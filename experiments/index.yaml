@@ -76,14 +76,21 @@ experiments:
     title: Standalone multi-tile U8xS8 projection probe
     parent: EXP-0002
     variants: []
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: substrate-projection-bringup
     source_branches:
       - codex/exp-0003-u8s8-projection
-    source_commits: []
+    source_commits:
+      - a54a650844f2540f67dd3bb914af203070cb6164
+      - fb5ff461b37d1b80899b5d376e8bec6f2c4f4ba0
+      - 98e0f9f2c39b225174d37ae4afac0fb86ae92cca
+      - 68ec6d3913ed173e5a948e75143496cf2661204f
+      - d9080af735c801f18cd8d51a4c8b0e4e121ef64a
+      - bcd1694ab3f38cc51864f2a39f2d652acd537acd
+      - a5791f8f6f46f7745d9608a2f799ffa252827da9
     record: docs/experiments/EXP-0003.md
     decided_by: user
     decided_on: '2026-08-27'
@@ -92,7 +99,15 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0003-u8s8-projection
       started_on: '2026-08-27'
-      completed_on: null
+      completed_on: '2026-08-27'
     evidence:
       formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0003'
       retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0003'
+      formal_run: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0003\\20260826T193448Z_a5791f8f6f46'
+      artifact_set: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0003\\a5791f8f6f46'
+      manifest: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0003\\20260826T193448Z_a5791f8f6f46\\manifest.txt'
+      formal_runs: 8
+      total_mismatches: 0
+      qnn_dependency_scan: none
+      static_integer_hmx_gate: pass
+      static_user_dma_gate: pass

@@ -41,6 +41,12 @@ The selected tile sizes, physical layouts, VTCM regions, buffer count,
 prefetch distance, workers, and dependency order for an Execution Unit.
 _Avoid_: QNN schedule, graph optimization
 
+**DMA Publication Barrier**:
+The explicit ordering point after User DMA reports idle and before a VTCM
+buffer is published to an HMX consumer. It makes completed DMA writes visible
+to the matrix engine before the producer signals buffer readiness.
+_Avoid_: diagnostic delay, implicit DMA completion
+
 **Native Boundary**:
 The declared input, output, persistent state, and weight placement used when an
 Execution Unit is timed without compatibility conversions.
