@@ -9,6 +9,7 @@
 #define QBH_DMA_DESC_PENDING UINT32_C(0)
 #define QBH_DMA_TYPE_1D UINT32_C(0)
 #define QBH_DMA_TYPE_2D UINT32_C(1)
+#define QBH_DMA_CONTENT_MISMATCH (-2)
 
 struct qbh_dma_desc_1d {
     uint32_t next;

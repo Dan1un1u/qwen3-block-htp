@@ -158,6 +158,26 @@ static int stage_activation_tiles(struct qbh_probe_header *header,
         if (record_dma_wait(header) != 0) {
             return -1;
         }
+        asm volatile("barrier" : : : "memory");
+        for (uint32_t row = 0; row < QBH_PROJ_M; ++row) {
+            for (uint32_t channel = 0;
+                 channel < QBH_HMX_INPUT_CHANNELS; ++channel) {
+                uint8_t expected = source[
+                    (size_t)row * QBH_PROJ_K +
+                    input_tile * QBH_HMX_INPUT_CHANNELS + channel];
+                uint8_t actual = destination[
+                    (size_t)input_tile * QBH_HMX_ACTIVATION_BYTES +
+                    (size_t)row * QBH_HMX_INPUT_CHANNELS + channel];
+                if (actual != expected) {
+                    header->dma_status = QBH_DMA_CONTENT_MISMATCH;
+                    FARF(ALWAYS,
+                         "EXP0003 activation DMA mismatch tile=%u row=%u "
+                         "channel=%u expected=%u actual=%u",
+                         input_tile, row, channel, expected, actual);
+                    return -1;
+                }
+            }
+        }
         ++header->activation_stage_count;
     }
     header->activation_stage_ticks =
@@ -193,6 +213,18 @@ static int stage_weight_bundle(struct qbh_probe_header *header,
     }
     if (record_dma_wait(header) != 0) {
         return -1;
+    }
+    asm volatile("barrier" : : : "memory");
+    for (uint32_t index = 0; index < QBH_PROJ_WEIGHT_BUNDLE_BYTES;
+         ++index) {
+        if (destination[index] != source[index]) {
+            header->dma_status = QBH_DMA_CONTENT_MISMATCH;
+            FARF(ALWAYS,
+                 "EXP0003 weight DMA mismatch index=%u expected=%u "
+                 "actual=%u",
+                 index, source[index], destination[index]);
+            return -1;
+        }
     }
     ++header->weight_bundle_stage_count;
     return 0;
