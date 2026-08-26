@@ -65,3 +65,26 @@ storage contract:
 ```sh
 scripts/collect_exp0002_evidence.sh
 ```
+
+## EXP-0003
+
+The projection probe composes twelve integer-HMX tile pairs into an exact
+`M=64, K=128, N=96` asymmetric-U8 by signed-S8 projection. Four activation K
+tiles are staged once and remain resident in VTCM. Three packed weight bundles
+flow through two VTCM slots, so the third bundle must reuse slot 0 only after
+the HMX worker releases it. A FastRPC-thread User DMA producer and a dedicated
+HMX consumer synchronize with explicit QuRT semaphores; QNN is not used.
+
+Build and run the first detached diagnostic without adding a process-kill
+timeout:
+
+```sh
+scripts/build_exp0003.sh
+QBH_DETACH=1 scripts/run_exp0003.sh identity 1
+scripts/poll_exp0003.sh identity 1
+```
+
+The result is checked against an independent row-major Host reference for
+`clamp(sum_k((activation - 128) * weight), 0, 255)`. Stage counters and qtimer
+measurements expose activation DMA, weight DMA, HMX computation, producer and
+consumer waits, pipeline duration, and output assembly separately.

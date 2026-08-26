@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define QBH_PROBE_MAGIC UINT32_C(0x51424850)
-#define QBH_PROBE_ABI_VERSION UINT32_C(2)
+#define QBH_PROBE_ABI_VERSION UINT32_C(3)
 #define QBH_PROBE_ALIGNMENT UINT32_C(4096)
 
 #define QBH_HMX_SPATIAL UINT32_C(64)
@@ -18,6 +18,27 @@
 #define QBH_HMX_DEFAULT_ZERO_POINT UINT32_C(128)
 #define QBH_HMX_DEFAULT_REPEATS UINT32_C(1)
 #define QBH_HMX_MAX_REPEATS UINT32_C(100000)
+
+#define QBH_PROJ_M UINT32_C(64)
+#define QBH_PROJ_K UINT32_C(128)
+#define QBH_PROJ_N UINT32_C(96)
+#define QBH_PROJ_K_TILES (QBH_PROJ_K / QBH_HMX_INPUT_CHANNELS)
+#define QBH_PROJ_N_TILES (QBH_PROJ_N / QBH_HMX_OUTPUT_CHANNELS)
+#define QBH_PROJ_ACTIVATION_BYTES (QBH_PROJ_M * QBH_PROJ_K)
+#define QBH_PROJ_LOGICAL_WEIGHT_BYTES (QBH_PROJ_K * QBH_PROJ_N)
+#define QBH_PROJ_WEIGHT_TILE_BYTES QBH_HMX_WEIGHT_BYTES
+#define QBH_PROJ_WEIGHT_CHUNK_BYTES \
+    (QBH_PROJ_K_TILES * QBH_PROJ_WEIGHT_TILE_BYTES)
+#define QBH_PROJ_WEIGHT_BUNDLE_BYTES \
+    (QBH_PROJ_WEIGHT_CHUNK_BYTES + QBH_HMX_BIAS_BYTES)
+#define QBH_PROJ_PACKED_WEIGHT_BYTES \
+    (QBH_PROJ_N_TILES * QBH_PROJ_WEIGHT_BUNDLE_BYTES)
+#define QBH_PROJ_OUTPUT_BYTES (QBH_PROJ_M * QBH_PROJ_N)
+#define QBH_PROJ_OUTPUT_TILES_BYTES \
+    (QBH_PROJ_N_TILES * QBH_HMX_OUTPUT_BYTES)
+#define QBH_PROJ_HMX_PAIRS_PER_REPEAT \
+    (QBH_PROJ_K_TILES * QBH_PROJ_N_TILES)
+#define QBH_PROJ_VTCM_BYTES UINT32_C(32768)
 
 enum qbh_probe_pattern {
     QBH_PATTERN_IDENTITY = 1,
@@ -43,6 +64,8 @@ enum qbh_probe_status {
     QBH_PROBE_STATUS_HMX_RELEASE_FAILED = -11,
     QBH_PROBE_STATUS_HMX_THREAD_FAILED = -12,
     QBH_PROBE_STATUS_HMX_POWER_FAILED = -13,
+    QBH_PROBE_STATUS_DMA_FAILED = -14,
+    QBH_PROBE_STATUS_SYNC_FAILED = -15,
 };
 
 struct qbh_probe_header {
@@ -74,14 +97,37 @@ struct qbh_probe_header {
     int32_t hvx_lock_status;
     int32_t hvx_unlock_status;
 
+    uint32_t projection_m;
+    uint32_t projection_k;
+    uint32_t projection_n;
+    uint32_t k_tile_count;
+    uint32_t n_tile_count;
+    uint32_t activation_stage_count;
+    uint32_t weight_bundle_stage_count;
+    uint32_t output_tile_count;
+    uint32_t dma_submit_count;
+    uint32_t dma_wait_count;
+    uint32_t weight_slot_reuse_count;
+    int32_t dma_status;
+    int32_t sync_status;
+
     uint64_t qtimer_start;
     uint64_t qtimer_end;
     uint64_t qtimer_elapsed;
     uint64_t pcycles_start;
     uint64_t pcycles_end;
+
+    uint64_t activation_stage_ticks;
+    uint64_t weight_stage_ticks;
+    uint64_t hmx_compute_ticks;
+    uint64_t hmx_ready_wait_ticks;
+    uint64_t producer_slot_wait_ticks;
+    uint64_t pipeline_ticks;
+    uint64_t output_assembly_ticks;
+    uint64_t dsp_total_ticks;
 };
 
-_Static_assert(sizeof(struct qbh_probe_header) == 144,
+_Static_assert(sizeof(struct qbh_probe_header) == 256,
                "probe header ABI changed");
 
 #endif

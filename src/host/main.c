@@ -9,7 +9,7 @@
 #include <string.h>
 #include <time.h>
 
-#include "hmx_int8_tile.h"
+#include "hmx_u8s8_projection.h"
 #include "host/session.h"
 #include "probe_protocol.h"
 #include "qwen3_probe.h"
@@ -78,44 +78,46 @@ static int parse_pattern(const char *text, uint32_t *pattern) {
 }
 
 static void fill_pattern(uint32_t pattern, uint8_t *activation,
-                         int8_t *weight) {
-    uint32_t spatial;
+                         int8_t *logical_weight) {
+    uint32_t row;
     uint32_t input_channel;
     uint32_t output_channel;
 
-    for (spatial = 0; spatial < QBH_HMX_SPATIAL; ++spatial) {
-        for (input_channel = 0; input_channel < QBH_HMX_INPUT_CHANNELS;
+    for (row = 0; row < QBH_PROJ_M; ++row) {
+        for (input_channel = 0; input_channel < QBH_PROJ_K;
              ++input_channel) {
             uint8_t value;
             switch (pattern) {
                 case QBH_PATTERN_IDENTITY:
                     value = (uint8_t)(QBH_HMX_DEFAULT_ZERO_POINT +
-                                      ((spatial + input_channel) & 7U));
+                                      ((row + input_channel) & 7U));
                     break;
                 case QBH_PATTERN_SIGNED:
                     value = (uint8_t)(QBH_HMX_DEFAULT_ZERO_POINT +
-                                      (int32_t)((spatial * 5U +
-                                                 input_channel * 3U) % 17U) -
+                                      (int32_t)((row * 5U +
+                                                 input_channel * 3U) %
+                                                17U) -
                                       8);
                     break;
                 case QBH_PATTERN_STRUCTURED:
                     value = (uint8_t)(96U +
-                                      ((spatial * 11U + input_channel * 13U) %
+                                      ((row * 11U + input_channel * 13U) %
                                        65U));
                     break;
                 default:
-                    value = ((spatial + input_channel) & 1U) != 0U
+                    value = ((row + input_channel) & 1U) != 0U
                                 ? UINT8_MAX
                                 : UINT8_C(0);
                     break;
             }
-            activation[qbh_activation_offset(spatial, input_channel)] = value;
+            activation[qbh_projection_activation_offset(row,
+                                                        input_channel)] =
+                value;
         }
     }
 
-    for (input_channel = 0; input_channel < QBH_HMX_INPUT_CHANNELS;
-         ++input_channel) {
-        for (output_channel = 0; output_channel < QBH_HMX_OUTPUT_CHANNELS;
+    for (input_channel = 0; input_channel < QBH_PROJ_K; ++input_channel) {
+        for (output_channel = 0; output_channel < QBH_PROJ_N;
              ++output_channel) {
             int8_t value;
             switch (pattern) {
@@ -125,13 +127,16 @@ static void fill_pattern(uint32_t pattern, uint8_t *activation,
                     break;
                 case QBH_PATTERN_SIGNED:
                     value = (int8_t)((int32_t)((input_channel * 7U +
-                                                output_channel * 5U) % 7U) -
+                                                output_channel * 5U) %
+                                               7U) -
                                      3);
                     break;
                 case QBH_PATTERN_STRUCTURED:
-                    value = ((input_channel + 3U * output_channel) % 5U) == 0U
+                    value = ((input_channel + 3U * output_channel) % 5U) ==
+                                    0U
                                 ? (int8_t)((int32_t)((input_channel +
-                                                     output_channel) % 5U) -
+                                                     output_channel) %
+                                                    5U) -
                                            2)
                                 : INT8_C(0);
                     break;
@@ -141,8 +146,60 @@ static void fill_pattern(uint32_t pattern, uint8_t *activation,
                                 : INT8_MIN;
                     break;
             }
-            weight[qbh_logical_weight_offset(input_channel, output_channel)] =
-                value;
+            logical_weight[qbh_projection_logical_weight_offset(
+                input_channel, output_channel)] = value;
+        }
+    }
+}
+
+static void pack_weight_bundles(const int8_t *logical_weight,
+                                int32_t input_zero_point,
+                                uint8_t *packed_bundles) {
+    uint32_t output_tile;
+
+    memset(packed_bundles, 0, QBH_PROJ_PACKED_WEIGHT_BYTES);
+    for (output_tile = 0; output_tile < QBH_PROJ_N_TILES; ++output_tile) {
+        uint32_t input_tile;
+        uint32_t *bias_words = (uint32_t *)(packed_bundles +
+            qbh_projection_bias_offset(output_tile));
+
+        for (input_tile = 0; input_tile < QBH_PROJ_K_TILES; ++input_tile) {
+            uint32_t input_channel;
+            uint32_t output_channel;
+            for (input_channel = 0;
+                 input_channel < QBH_HMX_INPUT_CHANNELS; ++input_channel) {
+                for (output_channel = 0;
+                     output_channel < QBH_HMX_OUTPUT_CHANNELS;
+                     ++output_channel) {
+                    uint32_t logical_k =
+                        input_tile * QBH_HMX_INPUT_CHANNELS + input_channel;
+                    uint32_t logical_n =
+                        output_tile * QBH_HMX_OUTPUT_CHANNELS +
+                        output_channel;
+                    packed_bundles[qbh_projection_packed_weight_offset(
+                        output_tile, input_tile, input_channel,
+                        output_channel)] = (uint8_t)logical_weight[
+                            qbh_projection_logical_weight_offset(logical_k,
+                                                                 logical_n)];
+                }
+            }
+        }
+
+        for (uint32_t output_channel = 0;
+             output_channel < QBH_HMX_OUTPUT_CHANNELS; ++output_channel) {
+            int32_t weight_sum = 0;
+            uint32_t logical_n =
+                output_tile * QBH_HMX_OUTPUT_CHANNELS + output_channel;
+            for (uint32_t input_channel = 0;
+                 input_channel < QBH_PROJ_K; ++input_channel) {
+                weight_sum += logical_weight[
+                    qbh_projection_logical_weight_offset(input_channel,
+                                                         logical_n)];
+            }
+            bias_words[output_channel] =
+                QBH_HMX_IDENTITY_CONVERT_LOWER_WORD;
+            bias_words[QBH_HMX_OUTPUT_CHANNELS + output_channel] =
+                (uint32_t)(-input_zero_point * weight_sum);
         }
     }
 }
@@ -158,33 +215,32 @@ static uint8_t clamp_to_u8(int32_t value) {
 }
 
 static uint32_t validate_output(const uint8_t *activation,
-                                const int8_t *weight, const uint8_t *output,
+                                const int8_t *logical_weight,
+                                const uint8_t *output,
                                 int32_t input_zero_point,
                                 uint8_t *reference_min,
                                 uint8_t *reference_max,
                                 uint64_t *reference_checksum) {
     uint32_t mismatches = 0;
-    uint32_t spatial;
-    uint32_t output_channel;
 
     *reference_min = UINT8_MAX;
     *reference_max = 0;
     *reference_checksum = 0;
-    for (spatial = 0; spatial < QBH_HMX_SPATIAL; ++spatial) {
-        for (output_channel = 0; output_channel < QBH_HMX_OUTPUT_CHANNELS;
-             ++output_channel) {
+    for (uint32_t row = 0; row < QBH_PROJ_M; ++row) {
+        for (uint32_t output_channel = 0;
+             output_channel < QBH_PROJ_N; ++output_channel) {
             int32_t accumulator = 0;
-            uint32_t input_channel;
             uint8_t expected;
 
-            for (input_channel = 0;
-                 input_channel < QBH_HMX_INPUT_CHANNELS; ++input_channel) {
+            for (uint32_t input_channel = 0;
+                 input_channel < QBH_PROJ_K; ++input_channel) {
                 accumulator +=
-                    ((int32_t)activation[qbh_activation_offset(
-                         spatial, input_channel)] -
+                    ((int32_t)activation[qbh_projection_activation_offset(
+                         row, input_channel)] -
                      input_zero_point) *
-                    (int32_t)weight[qbh_logical_weight_offset(
-                        input_channel, output_channel)];
+                    (int32_t)logical_weight[
+                        qbh_projection_logical_weight_offset(
+                            input_channel, output_channel)];
             }
             expected = clamp_to_u8(accumulator);
             if (expected < *reference_min) {
@@ -194,14 +250,16 @@ static uint32_t validate_output(const uint8_t *activation,
                 *reference_max = expected;
             }
             *reference_checksum += expected;
-            if (output[qbh_output_offset(spatial, output_channel)] != expected) {
+            if (output[qbh_projection_output_offset(row, output_channel)] !=
+                expected) {
                 if (mismatches < 8U) {
                     fprintf(stderr,
-                            "mismatch spatial=%" PRIu32 " channel=%" PRIu32
-                            " expected=%u actual=%u accumulator=%" PRId32 "\n",
-                            spatial, output_channel, (unsigned int)expected,
-                            (unsigned int)output[qbh_output_offset(
-                                spatial, output_channel)],
+                            "mismatch row=%" PRIu32 " channel=%" PRIu32
+                            " expected=%u actual=%u accumulator=%" PRId32
+                            "\n",
+                            row, output_channel, (unsigned int)expected,
+                            (unsigned int)output[qbh_projection_output_offset(
+                                row, output_channel)],
                             accumulator);
                 }
                 ++mismatches;
@@ -216,8 +274,9 @@ int main(int argc, char **argv) {
     struct qbh_probe_header *header = NULL;
     uint8_t *shared = NULL;
     uint8_t *activation;
-    int8_t *weight;
+    uint8_t *packed_weight;
     uint8_t *output;
+    int8_t *logical_weight = NULL;
     uint32_t pattern = QBH_PATTERN_IDENTITY;
     uint32_t repeats = QBH_HMX_DEFAULT_REPEATS;
     size_t activation_offset;
@@ -230,6 +289,8 @@ int main(int argc, char **argv) {
     uint8_t reference_min;
     uint8_t reference_max;
     uint32_t mismatches;
+    uint32_t expected_weight_stages;
+    uint32_t expected_reuses;
     int shared_fd = -1;
     int mapped = 0;
     int result = EXIT_FAILURE;
@@ -251,12 +312,19 @@ int main(int argc, char **argv) {
 
     activation_offset = align_up(sizeof(*header), QBH_PROBE_ALIGNMENT);
     weight_offset = activation_offset +
-                    align_up(QBH_HMX_ACTIVATION_BYTES, QBH_PROBE_ALIGNMENT);
+                    align_up(QBH_PROJ_ACTIVATION_BYTES,
+                             QBH_PROBE_ALIGNMENT);
     output_offset = weight_offset +
-                    align_up(QBH_HMX_WEIGHT_BYTES, QBH_PROBE_ALIGNMENT);
+                    align_up(QBH_PROJ_PACKED_WEIGHT_BYTES,
+                             QBH_PROBE_ALIGNMENT);
     total_bytes = output_offset +
-                  align_up(QBH_HMX_OUTPUT_BYTES, QBH_PROBE_ALIGNMENT);
+                  align_up(QBH_PROJ_OUTPUT_BYTES, QBH_PROBE_ALIGNMENT);
 
+    logical_weight = malloc(QBH_PROJ_LOGICAL_WEIGHT_BYTES);
+    if (logical_weight == NULL) {
+        fprintf(stderr, "logical weight allocation failed\n");
+        goto cleanup;
+    }
     shared = rpcmem_alloc(RPCMEM_HEAP_ID_SYSTEM, RPCMEM_FLAG_UNCACHED,
                           (int)total_bytes);
     if (shared == NULL) {
@@ -284,10 +352,13 @@ int main(int argc, char **argv) {
     header->dsp_status = QBH_PROBE_STATUS_HOST_INITIALIZED;
 
     activation = shared + activation_offset;
-    weight = (int8_t *)(shared + weight_offset);
+    packed_weight = shared + weight_offset;
     output = shared + output_offset;
-    fill_pattern(pattern, activation, weight);
-    memset(output, 0xa5, QBH_HMX_OUTPUT_BYTES);
+    fill_pattern(pattern, activation, logical_weight);
+    pack_weight_bundles(logical_weight,
+                        (int32_t)QBH_HMX_DEFAULT_ZERO_POINT,
+                        packed_weight);
+    memset(output, 0xa5, QBH_PROJ_OUTPUT_BYTES);
 
     rpc_result = qbh_session_open(&session);
     if (rpc_result != AEE_SUCCESS) {
@@ -307,26 +378,40 @@ int main(int argc, char **argv) {
                                  (uint32_t)total_bytes);
     host_end = monotonic_ns();
     if (rpc_result != AEE_SUCCESS) {
-        fprintf(stderr, "qwen3_probe_run failed: 0x%08x dsp_status=%d "
-                        "hmx_resource=%d hmx_lock=%d\n",
+        fprintf(stderr,
+                "qwen3_probe_run failed: 0x%08x dsp_status=%d "
+                "hmx_resource=%d hmx_lock=%d dma=%d sync=%d\n",
                 (unsigned int)rpc_result, header->dsp_status,
-                header->hmx_resource_status, header->hmx_lock_status);
+                header->hmx_resource_status, header->hmx_lock_status,
+                header->dma_status, header->sync_status);
         goto cleanup;
     }
 
     mismatches = validate_output(
-        activation, weight, output, (int32_t)header->input_zero_point,
-        &reference_min, &reference_max, &reference_checksum);
+        activation, logical_weight, output,
+        (int32_t)header->input_zero_point, &reference_min, &reference_max,
+        &reference_checksum);
 
-    printf("{\"experiment\":\"EXP-0002\","
+    printf("{\"experiment\":\"EXP-0003\","
            "\"pattern\":\"%s\",\"repeat_count\":%" PRIu32 ","
            "\"rpc_result\":%d,\"dsp_status\":%d,"
            "\"mismatches\":%" PRIu32 ","
            "\"reference_min\":%u,\"reference_max\":%u,"
            "\"reference_checksum\":%" PRIu64 ","
            "\"host_wall_ns\":%" PRIu64 ","
+           "\"projection_m\":%" PRIu32 ","
+           "\"projection_k\":%" PRIu32 ","
+           "\"projection_n\":%" PRIu32 ","
            "\"qtimer_ticks\":%" PRIu64 ","
            "\"pcycles\":%" PRIu64 ","
+           "\"activation_stage_ticks\":%" PRIu64 ","
+           "\"weight_stage_ticks\":%" PRIu64 ","
+           "\"hmx_compute_ticks\":%" PRIu64 ","
+           "\"hmx_ready_wait_ticks\":%" PRIu64 ","
+           "\"producer_slot_wait_ticks\":%" PRIu64 ","
+           "\"pipeline_ticks\":%" PRIu64 ","
+           "\"output_assembly_ticks\":%" PRIu64 ","
+           "\"dsp_total_ticks\":%" PRIu64 ","
            "\"vtcm_requested_bytes\":%" PRIu32 ","
            "\"vtcm_acquired_bytes\":%" PRIu32 ","
            "\"hmx_resource_status\":%d,\"hmx_lock_status\":%d,"
@@ -336,32 +421,64 @@ int main(int argc, char **argv) {
            "\"hmx_power_up_status\":%d,"
            "\"hmx_power_down_status\":%d,"
            "\"hmx_execution_count\":%" PRIu32 ","
-           "\"hvx_lock_status\":%d,\"hvx_unlock_status\":%d}\n",
+           "\"hvx_lock_status\":%d,\"hvx_unlock_status\":%d,"
+           "\"activation_stage_count\":%" PRIu32 ","
+           "\"weight_bundle_stage_count\":%" PRIu32 ","
+           "\"output_tile_count\":%" PRIu32 ","
+           "\"dma_submit_count\":%" PRIu32 ","
+           "\"dma_wait_count\":%" PRIu32 ","
+           "\"weight_slot_reuse_count\":%" PRIu32 ","
+           "\"dma_status\":%d,\"sync_status\":%d}\n",
            pattern_name(pattern), repeats, rpc_result, header->dsp_status,
            mismatches, (unsigned int)reference_min,
            (unsigned int)reference_max, reference_checksum,
-           host_end - host_start, header->qtimer_elapsed,
+           host_end - host_start, header->projection_m,
+           header->projection_k, header->projection_n,
+           header->qtimer_elapsed,
            header->pcycles_end - header->pcycles_start,
+           header->activation_stage_ticks, header->weight_stage_ticks,
+           header->hmx_compute_ticks, header->hmx_ready_wait_ticks,
+           header->producer_slot_wait_ticks, header->pipeline_ticks,
+           header->output_assembly_ticks, header->dsp_total_ticks,
            header->vtcm_requested_bytes, header->vtcm_acquired_bytes,
            header->hmx_resource_status, header->hmx_lock_status,
            header->hmx_unlock_status, header->hmx_release_status,
            header->hmx_thread_create_status,
            header->hmx_thread_join_status,
-           header->hmx_power_up_status,
-           header->hmx_power_down_status,
-           header->hmx_execution_count,
-           header->hvx_lock_status, header->hvx_unlock_status);
+           header->hmx_power_up_status, header->hmx_power_down_status,
+           header->hmx_execution_count, header->hvx_lock_status,
+           header->hvx_unlock_status, header->activation_stage_count,
+           header->weight_bundle_stage_count, header->output_tile_count,
+           header->dma_submit_count, header->dma_wait_count,
+           header->weight_slot_reuse_count, header->dma_status,
+           header->sync_status);
 
+    expected_weight_stages = repeats * QBH_PROJ_N_TILES;
+    expected_reuses = expected_weight_stages > 2U
+                          ? expected_weight_stages - 2U
+                          : 0U;
     if (header->dsp_status == QBH_PROBE_STATUS_OK && mismatches == 0 &&
+        header->projection_m == QBH_PROJ_M &&
+        header->projection_k == QBH_PROJ_K &&
+        header->projection_n == QBH_PROJ_N &&
         header->qtimer_end > header->qtimer_start &&
-        header->vtcm_acquired_bytes >= QBH_HMX_VTCM_BYTES &&
+        header->pipeline_ticks > 0 && header->hmx_compute_ticks > 0 &&
+        header->vtcm_acquired_bytes >= QBH_PROJ_VTCM_BYTES &&
         header->hmx_resource_status == 0 && header->hmx_lock_status == 0 &&
         header->hmx_unlock_status == 0 && header->hmx_release_status == 0 &&
         header->hmx_thread_create_status == 0 &&
         header->hmx_thread_join_status == 0 &&
         header->hmx_power_up_status == 0 &&
         header->hmx_power_down_status == 0 &&
-        header->hmx_execution_count == repeats &&
+        header->hmx_execution_count ==
+            repeats * QBH_PROJ_HMX_PAIRS_PER_REPEAT &&
+        header->activation_stage_count == QBH_PROJ_K_TILES &&
+        header->weight_bundle_stage_count == expected_weight_stages &&
+        header->output_tile_count == expected_weight_stages &&
+        header->dma_submit_count ==
+            QBH_PROJ_K_TILES + expected_weight_stages &&
+        header->weight_slot_reuse_count == expected_reuses &&
+        header->dma_status == 0 && header->sync_status == 0 &&
         header->hvx_lock_status == 0 && header->hvx_unlock_status == 0) {
         result = EXIT_SUCCESS;
     }
@@ -380,5 +497,6 @@ cleanup:
     if (shared != NULL) {
         rpcmem_free(shared);
     }
+    free(logical_weight);
     return result;
 }
