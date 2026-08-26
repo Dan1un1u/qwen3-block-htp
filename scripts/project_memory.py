@@ -100,7 +100,7 @@ def validate(require_clean: bool = False) -> tuple[dict, dict]:
         if remote_state != "configured":
             raise Failure("remote sync is required but no configured remote is recorded")
         run("git", "remote", "get-url", "origin", cwd=ROOT)
-    elif active != governance.get("remote_bootstrap_experiment"):
+    elif active not in (None, governance.get("remote_bootstrap_experiment")):
         raise Failure("local bootstrap exception is valid only for its declared experiment")
 
     return status, index
@@ -156,4 +156,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

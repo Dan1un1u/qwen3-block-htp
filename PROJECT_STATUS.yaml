@@ -14,19 +14,21 @@ toolchain:
   hexagon_sdk_candidate: 6.6.0.0
   hexagon_tools_candidate: 19.0.07
   android_ndk_candidate: r26c
+  verified_by: EXP-0001
   hardware: PJZ110
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0001
+  active_experiment: null
   next_experiment_number: 2
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: false
   remote_bootstrap_experiment: EXP-0001
 current_scope:
-  execution_unit: fastrpc_u8_vector_probe
+  execution_unit: null
+  last_completed_experiment: EXP-0001
+  last_completed_source_commit: 4d7c466ecdafdbe7960623cb50a8ac61d5b8691e
   full_model: out_of_scope
   qwen3_middle_block: future_scope
   selected_baseline: null
-

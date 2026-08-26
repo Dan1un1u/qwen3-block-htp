@@ -1,4 +1,15 @@
 schema_version: 1
 project: qwen3-block-htp
-artifacts: []
-
+artifacts:
+  - id: EXP-0001-results
+    experiment: EXP-0001
+    kind: formal-result-set
+    path: 'D:\llm_exp\results\qwen3-block-htp\exp0001'
+    source_commit: 4d7c466ecdafdbe7960623cb50a8ac61d5b8691e
+    manifest: 'D:\llm_exp\results\qwen3-block-htp\exp0001\summary.json'
+  - id: EXP-0001-binaries
+    experiment: EXP-0001
+    kind: retained-device-binaries
+    path: 'D:\llm_exp\models\qwen3-block-htp\exp0001'
+    source_commit: 4d7c466ecdafdbe7960623cb50a8ac61d5b8691e
+    manifest: 'D:\llm_exp\results\qwen3-block-htp\exp0001\artifact_manifest.json'

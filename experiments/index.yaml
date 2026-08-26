@@ -11,15 +11,16 @@ experiments:
     title: FastRPC U8 vector bring-up
     parent: null
     variants: []
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: substrate-bringup
     source_branches:
       - codex/exp-0001-fastrpc-bringup
     source_commits:
       - 8203c3fbfbdb2a1266b7b3e069bf9ded9bec440f
+      - 4d7c466ecdafdbe7960623cb50a8ac61d5b8691e
     record: docs/experiments/EXP-0001.md
     decided_by: user
     decided_on: '2026-08-27'
@@ -28,3 +29,11 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0001-fastrpc-bringup
       started_on: '2026-08-27'
+      completed_on: '2026-08-27'
+    evidence:
+      formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0001'
+      retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0001'
+      summary: 'D:\llm_exp\results\qwen3-block-htp\exp0001\summary.json'
+      formal_runs: 9
+      total_mismatches: 0
+      qnn_dependency_scan: none
