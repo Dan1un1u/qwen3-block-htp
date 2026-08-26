@@ -1,8 +1,8 @@
 schema_version: 1
 project:
   id: qwen3-block-htp
-  repository_url: null
-  remote_state: pending_user_authorization
+  repository_url: https://github.com/Dan1un1u/qwen3-block-htp
+  remote_state: configured
   git_common_dir: /home/daniuniu/work/qwen3-block-htp/.git
   source_root: /home/daniuniu/work/qwen3-block-htp
   memory_branch: codex/qwen3-block-project-memory
@@ -23,7 +23,7 @@ governance:
   next_experiment_number: 2
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
-  remote_sync_required: false
+  remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: null
