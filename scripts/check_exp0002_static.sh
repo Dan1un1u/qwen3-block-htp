@@ -2,7 +2,7 @@
 set -eo pipefail
 
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-source "${project_root}/scripts/env_exp0001.sh"
+source "${project_root}/scripts/env_exp0001.sh" >/dev/null
 set -u
 
 dsp_skel="${project_root}/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so"
