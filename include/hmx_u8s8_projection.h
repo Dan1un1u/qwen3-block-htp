@@ -42,8 +42,8 @@ static inline size_t qbh_projection_output_offset(uint32_t row,
 }
 
 void qbh_hmx_begin_u8s8_output(const uint32_t *bias_words);
-void qbh_hmx_accumulate_u8s8_tile(const uint8_t *activation,
-                                  const int8_t *packed_weight);
+void qbh_hmx_accumulate_u8s8_projection(const uint8_t *activation_tiles,
+                                        const int8_t *packed_weight_tiles);
 void qbh_hmx_store_u8_output(uint8_t *output);
 
 #endif

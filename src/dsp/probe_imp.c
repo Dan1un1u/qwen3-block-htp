@@ -249,15 +249,9 @@ static void hmx_worker_main(void *opaque) {
                 bundle + QBH_PROJ_WEIGHT_CHUNK_BYTES);
             uint64_t core_start = HAP_perf_get_qtimer_count();
             qbh_hmx_begin_u8s8_output(bias_words);
-            for (uint32_t input_tile = 0;
-                 input_tile < QBH_PROJ_K_TILES; ++input_tile) {
-                qbh_hmx_accumulate_u8s8_tile(
-                    job->activation_tiles +
-                        (size_t)input_tile * QBH_HMX_ACTIVATION_BYTES,
-                    (const int8_t *)(bundle +
-                        (size_t)input_tile * QBH_HMX_WEIGHT_BYTES));
-                ++job->hmx_execution_count;
-            }
+            qbh_hmx_accumulate_u8s8_projection(
+                job->activation_tiles, (const int8_t *)bundle);
+            job->hmx_execution_count += QBH_PROJ_K_TILES;
             qbh_hmx_store_u8_output(
                 job->output_tiles +
                 (size_t)output_tile * QBH_HMX_OUTPUT_BYTES);

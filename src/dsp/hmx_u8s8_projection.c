@@ -8,7 +8,10 @@
     (((QBH_HMX_SPATIAL_MASK >> 2U) << 7U) | \
      ((QBH_HMX_INPUT_CHANNELS - 1U) << 2U) | \
      (QBH_HMX_SPATIAL_MASK & 0x3U))
-#define QBH_HMX_WEIGHT_RT (QBH_HMX_WEIGHT_BYTES - 1U)
+#define QBH_HMX_PROJECTION_ACTIVATION_RT \
+    (QBH_HMX_ACTIVATION_RT + \
+     (QBH_PROJ_K_TILES - 1U) * QBH_HMX_ACTIVATION_BYTES)
+#define QBH_HMX_PROJECTION_WEIGHT_RT (QBH_PROJ_WEIGHT_CHUNK_BYTES - 1U)
 #define QBH_HMX_WRITE_RT \
     (((QBH_HMX_SPATIAL_MASK >> 2U) << 7U) | \
      (QBH_HMX_SPATIAL_MASK & 0x3U))
@@ -19,13 +22,15 @@ __attribute__((noinline)) void qbh_hmx_begin_u8s8_output(
     Q6_mxclracc();
 }
 
-__attribute__((noinline)) void qbh_hmx_accumulate_u8s8_tile(
-    const uint8_t *activation, const int8_t *packed_weight) {
+__attribute__((noinline)) void qbh_hmx_accumulate_u8s8_projection(
+    const uint8_t *activation_tiles, const int8_t *packed_weight_tiles) {
     asm volatile("{ activation.ub = mxmem(%0, %1):deep:cm\n"
                  "  weight.b = mxmem(%2, %3) }\n"
                  :
-                 : "r"(activation), "r"(QBH_HMX_ACTIVATION_RT),
-                   "r"(packed_weight), "r"(QBH_HMX_WEIGHT_RT)
+                 : "r"(activation_tiles),
+                   "r"(QBH_HMX_PROJECTION_ACTIVATION_RT),
+                   "r"(packed_weight_tiles),
+                   "r"(QBH_HMX_PROJECTION_WEIGHT_RT)
                  : "memory");
 }
 
