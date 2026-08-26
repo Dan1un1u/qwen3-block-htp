@@ -37,3 +37,28 @@ experiments:
       formal_runs: 9
       total_mismatches: 0
       qnn_dependency_scan: none
+  - id: EXP-0002
+    slug: int8-hmx-tile
+    title: Standalone U8xS8 integer HMX tile gate
+    parent: EXP-0001
+    variants: []
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: substrate-hmx-bringup
+    source_branches:
+      - codex/exp-0002-int8-hmx-tile
+    source_commits: []
+    record: docs/experiments/EXP-0002.md
+    decided_by: user
+    decided_on: '2026-08-27'
+    approval_ref: 'User message 2026-08-27: 继续实验'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0002-int8-hmx-tile
+      started_on: '2026-08-27'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0002'
+      retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0002'

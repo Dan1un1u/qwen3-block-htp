@@ -18,7 +18,6 @@ CONTRACT = ROOT / "PROJECT_CONTRACT.md"
 
 EXPECTED_PROJECT = "qwen3-block-htp"
 EXPECTED_MEMORY_BRANCH = "codex/qwen3-block-project-memory"
-EXPECTED_SOURCE_BRANCH = "codex/exp-0001-fastrpc-bringup"
 
 
 class Failure(RuntimeError):
@@ -48,6 +47,15 @@ def git_branch(path: Path) -> str:
 
 def git_dirty(path: Path) -> str:
     return run("git", "status", "--porcelain", cwd=path)
+
+
+def require_origin_sync(path: Path, branch: str) -> None:
+    local_head = run("git", "rev-parse", "HEAD", cwd=path)
+    remote_head = run(
+        "git", "rev-parse", f"refs/remotes/origin/{branch}", cwd=path,
+    )
+    if local_head != remote_head:
+        raise Failure(f"{branch} is not synchronized with origin")
 
 
 def validate(require_clean: bool = False) -> tuple[dict, dict]:
@@ -100,6 +108,7 @@ def validate(require_clean: bool = False) -> tuple[dict, dict]:
         if remote_state != "configured":
             raise Failure("remote sync is required but no configured remote is recorded")
         run("git", "remote", "get-url", "origin", cwd=ROOT)
+        require_origin_sync(ROOT, EXPECTED_MEMORY_BRANCH)
     elif active not in (None, governance.get("remote_bootstrap_experiment")):
         raise Failure("local bootstrap exception is valid only for its declared experiment")
 
@@ -111,19 +120,24 @@ def preflight(source: Path) -> None:
     source = source.resolve()
     if source != Path(status["project"]["source_root"]).resolve():
         raise Failure("source worktree path mismatch")
-    if git_branch(source) != EXPECTED_SOURCE_BRANCH:
+    active = status["governance"]["active_experiment"]
+    if active is None:
+        raise Failure("no active experiment")
+    record = next(item for item in index["experiments"] if item["id"] == active)
+    expected_source_branch = record["runtime"]["source_branch"]
+    if git_branch(source) != expected_source_branch:
         raise Failure("source branch mismatch")
     if git_dirty(source):
         raise Failure("source worktree is dirty")
-    active = status["governance"]["active_experiment"]
-    record = next(item for item in index["experiments"] if item["id"] == active)
+    if status["governance"].get("remote_sync_required"):
+        require_origin_sync(source, expected_source_branch)
     if record["runtime"]["source_worktree"] != str(source):
         raise Failure("source worktree does not own the active experiment")
     print("PROJECT_MEMORY=verified")
     print(f"EXPERIMENT={active}")
     print(f"SOURCE_BRANCH={git_branch(source)}")
     print(f"SOURCE_HEAD={run('git', 'rev-parse', 'HEAD', cwd=source)}")
-    print("REMOTE_SYNC=bootstrap-exception")
+    print("REMOTE_SYNC=verified")
 
 
 def main() -> int:

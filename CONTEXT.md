@@ -20,6 +20,12 @@ A minimal Execution Unit whose purpose is to prove communication, placement,
 resource access, timing, and deterministic output before model kernels exist.
 _Avoid_: model baseline, performance candidate
 
+**Integer HMX Tile Probe**:
+A substrate Execution Unit that proves direct V79 integer-HMX instructions,
+project-owned VTCM packing, resource acquisition, and exact integer output for
+one architectural tile.
+_Avoid_: optimized MatMul, projection baseline
+
 **Block Package**:
 A self-describing offline artifact containing one Qwen3 block's packed weights,
 quantization metadata, workload inputs, and reference identity.
@@ -49,4 +55,3 @@ _Avoid_: teacher accuracy, self-consistency test
 A Project Variant explicitly approved by the user to represent the current
 project outcome.
 _Avoid_: fastest observation, local pass, candidate
-
