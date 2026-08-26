@@ -1,0 +1,12 @@
+/build-*/
+/.cache/
+*.so
+*.a
+*.o
+*.bin
+*.elf
+*.map
+*.log
+__pycache__/
+*.pyc
+
