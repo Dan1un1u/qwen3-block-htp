@@ -26,6 +26,11 @@ project-owned memory and device lifecycle, and exact integer output for one
 architectural tile.
 _Avoid_: optimized MatMul, projection baseline
 
+**Projection Probe**:
+A substrate Execution Unit that composes multiple architectural integer-HMX
+tiles into one matrix projection validated by an Implementation Reference.
+_Avoid_: optimized Linear, Qwen3 block baseline
+
 **Block Package**:
 A self-describing offline artifact containing one Qwen3 block's packed weights,
 quantization metadata, workload inputs, and reference identity.

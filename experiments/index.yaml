@@ -71,3 +71,28 @@ experiments:
       total_mismatches: 0
       qnn_dependency_scan: none
       static_integer_hmx_gate: pass
+  - id: EXP-0003
+    slug: u8s8-projection
+    title: Standalone multi-tile U8xS8 projection probe
+    parent: EXP-0002
+    variants: []
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: substrate-projection-bringup
+    source_branches:
+      - codex/exp-0003-u8s8-projection
+    source_commits: []
+    record: docs/experiments/EXP-0003.md
+    decided_by: user
+    decided_on: '2026-08-27'
+    approval_ref: 'User message 2026-08-27: 继续实验'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0003-u8s8-projection
+      started_on: '2026-08-27'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0003'
+      retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0003'
