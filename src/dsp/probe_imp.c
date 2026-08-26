@@ -22,6 +22,7 @@
 #define QBH_VTCM_WEIGHT_SLOT1_OFFSET UINT32_C(12544)
 #define QBH_VTCM_OUTPUT_OFFSET UINT32_C(18432)
 #define QBH_HMX_WORKER_STACK_BYTES UINT32_C(16384)
+#define QBH_SYNC_TIMEOUT_US UINT64_C(1000000)
 
 _Static_assert(QBH_VTCM_WEIGHT_SLOT0_OFFSET +
                        QBH_PROJ_WEIGHT_BUNDLE_BYTES <=
@@ -223,11 +224,9 @@ static void hmx_worker_main(void *opaque) {
 
     job->lock_status = HAP_compute_res_hmx_lock2(
         job->hmx_context_id, HAP_COMPUTE_RES_HMX_SHARED);
-    job->sync_status = qurt_sem_up(job->started);
-    if (job->lock_status != AEE_SUCCESS || job->sync_status != QURT_EOK) {
-        qurt_thread_exit(job->lock_status != AEE_SUCCESS
-                             ? job->lock_status
-                             : job->sync_status);
+    (void)qurt_sem_up(job->started);
+    if (job->lock_status != AEE_SUCCESS) {
+        qurt_thread_exit(job->lock_status);
     }
 
     for (uint32_t repeat = 0; repeat < job->repeat_count; ++repeat) {
@@ -238,7 +237,8 @@ static void hmx_worker_main(void *opaque) {
             const uint8_t *bundle;
             const uint32_t *bias_words;
             uint64_t wait_start = HAP_perf_get_qtimer_count();
-            int status = qurt_sem_down(job->ready[slot]);
+            int status = qurt_sem_down_timed(job->ready[slot],
+                                             QBH_SYNC_TIMEOUT_US);
             job->ready_wait_ticks +=
                 HAP_perf_get_qtimer_count() - wait_start;
             if (status != QURT_EOK) {
@@ -272,12 +272,7 @@ static void hmx_worker_main(void *opaque) {
                 HAP_perf_get_qtimer_count() - core_start;
             ++job->output_tile_count;
 
-            status = qurt_sem_up(job->free_slot[slot]);
-            if (status != QURT_EOK) {
-                job->sync_status = status;
-                exit_status = status;
-                goto unlock;
-            }
+            (void)qurt_sem_up(job->free_slot[slot]);
         }
     }
 
@@ -508,7 +503,8 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     }
     hmx_thread_created = 1;
 
-    header->sync_status = qurt_sem_down(&worker_started);
+    header->sync_status = qurt_sem_down_timed(&worker_started,
+                                              QBH_SYNC_TIMEOUT_US);
     if (header->sync_status != QURT_EOK ||
         hmx_job.lock_status != AEE_SUCCESS) {
         header->hmx_lock_status = hmx_job.lock_status;
@@ -527,7 +523,8 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
             uint32_t linear_tile = repeat * QBH_PROJ_N_TILES + output_tile;
             uint32_t slot = linear_tile & 1U;
             uint64_t wait_start = HAP_perf_get_qtimer_count();
-            int sync_status = qurt_sem_down(&free_slot[slot]);
+            int sync_status = qurt_sem_down_timed(&free_slot[slot],
+                                                   QBH_SYNC_TIMEOUT_US);
             header->producer_slot_wait_ticks +=
                 HAP_perf_get_qtimer_count() - wait_start;
             if (sync_status != QURT_EOK) {
@@ -553,13 +550,7 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
             header->weight_stage_ticks +=
                 HAP_perf_get_qtimer_count() - stage_start;
 
-            sync_status = qurt_sem_up(&ready[slot]);
-            if (sync_status != QURT_EOK) {
-                header->sync_status = sync_status;
-                header->dsp_status = QBH_PROBE_STATUS_SYNC_FAILED;
-                result = AEE_EFAILED;
-                goto abort_worker;
-            }
+            (void)qurt_sem_up(&ready[slot]);
         }
     }
     goto join_worker;
