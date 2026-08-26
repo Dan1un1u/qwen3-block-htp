@@ -22,8 +22,8 @@ _Avoid_: model baseline, performance candidate
 
 **Integer HMX Tile Probe**:
 A substrate Execution Unit that proves direct V79 integer-HMX instructions,
-project-owned VTCM packing, resource acquisition, and exact integer output for
-one architectural tile.
+project-owned memory and device lifecycle, and exact integer output for one
+architectural tile.
 _Avoid_: optimized MatMul, projection baseline
 
 **Block Package**:

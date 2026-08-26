@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0002
+  active_experiment: null
   next_experiment_number: 3
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,8 +27,8 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: integer_hmx_tile_probe
-  last_completed_experiment: EXP-0001
-  last_completed_source_commit: 4d7c466ecdafdbe7960623cb50a8ac61d5b8691e
+  last_completed_experiment: EXP-0002
+  last_completed_source_commit: 86843728e63d6add2eff7efa94d5d772a8545c1c
   full_model: out_of_scope
   qwen3_middle_block: future_scope
   selected_baseline: null
