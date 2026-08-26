@@ -21,7 +21,7 @@ __attribute__((noinline)) void qbh_hmx_begin_u8s8_output(
 
 __attribute__((noinline)) void qbh_hmx_accumulate_u8s8_tile(
     const uint8_t *activation, const int8_t *packed_weight) {
-    asm volatile("{ activation.ub = mxmem(%0, %1):cm\n"
+    asm volatile("{ activation.ub = mxmem(%0, %1):deep:cm\n"
                  "  weight.b = mxmem(%2, %3) }\n"
                  :
                  : "r"(activation), "r"(QBH_HMX_ACTIVATION_RT),
