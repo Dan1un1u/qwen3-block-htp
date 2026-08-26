@@ -50,8 +50,11 @@ else()
     add_library(qwen3_probe_skel SHARED
         ${CMAKE_CURRENT_BINARY_DIR}/qwen3_probe_skel
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/probe_imp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/hmx_int8_tile
     )
     build_idl(include/qwen3_probe.idl qwen3_probe_skel)
-    target_compile_options(qwen3_probe_skel PRIVATE -Wall -Wextra -Werror)
+    target_compile_options(qwen3_probe_skel PRIVATE
+        -Wall -Wextra -Werror -mhmx -mhvx -mhvx-length=128B
+    )
     copy_binaries(qwen3_probe_skel)
 endif()
