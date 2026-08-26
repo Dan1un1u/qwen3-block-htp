@@ -1,4 +1,6 @@
 /build-*/
+/android_*/
+/hexagon_*/
 /.cache/
 *.so
 *.a
@@ -9,4 +11,3 @@
 *.log
 __pycache__/
 *.pyc
-
