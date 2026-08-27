@@ -92,13 +92,14 @@ static uint32_t qbh_align_up(uint32_t value, uint32_t alignment) {
     return (value + alignment - 1U) / alignment * alignment;
 }
 
-static void *qbh_arena_alloc(struct qbh_block_arena *arena,
-                             uint32_t bytes) {
+static void *qbh_arena_alloc_aligned(struct qbh_block_arena *arena,
+                                     uint32_t bytes,
+                                     uint32_t alignment) {
     uint32_t offset;
-    if (arena == NULL || bytes == 0U) {
+    if (arena == NULL || bytes == 0U || alignment == 0U) {
         return NULL;
     }
-    offset = qbh_align_up(arena->cursor, QBH_BLOCK_ALIGNMENT);
+    offset = qbh_align_up(arena->cursor, alignment);
     if (offset > arena->capacity || bytes > arena->capacity - offset) {
         return NULL;
     }
@@ -107,6 +108,12 @@ static void *qbh_arena_alloc(struct qbh_block_arena *arena,
         arena->peak = arena->cursor;
     }
     return arena->base + offset;
+}
+
+static void *qbh_arena_alloc(struct qbh_block_arena *arena,
+                             uint32_t bytes) {
+    return qbh_arena_alloc_aligned(
+        arena, bytes, QBH_BLOCK_ALIGNMENT);
 }
 
 static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
@@ -151,17 +158,21 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
     buffers->up = qbh_arena_alloc(&arena, intermediate_bytes);
     buffers->middle = qbh_arena_alloc(&arena, intermediate_bytes);
     buffers->down = qbh_arena_alloc(&arena, hidden_bytes);
-    buffers->hmx_activation = qbh_arena_alloc(
-        &arena, QBH_BLOCK_M * QBH_BLOCK_MAX_K * sizeof(uint16_t));
+    buffers->hmx_activation = qbh_arena_alloc_aligned(
+        &arena, QBH_BLOCK_M * QBH_BLOCK_MAX_K * sizeof(uint16_t),
+        QBH_HMX_FP16_TILE_BYTES);
     buffers->compressed_weight = qbh_arena_alloc(
         &arena, QBH_BLOCK_MAX_K * QBH_HMX_OUTPUT_CHANNELS / 2U);
-    buffers->expanded_weight = qbh_arena_alloc(
+    buffers->expanded_weight = qbh_arena_alloc_aligned(
         &arena, QBH_BLOCK_MAX_K * QBH_HMX_OUTPUT_CHANNELS *
-                    sizeof(uint16_t));
-    buffers->hmx_output = qbh_arena_alloc(
-        &arena, QBH_BLOCK_HMX_OUTPUT_MAX_BYTES);
-    buffers->scale_or_bias = qbh_arena_alloc(
-        &arena, QBH_HMX_FP16_SCALE_BYTES);
+                    sizeof(uint16_t),
+        QBH_HMX_FP16_TILE_BYTES);
+    buffers->hmx_output = qbh_arena_alloc_aligned(
+        &arena, QBH_BLOCK_HMX_OUTPUT_MAX_BYTES,
+        QBH_HMX_FP16_TILE_BYTES);
+    buffers->scale_or_bias = qbh_arena_alloc_aligned(
+        &arena, QBH_HMX_FP16_SCALE_BYTES,
+        QBH_HMX_FP16_SCALE_BYTES);
 
     if (buffers->input_norm_weight == NULL ||
         buffers->post_norm_weight == NULL ||
@@ -178,6 +189,16 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         buffers->compressed_weight == NULL ||
         buffers->expanded_weight == NULL || buffers->hmx_output == NULL ||
         buffers->scale_or_bias == NULL) {
+        return -1;
+    }
+    if (((uintptr_t)buffers->hmx_activation &
+         (QBH_HMX_FP16_TILE_BYTES - 1U)) != 0U ||
+        ((uintptr_t)buffers->expanded_weight &
+         (QBH_HMX_FP16_TILE_BYTES - 1U)) != 0U ||
+        ((uintptr_t)buffers->hmx_output &
+         (QBH_HMX_FP16_TILE_BYTES - 1U)) != 0U ||
+        ((uintptr_t)buffers->scale_or_bias &
+         (QBH_HMX_FP16_SCALE_BYTES - 1U)) != 0U) {
         return -1;
     }
     *peak_bytes = arena.peak;
