@@ -1084,16 +1084,6 @@ static int qbh_run_w4f16_projection(
             expanded_slots[current_slot], buffers->scale_or_bias,
             buffers->hmx_output, 2U, k_tiles);
         ++header->w4f16_streamed_command_count;
-        result = qbh_hmx_wait(worker);
-        header->projection_hmx_wait_ticks +=
-            HAP_perf_get_qtimer_count() - phase_start;
-        header->hmx_fp16_tile_pair_count += 2U * k_tiles;
-        ++header->hmx_command_count;
-        if (result != 0) {
-            qbh_record_projection_failure(
-                header, desc, n_tile, 17U, result);
-            return -1;
-        }
         if (next_tile < n_tiles) {
             uint32_t next_slot = next_tile & 1U;
             uint32_t following_tile = next_tile + 1U;
@@ -1108,6 +1098,7 @@ static int qbh_run_w4f16_projection(
                         (size_t)following_tile * compressed_bytes,
                     compressed_bytes);
                 if (result != 0) {
+                    (void)qbh_hmx_wait(worker);
                     qbh_record_projection_failure(
                         header, desc, n_tile, 14U, result);
                     return -1;
@@ -1139,6 +1130,7 @@ static int qbh_run_w4f16_projection(
                     HAP_perf_get_qtimer_count() - prefetch_start;
                 prefetch_active = 0;
                 if (result != 0) {
+                    (void)qbh_hmx_wait(worker);
                     qbh_record_projection_failure(
                         header, desc, n_tile, 15U, result);
                     return -1;
@@ -1146,6 +1138,16 @@ static int qbh_run_w4f16_projection(
             }
         }
 
+        result = qbh_hmx_wait(worker);
+        header->projection_hmx_wait_ticks +=
+            HAP_perf_get_qtimer_count() - phase_start;
+        header->hmx_fp16_tile_pair_count += 2U * k_tiles;
+        ++header->hmx_command_count;
+        if (result != 0) {
+            qbh_record_projection_failure(
+                header, desc, n_tile, 17U, result);
+            return -1;
+        }
         {
             uint64_t unpack_start = HAP_perf_get_qtimer_count();
             qbh_unpack_fp16_output(
