@@ -331,3 +331,32 @@ experiments:
       hvx_hmx_overlap_gate: pass
       boot_id_stable: true
       performance_characterization: postscale_reduces_expand_work_but_only_improves_down
+  - id: EXP-0009
+    slug: coarse-hmx-chunks
+    title: Batch multiple down-projection HMX streams per ready boundary
+    parent: EXP-0008
+    variants:
+      - expanded_s8_control
+      - postscale_chunk32_control
+      - postscale_chunk64
+      - postscale_chunk96
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: w4u8-coarse-hmx-consumer-batching
+    source_branches:
+      - codex/exp-0009-coarse-hmx-chunks
+    source_commits: []
+    record: docs/experiments/EXP-0009.md
+    decided_by: user
+    decided_on: '2026-08-27'
+    approval_ref: 'User message 2026-08-27: 继续优化现有方案'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0009-coarse-hmx-chunks
+      started_on: '2026-08-27'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0009'
+      retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0009'
