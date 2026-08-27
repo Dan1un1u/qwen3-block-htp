@@ -129,6 +129,7 @@ struct qbh_block_header {
     uint32_t variant;
     uint32_t repeat_count;
     uint32_t w4f16_requested_hvx_workers;
+    uint32_t w4f16_region_tiles;
 
     uint32_t input_offset;
     uint32_t input_bytes;

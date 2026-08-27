@@ -32,9 +32,9 @@ enum qbh_block_hmx_command_kind {
     QBH_BLOCK_HMX_FP16_STREAMING = 3,
 };
 
-#define QBH_BLOCK_W4F16_REGION_TILES UINT32_C(8)
+#define QBH_BLOCK_W4F16_MIN_REGION_TILES UINT32_C(8)
 #define QBH_BLOCK_W4F16_MAX_REGIONS \
-    (QBH_BLOCK_MAX_K / 32U / QBH_BLOCK_W4F16_REGION_TILES)
+    (QBH_BLOCK_MAX_K / 32U / QBH_BLOCK_W4F16_MIN_REGION_TILES)
 #define QBH_BLOCK_W4F16_HVX_WORKERS UINT32_C(4)
 #define QBH_BLOCK_W4F16_HVX_STACK_BYTES UINT32_C(8192)
 
@@ -122,6 +122,7 @@ struct qbh_block_w4f16_pool {
     volatile uint32_t *ready_generations;
     uint32_t expected_generation;
     uint32_t region_count;
+    uint32_t region_tiles;
     uint32_t worker_count;
     uint32_t created_workers;
 };
@@ -306,7 +307,10 @@ static int qbh_header_valid(const struct qbh_block_header *header,
     }
     if (header->w4f16_requested_hvx_workers == 0U ||
         header->w4f16_requested_hvx_workers >
-            QBH_BLOCK_W4F16_HVX_WORKERS) {
+            QBH_BLOCK_W4F16_HVX_WORKERS ||
+        (header->w4f16_region_tiles != 8U &&
+         header->w4f16_region_tiles != 16U &&
+         header->w4f16_region_tiles != 32U)) {
         return 0;
     }
     element_bytes = header->variant == QBH_BLOCK_W4U8 ? 1U : 2U;
@@ -552,13 +556,13 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
             start = HAP_perf_get_qtimer_count();
             qbh_expand_w4_to_f16_hvx(
                 pool->compressed_weight +
-                    (size_t)region * QBH_BLOCK_W4F16_REGION_TILES *
+                    (size_t)region * pool->region_tiles *
                         QBH_W4_PACKED_TILE_BYTES,
                 pool->channel_scale,
                 pool->expanded_weight +
-                    (size_t)region * QBH_BLOCK_W4F16_REGION_TILES *
+                    (size_t)region * pool->region_tiles *
                         QBH_HMX_FP16_TILE_BYTES,
-                QBH_BLOCK_W4F16_REGION_TILES);
+                pool->region_tiles);
             job->expand_ticks +=
                 HAP_perf_get_qtimer_count() - start;
             ++job->expand_count;
@@ -649,13 +653,15 @@ static void qbh_w4f16_pool_start(
     struct qbh_block_w4f16_pool *pool,
     const uint8_t *compressed_weight, const float *channel_scale,
     uint8_t *expanded_weight, volatile uint32_t *ready_generations,
-    uint32_t expected_generation, uint32_t region_count) {
+    uint32_t expected_generation, uint32_t region_count,
+    uint32_t region_tiles) {
     pool->compressed_weight = compressed_weight;
     pool->channel_scale = channel_scale;
     pool->expanded_weight = expanded_weight;
     pool->ready_generations = ready_generations;
     pool->expected_generation = expected_generation;
     pool->region_count = region_count;
+    pool->region_tiles = region_tiles;
     pool->next_region = 0U;
     asm volatile("barrier" ::: "memory");
     for (uint32_t worker = 0; worker < pool->worker_count; ++worker) {
@@ -892,7 +898,7 @@ static int qbh_run_projection(
             phase_start = HAP_perf_get_qtimer_count();
             if (header->variant == QBH_BLOCK_W4F16) {
                 uint32_t region_count =
-                    k_tiles / QBH_BLOCK_W4F16_REGION_TILES;
+                    k_tiles / header->w4f16_region_tiles;
                 uint32_t generation = n_tile + 1U;
                 uint64_t expand_start;
                 if (w4f16_pool == NULL) {
@@ -903,7 +909,7 @@ static int qbh_run_projection(
                     worker, buffers->hmx_activation,
                     buffers->expanded_weight, buffers->scale_or_bias,
                     buffers->hmx_output, 2U, k_tiles,
-                    QBH_BLOCK_W4F16_REGION_TILES, w4f16_ready,
+                    header->w4f16_region_tiles, w4f16_ready,
                     generation);
                 ++header->w4f16_streamed_command_count;
                 expand_start = HAP_perf_get_qtimer_count();
@@ -911,7 +917,8 @@ static int qbh_run_projection(
                     w4f16_pool, buffers->compressed_weight,
                     (const float *)buffers->channel_scale,
                     buffers->expanded_weight, w4f16_ready,
-                    generation, region_count);
+                    generation, region_count,
+                    header->w4f16_region_tiles);
                 qbh_w4f16_pool_wait(w4f16_pool);
                 header->w4f16_expand_ticks +=
                     HAP_perf_get_qtimer_count() - expand_start;
