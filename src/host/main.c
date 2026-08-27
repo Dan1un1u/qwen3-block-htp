@@ -1345,7 +1345,7 @@ int main(int argc, char **argv) {
         aggregate_output_tile_count += call_header->output_tile_count;
     }
 
-    printf("{\"experiment\":\"EXP-0016\","
+    printf("{\"experiment\":\"EXP-0017\","
            "\"weight_storage\":\"%s\","
            "\"physical_plan\":\"%s\","
            "\"requested_hvx_workers\":%" PRIu32 ","
