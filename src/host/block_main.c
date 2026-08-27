@@ -755,7 +755,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0022\","
+        "{\"experiment\":\"EXP-0023\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"FP16_HMX\","
         "\"projection_compute\":\"%s\","
@@ -798,6 +798,7 @@ int main(int argc, char **argv) {
         "\"vtcm_peak_plan_bytes\":%" PRIu32 ","
         "\"block_invocation_count\":%" PRIu32 ","
         "\"weight_ddr_read_bytes\":%" PRIu64 ","
+        "\"weight_dma_descriptor_count\":%" PRIu32 ","
         "\"boundary_ddr_read_bytes\":%" PRIu64 ","
         "\"boundary_ddr_write_bytes\":%" PRIu64 ","
         "\"intermediate_ddr_read_bytes\":%" PRIu32 ","
@@ -865,6 +866,7 @@ int main(int argc, char **argv) {
         header->vtcm_requested_bytes, header->vtcm_acquired_bytes,
         header->vtcm_peak_plan_bytes, header->block_invocation_count,
         header->weight_ddr_read_bytes,
+        header->weight_dma_descriptor_count,
         header->boundary_ddr_read_bytes,
         header->boundary_ddr_write_bytes,
         header->intermediate_ddr_read_bytes,

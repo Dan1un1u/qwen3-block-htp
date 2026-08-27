@@ -41,6 +41,7 @@ done
 
 grep -q 'qbh_run_block_rpc' "${static_output_dir}/dsp.symbols.txt"
 grep -q 'qbh_hmx_fp16_matmul_tiles' "${static_output_dir}/dsp.symbols.txt"
+grep -q 'qbh_hmx_fp16_matmul_tile_scales' "${static_output_dir}/dsp.symbols.txt"
 grep -q 'qbh_hmx_begin_u8s8_output' "${static_output_dir}/dsp.symbols.txt"
 grep -q 'mxclracc.hf' "${static_output_dir}/dsp.disassembly.txt"
 grep -q 'activation.hf = mxmem' "${static_output_dir}/dsp.disassembly.txt"
@@ -49,6 +50,7 @@ grep -q 'cvt.hf = acc' "${static_output_dir}/dsp.disassembly.txt"
 grep -q 'activation.ub = mxmem' "${static_output_dir}/dsp.disassembly.txt"
 grep -q 'weight.b = mxmem' "${static_output_dir}/dsp.disassembly.txt"
 grep -q ':after:cm:sat.ub = acc' "${static_output_dir}/dsp.disassembly.txt"
+grep -q 'vlut16' "${static_output_dir}/dsp.disassembly.txt"
 
 if grep -Eiq 'Qnn|QAIRT' "${static_output_dir}"/*.dynamic.txt; then
     printf 'unexpected QNN/QAIRT runtime dependency\n' >&2
@@ -99,7 +101,7 @@ if re.search(r"intermediate_[a-z_]+_offset", protocol):
     raise SystemExit("DSP ABI exposes an intermediate DDR tensor")
 PY
 
-printf '{"experiment":"EXP-0022","execution_unit":"qwen3_layer14_complete_block_m64",'
+printf '{"experiment":"EXP-0023","execution_unit":"qwen3_layer14_complete_block_m64",'
 printf '"fp16_hmx":true,"u8s8_integer_hmx":true,"single_block_fastrpc":true,'
 printf '"fixed_vtcm_request_bytes":8388608,"hmx_crouton_alignment_bytes":2048,'
 printf '"hmx_bias_alignment_bytes":256,"intermediate_ddr_allowed":false,'

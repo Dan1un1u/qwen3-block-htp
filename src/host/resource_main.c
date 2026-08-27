@@ -68,7 +68,7 @@ int main(void) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
 
-    printf("{\"experiment\":\"EXP-0022\","
+    printf("{\"experiment\":\"EXP-0023\","
            "\"gate\":\"fixed_full_vtcm_session\","
            "\"prepare_result\":%d,\"info_result\":%d,"
            "\"release_result\":%d,\"close_result\":%d,"
