@@ -35,6 +35,8 @@ enum qbh_block_hmx_command_kind {
 #define QBH_BLOCK_W4F16_REGION_TILES UINT32_C(8)
 #define QBH_BLOCK_W4F16_MAX_REGIONS \
     (QBH_BLOCK_MAX_K / 32U / QBH_BLOCK_W4F16_REGION_TILES)
+#define QBH_BLOCK_W4F16_HVX_WORKERS UINT32_C(4)
+#define QBH_BLOCK_W4F16_HVX_STACK_BYTES UINT32_C(8192)
 
 struct qbh_block_arena {
     uint8_t *base;
@@ -95,8 +97,53 @@ struct qbh_block_hmx_worker {
     uint64_t ready_wait_ticks;
 };
 
+struct qbh_block_w4f16_pool;
+
+struct qbh_block_w4f16_job {
+    struct qbh_block_w4f16_pool *pool;
+    uint32_t worker_index;
+    int32_t lock_status;
+    int32_t unlock_status;
+    uint32_t expand_count;
+    uint64_t expand_ticks;
+};
+
+struct qbh_block_w4f16_pool {
+    qurt_sem_t command_ready[QBH_BLOCK_W4F16_HVX_WORKERS];
+    qurt_sem_t command_done[QBH_BLOCK_W4F16_HVX_WORKERS];
+    qurt_sem_t worker_started[QBH_BLOCK_W4F16_HVX_WORKERS];
+    qurt_thread_t threads[QBH_BLOCK_W4F16_HVX_WORKERS];
+    struct qbh_block_w4f16_job jobs[QBH_BLOCK_W4F16_HVX_WORKERS];
+    volatile uint32_t stop;
+    volatile uint32_t next_region;
+    const uint8_t *compressed_weight;
+    const float *channel_scale;
+    uint8_t *expanded_weight;
+    volatile uint32_t *ready_generations;
+    uint32_t expected_generation;
+    uint32_t region_count;
+    uint32_t created_workers;
+};
+
 static uint8_t qbh_block_hmx_stack[QBH_BLOCK_HMX_STACK_BYTES]
     __attribute__((aligned(128)));
+static uint8_t qbh_block_w4f16_hvx_stacks
+    [QBH_BLOCK_W4F16_HVX_WORKERS][QBH_BLOCK_W4F16_HVX_STACK_BYTES]
+    __attribute__((aligned(128)));
+
+static uint32_t qbh_atomic_fetch_increment(volatile uint32_t *target) {
+    uint32_t original;
+    uint32_t updated;
+    __asm__ __volatile__(
+        "1:     %0 = memw_locked(%3)\n"
+        "       %1 = add(%0, #1)\n"
+        "       memw_locked(%3, p0) = %1\n"
+        "       if !p0 jump 1b\n"
+        : "=&r"(original), "=&r"(updated), "+m"(*target)
+        : "r"(target)
+        : "p0");
+    return original;
+}
 
 static uint32_t qbh_align_up(uint32_t value, uint32_t alignment) {
     return (value + alignment - 1U) / alignment * alignment;
@@ -474,6 +521,174 @@ static int qbh_hmx_wait(struct qbh_block_hmx_worker *worker) {
     return worker->command_status == AEE_SUCCESS ? 0 : -1;
 }
 
+static void qbh_w4f16_hvx_worker_main(void *opaque) {
+    struct qbh_block_w4f16_job *job =
+        (struct qbh_block_w4f16_job *)opaque;
+    struct qbh_block_w4f16_pool *pool = job->pool;
+
+    job->lock_status = qurt_hvx_lock(QURT_HVX_MODE_128B);
+    (void)qurt_sem_up(&pool->worker_started[job->worker_index]);
+    if (job->lock_status != AEE_SUCCESS) {
+        qurt_thread_exit(job->lock_status);
+    }
+    for (;;) {
+        qurt_sem_down(&pool->command_ready[job->worker_index]);
+        if (pool->stop != 0U) {
+            break;
+        }
+        for (;;) {
+            uint32_t region =
+                qbh_atomic_fetch_increment(&pool->next_region);
+            uint64_t start;
+            if (region >= pool->region_count) {
+                break;
+            }
+            start = HAP_perf_get_qtimer_count();
+            qbh_expand_w4_to_f16_hvx(
+                pool->compressed_weight +
+                    (size_t)region * QBH_BLOCK_W4F16_REGION_TILES *
+                        QBH_W4_PACKED_TILE_BYTES,
+                pool->channel_scale,
+                pool->expanded_weight +
+                    (size_t)region * QBH_BLOCK_W4F16_REGION_TILES *
+                        QBH_HMX_FP16_TILE_BYTES,
+                QBH_BLOCK_W4F16_REGION_TILES);
+            job->expand_ticks +=
+                HAP_perf_get_qtimer_count() - start;
+            ++job->expand_count;
+            pool->ready_generations[region] =
+                pool->expected_generation;
+            asm volatile("release(%0):at"
+                         :
+                         : "r"(&pool->ready_generations[region])
+                         : "memory");
+        }
+        (void)qurt_sem_up(&pool->command_done[job->worker_index]);
+    }
+    job->unlock_status = qurt_hvx_unlock();
+    qurt_thread_exit(job->unlock_status);
+}
+
+static int qbh_w4f16_pool_create(
+    struct qbh_block_w4f16_pool *pool) {
+    int result = 0;
+
+    memset(pool, 0, sizeof(*pool));
+    for (uint32_t worker = 0;
+         worker < QBH_BLOCK_W4F16_HVX_WORKERS; ++worker) {
+        qurt_sem_init_val(&pool->command_ready[worker], 0U);
+        qurt_sem_init_val(&pool->command_done[worker], 0U);
+        qurt_sem_init_val(&pool->worker_started[worker], 0U);
+    }
+    for (uint32_t worker = 0;
+         worker < QBH_BLOCK_W4F16_HVX_WORKERS; ++worker) {
+        qurt_thread_attr_t attributes;
+        char name[16] = "qbh-w4f16-hvx0";
+        name[13] = (char)('0' + worker);
+        pool->jobs[worker].pool = pool;
+        pool->jobs[worker].worker_index = worker;
+        qurt_thread_attr_init(&attributes);
+        qurt_thread_attr_set_name(&attributes, name);
+        qurt_thread_attr_set_stack_addr(
+            &attributes, qbh_block_w4f16_hvx_stacks[worker]);
+        qurt_thread_attr_set_stack_size(
+            &attributes, QBH_BLOCK_W4F16_HVX_STACK_BYTES);
+        qurt_thread_attr_set_priority(
+            &attributes,
+            qurt_thread_get_priority(qurt_thread_get_id()));
+        qurt_thread_attr_set_detachstate(
+            &attributes, QURT_THREAD_ATTR_CREATE_JOINABLE);
+        if (qurt_thread_create(
+                &pool->threads[worker], &attributes,
+                qbh_w4f16_hvx_worker_main,
+                &pool->jobs[worker]) != QURT_EOK) {
+            result = -1;
+            break;
+        }
+        ++pool->created_workers;
+    }
+    for (uint32_t worker = 0; worker < pool->created_workers;
+         ++worker) {
+        qurt_sem_down(&pool->worker_started[worker]);
+        if (pool->jobs[worker].lock_status != AEE_SUCCESS) {
+            result = -1;
+        }
+    }
+    if (result != 0 ||
+        pool->created_workers != QBH_BLOCK_W4F16_HVX_WORKERS) {
+        pool->stop = 1U;
+        asm volatile("barrier" ::: "memory");
+        for (uint32_t worker = 0; worker < pool->created_workers;
+             ++worker) {
+            int exit_status;
+            (void)qurt_sem_up(&pool->command_ready[worker]);
+            (void)qurt_thread_join(
+                pool->threads[worker], &exit_status);
+        }
+        for (uint32_t worker = 0;
+             worker < QBH_BLOCK_W4F16_HVX_WORKERS; ++worker) {
+            qurt_sem_destroy(&pool->worker_started[worker]);
+            qurt_sem_destroy(&pool->command_done[worker]);
+            qurt_sem_destroy(&pool->command_ready[worker]);
+        }
+        return -1;
+    }
+    return 0;
+}
+
+static void qbh_w4f16_pool_start(
+    struct qbh_block_w4f16_pool *pool,
+    const uint8_t *compressed_weight, const float *channel_scale,
+    uint8_t *expanded_weight, volatile uint32_t *ready_generations,
+    uint32_t expected_generation, uint32_t region_count) {
+    pool->compressed_weight = compressed_weight;
+    pool->channel_scale = channel_scale;
+    pool->expanded_weight = expanded_weight;
+    pool->ready_generations = ready_generations;
+    pool->expected_generation = expected_generation;
+    pool->region_count = region_count;
+    pool->next_region = 0U;
+    asm volatile("barrier" ::: "memory");
+    for (uint32_t worker = 0;
+         worker < QBH_BLOCK_W4F16_HVX_WORKERS; ++worker) {
+        (void)qurt_sem_up(&pool->command_ready[worker]);
+    }
+}
+
+static void qbh_w4f16_pool_wait(
+    struct qbh_block_w4f16_pool *pool) {
+    for (uint32_t worker = 0;
+         worker < QBH_BLOCK_W4F16_HVX_WORKERS; ++worker) {
+        qurt_sem_down(&pool->command_done[worker]);
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
+static int qbh_w4f16_pool_destroy(
+    struct qbh_block_w4f16_pool *pool) {
+    int result = 0;
+    pool->stop = 1U;
+    asm volatile("barrier" ::: "memory");
+    for (uint32_t worker = 0; worker < pool->created_workers;
+         ++worker) {
+        int exit_status = 0;
+        (void)qurt_sem_up(&pool->command_ready[worker]);
+        if (qurt_thread_join(pool->threads[worker], &exit_status) !=
+                QURT_EOK ||
+            exit_status != AEE_SUCCESS ||
+            pool->jobs[worker].unlock_status != AEE_SUCCESS) {
+            result = -1;
+        }
+    }
+    for (uint32_t worker = 0;
+         worker < QBH_BLOCK_W4F16_HVX_WORKERS; ++worker) {
+        qurt_sem_destroy(&pool->worker_started[worker]);
+        qurt_sem_destroy(&pool->command_done[worker]);
+        qurt_sem_destroy(&pool->command_ready[worker]);
+    }
+    return result;
+}
+
 static void qbh_pack_fp16_activation(const __fp16 *source,
                                      uint32_t source_stride,
                                      uint32_t k, __fp16 *destination) {
@@ -558,7 +773,8 @@ static int qbh_run_projection(
     struct qbh_block_header *header, const uint8_t *shared,
     const struct qbh_block_projection_desc *desc,
     struct qbh_block_buffers *buffers,
-    struct qbh_block_hmx_worker *worker, const void *input,
+    struct qbh_block_hmx_worker *worker,
+    struct qbh_block_w4f16_pool *w4f16_pool, const void *input,
     void *output) {
     uint32_t k_tiles = desc->k / 32U;
     uint32_t n_tiles = desc->n / 32U;
@@ -582,8 +798,7 @@ static int qbh_run_projection(
     }
     header->projection_pack_ticks +=
         HAP_perf_get_qtimer_count() - phase_start;
-    if (header->variant == QBH_BLOCK_W4U8 ||
-        header->variant == QBH_BLOCK_W4F16) {
+    if (header->variant == QBH_BLOCK_W4U8) {
         if (qurt_hvx_lock(QURT_HVX_MODE_128B) != AEE_SUCCESS) {
             qbh_record_projection_failure(
                 header, desc, 0U, 5U, -1);
@@ -673,6 +888,11 @@ static int qbh_run_projection(
                 uint32_t region_count =
                     k_tiles / QBH_BLOCK_W4F16_REGION_TILES;
                 uint32_t generation = n_tile + 1U;
+                uint64_t expand_start;
+                if (w4f16_pool == NULL) {
+                    result = -1;
+                    goto projection_command_complete;
+                }
                 qbh_hmx_start_fp16_streaming(
                     worker, buffers->hmx_activation,
                     buffers->expanded_weight, buffers->scale_or_bias,
@@ -680,29 +900,15 @@ static int qbh_run_projection(
                     QBH_BLOCK_W4F16_REGION_TILES, w4f16_ready,
                     generation);
                 ++header->w4f16_streamed_command_count;
-                for (uint32_t region = 0; region < region_count;
-                     ++region) {
-                    uint64_t expand_start =
-                        HAP_perf_get_qtimer_count();
-                    qbh_expand_w4_to_f16_hvx(
-                        buffers->compressed_weight +
-                            (size_t)region *
-                                QBH_BLOCK_W4F16_REGION_TILES *
-                                QBH_W4_PACKED_TILE_BYTES,
-                        (const float *)buffers->channel_scale,
-                        buffers->expanded_weight +
-                            (size_t)region *
-                                QBH_BLOCK_W4F16_REGION_TILES *
-                                QBH_HMX_FP16_TILE_BYTES,
-                        QBH_BLOCK_W4F16_REGION_TILES);
-                    header->w4f16_expand_ticks +=
-                        HAP_perf_get_qtimer_count() - expand_start;
-                    w4f16_ready[region] = generation;
-                    asm volatile("release(%0):at"
-                                 :
-                                 : "r"(&w4f16_ready[region])
-                                 : "memory");
-                }
+                expand_start = HAP_perf_get_qtimer_count();
+                qbh_w4f16_pool_start(
+                    w4f16_pool, buffers->compressed_weight,
+                    (const float *)buffers->channel_scale,
+                    buffers->expanded_weight, w4f16_ready,
+                    generation, region_count);
+                qbh_w4f16_pool_wait(w4f16_pool);
+                header->w4f16_expand_ticks +=
+                    HAP_perf_get_qtimer_count() - expand_start;
                 if (desc == &header->projections[0] &&
                     n_tile == 0U) {
                     header->w4f16_expand_mismatch_count =
@@ -722,6 +928,7 @@ static int qbh_run_projection(
                     buffers->scale_or_bias, buffers->hmx_output, 2U,
                     k_tiles, 1U);
             }
+projection_command_complete:
             header->projection_hmx_wait_ticks +=
                 HAP_perf_get_qtimer_count() - phase_start;
             header->hmx_fp16_tile_pair_count += 2U * k_tiles;
@@ -1194,7 +1401,8 @@ static void qbh_record_f16_nonfinite(struct qbh_block_header *header,
 static int qbh_run_one_block(struct qbh_block_header *header,
                              const uint8_t *shared,
                              struct qbh_block_buffers *buffers,
-                             struct qbh_block_hmx_worker *worker) {
+                             struct qbh_block_hmx_worker *worker,
+                             struct qbh_block_w4f16_pool *w4f16_pool) {
     uint32_t hidden_elements = QBH_BLOCK_M * QBH_BLOCK_HIDDEN;
     uint32_t intermediate_elements =
         QBH_BLOCK_M * QBH_BLOCK_INTERMEDIATE;
@@ -1235,13 +1443,16 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     start = HAP_perf_get_qtimer_count();
     if (qbh_run_projection(
             header, shared, &header->projections[QBH_BLOCK_PROJ_Q],
-            buffers, worker, buffers->normalized, buffers->q) != 0 ||
+            buffers, worker, w4f16_pool, buffers->normalized,
+            buffers->q) != 0 ||
         qbh_run_projection(
             header, shared, &header->projections[QBH_BLOCK_PROJ_K],
-            buffers, worker, buffers->normalized, buffers->k) != 0 ||
+            buffers, worker, w4f16_pool, buffers->normalized,
+            buffers->k) != 0 ||
         qbh_run_projection(
             header, shared, &header->projections[QBH_BLOCK_PROJ_V],
-            buffers, worker, buffers->normalized, buffers->v) != 0) {
+            buffers, worker, w4f16_pool, buffers->normalized,
+            buffers->v) != 0) {
         return QBH_BLOCK_STATUS_QKV_FAILED;
     }
     if (header->variant != QBH_BLOCK_W4U8) {
@@ -1318,7 +1529,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     start = HAP_perf_get_qtimer_count();
     if (qbh_run_projection(
             header, shared, &header->projections[QBH_BLOCK_PROJ_O],
-            buffers, worker, buffers->attention_concat,
+            buffers, worker, w4f16_pool, buffers->attention_concat,
             buffers->attention_projection) != 0) {
         return QBH_BLOCK_STATUS_O_PROJECTION_FAILED;
     }
@@ -1377,11 +1588,13 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     if (qbh_run_projection(
             header, shared,
             &header->projections[QBH_BLOCK_PROJ_GATE], buffers,
-            worker, buffers->normalized, buffers->gate) != 0 ||
+            worker, w4f16_pool, buffers->normalized,
+            buffers->gate) != 0 ||
         qbh_run_projection(
             header, shared,
             &header->projections[QBH_BLOCK_PROJ_UP], buffers,
-            worker, buffers->normalized, buffers->up) != 0) {
+            worker, w4f16_pool, buffers->normalized,
+            buffers->up) != 0) {
         return QBH_BLOCK_STATUS_GATE_UP_FAILED;
     }
     if (header->variant != QBH_BLOCK_W4U8) {
@@ -1416,7 +1629,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     if (qbh_run_projection(
             header, shared,
             &header->projections[QBH_BLOCK_PROJ_DOWN], buffers,
-            worker, buffers->middle, buffers->down) != 0) {
+            worker, w4f16_pool, buffers->middle, buffers->down) != 0) {
         return QBH_BLOCK_STATUS_DOWN_FAILED;
     }
     if (header->variant != QBH_BLOCK_W4U8) {
@@ -1457,6 +1670,7 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
     struct qbh_block_header *header = NULL;
     struct qbh_block_buffers buffers;
     struct qbh_block_hmx_worker worker;
+    struct qbh_block_w4f16_pool w4f16_pool;
     qurt_thread_attr_t attributes;
     qurt_thread_t thread;
     uint8_t *shared = NULL;
@@ -1464,6 +1678,7 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
     int result;
     int thread_created = 0;
     int thread_joined = 0;
+    int w4f16_pool_created = 0;
     int thread_exit_status = AEE_EFAILED;
 
     if (vtcm == NULL || vtcm_bytes != QBH_EXPECTED_FULL_VTCM_BYTES ||
@@ -1533,6 +1748,20 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
         result = AEE_EFAILED;
         goto stop_worker;
     }
+    if (header->variant == QBH_BLOCK_W4F16) {
+        if (qbh_w4f16_pool_create(&w4f16_pool) != 0) {
+            header->dsp_status =
+                QBH_BLOCK_STATUS_W4F16_PIPELINE_FAILED;
+            header->w4f16_pool_status = -1;
+            result = AEE_EFAILED;
+            goto stop_worker;
+        }
+        w4f16_pool_created = 1;
+        header->w4f16_hvx_workers_created =
+            w4f16_pool.created_workers;
+        header->w4f16_hvx_workers_locked =
+            w4f16_pool.created_workers;
+    }
 
     header->qtimer_start = HAP_perf_get_qtimer_count();
     if (qbh_stage_metadata(header, shared, &buffers) != 0) {
@@ -1542,7 +1771,8 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
     }
     for (uint32_t repeat = 0; repeat < header->repeat_count; ++repeat) {
         int block_status = qbh_run_one_block(
-            header, shared, &buffers, &worker);
+            header, shared, &buffers, &worker,
+            w4f16_pool_created != 0 ? &w4f16_pool : NULL);
         if (block_status != QBH_BLOCK_STATUS_OK) {
             header->dsp_status = block_status;
             result = AEE_EFAILED;
@@ -1568,6 +1798,25 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
     result = AEE_SUCCESS;
 
 stop_worker:
+    if (w4f16_pool_created != 0) {
+        header->w4f16_pool_status =
+            qbh_w4f16_pool_destroy(&w4f16_pool);
+        for (uint32_t worker_index = 0;
+             worker_index < w4f16_pool.created_workers;
+             ++worker_index) {
+            header->w4f16_expand_work_ticks +=
+                w4f16_pool.jobs[worker_index].expand_ticks;
+            header->w4f16_expand_region_count +=
+                w4f16_pool.jobs[worker_index].expand_count;
+        }
+        if (header->w4f16_pool_status != 0 &&
+            result == AEE_SUCCESS) {
+            header->dsp_status =
+                QBH_BLOCK_STATUS_W4F16_PIPELINE_FAILED;
+            result = AEE_EFAILED;
+        }
+        w4f16_pool_created = 0;
+    }
     if (thread_created != 0 && thread_joined == 0) {
         worker.stop = 1U;
         asm volatile("barrier" ::: "memory");

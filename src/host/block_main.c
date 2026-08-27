@@ -756,6 +756,9 @@ int main(int argc, char **argv) {
         "\"w4f16_expand_first_logical_index\":%" PRIu32 ","
         "\"w4f16_expand_expected_half_bits\":%" PRIu32 ","
         "\"w4f16_expand_actual_half_bits\":%" PRIu32 ","
+        "\"w4f16_hvx_workers_created\":%" PRIu32 ","
+        "\"w4f16_hvx_workers_locked\":%" PRIu32 ","
+        "\"w4f16_pool_status\":%d,"
         "\"host_wall_ns\":%" PRIu64 ","
         "\"host_wall_ns_per_block\":%.3f,"
         "\"max_abs\":%.9g,\"mean_abs\":%.9g,\"rmse\":%.9g,"
@@ -793,6 +796,8 @@ int main(int argc, char **argv) {
         "\"projection_unpack_ticks\":%" PRIu64 ","
         "\"hmx_ready_wait_ticks\":%" PRIu64 ","
         "\"w4f16_streamed_command_count\":%" PRIu64 ","
+        "\"w4f16_expand_work_ticks\":%" PRIu64 ","
+        "\"w4f16_expand_region_count\":%" PRIu64 ","
         "\"release_result\":%d,\"close_result\":%d}\n",
         qbh_variant_name(variant),
         variant == QBH_BLOCK_W4U8 ? "U8xS8_integer_HMX"
@@ -814,6 +819,9 @@ int main(int argc, char **argv) {
         header->w4f16_expand_first_logical_index,
         header->w4f16_expand_expected_half_bits,
         header->w4f16_expand_actual_half_bits,
+        header->w4f16_hvx_workers_created,
+        header->w4f16_hvx_workers_locked,
+        header->w4f16_pool_status,
         measured_end - measured_start,
         (double)(measured_end - measured_start) / repeats,
         measured_metrics.max_abs, measured_metrics.mean_abs,
@@ -841,6 +849,8 @@ int main(int argc, char **argv) {
         header->projection_unpack_ticks,
         header->hmx_ready_wait_ticks,
         header->w4f16_streamed_command_count,
+        header->w4f16_expand_work_ticks,
+        header->w4f16_expand_region_count,
         release_result, close_result);
 
     exit_code = warmup_result == AEE_SUCCESS &&

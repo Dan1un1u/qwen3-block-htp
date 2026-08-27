@@ -77,6 +77,7 @@ enum qbh_block_status {
     QBH_BLOCK_STATUS_ACTIVATION_FAILED = -14,
     QBH_BLOCK_STATUS_DOWN_FAILED = -15,
     QBH_BLOCK_STATUS_OUTPUT_DMA_FAILED = -16,
+    QBH_BLOCK_STATUS_W4F16_PIPELINE_FAILED = -17,
 };
 
 enum qbh_block_numerical_status {
@@ -174,6 +175,9 @@ struct qbh_block_header {
     uint32_t w4f16_expand_first_logical_index;
     uint32_t w4f16_expand_expected_half_bits;
     uint32_t w4f16_expand_actual_half_bits;
+    uint32_t w4f16_hvx_workers_created;
+    uint32_t w4f16_hvx_workers_locked;
+    int32_t w4f16_pool_status;
 
     uint32_t prepared_session_run_index;
     uint32_t resource_vtcm_address;
@@ -220,6 +224,8 @@ struct qbh_block_header {
     uint64_t projection_unpack_ticks;
     uint64_t hmx_ready_wait_ticks;
     uint64_t w4f16_streamed_command_count;
+    uint64_t w4f16_expand_work_ticks;
+    uint64_t w4f16_expand_region_count;
     uint64_t scalar_math_ticks;
 };
 
