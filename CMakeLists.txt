@@ -53,6 +53,7 @@ else()
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/hmx_int8_tile
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/hmx_u8s8_projection
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/w4_u8_expand
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/w4_parallel_pipeline
     )
     build_idl(include/qwen3_probe.idl qwen3_probe_skel)
     target_compile_options(qwen3_probe_skel PRIVATE

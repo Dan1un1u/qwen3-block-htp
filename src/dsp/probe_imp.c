@@ -16,6 +16,7 @@
 #include "probe_protocol.h"
 #include "qbh_user_dma.h"
 #include "qwen3_probe.h"
+#include "w4_parallel_pipeline.h"
 #include "w4_u8_expand.h"
 
 #define QBH_HMX_WORKER_STACK_BYTES UINT32_C(16384)
@@ -82,7 +83,14 @@ static int header_is_valid(const struct qbh_probe_header *header,
     }
     if (qbh_projection_layout_init(header->projection_variant,
                                    header->weight_storage_variant,
+                                   header->physical_plan,
                                    layout) != 0) {
+        return 0;
+    }
+    if (header->requested_hvx_workers == 0U ||
+        header->requested_hvx_workers > QBH_MAX_HVX_WORKERS ||
+        (header->physical_plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE &&
+         header->requested_hvx_workers != 1U)) {
         return 0;
     }
     return range_is_valid(header->activation_offset,
@@ -108,6 +116,12 @@ static int vtcm_layout_is_aligned(
            ((base + layout->vtcm_expanded_slot0_offset) &
             UINT32_C(255)) == 0 &&
            ((base + layout->vtcm_expanded_slot1_offset) &
+            UINT32_C(255)) == 0 &&
+           ((base + layout->vtcm_chunked_expanded_slots_offset) &
+            UINT32_C(255)) == 0 &&
+           ((base + qbh_projection_expanded_chunk_offset(
+                        layout,
+                        QBH_W4_EXPANDED_CHUNK_SLOT_COUNT - 1U)) &
             UINT32_C(255)) == 0 &&
            ((base + layout->vtcm_output_offset) & UINT32_C(2047)) == 0 &&
            layout->vtcm_plan_bytes <= QBH_W4U8_VTCM_BYTES;
@@ -379,8 +393,25 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     header->dma_submit_count = 0;
     header->dma_wait_count = 0;
     header->weight_slot_reuse_count = 0;
+    header->expanded_chunk_slot_reuse_count = 0;
+    header->chunks_per_output = layout.chunks_per_output;
+    header->chunk_expand_count = 0;
     header->dma_status = 0;
     header->sync_status = 0;
+    header->hvx_units_128b =
+        ((uint32_t)qurt_hvx_get_units() >> 8U) & UINT32_C(0xff);
+    header->hvx_workers_created = 0;
+    header->hvx_workers_locked = 0;
+    header->hvx_max_active_workers = 0;
+    header->hvx_hmx_overlap_observed = 0;
+    header->hvx_parallel_overlap_observed = 0;
+    header->hvx_thread_create_status = 0;
+    header->hvx_thread_join_status = 0;
+    for (uint32_t worker = 0; worker < QBH_MAX_HVX_WORKERS; ++worker) {
+        header->hvx_worker_lock_status[worker] = 0;
+        header->hvx_worker_unlock_status[worker] = 0;
+        header->hvx_worker_ticks[worker] = 0;
+    }
     header->qtimer_start = 0;
     header->qtimer_end = 0;
     header->qtimer_elapsed = 0;
@@ -392,14 +423,20 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     header->hmx_compute_ticks = 0;
     header->hmx_ready_wait_ticks = 0;
     header->producer_slot_wait_ticks = 0;
+    header->expanded_slot_wait_ticks = 0;
     header->pipeline_ticks = 0;
     header->output_assembly_ticks = 0;
     header->dsp_total_ticks = 0;
+    header->expand_window_start = 0;
+    header->expand_window_end = 0;
+    header->hmx_window_start = 0;
+    header->hmx_window_end = 0;
     dsp_total_start = HAP_perf_get_qtimer_count();
     FARF(ALWAYS,
-         "EXP0005 stage=header_valid projection=%u storage=%u "
-         "M=%u K=%u N=%u vtcm_plan=%u",
-         layout.variant, layout.weight_storage_variant, layout.m,
+         "EXP0006 stage=header_valid projection=%u storage=%u plan=%u "
+         "workers=%u M=%u K=%u N=%u vtcm_plan=%u",
+         layout.variant, layout.weight_storage_variant,
+         layout.physical_plan, header->requested_hvx_workers, layout.m,
          layout.k, layout.n,
          layout.vtcm_plan_bytes);
 
@@ -480,6 +517,26 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
         header->dsp_status = QBH_PROBE_STATUS_DMA_FAILED;
         result = AEE_EFAILED;
         goto cleanup;
+    }
+
+    if (layout.physical_plan == QBH_PHYSICAL_PLAN_CHUNKED) {
+        result = qbh_run_chunked_w4_pipeline(
+            header, &layout, shared + header->weight_offset,
+            activation_tiles, vtcm, hmx_context_id);
+        if (result != AEE_SUCCESS) {
+            if (header->dsp_status == QBH_PROBE_STATUS_DSP_RUNNING) {
+                header->dsp_status =
+                    header->dma_status != 0
+                        ? QBH_PROBE_STATUS_DMA_FAILED
+                        : (header->hmx_lock_status != AEE_SUCCESS
+                               ? QBH_PROBE_STATUS_HMX_LOCK_FAILED
+                               : (header->hvx_lock_status != AEE_SUCCESS
+                                      ? QBH_PROBE_STATUS_HVX_LOCK_FAILED
+                                      : QBH_PROBE_STATUS_SYNC_FAILED));
+            }
+            goto cleanup;
+        }
+        goto pipeline_complete;
     }
 
     header->hvx_lock_status = qurt_hvx_lock(QURT_HVX_MODE_128B);
@@ -646,6 +703,8 @@ join_worker:
         goto cleanup;
     }
 
+pipeline_complete:
+    ;
     uint64_t output_start = HAP_perf_get_qtimer_count();
     assemble_row_major_output(&layout, shared + header->output_offset,
                               output_tiles);

@@ -69,6 +69,57 @@ static int parse_storage(const char *text, uint32_t *storage) {
     return -1;
 }
 
+static const char *physical_plan_name(uint32_t physical_plan,
+                                      uint32_t hvx_workers) {
+    if (physical_plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE) {
+        return "exp0005_full_bundle_control";
+    }
+    switch (hvx_workers) {
+        case 1:
+            return "chunked_hvx1";
+        case 2:
+            return "chunked_hvx2";
+        case 4:
+            return "chunked_hvx4";
+        case 6:
+            return "chunked_hvx6";
+        default:
+            return "invalid";
+    }
+}
+
+static int parse_physical_plan(const char *text, uint32_t *physical_plan,
+                               uint32_t *hvx_workers) {
+    if (strcmp(text, "exp0005_full_bundle_control") == 0 ||
+        strcmp(text, "full_bundle") == 0 ||
+        strcmp(text, "control") == 0) {
+        *physical_plan = QBH_PHYSICAL_PLAN_FULL_BUNDLE;
+        *hvx_workers = 1;
+        return 0;
+    }
+    if (strcmp(text, "chunked_hvx1") == 0) {
+        *physical_plan = QBH_PHYSICAL_PLAN_CHUNKED;
+        *hvx_workers = 1;
+        return 0;
+    }
+    if (strcmp(text, "chunked_hvx2") == 0) {
+        *physical_plan = QBH_PHYSICAL_PLAN_CHUNKED;
+        *hvx_workers = 2;
+        return 0;
+    }
+    if (strcmp(text, "chunked_hvx4") == 0) {
+        *physical_plan = QBH_PHYSICAL_PLAN_CHUNKED;
+        *hvx_workers = 4;
+        return 0;
+    }
+    if (strcmp(text, "chunked_hvx6") == 0) {
+        *physical_plan = QBH_PHYSICAL_PLAN_CHUNKED;
+        *hvx_workers = 6;
+        return 0;
+    }
+    return -1;
+}
+
 static const char *projection_name(uint32_t variant) {
     switch (variant) {
         case QBH_PROJECTION_GATE_UP:
@@ -443,6 +494,8 @@ int main(int argc, char **argv) {
     uint32_t variant = QBH_PROJECTION_GATE_UP;
     uint32_t pattern = QBH_PATTERN_IDENTITY;
     uint32_t repeats = QBH_HMX_DEFAULT_REPEATS;
+    uint32_t physical_plan = QBH_PHYSICAL_PLAN_FULL_BUNDLE;
+    uint32_t requested_hvx_workers = 1;
     size_t activation_offset;
     size_t weight_offset;
     size_t output_offset;
@@ -481,11 +534,19 @@ int main(int argc, char **argv) {
         fprintf(stderr, "invalid repeat count: %s\n", argv[4]);
         return EXIT_FAILURE;
     }
-    if (argc > 5) {
+    if (argc > 5 &&
+        parse_physical_plan(argv[5], &physical_plan,
+                            &requested_hvx_workers) != 0) {
+        fprintf(stderr, "invalid physical plan: %s\n", argv[5]);
+        return EXIT_FAILURE;
+    }
+    if (argc > 6) {
         fprintf(stderr,
                 "usage: %s [packed_w4u8|expanded_s8_control] "
                 "[gate_up|down] "
-                "[identity|signed|structured|boundary] [repeat]\n",
+                "[identity|signed|structured|boundary] [repeat] "
+                "[exp0005_full_bundle_control|chunked_hvx1|"
+                "chunked_hvx2|chunked_hvx4|chunked_hvx6]\n",
                 argv[0]);
         return EXIT_FAILURE;
     }
@@ -494,7 +555,8 @@ int main(int argc, char **argv) {
                 (unsigned int)QBH_HMX_MAX_REPEATS);
         return EXIT_FAILURE;
     }
-    if (qbh_projection_layout_init(variant, storage, &layout) != 0) {
+    if (qbh_projection_layout_init(variant, storage, physical_plan,
+                                   &layout) != 0) {
         fprintf(stderr, "projection layout initialization failed\n");
         return EXIT_FAILURE;
     }
@@ -545,6 +607,8 @@ int main(int argc, char **argv) {
     header->pattern = pattern;
     header->projection_variant = variant;
     header->weight_storage_variant = storage;
+    header->physical_plan = physical_plan;
+    header->requested_hvx_workers = requested_hvx_workers;
     header->activation_offset = (uint32_t)activation_offset;
     header->weight_offset = (uint32_t)weight_offset;
     header->output_offset = (uint32_t)output_offset;
@@ -604,8 +668,10 @@ int main(int argc, char **argv) {
         &reference_min, &reference_max, &reference_checksum);
     reference_end = monotonic_ns();
 
-    printf("{\"experiment\":\"EXP-0005\","
+    printf("{\"experiment\":\"EXP-0006\","
            "\"weight_storage\":\"%s\","
+           "\"physical_plan\":\"%s\","
+           "\"requested_hvx_workers\":%" PRIu32 ","
            "\"projection\":\"%s\",\"pattern\":\"%s\","
            "\"repeat_count\":%" PRIu32 ","
            "\"rpc_result\":%d,\"dsp_status\":%d,"
@@ -634,6 +700,7 @@ int main(int argc, char **argv) {
            "\"hmx_compute_ticks\":%" PRIu64 ","
            "\"hmx_ready_wait_ticks\":%" PRIu64 ","
            "\"producer_slot_wait_ticks\":%" PRIu64 ","
+           "\"expanded_slot_wait_ticks\":%" PRIu64 ","
            "\"pipeline_ticks\":%" PRIu64 ","
            "\"output_assembly_ticks\":%" PRIu64 ","
            "\"dsp_total_ticks\":%" PRIu64 ","
@@ -655,8 +722,27 @@ int main(int argc, char **argv) {
            "\"dma_submit_count\":%" PRIu32 ","
            "\"dma_wait_count\":%" PRIu32 ","
            "\"weight_slot_reuse_count\":%" PRIu32 ","
+           "\"expanded_chunk_slot_reuse_count\":%" PRIu32 ","
+           "\"chunks_per_output\":%" PRIu32 ","
+           "\"chunk_expand_count\":%" PRIu32 ","
+           "\"hvx_units_128b\":%" PRIu32 ","
+           "\"hvx_workers_created\":%" PRIu32 ","
+           "\"hvx_workers_locked\":%" PRIu32 ","
+           "\"hvx_max_active_workers\":%" PRIu32 ","
+           "\"hvx_hmx_overlap_observed\":%" PRIu32 ","
+           "\"hvx_parallel_overlap_observed\":%" PRIu32 ","
+           "\"hvx_thread_create_status\":%d,"
+           "\"hvx_thread_join_status\":%d,"
+           "\"expand_window_start\":%" PRIu64 ","
+           "\"expand_window_end\":%" PRIu64 ","
+           "\"hmx_window_start\":%" PRIu64 ","
+           "\"hmx_window_end\":%" PRIu64 ","
+           "\"hvx_worker_ticks\":[%" PRIu64 ",%" PRIu64 ","
+           "%" PRIu64 ",%" PRIu64 ",%" PRIu64 ",%" PRIu64 "],"
            "\"dma_status\":%d,\"sync_status\":%d}\n",
-           storage_name(storage), projection_name(variant),
+           storage_name(storage),
+           physical_plan_name(physical_plan, requested_hvx_workers),
+           requested_hvx_workers, projection_name(variant),
            pattern_name(pattern), repeats, rpc_result, header->dsp_status,
            mismatches, (unsigned int)reference_min,
            (unsigned int)reference_max, reference_checksum,
@@ -674,7 +760,8 @@ int main(int argc, char **argv) {
            header->activation_stage_ticks, header->weight_stage_ticks,
            header->weight_expand_ticks, header->hmx_compute_ticks,
            header->hmx_ready_wait_ticks,
-           header->producer_slot_wait_ticks, header->pipeline_ticks,
+           header->producer_slot_wait_ticks,
+           header->expanded_slot_wait_ticks, header->pipeline_ticks,
            header->output_assembly_ticks, header->dsp_total_ticks,
            header->vtcm_requested_bytes, header->vtcm_acquired_bytes,
            header->hmx_resource_status, header->hmx_lock_status,
@@ -687,7 +774,22 @@ int main(int argc, char **argv) {
            header->hvx_unlock_status, header->activation_stage_count,
            header->weight_bundle_stage_count, header->output_tile_count,
            header->dma_submit_count, header->dma_wait_count,
-           header->weight_slot_reuse_count, header->dma_status,
+           header->weight_slot_reuse_count,
+           header->expanded_chunk_slot_reuse_count,
+           header->chunks_per_output, header->chunk_expand_count,
+           header->hvx_units_128b, header->hvx_workers_created,
+           header->hvx_workers_locked,
+           header->hvx_max_active_workers,
+           header->hvx_hmx_overlap_observed,
+           header->hvx_parallel_overlap_observed,
+           header->hvx_thread_create_status,
+           header->hvx_thread_join_status,
+           header->expand_window_start, header->expand_window_end,
+           header->hmx_window_start, header->hmx_window_end,
+           header->hvx_worker_ticks[0], header->hvx_worker_ticks[1],
+           header->hvx_worker_ticks[2], header->hvx_worker_ticks[3],
+           header->hvx_worker_ticks[4], header->hvx_worker_ticks[5],
+           header->dma_status,
            header->sync_status);
 
     expected_weight_stages = repeats * layout.n_tiles;
@@ -697,7 +799,10 @@ int main(int argc, char **argv) {
     expected_dma_waits =
         2U * (layout.k_tiles + expected_weight_stages);
     expected_expands = storage == QBH_WEIGHT_PACKED_W4
-                           ? expected_weight_stages
+                           ? expected_weight_stages *
+                                 (physical_plan == QBH_PHYSICAL_PLAN_CHUNKED
+                                      ? layout.chunks_per_output
+                                      : 1U)
                            : 0U;
     if (header->dsp_status == QBH_PROBE_STATUS_OK && mismatches == 0 &&
         header->projection_m == layout.m &&
@@ -736,6 +841,23 @@ int main(int argc, char **argv) {
             layout.k_tiles + expected_weight_stages &&
         header->dma_wait_count == expected_dma_waits &&
         header->weight_slot_reuse_count == expected_reuses &&
+        header->chunks_per_output == layout.chunks_per_output &&
+        header->chunk_expand_count ==
+            (physical_plan == QBH_PHYSICAL_PLAN_CHUNKED
+                 ? expected_expands
+                 : 0U) &&
+        header->expanded_chunk_slot_reuse_count ==
+            (physical_plan == QBH_PHYSICAL_PLAN_CHUNKED &&
+                     expected_expands >
+                         QBH_W4_EXPANDED_CHUNK_SLOT_COUNT
+                 ? expected_expands -
+                       QBH_W4_EXPANDED_CHUNK_SLOT_COUNT
+                 : 0U) &&
+        (physical_plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE ||
+         (header->hvx_workers_created == requested_hvx_workers &&
+          header->hvx_workers_locked == requested_hvx_workers &&
+          header->hvx_thread_create_status == 0 &&
+          header->hvx_thread_join_status == 0)) &&
         header->dma_status == 0 && header->sync_status == 0 &&
         header->hvx_lock_status == 0 && header->hvx_unlock_status == 0) {
         result = EXIT_SUCCESS;

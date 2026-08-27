@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define QBH_PROBE_MAGIC UINT32_C(0x51424850)
-#define QBH_PROBE_ABI_VERSION UINT32_C(5)
+#define QBH_PROBE_ABI_VERSION UINT32_C(6)
 #define QBH_PROBE_ALIGNMENT UINT32_C(4096)
 
 #define QBH_HMX_SPATIAL UINT32_C(64)
@@ -18,6 +18,11 @@
 #define QBH_HMX_DEFAULT_REPEATS UINT32_C(1)
 #define QBH_HMX_MAX_REPEATS UINT32_C(100000)
 #define QBH_HMX_MAX_STREAM_TILES UINT32_C(32)
+
+#define QBH_MAX_HVX_WORKERS UINT32_C(6)
+#define QBH_W4_COMPRESSED_SLOT_COUNT UINT32_C(2)
+#define QBH_W4_EXPANDED_CHUNK_SLOT_COUNT UINT32_C(8)
+#define QBH_W4_TASK_QUEUE_DEPTH UINT32_C(16)
 
 #define QBH_W4_PACKED_TILE_BYTES UINT32_C(512)
 #define QBH_W4_CHANNEL_SCALE_BYTES UINT32_C(32)
@@ -42,6 +47,11 @@ enum qbh_projection_variant {
 enum qbh_weight_storage_variant {
     QBH_WEIGHT_EXPANDED_S8 = 1,
     QBH_WEIGHT_PACKED_W4 = 2,
+};
+
+enum qbh_physical_plan {
+    QBH_PHYSICAL_PLAN_FULL_BUNDLE = 1,
+    QBH_PHYSICAL_PLAN_CHUNKED = 2,
 };
 
 enum qbh_probe_pattern {
@@ -83,6 +93,8 @@ struct qbh_probe_header {
     uint32_t pattern;
     uint32_t projection_variant;
     uint32_t weight_storage_variant;
+    uint32_t physical_plan;
+    uint32_t requested_hvx_workers;
     uint32_t activation_offset;
     uint32_t weight_offset;
     uint32_t output_offset;
@@ -124,8 +136,22 @@ struct qbh_probe_header {
     uint32_t dma_submit_count;
     uint32_t dma_wait_count;
     uint32_t weight_slot_reuse_count;
+    uint32_t expanded_chunk_slot_reuse_count;
+    uint32_t chunks_per_output;
+    uint32_t chunk_expand_count;
     int32_t dma_status;
     int32_t sync_status;
+
+    uint32_t hvx_units_128b;
+    uint32_t hvx_workers_created;
+    uint32_t hvx_workers_locked;
+    uint32_t hvx_max_active_workers;
+    uint32_t hvx_hmx_overlap_observed;
+    uint32_t hvx_parallel_overlap_observed;
+    int32_t hvx_thread_create_status;
+    int32_t hvx_thread_join_status;
+    int32_t hvx_worker_lock_status[QBH_MAX_HVX_WORKERS];
+    int32_t hvx_worker_unlock_status[QBH_MAX_HVX_WORKERS];
 
     uint64_t qtimer_start;
     uint64_t qtimer_end;
@@ -139,12 +165,18 @@ struct qbh_probe_header {
     uint64_t hmx_compute_ticks;
     uint64_t hmx_ready_wait_ticks;
     uint64_t producer_slot_wait_ticks;
+    uint64_t expanded_slot_wait_ticks;
     uint64_t pipeline_ticks;
     uint64_t output_assembly_ticks;
     uint64_t dsp_total_ticks;
+    uint64_t expand_window_start;
+    uint64_t expand_window_end;
+    uint64_t hmx_window_start;
+    uint64_t hmx_window_end;
+    uint64_t hvx_worker_ticks[QBH_MAX_HVX_WORKERS];
 };
 
-_Static_assert(sizeof(struct qbh_probe_header) == 304,
+_Static_assert(sizeof(struct qbh_probe_header) == 464,
                "probe header ABI changed");
 
 #endif

@@ -76,3 +76,13 @@ __attribute__((noinline)) void qbh_expand_w4_to_s8_hvx(
     }
     asm volatile("barrier" : : : "memory");
 }
+
+__attribute__((noinline)) void qbh_copy_hmx_bias_hvx(
+    const uint8_t *source, uint8_t *destination) {
+    const HVX_Vector *source_vectors = (const HVX_Vector *)source;
+    HVX_Vector *destination_vectors = (HVX_Vector *)destination;
+
+    destination_vectors[0] = source_vectors[0];
+    destination_vectors[1] = source_vectors[1];
+    asm volatile("barrier" : : : "memory");
+}
