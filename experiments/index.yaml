@@ -580,14 +580,15 @@ experiments:
       - packed_w4_linked_2d_output
       - expanded_s8_scalar_output
       - expanded_s8_linked_2d_output
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: projection-linked-2d-output-dma
     source_branches:
       - codex/exp-0014-linked-output-dma
-    source_commits: []
+    source_commits:
+      - bd75332d44412f57a9aee94ffa193faaee6eaa97
     record: docs/experiments/EXP-0014.md
     decided_by: user
     decided_on: '2026-08-27'
@@ -596,7 +597,52 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0014-linked-output-dma
       started_on: '2026-08-27'
-      completed_on: null
+      completed_on: '2026-08-27'
     evidence:
       formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0014'
       retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0014'
+      formal_run: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0014\\20260827T072851Z_bd75332d4441'
+      artifact_set: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0014\\bd75332d4441'
+      matrix: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0014\\20260827T072851Z_bd75332d4441\\matrix_gate.json'
+      formal_runs: 224
+      total_mismatches: 0
+      exact_reference: true
+      output_modes_pre_output_equivalent: true
+      descriptor_timeouts: 0
+      worker_fallback: false
+      qnn_dependency_scan: none
+      vtcm_request_bytes: 2097152
+      boot_id_stable: true
+      selected_output_mode: linked_2d_dma
+      gate_up_w4_improvement_percent: 18.270365540432262
+      down_w4_improvement_percent: 10.47472897224321
+      gate_up_w4_vs_s8_improvement_percent: 15.045261541488152
+      down_w4_vs_s8_improvement_percent: 13.434172331709064
+      performance_characterization: linked_2d_output_dma_passes_both_shape_gate
+  - id: EXP-0015
+    slug: persistent-resource-session
+    title: Reuse HMX, VTCM, and power resources across projection runs
+    parent: EXP-0014
+    variants:
+      - transient_resources
+      - persistent_resources
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: projection-persistent-resource-session
+    source_branches:
+      - codex/exp-0015-persistent-resource-session
+    source_commits: []
+    record: docs/experiments/EXP-0015.md
+    decided_by: user
+    decided_on: '2026-08-27'
+    approval_ref: 'User message 2026-08-27: 继续优化现有方案'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0015-persistent-resource-session
+      started_on: '2026-08-27'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0015'
+      retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0015'

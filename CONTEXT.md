@@ -82,3 +82,9 @@ The strict A/B Project Variant whose Native Boundary contains exactly the S8
 carrier produced by its paired packed-W4 variant, while every other declared
 contract remains equal.
 _Avoid_: independent W8 quantization variant, performance baseline
+
+**Prepared Runtime Session**:
+A Standalone HTP Runtime session that retains declared accelerator resources
+across multiple Execution Unit invocations while reporting prepare and release
+costs separately from hot invocation latency.
+_Avoid_: free setup, kernel-only speedup, persistent kernel
