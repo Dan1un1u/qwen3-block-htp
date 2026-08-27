@@ -38,7 +38,8 @@ static struct qbh_probe_session probe_session;
 static uint8_t hmx_worker_stack[QBH_HMX_WORKER_STACK_BYTES]
     __attribute__((aligned(128)));
 static struct qbh_dma_aligned_desc_2d
-    output_dma_descriptors[QBH_GATE_UP_N / QBH_HMX_OUTPUT_CHANNELS]
+    output_dma_descriptors[QBH_MAX_PROJECTION_N /
+                           QBH_HMX_OUTPUT_CHANNELS]
         __attribute__((aligned(64)));
 
 struct qbh_projection_worker_job {
@@ -519,7 +520,7 @@ static int assemble_row_major_output_dma(
     uint32_t spins = 0;
 
     if (layout->n_tiles >
-            QBH_GATE_UP_N / QBH_HMX_OUTPUT_CHANNELS ||
+            QBH_MAX_PROJECTION_N / QBH_HMX_OUTPUT_CHANNELS ||
         qbh_dma_wait_idle() != 0) {
         header->output_dma_status = -1;
         return -1;
@@ -688,7 +689,10 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     int hvx_locked = 0;
     int cache_result;
     int result = AEE_SUCCESS;
+    int layout_valid = 0;
     uint64_t dsp_total_start = 0;
+    uint64_t input_cache_start = 0;
+    uint64_t input_cache_ticks = 0;
 
     if (session == NULL) {
         return AEE_EBADPARM;
@@ -704,11 +708,12 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
         return AEE_EBADSIZE;
     }
 
-    cache_result = qurt_mem_cache_clean((qurt_addr_t)shared,
-                                        (qurt_size_t)shared_bytes,
+    header = (struct qbh_probe_header *)shared;
+    input_cache_start = HAP_perf_get_qtimer_count();
+    cache_result = qurt_mem_cache_clean((qurt_addr_t)header,
+                                        (qurt_size_t)sizeof(*header),
                                         QURT_MEM_CACHE_INVALIDATE,
                                         QURT_MEM_DCACHE);
-    header = (struct qbh_probe_header *)shared;
     if (cache_result != 0) {
         header->dsp_status = QBH_PROBE_STATUS_CACHE_INVALIDATE_FAILED;
         header->cache_status = cache_result;
@@ -718,6 +723,25 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     if (!header_is_valid(header, shared_bytes, &layout)) {
         header->dsp_status = QBH_PROBE_STATUS_BAD_HEADER;
         result = AEE_EBADPARM;
+        goto cleanup;
+    }
+    layout_valid = 1;
+    cache_result = qurt_mem_cache_clean(
+        (qurt_addr_t)(shared + header->activation_offset),
+        (qurt_size_t)layout.activation_bytes,
+        QURT_MEM_CACHE_INVALIDATE, QURT_MEM_DCACHE);
+    if (cache_result == 0) {
+        cache_result = qurt_mem_cache_clean(
+            (qurt_addr_t)(shared + header->weight_offset),
+            (qurt_size_t)layout.stored_weight_bytes,
+            QURT_MEM_CACHE_INVALIDATE, QURT_MEM_DCACHE);
+    }
+    input_cache_ticks =
+        HAP_perf_get_qtimer_count() - input_cache_start;
+    if (cache_result != 0) {
+        header->dsp_status = QBH_PROBE_STATUS_CACHE_INVALIDATE_FAILED;
+        header->cache_status = cache_result;
+        result = AEE_EFAILED;
         goto cleanup;
     }
     resources_from_session =
@@ -820,13 +844,15 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     header->pipeline_ticks = 0;
     header->output_assembly_ticks = 0;
     header->dsp_total_ticks = 0;
+    header->input_cache_ticks = input_cache_ticks;
+    header->output_cache_ticks = 0;
     header->expand_window_start = 0;
     header->expand_window_end = 0;
     header->hmx_window_start = 0;
     header->hmx_window_end = 0;
     dsp_total_start = HAP_perf_get_qtimer_count();
     FARF(ALWAYS,
-         "EXP0015 stage=header_valid projection=%u storage=%u plan=%u "
+         "EXP0016 stage=header_valid projection=%u storage=%u plan=%u "
          "workers=%u compressed_slots=%u expanded_slots=%u chunk_tiles=%u "
          "output_mode=%u resource_mode=%u "
          "M=%u K=%u N=%u vtcm_plan=%u",
@@ -1321,10 +1347,24 @@ cleanup:
         header->dsp_total_ticks =
             HAP_perf_get_qtimer_count() - dsp_total_start;
     }
-    cache_result = qurt_mem_cache_clean((qurt_addr_t)shared,
-                                        (qurt_size_t)shared_bytes,
-                                        QURT_MEM_CACHE_FLUSH,
-                                        QURT_MEM_DCACHE);
+    uint64_t output_cache_start = HAP_perf_get_qtimer_count();
+    cache_result = 0;
+    if (layout_valid) {
+        cache_result = qurt_mem_cache_clean(
+            (qurt_addr_t)(shared + header->output_offset),
+            (qurt_size_t)layout.output_bytes,
+            QURT_MEM_CACHE_FLUSH, QURT_MEM_DCACHE);
+    }
+    if (header != NULL) {
+        header->output_cache_ticks =
+            HAP_perf_get_qtimer_count() - output_cache_start;
+        int header_cache_result = qurt_mem_cache_clean(
+            (qurt_addr_t)header, (qurt_size_t)sizeof(*header),
+            QURT_MEM_CACHE_FLUSH, QURT_MEM_DCACHE);
+        if (cache_result == 0) {
+            cache_result = header_cache_result;
+        }
+    }
     if (cache_result != 0 && header != NULL) {
         header->dsp_status = QBH_PROBE_STATUS_CACHE_FLUSH_FAILED;
         header->cache_status = cache_result;

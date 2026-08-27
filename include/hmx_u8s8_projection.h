@@ -73,6 +73,9 @@ static inline int qbh_projection_layout_init(
     if (variant == QBH_PROJECTION_GATE_UP) {
         k = QBH_GATE_UP_K;
         n = QBH_GATE_UP_N;
+    } else if (variant == QBH_PROJECTION_GATE_UP_PAIR) {
+        k = QBH_GATE_UP_K;
+        n = QBH_GATE_UP_PAIR_N;
     } else if (variant == QBH_PROJECTION_DOWN) {
         k = QBH_DOWN_K;
         n = QBH_DOWN_N;
@@ -214,7 +217,9 @@ static inline int qbh_projection_layout_init(
     }
 
     return layout->hmx_pairs_per_repeat ==
-                       QBH_QWEN3_HMX_PAIRS_PER_REPEAT &&
+                       (variant == QBH_PROJECTION_GATE_UP_PAIR
+                            ? QBH_QWEN3_PAIRED_HMX_PAIRS_PER_REPEAT
+                            : QBH_QWEN3_HMX_PAIRS_PER_REPEAT) &&
                    layout->vtcm_full_bundle_plan_bytes <=
                        QBH_W4U8_VTCM_BYTES &&
                    layout->vtcm_chunked_plan_bytes <=

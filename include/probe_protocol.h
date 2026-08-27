@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define QBH_PROBE_MAGIC UINT32_C(0x51424850)
-#define QBH_PROBE_ABI_VERSION UINT32_C(16)
+#define QBH_PROBE_ABI_VERSION UINT32_C(17)
 #define QBH_PROBE_ALIGNMENT UINT32_C(4096)
 
 #define QBH_HMX_SPATIAL UINT32_C(64)
@@ -40,14 +40,18 @@
 #define QBH_PROJ_M UINT32_C(64)
 #define QBH_GATE_UP_K UINT32_C(2048)
 #define QBH_GATE_UP_N UINT32_C(6144)
+#define QBH_GATE_UP_PAIR_N UINT32_C(12288)
+#define QBH_MAX_PROJECTION_N QBH_GATE_UP_PAIR_N
 #define QBH_DOWN_K UINT32_C(6144)
 #define QBH_DOWN_N UINT32_C(2048)
 #define QBH_W4U8_VTCM_BYTES UINT32_C(2097152)
 #define QBH_QWEN3_HMX_PAIRS_PER_REPEAT UINT32_C(12288)
+#define QBH_QWEN3_PAIRED_HMX_PAIRS_PER_REPEAT UINT32_C(24576)
 
 enum qbh_projection_variant {
     QBH_PROJECTION_GATE_UP = 1,
     QBH_PROJECTION_DOWN = 2,
+    QBH_PROJECTION_GATE_UP_PAIR = 3,
 };
 
 enum qbh_weight_storage_variant {
@@ -275,6 +279,8 @@ struct qbh_probe_header {
     uint64_t pipeline_ticks;
     uint64_t output_assembly_ticks;
     uint64_t dsp_total_ticks;
+    uint64_t input_cache_ticks;
+    uint64_t output_cache_ticks;
     uint64_t expand_window_start;
     uint64_t expand_window_end;
     uint64_t hmx_window_start;
@@ -282,7 +288,7 @@ struct qbh_probe_header {
     uint64_t hvx_worker_ticks[QBH_MAX_HVX_WORKERS];
 };
 
-_Static_assert(sizeof(struct qbh_probe_header) == 584,
+_Static_assert(sizeof(struct qbh_probe_header) == 600,
                "probe header ABI changed");
 
 #endif

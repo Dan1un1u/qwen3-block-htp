@@ -397,6 +397,8 @@ static const char *projection_name(uint32_t variant) {
             return "gate_up";
         case QBH_PROJECTION_DOWN:
             return "down";
+        case QBH_PROJECTION_GATE_UP_PAIR:
+            return "gate_up_pair";
         default:
             return "invalid";
     }
@@ -413,9 +415,15 @@ static int parse_projection(const char *text, uint32_t *variant) {
         *variant = QBH_PROJECTION_DOWN;
         return 0;
     }
+    if (strcmp(text, "gate_up_pair") == 0 ||
+        strcmp(text, "paired_gate_up") == 0) {
+        *variant = QBH_PROJECTION_GATE_UP_PAIR;
+        return 0;
+    }
     if (parse_u32(text, &parsed) == 0 &&
         (parsed == QBH_PROJECTION_GATE_UP ||
-         parsed == QBH_PROJECTION_DOWN)) {
+         parsed == QBH_PROJECTION_DOWN ||
+         parsed == QBH_PROJECTION_GATE_UP_PAIR)) {
         *variant = parsed;
         return 0;
     }
@@ -458,6 +466,31 @@ static int parse_resource_lifetime(const char *text, uint32_t *mode) {
         strcmp(text, "persistent_resources") == 0 ||
         strcmp(text, "persistent") == 0) {
         *mode = QBH_RESOURCE_LIFETIME_PREPARED_SESSION;
+        return 0;
+    }
+    return -1;
+}
+
+enum qbh_host_invocation_mode {
+    QBH_HOST_SINGLE_INVOCATION = 1,
+    QBH_HOST_TWO_CALL_CONTROL = 2,
+};
+
+static const char *host_invocation_name(uint32_t mode) {
+    return mode == QBH_HOST_TWO_CALL_CONTROL
+               ? "two_call_control"
+               : "single_invocation";
+}
+
+static int parse_host_invocation(const char *text, uint32_t *mode) {
+    if (strcmp(text, "single_invocation") == 0 ||
+        strcmp(text, "single") == 0) {
+        *mode = QBH_HOST_SINGLE_INVOCATION;
+        return 0;
+    }
+    if (strcmp(text, "two_call_control") == 0 ||
+        strcmp(text, "two_calls") == 0) {
+        *mode = QBH_HOST_TWO_CALL_CONTROL;
         return 0;
     }
     return -1;
@@ -518,13 +551,16 @@ static uint8_t channel_scale(uint32_t pattern, uint32_t channel) {
 }
 
 static void fill_pattern(const struct qbh_projection_layout *layout,
-                         uint32_t pattern, uint8_t *activation,
-                         int8_t *logical_w4, int8_t *logical_s8,
+                         uint32_t pattern, uint32_t output_channel_base,
+                         uint8_t *activation, int8_t *logical_w4,
+                         int8_t *logical_s8,
                          uint8_t *channel_scales) {
     for (uint32_t output_channel = 0; output_channel < layout->n;
          ++output_channel) {
+        uint32_t global_output_channel =
+            output_channel_base + output_channel;
         channel_scales[output_channel] =
-            channel_scale(pattern, output_channel);
+            channel_scale(pattern, global_output_channel);
     }
 
     for (uint32_t row = 0; row < layout->m; ++row) {
@@ -564,29 +600,34 @@ static void fill_pattern(const struct qbh_projection_layout *layout,
         for (uint32_t output_channel = 0; output_channel < layout->n;
              ++output_channel) {
             int8_t q4;
+            uint32_t global_output_channel =
+                output_channel_base + output_channel;
             size_t offset = qbh_projection_logical_weight_offset(
                 layout, input_channel, output_channel);
             switch (pattern) {
                 case QBH_PATTERN_IDENTITY:
-                    q4 = input_channel == output_channel ? INT8_C(1)
-                                                         : INT8_C(0);
+                    q4 = input_channel == global_output_channel
+                             ? INT8_C(1)
+                             : INT8_C(0);
                     break;
                 case QBH_PATTERN_SIGNED:
                     q4 = (int8_t)((int32_t)((input_channel * 7U +
-                                             output_channel * 5U) %
+                                             global_output_channel * 5U) %
                                             7U) -
                                   3);
                     break;
                 case QBH_PATTERN_STRUCTURED:
-                    q4 = ((input_channel + 3U * output_channel) % 5U) == 0U
+                    q4 = ((input_channel +
+                           3U * global_output_channel) %
+                          5U) == 0U
                              ? (int8_t)((int32_t)((input_channel +
-                                                  output_channel) %
+                                                  global_output_channel) %
                                                  5U) -
                                         2)
                              : INT8_C(0);
                     break;
                 default:
-                    q4 = ((input_channel + output_channel) & 1U) != 0U
+                    q4 = ((input_channel + global_output_channel) & 1U) != 0U
                              ? INT8_C(7)
                              : INT8_C(-7);
                     break;
@@ -762,6 +803,24 @@ static uint64_t carrier_checksum(const int8_t *logical_s8,
     return checksum;
 }
 
+static uint64_t canonical_output_checksum(
+    const struct qbh_projection_layout *layout, const uint8_t *output,
+    size_t output_stride, uint32_t call_count) {
+    uint64_t checksum = UINT64_C(1469598103934665603);
+    for (uint32_t row = 0; row < layout->m; ++row) {
+        for (uint32_t call = 0; call < call_count; ++call) {
+            const uint8_t *row_output =
+                output + (size_t)call * output_stride +
+                (size_t)row * layout->n;
+            for (uint32_t channel = 0; channel < layout->n; ++channel) {
+                checksum ^= row_output[channel];
+                checksum *= UINT64_C(1099511628211);
+            }
+        }
+    }
+    return checksum;
+}
+
 static uint8_t clamp_to_u8(int32_t value) {
     if (value < 0) {
         return UINT8_C(0);
@@ -838,6 +897,7 @@ int main(int argc, char **argv) {
     struct qbh_session session = {(remote_handle64)-1, 0};
     struct qbh_projection_layout layout;
     struct qbh_probe_header *header = NULL;
+    struct qbh_probe_header measured_headers[2];
     uint8_t *shared = NULL;
     uint8_t *activation;
     uint8_t *stored_weights;
@@ -858,12 +918,20 @@ int main(int argc, char **argv) {
     uint32_t output_assembly_mode = QBH_OUTPUT_ASSEMBLY_SCALAR;
     uint32_t resource_lifetime_mode =
         QBH_RESOURCE_LIFETIME_TRANSIENT;
+    uint32_t host_invocation_mode = QBH_HOST_SINGLE_INVOCATION;
+    uint32_t measured_rpc_calls = 1;
     size_t activation_offset;
     size_t weight_offset;
     size_t output_offset;
+    size_t weight_stride;
+    size_t output_stride;
+    size_t logical_weight_stride;
+    size_t logical_weight_bytes;
+    size_t channel_scale_bytes;
     size_t total_bytes;
     uint64_t host_start;
     uint64_t host_end;
+    uint64_t measured_call_wall_ns[2] = {0, 0};
     uint64_t session_open_start;
     uint64_t session_open_end;
     uint64_t prepare_start = 0;
@@ -937,11 +1005,16 @@ int main(int argc, char **argv) {
         fprintf(stderr, "invalid resource lifetime mode: %s\n", argv[7]);
         return EXIT_FAILURE;
     }
-    if (argc > 8) {
+    if (argc > 8 &&
+        parse_host_invocation(argv[8], &host_invocation_mode) != 0) {
+        fprintf(stderr, "invalid host invocation mode: %s\n", argv[8]);
+        return EXIT_FAILURE;
+    }
+    if (argc > 9) {
         fprintf(stderr,
                 "usage: %s [packed_w4_hvx_prescale|"
                 "packed_w4_hmx_postscale|expanded_s8_control] "
-                "[gate_up|down] "
+                "[gate_up|down|gate_up_pair] "
                 "[identity|signed|structured|boundary] [repeat] "
                 "[exp0005_full_bundle_control|"
                 "exp0006_slots2_chunk32_control|slots3_chunk32|"
@@ -964,7 +1037,8 @@ int main(int argc, char **argv) {
                 "slots8e7_chunk64_dma_chain4|"
                 "slots8e7_chunk96_dma_chain4] "
                 "[scalar_memcpy|linked_2d_dma] "
-                "[transient_resources|prepared_session]\n",
+                "[transient_resources|prepared_session] "
+                "[single_invocation|two_call_control]\n",
                 argv[0]);
         return EXIT_FAILURE;
     }
@@ -979,25 +1053,47 @@ int main(int argc, char **argv) {
         fprintf(stderr, "projection layout initialization failed\n");
         return EXIT_FAILURE;
     }
+    if (host_invocation_mode == QBH_HOST_TWO_CALL_CONTROL &&
+        (variant != QBH_PROJECTION_GATE_UP ||
+         resource_lifetime_mode !=
+             QBH_RESOURCE_LIFETIME_PREPARED_SESSION)) {
+        fprintf(stderr,
+                "two_call_control requires gate_up and prepared_session\n");
+        return EXIT_FAILURE;
+    }
+    if (variant == QBH_PROJECTION_GATE_UP_PAIR &&
+        host_invocation_mode != QBH_HOST_SINGLE_INVOCATION) {
+        fprintf(stderr,
+                "gate_up_pair requires single_invocation\n");
+        return EXIT_FAILURE;
+    }
+    measured_rpc_calls =
+        host_invocation_mode == QBH_HOST_TWO_CALL_CONTROL ? 2U : 1U;
 
     activation_offset = align_up(sizeof(*header), QBH_PROBE_ALIGNMENT);
+    weight_stride = align_up(layout.stored_weight_bytes,
+                             QBH_PROBE_ALIGNMENT);
+    output_stride = align_up(layout.output_bytes,
+                             QBH_PROBE_ALIGNMENT);
+    logical_weight_stride = layout.logical_weight_bytes;
+    logical_weight_bytes = logical_weight_stride * measured_rpc_calls;
+    channel_scale_bytes = (size_t)layout.n * measured_rpc_calls;
     weight_offset = activation_offset +
                     align_up(layout.activation_bytes,
                              QBH_PROBE_ALIGNMENT);
     output_offset = weight_offset +
-                    align_up(layout.stored_weight_bytes,
-                             QBH_PROBE_ALIGNMENT);
+                    weight_stride * measured_rpc_calls;
     total_bytes = output_offset +
-                  align_up(layout.output_bytes, QBH_PROBE_ALIGNMENT);
+                  output_stride * measured_rpc_calls;
     if (total_bytes > UINT32_MAX || total_bytes > INT_MAX) {
         fprintf(stderr, "shared allocation is too large: %zu bytes\n",
                 total_bytes);
         goto cleanup;
     }
 
-    logical_w4 = malloc(layout.logical_weight_bytes);
-    logical_s8 = malloc(layout.logical_weight_bytes);
-    channel_scales = malloc(layout.n);
+    logical_w4 = malloc(logical_weight_bytes);
+    logical_s8 = malloc(logical_weight_bytes);
+    channel_scales = malloc(channel_scale_bytes);
     reference_accumulators = calloc(
         (size_t)layout.m * layout.n, sizeof(*reference_accumulators));
     if (logical_w4 == NULL || logical_s8 == NULL ||
@@ -1043,26 +1139,38 @@ int main(int argc, char **argv) {
     activation = shared + activation_offset;
     stored_weights = shared + weight_offset;
     output = shared + output_offset;
-    fill_pattern(&layout, pattern, activation, logical_w4, logical_s8,
-                 channel_scales);
-    if (qbh_weight_storage_is_packed_w4(storage)) {
-        pack_w4_bundles(&layout, logical_w4, logical_s8, channel_scales,
-                        (int32_t)QBH_HMX_DEFAULT_ZERO_POINT,
-                        storage, stored_weights);
-    } else {
-        pack_expanded_s8_bundles(
-            &layout, logical_s8,
-            (int32_t)QBH_HMX_DEFAULT_ZERO_POINT, stored_weights);
+    for (uint32_t call = 0; call < measured_rpc_calls; ++call) {
+        int8_t *call_w4 =
+            logical_w4 + (size_t)call * logical_weight_stride;
+        int8_t *call_s8 =
+            logical_s8 + (size_t)call * logical_weight_stride;
+        uint8_t *call_scales =
+            channel_scales + (size_t)call * layout.n;
+        uint8_t *call_weights =
+            stored_weights + (size_t)call * weight_stride;
+        fill_pattern(&layout, pattern, call * layout.n, activation,
+                     call_w4, call_s8, call_scales);
+        if (qbh_weight_storage_is_packed_w4(storage)) {
+            pack_w4_bundles(
+                &layout, call_w4, call_s8, call_scales,
+                (int32_t)QBH_HMX_DEFAULT_ZERO_POINT, storage,
+                call_weights);
+        } else {
+            pack_expanded_s8_bundles(
+                &layout, call_s8,
+                (int32_t)QBH_HMX_DEFAULT_ZERO_POINT, call_weights);
+        }
+        memset(output + (size_t)call * output_stride, 0xa5,
+               layout.output_bytes);
     }
     expanded_carrier_checksum = carrier_checksum(
-        logical_s8, layout.logical_weight_bytes);
+        logical_s8, logical_weight_bytes);
     packed_w4_checksum = carrier_checksum(
-        logical_w4, layout.logical_weight_bytes);
+        logical_w4, logical_weight_bytes);
     hmx_carrier_checksum =
         storage == QBH_WEIGHT_PACKED_W4_HMX_SCALE
             ? packed_w4_checksum
             : expanded_carrier_checksum;
-    memset(output, 0xa5, layout.output_bytes);
 
     session_open_start = monotonic_ns();
     rpc_result = qbh_session_open(&session);
@@ -1092,8 +1200,18 @@ int main(int argc, char **argv) {
     }
 
     warmup_start = monotonic_ns();
-    warmup_rpc_result = qwen3_probe_run(
-        session.handle, shared_fd, (uint32_t)total_bytes);
+    warmup_rpc_result = AEE_SUCCESS;
+    for (uint32_t call = 0; call < measured_rpc_calls; ++call) {
+        header->weight_offset =
+            (uint32_t)(weight_offset + (size_t)call * weight_stride);
+        header->output_offset =
+            (uint32_t)(output_offset + (size_t)call * output_stride);
+        warmup_rpc_result = qwen3_probe_run(
+            session.handle, shared_fd, (uint32_t)total_bytes);
+        if (warmup_rpc_result != AEE_SUCCESS) {
+            break;
+        }
+    }
     warmup_end = monotonic_ns();
     if (warmup_rpc_result != AEE_SUCCESS) {
         fprintf(stderr,
@@ -1104,16 +1222,32 @@ int main(int argc, char **argv) {
                 header->dma_status, header->sync_status);
         goto cleanup;
     }
-    warmup_output_checksum = carrier_checksum(
-        (const int8_t *)output, layout.output_bytes);
+    warmup_output_checksum = canonical_output_checksum(
+        &layout, output, output_stride, measured_rpc_calls);
     warmup_resource_vtcm_address = header->resource_vtcm_address;
     warmup_resource_hmx_context_id = header->resource_hmx_context_id;
     warmup_prepared_session_run_index =
         header->prepared_session_run_index;
 
     host_start = monotonic_ns();
-    rpc_result = qwen3_probe_run(session.handle, shared_fd,
-                                 (uint32_t)total_bytes);
+    rpc_result = AEE_SUCCESS;
+    for (uint32_t call = 0; call < measured_rpc_calls; ++call) {
+        uint64_t call_start;
+        uint64_t call_end;
+        header->weight_offset =
+            (uint32_t)(weight_offset + (size_t)call * weight_stride);
+        header->output_offset =
+            (uint32_t)(output_offset + (size_t)call * output_stride);
+        call_start = monotonic_ns();
+        rpc_result = qwen3_probe_run(session.handle, shared_fd,
+                                     (uint32_t)total_bytes);
+        call_end = monotonic_ns();
+        measured_call_wall_ns[call] = call_end - call_start;
+        measured_headers[call] = *header;
+        if (rpc_result != AEE_SUCCESS) {
+            break;
+        }
+    }
     host_end = monotonic_ns();
     if (rpc_result != AEE_SUCCESS) {
         fprintf(stderr,
@@ -1124,8 +1258,8 @@ int main(int argc, char **argv) {
                 header->dma_status, header->sync_status);
         goto cleanup;
     }
-    measured_output_checksum = carrier_checksum(
-        (const int8_t *)output, layout.output_bytes);
+    measured_output_checksum = canonical_output_checksum(
+        &layout, output, output_stride, measured_rpc_calls);
 
     if (resource_lifetime_mode ==
         QBH_RESOURCE_LIFETIME_PREPARED_SESSION) {
@@ -1149,13 +1283,69 @@ int main(int argc, char **argv) {
     }
 
     reference_start = monotonic_ns();
-    mismatches = validate_output(
-        &layout, activation, logical_s8, output,
-        (int32_t)header->input_zero_point, reference_accumulators,
-        &reference_min, &reference_max, &reference_checksum);
+    mismatches = 0U;
+    reference_min = UINT8_MAX;
+    reference_max = 0U;
+    reference_checksum = 0U;
+    for (uint32_t call = 0; call < measured_rpc_calls; ++call) {
+        uint8_t call_min;
+        uint8_t call_max;
+        uint64_t call_checksum;
+        mismatches += validate_output(
+            &layout, activation,
+            logical_s8 + (size_t)call * logical_weight_stride,
+            output + (size_t)call * output_stride,
+            (int32_t)header->input_zero_point, reference_accumulators,
+            &call_min, &call_max, &call_checksum);
+        if (call_min < reference_min) {
+            reference_min = call_min;
+        }
+        if (call_max > reference_max) {
+            reference_max = call_max;
+        }
+        reference_checksum += call_checksum;
+    }
     reference_end = monotonic_ns();
 
-    printf("{\"experiment\":\"EXP-0015\","
+    uint64_t aggregate_dsp_total_ticks = 0;
+    uint64_t aggregate_pipeline_ticks = 0;
+    uint64_t aggregate_activation_stage_ticks = 0;
+    uint64_t aggregate_weight_stage_ticks = 0;
+    uint64_t aggregate_weight_expand_ticks = 0;
+    uint64_t aggregate_hmx_compute_ticks = 0;
+    uint64_t aggregate_hmx_ready_wait_ticks = 0;
+    uint64_t aggregate_output_assembly_ticks = 0;
+    uint64_t aggregate_input_cache_ticks = 0;
+    uint64_t aggregate_output_cache_ticks = 0;
+    uint32_t aggregate_hmx_execution_count = 0;
+    uint32_t aggregate_hmx_stream_count = 0;
+    uint32_t aggregate_weight_bundle_stage_count = 0;
+    uint32_t aggregate_output_tile_count = 0;
+    for (uint32_t call = 0; call < measured_rpc_calls; ++call) {
+        const struct qbh_probe_header *call_header =
+            &measured_headers[call];
+        aggregate_dsp_total_ticks += call_header->dsp_total_ticks;
+        aggregate_pipeline_ticks += call_header->pipeline_ticks;
+        aggregate_activation_stage_ticks +=
+            call_header->activation_stage_ticks;
+        aggregate_weight_stage_ticks += call_header->weight_stage_ticks;
+        aggregate_weight_expand_ticks += call_header->weight_expand_ticks;
+        aggregate_hmx_compute_ticks += call_header->hmx_compute_ticks;
+        aggregate_hmx_ready_wait_ticks +=
+            call_header->hmx_ready_wait_ticks;
+        aggregate_output_assembly_ticks +=
+            call_header->output_assembly_ticks;
+        aggregate_input_cache_ticks += call_header->input_cache_ticks;
+        aggregate_output_cache_ticks += call_header->output_cache_ticks;
+        aggregate_hmx_execution_count +=
+            call_header->hmx_execution_count;
+        aggregate_hmx_stream_count += call_header->hmx_stream_count;
+        aggregate_weight_bundle_stage_count +=
+            call_header->weight_bundle_stage_count;
+        aggregate_output_tile_count += call_header->output_tile_count;
+    }
+
+    printf("{\"experiment\":\"EXP-0016\","
            "\"weight_storage\":\"%s\","
            "\"physical_plan\":\"%s\","
            "\"requested_hvx_workers\":%" PRIu32 ","
@@ -1164,6 +1354,8 @@ int main(int argc, char **argv) {
            "\"chunk_tiles\":%" PRIu32 ","
            "\"output_assembly_mode\":\"%s\","
            "\"resource_lifetime_mode\":\"%s\","
+           "\"host_invocation_mode\":\"%s\","
+           "\"measured_rpc_calls\":%" PRIu32 ","
            "\"dma_bundle_batch\":%" PRIu32 ","
            "\"projection\":\"%s\",\"pattern\":\"%s\","
            "\"repeat_count\":%" PRIu32 ","
@@ -1190,6 +1382,8 @@ int main(int argc, char **argv) {
            "\"session_close_wall_ns\":%" PRIu64 ","
            "\"reference_wall_ns\":%" PRIu64 ","
            "\"host_wall_ns\":%" PRIu64 ","
+           "\"first_call_host_wall_ns\":%" PRIu64 ","
+           "\"second_call_host_wall_ns\":%" PRIu64 ","
            "\"projection_m\":%" PRIu32 ","
            "\"projection_k\":%" PRIu32 ","
            "\"projection_n\":%" PRIu32 ","
@@ -1213,6 +1407,22 @@ int main(int argc, char **argv) {
            "\"pipeline_ticks\":%" PRIu64 ","
            "\"output_assembly_ticks\":%" PRIu64 ","
            "\"dsp_total_ticks\":%" PRIu64 ","
+           "\"aggregate_dsp_total_ticks\":%" PRIu64 ","
+           "\"aggregate_pipeline_ticks\":%" PRIu64 ","
+           "\"aggregate_activation_stage_ticks\":%" PRIu64 ","
+           "\"aggregate_weight_stage_ticks\":%" PRIu64 ","
+           "\"aggregate_weight_expand_ticks\":%" PRIu64 ","
+           "\"aggregate_hmx_compute_ticks\":%" PRIu64 ","
+           "\"aggregate_hmx_ready_wait_ticks\":%" PRIu64 ","
+           "\"aggregate_output_assembly_ticks\":%" PRIu64 ","
+           "\"input_cache_ticks\":%" PRIu64 ","
+           "\"output_cache_ticks\":%" PRIu64 ","
+           "\"aggregate_input_cache_ticks\":%" PRIu64 ","
+           "\"aggregate_output_cache_ticks\":%" PRIu64 ","
+           "\"aggregate_hmx_execution_count\":%" PRIu32 ","
+           "\"aggregate_hmx_stream_count\":%" PRIu32 ","
+           "\"aggregate_weight_bundle_stage_count\":%" PRIu32 ","
+           "\"aggregate_output_tile_count\":%" PRIu32 ","
            "\"vtcm_requested_bytes\":%" PRIu32 ","
            "\"vtcm_acquired_bytes\":%" PRIu32 ","
            "\"hmx_resource_status\":%d,\"hmx_lock_status\":%d,"
@@ -1274,6 +1484,8 @@ int main(int argc, char **argv) {
            header->expanded_chunk_slot_count, chunk_tiles,
            output_assembly_name(output_assembly_mode),
            resource_lifetime_name(resource_lifetime_mode),
+           host_invocation_name(host_invocation_mode),
+           measured_rpc_calls,
            qbh_physical_plan_dma_bundle_batch(physical_plan),
            projection_name(variant),
            pattern_name(pattern), repeats, rpc_result, header->dsp_status,
@@ -1291,7 +1503,8 @@ int main(int argc, char **argv) {
            session_close_result,
            session_close_end - session_close_start,
            reference_end - reference_start,
-           host_end - host_start, header->projection_m,
+           host_end - host_start, measured_call_wall_ns[0],
+           measured_call_wall_ns[1], header->projection_m,
            header->projection_k, header->projection_n,
            header->k_tile_count, header->n_tile_count,
            header->stored_weight_bundle_bytes,
@@ -1307,6 +1520,20 @@ int main(int argc, char **argv) {
            header->producer_slot_wait_ticks,
            header->expanded_slot_wait_ticks, header->pipeline_ticks,
            header->output_assembly_ticks, header->dsp_total_ticks,
+           aggregate_dsp_total_ticks, aggregate_pipeline_ticks,
+           aggregate_activation_stage_ticks,
+           aggregate_weight_stage_ticks,
+           aggregate_weight_expand_ticks,
+           aggregate_hmx_compute_ticks,
+           aggregate_hmx_ready_wait_ticks,
+           aggregate_output_assembly_ticks,
+           header->input_cache_ticks, header->output_cache_ticks,
+           aggregate_input_cache_ticks,
+           aggregate_output_cache_ticks,
+           aggregate_hmx_execution_count,
+           aggregate_hmx_stream_count,
+           aggregate_weight_bundle_stage_count,
+           aggregate_output_tile_count,
            header->vtcm_requested_bytes, header->vtcm_acquired_bytes,
            header->hmx_resource_status, header->hmx_lock_status,
            header->hmx_unlock_status, header->hmx_release_status,
@@ -1382,7 +1609,31 @@ int main(int argc, char **argv) {
                                       ? layout.chunks_per_output
                                       : 1U)
                            : 0U;
+    int all_measured_calls_valid = 1;
+    for (uint32_t call = 0; call < measured_rpc_calls; ++call) {
+        const struct qbh_probe_header *call_header =
+            &measured_headers[call];
+        if (call_header->dsp_status != QBH_PROBE_STATUS_OK ||
+            call_header->resource_vtcm_address !=
+                header->resource_vtcm_address ||
+            call_header->resource_hmx_context_id !=
+                header->resource_hmx_context_id ||
+            call_header->hmx_execution_count !=
+                repeats * layout.hmx_pairs_per_repeat ||
+            call_header->hmx_stream_count !=
+                repeats * layout.hmx_streams_per_repeat ||
+            call_header->weight_bundle_stage_count !=
+                expected_weight_stages ||
+            call_header->output_tile_count != expected_weight_stages ||
+            call_header->dma_descriptor_timeout_count != 0U ||
+            call_header->output_dma_descriptor_timeout_count != 0U ||
+            call_header->dma_status != 0 ||
+            call_header->sync_status != 0) {
+            all_measured_calls_valid = 0;
+        }
+    }
     if (header->dsp_status == QBH_PROBE_STATUS_OK && mismatches == 0 &&
+        all_measured_calls_valid &&
         warmup_rpc_result == AEE_SUCCESS &&
         warmup_output_checksum == measured_output_checksum &&
         header->projection_m == layout.m &&
@@ -1472,12 +1723,12 @@ int main(int argc, char **argv) {
         header->prepared_session_run_index ==
             (resource_lifetime_mode ==
                      QBH_RESOURCE_LIFETIME_PREPARED_SESSION
-                 ? 2U
+                 ? 2U * measured_rpc_calls
                  : 0U) &&
         warmup_prepared_session_run_index ==
             (resource_lifetime_mode ==
                      QBH_RESOURCE_LIFETIME_PREPARED_SESSION
-                 ? 1U
+                 ? measured_rpc_calls
                  : 0U) &&
         header->resource_vtcm_address != 0U &&
         header->resource_hmx_context_id != 0U &&
