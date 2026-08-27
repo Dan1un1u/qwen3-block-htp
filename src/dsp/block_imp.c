@@ -1094,16 +1094,6 @@ static int qbh_run_w4f16_projection(
                 header, desc, n_tile, 17U, result);
             return -1;
         }
-        {
-            uint64_t unpack_start = HAP_perf_get_qtimer_count();
-            qbh_unpack_fp16_output(
-                (const __fp16 *)buffers->hmx_output, 1U,
-                (__fp16 *)output, desc->n,
-                n_tile * QBH_HMX_FP16_COLS);
-            header->projection_unpack_ticks +=
-                HAP_perf_get_qtimer_count() - unpack_start;
-        }
-
         if (next_tile < n_tiles) {
             uint32_t next_slot = next_tile & 1U;
             uint32_t following_tile = next_tile + 1U;
@@ -1154,6 +1144,16 @@ static int qbh_run_w4f16_projection(
                     return -1;
                 }
             }
+        }
+
+        {
+            uint64_t unpack_start = HAP_perf_get_qtimer_count();
+            qbh_unpack_fp16_output(
+                (const __fp16 *)buffers->hmx_output, 1U,
+                (__fp16 *)output, desc->n,
+                n_tile * QBH_HMX_FP16_COLS);
+            header->projection_unpack_ticks +=
+                HAP_perf_get_qtimer_count() - unpack_start;
         }
     }
     return 0;
