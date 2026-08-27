@@ -40,13 +40,12 @@ void qbh_hmx_fp16_matmul_tiles(const __fp16 *activation_tiles,
                                __fp16 *output_tiles,
                                uint32_t m_tiles, uint32_t k_tiles,
                                uint32_t n_tiles) {
+    asm volatile("mxclracc.hf" ::: "memory");
     Q6_bias_mxmem2_A((void *)scale_block);
 
     for (uint32_t row_tile = 0; row_tile < m_tiles; ++row_tile) {
         for (uint32_t column_tile = 0; column_tile < n_tiles;
              ++column_tile) {
-            /* Each (row, column) tile is an independent dot product. */
-            asm volatile("mxclracc.hf" ::: "memory");
             const __fp16 *activation = activation_tiles +
                 (size_t)row_tile * k_tiles *
                     QBH_HMX_FP16_TILE_ELEMENTS;
