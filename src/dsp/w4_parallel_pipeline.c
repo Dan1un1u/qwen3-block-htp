@@ -58,7 +58,6 @@ struct qbh_parallel_state {
     qurt_sem_t expanded_ready[QBH_W4_EXPANDED_CHUNK_SLOT_COUNT];
     qurt_sem_t hmx_started;
     qurt_sem_t hvx_started;
-    qurt_sem_t streaming_hvx_credits;
     qurt_mutex_t metrics_mutex;
 
     volatile uint32_t
@@ -295,14 +294,21 @@ static int qbh_wait_linked_descriptor(
 }
 
 static int qbh_hvx_region_begin(struct qbh_parallel_state *state) {
-    int credit_acquired = 0;
-    if (qbh_physical_plan_is_capped_streaming(
-            state->layout->physical_plan) &&
-        state->streaming_hmx_consumption_started != 0U) {
-        qurt_sem_down(&state->streaming_hvx_credits);
-        credit_acquired = 1;
+    uint32_t active;
+    for (;;) {
+        active = qbh_atomic_inc_return(&state->active_hvx_workers);
+        if (!qbh_physical_plan_is_capped_streaming(
+                state->layout->physical_plan) ||
+            state->streaming_hmx_consumption_started == 0U ||
+            active <= 2U) {
+            break;
+        }
+        (void)qbh_atomic_dec_return(&state->active_hvx_workers);
+        if (state->abort_status != 0) {
+            return -1;
+        }
+        (void)qurt_thread_sched_yield();
     }
-    uint32_t active = qbh_atomic_inc_return(&state->active_hvx_workers);
     if (active > state->max_active_hvx_workers) {
         qurt_mutex_lock(&state->metrics_mutex);
         if (active > state->max_active_hvx_workers) {
@@ -316,18 +322,14 @@ static int qbh_hvx_region_begin(struct qbh_parallel_state *state) {
     if (state->hmx_active != 0U) {
         state->hvx_hmx_overlap_observed = 1U;
     }
-    return credit_acquired;
+    return 0;
 }
 
-static void qbh_hvx_region_end(struct qbh_parallel_state *state,
-                               int credit_acquired) {
+static void qbh_hvx_region_end(struct qbh_parallel_state *state) {
     if (state->hmx_active != 0U) {
         state->hvx_hmx_overlap_observed = 1U;
     }
     (void)qbh_atomic_dec_return(&state->active_hvx_workers);
-    if (credit_acquired != 0) {
-        qurt_sem_up(&state->streaming_hvx_credits);
-    }
 }
 
 static void qbh_hmx_region_begin(struct qbh_parallel_state *state) {
@@ -368,7 +370,7 @@ static void qbh_hvx_worker_main(void *opaque) {
         uint32_t region_tiles;
         size_t packed_offset;
         size_t expanded_offset;
-        int streaming_credit;
+        int admission_status;
 
         qbh_queue_pop(&state->queue, &task);
         if (task.stop != 0U) {
@@ -398,7 +400,11 @@ static void qbh_hvx_worker_main(void *opaque) {
         if (job->first_expand_start == 0U) {
             job->first_expand_start = start;
         }
-        streaming_credit = qbh_hvx_region_begin(state);
+        admission_status = qbh_hvx_region_begin(state);
+        if (admission_status != 0) {
+            exit_status = AEE_EFAILED;
+            break;
+        }
         if (layout->weight_storage_variant ==
             QBH_WEIGHT_PACKED_W4_HMX_SCALE) {
             qbh_unpack_w4_to_s8_hvx(
@@ -417,7 +423,7 @@ static void qbh_hvx_worker_main(void *opaque) {
                 compressed + layout->w4_bias_offset,
                 expanded + layout->expanded_chunk_weight_bytes);
         }
-        qbh_hvx_region_end(state, streaming_credit);
+        qbh_hvx_region_end(state);
         end = HAP_perf_get_qtimer_count();
         job->last_expand_end = end;
         job->expand_ticks += end - start;
@@ -612,9 +618,6 @@ static void qbh_abort_pipeline(struct qbh_parallel_state *state,
          slot < layout->compressed_slot_count; ++slot) {
         qurt_sem_up(&state->compressed_free[slot]);
     }
-    for (uint32_t worker = 0; worker < QBH_MAX_HVX_WORKERS; ++worker) {
-        qurt_sem_up(&state->streaming_hvx_credits);
-    }
 }
 
 static void qbh_publish_w4_bundle(
@@ -745,7 +748,6 @@ int qbh_run_chunked_w4_pipeline(
     qurt_mutex_init(&state.metrics_mutex);
     qurt_sem_init_val(&state.hmx_started, 0);
     qurt_sem_init_val(&state.hvx_started, 0);
-    qurt_sem_init_val(&state.streaming_hvx_credits, 2);
     for (uint32_t slot = 0; slot < layout->compressed_slot_count;
          ++slot) {
         qurt_sem_init_val(&state.compressed_free[slot], 1);
@@ -1028,7 +1030,6 @@ cleanup:
 
     qurt_sem_destroy(&state.hvx_started);
     qurt_sem_destroy(&state.hmx_started);
-    qurt_sem_destroy(&state.streaming_hvx_credits);
     for (uint32_t slot = 0;
          slot < layout->expanded_slot_count; ++slot) {
         qurt_sem_destroy(&state.expanded_ready[slot]);
