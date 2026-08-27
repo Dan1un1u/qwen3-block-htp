@@ -421,3 +421,33 @@ experiments:
       boot_id_stable: true
       selected_candidate_plan: slots4_chunk64
       performance_characterization: single_publication_w4_beats_expanded_s8_gate_up
+  - id: EXP-0011
+    slug: batched-weight-dma
+    title: Batch contiguous projection weight bundles per User-DMA submission
+    parent: EXP-0010
+    variants:
+      - expanded_s8_dma_batch1
+      - expanded_s8_dma_batch2
+      - packed_w4_dma_batch1
+      - packed_w4_dma_batch2
+      - packed_w4_dma_batch4
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: w4u8-batched-weight-dma-publication
+    source_branches:
+      - codex/exp-0011-batched-weight-dma
+    source_commits: []
+    record: docs/experiments/EXP-0011.md
+    decided_by: user
+    decided_on: '2026-08-27'
+    approval_ref: 'User message 2026-08-27: 继续优化现有方案'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0011-batched-weight-dma
+      started_on: '2026-08-27'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0011'
+      retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0011'
