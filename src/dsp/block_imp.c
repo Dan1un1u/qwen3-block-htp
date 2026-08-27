@@ -26,6 +26,11 @@
     (QBH_BLOCK_HEADS * QBH_BLOCK_M * QBH_BLOCK_M)
 #define QBH_BLOCK_HMX_OUTPUT_MAX_BYTES \
     (2U * 4U * QBH_HMX_FP16_TILE_BYTES)
+#define QBH_BLOCK_PROJECTION_SCALE_CHANNELS \
+    (3U * QBH_BLOCK_HIDDEN + 2U * QBH_BLOCK_KV_HIDDEN + \
+     2U * QBH_BLOCK_INTERMEDIATE)
+#define QBH_BLOCK_PROJECTION_SCALE_BYTES \
+    (QBH_BLOCK_PROJECTION_SCALE_CHANNELS * sizeof(float))
 
 enum qbh_block_hmx_command_kind {
     QBH_BLOCK_HMX_NONE = 0,
@@ -77,6 +82,7 @@ struct qbh_block_buffers {
     uint8_t *scale_or_bias;
     uint8_t *channel_scale;
     uint8_t *channel_scale_alt;
+    uint8_t *projection_scales;
 };
 
 struct qbh_block_hmx_worker {
@@ -250,6 +256,11 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
     buffers->channel_scale_alt = qbh_arena_alloc_aligned(
         &arena, QBH_HMX_FP16_SCALE_BYTES,
         QBH_HMX_FP16_SCALE_BYTES);
+    if (variant == QBH_BLOCK_W4F16) {
+        buffers->projection_scales = qbh_arena_alloc_aligned(
+            &arena, QBH_BLOCK_PROJECTION_SCALE_BYTES,
+            QBH_HMX_FP16_SCALE_BYTES);
+    }
 
     if (buffers->input_norm_weight == NULL ||
         buffers->post_norm_weight == NULL ||
@@ -269,7 +280,9 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         buffers->expanded_weight_alt == NULL ||
         buffers->hmx_output == NULL ||
         buffers->scale_or_bias == NULL || buffers->channel_scale == NULL ||
-        buffers->channel_scale_alt == NULL) {
+        buffers->channel_scale_alt == NULL ||
+        (variant == QBH_BLOCK_W4F16 &&
+         buffers->projection_scales == NULL)) {
         return -1;
     }
     if (((uintptr_t)buffers->hmx_activation &
@@ -285,7 +298,10 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         ((uintptr_t)buffers->channel_scale &
          (QBH_HMX_FP16_SCALE_BYTES - 1U)) != 0U ||
         ((uintptr_t)buffers->channel_scale_alt &
-         (QBH_HMX_FP16_SCALE_BYTES - 1U)) != 0U) {
+         (QBH_HMX_FP16_SCALE_BYTES - 1U)) != 0U ||
+        (variant == QBH_BLOCK_W4F16 &&
+         ((uintptr_t)buffers->projection_scales &
+          (QBH_HMX_FP16_SCALE_BYTES - 1U)) != 0U)) {
         return -1;
     }
     *peak_bytes = arena.peak;
@@ -937,6 +953,21 @@ static void qbh_record_projection_failure(
     header->projection_failure_step = step;
 }
 
+static const float *qbh_w4f16_projection_scales(
+    const struct qbh_block_header *header,
+    const struct qbh_block_buffers *buffers,
+    const struct qbh_block_projection_desc *desc) {
+    uint32_t projection_index =
+        (uint32_t)(desc - header->projections);
+    uint32_t channel_offset = 0U;
+
+    for (uint32_t index = 0; index < projection_index; ++index) {
+        channel_offset += header->projections[index].n;
+    }
+    return (const float *)(buffers->projection_scales +
+                           (size_t)channel_offset * sizeof(float));
+}
+
 static int qbh_run_w4f16_projection(
     struct qbh_block_header *header, const uint8_t *shared,
     const struct qbh_block_projection_desc *desc,
@@ -948,10 +979,10 @@ static int qbh_run_w4f16_projection(
     uint32_t compressed_bytes = k_tiles * QBH_W4_PACKED_TILE_BYTES;
     uint8_t *compressed_slots[2] = {
         buffers->compressed_weight, buffers->compressed_weight_alt};
-    uint8_t *scale_slots[2] = {
-        buffers->channel_scale, buffers->channel_scale_alt};
     uint8_t *expanded_slots[2] = {
         buffers->expanded_weight, buffers->expanded_weight_alt};
+    const float *projection_scales = qbh_w4f16_projection_scales(
+        header, buffers, desc);
     volatile uint32_t ready[QBH_BLOCK_W4F16_MAX_REGIONS];
     struct qbh_dma_aligned_desc_1d prefetch_descriptor
         __attribute__((aligned(64)));
@@ -966,22 +997,17 @@ static int qbh_run_w4f16_projection(
 
     if (qbh_dma_copy(header, compressed_slots[0],
                      shared + desc->weight_offset,
-                     compressed_bytes, 1U) != 0 ||
-        qbh_dma_copy(header, scale_slots[0],
-                     shared + desc->scale_offset,
-                     32U * sizeof(float), 1U) != 0) {
+                     compressed_bytes, 1U) != 0) {
         qbh_record_projection_failure(header, desc, 0U, 11U, -1);
         return -1;
     }
-    header->weight_ddr_read_bytes +=
-        compressed_bytes + 32U * sizeof(float);
-    header->weight_dma_descriptor_count += 2U;
+    header->weight_ddr_read_bytes += compressed_bytes;
+    ++header->weight_dma_descriptor_count;
 
     phase_start = HAP_perf_get_qtimer_count();
     qbh_w4f16_expand_with_main(
-        header, pool, compressed_slots[0],
-        (const float *)scale_slots[0], expanded_slots[0], ready,
-        1U, k_tiles);
+        header, pool, compressed_slots[0], projection_scales,
+        expanded_slots[0], ready, 1U, k_tiles);
     header->w4f16_expand_ticks +=
         HAP_perf_get_qtimer_count() - phase_start;
     if (desc == &header->projections[0]) {
@@ -1005,12 +1031,12 @@ static int qbh_run_w4f16_projection(
 
         qbh_hmx_fp16_init_channel_scales(
             buffers->scale_or_bias,
-            (const float *)scale_slots[current_slot]);
+            projection_scales + (size_t)n_tile * 32U);
         if (desc == &header->projections[0] && n_tile == 0U) {
             header->w4f16_expand_mismatch_count =
                 qbh_hmx_fp16_audit_channel_scales(
                     buffers->scale_or_bias,
-                    (const float *)scale_slots[0],
+                    projection_scales,
                     &header->w4f16_expand_first_logical_index,
                     &header->w4f16_expand_expected_half_bits,
                     &header->w4f16_expand_actual_half_bits);
@@ -1062,24 +1088,11 @@ static int qbh_run_w4f16_projection(
                     header, desc, n_tile, 15U, result);
                 return -1;
             }
-            if (qbh_dma_copy(
-                    header, scale_slots[next_slot],
-                    shared + desc->scale_offset +
-                        (size_t)next_tile * 32U * sizeof(float),
-                    32U * sizeof(float), 1U) != 0) {
-                (void)qbh_hmx_wait(worker);
-                qbh_record_projection_failure(
-                    header, desc, n_tile, 16U, -1);
-                return -1;
-            }
-            header->weight_ddr_read_bytes += 32U * sizeof(float);
-            ++header->weight_dma_descriptor_count;
-
             {
                 uint64_t expand_start = HAP_perf_get_qtimer_count();
                 qbh_w4f16_expand_with_main(
                     header, pool, compressed_slots[next_slot],
-                    (const float *)scale_slots[next_slot],
+                    projection_scales + (size_t)next_tile * 32U,
                     expanded_slots[next_slot], ready,
                     next_tile + 1U, k_tiles);
                 header->w4f16_expand_ticks +=
@@ -1798,6 +1811,22 @@ static int qbh_stage_metadata(struct qbh_block_header *header,
         }
         header->boundary_ddr_read_bytes += bytes[index];
         ++header->boundary_dma_descriptor_count;
+    }
+    if (header->variant == QBH_BLOCK_W4F16) {
+        uint8_t *destination = buffers->projection_scales;
+        for (uint32_t index = 0;
+             index < QBH_BLOCK_PROJECTION_COUNT; ++index) {
+            const struct qbh_block_projection_desc *desc =
+                &header->projections[index];
+            if (qbh_dma_copy(
+                    header, destination, shared + desc->scale_offset,
+                    desc->scale_bytes, 1U) != 0) {
+                return -1;
+            }
+            header->weight_ddr_read_bytes += desc->scale_bytes;
+            ++header->weight_dma_descriptor_count;
+            destination += desc->scale_bytes;
+        }
     }
     header->metadata_stage_ticks += HAP_perf_get_qtimer_count() - start;
     return 0;
