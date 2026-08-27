@@ -70,9 +70,28 @@ static int parse_storage(const char *text, uint32_t *storage) {
 }
 
 static const char *physical_plan_name(uint32_t physical_plan,
-                                      uint32_t hvx_workers) {
+                                      uint32_t hvx_workers,
+                                      uint32_t compressed_slots,
+                                      uint32_t chunk_tiles) {
     if (physical_plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE) {
         return "exp0005_full_bundle_control";
+    }
+    if (hvx_workers == 6U) {
+        if (compressed_slots == 2U && chunk_tiles == 32U) {
+            return "exp0006_slots2_chunk32_control";
+        }
+        if (compressed_slots == 3U && chunk_tiles == 32U) {
+            return "slots3_chunk32";
+        }
+        if (compressed_slots == 4U && chunk_tiles == 32U) {
+            return "slots4_chunk32";
+        }
+        if (compressed_slots == 2U && chunk_tiles == 16U) {
+            return "slots2_chunk16";
+        }
+        if (compressed_slots == 3U && chunk_tiles == 16U) {
+            return "slots3_chunk16";
+        }
     }
     switch (hvx_workers) {
         case 1:
@@ -89,32 +108,80 @@ static const char *physical_plan_name(uint32_t physical_plan,
 }
 
 static int parse_physical_plan(const char *text, uint32_t *physical_plan,
-                               uint32_t *hvx_workers) {
+                               uint32_t *hvx_workers,
+                               uint32_t *compressed_slots,
+                               uint32_t *chunk_tiles) {
     if (strcmp(text, "exp0005_full_bundle_control") == 0 ||
         strcmp(text, "full_bundle") == 0 ||
         strcmp(text, "control") == 0) {
         *physical_plan = QBH_PHYSICAL_PLAN_FULL_BUNDLE;
         *hvx_workers = 1;
+        *compressed_slots = QBH_W4_DEFAULT_COMPRESSED_SLOT_COUNT;
+        *chunk_tiles = QBH_W4_DEFAULT_CHUNK_TILES;
         return 0;
     }
     if (strcmp(text, "chunked_hvx1") == 0) {
         *physical_plan = QBH_PHYSICAL_PLAN_CHUNKED;
         *hvx_workers = 1;
+        *compressed_slots = QBH_W4_DEFAULT_COMPRESSED_SLOT_COUNT;
+        *chunk_tiles = QBH_W4_DEFAULT_CHUNK_TILES;
         return 0;
     }
     if (strcmp(text, "chunked_hvx2") == 0) {
         *physical_plan = QBH_PHYSICAL_PLAN_CHUNKED;
         *hvx_workers = 2;
+        *compressed_slots = QBH_W4_DEFAULT_COMPRESSED_SLOT_COUNT;
+        *chunk_tiles = QBH_W4_DEFAULT_CHUNK_TILES;
         return 0;
     }
     if (strcmp(text, "chunked_hvx4") == 0) {
         *physical_plan = QBH_PHYSICAL_PLAN_CHUNKED;
         *hvx_workers = 4;
+        *compressed_slots = QBH_W4_DEFAULT_COMPRESSED_SLOT_COUNT;
+        *chunk_tiles = QBH_W4_DEFAULT_CHUNK_TILES;
         return 0;
     }
     if (strcmp(text, "chunked_hvx6") == 0) {
         *physical_plan = QBH_PHYSICAL_PLAN_CHUNKED;
         *hvx_workers = 6;
+        *compressed_slots = QBH_W4_DEFAULT_COMPRESSED_SLOT_COUNT;
+        *chunk_tiles = QBH_W4_DEFAULT_CHUNK_TILES;
+        return 0;
+    }
+    if (strcmp(text, "exp0006_slots2_chunk32_control") == 0 ||
+        strcmp(text, "slots2_chunk32") == 0) {
+        *physical_plan = QBH_PHYSICAL_PLAN_CHUNKED;
+        *hvx_workers = 6;
+        *compressed_slots = 2U;
+        *chunk_tiles = 32U;
+        return 0;
+    }
+    if (strcmp(text, "slots3_chunk32") == 0) {
+        *physical_plan = QBH_PHYSICAL_PLAN_CHUNKED;
+        *hvx_workers = 6;
+        *compressed_slots = 3U;
+        *chunk_tiles = 32U;
+        return 0;
+    }
+    if (strcmp(text, "slots4_chunk32") == 0) {
+        *physical_plan = QBH_PHYSICAL_PLAN_CHUNKED;
+        *hvx_workers = 6;
+        *compressed_slots = 4U;
+        *chunk_tiles = 32U;
+        return 0;
+    }
+    if (strcmp(text, "slots2_chunk16") == 0) {
+        *physical_plan = QBH_PHYSICAL_PLAN_CHUNKED;
+        *hvx_workers = 6;
+        *compressed_slots = 2U;
+        *chunk_tiles = 16U;
+        return 0;
+    }
+    if (strcmp(text, "slots3_chunk16") == 0) {
+        *physical_plan = QBH_PHYSICAL_PLAN_CHUNKED;
+        *hvx_workers = 6;
+        *compressed_slots = 3U;
+        *chunk_tiles = 16U;
         return 0;
     }
     return -1;
@@ -496,6 +563,9 @@ int main(int argc, char **argv) {
     uint32_t repeats = QBH_HMX_DEFAULT_REPEATS;
     uint32_t physical_plan = QBH_PHYSICAL_PLAN_FULL_BUNDLE;
     uint32_t requested_hvx_workers = 1;
+    uint32_t compressed_slot_count =
+        QBH_W4_DEFAULT_COMPRESSED_SLOT_COUNT;
+    uint32_t chunk_tiles = QBH_W4_DEFAULT_CHUNK_TILES;
     size_t activation_offset;
     size_t weight_offset;
     size_t output_offset;
@@ -536,7 +606,9 @@ int main(int argc, char **argv) {
     }
     if (argc > 5 &&
         parse_physical_plan(argv[5], &physical_plan,
-                            &requested_hvx_workers) != 0) {
+                            &requested_hvx_workers,
+                            &compressed_slot_count,
+                            &chunk_tiles) != 0) {
         fprintf(stderr, "invalid physical plan: %s\n", argv[5]);
         return EXIT_FAILURE;
     }
@@ -545,8 +617,9 @@ int main(int argc, char **argv) {
                 "usage: %s [packed_w4u8|expanded_s8_control] "
                 "[gate_up|down] "
                 "[identity|signed|structured|boundary] [repeat] "
-                "[exp0005_full_bundle_control|chunked_hvx1|"
-                "chunked_hvx2|chunked_hvx4|chunked_hvx6]\n",
+                "[exp0005_full_bundle_control|"
+                "exp0006_slots2_chunk32_control|slots3_chunk32|"
+                "slots4_chunk32|slots2_chunk16|slots3_chunk16]\n",
                 argv[0]);
         return EXIT_FAILURE;
     }
@@ -556,6 +629,7 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
     if (qbh_projection_layout_init(variant, storage, physical_plan,
+                                   compressed_slot_count, chunk_tiles,
                                    &layout) != 0) {
         fprintf(stderr, "projection layout initialization failed\n");
         return EXIT_FAILURE;
@@ -609,6 +683,8 @@ int main(int argc, char **argv) {
     header->weight_storage_variant = storage;
     header->physical_plan = physical_plan;
     header->requested_hvx_workers = requested_hvx_workers;
+    header->compressed_slot_count = compressed_slot_count;
+    header->chunk_tiles = chunk_tiles;
     header->activation_offset = (uint32_t)activation_offset;
     header->weight_offset = (uint32_t)weight_offset;
     header->output_offset = (uint32_t)output_offset;
@@ -668,10 +744,12 @@ int main(int argc, char **argv) {
         &reference_min, &reference_max, &reference_checksum);
     reference_end = monotonic_ns();
 
-    printf("{\"experiment\":\"EXP-0006\","
+    printf("{\"experiment\":\"EXP-0007\","
            "\"weight_storage\":\"%s\","
            "\"physical_plan\":\"%s\","
            "\"requested_hvx_workers\":%" PRIu32 ","
+           "\"compressed_slot_count\":%" PRIu32 ","
+           "\"chunk_tiles\":%" PRIu32 ","
            "\"projection\":\"%s\",\"pattern\":\"%s\","
            "\"repeat_count\":%" PRIu32 ","
            "\"rpc_result\":%d,\"dsp_status\":%d,"
@@ -712,6 +790,8 @@ int main(int argc, char **argv) {
            "\"hmx_thread_join_status\":%d,"
            "\"hmx_power_up_status\":%d,"
            "\"hmx_power_down_status\":%d,"
+           "\"dcvs_power_setup_status\":%d,"
+           "\"dcvs_power_reset_status\":%d,"
            "\"hmx_execution_count\":%" PRIu32 ","
            "\"hmx_stream_count\":%" PRIu32 ","
            "\"weight_expand_count\":%" PRIu32 ","
@@ -741,8 +821,10 @@ int main(int argc, char **argv) {
            "%" PRIu64 ",%" PRIu64 ",%" PRIu64 ",%" PRIu64 "],"
            "\"dma_status\":%d,\"sync_status\":%d}\n",
            storage_name(storage),
-           physical_plan_name(physical_plan, requested_hvx_workers),
-           requested_hvx_workers, projection_name(variant),
+           physical_plan_name(physical_plan, requested_hvx_workers,
+                              compressed_slot_count, chunk_tiles),
+           requested_hvx_workers, compressed_slot_count, chunk_tiles,
+           projection_name(variant),
            pattern_name(pattern), repeats, rpc_result, header->dsp_status,
            mismatches, (unsigned int)reference_min,
            (unsigned int)reference_max, reference_checksum,
@@ -769,6 +851,8 @@ int main(int argc, char **argv) {
            header->hmx_thread_create_status,
            header->hmx_thread_join_status,
            header->hmx_power_up_status, header->hmx_power_down_status,
+           header->dcvs_power_setup_status,
+           header->dcvs_power_reset_status,
            header->hmx_execution_count, header->hmx_stream_count,
            header->weight_expand_count, header->hvx_lock_status,
            header->hvx_unlock_status, header->activation_stage_count,
@@ -793,8 +877,8 @@ int main(int argc, char **argv) {
            header->sync_status);
 
     expected_weight_stages = repeats * layout.n_tiles;
-    expected_reuses = expected_weight_stages > 2U
-                          ? expected_weight_stages - 2U
+    expected_reuses = expected_weight_stages > compressed_slot_count
+                          ? expected_weight_stages - compressed_slot_count
                           : 0U;
     expected_dma_waits =
         2U * (layout.k_tiles + expected_weight_stages);
@@ -810,6 +894,8 @@ int main(int argc, char **argv) {
         header->projection_n == layout.n &&
         header->k_tile_count == layout.k_tiles &&
         header->n_tile_count == layout.n_tiles &&
+        header->compressed_slot_count == layout.compressed_slot_count &&
+        header->chunk_tiles == layout.chunk_tiles &&
         header->stored_weight_bundle_bytes ==
             layout.stored_weight_bundle_bytes &&
         header->expanded_weight_bundle_bytes ==
@@ -829,6 +915,8 @@ int main(int argc, char **argv) {
         header->hmx_thread_join_status == 0 &&
         header->hmx_power_up_status == 0 &&
         header->hmx_power_down_status == 0 &&
+        header->dcvs_power_setup_status == 0 &&
+        header->dcvs_power_reset_status == 0 &&
         header->hmx_execution_count ==
             repeats * layout.hmx_pairs_per_repeat &&
         header->hmx_stream_count ==

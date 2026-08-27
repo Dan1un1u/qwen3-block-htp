@@ -13,6 +13,7 @@ struct qbh_projection_layout {
     uint32_t variant;
     uint32_t weight_storage_variant;
     uint32_t physical_plan;
+    uint32_t compressed_slot_count;
     uint32_t m;
     uint32_t k;
     uint32_t n;
@@ -59,7 +60,8 @@ static inline uint32_t qbh_align_up_u32(uint32_t value,
 
 static inline int qbh_projection_layout_init(
     uint32_t variant, uint32_t weight_storage_variant,
-    uint32_t physical_plan,
+    uint32_t physical_plan, uint32_t compressed_slot_count,
+    uint32_t chunk_tiles,
     struct qbh_projection_layout *layout) {
     uint32_t k;
     uint32_t n;
@@ -88,10 +90,21 @@ static inline int qbh_projection_layout_init(
         weight_storage_variant != QBH_WEIGHT_PACKED_W4) {
         return -1;
     }
+    if (compressed_slot_count <
+            QBH_W4_DEFAULT_COMPRESSED_SLOT_COUNT ||
+        compressed_slot_count > QBH_W4_MAX_COMPRESSED_SLOT_COUNT ||
+        (physical_plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE &&
+         compressed_slot_count !=
+             QBH_W4_DEFAULT_COMPRESSED_SLOT_COUNT) ||
+        (chunk_tiles != QBH_W4_DEFAULT_CHUNK_TILES &&
+         chunk_tiles != QBH_W4_FINE_CHUNK_TILES)) {
+        return -1;
+    }
 
     layout->variant = variant;
     layout->weight_storage_variant = weight_storage_variant;
     layout->physical_plan = physical_plan;
+    layout->compressed_slot_count = compressed_slot_count;
     layout->m = QBH_PROJ_M;
     layout->k = k;
     layout->n = n;
@@ -129,10 +142,14 @@ static inline int qbh_projection_layout_init(
     layout->k_streams_per_output =
         (layout->k_tiles + QBH_HMX_MAX_STREAM_TILES - 1U) /
         QBH_HMX_MAX_STREAM_TILES;
+    layout->chunk_tiles = chunk_tiles;
+    layout->chunks_per_output =
+        (layout->k_tiles + chunk_tiles - 1U) / chunk_tiles;
     layout->hmx_streams_per_repeat =
-        layout->n_tiles * layout->k_streams_per_output;
-    layout->chunk_tiles = QBH_HMX_MAX_STREAM_TILES;
-    layout->chunks_per_output = layout->k_streams_per_output;
+        layout->n_tiles *
+        (physical_plan == QBH_PHYSICAL_PLAN_CHUNKED
+             ? layout->chunks_per_output
+             : layout->k_streams_per_output);
     layout->expanded_chunk_weight_bytes =
         layout->chunk_tiles * QBH_HMX_WEIGHT_BYTES;
     layout->expanded_chunk_slot_bytes = qbh_align_up_u32(
@@ -161,7 +178,8 @@ static inline int qbh_projection_layout_init(
         layout->vtcm_output_offset + layout->output_tiles_bytes;
 
     layout->vtcm_chunked_expanded_slots_offset = qbh_align_up_u32(
-        layout->vtcm_compressed_slot1_offset + layout->w4_bundle_bytes,
+        layout->vtcm_compressed_slot0_offset +
+            compressed_slot_count * layout->w4_bundle_bytes,
         QBH_W4_METADATA_ALIGNMENT);
     layout->vtcm_chunked_output_offset = qbh_align_up_u32(
         layout->vtcm_chunked_expanded_slots_offset +
@@ -200,6 +218,12 @@ static inline uint32_t qbh_projection_expanded_chunk_offset(
     const struct qbh_projection_layout *layout, uint32_t slot) {
     return layout->vtcm_chunked_expanded_slots_offset +
            slot * layout->expanded_chunk_slot_bytes;
+}
+
+static inline uint32_t qbh_projection_compressed_slot_offset(
+    const struct qbh_projection_layout *layout, uint32_t slot) {
+    return layout->vtcm_compressed_slot0_offset +
+           slot * layout->w4_bundle_bytes;
 }
 
 static inline size_t qbh_projection_activation_offset(

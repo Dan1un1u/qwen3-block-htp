@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define QBH_PROBE_MAGIC UINT32_C(0x51424850)
-#define QBH_PROBE_ABI_VERSION UINT32_C(6)
+#define QBH_PROBE_ABI_VERSION UINT32_C(8)
 #define QBH_PROBE_ALIGNMENT UINT32_C(4096)
 
 #define QBH_HMX_SPATIAL UINT32_C(64)
@@ -20,9 +20,12 @@
 #define QBH_HMX_MAX_STREAM_TILES UINT32_C(32)
 
 #define QBH_MAX_HVX_WORKERS UINT32_C(6)
-#define QBH_W4_COMPRESSED_SLOT_COUNT UINT32_C(2)
+#define QBH_W4_DEFAULT_COMPRESSED_SLOT_COUNT UINT32_C(2)
+#define QBH_W4_MAX_COMPRESSED_SLOT_COUNT UINT32_C(4)
 #define QBH_W4_EXPANDED_CHUNK_SLOT_COUNT UINT32_C(8)
-#define QBH_W4_TASK_QUEUE_DEPTH UINT32_C(16)
+#define QBH_W4_TASK_QUEUE_DEPTH UINT32_C(32)
+#define QBH_W4_DEFAULT_CHUNK_TILES UINT32_C(32)
+#define QBH_W4_FINE_CHUNK_TILES UINT32_C(16)
 
 #define QBH_W4_PACKED_TILE_BYTES UINT32_C(512)
 #define QBH_W4_CHANNEL_SCALE_BYTES UINT32_C(32)
@@ -82,6 +85,7 @@ enum qbh_probe_status {
     QBH_PROBE_STATUS_SYNC_FAILED = -15,
     QBH_PROBE_STATUS_LAYOUT_FAILED = -16,
     QBH_PROBE_STATUS_W4_EXPAND_FAILED = -17,
+    QBH_PROBE_STATUS_DCVS_POWER_FAILED = -18,
 };
 
 struct qbh_probe_header {
@@ -95,6 +99,8 @@ struct qbh_probe_header {
     uint32_t weight_storage_variant;
     uint32_t physical_plan;
     uint32_t requested_hvx_workers;
+    uint32_t compressed_slot_count;
+    uint32_t chunk_tiles;
     uint32_t activation_offset;
     uint32_t weight_offset;
     uint32_t output_offset;
@@ -113,6 +119,8 @@ struct qbh_probe_header {
     int32_t hmx_thread_join_status;
     int32_t hmx_power_up_status;
     int32_t hmx_power_down_status;
+    int32_t dcvs_power_setup_status;
+    int32_t dcvs_power_reset_status;
     uint32_t hmx_execution_count;
     uint32_t hmx_stream_count;
     int32_t hvx_lock_status;
@@ -176,7 +184,7 @@ struct qbh_probe_header {
     uint64_t hvx_worker_ticks[QBH_MAX_HVX_WORKERS];
 };
 
-_Static_assert(sizeof(struct qbh_probe_header) == 496,
+_Static_assert(sizeof(struct qbh_probe_header) == 512,
                "probe header ABI changed");
 
 #endif

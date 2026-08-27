@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export REMOTE_ROOT="${REMOTE_ROOT:-/data/local/tmp/qwen3-block-htp/exp0007}"
+
+storage="${1:-packed_w4u8}"
+projection="${2:-gate_up}"
+pattern="${3:-identity}"
+repeat_count="${4:-1}"
+physical_plan="${5:-exp0006_slots2_chunk32_control}"
+
+exec "${project_root}/scripts/poll_exp0006.sh" \
+    "${storage}" "${projection}" "${pattern}" \
+    "${repeat_count}" "${physical_plan}"

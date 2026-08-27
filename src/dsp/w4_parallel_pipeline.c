@@ -43,20 +43,21 @@ struct qbh_parallel_state {
     struct qbh_probe_header *header;
     const struct qbh_projection_layout *layout;
     const uint8_t *activation_tiles;
-    uint8_t *compressed_slots[QBH_W4_COMPRESSED_SLOT_COUNT];
+    uint8_t *compressed_slots[QBH_W4_MAX_COMPRESSED_SLOT_COUNT];
     uint8_t *expanded_slots[QBH_W4_EXPANDED_CHUNK_SLOT_COUNT];
     uint8_t *output_tiles;
 
     struct qbh_chunk_queue queue;
-    qurt_sem_t compressed_free[QBH_W4_COMPRESSED_SLOT_COUNT];
+    qurt_sem_t compressed_free[QBH_W4_MAX_COMPRESSED_SLOT_COUNT];
     qurt_sem_t expanded_free[QBH_W4_EXPANDED_CHUNK_SLOT_COUNT];
     qurt_sem_t expanded_ready[QBH_W4_EXPANDED_CHUNK_SLOT_COUNT];
     qurt_sem_t hmx_started;
     qurt_sem_t hvx_started;
     qurt_mutex_t metrics_mutex;
 
-    volatile uint32_t compressed_remaining[QBH_W4_COMPRESSED_SLOT_COUNT];
-    uint32_t active_hvx_workers;
+    volatile uint32_t
+        compressed_remaining[QBH_W4_MAX_COMPRESSED_SLOT_COUNT];
+    volatile uint32_t active_hvx_workers;
     uint32_t max_active_hvx_workers;
     uint32_t hmx_active;
     uint32_t hvx_hmx_overlap_observed;
@@ -94,6 +95,19 @@ static uint32_t qbh_atomic_dec_return(volatile uint32_t *target) {
     __asm__ __volatile__(
         "1:     %0 = memw_locked(%2)\n"
         "       %0 = add(%0, #-1)\n"
+        "       memw_locked(%2, p0) = %0\n"
+        "       if !p0 jump 1b\n"
+        : "=&r"(result), "+m"(*target)
+        : "r"(target)
+        : "p0");
+    return result;
+}
+
+static uint32_t qbh_atomic_inc_return(volatile uint32_t *target) {
+    uint32_t result;
+    __asm__ __volatile__(
+        "1:     %0 = memw_locked(%2)\n"
+        "       %0 = add(%0, #1)\n"
         "       memw_locked(%2, p0) = %0\n"
         "       if !p0 jump 1b\n"
         : "=&r"(result), "+m"(*target)
@@ -186,45 +200,43 @@ static int qbh_stage_weight_bundle(struct qbh_probe_header *header,
 }
 
 static void qbh_hvx_region_begin(struct qbh_parallel_state *state) {
-    qurt_mutex_lock(&state->metrics_mutex);
-    ++state->active_hvx_workers;
-    if (state->active_hvx_workers > state->max_active_hvx_workers) {
-        state->max_active_hvx_workers = state->active_hvx_workers;
+    uint32_t active = qbh_atomic_inc_return(&state->active_hvx_workers);
+    if (active > state->max_active_hvx_workers) {
+        qurt_mutex_lock(&state->metrics_mutex);
+        if (active > state->max_active_hvx_workers) {
+            state->max_active_hvx_workers = active;
+        }
+        qurt_mutex_unlock(&state->metrics_mutex);
     }
-    if (state->active_hvx_workers > 1U) {
+    if (active > 1U) {
         state->hvx_parallel_overlap_observed = 1U;
     }
     if (state->hmx_active != 0U) {
         state->hvx_hmx_overlap_observed = 1U;
     }
-    qurt_mutex_unlock(&state->metrics_mutex);
 }
 
 static void qbh_hvx_region_end(struct qbh_parallel_state *state) {
-    qurt_mutex_lock(&state->metrics_mutex);
     if (state->hmx_active != 0U) {
         state->hvx_hmx_overlap_observed = 1U;
     }
-    --state->active_hvx_workers;
-    qurt_mutex_unlock(&state->metrics_mutex);
+    (void)qbh_atomic_dec_return(&state->active_hvx_workers);
 }
 
 static void qbh_hmx_region_begin(struct qbh_parallel_state *state) {
-    qurt_mutex_lock(&state->metrics_mutex);
     state->hmx_active = 1U;
+    asm volatile("barrier" : : : "memory");
     if (state->active_hvx_workers != 0U) {
         state->hvx_hmx_overlap_observed = 1U;
     }
-    qurt_mutex_unlock(&state->metrics_mutex);
 }
 
 static void qbh_hmx_region_end(struct qbh_parallel_state *state) {
-    qurt_mutex_lock(&state->metrics_mutex);
     if (state->active_hvx_workers != 0U) {
         state->hvx_hmx_overlap_observed = 1U;
     }
+    asm volatile("barrier" : : : "memory");
     state->hmx_active = 0U;
-    qurt_mutex_unlock(&state->metrics_mutex);
 }
 
 static void qbh_hvx_worker_main(void *opaque) {
@@ -417,10 +429,11 @@ int qbh_run_chunked_w4_pipeline(
     state.layout = layout;
     state.activation_tiles = activation_tiles;
     state.output_tiles = vtcm + layout->vtcm_output_offset;
-    state.compressed_slots[0] =
-        vtcm + layout->vtcm_compressed_slot0_offset;
-    state.compressed_slots[1] =
-        vtcm + layout->vtcm_compressed_slot1_offset;
+    for (uint32_t slot = 0; slot < layout->compressed_slot_count;
+         ++slot) {
+        state.compressed_slots[slot] =
+            vtcm + qbh_projection_compressed_slot_offset(layout, slot);
+    }
     for (uint32_t slot = 0;
          slot < QBH_W4_EXPANDED_CHUNK_SLOT_COUNT; ++slot) {
         state.expanded_slots[slot] =
@@ -431,7 +444,7 @@ int qbh_run_chunked_w4_pipeline(
     qurt_mutex_init(&state.metrics_mutex);
     qurt_sem_init_val(&state.hmx_started, 0);
     qurt_sem_init_val(&state.hvx_started, 0);
-    for (uint32_t slot = 0; slot < QBH_W4_COMPRESSED_SLOT_COUNT;
+    for (uint32_t slot = 0; slot < layout->compressed_slot_count;
          ++slot) {
         qurt_sem_init_val(&state.compressed_free[slot], 1);
     }
@@ -515,14 +528,14 @@ int qbh_run_chunked_w4_pipeline(
              ++output_tile) {
             uint32_t linear_output = repeat * layout->n_tiles + output_tile;
             uint32_t compressed_slot =
-                linear_output % QBH_W4_COMPRESSED_SLOT_COUNT;
+                linear_output % layout->compressed_slot_count;
             uint64_t wait_start = HAP_perf_get_qtimer_count();
             uint64_t stage_start;
 
             qurt_sem_down(&state.compressed_free[compressed_slot]);
             header->producer_slot_wait_ticks +=
                 HAP_perf_get_qtimer_count() - wait_start;
-            if (linear_output >= QBH_W4_COMPRESSED_SLOT_COUNT) {
+            if (linear_output >= layout->compressed_slot_count) {
                 ++header->weight_slot_reuse_count;
             }
 
@@ -682,7 +695,7 @@ cleanup:
         qurt_sem_destroy(&state.expanded_ready[slot]);
         qurt_sem_destroy(&state.expanded_free[slot]);
     }
-    for (uint32_t slot = 0; slot < QBH_W4_COMPRESSED_SLOT_COUNT;
+    for (uint32_t slot = 0; slot < layout->compressed_slot_count;
          ++slot) {
         qurt_sem_destroy(&state.compressed_free[slot]);
     }

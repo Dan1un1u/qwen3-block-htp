@@ -84,6 +84,8 @@ static int header_is_valid(const struct qbh_probe_header *header,
     if (qbh_projection_layout_init(header->projection_variant,
                                    header->weight_storage_variant,
                                    header->physical_plan,
+                                   header->compressed_slot_count,
+                                   header->chunk_tiles,
                                    layout) != 0) {
         return 0;
     }
@@ -113,6 +115,9 @@ static int vtcm_layout_is_aligned(
            ((base + layout->vtcm_compressed_slot1_offset) &
             UINT32_C(255)) ==
                0 &&
+           ((base + qbh_projection_compressed_slot_offset(
+                        layout, layout->compressed_slot_count - 1U)) &
+            UINT32_C(255)) == 0 &&
            ((base + layout->vtcm_expanded_slot0_offset) &
             UINT32_C(255)) == 0 &&
            ((base + layout->vtcm_expanded_slot1_offset) &
@@ -320,8 +325,10 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     int hmx_thread_joined = 0;
     int hmx_thread_exit_status = 0;
     HAP_power_request_t hmx_power_request;
+    HAP_power_request_t dcvs_power_request;
     int hmx_power_context = 0;
     int hmx_powered = 0;
+    int dcvs_powered = 0;
     int hvx_locked = 0;
     int cache_result;
     int result = AEE_SUCCESS;
@@ -368,6 +375,8 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     header->hmx_thread_join_status = 0;
     header->hmx_power_up_status = 0;
     header->hmx_power_down_status = 0;
+    header->dcvs_power_setup_status = 0;
+    header->dcvs_power_reset_status = 0;
     header->hmx_execution_count = 0;
     header->hmx_stream_count = 0;
     header->hvx_lock_status = 0;
@@ -433,12 +442,44 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     header->hmx_window_end = 0;
     dsp_total_start = HAP_perf_get_qtimer_count();
     FARF(ALWAYS,
-         "EXP0006 stage=header_valid projection=%u storage=%u plan=%u "
-         "workers=%u M=%u K=%u N=%u vtcm_plan=%u",
+         "EXP0007 stage=header_valid projection=%u storage=%u plan=%u "
+         "workers=%u compressed_slots=%u chunk_tiles=%u "
+         "M=%u K=%u N=%u vtcm_plan=%u",
          layout.variant, layout.weight_storage_variant,
-         layout.physical_plan, header->requested_hvx_workers, layout.m,
+         layout.physical_plan, header->requested_hvx_workers,
+         layout.compressed_slot_count, layout.chunk_tiles, layout.m,
          layout.k, layout.n,
          layout.vtcm_plan_bytes);
+
+    memset(&dcvs_power_request, 0, sizeof(dcvs_power_request));
+    dcvs_power_request.type = HAP_power_set_DCVS_v3;
+    dcvs_power_request.dcvs_v3.dcvs_enable = 1;
+    dcvs_power_request.dcvs_v3.dcvs_option =
+        HAP_DCVS_V2_PERFORMANCE_MODE;
+    dcvs_power_request.dcvs_v3.set_latency = 1;
+    dcvs_power_request.dcvs_v3.latency = 100;
+    dcvs_power_request.dcvs_v3.set_core_params = 1;
+    dcvs_power_request.dcvs_v3.core_params.min_corner =
+        HAP_DCVS_VCORNER_NOM;
+    dcvs_power_request.dcvs_v3.core_params.max_corner =
+        HAP_DCVS_VCORNER_TURBO_L3;
+    dcvs_power_request.dcvs_v3.core_params.target_corner =
+        HAP_DCVS_VCORNER_TURBO_L3;
+    dcvs_power_request.dcvs_v3.set_bus_params = 1;
+    dcvs_power_request.dcvs_v3.bus_params.min_corner =
+        HAP_DCVS_VCORNER_NOM;
+    dcvs_power_request.dcvs_v3.bus_params.max_corner =
+        HAP_DCVS_VCORNER_TURBO_L3;
+    dcvs_power_request.dcvs_v3.bus_params.target_corner =
+        HAP_DCVS_VCORNER_TURBO_L3;
+    header->dcvs_power_setup_status = HAP_power_set(
+        &hmx_power_context, &dcvs_power_request);
+    if (header->dcvs_power_setup_status != AEE_SUCCESS) {
+        header->dsp_status = QBH_PROBE_STATUS_DCVS_POWER_FAILED;
+        result = AEE_EFAILED;
+        goto cleanup;
+    }
+    dcvs_powered = 1;
 
     memset(&hmx_power_request, 0, sizeof(hmx_power_request));
     hmx_power_request.type = HAP_power_set_HMX;
@@ -771,6 +812,17 @@ cleanup:
             &hmx_power_context, &hmx_power_request);
         if (header->hmx_power_down_status != AEE_SUCCESS) {
             header->dsp_status = QBH_PROBE_STATUS_HMX_POWER_FAILED;
+            if (result == AEE_SUCCESS) {
+                result = AEE_EFAILED;
+            }
+        }
+    }
+    if (dcvs_powered) {
+        HAP_power_set_dcvs_v3_init(&dcvs_power_request);
+        header->dcvs_power_reset_status = HAP_power_set(
+            &hmx_power_context, &dcvs_power_request);
+        if (header->dcvs_power_reset_status != AEE_SUCCESS) {
+            header->dsp_status = QBH_PROBE_STATUS_DCVS_POWER_FAILED;
             if (result == AEE_SUCCESS) {
                 result = AEE_EFAILED;
             }
