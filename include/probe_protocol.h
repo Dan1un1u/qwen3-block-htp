@@ -176,7 +176,7 @@ struct qbh_probe_header {
     uint64_t hvx_worker_ticks[QBH_MAX_HVX_WORKERS];
 };
 
-_Static_assert(sizeof(struct qbh_probe_header) == 464,
+_Static_assert(sizeof(struct qbh_probe_header) == 496,
                "probe header ABI changed");
 
 #endif
