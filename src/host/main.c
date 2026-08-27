@@ -83,6 +83,25 @@ static const char *physical_plan_name(uint32_t physical_plan,
                                       uint32_t hvx_workers,
                                       uint32_t compressed_slots,
                                       uint32_t chunk_tiles) {
+    if (physical_plan ==
+        QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4) {
+        switch (hvx_workers) {
+            case 2: return "stream32_gate_hvx2";
+            case 3: return "stream32_gate_hvx3";
+            case 4: return "stream32_gate_hvx4";
+            case 6: return "stream32_gate_hvx6";
+            default: return "invalid";
+        }
+    }
+    if (physical_plan == QBH_PHYSICAL_PLAN_STREAMING_DMA_BATCH2) {
+        switch (hvx_workers) {
+            case 2: return "stream32_down_hvx2";
+            case 3: return "stream32_down_hvx3";
+            case 4: return "stream32_down_hvx4";
+            case 6: return "stream32_down_hvx6";
+            default: return "invalid";
+        }
+    }
     if (physical_plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE) {
         return "exp0005_full_bundle_control";
     }
@@ -189,6 +208,27 @@ static int parse_physical_plan(const char *text, uint32_t *physical_plan,
                                uint32_t *hvx_workers,
                                uint32_t *compressed_slots,
                                uint32_t *chunk_tiles) {
+    if (strcmp(text, "stream32_gate_hvx2") == 0 ||
+        strcmp(text, "stream32_gate_hvx3") == 0 ||
+        strcmp(text, "stream32_gate_hvx4") == 0 ||
+        strcmp(text, "stream32_gate_hvx6") == 0) {
+        *physical_plan =
+            QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4;
+        *hvx_workers = (uint32_t)(text[17] - '0');
+        *compressed_slots = 8U;
+        *chunk_tiles = QBH_W4_COARSE_CHUNK_TILES;
+        return 0;
+    }
+    if (strcmp(text, "stream32_down_hvx2") == 0 ||
+        strcmp(text, "stream32_down_hvx3") == 0 ||
+        strcmp(text, "stream32_down_hvx4") == 0 ||
+        strcmp(text, "stream32_down_hvx6") == 0) {
+        *physical_plan = QBH_PHYSICAL_PLAN_STREAMING_DMA_BATCH2;
+        *hvx_workers = (uint32_t)(text[17] - '0');
+        *compressed_slots = 4U;
+        *chunk_tiles = QBH_W4_WIDE_CHUNK_TILES;
+        return 0;
+    }
     if (strcmp(text, "exp0005_full_bundle_control") == 0 ||
         strcmp(text, "full_bundle") == 0 ||
         strcmp(text, "control") == 0) {
@@ -962,6 +1002,7 @@ int main(int argc, char **argv) {
     uint32_t expected_dma_descriptors;
     uint32_t expected_dma_chains;
     uint32_t expected_expands;
+    uint32_t expected_superchunks;
     int shared_fd = -1;
     int mapped = 0;
     int result = EXIT_FAILURE;
@@ -1035,7 +1076,11 @@ int main(int argc, char **argv) {
                 "slots8e7_chunk64_dma_batch4|"
                 "slots8e7_chunk96_dma_batch4|"
                 "slots8e7_chunk64_dma_chain4|"
-                "slots8e7_chunk96_dma_chain4] "
+                "slots8e7_chunk96_dma_chain4|"
+                "stream32_gate_hvx2|stream32_gate_hvx3|"
+                "stream32_gate_hvx4|stream32_gate_hvx6|"
+                "stream32_down_hvx2|stream32_down_hvx3|"
+                "stream32_down_hvx4|stream32_down_hvx6] "
                 "[scalar_memcpy|linked_2d_dma] "
                 "[transient_resources|prepared_session] "
                 "[single_invocation|two_call_control]\n",
@@ -1345,7 +1390,7 @@ int main(int argc, char **argv) {
         aggregate_output_tile_count += call_header->output_tile_count;
     }
 
-    printf("{\"experiment\":\"EXP-0017\","
+    printf("{\"experiment\":\"EXP-0019\","
            "\"weight_storage\":\"%s\","
            "\"physical_plan\":\"%s\","
            "\"requested_hvx_workers\":%" PRIu32 ","
@@ -1476,7 +1521,9 @@ int main(int argc, char **argv) {
            "\"hmx_window_end\":%" PRIu64 ","
            "\"hvx_worker_ticks\":[%" PRIu64 ",%" PRIu64 ","
            "%" PRIu64 ",%" PRIu64 ",%" PRIu64 ",%" PRIu64 "],"
-           "\"dma_status\":%d,\"sync_status\":%d}\n",
+           "\"dma_status\":%d,\"sync_status\":%d,"
+           "\"streaming_region_publish_count\":%" PRIu32 ","
+           "\"streaming_ready_timeout_count\":%" PRIu32 "}\n",
            storage_name(storage),
            physical_plan_name(physical_plan, requested_hvx_workers,
                               compressed_slot_count, chunk_tiles),
@@ -1578,7 +1625,9 @@ int main(int argc, char **argv) {
            header->hvx_worker_ticks[2], header->hvx_worker_ticks[3],
            header->hvx_worker_ticks[4], header->hvx_worker_ticks[5],
            header->dma_status,
-           header->sync_status);
+           header->sync_status,
+           header->streaming_region_publish_count,
+           header->streaming_ready_timeout_count);
 
     expected_weight_stages = repeats * layout.n_tiles;
     expected_reuses = expected_weight_stages > compressed_slot_count
@@ -1603,11 +1652,17 @@ int main(int argc, char **argv) {
             ? expected_weight_stages /
                   qbh_physical_plan_dma_bundle_batch(physical_plan)
             : 0U;
+    expected_superchunks =
+        expected_weight_stages * layout.chunks_per_output;
     expected_expands = qbh_weight_storage_is_packed_w4(storage)
                            ? expected_weight_stages *
-                                 (qbh_physical_plan_is_chunked(physical_plan)
-                                      ? layout.chunks_per_output
-                                      : 1U)
+                                 (qbh_physical_plan_is_streaming(physical_plan)
+                                      ? layout.k_tiles /
+                                            QBH_W4_STREAM_REGION_TILES
+                                      : (qbh_physical_plan_is_chunked(
+                                             physical_plan)
+                                             ? layout.chunks_per_output
+                                             : 1U))
                            : 0U;
     int all_measured_calls_valid = 1;
     for (uint32_t call = 0; call < measured_rpc_calls; ++call) {
@@ -1627,6 +1682,7 @@ int main(int argc, char **argv) {
             call_header->output_tile_count != expected_weight_stages ||
             call_header->dma_descriptor_timeout_count != 0U ||
             call_header->output_dma_descriptor_timeout_count != 0U ||
+            call_header->streaming_ready_timeout_count != 0U ||
             call_header->dma_status != 0 ||
             call_header->sync_status != 0) {
             all_measured_calls_valid = 0;
@@ -1745,11 +1801,16 @@ int main(int argc, char **argv) {
                  : 0U) &&
         header->expanded_chunk_slot_reuse_count ==
             (qbh_physical_plan_is_chunked(physical_plan) &&
-                     expected_expands >
+                     expected_superchunks >
                          layout.expanded_slot_count
-                 ? expected_expands -
+                 ? expected_superchunks -
                        layout.expanded_slot_count
                  : 0U) &&
+        header->streaming_region_publish_count ==
+            (qbh_physical_plan_is_streaming(physical_plan)
+                 ? expected_expands
+                 : 0U) &&
+        header->streaming_ready_timeout_count == 0U &&
         (qbh_physical_plan_is_full_bundle(physical_plan) ||
          (header->hvx_workers_created == requested_hvx_workers &&
           header->hvx_workers_locked == requested_hvx_workers &&

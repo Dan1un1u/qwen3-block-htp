@@ -102,8 +102,20 @@ static inline int qbh_projection_layout_init(
     if ((physical_plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_BATCH2 &&
          compressed_slot_count != 4U) ||
         ((physical_plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_BATCH4 ||
-          physical_plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_CHAIN4) &&
+          physical_plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_CHAIN4 ||
+          physical_plan ==
+              QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4) &&
          compressed_slot_count != 8U)) {
+        return -1;
+    }
+    if ((physical_plan == QBH_PHYSICAL_PLAN_STREAMING_DMA_BATCH2 &&
+         (variant != QBH_PROJECTION_DOWN || compressed_slot_count != 4U ||
+          chunk_tiles != QBH_W4_WIDE_CHUNK_TILES)) ||
+        (physical_plan ==
+             QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4 &&
+         (variant != QBH_PROJECTION_GATE_UP_PAIR ||
+          compressed_slot_count != 8U ||
+          chunk_tiles != QBH_W4_COARSE_CHUNK_TILES))) {
         return -1;
     }
     if (weight_storage_variant == QBH_WEIGHT_PACKED_W4_HMX_SCALE &&
@@ -260,6 +272,14 @@ static inline size_t qbh_projection_logical_weight_offset(
     uint32_t output_channel) {
     return (size_t)input_channel * layout->n + output_channel;
 }
+
+int32_t qbh_hmx_accumulate_u8s8_streaming(
+    const uint8_t *activation_tiles, const int8_t *expanded_weight_tiles,
+    const uint32_t *bias_words, uint32_t begin_output,
+    const volatile uint32_t *ready_generations,
+    uint32_t expected_generation, uint32_t stream_count,
+    volatile int32_t *abort_status, uint64_t timeout_ticks,
+    uint64_t *ready_wait_ticks);
 
 static inline size_t qbh_projection_expanded_bundle_offset(
     const struct qbh_projection_layout *layout, uint32_t output_tile) {

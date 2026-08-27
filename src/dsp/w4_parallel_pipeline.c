@@ -15,6 +15,7 @@
 #define QBH_HVX_WORKER_STACK_BYTES UINT32_C(8192)
 #define QBH_CHUNKED_HMX_STACK_BYTES UINT32_C(16384)
 #define QBH_DMA_DESCRIPTOR_TIMEOUT_TICKS UINT64_C(1920000)
+#define QBH_STREAM_READY_TIMEOUT_TICKS UINT64_C(1920000)
 
 static uint8_t qbh_hvx_worker_stacks[QBH_MAX_HVX_WORKERS]
                                     [QBH_HVX_WORKER_STACK_BYTES]
@@ -29,6 +30,9 @@ struct qbh_chunk_task {
     uint32_t expanded_slot;
     uint32_t chunk_index;
     uint32_t chunk_tiles;
+    uint32_t stream_region_index;
+    uint32_t stream_region_tiles;
+    uint32_t stream_generation;
 };
 
 struct qbh_chunk_queue {
@@ -58,6 +62,9 @@ struct qbh_parallel_state {
 
     volatile uint32_t
         compressed_remaining[QBH_W4_MAX_COMPRESSED_SLOT_COUNT];
+    volatile uint32_t stream_ready_generation
+        [QBH_W4_EXPANDED_CHUNK_SLOT_COUNT]
+        [QBH_W4_MAX_STREAM_REGIONS];
     volatile uint32_t active_hvx_workers;
     uint32_t max_active_hvx_workers;
     uint32_t hmx_active;
@@ -91,6 +98,9 @@ struct qbh_chunked_hmx_job {
     uint64_t last_compute_end;
 };
 
+static void qbh_abort_pipeline(struct qbh_parallel_state *state,
+                               int32_t status);
+
 static uint32_t qbh_atomic_dec_return(volatile uint32_t *target) {
     uint32_t result;
     __asm__ __volatile__(
@@ -115,6 +125,13 @@ static uint32_t qbh_atomic_inc_return(volatile uint32_t *target) {
         : "r"(target)
         : "p0");
     return result;
+}
+
+static uint32_t qbh_stream_region_count(
+    const struct qbh_projection_layout *layout, uint32_t chunk_index) {
+    uint32_t chunk_tiles =
+        qbh_projection_chunk_tiles(layout, chunk_index);
+    return chunk_tiles / QBH_W4_STREAM_REGION_TILES;
 }
 
 static void qbh_queue_init(struct qbh_chunk_queue *queue) {
@@ -334,6 +351,9 @@ static void qbh_hvx_worker_main(void *opaque) {
         uint64_t end;
         const uint8_t *compressed;
         uint8_t *expanded;
+        uint32_t region_tiles;
+        size_t packed_offset;
+        size_t expanded_offset;
 
         qbh_queue_pop(&state->queue, &task);
         if (task.stop != 0U) {
@@ -342,6 +362,23 @@ static void qbh_hvx_worker_main(void *opaque) {
 
         compressed = state->compressed_slots[task.compressed_slot];
         expanded = state->expanded_slots[task.expanded_slot];
+        if (qbh_physical_plan_is_streaming(layout->physical_plan)) {
+            region_tiles = task.stream_region_tiles;
+            packed_offset =
+                ((size_t)task.chunk_index * layout->chunk_tiles +
+                 (size_t)task.stream_region_index *
+                     QBH_W4_STREAM_REGION_TILES) *
+                QBH_W4_PACKED_TILE_BYTES;
+            expanded_offset =
+                (size_t)task.stream_region_index *
+                QBH_W4_STREAM_REGION_TILES * QBH_HMX_WEIGHT_BYTES;
+        } else {
+            region_tiles = task.chunk_tiles;
+            packed_offset =
+                (size_t)task.chunk_index * layout->chunk_tiles *
+                QBH_W4_PACKED_TILE_BYTES;
+            expanded_offset = 0U;
+        }
         start = HAP_perf_get_qtimer_count();
         if (job->first_expand_start == 0U) {
             job->first_expand_start = start;
@@ -350,19 +387,17 @@ static void qbh_hvx_worker_main(void *opaque) {
         if (layout->weight_storage_variant ==
             QBH_WEIGHT_PACKED_W4_HMX_SCALE) {
             qbh_unpack_w4_to_s8_hvx(
-                compressed +
-                    (size_t)task.chunk_index * layout->chunk_tiles *
-                        QBH_W4_PACKED_TILE_BYTES,
-                (int8_t *)expanded, task.chunk_tiles);
+                compressed + packed_offset,
+                (int8_t *)(expanded + expanded_offset), region_tiles);
         } else {
             qbh_expand_w4_to_s8_hvx(
-                compressed +
-                    (size_t)task.chunk_index * layout->chunk_tiles *
-                        QBH_W4_PACKED_TILE_BYTES,
+                compressed + packed_offset,
                 compressed + layout->w4_scale_offset,
-                (int8_t *)expanded, task.chunk_tiles);
+                (int8_t *)(expanded + expanded_offset), region_tiles);
         }
-        if (task.chunk_index == 0U) {
+        if (task.chunk_index == 0U &&
+            (!qbh_physical_plan_is_streaming(layout->physical_plan) ||
+             task.stream_region_index == 0U)) {
             qbh_copy_hmx_bias_hvx(
                 compressed + layout->w4_bias_offset,
                 expanded + layout->expanded_chunk_weight_bytes);
@@ -374,7 +409,20 @@ static void qbh_hvx_worker_main(void *opaque) {
         ++job->expand_count;
 
         asm volatile("barrier" : : : "memory");
-        qurt_sem_up(&state->expanded_ready[task.expanded_slot]);
+        if (qbh_physical_plan_is_streaming(layout->physical_plan)) {
+            volatile uint32_t *ready =
+                &state->stream_ready_generation[task.expanded_slot]
+                                                     [task.stream_region_index];
+            *ready = task.stream_generation;
+            asm volatile("release(%0):at"
+                         :
+                         : "r"(ready)
+                         : "memory");
+            (void)qbh_atomic_inc_return(
+                &state->header->streaming_region_publish_count);
+        } else {
+            qurt_sem_up(&state->expanded_ready[task.expanded_slot]);
+        }
         if (qbh_atomic_dec_return(
                 &state->compressed_remaining[task.compressed_slot]) == 0U) {
             qurt_sem_up(&state->compressed_free[task.compressed_slot]);
@@ -418,6 +466,71 @@ static void qbh_chunked_hmx_main(void *opaque) {
                 uint64_t wait_start = HAP_perf_get_qtimer_count();
                 uint64_t core_start;
                 uint64_t core_end;
+
+                if (qbh_physical_plan_is_streaming(
+                        layout->physical_plan)) {
+                    uint32_t stream_regions =
+                        qbh_stream_region_count(layout, chunk_index);
+                    uint32_t generation = sequence + 1U;
+                    uint64_t stream_ready_wait = 0U;
+                    int32_t streams;
+
+                    if (stream_regions == 0U ||
+                        stream_regions > QBH_W4_MAX_STREAM_REGIONS ||
+                        chunk_tiles != stream_regions *
+                                           QBH_W4_STREAM_REGION_TILES) {
+                        exit_status = AEE_EBADPARM;
+                        state->abort_status = exit_status;
+                        goto unlock;
+                    }
+                    core_start = HAP_perf_get_qtimer_count();
+                    if (job->first_compute_start == 0U) {
+                        job->first_compute_start = core_start;
+                    }
+                    qbh_hmx_region_begin(state);
+                    streams = qbh_hmx_accumulate_u8s8_streaming(
+                        state->activation_tiles +
+                            (size_t)chunk_index * layout->chunk_tiles *
+                                QBH_HMX_ACTIVATION_BYTES,
+                        (const int8_t *)state
+                            ->expanded_slots[expanded_slot],
+                        (const uint32_t *)(
+                            state->expanded_slots[expanded_slot] +
+                            layout->expanded_chunk_weight_bytes),
+                        chunk_index == 0U,
+                        state->stream_ready_generation[expanded_slot],
+                        generation, stream_regions,
+                        &state->abort_status,
+                        QBH_STREAM_READY_TIMEOUT_TICKS,
+                        &stream_ready_wait);
+                    qbh_hmx_region_end(state);
+                    core_end = HAP_perf_get_qtimer_count();
+                    job->ready_wait_ticks += stream_ready_wait;
+                    if (streams < 0) {
+                        if (streams == -2) {
+                            ++state->header
+                                  ->streaming_ready_timeout_count;
+                        }
+                        exit_status = AEE_EFAILED;
+                        qbh_abort_pipeline(state, exit_status);
+                        goto unlock;
+                    }
+                    job->stream_count += (uint32_t)streams;
+                    job->execution_count += chunk_tiles;
+                    if (chunk_index + 1U ==
+                        layout->chunks_per_output) {
+                        qbh_hmx_store_u8_output(
+                            state->output_tiles +
+                            (size_t)output_tile *
+                                QBH_HMX_OUTPUT_BYTES);
+                    }
+                    job->last_compute_end = core_end;
+                    job->compute_ticks +=
+                        core_end - core_start - stream_ready_wait;
+                    qurt_sem_up(
+                        &state->expanded_free[expanded_slot]);
+                    continue;
+                }
 
                 qurt_sem_down(&state->expanded_ready[expanded_slot]);
                 job->ready_wait_ticks +=
@@ -477,6 +590,11 @@ static void qbh_abort_pipeline(struct qbh_parallel_state *state,
     for (uint32_t slot = 0;
          slot < layout->expanded_slot_count; ++slot) {
         qurt_sem_up(&state->expanded_ready[slot]);
+        qurt_sem_up(&state->expanded_free[slot]);
+    }
+    for (uint32_t slot = 0;
+         slot < layout->compressed_slot_count; ++slot) {
+        qurt_sem_up(&state->compressed_free[slot]);
     }
 }
 
@@ -487,10 +605,11 @@ static void qbh_publish_w4_bundle(
     struct qbh_probe_header *header = state->header;
 
     state->compressed_remaining[compressed_slot] =
-        layout->chunks_per_output;
+        qbh_physical_plan_is_streaming(layout->physical_plan)
+            ? layout->k_tiles / QBH_W4_STREAM_REGION_TILES
+            : layout->chunks_per_output;
     for (uint32_t chunk_index = 0;
          chunk_index < layout->chunks_per_output; ++chunk_index) {
-        struct qbh_chunk_task task;
         uint32_t sequence =
             linear_output * layout->chunks_per_output + chunk_index;
         uint32_t expanded_slot =
@@ -503,14 +622,41 @@ static void qbh_publish_w4_bundle(
         if (sequence >= layout->expanded_slot_count) {
             ++header->expanded_chunk_slot_reuse_count;
         }
-        memset(&task, 0, sizeof(task));
-        task.sequence = sequence;
-        task.compressed_slot = compressed_slot;
-        task.expanded_slot = expanded_slot;
-        task.chunk_index = chunk_index;
-        task.chunk_tiles =
-            qbh_projection_chunk_tiles(layout, chunk_index);
-        qbh_queue_push(&state->queue, &task);
+        if (qbh_physical_plan_is_streaming(layout->physical_plan)) {
+            uint32_t regions =
+                qbh_stream_region_count(layout, chunk_index);
+            uint32_t generation = sequence + 1U;
+            for (uint32_t region = 0;
+                 region < QBH_W4_MAX_STREAM_REGIONS; ++region) {
+                state->stream_ready_generation[expanded_slot][region] = 0U;
+            }
+            asm volatile("barrier" : : : "memory");
+            for (uint32_t region = 0; region < regions; ++region) {
+                struct qbh_chunk_task task;
+                memset(&task, 0, sizeof(task));
+                task.sequence = sequence;
+                task.compressed_slot = compressed_slot;
+                task.expanded_slot = expanded_slot;
+                task.chunk_index = chunk_index;
+                task.chunk_tiles =
+                    qbh_projection_chunk_tiles(layout, chunk_index);
+                task.stream_region_index = region;
+                task.stream_region_tiles =
+                    QBH_W4_STREAM_REGION_TILES;
+                task.stream_generation = generation;
+                qbh_queue_push(&state->queue, &task);
+            }
+        } else {
+            struct qbh_chunk_task task;
+            memset(&task, 0, sizeof(task));
+            task.sequence = sequence;
+            task.compressed_slot = compressed_slot;
+            task.expanded_slot = expanded_slot;
+            task.chunk_index = chunk_index;
+            task.chunk_tiles =
+                qbh_projection_chunk_tiles(layout, chunk_index);
+            qbh_queue_push(&state->queue, &task);
+        }
     }
 }
 
@@ -540,6 +686,13 @@ int qbh_run_chunked_w4_pipeline(
             layout->weight_storage_variant) ||
         header->requested_hvx_workers == 0U ||
         header->requested_hvx_workers > QBH_MAX_HVX_WORKERS) {
+        return AEE_EBADPARM;
+    }
+    if (qbh_physical_plan_is_streaming(layout->physical_plan) &&
+        ((layout->chunk_tiles % QBH_W4_STREAM_REGION_TILES) != 0U ||
+         (layout->k_tiles % QBH_W4_STREAM_REGION_TILES) != 0U ||
+         layout->chunk_tiles / QBH_W4_STREAM_REGION_TILES >
+             QBH_W4_MAX_STREAM_REGIONS)) {
         return AEE_EBADPARM;
     }
     dma_bundle_batch = qbh_physical_plan_dma_bundle_batch(
@@ -660,6 +813,11 @@ int qbh_run_chunked_w4_pipeline(
             uint32_t first_compressed_slot =
                 linear_base % layout->compressed_slot_count;
 
+            if (state.abort_status != 0) {
+                result = state.abort_status;
+                goto stop_workers;
+            }
+
             for (uint32_t batch_index = 0;
                  batch_index < dma_bundle_batch; ++batch_index) {
                 uint32_t linear_output = linear_base + batch_index;
@@ -669,6 +827,10 @@ int qbh_run_chunked_w4_pipeline(
                 qurt_sem_down(&state.compressed_free[compressed_slot]);
                 header->producer_slot_wait_ticks +=
                     HAP_perf_get_qtimer_count() - wait_start;
+                if (state.abort_status != 0) {
+                    result = state.abort_status;
+                    goto stop_workers;
+                }
                 if (linear_output >= layout->compressed_slot_count) {
                     ++header->weight_slot_reuse_count;
                 }
@@ -820,7 +982,11 @@ stop_workers:
          joined_hvx_workers != header->requested_hvx_workers ||
          header->weight_expand_count !=
              header->repeat_count * layout->n_tiles *
-                 layout->chunks_per_output)) {
+                 (qbh_physical_plan_is_streaming(
+                      layout->physical_plan)
+                      ? layout->k_tiles /
+                            QBH_W4_STREAM_REGION_TILES
+                      : layout->chunks_per_output))) {
         result = AEE_EFAILED;
     }
 

@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define QBH_PROBE_MAGIC UINT32_C(0x51424850)
-#define QBH_PROBE_ABI_VERSION UINT32_C(18)
+#define QBH_PROBE_ABI_VERSION UINT32_C(20)
 #define QBH_PROBE_ALIGNMENT UINT32_C(4096)
 
 #define QBH_HMX_SPATIAL UINT32_C(64)
@@ -29,6 +29,8 @@
 #define QBH_W4_FINE_CHUNK_TILES UINT32_C(16)
 #define QBH_W4_COARSE_CHUNK_TILES UINT32_C(64)
 #define QBH_W4_WIDE_CHUNK_TILES UINT32_C(96)
+#define QBH_W4_STREAM_REGION_TILES UINT32_C(32)
+#define QBH_W4_MAX_STREAM_REGIONS UINT32_C(3)
 
 #define QBH_W4_PACKED_TILE_BYTES UINT32_C(512)
 #define QBH_W4_CHANNEL_SCALE_BYTES UINT32_C(32)
@@ -77,6 +79,8 @@ enum qbh_physical_plan {
     QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_BATCH2 = 9,
     QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_BATCH4 = 10,
     QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_CHAIN4 = 11,
+    QBH_PHYSICAL_PLAN_STREAMING_DMA_BATCH2 = 12,
+    QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4 = 13,
 };
 
 static inline int qbh_physical_plan_is_full_bundle(uint32_t plan) {
@@ -93,7 +97,9 @@ static inline int qbh_physical_plan_is_chunked(uint32_t plan) {
            plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_CHAIN4 ||
            plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_BATCH2 ||
            plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_BATCH4 ||
-           plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_CHAIN4;
+           plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_CHAIN4 ||
+           plan == QBH_PHYSICAL_PLAN_STREAMING_DMA_BATCH2 ||
+           plan == QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4;
 }
 
 static inline uint32_t qbh_physical_plan_dma_bundle_batch(uint32_t plan) {
@@ -101,13 +107,15 @@ static inline uint32_t qbh_physical_plan_dma_bundle_batch(uint32_t plan) {
         plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH2 ||
         plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE_DMA_CHAIN2 ||
         plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_CHAIN2 ||
-        plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_BATCH2) {
+        plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_BATCH2 ||
+        plan == QBH_PHYSICAL_PLAN_STREAMING_DMA_BATCH2) {
         return 2U;
     }
     if (plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH4 ||
         plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_CHAIN4 ||
         plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_BATCH4 ||
-        plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_CHAIN4) {
+        plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_CHAIN4 ||
+        plan == QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4) {
         return 4U;
     }
     return 1U;
@@ -117,16 +125,23 @@ static inline int qbh_physical_plan_uses_linked_dma(uint32_t plan) {
     return plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE_DMA_CHAIN2 ||
            plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_CHAIN2 ||
            plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_CHAIN4 ||
-           plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_CHAIN4;
+           plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_CHAIN4 ||
+           plan == QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4;
 }
 
 static inline uint32_t qbh_physical_plan_expanded_slot_count(
     uint32_t plan) {
     return plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_BATCH2 ||
                    plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_BATCH4 ||
-                   plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_CHAIN4
+                   plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_CHAIN4 ||
+                   plan == QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4
                ? QBH_W4_REBALANCED_EXPANDED_SLOT_COUNT
                : QBH_W4_EXPANDED_CHUNK_SLOT_COUNT;
+}
+
+static inline int qbh_physical_plan_is_streaming(uint32_t plan) {
+    return plan == QBH_PHYSICAL_PLAN_STREAMING_DMA_BATCH2 ||
+           plan == QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4;
 }
 
 enum qbh_probe_pattern {
@@ -251,6 +266,8 @@ struct qbh_probe_header {
     uint32_t chunk_expand_count;
     int32_t dma_status;
     int32_t sync_status;
+    uint32_t streaming_region_publish_count;
+    uint32_t streaming_ready_timeout_count;
 
     uint32_t hvx_units_128b;
     uint32_t hvx_workers_created;
@@ -288,7 +305,7 @@ struct qbh_probe_header {
     uint64_t hvx_worker_ticks[QBH_MAX_HVX_WORKERS];
 };
 
-_Static_assert(sizeof(struct qbh_probe_header) == 600,
+_Static_assert(sizeof(struct qbh_probe_header) == 608,
                "probe header ABI changed");
 
 #endif

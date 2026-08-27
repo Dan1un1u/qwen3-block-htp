@@ -846,13 +846,15 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     header->dsp_total_ticks = 0;
     header->input_cache_ticks = input_cache_ticks;
     header->output_cache_ticks = 0;
+    header->streaming_region_publish_count = 0U;
+    header->streaming_ready_timeout_count = 0U;
     header->expand_window_start = 0;
     header->expand_window_end = 0;
     header->hmx_window_start = 0;
     header->hmx_window_end = 0;
     dsp_total_start = HAP_perf_get_qtimer_count();
     FARF(ALWAYS,
-         "EXP0017 stage=header_valid projection=%u storage=%u plan=%u "
+         "EXP0019 stage=header_valid projection=%u storage=%u plan=%u "
          "workers=%u compressed_slots=%u expanded_slots=%u chunk_tiles=%u "
          "output_mode=%u resource_mode=%u "
          "M=%u K=%u N=%u vtcm_plan=%u",
