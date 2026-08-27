@@ -677,14 +677,15 @@ experiments:
     variants:
       - two_separate_gate_up_runs
       - paired_gate_up_projection
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: paired-gate-up-single-invocation
     source_branches:
       - codex/exp-0016-paired-gate-up-invocation
-    source_commits: []
+    source_commits:
+      - 457d48778eacbbc9f8f0460a49a6c8c0d245c7e5
     record: docs/experiments/EXP-0016.md
     decided_by: user
     decided_on: '2026-08-27'
@@ -693,7 +694,29 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0016-paired-gate-up-invocation
       started_on: '2026-08-27'
-      completed_on: null
+      completed_on: '2026-08-27'
     evidence:
       formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0016'
       retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0016'
+      formal_run: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0016\\20260827T081640Z_457d48778eac'
+      artifact_set: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0016\\457d48778eac'
+      matrix: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0016\\20260827T081640Z_457d48778eac\\matrix_gate.json'
+      formal_runs: 176
+      total_mismatches: 0
+      exact_reference: true
+      paired_and_two_call_outputs_identical: true
+      total_weight_and_output_bytes_equal: true
+      persistent_resource_identity_stable: true
+      descriptor_timeouts: 0
+      worker_fallback: false
+      qnn_dependency_scan: none
+      vtcm_request_bytes: 2097152
+      boot_id_stable: true
+      active_range_cache_maintenance: true
+      w4_repeat1_paired_improvement_percent: 14.142229309858823
+      w4_repeat10_paired_improvement_percent: 5.950987905721901
+      s8_repeat1_paired_improvement_percent: 8.12631723048907
+      s8_repeat10_paired_improvement_percent: 4.92266882368069
+      paired_w4_vs_s8_repeat1_improvement_percent: 17.849567813052904
+      paired_w4_vs_s8_repeat10_improvement_percent: 20.877885789541285
+      performance_characterization: paired_gate_up_single_invocation_passes_but_is_not_a_complete_mlp
