@@ -6,16 +6,15 @@
 #include "probe_protocol.h"
 #include "w4_u8_expand.h"
 
+/*
+ * vlut32 with Rt=0 selects byte 0 from each table halfword.  Therefore each
+ * signed nibble value occupies the low byte of a 16-bit table entry rather
+ * than a contiguous table byte.
+ */
 static const int8_t qbh_signed_w4_lut[128]
     __attribute__((aligned(128))) = {
-        0, 1, 2, 3, 4, 5, 6, 7, -8, -7, -6, -5, -4, -3, -2, -1,
-        0, 1, 2, 3, 4, 5, 6, 7, -8, -7, -6, -5, -4, -3, -2, -1,
-        0, 1, 2, 3, 4, 5, 6, 7, -8, -7, -6, -5, -4, -3, -2, -1,
-        0, 1, 2, 3, 4, 5, 6, 7, -8, -7, -6, -5, -4, -3, -2, -1,
-        0, 1, 2, 3, 4, 5, 6, 7, -8, -7, -6, -5, -4, -3, -2, -1,
-        0, 1, 2, 3, 4, 5, 6, 7, -8, -7, -6, -5, -4, -3, -2, -1,
-        0, 1, 2, 3, 4, 5, 6, 7, -8, -7, -6, -5, -4, -3, -2, -1,
-        0, 1, 2, 3, 4, 5, 6, 7, -8, -7, -6, -5, -4, -3, -2, -1,
+        0,  0, 1,  0, 2,  0, 3,  0, 4,  0, 5,  0, 6,  0, 7,  0,
+        -8, 0, -7, 0, -6, 0, -5, 0, -4, 0, -3, 0, -2, 0, -1, 0,
 };
 
 __attribute__((noinline)) void qbh_expand_w4_to_s8_hvx(
