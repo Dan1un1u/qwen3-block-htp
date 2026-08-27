@@ -1,7 +1,7 @@
 #include <hexagon_types.h>
 #include <HAP_perf.h>
+#include <hvx_hexagon_protos.h>
 #include <stdint.h>
-#include <string.h>
 
 #include "hmx_fp16.h"
 
@@ -50,18 +50,16 @@ void qbh_hmx_fp16_init_unity_scale(void *scale_block) {
 
 void qbh_hmx_fp16_init_channel_scales(void *scale_block,
                                       const float *channel_scales) {
-    uint16_t *values = (uint16_t *)scale_block;
+    const HVX_Vector scale_f32 =
+        *(const HVX_Vector *)channel_scales;
+    const HVX_Vector zero = Q6_V_vzero();
+    const HVX_VectorPair scale_bias_f32 = Q6_W_vshuff_VVR(
+        zero, scale_f32, -4);
+    HVX_Vector *values = (HVX_Vector *)scale_block;
 
-    for (uint32_t index = 0; index < 32U; ++index) {
-        __fp16 scale = (__fp16)channel_scales[index];
-        uint16_t scale_bits;
-        memcpy(&scale_bits, &scale, sizeof(scale_bits));
-        values[index * 2U] = scale_bits;
-        values[index * 2U + 1U] = 0U;
-    }
-    for (uint32_t index = 64U; index < 128U; ++index) {
-        values[index] = 0U;
-    }
+    values[0] = Q6_Vhf_vcvt_VsfVsf(
+        Q6_V_hi_W(scale_bias_f32), Q6_V_lo_W(scale_bias_f32));
+    values[1] = zero;
     asm volatile("barrier" ::: "memory");
 }
 
