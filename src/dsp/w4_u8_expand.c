@@ -106,6 +106,35 @@ __attribute__((noinline)) void qbh_unpack_w4_to_s8_hvx(
     asm volatile("barrier" : : : "memory");
 }
 
+__attribute__((noinline)) void qbh_unpack_w4_to_s8_hvx_bitwise(
+    const uint8_t *packed_w4, int8_t *expanded_s8,
+    uint32_t k_tiles) {
+    const HVX_Vector v_nibble_mask = Q6_Vb_vsplat_R(0x0f);
+    const HVX_Vector v_sign = Q6_Vb_vsplat_R(0x08);
+
+    for (uint32_t packed_vector = 0;
+         packed_vector < k_tiles * 4U; ++packed_vector) {
+        const HVX_Vector v_packed = *(const HVX_Vector *)(
+            packed_w4 + (size_t)packed_vector * sizeof(HVX_Vector));
+        const HVX_Vector v_low_unsigned =
+            Q6_V_vand_VV(v_packed, v_nibble_mask);
+        const HVX_Vector v_high_unsigned =
+            Q6_Vub_vlsr_VubR(v_packed, 4);
+        const HVX_Vector v_low = Q6_Vb_vsub_VbVb(
+            Q6_V_vxor_VV(v_low_unsigned, v_sign), v_sign);
+        const HVX_Vector v_high = Q6_Vb_vsub_VbVb(
+            Q6_V_vxor_VV(v_high_unsigned, v_sign), v_sign);
+        const HVX_VectorPair v_unpacked =
+            Q6_W_vshuff_VVR(v_high, v_low, -1);
+        HVX_Vector *destination = (HVX_Vector *)(
+            expanded_s8 + (size_t)packed_vector * 2U *
+                              sizeof(HVX_Vector));
+        destination[0] = Q6_V_lo_W(v_unpacked);
+        destination[1] = Q6_V_hi_W(v_unpacked);
+    }
+    asm volatile("barrier" : : : "memory");
+}
+
 __attribute__((noinline)) void qbh_copy_hmx_bias_hvx(
     const uint8_t *source, uint8_t *destination) {
     const HVX_Vector *source_vectors = (const HVX_Vector *)source;

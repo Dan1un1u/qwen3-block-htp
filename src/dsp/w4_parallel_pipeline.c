@@ -407,9 +407,16 @@ static void qbh_hvx_worker_main(void *opaque) {
         }
         if (layout->weight_storage_variant ==
             QBH_WEIGHT_PACKED_W4_HMX_SCALE) {
-            qbh_unpack_w4_to_s8_hvx(
-                compressed + packed_offset,
-                (int8_t *)(expanded + expanded_offset), region_tiles);
+            if (qbh_physical_plan_uses_bitwise_unpack(
+                    layout->physical_plan)) {
+                qbh_unpack_w4_to_s8_hvx_bitwise(
+                    compressed + packed_offset,
+                    (int8_t *)(expanded + expanded_offset), region_tiles);
+            } else {
+                qbh_unpack_w4_to_s8_hvx(
+                    compressed + packed_offset,
+                    (int8_t *)(expanded + expanded_offset), region_tiles);
+            }
         } else {
             qbh_expand_w4_to_s8_hvx(
                 compressed + packed_offset,
