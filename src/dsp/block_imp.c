@@ -2,6 +2,8 @@
 #include <HAP_compute_res.h>
 #include <HAP_mem.h>
 #include <HAP_perf.h>
+#include <hexagon_types.h>
+#include <hvx_hexagon_protos.h>
 #include <math.h>
 #include <qurt.h>
 #include <qurt_hvx.h>
@@ -319,7 +321,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
     }
     if (header->w4f16_requested_hvx_workers == 0U ||
         header->w4f16_requested_hvx_workers >
-            QBH_BLOCK_W4F16_HVX_WORKERS ||
+            QBH_BLOCK_W4F16_HVX_WORKERS - 1U ||
         (header->w4f16_region_tiles != 8U &&
          header->w4f16_region_tiles != 16U &&
          header->w4f16_region_tiles != 32U)) {
@@ -761,19 +763,30 @@ static void qbh_pack_fp16_activation(const __fp16 *source,
                                      uint32_t source_stride,
                                      uint32_t k, __fp16 *destination) {
     uint32_t k_tiles = k / QBH_HMX_FP16_COLS;
-    for (uint32_t row = 0; row < QBH_BLOCK_M; ++row) {
+    for (uint32_t row = 0; row < QBH_BLOCK_M; row += 2U) {
         uint32_t row_tile = row / QBH_HMX_FP16_ROWS;
-        uint32_t local_row = row % QBH_HMX_FP16_ROWS;
-        for (uint32_t channel = 0; channel < k; ++channel) {
-            uint32_t k_tile = channel / QBH_HMX_FP16_COLS;
-            uint32_t local_channel = channel % QBH_HMX_FP16_COLS;
+        uint32_t row_pair = (row % QBH_HMX_FP16_ROWS) / 2U;
+        const HVX_Vector *source0 = (const HVX_Vector *)(
+            source + (size_t)row * source_stride);
+        const HVX_Vector *source1 = (const HVX_Vector *)(
+            source + (size_t)(row + 1U) * source_stride);
+
+        /* Adapted from htp-ops-lib@85eb88e FP16 FlashAttention packing.
+         * Two 64-column row vectors become two adjacent Crouton tiles. */
+        for (uint32_t channel = 0; channel < k; channel += 64U) {
+            HVX_VectorPair packed = Q6_W_vshuff_VVR(
+                *source1++, *source0++, -2);
             size_t tile = qbh_hmx_fp16_matrix_tile_offset(
-                row_tile, k_tile, k_tiles);
-            destination[tile + qbh_hmx_fp16_tile_offset(
-                                   local_row, local_channel)] =
-                source[(size_t)row * source_stride + channel];
+                row_tile, channel / QBH_HMX_FP16_COLS, k_tiles);
+            HVX_Vector *output0 = (HVX_Vector *)(
+                destination + tile) + row_pair;
+            HVX_Vector *output1 = output0 +
+                QBH_HMX_FP16_TILE_BYTES / sizeof(HVX_Vector);
+            *output0 = Q6_V_lo_W(packed);
+            *output1 = Q6_V_hi_W(packed);
         }
     }
+    asm volatile("barrier" ::: "memory");
 }
 
 static void qbh_pack_u8_activation(const uint8_t *source,
@@ -797,21 +810,50 @@ static void qbh_unpack_fp16_output(const __fp16 *source,
                                    __fp16 *destination,
                                    uint32_t destination_stride,
                                    uint32_t destination_column) {
-    for (uint32_t row = 0; row < QBH_BLOCK_M; ++row) {
+    for (uint32_t row = 0; row < QBH_BLOCK_M; row += 2U) {
         uint32_t row_tile = row / QBH_HMX_FP16_ROWS;
-        uint32_t local_row = row % QBH_HMX_FP16_ROWS;
-        for (uint32_t column = 0;
-             column < n_tiles * QBH_HMX_FP16_COLS; ++column) {
-            uint32_t column_tile = column / QBH_HMX_FP16_COLS;
-            uint32_t local_column = column % QBH_HMX_FP16_COLS;
+        uint32_t row_pair = (row % QBH_HMX_FP16_ROWS) / 2U;
+        uint32_t column_tile = 0U;
+        __fp16 *destination0 = destination +
+            (size_t)row * destination_stride + destination_column;
+        __fp16 *destination1 = destination +
+            (size_t)(row + 1U) * destination_stride +
+            destination_column;
+
+        for (; column_tile + 1U < n_tiles; column_tile += 2U) {
             size_t tile = qbh_hmx_fp16_matrix_tile_offset(
                 row_tile, column_tile, n_tiles);
-            destination[(size_t)row * destination_stride +
-                        destination_column + column] =
-                source[tile + qbh_hmx_fp16_tile_offset(
-                                  local_row, local_column)];
+            const HVX_Vector *input0 = (const HVX_Vector *)(
+                source + tile) + row_pair;
+            const HVX_Vector *input1 = input0 +
+                QBH_HMX_FP16_TILE_BYTES / sizeof(HVX_Vector);
+            HVX_VectorPair rows = Q6_W_vdeal_VVR(
+                *input1, *input0, -2);
+            *(HVX_Vector *)(destination0 +
+                (size_t)column_tile * QBH_HMX_FP16_COLS) =
+                    Q6_V_lo_W(rows);
+            *(HVX_Vector *)(destination1 +
+                (size_t)column_tile * QBH_HMX_FP16_COLS) =
+                    Q6_V_hi_W(rows);
+        }
+        if (column_tile < n_tiles) {
+            size_t tile = qbh_hmx_fp16_matrix_tile_offset(
+                row_tile, column_tile, n_tiles);
+            const HVX_Vector *input = (const HVX_Vector *)(
+                source + tile) + row_pair;
+            HVX_VectorPair rows = Q6_W_vdeal_VVR(
+                Q6_V_vzero(), *input, -2);
+            HVX_Vector row0 = Q6_V_lo_W(rows);
+            HVX_Vector row1 = Q6_V_hi_W(rows);
+            memcpy(destination0 +
+                       (size_t)column_tile * QBH_HMX_FP16_COLS,
+                   &row0, 64U);
+            memcpy(destination1 +
+                       (size_t)column_tile * QBH_HMX_FP16_COLS,
+                   &row1, 64U);
         }
     }
+    asm volatile("barrier" ::: "memory");
 }
 
 static void qbh_unpack_u8_output(const uint8_t *source,
@@ -848,7 +890,6 @@ static int qbh_run_projection(
     uint32_t n_tiles = desc->n / 32U;
     uint32_t element_bytes =
         header->variant == QBH_BLOCK_W4U8 ? 1U : 2U;
-    int hvx_locked = 0;
     uint32_t failure_step = 0U;
     uint64_t phase_start = HAP_perf_get_qtimer_count();
     volatile uint32_t w4f16_ready[QBH_BLOCK_W4F16_MAX_REGIONS];
@@ -874,15 +915,6 @@ static int qbh_run_projection(
     }
     header->projection_pack_ticks +=
         HAP_perf_get_qtimer_count() - phase_start;
-    if (header->variant == QBH_BLOCK_W4U8) {
-        if (qurt_hvx_lock(QURT_HVX_MODE_128B) != AEE_SUCCESS) {
-            qbh_record_projection_failure(
-                header, desc, 0U, 5U, -1);
-            return -1;
-        }
-        hvx_locked = 1;
-    }
-
     if (header->variant == QBH_BLOCK_W4F16) {
         uint32_t compressed_bytes =
             k_tiles * QBH_W4_PACKED_TILE_BYTES;
@@ -951,9 +983,6 @@ static int qbh_run_projection(
         if (result != 0) {
             qbh_record_projection_failure(
                 header, desc, n_tile, failure_step, result);
-            if (hvx_locked != 0) {
-                (void)qurt_hvx_unlock();
-            }
             return -1;
         }
         if (header->variant == QBH_BLOCK_W4F16 &&
@@ -1101,16 +1130,8 @@ projection_command_complete:
         if (result != 0) {
             qbh_record_projection_failure(
                 header, desc, n_tile, failure_step, result);
-            if (hvx_locked != 0) {
-                (void)qurt_hvx_unlock();
-            }
             return -1;
         }
-    }
-    if (hvx_locked != 0 && qurt_hvx_unlock() != AEE_SUCCESS) {
-        qbh_record_projection_failure(
-            header, desc, n_tiles, 6U, -1);
-        return -1;
     }
     (void)element_bytes;
     return 0;
@@ -1834,6 +1855,7 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
     int thread_created = 0;
     int thread_joined = 0;
     int w4f16_pool_created = 0;
+    int main_hvx_locked = 0;
     int thread_exit_status = AEE_EFAILED;
 
     if (vtcm == NULL || vtcm_bytes != QBH_EXPECTED_FULL_VTCM_BYTES ||
@@ -1903,6 +1925,12 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
         result = AEE_EFAILED;
         goto stop_worker;
     }
+    if (qurt_hvx_lock(QURT_HVX_MODE_128B) != AEE_SUCCESS) {
+        header->dsp_status = QBH_BLOCK_STATUS_HMX_WORKER_FAILED;
+        result = AEE_EFAILED;
+        goto stop_worker;
+    }
+    main_hvx_locked = 1;
     if (header->variant == QBH_BLOCK_W4F16) {
         if (qbh_w4f16_pool_create(
                 &w4f16_pool,
@@ -1973,6 +2001,13 @@ stop_worker:
             result = AEE_EFAILED;
         }
         w4f16_pool_created = 0;
+    }
+    if (main_hvx_locked != 0) {
+        if (qurt_hvx_unlock() != AEE_SUCCESS && result == AEE_SUCCESS) {
+            header->dsp_status = QBH_BLOCK_STATUS_HMX_WORKER_FAILED;
+            result = AEE_EFAILED;
+        }
+        main_hvx_locked = 0;
     }
     if (thread_created != 0 && thread_joined == 0) {
         worker.stop = 1U;

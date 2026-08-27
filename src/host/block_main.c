@@ -434,7 +434,7 @@ int main(int argc, char **argv) {
         (argc >= 6 && qbh_parse_u32(
                           argv[5], &w4f16_region_tiles) != 0) ||
         repeats == 0U || repeats > 100U ||
-        w4f16_hvx_workers == 0U || w4f16_hvx_workers > 4U ||
+        w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
         (w4f16_region_tiles != 8U && w4f16_region_tiles != 16U &&
          w4f16_region_tiles != 32U)) {
         fprintf(stderr, "usage: %s PACKAGE_DIR VARIANT [repeat_count] "
