@@ -1018,3 +1018,31 @@ experiments:
       repeat10_per_mlp_total_ticks_median: 16551.35
       speed_gate_required: false
       performance_characterization: zero_intermediate_ddr_composition_passes_but_integrated_engine_cost_remains_visible
+  - id: EXP-0022
+    slug: real-block-three-variant
+    title: Compare real Qwen3 middle-block F16F16, W4F16, and W4U8
+    parent: EXP-0021
+    variants:
+      - f16f16_real_layer14
+      - w4f16_real_layer14
+      - w4u8_real_layer14
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-fixed-full-vtcm
+    source_branches:
+      - codex/exp-0022-real-block-three-variant
+    source_commits: []
+    record: docs/experiments/EXP-0022.md
+    decided_by: user
+    decided_on: '2026-08-27'
+    approval_ref: 'User message 2026-08-27: modify the VTCM allocation policy and execute the proposed real Qwen3 W16A16/W4A16/W4A8 single-block comparison'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0022-real-block-three-variant
+      started_on: '2026-08-27'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0022'
+      retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0022'

@@ -89,6 +89,17 @@ across multiple Execution Unit invocations while reporting prepare and release
 costs separately from hot invocation latency.
 _Avoid_: free setup, kernel-only speedup, persistent kernel
 
+**Fixed Full-VTCM Session**:
+A Prepared Runtime Session that requires the architecture-defined total VTCM
+as one common experiment budget while each Physical Plan reports only its own
+peak live allocation.
+_Avoid_: current-available best effort, per-operator VTCM request, assumed grant
+
+**Qwen3 Middle Block**:
+One complete Qwen3 transformer-layer Execution Unit from residual input to
+residual output, containing both self-attention and gated MLP computation.
+_Avoid_: MLP block, projection group, full model
+
 **Paired Gate/Up Projection**:
 One Execution Unit that evaluates two independent `2048 -> 6144` projections
 sharing the same `[64, 2048]` activation by representing their concatenated

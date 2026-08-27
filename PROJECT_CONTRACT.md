@@ -91,4 +91,9 @@ Changing any item requires explicit user approval and a committed amendment.
   a remote, EXP-0001 may run from the committed local source and Project Memory
   branches. No later experiment may start without a configured and synchronized
   remote unless the user explicitly extends this exception.
-
+- **PC-026 — Fixed full-VTCM experiment budget.** Formal single-client device
+  comparisons query the architecture-defined total VTCM, require that complete
+  amount once per Prepared Runtime Session, and give every compared Project
+  Variant the same grant. A run fails instead of silently shrinking to current
+  availability. Physical Plans allocate and reuse only the regions they need
+  and report requested, granted, and peak-used bytes separately.
