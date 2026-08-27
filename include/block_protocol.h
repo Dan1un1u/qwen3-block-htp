@@ -27,9 +27,17 @@ enum qbh_block_variant {
     QBH_BLOCK_W4U8 = 3,
 };
 
-enum qbh_block_common_ops_mode {
+enum qbh_block_common_ops_mask {
     QBH_BLOCK_COMMON_OPS_SCALAR = 0,
-    QBH_BLOCK_COMMON_OPS_HVX_FP16 = 1,
+    QBH_BLOCK_COMMON_OP_RMS_NORM = 1U << 0,
+    QBH_BLOCK_COMMON_OP_ROPE = 1U << 1,
+    QBH_BLOCK_COMMON_OP_SOFTMAX = 1U << 2,
+    QBH_BLOCK_COMMON_OP_SILU = 1U << 3,
+    QBH_BLOCK_COMMON_OPS_HVX_FP16 =
+        QBH_BLOCK_COMMON_OP_RMS_NORM |
+        QBH_BLOCK_COMMON_OP_ROPE |
+        QBH_BLOCK_COMMON_OP_SOFTMAX |
+        QBH_BLOCK_COMMON_OP_SILU,
 };
 
 enum qbh_block_projection_index {
@@ -135,7 +143,7 @@ struct qbh_block_header {
     uint32_t repeat_count;
     uint32_t w4f16_requested_hvx_workers;
     uint32_t w4f16_region_tiles;
-    uint32_t common_ops_mode;
+    uint32_t common_ops_mask;
 
     uint32_t input_offset;
     uint32_t input_bytes;

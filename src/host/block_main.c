@@ -163,22 +163,70 @@ static int qbh_parse_variant(const char *text, uint32_t *variant) {
     return -1;
 }
 
-static int qbh_parse_common_ops_mode(const char *text, uint32_t *mode) {
+static int qbh_parse_common_ops_mode(const char *text, uint32_t *mask) {
     if (strcmp(text, "scalar") == 0) {
-        *mode = QBH_BLOCK_COMMON_OPS_SCALAR;
+        *mask = QBH_BLOCK_COMMON_OPS_SCALAR;
         return 0;
     }
-    if (strcmp(text, "hvx") == 0 || strcmp(text, "hvx_fp16") == 0) {
-        *mode = QBH_BLOCK_COMMON_OPS_HVX_FP16;
+    if (strcmp(text, "rms") == 0) {
+        *mask = QBH_BLOCK_COMMON_OP_RMS_NORM;
+        return 0;
+    }
+    if (strcmp(text, "rope") == 0) {
+        *mask = QBH_BLOCK_COMMON_OP_ROPE;
+        return 0;
+    }
+    if (strcmp(text, "softmax") == 0) {
+        *mask = QBH_BLOCK_COMMON_OP_SOFTMAX;
+        return 0;
+    }
+    if (strcmp(text, "silu") == 0) {
+        *mask = QBH_BLOCK_COMMON_OP_SILU;
+        return 0;
+    }
+    if (strcmp(text, "rms_silu") == 0) {
+        *mask = QBH_BLOCK_COMMON_OP_RMS_NORM |
+                QBH_BLOCK_COMMON_OP_SILU;
+        return 0;
+    }
+    if (strcmp(text, "rms_silu_rope") == 0) {
+        *mask = QBH_BLOCK_COMMON_OP_RMS_NORM |
+                QBH_BLOCK_COMMON_OP_SILU |
+                QBH_BLOCK_COMMON_OP_ROPE;
+        return 0;
+    }
+    if (strcmp(text, "hvx") == 0 || strcmp(text, "hvx_fp16") == 0 ||
+        strcmp(text, "all") == 0) {
+        *mask = QBH_BLOCK_COMMON_OPS_HVX_FP16;
         return 0;
     }
     return -1;
 }
 
-static const char *qbh_common_ops_mode_name(uint32_t mode) {
-    return mode == QBH_BLOCK_COMMON_OPS_HVX_FP16
-               ? "hvx_fp16"
-               : "scalar";
+static const char *qbh_common_ops_mode_name(uint32_t mask) {
+    switch (mask) {
+        case QBH_BLOCK_COMMON_OPS_SCALAR:
+            return "scalar";
+        case QBH_BLOCK_COMMON_OP_RMS_NORM:
+            return "rms";
+        case QBH_BLOCK_COMMON_OP_ROPE:
+            return "rope";
+        case QBH_BLOCK_COMMON_OP_SOFTMAX:
+            return "softmax";
+        case QBH_BLOCK_COMMON_OP_SILU:
+            return "silu";
+        case QBH_BLOCK_COMMON_OP_RMS_NORM |
+             QBH_BLOCK_COMMON_OP_SILU:
+            return "rms_silu";
+        case QBH_BLOCK_COMMON_OP_RMS_NORM |
+             QBH_BLOCK_COMMON_OP_SILU |
+             QBH_BLOCK_COMMON_OP_ROPE:
+            return "rms_silu_rope";
+        case QBH_BLOCK_COMMON_OPS_HVX_FP16:
+            return "hvx_fp16";
+        default:
+            return "custom_mask";
+    }
 }
 
 static int qbh_make_path(char *destination, size_t destination_bytes,
@@ -420,7 +468,7 @@ int main(int argc, char **argv) {
     uint32_t repeats = 1U;
     uint32_t w4f16_hvx_workers = 2U;
     uint32_t w4f16_region_tiles = 16U;
-    uint32_t common_ops_mode = QBH_BLOCK_COMMON_OPS_HVX_FP16;
+    uint32_t common_ops_mask = QBH_BLOCK_COMMON_OPS_HVX_FP16;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t cursor = qbh_align_up_size(sizeof(*header), QBH_HOST_ALIGNMENT);
@@ -453,21 +501,22 @@ int main(int argc, char **argv) {
         (argc >= 6 && qbh_parse_u32(
                           argv[5], &w4f16_region_tiles) != 0) ||
         (argc >= 7 && qbh_parse_common_ops_mode(
-                          argv[6], &common_ops_mode) != 0) ||
+                          argv[6], &common_ops_mask) != 0) ||
         repeats == 0U || repeats > 100U ||
         w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
         (argc >= 7 && variant == QBH_BLOCK_W4U8 &&
-         common_ops_mode == QBH_BLOCK_COMMON_OPS_HVX_FP16) ||
+         common_ops_mask != QBH_BLOCK_COMMON_OPS_SCALAR) ||
         (w4f16_region_tiles != 8U && w4f16_region_tiles != 16U &&
          w4f16_region_tiles != 32U)) {
         fprintf(stderr, "usage: %s PACKAGE_DIR VARIANT [repeat_count] "
                         "[w4f16_hvx_workers] [w4f16_region_tiles] "
-                        "[scalar|hvx]\n",
+                        "[scalar|rms|rope|softmax|silu|rms_silu|"
+                        "rms_silu_rope|hvx]\n",
                 argv[0]);
         return 2;
     }
     if (argc < 7 && variant == QBH_BLOCK_W4U8) {
-        common_ops_mode = QBH_BLOCK_COMMON_OPS_SCALAR;
+        common_ops_mask = QBH_BLOCK_COMMON_OPS_SCALAR;
     }
     element_bytes = variant == QBH_BLOCK_W4U8 ? 1U : 2U;
     output_bytes = QBH_BLOCK_M * QBH_BLOCK_HIDDEN * element_bytes;
@@ -630,7 +679,7 @@ int main(int argc, char **argv) {
     header->repeat_count = repeats;
     header->w4f16_requested_hvx_workers = w4f16_hvx_workers;
     header->w4f16_region_tiles = w4f16_region_tiles;
-    header->common_ops_mode = common_ops_mode;
+    header->common_ops_mask = common_ops_mask;
     header->input_offset = input_slot.offset;
     header->input_bytes = input_slot.expected_bytes;
     header->output_bytes = output_bytes;
@@ -863,7 +912,7 @@ int main(int argc, char **argv) {
         qbh_variant_name(variant),
         variant == QBH_BLOCK_W4U8 ? "U8xS8_integer_HMX"
                                   : "FP16_HMX",
-        qbh_common_ops_mode_name(header->common_ops_mode),
+        qbh_common_ops_mode_name(header->common_ops_mask),
         variant == QBH_BLOCK_W4F16 ? "hmx_output_per_channel"
                                    : "not_applicable",
         warmup_result, warmup_run_index, warmup_end - warmup_start,
