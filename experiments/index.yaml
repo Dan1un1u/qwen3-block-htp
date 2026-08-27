@@ -1184,9 +1184,9 @@ experiments:
       - exp0023_w4f16_scalar_common_control
       - f16f16_hvx_fp16_common_ops
       - w4f16_hvx_fp16_common_ops
-    execution_state: running
-    evidence_validity: pending
-    local_gate: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-hvx-fp16-common-ops
     source_branches:
@@ -1209,7 +1209,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0024-fp16-hvx-common-ops
       started_on: '2026-08-28'
-      completed_on: null
+      completed_on: '2026-08-28'
     evidence:
       formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0024'
       retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0024'
@@ -1221,3 +1221,46 @@ experiments:
         - stable_causal_softmax
       activation_scope: fp16_only
       a8_operator_suite: deferred_to_separate_experiment
+      formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0024\20260827T204237Z_b9d14c599379'
+      artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0024\artifacts\b9d14c599379'
+      matrix: 'D:\llm_exp\results\qwen3-block-htp\exp0024\20260827T204237Z_b9d14c599379\matrix_gate.json'
+      formal_runs: 52
+      parent_block_package_hash_audit: pass
+      static_hvx_gate: pass
+      standard_stable_natural_exp_softmax: true
+      exact_full_vtcm_gate: pass
+      vtcm_request_bytes: 8388608
+      f16f16_vtcm_peak_plan_bytes: 6286080
+      w4f16_vtcm_peak_plan_bytes: 7744512
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      intermediate_dma_descriptor_count: 0
+      intermediate_spill_fill_count: 0
+      qnn_dependency_scan: none
+      boot_id_stable: true
+      f16f16_runtime_reference_cosine: 0.999999997
+      f16f16_runtime_reference_max_abs: 0.0625
+      w4f16_runtime_reference_cosine: 0.999999996
+      w4f16_runtime_reference_max_abs: 0.0625
+      rmsnorm_operator_max_abs: 0.0078125
+      qk_norm_rope_operator_max_abs: 0.03125
+      softmax_operator_max_abs: 0.00244140625
+      silu_by_up_operator_max_abs: 0.015625
+      operator_nonfinite_count: 0
+      softmax_mask_violation_count: 0
+      repeat1_scalar_f16f16_host_wall_ns_median: 259969896.0
+      repeat1_scalar_w4f16_host_wall_ns_median: 261204688.0
+      repeat1_hvx_f16f16_host_wall_ns_median: 124730520.0
+      repeat1_hvx_w4f16_host_wall_ns_median: 123481094.0
+      repeat1_hvx_w4f16_latency_change_percent: -1.0017003055867946
+      repeat10_scalar_f16f16_per_block_host_wall_ns_median: 195409052.0
+      repeat10_scalar_w4f16_per_block_host_wall_ns_median: 194475421.8
+      repeat10_hvx_f16f16_per_block_host_wall_ns_median: 60258609.4
+      repeat10_hvx_w4f16_per_block_host_wall_ns_median: 59169786.4
+      repeat10_hvx_f16f16_latency_change_from_scalar_percent: -69.16283622316534
+      repeat10_hvx_w4f16_latency_change_from_scalar_percent: -69.57467126059218
+      repeat10_hvx_w4f16_latency_change_percent: -1.8069169050555667
+      repeat10_hvx_w4f16_projection_latency_change_percent: -15.15765595914812
+      vectorization_non_regression_gate: pass
+      final_w4f16_faster_than_f16f16_gate: pass
+      performance_characterization: all_four_fp16_common_operator_families_vectorized_and_complete_block_latency_reduced_by_about_69_percent_while_w4f16_retains_a_small_complete_block_advantage
