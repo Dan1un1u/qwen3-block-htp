@@ -59,7 +59,6 @@ static void qbh_reset_phase_header(struct qbh_probe_header *phase,
     memset(phase, 0, sizeof(*phase));
     phase->magic = QBH_PROBE_MAGIC;
     phase->abi_version = QBH_PROBE_ABI_VERSION;
-    phase->experiment = QBH_MLP_EXPERIMENT;
     phase->header_bytes = sizeof(*phase);
     phase->repeat_count = 1U;
     phase->requested_hvx_workers = workers;
