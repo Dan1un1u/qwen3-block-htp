@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define QBH_PROBE_MAGIC UINT32_C(0x51424850)
-#define QBH_PROBE_ABI_VERSION UINT32_C(13)
+#define QBH_PROBE_ABI_VERSION UINT32_C(14)
 #define QBH_PROBE_ALIGNMENT UINT32_C(4096)
 
 #define QBH_HMX_SPATIAL UINT32_C(64)
@@ -21,8 +21,9 @@
 
 #define QBH_MAX_HVX_WORKERS UINT32_C(6)
 #define QBH_W4_DEFAULT_COMPRESSED_SLOT_COUNT UINT32_C(2)
-#define QBH_W4_MAX_COMPRESSED_SLOT_COUNT UINT32_C(4)
+#define QBH_W4_MAX_COMPRESSED_SLOT_COUNT UINT32_C(8)
 #define QBH_W4_EXPANDED_CHUNK_SLOT_COUNT UINT32_C(8)
+#define QBH_W4_REBALANCED_EXPANDED_SLOT_COUNT UINT32_C(7)
 #define QBH_W4_TASK_QUEUE_DEPTH UINT32_C(32)
 #define QBH_W4_DEFAULT_CHUNK_TILES UINT32_C(32)
 #define QBH_W4_FINE_CHUNK_TILES UINT32_C(16)
@@ -69,6 +70,9 @@ enum qbh_physical_plan {
     QBH_PHYSICAL_PLAN_FULL_BUNDLE_DMA_CHAIN2 = 6,
     QBH_PHYSICAL_PLAN_CHUNKED_DMA_CHAIN2 = 7,
     QBH_PHYSICAL_PLAN_CHUNKED_DMA_CHAIN4 = 8,
+    QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_BATCH2 = 9,
+    QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_BATCH4 = 10,
+    QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_CHAIN4 = 11,
 };
 
 static inline int qbh_physical_plan_is_full_bundle(uint32_t plan) {
@@ -82,18 +86,24 @@ static inline int qbh_physical_plan_is_chunked(uint32_t plan) {
            plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH2 ||
            plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH4 ||
            plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_CHAIN2 ||
-           plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_CHAIN4;
+           plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_CHAIN4 ||
+           plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_BATCH2 ||
+           plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_BATCH4 ||
+           plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_CHAIN4;
 }
 
 static inline uint32_t qbh_physical_plan_dma_bundle_batch(uint32_t plan) {
     if (plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE_DMA_BATCH2 ||
         plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH2 ||
         plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE_DMA_CHAIN2 ||
-        plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_CHAIN2) {
+        plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_CHAIN2 ||
+        plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_BATCH2) {
         return 2U;
     }
     if (plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH4 ||
-        plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_CHAIN4) {
+        plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_CHAIN4 ||
+        plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_BATCH4 ||
+        plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_CHAIN4) {
         return 4U;
     }
     return 1U;
@@ -102,7 +112,17 @@ static inline uint32_t qbh_physical_plan_dma_bundle_batch(uint32_t plan) {
 static inline int qbh_physical_plan_uses_linked_dma(uint32_t plan) {
     return plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE_DMA_CHAIN2 ||
            plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_CHAIN2 ||
-           plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_CHAIN4;
+           plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_CHAIN4 ||
+           plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_CHAIN4;
+}
+
+static inline uint32_t qbh_physical_plan_expanded_slot_count(
+    uint32_t plan) {
+    return plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_BATCH2 ||
+                   plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_BATCH4 ||
+                   plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_CHAIN4
+               ? QBH_W4_REBALANCED_EXPANDED_SLOT_COUNT
+               : QBH_W4_EXPANDED_CHUNK_SLOT_COUNT;
 }
 
 enum qbh_probe_pattern {
@@ -148,6 +168,7 @@ struct qbh_probe_header {
     uint32_t physical_plan;
     uint32_t requested_hvx_workers;
     uint32_t compressed_slot_count;
+    uint32_t expanded_chunk_slot_count;
     uint32_t chunk_tiles;
     uint32_t activation_offset;
     uint32_t weight_offset;

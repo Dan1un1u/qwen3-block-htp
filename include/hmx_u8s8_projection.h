@@ -14,6 +14,7 @@ struct qbh_projection_layout {
     uint32_t weight_storage_variant;
     uint32_t physical_plan;
     uint32_t compressed_slot_count;
+    uint32_t expanded_slot_count;
     uint32_t m;
     uint32_t k;
     uint32_t n;
@@ -95,6 +96,13 @@ static inline int qbh_projection_layout_init(
         weight_storage_variant != QBH_WEIGHT_EXPANDED_S8) {
         return -1;
     }
+    if ((physical_plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_BATCH2 &&
+         compressed_slot_count != 4U) ||
+        ((physical_plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_BATCH4 ||
+          physical_plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_CHAIN4) &&
+         compressed_slot_count != 8U)) {
+        return -1;
+    }
     if (weight_storage_variant == QBH_WEIGHT_PACKED_W4_HMX_SCALE &&
         !qbh_physical_plan_is_chunked(physical_plan)) {
         return -1;
@@ -116,6 +124,8 @@ static inline int qbh_projection_layout_init(
     layout->weight_storage_variant = weight_storage_variant;
     layout->physical_plan = physical_plan;
     layout->compressed_slot_count = compressed_slot_count;
+    layout->expanded_slot_count =
+        qbh_physical_plan_expanded_slot_count(physical_plan);
     layout->m = QBH_PROJ_M;
     layout->k = k;
     layout->n = n;
@@ -191,7 +201,7 @@ static inline int qbh_projection_layout_init(
         QBH_W4_METADATA_ALIGNMENT);
     layout->vtcm_chunked_output_offset = qbh_align_up_u32(
         layout->vtcm_chunked_expanded_slots_offset +
-            QBH_W4_EXPANDED_CHUNK_SLOT_COUNT *
+            layout->expanded_slot_count *
                 layout->expanded_chunk_slot_bytes,
         QBH_HMX_OUTPUT_BYTES);
     layout->vtcm_chunked_plan_bytes =

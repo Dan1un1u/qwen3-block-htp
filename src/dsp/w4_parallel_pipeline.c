@@ -412,7 +412,7 @@ static void qbh_chunked_hmx_main(void *opaque) {
                 uint32_t sequence =
                     linear_output * layout->chunks_per_output + chunk_index;
                 uint32_t expanded_slot =
-                    sequence % QBH_W4_EXPANDED_CHUNK_SLOT_COUNT;
+                    sequence % layout->expanded_slot_count;
                 uint32_t chunk_tiles =
                     qbh_projection_chunk_tiles(layout, chunk_index);
                 uint64_t wait_start = HAP_perf_get_qtimer_count();
@@ -472,9 +472,10 @@ unlock:
 
 static void qbh_abort_pipeline(struct qbh_parallel_state *state,
                                int32_t status) {
+    const struct qbh_projection_layout *layout = state->layout;
     state->abort_status = status != 0 ? status : AEE_EFAILED;
     for (uint32_t slot = 0;
-         slot < QBH_W4_EXPANDED_CHUNK_SLOT_COUNT; ++slot) {
+         slot < layout->expanded_slot_count; ++slot) {
         qurt_sem_up(&state->expanded_ready[slot]);
     }
 }
@@ -493,13 +494,13 @@ static void qbh_publish_w4_bundle(
         uint32_t sequence =
             linear_output * layout->chunks_per_output + chunk_index;
         uint32_t expanded_slot =
-            sequence % QBH_W4_EXPANDED_CHUNK_SLOT_COUNT;
+            sequence % layout->expanded_slot_count;
         uint64_t wait_start = HAP_perf_get_qtimer_count();
 
         qurt_sem_down(&state->expanded_free[expanded_slot]);
         header->expanded_slot_wait_ticks +=
             HAP_perf_get_qtimer_count() - wait_start;
-        if (sequence >= QBH_W4_EXPANDED_CHUNK_SLOT_COUNT) {
+        if (sequence >= layout->expanded_slot_count) {
             ++header->expanded_chunk_slot_reuse_count;
         }
         memset(&task, 0, sizeof(task));
@@ -563,7 +564,7 @@ int qbh_run_chunked_w4_pipeline(
             vtcm + qbh_projection_compressed_slot_offset(layout, slot);
     }
     for (uint32_t slot = 0;
-         slot < QBH_W4_EXPANDED_CHUNK_SLOT_COUNT; ++slot) {
+         slot < layout->expanded_slot_count; ++slot) {
         state.expanded_slots[slot] =
             vtcm + qbh_projection_expanded_chunk_offset(layout, slot);
     }
@@ -577,7 +578,7 @@ int qbh_run_chunked_w4_pipeline(
         qurt_sem_init_val(&state.compressed_free[slot], 1);
     }
     for (uint32_t slot = 0;
-         slot < QBH_W4_EXPANDED_CHUNK_SLOT_COUNT; ++slot) {
+         slot < layout->expanded_slot_count; ++slot) {
         qurt_sem_init_val(&state.expanded_free[slot], 1);
         qurt_sem_init_val(&state.expanded_ready[slot], 0);
     }
@@ -842,7 +843,7 @@ cleanup:
     qurt_sem_destroy(&state.hvx_started);
     qurt_sem_destroy(&state.hmx_started);
     for (uint32_t slot = 0;
-         slot < QBH_W4_EXPANDED_CHUNK_SLOT_COUNT; ++slot) {
+         slot < layout->expanded_slot_count; ++slot) {
         qurt_sem_destroy(&state.expanded_ready[slot]);
         qurt_sem_destroy(&state.expanded_free[slot]);
     }

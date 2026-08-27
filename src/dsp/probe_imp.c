@@ -90,6 +90,10 @@ static int header_is_valid(const struct qbh_probe_header *header,
                                    layout) != 0) {
         return 0;
     }
+    if (header->expanded_chunk_slot_count !=
+        layout->expanded_slot_count) {
+        return 0;
+    }
     if (header->requested_hvx_workers == 0U ||
         header->requested_hvx_workers > QBH_MAX_HVX_WORKERS ||
         (qbh_physical_plan_is_full_bundle(header->physical_plan) &&
@@ -127,7 +131,7 @@ static int vtcm_layout_is_aligned(
             UINT32_C(255)) == 0 &&
            ((base + qbh_projection_expanded_chunk_offset(
                         layout,
-                        QBH_W4_EXPANDED_CHUNK_SLOT_COUNT - 1U)) &
+                        layout->expanded_slot_count - 1U)) &
             UINT32_C(255)) == 0 &&
            ((base + layout->vtcm_output_offset) & UINT32_C(2047)) == 0 &&
            layout->vtcm_plan_bytes <= QBH_W4U8_VTCM_BYTES;
@@ -464,6 +468,7 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     header->projection_n = layout.n;
     header->k_tile_count = layout.k_tiles;
     header->n_tile_count = layout.n_tiles;
+    header->expanded_chunk_slot_count = layout.expanded_slot_count;
     header->stored_weight_bundle_bytes =
         layout.stored_weight_bundle_bytes;
     header->expanded_weight_bundle_bytes =
@@ -524,12 +529,13 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     header->hmx_window_end = 0;
     dsp_total_start = HAP_perf_get_qtimer_count();
     FARF(ALWAYS,
-         "EXP0012 stage=header_valid projection=%u storage=%u plan=%u "
-         "workers=%u compressed_slots=%u chunk_tiles=%u "
+         "EXP0013 stage=header_valid projection=%u storage=%u plan=%u "
+         "workers=%u compressed_slots=%u expanded_slots=%u chunk_tiles=%u "
          "M=%u K=%u N=%u vtcm_plan=%u",
          layout.variant, layout.weight_storage_variant,
          layout.physical_plan, header->requested_hvx_workers,
-         layout.compressed_slot_count, layout.chunk_tiles, layout.m,
+         layout.compressed_slot_count, layout.expanded_slot_count,
+         layout.chunk_tiles, layout.m,
          layout.k, layout.n,
          layout.vtcm_plan_bytes);
 
