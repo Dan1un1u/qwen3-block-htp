@@ -385,14 +385,15 @@ experiments:
       - hvx_prescale_chunk32_control
       - hmx_postscale_chunk32_control
       - hmx_postscale_chunk64
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: w4u8-gate-single-consumer-publication
     source_branches:
       - codex/exp-0010-gate-single-hmx-chunk
-    source_commits: []
+    source_commits:
+      - 2f72592e0d52b957f48fb5c75282340e9c03b514
     record: docs/experiments/EXP-0010.md
     decided_by: user
     decided_on: '2026-08-27'
@@ -401,7 +402,22 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0010-gate-single-hmx-chunk
       started_on: '2026-08-27'
-      completed_on: null
+      completed_on: '2026-08-27'
     evidence:
       formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0010'
       retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0010'
+      formal_run: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0010\\20260827T061602Z_2f72592e0d52'
+      artifact_set: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0010\\2f72592e0d52'
+      matrix: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0010\\20260827T061602Z_2f72592e0d52\\matrix_gate.json'
+      formal_runs: 64
+      total_mismatches: 0
+      exact_reference: true
+      all_variants_equivalent: true
+      same_hmx_execution_and_stream_counts: true
+      worker_fallback: false
+      qnn_dependency_scan: none
+      dcvs_performance_vote: true
+      hvx_hmx_overlap_gate: pass
+      boot_id_stable: true
+      selected_candidate_plan: slots4_chunk64
+      performance_characterization: single_publication_w4_beats_expanded_s8_gate_up
