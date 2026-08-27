@@ -1096,3 +1096,34 @@ experiments:
       repeat10_w4u8_latency_change_percent: -0.6280966349964667
       speed_gate_required: false
       performance_characterization: w4u8_projection_savings_are_real_but_nearly_cancelled_by_unoptimized_non_projection_u8_stages_in_steady_state
+  - id: EXP-0023
+    slug: w4f16-pipeline
+    title: Replace scalar W4F16 expansion with a DMA-HVX-HMX pipeline
+    parent: EXP-0022
+    variants:
+      - exp0022_scalar_w4f16_control
+      - pipelined_w4f16_candidates
+      - f16f16_fresh_control
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4f16-pipeline
+    source_branches:
+      - codex/exp-0023-w4f16-pipeline
+    source_commits: []
+    record: docs/experiments/EXP-0023.md
+    decided_by: user
+    decided_on: '2026-08-27'
+    approval_ref: 'User message 2026-08-27: repair W4A16; substantial acceleration relative to W16A16 is expected'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0023-w4f16-pipeline
+      started_on: '2026-08-27'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0023'
+      retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0023'
+      parent_formal_run: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0022\\20260827T123409Z_25157d78f13e'
+      speed_gate: repeat1_and_repeat10_w4f16_strictly_faster_than_fresh_f16f16
+      repeat10_improvement_target_percent: 15.0

@@ -137,6 +137,12 @@ mathematically equivalent under the experiment's exact integer scale domain,
 but they have different HVX/HMX work and scheduling costs.
 _Avoid_: different quantization algorithm, different W4 weights
 
+**Pipelined W4F16 Projection**:
+A W4F16 Physical Plan that moves packed W4, expands and scales bounded FP16
+Crouton tiles, and consumes them on FP16 HMX through overlapping DMA, HVX, and
+HMX stages while expanded weights remain temporary VTCM state.
+_Avoid_: scalar W4F16 expansion, pre-expanded FP16 weight storage, W4U8 pipeline
+
 **Interference-Aware Phase Pipeline**:
 A Physical Plan that continues to overlap DDR User DMA with accelerator work,
 but prevents HVX weight expansion and HMX matrix consumption from executing at
