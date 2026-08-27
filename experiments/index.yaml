@@ -148,3 +148,30 @@ experiments:
       static_integer_hmx_gate: pass
       static_user_dma_gate: pass
       boot_id_stable: true
+  - id: EXP-0005
+    slug: w4u8-projections
+    title: Qwen3 W4U8 per-channel projection substrate
+    parent: EXP-0004
+    variants:
+      - expanded_s8_control
+      - packed_w4u8
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: w4u8-expansion-bringup
+    source_branches:
+      - codex/exp-0005-w4u8-projections
+    source_commits: []
+    record: docs/experiments/EXP-0005.md
+    decided_by: user
+    decided_on: '2026-08-27'
+    approval_ref: 'User message 2026-08-27: 继续下一步'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0005-w4u8-projections
+      started_on: '2026-08-27'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0005'
+      retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0005'
