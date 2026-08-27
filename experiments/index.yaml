@@ -626,14 +626,15 @@ experiments:
     variants:
       - transient_resources
       - persistent_resources
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: projection-persistent-resource-session
     source_branches:
       - codex/exp-0015-persistent-resource-session
-    source_commits: []
+    source_commits:
+      - 23369a66c23443dbed6153fa6fab6a8ee3b2f054
     record: docs/experiments/EXP-0015.md
     decided_by: user
     decided_on: '2026-08-27'
@@ -642,7 +643,30 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0015-persistent-resource-session
       started_on: '2026-08-27'
-      completed_on: null
+      completed_on: '2026-08-27'
     evidence:
       formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0015'
       retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0015'
+      formal_run: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0015\\20260827T075344Z_23369a66c234'
+      artifact_set: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0015\\23369a66c234'
+      matrix: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0015\\20260827T075344Z_23369a66c234\\matrix_gate.json'
+      formal_runs: 224
+      total_mismatches: 0
+      exact_reference: true
+      warmup_and_measured_outputs_identical: true
+      lifetime_modes_projection_equivalent: true
+      persistent_resource_identity_stable: true
+      descriptor_timeouts: 0
+      worker_fallback: false
+      qnn_dependency_scan: none
+      vtcm_request_bytes: 2097152
+      boot_id_stable: true
+      gate_up_w4_hot_repeat1_improvement_percent: 79.72802747573797
+      down_w4_hot_repeat1_improvement_percent: 82.39984041890038
+      gate_up_w4_hot_repeat10_improvement_percent: 56.18715307296733
+      down_w4_hot_repeat10_improvement_percent: 60.410553092990945
+      gate_up_w4_vs_s8_repeat1_improvement_percent: 12.451926939497937
+      down_w4_vs_s8_repeat1_improvement_percent: 19.344383679980254
+      gate_up_w4_vs_s8_repeat10_improvement_percent: 21.87689395469288
+      down_w4_vs_s8_repeat10_improvement_percent: 25.42077301629748
+      performance_characterization: persistent_resource_session_passes_both_shapes_and_preserves_w4_advantage
