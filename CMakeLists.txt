@@ -52,6 +52,7 @@ else()
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/probe_imp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/hmx_int8_tile
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/hmx_u8s8_projection
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/mlp_u8
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/w4_u8_expand
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/w4_parallel_pipeline
     )
