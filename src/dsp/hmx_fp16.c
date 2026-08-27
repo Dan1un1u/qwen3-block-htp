@@ -25,8 +25,9 @@ static inline void qbh_hmx_fp16_store_tile(__fp16 *output_tile) {
 
 void qbh_hmx_fp16_init_unity_scale(void *scale_block) {
     uint16_t *values = (uint16_t *)scale_block;
-    for (uint32_t index = 0; index < 64U; ++index) {
-        values[index] = UINT16_C(0x3c00);
+    for (uint32_t index = 0; index < 32U; ++index) {
+        values[index * 2U] = UINT16_C(0x3c00);
+        values[index * 2U + 1U] = 0U;
     }
     for (uint32_t index = 64U; index < 128U; ++index) {
         values[index] = 0U;
