@@ -512,6 +512,7 @@ static int qbh_run_projection(
         header->variant == QBH_BLOCK_W4U8 ? 1U : 2U;
     int hvx_locked = 0;
     uint32_t failure_step = 0U;
+    uint64_t phase_start = HAP_perf_get_qtimer_count();
 
     if (header->variant == QBH_BLOCK_W4U8) {
         qbh_pack_u8_activation((const uint8_t *)input, desc->k,
@@ -522,6 +523,8 @@ static int qbh_run_projection(
                                  (__fp16 *)buffers->hmx_activation);
         qbh_hmx_fp16_init_unity_scale(buffers->scale_or_bias);
     }
+    header->projection_pack_ticks +=
+        HAP_perf_get_qtimer_count() - phase_start;
     if (header->variant == QBH_BLOCK_W4U8 ||
         header->variant == QBH_BLOCK_W4F16) {
         if (qurt_hvx_lock(QURT_HVX_MODE_128B) != AEE_SUCCESS) {
@@ -563,10 +566,13 @@ static int qbh_run_projection(
                 header->weight_ddr_read_bytes += 32U * sizeof(float);
                 ++header->weight_dma_descriptor_count;
                 if (result == 0) {
+                    phase_start = HAP_perf_get_qtimer_count();
                     qbh_expand_w4_to_f16_hvx(
                         buffers->compressed_weight,
                         (const float *)buffers->scale_or_bias,
                         buffers->expanded_weight, k_tiles);
+                    header->w4f16_expand_ticks +=
+                        HAP_perf_get_qtimer_count() - phase_start;
                     if (desc == &header->projections[0] &&
                         n_tile == 0U) {
                         header->w4f16_expand_mismatch_count =
@@ -608,30 +614,42 @@ static int qbh_run_projection(
 
         if (header->variant == QBH_BLOCK_W4U8) {
             failure_step = 4U;
+            phase_start = HAP_perf_get_qtimer_count();
             result = qbh_hmx_submit(
                 worker, QBH_BLOCK_HMX_U8S8,
                 buffers->hmx_activation, buffers->expanded_weight,
                 buffers->scale_or_bias, buffers->hmx_output, 1U,
                 k_tiles, 1U);
+            header->projection_hmx_wait_ticks +=
+                HAP_perf_get_qtimer_count() - phase_start;
             header->hmx_u8s8_tile_pair_count += k_tiles;
             if (result == 0) {
+                phase_start = HAP_perf_get_qtimer_count();
                 qbh_unpack_u8_output(
                     buffers->hmx_output, (uint8_t *)output, desc->n,
                     n_tile * QBH_HMX_OUTPUT_CHANNELS);
+                header->projection_unpack_ticks +=
+                    HAP_perf_get_qtimer_count() - phase_start;
             }
         } else {
             failure_step = 4U;
+            phase_start = HAP_perf_get_qtimer_count();
             result = qbh_hmx_submit(
                 worker, QBH_BLOCK_HMX_FP16,
                 buffers->hmx_activation, buffers->expanded_weight,
                 buffers->scale_or_bias, buffers->hmx_output, 2U,
                 k_tiles, 1U);
+            header->projection_hmx_wait_ticks +=
+                HAP_perf_get_qtimer_count() - phase_start;
             header->hmx_fp16_tile_pair_count += 2U * k_tiles;
             if (result == 0) {
+                phase_start = HAP_perf_get_qtimer_count();
                 qbh_unpack_fp16_output(
                     (const __fp16 *)buffers->hmx_output, 1U,
                     (__fp16 *)output, desc->n,
                     n_tile * QBH_HMX_FP16_COLS);
+                header->projection_unpack_ticks +=
+                    HAP_perf_get_qtimer_count() - phase_start;
             }
         }
         ++header->hmx_command_count;

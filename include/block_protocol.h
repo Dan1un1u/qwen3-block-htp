@@ -214,6 +214,10 @@ struct qbh_block_header {
     uint64_t output_stage_ticks;
     uint64_t weight_dma_ticks;
     uint64_t hmx_compute_ticks;
+    uint64_t projection_pack_ticks;
+    uint64_t w4f16_expand_ticks;
+    uint64_t projection_hmx_wait_ticks;
+    uint64_t projection_unpack_ticks;
     uint64_t scalar_math_ticks;
 };
 

@@ -785,7 +785,12 @@ int main(int argc, char **argv) {
         "\"activation_ticks\":%" PRIu64 ","
         "\"down_ticks\":%" PRIu64 ","
         "\"total_ticks\":%" PRIu64 ","
+        "\"weight_dma_ticks\":%" PRIu64 ","
         "\"hmx_compute_ticks\":%" PRIu64 ","
+        "\"projection_pack_ticks\":%" PRIu64 ","
+        "\"w4f16_expand_ticks\":%" PRIu64 ","
+        "\"projection_hmx_wait_ticks\":%" PRIu64 ","
+        "\"projection_unpack_ticks\":%" PRIu64 ","
         "\"release_result\":%d,\"close_result\":%d}\n",
         qbh_variant_name(variant),
         variant == QBH_BLOCK_W4U8 ? "U8xS8_integer_HMX"
@@ -827,7 +832,11 @@ int main(int argc, char **argv) {
         header->attention_ticks, header->o_projection_ticks,
         header->post_attention_norm_ticks, header->gate_up_ticks,
         header->activation_ticks, header->down_ticks,
-        header->total_ticks, header->hmx_compute_ticks,
+        header->total_ticks, header->weight_dma_ticks,
+        header->hmx_compute_ticks, header->projection_pack_ticks,
+        header->w4f16_expand_ticks,
+        header->projection_hmx_wait_ticks,
+        header->projection_unpack_ticks,
         release_result, close_result);
 
     exit_code = warmup_result == AEE_SUCCESS &&
