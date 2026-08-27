@@ -71,3 +71,14 @@ _Avoid_: teacher accuracy, self-consistency test
 A Project Variant explicitly approved by the user to represent the current
 project outcome.
 _Avoid_: fastest observation, local pass, candidate
+
+**W4U8 Projection Substrate**:
+A model-shaped Projection Probe that proves the canonical W4U8 arithmetic and
+weight-storage boundary for the gate/up and down shapes.
+_Avoid_: complete W4U8 block, optimized W4U8 baseline
+
+**Expanded-S8 Control**:
+The strict A/B Project Variant whose Native Boundary contains exactly the S8
+carrier produced by its paired packed-W4 variant, while every other declared
+contract remains equal.
+_Avoid_: independent W8 quantization variant, performance baseline
