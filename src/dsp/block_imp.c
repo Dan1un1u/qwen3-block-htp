@@ -567,6 +567,17 @@ static int qbh_run_projection(
                         buffers->compressed_weight,
                         (const float *)buffers->scale_or_bias,
                         buffers->expanded_weight, k_tiles);
+                    if (desc == &header->projections[0] &&
+                        n_tile == 0U) {
+                        header->w4f16_expand_mismatch_count =
+                            qbh_audit_w4_to_f16_tile(
+                                buffers->compressed_weight,
+                                (const float *)buffers->scale_or_bias,
+                                buffers->expanded_weight,
+                                &header->w4f16_expand_first_logical_index,
+                                &header->w4f16_expand_expected_half_bits,
+                                &header->w4f16_expand_actual_half_bits);
+                    }
                     qbh_hmx_fp16_init_unity_scale(
                         buffers->scale_or_bias);
                 }

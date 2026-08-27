@@ -2,6 +2,7 @@
 #include <hvx_hexagon_protos.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "probe_protocol.h"
 #include "w4_u8_expand.h"
@@ -103,6 +104,43 @@ __attribute__((noinline)) void qbh_expand_w4_to_f16_hvx(
         destination[packed_vector * 4U + 3U] = Q6_V_hi_W(v_groups1);
     }
     asm volatile("barrier" : : : "memory");
+}
+
+uint32_t qbh_audit_w4_to_f16_tile(
+    const uint8_t *packed_w4, const float *channel_scales,
+    const void *expanded_f16, uint32_t *first_logical_index,
+    uint32_t *expected_half_bits, uint32_t *actual_half_bits) {
+    const uint16_t *actual = (const uint16_t *)expanded_f16;
+    uint32_t mismatches = 0U;
+
+    for (uint32_t input = 0; input < 32U; ++input) {
+        for (uint32_t output = 0; output < 32U; ++output) {
+            uint32_t physical =
+                ((input / 4U) * 32U + output) * 4U + input % 4U;
+            uint8_t byte = packed_w4[physical / 2U];
+            uint8_t nibble = (physical & 1U) != 0U
+                                 ? (uint8_t)(byte >> 4U)
+                                 : (uint8_t)(byte & UINT8_C(0x0f));
+            int8_t quant = (nibble & UINT8_C(0x08)) != 0U
+                               ? (int8_t)(nibble | UINT8_C(0xf0))
+                               : (int8_t)nibble;
+            __fp16 expected =
+                (__fp16)((float)quant * channel_scales[output]);
+            uint16_t expected_bits;
+            uint32_t target =
+                ((input / 2U) * 32U + output) * 2U + input % 2U;
+            memcpy(&expected_bits, &expected, sizeof(expected_bits));
+            if (actual[target] != expected_bits) {
+                if (mismatches == 0U) {
+                    *first_logical_index = input * 32U + output;
+                    *expected_half_bits = expected_bits;
+                    *actual_half_bits = actual[target];
+                }
+                ++mismatches;
+            }
+        }
+    }
+    return mismatches;
 }
 
 __attribute__((noinline)) void qbh_expand_w4_to_s8_hvx(

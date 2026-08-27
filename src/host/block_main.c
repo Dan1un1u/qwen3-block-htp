@@ -752,6 +752,10 @@ int main(int argc, char **argv) {
         "\"projection_failure_index\":%" PRIu32 ","
         "\"projection_failure_n_tile\":%" PRIu32 ","
         "\"projection_failure_step\":%" PRIu32 ","
+        "\"w4f16_expand_mismatch_count\":%" PRIu32 ","
+        "\"w4f16_expand_first_logical_index\":%" PRIu32 ","
+        "\"w4f16_expand_expected_half_bits\":%" PRIu32 ","
+        "\"w4f16_expand_actual_half_bits\":%" PRIu32 ","
         "\"host_wall_ns\":%" PRIu64 ","
         "\"host_wall_ns_per_block\":%.3f,"
         "\"max_abs\":%.9g,\"mean_abs\":%.9g,\"rmse\":%.9g,"
@@ -799,6 +803,10 @@ int main(int argc, char **argv) {
         header->projection_failure_index,
         header->projection_failure_n_tile,
         header->projection_failure_step,
+        header->w4f16_expand_mismatch_count,
+        header->w4f16_expand_first_logical_index,
+        header->w4f16_expand_expected_half_bits,
+        header->w4f16_expand_actual_half_bits,
         measured_end - measured_start,
         (double)(measured_end - measured_start) / repeats,
         measured_metrics.max_abs, measured_metrics.mean_abs,
