@@ -86,6 +86,25 @@ static const char *physical_plan_name(uint32_t physical_plan,
     if (physical_plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE) {
         return "exp0005_full_bundle_control";
     }
+    if (physical_plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE_DMA_BATCH2) {
+        return "expanded_s8_dma_batch2";
+    }
+    if (physical_plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH2) {
+        if (compressed_slots == 4U && chunk_tiles == 64U) {
+            return "slots4_chunk64_dma_batch2";
+        }
+        if (compressed_slots == 4U && chunk_tiles == 96U) {
+            return "slots4_chunk96_dma_batch2";
+        }
+    }
+    if (physical_plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH4) {
+        if (compressed_slots == 4U && chunk_tiles == 64U) {
+            return "slots4_chunk64_dma_batch4";
+        }
+        if (compressed_slots == 4U && chunk_tiles == 96U) {
+            return "slots4_chunk96_dma_batch4";
+        }
+    }
     if (hvx_workers == 6U) {
         if (compressed_slots == 2U && chunk_tiles == 32U) {
             return "exp0006_slots2_chunk32_control";
@@ -209,6 +228,41 @@ static int parse_physical_plan(const char *text, uint32_t *physical_plan,
     }
     if (strcmp(text, "slots4_chunk96") == 0) {
         *physical_plan = QBH_PHYSICAL_PLAN_CHUNKED;
+        *hvx_workers = 6;
+        *compressed_slots = 4U;
+        *chunk_tiles = 96U;
+        return 0;
+    }
+    if (strcmp(text, "expanded_s8_dma_batch2") == 0) {
+        *physical_plan = QBH_PHYSICAL_PLAN_FULL_BUNDLE_DMA_BATCH2;
+        *hvx_workers = 1;
+        *compressed_slots = QBH_W4_DEFAULT_COMPRESSED_SLOT_COUNT;
+        *chunk_tiles = QBH_W4_DEFAULT_CHUNK_TILES;
+        return 0;
+    }
+    if (strcmp(text, "slots4_chunk64_dma_batch2") == 0) {
+        *physical_plan = QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH2;
+        *hvx_workers = 6;
+        *compressed_slots = 4U;
+        *chunk_tiles = 64U;
+        return 0;
+    }
+    if (strcmp(text, "slots4_chunk64_dma_batch4") == 0) {
+        *physical_plan = QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH4;
+        *hvx_workers = 6;
+        *compressed_slots = 4U;
+        *chunk_tiles = 64U;
+        return 0;
+    }
+    if (strcmp(text, "slots4_chunk96_dma_batch2") == 0) {
+        *physical_plan = QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH2;
+        *hvx_workers = 6;
+        *compressed_slots = 4U;
+        *chunk_tiles = 96U;
+        return 0;
+    }
+    if (strcmp(text, "slots4_chunk96_dma_batch4") == 0) {
+        *physical_plan = QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH4;
         *hvx_workers = 6;
         *compressed_slots = 4U;
         *chunk_tiles = 96U;
@@ -697,7 +751,12 @@ int main(int argc, char **argv) {
                 "[exp0005_full_bundle_control|"
                 "exp0006_slots2_chunk32_control|slots3_chunk32|"
                 "slots4_chunk32|slots2_chunk16|slots3_chunk16|"
-                "slots4_chunk64|slots4_chunk96]\n",
+                "slots4_chunk64|slots4_chunk96|"
+                "expanded_s8_dma_batch2|"
+                "slots4_chunk64_dma_batch2|"
+                "slots4_chunk64_dma_batch4|"
+                "slots4_chunk96_dma_batch2|"
+                "slots4_chunk96_dma_batch4]\n",
                 argv[0]);
         return EXIT_FAILURE;
     }
@@ -828,12 +887,13 @@ int main(int argc, char **argv) {
         &reference_min, &reference_max, &reference_checksum);
     reference_end = monotonic_ns();
 
-    printf("{\"experiment\":\"EXP-0010\","
+    printf("{\"experiment\":\"EXP-0011\","
            "\"weight_storage\":\"%s\","
            "\"physical_plan\":\"%s\","
            "\"requested_hvx_workers\":%" PRIu32 ","
            "\"compressed_slot_count\":%" PRIu32 ","
            "\"chunk_tiles\":%" PRIu32 ","
+           "\"dma_bundle_batch\":%" PRIu32 ","
            "\"projection\":\"%s\",\"pattern\":\"%s\","
            "\"repeat_count\":%" PRIu32 ","
            "\"rpc_result\":%d,\"dsp_status\":%d,"
@@ -910,6 +970,7 @@ int main(int argc, char **argv) {
            physical_plan_name(physical_plan, requested_hvx_workers,
                               compressed_slot_count, chunk_tiles),
            requested_hvx_workers, compressed_slot_count, chunk_tiles,
+           qbh_physical_plan_dma_bundle_batch(physical_plan),
            projection_name(variant),
            pattern_name(pattern), repeats, rpc_result, header->dsp_status,
            mismatches, (unsigned int)reference_min,
@@ -968,10 +1029,12 @@ int main(int argc, char **argv) {
                           ? expected_weight_stages - compressed_slot_count
                           : 0U;
     expected_dma_waits =
-        2U * (layout.k_tiles + expected_weight_stages);
+        2U * (layout.k_tiles +
+              expected_weight_stages /
+                  qbh_physical_plan_dma_bundle_batch(physical_plan));
     expected_expands = qbh_weight_storage_is_packed_w4(storage)
                            ? expected_weight_stages *
-                                 (physical_plan == QBH_PHYSICAL_PLAN_CHUNKED
+                                 (qbh_physical_plan_is_chunked(physical_plan)
                                       ? layout.chunks_per_output
                                       : 1U)
                            : 0U;
@@ -1013,22 +1076,24 @@ int main(int argc, char **argv) {
         header->weight_bundle_stage_count == expected_weight_stages &&
         header->output_tile_count == expected_weight_stages &&
         header->dma_submit_count ==
-            layout.k_tiles + expected_weight_stages &&
+            layout.k_tiles +
+                expected_weight_stages /
+                    qbh_physical_plan_dma_bundle_batch(physical_plan) &&
         header->dma_wait_count == expected_dma_waits &&
         header->weight_slot_reuse_count == expected_reuses &&
         header->chunks_per_output == layout.chunks_per_output &&
         header->chunk_expand_count ==
-            (physical_plan == QBH_PHYSICAL_PLAN_CHUNKED
+            (qbh_physical_plan_is_chunked(physical_plan)
                  ? expected_expands
                  : 0U) &&
         header->expanded_chunk_slot_reuse_count ==
-            (physical_plan == QBH_PHYSICAL_PLAN_CHUNKED &&
+            (qbh_physical_plan_is_chunked(physical_plan) &&
                      expected_expands >
                          QBH_W4_EXPANDED_CHUNK_SLOT_COUNT
                  ? expected_expands -
                        QBH_W4_EXPANDED_CHUNK_SLOT_COUNT
                  : 0U) &&
-        (physical_plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE ||
+        (qbh_physical_plan_is_full_bundle(physical_plan) ||
          (header->hvx_workers_created == requested_hvx_workers &&
           header->hvx_workers_locked == requested_hvx_workers &&
           header->hvx_thread_create_status == 0 &&

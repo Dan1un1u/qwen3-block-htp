@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define QBH_PROBE_MAGIC UINT32_C(0x51424850)
-#define QBH_PROBE_ABI_VERSION UINT32_C(11)
+#define QBH_PROBE_ABI_VERSION UINT32_C(12)
 #define QBH_PROBE_ALIGNMENT UINT32_C(4096)
 
 #define QBH_HMX_SPATIAL UINT32_C(64)
@@ -63,7 +63,32 @@ static inline int qbh_weight_storage_is_packed_w4(uint32_t storage) {
 enum qbh_physical_plan {
     QBH_PHYSICAL_PLAN_FULL_BUNDLE = 1,
     QBH_PHYSICAL_PLAN_CHUNKED = 2,
+    QBH_PHYSICAL_PLAN_FULL_BUNDLE_DMA_BATCH2 = 3,
+    QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH2 = 4,
+    QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH4 = 5,
 };
+
+static inline int qbh_physical_plan_is_full_bundle(uint32_t plan) {
+    return plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE ||
+           plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE_DMA_BATCH2;
+}
+
+static inline int qbh_physical_plan_is_chunked(uint32_t plan) {
+    return plan == QBH_PHYSICAL_PLAN_CHUNKED ||
+           plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH2 ||
+           plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH4;
+}
+
+static inline uint32_t qbh_physical_plan_dma_bundle_batch(uint32_t plan) {
+    if (plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE_DMA_BATCH2 ||
+        plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH2) {
+        return 2U;
+    }
+    if (plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH4) {
+        return 4U;
+    }
+    return 1U;
+}
 
 enum qbh_probe_pattern {
     QBH_PATTERN_IDENTITY = 1,

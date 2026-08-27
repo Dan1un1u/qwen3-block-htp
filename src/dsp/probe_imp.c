@@ -91,7 +91,7 @@ static int header_is_valid(const struct qbh_probe_header *header,
     }
     if (header->requested_hvx_workers == 0U ||
         header->requested_hvx_workers > QBH_MAX_HVX_WORKERS ||
-        (header->physical_plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE &&
+        (qbh_physical_plan_is_full_bundle(header->physical_plan) &&
          header->requested_hvx_workers != 1U)) {
         return 0;
     }
@@ -191,10 +191,11 @@ static int stage_activation_tiles(struct qbh_probe_header *header,
     return 0;
 }
 
-static int stage_weight_bundle(struct qbh_probe_header *header,
-                               const uint8_t *source,
-                               uint8_t *destination,
-                               uint32_t bundle_bytes) {
+static int stage_weight_bundles(struct qbh_probe_header *header,
+                                const uint8_t *source,
+                                uint8_t *destination,
+                                uint32_t bundle_bytes,
+                                uint32_t bundle_count) {
     struct qbh_dma_desc_1d descriptor __attribute__((aligned(64)));
     int status;
 
@@ -203,7 +204,7 @@ static int stage_weight_bundle(struct qbh_probe_header *header,
         return -1;
     }
     descriptor.next = 0;
-    descriptor.length = bundle_bytes;
+    descriptor.length = bundle_bytes * bundle_count;
     descriptor.type = QBH_DMA_TYPE_1D;
     descriptor.src_bypass = 1;
     descriptor.dst_bypass = 0;
@@ -222,7 +223,7 @@ static int stage_weight_bundle(struct qbh_probe_header *header,
         return -1;
     }
     asm volatile("barrier" : : : "memory");
-    ++header->weight_bundle_stage_count;
+    header->weight_bundle_stage_count += bundle_count;
     return 0;
 }
 
@@ -442,7 +443,7 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     header->hmx_window_end = 0;
     dsp_total_start = HAP_perf_get_qtimer_count();
     FARF(ALWAYS,
-         "EXP0007 stage=header_valid projection=%u storage=%u plan=%u "
+         "EXP0011 stage=header_valid projection=%u storage=%u plan=%u "
          "workers=%u compressed_slots=%u chunk_tiles=%u "
          "M=%u K=%u N=%u vtcm_plan=%u",
          layout.variant, layout.weight_storage_variant,
@@ -560,7 +561,7 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
         goto cleanup;
     }
 
-    if (layout.physical_plan == QBH_PHYSICAL_PLAN_CHUNKED) {
+    if (qbh_physical_plan_is_chunked(layout.physical_plan)) {
         result = qbh_run_chunked_w4_pipeline(
             header, &layout, shared + header->weight_offset,
             activation_tiles, vtcm, hmx_context_id);
@@ -654,31 +655,42 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     header->qtimer_start = HAP_perf_get_qtimer_count();
     header->pcycles_start = HAP_perf_get_pcycles();
     for (uint32_t repeat = 0; repeat < header->repeat_count; ++repeat) {
-        for (uint32_t output_tile = 0;
-             output_tile < layout.n_tiles; ++output_tile) {
-            uint32_t linear_tile = repeat * layout.n_tiles + output_tile;
-            uint32_t slot = linear_tile & 1U;
-            uint64_t wait_start = HAP_perf_get_qtimer_count();
-            qurt_sem_down(&free_slot[slot]);
-            header->producer_slot_wait_ticks +=
-                HAP_perf_get_qtimer_count() - wait_start;
-            if (linear_tile >= 2U) {
-                ++header->weight_slot_reuse_count;
+        uint32_t dma_bundle_batch =
+            qbh_physical_plan_dma_bundle_batch(layout.physical_plan);
+        for (uint32_t output_base = 0;
+             output_base < layout.n_tiles;
+             output_base += dma_bundle_batch) {
+            uint32_t linear_base =
+                repeat * layout.n_tiles + output_base;
+            uint32_t first_slot = linear_base & 1U;
+
+            for (uint32_t batch_index = 0;
+                 batch_index < dma_bundle_batch; ++batch_index) {
+                uint32_t linear_tile = linear_base + batch_index;
+                uint32_t slot = first_slot + batch_index;
+                uint64_t wait_start = HAP_perf_get_qtimer_count();
+                qurt_sem_down(&free_slot[slot]);
+                header->producer_slot_wait_ticks +=
+                    HAP_perf_get_qtimer_count() - wait_start;
+                if (linear_tile >= 2U) {
+                    ++header->weight_slot_reuse_count;
+                }
             }
 
             uint64_t stage_start = HAP_perf_get_qtimer_count();
             uint8_t *stage_destination =
                 qbh_weight_storage_is_packed_w4(
                     layout.weight_storage_variant)
-                    ? compressed_slots[slot]
-                    : expanded_slots[slot];
-            if (stage_weight_bundle(
+                    ? compressed_slots[first_slot]
+                    : expanded_slots[first_slot];
+            if (stage_weight_bundles(
                     header,
                     shared + header->weight_offset +
-                        (size_t)output_tile *
+                        (size_t)output_base *
                             layout.stored_weight_bundle_bytes,
                     stage_destination,
-                    layout.stored_weight_bundle_bytes) != 0) {
+                    layout.stored_weight_bundle_bytes,
+                    dma_bundle_batch) != 0) {
                 header->dsp_status = QBH_PROBE_STATUS_DMA_FAILED;
                 result = AEE_EFAILED;
                 goto abort_worker;
@@ -686,30 +698,35 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
             header->weight_stage_ticks +=
                 HAP_perf_get_qtimer_count() - stage_start;
 
-            if (qbh_weight_storage_is_packed_w4(
-                    layout.weight_storage_variant)) {
-                uint64_t expand_start = HAP_perf_get_qtimer_count();
-                if (layout.weight_storage_variant ==
-                    QBH_WEIGHT_PACKED_W4_HMX_SCALE) {
-                    qbh_unpack_w4_to_s8_hvx(
-                        compressed_slots[slot],
-                        (int8_t *)expanded_slots[slot],
-                        layout.k_tiles);
-                } else {
-                    qbh_expand_w4_to_s8_hvx(
-                        compressed_slots[slot],
-                        compressed_slots[slot] +
-                            layout.w4_scale_offset,
-                        (int8_t *)expanded_slots[slot],
-                        layout.k_tiles);
+            for (uint32_t batch_index = 0;
+                 batch_index < dma_bundle_batch; ++batch_index) {
+                uint32_t slot = first_slot + batch_index;
+                if (qbh_weight_storage_is_packed_w4(
+                        layout.weight_storage_variant)) {
+                    uint64_t expand_start =
+                        HAP_perf_get_qtimer_count();
+                    if (layout.weight_storage_variant ==
+                        QBH_WEIGHT_PACKED_W4_HMX_SCALE) {
+                        qbh_unpack_w4_to_s8_hvx(
+                            compressed_slots[slot],
+                            (int8_t *)expanded_slots[slot],
+                            layout.k_tiles);
+                    } else {
+                        qbh_expand_w4_to_s8_hvx(
+                            compressed_slots[slot],
+                            compressed_slots[slot] +
+                                layout.w4_scale_offset,
+                            (int8_t *)expanded_slots[slot],
+                            layout.k_tiles);
+                    }
+                    header->weight_expand_ticks +=
+                        HAP_perf_get_qtimer_count() - expand_start;
+                    ++header->weight_expand_count;
                 }
-                header->weight_expand_ticks +=
-                    HAP_perf_get_qtimer_count() - expand_start;
-                ++header->weight_expand_count;
-            }
-            asm volatile("barrier" : : : "memory");
+                asm volatile("barrier" : : : "memory");
 
-            (void)qurt_sem_up(&ready[slot]);
+                (void)qurt_sem_up(&ready[slot]);
+            }
         }
     }
     goto join_worker;

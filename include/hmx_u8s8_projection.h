@@ -82,22 +82,26 @@ static inline int qbh_projection_layout_init(
         !qbh_weight_storage_is_packed_w4(weight_storage_variant)) {
         return -1;
     }
-    if (physical_plan != QBH_PHYSICAL_PLAN_FULL_BUNDLE &&
-        physical_plan != QBH_PHYSICAL_PLAN_CHUNKED) {
+    if (!qbh_physical_plan_is_full_bundle(physical_plan) &&
+        !qbh_physical_plan_is_chunked(physical_plan)) {
         return -1;
     }
-    if (physical_plan == QBH_PHYSICAL_PLAN_CHUNKED &&
+    if (qbh_physical_plan_is_chunked(physical_plan) &&
         !qbh_weight_storage_is_packed_w4(weight_storage_variant)) {
         return -1;
     }
+    if (physical_plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE_DMA_BATCH2 &&
+        weight_storage_variant != QBH_WEIGHT_EXPANDED_S8) {
+        return -1;
+    }
     if (weight_storage_variant == QBH_WEIGHT_PACKED_W4_HMX_SCALE &&
-        physical_plan != QBH_PHYSICAL_PLAN_CHUNKED) {
+        !qbh_physical_plan_is_chunked(physical_plan)) {
         return -1;
     }
     if (compressed_slot_count <
             QBH_W4_DEFAULT_COMPRESSED_SLOT_COUNT ||
         compressed_slot_count > QBH_W4_MAX_COMPRESSED_SLOT_COUNT ||
-        (physical_plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE &&
+        (qbh_physical_plan_is_full_bundle(physical_plan) &&
          compressed_slot_count !=
              QBH_W4_DEFAULT_COMPRESSED_SLOT_COUNT) ||
         (chunk_tiles != QBH_W4_DEFAULT_CHUNK_TILES &&
@@ -191,7 +195,7 @@ static inline int qbh_projection_layout_init(
         QBH_HMX_OUTPUT_BYTES);
     layout->vtcm_chunked_plan_bytes =
         layout->vtcm_chunked_output_offset + layout->output_tiles_bytes;
-    if (physical_plan == QBH_PHYSICAL_PLAN_CHUNKED) {
+    if (qbh_physical_plan_is_chunked(physical_plan)) {
         layout->vtcm_output_offset = layout->vtcm_chunked_output_offset;
         layout->vtcm_plan_bytes = layout->vtcm_chunked_plan_bytes;
     } else {

@@ -164,10 +164,11 @@ static int qbh_record_dma_wait(struct qbh_probe_header *header) {
     return status;
 }
 
-static int qbh_stage_weight_bundle(struct qbh_probe_header *header,
-                                   const uint8_t *source,
-                                   uint8_t *destination,
-                                   uint32_t bundle_bytes) {
+static int qbh_stage_weight_bundles(struct qbh_probe_header *header,
+                                    const uint8_t *source,
+                                    uint8_t *destination,
+                                    uint32_t bundle_bytes,
+                                    uint32_t bundle_count) {
     struct qbh_dma_desc_1d descriptor __attribute__((aligned(64)));
     int status;
 
@@ -176,7 +177,7 @@ static int qbh_stage_weight_bundle(struct qbh_probe_header *header,
         return -1;
     }
     descriptor.next = 0;
-    descriptor.length = bundle_bytes;
+    descriptor.length = bundle_bytes * bundle_count;
     descriptor.type = QBH_DMA_TYPE_1D;
     descriptor.src_bypass = 1;
     descriptor.dst_bypass = 0;
@@ -195,7 +196,7 @@ static int qbh_stage_weight_bundle(struct qbh_probe_header *header,
         return -1;
     }
     asm volatile("barrier" : : : "memory");
-    ++header->weight_bundle_stage_count;
+    header->weight_bundle_stage_count += bundle_count;
     return 0;
 }
 
@@ -416,6 +417,7 @@ int qbh_run_chunked_w4_pipeline(
     uint32_t created_hvx_workers = 0;
     uint32_t joined_hvx_workers = 0;
     uint32_t successful_hvx_locks = 0;
+    uint32_t dma_bundle_batch;
     int hmx_thread_created = 0;
     int hmx_thread_joined = 0;
     int hmx_exit_status = 0;
@@ -423,11 +425,18 @@ int qbh_run_chunked_w4_pipeline(
 
     if (header == NULL || layout == NULL || stored_weights == NULL ||
         activation_tiles == NULL || vtcm == NULL || hmx_context_id == 0U ||
-        layout->physical_plan != QBH_PHYSICAL_PLAN_CHUNKED ||
+        !qbh_physical_plan_is_chunked(layout->physical_plan) ||
         !qbh_weight_storage_is_packed_w4(
             layout->weight_storage_variant) ||
         header->requested_hvx_workers == 0U ||
         header->requested_hvx_workers > QBH_MAX_HVX_WORKERS) {
+        return AEE_EBADPARM;
+    }
+    dma_bundle_batch = qbh_physical_plan_dma_bundle_batch(
+        layout->physical_plan);
+    if (dma_bundle_batch > layout->compressed_slot_count ||
+        layout->compressed_slot_count % dma_bundle_batch != 0U ||
+        layout->n_tiles % layout->compressed_slot_count != 0U) {
         return AEE_EBADPARM;
     }
 
@@ -534,59 +543,74 @@ int qbh_run_chunked_w4_pipeline(
     header->qtimer_start = HAP_perf_get_qtimer_count();
     header->pcycles_start = HAP_perf_get_pcycles();
     for (uint32_t repeat = 0; repeat < header->repeat_count; ++repeat) {
-        for (uint32_t output_tile = 0; output_tile < layout->n_tiles;
-             ++output_tile) {
-            uint32_t linear_output = repeat * layout->n_tiles + output_tile;
-            uint32_t compressed_slot =
-                linear_output % layout->compressed_slot_count;
-            uint64_t wait_start = HAP_perf_get_qtimer_count();
+        for (uint32_t output_base = 0; output_base < layout->n_tiles;
+             output_base += dma_bundle_batch) {
+            uint32_t linear_base = repeat * layout->n_tiles + output_base;
+            uint32_t first_compressed_slot =
+                linear_base % layout->compressed_slot_count;
             uint64_t stage_start;
 
-            qurt_sem_down(&state.compressed_free[compressed_slot]);
-            header->producer_slot_wait_ticks +=
-                HAP_perf_get_qtimer_count() - wait_start;
-            if (linear_output >= layout->compressed_slot_count) {
-                ++header->weight_slot_reuse_count;
+            for (uint32_t batch_index = 0;
+                 batch_index < dma_bundle_batch; ++batch_index) {
+                uint32_t linear_output = linear_base + batch_index;
+                uint32_t compressed_slot =
+                    first_compressed_slot + batch_index;
+                uint64_t wait_start = HAP_perf_get_qtimer_count();
+                qurt_sem_down(&state.compressed_free[compressed_slot]);
+                header->producer_slot_wait_ticks +=
+                    HAP_perf_get_qtimer_count() - wait_start;
+                if (linear_output >= layout->compressed_slot_count) {
+                    ++header->weight_slot_reuse_count;
+                }
             }
 
             stage_start = HAP_perf_get_qtimer_count();
-            if (qbh_stage_weight_bundle(
+            if (qbh_stage_weight_bundles(
                     header,
                     stored_weights +
-                        (size_t)output_tile * layout->w4_bundle_bytes,
-                    state.compressed_slots[compressed_slot],
-                    layout->w4_bundle_bytes) != 0) {
+                        (size_t)output_base * layout->w4_bundle_bytes,
+                    state.compressed_slots[first_compressed_slot],
+                    layout->w4_bundle_bytes, dma_bundle_batch) != 0) {
                 result = AEE_EFAILED;
                 qbh_abort_pipeline(&state, result);
                 goto stop_workers;
             }
             header->weight_stage_ticks +=
                 HAP_perf_get_qtimer_count() - stage_start;
-            state.compressed_remaining[compressed_slot] =
-                layout->chunks_per_output;
 
-            for (uint32_t chunk_index = 0;
-                 chunk_index < layout->chunks_per_output; ++chunk_index) {
-                struct qbh_chunk_task task;
-                uint32_t sequence =
-                    linear_output * layout->chunks_per_output + chunk_index;
-                uint32_t expanded_slot =
-                    sequence % QBH_W4_EXPANDED_CHUNK_SLOT_COUNT;
-                wait_start = HAP_perf_get_qtimer_count();
-                qurt_sem_down(&state.expanded_free[expanded_slot]);
-                header->expanded_slot_wait_ticks +=
-                    HAP_perf_get_qtimer_count() - wait_start;
-                if (sequence >= QBH_W4_EXPANDED_CHUNK_SLOT_COUNT) {
-                    ++header->expanded_chunk_slot_reuse_count;
+            for (uint32_t batch_index = 0;
+                 batch_index < dma_bundle_batch; ++batch_index) {
+                uint32_t linear_output = linear_base + batch_index;
+                uint32_t compressed_slot =
+                    first_compressed_slot + batch_index;
+                state.compressed_remaining[compressed_slot] =
+                    layout->chunks_per_output;
+
+                for (uint32_t chunk_index = 0;
+                     chunk_index < layout->chunks_per_output;
+                     ++chunk_index) {
+                    struct qbh_chunk_task task;
+                    uint32_t sequence =
+                        linear_output * layout->chunks_per_output +
+                        chunk_index;
+                    uint32_t expanded_slot =
+                        sequence % QBH_W4_EXPANDED_CHUNK_SLOT_COUNT;
+                    uint64_t wait_start = HAP_perf_get_qtimer_count();
+                    qurt_sem_down(&state.expanded_free[expanded_slot]);
+                    header->expanded_slot_wait_ticks +=
+                        HAP_perf_get_qtimer_count() - wait_start;
+                    if (sequence >= QBH_W4_EXPANDED_CHUNK_SLOT_COUNT) {
+                        ++header->expanded_chunk_slot_reuse_count;
+                    }
+                    memset(&task, 0, sizeof(task));
+                    task.sequence = sequence;
+                    task.compressed_slot = compressed_slot;
+                    task.expanded_slot = expanded_slot;
+                    task.chunk_index = chunk_index;
+                    task.chunk_tiles = qbh_projection_chunk_tiles(
+                        layout, chunk_index);
+                    qbh_queue_push(&state.queue, &task);
                 }
-                memset(&task, 0, sizeof(task));
-                task.sequence = sequence;
-                task.compressed_slot = compressed_slot;
-                task.expanded_slot = expanded_slot;
-                task.chunk_index = chunk_index;
-                task.chunk_tiles =
-                    qbh_projection_chunk_tiles(layout, chunk_index);
-                qbh_queue_push(&state.queue, &task);
             }
         }
     }
