@@ -17,6 +17,7 @@
 #include "probe_protocol.h"
 #include "qbh_user_dma.h"
 #include "qwen3_probe.h"
+#include "resource_protocol.h"
 #include "w4_parallel_pipeline.h"
 #include "w4_u8_expand.h"
 
@@ -30,6 +31,18 @@ struct qbh_probe_session {
     uint32_t vtcm_context_id;
     uint32_t hmx_context_id;
     uint8_t *vtcm;
+    int32_t prepare_result;
+    int32_t vtcm_query_status;
+    int32_t vtcm_configure_status;
+    int32_t vtcm_acquire_status;
+    int32_t vtcm_get_pointer_status;
+    uint32_t vtcm_total_bytes;
+    uint32_t vtcm_available_before_bytes;
+    uint32_t vtcm_requested_bytes;
+    uint32_t vtcm_minimum_page_bytes;
+    uint32_t vtcm_minimum_required_bytes;
+    uint32_t vtcm_granted_bytes;
+    uint64_t vtcm_acquire_ticks;
     int power_context;
     int dcvs_powered;
     int hmx_powered;
@@ -152,6 +165,9 @@ AEEResult qwen3_probe_prepare(remote_handle64 handle) {
     compute_res_attr_t vtcm_attributes;
     compute_res_attr_t hmx_attributes;
     HAP_power_request_t request;
+    void *vtcm_pointer = NULL;
+    unsigned int vtcm_granted_bytes = 0U;
+    uint64_t acquire_start;
     AEEResult result;
 
     if (session == NULL) {
@@ -160,6 +176,12 @@ AEEResult qwen3_probe_prepare(remote_handle64 handle) {
     if (session->prepared != 0U) {
         return AEE_SUCCESS;
     }
+
+    session->prepare_result = AEE_EFAILED;
+    session->vtcm_query_status = AEE_EFAILED;
+    session->vtcm_configure_status = AEE_EFAILED;
+    session->vtcm_acquire_status = AEE_EFAILED;
+    session->vtcm_get_pointer_status = AEE_EFAILED;
 
     memset(&request, 0, sizeof(request));
     request.type = HAP_power_set_DCVS_v3;
@@ -191,26 +213,59 @@ AEEResult qwen3_probe_prepare(remote_handle64 handle) {
     }
     session->hmx_powered = 1;
 
-    result = HAP_compute_res_attr_init(&vtcm_attributes);
-    if (result != AEE_SUCCESS ||
-        HAP_compute_res_attr_set_serialize(&vtcm_attributes, 1) !=
-            AEE_SUCCESS ||
-        HAP_compute_res_attr_set_vtcm_param(&vtcm_attributes,
-                                            QBH_W4U8_VTCM_BYTES, 1) !=
-            AEE_SUCCESS) {
-        result = AEE_EFAILED;
+    session->vtcm_query_status = HAP_compute_res_query_VTCM(
+        0U, &session->vtcm_total_bytes, NULL,
+        &session->vtcm_available_before_bytes, NULL);
+    session->vtcm_requested_bytes = session->vtcm_total_bytes;
+    session->vtcm_minimum_page_bytes = QBH_FULL_VTCM_MIN_PAGE_BYTES;
+    session->vtcm_minimum_required_bytes = 0U;
+    if (session->vtcm_query_status != AEE_SUCCESS ||
+        session->vtcm_total_bytes != QBH_EXPECTED_FULL_VTCM_BYTES) {
+        result = session->vtcm_query_status != AEE_SUCCESS
+                     ? session->vtcm_query_status
+                     : AEE_EFAILED;
         goto failure;
     }
+
+    session->vtcm_configure_status =
+        HAP_compute_res_attr_init(&vtcm_attributes);
+    if (session->vtcm_configure_status == AEE_SUCCESS) {
+        session->vtcm_configure_status =
+            HAP_compute_res_attr_set_serialize(&vtcm_attributes, 1);
+    }
+    if (session->vtcm_configure_status == AEE_SUCCESS) {
+        session->vtcm_configure_status =
+            HAP_compute_res_attr_set_vtcm_param_v2(
+                &vtcm_attributes, session->vtcm_requested_bytes,
+                session->vtcm_minimum_page_bytes,
+                session->vtcm_minimum_required_bytes);
+    }
+    if (session->vtcm_configure_status != AEE_SUCCESS) {
+        result = session->vtcm_configure_status;
+        goto failure;
+    }
+    acquire_start = HAP_perf_get_qtimer_count();
     session->vtcm_context_id =
-        HAP_compute_res_acquire(&vtcm_attributes, 100000);
+        HAP_compute_res_acquire(&vtcm_attributes, 1000000);
+    session->vtcm_acquire_ticks =
+        HAP_perf_get_qtimer_count() - acquire_start;
     if (session->vtcm_context_id == 0U) {
-        result = AEE_ERESOURCENOTFOUND;
+        session->vtcm_acquire_status = AEE_ERESOURCENOTFOUND;
+        result = session->vtcm_acquire_status;
         goto failure;
     }
-    session->vtcm = (uint8_t *)HAP_compute_res_attr_get_vtcm_ptr(
-        &vtcm_attributes);
-    if (session->vtcm == NULL) {
-        result = AEE_EFAILED;
+    session->vtcm_acquire_status = AEE_SUCCESS;
+    session->vtcm_get_pointer_status =
+        HAP_compute_res_attr_get_vtcm_ptr_v2(
+            &vtcm_attributes, &vtcm_pointer, &vtcm_granted_bytes);
+    session->vtcm = (uint8_t *)vtcm_pointer;
+    session->vtcm_granted_bytes = vtcm_granted_bytes;
+    if (session->vtcm_get_pointer_status != AEE_SUCCESS ||
+        session->vtcm == NULL ||
+        session->vtcm_granted_bytes != session->vtcm_requested_bytes) {
+        result = session->vtcm_get_pointer_status != AEE_SUCCESS
+                     ? session->vtcm_get_pointer_status
+                     : AEE_EFAILED;
         goto failure;
     }
 
@@ -229,9 +284,11 @@ AEEResult qwen3_probe_prepare(remote_handle64 handle) {
     }
     session->prepared = 1U;
     session->prepared_run_count = 0U;
+    session->prepare_result = AEE_SUCCESS;
     return AEE_SUCCESS;
 
 failure:
+    session->prepare_result = result;
     (void)qbh_release_prepared_resources(session);
     return result;
 }
@@ -240,6 +297,71 @@ AEEResult qwen3_probe_release(remote_handle64 handle) {
     struct qbh_probe_session *session = qbh_session_from_handle(handle);
     return session != NULL ? qbh_release_prepared_resources(session)
                            : AEE_EBADPARM;
+}
+
+AEEResult qwen3_probe_resource_info(remote_handle64 handle, int32 shared_fd,
+                                    uint32 shared_bytes) {
+    struct qbh_probe_session *session = qbh_session_from_handle(handle);
+    struct qbh_resource_header *header = NULL;
+    uint8_t *shared = NULL;
+    int cache_status;
+    AEEResult result;
+
+    if (session == NULL || shared_bytes < sizeof(*header)) {
+        return AEE_EBADPARM;
+    }
+    result = HAP_mmap_get(shared_fd, (void **)&shared, NULL);
+    if (result != AEE_SUCCESS || shared == NULL) {
+        return result != AEE_SUCCESS ? result : AEE_EFAILED;
+    }
+    header = (struct qbh_resource_header *)shared;
+    cache_status = qurt_mem_cache_clean(
+        (qurt_addr_t)header, (qurt_size_t)sizeof(*header),
+        QURT_MEM_CACHE_INVALIDATE, QURT_MEM_DCACHE);
+    if (cache_status != 0 || header->magic != QBH_RESOURCE_MAGIC ||
+        header->abi_version != QBH_RESOURCE_ABI_VERSION ||
+        header->experiment != QBH_RESOURCE_EXPERIMENT ||
+        header->header_bytes != sizeof(*header)) {
+        if (cache_status == 0) {
+            header->dsp_status = QBH_RESOURCE_STATUS_BAD_HEADER;
+        }
+        result = cache_status == 0 ? AEE_EBADPARM : AEE_EFAILED;
+        goto publish;
+    }
+
+    header->dsp_status = QBH_RESOURCE_STATUS_OK;
+    header->prepare_result = session->prepare_result;
+    header->query_status = session->vtcm_query_status;
+    header->configure_status = session->vtcm_configure_status;
+    header->acquire_status = session->vtcm_acquire_status;
+    header->get_pointer_status = session->vtcm_get_pointer_status;
+    header->expected_total_bytes = QBH_EXPECTED_FULL_VTCM_BYTES;
+    header->queried_total_bytes = session->vtcm_total_bytes;
+    header->available_before_bytes = session->vtcm_available_before_bytes;
+    header->requested_bytes = session->vtcm_requested_bytes;
+    header->minimum_page_bytes = session->vtcm_minimum_page_bytes;
+    header->minimum_required_bytes = session->vtcm_minimum_required_bytes;
+    header->granted_bytes = session->vtcm_granted_bytes;
+    header->context_id = session->vtcm_context_id;
+    header->vtcm_address = (uint32_t)(uintptr_t)session->vtcm;
+    header->exact_full_grant =
+        session->prepared != 0U &&
+        session->vtcm_total_bytes == QBH_EXPECTED_FULL_VTCM_BYTES &&
+        session->vtcm_granted_bytes == session->vtcm_total_bytes;
+    header->acquire_ticks = session->vtcm_acquire_ticks;
+    result = AEE_SUCCESS;
+
+publish:
+    if (header != NULL) {
+        int flush_status = qurt_mem_cache_clean(
+            (qurt_addr_t)header, (qurt_size_t)sizeof(*header),
+            QURT_MEM_CACHE_FLUSH, QURT_MEM_DCACHE);
+        if (flush_status != 0 && result == AEE_SUCCESS) {
+            result = AEE_EFAILED;
+        }
+    }
+    (void)HAP_mmap_put(shared_fd);
+    return result;
 }
 
 static int range_is_valid(uint32_t offset, uint32_t bytes,
