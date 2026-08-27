@@ -1104,14 +1104,24 @@ experiments:
       - exp0022_scalar_w4f16_control
       - pipelined_w4f16_candidates
       - f16f16_fresh_control
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4f16-pipeline
     source_branches:
       - codex/exp-0023-w4f16-pipeline
-    source_commits: []
+    source_commits:
+      - b658c780a6cdb5d2c745b10ebab8bd4c0e6f51ad
+      - cfb7904c8130eced3bc5f793ad54c42c1800ae5a
+      - f8f91a1c3ceb4c835fb43da8a7783d6e23393c87
+      - 4d3523b0021fdff78870821ae48db627a4510507
+      - e5a1b3ac534d5893adb3c4de71f9981da411cd66
+      - d884cf6567e10f1131c66041bc4b47d0ff8c65f7
+      - 178d4bd254ebe1ed02c785f0786b736481d341cf
+      - a32a0550214fb9c2f6eb7f947946ec11321e728d
+      - c540bd2c4298bf98eb7fe1d496106058325de922
+      - 896446df77cca17ad8f6c1940f09461a0f99d4af
     record: docs/experiments/EXP-0023.md
     decided_by: user
     decided_on: '2026-08-27'
@@ -1120,10 +1130,45 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0023-w4f16-pipeline
       started_on: '2026-08-27'
-      completed_on: null
+      completed_on: '2026-08-27'
     evidence:
       formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0023'
       retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0023'
       parent_formal_run: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0022\\20260827T123409Z_25157d78f13e'
       speed_gate: repeat1_and_repeat10_w4f16_strictly_faster_than_fresh_f16f16
       repeat10_improvement_target_percent: 15.0
+      formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0023\20260827T144632Z_896446df77cc'
+      artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0023\artifacts\896446df77cc'
+      matrix: 'D:\llm_exp\results\qwen3-block-htp\exp0023\20260827T144632Z_896446df77cc\matrix_gate.json'
+      formal_runs: 22
+      parent_block_package_hash_audit: pass
+      exact_full_vtcm_gate: pass
+      vtcm_request_bytes: 8388608
+      f16f16_vtcm_peak_plan_bytes: 6286080
+      w4f16_vtcm_peak_plan_bytes: 7744512
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      intermediate_dma_descriptor_count: 0
+      intermediate_spill_fill_count: 0
+      qnn_dependency_scan: none
+      boot_id_stable: true
+      w4f16_runtime_reference_cosine: 0.999999997
+      w4f16_runtime_reference_max_abs: 0.0625
+      w4f16_hmx_batch_n_tiles: 2
+      w4f16_dma_batch_n_tiles: 4
+      w4f16_hvx_workers: 2
+      w4f16_region_tiles: 16
+      f16f16_weight_ddr_read_bytes_per_block: 100663296
+      w4f16_weight_ddr_read_bytes_per_repeat10_block: 25174016.0
+      repeat1_f16f16_host_wall_ns_median: 262150104.0
+      repeat1_w4f16_host_wall_ns_median: 260824687.0
+      repeat1_w4f16_latency_change_percent: -0.5055946878434248
+      repeat10_f16f16_per_block_host_wall_ns_median: 195521380.2
+      repeat10_w4f16_per_block_host_wall_ns_median: 194130833.3
+      repeat10_w4f16_latency_change_percent: -0.711199408769303
+      repeat10_f16f16_projection_ticks_per_block_median: 134561.0
+      repeat10_w4f16_projection_ticks_per_block_median: 113818.6
+      repeat10_w4f16_projection_latency_change_percent: -15.414867606513027
+      speed_gate_result: pass
+      repeat10_improvement_target_result: fail
+      performance_characterization: projection_pipeline_repaired_and_15_percent_faster_but_shared_scalar_stages_limit_complete_block_gain_to_below_one_percent
