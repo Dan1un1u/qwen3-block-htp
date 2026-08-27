@@ -904,7 +904,7 @@ experiments:
     execution_state: completed
     evidence_validity: valid
     local_gate: fail
-    adoption_status: pending
+    adoption_status: rejected
     evidence_profile: selected-streaming-hvx-critical-path
     source_branches:
       - codex/exp-0020-hvx-unpack-stream-dispatch
@@ -917,6 +917,9 @@ experiments:
     decided_by: user
     decided_on: '2026-08-27'
     approval_ref: 'User message 2026-08-27: 同意'
+    rejected_by: user
+    rejected_on: '2026-08-27'
+    rejection_ref: 'User message 2026-08-27: agree to freeze EXP-0019 projection-v1 and move to the VTCM-resident MLP'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0020-hvx-unpack-stream-dispatch
@@ -951,3 +954,30 @@ experiments:
       down_parent_vs_s8_repeat1_improvement_percent: 11.003172913787727
       down_parent_vs_s8_repeat10_improvement_percent: 22.85191945487944
       performance_characterization: isolated_unpack_and_dispatch_changes_do_not_beat_exp0019_streaming_parent
+  - id: EXP-0021
+    slug: vtcm-resident-w4u8-mlp
+    title: Build a zero-intermediate-DDR Qwen3 W4U8 MLP Execution Unit
+    parent: EXP-0019
+    variants:
+      - exp0019_projection_v1_components
+      - vtcm_resident_tiled_gate_silu_up_down
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: qwen3-w4u8-mlp-vtcm-residency
+    source_branches:
+      - codex/exp-0021-vtcm-resident-w4u8-mlp
+    source_commits: []
+    record: docs/experiments/EXP-0021.md
+    decided_by: user
+    decided_on: '2026-08-27'
+    approval_ref: 'User message 2026-08-27: 同意; no intermediate DDR is a hard gate and intermediates must remain in VTCM through pipeline scheduling'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0021-vtcm-resident-w4u8-mlp
+      started_on: '2026-08-27'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0021'
+      retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0021'

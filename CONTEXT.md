@@ -96,6 +96,12 @@ weights and outputs as one `2048 -> 12288` physical projection. It does not
 apply SiLU, multiply gate and up outputs, or execute the down projection.
 _Avoid_: fused MLP, gate/up arithmetic fusion, complete Qwen3 block
 
+**VTCM-Resident MLP Intermediate**:
+The Gate/Up tile values, activated Gate-by-Up product, and Down activation that
+exist only in HMX accumulator state, HVX registers, or declared VTCM regions
+between the legal DDR input/weight boundary and final-output boundary.
+_Avoid_: shared-rpcmem workspace, cached DDR intermediate, hidden tensor output
+
 **W4 Scale Placement**:
 The physical stage at which a per-output-channel W4 scale is applied. In
 HVX-prescale, HVX expands each signed nibble and multiplies it by the channel
