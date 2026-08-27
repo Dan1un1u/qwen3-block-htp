@@ -100,8 +100,10 @@ def assert_runtime_valid(record, repeat):
         "dma_descriptor_completion_count": expected_descriptors,
         "dma_descriptor_timeout_count": 0,
         "weight_slot_reuse_count": max(0, logical_bundles - compressed),
-        "expanded_chunk_slot_reuse_count": max(
-            0, expected_expands - expanded),
+        "expanded_chunk_slot_reuse_count": (
+            max(0, expected_expands - expanded)
+            if record["weight_storage"] == "packed_w4_hmx_postscale"
+            else 0),
     }
     for field, expected in expected_fields.items():
         if record[field] != expected:
