@@ -469,3 +469,35 @@ experiments:
       selected_down_plan: slots4_chunk96_dma_batch2
       selected_expanded_s8_plan: exp0005_full_bundle_control
       performance_characterization: dma_batch2_improves_w4_and_beats_fair_s8_both_shapes
+  - id: EXP-0012
+    slug: linked-dma-publication
+    title: Publish linked User-DMA descriptors independently
+    parent: EXP-0011
+    variants:
+      - expanded_s8_dma_batch1
+      - expanded_s8_contiguous_batch2
+      - expanded_s8_linked_chain2
+      - packed_w4_dma_batch1
+      - packed_w4_contiguous_batch2
+      - packed_w4_linked_chain2
+      - packed_w4_linked_chain4
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: w4u8-linked-dma-independent-publication
+    source_branches:
+      - codex/exp-0012-linked-dma-publication
+    source_commits: []
+    record: docs/experiments/EXP-0012.md
+    decided_by: user
+    decided_on: '2026-08-27'
+    approval_ref: 'User message 2026-08-27: 继续优化现有方案'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0012-linked-dma-publication
+      started_on: '2026-08-27'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0012'
+      retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0012'
