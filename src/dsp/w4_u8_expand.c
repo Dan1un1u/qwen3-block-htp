@@ -20,12 +20,14 @@ static const int8_t qbh_signed_w4_lut[128]
 
 static const uint16_t qbh_signed_w4_f16_lut[64]
     __attribute__((aligned(128))) = {
-        UINT16_C(0x0000), UINT16_C(0x3c00), UINT16_C(0x4000),
-        UINT16_C(0x4200), UINT16_C(0x4400), UINT16_C(0x4500),
-        UINT16_C(0x4600), UINT16_C(0x4700), UINT16_C(0xc800),
-        UINT16_C(0xc700), UINT16_C(0xc600), UINT16_C(0xc500),
-        UINT16_C(0xc400), UINT16_C(0xc200), UINT16_C(0xc000),
-        UINT16_C(0xbc00),
+        UINT16_C(0x0000), 0U, UINT16_C(0x3c00), 0U,
+        UINT16_C(0x4000), 0U, UINT16_C(0x4200), 0U,
+        UINT16_C(0x4400), 0U, UINT16_C(0x4500), 0U,
+        UINT16_C(0x4600), 0U, UINT16_C(0x4700), 0U,
+        UINT16_C(0xc800), 0U, UINT16_C(0xc700), 0U,
+        UINT16_C(0xc600), 0U, UINT16_C(0xc500), 0U,
+        UINT16_C(0xc400), 0U, UINT16_C(0xc200), 0U,
+        UINT16_C(0xc000), 0U, UINT16_C(0xbc00), 0U,
 };
 
 static HVX_Vector qbh_scale_w4_f16_lanes(
