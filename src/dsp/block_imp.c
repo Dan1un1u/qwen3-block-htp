@@ -129,7 +129,6 @@ struct qbh_block_w4f16_pool {
     struct qbh_block_w4f16_job jobs[QBH_BLOCK_W4F16_HVX_WORKERS];
     volatile uint32_t stop;
     volatile uint32_t next_region;
-    volatile uint32_t static_partition;
     const uint8_t *compressed_weight;
     const float *channel_scale;
     uint8_t *expanded_weight;
@@ -137,8 +136,6 @@ struct qbh_block_w4f16_pool {
     uint32_t expected_generation;
     uint32_t region_count;
     uint32_t region_tiles;
-    uint32_t worker_start_tiles[QBH_BLOCK_W4F16_HVX_WORKERS];
-    uint32_t worker_tile_counts[QBH_BLOCK_W4F16_HVX_WORKERS];
     uint32_t worker_count;
     uint32_t created_workers;
 };
@@ -656,52 +653,31 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
         if (pool->stop != 0U) {
             break;
         }
-        if (pool->static_partition != 0U) {
-            uint32_t start_tile =
-                pool->worker_start_tiles[job->worker_index];
-            uint32_t tile_count =
-                pool->worker_tile_counts[job->worker_index];
-            uint64_t start = HAP_perf_get_qtimer_count();
-            if (tile_count != 0U) {
-                qbh_unpack_w4_to_f16_hvx(
-                    pool->compressed_weight +
-                        (size_t)start_tile *
-                            QBH_W4_PACKED_TILE_BYTES,
-                    pool->expanded_weight +
-                        (size_t)start_tile *
-                            QBH_HMX_FP16_TILE_BYTES,
-                    tile_count);
-                job->expand_ticks +=
-                    HAP_perf_get_qtimer_count() - start;
-                job->expand_count += tile_count;
+        for (;;) {
+            uint32_t region =
+                qbh_atomic_fetch_increment(&pool->next_region);
+            uint64_t start;
+            if (region >= pool->region_count) {
+                break;
             }
-        } else {
-            for (;;) {
-                uint32_t region =
-                    qbh_atomic_fetch_increment(&pool->next_region);
-                uint64_t start;
-                if (region >= pool->region_count) {
-                    break;
-                }
-                start = HAP_perf_get_qtimer_count();
-                qbh_unpack_w4_to_f16_hvx(
-                    pool->compressed_weight +
-                        (size_t)region * pool->region_tiles *
-                            QBH_W4_PACKED_TILE_BYTES,
-                    pool->expanded_weight +
-                        (size_t)region * pool->region_tiles *
-                            QBH_HMX_FP16_TILE_BYTES,
-                    pool->region_tiles);
-                job->expand_ticks +=
-                    HAP_perf_get_qtimer_count() - start;
-                ++job->expand_count;
-                pool->ready_generations[region] =
-                    pool->expected_generation;
-                asm volatile("release(%0):at"
-                             :
-                             : "r"(&pool->ready_generations[region])
-                             : "memory");
-            }
+            start = HAP_perf_get_qtimer_count();
+            qbh_unpack_w4_to_f16_hvx(
+                pool->compressed_weight +
+                    (size_t)region * pool->region_tiles *
+                        QBH_W4_PACKED_TILE_BYTES,
+                pool->expanded_weight +
+                    (size_t)region * pool->region_tiles *
+                        QBH_HMX_FP16_TILE_BYTES,
+                pool->region_tiles);
+            job->expand_ticks +=
+                HAP_perf_get_qtimer_count() - start;
+            ++job->expand_count;
+            pool->ready_generations[region] =
+                pool->expected_generation;
+            asm volatile("release(%0):at"
+                         :
+                         : "r"(&pool->ready_generations[region])
+                         : "memory");
         }
         (void)qurt_sem_up(&pool->command_done[job->worker_index]);
     }
@@ -793,7 +769,6 @@ static void qbh_w4f16_pool_start(
     pool->region_count = region_count;
     pool->region_tiles = region_tiles;
     pool->next_region = 0U;
-    pool->static_partition = 0U;
     asm volatile("barrier" ::: "memory");
     for (uint32_t worker = 0; worker < pool->worker_count; ++worker) {
         (void)qurt_sem_up(&pool->command_ready[worker]);
@@ -814,42 +789,30 @@ static void qbh_w4f16_expand_with_main(
     const uint8_t *compressed_weight, const float *channel_scale,
     uint8_t *expanded_weight, volatile uint32_t *ready_generations,
     uint32_t expected_generation, uint32_t k_tiles) {
-    uint32_t participant_count = pool->worker_count + 1U;
-    uint32_t base_tiles = k_tiles / participant_count;
-    uint32_t extra_tiles = k_tiles % participant_count;
-    uint32_t main_tiles = base_tiles + (extra_tiles != 0U ? 1U : 0U);
-    uint32_t tile_cursor = main_tiles;
+    uint32_t total_regions = k_tiles / header->w4f16_region_tiles;
+    uint32_t main_regions =
+        (total_regions + pool->worker_count) /
+        (pool->worker_count + 1U);
+    uint32_t main_tiles = main_regions * header->w4f16_region_tiles;
+    uint32_t pool_regions = total_regions - main_regions;
     uint64_t main_start;
 
-    pool->compressed_weight = compressed_weight;
-    pool->channel_scale = channel_scale;
-    pool->expanded_weight = expanded_weight;
-    pool->ready_generations = ready_generations;
-    pool->expected_generation = expected_generation;
-    pool->region_count = 0U;
-    pool->region_tiles = header->w4f16_region_tiles;
-    pool->next_region = 0U;
-    pool->static_partition = 1U;
-    for (uint32_t worker = 0; worker < pool->worker_count; ++worker) {
-        uint32_t participant = worker + 1U;
-        uint32_t worker_tiles =
-            base_tiles + (participant < extra_tiles ? 1U : 0U);
-        pool->worker_start_tiles[worker] = tile_cursor;
-        pool->worker_tile_counts[worker] = worker_tiles;
-        tile_cursor += worker_tiles;
-    }
-    asm volatile("barrier" ::: "memory");
-    for (uint32_t worker = 0; worker < pool->worker_count; ++worker) {
-        (void)qurt_sem_up(&pool->command_ready[worker]);
-    }
+    qbh_w4f16_pool_start(
+        pool,
+        compressed_weight +
+            (size_t)main_tiles * QBH_W4_PACKED_TILE_BYTES,
+        channel_scale,
+        expanded_weight +
+            (size_t)main_tiles * QBH_HMX_FP16_TILE_BYTES,
+        ready_generations, expected_generation, pool_regions,
+        header->w4f16_region_tiles);
     main_start = HAP_perf_get_qtimer_count();
     qbh_unpack_w4_to_f16_hvx(
         compressed_weight, expanded_weight, main_tiles);
     header->w4f16_expand_work_ticks +=
         HAP_perf_get_qtimer_count() - main_start;
-    header->w4f16_expand_region_count += main_tiles;
+    header->w4f16_expand_region_count += main_regions;
     qbh_w4f16_pool_wait(pool);
-    pool->static_partition = 0U;
 }
 
 static int qbh_w4f16_pool_destroy(
