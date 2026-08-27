@@ -18,6 +18,16 @@ static const int8_t qbh_signed_w4_lut[128]
         -8, 0, -7, 0, -6, 0, -5, 0, -4, 0, -3, 0, -2, 0, -1, 0,
 };
 
+static const uint16_t qbh_signed_w4_f16_lut[64]
+    __attribute__((aligned(128))) = {
+        UINT16_C(0x0000), UINT16_C(0x3c00), UINT16_C(0x4000),
+        UINT16_C(0x4200), UINT16_C(0x4400), UINT16_C(0x4500),
+        UINT16_C(0x4600), UINT16_C(0x4700), UINT16_C(0xc800),
+        UINT16_C(0xc700), UINT16_C(0xc600), UINT16_C(0xc500),
+        UINT16_C(0xc400), UINT16_C(0xc200), UINT16_C(0xc000),
+        UINT16_C(0xbc00),
+};
+
 static HVX_Vector qbh_scale_w4_f16_lanes(
     HVX_Vector v_quant_f16, HVX_Vector v_scale) {
     const HVX_Vector v_one_f16 = Q6_Vh_vsplat_R(0x3c00);
@@ -57,16 +67,11 @@ static HVX_VectorPair qbh_scale_w4_f16_group(
 }
 
 static HVX_VectorPair qbh_unpack_w4_f16_group(
-    HVX_Vector v_signed_group) {
+    HVX_Vector v_nibble_group, HVX_Vector v_f16_lut) {
     const HVX_Vector v_two_row_groups =
-        Q6_Vh_vdeal_Vh(v_signed_group);
-    const HVX_VectorPair v_quant_h =
-        Q6_Wh_vunpack_Vb(v_two_row_groups);
-    const HVX_Vector v_row01_f16 =
-        Q6_Vhf_equals_Vh(Q6_V_lo_W(v_quant_h));
-    const HVX_Vector v_row23_f16 =
-        Q6_Vhf_equals_Vh(Q6_V_hi_W(v_quant_h));
-    return Q6_W_vcombine_VV(v_row23_f16, v_row01_f16);
+        Q6_Vh_vdeal_Vh(v_nibble_group);
+    return Q6_Wh_vlut16_VbVhR_nomatch(
+        v_two_row_groups, v_f16_lut, 0);
 }
 
 __attribute__((noinline)) void qbh_expand_w4_to_f16_hvx(
@@ -111,7 +116,8 @@ __attribute__((noinline)) void qbh_expand_w4_to_f16_hvx(
 
 __attribute__((noinline)) void qbh_unpack_w4_to_f16_hvx(
     const uint8_t *packed_w4, void *expanded_f16, uint32_t k_tiles) {
-    const HVX_Vector v_lut = *(const HVX_Vector *)qbh_signed_w4_lut;
+    const HVX_Vector v_f16_lut =
+        *(const HVX_Vector *)qbh_signed_w4_f16_lut;
     const HVX_Vector v_nibble_mask = Q6_Vb_vsplat_R(0x0f);
     HVX_Vector *destination = (HVX_Vector *)expanded_f16;
 
@@ -126,16 +132,12 @@ __attribute__((noinline)) void qbh_unpack_w4_to_f16_hvx(
             Q6_V_vand_VV(v_packed, v_nibble_mask);
         const HVX_Vector v_high_indices =
             Q6_Vub_vlsr_VubR(v_packed, 4);
-        const HVX_Vector v_low = Q6_Vb_vlut32_VbVbR_nomatch(
-            v_low_indices, v_lut, 0);
-        const HVX_Vector v_high = Q6_Vb_vlut32_VbVbR_nomatch(
-            v_high_indices, v_lut, 0);
         const HVX_VectorPair v_unpacked =
-            Q6_W_vshuff_VVR(v_high, v_low, -1);
+            Q6_W_vshuff_VVR(v_high_indices, v_low_indices, -1);
         const HVX_VectorPair v_groups0 = qbh_unpack_w4_f16_group(
-            Q6_V_lo_W(v_unpacked));
+            Q6_V_lo_W(v_unpacked), v_f16_lut);
         const HVX_VectorPair v_groups1 = qbh_unpack_w4_f16_group(
-            Q6_V_hi_W(v_unpacked));
+            Q6_V_hi_W(v_unpacked), v_f16_lut);
         destination[packed_vector * 4U] = Q6_V_lo_W(v_groups0);
         destination[packed_vector * 4U + 1U] = Q6_V_hi_W(v_groups0);
         destination[packed_vector * 4U + 2U] = Q6_V_lo_W(v_groups1);
