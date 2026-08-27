@@ -102,6 +102,12 @@ static const char *physical_plan_name(uint32_t physical_plan,
         if (compressed_slots == 3U && chunk_tiles == 16U) {
             return "slots3_chunk16";
         }
+        if (compressed_slots == 4U && chunk_tiles == 64U) {
+            return "slots4_chunk64";
+        }
+        if (compressed_slots == 4U && chunk_tiles == 96U) {
+            return "slots4_chunk96";
+        }
     }
     switch (hvx_workers) {
         case 1:
@@ -192,6 +198,20 @@ static int parse_physical_plan(const char *text, uint32_t *physical_plan,
         *hvx_workers = 6;
         *compressed_slots = 3U;
         *chunk_tiles = 16U;
+        return 0;
+    }
+    if (strcmp(text, "slots4_chunk64") == 0) {
+        *physical_plan = QBH_PHYSICAL_PLAN_CHUNKED;
+        *hvx_workers = 6;
+        *compressed_slots = 4U;
+        *chunk_tiles = 64U;
+        return 0;
+    }
+    if (strcmp(text, "slots4_chunk96") == 0) {
+        *physical_plan = QBH_PHYSICAL_PLAN_CHUNKED;
+        *hvx_workers = 6;
+        *compressed_slots = 4U;
+        *chunk_tiles = 96U;
         return 0;
     }
     return -1;
@@ -676,7 +696,8 @@ int main(int argc, char **argv) {
                 "[identity|signed|structured|boundary] [repeat] "
                 "[exp0005_full_bundle_control|"
                 "exp0006_slots2_chunk32_control|slots3_chunk32|"
-                "slots4_chunk32|slots2_chunk16|slots3_chunk16]\n",
+                "slots4_chunk32|slots2_chunk16|slots3_chunk16|"
+                "slots4_chunk64|slots4_chunk96]\n",
                 argv[0]);
         return EXIT_FAILURE;
     }
@@ -807,7 +828,7 @@ int main(int argc, char **argv) {
         &reference_min, &reference_max, &reference_checksum);
     reference_end = monotonic_ns();
 
-    printf("{\"experiment\":\"EXP-0008\","
+    printf("{\"experiment\":\"EXP-0009\","
            "\"weight_storage\":\"%s\","
            "\"physical_plan\":\"%s\","
            "\"requested_hvx_workers\":%" PRIu32 ","

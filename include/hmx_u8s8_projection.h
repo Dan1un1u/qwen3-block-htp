@@ -101,7 +101,9 @@ static inline int qbh_projection_layout_init(
          compressed_slot_count !=
              QBH_W4_DEFAULT_COMPRESSED_SLOT_COUNT) ||
         (chunk_tiles != QBH_W4_DEFAULT_CHUNK_TILES &&
-         chunk_tiles != QBH_W4_FINE_CHUNK_TILES)) {
+         chunk_tiles != QBH_W4_FINE_CHUNK_TILES &&
+         chunk_tiles != QBH_W4_COARSE_CHUNK_TILES &&
+         chunk_tiles != QBH_W4_WIDE_CHUNK_TILES)) {
         return -1;
     }
 
@@ -150,10 +152,7 @@ static inline int qbh_projection_layout_init(
     layout->chunks_per_output =
         (layout->k_tiles + chunk_tiles - 1U) / chunk_tiles;
     layout->hmx_streams_per_repeat =
-        layout->n_tiles *
-        (physical_plan == QBH_PHYSICAL_PLAN_CHUNKED
-             ? layout->chunks_per_output
-             : layout->k_streams_per_output);
+        layout->n_tiles * layout->k_streams_per_output;
     layout->expanded_chunk_weight_bytes =
         layout->chunk_tiles * QBH_HMX_WEIGHT_BYTES;
     layout->expanded_chunk_slot_bytes = qbh_align_up_u32(
