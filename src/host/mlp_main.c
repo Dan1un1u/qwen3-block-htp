@@ -212,15 +212,21 @@ int main(int argc, char **argv) {
     size_t total_bytes;
     int shared_fd = -1;
     int mapped = 0;
+    int warmup_rpc_result = AEE_EFAILED;
     int rpc_result = AEE_EFAILED;
     int prepare_result = AEE_EFAILED;
     int release_result = AEE_EFAILED;
     int close_result = AEE_EFAILED;
     uint64_t host_start;
     uint64_t host_end;
+    uint64_t warmup_host_start;
+    uint64_t warmup_host_end;
     uint64_t reference_start;
     uint64_t reference_end;
     uint32_t mismatches = 0U;
+    uint32_t warmup_mismatches = 0U;
+    uint32_t warmup_run_index = 0U;
+    uint64_t warmup_output_checksum = 0U;
     int exit_code = 1;
 
     if ((argc > 1 && parse_u32(argv[1], &repeats) != 0) ||
@@ -334,6 +340,39 @@ int main(int argc, char **argv) {
         goto cleanup;
     }
 
+    header->repeat_count = 1U;
+    header->run_activation_self_test = self_test != 0U;
+    header->dsp_status = QBH_MLP_STATUS_HOST_READY;
+    warmup_host_start = monotonic_ns();
+    warmup_rpc_result = qwen3_probe_run_mlp(
+        session.handle, shared_fd, (uint32_t)total_bytes);
+    warmup_host_end = monotonic_ns();
+    if (warmup_rpc_result != AEE_SUCCESS) {
+        fprintf(stderr, "warmup run_mlp failed: 0x%08x dsp_status=%d\n",
+                (unsigned int)warmup_rpc_result, header->dsp_status);
+        goto cleanup;
+    }
+    warmup_run_index = header->prepared_session_run_index;
+    warmup_output_checksum = checksum(output, down_layout.output_bytes);
+    for (size_t index = 0; index < down_layout.output_bytes; ++index) {
+        if (output[index] != reference_output[index]) {
+            ++warmup_mismatches;
+        }
+    }
+    if (warmup_mismatches != 0U ||
+        header->activation_self_test_mismatches != 0U) {
+        fprintf(stderr,
+                "warmup correctness failed: output=%" PRIu32
+                " activation=%" PRIu32 "\n",
+                warmup_mismatches,
+                header->activation_self_test_mismatches);
+        goto cleanup;
+    }
+
+    header->repeat_count = repeats;
+    header->run_activation_self_test = 0U;
+    header->dsp_status = QBH_MLP_STATUS_HOST_READY;
+    memset(output, 0xa5, down_layout.output_bytes);
     host_start = monotonic_ns();
     rpc_result = qwen3_probe_run_mlp(
         session.handle, shared_fd, (uint32_t)total_bytes);
@@ -362,8 +401,21 @@ int main(int argc, char **argv) {
     }
 
     printf("{\"experiment\":\"EXP-0021\","
-           "\"implementation\":\"vtcm_resident_mlp_bringup\","
+           "\"implementation\":\"vtcm_resident_mlp_paired_tile_pipeline\","
+           "\"execution_unit\":\"qwen3_middle_block_mlp\","
+           "\"resource_lifetime_mode\":\"prepared_session\","
+           "\"intermediate_residency\":\"VTCM\","
+           "\"weight_storage\":\"packed_signed_w4_per_channel_integer_scale\","
+           "\"activation_approximation\":\"fixed_point_clipped_linear_silu\","
+           "\"warmup_rpc_calls\":1,\"measured_rpc_calls\":1,"
+           "\"warmup_repeat_count\":1,"
+           "\"warmup_rpc_result\":%d,"
+           "\"warmup_prepared_session_run_index\":%" PRIu32 ","
+           "\"warmup_mismatches\":%" PRIu32 ","
+           "\"warmup_output_checksum\":%" PRIu64 ","
+           "\"warmup_host_wall_ns\":%" PRIu64 ","
            "\"repeat_count\":%" PRIu32 ","
+           "\"prepared_session_run_index\":%" PRIu32 ","
            "\"rpc_result\":%d,\"dsp_status\":%d,"
            "\"mismatches\":%" PRIu32 ","
            "\"reference_checksum\":%" PRIu64 ","
@@ -396,7 +448,10 @@ int main(int argc, char **argv) {
            "\"activation_ticks\":%" PRIu64 ","
            "\"down_ticks\":%" PRIu64 ","
            "\"total_ticks\":%" PRIu64 "}\n",
-           repeats, rpc_result, header->dsp_status, mismatches,
+           warmup_rpc_result, warmup_run_index, warmup_mismatches,
+           warmup_output_checksum, warmup_host_end - warmup_host_start,
+           repeats, header->prepared_session_run_index, rpc_result,
+           header->dsp_status, mismatches,
            checksum(reference_output, down_layout.output_bytes),
            checksum(output, down_layout.output_bytes), host_end - host_start,
            reference_end - reference_start, header->vtcm_requested_bytes,
@@ -421,7 +476,8 @@ int main(int argc, char **argv) {
            header->down_phase.hvx_hmx_overlap_observed,
            header->gate_up_ticks, header->activation_ticks,
            header->down_ticks, header->total_ticks);
-    exit_code = mismatches == 0U &&
+    exit_code = warmup_rpc_result == AEE_SUCCESS &&
+                        warmup_mismatches == 0U && mismatches == 0U &&
                         header->activation_self_test_mismatches == 0U &&
                         header->intermediate_ddr_read_bytes == 0U &&
                         header->intermediate_ddr_write_bytes == 0U &&
