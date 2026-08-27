@@ -111,10 +111,29 @@ def validate_record(record, variant, repeat, mode):
     for prefix in ("warmup_", ""):
         cosine = record[f"{prefix}cosine"]
         max_abs = record[f"{prefix}max_abs"]
+        max_abs_limit = 0.125 if mode in MICRO_MODES else 0.0625
         if not math.isfinite(cosine) or cosine < 0.99999:
             raise SystemExit(f"invalid {mode}.{variant} {prefix}cosine: {cosine}")
-        if not math.isfinite(max_abs) or max_abs > 0.0625:
+        if not math.isfinite(max_abs) or max_abs > max_abs_limit:
             raise SystemExit(f"invalid {mode}.{variant} {prefix}max_abs: {max_abs}")
+
+    require(record, "common_op_nonfinite_count", 0)
+    require(record, "common_op_softmax_mask_violation_count", 0)
+    metric_prefix = {
+        "rms": "common_op_rms",
+        "rope": "common_op_rope",
+        "softmax": "common_op_softmax",
+        "silu": "common_op_silu",
+    }.get(mode)
+    if metric_prefix is not None:
+        operator_max_abs = record[f"{metric_prefix}_max_abs"]
+        operator_cosine = record[f"{metric_prefix}_cosine"]
+        if not math.isfinite(operator_max_abs) or operator_max_abs > 0.0625:
+            raise SystemExit(
+                f"invalid local {mode}.{variant} max_abs: {operator_max_abs}")
+        if not math.isfinite(operator_cosine) or operator_cosine < 0.99999:
+            raise SystemExit(
+                f"invalid local {mode}.{variant} cosine: {operator_cosine}")
 
     if variant == "W4F16":
         require(record, "w4f16_scale_placement", "hmx_output_per_channel")
@@ -241,9 +260,17 @@ def main():
             if len(records) != 1:
                 raise SystemExit(f"wrong microgate size for {mode}.{variant}")
             validate_record(records[0], variant, 1, mode)
+            metric_prefix = {
+                "rms": "common_op_rms",
+                "rope": "common_op_rope",
+                "softmax": "common_op_softmax",
+                "silu": "common_op_silu",
+            }[mode]
             microgates[mode][variant] = {
-                "max_abs": records[0]["max_abs"],
-                "cosine": records[0]["cosine"],
+                "operator_max_abs": records[0][f"{metric_prefix}_max_abs"],
+                "operator_cosine": records[0][f"{metric_prefix}_cosine"],
+                "integrated_max_abs": records[0]["max_abs"],
+                "integrated_cosine": records[0]["cosine"],
             }
             record_count += 1
 

@@ -853,6 +853,16 @@ int main(int argc, char **argv) {
         "\"attention_qk_max_abs\":%.9g,"
         "\"attention_probability_max_abs\":%.9g,"
         "\"attention_av_max_abs\":%.9g,"
+        "\"common_op_rms_max_abs\":%.9g,"
+        "\"common_op_rms_cosine\":%.9g,"
+        "\"common_op_rope_max_abs\":%.9g,"
+        "\"common_op_rope_cosine\":%.9g,"
+        "\"common_op_softmax_max_abs\":%.9g,"
+        "\"common_op_softmax_cosine\":%.9g,"
+        "\"common_op_silu_max_abs\":%.9g,"
+        "\"common_op_silu_cosine\":%.9g,"
+        "\"common_op_nonfinite_count\":%" PRIu32 ","
+        "\"common_op_softmax_mask_violation_count\":%" PRIu32 ","
         "\"projection_failure_result\":%d,"
         "\"projection_failure_index\":%" PRIu32 ","
         "\"projection_failure_n_tile\":%" PRIu32 ","
@@ -924,6 +934,16 @@ int main(int argc, char **argv) {
         header->attention_qk_max_abs,
         header->attention_probability_max_abs,
         header->attention_av_max_abs,
+        header->common_op_rms_max_abs,
+        header->common_op_rms_cosine,
+        header->common_op_rope_max_abs,
+        header->common_op_rope_cosine,
+        header->common_op_softmax_max_abs,
+        header->common_op_softmax_cosine,
+        header->common_op_silu_max_abs,
+        header->common_op_silu_cosine,
+        header->common_op_nonfinite_count,
+        header->common_op_softmax_mask_violation_count,
         header->projection_failure_result,
         header->projection_failure_index,
         header->projection_failure_n_tile,

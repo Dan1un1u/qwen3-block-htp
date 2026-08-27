@@ -1735,7 +1735,8 @@ static float qbh_f16_max_abs(const __fp16 *data, uint32_t elements) {
 
 static int qbh_attention_f16(struct qbh_block_header *header,
                              struct qbh_block_buffers *buffers,
-                             struct qbh_block_hmx_worker *worker) {
+                             struct qbh_block_hmx_worker *worker,
+                             struct qbh_hvx_check_metrics *softmax_check) {
     const __fp16 *q = (const __fp16 *)buffers->q;
     const __fp16 *k = (const __fp16 *)buffers->k;
     const __fp16 *v = (const __fp16 *)buffers->v;
@@ -1776,7 +1777,7 @@ static int qbh_attention_f16(struct qbh_block_header *header,
     if ((header->common_ops_mask & QBH_BLOCK_COMMON_OP_SOFTMAX) != 0U) {
         qbh_hvx_stable_causal_softmax_f16(
             scores, probability, QBH_BLOCK_HEADS, QBH_BLOCK_M,
-            QBH_BLOCK_M, 0.08838834764831845f);
+            QBH_BLOCK_M, 0.08838834764831845f, softmax_check);
     } else {
       for (uint32_t head = 0; head < QBH_BLOCK_HEADS; ++head) {
         for (uint32_t row = 0; row < QBH_BLOCK_M; ++row) {
@@ -1982,7 +1983,28 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     uint32_t hidden_elements = QBH_BLOCK_M * QBH_BLOCK_HIDDEN;
     uint32_t intermediate_elements =
         QBH_BLOCK_M * QBH_BLOCK_INTERMEDIATE;
+    struct qbh_hvx_check_metrics rms_check_metrics;
+    struct qbh_hvx_check_metrics rope_check_metrics;
+    struct qbh_hvx_check_metrics softmax_check_metrics;
+    struct qbh_hvx_check_metrics silu_check_metrics;
+    struct qbh_hvx_check_metrics *rms_check =
+        header->common_ops_mask == QBH_BLOCK_COMMON_OP_RMS_NORM
+            ? &rms_check_metrics : NULL;
+    struct qbh_hvx_check_metrics *rope_check =
+        header->common_ops_mask == QBH_BLOCK_COMMON_OP_ROPE
+            ? &rope_check_metrics : NULL;
+    struct qbh_hvx_check_metrics *softmax_check =
+        header->common_ops_mask == QBH_BLOCK_COMMON_OP_SOFTMAX
+            ? &softmax_check_metrics : NULL;
+    struct qbh_hvx_check_metrics *silu_check =
+        header->common_ops_mask == QBH_BLOCK_COMMON_OP_SILU
+            ? &silu_check_metrics : NULL;
     uint64_t start;
+
+    qbh_hvx_check_reset(&rms_check_metrics);
+    qbh_hvx_check_reset(&rope_check_metrics);
+    qbh_hvx_check_reset(&softmax_check_metrics);
+    qbh_hvx_check_reset(&silu_check_metrics);
 
     start = HAP_perf_get_qtimer_count();
     if (qbh_dma_copy(header, buffers->residual,
@@ -2010,7 +2032,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                 (const __fp16 *)buffers->residual,
                 (const __fp16 *)buffers->input_norm_weight,
                 (__fp16 *)buffers->normalized,
-                QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+                QBH_BLOCK_M, QBH_BLOCK_HIDDEN, rms_check);
         } else {
             qbh_rms_norm_f16(
                 (const __fp16 *)buffers->residual,
@@ -2084,14 +2106,14 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                 QBH_BLOCK_HIDDEN, QBH_BLOCK_HEAD_DIM,
                 (const __fp16 *)buffers->q_norm_weight,
                 (const __fp16 *)buffers->rope_cos,
-                (const __fp16 *)buffers->rope_sin);
+                (const __fp16 *)buffers->rope_sin, rope_check);
             qbh_hvx_qk_norm_rope_f16(
                 (__fp16 *)buffers->k, QBH_BLOCK_M,
                 QBH_BLOCK_KV_HEADS, QBH_BLOCK_KV_HIDDEN,
                 QBH_BLOCK_HEAD_DIM,
                 (const __fp16 *)buffers->k_norm_weight,
                 (const __fp16 *)buffers->rope_cos,
-                (const __fp16 *)buffers->rope_sin);
+                (const __fp16 *)buffers->rope_sin, rope_check);
         } else {
             qbh_qk_norm_rope_f16(
                 (__fp16 *)buffers->q, QBH_BLOCK_HEADS,
@@ -2116,7 +2138,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     header->qk_norm_rope_ticks += HAP_perf_get_qtimer_count() - start;
 
     start = HAP_perf_get_qtimer_count();
-    if (qbh_attention_f16(header, buffers, worker) != 0) {
+    if (qbh_attention_f16(header, buffers, worker, softmax_check) != 0) {
         return QBH_BLOCK_STATUS_ATTENTION_FAILED;
     }
     if (header->variant == QBH_BLOCK_W4U8) {
@@ -2178,7 +2200,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                 (const __fp16 *)buffers->residual,
                 (const __fp16 *)buffers->post_norm_weight,
                 (__fp16 *)buffers->normalized,
-                QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+                QBH_BLOCK_M, QBH_BLOCK_HIDDEN, rms_check);
         } else {
             qbh_rms_norm_f16(
                 (const __fp16 *)buffers->residual,
@@ -2228,7 +2250,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             qbh_hvx_silu_multiply_f16(
                 (const __fp16 *)buffers->gate,
                 (const __fp16 *)buffers->up,
-                (__fp16 *)buffers->middle, intermediate_elements);
+                (__fp16 *)buffers->middle, intermediate_elements,
+                silu_check);
         } else {
             qbh_silu_multiply_f16(
                 (const __fp16 *)buffers->gate,
@@ -2275,6 +2298,25 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     if (header->numerical_status == QBH_BLOCK_NUMERICAL_UNCHECKED) {
         header->numerical_status = QBH_BLOCK_NUMERICAL_OK;
     }
+    header->common_op_rms_max_abs = rms_check_metrics.max_abs;
+    header->common_op_rms_cosine =
+        qbh_hvx_check_cosine(&rms_check_metrics);
+    header->common_op_rope_max_abs = rope_check_metrics.max_abs;
+    header->common_op_rope_cosine =
+        qbh_hvx_check_cosine(&rope_check_metrics);
+    header->common_op_softmax_max_abs = softmax_check_metrics.max_abs;
+    header->common_op_softmax_cosine =
+        qbh_hvx_check_cosine(&softmax_check_metrics);
+    header->common_op_silu_max_abs = silu_check_metrics.max_abs;
+    header->common_op_silu_cosine =
+        qbh_hvx_check_cosine(&silu_check_metrics);
+    header->common_op_nonfinite_count =
+        rms_check_metrics.nonfinite_count +
+        rope_check_metrics.nonfinite_count +
+        softmax_check_metrics.nonfinite_count +
+        silu_check_metrics.nonfinite_count;
+    header->common_op_softmax_mask_violation_count =
+        softmax_check_metrics.mask_violation_count;
     header->final_residual_ticks += HAP_perf_get_qtimer_count() - start;
     return QBH_BLOCK_STATUS_OK;
 }

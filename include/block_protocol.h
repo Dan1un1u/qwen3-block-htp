@@ -6,7 +6,7 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(2)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(3)
 #define QBH_BLOCK_EXPERIMENT UINT32_C(24)
 
 #define QBH_BLOCK_M UINT32_C(64)
@@ -182,6 +182,16 @@ struct qbh_block_header {
     float attention_qk_max_abs;
     float attention_probability_max_abs;
     float attention_av_max_abs;
+    float common_op_rms_max_abs;
+    float common_op_rms_cosine;
+    float common_op_rope_max_abs;
+    float common_op_rope_cosine;
+    float common_op_softmax_max_abs;
+    float common_op_softmax_cosine;
+    float common_op_silu_max_abs;
+    float common_op_silu_cosine;
+    uint32_t common_op_nonfinite_count;
+    uint32_t common_op_softmax_mask_violation_count;
     int32_t projection_failure_result;
     uint32_t projection_failure_index;
     uint32_t projection_failure_n_tile;

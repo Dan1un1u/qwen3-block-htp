@@ -18,6 +18,45 @@ static const uint16_t qbh_hvx_lane_index[QBH_HVX_F16_LANES]
         48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
     };
 
+void qbh_hvx_check_reset(struct qbh_hvx_check_metrics *metrics) {
+    if (metrics == NULL) {
+        return;
+    }
+    metrics->max_abs = 0.0f;
+    metrics->dot = 0.0;
+    metrics->actual_norm = 0.0;
+    metrics->reference_norm = 0.0;
+    metrics->nonfinite_count = 0U;
+    metrics->mask_violation_count = 0U;
+}
+
+float qbh_hvx_check_cosine(const struct qbh_hvx_check_metrics *metrics) {
+    if (metrics == NULL || metrics->actual_norm <= 0.0 ||
+        metrics->reference_norm <= 0.0) {
+        return 0.0f;
+    }
+    return (float)(metrics->dot /
+        sqrt(metrics->actual_norm * metrics->reference_norm));
+}
+
+static void qbh_hvx_check_add(struct qbh_hvx_check_metrics *metrics,
+                              float actual, float reference) {
+    if (metrics == NULL) {
+        return;
+    }
+    if (!isfinite(actual) || !isfinite(reference)) {
+        ++metrics->nonfinite_count;
+        return;
+    }
+    float difference = fabsf(actual - reference);
+    if (difference > metrics->max_abs) {
+        metrics->max_abs = difference;
+    }
+    metrics->dot += (double)actual * (double)reference;
+    metrics->actual_norm += (double)actual * (double)actual;
+    metrics->reference_norm += (double)reference * (double)reference;
+}
+
 static float qbh_hvx_reduce_sum_qf32(HVX_Vector sum) {
     float lanes[32] __attribute__((aligned(QBH_HVX_BYTES)));
     *(HVX_Vector *)lanes = Q6_Vsf_equals_Vqf32(sum);
@@ -119,7 +158,8 @@ static HVX_Vector qbh_hvx_scale_then_multiply_f16_f32(
 
 void qbh_hvx_rms_norm_f16(const __fp16 *input, const __fp16 *gamma,
                            __fp16 *output, uint32_t rows,
-                           uint32_t width) {
+                           uint32_t width,
+                           struct qbh_hvx_check_metrics *check) {
     uint32_t vector_count = width / QBH_HVX_F16_LANES;
     const HVX_Vector *gamma_vectors = (const HVX_Vector *)gamma;
     for (uint32_t row = 0; row < rows; ++row) {
@@ -136,6 +176,22 @@ void qbh_hvx_rms_norm_f16(const __fp16 *input, const __fp16 *gamma,
                 qbh_hvx_scale_then_multiply_f16_f32(
                     input_vectors[index], inverse, gamma_vectors[index]);
         }
+        if (check != NULL) {
+            float reference_sum = 0.0f;
+            for (uint32_t channel = 0; channel < width; ++channel) {
+                float value = (float)input_row[channel];
+                reference_sum += value * value;
+            }
+            float reference_inverse = 1.0f / sqrtf(
+                reference_sum / (float)width + 1.0e-6f);
+            for (uint32_t channel = 0; channel < width; ++channel) {
+                __fp16 reference = (__fp16)(
+                    (float)input_row[channel] * reference_inverse *
+                    (float)gamma[channel]);
+                qbh_hvx_check_add(
+                    check, (float)output_row[channel], (float)reference);
+            }
+        }
     }
 }
 
@@ -143,7 +199,8 @@ void qbh_hvx_qk_norm_rope_f16(__fp16 *tensor, uint32_t rows,
                                uint32_t heads, uint32_t row_stride,
                                uint32_t head_dim, const __fp16 *gamma,
                                const __fp16 *cosine,
-                               const __fp16 *sine) {
+                               const __fp16 *sine,
+                               struct qbh_hvx_check_metrics *check) {
     const uint32_t half_dim = head_dim / 2U;
     for (uint32_t row = 0; row < rows; ++row) {
         const HVX_Vector cosine_first =
@@ -158,8 +215,14 @@ void qbh_hvx_qk_norm_rope_f16(__fp16 *tensor, uint32_t rows,
         const HVX_Vector gamma_second =
             *(const HVX_Vector *)(gamma + half_dim);
         for (uint32_t head = 0; head < heads; ++head) {
+            __fp16 original[128] __attribute__((aligned(QBH_HVX_BYTES)));
             __fp16 *values = tensor + (size_t)row * row_stride +
                              (size_t)head * head_dim;
+            if (check != NULL) {
+                for (uint32_t channel = 0; channel < head_dim; ++channel) {
+                    original[channel] = values[channel];
+                }
+            }
             float sum = qbh_hvx_sum_squares_f16(values, head_dim);
             __fp16 inverse = (__fp16)(
                 1.0f / sqrtf(sum / (float)head_dim + 1.0e-6f));
@@ -189,12 +252,42 @@ void qbh_hvx_qk_norm_rope_f16(__fp16 *tensor, uint32_t rows,
                 Q6_Vhf_equals_Vqf16(first_rotated);
             *(HVX_Vector *)(values + half_dim) =
                 Q6_Vhf_equals_Vqf16(second_rotated);
+            if (check != NULL) {
+                float reference_sum = 0.0f;
+                for (uint32_t channel = 0; channel < head_dim; ++channel) {
+                    float value = (float)original[channel];
+                    reference_sum += value * value;
+                }
+                float reference_inverse = 1.0f / sqrtf(
+                    reference_sum / (float)head_dim + 1.0e-6f);
+                for (uint32_t channel = 0; channel < half_dim; ++channel) {
+                    float first = (float)original[channel] *
+                        reference_inverse * (float)gamma[channel];
+                    float second = (float)original[channel + half_dim] *
+                        reference_inverse * (float)gamma[channel + half_dim];
+                    __fp16 first_reference = (__fp16)(
+                        first * (float)cosine[(size_t)row * head_dim + channel] -
+                        second * (float)sine[(size_t)row * head_dim + channel]);
+                    __fp16 second_reference = (__fp16)(
+                        second * (float)cosine[
+                            (size_t)row * head_dim + channel + half_dim] +
+                        first * (float)sine[
+                            (size_t)row * head_dim + channel + half_dim]);
+                    qbh_hvx_check_add(
+                        check, (float)values[channel],
+                        (float)first_reference);
+                    qbh_hvx_check_add(
+                        check, (float)values[channel + half_dim],
+                        (float)second_reference);
+                }
+            }
         }
     }
 }
 
 void qbh_hvx_silu_multiply_f16(const __fp16 *gate, const __fp16 *up,
-                                __fp16 *middle, uint32_t elements) {
+                                __fp16 *middle, uint32_t elements,
+                                struct qbh_hvx_check_metrics *check) {
     const HVX_Vector sign_mask = Q6_Vh_vsplat_R(0x8000);
     const HVX_Vector magnitude_mask = Q6_Vh_vsplat_R(0x7fff);
     const HVX_Vector one = Q6_Vh_vsplat_R(0x3c00);
@@ -220,13 +313,24 @@ void qbh_hvx_silu_multiply_f16(const __fp16 *gate, const __fp16 *up,
         silu = Q6_Vqf16_vmpy_Vqf16Vhf(silu, up_value);
         ((HVX_Vector *)middle)[index] = Q6_Vhf_equals_Vqf16(silu);
     }
+    if (check != NULL) {
+        for (uint32_t index = 0; index < elements; ++index) {
+            float gate_value = (float)gate[index];
+            __fp16 reference = (__fp16)(
+                gate_value / (1.0f + expf(-gate_value)) *
+                (float)up[index]);
+            qbh_hvx_check_add(
+                check, (float)middle[index], (float)reference);
+        }
+    }
 }
 
 void qbh_hvx_stable_causal_softmax_f16(__fp16 *scores,
                                         __fp16 *probability,
                                         uint32_t groups, uint32_t rows,
                                         uint32_t width,
-                                        float score_scale) {
+                                        float score_scale,
+                                        struct qbh_hvx_check_metrics *check) {
     const HVX_Vector lane_index =
         *(const HVX_Vector *)qbh_hvx_lane_index;
     const HVX_Vector negative_max = Q6_Vh_vsplat_R(0xfbff);
@@ -240,8 +344,13 @@ void qbh_hvx_stable_causal_softmax_f16(__fp16 *scores,
     }
     for (uint32_t group = 0; group < groups; ++group) {
         for (uint32_t row = 0; row < rows; ++row) {
+            __fp16 original[QBH_HVX_F16_LANES]
+                __attribute__((aligned(QBH_HVX_BYTES)));
             size_t offset = ((size_t)group * rows + row) * width;
             HVX_Vector score = *(const HVX_Vector *)(scores + offset);
+            if (check != NULL) {
+                *(HVX_Vector *)original = score;
+            }
             HVX_Vector row_limit = Q6_Vh_vsplat_R((int)row);
             HVX_VectorPred masked =
                 Q6_Q_vcmp_gt_VuhVuh(lane_index, row_limit);
@@ -262,6 +371,36 @@ void qbh_hvx_stable_causal_softmax_f16(__fp16 *scores,
             *(HVX_Vector *)(probability + offset) =
                 qbh_hvx_multiply_scale_f16_f32(
                     exponential, one_half, 1.0f / sum);
+            if (check != NULL) {
+                float reference_score[QBH_HVX_F16_LANES];
+                float reference_maximum = -INFINITY;
+                float reference_sum = 0.0f;
+                for (uint32_t column = 0; column < width; ++column) {
+                    float value = column <= row
+                        ? (float)original[column] * score_scale
+                        : -INFINITY;
+                    reference_score[column] = value;
+                    if (value > reference_maximum) {
+                        reference_maximum = value;
+                    }
+                }
+                for (uint32_t column = 0; column <= row; ++column) {
+                    __fp16 stored_score = (__fp16)reference_score[column];
+                    reference_score[column] = expf(
+                        (float)stored_score - reference_maximum);
+                    reference_sum += reference_score[column];
+                }
+                for (uint32_t column = 0; column < width; ++column) {
+                    __fp16 reference = column <= row
+                        ? (__fp16)(reference_score[column] / reference_sum)
+                        : (__fp16)0.0f;
+                    float actual = (float)probability[offset + column];
+                    qbh_hvx_check_add(check, actual, (float)reference);
+                    if (column > row && actual != 0.0f) {
+                        ++check->mask_violation_count;
+                    }
+                }
+            }
         }
     }
 }
