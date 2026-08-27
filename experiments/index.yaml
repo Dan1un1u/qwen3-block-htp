@@ -898,16 +898,21 @@ experiments:
       - exp0019_stream32_gate_hvx2_control
       - bitwise_signed_nibble_unpack
       - deterministic_two_producer_dispatch
+      - shared_lockfree_dynamic_dispatch
       - combined_unpack_and_dispatch
       - exp0019_down_chunk96_control
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
     adoption_status: pending
     evidence_profile: selected-streaming-hvx-critical-path
     source_branches:
       - codex/exp-0020-hvx-unpack-stream-dispatch
-    source_commits: []
+    source_commits:
+      - 691d8e8d56f8547b5b4c1d882bce31befcdf34cc
+      - 7f47e2847b5b46124df05d871ecdccbdf0f96e07
+      - 169060502472ec4f45e7f432ab4b5a8f3468aa4e
+      - 9990e3979ed646126d6148fb8c360430cbcc7e1e
     record: docs/experiments/EXP-0020.md
     decided_by: user
     decided_on: '2026-08-27'
@@ -916,7 +921,33 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0020-hvx-unpack-stream-dispatch
       started_on: '2026-08-27'
-      completed_on: null
+      completed_on: '2026-08-27'
     evidence:
       formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0020'
       retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0020'
+      formal_run: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0020\\20260827T101543Z_9990e3979ed6'
+      artifact_set: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0020\\9990e3979ed6'
+      matrix: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0020\\20260827T101543Z_9990e3979ed6\\matrix_gate.json'
+      formal_runs: 308
+      total_mismatches: 0
+      exact_reference: true
+      all_physical_plans_equivalent: true
+      persistent_resource_identity_stable: true
+      readiness_timeouts: 0
+      worker_fallback: false
+      qnn_dependency_scan: none
+      vtcm_request_bytes: 2097152
+      boot_id_stable: true
+      selected_gate_up_plan: stream32_gate_hvx2
+      repeat1_parent_host_wall_ns_median: 1184870.0
+      repeat1_bitwise_regression_percent: 12.474997257083055
+      repeat1_direct_dispatch_regression_percent: 3.217652569480196
+      repeat1_lockfree_dispatch_regression_percent: 1.6989205566855436
+      repeat10_parent_host_wall_ns_median: 5214297.0
+      repeat10_bitwise_regression_percent: 12.005741138258907
+      repeat10_direct_dispatch_regression_percent: 14.107347548480648
+      repeat10_lockfree_dispatch_regression_percent: 3.4869993021110997
+      down_selected_plan: slots4_chunk96_dma_batch2
+      down_parent_vs_s8_repeat1_improvement_percent: 11.003172913787727
+      down_parent_vs_s8_repeat10_improvement_percent: 22.85191945487944
+      performance_characterization: isolated_unpack_and_dispatch_changes_do_not_beat_exp0019_streaming_parent
