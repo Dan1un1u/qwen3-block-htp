@@ -90,7 +90,8 @@ static inline int qbh_projection_layout_init(
         !qbh_weight_storage_is_packed_w4(weight_storage_variant)) {
         return -1;
     }
-    if (physical_plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE_DMA_BATCH2 &&
+    if ((physical_plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE_DMA_BATCH2 ||
+         physical_plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE_DMA_CHAIN2) &&
         weight_storage_variant != QBH_WEIGHT_EXPANDED_S8) {
         return -1;
     }

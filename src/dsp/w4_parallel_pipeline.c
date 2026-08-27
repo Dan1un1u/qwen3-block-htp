@@ -14,6 +14,7 @@
 
 #define QBH_HVX_WORKER_STACK_BYTES UINT32_C(8192)
 #define QBH_CHUNKED_HMX_STACK_BYTES UINT32_C(16384)
+#define QBH_DMA_DESCRIPTOR_TIMEOUT_TICKS UINT64_C(1920000)
 
 static uint8_t qbh_hvx_worker_stacks[QBH_MAX_HVX_WORKERS]
                                     [QBH_HVX_WORKER_STACK_BYTES]
@@ -188,6 +189,7 @@ static int qbh_stage_weight_bundles(struct qbh_probe_header *header,
 
     status = qbh_dma_start(&descriptor);
     ++header->dma_submit_count;
+    ++header->dma_descriptor_count;
     if (status != 0) {
         header->dma_status = status;
         return -1;
@@ -195,9 +197,82 @@ static int qbh_stage_weight_bundles(struct qbh_probe_header *header,
     if (qbh_record_dma_wait(header) != 0) {
         return -1;
     }
+    ++header->dma_descriptor_completion_count;
     asm volatile("barrier" : : : "memory");
     header->weight_bundle_stage_count += bundle_count;
     return 0;
+}
+
+static int qbh_start_linked_weight_bundles(
+    struct qbh_probe_header *header,
+    struct qbh_dma_aligned_desc_1d *descriptors,
+    const uint8_t *source, uint8_t *destination,
+    uint32_t bundle_bytes, uint32_t bundle_count) {
+    if (bundle_count < 2U || bundle_count > 4U ||
+        qbh_record_dma_wait(header) != 0) {
+        return -1;
+    }
+    memset(descriptors, 0,
+           sizeof(*descriptors) * bundle_count);
+    for (uint32_t index = 0; index < bundle_count; ++index) {
+        struct qbh_dma_desc_1d *descriptor =
+            &descriptors[index].descriptor;
+        descriptor->next = index + 1U < bundle_count
+                               ? (uint32_t)(uintptr_t)(
+                                     &descriptors[index + 1U].descriptor)
+                               : 0U;
+        descriptor->length = bundle_bytes;
+        descriptor->type = QBH_DMA_TYPE_1D;
+        descriptor->src_bypass = 1;
+        descriptor->dst_bypass = 0;
+        descriptor->ordered = 1;
+        descriptor->dstate = QBH_DMA_DESC_PENDING;
+        descriptor->src = (uint32_t)(uintptr_t)(
+            source + (size_t)index * bundle_bytes);
+        descriptor->dst = (uint32_t)(uintptr_t)(
+            destination + (size_t)index * bundle_bytes);
+        asm volatile("release(%0):at"
+                     :
+                     : "r"(descriptor)
+                     : "memory");
+    }
+    if (qbh_dma_start(&descriptors[0].descriptor) != 0) {
+        return -1;
+    }
+    ++header->dma_submit_count;
+    header->dma_descriptor_count += bundle_count;
+    ++header->dma_chain_count;
+    return 0;
+}
+
+static int qbh_wait_linked_descriptor(
+    struct qbh_probe_header *header,
+    struct qbh_dma_desc_1d *descriptor) {
+    uint64_t start = HAP_perf_get_qtimer_count();
+    uint32_t spins = 0;
+
+    ++header->dma_wait_count;
+    for (;;) {
+        uint32_t status = Q6_R_dmpoll() & QBH_DMA_STATUS_MASK;
+        if (((volatile struct qbh_dma_desc_1d *)descriptor)->dstate ==
+            QBH_DMA_DESC_COMPLETE) {
+            asm volatile("barrier" : : : "memory");
+            ++header->dma_descriptor_completion_count;
+            return 0;
+        }
+        if (status == QBH_DMA_STATUS_ERROR) {
+            header->dma_status = (int32_t)status;
+            return -1;
+        }
+        ++spins;
+        if ((spins & UINT32_C(255)) == 0U &&
+            HAP_perf_get_qtimer_count() - start >
+                QBH_DMA_DESCRIPTOR_TIMEOUT_TICKS) {
+            ++header->dma_descriptor_timeout_count;
+            header->dma_status = -1;
+            return -1;
+        }
+    }
 }
 
 static void qbh_hvx_region_begin(struct qbh_parallel_state *state) {
@@ -404,6 +479,40 @@ static void qbh_abort_pipeline(struct qbh_parallel_state *state,
     }
 }
 
+static void qbh_publish_w4_bundle(
+    struct qbh_parallel_state *state, uint32_t linear_output,
+    uint32_t compressed_slot) {
+    const struct qbh_projection_layout *layout = state->layout;
+    struct qbh_probe_header *header = state->header;
+
+    state->compressed_remaining[compressed_slot] =
+        layout->chunks_per_output;
+    for (uint32_t chunk_index = 0;
+         chunk_index < layout->chunks_per_output; ++chunk_index) {
+        struct qbh_chunk_task task;
+        uint32_t sequence =
+            linear_output * layout->chunks_per_output + chunk_index;
+        uint32_t expanded_slot =
+            sequence % QBH_W4_EXPANDED_CHUNK_SLOT_COUNT;
+        uint64_t wait_start = HAP_perf_get_qtimer_count();
+
+        qurt_sem_down(&state->expanded_free[expanded_slot]);
+        header->expanded_slot_wait_ticks +=
+            HAP_perf_get_qtimer_count() - wait_start;
+        if (sequence >= QBH_W4_EXPANDED_CHUNK_SLOT_COUNT) {
+            ++header->expanded_chunk_slot_reuse_count;
+        }
+        memset(&task, 0, sizeof(task));
+        task.sequence = sequence;
+        task.compressed_slot = compressed_slot;
+        task.expanded_slot = expanded_slot;
+        task.chunk_index = chunk_index;
+        task.chunk_tiles =
+            qbh_projection_chunk_tiles(layout, chunk_index);
+        qbh_queue_push(&state->queue, &task);
+    }
+}
+
 int qbh_run_chunked_w4_pipeline(
     struct qbh_probe_header *header,
     const struct qbh_projection_layout *layout,
@@ -545,10 +654,10 @@ int qbh_run_chunked_w4_pipeline(
     for (uint32_t repeat = 0; repeat < header->repeat_count; ++repeat) {
         for (uint32_t output_base = 0; output_base < layout->n_tiles;
              output_base += dma_bundle_batch) {
+            struct qbh_dma_aligned_desc_1d linked_descriptors[4];
             uint32_t linear_base = repeat * layout->n_tiles + output_base;
             uint32_t first_compressed_slot =
                 linear_base % layout->compressed_slot_count;
-            uint64_t stage_start;
 
             for (uint32_t batch_index = 0;
                  batch_index < dma_bundle_batch; ++batch_index) {
@@ -564,52 +673,60 @@ int qbh_run_chunked_w4_pipeline(
                 }
             }
 
-            stage_start = HAP_perf_get_qtimer_count();
-            if (qbh_stage_weight_bundles(
-                    header,
-                    stored_weights +
-                        (size_t)output_base * layout->w4_bundle_bytes,
-                    state.compressed_slots[first_compressed_slot],
-                    layout->w4_bundle_bytes, dma_bundle_batch) != 0) {
-                result = AEE_EFAILED;
-                qbh_abort_pipeline(&state, result);
-                goto stop_workers;
-            }
-            header->weight_stage_ticks +=
-                HAP_perf_get_qtimer_count() - stage_start;
-
-            for (uint32_t batch_index = 0;
-                 batch_index < dma_bundle_batch; ++batch_index) {
-                uint32_t linear_output = linear_base + batch_index;
-                uint32_t compressed_slot =
-                    first_compressed_slot + batch_index;
-                state.compressed_remaining[compressed_slot] =
-                    layout->chunks_per_output;
-
-                for (uint32_t chunk_index = 0;
-                     chunk_index < layout->chunks_per_output;
-                     ++chunk_index) {
-                    struct qbh_chunk_task task;
-                    uint32_t sequence =
-                        linear_output * layout->chunks_per_output +
-                        chunk_index;
-                    uint32_t expanded_slot =
-                        sequence % QBH_W4_EXPANDED_CHUNK_SLOT_COUNT;
+            if (qbh_physical_plan_uses_linked_dma(
+                    layout->physical_plan)) {
+                if (qbh_start_linked_weight_bundles(
+                        header, linked_descriptors,
+                        stored_weights +
+                            (size_t)output_base * layout->w4_bundle_bytes,
+                        state.compressed_slots[first_compressed_slot],
+                        layout->w4_bundle_bytes, dma_bundle_batch) != 0) {
+                    result = AEE_EFAILED;
+                    qbh_abort_pipeline(&state, result);
+                    goto stop_workers;
+                }
+                for (uint32_t batch_index = 0;
+                     batch_index < dma_bundle_batch; ++batch_index) {
                     uint64_t wait_start = HAP_perf_get_qtimer_count();
-                    qurt_sem_down(&state.expanded_free[expanded_slot]);
-                    header->expanded_slot_wait_ticks +=
-                        HAP_perf_get_qtimer_count() - wait_start;
-                    if (sequence >= QBH_W4_EXPANDED_CHUNK_SLOT_COUNT) {
-                        ++header->expanded_chunk_slot_reuse_count;
+                    if (qbh_wait_linked_descriptor(
+                            header,
+                            &linked_descriptors[batch_index].descriptor) !=
+                        0) {
+                        result = AEE_EFAILED;
+                        qbh_abort_pipeline(&state, result);
+                        goto stop_workers;
                     }
-                    memset(&task, 0, sizeof(task));
-                    task.sequence = sequence;
-                    task.compressed_slot = compressed_slot;
-                    task.expanded_slot = expanded_slot;
-                    task.chunk_index = chunk_index;
-                    task.chunk_tiles = qbh_projection_chunk_tiles(
-                        layout, chunk_index);
-                    qbh_queue_push(&state.queue, &task);
+                    header->weight_stage_ticks +=
+                        HAP_perf_get_qtimer_count() - wait_start;
+                    ++header->weight_bundle_stage_count;
+                    qbh_publish_w4_bundle(
+                        &state, linear_base + batch_index,
+                        first_compressed_slot + batch_index);
+                }
+                if (qbh_record_dma_wait(header) != 0) {
+                    result = AEE_EFAILED;
+                    qbh_abort_pipeline(&state, result);
+                    goto stop_workers;
+                }
+            } else {
+                uint64_t stage_start = HAP_perf_get_qtimer_count();
+                if (qbh_stage_weight_bundles(
+                        header,
+                        stored_weights +
+                            (size_t)output_base * layout->w4_bundle_bytes,
+                        state.compressed_slots[first_compressed_slot],
+                        layout->w4_bundle_bytes, dma_bundle_batch) != 0) {
+                    result = AEE_EFAILED;
+                    qbh_abort_pipeline(&state, result);
+                    goto stop_workers;
+                }
+                header->weight_stage_ticks +=
+                    HAP_perf_get_qtimer_count() - stage_start;
+                for (uint32_t batch_index = 0;
+                     batch_index < dma_bundle_batch; ++batch_index) {
+                    qbh_publish_w4_bundle(
+                        &state, linear_base + batch_index,
+                        first_compressed_slot + batch_index);
                 }
             }
         }

@@ -20,6 +20,7 @@
 #include "w4_u8_expand.h"
 
 #define QBH_HMX_WORKER_STACK_BYTES UINT32_C(16384)
+#define QBH_DMA_DESCRIPTOR_TIMEOUT_TICKS UINT64_C(1920000)
 
 static uint32_t probe_session_token;
 static uint8_t hmx_worker_stack[QBH_HMX_WORKER_STACK_BYTES]
@@ -176,6 +177,7 @@ static int stage_activation_tiles(struct qbh_probe_header *header,
 
         status = qbh_dma_start(&descriptor);
         ++header->dma_submit_count;
+        ++header->dma_descriptor_count;
         if (status != 0) {
             header->dma_status = status;
             return -1;
@@ -183,6 +185,7 @@ static int stage_activation_tiles(struct qbh_probe_header *header,
         if (record_dma_wait(header) != 0) {
             return -1;
         }
+        ++header->dma_descriptor_completion_count;
         asm volatile("barrier" : : : "memory");
         ++header->activation_stage_count;
     }
@@ -215,6 +218,7 @@ static int stage_weight_bundles(struct qbh_probe_header *header,
 
     status = qbh_dma_start(&descriptor);
     ++header->dma_submit_count;
+    ++header->dma_descriptor_count;
     if (status != 0) {
         header->dma_status = status;
         return -1;
@@ -222,9 +226,82 @@ static int stage_weight_bundles(struct qbh_probe_header *header,
     if (record_dma_wait(header) != 0) {
         return -1;
     }
+    ++header->dma_descriptor_completion_count;
     asm volatile("barrier" : : : "memory");
     header->weight_bundle_stage_count += bundle_count;
     return 0;
+}
+
+static int start_linked_weight_bundles(
+    struct qbh_probe_header *header,
+    struct qbh_dma_aligned_desc_1d *descriptors,
+    const uint8_t *source, uint8_t *destination,
+    uint32_t bundle_bytes, uint32_t bundle_count) {
+    if (bundle_count < 2U || bundle_count > 4U ||
+        record_dma_wait(header) != 0) {
+        return -1;
+    }
+    memset(descriptors, 0,
+           sizeof(*descriptors) * bundle_count);
+    for (uint32_t index = 0; index < bundle_count; ++index) {
+        struct qbh_dma_desc_1d *descriptor =
+            &descriptors[index].descriptor;
+        descriptor->next = index + 1U < bundle_count
+                               ? (uint32_t)(uintptr_t)(
+                                     &descriptors[index + 1U].descriptor)
+                               : 0U;
+        descriptor->length = bundle_bytes;
+        descriptor->type = QBH_DMA_TYPE_1D;
+        descriptor->src_bypass = 1;
+        descriptor->dst_bypass = 0;
+        descriptor->ordered = 1;
+        descriptor->dstate = QBH_DMA_DESC_PENDING;
+        descriptor->src = (uint32_t)(uintptr_t)(
+            source + (size_t)index * bundle_bytes);
+        descriptor->dst = (uint32_t)(uintptr_t)(
+            destination + (size_t)index * bundle_bytes);
+        asm volatile("release(%0):at"
+                     :
+                     : "r"(descriptor)
+                     : "memory");
+    }
+    if (qbh_dma_start(&descriptors[0].descriptor) != 0) {
+        return -1;
+    }
+    ++header->dma_submit_count;
+    header->dma_descriptor_count += bundle_count;
+    ++header->dma_chain_count;
+    return 0;
+}
+
+static int wait_linked_descriptor(
+    struct qbh_probe_header *header,
+    struct qbh_dma_desc_1d *descriptor) {
+    uint64_t start = HAP_perf_get_qtimer_count();
+    uint32_t spins = 0;
+
+    ++header->dma_wait_count;
+    for (;;) {
+        uint32_t status = Q6_R_dmpoll() & QBH_DMA_STATUS_MASK;
+        if (((volatile struct qbh_dma_desc_1d *)descriptor)->dstate ==
+            QBH_DMA_DESC_COMPLETE) {
+            asm volatile("barrier" : : : "memory");
+            ++header->dma_descriptor_completion_count;
+            return 0;
+        }
+        if (status == QBH_DMA_STATUS_ERROR) {
+            header->dma_status = (int32_t)status;
+            return -1;
+        }
+        ++spins;
+        if ((spins & UINT32_C(255)) == 0U &&
+            HAP_perf_get_qtimer_count() - start >
+                QBH_DMA_DESCRIPTOR_TIMEOUT_TICKS) {
+            ++header->dma_descriptor_timeout_count;
+            header->dma_status = -1;
+            return -1;
+        }
+    }
 }
 
 __attribute__((noinline)) static void assemble_row_major_output(
@@ -402,6 +479,10 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     header->output_tile_count = 0;
     header->dma_submit_count = 0;
     header->dma_wait_count = 0;
+    header->dma_descriptor_count = 0;
+    header->dma_chain_count = 0;
+    header->dma_descriptor_completion_count = 0;
+    header->dma_descriptor_timeout_count = 0;
     header->weight_slot_reuse_count = 0;
     header->expanded_chunk_slot_reuse_count = 0;
     header->chunks_per_output = layout.chunks_per_output;
@@ -443,7 +524,7 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     header->hmx_window_end = 0;
     dsp_total_start = HAP_perf_get_qtimer_count();
     FARF(ALWAYS,
-         "EXP0011 stage=header_valid projection=%u storage=%u plan=%u "
+         "EXP0012 stage=header_valid projection=%u storage=%u plan=%u "
          "workers=%u compressed_slots=%u chunk_tiles=%u "
          "M=%u K=%u N=%u vtcm_plan=%u",
          layout.variant, layout.weight_storage_variant,
@@ -660,6 +741,7 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
         for (uint32_t output_base = 0;
              output_base < layout.n_tiles;
              output_base += dma_bundle_batch) {
+            struct qbh_dma_aligned_desc_1d linked_descriptors[4];
             uint32_t linear_base =
                 repeat * layout.n_tiles + output_base;
             uint32_t first_slot = linear_base & 1U;
@@ -677,55 +759,93 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
                 }
             }
 
-            uint64_t stage_start = HAP_perf_get_qtimer_count();
             uint8_t *stage_destination =
                 qbh_weight_storage_is_packed_w4(
                     layout.weight_storage_variant)
                     ? compressed_slots[first_slot]
                     : expanded_slots[first_slot];
-            if (stage_weight_bundles(
-                    header,
-                    shared + header->weight_offset +
-                        (size_t)output_base *
-                            layout.stored_weight_bundle_bytes,
-                    stage_destination,
-                    layout.stored_weight_bundle_bytes,
-                    dma_bundle_batch) != 0) {
-                header->dsp_status = QBH_PROBE_STATUS_DMA_FAILED;
-                result = AEE_EFAILED;
-                goto abort_worker;
-            }
-            header->weight_stage_ticks +=
-                HAP_perf_get_qtimer_count() - stage_start;
-
-            for (uint32_t batch_index = 0;
-                 batch_index < dma_bundle_batch; ++batch_index) {
-                uint32_t slot = first_slot + batch_index;
-                if (qbh_weight_storage_is_packed_w4(
-                        layout.weight_storage_variant)) {
-                    uint64_t expand_start =
-                        HAP_perf_get_qtimer_count();
-                    if (layout.weight_storage_variant ==
-                        QBH_WEIGHT_PACKED_W4_HMX_SCALE) {
-                        qbh_unpack_w4_to_s8_hvx(
-                            compressed_slots[slot],
-                            (int8_t *)expanded_slots[slot],
-                            layout.k_tiles);
-                    } else {
-                        qbh_expand_w4_to_s8_hvx(
-                            compressed_slots[slot],
-                            compressed_slots[slot] +
-                                layout.w4_scale_offset,
-                            (int8_t *)expanded_slots[slot],
-                            layout.k_tiles);
-                    }
-                    header->weight_expand_ticks +=
-                        HAP_perf_get_qtimer_count() - expand_start;
-                    ++header->weight_expand_count;
+            if (qbh_physical_plan_uses_linked_dma(
+                    layout.physical_plan)) {
+                if (start_linked_weight_bundles(
+                        header, linked_descriptors,
+                        shared + header->weight_offset +
+                            (size_t)output_base *
+                                layout.stored_weight_bundle_bytes,
+                        stage_destination,
+                        layout.stored_weight_bundle_bytes,
+                        dma_bundle_batch) != 0) {
+                    header->dsp_status = QBH_PROBE_STATUS_DMA_FAILED;
+                    result = AEE_EFAILED;
+                    goto abort_worker;
                 }
-                asm volatile("barrier" : : : "memory");
+                for (uint32_t batch_index = 0;
+                     batch_index < dma_bundle_batch; ++batch_index) {
+                    uint64_t wait_start = HAP_perf_get_qtimer_count();
+                    if (wait_linked_descriptor(
+                            header,
+                            &linked_descriptors[batch_index].descriptor) !=
+                        0) {
+                        header->dsp_status = QBH_PROBE_STATUS_DMA_FAILED;
+                        result = AEE_EFAILED;
+                        goto abort_worker;
+                    }
+                    header->weight_stage_ticks +=
+                        HAP_perf_get_qtimer_count() - wait_start;
+                    ++header->weight_bundle_stage_count;
+                    asm volatile("barrier" : : : "memory");
+                    (void)qurt_sem_up(
+                        &ready[first_slot + batch_index]);
+                }
+                if (record_dma_wait(header) != 0) {
+                    header->dsp_status = QBH_PROBE_STATUS_DMA_FAILED;
+                    result = AEE_EFAILED;
+                    goto abort_worker;
+                }
+            } else {
+                uint64_t stage_start = HAP_perf_get_qtimer_count();
+                if (stage_weight_bundles(
+                        header,
+                        shared + header->weight_offset +
+                            (size_t)output_base *
+                                layout.stored_weight_bundle_bytes,
+                        stage_destination,
+                        layout.stored_weight_bundle_bytes,
+                        dma_bundle_batch) != 0) {
+                    header->dsp_status = QBH_PROBE_STATUS_DMA_FAILED;
+                    result = AEE_EFAILED;
+                    goto abort_worker;
+                }
+                header->weight_stage_ticks +=
+                    HAP_perf_get_qtimer_count() - stage_start;
 
-                (void)qurt_sem_up(&ready[slot]);
+                for (uint32_t batch_index = 0;
+                     batch_index < dma_bundle_batch; ++batch_index) {
+                    uint32_t slot = first_slot + batch_index;
+                    if (qbh_weight_storage_is_packed_w4(
+                            layout.weight_storage_variant)) {
+                        uint64_t expand_start =
+                            HAP_perf_get_qtimer_count();
+                        if (layout.weight_storage_variant ==
+                            QBH_WEIGHT_PACKED_W4_HMX_SCALE) {
+                            qbh_unpack_w4_to_s8_hvx(
+                                compressed_slots[slot],
+                                (int8_t *)expanded_slots[slot],
+                                layout.k_tiles);
+                        } else {
+                            qbh_expand_w4_to_s8_hvx(
+                                compressed_slots[slot],
+                                compressed_slots[slot] +
+                                    layout.w4_scale_offset,
+                                (int8_t *)expanded_slots[slot],
+                                layout.k_tiles);
+                        }
+                        header->weight_expand_ticks +=
+                            HAP_perf_get_qtimer_count() - expand_start;
+                        ++header->weight_expand_count;
+                    }
+                    asm volatile("barrier" : : : "memory");
+                    (void)qurt_sem_up(&ready[slot]);
+                }
             }
         }
     }

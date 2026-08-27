@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define QBH_PROBE_MAGIC UINT32_C(0x51424850)
-#define QBH_PROBE_ABI_VERSION UINT32_C(12)
+#define QBH_PROBE_ABI_VERSION UINT32_C(13)
 #define QBH_PROBE_ALIGNMENT UINT32_C(4096)
 
 #define QBH_HMX_SPATIAL UINT32_C(64)
@@ -66,28 +66,43 @@ enum qbh_physical_plan {
     QBH_PHYSICAL_PLAN_FULL_BUNDLE_DMA_BATCH2 = 3,
     QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH2 = 4,
     QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH4 = 5,
+    QBH_PHYSICAL_PLAN_FULL_BUNDLE_DMA_CHAIN2 = 6,
+    QBH_PHYSICAL_PLAN_CHUNKED_DMA_CHAIN2 = 7,
+    QBH_PHYSICAL_PLAN_CHUNKED_DMA_CHAIN4 = 8,
 };
 
 static inline int qbh_physical_plan_is_full_bundle(uint32_t plan) {
     return plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE ||
-           plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE_DMA_BATCH2;
+           plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE_DMA_BATCH2 ||
+           plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE_DMA_CHAIN2;
 }
 
 static inline int qbh_physical_plan_is_chunked(uint32_t plan) {
     return plan == QBH_PHYSICAL_PLAN_CHUNKED ||
            plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH2 ||
-           plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH4;
+           plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH4 ||
+           plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_CHAIN2 ||
+           plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_CHAIN4;
 }
 
 static inline uint32_t qbh_physical_plan_dma_bundle_batch(uint32_t plan) {
     if (plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE_DMA_BATCH2 ||
-        plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH2) {
+        plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH2 ||
+        plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE_DMA_CHAIN2 ||
+        plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_CHAIN2) {
         return 2U;
     }
-    if (plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH4) {
+    if (plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH4 ||
+        plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_CHAIN4) {
         return 4U;
     }
     return 1U;
+}
+
+static inline int qbh_physical_plan_uses_linked_dma(uint32_t plan) {
+    return plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE_DMA_CHAIN2 ||
+           plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_CHAIN2 ||
+           plan == QBH_PHYSICAL_PLAN_CHUNKED_DMA_CHAIN4;
 }
 
 enum qbh_probe_pattern {
@@ -176,6 +191,10 @@ struct qbh_probe_header {
     uint32_t output_tile_count;
     uint32_t dma_submit_count;
     uint32_t dma_wait_count;
+    uint32_t dma_descriptor_count;
+    uint32_t dma_chain_count;
+    uint32_t dma_descriptor_completion_count;
+    uint32_t dma_descriptor_timeout_count;
     uint32_t weight_slot_reuse_count;
     uint32_t expanded_chunk_slot_reuse_count;
     uint32_t chunks_per_output;
@@ -217,7 +236,7 @@ struct qbh_probe_header {
     uint64_t hvx_worker_ticks[QBH_MAX_HVX_WORKERS];
 };
 
-_Static_assert(sizeof(struct qbh_probe_header) == 512,
+_Static_assert(sizeof(struct qbh_probe_header) == 528,
                "probe header ABI changed");
 
 #endif
