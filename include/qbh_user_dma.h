@@ -64,8 +64,15 @@ struct qbh_dma_aligned_desc_1d {
     uint8_t padding[48];
 } __attribute__((aligned(64)));
 
+struct qbh_dma_aligned_desc_2d {
+    struct qbh_dma_desc_2d descriptor;
+    uint8_t padding[32];
+} __attribute__((aligned(64)));
+
 _Static_assert(sizeof(struct qbh_dma_aligned_desc_1d) == 64,
                "linked DMA descriptor stride changed");
+_Static_assert(sizeof(struct qbh_dma_aligned_desc_2d) == 64,
+               "linked 2-D DMA descriptor stride changed");
 
 static inline int qbh_dma_wait_idle(void) {
     return (Q6_R_dmwait() & QBH_DMA_STATUS_MASK) == QBH_DMA_STATUS_IDLE

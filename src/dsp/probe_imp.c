@@ -25,6 +25,9 @@
 static uint32_t probe_session_token;
 static uint8_t hmx_worker_stack[QBH_HMX_WORKER_STACK_BYTES]
     __attribute__((aligned(128)));
+static struct qbh_dma_aligned_desc_2d
+    output_dma_descriptors[QBH_GATE_UP_N / QBH_HMX_OUTPUT_CHANNELS]
+        __attribute__((aligned(64)));
 
 struct qbh_projection_worker_job {
     uint32_t hmx_context_id;
@@ -79,7 +82,10 @@ static int header_is_valid(const struct qbh_probe_header *header,
         header->pattern > QBH_PATTERN_BOUNDARY ||
         header->input_zero_point > UINT8_MAX ||
         header->repeat_count == 0 ||
-        header->repeat_count > QBH_HMX_MAX_REPEATS) {
+        header->repeat_count > QBH_HMX_MAX_REPEATS ||
+        (header->output_assembly_mode != QBH_OUTPUT_ASSEMBLY_SCALAR &&
+         header->output_assembly_mode !=
+             QBH_OUTPUT_ASSEMBLY_LINKED_2D_DMA)) {
         return 0;
     }
     if (qbh_projection_layout_init(header->projection_variant,
@@ -327,6 +333,94 @@ __attribute__((noinline)) static void assemble_row_major_output(
     asm volatile("barrier" : : : "memory");
 }
 
+static int assemble_row_major_output_dma(
+    struct qbh_probe_header *header,
+    const struct qbh_projection_layout *layout, uint8_t *destination,
+    const uint8_t *source_tiles) {
+    uint64_t start = HAP_perf_get_qtimer_count();
+    uint32_t spins = 0;
+
+    if (layout->n_tiles >
+            QBH_GATE_UP_N / QBH_HMX_OUTPUT_CHANNELS ||
+        qbh_dma_wait_idle() != 0) {
+        header->output_dma_status = -1;
+        return -1;
+    }
+    ++header->output_dma_wait_count;
+    memset(output_dma_descriptors, 0,
+           sizeof(*output_dma_descriptors) * layout->n_tiles);
+    for (uint32_t output_tile = 0; output_tile < layout->n_tiles;
+         ++output_tile) {
+        struct qbh_dma_desc_2d *descriptor =
+            &output_dma_descriptors[output_tile].descriptor;
+        descriptor->next = output_tile + 1U < layout->n_tiles
+                               ? (uint32_t)(uintptr_t)(
+                                     &output_dma_descriptors[
+                                          output_tile + 1U].descriptor)
+                               : 0U;
+        descriptor->length = 0;
+        descriptor->type = QBH_DMA_TYPE_2D;
+        descriptor->src_bypass = 0;
+        descriptor->dst_bypass = 1;
+        descriptor->ordered = 1;
+        descriptor->dstate = QBH_DMA_DESC_PENDING;
+        descriptor->src = (uint32_t)(uintptr_t)(
+            source_tiles + (size_t)output_tile * QBH_HMX_OUTPUT_BYTES);
+        descriptor->dst = (uint32_t)(uintptr_t)(
+            destination +
+            (size_t)output_tile * QBH_HMX_OUTPUT_CHANNELS);
+        descriptor->roi_width = (uint16_t)QBH_HMX_OUTPUT_CHANNELS;
+        descriptor->roi_height = (uint16_t)layout->m;
+        descriptor->src_stride = (uint16_t)QBH_HMX_OUTPUT_CHANNELS;
+        descriptor->dst_stride = (uint16_t)layout->n;
+        descriptor->src_width_offset = 0;
+        descriptor->dst_width_offset = 0;
+        asm volatile("release(%0):at"
+                     :
+                     : "r"(descriptor)
+                     : "memory");
+    }
+
+    if (qbh_dma_start(&output_dma_descriptors[0].descriptor) != 0) {
+        header->output_dma_status = -1;
+        return -1;
+    }
+    ++header->output_dma_submit_count;
+    header->output_dma_descriptor_count += layout->n_tiles;
+    ++header->output_dma_chain_count;
+
+    for (;;) {
+        struct qbh_dma_desc_2d *last =
+            &output_dma_descriptors[layout->n_tiles - 1U].descriptor;
+        uint32_t status = Q6_R_dmpoll() & QBH_DMA_STATUS_MASK;
+        if (((volatile struct qbh_dma_desc_2d *)last)->dstate ==
+            QBH_DMA_DESC_COMPLETE) {
+            asm volatile("barrier" : : : "memory");
+            header->output_dma_descriptor_completion_count +=
+                layout->n_tiles;
+            break;
+        }
+        if (status == QBH_DMA_STATUS_ERROR) {
+            header->output_dma_status = (int32_t)status;
+            return -1;
+        }
+        ++spins;
+        if ((spins & UINT32_C(255)) == 0U &&
+            HAP_perf_get_qtimer_count() - start >
+                QBH_DMA_DESCRIPTOR_TIMEOUT_TICKS) {
+            ++header->output_dma_descriptor_timeout_count;
+            header->output_dma_status = -1;
+            return -1;
+        }
+    }
+    if (qbh_dma_wait_idle() != 0) {
+        header->output_dma_status = -1;
+        return -1;
+    }
+    ++header->output_dma_wait_count;
+    return 0;
+}
+
 static void hmx_worker_main(void *opaque) {
     struct qbh_projection_worker_job *job =
         (struct qbh_projection_worker_job *)opaque;
@@ -488,6 +582,13 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     header->dma_chain_count = 0;
     header->dma_descriptor_completion_count = 0;
     header->dma_descriptor_timeout_count = 0;
+    header->output_dma_submit_count = 0;
+    header->output_dma_wait_count = 0;
+    header->output_dma_descriptor_count = 0;
+    header->output_dma_chain_count = 0;
+    header->output_dma_descriptor_completion_count = 0;
+    header->output_dma_descriptor_timeout_count = 0;
+    header->output_dma_status = 0;
     header->weight_slot_reuse_count = 0;
     header->expanded_chunk_slot_reuse_count = 0;
     header->chunks_per_output = layout.chunks_per_output;
@@ -529,13 +630,14 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     header->hmx_window_end = 0;
     dsp_total_start = HAP_perf_get_qtimer_count();
     FARF(ALWAYS,
-         "EXP0013 stage=header_valid projection=%u storage=%u plan=%u "
+         "EXP0014 stage=header_valid projection=%u storage=%u plan=%u "
          "workers=%u compressed_slots=%u expanded_slots=%u chunk_tiles=%u "
+         "output_mode=%u "
          "M=%u K=%u N=%u vtcm_plan=%u",
          layout.variant, layout.weight_storage_variant,
          layout.physical_plan, header->requested_hvx_workers,
          layout.compressed_slot_count, layout.expanded_slot_count,
-         layout.chunk_tiles, layout.m,
+         layout.chunk_tiles, header->output_assembly_mode, layout.m,
          layout.k, layout.n,
          layout.vtcm_plan_bytes);
 
@@ -903,8 +1005,20 @@ join_worker:
 pipeline_complete:
     ;
     uint64_t output_start = HAP_perf_get_qtimer_count();
-    assemble_row_major_output(&layout, shared + header->output_offset,
-                              output_tiles);
+    if (header->output_assembly_mode ==
+        QBH_OUTPUT_ASSEMBLY_LINKED_2D_DMA) {
+        if (assemble_row_major_output_dma(
+                header, &layout, shared + header->output_offset,
+                output_tiles) != 0) {
+            header->dsp_status = QBH_PROBE_STATUS_OUTPUT_DMA_FAILED;
+            result = AEE_EFAILED;
+            goto cleanup;
+        }
+    } else {
+        assemble_row_major_output(&layout,
+                                  shared + header->output_offset,
+                                  output_tiles);
+    }
     header->output_assembly_ticks =
         HAP_perf_get_qtimer_count() - output_start;
     header->hvx_unlock_status = qurt_hvx_unlock();

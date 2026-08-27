@@ -422,6 +422,26 @@ static int parse_projection(const char *text, uint32_t *variant) {
     return -1;
 }
 
+static const char *output_assembly_name(uint32_t mode) {
+    return mode == QBH_OUTPUT_ASSEMBLY_LINKED_2D_DMA
+               ? "linked_2d_dma"
+               : "scalar_memcpy";
+}
+
+static int parse_output_assembly(const char *text, uint32_t *mode) {
+    if (strcmp(text, "scalar_memcpy") == 0 ||
+        strcmp(text, "scalar") == 0) {
+        *mode = QBH_OUTPUT_ASSEMBLY_SCALAR;
+        return 0;
+    }
+    if (strcmp(text, "linked_2d_dma") == 0 ||
+        strcmp(text, "output_dma") == 0) {
+        *mode = QBH_OUTPUT_ASSEMBLY_LINKED_2D_DMA;
+        return 0;
+    }
+    return -1;
+}
+
 static const char *pattern_name(uint32_t pattern) {
     switch (pattern) {
         case QBH_PATTERN_IDENTITY:
@@ -814,6 +834,7 @@ int main(int argc, char **argv) {
     uint32_t compressed_slot_count =
         QBH_W4_DEFAULT_COMPRESSED_SLOT_COUNT;
     uint32_t chunk_tiles = QBH_W4_DEFAULT_CHUNK_TILES;
+    uint32_t output_assembly_mode = QBH_OUTPUT_ASSEMBLY_SCALAR;
     size_t activation_offset;
     size_t weight_offset;
     size_t output_offset;
@@ -864,7 +885,12 @@ int main(int argc, char **argv) {
         fprintf(stderr, "invalid physical plan: %s\n", argv[5]);
         return EXIT_FAILURE;
     }
-    if (argc > 6) {
+    if (argc > 6 &&
+        parse_output_assembly(argv[6], &output_assembly_mode) != 0) {
+        fprintf(stderr, "invalid output assembly mode: %s\n", argv[6]);
+        return EXIT_FAILURE;
+    }
+    if (argc > 7) {
         fprintf(stderr,
                 "usage: %s [packed_w4_hvx_prescale|"
                 "packed_w4_hmx_postscale|expanded_s8_control] "
@@ -889,7 +915,8 @@ int main(int argc, char **argv) {
                 "slots8e7_chunk64_dma_batch4|"
                 "slots8e7_chunk96_dma_batch4|"
                 "slots8e7_chunk64_dma_chain4|"
-                "slots8e7_chunk96_dma_chain4]\n",
+                "slots8e7_chunk96_dma_chain4] "
+                "[scalar_memcpy|linked_2d_dma]\n",
                 argv[0]);
         return EXIT_FAILURE;
     }
@@ -956,6 +983,7 @@ int main(int argc, char **argv) {
     header->compressed_slot_count = compressed_slot_count;
     header->expanded_chunk_slot_count = layout.expanded_slot_count;
     header->chunk_tiles = chunk_tiles;
+    header->output_assembly_mode = output_assembly_mode;
     header->activation_offset = (uint32_t)activation_offset;
     header->weight_offset = (uint32_t)weight_offset;
     header->output_offset = (uint32_t)output_offset;
@@ -1021,13 +1049,14 @@ int main(int argc, char **argv) {
         &reference_min, &reference_max, &reference_checksum);
     reference_end = monotonic_ns();
 
-    printf("{\"experiment\":\"EXP-0013\","
+    printf("{\"experiment\":\"EXP-0014\","
            "\"weight_storage\":\"%s\","
            "\"physical_plan\":\"%s\","
            "\"requested_hvx_workers\":%" PRIu32 ","
            "\"compressed_slot_count\":%" PRIu32 ","
            "\"expanded_chunk_slot_count\":%" PRIu32 ","
            "\"chunk_tiles\":%" PRIu32 ","
+           "\"output_assembly_mode\":\"%s\","
            "\"dma_bundle_batch\":%" PRIu32 ","
            "\"projection\":\"%s\",\"pattern\":\"%s\","
            "\"repeat_count\":%" PRIu32 ","
@@ -1086,6 +1115,13 @@ int main(int argc, char **argv) {
            "\"dma_chain_count\":%" PRIu32 ","
            "\"dma_descriptor_completion_count\":%" PRIu32 ","
            "\"dma_descriptor_timeout_count\":%" PRIu32 ","
+           "\"output_dma_submit_count\":%" PRIu32 ","
+           "\"output_dma_wait_count\":%" PRIu32 ","
+           "\"output_dma_descriptor_count\":%" PRIu32 ","
+           "\"output_dma_chain_count\":%" PRIu32 ","
+           "\"output_dma_descriptor_completion_count\":%" PRIu32 ","
+           "\"output_dma_descriptor_timeout_count\":%" PRIu32 ","
+           "\"output_dma_status\":%d,"
            "\"weight_slot_reuse_count\":%" PRIu32 ","
            "\"expanded_chunk_slot_reuse_count\":%" PRIu32 ","
            "\"chunks_per_output\":%" PRIu32 ","
@@ -1110,6 +1146,7 @@ int main(int argc, char **argv) {
                               compressed_slot_count, chunk_tiles),
            requested_hvx_workers, compressed_slot_count,
            header->expanded_chunk_slot_count, chunk_tiles,
+           output_assembly_name(output_assembly_mode),
            qbh_physical_plan_dma_bundle_batch(physical_plan),
            projection_name(variant),
            pattern_name(pattern), repeats, rpc_result, header->dsp_status,
@@ -1149,6 +1186,13 @@ int main(int argc, char **argv) {
            header->dma_descriptor_count, header->dma_chain_count,
            header->dma_descriptor_completion_count,
            header->dma_descriptor_timeout_count,
+           header->output_dma_submit_count,
+           header->output_dma_wait_count,
+           header->output_dma_descriptor_count,
+           header->output_dma_chain_count,
+           header->output_dma_descriptor_completion_count,
+           header->output_dma_descriptor_timeout_count,
+           header->output_dma_status,
            header->weight_slot_reuse_count,
            header->expanded_chunk_slot_reuse_count,
            header->chunks_per_output, header->chunk_expand_count,
@@ -1204,6 +1248,7 @@ int main(int argc, char **argv) {
         header->n_tile_count == layout.n_tiles &&
         header->compressed_slot_count == layout.compressed_slot_count &&
         header->expanded_chunk_slot_count == layout.expanded_slot_count &&
+        header->output_assembly_mode == output_assembly_mode &&
         header->chunk_tiles == layout.chunk_tiles &&
         header->stored_weight_bundle_bytes ==
             layout.stored_weight_bundle_bytes &&
@@ -1244,6 +1289,33 @@ int main(int argc, char **argv) {
         header->dma_descriptor_completion_count ==
             expected_dma_descriptors &&
         header->dma_descriptor_timeout_count == 0U &&
+        header->output_dma_submit_count ==
+            (output_assembly_mode ==
+                     QBH_OUTPUT_ASSEMBLY_LINKED_2D_DMA
+                 ? 1U
+                 : 0U) &&
+        header->output_dma_wait_count ==
+            (output_assembly_mode ==
+                     QBH_OUTPUT_ASSEMBLY_LINKED_2D_DMA
+                 ? 2U
+                 : 0U) &&
+        header->output_dma_descriptor_count ==
+            (output_assembly_mode ==
+                     QBH_OUTPUT_ASSEMBLY_LINKED_2D_DMA
+                 ? layout.n_tiles
+                 : 0U) &&
+        header->output_dma_chain_count ==
+            (output_assembly_mode ==
+                     QBH_OUTPUT_ASSEMBLY_LINKED_2D_DMA
+                 ? 1U
+                 : 0U) &&
+        header->output_dma_descriptor_completion_count ==
+            (output_assembly_mode ==
+                     QBH_OUTPUT_ASSEMBLY_LINKED_2D_DMA
+                 ? layout.n_tiles
+                 : 0U) &&
+        header->output_dma_descriptor_timeout_count == 0U &&
+        header->output_dma_status == 0 &&
         header->weight_slot_reuse_count == expected_reuses &&
         header->chunks_per_output == layout.chunks_per_output &&
         header->chunk_expand_count ==
