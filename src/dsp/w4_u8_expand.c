@@ -53,10 +53,21 @@ __attribute__((noinline)) void qbh_expand_w4_to_s8_hvx(
             Q6_Wh_vmpy_VbVb(v_q0, v_scales);
         const HVX_VectorPair v_product1 =
             Q6_Wh_vmpy_VbVb(v_q1, v_scales);
+        /* Byte multiply separates even and odd inputs into two halfword
+         * vectors.  Re-interleave halfwords before narrowing back to the
+         * original HMX carrier order. */
+        const HVX_VectorPair v_product0_interleaved =
+            Q6_W_vshuff_VVR(Q6_V_hi_W(v_product0),
+                            Q6_V_lo_W(v_product0), -2);
+        const HVX_VectorPair v_product1_interleaved =
+            Q6_W_vshuff_VVR(Q6_V_hi_W(v_product1),
+                            Q6_V_lo_W(v_product1), -2);
         const HVX_Vector v_scaled0 = Q6_Vb_vpack_VhVh_sat(
-            Q6_V_hi_W(v_product0), Q6_V_lo_W(v_product0));
+            Q6_V_hi_W(v_product0_interleaved),
+            Q6_V_lo_W(v_product0_interleaved));
         const HVX_Vector v_scaled1 = Q6_Vb_vpack_VhVh_sat(
-            Q6_V_hi_W(v_product1), Q6_V_lo_W(v_product1));
+            Q6_V_hi_W(v_product1_interleaved),
+            Q6_V_lo_W(v_product1_interleaved));
         HVX_Vector *destination = (HVX_Vector *)(
             expanded_s8 + (size_t)packed_vector * 2U *
                               sizeof(HVX_Vector));
