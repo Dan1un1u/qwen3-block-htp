@@ -166,6 +166,10 @@ struct qbh_block_header {
     float attention_qk_max_abs;
     float attention_probability_max_abs;
     float attention_av_max_abs;
+    int32_t projection_failure_result;
+    uint32_t projection_failure_index;
+    uint32_t projection_failure_n_tile;
+    uint32_t projection_failure_step;
 
     uint32_t prepared_session_run_index;
     uint32_t resource_vtcm_address;

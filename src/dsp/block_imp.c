@@ -327,8 +327,11 @@ static int qbh_dma_copy(struct qbh_block_header *header, void *destination,
     struct qbh_dma_desc_1d *descriptor = &aligned.descriptor;
     uint64_t start = HAP_perf_get_qtimer_count();
     if (destination == NULL || source == NULL || bytes == 0U ||
-        bytes >= UINT32_C(0x01000000) || qbh_dma_wait_idle() != 0) {
+        bytes >= UINT32_C(0x01000000)) {
         return -1;
+    }
+    if (qbh_dma_wait_idle() != 0) {
+        return -2;
     }
     memset(&aligned, 0, sizeof(aligned));
     descriptor->length = bytes;
@@ -339,9 +342,14 @@ static int qbh_dma_copy(struct qbh_block_header *header, void *destination,
     descriptor->dstate = QBH_DMA_DESC_PENDING;
     descriptor->src = (uint32_t)(uintptr_t)source;
     descriptor->dst = (uint32_t)(uintptr_t)destination;
-    if (qbh_dma_start(descriptor) != 0 || qbh_dma_wait_idle() != 0 ||
-        descriptor->dstate != QBH_DMA_DESC_COMPLETE) {
-        return -1;
+    if (qbh_dma_start(descriptor) != 0) {
+        return -3;
+    }
+    if (qbh_dma_wait_idle() != 0) {
+        return -4;
+    }
+    if (descriptor->dstate != QBH_DMA_DESC_COMPLETE) {
+        return -5;
     }
     if (ddr_to_vtcm != 0U) {
         header->weight_dma_ticks += HAP_perf_get_qtimer_count() - start;
@@ -513,6 +521,17 @@ static void qbh_expand_w4_fp16(const uint8_t *packed,
     }
 }
 
+static void qbh_record_projection_failure(
+    struct qbh_block_header *header,
+    const struct qbh_block_projection_desc *desc,
+    uint32_t n_tile, uint32_t step, int32_t result) {
+    header->projection_failure_result = result;
+    header->projection_failure_index =
+        (uint32_t)(desc - header->projections);
+    header->projection_failure_n_tile = n_tile;
+    header->projection_failure_step = step;
+}
+
 static int qbh_run_projection(
     struct qbh_block_header *header, const uint8_t *shared,
     const struct qbh_block_projection_desc *desc,
@@ -524,11 +543,14 @@ static int qbh_run_projection(
     uint32_t element_bytes =
         header->variant == QBH_BLOCK_W4U8 ? 1U : 2U;
     int hvx_locked = 0;
+    uint32_t failure_step = 0U;
 
     if (header->variant == QBH_BLOCK_W4U8) {
         qbh_pack_u8_activation((const uint8_t *)input, desc->k,
                                desc->k, buffers->hmx_activation);
         if (qurt_hvx_lock(QURT_HVX_MODE_128B) != AEE_SUCCESS) {
+            qbh_record_projection_failure(
+                header, desc, 0U, 5U, -1);
             return -1;
         }
         hvx_locked = 1;
@@ -547,6 +569,7 @@ static int qbh_run_projection(
         if (header->variant == QBH_BLOCK_F16F16) {
             const uint8_t *source = shared + desc->weight_offset +
                 (size_t)n_tile * fp16_weight_bytes;
+            failure_step = 1U;
             result = qbh_dma_copy(header, buffers->expanded_weight,
                                   source, fp16_weight_bytes, 1U);
             header->weight_ddr_read_bytes += fp16_weight_bytes;
@@ -554,11 +577,13 @@ static int qbh_run_projection(
         } else {
             const uint8_t *source = shared + desc->weight_offset +
                 (size_t)n_tile * compressed_bytes;
+            failure_step = 1U;
             result = qbh_dma_copy(header, buffers->compressed_weight,
                                   source, compressed_bytes, 1U);
             header->weight_ddr_read_bytes += compressed_bytes;
             ++header->weight_dma_descriptor_count;
             if (result == 0 && header->variant == QBH_BLOCK_W4F16) {
+                failure_step = 2U;
                 result = qbh_dma_copy(
                     header, buffers->scale_or_bias,
                     shared + desc->scale_offset +
@@ -575,6 +600,7 @@ static int qbh_run_projection(
                         buffers->scale_or_bias);
                 }
             } else if (result == 0) {
+                failure_step = 3U;
                 result = qbh_dma_copy(
                     header, buffers->scale_or_bias,
                     shared + desc->bias_offset +
@@ -590,6 +616,8 @@ static int qbh_run_projection(
             }
         }
         if (result != 0) {
+            qbh_record_projection_failure(
+                header, desc, n_tile, failure_step, result);
             if (hvx_locked != 0) {
                 (void)qurt_hvx_unlock();
             }
@@ -597,6 +625,7 @@ static int qbh_run_projection(
         }
 
         if (header->variant == QBH_BLOCK_W4U8) {
+            failure_step = 4U;
             result = qbh_hmx_submit(
                 worker, QBH_BLOCK_HMX_U8S8,
                 buffers->hmx_activation, buffers->expanded_weight,
@@ -609,6 +638,7 @@ static int qbh_run_projection(
                     n_tile * QBH_HMX_OUTPUT_CHANNELS);
             }
         } else {
+            failure_step = 4U;
             result = qbh_hmx_submit(
                 worker, QBH_BLOCK_HMX_FP16,
                 buffers->hmx_activation, buffers->expanded_weight,
@@ -624,6 +654,8 @@ static int qbh_run_projection(
         }
         ++header->hmx_command_count;
         if (result != 0) {
+            qbh_record_projection_failure(
+                header, desc, n_tile, failure_step, result);
             if (hvx_locked != 0) {
                 (void)qurt_hvx_unlock();
             }
@@ -631,6 +663,8 @@ static int qbh_run_projection(
         }
     }
     if (hvx_locked != 0 && qurt_hvx_unlock() != AEE_SUCCESS) {
+        qbh_record_projection_failure(
+            header, desc, n_tiles, 6U, -1);
         return -1;
     }
     (void)element_bytes;

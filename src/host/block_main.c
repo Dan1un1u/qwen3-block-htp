@@ -675,8 +675,14 @@ int main(int argc, char **argv) {
     warmup_run_index = header->prepared_session_run_index;
     if (warmup_result != AEE_SUCCESS ||
         header->dsp_status != QBH_BLOCK_STATUS_OK) {
-        fprintf(stderr, "warmup failed: rpc=0x%08x dsp=%d\n",
-                (unsigned int)warmup_result, header->dsp_status);
+        fprintf(stderr,
+                "warmup failed: rpc=0x%08x dsp=%d projection=%" PRIu32
+                " n_tile=%" PRIu32 " step=%" PRIu32 " result=%d\n",
+                (unsigned int)warmup_result, header->dsp_status,
+                header->projection_failure_index,
+                header->projection_failure_n_tile,
+                header->projection_failure_step,
+                header->projection_failure_result);
         goto cleanup;
     }
     warmup_metrics = variant == QBH_BLOCK_W4U8
@@ -699,8 +705,14 @@ int main(int argc, char **argv) {
     measured_end = qbh_monotonic_ns();
     if (measured_result != AEE_SUCCESS ||
         header->dsp_status != QBH_BLOCK_STATUS_OK) {
-        fprintf(stderr, "measured run failed: rpc=0x%08x dsp=%d\n",
-                (unsigned int)measured_result, header->dsp_status);
+        fprintf(stderr,
+                "measured run failed: rpc=0x%08x dsp=%d projection=%" PRIu32
+                " n_tile=%" PRIu32 " step=%" PRIu32 " result=%d\n",
+                (unsigned int)measured_result, header->dsp_status,
+                header->projection_failure_index,
+                header->projection_failure_n_tile,
+                header->projection_failure_step,
+                header->projection_failure_result);
         goto cleanup;
     }
     measured_metrics = variant == QBH_BLOCK_W4U8
@@ -736,6 +748,10 @@ int main(int argc, char **argv) {
         "\"attention_qk_max_abs\":%.9g,"
         "\"attention_probability_max_abs\":%.9g,"
         "\"attention_av_max_abs\":%.9g,"
+        "\"projection_failure_result\":%d,"
+        "\"projection_failure_index\":%" PRIu32 ","
+        "\"projection_failure_n_tile\":%" PRIu32 ","
+        "\"projection_failure_step\":%" PRIu32 ","
         "\"host_wall_ns\":%" PRIu64 ","
         "\"host_wall_ns_per_block\":%.3f,"
         "\"max_abs\":%.9g,\"mean_abs\":%.9g,\"rmse\":%.9g,"
@@ -779,6 +795,10 @@ int main(int argc, char **argv) {
         header->attention_qk_max_abs,
         header->attention_probability_max_abs,
         header->attention_av_max_abs,
+        header->projection_failure_result,
+        header->projection_failure_index,
+        header->projection_failure_n_tile,
+        header->projection_failure_step,
         measured_end - measured_start,
         (double)(measured_end - measured_start) / repeats,
         measured_metrics.max_abs, measured_metrics.mean_abs,
