@@ -783,7 +783,7 @@ experiments:
     execution_state: completed
     evidence_validity: invalid
     local_gate: fail
-    adoption_status: pending
+    adoption_status: rejected
     evidence_profile: interference-aware-w4-phase-pipeline
     source_branches:
       - codex/exp-0018-interference-aware-pipeline
@@ -793,6 +793,9 @@ experiments:
     decided_by: user
     decided_on: '2026-08-27'
     approval_ref: 'User message 2026-08-27: 继续优化现有方案'
+    rejected_by: user
+    rejected_on: '2026-08-27'
+    rejection_ref: 'User message 2026-08-27: EXP-0018 is not supported; do not separate HMX and HVX'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0018-interference-aware-pipeline
@@ -819,3 +822,34 @@ experiments:
       safe_source_disables_down_two_chunk_phase: true
       device_restart_required: true
       performance_characterization: hmx_issue_recovers_but_phase_barriers_regress_total_latency_and_down_stalls
+  - id: EXP-0019
+    slug: streaming-microchunk-handoff
+    title: Stream partial HVX expansion directly into the ordered HMX consumer
+    parent: EXP-0017
+    variants:
+      - exp0017_coarse_publication_control
+      - stream32_hvx2
+      - stream32_hvx3
+      - stream32_hvx4
+      - stream32_hvx6
+      - expanded_s8_control
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: bounded-lookahead-hvx-hmx-streaming
+    source_branches:
+      - codex/exp-0019-streaming-microchunk-handoff
+    source_commits: []
+    record: docs/experiments/EXP-0019.md
+    decided_by: user
+    decided_on: '2026-08-27'
+    approval_ref: 'User message 2026-08-27: HVX should hand partial work directly to HMX; continue optimizing the pipeline'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0019-streaming-microchunk-handoff
+      started_on: '2026-08-27'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0019'
+      retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0019'

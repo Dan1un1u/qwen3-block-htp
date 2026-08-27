@@ -114,3 +114,14 @@ while User DMA prefetches the next packed group. It tests whether avoiding
 HVX/HMX VTCM and execution-resource interference is faster than maximizing
 nominal overlap.
 _Avoid_: serialized pipeline, disabled prefetch, reduced-HVX fallback
+
+**Streaming Microchunk Handoff**:
+A Physical Plan that retains the current 64- or 96-K-tile VTCM allocation and
+DMA transaction boundary, while dividing each resident expanded slot into
+ordered 32-K-tile readiness regions. HVX publishes each completed region with
+a generation-tagged release; one persistent HMX consumer begins after the
+first required region and accumulates subsequent streams as they become ready.
+The slot is released only after its complete superchunk is consumed. Producer
+lookahead is bounded so HVX cannot run an entire group ahead of HMX.
+_Avoid_: strict phase separation, full-group barrier, per-microchunk FastRPC,
+per-microchunk expanded-slot recycle
