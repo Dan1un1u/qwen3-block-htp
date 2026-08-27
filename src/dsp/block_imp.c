@@ -1028,6 +1028,7 @@ static int qbh_run_w4f16_projection(
         uint32_t next_tile = n_tile + 1U;
         uint64_t prefetch_start = 0U;
         int prefetch_active = 0;
+        int hmx_waited = 0;
 
         qbh_hmx_fp16_init_channel_scales(
             buffers->scale_or_bias,
@@ -1088,6 +1089,15 @@ static int qbh_run_w4f16_projection(
                     header, desc, n_tile, 15U, result);
                 return -1;
             }
+            result = qbh_hmx_wait(worker);
+            header->projection_hmx_wait_ticks +=
+                HAP_perf_get_qtimer_count() - phase_start;
+            hmx_waited = 1;
+            if (result != 0) {
+                qbh_record_projection_failure(
+                    header, desc, n_tile, 17U, result);
+                return -1;
+            }
             {
                 uint64_t expand_start = HAP_perf_get_qtimer_count();
                 qbh_w4f16_expand_with_main(
@@ -1100,9 +1110,11 @@ static int qbh_run_w4f16_projection(
             }
         }
 
-        result = qbh_hmx_wait(worker);
-        header->projection_hmx_wait_ticks +=
-            HAP_perf_get_qtimer_count() - phase_start;
+        if (hmx_waited == 0) {
+            result = qbh_hmx_wait(worker);
+            header->projection_hmx_wait_ticks +=
+                HAP_perf_get_qtimer_count() - phase_start;
+        }
         header->hmx_fp16_tile_pair_count += 2U * k_tiles;
         ++header->hmx_command_count;
         if (result != 0) {
