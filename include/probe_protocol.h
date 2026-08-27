@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define QBH_PROBE_MAGIC UINT32_C(0x51424850)
-#define QBH_PROBE_ABI_VERSION UINT32_C(3)
+#define QBH_PROBE_ABI_VERSION UINT32_C(4)
 #define QBH_PROBE_ALIGNMENT UINT32_C(4096)
 
 #define QBH_HMX_SPATIAL UINT32_C(64)
@@ -14,31 +14,23 @@
 #define QBH_HMX_WEIGHT_BYTES UINT32_C(1024)
 #define QBH_HMX_OUTPUT_BYTES UINT32_C(2048)
 #define QBH_HMX_BIAS_BYTES UINT32_C(256)
-#define QBH_HMX_VTCM_BYTES UINT32_C(8192)
 #define QBH_HMX_DEFAULT_ZERO_POINT UINT32_C(128)
 #define QBH_HMX_DEFAULT_REPEATS UINT32_C(1)
 #define QBH_HMX_MAX_REPEATS UINT32_C(100000)
+#define QBH_HMX_MAX_STREAM_TILES UINT32_C(32)
 
 #define QBH_PROJ_M UINT32_C(64)
-#define QBH_PROJ_K UINT32_C(128)
-#define QBH_PROJ_N UINT32_C(96)
-#define QBH_PROJ_K_TILES (QBH_PROJ_K / QBH_HMX_INPUT_CHANNELS)
-#define QBH_PROJ_N_TILES (QBH_PROJ_N / QBH_HMX_OUTPUT_CHANNELS)
-#define QBH_PROJ_ACTIVATION_BYTES (QBH_PROJ_M * QBH_PROJ_K)
-#define QBH_PROJ_LOGICAL_WEIGHT_BYTES (QBH_PROJ_K * QBH_PROJ_N)
-#define QBH_PROJ_WEIGHT_TILE_BYTES QBH_HMX_WEIGHT_BYTES
-#define QBH_PROJ_WEIGHT_CHUNK_BYTES \
-    (QBH_PROJ_K_TILES * QBH_PROJ_WEIGHT_TILE_BYTES)
-#define QBH_PROJ_WEIGHT_BUNDLE_BYTES \
-    (QBH_PROJ_WEIGHT_CHUNK_BYTES + QBH_HMX_BIAS_BYTES)
-#define QBH_PROJ_PACKED_WEIGHT_BYTES \
-    (QBH_PROJ_N_TILES * QBH_PROJ_WEIGHT_BUNDLE_BYTES)
-#define QBH_PROJ_OUTPUT_BYTES (QBH_PROJ_M * QBH_PROJ_N)
-#define QBH_PROJ_OUTPUT_TILES_BYTES \
-    (QBH_PROJ_N_TILES * QBH_HMX_OUTPUT_BYTES)
-#define QBH_PROJ_HMX_PAIRS_PER_REPEAT \
-    (QBH_PROJ_K_TILES * QBH_PROJ_N_TILES)
-#define QBH_PROJ_VTCM_BYTES UINT32_C(32768)
+#define QBH_GATE_UP_K UINT32_C(2048)
+#define QBH_GATE_UP_N UINT32_C(6144)
+#define QBH_DOWN_K UINT32_C(6144)
+#define QBH_DOWN_N UINT32_C(2048)
+#define QBH_QWEN3_VTCM_BYTES UINT32_C(1048576)
+#define QBH_QWEN3_HMX_PAIRS_PER_REPEAT UINT32_C(12288)
+
+enum qbh_projection_variant {
+    QBH_PROJECTION_GATE_UP = 1,
+    QBH_PROJECTION_DOWN = 2,
+};
 
 enum qbh_probe_pattern {
     QBH_PATTERN_IDENTITY = 1,
@@ -66,6 +58,7 @@ enum qbh_probe_status {
     QBH_PROBE_STATUS_HMX_POWER_FAILED = -13,
     QBH_PROBE_STATUS_DMA_FAILED = -14,
     QBH_PROBE_STATUS_SYNC_FAILED = -15,
+    QBH_PROBE_STATUS_LAYOUT_FAILED = -16,
 };
 
 struct qbh_probe_header {
@@ -75,6 +68,7 @@ struct qbh_probe_header {
     uint32_t total_bytes;
 
     uint32_t pattern;
+    uint32_t projection_variant;
     uint32_t activation_offset;
     uint32_t weight_offset;
     uint32_t output_offset;
@@ -94,6 +88,7 @@ struct qbh_probe_header {
     int32_t hmx_power_up_status;
     int32_t hmx_power_down_status;
     uint32_t hmx_execution_count;
+    uint32_t hmx_stream_count;
     int32_t hvx_lock_status;
     int32_t hvx_unlock_status;
 
@@ -102,6 +97,9 @@ struct qbh_probe_header {
     uint32_t projection_n;
     uint32_t k_tile_count;
     uint32_t n_tile_count;
+    uint32_t weight_bundle_bytes;
+    uint32_t vtcm_plan_bytes;
+    uint32_t k_streams_per_output;
     uint32_t activation_stage_count;
     uint32_t weight_bundle_stage_count;
     uint32_t output_tile_count;
@@ -127,7 +125,7 @@ struct qbh_probe_header {
     uint64_t dsp_total_ticks;
 };
 
-_Static_assert(sizeof(struct qbh_probe_header) == 256,
+_Static_assert(sizeof(struct qbh_probe_header) == 280,
                "probe header ABI changed");
 
 #endif

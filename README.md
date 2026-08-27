@@ -88,3 +88,36 @@ The result is checked against an independent row-major Host reference for
 `clamp(sum_k((activation - 128) * weight), 0, 255)`. Stage counters and qtimer
 measurements expose activation DMA, weight DMA, HMX computation, producer and
 consumer waits, pipeline duration, and output assembly separately.
+
+## EXP-0004
+
+The real-shape projection probe scales the validated EXP-0003 physical
+contract to the two Qwen3 middle-block MLP shapes at native HMX spatial width:
+`M=64, K=2048, N=6144` for gate/up and `M=64, K=6144, N=2048` for down. Both
+perform exactly 12,288 logical 64x32x32 HMX tile pairs. Activations and the
+complete tiled output remain resident in a fixed 1 MiB VTCM allocation, while
+packed S8 weight bundles flow through two User-DMA slots.
+
+K depth is split into at most 32 architectural tiles per continuous
+`activation.ub ... :deep:cm` stream. The accumulator is initialized once and
+retained across two gate/up streams or six down streams before the final U8
+store. This is a substrate correctness experiment: W4 unpacking and
+per-channel scales are intentionally deferred.
+
+Build, statically audit, and run the first detached diagnostic without a
+process-kill timeout:
+
+```sh
+scripts/build_exp0004.sh
+scripts/check_exp0004_static.sh
+QBH_DETACH=1 scripts/run_exp0004.sh gate_up identity 1
+scripts/poll_exp0004.sh gate_up identity 1
+```
+
+Both shapes and all four correctness patterns are checked byte-for-byte
+against an independent host reference. Formal evidence uses repeat 1 for
+correctness and repeat 10 for timing:
+
+```sh
+scripts/collect_exp0004_evidence.sh
+```

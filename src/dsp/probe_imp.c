@@ -17,23 +17,7 @@
 #include "qbh_user_dma.h"
 #include "qwen3_probe.h"
 
-#define QBH_VTCM_ACTIVATION_OFFSET UINT32_C(0)
-#define QBH_VTCM_WEIGHT_SLOT0_OFFSET UINT32_C(8192)
-#define QBH_VTCM_WEIGHT_SLOT1_OFFSET UINT32_C(12544)
-#define QBH_VTCM_OUTPUT_OFFSET UINT32_C(18432)
 #define QBH_HMX_WORKER_STACK_BYTES UINT32_C(16384)
-
-_Static_assert(QBH_VTCM_WEIGHT_SLOT0_OFFSET +
-                       QBH_PROJ_WEIGHT_BUNDLE_BYTES <=
-                   QBH_VTCM_WEIGHT_SLOT1_OFFSET,
-               "weight slot 0 overlaps slot 1");
-_Static_assert(QBH_VTCM_WEIGHT_SLOT1_OFFSET +
-                       QBH_PROJ_WEIGHT_BUNDLE_BYTES <=
-                   QBH_VTCM_OUTPUT_OFFSET,
-               "weight slot 1 overlaps output");
-_Static_assert(QBH_VTCM_OUTPUT_OFFSET + QBH_PROJ_OUTPUT_TILES_BYTES <=
-                   QBH_PROJ_VTCM_BYTES,
-               "projection VTCM layout exceeds allocation");
 
 static uint32_t probe_session_token;
 static uint8_t hmx_worker_stack[QBH_HMX_WORKER_STACK_BYTES]
@@ -45,6 +29,9 @@ struct qbh_projection_worker_job {
     const uint8_t *weight_slots[2];
     uint8_t *output_tiles;
     uint32_t repeat_count;
+    uint32_t k_tiles;
+    uint32_t n_tiles;
+    uint32_t weight_chunk_bytes;
     qurt_sem_t *ready[2];
     qurt_sem_t *free_slot[2];
     qurt_sem_t *started;
@@ -53,6 +40,7 @@ struct qbh_projection_worker_job {
     int32_t unlock_status;
     int32_t sync_status;
     uint32_t hmx_execution_count;
+    uint32_t hmx_stream_count;
     uint32_t output_tile_count;
     uint64_t hmx_compute_ticks;
     uint64_t ready_wait_ticks;
@@ -78,7 +66,8 @@ static int range_is_valid(uint32_t offset, uint32_t bytes,
 }
 
 static int header_is_valid(const struct qbh_probe_header *header,
-                           uint32_t shared_bytes) {
+                           uint32_t shared_bytes,
+                           struct qbh_projection_layout *layout) {
     if (header->magic != QBH_PROBE_MAGIC ||
         header->abi_version != QBH_PROBE_ABI_VERSION ||
         header->header_bytes != sizeof(*header) ||
@@ -90,22 +79,30 @@ static int header_is_valid(const struct qbh_probe_header *header,
         header->repeat_count > QBH_HMX_MAX_REPEATS) {
         return 0;
     }
+    if (qbh_projection_layout_init(header->projection_variant, layout) !=
+        0) {
+        return 0;
+    }
     return range_is_valid(header->activation_offset,
-                          QBH_PROJ_ACTIVATION_BYTES,
+                          layout->activation_bytes,
                           header->total_bytes) &&
            range_is_valid(header->weight_offset,
-                          QBH_PROJ_PACKED_WEIGHT_BYTES,
+                          layout->packed_weight_bytes,
                           header->total_bytes) &&
-           range_is_valid(header->output_offset, QBH_PROJ_OUTPUT_BYTES,
+           range_is_valid(header->output_offset, layout->output_bytes,
                           header->total_bytes);
 }
 
-static int vtcm_layout_is_aligned(const uint8_t *vtcm) {
+static int vtcm_layout_is_aligned(
+    const uint8_t *vtcm, const struct qbh_projection_layout *layout) {
     uintptr_t base = (uintptr_t)vtcm;
     return (base & UINT32_C(2047)) == 0 &&
-           ((base + QBH_VTCM_WEIGHT_SLOT0_OFFSET) & UINT32_C(255)) == 0 &&
-           ((base + QBH_VTCM_WEIGHT_SLOT1_OFFSET) & UINT32_C(255)) == 0 &&
-           ((base + QBH_VTCM_OUTPUT_OFFSET) & UINT32_C(2047)) == 0;
+           ((base + layout->vtcm_weight_slot0_offset) & UINT32_C(255)) ==
+               0 &&
+           ((base + layout->vtcm_weight_slot1_offset) & UINT32_C(255)) ==
+               0 &&
+           ((base + layout->vtcm_output_offset) & UINT32_C(2047)) == 0 &&
+           layout->vtcm_plan_bytes <= QBH_QWEN3_VTCM_BYTES;
 }
 
 static int record_dma_wait(struct qbh_probe_header *header) {
@@ -119,12 +116,13 @@ static int record_dma_wait(struct qbh_probe_header *header) {
 }
 
 static int stage_activation_tiles(struct qbh_probe_header *header,
+                                  const struct qbh_projection_layout *layout,
                                   const uint8_t *source,
                                   uint8_t *destination) {
     struct qbh_dma_desc_2d descriptor __attribute__((aligned(64)));
     uint64_t start = HAP_perf_get_qtimer_count();
 
-    for (uint32_t input_tile = 0; input_tile < QBH_PROJ_K_TILES;
+    for (uint32_t input_tile = 0; input_tile < layout->k_tiles;
          ++input_tile) {
         int status;
         memset(&descriptor, 0, sizeof(descriptor));
@@ -143,8 +141,8 @@ static int stage_activation_tiles(struct qbh_probe_header *header,
         descriptor.dst = (uint32_t)(uintptr_t)(
             destination + input_tile * QBH_HMX_ACTIVATION_BYTES);
         descriptor.roi_width = (uint16_t)QBH_HMX_INPUT_CHANNELS;
-        descriptor.roi_height = (uint16_t)QBH_PROJ_M;
-        descriptor.src_stride = (uint16_t)QBH_PROJ_K;
+        descriptor.roi_height = (uint16_t)layout->m;
+        descriptor.src_stride = (uint16_t)layout->k;
         descriptor.dst_stride = (uint16_t)QBH_HMX_INPUT_CHANNELS;
         descriptor.src_width_offset = 0;
         descriptor.dst_width_offset = 0;
@@ -168,7 +166,8 @@ static int stage_activation_tiles(struct qbh_probe_header *header,
 
 static int stage_weight_bundle(struct qbh_probe_header *header,
                                const uint8_t *source,
-                               uint8_t *destination) {
+                               uint8_t *destination,
+                               uint32_t bundle_bytes) {
     struct qbh_dma_desc_1d descriptor __attribute__((aligned(64)));
     int status;
 
@@ -177,7 +176,7 @@ static int stage_weight_bundle(struct qbh_probe_header *header,
         return -1;
     }
     descriptor.next = 0;
-    descriptor.length = QBH_PROJ_WEIGHT_BUNDLE_BYTES;
+    descriptor.length = bundle_bytes;
     descriptor.type = QBH_DMA_TYPE_1D;
     descriptor.src_bypass = 1;
     descriptor.dst_bypass = 0;
@@ -201,12 +200,13 @@ static int stage_weight_bundle(struct qbh_probe_header *header,
 }
 
 __attribute__((noinline)) static void assemble_row_major_output(
-    uint8_t *destination, const uint8_t *source_tiles) {
-    for (uint32_t row = 0; row < QBH_PROJ_M; ++row) {
+    const struct qbh_projection_layout *layout, uint8_t *destination,
+    const uint8_t *source_tiles) {
+    for (uint32_t row = 0; row < layout->m; ++row) {
         for (uint32_t output_tile = 0;
-             output_tile < QBH_PROJ_N_TILES; ++output_tile) {
+             output_tile < layout->n_tiles; ++output_tile) {
             memcpy(destination + qbh_projection_output_offset(
-                                     row,
+                                     layout, row,
                                      output_tile *
                                          QBH_HMX_OUTPUT_CHANNELS),
                    source_tiles +
@@ -232,8 +232,8 @@ static void hmx_worker_main(void *opaque) {
 
     for (uint32_t repeat = 0; repeat < job->repeat_count; ++repeat) {
         for (uint32_t output_tile = 0;
-             output_tile < QBH_PROJ_N_TILES; ++output_tile) {
-            uint32_t linear_tile = repeat * QBH_PROJ_N_TILES + output_tile;
+             output_tile < job->n_tiles; ++output_tile) {
+            uint32_t linear_tile = repeat * job->n_tiles + output_tile;
             uint32_t slot = linear_tile & 1U;
             const uint8_t *bundle;
             const uint32_t *bias_words;
@@ -248,12 +248,13 @@ static void hmx_worker_main(void *opaque) {
 
             bundle = job->weight_slots[slot];
             bias_words = (const uint32_t *)(
-                bundle + QBH_PROJ_WEIGHT_CHUNK_BYTES);
+                bundle + job->weight_chunk_bytes);
             uint64_t core_start = HAP_perf_get_qtimer_count();
             qbh_hmx_begin_u8s8_output(bias_words);
-            qbh_hmx_accumulate_u8s8_projection(
-                job->activation_tiles, (const int8_t *)bundle);
-            job->hmx_execution_count += QBH_PROJ_K_TILES;
+            job->hmx_stream_count += qbh_hmx_accumulate_u8s8_projection(
+                job->activation_tiles, (const int8_t *)bundle,
+                job->k_tiles);
+            job->hmx_execution_count += job->k_tiles;
             qbh_hmx_store_u8_output(
                 job->output_tiles +
                 (size_t)output_tile * QBH_HMX_OUTPUT_BYTES);
@@ -277,6 +278,7 @@ unlock:
 AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
                           uint32 shared_bytes) {
     struct qbh_probe_header *header = NULL;
+    struct qbh_projection_layout layout;
     compute_res_attr_t vtcm_attributes;
     compute_res_attr_t hmx_attributes;
     uint8_t *shared = NULL;
@@ -326,7 +328,7 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
         result = AEE_EFAILED;
         goto cleanup;
     }
-    if (!header_is_valid(header, shared_bytes)) {
+    if (!header_is_valid(header, shared_bytes, &layout)) {
         header->dsp_status = QBH_PROBE_STATUS_BAD_HEADER;
         result = AEE_EBADPARM;
         goto cleanup;
@@ -334,7 +336,7 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
 
     header->dsp_status = QBH_PROBE_STATUS_DSP_RUNNING;
     header->cache_status = 0;
-    header->vtcm_requested_bytes = QBH_PROJ_VTCM_BYTES;
+    header->vtcm_requested_bytes = QBH_QWEN3_VTCM_BYTES;
     header->vtcm_acquired_bytes = 0;
     header->hmx_resource_status = 0;
     header->hmx_lock_status = 0;
@@ -345,13 +347,17 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     header->hmx_power_up_status = 0;
     header->hmx_power_down_status = 0;
     header->hmx_execution_count = 0;
+    header->hmx_stream_count = 0;
     header->hvx_lock_status = 0;
     header->hvx_unlock_status = 0;
-    header->projection_m = QBH_PROJ_M;
-    header->projection_k = QBH_PROJ_K;
-    header->projection_n = QBH_PROJ_N;
-    header->k_tile_count = QBH_PROJ_K_TILES;
-    header->n_tile_count = QBH_PROJ_N_TILES;
+    header->projection_m = layout.m;
+    header->projection_k = layout.k;
+    header->projection_n = layout.n;
+    header->k_tile_count = layout.k_tiles;
+    header->n_tile_count = layout.n_tiles;
+    header->weight_bundle_bytes = layout.weight_bundle_bytes;
+    header->vtcm_plan_bytes = layout.vtcm_plan_bytes;
+    header->k_streams_per_output = layout.k_streams_per_output;
     header->activation_stage_count = 0;
     header->weight_bundle_stage_count = 0;
     header->output_tile_count = 0;
@@ -374,7 +380,11 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     header->output_assembly_ticks = 0;
     header->dsp_total_ticks = 0;
     dsp_total_start = HAP_perf_get_qtimer_count();
-    FARF(ALWAYS, "EXP0003 stage=header_valid");
+    FARF(ALWAYS,
+         "EXP0004 stage=header_valid variant=%u M=%u K=%u N=%u "
+         "vtcm_plan=%u",
+         layout.variant, layout.m, layout.k, layout.n,
+         layout.vtcm_plan_bytes);
 
     memset(&hmx_power_request, 0, sizeof(hmx_power_request));
     hmx_power_request.type = HAP_power_set_HMX;
@@ -393,7 +403,7 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
         HAP_compute_res_attr_set_serialize(&vtcm_attributes, 1) !=
             AEE_SUCCESS ||
         HAP_compute_res_attr_set_vtcm_param(&vtcm_attributes,
-                                            QBH_PROJ_VTCM_BYTES, 1) !=
+                                            QBH_QWEN3_VTCM_BYTES, 1) !=
             AEE_SUCCESS) {
         header->dsp_status = QBH_PROBE_STATUS_VTCM_CONFIG_FAILED;
         result = AEE_EFAILED;
@@ -411,8 +421,8 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
         result = AEE_EFAILED;
         goto cleanup;
     }
-    header->vtcm_acquired_bytes = QBH_PROJ_VTCM_BYTES;
-    if (!vtcm_layout_is_aligned(vtcm)) {
+    header->vtcm_acquired_bytes = QBH_QWEN3_VTCM_BYTES;
+    if (!vtcm_layout_is_aligned(vtcm, &layout)) {
         header->dsp_status = QBH_PROBE_STATUS_VTCM_ALIGNMENT_FAILED;
         result = AEE_EFAILED;
         goto cleanup;
@@ -438,12 +448,12 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
         goto cleanup;
     }
 
-    activation_tiles = vtcm + QBH_VTCM_ACTIVATION_OFFSET;
-    weight_slots[0] = vtcm + QBH_VTCM_WEIGHT_SLOT0_OFFSET;
-    weight_slots[1] = vtcm + QBH_VTCM_WEIGHT_SLOT1_OFFSET;
-    output_tiles = vtcm + QBH_VTCM_OUTPUT_OFFSET;
+    activation_tiles = vtcm + layout.vtcm_activation_offset;
+    weight_slots[0] = vtcm + layout.vtcm_weight_slot0_offset;
+    weight_slots[1] = vtcm + layout.vtcm_weight_slot1_offset;
+    output_tiles = vtcm + layout.vtcm_output_offset;
 
-    if (stage_activation_tiles(header,
+    if (stage_activation_tiles(header, &layout,
                                shared + header->activation_offset,
                                activation_tiles) != 0) {
         header->dsp_status = QBH_PROBE_STATUS_DMA_FAILED;
@@ -465,6 +475,9 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     hmx_job.weight_slots[1] = weight_slots[1];
     hmx_job.output_tiles = output_tiles;
     hmx_job.repeat_count = header->repeat_count;
+    hmx_job.k_tiles = layout.k_tiles;
+    hmx_job.n_tiles = layout.n_tiles;
+    hmx_job.weight_chunk_bytes = layout.weight_chunk_bytes;
     hmx_job.ready[0] = &ready[0];
     hmx_job.ready[1] = &ready[1];
     hmx_job.free_slot[0] = &free_slot[0];
@@ -504,8 +517,8 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     header->pcycles_start = HAP_perf_get_pcycles();
     for (uint32_t repeat = 0; repeat < header->repeat_count; ++repeat) {
         for (uint32_t output_tile = 0;
-             output_tile < QBH_PROJ_N_TILES; ++output_tile) {
-            uint32_t linear_tile = repeat * QBH_PROJ_N_TILES + output_tile;
+             output_tile < layout.n_tiles; ++output_tile) {
+            uint32_t linear_tile = repeat * layout.n_tiles + output_tile;
             uint32_t slot = linear_tile & 1U;
             uint64_t wait_start = HAP_perf_get_qtimer_count();
             qurt_sem_down(&free_slot[slot]);
@@ -519,8 +532,8 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
             if (stage_weight_bundle(
                     header,
                     shared + header->weight_offset +
-                        qbh_projection_bundle_offset(output_tile),
-                    weight_slots[slot]) != 0) {
+                        qbh_projection_bundle_offset(&layout, output_tile),
+                    weight_slots[slot], layout.weight_bundle_bytes) != 0) {
                 header->dsp_status = QBH_PROBE_STATUS_DMA_FAILED;
                 result = AEE_EFAILED;
                 goto abort_worker;
@@ -551,6 +564,7 @@ join_worker:
     header->hmx_lock_status = hmx_job.lock_status;
     header->hmx_unlock_status = hmx_job.unlock_status;
     header->hmx_execution_count = hmx_job.hmx_execution_count;
+    header->hmx_stream_count = hmx_job.hmx_stream_count;
     header->output_tile_count = hmx_job.output_tile_count;
     header->hmx_compute_ticks = hmx_job.hmx_compute_ticks;
     header->hmx_ready_wait_ticks = hmx_job.ready_wait_ticks;
@@ -582,7 +596,8 @@ join_worker:
         goto cleanup;
     }
     uint64_t output_start = HAP_perf_get_qtimer_count();
-    assemble_row_major_output(shared + header->output_offset, output_tiles);
+    assemble_row_major_output(&layout, shared + header->output_offset,
+                              output_tiles);
     header->output_assembly_ticks =
         HAP_perf_get_qtimer_count() - output_start;
     header->hvx_unlock_status = qurt_hvx_unlock();
