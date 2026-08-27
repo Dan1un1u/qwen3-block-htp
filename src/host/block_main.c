@@ -1,0 +1,828 @@
+#include <AEEStdErr.h>
+#include <errno.h>
+#include <inttypes.h>
+#include <limits.h>
+#include <math.h>
+#include <remote.h>
+#include <rpcmem.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <time.h>
+
+#include "block_protocol.h"
+#include "host/session.h"
+#include "qwen3_probe.h"
+
+#define QBH_HOST_ALIGNMENT ((size_t)128)
+#define QBH_HOST_PATH_BYTES ((size_t)1024)
+
+struct qbh_file_slot {
+    char path[QBH_HOST_PATH_BYTES];
+    uint32_t expected_bytes;
+    uint32_t offset;
+};
+
+struct qbh_qparam_record {
+    char name[32];
+    float scale;
+    int32_t zero_point;
+    float minimum;
+    float maximum;
+};
+
+struct qbh_error_metrics {
+    double max_abs;
+    double mean_abs;
+    double rmse;
+    double cosine;
+    uint64_t mismatches;
+    uint32_t max_lsb;
+};
+
+_Static_assert(sizeof(struct qbh_qparam_record) ==
+                   QBH_BLOCK_QPARAM_RECORD_BYTES,
+               "qparam package record changed");
+
+static const char *qbh_projection_names[QBH_BLOCK_PROJECTION_COUNT] = {
+    "q", "k", "v", "o", "gate", "up", "down",
+};
+
+static const uint32_t qbh_projection_k[QBH_BLOCK_PROJECTION_COUNT] = {
+    QBH_BLOCK_HIDDEN, QBH_BLOCK_HIDDEN, QBH_BLOCK_HIDDEN,
+    QBH_BLOCK_HIDDEN, QBH_BLOCK_HIDDEN, QBH_BLOCK_HIDDEN,
+    QBH_BLOCK_INTERMEDIATE,
+};
+
+static const uint32_t qbh_projection_n[QBH_BLOCK_PROJECTION_COUNT] = {
+    QBH_BLOCK_HIDDEN, QBH_BLOCK_KV_HIDDEN, QBH_BLOCK_KV_HIDDEN,
+    QBH_BLOCK_HIDDEN, QBH_BLOCK_INTERMEDIATE,
+    QBH_BLOCK_INTERMEDIATE, QBH_BLOCK_HIDDEN,
+};
+
+static const char *qbh_qparam_names[QBH_BLOCK_QPARAM_COUNT] = {
+    "block_input",
+    "input_norm",
+    "q_projection",
+    "k_projection",
+    "v",
+    "q_rope",
+    "k_rope",
+    "attention_probability",
+    "attention_concat",
+    "attention_projection",
+    "post_attention_residual",
+    "post_attention_norm",
+    "gate",
+    "up",
+    "middle",
+    "down",
+    "block_output",
+};
+
+static const uint32_t qbh_projection_input_qparam[
+    QBH_BLOCK_PROJECTION_COUNT] = {
+    QBH_BLOCK_QP_INPUT_NORM,
+    QBH_BLOCK_QP_INPUT_NORM,
+    QBH_BLOCK_QP_INPUT_NORM,
+    QBH_BLOCK_QP_ATTENTION_CONCAT,
+    QBH_BLOCK_QP_POST_ATTENTION_NORM,
+    QBH_BLOCK_QP_POST_ATTENTION_NORM,
+    QBH_BLOCK_QP_MIDDLE,
+};
+
+static const uint32_t qbh_projection_output_qparam[
+    QBH_BLOCK_PROJECTION_COUNT] = {
+    QBH_BLOCK_QP_Q_PROJECTION,
+    QBH_BLOCK_QP_K_PROJECTION,
+    QBH_BLOCK_QP_V,
+    QBH_BLOCK_QP_ATTENTION_PROJECTION,
+    QBH_BLOCK_QP_GATE,
+    QBH_BLOCK_QP_UP,
+    QBH_BLOCK_QP_DOWN,
+};
+
+static size_t qbh_align_up_size(size_t value, size_t alignment) {
+    return (value + alignment - 1U) / alignment * alignment;
+}
+
+static uint64_t qbh_monotonic_ns(void) {
+    struct timespec now;
+    (void)clock_gettime(CLOCK_MONOTONIC, &now);
+    return (uint64_t)now.tv_sec * UINT64_C(1000000000) +
+           (uint64_t)now.tv_nsec;
+}
+
+static int qbh_parse_u32(const char *text, uint32_t *value) {
+    char *end = NULL;
+    unsigned long parsed;
+    if (text == NULL || value == NULL) {
+        return -1;
+    }
+    errno = 0;
+    parsed = strtoul(text, &end, 0);
+    if (errno != 0 || text[0] == '\0' || end == NULL || *end != '\0' ||
+        parsed > UINT32_MAX) {
+        return -1;
+    }
+    *value = (uint32_t)parsed;
+    return 0;
+}
+
+static const char *qbh_variant_name(uint32_t variant) {
+    switch (variant) {
+        case QBH_BLOCK_F16F16:
+            return "F16F16";
+        case QBH_BLOCK_W4F16:
+            return "W4F16";
+        case QBH_BLOCK_W4U8:
+            return "W4U8";
+        default:
+            return "invalid";
+    }
+}
+
+static int qbh_parse_variant(const char *text, uint32_t *variant) {
+    if (strcmp(text, "F16F16") == 0 || strcmp(text, "f16f16") == 0 ||
+        strcmp(text, "W16A16") == 0 || strcmp(text, "w16a16") == 0) {
+        *variant = QBH_BLOCK_F16F16;
+        return 0;
+    }
+    if (strcmp(text, "W4F16") == 0 || strcmp(text, "w4f16") == 0 ||
+        strcmp(text, "W4A16") == 0 || strcmp(text, "w4a16") == 0) {
+        *variant = QBH_BLOCK_W4F16;
+        return 0;
+    }
+    if (strcmp(text, "W4U8") == 0 || strcmp(text, "w4u8") == 0 ||
+        strcmp(text, "W4A8") == 0 || strcmp(text, "w4a8") == 0) {
+        *variant = QBH_BLOCK_W4U8;
+        return 0;
+    }
+    return -1;
+}
+
+static int qbh_make_path(char *destination, size_t destination_bytes,
+                         const char *root, const char *file) {
+    int written = snprintf(destination, destination_bytes, "%s/%s",
+                           root, file);
+    return written >= 0 && (size_t)written < destination_bytes ? 0 : -1;
+}
+
+static int qbh_file_size(const char *path, uint32_t expected_bytes) {
+    struct stat status;
+    return stat(path, &status) == 0 && status.st_size >= 0 &&
+                   (uint64_t)status.st_size == expected_bytes
+               ? 0
+               : -1;
+}
+
+static int qbh_prepare_slot(struct qbh_file_slot *slot,
+                            const char *root, const char *file,
+                            uint32_t expected_bytes, size_t *cursor) {
+    if (slot == NULL || cursor == NULL ||
+        qbh_make_path(slot->path, sizeof(slot->path), root, file) != 0 ||
+        qbh_file_size(slot->path, expected_bytes) != 0) {
+        return -1;
+    }
+    *cursor = qbh_align_up_size(*cursor, QBH_HOST_ALIGNMENT);
+    if (*cursor > UINT32_MAX || expected_bytes > UINT32_MAX - *cursor) {
+        return -1;
+    }
+    slot->offset = (uint32_t)*cursor;
+    slot->expected_bytes = expected_bytes;
+    *cursor += expected_bytes;
+    return 0;
+}
+
+static int qbh_read_slot(uint8_t *shared,
+                         const struct qbh_file_slot *slot) {
+    FILE *stream = fopen(slot->path, "rb");
+    size_t read_bytes;
+    if (stream == NULL) {
+        return -1;
+    }
+    read_bytes = fread(shared + slot->offset, 1, slot->expected_bytes,
+                       stream);
+    if (fclose(stream) != 0 || read_bytes != slot->expected_bytes) {
+        return -1;
+    }
+    return 0;
+}
+
+static uint16_t qbh_float_to_half_bits(float value) {
+    __fp16 converted = (__fp16)value;
+    uint16_t bits;
+    memcpy(&bits, &converted, sizeof(bits));
+    return bits;
+}
+
+static float qbh_half_bits_to_float(uint16_t bits) {
+    __fp16 converted;
+    memcpy(&converted, &bits, sizeof(bits));
+    return (float)converted;
+}
+
+static int8_t qbh_decode_w4(const uint8_t *packed,
+                            uint32_t physical_index) {
+    uint8_t byte = packed[physical_index / 2U];
+    uint8_t nibble = (physical_index & 1U) != 0U
+                         ? (uint8_t)(byte >> 4U)
+                         : (uint8_t)(byte & UINT8_C(0x0f));
+    return (nibble & UINT8_C(0x08)) != 0U
+               ? (int8_t)(nibble | UINT8_C(0xf0))
+               : (int8_t)nibble;
+}
+
+static int qbh_load_qparams(struct qbh_block_header *header,
+                            const uint8_t *records) {
+    const struct qbh_qparam_record *source =
+        (const struct qbh_qparam_record *)records;
+    uint32_t found = 0U;
+    for (uint32_t target = 0; target < QBH_BLOCK_QPARAM_COUNT; ++target) {
+        int matched = 0;
+        for (uint32_t record = 0; record < QBH_BLOCK_QPARAM_COUNT;
+             ++record) {
+            if (strncmp(source[record].name, qbh_qparam_names[target],
+                        sizeof(source[record].name)) == 0) {
+                header->qparams[target].scale = source[record].scale;
+                header->qparams[target].zero_point =
+                    source[record].zero_point;
+                header->qparams[target].minimum = source[record].minimum;
+                header->qparams[target].maximum = source[record].maximum;
+                matched = 1;
+                ++found;
+                break;
+            }
+        }
+        if (matched == 0) {
+            return -1;
+        }
+    }
+    return found == QBH_BLOCK_QPARAM_COUNT ? 0 : -1;
+}
+
+static int qbh_build_bias_words(
+    struct qbh_block_header *header, uint8_t *shared,
+    uint32_t projection_index) {
+    struct qbh_block_projection_desc *desc =
+        &header->projections[projection_index];
+    const uint8_t *packed = shared + desc->weight_offset;
+    const float *scales = (const float *)(shared + desc->scale_offset);
+    uint32_t *bias = (uint32_t *)(shared + desc->bias_offset);
+    const struct qbh_block_qparam *input_qparam =
+        &header->qparams[qbh_projection_input_qparam[projection_index]];
+    const struct qbh_block_qparam *output_qparam =
+        &header->qparams[qbh_projection_output_qparam[projection_index]];
+    uint32_t k_tiles = desc->k / 32U;
+    uint32_t n_tiles = desc->n / 32U;
+
+    for (uint32_t n_tile = 0; n_tile < n_tiles; ++n_tile) {
+        for (uint32_t output = 0; output < 32U; ++output) {
+            int32_t sum = 0;
+            uint32_t global_output = n_tile * 32U + output;
+            float ratio = input_qparam->scale * scales[global_output] /
+                          output_qparam->scale;
+            int64_t offset;
+            if (!(ratio > 0.0f) || !isfinite(ratio)) {
+                return -1;
+            }
+            for (uint32_t k_tile = 0; k_tile < k_tiles; ++k_tile) {
+                const uint8_t *tile = packed +
+                    ((size_t)n_tile * k_tiles + k_tile) * 512U;
+                for (uint32_t input = 0; input < 32U; ++input) {
+                    uint32_t physical =
+                        ((input / 4U) * 32U + output) * 4U +
+                        input % 4U;
+                    sum += qbh_decode_w4(tile, physical);
+                }
+            }
+            bias[(size_t)n_tile * 64U + output] =
+                qbh_float_to_half_bits(512.0f * ratio);
+            offset = llround(
+                -(double)input_qparam->zero_point * (double)sum +
+                (double)output_qparam->zero_point / (double)ratio);
+            if (offset < INT32_MIN || offset > INT32_MAX) {
+                return -1;
+            }
+            bias[(size_t)n_tile * 64U + 32U + output] =
+                (uint32_t)(int32_t)offset;
+        }
+    }
+    return 0;
+}
+
+static struct qbh_error_metrics qbh_compare_f16(
+    const uint16_t *actual, const uint16_t *reference,
+    uint32_t elements) {
+    struct qbh_error_metrics metrics;
+    double absolute_sum = 0.0;
+    double squared_sum = 0.0;
+    double dot = 0.0;
+    double actual_norm = 0.0;
+    double reference_norm = 0.0;
+    memset(&metrics, 0, sizeof(metrics));
+    for (uint32_t index = 0; index < elements; ++index) {
+        double a = qbh_half_bits_to_float(actual[index]);
+        double b = qbh_half_bits_to_float(reference[index]);
+        double difference = fabs(a - b);
+        if (difference > metrics.max_abs) {
+            metrics.max_abs = difference;
+        }
+        absolute_sum += difference;
+        squared_sum += difference * difference;
+        dot += a * b;
+        actual_norm += a * a;
+        reference_norm += b * b;
+    }
+    metrics.mean_abs = absolute_sum / elements;
+    metrics.rmse = sqrt(squared_sum / elements);
+    metrics.cosine = actual_norm > 0.0 && reference_norm > 0.0
+                         ? dot / sqrt(actual_norm * reference_norm)
+                         : 0.0;
+    return metrics;
+}
+
+static struct qbh_error_metrics qbh_compare_u8(
+    const uint8_t *actual, const uint8_t *reference,
+    uint32_t elements,
+    const struct qbh_block_qparam *qparam) {
+    struct qbh_error_metrics metrics;
+    double absolute_sum = 0.0;
+    double squared_sum = 0.0;
+    double dot = 0.0;
+    double actual_norm = 0.0;
+    double reference_norm = 0.0;
+    memset(&metrics, 0, sizeof(metrics));
+    for (uint32_t index = 0; index < elements; ++index) {
+        uint32_t lsb = actual[index] > reference[index]
+                           ? actual[index] - reference[index]
+                           : reference[index] - actual[index];
+        double a = ((double)actual[index] - qparam->zero_point) *
+                   qparam->scale;
+        double b = ((double)reference[index] - qparam->zero_point) *
+                   qparam->scale;
+        double difference = fabs(a - b);
+        if (lsb != 0U) {
+            ++metrics.mismatches;
+        }
+        if (lsb > metrics.max_lsb) {
+            metrics.max_lsb = lsb;
+        }
+        if (difference > metrics.max_abs) {
+            metrics.max_abs = difference;
+        }
+        absolute_sum += difference;
+        squared_sum += difference * difference;
+        dot += a * b;
+        actual_norm += a * a;
+        reference_norm += b * b;
+    }
+    metrics.mean_abs = absolute_sum / elements;
+    metrics.rmse = sqrt(squared_sum / elements);
+    metrics.cosine = actual_norm > 0.0 && reference_norm > 0.0
+                         ? dot / sqrt(actual_norm * reference_norm)
+                         : 0.0;
+    return metrics;
+}
+
+int main(int argc, char **argv) {
+    struct qbh_session session = {(remote_handle64)-1, 0};
+    struct qbh_file_slot input_slot;
+    struct qbh_file_slot reference_slot;
+    struct qbh_file_slot qparam_slot;
+    struct qbh_file_slot norm_slots[4];
+    struct qbh_file_slot rope_slots[2];
+    struct qbh_file_slot weight_slots[QBH_BLOCK_PROJECTION_COUNT];
+    struct qbh_file_slot scale_slots[QBH_BLOCK_PROJECTION_COUNT];
+    struct qbh_block_header *header = NULL;
+    uint8_t *shared = NULL;
+    uint32_t variant;
+    uint32_t repeats = 1U;
+    uint32_t element_bytes;
+    uint32_t output_bytes;
+    size_t cursor = qbh_align_up_size(sizeof(*header), QBH_HOST_ALIGNMENT);
+    size_t total_bytes;
+    int shared_fd = -1;
+    int mapped = 0;
+    int open_result;
+    int prepare_result = AEE_EFAILED;
+    int warmup_result = AEE_EFAILED;
+    int measured_result = AEE_EFAILED;
+    int release_result = AEE_EFAILED;
+    int close_result = AEE_EFAILED;
+    uint64_t warmup_start;
+    uint64_t warmup_end;
+    uint64_t measured_start;
+    uint64_t measured_end;
+    struct qbh_error_metrics warmup_metrics;
+    struct qbh_error_metrics measured_metrics;
+    uint32_t warmup_run_index = 0U;
+    int exit_code = 1;
+    char file_name[128];
+
+    memset(&warmup_metrics, 0, sizeof(warmup_metrics));
+    memset(&measured_metrics, 0, sizeof(measured_metrics));
+    if (argc < 3 || argc > 4 ||
+        qbh_parse_variant(argv[2], &variant) != 0 ||
+        (argc == 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
+        repeats == 0U || repeats > 100U) {
+        fprintf(stderr, "usage: %s PACKAGE_DIR VARIANT [repeat_count]\n",
+                argv[0]);
+        return 2;
+    }
+    element_bytes = variant == QBH_BLOCK_W4U8 ? 1U : 2U;
+    output_bytes = QBH_BLOCK_M * QBH_BLOCK_HIDDEN * element_bytes;
+
+    if (qbh_prepare_slot(
+            &input_slot, argv[1],
+            variant == QBH_BLOCK_W4U8
+                ? "reference_w4u8_block_input_u8.bin"
+                : "block_input_f16.bin",
+            output_bytes, &cursor) != 0 ||
+        qbh_prepare_slot(
+            &reference_slot, argv[1],
+            variant == QBH_BLOCK_F16F16
+                ? "reference_f16f16_block_output_f16.bin"
+                : (variant == QBH_BLOCK_W4F16
+                       ? "reference_w4f16_block_output_f16.bin"
+                       : "reference_w4u8_block_output_u8.bin"),
+            output_bytes, &cursor) != 0 ||
+        qbh_prepare_slot(&qparam_slot, argv[1], "qparams_u8.bin",
+                         QBH_BLOCK_QPARAM_COUNT *
+                             QBH_BLOCK_QPARAM_RECORD_BYTES,
+                         &cursor) != 0 ||
+        qbh_prepare_slot(&norm_slots[0], argv[1],
+                         "input_norm_weight_f16.bin",
+                         QBH_BLOCK_HIDDEN * sizeof(uint16_t),
+                         &cursor) != 0 ||
+        qbh_prepare_slot(&norm_slots[1], argv[1],
+                         "post_norm_weight_f16.bin",
+                         QBH_BLOCK_HIDDEN * sizeof(uint16_t),
+                         &cursor) != 0 ||
+        qbh_prepare_slot(&norm_slots[2], argv[1],
+                         "q_norm_weight_f16.bin",
+                         QBH_BLOCK_HEAD_DIM * sizeof(uint16_t),
+                         &cursor) != 0 ||
+        qbh_prepare_slot(&norm_slots[3], argv[1],
+                         "k_norm_weight_f16.bin",
+                         QBH_BLOCK_HEAD_DIM * sizeof(uint16_t),
+                         &cursor) != 0 ||
+        qbh_prepare_slot(&rope_slots[0], argv[1], "rope_cos_f16.bin",
+                         QBH_BLOCK_M * QBH_BLOCK_HEAD_DIM *
+                             sizeof(uint16_t),
+                         &cursor) != 0 ||
+        qbh_prepare_slot(&rope_slots[1], argv[1], "rope_sin_f16.bin",
+                         QBH_BLOCK_M * QBH_BLOCK_HEAD_DIM *
+                             sizeof(uint16_t),
+                         &cursor) != 0) {
+        fprintf(stderr, "package common tensor audit failed\n");
+        return 2;
+    }
+
+    for (uint32_t projection = 0;
+         projection < QBH_BLOCK_PROJECTION_COUNT; ++projection) {
+        uint32_t weight_bytes = variant == QBH_BLOCK_F16F16
+            ? qbh_projection_k[projection] *
+                  qbh_projection_n[projection] * sizeof(uint16_t)
+            : qbh_projection_k[projection] *
+                  qbh_projection_n[projection] / 2U;
+        int name_status = snprintf(
+            file_name, sizeof(file_name),
+            variant == QBH_BLOCK_F16F16
+                ? "%s_weight_f16_hmx.bin"
+                : "%s_weight_w4_hmx.bin",
+            qbh_projection_names[projection]);
+        if (name_status < 0 || (size_t)name_status >= sizeof(file_name) ||
+            qbh_prepare_slot(&weight_slots[projection], argv[1],
+                             file_name, weight_bytes, &cursor) != 0) {
+            fprintf(stderr, "projection weight audit failed: %s\n",
+                    qbh_projection_names[projection]);
+            return 2;
+        }
+        if (variant != QBH_BLOCK_F16F16) {
+            name_status = snprintf(
+                file_name, sizeof(file_name),
+                "%s_weight_w4_scale_f32.bin",
+                qbh_projection_names[projection]);
+            if (name_status < 0 ||
+                (size_t)name_status >= sizeof(file_name) ||
+                qbh_prepare_slot(
+                    &scale_slots[projection], argv[1], file_name,
+                    qbh_projection_n[projection] * sizeof(float),
+                    &cursor) != 0) {
+                fprintf(stderr, "projection scale audit failed: %s\n",
+                        qbh_projection_names[projection]);
+                return 2;
+            }
+        } else {
+            memset(&scale_slots[projection], 0,
+                   sizeof(scale_slots[projection]));
+        }
+    }
+    cursor = qbh_align_up_size(cursor, QBH_HOST_ALIGNMENT);
+    if (cursor > UINT32_MAX || output_bytes > UINT32_MAX - cursor) {
+        return 2;
+    }
+    {
+        size_t output_offset = cursor;
+        cursor += output_bytes;
+        if (variant == QBH_BLOCK_W4U8) {
+            for (uint32_t projection = 0;
+                 projection < QBH_BLOCK_PROJECTION_COUNT; ++projection) {
+                size_t bias_bytes =
+                    qbh_projection_n[projection] / 32U *
+                    QBH_HMX_BIAS_BYTES;
+                cursor = qbh_align_up_size(cursor, QBH_HOST_ALIGNMENT);
+                if (cursor > UINT32_MAX ||
+                    bias_bytes > UINT32_MAX - cursor) {
+                    return 2;
+                }
+                cursor += bias_bytes;
+            }
+        }
+        total_bytes = cursor;
+        if (total_bytes > INT_MAX) {
+            fprintf(stderr, "rpcmem package too large: %zu\n", total_bytes);
+            return 2;
+        }
+        shared = rpcmem_alloc(RPCMEM_HEAP_ID_SYSTEM,
+                              RPCMEM_FLAG_UNCACHED, (int)total_bytes);
+        if (shared == NULL) {
+            fprintf(stderr, "rpcmem_alloc failed for %zu bytes\n",
+                    total_bytes);
+            return 2;
+        }
+        memset(shared, 0, total_bytes);
+        header = (struct qbh_block_header *)shared;
+        header->output_offset = (uint32_t)output_offset;
+    }
+
+    if (qbh_read_slot(shared, &input_slot) != 0 ||
+        qbh_read_slot(shared, &reference_slot) != 0 ||
+        qbh_read_slot(shared, &qparam_slot) != 0) {
+        fprintf(stderr, "package boundary tensor read failed\n");
+        goto cleanup;
+    }
+    for (uint32_t index = 0; index < 4U; ++index) {
+        if (qbh_read_slot(shared, &norm_slots[index]) != 0) {
+            goto cleanup;
+        }
+    }
+    for (uint32_t index = 0; index < 2U; ++index) {
+        if (qbh_read_slot(shared, &rope_slots[index]) != 0) {
+            goto cleanup;
+        }
+    }
+    for (uint32_t projection = 0;
+         projection < QBH_BLOCK_PROJECTION_COUNT; ++projection) {
+        if (qbh_read_slot(shared, &weight_slots[projection]) != 0 ||
+            (variant != QBH_BLOCK_F16F16 &&
+             qbh_read_slot(shared, &scale_slots[projection]) != 0)) {
+            goto cleanup;
+        }
+    }
+
+    header->magic = QBH_BLOCK_MAGIC;
+    header->abi_version = QBH_BLOCK_ABI_VERSION;
+    header->experiment = QBH_BLOCK_EXPERIMENT;
+    header->header_bytes = (uint32_t)sizeof(*header);
+    header->shared_bytes = (uint32_t)total_bytes;
+    header->variant = variant;
+    header->repeat_count = repeats;
+    header->input_offset = input_slot.offset;
+    header->input_bytes = input_slot.expected_bytes;
+    header->output_bytes = output_bytes;
+    header->reference_offset = reference_slot.offset;
+    header->reference_bytes = reference_slot.expected_bytes;
+    header->qparam_offset = qparam_slot.offset;
+    header->qparam_bytes = qparam_slot.expected_bytes;
+    header->input_norm_weight_offset = norm_slots[0].offset;
+    header->input_norm_weight_bytes = norm_slots[0].expected_bytes;
+    header->post_norm_weight_offset = norm_slots[1].offset;
+    header->post_norm_weight_bytes = norm_slots[1].expected_bytes;
+    header->q_norm_weight_offset = norm_slots[2].offset;
+    header->q_norm_weight_bytes = norm_slots[2].expected_bytes;
+    header->k_norm_weight_offset = norm_slots[3].offset;
+    header->k_norm_weight_bytes = norm_slots[3].expected_bytes;
+    header->rope_cos_offset = rope_slots[0].offset;
+    header->rope_cos_bytes = rope_slots[0].expected_bytes;
+    header->rope_sin_offset = rope_slots[1].offset;
+    header->rope_sin_bytes = rope_slots[1].expected_bytes;
+    if (qbh_load_qparams(header, shared + qparam_slot.offset) != 0) {
+        fprintf(stderr, "qparam record audit failed\n");
+        goto cleanup;
+    }
+
+    {
+        size_t bias_cursor = qbh_align_up_size(
+            (size_t)header->output_offset + output_bytes,
+            QBH_HOST_ALIGNMENT);
+        for (uint32_t projection = 0;
+             projection < QBH_BLOCK_PROJECTION_COUNT; ++projection) {
+            struct qbh_block_projection_desc *desc =
+                &header->projections[projection];
+            desc->k = qbh_projection_k[projection];
+            desc->n = qbh_projection_n[projection];
+            desc->weight_offset = weight_slots[projection].offset;
+            desc->weight_bytes = weight_slots[projection].expected_bytes;
+            if (variant != QBH_BLOCK_F16F16) {
+                desc->scale_offset = scale_slots[projection].offset;
+                desc->scale_bytes = scale_slots[projection].expected_bytes;
+            }
+            if (variant == QBH_BLOCK_W4U8) {
+                desc->bias_offset = (uint32_t)bias_cursor;
+                desc->bias_bytes = desc->n / 32U * QBH_HMX_BIAS_BYTES;
+                bias_cursor = qbh_align_up_size(
+                    bias_cursor + desc->bias_bytes,
+                    QBH_HOST_ALIGNMENT);
+                if (qbh_build_bias_words(header, shared, projection) != 0) {
+                    fprintf(stderr, "bias generation failed: %s\n",
+                            qbh_projection_names[projection]);
+                    goto cleanup;
+                }
+            }
+        }
+    }
+    header->dsp_status = QBH_BLOCK_STATUS_HOST_READY;
+    shared_fd = rpcmem_to_fd(shared);
+    if (shared_fd < 0) {
+        goto cleanup;
+    }
+    open_result = qbh_session_open(&session);
+    if (open_result != AEE_SUCCESS) {
+        goto cleanup;
+    }
+    open_result = fastrpc_mmap(CDSP_DOMAIN_ID, shared_fd, shared, 0,
+                               total_bytes, FASTRPC_MAP_FD);
+    if (open_result != AEE_SUCCESS) {
+        goto cleanup;
+    }
+    mapped = 1;
+    prepare_result = qbh_session_prepare(&session);
+    if (prepare_result != AEE_SUCCESS) {
+        goto cleanup;
+    }
+
+    header->repeat_count = 1U;
+    header->dsp_status = QBH_BLOCK_STATUS_HOST_READY;
+    memset(shared + header->output_offset, 0xa5, output_bytes);
+    warmup_start = qbh_monotonic_ns();
+    warmup_result = qwen3_probe_run_block(
+        session.handle, shared_fd, (uint32_t)total_bytes);
+    warmup_end = qbh_monotonic_ns();
+    warmup_run_index = header->prepared_session_run_index;
+    if (warmup_result != AEE_SUCCESS ||
+        header->dsp_status != QBH_BLOCK_STATUS_OK) {
+        fprintf(stderr, "warmup failed: rpc=0x%08x dsp=%d\n",
+                (unsigned int)warmup_result, header->dsp_status);
+        goto cleanup;
+    }
+    warmup_metrics = variant == QBH_BLOCK_W4U8
+        ? qbh_compare_u8(
+              shared + header->output_offset,
+              shared + header->reference_offset,
+              QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
+              &header->qparams[QBH_BLOCK_QP_BLOCK_OUTPUT])
+        : qbh_compare_f16(
+              (const uint16_t *)(shared + header->output_offset),
+              (const uint16_t *)(shared + header->reference_offset),
+              QBH_BLOCK_M * QBH_BLOCK_HIDDEN);
+
+    header->repeat_count = repeats;
+    header->dsp_status = QBH_BLOCK_STATUS_HOST_READY;
+    memset(shared + header->output_offset, 0xa5, output_bytes);
+    measured_start = qbh_monotonic_ns();
+    measured_result = qwen3_probe_run_block(
+        session.handle, shared_fd, (uint32_t)total_bytes);
+    measured_end = qbh_monotonic_ns();
+    if (measured_result != AEE_SUCCESS ||
+        header->dsp_status != QBH_BLOCK_STATUS_OK) {
+        fprintf(stderr, "measured run failed: rpc=0x%08x dsp=%d\n",
+                (unsigned int)measured_result, header->dsp_status);
+        goto cleanup;
+    }
+    measured_metrics = variant == QBH_BLOCK_W4U8
+        ? qbh_compare_u8(
+              shared + header->output_offset,
+              shared + header->reference_offset,
+              QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
+              &header->qparams[QBH_BLOCK_QP_BLOCK_OUTPUT])
+        : qbh_compare_f16(
+              (const uint16_t *)(shared + header->output_offset),
+              (const uint16_t *)(shared + header->reference_offset),
+              QBH_BLOCK_M * QBH_BLOCK_HIDDEN);
+
+    release_result = qbh_session_release(&session);
+    close_result = qbh_session_close(&session);
+    printf(
+        "{\"experiment\":\"EXP-0022\","
+        "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
+        "\"variant\":\"%s\",\"attention_compute\":\"FP16_HMX\","
+        "\"projection_compute\":\"%s\","
+        "\"intermediate_residency\":\"VTCM\","
+        "\"warmup_rpc_result\":%d,"
+        "\"warmup_prepared_session_run_index\":%" PRIu32 ","
+        "\"warmup_host_wall_ns\":%" PRIu64 ","
+        "\"warmup_max_abs\":%.9g,\"warmup_mean_abs\":%.9g,"
+        "\"warmup_rmse\":%.9g,\"warmup_cosine\":%.9g,"
+        "\"warmup_mismatches\":%" PRIu64 ","
+        "\"warmup_max_lsb\":%" PRIu32 ","
+        "\"repeat_count\":%" PRIu32 ","
+        "\"prepared_session_run_index\":%" PRIu32 ","
+        "\"rpc_result\":%d,\"dsp_status\":%d,"
+        "\"host_wall_ns\":%" PRIu64 ","
+        "\"host_wall_ns_per_block\":%.3f,"
+        "\"max_abs\":%.9g,\"mean_abs\":%.9g,\"rmse\":%.9g,"
+        "\"cosine\":%.9g,\"mismatches\":%" PRIu64 ","
+        "\"max_lsb\":%" PRIu32 ","
+        "\"vtcm_requested_bytes\":%" PRIu32 ","
+        "\"vtcm_acquired_bytes\":%" PRIu32 ","
+        "\"vtcm_peak_plan_bytes\":%" PRIu32 ","
+        "\"block_invocation_count\":%" PRIu32 ","
+        "\"weight_ddr_read_bytes\":%" PRIu64 ","
+        "\"boundary_ddr_read_bytes\":%" PRIu64 ","
+        "\"boundary_ddr_write_bytes\":%" PRIu64 ","
+        "\"intermediate_ddr_read_bytes\":%" PRIu32 ","
+        "\"intermediate_ddr_write_bytes\":%" PRIu32 ","
+        "\"intermediate_dma_descriptor_count\":%" PRIu32 ","
+        "\"intermediate_spill_fill_count\":%" PRIu32 ","
+        "\"hmx_command_count\":%" PRIu32 ","
+        "\"hmx_fp16_tile_pair_count\":%" PRIu32 ","
+        "\"hmx_u8s8_tile_pair_count\":%" PRIu32 ","
+        "\"input_norm_ticks\":%" PRIu64 ","
+        "\"qkv_projection_ticks\":%" PRIu64 ","
+        "\"qk_norm_rope_ticks\":%" PRIu64 ","
+        "\"attention_ticks\":%" PRIu64 ","
+        "\"o_projection_ticks\":%" PRIu64 ","
+        "\"post_attention_norm_ticks\":%" PRIu64 ","
+        "\"gate_up_ticks\":%" PRIu64 ","
+        "\"activation_ticks\":%" PRIu64 ","
+        "\"down_ticks\":%" PRIu64 ","
+        "\"total_ticks\":%" PRIu64 ","
+        "\"hmx_compute_ticks\":%" PRIu64 ","
+        "\"release_result\":%d,\"close_result\":%d}\n",
+        qbh_variant_name(variant),
+        variant == QBH_BLOCK_W4U8 ? "U8xS8_integer_HMX"
+                                  : "FP16_HMX",
+        warmup_result, warmup_run_index, warmup_end - warmup_start,
+        warmup_metrics.max_abs, warmup_metrics.mean_abs,
+        warmup_metrics.rmse, warmup_metrics.cosine,
+        warmup_metrics.mismatches, warmup_metrics.max_lsb, repeats,
+        header->prepared_session_run_index, measured_result,
+        header->dsp_status, measured_end - measured_start,
+        (double)(measured_end - measured_start) / repeats,
+        measured_metrics.max_abs, measured_metrics.mean_abs,
+        measured_metrics.rmse, measured_metrics.cosine,
+        measured_metrics.mismatches, measured_metrics.max_lsb,
+        header->vtcm_requested_bytes, header->vtcm_acquired_bytes,
+        header->vtcm_peak_plan_bytes, header->block_invocation_count,
+        header->weight_ddr_read_bytes,
+        header->boundary_ddr_read_bytes,
+        header->boundary_ddr_write_bytes,
+        header->intermediate_ddr_read_bytes,
+        header->intermediate_ddr_write_bytes,
+        header->intermediate_dma_descriptor_count,
+        header->intermediate_spill_fill_count,
+        header->hmx_command_count, header->hmx_fp16_tile_pair_count,
+        header->hmx_u8s8_tile_pair_count, header->input_norm_ticks,
+        header->qkv_projection_ticks, header->qk_norm_rope_ticks,
+        header->attention_ticks, header->o_projection_ticks,
+        header->post_attention_norm_ticks, header->gate_up_ticks,
+        header->activation_ticks, header->down_ticks,
+        header->total_ticks, header->hmx_compute_ticks,
+        release_result, close_result);
+
+    exit_code = warmup_result == AEE_SUCCESS &&
+                        measured_result == AEE_SUCCESS &&
+                        release_result == AEE_SUCCESS &&
+                        close_result == AEE_SUCCESS &&
+                        header->dsp_status == QBH_BLOCK_STATUS_OK &&
+                        header->vtcm_requested_bytes ==
+                            QBH_EXPECTED_FULL_VTCM_BYTES &&
+                        header->vtcm_acquired_bytes ==
+                            QBH_EXPECTED_FULL_VTCM_BYTES &&
+                        header->block_invocation_count == repeats &&
+                        header->intermediate_ddr_read_bytes == 0U &&
+                        header->intermediate_ddr_write_bytes == 0U &&
+                        header->intermediate_dma_descriptor_count == 0U &&
+                        header->intermediate_spill_fill_count == 0U &&
+                        isfinite(measured_metrics.cosine) &&
+                        measured_metrics.cosine > 0.90
+                    ? 0
+                    : 1;
+
+cleanup:
+    if (session.handle != (remote_handle64)-1) {
+        (void)qbh_session_close(&session);
+    }
+    if (mapped != 0) {
+        (void)fastrpc_munmap(CDSP_DOMAIN_ID, shared_fd, shared,
+                             total_bytes);
+    }
+    if (shared != NULL) {
+        rpcmem_free(shared);
+    }
+    return exit_code;
+}
