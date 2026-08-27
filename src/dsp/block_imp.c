@@ -37,6 +37,7 @@ enum qbh_block_hmx_command_kind {
     (QBH_BLOCK_MAX_K / 32U / QBH_BLOCK_W4F16_MIN_REGION_TILES)
 #define QBH_BLOCK_W4F16_HVX_WORKERS UINT32_C(4)
 #define QBH_BLOCK_W4F16_HVX_STACK_BYTES UINT32_C(8192)
+#define QBH_BLOCK_DMA_DESCRIPTOR_TIMEOUT_TICKS UINT64_C(1920000)
 
 struct qbh_block_arena {
     uint8_t *base;
@@ -462,14 +463,27 @@ static int qbh_dma_start_w4f16_prefetch(
 
 static int qbh_dma_wait_w4f16_prefetch(
     struct qbh_dma_aligned_desc_1d *aligned) {
-    if (qbh_dma_wait_idle() != 0) {
-        return -1;
+    struct qbh_dma_desc_1d *descriptor = &aligned->descriptor;
+    uint64_t start = HAP_perf_get_qtimer_count();
+    uint32_t spins = 0U;
+
+    for (;;) {
+        uint32_t status = Q6_R_dmpoll() & QBH_DMA_STATUS_MASK;
+        if (((volatile struct qbh_dma_desc_1d *)descriptor)->dstate ==
+            QBH_DMA_DESC_COMPLETE) {
+            asm volatile("barrier" ::: "memory");
+            return 0;
+        }
+        if (status == QBH_DMA_STATUS_ERROR) {
+            return -1;
+        }
+        ++spins;
+        if ((spins & UINT32_C(255)) == 0U &&
+            HAP_perf_get_qtimer_count() - start >
+                QBH_BLOCK_DMA_DESCRIPTOR_TIMEOUT_TICKS) {
+            return -2;
+        }
     }
-    if (aligned->descriptor.dstate != QBH_DMA_DESC_COMPLETE) {
-        return -2;
-    }
-    asm volatile("barrier" ::: "memory");
-    return 0;
 }
 
 static void qbh_hmx_worker_main(void *opaque) {
