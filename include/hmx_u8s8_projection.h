@@ -79,7 +79,7 @@ static inline int qbh_projection_layout_init(
         return -1;
     }
     if (weight_storage_variant != QBH_WEIGHT_EXPANDED_S8 &&
-        weight_storage_variant != QBH_WEIGHT_PACKED_W4) {
+        !qbh_weight_storage_is_packed_w4(weight_storage_variant)) {
         return -1;
     }
     if (physical_plan != QBH_PHYSICAL_PLAN_FULL_BUNDLE &&
@@ -87,7 +87,11 @@ static inline int qbh_projection_layout_init(
         return -1;
     }
     if (physical_plan == QBH_PHYSICAL_PLAN_CHUNKED &&
-        weight_storage_variant != QBH_WEIGHT_PACKED_W4) {
+        !qbh_weight_storage_is_packed_w4(weight_storage_variant)) {
+        return -1;
+    }
+    if (weight_storage_variant == QBH_WEIGHT_PACKED_W4_HMX_SCALE &&
+        physical_plan != QBH_PHYSICAL_PLAN_CHUNKED) {
         return -1;
     }
     if (compressed_slot_count <
@@ -129,7 +133,7 @@ static inline int qbh_projection_layout_init(
     layout->w4_weight_bytes =
         layout->n_tiles * layout->w4_bundle_bytes;
     layout->stored_weight_bundle_bytes =
-        weight_storage_variant == QBH_WEIGHT_PACKED_W4
+        qbh_weight_storage_is_packed_w4(weight_storage_variant)
             ? layout->w4_bundle_bytes
             : layout->expanded_weight_bundle_bytes;
     layout->stored_weight_bytes =

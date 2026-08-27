@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define QBH_PROBE_MAGIC UINT32_C(0x51424850)
-#define QBH_PROBE_ABI_VERSION UINT32_C(8)
+#define QBH_PROBE_ABI_VERSION UINT32_C(9)
 #define QBH_PROBE_ALIGNMENT UINT32_C(4096)
 
 #define QBH_HMX_SPATIAL UINT32_C(64)
@@ -50,7 +50,13 @@ enum qbh_projection_variant {
 enum qbh_weight_storage_variant {
     QBH_WEIGHT_EXPANDED_S8 = 1,
     QBH_WEIGHT_PACKED_W4 = 2,
+    QBH_WEIGHT_PACKED_W4_HMX_SCALE = 3,
 };
+
+static inline int qbh_weight_storage_is_packed_w4(uint32_t storage) {
+    return storage == QBH_WEIGHT_PACKED_W4 ||
+           storage == QBH_WEIGHT_PACKED_W4_HMX_SCALE;
+}
 
 enum qbh_physical_plan {
     QBH_PHYSICAL_PLAN_FULL_BUNDLE = 1,

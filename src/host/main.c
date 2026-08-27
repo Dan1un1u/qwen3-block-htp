@@ -41,7 +41,9 @@ static const char *storage_name(uint32_t storage) {
         case QBH_WEIGHT_EXPANDED_S8:
             return "expanded_s8_control";
         case QBH_WEIGHT_PACKED_W4:
-            return "packed_w4u8";
+            return "packed_w4_hvx_prescale";
+        case QBH_WEIGHT_PACKED_W4_HMX_SCALE:
+            return "packed_w4_hmx_postscale";
         default:
             return "invalid";
     }
@@ -56,13 +58,21 @@ static int parse_storage(const char *text, uint32_t *storage) {
         return 0;
     }
     if (strcmp(text, "packed_w4u8") == 0 ||
+        strcmp(text, "packed_w4_hvx_prescale") == 0 ||
         strcmp(text, "packed_w4") == 0 || strcmp(text, "w4") == 0) {
         *storage = QBH_WEIGHT_PACKED_W4;
         return 0;
     }
+    if (strcmp(text, "packed_w4_hmx_postscale") == 0 ||
+        strcmp(text, "hmx_postscale") == 0 ||
+        strcmp(text, "w4_postscale") == 0) {
+        *storage = QBH_WEIGHT_PACKED_W4_HMX_SCALE;
+        return 0;
+    }
     if (parse_u32(text, &parsed) == 0 &&
         (parsed == QBH_WEIGHT_EXPANDED_S8 ||
-         parsed == QBH_WEIGHT_PACKED_W4)) {
+         parsed == QBH_WEIGHT_PACKED_W4 ||
+         parsed == QBH_WEIGHT_PACKED_W4_HMX_SCALE)) {
         *storage = parsed;
         return 0;
     }
@@ -268,7 +278,7 @@ static uint8_t channel_scale(uint32_t pattern, uint32_t channel) {
         case QBH_PATTERN_STRUCTURED:
             return (uint8_t)(1U + (channel * 5U) % 12U);
         default:
-            return (uint8_t)(QBH_W4_MAX_INTEGER_SCALE - channel % 3U);
+            return (uint8_t)(QBH_W4_MAX_INTEGER_SCALE - channel % 6U);
     }
 }
 
@@ -375,6 +385,43 @@ static void fill_bias_words(
     }
 }
 
+/* Integer HMX uses FP16(512) as its unity output conversion scale. The
+ * synthetic EXP-0008 integer scales are exactly representable after the
+ * factor of 512, so the four extra mantissa bits remain zero. */
+static const uint16_t qbh_hmx_integer_scale_words[19] = {
+    0x0000, 0x6000, 0x6400, 0x6600, 0x6800,
+    0x6900, 0x6a00, 0x6b00, 0x6c00, 0x6c80,
+    0x6d00, 0x6d80, 0x6e00, 0x6e80, 0x6f00,
+    0x6f80, 0x7000, 0x7040, 0x7080,
+};
+
+_Static_assert(QBH_W4_MAX_INTEGER_SCALE == 18U,
+               "HMX integer-scale table must cover the experiment range");
+
+static void fill_postscale_bias_words(
+    const struct qbh_projection_layout *layout,
+    const int8_t *logical_w4, const uint8_t *channel_scales,
+    uint32_t output_tile, int32_t input_zero_point,
+    uint32_t *bias_words) {
+    for (uint32_t output_channel = 0;
+         output_channel < QBH_HMX_OUTPUT_CHANNELS; ++output_channel) {
+        int32_t weight_sum = 0;
+        uint32_t logical_n =
+            output_tile * QBH_HMX_OUTPUT_CHANNELS + output_channel;
+        uint32_t scale = channel_scales[logical_n];
+        for (uint32_t input_channel = 0; input_channel < layout->k;
+             ++input_channel) {
+            weight_sum += logical_w4[
+                qbh_projection_logical_weight_offset(
+                    layout, input_channel, logical_n)];
+        }
+        bias_words[output_channel] =
+            qbh_hmx_integer_scale_words[scale];
+        bias_words[QBH_HMX_OUTPUT_CHANNELS + output_channel] =
+            (uint32_t)(-input_zero_point * weight_sum);
+    }
+}
+
 static void pack_expanded_s8_bundles(
     const struct qbh_projection_layout *layout,
     const int8_t *logical_s8, int32_t input_zero_point,
@@ -413,7 +460,8 @@ static void pack_expanded_s8_bundles(
 static void pack_w4_bundles(
     const struct qbh_projection_layout *layout, const int8_t *logical_w4,
     const int8_t *logical_s8, const uint8_t *channel_scales,
-    int32_t input_zero_point, uint8_t *stored_weights) {
+    int32_t input_zero_point, uint32_t storage,
+    uint8_t *stored_weights) {
     memset(stored_weights, 0, layout->stored_weight_bytes);
     for (uint32_t output_tile = 0; output_tile < layout->n_tiles;
          ++output_tile) {
@@ -455,11 +503,17 @@ static void pack_w4_bundles(
                channel_scales +
                    output_tile * QBH_HMX_OUTPUT_CHANNELS,
                QBH_W4_CHANNEL_SCALE_BYTES);
-        fill_bias_words(
-            layout, logical_s8, output_tile, input_zero_point,
-            (uint32_t *)(stored_weights +
-                         qbh_projection_w4_bias_offset(
-                             layout, output_tile)));
+        uint32_t *bias_words = (uint32_t *)(
+            stored_weights + qbh_projection_w4_bias_offset(
+                                 layout, output_tile));
+        if (storage == QBH_WEIGHT_PACKED_W4_HMX_SCALE) {
+            fill_postscale_bias_words(
+                layout, logical_w4, channel_scales, output_tile,
+                input_zero_point, bias_words);
+        } else {
+            fill_bias_words(layout, logical_s8, output_tile,
+                            input_zero_point, bias_words);
+        }
     }
 }
 
@@ -576,6 +630,8 @@ int main(int argc, char **argv) {
     uint64_t reference_end;
     uint64_t reference_checksum;
     uint64_t expanded_carrier_checksum;
+    uint64_t packed_w4_checksum;
+    uint64_t hmx_carrier_checksum;
     uint8_t reference_min;
     uint8_t reference_max;
     uint32_t mismatches;
@@ -614,7 +670,8 @@ int main(int argc, char **argv) {
     }
     if (argc > 6) {
         fprintf(stderr,
-                "usage: %s [packed_w4u8|expanded_s8_control] "
+                "usage: %s [packed_w4_hvx_prescale|"
+                "packed_w4_hmx_postscale|expanded_s8_control] "
                 "[gate_up|down] "
                 "[identity|signed|structured|boundary] [repeat] "
                 "[exp0005_full_bundle_control|"
@@ -697,10 +754,10 @@ int main(int argc, char **argv) {
     output = shared + output_offset;
     fill_pattern(&layout, pattern, activation, logical_w4, logical_s8,
                  channel_scales);
-    if (storage == QBH_WEIGHT_PACKED_W4) {
+    if (qbh_weight_storage_is_packed_w4(storage)) {
         pack_w4_bundles(&layout, logical_w4, logical_s8, channel_scales,
                         (int32_t)QBH_HMX_DEFAULT_ZERO_POINT,
-                        stored_weights);
+                        storage, stored_weights);
     } else {
         pack_expanded_s8_bundles(
             &layout, logical_s8,
@@ -708,6 +765,12 @@ int main(int argc, char **argv) {
     }
     expanded_carrier_checksum = carrier_checksum(
         logical_s8, layout.logical_weight_bytes);
+    packed_w4_checksum = carrier_checksum(
+        logical_w4, layout.logical_weight_bytes);
+    hmx_carrier_checksum =
+        storage == QBH_WEIGHT_PACKED_W4_HMX_SCALE
+            ? packed_w4_checksum
+            : expanded_carrier_checksum;
     memset(output, 0xa5, layout.output_bytes);
 
     rpc_result = qbh_session_open(&session);
@@ -744,7 +807,7 @@ int main(int argc, char **argv) {
         &reference_min, &reference_max, &reference_checksum);
     reference_end = monotonic_ns();
 
-    printf("{\"experiment\":\"EXP-0007\","
+    printf("{\"experiment\":\"EXP-0008\","
            "\"weight_storage\":\"%s\","
            "\"physical_plan\":\"%s\","
            "\"requested_hvx_workers\":%" PRIu32 ","
@@ -757,6 +820,8 @@ int main(int argc, char **argv) {
            "\"reference_min\":%u,\"reference_max\":%u,"
            "\"reference_checksum\":%" PRIu64 ","
            "\"expanded_carrier_checksum\":%" PRIu64 ","
+           "\"packed_w4_checksum\":%" PRIu64 ","
+           "\"hmx_carrier_checksum\":%" PRIu64 ","
            "\"reference_wall_ns\":%" PRIu64 ","
            "\"host_wall_ns\":%" PRIu64 ","
            "\"projection_m\":%" PRIu32 ","
@@ -828,7 +893,8 @@ int main(int argc, char **argv) {
            pattern_name(pattern), repeats, rpc_result, header->dsp_status,
            mismatches, (unsigned int)reference_min,
            (unsigned int)reference_max, reference_checksum,
-           expanded_carrier_checksum, reference_end - reference_start,
+           expanded_carrier_checksum, packed_w4_checksum,
+           hmx_carrier_checksum, reference_end - reference_start,
            host_end - host_start, header->projection_m,
            header->projection_k, header->projection_n,
            header->k_tile_count, header->n_tile_count,
@@ -882,7 +948,7 @@ int main(int argc, char **argv) {
                           : 0U;
     expected_dma_waits =
         2U * (layout.k_tiles + expected_weight_stages);
-    expected_expands = storage == QBH_WEIGHT_PACKED_W4
+    expected_expands = qbh_weight_storage_is_packed_w4(storage)
                            ? expected_weight_stages *
                                  (physical_plan == QBH_PHYSICAL_PLAN_CHUNKED
                                       ? layout.chunks_per_output

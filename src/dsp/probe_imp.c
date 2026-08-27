@@ -600,7 +600,8 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     hmx_job.activation_tiles = activation_tiles;
     hmx_job.weight_slots[0] = expanded_slots[0];
     hmx_job.weight_slots[1] = expanded_slots[1];
-    if (layout.weight_storage_variant == QBH_WEIGHT_PACKED_W4) {
+    if (qbh_weight_storage_is_packed_w4(
+            layout.weight_storage_variant)) {
         hmx_job.bias_slots[0] = (const uint32_t *)(
             compressed_slots[0] + layout.w4_bias_offset);
         hmx_job.bias_slots[1] = (const uint32_t *)(
@@ -667,7 +668,8 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
 
             uint64_t stage_start = HAP_perf_get_qtimer_count();
             uint8_t *stage_destination =
-                layout.weight_storage_variant == QBH_WEIGHT_PACKED_W4
+                qbh_weight_storage_is_packed_w4(
+                    layout.weight_storage_variant)
                     ? compressed_slots[slot]
                     : expanded_slots[slot];
             if (stage_weight_bundle(
@@ -684,12 +686,23 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
             header->weight_stage_ticks +=
                 HAP_perf_get_qtimer_count() - stage_start;
 
-            if (layout.weight_storage_variant == QBH_WEIGHT_PACKED_W4) {
+            if (qbh_weight_storage_is_packed_w4(
+                    layout.weight_storage_variant)) {
                 uint64_t expand_start = HAP_perf_get_qtimer_count();
-                qbh_expand_w4_to_s8_hvx(
-                    compressed_slots[slot],
-                    compressed_slots[slot] + layout.w4_scale_offset,
-                    (int8_t *)expanded_slots[slot], layout.k_tiles);
+                if (layout.weight_storage_variant ==
+                    QBH_WEIGHT_PACKED_W4_HMX_SCALE) {
+                    qbh_unpack_w4_to_s8_hvx(
+                        compressed_slots[slot],
+                        (int8_t *)expanded_slots[slot],
+                        layout.k_tiles);
+                } else {
+                    qbh_expand_w4_to_s8_hvx(
+                        compressed_slots[slot],
+                        compressed_slots[slot] +
+                            layout.w4_scale_offset,
+                        (int8_t *)expanded_slots[slot],
+                        layout.k_tiles);
+                }
                 header->weight_expand_ticks +=
                     HAP_perf_get_qtimer_count() - expand_start;
                 ++header->weight_expand_count;

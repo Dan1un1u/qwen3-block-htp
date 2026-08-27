@@ -271,12 +271,21 @@ static void qbh_hvx_worker_main(void *opaque) {
             job->first_expand_start = start;
         }
         qbh_hvx_region_begin(state);
-        qbh_expand_w4_to_s8_hvx(
-            compressed +
-                (size_t)task.chunk_index * layout->chunk_tiles *
-                    QBH_W4_PACKED_TILE_BYTES,
-            compressed + layout->w4_scale_offset,
-            (int8_t *)expanded, task.chunk_tiles);
+        if (layout->weight_storage_variant ==
+            QBH_WEIGHT_PACKED_W4_HMX_SCALE) {
+            qbh_unpack_w4_to_s8_hvx(
+                compressed +
+                    (size_t)task.chunk_index * layout->chunk_tiles *
+                        QBH_W4_PACKED_TILE_BYTES,
+                (int8_t *)expanded, task.chunk_tiles);
+        } else {
+            qbh_expand_w4_to_s8_hvx(
+                compressed +
+                    (size_t)task.chunk_index * layout->chunk_tiles *
+                        QBH_W4_PACKED_TILE_BYTES,
+                compressed + layout->w4_scale_offset,
+                (int8_t *)expanded, task.chunk_tiles);
+        }
         if (task.chunk_index == 0U) {
             qbh_copy_hmx_bias_hvx(
                 compressed + layout->w4_bias_offset,
@@ -415,7 +424,8 @@ int qbh_run_chunked_w4_pipeline(
     if (header == NULL || layout == NULL || stored_weights == NULL ||
         activation_tiles == NULL || vtcm == NULL || hmx_context_id == 0U ||
         layout->physical_plan != QBH_PHYSICAL_PLAN_CHUNKED ||
-        layout->weight_storage_variant != QBH_WEIGHT_PACKED_W4 ||
+        !qbh_weight_storage_is_packed_w4(
+            layout->weight_storage_variant) ||
         header->requested_hvx_workers == 0U ||
         header->requested_hvx_workers > QBH_MAX_HVX_WORKERS) {
         return AEE_EBADPARM;
