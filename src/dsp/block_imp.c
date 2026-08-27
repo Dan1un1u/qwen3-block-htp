@@ -489,38 +489,6 @@ static void qbh_unpack_u8_output(const uint8_t *source,
     }
 }
 
-static int8_t qbh_decode_w4(const uint8_t *packed,
-                            uint32_t physical_index) {
-    uint8_t byte = packed[physical_index / 2U];
-    uint8_t nibble = (physical_index & 1U) != 0U
-                         ? (uint8_t)(byte >> 4U)
-                         : (uint8_t)(byte & UINT8_C(0x0f));
-    return (nibble & UINT8_C(0x08)) != 0U
-               ? (int8_t)(nibble | UINT8_C(0xf0))
-               : (int8_t)nibble;
-}
-
-static void qbh_expand_w4_fp16(const uint8_t *packed,
-                               const float *scales,
-                               uint32_t k_tiles,
-                               __fp16 *expanded) {
-    for (uint32_t k_tile = 0; k_tile < k_tiles; ++k_tile) {
-        const uint8_t *source = packed +
-            (size_t)k_tile * QBH_W4_PACKED_TILE_BYTES;
-        __fp16 *destination = expanded +
-            (size_t)k_tile * QBH_HMX_FP16_TILE_ELEMENTS;
-        for (uint32_t input = 0; input < 32U; ++input) {
-            for (uint32_t output = 0; output < 32U; ++output) {
-                uint32_t int_index =
-                    ((input / 4U) * 32U + output) * 4U + input % 4U;
-                destination[qbh_hmx_fp16_tile_offset(input, output)] =
-                    (__fp16)((float)qbh_decode_w4(source, int_index) *
-                             scales[output]);
-            }
-        }
-    }
-}
-
 static void qbh_record_projection_failure(
     struct qbh_block_header *header,
     const struct qbh_block_projection_desc *desc,
@@ -548,17 +516,20 @@ static int qbh_run_projection(
     if (header->variant == QBH_BLOCK_W4U8) {
         qbh_pack_u8_activation((const uint8_t *)input, desc->k,
                                desc->k, buffers->hmx_activation);
+    } else {
+        qbh_pack_fp16_activation((const __fp16 *)input, desc->k,
+                                 desc->k,
+                                 (__fp16 *)buffers->hmx_activation);
+        qbh_hmx_fp16_init_unity_scale(buffers->scale_or_bias);
+    }
+    if (header->variant == QBH_BLOCK_W4U8 ||
+        header->variant == QBH_BLOCK_W4F16) {
         if (qurt_hvx_lock(QURT_HVX_MODE_128B) != AEE_SUCCESS) {
             qbh_record_projection_failure(
                 header, desc, 0U, 5U, -1);
             return -1;
         }
         hvx_locked = 1;
-    } else {
-        qbh_pack_fp16_activation((const __fp16 *)input, desc->k,
-                                 desc->k,
-                                 (__fp16 *)buffers->hmx_activation);
-        qbh_hmx_fp16_init_unity_scale(buffers->scale_or_bias);
     }
 
     for (uint32_t n_tile = 0; n_tile < n_tiles; ++n_tile) {
@@ -592,10 +563,10 @@ static int qbh_run_projection(
                 header->weight_ddr_read_bytes += 32U * sizeof(float);
                 ++header->weight_dma_descriptor_count;
                 if (result == 0) {
-                    qbh_expand_w4_fp16(
+                    qbh_expand_w4_to_f16_hvx(
                         buffers->compressed_weight,
                         (const float *)buffers->scale_or_bias,
-                        k_tiles, (__fp16 *)buffers->expanded_weight);
+                        buffers->expanded_weight, k_tiles);
                     qbh_hmx_fp16_init_unity_scale(
                         buffers->scale_or_bias);
                 }

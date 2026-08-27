@@ -17,6 +17,94 @@ static const int8_t qbh_signed_w4_lut[128]
         -8, 0, -7, 0, -6, 0, -5, 0, -4, 0, -3, 0, -2, 0, -1, 0,
 };
 
+static HVX_Vector qbh_scale_w4_f16_lanes(
+    HVX_Vector v_quant_f16, HVX_Vector v_scale_lo,
+    HVX_Vector v_scale_hi) {
+    const HVX_Vector v_one_f16 = Q6_Vh_vsplat_R(0x3c00);
+    const HVX_VectorPair v_quant_qf32 =
+        Q6_Wqf32_vmpy_VhfVhf(v_quant_f16, v_one_f16);
+    const HVX_Vector v_quant_lo =
+        Q6_Vsf_equals_Vqf32(Q6_V_lo_W(v_quant_qf32));
+    const HVX_Vector v_quant_hi =
+        Q6_Vsf_equals_Vqf32(Q6_V_hi_W(v_quant_qf32));
+    const HVX_Vector v_product_lo =
+        Q6_Vqf32_vmpy_VsfVsf(v_quant_lo, v_scale_lo);
+    const HVX_Vector v_product_hi =
+        Q6_Vqf32_vmpy_VsfVsf(v_quant_hi, v_scale_hi);
+    return Q6_Vhf_equals_Wqf32(
+        Q6_W_vcombine_VV(v_product_hi, v_product_lo));
+}
+
+static HVX_VectorPair qbh_scale_w4_f16_group(
+    HVX_Vector v_signed_group, HVX_Vector v_scale_lo,
+    HVX_Vector v_scale_hi) {
+    /* Packed integer-HMX tiles group four K rows per output.  FP16 HMX groups
+     * two K rows.  Deal the signed-byte vector as halfwords so the even
+     * (row 0/1) pairs occupy the low half and the odd (row 2/3) pairs occupy
+     * the high half before widening to FP16. */
+    const HVX_Vector v_two_row_groups =
+        Q6_Vh_vdeal_Vh(v_signed_group);
+    const HVX_VectorPair v_quant_h =
+        Q6_Wh_vunpack_Vb(v_two_row_groups);
+    const HVX_Vector v_row01_f16 =
+        Q6_Vhf_equals_Vh(Q6_V_lo_W(v_quant_h));
+    const HVX_Vector v_row23_f16 =
+        Q6_Vhf_equals_Vh(Q6_V_hi_W(v_quant_h));
+    const HVX_Vector v_scaled01 = qbh_scale_w4_f16_lanes(
+        v_row01_f16, v_scale_lo, v_scale_hi);
+    const HVX_Vector v_scaled23 = qbh_scale_w4_f16_lanes(
+        v_row23_f16, v_scale_lo, v_scale_hi);
+    return Q6_W_vcombine_VV(v_scaled23, v_scaled01);
+}
+
+__attribute__((noinline)) void qbh_expand_w4_to_f16_hvx(
+    const uint8_t *packed_w4, const float *channel_scales,
+    void *expanded_f16, uint32_t k_tiles) {
+    float repeated_scales[64] __attribute__((aligned(128)));
+    const HVX_Vector v_lut = *(const HVX_Vector *)qbh_signed_w4_lut;
+    const HVX_Vector v_nibble_mask = Q6_Vb_vsplat_R(0x0f);
+    HVX_Vector *destination = (HVX_Vector *)expanded_f16;
+
+    /* The FP16 Crouton carrier stores two adjacent K rows per output.  Each
+     * scale is therefore repeated twice.  Keeping the source scale in SF and
+     * using qf32 products preserves the scalar contract half(q * scale_f32).
+     * The vectorization pattern is adapted from
+     * haozixu/htp-ops-lib@85eb88e, src/dsp/ops/mat_mul.c. */
+    for (uint32_t output = 0; output < 32U; ++output) {
+        repeated_scales[output * 2U] = channel_scales[output];
+        repeated_scales[output * 2U + 1U] = channel_scales[output];
+    }
+    const HVX_Vector v_scale_lo =
+        *(const HVX_Vector *)&repeated_scales[0];
+    const HVX_Vector v_scale_hi =
+        *(const HVX_Vector *)&repeated_scales[32];
+
+    for (uint32_t packed_vector = 0;
+         packed_vector < k_tiles * 4U; ++packed_vector) {
+        const HVX_Vector v_packed = *(const HVX_Vector *)(
+            packed_w4 + (size_t)packed_vector * sizeof(HVX_Vector));
+        const HVX_Vector v_low_indices =
+            Q6_V_vand_VV(v_packed, v_nibble_mask);
+        const HVX_Vector v_high_indices =
+            Q6_Vub_vlsr_VubR(v_packed, 4);
+        const HVX_Vector v_low = Q6_Vb_vlut32_VbVbR_nomatch(
+            v_low_indices, v_lut, 0);
+        const HVX_Vector v_high = Q6_Vb_vlut32_VbVbR_nomatch(
+            v_high_indices, v_lut, 0);
+        const HVX_VectorPair v_unpacked =
+            Q6_W_vshuff_VVR(v_high, v_low, -1);
+        const HVX_VectorPair v_groups0 = qbh_scale_w4_f16_group(
+            Q6_V_lo_W(v_unpacked), v_scale_lo, v_scale_hi);
+        const HVX_VectorPair v_groups1 = qbh_scale_w4_f16_group(
+            Q6_V_hi_W(v_unpacked), v_scale_lo, v_scale_hi);
+        destination[packed_vector * 4U] = Q6_V_lo_W(v_groups0);
+        destination[packed_vector * 4U + 1U] = Q6_V_hi_W(v_groups0);
+        destination[packed_vector * 4U + 2U] = Q6_V_lo_W(v_groups1);
+        destination[packed_vector * 4U + 3U] = Q6_V_hi_W(v_groups1);
+    }
+    asm volatile("barrier" : : : "memory");
+}
+
 __attribute__((noinline)) void qbh_expand_w4_to_s8_hvx(
     const uint8_t *packed_w4, const uint8_t *channel_scales,
     int8_t *expanded_s8, uint32_t k_tiles) {
