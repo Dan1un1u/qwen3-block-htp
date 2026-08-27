@@ -110,7 +110,9 @@ static inline int qbh_projection_layout_init(
           physical_plan ==
               QBH_PHYSICAL_PLAN_STREAMING_BITWISE_E7_DMA_CHAIN4 ||
           physical_plan ==
-              QBH_PHYSICAL_PLAN_STREAMING_DIRECT_E7_DMA_CHAIN4) &&
+              QBH_PHYSICAL_PLAN_STREAMING_DIRECT_E7_DMA_CHAIN4 ||
+          physical_plan ==
+              QBH_PHYSICAL_PLAN_STREAMING_LOCKFREE_E7_DMA_CHAIN4) &&
          compressed_slot_count != 8U)) {
         return -1;
     }
@@ -126,7 +128,9 @@ static inline int qbh_projection_layout_init(
           physical_plan ==
               QBH_PHYSICAL_PLAN_STREAMING_BITWISE_E7_DMA_CHAIN4 ||
           physical_plan ==
-              QBH_PHYSICAL_PLAN_STREAMING_DIRECT_E7_DMA_CHAIN4) &&
+              QBH_PHYSICAL_PLAN_STREAMING_DIRECT_E7_DMA_CHAIN4 ||
+          physical_plan ==
+              QBH_PHYSICAL_PLAN_STREAMING_LOCKFREE_E7_DMA_CHAIN4) &&
          (variant != QBH_PROJECTION_GATE_UP_PAIR ||
           compressed_slot_count != 8U ||
           chunk_tiles != QBH_W4_COARSE_CHUNK_TILES))) {

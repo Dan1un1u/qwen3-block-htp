@@ -53,6 +53,13 @@ struct qbh_direct_queue {
     qurt_sem_t available;
 };
 
+struct qbh_lockfree_queue {
+    struct qbh_chunk_task tasks[QBH_W4_TASK_QUEUE_DEPTH];
+    volatile uint32_t head;
+    uint32_t tail;
+    qurt_sem_t available;
+};
+
 struct qbh_parallel_state {
     struct qbh_probe_header *header;
     const struct qbh_projection_layout *layout;
@@ -63,6 +70,7 @@ struct qbh_parallel_state {
 
     struct qbh_chunk_queue queue;
     struct qbh_direct_queue direct_queues[QBH_DIRECT_QUEUE_COUNT];
+    struct qbh_lockfree_queue lockfree_queue;
     qurt_sem_t compressed_free[QBH_W4_MAX_COMPRESSED_SLOT_COUNT];
     qurt_sem_t expanded_free[QBH_W4_EXPANDED_CHUNK_SLOT_COUNT];
     qurt_sem_t expanded_ready[QBH_W4_EXPANDED_CHUNK_SLOT_COUNT];
@@ -188,6 +196,38 @@ static void qbh_direct_queue_pop(struct qbh_direct_queue *queue,
     asm volatile("barrier" : : : "memory");
     *task = queue->tasks[slot];
     ++queue->head;
+}
+
+static void qbh_lockfree_queue_init(struct qbh_lockfree_queue *queue) {
+    memset(queue, 0, sizeof(*queue));
+    qurt_sem_init_val(&queue->available, 0);
+}
+
+static void qbh_lockfree_queue_destroy(struct qbh_lockfree_queue *queue) {
+    qurt_sem_destroy(&queue->available);
+}
+
+static void qbh_lockfree_queue_push(struct qbh_lockfree_queue *queue,
+                                    const struct qbh_chunk_task *task) {
+    uint32_t slot = queue->tail % QBH_W4_TASK_QUEUE_DEPTH;
+    queue->tasks[slot] = *task;
+    asm volatile("release(%0):at"
+                 :
+                 : "r"(&queue->tasks[slot])
+                 : "memory");
+    ++queue->tail;
+    qurt_sem_up(&queue->available);
+}
+
+static void qbh_lockfree_queue_pop(struct qbh_lockfree_queue *queue,
+                                   struct qbh_chunk_task *task) {
+    uint32_t sequence;
+    uint32_t slot;
+    qurt_sem_down(&queue->available);
+    sequence = qbh_atomic_inc_return(&queue->head) - 1U;
+    slot = sequence % QBH_W4_TASK_QUEUE_DEPTH;
+    asm volatile("barrier" : : : "memory");
+    *task = queue->tasks[slot];
 }
 
 static void qbh_queue_push(struct qbh_chunk_queue *queue,
@@ -413,7 +453,10 @@ static void qbh_hvx_worker_main(void *opaque) {
         size_t expanded_offset;
         int admission_status;
 
-        if (qbh_physical_plan_uses_direct_dispatch(
+        if (qbh_physical_plan_uses_lockfree_dispatch(
+                layout->physical_plan)) {
+            qbh_lockfree_queue_pop(&state->lockfree_queue, &task);
+        } else if (qbh_physical_plan_uses_direct_dispatch(
                 layout->physical_plan)) {
             qbh_direct_queue_pop(
                 &state->direct_queues[job->worker_index], &task);
@@ -720,7 +763,11 @@ static void qbh_publish_w4_bundle(
                 task.stream_region_tiles =
                     QBH_W4_STREAM_REGION_TILES;
                 task.stream_generation = generation;
-                if (qbh_physical_plan_uses_direct_dispatch(
+                if (qbh_physical_plan_uses_lockfree_dispatch(
+                        layout->physical_plan)) {
+                    qbh_lockfree_queue_push(
+                        &state->lockfree_queue, &task);
+                } else if (qbh_physical_plan_uses_direct_dispatch(
                         layout->physical_plan)) {
                     qbh_direct_queue_push(
                         &state->direct_queues[region], &task);
@@ -785,6 +832,16 @@ int qbh_run_chunked_w4_pipeline(
              QBH_DIRECT_QUEUE_COUNT * QBH_W4_STREAM_REGION_TILES)) {
         return AEE_EBADPARM;
     }
+    if (qbh_physical_plan_uses_lockfree_dispatch(
+            layout->physical_plan) &&
+        (header->requested_hvx_workers != QBH_DIRECT_QUEUE_COUNT ||
+         layout->expanded_slot_count * QBH_DIRECT_QUEUE_COUNT +
+                 header->requested_hvx_workers >=
+             QBH_W4_TASK_QUEUE_DEPTH ||
+         layout->chunk_tiles !=
+             QBH_DIRECT_QUEUE_COUNT * QBH_W4_STREAM_REGION_TILES)) {
+        return AEE_EBADPARM;
+    }
     dma_bundle_batch = qbh_physical_plan_dma_bundle_batch(
         layout->physical_plan);
     if (dma_bundle_batch > layout->compressed_slot_count ||
@@ -819,6 +876,10 @@ int qbh_run_chunked_w4_pipeline(
              ++queue) {
             qbh_direct_queue_init(&state.direct_queues[queue]);
         }
+    }
+    if (qbh_physical_plan_uses_lockfree_dispatch(
+            layout->physical_plan)) {
+        qbh_lockfree_queue_init(&state.lockfree_queue);
     }
     qurt_mutex_init(&state.metrics_mutex);
     qurt_sem_init_val(&state.hmx_started, 0);
@@ -997,7 +1058,11 @@ stop_workers:
         struct qbh_chunk_task stop_task;
         memset(&stop_task, 0, sizeof(stop_task));
         stop_task.stop = 1U;
-        if (qbh_physical_plan_uses_direct_dispatch(
+        if (qbh_physical_plan_uses_lockfree_dispatch(
+                layout->physical_plan)) {
+            qbh_lockfree_queue_push(
+                &state.lockfree_queue, &stop_task);
+        } else if (qbh_physical_plan_uses_direct_dispatch(
                 layout->physical_plan)) {
             qbh_direct_queue_push(
                 &state.direct_queues[worker], &stop_task);
@@ -1105,7 +1170,11 @@ cleanup:
         struct qbh_chunk_task stop_task;
         memset(&stop_task, 0, sizeof(stop_task));
         stop_task.stop = 1U;
-        if (qbh_physical_plan_uses_direct_dispatch(
+        if (qbh_physical_plan_uses_lockfree_dispatch(
+                layout->physical_plan)) {
+            qbh_lockfree_queue_push(
+                &state.lockfree_queue, &stop_task);
+        } else if (qbh_physical_plan_uses_direct_dispatch(
                 layout->physical_plan)) {
             qbh_direct_queue_push(
                 &state.direct_queues[worker], &stop_task);
@@ -1133,6 +1202,10 @@ cleanup:
              ++queue) {
             qbh_direct_queue_destroy(&state.direct_queues[queue]);
         }
+    }
+    if (qbh_physical_plan_uses_lockfree_dispatch(
+            layout->physical_plan)) {
+        qbh_lockfree_queue_destroy(&state.lockfree_queue);
     }
     qbh_queue_destroy(&state.queue);
     return result;

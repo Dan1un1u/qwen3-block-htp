@@ -105,6 +105,10 @@ static const char *physical_plan_name(uint32_t physical_plan,
         QBH_PHYSICAL_PLAN_STREAMING_DIRECT_E7_DMA_CHAIN4) {
         return "stream32_gate_hvx2_direct";
     }
+    if (physical_plan ==
+        QBH_PHYSICAL_PLAN_STREAMING_LOCKFREE_E7_DMA_CHAIN4) {
+        return "stream32_gate_hvx2_lockfree";
+    }
     if (physical_plan == QBH_PHYSICAL_PLAN_STREAMING_DMA_BATCH2) {
         switch (hvx_workers) {
             case 2: return "stream32_down_hvx2";
@@ -264,6 +268,14 @@ static int parse_physical_plan(const char *text, uint32_t *physical_plan,
     if (strcmp(text, "stream32_gate_hvx2_direct") == 0) {
         *physical_plan =
             QBH_PHYSICAL_PLAN_STREAMING_DIRECT_E7_DMA_CHAIN4;
+        *hvx_workers = 2U;
+        *compressed_slots = 8U;
+        *chunk_tiles = QBH_W4_COARSE_CHUNK_TILES;
+        return 0;
+    }
+    if (strcmp(text, "stream32_gate_hvx2_lockfree") == 0) {
+        *physical_plan =
+            QBH_PHYSICAL_PLAN_STREAMING_LOCKFREE_E7_DMA_CHAIN4;
         *hvx_workers = 2U;
         *compressed_slots = 8U;
         *chunk_tiles = QBH_W4_COARSE_CHUNK_TILES;
@@ -1129,6 +1141,7 @@ int main(int argc, char **argv) {
                 "stream32_gate_hvx6_cap2|"
                 "stream32_gate_hvx2_bitwise|"
                 "stream32_gate_hvx2_direct|"
+                "stream32_gate_hvx2_lockfree|"
                 "stream32_down_hvx2|stream32_down_hvx3|"
                 "stream32_down_hvx4|stream32_down_hvx6|"
                 "stream32_down_hvx6_cap2] "

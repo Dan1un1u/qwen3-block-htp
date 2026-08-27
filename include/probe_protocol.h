@@ -85,6 +85,7 @@ enum qbh_physical_plan {
     QBH_PHYSICAL_PLAN_STREAMING_CAP2_E7_DMA_CHAIN4 = 15,
     QBH_PHYSICAL_PLAN_STREAMING_BITWISE_E7_DMA_CHAIN4 = 16,
     QBH_PHYSICAL_PLAN_STREAMING_DIRECT_E7_DMA_CHAIN4 = 17,
+    QBH_PHYSICAL_PLAN_STREAMING_LOCKFREE_E7_DMA_CHAIN4 = 18,
 };
 
 static inline int qbh_physical_plan_is_full_bundle(uint32_t plan) {
@@ -107,7 +108,8 @@ static inline int qbh_physical_plan_is_chunked(uint32_t plan) {
            plan == QBH_PHYSICAL_PLAN_STREAMING_CAP2_DMA_BATCH2 ||
            plan == QBH_PHYSICAL_PLAN_STREAMING_CAP2_E7_DMA_CHAIN4 ||
            plan == QBH_PHYSICAL_PLAN_STREAMING_BITWISE_E7_DMA_CHAIN4 ||
-           plan == QBH_PHYSICAL_PLAN_STREAMING_DIRECT_E7_DMA_CHAIN4;
+           plan == QBH_PHYSICAL_PLAN_STREAMING_DIRECT_E7_DMA_CHAIN4 ||
+           plan == QBH_PHYSICAL_PLAN_STREAMING_LOCKFREE_E7_DMA_CHAIN4;
 }
 
 static inline uint32_t qbh_physical_plan_dma_bundle_batch(uint32_t plan) {
@@ -127,7 +129,8 @@ static inline uint32_t qbh_physical_plan_dma_bundle_batch(uint32_t plan) {
         plan == QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4 ||
         plan == QBH_PHYSICAL_PLAN_STREAMING_CAP2_E7_DMA_CHAIN4 ||
         plan == QBH_PHYSICAL_PLAN_STREAMING_BITWISE_E7_DMA_CHAIN4 ||
-        plan == QBH_PHYSICAL_PLAN_STREAMING_DIRECT_E7_DMA_CHAIN4) {
+        plan == QBH_PHYSICAL_PLAN_STREAMING_DIRECT_E7_DMA_CHAIN4 ||
+        plan == QBH_PHYSICAL_PLAN_STREAMING_LOCKFREE_E7_DMA_CHAIN4) {
         return 4U;
     }
     return 1U;
@@ -141,7 +144,8 @@ static inline int qbh_physical_plan_uses_linked_dma(uint32_t plan) {
            plan == QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4 ||
            plan == QBH_PHYSICAL_PLAN_STREAMING_CAP2_E7_DMA_CHAIN4 ||
            plan == QBH_PHYSICAL_PLAN_STREAMING_BITWISE_E7_DMA_CHAIN4 ||
-           plan == QBH_PHYSICAL_PLAN_STREAMING_DIRECT_E7_DMA_CHAIN4;
+           plan == QBH_PHYSICAL_PLAN_STREAMING_DIRECT_E7_DMA_CHAIN4 ||
+           plan == QBH_PHYSICAL_PLAN_STREAMING_LOCKFREE_E7_DMA_CHAIN4;
 }
 
 static inline uint32_t qbh_physical_plan_expanded_slot_count(
@@ -152,7 +156,8 @@ static inline uint32_t qbh_physical_plan_expanded_slot_count(
                    plan == QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4 ||
                    plan == QBH_PHYSICAL_PLAN_STREAMING_CAP2_E7_DMA_CHAIN4 ||
                    plan == QBH_PHYSICAL_PLAN_STREAMING_BITWISE_E7_DMA_CHAIN4 ||
-                   plan == QBH_PHYSICAL_PLAN_STREAMING_DIRECT_E7_DMA_CHAIN4
+                   plan == QBH_PHYSICAL_PLAN_STREAMING_DIRECT_E7_DMA_CHAIN4 ||
+                   plan == QBH_PHYSICAL_PLAN_STREAMING_LOCKFREE_E7_DMA_CHAIN4
                ? QBH_W4_REBALANCED_EXPANDED_SLOT_COUNT
                : QBH_W4_EXPANDED_CHUNK_SLOT_COUNT;
 }
@@ -163,7 +168,8 @@ static inline int qbh_physical_plan_is_streaming(uint32_t plan) {
            plan == QBH_PHYSICAL_PLAN_STREAMING_CAP2_DMA_BATCH2 ||
            plan == QBH_PHYSICAL_PLAN_STREAMING_CAP2_E7_DMA_CHAIN4 ||
            plan == QBH_PHYSICAL_PLAN_STREAMING_BITWISE_E7_DMA_CHAIN4 ||
-           plan == QBH_PHYSICAL_PLAN_STREAMING_DIRECT_E7_DMA_CHAIN4;
+           plan == QBH_PHYSICAL_PLAN_STREAMING_DIRECT_E7_DMA_CHAIN4 ||
+           plan == QBH_PHYSICAL_PLAN_STREAMING_LOCKFREE_E7_DMA_CHAIN4;
 }
 
 static inline int qbh_physical_plan_is_capped_streaming(uint32_t plan) {
@@ -177,6 +183,10 @@ static inline int qbh_physical_plan_uses_bitwise_unpack(uint32_t plan) {
 
 static inline int qbh_physical_plan_uses_direct_dispatch(uint32_t plan) {
     return plan == QBH_PHYSICAL_PLAN_STREAMING_DIRECT_E7_DMA_CHAIN4;
+}
+
+static inline int qbh_physical_plan_uses_lockfree_dispatch(uint32_t plan) {
+    return plan == QBH_PHYSICAL_PLAN_STREAMING_LOCKFREE_E7_DMA_CHAIN4;
 }
 
 enum qbh_probe_pattern {
