@@ -608,23 +608,6 @@ static int qbh_hmx_submit(struct qbh_block_hmx_worker *worker,
     return worker->command_status == AEE_SUCCESS ? 0 : -1;
 }
 
-static void qbh_hmx_start_fp16(
-    struct qbh_block_hmx_worker *worker, const void *activation,
-    const void *weight, const void *scale, void *output,
-    uint32_t m_tiles, uint32_t k_tiles) {
-    worker->kind = QBH_BLOCK_HMX_FP16;
-    worker->activation = activation;
-    worker->weight = weight;
-    worker->scale_or_bias = scale;
-    worker->output = output;
-    worker->m_tiles = m_tiles;
-    worker->k_tiles = k_tiles;
-    worker->n_tiles = 1U;
-    worker->command_status = AEE_EFAILED;
-    asm volatile("barrier" ::: "memory");
-    (void)qurt_sem_up(&worker->command_ready);
-}
-
 static void qbh_hmx_start_fp16_tile_scales(
     struct qbh_block_hmx_worker *worker, const void *activation,
     const void *weight, const void *scale_blocks, void *output,
