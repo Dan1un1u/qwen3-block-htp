@@ -780,14 +780,15 @@ experiments:
       - packed_w4_fine_grain_overlap
       - packed_w4_phased_group4
       - expanded_s8_control
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: invalid
+    local_gate: fail
     adoption_status: pending
     evidence_profile: interference-aware-w4-phase-pipeline
     source_branches:
       - codex/exp-0018-interference-aware-pipeline
-    source_commits: []
+    source_commits:
+      - f428e2ca7de0b181077fa7ff38e85950760206ee
     record: docs/experiments/EXP-0018.md
     decided_by: user
     decided_on: '2026-08-27'
@@ -796,7 +797,25 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0018-interference-aware-pipeline
       started_on: '2026-08-27'
-      completed_on: null
+      completed_on: '2026-08-27'
     evidence:
       formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0018'
       retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0018'
+      formal_matrix_completed: false
+      inspection_result: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0018\\20260827T090902Z_f428e2c_inspection\\inspection_summary.json'
+      paired_gate_up_diagnostic_exact: true
+      paired_gate_up_hvx_hmx_overlap_observed: 0
+      paired_gate_up_hvx_parallel_overlap_observed: 1
+      paired_gate_up_repeat10_host_wall_ns: 9295469
+      parent_repeat10_host_wall_ns_median: 6129244.5
+      paired_gate_up_repeat10_regression_percent: 51.66
+      paired_gate_up_repeat10_hmx_compute_ticks: 14142
+      parent_repeat10_hmx_compute_ticks_median: 79969.0
+      paired_gate_up_repeat10_hmx_ready_wait_ticks: 139450
+      paired_gate_up_repeat10_expanded_slot_wait_ticks: 69610
+      down_diagnostic_fastrpc_stall: true
+      forced_fastrpc_teardown: false
+      automatic_retry: false
+      safe_source_disables_down_two_chunk_phase: true
+      device_restart_required: true
+      performance_characterization: hmx_issue_recovers_but_phase_barriers_regress_total_latency_and_down_stalls
