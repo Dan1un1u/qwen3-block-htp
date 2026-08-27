@@ -761,6 +761,38 @@ static void qbh_w4f16_pool_wait(
     asm volatile("barrier" ::: "memory");
 }
 
+static void qbh_w4f16_expand_with_main(
+    struct qbh_block_header *header,
+    struct qbh_block_w4f16_pool *pool,
+    const uint8_t *compressed_weight, const float *channel_scale,
+    uint8_t *expanded_weight, volatile uint32_t *ready_generations,
+    uint32_t expected_generation, uint32_t k_tiles) {
+    uint32_t total_regions = k_tiles / header->w4f16_region_tiles;
+    uint32_t main_regions =
+        (total_regions + pool->worker_count) /
+        (pool->worker_count + 1U);
+    uint32_t main_tiles = main_regions * header->w4f16_region_tiles;
+    uint32_t pool_regions = total_regions - main_regions;
+    uint64_t main_start;
+
+    qbh_w4f16_pool_start(
+        pool,
+        compressed_weight +
+            (size_t)main_tiles * QBH_W4_PACKED_TILE_BYTES,
+        channel_scale,
+        expanded_weight +
+            (size_t)main_tiles * QBH_HMX_FP16_TILE_BYTES,
+        ready_generations, expected_generation, pool_regions,
+        header->w4f16_region_tiles);
+    main_start = HAP_perf_get_qtimer_count();
+    qbh_unpack_w4_to_f16_hvx(
+        compressed_weight, expanded_weight, main_tiles);
+    header->w4f16_expand_work_ticks +=
+        HAP_perf_get_qtimer_count() - main_start;
+    header->w4f16_expand_region_count += main_regions;
+    qbh_w4f16_pool_wait(pool);
+}
+
 static int qbh_w4f16_pool_destroy(
     struct qbh_block_w4f16_pool *pool) {
     int result = 0;
@@ -914,7 +946,6 @@ static int qbh_run_w4f16_projection(
     uint32_t k_tiles = desc->k / QBH_HMX_FP16_COLS;
     uint32_t n_tiles = desc->n / QBH_HMX_FP16_COLS;
     uint32_t compressed_bytes = k_tiles * QBH_W4_PACKED_TILE_BYTES;
-    uint32_t region_count = k_tiles / header->w4f16_region_tiles;
     uint8_t *compressed_slots[2] = {
         buffers->compressed_weight, buffers->compressed_weight_alt};
     uint8_t *scale_slots[2] = {
@@ -947,11 +978,10 @@ static int qbh_run_w4f16_projection(
     header->weight_dma_descriptor_count += 2U;
 
     phase_start = HAP_perf_get_qtimer_count();
-    qbh_w4f16_pool_start(
-        pool, compressed_slots[0], (const float *)scale_slots[0],
-        expanded_slots[0], ready, 1U, region_count,
-        header->w4f16_region_tiles);
-    qbh_w4f16_pool_wait(pool);
+    qbh_w4f16_expand_with_main(
+        header, pool, compressed_slots[0],
+        (const float *)scale_slots[0], expanded_slots[0], ready,
+        1U, k_tiles);
     header->w4f16_expand_ticks +=
         HAP_perf_get_qtimer_count() - phase_start;
     if (desc == &header->projections[0]) {
@@ -1047,12 +1077,11 @@ static int qbh_run_w4f16_projection(
 
             {
                 uint64_t expand_start = HAP_perf_get_qtimer_count();
-                qbh_w4f16_pool_start(
-                    pool, compressed_slots[next_slot],
+                qbh_w4f16_expand_with_main(
+                    header, pool, compressed_slots[next_slot],
                     (const float *)scale_slots[next_slot],
-                    expanded_slots[next_slot], ready, next_tile + 1U,
-                    region_count, header->w4f16_region_tiles);
-                qbh_w4f16_pool_wait(pool);
+                    expanded_slots[next_slot], ready,
+                    next_tile + 1U, k_tiles);
                 header->w4f16_expand_ticks +=
                     HAP_perf_get_qtimer_count() - expand_start;
             }
