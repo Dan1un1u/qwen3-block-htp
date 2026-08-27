@@ -442,6 +442,27 @@ static int parse_output_assembly(const char *text, uint32_t *mode) {
     return -1;
 }
 
+static const char *resource_lifetime_name(uint32_t mode) {
+    return mode == QBH_RESOURCE_LIFETIME_PREPARED_SESSION
+               ? "prepared_session"
+               : "transient_resources";
+}
+
+static int parse_resource_lifetime(const char *text, uint32_t *mode) {
+    if (strcmp(text, "transient_resources") == 0 ||
+        strcmp(text, "transient") == 0) {
+        *mode = QBH_RESOURCE_LIFETIME_TRANSIENT;
+        return 0;
+    }
+    if (strcmp(text, "prepared_session") == 0 ||
+        strcmp(text, "persistent_resources") == 0 ||
+        strcmp(text, "persistent") == 0) {
+        *mode = QBH_RESOURCE_LIFETIME_PREPARED_SESSION;
+        return 0;
+    }
+    return -1;
+}
+
 static const char *pattern_name(uint32_t pattern) {
     switch (pattern) {
         case QBH_PATTERN_IDENTITY:
@@ -814,7 +835,7 @@ static uint32_t validate_output(
 }
 
 int main(int argc, char **argv) {
-    struct qbh_session session = {(remote_handle64)-1};
+    struct qbh_session session = {(remote_handle64)-1, 0};
     struct qbh_projection_layout layout;
     struct qbh_probe_header *header = NULL;
     uint8_t *shared = NULL;
@@ -835,18 +856,35 @@ int main(int argc, char **argv) {
         QBH_W4_DEFAULT_COMPRESSED_SLOT_COUNT;
     uint32_t chunk_tiles = QBH_W4_DEFAULT_CHUNK_TILES;
     uint32_t output_assembly_mode = QBH_OUTPUT_ASSEMBLY_SCALAR;
+    uint32_t resource_lifetime_mode =
+        QBH_RESOURCE_LIFETIME_TRANSIENT;
     size_t activation_offset;
     size_t weight_offset;
     size_t output_offset;
     size_t total_bytes;
     uint64_t host_start;
     uint64_t host_end;
+    uint64_t session_open_start;
+    uint64_t session_open_end;
+    uint64_t prepare_start = 0;
+    uint64_t prepare_end = 0;
+    uint64_t warmup_start;
+    uint64_t warmup_end;
+    uint64_t release_start = 0;
+    uint64_t release_end = 0;
+    uint64_t session_close_start;
+    uint64_t session_close_end;
     uint64_t reference_start;
     uint64_t reference_end;
     uint64_t reference_checksum;
     uint64_t expanded_carrier_checksum;
     uint64_t packed_w4_checksum;
     uint64_t hmx_carrier_checksum;
+    uint64_t warmup_output_checksum;
+    uint64_t measured_output_checksum;
+    uint32_t warmup_resource_vtcm_address;
+    uint32_t warmup_resource_hmx_context_id;
+    uint32_t warmup_prepared_session_run_index;
     uint8_t reference_min;
     uint8_t reference_max;
     uint32_t mismatches;
@@ -860,6 +898,10 @@ int main(int argc, char **argv) {
     int mapped = 0;
     int result = EXIT_FAILURE;
     int rpc_result;
+    int warmup_rpc_result;
+    int prepare_result = AEE_SUCCESS;
+    int release_result = AEE_SUCCESS;
+    int session_close_result = AEE_SUCCESS;
 
     if (argc > 1 && parse_storage(argv[1], &storage) != 0) {
         fprintf(stderr, "invalid weight storage: %s\n", argv[1]);
@@ -890,7 +932,12 @@ int main(int argc, char **argv) {
         fprintf(stderr, "invalid output assembly mode: %s\n", argv[6]);
         return EXIT_FAILURE;
     }
-    if (argc > 7) {
+    if (argc > 7 &&
+        parse_resource_lifetime(argv[7], &resource_lifetime_mode) != 0) {
+        fprintf(stderr, "invalid resource lifetime mode: %s\n", argv[7]);
+        return EXIT_FAILURE;
+    }
+    if (argc > 8) {
         fprintf(stderr,
                 "usage: %s [packed_w4_hvx_prescale|"
                 "packed_w4_hmx_postscale|expanded_s8_control] "
@@ -916,7 +963,8 @@ int main(int argc, char **argv) {
                 "slots8e7_chunk96_dma_batch4|"
                 "slots8e7_chunk64_dma_chain4|"
                 "slots8e7_chunk96_dma_chain4] "
-                "[scalar_memcpy|linked_2d_dma]\n",
+                "[scalar_memcpy|linked_2d_dma] "
+                "[transient_resources|prepared_session]\n",
                 argv[0]);
         return EXIT_FAILURE;
     }
@@ -984,6 +1032,7 @@ int main(int argc, char **argv) {
     header->expanded_chunk_slot_count = layout.expanded_slot_count;
     header->chunk_tiles = chunk_tiles;
     header->output_assembly_mode = output_assembly_mode;
+    header->resource_lifetime_mode = resource_lifetime_mode;
     header->activation_offset = (uint32_t)activation_offset;
     header->weight_offset = (uint32_t)weight_offset;
     header->output_offset = (uint32_t)output_offset;
@@ -1015,7 +1064,9 @@ int main(int argc, char **argv) {
             : expanded_carrier_checksum;
     memset(output, 0xa5, layout.output_bytes);
 
+    session_open_start = monotonic_ns();
     rpc_result = qbh_session_open(&session);
+    session_open_end = monotonic_ns();
     if (rpc_result != AEE_SUCCESS) {
         goto cleanup;
     }
@@ -1027,6 +1078,38 @@ int main(int argc, char **argv) {
         goto cleanup;
     }
     mapped = 1;
+
+    if (resource_lifetime_mode ==
+        QBH_RESOURCE_LIFETIME_PREPARED_SESSION) {
+        prepare_start = monotonic_ns();
+        prepare_result = qbh_session_prepare(&session);
+        prepare_end = monotonic_ns();
+        if (prepare_result != AEE_SUCCESS) {
+            fprintf(stderr, "qwen3_probe_prepare failed: 0x%08x\n",
+                    (unsigned int)prepare_result);
+            goto cleanup;
+        }
+    }
+
+    warmup_start = monotonic_ns();
+    warmup_rpc_result = qwen3_probe_run(
+        session.handle, shared_fd, (uint32_t)total_bytes);
+    warmup_end = monotonic_ns();
+    if (warmup_rpc_result != AEE_SUCCESS) {
+        fprintf(stderr,
+                "warm-up qwen3_probe_run failed: 0x%08x dsp_status=%d "
+                "hmx_resource=%d hmx_lock=%d dma=%d sync=%d\n",
+                (unsigned int)warmup_rpc_result, header->dsp_status,
+                header->hmx_resource_status, header->hmx_lock_status,
+                header->dma_status, header->sync_status);
+        goto cleanup;
+    }
+    warmup_output_checksum = carrier_checksum(
+        (const int8_t *)output, layout.output_bytes);
+    warmup_resource_vtcm_address = header->resource_vtcm_address;
+    warmup_resource_hmx_context_id = header->resource_hmx_context_id;
+    warmup_prepared_session_run_index =
+        header->prepared_session_run_index;
 
     host_start = monotonic_ns();
     rpc_result = qwen3_probe_run(session.handle, shared_fd,
@@ -1041,6 +1124,29 @@ int main(int argc, char **argv) {
                 header->dma_status, header->sync_status);
         goto cleanup;
     }
+    measured_output_checksum = carrier_checksum(
+        (const int8_t *)output, layout.output_bytes);
+
+    if (resource_lifetime_mode ==
+        QBH_RESOURCE_LIFETIME_PREPARED_SESSION) {
+        release_start = monotonic_ns();
+        release_result = qbh_session_release(&session);
+        release_end = monotonic_ns();
+        if (release_result != AEE_SUCCESS) {
+            fprintf(stderr, "qwen3_probe_release failed: 0x%08x\n",
+                    (unsigned int)release_result);
+            goto cleanup;
+        }
+    }
+
+    session_close_start = monotonic_ns();
+    session_close_result = qbh_session_close(&session);
+    session_close_end = monotonic_ns();
+    if (session_close_result != AEE_SUCCESS) {
+        fprintf(stderr, "qwen3_probe_close failed: 0x%08x\n",
+                (unsigned int)session_close_result);
+        goto cleanup;
+    }
 
     reference_start = monotonic_ns();
     mismatches = validate_output(
@@ -1049,7 +1155,7 @@ int main(int argc, char **argv) {
         &reference_min, &reference_max, &reference_checksum);
     reference_end = monotonic_ns();
 
-    printf("{\"experiment\":\"EXP-0014\","
+    printf("{\"experiment\":\"EXP-0015\","
            "\"weight_storage\":\"%s\","
            "\"physical_plan\":\"%s\","
            "\"requested_hvx_workers\":%" PRIu32 ","
@@ -1057,6 +1163,7 @@ int main(int argc, char **argv) {
            "\"expanded_chunk_slot_count\":%" PRIu32 ","
            "\"chunk_tiles\":%" PRIu32 ","
            "\"output_assembly_mode\":\"%s\","
+           "\"resource_lifetime_mode\":\"%s\","
            "\"dma_bundle_batch\":%" PRIu32 ","
            "\"projection\":\"%s\",\"pattern\":\"%s\","
            "\"repeat_count\":%" PRIu32 ","
@@ -1067,6 +1174,20 @@ int main(int argc, char **argv) {
            "\"expanded_carrier_checksum\":%" PRIu64 ","
            "\"packed_w4_checksum\":%" PRIu64 ","
            "\"hmx_carrier_checksum\":%" PRIu64 ","
+           "\"warmup_output_checksum\":%" PRIu64 ","
+           "\"measured_output_checksum\":%" PRIu64 ","
+           "\"warmup_resource_vtcm_address\":%" PRIu32 ","
+           "\"warmup_resource_hmx_context_id\":%" PRIu32 ","
+           "\"warmup_prepared_session_run_index\":%" PRIu32 ","
+           "\"session_open_wall_ns\":%" PRIu64 ","
+           "\"prepare_result\":%d,"
+           "\"prepare_wall_ns\":%" PRIu64 ","
+           "\"warmup_rpc_result\":%d,"
+           "\"warmup_host_wall_ns\":%" PRIu64 ","
+           "\"release_result\":%d,"
+           "\"release_wall_ns\":%" PRIu64 ","
+           "\"session_close_result\":%d,"
+           "\"session_close_wall_ns\":%" PRIu64 ","
            "\"reference_wall_ns\":%" PRIu64 ","
            "\"host_wall_ns\":%" PRIu64 ","
            "\"projection_m\":%" PRIu32 ","
@@ -1122,6 +1243,11 @@ int main(int argc, char **argv) {
            "\"output_dma_descriptor_completion_count\":%" PRIu32 ","
            "\"output_dma_descriptor_timeout_count\":%" PRIu32 ","
            "\"output_dma_status\":%d,"
+           "\"resource_setup_in_run\":%" PRIu32 ","
+           "\"resource_release_in_run\":%" PRIu32 ","
+           "\"prepared_session_run_index\":%" PRIu32 ","
+           "\"resource_vtcm_address\":%" PRIu32 ","
+           "\"resource_hmx_context_id\":%" PRIu32 ","
            "\"weight_slot_reuse_count\":%" PRIu32 ","
            "\"expanded_chunk_slot_reuse_count\":%" PRIu32 ","
            "\"chunks_per_output\":%" PRIu32 ","
@@ -1147,13 +1273,24 @@ int main(int argc, char **argv) {
            requested_hvx_workers, compressed_slot_count,
            header->expanded_chunk_slot_count, chunk_tiles,
            output_assembly_name(output_assembly_mode),
+           resource_lifetime_name(resource_lifetime_mode),
            qbh_physical_plan_dma_bundle_batch(physical_plan),
            projection_name(variant),
            pattern_name(pattern), repeats, rpc_result, header->dsp_status,
            mismatches, (unsigned int)reference_min,
            (unsigned int)reference_max, reference_checksum,
            expanded_carrier_checksum, packed_w4_checksum,
-           hmx_carrier_checksum, reference_end - reference_start,
+           hmx_carrier_checksum, warmup_output_checksum,
+           measured_output_checksum, warmup_resource_vtcm_address,
+           warmup_resource_hmx_context_id,
+           warmup_prepared_session_run_index,
+           session_open_end - session_open_start,
+           prepare_result, prepare_end - prepare_start,
+           warmup_rpc_result, warmup_end - warmup_start,
+           release_result, release_end - release_start,
+           session_close_result,
+           session_close_end - session_close_start,
+           reference_end - reference_start,
            host_end - host_start, header->projection_m,
            header->projection_k, header->projection_n,
            header->k_tile_count, header->n_tile_count,
@@ -1193,6 +1330,11 @@ int main(int argc, char **argv) {
            header->output_dma_descriptor_completion_count,
            header->output_dma_descriptor_timeout_count,
            header->output_dma_status,
+           header->resource_setup_in_run,
+           header->resource_release_in_run,
+           header->prepared_session_run_index,
+           header->resource_vtcm_address,
+           header->resource_hmx_context_id,
            header->weight_slot_reuse_count,
            header->expanded_chunk_slot_reuse_count,
            header->chunks_per_output, header->chunk_expand_count,
@@ -1241,6 +1383,8 @@ int main(int argc, char **argv) {
                                       : 1U)
                            : 0U;
     if (header->dsp_status == QBH_PROBE_STATUS_OK && mismatches == 0 &&
+        warmup_rpc_result == AEE_SUCCESS &&
+        warmup_output_checksum == measured_output_checksum &&
         header->projection_m == layout.m &&
         header->projection_k == layout.k &&
         header->projection_n == layout.n &&
@@ -1249,6 +1393,7 @@ int main(int argc, char **argv) {
         header->compressed_slot_count == layout.compressed_slot_count &&
         header->expanded_chunk_slot_count == layout.expanded_slot_count &&
         header->output_assembly_mode == output_assembly_mode &&
+        header->resource_lifetime_mode == resource_lifetime_mode &&
         header->chunk_tiles == layout.chunk_tiles &&
         header->stored_weight_bundle_bytes ==
             layout.stored_weight_bundle_bytes &&
@@ -1316,6 +1461,31 @@ int main(int argc, char **argv) {
                  : 0U) &&
         header->output_dma_descriptor_timeout_count == 0U &&
         header->output_dma_status == 0 &&
+        header->resource_setup_in_run ==
+            (resource_lifetime_mode == QBH_RESOURCE_LIFETIME_TRANSIENT
+                 ? 1U
+                 : 0U) &&
+        header->resource_release_in_run ==
+            (resource_lifetime_mode == QBH_RESOURCE_LIFETIME_TRANSIENT
+                 ? 1U
+                 : 0U) &&
+        header->prepared_session_run_index ==
+            (resource_lifetime_mode ==
+                     QBH_RESOURCE_LIFETIME_PREPARED_SESSION
+                 ? 2U
+                 : 0U) &&
+        warmup_prepared_session_run_index ==
+            (resource_lifetime_mode ==
+                     QBH_RESOURCE_LIFETIME_PREPARED_SESSION
+                 ? 1U
+                 : 0U) &&
+        header->resource_vtcm_address != 0U &&
+        header->resource_hmx_context_id != 0U &&
+        (resource_lifetime_mode == QBH_RESOURCE_LIFETIME_TRANSIENT ||
+         (warmup_resource_vtcm_address ==
+              header->resource_vtcm_address &&
+          warmup_resource_hmx_context_id ==
+              header->resource_hmx_context_id)) &&
         header->weight_slot_reuse_count == expected_reuses &&
         header->chunks_per_output == layout.chunks_per_output &&
         header->chunk_expand_count ==
@@ -1349,7 +1519,7 @@ cleanup:
             result = EXIT_FAILURE;
         }
     }
-    qbh_session_close(&session);
+    (void)qbh_session_close(&session);
     if (shared != NULL) {
         rpcmem_free(shared);
     }

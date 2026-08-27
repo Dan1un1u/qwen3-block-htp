@@ -16,6 +16,7 @@ int qbh_session_open(struct qbh_session *session) {
         return AEE_EBADPARM;
     }
     session->handle = (remote_handle64)-1;
+    session->prepared = 0;
 
     unsigned_control.domain = CDSP_DOMAIN_ID;
     unsigned_control.enable = 1;
@@ -56,9 +57,49 @@ int qbh_session_open(struct qbh_session *session) {
     return AEE_SUCCESS;
 }
 
-void qbh_session_close(struct qbh_session *session) {
-    if (session != NULL && session->handle != (remote_handle64)-1) {
-        (void)qwen3_probe_close(session->handle);
-        session->handle = (remote_handle64)-1;
+int qbh_session_prepare(struct qbh_session *session) {
+    int result;
+    if (session == NULL || session->handle == (remote_handle64)-1) {
+        return AEE_EBADPARM;
     }
+    result = qwen3_probe_prepare(session->handle);
+    if (result == AEE_SUCCESS) {
+        session->prepared = 1;
+    }
+    return result;
+}
+
+int qbh_session_release(struct qbh_session *session) {
+    int result;
+    if (session == NULL || session->handle == (remote_handle64)-1) {
+        return AEE_EBADPARM;
+    }
+    if (!session->prepared) {
+        return AEE_SUCCESS;
+    }
+    result = qwen3_probe_release(session->handle);
+    if (result == AEE_SUCCESS) {
+        session->prepared = 0;
+    }
+    return result;
+}
+
+int qbh_session_close(struct qbh_session *session) {
+    int result = AEE_SUCCESS;
+    int close_result;
+    if (session == NULL) {
+        return AEE_EBADPARM;
+    }
+    if (session->handle != (remote_handle64)-1) {
+        if (session->prepared) {
+            result = qbh_session_release(session);
+        }
+        close_result = qwen3_probe_close(session->handle);
+        if (result == AEE_SUCCESS) {
+            result = close_result;
+        }
+        session->handle = (remote_handle64)-1;
+        session->prepared = 0;
+    }
+    return result;
 }

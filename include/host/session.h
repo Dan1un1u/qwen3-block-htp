@@ -5,9 +5,12 @@
 
 struct qbh_session {
     remote_handle64 handle;
+    int prepared;
 };
 
 int qbh_session_open(struct qbh_session *session);
-void qbh_session_close(struct qbh_session *session);
+int qbh_session_prepare(struct qbh_session *session);
+int qbh_session_release(struct qbh_session *session);
+int qbh_session_close(struct qbh_session *session);
 
 #endif

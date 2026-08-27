@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define QBH_PROBE_MAGIC UINT32_C(0x51424850)
-#define QBH_PROBE_ABI_VERSION UINT32_C(15)
+#define QBH_PROBE_ABI_VERSION UINT32_C(16)
 #define QBH_PROBE_ALIGNMENT UINT32_C(4096)
 
 #define QBH_HMX_SPATIAL UINT32_C(64)
@@ -137,6 +137,11 @@ enum qbh_output_assembly_mode {
     QBH_OUTPUT_ASSEMBLY_LINKED_2D_DMA = 2,
 };
 
+enum qbh_resource_lifetime_mode {
+    QBH_RESOURCE_LIFETIME_TRANSIENT = 1,
+    QBH_RESOURCE_LIFETIME_PREPARED_SESSION = 2,
+};
+
 enum qbh_probe_status {
     QBH_PROBE_STATUS_HOST_INITIALIZED = 1,
     QBH_PROBE_STATUS_DSP_RUNNING = 2,
@@ -177,6 +182,7 @@ struct qbh_probe_header {
     uint32_t expanded_chunk_slot_count;
     uint32_t chunk_tiles;
     uint32_t output_assembly_mode;
+    uint32_t resource_lifetime_mode;
     uint32_t activation_offset;
     uint32_t weight_offset;
     uint32_t output_offset;
@@ -230,6 +236,11 @@ struct qbh_probe_header {
     uint32_t output_dma_descriptor_completion_count;
     uint32_t output_dma_descriptor_timeout_count;
     int32_t output_dma_status;
+    uint32_t resource_setup_in_run;
+    uint32_t resource_release_in_run;
+    uint32_t prepared_session_run_index;
+    uint32_t resource_vtcm_address;
+    uint32_t resource_hmx_context_id;
     uint32_t weight_slot_reuse_count;
     uint32_t expanded_chunk_slot_reuse_count;
     uint32_t chunks_per_output;
@@ -271,7 +282,7 @@ struct qbh_probe_header {
     uint64_t hvx_worker_ticks[QBH_MAX_HVX_WORKERS];
 };
 
-_Static_assert(sizeof(struct qbh_probe_header) == 560,
+_Static_assert(sizeof(struct qbh_probe_header) == 584,
                "probe header ABI changed");
 
 #endif

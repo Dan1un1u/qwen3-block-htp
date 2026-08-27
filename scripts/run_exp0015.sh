@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+adb_exe="${ADB_EXE:-/mnt/c/adb/adb.exe}"
+remote_root="${REMOTE_ROOT:-/data/local/tmp/qwen3-block-htp/exp0015}"
+storage="${1:-packed_w4_hmx_postscale}"
+projection="${2:-gate_up}"
+pattern="${3:-identity}"
+repeat_count="${4:-1}"
+physical_plan="${5:-slots8e7_chunk64_dma_chain4}"
+output_assembly="${6:-linked_2d_dma}"
+resource_lifetime="${7:-prepared_session}"
+
+host_executable="${project_root}/android_ReleaseG_aarch64/ship/qwen3_probe_cli"
+host_stub="${project_root}/android_ReleaseG_aarch64/ship/libqwen3_probe.so"
+dsp_skel="${project_root}/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so"
+
+for artifact in "${host_executable}" "${host_stub}" "${dsp_skel}"; do
+    if [[ ! -f "${artifact}" ]]; then
+        printf 'missing build artifact: %s\n' "${artifact}" >&2
+        exit 1
+    fi
+done
+
+"${adb_exe}" get-state >/dev/null
+if [[ "${QBH_SKIP_DEPLOY:-0}" != "1" ]]; then
+    "${adb_exe}" shell "mkdir -p ${remote_root}"
+    "${adb_exe}" push "$(wslpath -w "${host_executable}")" \
+        "${remote_root}/qwen3_probe_cli" >/dev/null 2>&1
+    "${adb_exe}" push "$(wslpath -w "${host_stub}")" \
+        "${remote_root}/libqwen3_probe.so" >/dev/null 2>&1
+    "${adb_exe}" push "$(wslpath -w "${dsp_skel}")" \
+        "${remote_root}/libqwen3_probe_skel.so" >/dev/null 2>&1
+    "${adb_exe}" shell \
+        "chmod 755 ${remote_root}/qwen3_probe_cli ${remote_root}/libqwen3_probe.so ${remote_root}/libqwen3_probe_skel.so"
+
+    if [[ "${QBH_DIAGNOSTIC_FARF:-0}" == "1" ]]; then
+        "${adb_exe}" shell "echo 0x1f > ${remote_root}/qwen3_probe_cli.farf"
+    else
+        "${adb_exe}" shell "rm -f ${remote_root}/qwen3_probe_cli.farf"
+    fi
+fi
+
+remote_log="${remote_root}/run_${storage}_${projection}_${pattern}_${repeat_count}_${physical_plan}_${output_assembly}_${resource_lifetime}.log"
+if [[ "${QBH_DETACH:-0}" == "1" ]]; then
+    "${adb_exe}" shell "rm -f ${remote_log}"
+    "${adb_exe}" shell \
+        "cd ${remote_root} && (LD_LIBRARY_PATH=${remote_root} DSP_LIBRARY_PATH=${remote_root} ADSP_LIBRARY_PATH=${remote_root} ./qwen3_probe_cli ${storage} ${projection} ${pattern} ${repeat_count} ${physical_plan} ${output_assembly} ${resource_lifetime} > ${remote_log} 2>&1 < /dev/null &)"
+    printf 'DETACHED_LOG=%s\n' "${remote_log}"
+    exit 0
+fi
+
+"${adb_exe}" shell \
+    "cd ${remote_root} && LD_LIBRARY_PATH=${remote_root} DSP_LIBRARY_PATH=${remote_root} ADSP_LIBRARY_PATH=${remote_root} ./qwen3_probe_cli ${storage} ${projection} ${pattern} ${repeat_count} ${physical_plan} ${output_assembly} ${resource_lifetime}"

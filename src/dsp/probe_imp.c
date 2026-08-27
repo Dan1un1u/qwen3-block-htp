@@ -22,7 +22,19 @@
 #define QBH_HMX_WORKER_STACK_BYTES UINT32_C(16384)
 #define QBH_DMA_DESCRIPTOR_TIMEOUT_TICKS UINT64_C(1920000)
 
-static uint32_t probe_session_token;
+struct qbh_probe_session {
+    uint32_t open;
+    uint32_t prepared;
+    uint32_t prepared_run_count;
+    uint32_t vtcm_context_id;
+    uint32_t hmx_context_id;
+    uint8_t *vtcm;
+    int power_context;
+    int dcvs_powered;
+    int hmx_powered;
+};
+
+static struct qbh_probe_session probe_session;
 static uint8_t hmx_worker_stack[QBH_HMX_WORKER_STACK_BYTES]
     __attribute__((aligned(128)));
 static struct qbh_dma_aligned_desc_2d
@@ -52,18 +64,180 @@ struct qbh_projection_worker_job {
     uint64_t ready_wait_ticks;
 };
 
+static struct qbh_probe_session *qbh_session_from_handle(
+    remote_handle64 handle) {
+    return handle == (remote_handle64)&probe_session &&
+                   probe_session.open != 0U
+               ? &probe_session
+               : NULL;
+}
+
+static AEEResult qbh_release_prepared_resources(
+    struct qbh_probe_session *session) {
+    HAP_power_request_t request;
+    AEEResult result = AEE_SUCCESS;
+    AEEResult current;
+
+    if (session == NULL) {
+        return AEE_EBADPARM;
+    }
+    if (session->hmx_context_id != 0U) {
+        current = HAP_compute_res_release(session->hmx_context_id);
+        if (result == AEE_SUCCESS && current != AEE_SUCCESS) {
+            result = current;
+        }
+        session->hmx_context_id = 0U;
+    }
+    if (session->vtcm_context_id != 0U) {
+        current = HAP_compute_res_release(session->vtcm_context_id);
+        if (result == AEE_SUCCESS && current != AEE_SUCCESS) {
+            result = current;
+        }
+        session->vtcm_context_id = 0U;
+        session->vtcm = NULL;
+    }
+    if (session->hmx_powered) {
+        memset(&request, 0, sizeof(request));
+        request.type = HAP_power_set_HMX;
+        request.hmx.power_up = 0;
+        current = HAP_power_set(&session->power_context, &request);
+        if (result == AEE_SUCCESS && current != AEE_SUCCESS) {
+            result = current;
+        }
+        session->hmx_powered = 0;
+    }
+    if (session->dcvs_powered) {
+        HAP_power_set_dcvs_v3_init(&request);
+        current = HAP_power_set(&session->power_context, &request);
+        if (result == AEE_SUCCESS && current != AEE_SUCCESS) {
+            result = current;
+        }
+        session->dcvs_powered = 0;
+    }
+    session->power_context = 0;
+    session->prepared = 0U;
+    session->prepared_run_count = 0U;
+    return result;
+}
+
 AEEResult qwen3_probe_open(const char *uri, remote_handle64 *handle) {
     (void)uri;
     if (handle == NULL) {
         return AEE_EBADPARM;
     }
-    *handle = (remote_handle64)&probe_session_token;
+    if (probe_session.open != 0U) {
+        return AEE_EFAILED;
+    }
+    memset(&probe_session, 0, sizeof(probe_session));
+    probe_session.open = 1U;
+    *handle = (remote_handle64)&probe_session;
     return AEE_SUCCESS;
 }
 
 AEEResult qwen3_probe_close(remote_handle64 handle) {
-    (void)handle;
+    struct qbh_probe_session *session = qbh_session_from_handle(handle);
+    AEEResult result;
+    if (session == NULL) {
+        return AEE_EBADPARM;
+    }
+    result = qbh_release_prepared_resources(session);
+    memset(session, 0, sizeof(*session));
+    return result;
+}
+
+AEEResult qwen3_probe_prepare(remote_handle64 handle) {
+    struct qbh_probe_session *session = qbh_session_from_handle(handle);
+    compute_res_attr_t vtcm_attributes;
+    compute_res_attr_t hmx_attributes;
+    HAP_power_request_t request;
+    AEEResult result;
+
+    if (session == NULL) {
+        return AEE_EBADPARM;
+    }
+    if (session->prepared != 0U) {
+        return AEE_SUCCESS;
+    }
+
+    memset(&request, 0, sizeof(request));
+    request.type = HAP_power_set_DCVS_v3;
+    request.dcvs_v3.dcvs_enable = 1;
+    request.dcvs_v3.dcvs_option = HAP_DCVS_V2_PERFORMANCE_MODE;
+    request.dcvs_v3.set_latency = 1;
+    request.dcvs_v3.latency = 100;
+    request.dcvs_v3.set_core_params = 1;
+    request.dcvs_v3.core_params.min_corner = HAP_DCVS_VCORNER_NOM;
+    request.dcvs_v3.core_params.max_corner = HAP_DCVS_VCORNER_TURBO_L3;
+    request.dcvs_v3.core_params.target_corner =
+        HAP_DCVS_VCORNER_TURBO_L3;
+    request.dcvs_v3.set_bus_params = 1;
+    request.dcvs_v3.bus_params.min_corner = HAP_DCVS_VCORNER_NOM;
+    request.dcvs_v3.bus_params.max_corner = HAP_DCVS_VCORNER_TURBO_L3;
+    request.dcvs_v3.bus_params.target_corner = HAP_DCVS_VCORNER_TURBO_L3;
+    result = HAP_power_set(&session->power_context, &request);
+    if (result != AEE_SUCCESS) {
+        goto failure;
+    }
+    session->dcvs_powered = 1;
+
+    memset(&request, 0, sizeof(request));
+    request.type = HAP_power_set_HMX;
+    request.hmx.power_up = 1;
+    result = HAP_power_set(&session->power_context, &request);
+    if (result != AEE_SUCCESS) {
+        goto failure;
+    }
+    session->hmx_powered = 1;
+
+    result = HAP_compute_res_attr_init(&vtcm_attributes);
+    if (result != AEE_SUCCESS ||
+        HAP_compute_res_attr_set_serialize(&vtcm_attributes, 1) !=
+            AEE_SUCCESS ||
+        HAP_compute_res_attr_set_vtcm_param(&vtcm_attributes,
+                                            QBH_W4U8_VTCM_BYTES, 1) !=
+            AEE_SUCCESS) {
+        result = AEE_EFAILED;
+        goto failure;
+    }
+    session->vtcm_context_id =
+        HAP_compute_res_acquire(&vtcm_attributes, 100000);
+    if (session->vtcm_context_id == 0U) {
+        result = AEE_ERESOURCENOTFOUND;
+        goto failure;
+    }
+    session->vtcm = (uint8_t *)HAP_compute_res_attr_get_vtcm_ptr(
+        &vtcm_attributes);
+    if (session->vtcm == NULL) {
+        result = AEE_EFAILED;
+        goto failure;
+    }
+
+    result = HAP_compute_res_attr_init(&hmx_attributes);
+    if (result != AEE_SUCCESS ||
+        HAP_compute_res_attr_set_hmx_param(&hmx_attributes, 1) !=
+            AEE_SUCCESS) {
+        result = AEE_EFAILED;
+        goto failure;
+    }
+    session->hmx_context_id =
+        HAP_compute_res_acquire(&hmx_attributes, 100000);
+    if (session->hmx_context_id == 0U) {
+        result = AEE_ERESOURCENOTFOUND;
+        goto failure;
+    }
+    session->prepared = 1U;
+    session->prepared_run_count = 0U;
     return AEE_SUCCESS;
+
+failure:
+    (void)qbh_release_prepared_resources(session);
+    return result;
+}
+
+AEEResult qwen3_probe_release(remote_handle64 handle) {
+    struct qbh_probe_session *session = qbh_session_from_handle(handle);
+    return session != NULL ? qbh_release_prepared_resources(session)
+                           : AEE_EBADPARM;
 }
 
 static int range_is_valid(uint32_t offset, uint32_t bytes,
@@ -85,7 +259,11 @@ static int header_is_valid(const struct qbh_probe_header *header,
         header->repeat_count > QBH_HMX_MAX_REPEATS ||
         (header->output_assembly_mode != QBH_OUTPUT_ASSEMBLY_SCALAR &&
          header->output_assembly_mode !=
-             QBH_OUTPUT_ASSEMBLY_LINKED_2D_DMA)) {
+             QBH_OUTPUT_ASSEMBLY_LINKED_2D_DMA) ||
+        (header->resource_lifetime_mode !=
+             QBH_RESOURCE_LIFETIME_TRANSIENT &&
+         header->resource_lifetime_mode !=
+             QBH_RESOURCE_LIFETIME_PREPARED_SESSION)) {
         return 0;
     }
     if (qbh_projection_layout_init(header->projection_variant,
@@ -478,6 +656,7 @@ unlock:
 
 AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
                           uint32 shared_bytes) {
+    struct qbh_probe_session *session = qbh_session_from_handle(handle);
     struct qbh_probe_header *header = NULL;
     struct qbh_projection_layout layout;
     compute_res_attr_t vtcm_attributes;
@@ -505,12 +684,15 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     int hmx_power_context = 0;
     int hmx_powered = 0;
     int dcvs_powered = 0;
+    int resources_from_session = 0;
     int hvx_locked = 0;
     int cache_result;
     int result = AEE_SUCCESS;
     uint64_t dsp_total_start = 0;
 
-    (void)handle;
+    if (session == NULL) {
+        return AEE_EBADPARM;
+    }
 
     result = HAP_mmap_get(shared_fd, (void **)&shared, NULL);
     if (result != AEE_SUCCESS || shared == NULL) {
@@ -536,6 +718,15 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     if (!header_is_valid(header, shared_bytes, &layout)) {
         header->dsp_status = QBH_PROBE_STATUS_BAD_HEADER;
         result = AEE_EBADPARM;
+        goto cleanup;
+    }
+    resources_from_session =
+        header->resource_lifetime_mode ==
+        QBH_RESOURCE_LIFETIME_PREPARED_SESSION;
+    if ((resources_from_session && session->prepared == 0U) ||
+        (!resources_from_session && session->prepared != 0U)) {
+        header->dsp_status = QBH_PROBE_STATUS_HMX_CONFIG_FAILED;
+        result = AEE_EBADSTATE;
         goto cleanup;
     }
 
@@ -589,6 +780,11 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     header->output_dma_descriptor_completion_count = 0;
     header->output_dma_descriptor_timeout_count = 0;
     header->output_dma_status = 0;
+    header->resource_setup_in_run = 0;
+    header->resource_release_in_run = 0;
+    header->prepared_session_run_index = 0;
+    header->resource_vtcm_address = 0;
+    header->resource_hmx_context_id = 0;
     header->weight_slot_reuse_count = 0;
     header->expanded_chunk_slot_reuse_count = 0;
     header->chunks_per_output = layout.chunks_per_output;
@@ -630,106 +826,124 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     header->hmx_window_end = 0;
     dsp_total_start = HAP_perf_get_qtimer_count();
     FARF(ALWAYS,
-         "EXP0014 stage=header_valid projection=%u storage=%u plan=%u "
+         "EXP0015 stage=header_valid projection=%u storage=%u plan=%u "
          "workers=%u compressed_slots=%u expanded_slots=%u chunk_tiles=%u "
-         "output_mode=%u "
+         "output_mode=%u resource_mode=%u "
          "M=%u K=%u N=%u vtcm_plan=%u",
          layout.variant, layout.weight_storage_variant,
          layout.physical_plan, header->requested_hvx_workers,
          layout.compressed_slot_count, layout.expanded_slot_count,
-         layout.chunk_tiles, header->output_assembly_mode, layout.m,
-         layout.k, layout.n,
+         layout.chunk_tiles, header->output_assembly_mode,
+         header->resource_lifetime_mode, layout.m, layout.k, layout.n,
          layout.vtcm_plan_bytes);
 
-    memset(&dcvs_power_request, 0, sizeof(dcvs_power_request));
-    dcvs_power_request.type = HAP_power_set_DCVS_v3;
-    dcvs_power_request.dcvs_v3.dcvs_enable = 1;
-    dcvs_power_request.dcvs_v3.dcvs_option =
-        HAP_DCVS_V2_PERFORMANCE_MODE;
-    dcvs_power_request.dcvs_v3.set_latency = 1;
-    dcvs_power_request.dcvs_v3.latency = 100;
-    dcvs_power_request.dcvs_v3.set_core_params = 1;
-    dcvs_power_request.dcvs_v3.core_params.min_corner =
-        HAP_DCVS_VCORNER_NOM;
-    dcvs_power_request.dcvs_v3.core_params.max_corner =
-        HAP_DCVS_VCORNER_TURBO_L3;
-    dcvs_power_request.dcvs_v3.core_params.target_corner =
-        HAP_DCVS_VCORNER_TURBO_L3;
-    dcvs_power_request.dcvs_v3.set_bus_params = 1;
-    dcvs_power_request.dcvs_v3.bus_params.min_corner =
-        HAP_DCVS_VCORNER_NOM;
-    dcvs_power_request.dcvs_v3.bus_params.max_corner =
-        HAP_DCVS_VCORNER_TURBO_L3;
-    dcvs_power_request.dcvs_v3.bus_params.target_corner =
-        HAP_DCVS_VCORNER_TURBO_L3;
-    header->dcvs_power_setup_status = HAP_power_set(
-        &hmx_power_context, &dcvs_power_request);
-    if (header->dcvs_power_setup_status != AEE_SUCCESS) {
-        header->dsp_status = QBH_PROBE_STATUS_DCVS_POWER_FAILED;
-        result = AEE_EFAILED;
-        goto cleanup;
-    }
-    dcvs_powered = 1;
+    if (resources_from_session) {
+        vtcm_context_id = session->vtcm_context_id;
+        hmx_context_id = session->hmx_context_id;
+        vtcm = session->vtcm;
+        header->vtcm_acquired_bytes = QBH_W4U8_VTCM_BYTES;
+        header->resource_vtcm_address = (uint32_t)(uintptr_t)vtcm;
+        header->resource_hmx_context_id = hmx_context_id;
+        header->prepared_session_run_index =
+            ++session->prepared_run_count;
+    } else {
+        header->resource_setup_in_run = 1U;
+        memset(&dcvs_power_request, 0, sizeof(dcvs_power_request));
+        dcvs_power_request.type = HAP_power_set_DCVS_v3;
+        dcvs_power_request.dcvs_v3.dcvs_enable = 1;
+        dcvs_power_request.dcvs_v3.dcvs_option =
+            HAP_DCVS_V2_PERFORMANCE_MODE;
+        dcvs_power_request.dcvs_v3.set_latency = 1;
+        dcvs_power_request.dcvs_v3.latency = 100;
+        dcvs_power_request.dcvs_v3.set_core_params = 1;
+        dcvs_power_request.dcvs_v3.core_params.min_corner =
+            HAP_DCVS_VCORNER_NOM;
+        dcvs_power_request.dcvs_v3.core_params.max_corner =
+            HAP_DCVS_VCORNER_TURBO_L3;
+        dcvs_power_request.dcvs_v3.core_params.target_corner =
+            HAP_DCVS_VCORNER_TURBO_L3;
+        dcvs_power_request.dcvs_v3.set_bus_params = 1;
+        dcvs_power_request.dcvs_v3.bus_params.min_corner =
+            HAP_DCVS_VCORNER_NOM;
+        dcvs_power_request.dcvs_v3.bus_params.max_corner =
+            HAP_DCVS_VCORNER_TURBO_L3;
+        dcvs_power_request.dcvs_v3.bus_params.target_corner =
+            HAP_DCVS_VCORNER_TURBO_L3;
+        header->dcvs_power_setup_status = HAP_power_set(
+            &hmx_power_context, &dcvs_power_request);
+        if (header->dcvs_power_setup_status != AEE_SUCCESS) {
+            header->dsp_status = QBH_PROBE_STATUS_DCVS_POWER_FAILED;
+            result = AEE_EFAILED;
+            goto cleanup;
+        }
+        dcvs_powered = 1;
 
-    memset(&hmx_power_request, 0, sizeof(hmx_power_request));
-    hmx_power_request.type = HAP_power_set_HMX;
-    hmx_power_request.hmx.power_up = 1;
-    header->hmx_power_up_status = HAP_power_set(
-        &hmx_power_context, &hmx_power_request);
-    if (header->hmx_power_up_status != AEE_SUCCESS) {
-        header->dsp_status = QBH_PROBE_STATUS_HMX_POWER_FAILED;
-        result = AEE_EFAILED;
-        goto cleanup;
-    }
-    hmx_powered = 1;
+        memset(&hmx_power_request, 0, sizeof(hmx_power_request));
+        hmx_power_request.type = HAP_power_set_HMX;
+        hmx_power_request.hmx.power_up = 1;
+        header->hmx_power_up_status = HAP_power_set(
+            &hmx_power_context, &hmx_power_request);
+        if (header->hmx_power_up_status != AEE_SUCCESS) {
+            header->dsp_status = QBH_PROBE_STATUS_HMX_POWER_FAILED;
+            result = AEE_EFAILED;
+            goto cleanup;
+        }
+        hmx_powered = 1;
 
-    result = HAP_compute_res_attr_init(&vtcm_attributes);
-    if (result != AEE_SUCCESS ||
-        HAP_compute_res_attr_set_serialize(&vtcm_attributes, 1) !=
-            AEE_SUCCESS ||
-        HAP_compute_res_attr_set_vtcm_param(&vtcm_attributes,
-                                            QBH_W4U8_VTCM_BYTES, 1) !=
-            AEE_SUCCESS) {
-        header->dsp_status = QBH_PROBE_STATUS_VTCM_CONFIG_FAILED;
-        result = AEE_EFAILED;
-        goto cleanup;
+        result = HAP_compute_res_attr_init(&vtcm_attributes);
+        if (result != AEE_SUCCESS ||
+            HAP_compute_res_attr_set_serialize(&vtcm_attributes, 1) !=
+                AEE_SUCCESS ||
+            HAP_compute_res_attr_set_vtcm_param(
+                &vtcm_attributes, QBH_W4U8_VTCM_BYTES, 1) !=
+                AEE_SUCCESS) {
+            header->dsp_status = QBH_PROBE_STATUS_VTCM_CONFIG_FAILED;
+            result = AEE_EFAILED;
+            goto cleanup;
+        }
+        vtcm_context_id = HAP_compute_res_acquire(
+            &vtcm_attributes, 100000);
+        if (vtcm_context_id == 0) {
+            header->dsp_status = QBH_PROBE_STATUS_VTCM_ACQUIRE_FAILED;
+            result = AEE_ERESOURCENOTFOUND;
+            goto cleanup;
+        }
+        vtcm = (uint8_t *)HAP_compute_res_attr_get_vtcm_ptr(
+            &vtcm_attributes);
+        if (vtcm == NULL) {
+            header->dsp_status = QBH_PROBE_STATUS_VTCM_POINTER_FAILED;
+            result = AEE_EFAILED;
+            goto cleanup;
+        }
+        header->vtcm_acquired_bytes = QBH_W4U8_VTCM_BYTES;
+        header->resource_vtcm_address = (uint32_t)(uintptr_t)vtcm;
+
+        result = HAP_compute_res_attr_init(&hmx_attributes);
+        if (result != AEE_SUCCESS) {
+            header->dsp_status = QBH_PROBE_STATUS_HMX_CONFIG_FAILED;
+            header->hmx_resource_status = result;
+            goto cleanup;
+        }
+        result = HAP_compute_res_attr_set_hmx_param(&hmx_attributes, 1);
+        header->hmx_resource_status = result;
+        if (result != AEE_SUCCESS) {
+            header->dsp_status = QBH_PROBE_STATUS_HMX_CONFIG_FAILED;
+            goto cleanup;
+        }
+        hmx_context_id = HAP_compute_res_acquire(
+            &hmx_attributes, 100000);
+        if (hmx_context_id == 0) {
+            header->dsp_status = QBH_PROBE_STATUS_HMX_CONFIG_FAILED;
+            header->hmx_resource_status = AEE_ERESOURCENOTFOUND;
+            result = AEE_ERESOURCENOTFOUND;
+            goto cleanup;
+        }
+        header->resource_hmx_context_id = hmx_context_id;
     }
-    vtcm_context_id = HAP_compute_res_acquire(&vtcm_attributes, 100000);
-    if (vtcm_context_id == 0) {
-        header->dsp_status = QBH_PROBE_STATUS_VTCM_ACQUIRE_FAILED;
-        result = AEE_ERESOURCENOTFOUND;
-        goto cleanup;
-    }
-    vtcm = (uint8_t *)HAP_compute_res_attr_get_vtcm_ptr(&vtcm_attributes);
-    if (vtcm == NULL) {
-        header->dsp_status = QBH_PROBE_STATUS_VTCM_POINTER_FAILED;
-        result = AEE_EFAILED;
-        goto cleanup;
-    }
-    header->vtcm_acquired_bytes = QBH_W4U8_VTCM_BYTES;
+
     if (!vtcm_layout_is_aligned(vtcm, &layout)) {
         header->dsp_status = QBH_PROBE_STATUS_VTCM_ALIGNMENT_FAILED;
         result = AEE_EFAILED;
-        goto cleanup;
-    }
-
-    result = HAP_compute_res_attr_init(&hmx_attributes);
-    if (result != AEE_SUCCESS) {
-        header->dsp_status = QBH_PROBE_STATUS_HMX_CONFIG_FAILED;
-        header->hmx_resource_status = result;
-        goto cleanup;
-    }
-    result = HAP_compute_res_attr_set_hmx_param(&hmx_attributes, 1);
-    header->hmx_resource_status = result;
-    if (result != AEE_SUCCESS) {
-        header->dsp_status = QBH_PROBE_STATUS_HMX_CONFIG_FAILED;
-        goto cleanup;
-    }
-    hmx_context_id = HAP_compute_res_acquire(&hmx_attributes, 100000);
-    if (hmx_context_id == 0) {
-        header->dsp_status = QBH_PROBE_STATUS_HMX_CONFIG_FAILED;
-        header->hmx_resource_status = AEE_ERESOURCENOTFOUND;
-        result = AEE_ERESOURCENOTFOUND;
         goto cleanup;
     }
 
@@ -1033,6 +1247,10 @@ pipeline_complete:
     result = AEE_SUCCESS;
 
 cleanup:
+    if (header != NULL && !resources_from_session &&
+        header->resource_setup_in_run != 0U) {
+        header->resource_release_in_run = 1U;
+    }
     if (hmx_thread_created && !hmx_thread_joined) {
         hmx_job.abort_status = AEE_EFAILED;
         if (semaphores_initialized) {
@@ -1059,7 +1277,7 @@ cleanup:
             result = AEE_EFAILED;
         }
     }
-    if (hmx_context_id != 0) {
+    if (!resources_from_session && hmx_context_id != 0) {
         header->hmx_release_status = HAP_compute_res_release(hmx_context_id);
         if (header->hmx_release_status != AEE_SUCCESS) {
             header->dsp_status = QBH_PROBE_STATUS_HMX_RELEASE_FAILED;
@@ -1068,13 +1286,13 @@ cleanup:
             }
         }
     }
-    if (vtcm_context_id != 0) {
+    if (!resources_from_session && vtcm_context_id != 0) {
         int release_result = HAP_compute_res_release(vtcm_context_id);
         if (release_result != AEE_SUCCESS && result == AEE_SUCCESS) {
             result = release_result;
         }
     }
-    if (hmx_powered) {
+    if (!resources_from_session && hmx_powered) {
         memset(&hmx_power_request, 0, sizeof(hmx_power_request));
         hmx_power_request.type = HAP_power_set_HMX;
         hmx_power_request.hmx.power_up = 0;
@@ -1087,7 +1305,7 @@ cleanup:
             }
         }
     }
-    if (dcvs_powered) {
+    if (!resources_from_session && dcvs_powered) {
         HAP_power_set_dcvs_v3_init(&dcvs_power_request);
         header->dcvs_power_reset_status = HAP_power_set(
             &hmx_power_context, &dcvs_power_request);
