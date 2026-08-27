@@ -376,3 +376,32 @@ experiments:
       boot_id_stable: true
       selected_candidate_plan: slots4_chunk96
       performance_characterization: coarse_chunk_w4_beats_expanded_s8_down
+  - id: EXP-0010
+    slug: gate-single-hmx-chunk
+    title: Batch both gate/up HMX streams behind one ready boundary
+    parent: EXP-0009
+    variants:
+      - expanded_s8_control
+      - hvx_prescale_chunk32_control
+      - hmx_postscale_chunk32_control
+      - hmx_postscale_chunk64
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: w4u8-gate-single-consumer-publication
+    source_branches:
+      - codex/exp-0010-gate-single-hmx-chunk
+    source_commits: []
+    record: docs/experiments/EXP-0010.md
+    decided_by: user
+    decided_on: '2026-08-27'
+    approval_ref: 'User message 2026-08-27: 继续优化现有方案'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0010-gate-single-hmx-chunk
+      started_on: '2026-08-27'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0010'
+      retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0010'
