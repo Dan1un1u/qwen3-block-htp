@@ -1107,7 +1107,7 @@ experiments:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending
+    adoption_status: accepted
     evidence_profile: real-qwen3-block-w4f16-pipeline
     source_branches:
       - codex/exp-0023-w4f16-pipeline
@@ -1126,6 +1126,9 @@ experiments:
     decided_by: user
     decided_on: '2026-08-27'
     approval_ref: 'User message 2026-08-27: repair W4A16; substantial acceleration relative to W16A16 is expected'
+    accepted_by: user
+    accepted_on: '2026-08-28'
+    acceptance_ref: 'User message 2026-08-28: 可以临时接受; use EXP-0023 as the provisional parent while optimizing the four FP16 common operators'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0023-w4f16-pipeline
@@ -1172,3 +1175,40 @@ experiments:
       speed_gate_result: pass
       repeat10_improvement_target_result: fail
       performance_characterization: projection_pipeline_repaired_and_15_percent_faster_but_shared_scalar_stages_limit_complete_block_gain_to_below_one_percent
+  - id: EXP-0024
+    slug: fp16-hvx-common-ops
+    title: Vectorize the four shared FP16 block operators with HVX
+    parent: EXP-0023
+    variants:
+      - exp0023_f16f16_scalar_common_control
+      - exp0023_w4f16_scalar_common_control
+      - f16f16_hvx_fp16_common_ops
+      - w4f16_hvx_fp16_common_ops
+    execution_state: running
+    evidence_validity: pending
+    local_gate: pending
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-hvx-fp16-common-ops
+    source_branches:
+      - codex/exp-0024-fp16-hvx-common-ops
+    source_commits: []
+    record: docs/experiments/EXP-0024.md
+    decided_by: user
+    decided_on: '2026-08-28'
+    approval_ref: 'User message 2026-08-28: implement RMSNorm, RoPE, standard Softmax, and SiLU in one long loop; begin with FP16 and exploit HVX SIMD'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0024-fp16-hvx-common-ops
+      started_on: '2026-08-28'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0024'
+      retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0024'
+      parent_formal_run: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0023\\20260827T144632Z_896446df77cc'
+      operator_order:
+        - rmsnorm
+        - silu_by_up
+        - rope
+        - stable_causal_softmax
+      activation_scope: fp16_only
+      a8_operator_suite: deferred_to_separate_experiment

@@ -72,6 +72,25 @@ A Project Variant explicitly approved by the user to represent the current
 project outcome.
 _Avoid_: fastest observation, local pass, candidate
 
+**Provisional Source Parent**:
+An accepted experiment explicitly chosen by the user as the implementation
+starting point for the next experiment, without promoting it to Selected
+Baseline. EXP-0023 currently has this role.
+_Avoid_: final baseline, automatic promotion, fastest observation
+
+**HVX FP16 Common-Operator Suite**:
+The shared FP16 implementations of RMSNorm, RoPE, stable causal Softmax, and
+SiLU-by-Up used identically by F16F16 and W4F16. Their hot elementwise and
+reduction loops use HVX SIMD; they do not change either projection variant.
+_Avoid_: projection optimization, A8 operator suite, scalar reference path
+
+**Standard Stable FP16 Softmax**:
+The conventional causal Softmax computation that applies the existing score
+scale and mask, subtracts the row maximum, evaluates a direct approximation to
+the natural exponential, sums probabilities, and normalizes. It excludes the
+previous project's log2-quantized Softmax algorithm.
+_Avoid_: log2 Softmax, LUT-quantized probability algorithm, changed mask rule
+
 **W4U8 Projection Substrate**:
 A model-shaped Projection Probe that proves the canonical W4U8 arithmetic and
 weight-storage boundary for the gate/up and down shapes.
