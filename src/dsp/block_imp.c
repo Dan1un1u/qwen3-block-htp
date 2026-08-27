@@ -1050,11 +1050,14 @@ projection_command_complete:
         }
         if (w4f16_prefetch_active != 0) {
             uint64_t wait_start = HAP_perf_get_qtimer_count();
+            int prefetch_result;
             failure_step = 8U;
-            if (qbh_dma_wait_w4f16_prefetch(
-                    &w4f16_prefetch_descriptor) != 0) {
+            prefetch_result = qbh_dma_wait_w4f16_prefetch(
+                &w4f16_prefetch_descriptor);
+            if (prefetch_result != 0) {
                 qbh_record_projection_failure(
-                    header, desc, n_tile, failure_step, -1);
+                    header, desc, n_tile, failure_step,
+                    prefetch_result);
                 return -1;
             }
             header->w4f16_prefetch_wait_ticks +=
