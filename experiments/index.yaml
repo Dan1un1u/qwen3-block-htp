@@ -571,3 +571,32 @@ experiments:
       selected_gate_up_candidate: slots8e7_chunk64_dma_chain4
       selected_down_candidate: slots8e7_chunk96_dma_chain4
       performance_characterization: ring_rebalance_helps_gate_up_but_not_down_host_wall
+  - id: EXP-0014
+    slug: linked-output-dma
+    title: Replace scalar output assembly with linked 2-D User DMA
+    parent: EXP-0013
+    variants:
+      - packed_w4_scalar_output
+      - packed_w4_linked_2d_output
+      - expanded_s8_scalar_output
+      - expanded_s8_linked_2d_output
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: projection-linked-2d-output-dma
+    source_branches:
+      - codex/exp-0014-linked-output-dma
+    source_commits: []
+    record: docs/experiments/EXP-0014.md
+    decided_by: user
+    decided_on: '2026-08-27'
+    approval_ref: 'User message 2026-08-27: 继续优化现有方案'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0014-linked-output-dma
+      started_on: '2026-08-27'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0014'
+      retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0014'
