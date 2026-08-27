@@ -28,23 +28,32 @@ static float qbh_hvx_reduce_sum_qf32(HVX_Vector sum) {
     return result;
 }
 
+static float qbh_hvx_reduce_sum_sf32(HVX_Vector sum) {
+    float lanes[32] __attribute__((aligned(QBH_HVX_BYTES)));
+    *(HVX_Vector *)lanes = sum;
+    float result = 0.0f;
+    for (uint32_t lane = 0; lane < 32U; ++lane) {
+        result += lanes[lane];
+    }
+    return result;
+}
+
 static float qbh_hvx_sum_squares_f16(const __fp16 *input,
                                       uint32_t width) {
     const HVX_Vector *vectors = (const HVX_Vector *)input;
-    const HVX_Vector zero = Q6_V_vzero();
-    HVX_Vector sum_lo = Q6_Vqf32_vadd_VsfVsf(zero, zero);
-    HVX_Vector sum_hi = Q6_Vqf32_vadd_VsfVsf(zero, zero);
+    HVX_Vector sum_lo = Q6_V_vzero();
+    HVX_Vector sum_hi = Q6_V_vzero();
     uint32_t vector_count = width / QBH_HVX_F16_LANES;
     for (uint32_t index = 0; index < vector_count; ++index) {
         HVX_Vector value = vectors[index];
         HVX_VectorPair square = Q6_Wqf32_vmpy_VhfVhf(value, value);
-        sum_lo = Q6_Vqf32_vadd_Vqf32Vqf32(
-            sum_lo, Q6_V_lo_W(square));
-        sum_hi = Q6_Vqf32_vadd_Vqf32Vqf32(
-            sum_hi, Q6_V_hi_W(square));
+        sum_lo = Q6_Vsf_vadd_VsfVsf(
+            sum_lo, Q6_Vsf_equals_Vqf32(Q6_V_lo_W(square)));
+        sum_hi = Q6_Vsf_vadd_VsfVsf(
+            sum_hi, Q6_Vsf_equals_Vqf32(Q6_V_hi_W(square)));
     }
-    return qbh_hvx_reduce_sum_qf32(
-        Q6_Vqf32_vadd_Vqf32Vqf32(sum_lo, sum_hi));
+    return qbh_hvx_reduce_sum_sf32(
+        Q6_Vsf_vadd_VsfVsf(sum_lo, sum_hi));
 }
 
 static float qbh_hvx_reduce_max_f16(HVX_Vector value) {
