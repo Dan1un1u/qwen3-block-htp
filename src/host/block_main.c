@@ -400,6 +400,7 @@ int main(int argc, char **argv) {
     uint8_t *shared = NULL;
     uint32_t variant;
     uint32_t repeats = 1U;
+    uint32_t w4f16_hvx_workers = 2U;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t cursor = qbh_align_up_size(sizeof(*header), QBH_HOST_ALIGNMENT);
@@ -424,11 +425,15 @@ int main(int argc, char **argv) {
 
     memset(&warmup_metrics, 0, sizeof(warmup_metrics));
     memset(&measured_metrics, 0, sizeof(measured_metrics));
-    if (argc < 3 || argc > 4 ||
+    if (argc < 3 || argc > 5 ||
         qbh_parse_variant(argv[2], &variant) != 0 ||
-        (argc == 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
-        repeats == 0U || repeats > 100U) {
-        fprintf(stderr, "usage: %s PACKAGE_DIR VARIANT [repeat_count]\n",
+        (argc >= 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
+        (argc >= 5 && qbh_parse_u32(
+                          argv[4], &w4f16_hvx_workers) != 0) ||
+        repeats == 0U || repeats > 100U ||
+        w4f16_hvx_workers == 0U || w4f16_hvx_workers > 4U) {
+        fprintf(stderr, "usage: %s PACKAGE_DIR VARIANT [repeat_count] "
+                        "[w4f16_hvx_workers]\n",
                 argv[0]);
         return 2;
     }
@@ -591,6 +596,7 @@ int main(int argc, char **argv) {
     header->shared_bytes = (uint32_t)total_bytes;
     header->variant = variant;
     header->repeat_count = repeats;
+    header->w4f16_requested_hvx_workers = w4f16_hvx_workers;
     header->input_offset = input_slot.offset;
     header->input_bytes = input_slot.expected_bytes;
     header->output_bytes = output_bytes;
@@ -758,6 +764,7 @@ int main(int argc, char **argv) {
         "\"w4f16_expand_actual_half_bits\":%" PRIu32 ","
         "\"w4f16_hvx_workers_created\":%" PRIu32 ","
         "\"w4f16_hvx_workers_locked\":%" PRIu32 ","
+        "\"w4f16_requested_hvx_workers\":%" PRIu32 ","
         "\"w4f16_pool_status\":%d,"
         "\"host_wall_ns\":%" PRIu64 ","
         "\"host_wall_ns_per_block\":%.3f,"
@@ -821,6 +828,7 @@ int main(int argc, char **argv) {
         header->w4f16_expand_actual_half_bits,
         header->w4f16_hvx_workers_created,
         header->w4f16_hvx_workers_locked,
+        header->w4f16_requested_hvx_workers,
         header->w4f16_pool_status,
         measured_end - measured_start,
         (double)(measured_end - measured_start) / repeats,

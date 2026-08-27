@@ -122,6 +122,7 @@ struct qbh_block_w4f16_pool {
     volatile uint32_t *ready_generations;
     uint32_t expected_generation;
     uint32_t region_count;
+    uint32_t worker_count;
     uint32_t created_workers;
 };
 
@@ -301,6 +302,11 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          header->variant != QBH_BLOCK_W4F16 &&
          header->variant != QBH_BLOCK_W4U8) ||
         header->repeat_count == 0U || header->repeat_count > 100U) {
+        return 0;
+    }
+    if (header->w4f16_requested_hvx_workers == 0U ||
+        header->w4f16_requested_hvx_workers >
+            QBH_BLOCK_W4F16_HVX_WORKERS) {
         return 0;
     }
     element_bytes = header->variant == QBH_BLOCK_W4U8 ? 1U : 2U;
@@ -570,18 +576,21 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
 }
 
 static int qbh_w4f16_pool_create(
-    struct qbh_block_w4f16_pool *pool) {
+    struct qbh_block_w4f16_pool *pool, uint32_t worker_count) {
     int result = 0;
 
+    if (worker_count == 0U ||
+        worker_count > QBH_BLOCK_W4F16_HVX_WORKERS) {
+        return -1;
+    }
     memset(pool, 0, sizeof(*pool));
-    for (uint32_t worker = 0;
-         worker < QBH_BLOCK_W4F16_HVX_WORKERS; ++worker) {
+    pool->worker_count = worker_count;
+    for (uint32_t worker = 0; worker < pool->worker_count; ++worker) {
         qurt_sem_init_val(&pool->command_ready[worker], 0U);
         qurt_sem_init_val(&pool->command_done[worker], 0U);
         qurt_sem_init_val(&pool->worker_started[worker], 0U);
     }
-    for (uint32_t worker = 0;
-         worker < QBH_BLOCK_W4F16_HVX_WORKERS; ++worker) {
+    for (uint32_t worker = 0; worker < pool->worker_count; ++worker) {
         qurt_thread_attr_t attributes;
         char name[16] = "qbh-w4f16-hvx0";
         name[13] = (char)('0' + worker);
@@ -615,7 +624,7 @@ static int qbh_w4f16_pool_create(
         }
     }
     if (result != 0 ||
-        pool->created_workers != QBH_BLOCK_W4F16_HVX_WORKERS) {
+        pool->created_workers != pool->worker_count) {
         pool->stop = 1U;
         asm volatile("barrier" ::: "memory");
         for (uint32_t worker = 0; worker < pool->created_workers;
@@ -625,8 +634,8 @@ static int qbh_w4f16_pool_create(
             (void)qurt_thread_join(
                 pool->threads[worker], &exit_status);
         }
-        for (uint32_t worker = 0;
-             worker < QBH_BLOCK_W4F16_HVX_WORKERS; ++worker) {
+        for (uint32_t worker = 0; worker < pool->worker_count;
+             ++worker) {
             qurt_sem_destroy(&pool->worker_started[worker]);
             qurt_sem_destroy(&pool->command_done[worker]);
             qurt_sem_destroy(&pool->command_ready[worker]);
@@ -649,16 +658,14 @@ static void qbh_w4f16_pool_start(
     pool->region_count = region_count;
     pool->next_region = 0U;
     asm volatile("barrier" ::: "memory");
-    for (uint32_t worker = 0;
-         worker < QBH_BLOCK_W4F16_HVX_WORKERS; ++worker) {
+    for (uint32_t worker = 0; worker < pool->worker_count; ++worker) {
         (void)qurt_sem_up(&pool->command_ready[worker]);
     }
 }
 
 static void qbh_w4f16_pool_wait(
     struct qbh_block_w4f16_pool *pool) {
-    for (uint32_t worker = 0;
-         worker < QBH_BLOCK_W4F16_HVX_WORKERS; ++worker) {
+    for (uint32_t worker = 0; worker < pool->worker_count; ++worker) {
         qurt_sem_down(&pool->command_done[worker]);
     }
     asm volatile("barrier" ::: "memory");
@@ -680,8 +687,7 @@ static int qbh_w4f16_pool_destroy(
             result = -1;
         }
     }
-    for (uint32_t worker = 0;
-         worker < QBH_BLOCK_W4F16_HVX_WORKERS; ++worker) {
+    for (uint32_t worker = 0; worker < pool->worker_count; ++worker) {
         qurt_sem_destroy(&pool->worker_started[worker]);
         qurt_sem_destroy(&pool->command_done[worker]);
         qurt_sem_destroy(&pool->command_ready[worker]);
@@ -1749,7 +1755,9 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
         goto stop_worker;
     }
     if (header->variant == QBH_BLOCK_W4F16) {
-        if (qbh_w4f16_pool_create(&w4f16_pool) != 0) {
+        if (qbh_w4f16_pool_create(
+                &w4f16_pool,
+                header->w4f16_requested_hvx_workers) != 0) {
             header->dsp_status =
                 QBH_BLOCK_STATUS_W4F16_PIPELINE_FAILED;
             header->w4f16_pool_status = -1;
