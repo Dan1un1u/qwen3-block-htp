@@ -65,12 +65,14 @@ __attribute__((noinline)) int32_t qbh_hmx_accumulate_u8s8_streaming(
     const volatile uint32_t *ready_generations,
     uint32_t expected_generation, uint32_t stream_count,
     volatile int32_t *abort_status, uint64_t timeout_ticks,
-    uint64_t *ready_wait_ticks) {
+    uint64_t *ready_wait_ticks,
+    volatile uint32_t *hmx_consumption_started) {
     uint64_t accumulated_wait = 0U;
 
     if (activation_tiles == NULL || expanded_weight_tiles == NULL ||
         ready_generations == NULL || abort_status == NULL ||
-        ready_wait_ticks == NULL || expected_generation == 0U ||
+        ready_wait_ticks == NULL || hmx_consumption_started == NULL ||
+        expected_generation == 0U ||
         stream_count == 0U ||
         stream_count > QBH_W4_MAX_STREAM_REGIONS) {
         return -1;
@@ -95,6 +97,14 @@ __attribute__((noinline)) int32_t qbh_hmx_accumulate_u8s8_streaming(
         }
         asm volatile("barrier" : : : "memory");
         accumulated_wait += HAP_perf_get_qtimer_count() - wait_start;
+
+        if (*hmx_consumption_started == 0U) {
+            *hmx_consumption_started = 1U;
+            asm volatile("release(%0):at"
+                         :
+                         : "r"(hmx_consumption_started)
+                         : "memory");
+        }
 
         if (stream == 0U && begin_output != 0U) {
             qbh_hmx_begin_u8s8_output(bias_words);

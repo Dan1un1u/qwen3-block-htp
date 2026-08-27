@@ -93,6 +93,10 @@ static const char *physical_plan_name(uint32_t physical_plan,
             default: return "invalid";
         }
     }
+    if (physical_plan ==
+        QBH_PHYSICAL_PLAN_STREAMING_CAP2_E7_DMA_CHAIN4) {
+        return "stream32_gate_hvx6_cap2";
+    }
     if (physical_plan == QBH_PHYSICAL_PLAN_STREAMING_DMA_BATCH2) {
         switch (hvx_workers) {
             case 2: return "stream32_down_hvx2";
@@ -101,6 +105,10 @@ static const char *physical_plan_name(uint32_t physical_plan,
             case 6: return "stream32_down_hvx6";
             default: return "invalid";
         }
+    }
+    if (physical_plan ==
+        QBH_PHYSICAL_PLAN_STREAMING_CAP2_DMA_BATCH2) {
+        return "stream32_down_hvx6_cap2";
     }
     if (physical_plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE) {
         return "exp0005_full_bundle_control";
@@ -225,6 +233,21 @@ static int parse_physical_plan(const char *text, uint32_t *physical_plan,
         strcmp(text, "stream32_down_hvx6") == 0) {
         *physical_plan = QBH_PHYSICAL_PLAN_STREAMING_DMA_BATCH2;
         *hvx_workers = (uint32_t)(text[17] - '0');
+        *compressed_slots = 4U;
+        *chunk_tiles = QBH_W4_WIDE_CHUNK_TILES;
+        return 0;
+    }
+    if (strcmp(text, "stream32_gate_hvx6_cap2") == 0) {
+        *physical_plan =
+            QBH_PHYSICAL_PLAN_STREAMING_CAP2_E7_DMA_CHAIN4;
+        *hvx_workers = 6U;
+        *compressed_slots = 8U;
+        *chunk_tiles = QBH_W4_COARSE_CHUNK_TILES;
+        return 0;
+    }
+    if (strcmp(text, "stream32_down_hvx6_cap2") == 0) {
+        *physical_plan = QBH_PHYSICAL_PLAN_STREAMING_CAP2_DMA_BATCH2;
+        *hvx_workers = 6U;
         *compressed_slots = 4U;
         *chunk_tiles = QBH_W4_WIDE_CHUNK_TILES;
         return 0;
@@ -1079,8 +1102,10 @@ int main(int argc, char **argv) {
                 "slots8e7_chunk96_dma_chain4|"
                 "stream32_gate_hvx2|stream32_gate_hvx3|"
                 "stream32_gate_hvx4|stream32_gate_hvx6|"
+                "stream32_gate_hvx6_cap2|"
                 "stream32_down_hvx2|stream32_down_hvx3|"
-                "stream32_down_hvx4|stream32_down_hvx6] "
+                "stream32_down_hvx4|stream32_down_hvx6|"
+                "stream32_down_hvx6_cap2] "
                 "[scalar_memcpy|linked_2d_dma] "
                 "[transient_resources|prepared_session] "
                 "[single_invocation|two_call_control]\n",

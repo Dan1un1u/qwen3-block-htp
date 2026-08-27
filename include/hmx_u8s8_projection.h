@@ -104,15 +104,21 @@ static inline int qbh_projection_layout_init(
         ((physical_plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_BATCH4 ||
           physical_plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_CHAIN4 ||
           physical_plan ==
-              QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4) &&
+              QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4 ||
+          physical_plan ==
+              QBH_PHYSICAL_PLAN_STREAMING_CAP2_E7_DMA_CHAIN4) &&
          compressed_slot_count != 8U)) {
         return -1;
     }
-    if ((physical_plan == QBH_PHYSICAL_PLAN_STREAMING_DMA_BATCH2 &&
+    if (((physical_plan == QBH_PHYSICAL_PLAN_STREAMING_DMA_BATCH2 ||
+          physical_plan ==
+              QBH_PHYSICAL_PLAN_STREAMING_CAP2_DMA_BATCH2) &&
          (variant != QBH_PROJECTION_DOWN || compressed_slot_count != 4U ||
           chunk_tiles != QBH_W4_WIDE_CHUNK_TILES)) ||
-        (physical_plan ==
-             QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4 &&
+        ((physical_plan ==
+              QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4 ||
+          physical_plan ==
+              QBH_PHYSICAL_PLAN_STREAMING_CAP2_E7_DMA_CHAIN4) &&
          (variant != QBH_PROJECTION_GATE_UP_PAIR ||
           compressed_slot_count != 8U ||
           chunk_tiles != QBH_W4_COARSE_CHUNK_TILES))) {
@@ -279,7 +285,8 @@ int32_t qbh_hmx_accumulate_u8s8_streaming(
     const volatile uint32_t *ready_generations,
     uint32_t expected_generation, uint32_t stream_count,
     volatile int32_t *abort_status, uint64_t timeout_ticks,
-    uint64_t *ready_wait_ticks);
+    uint64_t *ready_wait_ticks,
+    volatile uint32_t *hmx_consumption_started);
 
 static inline size_t qbh_projection_expanded_bundle_offset(
     const struct qbh_projection_layout *layout, uint32_t output_tile) {
