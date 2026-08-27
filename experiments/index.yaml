@@ -118,14 +118,15 @@ experiments:
     variants:
       - gate_up_2048x6144
       - down_6144x2048
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: qwen3-projection-shape-bringup
     source_branches:
       - codex/exp-0004-qwen3-projections
-    source_commits: []
+    source_commits:
+      - b4a1d9829172987b80240a188a313aed49d42b6c
     record: docs/experiments/EXP-0004.md
     decided_by: user
     decided_on: '2026-08-27'
@@ -134,7 +135,16 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0004-qwen3-projections
       started_on: '2026-08-27'
-      completed_on: null
+      completed_on: '2026-08-27'
     evidence:
       formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0004'
       retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0004'
+      formal_run: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0004\\20260827T034619Z_b4a1d9829172'
+      artifact_set: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0004\\b4a1d9829172'
+      manifest: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0004\\20260827T034619Z_b4a1d9829172\\manifest.txt'
+      formal_runs: 16
+      total_mismatches: 0
+      qnn_dependency_scan: none
+      static_integer_hmx_gate: pass
+      static_user_dma_gate: pass
+      boot_id_stable: true
