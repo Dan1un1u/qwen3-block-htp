@@ -191,3 +191,33 @@ experiments:
       packed_weight_reduction_gate: pass
       boot_id_stable: true
       performance_characterization: packed_w4u8_slower_than_expanded_s8_control
+  - id: EXP-0006
+    slug: parallel-w4-pipeline
+    title: Chunked multi-HVX W4 expansion and HMX pipeline
+    parent: EXP-0005
+    variants:
+      - exp0005_full_bundle_control
+      - chunked_hvx1
+      - chunked_hvx2
+      - chunked_hvx4
+      - chunked_hvx6
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: w4u8-parallel-pipeline
+    source_branches:
+      - codex/exp-0006-parallel-w4-pipeline
+    source_commits: []
+    record: docs/experiments/EXP-0006.md
+    decided_by: user
+    decided_on: '2026-08-27'
+    approval_ref: 'User message 2026-08-27: 同意，要充分利用HVX和HMX的并行，权重展开才能被其它开销覆盖'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0006-parallel-w4-pipeline
+      started_on: '2026-08-27'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0006'
+      retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0006'
