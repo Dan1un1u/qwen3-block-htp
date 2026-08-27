@@ -530,14 +530,16 @@ experiments:
       - packed_w4_slots4_expanded7_batch2
       - packed_w4_slots8_expanded7_batch4
       - packed_w4_slots8_expanded7_chain4
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
     adoption_status: pending
     evidence_profile: w4u8-vtcm-ring-rebalance
     source_branches:
       - codex/exp-0013-vtcm-ring-rebalance
-    source_commits: []
+    source_commits:
+      - f0d1b70d28b1cf73e85a51d6f7c8b4537c17ea26
+      - c8933de6502855a73603da8bc47ed365e4174de8
     record: docs/experiments/EXP-0013.md
     decided_by: user
     decided_on: '2026-08-27'
@@ -546,7 +548,26 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0013-vtcm-ring-rebalance
       started_on: '2026-08-27'
-      completed_on: null
+      completed_on: '2026-08-27'
     evidence:
       formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0013'
       retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0013'
+      formal_run: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0013\\20260827T070839Z_c8933de65028'
+      superseded_run: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0013\\20260827T070530Z_f0d1b70d28b1'
+      artifact_set: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0013\\c8933de65028'
+      matrix: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0013\\20260827T070839Z_c8933de65028\\matrix_gate.json'
+      formal_runs: 224
+      total_mismatches: 0
+      exact_reference: true
+      all_variants_equivalent: true
+      same_hmx_execution_and_stream_counts: true
+      descriptor_timeouts: 0
+      worker_fallback: false
+      qnn_dependency_scan: none
+      vtcm_request_bytes: 2097152
+      dcvs_performance_vote: true
+      hvx_hmx_overlap_gate: pass
+      boot_id_stable: true
+      selected_gate_up_candidate: slots8e7_chunk64_dma_chain4
+      selected_down_candidate: slots8e7_chunk96_dma_chain4
+      performance_characterization: ring_rebalance_helps_gate_up_but_not_down_host_wall
