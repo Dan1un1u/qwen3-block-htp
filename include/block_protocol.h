@@ -88,7 +88,7 @@ enum qbh_block_numerical_status {
     QBH_BLOCK_NUMERICAL_V = -4,
     QBH_BLOCK_NUMERICAL_Q_ROPE = -5,
     QBH_BLOCK_NUMERICAL_K_ROPE = -6,
-    QBH_BLOCK_NUMERICAL_ATTENTION = -7,
+    QBH_BLOCK_NUMERICAL_ATTENTION_QK = -7,
     QBH_BLOCK_NUMERICAL_O = -8,
     QBH_BLOCK_NUMERICAL_POST_RESIDUAL = -9,
     QBH_BLOCK_NUMERICAL_POST_NORM = -10,
@@ -97,6 +97,8 @@ enum qbh_block_numerical_status {
     QBH_BLOCK_NUMERICAL_MIDDLE = -13,
     QBH_BLOCK_NUMERICAL_DOWN = -14,
     QBH_BLOCK_NUMERICAL_OUTPUT = -15,
+    QBH_BLOCK_NUMERICAL_ATTENTION_SOFTMAX = -16,
+    QBH_BLOCK_NUMERICAL_ATTENTION_AV = -17,
 };
 
 struct qbh_block_qparam {
@@ -161,6 +163,9 @@ struct qbh_block_header {
     int32_t input_dma_status;
     int32_t output_dma_status;
     int32_t numerical_status;
+    float attention_qk_max_abs;
+    float attention_probability_max_abs;
+    float attention_av_max_abs;
 
     uint32_t prepared_session_run_index;
     uint32_t resource_vtcm_address;

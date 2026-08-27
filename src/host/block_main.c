@@ -733,6 +733,9 @@ int main(int argc, char **argv) {
         "\"prepared_session_run_index\":%" PRIu32 ","
         "\"rpc_result\":%d,\"dsp_status\":%d,"
         "\"numerical_status\":%d,"
+        "\"attention_qk_max_abs\":%.9g,"
+        "\"attention_probability_max_abs\":%.9g,"
+        "\"attention_av_max_abs\":%.9g,"
         "\"host_wall_ns\":%" PRIu64 ","
         "\"host_wall_ns_per_block\":%.3f,"
         "\"max_abs\":%.9g,\"mean_abs\":%.9g,\"rmse\":%.9g,"
@@ -773,6 +776,9 @@ int main(int argc, char **argv) {
         warmup_metrics.mismatches, warmup_metrics.max_lsb, repeats,
         header->prepared_session_run_index, measured_result,
         header->dsp_status, header->numerical_status,
+        header->attention_qk_max_abs,
+        header->attention_probability_max_abs,
+        header->attention_av_max_abs,
         measured_end - measured_start,
         (double)(measured_end - measured_start) / repeats,
         measured_metrics.max_abs, measured_metrics.mean_abs,

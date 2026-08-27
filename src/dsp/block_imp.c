@@ -815,6 +815,25 @@ static void qbh_pack_fp16_weight_transposed(
     }
 }
 
+static void qbh_record_f16_nonfinite(struct qbh_block_header *header,
+                                     const void *data,
+                                     uint32_t elements,
+                                     int32_t stage);
+
+static float qbh_f16_max_abs(const __fp16 *data, uint32_t elements) {
+    float maximum = 0.0f;
+    for (uint32_t index = 0; index < elements; ++index) {
+        float value = fabsf((float)data[index]);
+        if (!isfinite(value)) {
+            return INFINITY;
+        }
+        if (value > maximum) {
+            maximum = value;
+        }
+    }
+    return maximum;
+}
+
 static int qbh_attention_f16(struct qbh_block_header *header,
                              struct qbh_block_buffers *buffers,
                              struct qbh_block_hmx_worker *worker) {
@@ -849,6 +868,11 @@ static int qbh_attention_f16(struct qbh_block_header *header,
             scores + (size_t)head * QBH_BLOCK_M * QBH_BLOCK_M,
             QBH_BLOCK_M, 0U);
     }
+    qbh_record_f16_nonfinite(
+        header, scores, QBH_BLOCK_SCORE_ELEMENTS,
+        QBH_BLOCK_NUMERICAL_ATTENTION_QK);
+    header->attention_qk_max_abs = qbh_f16_max_abs(
+        scores, QBH_BLOCK_SCORE_ELEMENTS);
 
     for (uint32_t head = 0; head < QBH_BLOCK_HEADS; ++head) {
         for (uint32_t row = 0; row < QBH_BLOCK_M; ++row) {
@@ -882,6 +906,11 @@ static int qbh_attention_f16(struct qbh_block_header *header,
             }
         }
     }
+    qbh_record_f16_nonfinite(
+        header, probability, QBH_BLOCK_SCORE_ELEMENTS,
+        QBH_BLOCK_NUMERICAL_ATTENTION_SOFTMAX);
+    header->attention_probability_max_abs = qbh_f16_max_abs(
+        probability, QBH_BLOCK_SCORE_ELEMENTS);
 
     for (uint32_t head = 0; head < QBH_BLOCK_HEADS; ++head) {
         uint32_t kv_head = head / (QBH_BLOCK_HEADS / QBH_BLOCK_KV_HEADS);
@@ -906,6 +935,11 @@ static int qbh_attention_f16(struct qbh_block_header *header,
             (const __fp16 *)buffers->hmx_output, 4U, attention,
             QBH_BLOCK_HIDDEN, head * QBH_BLOCK_HEAD_DIM);
     }
+    qbh_record_f16_nonfinite(
+        header, attention, QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
+        QBH_BLOCK_NUMERICAL_ATTENTION_AV);
+    header->attention_av_max_abs = qbh_f16_max_abs(
+        attention, QBH_BLOCK_M * QBH_BLOCK_HIDDEN);
     return 0;
 }
 
@@ -1135,9 +1169,6 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     if (qbh_attention_f16(header, buffers, worker) != 0) {
         return QBH_BLOCK_STATUS_ATTENTION_FAILED;
     }
-    qbh_record_f16_nonfinite(
-        header, buffers->attention_concat, hidden_elements,
-        QBH_BLOCK_NUMERICAL_ATTENTION);
     if (header->variant == QBH_BLOCK_W4U8) {
         qbh_quantize_f16_buffer(
             (const __fp16 *)buffers->attention_concat,
