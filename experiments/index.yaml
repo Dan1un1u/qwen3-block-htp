@@ -728,14 +728,15 @@ experiments:
       - packed_w4_hvx_prescale
       - packed_w4_hmx_postscale
       - expanded_s8_control
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: current-schedule-w4-scale-placement
     source_branches:
       - codex/exp-0017-optimized-scale-placement
-    source_commits: []
+    source_commits:
+      - a488df2baf65a52d515cc75821c0dffd2966bc81
     record: docs/experiments/EXP-0017.md
     decided_by: user
     decided_on: '2026-08-27'
@@ -744,7 +745,30 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0017-optimized-scale-placement
       started_on: '2026-08-27'
-      completed_on: null
+      completed_on: '2026-08-27'
     evidence:
       formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0017'
       retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0017'
+      formal_run: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0017\\20260827T084020Z_a488df2baf65'
+      artifact_set: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0017\\a488df2baf65'
+      matrix: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0017\\20260827T084020Z_a488df2baf65\\matrix_gate.json'
+      formal_runs: 264
+      total_mismatches: 0
+      exact_reference: true
+      all_scale_placements_equivalent: true
+      persistent_resource_identity_stable: true
+      descriptor_timeouts: 0
+      worker_fallback: false
+      qnn_dependency_scan: none
+      vtcm_request_bytes: 2097152
+      boot_id_stable: true
+      down_repeat1_prescale_improvement_percent: 0.6006400202176216
+      gate_up_repeat1_prescale_improvement_percent: -1.8719426281375238
+      gate_up_repeat10_prescale_improvement_percent: -3.9840636150181314
+      down_repeat10_prescale_improvement_percent: -7.835943823132999
+      gate_up_selected_w4_vs_s8_repeat1_improvement_percent: 19.479182999547003
+      gate_up_selected_w4_vs_s8_repeat10_improvement_percent: 22.93111008912739
+      down_selected_w4_vs_s8_repeat1_improvement_percent: 9.702248543395015
+      down_selected_w4_vs_s8_repeat10_improvement_percent: 22.892386920807187
+      operational_scale_placement: hmx_postscale
+      performance_characterization: literal_local_gate_pass_but_prescale_has_no_stable_adoption_case
