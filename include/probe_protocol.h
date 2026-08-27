@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define QBH_PROBE_MAGIC UINT32_C(0x51424850)
-#define QBH_PROBE_ABI_VERSION UINT32_C(4)
+#define QBH_PROBE_ABI_VERSION UINT32_C(5)
 #define QBH_PROBE_ALIGNMENT UINT32_C(4096)
 
 #define QBH_HMX_SPATIAL UINT32_C(64)
@@ -19,17 +19,29 @@
 #define QBH_HMX_MAX_REPEATS UINT32_C(100000)
 #define QBH_HMX_MAX_STREAM_TILES UINT32_C(32)
 
+#define QBH_W4_PACKED_TILE_BYTES UINT32_C(512)
+#define QBH_W4_CHANNEL_SCALE_BYTES UINT32_C(32)
+#define QBH_W4_METADATA_ALIGNMENT UINT32_C(256)
+#define QBH_W4_MIN_VALUE INT32_C(-7)
+#define QBH_W4_MAX_VALUE INT32_C(7)
+#define QBH_W4_MAX_INTEGER_SCALE UINT32_C(18)
+
 #define QBH_PROJ_M UINT32_C(64)
 #define QBH_GATE_UP_K UINT32_C(2048)
 #define QBH_GATE_UP_N UINT32_C(6144)
 #define QBH_DOWN_K UINT32_C(6144)
 #define QBH_DOWN_N UINT32_C(2048)
-#define QBH_QWEN3_VTCM_BYTES UINT32_C(1048576)
+#define QBH_W4U8_VTCM_BYTES UINT32_C(2097152)
 #define QBH_QWEN3_HMX_PAIRS_PER_REPEAT UINT32_C(12288)
 
 enum qbh_projection_variant {
     QBH_PROJECTION_GATE_UP = 1,
     QBH_PROJECTION_DOWN = 2,
+};
+
+enum qbh_weight_storage_variant {
+    QBH_WEIGHT_EXPANDED_S8 = 1,
+    QBH_WEIGHT_PACKED_W4 = 2,
 };
 
 enum qbh_probe_pattern {
@@ -59,6 +71,7 @@ enum qbh_probe_status {
     QBH_PROBE_STATUS_DMA_FAILED = -14,
     QBH_PROBE_STATUS_SYNC_FAILED = -15,
     QBH_PROBE_STATUS_LAYOUT_FAILED = -16,
+    QBH_PROBE_STATUS_W4_EXPAND_FAILED = -17,
 };
 
 struct qbh_probe_header {
@@ -69,6 +82,7 @@ struct qbh_probe_header {
 
     uint32_t pattern;
     uint32_t projection_variant;
+    uint32_t weight_storage_variant;
     uint32_t activation_offset;
     uint32_t weight_offset;
     uint32_t output_offset;
@@ -97,9 +111,13 @@ struct qbh_probe_header {
     uint32_t projection_n;
     uint32_t k_tile_count;
     uint32_t n_tile_count;
-    uint32_t weight_bundle_bytes;
+    uint32_t stored_weight_bundle_bytes;
+    uint32_t expanded_weight_bundle_bytes;
     uint32_t vtcm_plan_bytes;
     uint32_t k_streams_per_output;
+    uint32_t stored_weight_bytes_per_repeat;
+    uint32_t expanded_weight_bytes_per_repeat;
+    uint32_t weight_expand_count;
     uint32_t activation_stage_count;
     uint32_t weight_bundle_stage_count;
     uint32_t output_tile_count;
@@ -117,6 +135,7 @@ struct qbh_probe_header {
 
     uint64_t activation_stage_ticks;
     uint64_t weight_stage_ticks;
+    uint64_t weight_expand_ticks;
     uint64_t hmx_compute_ticks;
     uint64_t hmx_ready_wait_ticks;
     uint64_t producer_slot_wait_ticks;
@@ -125,7 +144,7 @@ struct qbh_probe_header {
     uint64_t dsp_total_ticks;
 };
 
-_Static_assert(sizeof(struct qbh_probe_header) == 280,
+_Static_assert(sizeof(struct qbh_probe_header) == 304,
                "probe header ABI changed");
 
 #endif

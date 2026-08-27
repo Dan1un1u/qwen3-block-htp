@@ -121,3 +121,34 @@ correctness and repeat 10 for timing:
 ```sh
 scripts/collect_exp0004_evidence.sh
 ```
+
+## EXP-0005
+
+The W4U8 projection substrate keeps the EXP-0004 real Qwen3 shapes and HMX
+schedule, but adds a packed signed-W4 Native DDR Boundary. Two W4 nibbles are
+stored per byte. User DMA stages each compressed output-channel bundle into
+one of two VTCM slots, then an explicit HVX nibble LUT applies one exact
+positive integer scale per output channel and writes the S8 carrier into one
+of two HMX-consumption slots. QNN is not used.
+
+`expanded_s8_control` stores that identical S8 carrier in DDR. It is the strict
+A/B control for `packed_w4u8`: both variants request the same 2 MiB VTCM plan,
+use the same activation and output residency, execute the same integer-HMX
+schedule, and are checked against
+`clamp(sum_k((activation - 128) * w4 * channel_scale), 0, 255)`.
+
+Build and statically audit the DSP image, then use a detached first run:
+
+```sh
+scripts/build_exp0005.sh
+scripts/check_exp0005_static.sh
+QBH_DETACH=1 scripts/run_exp0005.sh packed_w4u8 gate_up identity 1
+scripts/poll_exp0005.sh packed_w4u8 gate_up identity 1
+```
+
+Formal evidence covers both storage variants, both shapes, four patterns, and
+repeat counts 1 and 10:
+
+```sh
+scripts/collect_exp0005_evidence.sh
+```
