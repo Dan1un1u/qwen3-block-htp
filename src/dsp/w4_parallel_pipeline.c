@@ -307,7 +307,7 @@ static int qbh_hvx_region_begin(struct qbh_parallel_state *state) {
         if (state->abort_status != 0) {
             return -1;
         }
-        (void)qurt_thread_sched_yield();
+        asm volatile("pause(#8)" : : : "memory");
     }
     if (active > state->max_active_hvx_workers) {
         qurt_mutex_lock(&state->metrics_mutex);
