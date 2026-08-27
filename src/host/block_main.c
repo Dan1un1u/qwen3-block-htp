@@ -812,6 +812,8 @@ int main(int argc, char **argv) {
         "\"w4f16_streamed_command_count\":%" PRIu64 ","
         "\"w4f16_expand_work_ticks\":%" PRIu64 ","
         "\"w4f16_expand_region_count\":%" PRIu64 ","
+        "\"w4f16_prefetch_count\":%" PRIu64 ","
+        "\"w4f16_prefetch_wait_ticks\":%" PRIu64 ","
         "\"release_result\":%d,\"close_result\":%d}\n",
         qbh_variant_name(variant),
         variant == QBH_BLOCK_W4U8 ? "U8xS8_integer_HMX"
@@ -867,6 +869,8 @@ int main(int argc, char **argv) {
         header->w4f16_streamed_command_count,
         header->w4f16_expand_work_ticks,
         header->w4f16_expand_region_count,
+        header->w4f16_prefetch_count,
+        header->w4f16_prefetch_wait_ticks,
         release_result, close_result);
 
     exit_code = warmup_result == AEE_SUCCESS &&

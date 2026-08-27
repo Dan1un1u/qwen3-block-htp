@@ -227,6 +227,8 @@ struct qbh_block_header {
     uint64_t w4f16_streamed_command_count;
     uint64_t w4f16_expand_work_ticks;
     uint64_t w4f16_expand_region_count;
+    uint64_t w4f16_prefetch_count;
+    uint64_t w4f16_prefetch_wait_ticks;
     uint64_t scalar_math_ticks;
 };
 
