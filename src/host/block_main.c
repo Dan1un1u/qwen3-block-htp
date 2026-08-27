@@ -732,6 +732,7 @@ int main(int argc, char **argv) {
         "\"repeat_count\":%" PRIu32 ","
         "\"prepared_session_run_index\":%" PRIu32 ","
         "\"rpc_result\":%d,\"dsp_status\":%d,"
+        "\"numerical_status\":%d,"
         "\"host_wall_ns\":%" PRIu64 ","
         "\"host_wall_ns_per_block\":%.3f,"
         "\"max_abs\":%.9g,\"mean_abs\":%.9g,\"rmse\":%.9g,"
@@ -771,7 +772,8 @@ int main(int argc, char **argv) {
         warmup_metrics.rmse, warmup_metrics.cosine,
         warmup_metrics.mismatches, warmup_metrics.max_lsb, repeats,
         header->prepared_session_run_index, measured_result,
-        header->dsp_status, measured_end - measured_start,
+        header->dsp_status, header->numerical_status,
+        measured_end - measured_start,
         (double)(measured_end - measured_start) / repeats,
         measured_metrics.max_abs, measured_metrics.mean_abs,
         measured_metrics.rmse, measured_metrics.cosine,
@@ -799,6 +801,8 @@ int main(int argc, char **argv) {
                         release_result == AEE_SUCCESS &&
                         close_result == AEE_SUCCESS &&
                         header->dsp_status == QBH_BLOCK_STATUS_OK &&
+                        header->numerical_status ==
+                            QBH_BLOCK_NUMERICAL_OK &&
                         header->vtcm_requested_bytes ==
                             QBH_EXPECTED_FULL_VTCM_BYTES &&
                         header->vtcm_acquired_bytes ==
