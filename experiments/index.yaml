@@ -772,3 +772,31 @@ experiments:
       down_selected_w4_vs_s8_repeat10_improvement_percent: 22.892386920807187
       operational_scale_placement: hmx_postscale
       performance_characterization: literal_local_gate_pass_but_prescale_has_no_stable_adoption_case
+  - id: EXP-0018
+    slug: interference-aware-pipeline
+    title: Avoid HVX/HMX interference while preserving next-group DMA overlap
+    parent: EXP-0017
+    variants:
+      - packed_w4_fine_grain_overlap
+      - packed_w4_phased_group4
+      - expanded_s8_control
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: interference-aware-w4-phase-pipeline
+    source_branches:
+      - codex/exp-0018-interference-aware-pipeline
+    source_commits: []
+    record: docs/experiments/EXP-0018.md
+    decided_by: user
+    decided_on: '2026-08-27'
+    approval_ref: 'User message 2026-08-27: 继续优化现有方案'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0018-interference-aware-pipeline
+      started_on: '2026-08-27'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0018'
+      retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0018'

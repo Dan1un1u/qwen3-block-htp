@@ -104,3 +104,13 @@ and HMX applies the channel scale during accumulator conversion. These are
 mathematically equivalent under the experiment's exact integer scale domain,
 but they have different HVX/HMX work and scheduling costs.
 _Avoid_: different quantization algorithm, different W4 weights
+
+**Interference-Aware Phase Pipeline**:
+A Physical Plan that continues to overlap DDR User DMA with accelerator work,
+but prevents HVX weight expansion and HMX matrix consumption from executing at
+the same instant. Packed bundles are expanded in a bounded output-channel
+group, all HVX workers reach a group barrier, and HMX then consumes that group
+while User DMA prefetches the next packed group. It tests whether avoiding
+HVX/HMX VTCM and execution-resource interference is faster than maximizing
+nominal overlap.
+_Avoid_: serialized pipeline, disabled prefetch, reduced-HVX fallback
