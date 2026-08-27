@@ -67,6 +67,24 @@ static float qbh_hvx_reduce_sum_f16(HVX_Vector value) {
             Q6_V_lo_W(widened), Q6_V_hi_W(widened)));
 }
 
+static HVX_Vector qbh_hvx_multiply_scale_f16_f32(
+    HVX_Vector left, HVX_Vector right, float scale) {
+    HVX_DV scaled;
+    const HVX_VectorPair product =
+        Q6_Wqf32_vmpy_VhfVhf(left, right);
+    const HVX_Vector scale_vector = Q6_Vsf_vadd_VsfVsf(
+        Q6_V_vsplat_R(*(const int32_t *)&scale), Q6_V_vzero());
+    const HVX_Vector product_lo =
+        Q6_Vsf_equals_Vqf32(Q6_V_lo_W(product));
+    const HVX_Vector product_hi =
+        Q6_Vsf_equals_Vqf32(Q6_V_hi_W(product));
+    scaled.V.lo = Q6_Vqf32_vmpy_VsfVsf(
+        product_lo, scale_vector);
+    scaled.V.hi = Q6_Vqf32_vmpy_VsfVsf(
+        product_hi, scale_vector);
+    return Q6_Vhf_equals_Wqf32(scaled.VV);
+}
+
 void qbh_hvx_rms_norm_f16(const __fp16 *input, const __fp16 *gamma,
                            __fp16 *output, uint32_t rows,
                            uint32_t width) {
@@ -79,16 +97,11 @@ void qbh_hvx_rms_norm_f16(const __fp16 *input, const __fp16 *gamma,
             (const HVX_Vector *)input_row;
         HVX_Vector *output_vectors = (HVX_Vector *)output_row;
         float sum = qbh_hvx_sum_squares_f16(input_row, width);
-        __fp16 inverse = (__fp16)(
-            1.0f / sqrtf(sum / (float)width + 1.0e-6f));
-        HVX_Vector inverse_vector =
-            Q6_Vh_vsplat_R(*(const uint16_t *)&inverse);
+        float inverse =
+            1.0f / sqrtf(sum / (float)width + 1.0e-6f);
         for (uint32_t index = 0; index < vector_count; ++index) {
-            HVX_Vector product = Q6_Vqf16_vmpy_VhfVhf(
-                input_vectors[index], gamma_vectors[index]);
-            product = Q6_Vqf16_vmpy_Vqf16Vhf(
-                product, inverse_vector);
-            output_vectors[index] = Q6_Vhf_equals_Vqf16(product);
+            output_vectors[index] = qbh_hvx_multiply_scale_f16_f32(
+                input_vectors[index], gamma_vectors[index], inverse);
         }
     }
 }
