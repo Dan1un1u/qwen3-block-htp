@@ -86,6 +86,9 @@ required = (
     "qbh_arena_alloc_aligned(",
     "qbh_attention_f16(",
     "qbh_run_projection(",
+    "qurt_sem_init_val(&worker.command_ready, 0U)",
+    "qurt_sem_init_val(&worker.command_done, 0U)",
+    "qurt_sem_init_val(&worker.worker_started, 0U)",
 )
 for fragment in required:
     if fragment not in implementation and fragment not in protocol:

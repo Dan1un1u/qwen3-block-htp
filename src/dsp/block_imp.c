@@ -1424,9 +1424,9 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
 
     memset(&worker, 0, sizeof(worker));
     worker.hmx_context_id = hmx_context_id;
-    qurt_sem_init(&worker.command_ready);
-    qurt_sem_init(&worker.command_done);
-    qurt_sem_init(&worker.worker_started);
+    qurt_sem_init_val(&worker.command_ready, 0U);
+    qurt_sem_init_val(&worker.command_done, 0U);
+    qurt_sem_init_val(&worker.worker_started, 0U);
     qurt_thread_attr_init(&attributes);
     qurt_thread_attr_set_name(&attributes, "qbh-block-hmx");
     qurt_thread_attr_set_stack_addr(&attributes, qbh_block_hmx_stack);
