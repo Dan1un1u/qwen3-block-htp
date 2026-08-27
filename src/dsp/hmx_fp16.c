@@ -56,8 +56,7 @@ void qbh_hmx_fp16_init_channel_scales(void *scale_block,
     const HVX_Vector zero = Q6_V_vzero();
     HVX_Vector *values = (HVX_Vector *)scale_block;
 
-    values[0] = Q6_Vh_vshuff_Vh(
-        Q6_Vhf_vcvt_VsfVsf(scale_f32, zero));
+    values[0] = Q6_Vhf_vcvt_VsfVsf(zero, scale_f32);
     values[1] = zero;
     asm volatile("barrier" ::: "memory");
 }
