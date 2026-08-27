@@ -33,9 +33,8 @@ for symbol in qbh_hvx_rms_norm_f16 qbh_hvx_qk_norm_rope_f16 \
 done
 grep -q 'vmpy(.*\.hf' "${static_output_dir}/exp0024.disassembly.txt"
 grep -q 'vadd(.*\.qf16' "${static_output_dir}/exp0024.disassembly.txt"
+grep -q 'vmax(.*\.hf' "${static_output_dir}/exp0024.disassembly.txt"
 grep -q 'vcmp\.gt(.*\.hf' "${static_output_dir}/exp0024.disassembly.txt"
-grep -q 'vcmp\.gt(.*\.sf' "${static_output_dir}/exp0024.disassembly.txt"
-grep -q 'vmpy(.*\.sf' "${static_output_dir}/exp0024.disassembly.txt"
 
 printf '{"experiment":"EXP-0024","hvx_fp16_rmsnorm":true,'
 printf '"hvx_fp16_rope":true,"hvx_fp16_silu":true,'

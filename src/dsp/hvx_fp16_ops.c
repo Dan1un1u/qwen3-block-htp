@@ -18,36 +18,24 @@ static const uint16_t qbh_hvx_lane_index[QBH_HVX_F16_LANES]
         48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
     };
 
-static const uint32_t qbh_hvx_lane_index32[32]
-    __attribute__((aligned(QBH_HVX_BYTES))) = {
-        0,  1,  2,  3,  4,  5,  6,  7,
-        8,  9,  10, 11, 12, 13, 14, 15,
-        16, 17, 18, 19, 20, 21, 22, 23,
-        24, 25, 26, 27, 28, 29, 30, 31,
-    };
+static float qbh_hvx_reduce_sum_qf32(HVX_Vector sum) {
+    float lanes[32] __attribute__((aligned(QBH_HVX_BYTES)));
+    *(HVX_Vector *)lanes = Q6_Vsf_equals_Vqf32(sum);
+    float result = 0.0f;
+    for (uint32_t lane = 0; lane < 32U; ++lane) {
+        result += lanes[lane];
+    }
+    return result;
+}
 
 static float qbh_hvx_reduce_sum_sf32(HVX_Vector sum) {
     float lanes[32] __attribute__((aligned(QBH_HVX_BYTES)));
-    for (int shift = 64; shift >= 4; shift >>= 1) {
-        sum = Q6_Vsf_vadd_VsfVsf(
-            sum, Q6_V_vlalign_VVR(sum, Q6_V_vzero(), shift));
-    }
     *(HVX_Vector *)lanes = sum;
-    return lanes[31];
-}
-
-static float qbh_hvx_reduce_max_sf32(HVX_Vector value) {
-    const HVX_Vector negative_infinity = Q6_V_vsplat_R(0xff800000);
-    float lanes[32] __attribute__((aligned(QBH_HVX_BYTES)));
-    for (int shift = 64; shift >= 4; shift >>= 1) {
-        HVX_Vector shifted = Q6_V_vlalign_VVR(
-            value, negative_infinity, shift);
-        HVX_VectorPred use_shifted =
-            Q6_Q_vcmp_gt_VsfVsf(shifted, value);
-        value = Q6_V_vmux_QVV(use_shifted, shifted, value);
+    float result = 0.0f;
+    for (uint32_t lane = 0; lane < 32U; ++lane) {
+        result += lanes[lane];
     }
-    *(HVX_Vector *)lanes = value;
-    return lanes[31];
+    return result;
 }
 
 static float qbh_hvx_sum_squares_f16(const __fp16 *input,
@@ -66,6 +54,26 @@ static float qbh_hvx_sum_squares_f16(const __fp16 *input,
     }
     return qbh_hvx_reduce_sum_sf32(
         Q6_Vsf_vadd_VsfVsf(sum_lo, sum_hi));
+}
+
+static float qbh_hvx_reduce_max_f16(HVX_Vector value) {
+    const HVX_Vector negative_max = Q6_Vh_vsplat_R(0xfbff);
+    __fp16 lanes[QBH_HVX_F16_LANES]
+        __attribute__((aligned(QBH_HVX_BYTES)));
+    for (int shift = 64; shift >= 2; shift >>= 1) {
+        value = Q6_Vhf_vmax_VhfVhf(
+            value, Q6_V_vlalign_VVR(value, negative_max, shift));
+    }
+    *(HVX_Vector *)lanes = value;
+    return (float)lanes[QBH_HVX_F16_LANES - 1U];
+}
+
+static float qbh_hvx_reduce_sum_f16(HVX_Vector value) {
+    const HVX_Vector one = Q6_Vh_vsplat_R(0x3c00);
+    HVX_VectorPair widened = Q6_Wqf32_vmpy_VhfVhf(value, one);
+    return qbh_hvx_reduce_sum_qf32(
+        Q6_Vqf32_vadd_Vqf32Vqf32(
+            Q6_V_lo_W(widened), Q6_V_hi_W(widened)));
 }
 
 static HVX_Vector qbh_hvx_multiply_scale_f16_f32(
@@ -197,16 +205,12 @@ void qbh_hvx_stable_causal_softmax_f16(__fp16 *scores,
                                         float score_scale) {
     const HVX_Vector lane_index =
         *(const HVX_Vector *)qbh_hvx_lane_index;
-    const HVX_Vector lane_index_lo =
-        *(const HVX_Vector *)qbh_hvx_lane_index32;
-    const HVX_Vector lane_index_hi = Q6_Vw_vadd_VwVw(
-        lane_index_lo, Q6_V_vsplat_R(32));
     const HVX_Vector negative_max = Q6_Vh_vsplat_R(0xfbff);
     const HVX_Vector zero = Q6_V_vzero();
     const HVX_Vector one_half = Q6_Vh_vsplat_R(0x3c00);
-    const HVX_Vector negative_infinity = Q6_V_vsplat_R(0xff800000);
-    const HVX_Vector scale = Q6_Vsf_vadd_VsfVsf(
-        Q6_V_vsplat_R(*(const int32_t *)&score_scale), zero);
+    __fp16 scale_half = (__fp16)score_scale;
+    const HVX_Vector scale =
+        Q6_Vh_vsplat_R(*(const uint16_t *)&scale_half);
     if (width != QBH_HVX_F16_LANES) {
         return;
     }
@@ -214,56 +218,23 @@ void qbh_hvx_stable_causal_softmax_f16(__fp16 *scores,
         for (uint32_t row = 0; row < rows; ++row) {
             size_t offset = ((size_t)group * rows + row) * width;
             HVX_Vector score = *(const HVX_Vector *)(scores + offset);
-            HVX_Vector row_limit_h = Q6_Vh_vsplat_R((int)row);
-            HVX_Vector row_limit_w = Q6_V_vsplat_R((int)row);
-            HVX_VectorPred masked_h =
-                Q6_Q_vcmp_gt_VuhVuh(lane_index, row_limit_h);
-            HVX_VectorPred masked_lo =
-                Q6_Q_vcmp_gt_VuwVuw(lane_index_lo, row_limit_w);
-            HVX_VectorPred masked_hi =
-                Q6_Q_vcmp_gt_VuwVuw(lane_index_hi, row_limit_w);
-            HVX_DV widened;
-            HVX_DV scaled_qf32;
-            HVX_DV exponential_qf32;
-            widened.VV = Q6_Wqf32_vmpy_VhfVhf(score, one_half);
-            HVX_Vector scaled_lo = Q6_Vsf_equals_Vqf32(
-                Q6_Vqf32_vmpy_VsfVsf(
-                    Q6_Vsf_equals_Vqf32(widened.V.lo), scale));
-            HVX_Vector scaled_hi = Q6_Vsf_equals_Vqf32(
-                Q6_Vqf32_vmpy_VsfVsf(
-                    Q6_Vsf_equals_Vqf32(widened.V.hi), scale));
-
-            scaled_qf32.V.lo = Q6_Vqf32_vadd_VsfVsf(scaled_lo, zero);
-            scaled_qf32.V.hi = Q6_Vqf32_vadd_VsfVsf(scaled_hi, zero);
-            score = Q6_Vhf_equals_Wqf32(scaled_qf32.VV);
-            score = Q6_V_vmux_QVV(masked_h, negative_max, score);
+            HVX_Vector row_limit = Q6_Vh_vsplat_R((int)row);
+            HVX_VectorPred masked =
+                Q6_Q_vcmp_gt_VuhVuh(lane_index, row_limit);
+            score = Q6_Vhf_equals_Vqf16(
+                Q6_Vqf16_vmpy_VhfVhf(score, scale));
+            score = Q6_V_vmux_QVV(masked, negative_max, score);
             *(HVX_Vector *)(scores + offset) = score;
 
-            scaled_lo = Q6_V_vmux_QVV(
-                masked_lo, negative_infinity, scaled_lo);
-            scaled_hi = Q6_V_vmux_QVV(
-                masked_hi, negative_infinity, scaled_hi);
-            float maximum_value = fmaxf(
-                qbh_hvx_reduce_max_sf32(scaled_lo),
-                qbh_hvx_reduce_max_sf32(scaled_hi));
-            HVX_Vector maximum = Q6_Vsf_vadd_VsfVsf(
-                Q6_V_vsplat_R(*(const int32_t *)&maximum_value), zero);
-            HVX_Vector exponential_lo = qhmath_hvx_exp_vf(
-                Q6_Vsf_vsub_VsfVsf(scaled_lo, maximum));
-            HVX_Vector exponential_hi = qhmath_hvx_exp_vf(
-                Q6_Vsf_vsub_VsfVsf(scaled_hi, maximum));
-            exponential_lo = Q6_V_vmux_QVV(
-                masked_lo, zero, exponential_lo);
-            exponential_hi = Q6_V_vmux_QVV(
-                masked_hi, zero, exponential_hi);
-            float sum = qbh_hvx_reduce_sum_sf32(
-                Q6_Vsf_vadd_VsfVsf(exponential_lo, exponential_hi));
-            exponential_qf32.V.lo = Q6_Vqf32_vadd_VsfVsf(
-                exponential_lo, zero);
-            exponential_qf32.V.hi = Q6_Vqf32_vadd_VsfVsf(
-                exponential_hi, zero);
-            HVX_Vector exponential =
-                Q6_Vhf_equals_Wqf32(exponential_qf32.VV);
+            float maximum_value = qbh_hvx_reduce_max_f16(score);
+            __fp16 maximum_half = (__fp16)maximum_value;
+            HVX_Vector maximum =
+                Q6_Vh_vsplat_R(*(const uint16_t *)&maximum_half);
+            HVX_Vector shifted = Q6_Vhf_equals_Vqf16(
+                Q6_Vqf16_vsub_VhfVhf(score, maximum));
+            HVX_Vector exponential = qhmath_hvx_exp_vhf(shifted);
+            exponential = Q6_V_vmux_QVV(masked, zero, exponential);
+            float sum = qbh_hvx_reduce_sum_f16(exponential);
             *(HVX_Vector *)(probability + offset) =
                 qbh_hvx_multiply_scale_f16_f32(
                     exponential, one_half, 1.0f / sum);
