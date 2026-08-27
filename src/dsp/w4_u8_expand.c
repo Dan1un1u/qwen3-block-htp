@@ -111,13 +111,15 @@ __attribute__((noinline)) void qbh_expand_w4_to_f16_hvx(
 
 __attribute__((noinline)) void qbh_unpack_w4_to_f16_hvx(
     const uint8_t *packed_w4, void *expanded_f16, uint32_t k_tiles) {
-    const HVX_Vector v_lut = *(const HVX_Vector *)qbh_signed_w4_lut;
     const HVX_Vector v_nibble_mask = Q6_Vb_vsplat_R(0x0f);
+    const HVX_Vector v_sign_bias = Q6_Vb_vsplat_R(0x08);
     HVX_Vector *destination = (HVX_Vector *)expanded_f16;
 
     /* Per-output-channel scales are applied by the FP16 HMX output-scale
      * unit.  The hot expansion loop therefore only decodes signed W4 and
-     * converts the integer carrier to FP16 Crouton. */
+     * converts the integer carrier to FP16 Crouton.  Two's-complement
+     * nibbles are sign-extended with (x ^ 8) - 8, avoiding the two vlut32
+     * lookups in the former path. */
     for (uint32_t packed_vector = 0;
          packed_vector < k_tiles * 4U; ++packed_vector) {
         const HVX_Vector v_packed = *(const HVX_Vector *)(
@@ -126,10 +128,10 @@ __attribute__((noinline)) void qbh_unpack_w4_to_f16_hvx(
             Q6_V_vand_VV(v_packed, v_nibble_mask);
         const HVX_Vector v_high_indices =
             Q6_Vub_vlsr_VubR(v_packed, 4);
-        const HVX_Vector v_low = Q6_Vb_vlut32_VbVbR_nomatch(
-            v_low_indices, v_lut, 0);
-        const HVX_Vector v_high = Q6_Vb_vlut32_VbVbR_nomatch(
-            v_high_indices, v_lut, 0);
+        const HVX_Vector v_low = Q6_Vb_vsub_VbVb(
+            Q6_V_vxor_VV(v_low_indices, v_sign_bias), v_sign_bias);
+        const HVX_Vector v_high = Q6_Vb_vsub_VbVb(
+            Q6_V_vxor_VV(v_high_indices, v_sign_bias), v_sign_bias);
         const HVX_VectorPair v_unpacked =
             Q6_W_vshuff_VVR(v_high, v_low, -1);
         const HVX_VectorPair v_groups0 = qbh_unpack_w4_f16_group(
