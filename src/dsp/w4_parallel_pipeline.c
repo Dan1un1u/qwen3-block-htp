@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "hmx_u8s8_projection.h"
+#include "mlp_u8.h"
 #include "probe_protocol.h"
 #include "qbh_user_dma.h"
 #include "w4_parallel_pipeline.h"
@@ -25,6 +26,7 @@ static uint8_t qbh_chunked_hmx_stack[QBH_CHUNKED_HMX_STACK_BYTES]
 
 struct qbh_chunk_task {
     uint32_t stop;
+    uint32_t mlp_activation;
     uint32_t sequence;
     uint32_t compressed_slot;
     uint32_t expanded_slot;
@@ -33,6 +35,8 @@ struct qbh_chunk_task {
     uint32_t stream_region_index;
     uint32_t stream_region_tiles;
     uint32_t stream_generation;
+    uint32_t mlp_pair_index;
+    uint32_t mlp_pair_slot;
 };
 
 struct qbh_chunk_queue {
@@ -58,6 +62,7 @@ struct qbh_parallel_state {
     qurt_sem_t expanded_ready[QBH_W4_EXPANDED_CHUNK_SLOT_COUNT];
     qurt_sem_t hmx_started;
     qurt_sem_t hvx_started;
+    qurt_sem_t mlp_pair_free[QBH_W4_MAX_COMPRESSED_SLOT_COUNT];
     qurt_mutex_t metrics_mutex;
 
     volatile uint32_t
@@ -72,6 +77,7 @@ struct qbh_parallel_state {
     uint32_t hvx_hmx_overlap_observed;
     uint32_t hvx_parallel_overlap_observed;
     volatile int32_t abort_status;
+    const struct qbh_mlp_gate_up_handoff *mlp_handoff;
 };
 
 struct qbh_hvx_worker_job {
@@ -377,6 +383,31 @@ static void qbh_hvx_worker_main(void *opaque) {
             break;
         }
 
+        if (task.mlp_activation != 0U) {
+            uint64_t activation_start = HAP_perf_get_qtimer_count();
+            uint8_t *pair = state->output_tiles +
+                (size_t)task.mlp_pair_slot * 2U *
+                    QBH_HMX_OUTPUT_BYTES;
+            if (qbh_hvx_region_begin(state) != 0) {
+                exit_status = AEE_EFAILED;
+                break;
+            }
+            qbh_mlp_gate_up_hvx(
+                pair, pair + QBH_HMX_OUTPUT_BYTES,
+                state->mlp_handoff->middle_activation +
+                    (size_t)task.mlp_pair_index * QBH_HMX_OUTPUT_BYTES,
+                QBH_HMX_OUTPUT_BYTES);
+            qbh_hvx_region_end(state);
+            qurt_mutex_lock(&state->metrics_mutex);
+            *state->mlp_handoff->activation_ticks +=
+                HAP_perf_get_qtimer_count() - activation_start;
+            ++*state->mlp_handoff->pair_consume_count;
+            qurt_mutex_unlock(&state->metrics_mutex);
+            asm volatile("barrier" : : : "memory");
+            qurt_sem_up(&state->mlp_pair_free[task.mlp_pair_slot]);
+            continue;
+        }
+
         compressed = state->compressed_slots[task.compressed_slot];
         expanded = state->expanded_slots[task.expanded_slot];
         if (qbh_physical_plan_is_streaming(layout->physical_plan)) {
@@ -541,10 +572,41 @@ static void qbh_chunked_hmx_main(void *opaque) {
                     job->execution_count += chunk_tiles;
                     if (chunk_index + 1U ==
                         layout->chunks_per_output) {
-                        qbh_hmx_store_u8_output(
-                            state->output_tiles +
-                            (size_t)output_tile *
-                                QBH_HMX_OUTPUT_BYTES);
+                        if (state->mlp_handoff != NULL) {
+                            uint32_t pair_index = output_tile / 2U;
+                            uint32_t pair_slot = pair_index %
+                                state->mlp_handoff->pair_slot_count;
+                            uint32_t pair_lane = output_tile & 1U;
+                            if (pair_lane == 0U) {
+                                uint64_t pair_wait =
+                                    HAP_perf_get_qtimer_count();
+                                qurt_sem_down(
+                                    &state->mlp_pair_free[pair_slot]);
+                                state->header->producer_slot_wait_ticks +=
+                                    HAP_perf_get_qtimer_count() - pair_wait;
+                            }
+                            qbh_hmx_store_u8_output(
+                                state->output_tiles +
+                                (size_t)pair_slot * 2U *
+                                    QBH_HMX_OUTPUT_BYTES +
+                                (size_t)pair_lane * QBH_HMX_OUTPUT_BYTES);
+                            if (pair_lane != 0U) {
+                                struct qbh_chunk_task activation_task;
+                                memset(&activation_task, 0,
+                                       sizeof(activation_task));
+                                activation_task.mlp_activation = 1U;
+                                activation_task.mlp_pair_index = pair_index;
+                                activation_task.mlp_pair_slot = pair_slot;
+                                qbh_queue_push(&state->queue,
+                                               &activation_task);
+                                ++*state->mlp_handoff->pair_publish_count;
+                            }
+                        } else {
+                            qbh_hmx_store_u8_output(
+                                state->output_tiles +
+                                (size_t)output_tile *
+                                    QBH_HMX_OUTPUT_BYTES);
+                        }
                     }
                     job->last_compute_end = core_end;
                     job->compute_ticks +=
@@ -580,6 +642,11 @@ static void qbh_chunked_hmx_main(void *opaque) {
                     chunk_tiles);
                 job->execution_count += chunk_tiles;
                 if (chunk_index + 1U == layout->chunks_per_output) {
+                    if (state->mlp_handoff != NULL) {
+                        exit_status = AEE_EBADPARM;
+                        state->abort_status = exit_status;
+                        goto unlock;
+                    }
                     qbh_hmx_store_u8_output(
                         state->output_tiles +
                         (size_t)output_tile * QBH_HMX_OUTPUT_BYTES);
@@ -682,11 +749,12 @@ static void qbh_publish_w4_bundle(
     }
 }
 
-int qbh_run_chunked_w4_pipeline(
+static int qbh_run_chunked_w4_pipeline_impl(
     struct qbh_probe_header *header,
     const struct qbh_projection_layout *layout,
     const uint8_t *stored_weights, const uint8_t *activation_tiles,
-    uint8_t *vtcm, uint32_t hmx_context_id) {
+    uint8_t *vtcm, uint32_t hmx_context_id,
+    const struct qbh_mlp_gate_up_handoff *handoff) {
     struct qbh_parallel_state state;
     struct qbh_hvx_worker_job hvx_jobs[QBH_MAX_HVX_WORKERS];
     struct qbh_chunked_hmx_job hmx_job;
@@ -710,6 +778,18 @@ int qbh_run_chunked_w4_pipeline(
         header->requested_hvx_workers > QBH_MAX_HVX_WORKERS) {
         return AEE_EBADPARM;
     }
+    if (handoff != NULL &&
+        (layout->variant != QBH_PROJECTION_GATE_UP_PAIR ||
+         !qbh_physical_plan_is_streaming(layout->physical_plan) ||
+         handoff->middle_activation == NULL ||
+         handoff->pair_publish_count == NULL ||
+         handoff->pair_consume_count == NULL ||
+         handoff->activation_ticks == NULL ||
+         handoff->pair_slot_count == 0U ||
+         handoff->pair_slot_count > QBH_W4_MAX_COMPRESSED_SLOT_COUNT ||
+         (layout->n_tiles & 1U) != 0U)) {
+        return AEE_EBADPARM;
+    }
     if (qbh_physical_plan_is_streaming(layout->physical_plan) &&
         ((layout->chunk_tiles % QBH_W4_STREAM_REGION_TILES) != 0U ||
          (layout->k_tiles % QBH_W4_STREAM_REGION_TILES) != 0U ||
@@ -731,6 +811,7 @@ int qbh_run_chunked_w4_pipeline(
     memset(hvx_threads, 0, sizeof(hvx_threads));
     state.header = header;
     state.layout = layout;
+    state.mlp_handoff = handoff;
     state.activation_tiles = activation_tiles;
     state.output_tiles = vtcm + layout->vtcm_output_offset;
     for (uint32_t slot = 0; slot < layout->compressed_slot_count;
@@ -742,6 +823,11 @@ int qbh_run_chunked_w4_pipeline(
          slot < layout->expanded_slot_count; ++slot) {
         state.expanded_slots[slot] =
             vtcm + qbh_projection_expanded_chunk_offset(layout, slot);
+    }
+    if (handoff != NULL) {
+        for (uint32_t slot = 0; slot < handoff->pair_slot_count; ++slot) {
+            qurt_sem_init_val(&state.mlp_pair_free[slot], 1);
+        }
     }
 
     qbh_queue_init(&state.queue);
@@ -918,6 +1004,12 @@ int qbh_run_chunked_w4_pipeline(
     }
 
 stop_workers:
+    if (handoff != NULL && result == AEE_SUCCESS &&
+        hmx_thread_created && !hmx_thread_joined) {
+        header->hmx_thread_join_status =
+            qurt_thread_join(hmx_thread, &hmx_exit_status);
+        hmx_thread_joined = 1;
+    }
     for (uint32_t worker = 0; worker < created_hvx_workers; ++worker) {
         struct qbh_chunk_task stop_task;
         memset(&stop_task, 0, sizeof(stop_task));
@@ -1002,6 +1094,9 @@ stop_workers:
          header->hmx_unlock_status != AEE_SUCCESS ||
          header->hvx_thread_join_status != 0 ||
          joined_hvx_workers != header->requested_hvx_workers ||
+         (handoff != NULL &&
+          (*handoff->pair_publish_count != layout->n_tiles / 2U ||
+           *handoff->pair_consume_count != layout->n_tiles / 2U)) ||
          header->weight_expand_count !=
              header->repeat_count * layout->n_tiles *
                  (qbh_physical_plan_is_streaming(
@@ -1039,7 +1134,33 @@ cleanup:
          ++slot) {
         qurt_sem_destroy(&state.compressed_free[slot]);
     }
+    if (handoff != NULL) {
+        for (uint32_t slot = 0; slot < handoff->pair_slot_count; ++slot) {
+            qurt_sem_destroy(&state.mlp_pair_free[slot]);
+        }
+    }
     qurt_mutex_destroy(&state.metrics_mutex);
     qbh_queue_destroy(&state.queue);
     return result;
+}
+
+int qbh_run_chunked_w4_pipeline(
+    struct qbh_probe_header *header,
+    const struct qbh_projection_layout *layout,
+    const uint8_t *stored_weights, const uint8_t *activation_tiles,
+    uint8_t *vtcm, uint32_t hmx_context_id) {
+    return qbh_run_chunked_w4_pipeline_impl(
+        header, layout, stored_weights, activation_tiles, vtcm,
+        hmx_context_id, NULL);
+}
+
+int qbh_run_chunked_w4_pipeline_mlp(
+    struct qbh_probe_header *header,
+    const struct qbh_projection_layout *layout,
+    const uint8_t *stored_weights, const uint8_t *activation_tiles,
+    uint8_t *vtcm, uint32_t hmx_context_id,
+    const struct qbh_mlp_gate_up_handoff *handoff) {
+    return qbh_run_chunked_w4_pipeline_impl(
+        header, layout, stored_weights, activation_tiles, vtcm,
+        hmx_context_id, handoff);
 }

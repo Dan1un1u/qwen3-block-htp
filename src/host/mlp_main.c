@@ -95,7 +95,8 @@ static void fill_identity_weights(
 
 static void pack_w4_postscale(
     const struct qbh_projection_layout *layout,
-    const int8_t *logical_w4, uint8_t *stored_weights) {
+    const int8_t *logical_w4, int gate_up_interleaved,
+    uint8_t *stored_weights) {
     memset(stored_weights, 0, layout->stored_weight_bytes);
     for (uint32_t output_tile = 0; output_tile < layout->n_tiles;
          ++output_tile) {
@@ -105,10 +106,17 @@ static void pack_w4_postscale(
             qbh_projection_w4_scale_offset(layout, output_tile);
         uint32_t *bias = (uint32_t *)(stored_weights +
             qbh_projection_w4_bias_offset(layout, output_tile));
+        uint32_t logical_output_tile = output_tile;
+        if (gate_up_interleaved != 0) {
+            logical_output_tile = output_tile / 2U +
+                (output_tile & 1U) *
+                    (QBH_GATE_UP_N / QBH_HMX_OUTPUT_CHANNELS);
+        }
         for (uint32_t output_lane = 0;
              output_lane < QBH_HMX_OUTPUT_CHANNELS; ++output_lane) {
             uint32_t logical_n =
-                output_tile * QBH_HMX_OUTPUT_CHANNELS + output_lane;
+                logical_output_tile * QBH_HMX_OUTPUT_CHANNELS +
+                output_lane;
             uint32_t scale = output_scale(logical_n);
             int32_t sum = 0;
             scales[output_lane] = (uint8_t)scale;
@@ -299,8 +307,8 @@ int main(int argc, char **argv) {
     header->dsp_status = QBH_MLP_STATUS_HOST_READY;
 
     fill_input(input);
-    pack_w4_postscale(&gate_layout, gate_logical, gate_weights);
-    pack_w4_postscale(&down_layout, down_logical, down_weights);
+    pack_w4_postscale(&gate_layout, gate_logical, 1, gate_weights);
+    pack_w4_postscale(&down_layout, down_logical, 0, down_weights);
     memset(output, 0xa5, down_layout.output_bytes);
 
     reference_start = monotonic_ns();
@@ -368,6 +376,10 @@ int main(int argc, char **argv) {
            "\"gate_up_output_vtcm_bytes\":%" PRIu32 ","
            "\"middle_vtcm_bytes\":%" PRIu32 ","
            "\"final_output_vtcm_bytes\":%" PRIu32 ","
+           "\"gate_up_pair_slot_count\":%" PRIu32 ","
+           "\"gate_up_pair_publish_count\":%" PRIu32 ","
+           "\"gate_up_pair_consume_count\":%" PRIu32 ","
+           "\"gate_up_full_tensor_materialized\":%" PRIu32 ","
            "\"activation_self_test_cases\":%" PRIu32 ","
            "\"activation_self_test_mismatches\":%" PRIu32 ","
            "\"intermediate_ddr_read_bytes\":%" PRIu32 ","
@@ -391,6 +403,10 @@ int main(int argc, char **argv) {
            header->vtcm_acquired_bytes, header->vtcm_peak_plan_bytes,
            header->gate_up_output_vtcm_bytes, header->middle_vtcm_bytes,
            header->final_output_vtcm_bytes,
+           header->gate_up_pair_slot_count,
+           header->gate_up_pair_publish_count,
+           header->gate_up_pair_consume_count,
+           header->gate_up_full_tensor_materialized,
            header->activation_self_test_cases,
            header->activation_self_test_mismatches,
            header->intermediate_ddr_read_bytes,
@@ -410,7 +426,13 @@ int main(int argc, char **argv) {
                         header->intermediate_ddr_read_bytes == 0U &&
                         header->intermediate_ddr_write_bytes == 0U &&
                         header->intermediate_dma_descriptor_count == 0U &&
-                        header->intermediate_spill_fill_count == 0U
+                        header->intermediate_spill_fill_count == 0U &&
+                        header->gate_up_full_tensor_materialized == 0U &&
+                        header->gate_up_pair_publish_count ==
+                            repeats * QBH_GATE_UP_N /
+                                QBH_HMX_OUTPUT_CHANNELS &&
+                        header->gate_up_pair_consume_count ==
+                            header->gate_up_pair_publish_count
                     ? 0
                     : 1;
 

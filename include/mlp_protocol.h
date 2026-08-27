@@ -6,7 +6,7 @@
 #include "probe_protocol.h"
 
 #define QBH_MLP_MAGIC UINT32_C(0x51424d4c)
-#define QBH_MLP_ABI_VERSION UINT32_C(1)
+#define QBH_MLP_ABI_VERSION UINT32_C(2)
 #define QBH_MLP_EXPERIMENT UINT32_C(21)
 #define QBH_MLP_INTERMEDIATE_BYTES \
     (QBH_PROJ_M * QBH_GATE_UP_N)
@@ -55,6 +55,10 @@ struct qbh_mlp_header {
     uint32_t gate_up_output_vtcm_bytes;
     uint32_t middle_vtcm_bytes;
     uint32_t final_output_vtcm_bytes;
+    uint32_t gate_up_pair_slot_count;
+    uint32_t gate_up_pair_publish_count;
+    uint32_t gate_up_pair_consume_count;
+    uint32_t gate_up_full_tensor_materialized;
 
     uint32_t activation_self_test_cases;
     uint32_t activation_self_test_mismatches;

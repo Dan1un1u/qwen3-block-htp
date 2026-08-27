@@ -17,6 +17,7 @@
 
 #define QBH_MLP_DMA_TIMEOUT_TICKS UINT64_C(1920000)
 #define QBH_MLP_SELF_TEST_ELEMENTS UINT32_C(65536)
+#define QBH_MLP_GATE_UP_PAIR_SLOTS UINT32_C(8)
 
 static struct qbh_dma_aligned_desc_2d
     qbh_mlp_output_descriptors[QBH_DOWN_N / QBH_HMX_OUTPUT_CHANNELS]
@@ -52,6 +53,36 @@ static int qbh_mlp_header_valid(const struct qbh_mlp_header *header,
                            header->down_weight_bytes, shared_bytes) &&
            qbh_range_valid(header->output_offset, header->output_bytes,
                            shared_bytes);
+}
+
+static int qbh_configure_gate_up_handoff_layout(
+    struct qbh_projection_layout *layout) {
+    uint32_t activation_offset = qbh_align_up_u32(
+        QBH_MLP_INTERMEDIATE_BYTES, QBH_HMX_ACTIVATION_BYTES);
+    uint32_t compressed_offset = qbh_align_up_u32(
+        activation_offset + layout->activation_bytes,
+        QBH_W4_METADATA_ALIGNMENT);
+    uint32_t expanded_offset = qbh_align_up_u32(
+        compressed_offset + layout->compressed_slot_count *
+                                layout->w4_bundle_bytes,
+        QBH_W4_METADATA_ALIGNMENT);
+    uint32_t output_offset = qbh_align_up_u32(
+        expanded_offset + layout->expanded_slot_count *
+                              layout->expanded_chunk_slot_bytes,
+        QBH_HMX_OUTPUT_BYTES);
+    uint32_t plan_bytes = output_offset +
+        QBH_MLP_GATE_UP_PAIR_SLOTS * 2U * QBH_HMX_OUTPUT_BYTES;
+
+    layout->vtcm_activation_offset = activation_offset;
+    layout->vtcm_compressed_slot0_offset = compressed_offset;
+    layout->vtcm_compressed_slot1_offset =
+        compressed_offset + layout->w4_bundle_bytes;
+    layout->vtcm_chunked_expanded_slots_offset = expanded_offset;
+    layout->vtcm_chunked_output_offset = output_offset;
+    layout->vtcm_output_offset = output_offset;
+    layout->vtcm_chunked_plan_bytes = plan_bytes;
+    layout->vtcm_plan_bytes = plan_bytes;
+    return plan_bytes <= QBH_W4U8_VTCM_BYTES ? 0 : -1;
 }
 
 static void qbh_reset_phase_header(struct qbh_probe_header *phase,
@@ -240,6 +271,7 @@ AEEResult qbh_run_mlp_rpc(int32_t shared_fd, uint32_t shared_bytes,
             QBH_PROJECTION_DOWN, QBH_WEIGHT_PACKED_W4_HMX_SCALE,
             QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH2, 4U,
             QBH_W4_WIDE_CHUNK_TILES, &down_layout) != 0 ||
+        qbh_configure_gate_up_handoff_layout(&gate_layout) != 0 ||
         !qbh_mlp_header_valid(header, shared_bytes, &gate_layout,
                               &down_layout)) {
         header->dsp_status = QBH_MLP_STATUS_BAD_HEADER;
@@ -275,9 +307,14 @@ AEEResult qbh_run_mlp_rpc(int32_t shared_fd, uint32_t shared_bytes,
     header->resource_hmx_context_id = hmx_context_id;
     header->vtcm_requested_bytes = QBH_W4U8_VTCM_BYTES;
     header->vtcm_acquired_bytes = QBH_W4U8_VTCM_BYTES;
-    header->gate_up_output_vtcm_bytes = gate_layout.output_tiles_bytes;
+    header->gate_up_output_vtcm_bytes =
+        QBH_MLP_GATE_UP_PAIR_SLOTS * 2U * QBH_HMX_OUTPUT_BYTES;
     header->middle_vtcm_bytes = QBH_MLP_INTERMEDIATE_BYTES;
     header->final_output_vtcm_bytes = down_layout.output_tiles_bytes;
+    header->gate_up_pair_slot_count = QBH_MLP_GATE_UP_PAIR_SLOTS;
+    header->gate_up_pair_publish_count = 0U;
+    header->gate_up_pair_consume_count = 0U;
+    header->gate_up_full_tensor_materialized = 0U;
     header->vtcm_peak_plan_bytes =
         gate_layout.vtcm_plan_bytes > down_layout.vtcm_plan_bytes
             ? gate_layout.vtcm_plan_bytes
@@ -307,8 +344,16 @@ AEEResult qbh_run_mlp_rpc(int32_t shared_fd, uint32_t shared_bytes,
     header->qtimer_start = HAP_perf_get_qtimer_count();
     for (uint32_t repeat = 0; repeat < header->repeat_count; ++repeat) {
         uint64_t start;
-        int hvx_status;
-        int hvx_unlock_status;
+        uint32_t pair_publish_count = 0U;
+        uint32_t pair_consume_count = 0U;
+        uint64_t activation_ticks = 0U;
+        struct qbh_mlp_gate_up_handoff handoff = {
+            vtcm,
+            QBH_MLP_GATE_UP_PAIR_SLOTS,
+            &pair_publish_count,
+            &pair_consume_count,
+            &activation_ticks,
+        };
 
         if (qbh_stage_activation(
                 header, &gate_layout, shared + header->input_offset,
@@ -320,32 +365,23 @@ AEEResult qbh_run_mlp_rpc(int32_t shared_fd, uint32_t shared_bytes,
 
         qbh_reset_phase_header(&header->gate_up_phase, 2U);
         start = HAP_perf_get_qtimer_count();
-        result = qbh_run_chunked_w4_pipeline(
+        result = qbh_run_chunked_w4_pipeline_mlp(
             &header->gate_up_phase, &gate_layout,
             shared + header->gate_up_weight_offset,
             vtcm + gate_layout.vtcm_activation_offset, vtcm,
-            hmx_context_id);
+            hmx_context_id, &handoff);
         header->gate_up_ticks += HAP_perf_get_qtimer_count() - start;
         if (result != AEE_SUCCESS) {
             header->dsp_status = QBH_MLP_STATUS_GATE_UP_FAILED;
             goto publish_header;
         }
 
-        start = HAP_perf_get_qtimer_count();
-        hvx_status = qurt_hvx_lock(QURT_HVX_MODE_128B);
-        if (hvx_status != AEE_SUCCESS) {
-            header->dsp_status = QBH_MLP_STATUS_ACTIVATION_FAILED;
-            result = AEE_EFAILED;
-            goto publish_header;
-        }
-        qbh_mlp_gate_up_hvx(
-            vtcm + gate_layout.vtcm_output_offset,
-            vtcm + gate_layout.vtcm_output_offset +
-                QBH_MLP_INTERMEDIATE_BYTES,
-            vtcm, QBH_MLP_INTERMEDIATE_BYTES);
-        hvx_unlock_status = qurt_hvx_unlock();
-        header->activation_ticks += HAP_perf_get_qtimer_count() - start;
-        if (hvx_unlock_status != AEE_SUCCESS) {
+        header->gate_up_pair_publish_count += pair_publish_count;
+        header->gate_up_pair_consume_count += pair_consume_count;
+        header->activation_ticks += activation_ticks;
+        if (pair_publish_count != QBH_GATE_UP_N /
+                                      QBH_HMX_OUTPUT_CHANNELS ||
+            pair_consume_count != pair_publish_count) {
             header->dsp_status = QBH_MLP_STATUS_ACTIVATION_FAILED;
             result = AEE_EFAILED;
             goto publish_header;
