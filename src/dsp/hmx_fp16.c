@@ -122,6 +122,44 @@ void qbh_hmx_fp16_matmul_tiles(const __fp16 *activation_tiles,
     asm volatile("barrier" ::: "memory");
 }
 
+void qbh_hmx_fp16_matmul_tile_scales(
+    const __fp16 *activation_tiles, const __fp16 *weight_tiles,
+    const void *scale_blocks, __fp16 *output_tiles,
+    uint32_t m_tiles, uint32_t k_tiles, uint32_t n_tiles) {
+    const uint8_t *scales = (const uint8_t *)scale_blocks;
+
+    asm volatile("mxclracc.hf" ::: "memory");
+    for (uint32_t row_tile = 0; row_tile < m_tiles; ++row_tile) {
+        for (uint32_t column_tile = 0; column_tile < n_tiles;
+             ++column_tile) {
+            const __fp16 *activation = activation_tiles +
+                (size_t)row_tile * k_tiles *
+                    QBH_HMX_FP16_TILE_ELEMENTS;
+            const __fp16 *weight = weight_tiles +
+                (size_t)column_tile * k_tiles *
+                    QBH_HMX_FP16_TILE_ELEMENTS;
+            uint32_t remaining = k_tiles;
+
+            Q6_bias_mxmem2_A((void *)(scales +
+                (size_t)column_tile * QBH_HMX_FP16_SCALE_BYTES));
+            while (remaining != 0U) {
+                uint32_t stream = remaining > 32U ? 32U : remaining;
+                qbh_hmx_fp16_load_tiles(activation, weight, stream);
+                activation += (size_t)stream *
+                              QBH_HMX_FP16_TILE_ELEMENTS;
+                weight += (size_t)stream *
+                          QBH_HMX_FP16_TILE_ELEMENTS;
+                remaining -= stream;
+            }
+            qbh_hmx_fp16_store_tile(
+                output_tiles +
+                qbh_hmx_fp16_matrix_tile_offset(
+                    row_tile, column_tile, n_tiles));
+        }
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
 int qbh_hmx_fp16_matmul_streaming(
     const __fp16 *activation_tiles, const __fp16 *weight_tiles,
     const void *scale_block, __fp16 *output_tiles,

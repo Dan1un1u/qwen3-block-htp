@@ -23,6 +23,10 @@ void qbh_hmx_fp16_matmul_tiles(const __fp16 *activation_tiles,
                                __fp16 *output_tiles,
                                uint32_t m_tiles, uint32_t k_tiles,
                                uint32_t n_tiles);
+void qbh_hmx_fp16_matmul_tile_scales(
+    const __fp16 *activation_tiles, const __fp16 *weight_tiles,
+    const void *scale_blocks, __fp16 *output_tiles,
+    uint32_t m_tiles, uint32_t k_tiles, uint32_t n_tiles);
 
 int qbh_hmx_fp16_matmul_streaming(
     const __fp16 *activation_tiles, const __fp16 *weight_tiles,
