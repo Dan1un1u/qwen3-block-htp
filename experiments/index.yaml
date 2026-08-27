@@ -1191,7 +1191,8 @@ experiments:
     evidence_profile: real-qwen3-block-hvx-fp16-common-ops
     source_branches:
       - codex/exp-0024-fp16-hvx-common-ops
-    source_commits: []
+    source_commits:
+      - 659d0e34d70c2d8f81612e5c728bf08b4a0a9e17
     record: docs/experiments/EXP-0024.md
     decided_by: user
     decided_on: '2026-08-28'
