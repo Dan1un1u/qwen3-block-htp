@@ -72,8 +72,11 @@ static HVX_VectorPair qbh_unpack_w4_f16_group(
     HVX_Vector v_nibble_group, HVX_Vector v_f16_lut) {
     const HVX_Vector v_two_row_groups =
         Q6_Vh_vdeal_Vh(v_nibble_group);
-    return Q6_Wh_vlut16_VbVhR_nomatch(
-        v_two_row_groups, v_f16_lut, 0);
+    const HVX_VectorPair v_lookup =
+        Q6_Wh_vlut16_VbVhR_nomatch(
+            v_two_row_groups, v_f16_lut, 0);
+    return Q6_W_vshuff_VVR(
+        Q6_V_hi_W(v_lookup), Q6_V_lo_W(v_lookup), -2);
 }
 
 __attribute__((noinline)) void qbh_expand_w4_to_f16_hvx(
