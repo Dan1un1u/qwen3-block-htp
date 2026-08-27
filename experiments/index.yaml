@@ -720,3 +720,31 @@ experiments:
       paired_w4_vs_s8_repeat1_improvement_percent: 17.849567813052904
       paired_w4_vs_s8_repeat10_improvement_percent: 20.877885789541285
       performance_characterization: paired_gate_up_single_invocation_passes_but_is_not_a_complete_mlp
+  - id: EXP-0017
+    slug: optimized-scale-placement
+    title: Re-evaluate W4 scale placement under the latest physical plans
+    parent: EXP-0016
+    variants:
+      - packed_w4_hvx_prescale
+      - packed_w4_hmx_postscale
+      - expanded_s8_control
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: current-schedule-w4-scale-placement
+    source_branches:
+      - codex/exp-0017-optimized-scale-placement
+    source_commits: []
+    record: docs/experiments/EXP-0017.md
+    decided_by: user
+    decided_on: '2026-08-27'
+    approval_ref: 'User message 2026-08-27: 继续优化现有方案'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0017-optimized-scale-placement
+      started_on: '2026-08-27'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0017'
+      retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0017'

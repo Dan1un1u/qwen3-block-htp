@@ -95,3 +95,12 @@ sharing the same `[64, 2048]` activation by representing their concatenated
 weights and outputs as one `2048 -> 12288` physical projection. It does not
 apply SiLU, multiply gate and up outputs, or execute the down projection.
 _Avoid_: fused MLP, gate/up arithmetic fusion, complete Qwen3 block
+
+**W4 Scale Placement**:
+The physical stage at which a per-output-channel W4 scale is applied. In
+HVX-prescale, HVX expands each signed nibble and multiplies it by the channel
+scale before integer HMX. In HMX-postscale, HVX expands the raw signed nibble
+and HMX applies the channel scale during accumulator conversion. These are
+mathematically equivalent under the experiment's exact integer scale domain,
+but they have different HVX/HMX work and scheduling costs.
+_Avoid_: different quantization algorithm, different W4 weights
