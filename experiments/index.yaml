@@ -961,14 +961,22 @@ experiments:
     variants:
       - exp0019_projection_v1_components
       - vtcm_resident_tiled_gate_silu_up_down
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: qwen3-w4u8-mlp-vtcm-residency
     source_branches:
       - codex/exp-0021-vtcm-resident-w4u8-mlp
-    source_commits: []
+    source_commits:
+      - 29e65ec36d2c9b481f4377bc15f723325d029040
+      - 8e72dc127ae179aa6ae8aa1906e0d4dfc7b95528
+      - 8684798110c77cfcebb62746180c1fde56168d78
+      - b8dd438edb6ef3b44e072f11849d378492f67b46
+      - e75ea2ad066b6ec8c51ba8523fa41091b589c467
+      - 4964c3984c59acabada20daf39564b996d778525
+      - 290f5d437ffa8ee7da169f97f135e80ec0081fc0
+      - 23f51b37efbd6e16e7e0249a17505264f1684d0d
     record: docs/experiments/EXP-0021.md
     decided_by: user
     decided_on: '2026-08-27'
@@ -977,7 +985,36 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0021-vtcm-resident-w4u8-mlp
       started_on: '2026-08-27'
-      completed_on: null
+      completed_on: '2026-08-27'
     evidence:
       formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0021'
       retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0021'
+      formal_run: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0021\\20260827T110633Z_23f51b37efbd'
+      artifact_set: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0021\\23f51b37efbd'
+      matrix: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0021\\20260827T110633Z_23f51b37efbd\\matrix_gate.json'
+      formal_runs: 21
+      total_mismatches: 0
+      exact_host_reference: true
+      exhaustive_u8_pair_activation_self_test: true
+      activation_self_test_cases: 65536
+      static_pointer_provenance_gate: pass
+      qnn_dependency_scan: none
+      vtcm_request_bytes: 2097152
+      vtcm_peak_plan_bytes: 1708032
+      gate_up_pair_ring_bytes: 32768
+      middle_vtcm_bytes: 393216
+      full_gate_up_tensor_materialized: false
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      intermediate_dma_descriptor_count: 0
+      intermediate_spill_fill_count: 0
+      final_output_dma_descriptor_count: 64
+      gate_up_hvx_hmx_overlap_observed: true
+      down_hvx_hmx_overlap_observed: true
+      boot_id_stable: true
+      repeat1_host_wall_ns_median: 1415260.5
+      repeat10_per_mlp_host_wall_ns_median: 1095747.35
+      repeat1_total_ticks_median: 17132.0
+      repeat10_per_mlp_total_ticks_median: 16551.35
+      speed_gate_required: false
+      performance_characterization: zero_intermediate_ddr_composition_passes_but_integrated_engine_cost_remains_visible
