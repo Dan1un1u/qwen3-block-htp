@@ -1,4 +1,5 @@
 #include <hexagon_types.h>
+#include <HAP_perf.h>
 #include <stdint.h>
 
 #include "hmx_fp16.h"
@@ -21,6 +22,18 @@ static inline void qbh_hmx_fp16_store_tile(__fp16 *output_tile) {
                  :
                  : "r"(2), "r"(output_tile), "r"(0)
                  : "memory");
+}
+
+static int qbh_hmx_fp16_wait_region(
+    const volatile uint32_t *ready_generation,
+    uint32_t expected_generation, uint64_t *wait_ticks) {
+    uint64_t start = HAP_perf_get_qtimer_count();
+    while (*ready_generation != expected_generation) {
+        asm volatile("pause(#8)" : : : "memory");
+    }
+    asm volatile("barrier" : : : "memory");
+    *wait_ticks += HAP_perf_get_qtimer_count() - start;
+    return 0;
 }
 
 void qbh_hmx_fp16_init_unity_scale(void *scale_block) {
@@ -69,4 +82,48 @@ void qbh_hmx_fp16_matmul_tiles(const __fp16 *activation_tiles,
         }
     }
     asm volatile("barrier" ::: "memory");
+}
+
+int qbh_hmx_fp16_matmul_streaming(
+    const __fp16 *activation_tiles, const __fp16 *weight_tiles,
+    const void *scale_block, __fp16 *output_tiles,
+    uint32_t m_tiles, uint32_t k_tiles,
+    uint32_t region_tiles, const volatile uint32_t *ready_generations,
+    uint32_t expected_generation, uint64_t *ready_wait_ticks) {
+    uint32_t region_count;
+
+    if (activation_tiles == NULL || weight_tiles == NULL ||
+        scale_block == NULL || output_tiles == NULL ||
+        ready_generations == NULL || ready_wait_ticks == NULL ||
+        m_tiles == 0U || k_tiles == 0U || region_tiles == 0U ||
+        region_tiles > 32U || k_tiles % region_tiles != 0U) {
+        return -1;
+    }
+    region_count = k_tiles / region_tiles;
+    asm volatile("mxclracc.hf" ::: "memory");
+    Q6_bias_mxmem2_A((void *)scale_block);
+
+    for (uint32_t row_tile = 0; row_tile < m_tiles; ++row_tile) {
+        const __fp16 *activation = activation_tiles +
+            (size_t)row_tile * k_tiles * QBH_HMX_FP16_TILE_ELEMENTS;
+        const __fp16 *weight = weight_tiles;
+        for (uint32_t region = 0; region < region_count; ++region) {
+            if (qbh_hmx_fp16_wait_region(
+                    &ready_generations[region], expected_generation,
+                    ready_wait_ticks) != 0) {
+                return -1;
+            }
+            qbh_hmx_fp16_load_tiles(
+                activation + (size_t)region * region_tiles *
+                                 QBH_HMX_FP16_TILE_ELEMENTS,
+                weight + (size_t)region * region_tiles *
+                             QBH_HMX_FP16_TILE_ELEMENTS,
+                region_tiles);
+        }
+        qbh_hmx_fp16_store_tile(
+            output_tiles + (size_t)row_tile *
+                               QBH_HMX_FP16_TILE_ELEMENTS);
+    }
+    asm volatile("barrier" ::: "memory");
+    return 0;
 }

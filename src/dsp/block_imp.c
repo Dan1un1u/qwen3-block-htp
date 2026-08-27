@@ -29,7 +29,12 @@ enum qbh_block_hmx_command_kind {
     QBH_BLOCK_HMX_NONE = 0,
     QBH_BLOCK_HMX_FP16 = 1,
     QBH_BLOCK_HMX_U8S8 = 2,
+    QBH_BLOCK_HMX_FP16_STREAMING = 3,
 };
+
+#define QBH_BLOCK_W4F16_REGION_TILES UINT32_C(8)
+#define QBH_BLOCK_W4F16_MAX_REGIONS \
+    (QBH_BLOCK_MAX_K / 32U / QBH_BLOCK_W4F16_REGION_TILES)
 
 struct qbh_block_arena {
     uint8_t *base;
@@ -63,6 +68,7 @@ struct qbh_block_buffers {
     uint8_t *expanded_weight;
     uint8_t *hmx_output;
     uint8_t *scale_or_bias;
+    uint8_t *channel_scale;
 };
 
 struct qbh_block_hmx_worker {
@@ -79,10 +85,14 @@ struct qbh_block_hmx_worker {
     uint32_t m_tiles;
     uint32_t k_tiles;
     uint32_t n_tiles;
+    uint32_t region_tiles;
+    const volatile uint32_t *ready_generations;
+    uint32_t expected_generation;
     int32_t lock_status;
     int32_t unlock_status;
     int32_t command_status;
     uint64_t compute_ticks;
+    uint64_t ready_wait_ticks;
 };
 
 static uint8_t qbh_block_hmx_stack[QBH_BLOCK_HMX_STACK_BYTES]
@@ -173,6 +183,9 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
     buffers->scale_or_bias = qbh_arena_alloc_aligned(
         &arena, QBH_HMX_FP16_SCALE_BYTES,
         QBH_HMX_FP16_SCALE_BYTES);
+    buffers->channel_scale = qbh_arena_alloc_aligned(
+        &arena, QBH_HMX_FP16_SCALE_BYTES,
+        QBH_HMX_FP16_SCALE_BYTES);
 
     if (buffers->input_norm_weight == NULL ||
         buffers->post_norm_weight == NULL ||
@@ -188,7 +201,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         buffers->down == NULL || buffers->hmx_activation == NULL ||
         buffers->compressed_weight == NULL ||
         buffers->expanded_weight == NULL || buffers->hmx_output == NULL ||
-        buffers->scale_or_bias == NULL) {
+        buffers->scale_or_bias == NULL || buffers->channel_scale == NULL) {
         return -1;
     }
     if (((uintptr_t)buffers->hmx_activation &
@@ -198,6 +211,8 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         ((uintptr_t)buffers->hmx_output &
          (QBH_HMX_FP16_TILE_BYTES - 1U)) != 0U ||
         ((uintptr_t)buffers->scale_or_bias &
+         (QBH_HMX_FP16_SCALE_BYTES - 1U)) != 0U ||
+        ((uintptr_t)buffers->channel_scale &
          (QBH_HMX_FP16_SCALE_BYTES - 1U)) != 0U) {
         return -1;
     }
@@ -380,6 +395,17 @@ static void qbh_hmx_worker_main(void *opaque) {
                 (const __fp16 *)worker->weight,
                 worker->scale_or_bias, (__fp16 *)worker->output,
                 worker->m_tiles, worker->k_tiles, worker->n_tiles);
+        } else if (worker->kind == QBH_BLOCK_HMX_FP16_STREAMING &&
+                   worker->n_tiles == 1U) {
+            worker->command_status = qbh_hmx_fp16_matmul_streaming(
+                (const __fp16 *)worker->activation,
+                (const __fp16 *)worker->weight,
+                worker->scale_or_bias, (__fp16 *)worker->output,
+                worker->m_tiles, worker->k_tiles,
+                worker->region_tiles, worker->ready_generations,
+                worker->expected_generation,
+                &worker->ready_wait_ticks) == 0
+                ? AEE_SUCCESS : AEE_EFAILED;
         } else if (worker->kind == QBH_BLOCK_HMX_U8S8 &&
                    worker->m_tiles == 1U && worker->n_tiles == 1U) {
             qbh_hmx_begin_u8s8_output(
@@ -415,6 +441,34 @@ static int qbh_hmx_submit(struct qbh_block_hmx_worker *worker,
     worker->command_status = AEE_EFAILED;
     asm volatile("barrier" ::: "memory");
     (void)qurt_sem_up(&worker->command_ready);
+    qurt_sem_down(&worker->command_done);
+    asm volatile("barrier" ::: "memory");
+    return worker->command_status == AEE_SUCCESS ? 0 : -1;
+}
+
+static void qbh_hmx_start_fp16_streaming(
+    struct qbh_block_hmx_worker *worker, const void *activation,
+    const void *weight, const void *scale, void *output,
+    uint32_t m_tiles, uint32_t k_tiles, uint32_t region_tiles,
+    const volatile uint32_t *ready_generations,
+    uint32_t expected_generation) {
+    worker->kind = QBH_BLOCK_HMX_FP16_STREAMING;
+    worker->activation = activation;
+    worker->weight = weight;
+    worker->scale_or_bias = scale;
+    worker->output = output;
+    worker->m_tiles = m_tiles;
+    worker->k_tiles = k_tiles;
+    worker->n_tiles = 1U;
+    worker->region_tiles = region_tiles;
+    worker->ready_generations = ready_generations;
+    worker->expected_generation = expected_generation;
+    worker->command_status = AEE_EFAILED;
+    asm volatile("barrier" ::: "memory");
+    (void)qurt_sem_up(&worker->command_ready);
+}
+
+static int qbh_hmx_wait(struct qbh_block_hmx_worker *worker) {
     qurt_sem_down(&worker->command_done);
     asm volatile("barrier" ::: "memory");
     return worker->command_status == AEE_SUCCESS ? 0 : -1;
@@ -513,6 +567,9 @@ static int qbh_run_projection(
     int hvx_locked = 0;
     uint32_t failure_step = 0U;
     uint64_t phase_start = HAP_perf_get_qtimer_count();
+    volatile uint32_t w4f16_ready[QBH_BLOCK_W4F16_MAX_REGIONS];
+
+    memset((void *)w4f16_ready, 0, sizeof(w4f16_ready));
 
     if (header->variant == QBH_BLOCK_W4U8) {
         qbh_pack_u8_activation((const uint8_t *)input, desc->k,
@@ -559,34 +616,12 @@ static int qbh_run_projection(
             if (result == 0 && header->variant == QBH_BLOCK_W4F16) {
                 failure_step = 2U;
                 result = qbh_dma_copy(
-                    header, buffers->scale_or_bias,
+                    header, buffers->channel_scale,
                     shared + desc->scale_offset +
                         (size_t)n_tile * 32U * sizeof(float),
                     32U * sizeof(float), 1U);
                 header->weight_ddr_read_bytes += 32U * sizeof(float);
                 ++header->weight_dma_descriptor_count;
-                if (result == 0) {
-                    phase_start = HAP_perf_get_qtimer_count();
-                    qbh_expand_w4_to_f16_hvx(
-                        buffers->compressed_weight,
-                        (const float *)buffers->scale_or_bias,
-                        buffers->expanded_weight, k_tiles);
-                    header->w4f16_expand_ticks +=
-                        HAP_perf_get_qtimer_count() - phase_start;
-                    if (desc == &header->projections[0] &&
-                        n_tile == 0U) {
-                        header->w4f16_expand_mismatch_count =
-                            qbh_audit_w4_to_f16_tile(
-                                buffers->compressed_weight,
-                                (const float *)buffers->scale_or_bias,
-                                buffers->expanded_weight,
-                                &header->w4f16_expand_first_logical_index,
-                                &header->w4f16_expand_expected_half_bits,
-                                &header->w4f16_expand_actual_half_bits);
-                    }
-                    qbh_hmx_fp16_init_unity_scale(
-                        buffers->scale_or_bias);
-                }
             } else if (result == 0) {
                 failure_step = 3U;
                 result = qbh_dma_copy(
@@ -634,11 +669,59 @@ static int qbh_run_projection(
         } else {
             failure_step = 4U;
             phase_start = HAP_perf_get_qtimer_count();
-            result = qbh_hmx_submit(
-                worker, QBH_BLOCK_HMX_FP16,
-                buffers->hmx_activation, buffers->expanded_weight,
-                buffers->scale_or_bias, buffers->hmx_output, 2U,
-                k_tiles, 1U);
+            if (header->variant == QBH_BLOCK_W4F16) {
+                uint32_t region_count =
+                    k_tiles / QBH_BLOCK_W4F16_REGION_TILES;
+                uint32_t generation = n_tile + 1U;
+                qbh_hmx_start_fp16_streaming(
+                    worker, buffers->hmx_activation,
+                    buffers->expanded_weight, buffers->scale_or_bias,
+                    buffers->hmx_output, 2U, k_tiles,
+                    QBH_BLOCK_W4F16_REGION_TILES, w4f16_ready,
+                    generation);
+                ++header->w4f16_streamed_command_count;
+                for (uint32_t region = 0; region < region_count;
+                     ++region) {
+                    uint64_t expand_start =
+                        HAP_perf_get_qtimer_count();
+                    qbh_expand_w4_to_f16_hvx(
+                        buffers->compressed_weight +
+                            (size_t)region *
+                                QBH_BLOCK_W4F16_REGION_TILES *
+                                QBH_W4_PACKED_TILE_BYTES,
+                        (const float *)buffers->channel_scale,
+                        buffers->expanded_weight +
+                            (size_t)region *
+                                QBH_BLOCK_W4F16_REGION_TILES *
+                                QBH_HMX_FP16_TILE_BYTES,
+                        QBH_BLOCK_W4F16_REGION_TILES);
+                    header->w4f16_expand_ticks +=
+                        HAP_perf_get_qtimer_count() - expand_start;
+                    w4f16_ready[region] = generation;
+                    asm volatile("release(%0):at"
+                                 :
+                                 : "r"(&w4f16_ready[region])
+                                 : "memory");
+                }
+                if (desc == &header->projections[0] &&
+                    n_tile == 0U) {
+                    header->w4f16_expand_mismatch_count =
+                        qbh_audit_w4_to_f16_tile(
+                            buffers->compressed_weight,
+                            (const float *)buffers->channel_scale,
+                            buffers->expanded_weight,
+                            &header->w4f16_expand_first_logical_index,
+                            &header->w4f16_expand_expected_half_bits,
+                            &header->w4f16_expand_actual_half_bits);
+                }
+                result = qbh_hmx_wait(worker);
+            } else {
+                result = qbh_hmx_submit(
+                    worker, QBH_BLOCK_HMX_FP16,
+                    buffers->hmx_activation, buffers->expanded_weight,
+                    buffers->scale_or_bias, buffers->hmx_output, 2U,
+                    k_tiles, 1U);
+            }
             header->projection_hmx_wait_ticks +=
                 HAP_perf_get_qtimer_count() - phase_start;
             header->hmx_fp16_tile_pair_count += 2U * k_tiles;
@@ -1495,6 +1578,7 @@ stop_worker:
     header->hmx_unlock_status = worker.unlock_status;
     header->hmx_worker_status = thread_exit_status;
     header->hmx_compute_ticks = worker.compute_ticks;
+    header->hmx_ready_wait_ticks = worker.ready_wait_ticks;
     header->qtimer_end = HAP_perf_get_qtimer_count();
     header->total_ticks = header->qtimer_end - header->qtimer_start;
 
