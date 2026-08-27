@@ -204,7 +204,6 @@ int main(int argc, char **argv) {
     size_t total_bytes;
     int shared_fd = -1;
     int mapped = 0;
-    int rpcmem_initialized = 0;
     int rpc_result = AEE_EFAILED;
     int prepare_result = AEE_EFAILED;
     int release_result = AEE_EFAILED;
@@ -263,8 +262,6 @@ int main(int argc, char **argv) {
     fill_identity_weights(&gate_layout, gate_logical, 1);
     fill_identity_weights(&down_layout, down_logical, 0);
 
-    rpcmem_init();
-    rpcmem_initialized = 1;
     shared = rpcmem_alloc(RPCMEM_HEAP_ID_SYSTEM, RPCMEM_FLAG_UNCACHED,
                           (int)total_bytes);
     if (shared == NULL) {
@@ -427,9 +424,6 @@ cleanup:
     }
     if (shared != NULL) {
         rpcmem_free(shared);
-    }
-    if (rpcmem_initialized) {
-        rpcmem_deinit();
     }
     free(reference_output);
     free(reference_middle);
