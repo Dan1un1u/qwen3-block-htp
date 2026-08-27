@@ -1069,6 +1069,15 @@ static int qbh_run_projection(
                             &header->w4f16_expand_first_logical_index,
                             &header->w4f16_expand_expected_half_bits,
                             &header->w4f16_expand_actual_half_bits);
+                    if (header->w4f16_expand_mismatch_count == 0U) {
+                        header->w4f16_expand_mismatch_count =
+                            qbh_hmx_fp16_audit_channel_scales(
+                                buffers->scale_or_bias,
+                                (const float *)w4f16_scale_slots[0],
+                                &header->w4f16_expand_first_logical_index,
+                                &header->w4f16_expand_expected_half_bits,
+                                &header->w4f16_expand_actual_half_bits);
+                    }
                 }
                 result = qbh_hmx_wait(worker);
             } else {

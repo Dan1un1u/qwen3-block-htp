@@ -2,6 +2,7 @@
 #include <HAP_perf.h>
 #include <hvx_hexagon_protos.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "hmx_fp16.h"
 
@@ -59,6 +60,30 @@ void qbh_hmx_fp16_init_channel_scales(void *scale_block,
         Q6_Vhf_vcvt_VsfVsf(zero, scale_f32));
     values[1] = zero;
     asm volatile("barrier" ::: "memory");
+}
+
+uint32_t qbh_hmx_fp16_audit_channel_scales(
+    const void *scale_block, const float *channel_scales,
+    uint32_t *first_channel, uint32_t *expected_half_bits,
+    uint32_t *actual_half_bits) {
+    const uint16_t *actual = (const uint16_t *)scale_block;
+    uint32_t mismatches = 0U;
+
+    for (uint32_t channel = 0; channel < 32U; ++channel) {
+        __fp16 expected = (__fp16)channel_scales[channel];
+        uint16_t expected_bits;
+        memcpy(&expected_bits, &expected, sizeof(expected_bits));
+        if (actual[channel * 2U] != expected_bits ||
+            actual[channel * 2U + 1U] != 0U) {
+            if (mismatches == 0U) {
+                *first_channel = channel;
+                *expected_half_bits = expected_bits;
+                *actual_half_bits = actual[channel * 2U];
+            }
+            ++mismatches;
+        }
+    }
+    return mismatches;
 }
 
 void qbh_hmx_fp16_matmul_tiles(const __fp16 *activation_tiles,
