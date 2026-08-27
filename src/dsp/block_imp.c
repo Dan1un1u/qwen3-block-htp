@@ -16,6 +16,7 @@
 #include "block_protocol.h"
 #include "hmx_fp16.h"
 #include "hmx_u8s8_projection.h"
+#include "hvx_fp16_ops.h"
 #include "qbh_user_dma.h"
 #include "w4_u8_expand.h"
 
@@ -357,6 +358,12 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          header->variant != QBH_BLOCK_W4F16 &&
          header->variant != QBH_BLOCK_W4U8) ||
         header->repeat_count == 0U || header->repeat_count > 100U) {
+        return 0;
+    }
+    if ((header->common_ops_mode != QBH_BLOCK_COMMON_OPS_SCALAR &&
+         header->common_ops_mode != QBH_BLOCK_COMMON_OPS_HVX_FP16) ||
+        (header->variant == QBH_BLOCK_W4U8 &&
+         header->common_ops_mode == QBH_BLOCK_COMMON_OPS_HVX_FP16)) {
         return 0;
     }
     if (header->w4f16_requested_hvx_workers == 0U ||
@@ -1766,7 +1773,12 @@ static int qbh_attention_f16(struct qbh_block_header *header,
     header->attention_qk_max_abs = qbh_f16_max_abs(
         scores, QBH_BLOCK_SCORE_ELEMENTS);
 
-    for (uint32_t head = 0; head < QBH_BLOCK_HEADS; ++head) {
+    if (header->common_ops_mode == QBH_BLOCK_COMMON_OPS_HVX_FP16) {
+        qbh_hvx_stable_causal_softmax_f16(
+            scores, probability, QBH_BLOCK_HEADS, QBH_BLOCK_M,
+            QBH_BLOCK_M, 0.08838834764831845f);
+    } else {
+      for (uint32_t head = 0; head < QBH_BLOCK_HEADS; ++head) {
         for (uint32_t row = 0; row < QBH_BLOCK_M; ++row) {
             __fp16 *score_row = scores +
                 ((size_t)head * QBH_BLOCK_M + row) * QBH_BLOCK_M;
@@ -1797,6 +1809,7 @@ static int qbh_attention_f16(struct qbh_block_header *header,
                     : (__fp16)0.0f;
             }
         }
+      }
     }
     qbh_record_f16_nonfinite(
         header, probability, QBH_BLOCK_SCORE_ELEMENTS,
@@ -1992,11 +2005,19 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             &header->qparams[QBH_BLOCK_QP_INPUT_NORM],
             QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
     } else {
-        qbh_rms_norm_f16(
-            (const __fp16 *)buffers->residual,
-            (const __fp16 *)buffers->input_norm_weight,
-            (__fp16 *)buffers->normalized,
-            QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+        if (header->common_ops_mode == QBH_BLOCK_COMMON_OPS_HVX_FP16) {
+            qbh_hvx_rms_norm_f16(
+                (const __fp16 *)buffers->residual,
+                (const __fp16 *)buffers->input_norm_weight,
+                (__fp16 *)buffers->normalized,
+                QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+        } else {
+            qbh_rms_norm_f16(
+                (const __fp16 *)buffers->residual,
+                (const __fp16 *)buffers->input_norm_weight,
+                (__fp16 *)buffers->normalized,
+                QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+        }
         qbh_record_f16_nonfinite(
             header, buffers->normalized, hidden_elements,
             QBH_BLOCK_NUMERICAL_INPUT_NORM);
@@ -2057,17 +2078,34 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             buffers->v, QBH_BLOCK_M * QBH_BLOCK_KV_HIDDEN,
             &header->qparams[QBH_BLOCK_QP_V]);
     } else {
-        qbh_qk_norm_rope_f16(
-            (__fp16 *)buffers->q, QBH_BLOCK_HEADS, QBH_BLOCK_HIDDEN,
-            (const __fp16 *)buffers->q_norm_weight,
-            (const __fp16 *)buffers->rope_cos,
-            (const __fp16 *)buffers->rope_sin);
-        qbh_qk_norm_rope_f16(
-            (__fp16 *)buffers->k, QBH_BLOCK_KV_HEADS,
-            QBH_BLOCK_KV_HIDDEN,
-            (const __fp16 *)buffers->k_norm_weight,
-            (const __fp16 *)buffers->rope_cos,
-            (const __fp16 *)buffers->rope_sin);
+        if (header->common_ops_mode == QBH_BLOCK_COMMON_OPS_HVX_FP16) {
+            qbh_hvx_qk_norm_rope_f16(
+                (__fp16 *)buffers->q, QBH_BLOCK_M, QBH_BLOCK_HEADS,
+                QBH_BLOCK_HIDDEN, QBH_BLOCK_HEAD_DIM,
+                (const __fp16 *)buffers->q_norm_weight,
+                (const __fp16 *)buffers->rope_cos,
+                (const __fp16 *)buffers->rope_sin);
+            qbh_hvx_qk_norm_rope_f16(
+                (__fp16 *)buffers->k, QBH_BLOCK_M,
+                QBH_BLOCK_KV_HEADS, QBH_BLOCK_KV_HIDDEN,
+                QBH_BLOCK_HEAD_DIM,
+                (const __fp16 *)buffers->k_norm_weight,
+                (const __fp16 *)buffers->rope_cos,
+                (const __fp16 *)buffers->rope_sin);
+        } else {
+            qbh_qk_norm_rope_f16(
+                (__fp16 *)buffers->q, QBH_BLOCK_HEADS,
+                QBH_BLOCK_HIDDEN,
+                (const __fp16 *)buffers->q_norm_weight,
+                (const __fp16 *)buffers->rope_cos,
+                (const __fp16 *)buffers->rope_sin);
+            qbh_qk_norm_rope_f16(
+                (__fp16 *)buffers->k, QBH_BLOCK_KV_HEADS,
+                QBH_BLOCK_KV_HIDDEN,
+                (const __fp16 *)buffers->k_norm_weight,
+                (const __fp16 *)buffers->rope_cos,
+                (const __fp16 *)buffers->rope_sin);
+        }
     }
     qbh_record_f16_nonfinite(
         header, buffers->q, QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
@@ -2135,11 +2173,19 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_NORM],
             QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
     } else {
-        qbh_rms_norm_f16(
-            (const __fp16 *)buffers->residual,
-            (const __fp16 *)buffers->post_norm_weight,
-            (__fp16 *)buffers->normalized,
-            QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+        if (header->common_ops_mode == QBH_BLOCK_COMMON_OPS_HVX_FP16) {
+            qbh_hvx_rms_norm_f16(
+                (const __fp16 *)buffers->residual,
+                (const __fp16 *)buffers->post_norm_weight,
+                (__fp16 *)buffers->normalized,
+                QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+        } else {
+            qbh_rms_norm_f16(
+                (const __fp16 *)buffers->residual,
+                (const __fp16 *)buffers->post_norm_weight,
+                (__fp16 *)buffers->normalized,
+                QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+        }
         qbh_record_f16_nonfinite(
             header, buffers->normalized, hidden_elements,
             QBH_BLOCK_NUMERICAL_POST_NORM);
@@ -2178,10 +2224,17 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             buffers->middle, &header->qparams[QBH_BLOCK_QP_MIDDLE],
             intermediate_elements);
     } else {
-        qbh_silu_multiply_f16(
-            (const __fp16 *)buffers->gate,
-            (const __fp16 *)buffers->up,
-            (__fp16 *)buffers->middle, intermediate_elements);
+        if (header->common_ops_mode == QBH_BLOCK_COMMON_OPS_HVX_FP16) {
+            qbh_hvx_silu_multiply_f16(
+                (const __fp16 *)buffers->gate,
+                (const __fp16 *)buffers->up,
+                (__fp16 *)buffers->middle, intermediate_elements);
+        } else {
+            qbh_silu_multiply_f16(
+                (const __fp16 *)buffers->gate,
+                (const __fp16 *)buffers->up,
+                (__fp16 *)buffers->middle, intermediate_elements);
+        }
         qbh_record_f16_nonfinite(
             header, buffers->middle, intermediate_elements,
             QBH_BLOCK_NUMERICAL_MIDDLE);

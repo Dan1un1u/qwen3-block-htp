@@ -6,8 +6,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(1)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(22)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(2)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(24)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -25,6 +25,11 @@ enum qbh_block_variant {
     QBH_BLOCK_F16F16 = 1,
     QBH_BLOCK_W4F16 = 2,
     QBH_BLOCK_W4U8 = 3,
+};
+
+enum qbh_block_common_ops_mode {
+    QBH_BLOCK_COMMON_OPS_SCALAR = 0,
+    QBH_BLOCK_COMMON_OPS_HVX_FP16 = 1,
 };
 
 enum qbh_block_projection_index {
@@ -130,6 +135,7 @@ struct qbh_block_header {
     uint32_t repeat_count;
     uint32_t w4f16_requested_hvx_workers;
     uint32_t w4f16_region_tiles;
+    uint32_t common_ops_mode;
 
     uint32_t input_offset;
     uint32_t input_bytes;

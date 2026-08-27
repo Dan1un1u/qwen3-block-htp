@@ -18,6 +18,8 @@ set(common_incs
     ${HEXAGON_SDK_ROOT}/incs
     ${HEXAGON_SDK_ROOT}/incs/stddef
     ${HEXAGON_SDK_ROOT}/rtos/qurt
+    ${HEXAGON_SDK_ROOT}/libs/qhl_hvx/inc/internal
+    ${HEXAGON_SDK_ROOT}/libs/qhl_hvx/inc/internal/xqf
 )
 include_directories(${common_incs})
 
@@ -88,11 +90,16 @@ else()
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/w4_u8_expand
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/w4_parallel_pipeline
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/hmx_fp16
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/hvx_fp16_ops
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/block_imp
     )
     build_idl(include/qwen3_probe.idl qwen3_probe_skel)
     target_compile_options(qwen3_probe_skel PRIVATE
         -Wall -Wextra -Werror -mhmx -mhvx -mhvx-length=128B
+    )
+    set_source_files_properties(
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/hvx_fp16_ops.c
+        PROPERTIES COMPILE_OPTIONS "-mllvm;-hexagon-qfloat-mode=lossy"
     )
     copy_binaries(qwen3_probe_skel)
 endif()
