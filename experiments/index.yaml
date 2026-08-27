@@ -837,7 +837,7 @@ experiments:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending
+    adoption_status: accepted
     evidence_profile: bounded-lookahead-hvx-hmx-streaming
     source_branches:
       - codex/exp-0019-streaming-microchunk-handoff
@@ -851,6 +851,9 @@ experiments:
     decided_by: user
     decided_on: '2026-08-27'
     approval_ref: 'User message 2026-08-27: HVX should hand partial work directly to HMX; continue optimizing the pipeline'
+    accepted_by: user
+    accepted_on: '2026-08-27'
+    acceptance_ref: 'User message 2026-08-27: 同意'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0019-streaming-microchunk-handoff
@@ -887,3 +890,33 @@ experiments:
       down_parent_vs_s8_repeat1_improvement_percent: 12.584239925575114
       down_parent_vs_s8_repeat10_improvement_percent: 23.96348498757364
       performance_characterization: two_hvx_streaming_handoff_improves_paired_gate_up_but_not_down
+  - id: EXP-0020
+    slug: hvx-unpack-stream-dispatch
+    title: Optimize HVX W4 unpack and two-producer streaming dispatch
+    parent: EXP-0019
+    variants:
+      - exp0019_stream32_gate_hvx2_control
+      - bitwise_signed_nibble_unpack
+      - deterministic_two_producer_dispatch
+      - combined_unpack_and_dispatch
+      - exp0019_down_chunk96_control
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: selected-streaming-hvx-critical-path
+    source_branches:
+      - codex/exp-0020-hvx-unpack-stream-dispatch
+    source_commits: []
+    record: docs/experiments/EXP-0020.md
+    decided_by: user
+    decided_on: '2026-08-27'
+    approval_ref: 'User message 2026-08-27: 同意'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0020-hvx-unpack-stream-dispatch
+      started_on: '2026-08-27'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0020'
+      retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0020'
