@@ -1026,14 +1026,30 @@ experiments:
       - f16f16_real_layer14
       - w4f16_real_layer14
       - w4u8_real_layer14
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-fixed-full-vtcm
     source_branches:
       - codex/exp-0022-real-block-three-variant
-    source_commits: []
+    source_commits:
+      - bf600a9fd26364cc057a597d5668ec001e263cb0
+      - 657e502ee75318e00d75fcfd2e35bb74fe83c984
+      - db8af71bd034a95b35076f93c9862607a8342322
+      - c4d868298f94007daf6e5d2d8e04b4059e0e6c10
+      - 0d012ee02ebdf6a6af62707f28ed5c385cf3adf1
+      - b892c9a4ddee7e0781fc73713f035f2aefb425f0
+      - d0952d445682c74ac79037ccbe42ab442e84fb4a
+      - 5047612537689c6c96f6bc894bccccfb1b747b21
+      - e3ae633da750641b217bfda9d86b706df241ff0a
+      - 070c5c58cfcfd300a16d4d8e619db495fcb4ebf3
+      - 58d3a8caeee08990e6e5baecc8c487b37b051e18
+      - a709886bf9cf8ca814a8850878ce518c52793852
+      - 1a52e1fbfa3b92d3fab011bad236f34933dd9f16
+      - 94edfb59b5831bee5f06e2fa496023825d0b9dde
+      - be3bd2ed3ad721e43c1bd164ab399ffeb9892650
+      - 25157d78f13e4be8215530639b166e772eaadb2c
     record: docs/experiments/EXP-0022.md
     decided_by: user
     decided_on: '2026-08-27'
@@ -1042,7 +1058,41 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0022-real-block-three-variant
       started_on: '2026-08-27'
-      completed_on: null
+      completed_on: '2026-08-27'
     evidence:
       formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0022'
       retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0022'
+      formal_run: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0022\\20260827T123409Z_25157d78f13e'
+      artifact_set: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0022\\artifacts\\25157d78f13e'
+      block_package: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0022\\block_package_layer14_m64'
+      matrix: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0022\\20260827T123409Z_25157d78f13e\\matrix_gate.json'
+      formal_runs: 33
+      block_package_tensors: 118
+      block_package_hash_audit: pass
+      exact_full_vtcm_gate: pass
+      vtcm_request_bytes: 8388608
+      f16f16_vtcm_peak_plan_bytes: 5794048
+      w4f16_vtcm_peak_plan_bytes: 5794048
+      w4u8_vtcm_peak_plan_bytes: 4090112
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      intermediate_dma_descriptor_count: 0
+      intermediate_spill_fill_count: 0
+      qnn_dependency_scan: none
+      boot_id_stable: true
+      w4_carrier_shared_between_w4f16_w4u8: true
+      f16f16_runtime_reference_cosine: 0.999999998
+      w4f16_runtime_reference_cosine: 0.999999998
+      w4u8_runtime_reference_mismatches: 0
+      w4u8_runtime_reference_max_lsb: 0
+      w4u8_bf16_teacher_cosine: 0.9963734745979309
+      repeat1_f16f16_host_wall_ns_median: 341711198.0
+      repeat1_w4f16_host_wall_ns_median: 3073139999.0
+      repeat1_w4u8_host_wall_ns_median: 288025625.0
+      repeat1_w4u8_latency_change_percent: -15.710802957063175
+      repeat10_f16f16_per_block_host_wall_ns_median: 276208166.6
+      repeat10_w4f16_per_block_host_wall_ns_median: 3003843608.2
+      repeat10_w4u8_per_block_host_wall_ns_median: 274473312.4
+      repeat10_w4u8_latency_change_percent: -0.6280966349964667
+      speed_gate_required: false
+      performance_characterization: w4u8_projection_savings_are_real_but_nearly_cancelled_by_unoptimized_non_projection_u8_stages_in_steady_state

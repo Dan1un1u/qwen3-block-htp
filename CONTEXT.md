@@ -95,6 +95,21 @@ as one common experiment budget while each Physical Plan reports only its own
 peak live allocation.
 _Avoid_: current-available best effort, per-operator VTCM request, assumed grant
 
+**HMX Crouton Address Contract**:
+The architecture-required base alignment and address encoding for tensors
+consumed or produced by HMX. On the current V79 FP16 path, Crouton activation,
+weight, and output tiles require 2 KiB alignment, and bias/scale loads require
+256-byte alignment. A logically in-range but under-aligned VTCM pointer is an
+invalid physical contract and may produce non-finite or unstable results.
+_Avoid_: optional arena padding, numerical tolerance, compiler alignment hint
+
+**Zero-Count Worker Handoff**:
+A producer/consumer semaphore contract whose first `down` must block until the
+peer publishes work or completion. QuRT `qurt_sem_init()` defaults to count
+one, so HMX command-ready, command-done, and worker-started handoffs must use
+`qurt_sem_init_val(..., 0)` explicitly.
+_Avoid_: default semaphore initialization, timing-dependent retry
+
 **Qwen3 Middle Block**:
 One complete Qwen3 transformer-layer Execution Unit from residual input to
 residual output, containing both self-attention and gated MLP computation.
