@@ -689,12 +689,19 @@ int main(int argc, char **argv) {
         header->dsp_status != QBH_BLOCK_STATUS_OK) {
         fprintf(stderr,
                 "warmup failed: rpc=0x%08x dsp=%d projection=%" PRIu32
-                " n_tile=%" PRIu32 " step=%" PRIu32 " result=%d\n",
+                " n_tile=%" PRIu32 " step=%" PRIu32 " result=%d"
+                " expand_mismatches=%" PRIu32
+                " first_index=%" PRIu32 " expected=0x%04" PRIx32
+                " actual=0x%04" PRIx32 "\n",
                 (unsigned int)warmup_result, header->dsp_status,
                 header->projection_failure_index,
                 header->projection_failure_n_tile,
                 header->projection_failure_step,
-                header->projection_failure_result);
+                header->projection_failure_result,
+                header->w4f16_expand_mismatch_count,
+                header->w4f16_expand_first_logical_index,
+                header->w4f16_expand_expected_half_bits,
+                header->w4f16_expand_actual_half_bits);
         goto cleanup;
     }
     warmup_metrics = variant == QBH_BLOCK_W4U8
@@ -719,12 +726,19 @@ int main(int argc, char **argv) {
         header->dsp_status != QBH_BLOCK_STATUS_OK) {
         fprintf(stderr,
                 "measured run failed: rpc=0x%08x dsp=%d projection=%" PRIu32
-                " n_tile=%" PRIu32 " step=%" PRIu32 " result=%d\n",
+                " n_tile=%" PRIu32 " step=%" PRIu32 " result=%d"
+                " expand_mismatches=%" PRIu32
+                " first_index=%" PRIu32 " expected=0x%04" PRIx32
+                " actual=0x%04" PRIx32 "\n",
                 (unsigned int)measured_result, header->dsp_status,
                 header->projection_failure_index,
                 header->projection_failure_n_tile,
                 header->projection_failure_step,
-                header->projection_failure_result);
+                header->projection_failure_result,
+                header->w4f16_expand_mismatch_count,
+                header->w4f16_expand_first_logical_index,
+                header->w4f16_expand_expected_half_bits,
+                header->w4f16_expand_actual_half_bits);
         goto cleanup;
     }
     measured_metrics = variant == QBH_BLOCK_W4U8
