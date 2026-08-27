@@ -832,6 +832,7 @@ experiments:
       - stream32_hvx3
       - stream32_hvx4
       - stream32_hvx6
+      - stream32_hvx6_cap2_after_first_ready
       - expanded_s8_control
     execution_state: running
     evidence_validity: not_checked
