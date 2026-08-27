@@ -745,6 +745,7 @@ int main(int argc, char **argv) {
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"FP16_HMX\","
         "\"projection_compute\":\"%s\","
+        "\"w4f16_scale_placement\":\"%s\","
         "\"intermediate_residency\":\"VTCM\","
         "\"warmup_rpc_result\":%d,"
         "\"warmup_prepared_session_run_index\":%" PRIu32 ","
@@ -818,6 +819,8 @@ int main(int argc, char **argv) {
         qbh_variant_name(variant),
         variant == QBH_BLOCK_W4U8 ? "U8xS8_integer_HMX"
                                   : "FP16_HMX",
+        variant == QBH_BLOCK_W4F16 ? "hmx_output_per_channel"
+                                   : "not_applicable",
         warmup_result, warmup_run_index, warmup_end - warmup_start,
         warmup_metrics.max_abs, warmup_metrics.mean_abs,
         warmup_metrics.rmse, warmup_metrics.cosine,

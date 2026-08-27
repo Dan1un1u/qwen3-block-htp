@@ -1,6 +1,7 @@
 #include <hexagon_types.h>
 #include <HAP_perf.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "hmx_fp16.h"
 
@@ -45,6 +46,23 @@ void qbh_hmx_fp16_init_unity_scale(void *scale_block) {
     for (uint32_t index = 64U; index < 128U; ++index) {
         values[index] = 0U;
     }
+}
+
+void qbh_hmx_fp16_init_channel_scales(void *scale_block,
+                                      const float *channel_scales) {
+    uint16_t *values = (uint16_t *)scale_block;
+
+    for (uint32_t index = 0; index < 32U; ++index) {
+        __fp16 scale = (__fp16)channel_scales[index];
+        uint16_t scale_bits;
+        memcpy(&scale_bits, &scale, sizeof(scale_bits));
+        values[index * 2U] = scale_bits;
+        values[index * 2U + 1U] = 0U;
+    }
+    for (uint32_t index = 64U; index < 128U; ++index) {
+        values[index] = 0U;
+    }
+    asm volatile("barrier" ::: "memory");
 }
 
 void qbh_hmx_fp16_matmul_tiles(const __fp16 *activation_tiles,

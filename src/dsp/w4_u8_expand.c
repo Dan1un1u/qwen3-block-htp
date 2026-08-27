@@ -56,6 +56,19 @@ static HVX_VectorPair qbh_scale_w4_f16_group(
     return Q6_W_vcombine_VV(v_scaled23, v_scaled01);
 }
 
+static HVX_VectorPair qbh_unpack_w4_f16_group(
+    HVX_Vector v_signed_group) {
+    const HVX_Vector v_two_row_groups =
+        Q6_Vh_vdeal_Vh(v_signed_group);
+    const HVX_VectorPair v_quant_h =
+        Q6_Wh_vunpack_Vb(v_two_row_groups);
+    const HVX_Vector v_row01_f16 =
+        Q6_Vhf_equals_Vh(Q6_V_lo_W(v_quant_h));
+    const HVX_Vector v_row23_f16 =
+        Q6_Vhf_equals_Vh(Q6_V_hi_W(v_quant_h));
+    return Q6_W_vcombine_VV(v_row23_f16, v_row01_f16);
+}
+
 __attribute__((noinline)) void qbh_expand_w4_to_f16_hvx(
     const uint8_t *packed_w4, const float *channel_scales,
     void *expanded_f16, uint32_t k_tiles) {
@@ -96,6 +109,41 @@ __attribute__((noinline)) void qbh_expand_w4_to_f16_hvx(
     asm volatile("barrier" : : : "memory");
 }
 
+__attribute__((noinline)) void qbh_unpack_w4_to_f16_hvx(
+    const uint8_t *packed_w4, void *expanded_f16, uint32_t k_tiles) {
+    const HVX_Vector v_lut = *(const HVX_Vector *)qbh_signed_w4_lut;
+    const HVX_Vector v_nibble_mask = Q6_Vb_vsplat_R(0x0f);
+    HVX_Vector *destination = (HVX_Vector *)expanded_f16;
+
+    /* Per-output-channel scales are applied by the FP16 HMX output-scale
+     * unit.  The hot expansion loop therefore only decodes signed W4 and
+     * converts the integer carrier to FP16 Crouton. */
+    for (uint32_t packed_vector = 0;
+         packed_vector < k_tiles * 4U; ++packed_vector) {
+        const HVX_Vector v_packed = *(const HVX_Vector *)(
+            packed_w4 + (size_t)packed_vector * sizeof(HVX_Vector));
+        const HVX_Vector v_low_indices =
+            Q6_V_vand_VV(v_packed, v_nibble_mask);
+        const HVX_Vector v_high_indices =
+            Q6_Vub_vlsr_VubR(v_packed, 4);
+        const HVX_Vector v_low = Q6_Vb_vlut32_VbVbR_nomatch(
+            v_low_indices, v_lut, 0);
+        const HVX_Vector v_high = Q6_Vb_vlut32_VbVbR_nomatch(
+            v_high_indices, v_lut, 0);
+        const HVX_VectorPair v_unpacked =
+            Q6_W_vshuff_VVR(v_high, v_low, -1);
+        const HVX_VectorPair v_groups0 = qbh_unpack_w4_f16_group(
+            Q6_V_lo_W(v_unpacked));
+        const HVX_VectorPair v_groups1 = qbh_unpack_w4_f16_group(
+            Q6_V_hi_W(v_unpacked));
+        destination[packed_vector * 4U] = Q6_V_lo_W(v_groups0);
+        destination[packed_vector * 4U + 1U] = Q6_V_hi_W(v_groups0);
+        destination[packed_vector * 4U + 2U] = Q6_V_lo_W(v_groups1);
+        destination[packed_vector * 4U + 3U] = Q6_V_hi_W(v_groups1);
+    }
+    asm volatile("barrier" : : : "memory");
+}
+
 uint32_t qbh_audit_w4_to_f16_tile(
     const uint8_t *packed_w4, const float *channel_scales,
     const void *expanded_f16, uint32_t *first_logical_index,
@@ -116,6 +164,42 @@ uint32_t qbh_audit_w4_to_f16_tile(
                                : (int8_t)nibble;
             __fp16 expected =
                 (__fp16)((float)quant * channel_scales[output]);
+            uint16_t expected_bits;
+            uint32_t target =
+                ((input / 2U) * 32U + output) * 2U + input % 2U;
+            memcpy(&expected_bits, &expected, sizeof(expected_bits));
+            if (actual[target] != expected_bits) {
+                if (mismatches == 0U) {
+                    *first_logical_index = input * 32U + output;
+                    *expected_half_bits = expected_bits;
+                    *actual_half_bits = actual[target];
+                }
+                ++mismatches;
+            }
+        }
+    }
+    return mismatches;
+}
+
+uint32_t qbh_audit_unscaled_w4_to_f16_tile(
+    const uint8_t *packed_w4, const void *expanded_f16,
+    uint32_t *first_logical_index, uint32_t *expected_half_bits,
+    uint32_t *actual_half_bits) {
+    const uint16_t *actual = (const uint16_t *)expanded_f16;
+    uint32_t mismatches = 0U;
+
+    for (uint32_t input = 0; input < 32U; ++input) {
+        for (uint32_t output = 0; output < 32U; ++output) {
+            uint32_t physical =
+                ((input / 4U) * 32U + output) * 4U + input % 4U;
+            uint8_t byte = packed_w4[physical / 2U];
+            uint8_t nibble = (physical & 1U) != 0U
+                                 ? (uint8_t)(byte >> 4U)
+                                 : (uint8_t)(byte & UINT8_C(0x0f));
+            int8_t quant = (nibble & UINT8_C(0x08)) != 0U
+                               ? (int8_t)(nibble | UINT8_C(0xf0))
+                               : (int8_t)nibble;
+            __fp16 expected = (__fp16)quant;
             uint16_t expected_bits;
             uint32_t target =
                 ((input / 2U) * 32U + output) * 2U + input % 2U;

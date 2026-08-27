@@ -611,11 +611,10 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
                 break;
             }
             start = HAP_perf_get_qtimer_count();
-            qbh_expand_w4_to_f16_hvx(
+            qbh_unpack_w4_to_f16_hvx(
                 pool->compressed_weight +
                     (size_t)region * pool->region_tiles *
                         QBH_W4_PACKED_TILE_BYTES,
-                pool->channel_scale,
                 pool->expanded_weight +
                     (size_t)region * pool->region_tiles *
                         QBH_HMX_FP16_TILE_BYTES,
@@ -1011,6 +1010,9 @@ static int qbh_run_projection(
                     result = -1;
                     goto projection_command_complete;
                 }
+                qbh_hmx_fp16_init_channel_scales(
+                    buffers->scale_or_bias,
+                    (const float *)w4f16_scale_slots[n_tile & 1U]);
                 qbh_hmx_start_fp16_streaming(
                     worker, buffers->hmx_activation,
                     buffers->expanded_weight, buffers->scale_or_bias,
@@ -1032,9 +1034,8 @@ static int qbh_run_projection(
                 if (desc == &header->projections[0] &&
                     n_tile == 0U) {
                     header->w4f16_expand_mismatch_count =
-                        qbh_audit_w4_to_f16_tile(
+                        qbh_audit_unscaled_w4_to_f16_tile(
                             w4f16_compressed_slots[n_tile & 1U],
-                            (const float *)w4f16_scale_slots[n_tile & 1U],
                             buffers->expanded_weight,
                             &header->w4f16_expand_first_logical_index,
                             &header->w4f16_expand_expected_half_bits,

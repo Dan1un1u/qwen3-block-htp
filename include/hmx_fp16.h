@@ -11,6 +11,8 @@
 #define QBH_HMX_FP16_SCALE_BYTES UINT32_C(256)
 
 void qbh_hmx_fp16_init_unity_scale(void *scale_block);
+void qbh_hmx_fp16_init_channel_scales(void *scale_block,
+                                      const float *channel_scales);
 void qbh_hmx_fp16_matmul_tiles(const __fp16 *activation_tiles,
                                const __fp16 *weight_tiles,
                                const void *scale_block,
