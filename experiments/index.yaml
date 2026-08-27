@@ -252,14 +252,15 @@ experiments:
       - slots4_chunk32
       - slots2_chunk16
       - slots3_chunk16
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: w4u8-prefetch-task-exposure
     source_branches:
       - codex/exp-0007-w4-prefetch-depth
-    source_commits: []
+    source_commits:
+      - 7ffce20b67eed57e193eb0fca2b8b7805db998d7
     record: docs/experiments/EXP-0007.md
     decided_by: user
     decided_on: '2026-08-27'
@@ -268,7 +269,22 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0007-w4-prefetch-depth
       started_on: '2026-08-27'
-      completed_on: null
+      completed_on: '2026-08-27'
     evidence:
       formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0007'
       retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0007'
+      formal_run: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0007\\20260827T054905Z_7ffce20b67ee'
+      artifact_set: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0007\\7ffce20b67ee'
+      matrix: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0007\\20260827T054905Z_7ffce20b67ee\\matrix_gate.json'
+      formal_runs: 192
+      total_mismatches: 0
+      exact_reference: true
+      all_variants_equivalent: true
+      worker_fallback: false
+      qnn_dependency_scan: none
+      dcvs_performance_vote: true
+      hvx_hmx_overlap_gate: pass
+      boot_id_stable: true
+      selected_gate_up_plan: slots4_chunk32
+      selected_down_plan: slots4_chunk32
+      performance_characterization: gate_up_packed_w4_beats_expanded_s8_but_down_does_not
