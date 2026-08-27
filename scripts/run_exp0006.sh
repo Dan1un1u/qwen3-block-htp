@@ -22,20 +22,22 @@ for artifact in "${host_executable}" "${host_stub}" "${dsp_skel}"; do
 done
 
 "${adb_exe}" get-state >/dev/null
-"${adb_exe}" shell "mkdir -p ${remote_root}"
-"${adb_exe}" push "$(wslpath -w "${host_executable}")" \
-    "${remote_root}/qwen3_probe_cli" >/dev/null 2>&1
-"${adb_exe}" push "$(wslpath -w "${host_stub}")" \
-    "${remote_root}/libqwen3_probe.so" >/dev/null 2>&1
-"${adb_exe}" push "$(wslpath -w "${dsp_skel}")" \
-    "${remote_root}/libqwen3_probe_skel.so" >/dev/null 2>&1
-"${adb_exe}" shell \
-    "chmod 755 ${remote_root}/qwen3_probe_cli ${remote_root}/libqwen3_probe.so ${remote_root}/libqwen3_probe_skel.so"
+if [[ "${QBH_SKIP_DEPLOY:-0}" != "1" ]]; then
+    "${adb_exe}" shell "mkdir -p ${remote_root}"
+    "${adb_exe}" push "$(wslpath -w "${host_executable}")" \
+        "${remote_root}/qwen3_probe_cli" >/dev/null 2>&1
+    "${adb_exe}" push "$(wslpath -w "${host_stub}")" \
+        "${remote_root}/libqwen3_probe.so" >/dev/null 2>&1
+    "${adb_exe}" push "$(wslpath -w "${dsp_skel}")" \
+        "${remote_root}/libqwen3_probe_skel.so" >/dev/null 2>&1
+    "${adb_exe}" shell \
+        "chmod 755 ${remote_root}/qwen3_probe_cli ${remote_root}/libqwen3_probe.so ${remote_root}/libqwen3_probe_skel.so"
 
-if [[ "${QBH_DIAGNOSTIC_FARF:-0}" == "1" ]]; then
-    "${adb_exe}" shell "echo 0x1f > ${remote_root}/qwen3_probe_cli.farf"
-else
-    "${adb_exe}" shell "rm -f ${remote_root}/qwen3_probe_cli.farf"
+    if [[ "${QBH_DIAGNOSTIC_FARF:-0}" == "1" ]]; then
+        "${adb_exe}" shell "echo 0x1f > ${remote_root}/qwen3_probe_cli.farf"
+    else
+        "${adb_exe}" shell "rm -f ${remote_root}/qwen3_probe_cli.farf"
+    fi
 fi
 
 remote_log="${remote_root}/run_${storage}_${projection}_${pattern}_${repeat_count}_${physical_plan}.log"
