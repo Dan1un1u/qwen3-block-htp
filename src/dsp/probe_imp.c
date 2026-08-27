@@ -13,6 +13,7 @@
 #include <hexagon_types.h>
 
 #include "hmx_u8s8_projection.h"
+#include "mlp_imp.h"
 #include "probe_protocol.h"
 #include "qbh_user_dma.h"
 #include "qwen3_probe.h"
@@ -1377,4 +1378,16 @@ cleanup:
 
     (void)HAP_mmap_put(shared_fd);
     return result;
+}
+
+AEEResult qwen3_probe_run_mlp(remote_handle64 handle, int32 shared_fd,
+                              uint32 shared_bytes) {
+    struct qbh_probe_session *session = qbh_session_from_handle(handle);
+    if (session == NULL || session->prepared == 0U ||
+        session->vtcm == NULL || session->hmx_context_id == 0U) {
+        return AEE_EBADSTATE;
+    }
+    return qbh_run_mlp_rpc(shared_fd, shared_bytes, session->vtcm,
+                           session->hmx_context_id,
+                           ++session->prepared_run_count);
 }

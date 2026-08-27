@@ -1,0 +1,11 @@
+#ifndef QWEN3_BLOCK_HTP_MLP_IMP_H
+#define QWEN3_BLOCK_HTP_MLP_IMP_H
+
+#include <AEEStdDef.h>
+#include <stdint.h>
+
+AEEResult qbh_run_mlp_rpc(int32_t shared_fd, uint32_t shared_bytes,
+                          uint8_t *vtcm, uint32_t hmx_context_id,
+                          uint32_t prepared_session_run_index);
+
+#endif
