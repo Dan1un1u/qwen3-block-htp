@@ -94,6 +94,29 @@ static HVX_Vector qbh_hvx_multiply_scale_f16_f32(
     return Q6_Vhf_equals_Wqf32(scaled.VV);
 }
 
+static HVX_Vector qbh_hvx_scale_then_multiply_f16_f32(
+    HVX_Vector value, float scale, HVX_Vector multiplier) {
+    const HVX_Vector one_half = Q6_Vh_vsplat_R(0x3c00);
+    const HVX_Vector scale_vector = Q6_Vsf_vadd_VsfVsf(
+        Q6_V_vsplat_R(*(const int32_t *)&scale), Q6_V_vzero());
+    const HVX_VectorPair value_qf32 =
+        Q6_Wqf32_vmpy_VhfVhf(value, one_half);
+    const HVX_VectorPair multiplier_qf32 =
+        Q6_Wqf32_vmpy_VhfVhf(multiplier, one_half);
+    HVX_DV result;
+    HVX_Vector scaled_lo = Q6_Vqf32_vmpy_VsfVsf(
+        Q6_Vsf_equals_Vqf32(Q6_V_lo_W(value_qf32)), scale_vector);
+    HVX_Vector scaled_hi = Q6_Vqf32_vmpy_VsfVsf(
+        Q6_Vsf_equals_Vqf32(Q6_V_hi_W(value_qf32)), scale_vector);
+    result.V.lo = Q6_Vqf32_vmpy_VsfVsf(
+        Q6_Vsf_equals_Vqf32(scaled_lo),
+        Q6_Vsf_equals_Vqf32(Q6_V_lo_W(multiplier_qf32)));
+    result.V.hi = Q6_Vqf32_vmpy_VsfVsf(
+        Q6_Vsf_equals_Vqf32(scaled_hi),
+        Q6_Vsf_equals_Vqf32(Q6_V_hi_W(multiplier_qf32)));
+    return Q6_Vhf_equals_Wqf32(result.VV);
+}
+
 void qbh_hvx_rms_norm_f16(const __fp16 *input, const __fp16 *gamma,
                            __fp16 *output, uint32_t rows,
                            uint32_t width) {
@@ -109,8 +132,9 @@ void qbh_hvx_rms_norm_f16(const __fp16 *input, const __fp16 *gamma,
         float inverse =
             1.0f / sqrtf(sum / (float)width + 1.0e-6f);
         for (uint32_t index = 0; index < vector_count; ++index) {
-            output_vectors[index] = qbh_hvx_multiply_scale_f16_f32(
-                input_vectors[index], gamma_vectors[index], inverse);
+            output_vectors[index] =
+                qbh_hvx_scale_then_multiply_f16_f32(
+                    input_vectors[index], inverse, gamma_vectors[index]);
         }
     }
 }

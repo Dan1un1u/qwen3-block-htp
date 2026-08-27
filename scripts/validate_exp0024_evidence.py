@@ -80,7 +80,7 @@ def validate_record(record, variant, repeat, mode):
         "block_invocation_count": repeat,
         "weight_ddr_read_bytes": expected["weight_bytes"](repeat),
         "weight_dma_descriptor_count": expected["weight_descriptors"](repeat),
-        "boundary_ddr_read_bytes": 303_616,
+        "boundary_ddr_read_bytes": 262_144 * repeat + 41_472,
         "boundary_ddr_write_bytes": 262_144,
         "intermediate_ddr_read_bytes": 0,
         "intermediate_ddr_write_bytes": 0,
