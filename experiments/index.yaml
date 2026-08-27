@@ -242,3 +242,33 @@ experiments:
       selected_gate_up_plan: chunked_hvx6
       selected_down_plan: chunked_hvx6
       performance_characterization: chunked_hvx6_beats_exp0005_packed_control_both_shapes
+  - id: EXP-0007
+    slug: w4-prefetch-depth
+    title: Deeper packed-W4 prefetch and task-exposure search
+    parent: EXP-0006
+    variants:
+      - exp0006_slots2_chunk32_control
+      - slots3_chunk32
+      - slots4_chunk32
+      - slots2_chunk16
+      - slots3_chunk16
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: w4u8-prefetch-task-exposure
+    source_branches:
+      - codex/exp-0007-w4-prefetch-depth
+    source_commits: []
+    record: docs/experiments/EXP-0007.md
+    decided_by: user
+    decided_on: '2026-08-27'
+    approval_ref: 'User message 2026-08-27: 继续优化现有方案'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0007-w4-prefetch-depth
+      started_on: '2026-08-27'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0007'
+      retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0007'
