@@ -279,10 +279,16 @@ static int header_is_valid(const struct qbh_probe_header *header,
         layout->expanded_slot_count) {
         return 0;
     }
+    if (qbh_physical_plan_is_phased(header->physical_plan) &&
+        layout->chunks_per_output != 1U) {
+        return 0;
+    }
     if (header->requested_hvx_workers == 0U ||
         header->requested_hvx_workers > QBH_MAX_HVX_WORKERS ||
         (qbh_physical_plan_is_full_bundle(header->physical_plan) &&
-         header->requested_hvx_workers != 1U)) {
+         header->requested_hvx_workers != 1U) ||
+        (qbh_physical_plan_is_phased(header->physical_plan) &&
+         header->requested_hvx_workers != 4U)) {
         return 0;
     }
     return range_is_valid(header->activation_offset,

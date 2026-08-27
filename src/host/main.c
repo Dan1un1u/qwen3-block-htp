@@ -83,6 +83,11 @@ static const char *physical_plan_name(uint32_t physical_plan,
                                       uint32_t hvx_workers,
                                       uint32_t compressed_slots,
                                       uint32_t chunk_tiles) {
+    if (physical_plan == QBH_PHYSICAL_PLAN_PHASED_GROUP4_DMA_CHAIN4) {
+        return chunk_tiles == 64U
+                   ? "phased_group4_chunk64_dma_chain4"
+                   : "phased_group4_chunk96_dma_chain4";
+    }
     if (physical_plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE) {
         return "exp0005_full_bundle_control";
     }
@@ -189,6 +194,20 @@ static int parse_physical_plan(const char *text, uint32_t *physical_plan,
                                uint32_t *hvx_workers,
                                uint32_t *compressed_slots,
                                uint32_t *chunk_tiles) {
+    if (strcmp(text, "phased_group4_chunk64_dma_chain4") == 0) {
+        *physical_plan = QBH_PHYSICAL_PLAN_PHASED_GROUP4_DMA_CHAIN4;
+        *hvx_workers = 4U;
+        *compressed_slots = 8U;
+        *chunk_tiles = 64U;
+        return 0;
+    }
+    if (strcmp(text, "phased_group4_chunk96_dma_chain4") == 0) {
+        *physical_plan = QBH_PHYSICAL_PLAN_PHASED_GROUP4_DMA_CHAIN4;
+        *hvx_workers = 4U;
+        *compressed_slots = 8U;
+        *chunk_tiles = 96U;
+        return 0;
+    }
     if (strcmp(text, "exp0005_full_bundle_control") == 0 ||
         strcmp(text, "full_bundle") == 0 ||
         strcmp(text, "control") == 0) {
@@ -1035,7 +1054,9 @@ int main(int argc, char **argv) {
                 "slots8e7_chunk64_dma_batch4|"
                 "slots8e7_chunk96_dma_batch4|"
                 "slots8e7_chunk64_dma_chain4|"
-                "slots8e7_chunk96_dma_chain4] "
+                "slots8e7_chunk96_dma_chain4|"
+                "phased_group4_chunk64_dma_chain4|"
+                "phased_group4_chunk96_dma_chain4] "
                 "[scalar_memcpy|linked_2d_dma] "
                 "[transient_resources|prepared_session] "
                 "[single_invocation|two_call_control]\n",
@@ -1051,6 +1072,14 @@ int main(int argc, char **argv) {
                                    compressed_slot_count, chunk_tiles,
                                    &layout) != 0) {
         fprintf(stderr, "projection layout initialization failed\n");
+        return EXIT_FAILURE;
+    }
+    if (qbh_physical_plan_is_phased(physical_plan) &&
+        layout.chunks_per_output != 1U) {
+        fprintf(stderr,
+                "phased_group4 currently requires one full-K chunk; "
+                "the down two-chunk path is disabled after a diagnostic "
+                "FastRPC stall\n");
         return EXIT_FAILURE;
     }
     if (host_invocation_mode == QBH_HOST_TWO_CALL_CONTROL &&
@@ -1345,7 +1374,7 @@ int main(int argc, char **argv) {
         aggregate_output_tile_count += call_header->output_tile_count;
     }
 
-    printf("{\"experiment\":\"EXP-0017\","
+    printf("{\"experiment\":\"EXP-0018\","
            "\"weight_storage\":\"%s\","
            "\"physical_plan\":\"%s\","
            "\"requested_hvx_workers\":%" PRIu32 ","

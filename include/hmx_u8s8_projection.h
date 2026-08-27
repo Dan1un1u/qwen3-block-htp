@@ -106,6 +106,10 @@ static inline int qbh_projection_layout_init(
          compressed_slot_count != 8U)) {
         return -1;
     }
+    if (physical_plan == QBH_PHYSICAL_PLAN_PHASED_GROUP4_DMA_CHAIN4 &&
+        compressed_slot_count != 8U) {
+        return -1;
+    }
     if (weight_storage_variant == QBH_WEIGHT_PACKED_W4_HMX_SCALE &&
         !qbh_physical_plan_is_chunked(physical_plan)) {
         return -1;

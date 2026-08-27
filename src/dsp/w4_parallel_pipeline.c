@@ -15,6 +15,7 @@
 #define QBH_HVX_WORKER_STACK_BYTES UINT32_C(8192)
 #define QBH_CHUNKED_HMX_STACK_BYTES UINT32_C(16384)
 #define QBH_DMA_DESCRIPTOR_TIMEOUT_TICKS UINT64_C(1920000)
+#define QBH_PHASED_GROUP_TILES UINT32_C(4)
 
 static uint8_t qbh_hvx_worker_stacks[QBH_MAX_HVX_WORKERS]
                                     [QBH_HVX_WORKER_STACK_BYTES]
@@ -54,6 +55,8 @@ struct qbh_parallel_state {
     qurt_sem_t expanded_ready[QBH_W4_EXPANDED_CHUNK_SLOT_COUNT];
     qurt_sem_t hmx_started;
     qurt_sem_t hvx_started;
+    qurt_sem_t phased_group_ready;
+    qurt_sem_t phased_group_done;
     qurt_mutex_t metrics_mutex;
 
     volatile uint32_t
@@ -402,6 +405,56 @@ static void qbh_chunked_hmx_main(void *opaque) {
         qurt_thread_exit(job->lock_status);
     }
 
+    if (qbh_physical_plan_is_phased(layout->physical_plan)) {
+        for (uint32_t repeat = 0; repeat < state->header->repeat_count;
+             ++repeat) {
+            for (uint32_t output_base = 0; output_base < layout->n_tiles;
+                 output_base += QBH_PHASED_GROUP_TILES) {
+                uint64_t wait_start = HAP_perf_get_qtimer_count();
+                qurt_sem_down(&state->phased_group_ready);
+                job->ready_wait_ticks +=
+                    HAP_perf_get_qtimer_count() - wait_start;
+                if (state->abort_status != 0) {
+                    exit_status = state->abort_status;
+                    qurt_sem_up(&state->phased_group_done);
+                    goto unlock;
+                }
+
+                for (uint32_t group_tile = 0;
+                     group_tile < QBH_PHASED_GROUP_TILES; ++group_tile) {
+                    uint32_t output_tile = output_base + group_tile;
+                    uint64_t core_start = HAP_perf_get_qtimer_count();
+                    uint64_t core_end;
+                    if (job->first_compute_start == 0U) {
+                        job->first_compute_start = core_start;
+                    }
+                    qbh_hmx_region_begin(state);
+                    qbh_hmx_begin_u8s8_output((const uint32_t *)(
+                        state->expanded_slots[group_tile] +
+                        layout->expanded_chunk_weight_bytes));
+                    job->stream_count +=
+                        qbh_hmx_accumulate_u8s8_projection(
+                            state->activation_tiles,
+                            (const int8_t *)state
+                                ->expanded_slots[group_tile],
+                            layout->k_tiles);
+                    job->execution_count += layout->k_tiles;
+                    qbh_hmx_store_u8_output(
+                        state->output_tiles +
+                        (size_t)output_tile * QBH_HMX_OUTPUT_BYTES);
+                    qbh_hmx_region_end(state);
+                    core_end = HAP_perf_get_qtimer_count();
+                    job->last_compute_end = core_end;
+                    job->compute_ticks += core_end - core_start;
+                    ++job->output_tile_count;
+                    qurt_sem_up(&state->expanded_free[group_tile]);
+                }
+                qurt_sem_up(&state->phased_group_done);
+            }
+        }
+        goto unlock;
+    }
+
     for (uint32_t repeat = 0; repeat < state->header->repeat_count;
          ++repeat) {
         for (uint32_t output_tile = 0; output_tile < layout->n_tiles;
@@ -478,6 +531,10 @@ static void qbh_abort_pipeline(struct qbh_parallel_state *state,
          slot < layout->expanded_slot_count; ++slot) {
         qurt_sem_up(&state->expanded_ready[slot]);
     }
+    if (qbh_physical_plan_is_phased(layout->physical_plan)) {
+        qurt_sem_up(&state->phased_group_ready);
+        qurt_sem_up(&state->phased_group_done);
+    }
 }
 
 static void qbh_publish_w4_bundle(
@@ -512,6 +569,131 @@ static void qbh_publish_w4_bundle(
             qbh_projection_chunk_tiles(layout, chunk_index);
         qbh_queue_push(&state->queue, &task);
     }
+}
+
+static int qbh_acquire_phased_compressed_group(
+    struct qbh_parallel_state *state, uint32_t linear_output_base,
+    uint32_t first_compressed_slot) {
+    struct qbh_probe_header *header = state->header;
+    for (uint32_t group_tile = 0; group_tile < QBH_PHASED_GROUP_TILES;
+         ++group_tile) {
+        uint64_t wait_start = HAP_perf_get_qtimer_count();
+        qurt_sem_down(
+            &state->compressed_free[first_compressed_slot + group_tile]);
+        header->producer_slot_wait_ticks +=
+            HAP_perf_get_qtimer_count() - wait_start;
+        if (linear_output_base + group_tile >=
+            state->layout->compressed_slot_count) {
+            ++header->weight_slot_reuse_count;
+        }
+    }
+    return 0;
+}
+
+static int qbh_complete_phased_weight_group(
+    struct qbh_parallel_state *state,
+    struct qbh_dma_aligned_desc_1d *descriptors) {
+    struct qbh_probe_header *header = state->header;
+    for (uint32_t group_tile = 0; group_tile < QBH_PHASED_GROUP_TILES;
+         ++group_tile) {
+        uint64_t wait_start = HAP_perf_get_qtimer_count();
+        if (qbh_wait_linked_descriptor(
+                header, &descriptors[group_tile].descriptor) != 0) {
+            return -1;
+        }
+        header->weight_stage_ticks +=
+            HAP_perf_get_qtimer_count() - wait_start;
+        ++header->weight_bundle_stage_count;
+    }
+    return qbh_record_dma_wait(header);
+}
+
+static int qbh_run_phased_group4_pipeline(
+    struct qbh_parallel_state *state, const uint8_t *stored_weights) {
+    const struct qbh_projection_layout *layout = state->layout;
+    struct qbh_probe_header *header = state->header;
+    struct qbh_dma_aligned_desc_1d current_descriptors[4];
+    uint32_t total_groups =
+        header->repeat_count * layout->n_tiles / QBH_PHASED_GROUP_TILES;
+
+    if (layout->expanded_slot_count != QBH_PHASED_GROUP_TILES ||
+        layout->compressed_slot_count != 2U * QBH_PHASED_GROUP_TILES ||
+        layout->chunks_per_output != 1U ||
+        layout->n_tiles % QBH_PHASED_GROUP_TILES != 0U) {
+        return AEE_EBADPARM;
+    }
+
+    if (qbh_acquire_phased_compressed_group(state, 0U, 0U) != 0 ||
+        qbh_start_linked_weight_bundles(
+            header, current_descriptors, stored_weights,
+            state->compressed_slots[0], layout->w4_bundle_bytes,
+            QBH_PHASED_GROUP_TILES) != 0 ||
+        qbh_complete_phased_weight_group(state, current_descriptors) != 0) {
+        qbh_abort_pipeline(state, AEE_EFAILED);
+        return AEE_EFAILED;
+    }
+
+    for (uint32_t linear_group = 0; linear_group < total_groups;
+         ++linear_group) {
+        struct qbh_dma_aligned_desc_1d next_descriptors[4];
+        uint32_t linear_output_base =
+            linear_group * QBH_PHASED_GROUP_TILES;
+        uint32_t output_base = linear_output_base % layout->n_tiles;
+        uint32_t current_first_slot =
+            (linear_group & 1U) * QBH_PHASED_GROUP_TILES;
+        int next_group_started = 0;
+
+        if (linear_group + 1U < total_groups) {
+            uint32_t next_linear_output_base =
+                (linear_group + 1U) * QBH_PHASED_GROUP_TILES;
+            uint32_t next_output_base =
+                next_linear_output_base % layout->n_tiles;
+            uint32_t next_first_slot =
+                ((linear_group + 1U) & 1U) * QBH_PHASED_GROUP_TILES;
+            if (qbh_acquire_phased_compressed_group(
+                    state, next_linear_output_base, next_first_slot) != 0 ||
+                qbh_start_linked_weight_bundles(
+                    header, next_descriptors,
+                    stored_weights +
+                        (size_t)next_output_base * layout->w4_bundle_bytes,
+                    state->compressed_slots[next_first_slot],
+                    layout->w4_bundle_bytes,
+                    QBH_PHASED_GROUP_TILES) != 0) {
+                qbh_abort_pipeline(state, AEE_EFAILED);
+                return AEE_EFAILED;
+            }
+            next_group_started = 1;
+        }
+
+        for (uint32_t group_tile = 0;
+             group_tile < QBH_PHASED_GROUP_TILES; ++group_tile) {
+            qbh_publish_w4_bundle(
+                state, linear_output_base + group_tile,
+                current_first_slot + group_tile);
+        }
+        for (uint32_t group_tile = 0;
+             group_tile < QBH_PHASED_GROUP_TILES; ++group_tile) {
+            uint64_t wait_start = HAP_perf_get_qtimer_count();
+            qurt_sem_down(&state->expanded_ready[group_tile]);
+            header->expanded_slot_wait_ticks +=
+                HAP_perf_get_qtimer_count() - wait_start;
+        }
+
+        asm volatile("barrier" : : : "memory");
+        qurt_sem_up(&state->phased_group_ready);
+        qurt_sem_down(&state->phased_group_done);
+        if (state->abort_status != 0) {
+            return state->abort_status;
+        }
+
+        if (next_group_started &&
+            qbh_complete_phased_weight_group(state, next_descriptors) != 0) {
+            qbh_abort_pipeline(state, AEE_EFAILED);
+            return AEE_EFAILED;
+        }
+        (void)output_base;
+    }
+    return AEE_SUCCESS;
 }
 
 int qbh_run_chunked_w4_pipeline(
@@ -573,6 +755,8 @@ int qbh_run_chunked_w4_pipeline(
     qurt_mutex_init(&state.metrics_mutex);
     qurt_sem_init_val(&state.hmx_started, 0);
     qurt_sem_init_val(&state.hvx_started, 0);
+    qurt_sem_init_val(&state.phased_group_ready, 0);
+    qurt_sem_init_val(&state.phased_group_done, 0);
     for (uint32_t slot = 0; slot < layout->compressed_slot_count;
          ++slot) {
         qurt_sem_init_val(&state.compressed_free[slot], 1);
@@ -652,6 +836,13 @@ int qbh_run_chunked_w4_pipeline(
 
     header->qtimer_start = HAP_perf_get_qtimer_count();
     header->pcycles_start = HAP_perf_get_pcycles();
+    if (qbh_physical_plan_is_phased(layout->physical_plan)) {
+        result = qbh_run_phased_group4_pipeline(&state, stored_weights);
+        if (result != AEE_SUCCESS) {
+            qbh_abort_pipeline(&state, result);
+        }
+        goto stop_workers;
+    }
     for (uint32_t repeat = 0; repeat < header->repeat_count; ++repeat) {
         for (uint32_t output_base = 0; output_base < layout->n_tiles;
              output_base += dma_bundle_batch) {
@@ -842,6 +1033,8 @@ cleanup:
 
     qurt_sem_destroy(&state.hvx_started);
     qurt_sem_destroy(&state.hmx_started);
+    qurt_sem_destroy(&state.phased_group_ready);
+    qurt_sem_destroy(&state.phased_group_done);
     for (uint32_t slot = 0;
          slot < layout->expanded_slot_count; ++slot) {
         qurt_sem_destroy(&state.expanded_ready[slot]);
