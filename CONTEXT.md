@@ -31,6 +31,11 @@ A substrate Execution Unit that composes multiple architectural integer-HMX
 tiles into one matrix projection validated by an Implementation Reference.
 _Avoid_: optimized Linear, Qwen3 block baseline
 
+**Qwen3 Middle-Block Projection**:
+A model-shaped Linear from a Qwen3 middle block whose K and N dimensions match
+the block architecture, while M is the declared execution-row scope.
+_Avoid_: full Qwen3 block, arbitrary projection probe
+
 **Block Package**:
 A self-describing offline artifact containing one Qwen3 block's packed weights,
 quantization metadata, workload inputs, and reference identity.

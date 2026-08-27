@@ -111,3 +111,30 @@ experiments:
       qnn_dependency_scan: none
       static_integer_hmx_gate: pass
       static_user_dma_gate: pass
+  - id: EXP-0004
+    slug: qwen3-projections
+    title: Qwen3 middle-block U8xS8 projection shapes
+    parent: EXP-0003
+    variants:
+      - gate_up_2048x6144
+      - down_6144x2048
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: qwen3-projection-shape-bringup
+    source_branches:
+      - codex/exp-0004-qwen3-projections
+    source_commits: []
+    record: docs/experiments/EXP-0004.md
+    decided_by: user
+    decided_on: '2026-08-27'
+    approval_ref: 'User message 2026-08-27: 继续将qwen3的真实形状实现'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0004-qwen3-projections
+      started_on: '2026-08-27'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0004'
+      retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0004'
