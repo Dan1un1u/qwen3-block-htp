@@ -441,18 +441,15 @@ static int qbh_dma_copy(struct qbh_block_header *header, void *destination,
 }
 
 static int qbh_dma_start_w4f16_prefetch(
-    struct qbh_dma_aligned_desc_1d descriptors[2],
+    struct qbh_dma_aligned_desc_1d *aligned,
     void *weight_destination, const void *weight_source,
-    uint32_t weight_bytes, void *scale_destination,
-    const void *scale_source) {
-    struct qbh_dma_desc_1d *weight = &descriptors[0].descriptor;
-    struct qbh_dma_desc_1d *scale = &descriptors[1].descriptor;
+    uint32_t weight_bytes) {
+    struct qbh_dma_desc_1d *weight = &aligned->descriptor;
 
     if (qbh_dma_wait_idle() != 0) {
         return -1;
     }
-    memset(descriptors, 0, sizeof(*descriptors) * 2U);
-    weight->next = (uint32_t)(uintptr_t)scale;
+    memset(aligned, 0, sizeof(*aligned));
     weight->length = weight_bytes;
     weight->type = QBH_DMA_TYPE_1D;
     weight->src_bypass = 1;
@@ -460,24 +457,15 @@ static int qbh_dma_start_w4f16_prefetch(
     weight->dstate = QBH_DMA_DESC_PENDING;
     weight->src = (uint32_t)(uintptr_t)weight_source;
     weight->dst = (uint32_t)(uintptr_t)weight_destination;
-    scale->length = 32U * sizeof(float);
-    scale->type = QBH_DMA_TYPE_1D;
-    scale->src_bypass = 1;
-    scale->ordered = 1;
-    scale->dstate = QBH_DMA_DESC_PENDING;
-    scale->src = (uint32_t)(uintptr_t)scale_source;
-    scale->dst = (uint32_t)(uintptr_t)scale_destination;
-    asm volatile("release(%0):at" : : "r"(scale) : "memory");
     return qbh_dma_start(weight) == 0 ? 0 : -2;
 }
 
 static int qbh_dma_wait_w4f16_prefetch(
-    struct qbh_dma_aligned_desc_1d descriptors[2]) {
+    struct qbh_dma_aligned_desc_1d *aligned) {
     if (qbh_dma_wait_idle() != 0) {
         return -1;
     }
-    if (descriptors[0].descriptor.dstate != QBH_DMA_DESC_COMPLETE ||
-        descriptors[1].descriptor.dstate != QBH_DMA_DESC_COMPLETE) {
+    if (aligned->descriptor.dstate != QBH_DMA_DESC_COMPLETE) {
         return -2;
     }
     asm volatile("barrier" ::: "memory");
@@ -851,7 +839,7 @@ static int qbh_run_projection(
     uint32_t failure_step = 0U;
     uint64_t phase_start = HAP_perf_get_qtimer_count();
     volatile uint32_t w4f16_ready[QBH_BLOCK_W4F16_MAX_REGIONS];
-    struct qbh_dma_aligned_desc_1d w4f16_prefetch_descriptors[2]
+    struct qbh_dma_aligned_desc_1d w4f16_prefetch_descriptor
         __attribute__((aligned(64)));
     uint8_t *w4f16_compressed_slots[2] = {
         buffers->compressed_weight, buffers->compressed_weight_alt};
@@ -962,13 +950,11 @@ static int qbh_run_projection(
             w4f16_prefetch_start = HAP_perf_get_qtimer_count();
             failure_step = 7U;
             result = qbh_dma_start_w4f16_prefetch(
-                w4f16_prefetch_descriptors,
+                &w4f16_prefetch_descriptor,
                 w4f16_compressed_slots[next_slot],
                 shared + desc->weight_offset +
                     (size_t)next_tile * compressed_bytes,
-                compressed_bytes, w4f16_scale_slots[next_slot],
-                shared + desc->scale_offset +
-                    (size_t)next_tile * 32U * sizeof(float));
+                compressed_bytes);
             if (result != 0) {
                 qbh_record_projection_failure(
                     header, desc, n_tile, failure_step, result);
@@ -976,9 +962,8 @@ static int qbh_run_projection(
             }
             w4f16_prefetch_active = 1;
             ++header->w4f16_prefetch_count;
-            header->weight_ddr_read_bytes +=
-                compressed_bytes + 32U * sizeof(float);
-            header->weight_dma_descriptor_count += 2U;
+            header->weight_ddr_read_bytes += compressed_bytes;
+            ++header->weight_dma_descriptor_count;
         }
 
         if (header->variant == QBH_BLOCK_W4U8) {
@@ -1067,7 +1052,7 @@ projection_command_complete:
             uint64_t wait_start = HAP_perf_get_qtimer_count();
             failure_step = 8U;
             if (qbh_dma_wait_w4f16_prefetch(
-                    w4f16_prefetch_descriptors) != 0) {
+                    &w4f16_prefetch_descriptor) != 0) {
                 qbh_record_projection_failure(
                     header, desc, n_tile, failure_step, -1);
                 return -1;
@@ -1076,6 +1061,22 @@ projection_command_complete:
                 HAP_perf_get_qtimer_count() - wait_start;
             header->weight_dma_ticks +=
                 HAP_perf_get_qtimer_count() - w4f16_prefetch_start;
+            {
+                uint32_t next_tile = n_tile + 1U;
+                uint32_t next_slot = next_tile & 1U;
+                failure_step = 9U;
+                if (qbh_dma_copy(
+                        header, w4f16_scale_slots[next_slot],
+                        shared + desc->scale_offset +
+                            (size_t)next_tile * 32U * sizeof(float),
+                        32U * sizeof(float), 1U) != 0) {
+                    qbh_record_projection_failure(
+                        header, desc, n_tile, failure_step, -1);
+                    return -1;
+                }
+                header->weight_ddr_read_bytes += 32U * sizeof(float);
+                ++header->weight_dma_descriptor_count;
+            }
             w4f16_prefetch_active = 0;
         }
         ++header->hmx_command_count;
