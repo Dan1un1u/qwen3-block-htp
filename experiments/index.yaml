@@ -834,14 +834,19 @@ experiments:
       - stream32_hvx6
       - stream32_hvx6_cap2_after_first_ready
       - expanded_s8_control
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: bounded-lookahead-hvx-hmx-streaming
     source_branches:
       - codex/exp-0019-streaming-microchunk-handoff
-    source_commits: []
+    source_commits:
+      - 5425d21ed724305536209879d8f433adebe98e0a
+      - 2a1929acba7605048327b453f6ce2f703665d9c7
+      - ddfa52cfe0f5134f32d4129bcde789a0f172ab51
+      - 14a539bf5431ce6770b498f4ec5a6e8650ad25d5
+      - 7fa7f280964978b334e25a2c76f1133ed458bf10
     record: docs/experiments/EXP-0019.md
     decided_by: user
     decided_on: '2026-08-27'
@@ -850,7 +855,35 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0019-streaming-microchunk-handoff
       started_on: '2026-08-27'
-      completed_on: null
+      completed_on: '2026-08-27'
     evidence:
       formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0019'
       retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0019'
+      formal_run: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0019\\20260827T094822Z_7fa7f2809649'
+      artifact_set: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0019\\7fa7f2809649'
+      matrix: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0019\\20260827T094822Z_7fa7f2809649\\matrix_gate.json'
+      formal_runs: 616
+      total_mismatches: 0
+      exact_reference: true
+      all_physical_plans_equivalent: true
+      persistent_resource_identity_stable: true
+      readiness_timeouts: 0
+      worker_fallback: false
+      qnn_dependency_scan: none
+      vtcm_request_bytes: 2097152
+      boot_id_stable: true
+      gate_up_selected_plan: stream32_gate_hvx2
+      gate_up_repeat1_parent_host_wall_ns_median: 1262526.5
+      gate_up_repeat1_selected_host_wall_ns_median: 1213828.0
+      gate_up_repeat1_improvement_percent: 3.8572259671381115
+      gate_up_repeat10_parent_host_wall_ns_median: 6075182.0
+      gate_up_repeat10_selected_host_wall_ns_median: 5020651.0
+      gate_up_repeat10_improvement_percent: 17.358014953296873
+      gate_up_selected_vs_s8_repeat1_improvement_percent: 26.161958165491214
+      gate_up_selected_vs_s8_repeat10_improvement_percent: 36.017619635201164
+      down_selected_plan: slots4_chunk96_dma_batch2
+      down_streaming_repeat1_regression_percent: 0.9514842227316119
+      down_streaming_repeat10_regression_percent: 10.98327138971143
+      down_parent_vs_s8_repeat1_improvement_percent: 12.584239925575114
+      down_parent_vs_s8_repeat10_improvement_percent: 23.96348498757364
+      performance_characterization: two_hvx_streaming_handoff_improves_paired_gate_up_but_not_down
