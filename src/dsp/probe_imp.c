@@ -166,6 +166,8 @@ AEEResult qwen3_probe_prepare(remote_handle64 handle) {
     compute_res_attr_t hmx_attributes;
     HAP_power_request_t request;
     void *vtcm_pointer = NULL;
+    unsigned int vtcm_total_bytes = 0U;
+    unsigned int vtcm_available_before_bytes = 0U;
     unsigned int vtcm_granted_bytes = 0U;
     uint64_t acquire_start;
     AEEResult result;
@@ -214,8 +216,10 @@ AEEResult qwen3_probe_prepare(remote_handle64 handle) {
     session->hmx_powered = 1;
 
     session->vtcm_query_status = HAP_compute_res_query_VTCM(
-        0U, &session->vtcm_total_bytes, NULL,
-        &session->vtcm_available_before_bytes, NULL);
+        0U, &vtcm_total_bytes, NULL, &vtcm_available_before_bytes, NULL);
+    session->vtcm_total_bytes = (uint32_t)vtcm_total_bytes;
+    session->vtcm_available_before_bytes =
+        (uint32_t)vtcm_available_before_bytes;
     session->vtcm_requested_bytes = session->vtcm_total_bytes;
     session->vtcm_minimum_page_bytes = QBH_FULL_VTCM_MIN_PAGE_BYTES;
     session->vtcm_minimum_required_bytes = 0U;
