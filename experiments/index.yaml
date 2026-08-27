@@ -520,3 +520,33 @@ experiments:
       selected_down_linked_plan: slots4_chunk96_dma_chain2
       selected_expanded_s8_plan: expanded_s8_dma_chain2
       performance_characterization: linked_chain2_helps_down_but_regresses_gate_up
+  - id: EXP-0013
+    slug: vtcm-ring-rebalance
+    title: Rebalance VTCM rings for batch-four overlap
+    parent: EXP-0012
+    variants:
+      - expanded_s8_fair_controls
+      - packed_w4_slots4_expanded8_batch2
+      - packed_w4_slots4_expanded7_batch2
+      - packed_w4_slots8_expanded7_batch4
+      - packed_w4_slots8_expanded7_chain4
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: w4u8-vtcm-ring-rebalance
+    source_branches:
+      - codex/exp-0013-vtcm-ring-rebalance
+    source_commits: []
+    record: docs/experiments/EXP-0013.md
+    decided_by: user
+    decided_on: '2026-08-27'
+    approval_ref: 'User message 2026-08-27: 继续优化现有方案'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0013-vtcm-ring-rebalance
+      started_on: '2026-08-27'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0013'
+      retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0013'
