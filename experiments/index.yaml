@@ -201,14 +201,18 @@ experiments:
       - chunked_hvx2
       - chunked_hvx4
       - chunked_hvx6
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: w4u8-parallel-pipeline
     source_branches:
       - codex/exp-0006-parallel-w4-pipeline
-    source_commits: []
+    source_commits:
+      - 29fa8a282840ce8e256028f4c168d3cd07a39f23
+      - ef2a1538b9bff3fc5dad34eec60b5bb05086199a
+      - 99d0148c27cd00471809a7d6bee73996ca39e91b
+      - 36545d8ede6f38f6443c220d65b3014c3f628e4f
     record: docs/experiments/EXP-0006.md
     decided_by: user
     decided_on: '2026-08-27'
@@ -217,7 +221,24 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0006-parallel-w4-pipeline
       started_on: '2026-08-27'
-      completed_on: null
+      completed_on: '2026-08-27'
     evidence:
       formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0006'
       retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0006'
+      formal_run: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0006\\20260827T052253Z_36545d8ede6f'
+      artifact_set: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0006\\36545d8ede6f'
+      manifest: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0006\\20260827T052253Z_36545d8ede6f\\manifest.txt'
+      formal_runs: 192
+      total_mismatches: 0
+      exact_reference: true
+      all_variants_equivalent: true
+      worker_fallback: false
+      qnn_dependency_scan: none
+      static_integer_hmx_gate: pass
+      static_multi_hvx_gate: pass
+      static_user_dma_gate: pass
+      hvx_hmx_overlap_gate: pass
+      boot_id_stable: true
+      selected_gate_up_plan: chunked_hvx6
+      selected_down_plan: chunked_hvx6
+      performance_characterization: chunked_hvx6_beats_exp0005_packed_control_both_shapes
