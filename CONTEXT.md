@@ -88,3 +88,10 @@ A Standalone HTP Runtime session that retains declared accelerator resources
 across multiple Execution Unit invocations while reporting prepare and release
 costs separately from hot invocation latency.
 _Avoid_: free setup, kernel-only speedup, persistent kernel
+
+**Paired Gate/Up Projection**:
+One Execution Unit that evaluates two independent `2048 -> 6144` projections
+sharing the same `[64, 2048]` activation by representing their concatenated
+weights and outputs as one `2048 -> 12288` physical projection. It does not
+apply SiLU, multiply gate and up outputs, or execute the down projection.
+_Avoid_: fused MLP, gate/up arithmetic fusion, complete Qwen3 block

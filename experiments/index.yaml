@@ -670,3 +670,30 @@ experiments:
       gate_up_w4_vs_s8_repeat10_improvement_percent: 21.87689395469288
       down_w4_vs_s8_repeat10_improvement_percent: 25.42077301629748
       performance_characterization: persistent_resource_session_passes_both_shapes_and_preserves_w4_advantage
+  - id: EXP-0016
+    slug: paired-gate-up-invocation
+    title: Evaluate gate and up projections in one DSP invocation
+    parent: EXP-0015
+    variants:
+      - two_separate_gate_up_runs
+      - paired_gate_up_projection
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: paired-gate-up-single-invocation
+    source_branches:
+      - codex/exp-0016-paired-gate-up-invocation
+    source_commits: []
+    record: docs/experiments/EXP-0016.md
+    decided_by: user
+    decided_on: '2026-08-27'
+    approval_ref: 'User message 2026-08-27: 继续优化现有方案'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0016-paired-gate-up-invocation
+      started_on: '2026-08-27'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\\llm_exp\\results\\qwen3-block-htp\\exp0016'
+      retained_artifacts: 'D:\\llm_exp\\models\\qwen3-block-htp\\exp0016'
