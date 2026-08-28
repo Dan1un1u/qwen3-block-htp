@@ -1433,6 +1433,7 @@ experiments:
     source_commits:
       - 24bd753fe2c13e268dc82cb3d5cf8ac821cff93a
       - 9ef94a987e9e0148649069893af33eda64f3af6f
+      - cc88df0a5e8f927daedeb43803e3d2073045736d
     record: docs/experiments/EXP-0027.md
     decided_by: user
     decided_on: '2026-08-28'
