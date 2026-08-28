@@ -30,6 +30,45 @@ void qbh_hvx_check_reset(struct qbh_hvx_check_metrics *metrics) {
     metrics->mask_violation_count = 0U;
 }
 
+void qbh_hvx_residual_add_f16(__fp16 *residual,
+                               const __fp16 *addition,
+                               uint32_t elements) {
+    HVX_Vector *residual_vectors = (HVX_Vector *)residual;
+    const HVX_Vector *addition_vectors =
+        (const HVX_Vector *)addition;
+    const uint32_t vector_count = elements / QBH_HVX_F16_LANES;
+    uint32_t index = 0U;
+
+    for (; index + 4U <= vector_count; index += 4U) {
+        const HVX_Vector residual0 = residual_vectors[index + 0U];
+        const HVX_Vector residual1 = residual_vectors[index + 1U];
+        const HVX_Vector residual2 = residual_vectors[index + 2U];
+        const HVX_Vector residual3 = residual_vectors[index + 3U];
+        const HVX_Vector addition0 = addition_vectors[index + 0U];
+        const HVX_Vector addition1 = addition_vectors[index + 1U];
+        const HVX_Vector addition2 = addition_vectors[index + 2U];
+        const HVX_Vector addition3 = addition_vectors[index + 3U];
+        residual_vectors[index + 0U] =
+            Q6_Vhf_vadd_VhfVhf(residual0, addition0);
+        residual_vectors[index + 1U] =
+            Q6_Vhf_vadd_VhfVhf(residual1, addition1);
+        residual_vectors[index + 2U] =
+            Q6_Vhf_vadd_VhfVhf(residual2, addition2);
+        residual_vectors[index + 3U] =
+            Q6_Vhf_vadd_VhfVhf(residual3, addition3);
+    }
+    for (; index < vector_count; ++index) {
+        residual_vectors[index] = Q6_Vhf_vadd_VhfVhf(
+            residual_vectors[index], addition_vectors[index]);
+    }
+    for (uint32_t element =
+             vector_count * QBH_HVX_F16_LANES;
+         element < elements; ++element) {
+        residual[element] = (__fp16)((float)residual[element] +
+                                     (float)addition[element]);
+    }
+}
+
 float qbh_hvx_check_cosine(const struct qbh_hvx_check_metrics *metrics) {
     if (metrics == NULL || metrics->actual_norm <= 0.0 ||
         metrics->reference_norm <= 0.0) {

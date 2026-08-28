@@ -31,6 +31,10 @@ void qbh_hvx_silu_multiply_f16(const __fp16 *gate, const __fp16 *up,
                                 __fp16 *middle, uint32_t elements,
                                 struct qbh_hvx_check_metrics *check);
 
+void qbh_hvx_residual_add_f16(__fp16 *residual,
+                               const __fp16 *addition,
+                               uint32_t elements);
+
 void qbh_hvx_stable_causal_softmax_f16(__fp16 *scores,
                                         __fp16 *probability,
                                         uint32_t groups, uint32_t rows,
