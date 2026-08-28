@@ -31,6 +31,8 @@ grep -q 'numerical_audit_mode' \
 grep -q 'residual_mode' "${static_output_dir}/exp0026.host.strings.txt"
 grep -q 'qbh_hvx_residual_add_f16' \
     "${static_output_dir}/exp0026.symbols.txt"
+grep -q 'qbh_hvx_residual_rms_norm_f16' \
+    "${static_output_dir}/exp0026.symbols.txt"
 grep -Eq 'v[0-9]+\.hf[[:space:]]*=[[:space:]]*vadd\(v[0-9]+\.hf,v[0-9]+\.hf\)' \
     "${static_output_dir}/exp0026.disassembly.txt"
 
