@@ -2075,3 +2075,39 @@ experiments:
       attribution_conclusion: q_projection_plus_qk_join_tail
       local_attribution_gate_result: pass
       performance_characterization: q_is_the_only_w4f16_projection_slower_than_f16f16_while_k_and_v_are_faster_and_qs_superlinear_wall_and_dma_lifetime_identify_the_missing_inbound_cross_prefetch_cold_start_as_the_next_hypothesis
+  - id: EXP-0035
+    slug: q-inbound-prefetch
+    title: Overlap the first packed Q-weight transfer with input RMSNorm
+    parent: EXP-0034
+    variants:
+      - exp0034_f16f16_batch4_control
+      - exp0034_w4f16_dma8_scale_cache_control
+      - w4f16_q_inbound_prefetch_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4f16-q-inbound-prefetch
+    source_branches:
+      - codex/exp-0035-q-inbound-prefetch
+    source_commits:
+      - c39dfefdb24c1bb9670a263a6605f833653800cc
+    record: docs/experiments/EXP-0035.md
+    decided_by: user
+    decided_on: '2026-08-28'
+    approval_ref: 'User message 2026-08-28: 确认启动'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0035-q-inbound-prefetch
+      started_on: '2026-08-28'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0035'
+      retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0035'
+      source_parent_commit: c39dfefdb24c1bb9670a263a6605f833653800cc
+      execution_unit: qwen3_layer14_complete_block_m64
+      activation_scope: fp16_only
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      primary_scope: move_first_q_packed_weight_dma_before_input_rmsnorm
+      local_speed_gate: q_projection_wall_and_complete_block_host_wall_strictly_improve_over_w4_control_at_repeat1_and_repeat10_while_w4_remains_faster_than_f16
