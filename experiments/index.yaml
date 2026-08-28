@@ -1933,15 +1933,17 @@ experiments:
       - exp0032_f16f16_batch4_control
       - exp0032_w4f16_dma8_scale_cache_control
       - w4f16_qkv_dynamic_work_stealing_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4f16-qkv-dynamic-worker-schedule
     source_branches:
       - codex/exp-0033-qkv-dynamic-scheduler
     source_commits:
       - 91ba193660513bd0675c0a091db199aa09df1773
+      - 4aee36037ad1b2abe432ad3a7987d9647ac7dd49
+      - 663ac0de9fe3a07756fec2e410d0d049fc35ec6b
     record: docs/experiments/EXP-0033.md
     decided_by: user
     decided_on: '2026-08-28'
@@ -1950,7 +1952,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0033-qkv-dynamic-scheduler
       started_on: '2026-08-28'
-      completed_on: null
+      completed_on: '2026-08-28'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0033'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0033'
@@ -1963,3 +1965,44 @@ experiments:
       fixed_mlp_mode: exp0032_gate_up_batch4_dma8_scale_cache
       primary_scope: w4f16_qkv_projection_and_qk_norm_rope_worker_ownership
       local_speed_gate: w4f16_qkv_and_complete_block_strictly_improve_over_exp0032_w4f16_control_at_repeat1_and_repeat10_without_regressing_the_f16f16_control_or_w4f16_complete_block_advantage
+      formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0033\20260828T152328Z_663ac0de9fe3'
+      artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0033\artifacts\663ac0de9fe3'
+      matrix: 'D:\llm_exp\results\qwen3-block-htp\exp0033\20260828T152328Z_663ac0de9fe3\matrix_gate.json'
+      source_commit: 663ac0de9fe3a07756fec2e410d0d049fc35ec6b
+      stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      formal_run_records: 33
+      parent_block_package_hashes_audited: 118
+      fixed_vtcm_request_bytes: 8388608
+      candidate_peak_vtcm_bytes: 7843328
+      observed_intermediate_ddr_bytes: 0
+      spill_fill_count: 0
+      single_fastrpc_per_execution_unit: true
+      single_hmx_owner: true
+      qnn_dependency: false
+      candidate_byte_exact: true
+      f16_output_hash: 704252c89780e695
+      w4_output_hash: f18b9abbe1487231
+      implementation_reference_mismatches: 0
+      implementation_reference_max_lsb: 0
+      repeat1_f16_control_qkv_ticks: 7752.0
+      repeat1_w4_control_qkv_ticks: 8656.0
+      repeat1_w4_dynamic_qkv_ticks: 10487.0
+      repeat1_f16_control_host_wall_ns_per_block: 2932292.0
+      repeat1_w4_control_host_wall_ns_per_block: 2839427.0
+      repeat1_w4_dynamic_host_wall_ns_per_block: 2912761.0
+      repeat1_qkv_change_vs_w4_control_percent: 21.152957486136792
+      repeat1_host_change_vs_w4_control_percent: 2.582704186443241
+      repeat10_f16_control_qkv_ticks: 7655.0
+      repeat10_w4_control_qkv_ticks: 8506.7
+      repeat10_w4_dynamic_qkv_ticks: 10510.0
+      repeat10_f16_control_host_wall_ns_per_block: 2517338.6
+      repeat10_w4_control_host_wall_ns_per_block: 2401104.2
+      repeat10_w4_dynamic_host_wall_ns_per_block: 2504583.3
+      repeat10_qkv_change_vs_w4_control_percent: 23.549672611000737
+      repeat10_host_change_vs_w4_control_percent: 4.309646370199172
+      repeat10_qk_norm_join_wait_change_ticks: -288.3
+      repeat10_projection_hmx_wait_change_ticks: 1929.3
+      repeat10_dynamic_main_norm_ticks: 2109.4
+      local_speed_gate_result: fail
+      rejected_diagnostic: existing_control_already_uses_three_expansion_contexts_plus_a_fourth_norm_context_and_main_context_work_stealing_serializes_norm_ahead_of_projection_hmx_production
+      performance_characterization: dynamic_main_context_norm_claims_remove_a_small_qk_join_tail_but_delay_the_next_projection_hmx_producer_action_increasing_hmx_wait_qkv_and_complete_block_latency

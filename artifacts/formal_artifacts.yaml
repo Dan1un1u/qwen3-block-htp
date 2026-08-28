@@ -1,6 +1,18 @@
 schema_version: 1
 project: qwen3-block-htp
 artifacts:
+  - id: EXP-0033-results
+    experiment: EXP-0033
+    kind: formal-result-set
+    path: 'D:\llm_exp\results\qwen3-block-htp\exp0033\20260828T152328Z_663ac0de9fe3'
+    source_commit: 663ac0de9fe3a07756fec2e410d0d049fc35ec6b
+    manifest: 'D:\llm_exp\results\qwen3-block-htp\exp0033\20260828T152328Z_663ac0de9fe3\matrix_gate.json'
+  - id: EXP-0033-binaries
+    experiment: EXP-0033
+    kind: retained-device-binaries
+    path: 'D:\llm_exp\models\qwen3-block-htp\exp0033\artifacts\663ac0de9fe3'
+    source_commit: 663ac0de9fe3a07756fec2e410d0d049fc35ec6b
+    manifest: 'D:\llm_exp\results\qwen3-block-htp\exp0033\20260828T152328Z_663ac0de9fe3\artifact_sha256.txt'
   - id: EXP-0001-results
     experiment: EXP-0001
     kind: formal-result-set
