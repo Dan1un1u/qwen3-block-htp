@@ -46,16 +46,19 @@ run_config() {
     local config="$1"
     local repeat="$2"
     local audit="$3"
-    local variant workers f16_mode attention_mode
+    local variant workers f16_mode w4_mode attention_mode
     case "${config}" in
         f16_control)
             variant=F16F16; workers=2; f16_mode=gate4
+            w4_mode=control
             attention_mode=gqa_qkv_overlap ;;
         w4_control)
             variant=W4F16; workers=3; f16_mode=serial
+            w4_mode=adaptive_down96_gate4_dma8_cross
             attention_mode=gqa_qkv_overlap ;;
         w4_dynamic)
             variant=W4F16; workers=3; f16_mode=serial
+            w4_mode=adaptive_down96_gate4_dma8_cross
             attention_mode=gqa_qkv_dynamic ;;
         *)
             printf 'unknown config: %s\n' "${config}" >&2
@@ -64,7 +67,7 @@ run_config() {
     "${project_root}/scripts/run_exp0033_block.sh" \
         "${variant}" "${repeat}" on "${audit}" fused \
         "${f16_mode}" hvx "${workers}" 32 \
-        adaptive_down96_gate4_dma8_cross hvx \
+        "${w4_mode}" hvx \
         streaming 4 64 "${attention_mode}" 4
 }
 
