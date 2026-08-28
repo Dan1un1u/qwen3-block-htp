@@ -297,3 +297,20 @@ the following projection. Input RMSNorm-to-QKV and Post-Attention
 Residual-RMSNorm-to-Gate/Up are separate measurable milestones.
 _Avoid_: changed RMSNorm reduction, approximate normalization, hidden row-major
 copy, quantized activation
+
+**Boundary-Local Speed Gain**:
+A reduction in the complete additive ledger interval declared for one
+producer-consumer boundary. It is evidence that the physical handoff removed
+work, but it is not a Project Variant speed pass unless complete Host wall also
+meets the same repeat-one, repeat-ten and fair-control contract. EXP-0038
+demonstrated this distinction for QKV, AV-to-O and Input-Norm-to-QKV.
+_Avoid_: complete-block speedup, adopted optimization, hidden overlap gain
+
+**Combined Norm-to-Projection Candidate**:
+The EXP-0038 Physical Plan that enables both Input-RMSNorm-to-QKV and
+Post-Attention-Residual-RMSNorm-to-Gate/Up Crouton-native stores while leaving
+QKV and AV-to-O in the EXP-0036 control form. It is byte-exact, zero
+intermediate DDR, and locally passes both repeat counts for F16F16 and W4F16,
+including an eleven-round paired W4F16 confirmation. Its Adoption Status is
+pending and it is not a Selected Baseline.
+_Avoid_: EXP-0038 overall pass, QKV-native candidate, adopted baseline

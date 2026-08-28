@@ -2328,14 +2328,16 @@ experiments:
       - input_rmsnorm_to_projection_crouton
       - post_attention_rmsnorm_to_projection_crouton
       - cumulative_fastest_valid_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
     adoption_status: pending
     evidence_profile: real-qwen3-block-crouton-native-cross-operator-boundaries
     source_branches:
       - codex/exp-0038-crouton-native-boundaries
-    source_commits: []
+    source_commits:
+      - db791a430631eaba8f90bf3d0e8914c4998a15f5
+      - 24917512fc35adfd22f97b5123473bb6a7518fd0
     record: docs/experiments/EXP-0038.md
     decided_by: user
     decided_on: '2026-08-29'
@@ -2344,6 +2346,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0038-crouton-native-boundaries
       started_on: '2026-08-29'
+      completed_on: '2026-08-29'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0038'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0038'
@@ -2362,3 +2365,69 @@ experiments:
       correctness_gate: byte_exact_against_paired_control_and_pass_independent_implementation_reference
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn
       speed_gate: relevant_combined_ledger_interval_and_complete_host_wall_strictly_improve_at_repeat1_and_repeat10_without_regressing_either_f16f16_or_w4f16
+      formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0038\20260828T193721Z_db791a430631'
+      artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0038\artifacts\db791a430631'
+      matrix: 'D:\llm_exp\results\qwen3-block-htp\exp0038\20260828T193721Z_db791a430631\matrix_gate.json'
+      implementation_commit: db791a430631eaba8f90bf3d0e8914c4998a15f5
+      evidence_validator_commit: 24917512fc35adfd22f97b5123473bb6a7518fd0
+      stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      formal_run_records: 224
+      f16_peak_vtcm_bytes: 6875904
+      w4_peak_vtcm_bytes: 8171008
+      observed_intermediate_ddr_bytes: 0
+      spill_fill_count: 0
+      single_fastrpc_per_execution_unit: true
+      single_hmx_owner: true
+      qnn_dependency: false
+      f16_output_hash: 704252c89780e695
+      w4_output_hash: f18b9abbe1487231
+      qkv_operand_mismatch_count: 0
+      qkv_f16_repeat1_boundary_change_percent: -0.1630069997123451
+      qkv_f16_repeat1_host_change_percent: -3.3749664359652987
+      qkv_f16_repeat10_boundary_change_percent: -1.2645577891378545
+      qkv_f16_repeat10_host_change_percent: 0.5660122127924216
+      qkv_w4_repeat1_boundary_change_percent: -4.12651130190993
+      qkv_w4_repeat1_host_change_percent: -1.0599412338648029
+      qkv_w4_repeat10_boundary_change_percent: -3.760776533181498
+      qkv_w4_repeat10_host_change_percent: -0.45729424746463465
+      qkv_gate_result: fail
+      av_to_o_f16_repeat1_boundary_change_percent: -1.3216536038112792
+      av_to_o_f16_repeat1_host_change_percent: -0.23546197811350478
+      av_to_o_f16_repeat10_boundary_change_percent: -1.6302277748152627
+      av_to_o_f16_repeat10_host_change_percent: 0.5626754718173643
+      av_to_o_w4_repeat1_boundary_change_percent: -1.9701986754966927
+      av_to_o_w4_repeat1_host_change_percent: -0.11474668539654953
+      av_to_o_w4_repeat10_boundary_change_percent: -1.4111397028305772
+      av_to_o_w4_repeat10_host_change_percent: 0.22806521097211707
+      av_to_o_gate_result: fail
+      input_norm_f16_repeat1_boundary_change_percent: -2.220155759618736
+      input_norm_f16_repeat1_host_change_percent: -0.5369560571438003
+      input_norm_f16_repeat10_boundary_change_percent: -2.2391281518733264
+      input_norm_f16_repeat10_host_change_percent: 0.36823119761482115
+      input_norm_w4_repeat1_boundary_change_percent: -1.6468626224723781
+      input_norm_w4_repeat1_host_change_percent: -0.6320589468621685
+      input_norm_w4_repeat10_boundary_change_percent: -1.363602546525089
+      input_norm_w4_repeat10_host_change_percent: 0.4013146858460326
+      input_norm_gate_result: fail
+      post_norm_f16_repeat1_boundary_change_percent: -1.493397146149078
+      post_norm_f16_repeat1_host_change_percent: -0.717071627020005
+      post_norm_f16_repeat10_boundary_change_percent: -1.1670543530372668
+      post_norm_f16_repeat10_host_change_percent: -0.0010414797761204575
+      post_norm_w4_repeat1_boundary_change_percent: -1.7750882501260667
+      post_norm_w4_repeat1_host_change_percent: -0.16336373205659838
+      post_norm_w4_repeat10_boundary_change_percent: -2.042562615768695
+      post_norm_w4_repeat10_host_change_percent: -0.19392632904192686
+      post_norm_gate_result: pass
+      combined_norms_f16_repeat1_boundary_change_percent: -1.4771191349681412
+      combined_norms_f16_repeat1_host_change_percent: -1.4413012981746687
+      combined_norms_f16_repeat10_boundary_change_percent: -1.617592199539486
+      combined_norms_f16_repeat10_host_change_percent: -0.32629961955144005
+      combined_norms_w4_repeat1_boundary_change_percent: -1.7269513190100616
+      combined_norms_w4_repeat1_host_change_percent: -0.6087212708540846
+      combined_norms_w4_repeat10_boundary_change_percent: -2.002606458832279
+      combined_norms_w4_repeat10_host_change_percent: -0.5762006510110163
+      combined_norms_w4_paired_repeat1_host_change_percent: -0.4757404082941341
+      combined_norms_w4_paired_repeat10_host_change_percent: -1.0490917668035782
+      combined_norms_gate_result: pass
+      overall_local_gate_result: fail
+      performance_characterization: qkv_av_to_o_and_input_norm_reduce_their_declared_boundary_intervals_but_do_not_propagate_a_non_regressing_host_gain_across_both_numeric_variants_and_repeat_counts_while_post_norm_passes_narrowly_and_combined_input_plus_post_norms_pass_all_primary_comparisons_and_the_extra_paired_w4_confirmation
