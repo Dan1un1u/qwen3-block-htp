@@ -363,7 +363,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
     if ((header->common_ops_mask &
          ~((uint32_t)QBH_BLOCK_COMMON_OPS_HVX_FP16)) != 0U ||
         (header->variant == QBH_BLOCK_W4U8 &&
-         header->common_ops_mask != QBH_BLOCK_COMMON_OPS_SCALAR)) {
+         header->common_ops_mask != QBH_BLOCK_COMMON_OPS_SCALAR) ||
+        header->attribution_enabled > 1U) {
         return 0;
     }
     if (header->w4f16_requested_hvx_workers == 0U ||
@@ -1733,6 +1734,28 @@ static float qbh_f16_max_abs(const __fp16 *data, uint32_t elements) {
     return maximum;
 }
 
+static uint64_t qbh_attribution_mark(uint64_t *cursor) {
+    uint64_t now = HAP_perf_get_qtimer_count();
+    uint64_t elapsed = now - *cursor;
+    *cursor = now;
+    return elapsed;
+}
+
+static uint64_t qbh_attention_attributed_ticks(
+    const struct qbh_block_header *header) {
+    return header->attention_setup_ticks +
+           header->attention_qk_pack_ticks +
+           header->attention_qk_hmx_ticks +
+           header->attention_qk_unpack_ticks +
+           header->attention_qk_audit_ticks +
+           header->attention_softmax_ticks +
+           header->attention_softmax_audit_ticks +
+           header->attention_av_pack_ticks +
+           header->attention_av_hmx_ticks +
+           header->attention_av_unpack_ticks +
+           header->attention_av_audit_ticks;
+}
+
 static int qbh_attention_f16(struct qbh_block_header *header,
                              struct qbh_block_buffers *buffers,
                              struct qbh_block_hmx_worker *worker,
@@ -1743,7 +1766,15 @@ static int qbh_attention_f16(struct qbh_block_header *header,
     __fp16 *scores = (__fp16 *)buffers->scores;
     __fp16 *probability = (__fp16 *)buffers->probability;
     __fp16 *attention = (__fp16 *)buffers->attention_concat;
+    uint64_t attribution_cursor = 0U;
+    if (header->attribution_enabled != 0U) {
+        attribution_cursor = HAP_perf_get_qtimer_count();
+    }
     qbh_hmx_fp16_init_unity_scale(buffers->scale_or_bias);
+    if (header->attribution_enabled != 0U) {
+        header->attention_setup_ticks +=
+            qbh_attribution_mark(&attribution_cursor);
+    }
 
     for (uint32_t head = 0; head < QBH_BLOCK_HEADS; ++head) {
         uint32_t kv_head = head / (QBH_BLOCK_HEADS / QBH_BLOCK_KV_HEADS);
@@ -1754,6 +1785,10 @@ static int qbh_attention_f16(struct qbh_block_header *header,
             k, QBH_BLOCK_KV_HIDDEN,
             kv_head * QBH_BLOCK_HEAD_DIM, QBH_BLOCK_HEAD_DIM,
             QBH_BLOCK_M, (__fp16 *)buffers->expanded_weight);
+        if (header->attribution_enabled != 0U) {
+            header->attention_qk_pack_ticks +=
+                qbh_attribution_mark(&attribution_cursor);
+        }
         if (qbh_hmx_submit(worker, QBH_BLOCK_HMX_FP16,
                            buffers->hmx_activation,
                            buffers->expanded_weight,
@@ -1761,18 +1796,30 @@ static int qbh_attention_f16(struct qbh_block_header *header,
                            buffers->hmx_output, 2U, 4U, 2U) != 0) {
             return -1;
         }
+        if (header->attribution_enabled != 0U) {
+            header->attention_qk_hmx_ticks +=
+                qbh_attribution_mark(&attribution_cursor);
+        }
         ++header->hmx_command_count;
         header->hmx_fp16_tile_pair_count += 16U;
         qbh_unpack_fp16_output(
             (const __fp16 *)buffers->hmx_output, 2U,
             scores + (size_t)head * QBH_BLOCK_M * QBH_BLOCK_M,
             QBH_BLOCK_M, 0U);
+        if (header->attribution_enabled != 0U) {
+            header->attention_qk_unpack_ticks +=
+                qbh_attribution_mark(&attribution_cursor);
+        }
     }
     qbh_record_f16_nonfinite(
         header, scores, QBH_BLOCK_SCORE_ELEMENTS,
         QBH_BLOCK_NUMERICAL_ATTENTION_QK);
     header->attention_qk_max_abs = qbh_f16_max_abs(
         scores, QBH_BLOCK_SCORE_ELEMENTS);
+    if (header->attribution_enabled != 0U) {
+        header->attention_qk_audit_ticks +=
+            qbh_attribution_mark(&attribution_cursor);
+    }
 
     if ((header->common_ops_mask & QBH_BLOCK_COMMON_OP_SOFTMAX) != 0U) {
         qbh_hvx_stable_causal_softmax_f16(
@@ -1812,11 +1859,19 @@ static int qbh_attention_f16(struct qbh_block_header *header,
         }
       }
     }
+    if (header->attribution_enabled != 0U) {
+        header->attention_softmax_ticks +=
+            qbh_attribution_mark(&attribution_cursor);
+    }
     qbh_record_f16_nonfinite(
         header, probability, QBH_BLOCK_SCORE_ELEMENTS,
         QBH_BLOCK_NUMERICAL_ATTENTION_SOFTMAX);
     header->attention_probability_max_abs = qbh_f16_max_abs(
         probability, QBH_BLOCK_SCORE_ELEMENTS);
+    if (header->attribution_enabled != 0U) {
+        header->attention_softmax_audit_ticks +=
+            qbh_attribution_mark(&attribution_cursor);
+    }
 
     for (uint32_t head = 0; head < QBH_BLOCK_HEADS; ++head) {
         uint32_t kv_head = head / (QBH_BLOCK_HEADS / QBH_BLOCK_KV_HEADS);
@@ -1828,6 +1883,10 @@ static int qbh_attention_f16(struct qbh_block_header *header,
             v, QBH_BLOCK_KV_HIDDEN,
             kv_head * QBH_BLOCK_HEAD_DIM, QBH_BLOCK_M,
             QBH_BLOCK_HEAD_DIM, (__fp16 *)buffers->expanded_weight);
+        if (header->attribution_enabled != 0U) {
+            header->attention_av_pack_ticks +=
+                qbh_attribution_mark(&attribution_cursor);
+        }
         if (qbh_hmx_submit(worker, QBH_BLOCK_HMX_FP16,
                            buffers->hmx_activation,
                            buffers->expanded_weight,
@@ -1835,17 +1894,29 @@ static int qbh_attention_f16(struct qbh_block_header *header,
                            buffers->hmx_output, 2U, 2U, 4U) != 0) {
             return -1;
         }
+        if (header->attribution_enabled != 0U) {
+            header->attention_av_hmx_ticks +=
+                qbh_attribution_mark(&attribution_cursor);
+        }
         ++header->hmx_command_count;
         header->hmx_fp16_tile_pair_count += 16U;
         qbh_unpack_fp16_output(
             (const __fp16 *)buffers->hmx_output, 4U, attention,
             QBH_BLOCK_HIDDEN, head * QBH_BLOCK_HEAD_DIM);
+        if (header->attribution_enabled != 0U) {
+            header->attention_av_unpack_ticks +=
+                qbh_attribution_mark(&attribution_cursor);
+        }
     }
     qbh_record_f16_nonfinite(
         header, attention, QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
         QBH_BLOCK_NUMERICAL_ATTENTION_AV);
     header->attention_av_max_abs = qbh_f16_max_abs(
         attention, QBH_BLOCK_M * QBH_BLOCK_HIDDEN);
+    if (header->attribution_enabled != 0U) {
+        header->attention_av_audit_ticks +=
+            qbh_attribution_mark(&attribution_cursor);
+    }
     return 0;
 }
 
@@ -2000,6 +2071,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         header->common_ops_mask == QBH_BLOCK_COMMON_OP_SILU
             ? &silu_check_metrics : NULL;
     uint64_t start;
+    uint64_t attention_attributed_before = 0U;
 
     qbh_hvx_check_reset(&rms_check_metrics);
     qbh_hvx_check_reset(&rope_check_metrics);
@@ -2137,6 +2209,10 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         QBH_BLOCK_NUMERICAL_K_ROPE);
     header->qk_norm_rope_ticks += HAP_perf_get_qtimer_count() - start;
 
+    if (header->attribution_enabled != 0U) {
+        attention_attributed_before =
+            qbh_attention_attributed_ticks(header);
+    }
     start = HAP_perf_get_qtimer_count();
     if (qbh_attention_f16(header, buffers, worker, softmax_check) != 0) {
         return QBH_BLOCK_STATUS_ATTENTION_FAILED;
@@ -2147,7 +2223,20 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             buffers->attention_concat, hidden_elements,
             &header->qparams[QBH_BLOCK_QP_ATTENTION_CONCAT]);
     }
-    header->attention_ticks += HAP_perf_get_qtimer_count() - start;
+    {
+        uint64_t attention_end = HAP_perf_get_qtimer_count();
+        uint64_t attention_elapsed = attention_end - start;
+        header->attention_ticks += attention_elapsed;
+        if (header->attribution_enabled != 0U) {
+            uint64_t attributed_delta =
+                qbh_attention_attributed_ticks(header) -
+                attention_attributed_before;
+            if (attention_elapsed > attributed_delta) {
+                header->attention_unattributed_ticks +=
+                    attention_elapsed - attributed_delta;
+            }
+        }
+    }
 
     start = HAP_perf_get_qtimer_count();
     if (qbh_run_projection(
@@ -2339,6 +2428,8 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
     int w4f16_pool_created = 0;
     int main_hvx_locked = 0;
     int thread_exit_status = AEE_EFAILED;
+    uint64_t invocation_start = 0U;
+    uint64_t teardown_start = 0U;
 
     if (vtcm == NULL || vtcm_bytes != QBH_EXPECTED_FULL_VTCM_BYTES ||
         hmx_context_id == 0U ||
@@ -2377,6 +2468,10 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
         header->dsp_status = QBH_BLOCK_STATUS_ARENA_FAILED;
         result = AEE_ENOMEMORY;
         goto publish;
+    }
+
+    if (header->attribution_enabled != 0U) {
+        invocation_start = HAP_perf_get_qtimer_count();
     }
 
     memset(&worker, 0, sizeof(worker));
@@ -2431,6 +2526,10 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
     }
 
     header->qtimer_start = HAP_perf_get_qtimer_count();
+    if (header->attribution_enabled != 0U) {
+        header->runtime_setup_ticks =
+            header->qtimer_start - invocation_start;
+    }
     if (qbh_stage_metadata(header, shared, &buffers) != 0) {
         header->dsp_status = QBH_BLOCK_STATUS_METADATA_DMA_FAILED;
         result = AEE_EFAILED;
@@ -2458,8 +2557,13 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
         }
         header->boundary_ddr_write_bytes += header->output_bytes;
         ++header->boundary_dma_descriptor_count;
-        header->output_stage_ticks +=
-            HAP_perf_get_qtimer_count() - output_start;
+        {
+            uint64_t output_end = HAP_perf_get_qtimer_count();
+            header->output_stage_ticks += output_end - output_start;
+            if (header->attribution_enabled != 0U) {
+                teardown_start = output_end;
+            }
+        }
     }
     header->dsp_status = QBH_BLOCK_STATUS_OK;
     result = AEE_SUCCESS;
@@ -2504,6 +2608,35 @@ stop_worker:
     header->hmx_ready_wait_ticks = worker.ready_wait_ticks;
     header->qtimer_end = HAP_perf_get_qtimer_count();
     header->total_ticks = header->qtimer_end - header->qtimer_start;
+    if (header->attribution_enabled != 0U && invocation_start != 0U &&
+        teardown_start != 0U) {
+        uint64_t named_ticks;
+        header->runtime_teardown_ticks =
+            header->qtimer_end - teardown_start;
+        header->invocation_ticks =
+            header->qtimer_end - invocation_start;
+        named_ticks = header->runtime_setup_ticks +
+                      header->metadata_stage_ticks +
+                      header->input_stage_ticks +
+                      header->input_norm_ticks +
+                      header->qkv_projection_ticks +
+                      header->qk_norm_rope_ticks +
+                      header->attention_ticks +
+                      header->o_projection_ticks +
+                      header->post_attention_residual_ticks +
+                      header->post_attention_norm_ticks +
+                      header->gate_up_ticks +
+                      header->activation_ticks +
+                      header->down_ticks +
+                      header->final_residual_ticks +
+                      header->output_stage_ticks +
+                      header->runtime_teardown_ticks;
+        header->ledger_named_ticks = named_ticks;
+        if (header->invocation_ticks > named_ticks) {
+            header->ledger_unattributed_ticks =
+                header->invocation_ticks - named_ticks;
+        }
+    }
 
 destroy_semaphores:
     qurt_sem_destroy(&worker.worker_started);

@@ -6,8 +6,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(3)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(24)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(4)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(25)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -144,6 +144,7 @@ struct qbh_block_header {
     uint32_t w4f16_requested_hvx_workers;
     uint32_t w4f16_region_tiles;
     uint32_t common_ops_mask;
+    uint32_t attribution_enabled;
 
     uint32_t input_offset;
     uint32_t input_bytes;
@@ -254,6 +255,25 @@ struct qbh_block_header {
     uint64_t w4f16_prefetch_count;
     uint64_t w4f16_prefetch_wait_ticks;
     uint64_t scalar_math_ticks;
+
+    uint64_t invocation_ticks;
+    uint64_t runtime_setup_ticks;
+    uint64_t runtime_teardown_ticks;
+    uint64_t ledger_named_ticks;
+    uint64_t ledger_unattributed_ticks;
+
+    uint64_t attention_setup_ticks;
+    uint64_t attention_qk_pack_ticks;
+    uint64_t attention_qk_hmx_ticks;
+    uint64_t attention_qk_unpack_ticks;
+    uint64_t attention_qk_audit_ticks;
+    uint64_t attention_softmax_ticks;
+    uint64_t attention_softmax_audit_ticks;
+    uint64_t attention_av_pack_ticks;
+    uint64_t attention_av_hmx_ticks;
+    uint64_t attention_av_unpack_ticks;
+    uint64_t attention_av_audit_ticks;
+    uint64_t attention_unattributed_ticks;
 };
 
 #endif

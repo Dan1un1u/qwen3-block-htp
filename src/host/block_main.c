@@ -203,6 +203,28 @@ static int qbh_parse_common_ops_mode(const char *text, uint32_t *mask) {
     return -1;
 }
 
+static int qbh_parse_attribution_mode(const char *text,
+                                      uint32_t *enabled) {
+    if (strcmp(text, "off") == 0) {
+        *enabled = 0U;
+        return 0;
+    }
+    if (strcmp(text, "on") == 0) {
+        *enabled = 1U;
+        return 0;
+    }
+    return -1;
+}
+
+static uint64_t qbh_fnv1a64(const uint8_t *data, size_t bytes) {
+    uint64_t hash = UINT64_C(1469598103934665603);
+    for (size_t index = 0; index < bytes; ++index) {
+        hash ^= data[index];
+        hash *= UINT64_C(1099511628211);
+    }
+    return hash;
+}
+
 static const char *qbh_common_ops_mode_name(uint32_t mask) {
     switch (mask) {
         case QBH_BLOCK_COMMON_OPS_SCALAR:
@@ -469,6 +491,7 @@ int main(int argc, char **argv) {
     uint32_t w4f16_hvx_workers = 2U;
     uint32_t w4f16_region_tiles = 16U;
     uint32_t common_ops_mask = QBH_BLOCK_COMMON_OPS_HVX_FP16;
+    uint32_t attribution_enabled = 0U;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t cursor = qbh_align_up_size(sizeof(*header), QBH_HOST_ALIGNMENT);
@@ -488,12 +511,13 @@ int main(int argc, char **argv) {
     struct qbh_error_metrics warmup_metrics;
     struct qbh_error_metrics measured_metrics;
     uint32_t warmup_run_index = 0U;
+    uint64_t output_hash = 0U;
     int exit_code = 1;
     char file_name[128];
 
     memset(&warmup_metrics, 0, sizeof(warmup_metrics));
     memset(&measured_metrics, 0, sizeof(measured_metrics));
-    if (argc < 3 || argc > 7 ||
+    if (argc < 3 || argc > 8 ||
         qbh_parse_variant(argv[2], &variant) != 0 ||
         (argc >= 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
         (argc >= 5 && qbh_parse_u32(
@@ -502,6 +526,8 @@ int main(int argc, char **argv) {
                           argv[5], &w4f16_region_tiles) != 0) ||
         (argc >= 7 && qbh_parse_common_ops_mode(
                           argv[6], &common_ops_mask) != 0) ||
+        (argc >= 8 && qbh_parse_attribution_mode(
+                          argv[7], &attribution_enabled) != 0) ||
         repeats == 0U || repeats > 100U ||
         w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
         (argc >= 7 && variant == QBH_BLOCK_W4U8 &&
@@ -511,7 +537,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "usage: %s PACKAGE_DIR VARIANT [repeat_count] "
                         "[w4f16_hvx_workers] [w4f16_region_tiles] "
                         "[scalar|rms|rope|softmax|silu|rms_silu|"
-                        "rms_silu_rope|hvx]\n",
+                        "rms_silu_rope|hvx] [off|on]\n",
                 argv[0]);
         return 2;
     }
@@ -680,6 +706,7 @@ int main(int argc, char **argv) {
     header->w4f16_requested_hvx_workers = w4f16_hvx_workers;
     header->w4f16_region_tiles = w4f16_region_tiles;
     header->common_ops_mask = common_ops_mask;
+    header->attribution_enabled = attribution_enabled;
     header->input_offset = input_slot.offset;
     header->input_bytes = input_slot.expected_bytes;
     header->output_bytes = output_bytes;
@@ -828,15 +855,18 @@ int main(int argc, char **argv) {
               (const uint16_t *)(shared + header->output_offset),
               (const uint16_t *)(shared + header->reference_offset),
               QBH_BLOCK_M * QBH_BLOCK_HIDDEN);
+    output_hash = qbh_fnv1a64(
+        shared + header->output_offset, header->output_bytes);
 
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0024\","
+        "{\"experiment\":\"EXP-0025\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"FP16_HMX\","
         "\"projection_compute\":\"%s\","
         "\"common_ops_mode\":\"%s\","
+        "\"attribution_mode\":\"%s\","
         "\"w4f16_scale_placement\":\"%s\","
         "\"intermediate_residency\":\"VTCM\","
         "\"warmup_rpc_result\":%d,"
@@ -881,6 +911,7 @@ int main(int argc, char **argv) {
         "\"max_abs\":%.9g,\"mean_abs\":%.9g,\"rmse\":%.9g,"
         "\"cosine\":%.9g,\"mismatches\":%" PRIu64 ","
         "\"max_lsb\":%" PRIu32 ","
+        "\"output_hash\":\"%016" PRIx64 "\","
         "\"vtcm_requested_bytes\":%" PRIu32 ","
         "\"vtcm_acquired_bytes\":%" PRIu32 ","
         "\"vtcm_peak_plan_bytes\":%" PRIu32 ","
@@ -896,16 +927,38 @@ int main(int argc, char **argv) {
         "\"hmx_command_count\":%" PRIu32 ","
         "\"hmx_fp16_tile_pair_count\":%" PRIu32 ","
         "\"hmx_u8s8_tile_pair_count\":%" PRIu32 ","
+        "\"input_stage_ticks\":%" PRIu64 ","
+        "\"metadata_stage_ticks\":%" PRIu64 ","
         "\"input_norm_ticks\":%" PRIu64 ","
         "\"qkv_projection_ticks\":%" PRIu64 ","
         "\"qk_norm_rope_ticks\":%" PRIu64 ","
         "\"attention_ticks\":%" PRIu64 ","
         "\"o_projection_ticks\":%" PRIu64 ","
+        "\"post_attention_residual_ticks\":%" PRIu64 ","
         "\"post_attention_norm_ticks\":%" PRIu64 ","
         "\"gate_up_ticks\":%" PRIu64 ","
         "\"activation_ticks\":%" PRIu64 ","
         "\"down_ticks\":%" PRIu64 ","
+        "\"final_residual_ticks\":%" PRIu64 ","
+        "\"output_stage_ticks\":%" PRIu64 ","
         "\"total_ticks\":%" PRIu64 ","
+        "\"invocation_ticks\":%" PRIu64 ","
+        "\"runtime_setup_ticks\":%" PRIu64 ","
+        "\"runtime_teardown_ticks\":%" PRIu64 ","
+        "\"ledger_named_ticks\":%" PRIu64 ","
+        "\"ledger_unattributed_ticks\":%" PRIu64 ","
+        "\"attention_setup_ticks\":%" PRIu64 ","
+        "\"attention_qk_pack_ticks\":%" PRIu64 ","
+        "\"attention_qk_hmx_ticks\":%" PRIu64 ","
+        "\"attention_qk_unpack_ticks\":%" PRIu64 ","
+        "\"attention_qk_audit_ticks\":%" PRIu64 ","
+        "\"attention_softmax_ticks\":%" PRIu64 ","
+        "\"attention_softmax_audit_ticks\":%" PRIu64 ","
+        "\"attention_av_pack_ticks\":%" PRIu64 ","
+        "\"attention_av_hmx_ticks\":%" PRIu64 ","
+        "\"attention_av_unpack_ticks\":%" PRIu64 ","
+        "\"attention_av_audit_ticks\":%" PRIu64 ","
+        "\"attention_unattributed_ticks\":%" PRIu64 ","
         "\"weight_dma_ticks\":%" PRIu64 ","
         "\"hmx_compute_ticks\":%" PRIu64 ","
         "\"projection_pack_ticks\":%" PRIu64 ","
@@ -923,6 +976,7 @@ int main(int argc, char **argv) {
         variant == QBH_BLOCK_W4U8 ? "U8xS8_integer_HMX"
                                   : "FP16_HMX",
         qbh_common_ops_mode_name(header->common_ops_mask),
+        header->attribution_enabled != 0U ? "on" : "off",
         variant == QBH_BLOCK_W4F16 ? "hmx_output_per_channel"
                                    : "not_applicable",
         warmup_result, warmup_run_index, warmup_end - warmup_start,
@@ -962,6 +1016,7 @@ int main(int argc, char **argv) {
         measured_metrics.max_abs, measured_metrics.mean_abs,
         measured_metrics.rmse, measured_metrics.cosine,
         measured_metrics.mismatches, measured_metrics.max_lsb,
+        output_hash,
         header->vtcm_requested_bytes, header->vtcm_acquired_bytes,
         header->vtcm_peak_plan_bytes, header->block_invocation_count,
         header->weight_ddr_read_bytes,
@@ -973,12 +1028,31 @@ int main(int argc, char **argv) {
         header->intermediate_dma_descriptor_count,
         header->intermediate_spill_fill_count,
         header->hmx_command_count, header->hmx_fp16_tile_pair_count,
-        header->hmx_u8s8_tile_pair_count, header->input_norm_ticks,
+        header->hmx_u8s8_tile_pair_count, header->input_stage_ticks,
+        header->metadata_stage_ticks, header->input_norm_ticks,
         header->qkv_projection_ticks, header->qk_norm_rope_ticks,
         header->attention_ticks, header->o_projection_ticks,
+        header->post_attention_residual_ticks,
         header->post_attention_norm_ticks, header->gate_up_ticks,
         header->activation_ticks, header->down_ticks,
-        header->total_ticks, header->weight_dma_ticks,
+        header->final_residual_ticks, header->output_stage_ticks,
+        header->total_ticks, header->invocation_ticks,
+        header->runtime_setup_ticks, header->runtime_teardown_ticks,
+        header->ledger_named_ticks,
+        header->ledger_unattributed_ticks,
+        header->attention_setup_ticks,
+        header->attention_qk_pack_ticks,
+        header->attention_qk_hmx_ticks,
+        header->attention_qk_unpack_ticks,
+        header->attention_qk_audit_ticks,
+        header->attention_softmax_ticks,
+        header->attention_softmax_audit_ticks,
+        header->attention_av_pack_ticks,
+        header->attention_av_hmx_ticks,
+        header->attention_av_unpack_ticks,
+        header->attention_av_audit_ticks,
+        header->attention_unattributed_ticks,
+        header->weight_dma_ticks,
         header->hmx_compute_ticks, header->projection_pack_ticks,
         header->w4f16_expand_ticks,
         header->projection_hmx_wait_ticks,
