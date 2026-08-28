@@ -6,8 +6,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(17)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(36)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(18)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(37)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -52,6 +52,12 @@ enum qbh_block_f16f16_projection_mode {
     QBH_BLOCK_F16F16_PROJECTION_BATCH2 = 2,
     QBH_BLOCK_F16F16_PROJECTION_GATE4 = 3,
     QBH_BLOCK_F16F16_PROJECTION_GATE8 = 4,
+};
+
+enum qbh_block_qkv_batch_mode {
+    QBH_BLOCK_QKV_BATCH2_CONTROL = 0,
+    QBH_BLOCK_Q_BATCH4 = 1,
+    QBH_BLOCK_QKV_BATCH4 = 2,
 };
 
 enum qbh_block_w4f16_pipeline_mode {
@@ -209,6 +215,7 @@ struct qbh_block_header {
     uint32_t numerical_audit_enabled;
     uint32_t residual_mode;
     uint32_t f16f16_projection_mode;
+    uint32_t qkv_batch_mode;
     uint32_t w4f16_pipeline_mode;
     uint32_t attention_pack_mode;
     uint32_t attention_pipeline_mode;
@@ -293,6 +300,8 @@ struct qbh_block_header {
     uint32_t attention_qk_norm_task_count;
     uint32_t attention_softmax_task_count;
     uint32_t attention_gqa_group_count;
+    uint32_t qkv_hmx_batch_n_tiles[3];
+    uint32_t qkv_hmx_command_count[3];
 
     uint32_t prepared_session_run_index;
     uint32_t resource_vtcm_address;
@@ -417,6 +426,13 @@ struct qbh_block_header {
     uint64_t w4f16_gate_up_stream_join_wait_ticks;
     uint64_t w4f16_gate_up_hmx_command_count;
     uint64_t w4f16_gate_up_scale_init_ticks;
+
+    uint64_t qkv_projection_wall_ticks[3];
+    uint64_t qkv_weight_dma_ticks[3];
+    uint64_t qkv_expand_ticks[3];
+    uint64_t qkv_expand_work_ticks[3];
+    uint64_t qkv_hmx_wait_ticks[3];
+    uint64_t qkv_unpack_ticks[3];
 };
 
 #endif

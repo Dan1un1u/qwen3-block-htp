@@ -286,6 +286,35 @@ static const char *qbh_f16f16_projection_mode_name(uint32_t mode) {
     return "serial";
 }
 
+static int qbh_parse_qkv_batch_mode(const char *text, uint32_t *mode) {
+    if (strcmp(text, "control") == 0 ||
+        strcmp(text, "batch2") == 0) {
+        *mode = QBH_BLOCK_QKV_BATCH2_CONTROL;
+        return 0;
+    }
+    if (strcmp(text, "q_batch4") == 0 ||
+        strcmp(text, "q4") == 0) {
+        *mode = QBH_BLOCK_Q_BATCH4;
+        return 0;
+    }
+    if (strcmp(text, "qkv_batch4") == 0 ||
+        strcmp(text, "qkv4") == 0) {
+        *mode = QBH_BLOCK_QKV_BATCH4;
+        return 0;
+    }
+    return -1;
+}
+
+static const char *qbh_qkv_batch_mode_name(uint32_t mode) {
+    if (mode == QBH_BLOCK_QKV_BATCH4) {
+        return "qkv_batch4";
+    }
+    if (mode == QBH_BLOCK_Q_BATCH4) {
+        return "q_batch4";
+    }
+    return "batch2_control";
+}
+
 static int qbh_parse_w4f16_pipeline_mode(const char *text,
                                          uint32_t *mode) {
     if (strcmp(text, "control") == 0) {
@@ -865,6 +894,7 @@ int main(int argc, char **argv) {
     uint32_t residual_mode = QBH_BLOCK_RESIDUAL_SCALAR;
     uint32_t f16f16_projection_mode =
         QBH_BLOCK_F16F16_PROJECTION_SERIAL;
+    uint32_t qkv_batch_mode = QBH_BLOCK_QKV_BATCH2_CONTROL;
     uint32_t w4f16_pipeline_mode = QBH_BLOCK_W4F16_PIPELINE_CONTROL;
     uint32_t attention_pack_mode = QBH_BLOCK_ATTENTION_PACK_CONTROL;
     uint32_t attention_pipeline_mode =
@@ -898,7 +928,7 @@ int main(int argc, char **argv) {
 
     memset(&warmup_metrics, 0, sizeof(warmup_metrics));
     memset(&measured_metrics, 0, sizeof(measured_metrics));
-    if (argc < 3 || argc > 18 ||
+    if (argc < 3 || argc > 19 ||
         qbh_parse_variant(argv[2], &variant) != 0 ||
         (argc >= 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
         (argc >= 5 && qbh_parse_u32(
@@ -929,6 +959,8 @@ int main(int argc, char **argv) {
                            argv[16], &attention_pipeline_mode) != 0) ||
         (argc >= 18 && qbh_parse_u32(
                            argv[17], &attention_hvx_contexts) != 0) ||
+        (argc >= 19 && qbh_parse_qkv_batch_mode(
+                           argv[18], &qkv_batch_mode) != 0) ||
         repeats == 0U || repeats > 100U ||
         w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
         (argc >= 7 && variant == QBH_BLOCK_W4U8 &&
@@ -1020,6 +1052,10 @@ int main(int argc, char **argv) {
              QBH_BLOCK_F16F16_PROJECTION_SERIAL) ||
         (variant != QBH_BLOCK_W4F16 &&
          w4f16_pipeline_mode != QBH_BLOCK_W4F16_PIPELINE_CONTROL) ||
+        (variant != QBH_BLOCK_W4F16 &&
+         qkv_batch_mode == QBH_BLOCK_Q_BATCH4) ||
+        (variant == QBH_BLOCK_W4U8 &&
+         qkv_batch_mode != QBH_BLOCK_QKV_BATCH2_CONTROL) ||
         ((w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_HYBRID_WORKERS ||
           w4f16_pipeline_mode ==
@@ -1079,7 +1115,8 @@ int main(int argc, char **argv) {
                         "[attention_pipeline:control|parallel_qk_norm_rope|"
                         "parallel_softmax|parallel_hvx|gqa_pipeline|"
                         "gqa_qkv_overlap] "
-                        "[attention_hvx_contexts:1..4]\n",
+                        "[attention_hvx_contexts:1..4] "
+                        "[qkv_batch:control|q_batch4|qkv_batch4]\n",
                 argv[0]);
         return 2;
     }
@@ -1252,6 +1289,7 @@ int main(int argc, char **argv) {
     header->numerical_audit_enabled = numerical_audit_enabled;
     header->residual_mode = residual_mode;
     header->f16f16_projection_mode = f16f16_projection_mode;
+    header->qkv_batch_mode = qkv_batch_mode;
     header->w4f16_pipeline_mode = w4f16_pipeline_mode;
     header->attention_pack_mode = attention_pack_mode;
     header->attention_pipeline_mode = attention_pipeline_mode;
@@ -1421,7 +1459,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0036\","
+        "{\"experiment\":\"EXP-0037\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"FP16_HMX\","
         "\"projection_compute\":\"%s\","
@@ -1430,6 +1468,7 @@ int main(int argc, char **argv) {
         "\"numerical_audit_mode\":\"%s\","
         "\"residual_mode\":\"%s\","
         "\"f16f16_projection_mode\":\"%s\","
+        "\"qkv_batch_mode\":\"%s\","
         "\"w4f16_pipeline_mode\":\"%s\","
         "\"attention_pack_mode\":\"%s\","
         "\"attention_pipeline_mode\":\"%s\","
@@ -1494,6 +1533,30 @@ int main(int argc, char **argv) {
         "\"attention_qk_norm_task_count\":%" PRIu32 ","
         "\"attention_softmax_task_count\":%" PRIu32 ","
         "\"attention_gqa_group_count\":%" PRIu32 ","
+        "\"q_hmx_batch_n_tiles\":%" PRIu32 ","
+        "\"k_hmx_batch_n_tiles\":%" PRIu32 ","
+        "\"v_hmx_batch_n_tiles\":%" PRIu32 ","
+        "\"q_hmx_command_count\":%" PRIu32 ","
+        "\"k_hmx_command_count\":%" PRIu32 ","
+        "\"v_hmx_command_count\":%" PRIu32 ","
+        "\"q_projection_wall_ticks\":%" PRIu64 ","
+        "\"k_projection_wall_ticks\":%" PRIu64 ","
+        "\"v_projection_wall_ticks\":%" PRIu64 ","
+        "\"q_weight_dma_ticks\":%" PRIu64 ","
+        "\"k_weight_dma_ticks\":%" PRIu64 ","
+        "\"v_weight_dma_ticks\":%" PRIu64 ","
+        "\"q_expand_ticks\":%" PRIu64 ","
+        "\"k_expand_ticks\":%" PRIu64 ","
+        "\"v_expand_ticks\":%" PRIu64 ","
+        "\"q_expand_work_ticks\":%" PRIu64 ","
+        "\"k_expand_work_ticks\":%" PRIu64 ","
+        "\"v_expand_work_ticks\":%" PRIu64 ","
+        "\"q_hmx_wait_ticks\":%" PRIu64 ","
+        "\"k_hmx_wait_ticks\":%" PRIu64 ","
+        "\"v_hmx_wait_ticks\":%" PRIu64 ","
+        "\"q_unpack_ticks\":%" PRIu64 ","
+        "\"k_unpack_ticks\":%" PRIu64 ","
+        "\"v_unpack_ticks\":%" PRIu64 ","
         "\"host_wall_ns\":%" PRIu64 ","
         "\"host_wall_ns_per_block\":%.3f,"
         "\"max_abs\":%.9g,\"mean_abs\":%.9g,\"rmse\":%.9g,"
@@ -1623,6 +1686,7 @@ int main(int argc, char **argv) {
             ? qbh_f16f16_projection_mode_name(
                   header->f16f16_projection_mode)
             : "not_applicable",
+        qbh_qkv_batch_mode_name(header->qkv_batch_mode),
         variant == QBH_BLOCK_W4F16
             ? qbh_w4f16_pipeline_mode_name(
                   header->w4f16_pipeline_mode)
@@ -1686,6 +1750,30 @@ int main(int argc, char **argv) {
         header->attention_qk_norm_task_count,
         header->attention_softmax_task_count,
         header->attention_gqa_group_count,
+        header->qkv_hmx_batch_n_tiles[QBH_BLOCK_PROJ_Q],
+        header->qkv_hmx_batch_n_tiles[QBH_BLOCK_PROJ_K],
+        header->qkv_hmx_batch_n_tiles[QBH_BLOCK_PROJ_V],
+        header->qkv_hmx_command_count[QBH_BLOCK_PROJ_Q],
+        header->qkv_hmx_command_count[QBH_BLOCK_PROJ_K],
+        header->qkv_hmx_command_count[QBH_BLOCK_PROJ_V],
+        header->qkv_projection_wall_ticks[QBH_BLOCK_PROJ_Q],
+        header->qkv_projection_wall_ticks[QBH_BLOCK_PROJ_K],
+        header->qkv_projection_wall_ticks[QBH_BLOCK_PROJ_V],
+        header->qkv_weight_dma_ticks[QBH_BLOCK_PROJ_Q],
+        header->qkv_weight_dma_ticks[QBH_BLOCK_PROJ_K],
+        header->qkv_weight_dma_ticks[QBH_BLOCK_PROJ_V],
+        header->qkv_expand_ticks[QBH_BLOCK_PROJ_Q],
+        header->qkv_expand_ticks[QBH_BLOCK_PROJ_K],
+        header->qkv_expand_ticks[QBH_BLOCK_PROJ_V],
+        header->qkv_expand_work_ticks[QBH_BLOCK_PROJ_Q],
+        header->qkv_expand_work_ticks[QBH_BLOCK_PROJ_K],
+        header->qkv_expand_work_ticks[QBH_BLOCK_PROJ_V],
+        header->qkv_hmx_wait_ticks[QBH_BLOCK_PROJ_Q],
+        header->qkv_hmx_wait_ticks[QBH_BLOCK_PROJ_K],
+        header->qkv_hmx_wait_ticks[QBH_BLOCK_PROJ_V],
+        header->qkv_unpack_ticks[QBH_BLOCK_PROJ_Q],
+        header->qkv_unpack_ticks[QBH_BLOCK_PROJ_K],
+        header->qkv_unpack_ticks[QBH_BLOCK_PROJ_V],
         measured_end - measured_start,
         (double)(measured_end - measured_start) / repeats,
         measured_metrics.max_abs, measured_metrics.mean_abs,

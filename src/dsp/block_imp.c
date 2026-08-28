@@ -537,6 +537,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
             QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM ||
         header->f16f16_projection_mode >
             QBH_BLOCK_F16F16_PROJECTION_GATE8 ||
+        header->qkv_batch_mode > QBH_BLOCK_QKV_BATCH4 ||
         header->w4f16_pipeline_mode >
             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH ||
         (header->attention_pack_mode &
@@ -622,6 +623,10 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (header->variant != QBH_BLOCK_W4F16 &&
          header->w4f16_pipeline_mode !=
              QBH_BLOCK_W4F16_PIPELINE_CONTROL) ||
+        (header->variant != QBH_BLOCK_W4F16 &&
+         header->qkv_batch_mode == QBH_BLOCK_Q_BATCH4) ||
+        (header->variant == QBH_BLOCK_W4U8 &&
+         header->qkv_batch_mode != QBH_BLOCK_QKV_BATCH2_CONTROL) ||
         ((header->w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_HYBRID_WORKERS ||
           header->w4f16_pipeline_mode ==
@@ -2200,6 +2205,24 @@ static const float *qbh_w4f16_projection_scales(
                            (size_t)channel_offset * sizeof(float));
 }
 
+static uint32_t qbh_qkv_projection_batch_tiles(
+    const struct qbh_block_header *header,
+    const struct qbh_block_projection_desc *desc) {
+    if (header == NULL || desc == NULL) {
+        return QBH_BLOCK_W4F16_HMX_BATCH_N_TILES;
+    }
+    if (desc == &header->projections[QBH_BLOCK_PROJ_Q] &&
+        header->qkv_batch_mode >= QBH_BLOCK_Q_BATCH4) {
+        return 4U;
+    }
+    if ((desc == &header->projections[QBH_BLOCK_PROJ_K] ||
+         desc == &header->projections[QBH_BLOCK_PROJ_V]) &&
+        header->qkv_batch_mode == QBH_BLOCK_QKV_BATCH4) {
+        return 4U;
+    }
+    return QBH_BLOCK_W4F16_HMX_BATCH_N_TILES;
+}
+
 static __attribute__((noinline)) int qbh_run_f16f16_pipelined_projection(
     struct qbh_block_header *header, const uint8_t *shared,
     const struct qbh_block_projection_desc *desc,
@@ -2241,6 +2264,18 @@ static __attribute__((noinline)) int qbh_run_f16f16_pipelined_projection(
         (desc == &header->projections[QBH_BLOCK_PROJ_GATE] ||
          desc == &header->projections[QBH_BLOCK_PROJ_UP])) {
         batch_n_tiles = 8U;
+    }
+    if (header->qkv_batch_mode == QBH_BLOCK_QKV_BATCH4 &&
+        (desc == &header->projections[QBH_BLOCK_PROJ_Q] ||
+         desc == &header->projections[QBH_BLOCK_PROJ_K] ||
+         desc == &header->projections[QBH_BLOCK_PROJ_V])) {
+        batch_n_tiles = 4U;
+    }
+
+    if (desc >= &header->projections[QBH_BLOCK_PROJ_Q] &&
+        desc <= &header->projections[QBH_BLOCK_PROJ_V]) {
+        header->qkv_hmx_batch_n_tiles[desc - header->projections] =
+            batch_n_tiles;
     }
 
     header->f16f16_weight_batch_n_tiles = batch_n_tiles;
@@ -2702,6 +2737,8 @@ static int qbh_run_w4f16_projection(
     struct qbh_block_w4f16_cross_prefetch *cross_prefetch) {
     uint32_t k_tiles = desc->k / QBH_HMX_FP16_COLS;
     uint32_t n_tiles = desc->n / QBH_HMX_FP16_COLS;
+    uint32_t hmx_batch_n_tiles =
+        qbh_qkv_projection_batch_tiles(header, desc);
     uint32_t compressed_bytes = k_tiles * QBH_W4_PACKED_TILE_BYTES;
     uint32_t batch_count =
         (n_tiles + QBH_BLOCK_W4F16_DMA_BATCH_N_TILES - 1U) /
@@ -2728,6 +2765,11 @@ static int qbh_run_w4f16_projection(
     if (pool == NULL) {
         qbh_record_projection_failure(header, desc, 0U, 10U, -1);
         return -1;
+    }
+    if (desc >= &header->projections[QBH_BLOCK_PROJ_Q] &&
+        desc <= &header->projections[QBH_BLOCK_PROJ_V]) {
+        header->qkv_hmx_batch_n_tiles[desc - header->projections] =
+            hmx_batch_n_tiles;
     }
     if (header->w4f16_pipeline_mode ==
             QBH_BLOCK_W4F16_PIPELINE_EARLY_REGION) {
@@ -2794,7 +2836,7 @@ static int qbh_run_w4f16_projection(
     qbh_w4f16_expand_with_main(
         header, pool, compressed_slots[0], projection_scales,
         expanded_slots[0], ready, 1U,
-        k_tiles * QBH_BLOCK_W4F16_HMX_BATCH_N_TILES,
+        k_tiles * hmx_batch_n_tiles,
         region_tiles, active_workers, 0U);
     header->w4f16_expand_ticks +=
         HAP_perf_get_qtimer_count() - phase_start;
@@ -2814,15 +2856,15 @@ static int qbh_run_w4f16_projection(
     }
 
     for (uint32_t n_tile = 0; n_tile < n_tiles;
-         n_tile += QBH_BLOCK_W4F16_HMX_BATCH_N_TILES) {
+         n_tile += hmx_batch_n_tiles) {
         uint32_t group_tiles = n_tiles - n_tile;
         uint32_t group_index =
-            n_tile / QBH_BLOCK_W4F16_HMX_BATCH_N_TILES;
+            n_tile / hmx_batch_n_tiles;
         uint32_t current_expanded_slot = group_index & 1U;
         uint32_t next_tile;
 
-        if (group_tiles > QBH_BLOCK_W4F16_HMX_BATCH_N_TILES) {
-            group_tiles = QBH_BLOCK_W4F16_HMX_BATCH_N_TILES;
+        if (group_tiles > hmx_batch_n_tiles) {
+            group_tiles = hmx_batch_n_tiles;
         }
         next_tile = n_tile + group_tiles;
         for (uint32_t tile = 0; tile < group_tiles; ++tile) {
@@ -2862,12 +2904,11 @@ static int qbh_run_w4f16_projection(
                 next_tile % QBH_BLOCK_W4F16_DMA_BATCH_N_TILES;
             uint32_t next_compressed_slot = next_batch & 1U;
             uint32_t next_expanded_slot =
-                (next_tile / QBH_BLOCK_W4F16_HMX_BATCH_N_TILES) & 1U;
+                (next_tile / hmx_batch_n_tiles) & 1U;
 
             if (next_group_tiles >
-                QBH_BLOCK_W4F16_HMX_BATCH_N_TILES) {
-                next_group_tiles =
-                    QBH_BLOCK_W4F16_HMX_BATCH_N_TILES;
+                hmx_batch_n_tiles) {
+                next_group_tiles = hmx_batch_n_tiles;
             }
 
             if (next_in_batch == 0U) {
@@ -4763,6 +4804,67 @@ static void qbh_record_f16_nonfinite(struct qbh_block_header *header,
     }
 }
 
+struct qbh_qkv_projection_snapshot {
+    uint64_t wall_start;
+    uint64_t weight_dma_ticks;
+    uint64_t expand_ticks;
+    uint64_t expand_work_ticks;
+    uint64_t hmx_wait_ticks;
+    uint64_t unpack_ticks;
+    uint32_t hmx_commands;
+};
+
+static uint64_t qbh_qkv_expand_work_ticks(
+    const struct qbh_block_header *header,
+    const struct qbh_block_w4f16_pool *pool) {
+    uint64_t ticks = header->w4f16_expand_work_ticks;
+    if (pool != NULL) {
+        for (uint32_t index = 0U; index < pool->created_workers; ++index) {
+            ticks += pool->jobs[index].expand_ticks;
+        }
+    }
+    return ticks;
+}
+
+static void qbh_qkv_projection_begin(
+    const struct qbh_block_header *header,
+    const struct qbh_block_w4f16_pool *pool,
+    struct qbh_qkv_projection_snapshot *snapshot) {
+    snapshot->wall_start = HAP_perf_get_qtimer_count();
+    snapshot->weight_dma_ticks = header->weight_dma_ticks;
+    snapshot->expand_ticks = header->w4f16_expand_ticks;
+    snapshot->expand_work_ticks =
+        qbh_qkv_expand_work_ticks(header, pool);
+    snapshot->hmx_wait_ticks = header->projection_hmx_wait_ticks;
+    snapshot->unpack_ticks = header->projection_unpack_ticks;
+    snapshot->hmx_commands = header->hmx_command_count;
+}
+
+static void qbh_qkv_projection_end(
+    struct qbh_block_header *header,
+    const struct qbh_block_w4f16_pool *pool,
+    uint32_t projection_index,
+    const struct qbh_qkv_projection_snapshot *snapshot) {
+    if (projection_index > QBH_BLOCK_PROJ_V) {
+        return;
+    }
+    header->qkv_projection_wall_ticks[projection_index] +=
+        HAP_perf_get_qtimer_count() - snapshot->wall_start;
+    header->qkv_weight_dma_ticks[projection_index] +=
+        header->weight_dma_ticks - snapshot->weight_dma_ticks;
+    header->qkv_expand_ticks[projection_index] +=
+        header->w4f16_expand_ticks - snapshot->expand_ticks;
+    header->qkv_expand_work_ticks[projection_index] +=
+        qbh_qkv_expand_work_ticks(header, pool) -
+        snapshot->expand_work_ticks;
+    header->qkv_hmx_wait_ticks[projection_index] +=
+        header->projection_hmx_wait_ticks - snapshot->hmx_wait_ticks;
+    header->qkv_unpack_ticks[projection_index] +=
+        header->projection_unpack_ticks - snapshot->unpack_ticks;
+    header->qkv_hmx_command_count[projection_index] +=
+        header->hmx_command_count - snapshot->hmx_commands;
+}
+
 static int qbh_run_one_block(struct qbh_block_header *header,
                              const uint8_t *shared,
                              struct qbh_block_buffers *buffers,
@@ -4776,6 +4878,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     struct qbh_hvx_check_metrics softmax_check_metrics;
     struct qbh_hvx_check_metrics silu_check_metrics;
     struct qbh_block_w4f16_cross_prefetch cross_prefetch;
+    struct qbh_qkv_projection_snapshot qkv_snapshot;
     struct qbh_hvx_check_metrics *rms_check =
         header->numerical_audit_enabled != 0U &&
         header->common_ops_mask == QBH_BLOCK_COMMON_OP_RMS_NORM
@@ -4815,6 +4918,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     uint32_t qkv_overlap_worker_count =
         header->variant == QBH_BLOCK_W4F16 ? 1U : 3U;
     int post_attention_norm_fused = 0;
+    int qkv_projection_result;
 
     qbh_hvx_check_reset(&rms_check_metrics);
     qbh_hvx_check_reset(&rope_check_metrics);
@@ -4879,12 +4983,16 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             qkv_overlap_worker_count) != 0) {
         return QBH_BLOCK_STATUS_QK_NORM_ROPE_FAILED;
     }
-    if (qbh_run_projection(
-            header, shared, &header->projections[QBH_BLOCK_PROJ_Q],
-            buffers, worker, w4f16_pool, buffers->normalized,
-            buffers->q, 0U,
-            &header->projections[QBH_BLOCK_PROJ_K],
-            &cross_prefetch) != 0) {
+    qbh_qkv_projection_begin(header, w4f16_pool, &qkv_snapshot);
+    qkv_projection_result = qbh_run_projection(
+        header, shared, &header->projections[QBH_BLOCK_PROJ_Q],
+        buffers, worker, w4f16_pool, buffers->normalized,
+        buffers->q, 0U,
+        &header->projections[QBH_BLOCK_PROJ_K],
+        &cross_prefetch);
+    qbh_qkv_projection_end(
+        header, w4f16_pool, QBH_BLOCK_PROJ_Q, &qkv_snapshot);
+    if (qkv_projection_result != 0) {
         if (qkv_overlap_enabled != 0U) {
             qbh_hvx_pool_qk_norm_rope_abort_async(w4f16_pool);
             (void)qbh_hvx_pool_qk_norm_rope_wait_async(
@@ -4893,12 +5001,16 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         }
         return QBH_BLOCK_STATUS_QKV_FAILED;
     }
-    if (qbh_run_projection(
-            header, shared, &header->projections[QBH_BLOCK_PROJ_K],
-            buffers, worker, w4f16_pool, buffers->normalized,
-            buffers->k, qkv_overlap_enabled,
-            &header->projections[QBH_BLOCK_PROJ_V],
-            &cross_prefetch) != 0) {
+    qbh_qkv_projection_begin(header, w4f16_pool, &qkv_snapshot);
+    qkv_projection_result = qbh_run_projection(
+        header, shared, &header->projections[QBH_BLOCK_PROJ_K],
+        buffers, worker, w4f16_pool, buffers->normalized,
+        buffers->k, qkv_overlap_enabled,
+        &header->projections[QBH_BLOCK_PROJ_V],
+        &cross_prefetch);
+    qbh_qkv_projection_end(
+        header, w4f16_pool, QBH_BLOCK_PROJ_K, &qkv_snapshot);
+    if (qkv_projection_result != 0) {
         if (qkv_overlap_enabled != 0U) {
             qbh_hvx_pool_qk_norm_rope_abort_async(w4f16_pool);
             (void)qbh_hvx_pool_qk_norm_rope_wait_async(
@@ -4907,12 +5019,16 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         }
         return QBH_BLOCK_STATUS_QKV_FAILED;
     }
-    if (qbh_run_projection(
-            header, shared, &header->projections[QBH_BLOCK_PROJ_V],
-            buffers, worker, w4f16_pool, buffers->normalized,
-            buffers->v, qkv_overlap_enabled,
-            &header->projections[QBH_BLOCK_PROJ_O],
-            &cross_prefetch) != 0) {
+    qbh_qkv_projection_begin(header, w4f16_pool, &qkv_snapshot);
+    qkv_projection_result = qbh_run_projection(
+        header, shared, &header->projections[QBH_BLOCK_PROJ_V],
+        buffers, worker, w4f16_pool, buffers->normalized,
+        buffers->v, qkv_overlap_enabled,
+        &header->projections[QBH_BLOCK_PROJ_O],
+        &cross_prefetch);
+    qbh_qkv_projection_end(
+        header, w4f16_pool, QBH_BLOCK_PROJ_V, &qkv_snapshot);
+    if (qkv_projection_result != 0) {
         return QBH_BLOCK_STATUS_QKV_FAILED;
     }
     if (qkv_overlap_enabled != 0U) {
