@@ -1347,7 +1347,8 @@ experiments:
     evidence_profile: real-qwen3-block-hvx-fp16-residual
     source_branches:
       - codex/exp-0026-hvx-residual
-    source_commits: []
+    source_commits:
+      - 97da4ff8fc4623e70496e7be1c3668262bd466a2
     record: docs/experiments/EXP-0026.md
     decided_by: user
     decided_on: '2026-08-28'
