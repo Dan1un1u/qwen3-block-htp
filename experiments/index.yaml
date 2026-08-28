@@ -1349,6 +1349,7 @@ experiments:
       - codex/exp-0026-hvx-residual
     source_commits:
       - 97da4ff8fc4623e70496e7be1c3668262bd466a2
+      - e818f299fd3ae0a52841da2084bf85be5e12fac3
     record: docs/experiments/EXP-0026.md
     decided_by: user
     decided_on: '2026-08-28'
