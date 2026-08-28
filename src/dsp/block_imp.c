@@ -39,6 +39,7 @@ enum qbh_block_hmx_command_kind {
     QBH_BLOCK_HMX_U8S8 = 2,
     QBH_BLOCK_HMX_FP16_STREAMING = 3,
     QBH_BLOCK_HMX_FP16_TILE_SCALES = 4,
+    QBH_BLOCK_HMX_FP16_TILE_SCALES_STREAMING = 5,
 };
 
 #define QBH_BLOCK_W4F16_MIN_REGION_TILES UINT32_C(8)
@@ -142,7 +143,15 @@ struct qbh_block_w4f16_pool {
     uint32_t region_count;
     uint32_t region_tiles;
     uint32_t worker_count;
+    uint32_t active_worker_count;
     uint32_t created_workers;
+};
+
+struct qbh_block_w4f16_cross_prefetch {
+    struct qbh_dma_aligned_desc_1d descriptor;
+    const struct qbh_block_projection_desc *target;
+    uint64_t start_ticks;
+    uint32_t active;
 };
 
 static uint8_t qbh_block_hmx_stack[QBH_BLOCK_HMX_STACK_BYTES]
@@ -377,9 +386,32 @@ static int qbh_header_valid(const struct qbh_block_header *header,
             QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM ||
         header->f16f16_projection_mode >
             QBH_BLOCK_F16F16_PROJECTION_BATCH2 ||
+        header->w4f16_pipeline_mode >
+            QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH ||
         (header->variant != QBH_BLOCK_F16F16 &&
          header->f16f16_projection_mode !=
              QBH_BLOCK_F16F16_PROJECTION_SERIAL) ||
+        (header->variant != QBH_BLOCK_W4F16 &&
+         header->w4f16_pipeline_mode !=
+             QBH_BLOCK_W4F16_PIPELINE_CONTROL) ||
+        ((header->w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_HYBRID_WORKERS ||
+          header->w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_HYBRID_CROSS_PREFETCH ||
+          header->w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN64_CROSS_PREFETCH ||
+          header->w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN48_CROSS_PREFETCH ||
+          header->w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH) &&
+         header->w4f16_requested_hvx_workers != 3U) ||
+        ((header->w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN64_CROSS_PREFETCH ||
+          header->w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN48_CROSS_PREFETCH ||
+          header->w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH) &&
+         header->w4f16_region_tiles != 32U) ||
         (header->variant == QBH_BLOCK_W4U8 &&
          header->residual_mode != QBH_BLOCK_RESIDUAL_SCALAR)) {
         return 0;
@@ -389,7 +421,11 @@ static int qbh_header_valid(const struct qbh_block_header *header,
             QBH_BLOCK_W4F16_HVX_WORKERS - 1U ||
         (header->w4f16_region_tiles != 8U &&
          header->w4f16_region_tiles != 16U &&
-         header->w4f16_region_tiles != 32U)) {
+         header->w4f16_region_tiles != 32U &&
+         header->w4f16_region_tiles != 64U) ||
+        (header->w4f16_pipeline_mode ==
+             QBH_BLOCK_W4F16_PIPELINE_EARLY_REGION &&
+         header->w4f16_region_tiles > 32U)) {
         return 0;
     }
     element_bytes = header->variant == QBH_BLOCK_W4U8 ? 1U : 2U;
@@ -553,6 +589,107 @@ static int qbh_dma_wait_weight_prefetch(
     }
 }
 
+static int qbh_w4f16_cross_prefetch_enabled(
+    const struct qbh_block_header *header) {
+    return header->w4f16_pipeline_mode ==
+               QBH_BLOCK_W4F16_PIPELINE_CROSS_PREFETCH ||
+           header->w4f16_pipeline_mode ==
+               QBH_BLOCK_W4F16_PIPELINE_HYBRID_CROSS_PREFETCH ||
+           header->w4f16_pipeline_mode ==
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN64_CROSS_PREFETCH ||
+           header->w4f16_pipeline_mode ==
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN48_CROSS_PREFETCH ||
+           header->w4f16_pipeline_mode ==
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH;
+}
+
+static int qbh_w4f16_start_cross_prefetch(
+    struct qbh_block_header *header, const uint8_t *shared,
+    const struct qbh_block_projection_desc *next_desc,
+    struct qbh_block_buffers *buffers,
+    struct qbh_block_w4f16_cross_prefetch *state) {
+    uint32_t k_tiles;
+    uint32_t n_tiles;
+    uint32_t first_batch_tiles;
+    uint32_t first_batch_bytes;
+    int result;
+
+    if (!qbh_w4f16_cross_prefetch_enabled(header) ||
+        next_desc == NULL) {
+        return 0;
+    }
+    if (state == NULL || state->active != 0U) {
+        return -1;
+    }
+    k_tiles = next_desc->k / QBH_HMX_FP16_COLS;
+    n_tiles = next_desc->n / QBH_HMX_FP16_COLS;
+    first_batch_tiles =
+        n_tiles < QBH_BLOCK_W4F16_DMA_BATCH_N_TILES
+            ? n_tiles : QBH_BLOCK_W4F16_DMA_BATCH_N_TILES;
+    first_batch_bytes = first_batch_tiles * k_tiles *
+                        QBH_W4_PACKED_TILE_BYTES;
+    state->start_ticks = HAP_perf_get_qtimer_count();
+    result = qbh_dma_start_weight_prefetch(
+        &state->descriptor, buffers->compressed_weight,
+        shared + next_desc->weight_offset, first_batch_bytes);
+    if (result != 0) {
+        state->start_ticks = 0U;
+        return result;
+    }
+    state->target = next_desc;
+    state->active = 1U;
+    ++header->w4f16_cross_prefetch_count;
+    header->weight_ddr_read_bytes += first_batch_bytes;
+    ++header->weight_dma_descriptor_count;
+    return 0;
+}
+
+static int qbh_w4f16_consume_cross_prefetch(
+    struct qbh_block_header *header,
+    const struct qbh_block_projection_desc *desc,
+    struct qbh_block_w4f16_cross_prefetch *state) {
+    uint64_t wait_start;
+    uint64_t end;
+    int result;
+
+    if (state == NULL || state->active == 0U) {
+        return 0;
+    }
+    if (state->target != desc) {
+        return -1;
+    }
+    wait_start = HAP_perf_get_qtimer_count();
+    result = qbh_dma_wait_weight_prefetch(&state->descriptor);
+    end = HAP_perf_get_qtimer_count();
+    header->w4f16_cross_prefetch_wait_ticks += end - wait_start;
+    header->w4f16_cross_prefetch_lifetime_ticks +=
+        end - state->start_ticks;
+    state->active = 0U;
+    state->target = NULL;
+    state->start_ticks = 0U;
+    return result == 0 ? 1 : -2;
+}
+
+static void qbh_w4f16_drain_cross_prefetch(
+    struct qbh_block_header *header,
+    struct qbh_block_w4f16_cross_prefetch *state) {
+    uint64_t wait_start;
+    uint64_t end;
+
+    if (state == NULL || state->active == 0U) {
+        return;
+    }
+    wait_start = HAP_perf_get_qtimer_count();
+    (void)qbh_dma_wait_weight_prefetch(&state->descriptor);
+    end = HAP_perf_get_qtimer_count();
+    header->w4f16_cross_prefetch_wait_ticks += end - wait_start;
+    header->w4f16_cross_prefetch_lifetime_ticks +=
+        end - state->start_ticks;
+    state->active = 0U;
+    state->target = NULL;
+    state->start_ticks = 0U;
+}
+
 static void qbh_hmx_worker_main(void *opaque) {
     struct qbh_block_hmx_worker *worker =
         (struct qbh_block_hmx_worker *)opaque;
@@ -593,6 +730,20 @@ static void qbh_hmx_worker_main(void *opaque) {
                 (const __fp16 *)worker->weight,
                 worker->scale_or_bias, (__fp16 *)worker->output,
                 worker->m_tiles, worker->k_tiles, worker->n_tiles);
+        } else if (worker->kind ==
+                       QBH_BLOCK_HMX_FP16_TILE_SCALES_STREAMING &&
+                   worker->n_tiles <= 2U) {
+            worker->command_status =
+                qbh_hmx_fp16_matmul_tile_scales_streaming(
+                    (const __fp16 *)worker->activation,
+                    (const __fp16 *)worker->weight,
+                    worker->scale_or_bias, (__fp16 *)worker->output,
+                    worker->m_tiles, worker->k_tiles,
+                    worker->n_tiles, worker->region_tiles,
+                    worker->ready_generations,
+                    worker->expected_generation,
+                    &worker->ready_wait_ticks) == 0
+                    ? AEE_SUCCESS : AEE_EFAILED;
         } else if (worker->kind == QBH_BLOCK_HMX_U8S8 &&
                    worker->m_tiles == 1U && worker->n_tiles == 1U) {
             qbh_hmx_begin_u8s8_output(
@@ -673,6 +824,29 @@ static void qbh_hmx_start_fp16_streaming(
     worker->m_tiles = m_tiles;
     worker->k_tiles = k_tiles;
     worker->n_tiles = 1U;
+    worker->region_tiles = region_tiles;
+    worker->ready_generations = ready_generations;
+    worker->expected_generation = expected_generation;
+    worker->command_status = AEE_EFAILED;
+    asm volatile("barrier" ::: "memory");
+    (void)qurt_sem_up(&worker->command_ready);
+}
+
+static void qbh_hmx_start_fp16_tile_scales_streaming(
+    struct qbh_block_hmx_worker *worker, const void *activation,
+    const void *weight, const void *scale_blocks, void *output,
+    uint32_t m_tiles, uint32_t k_tiles, uint32_t n_tiles,
+    uint32_t region_tiles,
+    const volatile uint32_t *ready_generations,
+    uint32_t expected_generation) {
+    worker->kind = QBH_BLOCK_HMX_FP16_TILE_SCALES_STREAMING;
+    worker->activation = activation;
+    worker->weight = weight;
+    worker->scale_or_bias = scale_blocks;
+    worker->output = output;
+    worker->m_tiles = m_tiles;
+    worker->k_tiles = k_tiles;
+    worker->n_tiles = n_tiles;
     worker->region_tiles = region_tiles;
     worker->ready_generations = ready_generations;
     worker->expected_generation = expected_generation;
@@ -809,7 +983,7 @@ static void qbh_w4f16_pool_start(
     const uint8_t *compressed_weight, const float *channel_scale,
     uint8_t *expanded_weight, volatile uint32_t *ready_generations,
     uint32_t expected_generation, uint32_t region_count,
-    uint32_t region_tiles) {
+    uint32_t region_tiles, uint32_t active_worker_count) {
     pool->compressed_weight = compressed_weight;
     pool->channel_scale = channel_scale;
     pool->expanded_weight = expanded_weight;
@@ -817,16 +991,19 @@ static void qbh_w4f16_pool_start(
     pool->expected_generation = expected_generation;
     pool->region_count = region_count;
     pool->region_tiles = region_tiles;
+    pool->active_worker_count = active_worker_count;
     pool->next_region = 0U;
     asm volatile("barrier" ::: "memory");
-    for (uint32_t worker = 0; worker < pool->worker_count; ++worker) {
+    for (uint32_t worker = 0; worker < pool->active_worker_count;
+         ++worker) {
         (void)qurt_sem_up(&pool->command_ready[worker]);
     }
 }
 
 static void qbh_w4f16_pool_wait(
     struct qbh_block_w4f16_pool *pool) {
-    for (uint32_t worker = 0; worker < pool->worker_count; ++worker) {
+    for (uint32_t worker = 0; worker < pool->active_worker_count;
+         ++worker) {
         qurt_sem_down(&pool->command_done[worker]);
     }
     asm volatile("barrier" ::: "memory");
@@ -837,14 +1014,28 @@ static void qbh_w4f16_expand_with_main(
     struct qbh_block_w4f16_pool *pool,
     const uint8_t *compressed_weight, const float *channel_scale,
     uint8_t *expanded_weight, volatile uint32_t *ready_generations,
-    uint32_t expected_generation, uint32_t k_tiles) {
-    uint32_t total_regions = k_tiles / header->w4f16_region_tiles;
-    uint32_t main_regions =
-        (total_regions + pool->worker_count) /
-        (pool->worker_count + 1U);
-    uint32_t main_tiles = main_regions * header->w4f16_region_tiles;
-    uint32_t pool_regions = total_regions - main_regions;
+    uint32_t expected_generation, uint32_t k_tiles,
+    uint32_t region_tiles, uint32_t active_worker_count,
+    uint32_t publish_ready) {
+    uint32_t total_regions = k_tiles / region_tiles;
+    uint32_t main_regions;
+    uint32_t main_tiles;
+    uint32_t pool_regions;
     uint64_t main_start;
+
+    if (header->w4f16_pipeline_mode ==
+            QBH_BLOCK_W4F16_PIPELINE_MAIN_HALF) {
+        main_regions = (total_regions + 1U) / 2U;
+    } else if (header->w4f16_pipeline_mode ==
+                   QBH_BLOCK_W4F16_PIPELINE_MAIN_TWO_THIRDS) {
+        main_regions = (2U * total_regions + 2U) / 3U;
+    } else {
+        main_regions =
+            (total_regions + active_worker_count) /
+            (active_worker_count + 1U);
+    }
+    main_tiles = main_regions * region_tiles;
+    pool_regions = total_regions - main_regions;
 
     qbh_w4f16_pool_start(
         pool,
@@ -853,15 +1044,39 @@ static void qbh_w4f16_expand_with_main(
         channel_scale,
         expanded_weight +
             (size_t)main_tiles * QBH_HMX_FP16_TILE_BYTES,
-        ready_generations, expected_generation, pool_regions,
-        header->w4f16_region_tiles);
+        ready_generations + main_regions, expected_generation,
+        pool_regions, region_tiles,
+        active_worker_count);
     main_start = HAP_perf_get_qtimer_count();
-    qbh_unpack_w4_to_f16_hvx(
-        compressed_weight, expanded_weight, main_tiles);
+    if (publish_ready == 0U) {
+        qbh_unpack_w4_to_f16_hvx(
+            compressed_weight, expanded_weight, main_tiles);
+    } else {
+        for (uint32_t region = 0; region < main_regions; ++region) {
+            qbh_unpack_w4_to_f16_hvx(
+                compressed_weight +
+                    (size_t)region * region_tiles *
+                        QBH_W4_PACKED_TILE_BYTES,
+                expanded_weight +
+                    (size_t)region * region_tiles *
+                        QBH_HMX_FP16_TILE_BYTES,
+                region_tiles);
+            ready_generations[region] = expected_generation;
+            asm volatile("release(%0):at"
+                         :
+                         : "r"(&ready_generations[region])
+                         : "memory");
+        }
+    }
     header->w4f16_expand_work_ticks +=
         HAP_perf_get_qtimer_count() - main_start;
     header->w4f16_expand_region_count += main_regions;
-    qbh_w4f16_pool_wait(pool);
+    {
+        uint64_t wait_start = HAP_perf_get_qtimer_count();
+        qbh_w4f16_pool_wait(pool);
+        header->w4f16_expand_pool_wait_ticks +=
+            HAP_perf_get_qtimer_count() - wait_start;
+    }
 }
 
 static int qbh_w4f16_pool_destroy(
@@ -1141,12 +1356,288 @@ static __attribute__((noinline)) int qbh_run_f16f16_pipelined_projection(
     return 0;
 }
 
-static int qbh_run_w4f16_projection(
+static uint32_t qbh_w4f16_projection_worker_count(
+    const struct qbh_block_header *header,
+    const struct qbh_block_projection_desc *desc,
+    const struct qbh_block_w4f16_pool *pool) {
+    if ((header->w4f16_pipeline_mode ==
+             QBH_BLOCK_W4F16_PIPELINE_HYBRID_WORKERS ||
+         header->w4f16_pipeline_mode ==
+             QBH_BLOCK_W4F16_PIPELINE_HYBRID_CROSS_PREFETCH ||
+         header->w4f16_pipeline_mode ==
+             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN64_CROSS_PREFETCH ||
+         header->w4f16_pipeline_mode ==
+             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN48_CROSS_PREFETCH ||
+         header->w4f16_pipeline_mode ==
+             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH) &&
+        desc->k != QBH_BLOCK_INTERMEDIATE &&
+        pool->worker_count > 2U) {
+        return 2U;
+    }
+    return pool->worker_count;
+}
+
+static uint32_t qbh_w4f16_projection_region_tiles(
+    const struct qbh_block_header *header,
+    const struct qbh_block_projection_desc *desc) {
+    if (desc->k == QBH_BLOCK_INTERMEDIATE) {
+        if (header->w4f16_pipeline_mode ==
+            QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN48_CROSS_PREFETCH) {
+            return 48U;
+        }
+        if (header->w4f16_pipeline_mode ==
+            QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN64_CROSS_PREFETCH) {
+            return 64U;
+        }
+        if (header->w4f16_pipeline_mode ==
+            QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH) {
+            return 96U;
+        }
+    }
+    return header->w4f16_region_tiles;
+}
+
+static void qbh_w4f16_note_effective_region(
+    struct qbh_block_header *header, uint32_t region_tiles) {
+    if (header->w4f16_effective_region_min == 0U ||
+        region_tiles < header->w4f16_effective_region_min) {
+        header->w4f16_effective_region_min = region_tiles;
+    }
+    if (region_tiles > header->w4f16_effective_region_max) {
+        header->w4f16_effective_region_max = region_tiles;
+    }
+}
+
+static void qbh_w4f16_note_active_workers(
+    struct qbh_block_header *header, uint32_t active_workers) {
+    if (header->w4f16_active_worker_min == 0U ||
+        active_workers < header->w4f16_active_worker_min) {
+        header->w4f16_active_worker_min = active_workers;
+    }
+    if (active_workers > header->w4f16_active_worker_max) {
+        header->w4f16_active_worker_max = active_workers;
+    }
+}
+
+static int qbh_run_w4f16_projection_early_region(
     struct qbh_block_header *header, const uint8_t *shared,
     const struct qbh_block_projection_desc *desc,
     struct qbh_block_buffers *buffers,
     struct qbh_block_hmx_worker *worker,
     struct qbh_block_w4f16_pool *pool, void *output) {
+    uint32_t k_tiles = desc->k / QBH_HMX_FP16_COLS;
+    uint32_t n_tiles = desc->n / QBH_HMX_FP16_COLS;
+    uint32_t compressed_bytes = k_tiles * QBH_W4_PACKED_TILE_BYTES;
+    uint32_t batch_count =
+        (n_tiles + QBH_BLOCK_W4F16_DMA_BATCH_N_TILES - 1U) /
+        QBH_BLOCK_W4F16_DMA_BATCH_N_TILES;
+    uint32_t active_workers = qbh_w4f16_projection_worker_count(
+        header, desc, pool);
+    uint8_t *compressed_slots[2] = {
+        buffers->compressed_weight, buffers->compressed_weight_alt};
+    uint8_t *expanded_slots[2] = {
+        buffers->expanded_weight, buffers->expanded_weight_alt};
+    const float *projection_scales = qbh_w4f16_projection_scales(
+        header, buffers, desc);
+    volatile uint32_t ready[QBH_BLOCK_W4F16_MAX_REGIONS];
+    struct qbh_dma_aligned_desc_1d prefetch_descriptor
+        __attribute__((aligned(64)));
+    uint64_t prefetch_start = 0U;
+    int prefetch_active = 0;
+    int result;
+
+    memset((void *)ready, 0, sizeof(ready));
+    qbh_w4f16_note_active_workers(header, active_workers);
+    qbh_w4f16_note_effective_region(
+        header, header->w4f16_region_tiles);
+    {
+        uint32_t first_batch_tiles =
+            n_tiles < QBH_BLOCK_W4F16_DMA_BATCH_N_TILES
+                ? n_tiles : QBH_BLOCK_W4F16_DMA_BATCH_N_TILES;
+        uint32_t first_batch_bytes = first_batch_tiles * compressed_bytes;
+        if (qbh_dma_copy(header, compressed_slots[0],
+                         shared + desc->weight_offset,
+                         first_batch_bytes, 1U) != 0) {
+            qbh_record_projection_failure(header, desc, 0U, 31U, -1);
+            return -1;
+        }
+        header->weight_ddr_read_bytes += first_batch_bytes;
+        ++header->weight_dma_descriptor_count;
+    }
+    if (batch_count > 1U) {
+        uint32_t second_batch_tiles =
+            n_tiles - QBH_BLOCK_W4F16_DMA_BATCH_N_TILES;
+        uint32_t second_batch_bytes;
+        if (second_batch_tiles > QBH_BLOCK_W4F16_DMA_BATCH_N_TILES) {
+            second_batch_tiles = QBH_BLOCK_W4F16_DMA_BATCH_N_TILES;
+        }
+        second_batch_bytes = second_batch_tiles * compressed_bytes;
+        prefetch_start = HAP_perf_get_qtimer_count();
+        result = qbh_dma_start_weight_prefetch(
+            &prefetch_descriptor, compressed_slots[1],
+            shared + desc->weight_offset +
+                (size_t)QBH_BLOCK_W4F16_DMA_BATCH_N_TILES *
+                    compressed_bytes,
+            second_batch_bytes);
+        if (result != 0) {
+            qbh_record_projection_failure(header, desc, 0U, 32U, result);
+            return -1;
+        }
+        prefetch_active = 1;
+        ++header->w4f16_prefetch_count;
+        header->weight_ddr_read_bytes += second_batch_bytes;
+        ++header->weight_dma_descriptor_count;
+    }
+
+    for (uint32_t n_tile = 0; n_tile < n_tiles;
+         n_tile += QBH_BLOCK_W4F16_HMX_BATCH_N_TILES) {
+        uint32_t group_tiles = n_tiles - n_tile;
+        uint32_t group_index =
+            n_tile / QBH_BLOCK_W4F16_HMX_BATCH_N_TILES;
+        uint32_t batch_index =
+            n_tile / QBH_BLOCK_W4F16_DMA_BATCH_N_TILES;
+        uint32_t in_batch =
+            n_tile % QBH_BLOCK_W4F16_DMA_BATCH_N_TILES;
+        uint32_t compressed_slot = batch_index & 1U;
+        uint32_t expanded_slot = group_index & 1U;
+        uint64_t command_start;
+        uint64_t expand_start;
+        uint64_t tail_wait_start;
+
+        if (group_tiles > QBH_BLOCK_W4F16_HMX_BATCH_N_TILES) {
+            group_tiles = QBH_BLOCK_W4F16_HMX_BATCH_N_TILES;
+        }
+        if (n_tile != 0U && in_batch == 0U) {
+            uint64_t wait_start = HAP_perf_get_qtimer_count();
+            result = qbh_dma_wait_weight_prefetch(&prefetch_descriptor);
+            header->w4f16_prefetch_wait_ticks +=
+                HAP_perf_get_qtimer_count() - wait_start;
+            header->weight_dma_ticks +=
+                HAP_perf_get_qtimer_count() - prefetch_start;
+            prefetch_active = 0;
+            if (result != 0) {
+                qbh_record_projection_failure(
+                    header, desc, n_tile, 33U, result);
+                return -1;
+            }
+            if (batch_index + 1U < batch_count) {
+                uint32_t following_batch = batch_index + 1U;
+                uint32_t following_first_tile = following_batch *
+                    QBH_BLOCK_W4F16_DMA_BATCH_N_TILES;
+                uint32_t following_tiles = n_tiles - following_first_tile;
+                uint32_t following_bytes;
+                uint32_t following_slot = following_batch & 1U;
+                if (following_tiles > QBH_BLOCK_W4F16_DMA_BATCH_N_TILES) {
+                    following_tiles = QBH_BLOCK_W4F16_DMA_BATCH_N_TILES;
+                }
+                following_bytes = following_tiles * compressed_bytes;
+                prefetch_start = HAP_perf_get_qtimer_count();
+                result = qbh_dma_start_weight_prefetch(
+                    &prefetch_descriptor, compressed_slots[following_slot],
+                    shared + desc->weight_offset +
+                        (size_t)following_first_tile * compressed_bytes,
+                    following_bytes);
+                if (result != 0) {
+                    qbh_record_projection_failure(
+                        header, desc, n_tile, 34U, result);
+                    return -1;
+                }
+                prefetch_active = 1;
+                ++header->w4f16_prefetch_count;
+                header->weight_ddr_read_bytes += following_bytes;
+                ++header->weight_dma_descriptor_count;
+            }
+        }
+
+        for (uint32_t tile = 0; tile < group_tiles; ++tile) {
+            qbh_hmx_fp16_init_channel_scales(
+                buffers->scale_or_bias +
+                    (size_t)tile * QBH_HMX_FP16_SCALE_BYTES,
+                projection_scales +
+                    (size_t)(n_tile + tile) * 32U);
+        }
+        command_start = HAP_perf_get_qtimer_count();
+        qbh_hmx_start_fp16_tile_scales_streaming(
+            worker, buffers->hmx_activation,
+            expanded_slots[expanded_slot], buffers->scale_or_bias,
+            buffers->hmx_output, 2U, k_tiles, group_tiles,
+            header->w4f16_region_tiles, ready, group_index + 1U);
+        ++header->w4f16_streamed_command_count;
+        ++header->w4f16_early_region_command_count;
+
+        expand_start = HAP_perf_get_qtimer_count();
+        qbh_w4f16_expand_with_main(
+            header, pool,
+            compressed_slots[compressed_slot] +
+                (size_t)in_batch * compressed_bytes,
+            projection_scales + (size_t)n_tile * 32U,
+            expanded_slots[expanded_slot], ready, group_index + 1U,
+            k_tiles * group_tiles, header->w4f16_region_tiles,
+            active_workers, 1U);
+        if (group_index == 0U) {
+            header->w4f16_first_expand_ticks +=
+                HAP_perf_get_qtimer_count() - expand_start;
+        } else {
+            header->w4f16_steady_expand_ticks +=
+                HAP_perf_get_qtimer_count() - expand_start;
+        }
+        header->w4f16_expand_ticks +=
+            HAP_perf_get_qtimer_count() - expand_start;
+
+        if (desc == &header->projections[0] && n_tile == 0U) {
+            header->w4f16_expand_mismatch_count =
+                qbh_audit_unscaled_w4_to_f16_tile(
+                    compressed_slots[compressed_slot],
+                    expanded_slots[expanded_slot],
+                    &header->w4f16_expand_first_logical_index,
+                    &header->w4f16_expand_expected_half_bits,
+                    &header->w4f16_expand_actual_half_bits);
+            if (header->w4f16_expand_mismatch_count != 0U) {
+                (void)qbh_hmx_wait(worker);
+                qbh_record_projection_failure(
+                    header, desc, n_tile, 35U, -1);
+                return -1;
+            }
+        }
+        tail_wait_start = HAP_perf_get_qtimer_count();
+        result = qbh_hmx_wait(worker);
+        header->w4f16_hmx_tail_wait_ticks +=
+            HAP_perf_get_qtimer_count() - tail_wait_start;
+        header->projection_hmx_wait_ticks +=
+            HAP_perf_get_qtimer_count() - command_start;
+        header->hmx_fp16_tile_pair_count +=
+            2U * k_tiles * group_tiles;
+        ++header->hmx_command_count;
+        if (result != 0) {
+            qbh_record_projection_failure(
+                header, desc, n_tile, 36U, result);
+            return -1;
+        }
+        {
+            uint64_t unpack_start = HAP_perf_get_qtimer_count();
+            qbh_unpack_fp16_output(
+                (const __fp16 *)buffers->hmx_output, group_tiles,
+                (__fp16 *)output, desc->n,
+                n_tile * QBH_HMX_FP16_COLS);
+            header->projection_unpack_ticks +=
+                HAP_perf_get_qtimer_count() - unpack_start;
+        }
+    }
+    if (prefetch_active != 0) {
+        qbh_record_projection_failure(header, desc, n_tiles, 37U, -1);
+        return -1;
+    }
+    return 0;
+}
+
+static int qbh_run_w4f16_projection(
+    struct qbh_block_header *header, const uint8_t *shared,
+    const struct qbh_block_projection_desc *desc,
+    struct qbh_block_buffers *buffers,
+    struct qbh_block_hmx_worker *worker,
+    struct qbh_block_w4f16_pool *pool, void *output,
+    const struct qbh_block_projection_desc *next_desc,
+    struct qbh_block_w4f16_cross_prefetch *cross_prefetch) {
     uint32_t k_tiles = desc->k / QBH_HMX_FP16_COLS;
     uint32_t n_tiles = desc->n / QBH_HMX_FP16_COLS;
     uint32_t compressed_bytes = k_tiles * QBH_W4_PACKED_TILE_BYTES;
@@ -1166,14 +1657,36 @@ static int qbh_run_w4f16_projection(
     uint64_t prefetch_start = 0U;
     int prefetch_active = 0;
     int result;
+    int first_batch_state;
+    int cross_prefetch_result = 0;
+    uint32_t cross_prefetch_attempted = 0U;
+    uint32_t active_workers;
+    uint32_t region_tiles;
 
     if (pool == NULL) {
         qbh_record_projection_failure(header, desc, 0U, 10U, -1);
         return -1;
     }
+    if (header->w4f16_pipeline_mode ==
+            QBH_BLOCK_W4F16_PIPELINE_EARLY_REGION) {
+        return qbh_run_w4f16_projection_early_region(
+            header, shared, desc, buffers, worker, pool, output);
+    }
+    active_workers = qbh_w4f16_projection_worker_count(
+        header, desc, pool);
+    region_tiles = qbh_w4f16_projection_region_tiles(header, desc);
+    qbh_w4f16_note_active_workers(header, active_workers);
+    qbh_w4f16_note_effective_region(header, region_tiles);
     memset((void *)ready, 0, sizeof(ready));
 
-    {
+    first_batch_state = qbh_w4f16_consume_cross_prefetch(
+        header, desc, cross_prefetch);
+    if (first_batch_state < 0) {
+        qbh_record_projection_failure(
+            header, desc, 0U, 38U, first_batch_state);
+        return -1;
+    }
+    if (first_batch_state == 0) {
         uint32_t first_batch_tiles =
             n_tiles < QBH_BLOCK_W4F16_DMA_BATCH_N_TILES
                 ? n_tiles : QBH_BLOCK_W4F16_DMA_BATCH_N_TILES;
@@ -1218,8 +1731,11 @@ static int qbh_run_w4f16_projection(
     qbh_w4f16_expand_with_main(
         header, pool, compressed_slots[0], projection_scales,
         expanded_slots[0], ready, 1U,
-        k_tiles * QBH_BLOCK_W4F16_HMX_BATCH_N_TILES);
+        k_tiles * QBH_BLOCK_W4F16_HMX_BATCH_N_TILES,
+        region_tiles, active_workers, 0U);
     header->w4f16_expand_ticks +=
+        HAP_perf_get_qtimer_count() - phase_start;
+    header->w4f16_first_expand_ticks +=
         HAP_perf_get_qtimer_count() - phase_start;
     if (desc == &header->projections[0]) {
         header->w4f16_expand_mismatch_count =
@@ -1354,21 +1870,44 @@ static int qbh_run_w4f16_projection(
                     projection_scales + (size_t)next_tile * 32U,
                     expanded_slots[next_expanded_slot], ready,
                     group_index + 2U,
-                    k_tiles * next_group_tiles);
+                    k_tiles * next_group_tiles,
+                    region_tiles, active_workers, 0U);
                 header->w4f16_expand_ticks +=
                     HAP_perf_get_qtimer_count() - expand_start;
+                header->w4f16_steady_expand_ticks +=
+                    HAP_perf_get_qtimer_count() - expand_start;
             }
+            if (next_tile + next_group_tiles >= n_tiles &&
+                cross_prefetch_attempted == 0U) {
+                cross_prefetch_attempted = 1U;
+                cross_prefetch_result =
+                    qbh_w4f16_start_cross_prefetch(
+                        header, shared, next_desc, buffers,
+                        cross_prefetch);
+            }
+        } else if (cross_prefetch_attempted == 0U) {
+            cross_prefetch_attempted = 1U;
+            cross_prefetch_result = qbh_w4f16_start_cross_prefetch(
+                header, shared, next_desc, buffers, cross_prefetch);
         }
 
-        result = qbh_hmx_wait(worker);
+        {
+            uint64_t tail_wait_start = HAP_perf_get_qtimer_count();
+            result = qbh_hmx_wait(worker);
+            header->w4f16_hmx_tail_wait_ticks +=
+                HAP_perf_get_qtimer_count() - tail_wait_start;
+        }
         header->projection_hmx_wait_ticks +=
             HAP_perf_get_qtimer_count() - phase_start;
         header->hmx_fp16_tile_pair_count +=
             2U * k_tiles * group_tiles;
         ++header->hmx_command_count;
-        if (result != 0) {
+        if (result != 0 || cross_prefetch_result != 0) {
+            qbh_w4f16_drain_cross_prefetch(header, cross_prefetch);
             qbh_record_projection_failure(
-                header, desc, n_tile, 17U, result);
+                header, desc, n_tile,
+                result != 0 ? 17U : 39U,
+                result != 0 ? result : cross_prefetch_result);
             return -1;
         }
         {
@@ -1394,7 +1933,9 @@ static int qbh_run_projection(
     struct qbh_block_buffers *buffers,
     struct qbh_block_hmx_worker *worker,
     struct qbh_block_w4f16_pool *w4f16_pool, const void *input,
-    void *output) {
+    void *output,
+    const struct qbh_block_projection_desc *next_w4_desc,
+    struct qbh_block_w4f16_cross_prefetch *cross_prefetch) {
     uint32_t k_tiles = desc->k / 32U;
     uint32_t n_tiles = desc->n / 32U;
     uint32_t element_bytes =
@@ -1427,7 +1968,7 @@ static int qbh_run_projection(
     if (header->variant == QBH_BLOCK_W4F16) {
         return qbh_run_w4f16_projection(
             header, shared, desc, buffers, worker, w4f16_pool,
-            output);
+            output, next_w4_desc, cross_prefetch);
     }
     if (header->variant == QBH_BLOCK_F16F16) {
         header->f16f16_weight_batch_n_tiles = 1U;
@@ -1578,7 +2119,8 @@ static int qbh_run_projection(
                     (const float *)w4f16_scale_slots[n_tile & 1U],
                     buffers->expanded_weight, w4f16_ready,
                     generation, region_count,
-                    header->w4f16_region_tiles);
+                    header->w4f16_region_tiles,
+                    w4f16_pool->worker_count);
                 qbh_w4f16_pool_wait(w4f16_pool);
                 header->w4f16_expand_ticks +=
                     HAP_perf_get_qtimer_count() - expand_start;
@@ -2236,6 +2778,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     struct qbh_hvx_check_metrics rope_check_metrics;
     struct qbh_hvx_check_metrics softmax_check_metrics;
     struct qbh_hvx_check_metrics silu_check_metrics;
+    struct qbh_block_w4f16_cross_prefetch cross_prefetch;
     struct qbh_hvx_check_metrics *rms_check =
         header->numerical_audit_enabled != 0U &&
         header->common_ops_mask == QBH_BLOCK_COMMON_OP_RMS_NORM
@@ -2261,6 +2804,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     qbh_hvx_check_reset(&rope_check_metrics);
     qbh_hvx_check_reset(&softmax_check_metrics);
     qbh_hvx_check_reset(&silu_check_metrics);
+    memset(&cross_prefetch, 0, sizeof(cross_prefetch));
 
     start = HAP_perf_get_qtimer_count();
     if (qbh_dma_copy(header, buffers->residual,
@@ -2309,15 +2853,18 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     if (qbh_run_projection(
             header, shared, &header->projections[QBH_BLOCK_PROJ_Q],
             buffers, worker, w4f16_pool, buffers->normalized,
-            buffers->q) != 0 ||
+            buffers->q, &header->projections[QBH_BLOCK_PROJ_K],
+            &cross_prefetch) != 0 ||
         qbh_run_projection(
             header, shared, &header->projections[QBH_BLOCK_PROJ_K],
             buffers, worker, w4f16_pool, buffers->normalized,
-            buffers->k) != 0 ||
+            buffers->k, &header->projections[QBH_BLOCK_PROJ_V],
+            &cross_prefetch) != 0 ||
         qbh_run_projection(
             header, shared, &header->projections[QBH_BLOCK_PROJ_V],
             buffers, worker, w4f16_pool, buffers->normalized,
-            buffers->v) != 0) {
+            buffers->v, &header->projections[QBH_BLOCK_PROJ_O],
+            &cross_prefetch) != 0) {
         return QBH_BLOCK_STATUS_QKV_FAILED;
     }
     if (header->variant != QBH_BLOCK_W4U8) {
@@ -2435,7 +2982,9 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     if (qbh_run_projection(
             header, shared, &header->projections[QBH_BLOCK_PROJ_O],
             buffers, worker, w4f16_pool, buffers->attention_concat,
-            buffers->attention_projection) != 0) {
+            buffers->attention_projection,
+            &header->projections[QBH_BLOCK_PROJ_GATE],
+            &cross_prefetch) != 0) {
         return QBH_BLOCK_STATUS_O_PROJECTION_FAILED;
     }
     if (header->variant != QBH_BLOCK_W4U8) {
@@ -2532,12 +3081,15 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             header, shared,
             &header->projections[QBH_BLOCK_PROJ_GATE], buffers,
             worker, w4f16_pool, buffers->normalized,
-            buffers->gate) != 0 ||
+            buffers->gate,
+            &header->projections[QBH_BLOCK_PROJ_UP],
+            &cross_prefetch) != 0 ||
         qbh_run_projection(
             header, shared,
             &header->projections[QBH_BLOCK_PROJ_UP], buffers,
             worker, w4f16_pool, buffers->normalized,
-            buffers->up) != 0) {
+            buffers->up, &header->projections[QBH_BLOCK_PROJ_DOWN],
+            &cross_prefetch) != 0) {
         return QBH_BLOCK_STATUS_GATE_UP_FAILED;
     }
     if (header->variant != QBH_BLOCK_W4U8) {
@@ -2586,7 +3138,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     if (qbh_run_projection(
             header, shared,
             &header->projections[QBH_BLOCK_PROJ_DOWN], buffers,
-            worker, w4f16_pool, buffers->middle, buffers->down) != 0) {
+            worker, w4f16_pool, buffers->middle, buffers->down,
+            NULL, &cross_prefetch) != 0) {
         return QBH_BLOCK_STATUS_DOWN_FAILED;
     }
     if (header->variant != QBH_BLOCK_W4U8) {

@@ -6,8 +6,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(6)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(27)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(8)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(28)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -50,6 +50,19 @@ enum qbh_block_f16f16_projection_mode {
     QBH_BLOCK_F16F16_PROJECTION_SERIAL = 0,
     QBH_BLOCK_F16F16_PROJECTION_ASYNC_SINGLE = 1,
     QBH_BLOCK_F16F16_PROJECTION_BATCH2 = 2,
+};
+
+enum qbh_block_w4f16_pipeline_mode {
+    QBH_BLOCK_W4F16_PIPELINE_CONTROL = 0,
+    QBH_BLOCK_W4F16_PIPELINE_EARLY_REGION = 1,
+    QBH_BLOCK_W4F16_PIPELINE_HYBRID_WORKERS = 2,
+    QBH_BLOCK_W4F16_PIPELINE_MAIN_HALF = 3,
+    QBH_BLOCK_W4F16_PIPELINE_MAIN_TWO_THIRDS = 4,
+    QBH_BLOCK_W4F16_PIPELINE_CROSS_PREFETCH = 5,
+    QBH_BLOCK_W4F16_PIPELINE_HYBRID_CROSS_PREFETCH = 6,
+    QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN64_CROSS_PREFETCH = 7,
+    QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN48_CROSS_PREFETCH = 8,
+    QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH = 9,
 };
 
 enum qbh_block_projection_index {
@@ -160,6 +173,7 @@ struct qbh_block_header {
     uint32_t numerical_audit_enabled;
     uint32_t residual_mode;
     uint32_t f16f16_projection_mode;
+    uint32_t w4f16_pipeline_mode;
 
     uint32_t input_offset;
     uint32_t input_bytes;
@@ -220,6 +234,10 @@ struct qbh_block_header {
     uint32_t w4f16_hvx_workers_locked;
     int32_t w4f16_pool_status;
     uint32_t f16f16_weight_batch_n_tiles;
+    uint32_t w4f16_active_worker_min;
+    uint32_t w4f16_active_worker_max;
+    uint32_t w4f16_effective_region_min;
+    uint32_t w4f16_effective_region_max;
 
     uint32_t prepared_session_run_index;
     uint32_t resource_vtcm_address;
@@ -272,6 +290,14 @@ struct qbh_block_header {
     uint64_t w4f16_prefetch_wait_ticks;
     uint64_t f16f16_prefetch_count;
     uint64_t f16f16_prefetch_wait_ticks;
+    uint64_t w4f16_first_expand_ticks;
+    uint64_t w4f16_steady_expand_ticks;
+    uint64_t w4f16_expand_pool_wait_ticks;
+    uint64_t w4f16_hmx_tail_wait_ticks;
+    uint64_t w4f16_early_region_command_count;
+    uint64_t w4f16_cross_prefetch_count;
+    uint64_t w4f16_cross_prefetch_wait_ticks;
+    uint64_t w4f16_cross_prefetch_lifetime_ticks;
     uint64_t scalar_math_ticks;
 
     uint64_t invocation_ticks;

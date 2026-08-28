@@ -35,6 +35,13 @@ int qbh_hmx_fp16_matmul_streaming(
     uint32_t region_tiles, const volatile uint32_t *ready_generations,
     uint32_t expected_generation, uint64_t *ready_wait_ticks);
 
+int qbh_hmx_fp16_matmul_tile_scales_streaming(
+    const __fp16 *activation_tiles, const __fp16 *weight_tiles,
+    const void *scale_blocks, __fp16 *output_tiles,
+    uint32_t m_tiles, uint32_t k_tiles, uint32_t n_tiles,
+    uint32_t region_tiles, const volatile uint32_t *ready_generations,
+    uint32_t expected_generation, uint64_t *ready_wait_ticks);
+
 static inline size_t qbh_hmx_fp16_matrix_tile_offset(
     uint32_t tile_row, uint32_t tile_column, uint32_t column_tiles) {
     return ((size_t)tile_row * column_tiles + tile_column) *

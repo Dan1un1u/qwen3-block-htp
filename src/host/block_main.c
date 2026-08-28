@@ -269,6 +269,95 @@ static const char *qbh_f16f16_projection_mode_name(uint32_t mode) {
     return "serial";
 }
 
+static int qbh_parse_w4f16_pipeline_mode(const char *text,
+                                         uint32_t *mode) {
+    if (strcmp(text, "control") == 0) {
+        *mode = QBH_BLOCK_W4F16_PIPELINE_CONTROL;
+        return 0;
+    }
+    if (strcmp(text, "early") == 0 ||
+        strcmp(text, "early_region") == 0) {
+        *mode = QBH_BLOCK_W4F16_PIPELINE_EARLY_REGION;
+        return 0;
+    }
+    if (strcmp(text, "hybrid") == 0 ||
+        strcmp(text, "hybrid_workers") == 0) {
+        *mode = QBH_BLOCK_W4F16_PIPELINE_HYBRID_WORKERS;
+        return 0;
+    }
+    if (strcmp(text, "main_half") == 0) {
+        *mode = QBH_BLOCK_W4F16_PIPELINE_MAIN_HALF;
+        return 0;
+    }
+    if (strcmp(text, "main_two_thirds") == 0) {
+        *mode = QBH_BLOCK_W4F16_PIPELINE_MAIN_TWO_THIRDS;
+        return 0;
+    }
+    if (strcmp(text, "cross") == 0 ||
+        strcmp(text, "cross_prefetch") == 0) {
+        *mode = QBH_BLOCK_W4F16_PIPELINE_CROSS_PREFETCH;
+        return 0;
+    }
+    if (strcmp(text, "hybrid_cross") == 0 ||
+        strcmp(text, "hybrid_cross_prefetch") == 0) {
+        *mode = QBH_BLOCK_W4F16_PIPELINE_HYBRID_CROSS_PREFETCH;
+        return 0;
+    }
+    if (strcmp(text, "adaptive_down64_cross") == 0 ||
+        strcmp(text, "adaptive_down64_cross_prefetch") == 0) {
+        *mode =
+            QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN64_CROSS_PREFETCH;
+        return 0;
+    }
+    if (strcmp(text, "adaptive_down48_cross") == 0 ||
+        strcmp(text, "adaptive_down48_cross_prefetch") == 0) {
+        *mode =
+            QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN48_CROSS_PREFETCH;
+        return 0;
+    }
+    if (strcmp(text, "adaptive_down96_cross") == 0 ||
+        strcmp(text, "adaptive_down96_cross_prefetch") == 0) {
+        *mode =
+            QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH;
+        return 0;
+    }
+    return -1;
+}
+
+static const char *qbh_w4f16_pipeline_mode_name(uint32_t mode) {
+    if (mode == QBH_BLOCK_W4F16_PIPELINE_EARLY_REGION) {
+        return "early_region";
+    }
+    if (mode == QBH_BLOCK_W4F16_PIPELINE_HYBRID_WORKERS) {
+        return "hybrid_workers";
+    }
+    if (mode == QBH_BLOCK_W4F16_PIPELINE_MAIN_HALF) {
+        return "main_half";
+    }
+    if (mode == QBH_BLOCK_W4F16_PIPELINE_MAIN_TWO_THIRDS) {
+        return "main_two_thirds";
+    }
+    if (mode == QBH_BLOCK_W4F16_PIPELINE_CROSS_PREFETCH) {
+        return "cross_prefetch";
+    }
+    if (mode == QBH_BLOCK_W4F16_PIPELINE_HYBRID_CROSS_PREFETCH) {
+        return "hybrid_cross_prefetch";
+    }
+    if (mode ==
+        QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN64_CROSS_PREFETCH) {
+        return "adaptive_down64_cross_prefetch";
+    }
+    if (mode ==
+        QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN48_CROSS_PREFETCH) {
+        return "adaptive_down48_cross_prefetch";
+    }
+    if (mode ==
+        QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH) {
+        return "adaptive_down96_cross_prefetch";
+    }
+    return "control";
+}
+
 static uint64_t qbh_fnv1a64(const uint8_t *data, size_t bytes) {
     uint64_t hash = UINT64_C(1469598103934665603);
     for (size_t index = 0; index < bytes; ++index) {
@@ -549,6 +638,7 @@ int main(int argc, char **argv) {
     uint32_t residual_mode = QBH_BLOCK_RESIDUAL_SCALAR;
     uint32_t f16f16_projection_mode =
         QBH_BLOCK_F16F16_PROJECTION_SERIAL;
+    uint32_t w4f16_pipeline_mode = QBH_BLOCK_W4F16_PIPELINE_CONTROL;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t cursor = qbh_align_up_size(sizeof(*header), QBH_HOST_ALIGNMENT);
@@ -574,7 +664,7 @@ int main(int argc, char **argv) {
 
     memset(&warmup_metrics, 0, sizeof(warmup_metrics));
     memset(&measured_metrics, 0, sizeof(measured_metrics));
-    if (argc < 3 || argc > 11 ||
+    if (argc < 3 || argc > 12 ||
         qbh_parse_variant(argv[2], &variant) != 0 ||
         (argc >= 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
         (argc >= 5 && qbh_parse_u32(
@@ -591,6 +681,8 @@ int main(int argc, char **argv) {
                            argv[9], &residual_mode) != 0) ||
         (argc >= 11 && qbh_parse_f16f16_projection_mode(
                            argv[10], &f16f16_projection_mode) != 0) ||
+        (argc >= 12 && qbh_parse_w4f16_pipeline_mode(
+                           argv[11], &w4f16_pipeline_mode) != 0) ||
         repeats == 0U || repeats > 100U ||
         w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
         (argc >= 7 && variant == QBH_BLOCK_W4U8 &&
@@ -600,14 +692,40 @@ int main(int argc, char **argv) {
         (variant != QBH_BLOCK_F16F16 &&
          f16f16_projection_mode !=
              QBH_BLOCK_F16F16_PROJECTION_SERIAL) ||
+        (variant != QBH_BLOCK_W4F16 &&
+         w4f16_pipeline_mode != QBH_BLOCK_W4F16_PIPELINE_CONTROL) ||
+        ((w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_HYBRID_WORKERS ||
+          w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_HYBRID_CROSS_PREFETCH ||
+          w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN64_CROSS_PREFETCH ||
+          w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN48_CROSS_PREFETCH ||
+          w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH) &&
+         w4f16_hvx_workers != 3U) ||
+        ((w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN64_CROSS_PREFETCH ||
+          w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN48_CROSS_PREFETCH ||
+          w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH) &&
+         w4f16_region_tiles != 32U) ||
         (w4f16_region_tiles != 8U && w4f16_region_tiles != 16U &&
-         w4f16_region_tiles != 32U)) {
+         w4f16_region_tiles != 32U && w4f16_region_tiles != 64U) ||
+        (w4f16_pipeline_mode == QBH_BLOCK_W4F16_PIPELINE_EARLY_REGION &&
+         w4f16_region_tiles > 32U)) {
         fprintf(stderr, "usage: %s PACKAGE_DIR VARIANT [repeat_count] "
                         "[w4f16_hvx_workers] [w4f16_region_tiles] "
                         "[scalar|rms|rope|softmax|silu|rms_silu|"
                         "rms_silu_rope|hvx] [attribution:off|on] "
                         "[audit:off|on] [residual:scalar|hvx|fused] "
-                        "[f16_projection:serial|async|batch2]\n",
+                        "[f16_projection:serial|async|batch2] "
+                        "[w4_pipeline:control|early|hybrid|main_half|"
+                        "main_two_thirds|cross|hybrid_cross|"
+                        "adaptive_down48_cross|adaptive_down64_cross|"
+                        "adaptive_down96_cross]\n",
                 argv[0]);
         return 2;
     }
@@ -780,6 +898,7 @@ int main(int argc, char **argv) {
     header->numerical_audit_enabled = numerical_audit_enabled;
     header->residual_mode = residual_mode;
     header->f16f16_projection_mode = f16f16_projection_mode;
+    header->w4f16_pipeline_mode = w4f16_pipeline_mode;
     header->input_offset = input_slot.offset;
     header->input_bytes = input_slot.expected_bytes;
     header->output_bytes = output_bytes;
@@ -934,7 +1053,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0027\","
+        "{\"experiment\":\"EXP-0028\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"FP16_HMX\","
         "\"projection_compute\":\"%s\","
@@ -943,6 +1062,7 @@ int main(int argc, char **argv) {
         "\"numerical_audit_mode\":\"%s\","
         "\"residual_mode\":\"%s\","
         "\"f16f16_projection_mode\":\"%s\","
+        "\"w4f16_pipeline_mode\":\"%s\","
         "\"w4f16_scale_placement\":\"%s\","
         "\"intermediate_residency\":\"VTCM\","
         "\"warmup_rpc_result\":%d,"
@@ -983,6 +1103,10 @@ int main(int argc, char **argv) {
         "\"w4f16_region_tiles\":%" PRIu32 ","
         "\"w4f16_pool_status\":%d,"
         "\"f16f16_weight_batch_n_tiles\":%" PRIu32 ","
+        "\"w4f16_active_worker_min\":%" PRIu32 ","
+        "\"w4f16_active_worker_max\":%" PRIu32 ","
+        "\"w4f16_effective_region_min\":%" PRIu32 ","
+        "\"w4f16_effective_region_max\":%" PRIu32 ","
         "\"host_wall_ns\":%" PRIu64 ","
         "\"host_wall_ns_per_block\":%.3f,"
         "\"max_abs\":%.9g,\"mean_abs\":%.9g,\"rmse\":%.9g,"
@@ -1060,6 +1184,14 @@ int main(int argc, char **argv) {
         "\"w4f16_prefetch_wait_ticks\":%" PRIu64 ","
         "\"f16f16_prefetch_count\":%" PRIu64 ","
         "\"f16f16_prefetch_wait_ticks\":%" PRIu64 ","
+        "\"w4f16_first_expand_ticks\":%" PRIu64 ","
+        "\"w4f16_steady_expand_ticks\":%" PRIu64 ","
+        "\"w4f16_expand_pool_wait_ticks\":%" PRIu64 ","
+        "\"w4f16_hmx_tail_wait_ticks\":%" PRIu64 ","
+        "\"w4f16_early_region_command_count\":%" PRIu64 ","
+        "\"w4f16_cross_prefetch_count\":%" PRIu64 ","
+        "\"w4f16_cross_prefetch_wait_ticks\":%" PRIu64 ","
+        "\"w4f16_cross_prefetch_lifetime_ticks\":%" PRIu64 ","
         "\"release_result\":%d,\"close_result\":%d}\n",
         qbh_variant_name(variant),
         variant == QBH_BLOCK_W4U8 ? "U8xS8_integer_HMX"
@@ -1071,6 +1203,10 @@ int main(int argc, char **argv) {
         variant == QBH_BLOCK_F16F16
             ? qbh_f16f16_projection_mode_name(
                   header->f16f16_projection_mode)
+            : "not_applicable",
+        variant == QBH_BLOCK_W4F16
+            ? qbh_w4f16_pipeline_mode_name(
+                  header->w4f16_pipeline_mode)
             : "not_applicable",
         variant == QBH_BLOCK_W4F16 ? "hmx_output_per_channel"
                                    : "not_applicable",
@@ -1107,6 +1243,10 @@ int main(int argc, char **argv) {
         header->w4f16_region_tiles,
         header->w4f16_pool_status,
         header->f16f16_weight_batch_n_tiles,
+        header->w4f16_active_worker_min,
+        header->w4f16_active_worker_max,
+        header->w4f16_effective_region_min,
+        header->w4f16_effective_region_max,
         measured_end - measured_start,
         (double)(measured_end - measured_start) / repeats,
         measured_metrics.max_abs, measured_metrics.mean_abs,
@@ -1171,6 +1311,14 @@ int main(int argc, char **argv) {
         header->w4f16_prefetch_wait_ticks,
         header->f16f16_prefetch_count,
         header->f16f16_prefetch_wait_ticks,
+        header->w4f16_first_expand_ticks,
+        header->w4f16_steady_expand_ticks,
+        header->w4f16_expand_pool_wait_ticks,
+        header->w4f16_hmx_tail_wait_ticks,
+        header->w4f16_early_region_command_count,
+        header->w4f16_cross_prefetch_count,
+        header->w4f16_cross_prefetch_wait_ticks,
+        header->w4f16_cross_prefetch_lifetime_ticks,
         release_result, close_result);
 
     exit_code = warmup_result == AEE_SUCCESS &&
