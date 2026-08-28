@@ -1423,9 +1423,9 @@ experiments:
       - f16f16_async_single_tile
       - f16f16_double_buffer_batch2
       - w4f16_current_pipeline_control
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-f16-weight-flow-roofline
     source_branches:
@@ -1442,7 +1442,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0027-f16-weight-pipeline
       started_on: '2026-08-28'
-      completed_on: null
+      completed_on: '2026-08-28'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0027'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0027'
@@ -1455,3 +1455,35 @@ experiments:
       fixed_vtcm_request_bytes: 8388608
       intermediate_ddr_allowed: false
       fair_control_requirement: optimize_f16f16_without_slowing_it_to_manufacture_w4f16_speedup
+      formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0027\20260828T074150Z_cc88df0a5e8f'
+      artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0027\artifacts\cc88df0a5e8f'
+      matrix: 'D:\llm_exp\results\qwen3-block-htp\exp0027\20260828T074150Z_cc88df0a5e8f\matrix_gate.json'
+      formal_runs: 44
+      parent_block_package_hash_audit: pass
+      exact_full_vtcm_gate: pass
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      intermediate_spill_fill_count: 0
+      qnn_dependency_scan: none
+      boot_id_stable: true
+      f16f16_output_hash_equivalence_gate: pass
+      audit_free_performance_mode_gate: pass
+      top_level_ledger_closure_gate: pass
+      attention_ledger_closure_gate: pass
+      static_f16f16_pipeline_gate: pass
+      selected_f16f16_plan: f16f16_double_buffer_batch2
+      repeat10_f16f16_serial_host_wall_ms: 13.6599427
+      repeat10_f16f16_batch2_host_wall_ms: 12.3994115
+      repeat10_f16f16_batch2_host_change_percent: -9.227939147943854
+      repeat10_f16f16_serial_projection_ticks: 67446.5
+      repeat10_f16f16_batch2_projection_ticks: 43521.5
+      repeat10_f16f16_batch2_projection_change_percent: -35.472559732528744
+      repeat10_f16f16_batch2_effective_weight_bandwidth_gbps: 44.408747014693894
+      repeat10_f16f16_serial_weight_dma_to_raw_hmx_ratio: 5.968863851573659
+      repeat10_w4f16_host_wall_ms: 12.5856146
+      repeat10_w4f16_projection_ticks: 46675.3
+      repeat10_w4f16_host_change_from_selected_f16f16_percent: 1.5017091738587673
+      repeat10_w4f16_projection_change_from_selected_f16f16_percent: 7.246533322610671
+      w4f16_faster_than_selected_f16f16: false
+      stop_for_w4_pipeline_discussion: true
+      performance_characterization: f16f16_is_weight_flow_dominated_but_the_old_serial_control_underused_dma_hmx_overlap_and_command_batching_after_fair_batch2_scheduling_current_w4f16_is_1_50_percent_slower_at_block_level_and_7_25_percent_slower_in_projections_so_w4_expand_handoff_must_be_repaired_before_shared_ops
