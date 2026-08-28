@@ -2013,15 +2013,16 @@ experiments:
     variants:
       - exp0032_f16f16_batch4_control
       - exp0032_w4f16_dma8_scale_cache_control
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: not_applicable
     evidence_profile: real-qwen3-block-qkv-per-projection-ledger
     source_branches:
       - codex/exp-0034-qkv-projection-attribution
     source_commits:
       - 91ba193660513bd0675c0a091db199aa09df1773
+      - c39dfefdb24c1bb9670a263a6605f833653800cc
     record: docs/experiments/EXP-0034.md
     decided_by: user
     decided_on: '2026-08-28'
@@ -2030,7 +2031,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0034-qkv-projection-attribution
       started_on: '2026-08-28'
-      completed_on: null
+      completed_on: '2026-08-28'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0034'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0034'
@@ -2041,3 +2042,36 @@ experiments:
       intermediate_ddr_allowed: false
       primary_scope: q_k_v_projection_telemetry_only
       completion_gate: per_projection_wall_ledger_and_engine_counter_deltas_reconcile_while_outputs_and_physical_contract_remain_unchanged
+      formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0034\20260828T153743Z_c39dfefdb24c'
+      artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0034\artifacts\c39dfefdb24c'
+      matrix: 'D:\llm_exp\results\qwen3-block-htp\exp0034\20260828T153743Z_c39dfefdb24c\matrix_gate.json'
+      source_commit: c39dfefdb24c1bb9670a263a6605f833653800cc
+      stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      formal_run_records: 22
+      parent_block_package_hashes_audited: 118
+      fixed_vtcm_request_bytes: 8388608
+      w4_peak_vtcm_bytes: 7843328
+      observed_intermediate_ddr_bytes: 0
+      spill_fill_count: 0
+      single_fastrpc_per_execution_unit: true
+      single_hmx_owner: true
+      qnn_dependency: false
+      controls_byte_exact: true
+      f16_output_hash: 704252c89780e695
+      w4_output_hash: f18b9abbe1487231
+      implementation_reference_mismatches: 0
+      implementation_reference_max_lsb: 0
+      repeat1_f16_q_k_v_ticks: [3878.0, 1912.0, 1888.0]
+      repeat1_w4_q_k_v_ticks: [4813.0, 1617.0, 1640.0]
+      repeat1_w4_minus_f16_q_k_v_ticks: [935.0, -295.0, -248.0]
+      repeat1_w4_minus_f16_unattributed_ticks: 477.0
+      repeat10_f16_q_k_v_ticks: [3871.6, 1913.4, 1888.8]
+      repeat10_w4_q_k_v_ticks: [4901.7, 1636.4, 1642.7]
+      repeat10_w4_minus_f16_q_k_v_ticks: [1030.1, -277.0, -246.1]
+      repeat10_w4_minus_f16_unattributed_ticks: 254.5
+      repeat10_w4_q_change_vs_f16_percent: 26.60657092674863
+      repeat10_w4_k_change_vs_f16_percent: -14.476847496602907
+      repeat10_w4_v_change_vs_f16_percent: -13.029436679373141
+      attribution_conclusion: q_projection_plus_qk_join_tail
+      local_attribution_gate_result: pass
+      performance_characterization: q_is_the_only_w4f16_projection_slower_than_f16f16_while_k_and_v_are_faster_and_qs_superlinear_wall_and_dma_lifetime_identify_the_missing_inbound_cross_prefetch_cold_start_as_the_next_hypothesis
