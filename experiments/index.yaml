@@ -1559,15 +1559,17 @@ experiments:
       - qk_direct_crouton_candidate
       - av_direct_crouton_candidate
       - combined_qk_av_crouton_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-attention-crouton-critical-path
     source_branches:
       - codex/exp-0029-attention-crouton-packing
     source_commits:
       - 6ba4e75de485a3070397342b8e4ffe09c8dbe15e
+      - c0cf8571274ba60ff03c81abccf3186c239f30b4
+      - 403bb7e25079ac785e8c216318f867e2c5c25e8d
     record: docs/experiments/EXP-0029.md
     decided_by: user
     decided_on: '2026-08-28'
@@ -1576,6 +1578,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0029-attention-crouton-packing
       started_on: '2026-08-28'
+      completed_on: '2026-08-28'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0029'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0029'
@@ -1588,3 +1591,44 @@ experiments:
       fixed_vtcm_request_bytes: 8388608
       intermediate_ddr_allowed: false
       local_speed_gate: combined_candidate_reduces_attention_ticks_and_does_not_regress_complete_block_host_wall_for_both_f16f16_and_w4f16_at_repeat1_and_repeat10
+      formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0029\20260828T092139Z_403bb7e25079'
+      artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0029\artifacts\403bb7e25079'
+      matrix: 'D:\llm_exp\results\qwen3-block-htp\exp0029\20260828T092139Z_403bb7e25079\matrix_gate.json'
+      formal_runs: 88
+      parent_block_package_hash_audit: true
+      fixed_vtcm_request_gate: pass
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      intermediate_spill_fill_count: 0
+      qnn_dependency_scan: none
+      boot_id_stable: true
+      output_hash_stability_gate: pass
+      audit_free_performance_mode_gate: pass
+      top_level_ledger_closure_gate: pass
+      attention_ledger_closure_gate: pass
+      static_attention_pack_gate: pass
+      selected_attention_pack_mode: combined_hvx
+      f16f16_output_hash: 704252c89780e695
+      w4f16_output_hash: f18b9abbe1487231
+      repeat1_f16f16_control_host_wall_ns: 13122969
+      repeat1_f16f16_combined_host_wall_ns: 5211718
+      repeat1_f16f16_host_change_percent: -60.285526849907214
+      repeat1_w4f16_control_host_wall_ns: 12830052
+      repeat1_w4f16_combined_host_wall_ns: 4905781
+      repeat1_w4f16_host_change_percent: -61.76335840260039
+      repeat1_w4f16_change_from_f16f16_percent: -5.870175631145047
+      repeat10_f16f16_control_host_wall_ns_per_block: 12421140.7
+      repeat10_f16f16_combined_host_wall_ns_per_block: 4847953.1
+      repeat10_f16f16_host_change_percent: -60.97014584175832
+      repeat10_w4f16_control_host_wall_ns_per_block: 12093859.3
+      repeat10_w4f16_combined_host_wall_ns_per_block: 4494463.6
+      repeat10_w4f16_host_change_percent: -62.836812563215446
+      repeat10_w4f16_change_from_f16f16_percent: -7.291520621352543
+      repeat10_f16f16_attention_ticks_per_block: 7211.3
+      repeat10_w4f16_attention_ticks_per_block: 7223.9
+      repeat10_f16f16_attention_change_percent: -95.28478121994263
+      repeat10_w4f16_attention_change_percent: -95.27641588516771
+      repeat10_f16f16_projection_ticks_per_block: 43763.8
+      repeat10_w4f16_projection_ticks_per_block: 37152.9
+      repeat10_w4f16_projection_change_percent: -15.10586375040559
+      performance_characterization: scalar_qk_and_av_rhs_packing_was_95_percent_of_attention_direct_hvx_crouton_construction_removes_that_shared_bottleneck_reduces_complete_block_host_wall_by_61_to_63_percent_and_exposes_a_7_29_percent_repeat10_w4f16_advantage_without_changing_output_or_ddr_residency
