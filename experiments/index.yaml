@@ -1264,3 +1264,33 @@ experiments:
       vectorization_non_regression_gate: pass
       final_w4f16_faster_than_f16f16_gate: pass
       performance_characterization: all_four_fp16_common_operator_families_vectorized_and_complete_block_latency_reduced_by_about_69_percent_while_w4f16_retains_a_small_complete_block_advantage
+  - id: EXP-0025
+    slug: block-time-attribution
+    title: Close the complete-block DSP timing ledger
+    parent: EXP-0024
+    variants:
+      - f16f16_hvx_common_ops
+      - w4f16_hvx_common_ops
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: not_applicable
+    evidence_profile: real-qwen3-block-exclusive-time-attribution
+    source_branches:
+      - codex/exp-0025-block-time-attribution
+    source_commits: []
+    record: docs/experiments/EXP-0025.md
+    decided_by: user
+    decided_on: '2026-08-28'
+    approval_ref: 'User message 2026-08-28: 先做补齐完整 block 的时间归因'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0025-block-time-attribution
+      started_on: '2026-08-28'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0025'
+      retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0025'
+      parent_formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0024\20260827T204237Z_b9d14c599379'
+      attribution_mode: exclusive_adjacent_timestamp_ledger
+      optimization_changes_allowed: false

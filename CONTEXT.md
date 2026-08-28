@@ -91,6 +91,29 @@ the natural exponential, sums probabilities, and normalizes. It excludes the
 previous project's log2-quantized Softmax algorithm.
 _Avoid_: log2 Softmax, LUT-quantized probability algorithm, changed mask rule
 
+**Block Timing Ledger**:
+The ordered set of mutually exclusive DSP wall-time intervals that spans one
+complete Qwen3 Middle Block envelope exactly once. Its entries may be summed;
+overlapping engine-work counters may not be inserted into this ledger.
+_Avoid_: sum of stage work counters, profiling total, accelerator work sum
+
+**Attributed Interval**:
+One exclusive entry in the Block Timing Ledger, bounded by adjacent timestamps
+and assigned to exactly one block activity or explicitly named handoff gap.
+_Avoid_: overlapping stage counter, estimated operator share
+
+**Unattributed Gap**:
+The portion of the Block Timing Ledger that remains only because an interval
+has not yet been assigned a meaningful activity name. It is a measurement
+defect to close, not an operator or an optimization target.
+_Avoid_: other compute, runtime overhead, unexplained bottleneck
+
+**Engine Work Counter**:
+A diagnostic duration or count for DMA, HVX, or HMX work that may overlap other
+engines and therefore explains a Physical Plan without contributing an
+additive entry to the Block Timing Ledger.
+_Avoid_: exclusive wall time, block share
+
 **W4U8 Projection Substrate**:
 A model-shaped Projection Probe that proves the canonical W4U8 arithmetic and
 weight-storage boundary for the gate/up and down shapes.
