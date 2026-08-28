@@ -13,6 +13,7 @@
 #include <time.h>
 
 #include "block_protocol.h"
+#include "hmx_fp16.h"
 #include "host/session.h"
 #include "qwen3_probe.h"
 
@@ -347,6 +348,12 @@ static int qbh_parse_w4f16_pipeline_mode(const char *text,
             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH;
         return 0;
     }
+    if (strcmp(text, "adaptive_down96_gate4_dma8_cross") == 0 ||
+        strcmp(text, "adaptive_down96_gate4_dma8_cross_prefetch") == 0) {
+        *mode =
+            QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH;
+        return 0;
+    }
     return -1;
 }
 
@@ -392,6 +399,10 @@ static const char *qbh_w4f16_pipeline_mode_name(uint32_t mode) {
     if (mode ==
         QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH) {
         return "adaptive_down96_gate4_cross_prefetch";
+    }
+    if (mode ==
+        QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH) {
+        return "adaptive_down96_gate4_dma8_cross_prefetch";
     }
     return "control";
 }
@@ -598,6 +609,46 @@ static uint16_t qbh_float_to_half_bits(float value) {
     uint16_t bits;
     memcpy(&bits, &converted, sizeof(bits));
     return bits;
+}
+
+static int qbh_prepare_gate_up_scale_cache(
+    const struct qbh_block_header *header, uint8_t *shared) {
+    uint8_t *destination;
+    uint32_t cache_bytes = 0U;
+
+    if (header->w4f16_pipeline_mode !=
+        QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH) {
+        return 0;
+    }
+    destination = shared + header->output_offset;
+    for (uint32_t projection = QBH_BLOCK_PROJ_GATE;
+         projection <= QBH_BLOCK_PROJ_UP; ++projection) {
+        const struct qbh_block_projection_desc *desc =
+            &header->projections[projection];
+        const float *scales =
+            (const float *)(shared + desc->scale_offset);
+        uint32_t tile_count = desc->n / QBH_HMX_FP16_COLS;
+        uint32_t projection_bytes =
+            tile_count * QBH_HMX_FP16_SCALE_BYTES;
+
+        if (desc->n % QBH_HMX_FP16_COLS != 0U ||
+            desc->scale_bytes != desc->n * sizeof(float) ||
+            projection_bytes > header->output_bytes - cache_bytes) {
+            return -1;
+        }
+        for (uint32_t tile = 0U; tile < tile_count; ++tile) {
+            uint16_t *block = (uint16_t *)(destination + cache_bytes +
+                (size_t)tile * QBH_HMX_FP16_SCALE_BYTES);
+            memset(block, 0, QBH_HMX_FP16_SCALE_BYTES);
+            for (uint32_t channel = 0U;
+                 channel < QBH_HMX_FP16_COLS; ++channel) {
+                block[channel * 2U] = qbh_float_to_half_bits(
+                    scales[(size_t)tile * QBH_HMX_FP16_COLS + channel]);
+            }
+        }
+        cache_bytes += projection_bytes;
+    }
+    return 0;
 }
 
 static float qbh_half_bits_to_float(uint16_t bits) {
@@ -921,7 +972,9 @@ int main(int argc, char **argv) {
            w4f16_pipeline_mode !=
                QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH &&
            w4f16_pipeline_mode !=
-               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH))) ||
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH &&
+           w4f16_pipeline_mode !=
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH))) ||
         (mlp_chunk_vectors != 16U && mlp_chunk_vectors != 32U &&
          mlp_chunk_vectors != 64U && mlp_chunk_vectors != 128U &&
          mlp_chunk_vectors != 256U) ||
@@ -945,7 +998,9 @@ int main(int argc, char **argv) {
           w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH ||
           w4f16_pipeline_mode ==
-              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH) &&
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH ||
+          w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH) &&
          w4f16_hvx_workers != 3U) ||
         ((w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN64_CROSS_PREFETCH ||
@@ -958,7 +1013,9 @@ int main(int argc, char **argv) {
           w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH ||
           w4f16_pipeline_mode ==
-              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH) &&
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH ||
+          w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH) &&
          w4f16_region_tiles != 32U) ||
         (w4f16_region_tiles != 8U && w4f16_region_tiles != 16U &&
          w4f16_region_tiles != 32U && w4f16_region_tiles != 64U) ||
@@ -975,7 +1032,8 @@ int main(int argc, char **argv) {
                         "adaptive_down48_cross|adaptive_down64_cross|"
                         "adaptive_down96_cross|adaptive_down96_gate16_cross|"
                         "adaptive_down96_gate8_cross|"
-                        "adaptive_down96_gate4_cross] "
+                        "adaptive_down96_gate4_cross|"
+                        "adaptive_down96_gate4_dma8_cross] "
                         "[attention_pack:control|qk_hvx|av_hvx|hvx] "
                         "[mlp:control|parallel_silu|streaming] "
                         "[mlp_hvx_contexts:1..4] "
@@ -1240,6 +1298,10 @@ int main(int argc, char **argv) {
     header->repeat_count = 1U;
     header->dsp_status = QBH_BLOCK_STATUS_HOST_READY;
     memset(shared + header->output_offset, 0xa5, output_bytes);
+    if (qbh_prepare_gate_up_scale_cache(header, shared) != 0) {
+        fprintf(stderr, "Gate/Up scale-cache preparation failed\n");
+        goto cleanup;
+    }
     warmup_start = qbh_monotonic_ns();
     warmup_result = qwen3_probe_run_block(
         session.handle, shared_fd, (uint32_t)total_bytes);
@@ -1278,6 +1340,10 @@ int main(int argc, char **argv) {
     header->repeat_count = repeats;
     header->dsp_status = QBH_BLOCK_STATUS_HOST_READY;
     memset(shared + header->output_offset, 0xa5, output_bytes);
+    if (qbh_prepare_gate_up_scale_cache(header, shared) != 0) {
+        fprintf(stderr, "Gate/Up scale-cache preparation failed\n");
+        goto cleanup;
+    }
     measured_start = qbh_monotonic_ns();
     measured_result = qwen3_probe_run_block(
         session.handle, shared_fd, (uint32_t)total_bytes);
@@ -1454,6 +1520,7 @@ int main(int argc, char **argv) {
         "\"attention_gqa_pipeline_ticks\":%" PRIu64 ","
         "\"attention_unattributed_ticks\":%" PRIu64 ","
         "\"w4f16_gate_up_effective_region_tiles\":%" PRIu32 ","
+        "\"w4f16_gate_up_scale_cache_bytes\":%" PRIu32 ","
         "\"w4f16_gate_up_weight_dma_ticks\":%" PRIu64 ","
         "\"w4f16_gate_up_expand_ticks\":%" PRIu64 ","
         "\"w4f16_gate_up_expand_work_ticks\":%" PRIu64 ","
@@ -1466,6 +1533,7 @@ int main(int argc, char **argv) {
         "\"w4f16_gate_up_stream_ready_wait_ticks\":%" PRIu64 ","
         "\"w4f16_gate_up_stream_join_wait_ticks\":%" PRIu64 ","
         "\"w4f16_gate_up_hmx_command_count\":%" PRIu64 ","
+        "\"w4f16_gate_up_scale_init_ticks\":%" PRIu64 ","
         "\"weight_dma_ticks\":%" PRIu64 ","
         "\"hmx_compute_ticks\":%" PRIu64 ","
         "\"projection_pack_ticks\":%" PRIu64 ","
@@ -1631,6 +1699,7 @@ int main(int argc, char **argv) {
         header->attention_gqa_pipeline_ticks,
         header->attention_unattributed_ticks,
         header->w4f16_gate_up_effective_region_tiles,
+        header->w4f16_gate_up_scale_cache_bytes,
         header->w4f16_gate_up_weight_dma_ticks,
         header->w4f16_gate_up_expand_ticks,
         header->w4f16_gate_up_expand_work_ticks,
@@ -1643,6 +1712,7 @@ int main(int argc, char **argv) {
         header->w4f16_gate_up_stream_ready_wait_ticks,
         header->w4f16_gate_up_stream_join_wait_ticks,
         header->w4f16_gate_up_hmx_command_count,
+        header->w4f16_gate_up_scale_init_ticks,
         header->weight_dma_ticks,
         header->hmx_compute_ticks, header->projection_pack_ticks,
         header->w4f16_expand_ticks,
