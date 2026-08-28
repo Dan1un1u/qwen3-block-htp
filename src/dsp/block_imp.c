@@ -1741,6 +1741,21 @@ static uint64_t qbh_attribution_mark(uint64_t *cursor) {
     return elapsed;
 }
 
+static uint64_t qbh_attribution_begin(
+    const struct qbh_block_header *header) {
+    return header->attribution_enabled != 0U
+               ? HAP_perf_get_qtimer_count()
+               : 0U;
+}
+
+static void qbh_attribution_accumulate(
+    const struct qbh_block_header *header, uint64_t start,
+    uint64_t *accumulator) {
+    if (header->attribution_enabled != 0U) {
+        *accumulator += HAP_perf_get_qtimer_count() - start;
+    }
+}
+
 static uint64_t qbh_attention_attributed_ticks(
     const struct qbh_block_header *header) {
     return header->attention_setup_ticks +
@@ -2071,6 +2086,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         header->common_ops_mask == QBH_BLOCK_COMMON_OP_SILU
             ? &silu_check_metrics : NULL;
     uint64_t start;
+    uint64_t audit_start;
     uint64_t attention_attributed_before = 0U;
 
     qbh_hvx_check_reset(&rms_check_metrics);
@@ -2112,9 +2128,12 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                 (__fp16 *)buffers->normalized,
                 QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
         }
+        audit_start = qbh_attribution_begin(header);
         qbh_record_f16_nonfinite(
             header, buffers->normalized, hidden_elements,
             QBH_BLOCK_NUMERICAL_INPUT_NORM);
+        qbh_attribution_accumulate(
+            header, audit_start, &header->input_norm_audit_ticks);
     }
     header->input_norm_ticks += HAP_perf_get_qtimer_count() - start;
 
@@ -2134,6 +2153,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         return QBH_BLOCK_STATUS_QKV_FAILED;
     }
     if (header->variant != QBH_BLOCK_W4U8) {
+        audit_start = qbh_attribution_begin(header);
         qbh_record_f16_nonfinite(
             header, buffers->q, QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
             QBH_BLOCK_NUMERICAL_Q);
@@ -2143,6 +2163,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         qbh_record_f16_nonfinite(
             header, buffers->v, QBH_BLOCK_M * QBH_BLOCK_KV_HIDDEN,
             QBH_BLOCK_NUMERICAL_V);
+        qbh_attribution_accumulate(
+            header, audit_start, &header->qkv_audit_ticks);
     }
     header->qkv_projection_ticks += HAP_perf_get_qtimer_count() - start;
 
@@ -2201,12 +2223,15 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                 (const __fp16 *)buffers->rope_sin);
         }
     }
+    audit_start = qbh_attribution_begin(header);
     qbh_record_f16_nonfinite(
         header, buffers->q, QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
         QBH_BLOCK_NUMERICAL_Q_ROPE);
     qbh_record_f16_nonfinite(
         header, buffers->k, QBH_BLOCK_M * QBH_BLOCK_KV_HIDDEN,
         QBH_BLOCK_NUMERICAL_K_ROPE);
+    qbh_attribution_accumulate(
+        header, audit_start, &header->qk_norm_rope_audit_ticks);
     header->qk_norm_rope_ticks += HAP_perf_get_qtimer_count() - start;
 
     if (header->attribution_enabled != 0U) {
@@ -2246,9 +2271,12 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         return QBH_BLOCK_STATUS_O_PROJECTION_FAILED;
     }
     if (header->variant != QBH_BLOCK_W4U8) {
+        audit_start = qbh_attribution_begin(header);
         qbh_record_f16_nonfinite(
             header, buffers->attention_projection, hidden_elements,
             QBH_BLOCK_NUMERICAL_O);
+        qbh_attribution_accumulate(
+            header, audit_start, &header->o_projection_audit_ticks);
     }
     header->o_projection_ticks += HAP_perf_get_qtimer_count() - start;
 
@@ -2267,9 +2295,13 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             (__fp16 *)buffers->residual,
             (const __fp16 *)buffers->attention_projection,
             hidden_elements);
+        audit_start = qbh_attribution_begin(header);
         qbh_record_f16_nonfinite(
             header, buffers->residual, hidden_elements,
             QBH_BLOCK_NUMERICAL_POST_RESIDUAL);
+        qbh_attribution_accumulate(
+            header, audit_start,
+            &header->post_attention_residual_audit_ticks);
     }
     header->post_attention_residual_ticks +=
         HAP_perf_get_qtimer_count() - start;
@@ -2297,9 +2329,13 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                 (__fp16 *)buffers->normalized,
                 QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
         }
+        audit_start = qbh_attribution_begin(header);
         qbh_record_f16_nonfinite(
             header, buffers->normalized, hidden_elements,
             QBH_BLOCK_NUMERICAL_POST_NORM);
+        qbh_attribution_accumulate(
+            header, audit_start,
+            &header->post_attention_norm_audit_ticks);
     }
     header->post_attention_norm_ticks +=
         HAP_perf_get_qtimer_count() - start;
@@ -2318,12 +2354,15 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         return QBH_BLOCK_STATUS_GATE_UP_FAILED;
     }
     if (header->variant != QBH_BLOCK_W4U8) {
+        audit_start = qbh_attribution_begin(header);
         qbh_record_f16_nonfinite(
             header, buffers->gate, intermediate_elements,
             QBH_BLOCK_NUMERICAL_GATE);
         qbh_record_f16_nonfinite(
             header, buffers->up, intermediate_elements,
             QBH_BLOCK_NUMERICAL_UP);
+        qbh_attribution_accumulate(
+            header, audit_start, &header->gate_up_audit_ticks);
     }
     header->gate_up_ticks += HAP_perf_get_qtimer_count() - start;
 
@@ -2347,9 +2386,12 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                 (const __fp16 *)buffers->up,
                 (__fp16 *)buffers->middle, intermediate_elements);
         }
+        audit_start = qbh_attribution_begin(header);
         qbh_record_f16_nonfinite(
             header, buffers->middle, intermediate_elements,
             QBH_BLOCK_NUMERICAL_MIDDLE);
+        qbh_attribution_accumulate(
+            header, audit_start, &header->activation_audit_ticks);
     }
     header->activation_ticks += HAP_perf_get_qtimer_count() - start;
 
@@ -2361,9 +2403,12 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         return QBH_BLOCK_STATUS_DOWN_FAILED;
     }
     if (header->variant != QBH_BLOCK_W4U8) {
+        audit_start = qbh_attribution_begin(header);
         qbh_record_f16_nonfinite(
             header, buffers->down, hidden_elements,
             QBH_BLOCK_NUMERICAL_DOWN);
+        qbh_attribution_accumulate(
+            header, audit_start, &header->down_audit_ticks);
     }
     header->down_ticks += HAP_perf_get_qtimer_count() - start;
 
@@ -2380,9 +2425,12 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         qbh_residual_add_f16((__fp16 *)buffers->residual,
                              (const __fp16 *)buffers->down,
                              hidden_elements);
+        audit_start = qbh_attribution_begin(header);
         qbh_record_f16_nonfinite(
             header, buffers->residual, hidden_elements,
             QBH_BLOCK_NUMERICAL_OUTPUT);
+        qbh_attribution_accumulate(
+            header, audit_start, &header->final_residual_audit_ticks);
     }
     if (header->numerical_status == QBH_BLOCK_NUMERICAL_UNCHECKED) {
         header->numerical_status = QBH_BLOCK_NUMERICAL_OK;

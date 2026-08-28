@@ -262,6 +262,17 @@ struct qbh_block_header {
     uint64_t ledger_named_ticks;
     uint64_t ledger_unattributed_ticks;
 
+    uint64_t input_norm_audit_ticks;
+    uint64_t qkv_audit_ticks;
+    uint64_t qk_norm_rope_audit_ticks;
+    uint64_t o_projection_audit_ticks;
+    uint64_t post_attention_residual_audit_ticks;
+    uint64_t post_attention_norm_audit_ticks;
+    uint64_t gate_up_audit_ticks;
+    uint64_t activation_audit_ticks;
+    uint64_t down_audit_ticks;
+    uint64_t final_residual_audit_ticks;
+
     uint64_t attention_setup_ticks;
     uint64_t attention_qk_pack_ticks;
     uint64_t attention_qk_hmx_ticks;

@@ -947,6 +947,16 @@ int main(int argc, char **argv) {
         "\"runtime_teardown_ticks\":%" PRIu64 ","
         "\"ledger_named_ticks\":%" PRIu64 ","
         "\"ledger_unattributed_ticks\":%" PRIu64 ","
+        "\"input_norm_audit_ticks\":%" PRIu64 ","
+        "\"qkv_audit_ticks\":%" PRIu64 ","
+        "\"qk_norm_rope_audit_ticks\":%" PRIu64 ","
+        "\"o_projection_audit_ticks\":%" PRIu64 ","
+        "\"post_attention_residual_audit_ticks\":%" PRIu64 ","
+        "\"post_attention_norm_audit_ticks\":%" PRIu64 ","
+        "\"gate_up_audit_ticks\":%" PRIu64 ","
+        "\"activation_audit_ticks\":%" PRIu64 ","
+        "\"down_audit_ticks\":%" PRIu64 ","
+        "\"final_residual_audit_ticks\":%" PRIu64 ","
         "\"attention_setup_ticks\":%" PRIu64 ","
         "\"attention_qk_pack_ticks\":%" PRIu64 ","
         "\"attention_qk_hmx_ticks\":%" PRIu64 ","
@@ -1040,6 +1050,16 @@ int main(int argc, char **argv) {
         header->runtime_setup_ticks, header->runtime_teardown_ticks,
         header->ledger_named_ticks,
         header->ledger_unattributed_ticks,
+        header->input_norm_audit_ticks,
+        header->qkv_audit_ticks,
+        header->qk_norm_rope_audit_ticks,
+        header->o_projection_audit_ticks,
+        header->post_attention_residual_audit_ticks,
+        header->post_attention_norm_audit_ticks,
+        header->gate_up_audit_ticks,
+        header->activation_audit_ticks,
+        header->down_audit_ticks,
+        header->final_residual_audit_ticks,
         header->attention_setup_ticks,
         header->attention_qk_pack_ticks,
         header->attention_qk_hmx_ticks,
