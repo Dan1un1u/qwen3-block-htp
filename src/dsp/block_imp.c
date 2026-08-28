@@ -388,6 +388,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
             QBH_BLOCK_F16F16_PROJECTION_BATCH2 ||
         header->w4f16_pipeline_mode >
             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH ||
+        (header->attention_pack_mode &
+         ~((uint32_t)QBH_BLOCK_ATTENTION_PACK_HVX)) != 0U ||
         (header->variant != QBH_BLOCK_F16F16 &&
          header->f16f16_projection_mode !=
              QBH_BLOCK_F16F16_PROJECTION_SERIAL) ||
@@ -413,7 +415,9 @@ static int qbh_header_valid(const struct qbh_block_header *header,
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH) &&
          header->w4f16_region_tiles != 32U) ||
         (header->variant == QBH_BLOCK_W4U8 &&
-         header->residual_mode != QBH_BLOCK_RESIDUAL_SCALAR)) {
+         (header->residual_mode != QBH_BLOCK_RESIDUAL_SCALAR ||
+          header->attention_pack_mode !=
+              QBH_BLOCK_ATTENTION_PACK_CONTROL))) {
         return 0;
     }
     if (header->w4f16_requested_hvx_workers == 0U ||
@@ -2367,7 +2371,7 @@ static void qbh_expand_u8_to_f16_in_place(
     }
 }
 
-static void qbh_pack_fp16_weight_rows(
+static void qbh_pack_fp16_weight_rows_scalar(
     const __fp16 *source, uint32_t source_stride,
     uint32_t source_column, uint32_t k, uint32_t n,
     __fp16 *destination) {
@@ -2388,7 +2392,7 @@ static void qbh_pack_fp16_weight_rows(
     }
 }
 
-static void qbh_pack_fp16_weight_transposed(
+static void qbh_pack_fp16_weight_transposed_scalar(
     const __fp16 *source, uint32_t source_stride,
     uint32_t source_column, uint32_t rows, uint32_t columns,
     __fp16 *destination) {
@@ -2407,6 +2411,84 @@ static void qbh_pack_fp16_weight_transposed(
                        source_column + output];
         }
     }
+}
+
+/* Word offsets for one FP16 HMX dual-tile.  Each vscatter word contains two
+ * adjacent K values and successive words are 128 bytes apart in Crouton. */
+static const int32_t qbh_attention_vscatter_offsets[32]
+    __attribute__((aligned(128))) = {
+        0, 128, 256, 384, 512, 640, 768, 896,
+        1024, 1152, 1280, 1408, 1536, 1664, 1792, 1920,
+        2048, 2176, 2304, 2432, 2560, 2688, 2816, 2944,
+        3072, 3200, 3328, 3456, 3584, 3712, 3840, 3968,
+    };
+
+static void qbh_pack_fp16_weight_rows_hvx(
+    const __fp16 *source, uint32_t source_stride,
+    uint32_t source_column, uint32_t k, uint32_t n,
+    __fp16 *destination) {
+    uint32_t k_tiles = k / QBH_HMX_FP16_ROWS;
+    uint32_t n_tiles = n / QBH_HMX_FP16_COLS;
+    HVX_Vector offsets_base = *(const HVX_Vector *)
+        qbh_attention_vscatter_offsets;
+    HVX_Vector offset_step = Q6_V_vsplat_R(4);
+
+    for (uint32_t n_tile = 0; n_tile < n_tiles; ++n_tile) {
+        HVX_Vector offsets = offsets_base;
+        for (uint32_t local_output = 0;
+             local_output < QBH_HMX_FP16_COLS; ++local_output) {
+            const HVX_Vector *input = (const HVX_Vector *)(
+                source + (size_t)(n_tile * QBH_HMX_FP16_COLS +
+                                  local_output) * source_stride +
+                source_column);
+            for (uint32_t channel = 0; channel < k; channel += 64U) {
+                size_t tile = ((size_t)n_tile * k_tiles +
+                               channel / QBH_HMX_FP16_ROWS) *
+                              QBH_HMX_FP16_TILE_ELEMENTS;
+                Q6_vscatter_RMVwV(
+                    (uint32_t)(uintptr_t)(destination + tile),
+                    2U * QBH_HMX_FP16_TILE_BYTES - 1U,
+                    offsets, *input++);
+            }
+            offsets = Q6_Vw_vadd_VwVw(offsets, offset_step);
+        }
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
+static void qbh_pack_fp16_weight_transposed_hvx(
+    const __fp16 *source, uint32_t source_stride,
+    uint32_t source_column, uint32_t rows, uint32_t columns,
+    __fp16 *destination) {
+    uint32_t k_tiles = rows / QBH_HMX_FP16_ROWS;
+
+    for (uint32_t input = 0; input < rows; input += 2U) {
+        uint32_t k_tile = input / QBH_HMX_FP16_ROWS;
+        uint32_t row_pair =
+            (input % QBH_HMX_FP16_ROWS) / 2U;
+        const HVX_Vector *source0 = (const HVX_Vector *)(
+            source + (size_t)input * source_stride + source_column);
+        const HVX_Vector *source1 = (const HVX_Vector *)(
+            source + (size_t)(input + 1U) * source_stride +
+            source_column);
+
+        for (uint32_t output = 0; output < columns; output += 64U) {
+            HVX_VectorPair packed = Q6_W_vshuff_VVR(
+                *source1++, *source0++, -2);
+            uint32_t n_tile = output / QBH_HMX_FP16_COLS;
+            size_t tile0 = ((size_t)n_tile * k_tiles + k_tile) *
+                           QBH_HMX_FP16_TILE_ELEMENTS;
+            size_t tile1 = ((size_t)(n_tile + 1U) * k_tiles + k_tile) *
+                           QBH_HMX_FP16_TILE_ELEMENTS;
+            HVX_Vector *output0 =
+                (HVX_Vector *)(destination + tile0) + row_pair;
+            HVX_Vector *output1 =
+                (HVX_Vector *)(destination + tile1) + row_pair;
+            *output0 = Q6_V_lo_W(packed);
+            *output1 = Q6_V_hi_W(packed);
+        }
+    }
+    asm volatile("barrier" ::: "memory");
 }
 
 static void qbh_record_f16_nonfinite(struct qbh_block_header *header,
@@ -2483,6 +2565,8 @@ static int qbh_attention_f16(struct qbh_block_header *header,
     __fp16 *probability = (__fp16 *)buffers->probability;
     __fp16 *attention = (__fp16 *)buffers->attention_concat;
     uint64_t attribution_cursor = 0U;
+    uint32_t packed_qk_kv_head = UINT32_MAX;
+    uint32_t packed_av_kv_head = UINT32_MAX;
     if (header->attribution_enabled != 0U) {
         attribution_cursor = HAP_perf_get_qtimer_count();
     }
@@ -2497,10 +2581,23 @@ static int qbh_attention_f16(struct qbh_block_header *header,
         qbh_pack_fp16_activation(
             q + head * QBH_BLOCK_HEAD_DIM, QBH_BLOCK_HIDDEN,
             QBH_BLOCK_HEAD_DIM, (__fp16 *)buffers->hmx_activation);
-        qbh_pack_fp16_weight_rows(
-            k, QBH_BLOCK_KV_HIDDEN,
-            kv_head * QBH_BLOCK_HEAD_DIM, QBH_BLOCK_HEAD_DIM,
-            QBH_BLOCK_M, (__fp16 *)buffers->expanded_weight);
+        if ((header->attention_pack_mode &
+             QBH_BLOCK_ATTENTION_PACK_QK_HVX) != 0U) {
+            if (packed_qk_kv_head != kv_head) {
+                qbh_pack_fp16_weight_rows_hvx(
+                    k, QBH_BLOCK_KV_HIDDEN,
+                    kv_head * QBH_BLOCK_HEAD_DIM,
+                    QBH_BLOCK_HEAD_DIM, QBH_BLOCK_M,
+                    (__fp16 *)buffers->expanded_weight);
+                packed_qk_kv_head = kv_head;
+            }
+        } else {
+            qbh_pack_fp16_weight_rows_scalar(
+                k, QBH_BLOCK_KV_HIDDEN,
+                kv_head * QBH_BLOCK_HEAD_DIM,
+                QBH_BLOCK_HEAD_DIM, QBH_BLOCK_M,
+                (__fp16 *)buffers->expanded_weight);
+        }
         if (header->attribution_enabled != 0U) {
             header->attention_qk_pack_ticks +=
                 qbh_attribution_mark(&attribution_cursor);
@@ -2597,10 +2694,23 @@ static int qbh_attention_f16(struct qbh_block_header *header,
             probability + (size_t)head * QBH_BLOCK_M * QBH_BLOCK_M,
             QBH_BLOCK_M, QBH_BLOCK_M,
             (__fp16 *)buffers->hmx_activation);
-        qbh_pack_fp16_weight_transposed(
-            v, QBH_BLOCK_KV_HIDDEN,
-            kv_head * QBH_BLOCK_HEAD_DIM, QBH_BLOCK_M,
-            QBH_BLOCK_HEAD_DIM, (__fp16 *)buffers->expanded_weight);
+        if ((header->attention_pack_mode &
+             QBH_BLOCK_ATTENTION_PACK_AV_HVX) != 0U) {
+            if (packed_av_kv_head != kv_head) {
+                qbh_pack_fp16_weight_transposed_hvx(
+                    v, QBH_BLOCK_KV_HIDDEN,
+                    kv_head * QBH_BLOCK_HEAD_DIM, QBH_BLOCK_M,
+                    QBH_BLOCK_HEAD_DIM,
+                    (__fp16 *)buffers->expanded_weight);
+                packed_av_kv_head = kv_head;
+            }
+        } else {
+            qbh_pack_fp16_weight_transposed_scalar(
+                v, QBH_BLOCK_KV_HIDDEN,
+                kv_head * QBH_BLOCK_HEAD_DIM, QBH_BLOCK_M,
+                QBH_BLOCK_HEAD_DIM,
+                (__fp16 *)buffers->expanded_weight);
+        }
         if (header->attribution_enabled != 0U) {
             header->attention_av_pack_ticks +=
                 qbh_attribution_mark(&attribution_cursor);

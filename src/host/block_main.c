@@ -358,6 +358,40 @@ static const char *qbh_w4f16_pipeline_mode_name(uint32_t mode) {
     return "control";
 }
 
+static int qbh_parse_attention_pack_mode(const char *text,
+                                         uint32_t *mode) {
+    if (strcmp(text, "control") == 0 || strcmp(text, "scalar") == 0) {
+        *mode = QBH_BLOCK_ATTENTION_PACK_CONTROL;
+        return 0;
+    }
+    if (strcmp(text, "qk_hvx") == 0) {
+        *mode = QBH_BLOCK_ATTENTION_PACK_QK_HVX;
+        return 0;
+    }
+    if (strcmp(text, "av_hvx") == 0) {
+        *mode = QBH_BLOCK_ATTENTION_PACK_AV_HVX;
+        return 0;
+    }
+    if (strcmp(text, "hvx") == 0 || strcmp(text, "combined_hvx") == 0) {
+        *mode = QBH_BLOCK_ATTENTION_PACK_HVX;
+        return 0;
+    }
+    return -1;
+}
+
+static const char *qbh_attention_pack_mode_name(uint32_t mode) {
+    if (mode == QBH_BLOCK_ATTENTION_PACK_QK_HVX) {
+        return "qk_hvx";
+    }
+    if (mode == QBH_BLOCK_ATTENTION_PACK_AV_HVX) {
+        return "av_hvx";
+    }
+    if (mode == QBH_BLOCK_ATTENTION_PACK_HVX) {
+        return "combined_hvx";
+    }
+    return "control";
+}
+
 static uint64_t qbh_fnv1a64(const uint8_t *data, size_t bytes) {
     uint64_t hash = UINT64_C(1469598103934665603);
     for (size_t index = 0; index < bytes; ++index) {
@@ -639,6 +673,7 @@ int main(int argc, char **argv) {
     uint32_t f16f16_projection_mode =
         QBH_BLOCK_F16F16_PROJECTION_SERIAL;
     uint32_t w4f16_pipeline_mode = QBH_BLOCK_W4F16_PIPELINE_CONTROL;
+    uint32_t attention_pack_mode = QBH_BLOCK_ATTENTION_PACK_CONTROL;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t cursor = qbh_align_up_size(sizeof(*header), QBH_HOST_ALIGNMENT);
@@ -664,7 +699,7 @@ int main(int argc, char **argv) {
 
     memset(&warmup_metrics, 0, sizeof(warmup_metrics));
     memset(&measured_metrics, 0, sizeof(measured_metrics));
-    if (argc < 3 || argc > 12 ||
+    if (argc < 3 || argc > 13 ||
         qbh_parse_variant(argv[2], &variant) != 0 ||
         (argc >= 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
         (argc >= 5 && qbh_parse_u32(
@@ -683,12 +718,16 @@ int main(int argc, char **argv) {
                            argv[10], &f16f16_projection_mode) != 0) ||
         (argc >= 12 && qbh_parse_w4f16_pipeline_mode(
                            argv[11], &w4f16_pipeline_mode) != 0) ||
+        (argc >= 13 && qbh_parse_attention_pack_mode(
+                           argv[12], &attention_pack_mode) != 0) ||
         repeats == 0U || repeats > 100U ||
         w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
         (argc >= 7 && variant == QBH_BLOCK_W4U8 &&
          common_ops_mask != QBH_BLOCK_COMMON_OPS_SCALAR) ||
         (variant == QBH_BLOCK_W4U8 &&
-         residual_mode != QBH_BLOCK_RESIDUAL_SCALAR) ||
+         (residual_mode != QBH_BLOCK_RESIDUAL_SCALAR ||
+          attention_pack_mode !=
+              QBH_BLOCK_ATTENTION_PACK_CONTROL)) ||
         (variant != QBH_BLOCK_F16F16 &&
          f16f16_projection_mode !=
              QBH_BLOCK_F16F16_PROJECTION_SERIAL) ||
@@ -725,7 +764,8 @@ int main(int argc, char **argv) {
                         "[w4_pipeline:control|early|hybrid|main_half|"
                         "main_two_thirds|cross|hybrid_cross|"
                         "adaptive_down48_cross|adaptive_down64_cross|"
-                        "adaptive_down96_cross]\n",
+                        "adaptive_down96_cross] "
+                        "[attention_pack:control|qk_hvx|av_hvx|hvx]\n",
                 argv[0]);
         return 2;
     }
@@ -899,6 +939,7 @@ int main(int argc, char **argv) {
     header->residual_mode = residual_mode;
     header->f16f16_projection_mode = f16f16_projection_mode;
     header->w4f16_pipeline_mode = w4f16_pipeline_mode;
+    header->attention_pack_mode = attention_pack_mode;
     header->input_offset = input_slot.offset;
     header->input_bytes = input_slot.expected_bytes;
     header->output_bytes = output_bytes;
@@ -1053,7 +1094,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0028\","
+        "{\"experiment\":\"EXP-0029\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"FP16_HMX\","
         "\"projection_compute\":\"%s\","
@@ -1063,6 +1104,7 @@ int main(int argc, char **argv) {
         "\"residual_mode\":\"%s\","
         "\"f16f16_projection_mode\":\"%s\","
         "\"w4f16_pipeline_mode\":\"%s\","
+        "\"attention_pack_mode\":\"%s\","
         "\"w4f16_scale_placement\":\"%s\","
         "\"intermediate_residency\":\"VTCM\","
         "\"warmup_rpc_result\":%d,"
@@ -1208,6 +1250,7 @@ int main(int argc, char **argv) {
             ? qbh_w4f16_pipeline_mode_name(
                   header->w4f16_pipeline_mode)
             : "not_applicable",
+        qbh_attention_pack_mode_name(header->attention_pack_mode),
         variant == QBH_BLOCK_W4F16 ? "hmx_output_per_channel"
                                    : "not_applicable",
         warmup_result, warmup_run_index, warmup_end - warmup_start,

@@ -6,8 +6,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(8)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(28)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(9)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(29)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -63,6 +63,15 @@ enum qbh_block_w4f16_pipeline_mode {
     QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN64_CROSS_PREFETCH = 7,
     QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN48_CROSS_PREFETCH = 8,
     QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH = 9,
+};
+
+enum qbh_block_attention_pack_mode {
+    QBH_BLOCK_ATTENTION_PACK_CONTROL = 0,
+    QBH_BLOCK_ATTENTION_PACK_QK_HVX = 1U << 0,
+    QBH_BLOCK_ATTENTION_PACK_AV_HVX = 1U << 1,
+    QBH_BLOCK_ATTENTION_PACK_HVX =
+        QBH_BLOCK_ATTENTION_PACK_QK_HVX |
+        QBH_BLOCK_ATTENTION_PACK_AV_HVX,
 };
 
 enum qbh_block_projection_index {
@@ -174,6 +183,7 @@ struct qbh_block_header {
     uint32_t residual_mode;
     uint32_t f16f16_projection_mode;
     uint32_t w4f16_pipeline_mode;
+    uint32_t attention_pack_mode;
 
     uint32_t input_offset;
     uint32_t input_bytes;
