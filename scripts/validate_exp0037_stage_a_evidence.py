@@ -272,15 +272,18 @@ def main():
         record_count += 11
 
     comparisons = {}
+    gate_failures = []
     for family in ("repeat1", "repeat10"):
         control = timing[family]["control"]
         candidate = timing[family]["q_batch4"]
         if candidate["q_projection_wall_ticks_median_per_block"] >= \
                 control["q_projection_wall_ticks_median_per_block"]:
-            raise SystemExit(f"{family}: Q projection wall did not improve")
+            gate_failures.append(
+                f"{family}: Q projection wall did not improve")
         if candidate["host_wall_ns_per_block_median"] >= \
                 control["host_wall_ns_per_block_median"]:
-            raise SystemExit(f"{family}: complete-block Host wall did not improve")
+            gate_failures.append(
+                f"{family}: complete-block Host wall did not improve")
         comparisons[family] = {
             "q_projection_wall_percent_vs_control": pct(
                 candidate["q_projection_wall_ticks_median_per_block"],
@@ -295,11 +298,13 @@ def main():
         "stage": "A",
         "execution_state": "completed",
         "evidence_validity": "valid",
-        "local_gate": "pass",
+        "local_gate": "fail" if gate_failures else "pass",
         "adoption_status": "pending",
         "formal_run_records": record_count,
         "parent_block_package_experiment": manifest["experiment"],
-        "selected_candidate": "q_batch4",
+        "tested_candidate": "q_batch4",
+        "selected_candidate": None if gate_failures else "q_batch4",
+        "gate_failures": gate_failures,
         "timing": timing,
         "comparisons": comparisons,
         "correctness": {
