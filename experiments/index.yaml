@@ -1718,10 +1718,10 @@ experiments:
       - multi_worker_qk_norm_rope_candidate
       - multi_worker_standard_softmax_candidate
       - gqa_group_attention_pipeline_candidate
-    execution_state: completed
+    execution_state: running
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending
+    adoption_status: accepted
     evidence_profile: real-qwen3-block-gqa-attention-critical-path
     source_branches:
       - codex/exp-0031-gqa-attention-pipeline
@@ -1732,11 +1732,13 @@ experiments:
     decided_by: user
     decided_on: '2026-08-28'
     approval_ref: 'User message 2026-08-28: 可以，开始工作'
+    acceptance_ref: 'User message 2026-08-28: 接受，继续31实验'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0031-gqa-attention-pipeline
       started_on: '2026-08-28'
       completed_on: '2026-08-28'
+      continued_on: '2026-08-28'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0031'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0031'
@@ -1788,3 +1790,5 @@ experiments:
       repeat10_f16f16_qknorm_attention_change_percent: -69.12003381872259
       repeat10_w4f16_qknorm_attention_change_percent: -69.15181796291837
       performance_characterization: four_hvx_contexts_remove_the_serial_qk_norm_rope_and_standard_softmax_bottlenecks_then_eight_gqa_group_tasks_overlap_hvx_preparation_and_softmax_with_one_serial_hmx_owner_reducing_complete_block_host_wall_by_15_to_16_percent_at_repeat10_without_changing_arithmetic_hmx_work_or_vtcm_residency
+      accepted_checkpoint_commit: 1cb6995e1d2194834cd80ca13420cdbbebccfd8a
+      continuation_milestone: overlap_qk_norm_rope_readiness_with_qkv_projection_without_changing_projection_math_or_hmx_ownership
