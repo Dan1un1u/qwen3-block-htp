@@ -205,3 +205,12 @@ The slot is released only after its complete superchunk is consumed. Producer
 lookahead is bounded so HVX cannot run an entire group ahead of HMX.
 _Avoid_: strict phase separation, full-group barrier, per-microchunk FastRPC,
 per-microchunk expanded-slot recycle
+
+**GQA-Group Attention Pipeline**:
+A complete Attention Physical Plan with eight independent tasks for Qwen3's
+sixteen Q heads and eight KV heads. Each task owns two Q heads and one K/V head,
+performs QK Norm and RoPE, submits unchanged QK and AV commands to one serialized
+HMX owner, and runs standard Softmax on an HVX context while other groups make
+progress. Scores, probabilities, worker scratch, and output remain VTCM state.
+_Avoid_: concurrent HMX ownership, online FlashAttention, changed Softmax
+mathematics, per-head FastRPC

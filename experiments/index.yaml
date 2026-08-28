@@ -1718,15 +1718,16 @@ experiments:
       - multi_worker_qk_norm_rope_candidate
       - multi_worker_standard_softmax_candidate
       - gqa_group_attention_pipeline_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-gqa-attention-critical-path
     source_branches:
       - codex/exp-0031-gqa-attention-pipeline
     source_commits:
       - 3bb967d60c6c91b51f26bf426510f0af99885be7
+      - 1cb6995e1d2194834cd80ca13420cdbbebccfd8a
     record: docs/experiments/EXP-0031.md
     decided_by: user
     decided_on: '2026-08-28'
@@ -1735,6 +1736,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0031-gqa-attention-pipeline
       started_on: '2026-08-28'
+      completed_on: '2026-08-28'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0031'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0031'
@@ -1749,3 +1751,40 @@ experiments:
       hmx_ownership_domains: 1
       standard_fp16_softmax_required: true
       local_speed_gate: selected_candidate_reduces_qk_norm_rope_plus_attention_ticks_and_does_not_regress_complete_block_host_wall_for_both_f16f16_and_w4f16_at_repeat1_and_repeat10
+      formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0031\20260828T121215Z_1cb6995e1d21'
+      artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0031\artifacts\1cb6995e1d21'
+      matrix: 'D:\llm_exp\results\qwen3-block-htp\exp0031\20260828T121215Z_1cb6995e1d21\matrix_gate.json'
+      formal_runs: 110
+      parent_block_package_hash_audit: true
+      fixed_vtcm_request_gate: pass
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      intermediate_spill_fill_count: 0
+      boot_id_stable: true
+      qnn_dependency_scan: none
+      output_hash_stability_gate: pass
+      single_hmx_owner_gate: pass
+      parallel_qk_norm_rope_gate: pass
+      parallel_standard_softmax_gate: pass
+      combined_parallel_hvx_gate: pass
+      gqa_group_pipeline_gate: pass
+      selected_candidate: gqa_group_attention_pipeline
+      f16f16_output_hash: 704252c89780e695
+      w4f16_output_hash: f18b9abbe1487231
+      repeat1_f16f16_control_host_wall_ns: 3562083
+      repeat1_f16f16_gqa_host_wall_ns: 3076666
+      repeat1_f16f16_host_change_percent: -13.627335466354939
+      repeat1_w4f16_control_host_wall_ns: 3416615
+      repeat1_w4f16_gqa_host_wall_ns: 2950052
+      repeat1_w4f16_host_change_percent: -13.655708939988854
+      repeat1_w4f16_change_from_f16f16_percent: -4.115298833217517
+      repeat10_f16f16_control_host_wall_ns_per_block: 3134921.9
+      repeat10_f16f16_gqa_host_wall_ns_per_block: 2664776.0
+      repeat10_f16f16_host_change_percent: -14.997053036632268
+      repeat10_w4f16_control_host_wall_ns_per_block: 3011833.4
+      repeat10_w4f16_gqa_host_wall_ns_per_block: 2527619.8
+      repeat10_w4f16_host_change_percent: -16.077037992871723
+      repeat10_w4f16_change_from_f16f16_percent: -5.147006727769998
+      repeat10_f16f16_qknorm_attention_change_percent: -69.12003381872259
+      repeat10_w4f16_qknorm_attention_change_percent: -69.15181796291837
+      performance_characterization: four_hvx_contexts_remove_the_serial_qk_norm_rope_and_standard_softmax_bottlenecks_then_eight_gqa_group_tasks_overlap_hvx_preparation_and_softmax_with_one_serial_hmx_owner_reducing_complete_block_host_wall_by_15_to_16_percent_at_repeat10_without_changing_arithmetic_hmx_work_or_vtcm_residency
