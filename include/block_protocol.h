@@ -43,6 +43,7 @@ enum qbh_block_common_ops_mask {
 enum qbh_block_residual_mode {
     QBH_BLOCK_RESIDUAL_SCALAR = 0,
     QBH_BLOCK_RESIDUAL_HVX = 1,
+    QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM = 2,
 };
 
 enum qbh_block_projection_index {

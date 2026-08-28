@@ -234,6 +234,64 @@ void qbh_hvx_rms_norm_f16(const __fp16 *input, const __fp16 *gamma,
     }
 }
 
+void qbh_hvx_residual_rms_norm_f16(
+    __fp16 *residual, const __fp16 *addition,
+    const __fp16 *gamma, __fp16 *output,
+    uint32_t rows, uint32_t width) {
+    const uint32_t vector_count = width / QBH_HVX_F16_LANES;
+    const uint32_t vector_elements =
+        vector_count * QBH_HVX_F16_LANES;
+    const HVX_Vector *gamma_vectors = (const HVX_Vector *)gamma;
+
+    for (uint32_t row = 0U; row < rows; ++row) {
+        __fp16 *residual_row = residual + (size_t)row * width;
+        const __fp16 *addition_row = addition + (size_t)row * width;
+        __fp16 *output_row = output + (size_t)row * width;
+        HVX_Vector *residual_vectors = (HVX_Vector *)residual_row;
+        const HVX_Vector *addition_vectors =
+            (const HVX_Vector *)addition_row;
+        HVX_Vector *output_vectors = (HVX_Vector *)output_row;
+        HVX_Vector sum_lo = Q6_V_vzero();
+        HVX_Vector sum_hi = Q6_V_vzero();
+
+        for (uint32_t index = 0U; index < vector_count; ++index) {
+            const HVX_Vector value = Q6_Vhf_vadd_VhfVhf(
+                residual_vectors[index], addition_vectors[index]);
+            const HVX_VectorPair square =
+                Q6_Wqf32_vmpy_VhfVhf(value, value);
+            residual_vectors[index] = value;
+            sum_lo = Q6_Vsf_vadd_VsfVsf(
+                sum_lo, Q6_Vsf_equals_Vqf32(Q6_V_lo_W(square)));
+            sum_hi = Q6_Vsf_vadd_VsfVsf(
+                sum_hi, Q6_Vsf_equals_Vqf32(Q6_V_hi_W(square)));
+        }
+        float sum = qbh_hvx_reduce_sum_sf32(
+            Q6_Vsf_vadd_VsfVsf(sum_lo, sum_hi));
+        for (uint32_t channel = vector_elements;
+             channel < width; ++channel) {
+            residual_row[channel] = (__fp16)(
+                (float)residual_row[channel] +
+                (float)addition_row[channel]);
+            const float value = (float)residual_row[channel];
+            sum += value * value;
+        }
+        const float inverse =
+            1.0f / sqrtf(sum / (float)width + 1.0e-6f);
+        for (uint32_t index = 0U; index < vector_count; ++index) {
+            output_vectors[index] =
+                qbh_hvx_scale_then_multiply_f16_f32(
+                    residual_vectors[index], inverse,
+                    gamma_vectors[index]);
+        }
+        for (uint32_t channel = vector_elements;
+             channel < width; ++channel) {
+            output_row[channel] = (__fp16)(
+                (float)residual_row[channel] * inverse *
+                (float)gamma[channel]);
+        }
+    }
+}
+
 void qbh_hvx_qk_norm_rope_f16(__fp16 *tensor, uint32_t rows,
                                uint32_t heads, uint32_t row_stride,
                                uint32_t head_dim, const __fp16 *gamma,

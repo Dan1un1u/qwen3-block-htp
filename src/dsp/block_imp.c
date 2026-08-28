@@ -366,7 +366,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          header->common_ops_mask != QBH_BLOCK_COMMON_OPS_SCALAR) ||
         header->attribution_enabled > 1U ||
         header->numerical_audit_enabled > 1U ||
-        header->residual_mode > QBH_BLOCK_RESIDUAL_HVX ||
+        header->residual_mode >
+            QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM ||
         (header->variant == QBH_BLOCK_W4U8 &&
          header->residual_mode != QBH_BLOCK_RESIDUAL_SCALAR)) {
         return 0;
@@ -2107,6 +2108,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     uint64_t start;
     uint64_t audit_start;
     uint64_t attention_attributed_before = 0U;
+    int post_attention_norm_fused = 0;
 
     qbh_hvx_check_reset(&rms_check_metrics);
     qbh_hvx_check_reset(&rope_check_metrics);
@@ -2310,7 +2312,16 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_RESIDUAL],
             hidden_elements);
     } else {
-        if (header->residual_mode == QBH_BLOCK_RESIDUAL_HVX) {
+        if (header->residual_mode ==
+            QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM) {
+            qbh_hvx_residual_rms_norm_f16(
+                (__fp16 *)buffers->residual,
+                (const __fp16 *)buffers->attention_projection,
+                (const __fp16 *)buffers->post_norm_weight,
+                (__fp16 *)buffers->normalized,
+                QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+            post_attention_norm_fused = 1;
+        } else if (header->residual_mode == QBH_BLOCK_RESIDUAL_HVX) {
             qbh_hvx_residual_add_f16(
                 (__fp16 *)buffers->residual,
                 (const __fp16 *)buffers->attention_projection,
@@ -2342,7 +2353,10 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_NORM],
             QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
     } else {
-        if ((header->common_ops_mask & QBH_BLOCK_COMMON_OP_RMS_NORM) != 0U) {
+        if (post_attention_norm_fused != 0) {
+            /* Materialized by the fused residual/RMSNorm first pass. */
+        } else if ((header->common_ops_mask &
+                    QBH_BLOCK_COMMON_OP_RMS_NORM) != 0U) {
             qbh_hvx_rms_norm_f16(
                 (const __fp16 *)buffers->residual,
                 (const __fp16 *)buffers->post_norm_weight,
@@ -2448,7 +2462,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             &header->qparams[QBH_BLOCK_QP_BLOCK_OUTPUT],
             hidden_elements);
     } else {
-        if (header->residual_mode == QBH_BLOCK_RESIDUAL_HVX) {
+        if (header->residual_mode != QBH_BLOCK_RESIDUAL_SCALAR) {
             qbh_hvx_residual_add_f16(
                 (__fp16 *)buffers->residual,
                 (const __fp16 *)buffers->down,

@@ -225,10 +225,18 @@ static int qbh_parse_residual_mode(const char *text, uint32_t *mode) {
         *mode = QBH_BLOCK_RESIDUAL_HVX;
         return 0;
     }
+    if (strcmp(text, "fused") == 0 ||
+        strcmp(text, "hvx_fused_post_norm") == 0) {
+        *mode = QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM;
+        return 0;
+    }
     return -1;
 }
 
 static const char *qbh_residual_mode_name(uint32_t mode) {
+    if (mode == QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM) {
+        return "hvx_fused_post_norm";
+    }
     return mode == QBH_BLOCK_RESIDUAL_HVX ? "hvx_fp16" : "scalar";
 }
 
@@ -562,7 +570,7 @@ int main(int argc, char **argv) {
                         "[w4f16_hvx_workers] [w4f16_region_tiles] "
                         "[scalar|rms|rope|softmax|silu|rms_silu|"
                         "rms_silu_rope|hvx] [attribution:off|on] "
-                        "[audit:off|on] [residual:scalar|hvx]\n",
+                        "[audit:off|on] [residual:scalar|hvx|fused]\n",
                 argv[0]);
         return 2;
     }
