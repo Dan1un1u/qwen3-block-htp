@@ -471,6 +471,11 @@ static int qbh_parse_attention_pipeline_mode(
         *mode = QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP;
         return 0;
     }
+    if (strcmp(text, "gqa_qkv_dynamic") == 0 ||
+        strcmp(text, "qkv_dynamic") == 0) {
+        *mode = QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_DYNAMIC;
+        return 0;
+    }
     return -1;
 }
 
@@ -490,6 +495,9 @@ static const char *qbh_attention_pipeline_mode_name(uint32_t mode) {
     }
     if (mode == QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP) {
         return "gqa_qkv_overlap";
+    }
+    if (mode == QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_DYNAMIC) {
+        return "gqa_qkv_dynamic";
     }
     return "control";
 }
@@ -917,7 +925,7 @@ int main(int argc, char **argv) {
               QBH_BLOCK_ATTENTION_PIPELINE_CONTROL ||
           mlp_mode != QBH_BLOCK_MLP_CONTROL)) ||
         attention_pipeline_mode >
-            QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP ||
+            QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_DYNAMIC ||
         attention_hvx_contexts == 0U ||
         attention_hvx_contexts > 4U ||
         (attention_pipeline_mode ==
@@ -940,15 +948,19 @@ int main(int argc, char **argv) {
         ((attention_pipeline_mode ==
               QBH_BLOCK_ATTENTION_PIPELINE_GQA ||
           attention_pipeline_mode ==
-              QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP) &&
+              QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP ||
+          attention_pipeline_mode ==
+              QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_DYNAMIC) &&
          (((common_ops_mask &
             (QBH_BLOCK_COMMON_OP_ROPE |
              QBH_BLOCK_COMMON_OP_SOFTMAX)) !=
            (QBH_BLOCK_COMMON_OP_ROPE |
             QBH_BLOCK_COMMON_OP_SOFTMAX)) ||
           attention_pack_mode != QBH_BLOCK_ATTENTION_PACK_HVX)) ||
-        (attention_pipeline_mode ==
-             QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP &&
+        ((attention_pipeline_mode ==
+              QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP ||
+          attention_pipeline_mode ==
+              QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_DYNAMIC) &&
          variant == QBH_BLOCK_W4F16 &&
          w4f16_hvx_workers != 3U) ||
         mlp_mode > QBH_BLOCK_MLP_STREAMING ||
@@ -1040,7 +1052,7 @@ int main(int argc, char **argv) {
                         "[mlp_chunk_vectors:16|32|64|128|256] "
                         "[attention_pipeline:control|parallel_qk_norm_rope|"
                         "parallel_softmax|parallel_hvx|gqa_pipeline|"
-                        "gqa_qkv_overlap] "
+                        "gqa_qkv_overlap|gqa_qkv_dynamic] "
                         "[attention_hvx_contexts:1..4]\n",
                 argv[0]);
         return 2;
@@ -1383,7 +1395,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0032\","
+        "{\"experiment\":\"EXP-0033\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"FP16_HMX\","
         "\"projection_compute\":\"%s\","
@@ -1572,6 +1584,12 @@ int main(int argc, char **argv) {
         "\"attention_gqa_worker_work_ticks\":%" PRIu64 ","
         "\"attention_gqa_hmx_wait_ticks\":%" PRIu64 ","
         "\"attention_gqa_queue_wait_ticks\":%" PRIu64 ","
+        "\"qkv_dynamic_enabled\":%" PRIu32 ","
+        "\"qkv_dynamic_rebalanced_expand_calls\":%" PRIu64 ","
+        "\"qkv_dynamic_steal_attempts\":%" PRIu64 ","
+        "\"qkv_dynamic_steal_successes\":%" PRIu64 ","
+        "\"qkv_dynamic_main_norm_tasks\":%" PRIu64 ","
+        "\"qkv_dynamic_main_norm_ticks\":%" PRIu64 ","
         "\"release_result\":%d,\"close_result\":%d}\n",
         qbh_variant_name(variant),
         variant == QBH_BLOCK_W4U8 ? "U8xS8_integer_HMX"
@@ -1750,6 +1768,12 @@ int main(int argc, char **argv) {
         header->attention_gqa_worker_work_ticks,
         header->attention_gqa_hmx_wait_ticks,
         header->attention_gqa_queue_wait_ticks,
+        header->qkv_dynamic_enabled,
+        header->qkv_dynamic_rebalanced_expand_calls,
+        header->qkv_dynamic_steal_attempts,
+        header->qkv_dynamic_steal_successes,
+        header->qkv_dynamic_main_norm_tasks,
+        header->qkv_dynamic_main_norm_ticks,
         release_result, close_result);
 
     exit_code = warmup_result == AEE_SUCCESS &&

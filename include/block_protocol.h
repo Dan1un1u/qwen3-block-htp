@@ -6,8 +6,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(16)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(32)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(17)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(33)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -86,6 +86,7 @@ enum qbh_block_attention_pipeline_mode {
     QBH_BLOCK_ATTENTION_PIPELINE_PARALLEL_HVX = 3,
     QBH_BLOCK_ATTENTION_PIPELINE_GQA = 4,
     QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP = 5,
+    QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_DYNAMIC = 6,
 };
 
 enum qbh_block_mlp_mode {
@@ -365,6 +366,12 @@ struct qbh_block_header {
     uint64_t attention_gqa_worker_work_ticks;
     uint64_t attention_gqa_hmx_wait_ticks;
     uint64_t attention_gqa_queue_wait_ticks;
+    uint32_t qkv_dynamic_enabled;
+    uint64_t qkv_dynamic_rebalanced_expand_calls;
+    uint64_t qkv_dynamic_steal_attempts;
+    uint64_t qkv_dynamic_steal_successes;
+    uint64_t qkv_dynamic_main_norm_tasks;
+    uint64_t qkv_dynamic_main_norm_ticks;
     uint64_t scalar_math_ticks;
 
     uint64_t invocation_ticks;
