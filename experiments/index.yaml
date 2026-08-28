@@ -1352,6 +1352,7 @@ experiments:
       - e818f299fd3ae0a52841da2084bf85be5e12fac3
       - 5712ee11f921d6035acd27867d2b86fbbdf54042
       - bda5f2069370af6451b9c5a3a7b46a675fcabce5
+      - 24bd753fe2c13e268dc82cb3d5cf8ac821cff93a
     record: docs/experiments/EXP-0026.md
     decided_by: user
     decided_on: '2026-08-28'
