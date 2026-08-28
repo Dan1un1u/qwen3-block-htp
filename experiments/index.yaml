@@ -1414,3 +1414,42 @@ experiments:
       repeat10_fused_w4f16_residual_percent: 0.4215692757217767
       repeat10_fused_w4f16_vs_f16f16_host_change_percent: -7.993750814647194
       performance_characterization: hvx_fp16_vector_add_removes_the_scalar_residual_bottleneck_and_the_formal_fused_candidate_narrowly_passes_the_strict_dual_variant_host_wall_gate_while_attention_packing_and_silu_become_the_leading_targets
+  - id: EXP-0027
+    slug: f16-weight-pipeline
+    title: Establish a fair memory-bound F16F16 projection pipeline
+    parent: EXP-0026
+    variants:
+      - f16f16_serial_weight_control
+      - f16f16_async_single_tile
+      - f16f16_double_buffer_batch2
+      - w4f16_current_pipeline_control
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-f16-weight-flow-roofline
+    source_branches:
+      - codex/exp-0027-f16-weight-pipeline
+    source_commits:
+      - 24bd753fe2c13e268dc82cb3d5cf8ac821cff93a
+    record: docs/experiments/EXP-0027.md
+    decided_by: user
+    decided_on: '2026-08-28'
+    approval_ref: 'User message 2026-08-28: continue optimization; verify whether W16A16 is substantially memory-bound and remove other under-optimized work before judging W4A16'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0027-f16-weight-pipeline
+      started_on: '2026-08-28'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0027'
+      retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0027'
+      source_parent_commit: 24bd753fe2c13e268dc82cb3d5cf8ac821cff93a
+      execution_unit: qwen3_layer14_complete_block_m64
+      activation_scope: fp16_only
+      residual_mode: hvx_fused_post_norm
+      performance_audits_in_timed_path: false
+      correctness_audits_in_correctness_path: true
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      fair_control_requirement: optimize_f16f16_without_slowing_it_to_manufacture_w4f16_speedup
