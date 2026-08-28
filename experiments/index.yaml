@@ -1278,7 +1278,8 @@ experiments:
     evidence_profile: real-qwen3-block-exclusive-time-attribution
     source_branches:
       - codex/exp-0025-block-time-attribution
-    source_commits: []
+    source_commits:
+      - 6118d7b1d76906fe3cc25e7fa4ae0c67a9827e4b
     record: docs/experiments/EXP-0025.md
     decided_by: user
     decided_on: '2026-08-28'
