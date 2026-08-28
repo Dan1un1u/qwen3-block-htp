@@ -31,6 +31,18 @@ void qbh_hvx_silu_multiply_f16(const __fp16 *gate, const __fp16 *up,
                                 __fp16 *middle, uint32_t elements,
                                 struct qbh_hvx_check_metrics *check);
 
+void qbh_hvx_silu_multiply_f16_vectors(
+    const __fp16 *gate, const __fp16 *up, __fp16 *middle,
+    uint32_t first_vector, uint32_t vector_count);
+
+void qbh_hvx_silu_multiply_f16_channel64(
+    const __fp16 *gate, const __fp16 *up, __fp16 *middle,
+    uint32_t rows, uint32_t row_stride, uint32_t first_channel);
+
+void qbh_hvx_silu_multiply_f16_audit(
+    const __fp16 *gate, const __fp16 *up, const __fp16 *middle,
+    uint32_t elements, struct qbh_hvx_check_metrics *check);
+
 void qbh_hvx_residual_add_f16(__fp16 *residual,
                                const __fp16 *addition,
                                uint32_t elements);

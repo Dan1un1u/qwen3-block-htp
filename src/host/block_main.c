@@ -392,6 +392,33 @@ static const char *qbh_attention_pack_mode_name(uint32_t mode) {
     return "control";
 }
 
+static int qbh_parse_mlp_mode(const char *text, uint32_t *mode) {
+    if (strcmp(text, "control") == 0) {
+        *mode = QBH_BLOCK_MLP_CONTROL;
+        return 0;
+    }
+    if (strcmp(text, "parallel_silu") == 0 ||
+        strcmp(text, "multi_worker_silu") == 0) {
+        *mode = QBH_BLOCK_MLP_MULTI_WORKER_SILU;
+        return 0;
+    }
+    if (strcmp(text, "streaming") == 0) {
+        *mode = QBH_BLOCK_MLP_STREAMING;
+        return 0;
+    }
+    return -1;
+}
+
+static const char *qbh_mlp_mode_name(uint32_t mode) {
+    if (mode == QBH_BLOCK_MLP_MULTI_WORKER_SILU) {
+        return "multi_worker_silu";
+    }
+    if (mode == QBH_BLOCK_MLP_STREAMING) {
+        return "streaming";
+    }
+    return "control";
+}
+
 static uint64_t qbh_fnv1a64(const uint8_t *data, size_t bytes) {
     uint64_t hash = UINT64_C(1469598103934665603);
     for (size_t index = 0; index < bytes; ++index) {
@@ -674,6 +701,9 @@ int main(int argc, char **argv) {
         QBH_BLOCK_F16F16_PROJECTION_SERIAL;
     uint32_t w4f16_pipeline_mode = QBH_BLOCK_W4F16_PIPELINE_CONTROL;
     uint32_t attention_pack_mode = QBH_BLOCK_ATTENTION_PACK_CONTROL;
+    uint32_t mlp_mode = QBH_BLOCK_MLP_CONTROL;
+    uint32_t mlp_hvx_contexts = 1U;
+    uint32_t mlp_chunk_vectors = 64U;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t cursor = qbh_align_up_size(sizeof(*header), QBH_HOST_ALIGNMENT);
@@ -699,7 +729,7 @@ int main(int argc, char **argv) {
 
     memset(&warmup_metrics, 0, sizeof(warmup_metrics));
     memset(&measured_metrics, 0, sizeof(measured_metrics));
-    if (argc < 3 || argc > 13 ||
+    if (argc < 3 || argc > 16 ||
         qbh_parse_variant(argv[2], &variant) != 0 ||
         (argc >= 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
         (argc >= 5 && qbh_parse_u32(
@@ -720,6 +750,12 @@ int main(int argc, char **argv) {
                            argv[11], &w4f16_pipeline_mode) != 0) ||
         (argc >= 13 && qbh_parse_attention_pack_mode(
                            argv[12], &attention_pack_mode) != 0) ||
+        (argc >= 14 && qbh_parse_mlp_mode(
+                           argv[13], &mlp_mode) != 0) ||
+        (argc >= 15 && qbh_parse_u32(
+                           argv[14], &mlp_hvx_contexts) != 0) ||
+        (argc >= 16 && qbh_parse_u32(
+                           argv[15], &mlp_chunk_vectors) != 0) ||
         repeats == 0U || repeats > 100U ||
         w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
         (argc >= 7 && variant == QBH_BLOCK_W4U8 &&
@@ -727,7 +763,25 @@ int main(int argc, char **argv) {
         (variant == QBH_BLOCK_W4U8 &&
          (residual_mode != QBH_BLOCK_RESIDUAL_SCALAR ||
           attention_pack_mode !=
-              QBH_BLOCK_ATTENTION_PACK_CONTROL)) ||
+              QBH_BLOCK_ATTENTION_PACK_CONTROL ||
+          mlp_mode != QBH_BLOCK_MLP_CONTROL)) ||
+        mlp_mode > QBH_BLOCK_MLP_STREAMING ||
+        mlp_hvx_contexts == 0U || mlp_hvx_contexts > 4U ||
+        (mlp_mode == QBH_BLOCK_MLP_CONTROL && mlp_hvx_contexts != 1U) ||
+        (mlp_mode != QBH_BLOCK_MLP_CONTROL &&
+         (variant == QBH_BLOCK_W4U8 ||
+          (common_ops_mask & QBH_BLOCK_COMMON_OP_SILU) == 0U)) ||
+        (mlp_mode == QBH_BLOCK_MLP_STREAMING &&
+         (mlp_hvx_contexts != 4U ||
+          (variant == QBH_BLOCK_F16F16 &&
+           f16f16_projection_mode !=
+               QBH_BLOCK_F16F16_PROJECTION_BATCH2) ||
+          (variant == QBH_BLOCK_W4F16 &&
+           w4f16_pipeline_mode !=
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH))) ||
+        (mlp_chunk_vectors != 16U && mlp_chunk_vectors != 32U &&
+         mlp_chunk_vectors != 64U && mlp_chunk_vectors != 128U &&
+         mlp_chunk_vectors != 256U) ||
         (variant != QBH_BLOCK_F16F16 &&
          f16f16_projection_mode !=
              QBH_BLOCK_F16F16_PROJECTION_SERIAL) ||
@@ -765,7 +819,10 @@ int main(int argc, char **argv) {
                         "main_two_thirds|cross|hybrid_cross|"
                         "adaptive_down48_cross|adaptive_down64_cross|"
                         "adaptive_down96_cross] "
-                        "[attention_pack:control|qk_hvx|av_hvx|hvx]\n",
+                        "[attention_pack:control|qk_hvx|av_hvx|hvx] "
+                        "[mlp:control|parallel_silu|streaming] "
+                        "[mlp_hvx_contexts:1..4] "
+                        "[mlp_chunk_vectors:16|32|64|128|256]\n",
                 argv[0]);
         return 2;
     }
@@ -940,6 +997,9 @@ int main(int argc, char **argv) {
     header->f16f16_projection_mode = f16f16_projection_mode;
     header->w4f16_pipeline_mode = w4f16_pipeline_mode;
     header->attention_pack_mode = attention_pack_mode;
+    header->mlp_mode = mlp_mode;
+    header->mlp_hvx_contexts = mlp_hvx_contexts;
+    header->mlp_chunk_vectors = mlp_chunk_vectors;
     header->input_offset = input_slot.offset;
     header->input_bytes = input_slot.expected_bytes;
     header->output_bytes = output_bytes;
@@ -1094,7 +1154,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0029\","
+        "{\"experiment\":\"EXP-0030\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"FP16_HMX\","
         "\"projection_compute\":\"%s\","
@@ -1105,6 +1165,9 @@ int main(int argc, char **argv) {
         "\"f16f16_projection_mode\":\"%s\","
         "\"w4f16_pipeline_mode\":\"%s\","
         "\"attention_pack_mode\":\"%s\","
+        "\"mlp_mode\":\"%s\","
+        "\"mlp_hvx_contexts\":%" PRIu32 ","
+        "\"mlp_chunk_vectors\":%" PRIu32 ","
         "\"w4f16_scale_placement\":\"%s\","
         "\"intermediate_residency\":\"VTCM\","
         "\"warmup_rpc_result\":%d,"
@@ -1149,6 +1212,12 @@ int main(int argc, char **argv) {
         "\"w4f16_active_worker_max\":%" PRIu32 ","
         "\"w4f16_effective_region_min\":%" PRIu32 ","
         "\"w4f16_effective_region_max\":%" PRIu32 ","
+        "\"mlp_hvx_workers_created\":%" PRIu32 ","
+        "\"mlp_hvx_workers_locked\":%" PRIu32 ","
+        "\"mlp_pool_status\":%d,"
+        "\"mlp_silu_chunk_count\":%" PRIu32 ","
+        "\"mlp_stream_group_count\":%" PRIu32 ","
+        "\"mlp_down_pack_skipped\":%" PRIu32 ","
         "\"host_wall_ns\":%" PRIu64 ","
         "\"host_wall_ns_per_block\":%.3f,"
         "\"max_abs\":%.9g,\"mean_abs\":%.9g,\"rmse\":%.9g,"
@@ -1234,6 +1303,13 @@ int main(int argc, char **argv) {
         "\"w4f16_cross_prefetch_count\":%" PRIu64 ","
         "\"w4f16_cross_prefetch_wait_ticks\":%" PRIu64 ","
         "\"w4f16_cross_prefetch_lifetime_ticks\":%" PRIu64 ","
+        "\"mlp_silu_main_work_ticks\":%" PRIu64 ","
+        "\"mlp_silu_worker_work_ticks\":%" PRIu64 ","
+        "\"mlp_silu_pool_wait_ticks\":%" PRIu64 ","
+        "\"mlp_stream_worker_work_ticks\":%" PRIu64 ","
+        "\"mlp_stream_main_work_ticks\":%" PRIu64 ","
+        "\"mlp_stream_ready_wait_ticks\":%" PRIu64 ","
+        "\"mlp_stream_join_wait_ticks\":%" PRIu64 ","
         "\"release_result\":%d,\"close_result\":%d}\n",
         qbh_variant_name(variant),
         variant == QBH_BLOCK_W4U8 ? "U8xS8_integer_HMX"
@@ -1251,6 +1327,9 @@ int main(int argc, char **argv) {
                   header->w4f16_pipeline_mode)
             : "not_applicable",
         qbh_attention_pack_mode_name(header->attention_pack_mode),
+        qbh_mlp_mode_name(header->mlp_mode),
+        header->mlp_hvx_contexts,
+        header->mlp_chunk_vectors,
         variant == QBH_BLOCK_W4F16 ? "hmx_output_per_channel"
                                    : "not_applicable",
         warmup_result, warmup_run_index, warmup_end - warmup_start,
@@ -1290,6 +1369,12 @@ int main(int argc, char **argv) {
         header->w4f16_active_worker_max,
         header->w4f16_effective_region_min,
         header->w4f16_effective_region_max,
+        header->mlp_hvx_workers_created,
+        header->mlp_hvx_workers_locked,
+        header->mlp_pool_status,
+        header->mlp_silu_chunk_count,
+        header->mlp_stream_group_count,
+        header->mlp_down_pack_skipped,
         measured_end - measured_start,
         (double)(measured_end - measured_start) / repeats,
         measured_metrics.max_abs, measured_metrics.mean_abs,
@@ -1362,6 +1447,13 @@ int main(int argc, char **argv) {
         header->w4f16_cross_prefetch_count,
         header->w4f16_cross_prefetch_wait_ticks,
         header->w4f16_cross_prefetch_lifetime_ticks,
+        header->mlp_silu_main_work_ticks,
+        header->mlp_silu_worker_work_ticks,
+        header->mlp_silu_pool_wait_ticks,
+        header->mlp_stream_worker_work_ticks,
+        header->mlp_stream_main_work_ticks,
+        header->mlp_stream_ready_wait_ticks,
+        header->mlp_stream_join_wait_ticks,
         release_result, close_result);
 
     exit_code = warmup_result == AEE_SUCCESS &&

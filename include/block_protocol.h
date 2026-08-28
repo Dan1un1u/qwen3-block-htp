@@ -6,8 +6,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(9)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(29)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(11)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(30)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -74,6 +74,12 @@ enum qbh_block_attention_pack_mode {
         QBH_BLOCK_ATTENTION_PACK_AV_HVX,
 };
 
+enum qbh_block_mlp_mode {
+    QBH_BLOCK_MLP_CONTROL = 0,
+    QBH_BLOCK_MLP_MULTI_WORKER_SILU = 1,
+    QBH_BLOCK_MLP_STREAMING = 2,
+};
+
 enum qbh_block_projection_index {
     QBH_BLOCK_PROJ_Q = 0,
     QBH_BLOCK_PROJ_K = 1,
@@ -125,6 +131,8 @@ enum qbh_block_status {
     QBH_BLOCK_STATUS_DOWN_FAILED = -15,
     QBH_BLOCK_STATUS_OUTPUT_DMA_FAILED = -16,
     QBH_BLOCK_STATUS_W4F16_PIPELINE_FAILED = -17,
+    QBH_BLOCK_STATUS_MLP_POOL_FAILED = -18,
+    QBH_BLOCK_STATUS_MLP_STREAM_FAILED = -19,
 };
 
 enum qbh_block_numerical_status {
@@ -184,6 +192,9 @@ struct qbh_block_header {
     uint32_t f16f16_projection_mode;
     uint32_t w4f16_pipeline_mode;
     uint32_t attention_pack_mode;
+    uint32_t mlp_mode;
+    uint32_t mlp_hvx_contexts;
+    uint32_t mlp_chunk_vectors;
 
     uint32_t input_offset;
     uint32_t input_bytes;
@@ -248,6 +259,12 @@ struct qbh_block_header {
     uint32_t w4f16_active_worker_max;
     uint32_t w4f16_effective_region_min;
     uint32_t w4f16_effective_region_max;
+    uint32_t mlp_hvx_workers_created;
+    uint32_t mlp_hvx_workers_locked;
+    int32_t mlp_pool_status;
+    uint32_t mlp_silu_chunk_count;
+    uint32_t mlp_stream_group_count;
+    uint32_t mlp_down_pack_skipped;
 
     uint32_t prepared_session_run_index;
     uint32_t resource_vtcm_address;
@@ -308,6 +325,13 @@ struct qbh_block_header {
     uint64_t w4f16_cross_prefetch_count;
     uint64_t w4f16_cross_prefetch_wait_ticks;
     uint64_t w4f16_cross_prefetch_lifetime_ticks;
+    uint64_t mlp_silu_main_work_ticks;
+    uint64_t mlp_silu_worker_work_ticks;
+    uint64_t mlp_silu_pool_wait_ticks;
+    uint64_t mlp_stream_worker_work_ticks;
+    uint64_t mlp_stream_main_work_ticks;
+    uint64_t mlp_stream_ready_wait_ticks;
+    uint64_t mlp_stream_join_wait_ticks;
     uint64_t scalar_math_ticks;
 
     uint64_t invocation_ticks;

@@ -382,44 +382,79 @@ void qbh_hvx_qk_norm_rope_f16(__fp16 *tensor, uint32_t rows,
     }
 }
 
-void qbh_hvx_silu_multiply_f16(const __fp16 *gate, const __fp16 *up,
-                                __fp16 *middle, uint32_t elements,
-                                struct qbh_hvx_check_metrics *check) {
+static HVX_Vector qbh_hvx_silu_multiply_vector(
+    HVX_Vector gate_value, HVX_Vector up_value) {
     const HVX_Vector sign_mask = Q6_Vh_vsplat_R(0x8000);
     const HVX_Vector magnitude_mask = Q6_Vh_vsplat_R(0x7fff);
     const HVX_Vector one = Q6_Vh_vsplat_R(0x3c00);
     const HVX_Vector zero = Q6_V_vzero();
-    uint32_t vector_count = elements / QBH_HVX_F16_LANES;
-    for (uint32_t index = 0; index < vector_count; ++index) {
+    HVX_Vector negative_abs = Q6_V_vor_VV(
+        Q6_V_vand_VV(gate_value, magnitude_mask), sign_mask);
+    HVX_Vector exponential = qhmath_hvx_exp_vhf(negative_abs);
+    HVX_Vector denominator = Q6_Vhf_equals_Vqf16(
+        Q6_Vqf16_vadd_VhfVhf(one, exponential));
+    HVX_Vector reciprocal = qhmath_hvx_inv_vhf(denominator);
+    HVX_Vector negative_sigmoid = Q6_Vhf_equals_Vqf16(
+        Q6_Vqf16_vmpy_VhfVhf(exponential, reciprocal));
+    HVX_VectorPred negative =
+        Q6_Q_vcmp_gt_VhfVhf(zero, gate_value);
+    HVX_Vector sigmoid = Q6_V_vmux_QVV(
+        negative, negative_sigmoid, reciprocal);
+    HVX_Vector silu = Q6_Vqf16_vmpy_VhfVhf(
+        gate_value, sigmoid);
+    silu = Q6_Vqf16_vmpy_Vqf16Vhf(silu, up_value);
+    return Q6_Vhf_equals_Vqf16(silu);
+}
+
+void qbh_hvx_silu_multiply_f16_vectors(
+    const __fp16 *gate, const __fp16 *up, __fp16 *middle,
+    uint32_t first_vector, uint32_t vector_count) {
+    uint32_t last_vector = first_vector + vector_count;
+    for (uint32_t index = first_vector; index < last_vector; ++index) {
         HVX_Vector gate_value = ((const HVX_Vector *)gate)[index];
         HVX_Vector up_value = ((const HVX_Vector *)up)[index];
-        HVX_Vector negative_abs = Q6_V_vor_VV(
-            Q6_V_vand_VV(gate_value, magnitude_mask), sign_mask);
-        HVX_Vector exponential = qhmath_hvx_exp_vhf(negative_abs);
-        HVX_Vector denominator = Q6_Vhf_equals_Vqf16(
-            Q6_Vqf16_vadd_VhfVhf(one, exponential));
-        HVX_Vector reciprocal = qhmath_hvx_inv_vhf(denominator);
-        HVX_Vector negative_sigmoid = Q6_Vhf_equals_Vqf16(
-            Q6_Vqf16_vmpy_VhfVhf(exponential, reciprocal));
-        HVX_VectorPred negative =
-            Q6_Q_vcmp_gt_VhfVhf(zero, gate_value);
-        HVX_Vector sigmoid = Q6_V_vmux_QVV(
-            negative, negative_sigmoid, reciprocal);
-        HVX_Vector silu = Q6_Vqf16_vmpy_VhfVhf(
-            gate_value, sigmoid);
-        silu = Q6_Vqf16_vmpy_Vqf16Vhf(silu, up_value);
-        ((HVX_Vector *)middle)[index] = Q6_Vhf_equals_Vqf16(silu);
+        ((HVX_Vector *)middle)[index] =
+            qbh_hvx_silu_multiply_vector(gate_value, up_value);
     }
-    if (check != NULL) {
-        for (uint32_t index = 0; index < elements; ++index) {
-            float gate_value = (float)gate[index];
-            __fp16 reference = (__fp16)(
-                gate_value / (1.0f + expf(-gate_value)) *
-                (float)up[index]);
-            qbh_hvx_check_add(
-                check, (float)middle[index], (float)reference);
-        }
+}
+
+void qbh_hvx_silu_multiply_f16_channel64(
+    const __fp16 *gate, const __fp16 *up, __fp16 *middle,
+    uint32_t rows, uint32_t row_stride, uint32_t first_channel) {
+    for (uint32_t row = 0U; row < rows; ++row) {
+        size_t offset = (size_t)row * row_stride + first_channel;
+        const HVX_Vector gate_value =
+            *(const HVX_Vector *)(gate + offset);
+        const HVX_Vector up_value =
+            *(const HVX_Vector *)(up + offset);
+        *(HVX_Vector *)(middle + offset) =
+            qbh_hvx_silu_multiply_vector(gate_value, up_value);
     }
+}
+
+void qbh_hvx_silu_multiply_f16_audit(
+    const __fp16 *gate, const __fp16 *up, const __fp16 *middle,
+    uint32_t elements, struct qbh_hvx_check_metrics *check) {
+    if (check == NULL) {
+        return;
+    }
+    for (uint32_t index = 0; index < elements; ++index) {
+        float gate_value = (float)gate[index];
+        __fp16 reference = (__fp16)(
+            gate_value / (1.0f + expf(-gate_value)) *
+            (float)up[index]);
+        qbh_hvx_check_add(
+            check, (float)middle[index], (float)reference);
+    }
+}
+
+void qbh_hvx_silu_multiply_f16(const __fp16 *gate, const __fp16 *up,
+                                __fp16 *middle, uint32_t elements,
+                                struct qbh_hvx_check_metrics *check) {
+    qbh_hvx_silu_multiply_f16_vectors(
+        gate, up, middle, 0U, elements / QBH_HVX_F16_LANES);
+    qbh_hvx_silu_multiply_f16_audit(
+        gate, up, middle, elements, check);
 }
 
 void qbh_hvx_stable_causal_softmax_f16(__fp16 *scores,
