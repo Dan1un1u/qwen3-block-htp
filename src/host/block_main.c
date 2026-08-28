@@ -256,10 +256,18 @@ static int qbh_parse_f16f16_projection_mode(const char *text,
         *mode = QBH_BLOCK_F16F16_PROJECTION_BATCH2;
         return 0;
     }
+    if (strcmp(text, "gate4") == 0 ||
+        strcmp(text, "gate_up_batch4") == 0) {
+        *mode = QBH_BLOCK_F16F16_PROJECTION_GATE4;
+        return 0;
+    }
     return -1;
 }
 
 static const char *qbh_f16f16_projection_mode_name(uint32_t mode) {
+    if (mode == QBH_BLOCK_F16F16_PROJECTION_GATE4) {
+        return "gate_up_batch4";
+    }
     if (mode == QBH_BLOCK_F16F16_PROJECTION_BATCH2) {
         return "double_buffer_batch2";
     }
@@ -902,7 +910,9 @@ int main(int argc, char **argv) {
          (mlp_hvx_contexts != 4U ||
           (variant == QBH_BLOCK_F16F16 &&
            f16f16_projection_mode !=
-               QBH_BLOCK_F16F16_PROJECTION_BATCH2) ||
+               QBH_BLOCK_F16F16_PROJECTION_BATCH2 &&
+           f16f16_projection_mode !=
+               QBH_BLOCK_F16F16_PROJECTION_GATE4) ||
           (variant == QBH_BLOCK_W4F16 &&
            w4f16_pipeline_mode !=
                QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH &&
@@ -959,7 +969,7 @@ int main(int argc, char **argv) {
                         "[scalar|rms|rope|softmax|silu|rms_silu|"
                         "rms_silu_rope|hvx] [attribution:off|on] "
                         "[audit:off|on] [residual:scalar|hvx|fused] "
-                        "[f16_projection:serial|async|batch2] "
+                        "[f16_projection:serial|async|batch2|gate4] "
                         "[w4_pipeline:control|early|hybrid|main_half|"
                         "main_two_thirds|cross|hybrid_cross|"
                         "adaptive_down48_cross|adaptive_down64_cross|"

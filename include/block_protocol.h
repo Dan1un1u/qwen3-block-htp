@@ -50,6 +50,7 @@ enum qbh_block_f16f16_projection_mode {
     QBH_BLOCK_F16F16_PROJECTION_SERIAL = 0,
     QBH_BLOCK_F16F16_PROJECTION_ASYNC_SINGLE = 1,
     QBH_BLOCK_F16F16_PROJECTION_BATCH2 = 2,
+    QBH_BLOCK_F16F16_PROJECTION_GATE4 = 3,
 };
 
 enum qbh_block_w4f16_pipeline_mode {

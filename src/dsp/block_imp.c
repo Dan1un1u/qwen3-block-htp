@@ -296,8 +296,10 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         variant == QBH_BLOCK_W4F16
             ? QBH_BLOCK_W4F16_HMX_BATCH_N_TILES
             : (variant == QBH_BLOCK_F16F16 &&
-               f16f16_projection_mode ==
-                   QBH_BLOCK_F16F16_PROJECTION_BATCH2
+               (f16f16_projection_mode ==
+                    QBH_BLOCK_F16F16_PROJECTION_BATCH2 ||
+                f16f16_projection_mode ==
+                    QBH_BLOCK_F16F16_PROJECTION_GATE4)
                    ? QBH_BLOCK_F16F16_BATCH_N_TILES
                    : 1U);
     uint32_t scale_batch_factor =
@@ -468,7 +470,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->residual_mode >
             QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM ||
         header->f16f16_projection_mode >
-            QBH_BLOCK_F16F16_PROJECTION_BATCH2 ||
+            QBH_BLOCK_F16F16_PROJECTION_GATE4 ||
         header->w4f16_pipeline_mode >
             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH ||
         (header->attention_pack_mode &
@@ -521,7 +523,9 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          (header->mlp_hvx_contexts != 4U ||
           (header->variant == QBH_BLOCK_F16F16 &&
            header->f16f16_projection_mode !=
-               QBH_BLOCK_F16F16_PROJECTION_BATCH2) ||
+               QBH_BLOCK_F16F16_PROJECTION_BATCH2 &&
+           header->f16f16_projection_mode !=
+               QBH_BLOCK_F16F16_PROJECTION_GATE4) ||
           (header->variant == QBH_BLOCK_W4F16 &&
            header->w4f16_pipeline_mode !=
                QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH &&
@@ -2004,11 +2008,7 @@ static __attribute__((noinline)) int qbh_run_f16f16_pipelined_projection(
     const void *activation_tiles, void *output) {
     uint32_t k_tiles = desc->k / QBH_HMX_FP16_COLS;
     uint32_t n_tiles = desc->n / QBH_HMX_FP16_COLS;
-    uint32_t batch_n_tiles =
-        header->f16f16_projection_mode ==
-                QBH_BLOCK_F16F16_PROJECTION_BATCH2
-            ? QBH_BLOCK_F16F16_BATCH_N_TILES
-            : 1U;
+    uint32_t batch_n_tiles = 1U;
     uint32_t weight_bytes_per_tile =
         k_tiles * QBH_HMX_FP16_TILE_BYTES;
     uint8_t *weight_slots[2] = {
@@ -2016,6 +2016,19 @@ static __attribute__((noinline)) int qbh_run_f16f16_pipelined_projection(
     struct qbh_dma_aligned_desc_1d prefetch_descriptor
         __attribute__((aligned(64)));
     int prefetch_active = 0;
+
+    if (header->f16f16_projection_mode ==
+            QBH_BLOCK_F16F16_PROJECTION_BATCH2 ||
+        header->f16f16_projection_mode ==
+            QBH_BLOCK_F16F16_PROJECTION_GATE4) {
+        batch_n_tiles = QBH_BLOCK_F16F16_BATCH_N_TILES;
+    }
+    if (header->f16f16_projection_mode ==
+            QBH_BLOCK_F16F16_PROJECTION_GATE4 &&
+        (desc == &header->projections[QBH_BLOCK_PROJ_GATE] ||
+         desc == &header->projections[QBH_BLOCK_PROJ_UP])) {
+        batch_n_tiles = 4U;
+    }
 
     header->f16f16_weight_batch_n_tiles = batch_n_tiles;
     {
