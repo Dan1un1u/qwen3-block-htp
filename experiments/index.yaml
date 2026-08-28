@@ -1487,3 +1487,41 @@ experiments:
       w4f16_faster_than_selected_f16f16: false
       stop_for_w4_pipeline_discussion: true
       performance_characterization: f16f16_is_weight_flow_dominated_but_the_old_serial_control_underused_dma_hmx_overlap_and_command_batching_after_fair_batch2_scheduling_current_w4f16_is_1_50_percent_slower_at_block_level_and_7_25_percent_slower_in_projections_so_w4_expand_handoff_must_be_repaired_before_shared_ops
+  - id: EXP-0028
+    slug: w4-stream-pipeline
+    title: Recover the W4F16 advantage with an early-region DMA-HVX-HMX pipeline
+    parent: EXP-0027
+    variants:
+      - f16f16_exp0027_batch2_control
+      - w4f16_exp0027_pipeline_control
+      - w4f16_early_region_handoff_candidates
+      - w4f16_bounded_lookahead_candidates
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4f16-streaming-critical-path
+    source_branches:
+      - codex/exp-0028-w4-stream-pipeline
+    source_commits:
+      - cc88df0a5e8f927daedeb43803e3d2073045736d
+    record: docs/experiments/EXP-0028.md
+    decided_by: user
+    decided_on: '2026-08-28'
+    approval_ref: 'User message 2026-08-28: 同意继续0028'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0028-w4-stream-pipeline
+      started_on: '2026-08-28'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0028'
+      retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0028'
+      source_parent_commit: cc88df0a5e8f927daedeb43803e3d2073045736d
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_f16f16_control: f16f16_exp0027_double_buffer_batch2
+      shared_operator_changes_allowed: false
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      local_speed_gate: w4f16_candidate_strictly_faster_than_f16f16_batch2_for_projection_and_complete_block_at_repeat1_and_repeat10
+      stretch_target: at_least_5_percent_complete_block_and_20_percent_projection_improvement_over_f16f16_batch2
