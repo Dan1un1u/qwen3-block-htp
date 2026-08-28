@@ -1640,15 +1640,17 @@ experiments:
       - exp0029_mlp_control
       - multi_worker_silu_candidate
       - streaming_gate_up_swiglu_down_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-streaming-gated-mlp
     source_branches:
       - codex/exp-0030-streaming-mlp
     source_commits:
       - 403bb7e25079ac785e8c216318f867e2c5c25e8d
+      - f25609cb594ef27b5581a91387429805568851cb
+      - 3bb967d60c6c91b51f26bf426510f0af99885be7
     record: docs/experiments/EXP-0030.md
     decided_by: user
     decided_on: '2026-08-28'
@@ -1657,6 +1659,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0030-streaming-mlp
       started_on: '2026-08-28'
+      completed_on: '2026-08-28'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0030'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0030'
@@ -1670,3 +1673,39 @@ experiments:
       fixed_vtcm_request_bytes: 8388608
       intermediate_ddr_allowed: false
       local_speed_gate: final_candidate_reduces_complete_mlp_ticks_and_does_not_regress_complete_block_host_wall_for_both_f16f16_and_w4f16_at_repeat1_and_repeat10
+      formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0030\20260828T113422Z_3bb967d60c6c'
+      artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0030\artifacts\3bb967d60c6c'
+      matrix: 'D:\llm_exp\results\qwen3-block-htp\exp0030\20260828T113422Z_3bb967d60c6c\matrix_gate.json'
+      formal_runs: 66
+      parent_block_package_hash_audit: true
+      fixed_vtcm_request_gate: pass
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      intermediate_spill_fill_count: 0
+      boot_id_stable: true
+      output_hash_stability_gate: pass
+      multi_worker_silu_gate: pass
+      interleaved_streaming_mlp_gate: pass
+      audit_free_performance_mode_gate: pass
+      top_level_ledger_closure_gate: pass
+      f16f16_output_hash: 704252c89780e695
+      w4f16_output_hash: f18b9abbe1487231
+      repeat1_f16f16_control_host_wall_ns: 5259010
+      repeat1_f16f16_streaming_host_wall_ns: 3541562
+      repeat1_f16f16_host_change_percent: -32.657249178077244
+      repeat1_w4f16_control_host_wall_ns: 4928646
+      repeat1_w4f16_streaming_host_wall_ns: 3418802
+      repeat1_w4f16_host_change_percent: -30.634052435496486
+      repeat10_f16f16_control_host_wall_ns_per_block: 4835750
+      repeat10_f16f16_streaming_host_wall_ns_per_block: 3160724
+      repeat10_f16f16_host_change_percent: -34.63839114925295
+      repeat10_w4f16_control_host_wall_ns_per_block: 4506666
+      repeat10_w4f16_streaming_host_wall_ns_per_block: 3019218
+      repeat10_w4f16_host_change_percent: -33.00550049552145
+      repeat10_w4f16_change_from_f16f16_percent: -4.476986918187109
+      repeat10_f16f16_control_complete_mlp_ticks_per_block: 64504
+      repeat10_f16f16_streaming_complete_mlp_ticks_per_block: 32290
+      repeat10_w4f16_control_complete_mlp_ticks_per_block: 58283
+      repeat10_w4f16_streaming_complete_mlp_ticks_per_block: 29581
+      milestone_c_early_down_hmx: infeasible_under_single_hmx_context_and_byte_exact_output_contract
+      performance_characterization: persistent_hvx_workers_and_generation_tagged_64_channel_groups_remove_the_full_tensor_silu_and_down_pack_barriers_halving_the_complete_mlp_interval_and_reducing_complete_block_host_wall_by_33_to_35_percent_while_preserving_zero_intermediate_ddr_and_a_4_48_percent_w4f16_advantage
