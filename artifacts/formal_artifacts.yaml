@@ -157,3 +157,15 @@ artifacts:
     path: 'D:\llm_exp\models\qwen3-block-htp\exp0022\artifacts\25157d78f13e'
     source_commit: 25157d78f13e4be8215530639b166e772eaadb2c
     manifest: 'D:\llm_exp\results\qwen3-block-htp\exp0022\20260827T123409Z_25157d78f13e\artifact_sha256.txt'
+  - id: EXP-0025-results
+    experiment: EXP-0025
+    kind: formal-result-set
+    path: 'D:\llm_exp\results\qwen3-block-htp\exp0025\20260828T060713Z_a8cba869e36e'
+    source_commit: a8cba869e36e5174730d7fe603358c621eb7ec2f
+    manifest: 'D:\llm_exp\results\qwen3-block-htp\exp0025\20260828T060713Z_a8cba869e36e\matrix_gate.json'
+  - id: EXP-0025-binaries
+    experiment: EXP-0025
+    kind: retained-device-binaries
+    path: 'D:\llm_exp\models\qwen3-block-htp\exp0025\artifacts\a8cba869e36e'
+    source_commit: a8cba869e36e5174730d7fe603358c621eb7ec2f
+    manifest: 'D:\llm_exp\results\qwen3-block-htp\exp0025\20260828T060713Z_a8cba869e36e\artifact_sha256.txt'

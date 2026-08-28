@@ -1271,9 +1271,9 @@ experiments:
     variants:
       - f16f16_hvx_common_ops
       - w4f16_hvx_common_ops
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: not_applicable
     evidence_profile: real-qwen3-block-exclusive-time-attribution
     source_branches:
@@ -1290,10 +1290,41 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0025-block-time-attribution
       started_on: '2026-08-28'
-      completed_on: null
+      completed_on: '2026-08-28'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0025'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0025'
       parent_formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0024\20260827T204237Z_b9d14c599379'
       attribution_mode: exclusive_adjacent_timestamp_ledger
       optimization_changes_allowed: false
+      formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0025\20260828T060713Z_a8cba869e36e'
+      artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0025\artifacts\a8cba869e36e'
+      matrix: 'D:\llm_exp\results\qwen3-block-htp\exp0025\20260828T060713Z_a8cba869e36e\matrix_gate.json'
+      formal_runs: 44
+      parent_block_package_hash_audit: pass
+      exact_full_vtcm_gate: pass
+      vtcm_request_bytes: 8388608
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      intermediate_spill_fill_count: 0
+      qnn_dependency_scan: none
+      boot_id_stable: true
+      output_hash_equivalence_gate: pass
+      top_level_ledger_closure_gate: pass
+      attention_ledger_closure_gate: pass
+      instrumentation_overhead_gate: pass
+      repeat10_f16f16_instrumentation_overhead_percent: 0.2029250962325202
+      repeat10_w4f16_instrumentation_overhead_percent: -0.17544474894993778
+      repeat10_w4f16_host_wall_ns_median: 59088005.2
+      repeat10_w4f16_invocation_ticks_median: 1130791.7
+      repeat10_w4f16_unattributed_ticks_median: 3.1
+      repeat10_w4f16_unattributed_percent: 0.0002741434346413404
+      repeat10_w4f16_projection_percent: 10.068441429133236
+      repeat10_w4f16_attention_percent: 39.71474145061376
+      repeat10_w4f16_residual_stages_including_audit_percent: 42.825844936781905
+      repeat10_w4f16_numerical_audit_percent: 37.10713476230857
+      repeat10_w4f16_residual_add_excluding_audit_percent: 41.64540648821529
+      repeat10_w4f16_attention_excluding_audit_percent: 13.526620331578313
+      repeat10_w4f16_softmax_percent_of_block: 0.4698743367147106
+      repeat10_w4f16_qk_av_pack_percent_of_block: 12.886776583167353
+      performance_characterization: timing_ledger_closes_and_shows_residual_adds_plus_always_on_numerical_audits_explain_the_old_gap_while_attention_runtime_is_pack_dominated_not_softmax_dominated
