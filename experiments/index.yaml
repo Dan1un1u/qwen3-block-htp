@@ -1340,9 +1340,9 @@ experiments:
       - scalar_residual_audit_free_control
       - hvx_residual_add
       - conditional_post_attention_residual_rmsnorm_fusion
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-hvx-fp16-residual
     source_branches:
@@ -1361,7 +1361,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0026-hvx-residual
       started_on: '2026-08-28'
-      completed_on: null
+      completed_on: '2026-08-28'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0026'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0026'
@@ -1371,3 +1371,46 @@ experiments:
       performance_audits_in_timed_path: false
       correctness_audits_in_correctness_path: true
       fusion_candidate_requires_hvx_add_gate: true
+      formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0026\20260828T070240Z_24bd753fe2c1'
+      artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0026\artifacts\24bd753fe2c1'
+      matrix: 'D:\llm_exp\results\qwen3-block-htp\exp0026\20260828T070240Z_24bd753fe2c1\matrix_gate.json'
+      formal_runs: 66
+      parent_block_package_hash_audit: pass
+      exact_full_vtcm_gate: pass
+      vtcm_request_bytes: 8388608
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      intermediate_spill_fill_count: 0
+      qnn_dependency_scan: none
+      boot_id_stable: true
+      output_hash_equivalence_gate: pass
+      audit_free_performance_mode_gate: pass
+      top_level_ledger_closure_gate: pass
+      attention_ledger_closure_gate: pass
+      static_hvx_residual_gate: pass
+      hvx_residual_tick_gate: pass
+      hvx_complete_block_host_gate: pass
+      fused_complete_block_host_gate: pass
+      selected_residual_mode: hvx_fused_post_norm
+      repeat10_f16f16_scalar_host_wall_ms: 38.5622552
+      repeat10_f16f16_hvx_host_wall_ms: 13.6919843
+      repeat10_f16f16_fused_host_wall_ms: 13.6892083
+      repeat10_f16f16_hvx_change_from_scalar_percent: -64.4938185565454
+      repeat10_f16f16_fused_change_from_hvx_percent: -0.020274636160666493
+      repeat10_w4f16_scalar_host_wall_ms: 37.4702291
+      repeat10_w4f16_hvx_host_wall_ms: 12.5977604
+      repeat10_w4f16_fused_host_wall_ms: 12.5949271
+      repeat10_w4f16_hvx_change_from_scalar_percent: -66.37928109171875
+      repeat10_w4f16_fused_change_from_hvx_percent: -0.022490505534622507
+      repeat10_f16f16_scalar_residual_ticks: 473886.5
+      repeat10_f16f16_hvx_residual_ticks: 189.4
+      repeat10_w4f16_scalar_residual_ticks: 473362.0
+      repeat10_w4f16_hvx_residual_ticks: 189.3
+      repeat10_f16f16_hvx_residual_change_percent: -99.96003262384559
+      repeat10_w4f16_hvx_residual_change_percent: -99.96000946421555
+      repeat10_fused_w4f16_attention_percent: 63.60202396503016
+      repeat10_fused_w4f16_projection_percent: 19.536577383143133
+      repeat10_fused_w4f16_silu_percent: 13.426671607224026
+      repeat10_fused_w4f16_residual_percent: 0.4215692757217767
+      repeat10_fused_w4f16_vs_f16f16_host_change_percent: -7.993750814647194
+      performance_characterization: hvx_fp16_vector_add_removes_the_scalar_residual_bottleneck_and_the_formal_fused_candidate_narrowly_passes_the_strict_dual_variant_host_wall_gate_while_attention_packing_and_silu_become_the_leading_targets
