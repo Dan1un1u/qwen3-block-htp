@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #include "hvx_fp16_ops.h"
+#include "hmx_fp16.h"
 #include "qhmath_hvx_vector.h"
 
 #define QBH_HVX_BYTES UINT32_C(128)
@@ -482,6 +483,41 @@ void qbh_hvx_silu_multiply_f16_channel64(
         *(HVX_Vector *)(middle + offset) =
             qbh_hvx_silu_multiply_vector(gate_value, up_value);
     }
+}
+
+void qbh_hvx_silu_multiply_f16_crouton_tiles(
+    const __fp16 *gate_tiles, const __fp16 *up_tiles,
+    __fp16 *down_tiles, uint32_t m_tiles, uint32_t n_tiles,
+    uint32_t down_k_tiles, uint32_t first_k_tile) {
+    const uint32_t vectors_per_tile =
+        QBH_HMX_FP16_TILE_BYTES / sizeof(HVX_Vector);
+
+    for (uint32_t row_tile = 0U; row_tile < m_tiles; ++row_tile) {
+        for (uint32_t column_tile = 0U;
+             column_tile < n_tiles; ++column_tile) {
+            const size_t source_tile =
+                qbh_hmx_fp16_matrix_tile_offset(
+                    row_tile, column_tile, n_tiles);
+            const size_t destination_tile =
+                qbh_hmx_fp16_matrix_tile_offset(
+                    row_tile, first_k_tile + column_tile,
+                    down_k_tiles);
+            const HVX_Vector *gate_vectors =
+                (const HVX_Vector *)(gate_tiles + source_tile);
+            const HVX_Vector *up_vectors =
+                (const HVX_Vector *)(up_tiles + source_tile);
+            HVX_Vector *down_vectors =
+                (HVX_Vector *)(down_tiles + destination_tile);
+
+            for (uint32_t vector = 0U;
+                 vector < vectors_per_tile; ++vector) {
+                down_vectors[vector] =
+                    qbh_hvx_silu_multiply_vector(
+                        gate_vectors[vector], up_vectors[vector]);
+            }
+        }
+    }
+    asm volatile("barrier" ::: "memory");
 }
 
 void qbh_hvx_silu_multiply_f16_audit(

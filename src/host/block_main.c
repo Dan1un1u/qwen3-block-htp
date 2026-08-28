@@ -508,6 +508,11 @@ static int qbh_parse_mlp_mode(const char *text, uint32_t *mode) {
         *mode = QBH_BLOCK_MLP_STREAMING;
         return 0;
     }
+    if (strcmp(text, "crouton_native") == 0 ||
+        strcmp(text, "crouton") == 0) {
+        *mode = QBH_BLOCK_MLP_CROUTON_NATIVE;
+        return 0;
+    }
     return -1;
 }
 
@@ -517,6 +522,9 @@ static const char *qbh_mlp_mode_name(uint32_t mode) {
     }
     if (mode == QBH_BLOCK_MLP_STREAMING) {
         return "streaming";
+    }
+    if (mode == QBH_BLOCK_MLP_CROUTON_NATIVE) {
+        return "crouton_native";
     }
     return "control";
 }
@@ -951,7 +959,7 @@ int main(int argc, char **argv) {
              QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP &&
          variant == QBH_BLOCK_W4F16 &&
          w4f16_hvx_workers != 3U) ||
-        mlp_mode > QBH_BLOCK_MLP_STREAMING ||
+        mlp_mode > QBH_BLOCK_MLP_CROUTON_NATIVE ||
         mlp_hvx_contexts == 0U || mlp_hvx_contexts > 4U ||
         (mlp_mode == QBH_BLOCK_MLP_CONTROL && mlp_hvx_contexts != 1U) ||
         (mlp_mode != QBH_BLOCK_MLP_CONTROL &&
@@ -975,6 +983,11 @@ int main(int argc, char **argv) {
                QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH &&
            w4f16_pipeline_mode !=
                QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH))) ||
+        (mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE &&
+         (variant != QBH_BLOCK_W4F16 ||
+          mlp_hvx_contexts != 4U ||
+          w4f16_pipeline_mode !=
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH)) ||
         (mlp_chunk_vectors != 16U && mlp_chunk_vectors != 32U &&
          mlp_chunk_vectors != 64U && mlp_chunk_vectors != 128U &&
          mlp_chunk_vectors != 256U) ||
@@ -1035,7 +1048,8 @@ int main(int argc, char **argv) {
                         "adaptive_down96_gate4_cross|"
                         "adaptive_down96_gate4_dma8_cross] "
                         "[attention_pack:control|qk_hvx|av_hvx|hvx] "
-                        "[mlp:control|parallel_silu|streaming] "
+                        "[mlp:control|parallel_silu|streaming|"
+                        "crouton_native] "
                         "[mlp_hvx_contexts:1..4] "
                         "[mlp_chunk_vectors:16|32|64|128|256] "
                         "[attention_pipeline:control|parallel_qk_norm_rope|"
@@ -1383,7 +1397,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0032\","
+        "{\"experiment\":\"EXP-0036\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"FP16_HMX\","
         "\"projection_compute\":\"%s\","
@@ -1449,6 +1463,7 @@ int main(int argc, char **argv) {
         "\"mlp_silu_chunk_count\":%" PRIu32 ","
         "\"mlp_stream_group_count\":%" PRIu32 ","
         "\"mlp_down_pack_skipped\":%" PRIu32 ","
+        "\"mlp_down_input_hash\":\"%016" PRIx64 "\","
         "\"attention_hvx_workers_created\":%" PRIu32 ","
         "\"attention_hvx_workers_locked\":%" PRIu32 ","
         "\"attention_pool_status\":%d,"
@@ -1640,6 +1655,7 @@ int main(int argc, char **argv) {
         header->mlp_silu_chunk_count,
         header->mlp_stream_group_count,
         header->mlp_down_pack_skipped,
+        header->mlp_down_input_hash,
         header->attention_hvx_workers_created,
         header->attention_hvx_workers_locked,
         header->attention_pool_status,

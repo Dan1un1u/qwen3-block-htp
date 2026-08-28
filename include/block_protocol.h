@@ -6,8 +6,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(16)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(32)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(17)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(36)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -92,6 +92,7 @@ enum qbh_block_mlp_mode {
     QBH_BLOCK_MLP_CONTROL = 0,
     QBH_BLOCK_MLP_MULTI_WORKER_SILU = 1,
     QBH_BLOCK_MLP_STREAMING = 2,
+    QBH_BLOCK_MLP_CROUTON_NATIVE = 3,
 };
 
 enum qbh_block_projection_index {
@@ -283,6 +284,7 @@ struct qbh_block_header {
     uint32_t mlp_silu_chunk_count;
     uint32_t mlp_stream_group_count;
     uint32_t mlp_down_pack_skipped;
+    uint64_t mlp_down_input_hash;
     uint32_t attention_hvx_workers_created;
     uint32_t attention_hvx_workers_locked;
     int32_t attention_pool_status;
