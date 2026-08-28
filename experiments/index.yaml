@@ -1505,6 +1505,7 @@ experiments:
       - codex/exp-0028-w4-stream-pipeline
     source_commits:
       - cc88df0a5e8f927daedeb43803e3d2073045736d
+      - 6ba4e75de485a3070397342b8e4ffe09c8dbe15e
     record: docs/experiments/EXP-0028.md
     decided_by: user
     decided_on: '2026-08-28'
