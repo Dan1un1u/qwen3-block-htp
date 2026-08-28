@@ -6,8 +6,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(11)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(30)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(12)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(31)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -74,6 +74,14 @@ enum qbh_block_attention_pack_mode {
         QBH_BLOCK_ATTENTION_PACK_AV_HVX,
 };
 
+enum qbh_block_attention_pipeline_mode {
+    QBH_BLOCK_ATTENTION_PIPELINE_CONTROL = 0,
+    QBH_BLOCK_ATTENTION_PIPELINE_PARALLEL_QK_NORM_ROPE = 1,
+    QBH_BLOCK_ATTENTION_PIPELINE_PARALLEL_SOFTMAX = 2,
+    QBH_BLOCK_ATTENTION_PIPELINE_PARALLEL_HVX = 3,
+    QBH_BLOCK_ATTENTION_PIPELINE_GQA = 4,
+};
+
 enum qbh_block_mlp_mode {
     QBH_BLOCK_MLP_CONTROL = 0,
     QBH_BLOCK_MLP_MULTI_WORKER_SILU = 1,
@@ -133,6 +141,8 @@ enum qbh_block_status {
     QBH_BLOCK_STATUS_W4F16_PIPELINE_FAILED = -17,
     QBH_BLOCK_STATUS_MLP_POOL_FAILED = -18,
     QBH_BLOCK_STATUS_MLP_STREAM_FAILED = -19,
+    QBH_BLOCK_STATUS_ATTENTION_POOL_FAILED = -20,
+    QBH_BLOCK_STATUS_ATTENTION_PIPELINE_FAILED = -21,
 };
 
 enum qbh_block_numerical_status {
@@ -192,6 +202,8 @@ struct qbh_block_header {
     uint32_t f16f16_projection_mode;
     uint32_t w4f16_pipeline_mode;
     uint32_t attention_pack_mode;
+    uint32_t attention_pipeline_mode;
+    uint32_t attention_hvx_contexts;
     uint32_t mlp_mode;
     uint32_t mlp_hvx_contexts;
     uint32_t mlp_chunk_vectors;
@@ -265,6 +277,12 @@ struct qbh_block_header {
     uint32_t mlp_silu_chunk_count;
     uint32_t mlp_stream_group_count;
     uint32_t mlp_down_pack_skipped;
+    uint32_t attention_hvx_workers_created;
+    uint32_t attention_hvx_workers_locked;
+    int32_t attention_pool_status;
+    uint32_t attention_qk_norm_task_count;
+    uint32_t attention_softmax_task_count;
+    uint32_t attention_gqa_group_count;
 
     uint32_t prepared_session_run_index;
     uint32_t resource_vtcm_address;
@@ -332,6 +350,15 @@ struct qbh_block_header {
     uint64_t mlp_stream_main_work_ticks;
     uint64_t mlp_stream_ready_wait_ticks;
     uint64_t mlp_stream_join_wait_ticks;
+    uint64_t attention_qk_norm_main_work_ticks;
+    uint64_t attention_qk_norm_worker_work_ticks;
+    uint64_t attention_qk_norm_pool_wait_ticks;
+    uint64_t attention_softmax_main_work_ticks;
+    uint64_t attention_softmax_worker_work_ticks;
+    uint64_t attention_softmax_pool_wait_ticks;
+    uint64_t attention_gqa_worker_work_ticks;
+    uint64_t attention_gqa_hmx_wait_ticks;
+    uint64_t attention_gqa_queue_wait_ticks;
     uint64_t scalar_math_ticks;
 
     uint64_t invocation_ticks;
@@ -362,6 +389,7 @@ struct qbh_block_header {
     uint64_t attention_av_hmx_ticks;
     uint64_t attention_av_unpack_ticks;
     uint64_t attention_av_audit_ticks;
+    uint64_t attention_gqa_pipeline_ticks;
     uint64_t attention_unattributed_ticks;
 };
 

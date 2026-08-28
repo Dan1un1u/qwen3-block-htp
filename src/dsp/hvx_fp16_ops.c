@@ -382,6 +382,58 @@ void qbh_hvx_qk_norm_rope_f16(__fp16 *tensor, uint32_t rows,
     }
 }
 
+void qbh_hvx_qk_norm_rope_f16_head(
+    __fp16 *tensor, uint32_t rows, uint32_t row_stride,
+    uint32_t head_dim, uint32_t head, const __fp16 *gamma,
+    const __fp16 *cosine, const __fp16 *sine) {
+    const uint32_t half_dim = head_dim / 2U;
+    const HVX_Vector gamma_first = *(const HVX_Vector *)gamma;
+    const HVX_Vector gamma_second =
+        *(const HVX_Vector *)(gamma + half_dim);
+
+    for (uint32_t row = 0U; row < rows; ++row) {
+        const HVX_Vector cosine_first =
+            *(const HVX_Vector *)(cosine + (size_t)row * head_dim);
+        const HVX_Vector cosine_second = *(const HVX_Vector *)(
+            cosine + (size_t)row * head_dim + half_dim);
+        const HVX_Vector sine_first =
+            *(const HVX_Vector *)(sine + (size_t)row * head_dim);
+        const HVX_Vector sine_second = *(const HVX_Vector *)(
+            sine + (size_t)row * head_dim + half_dim);
+        __fp16 *values = tensor + (size_t)row * row_stride +
+                         (size_t)head * head_dim;
+        float sum = qbh_hvx_sum_squares_f16(values, head_dim);
+        __fp16 inverse = (__fp16)(
+            1.0f / sqrtf(sum / (float)head_dim + 1.0e-6f));
+        HVX_Vector inverse_vector =
+            Q6_Vh_vsplat_R(*(const uint16_t *)&inverse);
+        HVX_Vector first = *(const HVX_Vector *)values;
+        HVX_Vector second =
+            *(const HVX_Vector *)(values + half_dim);
+        HVX_Vector first_norm = Q6_Vqf16_vmpy_VhfVhf(
+            first, gamma_first);
+        HVX_Vector second_norm = Q6_Vqf16_vmpy_VhfVhf(
+            second, gamma_second);
+        first = Q6_Vhf_equals_Vqf16(
+            Q6_Vqf16_vmpy_Vqf16Vhf(
+                first_norm, inverse_vector));
+        second = Q6_Vhf_equals_Vqf16(
+            Q6_Vqf16_vmpy_Vqf16Vhf(
+                second_norm, inverse_vector));
+
+        HVX_Vector first_rotated = Q6_Vqf16_vsub_Vqf16Vqf16(
+            Q6_Vqf16_vmpy_VhfVhf(first, cosine_first),
+            Q6_Vqf16_vmpy_VhfVhf(second, sine_first));
+        HVX_Vector second_rotated = Q6_Vqf16_vadd_Vqf16Vqf16(
+            Q6_Vqf16_vmpy_VhfVhf(second, cosine_second),
+            Q6_Vqf16_vmpy_VhfVhf(first, sine_second));
+        *(HVX_Vector *)values =
+            Q6_Vhf_equals_Vqf16(first_rotated);
+        *(HVX_Vector *)(values + half_dim) =
+            Q6_Vhf_equals_Vqf16(second_rotated);
+    }
+}
+
 static HVX_Vector qbh_hvx_silu_multiply_vector(
     HVX_Vector gate_value, HVX_Vector up_value) {
     const HVX_Vector sign_mask = Q6_Vh_vsplat_R(0x8000);

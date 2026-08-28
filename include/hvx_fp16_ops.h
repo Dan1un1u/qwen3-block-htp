@@ -27,6 +27,11 @@ void qbh_hvx_qk_norm_rope_f16(__fp16 *tensor, uint32_t rows,
                                const __fp16 *sine,
                                struct qbh_hvx_check_metrics *check);
 
+void qbh_hvx_qk_norm_rope_f16_head(
+    __fp16 *tensor, uint32_t rows, uint32_t row_stride,
+    uint32_t head_dim, uint32_t head, const __fp16 *gamma,
+    const __fp16 *cosine, const __fp16 *sine);
+
 void qbh_hvx_silu_multiply_f16(const __fp16 *gate, const __fp16 *up,
                                 __fp16 *middle, uint32_t elements,
                                 struct qbh_hvx_check_metrics *check);
