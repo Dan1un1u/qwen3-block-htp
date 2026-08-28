@@ -333,6 +333,12 @@ static int qbh_parse_w4f16_pipeline_mode(const char *text,
             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH;
         return 0;
     }
+    if (strcmp(text, "adaptive_down96_gate4_cross") == 0 ||
+        strcmp(text, "adaptive_down96_gate4_cross_prefetch") == 0) {
+        *mode =
+            QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH;
+        return 0;
+    }
     return -1;
 }
 
@@ -374,6 +380,10 @@ static const char *qbh_w4f16_pipeline_mode_name(uint32_t mode) {
     if (mode ==
         QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH) {
         return "adaptive_down96_gate8_cross_prefetch";
+    }
+    if (mode ==
+        QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH) {
+        return "adaptive_down96_gate4_cross_prefetch";
     }
     return "control";
 }
@@ -899,7 +909,9 @@ int main(int argc, char **argv) {
            w4f16_pipeline_mode !=
                QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE16_CROSS_PREFETCH &&
            w4f16_pipeline_mode !=
-               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH))) ||
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH &&
+           w4f16_pipeline_mode !=
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH))) ||
         (mlp_chunk_vectors != 16U && mlp_chunk_vectors != 32U &&
          mlp_chunk_vectors != 64U && mlp_chunk_vectors != 128U &&
          mlp_chunk_vectors != 256U) ||
@@ -921,7 +933,9 @@ int main(int argc, char **argv) {
           w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE16_CROSS_PREFETCH ||
           w4f16_pipeline_mode ==
-              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH) &&
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH ||
+          w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH) &&
          w4f16_hvx_workers != 3U) ||
         ((w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN64_CROSS_PREFETCH ||
@@ -932,7 +946,9 @@ int main(int argc, char **argv) {
           w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE16_CROSS_PREFETCH ||
           w4f16_pipeline_mode ==
-              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH) &&
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH ||
+          w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH) &&
          w4f16_region_tiles != 32U) ||
         (w4f16_region_tiles != 8U && w4f16_region_tiles != 16U &&
          w4f16_region_tiles != 32U && w4f16_region_tiles != 64U) ||
@@ -948,7 +964,8 @@ int main(int argc, char **argv) {
                         "main_two_thirds|cross|hybrid_cross|"
                         "adaptive_down48_cross|adaptive_down64_cross|"
                         "adaptive_down96_cross|adaptive_down96_gate16_cross|"
-                        "adaptive_down96_gate8_cross] "
+                        "adaptive_down96_gate8_cross|"
+                        "adaptive_down96_gate4_cross] "
                         "[attention_pack:control|qk_hvx|av_hvx|hvx] "
                         "[mlp:control|parallel_silu|streaming] "
                         "[mlp_hvx_contexts:1..4] "
