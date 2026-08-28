@@ -1323,6 +1323,10 @@ experiments:
       repeat10_w4f16_attention_percent: 39.71474145061376
       repeat10_w4f16_residual_stages_including_audit_percent: 42.825844936781905
       repeat10_w4f16_numerical_audit_percent: 37.10713476230857
+      repeat10_w4f16_estimated_audit_free_ticks: 711187.3
+      repeat10_w4f16_estimated_audit_free_residual_percent: 66.21642428091728
+      repeat10_w4f16_estimated_audit_free_attention_percent: 21.50740037118211
+      repeat10_w4f16_estimated_audit_free_projection_percent: 6.62438713402222
       repeat10_w4f16_residual_add_excluding_audit_percent: 41.64540648821529
       repeat10_w4f16_attention_excluding_audit_percent: 13.526620331578313
       repeat10_w4f16_softmax_percent_of_block: 0.4698743367147106
