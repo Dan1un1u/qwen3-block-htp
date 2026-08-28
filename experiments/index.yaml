@@ -1709,3 +1709,43 @@ experiments:
       repeat10_w4f16_streaming_complete_mlp_ticks_per_block: 29581
       milestone_c_early_down_hmx: infeasible_under_single_hmx_context_and_byte_exact_output_contract
       performance_characterization: persistent_hvx_workers_and_generation_tagged_64_channel_groups_remove_the_full_tensor_silu_and_down_pack_barriers_halving_the_complete_mlp_interval_and_reducing_complete_block_host_wall_by_33_to_35_percent_while_preserving_zero_intermediate_ddr_and_a_4_48_percent_w4f16_advantage
+  - id: EXP-0031
+    slug: gqa-attention-pipeline
+    title: Pipeline QK Norm, RoPE, QK HMX, standard Softmax, and AV HMX by GQA group
+    parent: EXP-0030
+    variants:
+      - exp0030_attention_control
+      - multi_worker_qk_norm_rope_candidate
+      - multi_worker_standard_softmax_candidate
+      - gqa_group_attention_pipeline_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-gqa-attention-critical-path
+    source_branches:
+      - codex/exp-0031-gqa-attention-pipeline
+    source_commits:
+      - 3bb967d60c6c91b51f26bf426510f0af99885be7
+    record: docs/experiments/EXP-0031.md
+    decided_by: user
+    decided_on: '2026-08-28'
+    approval_ref: 'User message 2026-08-28: 可以，开始工作'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0031-gqa-attention-pipeline
+      started_on: '2026-08-28'
+    evidence:
+      formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0031'
+      retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0031'
+      source_parent_commit: 3bb967d60c6c91b51f26bf426510f0af99885be7
+      execution_unit: qwen3_layer14_complete_block_m64
+      activation_scope: fp16_only
+      fixed_f16f16_control: exp0030_f16f16_streaming_mlp
+      fixed_w4f16_control: exp0030_w4f16_streaming_mlp
+      repeat_contract: repeat1_and_repeat10
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      standard_fp16_softmax_required: true
+      local_speed_gate: selected_candidate_reduces_qk_norm_rope_plus_attention_ticks_and_does_not_regress_complete_block_host_wall_for_both_f16f16_and_w4f16_at_repeat1_and_repeat10
