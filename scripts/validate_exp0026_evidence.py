@@ -131,9 +131,12 @@ def validate_record(record, variant, repeat, mode, audit_mode):
     for field, value in fixed.items():
         require(record, field, value)
 
+    positive_timing_fields = list(TIMING_FIELDS[:17])
+    if mode == "fused":
+        positive_timing_fields.remove("post_attention_norm_ticks")
     for field in (
         "warmup_host_wall_ns", "host_wall_ns", "host_wall_ns_per_block",
-    ) + TIMING_FIELDS[:17]:
+    ) + tuple(positive_timing_fields):
         value = record.get(field)
         if not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
             raise SystemExit(f"invalid positive {mode}.{variant}.{field}: {value!r}")
