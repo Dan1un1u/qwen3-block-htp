@@ -2083,15 +2083,16 @@ experiments:
       - exp0034_f16f16_batch4_control
       - exp0034_w4f16_dma8_scale_cache_control
       - w4f16_q_inbound_prefetch_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4f16-q-inbound-prefetch
     source_branches:
       - codex/exp-0035-q-inbound-prefetch
     source_commits:
       - c39dfefdb24c1bb9670a263a6605f833653800cc
+      - 247ceb9a2a28a56cb0fe95dca5a23cdd54e758b0
     record: docs/experiments/EXP-0035.md
     decided_by: user
     decided_on: '2026-08-28'
@@ -2100,7 +2101,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0035-q-inbound-prefetch
       started_on: '2026-08-28'
-      completed_on: null
+      completed_on: '2026-08-29'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0035'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0035'
@@ -2111,3 +2112,50 @@ experiments:
       intermediate_ddr_allowed: false
       primary_scope: move_first_q_packed_weight_dma_before_input_rmsnorm
       local_speed_gate: q_projection_wall_and_complete_block_host_wall_strictly_improve_over_w4_control_at_repeat1_and_repeat10_while_w4_remains_faster_than_f16
+      formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0035\20260828T155755Z_247ceb9a2a28'
+      artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0035\artifacts\247ceb9a2a28'
+      matrix: 'D:\llm_exp\results\qwen3-block-htp\exp0035\20260828T155755Z_247ceb9a2a28\matrix_gate.json'
+      source_commit: 247ceb9a2a28a56cb0fe95dca5a23cdd54e758b0
+      stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      formal_run_records: 33
+      parent_block_package_hashes_audited: 118
+      fixed_vtcm_request_bytes: 8388608
+      w4_peak_vtcm_bytes: 7843328
+      observed_intermediate_ddr_bytes: 0
+      spill_fill_count: 0
+      single_fastrpc_per_execution_unit: true
+      single_hmx_owner: true
+      qnn_dependency: false
+      candidate_byte_exact: true
+      f16_output_hash: 704252c89780e695
+      w4_output_hash: f18b9abbe1487231
+      implementation_reference_mismatches: 0
+      implementation_reference_max_lsb: 0
+      q_inbound_prefetch_bytes_per_block: 131072
+      q_inbound_prefetch_descriptors_per_block: 1
+      q_inbound_prefetch_starts_per_block: 1
+      q_inbound_prefetch_completions_per_block: 1
+      q_inbound_prefetch_consumes_per_block: 1
+      repeat1_prefetch_lifetime_ticks: 992.0
+      repeat1_prefetch_overlap_window_ticks: 881.0
+      repeat1_prefetch_consume_wait_ticks: 1.0
+      repeat1_w4_control_q_ticks: 4894.0
+      repeat1_w4_candidate_q_ticks: 4797.0
+      repeat1_q_change_vs_control_percent: -1.9820187985288062
+      repeat1_f16_host_wall_ns_per_block: 2954167.0
+      repeat1_w4_control_host_wall_ns_per_block: 2827083.0
+      repeat1_w4_candidate_host_wall_ns_per_block: 2831979.0
+      repeat1_host_change_vs_control_percent: 0.17318203957932266
+      repeat10_prefetch_lifetime_ticks: 985.6
+      repeat10_prefetch_overlap_window_ticks: 876.6
+      repeat10_prefetch_consume_wait_ticks: 0.9
+      repeat10_w4_control_q_ticks: 4897.8
+      repeat10_w4_candidate_q_ticks: 4815.1
+      repeat10_q_change_vs_control_percent: -1.6885132100126543
+      repeat10_f16_host_wall_ns_per_block: 2523750.0
+      repeat10_w4_control_host_wall_ns_per_block: 2411421.9
+      repeat10_w4_candidate_host_wall_ns_per_block: 2415776.0
+      repeat10_host_change_vs_control_percent: 0.18056151849661362
+      local_speed_gate_result: fail
+      rejected_diagnostic: first_q_bundle_was_fully_overlapped_and_reduced_q_wall_but_the_saved_interval_was_only_about_two_percent_of_q_and_did_not_reduce_complete_block_host_wall
+      performance_characterization: the_first_nonoverlapped_q_bundle_is_real_but_does_not_explain_the_superlinear_q_regression_inferred_by_exp0034_and_its_small_local_saving_is_below_downstream_schedule_variation
