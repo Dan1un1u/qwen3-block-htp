@@ -1831,18 +1831,24 @@ experiments:
     parent: EXP-0031
     variants:
       - exp0031_qkv_overlap_f16f16_control
+      - f16f16_gate_up_batch4_fair_control
       - exp0031_qkv_overlap_w4f16_control
-      - w4f16_gate_up_handoff_candidates
-      - w4f16_gate_up_lookahead_candidates
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+      - w4f16_gate_up_region16_and_region8_diagnostics
+      - w4f16_gate_up_batch4_dma4_candidate
+      - w4f16_gate_up_batch4_dma8_scale_cache_candidate
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4f16-gate-up-critical-path
     source_branches:
       - codex/exp-0032-gate-up-w4-pipeline
     source_commits:
       - 3638b167afd687939786f714fc48987021c02d94
+      - 9f6ef79d79e23cbc92261f39a868b81ba83958c7
+      - 07d6333dc3221521d64aaf611499700e46f51d37
+      - b5a3cfc8fb590fecd3a06d8afa0caac2681471ac
+      - 91ba193660513bd0675c0a091db199aa09df1773
     record: docs/experiments/EXP-0032.md
     decided_by: user
     decided_on: '2026-08-28'
@@ -1851,15 +1857,71 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0032-gate-up-w4-pipeline
       started_on: '2026-08-28'
-      completed_on: null
+      completed_on: '2026-08-28'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0032'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0032'
+      formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0032\20260828T133911Z_91ba19366051'
+      retained_artifact: 'D:\llm_exp\models\qwen3-block-htp\exp0032\artifacts\91ba19366051'
+      matrix: 'D:\llm_exp\results\qwen3-block-htp\exp0032\20260828T133911Z_91ba19366051\matrix_gate.json'
       source_parent_commit: 3638b167afd687939786f714fc48987021c02d94
+      source_commit: 91ba193660513bd0675c0a091db199aa09df1773
       execution_unit: qwen3_layer14_complete_block_m64
       activation_scope: fp16_only
+      stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      formal_run_records: 55
+      parent_block_package_hashes_audited: 118
+      selected_candidate: w4_b4_dma8_cache
       fixed_vtcm_request_bytes: 8388608
+      selected_peak_vtcm_bytes: 7843328
+      gate_up_scale_cache_bytes: 98304
       intermediate_ddr_allowed: false
+      observed_intermediate_ddr_bytes: 0
+      spill_fill_count: 0
+      single_fastrpc_per_execution_unit: true
+      single_hmx_owner: true
+      qnn_dependency: false
       fixed_attention_mode: exp0031_qkv_head_readiness_overlap
       fixed_mlp_mode: exp0030_streaming_gate_up_swiglu_down
       local_speed_gate: w4f16_gate_up_and_complete_block_strictly_improve_over_w4f16_control_and_w4f16_gate_up_becomes_faster_than_f16f16_at_repeat1_and_repeat10
+      local_speed_gate_result: pass
+      f16_controls_byte_exact: true
+      w4_candidates_byte_exact: true
+      f16_output_hash: 704252c89780e695
+      w4_output_hash: f18b9abbe1487231
+      implementation_reference_mismatches: 0
+      implementation_reference_max_lsb: 0
+      implementation_reference_max_abs: 0.0625
+      implementation_reference_cosine: 0.999999996
+      repeat1_f16_b4_gate_up_ticks: 21891.0
+      repeat1_w4_control_gate_up_ticks: 23197.0
+      repeat1_selected_gate_up_ticks: 21695.0
+      repeat1_f16_b4_host_wall_ns_per_block: 2934375.0
+      repeat1_w4_control_host_wall_ns_per_block: 2914010.0
+      repeat1_selected_host_wall_ns_per_block: 2816667.0
+      repeat1_gate_up_change_vs_f16_b4_percent: -0.8953451189986805
+      repeat1_gate_up_change_vs_w4_control_percent: -6.474975212311939
+      repeat1_host_change_vs_f16_b4_percent: -4.011348242811497
+      repeat1_host_change_vs_w4_control_percent: -3.3405170195023315
+      repeat10_f16_b4_gate_up_ticks: 21935.3
+      repeat10_w4_control_gate_up_ticks: 23660.6
+      repeat10_selected_gate_up_ticks: 21786.2
+      repeat10_f16_b4_host_wall_ns_per_block: 2532182.3
+      repeat10_w4_control_host_wall_ns_per_block: 2496734.3
+      repeat10_selected_host_wall_ns_per_block: 2384614.6
+      repeat10_gate_up_change_vs_f16_b4_percent: -0.6797262859409181
+      repeat10_gate_up_change_vs_w4_control_percent: -7.922030717733264
+      repeat10_host_change_vs_f16_b4_percent: -5.827688630474981
+      repeat10_host_change_vs_w4_control_percent: -4.490654051574483
+      selected_gate_up_hmx_commands_per_block: 256
+      control_gate_up_hmx_commands_per_block: 352
+      repeat10_selected_expand_ticks: 14245.2
+      repeat10_control_expand_ticks: 15639.1
+      repeat10_selected_hmx_wait_ticks: 15686.9
+      repeat10_control_hmx_wait_ticks: 18366.4
+      repeat10_selected_prefetch_wait_ticks: 402.8
+      repeat10_control_prefetch_wait_ticks: 911.7
+      repeat10_selected_scale_init_ticks: 11.5
+      repeat10_control_scale_init_ticks: 184.1
+      rejected_diagnostic: region16_and_region8_increased_pool_wait_hmx_wait_unpack_and_synchronization
+      performance_characterization: gate_up_batch4_reduces_hmx_submission_count_dma8_halves_packed_weight_prefetch_boundaries_and_a_preencoded_exact_hmx_scale_cache_removes_hot_path_scale_conversion_while_preserving_math_and_zero_ddr_residency

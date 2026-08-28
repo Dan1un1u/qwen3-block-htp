@@ -214,3 +214,25 @@ HMX owner, and runs standard Softmax on an HVX context while other groups make
 progress. Scores, probabilities, worker scratch, and output remain VTCM state.
 _Avoid_: concurrent HMX ownership, online FlashAttention, changed Softmax
 mathematics, per-head FastRPC
+
+**Fair Gate/Up Control**:
+The fastest valid F16F16 Gate/Up schedule under the same complete-block
+contract as a W4F16 candidate. For EXP-0032 this is the batch-four F16F16
+schedule, not the inherited batch-two schedule.
+_Avoid_: inherited control by default, unoptimized F16 comparator, micrograph
+control
+
+**Gate/Up DMA-8 Bundle**:
+A packed-W4 prefetch boundary containing eight Gate/Up output bundles. Its
+resident compressed data feeds two consecutive four-output-tile HMX commands
+while preserving the fixed expanded-weight plan and zero-intermediate-DDR
+contract.
+_Avoid_: eight-output HMX command, larger expanded-weight arena, DDR cache
+
+**Pre-encoded HMX Scale Cache**:
+A read-only VTCM copy of the exact FP16 HMX scale blocks deterministically
+derived from the Project Variant's existing FP32 per-channel scales before the
+timed RPC. It removes repeated hot-path representation conversion without
+changing quantization parameters, scale mathematics, or rounding.
+_Avoid_: new calibration, approximate scale, persistent DDR intermediate,
+changed numerical recipe
