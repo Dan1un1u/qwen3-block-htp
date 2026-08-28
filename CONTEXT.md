@@ -268,3 +268,10 @@ mathematically correct and zero-DDR yet slow when too few slots force the
 producer behind one consumer; capacity and worker exposure are scheduling
 parameters that require performance evidence.
 _Avoid_: storage-only ring, zero-DDR performance proof, unbounded queue
+
+**Head-Aligned QKV Batch-4**:
+A Q/K/V projection boundary in which one packed-weight DMA bundle, one HVX W4
+expansion group, one HMX output command, and one Q/K readiness publication all
+cover four 32-channel tiles, exactly one 128-channel Qwen3 head. Stage A may
+apply it to Q alone; extending it to K/V requires the preceding gate to pass.
+_Avoid_: QKV weight fusion, changed head layout, repeated first-Q prefetch

@@ -2242,3 +2242,40 @@ experiments:
       stage_b_gate_result: pass
       local_speed_gate_result: pass
       performance_characterization: crouton_native_swiglu_removes_row_major_materialization_and_w4_batch8_reduces_gate_up_commands_from_96_to_48_with_repeat1_and_repeat10_complete_block_speedups_while_f16_batch8_is_neutral
+  - id: EXP-0037
+    slug: head-aligned-qkv-batch4
+    title: Align Q/K/V DMA, W4 expansion, HMX, and head-readiness at four output tiles
+    parent: EXP-0036
+    variants:
+      - exp0036_w4f16_qkv_batch2_control
+      - w4f16_q_only_batch4_stage_a
+      - w4f16_qkv_batch4_stage_b_if_stage_a_passes
+      - f16f16_qkv_batch4_fair_control_if_stage_a_passes
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-head-aligned-qkv-projection
+    source_branches:
+      - codex/exp-0037-head-aligned-qkv-batch4
+    source_commits:
+      - a959219dfa95d6b7b1b45aa18d4e03f3d60d656c
+    record: docs/experiments/EXP-0037.md
+    decided_by: user
+    decided_on: '2026-08-29'
+    approval_ref: 'User message 2026-08-29: 确认'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0037-head-aligned-qkv-batch4
+      started_on: '2026-08-29'
+    evidence:
+      formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0037'
+      retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0037'
+      source_parent_commit: a959219dfa95d6b7b1b45aa18d4e03f3d60d656c
+      execution_unit: qwen3_layer14_complete_block_m64
+      activation_scope: fp16_only
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      primary_scope: align_qkv_dma4_hvx_expand4_hmx_batch4_and_one_head_readiness_boundary
+      stage_a_gate: q_only_batch4_must_be_byte_exact_and_strictly_reduce_q_projection_wall_and_complete_block_host_wall_at_repeat1_and_repeat10
+      stage_b_gate: only_after_stage_a_passes_extend_batch4_to_kv_and_give_f16f16_the_same_qkv_batch4_search_opportunity
