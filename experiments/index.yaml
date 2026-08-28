@@ -1550,3 +1550,41 @@ experiments:
       stretch_projection_20_percent_gate: fail
       stretch_complete_block_5_percent_gate: fail
       performance_characterization: adaptive_32_tile_regions_with_two_hvx_workers_for_qkvo_gate_up_96_tile_regions_with_three_workers_for_down_and_six_cross_projection_first_batch_prefetches_restore_a_strict_w4f16_win_over_the_fair_f16f16_control_but_shared_attention_and_silu_limit_complete_block_gain_to_2_59_percent
+  - id: EXP-0029
+    slug: attention-crouton-packing
+    title: Remove the QK and AV Crouton-packing critical path
+    parent: EXP-0028
+    variants:
+      - exp0028_attention_pack_control
+      - qk_direct_crouton_candidate
+      - av_direct_crouton_candidate
+      - combined_qk_av_crouton_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-attention-crouton-critical-path
+    source_branches:
+      - codex/exp-0029-attention-crouton-packing
+    source_commits:
+      - 6ba4e75de485a3070397342b8e4ffe09c8dbe15e
+    record: docs/experiments/EXP-0029.md
+    decided_by: user
+    decided_on: '2026-08-28'
+    approval_ref: 'User message 2026-08-28: confirm EXP-0029 attention-crouton-packing'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0029-attention-crouton-packing
+      started_on: '2026-08-28'
+    evidence:
+      formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0029'
+      retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0029'
+      source_parent_commit: 6ba4e75de485a3070397342b8e4ffe09c8dbe15e
+      execution_unit: qwen3_layer14_complete_block_m64
+      activation_scope: fp16_only
+      fixed_f16f16_control: f16f16_exp0027_double_buffer_batch2
+      fixed_w4f16_control: w4f16_exp0028_adaptive96
+      repeat_contract: repeat1_and_repeat10
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      local_speed_gate: combined_candidate_reduces_attention_ticks_and_does_not_regress_complete_block_host_wall_for_both_f16f16_and_w4f16_at_repeat1_and_repeat10
