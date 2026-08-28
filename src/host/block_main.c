@@ -262,10 +262,18 @@ static int qbh_parse_f16f16_projection_mode(const char *text,
         *mode = QBH_BLOCK_F16F16_PROJECTION_GATE4;
         return 0;
     }
+    if (strcmp(text, "gate8") == 0 ||
+        strcmp(text, "gate_up_batch8") == 0) {
+        *mode = QBH_BLOCK_F16F16_PROJECTION_GATE8;
+        return 0;
+    }
     return -1;
 }
 
 static const char *qbh_f16f16_projection_mode_name(uint32_t mode) {
+    if (mode == QBH_BLOCK_F16F16_PROJECTION_GATE8) {
+        return "gate_up_batch8";
+    }
     if (mode == QBH_BLOCK_F16F16_PROJECTION_GATE4) {
         return "gate_up_batch4";
     }
@@ -513,6 +521,11 @@ static int qbh_parse_mlp_mode(const char *text, uint32_t *mode) {
         *mode = QBH_BLOCK_MLP_CROUTON_NATIVE;
         return 0;
     }
+    if (strcmp(text, "crouton_native_batch8") == 0 ||
+        strcmp(text, "crouton_batch8") == 0) {
+        *mode = QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8;
+        return 0;
+    }
     return -1;
 }
 
@@ -525,6 +538,9 @@ static const char *qbh_mlp_mode_name(uint32_t mode) {
     }
     if (mode == QBH_BLOCK_MLP_CROUTON_NATIVE) {
         return "crouton_native";
+    }
+    if (mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8) {
+        return "crouton_native_batch8";
     }
     return "control";
 }
@@ -959,7 +975,7 @@ int main(int argc, char **argv) {
              QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP &&
          variant == QBH_BLOCK_W4F16 &&
          w4f16_hvx_workers != 3U) ||
-        mlp_mode > QBH_BLOCK_MLP_CROUTON_NATIVE ||
+        mlp_mode > QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 ||
         mlp_hvx_contexts == 0U || mlp_hvx_contexts > 4U ||
         (mlp_mode == QBH_BLOCK_MLP_CONTROL && mlp_hvx_contexts != 1U) ||
         (mlp_mode != QBH_BLOCK_MLP_CONTROL &&
@@ -988,6 +1004,14 @@ int main(int argc, char **argv) {
           mlp_hvx_contexts != 4U ||
           w4f16_pipeline_mode !=
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH)) ||
+        (mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 &&
+         (mlp_hvx_contexts != 4U ||
+          (variant == QBH_BLOCK_W4F16 &&
+           w4f16_pipeline_mode !=
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH) ||
+          (variant == QBH_BLOCK_F16F16 &&
+           f16f16_projection_mode !=
+               QBH_BLOCK_F16F16_PROJECTION_GATE8))) ||
         (mlp_chunk_vectors != 16U && mlp_chunk_vectors != 32U &&
          mlp_chunk_vectors != 64U && mlp_chunk_vectors != 128U &&
          mlp_chunk_vectors != 256U) ||
@@ -1039,7 +1063,7 @@ int main(int argc, char **argv) {
                         "[scalar|rms|rope|softmax|silu|rms_silu|"
                         "rms_silu_rope|hvx] [attribution:off|on] "
                         "[audit:off|on] [residual:scalar|hvx|fused] "
-                        "[f16_projection:serial|async|batch2|gate4] "
+                        "[f16_projection:serial|async|batch2|gate4|gate8] "
                         "[w4_pipeline:control|early|hybrid|main_half|"
                         "main_two_thirds|cross|hybrid_cross|"
                         "adaptive_down48_cross|adaptive_down64_cross|"
@@ -1049,7 +1073,7 @@ int main(int argc, char **argv) {
                         "adaptive_down96_gate4_dma8_cross] "
                         "[attention_pack:control|qk_hvx|av_hvx|hvx] "
                         "[mlp:control|parallel_silu|streaming|"
-                        "crouton_native] "
+                        "crouton_native|crouton_native_batch8] "
                         "[mlp_hvx_contexts:1..4] "
                         "[mlp_chunk_vectors:16|32|64|128|256] "
                         "[attention_pipeline:control|parallel_qk_norm_rope|"

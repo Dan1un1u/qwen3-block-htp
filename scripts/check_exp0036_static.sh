@@ -52,6 +52,8 @@ required = (
     "QBH_BLOCK_EXPERIMENT UINT32_C(36)",
     "QBH_BLOCK_ABI_VERSION UINT32_C(17)",
     "QBH_BLOCK_MLP_CROUTON_NATIVE",
+    "QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8",
+    "QBH_BLOCK_F16F16_PROJECTION_GATE8",
     "QBH_BLOCK_MLP_CROUTON_RING_SLOTS",
     "qbh_hvx_silu_multiply_f16_crouton_tiles(",
     "mlp_crouton_slot_consumed",
@@ -79,7 +81,8 @@ if re.search(r"intermediate_[a-z_]+_offset", protocol):
     raise SystemExit("DSP ABI exposes an intermediate DDR tensor")
 PY
 
-printf '{"experiment":"EXP-0036","stage":"A","batch4":true,'
-printf '"crouton_native_swiglu":true,"fixed_vtcm_request_bytes":8388608,'
+printf '{"experiment":"EXP-0036","stage":"A+B","batch4":true,'
+printf '"batch8":true,"crouton_native_swiglu":true,'
+printf '"fixed_vtcm_request_bytes":8388608,'
 printf '"intermediate_ddr_allowed":false,"single_hmx_owner":true,'
 printf '"qnn_dependency":false}\n'
