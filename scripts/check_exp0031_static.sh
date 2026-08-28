@@ -43,6 +43,7 @@ strings "${host_cli}" > "${static_output_dir}/host.strings.txt"
 grep -q 'EXP-0031' "${static_output_dir}/host.strings.txt"
 grep -q 'parallel_hvx' "${static_output_dir}/host.strings.txt"
 grep -q 'gqa_pipeline' "${static_output_dir}/host.strings.txt"
+grep -q 'gqa_qkv_overlap' "${static_output_dir}/host.strings.txt"
 grep -q 'qbh_hvx_qk_norm_rope_f16_head' \
     "${static_output_dir}/dsp.symbols.txt"
 grep -q 'qbh_hvx_stable_causal_softmax_f16' \
@@ -72,9 +73,12 @@ required = (
     "QBH_BLOCK_ATTENTION_PIPELINE_PARALLEL_SOFTMAX",
     "QBH_BLOCK_ATTENTION_PIPELINE_PARALLEL_HVX",
     "QBH_BLOCK_ATTENTION_PIPELINE_GQA",
+    "QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP",
     "qbh_hvx_pool_qk_norm_rope(",
     "qbh_hvx_pool_softmax(",
     "qbh_hvx_pool_gqa_attention(",
+    "qbh_hvx_pool_qk_norm_rope_start_async(",
+    "qbh_hvx_pool_qk_norm_rope_publish(",
     "qbh_attention_gqa_submit(",
     "qurt_mutex_lock(&pool->attention_hmx_mutex)",
     "qbh_hvx_qk_norm_rope_f16_head(",
@@ -102,5 +106,6 @@ PY
 
 printf '{"experiment":"EXP-0031","parallel_qk_norm_rope":true,'
 printf '"parallel_standard_softmax":true,"gqa_attention_pipeline":true,'
+printf '"qkv_head_readiness_overlap":true,'
 printf '"single_hmx_owner":true,"fixed_vtcm_request_bytes":8388608,'
 printf '"intermediate_ddr_allowed":false,"qnn_dependency":false}\n'

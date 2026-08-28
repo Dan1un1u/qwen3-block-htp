@@ -417,6 +417,11 @@ static int qbh_parse_attention_pipeline_mode(
         *mode = QBH_BLOCK_ATTENTION_PIPELINE_GQA;
         return 0;
     }
+    if (strcmp(text, "gqa_qkv_overlap") == 0 ||
+        strcmp(text, "qkv_overlap") == 0) {
+        *mode = QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP;
+        return 0;
+    }
     return -1;
 }
 
@@ -433,6 +438,9 @@ static const char *qbh_attention_pipeline_mode_name(uint32_t mode) {
     }
     if (mode == QBH_BLOCK_ATTENTION_PIPELINE_GQA) {
         return "gqa_pipeline";
+    }
+    if (mode == QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP) {
+        return "gqa_qkv_overlap";
     }
     return "control";
 }
@@ -820,7 +828,7 @@ int main(int argc, char **argv) {
               QBH_BLOCK_ATTENTION_PIPELINE_CONTROL ||
           mlp_mode != QBH_BLOCK_MLP_CONTROL)) ||
         attention_pipeline_mode >
-            QBH_BLOCK_ATTENTION_PIPELINE_GQA ||
+            QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP ||
         attention_hvx_contexts == 0U ||
         attention_hvx_contexts > 4U ||
         (attention_pipeline_mode ==
@@ -840,14 +848,20 @@ int main(int argc, char **argv) {
           attention_pipeline_mode ==
               QBH_BLOCK_ATTENTION_PIPELINE_PARALLEL_HVX) &&
          (common_ops_mask & QBH_BLOCK_COMMON_OP_SOFTMAX) == 0U) ||
-        (attention_pipeline_mode ==
-             QBH_BLOCK_ATTENTION_PIPELINE_GQA &&
+        ((attention_pipeline_mode ==
+              QBH_BLOCK_ATTENTION_PIPELINE_GQA ||
+          attention_pipeline_mode ==
+              QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP) &&
          (((common_ops_mask &
             (QBH_BLOCK_COMMON_OP_ROPE |
              QBH_BLOCK_COMMON_OP_SOFTMAX)) !=
            (QBH_BLOCK_COMMON_OP_ROPE |
             QBH_BLOCK_COMMON_OP_SOFTMAX)) ||
           attention_pack_mode != QBH_BLOCK_ATTENTION_PACK_HVX)) ||
+        (attention_pipeline_mode ==
+             QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP &&
+         variant == QBH_BLOCK_W4F16 &&
+         w4f16_hvx_workers != 3U) ||
         mlp_mode > QBH_BLOCK_MLP_STREAMING ||
         mlp_hvx_contexts == 0U || mlp_hvx_contexts > 4U ||
         (mlp_mode == QBH_BLOCK_MLP_CONTROL && mlp_hvx_contexts != 1U) ||
@@ -907,7 +921,8 @@ int main(int argc, char **argv) {
                         "[mlp_hvx_contexts:1..4] "
                         "[mlp_chunk_vectors:16|32|64|128|256] "
                         "[attention_pipeline:control|parallel_qk_norm_rope|"
-                        "parallel_softmax|parallel_hvx|gqa_pipeline] "
+                        "parallel_softmax|parallel_hvx|gqa_pipeline|"
+                        "gqa_qkv_overlap] "
                         "[attention_hvx_contexts:1..4]\n",
                 argv[0]);
         return 2;

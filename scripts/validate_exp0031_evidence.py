@@ -13,6 +13,7 @@ MODES = {
     "softmax": ("parallel_softmax", 4),
     "parallel": ("parallel_hvx", 4),
     "gqa": ("gqa_pipeline", 4),
+    "overlap": ("gqa_qkv_overlap", 4),
 }
 CONFIGS = {
     f"{variant}_{name}": (variant, mode, contexts)
@@ -110,9 +111,10 @@ def validate_record(record, config_name, repeat, audit_mode):
     variant = "F16F16" if family == "f16" else "W4F16"
     is_f16 = family == "f16"
     is_control = mode == "control"
-    is_qk = mode in ("parallel_qk_norm_rope", "parallel_hvx")
+    is_overlap = mode == "gqa_qkv_overlap"
+    is_qk = mode in ("parallel_qk_norm_rope", "parallel_hvx") or is_overlap
     is_softmax = mode in ("parallel_softmax", "parallel_hvx")
-    is_gqa = mode == "gqa_pipeline"
+    is_gqa = mode in ("gqa_pipeline", "gqa_qkv_overlap")
 
     fixed = {
         "experiment": "EXP-0031",
@@ -264,7 +266,11 @@ def validate_record(record, config_name, repeat, audit_mode):
                 ATTENTION_AUDIT_FIELDS:
             require(record, field, 0)
 
-    if is_qk:
+    if is_overlap:
+        require(record, "attention_qk_norm_main_work_ticks", 0)
+        if record["attention_qk_norm_worker_work_ticks"] <= 0:
+            raise SystemExit("streamed QK norm/RoPE work is missing")
+    elif is_qk:
         if record["attention_qk_norm_main_work_ticks"] <= 0 or \
                 record["attention_qk_norm_worker_work_ticks"] <= 0:
             raise SystemExit("parallel QK norm/RoPE work is missing")
@@ -334,6 +340,9 @@ def medians(records):
     result["qknorm_attention_ticks_median_per_block"] = (
         result["qk_norm_rope_ticks_median_per_block"] +
         result["attention_ticks_median_per_block"])
+    result["qkv_qknorm_attention_ticks_median_per_block"] = (
+        result["qkv_projection_ticks_median_per_block"] +
+        result["qknorm_attention_ticks_median_per_block"])
     return result
 
 
@@ -377,10 +386,18 @@ def main():
             if softmax["attention_softmax_ticks_median_per_block"] >= \
                     control["attention_softmax_ticks_median_per_block"]:
                 raise SystemExit("parallel Softmax did not reduce its stage")
+            accepted = timing[family][f"{variant}_gqa"]
+            overlap = timing[family][f"{variant}_overlap"]
+            if overlap["host_wall_ns_per_block_median"] > \
+                    accepted["host_wall_ns_per_block_median"]:
+                raise SystemExit("QKV overlap regressed accepted GQA Host wall")
+            if overlap["qkv_qknorm_attention_ticks_median_per_block"] >= \
+                    accepted["qkv_qknorm_attention_ticks_median_per_block"]:
+                raise SystemExit("QKV overlap did not reduce its full scope")
 
     eligible = []
     scores = {}
-    for candidate in ("parallel", "gqa"):
+    for candidate in ("parallel", "gqa", "overlap"):
         passes = True
         score = 0.0
         for family in ("repeat1", "repeat10"):
@@ -411,7 +428,7 @@ def main():
         for variant in ("f16", "w4"):
             control = timing[family][f"{variant}_control"]
             comparisons[family][variant] = {}
-            for candidate in ("qk", "softmax", "parallel", "gqa"):
+            for candidate in ("qk", "softmax", "parallel", "gqa", "overlap"):
                 trial = timing[family][f"{variant}_{candidate}"]
                 comparisons[family][variant][candidate] = {
                     "host_wall_percent_vs_control": percent_change(
@@ -431,6 +448,8 @@ def main():
         "evidence_validity": "valid",
         "local_gate": "pass",
         "adoption_status": "pending",
+        "accepted_checkpoint": "gqa",
+        "continuation_adoption_status": "pending_user_decision",
         "formal_run_records": record_count,
         "parent_block_package_experiment": manifest["experiment"],
         "selected_candidate": selected,

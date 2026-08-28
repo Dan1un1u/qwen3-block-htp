@@ -41,8 +41,8 @@ QBH_STATIC_OUTPUT_DIR="${result_dir}/static" \
     > "${result_dir}/vtcm_gate.jsonl"
 
 configs=(
-    f16_control f16_qk f16_softmax f16_parallel f16_gqa
-    w4_control w4_qk w4_softmax w4_parallel w4_gqa
+    f16_control f16_qk f16_softmax f16_parallel f16_gqa f16_overlap
+    w4_control w4_qk w4_softmax w4_parallel w4_gqa w4_overlap
 )
 
 set_config() {
@@ -63,6 +63,9 @@ set_config() {
         f16_gqa)
             variant=F16F16; workers=2; f16_mode=batch2; w4_mode=control
             attention_mode=gqa_pipeline; attention_contexts=4 ;;
+        f16_overlap)
+            variant=F16F16; workers=2; f16_mode=batch2; w4_mode=control
+            attention_mode=gqa_qkv_overlap; attention_contexts=4 ;;
         w4_control)
             variant=W4F16; workers=3; f16_mode=serial
             w4_mode=adaptive_down96_cross
@@ -83,6 +86,10 @@ set_config() {
             variant=W4F16; workers=3; f16_mode=serial
             w4_mode=adaptive_down96_cross
             attention_mode=gqa_pipeline; attention_contexts=4 ;;
+        w4_overlap)
+            variant=W4F16; workers=3; f16_mode=serial
+            w4_mode=adaptive_down96_cross
+            attention_mode=gqa_qkv_overlap; attention_contexts=4 ;;
         *)
             printf 'unknown config: %s\n' "${config}" >&2
             return 1 ;;
@@ -112,8 +119,8 @@ for round in 1 2 3 4 5; do
         order=("${configs[@]}")
     else
         order=(
-            w4_gqa w4_parallel w4_softmax w4_qk w4_control
-            f16_gqa f16_parallel f16_softmax f16_qk f16_control
+            w4_overlap w4_gqa w4_parallel w4_softmax w4_qk w4_control
+            f16_overlap f16_gqa f16_parallel f16_softmax f16_qk f16_control
         )
     fi
     for config in "${order[@]}"; do
@@ -149,7 +156,7 @@ cp "${project_root}/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so" \
     printf 'configs=%s\n' "$(IFS=,; printf '%s' "${configs[*]}")"
     printf 'correctness_numerical_audit=on\n'
     printf 'performance_numerical_audit=off\n'
-    printf 'attention_modes=control,parallel_qk_norm_rope,parallel_softmax,parallel_hvx,gqa_pipeline\n'
+    printf 'attention_modes=control,parallel_qk_norm_rope,parallel_softmax,parallel_hvx,gqa_pipeline,gqa_qkv_overlap\n'
     printf 'attention_hvx_contexts=4_for_candidates\n'
     printf 'hmx_ownership=single_serial_owner\n'
     printf 'repeat_contract=repeat1,repeat10\n'
