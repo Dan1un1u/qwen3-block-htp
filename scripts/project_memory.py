@@ -140,6 +140,44 @@ def preflight(source: Path) -> None:
     print("REMOTE_SYNC=verified")
 
 
+def brief(source: Path | None = None) -> None:
+    status, index = validate()
+    print("PROJECT_MEMORY=verified")
+    print("BACKEND=standalone-fastrpc-dsp")
+    print("QNN=none")
+    active = status["governance"]["active_experiment"]
+    print(f"ACTIVE_EXPERIMENT={active}")
+    if source is None:
+        return
+
+    source = source.resolve()
+    expected_source = Path(status["project"]["source_root"]).resolve()
+    if source != expected_source:
+        raise Failure("source worktree path mismatch")
+    actual_origin = run("git", "remote", "get-url", "origin", cwd=source)
+    expected_origin = status["project"]["repository_url"]
+    if actual_origin.removesuffix(".git") != expected_origin.removesuffix(".git"):
+        raise Failure("source origin mismatch")
+    common_dir = Path(run("git", "rev-parse", "--git-common-dir", cwd=source))
+    if not common_dir.is_absolute():
+        common_dir = source / common_dir
+    if common_dir.resolve() != Path(status["project"]["git_common_dir"]).resolve():
+        raise Failure("source git common directory mismatch")
+    if active is None:
+        raise Failure("no active experiment")
+    record = next(item for item in index["experiments"] if item["id"] == active)
+    expected_branch = record["runtime"]["source_branch"]
+    if git_branch(source) != expected_branch:
+        raise Failure("source branch mismatch")
+    if status["governance"].get("remote_sync_required"):
+        require_origin_sync(source, expected_branch)
+    print(f"SOURCE_WORKTREE={source}")
+    print(f"SOURCE_BRANCH={expected_branch}")
+    print(f"SOURCE_HEAD={run('git', 'rev-parse', 'HEAD', cwd=source)}")
+    print(f"SOURCE_DIRTY={'yes' if git_dirty(source) else 'no'}")
+    print("SOURCE_REMOTE_SYNC=verified")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -147,7 +185,8 @@ def main() -> int:
     check.add_argument("--clean", action="store_true")
     pre = sub.add_parser("preflight")
     pre.add_argument("--source-worktree", type=Path, required=True)
-    sub.add_parser("brief")
+    brief_parser = sub.add_parser("brief")
+    brief_parser.add_argument("--source-worktree", type=Path)
     args = parser.parse_args()
     try:
         if args.command == "validate":
@@ -157,11 +196,7 @@ def main() -> int:
         elif args.command == "preflight":
             preflight(args.source_worktree)
         else:
-            status, _ = validate()
-            print("PROJECT_MEMORY=verified")
-            print("BACKEND=standalone-fastrpc-dsp")
-            print("QNN=none")
-            print(f"ACTIVE_EXPERIMENT={status['governance']['active_experiment']}")
+            brief(args.source_worktree)
     except (Failure, OSError, KeyError, StopIteration, yaml.YAMLError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1

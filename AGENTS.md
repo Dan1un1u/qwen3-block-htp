@@ -3,8 +3,13 @@
 This orphan branch is the authoritative control plane for the standalone HTP
 block laboratory. It never carries implementation source or build products.
 
+- Before any project reading, theory discussion, source work, build, model
+  generation, device execution, or profiling, run
+  `scripts/bootstrap.sh /home/daniuniu/work/qwen3-block-htp`. Treat any
+  bootstrap failure as an immediate hard stop; stale fallback is forbidden.
 - Read `PROJECT_CONTRACT.md`, `PROJECT_STATUS.yaml`, `CONTEXT.md`, and
-  `experiments/index.yaml` before project work.
+  `experiments/index.yaml` in the order printed by bootstrap before project
+  work.
 - Run `python3 scripts/project_memory.py validate` before stateful work.
 - Run `python3 scripts/project_memory.py preflight --source-worktree <path>`
   immediately before source edits, builds, model generation, device execution,
@@ -18,4 +23,3 @@ block laboratory. It never carries implementation source or build products.
 - Source belongs in `/home/daniuniu/work/qwen3-block-htp`; models and retained
   intermediate artifacts belong under `D:\llm_exp\models\qwen3-block-htp`;
   formal results belong under `D:\llm_exp\results\qwen3-block-htp`.
-
