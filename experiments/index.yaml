@@ -1496,9 +1496,9 @@ experiments:
       - w4f16_exp0027_pipeline_control
       - w4f16_early_region_handoff_candidates
       - w4f16_bounded_lookahead_candidates
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4f16-streaming-critical-path
     source_branches:
@@ -1514,7 +1514,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0028-w4-stream-pipeline
       started_on: '2026-08-28'
-      completed_on: null
+      completed_on: '2026-08-28'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0028'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0028'
@@ -1526,3 +1526,27 @@ experiments:
       intermediate_ddr_allowed: false
       local_speed_gate: w4f16_candidate_strictly_faster_than_f16f16_batch2_for_projection_and_complete_block_at_repeat1_and_repeat10
       stretch_target: at_least_5_percent_complete_block_and_20_percent_projection_improvement_over_f16f16_batch2
+      formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0028\20260828T084934Z_6ba4e75de485'
+      artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0028\artifacts\6ba4e75de485'
+      matrix: 'D:\llm_exp\results\qwen3-block-htp\exp0028\20260828T084934Z_6ba4e75de485\matrix_gate.json'
+      formal_runs: 44
+      total_mismatches: 0
+      parent_block_package_hash_audit: true
+      static_w4_pipeline_gate: pass
+      zero_intermediate_ddr_gate: pass
+      fixed_vtcm_request_gate: pass
+      boot_id_stable: true
+      selected_w4_plan: w4_adaptive96
+      repeat10_selected_host_ns_per_block: 12083895.9
+      repeat10_selected_projection_ticks_per_block: 37349.0
+      repeat10_f16f16_host_ns_per_block: 12405078.1
+      repeat10_f16f16_projection_ticks_per_block: 43711.4
+      repeat10_exp0027_w4_control_host_ns_per_block: 12601411.4
+      repeat10_exp0027_w4_control_projection_ticks_per_block: 47080.6
+      repeat10_host_change_from_exp0027_w4_control_percent: -4.106805845573769
+      repeat10_projection_change_from_exp0027_w4_control_percent: -20.6700849182041
+      repeat10_host_change_from_f16f16_percent: -2.5891187254999948
+      repeat10_projection_change_from_f16f16_percent: -14.555470655252412
+      stretch_projection_20_percent_gate: fail
+      stretch_complete_block_5_percent_gate: fail
+      performance_characterization: adaptive_32_tile_regions_with_two_hvx_workers_for_qkvo_gate_up_96_tile_regions_with_three_workers_for_down_and_six_cross_projection_first_batch_prefetches_restore_a_strict_w4f16_win_over_the_fair_f16f16_control_but_shared_attention_and_silu_limit_complete_block_gain_to_2_59_percent
