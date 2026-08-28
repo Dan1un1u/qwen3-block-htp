@@ -1332,3 +1332,37 @@ experiments:
       repeat10_w4f16_softmax_percent_of_block: 0.4698743367147106
       repeat10_w4f16_qk_av_pack_percent_of_block: 12.886776583167353
       performance_characterization: timing_ledger_closes_and_shows_residual_adds_plus_always_on_numerical_audits_explain_the_old_gap_while_attention_runtime_is_pack_dominated_not_softmax_dominated
+  - id: EXP-0026
+    slug: hvx-residual
+    title: Vectorize and conditionally fuse the FP16 residual paths
+    parent: EXP-0025
+    variants:
+      - scalar_residual_audit_free_control
+      - hvx_residual_add
+      - conditional_post_attention_residual_rmsnorm_fusion
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-hvx-fp16-residual
+    source_branches:
+      - codex/exp-0026-hvx-residual
+    source_commits: []
+    record: docs/experiments/EXP-0026.md
+    decided_by: user
+    decided_on: '2026-08-28'
+    approval_ref: 'User message 2026-08-28: agree with the priority; residual is clearly regressed, optimize it first'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0026-hvx-residual
+      started_on: '2026-08-28'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0026'
+      retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0026'
+      parent_formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0025\20260828T060713Z_a8cba869e36e'
+      source_parent_commit: a8cba869e36e5174730d7fe603358c621eb7ec2f
+      activation_scope: fp16_only
+      performance_audits_in_timed_path: false
+      correctness_audits_in_correctness_path: true
+      fusion_candidate_requires_hvx_add_gate: true
