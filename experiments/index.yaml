@@ -1632,3 +1632,41 @@ experiments:
       repeat10_w4f16_projection_ticks_per_block: 37152.9
       repeat10_w4f16_projection_change_percent: -15.10586375040559
       performance_characterization: scalar_qk_and_av_rhs_packing_was_95_percent_of_attention_direct_hvx_crouton_construction_removes_that_shared_bottleneck_reduces_complete_block_host_wall_by_61_to_63_percent_and_exposes_a_7_29_percent_repeat10_w4f16_advantage_without_changing_output_or_ddr_residency
+  - id: EXP-0030
+    slug: streaming-mlp
+    title: Stream Gate and Up through multi-worker SwiGLU into Down HMX
+    parent: EXP-0029
+    variants:
+      - exp0029_mlp_control
+      - multi_worker_silu_candidate
+      - streaming_gate_up_swiglu_down_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-streaming-gated-mlp
+    source_branches:
+      - codex/exp-0030-streaming-mlp
+    source_commits:
+      - 403bb7e25079ac785e8c216318f867e2c5c25e8d
+    record: docs/experiments/EXP-0030.md
+    decided_by: user
+    decided_on: '2026-08-28'
+    approval_ref: 'User message 2026-08-28: 同意，你可开始工作'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0030-streaming-mlp
+      started_on: '2026-08-28'
+    evidence:
+      formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0030'
+      retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0030'
+      source_parent_commit: 403bb7e25079ac785e8c216318f867e2c5c25e8d
+      execution_unit: qwen3_layer14_complete_block_m64
+      activation_scope: fp16_only
+      fixed_f16f16_control: f16f16_exp0027_double_buffer_batch2
+      fixed_w4f16_control: w4f16_exp0028_adaptive96
+      fixed_attention_mode: exp0029_combined_hvx
+      repeat_contract: repeat1_and_repeat10
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      local_speed_gate: final_candidate_reduces_complete_mlp_ticks_and_does_not_regress_complete_block_host_wall_for_both_f16f16_and_w4f16_at_repeat1_and_repeat10
