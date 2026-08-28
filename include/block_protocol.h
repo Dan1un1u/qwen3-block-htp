@@ -6,8 +6,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(17)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(36)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(18)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(38)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -95,6 +95,14 @@ enum qbh_block_mlp_mode {
     QBH_BLOCK_MLP_STREAMING = 2,
     QBH_BLOCK_MLP_CROUTON_NATIVE = 3,
     QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 = 4,
+};
+
+enum qbh_block_crouton_boundary_mode {
+    QBH_BLOCK_CROUTON_BOUNDARY_CONTROL = 0,
+    QBH_BLOCK_CROUTON_BOUNDARY_QKV = 1U << 0,
+    QBH_BLOCK_CROUTON_BOUNDARY_AV_TO_O = 1U << 1,
+    QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM = 1U << 2,
+    QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM = 1U << 3,
 };
 
 enum qbh_block_projection_index {
@@ -216,6 +224,7 @@ struct qbh_block_header {
     uint32_t mlp_mode;
     uint32_t mlp_hvx_contexts;
     uint32_t mlp_chunk_vectors;
+    uint32_t crouton_boundary_mode;
 
     uint32_t input_offset;
     uint32_t input_bytes;
@@ -293,6 +302,16 @@ struct qbh_block_header {
     uint32_t attention_qk_norm_task_count;
     uint32_t attention_softmax_task_count;
     uint32_t attention_gqa_group_count;
+    uint32_t crouton_qkv_projection_count;
+    uint32_t crouton_qkv_unpack_skipped;
+    uint32_t crouton_qk_operand_count;
+    uint32_t crouton_av_weight_count;
+    uint32_t crouton_av_o_head_count;
+    uint32_t crouton_av_unpack_skipped;
+    uint32_t crouton_norm_projection_count;
+    uint32_t crouton_q_operand_mismatch_count;
+    uint32_t crouton_k_operand_mismatch_count;
+    uint32_t crouton_v_operand_mismatch_count;
 
     uint32_t prepared_session_run_index;
     uint32_t resource_vtcm_address;
@@ -369,6 +388,9 @@ struct qbh_block_header {
     uint64_t attention_gqa_worker_work_ticks;
     uint64_t attention_gqa_hmx_wait_ticks;
     uint64_t attention_gqa_queue_wait_ticks;
+    uint64_t crouton_qkv_transform_ticks;
+    uint64_t crouton_av_o_copy_ticks;
+    uint64_t crouton_norm_store_ticks;
     uint64_t scalar_math_ticks;
 
     uint64_t invocation_ticks;

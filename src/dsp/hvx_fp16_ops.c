@@ -19,6 +19,14 @@ static const uint16_t qbh_hvx_lane_index[QBH_HVX_F16_LANES]
         48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
     };
 
+static const int32_t qbh_hvx_crouton_vscatter_offsets[32]
+    __attribute__((aligned(QBH_HVX_BYTES))) = {
+        0, 128, 256, 384, 512, 640, 768, 896,
+        1024, 1152, 1280, 1408, 1536, 1664, 1792, 1920,
+        2048, 2176, 2304, 2432, 2560, 2688, 2816, 2944,
+        3072, 3200, 3328, 3456, 3584, 3712, 3840, 3968,
+    };
+
 void qbh_hvx_check_reset(struct qbh_hvx_check_metrics *metrics) {
     if (metrics == NULL) {
         return;
@@ -235,6 +243,58 @@ void qbh_hvx_rms_norm_f16(const __fp16 *input, const __fp16 *gamma,
     }
 }
 
+static void qbh_hvx_store_f16_pair_crouton(
+    __fp16 *output_tiles, uint32_t column_tiles,
+    uint32_t row, uint32_t first_column,
+    HVX_Vector row0, HVX_Vector row1) {
+    const uint32_t row_tile = row / QBH_HMX_FP16_ROWS;
+    const uint32_t row_pair =
+        (row % QBH_HMX_FP16_ROWS) / 2U;
+    const size_t tile = qbh_hmx_fp16_matrix_tile_offset(
+        row_tile, first_column / QBH_HMX_FP16_COLS,
+        column_tiles);
+    const HVX_VectorPair packed = Q6_W_vshuff_VVR(
+        row1, row0, -2);
+    HVX_Vector *output0 =
+        (HVX_Vector *)(output_tiles + tile) + row_pair;
+    HVX_Vector *output1 = output0 +
+        QBH_HMX_FP16_TILE_BYTES / sizeof(HVX_Vector);
+    *output0 = Q6_V_lo_W(packed);
+    *output1 = Q6_V_hi_W(packed);
+}
+
+void qbh_hvx_rms_norm_f16_crouton(
+    const __fp16 *input, const __fp16 *gamma,
+    __fp16 *output_tiles, uint32_t rows, uint32_t width) {
+    const uint32_t vector_count = width / QBH_HVX_F16_LANES;
+    const uint32_t column_tiles = width / QBH_HMX_FP16_COLS;
+    const HVX_Vector *gamma_vectors = (const HVX_Vector *)gamma;
+
+    for (uint32_t row = 0U; row < rows; row += 2U) {
+        const __fp16 *input0 = input + (size_t)row * width;
+        const __fp16 *input1 = input + (size_t)(row + 1U) * width;
+        const HVX_Vector *vectors0 = (const HVX_Vector *)input0;
+        const HVX_Vector *vectors1 = (const HVX_Vector *)input1;
+        const float inverse0 = 1.0f / sqrtf(
+            qbh_hvx_sum_squares_f16(input0, width) /
+                (float)width + 1.0e-6f);
+        const float inverse1 = 1.0f / sqrtf(
+            qbh_hvx_sum_squares_f16(input1, width) /
+                (float)width + 1.0e-6f);
+
+        for (uint32_t index = 0U; index < vector_count; ++index) {
+            qbh_hvx_store_f16_pair_crouton(
+                output_tiles, column_tiles, row,
+                index * QBH_HVX_F16_LANES,
+                qbh_hvx_scale_then_multiply_f16_f32(
+                    vectors0[index], inverse0, gamma_vectors[index]),
+                qbh_hvx_scale_then_multiply_f16_f32(
+                    vectors1[index], inverse1, gamma_vectors[index]));
+        }
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
 void qbh_hvx_residual_rms_norm_f16(
     __fp16 *residual, const __fp16 *addition,
     const __fp16 *gamma, __fp16 *output,
@@ -291,6 +351,69 @@ void qbh_hvx_residual_rms_norm_f16(
                 (float)gamma[channel]);
         }
     }
+}
+
+void qbh_hvx_residual_rms_norm_f16_crouton(
+    __fp16 *residual, const __fp16 *addition,
+    const __fp16 *gamma, __fp16 *output_tiles,
+    uint32_t rows, uint32_t width) {
+    const uint32_t vector_count = width / QBH_HVX_F16_LANES;
+    const uint32_t column_tiles = width / QBH_HMX_FP16_COLS;
+    const HVX_Vector *gamma_vectors = (const HVX_Vector *)gamma;
+
+    for (uint32_t row = 0U; row < rows; row += 2U) {
+        HVX_Vector *residual0 = (HVX_Vector *)(residual +
+            (size_t)row * width);
+        HVX_Vector *residual1 = (HVX_Vector *)(residual +
+            (size_t)(row + 1U) * width);
+        const HVX_Vector *addition0 = (const HVX_Vector *)(addition +
+            (size_t)row * width);
+        const HVX_Vector *addition1 = (const HVX_Vector *)(addition +
+            (size_t)(row + 1U) * width);
+        HVX_Vector sum0_lo = Q6_V_vzero();
+        HVX_Vector sum0_hi = Q6_V_vzero();
+        HVX_Vector sum1_lo = Q6_V_vzero();
+        HVX_Vector sum1_hi = Q6_V_vzero();
+
+        for (uint32_t index = 0U; index < vector_count; ++index) {
+            const HVX_Vector value0 = Q6_Vhf_vadd_VhfVhf(
+                residual0[index], addition0[index]);
+            const HVX_Vector value1 = Q6_Vhf_vadd_VhfVhf(
+                residual1[index], addition1[index]);
+            const HVX_VectorPair square0 =
+                Q6_Wqf32_vmpy_VhfVhf(value0, value0);
+            const HVX_VectorPair square1 =
+                Q6_Wqf32_vmpy_VhfVhf(value1, value1);
+            residual0[index] = value0;
+            residual1[index] = value1;
+            sum0_lo = Q6_Vsf_vadd_VsfVsf(
+                sum0_lo, Q6_Vsf_equals_Vqf32(Q6_V_lo_W(square0)));
+            sum0_hi = Q6_Vsf_vadd_VsfVsf(
+                sum0_hi, Q6_Vsf_equals_Vqf32(Q6_V_hi_W(square0)));
+            sum1_lo = Q6_Vsf_vadd_VsfVsf(
+                sum1_lo, Q6_Vsf_equals_Vqf32(Q6_V_lo_W(square1)));
+            sum1_hi = Q6_Vsf_vadd_VsfVsf(
+                sum1_hi, Q6_Vsf_equals_Vqf32(Q6_V_hi_W(square1)));
+        }
+        const float inverse0 = 1.0f / sqrtf(
+            qbh_hvx_reduce_sum_sf32(
+                Q6_Vsf_vadd_VsfVsf(sum0_lo, sum0_hi)) /
+                (float)width + 1.0e-6f);
+        const float inverse1 = 1.0f / sqrtf(
+            qbh_hvx_reduce_sum_sf32(
+                Q6_Vsf_vadd_VsfVsf(sum1_lo, sum1_hi)) /
+                (float)width + 1.0e-6f);
+        for (uint32_t index = 0U; index < vector_count; ++index) {
+            qbh_hvx_store_f16_pair_crouton(
+                output_tiles, column_tiles, row,
+                index * QBH_HVX_F16_LANES,
+                qbh_hvx_scale_then_multiply_f16_f32(
+                    residual0[index], inverse0, gamma_vectors[index]),
+                qbh_hvx_scale_then_multiply_f16_f32(
+                    residual1[index], inverse1, gamma_vectors[index]));
+        }
+    }
+    asm volatile("barrier" ::: "memory");
 }
 
 void qbh_hvx_qk_norm_rope_f16(__fp16 *tensor, uint32_t rows,
@@ -433,6 +556,160 @@ void qbh_hvx_qk_norm_rope_f16_head(
         *(HVX_Vector *)(values + half_dim) =
             Q6_Vhf_equals_Vqf16(second_rotated);
     }
+}
+
+static void qbh_hvx_qk_norm_rope_vectors(
+    HVX_Vector first, HVX_Vector second,
+    HVX_Vector gamma_first, HVX_Vector gamma_second,
+    HVX_Vector cosine_first, HVX_Vector cosine_second,
+    HVX_Vector sine_first, HVX_Vector sine_second,
+    HVX_Vector *first_output, HVX_Vector *second_output) {
+    HVX_Vector sum_lo = Q6_V_vzero();
+    HVX_Vector sum_hi = Q6_V_vzero();
+    HVX_VectorPair square = Q6_Wqf32_vmpy_VhfVhf(first, first);
+    __fp16 inverse;
+    HVX_Vector inverse_vector;
+    HVX_Vector first_norm;
+    HVX_Vector second_norm;
+
+    sum_lo = Q6_Vsf_vadd_VsfVsf(
+        sum_lo, Q6_Vsf_equals_Vqf32(Q6_V_lo_W(square)));
+    sum_hi = Q6_Vsf_vadd_VsfVsf(
+        sum_hi, Q6_Vsf_equals_Vqf32(Q6_V_hi_W(square)));
+    square = Q6_Wqf32_vmpy_VhfVhf(second, second);
+    sum_lo = Q6_Vsf_vadd_VsfVsf(
+        sum_lo, Q6_Vsf_equals_Vqf32(Q6_V_lo_W(square)));
+    sum_hi = Q6_Vsf_vadd_VsfVsf(
+        sum_hi, Q6_Vsf_equals_Vqf32(Q6_V_hi_W(square)));
+    inverse = (__fp16)(1.0f / sqrtf(
+        qbh_hvx_reduce_sum_sf32(
+            Q6_Vsf_vadd_VsfVsf(sum_lo, sum_hi)) /
+            128.0f + 1.0e-6f));
+    inverse_vector = Q6_Vh_vsplat_R(*(const uint16_t *)&inverse);
+    first_norm = Q6_Vqf16_vmpy_VhfVhf(first, gamma_first);
+    second_norm = Q6_Vqf16_vmpy_VhfVhf(second, gamma_second);
+    first = Q6_Vhf_equals_Vqf16(
+        Q6_Vqf16_vmpy_Vqf16Vhf(first_norm, inverse_vector));
+    second = Q6_Vhf_equals_Vqf16(
+        Q6_Vqf16_vmpy_Vqf16Vhf(second_norm, inverse_vector));
+    *first_output = Q6_Vhf_equals_Vqf16(
+        Q6_Vqf16_vsub_Vqf16Vqf16(
+            Q6_Vqf16_vmpy_VhfVhf(first, cosine_first),
+            Q6_Vqf16_vmpy_VhfVhf(second, sine_first)));
+    *second_output = Q6_Vhf_equals_Vqf16(
+        Q6_Vqf16_vadd_Vqf16Vqf16(
+            Q6_Vqf16_vmpy_VhfVhf(second, cosine_second),
+            Q6_Vqf16_vmpy_VhfVhf(first, sine_second)));
+}
+
+void qbh_hvx_qk_norm_rope_f16_crouton_head(
+    const __fp16 *source_group_tiles, __fp16 *destination_tiles,
+    uint32_t head, uint32_t destination_is_weight,
+    const __fp16 *gamma, const __fp16 *cosine,
+    const __fp16 *sine) {
+    const uint32_t head_tiles = 8U;
+    const uint32_t group_tiles = 4U;
+    const __fp16 *source = source_group_tiles +
+        (size_t)head * head_tiles * QBH_HMX_FP16_TILE_ELEMENTS;
+    __fp16 *destination = destination_tiles +
+        (size_t)head * head_tiles * QBH_HMX_FP16_TILE_ELEMENTS;
+    const HVX_Vector gamma_first = *(const HVX_Vector *)gamma;
+    const HVX_Vector gamma_second =
+        *(const HVX_Vector *)(gamma + QBH_HVX_F16_LANES);
+    const HVX_Vector offset_base =
+        *(const HVX_Vector *)qbh_hvx_crouton_vscatter_offsets;
+
+    for (uint32_t row = 0U; row < 64U; row += 2U) {
+        const uint32_t row_tile = row / QBH_HMX_FP16_ROWS;
+        const uint32_t row_pair =
+            (row % QBH_HMX_FP16_ROWS) / 2U;
+        const HVX_Vector *source_first0 =
+            (const HVX_Vector *)(source +
+                (size_t)(row_tile * 2U) *
+                    QBH_HMX_FP16_TILE_ELEMENTS) + row_pair;
+        const HVX_Vector *source_first1 = source_first0 +
+            QBH_HMX_FP16_TILE_BYTES / QBH_HVX_BYTES;
+        const HVX_Vector *source_second0 =
+            (const HVX_Vector *)(source +
+                (size_t)(group_tiles + row_tile * 2U) *
+                    QBH_HMX_FP16_TILE_ELEMENTS) + row_pair;
+        const HVX_Vector *source_second1 = source_second0 +
+            QBH_HMX_FP16_TILE_BYTES / QBH_HVX_BYTES;
+        const HVX_VectorPair first_rows = Q6_W_vdeal_VVR(
+            *source_first1, *source_first0, -2);
+        const HVX_VectorPair second_rows = Q6_W_vdeal_VVR(
+            *source_second1, *source_second0, -2);
+        HVX_Vector row_first[2];
+        HVX_Vector row_second[2];
+
+        qbh_hvx_qk_norm_rope_vectors(
+            Q6_V_lo_W(first_rows), Q6_V_lo_W(second_rows),
+            gamma_first, gamma_second,
+            *(const HVX_Vector *)(cosine + (size_t)row * 128U),
+            *(const HVX_Vector *)(cosine +
+                (size_t)row * 128U + QBH_HVX_F16_LANES),
+            *(const HVX_Vector *)(sine + (size_t)row * 128U),
+            *(const HVX_Vector *)(sine +
+                (size_t)row * 128U + QBH_HVX_F16_LANES),
+            &row_first[0], &row_second[0]);
+        qbh_hvx_qk_norm_rope_vectors(
+            Q6_V_hi_W(first_rows), Q6_V_hi_W(second_rows),
+            gamma_first, gamma_second,
+            *(const HVX_Vector *)(cosine + (size_t)(row + 1U) * 128U),
+            *(const HVX_Vector *)(cosine +
+                (size_t)(row + 1U) * 128U + QBH_HVX_F16_LANES),
+            *(const HVX_Vector *)(sine + (size_t)(row + 1U) * 128U),
+            *(const HVX_Vector *)(sine +
+                (size_t)(row + 1U) * 128U + QBH_HVX_F16_LANES),
+            &row_first[1], &row_second[1]);
+
+        if (destination_is_weight == 0U) {
+            const HVX_VectorPair first_packed = Q6_W_vshuff_VVR(
+                row_first[1], row_first[0], -2);
+            const HVX_VectorPair second_packed = Q6_W_vshuff_VVR(
+                row_second[1], row_second[0], -2);
+            HVX_Vector *destination_first =
+                (HVX_Vector *)(destination +
+                    (size_t)(row_tile * 4U) *
+                        QBH_HMX_FP16_TILE_ELEMENTS) + row_pair;
+            HVX_Vector *destination_second =
+                (HVX_Vector *)(destination +
+                    (size_t)(row_tile * 4U + 2U) *
+                        QBH_HMX_FP16_TILE_ELEMENTS) + row_pair;
+            destination_first[0] = Q6_V_lo_W(first_packed);
+            destination_first[QBH_HMX_FP16_TILE_BYTES /
+                              QBH_HVX_BYTES] =
+                Q6_V_hi_W(first_packed);
+            destination_second[0] = Q6_V_lo_W(second_packed);
+            destination_second[QBH_HMX_FP16_TILE_BYTES /
+                               QBH_HVX_BYTES] =
+                Q6_V_hi_W(second_packed);
+        } else {
+            for (uint32_t local_row = 0U;
+                 local_row < 2U; ++local_row) {
+                const uint32_t output_row = row + local_row;
+                const uint32_t n_tile =
+                    output_row / QBH_HMX_FP16_COLS;
+                const uint32_t local_output =
+                    output_row % QBH_HMX_FP16_COLS;
+                const HVX_Vector offsets = Q6_Vw_vadd_VwVw(
+                    offset_base, Q6_V_vsplat_R(local_output * 4U));
+                Q6_vscatter_RMVwV(
+                    (uint32_t)(uintptr_t)(destination +
+                        (size_t)(n_tile * 4U) *
+                            QBH_HMX_FP16_TILE_ELEMENTS),
+                    2U * QBH_HMX_FP16_TILE_BYTES - 1U,
+                    offsets, row_first[local_row]);
+                Q6_vscatter_RMVwV(
+                    (uint32_t)(uintptr_t)(destination +
+                        (size_t)(n_tile * 4U + 2U) *
+                            QBH_HMX_FP16_TILE_ELEMENTS),
+                    2U * QBH_HMX_FP16_TILE_BYTES - 1U,
+                    offsets, row_second[local_row]);
+            }
+        }
+    }
+    asm volatile("barrier" ::: "memory");
 }
 
 static HVX_Vector qbh_hvx_silu_multiply_vector(

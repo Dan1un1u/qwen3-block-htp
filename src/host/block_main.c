@@ -545,6 +545,67 @@ static const char *qbh_mlp_mode_name(uint32_t mode) {
     return "control";
 }
 
+static int qbh_parse_crouton_boundary_mode(
+    const char *text, uint32_t *mode) {
+    if (strcmp(text, "control") == 0) {
+        *mode = QBH_BLOCK_CROUTON_BOUNDARY_CONTROL;
+        return 0;
+    }
+    if (strcmp(text, "qkv") == 0) {
+        *mode = QBH_BLOCK_CROUTON_BOUNDARY_QKV;
+        return 0;
+    }
+    if (strcmp(text, "av_to_o") == 0 || strcmp(text, "av_o") == 0) {
+        *mode = QBH_BLOCK_CROUTON_BOUNDARY_AV_TO_O;
+        return 0;
+    }
+    if (strcmp(text, "input_norm") == 0) {
+        *mode = QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM;
+        return 0;
+    }
+    if (strcmp(text, "post_norm") == 0) {
+        *mode = QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM;
+        return 0;
+    }
+    if (strcmp(text, "norms") == 0 ||
+        strcmp(text, "input_post_norm") == 0) {
+        *mode = QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM |
+                QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM;
+        return 0;
+    }
+    if (strcmp(text, "all") == 0) {
+        *mode = QBH_BLOCK_CROUTON_BOUNDARY_QKV |
+                QBH_BLOCK_CROUTON_BOUNDARY_AV_TO_O |
+                QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM |
+                QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM;
+        return 0;
+    }
+    return -1;
+}
+
+static const char *qbh_crouton_boundary_mode_name(uint32_t mode) {
+    switch (mode) {
+        case QBH_BLOCK_CROUTON_BOUNDARY_QKV:
+            return "qkv";
+        case QBH_BLOCK_CROUTON_BOUNDARY_AV_TO_O:
+            return "av_to_o";
+        case QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM:
+            return "input_norm";
+        case QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM:
+            return "post_norm";
+        case QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM |
+             QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM:
+            return "norms";
+        case QBH_BLOCK_CROUTON_BOUNDARY_QKV |
+             QBH_BLOCK_CROUTON_BOUNDARY_AV_TO_O |
+             QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM |
+             QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM:
+            return "all";
+        default:
+            return "control";
+    }
+}
+
 static uint64_t qbh_fnv1a64(const uint8_t *data, size_t bytes) {
     uint64_t hash = UINT64_C(1469598103934665603);
     for (size_t index = 0; index < bytes; ++index) {
@@ -873,6 +934,8 @@ int main(int argc, char **argv) {
     uint32_t mlp_mode = QBH_BLOCK_MLP_CONTROL;
     uint32_t mlp_hvx_contexts = 1U;
     uint32_t mlp_chunk_vectors = 64U;
+    uint32_t crouton_boundary_mode =
+        QBH_BLOCK_CROUTON_BOUNDARY_CONTROL;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t cursor = qbh_align_up_size(sizeof(*header), QBH_HOST_ALIGNMENT);
@@ -898,7 +961,7 @@ int main(int argc, char **argv) {
 
     memset(&warmup_metrics, 0, sizeof(warmup_metrics));
     memset(&measured_metrics, 0, sizeof(measured_metrics));
-    if (argc < 3 || argc > 18 ||
+    if (argc < 3 || argc > 19 ||
         qbh_parse_variant(argv[2], &variant) != 0 ||
         (argc >= 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
         (argc >= 5 && qbh_parse_u32(
@@ -929,6 +992,8 @@ int main(int argc, char **argv) {
                            argv[16], &attention_pipeline_mode) != 0) ||
         (argc >= 18 && qbh_parse_u32(
                            argv[17], &attention_hvx_contexts) != 0) ||
+        (argc >= 19 && qbh_parse_crouton_boundary_mode(
+                           argv[18], &crouton_boundary_mode) != 0) ||
         repeats == 0U || repeats > 100U ||
         w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
         (argc >= 7 && variant == QBH_BLOCK_W4U8 &&
@@ -975,6 +1040,14 @@ int main(int argc, char **argv) {
              QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP &&
          variant == QBH_BLOCK_W4F16 &&
          w4f16_hvx_workers != 3U) ||
+        (crouton_boundary_mode != QBH_BLOCK_CROUTON_BOUNDARY_CONTROL &&
+         variant == QBH_BLOCK_W4U8) ||
+        ((crouton_boundary_mode & QBH_BLOCK_CROUTON_BOUNDARY_QKV) != 0U &&
+         attention_pipeline_mode !=
+             QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP) ||
+        ((crouton_boundary_mode & QBH_BLOCK_CROUTON_BOUNDARY_AV_TO_O) != 0U &&
+         attention_pipeline_mode !=
+             QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP) ||
         mlp_mode > QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 ||
         mlp_hvx_contexts == 0U || mlp_hvx_contexts > 4U ||
         (mlp_mode == QBH_BLOCK_MLP_CONTROL && mlp_hvx_contexts != 1U) ||
@@ -1079,7 +1152,9 @@ int main(int argc, char **argv) {
                         "[attention_pipeline:control|parallel_qk_norm_rope|"
                         "parallel_softmax|parallel_hvx|gqa_pipeline|"
                         "gqa_qkv_overlap] "
-                        "[attention_hvx_contexts:1..4]\n",
+                        "[attention_hvx_contexts:1..4] "
+                        "[crouton_boundary:control|qkv|av_to_o|"
+                        "input_norm|post_norm|norms|all]\n",
                 argv[0]);
         return 2;
     }
@@ -1259,6 +1334,7 @@ int main(int argc, char **argv) {
     header->mlp_mode = mlp_mode;
     header->mlp_hvx_contexts = mlp_hvx_contexts;
     header->mlp_chunk_vectors = mlp_chunk_vectors;
+    header->crouton_boundary_mode = crouton_boundary_mode;
     header->input_offset = input_slot.offset;
     header->input_bytes = input_slot.expected_bytes;
     header->output_bytes = output_bytes;
@@ -1421,7 +1497,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0036\","
+        "{\"experiment\":\"EXP-0038\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"FP16_HMX\","
         "\"projection_compute\":\"%s\","
@@ -1437,6 +1513,7 @@ int main(int argc, char **argv) {
         "\"mlp_mode\":\"%s\","
         "\"mlp_hvx_contexts\":%" PRIu32 ","
         "\"mlp_chunk_vectors\":%" PRIu32 ","
+        "\"crouton_boundary_mode\":\"%s\","
         "\"w4f16_scale_placement\":\"%s\","
         "\"intermediate_residency\":\"VTCM\","
         "\"warmup_rpc_result\":%d,"
@@ -1494,6 +1571,16 @@ int main(int argc, char **argv) {
         "\"attention_qk_norm_task_count\":%" PRIu32 ","
         "\"attention_softmax_task_count\":%" PRIu32 ","
         "\"attention_gqa_group_count\":%" PRIu32 ","
+        "\"crouton_qkv_projection_count\":%" PRIu32 ","
+        "\"crouton_qkv_unpack_skipped\":%" PRIu32 ","
+        "\"crouton_qk_operand_count\":%" PRIu32 ","
+        "\"crouton_av_weight_count\":%" PRIu32 ","
+        "\"crouton_av_o_head_count\":%" PRIu32 ","
+        "\"crouton_av_unpack_skipped\":%" PRIu32 ","
+        "\"crouton_norm_projection_count\":%" PRIu32 ","
+        "\"crouton_q_operand_mismatch_count\":%" PRIu32 ","
+        "\"crouton_k_operand_mismatch_count\":%" PRIu32 ","
+        "\"crouton_v_operand_mismatch_count\":%" PRIu32 ","
         "\"host_wall_ns\":%" PRIu64 ","
         "\"host_wall_ns_per_block\":%.3f,"
         "\"max_abs\":%.9g,\"mean_abs\":%.9g,\"rmse\":%.9g,"
@@ -1611,6 +1698,9 @@ int main(int argc, char **argv) {
         "\"attention_gqa_worker_work_ticks\":%" PRIu64 ","
         "\"attention_gqa_hmx_wait_ticks\":%" PRIu64 ","
         "\"attention_gqa_queue_wait_ticks\":%" PRIu64 ","
+        "\"crouton_qkv_transform_ticks\":%" PRIu64 ","
+        "\"crouton_av_o_copy_ticks\":%" PRIu64 ","
+        "\"crouton_norm_store_ticks\":%" PRIu64 ","
         "\"release_result\":%d,\"close_result\":%d}\n",
         qbh_variant_name(variant),
         variant == QBH_BLOCK_W4U8 ? "U8xS8_integer_HMX"
@@ -1634,6 +1724,8 @@ int main(int argc, char **argv) {
         qbh_mlp_mode_name(header->mlp_mode),
         header->mlp_hvx_contexts,
         header->mlp_chunk_vectors,
+        qbh_crouton_boundary_mode_name(
+            header->crouton_boundary_mode),
         variant == QBH_BLOCK_W4F16 ? "hmx_output_per_channel"
                                    : "not_applicable",
         warmup_result, warmup_run_index, warmup_end - warmup_start,
@@ -1686,6 +1778,16 @@ int main(int argc, char **argv) {
         header->attention_qk_norm_task_count,
         header->attention_softmax_task_count,
         header->attention_gqa_group_count,
+        header->crouton_qkv_projection_count,
+        header->crouton_qkv_unpack_skipped,
+        header->crouton_qk_operand_count,
+        header->crouton_av_weight_count,
+        header->crouton_av_o_head_count,
+        header->crouton_av_unpack_skipped,
+        header->crouton_norm_projection_count,
+        header->crouton_q_operand_mismatch_count,
+        header->crouton_k_operand_mismatch_count,
+        header->crouton_v_operand_mismatch_count,
         measured_end - measured_start,
         (double)(measured_end - measured_start) / repeats,
         measured_metrics.max_abs, measured_metrics.mean_abs,
@@ -1790,6 +1892,9 @@ int main(int argc, char **argv) {
         header->attention_gqa_worker_work_ticks,
         header->attention_gqa_hmx_wait_ticks,
         header->attention_gqa_queue_wait_ticks,
+        header->crouton_qkv_transform_ticks,
+        header->crouton_av_o_copy_ticks,
+        header->crouton_norm_store_ticks,
         release_result, close_result);
 
     exit_code = warmup_result == AEE_SUCCESS &&

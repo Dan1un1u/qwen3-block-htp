@@ -160,6 +160,7 @@ struct qbh_block_w4f16_job {
     uint64_t attention_gqa_ticks;
     uint64_t attention_gqa_hmx_wait_ticks;
     uint64_t attention_gqa_queue_wait_ticks;
+    uint64_t attention_av_o_copy_ticks;
 };
 
 struct qbh_block_w4f16_pool {
@@ -205,6 +206,9 @@ struct qbh_block_w4f16_pool {
     uint32_t mlp_crouton_slot_elements;
     __fp16 *attention_q;
     __fp16 *attention_k;
+    __fp16 *attention_q_destination;
+    __fp16 *attention_k_weight;
+    uint32_t attention_crouton_qkv;
     const __fp16 *attention_q_gamma;
     const __fp16 *attention_k_gamma;
     const __fp16 *attention_rope_cos;
@@ -572,6 +576,22 @@ static int qbh_header_valid(const struct qbh_block_header *header,
              QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP &&
          header->variant == QBH_BLOCK_W4F16 &&
          header->w4f16_requested_hvx_workers != 3U) ||
+        (header->crouton_boundary_mode &
+         ~((uint32_t)(QBH_BLOCK_CROUTON_BOUNDARY_QKV |
+                      QBH_BLOCK_CROUTON_BOUNDARY_AV_TO_O |
+                      QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM |
+                      QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM))) != 0U ||
+        (header->crouton_boundary_mode !=
+             QBH_BLOCK_CROUTON_BOUNDARY_CONTROL &&
+         header->variant == QBH_BLOCK_W4U8) ||
+        ((header->crouton_boundary_mode &
+          QBH_BLOCK_CROUTON_BOUNDARY_QKV) != 0U &&
+         header->attention_pipeline_mode !=
+             QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP) ||
+        ((header->crouton_boundary_mode &
+          QBH_BLOCK_CROUTON_BOUNDARY_AV_TO_O) != 0U &&
+         header->attention_pipeline_mode !=
+             QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP) ||
         header->mlp_mode > QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 ||
         header->mlp_hvx_contexts == 0U ||
         header->mlp_hvx_contexts > QBH_BLOCK_W4F16_HVX_WORKERS ||
@@ -1291,7 +1311,19 @@ static void qbh_attention_qk_norm_pool_run_tasks(
             asm volatile("barrier" ::: "memory");
         }
         start = HAP_perf_get_qtimer_count();
-        if (task < QBH_BLOCK_HEADS) {
+        if (pool->attention_crouton_qkv != 0U &&
+            task < QBH_BLOCK_HEADS) {
+            qbh_hvx_qk_norm_rope_f16_crouton_head(
+                pool->attention_q, pool->attention_q_destination,
+                task, 0U, pool->attention_q_gamma,
+                pool->attention_rope_cos, pool->attention_rope_sin);
+        } else if (pool->attention_crouton_qkv != 0U) {
+            uint32_t head = task - QBH_BLOCK_HEADS;
+            qbh_hvx_qk_norm_rope_f16_crouton_head(
+                pool->attention_k, pool->attention_k_weight,
+                head, 1U, pool->attention_k_gamma,
+                pool->attention_rope_cos, pool->attention_rope_sin);
+        } else if (task < QBH_BLOCK_HEADS) {
             qbh_hvx_qk_norm_rope_f16_head(
                 pool->attention_q, QBH_BLOCK_M, QBH_BLOCK_HIDDEN,
                 QBH_BLOCK_HEAD_DIM, task,
@@ -1617,7 +1649,9 @@ static int qbh_hvx_pool_qk_norm_rope(
 
 static int qbh_hvx_pool_qk_norm_rope_start_async(
     struct qbh_block_w4f16_pool *pool,
-    __fp16 *q, __fp16 *k, const __fp16 *q_gamma,
+    __fp16 *q, __fp16 *k, __fp16 *q_destination,
+    __fp16 *k_weight, uint32_t crouton_qkv,
+    const __fp16 *q_gamma,
     const __fp16 *k_gamma, const __fp16 *cosine,
     const __fp16 *sine, uint32_t task_base,
     uint32_t task_count, uint32_t first_worker,
@@ -1630,6 +1664,9 @@ static int qbh_hvx_pool_qk_norm_rope_start_async(
     }
     pool->attention_q = q;
     pool->attention_k = k;
+    pool->attention_q_destination = q_destination;
+    pool->attention_k_weight = k_weight;
+    pool->attention_crouton_qkv = crouton_qkv;
     pool->attention_q_gamma = q_gamma;
     pool->attention_k_gamma = k_gamma;
     pool->attention_rope_cos = cosine;
@@ -2200,6 +2237,22 @@ static const float *qbh_w4f16_projection_scales(
                            (size_t)channel_offset * sizeof(float));
 }
 
+static int qbh_crouton_qkv_enabled(
+    const struct qbh_block_header *header) {
+    return header->variant != QBH_BLOCK_W4U8 &&
+           (header->crouton_boundary_mode &
+            QBH_BLOCK_CROUTON_BOUNDARY_QKV) != 0U;
+}
+
+static int qbh_projection_direct_qkv_crouton(
+    const struct qbh_block_header *header,
+    const struct qbh_block_projection_desc *desc) {
+    return qbh_crouton_qkv_enabled(header) &&
+           (desc == &header->projections[QBH_BLOCK_PROJ_Q] ||
+            desc == &header->projections[QBH_BLOCK_PROJ_K] ||
+            desc == &header->projections[QBH_BLOCK_PROJ_V]);
+}
+
 static __attribute__((noinline)) int qbh_run_f16f16_pipelined_projection(
     struct qbh_block_header *header, const uint8_t *shared,
     const struct qbh_block_projection_desc *desc,
@@ -2214,10 +2267,12 @@ static __attribute__((noinline)) int qbh_run_f16f16_pipelined_projection(
         k_tiles * QBH_HMX_FP16_TILE_BYTES;
     uint8_t *weight_slots[2] = {
         buffers->expanded_weight, buffers->expanded_weight_alt};
-    const uint32_t direct_crouton =
-        header->mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 &&
-        (desc == &header->projections[QBH_BLOCK_PROJ_GATE] ||
-         desc == &header->projections[QBH_BLOCK_PROJ_UP]);
+    const uint32_t direct_qkv =
+        qbh_projection_direct_qkv_crouton(header, desc);
+    const uint32_t direct_crouton = direct_qkv ||
+        (header->mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 &&
+         (desc == &header->projections[QBH_BLOCK_PROJ_GATE] ||
+          desc == &header->projections[QBH_BLOCK_PROJ_UP]));
     struct qbh_dma_aligned_desc_1d prefetch_descriptor
         __attribute__((aligned(64)));
     int prefetch_active = 0;
@@ -2320,6 +2375,11 @@ static __attribute__((noinline)) int qbh_run_f16f16_pipelined_projection(
         ++header->hmx_command_count;
 
         if (hmx_result == 0 && direct_crouton != 0U) {
+            if (direct_qkv != 0U) {
+                header->crouton_qkv_unpack_skipped += group_tiles;
+                qbh_hvx_pool_qk_norm_rope_publish(
+                    header, desc, hvx_pool, n_tile, group_tiles);
+            }
             if (qbh_mlp_crouton_publish_up_group(
                     header, desc, hvx_pool, group_index) != 0) {
                 qbh_record_projection_failure(
@@ -2724,6 +2784,8 @@ static int qbh_run_w4f16_projection(
     uint32_t cross_prefetch_attempted = 0U;
     uint32_t active_workers;
     uint32_t region_tiles;
+    const uint32_t direct_qkv =
+        qbh_projection_direct_qkv_crouton(header, desc);
 
     if (pool == NULL) {
         qbh_record_projection_failure(header, desc, 0U, 10U, -1);
@@ -2820,9 +2882,17 @@ static int qbh_run_w4f16_projection(
             n_tile / QBH_BLOCK_W4F16_HMX_BATCH_N_TILES;
         uint32_t current_expanded_slot = group_index & 1U;
         uint32_t next_tile;
+        __fp16 *hmx_output = (__fp16 *)buffers->hmx_output;
 
         if (group_tiles > QBH_BLOCK_W4F16_HMX_BATCH_N_TILES) {
             group_tiles = QBH_BLOCK_W4F16_HMX_BATCH_N_TILES;
+        }
+        if (direct_qkv != 0U) {
+            const uint32_t output_group_elements =
+                (QBH_BLOCK_M / QBH_HMX_FP16_ROWS) *
+                group_tiles * QBH_HMX_FP16_TILE_ELEMENTS;
+            hmx_output = (__fp16 *)output +
+                (size_t)group_index * output_group_elements;
         }
         next_tile = n_tile + group_tiles;
         for (uint32_t tile = 0; tile < group_tiles; ++tile) {
@@ -2852,7 +2922,7 @@ static int qbh_run_w4f16_projection(
             worker, activation_tiles,
             expanded_slots[current_expanded_slot],
             buffers->scale_or_bias,
-            buffers->hmx_output, 2U, k_tiles, group_tiles);
+            hmx_output, 2U, k_tiles, group_tiles);
         ++header->w4f16_streamed_command_count;
         if (next_tile < n_tiles) {
             uint32_t next_group_tiles = n_tiles - next_tile;
@@ -2973,7 +3043,11 @@ static int qbh_run_w4f16_projection(
                 result != 0 ? result : cross_prefetch_result);
             return -1;
         }
-        {
+        if (direct_qkv != 0U) {
+            header->crouton_qkv_unpack_skipped += group_tiles;
+            qbh_hvx_pool_qk_norm_rope_publish(
+                header, desc, pool, n_tile, group_tiles);
+        } else {
             uint64_t unpack_start = HAP_perf_get_qtimer_count();
             qbh_unpack_fp16_output(
                 (const __fp16 *)buffers->hmx_output, group_tiles,
@@ -3361,12 +3435,15 @@ static int qbh_run_w4f16_interleaved_gate_up(
     header->w4f16_gate_up_effective_region_tiles =
         qbh_w4f16_gate_up_region_tiles(header);
 
-    pack_start = HAP_perf_get_qtimer_count();
-    qbh_pack_fp16_activation(
-        (const __fp16 *)buffers->normalized, QBH_BLOCK_HIDDEN,
-        QBH_BLOCK_HIDDEN, (__fp16 *)buffers->hmx_activation);
-    header->projection_pack_ticks +=
-        HAP_perf_get_qtimer_count() - pack_start;
+    if ((header->crouton_boundary_mode &
+         QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM) == 0U) {
+        pack_start = HAP_perf_get_qtimer_count();
+        qbh_pack_fp16_activation(
+            (const __fp16 *)buffers->normalized, QBH_BLOCK_HIDDEN,
+            QBH_BLOCK_HIDDEN, (__fp16 *)buffers->hmx_activation);
+        header->projection_pack_ticks +=
+            HAP_perf_get_qtimer_count() - pack_start;
+    }
 
     result = qbh_w4f16_consume_cross_prefetch(
         header, gate.desc, cross_prefetch);
@@ -3533,6 +3610,9 @@ static int qbh_run_projection(
     }
     header->projection_pack_ticks +=
         HAP_perf_get_qtimer_count() - phase_start;
+    if (qbh_projection_direct_qkv_crouton(header, desc)) {
+        ++header->crouton_qkv_projection_count;
+    }
     if (header->numerical_audit_enabled != 0U &&
         desc == &header->projections[QBH_BLOCK_PROJ_DOWN]) {
         header->mlp_down_input_hash = qbh_fnv1a64_bytes(
@@ -4074,6 +4154,164 @@ static __fp16 *qbh_attention_gqa_scratch(
         (size_t)context_index * QBH_BLOCK_HMX_OUTPUT_MAX_BYTES);
 }
 
+static void qbh_attention_copy_v_crouton_weight(
+    const __fp16 *source_group_tiles, uint32_t head,
+    __fp16 *destination_weight) {
+    static const uint8_t source_tile_for_weight[8] = {
+        0U, 2U, 1U, 3U, 4U, 6U, 5U, 7U};
+    const __fp16 *source = source_group_tiles +
+        (size_t)head * 8U * QBH_HMX_FP16_TILE_ELEMENTS;
+
+    for (uint32_t destination_tile = 0U;
+         destination_tile < 8U; ++destination_tile) {
+        const HVX_Vector *input = (const HVX_Vector *)(source +
+            (size_t)source_tile_for_weight[destination_tile] *
+                QBH_HMX_FP16_TILE_ELEMENTS);
+        HVX_Vector *output = (HVX_Vector *)(destination_weight +
+            (size_t)destination_tile * QBH_HMX_FP16_TILE_ELEMENTS);
+        for (uint32_t vector = 0U;
+             vector < QBH_HMX_FP16_TILE_BYTES / sizeof(HVX_Vector);
+             ++vector) {
+            output[vector] = input[vector];
+        }
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
+static void qbh_attention_copy_av_crouton_to_o_activation(
+    const __fp16 *source, uint32_t head,
+    __fp16 *destination) {
+    const uint32_t destination_tiles_per_row =
+        QBH_BLOCK_HIDDEN / QBH_HMX_FP16_COLS;
+    const uint32_t head_first_tile =
+        head * (QBH_BLOCK_HEAD_DIM / QBH_HMX_FP16_COLS);
+
+    for (uint32_t row_tile = 0U;
+         row_tile < QBH_BLOCK_M / QBH_HMX_FP16_ROWS;
+         ++row_tile) {
+        for (uint32_t column_tile = 0U;
+             column_tile < QBH_BLOCK_HEAD_DIM / QBH_HMX_FP16_COLS;
+             ++column_tile) {
+            const HVX_Vector *input = (const HVX_Vector *)(source +
+                (size_t)(row_tile * 4U + column_tile) *
+                    QBH_HMX_FP16_TILE_ELEMENTS);
+            HVX_Vector *output = (HVX_Vector *)(destination +
+                qbh_hmx_fp16_matrix_tile_offset(
+                    row_tile, head_first_tile + column_tile,
+                    destination_tiles_per_row));
+            for (uint32_t vector = 0U;
+                 vector < QBH_HMX_FP16_TILE_BYTES /
+                              sizeof(HVX_Vector);
+                 ++vector) {
+                output[vector] = input[vector];
+            }
+        }
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
+static uint32_t qbh_count_u16_mismatches(
+    const uint16_t *left, const uint16_t *right,
+    uint32_t elements) {
+    uint32_t mismatches = 0U;
+    for (uint32_t index = 0U; index < elements; ++index) {
+        mismatches += left[index] != right[index];
+    }
+    return mismatches;
+}
+
+static void qbh_unpack_fp16_grouped_projection(
+    const __fp16 *source, uint32_t n_tiles,
+    __fp16 *destination, uint32_t destination_stride) {
+    const uint32_t group_tiles = 2U;
+    const uint32_t group_elements =
+        (QBH_BLOCK_M / QBH_HMX_FP16_ROWS) *
+        group_tiles * QBH_HMX_FP16_TILE_ELEMENTS;
+    for (uint32_t first_tile = 0U; first_tile < n_tiles;
+         first_tile += group_tiles) {
+        qbh_unpack_fp16_output(
+            source + (size_t)(first_tile / group_tiles) *
+                group_elements,
+            group_tiles, destination, destination_stride,
+            first_tile * QBH_HMX_FP16_COLS);
+    }
+}
+
+static void qbh_audit_crouton_qkv_operands(
+    struct qbh_block_header *header,
+    struct qbh_block_buffers *buffers) {
+    const uint32_t head_elements =
+        QBH_BLOCK_M * QBH_BLOCK_HEAD_DIM;
+    __fp16 *q_reference = (__fp16 *)buffers->gate;
+    __fp16 *v_reference = q_reference +
+        QBH_BLOCK_M * QBH_BLOCK_HIDDEN;
+    __fp16 *k_reference = (__fp16 *)buffers->up;
+    __fp16 *reference_tiles = (__fp16 *)buffers->hmx_activation;
+    __fp16 *candidate_tiles = reference_tiles + head_elements;
+
+    qbh_unpack_fp16_grouped_projection(
+        (const __fp16 *)buffers->q,
+        QBH_BLOCK_HIDDEN / QBH_HMX_FP16_COLS,
+        q_reference, QBH_BLOCK_HIDDEN);
+    qbh_unpack_fp16_grouped_projection(
+        (const __fp16 *)buffers->k,
+        QBH_BLOCK_KV_HIDDEN / QBH_HMX_FP16_COLS,
+        k_reference, QBH_BLOCK_KV_HIDDEN);
+    qbh_unpack_fp16_grouped_projection(
+        (const __fp16 *)buffers->v,
+        QBH_BLOCK_KV_HIDDEN / QBH_HMX_FP16_COLS,
+        v_reference, QBH_BLOCK_KV_HIDDEN);
+    qbh_hvx_qk_norm_rope_f16(
+        q_reference, QBH_BLOCK_M, QBH_BLOCK_HEADS,
+        QBH_BLOCK_HIDDEN, QBH_BLOCK_HEAD_DIM,
+        (const __fp16 *)buffers->q_norm_weight,
+        (const __fp16 *)buffers->rope_cos,
+        (const __fp16 *)buffers->rope_sin, NULL);
+    qbh_hvx_qk_norm_rope_f16(
+        k_reference, QBH_BLOCK_M, QBH_BLOCK_KV_HEADS,
+        QBH_BLOCK_KV_HIDDEN, QBH_BLOCK_HEAD_DIM,
+        (const __fp16 *)buffers->k_norm_weight,
+        (const __fp16 *)buffers->rope_cos,
+        (const __fp16 *)buffers->rope_sin, NULL);
+
+    for (uint32_t head = 0U; head < QBH_BLOCK_HEADS; ++head) {
+        qbh_pack_fp16_activation(
+            q_reference + head * QBH_BLOCK_HEAD_DIM,
+            QBH_BLOCK_HIDDEN, QBH_BLOCK_HEAD_DIM,
+            reference_tiles);
+        header->crouton_q_operand_mismatch_count +=
+            qbh_count_u16_mismatches(
+                (const uint16_t *)reference_tiles,
+                (const uint16_t *)buffers->attention_projection +
+                    (size_t)head * head_elements,
+                head_elements);
+    }
+    for (uint32_t head = 0U; head < QBH_BLOCK_KV_HEADS; ++head) {
+        qbh_pack_fp16_weight_rows_hvx(
+            k_reference, QBH_BLOCK_KV_HIDDEN,
+            head * QBH_BLOCK_HEAD_DIM,
+            QBH_BLOCK_HEAD_DIM, QBH_BLOCK_M,
+            reference_tiles);
+        header->crouton_k_operand_mismatch_count +=
+            qbh_count_u16_mismatches(
+                (const uint16_t *)reference_tiles,
+                (const uint16_t *)buffers->scores +
+                    (size_t)head * head_elements,
+                head_elements);
+        qbh_pack_fp16_weight_transposed_hvx(
+            v_reference, QBH_BLOCK_KV_HIDDEN,
+            head * QBH_BLOCK_HEAD_DIM, QBH_BLOCK_M,
+            QBH_BLOCK_HEAD_DIM, reference_tiles);
+        qbh_attention_copy_v_crouton_weight(
+            (const __fp16 *)buffers->v, head, candidate_tiles);
+        header->crouton_v_operand_mismatch_count +=
+            qbh_count_u16_mismatches(
+                (const uint16_t *)reference_tiles,
+                (const uint16_t *)candidate_tiles,
+                head_elements);
+    }
+}
+
 static int qbh_attention_gqa_submit(
     struct qbh_block_w4f16_pool *pool,
     struct qbh_block_w4f16_job *job,
@@ -4119,6 +4357,11 @@ static void qbh_attention_gqa_pool_run_tasks(
         buffers->middle, job->worker_index);
     const size_t head_elements =
         (size_t)QBH_BLOCK_M * QBH_BLOCK_M;
+    const uint32_t direct_qkv = qbh_crouton_qkv_enabled(
+        pool->attention_header);
+    const uint32_t direct_av_o =
+        (pool->attention_header->crouton_boundary_mode &
+         QBH_BLOCK_CROUTON_BOUNDARY_AV_TO_O) != 0U;
 
     for (;;) {
         uint32_t kv_head =
@@ -4153,23 +4396,35 @@ static void qbh_attention_gqa_pool_run_tasks(
                 pool->attention_rope_sin);
         }
 
-        qbh_pack_fp16_weight_rows_hvx(
-            (const __fp16 *)buffers->k, QBH_BLOCK_KV_HIDDEN,
-            kv_head * QBH_BLOCK_HEAD_DIM,
-            QBH_BLOCK_HEAD_DIM, QBH_BLOCK_M, weight);
+        if (direct_qkv != 0U) {
+            weight = (__fp16 *)buffers->scores +
+                (size_t)kv_head * 2U * head_elements;
+        } else {
+            qbh_pack_fp16_weight_rows_hvx(
+                (const __fp16 *)buffers->k, QBH_BLOCK_KV_HIDDEN,
+                kv_head * QBH_BLOCK_HEAD_DIM,
+                QBH_BLOCK_HEAD_DIM, QBH_BLOCK_M, weight);
+        }
         for (uint32_t local_head = 0U; local_head < 2U; ++local_head) {
             uint32_t head = first_q_head + local_head;
-            qbh_pack_fp16_activation(
-                (const __fp16 *)buffers->q +
-                    head * QBH_BLOCK_HEAD_DIM,
-                QBH_BLOCK_HIDDEN, QBH_BLOCK_HEAD_DIM, activation);
+            if (direct_qkv != 0U) {
+                activation = (__fp16 *)buffers->attention_projection +
+                    (size_t)head * 2U * head_elements;
+            } else {
+                qbh_pack_fp16_activation(
+                    (const __fp16 *)buffers->q +
+                        head * QBH_BLOCK_HEAD_DIM,
+                    QBH_BLOCK_HIDDEN, QBH_BLOCK_HEAD_DIM, activation);
+            }
             if (qbh_attention_gqa_submit(
                     pool, job, activation, weight, output, 4U, 2U) != 0) {
                 break;
             }
             qbh_unpack_fp16_output(
                 output, 2U,
-                (__fp16 *)buffers->scores +
+                (direct_qkv != 0U
+                     ? (__fp16 *)buffers->probability
+                     : (__fp16 *)buffers->scores) +
                     (size_t)head * head_elements,
                 QBH_BLOCK_M, 0U);
         }
@@ -4183,7 +4438,9 @@ static void qbh_attention_gqa_pool_run_tasks(
                 uint32_t head = first_q_head + local_head;
                 pool->attention_gqa_qk_max_abs[head] = qbh_f16_max_abs(
                     pool->attention_header,
-                    (__fp16 *)buffers->scores +
+                    (direct_qkv != 0U
+                         ? (__fp16 *)buffers->probability
+                         : (__fp16 *)buffers->scores) +
                         (size_t)head * head_elements,
                     (uint32_t)head_elements);
             }
@@ -4192,31 +4449,53 @@ static void qbh_attention_gqa_pool_run_tasks(
         for (uint32_t local_head = 0U; local_head < 2U; ++local_head) {
             uint32_t head = first_q_head + local_head;
             qbh_hvx_stable_causal_softmax_f16(
-                (__fp16 *)buffers->scores +
+                (direct_qkv != 0U
+                     ? (__fp16 *)buffers->probability
+                     : (__fp16 *)buffers->scores) +
                     (size_t)head * head_elements,
-                (__fp16 *)buffers->probability +
+                (direct_qkv != 0U
+                     ? (__fp16 *)buffers->scores
+                     : (__fp16 *)buffers->probability) +
                     (size_t)head * head_elements,
                 1U, QBH_BLOCK_M, QBH_BLOCK_M,
                 0.08838834764831845f, NULL);
         }
 
-        qbh_pack_fp16_weight_transposed_hvx(
-            (const __fp16 *)buffers->v, QBH_BLOCK_KV_HIDDEN,
-            kv_head * QBH_BLOCK_HEAD_DIM, QBH_BLOCK_M,
-            QBH_BLOCK_HEAD_DIM, weight);
+        if (direct_qkv != 0U) {
+            weight = qbh_attention_gqa_scratch(
+                buffers->up, job->worker_index);
+            qbh_attention_copy_v_crouton_weight(
+                (const __fp16 *)buffers->v, kv_head, weight);
+        } else {
+            qbh_pack_fp16_weight_transposed_hvx(
+                (const __fp16 *)buffers->v, QBH_BLOCK_KV_HIDDEN,
+                kv_head * QBH_BLOCK_HEAD_DIM, QBH_BLOCK_M,
+                QBH_BLOCK_HEAD_DIM, weight);
+        }
         for (uint32_t local_head = 0U; local_head < 2U; ++local_head) {
             uint32_t head = first_q_head + local_head;
             qbh_pack_fp16_activation(
-                (const __fp16 *)buffers->probability +
+                (direct_qkv != 0U
+                     ? (const __fp16 *)buffers->scores
+                     : (const __fp16 *)buffers->probability) +
                     (size_t)head * head_elements,
                 QBH_BLOCK_M, QBH_BLOCK_M, activation);
             if (qbh_attention_gqa_submit(
                     pool, job, activation, weight, output, 2U, 4U) != 0) {
                 break;
             }
-            qbh_unpack_fp16_output(
-                output, 4U, (__fp16 *)buffers->attention_concat,
-                QBH_BLOCK_HIDDEN, head * QBH_BLOCK_HEAD_DIM);
+            if (direct_av_o != 0U) {
+                uint64_t copy_start = HAP_perf_get_qtimer_count();
+                qbh_attention_copy_av_crouton_to_o_activation(
+                    output, head,
+                    (__fp16 *)buffers->hmx_activation);
+                job->attention_av_o_copy_ticks +=
+                    HAP_perf_get_qtimer_count() - copy_start;
+            } else {
+                qbh_unpack_fp16_output(
+                    output, 4U, (__fp16 *)buffers->attention_concat,
+                    QBH_BLOCK_HIDDEN, head * QBH_BLOCK_HEAD_DIM);
+            }
         }
         if (pool->attention_gqa_abort != 0U) {
             break;
@@ -4282,6 +4561,8 @@ static int qbh_hvx_pool_gqa_attention(
         main_job.attention_gqa_hmx_wait_ticks;
     header->attention_gqa_queue_wait_ticks +=
         main_job.attention_gqa_queue_wait_ticks;
+    header->crouton_av_o_copy_ticks +=
+        main_job.attention_av_o_copy_ticks;
     header->attention_gqa_group_count +=
         main_job.attention_gqa_group_count;
     asm volatile("barrier" ::: "memory");
@@ -4415,6 +4696,10 @@ static int qbh_attention_f16(struct qbh_block_header *header,
             QBH_BLOCK_NUMERICAL_ATTENTION_SOFTMAX);
         header->attention_probability_max_abs = qbh_f16_max_abs(
             header, probability, QBH_BLOCK_SCORE_ELEMENTS);
+        if ((header->crouton_boundary_mode &
+             QBH_BLOCK_CROUTON_BOUNDARY_AV_TO_O) != 0U) {
+            attention = (__fp16 *)buffers->hmx_activation;
+        }
         qbh_record_f16_nonfinite(
             header, attention, QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
             QBH_BLOCK_NUMERICAL_ATTENTION_AV);
@@ -4810,6 +5095,20 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     uint32_t qkv_overlap_enabled =
         header->attention_pipeline_mode ==
             QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP;
+    uint32_t crouton_qkv_enabled =
+        qbh_crouton_qkv_enabled(header);
+    uint32_t crouton_av_o_enabled =
+        header->variant != QBH_BLOCK_W4U8 &&
+        (header->crouton_boundary_mode &
+         QBH_BLOCK_CROUTON_BOUNDARY_AV_TO_O) != 0U;
+    uint32_t crouton_input_norm_enabled =
+        header->variant != QBH_BLOCK_W4U8 &&
+        (header->crouton_boundary_mode &
+         QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM) != 0U;
+    uint32_t crouton_post_norm_enabled =
+        header->variant != QBH_BLOCK_W4U8 &&
+        (header->crouton_boundary_mode &
+         QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM) != 0U;
     uint32_t qkv_overlap_first_worker =
         header->variant == QBH_BLOCK_W4F16 ? 2U : 0U;
     uint32_t qkv_overlap_worker_count =
@@ -4843,7 +5142,19 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             &header->qparams[QBH_BLOCK_QP_INPUT_NORM],
             QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
     } else {
-        if ((header->common_ops_mask & QBH_BLOCK_COMMON_OP_RMS_NORM) != 0U) {
+        if (crouton_input_norm_enabled != 0U) {
+            uint64_t norm_start = HAP_perf_get_qtimer_count();
+            qbh_hvx_rms_norm_f16_crouton(
+                (const __fp16 *)buffers->residual,
+                (const __fp16 *)buffers->input_norm_weight,
+                (__fp16 *)buffers->hmx_activation,
+                QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+            header->crouton_norm_store_ticks +=
+                HAP_perf_get_qtimer_count() - norm_start;
+            ++header->crouton_norm_projection_count;
+            qbh_hmx_fp16_init_unity_scale(buffers->scale_or_bias);
+        } else if ((header->common_ops_mask &
+                    QBH_BLOCK_COMMON_OP_RMS_NORM) != 0U) {
             qbh_hvx_rms_norm_f16(
                 (const __fp16 *)buffers->residual,
                 (const __fp16 *)buffers->input_norm_weight,
@@ -4858,7 +5169,10 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         }
         audit_start = qbh_attribution_begin(header);
         qbh_record_f16_nonfinite(
-            header, buffers->normalized, hidden_elements,
+            header,
+            crouton_input_norm_enabled != 0U
+                ? buffers->hmx_activation : buffers->normalized,
+            hidden_elements,
             QBH_BLOCK_NUMERICAL_INPUT_NORM);
         qbh_attribution_accumulate(
             header, audit_start, &header->input_norm_audit_ticks);
@@ -4870,6 +5184,9 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         qbh_hvx_pool_qk_norm_rope_start_async(
             w4f16_pool, (__fp16 *)buffers->q,
             (__fp16 *)buffers->k,
+            (__fp16 *)buffers->attention_projection,
+            (__fp16 *)buffers->scores,
+            crouton_qkv_enabled,
             (const __fp16 *)buffers->q_norm_weight,
             (const __fp16 *)buffers->k_norm_weight,
             (const __fp16 *)buffers->rope_cos,
@@ -4881,8 +5198,10 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     }
     if (qbh_run_projection(
             header, shared, &header->projections[QBH_BLOCK_PROJ_Q],
-            buffers, worker, w4f16_pool, buffers->normalized,
-            buffers->q, 0U,
+            buffers, worker, w4f16_pool,
+            crouton_input_norm_enabled != 0U
+                ? buffers->hmx_activation : buffers->normalized,
+            buffers->q, crouton_input_norm_enabled,
             &header->projections[QBH_BLOCK_PROJ_K],
             &cross_prefetch) != 0) {
         if (qkv_overlap_enabled != 0U) {
@@ -4921,12 +5240,20 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                 qkv_overlap_worker_count) != 0) {
             return QBH_BLOCK_STATUS_QK_NORM_ROPE_FAILED;
         }
+        if (crouton_qkv_enabled != 0U &&
+            header->numerical_audit_enabled != 0U) {
+            qbh_audit_crouton_qkv_operands(header, buffers);
+        }
         audit_start = qbh_attribution_begin(header);
         qbh_record_f16_nonfinite(
-            header, buffers->q, QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
+            header,
+            crouton_qkv_enabled != 0U
+                ? buffers->attention_projection : buffers->q,
+            QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
             QBH_BLOCK_NUMERICAL_Q_ROPE);
         qbh_record_f16_nonfinite(
-            header, buffers->k,
+            header,
+            crouton_qkv_enabled != 0U ? buffers->scores : buffers->k,
             QBH_BLOCK_M * QBH_BLOCK_KV_HIDDEN,
             QBH_BLOCK_NUMERICAL_K_ROPE);
         qbh_record_f16_nonfinite(
@@ -4935,6 +5262,10 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             QBH_BLOCK_NUMERICAL_V);
         qbh_attribution_accumulate(
             header, audit_start, &header->qkv_audit_ticks);
+        if (crouton_qkv_enabled != 0U) {
+            header->crouton_qk_operand_count +=
+                QBH_BLOCK_HEADS + QBH_BLOCK_KV_HEADS;
+        }
     } else if (header->variant != QBH_BLOCK_W4U8) {
         audit_start = qbh_attribution_begin(header);
         qbh_record_f16_nonfinite(
@@ -5049,6 +5380,13 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             softmax_check) != 0) {
         return QBH_BLOCK_STATUS_ATTENTION_FAILED;
     }
+    if (crouton_qkv_enabled != 0U) {
+        header->crouton_av_weight_count += QBH_BLOCK_KV_HEADS;
+    }
+    if (crouton_av_o_enabled != 0U) {
+        header->crouton_av_o_head_count += QBH_BLOCK_HEADS;
+        header->crouton_av_unpack_skipped += QBH_BLOCK_HEADS;
+    }
     if (header->variant == QBH_BLOCK_W4U8) {
         qbh_quantize_f16_buffer(
             (const __fp16 *)buffers->attention_concat,
@@ -5073,8 +5411,11 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     start = HAP_perf_get_qtimer_count();
     if (qbh_run_projection(
             header, shared, &header->projections[QBH_BLOCK_PROJ_O],
-            buffers, worker, w4f16_pool, buffers->attention_concat,
-            buffers->attention_projection, 0U,
+            buffers, worker, w4f16_pool,
+            crouton_av_o_enabled != 0U
+                ? buffers->hmx_activation : buffers->attention_concat,
+            buffers->attention_projection,
+            crouton_av_o_enabled,
             &header->projections[QBH_BLOCK_PROJ_GATE],
             &cross_prefetch) != 0) {
         return QBH_BLOCK_STATUS_O_PROJECTION_FAILED;
@@ -5102,12 +5443,29 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     } else {
         if (header->residual_mode ==
             QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM) {
-            qbh_hvx_residual_rms_norm_f16(
-                (__fp16 *)buffers->residual,
-                (const __fp16 *)buffers->attention_projection,
-                (const __fp16 *)buffers->post_norm_weight,
-                (__fp16 *)buffers->normalized,
-                QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+            uint64_t norm_start = HAP_perf_get_qtimer_count();
+            if (crouton_post_norm_enabled != 0U) {
+                qbh_hvx_residual_rms_norm_f16_crouton(
+                    (__fp16 *)buffers->residual,
+                    (const __fp16 *)buffers->attention_projection,
+                    (const __fp16 *)buffers->post_norm_weight,
+                    (__fp16 *)buffers->hmx_activation,
+                    QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+                ++header->crouton_norm_projection_count;
+                qbh_hmx_fp16_init_unity_scale(
+                    buffers->scale_or_bias);
+            } else {
+                qbh_hvx_residual_rms_norm_f16(
+                    (__fp16 *)buffers->residual,
+                    (const __fp16 *)buffers->attention_projection,
+                    (const __fp16 *)buffers->post_norm_weight,
+                    (__fp16 *)buffers->normalized,
+                    QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+            }
+            if (crouton_post_norm_enabled != 0U) {
+                header->crouton_norm_store_ticks +=
+                    HAP_perf_get_qtimer_count() - norm_start;
+            }
             post_attention_norm_fused = 1;
         } else if (header->residual_mode == QBH_BLOCK_RESIDUAL_HVX) {
             qbh_hvx_residual_add_f16(
@@ -5143,6 +5501,17 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     } else {
         if (post_attention_norm_fused != 0) {
             /* Materialized by the fused residual/RMSNorm first pass. */
+        } else if (crouton_post_norm_enabled != 0U) {
+            uint64_t norm_start = HAP_perf_get_qtimer_count();
+            qbh_hvx_rms_norm_f16_crouton(
+                (const __fp16 *)buffers->residual,
+                (const __fp16 *)buffers->post_norm_weight,
+                (__fp16 *)buffers->hmx_activation,
+                QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+            header->crouton_norm_store_ticks +=
+                HAP_perf_get_qtimer_count() - norm_start;
+            ++header->crouton_norm_projection_count;
+            qbh_hmx_fp16_init_unity_scale(buffers->scale_or_bias);
         } else if ((header->common_ops_mask &
                     QBH_BLOCK_COMMON_OP_RMS_NORM) != 0U) {
             qbh_hvx_rms_norm_f16(
@@ -5159,7 +5528,10 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         }
         audit_start = qbh_attribution_begin(header);
         qbh_record_f16_nonfinite(
-            header, buffers->normalized, hidden_elements,
+            header,
+            crouton_post_norm_enabled != 0U
+                ? buffers->hmx_activation : buffers->normalized,
+            hidden_elements,
             QBH_BLOCK_NUMERICAL_POST_NORM);
         qbh_attribution_accumulate(
             header, audit_start,
@@ -5213,8 +5585,10 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         if (qbh_run_projection(
                 header, shared,
                 &header->projections[QBH_BLOCK_PROJ_GATE], buffers,
-                worker, w4f16_pool, buffers->normalized,
-                buffers->gate, 0U,
+                worker, w4f16_pool,
+                crouton_post_norm_enabled != 0U
+                    ? buffers->hmx_activation : buffers->normalized,
+                buffers->gate, crouton_post_norm_enabled,
                 &header->projections[QBH_BLOCK_PROJ_UP],
                 &cross_prefetch) != 0) {
             return QBH_BLOCK_STATUS_GATE_UP_FAILED;
@@ -5230,8 +5604,10 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         if (qbh_run_projection(
                 header, shared,
                 &header->projections[QBH_BLOCK_PROJ_UP], buffers,
-                worker, w4f16_pool, buffers->normalized,
-                buffers->up, 0U,
+                worker, w4f16_pool,
+                crouton_post_norm_enabled != 0U
+                    ? buffers->hmx_activation : buffers->normalized,
+                buffers->up, crouton_post_norm_enabled,
                 &header->projections[QBH_BLOCK_PROJ_DOWN],
                 &cross_prefetch) != 0) {
             (void)qbh_mlp_stream_pipeline_wait(
@@ -5645,6 +6021,11 @@ stop_worker:
                 w4f16_pool.jobs[worker_index].stream_group_count;
             header->attention_qk_norm_worker_work_ticks +=
                 w4f16_pool.jobs[worker_index].attention_qk_norm_ticks;
+            if ((header->crouton_boundary_mode &
+                 QBH_BLOCK_CROUTON_BOUNDARY_QKV) != 0U) {
+                header->crouton_qkv_transform_ticks +=
+                    w4f16_pool.jobs[worker_index].attention_qk_norm_ticks;
+            }
             header->attention_qk_norm_task_count +=
                 w4f16_pool.jobs[worker_index].attention_qk_norm_task_count;
             header->attention_softmax_worker_work_ticks +=
@@ -5659,6 +6040,8 @@ stop_worker:
                 w4f16_pool.jobs[worker_index].attention_gqa_hmx_wait_ticks;
             header->attention_gqa_queue_wait_ticks +=
                 w4f16_pool.jobs[worker_index].attention_gqa_queue_wait_ticks;
+            header->crouton_av_o_copy_ticks +=
+                w4f16_pool.jobs[worker_index].attention_av_o_copy_ticks;
         }
         if (pool_status != 0 && result == AEE_SUCCESS) {
             header->dsp_status = header->variant == QBH_BLOCK_W4F16
