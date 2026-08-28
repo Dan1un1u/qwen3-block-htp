@@ -219,7 +219,9 @@ struct qbh_block_w4f16_cross_prefetch {
     struct qbh_dma_aligned_desc_1d descriptor;
     const struct qbh_block_projection_desc *target;
     uint64_t start_ticks;
+    uint32_t first_batch_bytes;
     uint32_t active;
+    uint32_t q_inbound;
 };
 
 static uint8_t qbh_block_hmx_stack[QBH_BLOCK_HMX_STACK_BYTES]
@@ -278,6 +280,19 @@ static void *qbh_arena_alloc(struct qbh_block_arena *arena,
                              uint32_t bytes) {
     return qbh_arena_alloc_aligned(
         arena, bytes, QBH_BLOCK_ALIGNMENT);
+}
+
+static int qbh_w4f16_gate_up_dma8_enabled(uint32_t mode) {
+    return mode ==
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH ||
+           mode ==
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_Q_PREFETCH;
+}
+
+static int qbh_w4f16_q_inbound_prefetch_enabled(
+    const struct qbh_block_header *header) {
+    return header->w4f16_pipeline_mode ==
+           QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_Q_PREFETCH;
 }
 
 static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
@@ -374,8 +389,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         buffers->projection_scales = qbh_arena_alloc_aligned(
             &arena, QBH_BLOCK_PROJECTION_SCALE_BYTES,
             QBH_HMX_FP16_SCALE_BYTES);
-        if (w4f16_pipeline_mode ==
-            QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH) {
+        if (qbh_w4f16_gate_up_dma8_enabled(w4f16_pipeline_mode)) {
             buffers->gate_up_scale_cache = qbh_arena_alloc_aligned(
                 &arena,
                 2U * (QBH_BLOCK_INTERMEDIATE / QBH_HMX_FP16_COLS) *
@@ -405,8 +419,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         buffers->channel_scale_alt == NULL ||
         (variant == QBH_BLOCK_W4F16 &&
          (buffers->projection_scales == NULL ||
-          (w4f16_pipeline_mode ==
-               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH &&
+          (qbh_w4f16_gate_up_dma8_enabled(w4f16_pipeline_mode) &&
            buffers->gate_up_scale_cache == NULL)))) {
         return -1;
     }
@@ -488,7 +501,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->f16f16_projection_mode >
             QBH_BLOCK_F16F16_PROJECTION_GATE4 ||
         header->w4f16_pipeline_mode >
-            QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH ||
+            QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_Q_PREFETCH ||
         (header->attention_pack_mode &
          ~((uint32_t)QBH_BLOCK_ATTENTION_PACK_HVX)) != 0U ||
         header->attention_pipeline_mode >
@@ -552,7 +565,9 @@ static int qbh_header_valid(const struct qbh_block_header *header,
            header->w4f16_pipeline_mode !=
                QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH &&
            header->w4f16_pipeline_mode !=
-               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH))) ||
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH &&
+           header->w4f16_pipeline_mode !=
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_Q_PREFETCH))) ||
         (header->variant != QBH_BLOCK_F16F16 &&
          header->f16f16_projection_mode !=
              QBH_BLOCK_F16F16_PROJECTION_SERIAL) ||
@@ -576,7 +591,9 @@ static int qbh_header_valid(const struct qbh_block_header *header,
           header->w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH ||
           header->w4f16_pipeline_mode ==
-              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH) &&
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH ||
+          header->w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_Q_PREFETCH) &&
          header->w4f16_requested_hvx_workers != 3U) ||
         ((header->w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN64_CROSS_PREFETCH ||
@@ -591,7 +608,9 @@ static int qbh_header_valid(const struct qbh_block_header *header,
           header->w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH ||
           header->w4f16_pipeline_mode ==
-              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH) &&
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH ||
+          header->w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_Q_PREFETCH) &&
          header->w4f16_region_tiles != 32U) ||
         (header->variant == QBH_BLOCK_W4U8 &&
          (header->residual_mode != QBH_BLOCK_RESIDUAL_SCALAR ||
@@ -794,20 +813,34 @@ static int qbh_w4f16_cross_prefetch_enabled(
            header->w4f16_pipeline_mode ==
                QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH ||
            header->w4f16_pipeline_mode ==
-               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH;
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH ||
+           header->w4f16_pipeline_mode ==
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_Q_PREFETCH;
 }
 
 static uint32_t qbh_w4f16_dma_batch_tiles(
     const struct qbh_block_header *header,
     const struct qbh_block_projection_desc *desc) {
-    if (header->w4f16_pipeline_mode ==
-            QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH &&
+    if (qbh_w4f16_gate_up_dma8_enabled(
+            header->w4f16_pipeline_mode) &&
         desc != NULL &&
         (desc == &header->projections[QBH_BLOCK_PROJ_GATE] ||
          desc == &header->projections[QBH_BLOCK_PROJ_UP])) {
         return 8U;
     }
     return QBH_BLOCK_W4F16_DMA_BATCH_N_TILES;
+}
+
+static uint32_t qbh_w4f16_first_batch_bytes(
+    const struct qbh_block_header *header,
+    const struct qbh_block_projection_desc *desc) {
+    uint32_t k_tiles = desc->k / QBH_HMX_FP16_COLS;
+    uint32_t n_tiles = desc->n / QBH_HMX_FP16_COLS;
+    uint32_t dma_batch_tiles =
+        qbh_w4f16_dma_batch_tiles(header, desc);
+    uint32_t first_batch_tiles =
+        n_tiles < dma_batch_tiles ? n_tiles : dma_batch_tiles;
+    return first_batch_tiles * k_tiles * QBH_W4_PACKED_TILE_BYTES;
 }
 
 static int qbh_w4f16_start_cross_prefetch(
@@ -817,9 +850,7 @@ static int qbh_w4f16_start_cross_prefetch(
     struct qbh_block_w4f16_cross_prefetch *state) {
     uint32_t k_tiles;
     uint32_t n_tiles;
-    uint32_t first_batch_tiles;
     uint32_t first_batch_bytes;
-    uint32_t dma_batch_tiles;
     int result;
 
     if (!qbh_w4f16_cross_prefetch_enabled(header) ||
@@ -831,11 +862,11 @@ static int qbh_w4f16_start_cross_prefetch(
     }
     k_tiles = next_desc->k / QBH_HMX_FP16_COLS;
     n_tiles = next_desc->n / QBH_HMX_FP16_COLS;
-    dma_batch_tiles = qbh_w4f16_dma_batch_tiles(header, next_desc);
-    first_batch_tiles =
-        n_tiles < dma_batch_tiles ? n_tiles : dma_batch_tiles;
-    first_batch_bytes = first_batch_tiles * k_tiles *
-                        QBH_W4_PACKED_TILE_BYTES;
+    if (k_tiles == 0U || n_tiles == 0U) {
+        return -1;
+    }
+    first_batch_bytes = qbh_w4f16_first_batch_bytes(
+        header, next_desc);
     state->start_ticks = HAP_perf_get_qtimer_count();
     result = qbh_dma_start_weight_prefetch(
         &state->descriptor, buffers->compressed_weight,
@@ -845,10 +876,39 @@ static int qbh_w4f16_start_cross_prefetch(
         return result;
     }
     state->target = next_desc;
+    state->first_batch_bytes = first_batch_bytes;
     state->active = 1U;
     ++header->w4f16_cross_prefetch_count;
     header->weight_ddr_read_bytes += first_batch_bytes;
     ++header->weight_dma_descriptor_count;
+    return 0;
+}
+
+static int qbh_w4f16_start_q_inbound_prefetch(
+    struct qbh_block_header *header, const uint8_t *shared,
+    struct qbh_block_buffers *buffers,
+    struct qbh_block_w4f16_cross_prefetch *state) {
+    const struct qbh_block_projection_desc *q_desc =
+        &header->projections[QBH_BLOCK_PROJ_Q];
+    int result;
+
+    if (!qbh_w4f16_q_inbound_prefetch_enabled(header)) {
+        return 0;
+    }
+    header->q_inbound_prefetch_enabled = 1U;
+    result = qbh_w4f16_start_cross_prefetch(
+        header, shared, q_desc, buffers, state);
+    if (result != 0) {
+        return result;
+    }
+    if (state == NULL || state->active == 0U ||
+        state->target != q_desc || state->first_batch_bytes == 0U) {
+        return -1;
+    }
+    state->q_inbound = 1U;
+    ++header->q_inbound_prefetch_start_count;
+    ++header->q_inbound_prefetch_descriptor_count;
+    header->q_inbound_prefetch_bytes += state->first_batch_bytes;
     return 0;
 }
 
@@ -858,6 +918,7 @@ static int qbh_w4f16_consume_cross_prefetch(
     struct qbh_block_w4f16_cross_prefetch *state) {
     uint64_t wait_start;
     uint64_t end;
+    uint32_t q_inbound;
     int result;
 
     if (state == NULL || state->active == 0U) {
@@ -866,15 +927,29 @@ static int qbh_w4f16_consume_cross_prefetch(
     if (state->target != desc) {
         return -1;
     }
+    q_inbound = state->q_inbound;
+    if (q_inbound != 0U) {
+        ++header->q_inbound_prefetch_consume_count;
+    }
     wait_start = HAP_perf_get_qtimer_count();
     result = qbh_dma_wait_weight_prefetch(&state->descriptor);
     end = HAP_perf_get_qtimer_count();
     header->w4f16_cross_prefetch_wait_ticks += end - wait_start;
     header->w4f16_cross_prefetch_lifetime_ticks +=
         end - state->start_ticks;
+    if (q_inbound != 0U) {
+        header->q_inbound_prefetch_wait_ticks += end - wait_start;
+        header->q_inbound_prefetch_lifetime_ticks +=
+            end - state->start_ticks;
+        if (result == 0) {
+            ++header->q_inbound_prefetch_completion_count;
+        }
+    }
     state->active = 0U;
     state->target = NULL;
     state->start_ticks = 0U;
+    state->first_batch_bytes = 0U;
+    state->q_inbound = 0U;
     return result == 0 ? 1 : -2;
 }
 
@@ -893,9 +968,16 @@ static void qbh_w4f16_drain_cross_prefetch(
     header->w4f16_cross_prefetch_wait_ticks += end - wait_start;
     header->w4f16_cross_prefetch_lifetime_ticks +=
         end - state->start_ticks;
+    if (state->q_inbound != 0U) {
+        header->q_inbound_prefetch_wait_ticks += end - wait_start;
+        header->q_inbound_prefetch_lifetime_ticks +=
+            end - state->start_ticks;
+    }
     state->active = 0U;
     state->target = NULL;
     state->start_ticks = 0U;
+    state->first_batch_bytes = 0U;
+    state->q_inbound = 0U;
 }
 
 static void qbh_hmx_worker_main(void *opaque) {
@@ -2196,7 +2278,9 @@ static uint32_t qbh_w4f16_projection_worker_count(
          header->w4f16_pipeline_mode ==
              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH ||
          header->w4f16_pipeline_mode ==
-             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH) &&
+             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH ||
+         header->w4f16_pipeline_mode ==
+             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_Q_PREFETCH) &&
         desc->k != QBH_BLOCK_INTERMEDIATE &&
         pool->worker_count > 2U) {
         return 2U;
@@ -2225,7 +2309,9 @@ static uint32_t qbh_w4f16_projection_region_tiles(
             header->w4f16_pipeline_mode ==
                 QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH ||
             header->w4f16_pipeline_mode ==
-                QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH) {
+                QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH ||
+            header->w4f16_pipeline_mode ==
+                QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_Q_PREFETCH) {
             return 96U;
         }
     }
@@ -2250,7 +2336,9 @@ static uint32_t qbh_w4f16_gate_up_group_tiles(
     return (header->w4f16_pipeline_mode ==
                 QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH ||
             header->w4f16_pipeline_mode ==
-                QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH)
+                QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH ||
+            header->w4f16_pipeline_mode ==
+                QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_Q_PREFETCH)
                ? 4U : QBH_BLOCK_W4F16_HMX_BATCH_N_TILES;
 }
 
@@ -4588,8 +4676,8 @@ static int qbh_stage_metadata(struct qbh_block_header *header,
              index < QBH_BLOCK_PROJECTION_COUNT; ++index) {
             const struct qbh_block_projection_desc *desc =
                 &header->projections[index];
-            if (header->w4f16_pipeline_mode !=
-                    QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH ||
+            if (!qbh_w4f16_gate_up_dma8_enabled(
+                    header->w4f16_pipeline_mode) ||
                 (index != QBH_BLOCK_PROJ_GATE &&
                  index != QBH_BLOCK_PROJ_UP)) {
                 if (qbh_dma_copy(
@@ -4602,8 +4690,8 @@ static int qbh_stage_metadata(struct qbh_block_header *header,
             }
             destination += desc->scale_bytes;
         }
-        if (header->w4f16_pipeline_mode ==
-            QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH) {
+        if (qbh_w4f16_gate_up_dma8_enabled(
+                header->w4f16_pipeline_mode)) {
             uint32_t cache_source_offset = 0U;
             for (uint32_t index = QBH_BLOCK_PROJ_GATE;
                  index <= QBH_BLOCK_PROJ_UP; ++index) {
@@ -4721,6 +4809,10 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     header->input_stage_ticks += HAP_perf_get_qtimer_count() - start;
 
     start = HAP_perf_get_qtimer_count();
+    if (qbh_w4f16_start_q_inbound_prefetch(
+            header, shared, buffers, &cross_prefetch) != 0) {
+        return QBH_BLOCK_STATUS_W4F16_PIPELINE_FAILED;
+    }
     if (header->variant == QBH_BLOCK_W4U8) {
         qbh_rms_norm_u8(
             buffers->residual,
@@ -4750,7 +4842,14 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         qbh_attribution_accumulate(
             header, audit_start, &header->input_norm_audit_ticks);
     }
-    header->input_norm_ticks += HAP_perf_get_qtimer_count() - start;
+    {
+        uint64_t input_norm_end = HAP_perf_get_qtimer_count();
+        header->input_norm_ticks += input_norm_end - start;
+        if (cross_prefetch.q_inbound != 0U) {
+            header->q_inbound_prefetch_overlap_window_ticks +=
+                input_norm_end - cross_prefetch.start_ticks;
+        }
+    }
 
     start = HAP_perf_get_qtimer_count();
     if (qkv_overlap_enabled != 0U &&

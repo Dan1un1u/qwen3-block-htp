@@ -354,6 +354,13 @@ static int qbh_parse_w4f16_pipeline_mode(const char *text,
             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH;
         return 0;
     }
+    if (strcmp(text, "adaptive_down96_gate4_dma8_cross_q") == 0 ||
+        strcmp(text, "adaptive_down96_gate4_dma8_cross_qprefetch") == 0 ||
+        strcmp(text, "adaptive_down96_gate4_dma8_cross_q_prefetch") == 0) {
+        *mode =
+            QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_Q_PREFETCH;
+        return 0;
+    }
     return -1;
 }
 
@@ -403,6 +410,10 @@ static const char *qbh_w4f16_pipeline_mode_name(uint32_t mode) {
     if (mode ==
         QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH) {
         return "adaptive_down96_gate4_dma8_cross_prefetch";
+    }
+    if (mode ==
+        QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_Q_PREFETCH) {
+        return "adaptive_down96_gate4_dma8_cross_q_prefetch";
     }
     return "control";
 }
@@ -617,7 +628,9 @@ static int qbh_prepare_gate_up_scale_cache(
     uint32_t cache_bytes = 0U;
 
     if (header->w4f16_pipeline_mode !=
-        QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH) {
+            QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH &&
+        header->w4f16_pipeline_mode !=
+            QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_Q_PREFETCH) {
         return 0;
     }
     destination = shared + header->output_offset;
@@ -974,7 +987,9 @@ int main(int argc, char **argv) {
            w4f16_pipeline_mode !=
                QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH &&
            w4f16_pipeline_mode !=
-               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH))) ||
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH &&
+           w4f16_pipeline_mode !=
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_Q_PREFETCH))) ||
         (mlp_chunk_vectors != 16U && mlp_chunk_vectors != 32U &&
          mlp_chunk_vectors != 64U && mlp_chunk_vectors != 128U &&
          mlp_chunk_vectors != 256U) ||
@@ -1000,7 +1015,9 @@ int main(int argc, char **argv) {
           w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH ||
           w4f16_pipeline_mode ==
-              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH) &&
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH ||
+          w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_Q_PREFETCH) &&
          w4f16_hvx_workers != 3U) ||
         ((w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN64_CROSS_PREFETCH ||
@@ -1015,7 +1032,9 @@ int main(int argc, char **argv) {
           w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH ||
           w4f16_pipeline_mode ==
-              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH) &&
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH ||
+          w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_Q_PREFETCH) &&
          w4f16_region_tiles != 32U) ||
         (w4f16_region_tiles != 8U && w4f16_region_tiles != 16U &&
          w4f16_region_tiles != 32U && w4f16_region_tiles != 64U) ||
@@ -1033,7 +1052,8 @@ int main(int argc, char **argv) {
                         "adaptive_down96_cross|adaptive_down96_gate16_cross|"
                         "adaptive_down96_gate8_cross|"
                         "adaptive_down96_gate4_cross|"
-                        "adaptive_down96_gate4_dma8_cross] "
+                        "adaptive_down96_gate4_dma8_cross|"
+                        "adaptive_down96_gate4_dma8_cross_q] "
                         "[attention_pack:control|qk_hvx|av_hvx|hvx] "
                         "[mlp:control|parallel_silu|streaming] "
                         "[mlp_hvx_contexts:1..4] "
@@ -1383,7 +1403,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0034\","
+        "{\"experiment\":\"EXP-0035\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"FP16_HMX\","
         "\"projection_compute\":\"%s\","
@@ -1752,7 +1772,16 @@ int main(int argc, char **argv) {
         header->attention_gqa_queue_wait_ticks,
         release_result, close_result);
     printf(
-        ",\"qkv_attribution_version\":1,"
+        ",\"q_inbound_prefetch_enabled\":%" PRIu32 ","
+        "\"q_inbound_prefetch_start_count\":%" PRIu32 ","
+        "\"q_inbound_prefetch_completion_count\":%" PRIu32 ","
+        "\"q_inbound_prefetch_consume_count\":%" PRIu32 ","
+        "\"q_inbound_prefetch_bytes\":%" PRIu64 ","
+        "\"q_inbound_prefetch_descriptor_count\":%" PRIu32 ","
+        "\"q_inbound_prefetch_lifetime_ticks\":%" PRIu64 ","
+        "\"q_inbound_prefetch_wait_ticks\":%" PRIu64 ","
+        "\"q_inbound_prefetch_overlap_window_ticks\":%" PRIu64 ","
+        "\"qkv_attribution_version\":1,"
         "\"qkv_projection_wall_ticks\":[%" PRIu64 ",%" PRIu64
         ",%" PRIu64 "],"
         "\"qkv_weight_dma_ticks\":[%" PRIu64 ",%" PRIu64
@@ -1792,6 +1821,15 @@ int main(int argc, char **argv) {
         "\"qkv_f16_prefetch_count\":[%" PRIu64 ",%" PRIu64
         ",%" PRIu64 "],"
         "\"qkv_projection_unattributed_ticks\":%" PRIu64 "}\n",
+        header->q_inbound_prefetch_enabled,
+        header->q_inbound_prefetch_start_count,
+        header->q_inbound_prefetch_completion_count,
+        header->q_inbound_prefetch_consume_count,
+        header->q_inbound_prefetch_bytes,
+        header->q_inbound_prefetch_descriptor_count,
+        header->q_inbound_prefetch_lifetime_ticks,
+        header->q_inbound_prefetch_wait_ticks,
+        header->q_inbound_prefetch_overlap_window_ticks,
         header->qkv_attribution[0].wall_ticks,
         header->qkv_attribution[1].wall_ticks,
         header->qkv_attribution[2].wall_ticks,

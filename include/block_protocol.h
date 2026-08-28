@@ -6,8 +6,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(17)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(34)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(18)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(35)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -68,6 +68,7 @@ enum qbh_block_w4f16_pipeline_mode {
     QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH = 11,
     QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH = 12,
     QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH = 13,
+    QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_Q_PREFETCH = 14,
 };
 
 enum qbh_block_attention_pack_mode {
@@ -311,6 +312,11 @@ struct qbh_block_header {
     uint32_t attention_qk_norm_task_count;
     uint32_t attention_softmax_task_count;
     uint32_t attention_gqa_group_count;
+    uint32_t q_inbound_prefetch_enabled;
+    uint32_t q_inbound_prefetch_start_count;
+    uint32_t q_inbound_prefetch_completion_count;
+    uint32_t q_inbound_prefetch_consume_count;
+    uint32_t q_inbound_prefetch_descriptor_count;
 
     uint32_t prepared_session_run_index;
     uint32_t resource_vtcm_address;
@@ -373,6 +379,10 @@ struct qbh_block_header {
     uint64_t w4f16_cross_prefetch_count;
     uint64_t w4f16_cross_prefetch_wait_ticks;
     uint64_t w4f16_cross_prefetch_lifetime_ticks;
+    uint64_t q_inbound_prefetch_bytes;
+    uint64_t q_inbound_prefetch_lifetime_ticks;
+    uint64_t q_inbound_prefetch_wait_ticks;
+    uint64_t q_inbound_prefetch_overlap_window_ticks;
     uint64_t mlp_silu_main_work_ticks;
     uint64_t mlp_silu_worker_work_ticks;
     uint64_t mlp_silu_pool_wait_ticks;
