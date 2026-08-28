@@ -275,3 +275,25 @@ expansion group, one HMX output command, and one Q/K readiness publication all
 cover four 32-channel tiles, exactly one 128-channel Qwen3 head. Stage A may
 apply it to Q alone; extending it to K/V requires the preceding gate to pass.
 _Avoid_: QKV weight fusion, changed head layout, repeated first-Q prefetch
+
+**Crouton-Native QKV Handoff**:
+A producer-consumer contract in which Q/K/V projection output remains in HMX
+Crouton tile order, Q/K Norm-RoPE consumes those tiles without a complete
+row-major Q/K tensor, and Q/K/V are transformed directly into the Crouton
+operands consumed by QK and AV. It preserves projection arithmetic, head
+semantics, standard Attention mathematics, and one HMX owner.
+_Avoid_: Head-Aligned QKV Batch-4, row-major QKV cache, changed Attention math
+
+**Crouton-Native AV-to-O Handoff**:
+An Attention boundary in which each AV HMX result is written into the final
+Crouton activation position consumed by the O projection, eliminating the
+complete row-major Attention-concat materialization and O activation repack.
+_Avoid_: fused AV-O matrix multiplication, second HMX owner, DDR workspace
+
+**Crouton-Native Norm-to-Projection Handoff**:
+An FP16 RMSNorm or fused Residual-RMSNorm store path that writes its unchanged
+normalized values directly into the HMX Crouton activation layout consumed by
+the following projection. Input RMSNorm-to-QKV and Post-Attention
+Residual-RMSNorm-to-Gate/Up are separate measurable milestones.
+_Avoid_: changed RMSNorm reduction, approximate normalization, hidden row-major
+copy, quantized activation

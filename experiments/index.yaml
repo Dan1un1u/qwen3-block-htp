@@ -2316,3 +2316,49 @@ experiments:
       stage_b_executed: false
       stage_b_stop_reason: stage_a_complete_block_host_wall_regressed_at_repeat1_and_repeat10
       performance_characterization: q_batch4_halves_q_hmx_commands_and_reduces_local_q_wall_by_3_2_to_3_4_percent_but_coarser_head_publication_adds_261_to_283_qk_norm_rope_join_wait_ticks_so_qkv_wall_and_complete_block_host_wall_regress_and_stage_b_is_not_authorized
+  - id: EXP-0038
+    slug: crouton-native-projection-boundaries
+    title: Eliminate row-major boundaries around QKV, AV-to-O, and RMSNorm-to-Projection
+    parent: EXP-0036
+    variants:
+      - exp0036_f16f16_fastest_control
+      - exp0036_w4f16_crouton_swiglu_batch8_control
+      - crouton_native_qkv_handoff
+      - crouton_native_av_to_o_handoff
+      - input_rmsnorm_to_projection_crouton
+      - post_attention_rmsnorm_to_projection_crouton
+      - cumulative_fastest_valid_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-crouton-native-cross-operator-boundaries
+    source_branches:
+      - codex/exp-0038-crouton-native-boundaries
+    source_commits: []
+    record: docs/experiments/EXP-0038.md
+    decided_by: user
+    decided_on: '2026-08-29'
+    approval_ref: 'User message 2026-08-29: start a serial long-running loop and validate all three proposed directions'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0038-crouton-native-boundaries
+      started_on: '2026-08-29'
+    evidence:
+      formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0038'
+      retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0038'
+      source_parent_commit: a959219dfa95d6b7b1b45aa18d4e03f3d60d656c
+      execution_unit: qwen3_layer14_complete_block_m64
+      activation_scope: fp16_only
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      single_hmx_owner_required: true
+      repeat_contract: repeat1_and_repeat10
+      stage_a_scope: crouton_native_qkv_projection_to_qk_norm_rope_and_attention_handoff
+      stage_b_scope: crouton_native_av_output_to_o_projection_activation_handoff
+      stage_c1_scope: input_rmsnorm_direct_crouton_store_for_qkv
+      stage_c2_scope: post_attention_residual_rmsnorm_direct_crouton_store_for_gate_up
+      continuation_rule: a_failed_local_speed_gate_discards_only_that_candidate_and_does_not_block_later_independent_stages
+      correctness_gate: byte_exact_against_paired_control_and_pass_independent_implementation_reference
+      physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn
+      speed_gate: relevant_combined_ledger_interval_and_complete_host_wall_strictly_improve_at_repeat1_and_repeat10_without_regressing_either_f16f16_or_w4f16
