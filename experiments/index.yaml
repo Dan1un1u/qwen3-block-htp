@@ -1925,3 +1925,41 @@ experiments:
       repeat10_control_scale_init_ticks: 184.1
       rejected_diagnostic: region16_and_region8_increased_pool_wait_hmx_wait_unpack_and_synchronization
       performance_characterization: gate_up_batch4_reduces_hmx_submission_count_dma8_halves_packed_weight_prefetch_boundaries_and_a_preencoded_exact_hmx_scale_cache_removes_hot_path_scale_conversion_while_preserving_math_and_zero_ddr_residency
+  - id: EXP-0033
+    slug: qkv-dynamic-scheduler
+    title: Dynamically share W4 QKV expansion and QK Norm-RoPE workers
+    parent: EXP-0032
+    variants:
+      - exp0032_f16f16_batch4_control
+      - exp0032_w4f16_dma8_scale_cache_control
+      - w4f16_qkv_dynamic_work_stealing_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4f16-qkv-dynamic-worker-schedule
+    source_branches:
+      - codex/exp-0033-qkv-dynamic-scheduler
+    source_commits:
+      - 91ba193660513bd0675c0a091db199aa09df1773
+    record: docs/experiments/EXP-0033.md
+    decided_by: user
+    decided_on: '2026-08-28'
+    approval_ref: 'User message 2026-08-28: 同意'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0033-qkv-dynamic-scheduler
+      started_on: '2026-08-28'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0033'
+      retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0033'
+      source_parent_commit: 91ba193660513bd0675c0a091db199aa09df1773
+      execution_unit: qwen3_layer14_complete_block_m64
+      activation_scope: fp16_only
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      fixed_attention_mode: exp0031_qkv_head_readiness_plus_gqa_pipeline
+      fixed_mlp_mode: exp0032_gate_up_batch4_dma8_scale_cache
+      primary_scope: w4f16_qkv_projection_and_qk_norm_rope_worker_ownership
+      local_speed_gate: w4f16_qkv_and_complete_block_strictly_improve_over_exp0032_w4f16_control_at_repeat1_and_repeat10_without_regressing_the_f16f16_control_or_w4f16_complete_block_advantage
