@@ -199,9 +199,14 @@ def validate_record(record, config_name, repeat, audit_mode):
         value = record.get(field)
         if not isinstance(value, int) or value < 0:
             raise SystemExit(f"invalid timing field {field}: {value!r}")
-    for field in ("host_wall_ns", "host_wall_ns_per_block", "total_ticks",
-                  "invocation_ticks", "gate_up_ticks", "activation_ticks",
-                  "down_ticks", "weight_dma_ticks", "hmx_compute_ticks"):
+    positive_fields = (
+        "host_wall_ns", "host_wall_ns_per_block", "total_ticks",
+        "invocation_ticks", "gate_up_ticks", "down_ticks",
+        "weight_dma_ticks", "hmx_compute_ticks",
+    )
+    if not is_streaming:
+        positive_fields += ("activation_ticks",)
+    for field in positive_fields:
         value = record.get(field)
         if not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
             raise SystemExit(f"invalid positive {config_name}.{field}: {value!r}")
