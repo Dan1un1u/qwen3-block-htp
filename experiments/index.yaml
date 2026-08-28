@@ -2006,3 +2006,38 @@ experiments:
       local_speed_gate_result: fail
       rejected_diagnostic: existing_control_already_uses_three_expansion_contexts_plus_a_fourth_norm_context_and_main_context_work_stealing_serializes_norm_ahead_of_projection_hmx_production
       performance_characterization: dynamic_main_context_norm_claims_remove_a_small_qk_join_tail_but_delay_the_next_projection_hmx_producer_action_increasing_hmx_wait_qkv_and_complete_block_latency
+  - id: EXP-0034
+    slug: qkv-projection-attribution
+    title: Attribute the W4F16 QKV regression to Q, K, or V projection stages
+    parent: EXP-0032
+    variants:
+      - exp0032_f16f16_batch4_control
+      - exp0032_w4f16_dma8_scale_cache_control
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: not_applicable
+    evidence_profile: real-qwen3-block-qkv-per-projection-ledger
+    source_branches:
+      - codex/exp-0034-qkv-projection-attribution
+    source_commits:
+      - 91ba193660513bd0675c0a091db199aa09df1773
+    record: docs/experiments/EXP-0034.md
+    decided_by: user
+    decided_on: '2026-08-28'
+    approval_ref: 'User message 2026-08-28: 同意，继续下一步'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0034-qkv-projection-attribution
+      started_on: '2026-08-28'
+      completed_on: null
+    evidence:
+      formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0034'
+      retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0034'
+      source_parent_commit: 91ba193660513bd0675c0a091db199aa09df1773
+      execution_unit: qwen3_layer14_complete_block_m64
+      activation_scope: fp16_only
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      primary_scope: q_k_v_projection_telemetry_only
+      completion_gate: per_projection_wall_ledger_and_engine_counter_deltas_reconcile_while_outputs_and_physical_contract_remain_unchanged
