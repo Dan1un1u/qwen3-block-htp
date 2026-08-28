@@ -83,6 +83,23 @@ MODES = {
     },
 }
 
+BOUNDARY_FIELDS = {
+    "qkv": (
+        "qkv_projection_ticks", "qk_norm_rope_ticks", "attention_ticks",
+    ),
+    "avo": ("attention_ticks", "o_projection_ticks"),
+    "input_norm": ("input_norm_ticks", "qkv_projection_ticks"),
+    "post_norm": (
+        "post_attention_residual_ticks", "post_attention_norm_ticks",
+        "gate_up_ticks",
+    ),
+    "norms": (
+        "input_norm_ticks", "qkv_projection_ticks",
+        "post_attention_residual_ticks", "post_attention_norm_ticks",
+        "gate_up_ticks",
+    ),
+}
+
 CONFIGS = tuple(
     f"{variant}_{mode}" for variant in VARIANTS for mode in MODES
 )
@@ -210,7 +227,8 @@ def medians(records):
     fields = (
         "total_ticks", "invocation_ticks", "input_norm_ticks",
         "qkv_projection_ticks", "qk_norm_rope_ticks", "attention_ticks",
-        "o_projection_ticks", "post_attention_norm_ticks", "gate_up_ticks",
+        "o_projection_ticks", "post_attention_residual_ticks",
+        "post_attention_norm_ticks", "gate_up_ticks",
         "down_ticks", "weight_dma_ticks", "hmx_compute_ticks",
         "crouton_qkv_transform_ticks", "crouton_av_o_copy_ticks",
         "crouton_norm_store_ticks",
@@ -224,6 +242,11 @@ def medians(records):
     for field in fields:
         result[f"{field}_median_per_block"] = statistics.median(
             record[field] / repeat for record in records)
+    for mode, boundary_fields in BOUNDARY_FIELDS.items():
+        result[f"{mode}_boundary_ticks_median_per_block"] = statistics.median(
+            sum(record[field] for field in boundary_fields) / repeat
+            for record in records
+        )
     return result
 
 
@@ -234,23 +257,31 @@ def pct(candidate, control):
 def compare(timing, variant, mode):
     output = {}
     passed = True
+    boundary_key = f"{mode}_boundary_ticks_median_per_block"
     for family in ("repeat1", "repeat10"):
         control = timing[family][f"{variant}_control"]
         candidate = timing[family][f"{variant}_{mode}"]
-        delta = pct(
+        host_delta = pct(
             candidate["host_wall_ns_per_block_median"],
             control["host_wall_ns_per_block_median"],
         )
+        boundary_delta = pct(candidate[boundary_key], control[boundary_key])
+        family_pass = host_delta <= 0.0 and boundary_delta <= 0.0
         output[family] = {
             "control_host_wall_ns_per_block_median":
                 control["host_wall_ns_per_block_median"],
             "candidate_host_wall_ns_per_block_median":
                 candidate["host_wall_ns_per_block_median"],
-            "candidate_percent_vs_control": delta,
-            "pass_not_slower": delta <= 0.0,
+            "candidate_host_percent_vs_control": host_delta,
+            "control_boundary_ticks_median_per_block": control[boundary_key],
+            "candidate_boundary_ticks_median_per_block": candidate[boundary_key],
+            "candidate_boundary_percent_vs_control": boundary_delta,
+            "pass_host_not_slower": host_delta <= 0.0,
+            "pass_boundary_not_slower": boundary_delta <= 0.0,
+            "pass_speed_gate": family_pass,
         }
-        passed = passed and delta <= 0.0
-    output["pass_not_slower_both_repeats"] = passed
+        passed = passed and family_pass
+    output["pass_speed_gate_both_repeats"] = passed
     return output
 
 
@@ -321,16 +352,16 @@ def main():
 
     local_gates = {
         "qkv": all(comparisons["qkv"][variant]
-                   ["pass_not_slower_both_repeats"] for variant in VARIANTS),
+                   ["pass_speed_gate_both_repeats"] for variant in VARIANTS),
         "av_to_o": all(comparisons["avo"][variant]
-                       ["pass_not_slower_both_repeats"] for variant in VARIANTS),
+                       ["pass_speed_gate_both_repeats"] for variant in VARIANTS),
         "input_norm": all(comparisons["input_norm"][variant]
-                          ["pass_not_slower_both_repeats"] for variant in VARIANTS),
+                          ["pass_speed_gate_both_repeats"] for variant in VARIANTS),
         "post_norm": all(comparisons["post_norm"][variant]
-                         ["pass_not_slower_both_repeats"] for variant in VARIANTS),
+                         ["pass_speed_gate_both_repeats"] for variant in VARIANTS),
         "norms_combined": (
             all(comparisons["norms"][variant]
-                ["pass_not_slower_both_repeats"] for variant in VARIANTS)
+                ["pass_speed_gate_both_repeats"] for variant in VARIANTS)
             and paired_norms["pass_both_repeats"]
         ),
     }
