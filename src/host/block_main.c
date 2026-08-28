@@ -240,6 +240,35 @@ static const char *qbh_residual_mode_name(uint32_t mode) {
     return mode == QBH_BLOCK_RESIDUAL_HVX ? "hvx_fp16" : "scalar";
 }
 
+static int qbh_parse_f16f16_projection_mode(const char *text,
+                                             uint32_t *mode) {
+    if (strcmp(text, "serial") == 0) {
+        *mode = QBH_BLOCK_F16F16_PROJECTION_SERIAL;
+        return 0;
+    }
+    if (strcmp(text, "async") == 0 ||
+        strcmp(text, "async_single") == 0) {
+        *mode = QBH_BLOCK_F16F16_PROJECTION_ASYNC_SINGLE;
+        return 0;
+    }
+    if (strcmp(text, "batch2") == 0 ||
+        strcmp(text, "double_buffer_batch2") == 0) {
+        *mode = QBH_BLOCK_F16F16_PROJECTION_BATCH2;
+        return 0;
+    }
+    return -1;
+}
+
+static const char *qbh_f16f16_projection_mode_name(uint32_t mode) {
+    if (mode == QBH_BLOCK_F16F16_PROJECTION_BATCH2) {
+        return "double_buffer_batch2";
+    }
+    if (mode == QBH_BLOCK_F16F16_PROJECTION_ASYNC_SINGLE) {
+        return "async_single";
+    }
+    return "serial";
+}
+
 static uint64_t qbh_fnv1a64(const uint8_t *data, size_t bytes) {
     uint64_t hash = UINT64_C(1469598103934665603);
     for (size_t index = 0; index < bytes; ++index) {
@@ -518,6 +547,8 @@ int main(int argc, char **argv) {
     uint32_t attribution_enabled = 0U;
     uint32_t numerical_audit_enabled = 1U;
     uint32_t residual_mode = QBH_BLOCK_RESIDUAL_SCALAR;
+    uint32_t f16f16_projection_mode =
+        QBH_BLOCK_F16F16_PROJECTION_SERIAL;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t cursor = qbh_align_up_size(sizeof(*header), QBH_HOST_ALIGNMENT);
@@ -543,7 +574,7 @@ int main(int argc, char **argv) {
 
     memset(&warmup_metrics, 0, sizeof(warmup_metrics));
     memset(&measured_metrics, 0, sizeof(measured_metrics));
-    if (argc < 3 || argc > 10 ||
+    if (argc < 3 || argc > 11 ||
         qbh_parse_variant(argv[2], &variant) != 0 ||
         (argc >= 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
         (argc >= 5 && qbh_parse_u32(
@@ -558,19 +589,25 @@ int main(int argc, char **argv) {
                           argv[8], &numerical_audit_enabled) != 0) ||
         (argc >= 10 && qbh_parse_residual_mode(
                            argv[9], &residual_mode) != 0) ||
+        (argc >= 11 && qbh_parse_f16f16_projection_mode(
+                           argv[10], &f16f16_projection_mode) != 0) ||
         repeats == 0U || repeats > 100U ||
         w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
         (argc >= 7 && variant == QBH_BLOCK_W4U8 &&
          common_ops_mask != QBH_BLOCK_COMMON_OPS_SCALAR) ||
         (variant == QBH_BLOCK_W4U8 &&
          residual_mode != QBH_BLOCK_RESIDUAL_SCALAR) ||
+        (variant != QBH_BLOCK_F16F16 &&
+         f16f16_projection_mode !=
+             QBH_BLOCK_F16F16_PROJECTION_SERIAL) ||
         (w4f16_region_tiles != 8U && w4f16_region_tiles != 16U &&
          w4f16_region_tiles != 32U)) {
         fprintf(stderr, "usage: %s PACKAGE_DIR VARIANT [repeat_count] "
                         "[w4f16_hvx_workers] [w4f16_region_tiles] "
                         "[scalar|rms|rope|softmax|silu|rms_silu|"
                         "rms_silu_rope|hvx] [attribution:off|on] "
-                        "[audit:off|on] [residual:scalar|hvx|fused]\n",
+                        "[audit:off|on] [residual:scalar|hvx|fused] "
+                        "[f16_projection:serial|async|batch2]\n",
                 argv[0]);
         return 2;
     }
@@ -742,6 +779,7 @@ int main(int argc, char **argv) {
     header->attribution_enabled = attribution_enabled;
     header->numerical_audit_enabled = numerical_audit_enabled;
     header->residual_mode = residual_mode;
+    header->f16f16_projection_mode = f16f16_projection_mode;
     header->input_offset = input_slot.offset;
     header->input_bytes = input_slot.expected_bytes;
     header->output_bytes = output_bytes;
@@ -896,7 +934,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0026\","
+        "{\"experiment\":\"EXP-0027\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"FP16_HMX\","
         "\"projection_compute\":\"%s\","
@@ -904,6 +942,7 @@ int main(int argc, char **argv) {
         "\"attribution_mode\":\"%s\","
         "\"numerical_audit_mode\":\"%s\","
         "\"residual_mode\":\"%s\","
+        "\"f16f16_projection_mode\":\"%s\","
         "\"w4f16_scale_placement\":\"%s\","
         "\"intermediate_residency\":\"VTCM\","
         "\"warmup_rpc_result\":%d,"
@@ -943,6 +982,7 @@ int main(int argc, char **argv) {
         "\"w4f16_requested_hvx_workers\":%" PRIu32 ","
         "\"w4f16_region_tiles\":%" PRIu32 ","
         "\"w4f16_pool_status\":%d,"
+        "\"f16f16_weight_batch_n_tiles\":%" PRIu32 ","
         "\"host_wall_ns\":%" PRIu64 ","
         "\"host_wall_ns_per_block\":%.3f,"
         "\"max_abs\":%.9g,\"mean_abs\":%.9g,\"rmse\":%.9g,"
@@ -1018,6 +1058,8 @@ int main(int argc, char **argv) {
         "\"w4f16_expand_region_count\":%" PRIu64 ","
         "\"w4f16_prefetch_count\":%" PRIu64 ","
         "\"w4f16_prefetch_wait_ticks\":%" PRIu64 ","
+        "\"f16f16_prefetch_count\":%" PRIu64 ","
+        "\"f16f16_prefetch_wait_ticks\":%" PRIu64 ","
         "\"release_result\":%d,\"close_result\":%d}\n",
         qbh_variant_name(variant),
         variant == QBH_BLOCK_W4U8 ? "U8xS8_integer_HMX"
@@ -1026,6 +1068,10 @@ int main(int argc, char **argv) {
         header->attribution_enabled != 0U ? "on" : "off",
         header->numerical_audit_enabled != 0U ? "on" : "off",
         qbh_residual_mode_name(header->residual_mode),
+        variant == QBH_BLOCK_F16F16
+            ? qbh_f16f16_projection_mode_name(
+                  header->f16f16_projection_mode)
+            : "not_applicable",
         variant == QBH_BLOCK_W4F16 ? "hmx_output_per_channel"
                                    : "not_applicable",
         warmup_result, warmup_run_index, warmup_end - warmup_start,
@@ -1060,6 +1106,7 @@ int main(int argc, char **argv) {
         header->w4f16_requested_hvx_workers,
         header->w4f16_region_tiles,
         header->w4f16_pool_status,
+        header->f16f16_weight_batch_n_tiles,
         measured_end - measured_start,
         (double)(measured_end - measured_start) / repeats,
         measured_metrics.max_abs, measured_metrics.mean_abs,
@@ -1122,6 +1169,8 @@ int main(int argc, char **argv) {
         header->w4f16_expand_region_count,
         header->w4f16_prefetch_count,
         header->w4f16_prefetch_wait_ticks,
+        header->f16f16_prefetch_count,
+        header->f16f16_prefetch_wait_ticks,
         release_result, close_result);
 
     exit_code = warmup_result == AEE_SUCCESS &&

@@ -6,8 +6,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(5)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(26)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(6)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(27)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -44,6 +44,12 @@ enum qbh_block_residual_mode {
     QBH_BLOCK_RESIDUAL_SCALAR = 0,
     QBH_BLOCK_RESIDUAL_HVX = 1,
     QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM = 2,
+};
+
+enum qbh_block_f16f16_projection_mode {
+    QBH_BLOCK_F16F16_PROJECTION_SERIAL = 0,
+    QBH_BLOCK_F16F16_PROJECTION_ASYNC_SINGLE = 1,
+    QBH_BLOCK_F16F16_PROJECTION_BATCH2 = 2,
 };
 
 enum qbh_block_projection_index {
@@ -153,6 +159,7 @@ struct qbh_block_header {
     uint32_t attribution_enabled;
     uint32_t numerical_audit_enabled;
     uint32_t residual_mode;
+    uint32_t f16f16_projection_mode;
 
     uint32_t input_offset;
     uint32_t input_bytes;
@@ -212,6 +219,7 @@ struct qbh_block_header {
     uint32_t w4f16_hvx_workers_created;
     uint32_t w4f16_hvx_workers_locked;
     int32_t w4f16_pool_status;
+    uint32_t f16f16_weight_batch_n_tiles;
 
     uint32_t prepared_session_run_index;
     uint32_t resource_vtcm_address;
@@ -262,6 +270,8 @@ struct qbh_block_header {
     uint64_t w4f16_expand_region_count;
     uint64_t w4f16_prefetch_count;
     uint64_t w4f16_prefetch_wait_ticks;
+    uint64_t f16f16_prefetch_count;
+    uint64_t f16f16_prefetch_wait_ticks;
     uint64_t scalar_math_ticks;
 
     uint64_t invocation_ticks;
