@@ -1718,7 +1718,8 @@ experiments:
       - multi_worker_qk_norm_rope_candidate
       - multi_worker_standard_softmax_candidate
       - gqa_group_attention_pipeline_candidate
-    execution_state: running
+      - qkv_head_readiness_overlap_candidate
+    execution_state: completed
     evidence_validity: valid
     local_gate: pass
     adoption_status: accepted
@@ -1728,6 +1729,7 @@ experiments:
     source_commits:
       - 3bb967d60c6c91b51f26bf426510f0af99885be7
       - 1cb6995e1d2194834cd80ca13420cdbbebccfd8a
+      - 3638b167afd687939786f714fc48987021c02d94
     record: docs/experiments/EXP-0031.md
     decided_by: user
     decided_on: '2026-08-28'
@@ -1739,6 +1741,7 @@ experiments:
       started_on: '2026-08-28'
       completed_on: '2026-08-28'
       continued_on: '2026-08-28'
+      continuation_completed_on: '2026-08-28'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0031'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0031'
@@ -1792,3 +1795,33 @@ experiments:
       performance_characterization: four_hvx_contexts_remove_the_serial_qk_norm_rope_and_standard_softmax_bottlenecks_then_eight_gqa_group_tasks_overlap_hvx_preparation_and_softmax_with_one_serial_hmx_owner_reducing_complete_block_host_wall_by_15_to_16_percent_at_repeat10_without_changing_arithmetic_hmx_work_or_vtcm_residency
       accepted_checkpoint_commit: 1cb6995e1d2194834cd80ca13420cdbbebccfd8a
       continuation_milestone: overlap_qk_norm_rope_readiness_with_qkv_projection_without_changing_projection_math_or_hmx_ownership
+      continuation_source_commit: 3638b167afd687939786f714fc48987021c02d94
+      continuation_formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0031\20260828T123542Z_3638b167afd6'
+      continuation_artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0031\artifacts\3638b167afd6'
+      continuation_matrix: 'D:\llm_exp\results\qwen3-block-htp\exp0031\20260828T123542Z_3638b167afd6\matrix_gate.json'
+      continuation_formal_runs: 132
+      continuation_local_gate: pass
+      continuation_adoption_status: pending_user_decision
+      continuation_selected_candidate: qkv_head_readiness_overlap
+      continuation_parent_candidate: gqa_group_attention_pipeline
+      continuation_boot_id_stable: true
+      continuation_output_hash_stability_gate: pass
+      continuation_intermediate_ddr_read_bytes: 0
+      continuation_intermediate_ddr_write_bytes: 0
+      continuation_intermediate_spill_fill_count: 0
+      continuation_repeat1_f16f16_gqa_host_wall_ns: 3060052
+      continuation_repeat1_f16f16_overlap_host_wall_ns: 3011562
+      continuation_repeat1_f16f16_host_change_percent: -1.5846135948016538
+      continuation_repeat1_w4f16_gqa_host_wall_ns: 2955937
+      continuation_repeat1_w4f16_overlap_host_wall_ns: 2899896
+      continuation_repeat1_w4f16_host_change_percent: -1.8958793776727934
+      continuation_repeat10_f16f16_gqa_host_wall_ns_per_block: 2682494.8
+      continuation_repeat10_f16f16_overlap_host_wall_ns_per_block: 2584963.5
+      continuation_repeat10_f16f16_host_change_percent: -3.6358430219510462
+      continuation_repeat10_w4f16_gqa_host_wall_ns_per_block: 2535698.0
+      continuation_repeat10_w4f16_overlap_host_wall_ns_per_block: 2492177.1
+      continuation_repeat10_w4f16_host_change_percent: -1.7163282062769292
+      continuation_repeat10_f16f16_scope_change_percent: -13.220580829276486
+      continuation_repeat10_w4f16_scope_change_percent: -9.63847654046387
+      continuation_repeat10_w4f16_change_from_f16f16_percent: -3.589466543724884
+      continuation_performance_characterization: generation_tagged_head_readiness_allows_q_and_k_norm_rope_workers_to_consume_each_head_during_qkv_projection_while_reusing_one_packed_activation_reducing_paired_complete_block_host_wall_for_both_variants_without_changing_math_hmx_work_or_residency
