@@ -163,16 +163,18 @@ def brief(source: Path | None = None) -> None:
         common_dir = source / common_dir
     if common_dir.resolve() != Path(status["project"]["git_common_dir"]).resolve():
         raise Failure("source git common directory mismatch")
-    if active is None:
-        raise Failure("no active experiment")
-    record = next(item for item in index["experiments"] if item["id"] == active)
-    expected_branch = record["runtime"]["source_branch"]
-    if git_branch(source) != expected_branch:
-        raise Failure("source branch mismatch")
+    actual_branch = git_branch(source)
+    if active is not None:
+        record = next(
+            item for item in index["experiments"] if item["id"] == active)
+        expected_branch = record["runtime"]["source_branch"]
+        if actual_branch != expected_branch:
+            raise Failure("source branch mismatch")
     if status["governance"].get("remote_sync_required"):
-        require_origin_sync(source, expected_branch)
+        require_origin_sync(source, actual_branch)
     print(f"SOURCE_WORKTREE={source}")
-    print(f"SOURCE_BRANCH={expected_branch}")
+    print(f"SOURCE_BRANCH={actual_branch}")
+    print(f"SOURCE_EXPERIMENT_LOCK={active or 'none'}")
     print(f"SOURCE_HEAD={run('git', 'rev-parse', 'HEAD', cwd=source)}")
     print(f"SOURCE_DIRTY={'yes' if git_dirty(source) else 'no'}")
     print("SOURCE_REMOTE_SYNC=verified")

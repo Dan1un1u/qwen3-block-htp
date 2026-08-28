@@ -2251,15 +2251,18 @@ experiments:
       - w4f16_q_only_batch4_stage_a
       - w4f16_qkv_batch4_stage_b_if_stage_a_passes
       - f16f16_qkv_batch4_fair_control_if_stage_a_passes
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
     adoption_status: pending
     evidence_profile: real-qwen3-block-head-aligned-qkv-projection
     source_branches:
       - codex/exp-0037-head-aligned-qkv-batch4
     source_commits:
       - a959219dfa95d6b7b1b45aa18d4e03f3d60d656c
+      - 9621f90350962e7d824a5da722ae7e7749afd78a
+      - ef4a0d7c97564c14ccedd87b0a2e3abbfe06bf09
+      - d12e0d34e8ccc5cd1150c0d2285a6fca607acb3b
     record: docs/experiments/EXP-0037.md
     decided_by: user
     decided_on: '2026-08-29'
@@ -2268,6 +2271,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0037-head-aligned-qkv-batch4
       started_on: '2026-08-29'
+      completed_on: '2026-08-29'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0037'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0037'
@@ -2279,3 +2283,36 @@ experiments:
       primary_scope: align_qkv_dma4_hvx_expand4_hmx_batch4_and_one_head_readiness_boundary
       stage_a_gate: q_only_batch4_must_be_byte_exact_and_strictly_reduce_q_projection_wall_and_complete_block_host_wall_at_repeat1_and_repeat10
       stage_b_gate: only_after_stage_a_passes_extend_batch4_to_kv_and_give_f16f16_the_same_qkv_batch4_search_opportunity
+      stage_a_formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0037\stage_a\20260828T183615Z_ef4a0d7c9756'
+      stage_a_artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0037\stage_a_artifacts\ef4a0d7c9756'
+      stage_a_matrix: 'D:\llm_exp\results\qwen3-block-htp\exp0037\stage_a\20260828T183615Z_ef4a0d7c9756\matrix_gate.json'
+      stage_a_source_commit: ef4a0d7c97564c14ccedd87b0a2e3abbfe06bf09
+      evidence_validator_commit: d12e0d34e8ccc5cd1150c0d2285a6fca607acb3b
+      stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      formal_run_records: 22
+      parent_block_package_hashes_audited: 118
+      peak_vtcm_bytes: 8171008
+      observed_intermediate_ddr_bytes: 0
+      spill_fill_count: 0
+      single_fastrpc_per_execution_unit: true
+      single_hmx_owner: true
+      qnn_dependency: false
+      implementation_reference_mismatches: 0
+      implementation_reference_max_lsb: 0
+      output_hash: f18b9abbe1487231
+      q_hmx_commands_control_per_block: 32
+      q_hmx_commands_candidate_per_block: 16
+      k_hmx_commands_per_block: 16
+      v_hmx_commands_per_block: 16
+      repeat1_q_projection_change_percent: -3.2355915065722995
+      repeat1_qkv_projection_change_percent: 1.0360884749708976
+      repeat1_host_wall_change_percent: 0.3709836829836721
+      repeat1_qk_norm_pool_wait_delta_ticks: 283.0
+      repeat10_q_projection_change_percent: -3.388160540497065
+      repeat10_qkv_projection_change_percent: 1.3106561531299077
+      repeat10_host_wall_change_percent: 0.5403263856210039
+      repeat10_qk_norm_pool_wait_delta_ticks: 260.8
+      stage_a_gate_result: fail
+      stage_b_executed: false
+      stage_b_stop_reason: stage_a_complete_block_host_wall_regressed_at_repeat1_and_repeat10
+      performance_characterization: q_batch4_halves_q_hmx_commands_and_reduces_local_q_wall_by_3_2_to_3_4_percent_but_coarser_head_publication_adds_261_to_283_qk_norm_rope_join_wait_ticks_so_qkv_wall_and_complete_block_host_wall_regress_and_stage_b_is_not_authorized
