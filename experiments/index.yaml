@@ -2159,3 +2159,41 @@ experiments:
       local_speed_gate_result: fail
       rejected_diagnostic: first_q_bundle_was_fully_overlapped_and_reduced_q_wall_but_the_saved_interval_was_only_about_two_percent_of_q_and_did_not_reduce_complete_block_host_wall
       performance_characterization: the_first_nonoverlapped_q_bundle_is_real_but_does_not_explain_the_superlinear_q_regression_inferred_by_exp0034_and_its_small_local_saving_is_below_downstream_schedule_variation
+  - id: EXP-0036
+    slug: crouton-native-swiglu
+    title: Eliminate Gate/Up row-major materialization with a Crouton-native SwiGLU handoff
+    parent: EXP-0032
+    variants:
+      - exp0032_f16f16_batch4_fair_control
+      - exp0032_w4f16_batch4_dma8_scale_cache_control
+      - w4f16_crouton_native_swiglu_batch4_candidate
+      - w4f16_crouton_native_swiglu_batch8_candidate_if_stage_a_passes
+      - f16f16_crouton_native_swiglu_batch8_fair_control_if_stage_a_passes
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-crouton-native-gate-up-critical-path
+    source_branches:
+      - codex/exp-0036-crouton-native-swiglu
+    source_commits:
+      - 91ba193660513bd0675c0a091db199aa09df1773
+    record: docs/experiments/EXP-0036.md
+    decided_by: user
+    decided_on: '2026-08-29'
+    approval_ref: 'User message 2026-08-29: 批准，进入实现'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0036-crouton-native-swiglu
+      started_on: '2026-08-29'
+    evidence:
+      formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0036'
+      retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0036'
+      source_parent_commit: 91ba193660513bd0675c0a091db199aa09df1773
+      execution_unit: qwen3_layer14_complete_block_m64
+      activation_scope: fp16_only
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      primary_scope: replace_row_major_gate_up_middle_materialization_and_repack_with_crouton_native_swiglu_ring_handoff
+      stage_a_gate: batch4_candidate_must_be_byte_exact_and_strictly_reduce_gate_up_ticks_and_complete_block_host_wall_at_repeat1_and_repeat10_before_batch8_is_implemented
+      stage_b_gate: if_stage_a_passes_batch8_must_use_the_freed_vtcm_preserve_the_same_math_and_be_compared_with_a_fair_f16f16_batch8_control

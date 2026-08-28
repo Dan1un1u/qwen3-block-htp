@@ -236,3 +236,12 @@ timed RPC. It removes repeated hot-path representation conversion without
 changing quantization parameters, scale mathematics, or rounding.
 _Avoid_: new calibration, approximate scale, persistent DDR intermediate,
 changed numerical recipe
+
+**Crouton-Native SwiGLU Handoff**:
+A Gate/Up-to-Down MLP schedule in which matching Gate and Up HMX output tiles
+remain in Crouton tile order, HVX applies the unchanged SiLU-by-Up arithmetic
+directly to corresponding tile elements, and the result is written into its
+final Down-activation Crouton position. It avoids full row-major Gate, Up, and
+Middle materialization as well as output unpack and activation repack.
+_Avoid_: changed SwiGLU mathematics, hidden DDR intermediate, flat-tensor
+streaming, Down accumulation overlap
