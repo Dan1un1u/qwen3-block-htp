@@ -1383,7 +1383,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0032\","
+        "{\"experiment\":\"EXP-0034\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"FP16_HMX\","
         "\"projection_compute\":\"%s\","
@@ -1572,7 +1572,7 @@ int main(int argc, char **argv) {
         "\"attention_gqa_worker_work_ticks\":%" PRIu64 ","
         "\"attention_gqa_hmx_wait_ticks\":%" PRIu64 ","
         "\"attention_gqa_queue_wait_ticks\":%" PRIu64 ","
-        "\"release_result\":%d,\"close_result\":%d}\n",
+        "\"release_result\":%d,\"close_result\":%d",
         qbh_variant_name(variant),
         variant == QBH_BLOCK_W4U8 ? "U8xS8_integer_HMX"
                                   : "FP16_HMX",
@@ -1751,6 +1751,105 @@ int main(int argc, char **argv) {
         header->attention_gqa_hmx_wait_ticks,
         header->attention_gqa_queue_wait_ticks,
         release_result, close_result);
+    printf(
+        ",\"qkv_attribution_version\":1,"
+        "\"qkv_projection_wall_ticks\":[%" PRIu64 ",%" PRIu64
+        ",%" PRIu64 "],"
+        "\"qkv_weight_dma_ticks\":[%" PRIu64 ",%" PRIu64
+        ",%" PRIu64 "],"
+        "\"qkv_pack_ticks\":[%" PRIu64 ",%" PRIu64
+        ",%" PRIu64 "],"
+        "\"qkv_w4_expand_ticks\":[%" PRIu64 ",%" PRIu64
+        ",%" PRIu64 "],"
+        "\"qkv_w4_expand_work_ticks\":[%" PRIu64 ",%" PRIu64
+        ",%" PRIu64 "],"
+        "\"qkv_w4_expand_pool_wait_ticks\":[%" PRIu64 ",%" PRIu64
+        ",%" PRIu64 "],"
+        "\"qkv_hmx_compute_ticks\":[%" PRIu64 ",%" PRIu64
+        ",%" PRIu64 "],"
+        "\"qkv_hmx_wait_ticks\":[%" PRIu64 ",%" PRIu64
+        ",%" PRIu64 "],"
+        "\"qkv_hmx_ready_wait_ticks\":[%" PRIu64 ",%" PRIu64
+        ",%" PRIu64 "],"
+        "\"qkv_prefetch_wait_ticks\":[%" PRIu64 ",%" PRIu64
+        ",%" PRIu64 "],"
+        "\"qkv_unpack_ticks\":[%" PRIu64 ",%" PRIu64
+        ",%" PRIu64 "],"
+        "\"qkv_weight_ddr_read_bytes\":[%" PRIu64 ",%" PRIu64
+        ",%" PRIu64 "],"
+        "\"qkv_weight_dma_descriptor_count\":[%" PRIu64 ",%" PRIu64
+        ",%" PRIu64 "],"
+        "\"qkv_hmx_command_count\":[%" PRIu64 ",%" PRIu64
+        ",%" PRIu64 "],"
+        "\"qkv_hmx_fp16_tile_pair_count\":[%" PRIu64 ",%" PRIu64
+        ",%" PRIu64 "],"
+        "\"qkv_w4_streamed_command_count\":[%" PRIu64 ",%" PRIu64
+        ",%" PRIu64 "],"
+        "\"qkv_w4_expand_region_count\":[%" PRIu64 ",%" PRIu64
+        ",%" PRIu64 "],"
+        "\"qkv_w4_prefetch_count\":[%" PRIu64 ",%" PRIu64
+        ",%" PRIu64 "],"
+        "\"qkv_f16_prefetch_count\":[%" PRIu64 ",%" PRIu64
+        ",%" PRIu64 "],"
+        "\"qkv_projection_unattributed_ticks\":%" PRIu64 "}\n",
+        header->qkv_attribution[0].wall_ticks,
+        header->qkv_attribution[1].wall_ticks,
+        header->qkv_attribution[2].wall_ticks,
+        header->qkv_attribution[0].weight_dma_ticks,
+        header->qkv_attribution[1].weight_dma_ticks,
+        header->qkv_attribution[2].weight_dma_ticks,
+        header->qkv_attribution[0].pack_ticks,
+        header->qkv_attribution[1].pack_ticks,
+        header->qkv_attribution[2].pack_ticks,
+        header->qkv_attribution[0].w4_expand_ticks,
+        header->qkv_attribution[1].w4_expand_ticks,
+        header->qkv_attribution[2].w4_expand_ticks,
+        header->qkv_attribution[0].w4_expand_work_ticks,
+        header->qkv_attribution[1].w4_expand_work_ticks,
+        header->qkv_attribution[2].w4_expand_work_ticks,
+        header->qkv_attribution[0].w4_expand_pool_wait_ticks,
+        header->qkv_attribution[1].w4_expand_pool_wait_ticks,
+        header->qkv_attribution[2].w4_expand_pool_wait_ticks,
+        header->qkv_attribution[0].hmx_compute_ticks,
+        header->qkv_attribution[1].hmx_compute_ticks,
+        header->qkv_attribution[2].hmx_compute_ticks,
+        header->qkv_attribution[0].hmx_wait_ticks,
+        header->qkv_attribution[1].hmx_wait_ticks,
+        header->qkv_attribution[2].hmx_wait_ticks,
+        header->qkv_attribution[0].hmx_ready_wait_ticks,
+        header->qkv_attribution[1].hmx_ready_wait_ticks,
+        header->qkv_attribution[2].hmx_ready_wait_ticks,
+        header->qkv_attribution[0].prefetch_wait_ticks,
+        header->qkv_attribution[1].prefetch_wait_ticks,
+        header->qkv_attribution[2].prefetch_wait_ticks,
+        header->qkv_attribution[0].unpack_ticks,
+        header->qkv_attribution[1].unpack_ticks,
+        header->qkv_attribution[2].unpack_ticks,
+        header->qkv_attribution[0].weight_ddr_read_bytes,
+        header->qkv_attribution[1].weight_ddr_read_bytes,
+        header->qkv_attribution[2].weight_ddr_read_bytes,
+        header->qkv_attribution[0].weight_dma_descriptor_count,
+        header->qkv_attribution[1].weight_dma_descriptor_count,
+        header->qkv_attribution[2].weight_dma_descriptor_count,
+        header->qkv_attribution[0].hmx_command_count,
+        header->qkv_attribution[1].hmx_command_count,
+        header->qkv_attribution[2].hmx_command_count,
+        header->qkv_attribution[0].hmx_fp16_tile_pair_count,
+        header->qkv_attribution[1].hmx_fp16_tile_pair_count,
+        header->qkv_attribution[2].hmx_fp16_tile_pair_count,
+        header->qkv_attribution[0].w4_streamed_command_count,
+        header->qkv_attribution[1].w4_streamed_command_count,
+        header->qkv_attribution[2].w4_streamed_command_count,
+        header->qkv_attribution[0].w4_expand_region_count,
+        header->qkv_attribution[1].w4_expand_region_count,
+        header->qkv_attribution[2].w4_expand_region_count,
+        header->qkv_attribution[0].w4_prefetch_count,
+        header->qkv_attribution[1].w4_prefetch_count,
+        header->qkv_attribution[2].w4_prefetch_count,
+        header->qkv_attribution[0].f16_prefetch_count,
+        header->qkv_attribution[1].f16_prefetch_count,
+        header->qkv_attribution[2].f16_prefetch_count,
+        header->qkv_projection_unattributed_ticks);
 
     exit_code = warmup_result == AEE_SUCCESS &&
                         measured_result == AEE_SUCCESS &&

@@ -6,8 +6,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(16)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(32)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(17)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(34)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -191,6 +191,28 @@ struct qbh_block_projection_desc {
     uint32_t bias_bytes;
 };
 
+struct qbh_block_projection_attribution {
+    uint64_t wall_ticks;
+    uint64_t weight_dma_ticks;
+    uint64_t pack_ticks;
+    uint64_t w4_expand_ticks;
+    uint64_t w4_expand_work_ticks;
+    uint64_t w4_expand_pool_wait_ticks;
+    uint64_t hmx_compute_ticks;
+    uint64_t hmx_wait_ticks;
+    uint64_t hmx_ready_wait_ticks;
+    uint64_t prefetch_wait_ticks;
+    uint64_t unpack_ticks;
+    uint64_t weight_ddr_read_bytes;
+    uint64_t weight_dma_descriptor_count;
+    uint64_t hmx_command_count;
+    uint64_t hmx_fp16_tile_pair_count;
+    uint64_t w4_streamed_command_count;
+    uint64_t w4_expand_region_count;
+    uint64_t w4_prefetch_count;
+    uint64_t f16_prefetch_count;
+};
+
 struct qbh_block_header {
     uint32_t magic;
     uint32_t abi_version;
@@ -317,6 +339,8 @@ struct qbh_block_header {
     uint64_t metadata_stage_ticks;
     uint64_t input_norm_ticks;
     uint64_t qkv_projection_ticks;
+    struct qbh_block_projection_attribution qkv_attribution[3];
+    uint64_t qkv_projection_unattributed_ticks;
     uint64_t qk_norm_rope_ticks;
     uint64_t attention_ticks;
     uint64_t o_projection_ticks;

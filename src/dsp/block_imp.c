@@ -3546,6 +3546,134 @@ projection_command_complete:
     return 0;
 }
 
+struct qbh_qkv_counter_snapshot {
+    uint64_t weight_dma_ticks;
+    uint64_t pack_ticks;
+    uint64_t w4_expand_ticks;
+    uint64_t w4_expand_work_ticks;
+    uint64_t w4_expand_pool_wait_ticks;
+    uint64_t hmx_compute_ticks;
+    uint64_t hmx_wait_ticks;
+    uint64_t hmx_ready_wait_ticks;
+    uint64_t prefetch_wait_ticks;
+    uint64_t unpack_ticks;
+    uint64_t weight_ddr_read_bytes;
+    uint64_t weight_dma_descriptor_count;
+    uint64_t hmx_command_count;
+    uint64_t hmx_fp16_tile_pair_count;
+    uint64_t w4_streamed_command_count;
+    uint64_t w4_expand_region_count;
+    uint64_t w4_prefetch_count;
+    uint64_t f16_prefetch_count;
+};
+
+static void qbh_qkv_counter_snapshot(
+    const struct qbh_block_header *header,
+    const struct qbh_block_hmx_worker *worker,
+    struct qbh_qkv_counter_snapshot *snapshot) {
+    snapshot->weight_dma_ticks = header->weight_dma_ticks;
+    snapshot->pack_ticks = header->projection_pack_ticks;
+    snapshot->w4_expand_ticks = header->w4f16_expand_ticks;
+    snapshot->w4_expand_work_ticks = header->w4f16_expand_work_ticks;
+    snapshot->w4_expand_pool_wait_ticks =
+        header->w4f16_expand_pool_wait_ticks;
+    snapshot->hmx_compute_ticks = worker->compute_ticks;
+    snapshot->hmx_wait_ticks = header->projection_hmx_wait_ticks;
+    snapshot->hmx_ready_wait_ticks = worker->ready_wait_ticks;
+    snapshot->prefetch_wait_ticks = header->w4f16_prefetch_wait_ticks;
+    snapshot->unpack_ticks = header->projection_unpack_ticks;
+    snapshot->weight_ddr_read_bytes = header->weight_ddr_read_bytes;
+    snapshot->weight_dma_descriptor_count =
+        header->weight_dma_descriptor_count;
+    snapshot->hmx_command_count = header->hmx_command_count;
+    snapshot->hmx_fp16_tile_pair_count =
+        header->hmx_fp16_tile_pair_count;
+    snapshot->w4_streamed_command_count =
+        header->w4f16_streamed_command_count;
+    snapshot->w4_expand_region_count =
+        header->w4f16_expand_region_count;
+    snapshot->w4_prefetch_count = header->w4f16_prefetch_count;
+    snapshot->f16_prefetch_count = header->f16f16_prefetch_count;
+}
+
+static uint64_t qbh_record_qkv_projection_attribution(
+    struct qbh_block_header *header,
+    struct qbh_block_hmx_worker *worker, uint32_t projection,
+    uint64_t wall_start,
+    const struct qbh_qkv_counter_snapshot *before) {
+    struct qbh_block_projection_attribution *attribution =
+        &header->qkv_attribution[projection];
+    uint64_t wall_ticks = HAP_perf_get_qtimer_count() - wall_start;
+
+    attribution->wall_ticks += wall_ticks;
+    attribution->weight_dma_ticks +=
+        header->weight_dma_ticks - before->weight_dma_ticks;
+    attribution->pack_ticks +=
+        header->projection_pack_ticks - before->pack_ticks;
+    attribution->w4_expand_ticks +=
+        header->w4f16_expand_ticks - before->w4_expand_ticks;
+    attribution->w4_expand_work_ticks +=
+        header->w4f16_expand_work_ticks - before->w4_expand_work_ticks;
+    attribution->w4_expand_pool_wait_ticks +=
+        header->w4f16_expand_pool_wait_ticks -
+        before->w4_expand_pool_wait_ticks;
+    attribution->hmx_compute_ticks +=
+        worker->compute_ticks - before->hmx_compute_ticks;
+    attribution->hmx_wait_ticks +=
+        header->projection_hmx_wait_ticks - before->hmx_wait_ticks;
+    attribution->hmx_ready_wait_ticks +=
+        worker->ready_wait_ticks - before->hmx_ready_wait_ticks;
+    attribution->prefetch_wait_ticks +=
+        header->w4f16_prefetch_wait_ticks - before->prefetch_wait_ticks;
+    attribution->unpack_ticks +=
+        header->projection_unpack_ticks - before->unpack_ticks;
+    attribution->weight_ddr_read_bytes +=
+        header->weight_ddr_read_bytes - before->weight_ddr_read_bytes;
+    attribution->weight_dma_descriptor_count +=
+        header->weight_dma_descriptor_count -
+        before->weight_dma_descriptor_count;
+    attribution->hmx_command_count +=
+        header->hmx_command_count - before->hmx_command_count;
+    attribution->hmx_fp16_tile_pair_count +=
+        header->hmx_fp16_tile_pair_count -
+        before->hmx_fp16_tile_pair_count;
+    attribution->w4_streamed_command_count +=
+        header->w4f16_streamed_command_count -
+        before->w4_streamed_command_count;
+    attribution->w4_expand_region_count +=
+        header->w4f16_expand_region_count -
+        before->w4_expand_region_count;
+    attribution->w4_prefetch_count +=
+        header->w4f16_prefetch_count - before->w4_prefetch_count;
+    attribution->f16_prefetch_count +=
+        header->f16f16_prefetch_count - before->f16_prefetch_count;
+    return wall_ticks;
+}
+
+static int qbh_run_attributed_qkv_projection(
+    struct qbh_block_header *header, const uint8_t *shared,
+    uint32_t projection, struct qbh_block_buffers *buffers,
+    struct qbh_block_hmx_worker *worker,
+    struct qbh_block_w4f16_pool *w4f16_pool, const void *input,
+    void *output, uint32_t activation_tiles_ready,
+    const struct qbh_block_projection_desc *next_w4_desc,
+    struct qbh_block_w4f16_cross_prefetch *cross_prefetch,
+    uint64_t *projection_wall_sum) {
+    struct qbh_qkv_counter_snapshot before;
+    uint64_t wall_start;
+    int result;
+
+    qbh_qkv_counter_snapshot(header, worker, &before);
+    wall_start = HAP_perf_get_qtimer_count();
+    result = qbh_run_projection(
+        header, shared, &header->projections[projection], buffers,
+        worker, w4f16_pool, input, output, activation_tiles_ready,
+        next_w4_desc, cross_prefetch);
+    *projection_wall_sum += qbh_record_qkv_projection_attribution(
+        header, worker, projection, wall_start, &before);
+    return result;
+}
+
 static uint8_t qbh_quantize(float value,
                             const struct qbh_block_qparam *qparam) {
     float encoded = value / qparam->scale + (float)qparam->zero_point;
@@ -4565,6 +4693,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     uint64_t gate_up_stream_ready_wait_before = 0U;
     uint64_t gate_up_stream_join_wait_before = 0U;
     uint64_t gate_up_hmx_command_before = 0U;
+    uint64_t qkv_projection_wall_sum = 0U;
     uint32_t qkv_overlap_enabled =
         header->attention_pipeline_mode ==
             QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP;
@@ -4637,12 +4766,11 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             qkv_overlap_worker_count) != 0) {
         return QBH_BLOCK_STATUS_QK_NORM_ROPE_FAILED;
     }
-    if (qbh_run_projection(
-            header, shared, &header->projections[QBH_BLOCK_PROJ_Q],
-            buffers, worker, w4f16_pool, buffers->normalized,
-            buffers->q, 0U,
+    if (qbh_run_attributed_qkv_projection(
+            header, shared, QBH_BLOCK_PROJ_Q, buffers, worker,
+            w4f16_pool, buffers->normalized, buffers->q, 0U,
             &header->projections[QBH_BLOCK_PROJ_K],
-            &cross_prefetch) != 0) {
+            &cross_prefetch, &qkv_projection_wall_sum) != 0) {
         if (qkv_overlap_enabled != 0U) {
             qbh_hvx_pool_qk_norm_rope_abort_async(w4f16_pool);
             (void)qbh_hvx_pool_qk_norm_rope_wait_async(
@@ -4651,12 +4779,12 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         }
         return QBH_BLOCK_STATUS_QKV_FAILED;
     }
-    if (qbh_run_projection(
-            header, shared, &header->projections[QBH_BLOCK_PROJ_K],
-            buffers, worker, w4f16_pool, buffers->normalized,
-            buffers->k, qkv_overlap_enabled,
+    if (qbh_run_attributed_qkv_projection(
+            header, shared, QBH_BLOCK_PROJ_K, buffers, worker,
+            w4f16_pool, buffers->normalized, buffers->k,
+            qkv_overlap_enabled,
             &header->projections[QBH_BLOCK_PROJ_V],
-            &cross_prefetch) != 0) {
+            &cross_prefetch, &qkv_projection_wall_sum) != 0) {
         if (qkv_overlap_enabled != 0U) {
             qbh_hvx_pool_qk_norm_rope_abort_async(w4f16_pool);
             (void)qbh_hvx_pool_qk_norm_rope_wait_async(
@@ -4665,12 +4793,12 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         }
         return QBH_BLOCK_STATUS_QKV_FAILED;
     }
-    if (qbh_run_projection(
-            header, shared, &header->projections[QBH_BLOCK_PROJ_V],
-            buffers, worker, w4f16_pool, buffers->normalized,
-            buffers->v, qkv_overlap_enabled,
+    if (qbh_run_attributed_qkv_projection(
+            header, shared, QBH_BLOCK_PROJ_V, buffers, worker,
+            w4f16_pool, buffers->normalized, buffers->v,
+            qkv_overlap_enabled,
             &header->projections[QBH_BLOCK_PROJ_O],
-            &cross_prefetch) != 0) {
+            &cross_prefetch, &qkv_projection_wall_sum) != 0) {
         return QBH_BLOCK_STATUS_QKV_FAILED;
     }
     if (qkv_overlap_enabled != 0U) {
@@ -4707,7 +4835,14 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         qbh_attribution_accumulate(
             header, audit_start, &header->qkv_audit_ticks);
     }
-    header->qkv_projection_ticks += HAP_perf_get_qtimer_count() - start;
+    {
+        uint64_t qkv_ticks = HAP_perf_get_qtimer_count() - start;
+        header->qkv_projection_ticks += qkv_ticks;
+        if (qkv_ticks >= qkv_projection_wall_sum) {
+            header->qkv_projection_unattributed_ticks +=
+                qkv_ticks - qkv_projection_wall_sum;
+        }
+    }
 
     start = HAP_perf_get_qtimer_count();
     if (header->variant != QBH_BLOCK_W4U8 &&
