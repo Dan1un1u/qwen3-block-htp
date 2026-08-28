@@ -245,3 +245,26 @@ final Down-activation Crouton position. It avoids full row-major Gate, Up, and
 Middle materialization as well as output unpack and activation repack.
 _Avoid_: changed SwiGLU mathematics, hidden DDR intermediate, flat-tensor
 streaming, Down accumulation overlap
+
+**Gate/Up HMX Batch-8**:
+A complete-block Gate/Up Physical Plan that consumes eight output tiles in one
+HMX command. For W4F16 it is distinct from a Gate/Up DMA-8 Bundle: DMA-8 only
+prefetches eight packed bundles but feeds two batch-four HMX commands, whereas
+HMX Batch-8 reduces the Gate/Up command count itself from 96 to 48.
+_Avoid_: DMA-8 synonym, eight independent commands, changed projection math
+
+**GQA Scratch Reservation**:
+The aligned 64 KiB VTCM reservation retained for four complete-block GQA HMX
+worker contexts after the MLP row-major Middle materialization is removed. The
+current scheduler's historical arena aliases are an implicit Attention
+contract; reclaiming the full Middle arena without this reservation corrupts
+the QK/AV path.
+_Avoid_: unused Middle storage, optional padding, MLP intermediate
+
+**Producer-Backpressure Ring**:
+A bounded VTCM producer/consumer ring whose slot count controls how far HMX may
+advance before HVX post-processing drains completed output. A ring may be
+mathematically correct and zero-DDR yet slow when too few slots force the
+producer behind one consumer; capacity and worker exposure are scheduling
+parameters that require performance evidence.
+_Avoid_: storage-only ring, zero-DDR performance proof, unbounded queue

@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0036
+  active_experiment: null
   next_experiment_number: 37
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,8 +27,8 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0035
-  last_completed_source_commit: 247ceb9a2a28a56cb0fe95dca5a23cdd54e758b0
+  last_completed_experiment: EXP-0036
+  last_completed_source_commit: a959219dfa95d6b7b1b45aa18d4e03f3d60d656c
   provisional_source_parent: EXP-0031
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope

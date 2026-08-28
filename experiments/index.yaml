@@ -2169,15 +2169,17 @@ experiments:
       - w4f16_crouton_native_swiglu_batch4_candidate
       - w4f16_crouton_native_swiglu_batch8_candidate_if_stage_a_passes
       - f16f16_crouton_native_swiglu_batch8_fair_control_if_stage_a_passes
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-crouton-native-gate-up-critical-path
     source_branches:
       - codex/exp-0036-crouton-native-swiglu
     source_commits:
       - 91ba193660513bd0675c0a091db199aa09df1773
+      - 29afb4cc6bf31aa05c0244354990c8b1ab7c7f2b
+      - a959219dfa95d6b7b1b45aa18d4e03f3d60d656c
     record: docs/experiments/EXP-0036.md
     decided_by: user
     decided_on: '2026-08-29'
@@ -2186,6 +2188,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0036-crouton-native-swiglu
       started_on: '2026-08-29'
+      completed_on: '2026-08-29'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0036'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0036'
@@ -2197,3 +2200,45 @@ experiments:
       primary_scope: replace_row_major_gate_up_middle_materialization_and_repack_with_crouton_native_swiglu_ring_handoff
       stage_a_gate: batch4_candidate_must_be_byte_exact_and_strictly_reduce_gate_up_ticks_and_complete_block_host_wall_at_repeat1_and_repeat10_before_batch8_is_implemented
       stage_b_gate: if_stage_a_passes_batch8_must_use_the_freed_vtcm_preserve_the_same_math_and_be_compared_with_a_fair_f16f16_batch8_control
+      stage_a_formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0036\20260828T172042Z_29afb4cc6bf3'
+      stage_a_artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0036\artifacts\29afb4cc6bf3'
+      stage_a_matrix: 'D:\llm_exp\results\qwen3-block-htp\exp0036\20260828T172042Z_29afb4cc6bf3\matrix_gate.json'
+      stage_a_source_commit: 29afb4cc6bf31aa05c0244354990c8b1ab7c7f2b
+      stage_b_formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0036\stage_b\20260828T173327Z_a959219dfa95'
+      stage_b_artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0036\stage_b_artifacts\a959219dfa95'
+      stage_b_matrix: 'D:\llm_exp\results\qwen3-block-htp\exp0036\stage_b\20260828T173327Z_a959219dfa95\matrix_gate.json'
+      source_commit: a959219dfa95d6b7b1b45aa18d4e03f3d60d656c
+      stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      formal_run_records: 66
+      stage_a_peak_vtcm_bytes: 7843328
+      stage_b_w4_peak_vtcm_bytes: 8171008
+      stage_b_f16_peak_vtcm_bytes: 6875904
+      observed_intermediate_ddr_bytes: 0
+      spill_fill_count: 0
+      single_fastrpc_per_execution_unit: true
+      single_hmx_owner: true
+      qnn_dependency: false
+      implementation_reference_mismatches: 0
+      implementation_reference_max_lsb: 0
+      w4_down_input_hash: b0d16655c164a22b
+      w4_output_hash: f18b9abbe1487231
+      f16_down_input_hash: 72076aa944fc97e4
+      f16_output_hash: 704252c89780e695
+      stage_a_repeat1_gate_up_change_percent: -4.1621129
+      stage_a_repeat1_host_wall_change_percent: -1.4102031
+      stage_a_repeat10_gate_up_change_percent: -3.3774471
+      stage_a_repeat10_host_wall_change_percent: -1.4908624
+      stage_a_gate_result: pass
+      stage_b_w4_repeat1_gate_up_change_percent: -9.8694943
+      stage_b_w4_repeat1_host_wall_change_percent: -3.7617793
+      stage_b_w4_repeat10_gate_up_change_percent: -10.4609963
+      stage_b_w4_repeat10_host_wall_change_percent: -5.2467615
+      stage_b_w4_vs_fastest_f16_repeat1_gate_up_change_percent: -13.2893279
+      stage_b_w4_vs_fastest_f16_repeat1_host_wall_change_percent: -8.3309283
+      stage_b_w4_vs_fastest_f16_repeat10_gate_up_change_percent: -13.4879697
+      stage_b_w4_vs_fastest_f16_repeat10_host_wall_change_percent: -10.6807961
+      stage_b_f16_batch8_vs_batch4_repeat1_host_wall_change_percent: 0.6253003
+      stage_b_f16_batch8_vs_batch4_repeat10_host_wall_change_percent: -0.0397799
+      stage_b_gate_result: pass
+      local_speed_gate_result: pass
+      performance_characterization: crouton_native_swiglu_removes_row_major_materialization_and_w4_batch8_reduces_gate_up_commands_from_96_to_48_with_repeat1_and_repeat10_complete_block_speedups_while_f16_batch8_is_neutral
