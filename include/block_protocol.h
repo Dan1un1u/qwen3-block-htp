@@ -6,8 +6,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(13)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(31)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(14)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(32)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -63,6 +63,8 @@ enum qbh_block_w4f16_pipeline_mode {
     QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN64_CROSS_PREFETCH = 7,
     QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN48_CROSS_PREFETCH = 8,
     QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH = 9,
+    QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE16_CROSS_PREFETCH = 10,
+    QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH = 11,
 };
 
 enum qbh_block_attention_pack_mode {
@@ -392,6 +394,21 @@ struct qbh_block_header {
     uint64_t attention_av_audit_ticks;
     uint64_t attention_gqa_pipeline_ticks;
     uint64_t attention_unattributed_ticks;
+
+    uint32_t w4f16_gate_up_effective_region_tiles;
+    uint32_t w4f16_gate_up_reserved;
+    uint64_t w4f16_gate_up_weight_dma_ticks;
+    uint64_t w4f16_gate_up_expand_ticks;
+    uint64_t w4f16_gate_up_expand_work_ticks;
+    uint64_t w4f16_gate_up_expand_pool_wait_ticks;
+    uint64_t w4f16_gate_up_prefetch_wait_ticks;
+    uint64_t w4f16_gate_up_hmx_wait_ticks;
+    uint64_t w4f16_gate_up_hmx_tail_wait_ticks;
+    uint64_t w4f16_gate_up_unpack_ticks;
+    uint64_t w4f16_gate_up_stream_work_ticks;
+    uint64_t w4f16_gate_up_stream_ready_wait_ticks;
+    uint64_t w4f16_gate_up_stream_join_wait_ticks;
+    uint64_t w4f16_gate_up_hmx_command_count;
 };
 
 #endif

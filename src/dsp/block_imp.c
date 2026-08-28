@@ -470,7 +470,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->f16f16_projection_mode >
             QBH_BLOCK_F16F16_PROJECTION_BATCH2 ||
         header->w4f16_pipeline_mode >
-            QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH ||
+            QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH ||
         (header->attention_pack_mode &
          ~((uint32_t)QBH_BLOCK_ATTENTION_PACK_HVX)) != 0U ||
         header->attention_pipeline_mode >
@@ -524,7 +524,11 @@ static int qbh_header_valid(const struct qbh_block_header *header,
                QBH_BLOCK_F16F16_PROJECTION_BATCH2) ||
           (header->variant == QBH_BLOCK_W4F16 &&
            header->w4f16_pipeline_mode !=
-               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH))) ||
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH &&
+           header->w4f16_pipeline_mode !=
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE16_CROSS_PREFETCH &&
+           header->w4f16_pipeline_mode !=
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH))) ||
         (header->variant != QBH_BLOCK_F16F16 &&
          header->f16f16_projection_mode !=
              QBH_BLOCK_F16F16_PROJECTION_SERIAL) ||
@@ -540,14 +544,22 @@ static int qbh_header_valid(const struct qbh_block_header *header,
           header->w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN48_CROSS_PREFETCH ||
           header->w4f16_pipeline_mode ==
-              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH) &&
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH ||
+          header->w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE16_CROSS_PREFETCH ||
+          header->w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH) &&
          header->w4f16_requested_hvx_workers != 3U) ||
         ((header->w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN64_CROSS_PREFETCH ||
           header->w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN48_CROSS_PREFETCH ||
           header->w4f16_pipeline_mode ==
-              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH) &&
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH ||
+          header->w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE16_CROSS_PREFETCH ||
+          header->w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH) &&
          header->w4f16_region_tiles != 32U) ||
         (header->variant == QBH_BLOCK_W4U8 &&
          (header->residual_mode != QBH_BLOCK_RESIDUAL_SCALAR ||
@@ -742,7 +754,11 @@ static int qbh_w4f16_cross_prefetch_enabled(
            header->w4f16_pipeline_mode ==
                QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN48_CROSS_PREFETCH ||
            header->w4f16_pipeline_mode ==
-               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH;
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH ||
+           header->w4f16_pipeline_mode ==
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE16_CROSS_PREFETCH ||
+           header->w4f16_pipeline_mode ==
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH;
 }
 
 static int qbh_w4f16_start_cross_prefetch(
@@ -2110,7 +2126,11 @@ static uint32_t qbh_w4f16_projection_worker_count(
          header->w4f16_pipeline_mode ==
              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN48_CROSS_PREFETCH ||
          header->w4f16_pipeline_mode ==
-             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH) &&
+             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH ||
+         header->w4f16_pipeline_mode ==
+             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE16_CROSS_PREFETCH ||
+         header->w4f16_pipeline_mode ==
+             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH) &&
         desc->k != QBH_BLOCK_INTERMEDIATE &&
         pool->worker_count > 2U) {
         return 2U;
@@ -2131,9 +2151,26 @@ static uint32_t qbh_w4f16_projection_region_tiles(
             return 64U;
         }
         if (header->w4f16_pipeline_mode ==
-            QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH) {
+                QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH ||
+            header->w4f16_pipeline_mode ==
+                QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE16_CROSS_PREFETCH ||
+            header->w4f16_pipeline_mode ==
+                QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH) {
             return 96U;
         }
+    }
+    return header->w4f16_region_tiles;
+}
+
+static uint32_t qbh_w4f16_gate_up_region_tiles(
+    const struct qbh_block_header *header) {
+    if (header->w4f16_pipeline_mode ==
+        QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE16_CROSS_PREFETCH) {
+        return 16U;
+    }
+    if (header->w4f16_pipeline_mode ==
+        QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH) {
+        return 8U;
     }
     return header->w4f16_region_tiles;
 }
@@ -2809,6 +2846,8 @@ static int qbh_w4f16_mlp_prepare_group(
         first_tile % QBH_BLOCK_W4F16_DMA_BATCH_N_TILES;
     uint32_t compressed_slot = batch & 1U;
     uint32_t expanded_slot = group & 1U;
+    uint32_t region_tiles =
+        qbh_w4f16_gate_up_region_tiles(header);
     uint64_t expand_start;
     int result;
 
@@ -2828,7 +2867,7 @@ static int qbh_w4f16_mlp_prepare_group(
         state->expanded_slots[expanded_slot], state->ready,
         group + 1U,
         state->k_tiles * QBH_BLOCK_W4F16_HMX_BATCH_N_TILES,
-        header->w4f16_region_tiles, 2U, 0U);
+        region_tiles, 2U, 0U);
     header->w4f16_expand_ticks +=
         HAP_perf_get_qtimer_count() - expand_start;
     if (group == 0U) {
@@ -2982,7 +3021,9 @@ static int qbh_run_w4f16_interleaved_gate_up(
         QBH_BLOCK_W4F16_HMX_BATCH_N_TILES;
     qbh_w4f16_note_active_workers(header, 2U);
     qbh_w4f16_note_effective_region(
-        header, header->w4f16_region_tiles);
+        header, qbh_w4f16_gate_up_region_tiles(header));
+    header->w4f16_gate_up_effective_region_tiles =
+        qbh_w4f16_gate_up_region_tiles(header);
 
     pack_start = HAP_perf_get_qtimer_count();
     qbh_pack_fp16_activation(
@@ -4367,6 +4408,18 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     uint64_t start;
     uint64_t audit_start;
     uint64_t attention_attributed_before = 0U;
+    uint64_t gate_up_weight_dma_before = 0U;
+    uint64_t gate_up_expand_before = 0U;
+    uint64_t gate_up_expand_work_before = 0U;
+    uint64_t gate_up_expand_pool_wait_before = 0U;
+    uint64_t gate_up_prefetch_wait_before = 0U;
+    uint64_t gate_up_hmx_wait_before = 0U;
+    uint64_t gate_up_hmx_tail_wait_before = 0U;
+    uint64_t gate_up_unpack_before = 0U;
+    uint64_t gate_up_stream_work_before = 0U;
+    uint64_t gate_up_stream_ready_wait_before = 0U;
+    uint64_t gate_up_stream_join_wait_before = 0U;
+    uint64_t gate_up_hmx_command_before = 0U;
     uint32_t qkv_overlap_enabled =
         header->attention_pipeline_mode ==
             QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP;
@@ -4728,6 +4781,27 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     header->post_attention_norm_ticks +=
         HAP_perf_get_qtimer_count() - start;
 
+    if (header->variant == QBH_BLOCK_W4F16) {
+        gate_up_weight_dma_before = header->weight_dma_ticks;
+        gate_up_expand_before = header->w4f16_expand_ticks;
+        gate_up_expand_work_before = header->w4f16_expand_work_ticks;
+        gate_up_expand_pool_wait_before =
+            header->w4f16_expand_pool_wait_ticks;
+        gate_up_prefetch_wait_before =
+            header->w4f16_prefetch_wait_ticks;
+        gate_up_hmx_wait_before = header->projection_hmx_wait_ticks;
+        gate_up_hmx_tail_wait_before =
+            header->w4f16_hmx_tail_wait_ticks;
+        gate_up_unpack_before = header->projection_unpack_ticks;
+        gate_up_stream_work_before =
+            header->mlp_stream_worker_work_ticks +
+            header->mlp_stream_main_work_ticks;
+        gate_up_stream_ready_wait_before =
+            header->mlp_stream_ready_wait_ticks;
+        gate_up_stream_join_wait_before =
+            header->mlp_stream_join_wait_ticks;
+        gate_up_hmx_command_before = header->hmx_command_count;
+    }
     start = HAP_perf_get_qtimer_count();
     if (header->variant == QBH_BLOCK_W4F16 &&
         header->mlp_mode == QBH_BLOCK_MLP_STREAMING) {
@@ -4792,6 +4866,41 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             header, audit_start, &header->gate_up_audit_ticks);
     }
     header->gate_up_ticks += HAP_perf_get_qtimer_count() - start;
+    if (header->variant == QBH_BLOCK_W4F16) {
+        header->w4f16_gate_up_weight_dma_ticks +=
+            header->weight_dma_ticks - gate_up_weight_dma_before;
+        header->w4f16_gate_up_expand_ticks +=
+            header->w4f16_expand_ticks - gate_up_expand_before;
+        header->w4f16_gate_up_expand_work_ticks +=
+            header->w4f16_expand_work_ticks -
+            gate_up_expand_work_before;
+        header->w4f16_gate_up_expand_pool_wait_ticks +=
+            header->w4f16_expand_pool_wait_ticks -
+            gate_up_expand_pool_wait_before;
+        header->w4f16_gate_up_prefetch_wait_ticks +=
+            header->w4f16_prefetch_wait_ticks -
+            gate_up_prefetch_wait_before;
+        header->w4f16_gate_up_hmx_wait_ticks +=
+            header->projection_hmx_wait_ticks -
+            gate_up_hmx_wait_before;
+        header->w4f16_gate_up_hmx_tail_wait_ticks +=
+            header->w4f16_hmx_tail_wait_ticks -
+            gate_up_hmx_tail_wait_before;
+        header->w4f16_gate_up_unpack_ticks +=
+            header->projection_unpack_ticks - gate_up_unpack_before;
+        header->w4f16_gate_up_stream_work_ticks +=
+            header->mlp_stream_worker_work_ticks +
+                header->mlp_stream_main_work_ticks -
+            gate_up_stream_work_before;
+        header->w4f16_gate_up_stream_ready_wait_ticks +=
+            header->mlp_stream_ready_wait_ticks -
+            gate_up_stream_ready_wait_before;
+        header->w4f16_gate_up_stream_join_wait_ticks +=
+            header->mlp_stream_join_wait_ticks -
+            gate_up_stream_join_wait_before;
+        header->w4f16_gate_up_hmx_command_count +=
+            header->hmx_command_count - gate_up_hmx_command_before;
+    }
 
     start = HAP_perf_get_qtimer_count();
     if (header->variant == QBH_BLOCK_W4U8) {

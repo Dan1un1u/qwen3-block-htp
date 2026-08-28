@@ -321,6 +321,18 @@ static int qbh_parse_w4f16_pipeline_mode(const char *text,
             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH;
         return 0;
     }
+    if (strcmp(text, "adaptive_down96_gate16_cross") == 0 ||
+        strcmp(text, "adaptive_down96_gate16_cross_prefetch") == 0) {
+        *mode =
+            QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE16_CROSS_PREFETCH;
+        return 0;
+    }
+    if (strcmp(text, "adaptive_down96_gate8_cross") == 0 ||
+        strcmp(text, "adaptive_down96_gate8_cross_prefetch") == 0) {
+        *mode =
+            QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH;
+        return 0;
+    }
     return -1;
 }
 
@@ -354,6 +366,14 @@ static const char *qbh_w4f16_pipeline_mode_name(uint32_t mode) {
     if (mode ==
         QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH) {
         return "adaptive_down96_cross_prefetch";
+    }
+    if (mode ==
+        QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE16_CROSS_PREFETCH) {
+        return "adaptive_down96_gate16_cross_prefetch";
+    }
+    if (mode ==
+        QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH) {
+        return "adaptive_down96_gate8_cross_prefetch";
     }
     return "control";
 }
@@ -875,7 +895,11 @@ int main(int argc, char **argv) {
                QBH_BLOCK_F16F16_PROJECTION_BATCH2) ||
           (variant == QBH_BLOCK_W4F16 &&
            w4f16_pipeline_mode !=
-               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH))) ||
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH &&
+           w4f16_pipeline_mode !=
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE16_CROSS_PREFETCH &&
+           w4f16_pipeline_mode !=
+               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH))) ||
         (mlp_chunk_vectors != 16U && mlp_chunk_vectors != 32U &&
          mlp_chunk_vectors != 64U && mlp_chunk_vectors != 128U &&
          mlp_chunk_vectors != 256U) ||
@@ -893,14 +917,22 @@ int main(int argc, char **argv) {
           w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN48_CROSS_PREFETCH ||
           w4f16_pipeline_mode ==
-              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH) &&
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH ||
+          w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE16_CROSS_PREFETCH ||
+          w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH) &&
          w4f16_hvx_workers != 3U) ||
         ((w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN64_CROSS_PREFETCH ||
           w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN48_CROSS_PREFETCH ||
           w4f16_pipeline_mode ==
-              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH) &&
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_CROSS_PREFETCH ||
+          w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE16_CROSS_PREFETCH ||
+          w4f16_pipeline_mode ==
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH) &&
          w4f16_region_tiles != 32U) ||
         (w4f16_region_tiles != 8U && w4f16_region_tiles != 16U &&
          w4f16_region_tiles != 32U && w4f16_region_tiles != 64U) ||
@@ -915,7 +947,8 @@ int main(int argc, char **argv) {
                         "[w4_pipeline:control|early|hybrid|main_half|"
                         "main_two_thirds|cross|hybrid_cross|"
                         "adaptive_down48_cross|adaptive_down64_cross|"
-                        "adaptive_down96_cross] "
+                        "adaptive_down96_cross|adaptive_down96_gate16_cross|"
+                        "adaptive_down96_gate8_cross] "
                         "[attention_pack:control|qk_hvx|av_hvx|hvx] "
                         "[mlp:control|parallel_silu|streaming] "
                         "[mlp_hvx_contexts:1..4] "
@@ -1257,7 +1290,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0031\","
+        "{\"experiment\":\"EXP-0032\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"FP16_HMX\","
         "\"projection_compute\":\"%s\","
@@ -1393,6 +1426,19 @@ int main(int argc, char **argv) {
         "\"attention_av_audit_ticks\":%" PRIu64 ","
         "\"attention_gqa_pipeline_ticks\":%" PRIu64 ","
         "\"attention_unattributed_ticks\":%" PRIu64 ","
+        "\"w4f16_gate_up_effective_region_tiles\":%" PRIu32 ","
+        "\"w4f16_gate_up_weight_dma_ticks\":%" PRIu64 ","
+        "\"w4f16_gate_up_expand_ticks\":%" PRIu64 ","
+        "\"w4f16_gate_up_expand_work_ticks\":%" PRIu64 ","
+        "\"w4f16_gate_up_expand_pool_wait_ticks\":%" PRIu64 ","
+        "\"w4f16_gate_up_prefetch_wait_ticks\":%" PRIu64 ","
+        "\"w4f16_gate_up_hmx_wait_ticks\":%" PRIu64 ","
+        "\"w4f16_gate_up_hmx_tail_wait_ticks\":%" PRIu64 ","
+        "\"w4f16_gate_up_unpack_ticks\":%" PRIu64 ","
+        "\"w4f16_gate_up_stream_work_ticks\":%" PRIu64 ","
+        "\"w4f16_gate_up_stream_ready_wait_ticks\":%" PRIu64 ","
+        "\"w4f16_gate_up_stream_join_wait_ticks\":%" PRIu64 ","
+        "\"w4f16_gate_up_hmx_command_count\":%" PRIu64 ","
         "\"weight_dma_ticks\":%" PRIu64 ","
         "\"hmx_compute_ticks\":%" PRIu64 ","
         "\"projection_pack_ticks\":%" PRIu64 ","
@@ -1557,6 +1603,19 @@ int main(int argc, char **argv) {
         header->attention_av_audit_ticks,
         header->attention_gqa_pipeline_ticks,
         header->attention_unattributed_ticks,
+        header->w4f16_gate_up_effective_region_tiles,
+        header->w4f16_gate_up_weight_dma_ticks,
+        header->w4f16_gate_up_expand_ticks,
+        header->w4f16_gate_up_expand_work_ticks,
+        header->w4f16_gate_up_expand_pool_wait_ticks,
+        header->w4f16_gate_up_prefetch_wait_ticks,
+        header->w4f16_gate_up_hmx_wait_ticks,
+        header->w4f16_gate_up_hmx_tail_wait_ticks,
+        header->w4f16_gate_up_unpack_ticks,
+        header->w4f16_gate_up_stream_work_ticks,
+        header->w4f16_gate_up_stream_ready_wait_ticks,
+        header->w4f16_gate_up_stream_join_wait_ticks,
+        header->w4f16_gate_up_hmx_command_count,
         header->weight_dma_ticks,
         header->hmx_compute_ticks, header->projection_pack_ticks,
         header->w4f16_expand_ticks,
