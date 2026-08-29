@@ -95,6 +95,7 @@ struct qbh_hvx_worker_job {
 struct qbh_chunked_hmx_job {
     struct qbh_parallel_state *state;
     uint32_t hmx_context_id;
+    const struct qbh_w4_hmx_runner *runner;
     int32_t lock_status;
     int32_t unlock_status;
     uint32_t execution_count;
@@ -394,21 +395,35 @@ static void qbh_hvx_worker_main(void *opaque) {
                 break;
             }
             const uint8_t *multipliers =
-                state->mlp_handoff->output_multipliers +
-                (size_t)task.mlp_pair_index * 2U *
-                    QBH_HMX_OUTPUT_CHANNELS;
-            qbh_mlp_gate_up_requant_lut_hvx(
-                pair, pair + QBH_HMX_OUTPUT_BYTES,
-                state->mlp_handoff->middle_activation +
-                    (size_t)task.mlp_pair_index * QBH_HMX_OUTPUT_BYTES,
-                QBH_HMX_OUTPUT_BYTES,
-                state->mlp_handoff->activation_lut,
-                state->mlp_handoff->activation_gather_scratch +
-                    (size_t)job->worker_index *
-                        QBH_MLP_GATHER_SCRATCH_BYTES,
-                multipliers,
-                multipliers + QBH_HMX_OUTPUT_CHANNELS,
-                QBH_MLP_GATE_ZERO_POINT, QBH_MLP_UP_ZERO_POINT);
+                state->mlp_handoff->output_multipliers != NULL
+                    ? state->mlp_handoff->output_multipliers +
+                          (size_t)task.mlp_pair_index * 2U *
+                              QBH_HMX_OUTPUT_CHANNELS
+                    : NULL;
+            if (multipliers != NULL) {
+                qbh_mlp_gate_up_requant_lut_hvx(
+                    pair, pair + QBH_HMX_OUTPUT_BYTES,
+                    state->mlp_handoff->middle_activation +
+                        (size_t)task.mlp_pair_index * QBH_HMX_OUTPUT_BYTES,
+                    QBH_HMX_OUTPUT_BYTES,
+                    state->mlp_handoff->activation_lut,
+                    state->mlp_handoff->activation_gather_scratch +
+                        (size_t)job->worker_index *
+                            QBH_MLP_GATHER_SCRATCH_BYTES,
+                    multipliers,
+                    multipliers + QBH_HMX_OUTPUT_CHANNELS,
+                    QBH_MLP_GATE_ZERO_POINT, QBH_MLP_UP_ZERO_POINT);
+            } else {
+                qbh_mlp_gate_up_lut_hvx(
+                    pair, pair + QBH_HMX_OUTPUT_BYTES,
+                    state->mlp_handoff->middle_activation +
+                        (size_t)task.mlp_pair_index * QBH_HMX_OUTPUT_BYTES,
+                    QBH_HMX_OUTPUT_BYTES,
+                    state->mlp_handoff->activation_lut,
+                    state->mlp_handoff->activation_gather_scratch +
+                        (size_t)job->worker_index *
+                            QBH_MLP_GATHER_SCRATCH_BYTES);
+            }
             qbh_hvx_region_end(state);
             qurt_mutex_lock(&state->metrics_mutex);
             *state->mlp_handoff->activation_ticks +=
@@ -522,8 +537,10 @@ static void qbh_chunked_hmx_main(void *opaque) {
     const struct qbh_projection_layout *layout = state->layout;
     int exit_status = AEE_SUCCESS;
 
-    job->lock_status = HAP_compute_res_hmx_lock2(
-        job->hmx_context_id, HAP_COMPUTE_RES_HMX_SHARED);
+    job->lock_status = job->runner == NULL
+        ? HAP_compute_res_hmx_lock2(
+              job->hmx_context_id, HAP_COMPUTE_RES_HMX_SHARED)
+        : AEE_SUCCESS;
     qurt_sem_up(&state->hmx_started);
     if (job->lock_status != AEE_SUCCESS) {
         qurt_thread_exit(job->lock_status);
@@ -567,22 +584,54 @@ static void qbh_chunked_hmx_main(void *opaque) {
                         job->first_compute_start = core_start;
                     }
                     qbh_hmx_region_begin(state);
-                    streams = qbh_hmx_accumulate_u8s8_streaming(
-                        state->activation_tiles +
-                            (size_t)chunk_index * layout->chunk_tiles *
-                                QBH_HMX_ACTIVATION_BYTES,
-                        (const int8_t *)state
-                            ->expanded_slots[expanded_slot],
-                        (const uint32_t *)(
-                            state->expanded_slots[expanded_slot] +
-                            layout->expanded_chunk_weight_bytes),
-                        chunk_index == 0U,
-                        state->stream_ready_generation[expanded_slot],
-                        generation, stream_regions,
-                        &state->abort_status,
-                        QBH_STREAM_READY_TIMEOUT_TICKS,
-                        &stream_ready_wait,
-                        &state->streaming_hmx_consumption_started);
+                    if (job->runner != NULL) {
+                        uint32_t executed_streams = 0U;
+                        struct qbh_w4_hmx_request request = {
+                            .activation_tiles = state->activation_tiles +
+                                (size_t)chunk_index * layout->chunk_tiles *
+                                    QBH_HMX_ACTIVATION_BYTES,
+                            .expanded_weight_tiles = (const int8_t *)state
+                                ->expanded_slots[expanded_slot],
+                            .bias_words = (const uint32_t *)(
+                                state->expanded_slots[expanded_slot] +
+                                layout->expanded_chunk_weight_bytes),
+                            .output_tiles = NULL,
+                            .chunk_tiles = chunk_tiles,
+                            .begin_output = chunk_index == 0U,
+                            .store_output = 0U,
+                            .streaming = 1U,
+                            .ready_generations =
+                                state->stream_ready_generation[expanded_slot],
+                            .expected_generation = generation,
+                            .stream_count = stream_regions,
+                            .abort_status = &state->abort_status,
+                            .timeout_ticks = QBH_STREAM_READY_TIMEOUT_TICKS,
+                            .ready_wait_ticks = &stream_ready_wait,
+                            .hmx_consumption_started =
+                                &state->streaming_hmx_consumption_started,
+                            .executed_stream_count = &executed_streams,
+                        };
+                        streams = job->runner->submit(
+                                      job->runner->context, &request) == 0
+                                      ? (int32_t)executed_streams : -1;
+                    } else {
+                        streams = qbh_hmx_accumulate_u8s8_streaming(
+                            state->activation_tiles +
+                                (size_t)chunk_index * layout->chunk_tiles *
+                                    QBH_HMX_ACTIVATION_BYTES,
+                            (const int8_t *)state
+                                ->expanded_slots[expanded_slot],
+                            (const uint32_t *)(
+                                state->expanded_slots[expanded_slot] +
+                                layout->expanded_chunk_weight_bytes),
+                            chunk_index == 0U,
+                            state->stream_ready_generation[expanded_slot],
+                            generation, stream_regions,
+                            &state->abort_status,
+                            QBH_STREAM_READY_TIMEOUT_TICKS,
+                            &stream_ready_wait,
+                            &state->streaming_hmx_consumption_started);
+                    }
                     qbh_hmx_region_end(state);
                     core_end = HAP_perf_get_qtimer_count();
                     job->ready_wait_ticks += stream_ready_wait;
@@ -612,11 +661,26 @@ static void qbh_chunked_hmx_main(void *opaque) {
                                 state->header->producer_slot_wait_ticks +=
                                     HAP_perf_get_qtimer_count() - pair_wait;
                             }
-                            qbh_hmx_store_u8_output(
+                            uint8_t *store_output =
                                 state->output_tiles +
                                 (size_t)pair_slot * 2U *
                                     QBH_HMX_OUTPUT_BYTES +
-                                (size_t)pair_lane * QBH_HMX_OUTPUT_BYTES);
+                                (size_t)pair_lane * QBH_HMX_OUTPUT_BYTES;
+                            if (job->runner != NULL) {
+                                struct qbh_w4_hmx_request request = {
+                                    .output_tiles = store_output,
+                                    .store_output = 1U,
+                                };
+                                if (job->runner->submit(
+                                        job->runner->context,
+                                        &request) != 0) {
+                                    exit_status = AEE_EFAILED;
+                                    qbh_abort_pipeline(state, exit_status);
+                                    goto unlock;
+                                }
+                            } else {
+                                qbh_hmx_store_u8_output(store_output);
+                            }
                             if (pair_lane != 0U) {
                                 struct qbh_chunk_task activation_task;
                                 memset(&activation_task, 0,
@@ -629,10 +693,25 @@ static void qbh_chunked_hmx_main(void *opaque) {
                                 ++*state->mlp_handoff->pair_publish_count;
                             }
                         } else {
-                            qbh_hmx_store_u8_output(
+                            uint8_t *store_output =
                                 state->output_tiles +
                                 (size_t)output_tile *
-                                    QBH_HMX_OUTPUT_BYTES);
+                                    QBH_HMX_OUTPUT_BYTES;
+                            if (job->runner != NULL) {
+                                struct qbh_w4_hmx_request request = {
+                                    .output_tiles = store_output,
+                                    .store_output = 1U,
+                                };
+                                if (job->runner->submit(
+                                        job->runner->context,
+                                        &request) != 0) {
+                                    exit_status = AEE_EFAILED;
+                                    qbh_abort_pipeline(state, exit_status);
+                                    goto unlock;
+                                }
+                            } else {
+                                qbh_hmx_store_u8_output(store_output);
+                            }
                         }
                     }
                     job->last_compute_end = core_end;
@@ -656,17 +735,49 @@ static void qbh_chunked_hmx_main(void *opaque) {
                     job->first_compute_start = core_start;
                 }
                 qbh_hmx_region_begin(state);
-                if (chunk_index == 0U) {
-                    qbh_hmx_begin_u8s8_output((const uint32_t *)(
-                        state->expanded_slots[expanded_slot] +
-                        layout->expanded_chunk_weight_bytes));
+                if (job->runner != NULL) {
+                    uint32_t executed_streams = 0U;
+                    struct qbh_w4_hmx_request request = {
+                        .activation_tiles = state->activation_tiles +
+                            (size_t)chunk_index * layout->chunk_tiles *
+                                QBH_HMX_ACTIVATION_BYTES,
+                        .expanded_weight_tiles = (const int8_t *)
+                            state->expanded_slots[expanded_slot],
+                        .bias_words = (const uint32_t *)(
+                            state->expanded_slots[expanded_slot] +
+                            layout->expanded_chunk_weight_bytes),
+                        .output_tiles =
+                            chunk_index + 1U == layout->chunks_per_output
+                                ? state->output_tiles +
+                                      (size_t)output_tile *
+                                          QBH_HMX_OUTPUT_BYTES
+                                : NULL,
+                        .chunk_tiles = chunk_tiles,
+                        .begin_output = chunk_index == 0U,
+                        .store_output =
+                            chunk_index + 1U == layout->chunks_per_output,
+                        .executed_stream_count = &executed_streams,
+                    };
+                    if (job->runner->submit(job->runner->context,
+                                            &request) != 0) {
+                        exit_status = AEE_EFAILED;
+                        qbh_abort_pipeline(state, exit_status);
+                        goto unlock;
+                    }
+                    job->stream_count += executed_streams;
+                } else {
+                    if (chunk_index == 0U) {
+                        qbh_hmx_begin_u8s8_output((const uint32_t *)(
+                            state->expanded_slots[expanded_slot] +
+                            layout->expanded_chunk_weight_bytes));
+                    }
+                    job->stream_count += qbh_hmx_accumulate_u8s8_projection(
+                        state->activation_tiles +
+                            (size_t)chunk_index * layout->chunk_tiles *
+                                QBH_HMX_ACTIVATION_BYTES,
+                        (const int8_t *)state->expanded_slots[expanded_slot],
+                        chunk_tiles);
                 }
-                job->stream_count += qbh_hmx_accumulate_u8s8_projection(
-                    state->activation_tiles +
-                        (size_t)chunk_index * layout->chunk_tiles *
-                            QBH_HMX_ACTIVATION_BYTES,
-                    (const int8_t *)state->expanded_slots[expanded_slot],
-                    chunk_tiles);
                 job->execution_count += chunk_tiles;
                 if (chunk_index + 1U == layout->chunks_per_output) {
                     if (state->mlp_handoff != NULL) {
@@ -674,9 +785,11 @@ static void qbh_chunked_hmx_main(void *opaque) {
                         state->abort_status = exit_status;
                         goto unlock;
                     }
-                    qbh_hmx_store_u8_output(
-                        state->output_tiles +
-                        (size_t)output_tile * QBH_HMX_OUTPUT_BYTES);
+                    if (job->runner == NULL) {
+                        qbh_hmx_store_u8_output(
+                            state->output_tiles +
+                            (size_t)output_tile * QBH_HMX_OUTPUT_BYTES);
+                    }
                 }
                 qbh_hmx_region_end(state);
                 core_end = HAP_perf_get_qtimer_count();
@@ -690,8 +803,10 @@ static void qbh_chunked_hmx_main(void *opaque) {
     }
 
 unlock:
-    job->unlock_status = HAP_compute_res_hmx_unlock2(
-        job->hmx_context_id, HAP_COMPUTE_RES_HMX_SHARED);
+    job->unlock_status = job->runner == NULL
+        ? HAP_compute_res_hmx_unlock2(
+              job->hmx_context_id, HAP_COMPUTE_RES_HMX_SHARED)
+        : AEE_SUCCESS;
     if (exit_status == AEE_SUCCESS &&
         job->unlock_status != AEE_SUCCESS) {
         exit_status = job->unlock_status;
@@ -781,7 +896,8 @@ static int qbh_run_chunked_w4_pipeline_impl(
     const struct qbh_projection_layout *layout,
     const uint8_t *stored_weights, const uint8_t *activation_tiles,
     uint8_t *vtcm, uint32_t hmx_context_id,
-    const struct qbh_mlp_gate_up_handoff *handoff) {
+    const struct qbh_mlp_gate_up_handoff *handoff,
+    const struct qbh_w4_hmx_runner *runner) {
     struct qbh_parallel_state state;
     struct qbh_hvx_worker_job hvx_jobs[QBH_MAX_HVX_WORKERS];
     struct qbh_chunked_hmx_job hmx_job;
@@ -797,7 +913,9 @@ static int qbh_run_chunked_w4_pipeline_impl(
     int result = AEE_SUCCESS;
 
     if (header == NULL || layout == NULL || stored_weights == NULL ||
-        activation_tiles == NULL || vtcm == NULL || hmx_context_id == 0U ||
+        activation_tiles == NULL || vtcm == NULL ||
+        (hmx_context_id == 0U && runner == NULL) ||
+        (runner != NULL && runner->submit == NULL) ||
         !qbh_physical_plan_is_chunked(layout->physical_plan) ||
         (layout->weight_storage_variant != QBH_WEIGHT_EXPANDED_S8 &&
          !qbh_weight_storage_is_packed_w4(
@@ -876,6 +994,7 @@ static int qbh_run_chunked_w4_pipeline_impl(
 
     hmx_job.state = &state;
     hmx_job.hmx_context_id = hmx_context_id;
+    hmx_job.runner = runner;
     qurt_thread_attr_t hmx_attributes;
     qurt_thread_attr_init(&hmx_attributes);
     qurt_thread_attr_set_name(&hmx_attributes, "qbh-hmx-chunk");
@@ -1183,7 +1302,7 @@ int qbh_run_chunked_w4_pipeline(
     uint8_t *vtcm, uint32_t hmx_context_id) {
     return qbh_run_chunked_w4_pipeline_impl(
         header, layout, stored_weights, activation_tiles, vtcm,
-        hmx_context_id, NULL);
+        hmx_context_id, NULL, NULL);
 }
 
 int qbh_run_chunked_w4_pipeline_mlp(
@@ -1194,5 +1313,17 @@ int qbh_run_chunked_w4_pipeline_mlp(
     const struct qbh_mlp_gate_up_handoff *handoff) {
     return qbh_run_chunked_w4_pipeline_impl(
         header, layout, stored_weights, activation_tiles, vtcm,
-        hmx_context_id, handoff);
+        hmx_context_id, handoff, NULL);
+}
+
+int qbh_run_chunked_w4_pipeline_external(
+    struct qbh_probe_header *header,
+    const struct qbh_projection_layout *layout,
+    const uint8_t *stored_weights, const uint8_t *activation_tiles,
+    uint8_t *vtcm,
+    const struct qbh_mlp_gate_up_handoff *handoff,
+    const struct qbh_w4_hmx_runner *runner) {
+    return qbh_run_chunked_w4_pipeline_impl(
+        header, layout, stored_weights, activation_tiles, vtcm,
+        0U, handoff, runner);
 }

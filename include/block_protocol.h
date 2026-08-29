@@ -6,8 +6,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(18)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(38)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(19)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(40)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -95,6 +95,7 @@ enum qbh_block_mlp_mode {
     QBH_BLOCK_MLP_STREAMING = 2,
     QBH_BLOCK_MLP_CROUTON_NATIVE = 3,
     QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 = 4,
+    QBH_BLOCK_MLP_W4U8_STREAMING = 5,
 };
 
 enum qbh_block_crouton_boundary_mode {
@@ -247,6 +248,12 @@ struct qbh_block_header {
     uint32_t rope_cos_bytes;
     uint32_t rope_sin_offset;
     uint32_t rope_sin_bytes;
+    uint32_t w4u8_gate_up_bundle_offset;
+    uint32_t w4u8_gate_up_bundle_bytes;
+    uint32_t w4u8_down_bundle_offset;
+    uint32_t w4u8_down_bundle_bytes;
+    uint32_t w4u8_silu_lut_offset;
+    uint32_t w4u8_silu_lut_bytes;
 
     struct qbh_block_projection_desc
         projections[QBH_BLOCK_PROJECTION_COUNT];
@@ -439,6 +446,28 @@ struct qbh_block_header {
     uint64_t w4f16_gate_up_stream_join_wait_ticks;
     uint64_t w4f16_gate_up_hmx_command_count;
     uint64_t w4f16_gate_up_scale_init_ticks;
+
+    uint32_t w4u8_mlp_vtcm_base_offset;
+    uint32_t w4u8_mlp_vtcm_plan_bytes;
+    uint32_t w4u8_mlp_lut_vtcm_bytes;
+    uint32_t w4u8_mlp_gather_scratch_vtcm_bytes;
+    uint32_t w4u8_mlp_gate_up_hvx_workers;
+    uint32_t w4u8_mlp_down_hvx_workers;
+    uint32_t w4u8_mlp_pair_publish_count;
+    uint32_t w4u8_mlp_pair_consume_count;
+    uint32_t w4u8_mlp_gate_up_hvx_hmx_overlap;
+    uint32_t w4u8_mlp_down_hvx_hmx_overlap;
+    uint32_t w4u8_mlp_gate_up_hvx_parallel_overlap;
+    uint32_t w4u8_mlp_down_hvx_parallel_overlap;
+    uint64_t w4u8_mlp_gate_up_pipeline_ticks;
+    uint64_t w4u8_mlp_down_pipeline_ticks;
+    uint64_t w4u8_mlp_activation_work_ticks;
+    uint64_t w4u8_mlp_weight_stage_ticks;
+    uint64_t w4u8_mlp_weight_expand_ticks;
+    uint64_t w4u8_mlp_hmx_compute_ticks;
+    uint64_t w4u8_mlp_hmx_ready_wait_ticks;
+    uint64_t w4u8_mlp_producer_slot_wait_ticks;
+    uint64_t w4u8_mlp_expanded_slot_wait_ticks;
 };
 
 #endif

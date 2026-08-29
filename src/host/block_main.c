@@ -14,7 +14,9 @@
 
 #include "block_protocol.h"
 #include "hmx_fp16.h"
+#include "hmx_u8s8_projection.h"
 #include "host/session.h"
+#include "mlp_u8.h"
 #include "qwen3_probe.h"
 
 #define QBH_HOST_ALIGNMENT ((size_t)128)
@@ -526,6 +528,11 @@ static int qbh_parse_mlp_mode(const char *text, uint32_t *mode) {
         *mode = QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8;
         return 0;
     }
+    if (strcmp(text, "w4u8_streaming") == 0 ||
+        strcmp(text, "w4u8") == 0) {
+        *mode = QBH_BLOCK_MLP_W4U8_STREAMING;
+        return 0;
+    }
     return -1;
 }
 
@@ -541,6 +548,9 @@ static const char *qbh_mlp_mode_name(uint32_t mode) {
     }
     if (mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8) {
         return "crouton_native_batch8";
+    }
+    if (mode == QBH_BLOCK_MLP_W4U8_STREAMING) {
+        return "w4u8_streaming";
     }
     return "control";
 }
@@ -831,6 +841,76 @@ static int qbh_build_bias_words(
     return 0;
 }
 
+static int qbh_build_w4u8_streaming_bundles(
+    struct qbh_block_header *header, uint8_t *shared,
+    const struct qbh_projection_layout *gate_up_layout,
+    const struct qbh_projection_layout *down_layout) {
+    const struct qbh_block_projection_desc *gate;
+    const struct qbh_block_projection_desc *up;
+    const struct qbh_block_projection_desc *down;
+    uint8_t *gate_up_destination;
+    uint8_t *down_destination;
+    uint32_t gate_up_source_tiles;
+
+    if (header == NULL || shared == NULL || gate_up_layout == NULL ||
+        down_layout == NULL ||
+        header->variant != QBH_BLOCK_W4U8 ||
+        header->mlp_mode != QBH_BLOCK_MLP_W4U8_STREAMING ||
+        header->w4u8_gate_up_bundle_bytes !=
+            gate_up_layout->stored_weight_bytes ||
+        header->w4u8_down_bundle_bytes !=
+            down_layout->stored_weight_bytes) {
+        return -1;
+    }
+    gate = &header->projections[QBH_BLOCK_PROJ_GATE];
+    up = &header->projections[QBH_BLOCK_PROJ_UP];
+    down = &header->projections[QBH_BLOCK_PROJ_DOWN];
+    gate_up_source_tiles = gate->n / QBH_HMX_OUTPUT_CHANNELS;
+    if (gate->k != up->k || gate->n != up->n ||
+        gate_up_layout->n_tiles != 2U * gate_up_source_tiles ||
+        gate_up_layout->w4_packed_chunk_bytes !=
+            gate->k / QBH_HMX_INPUT_CHANNELS * QBH_W4_PACKED_TILE_BYTES ||
+        down_layout->w4_packed_chunk_bytes !=
+            down->k / QBH_HMX_INPUT_CHANNELS * QBH_W4_PACKED_TILE_BYTES) {
+        return -1;
+    }
+
+    gate_up_destination = shared + header->w4u8_gate_up_bundle_offset;
+    down_destination = shared + header->w4u8_down_bundle_offset;
+    memset(gate_up_destination, 0, header->w4u8_gate_up_bundle_bytes);
+    memset(down_destination, 0, header->w4u8_down_bundle_bytes);
+    for (uint32_t tile = 0U; tile < gate_up_source_tiles; ++tile) {
+        const struct qbh_block_projection_desc *sources[2] = {gate, up};
+        for (uint32_t lane = 0U; lane < 2U; ++lane) {
+            uint32_t output_tile = 2U * tile + lane;
+            uint8_t *bundle = gate_up_destination +
+                (size_t)output_tile *
+                    gate_up_layout->stored_weight_bundle_bytes;
+            memcpy(bundle,
+                   shared + sources[lane]->weight_offset +
+                       (size_t)tile * gate_up_layout->w4_packed_chunk_bytes,
+                   gate_up_layout->w4_packed_chunk_bytes);
+            memcpy(bundle + gate_up_layout->w4_bias_offset,
+                   shared + sources[lane]->bias_offset +
+                       (size_t)tile * QBH_HMX_BIAS_BYTES,
+                   QBH_HMX_BIAS_BYTES);
+        }
+    }
+    for (uint32_t tile = 0U; tile < down_layout->n_tiles; ++tile) {
+        uint8_t *bundle = down_destination +
+            (size_t)tile * down_layout->stored_weight_bundle_bytes;
+        memcpy(bundle,
+               shared + down->weight_offset +
+                   (size_t)tile * down_layout->w4_packed_chunk_bytes,
+               down_layout->w4_packed_chunk_bytes);
+        memcpy(bundle + down_layout->w4_bias_offset,
+               shared + down->bias_offset +
+                   (size_t)tile * QBH_HMX_BIAS_BYTES,
+               QBH_HMX_BIAS_BYTES);
+    }
+    return 0;
+}
+
 static struct qbh_error_metrics qbh_compare_f16(
     const uint16_t *actual, const uint16_t *reference,
     uint32_t elements) {
@@ -912,8 +992,11 @@ int main(int argc, char **argv) {
     struct qbh_file_slot qparam_slot;
     struct qbh_file_slot norm_slots[4];
     struct qbh_file_slot rope_slots[2];
+    struct qbh_file_slot w4u8_lut_slot;
     struct qbh_file_slot weight_slots[QBH_BLOCK_PROJECTION_COUNT];
     struct qbh_file_slot scale_slots[QBH_BLOCK_PROJECTION_COUNT];
+    struct qbh_projection_layout w4u8_gate_up_layout;
+    struct qbh_projection_layout w4u8_down_layout;
     struct qbh_block_header *header = NULL;
     uint8_t *shared = NULL;
     uint32_t variant;
@@ -938,6 +1021,8 @@ int main(int argc, char **argv) {
         QBH_BLOCK_CROUTON_BOUNDARY_CONTROL;
     uint32_t element_bytes;
     uint32_t output_bytes;
+    size_t w4u8_gate_up_bundle_offset = 0U;
+    size_t w4u8_down_bundle_offset = 0U;
     size_t cursor = qbh_align_up_size(sizeof(*header), QBH_HOST_ALIGNMENT);
     size_t total_bytes;
     int shared_fd = -1;
@@ -961,6 +1046,9 @@ int main(int argc, char **argv) {
 
     memset(&warmup_metrics, 0, sizeof(warmup_metrics));
     memset(&measured_metrics, 0, sizeof(measured_metrics));
+    memset(&w4u8_lut_slot, 0, sizeof(w4u8_lut_slot));
+    memset(&w4u8_gate_up_layout, 0, sizeof(w4u8_gate_up_layout));
+    memset(&w4u8_down_layout, 0, sizeof(w4u8_down_layout));
     if (argc < 3 || argc > 19 ||
         qbh_parse_variant(argv[2], &variant) != 0 ||
         (argc >= 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
@@ -1004,7 +1092,8 @@ int main(int argc, char **argv) {
               QBH_BLOCK_ATTENTION_PACK_CONTROL ||
           attention_pipeline_mode !=
               QBH_BLOCK_ATTENTION_PIPELINE_CONTROL ||
-          mlp_mode != QBH_BLOCK_MLP_CONTROL)) ||
+          (mlp_mode != QBH_BLOCK_MLP_CONTROL &&
+           mlp_mode != QBH_BLOCK_MLP_W4U8_STREAMING))) ||
         attention_pipeline_mode >
             QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP ||
         attention_hvx_contexts == 0U ||
@@ -1048,12 +1137,15 @@ int main(int argc, char **argv) {
         ((crouton_boundary_mode & QBH_BLOCK_CROUTON_BOUNDARY_AV_TO_O) != 0U &&
          attention_pipeline_mode !=
              QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP) ||
-        mlp_mode > QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 ||
+        mlp_mode > QBH_BLOCK_MLP_W4U8_STREAMING ||
         mlp_hvx_contexts == 0U || mlp_hvx_contexts > 4U ||
         (mlp_mode == QBH_BLOCK_MLP_CONTROL && mlp_hvx_contexts != 1U) ||
         (mlp_mode != QBH_BLOCK_MLP_CONTROL &&
+         mlp_mode != QBH_BLOCK_MLP_W4U8_STREAMING &&
          (variant == QBH_BLOCK_W4U8 ||
           (common_ops_mask & QBH_BLOCK_COMMON_OP_SILU) == 0U)) ||
+        (mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING &&
+         (variant != QBH_BLOCK_W4U8 || mlp_hvx_contexts != 3U)) ||
         (mlp_mode == QBH_BLOCK_MLP_STREAMING &&
          (mlp_hvx_contexts != 4U ||
           (variant == QBH_BLOCK_F16F16 &&
@@ -1146,7 +1238,8 @@ int main(int argc, char **argv) {
                         "adaptive_down96_gate4_dma8_cross] "
                         "[attention_pack:control|qk_hvx|av_hvx|hvx] "
                         "[mlp:control|parallel_silu|streaming|"
-                        "crouton_native|crouton_native_batch8] "
+                        "crouton_native|crouton_native_batch8|"
+                        "w4u8_streaming] "
                         "[mlp_hvx_contexts:1..4] "
                         "[mlp_chunk_vectors:16|32|64|128|256] "
                         "[attention_pipeline:control|parallel_qk_norm_rope|"
@@ -1163,6 +1256,22 @@ int main(int argc, char **argv) {
     }
     element_bytes = variant == QBH_BLOCK_W4U8 ? 1U : 2U;
     output_bytes = QBH_BLOCK_M * QBH_BLOCK_HIDDEN * element_bytes;
+    if (mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING &&
+        (qbh_projection_layout_init(
+             QBH_PROJECTION_GATE_UP_PAIR,
+             QBH_WEIGHT_PACKED_W4_HMX_SCALE,
+             QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4, 8U,
+             QBH_W4_COARSE_CHUNK_TILES,
+             &w4u8_gate_up_layout) != 0 ||
+         qbh_projection_layout_init(
+             QBH_PROJECTION_DOWN,
+             QBH_WEIGHT_PACKED_W4_HMX_SCALE,
+             QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH2, 4U,
+             QBH_W4_WIDE_CHUNK_TILES,
+             &w4u8_down_layout) != 0)) {
+        fprintf(stderr, "W4U8 streaming layout initialization failed\n");
+        return 2;
+    }
 
     if (qbh_prepare_slot(
             &input_slot, argv[1],
@@ -1207,6 +1316,13 @@ int main(int argc, char **argv) {
                              sizeof(uint16_t),
                          &cursor) != 0) {
         fprintf(stderr, "package common tensor audit failed\n");
+        return 2;
+    }
+    if (mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING &&
+        qbh_prepare_slot(&w4u8_lut_slot, argv[1],
+                         "silu_up_lut_u16.bin", QBH_MLP_LUT_BYTES,
+                         &cursor) != 0) {
+        fprintf(stderr, "W4U8 streaming LUT audit failed\n");
         return 2;
     }
 
@@ -1271,6 +1387,22 @@ int main(int argc, char **argv) {
                 cursor += bias_bytes;
             }
         }
+        if (mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING) {
+            cursor = qbh_align_up_size(cursor, QBH_HOST_ALIGNMENT);
+            w4u8_gate_up_bundle_offset = cursor;
+            if (w4u8_gate_up_layout.stored_weight_bytes >
+                UINT32_MAX - cursor) {
+                return 2;
+            }
+            cursor += w4u8_gate_up_layout.stored_weight_bytes;
+            cursor = qbh_align_up_size(cursor, QBH_HOST_ALIGNMENT);
+            w4u8_down_bundle_offset = cursor;
+            if (w4u8_down_layout.stored_weight_bytes >
+                UINT32_MAX - cursor) {
+                return 2;
+            }
+            cursor += w4u8_down_layout.stored_weight_bytes;
+        }
         total_bytes = cursor;
         if (total_bytes > INT_MAX) {
             fprintf(stderr, "rpcmem package too large: %zu\n", total_bytes);
@@ -1303,6 +1435,10 @@ int main(int argc, char **argv) {
         if (qbh_read_slot(shared, &rope_slots[index]) != 0) {
             goto cleanup;
         }
+    }
+    if (mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING &&
+        qbh_read_slot(shared, &w4u8_lut_slot) != 0) {
+        goto cleanup;
     }
     for (uint32_t projection = 0;
          projection < QBH_BLOCK_PROJECTION_COUNT; ++projection) {
@@ -1354,6 +1490,18 @@ int main(int argc, char **argv) {
     header->rope_cos_bytes = rope_slots[0].expected_bytes;
     header->rope_sin_offset = rope_slots[1].offset;
     header->rope_sin_bytes = rope_slots[1].expected_bytes;
+    if (mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING) {
+        header->w4u8_gate_up_bundle_offset =
+            (uint32_t)w4u8_gate_up_bundle_offset;
+        header->w4u8_gate_up_bundle_bytes =
+            w4u8_gate_up_layout.stored_weight_bytes;
+        header->w4u8_down_bundle_offset =
+            (uint32_t)w4u8_down_bundle_offset;
+        header->w4u8_down_bundle_bytes =
+            w4u8_down_layout.stored_weight_bytes;
+        header->w4u8_silu_lut_offset = w4u8_lut_slot.offset;
+        header->w4u8_silu_lut_bytes = w4u8_lut_slot.expected_bytes;
+    }
     if (qbh_load_qparams(header, shared + qparam_slot.offset) != 0) {
         fprintf(stderr, "qparam record audit failed\n");
         goto cleanup;
@@ -1388,6 +1536,13 @@ int main(int argc, char **argv) {
                 }
             }
         }
+    }
+    if (mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING &&
+        qbh_build_w4u8_streaming_bundles(
+            header, shared, &w4u8_gate_up_layout,
+            &w4u8_down_layout) != 0) {
+        fprintf(stderr, "W4U8 streaming bundle construction failed\n");
+        goto cleanup;
     }
     header->dsp_status = QBH_BLOCK_STATUS_HOST_READY;
     shared_fd = rpcmem_to_fd(shared);
@@ -1497,7 +1652,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0038\","
+        "{\"experiment\":\"EXP-0040\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"FP16_HMX\","
         "\"projection_compute\":\"%s\","
@@ -1660,6 +1815,27 @@ int main(int argc, char **argv) {
         "\"w4f16_gate_up_stream_join_wait_ticks\":%" PRIu64 ","
         "\"w4f16_gate_up_hmx_command_count\":%" PRIu64 ","
         "\"w4f16_gate_up_scale_init_ticks\":%" PRIu64 ","
+        "\"w4u8_mlp_vtcm_base_offset\":%" PRIu32 ","
+        "\"w4u8_mlp_vtcm_plan_bytes\":%" PRIu32 ","
+        "\"w4u8_mlp_lut_vtcm_bytes\":%" PRIu32 ","
+        "\"w4u8_mlp_gather_scratch_vtcm_bytes\":%" PRIu32 ","
+        "\"w4u8_mlp_gate_up_hvx_workers\":%" PRIu32 ","
+        "\"w4u8_mlp_down_hvx_workers\":%" PRIu32 ","
+        "\"w4u8_mlp_pair_publish_count\":%" PRIu32 ","
+        "\"w4u8_mlp_pair_consume_count\":%" PRIu32 ","
+        "\"w4u8_mlp_gate_up_hvx_hmx_overlap\":%" PRIu32 ","
+        "\"w4u8_mlp_down_hvx_hmx_overlap\":%" PRIu32 ","
+        "\"w4u8_mlp_gate_up_hvx_parallel_overlap\":%" PRIu32 ","
+        "\"w4u8_mlp_down_hvx_parallel_overlap\":%" PRIu32 ","
+        "\"w4u8_mlp_gate_up_pipeline_ticks\":%" PRIu64 ","
+        "\"w4u8_mlp_down_pipeline_ticks\":%" PRIu64 ","
+        "\"w4u8_mlp_activation_work_ticks\":%" PRIu64 ","
+        "\"w4u8_mlp_weight_stage_ticks\":%" PRIu64 ","
+        "\"w4u8_mlp_weight_expand_ticks\":%" PRIu64 ","
+        "\"w4u8_mlp_hmx_compute_ticks\":%" PRIu64 ","
+        "\"w4u8_mlp_hmx_ready_wait_ticks\":%" PRIu64 ","
+        "\"w4u8_mlp_producer_slot_wait_ticks\":%" PRIu64 ","
+        "\"w4u8_mlp_expanded_slot_wait_ticks\":%" PRIu64 ","
         "\"weight_dma_ticks\":%" PRIu64 ","
         "\"hmx_compute_ticks\":%" PRIu64 ","
         "\"projection_pack_ticks\":%" PRIu64 ","
@@ -1855,6 +2031,27 @@ int main(int argc, char **argv) {
         header->w4f16_gate_up_stream_join_wait_ticks,
         header->w4f16_gate_up_hmx_command_count,
         header->w4f16_gate_up_scale_init_ticks,
+        header->w4u8_mlp_vtcm_base_offset,
+        header->w4u8_mlp_vtcm_plan_bytes,
+        header->w4u8_mlp_lut_vtcm_bytes,
+        header->w4u8_mlp_gather_scratch_vtcm_bytes,
+        header->w4u8_mlp_gate_up_hvx_workers,
+        header->w4u8_mlp_down_hvx_workers,
+        header->w4u8_mlp_pair_publish_count,
+        header->w4u8_mlp_pair_consume_count,
+        header->w4u8_mlp_gate_up_hvx_hmx_overlap,
+        header->w4u8_mlp_down_hvx_hmx_overlap,
+        header->w4u8_mlp_gate_up_hvx_parallel_overlap,
+        header->w4u8_mlp_down_hvx_parallel_overlap,
+        header->w4u8_mlp_gate_up_pipeline_ticks,
+        header->w4u8_mlp_down_pipeline_ticks,
+        header->w4u8_mlp_activation_work_ticks,
+        header->w4u8_mlp_weight_stage_ticks,
+        header->w4u8_mlp_weight_expand_ticks,
+        header->w4u8_mlp_hmx_compute_ticks,
+        header->w4u8_mlp_hmx_ready_wait_ticks,
+        header->w4u8_mlp_producer_slot_wait_ticks,
+        header->w4u8_mlp_expanded_slot_wait_ticks,
         header->weight_dma_ticks,
         header->hmx_compute_ticks, header->projection_pack_ticks,
         header->w4f16_expand_ticks,
@@ -1913,6 +2110,8 @@ int main(int argc, char **argv) {
                         header->intermediate_ddr_write_bytes == 0U &&
                         header->intermediate_dma_descriptor_count == 0U &&
                         header->intermediate_spill_fill_count == 0U &&
+                        (mlp_mode != QBH_BLOCK_MLP_W4U8_STREAMING ||
+                         measured_metrics.mismatches == 0U) &&
                         isfinite(measured_metrics.cosine) &&
                         measured_metrics.cosine > 0.90
                     ? 0
