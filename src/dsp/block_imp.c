@@ -308,6 +308,7 @@ static int qbh_attention_gqa_enabled(uint32_t mode);
 static int qbh_attention_u8_enabled(uint32_t mode);
 static int qbh_attention_u8_fused_k_enabled(uint32_t mode);
 static int qbh_attention_u8_qkv_overlap_enabled(uint32_t mode);
+static int qbh_attention_u8_vgather_enabled(uint32_t mode);
 static void qbh_attention_gqa_pool_run_tasks(
     struct qbh_block_w4f16_pool *pool,
     struct qbh_block_w4f16_job *job);
@@ -473,8 +474,9 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         buffers->probability = qbh_arena_alloc(
             &arena, QBH_BLOCK_SCORE_ELEMENTS * sizeof(uint16_t));
     }
-    buffers->attention_concat = qbh_arena_alloc(
-        &arena, QBH_BLOCK_M * QBH_BLOCK_HIDDEN * sizeof(uint16_t));
+    buffers->attention_concat = qbh_arena_alloc_aligned(
+        &arena, QBH_BLOCK_M * QBH_BLOCK_HIDDEN * sizeof(uint16_t),
+        512U);
     buffers->attention_projection = qbh_arena_alloc(&arena, hidden_bytes);
     if (mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE ||
         mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8) {
@@ -677,7 +679,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (header->attention_pack_mode &
          ~((uint32_t)QBH_BLOCK_ATTENTION_PACK_HVX)) != 0U ||
         header->attention_pipeline_mode >
-            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP ||
+            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER ||
         header->attention_hvx_contexts == 0U ||
         header->attention_hvx_contexts >
             QBH_BLOCK_W4F16_HVX_WORKERS ||
@@ -773,14 +775,14 @@ static int qbh_header_valid(const struct qbh_block_header *header,
              QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP) ||
         ((header->crouton_boundary_mode &
           QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT) != 0U &&
-         (header->attention_pipeline_mode !=
-              QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP ||
+         (!qbh_attention_u8_qkv_overlap_enabled(
+              header->attention_pipeline_mode) ||
           header->w4u8_qkvo_pipeline_mode <
               QBH_BLOCK_W4U8_QKVO_BATCH4)) ||
         ((header->crouton_boundary_mode &
           QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT) != 0U &&
-         (header->attention_pipeline_mode !=
-              QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP ||
+         (!qbh_attention_u8_qkv_overlap_enabled(
+              header->attention_pipeline_mode) ||
           header->w4u8_qkvo_pipeline_mode <
               QBH_BLOCK_W4U8_QKVO_BATCH4 ||
           (header->residual_mode !=
@@ -1794,19 +1796,30 @@ static int qbh_attention_u8_enabled(uint32_t mode) {
            mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_FUSED_K ||
            mode ==
-               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER;
 }
 
 static int qbh_attention_u8_fused_k_enabled(uint32_t mode) {
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_FUSED_K ||
            mode ==
-               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER;
 }
 
 static int qbh_attention_u8_qkv_overlap_enabled(uint32_t mode) {
     return mode ==
-           QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER;
+}
+
+static int qbh_attention_u8_vgather_enabled(uint32_t mode) {
+    return mode ==
+           QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER;
 }
 
 static void qbh_attention_qk_norm_pool_run_tasks(
@@ -6010,11 +6023,20 @@ static int qbh_attention_u8_integer(
             HAP_perf_get_qtimer_count() - start;
 
         start = HAP_perf_get_qtimer_count();
-        qbh_attention_u8_pack_v_native(
-            v_head, config, v_weight, av_bias,
-            header->numerical_audit_enabled != 0U
-                ? &telemetry.v_recenter_saturation_count
-                : NULL);
+        if (qbh_attention_u8_vgather_enabled(
+                header->attention_pipeline_mode)) {
+            qbh_attention_u8_pack_v_native_vgather(
+                v_head, config, v_weight, av_bias, scratch,
+                header->numerical_audit_enabled != 0U
+                    ? &telemetry.v_recenter_saturation_count
+                    : NULL);
+        } else {
+            qbh_attention_u8_pack_v_native(
+                v_head, config, v_weight, av_bias,
+                header->numerical_audit_enabled != 0U
+                    ? &telemetry.v_recenter_saturation_count
+                    : NULL);
+        }
         header->u8_attention_v_pack_ticks +=
             HAP_perf_get_qtimer_count() - start;
 
@@ -6855,11 +6877,20 @@ static void qbh_attention_u8_pool_run_tasks(
         }
 
         start = HAP_perf_get_qtimer_count();
-        qbh_attention_u8_pack_v_native(
-            v_head, config, v_weight, av_bias,
-            telemetry_ptr != NULL
-                ? &telemetry.v_recenter_saturation_count
-                : NULL);
+        if (qbh_attention_u8_vgather_enabled(
+                header->attention_pipeline_mode)) {
+            qbh_attention_u8_pack_v_native_vgather(
+                v_head, config, v_weight, av_bias, scratch,
+                telemetry_ptr != NULL
+                    ? &telemetry.v_recenter_saturation_count
+                    : NULL);
+        } else {
+            qbh_attention_u8_pack_v_native(
+                v_head, config, v_weight, av_bias,
+                telemetry_ptr != NULL
+                    ? &telemetry.v_recenter_saturation_count
+                    : NULL);
+        }
         job->u8_attention_v_pack_ticks +=
             HAP_perf_get_qtimer_count() - start;
 

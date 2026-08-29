@@ -288,6 +288,135 @@ void qbh_attention_u8_pack_v_native(
     asm volatile("barrier" ::: "memory");
 }
 
+void qbh_attention_u8_pack_v_native_vgather(
+    const uint8_t *v_head_tiles,
+    const struct qbh_attention_config *config,
+    int8_t *weight_tiles, uint32_t *bias_words, uint8_t *scratch,
+    uint32_t *saturation_count) {
+    const uint32_t divisor = UINT32_C(1) << config->av_shift;
+    const int32_t rounding = config->av_shift == 0U
+                                 ? 0
+                                 : (int32_t)(divisor / 2U);
+    const uint16_t conversion = qbh_attention_u8_float_to_half_bits(
+        512.0f / (float)divisor);
+    const int32_t hmx_output_zero_point =
+        config->av_multiplier == 1U
+            ? config->output_zero_point
+            : (int32_t)QBH_ATTENTION_HMX_CENTER;
+
+    int16_t *recenter_lut = (int16_t *)(
+        scratch + QBH_ATTN_U8_VGATHER_LUT_OFFSET);
+    int16_t *gathered_low = (int16_t *)(
+        scratch + QBH_ATTN_U8_VGATHER_SCRATCH_OFFSET);
+    int16_t *gathered_high = gathered_low + 64;
+
+    for (uint32_t code = 0U; code <= UINT8_MAX; ++code) {
+        const int32_t centered =
+            (int32_t)code - config->v_zero_point;
+        const int32_t requantized =
+            qbh_attention_u8_round_div_signed(
+                centered * (int32_t)config->v_recenter_numerator,
+                (int32_t)config->v_recenter_denominator);
+        recenter_lut[code] = (int16_t)qbh_attention_u8_clip_s8(
+            requantized, NULL);
+    }
+
+    for (uint32_t n_tile = 0U;
+         n_tile < QBH_ATTENTION_HEAD_DIM_TILES; ++n_tile) {
+        const uint8_t *source = v_head_tiles +
+            (size_t)n_tile * QBH_HMX_ACTIVATION_BYTES;
+        for (uint32_t k_tile = 0U;
+             k_tile < QBH_ATTENTION_SCORE_TILES; ++k_tile) {
+            int8_t *destination = weight_tiles +
+                ((size_t)n_tile * QBH_ATTENTION_SCORE_TILES + k_tile) *
+                    QBH_HMX_WEIGHT_BYTES;
+            for (uint32_t input_group = 0U;
+                 input_group < QBH_HMX_INPUT_CHANNELS / 4U;
+                 ++input_group) {
+                const uint32_t token =
+                    k_tile * QBH_HMX_INPUT_CHANNELS +
+                    input_group * 4U;
+                const HVX_Vector values = *(const HVX_Vector *)(
+                    source +
+                    (size_t)token * QBH_HMX_OUTPUT_CHANNELS);
+                const HVX_VectorPair value_h =
+                    Q6_Wuh_vunpack_Vub(values);
+                const HVX_Vector offsets_low = Q6_Vh_vasl_VhR(
+                    Q6_V_lo_W(value_h), 1);
+                const HVX_Vector offsets_high = Q6_Vh_vasl_VhR(
+                    Q6_V_hi_W(value_h), 1);
+                const HVX_VectorPred all_lanes = Q6_Q_vcmp_eq_VwVw(
+                    offsets_low, offsets_low);
+                HVX_Vector recentered;
+
+                Q6_vgather_AQRMVh(
+                    gathered_low, all_lanes,
+                    (int32_t)(uintptr_t)recenter_lut,
+                    QBH_ATTN_U8_VGATHER_LUT_BYTES - 1U,
+                    offsets_low);
+                Q6_vgather_AQRMVh(
+                    gathered_high, all_lanes,
+                    (int32_t)(uintptr_t)recenter_lut,
+                    QBH_ATTN_U8_VGATHER_LUT_BYTES - 1U,
+                    offsets_high);
+                recentered = Q6_Vb_vpack_VhVh_sat(
+                    *(volatile HVX_Vector *)gathered_high,
+                    *(volatile HVX_Vector *)gathered_low);
+
+                if (saturation_count != NULL) {
+                    for (uint32_t index = 0U;
+                         index < QBH_ATTN_U8_HVX_BYTES; ++index) {
+                        const int32_t centered =
+                            (int32_t)((const uint8_t *)&values)[index] -
+                            config->v_zero_point;
+                        const int32_t requantized =
+                            qbh_attention_u8_round_div_signed(
+                                centered * (int32_t)
+                                    config->v_recenter_numerator,
+                                (int32_t)
+                                    config->v_recenter_denominator);
+                        *saturation_count +=
+                            requantized < INT8_MIN ||
+                            requantized > INT8_MAX;
+                    }
+                }
+                for (uint32_t output = 0U;
+                     output < QBH_HMX_OUTPUT_CHANNELS; ++output) {
+                    const uint8_t *bytes =
+                        (const uint8_t *)&recentered;
+                    const uint8_t byte0 = bytes[output];
+                    const uint8_t byte1 =
+                        bytes[QBH_HMX_OUTPUT_CHANNELS + output];
+                    const uint8_t byte2 =
+                        bytes[2U * QBH_HMX_OUTPUT_CHANNELS + output];
+                    const uint8_t byte3 =
+                        bytes[3U * QBH_HMX_OUTPUT_CHANNELS + output];
+                    ((uint32_t *)(destination +
+                         (size_t)input_group * 128U))[output] =
+                        (uint32_t)byte0 |
+                        ((uint32_t)byte1 << 8U) |
+                        ((uint32_t)byte2 << 16U) |
+                        ((uint32_t)byte3 << 24U);
+                }
+            }
+        }
+        {
+            uint32_t *bias = bias_words +
+                (size_t)n_tile *
+                    (QBH_HMX_BIAS_BYTES / sizeof(uint32_t));
+            for (uint32_t output = 0U;
+                 output < QBH_HMX_OUTPUT_CHANNELS; ++output) {
+                bias[output] = conversion;
+                bias[QBH_HMX_OUTPUT_CHANNELS + output] =
+                    (uint32_t)(hmx_output_zero_point *
+                                   (int32_t)divisor +
+                               rounding);
+            }
+        }
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
 static HVX_Vector qbh_attention_u8_requant_centered(
     HVX_Vector input, uint32_t multiplier,
     int32_t output_zero_point) {
