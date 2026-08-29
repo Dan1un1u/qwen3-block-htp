@@ -2918,13 +2918,14 @@ experiments:
       - native_tile_qk_norm_rope_k_operand_fusion
       - qkv_head_ready_integer_attention_pipeline
     execution_state: running
-    evidence_validity: not_checked
+    evidence_validity: valid
     local_gate: not_run
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4u8-native-integer-attention-operands
     source_branches:
       - codex/exp-0044-u8-attention-native-operands
-    source_commits: []
+    source_commits:
+      - 0a9f129fb10585141d310492968ddf37ffbcd5fb
     record: docs/experiments/EXP-0044.md
     decided_by: user
     decided_on: '2026-08-29'
@@ -2952,4 +2953,19 @@ experiments:
       correctness_gate: device_qk_softmax_av_and_final_block_output_are_byte_exact_to_the_exp0042_declared_integer_implementation_reference
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn
       local_speed_gate: final_candidate_strictly_improves_attention_and_complete_host_wall_over_exp0042_at_repeat1_and_repeat10
+      stage_a_source_head: 0a9f129fb10585141d310492968ddf37ffbcd5fb
+      stage_a_formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0044\20260829T121228Z_0a9f129fb105_stage_a'
+      stage_a_artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0044\artifacts\0a9f129fb105\stage_a'
+      stage_a_gate_record: 'D:\llm_exp\results\qwen3-block-htp\exp0044\20260829T121228Z_0a9f129fb105_stage_a\gate_summary.json'
+      stage_a_gate_record_sha256: 94160a83cb4c27e6ee29076201cbb6b52ce52aaf6518839a8d1067f1ed2cd20a
+      stage_a_implementation_reference_sha256: 5c4be632374786c7fb4a48e1097965f5e393d3a3133ef25530f21b5239c59896
+      stage_a_gate_result: pass
+      stage_a_fused_k_carrier_bias_mismatches: 0
+      stage_a_repeat1_qk_norm_rope_plus_k_pack_change_percent: -41.778203808238956
+      stage_a_repeat1_attention_change_percent: -29.7421381476751
+      stage_a_repeat1_host_wall_change_percent: -6.7431787487960975
+      stage_a_repeat10_qk_norm_rope_plus_k_pack_change_percent: -42.03227576749138
+      stage_a_repeat10_attention_change_percent: -30.336898078112284
+      stage_a_repeat10_host_wall_change_percent: -5.625949541839914
+      stage_b_admitted: true
       selected_baseline_changed: false

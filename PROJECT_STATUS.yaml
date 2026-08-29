@@ -33,9 +33,9 @@ current_scope:
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: exp0044_u8_attention_native_operand_fusion
-  active_experiment_evidence: pending
-  active_experiment_gate: byte_exact_native_k_operand_fusion_then_repeat1_repeat10_attention_and_host_improvement
+  active_experiment_stage: exp0044_stage_b_qkv_head_ready_overlap
+  active_experiment_evidence: 'D:\llm_exp\results\qwen3-block-htp\exp0044\20260829T121228Z_0a9f129fb105_stage_a'
+  active_experiment_gate: preserve_stage_a_byte_exact_fused_k_then_strictly_reduce_repeat1_repeat10_attention_and_host_wall_with_generation_safe_qkv_head_ready_overlap
   selected_baseline:
     id: W4F16-EXP0038-NORMS
     experiment: EXP-0038
