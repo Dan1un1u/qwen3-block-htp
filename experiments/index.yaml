@@ -3604,14 +3604,15 @@ experiments:
       - exp0050_down_command_control
       - q_only_generation_safe_head_pair
       - full_qkv_generation_safe_head_pair
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-qkv-head-pair-consumer-cadence
     source_branches:
       - codex/exp-0051-w4u8-qkv-head-pair-command
-    source_commits: []
+    source_commits:
+      - 587d3a9e9145ce62e788b2f5f5a5830101f4565b
     record: docs/experiments/EXP-0051.md
     decided_by: user
     decided_on: '2026-08-30'
@@ -3620,6 +3621,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0051-w4u8-qkv-head-pair-command
       started_on: '2026-08-30'
+      completed_on: '2026-08-30'
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0051'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0051'
@@ -3649,3 +3651,57 @@ experiments:
       stage_a_speed_gate: qkv_interval_and_complete_host_wall_strictly_improve_over_exp0050_at_repeat1_and_repeat10
       stage_b_speed_gate: qkv_interval_and_complete_host_wall_strictly_improve_over_stage_a_at_repeat1_and_repeat10
       completion_gate: seven_interleaved_paired_rounds_and_pc027_complete_profiling_closure
+      source_head: 587d3a9e9145ce62e788b2f5f5a5830101f4565b
+      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0051/20260829T162035Z_587d3a9e9145_formal'
+      artifact_set: 'D:/llm_exp/models/qwen3-block-htp/exp0051/artifacts/587d3a9e9145/formal'
+      gate_record: 'D:/llm_exp/results/qwen3-block-htp/exp0051/20260829T162035Z_587d3a9e9145_formal/gate_summary.json'
+      formal_full_profiling_report: 'D:/llm_exp/results/qwen3-block-htp/exp0051/20260829T162035Z_587d3a9e9145_formal/full_profiling_report.md'
+      full_profiling_report: docs/experiments/EXP-0051-PROFILING.md
+      gate_record_sha256: fc1fcfa663aa3f5f0eb36b69415ef566b694d91254aaf5fee9f0facbd137fc15
+      formal_full_profiling_report_sha256: 0d7f71c949c67a73e5b40ef4c48435d3b87aa96a254d786ff5bc424edf4df810
+      static_gate_sha256: 0e24346105e9d064e12e1b6d39010851bdd8a5b6e3c0821ee596a5f6592e160b
+      package_manifest_sha256: 043f61337b2ad2758bb95791bc4ca768150f457f1f28bc7d20a7ad57eba42359
+      stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      formal_paired_rounds: 7
+      output_hash: 69f22eeb035e5ec5
+      implementation_reference_mismatches: 0
+      implementation_reference_max_lsb: 0
+      fixed_vtcm_acquired_bytes: 8388608
+      vtcm_peak_plan_bytes: 6093536
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      spill_fill_count: 0
+      control_hmx_commands_per_block: 256
+      candidate_hmx_commands_per_block: 248
+      control_qkv_hmx_commands_per_block: 32
+      candidate_qkv_hmx_commands_per_block: 24
+      control_q_hmx_commands_per_block: 16
+      candidate_q_hmx_commands_per_block: 8
+      hmx_u8s8_tile_pairs_per_block: 49408
+      weight_dma_descriptors_per_block: 512
+      weight_ddr_read_bytes_per_block: 25444352
+      repeat1_control_host_wall_ns_per_block_median: 3380156.0
+      repeat1_candidate_host_wall_ns_per_block_median: 3392292.0
+      repeat1_host_wall_change_percent: 0.359037
+      repeat1_paired_host_wall_change_percent_median: 0.359037
+      repeat1_control_qkv_ticks_per_block_median: 17659.0
+      repeat1_candidate_qkv_ticks_per_block_median: 17542.0
+      repeat1_qkv_change_percent: -0.662552
+      repeat1_paired_qkv_change_percent_median: -0.711382
+      repeat10_control_host_wall_ns_per_block_median: 2989135.4
+      repeat10_candidate_host_wall_ns_per_block_median: 2971614.5
+      repeat10_host_wall_change_percent: -0.586153
+      repeat10_paired_host_wall_change_percent_median: -0.561828
+      repeat10_control_qkv_ticks_per_block_median: 17688.7
+      repeat10_candidate_qkv_ticks_per_block_median: 17570.2
+      repeat10_qkv_change_percent: -0.669919
+      repeat10_paired_qkv_change_percent_median: -0.593034
+      repeat10_hmx_compute_change_percent: 9.497
+      repeat10_hmx_ready_wait_change_percent: 17.917
+      repeat10_qkvo_hmx_lifetime_change_percent: -0.022
+      stage_a_gate_result: fail
+      stage_b_eligible: false
+      gate_result: fail
+      local_adoption_eligible: false
+      conclusion: q_head_pair_command_reduces_qkv_interval_but_moves_second_head_readiness_wait_inside_hmx_owner_and_does_not_strictly_improve_complete_host_wall_at_both_repeats
+      selected_baseline_changed: false

@@ -411,3 +411,13 @@ reduces worker-command cadence without delaying HMX until both chunks are
 pre-ready and without changing tile arithmetic, weights, qparams, or traffic.
 _Avoid_: pre-ready serialization, fused Down arithmetic, two concurrent HMX
 owners, changed K blocking
+
+**Generation-Safe Q Head-Pair Command**:
+The rejected EXP-0051 Stage-A W4U8 schedule in which one integer-HMX worker
+command computes two consecutive 128-channel Q heads, publishes the first head
+before waiting for the second head's expanded-weight generation, then computes
+and publishes the second. It reduces Q commands from 16 to 8 without changing
+tile arithmetic or per-head publication granularity, but does not shorten the
+QKVO physical HMX lifetime and fails the repeat-one complete Host-wall gate.
+_Avoid_: accepted QKV optimization, permission to extend the schedule to K/V,
+plain batch eight, proof that command count is the main QKV bottleneck
