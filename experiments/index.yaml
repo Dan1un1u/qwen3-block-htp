@@ -3172,3 +3172,48 @@ experiments:
       full_profiling_report_sha256: 7424926a2cf22e47f5d5b8dcfbd5951d727a5a140cb1d1854a57697a8efa4ab1
       final_conclusion: native_hvx_scatter_and_gather_remove_both_row_major_w4u8_mlp_layout_boundaries_and_reduce_complete_host_wall_without_changing_hmx_dma_bytes_qparams_or_output_codes
       selected_baseline_changed: false
+  - id: EXP-0047
+    slug: w4f16-w4u8-critical-path-attribution
+    title: Attribute the current-best W4U8 versus W4F16 complete-block gap
+    parent: EXP-0046
+    variants:
+      - w4f16_exp0038_norms_current_source_control
+      - w4u8_exp0046_native_mlp_io_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: not_applicable
+    evidence_profile: real-qwen3-block-current-best-cross-variant-critical-path
+    source_branches:
+      - codex/exp-0047-w4f16-w4u8-profile
+    source_commits: []
+    record: docs/experiments/EXP-0047.md
+    decided_by: user
+    decided_on: '2026-08-29'
+    approval_ref: 'User message 2026-08-29: 同意，继续'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0047-w4f16-w4u8-profile
+      started_on: '2026-08-29'
+    evidence:
+      formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0047'
+      retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0047'
+      source_parent_commit: 40da9f06f6a5d8335d0b9a0c45f7efa61525c50f
+      execution_unit: qwen3_layer14_complete_block_m64
+      comparison_scope: current_best_w4f16_vs_current_best_w4u8_on_same_source_commit_and_device_boot
+      comparison_semantics: paired_current_best_not_identical_schedule_single_variable
+      direct_control: W4F16-EXP0038-NORMS
+      candidate: W4U8-EXP0046-NATIVE-MLP-IO
+      shared_w4_values_and_scales_must_be_byte_identical: true
+      repeat_contract: repeat1_and_repeat10
+      formal_paired_rounds: 7
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      optimization_changes_allowed: false
+      correctness_gate: each_variant_passes_its_own_independent_reference_output_hash_and_declared_numerical_diagnostics
+      physical_gate: both_variants_use_exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_and_no_qnn
+      completion_gate: seven_interleaved_paired_rounds_and_pc027_report_close_the_complete_additive_ledger_and_overlapping_engine_work_for_both_variants
+      speed_gate: none_characterization_only
+      selected_baseline_changed: false

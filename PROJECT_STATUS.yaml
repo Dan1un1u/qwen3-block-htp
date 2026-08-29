@@ -19,8 +19,8 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 47
+  active_experiment: EXP-0047
+  next_experiment_number: 48
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -33,6 +33,9 @@ current_scope:
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
+  active_experiment_stage: exp0047_same_commit_w4f16_w4u8_cross_variant_attribution
+  active_experiment_evidence: pending
+  active_experiment_gate: both_variants_must_pass_their_own_correctness_and_physical_contracts_and_seven_interleaved_paired_rounds_must_close_the_complete_cross_variant_profiling_report
   last_completed_evidence: 'D:\llm_exp\results\qwen3-block-htp\exp0046\20260829T134655Z_40da9f06f6a5_stage_b'
   latest_w4u8_candidate:
     id: W4U8-EXP0046-NATIVE-MLP-IO
