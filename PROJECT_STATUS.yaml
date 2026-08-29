@@ -19,8 +19,8 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 56
+  active_experiment: EXP-0056
+  next_experiment_number: 57
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -33,9 +33,9 @@ current_scope:
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: none
+  active_experiment_stage: paired_softmax_row_implementation
   active_experiment_evidence: null
-  active_experiment_gate: not_applicable
+  active_experiment_gate: not_run
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0055/20260829T182552Z_9b93da7afc61_formal'
   latest_w4u8_candidate:
     id: W4U8-EXP0055-QK-NORM-ROPE-HEAD-PAIRS
@@ -45,8 +45,11 @@ current_scope:
     source_branch: codex/exp-0055-w4u8-qk-norm-rope-head-pairs
     source_head: 9b93da7afc61699e36780dfcbb8c287465cf0db0
     formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0055/20260829T182552Z_9b93da7afc61_formal'
-    adoption_status: pending
+    adoption_status: accepted
     local_gate: pass
+    promoted_by: user
+    promoted_on: '2026-08-30'
+    promotion_ref: 'User message 2026-08-30: 同意; promote EXP-0055 as the new W4A8 baseline'
     repeat1_host_wall_ns_per_block_median: 2983333.0
     repeat10_host_wall_ns_per_block_median: 2552526.1
     repeat1_qk_norm_rope_work_ticks_per_block_median: 34172.0
@@ -68,6 +71,20 @@ current_scope:
     down_hmx_commands_per_block: 64
     total_hmx_commands_per_block: 256
     output_hash: 69f22eeb035e5ec5
+  selected_w4u8_baseline:
+    id: W4U8-EXP0055-QK-NORM-ROPE-HEAD-PAIRS
+    experiment: EXP-0055
+    project_variant: W4U8
+    source_branch: codex/exp-0055-w4u8-qk-norm-rope-head-pairs
+    source_head: 9b93da7afc61699e36780dfcbb8c287465cf0db0
+    physical_plan: exp0053_plus_twelve_paired_qk_norm_rope_tasks
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0055/20260829T182552Z_9b93da7afc61_formal'
+    repeat1_host_wall_ns_per_block_median: 2983333.0
+    repeat10_host_wall_ns_per_block_median: 2552526.1
+    output_hash: 69f22eeb035e5ec5
+    promoted_by: user
+    promoted_on: '2026-08-30'
+    promotion_ref: 'User message 2026-08-30: 同意; promote EXP-0055 as the new W4A8 baseline'
   selected_baseline:
     id: W4F16-EXP0038-NORMS
     experiment: EXP-0038
