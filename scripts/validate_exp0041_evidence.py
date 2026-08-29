@@ -104,7 +104,14 @@ def validate_mode(record: dict[str, object], repeat: int, candidate: bool) -> No
     if candidate:
         require(record, "common_ops_mode", "rms_rope_softmax")
         require(record, "residual_mode", "hvx_fused_post_norm")
-        require(record, "post_attention_norm_ticks", 0)
+        post_norm_ticks = record.get("post_attention_norm_ticks")
+        if not isinstance(post_norm_ticks, int) or not (
+            0 <= post_norm_ticks <= repeat
+        ):
+            raise SystemExit(
+                "fused post-norm attribution exceeds one timer tick per block: "
+                f"{post_norm_ticks!r}"
+            )
     else:
         require(record, "common_ops_mode", "scalar")
         require(record, "residual_mode", "scalar")
