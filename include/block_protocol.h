@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(25)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(48)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(26)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(49)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -528,6 +528,8 @@ struct qbh_block_header {
     uint32_t w4u8_mlp_gather_scratch_vtcm_bytes;
     uint32_t w4u8_mlp_gate_up_hvx_workers;
     uint32_t w4u8_mlp_down_hvx_workers;
+    uint32_t w4u8_mlp_gate_up_hmx_batch_n_tiles;
+    uint32_t w4u8_mlp_gate_up_expanded_slot_count;
     uint32_t w4u8_mlp_pair_publish_count;
     uint32_t w4u8_mlp_pair_consume_count;
     uint32_t w4u8_mlp_gate_up_hvx_hmx_overlap;
@@ -539,6 +541,7 @@ struct qbh_block_header {
     uint64_t w4u8_mlp_input_pack_ticks;
     uint64_t w4u8_mlp_output_unpack_ticks;
     uint64_t w4u8_mlp_gate_up_pipeline_ticks;
+    uint64_t w4u8_mlp_gate_up_hmx_command_count;
     uint64_t w4u8_mlp_down_pipeline_ticks;
     uint64_t w4u8_mlp_activation_work_ticks;
     uint64_t w4u8_mlp_weight_stage_ticks;

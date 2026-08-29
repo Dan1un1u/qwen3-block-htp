@@ -70,6 +70,7 @@ enum qbh_block_hmx_command_kind {
 #define QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS UINT32_C(3)
 #define QBH_BLOCK_W4U8_DOWN_HVX_WORKERS UINT32_C(6)
 #define QBH_BLOCK_W4U8_GATE_UP_PAIR_SLOTS UINT32_C(8)
+#define QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES UINT32_C(8)
 #define QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES UINT32_C(4)
 #define QBH_BLOCK_W4U8_GATHER_SCRATCH_BYTES \
     (QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS * \
@@ -1327,32 +1328,74 @@ static void qbh_hmx_worker_main(void *opaque) {
                 worker->w4_pipeline_request;
             uint32_t streams = 0U;
             if (request->streaming != 0U) {
-                int32_t stream_result;
+                uint32_t batch_output_count =
+                    request->batch_output_count != 0U
+                        ? request->batch_output_count : 1U;
                 uint64_t ready_wait_before =
                     request->ready_wait_ticks != NULL
                         ? *request->ready_wait_ticks : 0U;
                 if (request->activation_tiles == NULL ||
-                    request->expanded_weight_tiles == NULL ||
-                    request->ready_generations == NULL ||
                     request->abort_status == NULL ||
                     request->ready_wait_ticks == NULL ||
-                    request->hmx_consumption_started == NULL) {
+                    request->hmx_consumption_started == NULL ||
+                    batch_output_count >
+                        QBH_W4_HMX_MAX_BATCH_OUTPUTS) {
                     worker->command_status = AEE_EBADPARM;
                 } else {
-                    stream_result = qbh_hmx_accumulate_u8s8_streaming(
-                        request->activation_tiles,
-                        request->expanded_weight_tiles,
-                        request->bias_words, request->begin_output,
-                        request->ready_generations,
-                        request->expected_generation,
-                        request->stream_count, request->abort_status,
-                        request->timeout_ticks,
-                        request->ready_wait_ticks,
-                        request->hmx_consumption_started);
-                    if (stream_result < 0) {
-                        worker->command_status = AEE_EFAILED;
-                    } else {
-                        streams = (uint32_t)stream_result;
+                    for (uint32_t batch_index = 0U;
+                         batch_index < batch_output_count; ++batch_index) {
+                        const int8_t *expanded_weight_tiles =
+                            request->batch_output_count != 0U
+                                ? request->batch_outputs[batch_index]
+                                      .expanded_weight_tiles
+                                : request->expanded_weight_tiles;
+                        const uint32_t *bias_words =
+                            request->batch_output_count != 0U
+                                ? request->batch_outputs[batch_index]
+                                      .bias_words
+                                : request->bias_words;
+                        uint8_t *output_tiles =
+                            request->batch_output_count != 0U
+                                ? request->batch_outputs[batch_index]
+                                      .output_tiles
+                                : request->output_tiles;
+                        const volatile uint32_t *ready_generations =
+                            request->batch_output_count != 0U
+                                ? request->batch_outputs[batch_index]
+                                      .ready_generations
+                                : request->ready_generations;
+                        uint32_t expected_generation =
+                            request->batch_output_count != 0U
+                                ? request->batch_outputs[batch_index]
+                                      .expected_generation
+                                : request->expected_generation;
+                        int32_t stream_result;
+
+                        if (expanded_weight_tiles == NULL ||
+                            ready_generations == NULL ||
+                            (request->begin_output != 0U &&
+                             bias_words == NULL) ||
+                            (request->store_output != 0U &&
+                             output_tiles == NULL)) {
+                            worker->command_status = AEE_EBADPARM;
+                            break;
+                        }
+                        stream_result = qbh_hmx_accumulate_u8s8_streaming(
+                            request->activation_tiles,
+                            expanded_weight_tiles, bias_words,
+                            request->begin_output, ready_generations,
+                            expected_generation, request->stream_count,
+                            request->abort_status, request->timeout_ticks,
+                            request->ready_wait_ticks,
+                            request->hmx_consumption_started);
+                        if (stream_result < 0) {
+                            worker->command_status = AEE_EFAILED;
+                            break;
+                        }
+                        streams += (uint32_t)stream_result;
+                        if (request->store_output != 0U) {
+                            qbh_hmx_store_u8_output(output_tiles);
+                        }
                     }
                     worker->ready_wait_ticks +=
                         *request->ready_wait_ticks - ready_wait_before;
@@ -1379,6 +1422,7 @@ static void qbh_hmx_worker_main(void *opaque) {
                 }
             }
             if (worker->command_status == AEE_SUCCESS &&
+                request->streaming == 0U &&
                 request->store_output != 0U) {
                 if (request->output_tiles == NULL) {
                     worker->command_status = AEE_EBADPARM;
@@ -6721,6 +6765,8 @@ static int qbh_init_w4u8_gate_up_layout(
             QBH_W4_COARSE_CHUNK_TILES, layout) != 0) {
         return -1;
     }
+    layout->expanded_slot_count =
+        QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES;
     return qbh_configure_w4u8_gate_up_layout(layout);
 }
 
@@ -6749,6 +6795,13 @@ static void qbh_accumulate_w4u8_phase_metrics(
     const struct qbh_probe_header *phase,
     const struct qbh_projection_layout *layout,
     uint32_t gate_up_phase) {
+    uint64_t command_count =
+        gate_up_phase != 0U &&
+                qbh_physical_plan_is_streaming(layout->physical_plan)
+            ? (layout->n_tiles +
+               QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES - 1U) /
+                  QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES
+            : layout->n_tiles * layout->chunks_per_output;
     header->weight_dma_ticks += phase->weight_stage_ticks;
     header->weight_ddr_read_bytes += layout->stored_weight_bytes;
     header->weight_dma_descriptor_count += phase->dma_descriptor_count;
@@ -6762,12 +6815,10 @@ static void qbh_accumulate_w4u8_phase_metrics(
     header->w4u8_mlp_expanded_slot_wait_ticks +=
         phase->expanded_slot_wait_ticks;
     header->hmx_u8s8_tile_pair_count += layout->hmx_pairs_per_repeat;
-    header->hmx_command_count +=
-        layout->n_tiles * layout->chunks_per_output +
-        (qbh_physical_plan_is_streaming(layout->physical_plan)
-             ? layout->n_tiles : 0U);
+    header->hmx_command_count += command_count;
     if (gate_up_phase != 0U) {
         header->w4u8_mlp_gate_up_pipeline_ticks += phase->pipeline_ticks;
+        header->w4u8_mlp_gate_up_hmx_command_count += command_count;
         header->w4u8_mlp_gate_up_hvx_hmx_overlap |=
             phase->hvx_hmx_overlap_observed;
         header->w4u8_mlp_gate_up_hvx_parallel_overlap |=
@@ -6793,6 +6844,8 @@ static int qbh_run_w4u8_streaming_mlp(
     struct qbh_probe_header down_phase;
     struct qbh_w4_hmx_runner runner = {
         .context = worker,
+        .max_batch_outputs =
+            QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES,
         .submit = qbh_block_w4_hmx_submit,
     };
     uint8_t *mlp_arena = buffers->q;
@@ -6826,6 +6879,10 @@ static int qbh_run_w4u8_streaming_mlp(
         QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS;
     header->w4u8_mlp_down_hvx_workers =
         QBH_BLOCK_W4U8_DOWN_HVX_WORKERS;
+    header->w4u8_mlp_gate_up_hmx_batch_n_tiles =
+        QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES;
+    header->w4u8_mlp_gate_up_expanded_slot_count =
+        gate_up_layout.expanded_slot_count;
 
     if (activation_prepacked != 0U) {
         ++header->w4u8_mlp_input_pack_skipped;

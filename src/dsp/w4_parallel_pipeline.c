@@ -546,6 +546,133 @@ static void qbh_chunked_hmx_main(void *opaque) {
         qurt_thread_exit(job->lock_status);
     }
 
+    if (state->mlp_handoff != NULL && job->runner != NULL &&
+        job->runner->max_batch_outputs > 1U &&
+        job->runner->max_batch_outputs <=
+            QBH_W4_HMX_MAX_BATCH_OUTPUTS &&
+        qbh_physical_plan_is_streaming(layout->physical_plan) &&
+        layout->chunks_per_output == 1U &&
+        state->header->repeat_count == 1U) {
+        uint32_t batch_capacity = job->runner->max_batch_outputs;
+        for (uint32_t output_base = 0U;
+             output_base < layout->n_tiles;
+             output_base += batch_capacity) {
+            uint32_t batch_outputs = layout->n_tiles - output_base;
+            uint32_t chunk_tiles =
+                qbh_projection_chunk_tiles(layout, 0U);
+            uint32_t stream_regions =
+                qbh_stream_region_count(layout, 0U);
+            uint64_t stream_ready_wait = 0U;
+            uint64_t core_start;
+            uint64_t core_end;
+            uint32_t executed_streams = 0U;
+            struct qbh_w4_hmx_request request;
+
+            if (batch_outputs > batch_capacity) {
+                batch_outputs = batch_capacity;
+            }
+            if (stream_regions == 0U ||
+                stream_regions > QBH_W4_MAX_STREAM_REGIONS ||
+                chunk_tiles != stream_regions *
+                                   QBH_W4_STREAM_REGION_TILES) {
+                exit_status = AEE_EBADPARM;
+                state->abort_status = exit_status;
+                goto unlock;
+            }
+            memset(&request, 0, sizeof(request));
+            request.activation_tiles = state->activation_tiles;
+            request.chunk_tiles = chunk_tiles;
+            request.begin_output = 1U;
+            request.store_output = 1U;
+            request.streaming = 1U;
+            request.stream_count = stream_regions;
+            request.abort_status = &state->abort_status;
+            request.timeout_ticks = QBH_STREAM_READY_TIMEOUT_TICKS;
+            request.ready_wait_ticks = &stream_ready_wait;
+            request.hmx_consumption_started =
+                &state->streaming_hmx_consumption_started;
+            request.executed_stream_count = &executed_streams;
+            request.batch_output_count = batch_outputs;
+
+            for (uint32_t batch_index = 0U;
+                 batch_index < batch_outputs; ++batch_index) {
+                uint32_t output_tile = output_base + batch_index;
+                uint32_t sequence = output_tile;
+                uint32_t expanded_slot =
+                    sequence % layout->expanded_slot_count;
+                uint32_t pair_index = output_tile / 2U;
+                uint32_t pair_slot = pair_index %
+                    state->mlp_handoff->pair_slot_count;
+                uint32_t pair_lane = output_tile & 1U;
+
+                if (pair_lane == 0U) {
+                    uint64_t pair_wait =
+                        HAP_perf_get_qtimer_count();
+                    qurt_sem_down(&state->mlp_pair_free[pair_slot]);
+                    state->header->producer_slot_wait_ticks +=
+                        HAP_perf_get_qtimer_count() - pair_wait;
+                }
+                request.batch_outputs[batch_index]
+                    .expanded_weight_tiles = (const int8_t *)
+                        state->expanded_slots[expanded_slot];
+                request.batch_outputs[batch_index].bias_words =
+                    (const uint32_t *)(
+                        state->expanded_slots[expanded_slot] +
+                        layout->expanded_chunk_weight_bytes);
+                request.batch_outputs[batch_index].output_tiles =
+                    state->output_tiles +
+                    (size_t)pair_slot * 2U * QBH_HMX_OUTPUT_BYTES +
+                    (size_t)pair_lane * QBH_HMX_OUTPUT_BYTES;
+                request.batch_outputs[batch_index]
+                    .ready_generations =
+                        state->stream_ready_generation[expanded_slot];
+                request.batch_outputs[batch_index]
+                    .expected_generation = sequence + 1U;
+            }
+
+            core_start = HAP_perf_get_qtimer_count();
+            if (job->first_compute_start == 0U) {
+                job->first_compute_start = core_start;
+            }
+            qbh_hmx_region_begin(state);
+            if (job->runner->submit(job->runner->context, &request) != 0) {
+                qbh_hmx_region_end(state);
+                exit_status = AEE_EFAILED;
+                qbh_abort_pipeline(state, exit_status);
+                goto unlock;
+            }
+            qbh_hmx_region_end(state);
+            core_end = HAP_perf_get_qtimer_count();
+            job->ready_wait_ticks += stream_ready_wait;
+            job->stream_count += executed_streams;
+            job->execution_count += batch_outputs * chunk_tiles;
+            job->output_tile_count += batch_outputs;
+            job->last_compute_end = core_end;
+            job->compute_ticks +=
+                core_end - core_start - stream_ready_wait;
+
+            for (uint32_t batch_index = 0U;
+                 batch_index < batch_outputs; ++batch_index) {
+                uint32_t output_tile = output_base + batch_index;
+                uint32_t expanded_slot =
+                    output_tile % layout->expanded_slot_count;
+                qurt_sem_up(&state->expanded_free[expanded_slot]);
+                if ((output_tile & 1U) != 0U) {
+                    uint32_t pair_index = output_tile / 2U;
+                    struct qbh_chunk_task activation_task;
+                    memset(&activation_task, 0, sizeof(activation_task));
+                    activation_task.mlp_activation = 1U;
+                    activation_task.mlp_pair_index = pair_index;
+                    activation_task.mlp_pair_slot = pair_index %
+                        state->mlp_handoff->pair_slot_count;
+                    qbh_queue_push(&state->queue, &activation_task);
+                    ++*state->mlp_handoff->pair_publish_count;
+                }
+            }
+        }
+        goto unlock;
+    }
+
     for (uint32_t repeat = 0; repeat < state->header->repeat_count;
          ++repeat) {
         for (uint32_t output_tile = 0; output_tile < layout->n_tiles;
@@ -568,6 +695,12 @@ static void qbh_chunked_hmx_main(void *opaque) {
                     uint32_t stream_regions =
                         qbh_stream_region_count(layout, chunk_index);
                     uint32_t generation = sequence + 1U;
+                    uint32_t final_chunk =
+                        chunk_index + 1U == layout->chunks_per_output;
+                    uint32_t pair_lane = output_tile & 1U;
+                    uint32_t pair_index = output_tile / 2U;
+                    uint32_t pair_slot = 0U;
+                    uint8_t *store_output = NULL;
                     uint64_t stream_ready_wait = 0U;
                     int32_t streams;
 
@@ -578,6 +711,27 @@ static void qbh_chunked_hmx_main(void *opaque) {
                         exit_status = AEE_EBADPARM;
                         state->abort_status = exit_status;
                         goto unlock;
+                    }
+                    if (final_chunk != 0U) {
+                        if (state->mlp_handoff != NULL) {
+                            pair_slot = pair_index %
+                                state->mlp_handoff->pair_slot_count;
+                            if (pair_lane == 0U) {
+                                uint64_t pair_wait =
+                                    HAP_perf_get_qtimer_count();
+                                qurt_sem_down(
+                                    &state->mlp_pair_free[pair_slot]);
+                                state->header->producer_slot_wait_ticks +=
+                                    HAP_perf_get_qtimer_count() - pair_wait;
+                            }
+                            store_output = state->output_tiles +
+                                (size_t)pair_slot * 2U *
+                                    QBH_HMX_OUTPUT_BYTES +
+                                (size_t)pair_lane * QBH_HMX_OUTPUT_BYTES;
+                        } else {
+                            store_output = state->output_tiles +
+                                (size_t)output_tile * QBH_HMX_OUTPUT_BYTES;
+                        }
                     }
                     core_start = HAP_perf_get_qtimer_count();
                     if (job->first_compute_start == 0U) {
@@ -595,10 +749,10 @@ static void qbh_chunked_hmx_main(void *opaque) {
                             .bias_words = (const uint32_t *)(
                                 state->expanded_slots[expanded_slot] +
                                 layout->expanded_chunk_weight_bytes),
-                            .output_tiles = NULL,
+                            .output_tiles = store_output,
                             .chunk_tiles = chunk_tiles,
                             .begin_output = chunk_index == 0U,
-                            .store_output = 0U,
+                            .store_output = final_chunk,
                             .streaming = 1U,
                             .ready_generations =
                                 state->stream_ready_generation[expanded_slot],
@@ -631,6 +785,9 @@ static void qbh_chunked_hmx_main(void *opaque) {
                             QBH_STREAM_READY_TIMEOUT_TICKS,
                             &stream_ready_wait,
                             &state->streaming_hmx_consumption_started);
+                        if (streams >= 0 && final_chunk != 0U) {
+                            qbh_hmx_store_u8_output(store_output);
+                        }
                     }
                     qbh_hmx_region_end(state);
                     core_end = HAP_perf_get_qtimer_count();
@@ -646,41 +803,8 @@ static void qbh_chunked_hmx_main(void *opaque) {
                     }
                     job->stream_count += (uint32_t)streams;
                     job->execution_count += chunk_tiles;
-                    if (chunk_index + 1U ==
-                        layout->chunks_per_output) {
+                    if (final_chunk != 0U) {
                         if (state->mlp_handoff != NULL) {
-                            uint32_t pair_index = output_tile / 2U;
-                            uint32_t pair_slot = pair_index %
-                                state->mlp_handoff->pair_slot_count;
-                            uint32_t pair_lane = output_tile & 1U;
-                            if (pair_lane == 0U) {
-                                uint64_t pair_wait =
-                                    HAP_perf_get_qtimer_count();
-                                qurt_sem_down(
-                                    &state->mlp_pair_free[pair_slot]);
-                                state->header->producer_slot_wait_ticks +=
-                                    HAP_perf_get_qtimer_count() - pair_wait;
-                            }
-                            uint8_t *store_output =
-                                state->output_tiles +
-                                (size_t)pair_slot * 2U *
-                                    QBH_HMX_OUTPUT_BYTES +
-                                (size_t)pair_lane * QBH_HMX_OUTPUT_BYTES;
-                            if (job->runner != NULL) {
-                                struct qbh_w4_hmx_request request = {
-                                    .output_tiles = store_output,
-                                    .store_output = 1U,
-                                };
-                                if (job->runner->submit(
-                                        job->runner->context,
-                                        &request) != 0) {
-                                    exit_status = AEE_EFAILED;
-                                    qbh_abort_pipeline(state, exit_status);
-                                    goto unlock;
-                                }
-                            } else {
-                                qbh_hmx_store_u8_output(store_output);
-                            }
                             if (pair_lane != 0U) {
                                 struct qbh_chunk_task activation_task;
                                 memset(&activation_task, 0,
@@ -691,26 +815,6 @@ static void qbh_chunked_hmx_main(void *opaque) {
                                 qbh_queue_push(&state->queue,
                                                &activation_task);
                                 ++*state->mlp_handoff->pair_publish_count;
-                            }
-                        } else {
-                            uint8_t *store_output =
-                                state->output_tiles +
-                                (size_t)output_tile *
-                                    QBH_HMX_OUTPUT_BYTES;
-                            if (job->runner != NULL) {
-                                struct qbh_w4_hmx_request request = {
-                                    .output_tiles = store_output,
-                                    .store_output = 1U,
-                                };
-                                if (job->runner->submit(
-                                        job->runner->context,
-                                        &request) != 0) {
-                                    exit_status = AEE_EFAILED;
-                                    qbh_abort_pipeline(state, exit_status);
-                                    goto unlock;
-                                }
-                            } else {
-                                qbh_hmx_store_u8_output(store_output);
                             }
                         }
                     }

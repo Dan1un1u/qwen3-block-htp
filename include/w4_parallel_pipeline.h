@@ -6,6 +6,8 @@
 #include "hmx_u8s8_projection.h"
 #include "probe_protocol.h"
 
+#define QBH_W4_HMX_MAX_BATCH_OUTPUTS UINT32_C(8)
+
 struct qbh_mlp_gate_up_handoff {
     uint8_t *middle_activation;
     const uint16_t *activation_lut;
@@ -34,10 +36,19 @@ struct qbh_w4_hmx_request {
     uint64_t *ready_wait_ticks;
     volatile uint32_t *hmx_consumption_started;
     uint32_t *executed_stream_count;
+    uint32_t batch_output_count;
+    struct {
+        const int8_t *expanded_weight_tiles;
+        const uint32_t *bias_words;
+        uint8_t *output_tiles;
+        const volatile uint32_t *ready_generations;
+        uint32_t expected_generation;
+    } batch_outputs[QBH_W4_HMX_MAX_BATCH_OUTPUTS];
 };
 
 struct qbh_w4_hmx_runner {
     void *context;
+    uint32_t max_batch_outputs;
     int (*submit)(void *context,
                   const struct qbh_w4_hmx_request *request);
 };
