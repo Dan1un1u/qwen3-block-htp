@@ -372,6 +372,25 @@ moved across that boundary rather than eliminated entirely.
 _Avoid_: fused O-residual arithmetic, hidden gather cost, row-major O output,
 changed qparams
 
+**Batched W4U8 Gate/Up HMX Consumer**:
+The EXP-0049 schedule in which the single integer-HMX owner consumes eight
+consecutive Gate/Up output tiles during one worker command. Each tile still
+uses its original streamed W4-to-S8 expanded regions, bias/qparam encoding and
+U8 output code. The final output store executes inside the same command as the
+accumulation. Eight expanded VTCM slots prevent in-batch slot reuse; HVX
+expansion, DMA publication and SwiGLU post-processing remain concurrent around
+the serialized HMX consumer. This changes command cadence, not HMX tile math.
+_Avoid_: eight-output matrix fusion, changed Gate/Up weights, ring-depth-only
+optimization, eight independent HMX commands
+
+**Accumulate-Store Command Fusion**:
+A scheduling transformation that performs the final integer-HMX U8 output
+store before returning from the streaming accumulation worker command. It
+removes a second command wake-up that previously contained no matrix
+accumulation. The accumulator arithmetic and output bytes are unchanged.
+_Avoid_: fused projection arithmetic, fused SwiGLU, omitted output store,
+operator fusion
+
 **Complete Profiling Comparison**:
 The mandatory experiment-closure report containing the primary Host and DSP
 latencies, every mutually exclusive Block Timing Ledger interval, relevant

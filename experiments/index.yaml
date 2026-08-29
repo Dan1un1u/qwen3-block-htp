@@ -3389,16 +3389,18 @@ experiments:
     parent: EXP-0048
     variants:
       - exp0048_native_qkv_o_control
-      - gate_up_integer_hmx_batch8_candidate
-      - gate_up_batch8_expanded_ring_and_lookahead_candidates
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+      - accumulate_store_single_command_smoke
+      - gate_up_integer_hmx_batch4_candidate
+      - gate_up_integer_hmx_batch8_with_eight_expanded_slots_candidate
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4u8-gate-up-consumer-cadence
     source_branches:
       - codex/exp-0049-w4u8-gate-up-pipeline
-    source_commits: []
+    source_commits:
+      - b37d208d262d5a45365d6efe32c03786a5c3a2d3
     record: docs/experiments/EXP-0049.md
     decided_by: user
     decided_on: '2026-08-29'
@@ -3407,6 +3409,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0049-w4u8-gate-up-pipeline
       started_on: '2026-08-29'
+      completed_on: '2026-08-29'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0049'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0049'
@@ -3429,9 +3432,64 @@ experiments:
       qnn_dependency_allowed: false
       repeat_contract: repeat1_and_repeat10
       bounded_search: gate_up_hmx_batch_n_tiles_4_or_8_expanded_slots_2_or_4_and_producer_lookahead_1_or_2_with_at_most_six_candidates
+      bounded_search_execution_note: initial_slot_count_assumption_was_incorrect_the_exp0048_control_already_used_seven_expanded_slots_and_batch8_requires_eight_slots_to_avoid_in_batch_ring_reuse_deadlock
       exclusion_from_exp0039: ring_depth_only_without_a_changed_gate_up_consumer_cadence_is_not_an_adoptable_hypothesis
       correctness_gate: device_final_block_output_is_byte_exact_to_exp0048_and_independent_implementation_reference_has_zero_mismatches_and_zero_max_lsb
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn
       local_speed_gate: selected_candidate_strictly_reduces_gate_up_ledger_and_complete_host_wall_over_exp0048_at_repeat1_and_repeat10
       completion_gate: seven_interleaved_paired_rounds_and_pc027_complete_profiling_closure
+      source_head: b37d208d262d5a45365d6efe32c03786a5c3a2d3
+      formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0049\20260829T152152Z_b37d208d262d_formal'
+      artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0049\artifacts\b37d208d262d\formal'
+      gate_record: 'D:\llm_exp\results\qwen3-block-htp\exp0049\20260829T152152Z_b37d208d262d_formal\gate_summary.json'
+      formal_full_profiling_report: 'D:\llm_exp\results\qwen3-block-htp\exp0049\20260829T152152Z_b37d208d262d_formal\full_profiling_report.md'
+      full_profiling_report: docs/experiments/EXP-0049-PROFILING.md
+      gate_record_sha256: 4fc24ce7e42eea6f9679f0f42139e668d1e2745f3236869b4350d1a008406e65
+      formal_full_profiling_report_sha256: f4c32d025f57ac902853b864ffe2b4c6ac4d852623784a5d27d9512f5aa57418
+      static_gate_sha256: 07c90d8c00fb156beac71e8442099247338283797cd0cae7edd092e0c841bdcc
+      package_manifest_sha256: 043f61337b2ad2758bb95791bc4ca768150f457f1f28bc7d20a7ad57eba42359
+      stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      formal_paired_rounds: 7
+      output_hash: 69f22eeb035e5ec5
+      implementation_reference_mismatches: 0
+      implementation_reference_max_lsb: 0
+      fixed_vtcm_request_bytes: 8388608
+      fixed_vtcm_acquired_bytes: 8388608
+      vtcm_peak_plan_bytes: 5306080
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      spill_fill_count: 0
+      control_hmx_commands_per_block: 1040
+      candidate_hmx_commands_per_block: 320
+      control_gate_up_hmx_commands_per_block: 768
+      candidate_gate_up_hmx_commands_per_block: 48
+      hmx_u8s8_tile_pairs_per_block: 49408
+      weight_dma_descriptors_per_block: 512
+      weight_ddr_read_bytes_per_block: 25444352
+      repeat1_control_host_wall_ns_per_block_median: 5141198.0
+      repeat1_candidate_host_wall_ns_per_block_median: 3523593.0
+      repeat1_host_wall_change_percent: -31.463581056399693
+      repeat1_paired_host_wall_change_percent_median: -31.33592598456625
+      repeat1_control_gate_up_pipeline_ticks_per_block_median: 44029.0
+      repeat1_candidate_gate_up_pipeline_ticks_per_block_median: 12930.0
+      repeat1_gate_up_pipeline_change_percent: -70.63299189170773
+      repeat10_control_host_wall_ns_per_block_median: 4726427.1
+      repeat10_candidate_host_wall_ns_per_block_median: 3125567.7
+      repeat10_host_wall_change_percent: -33.87039228850054
+      repeat10_paired_host_wall_change_percent_median: -34.12844163534366
+      repeat10_control_gate_up_pipeline_ticks_per_block_median: 44077.2
+      repeat10_candidate_gate_up_pipeline_ticks_per_block_median: 13084.0
+      repeat10_gate_up_pipeline_change_percent: -70.3157187843148
+      repeat1_expanded_slot_wait_change_percent: -77.53609482378161
+      repeat10_expanded_slot_wait_change_percent: -77.47193239848123
+      repeat1_hmx_ready_wait_change_percent: 27.70103242693034
+      repeat10_hmx_ready_wait_change_percent: 26.762390796643885
+      candidate_search_run: 'D:\llm_exp\results\qwen3-block-htp\exp0049\candidate_search_batch4_batch8'
+      candidate_search_batch4_repeat1_host_wall_ns_per_block_median: 3536302.0
+      candidate_search_batch4_repeat10_host_wall_ns_per_block_median: 3151817.7
+      candidate_search_batch8_repeat1_host_wall_ns_per_block_median: 3537136.0
+      candidate_search_batch8_repeat10_host_wall_ns_per_block_median: 3128458.3
+      gate_result: pass
+      local_adoption_eligible: true
+      conclusion: coarsening_gate_up_hmx_consumer_cadence_and_fusing_accumulate_with_store_removes_command_handoff_and_slot_backpressure_without_changing_math_weight_traffic_or_hmx_tile_work
       selected_baseline_changed: false
