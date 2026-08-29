@@ -504,13 +504,21 @@ static int qbh_parse_attention_pipeline_mode(
             QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_FUSED_K;
         return 0;
     }
+    if (strcmp(text, "u8_log2_gqa_qkv_overlap") == 0 ||
+        strcmp(text, "integer_gqa_qkv_overlap") == 0) {
+        *mode =
+            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP;
+        return 0;
+    }
     return -1;
 }
 
 static int qbh_attention_u8_enabled(uint32_t mode) {
     return mode == QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA ||
            mode ==
-               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_FUSED_K;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_FUSED_K ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP;
 }
 
 static const char *qbh_attention_pipeline_mode_name(uint32_t mode) {
@@ -536,6 +544,10 @@ static const char *qbh_attention_pipeline_mode_name(uint32_t mode) {
     if (mode ==
         QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_FUSED_K) {
         return "u8_log2_gqa_fused_k";
+    }
+    if (mode ==
+        QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP) {
+        return "u8_log2_gqa_qkv_overlap";
     }
     return "control";
 }
@@ -1150,7 +1162,7 @@ int main(int argc, char **argv) {
           (mlp_mode != QBH_BLOCK_MLP_CONTROL &&
            mlp_mode != QBH_BLOCK_MLP_W4U8_STREAMING))) ||
         attention_pipeline_mode >
-            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_FUSED_K ||
+            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP ||
         attention_hvx_contexts == 0U ||
         attention_hvx_contexts > 4U ||
         (attention_pipeline_mode ==

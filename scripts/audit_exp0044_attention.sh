@@ -9,13 +9,27 @@ package_dir="${QBH_EXP0044_PACKAGE:-/mnt/d/llm_exp/models/qwen3-block-htp/exp004
 stamp="$(date -u +%Y%m%dT%H%M%SZ)"
 source_head="$(git -C "${project_root}" rev-parse --short=12 HEAD)"
 result_dir="${1:-/mnt/d/llm_exp/results/qwen3-block-htp/exp0044/${stamp}_${source_head}_attention_audit}"
+mode="${2:-stage_a}"
 dump_dir="${result_dir}/attention_dump"
 remote_dump="${remote_root}/attention-audit-${stamp}"
+
+case "${mode}" in
+    candidate)
+        attention_pipeline_mode=u8_log2_gqa_qkv_overlap
+        ;;
+    stage_a)
+        attention_pipeline_mode=u8_log2_gqa_fused_k
+        ;;
+    *)
+        printf 'usage: %s [result-dir] [candidate|stage_a]\n' "$0" >&2
+        exit 2
+        ;;
+esac
 
 mkdir -p "${dump_dir}"
 "${adb_exe}" -s "${serial}" get-state >/dev/null
 "${adb_exe}" -s "${serial}" shell \
-    "mkdir -p ${remote_dump} && cd ${remote_root} && QBH_DUMP_ATTENTION_DIR=${remote_dump} LD_LIBRARY_PATH=${remote_root} DSP_LIBRARY_PATH=${remote_root} ADSP_LIBRARY_PATH=${remote_root} ./qwen3_block_cli ${remote_root}/block_package_layer14_m64 W4U8 1 2 32 rms_rope_softmax on on fused serial control hvx w4u8_streaming 3 64 u8_log2_gqa_fused_k 4 control" \
+    "mkdir -p ${remote_dump} && cd ${remote_root} && QBH_DUMP_ATTENTION_DIR=${remote_dump} LD_LIBRARY_PATH=${remote_root} DSP_LIBRARY_PATH=${remote_root} ADSP_LIBRARY_PATH=${remote_root} ./qwen3_block_cli ${remote_root}/block_package_layer14_m64 W4U8 1 2 32 rms_rope_softmax on on fused serial control hvx w4u8_streaming 3 64 ${attention_pipeline_mode} 4 control" \
     | tee "${result_dir}/device_audit.json"
 "${adb_exe}" -s "${serial}" pull "${remote_dump}/." \
     "$(wslpath -w "${dump_dir}")" >/dev/null

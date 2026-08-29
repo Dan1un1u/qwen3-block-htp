@@ -83,6 +83,7 @@ enum qbh_block_hvx_pool_job_kind {
     QBH_BLOCK_HVX_POOL_SOFTMAX = 5,
     QBH_BLOCK_HVX_POOL_GQA_ATTENTION = 6,
     QBH_BLOCK_HVX_POOL_U8_GQA_ATTENTION = 7,
+    QBH_BLOCK_HVX_POOL_U8_QK_PREP = 8,
 };
 
 struct qbh_block_arena {
@@ -184,6 +185,7 @@ struct qbh_block_w4f16_job {
     uint32_t u8_attention_probability_row_sum_min;
     uint32_t u8_attention_probability_row_sum_max;
     uint32_t u8_attention_fused_k_operand_mismatch_count;
+    uint32_t u8_attention_prepared_group_count;
     uint64_t u8_attention_qk_norm_rope_ticks;
     uint64_t u8_attention_k_pack_ticks;
     uint64_t u8_attention_v_pack_ticks;
@@ -281,12 +283,30 @@ static int qbh_attention_parallel_softmax_enabled(uint32_t mode);
 static int qbh_attention_gqa_enabled(uint32_t mode);
 static int qbh_attention_u8_enabled(uint32_t mode);
 static int qbh_attention_u8_fused_k_enabled(uint32_t mode);
+static int qbh_attention_u8_qkv_overlap_enabled(uint32_t mode);
 static void qbh_attention_gqa_pool_run_tasks(
     struct qbh_block_w4f16_pool *pool,
     struct qbh_block_w4f16_job *job);
 static void qbh_attention_u8_pool_run_tasks(
     struct qbh_block_w4f16_pool *pool,
     struct qbh_block_w4f16_job *job);
+static void qbh_attention_u8_qk_prep_pool_run_tasks(
+    struct qbh_block_w4f16_pool *pool,
+    struct qbh_block_w4f16_job *job);
+static int qbh_hvx_pool_u8_qk_prep_start_async(
+    struct qbh_block_header *header,
+    struct qbh_block_w4f16_pool *pool,
+    struct qbh_block_buffers *buffers);
+static void qbh_hvx_pool_u8_qk_prep_abort_async(
+    struct qbh_block_w4f16_pool *pool);
+static void qbh_hvx_pool_u8_qk_prep_publish(
+    const struct qbh_block_header *header,
+    const struct qbh_block_projection_desc *desc,
+    struct qbh_block_w4f16_pool *pool,
+    uint32_t first_n_tile, uint32_t n_tiles);
+static int qbh_hvx_pool_u8_qk_prep_wait_async(
+    struct qbh_block_header *header,
+    struct qbh_block_w4f16_pool *pool);
 static float qbh_f16_max_abs(
     const struct qbh_block_header *header,
     const __fp16 *data, uint32_t elements);
@@ -626,7 +646,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (header->attention_pack_mode &
          ~((uint32_t)QBH_BLOCK_ATTENTION_PACK_HVX)) != 0U ||
         header->attention_pipeline_mode >
-            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_FUSED_K ||
+            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP ||
         header->attention_hvx_contexts == 0U ||
         header->attention_hvx_contexts >
             QBH_BLOCK_W4F16_HVX_WORKERS ||
@@ -1525,12 +1545,21 @@ static int qbh_attention_gqa_enabled(uint32_t mode) {
 static int qbh_attention_u8_enabled(uint32_t mode) {
     return mode == QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA ||
            mode ==
-               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_FUSED_K;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_FUSED_K ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP;
 }
 
 static int qbh_attention_u8_fused_k_enabled(uint32_t mode) {
     return mode ==
-           QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_FUSED_K;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_FUSED_K ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP;
+}
+
+static int qbh_attention_u8_qkv_overlap_enabled(uint32_t mode) {
+    return mode ==
+           QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP;
 }
 
 static void qbh_attention_qk_norm_pool_run_tasks(
@@ -1672,6 +1701,9 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
         } else if (job->command_kind ==
                    QBH_BLOCK_HVX_POOL_U8_GQA_ATTENTION) {
             qbh_attention_u8_pool_run_tasks(pool, job);
+        } else if (job->command_kind ==
+                   QBH_BLOCK_HVX_POOL_U8_QK_PREP) {
+            qbh_attention_u8_qk_prep_pool_run_tasks(pool, job);
         }
         job->command_kind = QBH_BLOCK_HVX_POOL_NONE;
         (void)qurt_sem_up(&pool->command_done[job->worker_index]);
@@ -4011,6 +4043,8 @@ static int qbh_run_projection(
                     header, desc, w4f16_pool, n_tile, 1U);
             } else if (result == 0) {
                 ++header->u8_attention_qkv_unpack_skipped;
+                qbh_hvx_pool_u8_qk_prep_publish(
+                    header, desc, w4f16_pool, n_tile, 1U);
             }
         } else {
             failure_step = 4U;
@@ -5448,6 +5482,252 @@ static int qbh_attention_u8_integer(
     return 0;
 }
 
+static int qbh_attention_u8_qk_prep_wait_ready(
+    struct qbh_block_w4f16_pool *pool, uint32_t task) {
+    while (pool->attention_qk_ready[task] !=
+           pool->attention_qk_generation) {
+        if (pool->attention_qk_stream_abort != 0U) {
+            return -1;
+        }
+        asm volatile("pause(#8)" : : : "memory");
+    }
+    asm volatile("barrier" ::: "memory");
+    return 0;
+}
+
+static void qbh_attention_u8_qk_prep_pool_run_tasks(
+    struct qbh_block_w4f16_pool *pool,
+    struct qbh_block_w4f16_job *job) {
+    struct qbh_block_header *header = pool->attention_header;
+    struct qbh_block_buffers *buffers = pool->attention_buffers;
+
+    for (;;) {
+        const uint32_t group =
+            qbh_atomic_fetch_increment(&pool->next_attention_task);
+        const struct qbh_attention_config *config;
+        const uint32_t first_q_head =
+            group * QBH_ATTENTION_Q_HEADS_PER_GROUP;
+        uint8_t *q_group;
+        uint8_t *k_head;
+        uint8_t *scratch;
+        int8_t *k_weight;
+        uint32_t *qk_bias;
+        uint64_t start;
+
+        if (group >= pool->attention_task_count ||
+            pool->attention_qk_stream_abort != 0U) {
+            break;
+        }
+        config = &buffers->attention_configs[group];
+        if (!qbh_block_attention_config_valid(header, config, group)) {
+            pool->attention_qk_stream_abort = 1U;
+            asm volatile("barrier" ::: "memory");
+            break;
+        }
+        q_group = buffers->q +
+            (size_t)first_q_head *
+                QBH_ATTENTION_HEAD_DIM_TILES *
+                QBH_HMX_ACTIVATION_BYTES;
+        k_head = buffers->k +
+            (size_t)group * QBH_ATTENTION_HEAD_DIM_TILES *
+                QBH_HMX_ACTIVATION_BYTES;
+        scratch = buffers->attention_concat +
+            (size_t)group * QBH_ATTN_U8_GROUP_SCRATCH_BYTES;
+        k_weight = (int8_t *)(
+            scratch + QBH_ATTN_U8_K_WEIGHT_OFFSET);
+        qk_bias = (uint32_t *)(
+            scratch + QBH_ATTN_U8_QK_BIAS_OFFSET);
+
+        for (uint32_t local_head = 0U;
+             local_head < QBH_ATTENTION_Q_HEADS_PER_GROUP;
+             ++local_head) {
+            if (qbh_attention_u8_qk_prep_wait_ready(
+                    pool, first_q_head + local_head) != 0) {
+                return;
+            }
+            start = HAP_perf_get_qtimer_count();
+            qbh_hvx_qk_norm_rope_u8_native_head(
+                q_group +
+                    (size_t)local_head *
+                        QBH_ATTENTION_HEAD_DIM_TILES *
+                        QBH_HMX_ACTIVATION_BYTES,
+                &header->qparams[QBH_BLOCK_QP_Q_PROJECTION],
+                &header->qparams[QBH_BLOCK_QP_Q_ROPE],
+                (const __fp16 *)buffers->q_norm_weight,
+                (const __fp16 *)buffers->rope_cos,
+                (const __fp16 *)buffers->rope_sin);
+            job->u8_attention_qk_norm_rope_ticks +=
+                HAP_perf_get_qtimer_count() - start;
+        }
+
+        if (qbh_attention_u8_qk_prep_wait_ready(
+                pool, QBH_BLOCK_HEADS + group) != 0) {
+            return;
+        }
+        start = HAP_perf_get_qtimer_count();
+        qbh_hvx_qk_norm_rope_u8_native_k_head(
+            k_head,
+            &header->qparams[QBH_BLOCK_QP_K_PROJECTION],
+            &header->qparams[QBH_BLOCK_QP_K_ROPE],
+            (const __fp16 *)buffers->k_norm_weight,
+            (const __fp16 *)buffers->rope_cos,
+            (const __fp16 *)buffers->rope_sin,
+            config, k_weight, qk_bias);
+        job->u8_attention_qk_norm_rope_ticks +=
+            HAP_perf_get_qtimer_count() - start;
+
+        if (header->numerical_audit_enabled != 0U) {
+            const uint32_t audit_slice_bytes =
+                QBH_ATTN_U8_K_WEIGHT_BYTES +
+                QBH_ATTN_U8_QK_BIAS_BYTES;
+            uint8_t *reference = buffers->attention_projection +
+                (size_t)job->worker_index * audit_slice_bytes;
+            int8_t *reference_weight = (int8_t *)reference;
+            uint32_t *reference_bias = (uint32_t *)(
+                reference + QBH_ATTN_U8_K_WEIGHT_BYTES);
+
+            qbh_attention_u8_pack_k_native(
+                k_head, config, reference_weight, reference_bias);
+            job->u8_attention_fused_k_operand_mismatch_count +=
+                qbh_count_u8_mismatches(
+                    (const uint8_t *)k_weight,
+                    (const uint8_t *)reference_weight,
+                    QBH_ATTN_U8_K_WEIGHT_BYTES) +
+                qbh_count_u8_mismatches(
+                    (const uint8_t *)qk_bias,
+                    (const uint8_t *)reference_bias,
+                    QBH_ATTN_U8_QK_BIAS_BYTES);
+        }
+        ++job->u8_attention_prepared_group_count;
+    }
+}
+
+static int qbh_hvx_pool_u8_qk_prep_start_async(
+    struct qbh_block_header *header,
+    struct qbh_block_w4f16_pool *pool,
+    struct qbh_block_buffers *buffers) {
+    uint32_t worker_count;
+
+    if (header == NULL || pool == NULL || buffers == NULL ||
+        !qbh_attention_u8_qkv_overlap_enabled(
+            header->attention_pipeline_mode) ||
+        header->attention_hvx_contexts != 4U) {
+        return -1;
+    }
+    worker_count = header->attention_hvx_contexts - 1U;
+    if (worker_count == 0U || worker_count > pool->worker_count) {
+        return -1;
+    }
+    pool->attention_header = header;
+    pool->attention_buffers = buffers;
+    pool->attention_task_count = QBH_BLOCK_KV_HEADS;
+    pool->next_attention_task = 0U;
+    pool->attention_qk_stream_abort = 0U;
+    pool->attention_qk_streaming = 1U;
+    pool->active_worker_count = worker_count;
+    ++pool->attention_qk_generation;
+    if (pool->attention_qk_generation == 0U) {
+        memset((void *)pool->attention_qk_ready, 0,
+               sizeof(pool->attention_qk_ready));
+        pool->attention_qk_generation = 1U;
+    }
+    for (uint32_t worker = 0U; worker < worker_count; ++worker) {
+        struct qbh_block_w4f16_job *job = &pool->jobs[worker];
+        job->u8_attention_prepared_group_count = 0U;
+        job->u8_attention_fused_k_operand_mismatch_count = 0U;
+        job->u8_attention_qk_norm_rope_ticks = 0U;
+        job->u8_attention_k_pack_ticks = 0U;
+        job->command_kind = QBH_BLOCK_HVX_POOL_U8_QK_PREP;
+    }
+    asm volatile("barrier" ::: "memory");
+    for (uint32_t worker = 0U; worker < worker_count; ++worker) {
+        (void)qurt_sem_up(&pool->command_ready[worker]);
+    }
+    return 0;
+}
+
+static void qbh_hvx_pool_u8_qk_prep_abort_async(
+    struct qbh_block_w4f16_pool *pool) {
+    if (pool != NULL) {
+        pool->attention_qk_stream_abort = 1U;
+        asm volatile("barrier" ::: "memory");
+    }
+}
+
+static void qbh_hvx_pool_u8_qk_prep_publish(
+    const struct qbh_block_header *header,
+    const struct qbh_block_projection_desc *desc,
+    struct qbh_block_w4f16_pool *pool,
+    uint32_t first_n_tile, uint32_t n_tiles) {
+    const uint32_t tiles_per_head =
+        QBH_BLOCK_HEAD_DIM / QBH_HMX_OUTPUT_CHANNELS;
+    uint32_t end_tile;
+    uint32_t task;
+
+    if (header == NULL ||
+        !qbh_attention_u8_qkv_overlap_enabled(
+            header->attention_pipeline_mode) ||
+        pool == NULL ||
+        (desc != &header->projections[QBH_BLOCK_PROJ_Q] &&
+         desc != &header->projections[QBH_BLOCK_PROJ_K])) {
+        return;
+    }
+    end_tile = first_n_tile + n_tiles;
+    if (end_tile == 0U || end_tile % tiles_per_head != 0U) {
+        return;
+    }
+    task = end_tile / tiles_per_head - 1U;
+    if (desc == &header->projections[QBH_BLOCK_PROJ_K]) {
+        task += QBH_BLOCK_HEADS;
+    }
+    if (task >= QBH_BLOCK_HEADS + QBH_BLOCK_KV_HEADS) {
+        return;
+    }
+    pool->attention_qk_ready[task] =
+        pool->attention_qk_generation;
+    asm volatile("release(%0):at"
+                 :
+                 : "r"(&pool->attention_qk_ready[task])
+                 : "memory");
+}
+
+static int qbh_hvx_pool_u8_qk_prep_wait_async(
+    struct qbh_block_header *header,
+    struct qbh_block_w4f16_pool *pool) {
+    uint64_t wait_start;
+    uint32_t completed_groups = 0U;
+
+    if (header == NULL || pool == NULL ||
+        pool->active_worker_count == 0U ||
+        pool->active_worker_count > pool->worker_count) {
+        return -1;
+    }
+    wait_start = HAP_perf_get_qtimer_count();
+    for (uint32_t worker = 0U;
+         worker < pool->active_worker_count; ++worker) {
+        qurt_sem_down(&pool->command_done[worker]);
+    }
+    header->attention_qk_norm_pool_wait_ticks +=
+        HAP_perf_get_qtimer_count() - wait_start;
+    asm volatile("barrier" ::: "memory");
+    for (uint32_t worker = 0U;
+         worker < pool->active_worker_count; ++worker) {
+        const struct qbh_block_w4f16_job *job = &pool->jobs[worker];
+        completed_groups += job->u8_attention_prepared_group_count;
+        header->u8_attention_qk_norm_rope_ticks +=
+            job->u8_attention_qk_norm_rope_ticks;
+        header->u8_attention_k_pack_ticks +=
+            job->u8_attention_k_pack_ticks;
+        header->u8_attention_fused_k_operand_mismatch_count +=
+            job->u8_attention_fused_k_operand_mismatch_count;
+    }
+    pool->attention_qk_streaming = 0U;
+    return pool->attention_qk_stream_abort == 0U &&
+                   completed_groups == QBH_BLOCK_KV_HEADS
+               ? 0
+               : -1;
+}
+
 static int qbh_attention_u8_pool_submit(
     struct qbh_block_w4f16_pool *pool,
     struct qbh_block_w4f16_job *job,
@@ -5484,18 +5764,6 @@ static void qbh_attention_u8_pool_run_tasks(
     struct qbh_block_w4f16_job *job) {
     struct qbh_block_header *header = pool->attention_header;
     struct qbh_block_buffers *buffers = pool->attention_buffers;
-    uint8_t *scratch = buffers->attention_concat +
-        (size_t)job->worker_index * QBH_ATTN_U8_GROUP_SCRATCH_BYTES;
-    int8_t *k_weight = (int8_t *)(
-        scratch + QBH_ATTN_U8_K_WEIGHT_OFFSET);
-    int8_t *v_weight = (int8_t *)(
-        scratch + QBH_ATTN_U8_V_WEIGHT_OFFSET);
-    uint32_t *qk_bias = (uint32_t *)(
-        scratch + QBH_ATTN_U8_QK_BIAS_OFFSET);
-    uint32_t *av_bias = (uint32_t *)(
-        scratch + QBH_ATTN_U8_AV_BIAS_OFFSET);
-    uint8_t *softmax_scratch =
-        scratch + QBH_ATTN_U8_SOFTMAX_SCRATCH_OFFSET;
 
     job->u8_attention_probability_row_sum_min = UINT32_MAX;
     for (;;) {
@@ -5509,6 +5777,12 @@ static void qbh_attention_u8_pool_run_tasks(
         uint8_t *score_group;
         uint8_t *probability_group;
         uint8_t *output_group;
+        uint8_t *scratch;
+        int8_t *k_weight;
+        int8_t *v_weight;
+        uint32_t *qk_bias;
+        uint32_t *av_bias;
+        uint8_t *softmax_scratch;
         struct qbh_attention_u8_telemetry telemetry;
         struct qbh_attention_u8_telemetry *telemetry_ptr;
         uint64_t start;
@@ -5524,6 +5798,21 @@ static void qbh_attention_u8_pool_run_tasks(
             asm volatile("barrier" ::: "memory");
             break;
         }
+        scratch = buffers->attention_concat +
+            (size_t)(qbh_attention_u8_qkv_overlap_enabled(
+                         header->attention_pipeline_mode)
+                         ? group : job->worker_index) *
+                QBH_ATTN_U8_GROUP_SCRATCH_BYTES;
+        k_weight = (int8_t *)(
+            scratch + QBH_ATTN_U8_K_WEIGHT_OFFSET);
+        v_weight = (int8_t *)(
+            scratch + QBH_ATTN_U8_V_WEIGHT_OFFSET);
+        qk_bias = (uint32_t *)(
+            scratch + QBH_ATTN_U8_QK_BIAS_OFFSET);
+        av_bias = (uint32_t *)(
+            scratch + QBH_ATTN_U8_AV_BIAS_OFFSET);
+        softmax_scratch =
+            scratch + QBH_ATTN_U8_SOFTMAX_SCRATCH_OFFSET;
         first_q_head = group * QBH_ATTENTION_Q_HEADS_PER_GROUP;
         q_group = buffers->q +
             (size_t)first_q_head *
@@ -5549,71 +5838,74 @@ static void qbh_attention_u8_pool_run_tasks(
         telemetry_ptr = header->numerical_audit_enabled != 0U
             ? &telemetry : NULL;
 
-        start = HAP_perf_get_qtimer_count();
-        for (uint32_t local_head = 0U;
-             local_head < QBH_ATTENTION_Q_HEADS_PER_GROUP;
-             ++local_head) {
-            qbh_hvx_qk_norm_rope_u8_native_head(
-                q_group +
-                    (size_t)local_head *
-                        QBH_ATTENTION_HEAD_DIM_TILES *
-                        QBH_HMX_ACTIVATION_BYTES,
-                &header->qparams[QBH_BLOCK_QP_Q_PROJECTION],
-                &header->qparams[QBH_BLOCK_QP_Q_ROPE],
-                (const __fp16 *)buffers->q_norm_weight,
-                (const __fp16 *)buffers->rope_cos,
-                (const __fp16 *)buffers->rope_sin);
-        }
-        if (qbh_attention_u8_fused_k_enabled(
-                header->attention_pipeline_mode)) {
-            qbh_hvx_qk_norm_rope_u8_native_k_head(
-                k_head,
-                &header->qparams[QBH_BLOCK_QP_K_PROJECTION],
-                &header->qparams[QBH_BLOCK_QP_K_ROPE],
-                (const __fp16 *)buffers->k_norm_weight,
-                (const __fp16 *)buffers->rope_cos,
-                (const __fp16 *)buffers->rope_sin,
-                config, k_weight, qk_bias);
-        } else {
-            qbh_hvx_qk_norm_rope_u8_native_head(
-                k_head,
-                &header->qparams[QBH_BLOCK_QP_K_PROJECTION],
-                &header->qparams[QBH_BLOCK_QP_K_ROPE],
-                (const __fp16 *)buffers->k_norm_weight,
-                (const __fp16 *)buffers->rope_cos,
-                (const __fp16 *)buffers->rope_sin);
-        }
-        job->u8_attention_qk_norm_rope_ticks +=
-            HAP_perf_get_qtimer_count() - start;
-
-        if (!qbh_attention_u8_fused_k_enabled(
+        if (!qbh_attention_u8_qkv_overlap_enabled(
                 header->attention_pipeline_mode)) {
             start = HAP_perf_get_qtimer_count();
-            qbh_attention_u8_pack_k_native(
-                k_head, config, k_weight, qk_bias);
-            job->u8_attention_k_pack_ticks +=
+            for (uint32_t local_head = 0U;
+                 local_head < QBH_ATTENTION_Q_HEADS_PER_GROUP;
+                 ++local_head) {
+                qbh_hvx_qk_norm_rope_u8_native_head(
+                    q_group +
+                        (size_t)local_head *
+                            QBH_ATTENTION_HEAD_DIM_TILES *
+                            QBH_HMX_ACTIVATION_BYTES,
+                    &header->qparams[QBH_BLOCK_QP_Q_PROJECTION],
+                    &header->qparams[QBH_BLOCK_QP_Q_ROPE],
+                    (const __fp16 *)buffers->q_norm_weight,
+                    (const __fp16 *)buffers->rope_cos,
+                    (const __fp16 *)buffers->rope_sin);
+            }
+            if (qbh_attention_u8_fused_k_enabled(
+                    header->attention_pipeline_mode)) {
+                qbh_hvx_qk_norm_rope_u8_native_k_head(
+                    k_head,
+                    &header->qparams[QBH_BLOCK_QP_K_PROJECTION],
+                    &header->qparams[QBH_BLOCK_QP_K_ROPE],
+                    (const __fp16 *)buffers->k_norm_weight,
+                    (const __fp16 *)buffers->rope_cos,
+                    (const __fp16 *)buffers->rope_sin,
+                    config, k_weight, qk_bias);
+            } else {
+                qbh_hvx_qk_norm_rope_u8_native_head(
+                    k_head,
+                    &header->qparams[QBH_BLOCK_QP_K_PROJECTION],
+                    &header->qparams[QBH_BLOCK_QP_K_ROPE],
+                    (const __fp16 *)buffers->k_norm_weight,
+                    (const __fp16 *)buffers->rope_cos,
+                    (const __fp16 *)buffers->rope_sin);
+            }
+            job->u8_attention_qk_norm_rope_ticks +=
                 HAP_perf_get_qtimer_count() - start;
-        } else if (header->numerical_audit_enabled != 0U) {
-            const uint32_t audit_slice_bytes =
-                QBH_ATTN_U8_K_WEIGHT_BYTES +
-                QBH_ATTN_U8_QK_BIAS_BYTES;
-            uint8_t *reference = buffers->attention_projection +
-                (size_t)job->worker_index * audit_slice_bytes;
-            int8_t *reference_weight = (int8_t *)reference;
-            uint32_t *reference_bias = (uint32_t *)(
-                reference + QBH_ATTN_U8_K_WEIGHT_BYTES);
 
-            qbh_attention_u8_pack_k_native(
-                k_head, config, reference_weight, reference_bias);
-            job->u8_attention_fused_k_operand_mismatch_count +=
-                qbh_count_u8_mismatches(
-                    (const uint8_t *)k_weight,
-                    (const uint8_t *)reference_weight,
-                    QBH_ATTN_U8_K_WEIGHT_BYTES) +
-                qbh_count_u8_mismatches(
-                    (const uint8_t *)qk_bias,
-                    (const uint8_t *)reference_bias,
-                    QBH_ATTN_U8_QK_BIAS_BYTES);
+            if (!qbh_attention_u8_fused_k_enabled(
+                    header->attention_pipeline_mode)) {
+                start = HAP_perf_get_qtimer_count();
+                qbh_attention_u8_pack_k_native(
+                    k_head, config, k_weight, qk_bias);
+                job->u8_attention_k_pack_ticks +=
+                    HAP_perf_get_qtimer_count() - start;
+            } else if (header->numerical_audit_enabled != 0U) {
+                const uint32_t audit_slice_bytes =
+                    QBH_ATTN_U8_K_WEIGHT_BYTES +
+                    QBH_ATTN_U8_QK_BIAS_BYTES;
+                uint8_t *reference = buffers->attention_projection +
+                    (size_t)job->worker_index * audit_slice_bytes;
+                int8_t *reference_weight = (int8_t *)reference;
+                uint32_t *reference_bias = (uint32_t *)(
+                    reference + QBH_ATTN_U8_K_WEIGHT_BYTES);
+
+                qbh_attention_u8_pack_k_native(
+                    k_head, config, reference_weight, reference_bias);
+                job->u8_attention_fused_k_operand_mismatch_count +=
+                    qbh_count_u8_mismatches(
+                        (const uint8_t *)k_weight,
+                        (const uint8_t *)reference_weight,
+                        QBH_ATTN_U8_K_WEIGHT_BYTES) +
+                    qbh_count_u8_mismatches(
+                        (const uint8_t *)qk_bias,
+                        (const uint8_t *)reference_bias,
+                        QBH_ATTN_U8_QK_BIAS_BYTES);
+            }
         }
 
         start = HAP_perf_get_qtimer_count();
@@ -6309,6 +6601,9 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     uint32_t u8_integer_attention_enabled =
         qbh_attention_u8_enabled(
             header->attention_pipeline_mode);
+    uint32_t u8_qkv_overlap_enabled =
+        qbh_attention_u8_qkv_overlap_enabled(
+            header->attention_pipeline_mode);
     uint32_t crouton_qkv_enabled =
         qbh_crouton_qkv_enabled(header);
     uint32_t crouton_av_o_enabled =
@@ -6422,6 +6717,11 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             qkv_overlap_worker_count) != 0) {
         return QBH_BLOCK_STATUS_QK_NORM_ROPE_FAILED;
     }
+    if (u8_qkv_overlap_enabled != 0U &&
+        qbh_hvx_pool_u8_qk_prep_start_async(
+            header, w4f16_pool, buffers) != 0) {
+        return QBH_BLOCK_STATUS_QK_NORM_ROPE_FAILED;
+    }
     if (qbh_run_projection(
             header, shared, &header->projections[QBH_BLOCK_PROJ_Q],
             buffers, worker, w4f16_pool,
@@ -6435,6 +6735,11 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             (void)qbh_hvx_pool_qk_norm_rope_wait_async(
                 header, w4f16_pool, qkv_overlap_first_worker,
                 qkv_overlap_worker_count);
+        }
+        if (u8_qkv_overlap_enabled != 0U) {
+            qbh_hvx_pool_u8_qk_prep_abort_async(w4f16_pool);
+            (void)qbh_hvx_pool_u8_qk_prep_wait_async(
+                header, w4f16_pool);
         }
         return QBH_BLOCK_STATUS_QKV_FAILED;
     }
@@ -6450,6 +6755,11 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                 header, w4f16_pool, qkv_overlap_first_worker,
                 qkv_overlap_worker_count);
         }
+        if (u8_qkv_overlap_enabled != 0U) {
+            qbh_hvx_pool_u8_qk_prep_abort_async(w4f16_pool);
+            (void)qbh_hvx_pool_u8_qk_prep_wait_async(
+                header, w4f16_pool);
+        }
         return QBH_BLOCK_STATUS_QKV_FAILED;
     }
     if (qbh_run_projection(
@@ -6458,7 +6768,17 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             buffers->v, qkv_overlap_enabled,
             &header->projections[QBH_BLOCK_PROJ_O],
             &cross_prefetch) != 0) {
+        if (u8_qkv_overlap_enabled != 0U) {
+            qbh_hvx_pool_u8_qk_prep_abort_async(w4f16_pool);
+            (void)qbh_hvx_pool_u8_qk_prep_wait_async(
+                header, w4f16_pool);
+        }
         return QBH_BLOCK_STATUS_QKV_FAILED;
+    }
+    if (u8_qkv_overlap_enabled != 0U &&
+        qbh_hvx_pool_u8_qk_prep_wait_async(
+            header, w4f16_pool) != 0) {
+        return QBH_BLOCK_STATUS_QK_NORM_ROPE_FAILED;
     }
     if (qkv_overlap_enabled != 0U) {
         if (qbh_hvx_pool_qk_norm_rope_wait_async(

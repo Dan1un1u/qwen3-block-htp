@@ -20,15 +20,25 @@ grep -q '#define QBH_BLOCK_EXPERIMENT UINT32_C(44)' \
     "${project_root}/include/block_protocol.h"
 grep -q '#define QBH_EXPECTED_FULL_VTCM_BYTES UINT32_C(8388608)' \
     "${project_root}/include/probe_protocol.h"
-grep -q 'QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_FUSED_K' \
+grep -q 'QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP = 8' \
     "${project_root}/include/block_protocol.h"
+grep -q 'QBH_BLOCK_HVX_POOL_U8_QK_PREP = 8' \
+    "${project_root}/src/dsp/block_imp.c"
 grep -q 'qbh_hvx_qk_norm_rope_u8_native_k_head' \
     "${project_root}/src/dsp/hvx_u8_ops.c"
 grep -q 'Q6_vscatter_RMVwV' \
     "${project_root}/src/dsp/hvx_u8_ops.c"
 grep -q 'u8_attention_fused_k_operand_mismatch_count' \
     "${project_root}/src/dsp/block_imp.c"
+grep -q 'qbh_hvx_pool_u8_qk_prep_start_async' \
+    "${project_root}/src/dsp/block_imp.c"
+grep -q 'qbh_hvx_pool_u8_qk_prep_publish' \
+    "${project_root}/src/dsp/block_imp.c"
+grep -q 'qbh_hvx_pool_u8_qk_prep_wait_async' \
+    "${project_root}/src/dsp/block_imp.c"
+grep -q 'release(%0):at' \
+    "${project_root}/src/dsp/block_imp.c"
 grep -q 'paired_rounds=7' \
-    "${project_root}/scripts/collect_exp0044_stage_a.sh"
+    "${project_root}/scripts/collect_exp0044_stage_b.sh"
 
-printf '%s\n' '{"experiment":"EXP-0044","stage":"A","static_gate":"pass","block_abi":23,"qnn_dependency":false,"vtcm_request_bytes":8388608,"fused_k_operand":true}'
+printf '%s\n' '{"experiment":"EXP-0044","stage":"B","static_gate":"pass","block_abi":23,"qnn_dependency":false,"vtcm_request_bytes":8388608,"fused_k_operand":true,"generation_safe_qk_prep":true,"single_hmx_owner":true}'

@@ -11,13 +11,16 @@ audit_mode="${4:-off}"
 
 case "${mode}" in
     candidate)
+        attention_pipeline_mode=u8_log2_gqa_qkv_overlap
+        ;;
+    stage_a)
         attention_pipeline_mode=u8_log2_gqa_fused_k
         ;;
-    control)
+    control|original)
         attention_pipeline_mode=u8_log2_gqa
         ;;
     *)
-        printf 'usage: %s [candidate|control] [repeat] [attribution] [audit]\n' \
+        printf 'usage: %s [candidate|stage_a|original] [repeat] [attribution] [audit]\n' \
             "$0" >&2
         exit 2
         ;;
