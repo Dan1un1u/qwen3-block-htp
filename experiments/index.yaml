@@ -2818,3 +2818,41 @@ experiments:
       accuracy_characterization: implementation_exact_for_declared_integer_attention_given_actual_device_u8_qkv_but_w4f16_accuracy_is_diagnostic_only_and_current_minmax_u8_qparams_remain_unusable
       performance_characterization: replacing_the_exp0041_fp16_attention_island_with_pipelined_integer_qk_log2_u8_softmax_and_integer_av_reduces_complete_block_host_wall_by_49_51_percent_at_repeat1_and_51_98_percent_at_repeat10_and_reduces_the_attention_interval_by_80_95_and_81_58_percent_while_preserving_zero_intermediate_ddr
       selected_baseline_changed: false
+  - id: EXP-0043
+    slug: w4u8-block-time-attribution
+    title: Close the W4U8 complete-block timing ledger
+    parent: EXP-0042
+    variants:
+      - exp0042_uninstrumented_control
+      - w4u8_exclusive_ledger_instrumented
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: not_applicable
+    evidence_profile: real-qwen3-block-w4u8-exclusive-time-attribution
+    source_branches:
+      - codex/exp-0043-w4u8-block-time-attribution
+    source_commits: []
+    record: docs/experiments/EXP-0043.md
+    decided_by: user
+    decided_on: '2026-08-29'
+    approval_ref: 'User message 2026-08-29: 先做这一点'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0043-w4u8-block-time-attribution
+      started_on: '2026-08-29'
+    evidence:
+      formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0043'
+      retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0043'
+      source_parent_commit: d5f68b72b799a5c8df6c4f5cecfda218edc1e23d
+      selected_baseline: W4F16-EXP0038-NORMS
+      provisional_w4u8_parent: EXP-0042
+      execution_unit: qwen3_layer14_complete_block_m64
+      activation_scope: asymmetric_u8_qkv_integer_attention_boundaries
+      optimization_changes_allowed: false
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      attribution_mode: exclusive_adjacent_timestamp_ledger
+      completion_gate: close_top_level_and_nested_ledgers_to_at_most_0_1_percent_unattributed_at_repeat1_and_repeat10
+      instrumentation_overhead_gate: at_most_1_percent_repeat10_host_wall
+      selected_baseline_changed: false
