@@ -590,6 +590,127 @@ static void qbh_qk_norm_rope_one_head_u8(
     *(HVX_Vector *)values = qbh_pack_qf32_to_u8(&encoded);
 }
 
+struct qbh_qk_norm_rope_gamma_sf32 {
+    HVX_Vector lane[4];
+};
+
+struct qbh_qk_norm_rope_row_sf32 {
+    HVX_Vector cosine[4];
+    HVX_Vector sine[4];
+};
+
+static void qbh_qk_norm_rope_load_gamma_sf32(
+    const __fp16 *gamma,
+    struct qbh_qk_norm_rope_gamma_sf32 *converted) {
+    const HVX_VectorPair first = Q6_Wsf_vcvt_Vhf(
+        *(const HVX_Vector *)gamma);
+    const HVX_VectorPair second = Q6_Wsf_vcvt_Vhf(
+        *(const HVX_Vector *)(gamma + QBH_HVX_HALF_LANES));
+
+    converted->lane[0] = Q6_V_lo_W(first);
+    converted->lane[1] = Q6_V_hi_W(first);
+    converted->lane[2] = Q6_V_lo_W(second);
+    converted->lane[3] = Q6_V_hi_W(second);
+}
+
+static void qbh_qk_norm_rope_load_row_sf32(
+    const __fp16 *cosine, const __fp16 *sine,
+    struct qbh_qk_norm_rope_row_sf32 *converted) {
+    const HVX_VectorPair cosine_first = Q6_Wsf_vcvt_Vhf(
+        *(const HVX_Vector *)cosine);
+    const HVX_VectorPair cosine_second = Q6_Wsf_vcvt_Vhf(
+        *(const HVX_Vector *)(cosine + QBH_HVX_HALF_LANES));
+    const HVX_VectorPair sine_first = Q6_Wsf_vcvt_Vhf(
+        *(const HVX_Vector *)sine);
+    const HVX_VectorPair sine_second = Q6_Wsf_vcvt_Vhf(
+        *(const HVX_Vector *)(sine + QBH_HVX_HALF_LANES));
+
+    converted->cosine[0] = Q6_V_lo_W(cosine_first);
+    converted->cosine[1] = Q6_V_hi_W(cosine_first);
+    converted->cosine[2] = Q6_V_lo_W(cosine_second);
+    converted->cosine[3] = Q6_V_hi_W(cosine_second);
+    converted->sine[0] = Q6_V_lo_W(sine_first);
+    converted->sine[1] = Q6_V_hi_W(sine_first);
+    converted->sine[2] = Q6_V_lo_W(sine_second);
+    converted->sine[3] = Q6_V_hi_W(sine_second);
+}
+
+static void qbh_unary_gamma_preconverted_sf32(
+    HVX_Vector centered, HVX_Vector gamma_lo,
+    HVX_Vector gamma_hi, float coefficient,
+    HVX_Vector *result_lo, HVX_Vector *result_hi) {
+    const HVX_VectorPair centered_sf = Q6_Wsf_vcvt_Vhf(centered);
+    const HVX_Vector coefficient_sf = qbh_splat_sf(coefficient);
+    const HVX_Vector offset_sf = qbh_splat_sf(0.0f);
+    HVX_Vector product;
+
+    product = Q6_Vqf32_vmpy_VsfVsf(
+        Q6_V_lo_W(centered_sf), gamma_lo);
+    product = Q6_Vqf32_vmpy_VsfVsf(
+        Q6_Vsf_equals_Vqf32(product), coefficient_sf);
+    *result_lo = Q6_Vsf_vadd_VsfVsf(
+        Q6_Vsf_equals_Vqf32(product), offset_sf);
+
+    product = Q6_Vqf32_vmpy_VsfVsf(
+        Q6_V_hi_W(centered_sf), gamma_hi);
+    product = Q6_Vqf32_vmpy_VsfVsf(
+        Q6_Vsf_equals_Vqf32(product), coefficient_sf);
+    *result_hi = Q6_Vsf_vadd_VsfVsf(
+        Q6_Vsf_equals_Vqf32(product), offset_sf);
+}
+
+static void qbh_qk_norm_rope_one_head_u8_preconverted(
+    uint8_t *values,
+    const struct qbh_block_qparam *input_qparam,
+    const struct qbh_block_qparam *output_qparam,
+    const struct qbh_qk_norm_rope_gamma_sf32 *gamma,
+    const struct qbh_qk_norm_rope_row_sf32 *rope) {
+    const HVX_VectorPair centered = qbh_centered_half_pair(
+        *(const HVX_Vector *)values, input_qparam->zero_point);
+    const uint64_t centered_square_sum = qbh_centered_square_sum(
+        values, QBH_HVX_BYTES, input_qparam->zero_point);
+    const float input_scale = input_qparam->scale;
+    const float inverse = 1.0f / sqrtf(
+        (float)centered_square_sum * input_scale * input_scale /
+            (float)QBH_HVX_BYTES + 1.0e-6f);
+    const float norm_coefficient = input_scale * inverse;
+    HVX_Vector first[2];
+    HVX_Vector second[2];
+    struct qbh_qf32_quad encoded;
+
+    qbh_unary_gamma_preconverted_sf32(
+        Q6_V_lo_W(centered), gamma->lane[0], gamma->lane[1],
+        norm_coefficient, &first[0], &first[1]);
+    qbh_unary_gamma_preconverted_sf32(
+        Q6_V_hi_W(centered), gamma->lane[2], gamma->lane[3],
+        norm_coefficient, &second[0], &second[1]);
+
+    for (uint32_t part = 0U; part < 2U; ++part) {
+        const HVX_Vector first_sf = first[part];
+        const HVX_Vector second_sf = second[part];
+        const HVX_Vector first_rotated = Q6_Vsf_equals_Vqf32(
+            Q6_Vqf32_vsub_Vqf32Vqf32(
+            Q6_Vqf32_vmpy_VsfVsf(
+                first_sf, rope->cosine[part]),
+            Q6_Vqf32_vmpy_VsfVsf(
+                second_sf, rope->sine[part])));
+        const HVX_Vector second_rotated = Q6_Vsf_equals_Vqf32(
+            Q6_Vqf32_vadd_Vqf32Vqf32(
+            Q6_Vqf32_vmpy_VsfVsf(
+                second_sf, rope->cosine[part + 2U]),
+            Q6_Vqf32_vmpy_VsfVsf(
+                first_sf, rope->sine[part + 2U])));
+
+        encoded.lane[part] = qbh_sf32_scale_and_offset(
+            first_rotated, 1.0f / output_qparam->scale,
+            (float)output_qparam->zero_point);
+        encoded.lane[part + 2U] = qbh_sf32_scale_and_offset(
+            second_rotated, 1.0f / output_qparam->scale,
+            (float)output_qparam->zero_point);
+    }
+    *(HVX_Vector *)values = qbh_pack_qf32_to_u8(&encoded);
+}
+
 void qbh_hvx_qk_norm_rope_u8(
     uint8_t *tensor, uint32_t rows, uint32_t heads,
     uint32_t row_stride, uint32_t head_dim,
@@ -639,6 +760,54 @@ void qbh_hvx_qk_norm_rope_u8_native_head(
             memcpy(head_tiles + (size_t)tile * 2048U +
                        (size_t)row * 32U,
                    row_values + tile * 32U, 32U);
+        }
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
+void qbh_hvx_qk_norm_rope_u8_native_head_pair(
+    uint8_t *first_head_tiles, uint8_t *second_head_tiles,
+    const struct qbh_block_qparam *input_qparam,
+    const struct qbh_block_qparam *output_qparam,
+    const __fp16 *gamma, const __fp16 *cosine,
+    const __fp16 *sine) {
+    uint8_t row_values[2][QBH_HVX_BYTES]
+        __attribute__((aligned(QBH_HVX_BYTES)));
+    struct qbh_qk_norm_rope_gamma_sf32 gamma_sf32
+        __attribute__((aligned(QBH_HVX_BYTES)));
+
+    qbh_qk_norm_rope_load_gamma_sf32(gamma, &gamma_sf32);
+    for (uint32_t row = 0U; row < QBH_BLOCK_M; ++row) {
+        struct qbh_qk_norm_rope_row_sf32 rope_sf32
+            __attribute__((aligned(QBH_HVX_BYTES)));
+
+        for (uint32_t tile = 0U;
+             tile < QBH_BLOCK_HEAD_DIM / 32U; ++tile) {
+            const size_t tile_offset = (size_t)tile * 2048U +
+                (size_t)row * 32U;
+            memcpy(row_values[0] + tile * 32U,
+                   first_head_tiles + tile_offset, 32U);
+            memcpy(row_values[1] + tile * 32U,
+                   second_head_tiles + tile_offset, 32U);
+        }
+        qbh_qk_norm_rope_load_row_sf32(
+            cosine + (size_t)row * QBH_BLOCK_HEAD_DIM,
+            sine + (size_t)row * QBH_BLOCK_HEAD_DIM,
+            &rope_sf32);
+        qbh_qk_norm_rope_one_head_u8_preconverted(
+            row_values[0], input_qparam, output_qparam,
+            &gamma_sf32, &rope_sf32);
+        qbh_qk_norm_rope_one_head_u8_preconverted(
+            row_values[1], input_qparam, output_qparam,
+            &gamma_sf32, &rope_sf32);
+        for (uint32_t tile = 0U;
+             tile < QBH_BLOCK_HEAD_DIM / 32U; ++tile) {
+            const size_t tile_offset = (size_t)tile * 2048U +
+                (size_t)row * 32U;
+            memcpy(first_head_tiles + tile_offset,
+                   row_values[0] + tile * 32U, 32U);
+            memcpy(second_head_tiles + tile_offset,
+                   row_values[1] + tile * 32U, 32U);
         }
     }
     asm volatile("barrier" ::: "memory");
@@ -724,6 +893,129 @@ void qbh_hvx_qk_norm_rope_u8_native_k_head(
                 (int32_t)QBH_ATTENTION_HMX_CENTER *
                     (int32_t)divisor +
                 rounding);
+        }
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
+void qbh_hvx_qk_norm_rope_u8_native_k_head_pair(
+    uint8_t *first_head_tiles, uint8_t *second_head_tiles,
+    const struct qbh_block_qparam *input_qparam,
+    const struct qbh_block_qparam *output_qparam,
+    const __fp16 *gamma, const __fp16 *cosine,
+    const __fp16 *sine,
+    const struct qbh_attention_config *first_config,
+    const struct qbh_attention_config *second_config,
+    int8_t *first_weight_tiles, int8_t *second_weight_tiles,
+    uint32_t *first_bias_words, uint32_t *second_bias_words) {
+    uint8_t row_values[2][QBH_HVX_BYTES]
+        __attribute__((aligned(QBH_HVX_BYTES)));
+    int32_t signed_sums[2][QBH_ATTENTION_M];
+    struct qbh_qk_norm_rope_gamma_sf32 gamma_sf32
+        __attribute__((aligned(QBH_HVX_BYTES)));
+    const HVX_Vector offsets_base =
+        *(const HVX_Vector *)qbh_u8_k_vscatter_offsets;
+
+    qbh_qk_norm_rope_load_gamma_sf32(gamma, &gamma_sf32);
+    for (uint32_t row = 0U; row < QBH_BLOCK_M; ++row) {
+        const uint32_t n_tile = row / QBH_HMX_OUTPUT_CHANNELS;
+        const uint32_t output = row % QBH_HMX_OUTPUT_CHANNELS;
+        const HVX_Vector offsets = Q6_Vw_vadd_VwVw(
+            offsets_base, Q6_V_vsplat_R(output * 4U));
+        struct qbh_qk_norm_rope_row_sf32 rope_sf32
+            __attribute__((aligned(QBH_HVX_BYTES)));
+
+        for (uint32_t tile = 0U;
+             tile < QBH_BLOCK_HEAD_DIM / QBH_HMX_INPUT_CHANNELS;
+             ++tile) {
+            const size_t tile_offset =
+                (size_t)tile * QBH_HMX_ACTIVATION_BYTES +
+                (size_t)row * QBH_HMX_INPUT_CHANNELS;
+            memcpy(row_values[0] + tile * QBH_HMX_INPUT_CHANNELS,
+                   first_head_tiles + tile_offset,
+                   QBH_HMX_INPUT_CHANNELS);
+            memcpy(row_values[1] + tile * QBH_HMX_INPUT_CHANNELS,
+                   second_head_tiles + tile_offset,
+                   QBH_HMX_INPUT_CHANNELS);
+        }
+        qbh_qk_norm_rope_load_row_sf32(
+            cosine + (size_t)row * QBH_BLOCK_HEAD_DIM,
+            sine + (size_t)row * QBH_BLOCK_HEAD_DIM,
+            &rope_sf32);
+        qbh_qk_norm_rope_one_head_u8_preconverted(
+            row_values[0], input_qparam, output_qparam,
+            &gamma_sf32, &rope_sf32);
+        qbh_qk_norm_rope_one_head_u8_preconverted(
+            row_values[1], input_qparam, output_qparam,
+            &gamma_sf32, &rope_sf32);
+
+        for (uint32_t pair = 0U; pair < 2U; ++pair) {
+            uint8_t *head_tiles = pair == 0U
+                ? first_head_tiles : second_head_tiles;
+            int8_t *weight_tiles = pair == 0U
+                ? first_weight_tiles : second_weight_tiles;
+            int8_t *destination = weight_tiles +
+                (size_t)n_tile * QBH_ATTENTION_HEAD_DIM_TILES *
+                    QBH_HMX_WEIGHT_BYTES;
+
+            for (uint32_t tile = 0U;
+                 tile < QBH_BLOCK_HEAD_DIM /
+                            QBH_HMX_INPUT_CHANNELS;
+                 ++tile) {
+                const size_t tile_offset =
+                    (size_t)tile * QBH_HMX_ACTIVATION_BYTES +
+                    (size_t)row * QBH_HMX_INPUT_CHANNELS;
+                memcpy(head_tiles + tile_offset,
+                       row_values[pair] +
+                           tile * QBH_HMX_INPUT_CHANNELS,
+                       QBH_HMX_INPUT_CHANNELS);
+            }
+            {
+                const HVX_Vector centered = qbh_center_u8_to_s8(
+                    *(const HVX_Vector *)row_values[pair],
+                    output_qparam->zero_point);
+                signed_sums[pair][row] =
+                    qbh_reduce_signed_byte_sum(centered);
+                Q6_vscatter_RMVwV(
+                    (uint32_t)(uintptr_t)destination,
+                    QBH_ATTENTION_HEAD_DIM_TILES *
+                            QBH_HMX_WEIGHT_BYTES -
+                        1U,
+                    offsets, centered);
+            }
+        }
+    }
+
+    for (uint32_t pair = 0U; pair < 2U; ++pair) {
+        const struct qbh_attention_config *config = pair == 0U
+            ? first_config : second_config;
+        uint32_t *bias_words = pair == 0U
+            ? first_bias_words : second_bias_words;
+        const uint32_t divisor = UINT32_C(1) << config->score_shift;
+        const int32_t rounding = config->score_shift == 0U
+                                     ? 0
+                                     : (int32_t)(divisor / 2U);
+        const uint16_t conversion = qbh_half_bits(
+            512.0f / (float)divisor);
+
+        for (uint32_t n_tile = 0U;
+             n_tile < QBH_ATTENTION_SCORE_TILES; ++n_tile) {
+            uint32_t *bias = bias_words +
+                (size_t)n_tile *
+                    (QBH_HMX_BIAS_BYTES / sizeof(uint32_t));
+            for (uint32_t output = 0U;
+                 output < QBH_HMX_OUTPUT_CHANNELS; ++output) {
+                const uint32_t token =
+                    n_tile * QBH_HMX_OUTPUT_CHANNELS + output;
+                bias[output] = conversion;
+                bias[QBH_HMX_OUTPUT_CHANNELS + output] =
+                    (uint32_t)(
+                        -config->q_zero_point *
+                            signed_sums[pair][token] +
+                        (int32_t)QBH_ATTENTION_HMX_CENTER *
+                            (int32_t)divisor +
+                        rounding);
+            }
         }
     }
     asm volatile("barrier" ::: "memory");

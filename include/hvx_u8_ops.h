@@ -106,6 +106,13 @@ void qbh_hvx_qk_norm_rope_u8_native_head(
     const __fp16 *gamma, const __fp16 *cosine,
     const __fp16 *sine);
 
+void qbh_hvx_qk_norm_rope_u8_native_head_pair(
+    uint8_t *first_head_tiles, uint8_t *second_head_tiles,
+    const struct qbh_block_qparam *input_qparam,
+    const struct qbh_block_qparam *output_qparam,
+    const __fp16 *gamma, const __fp16 *cosine,
+    const __fp16 *sine);
+
 void qbh_hvx_qk_norm_rope_u8_native_k_head(
     uint8_t *head_tiles,
     const struct qbh_block_qparam *input_qparam,
@@ -114,6 +121,17 @@ void qbh_hvx_qk_norm_rope_u8_native_k_head(
     const __fp16 *sine,
     const struct qbh_attention_config *config,
     int8_t *weight_tiles, uint32_t *bias_words);
+
+void qbh_hvx_qk_norm_rope_u8_native_k_head_pair(
+    uint8_t *first_head_tiles, uint8_t *second_head_tiles,
+    const struct qbh_block_qparam *input_qparam,
+    const struct qbh_block_qparam *output_qparam,
+    const __fp16 *gamma, const __fp16 *cosine,
+    const __fp16 *sine,
+    const struct qbh_attention_config *first_config,
+    const struct qbh_attention_config *second_config,
+    int8_t *first_weight_tiles, int8_t *second_weight_tiles,
+    uint32_t *first_bias_words, uint32_t *second_bias_words);
 
 void qbh_hvx_expand_u8_to_f16_in_place(
     uint8_t *buffer, uint32_t elements,

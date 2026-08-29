@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(28)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(53)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(29)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(55)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -96,6 +96,7 @@ enum qbh_block_w4u8_qkvo_pipeline_mode {
     QBH_BLOCK_W4U8_QKV_BATCH4 = 2,
     QBH_BLOCK_W4U8_QKVO_BATCH4 = 3,
     QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_TASKS = 4,
+    QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS = 5,
 };
 
 enum qbh_block_attention_pack_mode {

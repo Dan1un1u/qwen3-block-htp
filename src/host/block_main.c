@@ -733,6 +733,11 @@ static int qbh_parse_w4u8_qkvo_pipeline_mode(
         *mode = QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_TASKS;
         return 0;
     }
+    if (strcmp(text, "qkvo_batch4_qk_head_pairs") == 0 ||
+        strcmp(text, "qk_head_pairs") == 0) {
+        *mode = QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS;
+        return 0;
+    }
     return -1;
 }
 
@@ -746,6 +751,8 @@ static const char *qbh_w4u8_qkvo_pipeline_mode_name(uint32_t mode) {
             return "qkvo_batch4";
         case QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_TASKS:
             return "qkvo_batch4_qk_head_tasks";
+        case QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS:
+            return "qkvo_batch4_qk_head_pairs";
         default:
             return "serial";
     }
@@ -1317,7 +1324,7 @@ int main(int argc, char **argv) {
            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT |
            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT)) != 0U) ||
         w4u8_qkvo_pipeline_mode >
-            QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_TASKS ||
+            QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS ||
         (variant != QBH_BLOCK_W4U8 &&
          w4u8_qkvo_pipeline_mode != QBH_BLOCK_W4U8_QKVO_SERIAL) ||
         ((crouton_boundary_mode & QBH_BLOCK_CROUTON_BOUNDARY_QKV) != 0U &&
@@ -2012,7 +2019,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0053\","
+        "{\"experiment\":\"EXP-0055\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
