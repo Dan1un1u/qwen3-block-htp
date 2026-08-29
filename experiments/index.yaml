@@ -4387,14 +4387,15 @@ experiments:
     variants:
       - exp0057_scalar_32_channel_v_carrier_transpose_control
       - five_stage_byte_vdeal_transpose_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4u8-v-pack-vdeal-transpose
     source_branches:
       - codex/exp-0058-w4u8-v-pack-vdeal-transpose
-    source_commits: []
+    source_commits:
+      - 912bfc093c1774791faf6eab3800992e29af6b6d
     record: docs/experiments/EXP-0058.md
     decided_by: user
     decided_on: '2026-08-30'
@@ -4403,7 +4404,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0058-w4u8-v-pack-vdeal-transpose
       started_on: '2026-08-30'
-      completed_on: null
+      completed_on: '2026-08-30'
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0058'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0058'
@@ -4432,3 +4433,107 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn
       local_speed_gate: u8_attention_v_pack_aggregate_work_attention_ledger_and_complete_host_wall_strictly_improve_at_repeat1_and_repeat10
       completion_gate: seven_interleaved_paired_rounds_and_complete_profiling_closure
+      source_head: 912bfc093c1774791faf6eab3800992e29af6b6d
+      implementation_commit: 912bfc093c1774791faf6eab3800992e29af6b6d
+      evidence_validator_commit: 912bfc093c1774791faf6eab3800992e29af6b6d
+      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0058/20260829T195056Z_912bfc093c17_formal'
+      artifact_set: 'D:/llm_exp/models/qwen3-block-htp/exp0058/artifacts/912bfc093c17/formal'
+      gate_record: 'D:/llm_exp/results/qwen3-block-htp/exp0058/20260829T195056Z_912bfc093c17_formal/gate_summary.json'
+      formal_full_profiling_report: 'D:/llm_exp/results/qwen3-block-htp/exp0058/20260829T195056Z_912bfc093c17_formal/full_profiling_report.md'
+      full_profiling_report: docs/experiments/EXP-0058-PROFILING.md
+      gate_record_sha256: 96740e2b16137caf1e81e53db710cbc1d5647b5741120cccb1fee8978a728a4d
+      formal_full_profiling_report_sha256: 10ea9c92e02db7345f378b9bbc3b97d992879fb02e281d837eb0f7488190b383
+      static_gate_sha256: ed56822527835ec4e166de305e815d120d43642fbedd06cd58609b30d28fc4da
+      package_manifest_sha256: 043f61337b2ad2758bb95791bc4ca768150f457f1f28bc7d20a7ad57eba42359
+      stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      formal_paired_rounds: 7
+      output_hash: 69f22eeb035e5ec5
+      v_recenter_saturation_equivalence: true
+      qk_probability_av_hash_equivalence: true
+      qk_hash: 32aa949912e365be
+      probability_hash: 94f2e218f06f9627
+      av_hash: f853658f52032bde
+      implementation_reference_mismatches: 0
+      implementation_reference_max_lsb: 0
+      fixed_vtcm_acquired_bytes: 8388608
+      vtcm_peak_plan_bytes: 5306080
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      spill_fill_count: 0
+      repeat1_control_host_wall_ns_per_block_median: 2972656.0
+      repeat1_candidate_host_wall_ns_per_block_median: 2957760.0
+      repeat1_host_wall_change_percent: -0.501101
+      repeat1_paired_host_wall_change_percent_median: -0.576376
+      repeat1_control_v_pack_ticks_per_block_median: 4930.0
+      repeat1_candidate_v_pack_ticks_per_block_median: 2798.0
+      repeat1_v_pack_change_percent: -43.245436
+      repeat1_paired_v_pack_change_percent_median: -43.215159
+      repeat1_control_attention_ticks_per_block_median: 7553.0
+      repeat1_candidate_attention_ticks_per_block_median: 7106.0
+      repeat1_attention_change_percent: -5.918178
+      repeat1_paired_attention_change_percent_median: -3.799815
+      repeat10_control_host_wall_ns_per_block_median: 2563671.9
+      repeat10_candidate_host_wall_ns_per_block_median: 2532328.1
+      repeat10_host_wall_change_percent: -1.222616
+      repeat10_paired_host_wall_change_percent_median: -0.718000
+      repeat10_control_v_pack_ticks_per_block_median: 4935.3
+      repeat10_candidate_v_pack_ticks_per_block_median: 2784.3
+      repeat10_v_pack_change_percent: -43.583977
+      repeat10_paired_v_pack_change_percent_median: -43.511885
+      repeat10_control_attention_ticks_per_block_median: 7675.7
+      repeat10_candidate_attention_ticks_per_block_median: 7258.2
+      repeat10_attention_change_percent: -5.439252
+      repeat10_paired_attention_change_percent_median: -5.189000
+      gate_result: pass
+      local_adoption_eligible: true
+      conclusion: five_byte_vdeal_stages_replace_the_scalar_four_row_v_carrier_transpose_reduce_v_pack_and_attention_work_and_improve_complete_host_wall_at_repeat1_and_repeat10_without_changing_math_or_physical_traffic
+      selected_baseline_changed: false
+  - id: EXP-0059
+    slug: w4u8-paired-softmax-after-vdeal
+    title: Re-evaluate paired U8 Softmax rows after vectorizing the V carrier
+    parent: EXP-0058
+    variants:
+      - exp0058_independent_softmax_rows_control
+      - exp0058_plus_paired_two_head_softmax_rows_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-paired-softmax-after-vdeal
+    source_branches:
+      - codex/exp-0059-w4u8-paired-softmax-after-vdeal
+    source_commits: []
+    record: docs/experiments/EXP-0059.md
+    decided_by: user
+    decided_on: '2026-08-30'
+    approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible experiments pre-approved'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0059-w4u8-paired-softmax-after-vdeal
+      started_on: '2026-08-30'
+      completed_on: null
+    evidence:
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0059'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0059'
+      source_parent_commit: 912bfc093c1774791faf6eab3800992e29af6b6d
+      direct_control: W4U8-EXP0058-V-PACK-VGATHER-VDEAL
+      contextual_comparator: W4F16-EXP0038-NORMS
+      execution_unit: qwen3_layer14_complete_block_m64
+      primary_scope: paired_two_q_head_u8_log2_softmax_rows_after_exact_vectorized_v_carrier
+      new_hypothesis: after_v_pack_worker_work_is_reduced_the_already_byte_exact_paired_softmax_saving_can_propagate_through_the_changed_attention_critical_path_to_complete_host_wall
+      rejected_result_not_reinterpreted: EXP-0056
+      arithmetic_changes_allowed: false
+      qparam_changes_allowed: false
+      v_pack_changes_allowed: false
+      projection_changes_allowed: false
+      residual_changes_allowed: false
+      mlp_changes_allowed: false
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      correctness_gate: final_output_and_qk_probability_av_boundaries_byte_exact_to_exp0058_and_independent_reference_zero_mismatches_zero_max_lsb
+      physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn
+      local_speed_gate: u8_attention_softmax_aggregate_work_attention_ledger_and_complete_host_wall_strictly_improve_at_repeat1_and_repeat10
+      completion_gate: seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
