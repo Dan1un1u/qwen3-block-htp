@@ -355,6 +355,23 @@ previous HMX command. Q/K publication remains aligned to one complete
 _Avoid_: fused QKV weights, changed arithmetic, concurrent HMX owners, DDR
 workspace, QNN lowering
 
+**Shared Native U8 QKV Input Carrier**:
+The EXP-0048 Stage-A boundary in which input RMSNorm scatters its unchanged
+asymmetric-U8 result once into the exact integer-HMX activation layout shared
+by Q, K, and V. It removes three repeated row-major-to-HMX carrier packs while
+leaving Q/K/V weights, qparams, commands, and arithmetic unchanged.
+_Avoid_: fused QKV projection, shared QKV weights, changed RMSNorm arithmetic,
+row-major QKV input
+
+**Native U8 O-to-Residual Handoff**:
+The EXP-0048 Stage-B boundary in which integer HMX writes O-projection output
+in native tile order and the post-Attention residual gathers those tiles
+directly before producing the unchanged native Gate/Up carrier. The target
+interval is O projection plus post-Attention residual, because gather work is
+moved across that boundary rather than eliminated entirely.
+_Avoid_: fused O-residual arithmetic, hidden gather cost, row-major O output,
+changed qparams
+
 **Complete Profiling Comparison**:
 The mandatory experiment-closure report containing the primary Host and DSP
 latencies, every mutually exclusive Block Timing Ledger interval, relevant

@@ -3268,15 +3268,16 @@ experiments:
       - exp0046_w4u8_native_mlp_io_current_source_control
       - input_rmsnorm_to_shared_qkv_u8_hmx_carrier
       - o_native_hmx_output_to_post_attention_residual_if_stage_a_passes
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4u8-native-qkv-o-layout-boundaries
     source_branches:
       - codex/exp-0048-w4u8-native-qkv-o-boundaries
     source_commits:
       - c83caebfe08d4233882bbc15a733912de2d284e8
+      - 61cd86fdabc3c3cf535bf13bfd7f5693fc502b8e
     record: docs/experiments/EXP-0048.md
     decided_by: user
     decided_on: '2026-08-29'
@@ -3285,6 +3286,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0048-w4u8-native-qkv-o-boundaries
       started_on: '2026-08-29'
+      completed_on: '2026-08-29'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0048'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0048'
@@ -3337,4 +3339,47 @@ experiments:
       stage_a_gate_result: pass
       stage_b_authorized: true
       stage_a_conclusion: one_native_u8_hmx_activation_carrier_shared_by_q_k_and_v_removes_repeated_projection_pack_and_strictly_reduces_qkv_and_complete_host_wall_without_changing_hmx_or_weight_dma_work
+      stage_b_source_head: 61cd86fdabc3c3cf535bf13bfd7f5693fc502b8e
+      stage_b_formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0048\20260829T145226Z_61cd86fdabc3_stage_b'
+      stage_b_artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0048\artifacts\61cd86fdabc3\stage_b'
+      stage_b_gate_record: 'D:\llm_exp\results\qwen3-block-htp\exp0048\20260829T145226Z_61cd86fdabc3_stage_b\gate_summary.json'
+      formal_full_profiling_report: 'D:\llm_exp\results\qwen3-block-htp\exp0048\20260829T145226Z_61cd86fdabc3_stage_b\full_profiling_report.md'
+      full_profiling_report: docs/experiments/EXP-0048-PROFILING.md
+      stage_b_gate_record_sha256: 1be6838a0be657a8bff6f6bd56e1e69660a243e7f4a6f02946585bd2f11cc571
+      stage_b_full_profiling_report_sha256: bb2ab30f4e360218ae0460ec71ea3ec789b3ed36e2937aae06c8a20367149d0c
+      stage_b_implementation_reference_sha256: 4e1b458d2219b7b47ceed6a52a115b658083322003aa9c84f5e4038343d6824e
+      stage_b_static_gate_sha256: 31be39e669306b6ca1476da6eb3c99d4a1004d8ddbdb8a0f0248192f73055230
+      package_manifest_sha256: 043f61337b2ad2758bb95791bc4ca768150f457f1f28bc7d20a7ad57eba42359
+      stage_b_stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      stage_b_formal_paired_rounds: 7
+      stage_b_output_hash: 69f22eeb035e5ec5
+      stage_b_implementation_reference_mismatches: 0
+      stage_b_implementation_reference_max_lsb: 0
+      stage_b_fixed_vtcm_request_bytes: 8388608
+      stage_b_fixed_vtcm_acquired_bytes: 8388608
+      stage_b_vtcm_peak_plan_bytes: 5306080
+      stage_b_intermediate_ddr_read_bytes: 0
+      stage_b_intermediate_ddr_write_bytes: 0
+      stage_b_spill_fill_count: 0
+      stage_b_hmx_commands_per_block: 1040
+      stage_b_hmx_u8s8_tile_pairs_per_block: 49408
+      stage_b_weight_dma_descriptors_per_block: 512
+      stage_b_weight_ddr_read_bytes_per_block: 25444352
+      stage_b_repeat1_control_host_wall_ns_per_block_median: 5442969.0
+      stage_b_repeat1_candidate_host_wall_ns_per_block_median: 5150469.0
+      stage_b_repeat1_host_wall_change_percent: -5.373905307930283
+      stage_b_repeat1_paired_host_wall_change_percent_median: -5.311276991676084
+      stage_b_repeat1_o_output_boundary_change_percent: -46.17644589943759
+      stage_b_repeat1_projection_unpack_change_percent: -100.0
+      stage_b_repeat10_control_host_wall_ns_per_block_median: 5030682.3
+      stage_b_repeat10_candidate_host_wall_ns_per_block_median: 4740999.9
+      stage_b_repeat10_host_wall_change_percent: -5.758312346617467
+      stage_b_repeat10_paired_host_wall_change_percent_median: -5.84879510280345
+      stage_b_repeat10_o_output_boundary_change_percent: -46.218938885157826
+      stage_b_repeat10_projection_unpack_change_percent: -100.0
+      final_repeat1_vs_exp0046_host_wall_change_percent: -16.032801937297382
+      final_repeat10_vs_exp0046_host_wall_change_percent: -17.38371740553639
+      stage_b_gate_result: pass
+      local_adoption_eligible: true
+      final_conclusion: native_qkv_input_and_o_output_carriers_remove_repeated_w4u8_projection_layout_conversions_and_strictly_reduce_both_target_boundaries_and_complete_host_wall_without_changing_arithmetic_hmx_weight_dma_qparams_or_output_codes
       selected_baseline_changed: false
