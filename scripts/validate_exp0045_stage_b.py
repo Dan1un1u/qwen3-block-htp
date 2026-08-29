@@ -128,12 +128,19 @@ def summarize_field(
         for index in range(SAMPLES)
         if left[index] != 0.0
     ]
-    return {
+    result = {
         f"control_{field}_median": left_median,
         f"candidate_{field}_median": right_median,
-        f"{field}_change_percent": (right_median / left_median - 1.0) * 100.0,
-        f"paired_{field}_change_percent_median": statistics.median(paired),
     }
+    if left_median != 0.0:
+        result[f"{field}_change_percent"] = (
+            right_median / left_median - 1.0
+        ) * 100.0
+    if paired:
+        result[f"paired_{field}_change_percent_median"] = statistics.median(
+            paired
+        )
+    return result
 
 
 def compare(
