@@ -39,6 +39,13 @@ void qbh_hvx_qk_norm_rope_u8(
     const __fp16 *gamma, const __fp16 *cosine,
     const __fp16 *sine);
 
+void qbh_hvx_qk_norm_rope_u8_native_head(
+    uint8_t *head_tiles,
+    const struct qbh_block_qparam *input_qparam,
+    const struct qbh_block_qparam *output_qparam,
+    const __fp16 *gamma, const __fp16 *cosine,
+    const __fp16 *sine);
+
 void qbh_hvx_expand_u8_to_f16_in_place(
     uint8_t *buffer, uint32_t elements,
     const struct qbh_block_qparam *qparam);

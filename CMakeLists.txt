@@ -115,6 +115,7 @@ else()
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/hmx_fp16
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/hvx_fp16_ops
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/hvx_u8_ops
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/attention_u8_core
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/attention_imp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/block_imp
     )

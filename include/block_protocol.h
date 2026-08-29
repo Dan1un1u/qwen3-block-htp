@@ -3,11 +3,12 @@
 
 #include <stdint.h>
 
+#include "attention_protocol.h"
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(20)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(41)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(22)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(42)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -20,6 +21,23 @@
 #define QBH_BLOCK_PROJECTION_COUNT UINT32_C(7)
 #define QBH_BLOCK_QPARAM_COUNT UINT32_C(17)
 #define QBH_BLOCK_QPARAM_RECORD_BYTES UINT32_C(48)
+#define QBH_BLOCK_ATTENTION_CONFIG_COUNT QBH_BLOCK_KV_HEADS
+#define QBH_BLOCK_ATTENTION_CONFIG_BYTES \
+    (QBH_BLOCK_ATTENTION_CONFIG_COUNT * \
+     sizeof(struct qbh_attention_config))
+#define QBH_BLOCK_U8_ATTENTION_Q_BYTES \
+    (QBH_BLOCK_M * QBH_BLOCK_HIDDEN)
+#define QBH_BLOCK_U8_ATTENTION_KV_BYTES \
+    (QBH_BLOCK_M * QBH_BLOCK_KV_HIDDEN)
+#define QBH_BLOCK_U8_ATTENTION_SCORE_BYTES \
+    (QBH_BLOCK_HEADS * QBH_BLOCK_M * QBH_BLOCK_M)
+#define QBH_BLOCK_U8_ATTENTION_AV_BYTES \
+    QBH_BLOCK_U8_ATTENTION_Q_BYTES
+#define QBH_BLOCK_U8_ATTENTION_AUDIT_BYTES \
+    (QBH_BLOCK_U8_ATTENTION_Q_BYTES + \
+     2U * QBH_BLOCK_U8_ATTENTION_KV_BYTES + \
+     2U * QBH_BLOCK_U8_ATTENTION_SCORE_BYTES + \
+     QBH_BLOCK_U8_ATTENTION_AV_BYTES)
 
 enum qbh_block_variant {
     QBH_BLOCK_F16F16 = 1,
@@ -87,6 +105,7 @@ enum qbh_block_attention_pipeline_mode {
     QBH_BLOCK_ATTENTION_PIPELINE_PARALLEL_HVX = 3,
     QBH_BLOCK_ATTENTION_PIPELINE_GQA = 4,
     QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP = 5,
+    QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA = 6,
 };
 
 enum qbh_block_mlp_mode {
@@ -254,10 +273,21 @@ struct qbh_block_header {
     uint32_t w4u8_down_bundle_bytes;
     uint32_t w4u8_silu_lut_offset;
     uint32_t w4u8_silu_lut_bytes;
+    uint32_t attention_config_offset;
+    uint32_t attention_config_bytes;
 
     struct qbh_block_projection_desc
         projections[QBH_BLOCK_PROJECTION_COUNT];
     struct qbh_block_qparam qparams[QBH_BLOCK_QPARAM_COUNT];
+
+    /* Host-computed FNV-1a hashes over independent, physical tile-order
+     * references.  They are part of the immutable request and therefore sit
+     * before dsp_status, the boundary at which the DSP clears run telemetry. */
+    uint64_t u8_attention_expected_score_hash;
+    uint64_t u8_attention_expected_probability_hash;
+    uint64_t u8_attention_expected_av_hash;
+    uint32_t u8_attention_audit_output_offset;
+    uint32_t u8_attention_audit_output_bytes;
 
     int32_t dsp_status;
     int32_t cache_status;
@@ -319,6 +349,20 @@ struct qbh_block_header {
     uint32_t crouton_q_operand_mismatch_count;
     uint32_t crouton_k_operand_mismatch_count;
     uint32_t crouton_v_operand_mismatch_count;
+    uint32_t u8_attention_group_count;
+    uint32_t u8_attention_qk_execution_count;
+    uint32_t u8_attention_av_execution_count;
+    uint32_t u8_attention_score_saturation_count;
+    uint32_t u8_attention_v_recenter_saturation_count;
+    uint32_t u8_attention_probability_mask_violation_count;
+    uint32_t u8_attention_probability_row_sum_min;
+    uint32_t u8_attention_probability_row_sum_max;
+    uint32_t u8_attention_direct_o_tile_count;
+    uint32_t u8_attention_qkv_unpack_skipped;
+    uint64_t u8_attention_actual_score_hash;
+    uint64_t u8_attention_actual_probability_hash;
+    uint64_t u8_attention_actual_av_hash;
+    uint32_t u8_attention_audit_ddr_write_bytes;
 
     uint32_t prepared_session_run_index;
     uint32_t resource_vtcm_address;
@@ -399,6 +443,15 @@ struct qbh_block_header {
     uint64_t crouton_av_o_copy_ticks;
     uint64_t crouton_norm_store_ticks;
     uint64_t scalar_math_ticks;
+    uint64_t u8_attention_qk_norm_rope_ticks;
+    uint64_t u8_attention_k_pack_ticks;
+    uint64_t u8_attention_v_pack_ticks;
+    uint64_t u8_attention_qk_hmx_ticks;
+    uint64_t u8_attention_qk_requant_ticks;
+    uint64_t u8_attention_softmax_ticks;
+    uint64_t u8_attention_av_hmx_ticks;
+    uint64_t u8_attention_av_requant_ticks;
+    uint64_t u8_attention_pipeline_wait_ticks;
 
     uint64_t invocation_ticks;
     uint64_t runtime_setup_ticks;

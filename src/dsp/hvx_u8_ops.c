@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "hvx_u8_ops.h"
 #include "qhmath_hvx_vector.h"
@@ -365,6 +366,37 @@ void qbh_hvx_qk_norm_rope_u8(
                 input_qparam, output_qparam, gamma,
                 cosine + (size_t)row * head_dim,
                 sine + (size_t)row * head_dim);
+        }
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
+void qbh_hvx_qk_norm_rope_u8_native_head(
+    uint8_t *head_tiles,
+    const struct qbh_block_qparam *input_qparam,
+    const struct qbh_block_qparam *output_qparam,
+    const __fp16 *gamma, const __fp16 *cosine,
+    const __fp16 *sine) {
+    uint8_t row_values[QBH_HVX_BYTES]
+        __attribute__((aligned(QBH_HVX_BYTES)));
+
+    for (uint32_t row = 0U; row < QBH_BLOCK_M; ++row) {
+        for (uint32_t tile = 0U;
+             tile < QBH_BLOCK_HEAD_DIM / 32U; ++tile) {
+            memcpy(row_values + tile * 32U,
+                   head_tiles + (size_t)tile * 2048U +
+                       (size_t)row * 32U,
+                   32U);
+        }
+        qbh_qk_norm_rope_one_head_u8(
+            row_values, input_qparam, output_qparam, gamma,
+            cosine + (size_t)row * QBH_BLOCK_HEAD_DIM,
+            sine + (size_t)row * QBH_BLOCK_HEAD_DIM);
+        for (uint32_t tile = 0U;
+             tile < QBH_BLOCK_HEAD_DIM / 32U; ++tile) {
+            memcpy(head_tiles + (size_t)tile * 2048U +
+                       (size_t)row * 32U,
+                   row_values + tile * 32U, 32U);
         }
     }
     asm volatile("barrier" ::: "memory");
