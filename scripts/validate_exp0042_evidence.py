@@ -41,8 +41,8 @@ def audit_package(package: pathlib.Path) -> str:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     require(manifest, "experiment", "EXP-0042")
     require(manifest, "execution_unit", "qwen3_layer14_complete_block_m64")
-    for entry in manifest["files"].values():
-        path = package / entry["file"]
+    for name, entry in manifest["files"].items():
+        path = package / entry.get("file", name)
         if not path.is_file() or path.stat().st_size != entry["bytes"]:
             raise SystemExit(f"invalid package tensor: {path.name}")
         if sha256(path) != entry["sha256"]:
