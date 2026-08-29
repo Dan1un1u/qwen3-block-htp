@@ -433,3 +433,15 @@ is a shorter Q/K preparation join tail and complete QKV interval, not a faster
 QKV matrix multiplication.
 _Avoid_: reordered Attention semantics, QKV projection fusion, more HMX
 parallelism, reduced Q/K Norm-RoPE work, Selected Baseline without promotion
+
+**Paired Native U8 Q/K Norm-RoPE Task**:
+The EXP-0055 W4U8 preparation schedule that replaces sixteen independent Q
+head tasks and eight independent K head tasks with eight adjacent-Q-head pairs
+and four adjacent-K-head pairs. Each pair converts the invariant gamma once
+and each row's shared RoPE cosine/sine table once, then executes the original
+per-head RMS reduction, reciprocal square root, rotation, requantization and K
+carrier construction independently. It is byte-exact, halves task cadence,
+and locally reduces Q/K Norm-RoPE work, preparation join, QKV ledger time and
+complete Host wall at repeat one and repeat ten.
+_Avoid_: paired-head arithmetic, shared RMS statistics, changed qparams,
+Attention fusion, Selected Baseline without promotion
