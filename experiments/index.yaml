@@ -2533,6 +2533,7 @@ experiments:
     source_commits:
       - 109d02ffdf91063a5d02198d3962bbc50a6c1d66
       - 2b187f7cb8678fb293db2b2e33bd64dfd4eeea1b
+      - 4a07e11536171371b918dd0167c7f493cc9b2ab2
     record: docs/experiments/EXP-0040.md
     decided_by: user
     decided_on: '2026-08-29'
@@ -2542,6 +2543,7 @@ experiments:
       source_branch: codex/exp-0040-w4u8-latest-mlp
       started_on: '2026-08-29'
       stage_a_completed_on: '2026-08-29'
+      stage_b_completed_on: '2026-08-29'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0040'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0040'
@@ -2594,3 +2596,31 @@ experiments:
       contract_amendment_approved_on: '2026-08-29'
       contract_amendment_ref: 'User message 2026-08-29: 批准'
       performance_characterization: the_original_two_worker_contract_cannot_hide_packed_w4_expansion_after_u8_output_requant_but_the_user_approved_best_to_best_schedule_uses_three_workers_for_packed_and_two_for_expanded_and_makes_packed_w4_19_22_percent_faster_at_repeat1_and_14_38_percent_faster_at_repeat10_with_matching_projection_interval_gains
+      stage_b_source_head: 4a07e11536171371b918dd0167c7f493cc9b2ab2
+      stage_b_formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0040\20260829T073525Z_4a07e1153617_stage_b'
+      stage_b_artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0040\stage_b_artifacts\4a07e1153617'
+      stage_b_gate_record: 'D:\llm_exp\results\qwen3-block-htp\exp0040\20260829T073525Z_4a07e1153617_stage_b\stage_b_gate.json'
+      stage_b_package_manifest_sha256: 7708b3aa2e65f6cddde55c7e812ffe6a325ee23f2221d066c810a38e3789acb3
+      stage_b_formal_records: 42
+      stage_b_boot_id_stable: true
+      stage_b_output_hash: 69f22eeb035e5ec5
+      stage_b_byte_exact_gate: pass
+      stage_b_fixed_vtcm_request_bytes: 8388608
+      stage_b_peak_vtcm_plan_bytes: 4713984
+      stage_b_intermediate_ddr_read_bytes: 0
+      stage_b_intermediate_ddr_write_bytes: 0
+      stage_b_intermediate_spill_fill_count: 0
+      stage_b_repeat1_control_host_wall_ns_per_block_median: 249941145.0
+      stage_b_repeat1_candidate_host_wall_ns_per_block_median: 174782083.0
+      stage_b_repeat1_candidate_host_change_percent: -30.070704045146314
+      stage_b_repeat1_paired_host_change_percent_median: -30.111678143072986
+      stage_b_repeat10_control_host_wall_ns_per_block_median: 247587838.4
+      stage_b_repeat10_candidate_host_wall_ns_per_block_median: 173481625.0
+      stage_b_repeat10_candidate_host_change_percent: -29.93128171355286
+      stage_b_repeat10_paired_host_change_percent_median: -29.929775473770203
+      stage_b_repeat1_w4f16_reference_host_wall_ns_per_block_median: 2644010.0
+      stage_b_repeat10_w4f16_reference_host_wall_ns_per_block_median: 2225442.7
+      stage_b_gate_result: pass
+      stage_b_local_adoption_eligible: true
+      stage_b_adoption_decision: pending_user_approval
+      stage_b_performance_characterization: replacing_only_the_old_w4u8_mlp_with_the_stage_a_packed_w4_integer_hmx_pipeline_reduces_complete_block_host_wall_by_30_07_percent_at_repeat1_and_29_93_percent_at_repeat10_while_preserving_byte_exact_output_and_zero_intermediate_ddr_but_the_unchanged_scalar_w4u8_common_operators_and_attention_path_still_make_the_candidate_far_slower_than_the_selected_w4f16_baseline

@@ -33,10 +33,11 @@ current_scope:
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: exp0040_stage_b_authorized
-  active_experiment_evidence: 'D:\llm_exp\results\qwen3-block-htp\exp0040\20260829T070330Z_2b187f7cb867_stage_a'
-  active_experiment_gate: stage_a_pass_variant_specific_workers_packed3_expanded2
+  active_experiment_stage: exp0040_stage_b_complete_pending_adoption
+  active_experiment_evidence: 'D:\llm_exp\results\qwen3-block-htp\exp0040\20260829T073525Z_4a07e1153617_stage_b'
+  active_experiment_gate: stage_b_pass_byte_exact_zero_ddr_and_strictly_faster_at_repeat1_repeat10
   stage_b_authorized: true
+  stage_b_complete: true
   selected_baseline:
     id: W4F16-EXP0038-NORMS
     experiment: EXP-0038
