@@ -8,6 +8,9 @@
 #define QBH_MLP_SILU_KNEE INT32_C(64)
 #define QBH_MLP_SILU_DENOMINATOR_SHIFT UINT32_C(7)
 #define QBH_MLP_PRODUCT_SHIFT UINT32_C(5)
+#define QBH_MLP_LUT_ENTRIES UINT32_C(65536)
+#define QBH_MLP_LUT_BYTES (QBH_MLP_LUT_ENTRIES * sizeof(uint16_t))
+#define QBH_MLP_GATHER_SCRATCH_BYTES UINT32_C(256)
 
 static inline int32_t qbh_floor_div_pow2(int32_t value,
                                          uint32_t shift) {
@@ -56,5 +59,20 @@ static inline uint8_t qbh_mlp_gate_up_scalar(uint8_t gate,
 
 void qbh_mlp_gate_up_hvx(const uint8_t *gate, const uint8_t *up,
                          uint8_t *middle, size_t elements);
+
+void qbh_mlp_gate_up_lut_hvx(const uint8_t *gate, const uint8_t *up,
+                             uint8_t *middle, size_t elements,
+                             const uint16_t *lut,
+                             uint8_t *gather_scratch);
+
+void qbh_mlp_gate_up_requant_lut_hvx(
+    const uint8_t *gate, const uint8_t *up, uint8_t *middle,
+    size_t elements, const uint16_t *lut, uint8_t *gather_scratch,
+    const uint8_t *gate_multipliers, const uint8_t *up_multipliers,
+    int32_t gate_zero_point, int32_t up_zero_point);
+
+void qbh_mlp_requant_u8_hvx(uint8_t *values, size_t elements,
+                            const uint8_t *multipliers,
+                            int32_t output_zero_point);
 
 #endif

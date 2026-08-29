@@ -313,6 +313,19 @@ __attribute__((noinline)) void qbh_unpack_w4_to_s8_hvx(
     asm volatile("barrier" : : : "memory");
 }
 
+__attribute__((noinline)) void qbh_copy_s8_hmx_tiles_hvx(
+    const int8_t *source, int8_t *destination, uint32_t k_tiles) {
+    const size_t vector_count =
+        (size_t)k_tiles * QBH_HMX_WEIGHT_BYTES / sizeof(HVX_Vector);
+    const HVX_Vector *source_vectors = (const HVX_Vector *)source;
+    HVX_Vector *destination_vectors = (HVX_Vector *)destination;
+
+    for (size_t vector = 0; vector < vector_count; ++vector) {
+        destination_vectors[vector] = source_vectors[vector];
+    }
+    asm volatile("barrier" : : : "memory");
+}
+
 __attribute__((noinline)) void qbh_copy_hmx_bias_hvx(
     const uint8_t *source, uint8_t *destination) {
     const HVX_Vector *source_vectors = (const HVX_Vector *)source;

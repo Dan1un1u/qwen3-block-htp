@@ -90,10 +90,6 @@ static inline int qbh_projection_layout_init(
         !qbh_physical_plan_is_chunked(physical_plan)) {
         return -1;
     }
-    if (qbh_physical_plan_is_chunked(physical_plan) &&
-        !qbh_weight_storage_is_packed_w4(weight_storage_variant)) {
-        return -1;
-    }
     if ((physical_plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE_DMA_BATCH2 ||
          physical_plan == QBH_PHYSICAL_PLAN_FULL_BUNDLE_DMA_CHAIN2) &&
         weight_storage_variant != QBH_WEIGHT_EXPANDED_S8) {
@@ -200,10 +196,12 @@ static inline int qbh_projection_layout_init(
         layout->vtcm_activation_offset + layout->activation_bytes,
         QBH_W4_METADATA_ALIGNMENT);
     layout->vtcm_compressed_slot1_offset = qbh_align_up_u32(
-        layout->vtcm_compressed_slot0_offset + layout->w4_bundle_bytes,
+        layout->vtcm_compressed_slot0_offset +
+            layout->stored_weight_bundle_bytes,
         QBH_W4_METADATA_ALIGNMENT);
     layout->vtcm_expanded_slot0_offset = qbh_align_up_u32(
-        layout->vtcm_compressed_slot1_offset + layout->w4_bundle_bytes,
+        layout->vtcm_compressed_slot1_offset +
+            layout->stored_weight_bundle_bytes,
         QBH_HMX_ACTIVATION_BYTES);
     layout->vtcm_expanded_slot1_offset = qbh_align_up_u32(
         layout->vtcm_expanded_slot0_offset +
@@ -218,7 +216,7 @@ static inline int qbh_projection_layout_init(
 
     layout->vtcm_chunked_expanded_slots_offset = qbh_align_up_u32(
         layout->vtcm_compressed_slot0_offset +
-            compressed_slot_count * layout->w4_bundle_bytes,
+            compressed_slot_count * layout->stored_weight_bundle_bytes,
         QBH_W4_METADATA_ALIGNMENT);
     layout->vtcm_chunked_output_offset = qbh_align_up_u32(
         layout->vtcm_chunked_expanded_slots_offset +
@@ -264,7 +262,7 @@ static inline uint32_t qbh_projection_expanded_chunk_offset(
 static inline uint32_t qbh_projection_compressed_slot_offset(
     const struct qbh_projection_layout *layout, uint32_t slot) {
     return layout->vtcm_compressed_slot0_offset +
-           slot * layout->w4_bundle_bytes;
+           slot * layout->stored_weight_bundle_bytes;
 }
 
 static inline size_t qbh_projection_activation_offset(

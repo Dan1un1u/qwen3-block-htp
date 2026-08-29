@@ -6,10 +6,16 @@
 #include "probe_protocol.h"
 
 #define QBH_MLP_MAGIC UINT32_C(0x51424d4c)
-#define QBH_MLP_ABI_VERSION UINT32_C(2)
-#define QBH_MLP_EXPERIMENT UINT32_C(21)
+#define QBH_MLP_ABI_VERSION UINT32_C(5)
+#define QBH_MLP_EXPERIMENT UINT32_C(40)
 #define QBH_MLP_INTERMEDIATE_BYTES \
     (QBH_PROJ_M * QBH_GATE_UP_N)
+#define QBH_MLP_GATE_UP_MULTIPLIER_BYTES QBH_GATE_UP_PAIR_N
+#define QBH_MLP_DOWN_MULTIPLIER_BYTES QBH_DOWN_N
+#define QBH_MLP_HMX_INTERMEDIATE_ZERO_POINT INT32_C(128)
+#define QBH_MLP_GATE_ZERO_POINT INT32_C(125)
+#define QBH_MLP_UP_ZERO_POINT INT32_C(110)
+#define QBH_MLP_DOWN_ZERO_POINT INT32_C(103)
 
 enum qbh_mlp_status {
     QBH_MLP_STATUS_HOST_READY = 1,
@@ -34,14 +40,22 @@ struct qbh_mlp_header {
     uint32_t repeat_count;
     uint32_t run_activation_self_test;
     uint32_t pattern;
+    uint32_t weight_storage_variant;
+    uint32_t gate_up_worker_count;
 
     uint32_t input_offset;
     uint32_t gate_up_weight_offset;
     uint32_t down_weight_offset;
+    uint32_t activation_lut_offset;
+    uint32_t gate_up_multiplier_offset;
+    uint32_t down_multiplier_offset;
     uint32_t output_offset;
     uint32_t input_bytes;
     uint32_t gate_up_weight_bytes;
     uint32_t down_weight_bytes;
+    uint32_t activation_lut_bytes;
+    uint32_t gate_up_multiplier_bytes;
+    uint32_t down_multiplier_bytes;
     uint32_t output_bytes;
 
     int32_t dsp_status;
@@ -54,6 +68,9 @@ struct qbh_mlp_header {
     uint32_t vtcm_peak_plan_bytes;
     uint32_t gate_up_output_vtcm_bytes;
     uint32_t middle_vtcm_bytes;
+    uint32_t activation_lut_vtcm_bytes;
+    uint32_t requant_metadata_vtcm_bytes;
+    uint32_t activation_gather_scratch_vtcm_bytes;
     uint32_t final_output_vtcm_bytes;
     uint32_t gate_up_pair_slot_count;
     uint32_t gate_up_pair_publish_count;
@@ -76,9 +93,12 @@ struct qbh_mlp_header {
     uint64_t qtimer_end;
     uint64_t total_ticks;
     uint64_t input_stage_ticks;
+    uint64_t activation_lut_stage_ticks;
+    uint64_t requant_metadata_stage_ticks;
     uint64_t gate_up_ticks;
     uint64_t activation_ticks;
     uint64_t down_ticks;
+    uint64_t down_requant_ticks;
     uint64_t final_output_ticks;
 
     struct qbh_probe_header gate_up_phase;

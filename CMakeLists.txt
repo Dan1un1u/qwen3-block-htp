@@ -39,6 +39,11 @@ if(${OS_TYPE} MATCHES "HLOS")
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host/session
     )
 
+    add_executable(qwen3_hmx_convert_cli
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host/hmx_convert_main
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host/session
+    )
+
     add_executable(qwen3_vtcm_cli
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host/resource_main
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host/session
@@ -53,6 +58,9 @@ if(${OS_TYPE} MATCHES "HLOS")
     target_compile_options(qwen3_probe_cli PRIVATE -Wall -Wextra -Werror)
     set_common_compile_and_link_options(qwen3_mlp_cli)
     target_compile_options(qwen3_mlp_cli PRIVATE -Wall -Wextra -Werror)
+    set_common_compile_and_link_options(qwen3_hmx_convert_cli)
+    target_compile_options(qwen3_hmx_convert_cli PRIVATE
+                           -Wall -Wextra -Werror)
     set_common_compile_and_link_options(qwen3_vtcm_cli)
     target_compile_options(qwen3_vtcm_cli PRIVATE -Wall -Wextra -Werror)
     set_common_compile_and_link_options(qwen3_block_cli)
@@ -65,6 +73,8 @@ if(${OS_TYPE} MATCHES "HLOS")
     target_link_libraries(qwen3_probe_cli qwen3_probe)
     add_dependencies(qwen3_mlp_cli qwen3_probe)
     target_link_libraries(qwen3_mlp_cli qwen3_probe)
+    add_dependencies(qwen3_hmx_convert_cli qwen3_probe)
+    target_link_libraries(qwen3_hmx_convert_cli qwen3_probe)
     add_dependencies(qwen3_vtcm_cli qwen3_probe)
     target_link_libraries(qwen3_vtcm_cli qwen3_probe)
     add_dependencies(qwen3_block_cli qwen3_probe)
@@ -73,11 +83,13 @@ if(${OS_TYPE} MATCHES "HLOS")
     if(${CMAKE_SYSTEM_NAME} MATCHES "Android")
         target_link_options(qwen3_probe_cli PRIVATE -llog -ldl)
         target_link_options(qwen3_mlp_cli PRIVATE -llog -ldl)
+        target_link_options(qwen3_hmx_convert_cli PRIVATE -llog -ldl)
         target_link_options(qwen3_vtcm_cli PRIVATE -llog -ldl)
         target_link_options(qwen3_block_cli PRIVATE -llog -ldl -lm)
     endif()
 
-    copy_binaries(qwen3_probe_cli qwen3_mlp_cli qwen3_vtcm_cli
+    copy_binaries(qwen3_probe_cli qwen3_mlp_cli
+                  qwen3_hmx_convert_cli qwen3_vtcm_cli
                   qwen3_block_cli qwen3_probe)
 else()
     add_library(qwen3_probe_skel SHARED

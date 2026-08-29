@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "hmx_u8s8_projection.h"
+#include "mlp_protocol.h"
 #include "mlp_u8.h"
 #include "probe_protocol.h"
 #include "qbh_user_dma.h"
@@ -374,7 +375,7 @@ static void qbh_hvx_worker_main(void *opaque) {
         const uint8_t *compressed;
         uint8_t *expanded;
         uint32_t region_tiles;
-        size_t packed_offset;
+        size_t source_offset;
         size_t expanded_offset;
         int admission_status;
 
@@ -392,11 +393,22 @@ static void qbh_hvx_worker_main(void *opaque) {
                 exit_status = AEE_EFAILED;
                 break;
             }
-            qbh_mlp_gate_up_hvx(
+            const uint8_t *multipliers =
+                state->mlp_handoff->output_multipliers +
+                (size_t)task.mlp_pair_index * 2U *
+                    QBH_HMX_OUTPUT_CHANNELS;
+            qbh_mlp_gate_up_requant_lut_hvx(
                 pair, pair + QBH_HMX_OUTPUT_BYTES,
                 state->mlp_handoff->middle_activation +
                     (size_t)task.mlp_pair_index * QBH_HMX_OUTPUT_BYTES,
-                QBH_HMX_OUTPUT_BYTES);
+                QBH_HMX_OUTPUT_BYTES,
+                state->mlp_handoff->activation_lut,
+                state->mlp_handoff->activation_gather_scratch +
+                    (size_t)job->worker_index *
+                        QBH_MLP_GATHER_SCRATCH_BYTES,
+                multipliers,
+                multipliers + QBH_HMX_OUTPUT_CHANNELS,
+                QBH_MLP_GATE_ZERO_POINT, QBH_MLP_UP_ZERO_POINT);
             qbh_hvx_region_end(state);
             qurt_mutex_lock(&state->metrics_mutex);
             *state->mlp_handoff->activation_ticks +=
@@ -412,19 +424,25 @@ static void qbh_hvx_worker_main(void *opaque) {
         expanded = state->expanded_slots[task.expanded_slot];
         if (qbh_physical_plan_is_streaming(layout->physical_plan)) {
             region_tiles = task.stream_region_tiles;
-            packed_offset =
+            source_offset =
                 ((size_t)task.chunk_index * layout->chunk_tiles +
                  (size_t)task.stream_region_index *
                      QBH_W4_STREAM_REGION_TILES) *
-                QBH_W4_PACKED_TILE_BYTES;
+                (layout->weight_storage_variant ==
+                         QBH_WEIGHT_EXPANDED_S8
+                     ? QBH_HMX_WEIGHT_BYTES
+                     : QBH_W4_PACKED_TILE_BYTES);
             expanded_offset =
                 (size_t)task.stream_region_index *
                 QBH_W4_STREAM_REGION_TILES * QBH_HMX_WEIGHT_BYTES;
         } else {
             region_tiles = task.chunk_tiles;
-            packed_offset =
+            source_offset =
                 (size_t)task.chunk_index * layout->chunk_tiles *
-                QBH_W4_PACKED_TILE_BYTES;
+                (layout->weight_storage_variant ==
+                         QBH_WEIGHT_EXPANDED_S8
+                     ? QBH_HMX_WEIGHT_BYTES
+                     : QBH_W4_PACKED_TILE_BYTES);
             expanded_offset = 0U;
         }
         start = HAP_perf_get_qtimer_count();
@@ -437,13 +455,18 @@ static void qbh_hvx_worker_main(void *opaque) {
             break;
         }
         if (layout->weight_storage_variant ==
+            QBH_WEIGHT_EXPANDED_S8) {
+            qbh_copy_s8_hmx_tiles_hvx(
+                (const int8_t *)(compressed + source_offset),
+                (int8_t *)(expanded + expanded_offset), region_tiles);
+        } else if (layout->weight_storage_variant ==
             QBH_WEIGHT_PACKED_W4_HMX_SCALE) {
             qbh_unpack_w4_to_s8_hvx(
-                compressed + packed_offset,
+                compressed + source_offset,
                 (int8_t *)(expanded + expanded_offset), region_tiles);
         } else {
             qbh_expand_w4_to_s8_hvx(
-                compressed + packed_offset,
+                compressed + source_offset,
                 compressed + layout->w4_scale_offset,
                 (int8_t *)(expanded + expanded_offset), region_tiles);
         }
@@ -451,7 +474,11 @@ static void qbh_hvx_worker_main(void *opaque) {
             (!qbh_physical_plan_is_streaming(layout->physical_plan) ||
              task.stream_region_index == 0U)) {
             qbh_copy_hmx_bias_hvx(
-                compressed + layout->w4_bias_offset,
+                compressed +
+                    (layout->weight_storage_variant ==
+                             QBH_WEIGHT_EXPANDED_S8
+                         ? layout->expanded_weight_chunk_bytes
+                         : layout->w4_bias_offset),
                 expanded + layout->expanded_chunk_weight_bytes);
         }
         qbh_hvx_region_end(state);
@@ -772,8 +799,9 @@ static int qbh_run_chunked_w4_pipeline_impl(
     if (header == NULL || layout == NULL || stored_weights == NULL ||
         activation_tiles == NULL || vtcm == NULL || hmx_context_id == 0U ||
         !qbh_physical_plan_is_chunked(layout->physical_plan) ||
-        !qbh_weight_storage_is_packed_w4(
-            layout->weight_storage_variant) ||
+        (layout->weight_storage_variant != QBH_WEIGHT_EXPANDED_S8 &&
+         !qbh_weight_storage_is_packed_w4(
+             layout->weight_storage_variant)) ||
         header->requested_hvx_workers == 0U ||
         header->requested_hvx_workers > QBH_MAX_HVX_WORKERS) {
         return AEE_EBADPARM;
@@ -782,6 +810,8 @@ static int qbh_run_chunked_w4_pipeline_impl(
         (layout->variant != QBH_PROJECTION_GATE_UP_PAIR ||
          !qbh_physical_plan_is_streaming(layout->physical_plan) ||
          handoff->middle_activation == NULL ||
+         handoff->activation_lut == NULL ||
+         handoff->activation_gather_scratch == NULL ||
          handoff->pair_publish_count == NULL ||
          handoff->pair_consume_count == NULL ||
          handoff->activation_ticks == NULL ||
@@ -948,10 +978,11 @@ static int qbh_run_chunked_w4_pipeline_impl(
                     layout->physical_plan)) {
                 if (qbh_start_linked_weight_bundles(
                         header, linked_descriptors,
-                        stored_weights +
-                            (size_t)output_base * layout->w4_bundle_bytes,
+                        stored_weights + (size_t)output_base *
+                            layout->stored_weight_bundle_bytes,
                         state.compressed_slots[first_compressed_slot],
-                        layout->w4_bundle_bytes, dma_bundle_batch) != 0) {
+                        layout->stored_weight_bundle_bytes,
+                        dma_bundle_batch) != 0) {
                     result = AEE_EFAILED;
                     qbh_abort_pipeline(&state, result);
                     goto stop_workers;
@@ -983,10 +1014,11 @@ static int qbh_run_chunked_w4_pipeline_impl(
                 uint64_t stage_start = HAP_perf_get_qtimer_count();
                 if (qbh_stage_weight_bundles(
                         header,
-                        stored_weights +
-                            (size_t)output_base * layout->w4_bundle_bytes,
+                        stored_weights + (size_t)output_base *
+                            layout->stored_weight_bundle_bytes,
                         state.compressed_slots[first_compressed_slot],
-                        layout->w4_bundle_bytes, dma_bundle_batch) != 0) {
+                        layout->stored_weight_bundle_bytes,
+                        dma_bundle_batch) != 0) {
                     result = AEE_EFAILED;
                     qbh_abort_pipeline(&state, result);
                     goto stop_workers;

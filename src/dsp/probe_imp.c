@@ -13,6 +13,7 @@
 #include <hexagon_types.h>
 
 #include "hmx_u8s8_projection.h"
+#include "hmx_convert_protocol.h"
 #include "block_imp.h"
 #include "mlp_imp.h"
 #include "probe_protocol.h"
@@ -372,6 +373,106 @@ publish:
 static int range_is_valid(uint32_t offset, uint32_t bytes,
                           uint32_t total_bytes) {
     return offset <= total_bytes && bytes <= total_bytes - offset;
+}
+
+AEEResult qwen3_probe_run_hmx_convert(remote_handle64 handle,
+                                      int32 shared_fd,
+                                      uint32 shared_bytes) {
+    struct qbh_probe_session *session = qbh_session_from_handle(handle);
+    struct qbh_hmx_convert_header *header = NULL;
+    uint8_t *shared = NULL;
+    uint8_t *activation;
+    int8_t *weight;
+    uint32_t *bias;
+    uint8_t *output;
+    int cache_status;
+    AEEResult result;
+
+    if (session == NULL || session->prepared == 0U ||
+        session->vtcm == NULL || shared_bytes < sizeof(*header)) {
+        return AEE_EBADSTATE;
+    }
+    result = HAP_mmap_get(shared_fd, (void **)&shared, NULL);
+    if (result != AEE_SUCCESS || shared == NULL) {
+        return result != AEE_SUCCESS ? result : AEE_EFAILED;
+    }
+    header = (struct qbh_hmx_convert_header *)shared;
+    cache_status = qurt_mem_cache_clean(
+        (qurt_addr_t)shared, (qurt_size_t)shared_bytes,
+        QURT_MEM_CACHE_INVALIDATE, QURT_MEM_DCACHE);
+    if (cache_status != 0) {
+        header->dsp_status = QBH_HMX_CONVERT_STATUS_CACHE_FAILED;
+        header->cache_status = cache_status;
+        result = AEE_EFAILED;
+        goto publish;
+    }
+    if (header->magic != QBH_HMX_CONVERT_MAGIC ||
+        header->abi_version != QBH_HMX_CONVERT_ABI_VERSION ||
+        header->header_bytes != sizeof(*header) ||
+        header->total_bytes > shared_bytes ||
+        !range_is_valid(header->activation_offset,
+                        QBH_HMX_ACTIVATION_BYTES,
+                        header->total_bytes) ||
+        !range_is_valid(header->weight_offset, QBH_HMX_WEIGHT_BYTES,
+                        header->total_bytes) ||
+        !range_is_valid(header->bias_offset, QBH_HMX_BIAS_BYTES,
+                        header->total_bytes) ||
+        !range_is_valid(header->output_offset, QBH_HMX_OUTPUT_BYTES,
+                        header->total_bytes)) {
+        header->dsp_status = QBH_HMX_CONVERT_STATUS_BAD_HEADER;
+        result = AEE_EBADPARM;
+        goto publish;
+    }
+
+    activation = session->vtcm;
+    weight = (int8_t *)(session->vtcm + QBH_HMX_ACTIVATION_BYTES);
+    bias = (uint32_t *)(session->vtcm +
+                        QBH_HMX_ACTIVATION_BYTES +
+                        QBH_HMX_WEIGHT_BYTES);
+    output = session->vtcm + QBH_HMX_OUTPUT_BYTES * 2U;
+    memcpy(activation, shared + header->activation_offset,
+           QBH_HMX_ACTIVATION_BYTES);
+    memcpy(weight, shared + header->weight_offset,
+           QBH_HMX_WEIGHT_BYTES);
+    memcpy(bias, shared + header->bias_offset, QBH_HMX_BIAS_BYTES);
+
+    header->hmx_context_id = session->hmx_context_id;
+    header->vtcm_address = (uint32_t)(uintptr_t)session->vtcm;
+    header->hmx_lock_status = HAP_compute_res_hmx_lock2(
+        session->hmx_context_id, HAP_COMPUTE_RES_HMX_SHARED);
+    if (header->hmx_lock_status != AEE_SUCCESS) {
+        header->dsp_status = QBH_HMX_CONVERT_STATUS_HMX_LOCK_FAILED;
+        result = AEE_EFAILED;
+        goto publish;
+    }
+    header->hmx_ticks = HAP_perf_get_qtimer_count();
+    qbh_execute_u8s8_tile(activation, weight, bias, output);
+    header->hmx_ticks = HAP_perf_get_qtimer_count() - header->hmx_ticks;
+    header->hmx_unlock_status = HAP_compute_res_hmx_unlock2(
+        session->hmx_context_id, HAP_COMPUTE_RES_HMX_SHARED);
+    if (header->hmx_unlock_status != AEE_SUCCESS) {
+        header->dsp_status = QBH_HMX_CONVERT_STATUS_HMX_UNLOCK_FAILED;
+        result = AEE_EFAILED;
+        goto publish;
+    }
+    memcpy(shared + header->output_offset, output,
+           QBH_HMX_OUTPUT_BYTES);
+    header->dsp_status = QBH_HMX_CONVERT_STATUS_OK;
+    result = AEE_SUCCESS;
+
+publish:
+    if (header != NULL) {
+        cache_status = qurt_mem_cache_clean(
+            (qurt_addr_t)shared, (qurt_size_t)shared_bytes,
+            QURT_MEM_CACHE_FLUSH, QURT_MEM_DCACHE);
+        if (cache_status != 0 && result == AEE_SUCCESS) {
+            header->dsp_status = QBH_HMX_CONVERT_STATUS_CACHE_FAILED;
+            header->cache_status = cache_status;
+            result = AEE_EFAILED;
+        }
+    }
+    (void)HAP_mmap_put(shared_fd);
+    return result;
 }
 
 static int header_is_valid(const struct qbh_probe_header *header,

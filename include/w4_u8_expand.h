@@ -11,6 +11,10 @@ void qbh_unpack_w4_to_s8_hvx(const uint8_t *packed_w4,
                              int8_t *expanded_s8,
                              uint32_t k_tiles);
 
+void qbh_copy_s8_hmx_tiles_hvx(const int8_t *source,
+                               int8_t *destination,
+                               uint32_t k_tiles);
+
 void qbh_expand_w4_to_f16_hvx(const uint8_t *packed_w4,
                               const float *channel_scales,
                               void *expanded_f16,
