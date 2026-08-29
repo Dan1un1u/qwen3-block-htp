@@ -28,5 +28,9 @@ grep -q 'Q6_Vb_vlut32_VbVbR_nomatch' \
     "${project_root}/src/dsp/attention_u8_core.c"
 grep -q 'qbh_hvx_qk_norm_rope_u8_native_head' \
     "${project_root}/src/dsp/hvx_u8_ops.c"
+grep -q 'implementation_reference_boundary' \
+    "${project_root}/scripts/verify_exp0042_attention_dump.py"
+grep -q 'paired_rounds=7' \
+    "${project_root}/scripts/collect_exp0042_evidence.sh"
 
 printf '%s\n' '{"experiment":"EXP-0042","static_gate":"pass","block_abi":22,"qnn_dependency":false,"vtcm_request_bytes":8388608,"integer_attention":true}'

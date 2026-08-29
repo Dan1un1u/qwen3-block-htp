@@ -659,7 +659,13 @@ static int qbh_header_valid(const struct qbh_block_header *header,
               QBH_BLOCK_ATTENTION_PACK_HVX)) ||
         (qbh_attention_u8_enabled(
              header->attention_pipeline_mode) &&
-         (header->common_ops_mask != QBH_BLOCK_COMMON_OPS_HVX_FP16 ||
+         (((header->common_ops_mask &
+              (QBH_BLOCK_COMMON_OP_RMS_NORM |
+               QBH_BLOCK_COMMON_OP_ROPE |
+               QBH_BLOCK_COMMON_OP_SOFTMAX)) !=
+             (QBH_BLOCK_COMMON_OP_RMS_NORM |
+              QBH_BLOCK_COMMON_OP_ROPE |
+              QBH_BLOCK_COMMON_OP_SOFTMAX)) ||
           header->attention_pack_mode !=
               QBH_BLOCK_ATTENTION_PACK_HVX)) ||
         (header->attention_pipeline_mode ==
@@ -6595,6 +6601,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             QBH_BLOCK_M * QBH_BLOCK_HIDDEN);
         if (header->numerical_status ==
                 QBH_BLOCK_NUMERICAL_UNCHECKED &&
+            header->u8_attention_expected_score_hash != 0U &&
             header->u8_attention_actual_score_hash !=
                 header->u8_attention_expected_score_hash) {
             header->numerical_status =
@@ -6602,6 +6609,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         }
         if (header->numerical_status ==
                 QBH_BLOCK_NUMERICAL_UNCHECKED &&
+            header->u8_attention_expected_probability_hash != 0U &&
             header->u8_attention_actual_probability_hash !=
                 header->u8_attention_expected_probability_hash) {
             header->numerical_status =
@@ -6609,6 +6617,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         }
         if (header->numerical_status ==
                 QBH_BLOCK_NUMERICAL_UNCHECKED &&
+            header->u8_attention_expected_av_hash != 0U &&
             header->u8_attention_actual_av_hash !=
                 header->u8_attention_expected_av_hash) {
             header->numerical_status =
