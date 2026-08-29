@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(24)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(45)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(25)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(46)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -132,6 +132,8 @@ enum qbh_block_crouton_boundary_mode {
     QBH_BLOCK_CROUTON_BOUNDARY_AV_TO_O = 1U << 1,
     QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM = 1U << 2,
     QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM = 1U << 3,
+    QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT = 1U << 4,
+    QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT = 1U << 5,
 };
 
 enum qbh_block_projection_index {
@@ -530,6 +532,10 @@ struct qbh_block_header {
     uint32_t w4u8_mlp_down_hvx_hmx_overlap;
     uint32_t w4u8_mlp_gate_up_hvx_parallel_overlap;
     uint32_t w4u8_mlp_down_hvx_parallel_overlap;
+    uint32_t w4u8_mlp_input_pack_skipped;
+    uint32_t w4u8_mlp_output_unpack_skipped;
+    uint64_t w4u8_mlp_input_pack_ticks;
+    uint64_t w4u8_mlp_output_unpack_ticks;
     uint64_t w4u8_mlp_gate_up_pipeline_ticks;
     uint64_t w4u8_mlp_down_pipeline_ticks;
     uint64_t w4u8_mlp_activation_work_ticks;

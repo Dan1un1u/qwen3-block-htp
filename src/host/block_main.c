@@ -638,6 +638,15 @@ static int qbh_parse_crouton_boundary_mode(
                 QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM;
         return 0;
     }
+    if (strcmp(text, "w4u8_mlp_input") == 0) {
+        *mode = QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT;
+        return 0;
+    }
+    if (strcmp(text, "w4u8_mlp_io") == 0) {
+        *mode = QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
+                QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT;
+        return 0;
+    }
     return -1;
 }
 
@@ -659,6 +668,11 @@ static const char *qbh_crouton_boundary_mode_name(uint32_t mode) {
              QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM |
              QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM:
             return "all";
+        case QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT:
+            return "w4u8_mlp_input";
+        case QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
+             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT:
+            return "w4u8_mlp_io";
         default:
             return "control";
     }
@@ -1238,8 +1252,20 @@ int main(int argc, char **argv) {
              QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP &&
          variant == QBH_BLOCK_W4F16 &&
          w4f16_hvx_workers != 3U) ||
-        (crouton_boundary_mode != QBH_BLOCK_CROUTON_BOUNDARY_CONTROL &&
-         variant == QBH_BLOCK_W4U8) ||
+        (variant == QBH_BLOCK_W4U8 &&
+         ((crouton_boundary_mode &
+           ~((uint32_t)(QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
+                        QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT))) != 0U ||
+          ((crouton_boundary_mode &
+            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT) != 0U &&
+           (crouton_boundary_mode &
+            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT) == 0U) ||
+          (crouton_boundary_mode != QBH_BLOCK_CROUTON_BOUNDARY_CONTROL &&
+           mlp_mode != QBH_BLOCK_MLP_W4U8_STREAMING))) ||
+        (variant != QBH_BLOCK_W4U8 &&
+         (crouton_boundary_mode &
+          (QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
+           QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT)) != 0U) ||
         w4u8_qkvo_pipeline_mode > QBH_BLOCK_W4U8_QKVO_BATCH4 ||
         (variant != QBH_BLOCK_W4U8 &&
          w4u8_qkvo_pipeline_mode != QBH_BLOCK_W4U8_QKVO_SERIAL) ||
@@ -1359,7 +1385,8 @@ int main(int argc, char **argv) {
                         "gqa_qkv_overlap|u8_log2_gqa] "
                         "[attention_hvx_contexts:1..4] "
                         "[crouton_boundary:control|qkv|av_to_o|"
-                        "input_norm|post_norm|norms|all] "
+                        "input_norm|post_norm|norms|all|"
+                        "w4u8_mlp_input|w4u8_mlp_io] "
                         "[w4u8_qkvo_pipeline:serial|qkv_batch2|"
                         "qkv_batch4|qkvo_batch4]\n",
                 argv[0]);
@@ -1905,7 +1932,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0045\","
+        "{\"experiment\":\"EXP-0046\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2115,6 +2142,10 @@ int main(int argc, char **argv) {
         "\"w4u8_mlp_down_hvx_hmx_overlap\":%" PRIu32 ","
         "\"w4u8_mlp_gate_up_hvx_parallel_overlap\":%" PRIu32 ","
         "\"w4u8_mlp_down_hvx_parallel_overlap\":%" PRIu32 ","
+        "\"w4u8_mlp_input_pack_skipped\":%" PRIu32 ","
+        "\"w4u8_mlp_output_unpack_skipped\":%" PRIu32 ","
+        "\"w4u8_mlp_input_pack_ticks\":%" PRIu64 ","
+        "\"w4u8_mlp_output_unpack_ticks\":%" PRIu64 ","
         "\"w4u8_mlp_gate_up_pipeline_ticks\":%" PRIu64 ","
         "\"w4u8_mlp_down_pipeline_ticks\":%" PRIu64 ","
         "\"w4u8_mlp_activation_work_ticks\":%" PRIu64 ","
@@ -2370,6 +2401,10 @@ int main(int argc, char **argv) {
         header->w4u8_mlp_down_hvx_hmx_overlap,
         header->w4u8_mlp_gate_up_hvx_parallel_overlap,
         header->w4u8_mlp_down_hvx_parallel_overlap,
+        header->w4u8_mlp_input_pack_skipped,
+        header->w4u8_mlp_output_unpack_skipped,
+        header->w4u8_mlp_input_pack_ticks,
+        header->w4u8_mlp_output_unpack_ticks,
         header->w4u8_mlp_gate_up_pipeline_ticks,
         header->w4u8_mlp_down_pipeline_ticks,
         header->w4u8_mlp_activation_work_ticks,

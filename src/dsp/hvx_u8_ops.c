@@ -22,6 +22,16 @@ static const int32_t qbh_u8_k_vscatter_offsets[QBH_HVX_WORD_LANES]
         3072, 3200, 3328, 3456, 3584, 3712, 3840, 3968,
     };
 
+/* Scatter one row's 128 adjacent channels into four consecutive integer-HMX
+ * activation tiles.  Each tile stores 64 rows of 32 channels. */
+static const int32_t qbh_u8_activation_vscatter_offsets[QBH_HVX_WORD_LANES]
+    __attribute__((aligned(QBH_HVX_BYTES))) = {
+        0, 4, 8, 12, 16, 20, 24, 28,
+        2048, 2052, 2056, 2060, 2064, 2068, 2072, 2076,
+        4096, 4100, 4104, 4108, 4112, 4116, 4120, 4124,
+        6144, 6148, 6152, 6156, 6160, 6164, 6168, 6172,
+    };
+
 struct qbh_qf32_quad {
     HVX_Vector lane[4];
 };
@@ -188,15 +198,33 @@ static uint64_t qbh_centered_square_sum(
            qbh_reduce_word_sum(sums[3]);
 }
 
-void qbh_hvx_rms_norm_u8(
+static void qbh_store_u8_hmx_activation(
+    uint8_t *output_tiles, uint32_t row,
+    uint32_t first_channel, HVX_Vector value) {
+    const HVX_Vector offsets = Q6_Vw_vadd_VwVw(
+        *(const HVX_Vector *)qbh_u8_activation_vscatter_offsets,
+        Q6_V_vsplat_R(row * QBH_HMX_INPUT_CHANNELS));
+    uint8_t *destination = output_tiles +
+        (size_t)(first_channel / QBH_HMX_INPUT_CHANNELS) *
+            QBH_HMX_ACTIVATION_BYTES;
+
+    Q6_vscatter_RMVwV(
+        (uint32_t)(uintptr_t)destination,
+        4U * QBH_HMX_ACTIVATION_BYTES - 1U,
+        offsets, value);
+}
+
+static void qbh_hvx_rms_norm_u8_impl(
     const uint8_t *input,
     const struct qbh_block_qparam *input_qparam,
     const __fp16 *gamma, uint8_t *output,
     const struct qbh_block_qparam *output_qparam,
-    uint32_t rows, uint32_t width) {
+    uint32_t rows, uint32_t width,
+    uint32_t native_hmx_activation) {
     for (uint32_t row = 0U; row < rows; ++row) {
         const uint8_t *input_row = input + (size_t)row * width;
-        uint8_t *output_row = output + (size_t)row * width;
+        uint8_t *output_row = native_hmx_activation == 0U
+            ? output + (size_t)row * width : NULL;
         const uint64_t centered_square_sum = qbh_centered_square_sum(
             input_row, width, input_qparam->zero_point);
         const float input_scale = input_qparam->scale;
@@ -226,11 +254,38 @@ void qbh_hvx_rms_norm_u8(
                                       QBH_HVX_HALF_LANES),
                 coefficient, (float)output_qparam->zero_point,
                 &encoded.lane[2], &encoded.lane[3]);
-            *(HVX_Vector *)(output_row + channel) =
-                qbh_pack_qf32_to_u8(&encoded);
+            const HVX_Vector result = qbh_pack_qf32_to_u8(&encoded);
+            if (native_hmx_activation != 0U) {
+                qbh_store_u8_hmx_activation(
+                    output, row, channel, result);
+            } else {
+                *(HVX_Vector *)(output_row + channel) = result;
+            }
         }
     }
     asm volatile("barrier" ::: "memory");
+}
+
+void qbh_hvx_rms_norm_u8(
+    const uint8_t *input,
+    const struct qbh_block_qparam *input_qparam,
+    const __fp16 *gamma, uint8_t *output,
+    const struct qbh_block_qparam *output_qparam,
+    uint32_t rows, uint32_t width) {
+    qbh_hvx_rms_norm_u8_impl(
+        input, input_qparam, gamma, output, output_qparam,
+        rows, width, 0U);
+}
+
+void qbh_hvx_rms_norm_u8_native_activation(
+    const uint8_t *input,
+    const struct qbh_block_qparam *input_qparam,
+    const __fp16 *gamma, uint8_t *output_tiles,
+    const struct qbh_block_qparam *output_qparam,
+    uint32_t rows, uint32_t width) {
+    qbh_hvx_rms_norm_u8_impl(
+        input, input_qparam, gamma, output_tiles, output_qparam,
+        rows, width, 1U);
 }
 
 #define QBH_U8_RESIDUAL_FRAC_BITS UINT32_C(14)
@@ -318,6 +373,23 @@ void qbh_hvx_residual_rms_norm_u8(
         residual, sum_qparam, rows * width);
     qbh_hvx_rms_norm_u8(
         residual, sum_qparam, gamma, normalized,
+        normalized_qparam, rows, width);
+}
+
+void qbh_hvx_residual_rms_norm_u8_native_activation(
+    uint8_t *residual,
+    const struct qbh_block_qparam *residual_qparam,
+    const uint8_t *addition,
+    const struct qbh_block_qparam *addition_qparam,
+    const struct qbh_block_qparam *sum_qparam,
+    const __fp16 *gamma, uint8_t *normalized_tiles,
+    const struct qbh_block_qparam *normalized_qparam,
+    uint32_t rows, uint32_t width) {
+    qbh_hvx_residual_add_u8(
+        residual, residual_qparam, addition, addition_qparam,
+        residual, sum_qparam, rows * width);
+    qbh_hvx_rms_norm_u8_native_activation(
+        residual, sum_qparam, gamma, normalized_tiles,
         normalized_qparam, rows, width);
 }
 
