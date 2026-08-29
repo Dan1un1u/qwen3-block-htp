@@ -72,6 +72,7 @@ enum qbh_block_hmx_command_kind {
 #define QBH_BLOCK_W4U8_GATE_UP_PAIR_SLOTS UINT32_C(8)
 #define QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES UINT32_C(8)
 #define QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES UINT32_C(4)
+#define QBH_BLOCK_W4U8_RESIDUAL_ROWS_PER_TASK UINT32_C(4)
 #define QBH_BLOCK_W4U8_GATHER_SCRATCH_BYTES \
     (QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS * \
      QBH_MLP_GATHER_SCRATCH_BYTES)
@@ -86,6 +87,12 @@ enum qbh_block_hvx_pool_job_kind {
     QBH_BLOCK_HVX_POOL_GQA_ATTENTION = 6,
     QBH_BLOCK_HVX_POOL_U8_GQA_ATTENTION = 7,
     QBH_BLOCK_HVX_POOL_U8_QK_PREP = 8,
+    QBH_BLOCK_HVX_POOL_U8_RESIDUAL = 9,
+};
+
+enum qbh_block_u8_residual_kind {
+    QBH_BLOCK_U8_RESIDUAL_POST_NORM = 1,
+    QBH_BLOCK_U8_RESIDUAL_FINAL = 2,
 };
 
 struct qbh_block_arena {
@@ -197,6 +204,10 @@ struct qbh_block_w4f16_job {
     uint64_t u8_attention_av_hmx_ticks;
     uint64_t u8_attention_av_requant_ticks;
     uint64_t u8_attention_hmx_queue_wait_ticks;
+    uint32_t u8_post_residual_task_count;
+    uint32_t u8_final_residual_task_count;
+    uint64_t u8_post_residual_ticks;
+    uint64_t u8_final_residual_ticks;
 };
 
 struct qbh_block_w4f16_pool {
@@ -265,6 +276,17 @@ struct qbh_block_w4f16_pool {
     uint32_t attention_qk_generation;
     volatile uint32_t attention_qk_stream_abort;
     uint32_t attention_qk_streaming;
+    uint8_t *u8_residual;
+    const struct qbh_block_qparam *u8_residual_qparam;
+    const uint8_t *u8_residual_addition_tiles;
+    const struct qbh_block_qparam *u8_residual_addition_qparam;
+    const struct qbh_block_qparam *u8_residual_sum_qparam;
+    const __fp16 *u8_residual_gamma;
+    uint8_t *u8_residual_normalized_tiles;
+    const struct qbh_block_qparam *u8_residual_normalized_qparam;
+    volatile uint32_t next_u8_residual_task;
+    uint32_t u8_residual_task_count;
+    uint32_t u8_residual_kind;
 };
 
 struct qbh_block_w4f16_cross_prefetch {
@@ -293,6 +315,9 @@ static void qbh_attention_u8_pool_run_tasks(
     struct qbh_block_w4f16_pool *pool,
     struct qbh_block_w4f16_job *job);
 static void qbh_attention_u8_qk_prep_pool_run_tasks(
+    struct qbh_block_w4f16_pool *pool,
+    struct qbh_block_w4f16_job *job);
+static void qbh_u8_residual_pool_run_tasks(
     struct qbh_block_w4f16_pool *pool,
     struct qbh_block_w4f16_job *job);
 static int qbh_hvx_pool_u8_qk_prep_start_async(
@@ -644,7 +669,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->attribution_enabled > 1U ||
         header->numerical_audit_enabled > 1U ||
         header->residual_mode >
-            QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM ||
+            QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4 ||
         header->f16f16_projection_mode >
             QBH_BLOCK_F16F16_PROJECTION_GATE8 ||
         header->w4f16_pipeline_mode >
@@ -758,8 +783,23 @@ static int qbh_header_valid(const struct qbh_block_header *header,
               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP ||
           header->w4u8_qkvo_pipeline_mode <
               QBH_BLOCK_W4U8_QKVO_BATCH4 ||
-          header->residual_mode !=
-              QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM)) ||
+          (header->residual_mode !=
+               QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM &&
+           header->residual_mode !=
+               QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4))) ||
+        (header->residual_mode ==
+             QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4 &&
+         (header->variant != QBH_BLOCK_W4U8 ||
+          header->attention_hvx_contexts != 4U ||
+          (header->crouton_boundary_mode &
+           (QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
+            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
+            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT |
+            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT)) !=
+           (QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
+            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
+            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT |
+            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT))) ||
         header->mlp_mode > QBH_BLOCK_MLP_W4U8_STREAMING ||
         header->mlp_hvx_contexts == 0U ||
         header->mlp_hvx_contexts > QBH_BLOCK_W4F16_HVX_WORKERS ||
@@ -1848,6 +1888,56 @@ static void qbh_attention_softmax_pool_run_tasks(
     }
 }
 
+static void qbh_u8_residual_pool_run_tasks(
+    struct qbh_block_w4f16_pool *pool,
+    struct qbh_block_w4f16_job *job) {
+    for (;;) {
+        const uint32_t task = qbh_atomic_fetch_increment(
+            &pool->next_u8_residual_task);
+        const uint32_t first_row =
+            task * QBH_BLOCK_W4U8_RESIDUAL_ROWS_PER_TASK;
+        uint32_t row_count;
+        uint64_t start;
+
+        if (task >= pool->u8_residual_task_count ||
+            first_row >= QBH_BLOCK_M) {
+            break;
+        }
+        row_count = QBH_BLOCK_M - first_row;
+        if (row_count > QBH_BLOCK_W4U8_RESIDUAL_ROWS_PER_TASK) {
+            row_count = QBH_BLOCK_W4U8_RESIDUAL_ROWS_PER_TASK;
+        }
+        start = HAP_perf_get_qtimer_count();
+        if (pool->u8_residual_kind ==
+            QBH_BLOCK_U8_RESIDUAL_POST_NORM) {
+            qbh_hvx_residual_rms_norm_u8_native_io_rows(
+                pool->u8_residual,
+                pool->u8_residual_qparam,
+                pool->u8_residual_addition_tiles,
+                pool->u8_residual_addition_qparam,
+                pool->u8_residual_sum_qparam,
+                pool->u8_residual_gamma,
+                pool->u8_residual_normalized_tiles,
+                pool->u8_residual_normalized_qparam,
+                first_row, row_count, QBH_BLOCK_HIDDEN);
+            job->u8_post_residual_ticks +=
+                HAP_perf_get_qtimer_count() - start;
+            ++job->u8_post_residual_task_count;
+        } else {
+            qbh_hvx_residual_add_u8_native_output_rows(
+                pool->u8_residual,
+                pool->u8_residual_qparam,
+                pool->u8_residual_addition_tiles,
+                pool->u8_residual_addition_qparam,
+                pool->u8_residual_sum_qparam,
+                first_row, row_count, QBH_BLOCK_HIDDEN);
+            job->u8_final_residual_ticks +=
+                HAP_perf_get_qtimer_count() - start;
+            ++job->u8_final_residual_task_count;
+        }
+    }
+}
+
 static void qbh_w4f16_hvx_worker_main(void *opaque) {
     struct qbh_block_w4f16_job *job =
         (struct qbh_block_w4f16_job *)opaque;
@@ -1911,6 +2001,9 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
         } else if (job->command_kind ==
                    QBH_BLOCK_HVX_POOL_U8_QK_PREP) {
             qbh_attention_u8_qk_prep_pool_run_tasks(pool, job);
+        } else if (job->command_kind ==
+                   QBH_BLOCK_HVX_POOL_U8_RESIDUAL) {
+            qbh_u8_residual_pool_run_tasks(pool, job);
         }
         job->command_kind = QBH_BLOCK_HVX_POOL_NONE;
         (void)qurt_sem_up(&pool->command_done[job->worker_index]);
@@ -2025,6 +2118,116 @@ static void qbh_w4f16_pool_wait(
         qurt_sem_down(&pool->command_done[worker]);
     }
     asm volatile("barrier" ::: "memory");
+}
+
+static int qbh_hvx_pool_u8_native_residual(
+    struct qbh_block_header *header,
+    struct qbh_block_w4f16_pool *pool,
+    uint8_t *residual,
+    const struct qbh_block_qparam *residual_qparam,
+    const uint8_t *addition_tiles,
+    const struct qbh_block_qparam *addition_qparam,
+    const struct qbh_block_qparam *sum_qparam,
+    const __fp16 *gamma, uint8_t *normalized_tiles,
+    const struct qbh_block_qparam *normalized_qparam,
+    uint32_t residual_kind) {
+    struct qbh_block_w4f16_job main_job;
+    uint32_t worker_task_count_before = 0U;
+    uint32_t worker_task_count_after = 0U;
+    uint64_t worker_ticks_before = 0U;
+    uint64_t worker_ticks_after = 0U;
+    uint64_t wait_start;
+
+    if (pool == NULL || pool->worker_count < 3U ||
+        (residual_kind != QBH_BLOCK_U8_RESIDUAL_POST_NORM &&
+         residual_kind != QBH_BLOCK_U8_RESIDUAL_FINAL)) {
+        return -1;
+    }
+    memset(&main_job, 0, sizeof(main_job));
+    pool->u8_residual = residual;
+    pool->u8_residual_qparam = residual_qparam;
+    pool->u8_residual_addition_tiles = addition_tiles;
+    pool->u8_residual_addition_qparam = addition_qparam;
+    pool->u8_residual_sum_qparam = sum_qparam;
+    pool->u8_residual_gamma = gamma;
+    pool->u8_residual_normalized_tiles = normalized_tiles;
+    pool->u8_residual_normalized_qparam = normalized_qparam;
+    pool->next_u8_residual_task = 0U;
+    pool->u8_residual_task_count =
+        (QBH_BLOCK_M + QBH_BLOCK_W4U8_RESIDUAL_ROWS_PER_TASK - 1U) /
+        QBH_BLOCK_W4U8_RESIDUAL_ROWS_PER_TASK;
+    pool->u8_residual_kind = residual_kind;
+    pool->active_worker_count = 3U;
+
+    for (uint32_t worker = 0U; worker < pool->active_worker_count;
+         ++worker) {
+        if (residual_kind == QBH_BLOCK_U8_RESIDUAL_POST_NORM) {
+            worker_task_count_before +=
+                pool->jobs[worker].u8_post_residual_task_count;
+            worker_ticks_before +=
+                pool->jobs[worker].u8_post_residual_ticks;
+        } else {
+            worker_task_count_before +=
+                pool->jobs[worker].u8_final_residual_task_count;
+            worker_ticks_before +=
+                pool->jobs[worker].u8_final_residual_ticks;
+        }
+        pool->jobs[worker].command_kind =
+            QBH_BLOCK_HVX_POOL_U8_RESIDUAL;
+    }
+    asm volatile("barrier" ::: "memory");
+    for (uint32_t worker = 0U; worker < pool->active_worker_count;
+         ++worker) {
+        (void)qurt_sem_up(&pool->command_ready[worker]);
+    }
+
+    qbh_u8_residual_pool_run_tasks(pool, &main_job);
+    wait_start = HAP_perf_get_qtimer_count();
+    qbh_w4f16_pool_wait(pool);
+    if (residual_kind == QBH_BLOCK_U8_RESIDUAL_POST_NORM) {
+        header->w4u8_post_residual_pool_wait_ticks +=
+            HAP_perf_get_qtimer_count() - wait_start;
+    } else {
+        header->w4u8_final_residual_pool_wait_ticks +=
+            HAP_perf_get_qtimer_count() - wait_start;
+    }
+
+    for (uint32_t worker = 0U; worker < pool->active_worker_count;
+         ++worker) {
+        if (residual_kind == QBH_BLOCK_U8_RESIDUAL_POST_NORM) {
+            worker_task_count_after +=
+                pool->jobs[worker].u8_post_residual_task_count;
+            worker_ticks_after +=
+                pool->jobs[worker].u8_post_residual_ticks;
+        } else {
+            worker_task_count_after +=
+                pool->jobs[worker].u8_final_residual_task_count;
+            worker_ticks_after +=
+                pool->jobs[worker].u8_final_residual_ticks;
+        }
+    }
+    if (residual_kind == QBH_BLOCK_U8_RESIDUAL_POST_NORM) {
+        const uint32_t task_count =
+            main_job.u8_post_residual_task_count +
+            worker_task_count_after - worker_task_count_before;
+        header->w4u8_post_residual_task_count += task_count;
+        header->w4u8_post_residual_main_work_ticks +=
+            main_job.u8_post_residual_ticks;
+        header->w4u8_post_residual_worker_work_ticks +=
+            worker_ticks_after - worker_ticks_before;
+        return task_count == pool->u8_residual_task_count ? 0 : -1;
+    }
+    {
+        const uint32_t task_count =
+            main_job.u8_final_residual_task_count +
+            worker_task_count_after - worker_task_count_before;
+        header->w4u8_final_residual_task_count += task_count;
+        header->w4u8_final_residual_main_work_ticks +=
+            main_job.u8_final_residual_ticks;
+        header->w4u8_final_residual_worker_work_ticks +=
+            worker_ticks_after - worker_ticks_before;
+        return task_count == pool->u8_residual_task_count ? 0 : -1;
+    }
 }
 
 static int qbh_hvx_pool_silu(
@@ -7769,19 +7972,38 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     start = HAP_perf_get_qtimer_count();
     if (header->variant == QBH_BLOCK_W4U8) {
         if (header->residual_mode ==
-            QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM) {
+                QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM ||
+            header->residual_mode ==
+                QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4) {
             if (w4u8_mlp_native_input_enabled != 0U) {
                 if (w4u8_o_native_output_enabled != 0U) {
-                    qbh_hvx_residual_rms_norm_u8_native_io(
-                        buffers->residual,
-                        &header->qparams[QBH_BLOCK_QP_BLOCK_INPUT],
-                        buffers->attention_projection,
-                        &header->qparams[QBH_BLOCK_QP_ATTENTION_PROJECTION],
-                        &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_RESIDUAL],
-                        (const __fp16 *)buffers->post_norm_weight,
-                        w4u8_mlp_native_activation,
-                        &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_NORM],
-                        QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+                    if (header->residual_mode ==
+                        QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4) {
+                        if (qbh_hvx_pool_u8_native_residual(
+                                header, w4f16_pool,
+                                buffers->residual,
+                                &header->qparams[QBH_BLOCK_QP_BLOCK_INPUT],
+                                buffers->attention_projection,
+                                &header->qparams[QBH_BLOCK_QP_ATTENTION_PROJECTION],
+                                &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_RESIDUAL],
+                                (const __fp16 *)buffers->post_norm_weight,
+                                w4u8_mlp_native_activation,
+                                &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_NORM],
+                                QBH_BLOCK_U8_RESIDUAL_POST_NORM) != 0) {
+                            return QBH_BLOCK_STATUS_RESIDUAL_POOL_FAILED;
+                        }
+                    } else {
+                        qbh_hvx_residual_rms_norm_u8_native_io(
+                            buffers->residual,
+                            &header->qparams[QBH_BLOCK_QP_BLOCK_INPUT],
+                            buffers->attention_projection,
+                            &header->qparams[QBH_BLOCK_QP_ATTENTION_PROJECTION],
+                            &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_RESIDUAL],
+                            (const __fp16 *)buffers->post_norm_weight,
+                            w4u8_mlp_native_activation,
+                            &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_NORM],
+                            QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+                    }
                 } else {
                     qbh_hvx_residual_rms_norm_u8_native_activation(
                         buffers->residual,
@@ -7828,7 +8050,9 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         }
     } else {
         if (header->residual_mode ==
-            QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM) {
+                QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM ||
+            header->residual_mode ==
+                QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4) {
             uint64_t norm_start = HAP_perf_get_qtimer_count();
             if (crouton_post_norm_enabled != 0U) {
                 qbh_hvx_residual_rms_norm_f16_crouton(
@@ -8157,13 +8381,28 @@ w4u8_mlp_complete:
     start = HAP_perf_get_qtimer_count();
     if (header->variant == QBH_BLOCK_W4U8) {
         if (w4u8_mlp_native_output_enabled != 0U) {
-            qbh_hvx_residual_add_u8_native_output(
-                buffers->residual,
-                &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_RESIDUAL],
-                w4u8_mlp_native_output,
-                &header->qparams[QBH_BLOCK_QP_DOWN],
-                &header->qparams[QBH_BLOCK_QP_BLOCK_OUTPUT],
-                QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+            if (header->residual_mode ==
+                QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4) {
+                if (qbh_hvx_pool_u8_native_residual(
+                        header, w4f16_pool,
+                        buffers->residual,
+                        &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_RESIDUAL],
+                        w4u8_mlp_native_output,
+                        &header->qparams[QBH_BLOCK_QP_DOWN],
+                        &header->qparams[QBH_BLOCK_QP_BLOCK_OUTPUT],
+                        NULL, NULL, NULL,
+                        QBH_BLOCK_U8_RESIDUAL_FINAL) != 0) {
+                    return QBH_BLOCK_STATUS_RESIDUAL_POOL_FAILED;
+                }
+            } else {
+                qbh_hvx_residual_add_u8_native_output(
+                    buffers->residual,
+                    &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_RESIDUAL],
+                    w4u8_mlp_native_output,
+                    &header->qparams[QBH_BLOCK_QP_DOWN],
+                    &header->qparams[QBH_BLOCK_QP_BLOCK_OUTPUT],
+                    QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+            }
         } else if (header->residual_mode != QBH_BLOCK_RESIDUAL_SCALAR) {
             qbh_hvx_residual_add_u8(
                 buffers->residual,

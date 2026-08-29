@@ -245,10 +245,18 @@ static int qbh_parse_residual_mode(const char *text, uint32_t *mode) {
         *mode = QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM;
         return 0;
     }
+    if (strcmp(text, "fused_pool4") == 0 ||
+        strcmp(text, "hvx_fused_post_norm_pool4") == 0) {
+        *mode = QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4;
+        return 0;
+    }
     return -1;
 }
 
 static const char *qbh_residual_mode_name(uint32_t mode) {
+    if (mode == QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4) {
+        return "hvx_fused_post_norm_pool4";
+    }
     if (mode == QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM) {
         return "hvx_fused_post_norm";
     }
@@ -1330,7 +1338,22 @@ int main(int argc, char **argv) {
               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP ||
           w4u8_qkvo_pipeline_mode <
               QBH_BLOCK_W4U8_QKVO_BATCH4 ||
-          residual_mode != QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM)) ||
+          (residual_mode != QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM &&
+           residual_mode !=
+               QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4))) ||
+        (residual_mode ==
+             QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4 &&
+         (variant != QBH_BLOCK_W4U8 ||
+          attention_hvx_contexts != 4U ||
+          (crouton_boundary_mode &
+           (QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
+            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
+            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT |
+            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT)) !=
+           (QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
+            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
+            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT |
+            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT))) ||
         mlp_mode > QBH_BLOCK_MLP_W4U8_STREAMING ||
         mlp_hvx_contexts == 0U || mlp_hvx_contexts > 4U ||
         (mlp_mode == QBH_BLOCK_MLP_CONTROL && mlp_hvx_contexts != 1U) ||
@@ -1989,7 +2012,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0052\","
+        "{\"experiment\":\"EXP-0053\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2172,6 +2195,14 @@ int main(int argc, char **argv) {
         "\"w4u8_qkvo_weight_expand_ticks\":%" PRIu64 ","
         "\"w4u8_qkvo_prefetch_wait_ticks\":%" PRIu64 ","
         "\"w4u8_qkvo_hmx_lifetime_ticks\":%" PRIu64 ","
+        "\"w4u8_post_residual_task_count\":%" PRIu32 ","
+        "\"w4u8_final_residual_task_count\":%" PRIu32 ","
+        "\"w4u8_post_residual_main_work_ticks\":%" PRIu64 ","
+        "\"w4u8_post_residual_worker_work_ticks\":%" PRIu64 ","
+        "\"w4u8_post_residual_pool_wait_ticks\":%" PRIu64 ","
+        "\"w4u8_final_residual_main_work_ticks\":%" PRIu64 ","
+        "\"w4u8_final_residual_worker_work_ticks\":%" PRIu64 ","
+        "\"w4u8_final_residual_pool_wait_ticks\":%" PRIu64 ","
         "\"w4f16_gate_up_effective_region_tiles\":%" PRIu32 ","
         "\"w4f16_gate_up_scale_cache_bytes\":%" PRIu32 ","
         "\"w4f16_gate_up_weight_dma_ticks\":%" PRIu64 ","
@@ -2435,6 +2466,14 @@ int main(int argc, char **argv) {
         header->w4u8_qkvo_weight_expand_ticks,
         header->w4u8_qkvo_prefetch_wait_ticks,
         header->w4u8_qkvo_hmx_lifetime_ticks,
+        header->w4u8_post_residual_task_count,
+        header->w4u8_final_residual_task_count,
+        header->w4u8_post_residual_main_work_ticks,
+        header->w4u8_post_residual_worker_work_ticks,
+        header->w4u8_post_residual_pool_wait_ticks,
+        header->w4u8_final_residual_main_work_ticks,
+        header->w4u8_final_residual_worker_work_ticks,
+        header->w4u8_final_residual_pool_wait_ticks,
         header->w4f16_gate_up_effective_region_tiles,
         header->w4f16_gate_up_scale_cache_bytes,
         header->w4f16_gate_up_weight_dma_ticks,

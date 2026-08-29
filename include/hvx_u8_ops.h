@@ -19,6 +19,13 @@ void qbh_hvx_rms_norm_u8_native_activation(
     const struct qbh_block_qparam *output_qparam,
     uint32_t rows, uint32_t width);
 
+void qbh_hvx_rms_norm_u8_native_activation_rows(
+    const uint8_t *input,
+    const struct qbh_block_qparam *input_qparam,
+    const __fp16 *gamma, uint8_t *output_tiles,
+    const struct qbh_block_qparam *output_qparam,
+    uint32_t first_row, uint32_t row_count, uint32_t width);
+
 void qbh_hvx_residual_add_u8(
     const uint8_t *left,
     const struct qbh_block_qparam *left_qparam,
@@ -35,6 +42,14 @@ void qbh_hvx_residual_add_u8_native_output(
     const struct qbh_block_qparam *addition_qparam,
     const struct qbh_block_qparam *output_qparam,
     uint32_t rows, uint32_t width);
+
+void qbh_hvx_residual_add_u8_native_output_rows(
+    uint8_t *residual,
+    const struct qbh_block_qparam *residual_qparam,
+    const uint8_t *addition_tiles,
+    const struct qbh_block_qparam *addition_qparam,
+    const struct qbh_block_qparam *output_qparam,
+    uint32_t first_row, uint32_t row_count, uint32_t width);
 
 void qbh_hvx_residual_rms_norm_u8(
     uint8_t *residual,
@@ -65,6 +80,16 @@ void qbh_hvx_residual_rms_norm_u8_native_io(
     const __fp16 *gamma, uint8_t *normalized_tiles,
     const struct qbh_block_qparam *normalized_qparam,
     uint32_t rows, uint32_t width);
+
+void qbh_hvx_residual_rms_norm_u8_native_io_rows(
+    uint8_t *residual,
+    const struct qbh_block_qparam *residual_qparam,
+    const uint8_t *addition_tiles,
+    const struct qbh_block_qparam *addition_qparam,
+    const struct qbh_block_qparam *sum_qparam,
+    const __fp16 *gamma, uint8_t *normalized_tiles,
+    const struct qbh_block_qparam *normalized_qparam,
+    uint32_t first_row, uint32_t row_count, uint32_t width);
 
 void qbh_hvx_qk_norm_rope_u8(
     uint8_t *tensor, uint32_t rows, uint32_t heads,

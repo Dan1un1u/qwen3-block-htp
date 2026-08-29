@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(27)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(52)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(28)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(53)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -62,6 +62,7 @@ enum qbh_block_residual_mode {
     QBH_BLOCK_RESIDUAL_SCALAR = 0,
     QBH_BLOCK_RESIDUAL_HVX = 1,
     QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM = 2,
+    QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4 = 3,
 };
 
 enum qbh_block_f16f16_projection_mode {
@@ -194,6 +195,7 @@ enum qbh_block_status {
     QBH_BLOCK_STATUS_MLP_STREAM_FAILED = -19,
     QBH_BLOCK_STATUS_ATTENTION_POOL_FAILED = -20,
     QBH_BLOCK_STATUS_ATTENTION_PIPELINE_FAILED = -21,
+    QBH_BLOCK_STATUS_RESIDUAL_POOL_FAILED = -22,
 };
 
 enum qbh_block_numerical_status {
@@ -475,6 +477,14 @@ struct qbh_block_header {
     uint64_t w4u8_qkvo_weight_expand_ticks;
     uint64_t w4u8_qkvo_prefetch_wait_ticks;
     uint64_t w4u8_qkvo_hmx_lifetime_ticks;
+    uint32_t w4u8_post_residual_task_count;
+    uint32_t w4u8_final_residual_task_count;
+    uint64_t w4u8_post_residual_main_work_ticks;
+    uint64_t w4u8_post_residual_worker_work_ticks;
+    uint64_t w4u8_post_residual_pool_wait_ticks;
+    uint64_t w4u8_final_residual_main_work_ticks;
+    uint64_t w4u8_final_residual_worker_work_ticks;
+    uint64_t w4u8_final_residual_pool_wait_ticks;
 
     uint64_t invocation_ticks;
     uint64_t runtime_setup_ticks;
