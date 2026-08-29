@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0052
+  active_experiment: null
   next_experiment_number: 53
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,30 +27,33 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0051
-  last_completed_source_commit: 587d3a9e9145ce62e788b2f5f5a5830101f4565b
+  last_completed_experiment: EXP-0052
+  last_completed_source_commit: f2d07a2727f316ad641ce2e7b423be804a6a3c1a
   provisional_source_parent: EXP-0042
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: approved_qk_prep_independent_head_scheduler
-  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0052'
-  active_experiment_gate: qk_prep_tail_qkv_and_complete_host_strictly_faster_repeat1_repeat10
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0051/20260829T162035Z_587d3a9e9145_formal'
+  active_experiment_stage: null
+  active_experiment_evidence: null
+  active_experiment_gate: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0052/20260829T164418Z_f2d07a2727f3_formal'
   latest_w4u8_candidate:
-    id: W4U8-EXP0050-DOWN-COMMAND-FUSION
-    experiment: EXP-0050
+    id: W4U8-EXP0052-QK-PREP-HEAD-SCHEDULER
+    experiment: EXP-0052
     project_variant: W4U8
-    physical_plan: exp0049_gate_up_batch8_plus_generation_safe_two_chunk_down_integer_hmx_consumer
-    source_branch: codex/exp-0050-w4u8-down-command-fusion
-    source_head: 67c112e298b49e96cbaa1a78b5223dad54040c42
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0050/20260829T154938Z_67c112e298b4_formal'
+    physical_plan: exp0050_plus_independent_ordered_q_then_k_head_prep
+    source_branch: codex/exp-0052-w4u8-qk-prep-head-scheduler
+    source_head: f2d07a2727f316ad641ce2e7b423be804a6a3c1a
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0052/20260829T164418Z_f2d07a2727f3_formal'
     adoption_status: pending
     local_gate: pass
-    repeat1_host_wall_ns_per_block_median: 3386406.0
-    repeat10_host_wall_ns_per_block_median: 2975953.1
-    repeat1_down_pipeline_ticks_per_block_median: 5855.0
-    repeat10_down_pipeline_ticks_per_block_median: 5945.4
+    repeat1_host_wall_ns_per_block_median: 3280834.0
+    repeat10_host_wall_ns_per_block_median: 2895281.2
+    repeat1_qkv_ticks_per_block_median: 15831.0
+    repeat10_qkv_ticks_per_block_median: 15957.9
+    repeat1_qk_prep_pool_wait_ticks_per_block_median: 8984.0
+    repeat10_qk_prep_pool_wait_ticks_per_block_median: 9100.0
+    qkv_hmx_commands_per_block: 32
     gate_up_hmx_commands_per_block: 48
     down_hmx_commands_per_block: 64
     total_hmx_commands_per_block: 256

@@ -421,3 +421,15 @@ tile arithmetic or per-head publication granularity, but does not shorten the
 QKVO physical HMX lifetime and fails the repeat-one complete Host-wall gate.
 _Avoid_: accepted QKV optimization, permission to extend the schedule to K/V,
 plain batch eight, proof that command count is the main QKV bottleneck
+
+**Independent Ordered Q-Then-K Head Preparation**:
+The EXP-0052 W4U8 Q/K Norm-RoPE scheduler that exposes sixteen Q-head tasks
+before eight K-head tasks to three HVX workers. It replaces the former
+group-owned task, in which a worker could finish two Q heads and then occupy a
+worker while waiting for that group's unavailable K head. Projection commands,
+head publication, arithmetic, qparams, tensor layouts and total logical work
+remain unchanged; only task claim order changes. The accepted local evidence
+is a shorter Q/K preparation join tail and complete QKV interval, not a faster
+QKV matrix multiplication.
+_Avoid_: reordered Attention semantics, QKV projection fusion, more HMX
+parallelism, reduced Q/K Norm-RoPE work, Selected Baseline without promotion
