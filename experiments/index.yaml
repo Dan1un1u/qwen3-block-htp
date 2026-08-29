@@ -3501,14 +3501,15 @@ experiments:
       - exp0049_gate_up_batch8_control
       - down_two_chunk_preready_diagnostic
       - down_two_chunk_generation_safe_command
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4u8-down-consumer-cadence
     source_branches:
       - codex/exp-0050-w4u8-down-command-fusion
-    source_commits: []
+    source_commits:
+      - 67c112e298b49e96cbaa1a78b5223dad54040c42
     record: docs/experiments/EXP-0050.md
     decided_by: user
     decided_on: '2026-08-29'
@@ -3517,6 +3518,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0050-w4u8-down-command-fusion
       started_on: '2026-08-29'
+      completed_on: '2026-08-29'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0050'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0050'
@@ -3543,3 +3545,54 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn
       local_speed_gate: down_interval_and_complete_host_wall_strictly_improve_over_exp0049_at_repeat1_and_repeat10
       completion_gate: seven_interleaved_paired_rounds_and_pc027_complete_profiling_closure
+      source_head: 67c112e298b49e96cbaa1a78b5223dad54040c42
+      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0050/20260829T154938Z_67c112e298b4_formal'
+      artifact_set: 'D:/llm_exp/models/qwen3-block-htp/exp0050/artifacts/67c112e298b4/formal'
+      gate_record: 'D:/llm_exp/results/qwen3-block-htp/exp0050/20260829T154938Z_67c112e298b4_formal/gate_summary.json'
+      formal_full_profiling_report: 'D:/llm_exp/results/qwen3-block-htp/exp0050/20260829T154938Z_67c112e298b4_formal/full_profiling_report.md'
+      full_profiling_report: docs/experiments/EXP-0050-PROFILING.md
+      gate_record_sha256: c4c1bc4e6322fe1691f562369c28418c8d529b07eec15ddbefce5eb397e34250
+      formal_full_profiling_report_sha256: 701157677150180693302acfbcda6edf3752a3422cfb6ef70da239ed0afae9d5
+      static_gate_sha256: e7739d8698c63d16729144af463cfdd6e4d1d8c84e8ff9a43b1b0d3cbf64bd84
+      package_manifest_sha256: 043f61337b2ad2758bb95791bc4ca768150f457f1f28bc7d20a7ad57eba42359
+      stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      formal_paired_rounds: 7
+      output_hash: 69f22eeb035e5ec5
+      implementation_reference_mismatches: 0
+      implementation_reference_max_lsb: 0
+      fixed_vtcm_acquired_bytes: 8388608
+      vtcm_peak_plan_bytes: 5306080
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      spill_fill_count: 0
+      control_hmx_commands_per_block: 320
+      candidate_hmx_commands_per_block: 256
+      control_down_hmx_commands_per_block: 128
+      candidate_down_hmx_commands_per_block: 64
+      hmx_u8s8_tile_pairs_per_block: 49408
+      weight_dma_descriptors_per_block: 512
+      weight_ddr_read_bytes_per_block: 25444352
+      repeat1_control_host_wall_ns_per_block_median: 3524010.0
+      repeat1_candidate_host_wall_ns_per_block_median: 3386406.0
+      repeat1_host_wall_change_percent: -3.904756
+      repeat1_paired_host_wall_change_percent_median: -3.109240
+      repeat1_control_down_ticks_per_block_median: 9471.0
+      repeat1_candidate_down_ticks_per_block_median: 6743.0
+      repeat1_down_change_percent: -28.803717
+      repeat1_control_down_pipeline_ticks_per_block_median: 8575.0
+      repeat1_candidate_down_pipeline_ticks_per_block_median: 5855.0
+      repeat1_down_pipeline_change_percent: -31.720117
+      repeat10_control_host_wall_ns_per_block_median: 3121328.1
+      repeat10_candidate_host_wall_ns_per_block_median: 2975953.1
+      repeat10_host_wall_change_percent: -4.657472
+      repeat10_paired_host_wall_change_percent_median: -4.497000
+      repeat10_control_down_ticks_per_block_median: 9507.6
+      repeat10_candidate_down_ticks_per_block_median: 6835.0
+      repeat10_down_change_percent: -28.109932
+      repeat10_control_down_pipeline_ticks_per_block_median: 8617.4
+      repeat10_candidate_down_pipeline_ticks_per_block_median: 5945.4
+      repeat10_down_pipeline_change_percent: -31.007032
+      gate_result: pass
+      local_adoption_eligible: true
+      conclusion: one_generation_safe_down_command_consumes_both_ordered_96_k_tile_chunks_while_hvx_produces_chunk_one_reducing_worker_handoffs_and_expanded_slot_backpressure_without_changing_math_weight_traffic_or_hmx_tile_work
+      selected_baseline_changed: false

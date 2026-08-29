@@ -401,3 +401,13 @@ when a field is unchanged or zero. Additive ledger intervals and overlapping
 HMX/HVX/DMA work are always placed in separate tables.
 _Avoid_: gate-only summary, selected-stage-only table, link-only handoff, sum of
 overlapping engine counters
+
+**Generation-Safe Two-Chunk Down Command**:
+The EXP-0050 W4U8 Down schedule in which one integer-HMX worker command begins
+after the first 96-K-tile expanded chunk is ready, accumulates it, waits inside
+the same command for the second chunk's generation tag while HVX produces that
+chunk, accumulates the second chunk, and stores the unchanged U8 output. It
+reduces worker-command cadence without delaying HMX until both chunks are
+pre-ready and without changing tile arithmetic, weights, qparams, or traffic.
+_Avoid_: pre-ready serialization, fused Down arithmetic, two concurrent HMX
+owners, changed K blocking
