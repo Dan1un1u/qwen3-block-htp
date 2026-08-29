@@ -1840,7 +1840,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0042\","
+        "{\"experiment\":\"EXP-0043\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2050,6 +2050,10 @@ int main(int argc, char **argv) {
         "\"w4u8_mlp_hmx_ready_wait_ticks\":%" PRIu64 ","
         "\"w4u8_mlp_producer_slot_wait_ticks\":%" PRIu64 ","
         "\"w4u8_mlp_expanded_slot_wait_ticks\":%" PRIu64 ","
+        "\"w4u8_mlp_boundary_ticks\":%" PRIu64 ","
+        "\"w4u8_mlp_input_pack_ticks\":%" PRIu64 ","
+        "\"w4u8_mlp_output_unpack_ticks\":%" PRIu64 ","
+        "\"w4u8_mlp_control_ticks\":%" PRIu64 ","
         "\"weight_dma_ticks\":%" PRIu64 ","
         "\"hmx_compute_ticks\":%" PRIu64 ","
         "\"projection_pack_ticks\":%" PRIu64 ","
@@ -2296,6 +2300,10 @@ int main(int argc, char **argv) {
         header->w4u8_mlp_hmx_ready_wait_ticks,
         header->w4u8_mlp_producer_slot_wait_ticks,
         header->w4u8_mlp_expanded_slot_wait_ticks,
+        header->w4u8_mlp_boundary_ticks,
+        header->w4u8_mlp_input_pack_ticks,
+        header->w4u8_mlp_output_unpack_ticks,
+        header->w4u8_mlp_control_ticks,
         header->weight_dma_ticks,
         header->hmx_compute_ticks, header->projection_pack_ticks,
         header->w4f16_expand_ticks,

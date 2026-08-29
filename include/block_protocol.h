@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(22)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(42)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(23)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(43)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -521,6 +521,10 @@ struct qbh_block_header {
     uint64_t w4u8_mlp_hmx_ready_wait_ticks;
     uint64_t w4u8_mlp_producer_slot_wait_ticks;
     uint64_t w4u8_mlp_expanded_slot_wait_ticks;
+    uint64_t w4u8_mlp_boundary_ticks;
+    uint64_t w4u8_mlp_input_pack_ticks;
+    uint64_t w4u8_mlp_output_unpack_ticks;
+    uint64_t w4u8_mlp_control_ticks;
 };
 
 #endif

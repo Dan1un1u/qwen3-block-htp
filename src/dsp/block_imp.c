@@ -6249,6 +6249,11 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     uint64_t gate_up_stream_ready_wait_before = 0U;
     uint64_t gate_up_stream_join_wait_before = 0U;
     uint64_t gate_up_hmx_command_before = 0U;
+    uint64_t w4u8_mlp_start = 0U;
+    uint64_t w4u8_mlp_gate_before = 0U;
+    uint64_t w4u8_mlp_down_before = 0U;
+    uint64_t w4u8_mlp_pack_before = 0U;
+    uint64_t w4u8_mlp_unpack_before = 0U;
     uint32_t qkv_overlap_enabled =
         header->attention_pipeline_mode ==
             QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP;
@@ -6861,9 +6866,37 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         HAP_perf_get_qtimer_count() - start;
 
     if (header->mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING) {
+        if (header->attribution_enabled != 0U) {
+            w4u8_mlp_gate_before = header->gate_up_ticks;
+            w4u8_mlp_down_before = header->down_ticks;
+            w4u8_mlp_pack_before = header->projection_pack_ticks;
+            w4u8_mlp_unpack_before = header->projection_unpack_ticks;
+            w4u8_mlp_start = HAP_perf_get_qtimer_count();
+        }
         if (qbh_run_w4u8_streaming_mlp(
                 header, shared, buffers, worker) != 0) {
             return QBH_BLOCK_STATUS_MLP_STREAM_FAILED;
+        }
+        if (header->attribution_enabled != 0U) {
+            uint64_t w4u8_mlp_end = HAP_perf_get_qtimer_count();
+            uint64_t gate_delta =
+                header->gate_up_ticks - w4u8_mlp_gate_before;
+            uint64_t down_delta =
+                header->down_ticks - w4u8_mlp_down_before;
+            uint64_t pack_delta =
+                header->projection_pack_ticks - w4u8_mlp_pack_before;
+            uint64_t unpack_delta =
+                header->projection_unpack_ticks - w4u8_mlp_unpack_before;
+            uint64_t elapsed = w4u8_mlp_end - w4u8_mlp_start;
+            uint64_t boundary = elapsed > gate_delta + down_delta
+                ? elapsed - gate_delta - down_delta : 0U;
+            uint64_t control = boundary > pack_delta + unpack_delta
+                ? boundary - pack_delta - unpack_delta : 0U;
+
+            header->w4u8_mlp_boundary_ticks += boundary;
+            header->w4u8_mlp_input_pack_ticks += pack_delta;
+            header->w4u8_mlp_output_unpack_ticks += unpack_delta;
+            header->w4u8_mlp_control_ticks += control;
         }
         goto w4u8_mlp_complete;
     }
@@ -7440,6 +7473,9 @@ stop_worker:
                       header->gate_up_ticks +
                       header->activation_ticks +
                       header->down_ticks +
+                      header->w4u8_mlp_input_pack_ticks +
+                      header->w4u8_mlp_output_unpack_ticks +
+                      header->w4u8_mlp_control_ticks +
                       header->final_residual_ticks +
                       header->output_stage_ticks +
                       header->runtime_teardown_ticks;
