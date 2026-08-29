@@ -181,7 +181,27 @@ def main() -> None:
     }
 
     audit = json.loads((result_dir / "package_numerical_audit.json").read_text())
-    summary["cross_numerical_reference"] = audit
+    w4f16_audit = json.loads(
+        (result_dir / "w4f16_cross_numerical_audit.json").read_text()
+    )
+    for name, expected_elements in {
+        "gate": 64 * 6144,
+        "up": 64 * 6144,
+        "middle": 64 * 6144,
+        "down": 64 * 2048,
+    }.items():
+        require(w4f16_audit[name], "elements", expected_elements)
+        for field in (
+            "maximum_absolute_error", "mean_absolute_error",
+            "root_mean_square_error", "cosine_similarity",
+        ):
+            if not math.isfinite(w4f16_audit[name][field]):
+                raise SystemExit(f"non-finite W4F16 cross-reference {name}.{field}")
+    summary["cross_numerical_reference"] = {
+        "candidate_vs_retained_w4u8_lsb": audit,
+        "candidate_dequantized_vs_selected_w4f16": w4f16_audit,
+        "gate": "reported_only_no_threshold",
+    }
     for workers in WORKERS:
         worker_summary: dict[str, object] = {}
         for storage in STORAGES:

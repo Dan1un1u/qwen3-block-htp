@@ -5,6 +5,7 @@ project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 result_root="${QBH_RESULT_ROOT:-/mnt/d/llm_exp/results/qwen3-block-htp/exp0040}"
 artifact_root="${QBH_ARTIFACT_ROOT:-/mnt/d/llm_exp/models/qwen3-block-htp/exp0040/artifacts}"
 package="${QBH_EXP0040_PACKAGE:-/mnt/d/llm_exp/models/qwen3-block-htp/exp0040/mlp_package_layer14_m64_output_requant_v5_round}"
+w4f16_source="${QBH_EXP0040_W4F16_SOURCE:-/mnt/d/llm_exp/models/qwen3-block-htp/exp0022/block_package_layer14_m64}"
 adb_exe="${ADB_EXE:-/mnt/c/adb/adb.exe}"
 source_head="$(git -C "${project_root}" rev-parse HEAD)"
 source_short="$(git -C "${project_root}" rev-parse --short=12 HEAD)"
@@ -88,6 +89,9 @@ cmp "${result_dir}/boot_id_before.txt" "${result_dir}/boot_id_after.txt"
 cp "${package}/manifest.json" "${result_dir}/package_manifest.json"
 python3 "${project_root}/scripts/audit_exp0040_package.py" "${package}" \
     > "${result_dir}/package_numerical_audit.json"
+python3 "${project_root}/scripts/audit_exp0040_w4f16_reference.py" \
+    "${package}" "${w4f16_source}" \
+    > "${result_dir}/w4f16_cross_numerical_audit.json"
 python3 "${project_root}/scripts/validate_exp0040_stage_a.py" \
     "${result_dir}" "${package}" > "${result_dir}/stage_a_gate.json"
 
@@ -113,6 +117,7 @@ cp "${project_root}/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so" \
     printf 'physical_contract=fixed_8mib_prepared_session_vtcm\n'
     printf 'intermediate_ddr_allowed=false\n'
     printf 'package=%s\n' "${package}"
+    printf 'w4f16_cross_reference=%s\n' "${w4f16_source}"
     printf 'result_dir=%s\n' "${result_dir}"
     printf 'artifact_dir=%s\n' "${artifact_dir}"
 } > "${result_dir}/manifest.txt"
