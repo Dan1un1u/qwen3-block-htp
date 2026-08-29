@@ -2524,13 +2524,15 @@ experiments:
       - complete_block_old_w4u8_control
       - complete_block_streaming_w4u8_candidate
     execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: pending_user_decision
     evidence_profile: real-qwen3-block-w4u8-integer-hmx-mlp-port
     source_branches:
       - codex/exp-0040-w4u8-latest-mlp
-    source_commits: []
+    source_commits:
+      - 109d02ffdf91063a5d02198d3962bbc50a6c1d66
+      - 2b187f7cb8678fb293db2b2e33bd64dfd4eeea1b
     record: docs/experiments/EXP-0040.md
     decided_by: user
     decided_on: '2026-08-29'
@@ -2539,6 +2541,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0040-w4u8-latest-mlp
       started_on: '2026-08-29'
+      stage_a_completed_on: '2026-08-29'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0040'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0040'
@@ -2552,3 +2555,35 @@ experiments:
       stage_a_gate: packed_w4u8_and_expanded_s8_are_byte_exact_and_packed_w4_strictly_reduces_mlp_host_wall_and_projection_interval_at_repeat1_and_repeat10
       stage_b_scope: replace_only_the_complete_block_w4u8_mlp_while_preserving_all_attention_and_common_operator_paths
       stage_b_gate: complete_block_candidate_is_byte_exact_zero_intermediate_ddr_and_strictly_faster_than_the_paired_old_w4u8_control_at_repeat1_and_repeat10
+      source_head: 2b187f7cb8678fb293db2b2e33bd64dfd4eeea1b
+      formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0040\20260829T070330Z_2b187f7cb867_stage_a'
+      artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0040\artifacts\2b187f7cb867'
+      stage_a_gate_record: 'D:\llm_exp\results\qwen3-block-htp\exp0040\20260829T070330Z_2b187f7cb867_stage_a\stage_a_gate.json'
+      package_manifest_sha256: 0fc729d496ccfddfc4f56979dc8422ec204a8d26c5fd3b2bc75462d86655920c
+      formal_records: 92
+      boot_id_stable: true
+      qnn_dependency: false
+      fixed_vtcm_request_gate: pass
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      intermediate_spill_fill_count: 0
+      implementation_reference_mismatches: 0
+      exact_silu_lut_cases: 65536
+      exact_silu_lut_mismatches: 0
+      retained_w4u8_down_mean_absolute_error_lsb: 0.5264053344726562
+      retained_w4u8_down_within_2_lsb_fraction: 0.9600677490234375
+      contract_gate_up_hvx_workers: 2
+      contract_repeat1_host_change_percent: -7.395283610731818
+      contract_repeat1_projection_change_percent: 10.849524187153058
+      contract_repeat10_host_change_percent: 8.280148332105309
+      contract_repeat10_projection_change_percent: 12.352252633676187
+      contract_stage_a_gate_result: fail
+      diagnostic_gate_up_hvx_workers: 3
+      diagnostic_repeat1_host_change_percent: -25.6249047029088
+      diagnostic_repeat1_projection_change_percent: -26.637424410186526
+      diagnostic_repeat10_host_change_percent: -25.106141193238884
+      diagnostic_repeat10_projection_change_percent: -26.83970360802842
+      diagnostic_worker3_gate_result: pass
+      stage_b_authorized: false
+      pending_decision: whether_to_amend_the_gate_up_worker_contract_from_two_to_three_before_stage_b
+      performance_characterization: the_original_two_worker_contract_cannot_hide_packed_w4_expansion_after_u8_output_requant_and_fails_repeat10_but_a_common_three_worker_schedule_makes_packed_w4_25_percent_faster_than_expanded_s8_at_both_repeat_scopes_so_stage_b_is_blocked_only_on_a_user_contract_decision
