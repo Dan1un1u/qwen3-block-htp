@@ -4175,14 +4175,16 @@ experiments:
     variants:
       - exp0055_independent_64_element_softmax_rows_control
       - paired_two_head_128_byte_hvx_softmax_rows_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-paired-log2-softmax-rows
     source_branches:
       - codex/exp-0056-w4u8-paired-softmax-rows
-    source_commits: []
+    source_commits:
+      - 0cbe4548a4a302e13fdb27f2ad92d849b27daa86
+      - a794de3edd4617c06e5e4ac1de11ba57a8a4cd9c
     record: docs/experiments/EXP-0056.md
     decided_by: user
     decided_on: '2026-08-30'
@@ -4191,7 +4193,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0056-w4u8-paired-softmax-rows
       started_on: '2026-08-30'
-      completed_on: null
+      completed_on: '2026-08-30'
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0056'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0056'
@@ -4219,3 +4221,108 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn
       local_speed_gate: u8_attention_softmax_aggregate_work_attention_ledger_and_complete_host_wall_strictly_improve_at_repeat1_and_repeat10
       completion_gate: seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
+      source_head: a794de3edd4617c06e5e4ac1de11ba57a8a4cd9c
+      implementation_commit: 0cbe4548a4a302e13fdb27f2ad92d849b27daa86
+      evidence_validator_commit: a794de3edd4617c06e5e4ac1de11ba57a8a4cd9c
+      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0056/20260829T192517Z_a794de3edd46_formal'
+      artifact_set: 'D:/llm_exp/models/qwen3-block-htp/exp0056/artifacts/a794de3edd46/formal'
+      gate_record: 'D:/llm_exp/results/qwen3-block-htp/exp0056/20260829T192517Z_a794de3edd46_formal/gate_summary.json'
+      formal_full_profiling_report: 'D:/llm_exp/results/qwen3-block-htp/exp0056/20260829T192517Z_a794de3edd46_formal/full_profiling_report.md'
+      full_profiling_report: docs/experiments/EXP-0056-PROFILING.md
+      gate_record_sha256: 7e2c16f1359274e3accb45e41eff97dac5c6a94d1367d66e976bb0f3d60ed1a3
+      formal_full_profiling_report_sha256: 6033ac7b7807575158996bce5f3408edda04cc3a110a766f4b316be7393a7058
+      static_gate_sha256: 0052825857bb55ec54204d7c86147eb274f9f33a0b1b6d2d7fe90f6bb3e4f1e8
+      package_manifest_sha256: 043f61337b2ad2758bb95791bc4ca768150f457f1f28bc7d20a7ad57eba42359
+      stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      formal_paired_rounds: 7
+      output_hash: 69f22eeb035e5ec5
+      qk_probability_av_hash_equivalence: true
+      qk_hash: 32aa949912e365be
+      probability_hash: 94f2e218f06f9627
+      av_hash: f853658f52032bde
+      fixed_vtcm_acquired_bytes: 8388608
+      vtcm_peak_plan_bytes: 5306080
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      spill_fill_count: 0
+      repeat1_control_host_wall_ns_per_block_median: 3000052.0
+      repeat1_candidate_host_wall_ns_per_block_median: 2985312.0
+      repeat1_host_wall_change_percent: -0.491325
+      repeat1_paired_host_wall_change_percent_median: 0.106
+      repeat1_control_softmax_ticks_per_block_median: 13727.0
+      repeat1_candidate_softmax_ticks_per_block_median: 12767.0
+      repeat1_softmax_change_percent: -6.994
+      repeat1_paired_softmax_change_percent_median: -7.966
+      repeat1_control_attention_ticks_per_block_median: 8031.0
+      repeat1_candidate_attention_ticks_per_block_median: 7943.0
+      repeat1_attention_change_percent: -1.096
+      repeat1_paired_attention_change_percent_median: -1.696
+      repeat10_control_host_wall_ns_per_block_median: 2583218.8
+      repeat10_candidate_host_wall_ns_per_block_median: 2563927.1
+      repeat10_host_wall_change_percent: -0.746802
+      repeat10_paired_host_wall_change_percent_median: -1.167
+      repeat10_control_softmax_ticks_per_block_median: 13831.0
+      repeat10_candidate_softmax_ticks_per_block_median: 12749.3
+      repeat10_softmax_change_percent: -7.821
+      repeat10_paired_softmax_change_percent_median: -8.091
+      repeat10_control_attention_ticks_per_block_median: 8031.3
+      repeat10_candidate_attention_ticks_per_block_median: 7773.7
+      repeat10_attention_change_percent: -3.207
+      repeat10_paired_attention_change_percent_median: -3.207
+      gate_result: fail
+      local_adoption_eligible: false
+      conclusion: paired_rows_and_a_banked_single_vlut32_preserved_byte_exact_attention_and_reduced_softmax_and_attention_work_but_repeat1_paired_host_wall_regressed_by_0_106_percent_so_the_strict_complete_block_gate_failed
+      selected_baseline_changed: false
+  - id: EXP-0057
+    slug: w4u8-v-pack-vgather
+    title: Replace scalar V recenter lookup with full-width HVX vgather
+    parent: EXP-0055
+    variants:
+      - exp0055_scalar_256_entry_v_recenter_lookup_control
+      - two_half_vector_hvx_vgather_recenter_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-v-pack-vgather
+    source_branches:
+      - codex/exp-0057-w4u8-v-pack-vgather
+    source_commits: []
+    record: docs/experiments/EXP-0057.md
+    decided_by: user
+    decided_on: '2026-08-30'
+    approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible experiments pre-approved'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0057-w4u8-v-pack-vgather
+      started_on: '2026-08-30'
+      completed_on: null
+    evidence:
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0057'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0057'
+      source_parent_commit: 9b93da7afc61699e36780dfcbb8c287465cf0db0
+      rejected_sibling_not_inherited: EXP-0056
+      direct_control: W4U8-EXP0055-QK-NORM-ROPE-HEAD-PAIRS
+      contextual_comparator: W4F16-EXP0038-NORMS
+      execution_unit: qwen3_layer14_complete_block_m64
+      primary_scope: v_recenter_lookup_inside_native_u8_av_weight_pack
+      hypothesis: replacing_128_scalar_lookups_per_v_carrier_vector_with_two_64_lane_halfword_vgathers_reduces_v_pack_worker_work_without_changing_the_recenter_lut_or_packed_hmx_operand
+      arithmetic_changes_allowed: false
+      qparam_changes_allowed: false
+      softmax_changes_allowed: false
+      qk_hmx_changes_allowed: false
+      av_hmx_changes_allowed: false
+      v_pack_schedule_changes_allowed: false
+      projection_changes_allowed: false
+      residual_changes_allowed: false
+      mlp_changes_allowed: false
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      candidate_contract: use_hvx_unpack_offset_generation_and_two_masked_halfword_vgathers_to_apply_the_exact_existing_256_entry_recenter_lut_then_preserve_the_existing_v_weight_carrier_layout
+      correctness_gate: final_output_and_qk_probability_av_boundaries_byte_exact_to_exp0055_and_independent_reference_zero_mismatches_zero_max_lsb
+      physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn
+      local_speed_gate: u8_attention_v_pack_aggregate_work_attention_ledger_and_complete_host_wall_strictly_improve_at_repeat1_and_repeat10
+      completion_gate: seven_interleaved_paired_rounds_and_complete_profiling_closure
