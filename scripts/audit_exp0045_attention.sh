@@ -14,10 +14,10 @@ dump_dir="${result_dir}/attention_dump"
 remote_dump="${remote_root}/attention-audit-${stamp}"
 
 case "${mode}" in
-    qkv_batch2|qkv_batch4)
+    qkv_batch2|qkv_batch4|qkvo_batch4)
         ;;
     *)
-        printf 'usage: %s [result-dir] [qkv_batch2|qkv_batch4]\n' "$0" >&2
+        printf 'usage: %s [result-dir] [qkv_batch2|qkv_batch4|qkvo_batch4]\n' "$0" >&2
         exit 2
         ;;
 esac
