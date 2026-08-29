@@ -701,11 +701,13 @@ static int qbh_header_valid(const struct qbh_block_header *header,
                       QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM |
                       QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM |
                       QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
-                      QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT))) != 0U ||
+                      QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
+                      QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT))) != 0U ||
         (header->variant == QBH_BLOCK_W4U8 &&
          ((header->crouton_boundary_mode &
            ~((uint32_t)(QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
-                        QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT))) != 0U ||
+                        QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
+                        QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT))) != 0U ||
           ((header->crouton_boundary_mode &
             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT) != 0U &&
            (header->crouton_boundary_mode &
@@ -716,7 +718,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (header->variant != QBH_BLOCK_W4U8 &&
          (header->crouton_boundary_mode &
           (QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
-           QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT)) != 0U) ||
+           QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
+           QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT)) != 0U) ||
         header->w4u8_qkvo_pipeline_mode >
             QBH_BLOCK_W4U8_QKVO_BATCH4 ||
         (header->variant != QBH_BLOCK_W4U8 &&
@@ -730,6 +733,12 @@ static int qbh_header_valid(const struct qbh_block_header *header,
           QBH_BLOCK_CROUTON_BOUNDARY_AV_TO_O) != 0U &&
          header->attention_pipeline_mode !=
              QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP) ||
+        ((header->crouton_boundary_mode &
+          QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT) != 0U &&
+         (header->attention_pipeline_mode !=
+              QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP ||
+          header->w4u8_qkvo_pipeline_mode !=
+              QBH_BLOCK_W4U8_QKVO_BATCH4)) ||
         header->mlp_mode > QBH_BLOCK_MLP_W4U8_STREAMING ||
         header->mlp_hvx_contexts == 0U ||
         header->mlp_hvx_contexts > QBH_BLOCK_W4F16_HVX_WORKERS ||
@@ -4175,9 +4184,17 @@ static int qbh_run_projection(
     memset((void *)w4f16_ready, 0, sizeof(w4f16_ready));
 
     if (activation_tiles_ready != 0U) {
+        const uint32_t w4u8_qkv_native_input =
+            header->variant == QBH_BLOCK_W4U8 &&
+            (header->crouton_boundary_mode &
+             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT) != 0U &&
+            (desc == &header->projections[QBH_BLOCK_PROJ_Q] ||
+             desc == &header->projections[QBH_BLOCK_PROJ_K] ||
+             desc == &header->projections[QBH_BLOCK_PROJ_V]);
         if ((header->variant == QBH_BLOCK_W4U8 &&
              !(u8_integer_attention != 0U &&
-               desc == &header->projections[QBH_BLOCK_PROJ_O])) ||
+               desc == &header->projections[QBH_BLOCK_PROJ_O]) &&
+             w4u8_qkv_native_input == 0U) ||
             ((header->mlp_mode == QBH_BLOCK_MLP_STREAMING ||
               header->mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE ||
               header->mlp_mode ==
@@ -6976,6 +6993,10 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         header->mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING &&
         (header->crouton_boundary_mode &
          QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT) != 0U;
+    uint32_t w4u8_qkv_native_input_enabled =
+        header->variant == QBH_BLOCK_W4U8 &&
+        (header->crouton_boundary_mode &
+         QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT) != 0U;
     struct qbh_projection_layout w4u8_gate_up_layout;
     struct qbh_projection_layout w4u8_down_layout;
     uint8_t *w4u8_mlp_native_activation = NULL;
@@ -7018,13 +7039,23 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     if (header->variant == QBH_BLOCK_W4U8) {
         if ((header->common_ops_mask &
              QBH_BLOCK_COMMON_OP_RMS_NORM) != 0U) {
-            qbh_hvx_rms_norm_u8(
-                buffers->residual,
-                &header->qparams[QBH_BLOCK_QP_BLOCK_INPUT],
-                (const __fp16 *)buffers->input_norm_weight,
-                buffers->normalized,
-                &header->qparams[QBH_BLOCK_QP_INPUT_NORM],
-                QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+            if (w4u8_qkv_native_input_enabled != 0U) {
+                qbh_hvx_rms_norm_u8_native_activation(
+                    buffers->residual,
+                    &header->qparams[QBH_BLOCK_QP_BLOCK_INPUT],
+                    (const __fp16 *)buffers->input_norm_weight,
+                    buffers->hmx_activation,
+                    &header->qparams[QBH_BLOCK_QP_INPUT_NORM],
+                    QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+            } else {
+                qbh_hvx_rms_norm_u8(
+                    buffers->residual,
+                    &header->qparams[QBH_BLOCK_QP_BLOCK_INPUT],
+                    (const __fp16 *)buffers->input_norm_weight,
+                    buffers->normalized,
+                    &header->qparams[QBH_BLOCK_QP_INPUT_NORM],
+                    QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+            }
         } else {
             qbh_rms_norm_u8(
                 buffers->residual,
@@ -7099,7 +7130,9 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             buffers, worker, w4f16_pool,
             crouton_input_norm_enabled != 0U
                 ? buffers->hmx_activation : buffers->normalized,
-            buffers->q, crouton_input_norm_enabled,
+            buffers->q,
+            crouton_input_norm_enabled |
+                w4u8_qkv_native_input_enabled,
             &header->projections[QBH_BLOCK_PROJ_K],
             &cross_prefetch) != 0) {
         if (qkv_overlap_enabled != 0U) {
@@ -7118,7 +7151,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     if (qbh_run_projection(
             header, shared, &header->projections[QBH_BLOCK_PROJ_K],
             buffers, worker, w4f16_pool, buffers->normalized,
-            buffers->k, qkv_overlap_enabled,
+            buffers->k,
+            qkv_overlap_enabled | w4u8_qkv_native_input_enabled,
             &header->projections[QBH_BLOCK_PROJ_V],
             &cross_prefetch) != 0) {
         if (qkv_overlap_enabled != 0U) {
@@ -7137,7 +7171,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     if (qbh_run_projection(
             header, shared, &header->projections[QBH_BLOCK_PROJ_V],
             buffers, worker, w4f16_pool, buffers->normalized,
-            buffers->v, qkv_overlap_enabled,
+            buffers->v,
+            qkv_overlap_enabled | w4u8_qkv_native_input_enabled,
             &header->projections[QBH_BLOCK_PROJ_O],
             &cross_prefetch) != 0) {
         if (u8_qkv_overlap_enabled != 0U) {
