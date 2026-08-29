@@ -606,6 +606,34 @@ static const char *qbh_crouton_boundary_mode_name(uint32_t mode) {
     }
 }
 
+static int qbh_parse_vtcm_plan_mode(const char *text, uint32_t *mode) {
+    if (strcmp(text, "control") == 0) {
+        *mode = QBH_BLOCK_VTCM_PLAN_CONTROL;
+        return 0;
+    }
+    if (strcmp(text, "phase_overlay") == 0 ||
+        strcmp(text, "overlay") == 0) {
+        *mode = QBH_BLOCK_VTCM_PLAN_PHASE_OVERLAY;
+        return 0;
+    }
+    if (strcmp(text, "gate_up_deep") == 0 ||
+        strcmp(text, "deep") == 0) {
+        *mode = QBH_BLOCK_VTCM_PLAN_GATE_UP_DEEP;
+        return 0;
+    }
+    return -1;
+}
+
+static const char *qbh_vtcm_plan_mode_name(uint32_t mode) {
+    if (mode == QBH_BLOCK_VTCM_PLAN_PHASE_OVERLAY) {
+        return "phase_overlay";
+    }
+    if (mode == QBH_BLOCK_VTCM_PLAN_GATE_UP_DEEP) {
+        return "gate_up_deep";
+    }
+    return "control";
+}
+
 static uint64_t qbh_fnv1a64(const uint8_t *data, size_t bytes) {
     uint64_t hash = UINT64_C(1469598103934665603);
     for (size_t index = 0; index < bytes; ++index) {
@@ -936,6 +964,7 @@ int main(int argc, char **argv) {
     uint32_t mlp_chunk_vectors = 64U;
     uint32_t crouton_boundary_mode =
         QBH_BLOCK_CROUTON_BOUNDARY_CONTROL;
+    uint32_t vtcm_plan_mode = QBH_BLOCK_VTCM_PLAN_CONTROL;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t cursor = qbh_align_up_size(sizeof(*header), QBH_HOST_ALIGNMENT);
@@ -961,7 +990,7 @@ int main(int argc, char **argv) {
 
     memset(&warmup_metrics, 0, sizeof(warmup_metrics));
     memset(&measured_metrics, 0, sizeof(measured_metrics));
-    if (argc < 3 || argc > 19 ||
+    if (argc < 3 || argc > 20 ||
         qbh_parse_variant(argv[2], &variant) != 0 ||
         (argc >= 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
         (argc >= 5 && qbh_parse_u32(
@@ -994,6 +1023,8 @@ int main(int argc, char **argv) {
                            argv[17], &attention_hvx_contexts) != 0) ||
         (argc >= 19 && qbh_parse_crouton_boundary_mode(
                            argv[18], &crouton_boundary_mode) != 0) ||
+        (argc >= 20 && qbh_parse_vtcm_plan_mode(
+                           argv[19], &vtcm_plan_mode) != 0) ||
         repeats == 0U || repeats > 100U ||
         w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
         (argc >= 7 && variant == QBH_BLOCK_W4U8 &&
@@ -1042,6 +1073,17 @@ int main(int argc, char **argv) {
          w4f16_hvx_workers != 3U) ||
         (crouton_boundary_mode != QBH_BLOCK_CROUTON_BOUNDARY_CONTROL &&
          variant == QBH_BLOCK_W4U8) ||
+        vtcm_plan_mode > QBH_BLOCK_VTCM_PLAN_GATE_UP_DEEP ||
+        (vtcm_plan_mode != QBH_BLOCK_VTCM_PLAN_CONTROL &&
+         (variant != QBH_BLOCK_W4F16 ||
+          crouton_boundary_mode !=
+              (QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM |
+               QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM) ||
+          attention_pipeline_mode !=
+              QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP ||
+          mlp_mode != QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 ||
+          w4f16_pipeline_mode !=
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH)) ||
         ((crouton_boundary_mode & QBH_BLOCK_CROUTON_BOUNDARY_QKV) != 0U &&
          attention_pipeline_mode !=
              QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP) ||
@@ -1154,7 +1196,8 @@ int main(int argc, char **argv) {
                         "gqa_qkv_overlap] "
                         "[attention_hvx_contexts:1..4] "
                         "[crouton_boundary:control|qkv|av_to_o|"
-                        "input_norm|post_norm|norms|all]\n",
+                        "input_norm|post_norm|norms|all] "
+                        "[vtcm_plan:control|phase_overlay|gate_up_deep]\n",
                 argv[0]);
         return 2;
     }
@@ -1335,6 +1378,7 @@ int main(int argc, char **argv) {
     header->mlp_hvx_contexts = mlp_hvx_contexts;
     header->mlp_chunk_vectors = mlp_chunk_vectors;
     header->crouton_boundary_mode = crouton_boundary_mode;
+    header->vtcm_plan_mode = vtcm_plan_mode;
     header->input_offset = input_slot.offset;
     header->input_bytes = input_slot.expected_bytes;
     header->output_bytes = output_bytes;
@@ -1497,7 +1541,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0038\","
+        "{\"experiment\":\"EXP-0039\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"FP16_HMX\","
         "\"projection_compute\":\"%s\","
@@ -1514,6 +1558,7 @@ int main(int argc, char **argv) {
         "\"mlp_hvx_contexts\":%" PRIu32 ","
         "\"mlp_chunk_vectors\":%" PRIu32 ","
         "\"crouton_boundary_mode\":\"%s\","
+        "\"vtcm_plan_mode\":\"%s\","
         "\"w4f16_scale_placement\":\"%s\","
         "\"intermediate_residency\":\"VTCM\","
         "\"warmup_rpc_result\":%d,"
@@ -1701,6 +1746,11 @@ int main(int argc, char **argv) {
         "\"crouton_qkv_transform_ticks\":%" PRIu64 ","
         "\"crouton_av_o_copy_ticks\":%" PRIu64 ","
         "\"crouton_norm_store_ticks\":%" PRIu64 ","
+        "\"vtcm_phase_overlay_bytes\":%" PRIu32 ","
+        "\"vtcm_ring_compaction_bytes\":%" PRIu32 ","
+        "\"vtcm_lookahead_bytes\":%" PRIu32 ","
+        "\"mlp_crouton_ring_slots\":%" PRIu32 ","
+        "\"w4f16_gate_up_lookahead_hmx_count\":%" PRIu64 ","
         "\"release_result\":%d,\"close_result\":%d}\n",
         qbh_variant_name(variant),
         variant == QBH_BLOCK_W4U8 ? "U8xS8_integer_HMX"
@@ -1726,6 +1776,7 @@ int main(int argc, char **argv) {
         header->mlp_chunk_vectors,
         qbh_crouton_boundary_mode_name(
             header->crouton_boundary_mode),
+        qbh_vtcm_plan_mode_name(header->vtcm_plan_mode),
         variant == QBH_BLOCK_W4F16 ? "hmx_output_per_channel"
                                    : "not_applicable",
         warmup_result, warmup_run_index, warmup_end - warmup_start,
@@ -1895,6 +1946,11 @@ int main(int argc, char **argv) {
         header->crouton_qkv_transform_ticks,
         header->crouton_av_o_copy_ticks,
         header->crouton_norm_store_ticks,
+        header->vtcm_phase_overlay_bytes,
+        header->vtcm_ring_compaction_bytes,
+        header->vtcm_lookahead_bytes,
+        header->mlp_crouton_ring_slots,
+        header->w4f16_gate_up_lookahead_hmx_count,
         release_result, close_result);
 
     exit_code = warmup_result == AEE_SUCCESS &&

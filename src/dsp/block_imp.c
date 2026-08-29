@@ -21,6 +21,7 @@
 #include "w4_u8_expand.h"
 
 #define QBH_BLOCK_ALIGNMENT UINT32_C(128)
+#define QBH_BLOCK_HMX_ADDRESS_WINDOW_BYTES UINT32_C(4194304)
 #define QBH_BLOCK_HMX_STACK_BYTES UINT32_C(16384)
 #define QBH_BLOCK_MAX_K QBH_BLOCK_INTERMEDIATE
 #define QBH_BLOCK_SCORE_ELEMENTS \
@@ -62,6 +63,7 @@ enum qbh_block_hmx_command_kind {
      QBH_BLOCK_MLP_CROUTON_GROUP_TILES)
 #define QBH_BLOCK_MLP_CROUTON_RING_SLOTS \
     QBH_BLOCK_MLP_CROUTON_GROUPS
+#define QBH_BLOCK_MLP_CROUTON_DEEP_RING_SLOTS UINT32_C(16)
 
 enum qbh_block_hvx_pool_job_kind {
     QBH_BLOCK_HVX_POOL_NONE = 0,
@@ -98,6 +100,8 @@ struct qbh_block_buffers {
     uint8_t *attention_projection;
     uint8_t *gate;
     uint8_t *up;
+    uint8_t *mlp_gate_ring;
+    uint8_t *mlp_up_ring;
     uint8_t *middle;
     uint8_t *down;
     uint8_t *hmx_activation;
@@ -105,6 +109,7 @@ struct qbh_block_buffers {
     uint8_t *compressed_weight_alt;
     uint8_t *expanded_weight;
     uint8_t *expanded_weight_alt;
+    uint8_t *expanded_weight_lookahead;
     uint8_t *hmx_output;
     uint8_t *scale_or_bias;
     uint8_t *channel_scale;
@@ -203,6 +208,7 @@ struct qbh_block_w4f16_pool {
     uint32_t mlp_crouton_native;
     uint32_t mlp_stream_group_limit;
     uint32_t mlp_crouton_group_tiles;
+    uint32_t mlp_crouton_ring_slots;
     uint32_t mlp_crouton_slot_elements;
     __fp16 *attention_q;
     __fp16 *attention_k;
@@ -296,6 +302,33 @@ static void *qbh_arena_alloc(struct qbh_block_arena *arena,
         arena, bytes, QBH_BLOCK_ALIGNMENT);
 }
 
+static void *qbh_arena_alloc_hmx_span(struct qbh_block_arena *arena,
+                                      uint32_t bytes) {
+    uint32_t offset;
+    uint32_t window_offset;
+    uintptr_t address;
+
+    if (arena == NULL || bytes == 0U ||
+        bytes > QBH_BLOCK_HMX_ADDRESS_WINDOW_BYTES) {
+        return NULL;
+    }
+    offset = qbh_align_up(arena->cursor, QBH_HMX_FP16_TILE_BYTES);
+    address = (uintptr_t)arena->base + offset;
+    window_offset = (uint32_t)(address &
+        (QBH_BLOCK_HMX_ADDRESS_WINDOW_BYTES - 1U));
+    if (bytes > QBH_BLOCK_HMX_ADDRESS_WINDOW_BYTES - window_offset) {
+        offset += QBH_BLOCK_HMX_ADDRESS_WINDOW_BYTES - window_offset;
+    }
+    if (offset > arena->capacity || bytes > arena->capacity - offset) {
+        return NULL;
+    }
+    arena->cursor = offset + bytes;
+    if (arena->cursor > arena->peak) {
+        arena->peak = arena->cursor;
+    }
+    return arena->base + offset;
+}
+
 static uint64_t qbh_fnv1a64_bytes(const uint8_t *data, uint32_t bytes) {
     uint64_t hash = UINT64_C(1469598103934665603);
     for (uint32_t index = 0U; index < bytes; ++index) {
@@ -310,6 +343,8 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
                             uint32_t f16f16_projection_mode,
                             uint32_t w4f16_pipeline_mode,
                             uint32_t mlp_mode,
+                            uint32_t crouton_boundary_mode,
+                            uint32_t vtcm_plan_mode,
                             struct qbh_block_buffers *buffers,
                             uint32_t *peak_bytes) {
     struct qbh_block_arena arena = {vtcm, vtcm_bytes, 0U, 0U};
@@ -367,7 +402,8 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         &arena, QBH_BLOCK_SCORE_ELEMENTS * sizeof(uint16_t));
     buffers->attention_concat = qbh_arena_alloc(
         &arena, QBH_BLOCK_M * QBH_BLOCK_HIDDEN * sizeof(uint16_t));
-    buffers->attention_projection = qbh_arena_alloc(&arena, hidden_bytes);
+    buffers->attention_projection = qbh_arena_alloc(
+        &arena, hidden_bytes);
     if (mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE ||
         mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8) {
         buffers->gate = qbh_arena_alloc_aligned(
@@ -388,6 +424,54 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         buffers->middle = qbh_arena_alloc(&arena, intermediate_bytes);
     }
     buffers->down = qbh_arena_alloc(&arena, hidden_bytes);
+    buffers->mlp_gate_ring = buffers->gate;
+    buffers->mlp_up_ring = buffers->up;
+    if (vtcm_plan_mode == QBH_BLOCK_VTCM_PLAN_GATE_UP_DEEP) {
+        const uint32_t output_group_bytes =
+            (QBH_BLOCK_M / QBH_HMX_FP16_ROWS) * 8U *
+            QBH_HMX_FP16_TILE_BYTES;
+        const uint32_t ring_bytes =
+            QBH_BLOCK_MLP_CROUTON_DEEP_RING_SLOTS *
+            output_group_bytes;
+        const uint32_t expanded_group_bytes =
+            QBH_BLOCK_HIDDEN * 8U * QBH_HMX_FP16_COLS *
+            sizeof(uint16_t);
+        uintptr_t lookahead_address;
+        uint32_t lookahead_window_offset;
+
+        if (variant != QBH_BLOCK_W4F16 ||
+            mlp_mode != QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 ||
+            crouton_boundary_mode !=
+                (QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM |
+                 QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM) ||
+            ring_bytes <
+                QBH_BLOCK_W4F16_HVX_WORKERS *
+                    QBH_BLOCK_HMX_OUTPUT_MAX_BYTES) {
+            return -1;
+        }
+        buffers->mlp_gate_ring = buffers->attention_concat;
+        buffers->mlp_up_ring = buffers->gate;
+        buffers->expanded_weight_lookahead =
+            buffers->gate + ring_bytes;
+        if (buffers->mlp_gate_ring + ring_bytes > buffers->gate ||
+            buffers->mlp_up_ring + ring_bytes >
+                buffers->expanded_weight_lookahead) {
+            return -1;
+        }
+        if (buffers->expanded_weight_lookahead +
+                expanded_group_bytes > buffers->middle) {
+            return -1;
+        }
+        lookahead_address =
+            (uintptr_t)buffers->expanded_weight_lookahead;
+        lookahead_window_offset = (uint32_t)(lookahead_address &
+            (QBH_BLOCK_HMX_ADDRESS_WINDOW_BYTES - 1U));
+        if (expanded_group_bytes >
+            QBH_BLOCK_HMX_ADDRESS_WINDOW_BYTES -
+                lookahead_window_offset) {
+            return -1;
+        }
+    }
     buffers->hmx_activation = qbh_arena_alloc_aligned(
         &arena, QBH_BLOCK_M * QBH_BLOCK_MAX_K * sizeof(uint16_t),
         QBH_HMX_FP16_TILE_BYTES);
@@ -406,12 +490,10 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
             : QBH_BLOCK_HIDDEN * 8U * QBH_HMX_FP16_COLS *
                   sizeof(uint16_t);
     }
-    buffers->expanded_weight = qbh_arena_alloc_aligned(
-        &arena, expanded_buffer_bytes,
-        QBH_HMX_FP16_TILE_BYTES);
-    buffers->expanded_weight_alt = qbh_arena_alloc_aligned(
-        &arena, expanded_buffer_bytes,
-        QBH_HMX_FP16_TILE_BYTES);
+    buffers->expanded_weight = qbh_arena_alloc_hmx_span(
+        &arena, expanded_buffer_bytes);
+    buffers->expanded_weight_alt = qbh_arena_alloc_hmx_span(
+        &arena, expanded_buffer_bytes);
     buffers->hmx_output = qbh_arena_alloc_aligned(
         &arena, QBH_BLOCK_HMX_OUTPUT_MAX_BYTES,
         QBH_HMX_FP16_TILE_BYTES);
@@ -448,7 +530,8 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         buffers->scores == NULL || buffers->probability == NULL ||
         buffers->attention_concat == NULL ||
         buffers->attention_projection == NULL || buffers->gate == NULL ||
-        buffers->up == NULL || buffers->middle == NULL ||
+        buffers->up == NULL || buffers->mlp_gate_ring == NULL ||
+        buffers->mlp_up_ring == NULL || buffers->middle == NULL ||
         buffers->down == NULL || buffers->hmx_activation == NULL ||
         buffers->compressed_weight == NULL ||
         buffers->compressed_weight_alt == NULL ||
@@ -461,7 +544,9 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
          (buffers->projection_scales == NULL ||
           (w4f16_pipeline_mode ==
                QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH &&
-           buffers->gate_up_scale_cache == NULL)))) {
+           buffers->gate_up_scale_cache == NULL) ||
+          (vtcm_plan_mode == QBH_BLOCK_VTCM_PLAN_GATE_UP_DEEP &&
+           buffers->expanded_weight_lookahead == NULL)))) {
         return -1;
     }
     if ((uintptr_t)buffers->attention_projection -
@@ -475,6 +560,9 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
          (QBH_HMX_FP16_TILE_BYTES - 1U)) != 0U ||
         ((uintptr_t)buffers->expanded_weight_alt &
          (QBH_HMX_FP16_TILE_BYTES - 1U)) != 0U ||
+        (buffers->expanded_weight_lookahead != NULL &&
+         ((uintptr_t)buffers->expanded_weight_lookahead &
+          (QBH_HMX_FP16_TILE_BYTES - 1U)) != 0U) ||
         ((uintptr_t)buffers->hmx_output &
          (QBH_HMX_FP16_TILE_BYTES - 1U)) != 0U ||
         ((uintptr_t)buffers->scale_or_bias &
@@ -584,6 +672,19 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (header->crouton_boundary_mode !=
              QBH_BLOCK_CROUTON_BOUNDARY_CONTROL &&
          header->variant == QBH_BLOCK_W4U8) ||
+        header->vtcm_plan_mode >
+            QBH_BLOCK_VTCM_PLAN_GATE_UP_DEEP ||
+        (header->vtcm_plan_mode != QBH_BLOCK_VTCM_PLAN_CONTROL &&
+         (header->variant != QBH_BLOCK_W4F16 ||
+          header->crouton_boundary_mode !=
+              (QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM |
+               QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM) ||
+          header->attention_pipeline_mode !=
+              QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP ||
+          header->mlp_mode !=
+              QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 ||
+          header->w4f16_pipeline_mode !=
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH)) ||
         ((header->crouton_boundary_mode &
           QBH_BLOCK_CROUTON_BOUNDARY_QKV) != 0U &&
          header->attention_pipeline_mode !=
@@ -1236,7 +1337,7 @@ static void qbh_mlp_stream_worker_run(
         work_start = HAP_perf_get_qtimer_count();
         if (pool->mlp_crouton_native != 0U) {
             const uint32_t slot =
-                group % QBH_BLOCK_MLP_CROUTON_RING_SLOTS;
+                group % pool->mlp_crouton_ring_slots;
             const __fp16 *gate_tiles = pool->mlp_gate +
                 (size_t)slot * pool->mlp_crouton_slot_elements;
             const __fp16 *up_tiles = pool->mlp_up +
@@ -1839,6 +1940,10 @@ static int qbh_mlp_stream_pipeline_start(
     pool->mlp_crouton_group_tiles =
         header->mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8
             ? 8U : QBH_BLOCK_MLP_CROUTON_GROUP_TILES;
+    pool->mlp_crouton_ring_slots =
+        header->vtcm_plan_mode == QBH_BLOCK_VTCM_PLAN_GATE_UP_DEEP
+            ? QBH_BLOCK_MLP_CROUTON_DEEP_RING_SLOTS
+            : QBH_BLOCK_MLP_CROUTON_RING_SLOTS;
     pool->mlp_stream_group_limit = pool->mlp_crouton_native != 0U
         ? QBH_BLOCK_INTERMEDIATE / QBH_HMX_FP16_COLS /
               pool->mlp_crouton_group_tiles
@@ -1929,14 +2034,15 @@ static int qbh_mlp_crouton_wait_slot(
 
     if ((header->mlp_mode != QBH_BLOCK_MLP_CROUTON_NATIVE &&
          header->mlp_mode != QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8) ||
-        group < QBH_BLOCK_MLP_CROUTON_RING_SLOTS) {
+        pool == NULL || group < pool->mlp_crouton_ring_slots) {
         return 0;
     }
-    if (pool == NULL || pool->mlp_crouton_native == 0U) {
+    if (pool->mlp_crouton_native == 0U ||
+        pool->mlp_crouton_ring_slots == 0U) {
         return -1;
     }
-    slot = group % QBH_BLOCK_MLP_CROUTON_RING_SLOTS;
-    expected = group - QBH_BLOCK_MLP_CROUTON_RING_SLOTS + 1U;
+    slot = group % pool->mlp_crouton_ring_slots;
+    expected = group - pool->mlp_crouton_ring_slots + 1U;
     wait_start = HAP_perf_get_qtimer_count();
     while (pool->mlp_crouton_slot_consumed[slot] != expected) {
         if (pool->mlp_stream_abort != 0U ||
@@ -3091,6 +3197,7 @@ struct qbh_w4f16_mlp_projection_state {
     uint32_t batch_count;
     uint32_t group_tiles;
     uint32_t dma_batch_tiles;
+    uint32_t ring_slots;
     volatile uint32_t ready[QBH_BLOCK_W4F16_MAX_REGIONS];
 };
 
@@ -3263,7 +3370,7 @@ static void qbh_w4f16_mlp_start_group(
             (QBH_BLOCK_M / QBH_HMX_FP16_ROWS) *
             state->group_tiles * QBH_HMX_FP16_TILE_ELEMENTS;
         output_tiles = state->output +
-            (size_t)(group % QBH_BLOCK_MLP_CROUTON_RING_SLOTS) *
+            (size_t)(group % state->ring_slots) *
                 output_group_elements;
     }
     qbh_hmx_start_fp16_tile_scales(
@@ -3271,6 +3378,12 @@ static void qbh_w4f16_mlp_start_group(
         state->expanded_slots[expanded_slot],
         scale_blocks, output_tiles, 2U,
         state->k_tiles, state->group_tiles);
+    if (header->vtcm_plan_mode ==
+            QBH_BLOCK_VTCM_PLAN_GATE_UP_DEEP &&
+        state->desc == &header->projections[QBH_BLOCK_PROJ_GATE] &&
+        expanded_slot == 1U) {
+        ++header->w4f16_gate_up_lookahead_hmx_count;
+    }
     ++header->w4f16_streamed_command_count;
 }
 
@@ -3341,6 +3454,7 @@ static int qbh_run_w4f16_interleaved_gate_up(
     uint32_t group_count;
     uint32_t group_tiles;
     uint32_t dma_batch_tiles;
+    uint32_t deep_pipeline;
     uint64_t pack_start;
     int result = 0;
 
@@ -3360,10 +3474,14 @@ static int qbh_run_w4f16_interleaved_gate_up(
     up.n_tiles = up.desc->n / QBH_HMX_FP16_COLS;
     group_tiles = qbh_w4f16_gate_up_group_tiles(header);
     dma_batch_tiles = qbh_w4f16_dma_batch_tiles(header, gate.desc);
+    deep_pipeline =
+        header->vtcm_plan_mode == QBH_BLOCK_VTCM_PLAN_GATE_UP_DEEP;
     gate.group_tiles = group_tiles;
     up.group_tiles = group_tiles;
     gate.dma_batch_tiles = dma_batch_tiles;
     up.dma_batch_tiles = dma_batch_tiles;
+    gate.ring_slots = pool->mlp_crouton_ring_slots;
+    up.ring_slots = pool->mlp_crouton_ring_slots;
     if (gate.k_tiles != up.k_tiles ||
         gate.n_tiles != up.n_tiles ||
         gate.n_tiles % group_tiles != 0U ||
@@ -3414,7 +3532,9 @@ static int qbh_run_w4f16_interleaved_gate_up(
     gate.expanded_slots[0] = buffers->expanded_weight;
     up.expanded_slots[0] = buffers->expanded_weight_alt;
     if (group_tiles >= 4U) {
-        gate.expanded_slots[1] = buffers->expanded_weight;
+        gate.expanded_slots[1] = deep_pipeline != 0U
+            ? buffers->expanded_weight_lookahead
+            : buffers->expanded_weight;
         up.expanded_slots[1] = buffers->expanded_weight_alt;
     } else {
         gate.expanded_slots[1] =
@@ -3426,8 +3546,8 @@ static int qbh_run_w4f16_interleaved_gate_up(
         header, buffers, gate.desc);
     up.scales = qbh_w4f16_projection_scales(
         header, buffers, up.desc);
-    gate.output = (__fp16 *)buffers->gate;
-    up.output = (__fp16 *)buffers->up;
+    gate.output = (__fp16 *)buffers->mlp_gate_ring;
+    up.output = (__fp16 *)buffers->mlp_up_ring;
     group_count = gate.n_tiles / group_tiles;
     qbh_w4f16_note_active_workers(header, 2U);
     qbh_w4f16_note_effective_region(
@@ -3489,6 +3609,12 @@ static int qbh_run_w4f16_interleaved_gate_up(
         result = -1;
         goto fused_gate_up_failed;
     }
+    if (deep_pipeline != 0U &&
+        qbh_w4f16_mlp_prepare_group(
+            header, shared, pool, &up, 0U) != 0) {
+        result = -1;
+        goto fused_gate_up_failed;
+    }
 
     for (uint32_t group = 0U; group < group_count; ++group) {
         if (qbh_mlp_crouton_wait_slot(
@@ -3498,8 +3624,55 @@ static int qbh_run_w4f16_interleaved_gate_up(
             result = -1;
             goto fused_gate_up_failed;
         }
-        for (uint32_t projection = 0U; projection < 2U;
-             ++projection) {
+        if (deep_pipeline != 0U) {
+            uint64_t command_start = HAP_perf_get_qtimer_count();
+
+            qbh_w4f16_mlp_start_group(
+                header, worker, buffers,
+                (const __fp16 *)buffers->hmx_activation,
+                &gate, group);
+            if (group == 0U && group_count > 1U) {
+                result = qbh_w4f16_mlp_prepare_group(
+                    header, shared, pool, &gate, 1U);
+            } else if (group != 0U) {
+                result = qbh_w4f16_mlp_prepare_group(
+                    header, shared, pool, &up, group);
+            }
+            if (qbh_w4f16_mlp_finish_group(
+                    header, worker, buffers, pool, &gate,
+                    group, command_start) != 0 || result != 0) {
+                qbh_record_projection_failure(
+                    header, gate.desc, group * group_tiles,
+                    56U, result);
+                result = -1;
+                goto fused_gate_up_failed;
+            }
+
+            command_start = HAP_perf_get_qtimer_count();
+            qbh_w4f16_mlp_start_group(
+                header, worker, buffers,
+                (const __fp16 *)buffers->hmx_activation,
+                &up, group);
+            if (group + 2U < group_count) {
+                result = qbh_w4f16_mlp_prepare_group(
+                    header, shared, pool, &gate, group + 2U);
+            } else if (group + 1U == group_count) {
+                result = qbh_w4f16_start_cross_prefetch(
+                    header, shared,
+                    &header->projections[QBH_BLOCK_PROJ_DOWN],
+                    buffers, cross_prefetch);
+            }
+            if (qbh_w4f16_mlp_finish_group(
+                    header, worker, buffers, pool, &up,
+                    group, command_start) != 0 || result != 0) {
+                qbh_record_projection_failure(
+                    header, up.desc, group * group_tiles,
+                    57U, result);
+                result = -1;
+                goto fused_gate_up_failed;
+            }
+        } else for (uint32_t projection = 0U; projection < 2U;
+                    ++projection) {
             struct qbh_w4f16_mlp_projection_state *current =
                 states[projection];
             uint32_t next_group = group;
@@ -5568,8 +5741,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
          header->mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8)) {
         if (qbh_mlp_stream_pipeline_start(
                 header, w4f16_pool,
-                (const __fp16 *)buffers->gate,
-                (const __fp16 *)buffers->up,
+                (const __fp16 *)buffers->mlp_gate_ring,
+                (const __fp16 *)buffers->mlp_up_ring,
                 (__fp16 *)buffers->middle,
                 (__fp16 *)buffers->q) != 0) {
             return QBH_BLOCK_STATUS_MLP_STREAM_FAILED;
@@ -5595,8 +5768,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         }
         if (qbh_mlp_stream_pipeline_start(
                 header, w4f16_pool,
-                (const __fp16 *)buffers->gate,
-                (const __fp16 *)buffers->up,
+                (const __fp16 *)buffers->mlp_gate_ring,
+                (const __fp16 *)buffers->mlp_up_ring,
                 (__fp16 *)buffers->middle,
                 (__fp16 *)buffers->q) != 0) {
             return QBH_BLOCK_STATUS_MLP_STREAM_FAILED;
@@ -5844,11 +6017,24 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
     if (qbh_plan_buffers(vtcm, vtcm_bytes, header->variant,
                          header->f16f16_projection_mode,
                          header->w4f16_pipeline_mode,
-                         header->mlp_mode, &buffers,
+                         header->mlp_mode,
+                         header->crouton_boundary_mode,
+                         header->vtcm_plan_mode, &buffers,
                          &header->vtcm_peak_plan_bytes) != 0) {
         header->dsp_status = QBH_BLOCK_STATUS_ARENA_FAILED;
         result = AEE_ENOMEMORY;
         goto publish;
+    }
+    if (header->vtcm_plan_mode ==
+        QBH_BLOCK_VTCM_PLAN_GATE_UP_DEEP) {
+        header->vtcm_phase_overlay_bytes = UINT32_C(524288);
+        header->vtcm_ring_compaction_bytes = UINT32_C(524288);
+        header->vtcm_lookahead_bytes = UINT32_C(1048576);
+        header->mlp_crouton_ring_slots =
+            QBH_BLOCK_MLP_CROUTON_DEEP_RING_SLOTS;
+    } else {
+        header->mlp_crouton_ring_slots =
+            QBH_BLOCK_MLP_CROUTON_RING_SLOTS;
     }
 
     if (header->attribution_enabled != 0U) {

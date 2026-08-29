@@ -6,8 +6,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(18)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(38)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(19)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(39)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -103,6 +103,12 @@ enum qbh_block_crouton_boundary_mode {
     QBH_BLOCK_CROUTON_BOUNDARY_AV_TO_O = 1U << 1,
     QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM = 1U << 2,
     QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM = 1U << 3,
+};
+
+enum qbh_block_vtcm_plan_mode {
+    QBH_BLOCK_VTCM_PLAN_CONTROL = 0,
+    QBH_BLOCK_VTCM_PLAN_PHASE_OVERLAY = 1,
+    QBH_BLOCK_VTCM_PLAN_GATE_UP_DEEP = 2,
 };
 
 enum qbh_block_projection_index {
@@ -225,6 +231,7 @@ struct qbh_block_header {
     uint32_t mlp_hvx_contexts;
     uint32_t mlp_chunk_vectors;
     uint32_t crouton_boundary_mode;
+    uint32_t vtcm_plan_mode;
 
     uint32_t input_offset;
     uint32_t input_bytes;
@@ -439,6 +446,11 @@ struct qbh_block_header {
     uint64_t w4f16_gate_up_stream_join_wait_ticks;
     uint64_t w4f16_gate_up_hmx_command_count;
     uint64_t w4f16_gate_up_scale_init_ticks;
+    uint32_t vtcm_phase_overlay_bytes;
+    uint32_t vtcm_ring_compaction_bytes;
+    uint32_t vtcm_lookahead_bytes;
+    uint32_t mlp_crouton_ring_slots;
+    uint64_t w4f16_gate_up_lookahead_hmx_count;
 };
 
 #endif
