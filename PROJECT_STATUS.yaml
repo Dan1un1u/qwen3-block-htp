@@ -33,9 +33,9 @@ current_scope:
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: exp0048_stage_a_input_rmsnorm_to_shared_qkv_u8_hmx_carrier
-  active_experiment_evidence: pending
-  active_experiment_gate: stage_a_must_be_byte_exact_preserve_the_physical_contract_and_strictly_reduce_projection_pack_qkv_and_host_wall_at_repeat1_and_repeat10_before_stage_b_o_native_output_to_residual_is_authorized
+  active_experiment_stage: exp0048_stage_b_o_native_hmx_output_to_post_attention_residual
+  active_experiment_evidence: 'D:\llm_exp\results\qwen3-block-htp\exp0048\20260829T144134Z_c83caebfe08d_stage_a'
+  active_experiment_gate: stage_a_passed_and_stage_b_must_be_byte_exact_preserve_the_physical_contract_and_strictly_reduce_o_output_boundary_and_host_wall_at_repeat1_and_repeat10
   last_completed_evidence: 'D:\llm_exp\results\qwen3-block-htp\exp0047\20260829T141901Z_f8897405621b_formal'
   latest_w4u8_candidate:
     id: W4U8-EXP0046-NATIVE-MLP-IO

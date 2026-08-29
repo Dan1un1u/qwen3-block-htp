@@ -3275,7 +3275,8 @@ experiments:
     evidence_profile: real-qwen3-block-w4u8-native-qkv-o-layout-boundaries
     source_branches:
       - codex/exp-0048-w4u8-native-qkv-o-boundaries
-    source_commits: []
+    source_commits:
+      - c83caebfe08d4233882bbc15a733912de2d284e8
     record: docs/experiments/EXP-0048.md
     decided_by: user
     decided_on: '2026-08-29'
@@ -3309,4 +3310,31 @@ experiments:
       correctness_gate: device_final_block_output_and_target_boundary_audits_are_byte_exact_to_exp0046_with_zero_implementation_reference_mismatches
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_and_no_qnn
       continuation_rule: stage_a_failure_is_a_hard_stop_and_forbids_stage_b
+      stage_a_source_head: c83caebfe08d4233882bbc15a733912de2d284e8
+      stage_a_formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0048\20260829T144134Z_c83caebfe08d_stage_a'
+      stage_a_artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0048\artifacts\c83caebfe08d\stage_a'
+      stage_a_gate_record: 'D:\llm_exp\results\qwen3-block-htp\exp0048\20260829T144134Z_c83caebfe08d_stage_a\gate_summary.json'
+      stage_a_full_profiling_report: 'D:\llm_exp\results\qwen3-block-htp\exp0048\20260829T144134Z_c83caebfe08d_stage_a\full_profiling_report.md'
+      stage_a_gate_record_sha256: c704ee008d5e323e4871e97fcb9339403df5d263c791cd1b4cb1829b3729dead
+      stage_a_full_profiling_report_sha256: ad392f8b7e68a0f2b42eaed44b84b38778c360fbbd718afa7af242524af6afc8
+      stage_a_implementation_reference_sha256: 4e1b458d2219b7b47ceed6a52a115b658083322003aa9c84f5e4038343d6824e
+      stage_a_static_gate_sha256: 8c89f17305b11b2899581af951ccaa8babcb51064312b65a3b4909125da8fb38
+      stage_a_stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      stage_a_formal_paired_rounds: 7
+      stage_a_output_hash: 69f22eeb035e5ec5
+      stage_a_implementation_reference_mismatches: 0
+      stage_a_implementation_reference_max_lsb: 0
+      stage_a_fixed_vtcm_request_bytes: 8388608
+      stage_a_intermediate_ddr_read_bytes: 0
+      stage_a_intermediate_ddr_write_bytes: 0
+      stage_a_spill_fill_count: 0
+      stage_a_repeat1_host_wall_change_percent: -11.652383973428016
+      stage_a_repeat1_qkv_change_percent: -42.548834790522314
+      stage_a_repeat1_projection_pack_change_percent: -99.96103832854429
+      stage_a_repeat10_host_wall_change_percent: -12.407265142226354
+      stage_a_repeat10_qkv_change_percent: -43.41903018629658
+      stage_a_repeat10_projection_pack_change_percent: -99.95736516734172
+      stage_a_gate_result: pass
+      stage_b_authorized: true
+      stage_a_conclusion: one_native_u8_hmx_activation_carrier_shared_by_q_k_and_v_removes_repeated_projection_pack_and_strictly_reduces_qkv_and_complete_host_wall_without_changing_hmx_or_weight_dma_work
       selected_baseline_changed: false
