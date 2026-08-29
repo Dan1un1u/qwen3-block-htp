@@ -1,6 +1,30 @@
 schema_version: 1
 project: qwen3-block-htp
 artifacts:
+  - id: EXP-0046-stage-b-results
+    experiment: EXP-0046
+    kind: formal-result-set
+    path: 'D:\llm_exp\results\qwen3-block-htp\exp0046\20260829T134655Z_40da9f06f6a5_stage_b'
+    source_commit: 40da9f06f6a5d8335d0b9a0c45f7efa61525c50f
+    manifest: 'D:\llm_exp\results\qwen3-block-htp\exp0046\20260829T134655Z_40da9f06f6a5_stage_b\gate_summary.json'
+  - id: EXP-0046-stage-b-binaries
+    experiment: EXP-0046
+    kind: retained-device-binaries
+    path: 'D:\llm_exp\models\qwen3-block-htp\exp0046\artifacts\40da9f06f6a5\stage_b'
+    source_commit: 40da9f06f6a5d8335d0b9a0c45f7efa61525c50f
+    manifest: 'D:\llm_exp\results\qwen3-block-htp\exp0046\20260829T134655Z_40da9f06f6a5_stage_b\artifact_sha256.txt'
+  - id: EXP-0046-stage-a-results
+    experiment: EXP-0046
+    kind: formal-result-set
+    path: 'D:\llm_exp\results\qwen3-block-htp\exp0046\20260829T133809Z_62c7648ee5d6_stage_a'
+    source_commit: 62c7648ee5d69acdafeb3d8577058747bc83a28e
+    manifest: 'D:\llm_exp\results\qwen3-block-htp\exp0046\20260829T133809Z_62c7648ee5d6_stage_a\gate_summary.json'
+  - id: EXP-0046-stage-a-binaries
+    experiment: EXP-0046
+    kind: retained-device-binaries
+    path: 'D:\llm_exp\models\qwen3-block-htp\exp0046\artifacts\62c7648ee5d6\stage_a'
+    source_commit: 62c7648ee5d69acdafeb3d8577058747bc83a28e
+    manifest: 'D:\llm_exp\results\qwen3-block-htp\exp0046\20260829T133809Z_62c7648ee5d6_stage_a\artifact_sha256.txt'
   - id: EXP-0035-results
     experiment: EXP-0035
     kind: formal-result-set

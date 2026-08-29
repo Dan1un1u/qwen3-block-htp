@@ -3087,15 +3087,16 @@ experiments:
       - exp0045_w4u8_qkvo_batch4_control
       - native_post_attention_norm_to_gate_up_handoff
       - native_down_to_final_residual_handoff_if_stage_a_passes
-    execution_state: running
+    execution_state: completed
     evidence_validity: valid
-    local_gate: stage_a_pass_stage_b_authorized
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4u8-native-mlp-layout-boundaries
     source_branches:
       - codex/exp-0046-w4u8-mlp-native-boundaries
     source_commits:
       - 62c7648ee5d69acdafeb3d8577058747bc83a28e
+      - 40da9f06f6a5d8335d0b9a0c45f7efa61525c50f
     record: docs/experiments/EXP-0046.md
     decided_by: user
     decided_on: '2026-08-29'
@@ -3145,4 +3146,29 @@ experiments:
       stage_a_weight_dma_descriptors_per_block: 512
       stage_a_conclusion: native_hvx_scatter_removes_the_row_major_gate_up_activation_pack_without_changing_projection_work_and_strictly_reduces_both_the_target_boundary_and_complete_host_wall
       stage_b_authorized: true
+      stage_b_source_head: 40da9f06f6a5d8335d0b9a0c45f7efa61525c50f
+      stage_b_formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0046\20260829T134655Z_40da9f06f6a5_stage_b'
+      stage_b_artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0046\artifacts\40da9f06f6a5\stage_b'
+      stage_b_gate_record: 'D:\llm_exp\results\qwen3-block-htp\exp0046\20260829T134655Z_40da9f06f6a5_stage_b\gate_summary.json'
+      stage_b_gate_record_sha256: 85924e65388bce347b4b9a1899a773b43c76dd99a388256aebf18826504363b1
+      stage_b_implementation_reference_sha256: 8f0ee1ba12cae18feee2ae3eb63910ec1ff33c9974b792109e442ae6c32e1fdd
+      stage_b_device_audit_sha256: 17473f3e90116bffdaef37d30062e81624b663961347ffdd2ac34646ea6230fc
+      stage_b_gate_result: pass
+      stage_b_byte_exact: true
+      stage_b_zero_intermediate_ddr: true
+      stage_b_fixed_8mib_vtcm: true
+      stage_b_repeat1_mlp_output_boundary_change_percent: -33.94405164463572
+      stage_b_repeat1_host_wall_change_percent: -4.74607545176815
+      stage_b_repeat10_mlp_output_boundary_change_percent: -33.8898747935229
+      stage_b_repeat10_host_wall_change_percent: -4.799318167679334
+      stage_b_hmx_commands_per_block: 1040
+      stage_b_weight_dma_descriptors_per_block: 512
+      final_repeat1_vs_exp0045_host_wall_change_percent: -11.810436979223947
+      final_repeat10_vs_exp0045_host_wall_change_percent: -9.82668495742428
+      final_repeat1_host_wall_ns_per_block_median: 6133906.0
+      final_repeat10_host_wall_ns_per_block_median: 5738578.1
+      full_profiling_report: docs/experiments/EXP-0046-PROFILING.md
+      formal_full_profiling_report: 'D:\llm_exp\results\qwen3-block-htp\exp0046\20260829T134655Z_40da9f06f6a5_stage_b\full_profiling_report.md'
+      full_profiling_report_sha256: 7424926a2cf22e47f5d5b8dcfbd5951d727a5a140cb1d1854a57697a8efa4ab1
+      final_conclusion: native_hvx_scatter_and_gather_remove_both_row_major_w4u8_mlp_layout_boundaries_and_reduce_complete_host_wall_without_changing_hmx_dma_bytes_qparams_or_output_codes
       selected_baseline_changed: false
