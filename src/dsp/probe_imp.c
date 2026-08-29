@@ -14,6 +14,7 @@
 
 #include "hmx_u8s8_projection.h"
 #include "hmx_convert_protocol.h"
+#include "attention_imp.h"
 #include "block_imp.h"
 #include "mlp_imp.h"
 #include "probe_protocol.h"
@@ -1618,6 +1619,22 @@ AEEResult qwen3_probe_run_mlp(remote_handle64 handle, int32 shared_fd,
     return qbh_run_mlp_rpc(shared_fd, shared_bytes, session->vtcm,
                            session->hmx_context_id,
                            ++session->prepared_run_count);
+}
+
+AEEResult qwen3_probe_run_attention(remote_handle64 handle,
+                                    int32 shared_fd,
+                                    uint32 shared_bytes) {
+    struct qbh_probe_session *session = qbh_session_from_handle(handle);
+    uint32_t run_index;
+    if (session == NULL || session->prepared == 0U ||
+        session->vtcm == NULL || session->hmx_context_id == 0U) {
+        return AEE_EBADSTATE;
+    }
+    run_index = ++session->prepared_run_count;
+    return qbh_run_attention_rpc(
+        shared_fd, shared_bytes, session->vtcm,
+        session->vtcm_granted_bytes, session->hmx_context_id,
+        run_index);
 }
 
 AEEResult qwen3_probe_run_block(remote_handle64 handle, int32 shared_fd,

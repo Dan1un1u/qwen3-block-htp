@@ -13,6 +13,7 @@ interface qwen3_probe : remote_handle64 {
     AEEResult run(in int32 shared_fd, in uint32 shared_bytes);
     AEEResult run_hmx_convert(in int32 shared_fd, in uint32 shared_bytes);
     AEEResult run_mlp(in int32 shared_fd, in uint32 shared_bytes);
+    AEEResult run_attention(in int32 shared_fd, in uint32 shared_bytes);
     AEEResult run_block(in int32 shared_fd, in uint32 shared_bytes);
 };
 
