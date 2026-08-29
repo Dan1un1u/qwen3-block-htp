@@ -159,6 +159,7 @@ def build_summary(result_dir: Path, package_dir: Path) -> dict[str, object]:
             "u8_attention_av_hmx_ticks",
             "u8_attention_av_requant_ticks",
             "u8_attention_pipeline_wait_ticks",
+            "attention_qk_norm_task_count",
             *base.COUNTERS, *base.RESOURCES,
         )))
         metrics = {
