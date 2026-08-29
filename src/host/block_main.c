@@ -720,6 +720,14 @@ static int qbh_parse_w4u8_qkvo_pipeline_mode(
         *mode = QBH_BLOCK_W4U8_QKVO_BATCH4;
         return 0;
     }
+    if (strcmp(text, "q_headpair") == 0) {
+        *mode = QBH_BLOCK_W4U8_Q_HEAD_PAIR;
+        return 0;
+    }
+    if (strcmp(text, "qkv_headpair") == 0) {
+        *mode = QBH_BLOCK_W4U8_QKV_HEAD_PAIR;
+        return 0;
+    }
     return -1;
 }
 
@@ -731,6 +739,10 @@ static const char *qbh_w4u8_qkvo_pipeline_mode_name(uint32_t mode) {
             return "qkv_batch4";
         case QBH_BLOCK_W4U8_QKVO_BATCH4:
             return "qkvo_batch4";
+        case QBH_BLOCK_W4U8_Q_HEAD_PAIR:
+            return "q_headpair";
+        case QBH_BLOCK_W4U8_QKV_HEAD_PAIR:
+            return "qkv_headpair";
         default:
             return "serial";
     }
@@ -1301,7 +1313,7 @@ int main(int argc, char **argv) {
            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT |
            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT)) != 0U) ||
-        w4u8_qkvo_pipeline_mode > QBH_BLOCK_W4U8_QKVO_BATCH4 ||
+        w4u8_qkvo_pipeline_mode > QBH_BLOCK_W4U8_QKV_HEAD_PAIR ||
         (variant != QBH_BLOCK_W4U8 &&
          w4u8_qkvo_pipeline_mode != QBH_BLOCK_W4U8_QKVO_SERIAL) ||
         ((crouton_boundary_mode & QBH_BLOCK_CROUTON_BOUNDARY_QKV) != 0U &&
@@ -1314,13 +1326,13 @@ int main(int argc, char **argv) {
           QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT) != 0U &&
          (attention_pipeline_mode !=
               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP ||
-          w4u8_qkvo_pipeline_mode !=
+          w4u8_qkvo_pipeline_mode <
               QBH_BLOCK_W4U8_QKVO_BATCH4)) ||
         ((crouton_boundary_mode &
           QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT) != 0U &&
          (attention_pipeline_mode !=
               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP ||
-          w4u8_qkvo_pipeline_mode !=
+          w4u8_qkvo_pipeline_mode <
               QBH_BLOCK_W4U8_QKVO_BATCH4 ||
           residual_mode != QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM)) ||
         mlp_mode > QBH_BLOCK_MLP_W4U8_STREAMING ||
@@ -1436,7 +1448,8 @@ int main(int argc, char **argv) {
                         "input_norm|post_norm|norms|all|"
                         "w4u8_mlp_input|w4u8_mlp_io] "
                         "[w4u8_qkvo_pipeline:serial|qkv_batch2|"
-                        "qkv_batch4|qkvo_batch4]\n",
+                        "qkv_batch4|qkvo_batch4|q_headpair|"
+                        "qkv_headpair]\n",
                 argv[0]);
         return 2;
     }
@@ -1980,7 +1993,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0050\","
+        "{\"experiment\":\"EXP-0051\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","

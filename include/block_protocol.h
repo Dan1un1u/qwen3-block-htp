@@ -8,7 +8,7 @@
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
 #define QBH_BLOCK_ABI_VERSION UINT32_C(27)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(50)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(51)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -94,6 +94,8 @@ enum qbh_block_w4u8_qkvo_pipeline_mode {
     QBH_BLOCK_W4U8_QKV_BATCH2 = 1,
     QBH_BLOCK_W4U8_QKV_BATCH4 = 2,
     QBH_BLOCK_W4U8_QKVO_BATCH4 = 3,
+    QBH_BLOCK_W4U8_Q_HEAD_PAIR = 4,
+    QBH_BLOCK_W4U8_QKV_HEAD_PAIR = 5,
 };
 
 enum qbh_block_attention_pack_mode {
