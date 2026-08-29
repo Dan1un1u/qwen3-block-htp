@@ -3830,14 +3830,16 @@ experiments:
     variants:
       - exp0052_single_context_native_residual_control
       - four_context_native_residual_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: complete
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4u8-native-residual-pool
     source_branches:
       - codex/exp-0053-w4u8-residual-pool
-    source_commits: []
+    source_commits:
+      - 0eff58cc2291c6883324ec31dc8174a8e089b6bd
+      - 668a9145ef434abf0ea04567d9dea6b8b863d627
     record: docs/experiments/EXP-0053.md
     decided_by: user
     decided_on: '2026-08-30'
@@ -3846,6 +3848,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0053-w4u8-residual-pool
       started_on: '2026-08-30'
+      completed_on: '2026-08-30'
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0053'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0053'
@@ -3875,3 +3878,57 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn
       local_speed_gate: combined_post_and_final_residual_ledger_and_complete_host_wall_strictly_improve_at_repeat1_and_repeat10
       completion_gate: seven_interleaved_paired_rounds_and_pc027_complete_profiling_closure
+      source_head: 668a9145ef434abf0ea04567d9dea6b8b863d627
+      implementation_commit: 0eff58cc2291c6883324ec31dc8174a8e089b6bd
+      evidence_validator_commit: 668a9145ef434abf0ea04567d9dea6b8b863d627
+      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0053/20260829T171930Z_668a9145ef43_formal'
+      artifact_set: 'D:/llm_exp/models/qwen3-block-htp/exp0053/artifacts/668a9145ef43/formal'
+      gate_record: 'D:/llm_exp/results/qwen3-block-htp/exp0053/20260829T171930Z_668a9145ef43_formal/gate_summary.json'
+      formal_full_profiling_report: 'D:/llm_exp/results/qwen3-block-htp/exp0053/20260829T171930Z_668a9145ef43_formal/full_profiling_report.md'
+      full_profiling_report: docs/experiments/EXP-0053-PROFILING.md
+      gate_record_sha256: f2743f4de423c9dfa977866e2c372806ff0c2f658a962acdf281263593ad16b5
+      formal_full_profiling_report_sha256: 0a600f6d7211cd64e8038f66707ccc5dca37d7dfefe5358780e5bbcacee6a1a3
+      static_gate_sha256: 44117c1cee5ce19b7ecd1e614c6247dbaf8b42d6427cfeaa37d368ea6d3630e1
+      package_manifest_sha256: 043f61337b2ad2758bb95791bc4ca768150f457f1f28bc7d20a7ad57eba42359
+      stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      formal_paired_rounds: 7
+      output_hash: 69f22eeb035e5ec5
+      implementation_reference_mismatches: 0
+      implementation_reference_max_lsb: 0
+      qk_probability_av_hash_equivalence: true
+      fixed_vtcm_request_bytes: 8388608
+      fixed_vtcm_acquired_bytes: 8388608
+      vtcm_peak_plan_bytes: 5306080
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      spill_fill_count: 0
+      control_hmx_commands_per_block: 256
+      candidate_hmx_commands_per_block: 256
+      hmx_u8s8_tile_pairs_per_block: 49408
+      weight_dma_descriptors_per_block: 512
+      weight_ddr_read_bytes_per_block: 25444352
+      control_residual_tasks_per_boundary_per_block: 0
+      candidate_residual_tasks_per_boundary_per_block: 16
+      candidate_residual_hvx_contexts: 4
+      repeat1_control_host_wall_ns_per_block_median: 3285365.0
+      repeat1_candidate_host_wall_ns_per_block_median: 3130521.0
+      repeat1_host_wall_change_percent: -4.713
+      repeat1_paired_host_wall_change_percent_median: -4.955
+      repeat1_control_combined_residual_ticks_per_block_median: 4513.0
+      repeat1_candidate_combined_residual_ticks_per_block_median: 1293.0
+      repeat1_combined_residual_change_percent: -71.349
+      repeat1_paired_combined_residual_change_percent_median: -71.413
+      repeat10_control_host_wall_ns_per_block_median: 2907151.1
+      repeat10_candidate_host_wall_ns_per_block_median: 2740229.2
+      repeat10_host_wall_change_percent: -5.742
+      repeat10_paired_host_wall_change_percent_median: -5.507
+      repeat10_control_combined_residual_ticks_per_block_median: 4507.9
+      repeat10_candidate_combined_residual_ticks_per_block_median: 1296.9
+      repeat10_combined_residual_change_percent: -71.231
+      repeat10_paired_combined_residual_change_percent_median: -71.224
+      prevalidation_run: 'D:/llm_exp/results/qwen3-block-htp/exp0053/20260829T171736Z_0eff58cc2291_formal'
+      prevalidation_status: excluded_validator_missing_invariant_summary_field_not_hardware_failure
+      gate_result: pass
+      local_adoption_eligible: true
+      conclusion: four_context_disjoint_row_tasks_reuse_idle_persistent_hvx_workers_and_remove_single_context_native_gather_residual_tail_without_changing_q14_math_layout_hmx_work_weight_traffic_or_residency
+      selected_baseline_changed: false
