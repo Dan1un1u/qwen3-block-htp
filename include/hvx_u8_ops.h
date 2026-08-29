@@ -1,0 +1,50 @@
+#ifndef QWEN3_BLOCK_HTP_HVX_U8_OPS_H
+#define QWEN3_BLOCK_HTP_HVX_U8_OPS_H
+
+#include <stdint.h>
+
+#include "block_protocol.h"
+
+void qbh_hvx_rms_norm_u8(
+    const uint8_t *input,
+    const struct qbh_block_qparam *input_qparam,
+    const __fp16 *gamma, uint8_t *output,
+    const struct qbh_block_qparam *output_qparam,
+    uint32_t rows, uint32_t width);
+
+void qbh_hvx_residual_add_u8(
+    const uint8_t *left,
+    const struct qbh_block_qparam *left_qparam,
+    const uint8_t *right,
+    const struct qbh_block_qparam *right_qparam,
+    uint8_t *output,
+    const struct qbh_block_qparam *output_qparam,
+    uint32_t elements);
+
+void qbh_hvx_residual_rms_norm_u8(
+    uint8_t *residual,
+    const struct qbh_block_qparam *residual_qparam,
+    const uint8_t *addition,
+    const struct qbh_block_qparam *addition_qparam,
+    const struct qbh_block_qparam *sum_qparam,
+    const __fp16 *gamma, uint8_t *normalized,
+    const struct qbh_block_qparam *normalized_qparam,
+    uint32_t rows, uint32_t width);
+
+void qbh_hvx_qk_norm_rope_u8(
+    uint8_t *tensor, uint32_t rows, uint32_t heads,
+    uint32_t row_stride, uint32_t head_dim,
+    const struct qbh_block_qparam *input_qparam,
+    const struct qbh_block_qparam *output_qparam,
+    const __fp16 *gamma, const __fp16 *cosine,
+    const __fp16 *sine);
+
+void qbh_hvx_expand_u8_to_f16_in_place(
+    uint8_t *buffer, uint32_t elements,
+    const struct qbh_block_qparam *qparam);
+
+void qbh_hvx_quantize_f16_to_u8(
+    const __fp16 *input, uint8_t *output, uint32_t elements,
+    const struct qbh_block_qparam *qparam);
+
+#endif

@@ -198,6 +198,18 @@ static int qbh_parse_common_ops_mode(const char *text, uint32_t *mask) {
                 QBH_BLOCK_COMMON_OP_ROPE;
         return 0;
     }
+    if (strcmp(text, "rms_rope") == 0) {
+        *mask = QBH_BLOCK_COMMON_OP_RMS_NORM |
+                QBH_BLOCK_COMMON_OP_ROPE;
+        return 0;
+    }
+    if (strcmp(text, "rms_rope_softmax") == 0 ||
+        strcmp(text, "u8_all") == 0) {
+        *mask = QBH_BLOCK_COMMON_OP_RMS_NORM |
+                QBH_BLOCK_COMMON_OP_ROPE |
+                QBH_BLOCK_COMMON_OP_SOFTMAX;
+        return 0;
+    }
     if (strcmp(text, "hvx") == 0 || strcmp(text, "hvx_fp16") == 0 ||
         strcmp(text, "all") == 0) {
         *mask = QBH_BLOCK_COMMON_OPS_HVX_FP16;
@@ -644,6 +656,13 @@ static const char *qbh_common_ops_mode_name(uint32_t mask) {
              QBH_BLOCK_COMMON_OP_SILU |
              QBH_BLOCK_COMMON_OP_ROPE:
             return "rms_silu_rope";
+        case QBH_BLOCK_COMMON_OP_RMS_NORM |
+             QBH_BLOCK_COMMON_OP_ROPE:
+            return "rms_rope";
+        case QBH_BLOCK_COMMON_OP_RMS_NORM |
+             QBH_BLOCK_COMMON_OP_ROPE |
+             QBH_BLOCK_COMMON_OP_SOFTMAX:
+            return "rms_rope_softmax";
         case QBH_BLOCK_COMMON_OPS_HVX_FP16:
             return "hvx_fp16";
         default:
@@ -1084,11 +1103,8 @@ int main(int argc, char **argv) {
                            argv[18], &crouton_boundary_mode) != 0) ||
         repeats == 0U || repeats > 100U ||
         w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
-        (argc >= 7 && variant == QBH_BLOCK_W4U8 &&
-         common_ops_mask != QBH_BLOCK_COMMON_OPS_SCALAR) ||
         (variant == QBH_BLOCK_W4U8 &&
-         (residual_mode != QBH_BLOCK_RESIDUAL_SCALAR ||
-          attention_pack_mode !=
+         (attention_pack_mode !=
               QBH_BLOCK_ATTENTION_PACK_CONTROL ||
           attention_pipeline_mode !=
               QBH_BLOCK_ATTENTION_PIPELINE_CONTROL ||
@@ -1648,11 +1664,32 @@ int main(int argc, char **argv) {
               QBH_BLOCK_M * QBH_BLOCK_HIDDEN);
     output_hash = qbh_fnv1a64(
         shared + header->output_offset, header->output_bytes);
+    {
+        const char *dump_path = getenv("QBH_DUMP_OUTPUT_PATH");
+        if (dump_path != NULL && dump_path[0] != '\0') {
+            FILE *dump = fopen(dump_path, "wb");
+            if (dump == NULL) {
+                fprintf(stderr, "failed to write output dump: %s\n",
+                        dump_path);
+                goto cleanup;
+            }
+            size_t written = fwrite(
+                shared + header->output_offset, 1U,
+                header->output_bytes, dump);
+            int dump_close_result = fclose(dump);
+            if (written != header->output_bytes ||
+                dump_close_result != 0) {
+                fprintf(stderr, "failed to write output dump: %s\n",
+                        dump_path);
+                goto cleanup;
+            }
+        }
+    }
 
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0040\","
+        "{\"experiment\":\"EXP-0041\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"FP16_HMX\","
         "\"projection_compute\":\"%s\","

@@ -103,6 +103,7 @@ else()
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/w4_parallel_pipeline
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/hmx_fp16
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/hvx_fp16_ops
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/hvx_u8_ops
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/block_imp
     )
     build_idl(include/qwen3_probe.idl qwen3_probe_skel)
@@ -111,6 +112,7 @@ else()
     )
     set_source_files_properties(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/hvx_fp16_ops.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/hvx_u8_ops.c
         PROPERTIES COMPILE_OPTIONS "-mllvm;-hexagon-qfloat-mode=lossy"
     )
     copy_binaries(qwen3_probe_skel)
