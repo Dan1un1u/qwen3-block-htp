@@ -3179,14 +3179,16 @@ experiments:
     variants:
       - w4f16_exp0038_norms_current_source_control
       - w4u8_exp0046_native_mlp_io_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: not_applicable
     evidence_profile: real-qwen3-block-current-best-cross-variant-critical-path
     source_branches:
       - codex/exp-0047-w4f16-w4u8-profile
-    source_commits: []
+    source_commits:
+      - 24569447e6c0da35cafd8f80a754facb9f47991f
+      - f8897405621b769f5e32a2690cea7399b215d59e
     record: docs/experiments/EXP-0047.md
     decided_by: user
     decided_on: '2026-08-29'
@@ -3195,6 +3197,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0047-w4f16-w4u8-profile
       started_on: '2026-08-29'
+      completed_on: '2026-08-29'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0047'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0047'
@@ -3216,4 +3219,44 @@ experiments:
       physical_gate: both_variants_use_exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_and_no_qnn
       completion_gate: seven_interleaved_paired_rounds_and_pc027_report_close_the_complete_additive_ledger_and_overlapping_engine_work_for_both_variants
       speed_gate: none_characterization_only
+      formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0047\20260829T141901Z_f8897405621b_formal'
+      artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0047\artifacts\f8897405621b'
+      gate_record: 'D:\llm_exp\results\qwen3-block-htp\exp0047\20260829T141901Z_f8897405621b_formal\gate_summary.json'
+      full_profiling_report: docs/experiments/EXP-0047-PROFILING.md
+      formal_full_profiling_report: 'D:\llm_exp\results\qwen3-block-htp\exp0047\20260829T141901Z_f8897405621b_formal\full_profiling_report.md'
+      gate_record_sha256: c31210dfc436b84cb98dcb816318a368b9568a73bd087ca2b46f5cec3628b6b3
+      full_profiling_report_sha256: 36abd65b94860f4d28ce32c91d9597c2893da5e7c2798b126f96dbeca7f7c6ca
+      package_manifest_sha256: 043f61337b2ad2758bb95791bc4ca768150f457f1f28bc7d20a7ad57eba42359
+      shared_w4_bundle_sha256: fd016578c132a7917faf79fc939faf88eb2afb4c922313e40794521e32215b22
+      formal_source_head: f8897405621b769f5e32a2690cea7399b215d59e
+      stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      formal_paired_rounds_completed: 7
+      correctness_gate_result: pass
+      physical_gate_result: pass
+      completion_gate_result: pass
+      shared_w4_values_and_scales_byte_identical_result: pass
+      w4f16_output_hash: f18b9abbe1487231
+      w4u8_output_hash: 69f22eeb035e5ec5
+      repeat1_w4f16_host_wall_ms_per_block_median: 2.640521
+      repeat1_w4u8_host_wall_ms_per_block_median: 6.135313
+      repeat1_w4u8_change_percent: 132.35236530972486
+      repeat10_w4f16_host_wall_ms_per_block_median: 2.2194739
+      repeat10_w4u8_host_wall_ms_per_block_median: 5.7514583
+      repeat10_w4u8_change_percent: 159.13610878686154
+      repeat10_w4u8_minus_w4f16_total_ticks: 67795.4
+      repeat10_gate_up_gap_ticks: 26393.5
+      repeat10_qkv_gap_ticks: 22999.3
+      repeat10_o_projection_gap_ticks: 6584.4
+      repeat10_attention_gap_ticks: 5344.9
+      repeat10_down_gap_ticks: 3079.4
+      w4f16_hmx_commands_per_block: 208
+      w4u8_hmx_commands_per_block: 1040
+      w4f16_tile_pairs_per_command: 475.0769230769231
+      w4u8_tile_pairs_per_command: 47.50769230769231
+      repeat10_w4f16_projection_pack_ticks_per_block: 113.1
+      repeat10_w4u8_projection_pack_ticks_per_block: 21115.6
+      repeat10_w4u8_mlp_expanded_slot_wait_ticks_per_block: 32116.0
+      prevalidation_run: 'D:\llm_exp\results\qwen3-block-htp\exp0047\20260829T141527Z_24569447e6c0_formal'
+      prevalidation_status: excluded_validator_contract_bug_not_hardware_failure
+      performance_characterization: current_w4u8_is_slower_because_the_same_w4_weight_bytes_are_consumed_through_five_times_more_hmx_commands_one_tenth_the_tile_pairs_per_command_large_activation_carrier_pack_cost_and_mlp_expanded_slot_pressure_while_w4f16_overlaps_its_larger_dma_work
       selected_baseline_changed: false
