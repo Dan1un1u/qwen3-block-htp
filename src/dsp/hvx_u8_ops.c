@@ -12,6 +12,16 @@
 #define QBH_HVX_HALF_LANES UINT32_C(64)
 #define QBH_HVX_WORD_LANES UINT32_C(32)
 
+/* One packed word contains four adjacent K channels.  The 32 output-token
+ * words in an integer-HMX tile are spaced by 128 bytes. */
+static const int32_t qbh_u8_k_vscatter_offsets[QBH_HVX_WORD_LANES]
+    __attribute__((aligned(QBH_HVX_BYTES))) = {
+        0, 128, 256, 384, 512, 640, 768, 896,
+        1024, 1152, 1280, 1408, 1536, 1664, 1792, 1920,
+        2048, 2176, 2304, 2432, 2560, 2688, 2816, 2944,
+        3072, 3200, 3328, 3456, 3584, 3712, 3840, 3968,
+    };
+
 struct qbh_qf32_quad {
     HVX_Vector lane[4];
 };
@@ -103,6 +113,45 @@ static uint64_t qbh_reduce_word_sum(HVX_Vector value) {
         sum += (uint32_t)lanes[lane];
     }
     return sum;
+}
+
+static HVX_Vector qbh_center_u8_to_s8(
+    HVX_Vector value, int32_t zero_point) {
+    const HVX_VectorPair unpacked = Q6_Wuh_vunpack_Vub(value);
+    const HVX_Vector offset = Q6_Vh_vsplat_R(zero_point);
+    const HVX_Vector low = Q6_Vh_vsub_VhVh(
+        Q6_V_lo_W(unpacked), offset);
+    const HVX_Vector high = Q6_Vh_vsub_VhVh(
+        Q6_V_hi_W(unpacked), offset);
+    return Q6_Vb_vpack_VhVh_sat(high, low);
+}
+
+static int32_t qbh_reduce_signed_byte_sum(HVX_Vector value) {
+    const HVX_VectorPair halves = Q6_Wh_vunpack_Vb(value);
+    const HVX_VectorPair words0 =
+        Q6_Ww_vunpack_Vh(Q6_V_lo_W(halves));
+    const HVX_VectorPair words1 =
+        Q6_Ww_vunpack_Vh(Q6_V_hi_W(halves));
+    HVX_Vector sum = Q6_Vw_vadd_VwVw(
+        Q6_Vw_vadd_VwVw(
+            Q6_V_lo_W(words0), Q6_V_hi_W(words0)),
+        Q6_Vw_vadd_VwVw(
+            Q6_V_lo_W(words1), Q6_V_hi_W(words1)));
+    const HVX_Vector zero = Q6_V_vzero();
+
+    for (uint32_t shift = 64U; shift >= 4U; shift >>= 1U) {
+        sum = Q6_Vw_vadd_VwVw(
+            sum, Q6_V_vlalign_VVR(sum, zero, shift));
+    }
+    return (int32_t)Q6_R_vextract_VR(sum, 124);
+}
+
+static uint16_t qbh_half_bits(float value) {
+    const __fp16 converted = (__fp16)value;
+    uint16_t bits;
+
+    memcpy(&bits, &converted, sizeof(bits));
+    return bits;
 }
 
 static uint64_t qbh_centered_square_sum(
@@ -397,6 +446,91 @@ void qbh_hvx_qk_norm_rope_u8_native_head(
             memcpy(head_tiles + (size_t)tile * 2048U +
                        (size_t)row * 32U,
                    row_values + tile * 32U, 32U);
+        }
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
+void qbh_hvx_qk_norm_rope_u8_native_k_head(
+    uint8_t *head_tiles,
+    const struct qbh_block_qparam *input_qparam,
+    const struct qbh_block_qparam *output_qparam,
+    const __fp16 *gamma, const __fp16 *cosine,
+    const __fp16 *sine,
+    const struct qbh_attention_config *config,
+    int8_t *weight_tiles, uint32_t *bias_words) {
+    uint8_t row_values[QBH_HVX_BYTES]
+        __attribute__((aligned(QBH_HVX_BYTES)));
+    int32_t signed_sums[QBH_ATTENTION_M];
+    const HVX_Vector offsets_base =
+        *(const HVX_Vector *)qbh_u8_k_vscatter_offsets;
+    const uint32_t divisor = UINT32_C(1) << config->score_shift;
+    const int32_t rounding = config->score_shift == 0U
+                                 ? 0
+                                 : (int32_t)(divisor / 2U);
+    const uint16_t conversion = qbh_half_bits(
+        512.0f / (float)divisor);
+
+    for (uint32_t row = 0U; row < QBH_BLOCK_M; ++row) {
+        const uint32_t n_tile = row / QBH_HMX_OUTPUT_CHANNELS;
+        const uint32_t output = row % QBH_HMX_OUTPUT_CHANNELS;
+        int8_t *destination = weight_tiles +
+            (size_t)n_tile * QBH_ATTENTION_HEAD_DIM_TILES *
+                QBH_HMX_WEIGHT_BYTES;
+        const HVX_Vector offsets = Q6_Vw_vadd_VwVw(
+            offsets_base, Q6_V_vsplat_R(output * 4U));
+
+        for (uint32_t tile = 0U;
+             tile < QBH_BLOCK_HEAD_DIM / QBH_HMX_INPUT_CHANNELS;
+             ++tile) {
+            memcpy(row_values + tile * QBH_HMX_INPUT_CHANNELS,
+                   head_tiles +
+                       (size_t)tile * QBH_HMX_ACTIVATION_BYTES +
+                       (size_t)row * QBH_HMX_INPUT_CHANNELS,
+                   QBH_HMX_INPUT_CHANNELS);
+        }
+        qbh_qk_norm_rope_one_head_u8(
+            row_values, input_qparam, output_qparam, gamma,
+            cosine + (size_t)row * QBH_BLOCK_HEAD_DIM,
+            sine + (size_t)row * QBH_BLOCK_HEAD_DIM);
+        for (uint32_t tile = 0U;
+             tile < QBH_BLOCK_HEAD_DIM / QBH_HMX_INPUT_CHANNELS;
+             ++tile) {
+            memcpy(head_tiles +
+                       (size_t)tile * QBH_HMX_ACTIVATION_BYTES +
+                       (size_t)row * QBH_HMX_INPUT_CHANNELS,
+                   row_values + tile * QBH_HMX_INPUT_CHANNELS,
+                   QBH_HMX_INPUT_CHANNELS);
+        }
+        {
+            const HVX_Vector centered = qbh_center_u8_to_s8(
+                *(const HVX_Vector *)row_values,
+                output_qparam->zero_point);
+            signed_sums[row] = qbh_reduce_signed_byte_sum(centered);
+            Q6_vscatter_RMVwV(
+                (uint32_t)(uintptr_t)destination,
+                QBH_ATTENTION_HEAD_DIM_TILES *
+                        QBH_HMX_WEIGHT_BYTES -
+                    1U,
+                offsets, centered);
+        }
+    }
+
+    for (uint32_t n_tile = 0U;
+         n_tile < QBH_ATTENTION_SCORE_TILES; ++n_tile) {
+        uint32_t *bias = bias_words +
+            (size_t)n_tile *
+                (QBH_HMX_BIAS_BYTES / sizeof(uint32_t));
+        for (uint32_t output = 0U;
+             output < QBH_HMX_OUTPUT_CHANNELS; ++output) {
+            const uint32_t token =
+                n_tile * QBH_HMX_OUTPUT_CHANNELS + output;
+            bias[output] = conversion;
+            bias[QBH_HMX_OUTPUT_CHANNELS + output] = (uint32_t)(
+                -config->q_zero_point * signed_sums[token] +
+                (int32_t)QBH_ATTENTION_HMX_CENTER *
+                    (int32_t)divisor +
+                rounding);
         }
     }
     asm volatile("barrier" ::: "memory");

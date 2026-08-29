@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(22)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(42)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(23)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(44)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -106,6 +106,7 @@ enum qbh_block_attention_pipeline_mode {
     QBH_BLOCK_ATTENTION_PIPELINE_GQA = 4,
     QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP = 5,
     QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA = 6,
+    QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_FUSED_K = 7,
 };
 
 enum qbh_block_mlp_mode {
@@ -359,6 +360,7 @@ struct qbh_block_header {
     uint32_t u8_attention_probability_row_sum_max;
     uint32_t u8_attention_direct_o_tile_count;
     uint32_t u8_attention_qkv_unpack_skipped;
+    uint32_t u8_attention_fused_k_operand_mismatch_count;
     uint64_t u8_attention_actual_score_hash;
     uint64_t u8_attention_actual_probability_hash;
     uint64_t u8_attention_actual_av_hash;

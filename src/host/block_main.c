@@ -498,7 +498,19 @@ static int qbh_parse_attention_pipeline_mode(
         *mode = QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA;
         return 0;
     }
+    if (strcmp(text, "u8_log2_gqa_fused_k") == 0 ||
+        strcmp(text, "integer_gqa_fused_k") == 0) {
+        *mode =
+            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_FUSED_K;
+        return 0;
+    }
     return -1;
+}
+
+static int qbh_attention_u8_enabled(uint32_t mode) {
+    return mode == QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_FUSED_K;
 }
 
 static const char *qbh_attention_pipeline_mode_name(uint32_t mode) {
@@ -520,6 +532,10 @@ static const char *qbh_attention_pipeline_mode_name(uint32_t mode) {
     }
     if (mode == QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA) {
         return "u8_log2_gqa";
+    }
+    if (mode ==
+        QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_FUSED_K) {
+        return "u8_log2_gqa_fused_k";
     }
     return "control";
 }
@@ -1117,14 +1133,12 @@ int main(int argc, char **argv) {
         repeats == 0U || repeats > 100U ||
         w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
         (variant == QBH_BLOCK_W4U8 &&
-         (((attention_pipeline_mode !=
-                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA) &&
+         ((!qbh_attention_u8_enabled(attention_pipeline_mode) &&
            (attention_pack_mode !=
                 QBH_BLOCK_ATTENTION_PACK_CONTROL ||
             attention_pipeline_mode !=
                 QBH_BLOCK_ATTENTION_PIPELINE_CONTROL)) ||
-          ((attention_pipeline_mode ==
-                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA) &&
+          (qbh_attention_u8_enabled(attention_pipeline_mode) &&
            (attention_pack_mode != QBH_BLOCK_ATTENTION_PACK_HVX ||
             (common_ops_mask &
                  (QBH_BLOCK_COMMON_OP_RMS_NORM |
@@ -1136,7 +1150,7 @@ int main(int argc, char **argv) {
           (mlp_mode != QBH_BLOCK_MLP_CONTROL &&
            mlp_mode != QBH_BLOCK_MLP_W4U8_STREAMING))) ||
         attention_pipeline_mode >
-            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA ||
+            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_FUSED_K ||
         attention_hvx_contexts == 0U ||
         attention_hvx_contexts > 4U ||
         (attention_pipeline_mode ==
@@ -1145,8 +1159,7 @@ int main(int argc, char **argv) {
         (attention_pipeline_mode !=
              QBH_BLOCK_ATTENTION_PIPELINE_CONTROL &&
          (attention_hvx_contexts != 4U ||
-          (attention_pipeline_mode ==
-               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA
+          (qbh_attention_u8_enabled(attention_pipeline_mode)
                ? variant != QBH_BLOCK_W4U8
                : variant == QBH_BLOCK_W4U8))) ||
         ((attention_pipeline_mode ==
@@ -1329,8 +1342,8 @@ int main(int argc, char **argv) {
                 ? "reference_f16f16_block_output_f16.bin"
                 : (variant == QBH_BLOCK_W4F16
                        ? "reference_w4f16_block_output_f16.bin"
-                       : (attention_pipeline_mode ==
-                              QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA
+                       : (qbh_attention_u8_enabled(
+                              attention_pipeline_mode)
                               ? "reference_w4u8_integer_attention_block_output_u8.bin"
                               : "reference_w4u8_block_output_u8.bin")),
             output_bytes, &cursor) != 0 ||
@@ -1365,8 +1378,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "package common tensor audit failed\n");
         return 2;
     }
-    if (attention_pipeline_mode ==
-            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA &&
+    if (qbh_attention_u8_enabled(attention_pipeline_mode) &&
         qbh_prepare_slot(
             &attention_config_slot, argv[1],
             "attention_config_all_groups.bin",
@@ -1374,8 +1386,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "integer Attention config audit failed\n");
         return 2;
     }
-    if (attention_pipeline_mode ==
-            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA &&
+    if (qbh_attention_u8_enabled(attention_pipeline_mode) &&
         (qbh_prepare_slot(
              &attention_audit_slots[0], argv[1],
              "reference_w4u8_integer_attention_score_tiles_u8.bin",
@@ -1478,8 +1489,7 @@ int main(int argc, char **argv) {
             }
             cursor += w4u8_down_layout.stored_weight_bytes;
         }
-        if (attention_pipeline_mode ==
-                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA &&
+        if (qbh_attention_u8_enabled(attention_pipeline_mode) &&
             numerical_audit_enabled != 0U) {
             cursor = qbh_align_up_size(cursor, QBH_HOST_ALIGNMENT);
             attention_audit_output_offset = cursor;
@@ -1526,8 +1536,7 @@ int main(int argc, char **argv) {
         qbh_read_slot(shared, &w4u8_lut_slot) != 0) {
         goto cleanup;
     }
-    if (attention_pipeline_mode ==
-            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA &&
+    if (qbh_attention_u8_enabled(attention_pipeline_mode) &&
         (qbh_read_slot(shared, &attention_config_slot) != 0 ||
          qbh_read_slot(shared, &attention_audit_slots[0]) != 0 ||
          qbh_read_slot(shared, &attention_audit_slots[1]) != 0 ||
@@ -1584,8 +1593,7 @@ int main(int argc, char **argv) {
     header->rope_cos_bytes = rope_slots[0].expected_bytes;
     header->rope_sin_offset = rope_slots[1].offset;
     header->rope_sin_bytes = rope_slots[1].expected_bytes;
-    if (attention_pipeline_mode ==
-        QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA) {
+    if (qbh_attention_u8_enabled(attention_pipeline_mode)) {
         header->attention_config_offset =
             attention_config_slot.offset;
         header->attention_config_bytes =
@@ -1786,8 +1794,7 @@ int main(int argc, char **argv) {
             }
         }
     }
-    if (attention_pipeline_mode ==
-            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA &&
+    if (qbh_attention_u8_enabled(attention_pipeline_mode) &&
         numerical_audit_enabled != 0U) {
         const char *dump_root = getenv("QBH_DUMP_ATTENTION_DIR");
         if (dump_root != NULL && dump_root[0] != '\0') {
@@ -1840,7 +1847,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0042\","
+        "{\"experiment\":\"EXP-0044\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -1924,6 +1931,7 @@ int main(int argc, char **argv) {
         "\"u8_attention_probability_row_sum_max\":%" PRIu32 ","
         "\"u8_attention_direct_o_tile_count\":%" PRIu32 ","
         "\"u8_attention_qkv_unpack_skipped\":%" PRIu32 ","
+        "\"u8_attention_fused_k_operand_mismatch_count\":%" PRIu32 ","
         "\"u8_attention_expected_score_hash\":\"%016" PRIx64 "\","
         "\"u8_attention_actual_score_hash\":\"%016" PRIx64 "\","
         "\"u8_attention_expected_probability_hash\":\"%016" PRIx64 "\","
@@ -2093,8 +2101,7 @@ int main(int argc, char **argv) {
         "\"crouton_norm_store_ticks\":%" PRIu64 ","
         "\"release_result\":%d,\"close_result\":%d}\n",
         qbh_variant_name(variant),
-        attention_pipeline_mode ==
-                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA
+        qbh_attention_u8_enabled(attention_pipeline_mode)
             ? "U8xS8_HMX_log2_softmax"
             : "FP16_HMX",
         variant == QBH_BLOCK_W4U8 ? "U8xS8_integer_HMX"
@@ -2182,6 +2189,7 @@ int main(int argc, char **argv) {
         header->u8_attention_probability_row_sum_max,
         header->u8_attention_direct_o_tile_count,
         header->u8_attention_qkv_unpack_skipped,
+        header->u8_attention_fused_k_operand_mismatch_count,
         header->u8_attention_expected_score_hash,
         header->u8_attention_actual_score_hash,
         header->u8_attention_expected_probability_hash,

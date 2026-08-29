@@ -43,6 +43,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--package", type=Path, required=True)
     parser.add_argument("--reference", type=Path)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--experiment", default="EXP-0042")
     return parser.parse_args()
 
 
@@ -314,7 +315,7 @@ def main() -> int:
     }
 
     result = {
-        "experiment": "EXP-0042",
+        "experiment": args.experiment,
         "implementation_reference_boundary": "actual device U8 Q/K/V tensors",
         "implementation_reference": "independent host integer QK, log2 Softmax, and AV",
         "core_exact": core_exact,
