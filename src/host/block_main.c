@@ -664,6 +664,42 @@ static const char *qbh_crouton_boundary_mode_name(uint32_t mode) {
     }
 }
 
+static int qbh_parse_w4u8_qkvo_pipeline_mode(
+    const char *text, uint32_t *mode) {
+    if (strcmp(text, "serial") == 0 || strcmp(text, "control") == 0) {
+        *mode = QBH_BLOCK_W4U8_QKVO_SERIAL;
+        return 0;
+    }
+    if (strcmp(text, "qkv_batch2") == 0 ||
+        strcmp(text, "batch2") == 0) {
+        *mode = QBH_BLOCK_W4U8_QKV_BATCH2;
+        return 0;
+    }
+    if (strcmp(text, "qkv_batch4") == 0 ||
+        strcmp(text, "batch4") == 0) {
+        *mode = QBH_BLOCK_W4U8_QKV_BATCH4;
+        return 0;
+    }
+    if (strcmp(text, "qkvo_batch4") == 0) {
+        *mode = QBH_BLOCK_W4U8_QKVO_BATCH4;
+        return 0;
+    }
+    return -1;
+}
+
+static const char *qbh_w4u8_qkvo_pipeline_mode_name(uint32_t mode) {
+    switch (mode) {
+        case QBH_BLOCK_W4U8_QKV_BATCH2:
+            return "qkv_batch2";
+        case QBH_BLOCK_W4U8_QKV_BATCH4:
+            return "qkv_batch4";
+        case QBH_BLOCK_W4U8_QKVO_BATCH4:
+            return "qkvo_batch4";
+        default:
+            return "serial";
+    }
+}
+
 static uint64_t qbh_fnv1a64(const uint8_t *data, size_t bytes) {
     uint64_t hash = UINT64_C(1469598103934665603);
     for (size_t index = 0; index < bytes; ++index) {
@@ -1076,6 +1112,8 @@ int main(int argc, char **argv) {
     uint32_t mlp_chunk_vectors = 64U;
     uint32_t crouton_boundary_mode =
         QBH_BLOCK_CROUTON_BOUNDARY_CONTROL;
+    uint32_t w4u8_qkvo_pipeline_mode =
+        QBH_BLOCK_W4U8_QKVO_SERIAL;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t w4u8_gate_up_bundle_offset = 0U;
@@ -1109,7 +1147,7 @@ int main(int argc, char **argv) {
     memset(attention_audit_slots, 0, sizeof(attention_audit_slots));
     memset(&w4u8_gate_up_layout, 0, sizeof(w4u8_gate_up_layout));
     memset(&w4u8_down_layout, 0, sizeof(w4u8_down_layout));
-    if (argc < 3 || argc > 19 ||
+    if (argc < 3 || argc > 20 ||
         qbh_parse_variant(argv[2], &variant) != 0 ||
         (argc >= 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
         (argc >= 5 && qbh_parse_u32(
@@ -1142,6 +1180,8 @@ int main(int argc, char **argv) {
                            argv[17], &attention_hvx_contexts) != 0) ||
         (argc >= 19 && qbh_parse_crouton_boundary_mode(
                            argv[18], &crouton_boundary_mode) != 0) ||
+        (argc >= 20 && qbh_parse_w4u8_qkvo_pipeline_mode(
+                           argv[19], &w4u8_qkvo_pipeline_mode) != 0) ||
         repeats == 0U || repeats > 100U ||
         w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
         (variant == QBH_BLOCK_W4U8 &&
@@ -1200,6 +1240,9 @@ int main(int argc, char **argv) {
          w4f16_hvx_workers != 3U) ||
         (crouton_boundary_mode != QBH_BLOCK_CROUTON_BOUNDARY_CONTROL &&
          variant == QBH_BLOCK_W4U8) ||
+        w4u8_qkvo_pipeline_mode > QBH_BLOCK_W4U8_QKVO_BATCH4 ||
+        (variant != QBH_BLOCK_W4U8 &&
+         w4u8_qkvo_pipeline_mode != QBH_BLOCK_W4U8_QKVO_SERIAL) ||
         ((crouton_boundary_mode & QBH_BLOCK_CROUTON_BOUNDARY_QKV) != 0U &&
          attention_pipeline_mode !=
              QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP) ||
@@ -1316,7 +1359,9 @@ int main(int argc, char **argv) {
                         "gqa_qkv_overlap|u8_log2_gqa] "
                         "[attention_hvx_contexts:1..4] "
                         "[crouton_boundary:control|qkv|av_to_o|"
-                        "input_norm|post_norm|norms|all]\n",
+                        "input_norm|post_norm|norms|all] "
+                        "[w4u8_qkvo_pipeline:serial|qkv_batch2|"
+                        "qkv_batch4|qkvo_batch4]\n",
                 argv[0]);
         return 2;
     }
@@ -1586,6 +1631,7 @@ int main(int argc, char **argv) {
     header->mlp_hvx_contexts = mlp_hvx_contexts;
     header->mlp_chunk_vectors = mlp_chunk_vectors;
     header->crouton_boundary_mode = crouton_boundary_mode;
+    header->w4u8_qkvo_pipeline_mode = w4u8_qkvo_pipeline_mode;
     header->input_offset = input_slot.offset;
     header->input_bytes = input_slot.expected_bytes;
     header->output_bytes = output_bytes;
@@ -1859,7 +1905,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0044\","
+        "{\"experiment\":\"EXP-0045\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -1876,6 +1922,7 @@ int main(int argc, char **argv) {
         "\"mlp_hvx_contexts\":%" PRIu32 ","
         "\"mlp_chunk_vectors\":%" PRIu32 ","
         "\"crouton_boundary_mode\":\"%s\","
+        "\"w4u8_qkvo_pipeline_mode\":\"%s\","
         "\"w4f16_scale_placement\":\"%s\","
         "\"intermediate_residency\":\"VTCM\","
         "\"warmup_rpc_result\":%d,"
@@ -1944,6 +1991,10 @@ int main(int argc, char **argv) {
         "\"u8_attention_direct_o_tile_count\":%" PRIu32 ","
         "\"u8_attention_qkv_unpack_skipped\":%" PRIu32 ","
         "\"u8_attention_fused_k_operand_mismatch_count\":%" PRIu32 ","
+        "\"w4u8_qkv_batch_n_tiles\":%" PRIu32 ","
+        "\"w4u8_qkv_batch_count\":%" PRIu32 ","
+        "\"w4u8_qkvo_prefetch_count\":%" PRIu32 ","
+        "\"w4u8_qkvo_overlap_schedule_count\":%" PRIu32 ","
         "\"u8_attention_expected_score_hash\":\"%016" PRIx64 "\","
         "\"u8_attention_actual_score_hash\":\"%016" PRIx64 "\","
         "\"u8_attention_expected_probability_hash\":\"%016" PRIx64 "\","
@@ -2034,6 +2085,9 @@ int main(int argc, char **argv) {
         "\"u8_attention_av_hmx_ticks\":%" PRIu64 ","
         "\"u8_attention_av_requant_ticks\":%" PRIu64 ","
         "\"u8_attention_pipeline_wait_ticks\":%" PRIu64 ","
+        "\"w4u8_qkvo_weight_expand_ticks\":%" PRIu64 ","
+        "\"w4u8_qkvo_prefetch_wait_ticks\":%" PRIu64 ","
+        "\"w4u8_qkvo_hmx_lifetime_ticks\":%" PRIu64 ","
         "\"w4f16_gate_up_effective_region_tiles\":%" PRIu32 ","
         "\"w4f16_gate_up_scale_cache_bytes\":%" PRIu32 ","
         "\"w4f16_gate_up_weight_dma_ticks\":%" PRIu64 ","
@@ -2139,6 +2193,8 @@ int main(int argc, char **argv) {
         header->mlp_chunk_vectors,
         qbh_crouton_boundary_mode_name(
             header->crouton_boundary_mode),
+        qbh_w4u8_qkvo_pipeline_mode_name(
+            header->w4u8_qkvo_pipeline_mode),
         variant == QBH_BLOCK_W4F16 ? "hmx_output_per_channel"
                                    : "not_applicable",
         warmup_result, warmup_run_index, warmup_end - warmup_start,
@@ -2202,6 +2258,10 @@ int main(int argc, char **argv) {
         header->u8_attention_direct_o_tile_count,
         header->u8_attention_qkv_unpack_skipped,
         header->u8_attention_fused_k_operand_mismatch_count,
+        header->w4u8_qkv_batch_n_tiles,
+        header->w4u8_qkv_batch_count,
+        header->w4u8_qkvo_prefetch_count,
+        header->w4u8_qkvo_overlap_schedule_count,
         header->u8_attention_expected_score_hash,
         header->u8_attention_actual_score_hash,
         header->u8_attention_expected_probability_hash,
@@ -2280,6 +2340,9 @@ int main(int argc, char **argv) {
         header->u8_attention_av_hmx_ticks,
         header->u8_attention_av_requant_ticks,
         header->u8_attention_pipeline_wait_ticks,
+        header->w4u8_qkvo_weight_expand_ticks,
+        header->w4u8_qkvo_prefetch_wait_ticks,
+        header->w4u8_qkvo_hmx_lifetime_ticks,
         header->w4f16_gate_up_effective_region_tiles,
         header->w4f16_gate_up_scale_cache_bytes,
         header->w4f16_gate_up_weight_dma_ticks,

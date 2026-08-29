@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(23)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(44)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(24)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(45)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -87,6 +87,13 @@ enum qbh_block_w4f16_pipeline_mode {
     QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE8_CROSS_PREFETCH = 11,
     QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH = 12,
     QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH = 13,
+};
+
+enum qbh_block_w4u8_qkvo_pipeline_mode {
+    QBH_BLOCK_W4U8_QKVO_SERIAL = 0,
+    QBH_BLOCK_W4U8_QKV_BATCH2 = 1,
+    QBH_BLOCK_W4U8_QKV_BATCH4 = 2,
+    QBH_BLOCK_W4U8_QKVO_BATCH4 = 3,
 };
 
 enum qbh_block_attention_pack_mode {
@@ -247,6 +254,7 @@ struct qbh_block_header {
     uint32_t mlp_hvx_contexts;
     uint32_t mlp_chunk_vectors;
     uint32_t crouton_boundary_mode;
+    uint32_t w4u8_qkvo_pipeline_mode;
 
     uint32_t input_offset;
     uint32_t input_bytes;
@@ -362,6 +370,10 @@ struct qbh_block_header {
     uint32_t u8_attention_direct_o_tile_count;
     uint32_t u8_attention_qkv_unpack_skipped;
     uint32_t u8_attention_fused_k_operand_mismatch_count;
+    uint32_t w4u8_qkv_batch_n_tiles;
+    uint32_t w4u8_qkv_batch_count;
+    uint32_t w4u8_qkvo_prefetch_count;
+    uint32_t w4u8_qkvo_overlap_schedule_count;
     uint64_t u8_attention_actual_score_hash;
     uint64_t u8_attention_actual_probability_hash;
     uint64_t u8_attention_actual_av_hash;
@@ -455,6 +467,9 @@ struct qbh_block_header {
     uint64_t u8_attention_av_hmx_ticks;
     uint64_t u8_attention_av_requant_ticks;
     uint64_t u8_attention_pipeline_wait_ticks;
+    uint64_t w4u8_qkvo_weight_expand_ticks;
+    uint64_t w4u8_qkvo_prefetch_wait_ticks;
+    uint64_t w4u8_qkvo_hmx_lifetime_ticks;
 
     uint64_t invocation_ticks;
     uint64_t runtime_setup_ticks;
