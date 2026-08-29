@@ -19,8 +19,8 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 44
+  active_experiment: EXP-0044
+  next_experiment_number: 45
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -33,9 +33,9 @@ current_scope:
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: none
-  active_experiment_evidence: 'D:\llm_exp\results\qwen3-block-htp\exp0043\20260829T114058Z_638fef441f35_formal'
-  active_experiment_gate: none
+  active_experiment_stage: exp0044_u8_attention_native_operand_fusion
+  active_experiment_evidence: pending
+  active_experiment_gate: byte_exact_native_k_operand_fusion_then_repeat1_repeat10_attention_and_host_improvement
   selected_baseline:
     id: W4F16-EXP0038-NORMS
     experiment: EXP-0038
