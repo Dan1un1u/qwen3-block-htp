@@ -653,6 +653,13 @@ static int qbh_parse_crouton_boundary_mode(
                 QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT;
         return 0;
     }
+    if (strcmp(text, "w4u8_mlp_io_qkv_o") == 0) {
+        *mode = QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
+                QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
+                QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT |
+                QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT;
+        return 0;
+    }
     return -1;
 }
 
@@ -683,6 +690,11 @@ static const char *qbh_crouton_boundary_mode_name(uint32_t mode) {
              QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
              QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT:
             return "w4u8_mlp_io_qkv_input";
+        case QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
+             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
+             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT |
+             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT:
+            return "w4u8_mlp_io_qkv_o";
         default:
             return "control";
     }
@@ -1266,18 +1278,29 @@ int main(int argc, char **argv) {
          ((crouton_boundary_mode &
            ~((uint32_t)(QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
                         QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
-                        QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT))) != 0U ||
+                        QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT |
+                        QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT))) != 0U ||
           ((crouton_boundary_mode &
             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT) != 0U &&
            (crouton_boundary_mode &
             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT) == 0U) ||
+          ((crouton_boundary_mode &
+            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT) != 0U &&
+           (crouton_boundary_mode &
+            (QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
+             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
+             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT)) !=
+            (QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
+             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
+             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT)) ||
           (crouton_boundary_mode != QBH_BLOCK_CROUTON_BOUNDARY_CONTROL &&
            mlp_mode != QBH_BLOCK_MLP_W4U8_STREAMING))) ||
         (variant != QBH_BLOCK_W4U8 &&
          (crouton_boundary_mode &
           (QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
-           QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT)) != 0U) ||
+           QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT |
+           QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT)) != 0U) ||
         w4u8_qkvo_pipeline_mode > QBH_BLOCK_W4U8_QKVO_BATCH4 ||
         (variant != QBH_BLOCK_W4U8 &&
          w4u8_qkvo_pipeline_mode != QBH_BLOCK_W4U8_QKVO_SERIAL) ||
@@ -1293,6 +1316,13 @@ int main(int argc, char **argv) {
               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP ||
           w4u8_qkvo_pipeline_mode !=
               QBH_BLOCK_W4U8_QKVO_BATCH4)) ||
+        ((crouton_boundary_mode &
+          QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT) != 0U &&
+         (attention_pipeline_mode !=
+              QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP ||
+          w4u8_qkvo_pipeline_mode !=
+              QBH_BLOCK_W4U8_QKVO_BATCH4 ||
+          residual_mode != QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM)) ||
         mlp_mode > QBH_BLOCK_MLP_W4U8_STREAMING ||
         mlp_hvx_contexts == 0U || mlp_hvx_contexts > 4U ||
         (mlp_mode == QBH_BLOCK_MLP_CONTROL && mlp_hvx_contexts != 1U) ||

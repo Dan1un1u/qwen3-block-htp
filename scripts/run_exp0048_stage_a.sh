@@ -16,8 +16,11 @@ case "${mode}" in
     qkv_native)
         boundary_mode=w4u8_mlp_io_qkv_input
         ;;
+    o_native)
+        boundary_mode=w4u8_mlp_io_qkv_o
+        ;;
     *)
-        printf 'usage: %s [control|qkv_native] [repeat] [attribution] [audit]\n' \
+        printf 'usage: %s [control|qkv_native|o_native] [repeat] [attribution] [audit]\n' \
             "$0" >&2
         exit 2
         ;;

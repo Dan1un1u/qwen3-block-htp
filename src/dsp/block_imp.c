@@ -702,16 +702,27 @@ static int qbh_header_valid(const struct qbh_block_header *header,
                       QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM |
                       QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
                       QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
-                      QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT))) != 0U ||
+                      QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT |
+                      QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT))) != 0U ||
         (header->variant == QBH_BLOCK_W4U8 &&
          ((header->crouton_boundary_mode &
            ~((uint32_t)(QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
                         QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
-                        QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT))) != 0U ||
+                        QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT |
+                        QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT))) != 0U ||
           ((header->crouton_boundary_mode &
             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT) != 0U &&
            (header->crouton_boundary_mode &
             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT) == 0U) ||
+          ((header->crouton_boundary_mode &
+            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT) != 0U &&
+           (header->crouton_boundary_mode &
+            (QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
+             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
+             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT)) !=
+            (QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
+             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
+             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT)) ||
           (header->crouton_boundary_mode !=
                QBH_BLOCK_CROUTON_BOUNDARY_CONTROL &&
            header->mlp_mode != QBH_BLOCK_MLP_W4U8_STREAMING))) ||
@@ -719,7 +730,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          (header->crouton_boundary_mode &
           (QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
-           QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT)) != 0U) ||
+           QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT |
+           QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT)) != 0U) ||
         header->w4u8_qkvo_pipeline_mode >
             QBH_BLOCK_W4U8_QKVO_BATCH4 ||
         (header->variant != QBH_BLOCK_W4U8 &&
@@ -739,6 +751,14 @@ static int qbh_header_valid(const struct qbh_block_header *header,
               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP ||
           header->w4u8_qkvo_pipeline_mode !=
               QBH_BLOCK_W4U8_QKVO_BATCH4)) ||
+        ((header->crouton_boundary_mode &
+          QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT) != 0U &&
+         (header->attention_pipeline_mode !=
+              QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP ||
+          header->w4u8_qkvo_pipeline_mode !=
+              QBH_BLOCK_W4U8_QKVO_BATCH4 ||
+          header->residual_mode !=
+              QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM)) ||
         header->mlp_mode > QBH_BLOCK_MLP_W4U8_STREAMING ||
         header->mlp_hvx_contexts == 0U ||
         header->mlp_hvx_contexts > QBH_BLOCK_W4F16_HVX_WORKERS ||
@@ -4063,11 +4083,13 @@ static int qbh_run_w4u8_qkvo_pipelined_projection(
                 return -1;
             }
             if (direct_output != 0U) {
-                header->u8_attention_qkv_unpack_skipped +=
-                    current_tiles;
-                qbh_hvx_pool_u8_qk_prep_publish(
-                    header, desc, w4f16_pool,
-                    current_base, current_tiles);
+                if (desc != &header->projections[QBH_BLOCK_PROJ_O]) {
+                    header->u8_attention_qkv_unpack_skipped +=
+                        current_tiles;
+                    qbh_hvx_pool_u8_qk_prep_publish(
+                        header, desc, w4f16_pool,
+                        current_base, current_tiles);
+                }
             } else {
                 uint64_t unpack_start =
                     HAP_perf_get_qtimer_count();
@@ -4122,10 +4144,12 @@ static int qbh_run_w4u8_qkvo_pipelined_projection(
             return -1;
         }
         if (direct_output != 0U) {
-            header->u8_attention_qkv_unpack_skipped += current_tiles;
-            qbh_hvx_pool_u8_qk_prep_publish(
-                header, desc, w4f16_pool,
-                current_base, current_tiles);
+            if (desc != &header->projections[QBH_BLOCK_PROJ_O]) {
+                header->u8_attention_qkv_unpack_skipped += current_tiles;
+                qbh_hvx_pool_u8_qk_prep_publish(
+                    header, desc, w4f16_pool,
+                    current_base, current_tiles);
+            }
         } else {
             uint64_t unpack_start = HAP_perf_get_qtimer_count();
             for (uint32_t tile = 0U; tile < current_tiles; ++tile) {
@@ -4175,11 +4199,14 @@ static int qbh_run_projection(
     uint64_t w4f16_prefetch_start = 0U;
     const uint32_t u8_integer_attention =
         qbh_attention_u8_enabled(header->attention_pipeline_mode);
-    const uint32_t direct_u8_qkv_output =
+    const uint32_t direct_u8_projection_output =
         u8_integer_attention != 0U &&
         (desc == &header->projections[QBH_BLOCK_PROJ_Q] ||
          desc == &header->projections[QBH_BLOCK_PROJ_K] ||
-         desc == &header->projections[QBH_BLOCK_PROJ_V]);
+         desc == &header->projections[QBH_BLOCK_PROJ_V] ||
+         (desc == &header->projections[QBH_BLOCK_PROJ_O] &&
+          (header->crouton_boundary_mode &
+           QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT) != 0U));
 
     memset((void *)w4f16_ready, 0, sizeof(w4f16_ready));
 
@@ -4252,7 +4279,7 @@ static int qbh_run_projection(
             return qbh_run_w4u8_qkvo_pipelined_projection(
                 header, shared, desc, buffers, worker,
                 w4f16_pool, projection_activation,
-                (uint8_t *)output, direct_u8_qkv_output,
+                (uint8_t *)output, direct_u8_projection_output,
                 batch_tiles);
         }
     }
@@ -4356,7 +4383,7 @@ static int qbh_run_projection(
                 worker, QBH_BLOCK_HMX_U8S8,
                 projection_activation, buffers->expanded_weight,
                 buffers->scale_or_bias,
-                direct_u8_qkv_output != 0U
+                direct_u8_projection_output != 0U
                     ? (uint8_t *)output +
                           (size_t)n_tile * QBH_HMX_OUTPUT_BYTES
                     : buffers->hmx_output,
@@ -4365,7 +4392,7 @@ static int qbh_run_projection(
             header->projection_hmx_wait_ticks +=
                 HAP_perf_get_qtimer_count() - phase_start;
             header->hmx_u8s8_tile_pair_count += k_tiles;
-            if (result == 0 && direct_u8_qkv_output == 0U) {
+            if (result == 0 && direct_u8_projection_output == 0U) {
                 phase_start = HAP_perf_get_qtimer_count();
                 qbh_unpack_u8_output(
                     buffers->hmx_output, (uint8_t *)output, desc->n,
@@ -4374,7 +4401,8 @@ static int qbh_run_projection(
                     HAP_perf_get_qtimer_count() - phase_start;
                 qbh_hvx_pool_qk_norm_rope_publish(
                     header, desc, w4f16_pool, n_tile, 1U);
-            } else if (result == 0) {
+            } else if (result == 0 &&
+                       desc != &header->projections[QBH_BLOCK_PROJ_O]) {
                 ++header->u8_attention_qkv_unpack_skipped;
                 qbh_hvx_pool_u8_qk_prep_publish(
                     header, desc, w4f16_pool, n_tile, 1U);
@@ -6997,6 +7025,10 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         header->variant == QBH_BLOCK_W4U8 &&
         (header->crouton_boundary_mode &
          QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT) != 0U;
+    uint32_t w4u8_o_native_output_enabled =
+        header->variant == QBH_BLOCK_W4U8 &&
+        (header->crouton_boundary_mode &
+         QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT) != 0U;
     struct qbh_projection_layout w4u8_gate_up_layout;
     struct qbh_projection_layout w4u8_down_layout;
     uint8_t *w4u8_mlp_native_activation = NULL;
@@ -7505,16 +7537,29 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         if (header->residual_mode ==
             QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM) {
             if (w4u8_mlp_native_input_enabled != 0U) {
-                qbh_hvx_residual_rms_norm_u8_native_activation(
-                    buffers->residual,
-                    &header->qparams[QBH_BLOCK_QP_BLOCK_INPUT],
-                    buffers->attention_projection,
-                    &header->qparams[QBH_BLOCK_QP_ATTENTION_PROJECTION],
-                    &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_RESIDUAL],
-                    (const __fp16 *)buffers->post_norm_weight,
-                    w4u8_mlp_native_activation,
-                    &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_NORM],
-                    QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+                if (w4u8_o_native_output_enabled != 0U) {
+                    qbh_hvx_residual_rms_norm_u8_native_io(
+                        buffers->residual,
+                        &header->qparams[QBH_BLOCK_QP_BLOCK_INPUT],
+                        buffers->attention_projection,
+                        &header->qparams[QBH_BLOCK_QP_ATTENTION_PROJECTION],
+                        &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_RESIDUAL],
+                        (const __fp16 *)buffers->post_norm_weight,
+                        w4u8_mlp_native_activation,
+                        &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_NORM],
+                        QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+                } else {
+                    qbh_hvx_residual_rms_norm_u8_native_activation(
+                        buffers->residual,
+                        &header->qparams[QBH_BLOCK_QP_BLOCK_INPUT],
+                        buffers->attention_projection,
+                        &header->qparams[QBH_BLOCK_QP_ATTENTION_PROJECTION],
+                        &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_RESIDUAL],
+                        (const __fp16 *)buffers->post_norm_weight,
+                        w4u8_mlp_native_activation,
+                        &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_NORM],
+                        QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+                }
             } else {
                 qbh_hvx_residual_rms_norm_u8(
                     buffers->residual,

@@ -9,13 +9,14 @@ package_dir="${QBH_EXP0048_PACKAGE:-/mnt/d/llm_exp/models/qwen3-block-htp/exp004
 stamp="$(date -u +%Y%m%dT%H%M%SZ)"
 source_head="$(git -C "${project_root}" rev-parse --short=12 HEAD)"
 result_dir="${1:-/mnt/d/llm_exp/results/qwen3-block-htp/exp0048/${stamp}_${source_head}_stage_a_attention_audit}"
+boundary_mode="${2:-w4u8_mlp_io_qkv_input}"
 dump_dir="${result_dir}/attention_dump"
 remote_dump="${remote_root}/attention-audit-${stamp}"
 
 mkdir -p "${dump_dir}"
 "${adb_exe}" -s "${serial}" get-state >/dev/null
 "${adb_exe}" -s "${serial}" shell \
-    "mkdir -p ${remote_dump} && cd ${remote_root} && QBH_DUMP_ATTENTION_DIR=${remote_dump} LD_LIBRARY_PATH=${remote_root} DSP_LIBRARY_PATH=${remote_root} ADSP_LIBRARY_PATH=${remote_root} ./qwen3_block_cli ${remote_root}/block_package_layer14_m64 W4U8 1 2 32 rms_rope_softmax on on fused serial control hvx w4u8_streaming 3 64 u8_log2_gqa_qkv_overlap 4 w4u8_mlp_io_qkv_input qkvo_batch4" \
+    "mkdir -p ${remote_dump} && cd ${remote_root} && QBH_DUMP_ATTENTION_DIR=${remote_dump} LD_LIBRARY_PATH=${remote_root} DSP_LIBRARY_PATH=${remote_root} ADSP_LIBRARY_PATH=${remote_root} ./qwen3_block_cli ${remote_root}/block_package_layer14_m64 W4U8 1 2 32 rms_rope_softmax on on fused serial control hvx w4u8_streaming 3 64 u8_log2_gqa_qkv_overlap 4 ${boundary_mode} qkvo_batch4" \
     | tee "${result_dir}/device_audit.json"
 "${adb_exe}" -s "${serial}" pull "${remote_dump}/." \
     "$(wslpath -w "${dump_dir}")" >/dev/null
@@ -31,4 +32,4 @@ mkdir -p "${dump_dir}"
 "${adb_exe}" -s "${serial}" shell \
     "rm -f ${remote_dump}/actual_q_tiles_u8.bin ${remote_dump}/actual_k_tiles_u8.bin ${remote_dump}/actual_v_tiles_u8.bin ${remote_dump}/actual_score_tiles_u8.bin ${remote_dump}/actual_probability_tiles_u8.bin ${remote_dump}/actual_av_tiles_u8.bin && rmdir ${remote_dump}" >/dev/null
 
-printf 'EXP0048_STAGE_A_AUDIT_RESULT=%s\n' "${result_dir}"
+printf 'EXP0048_ATTENTION_AUDIT_RESULT=%s\n' "${result_dir}"

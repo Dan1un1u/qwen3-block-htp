@@ -455,6 +455,23 @@ void qbh_hvx_residual_rms_norm_u8_native_activation(
         normalized_qparam, rows, width);
 }
 
+void qbh_hvx_residual_rms_norm_u8_native_io(
+    uint8_t *residual,
+    const struct qbh_block_qparam *residual_qparam,
+    const uint8_t *addition_tiles,
+    const struct qbh_block_qparam *addition_qparam,
+    const struct qbh_block_qparam *sum_qparam,
+    const __fp16 *gamma, uint8_t *normalized_tiles,
+    const struct qbh_block_qparam *normalized_qparam,
+    uint32_t rows, uint32_t width) {
+    qbh_hvx_residual_add_u8_native_output(
+        residual, residual_qparam, addition_tiles, addition_qparam,
+        sum_qparam, rows, width);
+    qbh_hvx_rms_norm_u8_native_activation(
+        residual, sum_qparam, gamma, normalized_tiles,
+        normalized_qparam, rows, width);
+}
+
 static HVX_Vector qbh_sf32_scale_and_offset(
     HVX_Vector value, float scale, float offset) {
     const HVX_Vector scaled = Q6_Vqf32_vmpy_VsfVsf(

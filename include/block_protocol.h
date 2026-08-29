@@ -135,6 +135,7 @@ enum qbh_block_crouton_boundary_mode {
     QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT = 1U << 4,
     QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT = 1U << 5,
     QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT = 1U << 6,
+    QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT = 1U << 7,
 };
 
 enum qbh_block_projection_index {
