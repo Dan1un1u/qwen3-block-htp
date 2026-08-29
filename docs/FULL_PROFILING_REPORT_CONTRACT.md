@@ -15,6 +15,18 @@ control.
 
 ## Required tables
 
+The user-facing response starts with a stable repeat-ten overview table for
+the latest valid F16F16 result, the Selected-Baseline W4F16 result, and the
+latest eligible W4U8 result. Its fixed rows are I/O and metadata, Input
+RMSNorm, QKV plus Q/K Norm-RoPE preparation, QK-Softmax-AV, O projection,
+Post-Attention residual plus RMSNorm, Gate/Up plus SwiGLU, Down projection,
+Final residual, Host/RPC and profiling-closure remainder, and complete Host
+wall. Every module cell contains microseconds and percent of Host wall. The
+last column reports `W4F16_time / W4U8_time - 1`; positive means W4U8 is
+faster. Columns reused from older formal evidence are identified in the text.
+This overview is mandatory even when the new experiment changes only one
+module or one Project Variant.
+
 For repeat one and repeat ten, every numeric row shows the control median,
 candidate median, and candidate-versus-control percentage. The report contains:
 

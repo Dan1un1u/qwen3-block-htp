@@ -109,3 +109,12 @@ Changing any item requires explicit user approval and a committed amendment.
   may not be recorded as completed without this report, except when execution
   ended before profiling was possible, in which case the report records the
   failure boundary and marks the unavailable sections explicitly.
+- **PC-028 — Three-variant completion overview.** Every user-facing experiment
+  closure begins with one stable module table comparing the latest valid
+  `F16F16`, Selected-Baseline `W4F16`, and latest eligible `W4U8` results at
+  repeat ten. Each module cell contains absolute wall time in microseconds and
+  its share of complete Host wall; the final column reports W4U8 speed relative
+  to W4F16 as `W4F16_time / W4U8_time - 1`. An experiment that changes only one
+  variant reuses the latest valid formal evidence for the other columns and
+  states that provenance. This overview supplements rather than replaces the
+  repeat-one/repeat-ten direct-control tables required by PC-027.
