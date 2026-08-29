@@ -2720,3 +2720,48 @@ experiments:
       accuracy_characterization: byte_exact_to_existing_w4u8_scalar_implementation_reference_only_not_full_model_quantization_accuracy
       performance_characterization: replacing_the_remaining_scalar_w4u8_rmsnorm_qk_norm_rope_attention_bridge_softmax_and_residual_paths_with_hvx_reduces_complete_block_host_wall_by_90_49_percent_at_repeat1_and_90_76_percent_at_repeat10_without_changing_hmx_work_or_the_zero_ddr_contract
       selected_baseline_changed: false
+  - id: EXP-0042
+    slug: w4u8-log2-gqa-attention
+    title: Replace the retained FP16 Attention island with integer QK, log2 Softmax, and integer AV
+    parent: EXP-0041
+    variants:
+      - exp0041_fp16_attention_island_control
+      - integer_qk_u8_score_micrograph
+      - tilewise_log2_softmax_gqa_micrograph
+      - integer_av_u8_output_micrograph
+      - cumulative_integer_gqa_attention_block_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-integer-gqa-attention
+    source_branches:
+      - codex/exp-0042-w4u8-log2-gqa-attention
+    source_commits: []
+    record: docs/experiments/EXP-0042.md
+    decided_by: user
+    decided_on: '2026-08-29'
+    approval_ref: 'User message 2026-08-29: 批准。开始实现'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0042-w4u8-log2-gqa-attention
+      started_on: '2026-08-29'
+    evidence:
+      formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0042'
+      retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0042'
+      source_parent_commit: 23bdbee61ddfddb914f0cbcc2266f0cee12be0e7
+      selected_baseline: W4F16-EXP0038-NORMS
+      provisional_w4u8_parent: EXP-0041
+      execution_unit: qwen3_layer14_complete_block_m64
+      activation_scope: asymmetric_u8_qkv_integer_attention_boundaries
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      kv_cache_scope: deferred
+      stage_a_scope: prove_u8_by_s8_integer_qk_and_av_with_dynamic_zero_point_correction_and_exact_host_integer_reference
+      stage_b_scope: implement_tilewise_log2_softmax_with_four_bit_exponent_codes_and_u8_probability_directly_in_hmx_activation_layout
+      stage_c_scope: pipeline_eight_gqa_groups_across_one_integer_hmx_owner_and_hvx_workers_then_integrate_the_complete_w4u8_block
+      correctness_gate: device_path_is_byte_exact_to_independent_integer_implementation_reference_for_each_declared_algorithm_mode
+      accuracy_gate: diagnostic_only_against_the_exp0041_fp16_attention_island_with_no_full_model_accuracy_requirement
+      physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn_no_fp16_attention_hmx
+      speed_gate: cumulative_candidate_strictly_improves_attention_and_complete_block_host_wall_over_exp0041_at_repeat1_and_repeat10_for_local_adoption
+      selected_baseline_changed: false
