@@ -2523,10 +2523,10 @@ experiments:
       - exp0038_w4f16_norms_mlp_reference
       - complete_block_old_w4u8_control
       - complete_block_streaming_w4u8_candidate
-    execution_state: running
+    execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending
+    adoption_status: accepted
     evidence_profile: real-qwen3-block-w4u8-integer-hmx-mlp-port
     source_branches:
       - codex/exp-0040-w4u8-latest-mlp
@@ -2538,6 +2538,10 @@ experiments:
     decided_by: user
     decided_on: '2026-08-29'
     approval_ref: 'User messages 2026-08-29: begin W4A8 from the proven integer-HMX path; approve the Stage-A variant-specific HVX worker amendment'
+    accepted_by: user
+    accepted_on: '2026-08-29'
+    acceptance_ref: 'User message 2026-08-29: continue implementing the A8 nonlinear operators from this W4U8 result'
+    accepted_variant: complete_block_streaming_w4u8_candidate
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0040-w4u8-latest-mlp
@@ -2624,3 +2628,49 @@ experiments:
       stage_b_local_adoption_eligible: true
       stage_b_adoption_decision: pending_user_approval
       stage_b_performance_characterization: replacing_only_the_old_w4u8_mlp_with_the_stage_a_packed_w4_integer_hmx_pipeline_reduces_complete_block_host_wall_by_30_07_percent_at_repeat1_and_29_93_percent_at_repeat10_while_preserving_byte_exact_output_and_zero_intermediate_ddr_but_the_unchanged_scalar_w4u8_common_operators_and_attention_path_still_make_the_candidate_far_slower_than_the_selected_w4f16_baseline
+      selected_baseline_changed: false
+  - id: EXP-0041
+    slug: w4u8-hvx-common-ops
+    title: Vectorize W4U8 common operators while retaining the current Attention island
+    parent: EXP-0040
+    variants:
+      - exp0040_streaming_w4u8_control
+      - hvx_u8_rmsnorm_residual
+      - hvx_u8_qk_norm_rope
+      - hvx_fp16_softmax_bridge
+      - cumulative_hvx_w4u8_common_ops
+    execution_state: running
+    evidence_validity: pending
+    local_gate: pending
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-hvx-common-operators
+    source_branches:
+      - codex/exp-0041-w4u8-hvx-common-ops
+    source_commits: []
+    record: docs/experiments/EXP-0041.md
+    decided_by: user
+    decided_on: '2026-08-29'
+    approval_ref: 'User message 2026-08-29: 继续完成非线性算子A8的实现，可以之前A16实现作为参考。'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0041-w4u8-hvx-common-ops
+      started_on: '2026-08-29'
+    evidence:
+      formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0041'
+      retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0041'
+      source_parent_commit: 4a07e11536171371b918dd0167c7f493cc9b2ab2
+      selected_baseline: W4F16-EXP0038-NORMS
+      provisional_w4u8_parent: EXP-0040
+      execution_unit: qwen3_layer14_complete_block_m64
+      activation_scope: asymmetric_u8_common_operator_boundaries
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      stage_a_scope: hvx_u8_input_rmsnorm_post_attention_residual_rmsnorm_and_final_residual
+      stage_b_scope: hvx_u8_qk_norm_rope_and_vectorized_u8_to_fp16_attention_bridge
+      stage_c_scope: reuse_the_validated_standard_fp16_hvx_softmax_inside_the_retained_fp16_hmx_attention_island
+      pure_u8_softmax_scope: deferred_until_integer_qk_and_av_can_change_together
+      correctness_gate: u8_native_operators_match_the_scalar_u8_implementation_reference_and_the_fp16_softmax_bridge_meets_its_existing_local_error_and_mask_contract
+      accuracy_gate: none_beyond_local_implementation_correctness
+      physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn
+      speed_gate: cumulative_complete_block_host_wall_strictly_improves_over_exp0040_at_repeat1_and_repeat10
+      selected_baseline_changed: false
