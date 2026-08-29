@@ -28,6 +28,14 @@ void qbh_hvx_residual_add_u8(
     const struct qbh_block_qparam *output_qparam,
     uint32_t elements);
 
+void qbh_hvx_residual_add_u8_native_output(
+    uint8_t *residual,
+    const struct qbh_block_qparam *residual_qparam,
+    const uint8_t *addition_tiles,
+    const struct qbh_block_qparam *addition_qparam,
+    const struct qbh_block_qparam *output_qparam,
+    uint32_t rows, uint32_t width);
+
 void qbh_hvx_residual_rms_norm_u8(
     uint8_t *residual,
     const struct qbh_block_qparam *residual_qparam,

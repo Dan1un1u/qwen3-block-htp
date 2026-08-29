@@ -6679,6 +6679,15 @@ static int qbh_init_w4u8_gate_up_layout(
     return qbh_configure_w4u8_gate_up_layout(layout);
 }
 
+static int qbh_init_w4u8_down_layout(
+    struct qbh_projection_layout *layout) {
+    return qbh_projection_layout_init(
+        QBH_PROJECTION_DOWN,
+        QBH_WEIGHT_PACKED_W4_HMX_SCALE,
+        QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH2, 4U,
+        QBH_W4_WIDE_CHUNK_TILES, layout);
+}
+
 static void qbh_reset_w4u8_phase_header(
     struct qbh_probe_header *phase, uint32_t workers) {
     memset(phase, 0, sizeof(*phase));
@@ -6731,7 +6740,8 @@ static int qbh_run_w4u8_streaming_mlp(
     struct qbh_block_header *header, const uint8_t *shared,
     struct qbh_block_buffers *buffers,
     struct qbh_block_hmx_worker *worker,
-    uint32_t activation_prepacked) {
+    uint32_t activation_prepacked,
+    uint32_t output_native) {
     struct qbh_projection_layout gate_up_layout;
     struct qbh_projection_layout down_layout;
     struct qbh_probe_header gate_up_phase;
@@ -6753,11 +6763,7 @@ static int qbh_run_w4u8_streaming_mlp(
     if (header->variant != QBH_BLOCK_W4U8 ||
         header->mlp_mode != QBH_BLOCK_MLP_W4U8_STREAMING ||
         qbh_init_w4u8_gate_up_layout(&gate_up_layout) != 0 ||
-        qbh_projection_layout_init(
-            QBH_PROJECTION_DOWN,
-            QBH_WEIGHT_PACKED_W4_HMX_SCALE,
-            QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH2, 4U,
-            QBH_W4_WIDE_CHUNK_TILES, &down_layout) != 0 ||
+        qbh_init_w4u8_down_layout(&down_layout) != 0 ||
         header->w4u8_gate_up_bundle_bytes !=
             gate_up_layout.stored_weight_bytes ||
         header->w4u8_down_bundle_bytes !=
@@ -6845,18 +6851,22 @@ static int qbh_run_w4u8_streaming_mlp(
     qbh_accumulate_w4u8_phase_metrics(
         header, &down_phase, &down_layout, 0U);
 
-    start = HAP_perf_get_qtimer_count();
-    for (uint32_t n_tile = 0U; n_tile < down_layout.n_tiles;
-         ++n_tile) {
-        qbh_unpack_u8_output(
-            mlp_arena + down_layout.vtcm_output_offset +
-                (size_t)n_tile * QBH_HMX_OUTPUT_BYTES,
-            buffers->down, QBH_BLOCK_HIDDEN,
-            n_tile * QBH_HMX_OUTPUT_CHANNELS);
+    if (output_native != 0U) {
+        ++header->w4u8_mlp_output_unpack_skipped;
+    } else {
+        start = HAP_perf_get_qtimer_count();
+        for (uint32_t n_tile = 0U; n_tile < down_layout.n_tiles;
+             ++n_tile) {
+            qbh_unpack_u8_output(
+                mlp_arena + down_layout.vtcm_output_offset +
+                    (size_t)n_tile * QBH_HMX_OUTPUT_BYTES,
+                buffers->down, QBH_BLOCK_HIDDEN,
+                n_tile * QBH_HMX_OUTPUT_CHANNELS);
+        }
+        unpack_ticks = HAP_perf_get_qtimer_count() - start;
+        header->projection_unpack_ticks += unpack_ticks;
+        header->w4u8_mlp_output_unpack_ticks += unpack_ticks;
     }
-    unpack_ticks = HAP_perf_get_qtimer_count() - start;
-    header->projection_unpack_ticks += unpack_ticks;
-    header->w4u8_mlp_output_unpack_ticks += unpack_ticks;
     result = 0;
 
 relock:
@@ -6961,8 +6971,15 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         header->mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING &&
         (header->crouton_boundary_mode &
          QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT) != 0U;
+    uint32_t w4u8_mlp_native_output_enabled =
+        header->variant == QBH_BLOCK_W4U8 &&
+        header->mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING &&
+        (header->crouton_boundary_mode &
+         QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT) != 0U;
     struct qbh_projection_layout w4u8_gate_up_layout;
+    struct qbh_projection_layout w4u8_down_layout;
     uint8_t *w4u8_mlp_native_activation = NULL;
+    const uint8_t *w4u8_mlp_native_output = NULL;
     int post_attention_norm_fused = 0;
 
     qbh_hvx_check_reset(&rms_check_metrics);
@@ -6977,6 +6994,13 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         }
         w4u8_mlp_native_activation = buffers->q +
             w4u8_gate_up_layout.vtcm_activation_offset;
+    }
+    if (w4u8_mlp_native_output_enabled != 0U) {
+        if (qbh_init_w4u8_down_layout(&w4u8_down_layout) != 0) {
+            return QBH_BLOCK_STATUS_MLP_STREAM_FAILED;
+        }
+        w4u8_mlp_native_output = buffers->q +
+            w4u8_down_layout.vtcm_output_offset;
     }
 
     start = HAP_perf_get_qtimer_count();
@@ -7614,7 +7638,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     if (header->mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING) {
         if (qbh_run_w4u8_streaming_mlp(
                 header, shared, buffers, worker,
-                w4u8_mlp_native_input_enabled) != 0) {
+                w4u8_mlp_native_input_enabled,
+                w4u8_mlp_native_output_enabled) != 0) {
             return QBH_BLOCK_STATUS_MLP_STREAM_FAILED;
         }
         goto w4u8_mlp_complete;
@@ -7817,7 +7842,15 @@ static int qbh_run_one_block(struct qbh_block_header *header,
 w4u8_mlp_complete:
     start = HAP_perf_get_qtimer_count();
     if (header->variant == QBH_BLOCK_W4U8) {
-        if (header->residual_mode != QBH_BLOCK_RESIDUAL_SCALAR) {
+        if (w4u8_mlp_native_output_enabled != 0U) {
+            qbh_hvx_residual_add_u8_native_output(
+                buffers->residual,
+                &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_RESIDUAL],
+                w4u8_mlp_native_output,
+                &header->qparams[QBH_BLOCK_QP_DOWN],
+                &header->qparams[QBH_BLOCK_QP_BLOCK_OUTPUT],
+                QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+        } else if (header->residual_mode != QBH_BLOCK_RESIDUAL_SCALAR) {
             qbh_hvx_residual_add_u8(
                 buffers->residual,
                 &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_RESIDUAL],
