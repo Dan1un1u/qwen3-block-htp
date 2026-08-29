@@ -325,6 +325,10 @@ static void qbh_attn_pack_v(
                                  : (int32_t)(divisor / 2U);
     const uint16_t conversion = qbh_attn_float_to_half_bits(
         512.0f / (float)divisor);
+    const int32_t hmx_output_zero_point =
+        config->av_multiplier == 1U
+            ? config->output_zero_point
+            : (int32_t)QBH_ATTENTION_HMX_CENTER;
     for (uint32_t n_tile = 0U;
          n_tile < QBH_ATTENTION_HEAD_DIM_TILES; ++n_tile) {
         for (uint32_t k_tile = 0U;
@@ -363,7 +367,7 @@ static void qbh_attn_pack_v(
                  output < QBH_HMX_OUTPUT_CHANNELS; ++output) {
                 block[output] = conversion;
                 block[QBH_HMX_OUTPUT_CHANNELS + output] =
-                    QBH_ATTENTION_HMX_CENTER * divisor + rounding;
+                    hmx_output_zero_point * (int32_t)divisor + rounding;
             }
         }
     }
@@ -817,18 +821,20 @@ static void qbh_attn_requant_av(
     struct qbh_attention_header *header,
     const struct qbh_attention_buffers *buffers) {
     const struct qbh_attention_config *config = &header->config;
-    const uint32_t tile_bytes =
-        QBH_ATTENTION_Q_HEADS_PER_GROUP *
-        QBH_ATTENTION_HEAD_DIM_TILES * QBH_HMX_OUTPUT_BYTES;
-    for (uint32_t offset = 0U; offset < tile_bytes;
-         offset += sizeof(HVX_Vector)) {
-        HVX_Vector *output = (HVX_Vector *)(
-            buffers->output_tiles + offset);
-        *output = qbh_attn_hvx_requant_centered_u8(
-            *output, config->av_multiplier,
-            config->output_zero_point);
+    if (config->av_multiplier != 1U) {
+        const uint32_t tile_bytes =
+            QBH_ATTENTION_Q_HEADS_PER_GROUP *
+            QBH_ATTENTION_HEAD_DIM_TILES * QBH_HMX_OUTPUT_BYTES;
+        for (uint32_t offset = 0U; offset < tile_bytes;
+             offset += sizeof(HVX_Vector)) {
+            HVX_Vector *output = (HVX_Vector *)(
+                buffers->output_tiles + offset);
+            *output = qbh_attn_hvx_requant_centered_u8(
+                *output, config->av_multiplier,
+                config->output_zero_point);
+        }
+        asm volatile("barrier" ::: "memory");
     }
-    asm volatile("barrier" ::: "memory");
     for (uint32_t head = 0U;
          head < QBH_ATTENTION_Q_HEADS_PER_GROUP; ++head) {
         for (uint32_t row = 0U; row < QBH_ATTENTION_M; ++row) {
@@ -1068,10 +1074,15 @@ AEEResult qbh_run_attention_rpc(int32_t shared_fd, uint32_t shared_bytes,
             break;
         }
         header->av_hmx_ticks += HAP_perf_get_qtimer_count() - start;
+    }
 
+    /* The complete block consumes AV in this native HMX tile layout.  The
+     * row-major copy exists only for the micrograph's Host-visible output and
+     * must therefore be paid once per RPC, not once per hot repetition. */
+    if (core_status == 0) {
         start = HAP_perf_get_qtimer_count();
         qbh_attn_requant_av(header, &buffers);
-        header->av_requant_ticks +=
+        header->av_requant_ticks =
             HAP_perf_get_qtimer_count() - start;
     }
 

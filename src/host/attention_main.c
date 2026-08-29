@@ -342,8 +342,11 @@ int main(int argc, char **argv) {
         ",\"input_stage_ticks\":%" PRIu64
         ",\"pack_ticks\":%" PRIu64
         ",\"qk_hmx_ticks\":%" PRIu64
+        ",\"qk_requant_ticks\":%" PRIu64
         ",\"softmax_ticks\":%" PRIu64
         ",\"av_hmx_ticks\":%" PRIu64
+        ",\"av_requant_ticks\":%" PRIu64
+        ",\"self_test_ticks\":%" PRIu64
         ",\"output_stage_ticks\":%" PRIu64
         ",\"qk_hmx_executions\":%" PRIu32
         ",\"av_hmx_executions\":%" PRIu32
@@ -368,8 +371,10 @@ int main(int argc, char **argv) {
         repeats, self_test, warmup_end - warmup_start,
         run_end - run_start, header->total_ticks,
         header->input_stage_ticks, header->pack_ticks,
-        header->qk_hmx_ticks, header->softmax_ticks,
-        header->av_hmx_ticks, header->output_stage_ticks,
+        header->qk_hmx_ticks, header->qk_requant_ticks,
+        header->softmax_ticks, header->av_hmx_ticks,
+        header->av_requant_ticks, header->self_test_ticks,
+        header->output_stage_ticks,
         header->hmx_qk_execution_count,
         header->hmx_av_execution_count,
         header->score_saturation_count,
