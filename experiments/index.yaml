@@ -3932,3 +3932,57 @@ experiments:
       local_adoption_eligible: true
       conclusion: four_context_disjoint_row_tasks_reuse_idle_persistent_hvx_workers_and_remove_single_context_native_gather_residual_tail_without_changing_q14_math_layout_hmx_work_weight_traffic_or_residency
       selected_baseline_changed: false
+  - id: EXP-0054
+    slug: w4u8-gqa-streaming
+    title: Pipeline native V operands and remove the full-QKV Attention barrier
+    parent: EXP-0053
+    variants:
+      - exp0053_w4u8_control
+      - stage_a_v_head_ready_native_av_operand
+      - stage_b_gqa_group_qkv_attention_streaming_if_stage_a_passes
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-gqa-streaming
+    source_branches:
+      - codex/exp-0054-w4u8-gqa-streaming
+    source_commits: []
+    record: docs/experiments/EXP-0054.md
+    decided_by: user
+    decided_on: '2026-08-30'
+    approval_ref: 'User message 2026-08-30: 同意方向，开始优化'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0054-w4u8-gqa-streaming
+      started_on: '2026-08-30'
+      completed_on: null
+    evidence:
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0054'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0054'
+      source_parent_commit: 668a9145ef434abf0ea04567d9dea6b8b863d627
+      direct_control: W4U8-EXP0053-RESIDUAL-POOL4
+      contextual_comparator: W4F16-EXP0038-NORMS
+      execution_unit: qwen3_layer14_complete_block_m64
+      activation_scope: asymmetric_u8_projection_and_integer_attention_boundaries
+      primary_scope: v_projection_to_av_operand_and_gqa_group_qkv_attention_pipeline
+      arithmetic_changes_allowed: false
+      qparam_changes_allowed: false
+      weight_changes_allowed: false
+      residual_schedule_changes_allowed: false
+      mlp_schedule_changes_allowed: false
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      stage_a_contract: publish_each_v_head_from_projection_and_prepare_the_native_av_rhs_operand_on_persistent_hvx_workers_before_attention_without_an_independent_attention_callback_v_pack
+      stage_a_correctness_gate: final_output_byte_exact_to_exp0053_and_independent_reference_zero_mismatches_zero_max_lsb
+      stage_a_physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn
+      stage_a_speed_gate: combined_qkv_plus_attention_ledger_and_complete_host_wall_strictly_improve_at_repeat1_and_repeat10
+      stage_b_entry_gate: stage_a_all_gates_pass
+      stage_b_contract: schedule_q_k_v_and_qk_softmax_av_by_gqa_group_without_a_full_qkv_join_while_preserving_one_hmx_owner
+      stage_b_correctness_gate: final_output_byte_exact_to_stage_a_and_independent_reference_zero_mismatches_zero_max_lsb
+      stage_b_physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn
+      stage_b_speed_gate: combined_qkv_plus_attention_ledger_and_complete_host_wall_strictly_improve_over_stage_a_at_repeat1_and_repeat10
+      completion_gate: seven_interleaved_paired_rounds_and_pc027_complete_profiling_closure
