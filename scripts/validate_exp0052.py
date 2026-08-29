@@ -28,7 +28,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def validate_record(record: dict[str, object], repeat: int,
-                    mode: str) -> None:
+                    mode: str, audit_enabled: bool = False) -> None:
     candidate = mode == "candidate"
     fixed = {
         "experiment": "EXP-0052",
@@ -59,7 +59,9 @@ def validate_record(record: dict[str, object], repeat: int,
         "intermediate_ddr_write_bytes": 0,
         "intermediate_dma_descriptor_count": 0,
         "intermediate_spill_fill_count": 0,
-        "u8_attention_audit_ddr_write_bytes": 0,
+        "u8_attention_audit_ddr_write_bytes": (
+            524_288 * repeat if audit_enabled else 0
+        ),
         "u8_attention_fused_k_operand_mismatch_count": 0,
         "u8_attention_qkv_unpack_skipped": 128 * repeat,
         "hmx_command_count": 256 * repeat,
@@ -115,7 +117,7 @@ def build_summary(result_dir: Path, package_dir: Path) -> dict[str, object]:
         record = base.load_jsonl(
             result_dir / f"correctness_{mode}.jsonl", 1
         )[0]
-        validate_record(record, 1, mode)
+        validate_record(record, 1, mode, audit_enabled=True)
         attention_hashes[mode] = (
             str(record["u8_attention_actual_score_hash"]),
             str(record["u8_attention_actual_probability_hash"]),
