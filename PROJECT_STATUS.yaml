@@ -33,9 +33,9 @@ current_scope:
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: exp0046_stage_a_w4u8_native_mlp_input_handoff
-  active_experiment_evidence: pending
-  active_experiment_gate: byte_exact_zero_ddr_native_mlp_input_handoff_must_reduce_the_combined_input_boundary_and_complete_host_wall_at_repeat1_and_repeat10_before_stage_b
+  active_experiment_stage: exp0046_stage_b_w4u8_native_mlp_output_handoff
+  active_experiment_evidence: 'D:\llm_exp\results\qwen3-block-htp\exp0046\20260829T133809Z_62c7648ee5d6_stage_a'
+  active_experiment_gate: byte_exact_zero_ddr_native_mlp_output_handoff_must_reduce_down_plus_output_boundary_plus_final_residual_and_complete_host_wall_at_repeat1_and_repeat10
   last_completed_evidence: 'D:\llm_exp\results\qwen3-block-htp\exp0045\20260829T130320Z_25ae2137841b_stage_b'
   latest_w4u8_candidate:
     id: W4U8-EXP0045-QKVO-BATCH4

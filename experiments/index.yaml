@@ -3088,13 +3088,14 @@ experiments:
       - native_post_attention_norm_to_gate_up_handoff
       - native_down_to_final_residual_handoff_if_stage_a_passes
     execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    evidence_validity: valid
+    local_gate: stage_a_pass_stage_b_authorized
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4u8-native-mlp-layout-boundaries
     source_branches:
       - codex/exp-0046-w4u8-mlp-native-boundaries
-    source_commits: []
+    source_commits:
+      - 62c7648ee5d69acdafeb3d8577058747bc83a28e
     record: docs/experiments/EXP-0046.md
     decided_by: user
     decided_on: '2026-08-29'
@@ -3125,4 +3126,23 @@ experiments:
       correctness_gate: device_final_block_output_is_byte_exact_to_exp0045_and_boundary_audits_have_zero_mismatches
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn
       local_speed_gate: final_candidate_strictly_improves_both_target_boundary_intervals_and_complete_host_wall_over_exp0045_at_repeat1_and_repeat10
+      stage_a_source_head: 62c7648ee5d69acdafeb3d8577058747bc83a28e
+      stage_a_formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0046\20260829T133809Z_62c7648ee5d6_stage_a'
+      stage_a_artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0046\artifacts\62c7648ee5d6\stage_a'
+      stage_a_gate_record: 'D:\llm_exp\results\qwen3-block-htp\exp0046\20260829T133809Z_62c7648ee5d6_stage_a\gate_summary.json'
+      stage_a_gate_record_sha256: 0ab2fc8c2d887bdc5923481dc6a555328b3aac4b485f034a5de20c994782a5b2
+      stage_a_implementation_reference_sha256: 8f0ee1ba12cae18feee2ae3eb63910ec1ff33c9974b792109e442ae6c32e1fdd
+      stage_a_device_audit_sha256: c4e29c732aef77a5e117fe57e1e25c82ffd526e675cbb86b4686295aa971dc67
+      stage_a_gate_result: pass
+      stage_a_byte_exact: true
+      stage_a_zero_intermediate_ddr: true
+      stage_a_fixed_8mib_vtcm: true
+      stage_a_repeat1_mlp_input_boundary_change_percent: -12.263742061921723
+      stage_a_repeat1_host_wall_change_percent: -7.745071610188681
+      stage_a_repeat10_mlp_input_boundary_change_percent: -12.267417884225384
+      stage_a_repeat10_host_wall_change_percent: -5.271315532115017
+      stage_a_hmx_commands_per_block: 1040
+      stage_a_weight_dma_descriptors_per_block: 512
+      stage_a_conclusion: native_hvx_scatter_removes_the_row_major_gate_up_activation_pack_without_changing_projection_work_and_strictly_reduces_both_the_target_boundary_and_complete_host_wall
+      stage_b_authorized: true
       selected_baseline_changed: false
