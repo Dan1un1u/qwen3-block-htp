@@ -343,3 +343,14 @@ unpack and synchronous projection HMX. Every prep worker joins before QK HMX
 starts, preserving one HMX owner and zero intermediate DDR.
 _Avoid_: partial-head consumption, concurrent HMX owners, Attention HMX during
 projection, changed qparams or arithmetic
+
+**W4U8 QKVO Batch-4 Pipeline**:
+The EXP-0045 Physical Plan that retains Generation-Safe Q/K Head-Ready
+Overlap while batching four adjacent 32-channel output tiles for Q, K, V, and
+O. Each batch uses one linked packed-weight-plus-bias DMA publication, one HVX
+W4-to-S8 expansion group, and one integer-HMX command. Two compressed and two
+expanded VTCM slots allow the next batch's DMA and expansion to overlap the
+previous HMX command. Q/K publication remains aligned to one complete
+128-channel head, and O continues to consume the native U8 Attention carrier.
+_Avoid_: fused QKV weights, changed arithmetic, concurrent HMX owners, DDR
+workspace, QNN lowering

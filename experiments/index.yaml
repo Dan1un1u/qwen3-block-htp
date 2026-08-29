@@ -2999,15 +2999,17 @@ experiments:
       - exp0044_stage_b_serial_qkvo_projection_control
       - head_aligned_w4u8_qkv_projection_pipeline
       - w4u8_qkvo_projection_pipeline_if_stage_a_passes
-    execution_state: running
+    execution_state: completed
     evidence_validity: valid
-    local_gate: stage_a_pass
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4u8-qkvo-projection-pipeline
     source_branches:
       - codex/exp-0045-w4u8-qkvo-pipeline
     source_commits:
       - c2a11a8e8c4eb084d5336d08ab836177b1f367cc
+      - 8f573711fd92e2ac9cab0076a6a4e3d281d2f39f
+      - 25ae2137841b66d6b9e69796892c62558814cd3f
     record: docs/experiments/EXP-0045.md
     decided_by: user
     decided_on: '2026-08-29'
@@ -3016,6 +3018,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0045-w4u8-qkvo-pipeline
       started_on: '2026-08-29'
+      completed_on: '2026-08-29'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0045'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0045'
@@ -3050,4 +3053,28 @@ experiments:
       stage_a_zero_intermediate_ddr: true
       stage_a_fixed_8mib_vtcm: true
       stage_a_conclusion: head_aligned_batch4_reduces_dma_descriptors_and_hmx_submission_overhead_but_increases_qk_prep_pool_wait_from_hvx_contention
+      stage_b_source_head: 25ae2137841b66d6b9e69796892c62558814cd3f
+      stage_b_formal_result: 'D:\llm_exp\results\qwen3-block-htp\exp0045\20260829T130320Z_25ae2137841b_stage_b'
+      stage_b_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0045\artifacts\25ae2137841b\stage_b'
+      stage_b_gate_record: 'D:\llm_exp\results\qwen3-block-htp\exp0045\20260829T130320Z_25ae2137841b_stage_b\gate_summary.json'
+      stage_b_gate_record_sha256: e51d644125ee8e156daa02adca6e8c01b20da5ebe412adb319c3de345b221145
+      stage_b_implementation_reference_sha256: 0ece17c985a13306e7275618a8df98db2ecfd3e27d1ac4b9f9b3ac1b1286158c
+      stage_b_device_audit_sha256: e6311d32d0c57ceea84e516652cb4b70f3361465a3633af404bf362b38871e2a
+      stage_b_gate_result: pass
+      stage_b_final_block_max_lsb: 0
+      stage_b_qk_softmax_av_mismatches: 0
+      stage_b_repeat1_o_change_percent: -26.215187038004927
+      stage_b_repeat1_qkvo_change_percent: -8.10217159937502
+      stage_b_repeat1_host_wall_change_percent: -6.852259529307259
+      stage_b_repeat10_o_change_percent: -25.831972310043604
+      stage_b_repeat10_qkvo_change_percent: -7.587909112472635
+      stage_b_repeat10_host_wall_change_percent: -2.9267183315747958
+      final_repeat1_vs_serial_qkvo_change_percent: -15.657667768148475
+      final_repeat1_vs_serial_host_wall_change_percent: -5.693022606266906
+      final_repeat10_vs_serial_qkvo_change_percent: -15.737680165842349
+      final_repeat10_vs_serial_host_wall_change_percent: -5.943292426932967
+      stage_b_hmx_commands_per_block: 1040
+      stage_b_weight_dma_descriptors_per_block: 512
+      stage_b_vtcm_peak_plan_bytes: 5306080
+      stage_b_conclusion: o_batch4_preserves_qkv_batch4_and_reduces_o_qkvo_and_complete_host_wall_at_both_repeat_scopes
       selected_baseline_changed: false
