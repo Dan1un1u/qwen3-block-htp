@@ -2639,14 +2639,16 @@ experiments:
       - hvx_u8_qk_norm_rope
       - hvx_fp16_softmax_bridge
       - cumulative_hvx_w4u8_common_ops
-    execution_state: running
-    evidence_validity: pending
-    local_gate: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4u8-hvx-common-operators
     source_branches:
       - codex/exp-0041-w4u8-hvx-common-ops
-    source_commits: []
+    source_commits:
+      - adaa894f0bb1aed60347de53af07f43c552ccbc5
+      - 23bdbee61ddfddb914f0cbcc2266f0cee12be0e7
     record: docs/experiments/EXP-0041.md
     decided_by: user
     decided_on: '2026-08-29'
@@ -2655,6 +2657,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0041-w4u8-hvx-common-ops
       started_on: '2026-08-29'
+      completed_on: '2026-08-29'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0041'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0041'
@@ -2673,4 +2676,47 @@ experiments:
       accuracy_gate: none_beyond_local_implementation_correctness
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn
       speed_gate: cumulative_complete_block_host_wall_strictly_improves_over_exp0040_at_repeat1_and_repeat10
+      source_head: 23bdbee61ddfddb914f0cbcc2266f0cee12be0e7
+      formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0041\20260829T081723Z_23bdbee61ddf_formal'
+      artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0041\artifacts\23bdbee61ddf'
+      gate_record: 'D:\llm_exp\results\qwen3-block-htp\exp0041\20260829T081723Z_23bdbee61ddf_formal\gate_summary.json'
+      package_reused_unchanged_from: EXP-0040-stage-B
+      package_manifest_sha256: 7708b3aa2e65f6cddde55c7e812ffe6a325ee23f2221d066c810a38e3789acb3
+      formal_records: 28
+      boot_id_stable: true
+      qnn_dependency: false
+      output_hash: 69f22eeb035e5ec5
+      implementation_reference_mismatches: 0
+      implementation_reference_max_lsb: 0
+      fixed_vtcm_request_gate: pass
+      vtcm_requested_bytes: 8388608
+      vtcm_acquired_bytes: 8388608
+      peak_vtcm_plan_bytes: 4713984
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      intermediate_spill_fill_count: 0
+      unchanged_hmx_work_gate: pass
+      hmx_commands_per_block: 1120
+      hmx_fp16_tile_pairs_per_block: 512
+      hmx_u8s8_tile_pairs_per_block: 49152
+      repeat1_control_host_wall_ns_per_block_median: 175878021.0
+      repeat1_candidate_host_wall_ns_per_block_median: 16728594.0
+      repeat1_host_change_percent: -90.48852499881154
+      repeat1_paired_host_change_percent_median: -90.46741036505067
+      repeat1_control_total_ticks_per_block_median: 3333542.0
+      repeat1_candidate_total_ticks_per_block_median: 307034.0
+      repeat10_control_host_wall_ns_per_block_median: 173608364.5
+      repeat10_candidate_host_wall_ns_per_block_median: 16033036.5
+      repeat10_host_change_percent: -90.76482487109658
+      repeat10_paired_host_change_percent_median: -90.76231686131602
+      repeat10_control_total_ticks_per_block_median: 3329620.4
+      repeat10_candidate_total_ticks_per_block_median: 306469.3
+      local_gate_result: pass
+      local_adoption_eligible: true
+      adoption_decision: pending_user_approval
+      selected_candidate_common_ops_mode: rms_rope_softmax
+      selected_candidate_residual_mode: hvx_fused_post_norm
+      true_u8_softmax_implemented: false
+      accuracy_characterization: byte_exact_to_existing_w4u8_scalar_implementation_reference_only_not_full_model_quantization_accuracy
+      performance_characterization: replacing_the_remaining_scalar_w4u8_rmsnorm_qk_norm_rope_attention_bridge_softmax_and_residual_paths_with_hvx_reduces_complete_block_host_wall_by_90_49_percent_at_repeat1_and_90_76_percent_at_repeat10_without_changing_hmx_work_or_the_zero_ddr_contract
       selected_baseline_changed: false
