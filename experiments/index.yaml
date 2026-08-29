@@ -2730,14 +2730,19 @@ experiments:
       - tilewise_log2_softmax_gqa_micrograph
       - integer_av_u8_output_micrograph
       - cumulative_integer_gqa_attention_block_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4u8-integer-gqa-attention
     source_branches:
       - codex/exp-0042-w4u8-log2-gqa-attention
-    source_commits: []
+    source_commits:
+      - 6fe460fbffcdf5caec2da7c9a28460abdb35ac66
+      - 55a2f5e307f9acd45ade1699d2f50854ea28cc58
+      - 944e830f48edad28878e41245a9c686bfba3f044
+      - bc138f72634d01a284d82c4bc0c48051a82df504
+      - d5f68b72b799a5c8df6c4f5cecfda218edc1e23d
     record: docs/experiments/EXP-0042.md
     decided_by: user
     decided_on: '2026-08-29'
@@ -2746,6 +2751,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0042-w4u8-log2-gqa-attention
       started_on: '2026-08-29'
+      completed_on: '2026-08-29'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0042'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0042'
@@ -2764,4 +2770,51 @@ experiments:
       accuracy_gate: diagnostic_only_against_the_exp0041_fp16_attention_island_with_no_full_model_accuracy_requirement
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn_no_fp16_attention_hmx
       speed_gate: cumulative_candidate_strictly_improves_attention_and_complete_block_host_wall_over_exp0041_at_repeat1_and_repeat10_for_local_adoption
+      source_head: d5f68b72b799a5c8df6c4f5cecfda218edc1e23d
+      implementation_commit: bc138f72634d01a284d82c4bc0c48051a82df504
+      evidence_validator_commit: d5f68b72b799a5c8df6c4f5cecfda218edc1e23d
+      formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0042\20260829T110712Z_d5f68b72b799_formal'
+      artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0042\artifacts\d5f68b72b799'
+      gate_record: 'D:\llm_exp\results\qwen3-block-htp\exp0042\20260829T110712Z_d5f68b72b799_formal\gate_summary.json'
+      package_manifest_sha256: 043f61337b2ad2758bb95791bc4ca768150f457f1f28bc7d20a7ad57eba42359
+      boot_id_stable: true
+      formal_paired_rounds: 7
+      implementation_reference_gate: pass
+      implementation_reference_qk_mismatches: 0
+      implementation_reference_softmax_mismatches: 0
+      implementation_reference_av_mismatches: 0
+      implementation_reference_max_lsb: 0
+      probability_mask_violations: 0
+      score_saturations: 2519
+      v_recenter_saturations: 723
+      av_saturations: 0
+      fixed_vtcm_request_gate: pass
+      vtcm_requested_bytes: 8388608
+      vtcm_acquired_bytes: 8388608
+      peak_vtcm_plan_bytes: 4714464
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      intermediate_spill_fill_count: 0
+      single_fastrpc_execution_unit: true
+      single_hmx_owner: true
+      qnn_dependency: false
+      no_fp16_attention_hmx: true
+      output_hash: 69f22eeb035e5ec5
+      repeat1_control_host_wall_ns_per_block_median: 16735625.0
+      repeat1_candidate_host_wall_ns_per_block_median: 8449844.0
+      repeat1_host_change_percent: -49.509839040968
+      repeat1_control_attention_ticks_per_block_median: 153432.0
+      repeat1_candidate_attention_ticks_per_block_median: 29222.0
+      repeat1_attention_change_percent: -80.9544293237395
+      repeat10_control_host_wall_ns_per_block_median: 16039531.2
+      repeat10_candidate_host_wall_ns_per_block_median: 7701739.5
+      repeat10_host_change_percent: -51.982764309221196
+      repeat10_control_attention_ticks_per_block_median: 153473.3
+      repeat10_candidate_attention_ticks_per_block_median: 28272.7
+      repeat10_attention_change_percent: -81.57809860086412
+      local_gate_result: pass
+      local_adoption_eligible: true
+      adoption_decision: pending_user_approval
+      accuracy_characterization: implementation_exact_for_declared_integer_attention_given_actual_device_u8_qkv_but_w4f16_accuracy_is_diagnostic_only_and_current_minmax_u8_qparams_remain_unusable
+      performance_characterization: replacing_the_exp0041_fp16_attention_island_with_pipelined_integer_qk_log2_u8_softmax_and_integer_av_reduces_complete_block_host_wall_by_49_51_percent_at_repeat1_and_51_98_percent_at_repeat10_and_reduces_the_attention_interval_by_80_95_and_81_58_percent_while_preserving_zero_intermediate_ddr
       selected_baseline_changed: false

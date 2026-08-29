@@ -316,3 +316,20 @@ including an eleven-round paired W4F16 confirmation. In the W4F16 variant it is
 the user-promoted `W4F16-EXP0038-NORMS` Selected Baseline. This promotion does
 not change EXP-0038's overall failed local gate or adopt its QKV/AV candidates.
 _Avoid_: EXP-0038 overall pass, QKV-native baseline, all-mode baseline
+
+**Integer Log2 GQA Attention Pipeline**:
+The EXP-0042 complete Attention replacement that consumes native-tile
+asymmetric-U8 Q/K/V, runs U8-by-S8 QK on integer HMX, produces a four-bit log2
+Softmax probability carrier on HVX, runs U8-by-S8 AV on integer HMX, and hands
+native U8 output tiles directly to the O projection. Eight GQA groups share
+one serialized HMX owner while four HVX contexts perform group-local work.
+_Avoid_: isolated custom Softmax, FP16 Attention island, concurrent HMX owners
+
+**Actual-Boundary Attention Audit**:
+The EXP-0042 correctness method that captures actual device Q/K/V at the
+declared integer-Attention input boundary only in audit-on mode, independently
+recomputes QK, log2 Softmax and AV on the Host, and requires byte-exact stage
+agreement. Its explicit diagnostic DDR export is not a zero-DDR performance
+run; the physical gate is measured separately with audit disabled.
+_Avoid_: circular device reference, offline-stage hash gate, audit DDR hidden
+as core traffic
