@@ -184,6 +184,7 @@ def build_summary(result_dir: Path, package_dir: Path) -> dict[str, object]:
             "host_wall_ns_per_block", "invocation_ticks", "total_ticks",
             "combined_residual_ticks", *base.LEDGER, *base.OVERLAP,
             *RESIDUAL_WORK, *base.COUNTERS, *RESIDUAL_COUNTERS,
+            "attention_qk_norm_task_count",
             "ledger_named_ticks", "ledger_unattributed_ticks",
             "runtime_setup_ticks", "runtime_teardown_ticks", *base.RESOURCES,
         )
