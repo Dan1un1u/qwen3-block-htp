@@ -333,3 +333,13 @@ agreement. Its explicit diagnostic DDR export is not a zero-DDR performance
 run; the physical gate is measured separately with audit disabled.
 _Avoid_: circular device reference, offline-stage hash gate, audit DDR hidden
 as core traffic
+
+**Generation-Safe Q/K Head-Ready Overlap**:
+The EXP-0044 Stage-B schedule in which each completed 128-channel Q or K head
+is published with a generation tag during QKV projection. Dedicated HVX
+workers consume only complete, disjoint heads for the unchanged Q Norm-RoPE
+and fused K Norm-RoPE/carrier preparation, while the main thread continues W4
+unpack and synchronous projection HMX. Every prep worker joins before QK HMX
+starts, preserving one HMX owner and zero intermediate DDR.
+_Avoid_: partial-head consumption, concurrent HMX owners, Attention HMX during
+projection, changed qparams or arithmetic

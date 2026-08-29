@@ -2917,15 +2917,16 @@ experiments:
       - exp0042_integer_attention_control
       - native_tile_qk_norm_rope_k_operand_fusion
       - qkv_head_ready_integer_attention_pipeline
-    execution_state: running
+    execution_state: completed
     evidence_validity: valid
-    local_gate: not_run
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4u8-native-integer-attention-operands
     source_branches:
       - codex/exp-0044-u8-attention-native-operands
     source_commits:
       - 0a9f129fb10585141d310492968ddf37ffbcd5fb
+      - 98126b62b9300d77b39eff1388f01233d832dad8
     record: docs/experiments/EXP-0044.md
     decided_by: user
     decided_on: '2026-08-29'
@@ -2968,4 +2969,25 @@ experiments:
       stage_a_repeat10_attention_change_percent: -30.336898078112284
       stage_a_repeat10_host_wall_change_percent: -5.625949541839914
       stage_b_admitted: true
+      stage_b_source_head: 98126b62b9300d77b39eff1388f01233d832dad8
+      stage_b_formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0044\20260829T123045Z_98126b62b930_stage_b'
+      stage_b_artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0044\artifacts\98126b62b930\stage_b'
+      stage_b_gate_record: 'D:\llm_exp\results\qwen3-block-htp\exp0044\20260829T123045Z_98126b62b930_stage_b\gate_summary.json'
+      stage_b_gate_record_sha256: 6a7acfbebd23431f82907ab925e8b38d7eddf0d658cefe17ff7c62eaff4f490c
+      stage_b_implementation_reference_sha256: 5c4be632374786c7fb4a48e1097965f5e393d3a3133ef25530f21b5239c59896
+      stage_b_device_audit_sha256: d08d7c003dc844023e3690f48ff934f3f359f8a13631c612bf79e0f6e8ab8556
+      stage_b_gate_result: pass
+      stage_b_qk_softmax_av_mismatches: 0
+      stage_b_final_block_max_lsb: 0
+      stage_b_repeat1_vs_stage_a_host_wall_change_percent: -6.398141363799736
+      stage_b_repeat1_vs_stage_a_attention_change_percent: -59.74634820371101
+      stage_b_repeat1_vs_stage_a_qkv_projection_change_percent: 5.211609309012499
+      stage_b_repeat10_vs_stage_a_host_wall_change_percent: -6.938645508263752
+      stage_b_repeat10_vs_stage_a_attention_change_percent: -59.84058000040056
+      stage_b_repeat10_vs_stage_a_qkv_projection_change_percent: 6.963352827680569
+      final_repeat1_vs_exp0042_host_wall_change_percent: -14.844283867216035
+      final_repeat1_vs_exp0042_attention_change_percent: -71.8753232424232
+      final_repeat10_vs_exp0042_host_wall_change_percent: -12.536658439528436
+      final_repeat10_vs_exp0042_attention_change_percent: -71.92009578423341
+      stage_b_conclusion: generation_safe_qk_hvx_prep_overlap_hides_most_qk_norm_rope_work_while_qkv_projection_slows_5_to_7_percent_from_hvx_contention_but_complete_host_wall_improves
       selected_baseline_changed: false
