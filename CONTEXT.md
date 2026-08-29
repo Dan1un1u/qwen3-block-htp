@@ -354,3 +354,14 @@ previous HMX command. Q/K publication remains aligned to one complete
 128-channel head, and O continues to consume the native U8 Attention carrier.
 _Avoid_: fused QKV weights, changed arithmetic, concurrent HMX owners, DDR
 workspace, QNN lowering
+
+**Complete Profiling Comparison**:
+The mandatory experiment-closure report containing the primary Host and DSP
+latencies, every mutually exclusive Block Timing Ledger interval, relevant
+overlapping engine-work diagnostics, physical traffic and resource counters,
+correctness results, and evidence provenance for both repeat-one and repeat-ten
+scopes. Absolute control and candidate values and their deltas are shown even
+when a field is unchanged or zero. Additive ledger intervals and overlapping
+HMX/HVX/DMA work are always placed in separate tables.
+_Avoid_: gate-only summary, selected-stage-only table, link-only handoff, sum of
+overlapping engine counters

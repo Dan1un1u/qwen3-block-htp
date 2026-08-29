@@ -3057,6 +3057,7 @@ experiments:
       stage_b_formal_result: 'D:\llm_exp\results\qwen3-block-htp\exp0045\20260829T130320Z_25ae2137841b_stage_b'
       stage_b_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0045\artifacts\25ae2137841b\stage_b'
       stage_b_gate_record: 'D:\llm_exp\results\qwen3-block-htp\exp0045\20260829T130320Z_25ae2137841b_stage_b\gate_summary.json'
+      full_profiling_report: docs/experiments/EXP-0045-PROFILING.md
       stage_b_gate_record_sha256: e51d644125ee8e156daa02adca6e8c01b20da5ebe412adb319c3de345b221145
       stage_b_implementation_reference_sha256: 0ece17c985a13306e7275618a8df98db2ecfd3e27d1ac4b9f9b3ac1b1286158c
       stage_b_device_audit_sha256: e6311d32d0c57ceea84e516652cb4b70f3361465a3633af404bf362b38871e2a

@@ -97,3 +97,15 @@ Changing any item requires explicit user approval and a committed amendment.
   Variant the same grant. A run fails instead of silently shrinking to current
   availability. Physical Plans allocate and reuse only the regions they need
   and report requested, granted, and peak-used bytes separately.
+- **PC-027 — Complete profiling closure.** Every experiment closure must retain
+  and present a complete profiling comparison as defined in
+  `docs/FULL_PROFILING_REPORT_CONTRACT.md`. The user-facing completion response
+  must contain the tables rather than only linking to raw evidence. It must show
+  absolute control and candidate values plus deltas for repeat one and repeat
+  ten; every defined additive Block Timing Ledger interval; relevant overlapping
+  HMX, HVX, DMA, wait, byte, command, VTCM, and residency counters; correctness
+  and physical gates; and evidence provenance. Unchanged, zero, or unavailable
+  fields remain visible and unavailable fields require a reason. An experiment
+  may not be recorded as completed without this report, except when execution
+  ended before profiling was possible, in which case the report records the
+  failure boundary and marks the unavailable sections explicitly.
