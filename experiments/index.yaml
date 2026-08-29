@@ -3000,13 +3000,14 @@ experiments:
       - head_aligned_w4u8_qkv_projection_pipeline
       - w4u8_qkvo_projection_pipeline_if_stage_a_passes
     execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    evidence_validity: valid
+    local_gate: stage_a_pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4u8-qkvo-projection-pipeline
     source_branches:
       - codex/exp-0045-w4u8-qkvo-pipeline
-    source_commits: []
+    source_commits:
+      - c2a11a8e8c4eb084d5336d08ab836177b1f367cc
     record: docs/experiments/EXP-0045.md
     decided_by: user
     decided_on: '2026-08-29'
@@ -3038,4 +3039,15 @@ experiments:
       correctness_gate: device_final_block_output_is_byte_exact_to_exp0044_and_projection_tile_audit_has_zero_mismatches
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn
       local_speed_gate: final_candidate_strictly_improves_qkvo_projection_sum_and_complete_host_wall_over_exp0044_at_repeat1_and_repeat10
+      stage_a_formal_result: 'D:\llm_exp\results\qwen3-block-htp\exp0045\20260829T125602Z_c2a11a8e8c4e_stage_a'
+      stage_a_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0045\artifacts\c2a11a8e8c4e\stage_a'
+      stage_a_selected_candidate: qkv_batch4
+      stage_a_repeat1_qkv_change_percent: -12.206693532252999
+      stage_a_repeat1_host_wall_change_percent: -6.825096860143487
+      stage_a_repeat10_qkv_change_percent: -11.581825356558994
+      stage_a_repeat10_host_wall_change_percent: -2.8945990514733233
+      stage_a_byte_exact: true
+      stage_a_zero_intermediate_ddr: true
+      stage_a_fixed_8mib_vtcm: true
+      stage_a_conclusion: head_aligned_batch4_reduces_dma_descriptors_and_hmx_submission_overhead_but_increases_qk_prep_pool_wait_from_hvx_contention
       selected_baseline_changed: false

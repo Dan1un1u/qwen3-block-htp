@@ -33,9 +33,9 @@ current_scope:
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: exp0045_stage_a_w4u8_qkv_projection_pipeline
-  active_experiment_evidence: pending
-  active_experiment_gate: byte_exact_head_aligned_dma_hvx_hmx_qkv_pipeline_must_strictly_reduce_qkv_and_host_wall_at_repeat1_repeat10_before_o_projection_is_admitted
+  active_experiment_stage: exp0045_stage_b_w4u8_o_projection_pipeline
+  active_experiment_evidence: 'D:\llm_exp\results\qwen3-block-htp\exp0045\20260829T125602Z_c2a11a8e8c4e_stage_a'
+  active_experiment_gate: preserve_selected_qkv_batch4_then_o_qkvo_and_host_wall_must_all_strictly_improve_at_repeat1_repeat10
   selected_baseline:
     id: W4F16-EXP0038-NORMS
     experiment: EXP-0038
