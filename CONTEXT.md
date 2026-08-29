@@ -75,7 +75,8 @@ _Avoid_: fastest observation, local pass, candidate
 **Provisional Source Parent**:
 An accepted experiment explicitly chosen by the user as the implementation
 starting point for the next experiment, without promoting it to Selected
-Baseline. EXP-0023 currently has this role.
+Baseline. EXP-0038 currently has this role and is also the source experiment
+for the first Selected Baseline; the two roles remain conceptually distinct.
 _Avoid_: final baseline, automatic promotion, fastest observation
 
 **HVX FP16 Common-Operator Suite**:
@@ -306,11 +307,12 @@ meets the same repeat-one, repeat-ten and fair-control contract. EXP-0038
 demonstrated this distinction for QKV, AV-to-O and Input-Norm-to-QKV.
 _Avoid_: complete-block speedup, adopted optimization, hidden overlap gain
 
-**Combined Norm-to-Projection Candidate**:
+**Combined Norm-to-Projection Baseline Mode**:
 The EXP-0038 Physical Plan that enables both Input-RMSNorm-to-QKV and
 Post-Attention-Residual-RMSNorm-to-Gate/Up Crouton-native stores while leaving
 QKV and AV-to-O in the EXP-0036 control form. It is byte-exact, zero
 intermediate DDR, and locally passes both repeat counts for F16F16 and W4F16,
-including an eleven-round paired W4F16 confirmation. Its Adoption Status is
-pending and it is not a Selected Baseline.
-_Avoid_: EXP-0038 overall pass, QKV-native candidate, adopted baseline
+including an eleven-round paired W4F16 confirmation. In the W4F16 variant it is
+the user-promoted `W4F16-EXP0038-NORMS` Selected Baseline. This promotion does
+not change EXP-0038's overall failed local gate or adopt its QKV/AV candidates.
+_Avoid_: EXP-0038 overall pass, QKV-native baseline, all-mode baseline
