@@ -2451,14 +2451,15 @@ experiments:
       - exp0038_w4f16_norms_control
       - phase_aware_overlay_no_schedule_change
       - phase_overlay_gate_up_deeper_producer_ring
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-vtcm-lifetime-and-w4f16-gate-up-pipeline
     source_branches:
       - codex/exp-0039-vtcm-phase-overlay
-    source_commits: []
+    source_commits:
+      - 82a1b537d951d12084ce6a66d7f3e3579ce520d2
     record: docs/experiments/EXP-0039.md
     decided_by: user
     decided_on: '2026-08-29'
@@ -2467,6 +2468,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0039-vtcm-phase-overlay
       started_on: '2026-08-29'
+      completed_on: '2026-08-29'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0039'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0039'
@@ -2479,3 +2481,35 @@ experiments:
       primary_scope: overlap_disjoint_attention_and_mlp_vtcm_lifetimes_then_spend_recovered_capacity_on_gate_up_dma_hvx_hmx_lookahead
       stage_a_gate: overlay_only_candidate_must_be_byte_exact_preserve_zero_ddr_and_not_regress_host_wall_before_any_deeper_ring_candidate_is_admitted
       stage_b_gate: deeper_gate_up_candidate_must_reduce_gate_up_ledger_and_complete_w4f16_host_wall_at_repeat1_and_repeat10_while_preserving_the_fixed_physical_and_numerical_contract
+      formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0039\20260829T051905Z_82a1b537d951'
+      artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0039\artifacts\82a1b537d951'
+      matrix: 'D:\llm_exp\results\qwen3-block-htp\exp0039\20260829T051905Z_82a1b537d951\matrix_gate.json'
+      implementation_commit: 82a1b537d951d12084ce6a66d7f3e3579ce520d2
+      evidence_validator_commit: 82a1b537d951d12084ce6a66d7f3e3579ce520d2
+      stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      formal_run_records: 69
+      parent_block_package_hashes_audited: 118
+      peak_vtcm_bytes: 8171008
+      observed_intermediate_ddr_bytes: 0
+      spill_fill_count: 0
+      single_fastrpc_per_execution_unit: true
+      single_hmx_owner: true
+      qnn_dependency: false
+      implementation_reference_mismatches: 0
+      implementation_reference_max_lsb: 0
+      output_hash: f18b9abbe1487231
+      recovered_phase_overlay_bytes: 524288
+      ring_compaction_bytes: 524288
+      expanded_weight_lookahead_bytes: 1048576
+      deep_ring_slots: 16
+      gate_lookahead_hmx_commands_per_block: 12
+      repeat1_host_wall_change_percent: -0.4443378359617278
+      repeat1_gate_up_change_percent: -0.5615894039735059
+      repeat10_host_wall_change_percent: 0.0650243147378049
+      repeat10_gate_up_change_percent: 0.20629987579361408
+      stage_a_gate_result: pass
+      stage_b_gate_result: fail
+      selected_baseline_changed: false
+      hidden_hmx_address_contract: expanded_weight_span_must_not_cross_observed_4mib_address_window
+      corrected_lifetime_finding: retained_attention_workers_already_reuse_gate_up_and_middle_storage_so_wholesale_attention_mlp_overlay_is_invalid
+      performance_characterization: one_mib_of_additional_gate_up_expanded_weight_lookahead_reduces_overlapping_dma_and_hmx_wait_diagnostics_but_does_not_reduce_the_repeat10_gate_up_or_complete_block_critical_path_so_insufficient_vtcm_depth_is_not_the_missing_w4f16_speedup
