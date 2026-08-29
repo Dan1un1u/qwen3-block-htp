@@ -47,6 +47,12 @@ void qbh_attention_u8_pack_v_native_vgather(
     int8_t *weight_tiles, uint32_t *bias_words, uint8_t *scratch,
     uint32_t *saturation_count);
 
+void qbh_attention_u8_pack_v_native_vgather_vdeal(
+    const uint8_t *v_head_tiles,
+    const struct qbh_attention_config *config,
+    int8_t *weight_tiles, uint32_t *bias_words, uint8_t *scratch,
+    uint32_t *saturation_count);
+
 void qbh_attention_u8_requant_qk(
     uint8_t *score_tiles,
     const struct qbh_attention_config *config,
