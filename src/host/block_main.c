@@ -1980,7 +1980,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0049\","
+        "{\"experiment\":\"EXP-0050\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2199,6 +2199,7 @@ int main(int argc, char **argv) {
         "\"w4u8_mlp_gate_up_pipeline_ticks\":%" PRIu64 ","
         "\"w4u8_mlp_gate_up_hmx_command_count\":%" PRIu64 ","
         "\"w4u8_mlp_down_pipeline_ticks\":%" PRIu64 ","
+        "\"w4u8_mlp_down_hmx_command_count\":%" PRIu64 ","
         "\"w4u8_mlp_activation_work_ticks\":%" PRIu64 ","
         "\"w4u8_mlp_weight_stage_ticks\":%" PRIu64 ","
         "\"w4u8_mlp_weight_expand_ticks\":%" PRIu64 ","
@@ -2461,6 +2462,7 @@ int main(int argc, char **argv) {
         header->w4u8_mlp_gate_up_pipeline_ticks,
         header->w4u8_mlp_gate_up_hmx_command_count,
         header->w4u8_mlp_down_pipeline_ticks,
+        header->w4u8_mlp_down_hmx_command_count,
         header->w4u8_mlp_activation_work_ticks,
         header->w4u8_mlp_weight_stage_ticks,
         header->w4u8_mlp_weight_expand_ticks,

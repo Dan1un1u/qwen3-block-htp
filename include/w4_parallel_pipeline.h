@@ -7,6 +7,7 @@
 #include "probe_protocol.h"
 
 #define QBH_W4_HMX_MAX_BATCH_OUTPUTS UINT32_C(8)
+#define QBH_W4_HMX_MAX_CONTINUATION_CHUNKS UINT32_C(1)
 
 struct qbh_mlp_gate_up_handoff {
     uint8_t *middle_activation;
@@ -44,11 +45,19 @@ struct qbh_w4_hmx_request {
         const volatile uint32_t *ready_generations;
         uint32_t expected_generation;
     } batch_outputs[QBH_W4_HMX_MAX_BATCH_OUTPUTS];
+    uint32_t continuation_chunk_count;
+    struct {
+        const uint8_t *activation_tiles;
+        const int8_t *expanded_weight_tiles;
+        uint32_t chunk_tiles;
+        void *ready_semaphore;
+    } continuation_chunks[QBH_W4_HMX_MAX_CONTINUATION_CHUNKS];
 };
 
 struct qbh_w4_hmx_runner {
     void *context;
     uint32_t max_batch_outputs;
+    uint32_t max_chunks_per_command;
     int (*submit)(void *context,
                   const struct qbh_w4_hmx_request *request);
 };

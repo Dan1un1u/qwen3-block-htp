@@ -1401,6 +1401,9 @@ static void qbh_hmx_worker_main(void *opaque) {
                         *request->ready_wait_ticks - ready_wait_before;
                 }
             } else {
+                uint64_t continuation_ready_wait_before =
+                    request->ready_wait_ticks != NULL
+                        ? *request->ready_wait_ticks : 0U;
                 if (request->begin_output != 0U) {
                     if (request->bias_words == NULL) {
                         worker->command_status = AEE_EBADPARM;
@@ -1419,6 +1422,56 @@ static void qbh_hmx_worker_main(void *opaque) {
                             request->expanded_weight_tiles,
                             request->chunk_tiles);
                     }
+                }
+                if (worker->command_status == AEE_SUCCESS &&
+                    request->continuation_chunk_count >
+                        QBH_W4_HMX_MAX_CONTINUATION_CHUNKS) {
+                    worker->command_status = AEE_EBADPARM;
+                }
+                for (uint32_t chunk_index = 0U;
+                     worker->command_status == AEE_SUCCESS &&
+                     chunk_index < request->continuation_chunk_count;
+                     ++chunk_index) {
+                    const uint8_t *activation_tiles =
+                        request->continuation_chunks[chunk_index]
+                            .activation_tiles;
+                    const int8_t *expanded_weight_tiles =
+                        request->continuation_chunks[chunk_index]
+                            .expanded_weight_tiles;
+                    uint32_t chunk_tiles =
+                        request->continuation_chunks[chunk_index]
+                            .chunk_tiles;
+                    qurt_sem_t *ready_semaphore = (qurt_sem_t *)
+                        request->continuation_chunks[chunk_index]
+                            .ready_semaphore;
+
+                    if (activation_tiles == NULL ||
+                        expanded_weight_tiles == NULL ||
+                        chunk_tiles == 0U || ready_semaphore == NULL ||
+                        request->ready_wait_ticks == NULL ||
+                        request->abort_status == NULL) {
+                        worker->command_status = AEE_EBADPARM;
+                        break;
+                    }
+                    {
+                        uint64_t wait_start =
+                            HAP_perf_get_qtimer_count();
+                        qurt_sem_down(ready_semaphore);
+                        *request->ready_wait_ticks +=
+                            HAP_perf_get_qtimer_count() - wait_start;
+                    }
+                    if (*request->abort_status != 0) {
+                        worker->command_status = AEE_EFAILED;
+                        break;
+                    }
+                    streams += qbh_hmx_accumulate_u8s8_projection(
+                        activation_tiles, expanded_weight_tiles,
+                        chunk_tiles);
+                }
+                if (request->ready_wait_ticks != NULL) {
+                    worker->ready_wait_ticks +=
+                        *request->ready_wait_ticks -
+                        continuation_ready_wait_before;
                 }
             }
             if (worker->command_status == AEE_SUCCESS &&
@@ -6801,7 +6854,10 @@ static void qbh_accumulate_w4u8_phase_metrics(
             ? (layout->n_tiles +
                QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES - 1U) /
                   QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES
-            : layout->n_tiles * layout->chunks_per_output;
+            : gate_up_phase == 0U &&
+                      layout->chunks_per_output == 2U
+                  ? layout->n_tiles
+                  : layout->n_tiles * layout->chunks_per_output;
     header->weight_dma_ticks += phase->weight_stage_ticks;
     header->weight_ddr_read_bytes += layout->stored_weight_bytes;
     header->weight_dma_descriptor_count += phase->dma_descriptor_count;
@@ -6825,6 +6881,7 @@ static void qbh_accumulate_w4u8_phase_metrics(
             phase->hvx_parallel_overlap_observed;
     } else {
         header->w4u8_mlp_down_pipeline_ticks += phase->pipeline_ticks;
+        header->w4u8_mlp_down_hmx_command_count += command_count;
         header->w4u8_mlp_down_hvx_hmx_overlap |=
             phase->hvx_hmx_overlap_observed;
         header->w4u8_mlp_down_hvx_parallel_overlap |=
@@ -6846,6 +6903,7 @@ static int qbh_run_w4u8_streaming_mlp(
         .context = worker,
         .max_batch_outputs =
             QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES,
+        .max_chunks_per_command = 2U,
         .submit = qbh_block_w4_hmx_submit,
     };
     uint8_t *mlp_arena = buffers->q;
