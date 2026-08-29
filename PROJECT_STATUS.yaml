@@ -19,56 +19,43 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0057
-  next_experiment_number: 58
+  active_experiment: EXP-0058
+  next_experiment_number: 59
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0056
-  last_completed_source_commit: a794de3edd4617c06e5e4ac1de11ba57a8a4cd9c
-  provisional_source_parent: EXP-0055
+  last_completed_experiment: EXP-0057
+  last_completed_source_commit: 579b899ee49926871996543fe3c3cf1bfa353d1c
+  provisional_source_parent: EXP-0057
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: v_pack_vgather_implementation
+  active_experiment_stage: v_pack_vdeal_transpose_implementation
   active_experiment_evidence: null
   active_experiment_gate: not_run
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0056/20260829T192517Z_a794de3edd46_formal'
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0057/20260829T194108Z_579b899ee499_formal'
   latest_w4u8_candidate:
-    id: W4U8-EXP0055-QK-NORM-ROPE-HEAD-PAIRS
-    experiment: EXP-0055
+    id: W4U8-EXP0057-V-PACK-VGATHER
+    experiment: EXP-0057
     project_variant: W4U8
-    physical_plan: exp0053_plus_twelve_paired_qk_norm_rope_tasks
-    source_branch: codex/exp-0055-w4u8-qk-norm-rope-head-pairs
-    source_head: 9b93da7afc61699e36780dfcbb8c287465cf0db0
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0055/20260829T182552Z_9b93da7afc61_formal'
-    adoption_status: accepted
+    physical_plan: exp0055_plus_exact_two_half_vector_v_recenter_vgather
+    source_branch: codex/exp-0057-w4u8-v-pack-vgather
+    source_head: 579b899ee49926871996543fe3c3cf1bfa353d1c
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0057/20260829T194108Z_579b899ee499_formal'
+    adoption_status: pending
     local_gate: pass
-    promoted_by: user
-    promoted_on: '2026-08-30'
-    promotion_ref: 'User message 2026-08-30: 同意; promote EXP-0055 as the new W4A8 baseline'
-    repeat1_host_wall_ns_per_block_median: 2983333.0
-    repeat10_host_wall_ns_per_block_median: 2552526.1
-    repeat1_qk_norm_rope_work_ticks_per_block_median: 34172.0
-    repeat10_qk_norm_rope_work_ticks_per_block_median: 33724.1
-    repeat1_qk_prep_pool_wait_ticks_per_block_median: 6299.0
-    repeat10_qk_prep_pool_wait_ticks_per_block_median: 6169.9
-    repeat1_qkv_ticks_per_block_median: 13093.0
-    repeat10_qkv_ticks_per_block_median: 12969.7
+    candidate_status: awaiting_user_promotion
+    repeat1_host_wall_ns_per_block_median: 2960886.0
+    repeat10_host_wall_ns_per_block_median: 2549109.4
+    repeat1_v_pack_ticks_per_block_median: 4957.0
+    repeat10_v_pack_ticks_per_block_median: 4931.9
+    repeat1_attention_ticks_per_block_median: 7546.0
+    repeat10_attention_ticks_per_block_median: 7635.9
     qk_norm_rope_physical_task_count_per_block: 12
     qk_norm_rope_logical_head_count_per_block: 24
-    repeat1_post_attention_residual_ticks_per_block_median: 876.0
-    repeat1_final_residual_ticks_per_block_median: 417.0
-    repeat10_post_attention_residual_ticks_per_block_median: 878.3
-    repeat10_final_residual_ticks_per_block_median: 419.0
-    residual_tasks_per_boundary_per_block: 16
-    residual_hvx_contexts: 4
-    qkv_hmx_commands_per_block: 32
-    gate_up_hmx_commands_per_block: 48
-    down_hmx_commands_per_block: 64
     total_hmx_commands_per_block: 256
     output_hash: 69f22eeb035e5ec5
   selected_w4u8_baseline:
