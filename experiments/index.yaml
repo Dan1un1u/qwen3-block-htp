@@ -2525,8 +2525,8 @@ experiments:
       - complete_block_streaming_w4u8_candidate
     execution_state: running
     evidence_validity: valid
-    local_gate: fail
-    adoption_status: pending_user_decision
+    local_gate: pass
+    adoption_status: pending
     evidence_profile: real-qwen3-block-w4u8-integer-hmx-mlp-port
     source_branches:
       - codex/exp-0040-w4u8-latest-mlp
@@ -2536,7 +2536,7 @@ experiments:
     record: docs/experiments/EXP-0040.md
     decided_by: user
     decided_on: '2026-08-29'
-    approval_ref: 'User message 2026-08-29: agree to begin W4A8 from the already-proven integer-HMX path'
+    approval_ref: 'User messages 2026-08-29: begin W4A8 from the proven integer-HMX path; approve the Stage-A variant-specific HVX worker amendment'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0040-w4u8-latest-mlp
@@ -2572,18 +2572,25 @@ experiments:
       exact_silu_lut_mismatches: 0
       retained_w4u8_down_mean_absolute_error_lsb: 0.5264053344726562
       retained_w4u8_down_within_2_lsb_fraction: 0.9600677490234375
-      contract_gate_up_hvx_workers: 2
+      original_contract_gate_up_hvx_workers: 2
       contract_repeat1_host_change_percent: -7.395283610731818
       contract_repeat1_projection_change_percent: 10.849524187153058
       contract_repeat10_host_change_percent: 8.280148332105309
       contract_repeat10_projection_change_percent: 12.352252633676187
-      contract_stage_a_gate_result: fail
-      diagnostic_gate_up_hvx_workers: 3
+      original_contract_stage_a_gate_result: fail
+      selected_packed_gate_up_hvx_workers: 3
+      selected_expanded_gate_up_hvx_workers: 2
       diagnostic_repeat1_host_change_percent: -25.6249047029088
       diagnostic_repeat1_projection_change_percent: -26.637424410186526
       diagnostic_repeat10_host_change_percent: -25.106141193238884
       diagnostic_repeat10_projection_change_percent: -26.83970360802842
       diagnostic_worker3_gate_result: pass
-      stage_b_authorized: false
-      pending_decision: whether_to_amend_the_gate_up_worker_contract_from_two_to_three_before_stage_b
-      performance_characterization: the_original_two_worker_contract_cannot_hide_packed_w4_expansion_after_u8_output_requant_and_fails_repeat10_but_a_common_three_worker_schedule_makes_packed_w4_25_percent_faster_than_expanded_s8_at_both_repeat_scopes_so_stage_b_is_blocked_only_on_a_user_contract_decision
+      selected_repeat1_host_change_percent: -19.21864043990109
+      selected_repeat1_projection_change_percent: -14.616375892149092
+      selected_repeat10_host_change_percent: -14.376296496226937
+      selected_repeat10_projection_change_percent: -14.231564266679953
+      stage_a_gate_result: pass_after_user_approved_variant_specific_hvx_worker_amendment
+      stage_b_authorized: true
+      contract_amendment_approved_on: '2026-08-29'
+      contract_amendment_ref: 'User message 2026-08-29: 批准'
+      performance_characterization: the_original_two_worker_contract_cannot_hide_packed_w4_expansion_after_u8_output_requant_but_the_user_approved_best_to_best_schedule_uses_three_workers_for_packed_and_two_for_expanded_and_makes_packed_w4_19_22_percent_faster_at_repeat1_and_14_38_percent_faster_at_repeat10_with_matching_projection_interval_gains
