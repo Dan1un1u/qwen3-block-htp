@@ -2825,14 +2825,15 @@ experiments:
     variants:
       - exp0042_uninstrumented_control
       - w4u8_exclusive_ledger_instrumented
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: not_applicable
     evidence_profile: real-qwen3-block-w4u8-exclusive-time-attribution
     source_branches:
       - codex/exp-0043-w4u8-block-time-attribution
-    source_commits: []
+    source_commits:
+      - 638fef441f358a3a4703ccbf5b86a2ef5c3c9d46
     record: docs/experiments/EXP-0043.md
     decided_by: user
     decided_on: '2026-08-29'
@@ -2841,6 +2842,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0043-w4u8-block-time-attribution
       started_on: '2026-08-29'
+      completed_on: '2026-08-29'
     evidence:
       formal_results: 'D:\llm_exp\results\qwen3-block-htp\exp0043'
       retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0043'
@@ -2855,4 +2857,55 @@ experiments:
       attribution_mode: exclusive_adjacent_timestamp_ledger
       completion_gate: close_top_level_and_nested_ledgers_to_at_most_0_1_percent_unattributed_at_repeat1_and_repeat10
       instrumentation_overhead_gate: at_most_1_percent_repeat10_host_wall
+      source_head: 638fef441f358a3a4703ccbf5b86a2ef5c3c9d46
+      implementation_commit: 638fef441f358a3a4703ccbf5b86a2ef5c3c9d46
+      evidence_validator_commit: 638fef441f358a3a4703ccbf5b86a2ef5c3c9d46
+      formal_run: 'D:\llm_exp\results\qwen3-block-htp\exp0043\20260829T114058Z_638fef441f35_formal'
+      artifact_set: 'D:\llm_exp\models\qwen3-block-htp\exp0043\artifacts\638fef441f35'
+      gate_record: 'D:\llm_exp\results\qwen3-block-htp\exp0043\20260829T114058Z_638fef441f35_formal\gate_summary.json'
+      package_manifest_sha256: 043f61337b2ad2758bb95791bc4ca768150f457f1f28bc7d20a7ad57eba42359
+      gate_record_sha256: 5c665f32339761ab8aa9f3895184bbf1b686c7609307c98601c4efe79d96a7cf
+      package_reused_from: EXP-0042
+      formal_paired_rounds: 11
+      boot_id_stable: true
+      implementation_reference_gate: pass
+      byte_exact_final_output_gate: pass
+      physical_counter_equivalence_gate: pass
+      fixed_vtcm_request_gate: pass
+      vtcm_requested_bytes: 8388608
+      vtcm_acquired_bytes: 8388608
+      peak_vtcm_plan_bytes: 4714464
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      spill_fill_bytes: 0
+      single_fastrpc_execution_unit: true
+      single_hmx_owner: true
+      qnn_dependency: false
+      repeat1_control_host_wall_ns_per_block_median: 8464948.0
+      repeat1_instrumented_host_wall_ns_per_block_median: 8352395.0
+      repeat1_paired_instrumentation_overhead_percent_median: 0.06583619887563508
+      repeat1_invocation_ticks_per_block_median: 148321.0
+      repeat1_ledger_named_ticks_per_block_median: 148312.0
+      repeat1_ledger_unattributed_ticks_per_block_median: 8.0
+      repeat1_unattributed_fraction_percent: 0.005393706892483195
+      repeat1_w4u8_mlp_boundary_ticks_per_block_median: 13167.0
+      repeat1_w4u8_mlp_input_pack_ticks_per_block_median: 6574.0
+      repeat1_w4u8_mlp_output_unpack_ticks_per_block_median: 6575.0
+      repeat1_w4u8_mlp_control_ticks_per_block_median: 18.0
+      repeat1_former_gap_explained_percent: 99.9392789373814
+      repeat10_control_host_wall_ns_per_block_median: 7719875.0
+      repeat10_instrumented_host_wall_ns_per_block_median: 7725447.9
+      repeat10_paired_instrumentation_overhead_percent_median: 0.11569868447682818
+      repeat10_invocation_ticks_per_block_median: 146869.6
+      repeat10_ledger_named_ticks_per_block_median: 146863.5
+      repeat10_ledger_unattributed_ticks_per_block_median: 5.5
+      repeat10_unattributed_fraction_percent: 0.0037448185329026565
+      repeat10_w4u8_mlp_boundary_ticks_per_block_median: 13163.1
+      repeat10_w4u8_mlp_input_pack_ticks_per_block_median: 6574.5
+      repeat10_w4u8_mlp_output_unpack_ticks_per_block_median: 6573.5
+      repeat10_w4u8_mlp_control_ticks_per_block_median: 15.3
+      repeat10_former_gap_explained_percent: 99.95823398083319
+      local_gate_result: pass
+      attribution_conclusion: the_former_13_2k_tick_gap_is_two_synchronous_w4u8_mlp_layout_boundaries_not_hidden_hmx_hvx_or_dma_wait
+      performance_characterization: attribution_only_with_repeat10_instrumentation_overhead_0_116_percent_and_no_execution_path_change
       selected_baseline_changed: false
