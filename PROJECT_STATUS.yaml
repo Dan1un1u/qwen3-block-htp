@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0086
+  active_experiment: null
   next_experiment_number: 87
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,16 +27,34 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0085
-  last_completed_source_commit: 5161d8adb1095f262e58949bf6be6e41523f6afa
+  last_completed_experiment: EXP-0086
+  last_completed_source_commit: f768a60f4173546b41884c4a15f0bc1e71c8aba3
   provisional_source_parent: EXP-0084
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: down_pipeline_timeline_diagnostic
+  active_experiment_stage: none
   active_experiment_evidence: null
-  active_experiment_gate: not_run
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0085/20260830T173432Z_5161d8adb109_stage_c_formal'
+  active_experiment_gate: none
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0086/formal_af51e13'
+  latest_w4u8_down_rebalance_experiment:
+    id: EXP-0086
+    source_branch: codex/exp-0086-w4u8-down-pipeline-rebalance
+    source_head: f768a60f4173546b41884c4a15f0bc1e71c8aba3
+    runtime_source_commit: af51e13b230eb54bbbef1d5adaae678ddecea3b4
+    direct_control: down_split_96_96
+    closest_candidate: down_split_64_128
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0086/formal_af51e13'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0086/artifacts/af51e13/stage_b_negative'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    correctness_gate: pass
+    physical_gate: pass
+    pc027_timing_ledger_closure: pass
+    pc028_module_table: pass
+    conclusion: audit_only_timeline_disproves_continuation_starvation_and_no_asymmetric_down_split_strictly_improves_down_and_complete_host_wall_at_repeat1_and_repeat10
+    selected_baseline_changed: false
   latest_group_major_qkv_experiment:
     id: EXP-0085
     source_branch: codex/exp-0085-gqa-group-major-qkv

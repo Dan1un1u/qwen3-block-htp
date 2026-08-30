@@ -7138,14 +7138,17 @@ experiments:
       - exp0084_w4u8_fair_canonical_control
       - down_pipeline_timeline_diagnostic
       - bounded_down_first_chunk_and_prefetch_candidates
-    execution_state: running
-    evidence_validity: not_run
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-down-pipeline-rebalance
     source_branches:
       - codex/exp-0086-w4u8-down-pipeline-rebalance
-    source_commits: []
+    source_commits:
+      - 412d80452905f3bd47523b574e119ba82ebab028
+      - af51e13b230eb54bbbef1d5adaae678ddecea3b4
+      - f768a60f4173546b41884c4a15f0bc1e71c8aba3
     record: docs/experiments/EXP-0086.md
     decided_by: user
     decided_on: '2026-08-31'
@@ -7154,10 +7157,15 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0086-w4u8-down-pipeline-rebalance
       started_on: '2026-08-31'
-      completed_on: null
+      completed_on: '2026-08-31'
     evidence:
-      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0086'
-      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0086'
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0086/formal_af51e13'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0086/artifacts/af51e13/stage_b_negative'
+      full_profiling_report: 'D:/llm_exp/results/qwen3-block-htp/exp0086/formal_af51e13/full_profiling_report.md'
+      runtime_source_commit: af51e13b230eb54bbbef1d5adaae678ddecea3b4
+      analysis_source_commit: f768a60f4173546b41884c4a15f0bc1e71c8aba3
+      preliminary_instrumented_results: 'D:/llm_exp/results/qwen3-block-htp/exp0086/invalid_instrumented_412d804'
+      preliminary_instrumented_results_validity: invalid_for_performance_because_timeline_was_not_yet_audit_only
       source_parent_commit: 6dc437fe08eaccf119c4cbce82937e22f125da0b
       direct_w4u8_control: W4U8-EXP0084-FAIR-CANONICAL
       contextual_w4f16_comparator: W4F16-EXP0084-COMMON-NORM-POOLS
@@ -7180,4 +7188,30 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_same_weight_bytes_dma_descriptors_hmx_commands_and_tile_pairs
       local_speed_gate: down_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: timeline_evidence_then_bounded_candidate_selection_then_seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
+      stage_a_gate_result: pass_to_bounded_search
+      stage_a_control_first_hmx_start_ticks: 174
+      stage_a_control_last_chunk_ready_ticks: 5528
+      stage_a_control_hmx_end_ticks: 5561
+      stage_a_control_max_continuation_wait_ticks: 1
+      stage_a_conclusion: continuation_tiles_are_ready_without_meaningful_hmx_starvation_but_the_first_hmx_start_latency_justified_the_bounded_asymmetric_split_search
+      stage_b_paired_rounds_per_candidate: 5
+      stage_b_candidate_grid_first_chunk_tiles: 64_80_112_128_against_control_96
+      stage_b_closest_candidate: first64_second128
+      stage_b_closest_repeat1_down_ordinary_improvement_percent: -0.9970
+      stage_b_closest_repeat1_down_paired_improvement_percent: 0.1819
+      stage_b_closest_repeat1_host_ordinary_improvement_percent: 1.8106
+      stage_b_closest_repeat1_host_paired_improvement_percent: 1.5799
+      stage_b_closest_repeat10_down_ordinary_improvement_percent: 1.3529
+      stage_b_closest_repeat10_down_paired_improvement_percent: 0.9289
+      stage_b_closest_repeat10_host_ordinary_improvement_percent: 0.9191
+      stage_b_closest_repeat10_host_paired_improvement_percent: 0.8819
+      stage_b_gate_result: fail
+      stage_c_status: not_run_by_contract_because_no_stage_b_candidate_passed_every_repeat1_and_repeat10_down_and_host_gate
+      performance_timeline_audit_only: true
+      pc027_timing_ledger_closure: pass
+      pc028_module_table: pass
+      correctness_gate_result: pass_zero_mismatches_zero_max_lsb_same_output_hash_69f22eeb035e5ec5
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_hmx_owner_49408_u8s8_tile_pairs
+      stable_device_boot: true
+      conclusion: asymmetric_down_chunking_changes_startup_and_slot_cadence_but_does_not_strictly_improve_down_and_complete_host_wall_across_repeat1_and_repeat10_so_the_symmetric_96_96_exp0084_plan_remains_selected
       selected_baseline_changed: false
