@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(41)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(79)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(42)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(80)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -98,7 +98,15 @@ enum qbh_block_w4u8_qkvo_pipeline_mode {
     QBH_BLOCK_W4U8_QKVO_BATCH4 = 3,
     QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_TASKS = 4,
     QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS = 5,
+    QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_CROSS_QKV_PREFETCH = 6,
 };
+
+static inline uint32_t qbh_block_w4u8_qkvo_uses_qk_head_pairs(
+    uint32_t mode) {
+    return mode == QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS ||
+           mode ==
+               QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_CROSS_QKV_PREFETCH;
+}
 
 enum qbh_block_u8_norm_reduction_mode {
     QBH_BLOCK_U8_NORM_REDUCTION_SCALAR = 0,
@@ -609,6 +617,10 @@ struct qbh_block_header {
     uint32_t w4u8_down_persistent_hvx_dispatch_count;
     uint32_t w4u8_down_persistent_hvx_worker_count;
     uint32_t w4u8_down_transient_hvx_thread_count;
+    uint32_t w4u8_qkv_cross_prefetch_count;
+    uint32_t w4u8_qkv_cross_prefetch_adoption_count;
+    uint64_t w4u8_qkv_cross_prefetch_wait_ticks;
+    uint64_t w4u8_qkv_cross_prefetch_lifetime_ticks;
 };
 
 #endif

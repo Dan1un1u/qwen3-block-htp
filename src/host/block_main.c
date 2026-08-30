@@ -883,6 +883,14 @@ static int qbh_parse_w4u8_qkvo_pipeline_mode(
         *mode = QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS;
         return 0;
     }
+    if (strcmp(
+            text,
+            "qkvo_batch4_qk_head_pairs_cross_qkv_prefetch") == 0 ||
+        strcmp(text, "qk_head_pairs_cross_qkv_prefetch") == 0) {
+        *mode =
+            QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_CROSS_QKV_PREFETCH;
+        return 0;
+    }
     return -1;
 }
 
@@ -898,6 +906,8 @@ static const char *qbh_w4u8_qkvo_pipeline_mode_name(uint32_t mode) {
             return "qkvo_batch4_qk_head_tasks";
         case QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS:
             return "qkvo_batch4_qk_head_pairs";
+        case QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_CROSS_QKV_PREFETCH:
+            return "qkvo_batch4_qk_head_pairs_cross_qkv_prefetch";
         default:
             return "serial";
     }
@@ -1524,7 +1534,7 @@ int main(int argc, char **argv) {
            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT |
            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT)) != 0U) ||
         w4u8_qkvo_pipeline_mode >
-            QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS ||
+            QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_CROSS_QKV_PREFETCH ||
         u8_norm_reduction_mode >
             QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE_PARALLEL_INPUT ||
         (variant != QBH_BLOCK_W4U8 &&
@@ -1696,7 +1706,8 @@ int main(int argc, char **argv) {
                         "[w4u8_qkvo_pipeline:serial|qkv_batch2|"
                         "qkv_batch4|qkvo_batch4|"
                         "qkvo_batch4_qk_head_tasks|"
-                        "qkvo_batch4_qk_head_pairs] "
+                        "qkvo_batch4_qk_head_pairs|"
+                        "qkvo_batch4_qk_head_pairs_cross_qkv_prefetch] "
                         "[u8_norm_reduction:scalar|hvx_tree|"
                         "hvx_tree_qk_batched_rsqrt|"
                         "hvx_tree_qk_batched_rsqrt_shared_rope]\n",
@@ -2244,7 +2255,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0079\","
+        "{\"experiment\":\"EXP-0080\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2335,6 +2346,8 @@ int main(int argc, char **argv) {
         "\"w4u8_qkv_batch_count\":%" PRIu32 ","
         "\"w4u8_qkvo_prefetch_count\":%" PRIu32 ","
         "\"w4u8_qkvo_overlap_schedule_count\":%" PRIu32 ","
+        "\"w4u8_qkv_cross_prefetch_count\":%" PRIu32 ","
+        "\"w4u8_qkv_cross_prefetch_adoption_count\":%" PRIu32 ","
         "\"u8_attention_expected_score_hash\":\"%016" PRIx64 "\","
         "\"u8_attention_actual_score_hash\":\"%016" PRIx64 "\","
         "\"u8_attention_expected_probability_hash\":\"%016" PRIx64 "\","
@@ -2432,6 +2445,8 @@ int main(int argc, char **argv) {
         "\"w4u8_qkvo_weight_expand_ticks\":%" PRIu64 ","
         "\"w4u8_qkvo_prefetch_wait_ticks\":%" PRIu64 ","
         "\"w4u8_qkvo_hmx_lifetime_ticks\":%" PRIu64 ","
+        "\"w4u8_qkv_cross_prefetch_wait_ticks\":%" PRIu64 ","
+        "\"w4u8_qkv_cross_prefetch_lifetime_ticks\":%" PRIu64 ","
         "\"w4u8_input_norm_task_count\":%" PRIu32 ","
         "\"w4u8_input_norm_main_work_ticks\":%" PRIu64 ","
         "\"w4u8_input_norm_worker_work_ticks\":%" PRIu64 ","
@@ -2635,6 +2650,8 @@ int main(int argc, char **argv) {
         header->w4u8_qkv_batch_count,
         header->w4u8_qkvo_prefetch_count,
         header->w4u8_qkvo_overlap_schedule_count,
+        header->w4u8_qkv_cross_prefetch_count,
+        header->w4u8_qkv_cross_prefetch_adoption_count,
         header->u8_attention_expected_score_hash,
         header->u8_attention_actual_score_hash,
         header->u8_attention_expected_probability_hash,
@@ -2722,6 +2739,8 @@ int main(int argc, char **argv) {
         header->w4u8_qkvo_weight_expand_ticks,
         header->w4u8_qkvo_prefetch_wait_ticks,
         header->w4u8_qkvo_hmx_lifetime_ticks,
+        header->w4u8_qkv_cross_prefetch_wait_ticks,
+        header->w4u8_qkv_cross_prefetch_lifetime_ticks,
         header->w4u8_input_norm_task_count,
         header->w4u8_input_norm_main_work_ticks,
         header->w4u8_input_norm_worker_work_ticks,
