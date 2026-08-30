@@ -56,6 +56,22 @@ enum qbh_block_hmx_command_kind {
 #define QBH_BLOCK_W4F16_HVX_STACK_BYTES UINT32_C(8192)
 #define QBH_BLOCK_W4F16_DMA_BATCH_N_TILES UINT32_C(4)
 #define QBH_BLOCK_F16F16_BATCH_N_TILES UINT32_C(2)
+
+_Static_assert(
+    QBH_BLOCK_W4F16_HVX_WORKERS *
+            (QBH_ATTN_U8_K_WEIGHT_BYTES + QBH_ATTN_U8_QK_BIAS_BYTES) <=
+        QBH_QK_PAIR_RSQRT_SCRATCH_OFFSET,
+    "Q/K rsqrt scratch must follow numerical-audit scratch");
+_Static_assert(
+    QBH_QK_PAIR_RSQRT_SCRATCH_OFFSET +
+            QBH_BLOCK_W4F16_HVX_WORKERS *
+                QBH_QK_PAIR_RSQRT_SCRATCH_BYTES <=
+        QBH_QK_ROPE_SF32_CACHE_OFFSET,
+    "Q/K rsqrt scratch must not overlap shared RoPE cache");
+_Static_assert(
+    QBH_QK_ROPE_SF32_CACHE_OFFSET + QBH_QK_ROPE_SF32_CACHE_BYTES <=
+        QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
+    "shared RoPE cache must fit the W4U8 Attention projection overlay");
 #define QBH_BLOCK_DMA_DESCRIPTOR_TIMEOUT_TICKS UINT64_C(1920000)
 #define QBH_BLOCK_HVX_F16_LANES UINT32_C(64)
 #define QBH_BLOCK_MLP_STREAM_CHANNELS UINT32_C(64)
@@ -678,7 +694,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->w4f16_pipeline_mode >
             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH ||
         header->u8_norm_reduction_mode >
-            QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT ||
+            QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE ||
         (header->variant != QBH_BLOCK_W4U8 &&
          header->u8_norm_reduction_mode !=
              QBH_BLOCK_U8_NORM_REDUCTION_SCALAR) ||
@@ -6457,9 +6473,11 @@ static void qbh_attention_u8_qk_prep_pool_run_head_pair_tasks(
                 (const __fp16 *)buffers->rope_cos,
                 (const __fp16 *)buffers->rope_sin,
                 buffers->attention_projection +
-                    (size_t)QBH_BLOCK_M * QBH_BLOCK_HIDDEN / 2U +
+                    QBH_QK_PAIR_RSQRT_SCRATCH_OFFSET +
                     (size_t)job->worker_index *
-                        QBH_QK_PAIR_RSQRT_SCRATCH_BYTES);
+                        QBH_QK_PAIR_RSQRT_SCRATCH_BYTES,
+                buffers->attention_projection +
+                    QBH_QK_ROPE_SF32_CACHE_OFFSET);
             job->u8_attention_qk_norm_rope_ticks +=
                 HAP_perf_get_qtimer_count() - start;
             job->attention_qk_norm_task_count += 2U;
@@ -6530,9 +6548,11 @@ static void qbh_attention_u8_qk_prep_pool_run_head_pair_tasks(
                 first_k_weight, second_k_weight,
                 first_qk_bias, second_qk_bias,
                 buffers->attention_projection +
-                    (size_t)QBH_BLOCK_M * QBH_BLOCK_HIDDEN / 2U +
+                    QBH_QK_PAIR_RSQRT_SCRATCH_OFFSET +
                     (size_t)job->worker_index *
-                        QBH_QK_PAIR_RSQRT_SCRATCH_BYTES);
+                        QBH_QK_PAIR_RSQRT_SCRATCH_BYTES,
+                buffers->attention_projection +
+                    QBH_QK_ROPE_SF32_CACHE_OFFSET);
             job->u8_attention_qk_norm_rope_ticks +=
                 HAP_perf_get_qtimer_count() - start;
             job->attention_qk_norm_task_count += 2U;
@@ -7811,6 +7831,15 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     header->input_norm_ticks += HAP_perf_get_qtimer_count() - start;
 
     start = HAP_perf_get_qtimer_count();
+    if (header->variant == QBH_BLOCK_W4U8 &&
+        header->u8_norm_reduction_mode ==
+            QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE) {
+        qbh_hvx_qk_rope_preconvert_sf32(
+            (const __fp16 *)buffers->rope_cos,
+            (const __fp16 *)buffers->rope_sin,
+            buffers->attention_projection +
+                QBH_QK_ROPE_SF32_CACHE_OFFSET);
+    }
     if (qkv_overlap_enabled != 0U &&
         qbh_hvx_pool_qk_norm_rope_start_async(
             w4f16_pool, (__fp16 *)buffers->q,
