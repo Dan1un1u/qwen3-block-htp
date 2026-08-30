@@ -561,3 +561,16 @@ context schedule, local redundant construction is cheaper than cross-context
 shared reads, most plausibly because of VTCM locality or bank contention.
 _Avoid_: reusable shared table is automatically faster, template-build count
 as a latency proxy, stacking the shared bank onto later Attention candidates
+
+**Globally Staged Row-Sliced U8 Attention**:
+The rejected EXP-0074 schedule that replaces eight coarse full-GQA tasks with
+three global stages: eight paired-head QK commands, sixteen independent 32-row
+Softmax tasks, and eight paired-head AV commands. It is byte-exact, retains
+zero intermediate DDR and the same HMX work, and shortens the Attention ledger
+about 4.6%, but increases aggregate Softmax work about 7.8% and Attention pool
+wait about 134%. Repeat-ten Host wall improves about 0.7%, while repeat-one
+ordinary and paired Host medians are marginally worse, so the strict complete-
+block gate fails. The result supports finer Softmax task granularity but rejects
+full QK/Softmax/AV stage barriers as the implementation boundary.
+_Avoid_: accepted W4U8 candidate, free stage barriers, lower aggregate Softmax
+work, permission to stack global staging onto a later candidate

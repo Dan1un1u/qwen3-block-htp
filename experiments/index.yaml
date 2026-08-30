@@ -6097,14 +6097,15 @@ experiments:
     variants:
       - exp0072_coarse_per_group_attention_pipeline_control
       - staged_qk_row_sliced_softmax_av_pipeline_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-staged-row-sliced-softmax
     source_branches:
       - codex/exp-0074-w4u8-staged-row-sliced-softmax
-    source_commits: []
+    source_commits:
+      - 57b098ec5a76e9a9062d0b536b3b81cb24d28729
     record: docs/experiments/EXP-0074.md
     decided_by: user
     decided_on: '2026-08-30'
@@ -6113,7 +6114,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0074-w4u8-staged-row-sliced-softmax
       started_on: '2026-08-30'
-      completed_on: null
+      completed_on: '2026-08-30'
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0074'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0074'
@@ -6135,3 +6136,47 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn_unchanged_hmx_commands_tile_pairs_and_weight_traffic
       local_speed_gate: attention_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
+      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0074/20260830T111113Z_57b098ec5a76_formal'
+      artifact_set: 'D:/llm_exp/models/qwen3-block-htp/exp0074/artifacts/57b098ec5a76/formal'
+      source_commit: 57b098ec5a76e9a9062d0b536b3b81cb24d28729
+      formal_samples_per_mode_per_repeat: 7
+      boot_id_stable: true
+      exact_reference: true
+      exact_control_candidate_boundaries: true
+      output_hash: 69f22eeb035e5ec5
+      input_norm_hash: 7255c2406108617c
+      qk_hash: 32aa949912e365be
+      probability_hash: 94f2e218f06f9627
+      av_hash: f853658f52032bde
+      candidate_softmax_tasks_per_block: 16
+      fixed_vtcm_gate: pass
+      zero_intermediate_ddr_gate: pass
+      zero_spill_fill_gate: pass
+      one_hmx_owner_gate: pass
+      unchanged_hmx_and_weight_traffic_gate: pass
+      repeat1_control_host_wall_ns_per_block_median: 2488073.0
+      repeat1_candidate_host_wall_ns_per_block_median: 2490781.0
+      repeat1_host_change_percent: 0.108839
+      repeat1_paired_host_change_percent_median: 0.006265
+      repeat1_control_attention_ticks_per_block_median: 4713.0
+      repeat1_candidate_attention_ticks_per_block_median: 4500.0
+      repeat1_attention_change_percent: -4.519414
+      repeat1_paired_attention_change_percent_median: -4.753784
+      repeat10_control_host_wall_ns_per_block_median: 2073630.2
+      repeat10_candidate_host_wall_ns_per_block_median: 2059317.7
+      repeat10_host_change_percent: -0.690215
+      repeat10_paired_host_change_percent_median: -0.365890
+      repeat10_control_attention_ticks_per_block_median: 4697.8
+      repeat10_candidate_attention_ticks_per_block_median: 4479.0
+      repeat10_attention_change_percent: -4.657499
+      repeat10_paired_attention_change_percent_median: -4.622985
+      repeat10_control_softmax_ticks_per_block_median: 14001.3
+      repeat10_candidate_softmax_ticks_per_block_median: 15099.2
+      repeat10_softmax_change_percent: 7.841415
+      repeat10_control_pipeline_wait_ticks_per_block_median: 1055.4
+      repeat10_candidate_pipeline_wait_ticks_per_block_median: 2467.7
+      repeat10_pipeline_wait_change_percent: 133.816562
+      gate_result: fail
+      local_adoption_eligible: false
+      conclusion: row_slicing_removes_the_coarse_attention_tail_and_improves_attention_but_three_global_stage_barriers_and_extra_row_task_overhead_erase_repeat1_complete_block_gain_so_the_candidate_is_rejected
+      selected_baseline_changed: false
