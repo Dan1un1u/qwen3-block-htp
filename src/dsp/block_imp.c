@@ -767,6 +767,11 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          header->fp16_norm_rows_per_task != 8U) ||
         header->fp16_norm_contexts < 2U ||
         header->fp16_norm_contexts > 4U ||
+        (header->w4u8_down_first_chunk_tiles_requested != 64U &&
+         header->w4u8_down_first_chunk_tiles_requested != 80U &&
+         header->w4u8_down_first_chunk_tiles_requested != 96U &&
+         header->w4u8_down_first_chunk_tiles_requested != 112U &&
+         header->w4u8_down_first_chunk_tiles_requested != 128U) ||
         (header->variant != QBH_BLOCK_W4U8 &&
          header->u8_norm_reduction_mode !=
              QBH_BLOCK_U8_NORM_REDUCTION_SCALAR) ||
@@ -1702,9 +1707,34 @@ static void qbh_hmx_worker_main(void *opaque) {
                     {
                         uint64_t wait_start =
                             HAP_perf_get_qtimer_count();
+                        uint64_t ready_tick;
+                        uint64_t wait_ticks;
                         qurt_sem_down(ready_semaphore);
-                        *request->ready_wait_ticks +=
-                            HAP_perf_get_qtimer_count() - wait_start;
+                        ready_tick = HAP_perf_get_qtimer_count();
+                        wait_ticks = ready_tick - wait_start;
+                        *request->ready_wait_ticks += wait_ticks;
+                        if (request->first_continuation_ready_tick !=
+                                NULL &&
+                            *request->first_continuation_ready_tick ==
+                                0U) {
+                            *request->first_continuation_ready_tick =
+                                ready_tick;
+                        }
+                        if (request->last_continuation_ready_tick !=
+                            NULL) {
+                            *request->last_continuation_ready_tick =
+                                ready_tick;
+                        }
+                        if (request
+                                    ->continuation_ready_wait_max_ticks !=
+                                NULL &&
+                            wait_ticks >
+                                *request
+                                     ->continuation_ready_wait_max_ticks) {
+                            *request
+                                 ->continuation_ready_wait_max_ticks =
+                                wait_ticks;
+                        }
                     }
                     if (*request->abort_status != 0) {
                         worker->command_status = AEE_EFAILED;
@@ -8593,12 +8623,17 @@ static int qbh_init_w4u8_gate_up_layout(
 }
 
 static int qbh_init_w4u8_down_layout(
-    struct qbh_projection_layout *layout) {
-    return qbh_projection_layout_init(
-        QBH_PROJECTION_DOWN,
-        QBH_WEIGHT_PACKED_W4_HMX_SCALE,
-        QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH2, 4U,
-        QBH_W4_WIDE_CHUNK_TILES, layout);
+    struct qbh_projection_layout *layout,
+    uint32_t first_chunk_tiles) {
+    if (qbh_projection_layout_init(
+            QBH_PROJECTION_DOWN,
+            QBH_WEIGHT_PACKED_W4_HMX_SCALE,
+            QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH2, 4U,
+            QBH_W4_WIDE_CHUNK_TILES, layout) != 0) {
+        return -1;
+    }
+    return qbh_projection_layout_set_two_chunk_split(
+        layout, first_chunk_tiles);
 }
 
 static void qbh_reset_w4u8_phase_header(
@@ -8610,6 +8645,13 @@ static void qbh_reset_w4u8_phase_header(
     phase->repeat_count = 1U;
     phase->requested_hvx_workers = workers;
     phase->dsp_status = QBH_PROBE_STATUS_DSP_RUNNING;
+}
+
+static uint64_t qbh_w4u8_phase_tick_delta(
+    const struct qbh_probe_header *phase, uint64_t tick) {
+    return tick >= phase->qtimer_start
+               ? tick - phase->qtimer_start
+               : 0U;
 }
 
 static void qbh_accumulate_w4u8_phase_metrics(
@@ -8655,6 +8697,49 @@ static void qbh_accumulate_w4u8_phase_metrics(
             phase->hvx_hmx_overlap_observed;
         header->w4u8_mlp_down_hvx_parallel_overlap |=
             phase->hvx_parallel_overlap_observed;
+        if (phase->timeline_enabled != 0U) {
+            header->w4u8_down_timeline_enabled = 1U;
+            header->w4u8_down_first_chunk_tiles =
+                qbh_projection_chunk_tiles(layout, 0U);
+            header->w4u8_down_second_chunk_tiles =
+                layout->chunks_per_output > 1U
+                    ? qbh_projection_chunk_tiles(layout, 1U)
+                    : 0U;
+            header->w4u8_down_first_dma_publication_ticks +=
+                qbh_w4u8_phase_tick_delta(
+                    phase, phase->first_dma_publication_tick);
+            header->w4u8_down_first_chunk_ready_ticks +=
+                qbh_w4u8_phase_tick_delta(
+                    phase, phase->first_chunk_ready_tick);
+            header->w4u8_down_first_hmx_start_ticks +=
+                qbh_w4u8_phase_tick_delta(
+                    phase, phase->hmx_window_start);
+            header->w4u8_down_first_continuation_ready_ticks +=
+                qbh_w4u8_phase_tick_delta(
+                    phase, phase->first_continuation_ready_tick);
+            header->w4u8_down_last_chunk_ready_ticks +=
+                qbh_w4u8_phase_tick_delta(
+                    phase, phase->last_chunk_ready_tick);
+            header->w4u8_down_hmx_end_ticks +=
+                qbh_w4u8_phase_tick_delta(
+                    phase, phase->hmx_window_end);
+            header->w4u8_down_initial_ready_wait_ticks +=
+                phase->hmx_initial_ready_wait_ticks;
+            header->w4u8_down_continuation_ready_wait_ticks +=
+                phase->hmx_continuation_ready_wait_ticks;
+            if (phase->hmx_initial_ready_wait_max_ticks >
+                header->w4u8_down_initial_ready_wait_max_ticks) {
+                header->w4u8_down_initial_ready_wait_max_ticks =
+                    phase->hmx_initial_ready_wait_max_ticks;
+            }
+            if (phase->hmx_continuation_ready_wait_max_ticks >
+                header
+                    ->w4u8_down_continuation_ready_wait_max_ticks) {
+                header
+                    ->w4u8_down_continuation_ready_wait_max_ticks =
+                    phase->hmx_continuation_ready_wait_max_ticks;
+            }
+        }
     }
 }
 
@@ -8710,7 +8795,9 @@ static int qbh_run_w4u8_streaming_mlp(
           hvx_pool->worker_count <
               QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS)) ||
         qbh_init_w4u8_gate_up_layout(&gate_up_layout) != 0 ||
-        qbh_init_w4u8_down_layout(&down_layout) != 0 ||
+        qbh_init_w4u8_down_layout(
+            &down_layout,
+            header->w4u8_down_first_chunk_tiles_requested) != 0 ||
         header->w4u8_gate_up_bundle_bytes !=
             gate_up_layout.stored_weight_bytes ||
         header->w4u8_down_bundle_bytes !=
@@ -8803,6 +8890,7 @@ static int qbh_run_w4u8_streaming_mlp(
 
     qbh_reset_w4u8_phase_header(
         &down_phase, QBH_BLOCK_W4U8_DOWN_HVX_WORKERS);
+    down_phase.timeline_enabled = QBH_BLOCK_DOWN_TIMELINE_ENABLED;
     start = HAP_perf_get_qtimer_count();
     if (header->mlp_mode ==
         QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX) {
@@ -8984,7 +9072,9 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             w4u8_gate_up_layout.vtcm_activation_offset;
     }
     if (w4u8_mlp_native_output_enabled != 0U) {
-        if (qbh_init_w4u8_down_layout(&w4u8_down_layout) != 0) {
+        if (qbh_init_w4u8_down_layout(
+                &w4u8_down_layout,
+                header->w4u8_down_first_chunk_tiles_requested) != 0) {
             return QBH_BLOCK_STATUS_MLP_STREAM_FAILED;
         }
         w4u8_mlp_native_output = buffers->q +

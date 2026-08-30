@@ -440,7 +440,8 @@ static int qbh_hvx_worker_run(struct qbh_hvx_worker_job *job,
         if (qbh_physical_plan_is_streaming(layout->physical_plan)) {
             region_tiles = task.stream_region_tiles;
             source_offset =
-                ((size_t)task.chunk_index * layout->chunk_tiles +
+                ((size_t)qbh_projection_chunk_first_tile(
+                     layout, task.chunk_index) +
                  (size_t)task.stream_region_index *
                      QBH_W4_STREAM_REGION_TILES) *
                 (layout->weight_storage_variant ==
@@ -453,7 +454,8 @@ static int qbh_hvx_worker_run(struct qbh_hvx_worker_job *job,
         } else {
             region_tiles = task.chunk_tiles;
             source_offset =
-                (size_t)task.chunk_index * layout->chunk_tiles *
+                (size_t)qbh_projection_chunk_first_tile(
+                    layout, task.chunk_index) *
                 (layout->weight_storage_variant ==
                          QBH_WEIGHT_EXPANDED_S8
                      ? QBH_HMX_WEIGHT_BYTES
@@ -716,6 +718,8 @@ static void qbh_chunked_hmx_main(void *opaque) {
                 uint32_t second_chunk_tiles =
                     qbh_projection_chunk_tiles(layout, 1U);
                 uint64_t wait_start = HAP_perf_get_qtimer_count();
+                uint64_t first_ready_tick;
+                uint64_t initial_ready_wait;
                 uint64_t continuation_ready_wait = 0U;
                 uint64_t core_start;
                 uint64_t core_end;
@@ -723,8 +727,26 @@ static void qbh_chunked_hmx_main(void *opaque) {
                 struct qbh_w4_hmx_request request;
 
                 qurt_sem_down(&state->expanded_ready[first_slot]);
-                job->ready_wait_ticks +=
-                    HAP_perf_get_qtimer_count() - wait_start;
+                first_ready_tick = HAP_perf_get_qtimer_count();
+                initial_ready_wait = first_ready_tick - wait_start;
+                job->ready_wait_ticks += initial_ready_wait;
+                if (state->header->timeline_enabled != 0U) {
+                    state->header->hmx_initial_ready_wait_ticks +=
+                        initial_ready_wait;
+                    if (initial_ready_wait >
+                        state->header
+                            ->hmx_initial_ready_wait_max_ticks) {
+                        state->header
+                            ->hmx_initial_ready_wait_max_ticks =
+                            initial_ready_wait;
+                    }
+                    if (state->header->first_chunk_ready_tick == 0U) {
+                        state->header->first_chunk_ready_tick =
+                            first_ready_tick;
+                    }
+                    state->header->last_chunk_ready_tick =
+                        first_ready_tick;
+                }
                 if (state->abort_status != 0) {
                     exit_status = state->abort_status;
                     goto unlock;
@@ -745,10 +767,20 @@ static void qbh_chunked_hmx_main(void *opaque) {
                 request.abort_status = &state->abort_status;
                 request.ready_wait_ticks = &continuation_ready_wait;
                 request.executed_stream_count = &executed_streams;
+                if (state->header->timeline_enabled != 0U) {
+                    request.first_continuation_ready_tick =
+                        &state->header->first_continuation_ready_tick;
+                    request.last_continuation_ready_tick =
+                        &state->header->last_chunk_ready_tick;
+                    request.continuation_ready_wait_max_ticks =
+                        &state->header
+                             ->hmx_continuation_ready_wait_max_ticks;
+                }
                 request.continuation_chunk_count = 1U;
                 request.continuation_chunks[0].activation_tiles =
                     state->activation_tiles +
-                    (size_t)layout->chunk_tiles *
+                    (size_t)qbh_projection_chunk_first_tile(
+                        layout, 1U) *
                         QBH_HMX_ACTIVATION_BYTES;
                 request.continuation_chunks[0].expanded_weight_tiles =
                     (const int8_t *)state->expanded_slots[second_slot];
@@ -772,6 +804,11 @@ static void qbh_chunked_hmx_main(void *opaque) {
                 qbh_hmx_region_end(state);
                 core_end = HAP_perf_get_qtimer_count();
                 job->ready_wait_ticks += continuation_ready_wait;
+                if (state->header->timeline_enabled != 0U) {
+                    state->header
+                        ->hmx_continuation_ready_wait_ticks +=
+                        continuation_ready_wait;
+                }
                 job->stream_count += executed_streams;
                 job->execution_count +=
                     first_chunk_tiles + second_chunk_tiles;
@@ -856,7 +893,8 @@ static void qbh_chunked_hmx_main(void *opaque) {
                         uint32_t executed_streams = 0U;
                         struct qbh_w4_hmx_request request = {
                             .activation_tiles = state->activation_tiles +
-                                (size_t)chunk_index * layout->chunk_tiles *
+                                (size_t)qbh_projection_chunk_first_tile(
+                                    layout, chunk_index) *
                                     QBH_HMX_ACTIVATION_BYTES,
                             .expanded_weight_tiles = (const int8_t *)state
                                 ->expanded_slots[expanded_slot],
@@ -885,7 +923,8 @@ static void qbh_chunked_hmx_main(void *opaque) {
                     } else {
                         streams = qbh_hmx_accumulate_u8s8_streaming(
                             state->activation_tiles +
-                                (size_t)chunk_index * layout->chunk_tiles *
+                                (size_t)qbh_projection_chunk_first_tile(
+                                    layout, chunk_index) *
                                     QBH_HMX_ACTIVATION_BYTES,
                             (const int8_t *)state
                                 ->expanded_slots[expanded_slot],
@@ -957,7 +996,8 @@ static void qbh_chunked_hmx_main(void *opaque) {
                     uint32_t executed_streams = 0U;
                     struct qbh_w4_hmx_request request = {
                         .activation_tiles = state->activation_tiles +
-                            (size_t)chunk_index * layout->chunk_tiles *
+                            (size_t)qbh_projection_chunk_first_tile(
+                                layout, chunk_index) *
                                 QBH_HMX_ACTIVATION_BYTES,
                         .expanded_weight_tiles = (const int8_t *)
                             state->expanded_slots[expanded_slot],
@@ -991,7 +1031,8 @@ static void qbh_chunked_hmx_main(void *opaque) {
                     }
                     job->stream_count += qbh_hmx_accumulate_u8s8_projection(
                         state->activation_tiles +
-                            (size_t)chunk_index * layout->chunk_tiles *
+                            (size_t)qbh_projection_chunk_first_tile(
+                                layout, chunk_index) *
                                 QBH_HMX_ACTIVATION_BYTES,
                         (const int8_t *)state->expanded_slots[expanded_slot],
                         chunk_tiles);
@@ -1362,6 +1403,11 @@ static int qbh_run_chunked_w4_pipeline_impl(
                     header->weight_stage_ticks +=
                         HAP_perf_get_qtimer_count() - wait_start;
                     ++header->weight_bundle_stage_count;
+                    if (header->timeline_enabled != 0U &&
+                        header->first_dma_publication_tick == 0U) {
+                        header->first_dma_publication_tick =
+                            HAP_perf_get_qtimer_count();
+                    }
                     qbh_publish_w4_bundle(
                         &state, linear_base + batch_index,
                         first_compressed_slot + batch_index);
@@ -1386,6 +1432,11 @@ static int qbh_run_chunked_w4_pipeline_impl(
                 }
                 header->weight_stage_ticks +=
                     HAP_perf_get_qtimer_count() - stage_start;
+                if (header->timeline_enabled != 0U &&
+                    header->first_dma_publication_tick == 0U) {
+                    header->first_dma_publication_tick =
+                        HAP_perf_get_qtimer_count();
+                }
                 for (uint32_t batch_index = 0;
                      batch_index < dma_bundle_batch; ++batch_index) {
                     qbh_publish_w4_bundle(

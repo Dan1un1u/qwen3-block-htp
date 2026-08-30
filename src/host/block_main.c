@@ -1430,6 +1430,7 @@ int main(int argc, char **argv) {
         QBH_BLOCK_FP16_COMMON_SCHEDULE_CONTROL;
     uint32_t fp16_norm_rows_per_task = 4U;
     uint32_t fp16_norm_contexts = 4U;
+    uint32_t w4u8_down_first_chunk_tiles = 96U;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t w4u8_gate_up_bundle_offset = 0U;
@@ -1463,7 +1464,7 @@ int main(int argc, char **argv) {
     memset(attention_audit_slots, 0, sizeof(attention_audit_slots));
     memset(&w4u8_gate_up_layout, 0, sizeof(w4u8_gate_up_layout));
     memset(&w4u8_down_layout, 0, sizeof(w4u8_down_layout));
-    if (argc < 3 || argc > 24 ||
+    if (argc < 3 || argc > 25 ||
         qbh_parse_variant(argv[2], &variant) != 0 ||
         (argc >= 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
         (argc >= 5 && qbh_parse_u32(
@@ -1506,6 +1507,9 @@ int main(int argc, char **argv) {
                            argv[22], &fp16_norm_rows_per_task) != 0) ||
         (argc >= 24 && qbh_parse_u32(
                            argv[23], &fp16_norm_contexts) != 0) ||
+        (argc >= 25 && qbh_parse_u32(
+                           argv[24],
+                           &w4u8_down_first_chunk_tiles) != 0) ||
         repeats == 0U || repeats > 100U ||
         w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
         (variant == QBH_BLOCK_W4U8 &&
@@ -1604,6 +1608,11 @@ int main(int argc, char **argv) {
          fp16_norm_rows_per_task != 4U &&
          fp16_norm_rows_per_task != 8U) ||
         fp16_norm_contexts < 2U || fp16_norm_contexts > 4U ||
+        (w4u8_down_first_chunk_tiles != 64U &&
+         w4u8_down_first_chunk_tiles != 80U &&
+         w4u8_down_first_chunk_tiles != 96U &&
+         w4u8_down_first_chunk_tiles != 112U &&
+         w4u8_down_first_chunk_tiles != 128U) ||
         (variant == QBH_BLOCK_W4U8 &&
          fp16_common_schedule_mode !=
              QBH_BLOCK_FP16_COMMON_SCHEDULE_CONTROL) ||
@@ -1782,7 +1791,8 @@ int main(int argc, char **argv) {
                         "input_norm_pool_post_norm_pool|"
                         "qk_head_pairs_input_norm_pool|all] "
                         "[fp16_norm_rows_per_task:2|4|8] "
-                        "[fp16_norm_contexts:2|3|4]\n",
+                        "[fp16_norm_contexts:2|3|4] "
+                        "[w4u8_down_first_chunk_tiles:64|80|96|112|128]\n",
                 argv[0]);
         return 2;
     }
@@ -1803,7 +1813,10 @@ int main(int argc, char **argv) {
              QBH_WEIGHT_PACKED_W4_HMX_SCALE,
              QBH_PHYSICAL_PLAN_CHUNKED_DMA_BATCH2, 4U,
              QBH_W4_WIDE_CHUNK_TILES,
-             &w4u8_down_layout) != 0)) {
+             &w4u8_down_layout) != 0 ||
+         qbh_projection_layout_set_two_chunk_split(
+             &w4u8_down_layout,
+             w4u8_down_first_chunk_tiles) != 0)) {
         fprintf(stderr, "W4U8 streaming layout initialization failed\n");
         return 2;
     }
@@ -2057,6 +2070,8 @@ int main(int argc, char **argv) {
     header->fp16_common_schedule_mode = fp16_common_schedule_mode;
     header->fp16_norm_rows_per_task = fp16_norm_rows_per_task;
     header->fp16_norm_contexts = fp16_norm_contexts;
+    header->w4u8_down_first_chunk_tiles_requested =
+        w4u8_down_first_chunk_tiles;
     header->input_offset = input_slot.offset;
     header->input_bytes = input_slot.expected_bytes;
     header->output_bytes = output_bytes;
@@ -2330,7 +2345,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0084\","
+        "{\"experiment\":\"EXP-0086\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2339,6 +2354,7 @@ int main(int argc, char **argv) {
         "\"fp16_common_schedule_mode\":\"%s\","
         "\"fp16_norm_rows_per_task\":%" PRIu32 ","
         "\"fp16_norm_contexts\":%" PRIu32 ","
+        "\"w4u8_down_first_chunk_tiles_requested\":%" PRIu32 ","
         "\"attribution_mode\":\"%s\","
         "\"numerical_audit_mode\":\"%s\","
         "\"residual_mode\":\"%s\","
@@ -2595,6 +2611,19 @@ int main(int argc, char **argv) {
         "\"w4u8_down_persistent_hvx_dispatch_count\":%" PRIu32 ","
         "\"w4u8_down_persistent_hvx_worker_count\":%" PRIu32 ","
         "\"w4u8_down_transient_hvx_thread_count\":%" PRIu32 ","
+        "\"w4u8_down_timeline_enabled\":%" PRIu32 ","
+        "\"w4u8_down_first_chunk_tiles\":%" PRIu32 ","
+        "\"w4u8_down_second_chunk_tiles\":%" PRIu32 ","
+        "\"w4u8_down_first_dma_publication_ticks\":%" PRIu64 ","
+        "\"w4u8_down_first_chunk_ready_ticks\":%" PRIu64 ","
+        "\"w4u8_down_first_hmx_start_ticks\":%" PRIu64 ","
+        "\"w4u8_down_first_continuation_ready_ticks\":%" PRIu64 ","
+        "\"w4u8_down_last_chunk_ready_ticks\":%" PRIu64 ","
+        "\"w4u8_down_hmx_end_ticks\":%" PRIu64 ","
+        "\"w4u8_down_initial_ready_wait_ticks\":%" PRIu64 ","
+        "\"w4u8_down_continuation_ready_wait_ticks\":%" PRIu64 ","
+        "\"w4u8_down_initial_ready_wait_max_ticks\":%" PRIu64 ","
+        "\"w4u8_down_continuation_ready_wait_max_ticks\":%" PRIu64 ","
         "\"weight_dma_ticks\":%" PRIu64 ","
         "\"hmx_compute_ticks\":%" PRIu64 ","
         "\"projection_pack_ticks\":%" PRIu64 ","
@@ -2650,6 +2679,7 @@ int main(int argc, char **argv) {
             header->fp16_common_schedule_mode),
         header->fp16_norm_rows_per_task,
         header->fp16_norm_contexts,
+        header->w4u8_down_first_chunk_tiles_requested,
         header->attribution_enabled != 0U ? "on" : "off",
         header->numerical_audit_enabled != 0U ? "on" : "off",
         qbh_residual_mode_name(header->residual_mode),
@@ -2900,6 +2930,19 @@ int main(int argc, char **argv) {
         header->w4u8_down_persistent_hvx_dispatch_count,
         header->w4u8_down_persistent_hvx_worker_count,
         header->w4u8_down_transient_hvx_thread_count,
+        header->w4u8_down_timeline_enabled,
+        header->w4u8_down_first_chunk_tiles,
+        header->w4u8_down_second_chunk_tiles,
+        header->w4u8_down_first_dma_publication_ticks,
+        header->w4u8_down_first_chunk_ready_ticks,
+        header->w4u8_down_first_hmx_start_ticks,
+        header->w4u8_down_first_continuation_ready_ticks,
+        header->w4u8_down_last_chunk_ready_ticks,
+        header->w4u8_down_hmx_end_ticks,
+        header->w4u8_down_initial_ready_wait_ticks,
+        header->w4u8_down_continuation_ready_wait_ticks,
+        header->w4u8_down_initial_ready_wait_max_ticks,
+        header->w4u8_down_continuation_ready_wait_max_ticks,
         header->weight_dma_ticks,
         header->hmx_compute_ticks, header->projection_pack_ticks,
         header->w4f16_expand_ticks,

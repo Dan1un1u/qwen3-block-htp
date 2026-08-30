@@ -37,6 +37,9 @@ struct qbh_w4_hmx_request {
     uint64_t *ready_wait_ticks;
     volatile uint32_t *hmx_consumption_started;
     uint32_t *executed_stream_count;
+    uint64_t *first_continuation_ready_tick;
+    uint64_t *last_continuation_ready_tick;
+    uint64_t *continuation_ready_wait_max_ticks;
     uint32_t batch_output_count;
     struct {
         const int8_t *expanded_weight_tiles;

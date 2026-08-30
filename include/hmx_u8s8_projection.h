@@ -38,6 +38,7 @@ struct qbh_projection_layout {
     uint32_t k_streams_per_output;
     uint32_t hmx_streams_per_repeat;
     uint32_t chunk_tiles;
+    uint32_t first_chunk_tiles;
     uint32_t chunks_per_output;
     uint32_t expanded_chunk_weight_bytes;
     uint32_t expanded_chunk_slot_bytes;
@@ -181,6 +182,7 @@ static inline int qbh_projection_layout_init(
         (layout->k_tiles + QBH_HMX_MAX_STREAM_TILES - 1U) /
         QBH_HMX_MAX_STREAM_TILES;
     layout->chunk_tiles = chunk_tiles;
+    layout->first_chunk_tiles = chunk_tiles;
     layout->chunks_per_output =
         (layout->k_tiles + chunk_tiles - 1U) / chunk_tiles;
     layout->hmx_streams_per_repeat =
@@ -247,10 +249,67 @@ static inline int qbh_projection_layout_init(
 
 static inline uint32_t qbh_projection_chunk_tiles(
     const struct qbh_projection_layout *layout, uint32_t chunk_index) {
-    uint32_t first_tile = chunk_index * layout->chunk_tiles;
+    uint32_t first_tile = chunk_index == 0U
+                              ? 0U
+                              : layout->first_chunk_tiles +
+                                    (chunk_index - 1U) *
+                                        layout->chunk_tiles;
     uint32_t remaining = layout->k_tiles - first_tile;
-    return remaining < layout->chunk_tiles ? remaining
-                                           : layout->chunk_tiles;
+    uint32_t requested = chunk_index == 0U
+                             ? layout->first_chunk_tiles
+                             : layout->chunk_tiles;
+    return remaining < requested ? remaining : requested;
+}
+
+static inline uint32_t qbh_projection_chunk_first_tile(
+    const struct qbh_projection_layout *layout, uint32_t chunk_index) {
+    return chunk_index == 0U
+               ? 0U
+               : layout->first_chunk_tiles +
+                     (chunk_index - 1U) * layout->chunk_tiles;
+}
+
+static inline int qbh_projection_layout_set_two_chunk_split(
+    struct qbh_projection_layout *layout, uint32_t first_chunk_tiles) {
+    uint32_t second_chunk_tiles;
+    uint32_t max_chunk_tiles;
+    uint32_t output_offset;
+    uint32_t plan_bytes;
+
+    if (layout == NULL || layout->variant != QBH_PROJECTION_DOWN ||
+        !qbh_physical_plan_is_chunked(layout->physical_plan) ||
+        qbh_physical_plan_is_streaming(layout->physical_plan) ||
+        first_chunk_tiles == 0U ||
+        first_chunk_tiles >= layout->k_tiles ||
+        (first_chunk_tiles & UINT32_C(15)) != 0U) {
+        return -1;
+    }
+    second_chunk_tiles = layout->k_tiles - first_chunk_tiles;
+    if ((second_chunk_tiles & UINT32_C(15)) != 0U) {
+        return -1;
+    }
+    max_chunk_tiles = first_chunk_tiles > second_chunk_tiles
+                          ? first_chunk_tiles
+                          : second_chunk_tiles;
+    layout->first_chunk_tiles = first_chunk_tiles;
+    layout->chunk_tiles = max_chunk_tiles;
+    layout->chunks_per_output = 2U;
+    layout->expanded_chunk_weight_bytes =
+        max_chunk_tiles * QBH_HMX_WEIGHT_BYTES;
+    layout->expanded_chunk_slot_bytes = qbh_align_up_u32(
+        layout->expanded_chunk_weight_bytes + QBH_HMX_BIAS_BYTES,
+        QBH_W4_METADATA_ALIGNMENT);
+    output_offset = qbh_align_up_u32(
+        layout->vtcm_chunked_expanded_slots_offset +
+            layout->expanded_slot_count *
+                layout->expanded_chunk_slot_bytes,
+        QBH_HMX_OUTPUT_BYTES);
+    plan_bytes = output_offset + layout->output_tiles_bytes;
+    layout->vtcm_chunked_output_offset = output_offset;
+    layout->vtcm_chunked_plan_bytes = plan_bytes;
+    layout->vtcm_output_offset = output_offset;
+    layout->vtcm_plan_bytes = plan_bytes;
+    return plan_bytes <= QBH_W4U8_VTCM_BYTES ? 0 : -1;
 }
 
 static inline uint32_t qbh_projection_expanded_chunk_offset(
