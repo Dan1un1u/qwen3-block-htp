@@ -9,10 +9,16 @@
 
 #define QBH_HMX_IDENTITY_CONVERT_LOWER_WORD (UINT32_C(24) << 10U)
 
+enum qbh_w4u8_decode_mode {
+    QBH_W4U8_DECODE_CONTROL = 0,
+    QBH_W4U8_DECODE_INTERLEAVED2 = 1,
+};
+
 struct qbh_projection_layout {
     uint32_t variant;
     uint32_t weight_storage_variant;
     uint32_t physical_plan;
+    uint32_t w4u8_decode_mode;
     uint32_t compressed_slot_count;
     uint32_t expanded_slot_count;
     uint32_t m;
@@ -140,6 +146,7 @@ static inline int qbh_projection_layout_init(
     layout->variant = variant;
     layout->weight_storage_variant = weight_storage_variant;
     layout->physical_plan = physical_plan;
+    layout->w4u8_decode_mode = QBH_W4U8_DECODE_CONTROL;
     layout->compressed_slot_count = compressed_slot_count;
     layout->expanded_slot_count =
         qbh_physical_plan_expanded_slot_count(physical_plan);

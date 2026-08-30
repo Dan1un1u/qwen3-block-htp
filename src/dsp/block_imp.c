@@ -767,6 +767,12 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          header->fp16_norm_rows_per_task != 8U) ||
         header->fp16_norm_contexts < 2U ||
         header->fp16_norm_contexts > 4U ||
+        header->w4u8_gate_up_decode_mode >
+            QBH_W4U8_DECODE_INTERLEAVED2 ||
+        (header->w4u8_gate_up_decode_mode !=
+             QBH_W4U8_DECODE_CONTROL &&
+         (header->variant != QBH_BLOCK_W4U8 ||
+          !qbh_block_mlp_is_w4u8_streaming(header->mlp_mode))) ||
         (header->variant != QBH_BLOCK_W4U8 &&
          header->u8_norm_reduction_mode !=
              QBH_BLOCK_U8_NORM_REDUCTION_SCALAR) ||
@@ -8717,6 +8723,8 @@ static int qbh_run_w4u8_streaming_mlp(
             down_layout.stored_weight_bytes) {
         return -1;
     }
+    gate_up_layout.w4u8_decode_mode =
+        header->w4u8_gate_up_decode_mode;
     header->w4u8_mlp_vtcm_base_offset =
         (uint32_t)((uintptr_t)mlp_arena -
                    (uintptr_t)header->resource_vtcm_address);
