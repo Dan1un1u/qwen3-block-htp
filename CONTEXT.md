@@ -618,3 +618,17 @@ regress, so the strict gate fails. Advancing only the first DMA chain does not
 remove per-block MLP pipeline startup and teardown cost.
 _Avoid_: accepted W4U8 candidate, permission to stack this mode, proof that
 Gate/Up weight prefetch is useless, or a substitute for persistent MLP workers
+
+**Q-Prefix-4 GQA QKV Schedule**:
+The rejected EXP-0085 common schedule that emits the first four GQA groups of
+Q, then all K groups, then the remaining four Q groups before V. It was the
+best bounded compromise between the current all-Q-first control and pure
+group-major order: pure group-major exposes K early but moves the critical tail
+to late Q heads. Seven-round formal evidence shows Q-Prefix-4 improves repeat-
+ten QKV by about 2.08% for F16F16 and 4.50% for W4F16, but regresses W4U8 QKV
+by about 0.84% and complete W4U8 Host wall by about 0.52%. The W4U8 paired-head
+preparation and projection pipeline is already balanced around its current
+Q-major order, so this is not a common cross-recipe optimization.
+_Avoid_: shared baseline promotion, assuming earlier K publication always
+shortens the critical path, recipe-specific adoption without a new approved
+experiment, or repeating the same bounded group/window/prefix search

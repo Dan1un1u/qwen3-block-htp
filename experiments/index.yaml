@@ -7054,10 +7054,10 @@ experiments:
       - exp0084_w4f16_fair_canonical_control
       - exp0084_w4u8_fair_canonical_control
       - gqa_group_major_qkv_super_projection_candidate
-    execution_state: running
-    evidence_validity: not_run
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-gqa-group-major-qkv
     source_branches:
       - codex/exp-0085-gqa-group-major-qkv
@@ -7066,6 +7066,8 @@ experiments:
       - f0398c0178e190621f903e99e7db07a9ce910a6f
       - d8cd89f273e0c50842c7b2f5877865d3ed592e3d
       - a54129c3353bb089386f0c1ea5f9ff2e6d89f9eb
+      - d2faa44e8c31feb39fc1ebbd344fdaf4c3ed7fed
+      - 5161d8adb1095f262e58949bf6be6e41523f6afa
     record: docs/experiments/EXP-0085.md
     decided_by: user
     decided_on: '2026-08-31'
@@ -7074,7 +7076,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0085-gqa-group-major-qkv
       started_on: '2026-08-31'
-      completed_on: null
+      completed_on: '2026-08-31'
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0085'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0085'
@@ -7109,4 +7111,22 @@ experiments:
       stage_a_post_projection_drain_ticks_w4f16: 501
       stage_a_post_projection_drain_ticks_w4u8: 1341
       stage_a_conclusion: current_q_major_then_k_major_then_v_major_order_leaves_an_addressable_post_projection_prep_drain_in_both_w4_paths_while_f16f16_is_already_nearly_fully_drained
+      stage_b_run: 'D:/llm_exp/results/qwen3-block-htp/exp0085/20260830T172859Z_d2faa44e8c31_stage_b'
+      stage_b_candidate: q_prefix4_k_all
+      stage_b_gate_result: pass_to_formal_because_the_bounded_search_found_one_candidate_with_positive_w4f16_and_marginal_w4u8_repeat1_medians
+      stage_b_conclusion: pure_group_major_orders_delay_late_q_heads_while_q_prefix4_balances_q_and_k_readiness_closely_enough_to_require_seven_round_formal_testing
+      stage_c_run: 'D:/llm_exp/results/qwen3-block-htp/exp0085/20260830T173432Z_5161d8adb109_stage_c_formal'
+      stage_c_retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0085/artifacts/5161d8adb109/stage_c_formal'
+      stage_c_candidate: q_prefix4_k_all
+      stage_c_gate_result: fail
+      stage_c_f16f16_repeat10_qkv_improvement_percent: 2.0791
+      stage_c_f16f16_repeat10_host_improvement_percent: 0.3405
+      stage_c_w4f16_repeat10_qkv_improvement_percent: 4.4973
+      stage_c_w4f16_repeat10_host_improvement_percent: 0.3567
+      stage_c_w4u8_repeat10_qkv_improvement_percent: -0.8414
+      stage_c_w4u8_repeat10_host_improvement_percent: -0.5231
+      stage_c_pc027_timing_ledger_closure: pass
+      stage_c_pc028_module_table: pass
+      stage_c_correctness_and_physical_gate: pass
+      conclusion: q_prefix4_reduces_fp16_qkv_tail_but_the_w4u8_pair_prep_and_projection_pipeline_is_already_balanced_and_the_reorder_stably_regresses_both_qkv_and_complete_block_so_no_shared_schedule_is_adopted
       selected_baseline_changed: false
