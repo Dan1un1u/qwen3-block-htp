@@ -199,6 +199,13 @@ def build_summary(result_dir: Path, package_dir: Path) -> dict[str, object]:
                 records["control"], records["candidate"], field
             ) for field in fields
         }
+        for field in (
+            "w4u8_mlp_gate_up_hmx_batch_n_tiles",
+            "w4u8_mlp_gate_up_expanded_slot_count",
+            "w4u8_mlp_vtcm_plan_bytes",
+        ):
+            metrics[field]["control"] *= repeat
+            metrics[field]["candidate"] *= repeat
         speed_gate = all(
             metrics[field][key] < 0.0
             for field in TARGETS
