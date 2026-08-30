@@ -53,6 +53,9 @@ enum qbh_block_hmx_command_kind {
     (QBH_BLOCK_MAX_K / 32U * QBH_BLOCK_W4F16_HMX_BATCH_N_TILES / \
      QBH_BLOCK_W4F16_MIN_REGION_TILES)
 #define QBH_BLOCK_W4F16_HVX_WORKERS UINT32_C(4)
+#define QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS UINT32_C(6)
+#define QBH_BLOCK_MAX_POOL_HVX_WORKERS \
+    (QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS - 1U)
 #define QBH_BLOCK_W4F16_HVX_STACK_BYTES UINT32_C(8192)
 #define QBH_BLOCK_W4F16_DMA_BATCH_N_TILES UINT32_C(4)
 #define QBH_BLOCK_F16F16_BATCH_N_TILES UINT32_C(2)
@@ -227,11 +230,11 @@ struct qbh_block_w4f16_job {
 };
 
 struct qbh_block_w4f16_pool {
-    qurt_sem_t command_ready[QBH_BLOCK_W4F16_HVX_WORKERS];
-    qurt_sem_t command_done[QBH_BLOCK_W4F16_HVX_WORKERS];
-    qurt_sem_t worker_started[QBH_BLOCK_W4F16_HVX_WORKERS];
-    qurt_thread_t threads[QBH_BLOCK_W4F16_HVX_WORKERS];
-    struct qbh_block_w4f16_job jobs[QBH_BLOCK_W4F16_HVX_WORKERS];
+    qurt_sem_t command_ready[QBH_BLOCK_MAX_POOL_HVX_WORKERS];
+    qurt_sem_t command_done[QBH_BLOCK_MAX_POOL_HVX_WORKERS];
+    qurt_sem_t worker_started[QBH_BLOCK_MAX_POOL_HVX_WORKERS];
+    qurt_thread_t threads[QBH_BLOCK_MAX_POOL_HVX_WORKERS];
+    struct qbh_block_w4f16_job jobs[QBH_BLOCK_MAX_POOL_HVX_WORKERS];
     volatile uint32_t stop;
     volatile uint32_t next_region;
     const uint8_t *compressed_weight;
@@ -315,7 +318,7 @@ struct qbh_block_w4f16_cross_prefetch {
 static uint8_t qbh_block_hmx_stack[QBH_BLOCK_HMX_STACK_BYTES]
     __attribute__((aligned(128)));
 static uint8_t qbh_block_w4f16_hvx_stacks
-    [QBH_BLOCK_W4F16_HVX_WORKERS][QBH_BLOCK_W4F16_HVX_STACK_BYTES]
+    [QBH_BLOCK_MAX_POOL_HVX_WORKERS][QBH_BLOCK_W4F16_HVX_STACK_BYTES]
     __attribute__((aligned(128)));
 
 static int qbh_attention_parallel_qk_norm_enabled(uint32_t mode);
@@ -706,17 +709,19 @@ static int qbh_header_valid(const struct qbh_block_header *header,
             QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES ||
         header->attention_hvx_contexts == 0U ||
         header->attention_hvx_contexts >
-            QBH_BLOCK_W4F16_HVX_WORKERS ||
+            QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS ||
         (header->attention_pipeline_mode ==
              QBH_BLOCK_ATTENTION_PIPELINE_CONTROL &&
          header->attention_hvx_contexts != 1U) ||
         (header->attention_pipeline_mode !=
              QBH_BLOCK_ATTENTION_PIPELINE_CONTROL &&
-         (header->attention_hvx_contexts != 4U ||
-          (qbh_attention_u8_enabled(
-               header->attention_pipeline_mode)
-               ? header->variant != QBH_BLOCK_W4U8
-               : header->variant == QBH_BLOCK_W4U8))) ||
+         (qbh_attention_u8_enabled(header->attention_pipeline_mode)
+              ? (header->variant != QBH_BLOCK_W4U8 ||
+                 header->attention_hvx_contexts < 4U ||
+                 header->attention_hvx_contexts >
+                     QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS)
+              : (header->variant == QBH_BLOCK_W4U8 ||
+                 header->attention_hvx_contexts != 4U))) ||
         (qbh_attention_parallel_qk_norm_enabled(
              header->attention_pipeline_mode) &&
          (header->common_ops_mask & QBH_BLOCK_COMMON_OP_ROPE) == 0U) ||
@@ -816,7 +821,9 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (header->residual_mode ==
              QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4 &&
          (header->variant != QBH_BLOCK_W4U8 ||
-          header->attention_hvx_contexts != 4U ||
+          header->attention_hvx_contexts < 4U ||
+          header->attention_hvx_contexts >
+              QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS ||
           (header->crouton_boundary_mode &
            (QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
@@ -2118,7 +2125,7 @@ static int qbh_w4f16_pool_create(
     int result = 0;
 
     if (worker_count == 0U ||
-        worker_count > QBH_BLOCK_W4F16_HVX_WORKERS) {
+        worker_count > QBH_BLOCK_MAX_POOL_HVX_WORKERS) {
         return -1;
     }
     memset(pool, 0, sizeof(*pool));
@@ -6737,7 +6744,9 @@ static int qbh_hvx_pool_u8_qk_prep_start_async(
     if (header == NULL || pool == NULL || buffers == NULL ||
         !qbh_attention_u8_qkv_overlap_enabled(
             header->attention_pipeline_mode) ||
-        header->attention_hvx_contexts != 4U) {
+        header->attention_hvx_contexts < 4U ||
+        header->attention_hvx_contexts >
+            QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS) {
         return -1;
     }
     worker_count = header->attention_hvx_contexts - 1U;
@@ -7283,7 +7292,9 @@ static int qbh_hvx_pool_u8_attention(
     uint32_t completed_groups;
 
     if (pool == NULL || buffers == NULL || worker == NULL ||
-        header->attention_hvx_contexts != 4U ||
+        header->attention_hvx_contexts < 4U ||
+        header->attention_hvx_contexts >
+            QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS ||
         header->attention_hvx_contexts - 1U > pool->worker_count) {
         return -1;
     }

@@ -1389,16 +1389,18 @@ int main(int argc, char **argv) {
         attention_pipeline_mode >
             QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES ||
         attention_hvx_contexts == 0U ||
-        attention_hvx_contexts > 4U ||
+        attention_hvx_contexts > 6U ||
         (attention_pipeline_mode ==
              QBH_BLOCK_ATTENTION_PIPELINE_CONTROL &&
          attention_hvx_contexts != 1U) ||
         (attention_pipeline_mode !=
              QBH_BLOCK_ATTENTION_PIPELINE_CONTROL &&
-         (attention_hvx_contexts != 4U ||
-          (qbh_attention_u8_enabled(attention_pipeline_mode)
-               ? variant != QBH_BLOCK_W4U8
-               : variant == QBH_BLOCK_W4U8))) ||
+         (qbh_attention_u8_enabled(attention_pipeline_mode)
+              ? (variant != QBH_BLOCK_W4U8 ||
+                 attention_hvx_contexts < 4U ||
+                 attention_hvx_contexts > 6U)
+              : (variant == QBH_BLOCK_W4U8 ||
+                 attention_hvx_contexts != 4U))) ||
         ((attention_pipeline_mode ==
               QBH_BLOCK_ATTENTION_PIPELINE_PARALLEL_QK_NORM_ROPE ||
           attention_pipeline_mode ==
@@ -1483,7 +1485,8 @@ int main(int argc, char **argv) {
         (residual_mode ==
              QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4 &&
          (variant != QBH_BLOCK_W4U8 ||
-          attention_hvx_contexts != 4U ||
+          attention_hvx_contexts < 4U ||
+          attention_hvx_contexts > 6U ||
           (crouton_boundary_mode &
            (QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
@@ -1605,7 +1608,7 @@ int main(int argc, char **argv) {
                         "u8_log2_gqa_qkv_overlap_vgather|"
                         "u8_log2_gqa_qkv_overlap_vgather_vdeal|"
                         "u8_log2_gqa_qkv_overlap_vgather_vdeal_fused_qk_requant] "
-                        "[attention_hvx_contexts:1..4] "
+                        "[attention_hvx_contexts:1..6] "
                         "[crouton_boundary:control|qkv|av_to_o|"
                         "input_norm|post_norm|norms|all|"
                         "w4u8_mlp_input|w4u8_mlp_io] "
