@@ -6748,14 +6748,15 @@ experiments:
     variants:
       - exp0079_vlut32_w4_decoder_control
       - arithmetic_xor_sub_w4_decoder_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-arithmetic-nibble-decode
     source_branches:
       - codex/exp-0082-w4u8-arithmetic-nibble-decode
-    source_commits: []
+    source_commits:
+      - 22fc21f2396f6c9aacfcce15211b5d8f6e5b01be
     record: docs/experiments/EXP-0082.md
     decided_by: user
     decided_on: '2026-08-30'
@@ -6764,7 +6765,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0082-w4u8-arithmetic-nibble-decode
       started_on: '2026-08-30'
-      completed_on: null
+      completed_on: '2026-08-30'
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0082'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0082'
@@ -6786,3 +6787,39 @@ experiments:
       static_execution_gate: arithmetic_candidate_hot_loop_contains_vector_byte_xor_and_subtract_and_no_vlut32
       local_speed_gate: aggregate_w4u8_weight_expansion_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
+      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0082/20260830T134035Z_22fc21f2396f_formal'
+      artifact_set: 'D:/llm_exp/models/qwen3-block-htp/exp0082/artifacts/22fc21f2396f/formal'
+      gate_summary_sha256: ec2b6b712fad4becdcb87b78ffe99000ba363fd59e2f926652fa14d5599a39d4
+      full_profiling_report_sha256: 5bb5985b25969f38cc8b95139c4d0e822a4bf2841906beea34007985b6abcd20
+      package_manifest_sha256: 043f61337b2ad2758bb95791bc4ca768150f457f1f28bc7d20a7ad57eba42359
+      output_hash: 69f22eeb035e5ec5
+      total_mismatches: 0
+      max_lsb: 0
+      formal_paired_rounds: 7
+      repeat1_control_host_wall_ns_per_block_median: 2376823.0
+      repeat1_candidate_host_wall_ns_per_block_median: 2423437.0
+      repeat1_host_wall_change_percent: 1.961189369170535
+      repeat1_host_wall_paired_change_percent: 2.2176321322348924
+      repeat1_control_aggregate_expand_ticks_median: 31795.0
+      repeat1_candidate_aggregate_expand_ticks_median: 35077.0
+      repeat1_aggregate_expand_change_percent: 10.322377732347853
+      repeat1_aggregate_expand_paired_change_percent: 10.544919919919927
+      repeat10_control_host_wall_ns_per_block_median: 1967208.4
+      repeat10_candidate_host_wall_ns_per_block_median: 1994468.8
+      repeat10_host_wall_change_percent: 1.3857403211576358
+      repeat10_host_wall_paired_change_percent: 1.543562770973761
+      repeat10_control_aggregate_expand_ticks_median: 31783.7
+      repeat10_candidate_aggregate_expand_ticks_median: 35117.4
+      repeat10_aggregate_expand_change_percent: 10.488709621598492
+      repeat10_aggregate_expand_paired_change_percent: 10.990990424575475
+      repeat10_qkvo_expand_change_percent: 14.010436949918216
+      repeat10_mlp_expand_change_percent: 9.625103480900377
+      fixed_vtcm_gate: pass
+      zero_intermediate_ddr_gate: pass
+      zero_spill_fill_gate: pass
+      unchanged_weight_dma_hmx_gate: pass
+      arithmetic_decoder_static_gate: pass
+      gate_result: fail
+      local_adoption_eligible: false
+      conclusion: arithmetic_xor_subtract_sign_extension_is_byte_exact_but_increases_the_dependency_chain_and_is_slower_than_v79_vlut32_for_every_projection_family
+      selected_baseline_changed: false
