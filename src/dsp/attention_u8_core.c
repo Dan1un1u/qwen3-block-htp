@@ -11,6 +11,10 @@
 #define QBH_ATTN_U8_HVX_BYTES UINT32_C(128)
 #define QBH_ATTN_U8_SCORE_ZP INT32_C(128)
 #define QBH_ATTN_U8_EXP_FRAC_BITS UINT32_C(15)
+#define QBH_ATTN_U8_LUT_LEADING_MIN UINT32_C(15)
+#define QBH_ATTN_U8_LUT_LEADING_MAX UINT32_C(21)
+#define QBH_ATTN_U8_LUT_TEMPLATE_BYTES UINT32_C(32)
+#define QBH_ATTN_U8_LUT_TEMPLATE_COUNT UINT32_C(14)
 
 static const uint8_t qbh_attention_u8_lane_index[QBH_ATTN_U8_HVX_BYTES]
     __attribute__((aligned(QBH_ATTN_U8_HVX_BYTES))) = {
@@ -804,6 +808,38 @@ static void qbh_attention_u8_build_probability_lut_entries(
     }
 }
 
+static void qbh_attention_u8_build_sole_lut_templates(
+    uint8_t *templates) {
+    memset(templates, 0,
+           QBH_ATTN_U8_LUT_TEMPLATE_COUNT *
+               QBH_ATTN_U8_LUT_TEMPLATE_BYTES);
+    for (uint32_t leading = QBH_ATTN_U8_LUT_LEADING_MIN;
+         leading <= QBH_ATTN_U8_LUT_LEADING_MAX; ++leading) {
+        for (uint32_t next = 0U; next < 2U; ++next) {
+            const uint32_t slot =
+                2U * (leading - QBH_ATTN_U8_LUT_LEADING_MIN) + next;
+            const uint32_t representative_sum =
+                (UINT32_C(1) << leading) |
+                (next << (leading - 1U));
+            qbh_attention_u8_build_probability_lut_entries(
+                templates +
+                    (size_t)slot * QBH_ATTN_U8_LUT_TEMPLATE_BYTES,
+                0U, representative_sum,
+                QBH_ATTENTION_DIVISION_SOLE, 2U);
+        }
+    }
+}
+
+static const uint8_t *qbh_attention_u8_select_sole_lut_template(
+    const uint8_t *templates, uint32_t sum) {
+    const uint32_t leading = qbh_attention_u8_floor_log2(sum);
+    const uint32_t next = (sum >> (leading - 1U)) & 1U;
+    const uint32_t slot =
+        2U * (leading - QBH_ATTN_U8_LUT_LEADING_MIN) + next;
+    return templates +
+        (size_t)slot * QBH_ATTN_U8_LUT_TEMPLATE_BYTES;
+}
+
 void qbh_attention_u8_softmax_group(
     const uint8_t *score_tiles, uint8_t *probability_tiles,
     uint8_t *scratch,
@@ -877,13 +913,16 @@ void qbh_attention_u8_softmax_group(
     asm volatile("barrier" ::: "memory");
 }
 
-void qbh_attention_u8_requant_softmax_group(
+static void qbh_attention_u8_requant_softmax_group_impl(
     uint8_t *score_tiles, uint8_t *probability_tiles,
     uint8_t *scratch,
     const struct qbh_attention_config *config,
-    struct qbh_attention_u8_telemetry *telemetry) {
+    struct qbh_attention_u8_telemetry *telemetry,
+    uint32_t use_lut_templates) {
     uint8_t *row_scratch = scratch;
     uint8_t *lut = scratch + QBH_ATTN_U8_HVX_BYTES;
+    uint8_t *lut_templates =
+        scratch + 2U * QBH_ATTN_U8_HVX_BYTES;
     uint8_t *score0 = score_tiles;
     uint8_t *score1 = score_tiles +
         QBH_ATTENTION_SCORE_TILES * QBH_HMX_OUTPUT_BYTES;
@@ -894,8 +933,15 @@ void qbh_attention_u8_requant_softmax_group(
         *(const HVX_Vector *)qbh_attention_u8_lane_index;
     const HVX_VectorPred lower_half = Q6_Q_vcmp_gt_VubVub(
         Q6_Vb_vsplat_R(64), lane);
+    const uint32_t use_sole_templates =
+        use_lut_templates != 0U &&
+        config->division_mode == QBH_ATTENTION_DIVISION_SOLE;
     uint32_t row_sum_min = UINT_MAX;
     uint32_t row_sum_max = 0U;
+
+    if (use_sole_templates != 0U) {
+        qbh_attention_u8_build_sole_lut_templates(lut_templates);
+    }
 
     for (uint32_t row = 0U; row < QBH_ATTENTION_M; ++row) {
         const uint32_t valid_count = row + 1U;
@@ -905,6 +951,8 @@ void qbh_attention_u8_requant_softmax_group(
         HVX_Vector banked_codes;
         HVX_VectorPair code_h;
         HVX_VectorPair probability_h;
+        uint32_t weight_sum0;
+        uint32_t weight_sum1;
         uint32_t probability_sum0;
         uint32_t probability_sum1;
 
@@ -963,17 +1011,28 @@ void qbh_attention_u8_requant_softmax_group(
         codes = qbh_attention_u8_log2_codes_paired(
             score, row, config->fraction_bits);
         code_h = Q6_Wuh_vunpack_Vub(codes);
-        memset(lut, 0, QBH_ATTN_U8_HVX_BYTES);
-        qbh_attention_u8_build_probability_lut_entries(
-            lut, 0U,
-            qbh_attention_u8_sum_log2_weights_half(
-                Q6_V_lo_W(code_h)),
-            config->division_mode, valid_count);
-        qbh_attention_u8_build_probability_lut_entries(
-            lut, 16U,
-            qbh_attention_u8_sum_log2_weights_half(
-                Q6_V_hi_W(code_h)),
-            config->division_mode, valid_count);
+        weight_sum0 = qbh_attention_u8_sum_log2_weights_half(
+            Q6_V_lo_W(code_h));
+        weight_sum1 = qbh_attention_u8_sum_log2_weights_half(
+            Q6_V_hi_W(code_h));
+        if (use_sole_templates != 0U && valid_count != 1U) {
+            memcpy(lut,
+                   qbh_attention_u8_select_sole_lut_template(
+                       lut_templates, weight_sum0),
+                   QBH_ATTN_U8_LUT_TEMPLATE_BYTES);
+            memcpy(lut + QBH_ATTN_U8_LUT_TEMPLATE_BYTES,
+                   qbh_attention_u8_select_sole_lut_template(
+                       lut_templates, weight_sum1),
+                   QBH_ATTN_U8_LUT_TEMPLATE_BYTES);
+        } else {
+            memset(lut, 0, QBH_ATTN_U8_HVX_BYTES);
+            qbh_attention_u8_build_probability_lut_entries(
+                lut, 0U, weight_sum0,
+                config->division_mode, valid_count);
+            qbh_attention_u8_build_probability_lut_entries(
+                lut, 16U, weight_sum1,
+                config->division_mode, valid_count);
+        }
         banked_codes = Q6_V_vmux_QVV(
             lower_half, codes,
             Q6_Vb_vadd_VbVb(codes, Q6_Vb_vsplat_R(16)));
@@ -1041,6 +1100,26 @@ void qbh_attention_u8_requant_softmax_group(
         telemetry->probability_row_sum_max = row_sum_max;
     }
     asm volatile("barrier" ::: "memory");
+}
+
+void qbh_attention_u8_requant_softmax_group(
+    uint8_t *score_tiles, uint8_t *probability_tiles,
+    uint8_t *scratch,
+    const struct qbh_attention_config *config,
+    struct qbh_attention_u8_telemetry *telemetry) {
+    qbh_attention_u8_requant_softmax_group_impl(
+        score_tiles, probability_tiles, scratch,
+        config, telemetry, 0U);
+}
+
+void qbh_attention_u8_requant_softmax_group_lut_templates(
+    uint8_t *score_tiles, uint8_t *probability_tiles,
+    uint8_t *scratch,
+    const struct qbh_attention_config *config,
+    struct qbh_attention_u8_telemetry *telemetry) {
+    qbh_attention_u8_requant_softmax_group_impl(
+        score_tiles, probability_tiles, scratch,
+        config, telemetry, 1U);
 }
 
 void qbh_attention_u8_requant_av(

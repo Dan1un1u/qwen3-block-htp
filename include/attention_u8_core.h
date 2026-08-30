@@ -15,7 +15,9 @@
 #define QBH_ATTN_U8_AV_BIAS_OFFSET UINT32_C(16896)
 #define QBH_ATTN_U8_AV_BIAS_BYTES UINT32_C(1024)
 #define QBH_ATTN_U8_SOFTMAX_SCRATCH_OFFSET UINT32_C(17920)
-#define QBH_ATTN_U8_SOFTMAX_SCRATCH_BYTES UINT32_C(256)
+/* Softmax runs after V packing and may reuse the vgather/V-deal workspace.
+ * The template candidate needs 704 bytes, rounded to six HVX vectors. */
+#define QBH_ATTN_U8_SOFTMAX_SCRATCH_BYTES UINT32_C(768)
 #define QBH_ATTN_U8_VGATHER_SCRATCH_OFFSET \
     QBH_ATTN_U8_SOFTMAX_SCRATCH_OFFSET
 #define QBH_ATTN_U8_VGATHER_SCRATCH_BYTES UINT32_C(256)
@@ -65,6 +67,12 @@ void qbh_attention_u8_softmax_group(
     struct qbh_attention_u8_telemetry *telemetry);
 
 void qbh_attention_u8_requant_softmax_group(
+    uint8_t *score_tiles, uint8_t *probability_tiles,
+    uint8_t *scratch,
+    const struct qbh_attention_config *config,
+    struct qbh_attention_u8_telemetry *telemetry);
+
+void qbh_attention_u8_requant_softmax_group_lut_templates(
     uint8_t *score_tiles, uint8_t *probability_tiles,
     uint8_t *scratch,
     const struct qbh_attention_config *config,
