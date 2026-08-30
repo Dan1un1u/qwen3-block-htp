@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(42)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(84)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(43)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(85)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -430,6 +430,17 @@ struct qbh_block_header {
     uint32_t w4u8_qkv_batch_count;
     uint32_t w4u8_qkvo_prefetch_count;
     uint32_t w4u8_qkvo_overlap_schedule_count;
+    uint64_t qkv_timeline_origin_ticks;
+    uint64_t qkv_timeline_end_ticks;
+    uint64_t qkv_timeline_weight_dma_ticks;
+    uint64_t qkv_timeline_weight_expand_ticks;
+    uint64_t qkv_timeline_hmx_wait_ticks;
+    uint64_t qkv_timeline_q_projection_ready[QBH_BLOCK_KV_HEADS];
+    uint64_t qkv_timeline_k_projection_ready[QBH_BLOCK_KV_HEADS];
+    uint64_t qkv_timeline_v_projection_ready[QBH_BLOCK_KV_HEADS];
+    uint64_t qkv_timeline_q_prep_head_ready[QBH_BLOCK_HEADS];
+    uint64_t qkv_timeline_k_prep_ready[QBH_BLOCK_KV_HEADS];
+    uint64_t qkv_timeline_attention_consume[QBH_BLOCK_KV_HEADS];
     uint64_t u8_attention_actual_score_hash;
     uint64_t u8_attention_actual_probability_hash;
     uint64_t u8_attention_actual_av_hash;

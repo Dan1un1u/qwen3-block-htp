@@ -2326,11 +2326,69 @@ int main(int argc, char **argv) {
             }
         }
     }
+    if (numerical_audit_enabled != 0U) {
+        const char *timeline_path = getenv("QBH_DUMP_QKV_TIMELINE_PATH");
+        if (timeline_path != NULL && timeline_path[0] != '\0') {
+            FILE *timeline = fopen(timeline_path, "w");
+            if (timeline == NULL) {
+                fprintf(stderr, "failed to open QKV timeline: %s\n",
+                        timeline_path);
+                goto cleanup;
+            }
+            fprintf(
+                timeline,
+                "{\"experiment\":\"EXP-0085\","
+                "\"stage\":\"A\",\"variant\":\"%s\","
+                "\"repeat_count\":%" PRIu32 ","
+                "\"qkv_end_ticks\":%" PRIu64 ","
+                "\"weight_dma_ticks\":%" PRIu64 ","
+                "\"weight_expand_ticks\":%" PRIu64 ","
+                "\"hmx_wait_ticks\":%" PRIu64 ",\"groups\":[",
+                qbh_variant_name(variant), repeats,
+                header->qkv_timeline_end_ticks,
+                header->qkv_timeline_weight_dma_ticks,
+                header->qkv_timeline_weight_expand_ticks,
+                header->qkv_timeline_hmx_wait_ticks);
+            for (uint32_t group = 0U;
+                 group < QBH_BLOCK_KV_HEADS; ++group) {
+                uint64_t q_prep =
+                    header->qkv_timeline_q_prep_head_ready[group * 2U];
+                uint64_t second_q_prep =
+                    header->qkv_timeline_q_prep_head_ready[
+                        group * 2U + 1U];
+                if (second_q_prep > q_prep) {
+                    q_prep = second_q_prep;
+                }
+                fprintf(
+                    timeline,
+                    "%s{\"group\":%" PRIu32 ","
+                    "\"q_projection_ready\":%" PRIu64 ","
+                    "\"k_projection_ready\":%" PRIu64 ","
+                    "\"v_projection_ready\":%" PRIu64 ","
+                    "\"q_prep_ready\":%" PRIu64 ","
+                    "\"k_prep_ready\":%" PRIu64 ","
+                    "\"attention_consume\":%" PRIu64 "}",
+                    group == 0U ? "" : ",", group,
+                    header->qkv_timeline_q_projection_ready[group],
+                    header->qkv_timeline_k_projection_ready[group],
+                    header->qkv_timeline_v_projection_ready[group],
+                    q_prep,
+                    header->qkv_timeline_k_prep_ready[group],
+                    header->qkv_timeline_attention_consume[group]);
+            }
+            if (fprintf(timeline, "]}\n") < 0 ||
+                fclose(timeline) != 0) {
+                fprintf(stderr, "failed to write QKV timeline: %s\n",
+                        timeline_path);
+                goto cleanup;
+            }
+        }
+    }
 
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0084\","
+        "{\"experiment\":\"EXP-0085\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
