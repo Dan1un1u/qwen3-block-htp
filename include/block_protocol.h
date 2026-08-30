@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(37)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(70)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(38)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(71)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -104,6 +104,7 @@ enum qbh_block_u8_norm_reduction_mode {
     QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE = 1,
     QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT = 2,
     QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE = 3,
+    QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE_PARALLEL_INPUT = 4,
 };
 
 enum qbh_block_attention_pack_mode {
@@ -399,6 +400,7 @@ struct qbh_block_header {
     uint64_t u8_attention_actual_score_hash;
     uint64_t u8_attention_actual_probability_hash;
     uint64_t u8_attention_actual_av_hash;
+    uint64_t u8_input_norm_actual_hash;
     uint32_t u8_attention_audit_ddr_write_bytes;
 
     uint32_t prepared_session_run_index;
@@ -492,6 +494,10 @@ struct qbh_block_header {
     uint64_t w4u8_qkvo_weight_expand_ticks;
     uint64_t w4u8_qkvo_prefetch_wait_ticks;
     uint64_t w4u8_qkvo_hmx_lifetime_ticks;
+    uint32_t w4u8_input_norm_task_count;
+    uint64_t w4u8_input_norm_main_work_ticks;
+    uint64_t w4u8_input_norm_worker_work_ticks;
+    uint64_t w4u8_input_norm_pool_wait_ticks;
     uint32_t w4u8_post_residual_task_count;
     uint32_t w4u8_final_residual_task_count;
     uint64_t w4u8_post_residual_main_work_ticks;

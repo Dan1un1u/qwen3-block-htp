@@ -882,7 +882,7 @@ void qbh_hvx_qk_norm_rope_u8_native_head_pair(
         qbh_u8_norm_reduction_mode >=
         QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT;
     const uint32_t shared_rope =
-        qbh_u8_norm_reduction_mode ==
+        qbh_u8_norm_reduction_mode >=
         QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE;
 
     qbh_qk_norm_rope_load_gamma_sf32(gamma, &gamma_sf32);
@@ -1068,7 +1068,7 @@ void qbh_hvx_qk_norm_rope_u8_native_k_head_pair(
         qbh_u8_norm_reduction_mode >=
         QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT;
     const uint32_t shared_rope =
-        qbh_u8_norm_reduction_mode ==
+        qbh_u8_norm_reduction_mode >=
         QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE;
 
     qbh_qk_norm_rope_load_gamma_sf32(gamma, &gamma_sf32);
