@@ -5561,3 +5561,53 @@ experiments:
       local_adoption_eligible: true
       conclusion: main_plus_five_persistent_attention_hvx_workers_reduce_the_qk_preparation_join_tail_and_combined_qkv_attention_critical_interval_enough_for_a_stable_complete_block_speedup_despite_higher_softmax_and_attention_work_counters
       selected_baseline_changed: false
+  - id: EXP-0069
+    slug: w4u8-split-attention-context-domains
+    title: Decouple Q/K preparation and GQA Attention HVX domains
+    parent: EXP-0068
+    variants:
+      - exp0068_prep6_attention6_control
+      - exp0068_prep6_attention4_candidate
+      - exp0068_prep6_attention5_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-split-attention-context-domains
+    source_branches:
+      - codex/exp-0069-w4u8-split-attention-context-domains
+    source_commits: []
+    record: docs/experiments/EXP-0069.md
+    decided_by: user
+    decided_on: '2026-08-30'
+    approval_ref: 'User message 2026-08-30: 允许推送，继续实验; continuous profiling-guided loop remains approved'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0069-w4u8-split-attention-context-domains
+      started_on: '2026-08-30'
+      completed_on: null
+    evidence:
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0069'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0069'
+      source_parent_commit: 77398acdab364c2642ce132f95964ab03494a9b3
+      direct_control: W4U8-EXP0068-ATTENTION-HVX-CONTEXT6
+      contextual_comparator: W4F16-EXP0038-NORMS
+      execution_unit: qwen3_layer14_complete_block_m64
+      primary_scope: separate_qk_preparation_and_gqa_attention_active_hvx_context_counts
+      hypothesis: six_contexts_are_needed_for_qk_preparation_but_four_or_five_active_contexts_can_reduce_gqa_attention_softmax_and_pipeline_contention_while_retaining_the_preparation_join_gain
+      bounded_candidates: qk_prep_contexts_6_with_attention_active_contexts_4_and_5
+      selection_rule: lowest_three_round_repeat10_combined_qkv_plus_attention_ticks_then_host_wall_with_the_selected_candidate_formally_compared_against_prep6_attention6
+      qk_norm_rope_softmax_or_av_arithmetic_changes_allowed: false
+      hmx_command_or_tile_changes_allowed: false
+      persistent_worker_creation_changes_allowed: false
+      projection_residual_or_mlp_changes_allowed: false
+      qparam_layout_or_mask_changes_allowed: false
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      correctness_gate: final_output_and_qk_probability_av_boundaries_byte_exact_to_exp0068_and_independent_reference_zero_mismatches_zero_max_lsb
+      physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn_six_persistent_contexts_created_and_locked_and_separate_active_context_telemetry
+      local_speed_gate: attention_ledger_combined_qkv_plus_attention_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
+      completion_gate: seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
