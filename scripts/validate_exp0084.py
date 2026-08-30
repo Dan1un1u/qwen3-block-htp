@@ -12,6 +12,7 @@ SAMPLES = 7
 REPEATS = (1, 10)
 FP16_VARIANTS = ("f16f16", "w4f16")
 STAGES = ("stage_a", "stage_b", "stage_c", "candidate")
+TRI_PLANS = ("canonical", "recipe_best")
 VTCM_BYTES = 8_388_608
 QTIMER_TICKS_PER_US = 19.2
 EXPECTED_HASHES = {
@@ -230,6 +231,46 @@ def median_record(records: list[dict]) -> dict:
     return result
 
 
+def tri_records(result_dir: Path, plan: str, variant: str,
+                repeat: int) -> list[dict]:
+    records = load_jsonl(
+        result_dir / "tri_variant" / plan /
+        f"{variant}_r{repeat}.jsonl", SAMPLES)
+    expected_variant = variant.upper()
+    for record in records:
+        validate_record(record, repeat, expected_variant)
+    return records
+
+
+def validate_tri_schedule(record: dict, plan: str, variant: str,
+                          selection: dict) -> None:
+    if variant == "w4u8":
+        expected = {
+            "fp16_common_schedule_mode": "control",
+            "fp16_norm_rows_per_task": 4,
+            "fp16_norm_contexts": 4,
+        }
+    else:
+        if plan == "canonical":
+            rows = selection["selected_rows_per_task"]
+            contexts = selection["selected_contexts"]
+        else:
+            best = selection["recipe_specific_best"][variant]
+            rows = best["rows_per_task"]
+            contexts = best["contexts"]
+        expected = {
+            "fp16_common_schedule_mode":
+                "input_norm_pool_post_norm_pool",
+            "fp16_norm_rows_per_task": rows,
+            "fp16_norm_contexts": contexts,
+        }
+    for field, value in expected.items():
+        if record.get(field) != value:
+            raise SystemExit(
+                f"{plan} {variant} {field}: "
+                f"{record.get(field)!r} != {value!r}")
+
+
 def build_summary(result_dir: Path) -> dict:
     if (result_dir / "boot_id_before.txt").read_bytes() != \
             (result_dir / "boot_id_after.txt").read_bytes():
@@ -264,23 +305,33 @@ def build_summary(result_dir: Path) -> dict:
     }
 
     stages = {stage: stage_summary(result_dir, stage) for stage in STAGES}
-    w4u8 = {}
-    for repeat in REPEATS:
-        records = load_jsonl(
-            result_dir / "w4u8" / f"w4u8_control_r{repeat}.jsonl",
-            SAMPLES)
-        for record in records:
-            validate_record(record, repeat, "W4U8")
-        w4u8[f"repeat{repeat}"] = {
-            "median_record": median_record(records),
-        }
+    tri_variant = {}
+    for plan in TRI_PLANS:
+        plan_summary = {}
+        for variant in ("f16f16", "w4f16", "w4u8"):
+            repeat_summary = {}
+            for repeat in REPEATS:
+                records = tri_records(
+                    result_dir, plan, variant, repeat)
+                for record in records:
+                    validate_tri_schedule(
+                        record, plan, variant, selection)
+                repeat_summary[f"repeat{repeat}"] = {
+                    "median_record": median_record(records),
+                }
+            plan_summary[variant] = repeat_summary
+        tri_variant[plan] = plan_summary
 
-    final_records = {}
-    for variant in FP16_VARIANTS:
-        records = stage_records(
-            result_dir, "candidate", variant, 10, "candidate")
-        final_records[variant] = median_record(records)
-    final_records["w4u8"] = w4u8["repeat10"]["median_record"]
+    final_records = {
+        variant: tri_variant["canonical"][variant]["repeat10"][
+            "median_record"]
+        for variant in ("f16f16", "w4f16", "w4u8")
+    }
+    recipe_best_records = {
+        variant: tri_variant["recipe_best"][variant]["repeat10"][
+            "median_record"]
+        for variant in ("f16f16", "w4f16", "w4u8")
+    }
 
     local_gate = (
         stages["stage_b"]["host_wall_non_regression_gate"] and
@@ -292,8 +343,9 @@ def build_summary(result_dir: Path) -> dict:
         "selection": selection,
         "correctness": correctness,
         "stages": stages,
-        "w4u8": w4u8,
+        "tri_variant": tri_variant,
         "final_median_records": final_records,
+        "recipe_best_median_records": recipe_best_records,
         "stage_a_gate": stages["stage_a"]["host_wall_non_regression_gate"],
         "stage_b_gate": stages["stage_b"]["host_wall_non_regression_gate"],
         "stage_c_gate": stages["stage_c"]["host_wall_non_regression_gate"],
@@ -337,18 +389,13 @@ def add_direct_table(lines: list[str], summary: dict,
     lines.append("")
 
 
-def build_report(summary: dict, result_dir: Path) -> str:
-    lines = [
-        "# EXP-0084 full profiling report", "",
-        "This report compares all three recipes from one source commit and "
-        "one binary. F16F16 and W4F16 use the same bounded norm scheduling "
-        "grid and selection rule; W4U8 remains byte-identical to EXP-0079.",
-        "",
-        "## PC-028 three-variant repeat10 module wall time", "",
+def add_module_table(lines: list[str], records: dict,
+                     title: str) -> None:
+    lines.extend([
+        f"## {title}", "",
         "| Module | F16F16 | W4F16 | W4U8 | W4U8 speed vs W4F16 |",
         "|---|---:|---:|---:|---:|",
-    ]
-    records = summary["final_median_records"]
+    ])
     modules = {name: dict(module_us(records[name]))
                for name in ("f16f16", "w4f16", "w4u8")}
     totals = {name: modules[name]["Complete block Host wall"]
@@ -366,6 +413,23 @@ def build_report(summary: dict, result_dir: Path) -> str:
         lines.append(
             f"| {module} | {cells[0]} | {cells[1]} | {cells[2]} | "
             f"{speed * 100.0:+.1f}% |")
+    lines.append("")
+
+
+def build_report(summary: dict, result_dir: Path) -> str:
+    lines = [
+        "# EXP-0084 full profiling report", "",
+        "This report compares all three recipes from one source commit and "
+        "one binary. F16F16 and W4F16 use the same bounded norm scheduling "
+        "grid and selection rule; W4U8 remains byte-identical to EXP-0079.",
+        "",
+    ]
+    add_module_table(
+        lines, summary["final_median_records"],
+        "PC-028 canonical common-schedule repeat10 module wall time")
+    add_module_table(
+        lines, summary["recipe_best_median_records"],
+        "PC-028 equal-budget recipe-best repeat10 module wall time")
     lines.extend(["", "## Stage gates", "",
                   "| Stage | Result |", "|---|---:|"])
     for stage, label in (("stage_a", "Q/K head pairs"),
@@ -462,8 +526,8 @@ def build_report(summary: dict, result_dir: Path) -> str:
         f"Formal result directory: `{result_dir}`", "",
         "The device boot ID is unchanged across collection. Package manifests, "
         "binary hashes, build/deploy logs, the full 3x3 grid, seven paired "
-        "rounds for every stage, and seven W4U8 rounds are retained alongside "
-        "this report.", "",
+        "rounds for every stage, and two seven-round interleaved tri-variant "
+        "matrices are retained alongside this report.", "",
         f"Overall local gate: {'PASS' if summary['local_gate_pass'] else 'FAIL'}. "
         "No Selected Baseline is changed automatically.", "",
     ])

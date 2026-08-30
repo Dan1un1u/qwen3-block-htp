@@ -27,7 +27,7 @@ python3 /home/daniuniu/work/qwen3-block-htp-project-memory/scripts/project_memor
 
 mkdir -p "${result_dir}" "${artifact_dir}" \
     "${result_dir}/correctness" "${result_dir}/stages" \
-    "${result_dir}/w4u8"
+    "${result_dir}/tri_variant"
 "${project_root}/scripts/build_exp0084.sh" \
     > "${result_dir}/build.log" 2>&1
 "${project_root}/scripts/check_exp0084_static.sh" \
@@ -57,6 +57,21 @@ read -r selected_rows selected_contexts < <(
     python3 "${project_root}/scripts/select_exp0084_grid.py" \
         "${result_dir}/grid" --plain
 )
+read -r f16_best_rows f16_best_contexts \
+        w4_best_rows w4_best_contexts < <(
+    python3 - "${result_dir}/grid_selection.json" <<'PY'
+import json
+import sys
+
+selection = json.load(open(sys.argv[1]))["recipe_specific_best"]
+print(
+    selection["f16f16"]["rows_per_task"],
+    selection["f16f16"]["contexts"],
+    selection["w4f16"]["rows_per_task"],
+    selection["w4f16"]["contexts"],
+)
+PY
+)
 export EXP0084_FP16_NORM_ROWS="${selected_rows}"
 export EXP0084_FP16_NORM_CONTEXTS="${selected_contexts}"
 
@@ -79,23 +94,13 @@ for stage in stage_a stage_b stage_c candidate; do
         "${stage}" "${result_dir}/stages/${stage}" "${paired_rounds}"
 done
 
-for repeat in 1 10; do
-    : > "${result_dir}/w4u8/w4u8_control_r${repeat}.jsonl"
-done
-for ((round = 1; round <= paired_rounds; ++round)); do
-    printf 'EXP-0084 W4U8 control round %d/%d\n' \
-        "${round}" "${paired_rounds}"
-    if ((round % 2 == 1)); then
-        repeats=(1 10)
-    else
-        repeats=(10 1)
-    fi
-    for repeat in "${repeats[@]}"; do
-        "${project_root}/scripts/run_exp0084.sh" W4U8 control \
-            "${repeat}" on off \
-            >> "${result_dir}/w4u8/w4u8_control_r${repeat}.jsonl"
-    done
-done
+printf 'EXP-0084 interleaved canonical and recipe-best tri-variant formal\n'
+"${project_root}/scripts/run_exp0084_tri_formal.sh" \
+    "${result_dir}/tri_variant" \
+    "${selected_rows}" "${selected_contexts}" \
+    "${f16_best_rows}" "${f16_best_contexts}" \
+    "${w4_best_rows}" "${w4_best_contexts}" \
+    "${paired_rounds}"
 
 "${adb_exe}" shell cat /proc/sys/kernel/random/boot_id \
     > "${result_dir}/boot_id_after.txt"
@@ -130,6 +135,10 @@ cp "${project_root}/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so" \
         "${paired_rounds}"
     printf 'grid_rounds=%d\nselected_rows_per_task=%s\nselected_contexts=%s\n' \
         "${grid_rounds}" "${selected_rows}" "${selected_contexts}"
+    printf 'f16f16_best_rows_per_task=%s\nf16f16_best_contexts=%s\n' \
+        "${f16_best_rows}" "${f16_best_contexts}"
+    printf 'w4f16_best_rows_per_task=%s\nw4f16_best_contexts=%s\n' \
+        "${w4_best_rows}" "${w4_best_contexts}"
     printf 'physical_contract=exact_8mib_vtcm_one_fastrpc_one_hmx_owner\n'
     printf 'intermediate_ddr_allowed=false\nqnn_allowed=false\n'
     printf 'fp16_package=%s\nw4u8_package=%s\n' \
