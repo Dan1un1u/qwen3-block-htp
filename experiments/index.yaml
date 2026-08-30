@@ -6937,7 +6937,7 @@ experiments:
       - fp16_input_rmsnorm_persistent_pool_candidate
       - fp16_post_residual_rmsnorm_persistent_pool_candidate
       - equal_budget_per_recipe_selected_plans
-    execution_state: running
+    execution_state: completed
     evidence_validity: valid
     local_gate: pass
     adoption_status: pending
@@ -6947,6 +6947,7 @@ experiments:
     source_commits:
       - f97f8ef7928c58f10e7995a101b76a84af7c0aad
       - 7b78005bce92cfb04f23e54ababffdd36f60a47d
+      - 6dc437fe08eaccf119c4cbce82937e22f125da0b
     record: docs/experiments/EXP-0084.md
     decided_by: user
     decided_on: '2026-08-30'
@@ -6955,7 +6956,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0084-cross-recipe-common-schedule-parity
       started_on: '2026-08-30'
-      completed_on: null
+      completed_on: '2026-08-31'
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0084'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0084'
@@ -6980,44 +6981,52 @@ experiments:
       stage_c_gate: fp16_post_residual_norm_pool_candidate_is_byte_exact_and_post_residual_norm_plus_gate_up_and_host_wall_do_not_regress_for_either_f16f16_or_w4f16_at_repeat1_and_repeat10
       final_fairness_gate: all_three_recipes_run_from_one_source_commit_one_binary_one_boot_same_8mib_vtcm_one_fastrpc_one_hmx_owner_zero_intermediate_ddr_with_interleaved_repeat1_repeat10_rounds
       completion_gate: serial_per_stage_evidence_plus_equal_budget_tri_variant_pc027_pc028_closure
-      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0084/20260830T155058Z_7b78005bce92_formal'
-      artifact_set: 'D:/llm_exp/models/qwen3-block-htp/exp0084/artifacts/7b78005bce92/formal'
-      gate_summary_sha256: d6f6058ddee17d3d7165cc37d9172af33947c7b03bd0c38ecdbce9b4348cb04d
-      full_profiling_report_sha256: e7d6e5eade3997ba40d939b238a322c228f615ce7b6f848472af11adc777fe48
+      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0084/20260830T160259Z_6dc437fe08ea_formal'
+      artifact_set: 'D:/llm_exp/models/qwen3-block-htp/exp0084/artifacts/6dc437fe08ea/formal'
+      gate_summary_sha256: b20246a2f2ef6d4003386389ea6b0064c38941f3bce394d855d25c639ec21983
+      full_profiling_report_sha256: 81dddcde935af22b730887888b3900426df6d52f8e3244895127d887f8b8230d
       fp16_package_manifest_sha256: f5ea2692a88015eb7bdba00181da57dd0092f48c53b7c60f8a5feb718faf9d25
       w4u8_package_manifest_sha256: 043f61337b2ad2758bb95791bc4ca768150f457f1f28bc7d20a7ad57eba42359
       device_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
-      formal_device_invocations: 321
+      formal_device_invocations: 391
       formal_paired_rounds_per_stage: 7
+      interleaved_tri_variant_rounds_per_plan: 7
       equal_budget_grid_rounds: 2
       common_selected_rows_per_task: 4
-      common_selected_contexts: 4
-      f16f16_recipe_specific_best_rows_per_task: 4
+      common_selected_contexts: 3
+      f16f16_recipe_specific_best_rows_per_task: 2
       f16f16_recipe_specific_best_contexts: 4
       w4f16_recipe_specific_best_rows_per_task: 4
       w4f16_recipe_specific_best_contexts: 3
       stage_a_gate_result: fail
       stage_a_conclusion: qk_head_pair_tasks_raise_w4f16_readiness_wait_and_do_not_non_regress_host_wall
       stage_b_gate_result: pass
-      stage_b_input_norm_ticks_change_percent_repeat10_f16f16: -68.21837679746527
-      stage_b_input_norm_ticks_change_percent_repeat10_w4f16: -68.21837679746527
+      stage_b_input_norm_ticks_change_percent_repeat10_f16f16: -59.5710978433045
+      stage_b_input_norm_ticks_change_percent_repeat10_w4f16: -59.51742627345844
       stage_c_gate_result: pass
-      stage_c_post_residual_ticks_change_percent_repeat10_f16f16: -67.99443601416287
-      stage_c_post_residual_ticks_change_percent_repeat10_w4f16: -68.02781289506954
+      stage_c_post_residual_ticks_change_percent_repeat10_f16f16: -59.5322376738306
+      stage_c_post_residual_ticks_change_percent_repeat10_w4f16: -59.502148091988886
       combined_gate_result: pass
-      f16f16_repeat1_control_host_wall_ns_per_block_median: 2911041.0
-      f16f16_repeat1_candidate_host_wall_ns_per_block_median: 2847969.0
-      f16f16_repeat1_candidate_change_percent: -2.1666476013220026
-      f16f16_repeat10_control_host_wall_ns_per_block_median: 2494161.4
-      f16f16_repeat10_candidate_host_wall_ns_per_block_median: 2442000.0
-      f16f16_repeat10_candidate_change_percent: -2.091340199555647
-      w4f16_repeat1_control_host_wall_ns_per_block_median: 2651146.0
-      w4f16_repeat1_candidate_host_wall_ns_per_block_median: 2588125.0
-      w4f16_repeat1_candidate_change_percent: -2.3771229498488533
-      w4f16_repeat10_control_host_wall_ns_per_block_median: 2216046.8
-      w4f16_repeat10_candidate_host_wall_ns_per_block_median: 2155239.6
-      w4f16_repeat10_candidate_change_percent: -2.7439492703854373
-      unchanged_w4u8_repeat10_host_wall_ns_per_block_median: 1944005.2
+      f16f16_repeat1_control_host_wall_ns_per_block_median: 2914271.0
+      f16f16_repeat1_candidate_host_wall_ns_per_block_median: 2844323.0
+      f16f16_repeat1_candidate_change_percent: -2.4001885891874797
+      f16f16_repeat10_control_host_wall_ns_per_block_median: 2487546.9
+      f16f16_repeat10_candidate_host_wall_ns_per_block_median: 2453140.7
+      f16f16_repeat10_candidate_change_percent: -1.3831377410411738
+      w4f16_repeat1_control_host_wall_ns_per_block_median: 2656094.0
+      w4f16_repeat1_candidate_host_wall_ns_per_block_median: 2609115.0
+      w4f16_repeat1_candidate_change_percent: -1.768725052652509
+      w4f16_repeat10_control_host_wall_ns_per_block_median: 2213479.1
+      w4f16_repeat10_candidate_host_wall_ns_per_block_median: 2165375.0
+      w4f16_repeat10_candidate_change_percent: -2.1732348862024575
+      canonical_f16f16_repeat10_host_wall_ns_per_block_median: 2442369.8
+      canonical_w4f16_repeat10_host_wall_ns_per_block_median: 2161776.0
+      canonical_w4u8_repeat10_host_wall_ns_per_block_median: 1955276.1
+      canonical_w4u8_speedup_over_w4f16_percent: 10.561163203498469
+      recipe_best_f16f16_repeat10_host_wall_ns_per_block_median: 2436416.7
+      recipe_best_w4f16_repeat10_host_wall_ns_per_block_median: 2162020.8
+      recipe_best_w4u8_repeat10_host_wall_ns_per_block_median: 1948312.5
+      recipe_best_w4u8_speedup_over_w4f16_percent: 10.968892310653433
       f16f16_output_hash: 704252c89780e695
       w4f16_output_hash: f18b9abbe1487231
       w4u8_output_hash: 69f22eeb035e5ec5
@@ -7031,5 +7040,5 @@ experiments:
       pc027_gate: pass
       pc028_gate: pass
       gate_result: pass
-      conclusion: dtype_independent_fp16_norm_pool_backports_reduce_the_fair_w4f16_repeat10_block_wall_to_2155us_and_reduce_the_apparent_w4u8_over_w4f16_speedup_to_10_9_percent_while_qk_head_pairing_is_not_common
+      conclusion: dtype_independent_fp16_norm_pool_backports_reduce_the_fair_w4f16_repeat10_block_wall_to_about_2162us_and_reduce_the_apparent_w4u8_over_w4f16_speedup_from_14_1_percent_to_10_6_to_11_0_percent_while_qk_head_pairing_is_not_common
       selected_baseline_changed: false
