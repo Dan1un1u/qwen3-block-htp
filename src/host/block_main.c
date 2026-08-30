@@ -1431,6 +1431,7 @@ int main(int argc, char **argv) {
     uint32_t fp16_norm_rows_per_task = 4U;
     uint32_t fp16_norm_contexts = 4U;
     uint32_t w4u8_attention_timeline_requested = 0U;
+    uint32_t w4u8_attention_softmax_row_slices_requested = 2U;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t w4u8_gate_up_bundle_offset = 0U;
@@ -1464,7 +1465,7 @@ int main(int argc, char **argv) {
     memset(attention_audit_slots, 0, sizeof(attention_audit_slots));
     memset(&w4u8_gate_up_layout, 0, sizeof(w4u8_gate_up_layout));
     memset(&w4u8_down_layout, 0, sizeof(w4u8_down_layout));
-    if (argc < 3 || argc > 25 ||
+    if (argc < 3 || argc > 26 ||
         qbh_parse_variant(argv[2], &variant) != 0 ||
         (argc >= 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
         (argc >= 5 && qbh_parse_u32(
@@ -1510,6 +1511,10 @@ int main(int argc, char **argv) {
         (argc >= 25 && qbh_parse_attribution_mode(
                            argv[24],
                            &w4u8_attention_timeline_requested) != 0) ||
+        (argc >= 26 && qbh_parse_u32(
+                           argv[25],
+                           &w4u8_attention_softmax_row_slices_requested) !=
+                           0) ||
         repeats == 0U || repeats > 100U ||
         w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
         (variant == QBH_BLOCK_W4U8 &&
@@ -1612,6 +1617,8 @@ int main(int argc, char **argv) {
          (variant != QBH_BLOCK_W4U8 ||
           attention_pipeline_mode !=
               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM)) ||
+        (w4u8_attention_softmax_row_slices_requested != 2U &&
+         w4u8_attention_softmax_row_slices_requested != 4U) ||
         (variant == QBH_BLOCK_W4U8 &&
          fp16_common_schedule_mode !=
              QBH_BLOCK_FP16_COMMON_SCHEDULE_CONTROL) ||
@@ -1791,7 +1798,8 @@ int main(int argc, char **argv) {
                         "qk_head_pairs_input_norm_pool|all] "
                         "[fp16_norm_rows_per_task:2|4|8] "
                         "[fp16_norm_contexts:2|3|4] "
-                        "[w4u8_attention_timeline:off|on]\n",
+                        "[w4u8_attention_timeline:off|on] "
+                        "[w4u8_attention_softmax_row_slices:2|4]\n",
                 argv[0]);
         return 2;
     }
@@ -2068,6 +2076,8 @@ int main(int argc, char **argv) {
     header->fp16_norm_contexts = fp16_norm_contexts;
     header->w4u8_attention_timeline_requested =
         w4u8_attention_timeline_requested;
+    header->w4u8_attention_softmax_row_slices_requested =
+        w4u8_attention_softmax_row_slices_requested;
     header->input_offset = input_slot.offset;
     header->input_bytes = input_slot.expected_bytes;
     header->output_bytes = output_bytes;
@@ -2353,6 +2363,7 @@ int main(int argc, char **argv) {
         "\"attribution_mode\":\"%s\","
         "\"numerical_audit_mode\":\"%s\","
         "\"w4u8_attention_timeline_requested\":%" PRIu32 ","
+        "\"w4u8_attention_softmax_row_slices_requested\":%" PRIu32 ","
         "\"residual_mode\":\"%s\","
         "\"f16f16_projection_mode\":\"%s\","
         "\"w4f16_pipeline_mode\":\"%s\","
@@ -2701,6 +2712,7 @@ int main(int argc, char **argv) {
         header->attribution_enabled != 0U ? "on" : "off",
         header->numerical_audit_enabled != 0U ? "on" : "off",
         header->w4u8_attention_timeline_requested,
+        header->w4u8_attention_softmax_row_slices_requested,
         qbh_residual_mode_name(header->residual_mode),
         variant == QBH_BLOCK_F16F16
             ? qbh_f16f16_projection_mode_name(

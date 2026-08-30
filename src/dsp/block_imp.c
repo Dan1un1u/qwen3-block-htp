@@ -94,9 +94,7 @@ _Static_assert(
 #define QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES UINT32_C(4)
 #define QBH_BLOCK_W4U8_INPUT_NORM_ROWS_PER_TASK UINT32_C(4)
 #define QBH_BLOCK_W4U8_RESIDUAL_ROWS_PER_TASK UINT32_C(4)
-#define QBH_BLOCK_W4U8_SOFTMAX_ROW_SLICES UINT32_C(2)
-#define QBH_BLOCK_W4U8_SOFTMAX_ROWS_PER_SLICE \
-    (QBH_ATTENTION_M / QBH_BLOCK_W4U8_SOFTMAX_ROW_SLICES)
+#define QBH_BLOCK_W4U8_SOFTMAX_CONTROL_ROW_SLICES UINT32_C(2)
 #define QBH_BLOCK_W4U8_SOFTMAX_MAX_ROW_SLICES UINT32_C(4)
 #define QBH_BLOCK_W4U8_SOFTMAX_MAX_TASKS \
     (QBH_BLOCK_KV_HEADS * QBH_BLOCK_W4U8_SOFTMAX_MAX_ROW_SLICES)
@@ -315,7 +313,7 @@ struct qbh_block_w4f16_pool {
     volatile uint32_t next_attention_av_task;
     volatile uint32_t u8_attention_qk_ready[QBH_BLOCK_KV_HEADS];
     volatile uint32_t u8_attention_softmax_ready[
-        QBH_BLOCK_KV_HEADS * QBH_BLOCK_W4U8_SOFTMAX_ROW_SLICES];
+        QBH_BLOCK_KV_HEADS * QBH_BLOCK_W4U8_SOFTMAX_MAX_ROW_SLICES];
     uint32_t u8_attention_dependency_generation;
     uint32_t u8_attention_timeline_enabled;
     uint64_t u8_attention_timeline_origin;
@@ -785,6 +783,10 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->fp16_norm_contexts < 2U ||
         header->fp16_norm_contexts > 4U ||
         header->w4u8_attention_timeline_requested > 1U ||
+        (header->w4u8_attention_softmax_row_slices_requested !=
+             QBH_BLOCK_W4U8_SOFTMAX_CONTROL_ROW_SLICES &&
+         header->w4u8_attention_softmax_row_slices_requested !=
+             QBH_BLOCK_W4U8_SOFTMAX_MAX_ROW_SLICES) ||
         (header->w4u8_attention_timeline_requested != 0U &&
          (header->variant != QBH_BLOCK_W4U8 ||
           !qbh_attention_u8_dependency_stream_enabled(
@@ -7712,6 +7714,9 @@ static void qbh_attention_u8_dependency_stream_run_tasks(
     struct qbh_block_buffers *buffers = pool->attention_buffers;
     uint8_t *softmax_scratch = buffers->attention_projection +
         (size_t)job->worker_index * QBH_ATTN_U8_SOFTMAX_SCRATCH_BYTES;
+    const uint32_t slices =
+        header->w4u8_attention_softmax_row_slices_requested;
+    const uint32_t rows_per_slice = QBH_ATTENTION_M / slices;
     uint32_t templates_built = 0U;
 
     job->u8_attention_probability_row_sum_min = UINT32_MAX;
@@ -7779,9 +7784,9 @@ static void qbh_attention_u8_dependency_stream_run_tasks(
         const uint32_t group = task % QBH_BLOCK_KV_HEADS;
         const uint32_t slice = task / QBH_BLOCK_KV_HEADS;
         const uint32_t first_row =
-            slice * QBH_BLOCK_W4U8_SOFTMAX_ROWS_PER_SLICE;
+            slice * rows_per_slice;
         const uint32_t ready_index =
-            group * QBH_BLOCK_W4U8_SOFTMAX_ROW_SLICES + slice;
+            group * QBH_BLOCK_W4U8_SOFTMAX_MAX_ROW_SLICES + slice;
         struct qbh_attention_u8_group_view view;
         struct qbh_attention_u8_telemetry telemetry;
         struct qbh_attention_u8_telemetry *telemetry_ptr;
@@ -7794,7 +7799,7 @@ static void qbh_attention_u8_dependency_stream_run_tasks(
         }
 
         if (task >= QBH_BLOCK_KV_HEADS *
-                        QBH_BLOCK_W4U8_SOFTMAX_ROW_SLICES ||
+                        slices ||
             pool->attention_gqa_abort != 0U) {
             break;
         }
@@ -7837,7 +7842,7 @@ static void qbh_attention_u8_dependency_stream_run_tasks(
         qbh_attention_u8_requant_softmax_group_rows_prebuilt_templates(
             view.score_group, view.probability_group,
             softmax_scratch, view.config, telemetry_ptr,
-            first_row, QBH_BLOCK_W4U8_SOFTMAX_ROWS_PER_SLICE);
+            first_row, rows_per_slice);
         job->u8_attention_softmax_ticks +=
             HAP_perf_get_qtimer_count() - start;
         if (pool->u8_attention_timeline_enabled != 0U) {
@@ -7880,16 +7885,17 @@ static void qbh_attention_u8_dependency_stream_run_tasks(
             pool->attention_gqa_abort != 0U) {
             break;
         }
-        while (pool->u8_attention_softmax_ready[
-                   group * QBH_BLOCK_W4U8_SOFTMAX_ROW_SLICES] !=
-                   pool->u8_attention_dependency_generation ||
-               pool->u8_attention_softmax_ready[
-                   group * QBH_BLOCK_W4U8_SOFTMAX_ROW_SLICES + 1U] !=
+        for (uint32_t slice = 0U; slice < slices; ++slice) {
+            while (pool->u8_attention_softmax_ready[
+                       group *
+                           QBH_BLOCK_W4U8_SOFTMAX_MAX_ROW_SLICES +
+                       slice] !=
                    pool->u8_attention_dependency_generation) {
-            if (pool->attention_gqa_abort != 0U) {
-                return;
+                if (pool->attention_gqa_abort != 0U) {
+                    return;
+                }
+                asm volatile("pause(#8)" : : : "memory");
             }
-            asm volatile("pause(#8)" : : : "memory");
         }
         asm volatile("barrier" ::: "memory");
         if (pool->u8_attention_timeline_enabled != 0U) {
@@ -7928,7 +7934,8 @@ static void qbh_attention_u8_dependency_stream_run_tasks(
 static void qbh_attention_u8_publish_timeline(
     struct qbh_block_header *header,
     const struct qbh_block_w4f16_pool *pool) {
-    const uint32_t slices = QBH_BLOCK_W4U8_SOFTMAX_ROW_SLICES;
+    const uint32_t slices =
+        header->w4u8_attention_softmax_row_slices_requested;
     const uint32_t task_count = QBH_BLOCK_KV_HEADS * slices;
     uint64_t qk_first = UINT64_MAX;
     uint64_t claim_first = UINT64_MAX;
@@ -7975,7 +7982,8 @@ static void qbh_attention_u8_publish_timeline(
             header->w4u8_attention_av_end_last_ticks = av_end;
         }
         for (uint32_t slice = 0U; slice < slices; ++slice) {
-            const uint32_t index = group * slices + slice;
+            const uint32_t index =
+                group * QBH_BLOCK_W4U8_SOFTMAX_MAX_ROW_SLICES + slice;
             const uint64_t claim =
                 pool->u8_attention_timeline_softmax_claim[index];
             const uint64_t task_start =

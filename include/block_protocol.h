@@ -7,7 +7,7 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(44)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(45)
 #define QBH_BLOCK_EXPERIMENT UINT32_C(87)
 #define QBH_BLOCK_W4U8_ATTENTION_TIMELINE_CONTEXTS UINT32_C(6)
 
@@ -312,6 +312,7 @@ struct qbh_block_header {
     uint32_t fp16_norm_rows_per_task;
     uint32_t fp16_norm_contexts;
     uint32_t w4u8_attention_timeline_requested;
+    uint32_t w4u8_attention_softmax_row_slices_requested;
 
     uint32_t input_offset;
     uint32_t input_bytes;
