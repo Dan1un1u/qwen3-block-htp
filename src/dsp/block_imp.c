@@ -678,7 +678,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->w4f16_pipeline_mode >
             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH ||
         header->u8_norm_reduction_mode >
-            QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE ||
+            QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT ||
         (header->variant != QBH_BLOCK_W4U8 &&
          header->u8_norm_reduction_mode !=
              QBH_BLOCK_U8_NORM_REDUCTION_SCALAR) ||
@@ -6455,7 +6455,11 @@ static void qbh_attention_u8_qk_prep_pool_run_head_pair_tasks(
                 &header->qparams[QBH_BLOCK_QP_Q_ROPE],
                 (const __fp16 *)buffers->q_norm_weight,
                 (const __fp16 *)buffers->rope_cos,
-                (const __fp16 *)buffers->rope_sin);
+                (const __fp16 *)buffers->rope_sin,
+                buffers->attention_projection +
+                    (size_t)QBH_BLOCK_M * QBH_BLOCK_HIDDEN / 2U +
+                    (size_t)job->worker_index *
+                        QBH_QK_PAIR_RSQRT_SCRATCH_BYTES);
             job->u8_attention_qk_norm_rope_ticks +=
                 HAP_perf_get_qtimer_count() - start;
             job->attention_qk_norm_task_count += 2U;
@@ -6524,7 +6528,11 @@ static void qbh_attention_u8_qk_prep_pool_run_head_pair_tasks(
                 (const __fp16 *)buffers->rope_sin,
                 first_config, second_config,
                 first_k_weight, second_k_weight,
-                first_qk_bias, second_qk_bias);
+                first_qk_bias, second_qk_bias,
+                buffers->attention_projection +
+                    (size_t)QBH_BLOCK_M * QBH_BLOCK_HIDDEN / 2U +
+                    (size_t)job->worker_index *
+                        QBH_QK_PAIR_RSQRT_SCRATCH_BYTES);
             job->u8_attention_qk_norm_rope_ticks +=
                 HAP_perf_get_qtimer_count() - start;
             job->attention_qk_norm_task_count += 2U;

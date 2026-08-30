@@ -209,8 +209,8 @@ static uint64_t qbh_centered_square_sum(
         sums[2] = Q6_Vw_vadd_VwVw(sums[2], Q6_V_lo_W(square1));
         sums[3] = Q6_Vw_vadd_VwVw(sums[3], Q6_V_hi_W(square1));
     }
-    if (qbh_u8_norm_reduction_mode ==
-        QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE) {
+    if (qbh_u8_norm_reduction_mode !=
+        QBH_BLOCK_U8_NORM_REDUCTION_SCALAR) {
         const HVX_Vector combined = Q6_Vw_vadd_VwVw(
             Q6_Vw_vadd_VwVw(sums[0], sums[1]),
             Q6_Vw_vadd_VwVw(sums[2], sums[3]));
@@ -683,21 +683,15 @@ static void qbh_unary_gamma_preconverted_sf32(
         Q6_Vsf_equals_Vqf32(product), offset_sf);
 }
 
-static void qbh_qk_norm_rope_one_head_u8_preconverted(
+static void qbh_qk_norm_rope_one_head_u8_preconverted_coefficient(
     uint8_t *values,
-    const struct qbh_block_qparam *input_qparam,
+    int32_t input_zero_point,
     const struct qbh_block_qparam *output_qparam,
     const struct qbh_qk_norm_rope_gamma_sf32 *gamma,
-    const struct qbh_qk_norm_rope_row_sf32 *rope) {
+    const struct qbh_qk_norm_rope_row_sf32 *rope,
+    float norm_coefficient) {
     const HVX_VectorPair centered = qbh_centered_half_pair(
-        *(const HVX_Vector *)values, input_qparam->zero_point);
-    const uint64_t centered_square_sum = qbh_centered_square_sum(
-        values, QBH_HVX_BYTES, input_qparam->zero_point);
-    const float input_scale = input_qparam->scale;
-    const float inverse = 1.0f / sqrtf(
-        (float)centered_square_sum * input_scale * input_scale /
-            (float)QBH_HVX_BYTES + 1.0e-6f);
-    const float norm_coefficient = input_scale * inverse;
+        *(const HVX_Vector *)values, input_zero_point);
     HVX_Vector first[2];
     HVX_Vector second[2];
     struct qbh_qf32_quad encoded;
@@ -733,6 +727,69 @@ static void qbh_qk_norm_rope_one_head_u8_preconverted(
             (float)output_qparam->zero_point);
     }
     *(HVX_Vector *)values = qbh_pack_qf32_to_u8(&encoded);
+}
+
+static void qbh_qk_norm_rope_one_head_u8_preconverted(
+    uint8_t *values,
+    const struct qbh_block_qparam *input_qparam,
+    const struct qbh_block_qparam *output_qparam,
+    const struct qbh_qk_norm_rope_gamma_sf32 *gamma,
+    const struct qbh_qk_norm_rope_row_sf32 *rope) {
+    const uint64_t centered_square_sum = qbh_centered_square_sum(
+        values, QBH_HVX_BYTES, input_qparam->zero_point);
+    const float input_scale = input_qparam->scale;
+    const float inverse = 1.0f / sqrtf(
+        (float)centered_square_sum * input_scale * input_scale /
+            (float)QBH_HVX_BYTES + 1.0e-6f);
+    const float norm_coefficient = input_scale * inverse;
+    qbh_qk_norm_rope_one_head_u8_preconverted_coefficient(
+        values, input_qparam->zero_point, output_qparam,
+        gamma, rope, norm_coefficient);
+}
+
+static void qbh_qk_norm_rope_pair_batched_rsqrt(
+    const uint8_t *first_head_tiles,
+    const uint8_t *second_head_tiles,
+    const struct qbh_block_qparam *input_qparam,
+    uint32_t first_row, uint8_t *row_cache,
+    float inverse_sqrt[2][QBH_QK_PAIR_RSQRT_ROWS]) {
+    const float input_scale = input_qparam->scale;
+
+    for (uint32_t local_row = 0U;
+         local_row < QBH_QK_PAIR_RSQRT_ROWS; ++local_row) {
+        const uint32_t row = first_row + local_row;
+        uint8_t *row_values[2] = {
+            row_cache +
+                (size_t)local_row * QBH_HVX_BYTES,
+            row_cache +
+                (size_t)(QBH_QK_PAIR_RSQRT_ROWS + local_row) *
+                    QBH_HVX_BYTES,
+        };
+        for (uint32_t tile = 0U;
+             tile < QBH_BLOCK_HEAD_DIM / QBH_HMX_INPUT_CHANNELS;
+             ++tile) {
+            const size_t tile_offset =
+                (size_t)tile * QBH_HMX_ACTIVATION_BYTES +
+                (size_t)row * QBH_HMX_INPUT_CHANNELS;
+            memcpy(row_values[0] + tile * QBH_HMX_INPUT_CHANNELS,
+                   first_head_tiles + tile_offset,
+                   QBH_HMX_INPUT_CHANNELS);
+            memcpy(row_values[1] + tile * QBH_HMX_INPUT_CHANNELS,
+                   second_head_tiles + tile_offset,
+                   QBH_HMX_INPUT_CHANNELS);
+        }
+        for (uint32_t pair = 0U; pair < 2U; ++pair) {
+            const uint64_t sum = qbh_centered_square_sum(
+                row_values[pair], QBH_HVX_BYTES,
+                input_qparam->zero_point);
+            inverse_sqrt[pair][local_row] =
+                (float)sum * input_scale * input_scale /
+                    (float)QBH_HVX_BYTES +
+                1.0e-6f;
+        }
+    }
+    *(HVX_Vector *)inverse_sqrt =
+        qhmath_hvx_rsqrt_vf(*(const HVX_Vector *)inverse_sqrt);
 }
 
 void qbh_hvx_qk_norm_rope_u8(
@@ -794,44 +851,79 @@ void qbh_hvx_qk_norm_rope_u8_native_head_pair(
     const struct qbh_block_qparam *input_qparam,
     const struct qbh_block_qparam *output_qparam,
     const __fp16 *gamma, const __fp16 *cosine,
-    const __fp16 *sine) {
+    const __fp16 *sine, uint8_t *rsqrt_scratch) {
     uint8_t row_values[2][QBH_HVX_BYTES]
+        __attribute__((aligned(QBH_HVX_BYTES)));
+    float inverse_sqrt[2][QBH_QK_PAIR_RSQRT_ROWS]
         __attribute__((aligned(QBH_HVX_BYTES)));
     struct qbh_qk_norm_rope_gamma_sf32 gamma_sf32
         __attribute__((aligned(QBH_HVX_BYTES)));
+    const uint32_t batched_rsqrt =
+        qbh_u8_norm_reduction_mode ==
+        QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT;
 
     qbh_qk_norm_rope_load_gamma_sf32(gamma, &gamma_sf32);
-    for (uint32_t row = 0U; row < QBH_BLOCK_M; ++row) {
-        struct qbh_qk_norm_rope_row_sf32 rope_sf32
-            __attribute__((aligned(QBH_HVX_BYTES)));
-
-        for (uint32_t tile = 0U;
-             tile < QBH_BLOCK_HEAD_DIM / 32U; ++tile) {
-            const size_t tile_offset = (size_t)tile * 2048U +
-                (size_t)row * 32U;
-            memcpy(row_values[0] + tile * 32U,
-                   first_head_tiles + tile_offset, 32U);
-            memcpy(row_values[1] + tile * 32U,
-                   second_head_tiles + tile_offset, 32U);
+    for (uint32_t first_row = 0U; first_row < QBH_BLOCK_M;
+         first_row += QBH_QK_PAIR_RSQRT_ROWS) {
+        if (batched_rsqrt != 0U) {
+            qbh_qk_norm_rope_pair_batched_rsqrt(
+                first_head_tiles, second_head_tiles, input_qparam,
+                first_row, rsqrt_scratch, inverse_sqrt);
         }
-        qbh_qk_norm_rope_load_row_sf32(
-            cosine + (size_t)row * QBH_BLOCK_HEAD_DIM,
-            sine + (size_t)row * QBH_BLOCK_HEAD_DIM,
-            &rope_sf32);
-        qbh_qk_norm_rope_one_head_u8_preconverted(
-            row_values[0], input_qparam, output_qparam,
-            &gamma_sf32, &rope_sf32);
-        qbh_qk_norm_rope_one_head_u8_preconverted(
-            row_values[1], input_qparam, output_qparam,
-            &gamma_sf32, &rope_sf32);
-        for (uint32_t tile = 0U;
-             tile < QBH_BLOCK_HEAD_DIM / 32U; ++tile) {
-            const size_t tile_offset = (size_t)tile * 2048U +
-                (size_t)row * 32U;
-            memcpy(first_head_tiles + tile_offset,
-                   row_values[0] + tile * 32U, 32U);
-            memcpy(second_head_tiles + tile_offset,
-                   row_values[1] + tile * 32U, 32U);
+        for (uint32_t local_row = 0U;
+             local_row < QBH_QK_PAIR_RSQRT_ROWS; ++local_row) {
+            const uint32_t row = first_row + local_row;
+            uint8_t *active_values[2] = {
+                batched_rsqrt != 0U
+                    ? rsqrt_scratch +
+                          (size_t)local_row * QBH_HVX_BYTES
+                    : row_values[0],
+                batched_rsqrt != 0U
+                    ? rsqrt_scratch +
+                          (size_t)(QBH_QK_PAIR_RSQRT_ROWS + local_row) *
+                              QBH_HVX_BYTES
+                    : row_values[1],
+            };
+            struct qbh_qk_norm_rope_row_sf32 rope_sf32
+                __attribute__((aligned(QBH_HVX_BYTES)));
+
+            if (batched_rsqrt == 0U) {
+                for (uint32_t tile = 0U;
+                     tile < QBH_BLOCK_HEAD_DIM / 32U; ++tile) {
+                    const size_t tile_offset = (size_t)tile * 2048U +
+                        (size_t)row * 32U;
+                    memcpy(active_values[0] + tile * 32U,
+                           first_head_tiles + tile_offset, 32U);
+                    memcpy(active_values[1] + tile * 32U,
+                           second_head_tiles + tile_offset, 32U);
+                }
+            }
+            qbh_qk_norm_rope_load_row_sf32(
+                cosine + (size_t)row * QBH_BLOCK_HEAD_DIM,
+                sine + (size_t)row * QBH_BLOCK_HEAD_DIM,
+                &rope_sf32);
+            for (uint32_t pair = 0U; pair < 2U; ++pair) {
+                if (batched_rsqrt != 0U) {
+                    qbh_qk_norm_rope_one_head_u8_preconverted_coefficient(
+                        active_values[pair], input_qparam->zero_point,
+                        output_qparam, &gamma_sf32, &rope_sf32,
+                        input_qparam->scale *
+                            inverse_sqrt[pair][local_row]);
+                } else {
+                    qbh_qk_norm_rope_one_head_u8_preconverted(
+                        active_values[pair], input_qparam, output_qparam,
+                        &gamma_sf32, &rope_sf32);
+                }
+            }
+            for (uint32_t tile = 0U;
+                 tile < QBH_BLOCK_HEAD_DIM / 32U; ++tile) {
+                const size_t tile_offset = (size_t)tile * 2048U +
+                    (size_t)row * 32U;
+                memcpy(first_head_tiles + tile_offset,
+                       active_values[0] + tile * 32U, 32U);
+                memcpy(second_head_tiles + tile_offset,
+                       active_values[1] + tile * 32U, 32U);
+            }
         }
     }
     asm volatile("barrier" ::: "memory");
@@ -931,81 +1023,120 @@ void qbh_hvx_qk_norm_rope_u8_native_k_head_pair(
     const struct qbh_attention_config *first_config,
     const struct qbh_attention_config *second_config,
     int8_t *first_weight_tiles, int8_t *second_weight_tiles,
-    uint32_t *first_bias_words, uint32_t *second_bias_words) {
+    uint32_t *first_bias_words, uint32_t *second_bias_words,
+    uint8_t *rsqrt_scratch) {
     uint8_t row_values[2][QBH_HVX_BYTES]
+        __attribute__((aligned(QBH_HVX_BYTES)));
+    float inverse_sqrt[2][QBH_QK_PAIR_RSQRT_ROWS]
         __attribute__((aligned(QBH_HVX_BYTES)));
     int32_t signed_sums[2][QBH_ATTENTION_M];
     struct qbh_qk_norm_rope_gamma_sf32 gamma_sf32
         __attribute__((aligned(QBH_HVX_BYTES)));
     const HVX_Vector offsets_base =
         *(const HVX_Vector *)qbh_u8_k_vscatter_offsets;
+    const uint32_t batched_rsqrt =
+        qbh_u8_norm_reduction_mode ==
+        QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT;
 
     qbh_qk_norm_rope_load_gamma_sf32(gamma, &gamma_sf32);
-    for (uint32_t row = 0U; row < QBH_BLOCK_M; ++row) {
-        const uint32_t n_tile = row / QBH_HMX_OUTPUT_CHANNELS;
-        const uint32_t output = row % QBH_HMX_OUTPUT_CHANNELS;
-        const HVX_Vector offsets = Q6_Vw_vadd_VwVw(
-            offsets_base, Q6_V_vsplat_R(output * 4U));
-        struct qbh_qk_norm_rope_row_sf32 rope_sf32
-            __attribute__((aligned(QBH_HVX_BYTES)));
-
-        for (uint32_t tile = 0U;
-             tile < QBH_BLOCK_HEAD_DIM / QBH_HMX_INPUT_CHANNELS;
-             ++tile) {
-            const size_t tile_offset =
-                (size_t)tile * QBH_HMX_ACTIVATION_BYTES +
-                (size_t)row * QBH_HMX_INPUT_CHANNELS;
-            memcpy(row_values[0] + tile * QBH_HMX_INPUT_CHANNELS,
-                   first_head_tiles + tile_offset,
-                   QBH_HMX_INPUT_CHANNELS);
-            memcpy(row_values[1] + tile * QBH_HMX_INPUT_CHANNELS,
-                   second_head_tiles + tile_offset,
-                   QBH_HMX_INPUT_CHANNELS);
+    for (uint32_t first_row = 0U; first_row < QBH_BLOCK_M;
+         first_row += QBH_QK_PAIR_RSQRT_ROWS) {
+        if (batched_rsqrt != 0U) {
+            qbh_qk_norm_rope_pair_batched_rsqrt(
+                first_head_tiles, second_head_tiles, input_qparam,
+                first_row, rsqrt_scratch, inverse_sqrt);
         }
-        qbh_qk_norm_rope_load_row_sf32(
-            cosine + (size_t)row * QBH_BLOCK_HEAD_DIM,
-            sine + (size_t)row * QBH_BLOCK_HEAD_DIM,
-            &rope_sf32);
-        qbh_qk_norm_rope_one_head_u8_preconverted(
-            row_values[0], input_qparam, output_qparam,
-            &gamma_sf32, &rope_sf32);
-        qbh_qk_norm_rope_one_head_u8_preconverted(
-            row_values[1], input_qparam, output_qparam,
-            &gamma_sf32, &rope_sf32);
+        for (uint32_t local_row = 0U;
+             local_row < QBH_QK_PAIR_RSQRT_ROWS; ++local_row) {
+            const uint32_t row = first_row + local_row;
+            const uint32_t n_tile = row / QBH_HMX_OUTPUT_CHANNELS;
+            const uint32_t output = row % QBH_HMX_OUTPUT_CHANNELS;
+            const HVX_Vector offsets = Q6_Vw_vadd_VwVw(
+                offsets_base, Q6_V_vsplat_R(output * 4U));
+            uint8_t *active_values[2] = {
+                batched_rsqrt != 0U
+                    ? rsqrt_scratch +
+                          (size_t)local_row * QBH_HVX_BYTES
+                    : row_values[0],
+                batched_rsqrt != 0U
+                    ? rsqrt_scratch +
+                          (size_t)(QBH_QK_PAIR_RSQRT_ROWS + local_row) *
+                              QBH_HVX_BYTES
+                    : row_values[1],
+            };
+            struct qbh_qk_norm_rope_row_sf32 rope_sf32
+                __attribute__((aligned(QBH_HVX_BYTES)));
 
-        for (uint32_t pair = 0U; pair < 2U; ++pair) {
-            uint8_t *head_tiles = pair == 0U
-                ? first_head_tiles : second_head_tiles;
-            int8_t *weight_tiles = pair == 0U
-                ? first_weight_tiles : second_weight_tiles;
-            int8_t *destination = weight_tiles +
-                (size_t)n_tile * QBH_ATTENTION_HEAD_DIM_TILES *
-                    QBH_HMX_WEIGHT_BYTES;
-
-            for (uint32_t tile = 0U;
-                 tile < QBH_BLOCK_HEAD_DIM /
-                            QBH_HMX_INPUT_CHANNELS;
-                 ++tile) {
-                const size_t tile_offset =
-                    (size_t)tile * QBH_HMX_ACTIVATION_BYTES +
-                    (size_t)row * QBH_HMX_INPUT_CHANNELS;
-                memcpy(head_tiles + tile_offset,
-                       row_values[pair] +
-                           tile * QBH_HMX_INPUT_CHANNELS,
-                       QBH_HMX_INPUT_CHANNELS);
+            if (batched_rsqrt == 0U) {
+                for (uint32_t tile = 0U;
+                     tile < QBH_BLOCK_HEAD_DIM /
+                                QBH_HMX_INPUT_CHANNELS;
+                     ++tile) {
+                    const size_t tile_offset =
+                        (size_t)tile * QBH_HMX_ACTIVATION_BYTES +
+                        (size_t)row * QBH_HMX_INPUT_CHANNELS;
+                    memcpy(active_values[0] +
+                               tile * QBH_HMX_INPUT_CHANNELS,
+                           first_head_tiles + tile_offset,
+                           QBH_HMX_INPUT_CHANNELS);
+                    memcpy(active_values[1] +
+                               tile * QBH_HMX_INPUT_CHANNELS,
+                           second_head_tiles + tile_offset,
+                           QBH_HMX_INPUT_CHANNELS);
+                }
             }
-            {
-                const HVX_Vector centered = qbh_center_u8_to_s8(
-                    *(const HVX_Vector *)row_values[pair],
-                    output_qparam->zero_point);
-                signed_sums[pair][row] =
-                    qbh_reduce_signed_byte_sum(centered);
-                Q6_vscatter_RMVwV(
-                    (uint32_t)(uintptr_t)destination,
-                    QBH_ATTENTION_HEAD_DIM_TILES *
-                            QBH_HMX_WEIGHT_BYTES -
-                        1U,
-                    offsets, centered);
+            qbh_qk_norm_rope_load_row_sf32(
+                cosine + (size_t)row * QBH_BLOCK_HEAD_DIM,
+                sine + (size_t)row * QBH_BLOCK_HEAD_DIM,
+                &rope_sf32);
+            for (uint32_t pair = 0U; pair < 2U; ++pair) {
+                if (batched_rsqrt != 0U) {
+                    qbh_qk_norm_rope_one_head_u8_preconverted_coefficient(
+                        active_values[pair], input_qparam->zero_point,
+                        output_qparam, &gamma_sf32, &rope_sf32,
+                        input_qparam->scale *
+                            inverse_sqrt[pair][local_row]);
+                } else {
+                    qbh_qk_norm_rope_one_head_u8_preconverted(
+                        active_values[pair], input_qparam, output_qparam,
+                        &gamma_sf32, &rope_sf32);
+                }
+            }
+
+            for (uint32_t pair = 0U; pair < 2U; ++pair) {
+                uint8_t *head_tiles = pair == 0U
+                    ? first_head_tiles : second_head_tiles;
+                int8_t *weight_tiles = pair == 0U
+                    ? first_weight_tiles : second_weight_tiles;
+                int8_t *destination = weight_tiles +
+                    (size_t)n_tile * QBH_ATTENTION_HEAD_DIM_TILES *
+                        QBH_HMX_WEIGHT_BYTES;
+
+                for (uint32_t tile = 0U;
+                     tile < QBH_BLOCK_HEAD_DIM /
+                                QBH_HMX_INPUT_CHANNELS;
+                     ++tile) {
+                    const size_t tile_offset =
+                        (size_t)tile * QBH_HMX_ACTIVATION_BYTES +
+                        (size_t)row * QBH_HMX_INPUT_CHANNELS;
+                    memcpy(head_tiles + tile_offset,
+                           active_values[pair] +
+                               tile * QBH_HMX_INPUT_CHANNELS,
+                           QBH_HMX_INPUT_CHANNELS);
+                }
+                {
+                    const HVX_Vector centered = qbh_center_u8_to_s8(
+                        *(const HVX_Vector *)active_values[pair],
+                        output_qparam->zero_point);
+                    signed_sums[pair][row] =
+                        qbh_reduce_signed_byte_sum(centered);
+                    Q6_vscatter_RMVwV(
+                        (uint32_t)(uintptr_t)destination,
+                        QBH_ATTENTION_HEAD_DIM_TILES *
+                                QBH_HMX_WEIGHT_BYTES -
+                            1U,
+                        offsets, centered);
+                }
             }
         }
     }

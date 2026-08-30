@@ -5,6 +5,10 @@
 
 #include "block_protocol.h"
 
+#define QBH_QK_PAIR_RSQRT_ROWS UINT32_C(16)
+#define QBH_QK_PAIR_RSQRT_SCRATCH_BYTES \
+    (2U * QBH_QK_PAIR_RSQRT_ROWS * QBH_BLOCK_HEAD_DIM)
+
 void qbh_hvx_u8_set_norm_reduction_mode(uint32_t mode);
 
 void qbh_hvx_rms_norm_u8(
@@ -113,7 +117,7 @@ void qbh_hvx_qk_norm_rope_u8_native_head_pair(
     const struct qbh_block_qparam *input_qparam,
     const struct qbh_block_qparam *output_qparam,
     const __fp16 *gamma, const __fp16 *cosine,
-    const __fp16 *sine);
+    const __fp16 *sine, uint8_t *rsqrt_scratch);
 
 void qbh_hvx_qk_norm_rope_u8_native_k_head(
     uint8_t *head_tiles,
@@ -133,7 +137,8 @@ void qbh_hvx_qk_norm_rope_u8_native_k_head_pair(
     const struct qbh_attention_config *first_config,
     const struct qbh_attention_config *second_config,
     int8_t *first_weight_tiles, int8_t *second_weight_tiles,
-    uint32_t *first_bias_words, uint32_t *second_bias_words);
+    uint32_t *first_bias_words, uint32_t *second_bias_words,
+    uint8_t *rsqrt_scratch);
 
 void qbh_hvx_expand_u8_to_f16_in_place(
     uint8_t *buffer, uint32_t elements,
