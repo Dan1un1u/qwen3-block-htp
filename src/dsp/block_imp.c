@@ -6445,7 +6445,7 @@ static int qbh_hvx_pool_gqa_attention(
     if (pool->attention_gqa_abort != 0U) {
         return -1;
     }
-    if (header->qkv_timeline_enabled != 0U) {
+    if (header->numerical_audit_enabled != 0U) {
         for (uint32_t head = 0U; head < QBH_BLOCK_HEADS; ++head) {
             float value = pool->attention_gqa_qk_max_abs[head];
             if (!isfinite(value)) {
@@ -9375,7 +9375,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         qbh_attribution_accumulate(
             header, audit_start, &header->qkv_audit_ticks);
     }
-    if (header->numerical_audit_enabled != 0U) {
+    if (header->qkv_timeline_enabled != 0U) {
         header->qkv_timeline_end_ticks =
             HAP_perf_get_qtimer_count() -
             header->qkv_timeline_origin_ticks;
