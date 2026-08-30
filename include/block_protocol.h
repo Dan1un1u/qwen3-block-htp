@@ -510,6 +510,7 @@ struct qbh_block_header {
     uint64_t invocation_ticks;
     uint64_t runtime_setup_ticks;
     uint64_t runtime_teardown_ticks;
+    uint64_t stage_boundary_ticks;
     uint64_t ledger_named_ticks;
     uint64_t ledger_unattributed_ticks;
 

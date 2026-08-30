@@ -9429,6 +9429,11 @@ stop_worker:
                       header->final_residual_ticks +
                       header->output_stage_ticks +
                       header->runtime_teardown_ticks;
+        if (header->invocation_ticks > named_ticks) {
+            header->stage_boundary_ticks =
+                header->invocation_ticks - named_ticks;
+            named_ticks += header->stage_boundary_ticks;
+        }
         header->ledger_named_ticks = named_ticks;
         if (header->invocation_ticks > named_ticks) {
             header->ledger_unattributed_ticks =

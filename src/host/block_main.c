@@ -2336,6 +2336,7 @@ int main(int argc, char **argv) {
         "\"invocation_ticks\":%" PRIu64 ","
         "\"runtime_setup_ticks\":%" PRIu64 ","
         "\"runtime_teardown_ticks\":%" PRIu64 ","
+        "\"stage_boundary_ticks\":%" PRIu64 ","
         "\"ledger_named_ticks\":%" PRIu64 ","
         "\"ledger_unattributed_ticks\":%" PRIu64 ","
         "\"input_norm_audit_ticks\":%" PRIu64 ","
@@ -2616,6 +2617,7 @@ int main(int argc, char **argv) {
         header->final_residual_ticks, header->output_stage_ticks,
         header->total_ticks, header->invocation_ticks,
         header->runtime_setup_ticks, header->runtime_teardown_ticks,
+        header->stage_boundary_ticks,
         header->ledger_named_ticks,
         header->ledger_unattributed_ticks,
         header->input_norm_audit_ticks,

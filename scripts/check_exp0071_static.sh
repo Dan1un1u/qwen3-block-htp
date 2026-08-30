@@ -13,6 +13,7 @@ grep -q 'qbh_hvx_pool_u8_input_norm' src/dsp/block_imp.c
 grep -q 'qbh_hvx_rms_norm_u8_native_activation_rows' src/dsp/block_imp.c
 grep -q 'w4u8_input_norm_task_count' include/block_protocol.h
 grep -q 'u8_input_norm_actual_hash' include/block_protocol.h
+grep -q 'stage_boundary_ticks' include/block_protocol.h
 grep -q 'QBH_EXPECTED_FULL_VTCM_BYTES' src/dsp/block_imp.c
 if grep -Rqs --exclude='check_exp0071_static.sh' \
         -E 'Qnn|qti\.aisw|QAIRT' include src CMakeLists.txt; then

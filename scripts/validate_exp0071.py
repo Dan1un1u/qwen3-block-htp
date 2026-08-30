@@ -20,6 +20,7 @@ PROBABILITY_HASH = "94f2e218f06f9627"
 AV_HASH = "f853658f52032bde"
 QTIMER_TICKS_PER_US = 19.2
 TARGETS = ("host_wall_ns_per_block", "input_norm_ticks")
+LEDGER = tuple(dict.fromkeys((*base.LEDGER, "stage_boundary_ticks")))
 OVERLAP = tuple(dict.fromkeys((
     *previous.OVERLAP,
     "w4u8_input_norm_main_work_ticks",
@@ -166,7 +167,7 @@ def build_summary(result_dir: Path, package_dir: Path) -> dict[str, object]:
                 validate_record(record, repeat, mode)
         fields = tuple(dict.fromkeys((
             *TARGETS, "invocation_ticks", "total_ticks",
-            *base.LEDGER, *OVERLAP, *base.COUNTERS,
+            *LEDGER, *OVERLAP, *base.COUNTERS,
             *base.RESOURCES, *EXTRA_REPORT_FIELDS,
         )))
         metrics = {
@@ -320,7 +321,7 @@ def render_report(summary: dict[str, object]) -> str:
             ("host_wall_ns_per_block", "input_norm_ticks",
              "invocation_ticks", "total_ticks"), metrics,
         )
-        add_table(lines, "Additive Block Timing Ledger", base.LEDGER, metrics)
+        add_table(lines, "Additive Block Timing Ledger", LEDGER, metrics)
         add_table(lines, "Overlapping engine work and waits", OVERLAP, metrics)
         add_table(
             lines, "Traffic, commands, counters and residency",
