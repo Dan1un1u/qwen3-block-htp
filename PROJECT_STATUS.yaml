@@ -33,9 +33,9 @@ current_scope:
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: registered_group_major_qkv_timeline_diagnostic
-  active_experiment_evidence: null
-  active_experiment_gate: not_run
+  active_experiment_stage: group_major_qkv_micro_gate
+  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0085/20260830T165254Z_a54129c3353b_stage_a'
+  active_experiment_gate: stage_a_pass
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0084/20260830T160259Z_6dc437fe08ea_formal'
   latest_cross_recipe_candidate:
     id: FP16-COMMON-EXP0084-NORM-POOLS

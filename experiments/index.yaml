@@ -7061,7 +7061,11 @@ experiments:
     evidence_profile: real-qwen3-block-gqa-group-major-qkv
     source_branches:
       - codex/exp-0085-gqa-group-major-qkv
-    source_commits: []
+    source_commits:
+      - dd64256752b524c9ea4c72ac25c01a48745411bd
+      - f0398c0178e190621f903e99e7db07a9ce910a6f
+      - d8cd89f273e0c50842c7b2f5877865d3ed592e3d
+      - a54129c3353bb089386f0c1ea5f9ff2e6d89f9eb
     record: docs/experiments/EXP-0085.md
     decided_by: user
     decided_on: '2026-08-31'
@@ -7097,4 +7101,12 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_logical_weight_bytes_and_hmx_tile_pairs
       local_speed_gate: w4f16_and_w4u8_qkv_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10_while_f16f16_is_byte_exact_equally_tuned_and_non_regressing
       completion_gate: stage_a_timeline_evidence_then_bounded_candidate_selection_then_seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
+      stage_a_run: 'D:/llm_exp/results/qwen3-block-htp/exp0085/20260830T165254Z_a54129c3353b_stage_a'
+      stage_a_gate_result: pass
+      stage_a_output_hashes: f16f16_704252c89780e695_w4f16_f18b9abbe1487231_w4u8_69f22eeb035e5ec5
+      stage_a_q_group7_before_k_group0_all_variants: true
+      stage_a_post_projection_drain_ticks_f16f16: 8
+      stage_a_post_projection_drain_ticks_w4f16: 501
+      stage_a_post_projection_drain_ticks_w4u8: 1341
+      stage_a_conclusion: current_q_major_then_k_major_then_v_major_order_leaves_an_addressable_post_projection_prep_drain_in_both_w4_paths_while_f16f16_is_already_nearly_fully_drained
       selected_baseline_changed: false
