@@ -38,7 +38,8 @@ def main() -> int:
     for record in records:
         required = {
             "variant": "W4U8",
-            "numerical_audit_mode": "on",
+            "numerical_audit_mode": "off",
+            "w4u8_attention_timeline_requested": 1,
             "w4u8_attention_timeline_enabled": 1,
             "w4u8_attention_softmax_row_slices": 2,
             "w4u8_attention_softmax_timeline_task_count": 16,

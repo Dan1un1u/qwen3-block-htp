@@ -784,6 +784,11 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          header->fp16_norm_rows_per_task != 8U) ||
         header->fp16_norm_contexts < 2U ||
         header->fp16_norm_contexts > 4U ||
+        header->w4u8_attention_timeline_requested > 1U ||
+        (header->w4u8_attention_timeline_requested != 0U &&
+         (header->variant != QBH_BLOCK_W4U8 ||
+          !qbh_attention_u8_dependency_stream_enabled(
+              header->attention_pipeline_mode))) ||
         (header->variant != QBH_BLOCK_W4U8 &&
          header->u8_norm_reduction_mode !=
              QBH_BLOCK_U8_NORM_REDUCTION_SCALAR) ||
@@ -8482,7 +8487,7 @@ static int qbh_hvx_pool_u8_attention(
     pool->attention_gqa_abort = 0U;
     pool->active_worker_count = header->attention_hvx_contexts - 1U;
     pool->u8_attention_timeline_enabled =
-        header->numerical_audit_enabled != 0U ? 1U : 0U;
+        header->w4u8_attention_timeline_requested;
     if (pool->u8_attention_timeline_enabled != 0U) {
         memset(pool->u8_attention_timeline_qk_ready, 0,
                sizeof(pool->u8_attention_timeline_qk_ready));
