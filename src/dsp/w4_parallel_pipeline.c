@@ -44,6 +44,8 @@ struct qbh_chunk_queue {
     struct qbh_chunk_task tasks[QBH_W4_TASK_QUEUE_DEPTH];
     uint32_t head;
     uint32_t tail;
+    uint32_t audit_enabled;
+    uint32_t max_depth;
     qurt_mutex_t mutex;
     qurt_sem_t available;
     qurt_sem_t free_entries;
@@ -143,8 +145,10 @@ static uint32_t qbh_stream_region_count(
     return chunk_tiles / QBH_W4_STREAM_REGION_TILES;
 }
 
-static void qbh_queue_init(struct qbh_chunk_queue *queue) {
+static void qbh_queue_init(struct qbh_chunk_queue *queue,
+                           uint32_t audit_enabled) {
     memset(queue, 0, sizeof(*queue));
+    queue->audit_enabled = audit_enabled;
     qurt_mutex_init(&queue->mutex);
     qurt_sem_init_val(&queue->available, 0);
     qurt_sem_init_val(&queue->free_entries,
@@ -160,11 +164,22 @@ static void qbh_queue_destroy(struct qbh_chunk_queue *queue) {
 static void qbh_queue_push(struct qbh_chunk_queue *queue,
                            const struct qbh_chunk_task *task) {
     uint32_t slot;
+    uint32_t depth;
     qurt_sem_down(&queue->free_entries);
     qurt_mutex_lock(&queue->mutex);
     slot = queue->tail % QBH_W4_TASK_QUEUE_DEPTH;
     queue->tasks[slot] = *task;
+    depth = queue->tail - queue->head;
+    if (task->mlp_activation != 0U && queue->audit_enabled != 0U) {
+        queue->tasks[slot].sequence =
+            (uint32_t)HAP_perf_get_qtimer_count();
+        queue->tasks[slot].compressed_slot = depth;
+    }
     ++queue->tail;
+    ++depth;
+    if (depth > queue->max_depth) {
+        queue->max_depth = depth;
+    }
     qurt_mutex_unlock(&queue->mutex);
     qurt_sem_up(&queue->available);
 }
@@ -390,6 +405,27 @@ static int qbh_hvx_worker_run(struct qbh_hvx_worker_job *job,
             uint8_t *pair = state->output_tiles +
                 (size_t)task.mlp_pair_slot * 2U *
                     QBH_HMX_OUTPUT_BYTES;
+            if (state->header->mlp_task_queue_mode != 0U) {
+                uint64_t queue_wait = (uint32_t)(
+                    (uint32_t)activation_start - task.sequence);
+                qurt_mutex_lock(&state->metrics_mutex);
+                ++state->header->mlp_activation_queue_claim_count;
+                state->header->mlp_activation_queue_wait_ticks +=
+                    queue_wait;
+                if (queue_wait > state->header
+                                     ->mlp_activation_queue_wait_max_ticks) {
+                    state->header->mlp_activation_queue_wait_max_ticks =
+                        queue_wait;
+                }
+                state->header->mlp_activation_queue_tasks_ahead_sum +=
+                    task.compressed_slot;
+                if (task.compressed_slot > state->header
+                                                ->mlp_activation_queue_tasks_ahead_max) {
+                    state->header->mlp_activation_queue_tasks_ahead_max =
+                        task.compressed_slot;
+                }
+                qurt_mutex_unlock(&state->metrics_mutex);
+            }
             if (qbh_hvx_region_begin(state) != 0) {
                 exit_status = AEE_EFAILED;
                 break;
@@ -1144,7 +1180,8 @@ static int qbh_run_chunked_w4_pipeline_impl(
          !qbh_weight_storage_is_packed_w4(
              layout->weight_storage_variant)) ||
         header->requested_hvx_workers == 0U ||
-        header->requested_hvx_workers > QBH_MAX_HVX_WORKERS) {
+        header->requested_hvx_workers > QBH_MAX_HVX_WORKERS ||
+        header->mlp_task_queue_mode > 1U) {
         return AEE_EBADPARM;
     }
     if (handoff != NULL &&
@@ -1201,7 +1238,7 @@ static int qbh_run_chunked_w4_pipeline_impl(
         }
     }
 
-    qbh_queue_init(&state.queue);
+    qbh_queue_init(&state.queue, header->mlp_task_queue_mode != 0U);
     qurt_mutex_init(&state.metrics_mutex);
     qurt_sem_init_val(&state.hmx_started, 0);
     qurt_sem_init_val(&state.hvx_started, 0);
@@ -1459,6 +1496,7 @@ stop_workers:
         state.hvx_hmx_overlap_observed;
     header->hvx_parallel_overlap_observed =
         state.hvx_parallel_overlap_observed;
+    header->mlp_activation_queue_depth_max = state.queue.max_depth;
 
     for (uint32_t worker = 0; worker < created_hvx_workers; ++worker) {
         header->hvx_worker_lock_status[worker] =

@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define QBH_PROBE_MAGIC UINT32_C(0x51424850)
-#define QBH_PROBE_ABI_VERSION UINT32_C(20)
+#define QBH_PROBE_ABI_VERSION UINT32_C(21)
 #define QBH_PROBE_ALIGNMENT UINT32_C(4096)
 
 #define QBH_HMX_SPATIAL UINT32_C(64)
@@ -224,6 +224,7 @@ struct qbh_probe_header {
     uint32_t output_offset;
     uint32_t input_zero_point;
     uint32_t repeat_count;
+    uint32_t mlp_task_queue_mode;
 
     int32_t dsp_status;
     uint32_t vtcm_requested_bytes;
@@ -320,9 +321,15 @@ struct qbh_probe_header {
     uint64_t hmx_window_start;
     uint64_t hmx_window_end;
     uint64_t hvx_worker_ticks[QBH_MAX_HVX_WORKERS];
+    uint64_t mlp_activation_queue_claim_count;
+    uint64_t mlp_activation_queue_wait_ticks;
+    uint64_t mlp_activation_queue_wait_max_ticks;
+    uint64_t mlp_activation_queue_tasks_ahead_sum;
+    uint64_t mlp_activation_queue_tasks_ahead_max;
+    uint64_t mlp_activation_queue_depth_max;
 };
 
-_Static_assert(sizeof(struct qbh_probe_header) == 608,
+_Static_assert(sizeof(struct qbh_probe_header) == 664,
                "probe header ABI changed");
 
 #endif

@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(42)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(84)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(43)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(90)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -156,6 +156,11 @@ enum qbh_block_mlp_mode {
     QBH_BLOCK_MLP_W4U8_STREAMING = 5,
     QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_GATE_UP_HVX = 6,
     QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX = 7,
+};
+
+enum qbh_block_w4u8_gate_up_queue_mode {
+    QBH_BLOCK_W4U8_GATE_UP_QUEUE_CONTROL = 0,
+    QBH_BLOCK_W4U8_GATE_UP_QUEUE_AUDIT = 1,
 };
 
 static inline uint32_t qbh_block_mlp_is_w4u8_streaming(uint32_t mode) {
@@ -310,6 +315,7 @@ struct qbh_block_header {
     uint32_t fp16_common_schedule_mode;
     uint32_t fp16_norm_rows_per_task;
     uint32_t fp16_norm_contexts;
+    uint32_t w4u8_gate_up_queue_mode;
 
     uint32_t input_offset;
     uint32_t input_bytes;
@@ -628,6 +634,12 @@ struct qbh_block_header {
     uint64_t w4u8_mlp_hmx_ready_wait_ticks;
     uint64_t w4u8_mlp_producer_slot_wait_ticks;
     uint64_t w4u8_mlp_expanded_slot_wait_ticks;
+    uint64_t w4u8_mlp_activation_queue_claim_count;
+    uint64_t w4u8_mlp_activation_queue_wait_ticks;
+    uint64_t w4u8_mlp_activation_queue_wait_max_ticks;
+    uint64_t w4u8_mlp_activation_queue_tasks_ahead_sum;
+    uint64_t w4u8_mlp_activation_queue_tasks_ahead_max;
+    uint64_t w4u8_mlp_activation_queue_depth_max;
     uint32_t w4u8_gate_up_persistent_hvx_dispatch_count;
     uint32_t w4u8_gate_up_persistent_hvx_worker_count;
     uint32_t w4u8_gate_up_transient_hvx_thread_count;

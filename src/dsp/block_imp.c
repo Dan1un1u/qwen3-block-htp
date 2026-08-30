@@ -916,6 +916,12 @@ static int qbh_header_valid(const struct qbh_block_header *header,
             QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX ||
         header->mlp_hvx_contexts == 0U ||
         header->mlp_hvx_contexts > QBH_BLOCK_W4F16_HVX_WORKERS ||
+        header->w4u8_gate_up_queue_mode >
+            QBH_BLOCK_W4U8_GATE_UP_QUEUE_AUDIT ||
+        (header->w4u8_gate_up_queue_mode !=
+             QBH_BLOCK_W4U8_GATE_UP_QUEUE_CONTROL &&
+         (header->variant != QBH_BLOCK_W4U8 ||
+          !qbh_block_mlp_is_w4u8_streaming(header->mlp_mode))) ||
         (header->mlp_chunk_vectors != 16U &&
          header->mlp_chunk_vectors != 32U &&
          header->mlp_chunk_vectors != 64U &&
@@ -8602,13 +8608,15 @@ static int qbh_init_w4u8_down_layout(
 }
 
 static void qbh_reset_w4u8_phase_header(
-    struct qbh_probe_header *phase, uint32_t workers) {
+    struct qbh_probe_header *phase, uint32_t workers,
+    uint32_t mlp_task_queue_mode) {
     memset(phase, 0, sizeof(*phase));
     phase->magic = QBH_PROBE_MAGIC;
     phase->abi_version = QBH_PROBE_ABI_VERSION;
     phase->header_bytes = sizeof(*phase);
     phase->repeat_count = 1U;
     phase->requested_hvx_workers = workers;
+    phase->mlp_task_queue_mode = mlp_task_queue_mode;
     phase->dsp_status = QBH_PROBE_STATUS_DSP_RUNNING;
 }
 
@@ -8639,6 +8647,27 @@ static void qbh_accumulate_w4u8_phase_metrics(
         phase->producer_slot_wait_ticks;
     header->w4u8_mlp_expanded_slot_wait_ticks +=
         phase->expanded_slot_wait_ticks;
+    header->w4u8_mlp_activation_queue_claim_count +=
+        phase->mlp_activation_queue_claim_count;
+    header->w4u8_mlp_activation_queue_wait_ticks +=
+        phase->mlp_activation_queue_wait_ticks;
+    if (phase->mlp_activation_queue_wait_max_ticks >
+        header->w4u8_mlp_activation_queue_wait_max_ticks) {
+        header->w4u8_mlp_activation_queue_wait_max_ticks =
+            phase->mlp_activation_queue_wait_max_ticks;
+    }
+    header->w4u8_mlp_activation_queue_tasks_ahead_sum +=
+        phase->mlp_activation_queue_tasks_ahead_sum;
+    if (phase->mlp_activation_queue_tasks_ahead_max >
+        header->w4u8_mlp_activation_queue_tasks_ahead_max) {
+        header->w4u8_mlp_activation_queue_tasks_ahead_max =
+            phase->mlp_activation_queue_tasks_ahead_max;
+    }
+    if (phase->mlp_activation_queue_depth_max >
+        header->w4u8_mlp_activation_queue_depth_max) {
+        header->w4u8_mlp_activation_queue_depth_max =
+            phase->mlp_activation_queue_depth_max;
+    }
     header->hmx_u8s8_tile_pair_count += layout->hmx_pairs_per_repeat;
     header->hmx_command_count += command_count;
     if (gate_up_phase != 0U) {
@@ -8765,7 +8794,8 @@ static int qbh_run_w4u8_streaming_mlp(
             .activation_ticks = &activation_work_ticks,
         };
         qbh_reset_w4u8_phase_header(
-            &gate_up_phase, QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS);
+            &gate_up_phase, QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS,
+            header->w4u8_gate_up_queue_mode);
         start = HAP_perf_get_qtimer_count();
         if (qbh_block_mlp_uses_persistent_gate_up_hvx(
                 header->mlp_mode)) {
@@ -8802,7 +8832,8 @@ static int qbh_run_w4u8_streaming_mlp(
     }
 
     qbh_reset_w4u8_phase_header(
-        &down_phase, QBH_BLOCK_W4U8_DOWN_HVX_WORKERS);
+        &down_phase, QBH_BLOCK_W4U8_DOWN_HVX_WORKERS,
+        QBH_BLOCK_W4U8_GATE_UP_QUEUE_CONTROL);
     start = HAP_perf_get_qtimer_count();
     if (header->mlp_mode ==
         QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX) {
