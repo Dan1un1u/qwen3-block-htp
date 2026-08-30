@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0067
+  active_experiment: null
   next_experiment_number: 68
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,16 +27,16 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0066
-  last_completed_source_commit: a87510c11f0184a57a5eba44b1679aa51f88d952
+  last_completed_experiment: EXP-0067
+  last_completed_source_commit: afcd875adc9adf93f4725ba75157b1871206f122
   provisional_source_parent: EXP-0065
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: input_rmsnorm_batched_rsqrt_implementation
+  active_experiment_stage: null
   active_experiment_evidence: null
-  active_experiment_gate: not_run
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0066/20260830T082753Z_a87510c11f01_formal'
+  active_experiment_gate: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0067/20260830T084346Z_afcd875adc9a_formal'
   latest_w4u8_candidate:
     id: W4U8-EXP0065-SOFTMAX-LUT-TEMPLATES
     experiment: EXP-0065

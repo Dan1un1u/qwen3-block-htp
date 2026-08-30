@@ -5344,14 +5344,15 @@ experiments:
     variants:
       - exp0065_per_row_scalar_input_rsqrt_control
       - exp0065_two_vector_input_rsqrt_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-input-rmsnorm-batched-rsqrt
     source_branches:
       - codex/exp-0067-w4u8-input-rmsnorm-batched-rsqrt
-    source_commits: []
+    source_commits:
+      - afcd875adc9adf93f4725ba75157b1871206f122
     record: docs/experiments/EXP-0067.md
     decided_by: user
     decided_on: '2026-08-30'
@@ -5360,7 +5361,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0067-w4u8-input-rmsnorm-batched-rsqrt
       started_on: '2026-08-30'
-      completed_on: null
+      completed_on: '2026-08-30'
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0067'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0067'
@@ -5384,3 +5385,68 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn
       local_speed_gate: input_norm_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
+      source_head: afcd875adc9adf93f4725ba75157b1871206f122
+      implementation_commit: afcd875adc9adf93f4725ba75157b1871206f122
+      evidence_validator_commit: afcd875adc9adf93f4725ba75157b1871206f122
+      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0067/20260830T084346Z_afcd875adc9a_formal'
+      artifact_set: 'D:/llm_exp/models/qwen3-block-htp/exp0067/artifacts/afcd875adc9a/formal'
+      gate_record: 'D:/llm_exp/results/qwen3-block-htp/exp0067/20260830T084346Z_afcd875adc9a_formal/gate_summary.json'
+      formal_full_profiling_report: 'D:/llm_exp/results/qwen3-block-htp/exp0067/20260830T084346Z_afcd875adc9a_formal/full_profiling_report.md'
+      full_profiling_report: docs/experiments/EXP-0067-PROFILING.md
+      gate_record_sha256: f0e5c3b808f32e84215aff5be0c4fcac3b2d8e9162a4179b9736ee325dc40400
+      formal_full_profiling_report_sha256: 998f79e99c82b13d72cffeeb473bb664589d6dd2410c44ae4b7b728d28e071b0
+      static_gate_sha256: bd2e8247ece968697ea85c2f394568e89f545d0ad34ec345570ed59dfa4e70d5
+      package_manifest_sha256: 043f61337b2ad2758bb95791bc4ca768150f457f1f28bc7d20a7ad57eba42359
+      stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      formal_paired_rounds: 7
+      output_hash: 69f22eeb035e5ec5
+      input_norm_hash: 7255c2406108617c
+      input_norm_hash_equivalence: true
+      qk_probability_av_hash_equivalence: true
+      qk_hash: 32aa949912e365be
+      probability_hash: 94f2e218f06f9627
+      av_hash: f853658f52032bde
+      implementation_reference_mismatches: 0
+      implementation_reference_max_lsb: 0
+      fixed_vtcm_acquired_bytes: 8388608
+      vtcm_peak_plan_bytes: 5306080
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      spill_fill_count: 0
+      hmx_commands_per_block: 192
+      hmx_tile_pairs_per_block: 49408
+      input_rsqrt_scalar_calls_per_block_control: 64
+      input_rsqrt_hvx_vectors_per_block_candidate: 2
+      repeat1_control_host_wall_ns_per_block_median: 2675365.0
+      repeat1_candidate_host_wall_ns_per_block_median: 2676875.0
+      repeat1_host_wall_change_percent: 0.056441
+      repeat1_paired_host_wall_change_percent_median: 0.056441
+      repeat1_control_input_norm_ticks_per_block_median: 1495.0
+      repeat1_candidate_input_norm_ticks_per_block_median: 1482.0
+      repeat1_input_norm_change_percent: -0.869565
+      repeat1_paired_input_norm_change_percent_median: -0.803213
+      repeat1_control_invocation_ticks_per_block_median: 43306.0
+      repeat1_candidate_invocation_ticks_per_block_median: 43298.0
+      repeat1_invocation_change_percent: -0.018473
+      repeat1_control_total_ticks_per_block_median: 42811.0
+      repeat1_candidate_total_ticks_per_block_median: 42800.0
+      repeat1_total_change_percent: -0.025694
+      repeat10_control_host_wall_ns_per_block_median: 2280239.6
+      repeat10_candidate_host_wall_ns_per_block_median: 2274593.7
+      repeat10_host_wall_change_percent: -0.247601
+      repeat10_paired_host_wall_change_percent_median: -0.787196
+      repeat10_control_input_norm_ticks_per_block_median: 1488.2
+      repeat10_candidate_input_norm_ticks_per_block_median: 1474.5
+      repeat10_input_norm_change_percent: -0.920575
+      repeat10_paired_input_norm_change_percent_median: -0.868102
+      repeat10_control_invocation_ticks_per_block_median: 42469.7
+      repeat10_candidate_invocation_ticks_per_block_median: 42348.6
+      repeat10_invocation_change_percent: -0.285145
+      repeat10_control_total_ticks_per_block_median: 42419.4
+      repeat10_candidate_total_ticks_per_block_median: 42299.2
+      repeat10_total_change_percent: -0.283360
+      gate_result: fail
+      local_adoption_eligible: false
+      conclusion: two_hvx_rsqrt_vectors_preserve_exact_input_norm_and_reduce_the_input_norm_ledger_by_about_nine_tenths_of_one_percent_but_fail_the_repeat1_complete_host_wall_gate
+      reopen_condition: only_with_a_new_input_rmsnorm_hypothesis_that_removes_a_material_fraction_of_the_centered_square_reduction_or_fuses_the_native_handoff_without_changing_bytes
+      selected_baseline_changed: false
