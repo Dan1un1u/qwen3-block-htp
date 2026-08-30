@@ -502,6 +502,19 @@ _Avoid_: accepted Attention optimization, fewer persistent workers, changed
 Attention arithmetic, permission to retune four/five active contexts without
 a new block-level hypothesis
 
+**Per-GQA-Group QK/AV HMX Command Batch**:
+The EXP-0070 W4U8 Attention schedule that treats the two contiguous Q heads of
+one GQA group as two HMX M tiles. It submits one worker command for the four QK
+output tiles and one for the eight AV output tiles, instead of one QK2 and one
+AV4 command per Q head. Attention commands fall from 32 to 16 and total block
+commands from 192 to 176 while all 49,408 tile pairs, numerical bytes, DMA
+traffic, VTCM residency, context counts, and one-owner ordering remain
+unchanged. It passes repeat-one and repeat-ten ordinary and paired Host-wall
+and Attention gates and is the latest locally eligible W4U8 candidate.
+_Avoid_: one physical HMX instruction for two heads, concurrent HMX owners,
+changed QK/AV arithmetic, changed tile-pair count, Selected Baseline without
+promotion
+
 **Audit-Only Probability Row-Sum Reduction**:
 The rejected EXP-0066 Softmax schedule that skips probability row-sum and
 min/max reductions when numerical telemetry is absent, while retaining them

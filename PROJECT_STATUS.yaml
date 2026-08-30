@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0070
+  active_experiment: null
   next_experiment_number: 71
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,37 +27,38 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0069
-  last_completed_source_commit: 8d68aa65e459a607cfd0e5686495cf3e3478bd11
-  provisional_source_parent: EXP-0068
+  last_completed_experiment: EXP-0070
+  last_completed_source_commit: ce84f2ecb5931d184a31d2d6d814c80e239af563
+  provisional_source_parent: EXP-0070
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: gqa_group_hmx_command_batching_implementation
+  active_experiment_stage: idle
   active_experiment_evidence: null
-  active_experiment_gate: not_run
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0069/20260830T093306Z_8d68aa65e459_formal'
+  active_experiment_gate: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0070/20260830T094952Z_ce84f2ecb593_formal'
   latest_w4u8_candidate:
-    id: W4U8-EXP0068-ATTENTION-HVX-CONTEXT6
-    experiment: EXP-0068
+    id: W4U8-EXP0070-GQA-HMX-BATCH
+    experiment: EXP-0070
     project_variant: W4U8
-    physical_plan: exp0065_plus_main_and_five_attention_hvx_workers
-    source_branch: codex/exp-0068-w4u8-attention-hvx-context-scaling
-    source_head: 77398acdab364c2642ce132f95964ab03494a9b3
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0068/20260830T092115Z_77398acdab36_formal'
+    physical_plan: exp0068_plus_per_gqa_group_qk4_av8_hmx_commands
+    source_branch: codex/exp-0070-w4u8-gqa-group-hmx-command-batching
+    source_head: ce84f2ecb5931d184a31d2d6d814c80e239af563
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0070/20260830T094952Z_ce84f2ecb593_formal'
     adoption_status: pending
     local_gate: pass
     candidate_status: awaiting_user_promotion
-    repeat1_host_wall_ns_per_block_median: 2578177.0
-    repeat10_host_wall_ns_per_block_median: 2145526.1
-    repeat1_qkv_plus_attention_ticks_per_block_median: 13214.0
-    repeat10_qkv_plus_attention_ticks_per_block_median: 13084.0
-    repeat1_qk_prep_pool_wait_ticks_per_block_median: 1260.0
-    repeat10_qk_prep_pool_wait_ticks_per_block_median: 1146.8
+    repeat1_host_wall_ns_per_block_median: 2557969.0
+    repeat10_host_wall_ns_per_block_median: 2124156.3
+    repeat1_qkv_plus_attention_ticks_per_block_median: 12849.0
+    repeat10_qkv_plus_attention_ticks_per_block_median: 12788.4
+    repeat1_attention_ticks_per_block_median: 4670.0
+    repeat10_attention_ticks_per_block_median: 4679.9
     attention_hvx_contexts: 6
     attention_hvx_workers: 5
     sole_lut_templates_per_group: 14
-    total_hmx_commands_per_block: 192
+    attention_hmx_commands_per_block: 16
+    total_hmx_commands_per_block: 176
     total_hmx_tile_pairs_per_block: 49408
     output_hash: 69f22eeb035e5ec5
   selected_w4u8_baseline:
