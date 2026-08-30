@@ -65,6 +65,7 @@ def main() -> int:
         median(records, f"w4u8_attention_softmax_context{i}_work_ticks")
         for i in range(CONTEXTS)
     ]
+    nonzero_work_ticks = [value for value in work_ticks if value > 0.0]
     summary = {
         "experiment": "EXP-0087",
         "stage": "A",
@@ -72,8 +73,11 @@ def main() -> int:
         "output_hashes": sorted({record["output_hash"] for record in records}),
         "context_task_count_medians": task_counts,
         "context_work_tick_medians": work_ticks,
+        "active_softmax_contexts": len(nonzero_work_ticks),
         "context_task_imbalance": max(task_counts) - min(task_counts),
-        "context_work_max_to_min": max(work_ticks) / min(work_ticks),
+        "active_context_work_max_to_min": (
+            max(nonzero_work_ticks) / min(nonzero_work_ticks)
+        ),
         "qk_ready_first_ticks": median(
             records, "w4u8_attention_qk_ready_first_ticks"
         ),
