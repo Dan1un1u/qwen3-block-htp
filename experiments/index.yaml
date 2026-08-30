@@ -7215,3 +7215,54 @@ experiments:
       stable_device_boot: true
       conclusion: asymmetric_down_chunking_changes_startup_and_slot_cadence_but_does_not_strictly_improve_down_and_complete_host_wall_across_repeat1_and_repeat10_so_the_symmetric_96_96_exp0084_plan_remains_selected
       selected_baseline_changed: false
+  - id: EXP-0087
+    slug: w4u8-attention-softmax-slice-granularity
+    title: Audit and reduce dependency-driven W4U8 Attention Softmax task tails
+    parent: EXP-0084
+    variants:
+      - exp0084_w4u8_fair_canonical_control_32_rows
+      - audit_only_attention_task_timeline
+      - dependency_stream_16_row_softmax_slice_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-attention-softmax-slice-granularity
+    source_branches:
+      - codex/exp-0087-w4u8-attention-slice-granularity
+    source_commits: []
+    record: docs/experiments/EXP-0087.md
+    decided_by: user
+    decided_on: '2026-08-31'
+    approval_ref: 'User message 2026-08-31: 继续下一步; proceed with the next profiling-guided W4U8 optimization after EXP-0086'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0087-w4u8-attention-slice-granularity
+      started_on: '2026-08-31'
+      completed_on: null
+    evidence:
+      formal_results: null
+      retained_artifacts: null
+      source_parent_commit: 6dc437fe08eaccf119c4cbce82937e22f125da0b
+      direct_w4u8_control: W4U8-EXP0084-FAIR-CANONICAL
+      contextual_w4f16_comparator: W4F16-EXP0084-COMMON-NORM-POOLS
+      contextual_f16f16_comparator: F16F16-EXP0084-FAIR-CANONICAL
+      execution_unit: qwen3_layer14_complete_block_m64
+      primary_scope: w4u8_dependency_driven_qk_softmax_av_task_tail_and_softmax_row_slice_granularity
+      hypothesis: the_current_six_context_dependency_stream_exposes_sixteen_32_row_softmax_tasks_whose_dependency_arrival_and_coarse_task_length_leave_an_addressable_tail_before_av_and_pool_join_while_four_16_row_slices_per_group_can_reduce_that_tail_without_global_barriers_or_new_math
+      serial_milestones: audit_only_per_task_timeline_then_single_16_row_micro_gate_then_seven_round_formal_and_pc027_pc028_closure
+      stage_a_diagnostic: audit_only_record_qk_ready_softmax_task_claim_start_end_context_distribution_per_group_av_ready_start_end_and_pool_join_without_changing_ordinary_performance_mode
+      stage_a_stop_condition: stop_before_candidate_implementation_if_no_repeatable_softmax_task_tail_context_imbalance_or_av_readiness_gap_addressable_by_finer_row_slices_is_visible
+      candidate_contract: keep_the_exp0075_generation_driven_qk_to_softmax_to_av_scheduler_and_change_only_each_group_from_two_32_row_softmax_slices_to_four_16_row_slices_with_av_waiting_for_all_slices
+      forbidden_inherited_directions: global_qk_softmax_av_stage_barriers_shared_lut_bank_attention_context_count_search_qkv_group_major_order_av_affine_requant_change_hmx_command_batch_change
+      attention_arithmetic_qparams_lut_values_mask_probability_bytes_v_pack_qk_av_hmx_math_or_other_block_stages_changes_allowed: false
+      performance_timeline_must_be_audit_only: true
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      correctness_gate: final_output_and_audited_qk_probability_av_boundaries_byte_exact_to_exp0084_w4u8_and_independent_reference_zero_mismatches_zero_max_lsb
+      physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_same_176_hmx_commands_49408_u8s8_tile_pairs_and_unchanged_tensor_traffic
+      local_speed_gate: attention_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
+      completion_gate: stage_a_tail_evidence_then_bounded_32_vs_16_row_gate_then_seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
