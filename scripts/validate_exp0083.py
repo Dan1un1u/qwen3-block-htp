@@ -38,7 +38,7 @@ BATCH = {"control": 8, "candidate": 16, "diagnostic32": 32}
 GATE_COMMANDS = {"control": 48, "candidate": 24, "diagnostic32": 12}
 TOTAL_COMMANDS = {"control": 176, "candidate": 152, "diagnostic32": 140}
 PLAN_BYTES = {
-    "control": 1_708_032,
+    "control": 1_724_416,
     "candidate": 1_875_968,
     "diagnostic32": 2_961_408,
 }

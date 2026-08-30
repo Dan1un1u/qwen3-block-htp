@@ -8229,6 +8229,12 @@ static int qbh_stage_metadata(struct qbh_block_header *header,
     return 0;
 }
 
+static uint32_t qbh_w4u8_gate_up_pair_slot_count(
+    uint32_t batch_n_tiles) {
+    uint32_t pair_count = batch_n_tiles / 2U;
+    return pair_count < 8U ? 8U : pair_count;
+}
+
 static int qbh_configure_w4u8_gate_up_layout(
     struct qbh_projection_layout *layout,
     uint32_t batch_n_tiles) {
@@ -8247,7 +8253,7 @@ static int qbh_configure_w4u8_gate_up_layout(
                               layout->expanded_chunk_slot_bytes,
         QBH_HMX_OUTPUT_BYTES);
     uint32_t plan_bytes = output_offset +
-        (batch_n_tiles / 2U) * 2U *
+        qbh_w4u8_gate_up_pair_slot_count(batch_n_tiles) * 2U *
             QBH_HMX_OUTPUT_BYTES;
 
     layout->vtcm_activation_offset = activation_offset;
@@ -8275,7 +8281,8 @@ static int qbh_init_w4u8_gate_up_layout(
     if ((batch_n_tiles != 8U && batch_n_tiles != 16U &&
          batch_n_tiles != 32U) ||
         batch_n_tiles > QBH_W4_MAX_EXPANDED_SLOT_COUNT ||
-        batch_n_tiles / 2U > QBH_W4_MAX_PAIR_SLOT_COUNT) {
+        qbh_w4u8_gate_up_pair_slot_count(batch_n_tiles) >
+            QBH_W4_MAX_PAIR_SLOT_COUNT) {
         return -1;
     }
     layout->expanded_slot_count = batch_n_tiles;
@@ -8450,7 +8457,8 @@ static int qbh_run_w4u8_streaming_mlp(
             .activation_gather_scratch =
                 buffers->w4u8_gather_scratch,
             .pair_slot_count =
-                header->w4u8_gate_up_batch_n_tiles / 2U,
+                qbh_w4u8_gate_up_pair_slot_count(
+                    header->w4u8_gate_up_batch_n_tiles),
             .pair_publish_count = &pair_publish_count,
             .pair_consume_count = &pair_consume_count,
             .activation_ticks = &activation_work_ticks,
