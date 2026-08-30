@@ -952,6 +952,64 @@ static const char *qbh_u8_norm_reduction_mode_name(uint32_t mode) {
     }
 }
 
+static int qbh_parse_fp16_common_schedule_mode(
+    const char *text, uint32_t *mode) {
+    if (strcmp(text, "control") == 0) {
+        *mode = QBH_BLOCK_FP16_COMMON_SCHEDULE_CONTROL;
+        return 0;
+    }
+    if (strcmp(text, "qk_head_pairs") == 0) {
+        *mode = QBH_BLOCK_FP16_COMMON_SCHEDULE_QK_HEAD_PAIRS;
+        return 0;
+    }
+    if (strcmp(text, "input_norm_pool") == 0) {
+        *mode = QBH_BLOCK_FP16_COMMON_SCHEDULE_INPUT_NORM_POOL;
+        return 0;
+    }
+    if (strcmp(text, "post_norm_pool") == 0) {
+        *mode = QBH_BLOCK_FP16_COMMON_SCHEDULE_POST_RESIDUAL_NORM_POOL;
+        return 0;
+    }
+    if (strcmp(text, "input_norm_pool_post_norm_pool") == 0) {
+        *mode = QBH_BLOCK_FP16_COMMON_SCHEDULE_INPUT_NORM_POOL |
+                QBH_BLOCK_FP16_COMMON_SCHEDULE_POST_RESIDUAL_NORM_POOL;
+        return 0;
+    }
+    if (strcmp(text, "qk_head_pairs_input_norm_pool") == 0) {
+        *mode = QBH_BLOCK_FP16_COMMON_SCHEDULE_QK_HEAD_PAIRS |
+                QBH_BLOCK_FP16_COMMON_SCHEDULE_INPUT_NORM_POOL;
+        return 0;
+    }
+    if (strcmp(text, "all") == 0 ||
+        strcmp(text,
+               "qk_head_pairs_input_norm_pool_post_norm_pool") == 0) {
+        *mode = QBH_BLOCK_FP16_COMMON_SCHEDULE_ALL;
+        return 0;
+    }
+    return -1;
+}
+
+static const char *qbh_fp16_common_schedule_mode_name(uint32_t mode) {
+    switch (mode) {
+        case QBH_BLOCK_FP16_COMMON_SCHEDULE_QK_HEAD_PAIRS:
+            return "qk_head_pairs";
+        case QBH_BLOCK_FP16_COMMON_SCHEDULE_INPUT_NORM_POOL:
+            return "input_norm_pool";
+        case QBH_BLOCK_FP16_COMMON_SCHEDULE_POST_RESIDUAL_NORM_POOL:
+            return "post_norm_pool";
+        case QBH_BLOCK_FP16_COMMON_SCHEDULE_INPUT_NORM_POOL |
+             QBH_BLOCK_FP16_COMMON_SCHEDULE_POST_RESIDUAL_NORM_POOL:
+            return "input_norm_pool_post_norm_pool";
+        case QBH_BLOCK_FP16_COMMON_SCHEDULE_QK_HEAD_PAIRS |
+             QBH_BLOCK_FP16_COMMON_SCHEDULE_INPUT_NORM_POOL:
+            return "qk_head_pairs_input_norm_pool";
+        case QBH_BLOCK_FP16_COMMON_SCHEDULE_ALL:
+            return "qk_head_pairs_input_norm_pool_post_norm_pool";
+        default:
+            return "control";
+    }
+}
+
 static uint64_t qbh_fnv1a64(const uint8_t *data, size_t bytes) {
     uint64_t hash = UINT64_C(1469598103934665603);
     for (size_t index = 0; index < bytes; ++index) {
@@ -1368,6 +1426,10 @@ int main(int argc, char **argv) {
         QBH_BLOCK_W4U8_QKVO_SERIAL;
     uint32_t u8_norm_reduction_mode =
         QBH_BLOCK_U8_NORM_REDUCTION_SCALAR;
+    uint32_t fp16_common_schedule_mode =
+        QBH_BLOCK_FP16_COMMON_SCHEDULE_CONTROL;
+    uint32_t fp16_norm_rows_per_task = 4U;
+    uint32_t fp16_norm_contexts = 4U;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t w4u8_gate_up_bundle_offset = 0U;
@@ -1401,7 +1463,7 @@ int main(int argc, char **argv) {
     memset(attention_audit_slots, 0, sizeof(attention_audit_slots));
     memset(&w4u8_gate_up_layout, 0, sizeof(w4u8_gate_up_layout));
     memset(&w4u8_down_layout, 0, sizeof(w4u8_down_layout));
-    if (argc < 3 || argc > 21 ||
+    if (argc < 3 || argc > 24 ||
         qbh_parse_variant(argv[2], &variant) != 0 ||
         (argc >= 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
         (argc >= 5 && qbh_parse_u32(
@@ -1438,6 +1500,12 @@ int main(int argc, char **argv) {
                            argv[19], &w4u8_qkvo_pipeline_mode) != 0) ||
         (argc >= 21 && qbh_parse_u8_norm_reduction_mode(
                            argv[20], &u8_norm_reduction_mode) != 0) ||
+        (argc >= 22 && qbh_parse_fp16_common_schedule_mode(
+                           argv[21], &fp16_common_schedule_mode) != 0) ||
+        (argc >= 23 && qbh_parse_u32(
+                           argv[22], &fp16_norm_rows_per_task) != 0) ||
+        (argc >= 24 && qbh_parse_u32(
+                           argv[23], &fp16_norm_contexts) != 0) ||
         repeats == 0U || repeats > 100U ||
         w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
         (variant == QBH_BLOCK_W4U8 &&
@@ -1530,6 +1598,15 @@ int main(int argc, char **argv) {
         (variant != QBH_BLOCK_W4U8 &&
          u8_norm_reduction_mode !=
              QBH_BLOCK_U8_NORM_REDUCTION_SCALAR) ||
+        fp16_common_schedule_mode >
+            QBH_BLOCK_FP16_COMMON_SCHEDULE_ALL ||
+        (fp16_norm_rows_per_task != 2U &&
+         fp16_norm_rows_per_task != 4U &&
+         fp16_norm_rows_per_task != 8U) ||
+        fp16_norm_contexts < 2U || fp16_norm_contexts > 4U ||
+        (variant == QBH_BLOCK_W4U8 &&
+         fp16_common_schedule_mode !=
+             QBH_BLOCK_FP16_COMMON_SCHEDULE_CONTROL) ||
         (variant != QBH_BLOCK_W4U8 &&
          w4u8_qkvo_pipeline_mode != QBH_BLOCK_W4U8_QKVO_SERIAL) ||
         ((crouton_boundary_mode & QBH_BLOCK_CROUTON_BOUNDARY_QKV) != 0U &&
@@ -1699,7 +1776,13 @@ int main(int argc, char **argv) {
                         "qkvo_batch4_qk_head_pairs] "
                         "[u8_norm_reduction:scalar|hvx_tree|"
                         "hvx_tree_qk_batched_rsqrt|"
-                        "hvx_tree_qk_batched_rsqrt_shared_rope]\n",
+                        "hvx_tree_qk_batched_rsqrt_shared_rope] "
+                        "[fp16_common_schedule:control|qk_head_pairs|"
+                        "input_norm_pool|post_norm_pool|"
+                        "input_norm_pool_post_norm_pool|"
+                        "qk_head_pairs_input_norm_pool|all] "
+                        "[fp16_norm_rows_per_task:2|4|8] "
+                        "[fp16_norm_contexts:2|3|4]\n",
                 argv[0]);
         return 2;
     }
@@ -1971,6 +2054,9 @@ int main(int argc, char **argv) {
     header->crouton_boundary_mode = crouton_boundary_mode;
     header->w4u8_qkvo_pipeline_mode = w4u8_qkvo_pipeline_mode;
     header->u8_norm_reduction_mode = u8_norm_reduction_mode;
+    header->fp16_common_schedule_mode = fp16_common_schedule_mode;
+    header->fp16_norm_rows_per_task = fp16_norm_rows_per_task;
+    header->fp16_norm_contexts = fp16_norm_contexts;
     header->input_offset = input_slot.offset;
     header->input_bytes = input_slot.expected_bytes;
     header->output_bytes = output_bytes;
@@ -2244,12 +2330,15 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0079\","
+        "{\"experiment\":\"EXP-0084\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
         "\"common_ops_mode\":\"%s\","
         "\"u8_norm_reduction_mode\":\"%s\","
+        "\"fp16_common_schedule_mode\":\"%s\","
+        "\"fp16_norm_rows_per_task\":%" PRIu32 ","
+        "\"fp16_norm_contexts\":%" PRIu32 ","
         "\"attribution_mode\":\"%s\","
         "\"numerical_audit_mode\":\"%s\","
         "\"residual_mode\":\"%s\","
@@ -2318,6 +2407,7 @@ int main(int argc, char **argv) {
         "\"attention_hvx_workers_locked\":%" PRIu32 ","
         "\"attention_pool_status\":%d,"
         "\"attention_qk_norm_task_count\":%" PRIu32 ","
+        "\"fp16_qk_norm_pair_task_count\":%" PRIu32 ","
         "\"attention_softmax_task_count\":%" PRIu32 ","
         "\"attention_gqa_group_count\":%" PRIu32 ","
         "\"u8_attention_group_count\":%" PRIu32 ","
@@ -2445,6 +2535,16 @@ int main(int argc, char **argv) {
         "\"w4u8_final_residual_main_work_ticks\":%" PRIu64 ","
         "\"w4u8_final_residual_worker_work_ticks\":%" PRIu64 ","
         "\"w4u8_final_residual_pool_wait_ticks\":%" PRIu64 ","
+        "\"fp16_input_norm_task_count\":%" PRIu32 ","
+        "\"fp16_input_norm_active_contexts\":%" PRIu32 ","
+        "\"fp16_input_norm_main_work_ticks\":%" PRIu64 ","
+        "\"fp16_input_norm_worker_work_ticks\":%" PRIu64 ","
+        "\"fp16_input_norm_pool_wait_ticks\":%" PRIu64 ","
+        "\"fp16_post_residual_norm_task_count\":%" PRIu32 ","
+        "\"fp16_post_residual_norm_active_contexts\":%" PRIu32 ","
+        "\"fp16_post_residual_norm_main_work_ticks\":%" PRIu64 ","
+        "\"fp16_post_residual_norm_worker_work_ticks\":%" PRIu64 ","
+        "\"fp16_post_residual_norm_pool_wait_ticks\":%" PRIu64 ","
         "\"w4f16_gate_up_effective_region_tiles\":%" PRIu32 ","
         "\"w4f16_gate_up_scale_cache_bytes\":%" PRIu32 ","
         "\"w4f16_gate_up_weight_dma_ticks\":%" PRIu64 ","
@@ -2546,6 +2646,10 @@ int main(int argc, char **argv) {
         qbh_common_ops_mode_name(header->common_ops_mask),
         qbh_u8_norm_reduction_mode_name(
             header->u8_norm_reduction_mode),
+        qbh_fp16_common_schedule_mode_name(
+            header->fp16_common_schedule_mode),
+        header->fp16_norm_rows_per_task,
+        header->fp16_norm_contexts,
         header->attribution_enabled != 0U ? "on" : "off",
         header->numerical_audit_enabled != 0U ? "on" : "off",
         qbh_residual_mode_name(header->residual_mode),
@@ -2618,6 +2722,7 @@ int main(int argc, char **argv) {
         header->attention_hvx_workers_locked,
         header->attention_pool_status,
         header->attention_qk_norm_task_count,
+        header->fp16_qk_norm_pair_task_count,
         header->attention_softmax_task_count,
         header->attention_gqa_group_count,
         header->u8_attention_group_count,
@@ -2735,6 +2840,16 @@ int main(int argc, char **argv) {
         header->w4u8_final_residual_main_work_ticks,
         header->w4u8_final_residual_worker_work_ticks,
         header->w4u8_final_residual_pool_wait_ticks,
+        header->fp16_input_norm_task_count,
+        header->fp16_input_norm_active_contexts,
+        header->fp16_input_norm_main_work_ticks,
+        header->fp16_input_norm_worker_work_ticks,
+        header->fp16_input_norm_pool_wait_ticks,
+        header->fp16_post_residual_norm_task_count,
+        header->fp16_post_residual_norm_active_contexts,
+        header->fp16_post_residual_norm_main_work_ticks,
+        header->fp16_post_residual_norm_worker_work_ticks,
+        header->fp16_post_residual_norm_pool_wait_ticks,
         header->w4f16_gate_up_effective_region_tiles,
         header->w4f16_gate_up_scale_cache_bytes,
         header->w4f16_gate_up_weight_dma_ticks,

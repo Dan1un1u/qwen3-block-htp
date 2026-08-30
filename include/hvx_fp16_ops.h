@@ -20,9 +20,18 @@ void qbh_hvx_rms_norm_f16(const __fp16 *input, const __fp16 *gamma,
                            uint32_t width,
                            struct qbh_hvx_check_metrics *check);
 
+void qbh_hvx_rms_norm_f16_rows(
+    const __fp16 *input, const __fp16 *gamma, __fp16 *output,
+    uint32_t first_row, uint32_t row_count, uint32_t width);
+
 void qbh_hvx_rms_norm_f16_crouton(
     const __fp16 *input, const __fp16 *gamma,
     __fp16 *output_tiles, uint32_t rows, uint32_t width);
+
+void qbh_hvx_rms_norm_f16_crouton_rows(
+    const __fp16 *input, const __fp16 *gamma,
+    __fp16 *output_tiles, uint32_t first_row,
+    uint32_t row_count, uint32_t width);
 
 void qbh_hvx_qk_norm_rope_f16(__fp16 *tensor, uint32_t rows,
                                uint32_t heads, uint32_t row_stride,
@@ -72,10 +81,20 @@ void qbh_hvx_residual_rms_norm_f16(
     const __fp16 *gamma, __fp16 *output,
     uint32_t rows, uint32_t width);
 
+void qbh_hvx_residual_rms_norm_f16_rows(
+    __fp16 *residual, const __fp16 *addition,
+    const __fp16 *gamma, __fp16 *output,
+    uint32_t first_row, uint32_t row_count, uint32_t width);
+
 void qbh_hvx_residual_rms_norm_f16_crouton(
     __fp16 *residual, const __fp16 *addition,
     const __fp16 *gamma, __fp16 *output_tiles,
     uint32_t rows, uint32_t width);
+
+void qbh_hvx_residual_rms_norm_f16_crouton_rows(
+    __fp16 *residual, const __fp16 *addition,
+    const __fp16 *gamma, __fp16 *output_tiles,
+    uint32_t first_row, uint32_t row_count, uint32_t width);
 
 void qbh_hvx_stable_causal_softmax_f16(__fp16 *scores,
                                         __fp16 *probability,

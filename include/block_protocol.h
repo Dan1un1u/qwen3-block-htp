@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(41)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(79)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(42)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(84)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -106,6 +106,17 @@ enum qbh_block_u8_norm_reduction_mode {
     QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT = 2,
     QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE = 3,
     QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE_PARALLEL_INPUT = 4,
+};
+
+enum qbh_block_fp16_common_schedule_mode {
+    QBH_BLOCK_FP16_COMMON_SCHEDULE_CONTROL = 0,
+    QBH_BLOCK_FP16_COMMON_SCHEDULE_QK_HEAD_PAIRS = 1U << 0,
+    QBH_BLOCK_FP16_COMMON_SCHEDULE_INPUT_NORM_POOL = 1U << 1,
+    QBH_BLOCK_FP16_COMMON_SCHEDULE_POST_RESIDUAL_NORM_POOL = 1U << 2,
+    QBH_BLOCK_FP16_COMMON_SCHEDULE_ALL =
+        QBH_BLOCK_FP16_COMMON_SCHEDULE_QK_HEAD_PAIRS |
+        QBH_BLOCK_FP16_COMMON_SCHEDULE_INPUT_NORM_POOL |
+        QBH_BLOCK_FP16_COMMON_SCHEDULE_POST_RESIDUAL_NORM_POOL,
 };
 
 enum qbh_block_attention_pack_mode {
@@ -296,6 +307,9 @@ struct qbh_block_header {
     uint32_t crouton_boundary_mode;
     uint32_t w4u8_qkvo_pipeline_mode;
     uint32_t u8_norm_reduction_mode;
+    uint32_t fp16_common_schedule_mode;
+    uint32_t fp16_norm_rows_per_task;
+    uint32_t fp16_norm_contexts;
 
     uint32_t input_offset;
     uint32_t input_bytes;
@@ -388,6 +402,7 @@ struct qbh_block_header {
     uint32_t attention_hvx_workers_locked;
     int32_t attention_pool_status;
     uint32_t attention_qk_norm_task_count;
+    uint32_t fp16_qk_norm_pair_task_count;
     uint32_t attention_softmax_task_count;
     uint32_t attention_gqa_group_count;
     uint32_t crouton_qkv_projection_count;
@@ -525,6 +540,16 @@ struct qbh_block_header {
     uint64_t w4u8_final_residual_main_work_ticks;
     uint64_t w4u8_final_residual_worker_work_ticks;
     uint64_t w4u8_final_residual_pool_wait_ticks;
+    uint32_t fp16_input_norm_task_count;
+    uint32_t fp16_input_norm_active_contexts;
+    uint32_t fp16_post_residual_norm_task_count;
+    uint32_t fp16_post_residual_norm_active_contexts;
+    uint64_t fp16_input_norm_main_work_ticks;
+    uint64_t fp16_input_norm_worker_work_ticks;
+    uint64_t fp16_input_norm_pool_wait_ticks;
+    uint64_t fp16_post_residual_norm_main_work_ticks;
+    uint64_t fp16_post_residual_norm_worker_work_ticks;
+    uint64_t fp16_post_residual_norm_pool_wait_ticks;
 
     uint64_t invocation_ticks;
     uint64_t runtime_setup_ticks;
