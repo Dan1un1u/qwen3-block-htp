@@ -6577,14 +6577,15 @@ experiments:
     variants:
       - exp0079_per_projection_qkv_first_batch_control
       - q_to_k_to_v_first_batch_prefetch_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-qkv-cross-projection-prefetch
     source_branches:
       - codex/exp-0080-w4u8-qkv-cross-projection-prefetch
-    source_commits: []
+    source_commits:
+      - 467ef2e7195d1a5e35be16b193eb286bdcfc3013
     record: docs/experiments/EXP-0080.md
     decided_by: user
     decided_on: '2026-08-30'
@@ -6593,7 +6594,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0080-w4u8-qkv-cross-projection-prefetch
       started_on: '2026-08-30'
-      completed_on: null
+      completed_on: '2026-08-30'
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0080'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0080'
@@ -6616,3 +6617,36 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_same_weight_bytes_dma_descriptors_176_hmx_commands_and_49408_tile_pairs
       local_speed_gate: qkv_projection_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
+      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0080/20260830T124910Z_467ef2e7195d_formal'
+      artifact_set: 'D:/llm_exp/models/qwen3-block-htp/exp0080/artifacts/467ef2e7195d/formal'
+      gate_summary_sha256: 17d5820aaa48595dd5398f589dde230ebc8d1077a3967f5055c958bc9cc320ce
+      full_profiling_report_sha256: 7ba7a270c4f1453a2b541b2a0293182b4e628dbd89e2d789d84b41c288e48edb
+      package_manifest_sha256: 043f61337b2ad2758bb95791bc4ca768150f457f1f28bc7d20a7ad57eba42359
+      output_hash: 69f22eeb035e5ec5
+      total_mismatches: 0
+      max_lsb: 0
+      formal_paired_rounds: 7
+      repeat1_control_host_wall_ns_per_block_median: 2379114.0
+      repeat1_candidate_host_wall_ns_per_block_median: 2369063.0
+      repeat1_host_wall_change_percent: -0.42246819614361053
+      repeat1_host_wall_paired_change_percent: 0.37219738104186106
+      repeat1_qkv_change_percent: 0.1718423961274235
+      repeat1_qkv_paired_change_percent: 0.3527248041058072
+      repeat10_control_host_wall_ns_per_block_median: 1955921.9
+      repeat10_candidate_host_wall_ns_per_block_median: 1953015.6
+      repeat10_host_wall_change_percent: -0.14858977852803188
+      repeat10_host_wall_paired_change_percent: -0.09806337266514942
+      repeat10_qkv_change_percent: 0.09460273002322239
+      repeat10_qkv_paired_change_percent: -0.0678942707609853
+      repeat10_qkvo_prefetch_wait_change_percent: -2.8885836345711485
+      repeat10_qkvo_hmx_lifetime_change_percent: 0.2552332755174429
+      repeat10_projection_hmx_wait_change_percent: 17.34650064405323
+      fixed_vtcm_gate: pass
+      zero_intermediate_ddr_gate: pass
+      zero_spill_fill_gate: pass
+      unchanged_weight_dma_hmx_gate: pass
+      cross_projection_prefetch_execution_gate: pass
+      gate_result: fail
+      local_adoption_eligible: false
+      conclusion: cross_projection_prefetch_reduces_qkvo_prefetch_wait_but_does_not_reduce_qkv_ledger_and_extends_hmx_or_queue_lifetime
+      selected_baseline_changed: false
