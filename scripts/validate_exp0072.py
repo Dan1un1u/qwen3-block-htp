@@ -190,8 +190,10 @@ def build_summary(result_dir: Path, package_dir: Path) -> dict[str, object]:
             for field in invariant_fields
         )
         execution_gate = (
-            metrics["w4u8_residual_active_contexts"]["control"] == 4.0
-            and metrics["w4u8_residual_active_contexts"]["candidate"] == 6.0
+            metrics["w4u8_residual_active_contexts"]["control"]
+                == 4.0 / repeat
+            and metrics["w4u8_residual_active_contexts"]["candidate"]
+                == 6.0 / repeat
             and metrics["w4u8_post_residual_worker_work_ticks"][
                 "candidate"
             ] > 0.0
