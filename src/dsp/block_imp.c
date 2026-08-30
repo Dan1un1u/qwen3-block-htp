@@ -8016,8 +8016,11 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     if (header->variant == QBH_BLOCK_W4U8 &&
         header->numerical_audit_enabled != 0U &&
         w4u8_qkv_native_input_enabled != 0U) {
+        audit_start = qbh_attribution_begin(header);
         header->u8_input_norm_actual_hash = qbh_fnv1a64_bytes(
             buffers->hmx_activation, hidden_elements);
+        qbh_attribution_accumulate(
+            header, audit_start, &header->input_norm_audit_ticks);
     }
 
     start = HAP_perf_get_qtimer_count();
