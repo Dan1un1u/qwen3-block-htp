@@ -33,9 +33,9 @@ current_scope:
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: attention_task_tail_audit
-  active_experiment_evidence: null
-  active_experiment_gate: not_run
+  active_experiment_stage: bounded_32_vs_16_row_gate
+  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0087/stage_a_b30e900'
+  active_experiment_gate: pass_to_stage_b
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0086/formal_af51e13'
   latest_w4u8_down_rebalance_experiment:
     id: EXP-0086

@@ -7230,7 +7230,10 @@ experiments:
     evidence_profile: real-qwen3-block-w4u8-attention-softmax-slice-granularity
     source_branches:
       - codex/exp-0087-w4u8-attention-slice-granularity
-    source_commits: []
+    source_commits:
+      - a62d6bea6d132d252addf52541cc7b9255a6a7a5
+      - f03b5b49a1debff47a2bc67b164569ca486f830e
+      - b30e9000176276a535f495b12db4036e034a1858
     record: docs/experiments/EXP-0087.md
     decided_by: user
     decided_on: '2026-08-31'
@@ -7266,3 +7269,24 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_same_176_hmx_commands_49408_u8s8_tile_pairs_and_unchanged_tensor_traffic
       local_speed_gate: attention_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: stage_a_tail_evidence_then_bounded_32_vs_16_row_gate_then_seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
+      preliminary_numerical_audit_timeline: 'D:/llm_exp/results/qwen3-block-htp/exp0087/stage_a_f03b5b4'
+      preliminary_numerical_audit_timeline_validity: invalid_for_schedule_decision_because_numerical_audit_inflates_v_pack_and_changes_context_progress
+      stage_a_run: 'D:/llm_exp/results/qwen3-block-htp/exp0087/stage_a_b30e900'
+      stage_a_runtime_source_commit: b30e9000176276a535f495b12db4036e034a1858
+      stage_a_gate_result: pass_to_stage_b
+      stage_a_timeline_isolated_from_numerical_audit: true
+      stage_a_rounds: 7
+      stage_a_active_softmax_contexts: 6
+      stage_a_context_task_count_medians: 3_3_2_3_3_2
+      stage_a_active_context_work_max_to_min: 1.5006
+      stage_a_softmax_start_first_ticks: 708
+      stage_a_softmax_start_last_ticks: 2612
+      stage_a_softmax_end_first_ticks: 1629
+      stage_a_softmax_end_last_ticks: 3436
+      stage_a_softmax_task_min_ticks: 835
+      stage_a_softmax_task_max_ticks: 952
+      stage_a_qk_to_softmax_start_max_ticks: 2011
+      stage_a_all_slices_to_av_start_max_ticks: 313
+      stage_a_pool_join_ticks: 3752
+      stage_a_correctness_and_physical_gate: pass_same_output_hash_69f22eeb035e5ec5_zero_mismatches_zero_max_lsb_exact_8mib_vtcm_zero_intermediate_ddr_176_hmx_commands_49408_u8s8_tile_pairs
+      stage_a_conclusion: ordinary_schedule_uses_all_six_contexts_but_sixteen_equal_32_row_tasks_force_a_stable_three_three_two_three_three_two_distribution_and_about_1_5x_context_work_imbalance_while_av_readiness_delay_is_small_so_finer_16_row_tasks_are_an_addressable_single_variable
