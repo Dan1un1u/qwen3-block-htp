@@ -6500,14 +6500,15 @@ experiments:
     variants:
       - exp0078_six_transient_down_hvx_workers_control
       - five_persistent_plus_one_transient_down_hvx_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4u8-hybrid-persistent-down-hvx
     source_branches:
       - codex/exp-0079-w4u8-hybrid-persistent-down-hvx
-    source_commits: []
+    source_commits:
+      - 8296e3de6bf1e22faa8ba3480fa6dc949d5a4e0a
     record: docs/experiments/EXP-0079.md
     decided_by: user
     decided_on: '2026-08-30'
@@ -6516,7 +6517,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0079-w4u8-hybrid-persistent-down-hvx
       started_on: '2026-08-30'
-      completed_on: null
+      completed_on: '2026-08-30'
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0079'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0079'
@@ -6539,3 +6540,33 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_same_weight_bytes_dma_descriptors_176_hmx_commands_and_49408_tile_pairs
       local_speed_gate: down_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
+      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0079/20260830T123738Z_8296e3de6bf1_formal'
+      source_commit: 8296e3de6bf1e22faa8ba3480fa6dc949d5a4e0a
+      gate_summary: 'D:/llm_exp/results/qwen3-block-htp/exp0079/20260830T123738Z_8296e3de6bf1_formal/gate_summary.json'
+      full_profiling_report: 'D:/llm_exp/results/qwen3-block-htp/exp0079/20260830T123738Z_8296e3de6bf1_formal/full_profiling_report.md'
+      gate_summary_sha256: 8998785afedbd7fabd77d5d973072c241801e01c31a514fef0d55c7749769fbe
+      full_profiling_report_sha256: d9dadd91c65ea1671c10b54c835ad3ff476c85b93f7528c6f542a3a7dd392327
+      output_hash: 69f22eeb035e5ec5
+      mismatches: 0
+      max_lsb: 0
+      repeat1_control_host_wall_ns_per_block_median: 2426563.0
+      repeat1_candidate_host_wall_ns_per_block_median: 2371614.0
+      repeat1_host_wall_change_percent: -2.264478606160236
+      repeat1_host_wall_paired_change_percent: -2.9513348715858645
+      repeat1_down_change_percent: -10.409084291745518
+      repeat1_down_paired_change_percent: -10.199912447103454
+      repeat10_control_host_wall_ns_per_block_median: 1997041.6
+      repeat10_candidate_host_wall_ns_per_block_median: 1954026.1
+      repeat10_host_wall_change_percent: -2.153961139317273
+      repeat10_host_wall_paired_change_percent: -2.059256650526642
+      repeat10_down_change_percent: -10.364895536285857
+      repeat10_down_paired_change_percent: -10.7595943815186
+      fixed_vtcm_gate: pass
+      zero_intermediate_ddr_gate: pass
+      zero_spill_fill_gate: pass
+      unchanged_weight_dma_hmx_gate: pass
+      hybrid_down_worker_execution_gate: pass
+      gate_result: pass
+      local_adoption_eligible: true
+      conclusion: replacing_five_of_six_transient_down_hvx_workers_with_persistent_pool_workers_reduces_down_and_complete_block_wall_at_repeat1_and_repeat10
+      selected_baseline_changed: false

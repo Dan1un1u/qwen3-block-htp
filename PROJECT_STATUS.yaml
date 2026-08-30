@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0079
+  active_experiment: null
   next_experiment_number: 80
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,31 +27,31 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0078
-  last_completed_source_commit: 7371914465dfb8929760803d5ff1856e398cb5e1
-  provisional_source_parent: EXP-0078
+  last_completed_experiment: EXP-0079
+  last_completed_source_commit: 8296e3de6bf1e22faa8ba3480fa6dc949d5a4e0a
+  provisional_source_parent: EXP-0079
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: hybrid_persistent_pool_down_expansion_implementation
+  active_experiment_stage: null
   active_experiment_evidence: null
-  active_experiment_gate: not_run
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0078/20260830T122815Z_7371914465df_formal'
+  active_experiment_gate: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0079/20260830T123738Z_8296e3de6bf1_formal'
   latest_w4u8_candidate:
-    id: W4U8-EXP0078-PERSISTENT-GATE-UP-HVX
-    experiment: EXP-0078
+    id: W4U8-EXP0079-PERSISTENT-MLP-HVX
+    experiment: EXP-0079
     project_variant: W4U8
-    physical_plan: exp0075_plus_three_persistent_gate_up_hvx_expansion_workers
-    source_branch: codex/exp-0078-w4u8-persistent-gate-up-hvx
-    source_head: 7371914465dfb8929760803d5ff1856e398cb5e1
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0078/20260830T122815Z_7371914465df_formal'
+    physical_plan: exp0078_plus_five_persistent_and_one_transient_down_hvx_expansion_workers
+    source_branch: codex/exp-0079-w4u8-hybrid-persistent-down-hvx
+    source_head: 8296e3de6bf1e22faa8ba3480fa6dc949d5a4e0a
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0079/20260830T123738Z_8296e3de6bf1_formal'
     adoption_status: pending
     local_gate: pass
     candidate_status: awaiting_user_promotion
-    repeat1_host_wall_ns_per_block_median: 2401511.0
-    repeat10_host_wall_ns_per_block_median: 1985697.9
-    repeat1_gate_up_ticks_per_block_median: 12996.0
-    repeat10_gate_up_ticks_per_block_median: 13017.2
+    repeat1_host_wall_ns_per_block_median: 2371614.0
+    repeat10_host_wall_ns_per_block_median: 1954026.1
+    repeat1_down_ticks_per_block_median: 6154.0
+    repeat10_down_ticks_per_block_median: 6160.8
     input_norm_task_count_per_block: 16
     residual_task_count_per_boundary_per_block: 16
     residual_active_contexts: 6
