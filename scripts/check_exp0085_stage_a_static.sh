@@ -5,6 +5,7 @@ project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 protocol="${project_root}/include/block_protocol.h"
 dsp="${project_root}/src/dsp/block_imp.c"
 host="${project_root}/src/host/block_main.c"
+formal_runner="${project_root}/scripts/run_exp0085.sh"
 
 grep -q 'QBH_BLOCK_ABI_VERSION UINT32_C(45)' "${protocol}"
 grep -q 'QBH_BLOCK_EXPERIMENT UINT32_C(85)' "${protocol}"
@@ -21,9 +22,11 @@ grep -q 'qbh_run_w4u8_qkv_group_major' "${dsp}"
 grep -q 'QBH_DUMP_QKV_TIMELINE_PATH' "${host}"
 grep -q 'QBH_QKV_TIMELINE' "${host}"
 grep -q 'QBH_QKV_SCHEDULE' "${host}"
+grep -q 'qkv_schedule' "${host}"
+grep -q 'QBH_QKV_TIMELINE=0' "${formal_runner}"
 if grep -RInE 'QnnGraph|QnnContext|QnnBackend|libQnn' \
         "${project_root}/src" "${project_root}/include" >/dev/null; then
     printf 'QNN dependency found in formal source\n' >&2
     exit 1
 fi
-printf '%s\n' '{"experiment":"EXP-0085","stage":"A/B","static_gate":"pass","runtime_schedule_selectable":true,"qnn_dependency":false}'
+printf '%s\n' '{"experiment":"EXP-0085","stage":"A/B/C","static_gate":"pass","runtime_schedule_selectable":true,"qnn_dependency":false}'

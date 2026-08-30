@@ -2461,7 +2461,8 @@ int main(int argc, char **argv) {
     printf(
         "{\"experiment\":\"EXP-0085\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
-        "\"variant\":\"%s\",\"attention_compute\":\"%s\","
+        "\"variant\":\"%s\",\"qkv_schedule\":\"%s\","
+        "\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
         "\"common_ops_mode\":\"%s\","
         "\"u8_norm_reduction_mode\":\"%s\","
@@ -2767,6 +2768,7 @@ int main(int argc, char **argv) {
         "\"crouton_norm_store_ticks\":%" PRIu64 ","
         "\"release_result\":%d,\"close_result\":%d}\n",
         qbh_variant_name(variant),
+        qbh_qkv_schedule_mode_name(qkv_schedule_mode),
         qbh_attention_u8_enabled(attention_pipeline_mode)
             ? "U8xS8_HMX_log2_softmax"
             : "FP16_HMX",
