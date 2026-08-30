@@ -250,10 +250,18 @@ static int qbh_parse_residual_mode(const char *text, uint32_t *mode) {
         *mode = QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4;
         return 0;
     }
+    if (strcmp(text, "fused_pool6") == 0 ||
+        strcmp(text, "hvx_fused_post_norm_pool6") == 0) {
+        *mode = QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6;
+        return 0;
+    }
     return -1;
 }
 
 static const char *qbh_residual_mode_name(uint32_t mode) {
+    if (mode == QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6) {
+        return "hvx_fused_post_norm_pool6";
+    }
     if (mode == QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4) {
         return "hvx_fused_post_norm_pool4";
     }
@@ -1506,9 +1514,13 @@ int main(int argc, char **argv) {
               QBH_BLOCK_W4U8_QKVO_BATCH4 ||
           (residual_mode != QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM &&
            residual_mode !=
-               QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4))) ||
-        (residual_mode ==
-             QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4 &&
+               QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4 &&
+           residual_mode !=
+               QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6))) ||
+        ((residual_mode ==
+              QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4 ||
+          residual_mode ==
+              QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6) &&
          (variant != QBH_BLOCK_W4U8 ||
           attention_hvx_contexts < 4U ||
           attention_hvx_contexts > 6U ||
@@ -1521,6 +1533,9 @@ int main(int argc, char **argv) {
             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT |
             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT))) ||
+        (residual_mode ==
+             QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6 &&
+         attention_hvx_contexts != 6U) ||
         mlp_mode > QBH_BLOCK_MLP_W4U8_STREAMING ||
         mlp_hvx_contexts == 0U || mlp_hvx_contexts > 4U ||
         (mlp_mode == QBH_BLOCK_MLP_CONTROL && mlp_hvx_contexts != 1U) ||
@@ -2188,7 +2203,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0071\","
+        "{\"experiment\":\"EXP-0072\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2380,6 +2395,7 @@ int main(int argc, char **argv) {
         "\"w4u8_input_norm_main_work_ticks\":%" PRIu64 ","
         "\"w4u8_input_norm_worker_work_ticks\":%" PRIu64 ","
         "\"w4u8_input_norm_pool_wait_ticks\":%" PRIu64 ","
+        "\"w4u8_residual_active_contexts\":%" PRIu32 ","
         "\"w4u8_post_residual_task_count\":%" PRIu32 ","
         "\"w4u8_final_residual_task_count\":%" PRIu32 ","
         "\"w4u8_post_residual_main_work_ticks\":%" PRIu64 ","
@@ -2663,6 +2679,7 @@ int main(int argc, char **argv) {
         header->w4u8_input_norm_main_work_ticks,
         header->w4u8_input_norm_worker_work_ticks,
         header->w4u8_input_norm_pool_wait_ticks,
+        header->w4u8_residual_active_contexts,
         header->w4u8_post_residual_task_count,
         header->w4u8_final_residual_task_count,
         header->w4u8_post_residual_main_work_ticks,
