@@ -83,12 +83,15 @@ def main() -> int:
             record["down_first_hmx_start_ticks"],
             record["down_phase_end_ticks"],
         ]
-        if any(value <= 0 for value in ordered):
-            raise SystemExit(f"zero timeline point: {ordered}")
+        if ordered[0] < 0 or any(value <= 0 for value in ordered[1:]):
+            raise SystemExit(f"missing timeline point: {ordered}")
         if any(right < left for left, right in zip(ordered, ordered[1:])):
             raise SystemExit(f"non-monotonic timeline: {ordered}")
-        if record["gate_up_last_hmx_end_ticks"] > record["gate_up_join_ticks"]:
-            raise SystemExit("Gate/Up HMX end exceeds Gate/Up join")
+        if not (record["gate_up_first_hmx_start_ticks"] <=
+                record["gate_up_last_hmx_end_ticks"] <=
+                record["middle_all_ready_ticks"] <=
+                record["gate_up_join_ticks"]):
+            raise SystemExit("invalid Gate/Up HMX, activation, or join order")
         windows.append(
             record["gate_up_join_ticks"] -
             record["middle_first_half_ready_ticks"]
