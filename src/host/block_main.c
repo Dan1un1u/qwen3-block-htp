@@ -2128,7 +2128,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0062\","
+        "{\"experiment\":\"EXP-0063\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2306,6 +2306,7 @@ int main(int argc, char **argv) {
         "\"u8_attention_qk_hmx_ticks\":%" PRIu64 ","
         "\"u8_attention_qk_requant_ticks\":%" PRIu64 ","
         "\"u8_attention_softmax_ticks\":%" PRIu64 ","
+        "\"u8_attention_qk_requant_softmax_ticks\":%" PRIu64 ","
         "\"u8_attention_av_hmx_ticks\":%" PRIu64 ","
         "\"u8_attention_av_requant_ticks\":%" PRIu64 ","
         "\"u8_attention_pipeline_wait_ticks\":%" PRIu64 ","
@@ -2579,6 +2580,8 @@ int main(int argc, char **argv) {
         header->u8_attention_qk_hmx_ticks,
         header->u8_attention_qk_requant_ticks,
         header->u8_attention_softmax_ticks,
+        header->u8_attention_qk_requant_ticks +
+            header->u8_attention_softmax_ticks,
         header->u8_attention_av_hmx_ticks,
         header->u8_attention_av_requant_ticks,
         header->u8_attention_pipeline_wait_ticks,

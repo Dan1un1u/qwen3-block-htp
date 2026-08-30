@@ -699,7 +699,8 @@ static void qbh_attention_u8_build_probability_lut(
     }
 }
 
-static void qbh_attention_u8_softmax_group_impl(
+static inline __attribute__((always_inline)) void
+qbh_attention_u8_softmax_group_impl(
     uint8_t *score_tiles, uint8_t *probability_tiles,
     uint8_t *scratch,
     const struct qbh_attention_config *config,
