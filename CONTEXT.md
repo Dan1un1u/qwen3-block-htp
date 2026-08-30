@@ -478,3 +478,12 @@ instead of running two sixteen-entry scalar builders on every row. It preserves
 QK codes, sums, mask semantics, probability bytes, and all HMX work exactly.
 _Avoid_: changed Softmax approximation, shared head denominator, DDR lookup
 table, major block-level speedup, Selected Baseline without promotion
+
+**Audit-Only Probability Row-Sum Reduction**:
+The rejected EXP-0066 Softmax schedule that skips probability row-sum and
+min/max reductions when numerical telemetry is absent, while retaining them
+and their exact values in audit mode. It reliably reduces Softmax and Attention
+work and improves repeat-ten wall latency, but fails the repeat-one paired
+complete-wall gate and is not an adopted source parent.
+_Avoid_: changed probability bytes, missing audit telemetry, accepted W4U8
+candidate, permission to stack the rejected change without a new hypothesis

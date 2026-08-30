@@ -5236,14 +5236,15 @@ experiments:
     variants:
       - exp0065_unconditional_probability_row_sum_control
       - exp0065_audit_only_probability_row_sum_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-softmax-audit-reduction-elision
     source_branches:
       - codex/exp-0066-w4u8-softmax-audit-reduction-elision
-    source_commits: []
+    source_commits:
+      - a87510c11f0184a57a5eba44b1679aa51f88d952
     record: docs/experiments/EXP-0066.md
     decided_by: user
     decided_on: '2026-08-30'
@@ -5252,7 +5253,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0066-w4u8-softmax-audit-reduction-elision
       started_on: '2026-08-30'
-      completed_on: null
+      completed_on: '2026-08-30'
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0066'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0066'
@@ -5277,3 +5278,62 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn
       local_speed_gate: softmax_work_attention_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
+      source_head: a87510c11f0184a57a5eba44b1679aa51f88d952
+      implementation_commit: a87510c11f0184a57a5eba44b1679aa51f88d952
+      evidence_validator_commit: a87510c11f0184a57a5eba44b1679aa51f88d952
+      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0066/20260830T082753Z_a87510c11f01_formal'
+      artifact_set: 'D:/llm_exp/models/qwen3-block-htp/exp0066/artifacts/a87510c11f01/formal'
+      gate_record: 'D:/llm_exp/results/qwen3-block-htp/exp0066/20260830T082753Z_a87510c11f01_formal/gate_summary.json'
+      formal_full_profiling_report: 'D:/llm_exp/results/qwen3-block-htp/exp0066/20260830T082753Z_a87510c11f01_formal/full_profiling_report.md'
+      full_profiling_report: docs/experiments/EXP-0066-PROFILING.md
+      gate_record_sha256: 4ccfb2d31b2c9d597fd2844ff97a7f3ae134e332c0d0cdab31cdb6d974166d35
+      formal_full_profiling_report_sha256: a7f3adca96e8cbed5a03caea444084ea05fcbff48a767986fe541400c04afc70
+      static_gate_sha256: 13b7dfd423b09667af94d79eb446c2ab3805bf3a29f3a4bb0fffb66637ac47b1
+      package_manifest_sha256: 043f61337b2ad2758bb95791bc4ca768150f457f1f28bc7d20a7ad57eba42359
+      stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      formal_paired_rounds: 7
+      output_hash: 69f22eeb035e5ec5
+      qk_probability_av_hash_equivalence: true
+      qk_hash: 32aa949912e365be
+      probability_hash: 94f2e218f06f9627
+      av_hash: f853658f52032bde
+      implementation_reference_mismatches: 0
+      implementation_reference_max_lsb: 0
+      audit_probability_row_sum_min: 205
+      audit_probability_row_sum_max: 320
+      fixed_vtcm_acquired_bytes: 8388608
+      vtcm_peak_plan_bytes: 5306080
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      spill_fill_count: 0
+      hmx_commands_per_block: 192
+      hmx_tile_pairs_per_block: 49408
+      repeat1_control_host_wall_ns_per_block_median: 2687865.0
+      repeat1_candidate_host_wall_ns_per_block_median: 2686146.0
+      repeat1_host_wall_change_percent: -0.063954
+      repeat1_paired_host_wall_change_percent_median: 0.146851
+      repeat1_control_softmax_ticks_per_block_median: 12989.0
+      repeat1_candidate_softmax_ticks_per_block_median: 12533.0
+      repeat1_softmax_change_percent: -3.510663
+      repeat1_paired_softmax_change_percent_median: -3.577473
+      repeat1_control_attention_ticks_per_block_median: 5041.0
+      repeat1_candidate_attention_ticks_per_block_median: 4890.0
+      repeat1_attention_change_percent: -2.995437
+      repeat1_paired_attention_change_percent_median: -3.154136
+      repeat10_control_host_wall_ns_per_block_median: 2288062.5
+      repeat10_candidate_host_wall_ns_per_block_median: 2280166.7
+      repeat10_host_wall_change_percent: -0.345087
+      repeat10_paired_host_wall_change_percent_median: -0.239091
+      repeat10_control_softmax_ticks_per_block_median: 12965.4
+      repeat10_candidate_softmax_ticks_per_block_median: 12522.2
+      repeat10_softmax_change_percent: -3.418329
+      repeat10_paired_softmax_change_percent_median: -3.591738
+      repeat10_control_attention_ticks_per_block_median: 5020.9
+      repeat10_candidate_attention_ticks_per_block_median: 4916.7
+      repeat10_attention_change_percent: -2.075325
+      repeat10_paired_attention_change_percent_median: -2.399968
+      gate_result: fail
+      local_adoption_eligible: false
+      conclusion: audit_only_probability_row_sum_reductions_reduce_softmax_and_attention_and_repeat10_host_wall_but_fail_the_repeat1_paired_complete_host_wall_gate
+      reopen_condition: only_with_a_new_non_audit_softmax_work_elimination_hypothesis_that_can_materially_exceed_repeat1_noise
+      selected_baseline_changed: false
