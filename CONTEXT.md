@@ -445,3 +445,15 @@ and locally reduces Q/K Norm-RoPE work, preparation join, QKV ledger time and
 complete Host wall at repeat one and repeat ten.
 _Avoid_: paired-head arithmetic, shared RMS statistics, changed qparams,
 Attention fusion, Selected Baseline without promotion
+
+**Paired Full-Width QK Requant-Softmax Load**:
+The EXP-0063 W4U8 Attention boundary that packs the corresponding 64-byte
+score rows from both Q heads of one GQA group into one 128-byte HVX vector,
+applies the unchanged QK requantization once at full SIMD occupancy, and then
+computes two mathematically independent log2 Softmax rows. Performance mode
+does not materialize the requantized score carrier; audit mode writes each
+64-byte half back to its original score tiles solely to retain the authoritative
+QK hash. It removes a separate full-carrier pass without merging probability
+mass, changing qparams, changing mask semantics, or changing QK/AV HMX work.
+_Avoid_: shared two-head Softmax denominator, changed Attention arithmetic,
+ordinary 64-byte row fusion, Selected Baseline without promotion

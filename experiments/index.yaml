@@ -4910,15 +4910,19 @@ experiments:
     parent: EXP-0062
     variants:
       - exp0062_separate_qk_requant_then_softmax_control
-      - exp0062_row_fused_qk_requant_softmax_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+      - exp0062_paired_row_fused_qk_requant_softmax_candidate
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4u8-fused-qk-requant-softmax
     source_branches:
       - codex/exp-0063-w4u8-fused-qk-requant-softmax
-    source_commits: []
+    source_commits:
+      - 21697c0be23de754e7bfc7361fb2efada4605c54
+      - b0ef52d52133ddf6b165c0dcb0fc69816b24f62b
+      - cef40e592ff1273e89f9a367df6300e638ab0b96
+      - 9c7bd641ed8b671972f5a4d6e085d2112bd6a618
     record: docs/experiments/EXP-0063.md
     decided_by: user
     decided_on: '2026-08-30'
@@ -4927,7 +4931,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0063-w4u8-fused-qk-requant-softmax
       started_on: '2026-08-30'
-      completed_on: null
+      completed_on: '2026-08-30'
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0063'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0063'
@@ -4954,3 +4958,59 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn
       local_speed_gate: combined_qk_requant_softmax_work_attention_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
+      source_head: 9c7bd641ed8b671972f5a4d6e085d2112bd6a618
+      implementation_commit: cef40e592ff1273e89f9a367df6300e638ab0b96
+      evidence_validator_commit: 9c7bd641ed8b671972f5a4d6e085d2112bd6a618
+      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0063/20260830T075041Z_9c7bd641ed8b_formal'
+      artifact_set: 'D:/llm_exp/models/qwen3-block-htp/exp0063/artifacts/9c7bd641ed8b/formal'
+      gate_record: 'D:/llm_exp/results/qwen3-block-htp/exp0063/20260830T075041Z_9c7bd641ed8b_formal/gate_summary.json'
+      formal_full_profiling_report: 'D:/llm_exp/results/qwen3-block-htp/exp0063/20260830T075041Z_9c7bd641ed8b_formal/full_profiling_report.md'
+      full_profiling_report: docs/experiments/EXP-0063-PROFILING.md
+      gate_record_sha256: 580536993281d92ac573611cd3a837653d380848ced91c648f188c90c585276e
+      formal_full_profiling_report_sha256: 5e225f94565de93bb44538e15b298c8e76ad6692170b830cb9d0c1344f7e5af7
+      static_gate_sha256: 1ef63d45729bf6979c2c82170d5dbc1cdbc3cb7b81126e514cc8392e33761a02
+      package_manifest_sha256: 043f61337b2ad2758bb95791bc4ca768150f457f1f28bc7d20a7ad57eba42359
+      stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      formal_paired_rounds: 7
+      output_hash: 69f22eeb035e5ec5
+      qk_probability_av_hash_equivalence: true
+      qk_hash: 32aa949912e365be
+      probability_hash: 94f2e218f06f9627
+      av_hash: f853658f52032bde
+      implementation_reference_mismatches: 0
+      implementation_reference_max_lsb: 0
+      fixed_vtcm_acquired_bytes: 8388608
+      vtcm_peak_plan_bytes: 5306080
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      spill_fill_count: 0
+      paired_q_head_rows_per_group: 2
+      performance_mode_qk_score_writeback: false
+      repeat1_control_host_wall_ns_per_block_median: 2822708.0
+      repeat1_candidate_host_wall_ns_per_block_median: 2777917.0
+      repeat1_host_wall_change_percent: -1.586810
+      repeat1_paired_host_wall_change_percent_median: -0.352086
+      repeat1_control_qk_requant_softmax_ticks_per_block_median: 14257.0
+      repeat1_candidate_qk_requant_softmax_ticks_per_block_median: 13129.0
+      repeat1_qk_requant_softmax_change_percent: -7.911903
+      repeat1_paired_qk_requant_softmax_change_percent_median: -7.821386
+      repeat1_control_attention_ticks_per_block_median: 7298.0
+      repeat1_candidate_attention_ticks_per_block_median: 6898.0
+      repeat1_attention_change_percent: -5.480954
+      repeat1_paired_attention_change_percent_median: -5.607477
+      repeat10_control_host_wall_ns_per_block_median: 2408963.5
+      repeat10_candidate_host_wall_ns_per_block_median: 2396359.4
+      repeat10_host_wall_change_percent: -0.523217
+      repeat10_paired_host_wall_change_percent_median: -0.610894
+      repeat10_control_qk_requant_softmax_ticks_per_block_median: 14398.8
+      repeat10_candidate_qk_requant_softmax_ticks_per_block_median: 13121.7
+      repeat10_qk_requant_softmax_change_percent: -8.869489
+      repeat10_paired_qk_requant_softmax_change_percent_median: -8.726228
+      repeat10_control_attention_ticks_per_block_median: 7344.2
+      repeat10_candidate_attention_ticks_per_block_median: 7027.0
+      repeat10_attention_change_percent: -4.319054
+      repeat10_paired_attention_change_percent_median: -4.380671
+      gate_result: pass
+      local_adoption_eligible: true
+      conclusion: pairing_both_q_head_rows_restores_full_128_byte_hvx_requant_occupancy_and_fuses_away_the_separate_score_carrier_pass_while_preserving_exact_math_and_zero_intermediate_ddr
+      selected_baseline_changed: false
