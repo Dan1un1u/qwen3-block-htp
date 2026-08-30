@@ -33,6 +33,13 @@ void qbh_hvx_rms_norm_u8_native_activation(
     const struct qbh_block_qparam *output_qparam,
     uint32_t rows, uint32_t width);
 
+void qbh_hvx_rms_norm_u8_native_activation_batched_rsqrt(
+    const uint8_t *input,
+    const struct qbh_block_qparam *input_qparam,
+    const __fp16 *gamma, uint8_t *output_tiles,
+    const struct qbh_block_qparam *output_qparam,
+    uint32_t rows, uint32_t width, uint8_t *rsqrt_scratch);
+
 void qbh_hvx_rms_norm_u8_native_activation_rows(
     const uint8_t *input,
     const struct qbh_block_qparam *input_qparam,

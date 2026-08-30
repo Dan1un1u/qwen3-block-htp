@@ -244,20 +244,44 @@ static void qbh_hvx_rms_norm_u8_impl(
     const __fp16 *gamma, uint8_t *output,
     const struct qbh_block_qparam *output_qparam,
     uint32_t first_row, uint32_t row_count, uint32_t width,
-    uint32_t native_hmx_activation) {
+    uint32_t native_hmx_activation,
+    float *batched_inverse_sqrt) {
     const uint32_t last_row = first_row + row_count;
+    const float input_scale = input_qparam->scale;
+
+    if (batched_inverse_sqrt != NULL) {
+        for (uint32_t row = first_row; row < last_row; ++row) {
+            const uint8_t *input_row = input + (size_t)row * width;
+            const uint64_t centered_square_sum = qbh_centered_square_sum(
+                input_row, width, input_qparam->zero_point);
+            batched_inverse_sqrt[row - first_row] =
+                (float)centered_square_sum * input_scale * input_scale /
+                    (float)width +
+                1.0e-6f;
+        }
+        for (uint32_t row = 0U; row < row_count;
+             row += QBH_HVX_WORD_LANES) {
+            *(HVX_Vector *)(batched_inverse_sqrt + row) =
+                qhmath_hvx_rsqrt_vf(
+                    *(const HVX_Vector *)(batched_inverse_sqrt + row));
+        }
+    }
 
     for (uint32_t row = first_row; row < last_row; ++row) {
         const uint8_t *input_row = input + (size_t)row * width;
         uint8_t *output_row = native_hmx_activation == 0U
             ? output + (size_t)row * width : NULL;
-        const uint64_t centered_square_sum = qbh_centered_square_sum(
-            input_row, width, input_qparam->zero_point);
-        const float input_scale = input_qparam->scale;
-        const float real_square_sum =
-            (float)centered_square_sum * input_scale * input_scale;
-        const float inverse = 1.0f / sqrtf(
-            real_square_sum / (float)width + 1.0e-6f);
+        float inverse;
+        if (batched_inverse_sqrt != NULL) {
+            inverse = batched_inverse_sqrt[row - first_row];
+        } else {
+            const uint64_t centered_square_sum = qbh_centered_square_sum(
+                input_row, width, input_qparam->zero_point);
+            const float real_square_sum =
+                (float)centered_square_sum * input_scale * input_scale;
+            inverse = 1.0f / sqrtf(
+                real_square_sum / (float)width + 1.0e-6f);
+        }
         const float coefficient =
             input_scale * inverse / output_qparam->scale;
 
@@ -300,7 +324,7 @@ void qbh_hvx_rms_norm_u8(
     uint32_t rows, uint32_t width) {
     qbh_hvx_rms_norm_u8_impl(
         input, input_qparam, gamma, output, output_qparam,
-        0U, rows, width, 0U);
+        0U, rows, width, 0U, NULL);
 }
 
 void qbh_hvx_rms_norm_u8_native_activation(
@@ -311,7 +335,18 @@ void qbh_hvx_rms_norm_u8_native_activation(
     uint32_t rows, uint32_t width) {
     qbh_hvx_rms_norm_u8_impl(
         input, input_qparam, gamma, output_tiles, output_qparam,
-        0U, rows, width, 1U);
+        0U, rows, width, 1U, NULL);
+}
+
+void qbh_hvx_rms_norm_u8_native_activation_batched_rsqrt(
+    const uint8_t *input,
+    const struct qbh_block_qparam *input_qparam,
+    const __fp16 *gamma, uint8_t *output_tiles,
+    const struct qbh_block_qparam *output_qparam,
+    uint32_t rows, uint32_t width, uint8_t *rsqrt_scratch) {
+    qbh_hvx_rms_norm_u8_impl(
+        input, input_qparam, gamma, output_tiles, output_qparam,
+        0U, rows, width, 1U, (float *)rsqrt_scratch);
 }
 
 void qbh_hvx_rms_norm_u8_native_activation_rows(
@@ -322,7 +357,7 @@ void qbh_hvx_rms_norm_u8_native_activation_rows(
     uint32_t first_row, uint32_t row_count, uint32_t width) {
     qbh_hvx_rms_norm_u8_impl(
         input, input_qparam, gamma, output_tiles, output_qparam,
-        first_row, row_count, width, 1U);
+        first_row, row_count, width, 1U, NULL);
 }
 
 #define QBH_U8_RESIDUAL_FRAC_BITS UINT32_C(14)
@@ -882,7 +917,7 @@ void qbh_hvx_qk_norm_rope_u8_native_head_pair(
         qbh_u8_norm_reduction_mode >=
         QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT;
     const uint32_t shared_rope =
-        qbh_u8_norm_reduction_mode ==
+        qbh_u8_norm_reduction_mode >=
         QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE;
 
     qbh_qk_norm_rope_load_gamma_sf32(gamma, &gamma_sf32);
@@ -1068,7 +1103,7 @@ void qbh_hvx_qk_norm_rope_u8_native_k_head_pair(
         qbh_u8_norm_reduction_mode >=
         QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT;
     const uint32_t shared_rope =
-        qbh_u8_norm_reduction_mode ==
+        qbh_u8_norm_reduction_mode >=
         QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE;
 
     qbh_qk_norm_rope_load_gamma_sf32(gamma, &gamma_sf32);

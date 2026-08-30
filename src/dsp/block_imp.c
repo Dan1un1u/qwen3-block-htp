@@ -696,7 +696,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->w4f16_pipeline_mode >
             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH ||
         header->u8_norm_reduction_mode >
-            QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE ||
+            QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE_INPUT_RSQRT ||
         (header->variant != QBH_BLOCK_W4U8 &&
          header->u8_norm_reduction_mode !=
              QBH_BLOCK_U8_NORM_REDUCTION_SCALAR) ||
@@ -7938,13 +7938,25 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         if ((header->common_ops_mask &
              QBH_BLOCK_COMMON_OP_RMS_NORM) != 0U) {
             if (w4u8_qkv_native_input_enabled != 0U) {
-                qbh_hvx_rms_norm_u8_native_activation(
-                    buffers->residual,
-                    &header->qparams[QBH_BLOCK_QP_BLOCK_INPUT],
-                    (const __fp16 *)buffers->input_norm_weight,
-                    buffers->hmx_activation,
-                    &header->qparams[QBH_BLOCK_QP_INPUT_NORM],
-                    QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+                if (header->u8_norm_reduction_mode ==
+                    QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE_INPUT_RSQRT) {
+                    qbh_hvx_rms_norm_u8_native_activation_batched_rsqrt(
+                        buffers->residual,
+                        &header->qparams[QBH_BLOCK_QP_BLOCK_INPUT],
+                        (const __fp16 *)buffers->input_norm_weight,
+                        buffers->hmx_activation,
+                        &header->qparams[QBH_BLOCK_QP_INPUT_NORM],
+                        QBH_BLOCK_M, QBH_BLOCK_HIDDEN,
+                        buffers->attention_concat);
+                } else {
+                    qbh_hvx_rms_norm_u8_native_activation(
+                        buffers->residual,
+                        &header->qparams[QBH_BLOCK_QP_BLOCK_INPUT],
+                        (const __fp16 *)buffers->input_norm_weight,
+                        buffers->hmx_activation,
+                        &header->qparams[QBH_BLOCK_QP_INPUT_NORM],
+                        QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+                }
             } else {
                 qbh_hvx_rms_norm_u8(
                     buffers->residual,
@@ -8001,9 +8013,16 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     }
     header->input_norm_ticks += HAP_perf_get_qtimer_count() - start;
 
+    if (header->variant == QBH_BLOCK_W4U8 &&
+        header->numerical_audit_enabled != 0U &&
+        w4u8_qkv_native_input_enabled != 0U) {
+        header->u8_input_norm_actual_hash = qbh_fnv1a64_bytes(
+            buffers->hmx_activation, hidden_elements);
+    }
+
     start = HAP_perf_get_qtimer_count();
     if (header->variant == QBH_BLOCK_W4U8 &&
-        header->u8_norm_reduction_mode ==
+        header->u8_norm_reduction_mode >=
             QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE) {
         qbh_hvx_qk_rope_preconvert_sf32(
             (const __fp16 *)buffers->rope_cos,

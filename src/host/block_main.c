@@ -865,6 +865,13 @@ static int qbh_parse_u8_norm_reduction_mode(
             QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE;
         return 0;
     }
+    if (strcmp(text,
+               "hvx_tree_qk_batched_rsqrt_shared_rope_input_rsqrt") == 0 ||
+        strcmp(text, "input_batched_rsqrt") == 0) {
+        *mode =
+            QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE_INPUT_RSQRT;
+        return 0;
+    }
     return -1;
 }
 
@@ -876,6 +883,8 @@ static const char *qbh_u8_norm_reduction_mode_name(uint32_t mode) {
             return "hvx_tree_qk_batched_rsqrt";
         case QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE:
             return "hvx_tree_qk_batched_rsqrt_shared_rope";
+        case QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE_INPUT_RSQRT:
+            return "hvx_tree_qk_batched_rsqrt_shared_rope_input_rsqrt";
         default:
             return "scalar";
     }
@@ -1453,7 +1462,7 @@ int main(int argc, char **argv) {
         w4u8_qkvo_pipeline_mode >
             QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS ||
         u8_norm_reduction_mode >
-            QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE ||
+            QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE_INPUT_RSQRT ||
         (variant != QBH_BLOCK_W4U8 &&
          u8_norm_reduction_mode !=
              QBH_BLOCK_U8_NORM_REDUCTION_SCALAR) ||
@@ -1615,7 +1624,7 @@ int main(int argc, char **argv) {
                         "qkvo_batch4_qk_head_pairs] "
                         "[u8_norm_reduction:scalar|hvx_tree|"
                         "hvx_tree_qk_batched_rsqrt|"
-                        "hvx_tree_qk_batched_rsqrt_shared_rope]\n",
+                        "hvx_tree_qk_batched_rsqrt_shared_rope|hvx_tree_qk_batched_rsqrt_shared_rope_input_rsqrt]\n",
                 argv[0]);
         return 2;
     }
@@ -2160,7 +2169,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0065\","
+        "{\"experiment\":\"EXP-0067\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2251,6 +2260,7 @@ int main(int argc, char **argv) {
         "\"w4u8_qkv_batch_count\":%" PRIu32 ","
         "\"w4u8_qkvo_prefetch_count\":%" PRIu32 ","
         "\"w4u8_qkvo_overlap_schedule_count\":%" PRIu32 ","
+        "\"u8_input_norm_actual_hash\":\"%016" PRIx64 "\","
         "\"u8_attention_expected_score_hash\":\"%016" PRIx64 "\","
         "\"u8_attention_actual_score_hash\":\"%016" PRIx64 "\","
         "\"u8_attention_expected_probability_hash\":\"%016" PRIx64 "\","
@@ -2538,6 +2548,7 @@ int main(int argc, char **argv) {
         header->w4u8_qkv_batch_count,
         header->w4u8_qkvo_prefetch_count,
         header->w4u8_qkvo_overlap_schedule_count,
+        header->u8_input_norm_actual_hash,
         header->u8_attention_expected_score_hash,
         header->u8_attention_actual_score_hash,
         header->u8_attention_expected_probability_hash,
