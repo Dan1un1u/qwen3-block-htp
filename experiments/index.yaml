@@ -6187,14 +6187,15 @@ experiments:
     variants:
       - exp0072_coarse_per_group_attention_pipeline_control
       - dependency_driven_qk_row_sliced_softmax_av_stream_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4u8-dependency-softmax-stream
     source_branches:
       - codex/exp-0075-w4u8-dependency-softmax-stream
-    source_commits: []
+    source_commits:
+      - 8e3fe8561e5b1bf994d20f8e93c96dd6087c0af2
     record: docs/experiments/EXP-0075.md
     decided_by: user
     decided_on: '2026-08-30'
@@ -6203,7 +6204,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0075-w4u8-dependency-softmax-stream
       started_on: '2026-08-30'
-      completed_on: null
+      completed_on: '2026-08-30'
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0075'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0075'
@@ -6226,3 +6227,48 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn_unchanged_hmx_commands_tile_pairs_and_weight_traffic
       local_speed_gate: attention_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
+      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0075/20260830T112231Z_8e3fe8561e5b_formal'
+      artifact_set: 'D:/llm_exp/models/qwen3-block-htp/exp0075/artifacts/8e3fe8561e5b/formal'
+      source_commit: 8e3fe8561e5b1bf994d20f8e93c96dd6087c0af2
+      formal_samples_per_mode_per_repeat: 7
+      boot_id_stable: true
+      exact_reference: true
+      exact_control_candidate_boundaries: true
+      output_hash: 69f22eeb035e5ec5
+      input_norm_hash: 7255c2406108617c
+      qk_hash: 32aa949912e365be
+      probability_hash: 94f2e218f06f9627
+      av_hash: f853658f52032bde
+      candidate_softmax_tasks_per_block: 16
+      global_attention_stage_barriers: 0
+      fixed_vtcm_gate: pass
+      zero_intermediate_ddr_gate: pass
+      zero_spill_fill_gate: pass
+      one_hmx_owner_gate: pass
+      unchanged_hmx_and_weight_traffic_gate: pass
+      repeat1_control_host_wall_ns_per_block_median: 2494375.0
+      repeat1_candidate_host_wall_ns_per_block_median: 2443542.0
+      repeat1_host_change_percent: -2.037905
+      repeat1_paired_host_change_percent_median: -2.103330
+      repeat1_control_attention_ticks_per_block_median: 4698.0
+      repeat1_candidate_attention_ticks_per_block_median: 3780.0
+      repeat1_attention_change_percent: -19.540230
+      repeat1_paired_attention_change_percent_median: -19.748347
+      repeat10_control_host_wall_ns_per_block_median: 2067552.1
+      repeat10_candidate_host_wall_ns_per_block_median: 2027734.4
+      repeat10_host_change_percent: -1.925838
+      repeat10_paired_host_change_percent_median: -1.989921
+      repeat10_control_attention_ticks_per_block_median: 4706.0
+      repeat10_candidate_attention_ticks_per_block_median: 3781.6
+      repeat10_attention_change_percent: -19.643009
+      repeat10_paired_attention_change_percent_median: -19.409265
+      repeat10_control_softmax_ticks_per_block_median: 13999.5
+      repeat10_candidate_softmax_ticks_per_block_median: 14123.7
+      repeat10_softmax_change_percent: 0.887175
+      repeat10_control_pipeline_wait_ticks_per_block_median: 1032.8
+      repeat10_candidate_pipeline_wait_ticks_per_block_median: 1075.4
+      repeat10_pipeline_wait_change_percent: 4.124710
+      gate_result: pass
+      local_adoption_eligible: true
+      conclusion: per_group_generation_dependencies_retain_row_sliced_softmax_parallelism_without_global_stage_barriers_cutting_attention_about_nineteen_point_six_percent_and_repeat10_host_about_one_point_nine_percent
+      selected_baseline_changed: false

@@ -574,3 +574,15 @@ block gate fails. The result supports finer Softmax task granularity but rejects
 full QK/Softmax/AV stage barriers as the implementation boundary.
 _Avoid_: accepted W4U8 candidate, free stage barriers, lower aggregate Softmax
 work, permission to stack global staging onto a later candidate
+
+**Dependency-Driven Row-Sliced U8 Attention**:
+The EXP-0075 W4U8 schedule that starts the six-context Attention pool once and
+lets every context move independently through the shared QK queue, sixteen
+32-row Softmax tasks, and the AV queue. Per-group generation tags publish QK
+scores and the two completed probability slices; no full-pool QK-to-Softmax or
+Softmax-to-AV barrier exists. It keeps byte-identical arithmetic, 176 HMX
+commands, 49,408 tile pairs, zero intermediate DDR and one HMX owner. Relative
+to EXP-0072 it reduces the Attention ledger about 19.6% and repeat-ten Host wall
+about 1.9%, and is the latest locally eligible W4U8 candidate.
+_Avoid_: full FlashAttention fusion, concurrent HMX owners, changed Softmax
+math, Selected Baseline without user promotion

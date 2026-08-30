@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0075
+  active_experiment: null
   next_experiment_number: 76
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,31 +27,31 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0074
-  last_completed_source_commit: 57b098ec5a76e9a9062d0b536b3b81cb24d28729
-  provisional_source_parent: EXP-0072
+  last_completed_experiment: EXP-0075
+  last_completed_source_commit: 8e3fe8561e5b1bf994d20f8e93c96dd6087c0af2
+  provisional_source_parent: EXP-0075
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: dependency_driven_row_sliced_attention_implementation
+  active_experiment_stage: none
   active_experiment_evidence: null
-  active_experiment_gate: not_run
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0074/20260830T111113Z_57b098ec5a76_formal'
+  active_experiment_gate: not_applicable
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0075/20260830T112231Z_8e3fe8561e5b_formal'
   latest_w4u8_candidate:
-    id: W4U8-EXP0072-SIX-CONTEXT-RESIDUAL
-    experiment: EXP-0072
+    id: W4U8-EXP0075-DEPENDENCY-ATTENTION-STREAM
+    experiment: EXP-0075
     project_variant: W4U8
-    physical_plan: exp0071_plus_main_and_five_native_residual_contexts
-    source_branch: codex/exp-0072-w4u8-six-context-residual
-    source_head: 6a7be24f93a5503b28363d1c99b868d788928870
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0072/20260830T102828Z_6a7be24f93a5_formal'
+    physical_plan: exp0072_plus_dependency_driven_qk_row_softmax_av_stream
+    source_branch: codex/exp-0075-w4u8-dependency-softmax-stream
+    source_head: 8e3fe8561e5b1bf994d20f8e93c96dd6087c0af2
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0075/20260830T112231Z_8e3fe8561e5b_formal'
     adoption_status: pending
     local_gate: pass
     candidate_status: awaiting_user_promotion
-    repeat1_host_wall_ns_per_block_median: 2471198.0
-    repeat10_host_wall_ns_per_block_median: 2060849.0
-    repeat1_combined_residual_ticks_per_block_median: 970.0
-    repeat10_combined_residual_ticks_per_block_median: 967.6
+    repeat1_host_wall_ns_per_block_median: 2443542.0
+    repeat10_host_wall_ns_per_block_median: 2027734.4
+    repeat1_attention_ticks_per_block_median: 3780.0
+    repeat10_attention_ticks_per_block_median: 3781.6
     input_norm_task_count_per_block: 16
     residual_task_count_per_boundary_per_block: 16
     residual_active_contexts: 6
@@ -59,6 +59,8 @@ current_scope:
     attention_hvx_contexts: 6
     attention_hvx_workers: 5
     sole_lut_templates_per_group: 14
+    softmax_row_tasks_per_block: 16
+    global_attention_stage_barriers: 0
     attention_hmx_commands_per_block: 16
     total_hmx_commands_per_block: 176
     total_hmx_tile_pairs_per_block: 49408
