@@ -32,12 +32,12 @@ def main():
             if len(control) != len(trial) or not control:
                 raise RuntimeError("paired record count mismatch")
             comparison = {"rounds": len(control)}
+            # Down timeline counters are audit-only by contract and remain
+            # zero in ordinary performance records.
             for metric, already_per in (
                 ("host_wall_ns_per_block", True),
                 ("down_ticks", False),
                 ("w4u8_mlp_down_pipeline_ticks", False),
-                ("w4u8_down_first_hmx_start_ticks", False),
-                ("w4u8_down_continuation_ready_wait_ticks", False),
                 ("w4u8_mlp_hmx_compute_ticks", False),
                 ("w4u8_mlp_weight_expand_ticks", False),
             ):
