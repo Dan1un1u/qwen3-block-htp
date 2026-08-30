@@ -72,7 +72,7 @@ cp "${project_root}/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so" "$
     printf 'experiment=EXP-0063\nsource_branch=%s\nsource_head=%s\n' "${source_branch}" "${source_head}"
     printf 'execution_unit=qwen3_layer14_complete_block_m64\n'
     printf 'control=separate-qk-requant-then-softmax\n'
-    printf 'candidate=row-fused-qk-requant-softmax\n'
+    printf 'candidate=paired-row-fused-qk-requant-softmax\n'
     printf 'repeat_contract=repeat1,repeat10\npaired_rounds=%d\n' "${paired_rounds}"
     printf 'physical_contract=exact_8mib_vtcm_one_fastrpc_one_hmx_owner\nintermediate_ddr_allowed=false\n'
     printf 'package=%s\nresult_dir=%s\nartifact_dir=%s\n' "${package}" "${result_dir}" "${artifact_dir}"

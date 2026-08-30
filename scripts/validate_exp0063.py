@@ -115,7 +115,10 @@ def build_summary(result_dir: Path, package_dir: Path) -> dict[str, object]:
     summary.update({
         "experiment": "EXP-0063",
         "control": "separate QK requantization pass then Softmax",
-        "candidate": "exact QK requantization fused into Softmax row load",
+        "candidate": (
+            "paired two-head Softmax rows with exact QK requantization "
+            "fused into the full-width row load"
+        ),
     })
     return summary
 
@@ -132,8 +135,9 @@ def render_report(summary: dict[str, object]) -> str:
     lines = [
         "# EXP-0063 — Complete profiling report", "",
         "The control writes each 8 KiB requantized QK score group and then "
-        "loads it again in Softmax. The candidate applies the identical "
-        "requantization while loading each 64-element Softmax row. Audit "
+        "loads it again in Softmax. The candidate packs the corresponding "
+        "64-element rows from both Q heads into one 128-byte HVX vector and "
+        "applies the identical requantization at full SIMD occupancy. Audit "
         "mode writes the converted row back solely to preserve the "
         "authoritative QK hash; performance mode performs no score writeback.",
         "",

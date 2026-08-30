@@ -19,4 +19,4 @@ if grep -Rqs --exclude='check_exp0063_static.sh' \
 fi
 
 printf '%s\n' \
-    '{"experiment":"EXP-0063","static_gate":"pass","block_abi":35,"runtime_telemetry_experiment":63,"control":"separate-qk-requant-then-softmax","candidate":"row-fused-qk-requant-softmax","qnn_dependency":false,"vtcm_request_bytes":8388608,"single_hmx_owner":true}'
+    '{"experiment":"EXP-0063","static_gate":"pass","block_abi":35,"runtime_telemetry_experiment":63,"control":"separate-qk-requant-then-softmax","candidate":"paired-row-fused-qk-requant-softmax","qnn_dependency":false,"vtcm_request_bytes":8388608,"single_hmx_owner":true}'
