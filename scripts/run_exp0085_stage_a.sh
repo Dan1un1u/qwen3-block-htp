@@ -38,4 +38,4 @@ mkdir -p "$(dirname "${timeline_output}")"
 "${adb_exe}" shell rm -f "${remote_timeline}"
 "${adb_exe}" shell \
     "cd ${remote_root} && QBH_DUMP_QKV_TIMELINE_PATH=${remote_timeline} LD_LIBRARY_PATH=${remote_root} DSP_LIBRARY_PATH=${remote_root} ADSP_LIBRARY_PATH=${remote_root} ./qwen3_block_cli ${remote_root}/block_package_layer14_m64 ${variant} ${repeat_count} ${runtime_args}"
-"${adb_exe}" pull "${remote_timeline}" "${timeline_output}" >/dev/null
+"${adb_exe}" exec-out cat "${remote_timeline}" >"${timeline_output}"
