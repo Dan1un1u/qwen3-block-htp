@@ -7611,14 +7611,15 @@ experiments:
       - gate_up_two_way_interleaved_vlut32_candidate
       - gate_up_four_way_interleaved_vlut32_candidate_if_two_way_is_promising
       - common_projection_interleaved_decoder_if_gate_up_passes
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-interleaved-nibble-decode
     source_branches:
       - codex/exp-0091-w4u8-interleaved-nibble-decode
-    source_commits: []
+    source_commits:
+      - e2c39af9716d272ac2c95936495002ee04a10214
     record: docs/experiments/EXP-0091.md
     decided_by: user
     decided_on: '2026-08-31'
@@ -7627,10 +7628,10 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0091-w4u8-interleaved-nibble-decode
       started_on: '2026-08-31'
-      completed_on: null
+      completed_on: '2026-08-31'
     evidence:
-      formal_results: null
-      retained_artifacts: null
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0091/stage_b_e2c39af9716d'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0091/artifacts/e2c39af9716d/stage_b'
       source_parent_commit: 6dc437fe08eaccf119c4cbce82937e22f125da0b
       direct_w4u8_control: W4U8-EXP0084-FAIR-CANONICAL
       contextual_w4f16_comparator: W4F16-EXP0084-COMMON-NORM-POOLS
@@ -7654,3 +7655,38 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_same_weight_bytes_512_dma_descriptors_176_hmx_commands_and_49408_tile_pairs
       stage_b_speed_gate: gate_up_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10_without_other_module_regression_beyond_noise
       completion_gate: static_schedule_evidence_then_five_interleaved_stage_b_rounds_then_optional_seven_round_stage_c_and_pc027_pc028_complete_profiling_closure
+      stage_a_static_gate_result: pass
+      stage_a_control_vectors_per_loop: 1
+      stage_a_control_vlut32_per_loop: 2
+      stage_a_candidate_vectors_per_loop: 2
+      stage_a_candidate_vlut32_per_loop: 4
+      stage_a_candidate_stack_spill: false
+      stage_b_rounds: 5
+      stage_b_repeat1_weight_expand_change_percent: -5.2871
+      stage_b_repeat1_weight_expand_paired_change_percent: -5.6173
+      stage_b_repeat1_hmx_ready_wait_change_percent: -3.1677
+      stage_b_repeat1_gate_up_change_percent: 1.2388
+      stage_b_repeat1_gate_up_paired_change_percent: 1.6960
+      stage_b_repeat1_host_change_percent: -2.0194
+      stage_b_repeat1_host_paired_change_percent: -2.2636
+      stage_b_repeat10_weight_expand_change_percent: -5.3190
+      stage_b_repeat10_weight_expand_paired_change_percent: -5.5187
+      stage_b_repeat10_hmx_ready_wait_change_percent: -2.8767
+      stage_b_repeat10_gate_up_change_percent: 0.9483
+      stage_b_repeat10_gate_up_paired_change_percent: 0.6515
+      stage_b_repeat10_host_change_percent: -0.2471
+      stage_b_repeat10_host_paired_change_percent: -1.0770
+      stage_b_hmx_compute_change_percent_repeat1_repeat10: 5.092_4.059
+      stage_b_gate_result: fail
+      stage_c_status: not_run_by_contract_because_gate_up_regressed_at_repeat1_and_repeat10
+      correctness_gate_result: pass_output_qk_probability_av_byte_exact_zero_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_25444352_weight_bytes_512_dma_descriptors_176_hmx_commands_49408_u8s8_tile_pairs
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_reused_exp0084_canonical
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: 044ede1bcd362b95152e72b02c2d470435ea376192645c49e141af357e002d5e
+      full_profiling_report_sha256: e46571ddce39ed30c1bf2bf3c24d55c28d87ce37ab8b136a19f154c0a56158ad
+      evidence_manifest_sha256: d2dec2767971ceb0cb3acef0cda3e40bc565017f76f9681b35b15cfad4913c4c
+      evidence_sha256_ledger_sha256: d9222f3f091b3659dae78afd97112ce3a2e1154ebf8d8916b07a9d4b0dcece00
+      conclusion: explicit_two_way_vlut32_interleaving_shortens_decoder_work_but_increases_overlapped_hmx_compute_and_regresses_gate_up_so_no_four_way_or_common_projection_extension_is_allowed
+      selected_baseline_changed: false

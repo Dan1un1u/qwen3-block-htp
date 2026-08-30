@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0091
+  active_experiment: null
   next_experiment_number: 92
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,16 +27,42 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0090
-  last_completed_source_commit: 61695b9d43361575bc3c6c0886f9280f6681499f
+  last_completed_experiment: EXP-0091
+  last_completed_source_commit: e2c39af9716d272ac2c95936495002ee04a10214
   provisional_source_parent: EXP-0084
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: static_decoder_schedule_audit_then_gate_up_two_way_interleave
+  active_experiment_stage: null
   active_experiment_evidence: null
-  active_experiment_gate: not_run
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0090/stage_a_0792b2cbb845'
+  active_experiment_gate: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0091/stage_b_e2c39af9716d'
+  latest_w4u8_interleaved_nibble_decode_experiment:
+    id: EXP-0091
+    source_branch: codex/exp-0091-w4u8-interleaved-nibble-decode
+    source_head: e2c39af9716d272ac2c95936495002ee04a10214
+    direct_control: exp0084_w4u8_fair_canonical_single_vector_vlut32
+    candidate: gate_up_two_way_interleaved_vlut32
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0091/stage_b_e2c39af9716d'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0091/artifacts/e2c39af9716d/stage_b'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    static_gate: pass_two_independent_vectors_four_vlut32_no_stack_spill
+    correctness_gate: pass
+    physical_gate: pass
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass_reused_exp0084_canonical
+    repeat1_weight_expand_delta_percent: -5.2871
+    repeat1_hmx_ready_wait_delta_percent: -3.1677
+    repeat1_gate_up_delta_percent: 1.2388
+    repeat1_host_delta_percent: -2.0194
+    repeat10_weight_expand_delta_percent: -5.3190
+    repeat10_hmx_ready_wait_delta_percent: -2.8767
+    repeat10_gate_up_delta_percent: 0.9483
+    repeat10_host_delta_percent: -0.2471
+    conclusion: two_way_interleaving_improves_decoder_work_and_ready_wait_but_denser_hvx_overlap_increases_hmx_compute_and_regresses_gate_up_at_both_repeats
+    selected_baseline_changed: false
   latest_w4u8_gate_up_activation_priority_experiment:
     id: EXP-0090
     source_branch: codex/exp-0090-w4u8-gate-up-activation-priority
