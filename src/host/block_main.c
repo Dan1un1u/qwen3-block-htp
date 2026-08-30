@@ -720,6 +720,13 @@ static int qbh_parse_mlp_mode(const char *text, uint32_t *mode) {
             QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_GATE_UP_HVX;
         return 0;
     }
+    if (strcmp(
+            text,
+            "w4u8_streaming_persistent_mlp_hvx") == 0 ||
+        strcmp(text, "w4u8_persistent_mlp_hvx") == 0) {
+        *mode = QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX;
+        return 0;
+    }
     return -1;
 }
 
@@ -742,6 +749,9 @@ static const char *qbh_mlp_mode_name(uint32_t mode) {
     if (mode ==
         QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_GATE_UP_HVX) {
         return "w4u8_streaming_persistent_gate_up_hvx";
+    }
+    if (mode == QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX) {
+        return "w4u8_streaming_persistent_mlp_hvx";
     }
     return "control";
 }
@@ -1565,7 +1575,7 @@ int main(int argc, char **argv) {
              QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6 &&
          attention_hvx_contexts != 6U) ||
         mlp_mode >
-            QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_GATE_UP_HVX ||
+            QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX ||
         mlp_hvx_contexts == 0U || mlp_hvx_contexts > 4U ||
         (mlp_mode == QBH_BLOCK_MLP_CONTROL && mlp_hvx_contexts != 1U) ||
         (mlp_mode != QBH_BLOCK_MLP_CONTROL &&
@@ -1668,7 +1678,8 @@ int main(int argc, char **argv) {
                         "[mlp:control|parallel_silu|streaming|"
                         "crouton_native|crouton_native_batch8|"
                         "w4u8_streaming|"
-                        "w4u8_streaming_persistent_gate_up_hvx] "
+                        "w4u8_streaming_persistent_gate_up_hvx|"
+                        "w4u8_streaming_persistent_mlp_hvx] "
                         "[mlp_hvx_contexts:1..4] "
                         "[mlp_chunk_vectors:16|32|64|128|256] "
                         "[attention_pipeline:control|parallel_qk_norm_rope|"
@@ -2233,7 +2244,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0078\","
+        "{\"experiment\":\"EXP-0079\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2481,6 +2492,9 @@ int main(int argc, char **argv) {
         "\"w4u8_gate_up_persistent_hvx_dispatch_count\":%" PRIu32 ","
         "\"w4u8_gate_up_persistent_hvx_worker_count\":%" PRIu32 ","
         "\"w4u8_gate_up_transient_hvx_thread_count\":%" PRIu32 ","
+        "\"w4u8_down_persistent_hvx_dispatch_count\":%" PRIu32 ","
+        "\"w4u8_down_persistent_hvx_worker_count\":%" PRIu32 ","
+        "\"w4u8_down_transient_hvx_thread_count\":%" PRIu32 ","
         "\"weight_dma_ticks\":%" PRIu64 ","
         "\"hmx_compute_ticks\":%" PRIu64 ","
         "\"projection_pack_ticks\":%" PRIu64 ","
@@ -2768,6 +2782,9 @@ int main(int argc, char **argv) {
         header->w4u8_gate_up_persistent_hvx_dispatch_count,
         header->w4u8_gate_up_persistent_hvx_worker_count,
         header->w4u8_gate_up_transient_hvx_thread_count,
+        header->w4u8_down_persistent_hvx_dispatch_count,
+        header->w4u8_down_persistent_hvx_worker_count,
+        header->w4u8_down_transient_hvx_thread_count,
         header->weight_dma_ticks,
         header->hmx_compute_ticks, header->projection_pack_ticks,
         header->w4f16_expand_ticks,

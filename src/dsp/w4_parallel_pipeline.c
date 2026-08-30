@@ -539,9 +539,17 @@ int qbh_run_chunked_w4_external_hvx_worker(void *worker_context) {
         (struct qbh_hvx_worker_job *)worker_context, 0U);
 }
 
+int qbh_run_chunked_w4_managed_hvx_worker(void *worker_context) {
+    if (worker_context == NULL) {
+        return AEE_EBADPARM;
+    }
+    return qbh_hvx_worker_run(
+        (struct qbh_hvx_worker_job *)worker_context, 1U);
+}
+
 static void qbh_hvx_worker_main(void *opaque) {
-    int exit_status = qbh_hvx_worker_run(
-        (struct qbh_hvx_worker_job *)opaque, 1U);
+    int exit_status =
+        qbh_run_chunked_w4_managed_hvx_worker(opaque);
     qurt_thread_exit(exit_status);
 }
 

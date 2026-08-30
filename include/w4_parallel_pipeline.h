@@ -101,5 +101,6 @@ int qbh_run_chunked_w4_pipeline_external_hvx(
     const struct qbh_w4_hvx_dispatch_runner *hvx_runner);
 
 int qbh_run_chunked_w4_external_hvx_worker(void *worker_context);
+int qbh_run_chunked_w4_managed_hvx_worker(void *worker_context);
 
 #endif

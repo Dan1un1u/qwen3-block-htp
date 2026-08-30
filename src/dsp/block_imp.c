@@ -88,6 +88,7 @@ _Static_assert(
     QBH_BLOCK_MLP_CROUTON_GROUPS
 #define QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS UINT32_C(3)
 #define QBH_BLOCK_W4U8_DOWN_HVX_WORKERS UINT32_C(6)
+#define QBH_BLOCK_W4U8_DOWN_PERSISTENT_HVX_WORKERS UINT32_C(5)
 #define QBH_BLOCK_W4U8_GATE_UP_PAIR_SLOTS UINT32_C(8)
 #define QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES UINT32_C(8)
 #define QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES UINT32_C(4)
@@ -338,10 +339,19 @@ struct qbh_block_w4f16_cross_prefetch {
     uint32_t active;
 };
 
+struct qbh_block_w4u8_hybrid_hvx_runner {
+    struct qbh_block_w4f16_pool *pool;
+    qurt_thread_t transient_thread;
+    uint32_t transient_thread_created;
+};
+
 static uint8_t qbh_block_hmx_stack[QBH_BLOCK_HMX_STACK_BYTES]
     __attribute__((aligned(128)));
 static uint8_t qbh_block_w4f16_hvx_stacks
     [QBH_BLOCK_MAX_POOL_HVX_WORKERS][QBH_BLOCK_W4F16_HVX_STACK_BYTES]
+    __attribute__((aligned(128)));
+static uint8_t qbh_block_w4u8_down_transient_hvx_stack
+    [QBH_BLOCK_W4F16_HVX_STACK_BYTES]
     __attribute__((aligned(128)));
 
 static int qbh_attention_parallel_qk_norm_enabled(uint32_t mode);
@@ -871,7 +881,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          header->attention_hvx_contexts !=
              QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS) ||
         header->mlp_mode >
-            QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_GATE_UP_HVX ||
+            QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX ||
         header->mlp_hvx_contexts == 0U ||
         header->mlp_hvx_contexts > QBH_BLOCK_W4F16_HVX_WORKERS ||
         (header->mlp_chunk_vectors != 16U &&
@@ -2416,6 +2426,123 @@ static int qbh_w4u8_pipeline_pool_wait(
         pool->jobs[worker].w4u8_pipeline_worker_context = NULL;
     }
     pool->active_worker_count = 0U;
+    return result;
+}
+
+static void qbh_w4u8_down_transient_hvx_worker_main(void *opaque) {
+    qurt_thread_exit(
+        qbh_run_chunked_w4_managed_hvx_worker(opaque));
+}
+
+static int qbh_w4u8_hybrid_down_runner_start(
+    void *context, void *const *worker_contexts,
+    uint32_t worker_count) {
+    struct qbh_block_w4u8_hybrid_hvx_runner *runner =
+        (struct qbh_block_w4u8_hybrid_hvx_runner *)context;
+    struct qbh_block_w4f16_pool *pool;
+    qurt_thread_attr_t attributes;
+
+    if (runner == NULL || worker_contexts == NULL ||
+        worker_count != QBH_BLOCK_W4U8_DOWN_HVX_WORKERS ||
+        runner->transient_thread_created != 0U) {
+        return AEE_EBADPARM;
+    }
+    pool = runner->pool;
+    if (pool == NULL ||
+        pool->worker_count <
+            QBH_BLOCK_W4U8_DOWN_PERSISTENT_HVX_WORKERS) {
+        return AEE_EBADPARM;
+    }
+    for (uint32_t worker = 0U;
+         worker < QBH_BLOCK_W4U8_DOWN_PERSISTENT_HVX_WORKERS;
+         ++worker) {
+        if (worker_contexts[worker] == NULL ||
+            pool->jobs[worker].command_kind !=
+                QBH_BLOCK_HVX_POOL_NONE) {
+            return AEE_EFAILED;
+        }
+    }
+    if (worker_contexts[QBH_BLOCK_W4U8_DOWN_PERSISTENT_HVX_WORKERS]
+        == NULL) {
+        return AEE_EBADPARM;
+    }
+
+    qurt_thread_attr_init(&attributes);
+    qurt_thread_attr_set_name(
+        &attributes, "qbh-w4u8-down5");
+    qurt_thread_attr_set_stack_addr(
+        &attributes, qbh_block_w4u8_down_transient_hvx_stack);
+    qurt_thread_attr_set_stack_size(
+        &attributes, QBH_BLOCK_W4F16_HVX_STACK_BYTES);
+    qurt_thread_attr_set_priority(
+        &attributes,
+        qurt_thread_get_priority(qurt_thread_get_id()));
+    qurt_thread_attr_set_detachstate(
+        &attributes, QURT_THREAD_ATTR_CREATE_JOINABLE);
+    if (qurt_thread_create(
+            &runner->transient_thread, &attributes,
+            qbh_w4u8_down_transient_hvx_worker_main,
+            worker_contexts[
+                QBH_BLOCK_W4U8_DOWN_PERSISTENT_HVX_WORKERS]) !=
+        QURT_EOK) {
+        return AEE_EFAILED;
+    }
+    runner->transient_thread_created = 1U;
+
+    pool->active_worker_count =
+        QBH_BLOCK_W4U8_DOWN_PERSISTENT_HVX_WORKERS;
+    for (uint32_t worker = 0U;
+         worker < pool->active_worker_count; ++worker) {
+        pool->jobs[worker].w4u8_pipeline_worker_context =
+            worker_contexts[worker];
+        pool->jobs[worker].w4u8_pipeline_worker_status =
+            AEE_EFAILED;
+        pool->jobs[worker].command_kind =
+            QBH_BLOCK_HVX_POOL_W4U8_PIPELINE;
+    }
+    asm volatile("barrier" ::: "memory");
+    for (uint32_t worker = 0U;
+         worker < pool->active_worker_count; ++worker) {
+        (void)qurt_sem_up(&pool->command_ready[worker]);
+    }
+    return AEE_SUCCESS;
+}
+
+static int qbh_w4u8_hybrid_down_runner_wait(
+    void *context, uint32_t worker_count) {
+    struct qbh_block_w4u8_hybrid_hvx_runner *runner =
+        (struct qbh_block_w4u8_hybrid_hvx_runner *)context;
+    struct qbh_block_w4f16_pool *pool;
+    int transient_exit_status = AEE_EFAILED;
+    int result = AEE_SUCCESS;
+
+    if (runner == NULL ||
+        worker_count != QBH_BLOCK_W4U8_DOWN_HVX_WORKERS ||
+        runner->transient_thread_created == 0U) {
+        return AEE_EBADPARM;
+    }
+    pool = runner->pool;
+    if (pool == NULL || pool->active_worker_count !=
+            QBH_BLOCK_W4U8_DOWN_PERSISTENT_HVX_WORKERS) {
+        return AEE_EBADPARM;
+    }
+    qbh_w4f16_pool_wait(pool);
+    for (uint32_t worker = 0U;
+         worker < pool->active_worker_count; ++worker) {
+        if (pool->jobs[worker].w4u8_pipeline_worker_status !=
+            AEE_SUCCESS) {
+            result = AEE_EFAILED;
+        }
+        pool->jobs[worker].w4u8_pipeline_worker_context = NULL;
+    }
+    pool->active_worker_count = 0U;
+    if (qurt_thread_join(
+            runner->transient_thread,
+            &transient_exit_status) != QURT_EOK ||
+        transient_exit_status != AEE_SUCCESS) {
+        result = AEE_EFAILED;
+    }
+    runner->transient_thread_created = 0U;
     return result;
 }
 
@@ -8233,6 +8360,16 @@ static int qbh_run_w4u8_streaming_mlp(
         .start = qbh_w4u8_pipeline_pool_start,
         .wait = qbh_w4u8_pipeline_pool_wait,
     };
+    struct qbh_block_w4u8_hybrid_hvx_runner hybrid_down_context = {
+        .pool = hvx_pool,
+        .transient_thread_created = 0U,
+    };
+    struct qbh_w4_hvx_dispatch_runner hybrid_down_runner = {
+        .context = &hybrid_down_context,
+        .max_workers = QBH_BLOCK_W4U8_DOWN_HVX_WORKERS,
+        .start = qbh_w4u8_hybrid_down_runner_start,
+        .wait = qbh_w4u8_hybrid_down_runner_wait,
+    };
     uint8_t *mlp_arena = buffers->q;
     uint32_t pair_publish_count = 0U;
     uint32_t pair_consume_count = 0U;
@@ -8245,8 +8382,8 @@ static int qbh_run_w4u8_streaming_mlp(
 
     if (header->variant != QBH_BLOCK_W4U8 ||
         !qbh_block_mlp_is_w4u8_streaming(header->mlp_mode) ||
-        (header->mlp_mode ==
-             QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_GATE_UP_HVX &&
+        (qbh_block_mlp_uses_persistent_gate_up_hvx(
+             header->mlp_mode) &&
          (hvx_pool == NULL ||
           hvx_pool->worker_count <
               QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS)) ||
@@ -8308,8 +8445,8 @@ static int qbh_run_w4u8_streaming_mlp(
         qbh_reset_w4u8_phase_header(
             &gate_up_phase, QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS);
         start = HAP_perf_get_qtimer_count();
-        if (header->mlp_mode ==
-            QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_GATE_UP_HVX) {
+        if (qbh_block_mlp_uses_persistent_gate_up_hvx(
+                header->mlp_mode)) {
             result = qbh_run_chunked_w4_pipeline_external_hvx(
                 &gate_up_phase, &gate_up_layout,
                 shared + header->w4u8_gate_up_bundle_offset,
@@ -8345,10 +8482,25 @@ static int qbh_run_w4u8_streaming_mlp(
     qbh_reset_w4u8_phase_header(
         &down_phase, QBH_BLOCK_W4U8_DOWN_HVX_WORKERS);
     start = HAP_perf_get_qtimer_count();
-    result = qbh_run_chunked_w4_pipeline_external(
-        &down_phase, &down_layout,
-        shared + header->w4u8_down_bundle_offset,
-        mlp_arena, mlp_arena, NULL, &runner);
+    if (header->mlp_mode ==
+        QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX) {
+        result = qbh_run_chunked_w4_pipeline_external_hvx(
+            &down_phase, &down_layout,
+            shared + header->w4u8_down_bundle_offset,
+            mlp_arena, mlp_arena, NULL, &runner,
+            &hybrid_down_runner);
+        ++header->w4u8_down_persistent_hvx_dispatch_count;
+        header->w4u8_down_persistent_hvx_worker_count +=
+            QBH_BLOCK_W4U8_DOWN_PERSISTENT_HVX_WORKERS;
+        ++header->w4u8_down_transient_hvx_thread_count;
+    } else {
+        result = qbh_run_chunked_w4_pipeline_external(
+            &down_phase, &down_layout,
+            shared + header->w4u8_down_bundle_offset,
+            mlp_arena, mlp_arena, NULL, &runner);
+        header->w4u8_down_transient_hvx_thread_count +=
+            QBH_BLOCK_W4U8_DOWN_HVX_WORKERS;
+    }
     header->down_ticks += HAP_perf_get_qtimer_count() - start;
     if (result != AEE_SUCCESS) {
         result = -1;
