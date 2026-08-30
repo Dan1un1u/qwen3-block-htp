@@ -8890,7 +8890,10 @@ static int qbh_run_w4u8_streaming_mlp(
 
     qbh_reset_w4u8_phase_header(
         &down_phase, QBH_BLOCK_W4U8_DOWN_HVX_WORKERS);
-    down_phase.timeline_enabled = QBH_BLOCK_DOWN_TIMELINE_ENABLED;
+    down_phase.timeline_enabled =
+        header->numerical_audit_enabled != 0U
+            ? QBH_BLOCK_DOWN_TIMELINE_ENABLED
+            : 0U;
     start = HAP_perf_get_qtimer_count();
     if (header->mlp_mode ==
         QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX) {
