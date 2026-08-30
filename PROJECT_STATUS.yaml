@@ -19,8 +19,8 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 73
+  active_experiment: EXP-0073
+  next_experiment_number: 74
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -33,9 +33,9 @@ current_scope:
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: idle
+  active_experiment_stage: shared_softmax_lut_template_implementation
   active_experiment_evidence: null
-  active_experiment_gate: null
+  active_experiment_gate: not_run
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0072/20260830T102828Z_6a7be24f93a5_formal'
   latest_w4u8_candidate:
     id: W4U8-EXP0072-SIX-CONTEXT-RESIDUAL
