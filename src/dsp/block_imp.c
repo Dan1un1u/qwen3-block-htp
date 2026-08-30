@@ -8011,8 +8011,6 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         qbh_attribution_accumulate(
             header, audit_start, &header->input_norm_audit_ticks);
     }
-    header->input_norm_ticks += HAP_perf_get_qtimer_count() - start;
-
     if (header->variant == QBH_BLOCK_W4U8 &&
         header->numerical_audit_enabled != 0U &&
         w4u8_qkv_native_input_enabled != 0U) {
@@ -8022,6 +8020,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         qbh_attribution_accumulate(
             header, audit_start, &header->input_norm_audit_ticks);
     }
+    header->input_norm_ticks += HAP_perf_get_qtimer_count() - start;
 
     start = HAP_perf_get_qtimer_count();
     if (header->variant == QBH_BLOCK_W4U8 &&
