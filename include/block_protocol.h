@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(39)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(72)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(40)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(73)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -133,6 +133,7 @@ enum qbh_block_attention_pipeline_mode {
     QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH = 12,
     QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES = 13,
     QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH = 14,
+    QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_SHARED_LUT_TEMPLATES_GQA_BATCH = 15,
 };
 
 enum qbh_block_mlp_mode {
@@ -492,6 +493,7 @@ struct qbh_block_header {
     uint64_t u8_attention_av_hmx_ticks;
     uint64_t u8_attention_av_requant_ticks;
     uint64_t u8_attention_pipeline_wait_ticks;
+    uint32_t u8_attention_lut_template_build_count;
     uint64_t w4u8_qkvo_weight_expand_ticks;
     uint64_t w4u8_qkvo_prefetch_wait_ticks;
     uint64_t w4u8_qkvo_hmx_lifetime_ticks;
