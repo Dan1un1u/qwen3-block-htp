@@ -6831,14 +6831,16 @@ experiments:
       - exp0079_gate_up_hmx_batch8_control
       - gate_up_hmx_batch16_candidate
       - gate_up_hmx_batch32_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-gate-up-wide-hmx-batches
     source_branches:
       - codex/exp-0083-w4u8-gate-up-wide-hmx-batches
-    source_commits: []
+    source_commits:
+      - 685e21a42cc0f1dfe6f08c4e502611f3f6825a5c
+      - 8be47fc40b3bcf0266ee20923b7034c73d97970d
     record: docs/experiments/EXP-0083.md
     decided_by: user
     decided_on: '2026-08-30'
@@ -6847,7 +6849,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0083-w4u8-gate-up-wide-hmx-batches
       started_on: '2026-08-30'
-      completed_on: null
+      completed_on: '2026-08-30'
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0083'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0083'
@@ -6869,3 +6871,49 @@ experiments:
       execution_gate: gate_up_hmx_commands_equal_48_24_12_for_batch8_16_32_and_peak_plan_fits_fixed_vtcm
       local_speed_gate: gate_up_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: bounded_smoke_selection_then_seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
+      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0083/20260830T140406Z_8be47fc40b3b_formal'
+      artifact_set: 'D:/llm_exp/models/qwen3-block-htp/exp0083/artifacts/8be47fc40b3b/formal'
+      non_authoritative_pre_validator_fix_run: 'D:/llm_exp/results/qwen3-block-htp/exp0083/20260830T140133Z_685e21a42cc0_formal'
+      gate_summary_sha256: c496a9d1bbe6fb712e9526c7e148069dd3ec64e39eaf33a68ea25795248ff22
+      full_profiling_report_sha256: ed61dafe416f57fbc0277d0238de9e1c4072cd76af73a64a71163c9780c90511
+      package_manifest_sha256: 043f61337b2ad2758bb95791bc4ca768150f457f1f28bc7d20a7ad57eba42359
+      output_hash: 69f22eeb035e5ec5
+      total_mismatches: 0
+      max_lsb: 0
+      formal_paired_rounds: 7
+      repeat1_control_host_wall_ns_per_block_median: 2450886.0
+      repeat1_candidate_host_wall_ns_per_block_median: 2463697.0
+      repeat1_host_wall_change_percent: 0.5227089305663402
+      repeat1_host_wall_paired_change_percent: 0.5287624943531855
+      repeat1_control_gate_up_ticks_per_block_median: 14599.0
+      repeat1_candidate_gate_up_ticks_per_block_median: 14608.0
+      repeat1_gate_up_change_percent: 0.06164805808617224
+      repeat1_gate_up_paired_change_percent: 0.6575792862524743
+      repeat10_control_host_wall_ns_per_block_median: 2019067.7
+      repeat10_candidate_host_wall_ns_per_block_median: 2022505.2
+      repeat10_host_wall_change_percent: 0.1702518444527623
+      repeat10_host_wall_paired_change_percent: -0.14635526294101142
+      repeat10_control_gate_up_ticks_per_block_median: 14770.9
+      repeat10_candidate_gate_up_ticks_per_block_median: 14344.4
+      repeat10_gate_up_change_percent: -2.8874340764611484
+      repeat10_gate_up_paired_change_percent: -2.8874340764611484
+      repeat10_gate_up_pipeline_change_percent: -3.5924658008898103
+      repeat10_hmx_ready_wait_change_percent: 31.62074284046854
+      repeat10_producer_slot_wait_change_percent: 13.428751841717524
+      repeat10_expanded_slot_wait_change_percent: -40.268215855291686
+      batch8_gate_up_hmx_commands_per_block: 48
+      batch16_gate_up_hmx_commands_per_block: 24
+      batch32_gate_up_hmx_commands_per_block: 12
+      batch8_mlp_plan_bytes: 1708032
+      batch16_mlp_plan_bytes: 1875968
+      batch32_mlp_plan_bytes: 2961408
+      full_block_peak_plan_bytes: 5306080
+      fixed_vtcm_gate: pass
+      zero_intermediate_ddr_gate: pass
+      zero_spill_fill_gate: pass
+      unchanged_weight_dma_hmx_tile_gate: pass
+      wide_batch_execution_gate: pass
+      gate_result: fail
+      local_adoption_eligible: false
+      conclusion: wider_gate_up_commands_reduce_command_and_expanded_slot_wait_but_delay_pair_publication_raise_hmx_ready_and_producer_wait_and_do_not_robustly_reduce_complete_host_wall
+      selected_baseline_changed: false
