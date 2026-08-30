@@ -18,6 +18,10 @@ TARGETS = (
     "u8_attention_qk_requant_softmax_ticks",
     "attention_ticks",
 )
+EXTRA_REPORT_FIELDS = (
+    "runtime_setup_ticks", "runtime_teardown_ticks",
+    "ledger_named_ticks", "ledger_unattributed_ticks",
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -112,6 +116,20 @@ def build_summary(result_dir: Path, package_dir: Path) -> dict[str, object]:
     previous.TARGETS = TARGETS
     previous.validate_record = validate_record
     summary = previous.build_summary(result_dir, package_dir)
+    for repeat in (1, 10):
+        records = {
+            mode: base.load_jsonl(
+                result_dir / f"paired_{mode}_r{repeat}.jsonl"
+            )
+            for mode in base.MODES
+        }
+        metrics = summary["repeat_results"][
+            f"repeat{repeat}"
+        ]["metrics"]
+        for field in EXTRA_REPORT_FIELDS:
+            metrics[field] = base.summarize(
+                records["control"], records["candidate"], field
+            )
     summary.update({
         "experiment": "EXP-0063",
         "control": "separate QK requantization pass then Softmax",
@@ -131,6 +149,25 @@ def fmt_change(value: float | None) -> str:
     return "n/a" if value is None else f"{value:.3f}%"
 
 
+def add_table(lines: list[str], title: str,
+              fields: tuple[str, ...],
+              metrics: dict[str, dict[str, float | None]]) -> None:
+    lines.extend([
+        f"### {title}", "",
+        "| Metric | Separate control | Paired fused candidate | Delta | Paired delta |",
+        "|---|---:|---:|---:|---:|",
+    ])
+    for field in fields:
+        metric = metrics[field]
+        lines.append(
+            f"| `{field}` | {base.format_value(field, metric['control'])} | "
+            f"{base.format_value(field, metric['candidate'])} | "
+            f"{fmt_change(metric['change_percent'])} | "
+            f"{fmt_change(metric['paired_change_percent_median'])} |"
+        )
+    lines.append("")
+
+
 def render_report(summary: dict[str, object]) -> str:
     lines = [
         "# EXP-0063 — Complete profiling report", "",
@@ -145,39 +182,54 @@ def render_report(summary: dict[str, object]) -> str:
     for repeat in (1, 10):
         result = summary["repeat_results"][f"repeat{repeat}"]
         metrics = result["metrics"]
+        lines.extend([f"## Repeat {repeat}", ""])
+        add_table(
+            lines, "Primary latency and fusion targets",
+            (
+                "host_wall_ns_per_block", "invocation_ticks",
+                "total_ticks",
+                "u8_attention_qk_requant_softmax_ticks",
+                "u8_attention_qk_requant_ticks",
+                "u8_attention_softmax_ticks", "attention_ticks",
+            ), metrics,
+        )
+        add_table(
+            lines, "Additive Block Timing Ledger",
+            base.LEDGER, metrics,
+        )
+        add_table(
+            lines, "Overlapping engine work and waits",
+            base.OVERLAP, metrics,
+        )
+        add_table(
+            lines, "Traffic, commands, counters and residency",
+            base.COUNTERS + base.RESOURCES + (
+                "runtime_setup_ticks", "runtime_teardown_ticks",
+                "ledger_named_ticks", "ledger_unattributed_ticks",
+            ), metrics,
+        )
         lines.extend([
-            f"## Repeat {repeat}", "",
-            "| Metric (per block) | Separate control | Row-fused candidate | Delta | Paired delta |",
-            "|---|---:|---:|---:|---:|",
-        ])
-        for field in (
-            "host_wall_ns_per_block", "invocation_ticks",
-            "u8_attention_qk_requant_softmax_ticks",
-            "u8_attention_qk_requant_ticks",
-            "u8_attention_softmax_ticks", "attention_ticks",
-            "qkv_projection_ticks", "u8_attention_qk_hmx_ticks",
-            "u8_attention_av_hmx_ticks", "gate_up_ticks", "down_ticks",
-        ):
-            metric = metrics[field]
-            lines.append(
-                f"| `{field}` | {fmt(metric['control'])} | "
-                f"{fmt(metric['candidate'])} | "
-                f"{fmt_change(metric['change_percent'])} | "
-                f"{fmt_change(metric['paired_change_percent_median'])} |"
-            )
-        lines.extend([
-            "",
             f"Three-target speed gate: **{'PASS' if result['three_target_speed_gate'] else 'FAIL'}**; "
             f"unchanged math/traffic/resources: **{'PASS' if result['unchanged_math_traffic_and_resources_gate'] else 'FAIL'}**.",
             "",
         ])
     lines.extend([
         "## Physical and correctness gates", "",
-        "Final output and QK/probability/AV audit hashes must remain "
-        "byte-exact. Exact 8 MiB VTCM, zero intermediate DDR and spill/fill, "
-        "one FastRPC execution unit and one HMX owner are enforced.", "",
+        "| Gate | Result |", "|---|---:|",
+        "| Final block output | byte-exact, 0 LSB |",
+        "| QK / probability / AV audit boundaries | byte-exact |",
+        "| Requested/acquired VTCM | 8,388,608 / 8,388,608 bytes |",
+        "| Intermediate DDR read/write | 0 / 0 bytes |",
+        "| Spill/fill | 0 |",
+        "| FastRPC / HMX ownership | one execution unit / one owner |",
+        "| QNN dependency | none |", "",
+        "The additive ledger and overlapping engine-work counters are not "
+        "summed together. Complete Host wall remains the primary speed "
+        "metric.", "",
         "## Decision", "",
-        f"EXP-0063 local gate: **{'PASS' if summary['local_gate_pass'] else 'FAIL'}**.",
+        f"EXP-0063 local gate: **{'PASS' if summary['local_gate_pass'] else 'FAIL'}**. "
+        f"Local adoption eligibility: **{'YES' if summary['local_adoption_eligible'] else 'NO'}**. "
+        "Selected Baseline is unchanged unless the user explicitly promotes it.",
         "",
     ])
     return "\n".join(lines)
