@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 
 import validate_exp0070 as pc
+import validate_exp0078 as report_base
 import validate_exp0079 as previous
 
 
@@ -265,15 +266,19 @@ def render_report(summary: dict[str, object]) -> str:
         result = summary["repeat_results"][f"repeat{repeat}"]
         metrics = result["metrics"]
         lines.extend([f"## Repeat {repeat}", ""])
-        previous.add_table(lines, "Primary wall-latency targets",
-                           (*TARGETS, "invocation_ticks", "total_ticks"), metrics)
-        previous.add_table(lines, "Additive Block Timing Ledger", LEDGER, metrics)
-        previous.add_table(lines, "Overlapping engine work and waits", OVERLAP, metrics)
-        previous.add_table(lines, "Traffic, commands, counters and residency",
-                           tuple(dict.fromkeys((
-                               *base.COUNTERS, *base.RESOURCES,
-                               *EXTRA_REPORT_FIELDS,
-                           ))), metrics)
+        report_base.add_table(
+            lines, "Primary wall-latency targets",
+            (*TARGETS, "invocation_ticks", "total_ticks"), metrics)
+        report_base.add_table(
+            lines, "Additive Block Timing Ledger", LEDGER, metrics)
+        report_base.add_table(
+            lines, "Overlapping engine work and waits", OVERLAP, metrics)
+        report_base.add_table(
+            lines, "Traffic, commands, counters and residency",
+            tuple(dict.fromkeys((
+                *base.COUNTERS, *base.RESOURCES,
+                *EXTRA_REPORT_FIELDS,
+            ))), metrics)
         lines.extend([
             f"Two-target speed gate: **{'PASS' if result['two_target_speed_gate'] else 'FAIL'}**; "
             f"unchanged physical contract: **{'PASS' if result['unchanged_physical_contract_gate'] else 'FAIL'}**; "
