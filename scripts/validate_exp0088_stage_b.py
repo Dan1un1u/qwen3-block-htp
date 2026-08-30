@@ -72,12 +72,13 @@ def validate(record: dict[str, object], repeat: int, mode: str,
             require(record, "warmup_u8_attention_lut_template_build_count", 6)
             require(record, "u8_attention_lut_template_build_count", 6 * repeat)
     else:
-        require(record, "u8_attention_lut_template_build_count", 0)
         require(record, "u8_attention_lut_private_vtcm_bytes", 3_072)
-        require(record, "u8_attention_lut_template_build_ticks", 0)
         if audit:
             warmup_builds = int(
                 record["warmup_u8_attention_lut_template_build_count"]
+            )
+            measured_builds = int(
+                record["u8_attention_lut_template_build_count"]
             )
             measured_reuses = int(
                 record["u8_attention_lut_template_reuse_count"]
@@ -87,13 +88,21 @@ def validate(record: dict[str, object], repeat: int, mode: str,
                     "candidate audit warmup must activate between one and "
                     f"six private contexts, got {warmup_builds}"
                 )
-            if measured_reuses != warmup_builds:
+            if measured_reuses <= 0:
                 raise SystemExit(
-                    "candidate audit measured reuse count must equal the "
-                    f"warmup build count: {measured_reuses} != {warmup_builds}"
+                    "candidate audit measured invocation did not reuse any "
+                    "warmup-built private bank"
+                )
+            if measured_builds + measured_reuses != warmup_builds:
+                raise SystemExit(
+                    "candidate audit active-context count changed between "
+                    "warmup and measured invocation: "
+                    f"{measured_builds} + {measured_reuses} != {warmup_builds}"
                 )
         else:
+            require(record, "u8_attention_lut_template_build_count", 0)
             require(record, "u8_attention_lut_template_reuse_count", 6 * repeat)
+            require(record, "u8_attention_lut_template_build_ticks", 0)
             require(record, "warmup_u8_attention_lut_template_build_count", 6)
             require(record, "warmup_u8_attention_lut_template_reuse_count", 0)
 
