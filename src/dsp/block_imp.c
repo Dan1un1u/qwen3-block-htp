@@ -830,6 +830,11 @@ static int qbh_header_valid(const struct qbh_block_header *header,
            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT)) != 0U) ||
         header->w4u8_qkvo_pipeline_mode >
             QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS ||
+        header->w4u8_decode_mode >
+            QBH_BLOCK_W4U8_DECODE_ARITHMETIC ||
+        (header->variant != QBH_BLOCK_W4U8 &&
+         header->w4u8_decode_mode !=
+             QBH_BLOCK_W4U8_DECODE_VLUT32) ||
         (header->variant != QBH_BLOCK_W4U8 &&
          header->w4u8_qkvo_pipeline_mode !=
              QBH_BLOCK_W4U8_QKVO_SERIAL) ||
@@ -9730,6 +9735,7 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
     header->vtcm_acquired_bytes = vtcm_bytes;
     qbh_hvx_u8_set_norm_reduction_mode(
         header->u8_norm_reduction_mode);
+    qbh_w4_u8_set_decode_mode(header->w4u8_decode_mode);
 
     if (qbh_plan_buffers(vtcm, vtcm_bytes, header->variant,
                          header->f16f16_projection_mode,

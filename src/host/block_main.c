@@ -952,6 +952,26 @@ static const char *qbh_u8_norm_reduction_mode_name(uint32_t mode) {
     }
 }
 
+static int qbh_parse_w4u8_decode_mode(
+    const char *text, uint32_t *mode) {
+    if (strcmp(text, "vlut32") == 0 || strcmp(text, "control") == 0) {
+        *mode = QBH_BLOCK_W4U8_DECODE_VLUT32;
+        return 0;
+    }
+    if (strcmp(text, "arithmetic") == 0 ||
+        strcmp(text, "xor_sub") == 0) {
+        *mode = QBH_BLOCK_W4U8_DECODE_ARITHMETIC;
+        return 0;
+    }
+    return -1;
+}
+
+static const char *qbh_w4u8_decode_mode_name(uint32_t mode) {
+    return mode == QBH_BLOCK_W4U8_DECODE_ARITHMETIC
+               ? "arithmetic"
+               : "vlut32";
+}
+
 static uint64_t qbh_fnv1a64(const uint8_t *data, size_t bytes) {
     uint64_t hash = UINT64_C(1469598103934665603);
     for (size_t index = 0; index < bytes; ++index) {
@@ -1368,6 +1388,7 @@ int main(int argc, char **argv) {
         QBH_BLOCK_W4U8_QKVO_SERIAL;
     uint32_t u8_norm_reduction_mode =
         QBH_BLOCK_U8_NORM_REDUCTION_SCALAR;
+    uint32_t w4u8_decode_mode = QBH_BLOCK_W4U8_DECODE_VLUT32;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t w4u8_gate_up_bundle_offset = 0U;
@@ -1401,7 +1422,7 @@ int main(int argc, char **argv) {
     memset(attention_audit_slots, 0, sizeof(attention_audit_slots));
     memset(&w4u8_gate_up_layout, 0, sizeof(w4u8_gate_up_layout));
     memset(&w4u8_down_layout, 0, sizeof(w4u8_down_layout));
-    if (argc < 3 || argc > 21 ||
+    if (argc < 3 || argc > 22 ||
         qbh_parse_variant(argv[2], &variant) != 0 ||
         (argc >= 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
         (argc >= 5 && qbh_parse_u32(
@@ -1438,6 +1459,8 @@ int main(int argc, char **argv) {
                            argv[19], &w4u8_qkvo_pipeline_mode) != 0) ||
         (argc >= 21 && qbh_parse_u8_norm_reduction_mode(
                            argv[20], &u8_norm_reduction_mode) != 0) ||
+        (argc >= 22 && qbh_parse_w4u8_decode_mode(
+                           argv[21], &w4u8_decode_mode) != 0) ||
         repeats == 0U || repeats > 100U ||
         w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
         (variant == QBH_BLOCK_W4U8 &&
@@ -1527,9 +1550,12 @@ int main(int argc, char **argv) {
             QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS ||
         u8_norm_reduction_mode >
             QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE_PARALLEL_INPUT ||
+        w4u8_decode_mode > QBH_BLOCK_W4U8_DECODE_ARITHMETIC ||
         (variant != QBH_BLOCK_W4U8 &&
          u8_norm_reduction_mode !=
              QBH_BLOCK_U8_NORM_REDUCTION_SCALAR) ||
+        (variant != QBH_BLOCK_W4U8 &&
+         w4u8_decode_mode != QBH_BLOCK_W4U8_DECODE_VLUT32) ||
         (variant != QBH_BLOCK_W4U8 &&
          w4u8_qkvo_pipeline_mode != QBH_BLOCK_W4U8_QKVO_SERIAL) ||
         ((crouton_boundary_mode & QBH_BLOCK_CROUTON_BOUNDARY_QKV) != 0U &&
@@ -1971,6 +1997,7 @@ int main(int argc, char **argv) {
     header->crouton_boundary_mode = crouton_boundary_mode;
     header->w4u8_qkvo_pipeline_mode = w4u8_qkvo_pipeline_mode;
     header->u8_norm_reduction_mode = u8_norm_reduction_mode;
+    header->w4u8_decode_mode = w4u8_decode_mode;
     header->input_offset = input_slot.offset;
     header->input_bytes = input_slot.expected_bytes;
     header->output_bytes = output_bytes;
@@ -2244,7 +2271,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0079\","
+        "{\"experiment\":\"EXP-0082\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2263,6 +2290,7 @@ int main(int argc, char **argv) {
         "\"mlp_chunk_vectors\":%" PRIu32 ","
         "\"crouton_boundary_mode\":\"%s\","
         "\"w4u8_qkvo_pipeline_mode\":\"%s\","
+        "\"w4u8_decode_mode\":\"%s\","
         "\"w4f16_scale_placement\":\"%s\","
         "\"intermediate_residency\":\"VTCM\","
         "\"warmup_rpc_result\":%d,"
@@ -2568,6 +2596,7 @@ int main(int argc, char **argv) {
             header->crouton_boundary_mode),
         qbh_w4u8_qkvo_pipeline_mode_name(
             header->w4u8_qkvo_pipeline_mode),
+        qbh_w4u8_decode_mode_name(header->w4u8_decode_mode),
         variant == QBH_BLOCK_W4F16 ? "hmx_output_per_channel"
                                    : "not_applicable",
         warmup_result, warmup_run_index, warmup_end - warmup_start,

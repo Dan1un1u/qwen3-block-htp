@@ -30,6 +30,13 @@ static const uint16_t qbh_signed_w4_f16_lut[64]
         UINT16_C(0xc000), 0U, UINT16_C(0xbc00), 0U,
 };
 
+static volatile uint32_t qbh_w4_u8_decode_mode;
+
+void qbh_w4_u8_set_decode_mode(uint32_t mode) {
+    qbh_w4_u8_decode_mode = mode;
+    asm volatile("barrier" : : : "memory");
+}
+
 static HVX_Vector qbh_scale_w4_f16_lanes(
     HVX_Vector v_quant_f16, HVX_Vector v_scale) {
     const HVX_Vector v_one_f16 = Q6_Vh_vsplat_R(0x3c00);
@@ -284,7 +291,7 @@ __attribute__((noinline)) void qbh_expand_w4_to_s8_hvx(
     asm volatile("barrier" : : : "memory");
 }
 
-__attribute__((noinline)) void qbh_unpack_w4_to_s8_hvx(
+__attribute__((noinline)) void qbh_unpack_w4_to_s8_hvx_vlut32(
     const uint8_t *packed_w4, int8_t *expanded_s8,
     uint32_t k_tiles) {
     const HVX_Vector v_lut = *(const HVX_Vector *)qbh_signed_w4_lut;
@@ -311,6 +318,47 @@ __attribute__((noinline)) void qbh_unpack_w4_to_s8_hvx(
         destination[1] = Q6_V_hi_W(v_unpacked);
     }
     asm volatile("barrier" : : : "memory");
+}
+
+__attribute__((noinline)) void qbh_unpack_w4_to_s8_hvx_arithmetic(
+    const uint8_t *packed_w4, int8_t *expanded_s8,
+    uint32_t k_tiles) {
+    const HVX_Vector v_nibble_mask = Q6_Vb_vsplat_R(0x0f);
+    const HVX_Vector v_sign_bit = Q6_Vb_vsplat_R(0x08);
+
+    for (uint32_t packed_vector = 0;
+         packed_vector < k_tiles * 4U; ++packed_vector) {
+        const HVX_Vector v_packed = *(const HVX_Vector *)(
+            packed_w4 + (size_t)packed_vector * sizeof(HVX_Vector));
+        const HVX_Vector v_low_unsigned =
+            Q6_V_vand_VV(v_packed, v_nibble_mask);
+        const HVX_Vector v_high_unsigned =
+            Q6_Vub_vlsr_VubR(v_packed, 4);
+        const HVX_Vector v_low = Q6_Vb_vsub_VbVb(
+            Q6_V_vxor_VV(v_low_unsigned, v_sign_bit), v_sign_bit);
+        const HVX_Vector v_high = Q6_Vb_vsub_VbVb(
+            Q6_V_vxor_VV(v_high_unsigned, v_sign_bit), v_sign_bit);
+        const HVX_VectorPair v_unpacked =
+            Q6_W_vshuff_VVR(v_high, v_low, -1);
+        HVX_Vector *destination = (HVX_Vector *)(
+            expanded_s8 + (size_t)packed_vector * 2U *
+                              sizeof(HVX_Vector));
+        destination[0] = Q6_V_lo_W(v_unpacked);
+        destination[1] = Q6_V_hi_W(v_unpacked);
+    }
+    asm volatile("barrier" : : : "memory");
+}
+
+__attribute__((noinline)) void qbh_unpack_w4_to_s8_hvx(
+    const uint8_t *packed_w4, int8_t *expanded_s8,
+    uint32_t k_tiles) {
+    if (qbh_w4_u8_decode_mode != 0U) {
+        qbh_unpack_w4_to_s8_hvx_arithmetic(
+            packed_w4, expanded_s8, k_tiles);
+    } else {
+        qbh_unpack_w4_to_s8_hvx_vlut32(
+            packed_w4, expanded_s8, k_tiles);
+    }
 }
 
 __attribute__((noinline)) void qbh_copy_s8_hmx_tiles_hvx(
