@@ -5,6 +5,8 @@
 
 #include "block_protocol.h"
 
+void qbh_hvx_u8_set_norm_reduction_mode(uint32_t mode);
+
 void qbh_hvx_rms_norm_u8(
     const uint8_t *input,
     const struct qbh_block_qparam *input_qparam,

@@ -677,6 +677,11 @@ static int qbh_header_valid(const struct qbh_block_header *header,
             QBH_BLOCK_F16F16_PROJECTION_GATE8 ||
         header->w4f16_pipeline_mode >
             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH ||
+        header->u8_norm_reduction_mode >
+            QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE ||
+        (header->variant != QBH_BLOCK_W4U8 &&
+         header->u8_norm_reduction_mode !=
+             QBH_BLOCK_U8_NORM_REDUCTION_SCALAR) ||
         (header->attention_pack_mode &
          ~((uint32_t)QBH_BLOCK_ATTENTION_PACK_HVX)) != 0U ||
         header->attention_pipeline_mode >
@@ -8742,6 +8747,8 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
     header->resource_hmx_context_id = hmx_context_id;
     header->vtcm_requested_bytes = QBH_EXPECTED_FULL_VTCM_BYTES;
     header->vtcm_acquired_bytes = vtcm_bytes;
+    qbh_hvx_u8_set_norm_reduction_mode(
+        header->u8_norm_reduction_mode);
 
     if (qbh_plan_buffers(vtcm, vtcm_bytes, header->variant,
                          header->f16f16_projection_mode,

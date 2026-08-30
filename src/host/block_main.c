@@ -793,6 +793,25 @@ static const char *qbh_w4u8_qkvo_pipeline_mode_name(uint32_t mode) {
     }
 }
 
+static int qbh_parse_u8_norm_reduction_mode(
+    const char *text, uint32_t *mode) {
+    if (strcmp(text, "scalar") == 0 || strcmp(text, "control") == 0) {
+        *mode = QBH_BLOCK_U8_NORM_REDUCTION_SCALAR;
+        return 0;
+    }
+    if (strcmp(text, "hvx_tree") == 0 ||
+        strcmp(text, "vector_tree") == 0) {
+        *mode = QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE;
+        return 0;
+    }
+    return -1;
+}
+
+static const char *qbh_u8_norm_reduction_mode_name(uint32_t mode) {
+    return mode == QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE
+        ? "hvx_tree" : "scalar";
+}
+
 static uint64_t qbh_fnv1a64(const uint8_t *data, size_t bytes) {
     uint64_t hash = UINT64_C(1469598103934665603);
     for (size_t index = 0; index < bytes; ++index) {
@@ -1207,6 +1226,8 @@ int main(int argc, char **argv) {
         QBH_BLOCK_CROUTON_BOUNDARY_CONTROL;
     uint32_t w4u8_qkvo_pipeline_mode =
         QBH_BLOCK_W4U8_QKVO_SERIAL;
+    uint32_t u8_norm_reduction_mode =
+        QBH_BLOCK_U8_NORM_REDUCTION_SCALAR;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t w4u8_gate_up_bundle_offset = 0U;
@@ -1240,7 +1261,7 @@ int main(int argc, char **argv) {
     memset(attention_audit_slots, 0, sizeof(attention_audit_slots));
     memset(&w4u8_gate_up_layout, 0, sizeof(w4u8_gate_up_layout));
     memset(&w4u8_down_layout, 0, sizeof(w4u8_down_layout));
-    if (argc < 3 || argc > 20 ||
+    if (argc < 3 || argc > 21 ||
         qbh_parse_variant(argv[2], &variant) != 0 ||
         (argc >= 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
         (argc >= 5 && qbh_parse_u32(
@@ -1275,6 +1296,8 @@ int main(int argc, char **argv) {
                            argv[18], &crouton_boundary_mode) != 0) ||
         (argc >= 20 && qbh_parse_w4u8_qkvo_pipeline_mode(
                            argv[19], &w4u8_qkvo_pipeline_mode) != 0) ||
+        (argc >= 21 && qbh_parse_u8_norm_reduction_mode(
+                           argv[20], &u8_norm_reduction_mode) != 0) ||
         repeats == 0U || repeats > 100U ||
         w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
         (variant == QBH_BLOCK_W4U8 &&
@@ -1360,6 +1383,11 @@ int main(int argc, char **argv) {
            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT)) != 0U) ||
         w4u8_qkvo_pipeline_mode >
             QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS ||
+        u8_norm_reduction_mode >
+            QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE ||
+        (variant != QBH_BLOCK_W4U8 &&
+         u8_norm_reduction_mode !=
+             QBH_BLOCK_U8_NORM_REDUCTION_SCALAR) ||
         (variant != QBH_BLOCK_W4U8 &&
          w4u8_qkvo_pipeline_mode != QBH_BLOCK_W4U8_QKVO_SERIAL) ||
         ((crouton_boundary_mode & QBH_BLOCK_CROUTON_BOUNDARY_QKV) != 0U &&
@@ -1513,7 +1541,9 @@ int main(int argc, char **argv) {
                         "w4u8_mlp_input|w4u8_mlp_io] "
                         "[w4u8_qkvo_pipeline:serial|qkv_batch2|"
                         "qkv_batch4|qkvo_batch4|"
-                        "qkvo_batch4_qk_head_tasks]\n",
+                        "qkvo_batch4_qk_head_tasks|"
+                        "qkvo_batch4_qk_head_pairs] "
+                        "[u8_norm_reduction:scalar|hvx_tree]\n",
                 argv[0]);
         return 2;
     }
@@ -1784,6 +1814,7 @@ int main(int argc, char **argv) {
     header->mlp_chunk_vectors = mlp_chunk_vectors;
     header->crouton_boundary_mode = crouton_boundary_mode;
     header->w4u8_qkvo_pipeline_mode = w4u8_qkvo_pipeline_mode;
+    header->u8_norm_reduction_mode = u8_norm_reduction_mode;
     header->input_offset = input_slot.offset;
     header->input_bytes = input_slot.expected_bytes;
     header->output_bytes = output_bytes;
@@ -2057,11 +2088,12 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0058\","
+        "{\"experiment\":\"EXP-0060\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
         "\"common_ops_mode\":\"%s\","
+        "\"u8_norm_reduction_mode\":\"%s\","
         "\"attribution_mode\":\"%s\","
         "\"numerical_audit_mode\":\"%s\","
         "\"residual_mode\":\"%s\","
@@ -2341,6 +2373,8 @@ int main(int argc, char **argv) {
         variant == QBH_BLOCK_W4U8 ? "U8xS8_integer_HMX"
                                   : "FP16_HMX",
         qbh_common_ops_mode_name(header->common_ops_mask),
+        qbh_u8_norm_reduction_mode_name(
+            header->u8_norm_reduction_mode),
         header->attribution_enabled != 0U ? "on" : "off",
         header->numerical_audit_enabled != 0U ? "on" : "off",
         qbh_residual_mode_name(header->residual_mode),

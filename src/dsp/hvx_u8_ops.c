@@ -36,6 +36,14 @@ struct qbh_qf32_quad {
     HVX_Vector lane[4];
 };
 
+static uint32_t qbh_u8_norm_reduction_mode =
+    QBH_BLOCK_U8_NORM_REDUCTION_SCALAR;
+
+void qbh_hvx_u8_set_norm_reduction_mode(uint32_t mode) {
+    qbh_u8_norm_reduction_mode = mode;
+    asm volatile("barrier" ::: "memory");
+}
+
 static HVX_Vector qbh_splat_sf(float value) {
     return Q6_Vsf_vadd_VsfVsf(
         Q6_V_vsplat_R(*(const int32_t *)&value), Q6_V_vzero());
@@ -125,6 +133,15 @@ static uint64_t qbh_reduce_word_sum(HVX_Vector value) {
     return sum;
 }
 
+static uint32_t qbh_reduce_word_sum_hvx(HVX_Vector value) {
+    const HVX_Vector zero = Q6_V_vzero();
+    for (uint32_t shift = 64U; shift >= 4U; shift >>= 1U) {
+        value = Q6_Vw_vadd_VwVw(
+            value, Q6_V_vlalign_VVR(value, zero, shift));
+    }
+    return (uint32_t)Q6_R_vextract_VR(value, 124);
+}
+
 static HVX_Vector qbh_center_u8_to_s8(
     HVX_Vector value, int32_t zero_point) {
     const HVX_VectorPair unpacked = Q6_Wuh_vunpack_Vub(value);
@@ -191,6 +208,13 @@ static uint64_t qbh_centered_square_sum(
         sums[1] = Q6_Vw_vadd_VwVw(sums[1], Q6_V_hi_W(square0));
         sums[2] = Q6_Vw_vadd_VwVw(sums[2], Q6_V_lo_W(square1));
         sums[3] = Q6_Vw_vadd_VwVw(sums[3], Q6_V_hi_W(square1));
+    }
+    if (qbh_u8_norm_reduction_mode ==
+        QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE) {
+        const HVX_Vector combined = Q6_Vw_vadd_VwVw(
+            Q6_Vw_vadd_VwVw(sums[0], sums[1]),
+            Q6_Vw_vadd_VwVw(sums[2], sums[3]));
+        return qbh_reduce_word_sum_hvx(combined);
     }
     return qbh_reduce_word_sum(sums[0]) +
            qbh_reduce_word_sum(sums[1]) +
