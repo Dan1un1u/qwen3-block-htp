@@ -7,8 +7,9 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(42)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(84)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(43)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(87)
+#define QBH_BLOCK_W4U8_ATTENTION_TIMELINE_CONTEXTS UINT32_C(6)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -634,6 +635,35 @@ struct qbh_block_header {
     uint32_t w4u8_down_persistent_hvx_dispatch_count;
     uint32_t w4u8_down_persistent_hvx_worker_count;
     uint32_t w4u8_down_transient_hvx_thread_count;
+
+    uint32_t w4u8_attention_timeline_enabled;
+    uint32_t w4u8_attention_softmax_row_slices;
+    uint32_t w4u8_attention_softmax_timeline_task_count;
+    uint32_t w4u8_attention_timeline_context_count;
+    uint64_t w4u8_attention_qk_ready_first_ticks;
+    uint64_t w4u8_attention_qk_ready_last_ticks;
+    uint64_t w4u8_attention_softmax_claim_first_ticks;
+    uint64_t w4u8_attention_softmax_claim_last_ticks;
+    uint64_t w4u8_attention_softmax_start_first_ticks;
+    uint64_t w4u8_attention_softmax_start_last_ticks;
+    uint64_t w4u8_attention_softmax_end_first_ticks;
+    uint64_t w4u8_attention_softmax_end_last_ticks;
+    uint64_t w4u8_attention_softmax_task_min_ticks;
+    uint64_t w4u8_attention_softmax_task_max_ticks;
+    uint64_t w4u8_attention_softmax_task_work_ticks;
+    uint64_t w4u8_attention_qk_to_softmax_start_max_ticks;
+    uint64_t w4u8_attention_all_slices_ready_first_ticks;
+    uint64_t w4u8_attention_all_slices_ready_last_ticks;
+    uint64_t w4u8_attention_av_start_first_ticks;
+    uint64_t w4u8_attention_av_start_last_ticks;
+    uint64_t w4u8_attention_av_end_first_ticks;
+    uint64_t w4u8_attention_av_end_last_ticks;
+    uint64_t w4u8_attention_all_slices_to_av_start_max_ticks;
+    uint64_t w4u8_attention_pool_join_ticks;
+    uint32_t w4u8_attention_softmax_context_tasks[
+        QBH_BLOCK_W4U8_ATTENTION_TIMELINE_CONTEXTS];
+    uint64_t w4u8_attention_softmax_context_work_ticks[
+        QBH_BLOCK_W4U8_ATTENTION_TIMELINE_CONTEXTS];
 };
 
 #endif

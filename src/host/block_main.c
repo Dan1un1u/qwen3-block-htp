@@ -2330,7 +2330,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0084\","
+        "{\"experiment\":\"EXP-0087\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2595,6 +2595,42 @@ int main(int argc, char **argv) {
         "\"w4u8_down_persistent_hvx_dispatch_count\":%" PRIu32 ","
         "\"w4u8_down_persistent_hvx_worker_count\":%" PRIu32 ","
         "\"w4u8_down_transient_hvx_thread_count\":%" PRIu32 ","
+        "\"w4u8_attention_timeline_enabled\":%" PRIu32 ","
+        "\"w4u8_attention_softmax_row_slices\":%" PRIu32 ","
+        "\"w4u8_attention_softmax_timeline_task_count\":%" PRIu32 ","
+        "\"w4u8_attention_timeline_context_count\":%" PRIu32 ","
+        "\"w4u8_attention_qk_ready_first_ticks\":%" PRIu64 ","
+        "\"w4u8_attention_qk_ready_last_ticks\":%" PRIu64 ","
+        "\"w4u8_attention_softmax_claim_first_ticks\":%" PRIu64 ","
+        "\"w4u8_attention_softmax_claim_last_ticks\":%" PRIu64 ","
+        "\"w4u8_attention_softmax_start_first_ticks\":%" PRIu64 ","
+        "\"w4u8_attention_softmax_start_last_ticks\":%" PRIu64 ","
+        "\"w4u8_attention_softmax_end_first_ticks\":%" PRIu64 ","
+        "\"w4u8_attention_softmax_end_last_ticks\":%" PRIu64 ","
+        "\"w4u8_attention_softmax_task_min_ticks\":%" PRIu64 ","
+        "\"w4u8_attention_softmax_task_max_ticks\":%" PRIu64 ","
+        "\"w4u8_attention_softmax_task_work_ticks\":%" PRIu64 ","
+        "\"w4u8_attention_qk_to_softmax_start_max_ticks\":%" PRIu64 ","
+        "\"w4u8_attention_all_slices_ready_first_ticks\":%" PRIu64 ","
+        "\"w4u8_attention_all_slices_ready_last_ticks\":%" PRIu64 ","
+        "\"w4u8_attention_av_start_first_ticks\":%" PRIu64 ","
+        "\"w4u8_attention_av_start_last_ticks\":%" PRIu64 ","
+        "\"w4u8_attention_av_end_first_ticks\":%" PRIu64 ","
+        "\"w4u8_attention_av_end_last_ticks\":%" PRIu64 ","
+        "\"w4u8_attention_all_slices_to_av_start_max_ticks\":%" PRIu64 ","
+        "\"w4u8_attention_pool_join_ticks\":%" PRIu64 ","
+        "\"w4u8_attention_softmax_context0_tasks\":%" PRIu32 ","
+        "\"w4u8_attention_softmax_context1_tasks\":%" PRIu32 ","
+        "\"w4u8_attention_softmax_context2_tasks\":%" PRIu32 ","
+        "\"w4u8_attention_softmax_context3_tasks\":%" PRIu32 ","
+        "\"w4u8_attention_softmax_context4_tasks\":%" PRIu32 ","
+        "\"w4u8_attention_softmax_context5_tasks\":%" PRIu32 ","
+        "\"w4u8_attention_softmax_context0_work_ticks\":%" PRIu64 ","
+        "\"w4u8_attention_softmax_context1_work_ticks\":%" PRIu64 ","
+        "\"w4u8_attention_softmax_context2_work_ticks\":%" PRIu64 ","
+        "\"w4u8_attention_softmax_context3_work_ticks\":%" PRIu64 ","
+        "\"w4u8_attention_softmax_context4_work_ticks\":%" PRIu64 ","
+        "\"w4u8_attention_softmax_context5_work_ticks\":%" PRIu64 ","
         "\"weight_dma_ticks\":%" PRIu64 ","
         "\"hmx_compute_ticks\":%" PRIu64 ","
         "\"projection_pack_ticks\":%" PRIu64 ","
@@ -2900,6 +2936,42 @@ int main(int argc, char **argv) {
         header->w4u8_down_persistent_hvx_dispatch_count,
         header->w4u8_down_persistent_hvx_worker_count,
         header->w4u8_down_transient_hvx_thread_count,
+        header->w4u8_attention_timeline_enabled,
+        header->w4u8_attention_softmax_row_slices,
+        header->w4u8_attention_softmax_timeline_task_count,
+        header->w4u8_attention_timeline_context_count,
+        header->w4u8_attention_qk_ready_first_ticks,
+        header->w4u8_attention_qk_ready_last_ticks,
+        header->w4u8_attention_softmax_claim_first_ticks,
+        header->w4u8_attention_softmax_claim_last_ticks,
+        header->w4u8_attention_softmax_start_first_ticks,
+        header->w4u8_attention_softmax_start_last_ticks,
+        header->w4u8_attention_softmax_end_first_ticks,
+        header->w4u8_attention_softmax_end_last_ticks,
+        header->w4u8_attention_softmax_task_min_ticks,
+        header->w4u8_attention_softmax_task_max_ticks,
+        header->w4u8_attention_softmax_task_work_ticks,
+        header->w4u8_attention_qk_to_softmax_start_max_ticks,
+        header->w4u8_attention_all_slices_ready_first_ticks,
+        header->w4u8_attention_all_slices_ready_last_ticks,
+        header->w4u8_attention_av_start_first_ticks,
+        header->w4u8_attention_av_start_last_ticks,
+        header->w4u8_attention_av_end_first_ticks,
+        header->w4u8_attention_av_end_last_ticks,
+        header->w4u8_attention_all_slices_to_av_start_max_ticks,
+        header->w4u8_attention_pool_join_ticks,
+        header->w4u8_attention_softmax_context_tasks[0],
+        header->w4u8_attention_softmax_context_tasks[1],
+        header->w4u8_attention_softmax_context_tasks[2],
+        header->w4u8_attention_softmax_context_tasks[3],
+        header->w4u8_attention_softmax_context_tasks[4],
+        header->w4u8_attention_softmax_context_tasks[5],
+        header->w4u8_attention_softmax_context_work_ticks[0],
+        header->w4u8_attention_softmax_context_work_ticks[1],
+        header->w4u8_attention_softmax_context_work_ticks[2],
+        header->w4u8_attention_softmax_context_work_ticks[3],
+        header->w4u8_attention_softmax_context_work_ticks[4],
+        header->w4u8_attention_softmax_context_work_ticks[5],
         header->weight_dma_ticks,
         header->hmx_compute_ticks, header->projection_pack_ticks,
         header->w4f16_expand_ticks,
