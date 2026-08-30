@@ -6,6 +6,7 @@ cd "${project_root}"
 
 grep -q '#define QBH_BLOCK_ABI_VERSION UINT32_C(37)' include/block_protocol.h
 grep -q '#define QBH_BLOCK_EXPERIMENT UINT32_C(68)' include/block_protocol.h
+grep -q '"EXP-0068"' src/host/block_main.c
 grep -q '#define QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS UINT32_C(6)' src/dsp/block_imp.c
 grep -q 'QBH_BLOCK_MAX_POOL_HVX_WORKERS' src/dsp/block_imp.c
 grep -q 'attention_hvx_contexts > 6U' src/host/block_main.c
