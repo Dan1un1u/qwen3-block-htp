@@ -19,8 +19,8 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 85
+  active_experiment: EXP-0085
+  next_experiment_number: 86
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -29,11 +29,11 @@ current_scope:
   execution_unit: qwen3_middle_block
   last_completed_experiment: EXP-0084
   last_completed_source_commit: 6dc437fe08eaccf119c4cbce82937e22f125da0b
-  provisional_source_parent: EXP-0079
+  provisional_source_parent: EXP-0084
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: null
+  active_experiment_stage: registered_group_major_qkv_timeline_diagnostic
   active_experiment_evidence: null
   active_experiment_gate: not_run
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0084/20260830T160259Z_6dc437fe08ea_formal'
@@ -44,9 +44,9 @@ current_scope:
     source_head: 6dc437fe08eaccf119c4cbce82937e22f125da0b
     physical_plan: fp16_input_and_post_residual_rmsnorm_persistent_pool_common_rows4_contexts3
     formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0084/20260830T160259Z_6dc437fe08ea_formal'
-    adoption_status: pending
+    adoption_status: accepted
     local_gate: pass
-    candidate_status: awaiting_user_promotion
+    candidate_status: promoted_as_fair_comparison_baselines
     canonical_f16f16_repeat10_host_wall_ns_per_block_median: 2442369.8
     canonical_w4f16_repeat10_host_wall_ns_per_block_median: 2161776.0
     canonical_w4u8_repeat10_host_wall_ns_per_block_median: 1955276.1
@@ -56,58 +56,42 @@ current_scope:
     f16f16_output_hash: 704252c89780e695
     w4f16_output_hash: f18b9abbe1487231
     w4u8_output_hash: 69f22eeb035e5ec5
-    selected_baseline_changed: false
+    selected_baseline_changed: true
   latest_w4u8_candidate:
-    id: W4U8-EXP0079-PERSISTENT-MLP-HVX
-    experiment: EXP-0079
+    id: W4U8-EXP0084-FAIR-CANONICAL
+    experiment: EXP-0084
     project_variant: W4U8
-    physical_plan: exp0078_plus_five_persistent_and_one_transient_down_hvx_expansion_workers
-    source_branch: codex/exp-0079-w4u8-hybrid-persistent-down-hvx
-    source_head: 8296e3de6bf1e22faa8ba3480fa6dc949d5a4e0a
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0079/20260830T123738Z_8296e3de6bf1_formal'
-    adoption_status: pending
+    physical_plan: exp0079_compatible_w4u8_path_measured_in_exp0084_fair_canonical_matrix
+    source_branch: codex/exp-0084-cross-recipe-common-schedule-parity
+    source_head: 6dc437fe08eaccf119c4cbce82937e22f125da0b
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0084/20260830T160259Z_6dc437fe08ea_formal'
+    adoption_status: accepted
     local_gate: pass
-    candidate_status: awaiting_user_promotion
-    repeat1_host_wall_ns_per_block_median: 2371614.0
-    repeat10_host_wall_ns_per_block_median: 1954026.1
-    repeat1_down_ticks_per_block_median: 6154.0
-    repeat10_down_ticks_per_block_median: 6160.8
-    input_norm_task_count_per_block: 16
-    residual_task_count_per_boundary_per_block: 16
-    residual_active_contexts: 6
-    input_norm_hash: 7255c2406108617c
-    attention_hvx_contexts: 6
-    attention_hvx_workers: 5
-    sole_lut_templates_per_group: 14
-    softmax_row_tasks_per_block: 16
-    global_attention_stage_barriers: 0
-    attention_hmx_commands_per_block: 16
-    total_hmx_commands_per_block: 176
-    total_hmx_tile_pairs_per_block: 49408
+    candidate_status: promoted_as_selected_w4u8_fair_baseline
+    repeat1_host_wall_ns_per_block_median: 2359531.0
+    repeat10_host_wall_ns_per_block_median: 1955276.1
     output_hash: 69f22eeb035e5ec5
   selected_w4u8_baseline:
-    id: W4U8-EXP0055-QK-NORM-ROPE-HEAD-PAIRS
-    experiment: EXP-0055
+    id: W4U8-EXP0084-FAIR-CANONICAL
+    experiment: EXP-0084
     project_variant: W4U8
-    source_branch: codex/exp-0055-w4u8-qk-norm-rope-head-pairs
-    source_head: 9b93da7afc61699e36780dfcbb8c287465cf0db0
-    physical_plan: exp0053_plus_twelve_paired_qk_norm_rope_tasks
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0055/20260829T182552Z_9b93da7afc61_formal'
-    repeat1_host_wall_ns_per_block_median: 2983333.0
-    repeat10_host_wall_ns_per_block_median: 2552526.1
+    source_branch: codex/exp-0084-cross-recipe-common-schedule-parity
+    source_head: 6dc437fe08eaccf119c4cbce82937e22f125da0b
+    physical_plan: exp0079_compatible_w4u8_path_measured_in_exp0084_fair_canonical_matrix
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0084/20260830T160259Z_6dc437fe08ea_formal'
+    repeat1_host_wall_ns_per_block_median: 2359531.0
+    repeat10_host_wall_ns_per_block_median: 1955276.1
     output_hash: 69f22eeb035e5ec5
     promoted_by: user
-    promoted_on: '2026-08-30'
-    promotion_ref: 'User message 2026-08-30: 同意; promote EXP-0055 as the new W4A8 baseline'
+    promoted_on: '2026-08-31'
+    promotion_ref: 'User message 2026-08-31: 同意，开始工作; promote the EXP-0084 EXP-0079-compatible W4U8 path as the fair comparison baseline'
   selected_baseline:
-    id: W4F16-EXP0038-NORMS
-    experiment: EXP-0038
+    id: W4F16-EXP0084-COMMON-NORM-POOLS
+    experiment: EXP-0084
     project_variant: W4F16
-    physical_plan: exp0036_crouton_native_swiglu_batch8_plus_exp0038_combined_norms
-    source_branch: codex/exp-0038-crouton-native-boundaries
-    source_head: 24917512fc35adfd22f97b5123473bb6a7518fd0
-    implementation_commit: db791a430631eaba8f90bf3d0e8914c4998a15f5
-    evidence_validator_commit: 24917512fc35adfd22f97b5123473bb6a7518fd0
+    physical_plan: fp16_input_and_post_residual_rmsnorm_persistent_pool_common_rows4_contexts3
+    source_branch: codex/exp-0084-cross-recipe-common-schedule-parity
+    source_head: 6dc437fe08eaccf119c4cbce82937e22f125da0b
     runtime:
       common_ops_mode: hvx_fp16
       residual_mode: hvx_fused_post_norm
@@ -121,11 +105,11 @@ current_scope:
       mlp_hvx_contexts: 4
       mlp_chunk_vectors: 64
       crouton_boundary_mode: norms
-    formal_evidence: 'D:\llm_exp\results\qwen3-block-htp\exp0038\20260828T193721Z_db791a430631'
-    retained_artifacts: 'D:\llm_exp\models\qwen3-block-htp\exp0038\artifacts\db791a430631'
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0084/20260830T160259Z_6dc437fe08ea_formal'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0084/artifacts/6dc437fe08ea/formal'
     output_hash: f18b9abbe1487231
-    repeat1_host_wall_ns_per_block_median: 2661771.0
-    repeat10_host_wall_ns_per_block_median: 2229682.3
+    repeat1_host_wall_ns_per_block_median: 2581823.0
+    repeat10_host_wall_ns_per_block_median: 2161776.0
     promoted_by: user
-    promoted_on: '2026-08-29'
-    promotion_ref: 'User message 2026-08-29: 将目前的最快方案晋升为baseline'
+    promoted_on: '2026-08-31'
+    promotion_ref: 'User message 2026-08-31: 同意，开始工作; promote the EXP-0084 common W4F16 candidate as the fair comparison baseline'

@@ -6940,7 +6940,7 @@ experiments:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending
+    adoption_status: accepted
     evidence_profile: real-qwen3-block-cross-recipe-common-schedule-parity
     source_branches:
       - codex/exp-0084-cross-recipe-common-schedule-parity
@@ -6952,6 +6952,9 @@ experiments:
     decided_by: user
     decided_on: '2026-08-30'
     approval_ref: 'User message 2026-08-30: 好的，开始吧; approve the proposed cross-recipe synchronization workflow'
+    promoted_by: user
+    promoted_on: '2026-08-31'
+    promotion_ref: 'User message 2026-08-31: 同意，开始工作; promote the EXP-0084 common W4F16 candidate and EXP-0079-compatible W4U8 path as fair comparison baselines'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0084-cross-recipe-common-schedule-parity
@@ -7041,4 +7044,57 @@ experiments:
       pc028_gate: pass
       gate_result: pass
       conclusion: dtype_independent_fp16_norm_pool_backports_reduce_the_fair_w4f16_repeat10_block_wall_to_about_2162us_and_reduce_the_apparent_w4u8_over_w4f16_speedup_from_14_1_percent_to_10_6_to_11_0_percent_while_qk_head_pairing_is_not_common
+      selected_baseline_changed: true
+  - id: EXP-0085
+    slug: gqa-group-major-qkv
+    title: GQA-group-major QKV projection scheduling
+    parent: EXP-0084
+    variants:
+      - exp0084_f16f16_fair_canonical_control
+      - exp0084_w4f16_fair_canonical_control
+      - exp0084_w4u8_fair_canonical_control
+      - gqa_group_major_qkv_super_projection_candidate
+    execution_state: running
+    evidence_validity: not_run
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-gqa-group-major-qkv
+    source_branches:
+      - codex/exp-0085-gqa-group-major-qkv
+    source_commits: []
+    record: docs/experiments/EXP-0085.md
+    decided_by: user
+    decided_on: '2026-08-31'
+    approval_ref: 'User message 2026-08-31: 同意，开始工作; accept EXP-0084 as parent and fair baselines, then begin EXP-0085 group-major QKV'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0085-gqa-group-major-qkv
+      started_on: '2026-08-31'
+      completed_on: null
+    evidence:
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0085'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0085'
+      source_parent_commit: 6dc437fe08eaccf119c4cbce82937e22f125da0b
+      direct_f16f16_control: F16F16-EXP0084-FAIR-CANONICAL
+      direct_w4f16_control: W4F16-EXP0084-COMMON-NORM-POOLS
+      direct_w4u8_control: W4U8-EXP0084-FAIR-CANONICAL
+      execution_unit: qwen3_layer14_complete_block_m64
+      primary_scope: qkv_projection_physical_storage_command_and_readiness_order_with_one_gqa_group_as_the_outer_schedule_unit
+      hypothesis: presenting_two_q_heads_one_k_head_and_one_v_head_as_one_group_major_weight_and_command_stream_reuses_the_published_activation_carrier_reduces_projection_boundary_handoffs_and_publishes_attention_ready_heads_earlier_without_changing_qkv_math
+      serial_milestones: timeline_diagnostic_then_group_major_micro_gate_then_complete_block_formal
+      stage_a_diagnostic: add_audit_only_per_group_timestamps_for_activation_publication_weight_dma_w4_expand_hmx_submit_hmx_complete_head_publication_and_attention_consume_without_changing_the_control_schedule
+      stage_a_stop_condition: stop_before_implementation_if_the_timeline_shows_no_repeated_boundary_or_readiness_gap_addressable_by_group_major_order_under_one_hmx_owner
+      candidate_contract: offline_reorder_existing_qkv_weight_segments_into_gqa_group_major_storage_and_schedule_two_q_one_k_one_v_segments_per_group_while_preserving_individual_head_publication
+      qkv_arithmetic_qparams_weight_values_head_semantics_norm_rope_attention_o_projection_mlp_or_residual_changes_allowed: false
+      package_reordering_or_duplicate_control_package_allowed: true
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      tuning_budget: identical_bounded_group_order_prefetch_distance_and_publication_grid_for_f16f16_w4f16_w4u8_where_physically_applicable
+      correctness_gate: final_output_and_audited_qkv_boundaries_byte_exact_to_each_exp0084_variant_and_independent_reference_zero_mismatches_zero_max_lsb
+      physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_logical_weight_bytes_and_hmx_tile_pairs
+      local_speed_gate: w4f16_and_w4u8_qkv_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10_while_f16f16_is_byte_exact_equally_tuned_and_non_regressing
+      completion_gate: stage_a_timeline_evidence_then_bounded_candidate_selection_then_seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
       selected_baseline_changed: false

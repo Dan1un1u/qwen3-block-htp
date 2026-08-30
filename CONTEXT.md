@@ -277,6 +277,14 @@ cover four 32-channel tiles, exactly one 128-channel Qwen3 head. Stage A may
 apply it to Q alone; extending it to K/V requires the preceding gate to pass.
 _Avoid_: QKV weight fusion, changed head layout, repeated first-Q prefetch
 
+**GQA-Group-Major QKV Super-Projection**:
+A Q/K/V scheduling and storage plan whose outer unit is one Qwen3 GQA group:
+two Q heads, one K head, and one V head. It reuses one published activation
+carrier and presents the unchanged Q/K/V weight segments in group-major order,
+while publishing each head as soon as its own projection segment completes.
+_Avoid_: changed Q/K/V mathematics, concatenated logical Linear, delayed
+whole-group readiness, concurrent HMX owners, fused Attention
+
 **Crouton-Native QKV Handoff**:
 A producer-consumer contract in which Q/K/V projection output remains in HMX
 Crouton tile order, Q/K Norm-RoPE consumes those tiles without a complete
