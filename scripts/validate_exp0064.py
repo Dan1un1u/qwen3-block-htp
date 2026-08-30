@@ -13,6 +13,7 @@ import validate_exp0063 as previous
 
 OUTPUT_HASH = "69f22eeb035e5ec5"
 VTCM_BYTES = 8_388_608
+EXP0063_VALIDATE_RECORD = previous.validate_record
 TARGETS = (
     "host_wall_ns_per_block",
     "u8_attention_qk_av_hmx_ticks",
@@ -44,7 +45,7 @@ def validate_record(record: dict[str, object], repeat: int,
         "u8_log2_gqa_qkv_overlap_vgather_vdeal_fused_qk_requant"
     )
     compatibility["hmx_command_count"] = 256 * repeat
-    previous.validate_record(
+    EXP0063_VALIDATE_RECORD(
         compatibility, repeat, "candidate", audit_enabled
     )
     base.require(record, "experiment", "EXP-0064")
