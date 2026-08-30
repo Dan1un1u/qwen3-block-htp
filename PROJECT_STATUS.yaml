@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
+  active_experiment: EXP-0084
   next_experiment_number: 85
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,16 +27,16 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0084
-  last_completed_source_commit: 7b78005bce92cfb04f23e54ababffdd36f60a47d
+  last_completed_experiment: EXP-0083
+  last_completed_source_commit: a14db168b7c99c3034d6f3dadad26ff0ef86e162
   provisional_source_parent: EXP-0079
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: null
-  active_experiment_evidence: null
-  active_experiment_gate: not_run
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0084/20260830T155058Z_7b78005bce92_formal'
+  active_experiment_stage: complete_interleaved_canonical_and_recipe_best_tri_variant_formals
+  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0084/20260830T155058Z_7b78005bce92_formal'
+  active_experiment_gate: partial_pass_tri_variant_interleaving_pending
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0083/20260830T141843Z_a14db168b7c9_formal'
   latest_cross_recipe_candidate:
     id: FP16-COMMON-EXP0084-NORM-POOLS
     experiment: EXP-0084
@@ -46,7 +46,7 @@ current_scope:
     formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0084/20260830T155058Z_7b78005bce92_formal'
     adoption_status: pending
     local_gate: pass
-    candidate_status: awaiting_user_promotion
+    candidate_status: closure_extension_running
     f16f16_repeat10_host_wall_ns_per_block_median: 2442000.0
     w4f16_repeat10_host_wall_ns_per_block_median: 2155239.6
     unchanged_w4u8_repeat10_host_wall_ns_per_block_median: 1944005.2

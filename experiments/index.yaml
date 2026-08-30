@@ -3621,7 +3621,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0051-w4u8-qkv-head-pair-command
       started_on: '2026-08-30'
-      completed_on: '2026-08-30'
+      completed_on: null
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0051'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0051'
@@ -6937,7 +6937,7 @@ experiments:
       - fp16_input_rmsnorm_persistent_pool_candidate
       - fp16_post_residual_rmsnorm_persistent_pool_candidate
       - equal_budget_per_recipe_selected_plans
-    execution_state: completed
+    execution_state: running
     evidence_validity: valid
     local_gate: pass
     adoption_status: pending
@@ -6955,7 +6955,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0084-cross-recipe-common-schedule-parity
       started_on: '2026-08-30'
-      completed_on: '2026-08-30'
+      completed_on: null
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0084'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0084'
