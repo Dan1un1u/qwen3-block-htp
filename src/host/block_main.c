@@ -1430,6 +1430,7 @@ int main(int argc, char **argv) {
         QBH_BLOCK_FP16_COMMON_SCHEDULE_CONTROL;
     uint32_t fp16_norm_rows_per_task = 4U;
     uint32_t fp16_norm_contexts = 4U;
+    uint32_t qkv_timeline_enabled = 0U;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t w4u8_gate_up_bundle_offset = 0U;
@@ -1453,6 +1454,15 @@ int main(int argc, char **argv) {
     struct qbh_error_metrics measured_metrics;
     uint32_t warmup_run_index = 0U;
     uint64_t output_hash = 0U;
+
+    {
+        const char *timeline_mode = getenv("QBH_QKV_TIMELINE");
+        if (timeline_mode != NULL &&
+            (strcmp(timeline_mode, "1") == 0 ||
+             strcmp(timeline_mode, "on") == 0)) {
+            qkv_timeline_enabled = 1U;
+        }
+    }
     int exit_code = 1;
     char file_name[128];
 
@@ -2057,6 +2067,7 @@ int main(int argc, char **argv) {
     header->fp16_common_schedule_mode = fp16_common_schedule_mode;
     header->fp16_norm_rows_per_task = fp16_norm_rows_per_task;
     header->fp16_norm_contexts = fp16_norm_contexts;
+    header->qkv_timeline_enabled = qkv_timeline_enabled;
     header->input_offset = input_slot.offset;
     header->input_bytes = input_slot.expected_bytes;
     header->output_bytes = output_bytes;
@@ -2326,7 +2337,7 @@ int main(int argc, char **argv) {
             }
         }
     }
-    if (numerical_audit_enabled != 0U) {
+    if (qkv_timeline_enabled != 0U) {
         const char *timeline_path = getenv("QBH_DUMP_QKV_TIMELINE_PATH");
         if (timeline_path != NULL && timeline_path[0] != '\0') {
             FILE *timeline = fopen(timeline_path, "w");

@@ -437,7 +437,7 @@ static uint32_t qbh_atomic_fetch_increment(volatile uint32_t *target) {
 
 static uint64_t qbh_qkv_timeline_delta(
     const struct qbh_block_header *header) {
-    if (header == NULL || header->numerical_audit_enabled == 0U ||
+    if (header == NULL || header->qkv_timeline_enabled == 0U ||
         header->qkv_timeline_origin_ticks == 0U) {
         return 0U;
     }
@@ -456,16 +456,15 @@ static void qbh_qkv_timeline_record_projection(
     uint64_t delta;
 
     if (header == NULL || desc == NULL || n_tiles == 0U ||
-        first_n_tile % tiles_per_head != 0U ||
-        n_tiles % tiles_per_head != 0U) {
+        (first_n_tile + n_tiles) % tiles_per_head != 0U) {
         return;
     }
     delta = qbh_qkv_timeline_delta(header);
     if (delta == 0U) {
         return;
     }
-    first_head = first_n_tile / tiles_per_head;
     end_head = (first_n_tile + n_tiles) / tiles_per_head;
+    first_head = end_head - 1U;
     for (uint32_t head = first_head; head < end_head; ++head) {
         if (desc == &header->projections[QBH_BLOCK_PROJ_Q]) {
             if ((head & 1U) != 0U &&
@@ -500,7 +499,7 @@ static void qbh_qkv_timeline_record_prep_task(
 static void qbh_qkv_timeline_record_attention(
     struct qbh_block_header *header, uint32_t group) {
     uint64_t delta;
-    if (group >= QBH_BLOCK_KV_HEADS ||
+    if (header == NULL || group >= QBH_BLOCK_KV_HEADS ||
         header->qkv_timeline_attention_consume[group] != 0U) {
         return;
     }
@@ -3229,7 +3228,7 @@ static int qbh_hvx_pool_qk_norm_rope(
 }
 
 static int qbh_hvx_pool_qk_norm_rope_start_async(
-    const struct qbh_block_header *header,
+    struct qbh_block_header *header,
     struct qbh_block_w4f16_pool *pool,
     __fp16 *q, __fp16 *k, __fp16 *q_destination,
     __fp16 *k_weight, uint32_t crouton_qkv,
@@ -3252,6 +3251,7 @@ static int qbh_hvx_pool_qk_norm_rope_start_async(
         return -1;
     }
     pool->attention_q = q;
+    pool->attention_header = header;
     pool->attention_k = k;
     pool->attention_q_destination = q_destination;
     pool->attention_k_weight = k_weight;
@@ -6445,7 +6445,7 @@ static int qbh_hvx_pool_gqa_attention(
     if (pool->attention_gqa_abort != 0U) {
         return -1;
     }
-    if (header->numerical_audit_enabled != 0U) {
+    if (header->qkv_timeline_enabled != 0U) {
         for (uint32_t head = 0U; head < QBH_BLOCK_HEADS; ++head) {
             float value = pool->attention_gqa_qk_max_abs[head];
             if (!isfinite(value)) {
@@ -9212,7 +9212,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     header->input_norm_ticks += HAP_perf_get_qtimer_count() - start;
 
     start = HAP_perf_get_qtimer_count();
-    if (header->numerical_audit_enabled != 0U) {
+    if (header->qkv_timeline_enabled != 0U) {
         memset(header->qkv_timeline_q_projection_ready, 0,
                sizeof(header->qkv_timeline_q_projection_ready));
         memset(header->qkv_timeline_k_projection_ready, 0,

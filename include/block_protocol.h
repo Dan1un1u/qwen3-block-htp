@@ -7,7 +7,7 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(43)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(44)
 #define QBH_BLOCK_EXPERIMENT UINT32_C(85)
 
 #define QBH_BLOCK_M UINT32_C(64)
@@ -310,6 +310,7 @@ struct qbh_block_header {
     uint32_t fp16_common_schedule_mode;
     uint32_t fp16_norm_rows_per_task;
     uint32_t fp16_norm_contexts;
+    uint32_t qkv_timeline_enabled;
 
     uint32_t input_offset;
     uint32_t input_bytes;
