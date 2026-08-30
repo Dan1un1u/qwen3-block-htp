@@ -6416,3 +6416,49 @@ experiments:
       local_adoption_eligible: false
       conclusion: first_chain_prefetch_improves_repeat10_steady_state_but_cannot_amortize_one_block_pipeline_startup_and_fails_repeat1
       selected_baseline_changed: false
+  - id: EXP-0078
+    slug: w4u8-persistent-gate-up-hvx
+    title: Persistent-pool W4U8 Gate/Up expansion workers
+    parent: EXP-0075
+    variants:
+      - exp0075_per_phase_gate_up_hvx_threads_control
+      - persistent_pool_three_worker_gate_up_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-persistent-gate-up-hvx
+    source_branches:
+      - codex/exp-0078-w4u8-persistent-gate-up-hvx
+    source_commits: []
+    record: docs/experiments/EXP-0078.md
+    decided_by: user
+    decided_on: '2026-08-30'
+    approval_ref: 'User message 2026-08-30: 允许推送，继续实验; continuous profiling-guided loop remains approved'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0078-w4u8-persistent-gate-up-hvx
+      started_on: '2026-08-30'
+      completed_on: null
+    evidence:
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0078'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0078'
+      source_parent_commit: 8e3fe8561e5b1bf994d20f8e93c96dd6087c0af2
+      direct_control: W4U8-EXP0075-DEPENDENCY-ATTENTION-STREAM
+      contextual_comparator: W4F16-EXP0038-NORMS
+      execution_unit: qwen3_layer14_complete_block_m64
+      primary_scope: gate_up_hvx_expansion_worker_lifecycle
+      hypothesis: reusing_three_already_locked_persistent_hvx_workers_removes_gate_up_per_block_thread_and_hvx_context_startup_without_changing_the_dma_expand_hmx_pipeline
+      bounded_candidate: external_three_worker_expansion_runner_for_gate_up_only_with_down_unchanged
+      numerical_layout_dma_hmx_or_down_changes_allowed: false
+      gate_up_specific_hvx_thread_create_lock_unlock_destroy_allowed: false
+      persistent_pool_gate_up_worker_count: 3
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      correctness_gate: final_output_and_audited_boundaries_byte_exact_to_exp0075_and_independent_reference_zero_mismatches_zero_max_lsb
+      physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_same_weight_bytes_dma_descriptors_176_hmx_commands_and_49408_tile_pairs
+      local_speed_gate: gate_up_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
+      completion_gate: seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
