@@ -356,17 +356,17 @@ static void qbh_hmx_region_end(struct qbh_parallel_state *state) {
     state->hmx_active = 0U;
 }
 
-static void qbh_hvx_worker_main(void *opaque) {
-    struct qbh_hvx_worker_job *job =
-        (struct qbh_hvx_worker_job *)opaque;
+static int qbh_hvx_worker_run(struct qbh_hvx_worker_job *job,
+                              uint32_t manage_hvx_context) {
     struct qbh_parallel_state *state = job->state;
     const struct qbh_projection_layout *layout = state->layout;
     int exit_status = AEE_SUCCESS;
 
-    job->lock_status = qurt_hvx_lock(QURT_HVX_MODE_128B);
+    job->lock_status = manage_hvx_context != 0U
+        ? qurt_hvx_lock(QURT_HVX_MODE_128B) : AEE_SUCCESS;
     qurt_sem_up(&state->hvx_started);
     if (job->lock_status != AEE_SUCCESS) {
-        qurt_thread_exit(job->lock_status);
+        return job->lock_status;
     }
 
     for (;;) {
@@ -523,10 +523,25 @@ static void qbh_hvx_worker_main(void *opaque) {
         }
     }
 
-    job->unlock_status = qurt_hvx_unlock();
+    job->unlock_status = manage_hvx_context != 0U
+        ? qurt_hvx_unlock() : AEE_SUCCESS;
     if (job->unlock_status != AEE_SUCCESS) {
         exit_status = job->unlock_status;
     }
+    return exit_status;
+}
+
+int qbh_run_chunked_w4_external_hvx_worker(void *worker_context) {
+    if (worker_context == NULL) {
+        return AEE_EBADPARM;
+    }
+    return qbh_hvx_worker_run(
+        (struct qbh_hvx_worker_job *)worker_context, 0U);
+}
+
+static void qbh_hvx_worker_main(void *opaque) {
+    int exit_status = qbh_hvx_worker_run(
+        (struct qbh_hvx_worker_job *)opaque, 1U);
     qurt_thread_exit(exit_status);
 }
 
@@ -1092,7 +1107,8 @@ static int qbh_run_chunked_w4_pipeline_impl(
     const uint8_t *stored_weights, const uint8_t *activation_tiles,
     uint8_t *vtcm, uint32_t hmx_context_id,
     const struct qbh_mlp_gate_up_handoff *handoff,
-    const struct qbh_w4_hmx_runner *runner) {
+    const struct qbh_w4_hmx_runner *runner,
+    const struct qbh_w4_hvx_dispatch_runner *hvx_runner) {
     struct qbh_parallel_state state;
     struct qbh_hvx_worker_job hvx_jobs[QBH_MAX_HVX_WORKERS];
     struct qbh_chunked_hmx_job hmx_job;
@@ -1104,6 +1120,7 @@ static int qbh_run_chunked_w4_pipeline_impl(
     uint32_t dma_bundle_batch;
     int hmx_thread_created = 0;
     int hmx_thread_joined = 0;
+    int external_hvx_started = 0;
     int hmx_exit_status = 0;
     int result = AEE_SUCCESS;
 
@@ -1111,6 +1128,9 @@ static int qbh_run_chunked_w4_pipeline_impl(
         activation_tiles == NULL || vtcm == NULL ||
         (hmx_context_id == 0U && runner == NULL) ||
         (runner != NULL && runner->submit == NULL) ||
+        (hvx_runner != NULL &&
+         (hvx_runner->start == NULL || hvx_runner->wait == NULL ||
+          hvx_runner->max_workers < header->requested_hvx_workers)) ||
         !qbh_physical_plan_is_chunked(layout->physical_plan) ||
         (layout->weight_storage_variant != QBH_WEIGHT_EXPANDED_S8 &&
          !qbh_weight_storage_is_packed_w4(
@@ -1212,31 +1232,50 @@ static int qbh_run_chunked_w4_pipeline_impl(
 
     for (uint32_t worker = 0; worker < header->requested_hvx_workers;
          ++worker) {
-        qurt_thread_attr_t attributes;
-        char name[16] = "qbh-hvx0";
-        name[7] = (char)('0' + worker);
         hvx_jobs[worker].state = &state;
         hvx_jobs[worker].worker_index = worker;
-        qurt_thread_attr_init(&attributes);
-        qurt_thread_attr_set_name(&attributes, name);
-        qurt_thread_attr_set_stack_addr(
-            &attributes, qbh_hvx_worker_stacks[worker]);
-        qurt_thread_attr_set_stack_size(&attributes,
-                                        QBH_HVX_WORKER_STACK_BYTES);
-        qurt_thread_attr_set_priority(
-            &attributes,
-            qurt_thread_get_priority(qurt_thread_get_id()));
-        qurt_thread_attr_set_detachstate(
-            &attributes, QURT_THREAD_ATTR_CREATE_JOINABLE);
-        int create_status = qurt_thread_create(
-            &hvx_threads[worker], &attributes, qbh_hvx_worker_main,
-            &hvx_jobs[worker]);
-        if (create_status != QURT_EOK) {
-            header->hvx_thread_create_status = create_status;
-            result = AEE_EFAILED;
-            break;
+    }
+    if (hvx_runner != NULL) {
+        void *worker_contexts[QBH_MAX_HVX_WORKERS];
+        for (uint32_t worker = 0;
+             worker < header->requested_hvx_workers; ++worker) {
+            worker_contexts[worker] = &hvx_jobs[worker];
         }
-        ++created_hvx_workers;
+        if (hvx_runner->start(
+                hvx_runner->context, worker_contexts,
+                header->requested_hvx_workers) != AEE_SUCCESS) {
+            result = AEE_EFAILED;
+        } else {
+            created_hvx_workers = header->requested_hvx_workers;
+            external_hvx_started = 1;
+        }
+    } else {
+        for (uint32_t worker = 0;
+             worker < header->requested_hvx_workers; ++worker) {
+            qurt_thread_attr_t attributes;
+            char name[16] = "qbh-hvx0";
+            name[7] = (char)('0' + worker);
+            qurt_thread_attr_init(&attributes);
+            qurt_thread_attr_set_name(&attributes, name);
+            qurt_thread_attr_set_stack_addr(
+                &attributes, qbh_hvx_worker_stacks[worker]);
+            qurt_thread_attr_set_stack_size(
+                &attributes, QBH_HVX_WORKER_STACK_BYTES);
+            qurt_thread_attr_set_priority(
+                &attributes,
+                qurt_thread_get_priority(qurt_thread_get_id()));
+            qurt_thread_attr_set_detachstate(
+                &attributes, QURT_THREAD_ATTR_CREATE_JOINABLE);
+            int create_status = qurt_thread_create(
+                &hvx_threads[worker], &attributes,
+                qbh_hvx_worker_main, &hvx_jobs[worker]);
+            if (create_status != QURT_EOK) {
+                header->hvx_thread_create_status = create_status;
+                result = AEE_EFAILED;
+                break;
+            }
+            ++created_hvx_workers;
+        }
     }
     header->hvx_workers_created = created_hvx_workers;
 
@@ -1368,15 +1407,26 @@ stop_workers:
             qurt_thread_join(hmx_thread, &hmx_exit_status);
         hmx_thread_joined = 1;
     }
-    for (uint32_t worker = 0; worker < created_hvx_workers; ++worker) {
-        int exit_status = 0;
-        int join_status =
-            qurt_thread_join(hvx_threads[worker], &exit_status);
-        ++joined_hvx_workers;
-        if ((join_status != QURT_EOK || exit_status != AEE_SUCCESS) &&
-            header->hvx_thread_join_status == 0) {
-            header->hvx_thread_join_status =
-                join_status != QURT_EOK ? join_status : exit_status;
+    if (external_hvx_started != 0) {
+        int wait_status = hvx_runner->wait(
+            hvx_runner->context, created_hvx_workers);
+        joined_hvx_workers = created_hvx_workers;
+        if (wait_status != AEE_SUCCESS) {
+            header->hvx_thread_join_status = wait_status;
+        }
+    } else {
+        for (uint32_t worker = 0; worker < created_hvx_workers; ++worker) {
+            int exit_status = 0;
+            int join_status =
+                qurt_thread_join(hvx_threads[worker], &exit_status);
+            ++joined_hvx_workers;
+            if ((join_status != QURT_EOK ||
+                 exit_status != AEE_SUCCESS) &&
+                header->hvx_thread_join_status == 0) {
+                header->hvx_thread_join_status =
+                    join_status != QURT_EOK
+                        ? join_status : exit_status;
+            }
         }
     }
     header->pcycles_end = HAP_perf_get_pcycles();
@@ -1459,14 +1509,28 @@ cleanup:
         header->hmx_thread_join_status =
             qurt_thread_join(hmx_thread, &hmx_exit_status);
     }
-    for (uint32_t worker = joined_hvx_workers;
-         worker < created_hvx_workers; ++worker) {
-        int exit_status = 0;
-        struct qbh_chunk_task stop_task;
-        memset(&stop_task, 0, sizeof(stop_task));
-        stop_task.stop = 1U;
-        qbh_queue_push(&state.queue, &stop_task);
-        (void)qurt_thread_join(hvx_threads[worker], &exit_status);
+    if (external_hvx_started != 0 &&
+        joined_hvx_workers < created_hvx_workers) {
+        for (uint32_t worker = joined_hvx_workers;
+             worker < created_hvx_workers; ++worker) {
+            struct qbh_chunk_task stop_task;
+            memset(&stop_task, 0, sizeof(stop_task));
+            stop_task.stop = 1U;
+            qbh_queue_push(&state.queue, &stop_task);
+        }
+        (void)hvx_runner->wait(
+            hvx_runner->context, created_hvx_workers);
+    } else {
+        for (uint32_t worker = joined_hvx_workers;
+             worker < created_hvx_workers; ++worker) {
+            int exit_status = 0;
+            struct qbh_chunk_task stop_task;
+            memset(&stop_task, 0, sizeof(stop_task));
+            stop_task.stop = 1U;
+            qbh_queue_push(&state.queue, &stop_task);
+            (void)qurt_thread_join(
+                hvx_threads[worker], &exit_status);
+        }
     }
 
     qurt_sem_destroy(&state.hvx_started);
@@ -1497,7 +1561,7 @@ int qbh_run_chunked_w4_pipeline(
     uint8_t *vtcm, uint32_t hmx_context_id) {
     return qbh_run_chunked_w4_pipeline_impl(
         header, layout, stored_weights, activation_tiles, vtcm,
-        hmx_context_id, NULL, NULL);
+        hmx_context_id, NULL, NULL, NULL);
 }
 
 int qbh_run_chunked_w4_pipeline_mlp(
@@ -1508,7 +1572,7 @@ int qbh_run_chunked_w4_pipeline_mlp(
     const struct qbh_mlp_gate_up_handoff *handoff) {
     return qbh_run_chunked_w4_pipeline_impl(
         header, layout, stored_weights, activation_tiles, vtcm,
-        hmx_context_id, handoff, NULL);
+        hmx_context_id, handoff, NULL, NULL);
 }
 
 int qbh_run_chunked_w4_pipeline_external(
@@ -1520,5 +1584,18 @@ int qbh_run_chunked_w4_pipeline_external(
     const struct qbh_w4_hmx_runner *runner) {
     return qbh_run_chunked_w4_pipeline_impl(
         header, layout, stored_weights, activation_tiles, vtcm,
-        0U, handoff, runner);
+        0U, handoff, runner, NULL);
+}
+
+int qbh_run_chunked_w4_pipeline_external_hvx(
+    struct qbh_probe_header *header,
+    const struct qbh_projection_layout *layout,
+    const uint8_t *stored_weights, const uint8_t *activation_tiles,
+    uint8_t *vtcm,
+    const struct qbh_mlp_gate_up_handoff *handoff,
+    const struct qbh_w4_hmx_runner *hmx_runner,
+    const struct qbh_w4_hvx_dispatch_runner *hvx_runner) {
+    return qbh_run_chunked_w4_pipeline_impl(
+        header, layout, stored_weights, activation_tiles, vtcm,
+        0U, handoff, hmx_runner, hvx_runner);
 }

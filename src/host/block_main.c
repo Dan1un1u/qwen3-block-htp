@@ -712,6 +712,14 @@ static int qbh_parse_mlp_mode(const char *text, uint32_t *mode) {
         *mode = QBH_BLOCK_MLP_W4U8_STREAMING;
         return 0;
     }
+    if (strcmp(
+            text,
+            "w4u8_streaming_persistent_gate_up_hvx") == 0 ||
+        strcmp(text, "w4u8_persistent_gate_up_hvx") == 0) {
+        *mode =
+            QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_GATE_UP_HVX;
+        return 0;
+    }
     return -1;
 }
 
@@ -730,6 +738,10 @@ static const char *qbh_mlp_mode_name(uint32_t mode) {
     }
     if (mode == QBH_BLOCK_MLP_W4U8_STREAMING) {
         return "w4u8_streaming";
+    }
+    if (mode ==
+        QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_GATE_UP_HVX) {
+        return "w4u8_streaming_persistent_gate_up_hvx";
     }
     return "control";
 }
@@ -1176,7 +1188,7 @@ static int qbh_build_w4u8_streaming_bundles(
     if (header == NULL || shared == NULL || gate_up_layout == NULL ||
         down_layout == NULL ||
         header->variant != QBH_BLOCK_W4U8 ||
-        header->mlp_mode != QBH_BLOCK_MLP_W4U8_STREAMING ||
+        !qbh_block_mlp_is_w4u8_streaming(header->mlp_mode) ||
         header->w4u8_gate_up_bundle_bytes !=
             gate_up_layout->stored_weight_bytes ||
         header->w4u8_down_bundle_bytes !=
@@ -1434,7 +1446,7 @@ int main(int argc, char **argv) {
                  QBH_BLOCK_COMMON_OP_ROPE |
                  QBH_BLOCK_COMMON_OP_SOFTMAX))) ||
           (mlp_mode != QBH_BLOCK_MLP_CONTROL &&
-           mlp_mode != QBH_BLOCK_MLP_W4U8_STREAMING))) ||
+           !qbh_block_mlp_is_w4u8_streaming(mlp_mode)))) ||
         attention_pipeline_mode >
             QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM ||
         attention_hvx_contexts == 0U ||
@@ -1494,7 +1506,7 @@ int main(int argc, char **argv) {
              QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
              QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT)) ||
           (crouton_boundary_mode != QBH_BLOCK_CROUTON_BOUNDARY_CONTROL &&
-           mlp_mode != QBH_BLOCK_MLP_W4U8_STREAMING))) ||
+           !qbh_block_mlp_is_w4u8_streaming(mlp_mode)))) ||
         (variant != QBH_BLOCK_W4U8 &&
          (crouton_boundary_mode &
           (QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
@@ -1552,14 +1564,15 @@ int main(int argc, char **argv) {
         (residual_mode ==
              QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6 &&
          attention_hvx_contexts != 6U) ||
-        mlp_mode > QBH_BLOCK_MLP_W4U8_STREAMING ||
+        mlp_mode >
+            QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_GATE_UP_HVX ||
         mlp_hvx_contexts == 0U || mlp_hvx_contexts > 4U ||
         (mlp_mode == QBH_BLOCK_MLP_CONTROL && mlp_hvx_contexts != 1U) ||
         (mlp_mode != QBH_BLOCK_MLP_CONTROL &&
-         mlp_mode != QBH_BLOCK_MLP_W4U8_STREAMING &&
+         !qbh_block_mlp_is_w4u8_streaming(mlp_mode) &&
          (variant == QBH_BLOCK_W4U8 ||
           (common_ops_mask & QBH_BLOCK_COMMON_OP_SILU) == 0U)) ||
-        (mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING &&
+        (qbh_block_mlp_is_w4u8_streaming(mlp_mode) &&
          (variant != QBH_BLOCK_W4U8 || mlp_hvx_contexts != 3U)) ||
         (mlp_mode == QBH_BLOCK_MLP_STREAMING &&
          (mlp_hvx_contexts != 4U ||
@@ -1654,7 +1667,8 @@ int main(int argc, char **argv) {
                         "[attention_pack:control|qk_hvx|av_hvx|hvx] "
                         "[mlp:control|parallel_silu|streaming|"
                         "crouton_native|crouton_native_batch8|"
-                        "w4u8_streaming] "
+                        "w4u8_streaming|"
+                        "w4u8_streaming_persistent_gate_up_hvx] "
                         "[mlp_hvx_contexts:1..4] "
                         "[mlp_chunk_vectors:16|32|64|128|256] "
                         "[attention_pipeline:control|parallel_qk_norm_rope|"
@@ -1683,7 +1697,7 @@ int main(int argc, char **argv) {
     }
     element_bytes = variant == QBH_BLOCK_W4U8 ? 1U : 2U;
     output_bytes = QBH_BLOCK_M * QBH_BLOCK_HIDDEN * element_bytes;
-    if (mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING &&
+    if (qbh_block_mlp_is_w4u8_streaming(mlp_mode) &&
         (qbh_projection_layout_init(
              QBH_PROJECTION_GATE_UP_PAIR,
              QBH_WEIGHT_PACKED_W4_HMX_SCALE,
@@ -1774,7 +1788,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "integer Attention stage-reference audit failed\n");
         return 2;
     }
-    if (mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING &&
+    if (qbh_block_mlp_is_w4u8_streaming(mlp_mode) &&
         qbh_prepare_slot(&w4u8_lut_slot, argv[1],
                          "silu_up_lut_u16.bin", QBH_MLP_LUT_BYTES,
                          &cursor) != 0) {
@@ -1843,7 +1857,7 @@ int main(int argc, char **argv) {
                 cursor += bias_bytes;
             }
         }
-        if (mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING) {
+        if (qbh_block_mlp_is_w4u8_streaming(mlp_mode)) {
             cursor = qbh_align_up_size(cursor, QBH_HOST_ALIGNMENT);
             w4u8_gate_up_bundle_offset = cursor;
             if (w4u8_gate_up_layout.stored_weight_bytes >
@@ -1902,7 +1916,7 @@ int main(int argc, char **argv) {
             goto cleanup;
         }
     }
-    if (mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING &&
+    if (qbh_block_mlp_is_w4u8_streaming(mlp_mode) &&
         qbh_read_slot(shared, &w4u8_lut_slot) != 0) {
         goto cleanup;
     }
@@ -1987,7 +2001,7 @@ int main(int argc, char **argv) {
                 QBH_BLOCK_U8_ATTENTION_AUDIT_BYTES;
         }
     }
-    if (mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING) {
+    if (qbh_block_mlp_is_w4u8_streaming(mlp_mode)) {
         header->w4u8_gate_up_bundle_offset =
             (uint32_t)w4u8_gate_up_bundle_offset;
         header->w4u8_gate_up_bundle_bytes =
@@ -2034,7 +2048,7 @@ int main(int argc, char **argv) {
             }
         }
     }
-    if (mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING &&
+    if (qbh_block_mlp_is_w4u8_streaming(mlp_mode) &&
         qbh_build_w4u8_streaming_bundles(
             header, shared, &w4u8_gate_up_layout,
             &w4u8_down_layout) != 0) {
@@ -2219,7 +2233,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0075\","
+        "{\"experiment\":\"EXP-0078\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2464,6 +2478,9 @@ int main(int argc, char **argv) {
         "\"w4u8_mlp_hmx_ready_wait_ticks\":%" PRIu64 ","
         "\"w4u8_mlp_producer_slot_wait_ticks\":%" PRIu64 ","
         "\"w4u8_mlp_expanded_slot_wait_ticks\":%" PRIu64 ","
+        "\"w4u8_gate_up_persistent_hvx_dispatch_count\":%" PRIu32 ","
+        "\"w4u8_gate_up_persistent_hvx_worker_count\":%" PRIu32 ","
+        "\"w4u8_gate_up_transient_hvx_thread_count\":%" PRIu32 ","
         "\"weight_dma_ticks\":%" PRIu64 ","
         "\"hmx_compute_ticks\":%" PRIu64 ","
         "\"projection_pack_ticks\":%" PRIu64 ","
@@ -2748,6 +2765,9 @@ int main(int argc, char **argv) {
         header->w4u8_mlp_hmx_ready_wait_ticks,
         header->w4u8_mlp_producer_slot_wait_ticks,
         header->w4u8_mlp_expanded_slot_wait_ticks,
+        header->w4u8_gate_up_persistent_hvx_dispatch_count,
+        header->w4u8_gate_up_persistent_hvx_worker_count,
+        header->w4u8_gate_up_transient_hvx_thread_count,
         header->weight_dma_ticks,
         header->hmx_compute_ticks, header->projection_pack_ticks,
         header->w4f16_expand_ticks,
@@ -2806,7 +2826,7 @@ int main(int argc, char **argv) {
                         header->intermediate_ddr_write_bytes == 0U &&
                         header->intermediate_dma_descriptor_count == 0U &&
                         header->intermediate_spill_fill_count == 0U &&
-                        (mlp_mode != QBH_BLOCK_MLP_W4U8_STREAMING ||
+                        (!qbh_block_mlp_is_w4u8_streaming(mlp_mode) ||
                          measured_metrics.mismatches == 0U) &&
                         isfinite(measured_metrics.cosine) &&
                         measured_metrics.cosine > 0.90

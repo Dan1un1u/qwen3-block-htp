@@ -62,6 +62,14 @@ struct qbh_w4_hmx_runner {
                   const struct qbh_w4_hmx_request *request);
 };
 
+struct qbh_w4_hvx_dispatch_runner {
+    void *context;
+    uint32_t max_workers;
+    int (*start)(void *context, void *const *worker_contexts,
+                 uint32_t worker_count);
+    int (*wait)(void *context, uint32_t worker_count);
+};
+
 int qbh_run_chunked_w4_pipeline(
     struct qbh_probe_header *header,
     const struct qbh_projection_layout *layout,
@@ -82,5 +90,16 @@ int qbh_run_chunked_w4_pipeline_external(
     uint8_t *vtcm,
     const struct qbh_mlp_gate_up_handoff *handoff,
     const struct qbh_w4_hmx_runner *runner);
+
+int qbh_run_chunked_w4_pipeline_external_hvx(
+    struct qbh_probe_header *header,
+    const struct qbh_projection_layout *layout,
+    const uint8_t *stored_weights, const uint8_t *activation_tiles,
+    uint8_t *vtcm,
+    const struct qbh_mlp_gate_up_handoff *handoff,
+    const struct qbh_w4_hmx_runner *hmx_runner,
+    const struct qbh_w4_hvx_dispatch_runner *hvx_runner);
+
+int qbh_run_chunked_w4_external_hvx_worker(void *worker_context);
 
 #endif

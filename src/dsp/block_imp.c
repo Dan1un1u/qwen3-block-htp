@@ -112,6 +112,7 @@ enum qbh_block_hvx_pool_job_kind {
     QBH_BLOCK_HVX_POOL_U8_QK_PREP = 8,
     QBH_BLOCK_HVX_POOL_U8_RESIDUAL = 9,
     QBH_BLOCK_HVX_POOL_U8_INPUT_NORM = 10,
+    QBH_BLOCK_HVX_POOL_W4U8_PIPELINE = 11,
 };
 
 enum qbh_block_u8_residual_kind {
@@ -234,6 +235,8 @@ struct qbh_block_w4f16_job {
     uint64_t u8_final_residual_ticks;
     uint32_t u8_input_norm_task_count;
     uint64_t u8_input_norm_ticks;
+    void *w4u8_pipeline_worker_context;
+    int32_t w4u8_pipeline_worker_status;
 };
 
 struct qbh_block_w4f16_pool {
@@ -581,7 +584,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
     buffers->channel_scale_alt = qbh_arena_alloc_aligned(
         &arena, QBH_HMX_FP16_SCALE_BYTES,
         QBH_HMX_FP16_SCALE_BYTES);
-    if (mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING) {
+    if (qbh_block_mlp_is_w4u8_streaming(mlp_mode)) {
         buffers->w4u8_silu_lut = qbh_arena_alloc_aligned(
             &arena, QBH_MLP_LUT_BYTES, QBH_BLOCK_ALIGNMENT);
         buffers->w4u8_gather_scratch = qbh_arena_alloc_aligned(
@@ -626,7 +629,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         buffers->hmx_output == NULL ||
         buffers->scale_or_bias == NULL || buffers->channel_scale == NULL ||
         buffers->channel_scale_alt == NULL ||
-        (mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING &&
+        (qbh_block_mlp_is_w4u8_streaming(mlp_mode) &&
          (buffers->w4u8_silu_lut == NULL ||
           buffers->w4u8_gather_scratch == NULL)) ||
         (qbh_attention_u8_enabled(attention_pipeline_mode) &&
@@ -807,7 +810,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
              QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT)) ||
           (header->crouton_boundary_mode !=
                QBH_BLOCK_CROUTON_BOUNDARY_CONTROL &&
-           header->mlp_mode != QBH_BLOCK_MLP_W4U8_STREAMING))) ||
+           !qbh_block_mlp_is_w4u8_streaming(
+               header->mlp_mode)))) ||
         (header->variant != QBH_BLOCK_W4U8 &&
          (header->crouton_boundary_mode &
           (QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
@@ -866,7 +870,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
              QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6 &&
          header->attention_hvx_contexts !=
              QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS) ||
-        header->mlp_mode > QBH_BLOCK_MLP_W4U8_STREAMING ||
+        header->mlp_mode >
+            QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_GATE_UP_HVX ||
         header->mlp_hvx_contexts == 0U ||
         header->mlp_hvx_contexts > QBH_BLOCK_W4F16_HVX_WORKERS ||
         (header->mlp_chunk_vectors != 16U &&
@@ -877,10 +882,10 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (header->mlp_mode == QBH_BLOCK_MLP_CONTROL &&
          header->mlp_hvx_contexts != 1U) ||
         (header->mlp_mode != QBH_BLOCK_MLP_CONTROL &&
-         header->mlp_mode != QBH_BLOCK_MLP_W4U8_STREAMING &&
+         !qbh_block_mlp_is_w4u8_streaming(header->mlp_mode) &&
          (header->variant == QBH_BLOCK_W4U8 ||
           (header->common_ops_mask & QBH_BLOCK_COMMON_OP_SILU) == 0U)) ||
-        (header->mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING &&
+        (qbh_block_mlp_is_w4u8_streaming(header->mlp_mode) &&
          (header->variant != QBH_BLOCK_W4U8 ||
           header->mlp_hvx_contexts !=
               QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS)) ||
@@ -963,7 +968,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
             header->attention_pipeline_mode !=
                 QBH_BLOCK_ATTENTION_PIPELINE_CONTROL)) ||
           (header->mlp_mode != QBH_BLOCK_MLP_CONTROL &&
-           header->mlp_mode != QBH_BLOCK_MLP_W4U8_STREAMING)))) {
+           !qbh_block_mlp_is_w4u8_streaming(
+               header->mlp_mode))))) {
         return 0;
     }
     if (header->w4f16_requested_hvx_workers == 0U ||
@@ -1039,7 +1045,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          header->attention_config_bytes != 0U)) {
         return 0;
     }
-    if (header->mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING &&
+    if (qbh_block_mlp_is_w4u8_streaming(header->mlp_mode) &&
         (header->w4u8_silu_lut_bytes != QBH_MLP_LUT_BYTES ||
          header->w4u8_gate_up_bundle_bytes == 0U ||
          header->w4u8_down_bundle_bytes == 0U ||
@@ -2237,6 +2243,11 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
         } else if (job->command_kind ==
                    QBH_BLOCK_HVX_POOL_U8_INPUT_NORM) {
             qbh_u8_input_norm_pool_run_tasks(pool, job);
+        } else if (job->command_kind ==
+                   QBH_BLOCK_HVX_POOL_W4U8_PIPELINE) {
+            job->w4u8_pipeline_worker_status =
+                qbh_run_chunked_w4_external_hvx_worker(
+                    job->w4u8_pipeline_worker_context);
         }
         job->command_kind = QBH_BLOCK_HVX_POOL_NONE;
         (void)qurt_sem_up(&pool->command_done[job->worker_index]);
@@ -2351,6 +2362,61 @@ static void qbh_w4f16_pool_wait(
         qurt_sem_down(&pool->command_done[worker]);
     }
     asm volatile("barrier" ::: "memory");
+}
+
+static int qbh_w4u8_pipeline_pool_start(
+    void *context, void *const *worker_contexts,
+    uint32_t worker_count) {
+    struct qbh_block_w4f16_pool *pool =
+        (struct qbh_block_w4f16_pool *)context;
+
+    if (pool == NULL || worker_contexts == NULL ||
+        worker_count == 0U || worker_count > pool->worker_count) {
+        return AEE_EBADPARM;
+    }
+    for (uint32_t worker = 0U; worker < worker_count; ++worker) {
+        if (worker_contexts[worker] == NULL ||
+            pool->jobs[worker].command_kind !=
+                QBH_BLOCK_HVX_POOL_NONE) {
+            return AEE_EFAILED;
+        }
+    }
+    pool->active_worker_count = worker_count;
+    for (uint32_t worker = 0U; worker < worker_count; ++worker) {
+        pool->jobs[worker].w4u8_pipeline_worker_context =
+            worker_contexts[worker];
+        pool->jobs[worker].w4u8_pipeline_worker_status =
+            AEE_EFAILED;
+        pool->jobs[worker].command_kind =
+            QBH_BLOCK_HVX_POOL_W4U8_PIPELINE;
+    }
+    asm volatile("barrier" ::: "memory");
+    for (uint32_t worker = 0U; worker < worker_count; ++worker) {
+        (void)qurt_sem_up(&pool->command_ready[worker]);
+    }
+    return AEE_SUCCESS;
+}
+
+static int qbh_w4u8_pipeline_pool_wait(
+    void *context, uint32_t worker_count) {
+    struct qbh_block_w4f16_pool *pool =
+        (struct qbh_block_w4f16_pool *)context;
+    int result = AEE_SUCCESS;
+
+    if (pool == NULL || worker_count == 0U ||
+        worker_count != pool->active_worker_count) {
+        return AEE_EBADPARM;
+    }
+    qbh_w4f16_pool_wait(pool);
+    for (uint32_t worker = 0U; worker < worker_count; ++worker) {
+        if (pool->jobs[worker].w4u8_pipeline_worker_status !=
+            AEE_SUCCESS) {
+            result = AEE_EFAILED;
+        }
+        pool->jobs[worker].w4u8_pipeline_worker_context = NULL;
+    }
+    pool->active_worker_count = 0U;
+    return result;
 }
 
 static int qbh_hvx_pool_u8_input_norm(
@@ -7954,7 +8020,7 @@ static int qbh_stage_metadata(struct qbh_block_header *header,
         header->boundary_ddr_read_bytes += bytes[index];
         ++header->boundary_dma_descriptor_count;
     }
-    if (header->mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING) {
+    if (qbh_block_mlp_is_w4u8_streaming(header->mlp_mode)) {
         if (qbh_dma_copy(
                 header, buffers->w4u8_silu_lut,
                 shared + header->w4u8_silu_lut_offset,
@@ -8147,6 +8213,7 @@ static int qbh_run_w4u8_streaming_mlp(
     struct qbh_block_header *header, const uint8_t *shared,
     struct qbh_block_buffers *buffers,
     struct qbh_block_hmx_worker *worker,
+    struct qbh_block_w4f16_pool *hvx_pool,
     uint32_t activation_prepacked,
     uint32_t output_native) {
     struct qbh_projection_layout gate_up_layout;
@@ -8160,6 +8227,12 @@ static int qbh_run_w4u8_streaming_mlp(
         .max_chunks_per_command = 2U,
         .submit = qbh_block_w4_hmx_submit,
     };
+    struct qbh_w4_hvx_dispatch_runner hvx_runner = {
+        .context = hvx_pool,
+        .max_workers = hvx_pool != NULL ? hvx_pool->worker_count : 0U,
+        .start = qbh_w4u8_pipeline_pool_start,
+        .wait = qbh_w4u8_pipeline_pool_wait,
+    };
     uint8_t *mlp_arena = buffers->q;
     uint32_t pair_publish_count = 0U;
     uint32_t pair_consume_count = 0U;
@@ -8171,7 +8244,12 @@ static int qbh_run_w4u8_streaming_mlp(
     int relock_status;
 
     if (header->variant != QBH_BLOCK_W4U8 ||
-        header->mlp_mode != QBH_BLOCK_MLP_W4U8_STREAMING ||
+        !qbh_block_mlp_is_w4u8_streaming(header->mlp_mode) ||
+        (header->mlp_mode ==
+             QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_GATE_UP_HVX &&
+         (hvx_pool == NULL ||
+          hvx_pool->worker_count <
+              QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS)) ||
         qbh_init_w4u8_gate_up_layout(&gate_up_layout) != 0 ||
         qbh_init_w4u8_down_layout(&down_layout) != 0 ||
         header->w4u8_gate_up_bundle_bytes !=
@@ -8230,11 +8308,25 @@ static int qbh_run_w4u8_streaming_mlp(
         qbh_reset_w4u8_phase_header(
             &gate_up_phase, QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS);
         start = HAP_perf_get_qtimer_count();
-        result = qbh_run_chunked_w4_pipeline_external(
-            &gate_up_phase, &gate_up_layout,
-            shared + header->w4u8_gate_up_bundle_offset,
-            mlp_arena + gate_up_layout.vtcm_activation_offset,
-            mlp_arena, &handoff, &runner);
+        if (header->mlp_mode ==
+            QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_GATE_UP_HVX) {
+            result = qbh_run_chunked_w4_pipeline_external_hvx(
+                &gate_up_phase, &gate_up_layout,
+                shared + header->w4u8_gate_up_bundle_offset,
+                mlp_arena + gate_up_layout.vtcm_activation_offset,
+                mlp_arena, &handoff, &runner, &hvx_runner);
+            ++header->w4u8_gate_up_persistent_hvx_dispatch_count;
+            header->w4u8_gate_up_persistent_hvx_worker_count +=
+                QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS;
+        } else {
+            result = qbh_run_chunked_w4_pipeline_external(
+                &gate_up_phase, &gate_up_layout,
+                shared + header->w4u8_gate_up_bundle_offset,
+                mlp_arena + gate_up_layout.vtcm_activation_offset,
+                mlp_arena, &handoff, &runner);
+            header->w4u8_gate_up_transient_hvx_thread_count +=
+                QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS;
+        }
         header->gate_up_ticks += HAP_perf_get_qtimer_count() - start;
         header->w4u8_mlp_activation_work_ticks +=
             activation_work_ticks;
@@ -8382,12 +8474,12 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         header->variant == QBH_BLOCK_W4F16 ? 1U : 3U;
     uint32_t w4u8_mlp_native_input_enabled =
         header->variant == QBH_BLOCK_W4U8 &&
-        header->mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING &&
+        qbh_block_mlp_is_w4u8_streaming(header->mlp_mode) &&
         (header->crouton_boundary_mode &
          QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT) != 0U;
     uint32_t w4u8_mlp_native_output_enabled =
         header->variant == QBH_BLOCK_W4U8 &&
-        header->mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING &&
+        qbh_block_mlp_is_w4u8_streaming(header->mlp_mode) &&
         (header->crouton_boundary_mode &
          QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT) != 0U;
     uint32_t w4u8_qkv_native_input_enabled =
@@ -9138,9 +9230,9 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     header->post_attention_norm_ticks +=
         HAP_perf_get_qtimer_count() - start;
 
-    if (header->mlp_mode == QBH_BLOCK_MLP_W4U8_STREAMING) {
+    if (qbh_block_mlp_is_w4u8_streaming(header->mlp_mode)) {
         if (qbh_run_w4u8_streaming_mlp(
-                header, shared, buffers, worker,
+                header, shared, buffers, worker, w4f16_pool,
                 w4u8_mlp_native_input_enabled,
                 w4u8_mlp_native_output_enabled) != 0) {
             return QBH_BLOCK_STATUS_MLP_STREAM_FAILED;

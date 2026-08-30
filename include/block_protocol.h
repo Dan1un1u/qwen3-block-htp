@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(39)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(75)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(40)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(78)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -143,7 +143,14 @@ enum qbh_block_mlp_mode {
     QBH_BLOCK_MLP_CROUTON_NATIVE = 3,
     QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 = 4,
     QBH_BLOCK_MLP_W4U8_STREAMING = 5,
+    QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_GATE_UP_HVX = 6,
 };
+
+static inline uint32_t qbh_block_mlp_is_w4u8_streaming(uint32_t mode) {
+    return mode == QBH_BLOCK_MLP_W4U8_STREAMING ||
+           mode ==
+               QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_GATE_UP_HVX;
+}
 
 enum qbh_block_crouton_boundary_mode {
     QBH_BLOCK_CROUTON_BOUNDARY_CONTROL = 0,
@@ -587,6 +594,9 @@ struct qbh_block_header {
     uint64_t w4u8_mlp_hmx_ready_wait_ticks;
     uint64_t w4u8_mlp_producer_slot_wait_ticks;
     uint64_t w4u8_mlp_expanded_slot_wait_ticks;
+    uint32_t w4u8_gate_up_persistent_hvx_dispatch_count;
+    uint32_t w4u8_gate_up_persistent_hvx_worker_count;
+    uint32_t w4u8_gate_up_transient_hvx_thread_count;
 };
 
 #endif
