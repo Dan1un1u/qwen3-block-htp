@@ -7,21 +7,39 @@ u8_remote="${EXP0085_U8_REMOTE_ROOT:-/data/local/tmp/qwen3-block-htp/exp0085-u8}
 variant="${1:-W4U8}"
 repeat_count="${2:-1}"
 timeline_output="${3:-}"
+qkv_schedule="${4:-control}"
 remote_timeline="/data/local/tmp/qwen3-block-htp/exp0085-${variant,,}-qkv-timeline.json"
 
 if [[ -z "${timeline_output}" ]]; then
-    printf 'usage: %s F16F16|W4F16|W4U8 repeat timeline-output\n' "$0" >&2
+    printf 'usage: %s F16F16|W4F16|W4U8 repeat timeline-output [control|group_major|group_major2|group_major4|q_prefix4_k_all|q_prefix6_k_all]\n' "$0" >&2
+    exit 2
+fi
+if [[ "${qkv_schedule}" != "control" &&
+      "${qkv_schedule}" != "group_major" &&
+      "${qkv_schedule}" != "group_major2" &&
+      "${qkv_schedule}" != "group_major4" &&
+      "${qkv_schedule}" != "q_prefix4_k_all" &&
+      "${qkv_schedule}" != "q_prefix6_k_all" ]]; then
+    printf 'invalid QKV schedule: %s\n' "${qkv_schedule}" >&2
     exit 2
 fi
 
 case "${variant}" in
     F16F16)
         remote_root="${fp16_remote}"
-        runtime_args="2 32 hvx on off fused gate8 control hvx crouton_native_batch8 4 64 gqa_qkv_overlap 4 norms serial scalar input_norm_pool_post_norm_pool 4 3"
+        fp16_boundary="norms"
+        if [[ "${qkv_schedule}" != "control" ]]; then
+            fp16_boundary="qkv_norms"
+        fi
+        runtime_args="2 32 hvx on off fused gate8 control hvx crouton_native_batch8 4 64 gqa_qkv_overlap 4 ${fp16_boundary} serial scalar input_norm_pool_post_norm_pool 4 3"
         ;;
     W4F16)
         remote_root="${fp16_remote}"
-        runtime_args="3 32 hvx on off fused serial adaptive_down96_gate4_dma8_cross hvx crouton_native_batch8 4 64 gqa_qkv_overlap 4 norms serial scalar input_norm_pool_post_norm_pool 4 3"
+        fp16_boundary="norms"
+        if [[ "${qkv_schedule}" != "control" ]]; then
+            fp16_boundary="qkv_norms"
+        fi
+        runtime_args="3 32 hvx on off fused serial adaptive_down96_gate4_dma8_cross hvx crouton_native_batch8 4 64 gqa_qkv_overlap 4 ${fp16_boundary} serial scalar input_norm_pool_post_norm_pool 4 3"
         ;;
     W4U8)
         remote_root="${u8_remote}"
@@ -37,5 +55,5 @@ mkdir -p "$(dirname "${timeline_output}")"
 "${adb_exe}" get-state >/dev/null
 "${adb_exe}" shell rm -f "${remote_timeline}"
 "${adb_exe}" shell \
-    "cd ${remote_root} && QBH_QKV_TIMELINE=1 QBH_DUMP_QKV_TIMELINE_PATH=${remote_timeline} LD_LIBRARY_PATH=${remote_root} DSP_LIBRARY_PATH=${remote_root} ADSP_LIBRARY_PATH=${remote_root} ./qwen3_block_cli ${remote_root}/block_package_layer14_m64 ${variant} ${repeat_count} ${runtime_args}"
+    "cd ${remote_root} && QBH_QKV_SCHEDULE=${qkv_schedule} QBH_QKV_TIMELINE=1 QBH_DUMP_QKV_TIMELINE_PATH=${remote_timeline} LD_LIBRARY_PATH=${remote_root} DSP_LIBRARY_PATH=${remote_root} ADSP_LIBRARY_PATH=${remote_root} ./qwen3_block_cli ${remote_root}/block_package_layer14_m64 ${variant} ${repeat_count} ${runtime_args}"
 "${adb_exe}" exec-out cat "${remote_timeline}" >"${timeline_output}"

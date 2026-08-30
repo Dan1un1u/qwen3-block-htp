@@ -784,6 +784,13 @@ static int qbh_parse_crouton_boundary_mode(
                 QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM;
         return 0;
     }
+    if (strcmp(text, "qkv_norms") == 0 ||
+        strcmp(text, "qkv_input_post_norm") == 0) {
+        *mode = QBH_BLOCK_CROUTON_BOUNDARY_QKV |
+                QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM |
+                QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM;
+        return 0;
+    }
     if (strcmp(text, "all") == 0) {
         *mode = QBH_BLOCK_CROUTON_BOUNDARY_QKV |
                 QBH_BLOCK_CROUTON_BOUNDARY_AV_TO_O |
@@ -829,6 +836,10 @@ static const char *qbh_crouton_boundary_mode_name(uint32_t mode) {
         case QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM |
              QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM:
             return "norms";
+        case QBH_BLOCK_CROUTON_BOUNDARY_QKV |
+             QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM |
+             QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM:
+            return "qkv_norms";
         case QBH_BLOCK_CROUTON_BOUNDARY_QKV |
              QBH_BLOCK_CROUTON_BOUNDARY_AV_TO_O |
              QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM |
@@ -1005,6 +1016,23 @@ static const char *qbh_fp16_common_schedule_mode_name(uint32_t mode) {
             return "qk_head_pairs_input_norm_pool";
         case QBH_BLOCK_FP16_COMMON_SCHEDULE_ALL:
             return "qk_head_pairs_input_norm_pool_post_norm_pool";
+        default:
+            return "control";
+    }
+}
+
+static const char *qbh_qkv_schedule_mode_name(uint32_t mode) {
+    switch (mode) {
+        case QBH_BLOCK_QKV_SCHEDULE_GQA_GROUP_MAJOR:
+            return "group_major";
+        case QBH_BLOCK_QKV_SCHEDULE_GQA_WINDOW2:
+            return "group_major2";
+        case QBH_BLOCK_QKV_SCHEDULE_GQA_WINDOW4:
+            return "group_major4";
+        case QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL:
+            return "q_prefix4_k_all";
+        case QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX6_K_ALL:
+            return "q_prefix6_k_all";
         default:
             return "control";
     }
@@ -1431,6 +1459,7 @@ int main(int argc, char **argv) {
     uint32_t fp16_norm_rows_per_task = 4U;
     uint32_t fp16_norm_contexts = 4U;
     uint32_t qkv_timeline_enabled = 0U;
+    uint32_t qkv_schedule_mode = QBH_BLOCK_QKV_SCHEDULE_CONTROL;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t w4u8_gate_up_bundle_offset = 0U;
@@ -1461,6 +1490,31 @@ int main(int argc, char **argv) {
             (strcmp(timeline_mode, "1") == 0 ||
              strcmp(timeline_mode, "on") == 0)) {
             qkv_timeline_enabled = 1U;
+        }
+    }
+    {
+        const char *schedule_mode = getenv("QBH_QKV_SCHEDULE");
+        if (schedule_mode != NULL && schedule_mode[0] != '\0') {
+            if (strcmp(schedule_mode, "control") == 0) {
+                qkv_schedule_mode = QBH_BLOCK_QKV_SCHEDULE_CONTROL;
+            } else if (strcmp(schedule_mode, "group_major") == 0) {
+                qkv_schedule_mode =
+                    QBH_BLOCK_QKV_SCHEDULE_GQA_GROUP_MAJOR;
+            } else if (strcmp(schedule_mode, "group_major2") == 0) {
+                qkv_schedule_mode =
+                    QBH_BLOCK_QKV_SCHEDULE_GQA_WINDOW2;
+            } else if (strcmp(schedule_mode, "group_major4") == 0) {
+                qkv_schedule_mode =
+                    QBH_BLOCK_QKV_SCHEDULE_GQA_WINDOW4;
+            } else if (strcmp(schedule_mode, "q_prefix4_k_all") == 0) {
+                qkv_schedule_mode =
+                    QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL;
+            } else if (strcmp(schedule_mode, "q_prefix6_k_all") == 0) {
+                qkv_schedule_mode =
+                    QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX6_K_ALL;
+            } else {
+                qkv_schedule_mode = UINT32_MAX;
+            }
         }
     }
     int exit_code = 1;
@@ -1614,6 +1668,8 @@ int main(int argc, char **argv) {
          fp16_norm_rows_per_task != 4U &&
          fp16_norm_rows_per_task != 8U) ||
         fp16_norm_contexts < 2U || fp16_norm_contexts > 4U ||
+        qkv_schedule_mode >
+            QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX6_K_ALL ||
         (variant == QBH_BLOCK_W4U8 &&
          fp16_common_schedule_mode !=
              QBH_BLOCK_FP16_COMMON_SCHEDULE_CONTROL) ||
@@ -1778,7 +1834,7 @@ int main(int argc, char **argv) {
                         "u8_log2_gqa_qkv_overlap_vgather_vdeal_fused_qk_requant] "
                         "[attention_hvx_contexts:1..6] "
                         "[crouton_boundary:control|qkv|av_to_o|"
-                        "input_norm|post_norm|norms|all|"
+                        "input_norm|post_norm|norms|qkv_norms|all|"
                         "w4u8_mlp_input|w4u8_mlp_io] "
                         "[w4u8_qkvo_pipeline:serial|qkv_batch2|"
                         "qkv_batch4|qkvo_batch4|"
@@ -2068,6 +2124,7 @@ int main(int argc, char **argv) {
     header->fp16_norm_rows_per_task = fp16_norm_rows_per_task;
     header->fp16_norm_contexts = fp16_norm_contexts;
     header->qkv_timeline_enabled = qkv_timeline_enabled;
+    header->qkv_schedule_mode = qkv_schedule_mode;
     header->input_offset = input_slot.offset;
     header->input_bytes = input_slot.expected_bytes;
     header->output_bytes = output_bytes;
@@ -2350,12 +2407,15 @@ int main(int argc, char **argv) {
                 timeline,
                 "{\"experiment\":\"EXP-0085\","
                 "\"stage\":\"A\",\"variant\":\"%s\","
+                "\"qkv_schedule\":\"%s\","
                 "\"repeat_count\":%" PRIu32 ","
                 "\"qkv_end_ticks\":%" PRIu64 ","
                 "\"weight_dma_ticks\":%" PRIu64 ","
                 "\"weight_expand_ticks\":%" PRIu64 ","
                 "\"hmx_wait_ticks\":%" PRIu64 ",\"groups\":[",
-                qbh_variant_name(variant), repeats,
+                qbh_variant_name(variant),
+                qbh_qkv_schedule_mode_name(qkv_schedule_mode),
+                repeats,
                 header->qkv_timeline_end_ticks,
                 header->qkv_timeline_weight_dma_ticks,
                 header->qkv_timeline_weight_expand_ticks,

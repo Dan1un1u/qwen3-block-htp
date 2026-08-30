@@ -7,7 +7,7 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(44)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(45)
 #define QBH_BLOCK_EXPERIMENT UINT32_C(85)
 
 #define QBH_BLOCK_M UINT32_C(64)
@@ -118,6 +118,41 @@ enum qbh_block_fp16_common_schedule_mode {
         QBH_BLOCK_FP16_COMMON_SCHEDULE_INPUT_NORM_POOL |
         QBH_BLOCK_FP16_COMMON_SCHEDULE_POST_RESIDUAL_NORM_POOL,
 };
+
+enum qbh_block_qkv_schedule_mode {
+    QBH_BLOCK_QKV_SCHEDULE_CONTROL = 0,
+    QBH_BLOCK_QKV_SCHEDULE_GQA_GROUP_MAJOR = 1,
+    QBH_BLOCK_QKV_SCHEDULE_GQA_WINDOW2 = 2,
+    QBH_BLOCK_QKV_SCHEDULE_GQA_WINDOW4 = 3,
+    QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL = 4,
+    QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX6_K_ALL = 5,
+};
+
+static inline uint32_t qbh_block_qkv_schedule_is_grouped(
+    uint32_t mode) {
+    return mode >= QBH_BLOCK_QKV_SCHEDULE_GQA_GROUP_MAJOR &&
+           mode <= QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX6_K_ALL;
+}
+
+static inline uint32_t qbh_block_qkv_schedule_is_pivot(
+    uint32_t mode) {
+    return mode == QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL ||
+           mode == QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX6_K_ALL;
+}
+
+static inline uint32_t qbh_block_qkv_schedule_q_prefix(
+    uint32_t mode) {
+    return mode == QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX6_K_ALL
+               ? 6U : 4U;
+}
+
+static inline uint32_t qbh_block_qkv_schedule_window(
+    uint32_t mode) {
+    return mode == QBH_BLOCK_QKV_SCHEDULE_GQA_WINDOW4
+               ? 4U
+               : (mode == QBH_BLOCK_QKV_SCHEDULE_GQA_WINDOW2
+                      ? 2U : 1U);
+}
 
 enum qbh_block_attention_pack_mode {
     QBH_BLOCK_ATTENTION_PACK_CONTROL = 0,
@@ -311,6 +346,7 @@ struct qbh_block_header {
     uint32_t fp16_norm_rows_per_task;
     uint32_t fp16_norm_contexts;
     uint32_t qkv_timeline_enabled;
+    uint32_t qkv_schedule_mode;
 
     uint32_t input_offset;
     uint32_t input_bytes;
