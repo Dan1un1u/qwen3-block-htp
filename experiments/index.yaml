@@ -6657,14 +6657,15 @@ experiments:
     variants:
       - exp0079_main_hvx_qkv_expand_control
       - q_only_idle_qk_prep_worker_assisted_expand_stage_a
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-qkv-worker-assisted-expand
     source_branches:
       - codex/exp-0081-w4u8-qkv-worker-assisted-expand
-    source_commits: []
+    source_commits:
+      - 7d52d6c3a8616942f9480859b2d5437671f5d8bb
     record: docs/experiments/EXP-0081.md
     decided_by: user
     decided_on: '2026-08-30'
@@ -6673,7 +6674,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0081-w4u8-qkv-worker-assisted-expand
       started_on: '2026-08-30'
-      completed_on: null
+      completed_on: '2026-08-30'
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0081'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0081'
@@ -6698,3 +6699,45 @@ experiments:
       stage_a_execution_gate: positive_q_worker_assisted_batch_and_tile_counts_with_all_twelve_qk_pair_tasks_preserved
       local_speed_gate: qkv_projection_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
+      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0081/20260830T132210Z_7d52d6c3a861_formal'
+      artifact_set: 'D:/llm_exp/models/qwen3-block-htp/exp0081/artifacts/7d52d6c3a861/formal'
+      non_authoritative_validator_failed_run: 'D:/llm_exp/results/qwen3-block-htp/exp0081/20260830T130628Z_065a0e522568_formal'
+      gate_summary_sha256: 98bbe66db7ea096686602853c2df17c2d595b3395dcaf928b615da59c6b0dad9
+      full_profiling_report_sha256: 8c781e2120e168e143f5d4ba6225e752e9e0cb456132001252b3515fcdb01769
+      package_manifest_sha256: 043f61337b2ad2758bb95791bc4ca768150f457f1f28bc7d20a7ad57eba42359
+      output_hash: 69f22eeb035e5ec5
+      total_mismatches: 0
+      max_lsb: 0
+      formal_paired_rounds: 7
+      repeat1_control_host_wall_ns_per_block_median: 2376770.0
+      repeat1_candidate_host_wall_ns_per_block_median: 2358854.0
+      repeat1_host_wall_change_percent: -0.7537961182613406
+      repeat1_host_wall_paired_change_percent: 2.8499797252222514
+      repeat1_control_qkv_ticks_per_block_median: 8169.0
+      repeat1_candidate_qkv_ticks_per_block_median: 7871.0
+      repeat1_qkv_change_percent: -3.6479373240298707
+      repeat1_qkv_paired_change_percent: -3.6112131227812427
+      repeat10_control_host_wall_ns_per_block_median: 1958875.0
+      repeat10_candidate_host_wall_ns_per_block_median: 1937401.0
+      repeat10_host_wall_change_percent: -1.0962414651266683
+      repeat10_host_wall_paired_change_percent: -1.3577541951363403
+      repeat10_control_qkv_ticks_per_block_median: 8184.8
+      repeat10_candidate_qkv_ticks_per_block_median: 7835.3
+      repeat10_qkv_change_percent: -4.270110448636499
+      repeat10_qkv_paired_change_percent: -4.304320203303691
+      repeat10_qkvo_weight_expand_change_percent: -9.0920429034672
+      repeat10_qkvo_hmx_lifetime_change_percent: -5.500796281151821
+      repeat10_qk_prep_pool_wait_change_percent: 19.532191945985055
+      worker_assisted_q_batches_per_block: 11
+      worker_assisted_q_tiles_per_block: 20
+      worker_assistance_wait_ticks_per_block_repeat10: 2.8
+      fixed_vtcm_gate: pass
+      zero_intermediate_ddr_gate: pass
+      zero_spill_fill_gate: pass
+      unchanged_weight_dma_hmx_gate: pass
+      worker_assistance_execution_gate: pass
+      gate_result: fail
+      local_adoption_eligible: false
+      conclusion: q_only_worker_assistance_reliably_shortens_qkv_expansion_and_qkv_wall_but_increases_qk_preparation_join_pressure_and_fails_the_repeat1_paired_complete_host_wall_gate
+      stage_b_started: false
+      selected_baseline_changed: false
