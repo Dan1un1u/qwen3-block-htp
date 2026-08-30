@@ -1368,6 +1368,7 @@ int main(int argc, char **argv) {
         QBH_BLOCK_W4U8_QKVO_SERIAL;
     uint32_t u8_norm_reduction_mode =
         QBH_BLOCK_U8_NORM_REDUCTION_SCALAR;
+    uint32_t w4u8_gate_up_batch_n_tiles = 8U;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t w4u8_gate_up_bundle_offset = 0U;
@@ -1401,7 +1402,7 @@ int main(int argc, char **argv) {
     memset(attention_audit_slots, 0, sizeof(attention_audit_slots));
     memset(&w4u8_gate_up_layout, 0, sizeof(w4u8_gate_up_layout));
     memset(&w4u8_down_layout, 0, sizeof(w4u8_down_layout));
-    if (argc < 3 || argc > 21 ||
+    if (argc < 3 || argc > 22 ||
         qbh_parse_variant(argv[2], &variant) != 0 ||
         (argc >= 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
         (argc >= 5 && qbh_parse_u32(
@@ -1438,6 +1439,9 @@ int main(int argc, char **argv) {
                            argv[19], &w4u8_qkvo_pipeline_mode) != 0) ||
         (argc >= 21 && qbh_parse_u8_norm_reduction_mode(
                            argv[20], &u8_norm_reduction_mode) != 0) ||
+        (argc >= 22 && qbh_parse_u32(
+                           argv[21],
+                           &w4u8_gate_up_batch_n_tiles) != 0) ||
         repeats == 0U || repeats > 100U ||
         w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
         (variant == QBH_BLOCK_W4U8 &&
@@ -1527,6 +1531,11 @@ int main(int argc, char **argv) {
             QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS ||
         u8_norm_reduction_mode >
             QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE_PARALLEL_INPUT ||
+        (w4u8_gate_up_batch_n_tiles != 8U &&
+         w4u8_gate_up_batch_n_tiles != 16U &&
+         w4u8_gate_up_batch_n_tiles != 32U) ||
+        (variant != QBH_BLOCK_W4U8 &&
+         w4u8_gate_up_batch_n_tiles != 8U) ||
         (variant != QBH_BLOCK_W4U8 &&
          u8_norm_reduction_mode !=
              QBH_BLOCK_U8_NORM_REDUCTION_SCALAR) ||
@@ -1699,7 +1708,8 @@ int main(int argc, char **argv) {
                         "qkvo_batch4_qk_head_pairs] "
                         "[u8_norm_reduction:scalar|hvx_tree|"
                         "hvx_tree_qk_batched_rsqrt|"
-                        "hvx_tree_qk_batched_rsqrt_shared_rope]\n",
+                        "hvx_tree_qk_batched_rsqrt_shared_rope] "
+                        "[w4u8_gate_up_batch_n_tiles:8|16|32]\n",
                 argv[0]);
         return 2;
     }
@@ -1971,6 +1981,8 @@ int main(int argc, char **argv) {
     header->crouton_boundary_mode = crouton_boundary_mode;
     header->w4u8_qkvo_pipeline_mode = w4u8_qkvo_pipeline_mode;
     header->u8_norm_reduction_mode = u8_norm_reduction_mode;
+    header->w4u8_gate_up_batch_n_tiles =
+        w4u8_gate_up_batch_n_tiles;
     header->input_offset = input_slot.offset;
     header->input_bytes = input_slot.expected_bytes;
     header->output_bytes = output_bytes;
@@ -2244,7 +2256,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0079\","
+        "{\"experiment\":\"EXP-0083\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","

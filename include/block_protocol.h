@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(41)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(79)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(42)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(83)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -296,6 +296,7 @@ struct qbh_block_header {
     uint32_t crouton_boundary_mode;
     uint32_t w4u8_qkvo_pipeline_mode;
     uint32_t u8_norm_reduction_mode;
+    uint32_t w4u8_gate_up_batch_n_tiles;
 
     uint32_t input_offset;
     uint32_t input_bytes;

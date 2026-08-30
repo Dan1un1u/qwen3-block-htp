@@ -54,22 +54,22 @@ struct qbh_parallel_state {
     const struct qbh_projection_layout *layout;
     const uint8_t *activation_tiles;
     uint8_t *compressed_slots[QBH_W4_MAX_COMPRESSED_SLOT_COUNT];
-    uint8_t *expanded_slots[QBH_W4_EXPANDED_CHUNK_SLOT_COUNT];
+    uint8_t *expanded_slots[QBH_W4_MAX_EXPANDED_SLOT_COUNT];
     uint8_t *output_tiles;
 
     struct qbh_chunk_queue queue;
     qurt_sem_t compressed_free[QBH_W4_MAX_COMPRESSED_SLOT_COUNT];
-    qurt_sem_t expanded_free[QBH_W4_EXPANDED_CHUNK_SLOT_COUNT];
-    qurt_sem_t expanded_ready[QBH_W4_EXPANDED_CHUNK_SLOT_COUNT];
+    qurt_sem_t expanded_free[QBH_W4_MAX_EXPANDED_SLOT_COUNT];
+    qurt_sem_t expanded_ready[QBH_W4_MAX_EXPANDED_SLOT_COUNT];
     qurt_sem_t hmx_started;
     qurt_sem_t hvx_started;
-    qurt_sem_t mlp_pair_free[QBH_W4_MAX_COMPRESSED_SLOT_COUNT];
+    qurt_sem_t mlp_pair_free[QBH_W4_MAX_PAIR_SLOT_COUNT];
     qurt_mutex_t metrics_mutex;
 
     volatile uint32_t
         compressed_remaining[QBH_W4_MAX_COMPRESSED_SLOT_COUNT];
     volatile uint32_t stream_ready_generation
-        [QBH_W4_EXPANDED_CHUNK_SLOT_COUNT]
+        [QBH_W4_MAX_EXPANDED_SLOT_COUNT]
         [QBH_W4_MAX_STREAM_REGIONS];
     volatile uint32_t active_hvx_workers;
     volatile uint32_t streaming_hmx_consumption_started;
@@ -1157,7 +1157,7 @@ static int qbh_run_chunked_w4_pipeline_impl(
          handoff->pair_consume_count == NULL ||
          handoff->activation_ticks == NULL ||
          handoff->pair_slot_count == 0U ||
-         handoff->pair_slot_count > QBH_W4_MAX_COMPRESSED_SLOT_COUNT ||
+         handoff->pair_slot_count > QBH_W4_MAX_PAIR_SLOT_COUNT ||
          (layout->n_tiles & 1U) != 0U)) {
         return AEE_EBADPARM;
     }

@@ -6,7 +6,7 @@
 #include "hmx_u8s8_projection.h"
 #include "probe_protocol.h"
 
-#define QBH_W4_HMX_MAX_BATCH_OUTPUTS UINT32_C(8)
+#define QBH_W4_HMX_MAX_BATCH_OUTPUTS UINT32_C(32)
 #define QBH_W4_HMX_MAX_CONTINUATION_CHUNKS UINT32_C(1)
 
 struct qbh_mlp_gate_up_handoff {
