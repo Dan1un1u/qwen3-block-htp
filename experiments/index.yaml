@@ -7223,10 +7223,10 @@ experiments:
       - exp0084_w4u8_fair_canonical_control_32_rows
       - audit_only_attention_task_timeline
       - dependency_stream_16_row_softmax_slice_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-attention-softmax-slice-granularity
     source_branches:
       - codex/exp-0087-w4u8-attention-slice-granularity
@@ -7234,6 +7234,8 @@ experiments:
       - a62d6bea6d132d252addf52541cc7b9255a6a7a5
       - f03b5b49a1debff47a2bc67b164569ca486f830e
       - b30e9000176276a535f495b12db4036e034a1858
+      - a1cae71f846093cc2ee669e18fcf60ac95a7103e
+      - 1034561a93980421f1022b9719d28ee7a2240fab
     record: docs/experiments/EXP-0087.md
     decided_by: user
     decided_on: '2026-08-31'
@@ -7242,10 +7244,10 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0087-w4u8-attention-slice-granularity
       started_on: '2026-08-31'
-      completed_on: null
+      completed_on: '2026-08-31'
     evidence:
-      formal_results: null
-      retained_artifacts: null
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0087/stage_b_a1cae71'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0087/artifacts/a1cae71/stage_b_negative'
       source_parent_commit: 6dc437fe08eaccf119c4cbce82937e22f125da0b
       direct_w4u8_control: W4U8-EXP0084-FAIR-CANONICAL
       contextual_w4f16_comparator: W4F16-EXP0084-COMMON-NORM-POOLS
@@ -7290,3 +7292,35 @@ experiments:
       stage_a_pool_join_ticks: 3752
       stage_a_correctness_and_physical_gate: pass_same_output_hash_69f22eeb035e5ec5_zero_mismatches_zero_max_lsb_exact_8mib_vtcm_zero_intermediate_ddr_176_hmx_commands_49408_u8s8_tile_pairs
       stage_a_conclusion: ordinary_schedule_uses_all_six_contexts_but_sixteen_equal_32_row_tasks_force_a_stable_three_three_two_three_three_two_distribution_and_about_1_5x_context_work_imbalance_while_av_readiness_delay_is_small_so_finer_16_row_tasks_are_an_addressable_single_variable
+      stage_b_runtime_source_commit: a1cae71f846093cc2ee669e18fcf60ac95a7103e
+      stage_b_analysis_source_commit: 1034561a93980421f1022b9719d28ee7a2240fab
+      stage_b_run: 'D:/llm_exp/results/qwen3-block-htp/exp0087/stage_b_a1cae71'
+      stage_b_retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0087/artifacts/a1cae71/stage_b_negative'
+      stage_b_rounds: 5
+      stage_b_gate_result: fail
+      stage_b_control_rows_per_slice: 32
+      stage_b_candidate_rows_per_slice: 16
+      stage_b_candidate_context_task_count_medians: 6_5_6_5_5_5
+      stage_b_control_softmax_task_work_ticks: 14182
+      stage_b_candidate_softmax_task_work_ticks: 14590
+      stage_b_control_pool_join_ticks: 3752
+      stage_b_candidate_pool_join_ticks: 3750
+      stage_b_repeat1_attention_ordinary_improvement_percent: 0.1837
+      stage_b_repeat1_attention_paired_improvement_percent: 0.3469
+      stage_b_repeat1_host_ordinary_improvement_percent: -0.0088
+      stage_b_repeat1_host_paired_improvement_percent: -0.0088
+      stage_b_repeat10_attention_ordinary_improvement_percent: 0.8154
+      stage_b_repeat10_attention_paired_improvement_percent: 0.8277
+      stage_b_repeat10_host_ordinary_improvement_percent: 0.3941
+      stage_b_repeat10_host_paired_improvement_percent: 0.1886
+      stage_c_status: not_run_by_contract_because_stage_b_repeat1_complete_host_wall_did_not_strictly_improve
+      correctness_gate_result: pass_byte_exact_same_output_hash_69f22eeb035e5ec5_probability_hash_94f2e218f06f9627_av_hash_f853658f52032bde_zero_mismatches_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_176_hmx_commands_49408_u8s8_tile_pairs_per_block
+      pc027_timing_ledger_closure: pass
+      pc028_module_table: pass
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: 40c862b7e1358746d586f1e8f1300b988e8b24d7fab83c84390e40e92e5bdd1d
+      full_profiling_report_sha256: aae8707eab9deaeb1fa3eb03daf8cf6ba2672e70880d6a16ea4512ab2766448b
+      stage_b_summary_sha256: a57bdb7881fe4f1ab9c993216dbda81ca3b71107951a6d3e664c6e60dd00062b
+      conclusion: sixteen_row_tasks_reduce_the_theoretical_six_context_imbalance_but_raise_softmax_task_work_about_2_9_percent_leave_pool_join_unchanged_and_fail_the_strict_repeat1_complete_host_wall_gate
+      selected_baseline_changed: false

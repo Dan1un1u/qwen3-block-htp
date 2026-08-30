@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0087
+  active_experiment: null
   next_experiment_number: 88
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,16 +27,37 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0086
-  last_completed_source_commit: f768a60f4173546b41884c4a15f0bc1e71c8aba3
+  last_completed_experiment: EXP-0087
+  last_completed_source_commit: 1034561a93980421f1022b9719d28ee7a2240fab
   provisional_source_parent: EXP-0084
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: bounded_32_vs_16_row_gate
-  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0087/stage_a_b30e900'
-  active_experiment_gate: pass_to_stage_b
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0086/formal_af51e13'
+  active_experiment_stage: none
+  active_experiment_evidence: null
+  active_experiment_gate: none
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0087/stage_b_a1cae71'
+  latest_w4u8_attention_slice_experiment:
+    id: EXP-0087
+    source_branch: codex/exp-0087-w4u8-attention-slice-granularity
+    source_head: 1034561a93980421f1022b9719d28ee7a2240fab
+    runtime_source_head: a1cae71f846093cc2ee669e18fcf60ac95a7103e
+    direct_control: dependency_stream_two_32_row_softmax_tasks_per_group
+    candidate: dependency_stream_four_16_row_softmax_tasks_per_group
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0087/stage_b_a1cae71'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0087/artifacts/a1cae71/stage_b_negative'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    correctness_gate: pass
+    physical_gate: pass
+    pc027_timing_ledger_closure: pass
+    pc028_module_table: pass
+    repeat10_attention_improvement_percent: 0.8154
+    repeat10_host_improvement_percent: 0.3941
+    repeat1_host_improvement_percent: -0.0088
+    conclusion: finer_tasks_fix_the_six_context_work_imbalance_but_add_about_2_9_percent_softmax_task_work_and_do_not_move_pool_join_or_strictly_improve_repeat1_complete_host_wall
+    selected_baseline_changed: false
   latest_w4u8_down_rebalance_experiment:
     id: EXP-0086
     source_branch: codex/exp-0086-w4u8-down-pipeline-rebalance
