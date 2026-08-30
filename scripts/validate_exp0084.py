@@ -187,10 +187,12 @@ def stage_summary(result_dir: Path, stage: str) -> dict:
 
 
 def module_us(record: dict) -> list[tuple[str, float]]:
+    repeat_count = float(record.get("repeat_count", 1))
+
     def ticks(*fields: str) -> float:
         return (
             sum(float(record[field]) for field in fields)
-            / QTIMER_TICKS_PER_US
+            / repeat_count / QTIMER_TICKS_PER_US
         )
 
     modules = [
@@ -369,7 +371,7 @@ def build_report(summary: dict, result_dir: Path) -> str:
     for stage, label in (("stage_a", "Q/K head pairs"),
                          ("stage_b", "Input RMSNorm pool"),
                          ("stage_c", "Post residual/RMSNorm pool"),
-                         ("candidate", "Accepted combined candidate")):
+                         ("candidate", "Combined B+C candidate")):
         gate = summary["stages"][stage]["host_wall_non_regression_gate"]
         lines.append(f"| {label} | {'PASS' if gate else 'FAIL'} |")
     lines.extend([
@@ -377,7 +379,19 @@ def build_report(summary: dict, result_dir: Path) -> str:
         f"rows/task={summary['selection']['selected_rows_per_task']}, "
         f"contexts={summary['selection']['selected_contexts']}. "
         f"Rule: {summary['selection']['selection_rule']}.", "",
+        "Equal-budget recipe-specific optima (reported for fairness analysis; "
+        "not automatically adopted):", "",
+        "| Recipe | rows/task | contexts | repeat1 | repeat10 |",
+        "|---|---:|---:|---:|---:|",
     ])
+    for variant in FP16_VARIANTS:
+        best = summary["selection"]["recipe_specific_best"][variant]
+        lines.append(
+            f"| {variant.upper()} | {best['rows_per_task']} | "
+            f"{best['contexts']} | "
+            f"{best['host_wall_ns_per_block']['repeat1'] / 1000.0:.3f} us | "
+            f"{best['host_wall_ns_per_block']['repeat10'] / 1000.0:.3f} us |")
+    lines.append("")
 
     stage_fields = {
         "stage_a": (
