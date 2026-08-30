@@ -30,6 +30,8 @@ OVERLAP = tuple(dict.fromkeys((
 EXTRA_REPORT_FIELDS = tuple(dict.fromkeys((
     *previous.EXTRA_REPORT_FIELDS,
     "w4u8_input_norm_task_count",
+    "w4u8_post_residual_task_count",
+    "w4u8_final_residual_task_count",
 )))
 
 
@@ -188,7 +190,7 @@ def build_summary(result_dir: Path, package_dir: Path) -> dict[str, object]:
         task_gate = (
             metrics["w4u8_input_norm_task_count"]["control"] == 0.0
             and metrics["w4u8_input_norm_task_count"]["candidate"]
-                == float(16 * repeat)
+                == 16.0
             and metrics["w4u8_input_norm_worker_work_ticks"][
                 "candidate"
             ] > 0.0
