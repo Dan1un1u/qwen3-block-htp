@@ -6831,16 +6831,18 @@ experiments:
       - exp0079_gate_up_hmx_batch8_control
       - gate_up_hmx_batch16_candidate
       - gate_up_hmx_batch32_candidate
-    execution_state: running
-    evidence_validity: invalid
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-gate-up-wide-hmx-batches
     source_branches:
       - codex/exp-0083-w4u8-gate-up-wide-hmx-batches
     source_commits:
       - 685e21a42cc0f1dfe6f08c4e502611f3f6825a5c
       - 8be47fc40b3bcf0266ee20923b7034c73d97970d
+      - 9209bca4add3378fa9231eab654bfd7a94511783
+      - a14db168b7c99c3034d6f3dadad26ff0ef86e162
     record: docs/experiments/EXP-0083.md
     decided_by: user
     decided_on: '2026-08-30'
@@ -6849,7 +6851,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0083-w4u8-gate-up-wide-hmx-batches
       started_on: '2026-08-30'
-      completed_on: null
+      completed_on: '2026-08-30'
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0083'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0083'
@@ -6876,3 +6878,52 @@ experiments:
         - 'D:/llm_exp/results/qwen3-block-htp/exp0083/20260830T140406Z_8be47fc40b3b_formal'
       invalidation_reason: runtime_refactor_reduced_batch8_control_pair_ring_from_exp0079_eight_slots_to_four_and_increased_producer_wait_so_the_control_was_not_strict
       repaired_pair_slot_contract: batch8_uses_8_batch16_uses_8_batch32_uses_16
+      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0083/20260830T141843Z_a14db168b7c9_formal'
+      artifact_set: 'D:/llm_exp/models/qwen3-block-htp/exp0083/artifacts/a14db168b7c9/formal'
+      gate_summary_sha256: 2768589653cb0223cc3eae67c7834301d2a0cb1e5fe65b80db800478d17791c4
+      full_profiling_report_sha256: 79c1c69bbb65a537a822bc8d6bf0b60400c6dc85f77f485d95cd952837fa12fd
+      package_manifest_sha256: 043f61337b2ad2758bb95791bc4ca768150f457f1f28bc7d20a7ad57eba42359
+      output_hash: 69f22eeb035e5ec5
+      total_mismatches: 0
+      max_lsb: 0
+      formal_paired_rounds: 7
+      repeat1_control_host_wall_ns_per_block_median: 2389115.0
+      repeat1_candidate_host_wall_ns_per_block_median: 2437032.0
+      repeat1_host_wall_change_percent: 2.006
+      repeat1_host_wall_paired_change_percent: 2.417
+      repeat1_control_gate_up_ticks_per_block_median: 13452.0
+      repeat1_candidate_gate_up_ticks_per_block_median: 14583.0
+      repeat1_gate_up_change_percent: 8.408
+      repeat1_gate_up_paired_change_percent: 7.985
+      repeat10_control_host_wall_ns_per_block_median: 1964489.6
+      repeat10_candidate_host_wall_ns_per_block_median: 2025599.0
+      repeat10_host_wall_change_percent: 3.111
+      repeat10_host_wall_paired_change_percent: 2.778
+      repeat10_control_gate_up_ticks_per_block_median: 13502.6
+      repeat10_candidate_gate_up_ticks_per_block_median: 14556.4
+      repeat10_gate_up_change_percent: 7.804
+      repeat10_gate_up_paired_change_percent: 7.479
+      repeat10_gate_up_pipeline_change_percent: 7.263
+      repeat10_hmx_ready_wait_change_percent: -23.812
+      repeat10_producer_slot_wait_change_percent: 1594.561
+      repeat10_expanded_slot_wait_change_percent: -35.832
+      batch8_gate_up_hmx_commands_per_block: 48
+      batch16_gate_up_hmx_commands_per_block: 24
+      batch32_gate_up_hmx_commands_per_block: 12
+      batch8_pair_slots: 8
+      batch16_pair_slots: 8
+      batch32_pair_slots: 16
+      batch8_mlp_plan_bytes: 1708032
+      batch16_mlp_plan_bytes: 1875968
+      batch32_mlp_plan_bytes: 2961408
+      full_block_peak_plan_bytes: 5306080
+      fixed_vtcm_gate: pass
+      zero_intermediate_ddr_gate: pass
+      zero_spill_fill_gate: pass
+      unchanged_weight_dma_hmx_tile_gate: pass
+      wide_batch_execution_gate: pass
+      strict_control_repair_gate: pass
+      gate_result: fail
+      local_adoption_eligible: false
+      conclusion: wider_gate_up_hmx_commands_reduce_hmx_ready_and_expanded_slot_wait_but_delay_pair_publication_raise_producer_backpressure_about_seventeen_fold_and_slow_gate_up_and_complete_host_wall
+      selected_baseline_changed: false
