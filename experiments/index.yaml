@@ -4707,14 +4707,15 @@ experiments:
     variants:
       - exp0060_scalar_qk_reciprocal_square_root_control
       - exp0060_paired_qk_hvx_batched_reciprocal_square_root_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4u8-qk-paired-batched-rsqrt
     source_branches:
       - codex/exp-0061-w4u8-qk-paired-batched-rsqrt
-    source_commits: []
+    source_commits:
+      - 21006b8d9ab73400572da14a05ea9d57708e3aa8
     record: docs/experiments/EXP-0061.md
     decided_by: user
     decided_on: '2026-08-30'
@@ -4723,7 +4724,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0061-w4u8-qk-paired-batched-rsqrt
       started_on: '2026-08-30'
-      completed_on: null
+      completed_on: '2026-08-30'
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0061'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0061'
@@ -4748,6 +4749,106 @@ experiments:
       qnn_dependency_allowed: false
       repeat_contract: repeat1_and_repeat10
       correctness_gate: final_output_and_qk_probability_av_boundaries_byte_exact_to_exp0060_and_independent_reference_zero_mismatches_zero_max_lsb
+      physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn
+      local_speed_gate: qk_norm_rope_work_qkv_critical_path_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
+      completion_gate: seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
+      source_head: 21006b8d9ab73400572da14a05ea9d57708e3aa8
+      implementation_commit: 21006b8d9ab73400572da14a05ea9d57708e3aa8
+      evidence_validator_commit: 21006b8d9ab73400572da14a05ea9d57708e3aa8
+      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0061/20260830T062409Z_21006b8d9ab7_formal'
+      artifact_set: 'D:/llm_exp/models/qwen3-block-htp/exp0061/artifacts/21006b8d9ab7/formal'
+      gate_record: 'D:/llm_exp/results/qwen3-block-htp/exp0061/20260830T062409Z_21006b8d9ab7_formal/gate_summary.json'
+      formal_full_profiling_report: 'D:/llm_exp/results/qwen3-block-htp/exp0061/20260830T062409Z_21006b8d9ab7_formal/full_profiling_report.md'
+      full_profiling_report: docs/experiments/EXP-0061-PROFILING.md
+      gate_record_sha256: bfb56fbadeb4c75522c8e7931048fa08679665b5e127c19986f2fd9b82894661
+      formal_full_profiling_report_sha256: 5037aaf14ddc6a32cf16c5ad3d33f838b4c80461ec865cf687a149006d2e0722
+      static_gate_sha256: a300154c8fc26fd8d000e853535fb917019b3fa8e4128acf58e19bde4b066e12
+      package_manifest_sha256: 043f61337b2ad2758bb95791bc4ca768150f457f1f28bc7d20a7ad57eba42359
+      stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      formal_paired_rounds: 7
+      output_hash: 69f22eeb035e5ec5
+      qk_probability_av_hash_equivalence: true
+      qk_hash: 32aa949912e365be
+      probability_hash: 94f2e218f06f9627
+      av_hash: f853658f52032bde
+      implementation_reference_mismatches: 0
+      implementation_reference_max_lsb: 0
+      fixed_vtcm_acquired_bytes: 8388608
+      vtcm_peak_plan_bytes: 5306080
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      spill_fill_count: 0
+      repeat1_control_host_wall_ns_per_block_median: 2844115.0
+      repeat1_candidate_host_wall_ns_per_block_median: 2828282.0
+      repeat1_host_wall_change_percent: -0.556693
+      repeat1_paired_host_wall_change_percent_median: -0.316389
+      repeat1_control_qk_norm_rope_work_ticks_per_block_median: 28395.0
+      repeat1_candidate_qk_norm_rope_work_ticks_per_block_median: 27124.0
+      repeat1_qk_norm_rope_work_change_percent: -4.476140
+      repeat1_control_qkv_ledger_ticks_per_block_median: 11131.0
+      repeat1_candidate_qkv_ledger_ticks_per_block_median: 10699.0
+      repeat1_qkv_ledger_change_percent: -3.881053
+      repeat10_control_host_wall_ns_per_block_median: 2426703.1
+      repeat10_candidate_host_wall_ns_per_block_median: 2409963.6
+      repeat10_host_wall_change_percent: -0.689804
+      repeat10_paired_host_wall_change_percent_median: -1.110688
+      repeat10_control_qk_norm_rope_work_ticks_per_block_median: 28108.7
+      repeat10_candidate_qk_norm_rope_work_ticks_per_block_median: 26897.2
+      repeat10_qk_norm_rope_work_change_percent: -4.310053
+      repeat10_control_qkv_ledger_ticks_per_block_median: 10980.1
+      repeat10_candidate_qkv_ledger_ticks_per_block_median: 10677.4
+      repeat10_qkv_ledger_change_percent: -2.756805
+      gate_result: pass
+      local_adoption_eligible: true
+      conclusion: paired_16_row_vtcm_chunks_fill_four_hvx_rsqrt_vectors_per_task_and_reduce_qk_norm_qkv_and_host_wall_without_changing_attention_math_or_physical_contract
+      selected_baseline_changed: false
+  - id: EXP-0062
+    slug: w4u8-shared-rope-preconversion
+    title: Share preconverted RoPE coefficients across Q/K tasks
+    parent: EXP-0061
+    variants:
+      - exp0061_per_task_rope_fp16_to_sf32_control
+      - exp0061_shared_vtcm_rope_sf32_cache_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-shared-rope-preconversion
+    source_branches:
+      - codex/exp-0062-w4u8-shared-rope-preconversion
+    source_commits: []
+    record: docs/experiments/EXP-0062.md
+    decided_by: user
+    decided_on: '2026-08-30'
+    approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible experiments pre-approved'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0062-w4u8-shared-rope-preconversion
+      started_on: '2026-08-30'
+      completed_on: null
+    evidence:
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0062'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0062'
+      source_parent_commit: 21006b8d9ab73400572da14a05ea9d57708e3aa8
+      direct_control: W4U8-EXP0061-QK-BATCHED-RSQRT
+      contextual_comparator: W4F16-EXP0038-NORMS
+      execution_unit: qwen3_layer14_complete_block_m64
+      primary_scope: shared_rope_fp16_to_sf32_preconversion
+      hypothesis: one_64_row_vtcm_rope_sf32_cache_can_replace_twelve_repeated_per_task_conversions_without_changing_qk_norm_or_attention_math
+      reciprocal_square_root_changes_allowed: false
+      centered_square_reduction_changes_allowed: false
+      qparam_changes_allowed: false
+      rope_values_or_equations_changes_allowed: false
+      attention_schedule_changes_allowed: cache_prepare_barrier_only
+      projection_changes_allowed: false
+      residual_equation_changes_allowed: false
+      mlp_changes_allowed: false
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      correctness_gate: final_output_and_qk_probability_av_boundaries_byte_exact_to_exp0061_and_independent_reference_zero_mismatches_zero_max_lsb
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn
       local_speed_gate: qk_norm_rope_work_qkv_critical_path_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
