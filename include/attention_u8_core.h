@@ -64,6 +64,12 @@ void qbh_attention_u8_softmax_group(
     const struct qbh_attention_config *config,
     struct qbh_attention_u8_telemetry *telemetry);
 
+void qbh_attention_u8_requant_softmax_group(
+    uint8_t *score_tiles, uint8_t *probability_tiles,
+    uint8_t *scratch,
+    const struct qbh_attention_config *config,
+    struct qbh_attention_u8_telemetry *telemetry);
+
 void qbh_attention_u8_requant_av(
     uint8_t *output_tiles,
     const struct qbh_attention_config *config);

@@ -326,6 +326,7 @@ static int qbh_attention_u8_fused_k_enabled(uint32_t mode);
 static int qbh_attention_u8_qkv_overlap_enabled(uint32_t mode);
 static int qbh_attention_u8_vgather_enabled(uint32_t mode);
 static int qbh_attention_u8_vdeal_enabled(uint32_t mode);
+static int qbh_attention_u8_fused_qk_requant_enabled(uint32_t mode);
 static void qbh_attention_gqa_pool_run_tasks(
     struct qbh_block_w4f16_pool *pool,
     struct qbh_block_w4f16_job *job);
@@ -701,7 +702,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (header->attention_pack_mode &
          ~((uint32_t)QBH_BLOCK_ATTENTION_PACK_HVX)) != 0U ||
         header->attention_pipeline_mode >
-            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL ||
+            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT ||
         header->attention_hvx_contexts == 0U ||
         header->attention_hvx_contexts >
             QBH_BLOCK_W4F16_HVX_WORKERS ||
@@ -1822,7 +1823,9 @@ static int qbh_attention_u8_enabled(uint32_t mode) {
            mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER ||
            mode ==
-               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT;
 }
 
 static int qbh_attention_u8_fused_k_enabled(uint32_t mode) {
@@ -1833,7 +1836,9 @@ static int qbh_attention_u8_fused_k_enabled(uint32_t mode) {
            mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER ||
            mode ==
-               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT;
 }
 
 static int qbh_attention_u8_qkv_overlap_enabled(uint32_t mode) {
@@ -1842,19 +1847,30 @@ static int qbh_attention_u8_qkv_overlap_enabled(uint32_t mode) {
            mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER ||
            mode ==
-               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT;
 }
 
 static int qbh_attention_u8_vgather_enabled(uint32_t mode) {
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER ||
            mode ==
-               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT;
 }
 
 static int qbh_attention_u8_vdeal_enabled(uint32_t mode) {
     return mode ==
-           QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT;
+}
+
+static int qbh_attention_u8_fused_qk_requant_enabled(uint32_t mode) {
+    return mode ==
+           QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT;
 }
 
 static void qbh_attention_qk_norm_pool_run_tasks(
@@ -6120,22 +6136,35 @@ static int qbh_attention_u8_integer(
         header->u8_attention_qk_hmx_ticks +=
             HAP_perf_get_qtimer_count() - start;
 
-        start = HAP_perf_get_qtimer_count();
-        qbh_attention_u8_requant_qk(
-            score_group, config,
-            header->numerical_audit_enabled != 0U
-                ? &telemetry.score_saturation_count
-                : NULL);
-        header->u8_attention_qk_requant_ticks +=
-            HAP_perf_get_qtimer_count() - start;
+        if (!qbh_attention_u8_fused_qk_requant_enabled(
+                header->attention_pipeline_mode)) {
+            start = HAP_perf_get_qtimer_count();
+            qbh_attention_u8_requant_qk(
+                score_group, config,
+                header->numerical_audit_enabled != 0U
+                    ? &telemetry.score_saturation_count
+                    : NULL);
+            header->u8_attention_qk_requant_ticks +=
+                HAP_perf_get_qtimer_count() - start;
+        }
 
         start = HAP_perf_get_qtimer_count();
-        qbh_attention_u8_softmax_group(
-            score_group, probability_group,
-            softmax_scratch, config,
-            header->numerical_audit_enabled != 0U
-                ? &telemetry
-                : NULL);
+        if (qbh_attention_u8_fused_qk_requant_enabled(
+                header->attention_pipeline_mode)) {
+            qbh_attention_u8_requant_softmax_group(
+                score_group, probability_group,
+                softmax_scratch, config,
+                header->numerical_audit_enabled != 0U
+                    ? &telemetry
+                    : NULL);
+        } else {
+            qbh_attention_u8_softmax_group(
+                score_group, probability_group,
+                softmax_scratch, config,
+                header->numerical_audit_enabled != 0U
+                    ? &telemetry
+                    : NULL);
+        }
         header->u8_attention_softmax_ticks +=
             HAP_perf_get_qtimer_count() - start;
 
@@ -6988,18 +7017,28 @@ static void qbh_attention_u8_pool_run_tasks(
             break;
         }
 
-        start = HAP_perf_get_qtimer_count();
-        qbh_attention_u8_requant_qk(
-            score_group, config,
-            telemetry_ptr != NULL
-                ? &telemetry.score_saturation_count : NULL);
-        job->u8_attention_qk_requant_ticks +=
-            HAP_perf_get_qtimer_count() - start;
+        if (!qbh_attention_u8_fused_qk_requant_enabled(
+                header->attention_pipeline_mode)) {
+            start = HAP_perf_get_qtimer_count();
+            qbh_attention_u8_requant_qk(
+                score_group, config,
+                telemetry_ptr != NULL
+                    ? &telemetry.score_saturation_count : NULL);
+            job->u8_attention_qk_requant_ticks +=
+                HAP_perf_get_qtimer_count() - start;
+        }
 
         start = HAP_perf_get_qtimer_count();
-        qbh_attention_u8_softmax_group(
-            score_group, probability_group, softmax_scratch,
-            config, telemetry_ptr);
+        if (qbh_attention_u8_fused_qk_requant_enabled(
+                header->attention_pipeline_mode)) {
+            qbh_attention_u8_requant_softmax_group(
+                score_group, probability_group, softmax_scratch,
+                config, telemetry_ptr);
+        } else {
+            qbh_attention_u8_softmax_group(
+                score_group, probability_group, softmax_scratch,
+                config, telemetry_ptr);
+        }
         job->u8_attention_softmax_ticks +=
             HAP_perf_get_qtimer_count() - start;
 
