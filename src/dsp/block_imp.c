@@ -708,7 +708,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->attribution_enabled > 1U ||
         header->numerical_audit_enabled > 1U ||
         header->residual_mode >
-            QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4 ||
+            QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6 ||
         header->f16f16_projection_mode >
             QBH_BLOCK_F16F16_PROJECTION_GATE8 ||
         header->w4f16_pipeline_mode >
@@ -832,9 +832,13 @@ static int qbh_header_valid(const struct qbh_block_header *header,
           (header->residual_mode !=
                QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM &&
            header->residual_mode !=
-               QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4))) ||
-        (header->residual_mode ==
-             QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4 &&
+               QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4 &&
+           header->residual_mode !=
+               QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6))) ||
+        ((header->residual_mode ==
+              QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4 ||
+          header->residual_mode ==
+              QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6) &&
          (header->variant != QBH_BLOCK_W4U8 ||
           header->attention_hvx_contexts < 4U ||
           header->attention_hvx_contexts >
@@ -848,6 +852,10 @@ static int qbh_header_valid(const struct qbh_block_header *header,
             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT |
             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT))) ||
+        (header->residual_mode ==
+             QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6 &&
+         header->attention_hvx_contexts !=
+             QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS) ||
         header->mlp_mode > QBH_BLOCK_MLP_W4U8_STREAMING ||
         header->mlp_hvx_contexts == 0U ||
         header->mlp_hvx_contexts > QBH_BLOCK_W4F16_HVX_WORKERS ||
@@ -2398,8 +2406,13 @@ static int qbh_hvx_pool_u8_native_residual(
     uint64_t worker_ticks_before = 0U;
     uint64_t worker_ticks_after = 0U;
     uint64_t wait_start;
+    const uint32_t active_worker_count =
+        header->residual_mode ==
+                QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6
+            ? QBH_BLOCK_MAX_POOL_HVX_WORKERS
+            : 3U;
 
-    if (pool == NULL || pool->worker_count < 3U ||
+    if (pool == NULL || pool->worker_count < active_worker_count ||
         (residual_kind != QBH_BLOCK_U8_RESIDUAL_POST_NORM &&
          residual_kind != QBH_BLOCK_U8_RESIDUAL_FINAL)) {
         return -1;
@@ -2418,7 +2431,9 @@ static int qbh_hvx_pool_u8_native_residual(
         (QBH_BLOCK_M + QBH_BLOCK_W4U8_RESIDUAL_ROWS_PER_TASK - 1U) /
         QBH_BLOCK_W4U8_RESIDUAL_ROWS_PER_TASK;
     pool->u8_residual_kind = residual_kind;
-    pool->active_worker_count = 3U;
+    pool->active_worker_count = active_worker_count;
+    header->w4u8_residual_active_contexts =
+        active_worker_count + 1U;
 
     for (uint32_t worker = 0U; worker < pool->active_worker_count;
          ++worker) {
@@ -8620,11 +8635,15 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         if (header->residual_mode ==
                 QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM ||
             header->residual_mode ==
-                QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4) {
+                QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4 ||
+            header->residual_mode ==
+                QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6) {
             if (w4u8_mlp_native_input_enabled != 0U) {
                 if (w4u8_o_native_output_enabled != 0U) {
                     if (header->residual_mode ==
-                        QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4) {
+                            QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4 ||
+                        header->residual_mode ==
+                            QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6) {
                         if (qbh_hvx_pool_u8_native_residual(
                                 header, w4f16_pool,
                                 buffers->residual,
@@ -8698,7 +8717,9 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         if (header->residual_mode ==
                 QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM ||
             header->residual_mode ==
-                QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4) {
+                QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4 ||
+            header->residual_mode ==
+                QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6) {
             uint64_t norm_start = HAP_perf_get_qtimer_count();
             if (crouton_post_norm_enabled != 0U) {
                 qbh_hvx_residual_rms_norm_f16_crouton(
@@ -9028,7 +9049,9 @@ w4u8_mlp_complete:
     if (header->variant == QBH_BLOCK_W4U8) {
         if (w4u8_mlp_native_output_enabled != 0U) {
             if (header->residual_mode ==
-                QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4) {
+                    QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4 ||
+                header->residual_mode ==
+                    QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6) {
                 if (qbh_hvx_pool_u8_native_residual(
                         header, w4f16_pool,
                         buffers->residual,

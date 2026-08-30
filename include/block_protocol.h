@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(38)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(71)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(39)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(72)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -63,6 +63,7 @@ enum qbh_block_residual_mode {
     QBH_BLOCK_RESIDUAL_HVX = 1,
     QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM = 2,
     QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4 = 3,
+    QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6 = 4,
 };
 
 enum qbh_block_f16f16_projection_mode {
@@ -498,6 +499,7 @@ struct qbh_block_header {
     uint64_t w4u8_input_norm_main_work_ticks;
     uint64_t w4u8_input_norm_worker_work_ticks;
     uint64_t w4u8_input_norm_pool_wait_ticks;
+    uint32_t w4u8_residual_active_contexts;
     uint32_t w4u8_post_residual_task_count;
     uint32_t w4u8_final_residual_task_count;
     uint64_t w4u8_post_residual_main_work_ticks;
