@@ -475,10 +475,20 @@ static int qbh_hvx_worker_run(struct qbh_hvx_worker_job *job,
                 (const int8_t *)(compressed + source_offset),
                 (int8_t *)(expanded + expanded_offset), region_tiles);
         } else if (layout->weight_storage_variant ==
-            QBH_WEIGHT_PACKED_W4_HMX_SCALE) {
-            qbh_unpack_w4_to_s8_hvx(
-                compressed + source_offset,
-                (int8_t *)(expanded + expanded_offset), region_tiles);
+                   QBH_WEIGHT_PACKED_W4_HMX_SCALE) {
+            if (layout->variant == QBH_PROJECTION_GATE_UP_PAIR &&
+                layout->w4u8_decode_mode ==
+                    QBH_W4U8_DECODE_INTERLEAVED2) {
+                qbh_unpack_w4_to_s8_hvx_interleaved2(
+                    compressed + source_offset,
+                    (int8_t *)(expanded + expanded_offset),
+                    region_tiles);
+            } else {
+                qbh_unpack_w4_to_s8_hvx(
+                    compressed + source_offset,
+                    (int8_t *)(expanded + expanded_offset),
+                    region_tiles);
+            }
         } else {
             qbh_expand_w4_to_s8_hvx(
                 compressed + source_offset,

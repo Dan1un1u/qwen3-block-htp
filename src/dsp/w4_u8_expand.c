@@ -313,6 +313,54 @@ __attribute__((noinline)) void qbh_unpack_w4_to_s8_hvx(
     asm volatile("barrier" : : : "memory");
 }
 
+__attribute__((noinline)) void qbh_unpack_w4_to_s8_hvx_interleaved2(
+    const uint8_t *packed_w4, int8_t *expanded_s8,
+    uint32_t k_tiles) {
+    const HVX_Vector v_lut = *(const HVX_Vector *)qbh_signed_w4_lut;
+    const HVX_Vector v_nibble_mask = Q6_Vb_vsplat_R(0x0f);
+    const HVX_Vector *packed_vectors =
+        (const HVX_Vector *)packed_w4;
+    HVX_Vector *expanded_vectors = (HVX_Vector *)expanded_s8;
+    const uint32_t packed_vector_count = k_tiles * 4U;
+
+    for (uint32_t packed_vector = 0;
+         packed_vector < packed_vector_count; packed_vector += 2U) {
+        const HVX_Vector v_packed0 = packed_vectors[packed_vector];
+        const HVX_Vector v_packed1 = packed_vectors[packed_vector + 1U];
+        const HVX_Vector v_low_indices0 =
+            Q6_V_vand_VV(v_packed0, v_nibble_mask);
+        const HVX_Vector v_high_indices0 =
+            Q6_Vub_vlsr_VubR(v_packed0, 4);
+        const HVX_Vector v_low_indices1 =
+            Q6_V_vand_VV(v_packed1, v_nibble_mask);
+        const HVX_Vector v_high_indices1 =
+            Q6_Vub_vlsr_VubR(v_packed1, 4);
+        const HVX_Vector v_low0 = Q6_Vb_vlut32_VbVbR_nomatch(
+            v_low_indices0, v_lut, 0);
+        const HVX_Vector v_low1 = Q6_Vb_vlut32_VbVbR_nomatch(
+            v_low_indices1, v_lut, 0);
+        const HVX_Vector v_high0 = Q6_Vb_vlut32_VbVbR_nomatch(
+            v_high_indices0, v_lut, 0);
+        const HVX_Vector v_high1 = Q6_Vb_vlut32_VbVbR_nomatch(
+            v_high_indices1, v_lut, 0);
+        const HVX_VectorPair v_unpacked0 =
+            Q6_W_vshuff_VVR(v_high0, v_low0, -1);
+        const HVX_VectorPair v_unpacked1 =
+            Q6_W_vshuff_VVR(v_high1, v_low1, -1);
+        const uint32_t expanded_vector = packed_vector * 2U;
+
+        expanded_vectors[expanded_vector] =
+            Q6_V_lo_W(v_unpacked0);
+        expanded_vectors[expanded_vector + 1U] =
+            Q6_V_hi_W(v_unpacked0);
+        expanded_vectors[expanded_vector + 2U] =
+            Q6_V_lo_W(v_unpacked1);
+        expanded_vectors[expanded_vector + 3U] =
+            Q6_V_hi_W(v_unpacked1);
+    }
+    asm volatile("barrier" : : : "memory");
+}
+
 __attribute__((noinline)) void qbh_copy_s8_hmx_tiles_hvx(
     const int8_t *source, int8_t *destination, uint32_t k_tiles) {
     const size_t vector_count =
