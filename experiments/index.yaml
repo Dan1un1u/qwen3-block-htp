@@ -5792,14 +5792,17 @@ experiments:
     variants:
       - exp0070_serial_input_rmsnorm_control
       - main_plus_five_parallel_input_rmsnorm_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4u8-parallel-input-rmsnorm
     source_branches:
       - codex/exp-0071-w4u8-parallel-input-rmsnorm
-    source_commits: []
+    source_commits:
+      - 60379940469060b8ae6418214b1d81389f0c8606
+      - d6299a9849fd5c77ee005855d90d09ae096faf7f
+      - 14526c4fb1a8c07283278995f1b9dec225b43b32
     record: docs/experiments/EXP-0071.md
     decided_by: user
     decided_on: '2026-08-30'
@@ -5808,7 +5811,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0071-w4u8-parallel-input-rmsnorm
       started_on: '2026-08-30'
-      completed_on: null
+      completed_on: '2026-08-30'
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0071'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0071'
@@ -5831,3 +5834,55 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn_and_six_persistent_hvx_contexts
       local_speed_gate: input_norm_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
+      source_head: 14526c4fb1a8c07283278995f1b9dec225b43b32
+      implementation_commit: 60379940469060b8ae6418214b1d81389f0c8606
+      ledger_instrumentation_commit: d6299a9849fd5c77ee005855d90d09ae096faf7f
+      evidence_validator_commit: 14526c4fb1a8c07283278995f1b9dec225b43b32
+      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0071/20260830T101057Z_14526c4fb1a8_formal'
+      artifact_set: 'D:/llm_exp/models/qwen3-block-htp/exp0071/artifacts/14526c4fb1a8/formal'
+      gate_record: 'D:/llm_exp/results/qwen3-block-htp/exp0071/20260830T101057Z_14526c4fb1a8_formal/gate_summary.json'
+      formal_full_profiling_report: 'D:/llm_exp/results/qwen3-block-htp/exp0071/20260830T101057Z_14526c4fb1a8_formal/full_profiling_report.md'
+      full_profiling_report: docs/experiments/EXP-0071-PROFILING.md
+      gate_record_sha256: 6d266f86672330a3cc867107e16e25dca26cf71b8f89823edd864125936d94b6
+      formal_full_profiling_report_sha256: 336f45121e437610b61d7c9ba820a37356dc8f20dc7d50842fc42ce47697a523
+      static_gate_sha256: fcb68802d4523f6422e9addf4c181f26620d065e193dad80c335f452facaaa62
+      package_manifest_sha256: 043f61337b2ad2758bb95791bc4ca768150f457f1f28bc7d20a7ad57eba42359
+      stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      formal_paired_rounds: 7
+      input_norm_tasks_per_block: 16
+      persistent_hvx_contexts: 6
+      persistent_hvx_workers: 5
+      output_hash: 69f22eeb035e5ec5
+      input_norm_hash: 7255c2406108617c
+      qk_hash: 32aa949912e365be
+      probability_hash: 94f2e218f06f9627
+      av_hash: f853658f52032bde
+      implementation_reference_mismatches: 0
+      implementation_reference_max_lsb: 0
+      fixed_vtcm_acquired_bytes: 8388608
+      vtcm_peak_plan_bytes: 5306080
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      spill_fill_count: 0
+      hmx_commands_per_block: 176
+      hmx_tile_pairs_per_block: 49408
+      repeat1_control_host_wall_ns_per_block_median: 2556511.0
+      repeat1_candidate_host_wall_ns_per_block_median: 2499427.0
+      repeat1_host_wall_change_percent: -2.232887
+      repeat1_paired_host_wall_change_percent_median: -2.155044
+      repeat1_control_input_norm_ticks_per_block_median: 1554.0
+      repeat1_candidate_input_norm_ticks_per_block_median: 365.0
+      repeat1_input_norm_change_percent: -76.512227
+      repeat1_paired_input_norm_change_percent_median: -76.267880
+      repeat10_control_host_wall_ns_per_block_median: 2134432.3
+      repeat10_candidate_host_wall_ns_per_block_median: 2065567.7
+      repeat10_host_wall_change_percent: -3.226366
+      repeat10_paired_host_wall_change_percent_median: -3.169490
+      repeat10_control_input_norm_ticks_per_block_median: 1543.7
+      repeat10_candidate_input_norm_ticks_per_block_median: 358.8
+      repeat10_input_norm_change_percent: -76.757142
+      repeat10_paired_input_norm_change_percent_median: -76.742076
+      gate_result: pass
+      local_adoption_eligible: true
+      conclusion: sixteen_four_row_tasks_across_the_existing_main_plus_five_hvx_context_domain_reduce_the_serial_input_rmsnorm_critical_interval_and_complete_block_wall_without_changing_per_row_math_or_any_physical_contract
+      selected_baseline_changed: false

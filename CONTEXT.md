@@ -523,3 +523,20 @@ work and improves repeat-ten wall latency, but fails the repeat-one paired
 complete-wall gate and is not an adopted source parent.
 _Avoid_: changed probability bytes, missing audit telemetry, accepted W4U8
 candidate, permission to stack the rejected change without a new hypothesis
+
+**Parallel Native U8 Input RMSNorm**:
+The EXP-0071 schedule that splits the 64 independent Input RMSNorm rows into
+sixteen four-row tasks consumed by the main DSP thread and five already-
+persistent HVX workers. Each task calls the unchanged per-row centered-square
+reduction, scalar square root, gamma, requantization, and direct native HMX
+activation store. It changes execution occupancy only and is byte-exact at the
+native activation boundary.
+_Avoid_: batched reciprocal-square-root approximation, changed RMSNorm math,
+new worker creation, row-major handoff, Selected Baseline without promotion
+
+**Stage Timing Boundary Interval**:
+The additive profiling interval that explicitly accounts for qtimer reads and
+adjacent stage-boundary bookkeeping not enclosed by an operator stage timer.
+It closes the complete invocation ledger without assigning instrumentation
+overhead to an operator and is not an optimization target.
+_Avoid_: unattributed operator work, hidden runtime cost, relaxed ledger gate
