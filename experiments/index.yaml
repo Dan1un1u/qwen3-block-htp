@@ -7416,3 +7416,54 @@ experiments:
       full_profiling_report_sha256: 280acade9e34ad302ad3fa848ce7f47c58be85929a626817b320f02972a40180
       conclusion: six_private_banks_persist_and_remove_all_ordinary_measured_lut_builds_but_the_saved_build_work_is_not_on_the_attention_critical_path_and_the_extra_vtcm_layout_slightly_regresses_repeat10_host_attention_and_softmax
       selected_baseline_changed: false
+  - id: EXP-0089
+    slug: w4u8-gate-up-down-dependency-stream
+    title: Overlap W4U8 Gate/Up activation production with Down weight preparation
+    parent: EXP-0084
+    variants:
+      - exp0084_w4u8_fair_canonical_serial_gate_up_then_down_control
+      - down_first_chunk_vtcm_prestage_candidate
+      - dependency_driven_gate_up_down_hmx_interleave_if_stage_b_passes
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-gate-up-down-dependency-stream
+    source_branches:
+      - codex/exp-0089-w4u8-gate-up-down-dependency-stream
+    source_commits: []
+    record: docs/experiments/EXP-0089.md
+    decided_by: user
+    decided_on: '2026-08-31'
+    approval_ref: 'User message 2026-08-31: resume the autonomous profiling-guided loop and continue to the next experiment'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0089-w4u8-gate-up-down-dependency-stream
+      started_on: '2026-08-31'
+      completed_on: null
+    evidence:
+      formal_results: null
+      retained_artifacts: null
+      source_parent_commit: 6dc437fe08eaccf119c4cbce82937e22f125da0b
+      direct_w4u8_control: W4U8-EXP0084-FAIR-CANONICAL
+      contextual_w4f16_comparator: W4F16-EXP0084-COMMON-NORM-POOLS
+      contextual_f16f16_comparator: F16F16-EXP0084-FAIR-CANONICAL
+      execution_unit: qwen3_layer14_complete_block_m64
+      primary_scope: gate_up_swiglu_middle_activation_to_down_first_chunk_vtcm_dependency_and_producer_overlap
+      hypothesis: the_full_gate_up_join_delays_all_down_weight_dma_and_hvx_expansion_even_though_the_first_down_k_chunk_needs_only_the_first_96_of_192_ordered_middle_activation_tiles
+      serial_milestones: audit_only_dependency_timeline_and_vtcm_capacity_then_producer_only_overlap_gate_then_optional_hmx_interleave_and_formal_pc027_pc028_closure
+      stage_a_timeline: first_middle_tile_middle_tile_95_middle_tile_191_gate_up_first_last_hmx_gate_up_join_down_first_dma_first_expand_first_hmx_and_down_end
+      stage_a_stop_condition: stop_if_first_half_activation_has_no_repeatable_window_before_gate_up_completion_or_a_non_aliasing_down_prestage_ring_does_not_fit_exact_8mib
+      stage_b_candidate: separate_vtcm_down_first_chunk_compressed_and_expanded_ring_prestaged_with_otherwise_idle_hvx_capacity_while_all_down_hmx_remains_after_gate_up_hmx
+      stage_c_candidate: dependency_ready_down_chunk_commands_may_interleave_only_in_existing_hmx_owner_idle_windows_without_blocking_gate_up
+      forbidden_inherited_directions: changed_quant_math_intermediate_ddr_second_hmx_owner_gate_up_or_down_tile_work_change_weight_byte_change_softmax_attention_or_residual_change
+      arithmetic_qparams_weights_layout_output_codes_or_middle_activation_order_changes_allowed: false
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      correctness_gate: final_output_and_audited_middle_activation_and_down_boundaries_byte_exact_to_exp0084_and_independent_reference_zero_mismatches_zero_max_lsb
+      physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_same_weight_bytes_dma_descriptors_hmx_commands_and_tile_pairs
+      stage_b_speed_gate: gate_up_non_regressing_and_combined_gate_up_down_plus_complete_host_wall_strictly_improving_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
+      completion_gate: stage_a_timeline_then_five_round_stage_b_then_optional_seven_round_stage_c_and_pc027_pc028_complete_profiling_closure
