@@ -7130,3 +7130,54 @@ experiments:
       stage_c_correctness_and_physical_gate: pass
       conclusion: q_prefix4_reduces_fp16_qkv_tail_but_the_w4u8_pair_prep_and_projection_pipeline_is_already_balanced_and_the_reorder_stably_regresses_both_qkv_and_complete_block_so_no_shared_schedule_is_adopted
       selected_baseline_changed: false
+  - id: EXP-0086
+    slug: w4u8-down-pipeline-rebalance
+    title: Rebalance the latest W4U8 Down DMA-expand-HMX pipeline
+    parent: EXP-0084
+    variants:
+      - exp0084_w4u8_fair_canonical_control
+      - down_pipeline_timeline_diagnostic
+      - bounded_down_first_chunk_and_prefetch_candidates
+    execution_state: running
+    evidence_validity: not_run
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-down-pipeline-rebalance
+    source_branches:
+      - codex/exp-0086-w4u8-down-pipeline-rebalance
+    source_commits: []
+    record: docs/experiments/EXP-0086.md
+    decided_by: user
+    decided_on: '2026-08-31'
+    approval_ref: 'User message 2026-08-31: 继续下一步; proceed with the recommended W4U8 Down projection optimization'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0086-w4u8-down-pipeline-rebalance
+      started_on: '2026-08-31'
+      completed_on: null
+    evidence:
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0086'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0086'
+      source_parent_commit: 6dc437fe08eaccf119c4cbce82937e22f125da0b
+      direct_w4u8_control: W4U8-EXP0084-FAIR-CANONICAL
+      contextual_w4f16_comparator: W4F16-EXP0084-COMMON-NORM-POOLS
+      contextual_f16f16_comparator: F16F16-EXP0084-FAIR-CANONICAL
+      execution_unit: qwen3_layer14_complete_block_m64
+      primary_scope: w4u8_down_projection_dma_w4_expand_hmx_consumption_and_generation_safe_chunk_boundary
+      hypothesis: the_symmetric_96_plus_96_k_tile_down_partition_was_selected_before_the_latest_persistent_worker_topology_and_now_delays_hmx_start_or_exposes_a_producer_tail_that_can_be_rebalanced_without_changing_work
+      serial_milestones: audit_only_down_timeline_then_bounded_chunk_and_prefetch_micro_gate_then_complete_block_formal
+      stage_a_diagnostic: separately_timestamp_down_first_dma_publication_first_expanded_region_first_hmx_start_each_chunk_ready_hmx_wait_and_final_store_without_changing_performance_mode
+      stage_a_stop_condition: stop_before_candidate_implementation_if_no_repeated_hmx_starvation_producer_tail_or_chunk_boundary_gap_is_visible
+      bounded_candidate_grid: preserve_192_total_k_tiles_and_search_first_chunk_at_64_80_96_112_128_tiles_with_only_compatible_prefetch_distance_variants
+      arithmetic_qparams_weights_layout_output_codes_attention_gate_up_or_residual_changes_allowed: false
+      fixed_down_worker_topology: five_persistent_plus_one_transient_hvx_expansion_workers_and_one_serialized_hmx_owner
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      correctness_gate: final_output_and_audited_down_boundaries_byte_exact_to_exp0084_w4u8_and_independent_reference_zero_mismatches_zero_max_lsb
+      physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_same_weight_bytes_dma_descriptors_hmx_commands_and_tile_pairs
+      local_speed_gate: down_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
+      completion_gate: timeline_evidence_then_bounded_candidate_selection_then_seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
+      selected_baseline_changed: false
