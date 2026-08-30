@@ -7324,3 +7324,52 @@ experiments:
       stage_b_summary_sha256: a57bdb7881fe4f1ab9c993216dbda81ca3b71107951a6d3e664c6e60dd00062b
       conclusion: sixteen_row_tasks_reduce_the_theoretical_six_context_imbalance_but_raise_softmax_task_work_about_2_9_percent_leave_pool_join_unchanged_and_fail_the_strict_repeat1_complete_host_wall_gate
       selected_baseline_changed: false
+  - id: EXP-0088
+    slug: w4u8-private-persistent-softmax-lut
+    title: Retain one private SOLE Softmax LUT bank per HVX context
+    parent: EXP-0084
+    variants:
+      - exp0084_w4u8_fair_canonical_control_per_block_private_build
+      - prepared_session_private_persistent_lut_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-private-persistent-softmax-lut
+    source_branches:
+      - codex/exp-0088-w4u8-private-persistent-softmax-lut
+    source_commits: []
+    record: docs/experiments/EXP-0088.md
+    decided_by: user
+    decided_on: '2026-08-31'
+    approval_ref: 'User message 2026-08-31: continue the profiling-guided loop and autonomously handle ordinary recoverable issues'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0088-w4u8-private-persistent-softmax-lut
+      started_on: '2026-08-31'
+      completed_on: null
+    evidence:
+      formal_results: null
+      retained_artifacts: null
+      source_parent_commit: 6dc437fe08eaccf119c4cbce82937e22f125da0b
+      direct_w4u8_control: W4U8-EXP0084-FAIR-CANONICAL
+      contextual_w4f16_comparator: W4F16-EXP0084-COMMON-NORM-POOLS
+      contextual_f16f16_comparator: F16F16-EXP0084-FAIR-CANONICAL
+      execution_unit: qwen3_layer14_complete_block_m64
+      primary_scope: private_per_hvx_context_sole_lut_template_lifetime_across_prepared_session_invocations
+      hypothesis: preserving_six_context_local_template_banks_across_warmup_and_measured_invocations_removes_per_block_builds_without_the_shared_bank_locality_and_contention_penalty_seen_in_exp0073
+      serial_milestones: persistence_and_correctness_gate_then_five_round_speed_gate_then_seven_round_formal_pc027_pc028_closure
+      candidate_contract: reserve_six_aligned_512_byte_private_vtcm_slots_build_each_unchanged_448_byte_bank_once_in_the_warmup_invocation_and_reuse_only_its_own_bank_in_subsequent_measured_invocations
+      forbidden_inherited_directions: one_shared_lut_bank_softmax_row_slice_change_global_attention_barriers_context_count_search_qkv_order_hmx_batch_or_attention_math_change
+      arithmetic_qparams_lut_bytes_mask_probability_qk_av_hmx_v_pack_projection_mlp_or_residual_changes_allowed: false
+      fixed_vtcm_request_bytes: 8388608
+      declared_additional_private_vtcm_bytes: 3072
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      correctness_gate: final_output_and_audited_qk_probability_av_boundaries_byte_exact_to_exp0084_w4u8_and_independent_reference_zero_mismatches_zero_max_lsb
+      physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_per_block_invocation_one_hmx_owner_same_176_hmx_commands_49408_u8s8_tile_pairs_and_unchanged_logical_tensor_traffic
+      persistence_gate: warmup_builds_exactly_six_private_banks_measured_repeat1_and_repeat10_build_zero_and_reuse_only_context_local_banks
+      local_speed_gate: softmax_work_attention_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
+      completion_gate: first_use_and_measured_costs_reported_then_stage_b_pass_then_seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
