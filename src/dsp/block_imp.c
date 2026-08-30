@@ -331,6 +331,7 @@ static int qbh_attention_u8_vgather_enabled(uint32_t mode);
 static int qbh_attention_u8_vdeal_enabled(uint32_t mode);
 static int qbh_attention_u8_fused_qk_requant_enabled(uint32_t mode);
 static int qbh_attention_u8_hmx_batch_enabled(uint32_t mode);
+static int qbh_attention_u8_gqa_hmx_batch_enabled(uint32_t mode);
 static void qbh_attention_gqa_pool_run_tasks(
     struct qbh_block_w4f16_pool *pool,
     struct qbh_block_w4f16_job *job);
@@ -706,7 +707,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (header->attention_pack_mode &
          ~((uint32_t)QBH_BLOCK_ATTENTION_PACK_HVX)) != 0U ||
         header->attention_pipeline_mode >
-            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES ||
+            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH ||
         header->attention_hvx_contexts == 0U ||
         header->attention_hvx_contexts >
             QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS ||
@@ -1376,24 +1377,36 @@ static void qbh_hmx_worker_main(void *opaque) {
                     &worker->ready_wait_ticks) == 0
                     ? AEE_SUCCESS : AEE_EFAILED;
         } else if (worker->kind == QBH_BLOCK_HMX_U8S8 &&
-                   worker->m_tiles == 1U && worker->n_tiles >= 1U &&
+                   worker->m_tiles >= 1U &&
+                   worker->m_tiles <= QBH_ATTENTION_Q_HEADS_PER_GROUP &&
+                   worker->n_tiles >= 1U &&
                    worker->n_tiles <=
                        QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES) {
-            for (uint32_t output_tile = 0U;
-                 output_tile < worker->n_tiles; ++output_tile) {
-                qbh_hmx_begin_u8s8_output(
-                    (const uint32_t *)worker->scale_or_bias +
-                    (size_t)output_tile *
-                        (QBH_HMX_BIAS_BYTES / sizeof(uint32_t)));
-                (void)qbh_hmx_accumulate_u8s8_projection(
-                    (const uint8_t *)worker->activation,
-                    (const int8_t *)worker->weight +
-                        (size_t)output_tile * worker->k_tiles *
-                            QBH_HMX_WEIGHT_BYTES,
-                    worker->k_tiles);
-                qbh_hmx_store_u8_output(
-                    (uint8_t *)worker->output +
-                    (size_t)output_tile * QBH_HMX_OUTPUT_BYTES);
+            for (uint32_t m_tile = 0U;
+                 m_tile < worker->m_tiles; ++m_tile) {
+                const uint8_t *activation =
+                    (const uint8_t *)worker->activation +
+                    (size_t)m_tile * worker->k_tiles *
+                        QBH_HMX_ACTIVATION_BYTES;
+                uint8_t *output = (uint8_t *)worker->output +
+                    (size_t)m_tile * worker->n_tiles *
+                        QBH_HMX_OUTPUT_BYTES;
+                for (uint32_t output_tile = 0U;
+                     output_tile < worker->n_tiles; ++output_tile) {
+                    qbh_hmx_begin_u8s8_output(
+                        (const uint32_t *)worker->scale_or_bias +
+                        (size_t)output_tile *
+                            (QBH_HMX_BIAS_BYTES / sizeof(uint32_t)));
+                    (void)qbh_hmx_accumulate_u8s8_projection(
+                        activation,
+                        (const int8_t *)worker->weight +
+                            (size_t)output_tile * worker->k_tiles *
+                                QBH_HMX_WEIGHT_BYTES,
+                        worker->k_tiles);
+                    qbh_hmx_store_u8_output(
+                        output + (size_t)output_tile *
+                            QBH_HMX_OUTPUT_BYTES);
+                }
             }
         } else if (worker->kind == QBH_BLOCK_HMX_U8S8_PIPELINE &&
                    worker->w4_pipeline_request != NULL) {
@@ -1837,7 +1850,9 @@ static int qbh_attention_u8_enabled(uint32_t mode) {
            mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH ||
            mode ==
-               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH;
 }
 
 static int qbh_attention_u8_fused_k_enabled(uint32_t mode) {
@@ -1854,7 +1869,9 @@ static int qbh_attention_u8_fused_k_enabled(uint32_t mode) {
            mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH ||
            mode ==
-               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH;
 }
 
 static int qbh_attention_u8_qkv_overlap_enabled(uint32_t mode) {
@@ -1869,7 +1886,9 @@ static int qbh_attention_u8_qkv_overlap_enabled(uint32_t mode) {
            mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH ||
            mode ==
-               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH;
 }
 
 static int qbh_attention_u8_vgather_enabled(uint32_t mode) {
@@ -1882,7 +1901,9 @@ static int qbh_attention_u8_vgather_enabled(uint32_t mode) {
            mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH ||
            mode ==
-               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH;
 }
 
 static int qbh_attention_u8_vdeal_enabled(uint32_t mode) {
@@ -1893,7 +1914,9 @@ static int qbh_attention_u8_vdeal_enabled(uint32_t mode) {
            mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH ||
            mode ==
-               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH;
 }
 
 static int qbh_attention_u8_fused_qk_requant_enabled(uint32_t mode) {
@@ -1902,19 +1925,30 @@ static int qbh_attention_u8_fused_qk_requant_enabled(uint32_t mode) {
            mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH ||
            mode ==
-               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH;
 }
 
 static int qbh_attention_u8_hmx_batch_enabled(uint32_t mode) {
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH ||
            mode ==
-               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH;
 }
 
 static int qbh_attention_u8_lut_templates_enabled(uint32_t mode) {
     return mode ==
-           QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH;
+}
+
+static int qbh_attention_u8_gqa_hmx_batch_enabled(uint32_t mode) {
+    return mode ==
+           QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH;
 }
 
 static void qbh_attention_qk_norm_pool_run_tasks(
@@ -6882,7 +6916,7 @@ static int qbh_attention_u8_pool_submit(
     struct qbh_block_w4f16_job *job,
     const uint8_t *activation, const int8_t *weight,
     const uint32_t *bias, uint8_t *output,
-    uint32_t k_tiles, uint32_t n_tiles,
+    uint32_t m_tiles, uint32_t k_tiles, uint32_t n_tiles,
     uint64_t *hmx_ticks) {
     const uint64_t queue_start = HAP_perf_get_qtimer_count();
     uint64_t hmx_start;
@@ -6898,7 +6932,8 @@ static int qbh_attention_u8_pool_submit(
     hmx_start = HAP_perf_get_qtimer_count();
     result = qbh_hmx_submit(
         pool->attention_hmx_worker, QBH_BLOCK_HMX_U8S8,
-        activation, weight, bias, output, 1U, k_tiles, n_tiles);
+        activation, weight, bias, output,
+        m_tiles, k_tiles, n_tiles);
     *hmx_ticks += HAP_perf_get_qtimer_count() - hmx_start;
     qurt_mutex_unlock(&pool->attention_hmx_mutex);
     if (result != 0) {
@@ -7083,47 +7118,58 @@ static void qbh_attention_u8_pool_run_tasks(
         job->u8_attention_v_pack_ticks +=
             HAP_perf_get_qtimer_count() - start;
 
-        for (uint32_t local_head = 0U;
-             local_head < QBH_ATTENTION_Q_HEADS_PER_GROUP;
-             ++local_head) {
-            const uint8_t *q_head = q_group +
-                (size_t)local_head *
-                    QBH_ATTENTION_HEAD_DIM_TILES *
-                    QBH_HMX_ACTIVATION_BYTES;
-            if (qbh_attention_u8_hmx_batch_enabled(
-                    header->attention_pipeline_mode)) {
-                if (qbh_attention_u8_pool_submit(
-                        pool, job, q_head,
-                        k_weight, qk_bias,
-                        score_group +
-                            (size_t)local_head *
-                                QBH_ATTENTION_SCORE_TILES *
-                                QBH_HMX_OUTPUT_BYTES,
-                        QBH_ATTENTION_HEAD_DIM_TILES,
-                        QBH_ATTENTION_SCORE_TILES,
-                        &job->u8_attention_qk_hmx_ticks) != 0) {
-                    break;
-                }
-            } else {
-                for (uint32_t n_tile = 0U;
-                     n_tile < QBH_ATTENTION_SCORE_TILES; ++n_tile) {
+        if (qbh_attention_u8_gqa_hmx_batch_enabled(
+                header->attention_pipeline_mode)) {
+            if (qbh_attention_u8_pool_submit(
+                    pool, job, q_group, k_weight, qk_bias,
+                    score_group, QBH_ATTENTION_Q_HEADS_PER_GROUP,
+                    QBH_ATTENTION_HEAD_DIM_TILES,
+                    QBH_ATTENTION_SCORE_TILES,
+                    &job->u8_attention_qk_hmx_ticks) != 0) {
+                break;
+            }
+        } else {
+            for (uint32_t local_head = 0U;
+                 local_head < QBH_ATTENTION_Q_HEADS_PER_GROUP;
+                 ++local_head) {
+                const uint8_t *q_head = q_group +
+                    (size_t)local_head *
+                        QBH_ATTENTION_HEAD_DIM_TILES *
+                        QBH_HMX_ACTIVATION_BYTES;
+                if (qbh_attention_u8_hmx_batch_enabled(
+                        header->attention_pipeline_mode)) {
                     if (qbh_attention_u8_pool_submit(
-                            pool, job, q_head,
-                            k_weight +
-                                (size_t)n_tile *
-                                    QBH_ATTENTION_HEAD_DIM_TILES *
-                                    QBH_HMX_WEIGHT_BYTES,
-                            qk_bias +
-                                (size_t)n_tile *
-                                    (QBH_HMX_BIAS_BYTES /
-                                     sizeof(uint32_t)),
+                            pool, job, q_head, k_weight, qk_bias,
                             score_group +
-                                ((size_t)local_head *
-                                     QBH_ATTENTION_SCORE_TILES +
-                                 n_tile) * QBH_HMX_OUTPUT_BYTES,
-                            QBH_ATTENTION_HEAD_DIM_TILES, 1U,
+                                (size_t)local_head *
+                                    QBH_ATTENTION_SCORE_TILES *
+                                    QBH_HMX_OUTPUT_BYTES,
+                            1U, QBH_ATTENTION_HEAD_DIM_TILES,
+                            QBH_ATTENTION_SCORE_TILES,
                             &job->u8_attention_qk_hmx_ticks) != 0) {
                         break;
+                    }
+                } else {
+                    for (uint32_t n_tile = 0U;
+                         n_tile < QBH_ATTENTION_SCORE_TILES; ++n_tile) {
+                        if (qbh_attention_u8_pool_submit(
+                                pool, job, q_head,
+                                k_weight +
+                                    (size_t)n_tile *
+                                        QBH_ATTENTION_HEAD_DIM_TILES *
+                                        QBH_HMX_WEIGHT_BYTES,
+                                qk_bias +
+                                    (size_t)n_tile *
+                                        (QBH_HMX_BIAS_BYTES /
+                                         sizeof(uint32_t)),
+                                score_group +
+                                    ((size_t)local_head *
+                                         QBH_ATTENTION_SCORE_TILES +
+                                     n_tile) * QBH_HMX_OUTPUT_BYTES,
+                                1U, QBH_ATTENTION_HEAD_DIM_TILES, 1U,
+                                &job->u8_attention_qk_hmx_ticks) != 0) {
+                            break;
+                        }
                     }
                 }
             }
@@ -7164,46 +7210,57 @@ static void qbh_attention_u8_pool_run_tasks(
         job->u8_attention_softmax_ticks +=
             HAP_perf_get_qtimer_count() - start;
 
-        for (uint32_t local_head = 0U;
-             local_head < QBH_ATTENTION_Q_HEADS_PER_GROUP;
-             ++local_head) {
-            const uint8_t *probability = probability_group +
-                (size_t)local_head * QBH_ATTENTION_SCORE_TILES *
-                    QBH_HMX_ACTIVATION_BYTES;
-            if (qbh_attention_u8_hmx_batch_enabled(
-                    header->attention_pipeline_mode)) {
-                if (qbh_attention_u8_pool_submit(
-                        pool, job, probability,
-                        v_weight, av_bias,
-                        output_group +
-                            (size_t)local_head *
-                                QBH_ATTENTION_HEAD_DIM_TILES *
-                                QBH_HMX_OUTPUT_BYTES,
-                        QBH_ATTENTION_SCORE_TILES,
-                        QBH_ATTENTION_HEAD_DIM_TILES,
-                        &job->u8_attention_av_hmx_ticks) != 0) {
-                    break;
-                }
-            } else {
-                for (uint32_t n_tile = 0U;
-                     n_tile < QBH_ATTENTION_HEAD_DIM_TILES; ++n_tile) {
+        if (qbh_attention_u8_gqa_hmx_batch_enabled(
+                header->attention_pipeline_mode)) {
+            if (qbh_attention_u8_pool_submit(
+                    pool, job, probability_group, v_weight, av_bias,
+                    output_group, QBH_ATTENTION_Q_HEADS_PER_GROUP,
+                    QBH_ATTENTION_SCORE_TILES,
+                    QBH_ATTENTION_HEAD_DIM_TILES,
+                    &job->u8_attention_av_hmx_ticks) != 0) {
+                break;
+            }
+        } else {
+            for (uint32_t local_head = 0U;
+                 local_head < QBH_ATTENTION_Q_HEADS_PER_GROUP;
+                 ++local_head) {
+                const uint8_t *probability = probability_group +
+                    (size_t)local_head * QBH_ATTENTION_SCORE_TILES *
+                        QBH_HMX_ACTIVATION_BYTES;
+                if (qbh_attention_u8_hmx_batch_enabled(
+                        header->attention_pipeline_mode)) {
                     if (qbh_attention_u8_pool_submit(
-                            pool, job, probability,
-                            v_weight +
-                                (size_t)n_tile *
-                                    QBH_ATTENTION_SCORE_TILES *
-                                    QBH_HMX_WEIGHT_BYTES,
-                            av_bias +
-                                (size_t)n_tile *
-                                    (QBH_HMX_BIAS_BYTES /
-                                     sizeof(uint32_t)),
+                            pool, job, probability, v_weight, av_bias,
                             output_group +
-                                ((size_t)local_head *
-                                     QBH_ATTENTION_HEAD_DIM_TILES +
-                                 n_tile) * QBH_HMX_OUTPUT_BYTES,
-                            QBH_ATTENTION_SCORE_TILES, 1U,
+                                (size_t)local_head *
+                                    QBH_ATTENTION_HEAD_DIM_TILES *
+                                    QBH_HMX_OUTPUT_BYTES,
+                            1U, QBH_ATTENTION_SCORE_TILES,
+                            QBH_ATTENTION_HEAD_DIM_TILES,
                             &job->u8_attention_av_hmx_ticks) != 0) {
                         break;
+                    }
+                } else {
+                    for (uint32_t n_tile = 0U;
+                         n_tile < QBH_ATTENTION_HEAD_DIM_TILES; ++n_tile) {
+                        if (qbh_attention_u8_pool_submit(
+                                pool, job, probability,
+                                v_weight +
+                                    (size_t)n_tile *
+                                        QBH_ATTENTION_SCORE_TILES *
+                                        QBH_HMX_WEIGHT_BYTES,
+                                av_bias +
+                                    (size_t)n_tile *
+                                        (QBH_HMX_BIAS_BYTES /
+                                         sizeof(uint32_t)),
+                                output_group +
+                                    ((size_t)local_head *
+                                         QBH_ATTENTION_HEAD_DIM_TILES +
+                                     n_tile) * QBH_HMX_OUTPUT_BYTES,
+                                1U, QBH_ATTENTION_SCORE_TILES, 1U,
+                                &job->u8_attention_av_hmx_ticks) != 0) {
+                            break;
+                        }
                     }
                 }
             }
@@ -7361,13 +7418,16 @@ static int qbh_hvx_pool_u8_attention(
     header->u8_attention_av_execution_count +=
         completed_groups * QBH_ATTENTION_Q_HEADS_PER_GROUP *
         QBH_ATTENTION_HEAD_DIM_TILES;
-    header->hmx_command_count +=
-        completed_groups * QBH_ATTENTION_Q_HEADS_PER_GROUP *
-        (qbh_attention_u8_hmx_batch_enabled(
+    header->hmx_command_count += completed_groups *
+        (qbh_attention_u8_gqa_hmx_batch_enabled(
              header->attention_pipeline_mode)
              ? 2U
-             : (QBH_ATTENTION_SCORE_TILES +
-                QBH_ATTENTION_HEAD_DIM_TILES));
+             : QBH_ATTENTION_Q_HEADS_PER_GROUP *
+                   (qbh_attention_u8_hmx_batch_enabled(
+                        header->attention_pipeline_mode)
+                        ? 2U
+                        : (QBH_ATTENTION_SCORE_TILES +
+                           QBH_ATTENTION_HEAD_DIM_TILES)));
     header->hmx_u8s8_tile_pair_count +=
         completed_groups * QBH_ATTENTION_Q_HEADS_PER_GROUP *
         (QBH_ATTENTION_SCORE_TILES *
