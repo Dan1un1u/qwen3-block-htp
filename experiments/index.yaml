@@ -6020,7 +6020,7 @@ experiments:
       execution_unit: qwen3_layer14_complete_block_m64
       primary_scope: sole_softmax_lut_template_build_frequency_and_storage
       hypothesis: one_prebuilt_read_only_448_byte_template_bank_can_replace_eight_identical_per_group_builds_and_reduce_attention_wall_without_changing_softmax_bytes
-      bounded_candidate: one_shared_bank_in_existing_group_zero_softmax_scratch
+      bounded_candidate: one_shared_bank_in_existing_attention_projection_vtcm_workspace_between_disjoint_lifetimes
       softmax_math_lut_values_row_loop_task_schedule_or_output_changes_allowed: false
       allocation_vtcm_plan_hmx_projection_residual_or_mlp_changes_allowed: false
       fixed_vtcm_request_bytes: 8388608
