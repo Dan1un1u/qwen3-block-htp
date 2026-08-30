@@ -479,6 +479,18 @@ QK codes, sums, mask semantics, probability bytes, and all HMX work exactly.
 _Avoid_: changed Softmax approximation, shared head denominator, DDR lookup
 table, major block-level speedup, Selected Baseline without promotion
 
+**Expanded Persistent Attention HVX Domain**:
+The EXP-0068 W4U8 schedule that increases the persistent Attention execution
+domain from the main DSP thread plus three HVX workers to the main thread plus
+five workers. The larger domain consumes the same twenty-four paired Q/K
+Norm-RoPE tasks and eight GQA groups, preserves one serialized HMX owner and
+all numerical bytes, and shortens the Q/K preparation join tail. It is a
+parallel-domain occupancy change, not reduced work: aggregate Q/K Norm-RoPE,
+Softmax, and Attention wait counters may rise even while the additive
+QKV-plus-Attention critical interval falls.
+_Avoid_: concurrent HMX owners, changed Attention arithmetic, six worker
+threads, reduced Softmax work, Selected Baseline without promotion
+
 **Audit-Only Probability Row-Sum Reduction**:
 The rejected EXP-0066 Softmax schedule that skips probability row-sum and
 min/max reductions when numerical telemetry is absent, while retaining them
