@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0088
+  active_experiment: null
   next_experiment_number: 89
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,16 +27,45 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0087
-  last_completed_source_commit: 1034561a93980421f1022b9719d28ee7a2240fab
+  last_completed_experiment: EXP-0088
+  last_completed_source_commit: f37d97439009a7a871d1993e816cb7a8920d1f7a
   provisional_source_parent: EXP-0084
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: private_persistent_softmax_lut_gate
+  active_experiment_stage: none
   active_experiment_evidence: null
-  active_experiment_gate: not_run
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0087/stage_b_a1cae71'
+  active_experiment_gate: none
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0088/stage_b_742e8c789709'
+  latest_w4u8_private_persistent_softmax_lut_experiment:
+    id: EXP-0088
+    source_branch: codex/exp-0088-w4u8-private-persistent-softmax-lut
+    source_head: f37d97439009a7a871d1993e816cb7a8920d1f7a
+    runtime_source_head: 742e8c789709937cd61f734f3240a74fb1d49f27
+    direct_control: exp0084_dependency_stream_with_per_block_private_lut_builds
+    candidate: six_context_local_lut_banks_persistent_across_prepared_session_calls
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0088/stage_b_742e8c789709'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0088/artifacts/742e8c789709/stage_b_negative'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    correctness_gate: pass
+    physical_gate: pass
+    persistence_gate: pass_on_ordinary_performance_path
+    pc027_timing_ledger_closure: pass
+    pc028_module_table: pass
+    repeat1_host_delta_percent: -0.8375
+    repeat1_attention_delta_percent: 0.5338
+    repeat1_softmax_delta_percent: 0.1073
+    repeat10_host_delta_percent: 0.0203
+    repeat10_attention_delta_percent: 0.3634
+    repeat10_softmax_delta_percent: 0.3464
+    ordinary_warmup_private_bank_builds: 6
+    candidate_repeat1_measured_builds_reuses: 0_6
+    candidate_repeat10_measured_builds_reuses: 0_60
+    candidate_private_vtcm_bytes: 3072
+    conclusion: eliminating_per_block_lut_construction_is_mathematically_and_physically_valid_but_does_not_shorten_the_attention_critical_path_and_slightly_regresses_repeat10_host_attention_and_softmax_medians
+    selected_baseline_changed: false
   latest_w4u8_attention_slice_experiment:
     id: EXP-0087
     source_branch: codex/exp-0087-w4u8-attention-slice-granularity
