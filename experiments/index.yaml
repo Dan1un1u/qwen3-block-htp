@@ -5893,14 +5893,17 @@ experiments:
     variants:
       - exp0071_four_context_native_residual_control
       - six_context_native_residual_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4u8-six-context-native-residual
     source_branches:
       - codex/exp-0072-w4u8-six-context-residual
-    source_commits: []
+    source_commits:
+      - 08cbb851c10d3ed4064c870cf3e3c1864eddf9d3
+      - 739d28d28710c0163b6af65786aa592630d7ecee
+      - 6a7be24f93a5503b28363d1c99b868d788928870
     record: docs/experiments/EXP-0072.md
     decided_by: user
     decided_on: '2026-08-30'
@@ -5909,7 +5912,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0072-w4u8-six-context-residual
       started_on: '2026-08-30'
-      completed_on: null
+      completed_on: '2026-08-30'
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0072'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0072'
@@ -5932,3 +5935,55 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn_six_persistent_contexts_and_unchanged_hmx_commands_tiles_tasks_and_traffic
       local_speed_gate: combined_post_attention_and_final_residual_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
+      source_head: 6a7be24f93a5503b28363d1c99b868d788928870
+      implementation_checkpoint_commit: 08cbb851c10d3ed4064c870cf3e3c1864eddf9d3
+      implementation_commit: 739d28d28710c0163b6af65786aa592630d7ecee
+      evidence_validator_commit: 6a7be24f93a5503b28363d1c99b868d788928870
+      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0072/20260830T102828Z_6a7be24f93a5_formal'
+      artifact_set: 'D:/llm_exp/models/qwen3-block-htp/exp0072/artifacts/6a7be24f93a5/formal'
+      gate_record: 'D:/llm_exp/results/qwen3-block-htp/exp0072/20260830T102828Z_6a7be24f93a5_formal/gate_summary.json'
+      formal_full_profiling_report: 'D:/llm_exp/results/qwen3-block-htp/exp0072/20260830T102828Z_6a7be24f93a5_formal/full_profiling_report.md'
+      full_profiling_report: docs/experiments/EXP-0072-PROFILING.md
+      gate_record_sha256: 29e1101bcff8bf3cffd5994d9325ad12b37cb9dc2dd2b61f944b24328083c8bd
+      formal_full_profiling_report_sha256: d2485c7546676971dc46445f5e0714e6e6d03332253bdd7eae946837c4a0afab
+      static_gate_sha256: a5368b62c1031badcf1be380d81fd1b375851242d469a83a1e8adb81b3d2cc9d
+      package_manifest_sha256: 043f61337b2ad2758bb95791bc4ca768150f457f1f28bc7d20a7ad57eba42359
+      stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      formal_paired_rounds: 7
+      control_residual_active_contexts: 4
+      candidate_residual_active_contexts: 6
+      residual_tasks_per_boundary_per_block: 16
+      output_hash: 69f22eeb035e5ec5
+      input_norm_hash: 7255c2406108617c
+      qk_hash: 32aa949912e365be
+      probability_hash: 94f2e218f06f9627
+      av_hash: f853658f52032bde
+      implementation_reference_mismatches: 0
+      implementation_reference_max_lsb: 0
+      fixed_vtcm_acquired_bytes: 8388608
+      vtcm_peak_plan_bytes: 5306080
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      spill_fill_count: 0
+      hmx_commands_per_block: 176
+      hmx_tile_pairs_per_block: 49408
+      repeat1_control_host_wall_ns_per_block_median: 2479948.0
+      repeat1_candidate_host_wall_ns_per_block_median: 2471198.0
+      repeat1_host_wall_change_percent: -0.352830
+      repeat1_paired_host_wall_change_percent_median: -0.530040
+      repeat1_control_combined_residual_ticks_per_block_median: 1238.0
+      repeat1_candidate_combined_residual_ticks_per_block_median: 970.0
+      repeat1_combined_residual_change_percent: -21.647819
+      repeat1_paired_combined_residual_change_percent_median: -20.722892
+      repeat10_control_host_wall_ns_per_block_median: 2073885.4
+      repeat10_candidate_host_wall_ns_per_block_median: 2060849.0
+      repeat10_host_wall_change_percent: -0.628598
+      repeat10_paired_host_wall_change_percent_median: -0.344310
+      repeat10_control_combined_residual_ticks_per_block_median: 1232.6
+      repeat10_candidate_combined_residual_ticks_per_block_median: 967.6
+      repeat10_combined_residual_change_percent: -21.499270
+      repeat10_paired_combined_residual_change_percent_median: -21.392590
+      gate_result: pass
+      local_adoption_eligible: true
+      conclusion: reusing_all_five_persistent_hvx_workers_for_the_unchanged_native_residual_tasks_reduces_both_residual_critical_intervals_and_complete_block_wall_without_changing_math_or_the_physical_contract
+      selected_baseline_changed: false

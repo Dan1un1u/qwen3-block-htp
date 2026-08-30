@@ -540,3 +540,13 @@ adjacent stage-boundary bookkeeping not enclosed by an operator stage timer.
 It closes the complete invocation ledger without assigning instrumentation
 overhead to an operator and is not an optimization target.
 _Avoid_: unattributed operator work, hidden runtime cost, relaxed ledger gate
+
+**Six-Context Native U8 Residual**:
+The EXP-0072 schedule that lets the main DSP context and all five already-
+persistent HVX workers claim the same sixteen four-row native U8 residual
+tasks at both block residual boundaries. It changes only occupancy; task
+granularity, Q14 residual arithmetic, fused RMSNorm, qparams, layouts, buffers,
+DMA, HMX, and VTCM are unchanged. The measured combined residual ledger falls
+about 21.5% and complete repeat-ten Host wall about 0.63%.
+_Avoid_: new worker creation, changed residual math, changed task size,
+additional buffers, Selected Baseline without promotion
