@@ -749,9 +749,13 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         return 0;
     }
     if ((header->common_ops_mask &
-         ~((uint32_t)QBH_BLOCK_COMMON_OPS_HVX_FP16)) != 0U ||
+        ~((uint32_t)QBH_BLOCK_COMMON_OPS_HVX_FP16)) != 0U ||
         header->attribution_enabled > 1U ||
         header->numerical_audit_enabled > 1U ||
+        header->w4u8_gate_down_timeline_requested > 1U ||
+        (header->w4u8_gate_down_timeline_requested != 0U &&
+         (header->variant != QBH_BLOCK_W4U8 ||
+          header->repeat_count != 1U)) ||
         header->residual_mode >
             QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6 ||
         header->f16f16_projection_mode >
@@ -8612,6 +8616,10 @@ static void qbh_reset_w4u8_phase_header(
     phase->dsp_status = QBH_PROBE_STATUS_DSP_RUNNING;
 }
 
+static uint64_t qbh_w4u8_tick_since(uint64_t origin, uint64_t tick) {
+    return tick >= origin ? tick - origin : 0U;
+}
+
 static void qbh_accumulate_w4u8_phase_metrics(
     struct qbh_block_header *header,
     const struct qbh_probe_header *phase,
@@ -8697,6 +8705,7 @@ static int qbh_run_w4u8_streaming_mlp(
     uint32_t pair_consume_count = 0U;
     uint64_t activation_work_ticks = 0U;
     uint64_t unpack_ticks = 0U;
+    uint64_t timeline_origin = 0U;
     uint64_t start;
     int result = -1;
     int unlock_status;
@@ -8732,6 +8741,23 @@ static int qbh_run_w4u8_streaming_mlp(
         QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES;
     header->w4u8_mlp_gate_up_expanded_slot_count =
         gate_up_layout.expanded_slot_count;
+    if (header->w4u8_gate_down_timeline_requested != 0U) {
+        header->w4u8_gate_down_timeline_enabled = 1U;
+        header->w4u8_gate_up_plan_bytes =
+            gate_up_layout.vtcm_plan_bytes;
+        header->w4u8_down_plan_bytes = down_layout.vtcm_plan_bytes;
+        header->w4u8_gate_down_spare_vtcm_bytes =
+            header->vtcm_peak_plan_bytes <=
+                    QBH_EXPECTED_FULL_VTCM_BYTES
+                ? QBH_EXPECTED_FULL_VTCM_BYTES -
+                      header->vtcm_peak_plan_bytes
+                : 0U;
+        header->w4u8_down_first_chunk_prestage_bytes =
+            down_layout.compressed_slot_count *
+                down_layout.stored_weight_bundle_bytes +
+            down_layout.expanded_slot_count *
+                down_layout.expanded_chunk_slot_bytes;
+    }
 
     if (activation_prepacked != 0U) {
         ++header->w4u8_mlp_input_pack_skipped;
@@ -8766,6 +8792,8 @@ static int qbh_run_w4u8_streaming_mlp(
         };
         qbh_reset_w4u8_phase_header(
             &gate_up_phase, QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS);
+        gate_up_phase.timeline_enabled =
+            header->w4u8_gate_down_timeline_requested;
         start = HAP_perf_get_qtimer_count();
         if (qbh_block_mlp_uses_persistent_gate_up_hvx(
                 header->mlp_mode)) {
@@ -8799,10 +8827,36 @@ static int qbh_run_w4u8_streaming_mlp(
         }
         qbh_accumulate_w4u8_phase_metrics(
             header, &gate_up_phase, &gate_up_layout, 1U);
+        if (header->w4u8_gate_down_timeline_requested != 0U) {
+            timeline_origin = gate_up_phase.qtimer_start;
+            header->w4u8_gate_up_first_hmx_start_ticks =
+                qbh_w4u8_tick_since(
+                    timeline_origin, gate_up_phase.hmx_window_start);
+            header->w4u8_gate_up_last_hmx_end_ticks =
+                qbh_w4u8_tick_since(
+                    timeline_origin, gate_up_phase.hmx_window_end);
+            header->w4u8_middle_first_ready_ticks =
+                qbh_w4u8_tick_since(
+                    timeline_origin,
+                    gate_up_phase.mlp_middle_first_ready_tick);
+            header->w4u8_middle_first_half_ready_ticks =
+                qbh_w4u8_tick_since(
+                    timeline_origin,
+                    gate_up_phase.mlp_middle_first_half_ready_tick);
+            header->w4u8_middle_all_ready_ticks =
+                qbh_w4u8_tick_since(
+                    timeline_origin,
+                    gate_up_phase.mlp_middle_all_ready_tick);
+            header->w4u8_gate_up_join_ticks =
+                qbh_w4u8_tick_since(
+                    timeline_origin, gate_up_phase.qtimer_end);
+        }
     }
 
     qbh_reset_w4u8_phase_header(
         &down_phase, QBH_BLOCK_W4U8_DOWN_HVX_WORKERS);
+    down_phase.timeline_enabled =
+        header->w4u8_gate_down_timeline_requested;
     start = HAP_perf_get_qtimer_count();
     if (header->mlp_mode ==
         QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX) {
@@ -8830,6 +8884,21 @@ static int qbh_run_w4u8_streaming_mlp(
     }
     qbh_accumulate_w4u8_phase_metrics(
         header, &down_phase, &down_layout, 0U);
+    if (header->w4u8_gate_down_timeline_requested != 0U) {
+        header->w4u8_down_phase_start_ticks =
+            qbh_w4u8_tick_since(timeline_origin, down_phase.qtimer_start);
+        header->w4u8_down_first_dma_publication_ticks =
+            qbh_w4u8_tick_since(
+                timeline_origin, down_phase.first_dma_publication_tick);
+        header->w4u8_down_first_expand_end_ticks =
+            qbh_w4u8_tick_since(
+                timeline_origin, down_phase.first_expand_end_tick);
+        header->w4u8_down_first_hmx_start_ticks =
+            qbh_w4u8_tick_since(
+                timeline_origin, down_phase.hmx_window_start);
+        header->w4u8_down_phase_end_ticks =
+            qbh_w4u8_tick_since(timeline_origin, down_phase.qtimer_end);
+    }
 
     if (output_native != 0U) {
         ++header->w4u8_mlp_output_unpack_skipped;

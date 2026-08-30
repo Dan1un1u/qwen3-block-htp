@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(42)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(84)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(43)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(89)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -310,6 +310,7 @@ struct qbh_block_header {
     uint32_t fp16_common_schedule_mode;
     uint32_t fp16_norm_rows_per_task;
     uint32_t fp16_norm_contexts;
+    uint32_t w4u8_gate_down_timeline_requested;
 
     uint32_t input_offset;
     uint32_t input_bytes;
@@ -634,6 +635,23 @@ struct qbh_block_header {
     uint32_t w4u8_down_persistent_hvx_dispatch_count;
     uint32_t w4u8_down_persistent_hvx_worker_count;
     uint32_t w4u8_down_transient_hvx_thread_count;
+    uint32_t w4u8_gate_down_timeline_enabled;
+    uint32_t w4u8_gate_up_plan_bytes;
+    uint32_t w4u8_down_plan_bytes;
+    uint32_t w4u8_gate_down_spare_vtcm_bytes;
+    uint32_t w4u8_down_first_chunk_prestage_bytes;
+    uint32_t w4u8_gate_down_timeline_reserved;
+    uint64_t w4u8_gate_up_first_hmx_start_ticks;
+    uint64_t w4u8_gate_up_last_hmx_end_ticks;
+    uint64_t w4u8_middle_first_ready_ticks;
+    uint64_t w4u8_middle_first_half_ready_ticks;
+    uint64_t w4u8_middle_all_ready_ticks;
+    uint64_t w4u8_gate_up_join_ticks;
+    uint64_t w4u8_down_phase_start_ticks;
+    uint64_t w4u8_down_first_dma_publication_ticks;
+    uint64_t w4u8_down_first_expand_end_ticks;
+    uint64_t w4u8_down_first_hmx_start_ticks;
+    uint64_t w4u8_down_phase_end_ticks;
 };
 
 #endif

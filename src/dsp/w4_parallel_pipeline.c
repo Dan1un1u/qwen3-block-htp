@@ -77,6 +77,8 @@ struct qbh_parallel_state {
     uint32_t hmx_active;
     uint32_t hvx_hmx_overlap_observed;
     uint32_t hvx_parallel_overlap_observed;
+    uint32_t mlp_first_half_ready_count;
+    uint32_t mlp_all_ready_count;
     volatile int32_t abort_status;
     const struct qbh_mlp_gate_up_handoff *mlp_handoff;
 };
@@ -387,6 +389,7 @@ static int qbh_hvx_worker_run(struct qbh_hvx_worker_job *job,
 
         if (task.mlp_activation != 0U) {
             uint64_t activation_start = HAP_perf_get_qtimer_count();
+            uint64_t activation_end;
             uint8_t *pair = state->output_tiles +
                 (size_t)task.mlp_pair_slot * 2U *
                     QBH_HMX_OUTPUT_BYTES;
@@ -425,10 +428,32 @@ static int qbh_hvx_worker_run(struct qbh_hvx_worker_job *job,
                             QBH_MLP_GATHER_SCRATCH_BYTES);
             }
             qbh_hvx_region_end(state);
+            activation_end = HAP_perf_get_qtimer_count();
             qurt_mutex_lock(&state->metrics_mutex);
             *state->mlp_handoff->activation_ticks +=
-                HAP_perf_get_qtimer_count() - activation_start;
+                activation_end - activation_start;
             ++*state->mlp_handoff->pair_consume_count;
+            if (state->header->timeline_enabled != 0U) {
+                uint32_t pair_count = layout->n_tiles / 2U;
+                uint32_t first_half_pairs = pair_count / 2U;
+                ++state->mlp_all_ready_count;
+                if (state->header->mlp_middle_first_ready_tick == 0U) {
+                    state->header->mlp_middle_first_ready_tick =
+                        activation_end;
+                }
+                if (task.mlp_pair_index < first_half_pairs) {
+                    ++state->mlp_first_half_ready_count;
+                    if (state->mlp_first_half_ready_count ==
+                        first_half_pairs) {
+                        state->header->mlp_middle_first_half_ready_tick =
+                            activation_end;
+                    }
+                }
+                if (state->mlp_all_ready_count == pair_count) {
+                    state->header->mlp_middle_all_ready_tick =
+                        activation_end;
+                }
+            }
             qurt_mutex_unlock(&state->metrics_mutex);
             asm volatile("barrier" : : : "memory");
             qurt_sem_up(&state->mlp_pair_free[task.mlp_pair_slot]);
@@ -498,6 +523,10 @@ static int qbh_hvx_worker_run(struct qbh_hvx_worker_job *job,
         }
         qbh_hvx_region_end(state);
         end = HAP_perf_get_qtimer_count();
+        if (state->header->timeline_enabled != 0U &&
+            state->header->first_expand_end_tick == 0U) {
+            state->header->first_expand_end_tick = end;
+        }
         job->last_expand_end = end;
         job->expand_ticks += end - start;
         ++job->expand_count;
@@ -1362,6 +1391,11 @@ static int qbh_run_chunked_w4_pipeline_impl(
                     header->weight_stage_ticks +=
                         HAP_perf_get_qtimer_count() - wait_start;
                     ++header->weight_bundle_stage_count;
+                    if (header->timeline_enabled != 0U &&
+                        header->first_dma_publication_tick == 0U) {
+                        header->first_dma_publication_tick =
+                            HAP_perf_get_qtimer_count();
+                    }
                     qbh_publish_w4_bundle(
                         &state, linear_base + batch_index,
                         first_compressed_slot + batch_index);
@@ -1386,6 +1420,11 @@ static int qbh_run_chunked_w4_pipeline_impl(
                 }
                 header->weight_stage_ticks +=
                     HAP_perf_get_qtimer_count() - stage_start;
+                if (header->timeline_enabled != 0U &&
+                    header->first_dma_publication_tick == 0U) {
+                    header->first_dma_publication_tick =
+                        HAP_perf_get_qtimer_count();
+                }
                 for (uint32_t batch_index = 0;
                      batch_index < dma_bundle_batch; ++batch_index) {
                     qbh_publish_w4_bundle(

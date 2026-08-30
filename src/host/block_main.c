@@ -1430,6 +1430,7 @@ int main(int argc, char **argv) {
         QBH_BLOCK_FP16_COMMON_SCHEDULE_CONTROL;
     uint32_t fp16_norm_rows_per_task = 4U;
     uint32_t fp16_norm_contexts = 4U;
+    uint32_t w4u8_gate_down_timeline = 0U;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t w4u8_gate_up_bundle_offset = 0U;
@@ -1463,7 +1464,7 @@ int main(int argc, char **argv) {
     memset(attention_audit_slots, 0, sizeof(attention_audit_slots));
     memset(&w4u8_gate_up_layout, 0, sizeof(w4u8_gate_up_layout));
     memset(&w4u8_down_layout, 0, sizeof(w4u8_down_layout));
-    if (argc < 3 || argc > 24 ||
+    if (argc < 3 || argc > 25 ||
         qbh_parse_variant(argv[2], &variant) != 0 ||
         (argc >= 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
         (argc >= 5 && qbh_parse_u32(
@@ -1506,6 +1507,8 @@ int main(int argc, char **argv) {
                            argv[22], &fp16_norm_rows_per_task) != 0) ||
         (argc >= 24 && qbh_parse_u32(
                            argv[23], &fp16_norm_contexts) != 0) ||
+        (argc >= 25 && qbh_parse_u32(
+                           argv[24], &w4u8_gate_down_timeline) != 0) ||
         repeats == 0U || repeats > 100U ||
         w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
         (variant == QBH_BLOCK_W4U8 &&
@@ -1604,6 +1607,9 @@ int main(int argc, char **argv) {
          fp16_norm_rows_per_task != 4U &&
          fp16_norm_rows_per_task != 8U) ||
         fp16_norm_contexts < 2U || fp16_norm_contexts > 4U ||
+        w4u8_gate_down_timeline > 1U ||
+        (w4u8_gate_down_timeline != 0U &&
+         (variant != QBH_BLOCK_W4U8 || repeats != 1U)) ||
         (variant == QBH_BLOCK_W4U8 &&
          fp16_common_schedule_mode !=
              QBH_BLOCK_FP16_COMMON_SCHEDULE_CONTROL) ||
@@ -1782,7 +1788,8 @@ int main(int argc, char **argv) {
                         "input_norm_pool_post_norm_pool|"
                         "qk_head_pairs_input_norm_pool|all] "
                         "[fp16_norm_rows_per_task:2|4|8] "
-                        "[fp16_norm_contexts:2|3|4]\n",
+                "[fp16_norm_contexts:2|3|4] "
+                "[w4u8_gate_down_timeline:0|1]\n",
                 argv[0]);
         return 2;
     }
@@ -2057,6 +2064,8 @@ int main(int argc, char **argv) {
     header->fp16_common_schedule_mode = fp16_common_schedule_mode;
     header->fp16_norm_rows_per_task = fp16_norm_rows_per_task;
     header->fp16_norm_contexts = fp16_norm_contexts;
+    header->w4u8_gate_down_timeline_requested =
+        w4u8_gate_down_timeline;
     header->input_offset = input_slot.offset;
     header->input_bytes = input_slot.expected_bytes;
     header->output_bytes = output_bytes;
@@ -2330,7 +2339,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0084\","
+        "{\"experiment\":\"EXP-0089\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2941,6 +2950,52 @@ int main(int argc, char **argv) {
         header->crouton_av_o_copy_ticks,
         header->crouton_norm_store_ticks,
         release_result, close_result);
+
+    if (header->w4u8_gate_down_timeline_requested != 0U) {
+        printf(
+            "{\"experiment\":\"EXP-0089\","
+            "\"record\":\"gate_up_down_timeline\","
+            "\"prepared_session_run_index\":%" PRIu32 ","
+            "\"timeline_enabled\":%" PRIu32 ","
+            "\"vtcm_requested_bytes\":%" PRIu32 ","
+            "\"vtcm_acquired_bytes\":%" PRIu32 ","
+            "\"vtcm_peak_plan_bytes\":%" PRIu32 ","
+            "\"gate_up_plan_bytes\":%" PRIu32 ","
+            "\"down_plan_bytes\":%" PRIu32 ","
+            "\"spare_vtcm_bytes\":%" PRIu32 ","
+            "\"down_first_chunk_prestage_bytes\":%" PRIu32 ","
+            "\"gate_up_first_hmx_start_ticks\":%" PRIu64 ","
+            "\"gate_up_last_hmx_end_ticks\":%" PRIu64 ","
+            "\"middle_first_ready_ticks\":%" PRIu64 ","
+            "\"middle_first_half_ready_ticks\":%" PRIu64 ","
+            "\"middle_all_ready_ticks\":%" PRIu64 ","
+            "\"gate_up_join_ticks\":%" PRIu64 ","
+            "\"down_phase_start_ticks\":%" PRIu64 ","
+            "\"down_first_dma_publication_ticks\":%" PRIu64 ","
+            "\"down_first_expand_end_ticks\":%" PRIu64 ","
+            "\"down_first_hmx_start_ticks\":%" PRIu64 ","
+            "\"down_phase_end_ticks\":%" PRIu64 "}\n",
+            header->prepared_session_run_index,
+            header->w4u8_gate_down_timeline_enabled,
+            header->vtcm_requested_bytes,
+            header->vtcm_acquired_bytes,
+            header->vtcm_peak_plan_bytes,
+            header->w4u8_gate_up_plan_bytes,
+            header->w4u8_down_plan_bytes,
+            header->w4u8_gate_down_spare_vtcm_bytes,
+            header->w4u8_down_first_chunk_prestage_bytes,
+            header->w4u8_gate_up_first_hmx_start_ticks,
+            header->w4u8_gate_up_last_hmx_end_ticks,
+            header->w4u8_middle_first_ready_ticks,
+            header->w4u8_middle_first_half_ready_ticks,
+            header->w4u8_middle_all_ready_ticks,
+            header->w4u8_gate_up_join_ticks,
+            header->w4u8_down_phase_start_ticks,
+            header->w4u8_down_first_dma_publication_ticks,
+            header->w4u8_down_first_expand_end_ticks,
+            header->w4u8_down_first_hmx_start_ticks,
+            header->w4u8_down_phase_end_ticks);
+    }
 
     exit_code = warmup_result == AEE_SUCCESS &&
                         measured_result == AEE_SUCCESS &&
