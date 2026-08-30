@@ -7,7 +7,8 @@ repeat_count="${1:-1}"
 attribution_mode="${2:-on}"
 audit_mode="${3:-off}"
 timeline_mode="${4:-0}"
-runtime_args="2 32 rms_rope_softmax ${attribution_mode} ${audit_mode} fused_pool6 serial control hvx w4u8_streaming_persistent_mlp_hvx 3 64 u8_log2_gqa_qkv_overlap_vgather_vdeal_fused_qk_requant_hmx_batch_lut_templates_gqa_batch_dependency_stream 6 w4u8_mlp_io_qkv_o qkvo_batch4_qk_head_pairs hvx_tree_qk_batched_rsqrt_shared_rope_parallel_input control 4 4 ${timeline_mode}"
+prestage_mode="${5:-0}"
+runtime_args="2 32 rms_rope_softmax ${attribution_mode} ${audit_mode} fused_pool6 serial control hvx w4u8_streaming_persistent_mlp_hvx 3 64 u8_log2_gqa_qkv_overlap_vgather_vdeal_fused_qk_requant_hmx_batch_lut_templates_gqa_batch_dependency_stream 6 w4u8_mlp_io_qkv_o qkvo_batch4_qk_head_pairs hvx_tree_qk_batched_rsqrt_shared_rope_parallel_input control 4 4 ${timeline_mode} ${prestage_mode}"
 
 if [[ "${timeline_mode}" != 0 && "${repeat_count}" != 1 ]]; then
     printf 'EXP-0089 timeline is audit-only and requires repeat1\n' >&2

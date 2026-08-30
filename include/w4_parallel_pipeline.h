@@ -8,6 +8,27 @@
 
 #define QBH_W4_HMX_MAX_BATCH_OUTPUTS UINT32_C(8)
 #define QBH_W4_HMX_MAX_CONTINUATION_CHUNKS UINT32_C(1)
+#define QBH_W4_DOWN_PRESTAGE_OUTPUTS UINT32_C(4)
+
+struct qbh_w4_down_prestage {
+    const struct qbh_projection_layout *layout;
+    const uint8_t *stored_weights;
+    uint8_t *compressed_ring;
+    uint8_t *expanded_ring;
+    uint32_t output_count;
+    uint32_t trigger_output_base;
+    volatile uint32_t dma_published_count;
+    uint32_t dma_descriptor_count;
+    volatile uint32_t expand_completed_count;
+    uint32_t consumed;
+    uint64_t start_tick;
+    uint64_t first_dma_publication_tick;
+    uint64_t dma_end_tick;
+    uint64_t first_expand_end_tick;
+    uint64_t expand_end_tick;
+    uint64_t dma_ticks;
+    uint64_t expand_ticks;
+};
 
 struct qbh_mlp_gate_up_handoff {
     uint8_t *middle_activation;
@@ -18,6 +39,7 @@ struct qbh_mlp_gate_up_handoff {
     uint32_t *pair_publish_count;
     uint32_t *pair_consume_count;
     uint64_t *activation_ticks;
+    struct qbh_w4_down_prestage *down_prestage;
 };
 
 struct qbh_w4_hmx_request {
@@ -99,6 +121,16 @@ int qbh_run_chunked_w4_pipeline_external_hvx(
     const struct qbh_mlp_gate_up_handoff *handoff,
     const struct qbh_w4_hmx_runner *hmx_runner,
     const struct qbh_w4_hvx_dispatch_runner *hvx_runner);
+
+int qbh_run_chunked_w4_pipeline_external_hvx_prestaged(
+    struct qbh_probe_header *header,
+    const struct qbh_projection_layout *layout,
+    const uint8_t *stored_weights, const uint8_t *activation_tiles,
+    uint8_t *vtcm,
+    const struct qbh_mlp_gate_up_handoff *handoff,
+    const struct qbh_w4_hmx_runner *hmx_runner,
+    const struct qbh_w4_hvx_dispatch_runner *hvx_runner,
+    struct qbh_w4_down_prestage *prestage);
 
 int qbh_run_chunked_w4_external_hvx_worker(void *worker_context);
 int qbh_run_chunked_w4_managed_hvx_worker(void *worker_context);

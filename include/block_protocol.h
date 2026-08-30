@@ -7,7 +7,7 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(43)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(44)
 #define QBH_BLOCK_EXPERIMENT UINT32_C(89)
 
 #define QBH_BLOCK_M UINT32_C(64)
@@ -311,6 +311,7 @@ struct qbh_block_header {
     uint32_t fp16_norm_rows_per_task;
     uint32_t fp16_norm_contexts;
     uint32_t w4u8_gate_down_timeline_requested;
+    uint32_t w4u8_gate_down_prestage_requested;
 
     uint32_t input_offset;
     uint32_t input_bytes;
@@ -652,6 +653,25 @@ struct qbh_block_header {
     uint64_t w4u8_down_first_expand_end_ticks;
     uint64_t w4u8_down_first_hmx_start_ticks;
     uint64_t w4u8_down_phase_end_ticks;
+    uint32_t w4u8_gate_down_prestage_enabled;
+    uint32_t w4u8_down_prestage_output_count;
+    uint32_t w4u8_down_prestage_dma_descriptor_count;
+    uint32_t w4u8_down_prestage_expand_count;
+    uint32_t w4u8_down_prestage_consumed;
+    uint32_t w4u8_down_prestage_ring_bytes;
+    uint32_t w4u8_down_prestage_ring_offset;
+    uint32_t w4u8_gate_up_dma_descriptor_count;
+    uint32_t w4u8_down_dma_descriptor_count;
+    uint32_t w4u8_down_prestage_trigger_output_base;
+    uint32_t w4u8_down_prestage_trigger_reserved;
+    uint64_t w4u8_down_prestage_start_ticks;
+    uint64_t w4u8_down_prestage_first_dma_ticks;
+    uint64_t w4u8_down_prestage_dma_end_ticks;
+    uint64_t w4u8_down_prestage_first_expand_end_ticks;
+    uint64_t w4u8_down_prestage_expand_end_ticks;
+    uint64_t w4u8_down_prestage_dma_ticks;
+    uint64_t w4u8_down_prestage_expand_ticks;
+    uint64_t w4u8_down_output_hash;
 };
 
 #endif

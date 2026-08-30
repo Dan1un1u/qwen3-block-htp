@@ -28,6 +28,8 @@ static uint8_t qbh_chunked_hmx_stack[QBH_CHUNKED_HMX_STACK_BYTES]
 struct qbh_chunk_task {
     uint32_t stop;
     uint32_t mlp_activation;
+    uint32_t down_prestage;
+    uint32_t down_prestage_output;
     uint32_t sequence;
     uint32_t compressed_slot;
     uint32_t expanded_slot;
@@ -81,6 +83,7 @@ struct qbh_parallel_state {
     uint32_t mlp_all_ready_count;
     volatile int32_t abort_status;
     const struct qbh_mlp_gate_up_handoff *mlp_handoff;
+    struct qbh_w4_down_prestage *prestage;
 };
 
 struct qbh_hvx_worker_job {
@@ -303,6 +306,69 @@ static int qbh_wait_linked_descriptor(
     }
 }
 
+static int qbh_prestage_down_prefix(
+    struct qbh_parallel_state *state,
+    struct qbh_w4_down_prestage *prestage) {
+    const struct qbh_projection_layout *layout;
+
+    if (state == NULL || prestage == NULL || prestage->layout == NULL ||
+        prestage->stored_weights == NULL ||
+        prestage->compressed_ring == NULL ||
+        prestage->expanded_ring == NULL ||
+        prestage->output_count != QBH_W4_DOWN_PRESTAGE_OUTPUTS ||
+        prestage->output_count > 4U ||
+        prestage->dma_published_count != 0U ||
+        prestage->expand_completed_count != 0U) {
+        return -1;
+    }
+    layout = prestage->layout;
+    if (layout->weight_storage_variant !=
+            QBH_WEIGHT_PACKED_W4_HMX_SCALE ||
+        qbh_physical_plan_is_streaming(layout->physical_plan) ||
+        layout->chunks_per_output != 2U ||
+        layout->compressed_slot_count < prestage->output_count ||
+        layout->expanded_slot_count < 2U * prestage->output_count) {
+        return -1;
+    }
+
+    prestage->start_tick = HAP_perf_get_qtimer_count();
+    for (uint32_t output_base = 0U;
+         output_base < prestage->output_count; output_base += 2U) {
+        uint64_t stage_start = HAP_perf_get_qtimer_count();
+        uint64_t stage_elapsed;
+        if (qbh_stage_weight_bundles(
+                state->header,
+                prestage->stored_weights +
+                    (size_t)output_base *
+                        layout->stored_weight_bundle_bytes,
+                prestage->compressed_ring +
+                    (size_t)output_base *
+                        layout->stored_weight_bundle_bytes,
+                layout->stored_weight_bundle_bytes, 2U) != 0) {
+            return -1;
+        }
+        stage_elapsed = HAP_perf_get_qtimer_count() - stage_start;
+        prestage->dma_ticks += stage_elapsed;
+        state->header->weight_stage_ticks += stage_elapsed;
+        ++prestage->dma_descriptor_count;
+        prestage->dma_published_count += 2U;
+        if (prestage->first_dma_publication_tick == 0U) {
+            prestage->first_dma_publication_tick =
+                HAP_perf_get_qtimer_count();
+        }
+        for (uint32_t output = output_base;
+             output < output_base + 2U; ++output) {
+            struct qbh_chunk_task task;
+            memset(&task, 0, sizeof(task));
+            task.down_prestage = 1U;
+            task.down_prestage_output = output;
+            qbh_queue_push(&state->queue, &task);
+        }
+    }
+    prestage->dma_end_tick = HAP_perf_get_qtimer_count();
+    return 0;
+}
+
 static int qbh_hvx_region_begin(struct qbh_parallel_state *state) {
     uint32_t active;
     for (;;) {
@@ -457,6 +523,58 @@ static int qbh_hvx_worker_run(struct qbh_hvx_worker_job *job,
             qurt_mutex_unlock(&state->metrics_mutex);
             asm volatile("barrier" : : : "memory");
             qurt_sem_up(&state->mlp_pair_free[task.mlp_pair_slot]);
+            continue;
+        }
+
+        if (task.down_prestage != 0U) {
+            struct qbh_w4_down_prestage *prestage =
+                state->mlp_handoff != NULL
+                    ? state->mlp_handoff->down_prestage : NULL;
+            const struct qbh_projection_layout *down_layout =
+                prestage != NULL ? prestage->layout : NULL;
+            uint32_t output = task.down_prestage_output;
+            uint32_t expanded_slot = output * 2U;
+            uint64_t prestage_start;
+            uint64_t prestage_end;
+
+            if (prestage == NULL || down_layout == NULL ||
+                output >= prestage->output_count ||
+                expanded_slot >= down_layout->expanded_slot_count ||
+                down_layout->weight_storage_variant !=
+                    QBH_WEIGHT_PACKED_W4_HMX_SCALE) {
+                exit_status = AEE_EBADPARM;
+                qbh_abort_pipeline(state, exit_status);
+                break;
+            }
+            compressed = prestage->compressed_ring +
+                (size_t)output * down_layout->stored_weight_bundle_bytes;
+            expanded = prestage->expanded_ring +
+                (size_t)expanded_slot *
+                    down_layout->expanded_chunk_slot_bytes;
+            prestage_start = HAP_perf_get_qtimer_count();
+            admission_status = qbh_hvx_region_begin(state);
+            if (admission_status != 0) {
+                exit_status = AEE_EFAILED;
+                break;
+            }
+            qbh_unpack_w4_to_s8_hvx(
+                compressed, (int8_t *)expanded,
+                qbh_projection_chunk_tiles(down_layout, 0U));
+            qbh_copy_hmx_bias_hvx(
+                compressed + down_layout->w4_bias_offset,
+                expanded + down_layout->expanded_chunk_weight_bytes);
+            qbh_hvx_region_end(state);
+            prestage_end = HAP_perf_get_qtimer_count();
+            qurt_mutex_lock(&state->metrics_mutex);
+            prestage->expand_ticks += prestage_end - prestage_start;
+            if (prestage->first_expand_end_tick == 0U) {
+                prestage->first_expand_end_tick = prestage_end;
+            }
+            if (prestage_end > prestage->expand_end_tick) {
+                prestage->expand_end_tick = prestage_end;
+            }
+            ++prestage->expand_completed_count;
+            qurt_mutex_unlock(&state->metrics_mutex);
             continue;
         }
 
@@ -1145,7 +1263,8 @@ static int qbh_run_chunked_w4_pipeline_impl(
     uint8_t *vtcm, uint32_t hmx_context_id,
     const struct qbh_mlp_gate_up_handoff *handoff,
     const struct qbh_w4_hmx_runner *runner,
-    const struct qbh_w4_hvx_dispatch_runner *hvx_runner) {
+    const struct qbh_w4_hvx_dispatch_runner *hvx_runner,
+    struct qbh_w4_down_prestage *prestage) {
     struct qbh_parallel_state state;
     struct qbh_hvx_worker_job hvx_jobs[QBH_MAX_HVX_WORKERS];
     struct qbh_chunked_hmx_job hmx_job;
@@ -1190,6 +1309,32 @@ static int qbh_run_chunked_w4_pipeline_impl(
          (layout->n_tiles & 1U) != 0U)) {
         return AEE_EBADPARM;
     }
+    if (handoff != NULL && handoff->down_prestage != NULL &&
+        (handoff->down_prestage->layout == NULL ||
+         handoff->down_prestage->stored_weights == NULL ||
+         handoff->down_prestage->compressed_ring == NULL ||
+         handoff->down_prestage->expanded_ring == NULL ||
+         handoff->down_prestage->output_count !=
+             QBH_W4_DOWN_PRESTAGE_OUTPUTS ||
+         handoff->down_prestage->trigger_output_base >=
+             layout->n_tiles)) {
+        return AEE_EBADPARM;
+    }
+    if (prestage != NULL &&
+        (handoff != NULL || prestage->layout != layout ||
+         prestage->stored_weights != stored_weights ||
+         prestage->compressed_ring == NULL ||
+         prestage->expanded_ring == NULL ||
+         prestage->output_count != QBH_W4_DOWN_PRESTAGE_OUTPUTS ||
+         prestage->dma_published_count != prestage->output_count ||
+         prestage->expand_completed_count != prestage->output_count ||
+         prestage->consumed != 0U || header->repeat_count != 1U ||
+         qbh_physical_plan_is_streaming(layout->physical_plan) ||
+         layout->chunks_per_output != 2U ||
+         layout->compressed_slot_count < prestage->output_count ||
+         layout->expanded_slot_count < 2U * prestage->output_count)) {
+        return AEE_EBADPARM;
+    }
     if (qbh_physical_plan_is_streaming(layout->physical_plan) &&
         ((layout->chunk_tiles % QBH_W4_STREAM_REGION_TILES) != 0U ||
          (layout->k_tiles % QBH_W4_STREAM_REGION_TILES) != 0U ||
@@ -1212,17 +1357,22 @@ static int qbh_run_chunked_w4_pipeline_impl(
     state.header = header;
     state.layout = layout;
     state.mlp_handoff = handoff;
+    state.prestage = prestage;
     state.activation_tiles = activation_tiles;
     state.output_tiles = vtcm + layout->vtcm_output_offset;
     for (uint32_t slot = 0; slot < layout->compressed_slot_count;
          ++slot) {
-        state.compressed_slots[slot] =
-            vtcm + qbh_projection_compressed_slot_offset(layout, slot);
+        state.compressed_slots[slot] = prestage != NULL
+            ? prestage->compressed_ring +
+                  (size_t)slot * layout->stored_weight_bundle_bytes
+            : vtcm + qbh_projection_compressed_slot_offset(layout, slot);
     }
     for (uint32_t slot = 0;
          slot < layout->expanded_slot_count; ++slot) {
-        state.expanded_slots[slot] =
-            vtcm + qbh_projection_expanded_chunk_offset(layout, slot);
+        state.expanded_slots[slot] = prestage != NULL
+            ? prestage->expanded_ring +
+                  (size_t)slot * layout->expanded_chunk_slot_bytes
+            : vtcm + qbh_projection_expanded_chunk_offset(layout, slot);
     }
     if (handoff != NULL) {
         for (uint32_t slot = 0; slot < handoff->pair_slot_count; ++slot) {
@@ -1236,11 +1386,16 @@ static int qbh_run_chunked_w4_pipeline_impl(
     qurt_sem_init_val(&state.hvx_started, 0);
     for (uint32_t slot = 0; slot < layout->compressed_slot_count;
          ++slot) {
-        qurt_sem_init_val(&state.compressed_free[slot], 1);
+        qurt_sem_init_val(
+            &state.compressed_free[slot],
+            prestage != NULL && slot < prestage->output_count ? 0 : 1);
     }
     for (uint32_t slot = 0;
          slot < layout->expanded_slot_count; ++slot) {
-        qurt_sem_init_val(&state.expanded_free[slot], 1);
+        uint32_t prestaged_slot = prestage != NULL &&
+            slot < 2U * prestage->output_count && (slot & 1U) == 0U;
+        qurt_sem_init_val(
+            &state.expanded_free[slot], prestaged_slot != 0U ? 0 : 1);
         qurt_sem_init_val(&state.expanded_ready[slot], 0);
     }
 
@@ -1333,8 +1488,38 @@ static int qbh_run_chunked_w4_pipeline_impl(
 
     header->qtimer_start = HAP_perf_get_qtimer_count();
     header->pcycles_start = HAP_perf_get_pcycles();
+    if (prestage != NULL) {
+        header->first_dma_publication_tick =
+            prestage->first_dma_publication_tick;
+        header->first_expand_end_tick =
+            prestage->first_expand_end_tick;
+        for (uint32_t output = 0U;
+             output < prestage->output_count; ++output) {
+            uint32_t compressed_slot = output;
+            uint32_t first_slot = output * 2U;
+            uint32_t second_slot = first_slot + 1U;
+            struct qbh_chunk_task task;
+            state.compressed_remaining[compressed_slot] = 1U;
+            asm volatile("barrier" : : : "memory");
+            qurt_sem_up(&state.expanded_ready[first_slot]);
+            qurt_sem_down(&state.expanded_free[second_slot]);
+            memset(&task, 0, sizeof(task));
+            task.sequence = second_slot;
+            task.compressed_slot = compressed_slot;
+            task.expanded_slot = second_slot;
+            task.chunk_index = 1U;
+            task.chunk_tiles =
+                qbh_projection_chunk_tiles(layout, 1U);
+            qbh_queue_push(&state.queue, &task);
+        }
+        prestage->consumed = 1U;
+    }
     for (uint32_t repeat = 0; repeat < header->repeat_count; ++repeat) {
-        for (uint32_t output_base = 0; output_base < layout->n_tiles;
+        uint32_t first_output =
+            repeat == 0U && prestage != NULL
+                ? prestage->output_count : 0U;
+        for (uint32_t output_base = first_output;
+             output_base < layout->n_tiles;
              output_base += dma_bundle_batch) {
             struct qbh_dma_aligned_desc_1d linked_descriptors[4];
             uint32_t linear_base = repeat * layout->n_tiles + output_base;
@@ -1344,6 +1529,19 @@ static int qbh_run_chunked_w4_pipeline_impl(
             if (state.abort_status != 0) {
                 result = state.abort_status;
                 goto stop_workers;
+            }
+
+            if (repeat == 0U && handoff != NULL &&
+                handoff->down_prestage != NULL &&
+                output_base ==
+                    handoff->down_prestage->trigger_output_base &&
+                handoff->down_prestage->dma_published_count == 0U) {
+                if (qbh_prestage_down_prefix(
+                        &state, handoff->down_prestage) != 0) {
+                    result = AEE_EFAILED;
+                    qbh_abort_pipeline(&state, result);
+                    goto stop_workers;
+                }
             }
 
             for (uint32_t batch_index = 0;
@@ -1539,14 +1737,21 @@ stop_workers:
          joined_hvx_workers != header->requested_hvx_workers ||
          (handoff != NULL &&
           (*handoff->pair_publish_count != layout->n_tiles / 2U ||
-           *handoff->pair_consume_count != layout->n_tiles / 2U)) ||
+           *handoff->pair_consume_count != layout->n_tiles / 2U ||
+           (handoff->down_prestage != NULL &&
+            (handoff->down_prestage->dma_published_count !=
+                 handoff->down_prestage->output_count ||
+             handoff->down_prestage->expand_completed_count !=
+                 handoff->down_prestage->output_count)))) ||
+         (prestage != NULL && prestage->consumed == 0U) ||
          header->weight_expand_count !=
              header->repeat_count * layout->n_tiles *
                  (qbh_physical_plan_is_streaming(
                       layout->physical_plan)
                       ? layout->k_tiles /
                             QBH_W4_STREAM_REGION_TILES
-                      : layout->chunks_per_output))) {
+                      : layout->chunks_per_output) -
+                 (prestage != NULL ? prestage->output_count : 0U))) {
         result = AEE_EFAILED;
     }
 
@@ -1608,7 +1813,7 @@ int qbh_run_chunked_w4_pipeline(
     uint8_t *vtcm, uint32_t hmx_context_id) {
     return qbh_run_chunked_w4_pipeline_impl(
         header, layout, stored_weights, activation_tiles, vtcm,
-        hmx_context_id, NULL, NULL, NULL);
+        hmx_context_id, NULL, NULL, NULL, NULL);
 }
 
 int qbh_run_chunked_w4_pipeline_mlp(
@@ -1619,7 +1824,7 @@ int qbh_run_chunked_w4_pipeline_mlp(
     const struct qbh_mlp_gate_up_handoff *handoff) {
     return qbh_run_chunked_w4_pipeline_impl(
         header, layout, stored_weights, activation_tiles, vtcm,
-        hmx_context_id, handoff, NULL, NULL);
+        hmx_context_id, handoff, NULL, NULL, NULL);
 }
 
 int qbh_run_chunked_w4_pipeline_external(
@@ -1631,7 +1836,7 @@ int qbh_run_chunked_w4_pipeline_external(
     const struct qbh_w4_hmx_runner *runner) {
     return qbh_run_chunked_w4_pipeline_impl(
         header, layout, stored_weights, activation_tiles, vtcm,
-        0U, handoff, runner, NULL);
+        0U, handoff, runner, NULL, NULL);
 }
 
 int qbh_run_chunked_w4_pipeline_external_hvx(
@@ -1644,5 +1849,19 @@ int qbh_run_chunked_w4_pipeline_external_hvx(
     const struct qbh_w4_hvx_dispatch_runner *hvx_runner) {
     return qbh_run_chunked_w4_pipeline_impl(
         header, layout, stored_weights, activation_tiles, vtcm,
-        0U, handoff, hmx_runner, hvx_runner);
+        0U, handoff, hmx_runner, hvx_runner, NULL);
+}
+
+int qbh_run_chunked_w4_pipeline_external_hvx_prestaged(
+    struct qbh_probe_header *header,
+    const struct qbh_projection_layout *layout,
+    const uint8_t *stored_weights, const uint8_t *activation_tiles,
+    uint8_t *vtcm,
+    const struct qbh_mlp_gate_up_handoff *handoff,
+    const struct qbh_w4_hmx_runner *hmx_runner,
+    const struct qbh_w4_hvx_dispatch_runner *hvx_runner,
+    struct qbh_w4_down_prestage *prestage) {
+    return qbh_run_chunked_w4_pipeline_impl(
+        header, layout, stored_weights, activation_tiles, vtcm,
+        0U, handoff, hmx_runner, hvx_runner, prestage);
 }
