@@ -457,3 +457,14 @@ QK hash. It removes a separate full-carrier pass without merging probability
 mass, changing qparams, changing mask semantics, or changing QK/AV HMX work.
 _Avoid_: shared two-head Softmax denominator, changed Attention arithmetic,
 ordinary 64-byte row fusion, Selected Baseline without promotion
+
+**Per-Head QK/AV HMX Command Batch**:
+The EXP-0064 W4U8 Attention schedule that submits both QK output tiles and all
+four AV output tiles of one Q head through the integer-HMX worker's existing
+multi-output loop. It removes one command handoff per extra output tile while
+preserving every tile pair, weight, bias, qparam, score, probability, and AV
+byte. Attention HMX command count falls from 96 to 32 and total block HMX
+command count from 256 to 192 without changing one-owner ordering or creating
+an intermediate DDR boundary.
+_Avoid_: fused QK/AV arithmetic, concurrent HMX owners, changed Attention
+math, fewer HMX tile pairs, Selected Baseline without promotion

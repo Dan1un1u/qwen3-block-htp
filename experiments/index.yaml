@@ -5021,14 +5021,16 @@ experiments:
     variants:
       - exp0063_per_output_tile_attention_hmx_control
       - exp0063_per_head_qk2_av4_hmx_batch_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4u8-attention-hmx-output-batching
     source_branches:
       - codex/exp-0064-w4u8-attention-hmx-batching
-    source_commits: []
+    source_commits:
+      - 3842aede2ecae49487d1cf3a655952429bcad867
+      - ea013518038df0bdee28d35f9c8b2ad69498d285
     record: docs/experiments/EXP-0064.md
     decided_by: user
     decided_on: '2026-08-30'
@@ -5037,7 +5039,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0064-w4u8-attention-hmx-batching
       started_on: '2026-08-30'
-      completed_on: null
+      completed_on: '2026-08-30'
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0064'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0064'
@@ -5062,3 +5064,62 @@ experiments:
       command_gate: attention_hmx_commands_reduce_from_96_to_32_and_total_hmx_commands_reduce_from_256_to_192_with_unchanged_tile_pair_count
       local_speed_gate: combined_qk_av_hmx_submission_attention_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
+      source_head: ea013518038df0bdee28d35f9c8b2ad69498d285
+      implementation_commit: 3842aede2ecae49487d1cf3a655952429bcad867
+      evidence_validator_commit: ea013518038df0bdee28d35f9c8b2ad69498d285
+      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0064/20260830T080535Z_ea013518038d_formal'
+      artifact_set: 'D:/llm_exp/models/qwen3-block-htp/exp0064/artifacts/ea013518038d/formal'
+      gate_record: 'D:/llm_exp/results/qwen3-block-htp/exp0064/20260830T080535Z_ea013518038d_formal/gate_summary.json'
+      formal_full_profiling_report: 'D:/llm_exp/results/qwen3-block-htp/exp0064/20260830T080535Z_ea013518038d_formal/full_profiling_report.md'
+      full_profiling_report: docs/experiments/EXP-0064-PROFILING.md
+      gate_record_sha256: 935e64c705afc319f8f7b104a84f6265379b9ed965c19a482182f57cb66ff3ef
+      formal_full_profiling_report_sha256: 8ba5b56fbdf4f8fd415b1bcfe1a993a17ad2a104e14c6df5f4793a9a9082bf53
+      static_gate_sha256: a2c818a1f7c032cf92a55cac04c598ea8d66291df29b0c375be3a9c72b6f5a07
+      package_manifest_sha256: 043f61337b2ad2758bb95791bc4ca768150f457f1f28bc7d20a7ad57eba42359
+      stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      formal_paired_rounds: 7
+      output_hash: 69f22eeb035e5ec5
+      qk_probability_av_hash_equivalence: true
+      qk_hash: 32aa949912e365be
+      probability_hash: 94f2e218f06f9627
+      av_hash: f853658f52032bde
+      implementation_reference_mismatches: 0
+      implementation_reference_max_lsb: 0
+      fixed_vtcm_acquired_bytes: 8388608
+      vtcm_peak_plan_bytes: 5306080
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      spill_fill_count: 0
+      control_attention_hmx_commands_per_block: 96
+      candidate_attention_hmx_commands_per_block: 32
+      control_total_hmx_commands_per_block: 256
+      candidate_total_hmx_commands_per_block: 192
+      hmx_tile_pairs_per_block: 49408
+      repeat1_control_host_wall_ns_per_block_median: 2795781.0
+      repeat1_candidate_host_wall_ns_per_block_median: 2719323.0
+      repeat1_host_wall_change_percent: -2.734764
+      repeat1_paired_host_wall_change_percent_median: -1.227671
+      repeat1_control_qk_av_hmx_ticks_per_block_median: 3993.0
+      repeat1_candidate_qk_av_hmx_ticks_per_block_median: 1502.0
+      repeat1_qk_av_hmx_change_percent: -62.384172
+      repeat1_paired_qk_av_hmx_change_percent_median: -62.374749
+      repeat1_control_attention_ticks_per_block_median: 7046.0
+      repeat1_candidate_attention_ticks_per_block_median: 5090.0
+      repeat1_attention_change_percent: -27.760431
+      repeat1_paired_attention_change_percent_median: -27.788816
+      repeat10_control_host_wall_ns_per_block_median: 2401099.0
+      repeat10_candidate_host_wall_ns_per_block_median: 2290593.8
+      repeat10_host_wall_change_percent: -4.602276
+      repeat10_paired_host_wall_change_percent_median: -4.803142
+      repeat10_control_qk_av_hmx_ticks_per_block_median: 4045.1
+      repeat10_candidate_qk_av_hmx_ticks_per_block_median: 1488.3
+      repeat10_qk_av_hmx_change_percent: -63.207337
+      repeat10_paired_qk_av_hmx_change_percent_median: -62.721671
+      repeat10_control_attention_ticks_per_block_median: 7058.2
+      repeat10_candidate_attention_ticks_per_block_median: 5111.1
+      repeat10_attention_change_percent: -27.586353
+      repeat10_paired_attention_change_percent_median: -27.638639
+      gate_result: pass
+      local_adoption_eligible: true
+      conclusion: batching_each_q_heads_two_qk_and_four_av_output_tiles_into_existing_multi_output_hmx_commands_removes_sixty_four_command_round_trips_and_most_attention_pipeline_wait_while_preserving_exact_math_and_zero_intermediate_ddr
+      selected_baseline_changed: false
