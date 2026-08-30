@@ -140,11 +140,28 @@ def median(records: list[dict[str, object]], field: str) -> float:
 
 
 def summarize(control: list[dict[str, object]],
-              candidate: list[dict[str, object]], field: str) -> dict[str, float]:
-    left = [float(record[field]) for record in control]
-    right = [float(record[field]) for record in candidate]
+              candidate: list[dict[str, object]], field: str,
+              divisor: float = 1.0) -> dict[str, float]:
+    left = [float(record[field]) / divisor for record in control]
+    right = [float(record[field]) / divisor for record in candidate]
     control_median = statistics.median(left)
     candidate_median = statistics.median(right)
+    if all(value == 0.0 for value in left + right):
+        return {
+            "control": 0.0,
+            "candidate": 0.0,
+            "change_percent": 0.0,
+            "paired_change_percent_median": 0.0,
+        }
+    if any(value == 0.0 for value in left) or control_median == 0.0:
+        return {
+            "control": control_median,
+            "candidate": candidate_median,
+            "change_percent": None,
+            "paired_change_percent_median": None,
+            "percentage_unavailable_reason":
+                "at_least_one_control_sample_is_zero",
+        }
     paired = [(r / l - 1.0) * 100.0 for l, r in zip(left, right)]
     return {
         "control": control_median,
@@ -155,10 +172,11 @@ def summarize(control: list[dict[str, object]],
 
 
 def summarize_combined(control: list[dict[str, object]],
-                       candidate: list[dict[str, object]]) -> dict[str, float]:
-    left = [float(r["gate_up_ticks"]) + float(r["down_ticks"])
+                       candidate: list[dict[str, object]],
+                       divisor: float = 1.0) -> dict[str, float]:
+    left = [(float(r["gate_up_ticks"]) + float(r["down_ticks"])) / divisor
             for r in control]
-    right = [float(r["gate_up_ticks"]) + float(r["down_ticks"])
+    right = [(float(r["gate_up_ticks"]) + float(r["down_ticks"])) / divisor
              for r in candidate]
     control_median = statistics.median(left)
     candidate_median = statistics.median(right)
@@ -220,11 +238,13 @@ def main() -> None:
             validate_prestage(record)
 
         gate_up = summarize(
-            records["control"], records["candidate"], "gate_up_ticks")
+            records["control"], records["candidate"], "gate_up_ticks",
+            repeat)
         down = summarize(
-            records["control"], records["candidate"], "down_ticks")
+            records["control"], records["candidate"], "down_ticks",
+            repeat)
         combined = summarize_combined(
-            records["control"], records["candidate"])
+            records["control"], records["candidate"], repeat)
         host = summarize(
             records["control"], records["candidate"],
             "host_wall_ns_per_block")
@@ -241,11 +261,13 @@ def main() -> None:
         stage_gates.append(passed)
 
         ledger = {
-            field: summarize(records["control"], records["candidate"], field)
+            field: summarize(
+                records["control"], records["candidate"], field, repeat)
             for field in LEDGER_FIELDS
         }
         overlap = {
-            field: summarize(records["control"], records["candidate"], field)
+            field: summarize(
+                records["control"], records["candidate"], field, repeat)
             for field in OVERLAP_FIELDS
         }
         prestage = {
