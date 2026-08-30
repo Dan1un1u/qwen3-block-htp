@@ -5569,14 +5569,15 @@ experiments:
       - exp0068_prep6_attention6_control
       - exp0068_prep6_attention4_candidate
       - exp0068_prep6_attention5_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-split-attention-context-domains
     source_branches:
       - codex/exp-0069-w4u8-split-attention-context-domains
-    source_commits: []
+    source_commits:
+      - 8d68aa65e459a607cfd0e5686495cf3e3478bd11
     record: docs/experiments/EXP-0069.md
     decided_by: user
     decided_on: '2026-08-30'
@@ -5585,7 +5586,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0069-w4u8-split-attention-context-domains
       started_on: '2026-08-30'
-      completed_on: null
+      completed_on: '2026-08-30'
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0069'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0069'
@@ -5611,3 +5612,65 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn_six_persistent_contexts_created_and_locked_and_separate_active_context_telemetry
       local_speed_gate: attention_ledger_combined_qkv_plus_attention_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
+      source_head: 8d68aa65e459a607cfd0e5686495cf3e3478bd11
+      implementation_commit: 8d68aa65e459a607cfd0e5686495cf3e3478bd11
+      evidence_validator_commit: 8d68aa65e459a607cfd0e5686495cf3e3478bd11
+      search_run: 'D:/llm_exp/results/qwen3-block-htp/exp0069/search/20260830T093104Z_cdcc41889bd4'
+      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0069/20260830T093306Z_8d68aa65e459_formal'
+      artifact_set: 'D:/llm_exp/models/qwen3-block-htp/exp0069/artifacts/8d68aa65e459/formal'
+      gate_record: 'D:/llm_exp/results/qwen3-block-htp/exp0069/20260830T093306Z_8d68aa65e459_formal/gate_summary.json'
+      formal_full_profiling_report: 'D:/llm_exp/results/qwen3-block-htp/exp0069/20260830T093306Z_8d68aa65e459_formal/full_profiling_report.md'
+      full_profiling_report: docs/experiments/EXP-0069-PROFILING.md
+      gate_record_sha256: 44a8885267eed93a2e4f61c288b16bef20305a6141ec7af5afd380c902952674
+      formal_full_profiling_report_sha256: 0b9e5b22fa509d10b24aa57588fc5438134fb7b534f66e1d3f9a977380b3bfa9
+      static_gate_sha256: a01bde4c837e203fa61b0f63a06d5290fa51ae78c9251f39670abdf2e99c54a4
+      package_manifest_sha256: 043f61337b2ad2758bb95791bc4ca768150f457f1f28bc7d20a7ad57eba42359
+      selection_record_sha256: 8165023ee4785be72411ffd879330de63a0ddbc65c3f22c09bd4c637cab8e13d
+      stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      formal_paired_rounds: 7
+      qk_prep_contexts: 6
+      selected_attention_active_contexts: 5
+      persistent_attention_hvx_workers: 5
+      output_hash: 69f22eeb035e5ec5
+      qk_probability_av_hash_equivalence: true
+      qk_hash: 32aa949912e365be
+      probability_hash: 94f2e218f06f9627
+      av_hash: f853658f52032bde
+      implementation_reference_mismatches: 0
+      implementation_reference_max_lsb: 0
+      fixed_vtcm_acquired_bytes: 8388608
+      vtcm_peak_plan_bytes: 5306080
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      spill_fill_count: 0
+      hmx_commands_per_block: 192
+      hmx_tile_pairs_per_block: 49408
+      repeat1_control_host_wall_ns_per_block_median: 2567865.0
+      repeat1_candidate_host_wall_ns_per_block_median: 2567448.0
+      repeat1_host_wall_change_percent: -0.016239
+      repeat1_paired_host_wall_change_percent_median: 0.961754
+      repeat1_control_attention_ticks_per_block_median: 4973.0
+      repeat1_candidate_attention_ticks_per_block_median: 4889.0
+      repeat1_attention_change_percent: -1.689121
+      repeat1_paired_attention_change_percent_median: -1.588578
+      repeat1_control_qkv_plus_attention_ticks_per_block_median: 13179.0
+      repeat1_candidate_qkv_plus_attention_ticks_per_block_median: 13063.0
+      repeat1_qkv_plus_attention_change_percent: -0.880188
+      repeat1_paired_qkv_plus_attention_change_percent_median: -0.811713
+      repeat10_control_host_wall_ns_per_block_median: 2140140.6
+      repeat10_candidate_host_wall_ns_per_block_median: 2137234.4
+      repeat10_host_wall_change_percent: -0.135795
+      repeat10_paired_host_wall_change_percent_median: -0.135820
+      repeat10_control_attention_ticks_per_block_median: 4961.9
+      repeat10_candidate_attention_ticks_per_block_median: 4871.9
+      repeat10_attention_change_percent: -1.813821
+      repeat10_paired_attention_change_percent_median: -1.723790
+      repeat10_control_qkv_plus_attention_ticks_per_block_median: 13054.7
+      repeat10_candidate_qkv_plus_attention_ticks_per_block_median: 12991.5
+      repeat10_qkv_plus_attention_change_percent: -0.484117
+      repeat10_paired_qkv_plus_attention_change_percent_median: -0.531899
+      gate_result: fail
+      local_adoption_eligible: false
+      conclusion: restricting_gqa_attention_to_five_active_contexts_reduces_softmax_work_pipeline_wait_and_attention_ledger_but_the_complete_block_gain_is_too_small_and_repeat1_paired_host_wall_regresses
+      reopen_condition: only_with_a_new_attention_scheduling_hypothesis_that_changes_the_block_critical_path_beyond_context_count_retuning
+      selected_baseline_changed: false

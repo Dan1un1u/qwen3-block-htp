@@ -491,6 +491,17 @@ QKV-plus-Attention critical interval falls.
 _Avoid_: concurrent HMX owners, changed Attention arithmetic, six worker
 threads, reduced Softmax work, Selected Baseline without promotion
 
+**Split Attention Context Domain**:
+The rejected EXP-0069 schedule that keeps EXP-0068's six-context persistent
+pool and uses all six contexts for Q/K preparation, but allows only five total
+contexts to claim GQA Attention tasks. It reduces Softmax aggregate work,
+Attention queue wait, and the Attention ledger, yet the complete-block gain is
+too small and the repeat-one paired Host wall regresses. It is not an adopted
+source parent.
+_Avoid_: accepted Attention optimization, fewer persistent workers, changed
+Attention arithmetic, permission to retune four/five active contexts without
+a new block-level hypothesis
+
 **Audit-Only Probability Row-Sum Reduction**:
 The rejected EXP-0066 Softmax schedule that skips probability row-sum and
 min/max reductions when numerical telemetry is absent, while retaining them
