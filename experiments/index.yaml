@@ -7602,3 +7602,55 @@ experiments:
       evidence_manifest_sha256: 86e1229244907d9c89e95c28a5f12f94adfdeea2871bdca48951f87a656cdfa7
       conclusion: audit_disproves_a_material_single_fifo_activation_backlog_and_priority_queue_implementation_is_stopped_before_stage_b
       selected_baseline_changed: false
+  - id: EXP-0091
+    slug: w4u8-interleaved-nibble-decode
+    title: Interleaved V79 vlut32 W4U8 nibble decoder
+    parent: EXP-0084
+    variants:
+      - exp0084_w4u8_fair_canonical_single_vector_vlut32_control
+      - gate_up_two_way_interleaved_vlut32_candidate
+      - gate_up_four_way_interleaved_vlut32_candidate_if_two_way_is_promising
+      - common_projection_interleaved_decoder_if_gate_up_passes
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-interleaved-nibble-decode
+    source_branches:
+      - codex/exp-0091-w4u8-interleaved-nibble-decode
+    source_commits: []
+    record: docs/experiments/EXP-0091.md
+    decided_by: user
+    decided_on: '2026-08-31'
+    approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary recoverable git issues without stopping'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0091-w4u8-interleaved-nibble-decode
+      started_on: '2026-08-31'
+      completed_on: null
+    evidence:
+      formal_results: null
+      retained_artifacts: null
+      source_parent_commit: 6dc437fe08eaccf119c4cbce82937e22f125da0b
+      direct_w4u8_control: W4U8-EXP0084-FAIR-CANONICAL
+      contextual_w4f16_comparator: W4F16-EXP0084-COMMON-NORM-POOLS
+      contextual_f16f16_comparator: F16F16-EXP0084-FAIR-CANONICAL
+      execution_unit: qwen3_layer14_complete_block_m64
+      primary_scope: gate_up_w4_to_s8_vlut32_instruction_latency_and_memory_pipeline
+      hypothesis: accepted_single_vector_decoder_exposes_a_serial_load_two_vlut_shuffle_two_store_chain_that_can_be_shortened_on_the_critical_path_by_interleaving_independent_vectors
+      serial_milestones: accepted_and_candidate_static_disassembly_then_gate_up_only_two_way_timing_then_optional_four_way_or_common_projection_confirmation_and_pc027_pc028_closure
+      stage_a_static_gate: accepted_hot_loop_must_lack_auto_unroll_and_candidate_hot_loop_must_show_at_least_two_independent_interleaved_vector_streams_without_spill
+      stage_b_candidate: preserve_vlut32_math_and_interleave_two_independent_packed_vectors_only_for_gate_up
+      stage_b_stop_condition: stop_if_candidate_disassembly_collapses_to_single_vector_or_if_gate_up_or_complete_host_wall_fails_strict_ordinary_and_paired_improvement_at_either_repeat
+      stage_c_candidate: extend_only_the_selected_gate_up_decoder_to_qkv_o_and_down_if_stage_b_passes
+      forbidden_inherited_directions: exp0082_arithmetic_decoder_queue_priority_cross_phase_down_prestage_changed_quant_math_new_hvx_workers_changed_tile_or_command_granularity_new_hmx_owner
+      arithmetic_qparams_weights_layout_output_codes_task_counts_dma_descriptors_hmx_commands_or_tile_pairs_changes_allowed: false
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      correctness_gate: final_output_and_audited_middle_activation_down_output_qk_probability_av_boundaries_byte_exact_to_exp0084_and_independent_reference_zero_mismatches_zero_max_lsb
+      physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_same_weight_bytes_512_dma_descriptors_176_hmx_commands_and_49408_tile_pairs
+      stage_b_speed_gate: gate_up_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10_without_other_module_regression_beyond_noise
+      completion_gate: static_schedule_evidence_then_five_interleaved_stage_b_rounds_then_optional_seven_round_stage_c_and_pc027_pc028_complete_profiling_closure
