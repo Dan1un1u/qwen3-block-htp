@@ -550,3 +550,14 @@ DMA, HMX, and VTCM are unchanged. The measured combined residual ledger falls
 about 21.5% and complete repeat-ten Host wall about 0.63%.
 _Avoid_: new worker creation, changed residual math, changed task size,
 additional buffers, Selected Baseline without promotion
+
+**Shared SOLE LUT-Template Bank**:
+The rejected EXP-0073 Softmax storage experiment that replaces eight
+context-local builds of the same fourteen-template, 448-byte SOLE probability
+bank with one read-only VTCM bank shared by all GQA tasks. It is byte-exact and
+zero-DDR, but increases Softmax aggregate work by about 8.2%, Attention wall by
+about 4.4%, and repeat-ten Host wall by about 0.55%. Under the current six-
+context schedule, local redundant construction is cheaper than cross-context
+shared reads, most plausibly because of VTCM locality or bank contention.
+_Avoid_: reusable shared table is automatically faster, template-build count
+as a latency proxy, stacking the shared bank onto later Attention candidates
