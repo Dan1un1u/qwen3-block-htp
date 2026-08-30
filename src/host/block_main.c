@@ -1288,6 +1288,7 @@ int main(int argc, char **argv) {
     uint32_t attention_pipeline_mode =
         QBH_BLOCK_ATTENTION_PIPELINE_CONTROL;
     uint32_t attention_hvx_contexts = 1U;
+    uint32_t attention_active_contexts = 0U;
     uint32_t mlp_mode = QBH_BLOCK_MLP_CONTROL;
     uint32_t mlp_hvx_contexts = 1U;
     uint32_t mlp_chunk_vectors = 64U;
@@ -1330,7 +1331,7 @@ int main(int argc, char **argv) {
     memset(attention_audit_slots, 0, sizeof(attention_audit_slots));
     memset(&w4u8_gate_up_layout, 0, sizeof(w4u8_gate_up_layout));
     memset(&w4u8_down_layout, 0, sizeof(w4u8_down_layout));
-    if (argc < 3 || argc > 21 ||
+    if (argc < 3 || argc > 22 ||
         qbh_parse_variant(argv[2], &variant) != 0 ||
         (argc >= 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
         (argc >= 5 && qbh_parse_u32(
@@ -1367,6 +1368,8 @@ int main(int argc, char **argv) {
                            argv[19], &w4u8_qkvo_pipeline_mode) != 0) ||
         (argc >= 21 && qbh_parse_u8_norm_reduction_mode(
                            argv[20], &u8_norm_reduction_mode) != 0) ||
+        (argc >= 22 && qbh_parse_u32(
+                           argv[21], &attention_active_contexts) != 0) ||
         repeats == 0U || repeats > 100U ||
         w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
         (variant == QBH_BLOCK_W4U8 &&
@@ -1390,6 +1393,12 @@ int main(int argc, char **argv) {
             QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES ||
         attention_hvx_contexts == 0U ||
         attention_hvx_contexts > 6U ||
+        (attention_active_contexts != 0U &&
+         (attention_active_contexts > attention_hvx_contexts ||
+          (qbh_attention_u8_enabled(attention_pipeline_mode)
+               ? attention_active_contexts < 4U
+               : attention_active_contexts !=
+                     attention_hvx_contexts))) ||
         (attention_pipeline_mode ==
              QBH_BLOCK_ATTENTION_PIPELINE_CONTROL &&
          attention_hvx_contexts != 1U) ||
@@ -1618,9 +1627,13 @@ int main(int argc, char **argv) {
                         "qkvo_batch4_qk_head_pairs] "
                         "[u8_norm_reduction:scalar|hvx_tree|"
                         "hvx_tree_qk_batched_rsqrt|"
-                        "hvx_tree_qk_batched_rsqrt_shared_rope]\n",
+                        "hvx_tree_qk_batched_rsqrt_shared_rope] "
+                        "[attention_active_contexts:0|4..6]\n",
                 argv[0]);
         return 2;
+    }
+    if (attention_active_contexts == 0U) {
+        attention_active_contexts = attention_hvx_contexts;
     }
     if (argc < 7 && variant == QBH_BLOCK_W4U8) {
         common_ops_mask = QBH_BLOCK_COMMON_OPS_SCALAR;
@@ -1884,6 +1897,7 @@ int main(int argc, char **argv) {
     header->attention_pack_mode = attention_pack_mode;
     header->attention_pipeline_mode = attention_pipeline_mode;
     header->attention_hvx_contexts = attention_hvx_contexts;
+    header->attention_active_contexts = attention_active_contexts;
     header->mlp_mode = mlp_mode;
     header->mlp_hvx_contexts = mlp_hvx_contexts;
     header->mlp_chunk_vectors = mlp_chunk_vectors;
@@ -2163,7 +2177,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0068\","
+        "{\"experiment\":\"EXP-0069\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2177,6 +2191,7 @@ int main(int argc, char **argv) {
         "\"attention_pack_mode\":\"%s\","
         "\"attention_pipeline_mode\":\"%s\","
         "\"attention_hvx_contexts\":%" PRIu32 ","
+        "\"attention_active_contexts\":%" PRIu32 ","
         "\"mlp_mode\":\"%s\","
         "\"mlp_hvx_contexts\":%" PRIu32 ","
         "\"mlp_chunk_vectors\":%" PRIu32 ","
@@ -2467,6 +2482,7 @@ int main(int argc, char **argv) {
         qbh_attention_pipeline_mode_name(
             header->attention_pipeline_mode),
         header->attention_hvx_contexts,
+        header->attention_active_contexts,
         qbh_mlp_mode_name(header->mlp_mode),
         header->mlp_hvx_contexts,
         header->mlp_chunk_vectors,

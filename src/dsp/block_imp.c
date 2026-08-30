@@ -710,6 +710,13 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->attention_hvx_contexts == 0U ||
         header->attention_hvx_contexts >
             QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS ||
+        header->attention_active_contexts == 0U ||
+        header->attention_active_contexts >
+            header->attention_hvx_contexts ||
+        (qbh_attention_u8_enabled(header->attention_pipeline_mode)
+             ? header->attention_active_contexts < 4U
+             : header->attention_active_contexts !=
+                   header->attention_hvx_contexts) ||
         (header->attention_pipeline_mode ==
              QBH_BLOCK_ATTENTION_PIPELINE_CONTROL &&
          header->attention_hvx_contexts != 1U) ||
@@ -7292,21 +7299,23 @@ static int qbh_hvx_pool_u8_attention(
     uint32_t completed_groups;
 
     if (pool == NULL || buffers == NULL || worker == NULL ||
-        header->attention_hvx_contexts < 4U ||
-        header->attention_hvx_contexts >
+        header->attention_active_contexts < 4U ||
+        header->attention_active_contexts >
             QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS ||
-        header->attention_hvx_contexts - 1U > pool->worker_count) {
+        header->attention_active_contexts >
+            header->attention_hvx_contexts ||
+        header->attention_active_contexts - 1U > pool->worker_count) {
         return -1;
     }
     memset(&main_job, 0, sizeof(main_job));
-    main_job.worker_index = header->attention_hvx_contexts - 1U;
+    main_job.worker_index = header->attention_active_contexts - 1U;
     pool->attention_header = header;
     pool->attention_buffers = buffers;
     pool->attention_hmx_worker = worker;
     pool->attention_task_count = QBH_BLOCK_KV_HEADS;
     pool->next_attention_task = 0U;
     pool->attention_gqa_abort = 0U;
-    pool->active_worker_count = header->attention_hvx_contexts - 1U;
+    pool->active_worker_count = header->attention_active_contexts - 1U;
     header->u8_attention_probability_row_sum_min = UINT32_MAX;
     for (uint32_t worker_index = 0U;
          worker_index < pool->active_worker_count; ++worker_index) {

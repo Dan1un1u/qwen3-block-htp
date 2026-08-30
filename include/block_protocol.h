@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(37)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(68)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(38)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(69)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -270,6 +270,7 @@ struct qbh_block_header {
     uint32_t attention_pack_mode;
     uint32_t attention_pipeline_mode;
     uint32_t attention_hvx_contexts;
+    uint32_t attention_active_contexts;
     uint32_t mlp_mode;
     uint32_t mlp_hvx_contexts;
     uint32_t mlp_chunk_vectors;
