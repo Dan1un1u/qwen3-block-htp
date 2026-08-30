@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0090
+  active_experiment: null
   next_experiment_number: 91
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,16 +27,39 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0089
-  last_completed_source_commit: 9c489c44641236de92b425d2afae0439dab3de6b
+  last_completed_experiment: EXP-0090
+  last_completed_source_commit: 61695b9d43361575bc3c6c0886f9280f6681499f
   provisional_source_parent: EXP-0084
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: gate_up_activation_queue_audit
+  active_experiment_stage: null
   active_experiment_evidence: null
-  active_experiment_gate: not_run
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0089/stage_b_416825029ade'
+  active_experiment_gate: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0090/stage_a_0792b2cbb845'
+  latest_w4u8_gate_up_activation_priority_experiment:
+    id: EXP-0090
+    source_branch: codex/exp-0090-w4u8-gate-up-activation-priority
+    source_head: 61695b9d43361575bc3c6c0886f9280f6681499f
+    runtime_source_head: 0792b2cbb8455fad66e5a6f5893cfa55e209ab16
+    direct_control: exp0084_w4u8_fair_canonical_single_fifo
+    candidate: not_implemented_by_stage_a_stop_contract
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0090/stage_a_0792b2cbb845'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0090/artifacts/0792b2cbb845/stage_a'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    correctness_gate: pass
+    physical_gate: pass
+    pc027_failure_boundary_report: pass
+    pc028_module_table: pass
+    activation_queue_mean_wait_ticks_median: 28.734375
+    activation_work_per_task_ticks_median: 40.661458333333336
+    activation_tasks_ahead_mean_median: 1.2864583333333333
+    activation_tasks_ahead_max_median: 3
+    queue_depth_max_median: 8
+    conclusion: ready_swiglu_tasks_do_not_wait_behind_a_material_fifo_backlog_so_priority_arbitration_lacks_enough_recoverable_critical_path_and_stage_b_was_not_implemented
+    selected_baseline_changed: false
   latest_w4u8_gate_up_down_dependency_stream_experiment:
     id: EXP-0089
     source_branch: codex/exp-0089-w4u8-gate-up-down-dependency-stream

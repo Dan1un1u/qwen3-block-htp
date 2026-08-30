@@ -7532,14 +7532,16 @@ experiments:
       - exp0084_w4u8_fair_canonical_single_fifo_control
       - audit_only_gate_up_queue_residency
       - activation_priority_same_pool_candidate_if_stage_a_passes
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-gate-up-activation-priority
     source_branches:
       - codex/exp-0090-w4u8-gate-up-activation-priority
-    source_commits: []
+    source_commits:
+      - 0792b2cbb8455fad66e5a6f5893cfa55e209ab16
+      - 61695b9d43361575bc3c6c0886f9280f6681499f
     record: docs/experiments/EXP-0090.md
     decided_by: user
     decided_on: '2026-08-31'
@@ -7548,10 +7550,10 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0090-w4u8-gate-up-activation-priority
       started_on: '2026-08-31'
-      completed_on: null
+      completed_on: '2026-08-31'
     evidence:
-      formal_results: null
-      retained_artifacts: null
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0090/stage_a_0792b2cbb845'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0090/artifacts/0792b2cbb845/stage_a'
       source_parent_commit: 6dc437fe08eaccf119c4cbce82937e22f125da0b
       direct_w4u8_control: W4U8-EXP0084-FAIR-CANONICAL
       contextual_w4f16_comparator: W4F16-EXP0084-COMMON-NORM-POOLS
@@ -7574,3 +7576,29 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_same_weight_bytes_512_dma_descriptors_176_hmx_commands_and_49408_tile_pairs
       stage_b_speed_gate: gate_up_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10_without_down_or_attention_regression_beyond_noise
       completion_gate: seven_audit_rounds_then_five_interleaved_stage_b_rounds_then_optional_seven_round_confirmation_and_pc027_pc028_complete_profiling_closure
+      stage_a_runtime_source_commit: 0792b2cbb8455fad66e5a6f5893cfa55e209ab16
+      stage_a_analysis_source_commit: 61695b9d43361575bc3c6c0886f9280f6681499f
+      stage_a_run: 'D:/llm_exp/results/qwen3-block-htp/exp0090/stage_a_0792b2cbb845'
+      stage_a_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0090/artifacts/0792b2cbb845/stage_a'
+      stage_a_audit_runs: 7
+      stage_a_activation_claim_count_min_max: 192_192
+      stage_a_activation_queue_mean_wait_ticks_median: 28.734375
+      stage_a_activation_queue_max_wait_ticks_median: 62
+      stage_a_activation_tasks_ahead_mean_median: 1.2864583333333333
+      stage_a_activation_tasks_ahead_max_median: 3
+      stage_a_queue_depth_max_median: 8
+      stage_a_activation_work_per_task_ticks_median: 40.661458333333336
+      stage_a_producer_slot_wait_ticks_median: 321
+      stage_a_ordinary_instrumentation_off: true
+      stage_a_correctness_gate: pass_output_69f22eeb035e5ec5_zero_mismatch_zero_max_lsb
+      stage_a_physical_gate: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_25444352_weight_bytes_512_dma_descriptors_176_hmx_commands_49408_u8s8_tile_pairs
+      stage_a_gate_result: fail
+      stage_b_status: not_run_by_contract_because_activation_queue_residence_is_shorter_than_one_activation_task_and_only_three_older_tasks_at_typical_maximum
+      pc027_failure_boundary_report: pass
+      pc028_module_table: pass_reused_exp0084_canonical
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      stage_a_summary_sha256: 470632b51c19d5bc0026f2122b3a724ab407098a5f3b2214effef14aa76572c1
+      full_profiling_report_sha256: f2f056f356fbf56282c772b8d9f3c6c8107a7ec090882172d5485edf7c60eaa8
+      evidence_manifest_sha256: 86e1229244907d9c89e95c28a5f12f94adfdeea2871bdca48951f87a656cdfa7
+      conclusion: audit_disproves_a_material_single_fifo_activation_backlog_and_priority_queue_implementation_is_stopped_before_stage_b
+      selected_baseline_changed: false

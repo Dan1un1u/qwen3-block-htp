@@ -643,3 +643,14 @@ and ordinary repeat-ten complete Host wall also regresses, so Stage C HMX
 interleaving was not run and EXP-0084 remains the selected W4U8 baseline.
 _Avoid_: accepted cross-phase MLP pipeline, permission to interleave Down HMX,
 proof that Down prestaging is free, or stacking this schedule onto a candidate
+
+**Rejected Gate/Up Activation-Priority Queue**:
+The EXP-0090 audit-only hypothesis that ready Gate/Up SwiGLU tasks might spend
+a material interval behind W4-to-S8 expansion tasks in one FIFO. Seven device
+runs observe all 192 activation tasks, but their median mean residence is only
+28.7 ticks versus about 40.7 ticks of work per task; only 1.29 older tasks are
+ahead on average and the typical maximum is three. The serial gate therefore
+stops before priority-queue implementation. EXP-0084 remains the selected
+W4U8 baseline.
+_Avoid_: hidden long activation backlog, priority scheduling as an established
+bottleneck, implementing the rejected dual-class queue without a new hypothesis
