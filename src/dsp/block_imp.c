@@ -310,6 +310,7 @@ static int qbh_attention_u8_fused_k_enabled(uint32_t mode);
 static int qbh_attention_u8_qkv_overlap_enabled(uint32_t mode);
 static int qbh_attention_u8_vgather_enabled(uint32_t mode);
 static int qbh_attention_u8_vdeal_enabled(uint32_t mode);
+static int qbh_attention_u8_paired_softmax_enabled(uint32_t mode);
 static void qbh_attention_gqa_pool_run_tasks(
     struct qbh_block_w4f16_pool *pool,
     struct qbh_block_w4f16_job *job);
@@ -680,7 +681,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (header->attention_pack_mode &
          ~((uint32_t)QBH_BLOCK_ATTENTION_PACK_HVX)) != 0U ||
         header->attention_pipeline_mode >
-            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL ||
+            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_PAIRED_SOFTMAX ||
         header->attention_hvx_contexts == 0U ||
         header->attention_hvx_contexts >
             QBH_BLOCK_W4F16_HVX_WORKERS ||
@@ -1801,7 +1802,9 @@ static int qbh_attention_u8_enabled(uint32_t mode) {
            mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER ||
            mode ==
-               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_PAIRED_SOFTMAX;
 }
 
 static int qbh_attention_u8_fused_k_enabled(uint32_t mode) {
@@ -1812,7 +1815,9 @@ static int qbh_attention_u8_fused_k_enabled(uint32_t mode) {
            mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER ||
            mode ==
-               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_PAIRED_SOFTMAX;
 }
 
 static int qbh_attention_u8_qkv_overlap_enabled(uint32_t mode) {
@@ -1821,19 +1826,30 @@ static int qbh_attention_u8_qkv_overlap_enabled(uint32_t mode) {
            mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER ||
            mode ==
-               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_PAIRED_SOFTMAX;
 }
 
 static int qbh_attention_u8_vgather_enabled(uint32_t mode) {
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER ||
            mode ==
-               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_PAIRED_SOFTMAX;
 }
 
 static int qbh_attention_u8_vdeal_enabled(uint32_t mode) {
     return mode ==
-           QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_PAIRED_SOFTMAX;
+}
+
+static int qbh_attention_u8_paired_softmax_enabled(uint32_t mode) {
+    return mode ==
+           QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_PAIRED_SOFTMAX;
 }
 
 static void qbh_attention_qk_norm_pool_run_tasks(
@@ -6109,12 +6125,22 @@ static int qbh_attention_u8_integer(
             HAP_perf_get_qtimer_count() - start;
 
         start = HAP_perf_get_qtimer_count();
-        qbh_attention_u8_softmax_group(
-            score_group, probability_group,
-            softmax_scratch, config,
-            header->numerical_audit_enabled != 0U
-                ? &telemetry
-                : NULL);
+        if (qbh_attention_u8_paired_softmax_enabled(
+                header->attention_pipeline_mode)) {
+            qbh_attention_u8_softmax_group_paired_rows(
+                score_group, probability_group,
+                softmax_scratch, config,
+                header->numerical_audit_enabled != 0U
+                    ? &telemetry
+                    : NULL);
+        } else {
+            qbh_attention_u8_softmax_group(
+                score_group, probability_group,
+                softmax_scratch, config,
+                header->numerical_audit_enabled != 0U
+                    ? &telemetry
+                    : NULL);
+        }
         header->u8_attention_softmax_ticks +=
             HAP_perf_get_qtimer_count() - start;
 
@@ -6964,9 +6990,16 @@ static void qbh_attention_u8_pool_run_tasks(
             HAP_perf_get_qtimer_count() - start;
 
         start = HAP_perf_get_qtimer_count();
-        qbh_attention_u8_softmax_group(
-            score_group, probability_group, softmax_scratch,
-            config, telemetry_ptr);
+        if (qbh_attention_u8_paired_softmax_enabled(
+                header->attention_pipeline_mode)) {
+            qbh_attention_u8_softmax_group_paired_rows(
+                score_group, probability_group, softmax_scratch,
+                config, telemetry_ptr);
+        } else {
+            qbh_attention_u8_softmax_group(
+                score_group, probability_group, softmax_scratch,
+                config, telemetry_ptr);
+        }
         job->u8_attention_softmax_ticks +=
             HAP_perf_get_qtimer_count() - start;
 
