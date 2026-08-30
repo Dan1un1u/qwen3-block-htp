@@ -5886,3 +5886,49 @@ experiments:
       local_adoption_eligible: true
       conclusion: sixteen_four_row_tasks_across_the_existing_main_plus_five_hvx_context_domain_reduce_the_serial_input_rmsnorm_critical_interval_and_complete_block_wall_without_changing_per_row_math_or_any_physical_contract
       selected_baseline_changed: false
+  - id: EXP-0072
+    slug: w4u8-six-context-residual
+    title: Expand native W4U8 residual flow to six HVX contexts
+    parent: EXP-0071
+    variants:
+      - exp0071_four_context_native_residual_control
+      - six_context_native_residual_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-six-context-native-residual
+    source_branches:
+      - codex/exp-0072-w4u8-six-context-residual
+    source_commits: []
+    record: docs/experiments/EXP-0072.md
+    decided_by: user
+    decided_on: '2026-08-30'
+    approval_ref: 'User message 2026-08-30: 允许推送，继续实验; continuous profiling-guided loop remains approved'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0072-w4u8-six-context-residual
+      started_on: '2026-08-30'
+      completed_on: null
+    evidence:
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0072'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0072'
+      source_parent_commit: 14526c4fb1a8c07283278995f1b9dec225b43b32
+      direct_control: W4U8-EXP0071-PARALLEL-INPUT-RMSNORM
+      contextual_comparator: W4F16-EXP0038-NORMS
+      execution_unit: qwen3_layer14_complete_block_m64
+      primary_scope: active_context_count_for_post_attention_fused_residual_norm_and_final_residual
+      hypothesis: the_residual_pool_still_uses_main_plus_three_after_the_persistent_domain_expanded_to_main_plus_five_so_exposing_the_same_tasks_to_all_six_contexts_can_reduce_combined_residual_wall
+      bounded_candidate: main_plus_five_workers_with_unchanged_sixteen_four_row_tasks_per_boundary
+      residual_arithmetic_task_granularity_qparam_or_layout_changes_allowed: false
+      projection_attention_mlp_or_input_norm_changes_allowed: false
+      worker_creation_hmx_dma_or_vtcm_plan_changes_allowed: false
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      correctness_gate: final_output_and_audited_boundaries_byte_exact_to_exp0071_and_independent_reference_zero_mismatches_zero_max_lsb
+      physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn_six_persistent_contexts_and_unchanged_hmx_commands_tiles_tasks_and_traffic
+      local_speed_gate: combined_post_attention_and_final_residual_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
+      completion_gate: seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
