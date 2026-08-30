@@ -6279,14 +6279,15 @@ experiments:
     variants:
       - exp0075_two_stage_av_output_requant_control
       - direct_final_u8_hmx_av_output_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-av-output-requant-fusion
     source_branches:
       - codex/exp-0076-w4u8-av-output-requant-fusion
-    source_commits: []
+    source_commits:
+      - cb74da2b0c929f47f45208b1ca9919842667491b
     record: docs/experiments/EXP-0076.md
     decided_by: user
     decided_on: '2026-08-30'
@@ -6295,7 +6296,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0076-w4u8-av-output-requant-fusion
       started_on: '2026-08-30'
-      completed_on: null
+      completed_on: '2026-08-30'
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0076'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0076'
@@ -6317,3 +6318,25 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn_176_hmx_commands_49408_tile_pairs_and_unchanged_weight_traffic
       local_speed_gate: attention_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
+      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0076/20260830T113701Z_cb74da2_formal'
+      source_commit: cb74da2b0c929f47f45208b1ca9919842667491b
+      correctness_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0076/20260830T113701Z_cb74da2_formal/correctness_gate.json'
+      full_profiling_report: docs/experiments/EXP-0076-PROFILING.md
+      correctness_evidence_sha256: 0b7577916c5b1a46a730d1b23e95d92be50ecd7c3739651e5257d739ad961d32
+      full_profiling_report_sha256: 6a5ca427a7ff4c6aebfa37be4db38159a7d3b2d46411337fddbaf747f9c49e8f
+      failure_boundary: pre_build_integer_correctness_gate
+      accepted_two_stage_reference_mismatches: 0
+      accepted_two_stage_reference_max_lsb: 0
+      one_stage_hmx_affine_mismatches: 19713
+      one_stage_hmx_affine_elements: 131072
+      one_stage_hmx_affine_mismatch_percent: 15.039825439453125
+      one_stage_hmx_affine_max_lsb: 5
+      one_stage_hmx_affine_mean_abs_lsb: 0.18668365478515625
+      build_status: not_run_after_mandatory_correctness_gate_failure
+      device_execution_status: not_run_after_mandatory_correctness_gate_failure
+      repeat1_profiling_status: unavailable_after_pre_build_failure
+      repeat10_profiling_status: unavailable_after_pre_build_failure
+      gate_result: fail
+      local_adoption_eligible: false
+      conclusion: current_two_stage_av_rounding_cannot_be_represented_byte_exactly_by_one_affine_hmx_output_conversion_when_group_multiplier_is_greater_than_one
+      selected_baseline_changed: false

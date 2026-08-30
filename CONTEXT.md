@@ -586,3 +586,14 @@ to EXP-0072 it reduces the Attention ledger about 19.6% and repeat-ten Host wall
 about 1.9%, and is the latest locally eligible W4U8 candidate.
 _Avoid_: full FlashAttention fusion, concurrent HMX owners, changed Softmax
 math, Selected Baseline without user promotion
+
+**Two-Stage AV Requantization Boundary**:
+The accepted W4U8 Attention output mapping first rounds and saturates the HMX
+accumulator into a U8 carrier centred at 128, then applies the group multiplier
+and final output zero point in HVX. Rejected EXP-0076 proved that folding a
+multiplier of nine or eleven into one affine HMX conversion changes rounding
+order: on the real layer-14 boundary it changes 19,713 of 131,072 bytes, with a
+5 LSB maximum error. Only the multiplier-one group is exactly fusible under the
+current qparams. EXP-0075 remains the source parent.
+_Avoid_: calling the post-HMX pass redundant, direct affine fusion under the
+same byte-exact contract, performance testing after this correctness failure
