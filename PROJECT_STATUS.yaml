@@ -33,9 +33,9 @@ current_scope:
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: gate_up_to_down_dependency_timeline
-  active_experiment_evidence: null
-  active_experiment_gate: not_run
+  active_experiment_stage: down_first_chunk_producer_overlap
+  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0089/stage_a_c4cb9febe29e'
+  active_experiment_gate: stage_a_pass
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0088/stage_b_742e8c789709'
   latest_w4u8_private_persistent_softmax_lut_experiment:
     id: EXP-0088

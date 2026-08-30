@@ -7431,7 +7431,9 @@ experiments:
     evidence_profile: real-qwen3-block-w4u8-gate-up-down-dependency-stream
     source_branches:
       - codex/exp-0089-w4u8-gate-up-down-dependency-stream
-    source_commits: []
+    source_commits:
+      - c4cb9febe29e9442f79c0d6c9dafdd9b290594ad
+      - 7705a87e0b80a943c821e40d4db47507e1c394fa
     record: docs/experiments/EXP-0089.md
     decided_by: user
     decided_on: '2026-08-31'
@@ -7467,3 +7469,19 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_same_weight_bytes_dma_descriptors_hmx_commands_and_tile_pairs
       stage_b_speed_gate: gate_up_non_regressing_and_combined_gate_up_down_plus_complete_host_wall_strictly_improving_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: stage_a_timeline_then_five_round_stage_b_then_optional_seven_round_stage_c_and_pc027_pc028_complete_profiling_closure
+      stage_a_results: 'D:/llm_exp/results/qwen3-block-htp/exp0089/stage_a_c4cb9febe29e'
+      stage_a_runtime_source_commit: c4cb9febe29e9442f79c0d6c9dafdd9b290594ad
+      stage_a_analysis_source_commit: 7705a87e0b80a943c821e40d4db47507e1c394fa
+      stage_a_samples: 7
+      stage_a_overlap_window_ticks_min_max: 6245_6540
+      stage_a_overlap_window_ticks_median: 6426
+      stage_a_down_startup_ticks_min_max: 152_168
+      stage_a_down_startup_ticks_median: 160
+      stage_a_spare_vtcm_bytes: 3082528
+      stage_a_down_first_chunk_prestage_bytes: 1183744
+      stage_a_capacity_gate: pass
+      stage_a_timeline_is_audit_only: true
+      stage_a_correctness_and_physical_gate: pass_output_69f22eeb035e5ec5_exact_8mib_zero_intermediate_ddr_176_commands_49408_u8s8_tile_pairs
+      stage_a_summary_sha256: 145cb50b639c873f39bd991ee6c1661ca5d8348d96f484be277a731898d6bf73
+      stage_a_gate_result: pass_to_stage_b
+      stage_a_conclusion: first_96_middle_tiles_are_ready_about_6426_ticks_before_gate_up_join_while_current_down_startup_is_only_about_160_ticks_and_a_conservative_1183744_byte_prestage_ring_fits_the_3082528_byte_spare_vtcm_capacity
