@@ -916,14 +916,16 @@ void qbh_attention_u8_softmax_group(
 static void qbh_attention_u8_requant_softmax_group_impl(
     uint8_t *score_tiles, uint8_t *probability_tiles,
     uint8_t *scratch,
+    const uint8_t *external_lut_templates,
     const struct qbh_attention_config *config,
     struct qbh_attention_u8_telemetry *telemetry,
     uint32_t use_lut_templates, uint32_t build_lut_templates,
     uint32_t first_row, uint32_t row_count) {
     uint8_t *row_scratch = scratch;
     uint8_t *lut = scratch + QBH_ATTN_U8_HVX_BYTES;
-    uint8_t *lut_templates =
-        scratch + 2U * QBH_ATTN_U8_HVX_BYTES;
+    uint8_t *lut_templates = external_lut_templates != NULL
+        ? (uint8_t *)external_lut_templates
+        : scratch + 2U * QBH_ATTN_U8_HVX_BYTES;
     uint8_t *score0 = score_tiles;
     uint8_t *score1 = score_tiles +
         QBH_ATTENTION_SCORE_TILES * QBH_HMX_OUTPUT_BYTES;
@@ -1110,7 +1112,7 @@ void qbh_attention_u8_requant_softmax_group(
     const struct qbh_attention_config *config,
     struct qbh_attention_u8_telemetry *telemetry) {
     qbh_attention_u8_requant_softmax_group_impl(
-        score_tiles, probability_tiles, scratch,
+        score_tiles, probability_tiles, scratch, NULL,
         config, telemetry, 0U, 0U, 0U, QBH_ATTENTION_M);
 }
 
@@ -1120,7 +1122,7 @@ void qbh_attention_u8_requant_softmax_group_lut_templates(
     const struct qbh_attention_config *config,
     struct qbh_attention_u8_telemetry *telemetry) {
     qbh_attention_u8_requant_softmax_group_impl(
-        score_tiles, probability_tiles, scratch,
+        score_tiles, probability_tiles, scratch, NULL,
         config, telemetry, 1U, 1U, 0U, QBH_ATTENTION_M);
 }
 
@@ -1131,7 +1133,18 @@ void qbh_attention_u8_requant_softmax_group_rows_prebuilt_templates(
     struct qbh_attention_u8_telemetry *telemetry,
     uint32_t first_row, uint32_t row_count) {
     qbh_attention_u8_requant_softmax_group_impl(
-        score_tiles, probability_tiles, scratch,
+        score_tiles, probability_tiles, scratch, NULL,
+        config, telemetry, 1U, 0U, first_row, row_count);
+}
+
+void qbh_attention_u8_requant_softmax_group_rows_external_templates(
+    uint8_t *score_tiles, uint8_t *probability_tiles,
+    uint8_t *scratch, const uint8_t *templates,
+    const struct qbh_attention_config *config,
+    struct qbh_attention_u8_telemetry *telemetry,
+    uint32_t first_row, uint32_t row_count) {
+    qbh_attention_u8_requant_softmax_group_impl(
+        score_tiles, probability_tiles, scratch, templates,
         config, telemetry, 1U, 0U, first_row, row_count);
 }
 

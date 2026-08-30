@@ -100,6 +100,9 @@ _Static_assert(
 #define QBH_BLOCK_W4U8_GATHER_SCRATCH_BYTES \
     (QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS * \
      QBH_MLP_GATHER_SCRATCH_BYTES)
+#define QBH_BLOCK_U8_PRIVATE_LUT_MAGIC UINT32_C(0x534f4c45)
+#define QBH_BLOCK_U8_PRIVATE_LUT_GUARD_OFFSET \
+    QBH_ATTN_U8_LUT_TEMPLATE_BANK_BYTES
 
 enum qbh_block_hvx_pool_job_kind {
     QBH_BLOCK_HVX_POOL_NONE = 0,
@@ -163,6 +166,7 @@ struct qbh_block_buffers {
     uint8_t *gate_up_scale_cache;
     uint8_t *w4u8_silu_lut;
     uint8_t *w4u8_gather_scratch;
+    uint8_t *u8_attention_private_lut_banks;
     struct qbh_attention_config *attention_configs;
 };
 
@@ -230,6 +234,9 @@ struct qbh_block_w4f16_job {
     uint64_t u8_attention_qk_hmx_ticks;
     uint64_t u8_attention_qk_requant_ticks;
     uint64_t u8_attention_softmax_ticks;
+    uint32_t u8_attention_lut_template_build_count;
+    uint32_t u8_attention_lut_template_reuse_count;
+    uint64_t u8_attention_lut_template_build_ticks;
     uint64_t u8_attention_av_hmx_ticks;
     uint64_t u8_attention_av_requant_ticks;
     uint64_t u8_attention_hmx_queue_wait_ticks;
@@ -388,6 +395,8 @@ static int qbh_attention_u8_fused_qk_requant_enabled(uint32_t mode);
 static int qbh_attention_u8_hmx_batch_enabled(uint32_t mode);
 static int qbh_attention_u8_gqa_hmx_batch_enabled(uint32_t mode);
 static int qbh_attention_u8_dependency_stream_enabled(uint32_t mode);
+static int qbh_attention_u8_private_persistent_lut_enabled(
+    uint32_t mode);
 static void qbh_attention_gqa_pool_run_tasks(
     struct qbh_block_w4f16_pool *pool,
     struct qbh_block_w4f16_job *job);
@@ -628,6 +637,15 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
             &arena, QBH_BLOCK_ATTENTION_CONFIG_BYTES,
             QBH_BLOCK_ALIGNMENT);
     }
+    if (qbh_attention_u8_private_persistent_lut_enabled(
+            attention_pipeline_mode)) {
+        buffers->u8_attention_private_lut_banks =
+            qbh_arena_alloc_aligned(
+                &arena,
+                QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS *
+                    QBH_ATTN_U8_PRIVATE_TEMPLATE_SLOT_BYTES,
+                QBH_ATTN_U8_PRIVATE_TEMPLATE_SLOT_BYTES);
+    }
     if (variant == QBH_BLOCK_W4F16) {
         buffers->projection_scales = qbh_arena_alloc_aligned(
             &arena, QBH_BLOCK_PROJECTION_SCALE_BYTES,
@@ -666,6 +684,9 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
           buffers->w4u8_gather_scratch == NULL)) ||
         (qbh_attention_u8_enabled(attention_pipeline_mode) &&
          buffers->attention_configs == NULL) ||
+        (qbh_attention_u8_private_persistent_lut_enabled(
+             attention_pipeline_mode) &&
+         buffers->u8_attention_private_lut_banks == NULL) ||
         (variant == QBH_BLOCK_W4F16 &&
          (buffers->projection_scales == NULL ||
           (w4f16_pipeline_mode ==
@@ -688,6 +709,10 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
             (QBH_HMX_FP16_TILE_BYTES - 1U)) != 0U ||
           (((uintptr_t)buffers->attention_concat) &
            (QBH_BLOCK_ALIGNMENT - 1U)) != 0U)) ||
+        (qbh_attention_u8_private_persistent_lut_enabled(
+             attention_pipeline_mode) &&
+         ((uintptr_t)buffers->u8_attention_private_lut_banks &
+          (QBH_ATTN_U8_PRIVATE_TEMPLATE_SLOT_BYTES - 1U)) != 0U) ||
         ((uintptr_t)buffers->expanded_weight &
          (QBH_HMX_FP16_TILE_BYTES - 1U)) != 0U ||
         ((uintptr_t)buffers->expanded_weight_alt &
@@ -776,7 +801,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (header->attention_pack_mode &
          ~((uint32_t)QBH_BLOCK_ATTENTION_PACK_HVX)) != 0U ||
         header->attention_pipeline_mode >
-            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM ||
+            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM_PRIVATE_PERSISTENT_LUT ||
         header->attention_hvx_contexts == 0U ||
         header->attention_hvx_contexts >
             QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS ||
@@ -1995,7 +2020,14 @@ static int qbh_attention_gqa_enabled(uint32_t mode) {
            mode == QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP;
 }
 
+static uint32_t qbh_attention_u8_feature_mode(uint32_t mode) {
+    return qbh_attention_u8_private_persistent_lut_enabled(mode)
+        ? QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM
+        : mode;
+}
+
 static int qbh_attention_u8_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_feature_mode(mode);
     return mode == QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA ||
            mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_FUSED_K ||
@@ -2018,6 +2050,7 @@ static int qbh_attention_u8_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_fused_k_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_feature_mode(mode);
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_FUSED_K ||
            mode ==
@@ -2039,6 +2072,7 @@ static int qbh_attention_u8_fused_k_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_qkv_overlap_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_feature_mode(mode);
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP ||
            mode ==
@@ -2058,6 +2092,7 @@ static int qbh_attention_u8_qkv_overlap_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_vgather_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_feature_mode(mode);
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER ||
            mode ==
@@ -2075,6 +2110,7 @@ static int qbh_attention_u8_vgather_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_vdeal_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_feature_mode(mode);
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL ||
            mode ==
@@ -2090,6 +2126,7 @@ static int qbh_attention_u8_vdeal_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_fused_qk_requant_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_feature_mode(mode);
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT ||
            mode ==
@@ -2103,6 +2140,7 @@ static int qbh_attention_u8_fused_qk_requant_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_hmx_batch_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_feature_mode(mode);
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH ||
            mode ==
@@ -2114,6 +2152,7 @@ static int qbh_attention_u8_hmx_batch_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_lut_templates_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_feature_mode(mode);
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES ||
            mode ==
@@ -2123,6 +2162,7 @@ static int qbh_attention_u8_lut_templates_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_gqa_hmx_batch_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_feature_mode(mode);
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH ||
            mode ==
@@ -2130,8 +2170,15 @@ static int qbh_attention_u8_gqa_hmx_batch_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_dependency_stream_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_feature_mode(mode);
     return mode ==
            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM;
+}
+
+static int qbh_attention_u8_private_persistent_lut_enabled(
+    uint32_t mode) {
+    return mode ==
+           QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM_PRIVATE_PERSISTENT_LUT;
 }
 
 static int qbh_attention_qk_norm_wait_head(
@@ -7690,6 +7737,13 @@ static void qbh_attention_u8_dependency_stream_run_tasks(
     struct qbh_block_buffers *buffers = pool->attention_buffers;
     uint8_t *softmax_scratch = buffers->attention_projection +
         (size_t)job->worker_index * QBH_ATTN_U8_SOFTMAX_SCRATCH_BYTES;
+    uint8_t *persistent_template_bank =
+        qbh_attention_u8_private_persistent_lut_enabled(
+            header->attention_pipeline_mode)
+            ? buffers->u8_attention_private_lut_banks +
+                  (size_t)job->worker_index *
+                      QBH_ATTN_U8_PRIVATE_TEMPLATE_SLOT_BYTES
+            : NULL;
     uint32_t templates_built = 0U;
 
     job->u8_attention_probability_row_sum_min = UINT32_MAX;
@@ -7780,22 +7834,62 @@ static void qbh_attention_u8_dependency_stream_run_tasks(
             return;
         }
         if (templates_built == 0U) {
+            const uint32_t build_count_before =
+                job->u8_attention_lut_template_build_count;
             start = HAP_perf_get_qtimer_count();
-            qbh_attention_u8_build_sole_lut_template_bank(
-                softmax_scratch + QBH_ATTN_U8_SOFTMAX_TEMPLATE_OFFSET);
+            if (persistent_template_bank != NULL) {
+                volatile uint32_t *guard = (volatile uint32_t *)(
+                    persistent_template_bank +
+                    QBH_BLOCK_U8_PRIVATE_LUT_GUARD_OFFSET);
+                const uint32_t force_first_session_build =
+                    header->prepared_session_run_index == 1U &&
+                    header->block_invocation_count == 0U;
+                if (force_first_session_build != 0U ||
+                    guard[0] != QBH_BLOCK_U8_PRIVATE_LUT_MAGIC ||
+                    guard[1] != ~QBH_BLOCK_U8_PRIVATE_LUT_MAGIC) {
+                    qbh_attention_u8_build_sole_lut_template_bank(
+                        persistent_template_bank);
+                    guard[0] = QBH_BLOCK_U8_PRIVATE_LUT_MAGIC;
+                    guard[1] = ~QBH_BLOCK_U8_PRIVATE_LUT_MAGIC;
+                    ++job->u8_attention_lut_template_build_count;
+                } else {
+                    ++job->u8_attention_lut_template_reuse_count;
+                }
+            } else {
+                qbh_attention_u8_build_sole_lut_template_bank(
+                    softmax_scratch +
+                        QBH_ATTN_U8_SOFTMAX_TEMPLATE_OFFSET);
+                ++job->u8_attention_lut_template_build_count;
+            }
             asm volatile("barrier" ::: "memory");
-            job->u8_attention_softmax_ticks +=
-                HAP_perf_get_qtimer_count() - start;
+            {
+                const uint64_t build_ticks =
+                    HAP_perf_get_qtimer_count() - start;
+                job->u8_attention_softmax_ticks += build_ticks;
+                if (job->u8_attention_lut_template_build_count !=
+                    build_count_before) {
+                    job->u8_attention_lut_template_build_ticks +=
+                        build_ticks;
+                }
+            }
             templates_built = 1U;
         }
         memset(&telemetry, 0, sizeof(telemetry));
         telemetry_ptr = header->numerical_audit_enabled != 0U
             ? &telemetry : NULL;
         start = HAP_perf_get_qtimer_count();
-        qbh_attention_u8_requant_softmax_group_rows_prebuilt_templates(
-            view.score_group, view.probability_group,
-            softmax_scratch, view.config, telemetry_ptr,
-            first_row, QBH_BLOCK_W4U8_SOFTMAX_ROWS_PER_SLICE);
+        if (persistent_template_bank != NULL) {
+            qbh_attention_u8_requant_softmax_group_rows_external_templates(
+                view.score_group, view.probability_group,
+                softmax_scratch, persistent_template_bank,
+                view.config, telemetry_ptr,
+                first_row, QBH_BLOCK_W4U8_SOFTMAX_ROWS_PER_SLICE);
+        } else {
+            qbh_attention_u8_requant_softmax_group_rows_prebuilt_templates(
+                view.score_group, view.probability_group,
+                softmax_scratch, view.config, telemetry_ptr,
+                first_row, QBH_BLOCK_W4U8_SOFTMAX_ROWS_PER_SLICE);
+        }
         job->u8_attention_softmax_ticks +=
             HAP_perf_get_qtimer_count() - start;
         ++job->attention_softmax_task_count;
@@ -8243,6 +8337,12 @@ static void qbh_attention_u8_accumulate_job(
         job->u8_attention_qk_requant_ticks;
     header->u8_attention_softmax_ticks +=
         job->u8_attention_softmax_ticks;
+    header->u8_attention_lut_template_build_count +=
+        job->u8_attention_lut_template_build_count;
+    header->u8_attention_lut_template_reuse_count +=
+        job->u8_attention_lut_template_reuse_count;
+    header->u8_attention_lut_template_build_ticks +=
+        job->u8_attention_lut_template_build_ticks;
     header->u8_attention_av_hmx_ticks +=
         job->u8_attention_av_hmx_ticks;
     header->u8_attention_av_requant_ticks +=
@@ -8328,6 +8428,9 @@ static int qbh_hvx_pool_u8_attention(
         job->u8_attention_qk_hmx_ticks = 0U;
         job->u8_attention_qk_requant_ticks = 0U;
         job->u8_attention_softmax_ticks = 0U;
+        job->u8_attention_lut_template_build_count = 0U;
+        job->u8_attention_lut_template_reuse_count = 0U;
+        job->u8_attention_lut_template_build_ticks = 0U;
         job->u8_attention_av_hmx_ticks = 0U;
         job->u8_attention_av_requant_ticks = 0U;
         job->u8_attention_hmx_queue_wait_ticks = 0U;
@@ -8384,6 +8487,12 @@ static int qbh_hvx_pool_u8_attention(
     header->u8_attention_direct_o_tile_count +=
         completed_groups * QBH_ATTENTION_Q_HEADS_PER_GROUP *
         QBH_ATTENTION_HEAD_DIM_TILES;
+    if (qbh_attention_u8_private_persistent_lut_enabled(
+            header->attention_pipeline_mode)) {
+        header->u8_attention_lut_private_vtcm_bytes =
+            QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS *
+            QBH_ATTN_U8_PRIVATE_TEMPLATE_SLOT_BYTES;
+    }
     return 0;
 }
 

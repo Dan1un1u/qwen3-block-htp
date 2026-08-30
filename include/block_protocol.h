@@ -145,6 +145,7 @@ enum qbh_block_attention_pipeline_mode {
     QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES = 13,
     QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH = 14,
     QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM = 15,
+    QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM_PRIVATE_PERSISTENT_LUT = 16,
 };
 
 enum qbh_block_mlp_mode {
@@ -426,6 +427,9 @@ struct qbh_block_header {
     uint32_t u8_attention_direct_o_tile_count;
     uint32_t u8_attention_qkv_unpack_skipped;
     uint32_t u8_attention_fused_k_operand_mismatch_count;
+    uint32_t u8_attention_lut_template_build_count;
+    uint32_t u8_attention_lut_template_reuse_count;
+    uint32_t u8_attention_lut_private_vtcm_bytes;
     uint32_t w4u8_qkv_batch_n_tiles;
     uint32_t w4u8_qkv_batch_count;
     uint32_t w4u8_qkvo_prefetch_count;
@@ -521,6 +525,7 @@ struct qbh_block_header {
     uint64_t u8_attention_qk_hmx_ticks;
     uint64_t u8_attention_qk_requant_ticks;
     uint64_t u8_attention_softmax_ticks;
+    uint64_t u8_attention_lut_template_build_ticks;
     uint64_t u8_attention_av_hmx_ticks;
     uint64_t u8_attention_av_requant_ticks;
     uint64_t u8_attention_pipeline_wait_ticks;

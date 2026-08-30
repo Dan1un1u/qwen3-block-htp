@@ -580,6 +580,14 @@ static int qbh_parse_attention_pipeline_mode(
             QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM;
         return 0;
     }
+    if (strcmp(text,
+               "u8_log2_gqa_qkv_overlap_vgather_vdeal_fused_qk_requant_hmx_batch_lut_templates_gqa_batch_dependency_stream_private_persistent_lut") == 0 ||
+        strcmp(text,
+               "integer_gqa_qkv_overlap_vgather_vdeal_fused_qk_requant_hmx_batch_lut_templates_gqa_batch_dependency_stream_private_persistent_lut") == 0) {
+        *mode =
+            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM_PRIVATE_PERSISTENT_LUT;
+        return 0;
+    }
     return -1;
 }
 
@@ -602,7 +610,9 @@ static int qbh_attention_u8_enabled(uint32_t mode) {
            mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH ||
            mode ==
-               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM_PRIVATE_PERSISTENT_LUT;
 }
 
 static int qbh_attention_u8_qkv_overlap_enabled(uint32_t mode) {
@@ -621,7 +631,9 @@ static int qbh_attention_u8_qkv_overlap_enabled(uint32_t mode) {
            mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH ||
            mode ==
-               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM;
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM ||
+           mode ==
+               QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM_PRIVATE_PERSISTENT_LUT;
 }
 
 static const char *qbh_attention_pipeline_mode_name(uint32_t mode) {
@@ -679,6 +691,10 @@ static const char *qbh_attention_pipeline_mode_name(uint32_t mode) {
     if (mode ==
         QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM) {
         return "u8_log2_gqa_qkv_overlap_vgather_vdeal_fused_qk_requant_hmx_batch_lut_templates_gqa_batch_dependency_stream";
+    }
+    if (mode ==
+        QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM_PRIVATE_PERSISTENT_LUT) {
+        return "u8_log2_gqa_qkv_overlap_vgather_vdeal_fused_qk_requant_hmx_batch_lut_templates_gqa_batch_dependency_stream_private_persistent_lut";
     }
     return "control";
 }
@@ -1452,6 +1468,10 @@ int main(int argc, char **argv) {
     struct qbh_error_metrics warmup_metrics;
     struct qbh_error_metrics measured_metrics;
     uint32_t warmup_run_index = 0U;
+    uint32_t warmup_lut_template_build_count = 0U;
+    uint32_t warmup_lut_template_reuse_count = 0U;
+    uint32_t warmup_lut_private_vtcm_bytes = 0U;
+    uint64_t warmup_lut_template_build_ticks = 0U;
     uint64_t output_hash = 0U;
     int exit_code = 1;
     char file_name[128];
@@ -1526,7 +1546,7 @@ int main(int argc, char **argv) {
           (mlp_mode != QBH_BLOCK_MLP_CONTROL &&
            !qbh_block_mlp_is_w4u8_streaming(mlp_mode)))) ||
         attention_pipeline_mode >
-            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM ||
+            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM_PRIVATE_PERSISTENT_LUT ||
         attention_hvx_contexts == 0U ||
         attention_hvx_contexts > 6U ||
         (attention_pipeline_mode ==
@@ -2213,6 +2233,14 @@ int main(int argc, char **argv) {
               (const uint16_t *)(shared + header->output_offset),
               (const uint16_t *)(shared + header->reference_offset),
               QBH_BLOCK_M * QBH_BLOCK_HIDDEN);
+    warmup_lut_template_build_count =
+        header->u8_attention_lut_template_build_count;
+    warmup_lut_template_reuse_count =
+        header->u8_attention_lut_template_reuse_count;
+    warmup_lut_private_vtcm_bytes =
+        header->u8_attention_lut_private_vtcm_bytes;
+    warmup_lut_template_build_ticks =
+        header->u8_attention_lut_template_build_ticks;
 
     header->repeat_count = repeats;
     header->dsp_status = QBH_BLOCK_STATUS_HOST_READY;
@@ -2330,7 +2358,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0084\","
+        "{\"experiment\":\"EXP-0088\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2361,6 +2389,10 @@ int main(int argc, char **argv) {
         "\"warmup_rmse\":%.9g,\"warmup_cosine\":%.9g,"
         "\"warmup_mismatches\":%" PRIu64 ","
         "\"warmup_max_lsb\":%" PRIu32 ","
+        "\"warmup_u8_attention_lut_template_build_count\":%" PRIu32 ","
+        "\"warmup_u8_attention_lut_template_reuse_count\":%" PRIu32 ","
+        "\"warmup_u8_attention_lut_private_vtcm_bytes\":%" PRIu32 ","
+        "\"warmup_u8_attention_lut_template_build_ticks\":%" PRIu64 ","
         "\"repeat_count\":%" PRIu32 ","
         "\"prepared_session_run_index\":%" PRIu32 ","
         "\"rpc_result\":%d,\"dsp_status\":%d,"
@@ -2421,6 +2453,10 @@ int main(int argc, char **argv) {
         "\"u8_attention_direct_o_tile_count\":%" PRIu32 ","
         "\"u8_attention_qkv_unpack_skipped\":%" PRIu32 ","
         "\"u8_attention_fused_k_operand_mismatch_count\":%" PRIu32 ","
+        "\"u8_attention_lut_template_build_count\":%" PRIu32 ","
+        "\"u8_attention_lut_template_reuse_count\":%" PRIu32 ","
+        "\"u8_attention_lut_private_vtcm_bytes\":%" PRIu32 ","
+        "\"u8_attention_lut_template_build_ticks\":%" PRIu64 ","
         "\"w4u8_qkv_batch_n_tiles\":%" PRIu32 ","
         "\"w4u8_qkv_batch_count\":%" PRIu32 ","
         "\"w4u8_qkvo_prefetch_count\":%" PRIu32 ","
@@ -2677,7 +2713,11 @@ int main(int argc, char **argv) {
         warmup_result, warmup_run_index, warmup_end - warmup_start,
         warmup_metrics.max_abs, warmup_metrics.mean_abs,
         warmup_metrics.rmse, warmup_metrics.cosine,
-        warmup_metrics.mismatches, warmup_metrics.max_lsb, repeats,
+        warmup_metrics.mismatches, warmup_metrics.max_lsb,
+        warmup_lut_template_build_count,
+        warmup_lut_template_reuse_count,
+        warmup_lut_private_vtcm_bytes,
+        warmup_lut_template_build_ticks, repeats,
         header->prepared_session_run_index, measured_result,
         header->dsp_status, header->numerical_status,
         header->attention_qk_max_abs,
@@ -2736,6 +2776,10 @@ int main(int argc, char **argv) {
         header->u8_attention_direct_o_tile_count,
         header->u8_attention_qkv_unpack_skipped,
         header->u8_attention_fused_k_operand_mismatch_count,
+        header->u8_attention_lut_template_build_count,
+        header->u8_attention_lut_template_reuse_count,
+        header->u8_attention_lut_private_vtcm_bytes,
+        header->u8_attention_lut_template_build_ticks,
         header->w4u8_qkv_batch_n_tiles,
         header->w4u8_qkv_batch_count,
         header->w4u8_qkvo_prefetch_count,
