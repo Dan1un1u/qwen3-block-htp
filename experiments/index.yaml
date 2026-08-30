@@ -6347,14 +6347,15 @@ experiments:
     variants:
       - exp0075_gate_up_local_initial_dma_control
       - residual_overlapped_gate_up_initial_dma_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-gate-up-cross-phase-prefetch
     source_branches:
       - codex/exp-0077-w4u8-gate-up-cross-phase-prefetch
-    source_commits: []
+    source_commits:
+      - ccf26a7f10f3175d0c92e638fdeb20e9534ae320
     record: docs/experiments/EXP-0077.md
     decided_by: user
     decided_on: '2026-08-30'
@@ -6363,7 +6364,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0077-w4u8-gate-up-cross-phase-prefetch
       started_on: '2026-08-30'
-      completed_on: null
+      completed_on: '2026-08-30'
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0077'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0077'
@@ -6385,3 +6386,33 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_same_weight_bytes_dma_descriptors_176_hmx_commands_and_49408_tile_pairs
       local_speed_gate: combined_post_attention_residual_plus_gate_up_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
+      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0077/20260830T121018Z_ccf26a7f10f3_formal'
+      source_commit: ccf26a7f10f3175d0c92e638fdeb20e9534ae320
+      gate_summary: 'D:/llm_exp/results/qwen3-block-htp/exp0077/20260830T121018Z_ccf26a7f10f3_formal/gate_summary.json'
+      full_profiling_report: 'D:/llm_exp/results/qwen3-block-htp/exp0077/20260830T121018Z_ccf26a7f10f3_formal/full_profiling_report.md'
+      gate_summary_sha256: b3ae2f0c20028254b073fd56eb2e6adec01dbcd6f5d0d1b90ea5d014277e73c0
+      full_profiling_report_sha256: 56333fa3ce8eb8a4ad3e72056135374fd80c6414c3a887f2e042a929a006943b
+      output_hash: 69f22eeb035e5ec5
+      mismatches: 0
+      max_lsb: 0
+      repeat1_control_host_wall_ns_per_block_median: 2436667.0
+      repeat1_candidate_host_wall_ns_per_block_median: 2450521.0
+      repeat1_host_wall_change_percent: 0.568563533712241
+      repeat1_host_wall_paired_change_percent: -0.117722083841132
+      repeat1_combined_change_percent: 0.168468341990735
+      repeat1_combined_paired_change_percent: 0.476457399103136
+      repeat10_control_host_wall_ns_per_block_median: 2020989.6
+      repeat10_candidate_host_wall_ns_per_block_median: 2006046.9
+      repeat10_host_wall_change_percent: -0.739375403020393
+      repeat10_host_wall_paired_change_percent: -1.36887426746453
+      repeat10_combined_change_percent: -0.922652591197692
+      repeat10_combined_paired_change_percent: -0.768237797857874
+      fixed_vtcm_gate: pass
+      zero_intermediate_ddr_gate: pass
+      zero_spill_fill_gate: pass
+      unchanged_weight_dma_hmx_gate: pass
+      cross_phase_prefetch_execution_gate: pass
+      gate_result: fail
+      local_adoption_eligible: false
+      conclusion: first_chain_prefetch_improves_repeat10_steady_state_but_cannot_amortize_one_block_pipeline_startup_and_fails_repeat1
+      selected_baseline_changed: false

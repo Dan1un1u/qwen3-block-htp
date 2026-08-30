@@ -597,3 +597,16 @@ order: on the real layer-14 boundary it changes 19,713 of 131,072 bytes, with a
 current qparams. EXP-0075 remains the source parent.
 _Avoid_: calling the post-HMX pass redundant, direct affine fusion under the
 same byte-exact contract, performance testing after this correctness failure
+
+**Gate/Up Cross-Phase Initial DMA Prefetch**:
+The rejected EXP-0077 schedule starts the same first four linked Gate/Up weight
+descriptors after O projection and overlaps them with the native U8
+post-attention residual/RMSNorm. The existing Gate/Up pipeline later adopts and
+publishes that chain without resubmission. It is byte-exact and preserves all
+weight bytes, descriptor counts, HMX commands, tile pairs, VTCM residency and
+zero-intermediate-DDR constraints. Repeat ten improves Gate/Up about 1.05% and
+complete Host wall about 0.74%, but repeat one Gate/Up and the combined interval
+regress, so the strict gate fails. Advancing only the first DMA chain does not
+remove per-block MLP pipeline startup and teardown cost.
+_Avoid_: accepted W4U8 candidate, permission to stack this mode, proof that
+Gate/Up weight prefetch is useless, or a substitute for persistent MLP workers
