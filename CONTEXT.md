@@ -632,3 +632,14 @@ Q-major order, so this is not a common cross-recipe optimization.
 _Avoid_: shared baseline promotion, assuming earlier K publication always
 shortens the critical path, recipe-specific adoption without a new approved
 experiment, or repeating the same bounded group/window/prefix search
+
+**Rejected Down First-Chunk Prestage**:
+The EXP-0089 Stage-B schedule that uses a phase-overlay VTCM ring to move and
+expand the first four Down output bundles while Gate/Up is still producing the
+middle activation. It preserves all arithmetic and physical-work counts and
+reduces the Down interval, but the borrowed DMA/HVX work increases Gate/Up
+ready and producer-slot waits. Gate/Up regresses at repeat one and repeat ten,
+and ordinary repeat-ten complete Host wall also regresses, so Stage C HMX
+interleaving was not run and EXP-0084 remains the selected W4U8 baseline.
+_Avoid_: accepted cross-phase MLP pipeline, permission to interleave Down HMX,
+proof that Down prestaging is free, or stacking this schedule onto a candidate

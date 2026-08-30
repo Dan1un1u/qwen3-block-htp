@@ -7424,16 +7424,18 @@ experiments:
       - exp0084_w4u8_fair_canonical_serial_gate_up_then_down_control
       - down_first_chunk_vtcm_prestage_candidate
       - dependency_driven_gate_up_down_hmx_interleave_if_stage_b_passes
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-gate-up-down-dependency-stream
     source_branches:
       - codex/exp-0089-w4u8-gate-up-down-dependency-stream
     source_commits:
       - c4cb9febe29e9442f79c0d6c9dafdd9b290594ad
       - 7705a87e0b80a943c821e40d4db47507e1c394fa
+      - 416825029ade972f925e3cda55c140eef0515250
+      - 9c489c44641236de92b425d2afae0439dab3de6b
     record: docs/experiments/EXP-0089.md
     decided_by: user
     decided_on: '2026-08-31'
@@ -7442,10 +7444,10 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0089-w4u8-gate-up-down-dependency-stream
       started_on: '2026-08-31'
-      completed_on: null
+      completed_on: '2026-08-31'
     evidence:
-      formal_results: null
-      retained_artifacts: null
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0089/stage_b_416825029ade'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0089/artifacts/416825029ade/stage_b_negative'
       source_parent_commit: 6dc437fe08eaccf119c4cbce82937e22f125da0b
       direct_w4u8_control: W4U8-EXP0084-FAIR-CANONICAL
       contextual_w4f16_comparator: W4F16-EXP0084-COMMON-NORM-POOLS
@@ -7485,3 +7487,40 @@ experiments:
       stage_a_summary_sha256: 145cb50b639c873f39bd991ee6c1661ca5d8348d96f484be277a731898d6bf73
       stage_a_gate_result: pass_to_stage_b
       stage_a_conclusion: first_96_middle_tiles_are_ready_about_6426_ticks_before_gate_up_join_while_current_down_startup_is_only_about_160_ticks_and_a_conservative_1183744_byte_prestage_ring_fits_the_3082528_byte_spare_vtcm_capacity
+      stage_b_runtime_source_commit: 416825029ade972f925e3cda55c140eef0515250
+      stage_b_analysis_source_commit: 9c489c44641236de92b425d2afae0439dab3de6b
+      stage_b_run: 'D:/llm_exp/results/qwen3-block-htp/exp0089/stage_b_416825029ade'
+      stage_b_retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0089/artifacts/416825029ade/stage_b_negative'
+      stage_b_rounds: 5
+      stage_b_selected_trigger_mode: after_gate_up_output_tile_288
+      stage_b_prestaged_down_output_tiles: 4
+      stage_b_prestaged_down_k_tiles_per_output: 96
+      stage_b_prestage_ring_bytes: 1183744
+      stage_b_repeat1_gate_up_ordinary_delta_percent: 0.7947
+      stage_b_repeat1_gate_up_paired_delta_percent: 1.1553
+      stage_b_repeat1_down_ordinary_delta_percent: -3.2897
+      stage_b_repeat1_down_paired_delta_percent: -3.1505
+      stage_b_repeat1_combined_ordinary_delta_percent: -0.4008
+      stage_b_repeat1_combined_paired_delta_percent: -0.2336
+      stage_b_repeat1_host_ordinary_delta_percent: -1.0159
+      stage_b_repeat1_host_paired_delta_percent: -1.7251
+      stage_b_repeat10_gate_up_ordinary_delta_percent: 0.6184
+      stage_b_repeat10_gate_up_paired_delta_percent: 0.7693
+      stage_b_repeat10_down_ordinary_delta_percent: -1.4668
+      stage_b_repeat10_down_paired_delta_percent: -1.7396
+      stage_b_repeat10_combined_ordinary_delta_percent: -0.0400
+      stage_b_repeat10_combined_paired_delta_percent: -0.1507
+      stage_b_repeat10_host_ordinary_delta_percent: 0.1742
+      stage_b_repeat10_host_paired_delta_percent: -0.1756
+      stage_b_gate_result: fail
+      stage_c_status: not_run_by_contract_because_gate_up_regressed_at_repeat1_and_repeat10_and_repeat10_ordinary_host_wall_regressed
+      correctness_gate_result: pass_output_middle_activation_down_output_qk_probability_av_byte_exact_zero_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_25444352_weight_bytes_512_dma_descriptors_176_hmx_commands_49408_u8s8_tile_pairs
+      pc027_timing_ledger_closure: pass
+      pc028_module_table: pass
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: 46f65362f2064765850479506f1ec3e989860bd7ac112de25059151ad8c44edc
+      full_profiling_report_sha256: 8c283ba3eccdcd7110a4936754f8031a84c0f6d924f5f9361b9ac7985a7678d1
+      evidence_manifest_sha256: 6d21663ddddfcc7647ccf0ed43dbb480c1e196a9046c4a2db0c96947c9f4796f
+      conclusion: prestaging_four_down_first_chunks_reduces_down_but_uses_gate_up_dma_hvx_capacity_regresses_gate_up_at_both_repeats_and_regresses_repeat10_ordinary_complete_host_wall
+      selected_baseline_changed: false

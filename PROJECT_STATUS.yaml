@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0089
+  active_experiment: null
   next_experiment_number: 90
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,16 +27,42 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0088
-  last_completed_source_commit: f37d97439009a7a871d1993e816cb7a8920d1f7a
+  last_completed_experiment: EXP-0089
+  last_completed_source_commit: 9c489c44641236de92b425d2afae0439dab3de6b
   provisional_source_parent: EXP-0084
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: down_first_chunk_producer_overlap
-  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0089/stage_a_c4cb9febe29e'
-  active_experiment_gate: stage_a_pass
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0088/stage_b_742e8c789709'
+  active_experiment_stage: null
+  active_experiment_evidence: null
+  active_experiment_gate: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0089/stage_b_416825029ade'
+  latest_w4u8_gate_up_down_dependency_stream_experiment:
+    id: EXP-0089
+    source_branch: codex/exp-0089-w4u8-gate-up-down-dependency-stream
+    source_head: 9c489c44641236de92b425d2afae0439dab3de6b
+    runtime_source_head: 416825029ade972f925e3cda55c140eef0515250
+    direct_control: exp0084_w4u8_fair_canonical_serial_gate_up_then_down
+    candidate: four_output_down_first_chunk_prestaged_during_gate_up
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0089/stage_b_416825029ade'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0089/artifacts/416825029ade/stage_b_negative'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    correctness_gate: pass
+    physical_gate: pass
+    pc027_timing_ledger_closure: pass
+    pc028_module_table: pass
+    repeat1_gate_up_delta_percent: 0.7947
+    repeat1_down_delta_percent: -3.2897
+    repeat1_gate_up_plus_down_delta_percent: -0.4008
+    repeat1_host_delta_percent: -1.0159
+    repeat10_gate_up_delta_percent: 0.6184
+    repeat10_down_delta_percent: -1.4668
+    repeat10_gate_up_plus_down_delta_percent: -0.0400
+    repeat10_host_delta_percent: 0.1742
+    conclusion: down_first_chunk_prestage_shortens_down_but_borrows_dma_hvx_capacity_from_gate_up_regresses_gate_up_at_both_repeats_and_regresses_repeat10_ordinary_host_wall
+    selected_baseline_changed: false
   latest_w4u8_private_persistent_softmax_lut_experiment:
     id: EXP-0088
     source_branch: codex/exp-0088-w4u8-private-persistent-softmax-lut
