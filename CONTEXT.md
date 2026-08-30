@@ -468,3 +468,13 @@ command count from 256 to 192 without changing one-owner ordering or creating
 an intermediate DDR boundary.
 _Avoid_: fused QK/AV arithmetic, concurrent HMX owners, changed Attention
 math, fewer HMX tile pairs, Selected Baseline without promotion
+
+**Per-Group SOLE Probability-LUT Templates**:
+The EXP-0065 W4U8 Softmax implementation that recognizes the SOLE division
+approximation depends on a row sum only through its highest set bit and the
+next bit. It builds the fourteen reachable 32-byte LUT-bank templates once in
+each GQA group's reused VTCM scratch and selects two banks per paired-head row,
+instead of running two sixteen-entry scalar builders on every row. It preserves
+QK codes, sums, mask semantics, probability bytes, and all HMX work exactly.
+_Avoid_: changed Softmax approximation, shared head denominator, DDR lookup
+table, major block-level speedup, Selected Baseline without promotion

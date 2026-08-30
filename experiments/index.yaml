@@ -5130,14 +5130,15 @@ experiments:
     variants:
       - exp0064_per_row_scalar_probability_lut_control
       - exp0064_per_group_precomputed_probability_lut_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4u8-softmax-lut-templates
     source_branches:
       - codex/exp-0065-w4u8-softmax-lut-templates
-    source_commits: []
+    source_commits:
+      - 5ad3c0fbcf0c53b81949346b2b6c8b69a47c5501
     record: docs/experiments/EXP-0065.md
     decided_by: user
     decided_on: '2026-08-30'
@@ -5146,7 +5147,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0065-w4u8-softmax-lut-templates
       started_on: '2026-08-30'
-      completed_on: null
+      completed_on: '2026-08-30'
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0065'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0065'
@@ -5171,3 +5172,60 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn
       local_speed_gate: softmax_work_attention_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
+      source_head: 5ad3c0fbcf0c53b81949346b2b6c8b69a47c5501
+      implementation_commit: 5ad3c0fbcf0c53b81949346b2b6c8b69a47c5501
+      evidence_validator_commit: 5ad3c0fbcf0c53b81949346b2b6c8b69a47c5501
+      formal_run: 'D:/llm_exp/results/qwen3-block-htp/exp0065/20260830T081948Z_5ad3c0fbcf0c_formal'
+      artifact_set: 'D:/llm_exp/models/qwen3-block-htp/exp0065/artifacts/5ad3c0fbcf0c/formal'
+      gate_record: 'D:/llm_exp/results/qwen3-block-htp/exp0065/20260830T081948Z_5ad3c0fbcf0c_formal/gate_summary.json'
+      formal_full_profiling_report: 'D:/llm_exp/results/qwen3-block-htp/exp0065/20260830T081948Z_5ad3c0fbcf0c_formal/full_profiling_report.md'
+      full_profiling_report: docs/experiments/EXP-0065-PROFILING.md
+      gate_record_sha256: ffa0be6ce0c8a89c9019433bbbd40e133720a6e62fbe8f2b0ec668b81f98d7ed
+      formal_full_profiling_report_sha256: d9d26d0d0e2b37a4776ca599e29e055b0208cf446facc2c7b0160e9b55225113
+      static_gate_sha256: 6cda50f2572bd7d9bb5cd54051d139c5f8ab7cfe9910cf6d5763d07c67c80fa4
+      package_manifest_sha256: 043f61337b2ad2758bb95791bc4ca768150f457f1f28bc7d20a7ad57eba42359
+      stable_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      formal_paired_rounds: 7
+      output_hash: 69f22eeb035e5ec5
+      qk_probability_av_hash_equivalence: true
+      qk_hash: 32aa949912e365be
+      probability_hash: 94f2e218f06f9627
+      av_hash: f853658f52032bde
+      implementation_reference_mismatches: 0
+      implementation_reference_max_lsb: 0
+      fixed_vtcm_acquired_bytes: 8388608
+      vtcm_peak_plan_bytes: 5306080
+      intermediate_ddr_read_bytes: 0
+      intermediate_ddr_write_bytes: 0
+      spill_fill_count: 0
+      hmx_commands_per_block: 192
+      hmx_tile_pairs_per_block: 49408
+      sole_lut_templates_per_group: 14
+      repeat1_control_host_wall_ns_per_block_median: 2677969.0
+      repeat1_candidate_host_wall_ns_per_block_median: 2667552.0
+      repeat1_host_wall_change_percent: -0.388989
+      repeat1_paired_host_wall_change_percent_median: -0.815288
+      repeat1_control_softmax_ticks_per_block_median: 13153.0
+      repeat1_candidate_softmax_ticks_per_block_median: 12958.0
+      repeat1_softmax_change_percent: -1.482552
+      repeat1_paired_softmax_change_percent_median: -1.960635
+      repeat1_control_attention_ticks_per_block_median: 5047.0
+      repeat1_candidate_attention_ticks_per_block_median: 4994.0
+      repeat1_attention_change_percent: -1.050129
+      repeat1_paired_attention_change_percent_median: -1.113099
+      repeat10_control_host_wall_ns_per_block_median: 2291161.5
+      repeat10_candidate_host_wall_ns_per_block_median: 2288052.1
+      repeat10_host_wall_change_percent: -0.135713
+      repeat10_paired_host_wall_change_percent_median: -0.001591
+      repeat10_control_softmax_ticks_per_block_median: 13179.9
+      repeat10_candidate_softmax_ticks_per_block_median: 12926.3
+      repeat10_softmax_change_percent: -1.924142
+      repeat10_paired_softmax_change_percent_median: -1.958285
+      repeat10_control_attention_ticks_per_block_median: 5069.7
+      repeat10_candidate_attention_ticks_per_block_median: 4987.9
+      repeat10_attention_change_percent: -1.613508
+      repeat10_paired_attention_change_percent_median: -1.570113
+      gate_result: pass
+      local_adoption_eligible: true
+      conclusion: precomputing_the_fourteen_reachable_sole_probability_lut_templates_per_group_preserves_exact_math_and_reduces_softmax_and_attention_but_only_marginally_improves_complete_block_wall
+      selected_baseline_changed: false
