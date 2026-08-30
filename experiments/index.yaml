@@ -5337,3 +5337,50 @@ experiments:
       conclusion: audit_only_probability_row_sum_reductions_reduce_softmax_and_attention_and_repeat10_host_wall_but_fail_the_repeat1_paired_complete_host_wall_gate
       reopen_condition: only_with_a_new_non_audit_softmax_work_elimination_hypothesis_that_can_materially_exceed_repeat1_noise
       selected_baseline_changed: false
+  - id: EXP-0067
+    slug: w4u8-input-rmsnorm-batched-rsqrt
+    title: Batch Input RMSNorm reciprocal square roots on HVX
+    parent: EXP-0065
+    variants:
+      - exp0065_per_row_scalar_input_rsqrt_control
+      - exp0065_two_vector_input_rsqrt_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-input-rmsnorm-batched-rsqrt
+    source_branches:
+      - codex/exp-0067-w4u8-input-rmsnorm-batched-rsqrt
+    source_commits: []
+    record: docs/experiments/EXP-0067.md
+    decided_by: user
+    decided_on: '2026-08-30'
+    approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible experiments pre-approved'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0067-w4u8-input-rmsnorm-batched-rsqrt
+      started_on: '2026-08-30'
+      completed_on: null
+    evidence:
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0067'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0067'
+      source_parent_commit: 5ad3c0fbcf0c53b81949346b2b6c8b69a47c5501
+      direct_control: W4U8-EXP0065-SOFTMAX-LUT-TEMPLATES
+      contextual_comparator: W4F16-EXP0038-NORMS
+      execution_unit: qwen3_layer14_complete_block_m64
+      primary_scope: input_rmsnorm_batched_hvx_reciprocal_square_root
+      hypothesis: computing_all_sixty_four_input_row_mean_squares_then_using_two_thirty_two_lane_qhmath_hvx_rsqrt_vectors_can_replace_sixty_four_scalar_sqrtf_calls_without_changing_rmsnorm_output_bytes
+      input_centered_square_reduction_changes_allowed: false
+      reciprocal_square_root_changes_allowed: qhmath_hvx_two_vectors_only
+      gamma_qparam_or_output_encoding_changes_allowed: false
+      qk_norm_rope_or_attention_changes_allowed: false
+      projection_residual_or_mlp_changes_allowed: false
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      correctness_gate: input_norm_and_final_output_are_byte_exact_to_exp0065_and_independent_reference_zero_mismatches_zero_max_lsb
+      physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_no_qnn
+      local_speed_gate: input_norm_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
+      completion_gate: seven_interleaved_paired_rounds_and_pc027_pc028_complete_profiling_closure
