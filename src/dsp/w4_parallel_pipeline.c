@@ -229,13 +229,13 @@ static int qbh_stage_weight_bundles(struct qbh_probe_header *header,
     return 0;
 }
 
-static int qbh_start_linked_weight_bundles(
-    struct qbh_probe_header *header,
+static int qbh_prepare_linked_weight_bundles(
     struct qbh_dma_aligned_desc_1d *descriptors,
     const uint8_t *source, uint8_t *destination,
     uint32_t bundle_bytes, uint32_t bundle_count) {
-    if (bundle_count < 2U || bundle_count > 4U ||
-        qbh_record_dma_wait(header) != 0) {
+    if (descriptors == NULL || source == NULL || destination == NULL ||
+        bundle_bytes == 0U || bundle_count < 2U ||
+        bundle_count > QBH_W4_INITIAL_PREFETCH_MAX_BUNDLES) {
         return -1;
     }
     memset(descriptors, 0,
@@ -261,6 +261,20 @@ static int qbh_start_linked_weight_bundles(
                      :
                      : "r"(descriptor)
                      : "memory");
+    }
+    return 0;
+}
+
+static int qbh_start_linked_weight_bundles(
+    struct qbh_probe_header *header,
+    struct qbh_dma_aligned_desc_1d *descriptors,
+    const uint8_t *source, uint8_t *destination,
+    uint32_t bundle_bytes, uint32_t bundle_count) {
+    if (header == NULL || qbh_record_dma_wait(header) != 0 ||
+        qbh_prepare_linked_weight_bundles(
+            descriptors, source, destination, bundle_bytes,
+            bundle_count) != 0) {
+        return -1;
     }
     if (qbh_dma_start(&descriptors[0].descriptor) != 0) {
         return -1;
@@ -299,6 +313,58 @@ static int qbh_wait_linked_descriptor(
             return -1;
         }
     }
+}
+
+int qbh_start_chunked_w4_initial_prefetch(
+    const struct qbh_projection_layout *layout,
+    const uint8_t *stored_weights, uint8_t *vtcm,
+    struct qbh_w4_initial_prefetch *prefetch) {
+    uint32_t bundle_count;
+    uint8_t *destination;
+
+    if (layout == NULL || stored_weights == NULL || vtcm == NULL ||
+        prefetch == NULL || prefetch->active != 0U ||
+        !qbh_physical_plan_is_chunked(layout->physical_plan) ||
+        !qbh_physical_plan_uses_linked_dma(layout->physical_plan)) {
+        return AEE_EBADPARM;
+    }
+    bundle_count = qbh_physical_plan_dma_bundle_batch(
+        layout->physical_plan);
+    if (bundle_count < 2U ||
+        bundle_count > QBH_W4_INITIAL_PREFETCH_MAX_BUNDLES ||
+        bundle_count > layout->compressed_slot_count) {
+        return AEE_EBADPARM;
+    }
+    destination = vtcm +
+        qbh_projection_compressed_slot_offset(layout, 0U);
+    if (qbh_dma_wait_idle() != 0 ||
+        qbh_prepare_linked_weight_bundles(
+            prefetch->descriptors, stored_weights, destination,
+            layout->stored_weight_bundle_bytes, bundle_count) != 0) {
+        return AEE_EFAILED;
+    }
+
+    prefetch->start_ticks = HAP_perf_get_qtimer_count();
+    if (qbh_dma_start(&prefetch->descriptors[0].descriptor) != 0) {
+        prefetch->start_ticks = 0U;
+        return AEE_EFAILED;
+    }
+    prefetch->source = stored_weights;
+    prefetch->destination = destination;
+    prefetch->bundle_bytes = layout->stored_weight_bundle_bytes;
+    prefetch->bundle_count = bundle_count;
+    prefetch->active = 1U;
+    return AEE_SUCCESS;
+}
+
+void qbh_drain_chunked_w4_initial_prefetch(
+    struct qbh_w4_initial_prefetch *prefetch) {
+    if (prefetch == NULL || prefetch->active == 0U) {
+        return;
+    }
+    (void)qbh_dma_wait_idle();
+    asm volatile("barrier" : : : "memory");
+    memset(prefetch, 0, sizeof(*prefetch));
 }
 
 static int qbh_hvx_region_begin(struct qbh_parallel_state *state) {
@@ -1092,7 +1158,10 @@ static int qbh_run_chunked_w4_pipeline_impl(
     const uint8_t *stored_weights, const uint8_t *activation_tiles,
     uint8_t *vtcm, uint32_t hmx_context_id,
     const struct qbh_mlp_gate_up_handoff *handoff,
-    const struct qbh_w4_hmx_runner *runner) {
+    const struct qbh_w4_hmx_runner *runner,
+    struct qbh_w4_initial_prefetch *initial_prefetch,
+    uint64_t *initial_prefetch_wait_ticks,
+    uint64_t *initial_prefetch_lifetime_ticks) {
     struct qbh_parallel_state state;
     struct qbh_hvx_worker_job hvx_jobs[QBH_MAX_HVX_WORKERS];
     struct qbh_chunked_hmx_job hmx_job;
@@ -1145,6 +1214,20 @@ static int qbh_run_chunked_w4_pipeline_impl(
     if (dma_bundle_batch > layout->compressed_slot_count ||
         layout->compressed_slot_count % dma_bundle_batch != 0U ||
         layout->n_tiles % layout->compressed_slot_count != 0U) {
+        return AEE_EBADPARM;
+    }
+    if (initial_prefetch != NULL &&
+        (initial_prefetch->active == 0U ||
+         header->repeat_count != 1U ||
+         !qbh_physical_plan_uses_linked_dma(
+             layout->physical_plan) ||
+         initial_prefetch->source != stored_weights ||
+         initial_prefetch->destination !=
+             vtcm + qbh_projection_compressed_slot_offset(
+                        layout, 0U) ||
+         initial_prefetch->bundle_bytes !=
+             layout->stored_weight_bundle_bytes ||
+         initial_prefetch->bundle_count != dma_bundle_batch)) {
         return AEE_EBADPARM;
     }
 
@@ -1260,7 +1343,14 @@ static int qbh_run_chunked_w4_pipeline_impl(
     for (uint32_t repeat = 0; repeat < header->repeat_count; ++repeat) {
         for (uint32_t output_base = 0; output_base < layout->n_tiles;
              output_base += dma_bundle_batch) {
-            struct qbh_dma_aligned_desc_1d linked_descriptors[4];
+            struct qbh_dma_aligned_desc_1d
+                local_linked_descriptors[
+                    QBH_W4_INITIAL_PREFETCH_MAX_BUNDLES];
+            struct qbh_dma_aligned_desc_1d *linked_descriptors =
+                local_linked_descriptors;
+            uint32_t consume_initial_prefetch =
+                initial_prefetch != NULL && repeat == 0U &&
+                output_base == 0U;
             uint32_t linear_base = repeat * layout->n_tiles + output_base;
             uint32_t first_compressed_slot =
                 linear_base % layout->compressed_slot_count;
@@ -1290,20 +1380,29 @@ static int qbh_run_chunked_w4_pipeline_impl(
 
             if (qbh_physical_plan_uses_linked_dma(
                     layout->physical_plan)) {
-                if (qbh_start_linked_weight_bundles(
-                        header, linked_descriptors,
-                        stored_weights + (size_t)output_base *
+                if (consume_initial_prefetch != 0U) {
+                    linked_descriptors = initial_prefetch->descriptors;
+                    ++header->dma_wait_count;
+                    ++header->dma_submit_count;
+                    header->dma_descriptor_count += dma_bundle_batch;
+                    ++header->dma_chain_count;
+                } else {
+                    if (qbh_start_linked_weight_bundles(
+                            header, linked_descriptors,
+                            stored_weights + (size_t)output_base *
+                                layout->stored_weight_bundle_bytes,
+                            state.compressed_slots[first_compressed_slot],
                             layout->stored_weight_bundle_bytes,
-                        state.compressed_slots[first_compressed_slot],
-                        layout->stored_weight_bundle_bytes,
-                        dma_bundle_batch) != 0) {
-                    result = AEE_EFAILED;
-                    qbh_abort_pipeline(&state, result);
-                    goto stop_workers;
+                            dma_bundle_batch) != 0) {
+                        result = AEE_EFAILED;
+                        qbh_abort_pipeline(&state, result);
+                        goto stop_workers;
+                    }
                 }
                 for (uint32_t batch_index = 0;
                      batch_index < dma_bundle_batch; ++batch_index) {
                     uint64_t wait_start = HAP_perf_get_qtimer_count();
+                    uint64_t wait_elapsed;
                     if (qbh_wait_linked_descriptor(
                             header,
                             &linked_descriptors[batch_index].descriptor) !=
@@ -1312,8 +1411,13 @@ static int qbh_run_chunked_w4_pipeline_impl(
                         qbh_abort_pipeline(&state, result);
                         goto stop_workers;
                     }
-                    header->weight_stage_ticks +=
+                    wait_elapsed =
                         HAP_perf_get_qtimer_count() - wait_start;
+                    header->weight_stage_ticks += wait_elapsed;
+                    if (consume_initial_prefetch != 0U &&
+                        initial_prefetch_wait_ticks != NULL) {
+                        *initial_prefetch_wait_ticks += wait_elapsed;
+                    }
                     ++header->weight_bundle_stage_count;
                     qbh_publish_w4_bundle(
                         &state, linear_base + batch_index,
@@ -1323,6 +1427,15 @@ static int qbh_run_chunked_w4_pipeline_impl(
                     result = AEE_EFAILED;
                     qbh_abort_pipeline(&state, result);
                     goto stop_workers;
+                }
+                if (consume_initial_prefetch != 0U) {
+                    uint64_t end = HAP_perf_get_qtimer_count();
+                    if (initial_prefetch_lifetime_ticks != NULL) {
+                        *initial_prefetch_lifetime_ticks +=
+                            end - initial_prefetch->start_ticks;
+                    }
+                    memset(initial_prefetch, 0,
+                           sizeof(*initial_prefetch));
                 }
             } else {
                 uint64_t stage_start = HAP_perf_get_qtimer_count();
@@ -1454,6 +1567,11 @@ stop_workers:
     }
 
 cleanup:
+    if (initial_prefetch != NULL &&
+        initial_prefetch->active != 0U) {
+        qbh_drain_chunked_w4_initial_prefetch(
+            initial_prefetch);
+    }
     if (hmx_thread_created && !hmx_thread_joined) {
         qbh_abort_pipeline(&state, AEE_EFAILED);
         header->hmx_thread_join_status =
@@ -1497,7 +1615,7 @@ int qbh_run_chunked_w4_pipeline(
     uint8_t *vtcm, uint32_t hmx_context_id) {
     return qbh_run_chunked_w4_pipeline_impl(
         header, layout, stored_weights, activation_tiles, vtcm,
-        hmx_context_id, NULL, NULL);
+        hmx_context_id, NULL, NULL, NULL, NULL, NULL);
 }
 
 int qbh_run_chunked_w4_pipeline_mlp(
@@ -1508,7 +1626,7 @@ int qbh_run_chunked_w4_pipeline_mlp(
     const struct qbh_mlp_gate_up_handoff *handoff) {
     return qbh_run_chunked_w4_pipeline_impl(
         header, layout, stored_weights, activation_tiles, vtcm,
-        hmx_context_id, handoff, NULL);
+        hmx_context_id, handoff, NULL, NULL, NULL, NULL);
 }
 
 int qbh_run_chunked_w4_pipeline_external(
@@ -1520,5 +1638,25 @@ int qbh_run_chunked_w4_pipeline_external(
     const struct qbh_w4_hmx_runner *runner) {
     return qbh_run_chunked_w4_pipeline_impl(
         header, layout, stored_weights, activation_tiles, vtcm,
-        0U, handoff, runner);
+        0U, handoff, runner, NULL, NULL, NULL);
+}
+
+int qbh_run_chunked_w4_pipeline_external_prefetched(
+    struct qbh_probe_header *header,
+    const struct qbh_projection_layout *layout,
+    const uint8_t *stored_weights, const uint8_t *activation_tiles,
+    uint8_t *vtcm,
+    const struct qbh_mlp_gate_up_handoff *handoff,
+    const struct qbh_w4_hmx_runner *runner,
+    struct qbh_w4_initial_prefetch *prefetch,
+    uint64_t *prefetch_wait_ticks,
+    uint64_t *prefetch_lifetime_ticks) {
+    int result = qbh_run_chunked_w4_pipeline_impl(
+        header, layout, stored_weights, activation_tiles, vtcm,
+        0U, handoff, runner, prefetch, prefetch_wait_ticks,
+        prefetch_lifetime_ticks);
+    if (prefetch != NULL && prefetch->active != 0U) {
+        qbh_drain_chunked_w4_initial_prefetch(prefetch);
+    }
+    return result;
 }

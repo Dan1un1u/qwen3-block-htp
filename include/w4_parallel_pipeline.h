@@ -5,9 +5,22 @@
 
 #include "hmx_u8s8_projection.h"
 #include "probe_protocol.h"
+#include "qbh_user_dma.h"
 
 #define QBH_W4_HMX_MAX_BATCH_OUTPUTS UINT32_C(8)
 #define QBH_W4_HMX_MAX_CONTINUATION_CHUNKS UINT32_C(1)
+#define QBH_W4_INITIAL_PREFETCH_MAX_BUNDLES UINT32_C(4)
+
+struct qbh_w4_initial_prefetch {
+    struct qbh_dma_aligned_desc_1d
+        descriptors[QBH_W4_INITIAL_PREFETCH_MAX_BUNDLES];
+    const uint8_t *source;
+    uint8_t *destination;
+    uint32_t bundle_bytes;
+    uint32_t bundle_count;
+    uint64_t start_ticks;
+    uint32_t active;
+};
 
 struct qbh_mlp_gate_up_handoff {
     uint8_t *middle_activation;
@@ -82,5 +95,24 @@ int qbh_run_chunked_w4_pipeline_external(
     uint8_t *vtcm,
     const struct qbh_mlp_gate_up_handoff *handoff,
     const struct qbh_w4_hmx_runner *runner);
+
+int qbh_start_chunked_w4_initial_prefetch(
+    const struct qbh_projection_layout *layout,
+    const uint8_t *stored_weights, uint8_t *vtcm,
+    struct qbh_w4_initial_prefetch *prefetch);
+
+void qbh_drain_chunked_w4_initial_prefetch(
+    struct qbh_w4_initial_prefetch *prefetch);
+
+int qbh_run_chunked_w4_pipeline_external_prefetched(
+    struct qbh_probe_header *header,
+    const struct qbh_projection_layout *layout,
+    const uint8_t *stored_weights, const uint8_t *activation_tiles,
+    uint8_t *vtcm,
+    const struct qbh_mlp_gate_up_handoff *handoff,
+    const struct qbh_w4_hmx_runner *runner,
+    struct qbh_w4_initial_prefetch *prefetch,
+    uint64_t *prefetch_wait_ticks,
+    uint64_t *prefetch_lifetime_ticks);
 
 #endif
