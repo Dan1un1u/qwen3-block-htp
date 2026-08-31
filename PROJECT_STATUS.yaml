@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0118
+  active_experiment: null
   next_experiment_number: 119
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,25 +27,53 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0117
-  last_completed_source_commit: 65377d4132ec5a7bb15e1521a773c2734443f06e
+  last_completed_experiment: EXP-0118
+  last_completed_source_commit: cc091ab2bd095d8d9d4a7de084104d3b0fccde09
   provisional_source_parent: EXP-0112
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: registered
+  active_experiment_stage: none
   active_experiment_evidence: null
-  active_experiment_gate: not_run
-  active_recipe_specialization: W4U8
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0117/20260831T201239Z_65377d4132ec_formal'
+  active_experiment_gate: none
+  active_recipe_specialization: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0118/20260831T205015Z_e806cce87c60_formal'
   last_rejected_specialization:
-    id: EXP-0117
-    source_branch: codex/exp-0117-w4u8-packed-pair-swiglu-lut
-    source_head: 65377d4132ec5a7bb15e1521a773c2734443f06e
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0117/20260831T201239Z_65377d4132ec_formal'
+    id: EXP-0118
+    source_branch: codex/exp-0118-w4u8-qkv-preemptible-worker-expand
+    source_head: cc091ab2bd095d8d9d4a7de084104d3b0fccde09
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0118/20260831T205015Z_e806cce87c60_formal'
     local_gate: fail
     adoption_status: rejected
-    reason: packed_pair_reduces_activation_work_but_is_hidden_by_parallel_stream_and_repeat10_complete_host_does_not_improve
+    reason: preemptible_assistance_reduces_q_expand_and_qkv_but_increases_qk_prep_wait_and_fails_repeat10_paired_host
+  latest_w4u8_qkv_preemptible_expand_candidate:
+    id: EXP-0118
+    source_branch: codex/exp-0118-w4u8-qkv-preemptible-worker-expand
+    runtime_source_head: e806cce87c60e188c37c0e08acf5caaa72d74b67
+    validator_source_head: cc091ab2bd095d8d9d4a7de084104d3b0fccde09
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0118/20260831T205015Z_e806cce87c60_formal'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0118/artifacts/e806cce87c60/20260831T205015Z_formal'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    static_gate: pass_fixed_16k_regions_atomic_claim_dependency_recheck_no_qnn
+    correctness_gate: pass_control_candidate_byte_exact_output_69f22eeb035e5ec5_zero_mismatch_zero_max_lsb
+    physical_gate: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner
+    repeat1_qkv_change_percent: -3.650190114068441
+    repeat1_host_change_percent: -0.6964213422894328
+    repeat10_qkv_change_percent: -3.8217205335223103
+    repeat10_host_change_percent: -0.7164723805840101
+    repeat10_host_paired_change_percent: 0.40738041312662343
+    repeat10_weight_expand_change_percent: -5.226985833839814
+    repeat10_qk_prep_pool_wait_change_percent: 6.267116073309453
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    gate_summary_sha256: 6ff0ed1448014d800f7d3624d0611208d0427ceb9d679c01b48538497f291519
+    full_profiling_report_sha256: 969050f5640f3f1bbb0939a89d7163e7050565c93cd60cb6493e2b124011d1ec
+    evidence_sha256_ledger_sha256: 63c18f4264bbc88c54b74c4b381f3add3d9bd9e4db4b1e9e9e5995cedd260298
+    conclusion: qkv_local_speedup_is_real_but_complete_block_host_stability_gate_fails
+    selected_baseline_changed: false
   latest_w4u8_packed_pair_lut_candidate:
     id: EXP-0117
     source_branch: codex/exp-0117-w4u8-packed-pair-swiglu-lut

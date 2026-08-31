@@ -9604,20 +9604,23 @@ experiments:
     variants:
       - exp0112_main_hvx_q_expand_control
       - q_only_preemptible_worker_assisted_expand_stage_a
-    execution_state: running
-    evidence_validity: pending
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-qkv-preemptible-worker-expand
     source_branches:
       - codex/exp-0118-w4u8-qkv-preemptible-worker-expand
-    source_commits: []
+    source_commits:
+      - e806cce87c60e188c37c0e08acf5caaa72d74b67
+      - cc091ab2bd095d8d9d4a7de084104d3b0fccde09
     record: docs/experiments/EXP-0118.md
     approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0118-w4u8-qkv-preemptible-worker-expand
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0112
       source_parent_commit: 5429c70bc6eb155af96bb7dd987094bb8fb941b1
@@ -9640,3 +9643,33 @@ experiments:
       physical_gate: exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_boundary_bytes_dma_descriptors_hmx_commands_tile_pairs_and_peak_vtcm
       speed_gate: qkv_projection_and_complete_host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
       completion_gate: stage_a_static_correctness_execution_physical_then_five_rounds_pc027_pc028_and_stop_or_extend_kv_only_after_pass
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0118/20260831T205015Z_e806cce87c60_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0118/artifacts/e806cce87c60/20260831T205015Z_formal'
+      runtime_source_commit: e806cce87c60e188c37c0e08acf5caaa72d74b67
+      validator_source_commit: cc091ab2bd095d8d9d4a7de084104d3b0fccde09
+      static_gate_result: pass_fixed_16k_regions_atomic_claim_dependency_recheck_no_qnn
+      correctness_gate_result: pass_control_candidate_byte_exact_output_69f22eeb035e5ec5_zero_mismatch_zero_max_lsb
+      execution_gate_result: pass_positive_assistance_all_twelve_qk_pairs_once_max_16_k_tiles_per_turn
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_traffic_commands_and_peak_vtcm
+      repeat1_qkv_change_percent: -3.650190114068441
+      repeat1_qkv_paired_change_percent: -4.143784323514732
+      repeat1_host_change_percent: -0.6964213422894328
+      repeat1_host_paired_change_percent: -0.8439060080180805
+      repeat10_qkv_change_percent: -3.8217205335223103
+      repeat10_qkv_paired_change_percent: -3.7521340499525713
+      repeat10_host_change_percent: -0.7164723805840101
+      repeat10_host_paired_change_percent: 0.40738041312662343
+      repeat10_weight_expand_change_percent: -5.226985833839814
+      repeat10_qk_prep_pool_wait_change_percent: 6.267116073309453
+      repeat10_control_host_wall_us: 1764.2969
+      repeat10_candidate_host_wall_us: 1751.6562
+      repeat10_control_qkv_module_us: 411.5729166666667
+      repeat10_candidate_qkv_module_us: 395.84375
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_exp0109_f16f16_exp0111_w4f16_exp0112_parent_and_exp0118_candidate_w4u8
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: 6ff0ed1448014d800f7d3624d0611208d0427ceb9d679c01b48538497f291519
+      full_profiling_report_sha256: 969050f5640f3f1bbb0939a89d7163e7050565c93cd60cb6493e2b124011d1ec
+      evidence_sha256_ledger_sha256: 63c18f4264bbc88c54b74c4b381f3add3d9bd9e4db4b1e9e9e5995cedd260298
+      conclusion: bounded_worker_turns_consistently_reduce_q_expand_and_qkv_but_still_raise_qk_prep_wait_and_fail_repeat10_paired_host
+      selected_baseline_changed: false
