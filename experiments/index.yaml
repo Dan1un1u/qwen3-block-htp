@@ -8448,14 +8448,15 @@ experiments:
     variants:
       - qkv_batch4_control
       - qkv_head_pair_batch8_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-qkv-head-pair-batch8
     source_branches:
       - codex/exp-0102-w4u8-qkv-head-pair-batch8
-    source_commits: []
+    source_commits:
+      - 794ffdef3a092785882428f2e2010ee3842dd374
     record: docs/experiments/EXP-0102.md
     decided_by: user
     decided_on: '2026-08-31'
@@ -8464,10 +8465,10 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0102-w4u8-qkv-head-pair-batch8
       started_on: '2026-08-31'
-      completed_on: null
+      completed_on: '2026-08-31'
     evidence:
-      formal_results: null
-      retained_artifacts: null
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0102/formal_794ffdef3a09'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0102/artifacts/794ffdef3a09/formal'
       source_parent_commit: 6dc437fe08eaccf119c4cbce82937e22f125da0b
       direct_w4u8_control: W4U8-EXP0084-FAIR-CANONICAL
       contextual_w4f16_comparator: W4F16-EXP0084-COMMON-NORM-POOLS
@@ -8488,3 +8489,28 @@ experiments:
       dependency_gate: all_16_q_and_8_k_head_dependencies_published_once_no_early_qk_norm_read
       speed_gate: qkv_projection_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: static_buffer_correctness_physical_dependency_gates_then_five_order_rotated_rounds_and_pc027_pc028_complete_profiling_closure
+      runtime_source_commit: 794ffdef3a092785882428f2e2010ee3842dd374
+      static_gate_result: pass_qkv_batch4_and_batch8_same_binary_same_enlarged_buffer_plan_no_qnn
+      correctness_gate_result: pass_final_input_norm_qk_probability_av_byte_exact_zero_mismatch_zero_max_lsb
+      physical_gate_result: pass_same_5570272_peak_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_weight_bytes_and_49408_tile_pairs
+      dependency_gate_result: pass_all_16_q_and_8_k_head_dependencies_published_once
+      command_gate_result: pass_qkv_32_to_16_total_176_to_160_dma_descriptors_512_to_480
+      repeat1_qkv_change_percent: 0.660
+      repeat1_qkv_paired_change_percent: 1.405
+      repeat1_host_change_percent: -0.569
+      repeat1_host_paired_change_percent: -4.375
+      repeat10_qkv_change_percent: 0.859
+      repeat10_qkv_paired_change_percent: 0.954
+      repeat10_host_change_percent: -0.157
+      repeat10_host_paired_change_percent: 0.638
+      repeat10_qkvo_prefetch_wait_change_percent: -12.447
+      repeat10_qkvo_hmx_lifetime_change_percent: -11.579
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_reused_exp0084_canonical_f16f16_w4f16
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: 6efc5eb2fdcf885c26b4f5b3d26e0e782623e40933153ec5c4448b9b724b1135
+      full_profiling_report_sha256: b82776089b05bc8f6d2c599ddb24c9b5550b9c90604f66ad485a0a6c3d10d8a0
+      evidence_sha256_ledger_sha256: 83961b0dcfb5dc59fae94ffed847fec71104757612d38953f9d4e4feff5aa4b2
+      conclusion: qkv_batch8_reduces_commands_prefetch_wait_and_hmx_lifetime_but_coarser_pipeline_granularity_regresses_qkv_wall_and_fails_host_paired_repeat10
+      reopen_condition: only_with_a_new_qkv_pipeline_or_data_layout_hypothesis_not_another_batch_cardinality_search
+      selected_baseline_changed: false
