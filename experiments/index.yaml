@@ -9254,20 +9254,22 @@ experiments:
     variants:
       - exp0112_single_fence_release_control
       - w4u8_gate_up_worker_barrier_plain_generation_store
-    execution_state: running
-    evidence_validity: pending
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-gate-up-generation-release-elision
     source_branches:
       - codex/exp-0113-w4u8-gate-up-generation-release-elision
-    source_commits: []
+    source_commits:
+      - 542a0115525e7c00cf5e65530677d4477c062a70
     record: docs/experiments/EXP-0113.md
     approval_ref: 'User message 2026-09-01: 既然有收益，那就采用。继续针对W4A16和W4A8开展loop优化。'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0113-w4u8-gate-up-generation-release-elision
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0112
       source_parent_commit: 5429c70bc6eb155af96bb7dd987094bb8fb941b1
@@ -9288,3 +9290,26 @@ experiments:
       static_gate: control_contains_worker_barrier_generation_store_and_address_release_candidate_contains_worker_barrier_and_generation_store_but_no_address_release_consumer_barrier_unchanged
       speed_gate: gate_up_plus_swiglu_and_complete_host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
       completion_gate: five_rounds_pc027_pc028_complete_profiling_then_accept_or_reject_without_automatic_baseline_promotion
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0113/20260831T185051Z_542a0115525e_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0113/artifacts/542a0115525e/20260831T185051Z_formal'
+      runtime_source_commit: 542a0115525e7c00cf5e65530677d4477c062a70
+      static_gate_result: pass_worker_barrier_generation_store_and_consumer_barrier_retained_candidate_skips_only_address_release_no_qnn
+      correctness_gate_result: pass_control_candidate_byte_exact_output_69f22eeb035e5ec5_zero_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_weight_dma_hmx_publication_and_peak_vtcm
+      repeat1_gate_up_change_percent: -0.5987558320373232
+      repeat1_gate_up_paired_change_percent: -0.22261090793448401
+      repeat1_host_change_percent: 0.6446237297381696
+      repeat1_host_paired_change_percent: 4.970024914720028
+      repeat10_gate_up_change_percent: 1.1511452999446448
+      repeat10_gate_up_paired_change_percent: 1.1876429138083955
+      repeat10_host_change_percent: 0.11897108613247998
+      repeat10_host_paired_change_percent: 0.5163773734908395
+      repeat10_hmx_ready_wait_change_percent: 2.6900362399892686
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_exp0109_f16f16_w4u8_exp0111_w4f16
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: f52a0617f55047e687854963204f7f68d68ddab033b2e0fe4096771a1a986f0e
+      full_profiling_report_sha256: c76f203c0317c75fa3537bdc3e5f7a8e159fa1287a4c34f7e81d54ca6dde3290
+      evidence_sha256_ledger_sha256: 46489b9e37c85c9aed654708e0d90edf9d0cfc7d241361dfe4df2c0c86c21736
+      conclusion: producer_address_release_elision_is_byte_exact_but_increases_hmx_ready_wait_and_regresses_repeat10_gate_up_and_complete_host_so_exp0112_single_fence_remains_the_provisional_w4u8_parent
+      selected_baseline_changed: false
