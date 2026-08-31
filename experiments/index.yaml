@@ -9842,20 +9842,23 @@ experiments:
     variants:
       - exp0120_ring16_worker3_control
       - w4u8_ring16_worker4_candidate
-    execution_state: running
-    evidence_validity: pending
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-ring16-gate-up-worker-count
     source_branches:
       - codex/exp-0121-w4u8-gate-up-ring16-worker-count
-    source_commits: []
+    source_commits:
+      - 1a724b42c77b174fd772f44139b175ff1c964aed
+      - 2ebfbb7a2388e576003d161e6803173f1d3d1143
     record: docs/experiments/EXP-0121.md
     approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0121-w4u8-gate-up-ring16-worker-count
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0120
       source_parent_commit: fa410c4c237903931c95112dc7f26235738a6905
@@ -9878,3 +9881,35 @@ experiments:
       physical_gate: exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_bytes_dma_descriptors_hmx_commands_tile_pairs_and_peak_vtcm_except_declared_scratch_delta
       speed_gate: gate_up_and_complete_host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
       completion_gate: static_correctness_physical_then_five_rotated_rounds_pc027_pc028_and_accept_or_reject_without_automatic_baseline_promotion
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0121/20260831T220137Z_1a724b42c77b_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0121/artifacts/1a724b42c77b/20260831T220137Z_formal'
+      runtime_source_commit: 1a724b42c77b174fd772f44139b175ff1c964aed
+      validator_source_commit: 2ebfbb7a2388e576003d161e6803173f1d3d1143
+      static_gate_result: pass_runtime_worker3_worker4_ring16_batch8_single_fence_no_qnn
+      correctness_gate_result: pass_byte_exact_output_69f22eeb035e5ec5_zero_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_dma_hmx_work_and_peak_vtcm
+      selected_cell: worker3_control
+      repeat1_gate_up_change_percent: 32.2857418297503
+      repeat1_gate_up_paired_change_percent: 31.447025932709916
+      repeat1_host_change_percent: 8.421035508412999
+      repeat1_host_paired_change_percent: 8.421035508412999
+      repeat10_gate_up_change_percent: 31.19346757692234
+      repeat10_gate_up_paired_change_percent: 29.592964629227424
+      repeat10_host_change_percent: 9.592619065266849
+      repeat10_host_paired_change_percent: 9.592619065266849
+      repeat10_weight_expand_change_percent: 5.4945703245163235
+      repeat10_hmx_compute_change_percent: 33.950207144532165
+      repeat10_hmx_ready_wait_change_percent: 25.412098502721612
+      repeat10_expanded_slot_wait_change_percent: -12.019704433497546
+      repeat10_producer_slot_wait_change_percent: -63.4395953417245
+      peak_vtcm_bytes: 5306336
+      repeat10_control_host_wall_us: 1610.8854
+      repeat10_candidate_host_wall_us: 1765.4115
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_exp0109_f16f16_exp0111_w4f16_exp0121_worker3_control_w4u8
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: 27e9ebae03fc60985372e527b52c5aec4f0d907502233fa789f93f62ca8e6115
+      full_profiling_report_sha256: fa6ac7d2437229d2e1c87067392f081a16e1453981f432aa0b3b44dc99ff1445
+      evidence_sha256_ledger_sha256: e9abf7ede115c67fdc29d51abe250859f13d5b8d76e40bb5a80250224f281e28
+      conclusion: fourth_worker_turns_removed_queue_backpressure_into_hvx_hmx_contention_and_is_rejected
+      selected_baseline_changed: false
