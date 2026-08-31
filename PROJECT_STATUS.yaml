@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0111
+  active_experiment: null
   next_experiment_number: 112
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,19 +27,50 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0110
-  last_completed_source_commit: d18e901339f4eadd760b590e91f004c3f76e9cb6
-  provisional_source_parent: EXP-0110
+  last_completed_experiment: EXP-0111
+  last_completed_source_commit: eebd967a3e34279888b0b2c644ff451ee368c2c6
+  provisional_source_parent: EXP-0111
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: registered
+  active_experiment_stage: none
   active_experiment_evidence: null
   active_experiment_gate: not_run
-  active_recipe_specialization: W4F16
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0110/20260831T163813Z_d18e901339f4_formal'
+  active_recipe_specialization: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0111/20260831T181039Z_eebd967a3e34_formal'
   public_common_layer_state: frozen
   future_default_work_class: recipe_specialization
+  latest_w4f16_gate_up_fence_candidate:
+    id: EXP-0111
+    source_branch: codex/exp-0111-w4f16-gate-up-publication-fence
+    source_head: eebd967a3e34279888b0b2c644ff451ee368c2c6
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0111/20260831T181039Z_eebd967a3e34_formal'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0111/artifacts/eebd967a3e34/20260831T181039Z_formal'
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending
+    correctness_gate: pass_byte_exact_final_and_expansion_audit_zero_mismatch_zero_max_lsb
+    physical_gate: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_weight_dma_hmx_and_peak_vtcm
+    repeat1_gate_up_change_percent: -4.682599762085005
+    repeat1_gate_up_paired_change_percent: -4.4338704444684796
+    repeat1_host_change_percent: -4.2219917880567
+    repeat1_host_paired_change_percent: -4.2219917880567
+    repeat10_gate_up_change_percent: -4.835441411589999
+    repeat10_gate_up_paired_change_percent: -4.764
+    repeat10_host_change_percent: -1.976603
+    repeat10_host_paired_change_percent: -2.455
+    repeat10_control_host_wall_us: 2137.2605
+    repeat10_candidate_host_wall_us: 2095.0156
+    repeat10_control_gate_up_module_us: 963.296875
+    repeat10_candidate_gate_up_module_us: 916.7135416666667
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass_reused_exp0109_f16f16_w4u8_and_exp0111_control_w4f16
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    gate_summary_sha256: 0865612f8907600d29dd34a43c182cf898e6e07809af2a4078658918fcc72edf
+    full_profiling_report_sha256: 8ec8a71c523b2646ad06182344e0ea2c99c5a4ac6a94a742094d791b280075a1
+    evidence_sha256_ledger_sha256: 42776687bba3d871ea2b0d835d1820315075d02903951a1af8ee99b7ac1a5196
+    conclusion: removing_nonstreamed_gate_up_region_barriers_and_publication_is_byte_exact_and_improves_gate_up_and_complete_host_at_both_repeats
+    selected_baseline_changed: false
   latest_w4f16_qkv_specialization_candidate:
     id: EXP-0110
     source_branch: codex/exp-0110-w4f16-qkv-specialization-factorial
