@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0107
+  active_experiment: null
   next_experiment_number: 108
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,16 +27,45 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0106
-  last_completed_source_commit: 837714ba5ea2bbdef5799fe959996fb8fe862c8d
+  last_completed_experiment: EXP-0107
+  last_completed_source_commit: c2fa6aaaf89e47b43181a27f9a7d3f7baf299a7e
   provisional_source_parent: EXP-0106
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: common_interleaved_mlp_pipeline_implementation
+  active_experiment_stage: null
   active_experiment_evidence: null
-  active_experiment_gate: none
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0106/20260831T133046Z_837714ba5ea2_formal'
+  active_experiment_gate: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0107/20260831T142754Z_c2fa6aaaf89e_formal'
+  latest_common_interleaved_mlp_experiment:
+    id: EXP-0107
+    source_branch: codex/exp-0107-common-interleaved-mlp-pipeline
+    source_head: c2fa6aaaf89e47b43181a27f9a7d3f7baf299a7e
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0107/20260831T142754Z_c2fa6aaaf89e_formal'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0107/artifacts/c2fa6aaaf89e/20260831T142754Z_formal'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: pending_user_decision
+    f16f16_speed_hypothesis: pass
+    w4f16_w4u8_parity_gate: fail_w4u8_repeat1_gate_up_ordinary_median_1_352_percent_exceeded_one_percent_limit
+    physical_equality_gate: pass
+    correctness_gate: pass_byte_exact_zero_mismatch_zero_max_lsb
+    repeat1_f16f16_gate_up_change_percent: -7.539218
+    repeat1_f16f16_gate_up_paired_change_percent: -7.580615
+    repeat1_f16f16_host_change_percent: -2.593169
+    repeat1_f16f16_host_paired_change_percent: -2.582117
+    repeat10_f16f16_gate_up_change_percent: -8.400259
+    repeat10_f16f16_gate_up_paired_change_percent: -8.235559
+    repeat10_f16f16_host_change_percent: -4.307074
+    repeat10_f16f16_host_paired_change_percent: -3.639174
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass_same_source_three_recipe
+    gate_summary_sha256: e0614993e89d5abb5d80f01b900ad7802ba8d37233d3a0adac0c97121e7393db
+    full_profiling_report_sha256: 55812d6d7985ef4617af98e9bf29ad9d5cbf91e22c1678b7b0dd33042ca11253
+    evidence_sha256_ledger_sha256: 95a53aaf6e9c8fcacf9e93cd3f052ed7668eb56cf66cdf2c3559abe42df9d74f
+    conclusion: f16f16_group_interleaving_is_a_real_common_schedule_improvement_but_the_predeclared_three_recipe_local_gate_fails_on_a_1_35_percent_identical_w4u8_repeat1_parity_fluctuation
+    selected_baseline_changed: false
   latest_integrated_baseline_experiment:
     id: EXP-0106
     source_branch: codex/exp-0106-integrated-fair-fastest-baselines
