@@ -224,6 +224,7 @@ struct qbh_block_w4f16_job {
     uint32_t u8_attention_probability_row_sum_max;
     uint32_t u8_attention_fused_k_operand_mismatch_count;
     uint32_t u8_attention_prepared_group_count;
+    uint32_t u8_softmax_dual_head_row_count;
     uint64_t u8_attention_qk_norm_rope_ticks;
     uint64_t u8_attention_k_pack_ticks;
     uint64_t u8_attention_v_pack_ticks;
@@ -760,6 +761,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH ||
         header->u8_norm_reduction_mode >
             QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE_PARALLEL_INPUT ||
+        header->w4u8_softmax_reduction_mode >
+            QBH_BLOCK_W4U8_SOFTMAX_REDUCTION_DUAL_HEAD ||
         header->fp16_common_schedule_mode >
             QBH_BLOCK_FP16_COMMON_SCHEDULE_ALL ||
         (header->fp16_norm_rows_per_task != 2U &&
@@ -770,6 +773,9 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (header->variant != QBH_BLOCK_W4U8 &&
          header->u8_norm_reduction_mode !=
              QBH_BLOCK_U8_NORM_REDUCTION_SCALAR) ||
+        (header->variant != QBH_BLOCK_W4U8 &&
+         header->w4u8_softmax_reduction_mode !=
+             QBH_BLOCK_W4U8_SOFTMAX_REDUCTION_SERIAL_HEADS) ||
         (header->variant == QBH_BLOCK_W4U8 &&
          header->fp16_common_schedule_mode !=
              QBH_BLOCK_FP16_COMMON_SCHEDULE_CONTROL) ||
@@ -6958,6 +6964,11 @@ static int qbh_attention_u8_integer(
         }
         header->u8_attention_softmax_ticks +=
             HAP_perf_get_qtimer_count() - start;
+        if (header->w4u8_softmax_reduction_mode ==
+            QBH_BLOCK_W4U8_SOFTMAX_REDUCTION_DUAL_HEAD) {
+            header->w4u8_softmax_dual_head_row_count +=
+                QBH_ATTENTION_M;
+        }
 
         start = HAP_perf_get_qtimer_count();
         for (uint32_t local_head = 0U;
@@ -7798,6 +7809,11 @@ static void qbh_attention_u8_dependency_stream_run_tasks(
             first_row, QBH_BLOCK_W4U8_SOFTMAX_ROWS_PER_SLICE);
         job->u8_attention_softmax_ticks +=
             HAP_perf_get_qtimer_count() - start;
+        if (header->w4u8_softmax_reduction_mode ==
+            QBH_BLOCK_W4U8_SOFTMAX_REDUCTION_DUAL_HEAD) {
+            job->u8_softmax_dual_head_row_count +=
+                QBH_BLOCK_W4U8_SOFTMAX_ROWS_PER_SLICE;
+        }
         ++job->attention_softmax_task_count;
         if (telemetry_ptr != NULL) {
             job->u8_attention_score_saturation_count +=
@@ -8139,6 +8155,11 @@ static void qbh_attention_u8_pool_run_tasks(
         }
         job->u8_attention_softmax_ticks +=
             HAP_perf_get_qtimer_count() - start;
+        if (header->w4u8_softmax_reduction_mode ==
+            QBH_BLOCK_W4U8_SOFTMAX_REDUCTION_DUAL_HEAD) {
+            job->u8_softmax_dual_head_row_count +=
+                QBH_ATTENTION_M;
+        }
 
         if (qbh_attention_u8_gqa_hmx_batch_enabled(
                 header->attention_pipeline_mode)) {
@@ -8249,6 +8270,8 @@ static void qbh_attention_u8_accumulate_job(
         job->u8_attention_av_requant_ticks;
     header->u8_attention_pipeline_wait_ticks +=
         job->u8_attention_hmx_queue_wait_ticks;
+    header->w4u8_softmax_dual_head_row_count +=
+        job->u8_softmax_dual_head_row_count;
     header->u8_attention_fused_k_operand_mismatch_count +=
         job->u8_attention_fused_k_operand_mismatch_count;
     header->u8_attention_score_saturation_count +=
@@ -8320,6 +8343,7 @@ static int qbh_hvx_pool_u8_attention(
         job->u8_attention_v_recenter_saturation_count = 0U;
         job->u8_attention_probability_mask_violation_count = 0U;
         job->u8_attention_fused_k_operand_mismatch_count = 0U;
+        job->u8_softmax_dual_head_row_count = 0U;
         job->u8_attention_probability_row_sum_min = UINT32_MAX;
         job->u8_attention_probability_row_sum_max = 0U;
         job->u8_attention_qk_norm_rope_ticks = 0U;
@@ -10091,6 +10115,10 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
     header->vtcm_acquired_bytes = vtcm_bytes;
     qbh_hvx_u8_set_norm_reduction_mode(
         header->u8_norm_reduction_mode);
+    qbh_attention_u8_set_softmax_reduction_mode(
+        header->w4u8_softmax_reduction_mode);
+    header->w4u8_softmax_reduction_mode_observed =
+        header->w4u8_softmax_reduction_mode;
 
     if (qbh_plan_buffers(vtcm, vtcm_bytes, header->variant,
                          header->f16f16_projection_mode,

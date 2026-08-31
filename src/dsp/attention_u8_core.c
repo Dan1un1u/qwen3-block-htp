@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "attention_u8_core.h"
+#include "block_protocol.h"
 #include "hmx_int8_tile.h"
 
 #define QBH_ATTN_U8_HVX_BYTES UINT32_C(128)
@@ -28,6 +29,14 @@ static const uint8_t qbh_attention_u8_lane_index[QBH_ATTN_U8_HVX_BYTES]
         110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122,
         123, 124, 125, 126, 127,
     };
+
+static uint32_t qbh_attention_u8_softmax_reduction_mode =
+    QBH_BLOCK_W4U8_SOFTMAX_REDUCTION_SERIAL_HEADS;
+
+void qbh_attention_u8_set_softmax_reduction_mode(uint32_t mode) {
+    qbh_attention_u8_softmax_reduction_mode = mode;
+    asm volatile("barrier" ::: "memory");
+}
 
 /* One word holds the four adjacent K lanes consumed by an integer-HMX
  * weight tile.  Consecutive words for one logical K row are 128 bytes apart
@@ -611,6 +620,36 @@ static uint32_t qbh_attention_u8_reduce_sum_words(HVX_Vector value) {
     return (uint32_t)Q6_R_vextract_VR(value, 124);
 }
 
+static inline void qbh_attention_u8_reduce_sum_words_dual_head(
+    HVX_Vector value0, HVX_Vector value1,
+    uint32_t *sum0, uint32_t *sum1) {
+    const HVX_Vector zero = Q6_V_vzero();
+    for (uint32_t shift = 64U; shift >= 4U; shift >>= 1U) {
+        value0 = Q6_Vw_vadd_VwVw(
+            value0, Q6_V_vlalign_VVR(value0, zero, shift));
+        value1 = Q6_Vw_vadd_VwVw(
+            value1, Q6_V_vlalign_VVR(value1, zero, shift));
+    }
+    *sum0 = (uint32_t)Q6_R_vextract_VR(value0, 124);
+    *sum1 = (uint32_t)Q6_R_vextract_VR(value1, 124);
+}
+
+static inline void qbh_attention_u8_reduce_max_dual_head(
+    HVX_Vector value0, HVX_Vector value1,
+    uint32_t *maximum0, uint32_t *maximum1) {
+    const HVX_Vector zero = Q6_V_vzero();
+    for (uint32_t shift = 64U; shift >= 2U; shift >>= 1U) {
+        value0 = Q6_Vuh_vmax_VuhVuh(
+            value0, Q6_V_vlalign_VVR(value0, zero, shift));
+        value1 = Q6_Vuh_vmax_VuhVuh(
+            value1, Q6_V_vlalign_VVR(value1, zero, shift));
+    }
+    *maximum0 =
+        ((uint32_t)Q6_R_vextract_VR(value0, 124) >> 16U) & UINT32_C(0xffff);
+    *maximum1 =
+        ((uint32_t)Q6_R_vextract_VR(value1, 124) >> 16U) & UINT32_C(0xffff);
+}
+
 static uint32_t qbh_attention_u8_sum_log2_weights(HVX_Vector codes) {
     const HVX_VectorPair code_h = Q6_Wuh_vunpack_Vub(codes);
     const HVX_Vector exponent_h = Q6_Vh_vsub_VhVh(
@@ -655,6 +694,44 @@ static uint32_t qbh_attention_u8_sum_probability_half(
         Q6_Vw_vadd_VwVw(
             Q6_V_lo_W(probability_w),
             Q6_V_hi_W(probability_w)));
+}
+
+static __attribute__((noinline)) void
+qbh_attention_u8_sum_log2_weights_dual_head(
+    HVX_Vector code0_h, HVX_Vector code1_h,
+    uint32_t *sum0, uint32_t *sum1) {
+    const HVX_Vector exponent0_h = Q6_Vh_vsub_VhVh(
+        Q6_Vh_vsplat_R(15), code0_h);
+    const HVX_Vector exponent1_h = Q6_Vh_vsub_VhVh(
+        Q6_Vh_vsplat_R(15), code1_h);
+    const HVX_Vector weights0_h = Q6_Vh_vasl_VhVh(
+        Q6_Vh_vsplat_R(1), exponent0_h);
+    const HVX_Vector weights1_h = Q6_Vh_vasl_VhVh(
+        Q6_Vh_vsplat_R(1), exponent1_h);
+    const HVX_VectorPair weights0_w = Q6_Wuw_vunpack_Vuh(weights0_h);
+    const HVX_VectorPair weights1_w = Q6_Wuw_vunpack_Vuh(weights1_h);
+    qbh_attention_u8_reduce_sum_words_dual_head(
+        Q6_Vw_vadd_VwVw(
+            Q6_V_lo_W(weights0_w), Q6_V_hi_W(weights0_w)),
+        Q6_Vw_vadd_VwVw(
+            Q6_V_lo_W(weights1_w), Q6_V_hi_W(weights1_w)),
+        sum0, sum1);
+}
+
+static __attribute__((noinline)) void
+qbh_attention_u8_sum_probability_dual_head(
+    HVX_Vector probability0_h, HVX_Vector probability1_h,
+    uint32_t *sum0, uint32_t *sum1) {
+    const HVX_VectorPair probability0_w =
+        Q6_Wuw_vunpack_Vuh(probability0_h);
+    const HVX_VectorPair probability1_w =
+        Q6_Wuw_vunpack_Vuh(probability1_h);
+    qbh_attention_u8_reduce_sum_words_dual_head(
+        Q6_Vw_vadd_VwVw(
+            Q6_V_lo_W(probability0_w), Q6_V_hi_W(probability0_w)),
+        Q6_Vw_vadd_VwVw(
+            Q6_V_lo_W(probability1_w), Q6_V_hi_W(probability1_w)),
+        sum0, sum1);
 }
 
 static HVX_Vector qbh_attention_u8_log2_code_half(
@@ -723,6 +800,37 @@ static HVX_Vector qbh_attention_u8_log2_codes_paired(
     const HVX_Vector code0 = qbh_attention_u8_log2_code_half(
         Q6_V_lo_W(score_h), maximum0, fraction_bits);
     const HVX_Vector code1 = qbh_attention_u8_log2_code_half(
+        Q6_V_hi_W(score_h), maximum1, fraction_bits);
+    return Q6_V_vmux_QVV(
+        valid, Q6_Vub_vpack_VhVh_sat(code1, code0),
+        Q6_Vb_vsplat_R(16));
+}
+
+static __attribute__((noinline)) HVX_Vector
+qbh_attention_u8_log2_codes_paired_dual_head_reduction(
+    HVX_Vector score, uint32_t row,
+    uint32_t fraction_bits) {
+    const HVX_Vector lane =
+        *(const HVX_Vector *)qbh_attention_u8_lane_index;
+    const HVX_Vector repeated_lane = Q6_V_vand_VV(
+        lane, Q6_Vb_vsplat_R(63));
+    const HVX_VectorPred valid = Q6_Q_not_Q(
+        Q6_Q_vcmp_gt_VubVub(
+            repeated_lane, Q6_Vb_vsplat_R(row)));
+    const HVX_Vector masked_score = Q6_V_vmux_QVV(
+        valid, score, Q6_V_vzero());
+    const HVX_VectorPair score_h = Q6_Wuh_vunpack_Vub(masked_score);
+    uint32_t maximum0;
+    uint32_t maximum1;
+    HVX_Vector code0;
+    HVX_Vector code1;
+
+    qbh_attention_u8_reduce_max_dual_head(
+        Q6_V_lo_W(score_h), Q6_V_hi_W(score_h),
+        &maximum0, &maximum1);
+    code0 = qbh_attention_u8_log2_code_half(
+        Q6_V_lo_W(score_h), maximum0, fraction_bits);
+    code1 = qbh_attention_u8_log2_code_half(
         Q6_V_hi_W(score_h), maximum1, fraction_bits);
     return Q6_V_vmux_QVV(
         valid, Q6_Vub_vpack_VhVh_sat(code1, code0),
@@ -1010,13 +1118,24 @@ static void qbh_attention_u8_requant_softmax_group_impl(
                    QBH_HMX_OUTPUT_CHANNELS);
         }
 
-        codes = qbh_attention_u8_log2_codes_paired(
-            score, row, config->fraction_bits);
-        code_h = Q6_Wuh_vunpack_Vub(codes);
-        weight_sum0 = qbh_attention_u8_sum_log2_weights_half(
-            Q6_V_lo_W(code_h));
-        weight_sum1 = qbh_attention_u8_sum_log2_weights_half(
-            Q6_V_hi_W(code_h));
+        if (qbh_attention_u8_softmax_reduction_mode ==
+            QBH_BLOCK_W4U8_SOFTMAX_REDUCTION_DUAL_HEAD) {
+            codes =
+                qbh_attention_u8_log2_codes_paired_dual_head_reduction(
+                    score, row, config->fraction_bits);
+            code_h = Q6_Wuh_vunpack_Vub(codes);
+            qbh_attention_u8_sum_log2_weights_dual_head(
+                Q6_V_lo_W(code_h), Q6_V_hi_W(code_h),
+                &weight_sum0, &weight_sum1);
+        } else {
+            codes = qbh_attention_u8_log2_codes_paired(
+                score, row, config->fraction_bits);
+            code_h = Q6_Wuh_vunpack_Vub(codes);
+            weight_sum0 = qbh_attention_u8_sum_log2_weights_half(
+                Q6_V_lo_W(code_h));
+            weight_sum1 = qbh_attention_u8_sum_log2_weights_half(
+                Q6_V_hi_W(code_h));
+        }
         if (use_sole_templates != 0U && valid_count != 1U) {
             memcpy(lut,
                    qbh_attention_u8_select_sole_lut_template(
@@ -1052,10 +1171,18 @@ static void qbh_attention_u8_requant_softmax_group_impl(
         }
         *(HVX_Vector *)row_scratch = probabilities;
         probability_h = Q6_Wuh_vunpack_Vub(probabilities);
-        probability_sum0 = qbh_attention_u8_sum_probability_half(
-            Q6_V_lo_W(probability_h));
-        probability_sum1 = qbh_attention_u8_sum_probability_half(
-            Q6_V_hi_W(probability_h));
+        if (qbh_attention_u8_softmax_reduction_mode ==
+            QBH_BLOCK_W4U8_SOFTMAX_REDUCTION_DUAL_HEAD) {
+            qbh_attention_u8_sum_probability_dual_head(
+                Q6_V_lo_W(probability_h),
+                Q6_V_hi_W(probability_h),
+                &probability_sum0, &probability_sum1);
+        } else {
+            probability_sum0 = qbh_attention_u8_sum_probability_half(
+                Q6_V_lo_W(probability_h));
+            probability_sum1 = qbh_attention_u8_sum_probability_half(
+                Q6_V_hi_W(probability_h));
+        }
 
         memcpy(probability0 +
                    (size_t)row * QBH_HMX_INPUT_CHANNELS,

@@ -33,6 +33,8 @@ struct qbh_attention_u8_telemetry {
     uint32_t probability_row_sum_max;
 };
 
+void qbh_attention_u8_set_softmax_reduction_mode(uint32_t mode);
+
 void qbh_attention_u8_pack_k_native(
     const uint8_t *k_head_tiles,
     const struct qbh_attention_config *config,
