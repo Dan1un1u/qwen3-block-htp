@@ -11,6 +11,9 @@
 #define QBH_MLP_LUT_ENTRIES UINT32_C(65536)
 #define QBH_MLP_LUT_BYTES (QBH_MLP_LUT_ENTRIES * sizeof(uint16_t))
 #define QBH_MLP_GATHER_SCRATCH_BYTES UINT32_C(256)
+#define QBH_MLP_AFFINE_COEFFICIENT_ENTRIES UINT32_C(256)
+#define QBH_MLP_AFFINE_COEFFICIENT_BYTES \
+    (QBH_MLP_AFFINE_COEFFICIENT_ENTRIES * sizeof(uint16_t))
 
 static inline int32_t qbh_floor_div_pow2(int32_t value,
                                          uint32_t shift) {
@@ -64,6 +67,13 @@ void qbh_mlp_gate_up_lut_hvx(const uint8_t *gate, const uint8_t *up,
                              uint8_t *middle, size_t elements,
                              const uint16_t *lut,
                              uint8_t *gather_scratch);
+
+void qbh_mlp_stage_exact_affine_coefficients(uint16_t *destination);
+
+void qbh_mlp_gate_up_exact_affine_hvx(
+    const uint8_t *gate, const uint8_t *up, uint8_t *middle,
+    size_t elements, const uint16_t *coefficients,
+    uint8_t *gather_scratch);
 
 void qbh_mlp_gate_up_requant_lut_hvx(
     const uint8_t *gate, const uint8_t *up, uint8_t *middle,
