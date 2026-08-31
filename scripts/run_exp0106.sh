@@ -14,12 +14,12 @@ case "${cell}" in
     fair_f16f16)
         remote_root="${fp16_remote}"
         variant=F16F16
-        runtime_args="2 32 hvx ${attribution_mode} ${audit_mode} fused gate8 control hvx crouton_native_batch8 4 64 gqa_qkv_overlap 4 norms serial scalar input_norm_pool_post_norm_pool 4 4 1 0"
+        runtime_args="2 32 hvx ${attribution_mode} ${audit_mode} fused gate8 control hvx crouton_native_batch8 4 64 gqa_qkv_overlap 4 norms serial scalar input_norm_pool_post_norm_pool 4 3 1 0"
         ;;
     fair_w4f16)
         remote_root="${fp16_remote}"
         variant=W4F16
-        runtime_args="3 32 hvx ${attribution_mode} ${audit_mode} fused serial adaptive_down96_gate4_dma8_cross hvx crouton_native_batch8 4 64 gqa_qkv_overlap 4 norms serial scalar input_norm_pool_post_norm_pool 4 4 1 0"
+        runtime_args="3 32 hvx ${attribution_mode} ${audit_mode} fused serial adaptive_down96_gate4_dma8_cross hvx crouton_native_batch8 4 64 gqa_qkv_overlap 4 norms serial scalar input_norm_pool_post_norm_pool 4 3 1 0"
         ;;
     fair_w4u8|down4|down4_softmax|down4_softmax_residual|integrated)
         remote_root="${u8_remote}"

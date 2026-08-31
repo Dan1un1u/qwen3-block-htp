@@ -21,6 +21,17 @@ grep -q 'qbh_qk_norm_rope_two_heads_u8_quarter_tiled' \
     "${project_root}/src/dsp/hvx_u8_ops.c"
 grep -q 'w4u8_down_hmx_batch_outputs' \
     "${project_root}/src/dsp/block_imp.c"
+fair_context3_count="$(grep -c 'input_norm_pool_post_norm_pool 4 3 1 0"' \
+    "${project_root}/scripts/run_exp0106.sh")"
+if [[ "${fair_context3_count}" -ne 2 ]]; then
+    printf 'EXP-0084 fair FP16 rows4/contexts3 contract not preserved\n' >&2
+    exit 1
+fi
+if grep -q 'input_norm_pool_post_norm_pool 4 4 1 0"' \
+        "${project_root}/scripts/run_exp0106.sh"; then
+    printf 'non-canonical FP16 contexts4 fair cell found\n' >&2
+    exit 1
+fi
 if grep -q 'qbh_hvx_qk_norm_rope_u8_native_dual_head' \
         "${project_root}/src/dsp/hvx_u8_ops.c"; then
     printf 'rejected EXP-0105 dual-head helper found\n' >&2
