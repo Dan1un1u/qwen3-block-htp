@@ -9247,3 +9247,44 @@ experiments:
       evidence_sha256_ledger_sha256: 5a46ebe65267829a7a579d18f9b8b1214c58e8a37ae3083035d16427b9d21822
       conclusion: removing_internal_unpack_and_bias_barriers_while_retaining_one_worker_publication_barrier_and_generation_release_is_byte_exact_and_locally_faster_but_removing_the_worker_barrier_also_regresses_repeat10
       selected_baseline_changed: false
+  - id: EXP-0113
+    slug: w4u8-gate-up-generation-release-elision
+    title: W4U8 Gate/Up redundant generation-release elimination
+    parent: EXP-0112
+    variants:
+      - exp0112_single_fence_release_control
+      - w4u8_gate_up_worker_barrier_plain_generation_store
+    execution_state: running
+    evidence_validity: pending
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-gate-up-generation-release-elision
+    source_branches:
+      - codex/exp-0113-w4u8-gate-up-generation-release-elision
+    source_commits: []
+    record: docs/experiments/EXP-0113.md
+    approval_ref: 'User message 2026-09-01: 既然有收益，那就采用。继续针对W4A16和W4A8开展loop优化。'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0113-w4u8-gate-up-generation-release-elision
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0112
+      source_parent_commit: 5429c70bc6eb155af96bb7dd987094bb8fb941b1
+      selected_w4u8_runtime_parent: EXP-0112-single_fence
+      recipe_scope: W4U8_gate_up_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      hypothesis: the_worker_full_barrier_orders_expanded_vtcm_stores_before_the_volatile_generation_store_and_the_consumer_full_barrier_orders_reads_after_observation_so_the_producer_address_release_is_redundant_for_vtcm
+      implementation_boundary: one_runtime_selectable_gate_up_publication_mode_only_keep_relaxed_helpers_worker_full_barrier_generation_store_consumer_poll_and_consumer_barrier_unchanged
+      excluded_changes: no_release_only_retry_no_weight_qparam_layout_dma_hmx_ring_worker_attention_down_w4f16_or_public_changes
+      correctness_gate: candidate_byte_exact_to_exp0112_single_fence_final_output_and_existing_w4u8_intermediate_audits_zero_mismatch_zero_max_lsb
+      physical_gate: exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_dma_hmx_stream_publication_and_peak_vtcm
+      static_gate: control_contains_worker_barrier_generation_store_and_address_release_candidate_contains_worker_barrier_and_generation_store_but_no_address_release_consumer_barrier_unchanged
+      speed_gate: gate_up_plus_swiglu_and_complete_host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
+      completion_gate: five_rounds_pc027_pc028_complete_profiling_then_accept_or_reject_without_automatic_baseline_promotion
