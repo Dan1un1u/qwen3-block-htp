@@ -785,11 +785,11 @@ static void qbh_hvx_qk_norm_rope_vectors(
 
 void qbh_hvx_qk_norm_rope_f16_crouton_head(
     const __fp16 *source_group_tiles, __fp16 *destination_tiles,
-    uint32_t head, uint32_t destination_is_weight,
+    uint32_t head, uint32_t source_group_tiles_per_command,
+    uint32_t destination_is_weight,
     const __fp16 *gamma, const __fp16 *cosine,
     const __fp16 *sine) {
     const uint32_t head_tiles = 8U;
-    const uint32_t group_tiles = 4U;
     const __fp16 *source = source_group_tiles +
         (size_t)head * head_tiles * QBH_HMX_FP16_TILE_ELEMENTS;
     __fp16 *destination = destination_tiles +
@@ -804,15 +804,21 @@ void qbh_hvx_qk_norm_rope_f16_crouton_head(
         const uint32_t row_tile = row / QBH_HMX_FP16_ROWS;
         const uint32_t row_pair =
             (row % QBH_HMX_FP16_ROWS) / 2U;
+        const uint32_t source_first_tile =
+            source_group_tiles_per_command == 4U
+                ? row_tile * 4U : row_tile * 2U;
+        const uint32_t source_second_tile =
+            source_group_tiles_per_command == 4U
+                ? row_tile * 4U + 2U : 4U + row_tile * 2U;
         const HVX_Vector *source_first0 =
             (const HVX_Vector *)(source +
-                (size_t)(row_tile * 2U) *
+                (size_t)source_first_tile *
                     QBH_HMX_FP16_TILE_ELEMENTS) + row_pair;
         const HVX_Vector *source_first1 = source_first0 +
             QBH_HMX_FP16_TILE_BYTES / QBH_HVX_BYTES;
         const HVX_Vector *source_second0 =
             (const HVX_Vector *)(source +
-                (size_t)(group_tiles + row_tile * 2U) *
+                (size_t)source_second_tile *
                     QBH_HMX_FP16_TILE_ELEMENTS) + row_pair;
         const HVX_Vector *source_second1 = source_second0 +
             QBH_HMX_FP16_TILE_BYTES / QBH_HVX_BYTES;

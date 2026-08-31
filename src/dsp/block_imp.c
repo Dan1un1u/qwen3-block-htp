@@ -2322,17 +2322,25 @@ static int qbh_attention_qk_norm_wait_head(
 
 static void qbh_attention_qk_norm_run_head(
     struct qbh_block_w4f16_pool *pool, uint32_t task) {
+    const uint32_t source_group_tiles_per_command =
+        pool->attention_header != NULL &&
+        pool->attention_header->variant == QBH_BLOCK_W4F16 &&
+        pool->attention_header->qkv_schedule_mode ==
+            QBH_BLOCK_QKV_SCHEDULE_HEAD_ALIGNED_BATCH4
+            ? 4U : 2U;
     if (pool->attention_crouton_qkv != 0U &&
         task < QBH_BLOCK_HEADS) {
         qbh_hvx_qk_norm_rope_f16_crouton_head(
             pool->attention_q, pool->attention_q_destination,
-            task, 0U, pool->attention_q_gamma,
+            task, source_group_tiles_per_command, 0U,
+            pool->attention_q_gamma,
             pool->attention_rope_cos, pool->attention_rope_sin);
     } else if (pool->attention_crouton_qkv != 0U) {
         const uint32_t head = task - QBH_BLOCK_HEADS;
         qbh_hvx_qk_norm_rope_f16_crouton_head(
             pool->attention_k, pool->attention_k_weight,
-            head, 1U, pool->attention_k_gamma,
+            head, source_group_tiles_per_command, 1U,
+            pool->attention_k_gamma,
             pool->attention_rope_cos, pool->attention_rope_sin);
     } else if (task < QBH_BLOCK_HEADS) {
         qbh_hvx_qk_norm_rope_f16_head(
@@ -6793,9 +6801,16 @@ static __fp16 *qbh_attention_gqa_scratch(
 
 static void qbh_attention_copy_v_crouton_weight(
     const __fp16 *source_group_tiles, uint32_t head,
+    uint32_t source_group_tiles_per_command,
     __fp16 *destination_weight) {
-    static const uint8_t source_tile_for_weight[8] = {
+    static const uint8_t source_tile_for_weight_batch2[8] = {
         0U, 2U, 1U, 3U, 4U, 6U, 5U, 7U};
+    static const uint8_t source_tile_for_weight_batch4[8] = {
+        0U, 4U, 1U, 5U, 2U, 6U, 3U, 7U};
+    const uint8_t *source_tile_for_weight =
+        source_group_tiles_per_command == 4U
+            ? source_tile_for_weight_batch4
+            : source_tile_for_weight_batch2;
     const __fp16 *source = source_group_tiles +
         (size_t)head * 8U * QBH_HMX_FP16_TILE_ELEMENTS;
 
@@ -6869,8 +6884,8 @@ static uint32_t qbh_count_u8_mismatches(
 
 static void qbh_unpack_fp16_grouped_projection(
     const __fp16 *source, uint32_t n_tiles,
-    __fp16 *destination, uint32_t destination_stride) {
-    const uint32_t group_tiles = 2U;
+    __fp16 *destination, uint32_t destination_stride,
+    uint32_t group_tiles) {
     const uint32_t group_elements =
         (QBH_BLOCK_M / QBH_HMX_FP16_ROWS) *
         group_tiles * QBH_HMX_FP16_TILE_ELEMENTS;
@@ -6895,19 +6910,27 @@ static void qbh_audit_crouton_qkv_operands(
     __fp16 *k_reference = (__fp16 *)buffers->up;
     __fp16 *reference_tiles = (__fp16 *)buffers->hmx_activation;
     __fp16 *candidate_tiles = reference_tiles + head_elements;
+    const uint32_t source_group_tiles_per_command =
+        header->variant == QBH_BLOCK_W4F16 &&
+        header->qkv_schedule_mode ==
+            QBH_BLOCK_QKV_SCHEDULE_HEAD_ALIGNED_BATCH4
+            ? 4U : 2U;
 
     qbh_unpack_fp16_grouped_projection(
         (const __fp16 *)buffers->q,
         QBH_BLOCK_HIDDEN / QBH_HMX_FP16_COLS,
-        q_reference, QBH_BLOCK_HIDDEN);
+        q_reference, QBH_BLOCK_HIDDEN,
+        source_group_tiles_per_command);
     qbh_unpack_fp16_grouped_projection(
         (const __fp16 *)buffers->k,
         QBH_BLOCK_KV_HIDDEN / QBH_HMX_FP16_COLS,
-        k_reference, QBH_BLOCK_KV_HIDDEN);
+        k_reference, QBH_BLOCK_KV_HIDDEN,
+        source_group_tiles_per_command);
     qbh_unpack_fp16_grouped_projection(
         (const __fp16 *)buffers->v,
         QBH_BLOCK_KV_HIDDEN / QBH_HMX_FP16_COLS,
-        v_reference, QBH_BLOCK_KV_HIDDEN);
+        v_reference, QBH_BLOCK_KV_HIDDEN,
+        source_group_tiles_per_command);
     qbh_hvx_qk_norm_rope_f16(
         q_reference, QBH_BLOCK_M, QBH_BLOCK_HEADS,
         QBH_BLOCK_HIDDEN, QBH_BLOCK_HEAD_DIM,
@@ -6950,7 +6973,12 @@ static void qbh_audit_crouton_qkv_operands(
             head * QBH_BLOCK_HEAD_DIM, QBH_BLOCK_M,
             QBH_BLOCK_HEAD_DIM, reference_tiles);
         qbh_attention_copy_v_crouton_weight(
-            (const __fp16 *)buffers->v, head, candidate_tiles);
+            (const __fp16 *)buffers->v, head,
+            header->variant == QBH_BLOCK_W4F16 &&
+                    header->qkv_schedule_mode ==
+                        QBH_BLOCK_QKV_SCHEDULE_HEAD_ALIGNED_BATCH4
+                ? 4U : 2U,
+            candidate_tiles);
         header->crouton_v_operand_mismatch_count +=
             qbh_count_u16_mismatches(
                 (const uint16_t *)reference_tiles,
@@ -7151,7 +7179,12 @@ static void qbh_attention_gqa_pool_run_tasks(
             weight = qbh_attention_gqa_scratch(
                 buffers->up, job->worker_index);
             qbh_attention_copy_v_crouton_weight(
-                (const __fp16 *)buffers->v, kv_head, weight);
+                (const __fp16 *)buffers->v, kv_head,
+                pool->attention_header->variant == QBH_BLOCK_W4F16 &&
+                        pool->attention_header->qkv_schedule_mode ==
+                            QBH_BLOCK_QKV_SCHEDULE_HEAD_ALIGNED_BATCH4
+                    ? 4U : 2U,
+                weight);
         } else {
             qbh_pack_fp16_weight_transposed_hvx(
                 (const __fp16 *)buffers->v, QBH_BLOCK_KV_HIDDEN,
