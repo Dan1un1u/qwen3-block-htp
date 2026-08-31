@@ -10071,3 +10071,48 @@ experiments:
       conclusion: persistent_workers_remove_stream_join_tail_but_spin_per_generation_and_increase_expand_wait_gate_up_and_complete_host
       reopen_condition: bounded_multi_group_queue_overlaps_useful_work_without_per_generation_spin_polling
       selected_baseline_changed: false
+  - id: EXP-0124
+    slug: w4u8-qkv-producer-consumer-ring
+    title: W4U8 QKV four-batch producer/consumer ring
+    parent: EXP-0120
+    variants:
+      - exp0120_head_aligned_batch4_control
+      - qkv_ring4_expand_worker1
+      - qkv_ring4_expand_worker2
+      - qkv_ring4_expand_worker3
+    execution_state: running
+    evidence_validity: pending
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-qkv-producer-consumer-ring
+    source_branches:
+      - codex/exp-0124-w4u8-qkv-producer-consumer-ring
+    source_commits: []
+    record: docs/experiments/EXP-0124.md
+    approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0124-w4u8-qkv-producer-consumer-ring
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0120
+      source_parent_commit: fa410c4c237903931c95112dc7f26235738a6905
+      selected_w4u8_runtime_parent: EXP-0120-ring16
+      recipe_scope: W4U8_QKV_DMA_HVX_HMX_and_QK_prep_schedule_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      prior_negative_boundary: EXP-0118_and_EXP-0119_opportunistic_Q_expand_assistance_reduced_QKV_but_failed_complete_host_stability
+      new_mechanism: one_bounded_four_batch_ring_one_long_lived_mixed_worker_epoch_and_one_ordered_HMX_consumer_across_Q_K_V
+      hypothesis: a_structural_QKV_ring_can_overlap_DMA_parallel_expansion_HMX_and_head_preparation_without_the_per_batch_or_opportunistic_assistance_overheads
+      implementation_boundary: runtime_control_or_ring4_with_expand_worker_partitions_1_2_3_same_head_aligned_batch4_math_and_publication
+      excluded_changes: no_weights_scales_qparams_projection_math_attention_math_O_MLP_residual_public_layer_DDR_boundary_FastRPC_or_QNN_changes
+      static_gate: exact_runtime_control_ring_selection_four_slots_one_DMA_producer_one_HMX_owner_mixed_worker_partition_head_publication_no_QNN
+      correctness_gate: every_candidate_byte_exact_to_EXP0120_final_output_and_existing_input_norm_score_probability_AV_and_expansion_audits_zero_mismatch_zero_max_lsb
+      physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_identical_weight_bytes_DMA_descriptors_HMX_tile_pairs_qparams_and_outputs_declared_ring_and_command_delta_only
+      speed_gate: QKV_plus_QK_Norm_RoPE_and_complete_Host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
+      completion_gate: bounded_diagnostic_matrix_then_five_rotated_formal_rounds_PC027_PC028_and_accept_or_reject_without_automatic_baseline_promotion
