@@ -660,3 +660,13 @@ The locally eligible EXP-0093 residual boundary plan that reconstructs four
 contiguous activation rows from native integer-HMX tiles in registers while
 preserving byte-exact residual semantics and VTCM residency.
 _Avoid_: accepted baseline, changed residual arithmetic, residual approximation
+
+**Prepared-Session Attention Metadata Cache**:
+A VTCM-resident set of immutable, group-specific Attention lookup and bias
+objects built during the warmup call of one Prepared Runtime Session and reused
+by later measured block calls. It excludes mutable per-context gather scratch.
+EXP-0094 demonstrated that this can remove V-pack setup work without changing
+the mathematical or physical HMX contract, but a local work reduction alone is
+not sufficient for baseline adoption when complete Host wall does not pass its
+predeclared gate.
+_Avoid_: accepted baseline, complete Attention speedup, free VTCM capacity

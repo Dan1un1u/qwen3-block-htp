@@ -7864,14 +7864,17 @@ experiments:
     variants:
       - exp0084_per_group_hot_v_lut_and_bias_build_control
       - prepared_session_vtcm_v_lut_and_bias_cache_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-persistent-v-recenter-cache
     source_branches:
       - codex/exp-0094-w4u8-persistent-v-recenter-cache
-    source_commits: []
+    source_commits:
+      - 30f4bf92fc86b3a03778012bc426a86300f8af0a
+      - 2358b911b88f060e18c92fda06cfbf75fc29c3c0
+      - 6bfa0aec4b55914bd1cd216342143bed8ada2fb3
     record: docs/experiments/EXP-0094.md
     decided_by: user
     decided_on: '2026-08-31'
@@ -7880,10 +7883,10 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0094-w4u8-persistent-v-recenter-cache
       started_on: '2026-08-31'
-      completed_on: null
+      completed_on: '2026-08-31'
     evidence:
-      formal_results: null
-      retained_artifacts: null
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0094/formal_6bfa0aec4b55'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0094/artifacts/6bfa0aec4b55/formal'
       source_parent_commit: 6dc437fe08eaccf119c4cbce82937e22f125da0b
       direct_w4u8_control: W4U8-EXP0084-FAIR-CANONICAL
       contextual_w4f16_comparator: W4F16-EXP0084-COMMON-NORM-POOLS
@@ -7904,3 +7907,30 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_same_weight_bytes_512_dma_descriptors_176_hmx_commands_and_49408_tile_pairs_with_declared_12288_byte_vtcm_cache
       speed_gate: v_pack_work_attention_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: correctness_and_persistence_then_five_round_speed_gate_and_pc027_pc028_complete_profiling_closure
+      runtime_source_commit: 6bfa0aec4b55914bd1cd216342143bed8ada2fb3
+      correctness_gate_result: pass_final_input_norm_qk_probability_av_byte_exact_zero_mismatch_zero_max_lsb
+      persistence_gate_result: pass_warmup_build8_reuse8_measured_build0_reuse8_per_block
+      physical_gate_result: pass_exact_8mib_vtcm_declared_12288_byte_peak_delta_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_25444352_weight_bytes_512_dma_descriptors_176_hmx_commands_49408_u8s8_tile_pairs
+      repeat1_v_pack_change_percent: -45.6283
+      repeat1_v_pack_paired_change_percent: -45.9333
+      repeat1_attention_change_percent: -2.8928
+      repeat1_attention_paired_change_percent: -3.2154
+      repeat1_host_change_percent: 0.0707
+      repeat1_host_paired_change_percent: 0.0309
+      repeat10_v_pack_change_percent: -45.9416
+      repeat10_v_pack_paired_change_percent: -46.0167
+      repeat10_attention_change_percent: -3.0471
+      repeat10_attention_paired_change_percent: -3.1560
+      repeat10_host_change_percent: -0.4394
+      repeat10_host_paired_change_percent: -0.6450
+      repeat1_three_target_speed_gate: fail_host_wall
+      repeat10_three_target_speed_gate: pass
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_reused_exp0084_canonical_f16f16_w4f16
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: 0af935724824cb4bed72a3f303973dd842f0235b98c211c910b21a7c4fba7895
+      full_profiling_report_sha256: 53964caad18db1620e35f41bd0449dc018f17f24703c215033dcdc7851275ac3
+      evidence_sha256_ledger_sha256: 04ce9778a67528028b561b0facea0a10229f10829796ca42227e4808eedb27c6
+      conclusion: cache_removes_about_46_percent_of_v_pack_work_and_3_percent_of_attention_ledger_but_fails_repeat1_complete_host_wall_gate
+      reopen_condition: only_as_part_of_a_new_larger_attention_critical_path_hypothesis_not_as_a_standalone_cache_experiment
+      selected_baseline_changed: false
