@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0104
+  active_experiment: null
   next_experiment_number: 105
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,16 +27,52 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0103
-  last_completed_source_commit: 66a9cb6162f85a48622cb54a8414a74ebfeace91
+  last_completed_experiment: EXP-0104
+  last_completed_source_commit: c751d40d801c5a740dca5eca8c6f8b339c4f7063
   provisional_source_parent: EXP-0084
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: quarter_tiled_interleaved_two_head_u8_qk_norm_rope
+  active_experiment_stage: null
   active_experiment_evidence: null
-  active_experiment_gate: none
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0103/formal_66a9cb6162f8'
+  active_experiment_gate: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0104/formal_c751d40d801c'
+  latest_w4u8_qk_quarter_tiled_candidate:
+    id: EXP-0104
+    source_branch: codex/exp-0104-w4u8-quarter-tiled-interleaved-qk-pair
+    source_head: c751d40d801c5a740dca5eca8c6f8b339c4f7063
+    direct_control: W4U8-EXP0084-FAIR-CANONICAL
+    candidate: quarter_tiled_interleaved_two_head_qk_kernel
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0104/formal_c751d40d801c'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0104/artifacts/c751d40d801c/formal'
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending_user_decision
+    static_gate: pass_true_two_head_quarter_tiled_1076_byte_helper_vdeal_zero_vector_stack_access_24_byte_scalar_abi_frame_no_qnn
+    correctness_gate: pass_final_input_norm_qk_probability_av_byte_exact_zero_mismatch_zero_max_lsb
+    physical_gate: pass_same_5306080_peak_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_weight_bytes_512_dma_descriptors_176_hmx_commands_and_49408_tile_pairs
+    repeat1_qk_work_change_percent: -2.922
+    repeat1_qk_work_paired_change_percent: -3.574
+    repeat1_qkv_change_percent: -3.475
+    repeat1_qkv_paired_change_percent: -2.638
+    repeat1_host_change_percent: -0.116
+    repeat1_host_paired_change_percent: -0.079
+    repeat10_qk_work_change_percent: -3.685
+    repeat10_qk_work_paired_change_percent: -3.585
+    repeat10_qkv_change_percent: -3.170
+    repeat10_qkv_paired_change_percent: -3.124
+    repeat10_host_change_percent: -0.518
+    repeat10_host_paired_change_percent: -0.429
+    repeat10_qk_pool_wait_change_percent: -19.863
+    repeat10_qk_pool_wait_paired_change_percent: -20.010
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass_reused_exp0084_canonical_f16f16_w4f16
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    gate_summary_sha256: b28bc0501f12c0b8f42c5304f72c6e8ee1a0ac3a2affa0eaa289a69a8b992769
+    full_profiling_report_sha256: 163a2c9d44b276a91b4827e6e34e137ebfda5349b116868aac10a70982372de0
+    evidence_sha256_ledger_sha256: 98afaf97c8b825b4ccd319b5b03ac9c2091fda9202936d1065a85667a1beb7a0
+    conclusion: quarter_tiling_removes_vector_spill_exposes_cross_head_ilp_and_strictly_improves_qk_work_qkv_ledger_and_complete_host_at_both_repeats
+    selected_baseline_changed: false
   latest_w4u8_qk_pair_kernel_experiment:
     id: EXP-0103
     source_branch: codex/exp-0103-w4u8-interleaved-qk-pair-kernel

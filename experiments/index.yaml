@@ -8595,14 +8595,15 @@ experiments:
     variants:
       - exp0084_serial_inner_two_head_qk_kernel_control
       - quarter_tiled_interleaved_two_head_qk_kernel_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending_user_decision
     evidence_profile: real-qwen3-block-w4u8-quarter-tiled-interleaved-qk-pair
     source_branches:
       - codex/exp-0104-w4u8-quarter-tiled-interleaved-qk-pair
-    source_commits: []
+    source_commits:
+      - c751d40d801c5a740dca5eca8c6f8b339c4f7063
     record: docs/experiments/EXP-0104.md
     decided_by: user
     decided_on: '2026-08-31'
@@ -8611,10 +8612,10 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0104-w4u8-quarter-tiled-interleaved-qk-pair
       started_on: '2026-08-31'
-      completed_on: null
+      completed_on: '2026-08-31'
     evidence:
-      formal_results: null
-      retained_artifacts: null
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0104/formal_c751d40d801c'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0104/artifacts/c751d40d801c/formal'
       source_parent_commit: 6dc437fe08eaccf119c4cbce82937e22f125da0b
       direct_w4u8_control: W4U8-EXP0084-FAIR-CANONICAL
       contextual_w4f16_comparator: W4F16-EXP0084-COMMON-NORM-POOLS
@@ -8632,3 +8633,30 @@ experiments:
       physical_gate: same_peak_exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_same_weight_bytes_dma_descriptors_hmx_commands_and_49408_tile_pairs
       speed_gate: qk_norm_rope_work_qkv_projection_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: static_correctness_and_physical_gates_then_five_order_rotated_rounds_and_pc027_pc028_complete_profiling_closure
+      runtime_source_commit: c751d40d801c5a740dca5eca8c6f8b339c4f7063
+      static_gate_clarification: no_vector_stack_access_is_the_physical_spill_gate_the_only_allocframe_is_a_24_byte_scalar_abi_save_area
+      static_gate_result: pass_true_two_head_quarter_tiled_1076_byte_helper_vdeal_zero_vector_stack_access_24_byte_scalar_abi_frame_no_qnn
+      correctness_gate_result: pass_final_input_norm_qk_probability_av_byte_exact_zero_mismatch_zero_max_lsb
+      physical_gate_result: pass_same_5306080_peak_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_weight_bytes_512_dma_descriptors_176_hmx_commands_and_49408_tile_pairs
+      repeat1_qk_work_change_percent: -2.922
+      repeat1_qk_work_paired_change_percent: -3.574
+      repeat1_qkv_change_percent: -3.475
+      repeat1_qkv_paired_change_percent: -2.638
+      repeat1_host_change_percent: -0.116
+      repeat1_host_paired_change_percent: -0.079
+      repeat10_qk_work_change_percent: -3.685
+      repeat10_qk_work_paired_change_percent: -3.585
+      repeat10_qkv_change_percent: -3.170
+      repeat10_qkv_paired_change_percent: -3.124
+      repeat10_host_change_percent: -0.518
+      repeat10_host_paired_change_percent: -0.429
+      repeat10_qk_pool_wait_change_percent: -19.863
+      repeat10_qk_pool_wait_paired_change_percent: -20.010
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_reused_exp0084_canonical_f16f16_w4f16
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: b28bc0501f12c0b8f42c5304f72c6e8ee1a0ac3a2affa0eaa289a69a8b992769
+      full_profiling_report_sha256: 163a2c9d44b276a91b4827e6e34e137ebfda5349b116868aac10a70982372de0
+      evidence_sha256_ledger_sha256: 98afaf97c8b825b4ccd319b5b03ac9c2091fda9202936d1065a85667a1beb7a0
+      conclusion: quarter_tiling_removes_vector_spill_exposes_cross_head_ilp_and_strictly_improves_qk_work_qkv_ledger_and_complete_host_at_both_repeats
+      selected_baseline_changed: false
