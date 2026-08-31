@@ -9992,3 +9992,45 @@ experiments:
       conclusion: eight_bundle_chain_reduces_dma_control_work_but_delays_first_half_publication_increases_producer_wait_and_regresses_gate_up_and_complete_host
       reopen_condition: hardware_or_schedule_supports_partial_linked_chain_completion_publication_without_waiting_for_all_eight_bundles
       selected_baseline_changed: false
+  - id: EXP-0123
+    slug: w4f16-gate-up-persistent-expand
+    title: W4F16 Gate/Up persistent expansion-worker pipeline
+    parent: EXP-0120
+    variants:
+      - exp0111_join_only_epoch_workers_control
+      - w4f16_gate_up_persistent_expand_candidate
+    execution_state: running
+    evidence_validity: pending
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4f16-gate-up-persistent-expand
+    source_branches:
+      - codex/exp-0123-w4f16-gate-up-persistent-expand
+    source_commits: []
+    record: docs/experiments/EXP-0123.md
+    approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0123-w4f16-gate-up-persistent-expand
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0120
+      source_parent_commit: fa410c4c237903931c95112dc7f26235738a6905
+      selected_w4f16_runtime_parent: EXP-0111-join_only
+      recipe_scope: W4F16_gate_up_expansion_worker_lifetime_and_generation_handoff_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      prior_negative_boundary: EXP-0114_post_semaphore_barrier_is_too_small_and_EXP-0122_coarse_dma_chain_hurts_readiness
+      hypothesis: one_persistent_worker_epoch_across_all_gate_up_groups_removes_repeated_semaphore_dispatch_join_without_coarsening_dma_or_hmx_readiness
+      implementation_boundary: runtime_selectable_epoch_control_or_persistent_two_worker_generation_queue_same_main_partition_group_order_and_math
+      excluded_changes: no_worker_count_region_size_ring_depth_dma_batch_hmx_batch_weight_scale_crouton_swiglu_down_qkv_attention_residual_w4u8_or_public_changes
+      static_gate: persistent_dispatch_once_bounded_generation_queue_exact_two_workers_no_qnn
+      correctness_gate: candidate_byte_exact_to_exp0111_final_output_and_w4f16_expansion_audit_zero_mismatch_zero_max_lsb
+      physical_gate: exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_dma_hmx_tile_work_and_peak_vtcm
+      speed_gate: gate_up_and_complete_host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
+      completion_gate: static_correctness_physical_then_five_rotated_rounds_pc027_pc028_and_accept_or_reject_without_automatic_baseline_promotion
