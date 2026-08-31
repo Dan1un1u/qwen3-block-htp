@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0115
+  active_experiment: null
   next_experiment_number: 116
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,26 +27,60 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0114
-  last_completed_source_commit: a26ccdf84179c5fa17727e50aa8f296457cac33d
+  last_completed_experiment: EXP-0115
+  last_completed_source_commit: e7c07b5207b43a8c28420d500417508d4054abcf
   provisional_source_parent: EXP-0112
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: registered
-  active_experiment_evidence: null
-  active_experiment_gate: not_run
+  active_experiment_stage: none
+  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0115/20260831T192022Z_e7c07b5207b4_formal'
+  active_experiment_gate: fail
   active_recipe_specialization: W4F16
   active_recipe_specialization: W4U8
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0114/20260831T190227Z_a26ccdf84179_formal'
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0115/20260831T192022Z_e7c07b5207b4_formal'
   last_rejected_specialization:
-    id: EXP-0114
-    source_branch: codex/exp-0114-w4f16-gate-up-pool-join-barrier
-    source_head: a26ccdf84179c5fa17727e50aa8f296457cac33d
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0114/20260831T190227Z_a26ccdf84179_formal'
+    id: EXP-0115
+    source_branch: codex/exp-0115-w4f16-gate-up-unmasked-low-nibble
+    source_head: e7c07b5207b43a8c28420d500417508d4054abcf
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0115/20260831T192022Z_e7c07b5207b4_formal'
     local_gate: fail
     adoption_status: rejected
-    reason: join_wait_reduces_but_gate_up_and_host_do_not_pass_strict_speed_gate
+    reason: low_nibble_mask_elision_is_byte_exact_but_does_not_improve_gate_up_or_complete_host
+  latest_w4f16_low_nibble_candidate:
+    id: EXP-0115
+    source_branch: codex/exp-0115-w4f16-gate-up-unmasked-low-nibble
+    source_head: e7c07b5207b43a8c28420d500417508d4054abcf
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0115/20260831T192022Z_e7c07b5207b4_formal'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0115/artifacts/e7c07b5207b4/20260831T192022Z_formal'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    static_gate: pass_control_has_vand_candidate_has_no_vand_decode_and_store_structure_unchanged_no_qnn
+    correctness_gate: pass_control_candidate_byte_exact_output_f18b9abbe1487231_expansion_audit_zero_mismatch_zero_max_lsb
+    physical_gate: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_weight_dma_hmx_and_peak_vtcm
+    repeat1_gate_up_change_percent: 0.27266530334015826
+    repeat1_gate_up_paired_change_percent: 0.564006152794394
+    repeat1_host_change_percent: -0.07839725740327319
+    repeat1_host_paired_change_percent: 0.19039443957629132
+    repeat10_gate_up_change_percent: 0.11985299547283557
+    repeat10_gate_up_paired_change_percent: 0.07675033400609266
+    repeat10_host_change_percent: 0.08501188414882233
+    repeat10_host_paired_change_percent: -0.13970226116104545
+    repeat10_gate_up_expand_work_change_percent: -0.033460980778532434
+    repeat10_join_wait_change_percent: 5.990338164251208
+    repeat10_control_host_wall_us: 2095.3541
+    repeat10_candidate_host_wall_us: 2097.1354
+    repeat10_control_gate_up_module_us: 916.953125
+    repeat10_candidate_gate_up_module_us: 918.0416666666667
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass_exp0109_f16f16_w4u8_and_exp0115_control_w4f16
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    gate_summary_sha256: 5e5f2ab22eee5f826cb78e54fae097d427952c33ea7e1a13e74980b0f2e15e24
+    full_profiling_report_sha256: 00981f1621f0a72743f9e7e5c1151a24eb3ba4eff167be25639253bbf3e961db
+    evidence_sha256_ledger_sha256: f24befb9ce56d9e2aacbf7a59491cf004952240a70188badc5d2052a2cb57642
+    conclusion: removing_the_low_nibble_vand_is_byte_exact_but_the_decode_instruction_is_hidden_and_join_variance_dominates_so_the_candidate_is_rejected
+    selected_baseline_changed: false
   public_common_layer_state: frozen
   future_default_work_class: recipe_specialization
   latest_w4u8_gate_up_fence_candidate:

@@ -9386,20 +9386,22 @@ experiments:
     variants:
       - exp0111_join_only_masked_low_control
       - w4f16_gate_up_unmasked_low_vlut16_candidate
-    execution_state: running
-    evidence_validity: pending
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4f16-gate-up-unmasked-low-vlut16
     source_branches:
       - codex/exp-0115-w4f16-gate-up-unmasked-low-nibble
-    source_commits: []
+    source_commits:
+      - e7c07b5207b43a8c28420d500417508d4054abcf
     record: docs/experiments/EXP-0115.md
     approval_ref: 'User message 2026-09-01: 既然有收益，那就采用。继续针对W4A16和W4A8开展loop优化。'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0115-w4f16-gate-up-unmasked-low-nibble
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0112
       source_parent_commit: 5429c70bc6eb155af96bb7dd987094bb8fb941b1
@@ -9421,3 +9423,31 @@ experiments:
       static_gate: control_relaxed_unpack_contains_vand_candidate_relaxed_unpack_contains_no_vand_and_both_retain_high_shift_vlut16_deal_shuffle_and_identical_store_count
       speed_gate: gate_up_plus_swiglu_and_complete_host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
       completion_gate: five_rounds_pc027_pc028_complete_profiling_then_accept_or_reject_without_automatic_baseline_promotion
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0115/20260831T192022Z_e7c07b5207b4_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0115/artifacts/e7c07b5207b4/20260831T192022Z_formal'
+      runtime_source_commit: e7c07b5207b43a8c28420d500417508d4054abcf
+      static_gate_result: pass_control_has_vand_candidate_has_no_vand_decode_and_store_structure_unchanged_no_qnn
+      correctness_gate_result: pass_control_candidate_byte_exact_output_f18b9abbe1487231_expansion_audit_zero_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_weight_dma_hmx_and_peak_vtcm
+      repeat1_gate_up_change_percent: 0.27266530334015826
+      repeat1_gate_up_paired_change_percent: 0.564006152794394
+      repeat1_host_change_percent: -0.07839725740327319
+      repeat1_host_paired_change_percent: 0.19039443957629132
+      repeat10_gate_up_change_percent: 0.11985299547283557
+      repeat10_gate_up_paired_change_percent: 0.07675033400609266
+      repeat10_host_change_percent: 0.08501188414882233
+      repeat10_host_paired_change_percent: -0.13970226116104545
+      repeat10_gate_up_expand_work_change_percent: -0.033460980778532434
+      repeat10_join_wait_change_percent: 5.990338164251208
+      repeat10_control_host_wall_us: 2095.3541
+      repeat10_candidate_host_wall_us: 2097.1354
+      repeat10_control_gate_up_module_us: 916.953125
+      repeat10_candidate_gate_up_module_us: 918.0416666666667
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_exp0109_f16f16_w4u8_and_exp0115_control_w4f16
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: 5e5f2ab22eee5f826cb78e54fae097d427952c33ea7e1a13e74980b0f2e15e24
+      full_profiling_report_sha256: 00981f1621f0a72743f9e7e5c1151a24eb3ba4eff167be25639253bbf3e961db
+      evidence_sha256_ledger_sha256: f24befb9ce56d9e2aacbf7a59491cf004952240a70188badc5d2052a2cb57642
+      conclusion: removing_the_low_nibble_vand_is_byte_exact_but_the_decode_instruction_is_hidden_and_join_variance_dominates_so_the_candidate_is_rejected
+      selected_baseline_changed: false
