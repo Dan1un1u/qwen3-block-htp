@@ -670,3 +670,15 @@ the mathematical or physical HMX contract, but a local work reduction alone is
 not sufficient for baseline adoption when complete Host wall does not pass its
 predeclared gate.
 _Avoid_: accepted baseline, complete Attention speedup, free VTCM capacity
+
+**Four-Row Native Softmax Carrier Shuffle**:
+The locally eligible EXP-0095 layout transform that reconstructs four logical
+QK score rows from four aligned physical HMX tiles with two levels of HVX
+`vshuff`, applies the unchanged integer Softmax one row at a time, and
+inverse-transposes four probability rows back to native AV input tiles. Every
+HVX worker owns a private 1 KiB carrier in phase-retired VTCM; sharing that
+carrier by GQA group is invalid because the two row slices of one group can run
+concurrently. The accepted evidence is byte-exact and improves complete Host
+wall, but it is not a Selected Baseline until explicit user promotion.
+_Avoid_: accepted baseline, changed Softmax approximation, shared per-group
+carrier, additional VTCM allocation

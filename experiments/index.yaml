@@ -7941,14 +7941,15 @@ experiments:
     variants:
       - exp0084_per_row_eight_memcpy_softmax_carrier_control
       - four_row_hvx_tile_transpose_softmax_carrier_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending_user_decision
     evidence_profile: real-qwen3-block-w4u8-four-row-native-softmax-carrier-shuffle
     source_branches:
       - codex/exp-0095-w4u8-four-row-native-softmax-carrier-shuffle
-    source_commits: []
+    source_commits:
+      - b54490b8de77b8dfc052360409e592da5c4ba5d5
     record: docs/experiments/EXP-0095.md
     decided_by: user
     decided_on: '2026-08-31'
@@ -7957,10 +7958,10 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0095-w4u8-four-row-native-softmax-carrier-shuffle
       started_on: '2026-08-31'
-      completed_on: null
+      completed_on: '2026-08-31'
     evidence:
-      formal_results: null
-      retained_artifacts: null
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0095/formal_b54490b8de77'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0095/artifacts/b54490b8de77/formal'
       source_parent_commit: 6dc437fe08eaccf119c4cbce82937e22f125da0b
       direct_w4u8_control: W4U8-EXP0084-FAIR-CANONICAL
       contextual_w4f16_comparator: W4F16-EXP0084-COMMON-NORM-POOLS
@@ -7981,3 +7982,27 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_same_peak_plan_bytes_weight_bytes_512_dma_descriptors_176_hmx_commands_49408_tile_pairs_and_16_softmax_tasks_per_block
       speed_gate: softmax_work_attention_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: static_correctness_and_physical_gates_then_five_order_rotated_rounds_and_pc027_pc028_complete_profiling_closure
+      runtime_source_commit: b54490b8de77b8dfc052360409e592da5c4ba5d5
+      static_gate_result: pass_twelve_vshuff_zero_vgather_zero_carrier_memcpy_zero_vector_stack_spill_worker_private_1024_byte_carrier
+      correctness_gate_result: pass_final_input_norm_qk_probability_av_byte_exact_zero_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_unchanged_5306080_peak_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_25444352_weight_bytes_512_dma_descriptors_176_hmx_commands_49408_u8s8_tile_pairs
+      repeat1_softmax_change_percent: -59.3553
+      repeat1_softmax_paired_change_percent: -59.4677
+      repeat1_attention_change_percent: -38.0689
+      repeat1_attention_paired_change_percent: -38.6477
+      repeat1_host_change_percent: -3.4611
+      repeat1_host_paired_change_percent: -9.0891
+      repeat10_softmax_change_percent: -59.1872
+      repeat10_softmax_paired_change_percent: -59.0723
+      repeat10_attention_change_percent: -37.9496
+      repeat10_attention_paired_change_percent: -37.9496
+      repeat10_host_change_percent: -3.9203
+      repeat10_host_paired_change_percent: -3.7192
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_reused_exp0084_canonical_f16f16_w4f16
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: cce9b2bf93be5cd011756203372460bf220617d0a7f80f44296d4bfc772091c0
+      full_profiling_report_sha256: 510b646c301fa987a9adffb28aee1601044b879ec19c94d30bbb5f97b2aff0b7
+      evidence_sha256_ledger_sha256: 1b4dadc6844c89e7c446a0e90f98e01839d70ca62f90ab504e18d3a7594f3c3e
+      conclusion: four_row_worker_private_native_shuffle_removes_score_probability_carrier_memcpy_and_strictly_improves_softmax_attention_and_complete_host_wall_at_repeat1_and_repeat10
+      selected_baseline_changed: false

@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0095
+  active_experiment: null
   next_experiment_number: 96
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,16 +27,50 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0094
-  last_completed_source_commit: 6bfa0aec4b55914bd1cd216342143bed8ada2fb3
+  last_completed_experiment: EXP-0095
+  last_completed_source_commit: b54490b8de77b8dfc052360409e592da5c4ba5d5
   provisional_source_parent: EXP-0084
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: four_row_native_softmax_carrier_shuffle
+  active_experiment_stage: none
   active_experiment_evidence: null
-  active_experiment_gate: not_run
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0094/formal_6bfa0aec4b55'
+  active_experiment_gate: none
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0095/formal_b54490b8de77'
+  latest_w4u8_four_row_softmax_carrier_candidate:
+    id: EXP-0095
+    source_branch: codex/exp-0095-w4u8-four-row-native-softmax-carrier-shuffle
+    source_head: b54490b8de77b8dfc052360409e592da5c4ba5d5
+    direct_control: W4U8-EXP0084-FAIR-CANONICAL
+    candidate: worker_private_four_row_native_vshuff_score_probability_carrier
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0095/formal_b54490b8de77'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0095/artifacts/b54490b8de77/formal'
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending_user_decision
+    static_gate: pass_twelve_vshuff_zero_vgather_zero_carrier_memcpy_zero_vector_stack_spill_worker_private_1024_byte_carrier
+    correctness_gate: pass_final_input_norm_qk_probability_av_byte_exact_zero_mismatch_zero_max_lsb
+    physical_gate: pass_exact_8mib_vtcm_unchanged_5306080_peak_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_25444352_weight_bytes_512_dma_descriptors_176_hmx_commands_49408_u8s8_tile_pairs
+    repeat1_softmax_change_percent: -59.3553
+    repeat1_softmax_paired_change_percent: -59.4677
+    repeat1_attention_change_percent: -38.0689
+    repeat1_attention_paired_change_percent: -38.6477
+    repeat1_host_change_percent: -3.4611
+    repeat1_host_paired_change_percent: -9.0891
+    repeat10_softmax_change_percent: -59.1872
+    repeat10_softmax_paired_change_percent: -59.0723
+    repeat10_attention_change_percent: -37.9496
+    repeat10_attention_paired_change_percent: -37.9496
+    repeat10_host_change_percent: -3.9203
+    repeat10_host_paired_change_percent: -3.7192
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass_reused_exp0084_canonical_f16f16_w4f16
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    gate_summary_sha256: cce9b2bf93be5cd011756203372460bf220617d0a7f80f44296d4bfc772091c0
+    full_profiling_report_sha256: 510b646c301fa987a9adffb28aee1601044b879ec19c94d30bbb5f97b2aff0b7
+    evidence_sha256_ledger_sha256: 1b4dadc6844c89e7c446a0e90f98e01839d70ca62f90ab504e18d3a7594f3c3e
+    conclusion: four_row_worker_private_native_shuffle_removes_score_probability_carrier_memcpy_and_strictly_improves_softmax_attention_and_complete_host_wall_at_repeat1_and_repeat10
+    selected_baseline_changed: false
   latest_w4u8_persistent_v_cache_experiment:
     id: EXP-0094
     source_branch: codex/exp-0094-w4u8-persistent-v-recenter-cache
