@@ -10152,20 +10152,22 @@ experiments:
       - exp0124_ring3_control
       - qk_boundary_handoff1
       - qk_boundary_handoff2
-    execution_state: running
-    evidence_validity: pending
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-qkv-phase-handoff
     source_branches:
       - codex/exp-0125-w4u8-qkv-phase-handoff
-    source_commits: []
+    source_commits:
+      - 9b4ee13ca709281d57d76bc303d46de95c66fb82
     record: docs/experiments/EXP-0125.md
     approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0125-w4u8-qkv-phase-handoff
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0124
       source_parent_commit: 95fadff5930d9081678ad99bb62ef84849ee1897
@@ -10186,3 +10188,37 @@ experiments:
       physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_identical_weight_DMA_HMX_work_and_peak_vtcm
       speed_gate: QKV_plus_QK_Norm_RoPE_and_complete_Host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
       completion_gate: bounded_matrix_then_five_rotated_rounds_PC027_PC028_and_no_automatic_baseline_promotion
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0125/20260831T232947Z_9b4ee13ca709_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0125/artifacts/9b4ee13ca709/20260831T232947Z_formal'
+      source_commit: 9b4ee13ca709281d57d76bc303d46de95c66fb82
+      static_gate_result: pass_fixed_QK_phase_three_initial_workers_bounded_handoff_one_hmx_no_qnn
+      correctness_gate_result: pass_all_cells_byte_exact_output_69f22eeb035e5ec5_zero_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_work
+      selected_cell: exp0124_ring3_control
+      handoff1_repeat1_host_change_percent: -1.576
+      handoff1_repeat1_host_paired_change_percent: -2.472
+      handoff1_repeat1_qkv_change_percent: -2.265
+      handoff1_repeat1_qkv_paired_change_percent: -0.700
+      handoff1_repeat10_host_change_percent: 1.265
+      handoff1_repeat10_host_paired_change_percent: 0.784
+      handoff1_repeat10_qkv_change_percent: 0.584
+      handoff1_repeat10_qkv_paired_change_percent: 0.950
+      handoff2_repeat1_host_change_percent: 1.621
+      handoff2_repeat1_qkv_change_percent: 5.413
+      handoff2_repeat10_host_change_percent: 2.205
+      handoff2_repeat10_qkv_change_percent: 6.896
+      handoff1_repeat10_prep_pool_wait_change_percent: -4.24
+      handoff1_repeat10_hmx_ready_wait_change_percent: 12.49
+      handoff1_repeat10_producer_slot_wait_change_percent: 80.3
+      handoff2_repeat10_prep_pool_wait_change_percent: -6.91
+      handoff2_repeat10_hmx_ready_wait_change_percent: 57.5
+      handoff2_repeat10_producer_slot_wait_change_percent: 518.0
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_exp0109_f16f16_exp0111_w4f16_exp0124_ring3_control_w4u8
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: 8ae31e978953729d035d2b8733ea14ac7460bc931816c8c3b86c5f7eb26732fa
+      full_profiling_report_sha256: 7059c22c3883c4c12f405a24a539b5c4454806136b20bbbe0a2a2780659d6757
+      evidence_sha256_ledger_sha256: f99dda21941a6defb7c7ed4618702106fabc5f708a734ba5ae7100bcce811fbc
+      conclusion: early_worker_handoff_moves_tail_from_QK_prep_to_V_readiness_and_ring_backpressure
+      reopen_condition: overlap_QK_prep_without_reducing_V_expansion_capacity
+      selected_baseline_changed: false
