@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0110
+  active_experiment: null
   next_experiment_number: 111
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,27 +27,17 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0109
-  last_completed_source_commit: 42e2a33012929ccbb05e8c2741124b6fd539552c
-  provisional_source_parent: EXP-0109
+  last_completed_experiment: EXP-0110
+  last_completed_source_commit: d18e901339f4eadd760b590e91f004c3f76e9cb6
+  provisional_source_parent: EXP-0110
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: awaiting_user_adoption_decision
-  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0110/20260831T163813Z_d18e901339f4_formal'
-  active_experiment_gate: pass
-  active_recipe_specialization:
-    id: EXP-0110
-    recipe: W4F16
-    source_parent: EXP-0109
-    scope: qkv_carrier_and_q_prefix4_factorial
-    public_common_layer_changes_allowed: false
-    source_head: d18e901339f4eadd760b590e91f004c3f76e9cb6
-    evidence_validity: valid
-    local_gate: pass
-    adoption_status: pending
-    selected_candidate: w4f16_qkv_norms_carrier_only
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0109/20260831T155519Z_42e2a3301292_formal'
+  active_experiment_stage: none
+  active_experiment_evidence: null
+  active_experiment_gate: not_run
+  active_recipe_specialization: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0110/20260831T163813Z_d18e901339f4_formal'
   public_common_layer_state: frozen
   future_default_work_class: recipe_specialization
   latest_w4f16_qkv_specialization_candidate:
@@ -58,8 +48,8 @@ current_scope:
     retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0110/artifacts/d18e901339f4/20260831T163813Z_formal'
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending
-    selected_candidate: w4f16_qkv_norms_carrier_only
+    adoption_status: accepted
+    accepted_variant: w4f16_qkv_norms_carrier_only
     correctness_gate: pass_all_four_cells_byte_exact_independent_qkv_operand_audit_zero_mismatch_zero_max_lsb
     physical_gate: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_w4_bytes_hmx_work
     repeat1_carrier_qkv_qknorm_change_percent: -6.860096323270293
@@ -79,7 +69,12 @@ current_scope:
     full_profiling_report_sha256: ead4696f022d643192120c64ac4bace32941eca844cb789aff215622ba5b142a
     evidence_sha256_ledger_sha256: d90e3b8613e122a2cac426c312e2188687983672e0623cdac30925837f9996ea
     conclusion: carrier_only_passes_as_the_selected_w4f16_recipe_specialization_candidate_while_q_prefix4_is_rejected_and_the_combination_weakens_carrier
-    selected_baseline_changed: false
+    source_tags:
+      - baseline-w4f16-specialized-exp0110
+    accepted_by: user
+    accepted_on: '2026-09-01'
+    acceptance_ref: 'User message 2026-09-01: 既然有收益，那就采用。继续针对W4A16和W4A8开展loop优化。'
+    selected_baseline_changed: true
   latest_public_common_freeze:
     id: EXP-0109
     source_branch: codex/exp-0109-public-common-freeze-consolidation

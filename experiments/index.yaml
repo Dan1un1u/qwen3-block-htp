@@ -9036,10 +9036,10 @@ experiments:
       - w4f16_qkv_norms_carrier_only
       - w4f16_q_prefix4_only
       - w4f16_qkv_norms_q_prefix4_combined
-    execution_state: running
+    execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending
+    adoption_status: accepted
     evidence_profile: real-qwen3-block-w4f16-qkv-specialization-factorial
     source_branches:
       - codex/exp-0110-w4f16-qkv-specialization-factorial
@@ -9049,11 +9049,15 @@ experiments:
     decided_by: user
     decided_on: '2026-09-01'
     approval_ref: 'User message 2026-09-01: 可以，按你建议开始实现'
+    accepted_by: user
+    accepted_on: '2026-09-01'
+    acceptance_ref: 'User message 2026-09-01: 既然有收益，那就采用。继续针对W4A16和W4A8开展loop优化。'
+    accepted_variant: w4f16_qkv_norms_carrier_only
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0110-w4f16-qkv-specialization-factorial
       started_on: '2026-09-01'
-      completed_on: null
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0109
       source_parent_commit: 42e2a33012929ccbb05e8c2741124b6fd539552c
@@ -9100,4 +9104,6 @@ experiments:
       full_profiling_report_sha256: ead4696f022d643192120c64ac4bace32941eca844cb789aff215622ba5b142a
       evidence_sha256_ledger_sha256: d90e3b8613e122a2cac426c312e2188687983672e0623cdac30925837f9996ea
       conclusion: carrier_only_passes_as_the_selected_w4f16_recipe_specialization_candidate_while_q_prefix4_is_rejected_and_the_combination_weakens_carrier
-      selected_baseline_changed: false
+      source_tags:
+        - baseline-w4f16-specialized-exp0110
+      selected_baseline_changed: true

@@ -72,6 +72,11 @@ A Project Variant explicitly approved by the user to represent the current
 project outcome.
 _Avoid_: fastest observation, local pass, candidate
 
+**Recipe-Specialized Baseline**:
+A Selected Baseline approved for one numerical recipe after the Public Common
+Layer is frozen; it may diverge from the fair cross-recipe configuration.
+_Avoid_: Public Common Baseline, fair comparator, local candidate
+
 **Provisional Source Parent**:
 An accepted experiment explicitly chosen by the user as the implementation
 starting point for the next experiment, without promoting it to Selected
