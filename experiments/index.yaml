@@ -9920,20 +9920,22 @@ experiments:
     variants:
       - exp0120_ring16_dma_chain4_control
       - w4u8_ring16_dma_chain8_candidate
-    execution_state: running
-    evidence_validity: pending
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-ring16-gate-up-dma-chain8
     source_branches:
       - codex/exp-0122-w4u8-gate-up-ring16-dma-chain8
-    source_commits: []
+    source_commits:
+      - 521841bd0140047e5ca73067b1a3443238cecc11
     record: docs/experiments/EXP-0122.md
     approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0122-w4u8-gate-up-ring16-dma-chain8
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0120
       source_parent_commit: fa410c4c237903931c95112dc7f26235738a6905
@@ -9955,3 +9957,38 @@ experiments:
       physical_gate: exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_bytes_dma_descriptor_count_hmx_commands_tile_pairs_and_peak_vtcm_declared_dma_chain_submit_delta_only
       speed_gate: gate_up_and_complete_host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
       completion_gate: static_correctness_physical_then_five_rotated_rounds_pc027_pc028_and_accept_or_reject_without_automatic_baseline_promotion
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0122/20260831T222533Z_521841bd0140_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0122/artifacts/521841bd0140/20260831T222533Z_formal'
+      runtime_source_commit: 521841bd0140047e5ca73067b1a3443238cecc11
+      static_gate_result: pass_runtime_chain4_chain8_ring16_worker3_batch8_single_fence_no_qnn
+      correctness_gate_result: pass_byte_exact_output_69f22eeb035e5ec5_zero_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_dma_hmx_work_and_peak_vtcm
+      selected_cell: chain4_control
+      repeat1_gate_up_change_percent: 3.3879057442982807
+      repeat1_gate_up_paired_change_percent: 3.3879057442982807
+      repeat1_host_change_percent: 0.7161220681076941
+      repeat1_host_paired_change_percent: 1.5838753986779475
+      repeat10_gate_up_change_percent: 4.483742156303494
+      repeat10_gate_up_paired_change_percent: 3.971387912429658
+      repeat10_host_change_percent: 0.9784249020498459
+      repeat10_host_paired_change_percent: 1.4052185159728392
+      repeat10_weight_stage_change_percent: -13.762235203408224
+      repeat10_hmx_compute_change_percent: 7.631977602638584
+      repeat10_hmx_ready_wait_change_percent: -3.1576023211309368
+      repeat10_producer_slot_wait_change_percent: 171.69590643274853
+      repeat10_dma_submit_change_percent: -37.5
+      repeat10_dma_wait_change_percent: -15.0
+      repeat10_dma_chain_change_percent: -50.0
+      repeat10_control_host_wall_us: 1620.9011
+      repeat10_candidate_host_wall_us: 1636.7604
+      repeat10_control_gate_up_module_us: 547.8125
+      repeat10_candidate_gate_up_module_us: 572.375
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_exp0109_f16f16_exp0111_w4f16_exp0122_chain4_control_w4u8
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: f2f175b82744e0dcc61420250269161a9ed85879896b8d02a2e582bf9c244b11
+      full_profiling_report_sha256: 96c3293ee2884959e7188a2d2820f10421b729756bd65e738a6a1b01753a96ed
+      evidence_sha256_ledger_sha256: b6fba8910a676439a2ae48ac59d7b88c2641b2b7855220b079e727ec254a60bd
+      conclusion: eight_bundle_chain_reduces_dma_control_work_but_delays_first_half_publication_increases_producer_wait_and_regresses_gate_up_and_complete_host
+      reopen_condition: hardware_or_schedule_supports_partial_linked_chain_completion_publication_without_waiting_for_all_eight_bundles
+      selected_baseline_changed: false
