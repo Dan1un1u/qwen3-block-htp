@@ -9757,3 +9757,45 @@ experiments:
       conclusion: 16k_keeps_qkv_gain_but_blocks_dependencies_8k_relieves_dependencies_but_loses_expand_gain_4k_is_overfragmented_no_cell_improves_complete_host_at_both_repeats
       reopen_condition: new_mechanism_removes_per_region_unpack_setup_or_publication_cost_not_another_region_size
       selected_baseline_changed: false
+  - id: EXP-0120
+    slug: w4u8-gate-up-double-buffered-ring
+    title: W4U8 Gate/Up double-buffered compressed and expanded ring
+    parent: EXP-0112
+    variants:
+      - exp0112_single_fence_ring8_control
+      - w4u8_single_fence_ring16_candidate
+    execution_state: running
+    evidence_validity: pending
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-gate-up-double-buffered-ring
+    source_branches:
+      - codex/exp-0120-w4u8-gate-up-double-buffered-ring
+    source_commits: []
+    record: docs/experiments/EXP-0120.md
+    approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0120-w4u8-gate-up-double-buffered-ring
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0112
+      source_parent_commit: 5429c70bc6eb155af96bb7dd987094bb8fb941b1
+      selected_w4u8_runtime_parent: EXP-0112-single_fence
+      recipe_scope: W4U8_gate_up_vtcm_ring_and_overlap_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      prior_negative_boundary: EXP-0039_deeper_w4f16_ring_without_current_w4u8_batch8_persistent_workers_or_single_fence_did_not_improve_complete_wall
+      hypothesis: sixteen_compressed_and_expanded_slots_form_a_full_next_command_buffer_and_reduce_hmx_ready_and_expanded_slot_wait_under_the_current_batch8_single_fence_pipeline
+      implementation_boundary: runtime_selectable_ring8_control_and_ring16_candidate_same_batch8_three_workers_stream_regions_pair_slots_and_math
+      excluded_changes: no_hmx_batch_worker_count_stream_region_pair_slot_weight_qparam_lut_down_qkv_attention_residual_w4f16_or_public_changes
+      static_gate: exact_8_or_16_runtime_selection_candidate_plan_contains_sixteen_compressed_and_expanded_slots_no_qnn
+      correctness_gate: candidate_byte_exact_to_exp0112_final_output_and_existing_input_norm_score_probability_av_audits_zero_mismatch_zero_max_lsb
+      physical_gate: exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_bytes_dma_descriptors_hmx_commands_and_tile_pairs_declared_peak_delta_only
+      speed_gate: gate_up_and_complete_host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
+      completion_gate: static_correctness_physical_then_five_rotated_rounds_pc027_pc028_and_accept_or_reject_without_automatic_baseline_promotion
