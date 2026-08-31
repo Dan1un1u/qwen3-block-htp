@@ -10144,3 +10144,45 @@ experiments:
       conclusion: qkv_boundary_pass_but_repeat1_ordinary_complete_host_gate_fails
       reopen_condition: preserve_ring_and_handoff_expand_workers_to_qk_prep_before_V_tail
       selected_baseline_changed: false
+  - id: EXP-0125
+    slug: w4u8-qkv-phase-handoff
+    title: W4U8 QKV phase-aware expansion-to-preparation handoff
+    parent: EXP-0124
+    variants:
+      - exp0124_ring3_control
+      - qk_boundary_handoff1
+      - qk_boundary_handoff2
+    execution_state: running
+    evidence_validity: pending
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-qkv-phase-handoff
+    source_branches:
+      - codex/exp-0125-w4u8-qkv-phase-handoff
+    source_commits: []
+    record: docs/experiments/EXP-0125.md
+    approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0125-w4u8-qkv-phase-handoff
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0124
+      source_parent_commit: 95fadff5930d9081678ad99bb62ef84849ee1897
+      recipe_scope: W4U8_QKV_worker_phase_handoff_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      prior_positive_boundary: EXP0124_ring3_reduces_QKV_4p85_percent_repeat10_but_has_262us_prep_tail
+      hypothesis: early_QK_to_prep_worker_handoff_removes_pool_tail_more_than_it_delays_single_or_dual_worker_V_expansion
+      implementation_boundary: runtime_handoff0_1_2_three_initial_expand_workers_four_ring_slots_same_DMA_HMX_head_publish_and_math
+      excluded_changes: no_weights_scales_qparams_ring_size_DMA_order_HMX_math_norm_rope_math_attention_O_MLP_residual_public_DDR_FastRPC_QNN_changes
+      static_gate: fixed_96_task_QK_phase_three_initial_expand_workers_one_or_two_handoff_at_least_one_V_worker_one_HMX_no_QNN
+      correctness_gate: all_cells_byte_exact_to_EXP0124_control_output_and_stage_audits_zero_mismatch_zero_max_lsb
+      physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_identical_weight_DMA_HMX_work_and_peak_vtcm
+      speed_gate: QKV_plus_QK_Norm_RoPE_and_complete_Host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
+      completion_gate: bounded_matrix_then_five_rotated_rounds_PC027_PC028_and_no_automatic_baseline_promotion
