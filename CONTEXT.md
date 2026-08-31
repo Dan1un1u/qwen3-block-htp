@@ -693,3 +693,14 @@ with a 65-LSB maximum, and the real block changes 6,169 output bytes. The
 experiment stops before performance testing.
 _Avoid_: byte-exact arithmetic replacement, same formula as the formal LUT,
 accepted optimization, permission to resume the old clipped-Q7 helper
+
+**Rejected Exact Affine Gate/Up Carrier**:
+The EXP-0097 representation that proves each formal Gate/Up LUT row can be
+encoded exactly by one unsigned 16-bit magnitude, coefficient sign, and a Q15
+or Q14 rounded shift. It reduces the hot-loop gathers from four to two and is
+byte-exact over all 65,536 codes and the real block, but the added vector
+multiply, dual shifts and selection increase activation work by about 32%.
+Longer HVX tasks increase pair-slot and HMX ready waits, so Gate/Up and complete
+Host wall regress.
+_Avoid_: smaller table implies faster kernel, gather count as the sole latency
+proxy, accepted optimization, reopening without lower total HVX latency
