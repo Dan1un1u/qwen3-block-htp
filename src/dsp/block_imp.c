@@ -768,7 +768,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->fp16_norm_contexts < 2U ||
         header->fp16_norm_contexts > 4U ||
         (header->w4u8_down_hmx_batch_outputs != 1U &&
-         header->w4u8_down_hmx_batch_outputs != 2U) ||
+         header->w4u8_down_hmx_batch_outputs != 4U) ||
         (header->variant != QBH_BLOCK_W4U8 &&
          header->w4u8_down_hmx_batch_outputs != 1U) ||
         (header->variant != QBH_BLOCK_W4U8 &&

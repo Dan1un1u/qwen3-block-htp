@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate EXP-0098 and render its PC-027/PC-028 closure."""
+"""Validate EXP-0099 and render its PC-027/PC-028 closure."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ import validate_exp0084 as exp84
 
 SAMPLES = 5
 REPEATS = (1, 10)
-MODES = ("control", "batch2")
+MODES = ("control", "batch4")
 OUTPUT_HASH = "69f22eeb035e5ec5"
 INPUT_NORM_HASH = "7255c2406108617c"
 QK_HASH = "32aa949912e365be"
@@ -57,9 +57,9 @@ def validate_record(record: dict[str, object], repeat: int,
     compatibility = dict(record)
     compatibility.update({"experiment": "EXP-0084"})
     exp84.validate_record(compatibility, repeat, "W4U8")
-    batch = 1 if mode == "control" else 2
+    batch = 1 if mode == "control" else 4
     fixed = {
-        "experiment": "EXP-0098",
+        "experiment": "EXP-0099",
         "w4u8_down_hmx_batch_outputs": batch,
         "block_invocation_count": repeat,
         "vtcm_requested_bytes": 8_388_608,
@@ -71,11 +71,11 @@ def validate_record(record: dict[str, object], repeat: int,
         "intermediate_spill_fill_count": 0,
         "weight_ddr_read_bytes": 25_444_352 * repeat,
         "weight_dma_descriptor_count": 512 * repeat,
-        "hmx_command_count": (176 if mode == "control" else 144) * repeat,
+        "hmx_command_count": (176 if mode == "control" else 128) * repeat,
         "hmx_u8s8_tile_pair_count": 49_408 * repeat,
         "w4u8_mlp_down_hmx_batch_n_tiles": batch,
         "w4u8_mlp_down_hmx_command_count": (
-            64 if mode == "control" else 32
+            64 if mode == "control" else 16
         ) * repeat,
         "w4u8_mlp_down_in_command_slot_release_count": (
             0 if mode == "control" else 128 * repeat
@@ -92,7 +92,7 @@ def validate_record(record: dict[str, object], repeat: int,
         base.require(record, "w4u8_mlp_down_producer_progress_command_count", 0)
     elif int(record.get(
             "w4u8_mlp_down_producer_progress_command_count", 0)) <= 0:
-        raise SystemExit("batch2: no producer progress inside HMX commands")
+        raise SystemExit("batch4: no producer progress inside HMX commands")
     if audit:
         boundaries = (
             record.get("u8_input_norm_actual_hash"),
@@ -167,7 +167,7 @@ def contextual_modules(variant: str) -> dict[str, float]:
 def build_summary(result_dir: Path, package_dir: Path) -> dict[str, object]:
     if (result_dir / "boot_id_before.txt").read_bytes() != \
             (result_dir / "boot_id_after.txt").read_bytes():
-        raise SystemExit("device boot ID changed during EXP-0098")
+        raise SystemExit("device boot ID changed during EXP-0099")
     static_gate = json.loads((result_dir / "static_gate.json").read_text())
     if static_gate.get("static_gate") != "pass":
         raise SystemExit("static gate failed")
@@ -203,7 +203,7 @@ def build_summary(result_dir: Path, package_dir: Path) -> dict[str, object]:
         for mode, values in records.items():
             for record in values:
                 validate_record(record, repeat, mode)
-        metrics = metric_set(records["control"], records["batch2"])
+        metrics = metric_set(records["control"], records["batch4"])
         speed = all(
             metrics[field][key] < 0.0
             for field in TARGETS
@@ -216,11 +216,11 @@ def build_summary(result_dir: Path, package_dir: Path) -> dict[str, object]:
         }
         records_by_repeat[repeat] = records
     local_gate = all(gates)
-    selected = "batch2" if local_gate else "control"
+    selected = "batch4" if local_gate else "control"
     return {
-        "experiment": "EXP-0098",
+        "experiment": "EXP-0099",
         "control": "one Down output per HMX command",
-        "candidate": "two generation-safe Down outputs per HMX command",
+        "candidate": "four generation-safe Down outputs per HMX command",
         "source_commit": (result_dir / "source_commit.txt").read_text().strip(),
         "package_manifest_sha256": base.sha256(package_dir / "manifest.json"),
         "static_gate": static_gate,
@@ -241,9 +241,9 @@ def build_summary(result_dir: Path, package_dir: Path) -> dict[str, object]:
             "w4f16": contextual_modules("w4f16"),
             "w4u8": module_medians(records_by_repeat[10][selected]),
             "w4u8_control": module_medians(records_by_repeat[10]["control"]),
-            "w4u8_candidate": module_medians(records_by_repeat[10]["batch2"]),
+            "w4u8_candidate": module_medians(records_by_repeat[10]["batch4"]),
             "w4u8_provenance": (
-                "EXP-0098 batch2" if local_gate else "EXP-0084 control"
+                "EXP-0099 batch4" if local_gate else "EXP-0084 control"
             ),
             "contextual_provenance": str(EXP0084_EVIDENCE),
         },
@@ -305,10 +305,10 @@ def add_pc028(lines: list[str], summary: dict[str, object]) -> None:
 
 
 def render_report(summary: dict[str, object]) -> str:
-    lines = ["# EXP-0098 — Complete profiling report", ""]
+    lines = ["# EXP-0099 — Complete profiling report", ""]
     add_pc028(lines, summary)
     lines.extend([
-        "The candidate halves Down HMX command submissions while preserving "
+        "The candidate quarters Down HMX command submissions while preserving "
         "the original two 96-K-tile chunks per output. Each output releases "
         "its two expanded slots inside the HMX worker before the next output "
         "is consumed, preserving producer progress and avoiding a whole-batch "
@@ -335,9 +335,9 @@ def render_report(summary: dict[str, object]) -> str:
         "| FastRPC / HMX ownership | one execution unit / one owner |",
         "| Weight bytes / descriptors | 25,444,352 / 512 per block |",
         "| U8xS8 tile pairs | 49,408 per block |",
-        "| Down / total HMX commands | 64→32 / 176→144 per block |", "",
+        "| Down / total HMX commands | 64→16 / 176→128 per block |", "",
         "## Decision", "",
-        f"EXP-0098 local gate: **{'PASS' if summary['local_gate_pass'] else 'FAIL'}**. "
+        f"EXP-0099 local gate: **{'PASS' if summary['local_gate_pass'] else 'FAIL'}**. "
         f"Local adoption eligibility: **{'YES' if summary['local_adoption_eligible'] else 'NO'}**. "
         "Selected Baseline remains unchanged until explicit user promotion.", "",
         f"Source commit: `{summary['source_commit']}`.", "",

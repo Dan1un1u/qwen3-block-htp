@@ -1609,7 +1609,7 @@ int main(int argc, char **argv) {
          fp16_norm_rows_per_task != 8U) ||
         fp16_norm_contexts < 2U || fp16_norm_contexts > 4U ||
         (w4u8_down_hmx_batch_outputs != 1U &&
-         w4u8_down_hmx_batch_outputs != 2U) ||
+         w4u8_down_hmx_batch_outputs != 4U) ||
         (variant != QBH_BLOCK_W4U8 &&
          w4u8_down_hmx_batch_outputs != 1U) ||
         (variant == QBH_BLOCK_W4U8 &&
@@ -1791,7 +1791,7 @@ int main(int argc, char **argv) {
                         "qk_head_pairs_input_norm_pool|all] "
                         "[fp16_norm_rows_per_task:2|4|8] "
                         "[fp16_norm_contexts:2|3|4] "
-                        "[w4u8_down_hmx_batch_outputs:1|2]\n",
+                        "[w4u8_down_hmx_batch_outputs:1|4]\n",
                 argv[0]);
         return 2;
     }
@@ -2341,7 +2341,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0098\","
+        "{\"experiment\":\"EXP-0099\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","

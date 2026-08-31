@@ -2,7 +2,7 @@
 set -euo pipefail
 
 adb_exe="${ADB_EXE:-/mnt/c/adb/adb.exe}"
-remote_root="${EXP0098_REMOTE_ROOT:-/data/local/tmp/qwen3-block-htp/exp0098-u8}"
+remote_root="${EXP0099_REMOTE_ROOT:-/data/local/tmp/qwen3-block-htp/exp0099-u8}"
 cell="${1:-control}"
 repeat_count="${2:-1}"
 attribution_mode="${3:-on}"
@@ -11,9 +11,9 @@ attention_pipeline="u8_log2_gqa_qkv_overlap_vgather_vdeal_fused_qk_requant_hmx_b
 
 case "${cell}" in
     control) down_batch_outputs=1 ;;
-    batch2|candidate) down_batch_outputs=2 ;;
+    batch4|candidate) down_batch_outputs=4 ;;
     *)
-        printf 'usage: %s control|batch2 [repeat] [attribution] [audit]\n' "$0" >&2
+        printf 'usage: %s control|batch4 [repeat] [attribution] [audit]\n' "$0" >&2
         exit 2
         ;;
 esac
