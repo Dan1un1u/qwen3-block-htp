@@ -255,10 +255,20 @@ static int qbh_parse_residual_mode(const char *text, uint32_t *mode) {
         *mode = QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6;
         return 0;
     }
+    if (strcmp(text, "fused_pool6_shuffle4") == 0 ||
+        strcmp(text, "hvx_fused_post_norm_pool6_shuffle4") == 0) {
+        *mode =
+            QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6_SHUFFLE4;
+        return 0;
+    }
     return -1;
 }
 
 static const char *qbh_residual_mode_name(uint32_t mode) {
+    if (mode ==
+        QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6_SHUFFLE4) {
+        return "hvx_fused_post_norm_pool6_shuffle4";
+    }
     if (mode == QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6) {
         return "hvx_fused_post_norm_pool6";
     }
@@ -1631,11 +1641,15 @@ int main(int argc, char **argv) {
            residual_mode !=
                QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4 &&
            residual_mode !=
-               QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6))) ||
+               QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6 &&
+           residual_mode !=
+               QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6_SHUFFLE4))) ||
         ((residual_mode ==
               QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4 ||
           residual_mode ==
-              QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6) &&
+              QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6 ||
+          residual_mode ==
+              QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6_SHUFFLE4) &&
          (variant != QBH_BLOCK_W4U8 ||
           attention_hvx_contexts < 4U ||
           attention_hvx_contexts > 6U ||
@@ -1648,8 +1662,10 @@ int main(int argc, char **argv) {
             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT |
             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT))) ||
-        (residual_mode ==
-             QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6 &&
+        ((residual_mode ==
+              QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6 ||
+          residual_mode ==
+              QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6_SHUFFLE4) &&
          attention_hvx_contexts != 6U) ||
         mlp_mode >
             QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX ||

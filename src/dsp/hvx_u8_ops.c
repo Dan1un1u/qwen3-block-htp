@@ -460,6 +460,95 @@ void qbh_hvx_residual_add_u8_native_output_rows(
     asm volatile("barrier" ::: "memory");
 }
 
+void qbh_hvx_residual_add_u8_native_output_rows_shuffle4(
+    uint8_t *residual,
+    const struct qbh_block_qparam *residual_qparam,
+    const uint8_t *addition_tiles,
+    const struct qbh_block_qparam *addition_qparam,
+    const struct qbh_block_qparam *output_qparam,
+    uint32_t first_row, uint32_t row_count, uint32_t width) {
+    const float fixed_scale =
+        (float)(UINT32_C(1) << QBH_U8_RESIDUAL_FRAC_BITS);
+    const int32_t residual_coefficient = (int32_t)roundf(
+        residual_qparam->scale / output_qparam->scale * fixed_scale);
+    const int32_t addition_coefficient = (int32_t)roundf(
+        addition_qparam->scale / output_qparam->scale * fixed_scale);
+    const HVX_Vector residual_offset = Q6_Vh_vsplat_R(
+        residual_qparam->zero_point);
+    const HVX_Vector addition_offset = Q6_Vh_vsplat_R(
+        addition_qparam->zero_point);
+
+    if ((first_row & 3U) != 0U || (row_count & 3U) != 0U ||
+        (width & (QBH_HVX_BYTES - 1U)) != 0U) {
+        qbh_hvx_residual_add_u8_native_output_rows(
+            residual, residual_qparam, addition_tiles,
+            addition_qparam, output_qparam,
+            first_row, row_count, width);
+        return;
+    }
+
+    const uint32_t last_row = first_row + row_count;
+    for (uint32_t row = first_row; row < last_row; row += 4U) {
+        for (uint32_t channel = 0U; channel < width;
+             channel += QBH_HVX_BYTES) {
+            const uint8_t *tile_group = addition_tiles +
+                (size_t)(channel / QBH_HMX_OUTPUT_CHANNELS) *
+                    QBH_HMX_OUTPUT_BYTES +
+                (size_t)row * QBH_HMX_OUTPUT_CHANNELS;
+            const HVX_Vector tile0 =
+                *(const HVX_Vector *)(tile_group +
+                    0U * QBH_HMX_OUTPUT_BYTES);
+            const HVX_Vector tile1 =
+                *(const HVX_Vector *)(tile_group +
+                    1U * QBH_HMX_OUTPUT_BYTES);
+            const HVX_Vector tile2 =
+                *(const HVX_Vector *)(tile_group +
+                    2U * QBH_HMX_OUTPUT_BYTES);
+            const HVX_Vector tile3 =
+                *(const HVX_Vector *)(tile_group +
+                    3U * QBH_HMX_OUTPUT_BYTES);
+            const HVX_VectorPair tile01 = Q6_W_vshuff_VVR(
+                tile1, tile0, -32);
+            const HVX_VectorPair tile23 = Q6_W_vshuff_VVR(
+                tile3, tile2, -32);
+            const HVX_VectorPair rows01 = Q6_W_vshuff_VVR(
+                Q6_V_lo_W(tile23), Q6_V_lo_W(tile01), -64);
+            const HVX_VectorPair rows23 = Q6_W_vshuff_VVR(
+                Q6_V_hi_W(tile23), Q6_V_hi_W(tile01), -64);
+            HVX_Vector *residual0 = (HVX_Vector *)(residual +
+                (size_t)(row + 0U) * width + channel);
+            HVX_Vector *residual1 = (HVX_Vector *)(residual +
+                (size_t)(row + 1U) * width + channel);
+            HVX_Vector *residual2 = (HVX_Vector *)(residual +
+                (size_t)(row + 2U) * width + channel);
+            HVX_Vector *residual3 = (HVX_Vector *)(residual +
+                (size_t)(row + 3U) * width + channel);
+
+            *residual0 = qbh_residual_add_u8_vector(
+                *residual0, Q6_V_lo_W(rows01),
+                residual_offset, addition_offset,
+                residual_coefficient, addition_coefficient,
+                output_qparam->zero_point);
+            *residual1 = qbh_residual_add_u8_vector(
+                *residual1, Q6_V_hi_W(rows01),
+                residual_offset, addition_offset,
+                residual_coefficient, addition_coefficient,
+                output_qparam->zero_point);
+            *residual2 = qbh_residual_add_u8_vector(
+                *residual2, Q6_V_lo_W(rows23),
+                residual_offset, addition_offset,
+                residual_coefficient, addition_coefficient,
+                output_qparam->zero_point);
+            *residual3 = qbh_residual_add_u8_vector(
+                *residual3, Q6_V_hi_W(rows23),
+                residual_offset, addition_offset,
+                residual_coefficient, addition_coefficient,
+                output_qparam->zero_point);
+        }
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
 void qbh_hvx_residual_add_u8_native_output(
     uint8_t *residual,
     const struct qbh_block_qparam *residual_qparam,
@@ -531,6 +620,23 @@ void qbh_hvx_residual_rms_norm_u8_native_io_rows(
     const struct qbh_block_qparam *normalized_qparam,
     uint32_t first_row, uint32_t row_count, uint32_t width) {
     qbh_hvx_residual_add_u8_native_output_rows(
+        residual, residual_qparam, addition_tiles, addition_qparam,
+        sum_qparam, first_row, row_count, width);
+    qbh_hvx_rms_norm_u8_native_activation_rows(
+        residual, sum_qparam, gamma, normalized_tiles,
+        normalized_qparam, first_row, row_count, width);
+}
+
+void qbh_hvx_residual_rms_norm_u8_native_io_rows_shuffle4(
+    uint8_t *residual,
+    const struct qbh_block_qparam *residual_qparam,
+    const uint8_t *addition_tiles,
+    const struct qbh_block_qparam *addition_qparam,
+    const struct qbh_block_qparam *sum_qparam,
+    const __fp16 *gamma, uint8_t *normalized_tiles,
+    const struct qbh_block_qparam *normalized_qparam,
+    uint32_t first_row, uint32_t row_count, uint32_t width) {
+    qbh_hvx_residual_add_u8_native_output_rows_shuffle4(
         residual, residual_qparam, addition_tiles, addition_qparam,
         sum_qparam, first_row, row_count, width);
     qbh_hvx_rms_norm_u8_native_activation_rows(
