@@ -8881,3 +8881,47 @@ experiments:
       evidence_sha256_ledger_sha256: 95a53aaf6e9c8fcacf9e93cd3f052ed7668eb56cf66cdf2c3559abe42df9d74f
       conclusion: f16f16_group_interleaving_is_real_but_the_all_recipe_gate_fails_on_identical_w4u8_repeat1_parity_noise
       selected_baseline_changed: false
+  - id: EXP-0108
+    slug: common-qkv-carrier-revalidation
+    title: Current-baseline common QKV carrier revalidation
+    parent: EXP-0106
+    variants:
+      - exp0106_norms_qkv_control_f16f16
+      - qkv_norms_crouton_candidate_f16f16
+      - exp0106_norms_qkv_control_w4f16
+      - qkv_norms_crouton_candidate_w4f16
+      - exp0106_w4u8_native_qkv_parity_control
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-common-qkv-carrier-revalidation
+    source_branches:
+      - codex/exp-0108-common-qkv-carrier-revalidation
+    source_commits: []
+    record: docs/experiments/EXP-0108.md
+    decided_by: user
+    decided_on: '2026-08-31'
+    approval_ref: 'User message 2026-08-31: 同意，做这两项实验，然后汇报结果，并给出是否冻结的建议判断'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0108-common-qkv-carrier-revalidation
+      started_on: '2026-08-31'
+      completed_on: null
+    evidence:
+      formal_results: null
+      retained_artifacts: null
+      source_parent_commit: 837714ba5ea2bbdef5799fe959996fb8fe862c8d
+      accepted_fair_authority: EXP-0106
+      prior_negative_evidence: EXP-0038-stage-a
+      reopen_authority: explicit_user_approval_for_current_baseline_revalidation
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      correctness_gate: accepted_output_hashes_and_independent_qkv_operand_audit_zero_mismatches_zero_max_lsb
+      physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_and_expected_qkv_native_carrier_telemetry
+      speed_gate: f16f16_and_w4f16_qkv_plus_qk_norm_rope_and_complete_host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10_w4u8_within_one_percent
+      completion_gate: same_source_three_recipe_controls_candidates_pc027_pc028_and_freeze_recommendation
