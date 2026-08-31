@@ -170,6 +170,9 @@ def build_summary(result_dir: Path, exp0109_dir: Path,
     pc028["w4f16"] = exp109.module_medians(
         records[10][selected_cell]
     )
+    pc028["w4u8"] = exp109.module_medians(load(
+        exp0120_dir / "paired_ring16_r10.jsonl", SAMPLES
+    ))
     return {
         "experiment": "EXP-0123",
         "source_commit":
