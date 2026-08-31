@@ -682,3 +682,14 @@ concurrently. The accepted evidence is byte-exact and improves complete Host
 wall, but it is not a Selected Baseline until explicit user promotion.
 _Avoid_: accepted baseline, changed Softmax approximation, shared per-group
 carrier, additional VTCM allocation
+
+**Rejected Clipped-Q7 Gate/Up Arithmetic**:
+The EXP-0096 candidate that replaces the formal 128 KiB float-SiLU-derived
+Gate/Up LUT with the repository's older direct clipped-Q7 SiLU and Q5 product
+helper. Although disassembly proves a zero-`vgather` HVX multiply/shift/pack
+path and activation work falls in a diagnostic run, the helper is not the same
+mathematical mapping: exhaustive U8-by-U8 comparison finds 57,270 mismatches
+with a 65-LSB maximum, and the real block changes 6,169 output bytes. The
+experiment stops before performance testing.
+_Avoid_: byte-exact arithmetic replacement, same formula as the formal LUT,
+accepted optimization, permission to resume the old clipped-Q7 helper

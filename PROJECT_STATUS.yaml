@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0096
+  active_experiment: null
   next_experiment_number: 97
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,16 +27,44 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0095
-  last_completed_source_commit: b54490b8de77b8dfc052360409e592da5c4ba5d5
+  last_completed_experiment: EXP-0096
+  last_completed_source_commit: a1adfffef57334834178d1116bbec75bc2101c95
   provisional_source_parent: EXP-0084
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: byte_exact_arithmetic_gate_up_activation
+  active_experiment_stage: null
   active_experiment_evidence: null
-  active_experiment_gate: not_run
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0095/formal_b54490b8de77'
+  active_experiment_gate: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0096/stage_a_a1adfffef573'
+  latest_w4u8_arithmetic_gate_up_experiment:
+    id: EXP-0096
+    source_branch: codex/exp-0096-w4u8-arithmetic-gate-up-activation
+    source_head: a1adfffef57334834178d1116bbec75bc2101c95
+    direct_control: W4U8-EXP0084-FAIR-CANONICAL
+    candidate: old_direct_hvx_clipped_q7_silu_q5_product
+    stage_a_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0096/stage_a_a1adfffef573'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0096/artifacts/a1adfffef573/stage_a'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    static_gate: pass_zero_vgather_four_vmpy_five_shift_pack_zero_vector_stack_spill
+    physical_gate: pass_exact_8mib_vtcm_unchanged_5306080_peak_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_25444352_weight_bytes_512_dma_descriptors_176_hmx_commands_49408_u8s8_tile_pairs
+    correctness_gate: fail_6169_final_output_mismatches_one_max_lsb
+    full_domain_mapping_mismatches: 57270
+    full_domain_mapping_max_lsb: 65
+    diagnostic_activation_work_change_percent: -60.4657
+    diagnostic_gate_up_change_percent: 9.5830
+    diagnostic_host_change_percent: 0.7975
+    speed_gate: not_run_by_contract_after_correctness_failure
+    pc027_failure_boundary_report: pass
+    pc028_module_table: pass_reused_exp0084_canonical
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    gate_summary_sha256: 91bd592df2300ffbeb2729547a6b483b93ee7948d8424c3c1874cc0ebe76be2d
+    full_profiling_report_sha256: 75f9cf65e0104a58b2c4ae00ac7cdc4fd71c776d846fe608106b779db123c829
+    evidence_sha256_ledger_sha256: 3444e828d446fb08996e6c675a2eb21e9c7ca0d531c42c4618eda10c1f90205d
+    conclusion: existing_direct_clipped_q7_formula_is_not_the_formal_float_silu_derived_lut_mapping_and_fails_byte_exact_correctness_before_performance_testing
+    selected_baseline_changed: false
   latest_w4u8_four_row_softmax_carrier_candidate:
     id: EXP-0095
     source_branch: codex/exp-0095-w4u8-four-row-native-softmax-carrier-shuffle
