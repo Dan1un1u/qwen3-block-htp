@@ -727,6 +727,14 @@ static int qbh_parse_mlp_mode(const char *text, uint32_t *mode) {
         *mode = QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX;
         return 0;
     }
+    if (strcmp(
+            text,
+            "w4u8_streaming_persistent_mlp_hvx_arithmetic_activation") == 0 ||
+        strcmp(text, "w4u8_arithmetic_activation") == 0) {
+        *mode =
+            QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX_ARITHMETIC_ACTIVATION;
+        return 0;
+    }
     return -1;
 }
 
@@ -752,6 +760,10 @@ static const char *qbh_mlp_mode_name(uint32_t mode) {
     }
     if (mode == QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX) {
         return "w4u8_streaming_persistent_mlp_hvx";
+    }
+    if (mode ==
+        QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX_ARITHMETIC_ACTIVATION) {
+        return "w4u8_streaming_persistent_mlp_hvx_arithmetic_activation";
     }
     return "control";
 }
@@ -1652,7 +1664,7 @@ int main(int argc, char **argv) {
              QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6 &&
          attention_hvx_contexts != 6U) ||
         mlp_mode >
-            QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX ||
+            QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX_ARITHMETIC_ACTIVATION ||
         mlp_hvx_contexts == 0U || mlp_hvx_contexts > 4U ||
         (mlp_mode == QBH_BLOCK_MLP_CONTROL && mlp_hvx_contexts != 1U) ||
         (mlp_mode != QBH_BLOCK_MLP_CONTROL &&
@@ -1756,7 +1768,8 @@ int main(int argc, char **argv) {
                         "crouton_native|crouton_native_batch8|"
                         "w4u8_streaming|"
                         "w4u8_streaming_persistent_gate_up_hvx|"
-                        "w4u8_streaming_persistent_mlp_hvx] "
+                        "w4u8_streaming_persistent_mlp_hvx|"
+                        "w4u8_streaming_persistent_mlp_hvx_arithmetic_activation] "
                         "[mlp_hvx_contexts:1..4] "
                         "[mlp_chunk_vectors:16|32|64|128|256] "
                         "[attention_pipeline:control|parallel_qk_norm_rope|"
@@ -2330,7 +2343,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0084\","
+        "{\"experiment\":\"EXP-0096\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2570,6 +2583,7 @@ int main(int argc, char **argv) {
         "\"w4u8_mlp_gate_up_expanded_slot_count\":%" PRIu32 ","
         "\"w4u8_mlp_pair_publish_count\":%" PRIu32 ","
         "\"w4u8_mlp_pair_consume_count\":%" PRIu32 ","
+        "\"w4u8_mlp_arithmetic_activation_task_count\":%" PRIu32 ","
         "\"w4u8_mlp_gate_up_hvx_hmx_overlap\":%" PRIu32 ","
         "\"w4u8_mlp_down_hvx_hmx_overlap\":%" PRIu32 ","
         "\"w4u8_mlp_gate_up_hvx_parallel_overlap\":%" PRIu32 ","
@@ -2875,6 +2889,7 @@ int main(int argc, char **argv) {
         header->w4u8_mlp_gate_up_expanded_slot_count,
         header->w4u8_mlp_pair_publish_count,
         header->w4u8_mlp_pair_consume_count,
+        header->w4u8_mlp_arithmetic_activation_task_count,
         header->w4u8_mlp_gate_up_hvx_hmx_overlap,
         header->w4u8_mlp_down_hvx_hmx_overlap,
         header->w4u8_mlp_gate_up_hvx_parallel_overlap,
