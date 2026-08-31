@@ -9175,3 +9175,45 @@ experiments:
       evidence_sha256_ledger_sha256: 42776687bba3d871ea2b0d835d1820315075d02903951a1af8ee99b7ac1a5196
       conclusion: removing_nonstreamed_gate_up_region_barriers_and_publication_is_byte_exact_and_improves_gate_up_and_complete_host_at_both_repeats
       selected_baseline_changed: false
+  - id: EXP-0112
+    slug: w4u8-gate-up-stream-release-fence
+    title: W4U8 Gate/Up streaming release-fence hierarchy
+    parent: EXP-0111
+    variants:
+      - exp0109_w4u8_fastest_control
+      - w4u8_gate_up_single_worker_fence
+      - w4u8_gate_up_release_only
+    execution_state: running
+    evidence_validity: pending
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-gate-up-stream-release-fence
+    source_branches:
+      - codex/exp-0112-w4u8-gate-up-stream-release-fence
+    source_commits: []
+    record: docs/experiments/EXP-0112.md
+    approval_ref: 'User message 2026-09-01: 既然有收益，那就采用。继续针对W4A16和W4A8开展loop优化。'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0112-w4u8-gate-up-stream-release-fence
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0111
+      source_parent_commit: eebd967a3e34279888b0b2c644ff451ee368c2c6
+      selected_w4u8_runtime_parent: EXP-0109-fastest
+      recipe_scope: W4U8_gate_up_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      factorial_cells: control_internal_and_worker_barrier_plus_release_single_worker_fence_release_only
+      hypothesis: generation_release_orders_disjoint_vtcm_region_and_bias_stores_so_internal_and_worker_full_barriers_are_redundant
+      implementation_boundary: runtime_selectable_gate_up_handoff_only_down_qkv_attention_w4f16_and_public_paths_unchanged
+      correctness_gate: all_cells_byte_exact_final_output_and_w4u8_intermediate_audits_zero_mismatch_zero_max_lsb
+      physical_gate: exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_dma_hmx_stream_publication_and_peak_vtcm
+      static_gate: ordered_helpers_retain_barrier_relaxed_unpack_and_bias_helpers_have_no_full_barrier_release_only_worker_has_no_pre_release_full_barrier
+      speed_gate: select_lowest_host_cell_among_candidates_that_strictly_improve_gate_up_plus_swiglu_and_complete_host_in_ordinary_and_paired_repeat1_and_repeat10
+      completion_gate: five_rounds_pc027_pc028_complete_profiling_then_accept_or_reject_without_automatic_baseline_promotion
