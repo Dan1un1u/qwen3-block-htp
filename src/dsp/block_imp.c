@@ -779,7 +779,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
              QBH_BLOCK_W4F16_GROUP_FENCE_CONTROL &&
          header->variant != QBH_BLOCK_W4F16) ||
         header->w4u8_stream_fence_mode >
-            QBH_BLOCK_W4U8_STREAM_FENCE_RELEASE_ONLY ||
+            QBH_BLOCK_W4U8_STREAM_FENCE_BARRIER_ONLY ||
         (header->w4u8_stream_fence_mode !=
              QBH_BLOCK_W4U8_STREAM_FENCE_CONTROL &&
          header->variant != QBH_BLOCK_W4U8) ||

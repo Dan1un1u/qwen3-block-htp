@@ -535,10 +535,13 @@ static int qbh_hvx_worker_run(struct qbh_hvx_worker_job *job,
                 &state->stream_ready_generation[task.expanded_slot]
                                                      [task.stream_region_index];
             *ready = task.stream_generation;
-            asm volatile("release(%0):at"
-                         :
-                         : "r"(ready)
-                         : "memory");
+            if (stream_fence_mode !=
+                QBH_W4_STREAM_FENCE_BARRIER_ONLY) {
+                asm volatile("release(%0):at"
+                             :
+                             : "r"(ready)
+                             : "memory");
+            }
             (void)qbh_atomic_inc_return(
                 &state->header->streaming_region_publish_count);
         } else {

@@ -1076,6 +1076,8 @@ static const char *qbh_w4u8_stream_fence_mode_name(uint32_t mode) {
             return "single_fence";
         case QBH_BLOCK_W4U8_STREAM_FENCE_RELEASE_ONLY:
             return "release_only";
+        case QBH_BLOCK_W4U8_STREAM_FENCE_BARRIER_ONLY:
+            return "barrier_only";
         default:
             return "control";
     }
@@ -1581,6 +1583,9 @@ int main(int argc, char **argv) {
             } else if (strcmp(stream_fence, "release_only") == 0) {
                 w4u8_stream_fence_mode =
                     QBH_BLOCK_W4U8_STREAM_FENCE_RELEASE_ONLY;
+            } else if (strcmp(stream_fence, "barrier_only") == 0) {
+                w4u8_stream_fence_mode =
+                    QBH_BLOCK_W4U8_STREAM_FENCE_BARRIER_ONLY;
             } else {
                 w4u8_stream_fence_mode = UINT32_MAX;
             }
@@ -2497,7 +2502,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0112\","
+        "{\"experiment\":\"EXP-0113\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","

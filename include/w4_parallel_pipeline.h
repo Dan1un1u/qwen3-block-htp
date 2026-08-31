@@ -13,6 +13,7 @@ enum qbh_w4_stream_fence_mode {
     QBH_W4_STREAM_FENCE_CONTROL = 0,
     QBH_W4_STREAM_FENCE_SINGLE = 1,
     QBH_W4_STREAM_FENCE_RELEASE_ONLY = 2,
+    QBH_W4_STREAM_FENCE_BARRIER_ONLY = 3,
 };
 
 struct qbh_mlp_gate_up_handoff {
