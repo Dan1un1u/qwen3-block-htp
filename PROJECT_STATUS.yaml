@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0119
+  active_experiment: null
   next_experiment_number: 120
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,25 +27,53 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0118
-  last_completed_source_commit: cc091ab2bd095d8d9d4a7de084104d3b0fccde09
+  last_completed_experiment: EXP-0119
+  last_completed_source_commit: f7d404b684269b303ff278ef443d0e6ae64e2074
   provisional_source_parent: EXP-0112
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: registered
+  active_experiment_stage: none
   active_experiment_evidence: null
-  active_experiment_gate: not_run
-  active_recipe_specialization: W4U8
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0118/20260831T205015Z_e806cce87c60_formal'
+  active_experiment_gate: none
+  active_recipe_specialization: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0119/20260831T210524Z_f7d404b68426_formal'
   last_rejected_specialization:
-    id: EXP-0118
-    source_branch: codex/exp-0118-w4u8-qkv-preemptible-worker-expand
-    source_head: cc091ab2bd095d8d9d4a7de084104d3b0fccde09
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0118/20260831T205015Z_e806cce87c60_formal'
+    id: EXP-0119
+    source_branch: codex/exp-0119-w4u8-qkv-assist-granularity
+    source_head: f7d404b684269b303ff278ef443d0e6ae64e2074
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0119/20260831T210524Z_f7d404b68426_formal'
     local_gate: fail
     adoption_status: rejected
-    reason: preemptible_assistance_reduces_q_expand_and_qkv_but_increases_qk_prep_wait_and_fails_repeat10_paired_host
+    reason: granularity_sweep_exposes_throughput_responsiveness_tradeoff_but_no_cell_improves_complete_host_at_both_repeats
+  latest_w4u8_qkv_assist_granularity_candidate:
+    id: EXP-0119
+    source_branch: codex/exp-0119-w4u8-qkv-assist-granularity
+    source_head: f7d404b684269b303ff278ef443d0e6ae64e2074
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0119/20260831T210524Z_f7d404b68426_formal'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0119/artifacts/f7d404b68426/20260831T210524Z_formal'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    correctness_gate: pass_all_four_cells_byte_exact_zero_mismatch_zero_max_lsb
+    physical_gate: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner
+    assist16_repeat10_qkv_change_percent: -3.769
+    assist16_repeat10_host_change_percent: 0.180
+    assist8_repeat10_qkv_change_percent: -1.814
+    assist8_repeat10_host_change_percent: 0.203
+    assist8_repeat10_qk_prep_pool_wait_change_percent: -17.540
+    assist4_repeat10_qkv_change_percent: 4.466
+    assist4_repeat10_host_change_percent: 2.105
+    eligible_cells: none
+    selected_cell: control
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    gate_summary_sha256: 7475173e7e829b24b5980f327a16f2c9f99916bc51363722541ba0ddb094d6a5
+    full_profiling_report_sha256: e01a9b483360047a7d1a8e6aa592084361b007ce5271ab49e8b438368ad20cad
+    evidence_sha256_ledger_sha256: fa41dda0fcf155b4f52eb434cd7e731f2f4baab957b3e17371d84bdaf6288f8f
+    conclusion: current_worker_lending_family_is_closed
+    selected_baseline_changed: false
   latest_w4u8_qkv_preemptible_expand_candidate:
     id: EXP-0118
     source_branch: codex/exp-0118-w4u8-qkv-preemptible-worker-expand
