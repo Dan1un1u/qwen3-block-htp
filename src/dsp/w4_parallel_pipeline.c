@@ -400,7 +400,13 @@ static int qbh_hvx_worker_run(struct qbh_hvx_worker_job *job,
                           (size_t)task.mlp_pair_index * 2U *
                               QBH_HMX_OUTPUT_CHANNELS
                     : NULL;
-            if (multipliers != NULL) {
+            if (state->mlp_handoff->activation_direct_arithmetic != 0U) {
+                qbh_mlp_gate_up_hvx(
+                    pair, pair + QBH_HMX_OUTPUT_BYTES,
+                    state->mlp_handoff->middle_activation +
+                        (size_t)task.mlp_pair_index * QBH_HMX_OUTPUT_BYTES,
+                    QBH_HMX_OUTPUT_BYTES);
+            } else if (multipliers != NULL) {
                 qbh_mlp_gate_up_requant_lut_hvx(
                     pair, pair + QBH_HMX_OUTPUT_BYTES,
                     state->mlp_handoff->middle_activation +
@@ -429,6 +435,10 @@ static int qbh_hvx_worker_run(struct qbh_hvx_worker_job *job,
             *state->mlp_handoff->activation_ticks +=
                 HAP_perf_get_qtimer_count() - activation_start;
             ++*state->mlp_handoff->pair_consume_count;
+            if (state->mlp_handoff->activation_direct_arithmetic != 0U &&
+                state->mlp_handoff->arithmetic_activation_task_count != NULL) {
+                ++*state->mlp_handoff->arithmetic_activation_task_count;
+            }
             qurt_mutex_unlock(&state->metrics_mutex);
             asm volatile("barrier" : : : "memory");
             qurt_sem_up(&state->mlp_pair_free[task.mlp_pair_slot]);

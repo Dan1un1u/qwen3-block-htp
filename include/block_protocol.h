@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(42)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(84)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(43)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(96)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -156,20 +156,38 @@ enum qbh_block_mlp_mode {
     QBH_BLOCK_MLP_W4U8_STREAMING = 5,
     QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_GATE_UP_HVX = 6,
     QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX = 7,
+    QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX_ARITHMETIC_ACTIVATION = 8,
 };
 
 static inline uint32_t qbh_block_mlp_is_w4u8_streaming(uint32_t mode) {
     return mode == QBH_BLOCK_MLP_W4U8_STREAMING ||
            mode ==
                QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_GATE_UP_HVX ||
-           mode == QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX;
+           mode == QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX ||
+           mode ==
+               QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX_ARITHMETIC_ACTIVATION;
 }
 
 static inline uint32_t qbh_block_mlp_uses_persistent_gate_up_hvx(
     uint32_t mode) {
     return mode ==
                QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_GATE_UP_HVX ||
-           mode == QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX;
+           mode == QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX ||
+           mode ==
+               QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX_ARITHMETIC_ACTIVATION;
+}
+
+static inline uint32_t qbh_block_mlp_uses_persistent_mlp_hvx(
+    uint32_t mode) {
+    return mode == QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX ||
+           mode ==
+               QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX_ARITHMETIC_ACTIVATION;
+}
+
+static inline uint32_t qbh_block_mlp_uses_arithmetic_activation(
+    uint32_t mode) {
+    return mode ==
+           QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX_ARITHMETIC_ACTIVATION;
 }
 
 enum qbh_block_crouton_boundary_mode {
@@ -609,6 +627,7 @@ struct qbh_block_header {
     uint32_t w4u8_mlp_gate_up_expanded_slot_count;
     uint32_t w4u8_mlp_pair_publish_count;
     uint32_t w4u8_mlp_pair_consume_count;
+    uint32_t w4u8_mlp_arithmetic_activation_task_count;
     uint32_t w4u8_mlp_gate_up_hvx_hmx_overlap;
     uint32_t w4u8_mlp_down_hvx_hmx_overlap;
     uint32_t w4u8_mlp_gate_up_hvx_parallel_overlap;

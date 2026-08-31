@@ -14,9 +14,11 @@ struct qbh_mlp_gate_up_handoff {
     const uint16_t *activation_lut;
     const uint8_t *output_multipliers;
     uint8_t *activation_gather_scratch;
+    uint32_t activation_direct_arithmetic;
     uint32_t pair_slot_count;
     uint32_t *pair_publish_count;
     uint32_t *pair_consume_count;
+    uint32_t *arithmetic_activation_task_count;
     uint64_t *activation_ticks;
 };
 

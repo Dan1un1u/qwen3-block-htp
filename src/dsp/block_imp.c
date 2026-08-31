@@ -913,7 +913,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          header->attention_hvx_contexts !=
              QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS) ||
         header->mlp_mode >
-            QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX ||
+            QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX_ARITHMETIC_ACTIVATION ||
         header->mlp_hvx_contexts == 0U ||
         header->mlp_hvx_contexts > QBH_BLOCK_W4F16_HVX_WORKERS ||
         (header->mlp_chunk_vectors != 16U &&
@@ -8759,9 +8759,14 @@ static int qbh_run_w4u8_streaming_mlp(
             .output_multipliers = NULL,
             .activation_gather_scratch =
                 buffers->w4u8_gather_scratch,
+            .activation_direct_arithmetic =
+                qbh_block_mlp_uses_arithmetic_activation(
+                    header->mlp_mode),
             .pair_slot_count = QBH_BLOCK_W4U8_GATE_UP_PAIR_SLOTS,
             .pair_publish_count = &pair_publish_count,
             .pair_consume_count = &pair_consume_count,
+            .arithmetic_activation_task_count =
+                &header->w4u8_mlp_arithmetic_activation_task_count,
             .activation_ticks = &activation_work_ticks,
         };
         qbh_reset_w4u8_phase_header(
@@ -8804,8 +8809,8 @@ static int qbh_run_w4u8_streaming_mlp(
     qbh_reset_w4u8_phase_header(
         &down_phase, QBH_BLOCK_W4U8_DOWN_HVX_WORKERS);
     start = HAP_perf_get_qtimer_count();
-    if (header->mlp_mode ==
-        QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX) {
+    if (qbh_block_mlp_uses_persistent_mlp_hvx(
+            header->mlp_mode)) {
         result = qbh_run_chunked_w4_pipeline_external_hvx(
             &down_phase, &down_layout,
             shared + header->w4u8_down_bundle_offset,
