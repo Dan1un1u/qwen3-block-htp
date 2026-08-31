@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0098
+  active_experiment: null
   next_experiment_number: 99
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,16 +27,44 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0097
-  last_completed_source_commit: 4f53209fa4f84a3b35dcc8a0674aef5bcfcf006b
+  last_completed_experiment: EXP-0098
+  last_completed_source_commit: 2198e4e1552bc465308ec752ad0d60279d8126c6
   provisional_source_parent: EXP-0084
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: down_generation_safe_output_batch
+  active_experiment_stage: none
   active_experiment_evidence: null
-  active_experiment_gate: not_run
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0097/formal_b9055ff6c7e6'
+  active_experiment_gate: none
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0098/formal_2198e4e1552b'
+  latest_w4u8_down_output_batch_candidate:
+    id: EXP-0098
+    source_branch: codex/exp-0098-w4u8-down-generation-safe-output-batch
+    source_head: 2198e4e1552bc465308ec752ad0d60279d8126c6
+    direct_control: W4U8-EXP0084-FAIR-CANONICAL
+    candidate: generation_safe_two_output_per_hmx_command
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0098/formal_2198e4e1552b'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0098/artifacts/2198e4e1552b/formal'
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending_user_decision
+    correctness_gate: pass_final_input_norm_qk_probability_av_byte_exact_zero_mismatch_zero_max_lsb
+    physical_gate: pass_exact_8mib_vtcm_unchanged_5306080_peak_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_25444352_weight_bytes_512_dma_descriptors_49408_u8s8_tile_pairs
+    command_gate: pass_down_64_to_32_total_176_to_144_128_in_command_releases_and_producer_progress
+    repeat1_down_change_percent: -26.8856
+    repeat1_host_change_percent: -0.4043
+    repeat1_host_paired_change_percent: -2.7083
+    repeat10_down_change_percent: -25.2619
+    repeat10_host_change_percent: -4.0812
+    repeat10_host_paired_change_percent: -4.1401
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass_reused_exp0084_canonical_f16f16_w4f16
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    gate_summary_sha256: d942e51da994a9d12fff6d3b421f3d3af27816164bec4772bd5685c758d3156d
+    full_profiling_report_sha256: 026701094c3ab69d0d804bff7b8a8988641855738e66da831a56004ef2ce2d5b
+    evidence_sha256_ledger_sha256: c4b226d8b026e10c982de334085bd6d0f4ede41639d9256932c36fb64bbf5e7f
+    conclusion: two_output_batching_is_locally_adoption_eligible_but_selected_baseline_remains_exp0084_pending_user_decision
+    selected_baseline_changed: false
   latest_w4u8_exact_affine_gate_up_experiment:
     id: EXP-0097
     source_branch: codex/exp-0097-w4u8-exact-affine-gate-up-activation

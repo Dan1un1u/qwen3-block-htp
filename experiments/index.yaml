@@ -8164,14 +8164,15 @@ experiments:
       - exp0084_one_output_two_chunk_per_hmx_command_control
       - generation_safe_two_output_per_hmx_command_candidate
       - generation_safe_four_output_per_hmx_command_candidate_if_stage_b_passes
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: complete
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending_user_decision
     evidence_profile: real-qwen3-block-w4u8-down-generation-safe-output-batch
     source_branches:
       - codex/exp-0098-w4u8-down-generation-safe-output-batch
-    source_commits: []
+    source_commits:
+      - 2198e4e1552bc465308ec752ad0d60279d8126c6
     record: docs/experiments/EXP-0098.md
     decided_by: user
     decided_on: '2026-08-31'
@@ -8180,10 +8181,10 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0098-w4u8-down-generation-safe-output-batch
       started_on: '2026-08-31'
-      completed_on: null
+      completed_on: '2026-08-31'
     evidence:
-      formal_results: null
-      retained_artifacts: null
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0098/formal_2198e4e1552b'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0098/artifacts/2198e4e1552b/formal'
       source_parent_commit: 6dc437fe08eaccf119c4cbce82937e22f125da0b
       direct_w4u8_control: W4U8-EXP0084-FAIR-CANONICAL
       contextual_w4f16_comparator: W4F16-EXP0084-COMMON-NORM-POOLS
@@ -8205,3 +8206,26 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_25444352_weight_bytes_512_dma_descriptors_49408_tile_pairs_and_declared_64_to_32_or_16_down_command_reduction
       speed_gate: down_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: batch2_lifetime_correctness_physical_and_five_round_speed_gates_then_optional_batch4_and_pc027_pc028_complete_profiling_closure
+      runtime_source_commit: 2198e4e1552bc465308ec752ad0d60279d8126c6
+      static_gate_result: pass_generation_safe_per_output_slot_release_no_whole_batch_preready_no_qnn
+      correctness_gate_result: pass_final_input_norm_qk_probability_av_byte_exact_zero_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_unchanged_5306080_peak_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_25444352_weight_bytes_512_dma_descriptors_49408_u8s8_tile_pairs
+      command_gate_result: pass_down_64_to_32_total_176_to_144_with_128_in_command_slot_releases_and_observed_producer_progress
+      repeat1_down_change_percent: -26.8856
+      repeat1_down_paired_change_percent: -26.6905
+      repeat1_host_change_percent: -0.4043
+      repeat1_host_paired_change_percent: -2.7083
+      repeat10_down_change_percent: -25.2619
+      repeat10_down_paired_change_percent: -25.3946
+      repeat10_host_change_percent: -4.0812
+      repeat10_host_paired_change_percent: -4.1401
+      repeat10_down_pipeline_change_percent: -27.2227
+      repeat10_expanded_slot_wait_change_percent: -35.1991
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_reused_exp0084_canonical_f16f16_w4f16
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: d942e51da994a9d12fff6d3b421f3d3af27816164bec4772bd5685c758d3156d
+      full_profiling_report_sha256: 026701094c3ab69d0d804bff7b8a8988641855738e66da831a56004ef2ce2d5b
+      evidence_sha256_ledger_sha256: c4b226d8b026e10c982de334085bd6d0f4ede41639d9256932c36fb64bbf5e7f
+      conclusion: generation_safe_two_output_commands_halve_down_command_submissions_reduce_expanded_slot_wait_and_improve_down_and_complete_host_wall_without_changing_traffic_or_math
+      selected_baseline_changed: false
