@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(42)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(84)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(43)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(98)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -310,6 +310,7 @@ struct qbh_block_header {
     uint32_t fp16_common_schedule_mode;
     uint32_t fp16_norm_rows_per_task;
     uint32_t fp16_norm_contexts;
+    uint32_t w4u8_down_hmx_batch_outputs;
 
     uint32_t input_offset;
     uint32_t input_bytes;
@@ -606,6 +607,9 @@ struct qbh_block_header {
     uint32_t w4u8_mlp_gate_up_hvx_workers;
     uint32_t w4u8_mlp_down_hvx_workers;
     uint32_t w4u8_mlp_gate_up_hmx_batch_n_tiles;
+    uint32_t w4u8_mlp_down_hmx_batch_n_tiles;
+    uint32_t w4u8_mlp_down_in_command_slot_release_count;
+    uint32_t w4u8_mlp_down_producer_progress_command_count;
     uint32_t w4u8_mlp_gate_up_expanded_slot_count;
     uint32_t w4u8_mlp_pair_publish_count;
     uint32_t w4u8_mlp_pair_consume_count;

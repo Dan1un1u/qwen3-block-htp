@@ -44,6 +44,11 @@ struct qbh_w4_hmx_request {
         uint8_t *output_tiles;
         const volatile uint32_t *ready_generations;
         uint32_t expected_generation;
+        void *ready_semaphore;
+        void *free_semaphore;
+        const int8_t *continuation_expanded_weight_tiles;
+        void *continuation_ready_semaphore;
+        void *continuation_free_semaphore;
     } batch_outputs[QBH_W4_HMX_MAX_BATCH_OUTPUTS];
     uint32_t continuation_chunk_count;
     struct {
@@ -52,11 +57,13 @@ struct qbh_w4_hmx_request {
         uint32_t chunk_tiles;
         void *ready_semaphore;
     } continuation_chunks[QBH_W4_HMX_MAX_CONTINUATION_CHUNKS];
+    uint32_t *in_command_slot_release_count;
 };
 
 struct qbh_w4_hmx_runner {
     void *context;
     uint32_t max_batch_outputs;
+    uint32_t max_nonstreaming_batch_outputs;
     uint32_t max_chunks_per_command;
     int (*submit)(void *context,
                   const struct qbh_w4_hmx_request *request);
