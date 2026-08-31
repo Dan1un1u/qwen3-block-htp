@@ -10298,3 +10298,47 @@ experiments:
       conclusion: command_reduction_is_real_but_uniform_batch4_coarsens_QKV_readiness
       reopen_condition: isolate_batch4_to_V_or_KV_without_delaying_Q_head_publication
       selected_baseline_changed: false
+  - id: EXP-0127
+    slug: w4f16-qkv-selective-batch4
+    title: W4F16 projection-selective QKV HMX batch four
+    parent: EXP-0111
+    variants:
+      - qkv_hmx_batch2_control
+      - v_hmx_batch4_candidate
+      - kv_hmx_batch4_candidate
+    execution_state: running
+    evidence_validity: pending
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4f16-qkv-selective-batch4
+    source_branches:
+      - codex/exp-0127-w4f16-qkv-selective-batch4
+    source_commits: []
+    record: docs/experiments/EXP-0127.md
+    approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0127-w4f16-qkv-selective-batch4
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0126
+      source_parent_commit: 500122e068fd85c4a69734b095ba2913aad8c2ca
+      logical_w4f16_parent: EXP-0111
+      accepted_w4f16_carrier_parent: EXP-0110
+      recipe_scope: W4F16_QKV_projection_selective_HMX_batch_size_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      prior_negative_boundary: EXP0126_uniform_batch4_saves_commands_but_delays_Q_head_and_QK_prep
+      hypothesis: preserve_Q_batch2_readiness_while_batch4_on_V_or_KV_retains_command_savings_without_dependency_tail
+      implementation_boundary: runtime_QKV_batch2_V_batch4_or_KV_batch4_same_direct_Crouton_carrier_order_math_and_publication
+      excluded_changes: no_weights_scales_projection_order_QK_norm_rope_attention_O_MLP_residual_public_DDR_FastRPC_QNN_changes
+      static_gate: exact_projection_selective_batch_widths_one_HMX_no_QNN
+      correctness_gate: all_cells_output_f18b9abbe1487231_QKV_operand_audit_zero_mismatch_zero_max_lsb
+      physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_identical_weight_bytes_and_HMX_tile_pairs_expected_selective_command_counts
+      speed_gate: QKV_plus_QK_Norm_RoPE_and_complete_Host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
+      completion_gate: bounded_diagnostic_then_five_rotated_rounds_PC027_PC028_and_no_automatic_baseline_promotion
