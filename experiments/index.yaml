@@ -8872,7 +8872,7 @@ experiments:
       repeat10_f16f16_gate_up_paired_change_percent: -8.235559
       repeat10_f16f16_host_change_percent: -4.307074
       repeat10_f16f16_host_paired_change_percent: -3.639174
-      w4f16_w4u8_parity_gate: fail_w4u8_repeat1_gate_up_ordinary_median_1_352_percent_exceeded_one_percent_limit
+      w4f16_w4u8_parity_gate: fail_w4u8_repeat1_gate_up_ordinary_and_host_ordinary_paired_medians_exceeded_one_percent_limit
       pc027_complete_profiling_report: pass
       pc028_module_table: pass_same_source_three_recipe
       stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
