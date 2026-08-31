@@ -683,6 +683,35 @@ wall, but it is not a Selected Baseline until explicit user promotion.
 _Avoid_: accepted baseline, changed Softmax approximation, shared per-group
 carrier, additional VTCM allocation
 
+**Public Common Layer**:
+The user-governed source, physical contracts and profiling primitives eligible
+for the fair three-recipe comparison. Shared eligibility does not require
+identical implementation code, but recipe-specific advantages must not be
+hidden inside this layer.
+_Avoid_: fastest-per-recipe result, identical code-path requirement, permission
+to merge a specialization silently
+
+**Frozen Public Baseline**:
+A user-approved consolidated source revision that fixes the Public Common
+Layer and its fair comparison configurations. Future specializations branch
+from it and cannot silently redefine it.
+_Avoid_: immutable repository history, prohibition on new experiments,
+automatic promotion of a specialized result
+
+**Recipe Specialization**:
+An explicitly recipe-scoped optimization evaluated separately from the fair
+common baseline. It may update the fastest result for that recipe but does not
+retroactively change the Public Common Layer.
+_Avoid_: public/common optimization, fair cross-recipe comparison, permission
+to alter another recipe
+
+**Documented Gate Exception**:
+An explicit user adoption decision that preserves the experiment's original
+failed local gate while recording why a bounded component is nevertheless
+accepted. It never converts the historical gate result into a pass.
+_Avoid_: relaxed gate after observing data, automatic exception, erased
+negative evidence
+
 **Rejected Clipped-Q7 Gate/Up Arithmetic**:
 The EXP-0096 candidate that replaces the formal 128 KiB float-SiLU-derived
 Gate/Up LUT with the repository's older direct clipped-Q7 SiLU and Q5 product

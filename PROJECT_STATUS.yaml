@@ -19,8 +19,8 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 109
+  active_experiment: EXP-0109
+  next_experiment_number: 110
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -33,9 +33,9 @@ current_scope:
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: null
+  active_experiment_stage: contract_registered
   active_experiment_evidence: null
-  active_experiment_gate: null
+  active_experiment_gate: not_run
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0108/20260831T144457Z_79130ef6f02f_formal'
   latest_common_qkv_carrier_revalidation:
     id: EXP-0108
@@ -46,7 +46,10 @@ current_scope:
     prior_negative_evidence: EXP-0038-stage-a
     evidence_validity: valid
     local_gate: fail
-    adoption_status: pending_user_decision
+    adoption_status: rejected
+    decided_by: user
+    decided_on: '2026-08-31'
+    decision_ref: 'User message 2026-08-31: 同意你的建议'
     correctness_gate: pass_byte_exact_qkv_operand_audit_zero_mismatches_zero_max_lsb
     physical_gate: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_128_unpack_tiles_skipped_24_qk_operands_8_av_weights
     repeat1_f16f16_qkv_qknorm_change_percent: 0.411796
@@ -68,7 +71,8 @@ current_scope:
     gate_summary_sha256: ce7a9af6bfe9e663d4145d3fc5ee2c810ef4cafe9f736bf4a4440df80465690b
     full_profiling_report_sha256: 752462a85cab576d7ed00cbfebf8311485bc0f513f0753b84477200cd443a1d6
     evidence_sha256_ledger_sha256: 3942bcd1620f4dc8fddc2c045ebb08e633e68e0113b451d7ed247e3464231fa5
-    conclusion: qkv_crouton_carrier_is_w4f16_specificly_useful_but_fails_as_a_public_cross_recipe_plan_because_f16f16_host_wall_regresses_at_both_repeats
+    conclusion: qkv_crouton_carrier_is_rejected_as_a_public_cross_recipe_plan_because_f16f16_host_wall_regresses_at_both_repeats
+    reopen_condition: only_as_an_explicit_w4f16_recipe_specialization_or_under_a_new_public_physical_contract
     selected_baseline_changed: false
   latest_common_interleaved_mlp_experiment:
     id: EXP-0107
@@ -78,7 +82,11 @@ current_scope:
     retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0107/artifacts/c2fa6aaaf89e/20260831T142754Z_formal'
     evidence_validity: valid
     local_gate: fail
-    adoption_status: pending_user_decision
+    adoption_status: accepted
+    acceptance_basis: documented_gate_exception_for_identity_proven_w4_parity_noise_after_the_causal_f16f16_candidate_passed_all_target_speed_correctness_and_physical_checks
+    decided_by: user
+    decided_on: '2026-08-31'
+    decision_ref: 'User message 2026-08-31: 同意你的建议'
     f16f16_speed_hypothesis: pass
     w4f16_w4u8_parity_gate: fail_w4u8_repeat1_gate_up_ordinary_and_host_ordinary_paired_medians_exceeded_one_percent_limit
     physical_equality_gate: pass
@@ -97,7 +105,7 @@ current_scope:
     gate_summary_sha256: e0614993e89d5abb5d80f01b900ad7802ba8d37233d3a0adac0c97121e7393db
     full_profiling_report_sha256: 55812d6d7985ef4617af98e9bf29ad9d5cbf91e22c1678b7b0dd33042ca11253
     evidence_sha256_ledger_sha256: 95a53aaf6e9c8fcacf9e93cd3f052ed7668eb56cf66cdf2c3559abe42df9d74f
-    conclusion: f16f16_group_interleaving_is_a_real_common_schedule_improvement_but_the_predeclared_three_recipe_local_gate_fails_on_a_1_35_percent_identical_w4u8_repeat1_parity_fluctuation
+    conclusion: f16f16_group_interleaving_is_accepted_as_a_public_component_with_the_original_local_gate_failure_preserved_and_an_explicit_user_gate_exception
     selected_baseline_changed: false
   latest_integrated_baseline_experiment:
     id: EXP-0106

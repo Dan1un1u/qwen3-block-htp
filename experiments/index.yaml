@@ -8829,7 +8829,7 @@ experiments:
     execution_state: completed
     evidence_validity: valid
     local_gate: fail
-    adoption_status: pending_user_decision
+    adoption_status: accepted
     evidence_profile: real-qwen3-block-common-interleaved-mlp-pipeline
     source_branches:
       - codex/exp-0107-common-interleaved-mlp-pipeline
@@ -8880,6 +8880,7 @@ experiments:
       full_profiling_report_sha256: 55812d6d7985ef4617af98e9bf29ad9d5cbf91e22c1678b7b0dd33042ca11253
       evidence_sha256_ledger_sha256: 95a53aaf6e9c8fcacf9e93cd3f052ed7668eb56cf66cdf2c3559abe42df9d74f
       conclusion: f16f16_group_interleaving_is_real_but_the_all_recipe_gate_fails_on_identical_w4u8_repeat1_parity_noise
+      acceptance_basis: documented_gate_exception_for_identity_proven_w4_parity_noise_after_the_causal_f16f16_candidate_passed_all_target_speed_correctness_and_physical_checks
       selected_baseline_changed: false
   - id: EXP-0108
     slug: common-qkv-carrier-revalidation
@@ -8894,7 +8895,7 @@ experiments:
     execution_state: completed
     evidence_validity: valid
     local_gate: fail
-    adoption_status: pending_user_decision
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-common-qkv-carrier-revalidation
     source_branches:
       - codex/exp-0108-common-qkv-carrier-revalidation
@@ -8950,4 +8951,49 @@ experiments:
       full_profiling_report_sha256: 752462a85cab576d7ed00cbfebf8311485bc0f513f0753b84477200cd443a1d6
       evidence_sha256_ledger_sha256: 3942bcd1620f4dc8fddc2c045ebb08e633e68e0113b451d7ed247e3464231fa5
       conclusion: current_baseline_revalidation_reproduces_w4f16_local_gain_but_f16f16_host_regression_so_public_qkv_carrier_fails
+      reopen_condition: only_as_an_explicit_w4f16_recipe_specialization_or_under_a_new_public_physical_contract
+      selected_baseline_changed: false
+  - id: EXP-0109
+    slug: public-common-freeze-consolidation
+    title: Public common-layer consolidation and freeze
+    parent: EXP-0106
+    variants:
+      - exp0106_f16f16_fair_control
+      - frozen_f16f16_gate8_interleaved
+      - exp0106_w4f16_fair_unchanged
+      - exp0106_w4u8_fair_unchanged
+      - exp0106_w4u8_fastest_unchanged
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-public-common-freeze-consolidation
+    source_branches:
+      - codex/exp-0109-public-common-freeze-consolidation
+    source_commits: []
+    record: docs/experiments/EXP-0109.md
+    decided_by: user
+    decided_on: '2026-08-31'
+    approval_ref: 'User message 2026-08-31: 同意你的建议'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0109-public-common-freeze-consolidation
+      started_on: '2026-08-31'
+      completed_on: null
+    evidence:
+      source_parent_experiment: EXP-0106
+      source_parent_commit: 837714ba5ea2bbdef5799fe959996fb8fe862c8d
+      accepted_component_experiment: EXP-0107
+      rejected_public_component_experiment: EXP-0108
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      static_gate: exp0107_f16f16_gate8_interleaved_present_exp0108_qkv_norms_public_path_absent_and_exp0106_w4_runtime_plans_unchanged
+      correctness_gate: accepted_output_hashes_and_independent_audit_preserved_zero_mismatches_zero_max_lsb
+      physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner
+      speed_gate: reproduce_the_accepted_f16f16_interleaved_improvement_in_ordinary_and_paired_repeat1_and_repeat10_while_preserving_exp0106_w4_fair_and_fastest_plans
+      completion_gate: same_source_frozen_fair_three_recipe_and_fastest_w4u8_pc027_pc028_formal_evidence_then_user_approved_promotion_and_tags
       selected_baseline_changed: false
