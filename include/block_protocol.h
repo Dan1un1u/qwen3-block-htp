@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(47)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(112)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(48)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(118)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -100,7 +100,15 @@ enum qbh_block_w4u8_qkvo_pipeline_mode {
     QBH_BLOCK_W4U8_QKVO_BATCH4 = 3,
     QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_TASKS = 4,
     QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS = 5,
+    QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_PREEMPTIBLE_EXPAND = 6,
 };
+
+static inline uint32_t qbh_block_w4u8_qkvo_uses_qk_head_pairs(
+    uint32_t mode) {
+    return mode == QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS ||
+           mode ==
+               QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_PREEMPTIBLE_EXPAND;
+}
 
 enum qbh_block_u8_norm_reduction_mode {
     QBH_BLOCK_U8_NORM_REDUCTION_SCALAR = 0,
@@ -562,6 +570,15 @@ struct qbh_block_header {
     uint64_t w4u8_qkvo_weight_expand_ticks;
     uint64_t w4u8_qkvo_prefetch_wait_ticks;
     uint64_t w4u8_qkvo_hmx_lifetime_ticks;
+    uint32_t w4u8_qkv_worker_assist_batch_count;
+    uint32_t w4u8_qkv_worker_assist_region_count;
+    uint32_t w4u8_qkv_worker_assist_k_tile_count;
+    uint32_t w4u8_qkv_main_expand_region_count;
+    uint32_t w4u8_qkv_main_expand_k_tile_count;
+    uint32_t w4u8_qkv_worker_max_region_k_tiles;
+    uint64_t w4u8_qkv_worker_expand_ticks;
+    uint64_t w4u8_qkv_main_expand_ticks;
+    uint64_t w4u8_qkv_worker_assist_wait_ticks;
     uint32_t w4u8_input_norm_task_count;
     uint64_t w4u8_input_norm_main_work_ticks;
     uint64_t w4u8_input_norm_worker_work_ticks;

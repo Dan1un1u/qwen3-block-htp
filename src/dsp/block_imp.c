@@ -92,6 +92,7 @@ _Static_assert(
 #define QBH_BLOCK_W4U8_GATE_UP_PAIR_SLOTS UINT32_C(8)
 #define QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES UINT32_C(8)
 #define QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES UINT32_C(4)
+#define QBH_BLOCK_W4U8_QKV_ASSIST_REGION_K_TILES UINT32_C(16)
 #define QBH_BLOCK_W4U8_INPUT_NORM_ROWS_PER_TASK UINT32_C(4)
 #define QBH_BLOCK_W4U8_RESIDUAL_ROWS_PER_TASK UINT32_C(4)
 #define QBH_BLOCK_W4U8_SOFTMAX_ROW_SLICES UINT32_C(2)
@@ -247,6 +248,10 @@ struct qbh_block_w4f16_job {
     uint64_t fp16_post_residual_norm_ticks;
     void *w4u8_pipeline_worker_context;
     int32_t w4u8_pipeline_worker_status;
+    volatile uint32_t qkv_expand_wait_state;
+    uint32_t qkv_expand_region_count;
+    uint32_t qkv_expand_k_tile_count;
+    uint64_t qkv_expand_ticks;
 };
 
 struct qbh_block_w4f16_pool {
@@ -322,6 +327,17 @@ struct qbh_block_w4f16_pool {
     uint32_t attention_qk_generation;
     volatile uint32_t attention_qk_stream_abort;
     uint32_t attention_qk_streaming;
+    const uint8_t *qkv_expand_compressed;
+    uint8_t *qkv_expand_expanded;
+    uint32_t qkv_expand_k_tiles;
+    uint32_t qkv_expand_tiles;
+    uint32_t qkv_expand_region_k_tiles;
+    uint32_t qkv_expand_region_count;
+    uint32_t qkv_expand_generation_counter;
+    volatile uint32_t qkv_expand_active_generation;
+    volatile uint32_t qkv_expand_next_region;
+    volatile uint32_t qkv_expand_completed_regions;
+    volatile uint32_t qkv_expand_worker_regions;
     uint32_t fp16_common_schedule_mode;
     uint8_t *u8_residual;
     const struct qbh_block_qparam *u8_residual_qparam;
@@ -900,7 +916,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT |
            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT)) != 0U) ||
         header->w4u8_qkvo_pipeline_mode >
-            QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS ||
+            QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_PREEMPTIBLE_EXPAND ||
         (header->variant != QBH_BLOCK_W4U8 &&
          header->w4u8_qkvo_pipeline_mode !=
              QBH_BLOCK_W4U8_QKVO_SERIAL) ||
@@ -5475,6 +5491,143 @@ fused_gate_up_failed:
     return result;
 }
 
+static void qbh_w4u8_qkv_expand_region(
+    const struct qbh_block_w4f16_pool *pool, uint32_t region) {
+    const uint32_t regions_per_tile =
+        pool->qkv_expand_k_tiles / pool->qkv_expand_region_k_tiles;
+    const uint32_t tile = region / regions_per_tile;
+    const uint32_t region_in_tile = region % regions_per_tile;
+    const uint32_t first_k_tile =
+        region_in_tile * pool->qkv_expand_region_k_tiles;
+    const uint32_t compressed_tile_bytes =
+        pool->qkv_expand_k_tiles * QBH_W4_PACKED_TILE_BYTES;
+    const uint32_t expanded_tile_bytes =
+        pool->qkv_expand_k_tiles * QBH_HMX_WEIGHT_BYTES;
+
+    qbh_unpack_w4_to_s8_hvx(
+        pool->qkv_expand_compressed +
+            (size_t)tile * compressed_tile_bytes +
+            (size_t)first_k_tile * QBH_W4_PACKED_TILE_BYTES,
+        (int8_t *)(pool->qkv_expand_expanded +
+            (size_t)tile * expanded_tile_bytes +
+            (size_t)first_k_tile * QBH_HMX_WEIGHT_BYTES),
+        pool->qkv_expand_region_k_tiles);
+}
+
+static int qbh_w4u8_qkv_expand_preemptible(
+    struct qbh_block_header *header,
+    struct qbh_block_w4f16_pool *pool,
+    const uint8_t *compressed, uint8_t *expanded,
+    uint32_t k_tiles, uint32_t tiles) {
+    uint32_t generation;
+    uint32_t main_regions = 0U;
+    uint64_t main_work_ticks = 0U;
+    uint64_t assist_wait_ticks = 0U;
+    uint64_t wait_start;
+
+    if (header == NULL || pool == NULL || compressed == NULL ||
+        expanded == NULL || tiles == 0U ||
+        k_tiles == 0U ||
+        k_tiles % QBH_BLOCK_W4U8_QKV_ASSIST_REGION_K_TILES != 0U ||
+        pool->active_worker_count == 0U ||
+        pool->active_worker_count > pool->worker_count) {
+        return -1;
+    }
+
+    generation = ++pool->qkv_expand_generation_counter;
+    if (generation == 0U) {
+        generation = ++pool->qkv_expand_generation_counter;
+    }
+    pool->qkv_expand_compressed = compressed;
+    pool->qkv_expand_expanded = expanded;
+    pool->qkv_expand_k_tiles = k_tiles;
+    pool->qkv_expand_tiles = tiles;
+    pool->qkv_expand_region_k_tiles =
+        QBH_BLOCK_W4U8_QKV_ASSIST_REGION_K_TILES;
+    pool->qkv_expand_region_count =
+        tiles * k_tiles / pool->qkv_expand_region_k_tiles;
+    pool->qkv_expand_next_region = 0U;
+    pool->qkv_expand_completed_regions = 0U;
+    pool->qkv_expand_worker_regions = 0U;
+    asm volatile("barrier" ::: "memory");
+    pool->qkv_expand_active_generation = generation;
+    asm volatile("release(%0):at"
+                 :
+                 : "r"(&pool->qkv_expand_active_generation)
+                 : "memory");
+
+    while (pool->qkv_expand_completed_regions <
+           pool->qkv_expand_region_count) {
+        uint32_t region;
+
+        for (uint32_t worker = 0U;
+             worker < pool->active_worker_count; ++worker) {
+            (void)__sync_bool_compare_and_swap(
+                &pool->jobs[worker].qkv_expand_wait_state,
+                1U, 2U);
+        }
+
+        region = qbh_atomic_fetch_increment(
+            &pool->qkv_expand_next_region);
+        if (region < pool->qkv_expand_region_count) {
+            const uint64_t region_start =
+                HAP_perf_get_qtimer_count();
+            qbh_w4u8_qkv_expand_region(pool, region);
+            main_work_ticks +=
+                HAP_perf_get_qtimer_count() - region_start;
+            ++main_regions;
+            (void)qbh_atomic_fetch_increment(
+                &pool->qkv_expand_completed_regions);
+        } else {
+            const uint64_t region_wait_start =
+                HAP_perf_get_qtimer_count();
+            asm volatile("pause(#8)" : : : "memory");
+            assist_wait_ticks +=
+                HAP_perf_get_qtimer_count() - region_wait_start;
+        }
+    }
+    header->w4u8_qkv_main_expand_ticks += main_work_ticks;
+
+    pool->qkv_expand_active_generation = 0U;
+    asm volatile("release(%0):at"
+                 :
+                 : "r"(&pool->qkv_expand_active_generation)
+                 : "memory");
+    wait_start = HAP_perf_get_qtimer_count();
+    for (uint32_t worker = 0U;
+         worker < pool->active_worker_count; ++worker) {
+        struct qbh_block_w4f16_job *job = &pool->jobs[worker];
+        for (;;) {
+            const uint32_t state = job->qkv_expand_wait_state;
+            if (state == 0U ||
+                (state == 1U && __sync_bool_compare_and_swap(
+                    &job->qkv_expand_wait_state, 1U, 0U))) {
+                break;
+            }
+            asm volatile("pause(#8)" : : : "memory");
+        }
+    }
+    header->w4u8_qkv_worker_assist_wait_ticks +=
+        assist_wait_ticks + HAP_perf_get_qtimer_count() - wait_start;
+    header->w4u8_qkv_main_expand_region_count += main_regions;
+    header->w4u8_qkv_main_expand_k_tile_count +=
+        main_regions * pool->qkv_expand_region_k_tiles;
+    header->w4u8_qkv_worker_assist_region_count +=
+        pool->qkv_expand_worker_regions;
+    header->w4u8_qkv_worker_assist_k_tile_count +=
+        pool->qkv_expand_worker_regions *
+            pool->qkv_expand_region_k_tiles;
+    if (pool->qkv_expand_worker_regions != 0U) {
+        ++header->w4u8_qkv_worker_assist_batch_count;
+    }
+    if (pool->qkv_expand_region_k_tiles >
+        header->w4u8_qkv_worker_max_region_k_tiles) {
+        header->w4u8_qkv_worker_max_region_k_tiles =
+            pool->qkv_expand_region_k_tiles;
+    }
+    return 0;
+}
+
 static uint32_t qbh_w4u8_qkvo_batch_tiles(
     const struct qbh_block_header *header,
     const struct qbh_block_projection_desc *desc) {
@@ -5594,13 +5747,39 @@ static int qbh_run_w4u8_qkvo_pipelined_projection(
         }
 
         expand_start = HAP_perf_get_qtimer_count();
-        for (uint32_t tile = 0U; tile < tiles; ++tile) {
-            qbh_unpack_w4_to_s8_hvx(
-                compressed_slots[slot] +
-                    (size_t)tile * compressed_tile_bytes,
-                (int8_t *)(expanded_slots[slot] +
-                    (size_t)tile * expanded_tile_bytes),
-                k_tiles);
+        if (header->w4u8_qkvo_pipeline_mode ==
+                QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_PREEMPTIBLE_EXPAND &&
+            desc == &header->projections[QBH_BLOCK_PROJ_Q] &&
+            w4f16_pool != NULL && tiles == batch_tiles &&
+            tiles == QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES) {
+            result = qbh_w4u8_qkv_expand_preemptible(
+                header, w4f16_pool, compressed_slots[slot],
+                expanded_slots[slot], k_tiles, tiles);
+            if (result != 0) {
+                if (hmx_active != 0) {
+                    (void)qbh_hmx_wait(worker);
+                }
+                qbh_record_projection_failure(
+                    header, desc, batch_base, 16U, result);
+                return -1;
+            }
+        } else {
+            uint64_t main_start = HAP_perf_get_qtimer_count();
+            for (uint32_t tile = 0U; tile < tiles; ++tile) {
+                qbh_unpack_w4_to_s8_hvx(
+                    compressed_slots[slot] +
+                        (size_t)tile * compressed_tile_bytes,
+                    (int8_t *)(expanded_slots[slot] +
+                        (size_t)tile * expanded_tile_bytes),
+                    k_tiles);
+            }
+            if (desc != &header->projections[QBH_BLOCK_PROJ_O]) {
+                header->w4u8_qkv_main_expand_ticks +=
+                    HAP_perf_get_qtimer_count() - main_start;
+                header->w4u8_qkv_main_expand_region_count += tiles;
+                header->w4u8_qkv_main_expand_k_tile_count +=
+                    tiles * k_tiles;
+            }
         }
         header->w4u8_qkvo_weight_expand_ticks +=
             HAP_perf_get_qtimer_count() - expand_start;
@@ -7923,14 +8102,71 @@ static int qbh_attention_u8_integer(
     return 0;
 }
 
+static void qbh_attention_u8_qkv_expand_help(
+    struct qbh_block_w4f16_pool *pool,
+    struct qbh_block_w4f16_job *job) {
+    uint32_t generation;
+    uint32_t region;
+    uint64_t start;
+
+    if (job->qkv_expand_wait_state != 2U) {
+        return;
+    }
+    asm volatile("barrier" ::: "memory");
+    generation = pool->qkv_expand_active_generation;
+    region = qbh_atomic_fetch_increment(
+        &pool->qkv_expand_next_region);
+    if (generation != 0U &&
+        generation == pool->qkv_expand_active_generation &&
+        region < pool->qkv_expand_region_count) {
+        start = HAP_perf_get_qtimer_count();
+        qbh_w4u8_qkv_expand_region(pool, region);
+        job->qkv_expand_ticks +=
+            HAP_perf_get_qtimer_count() - start;
+        ++job->qkv_expand_region_count;
+        job->qkv_expand_k_tile_count +=
+            pool->qkv_expand_region_k_tiles;
+        (void)qbh_atomic_fetch_increment(
+            &pool->qkv_expand_worker_regions);
+        (void)qbh_atomic_fetch_increment(
+            &pool->qkv_expand_completed_regions);
+    }
+    job->qkv_expand_wait_state = 0U;
+    asm volatile("release(%0):at"
+                 :
+                 : "r"(&job->qkv_expand_wait_state)
+                 : "memory");
+}
+
 static int qbh_attention_u8_qk_prep_wait_ready(
-    struct qbh_block_w4f16_pool *pool, uint32_t task) {
+    struct qbh_block_w4f16_pool *pool,
+    struct qbh_block_w4f16_job *job, uint32_t task) {
     while (pool->attention_qk_ready[task] !=
            pool->attention_qk_generation) {
         if (pool->attention_qk_stream_abort != 0U) {
             return -1;
         }
+        if (pool->qkv_expand_active_generation != 0U &&
+            job->qkv_expand_wait_state == 0U) {
+            (void)__sync_bool_compare_and_swap(
+                &job->qkv_expand_wait_state, 0U, 1U);
+        }
+        if (job->qkv_expand_wait_state == 2U) {
+            qbh_attention_u8_qkv_expand_help(pool, job);
+        }
         asm volatile("pause(#8)" : : : "memory");
+    }
+    for (;;) {
+        const uint32_t state = job->qkv_expand_wait_state;
+        if (state == 2U) {
+            qbh_attention_u8_qkv_expand_help(pool, job);
+            continue;
+        }
+        if (state == 0U ||
+            (state == 1U && __sync_bool_compare_and_swap(
+                &job->qkv_expand_wait_state, 1U, 0U))) {
+            break;
+        }
     }
     asm volatile("barrier" ::: "memory");
     return 0;
@@ -7983,7 +8219,7 @@ static void qbh_attention_u8_qk_prep_pool_run_group_tasks(
              local_head < QBH_ATTENTION_Q_HEADS_PER_GROUP;
              ++local_head) {
             if (qbh_attention_u8_qk_prep_wait_ready(
-                    pool, first_q_head + local_head) != 0) {
+                    pool, job, first_q_head + local_head) != 0) {
                 return;
             }
             start = HAP_perf_get_qtimer_count();
@@ -8003,7 +8239,7 @@ static void qbh_attention_u8_qk_prep_pool_run_group_tasks(
         }
 
         if (qbh_attention_u8_qk_prep_wait_ready(
-                pool, QBH_BLOCK_HEADS + group) != 0) {
+                pool, job, QBH_BLOCK_HEADS + group) != 0) {
             return;
         }
         start = HAP_perf_get_qtimer_count();
@@ -8061,7 +8297,8 @@ static void qbh_attention_u8_qk_prep_pool_run_head_tasks(
             pool->attention_qk_stream_abort != 0U) {
             break;
         }
-        if (qbh_attention_u8_qk_prep_wait_ready(pool, task) != 0) {
+        if (qbh_attention_u8_qk_prep_wait_ready(
+                pool, job, task) != 0) {
             return;
         }
 
@@ -8168,9 +8405,9 @@ static void qbh_attention_u8_qk_prep_pool_run_head_pair_tasks(
             uint8_t *second_q_head;
 
             if (qbh_attention_u8_qk_prep_wait_ready(
-                    pool, first_head) != 0 ||
+                    pool, job, first_head) != 0 ||
                 qbh_attention_u8_qk_prep_wait_ready(
-                    pool, first_head + 1U) != 0) {
+                    pool, job, first_head + 1U) != 0) {
                 return;
             }
             first_q_head = buffers->q +
@@ -8221,9 +8458,11 @@ static void qbh_attention_u8_qk_prep_pool_run_head_pair_tasks(
             uint32_t *second_qk_bias;
 
             if (qbh_attention_u8_qk_prep_wait_ready(
-                    pool, QBH_BLOCK_HEADS + first_group) != 0 ||
+                    pool, job,
+                    QBH_BLOCK_HEADS + first_group) != 0 ||
                 qbh_attention_u8_qk_prep_wait_ready(
-                    pool, QBH_BLOCK_HEADS + first_group + 1U) != 0) {
+                    pool, job,
+                    QBH_BLOCK_HEADS + first_group + 1U) != 0) {
                 return;
             }
             if (!qbh_block_attention_config_valid(
@@ -8323,8 +8562,8 @@ static void qbh_attention_u8_qk_prep_pool_run_head_pair_tasks(
 static void qbh_attention_u8_qk_prep_pool_run_tasks(
     struct qbh_block_w4f16_pool *pool,
     struct qbh_block_w4f16_job *job) {
-    if (pool->attention_header->w4u8_qkvo_pipeline_mode ==
-        QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS) {
+    if (qbh_block_w4u8_qkvo_uses_qk_head_pairs(
+            pool->attention_header->w4u8_qkvo_pipeline_mode)) {
         qbh_attention_u8_qk_prep_pool_run_head_pair_tasks(pool, job);
     } else if (pool->attention_header->w4u8_qkvo_pipeline_mode ==
                QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_TASKS) {
@@ -8354,8 +8593,8 @@ static int qbh_hvx_pool_u8_qk_prep_start_async(
     }
     pool->attention_header = header;
     pool->attention_buffers = buffers;
-    if (header->w4u8_qkvo_pipeline_mode ==
-        QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS) {
+    if (qbh_block_w4u8_qkvo_uses_qk_head_pairs(
+            header->w4u8_qkvo_pipeline_mode)) {
         pool->attention_task_count =
             QBH_BLOCK_HEADS / 2U + QBH_BLOCK_KV_HEADS / 2U;
     } else if (header->w4u8_qkvo_pipeline_mode ==
@@ -8368,6 +8607,11 @@ static int qbh_hvx_pool_u8_qk_prep_start_async(
     pool->next_attention_task = 0U;
     pool->attention_qk_stream_abort = 0U;
     pool->attention_qk_streaming = 1U;
+    pool->qkv_expand_generation_counter = 0U;
+    pool->qkv_expand_active_generation = 0U;
+    pool->qkv_expand_next_region = 0U;
+    pool->qkv_expand_completed_regions = 0U;
+    pool->qkv_expand_worker_regions = 0U;
     pool->active_worker_count = worker_count;
     ++pool->attention_qk_generation;
     if (pool->attention_qk_generation == 0U) {
@@ -8383,6 +8627,10 @@ static int qbh_hvx_pool_u8_qk_prep_start_async(
         job->u8_attention_qk_norm_rope_ticks = 0U;
         job->u8_attention_k_pack_ticks = 0U;
         job->attention_qk_norm_task_count = 0U;
+        job->qkv_expand_wait_state = 0U;
+        job->qkv_expand_region_count = 0U;
+        job->qkv_expand_k_tile_count = 0U;
+        job->qkv_expand_ticks = 0U;
         job->command_kind = QBH_BLOCK_HVX_POOL_U8_QK_PREP;
     }
     asm volatile("barrier" ::: "memory");
@@ -8471,6 +8719,8 @@ static int qbh_hvx_pool_u8_qk_prep_wait_async(
             job->u8_attention_k_pack_ticks;
         header->u8_attention_fused_k_operand_mismatch_count +=
             job->u8_attention_fused_k_operand_mismatch_count;
+        header->w4u8_qkv_worker_expand_ticks +=
+            job->qkv_expand_ticks;
     }
     pool->attention_qk_streaming = 0U;
     return pool->attention_qk_stream_abort == 0U &&

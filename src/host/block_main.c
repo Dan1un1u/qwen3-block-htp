@@ -933,6 +933,13 @@ static int qbh_parse_w4u8_qkvo_pipeline_mode(
         *mode = QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS;
         return 0;
     }
+    if (strcmp(text,
+               "qkvo_batch4_qk_head_pairs_q_preemptible_expand") == 0 ||
+        strcmp(text, "q_preemptible_expand") == 0) {
+        *mode =
+            QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_PREEMPTIBLE_EXPAND;
+        return 0;
+    }
     return -1;
 }
 
@@ -948,6 +955,8 @@ static const char *qbh_w4u8_qkvo_pipeline_mode_name(uint32_t mode) {
             return "qkvo_batch4_qk_head_tasks";
         case QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS:
             return "qkvo_batch4_qk_head_pairs";
+        case QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_PREEMPTIBLE_EXPAND:
+            return "qkvo_batch4_qk_head_pairs_q_preemptible_expand";
         default:
             return "serial";
     }
@@ -1721,7 +1730,7 @@ int main(int argc, char **argv) {
            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT |
            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT)) != 0U) ||
         w4u8_qkvo_pipeline_mode >
-            QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS ||
+            QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_PREEMPTIBLE_EXPAND ||
         u8_norm_reduction_mode >
             QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE_PARALLEL_INPUT ||
         w4u8_qk_pair_kernel_mode >
@@ -1930,6 +1939,7 @@ int main(int argc, char **argv) {
                         "w4u8_mlp_input|w4u8_mlp_io] "
                         "[w4u8_qkvo_pipeline:serial|qkv_batch2|"
                         "qkv_batch4|qkvo_batch4|"
+                        "qkvo_batch4_qk_head_pairs_q_preemptible_expand|"
                         "qkvo_batch4_qk_head_tasks|"
                         "qkvo_batch4_qk_head_pairs] "
                         "[u8_norm_reduction:scalar|hvx_tree|"
@@ -2497,7 +2507,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0112\","
+        "{\"experiment\":\"EXP-0118\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2700,6 +2710,15 @@ int main(int argc, char **argv) {
         "\"w4u8_qkvo_weight_expand_ticks\":%" PRIu64 ","
         "\"w4u8_qkvo_prefetch_wait_ticks\":%" PRIu64 ","
         "\"w4u8_qkvo_hmx_lifetime_ticks\":%" PRIu64 ","
+        "\"w4u8_qkv_worker_assist_batch_count\":%" PRIu32 ","
+        "\"w4u8_qkv_worker_assist_region_count\":%" PRIu32 ","
+        "\"w4u8_qkv_worker_assist_k_tile_count\":%" PRIu32 ","
+        "\"w4u8_qkv_main_expand_region_count\":%" PRIu32 ","
+        "\"w4u8_qkv_main_expand_k_tile_count\":%" PRIu32 ","
+        "\"w4u8_qkv_worker_max_region_k_tiles\":%" PRIu32 ","
+        "\"w4u8_qkv_worker_expand_ticks\":%" PRIu64 ","
+        "\"w4u8_qkv_main_expand_ticks\":%" PRIu64 ","
+        "\"w4u8_qkv_worker_assist_wait_ticks\":%" PRIu64 ","
         "\"w4u8_input_norm_task_count\":%" PRIu32 ","
         "\"w4u8_input_norm_main_work_ticks\":%" PRIu64 ","
         "\"w4u8_input_norm_worker_work_ticks\":%" PRIu64 ","
@@ -3021,6 +3040,15 @@ int main(int argc, char **argv) {
         header->w4u8_qkvo_weight_expand_ticks,
         header->w4u8_qkvo_prefetch_wait_ticks,
         header->w4u8_qkvo_hmx_lifetime_ticks,
+        header->w4u8_qkv_worker_assist_batch_count,
+        header->w4u8_qkv_worker_assist_region_count,
+        header->w4u8_qkv_worker_assist_k_tile_count,
+        header->w4u8_qkv_main_expand_region_count,
+        header->w4u8_qkv_main_expand_k_tile_count,
+        header->w4u8_qkv_worker_max_region_k_tiles,
+        header->w4u8_qkv_worker_expand_ticks,
+        header->w4u8_qkv_main_expand_ticks,
+        header->w4u8_qkv_worker_assist_wait_ticks,
         header->w4u8_input_norm_task_count,
         header->w4u8_input_norm_main_work_ticks,
         header->w4u8_input_norm_worker_work_ticks,
