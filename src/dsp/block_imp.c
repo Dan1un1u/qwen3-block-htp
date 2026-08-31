@@ -91,7 +91,10 @@ _Static_assert(
 #define QBH_BLOCK_W4U8_DOWN_PERSISTENT_HVX_WORKERS UINT32_C(5)
 #define QBH_BLOCK_W4U8_GATE_UP_PAIR_SLOTS UINT32_C(8)
 #define QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES UINT32_C(8)
-#define QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES UINT32_C(4)
+#define QBH_BLOCK_W4U8_QKV_CONTROL_BATCH_N_TILES UINT32_C(4)
+#define QBH_BLOCK_W4U8_QKV_MAX_BATCH_N_TILES UINT32_C(8)
+#define QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES \
+    QBH_BLOCK_W4U8_QKV_MAX_BATCH_N_TILES
 #define QBH_BLOCK_W4U8_INPUT_NORM_ROWS_PER_TASK UINT32_C(4)
 #define QBH_BLOCK_W4U8_RESIDUAL_ROWS_PER_TASK UINT32_C(4)
 #define QBH_BLOCK_W4U8_SOFTMAX_ROW_SLICES UINT32_C(2)
@@ -410,7 +413,7 @@ static int qbh_hvx_pool_u8_qk_prep_start_async(
 static void qbh_hvx_pool_u8_qk_prep_abort_async(
     struct qbh_block_w4f16_pool *pool);
 static void qbh_hvx_pool_u8_qk_prep_publish(
-    const struct qbh_block_header *header,
+    struct qbh_block_header *header,
     const struct qbh_block_projection_desc *desc,
     struct qbh_block_w4f16_pool *pool,
     uint32_t first_n_tile, uint32_t n_tiles);
@@ -489,7 +492,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         variant == QBH_BLOCK_W4F16
             ? QBH_BLOCK_W4F16_DMA_BATCH_N_TILES
             : (variant == QBH_BLOCK_W4U8
-                   ? QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES : 1U);
+                   ? QBH_BLOCK_W4U8_QKV_CONTROL_BATCH_N_TILES : 1U);
     uint32_t expanded_batch_factor =
         variant == QBH_BLOCK_W4F16
             ? QBH_BLOCK_W4F16_HMX_BATCH_N_TILES
@@ -503,13 +506,16 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
                    ? QBH_BLOCK_F16F16_BATCH_N_TILES
                    : 1U);
     uint32_t expanded_buffer_bytes =
-        QBH_BLOCK_MAX_K * QBH_HMX_OUTPUT_CHANNELS *
-        sizeof(uint16_t) * expanded_batch_factor;
+        variant == QBH_BLOCK_W4U8
+            ? QBH_BLOCK_HIDDEN * QBH_HMX_OUTPUT_CHANNELS *
+                  QBH_BLOCK_W4U8_QKV_MAX_BATCH_N_TILES
+            : QBH_BLOCK_MAX_K * QBH_HMX_OUTPUT_CHANNELS *
+                  sizeof(uint16_t) * expanded_batch_factor;
     uint32_t scale_batch_factor =
         variant == QBH_BLOCK_W4F16
             ? 4U
             : (variant == QBH_BLOCK_W4U8
-                   ? 2U * QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES : 1U);
+                   ? 2U * QBH_BLOCK_W4U8_QKV_MAX_BATCH_N_TILES : 1U);
 
     memset(buffers, 0, sizeof(*buffers));
     buffers->input_norm_weight = qbh_arena_alloc(
@@ -767,6 +773,10 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          header->fp16_norm_rows_per_task != 8U) ||
         header->fp16_norm_contexts < 2U ||
         header->fp16_norm_contexts > 4U ||
+        (header->w4u8_qkv_batch_n_tiles_config != 4U &&
+         header->w4u8_qkv_batch_n_tiles_config != 8U) ||
+        (header->variant != QBH_BLOCK_W4U8 &&
+         header->w4u8_qkv_batch_n_tiles_config != 4U) ||
         (header->variant != QBH_BLOCK_W4U8 &&
          header->u8_norm_reduction_mode !=
              QBH_BLOCK_U8_NORM_REDUCTION_SCALAR) ||
@@ -5077,7 +5087,7 @@ static uint32_t qbh_w4u8_qkvo_batch_tiles(
         desc == &header->projections[QBH_BLOCK_PROJ_V]) {
         return header->w4u8_qkvo_pipeline_mode ==
                        QBH_BLOCK_W4U8_QKV_BATCH2
-                   ? 2U : 4U;
+                   ? 2U : header->w4u8_qkv_batch_n_tiles_config;
     }
     if (desc == &header->projections[QBH_BLOCK_PROJ_O] &&
         header->w4u8_qkvo_pipeline_mode >=
@@ -5126,6 +5136,7 @@ static int qbh_run_w4u8_qkvo_pipelined_projection(
     }
     if (desc != &header->projections[QBH_BLOCK_PROJ_O]) {
         header->w4u8_qkv_batch_n_tiles = batch_tiles;
+        header->w4u8_qkv_batch_n_tiles_observed = batch_tiles;
     }
 
     for (uint32_t batch_base = 0U; batch_base < n_tiles;
@@ -7517,14 +7528,15 @@ static void qbh_hvx_pool_u8_qk_prep_abort_async(
 }
 
 static void qbh_hvx_pool_u8_qk_prep_publish(
-    const struct qbh_block_header *header,
+    struct qbh_block_header *header,
     const struct qbh_block_projection_desc *desc,
     struct qbh_block_w4f16_pool *pool,
     uint32_t first_n_tile, uint32_t n_tiles) {
     const uint32_t tiles_per_head =
         QBH_BLOCK_HEAD_DIM / QBH_HMX_OUTPUT_CHANNELS;
     uint32_t end_tile;
-    uint32_t task;
+    uint32_t first_head;
+    uint32_t end_head;
 
     if (header == NULL ||
         !qbh_attention_u8_qkv_overlap_enabled(
@@ -7535,22 +7547,32 @@ static void qbh_hvx_pool_u8_qk_prep_publish(
         return;
     }
     end_tile = first_n_tile + n_tiles;
-    if (end_tile == 0U || end_tile % tiles_per_head != 0U) {
+    if (end_tile == 0U || first_n_tile % tiles_per_head != 0U ||
+        end_tile % tiles_per_head != 0U) {
         return;
     }
-    task = end_tile / tiles_per_head - 1U;
-    if (desc == &header->projections[QBH_BLOCK_PROJ_K]) {
-        task += QBH_BLOCK_HEADS;
+    first_head = first_n_tile / tiles_per_head;
+    end_head = end_tile / tiles_per_head;
+    for (uint32_t head = first_head; head < end_head; ++head) {
+        uint32_t task = head;
+        if (desc == &header->projections[QBH_BLOCK_PROJ_K]) {
+            task += QBH_BLOCK_HEADS;
+        }
+        if (task >= QBH_BLOCK_HEADS + QBH_BLOCK_KV_HEADS) {
+            return;
+        }
+        pool->attention_qk_ready[task] =
+            pool->attention_qk_generation;
+        asm volatile("release(%0):at"
+                     :
+                     : "r"(&pool->attention_qk_ready[task])
+                     : "memory");
+        if (desc == &header->projections[QBH_BLOCK_PROJ_Q]) {
+            ++header->w4u8_q_ready_publish_count;
+        } else {
+            ++header->w4u8_k_ready_publish_count;
+        }
     }
-    if (task >= QBH_BLOCK_HEADS + QBH_BLOCK_KV_HEADS) {
-        return;
-    }
-    pool->attention_qk_ready[task] =
-        pool->attention_qk_generation;
-    asm volatile("release(%0):at"
-                 :
-                 : "r"(&pool->attention_qk_ready[task])
-                 : "memory");
 }
 
 static int qbh_hvx_pool_u8_qk_prep_wait_async(
