@@ -122,7 +122,7 @@ __attribute__((noinline)) void qbh_expand_w4_to_f16_hvx(
 static __attribute__((always_inline)) inline void
 qbh_unpack_w4_to_f16_hvx_impl(
     const uint8_t *packed_w4, void *expanded_f16, uint32_t k_tiles,
-    uint32_t publish_fence) {
+    uint32_t publish_fence, uint32_t mask_low_nibble) {
     const HVX_Vector v_f16_lut =
         *(const HVX_Vector *)qbh_signed_w4_f16_lut;
     const HVX_Vector v_nibble_mask = Q6_Vb_vsplat_R(0x0f);
@@ -135,8 +135,9 @@ qbh_unpack_w4_to_f16_hvx_impl(
          packed_vector < k_tiles * 4U; ++packed_vector) {
         const HVX_Vector v_packed = *(const HVX_Vector *)(
             packed_w4 + (size_t)packed_vector * sizeof(HVX_Vector));
-        const HVX_Vector v_low_indices =
-            Q6_V_vand_VV(v_packed, v_nibble_mask);
+        const HVX_Vector v_low_indices = mask_low_nibble != 0U
+            ? Q6_V_vand_VV(v_packed, v_nibble_mask)
+            : v_packed;
         const HVX_Vector v_high_indices =
             Q6_Vub_vlsr_VubR(v_packed, 4);
         const HVX_VectorPair v_unpacked =
@@ -158,7 +159,7 @@ qbh_unpack_w4_to_f16_hvx_impl(
 __attribute__((noinline)) void qbh_unpack_w4_to_f16_hvx(
     const uint8_t *packed_w4, void *expanded_f16, uint32_t k_tiles) {
     qbh_unpack_w4_to_f16_hvx_impl(
-        packed_w4, expanded_f16, k_tiles, 1U);
+        packed_w4, expanded_f16, k_tiles, 1U, 1U);
 }
 
 __attribute__((noinline)) void qbh_unpack_w4_to_f16_hvx_relaxed(
@@ -166,7 +167,15 @@ __attribute__((noinline)) void qbh_unpack_w4_to_f16_hvx_relaxed(
     /* A caller that joins all HVX workers before exposing the complete group
      * supplies the single publication fence at that join. */
     qbh_unpack_w4_to_f16_hvx_impl(
-        packed_w4, expanded_f16, k_tiles, 0U);
+        packed_w4, expanded_f16, k_tiles, 0U, 1U);
+}
+
+__attribute__((noinline)) void
+qbh_unpack_w4_to_f16_hvx_relaxed_unmasked(
+    const uint8_t *packed_w4, void *expanded_f16,
+    uint32_t k_tiles) {
+    qbh_unpack_w4_to_f16_hvx_impl(
+        packed_w4, expanded_f16, k_tiles, 0U, 0U);
 }
 
 uint32_t qbh_audit_w4_to_f16_tile(

@@ -774,7 +774,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->qkv_schedule_mode >
             QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL ||
         header->w4f16_group_fence_mode >
-            QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY ||
+            QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY_UNMASKED ||
         (header->w4f16_group_fence_mode !=
              QBH_BLOCK_W4F16_GROUP_FENCE_CONTROL &&
          header->variant != QBH_BLOCK_W4F16) ||
@@ -2559,8 +2559,17 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
                     break;
                 }
                 start = HAP_perf_get_qtimer_count();
-                if (pool->publish_ready != 0U) {
+                if (pool->publish_ready == 1U) {
                     qbh_unpack_w4_to_f16_hvx(
+                        pool->compressed_weight +
+                            (size_t)region * pool->region_tiles *
+                                QBH_W4_PACKED_TILE_BYTES,
+                        pool->expanded_weight +
+                            (size_t)region * pool->region_tiles *
+                                QBH_HMX_FP16_TILE_BYTES,
+                        pool->region_tiles);
+                } else if (pool->publish_ready == 2U) {
+                    qbh_unpack_w4_to_f16_hvx_relaxed_unmasked(
                         pool->compressed_weight +
                             (size_t)region * pool->region_tiles *
                                 QBH_W4_PACKED_TILE_BYTES,
@@ -2581,7 +2590,7 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
                 job->expand_ticks +=
                     HAP_perf_get_qtimer_count() - start;
                 ++job->expand_count;
-                if (pool->publish_ready != 0U) {
+                if (pool->publish_ready == 1U) {
                     pool->ready_generations[region] =
                         pool->expected_generation;
                     asm volatile("release(%0):at"
@@ -3789,9 +3798,14 @@ static void qbh_w4f16_expand_with_main(
         ready_generations + main_regions, expected_generation,
         pool_regions, region_tiles,
         active_worker_count,
-        publish_ready != 0U || relaxed_group_fence == 0U);
+        publish_ready != 0U || relaxed_group_fence == 0U
+            ? 1U
+            : (relaxed_group_fence >= 2U ? 2U : 0U));
     main_start = HAP_perf_get_qtimer_count();
-    if (publish_ready == 0U && relaxed_group_fence != 0U) {
+    if (publish_ready == 0U && relaxed_group_fence >= 2U) {
+        qbh_unpack_w4_to_f16_hvx_relaxed_unmasked(
+            compressed_weight, expanded_weight, main_tiles);
+    } else if (publish_ready == 0U && relaxed_group_fence != 0U) {
         qbh_unpack_w4_to_f16_hvx_relaxed(
             compressed_weight, expanded_weight, main_tiles);
     } else if (publish_ready == 0U) {
@@ -5141,8 +5155,7 @@ static int qbh_w4f16_mlp_prepare_group(
         group + 1U,
         state->k_tiles * state->group_tiles,
         region_tiles, 2U, 0U,
-        header->w4f16_group_fence_mode ==
-            QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY);
+        header->w4f16_group_fence_mode);
     header->w4f16_expand_ticks +=
         HAP_perf_get_qtimer_count() - expand_start;
     if (group == 0U) {

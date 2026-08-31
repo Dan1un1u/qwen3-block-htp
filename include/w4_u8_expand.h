@@ -29,8 +29,12 @@ void qbh_unpack_w4_to_f16_hvx(const uint8_t *packed_w4,
                               uint32_t k_tiles);
 
 void qbh_unpack_w4_to_f16_hvx_relaxed(const uint8_t *packed_w4,
-                                      void *expanded_f16,
-                                      uint32_t k_tiles);
+                                       void *expanded_f16,
+                                       uint32_t k_tiles);
+
+void qbh_unpack_w4_to_f16_hvx_relaxed_unmasked(
+    const uint8_t *packed_w4, void *expanded_f16,
+    uint32_t k_tiles);
 
 uint32_t qbh_audit_w4_to_f16_tile(
     const uint8_t *packed_w4, const float *channel_scales,
