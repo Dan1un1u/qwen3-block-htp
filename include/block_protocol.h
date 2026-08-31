@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(49)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(124)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(50)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(125)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -341,6 +341,7 @@ struct qbh_block_header {
     uint32_t w4u8_stream_fence_mode;
     uint32_t w4u8_gate_up_ring_slots;
     uint32_t w4u8_qkv_ring_expand_workers;
+    uint32_t w4u8_qkv_ring_handoff_workers;
 
     uint32_t input_offset;
     uint32_t input_bytes;
@@ -689,6 +690,12 @@ struct qbh_block_header {
     uint64_t w4u8_qkv_ring_hmx_ready_wait_ticks;
     uint64_t w4u8_qkv_ring_hmx_compute_ticks;
     uint64_t w4u8_qkv_ring_pool_wait_ticks;
+    uint32_t w4u8_qkv_ring_handoff_worker_count;
+    uint32_t w4u8_qkv_ring_v_expand_worker_count;
+    uint32_t w4u8_qkv_ring_handoff_count;
+    uint32_t w4u8_qkv_ring_final_prep_worker_count;
+    uint64_t w4u8_qkv_ring_qk_expand_ticks;
+    uint64_t w4u8_qkv_ring_v_expand_ticks;
 };
 
 #endif
