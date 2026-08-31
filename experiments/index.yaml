@@ -9597,3 +9597,46 @@ experiments:
       evidence_sha256_ledger_sha256: 349348c2b24943b9bb9fb1b1f11e5ff4b1697baf3e47041cdbe281f11ec6894e
       conclusion: exact_packed_pair_lookup_halves_gathers_and_reduces_activation_work_but_the_existing_parallel_stream_hides_it_and_complete_repeat10_host_does_not_improve
       selected_baseline_changed: false
+  - id: EXP-0118
+    slug: w4u8-qkv-preemptible-worker-expand
+    title: W4U8 preemptible worker-assisted Q expansion
+    parent: EXP-0112
+    variants:
+      - exp0112_main_hvx_q_expand_control
+      - q_only_preemptible_worker_assisted_expand_stage_a
+    execution_state: running
+    evidence_validity: pending
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-qkv-preemptible-worker-expand
+    source_branches:
+      - codex/exp-0118-w4u8-qkv-preemptible-worker-expand
+    source_commits: []
+    record: docs/experiments/EXP-0118.md
+    approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0118-w4u8-qkv-preemptible-worker-expand
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0112
+      source_parent_commit: 5429c70bc6eb155af96bb7dd987094bb8fb941b1
+      selected_w4u8_runtime_parent: EXP-0112-single_fence
+      recipe_scope: W4U8_q_projection_expansion_schedule_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      prior_negative_boundary: EXP-0081_full_output_tile_worker_assistance_reduced_qkv_but_increased_qk_prep_join_pressure_and_failed_repeat1_paired_host
+      hypothesis: quarter_tile_16k_region_assistance_bounds_worker_nonpreemptibility_and_preserves_qk_dependency_service_while_retaining_parallel_q_expansion
+      implementation_boundary: runtime_selectable_q_only_generation_safe_region_claim_queue_idle_qk_workers_claim_at_most_one_region_before_each_dependency_recheck_main_thread_drains_remaining_regions
+      excluded_changes: no_k_v_o_attention_math_qk_norm_rope_math_qparam_weight_layout_dma_hmx_command_mlp_residual_w4f16_or_public_changes
+      static_gate: fixed_16k_tile_regions_generation_safe_atomic_claim_and_worker_dependency_recheck_after_each_region_no_qnn
+      correctness_gate: candidate_byte_exact_to_exp0112_final_output_and_existing_input_norm_score_probability_av_audits_zero_mismatch_zero_max_lsb
+      execution_gate: positive_assisted_region_and_tile_counts_all_twelve_qk_pair_tasks_once_no_early_dependency_read
+      physical_gate: exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_boundary_bytes_dma_descriptors_hmx_commands_tile_pairs_and_peak_vtcm
+      speed_gate: qkv_projection_and_complete_host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
+      completion_gate: stage_a_static_correctness_execution_physical_then_five_rounds_pc027_pc028_and_stop_or_extend_kv_only_after_pass
