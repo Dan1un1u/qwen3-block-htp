@@ -9107,3 +9107,43 @@ experiments:
       source_tags:
         - baseline-w4f16-specialized-exp0110
       selected_baseline_changed: true
+  - id: EXP-0111
+    slug: w4f16-gate-up-publication-fence
+    title: W4F16 Gate/Up redundant publication-fence elimination
+    parent: EXP-0110
+    variants:
+      - exp0110_w4f16_carrier_control
+      - w4f16_gate_up_group_fence_candidate
+    execution_state: running
+    evidence_validity: pending
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4f16-gate-up-publication-fence
+    source_branches:
+      - codex/exp-0111-w4f16-gate-up-publication-fence
+    source_commits: []
+    record: docs/experiments/EXP-0111.md
+    approval_ref: 'User message 2026-09-01: 既然有收益，那就采用。继续针对W4A16和W4A8开展loop优化。'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0111-w4f16-gate-up-publication-fence
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0110
+      source_parent_commit: d18e901339f4eadd760b590e91f004c3f76e9cb6
+      recipe_scope: W4F16_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      hypothesis: nonstreamed_gate_up_groups_need_one_join_fence_not_one_full_barrier_and_release_per_expand_region
+      implementation_boundary: relaxed_w4_to_f16_unpack_only_for_publish_ready_zero_skip_region_generation_publication_retain_pool_join_barrier
+      excluded_changes: no_weight_scale_hmx_dma_ring_worker_attention_down_public_or_w4u8_changes
+      correctness_gate: byte_exact_control_candidate_final_output_and_w4f16_expansion_audit_zero_mismatch_zero_max_lsb
+      physical_gate: exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_weight_bytes_dma_descriptors_hmx_commands_tile_work_and_peak_vtcm
+      static_gate: candidate_disassembly_has_no_per_region_full_barrier_on_nonstreamed_gate_up_path_and_streaming_publication_path_is_unchanged
+      speed_gate: gate_up_plus_swiglu_and_complete_host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
+      completion_gate: five_rounds_pc027_pc028_complete_profiling_then_accept_or_reject_without_automatic_baseline_promotion
