@@ -8730,3 +8730,55 @@ experiments:
       conclusion: explicit_dual_head_helpers_preserve_math_and_physical_contract_but_function_call_and_scalar_result_store_boundaries_erase_theoretical_reduction_ilp_and_fail_softmax_attention_and_host_gates
       reopen_condition: only_with_a_single_inline_dual_head_pipeline_that_removes_call_and_scalar_store_boundaries_not_another_out_of_line_paired_helper
       selected_baseline_changed: false
+  - id: EXP-0106
+    slug: integrated-fair-fastest-baselines
+    title: Integrated fair-comparison and fastest W4U8 baselines
+    parent: EXP-0099
+    variants:
+      - exp0084_f16f16_fair_control
+      - exp0084_w4f16_fair_control
+      - exp0084_w4u8_fair_control
+      - exp0099_down_batch4_fastest_control
+      - integrated_w4u8_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-integrated-fair-and-fastest-baselines
+    source_branches:
+      - codex/exp-0106-integrated-fair-fastest-baselines
+    source_commits: []
+    record: docs/experiments/EXP-0106.md
+    decided_by: user
+    decided_on: '2026-08-31'
+    approval_ref: 'User message 2026-08-31: 把最新成果整理合入原baseline。公平比较baseline就将有共同收益的优化合入，最快单一实现同理。'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0106-integrated-fair-fastest-baselines
+      started_on: '2026-08-31'
+      completed_on: null
+    evidence:
+      formal_results: null
+      retained_artifacts: null
+      source_parent_commit: ee375b8805814e56e8948443e1879acb89117fad
+      accepted_fair_authority: EXP-0084
+      fastest_complete_parent: EXP-0099
+      integrated_components:
+        - EXP-0095_four_row_native_softmax_carrier
+        - EXP-0093_four_row_native_residual_shuffle
+        - EXP-0104_quarter_tiled_paired_qk_norm_rope
+      excluded_components:
+        - EXP-0098_superseded_by_EXP-0099
+        - EXP-0105_rejected_dual_head_softmax_reductions
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      correctness_gate: final_input_norm_qk_probability_av_byte_exact_to_declared_controls_and_independent_reference_zero_mismatches_zero_max_lsb
+      static_gate: down_batch4_softmax_shuffle4_residual_shuffle4_and_qk_quarter_tiled_paths_present_rejected_exp0105_path_absent
+      physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_and_parent_equivalent_weight_dma_hmx_work
+      speed_gate: select_lowest_valid_incremental_cell_then_strictly_improve_complete_host_wall_over_exp0099_in_ordinary_and_paired_repeat1_and_repeat10
+      fair_matrix_gate: same_source_same_boot_f16f16_w4f16_w4u8_output_hashes_preserved_and_no_material_f16f16_or_w4f16_regression
+      completion_gate: incremental_component_matrix_then_same_source_three_recipe_pc027_pc028_complete_profiling_and_explicit_user_promotion
