@@ -116,6 +116,7 @@ enum qbh_block_hvx_pool_job_kind {
     QBH_BLOCK_HVX_POOL_W4U8_PIPELINE = 11,
     QBH_BLOCK_HVX_POOL_FP16_INPUT_NORM = 12,
     QBH_BLOCK_HVX_POOL_FP16_POST_RESIDUAL_NORM = 13,
+    QBH_BLOCK_HVX_POOL_W4F16_PERSISTENT_EXPAND = 14,
 };
 
 enum qbh_block_u8_residual_kind {
@@ -268,6 +269,10 @@ struct qbh_block_w4f16_pool {
     uint32_t worker_count;
     uint32_t active_worker_count;
     uint32_t created_workers;
+    volatile uint32_t persistent_expand_generation;
+    volatile uint32_t persistent_expand_completed;
+    volatile uint32_t persistent_expand_stop;
+    uint32_t persistent_expand_worker_count;
     const __fp16 *silu_gate;
     const __fp16 *silu_up;
     __fp16 *silu_middle;
@@ -774,7 +779,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->qkv_schedule_mode >
             QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL ||
         header->w4f16_group_fence_mode >
-            QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY ||
+            QBH_BLOCK_W4F16_GROUP_FENCE_PERSISTENT ||
         (header->w4f16_group_fence_mode !=
              QBH_BLOCK_W4F16_GROUP_FENCE_CONTROL &&
          header->variant != QBH_BLOCK_W4F16) ||
@@ -2539,6 +2544,72 @@ static void qbh_u8_input_norm_pool_run_tasks(
     }
 }
 
+static void qbh_w4f16_persistent_expand_worker_run(
+    struct qbh_block_w4f16_pool *pool,
+    struct qbh_block_w4f16_job *job) {
+    uint32_t observed_generation =
+        pool->persistent_expand_generation;
+
+    for (;;) {
+        while (pool->persistent_expand_generation ==
+                   observed_generation &&
+               pool->persistent_expand_stop == 0U) {
+            asm volatile("pause(#8)" : : : "memory");
+        }
+        asm volatile("barrier" ::: "memory");
+        if (pool->persistent_expand_stop != 0U) {
+            break;
+        }
+        observed_generation =
+            pool->persistent_expand_generation;
+        for (;;) {
+            uint32_t region =
+                qbh_atomic_fetch_increment(&pool->next_region);
+            uint64_t start;
+            if (region >= pool->region_count) {
+                break;
+            }
+            start = HAP_perf_get_qtimer_count();
+            if (pool->publish_ready != 0U) {
+                qbh_unpack_w4_to_f16_hvx(
+                    pool->compressed_weight +
+                        (size_t)region * pool->region_tiles *
+                            QBH_W4_PACKED_TILE_BYTES,
+                    pool->expanded_weight +
+                        (size_t)region * pool->region_tiles *
+                            QBH_HMX_FP16_TILE_BYTES,
+                    pool->region_tiles);
+            } else {
+                qbh_unpack_w4_to_f16_hvx_relaxed(
+                    pool->compressed_weight +
+                        (size_t)region * pool->region_tiles *
+                            QBH_W4_PACKED_TILE_BYTES,
+                    pool->expanded_weight +
+                        (size_t)region * pool->region_tiles *
+                            QBH_HMX_FP16_TILE_BYTES,
+                    pool->region_tiles);
+            }
+            job->expand_ticks +=
+                HAP_perf_get_qtimer_count() - start;
+            ++job->expand_count;
+            if (pool->publish_ready != 0U) {
+                pool->ready_generations[region] =
+                    pool->expected_generation;
+                asm volatile("release(%0):at"
+                             :
+                             : "r"(&pool->ready_generations[region])
+                             : "memory");
+            }
+        }
+        (void)qbh_atomic_fetch_increment(
+            &pool->persistent_expand_completed);
+        asm volatile("release(%0):at"
+                     :
+                     : "r"(&pool->persistent_expand_completed)
+                     : "memory");
+    }
+}
+
 static void qbh_w4f16_hvx_worker_main(void *opaque) {
     struct qbh_block_w4f16_job *job =
         (struct qbh_block_w4f16_job *)opaque;
@@ -2627,6 +2698,9 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
         } else if (job->command_kind ==
                    QBH_BLOCK_HVX_POOL_FP16_POST_RESIDUAL_NORM) {
             qbh_fp16_post_residual_norm_pool_run_tasks(pool, job);
+        } else if (job->command_kind ==
+                   QBH_BLOCK_HVX_POOL_W4F16_PERSISTENT_EXPAND) {
+            qbh_w4f16_persistent_expand_worker_run(pool, job);
         } else if (job->command_kind ==
                    QBH_BLOCK_HVX_POOL_W4U8_PIPELINE) {
             job->w4u8_pipeline_worker_status =
@@ -2748,6 +2822,65 @@ static void qbh_w4f16_pool_wait(
         qurt_sem_down(&pool->command_done[worker]);
     }
     asm volatile("barrier" ::: "memory");
+}
+
+static int qbh_w4f16_persistent_expand_start(
+    struct qbh_block_header *header,
+    struct qbh_block_w4f16_pool *pool,
+    uint32_t worker_count) {
+    if (header == NULL || pool == NULL || worker_count == 0U ||
+        worker_count > pool->worker_count ||
+        pool->persistent_expand_worker_count != 0U) {
+        return -1;
+    }
+    for (uint32_t worker = 0U; worker < worker_count; ++worker) {
+        if (pool->jobs[worker].command_kind !=
+            QBH_BLOCK_HVX_POOL_NONE) {
+            return -1;
+        }
+    }
+    pool->persistent_expand_stop = 0U;
+    pool->persistent_expand_completed = 0U;
+    pool->persistent_expand_worker_count = worker_count;
+    for (uint32_t worker = 0U; worker < worker_count; ++worker) {
+        pool->jobs[worker].command_kind =
+            QBH_BLOCK_HVX_POOL_W4F16_PERSISTENT_EXPAND;
+    }
+    asm volatile("barrier" ::: "memory");
+    for (uint32_t worker = 0U; worker < worker_count; ++worker) {
+        (void)qurt_sem_up(&pool->command_ready[worker]);
+    }
+    header->w4f16_gate_up_persistent_dispatch_count +=
+        worker_count;
+    return 0;
+}
+
+static int qbh_w4f16_persistent_expand_stop(
+    struct qbh_block_header *header,
+    struct qbh_block_w4f16_pool *pool) {
+    uint32_t worker_count;
+    uint64_t wait_start;
+
+    if (header == NULL || pool == NULL ||
+        pool->persistent_expand_worker_count == 0U) {
+        return 0;
+    }
+    worker_count = pool->persistent_expand_worker_count;
+    pool->persistent_expand_stop = 1U;
+    ++pool->persistent_expand_generation;
+    asm volatile("release(%0):at"
+                 :
+                 : "r"(&pool->persistent_expand_generation)
+                 : "memory");
+    wait_start = HAP_perf_get_qtimer_count();
+    for (uint32_t worker = 0U; worker < worker_count; ++worker) {
+        qurt_sem_down(&pool->command_done[worker]);
+    }
+    header->w4f16_gate_up_persistent_wait_ticks +=
+        HAP_perf_get_qtimer_count() - wait_start;
+    asm volatile("barrier" ::: "memory");
+    pool->persistent_expand_worker_count = 0U;
+    return 0;
 }
 
 static int qbh_w4u8_pipeline_pool_start(
@@ -3827,6 +3960,98 @@ static void qbh_w4f16_expand_with_main(
         header->w4f16_expand_pool_wait_ticks +=
             HAP_perf_get_qtimer_count() - wait_start;
     }
+}
+
+static int qbh_w4f16_expand_with_main_persistent(
+    struct qbh_block_header *header,
+    struct qbh_block_w4f16_pool *pool,
+    const uint8_t *compressed_weight, const float *channel_scale,
+    uint8_t *expanded_weight, volatile uint32_t *ready_generations,
+    uint32_t expected_generation, uint32_t k_tiles,
+    uint32_t region_tiles, uint32_t active_worker_count,
+    uint32_t publish_ready) {
+    uint32_t total_regions = k_tiles / region_tiles;
+    uint32_t main_regions =
+        (total_regions + active_worker_count) /
+        (active_worker_count + 1U);
+    uint32_t main_tiles = main_regions * region_tiles;
+    uint32_t pool_regions = total_regions - main_regions;
+    uint64_t main_start;
+    uint64_t wait_start;
+
+    if (pool == NULL || active_worker_count == 0U ||
+        active_worker_count !=
+            pool->persistent_expand_worker_count) {
+        return -1;
+    }
+    pool->compressed_weight = compressed_weight +
+        (size_t)main_tiles * QBH_W4_PACKED_TILE_BYTES;
+    pool->channel_scale = channel_scale;
+    pool->expanded_weight = expanded_weight +
+        (size_t)main_tiles * QBH_HMX_FP16_TILE_BYTES;
+    pool->ready_generations = ready_generations + main_regions;
+    pool->expected_generation = expected_generation;
+    pool->region_count = pool_regions;
+    pool->region_tiles = region_tiles;
+    pool->publish_ready = publish_ready;
+    pool->next_region = 0U;
+    pool->persistent_expand_completed = 0U;
+    asm volatile("barrier" ::: "memory");
+    ++pool->persistent_expand_generation;
+    asm volatile("release(%0):at"
+                 :
+                 : "r"(&pool->persistent_expand_generation)
+                 : "memory");
+    ++header->w4f16_gate_up_persistent_job_count;
+
+    main_start = HAP_perf_get_qtimer_count();
+    if (publish_ready == 0U) {
+        qbh_unpack_w4_to_f16_hvx_relaxed(
+            compressed_weight, expanded_weight, main_tiles);
+    } else {
+        for (uint32_t region = 0U; region < main_regions;
+             ++region) {
+            qbh_unpack_w4_to_f16_hvx(
+                compressed_weight +
+                    (size_t)region * region_tiles *
+                        QBH_W4_PACKED_TILE_BYTES,
+                expanded_weight +
+                    (size_t)region * region_tiles *
+                        QBH_HMX_FP16_TILE_BYTES,
+                region_tiles);
+            ready_generations[region] = expected_generation;
+            asm volatile("release(%0):at"
+                         :
+                         : "r"(&ready_generations[region])
+                         : "memory");
+        }
+    }
+    header->w4f16_expand_work_ticks +=
+        HAP_perf_get_qtimer_count() - main_start;
+    header->w4f16_expand_region_count += main_regions;
+
+    wait_start = HAP_perf_get_qtimer_count();
+    while (pool->persistent_expand_completed <
+           active_worker_count) {
+        if (HAP_perf_get_qtimer_count() - wait_start >
+            QBH_BLOCK_DMA_DESCRIPTOR_TIMEOUT_TICKS) {
+            ++header->w4f16_gate_up_persistent_failure_count;
+            header->w4f16_gate_up_persistent_wait_ticks +=
+                HAP_perf_get_qtimer_count() - wait_start;
+            header->w4f16_expand_pool_wait_ticks +=
+                HAP_perf_get_qtimer_count() - wait_start;
+            return -1;
+        }
+        asm volatile("pause(#8)" : : : "memory");
+    }
+    asm volatile("barrier" ::: "memory");
+    header->w4f16_gate_up_persistent_completion_count +=
+        active_worker_count;
+    header->w4f16_gate_up_persistent_wait_ticks +=
+        HAP_perf_get_qtimer_count() - wait_start;
+    header->w4f16_expand_pool_wait_ticks +=
+        HAP_perf_get_qtimer_count() - wait_start;
+    return 0;
 }
 
 static int qbh_w4f16_pool_destroy(
@@ -5136,17 +5361,35 @@ static int qbh_w4f16_mlp_prepare_group(
         }
     }
     expand_start = HAP_perf_get_qtimer_count();
-    qbh_w4f16_expand_with_main(
-        header, pool,
-        state->compressed_slots[compressed_slot] +
-            (size_t)in_batch * state->compressed_bytes_per_tile,
-        state->scales + (size_t)first_tile * 32U,
-        state->expanded_slots[expanded_slot], state->ready,
-        group + 1U,
-        state->k_tiles * state->group_tiles,
-        region_tiles, 2U, 0U,
-        header->w4f16_group_fence_mode ==
-            QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY);
+    if (header->w4f16_group_fence_mode ==
+        QBH_BLOCK_W4F16_GROUP_FENCE_PERSISTENT) {
+        result = qbh_w4f16_expand_with_main_persistent(
+            header, pool,
+            state->compressed_slots[compressed_slot] +
+                (size_t)in_batch *
+                    state->compressed_bytes_per_tile,
+            state->scales + (size_t)first_tile * 32U,
+            state->expanded_slots[expanded_slot], state->ready,
+            group + 1U,
+            state->k_tiles * state->group_tiles,
+            region_tiles, 2U, 0U);
+        if (result != 0) {
+            return result;
+        }
+    } else {
+        qbh_w4f16_expand_with_main(
+            header, pool,
+            state->compressed_slots[compressed_slot] +
+                (size_t)in_batch *
+                    state->compressed_bytes_per_tile,
+            state->scales + (size_t)first_tile * 32U,
+            state->expanded_slots[expanded_slot], state->ready,
+            group + 1U,
+            state->k_tiles * state->group_tiles,
+            region_tiles, 2U, 0U,
+            header->w4f16_group_fence_mode !=
+                QBH_BLOCK_W4F16_GROUP_FENCE_CONTROL);
+    }
     header->w4f16_expand_ticks +=
         HAP_perf_get_qtimer_count() - expand_start;
     if (group == 0U) {
@@ -5271,6 +5514,7 @@ static int qbh_run_w4f16_interleaved_gate_up(
     uint32_t group_count;
     uint32_t group_tiles;
     uint32_t dma_batch_tiles;
+    uint32_t persistent_expand_started = 0U;
     uint64_t pack_start;
     int result = 0;
 
@@ -5414,6 +5658,15 @@ static int qbh_run_w4f16_interleaved_gate_up(
             header, up.desc, 0U, 53U, -1);
         return -1;
     }
+    if (header->w4f16_group_fence_mode ==
+        QBH_BLOCK_W4F16_GROUP_FENCE_PERSISTENT) {
+        if (qbh_w4f16_persistent_expand_start(
+                header, pool, 2U) != 0) {
+            result = -1;
+            goto fused_gate_up_failed;
+        }
+        persistent_expand_started = 1U;
+    }
     if (qbh_w4f16_mlp_prepare_group(
             header, shared, pool, &gate, 0U) != 0) {
         result = -1;
@@ -5470,9 +5723,20 @@ static int qbh_run_w4f16_interleaved_gate_up(
         result = -1;
         goto fused_gate_up_failed;
     }
+    if (persistent_expand_started != 0U) {
+        if (qbh_w4f16_persistent_expand_stop(
+                header, pool) != 0) {
+            return -1;
+        }
+        persistent_expand_started = 0U;
+    }
     return 0;
 
 fused_gate_up_failed:
+    if (persistent_expand_started != 0U) {
+        (void)qbh_w4f16_persistent_expand_stop(
+            header, pool);
+    }
     qbh_w4f16_mlp_drain_prefetch(header, &gate);
     qbh_w4f16_mlp_drain_prefetch(header, &up);
     qbh_w4f16_drain_cross_prefetch(header, cross_prefetch);

@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(48)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(120)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(51)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(123)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -134,6 +134,7 @@ enum qbh_block_qkv_schedule_mode {
 enum qbh_block_w4f16_group_fence_mode {
     QBH_BLOCK_W4F16_GROUP_FENCE_CONTROL = 0,
     QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY = 1,
+    QBH_BLOCK_W4F16_GROUP_FENCE_PERSISTENT = 2,
 };
 
 enum qbh_block_w4u8_stream_fence_mode {
@@ -634,6 +635,11 @@ struct qbh_block_header {
     uint64_t w4f16_gate_up_stream_join_wait_ticks;
     uint64_t w4f16_gate_up_hmx_command_count;
     uint64_t w4f16_gate_up_scale_init_ticks;
+    uint32_t w4f16_gate_up_persistent_dispatch_count;
+    uint32_t w4f16_gate_up_persistent_job_count;
+    uint32_t w4f16_gate_up_persistent_completion_count;
+    uint32_t w4f16_gate_up_persistent_failure_count;
+    uint64_t w4f16_gate_up_persistent_wait_ticks;
 
     uint32_t w4u8_mlp_vtcm_base_offset;
     uint32_t w4u8_mlp_vtcm_plan_bytes;

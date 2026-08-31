@@ -1066,6 +1066,9 @@ static const char *qbh_qkv_schedule_mode_name(uint32_t mode) {
 }
 
 static const char *qbh_w4f16_group_fence_mode_name(uint32_t mode) {
+    if (mode == QBH_BLOCK_W4F16_GROUP_FENCE_PERSISTENT) {
+        return "persistent";
+    }
     return mode == QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY
                ? "join_only" : "control";
 }
@@ -1565,6 +1568,9 @@ int main(int argc, char **argv) {
             } else if (strcmp(group_fence, "join_only") == 0) {
                 w4f16_group_fence_mode =
                     QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY;
+            } else if (strcmp(group_fence, "persistent") == 0) {
+                w4f16_group_fence_mode =
+                    QBH_BLOCK_W4F16_GROUP_FENCE_PERSISTENT;
             } else {
                 w4f16_group_fence_mode = UINT32_MAX;
             }
@@ -2510,7 +2516,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0120\","
+        "{\"experiment\":\"EXP-0123\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2751,6 +2757,11 @@ int main(int argc, char **argv) {
         "\"w4f16_gate_up_stream_join_wait_ticks\":%" PRIu64 ","
         "\"w4f16_gate_up_hmx_command_count\":%" PRIu64 ","
         "\"w4f16_gate_up_scale_init_ticks\":%" PRIu64 ","
+        "\"w4f16_gate_up_persistent_dispatch_count\":%" PRIu32 ","
+        "\"w4f16_gate_up_persistent_job_count\":%" PRIu32 ","
+        "\"w4f16_gate_up_persistent_completion_count\":%" PRIu32 ","
+        "\"w4f16_gate_up_persistent_failure_count\":%" PRIu32 ","
+        "\"w4f16_gate_up_persistent_wait_ticks\":%" PRIu64 ","
         "\"w4u8_mlp_vtcm_base_offset\":%" PRIu32 ","
         "\"w4u8_mlp_vtcm_plan_bytes\":%" PRIu32 ","
         "\"w4u8_mlp_lut_vtcm_bytes\":%" PRIu32 ","
@@ -3072,6 +3083,11 @@ int main(int argc, char **argv) {
         header->w4f16_gate_up_stream_join_wait_ticks,
         header->w4f16_gate_up_hmx_command_count,
         header->w4f16_gate_up_scale_init_ticks,
+        header->w4f16_gate_up_persistent_dispatch_count,
+        header->w4f16_gate_up_persistent_job_count,
+        header->w4f16_gate_up_persistent_completion_count,
+        header->w4f16_gate_up_persistent_failure_count,
+        header->w4f16_gate_up_persistent_wait_ticks,
         header->w4u8_mlp_vtcm_base_offset,
         header->w4u8_mlp_vtcm_plan_bytes,
         header->w4u8_mlp_lut_vtcm_bytes,
