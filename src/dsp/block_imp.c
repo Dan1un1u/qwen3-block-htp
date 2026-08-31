@@ -36,6 +36,10 @@
      2U * QBH_BLOCK_INTERMEDIATE)
 #define QBH_BLOCK_PROJECTION_SCALE_BYTES \
     (QBH_BLOCK_PROJECTION_SCALE_CHANNELS * sizeof(float))
+#define QBH_BLOCK_ATTENTION_V_CACHE_ALIGNMENT UINT32_C(256)
+
+_Static_assert(QBH_BLOCK_KV_HEADS == QBH_ATTN_U8_PERSISTENT_GROUPS,
+               "persistent V cache must cover every KV head");
 
 enum qbh_block_hmx_command_kind {
     QBH_BLOCK_HMX_NONE = 0,
@@ -163,6 +167,9 @@ struct qbh_block_buffers {
     uint8_t *gate_up_scale_cache;
     uint8_t *w4u8_silu_lut;
     uint8_t *w4u8_gather_scratch;
+    uint8_t *attention_v_cache;
+    int16_t *attention_v_recenter_lut_cache;
+    uint32_t *attention_av_bias_cache;
     struct qbh_attention_config *attention_configs;
 };
 
@@ -224,6 +231,7 @@ struct qbh_block_w4f16_job {
     uint32_t u8_attention_probability_row_sum_max;
     uint32_t u8_attention_fused_k_operand_mismatch_count;
     uint32_t u8_attention_prepared_group_count;
+    uint32_t u8_attention_v_cache_reuse_group_count;
     uint64_t u8_attention_qk_norm_rope_ticks;
     uint64_t u8_attention_k_pack_ticks;
     uint64_t u8_attention_v_pack_ticks;
@@ -388,6 +396,7 @@ static int qbh_attention_u8_fused_qk_requant_enabled(uint32_t mode);
 static int qbh_attention_u8_hmx_batch_enabled(uint32_t mode);
 static int qbh_attention_u8_gqa_hmx_batch_enabled(uint32_t mode);
 static int qbh_attention_u8_dependency_stream_enabled(uint32_t mode);
+static int qbh_attention_u8_persistent_v_cache_enabled(uint32_t mode);
 static void qbh_attention_gqa_pool_run_tasks(
     struct qbh_block_w4f16_pool *pool,
     struct qbh_block_w4f16_job *job);
@@ -623,6 +632,19 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
             &arena, QBH_BLOCK_W4U8_GATHER_SCRATCH_BYTES,
             QBH_BLOCK_ALIGNMENT);
     }
+    if (qbh_attention_u8_persistent_v_cache_enabled(
+            attention_pipeline_mode)) {
+        buffers->attention_v_cache = qbh_arena_alloc_aligned(
+            &arena, QBH_ATTN_U8_PERSISTENT_V_CACHE_BYTES,
+            QBH_BLOCK_ATTENTION_V_CACHE_ALIGNMENT);
+        if (buffers->attention_v_cache != NULL) {
+            buffers->attention_v_recenter_lut_cache =
+                (int16_t *)buffers->attention_v_cache;
+            buffers->attention_av_bias_cache = (uint32_t *)(
+                buffers->attention_v_cache +
+                QBH_ATTN_U8_PERSISTENT_V_LUT_CACHE_BYTES);
+        }
+    }
     if (qbh_attention_u8_enabled(attention_pipeline_mode)) {
         buffers->attention_configs = qbh_arena_alloc_aligned(
             &arena, QBH_BLOCK_ATTENTION_CONFIG_BYTES,
@@ -666,6 +688,11 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
           buffers->w4u8_gather_scratch == NULL)) ||
         (qbh_attention_u8_enabled(attention_pipeline_mode) &&
          buffers->attention_configs == NULL) ||
+        (qbh_attention_u8_persistent_v_cache_enabled(
+             attention_pipeline_mode) &&
+         (buffers->attention_v_cache == NULL ||
+          buffers->attention_v_recenter_lut_cache == NULL ||
+          buffers->attention_av_bias_cache == NULL)) ||
         (variant == QBH_BLOCK_W4F16 &&
          (buffers->projection_scales == NULL ||
           (w4f16_pipeline_mode ==
@@ -688,6 +715,12 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
             (QBH_HMX_FP16_TILE_BYTES - 1U)) != 0U ||
           (((uintptr_t)buffers->attention_concat) &
            (QBH_BLOCK_ALIGNMENT - 1U)) != 0U)) ||
+        (qbh_attention_u8_persistent_v_cache_enabled(
+             attention_pipeline_mode) &&
+         ((((uintptr_t)buffers->attention_v_recenter_lut_cache) &
+           (QBH_BLOCK_ALIGNMENT - 1U)) != 0U ||
+          (((uintptr_t)buffers->attention_av_bias_cache) &
+           (QBH_BLOCK_ATTENTION_V_CACHE_ALIGNMENT - 1U)) != 0U)) ||
         ((uintptr_t)buffers->expanded_weight &
          (QBH_HMX_FP16_TILE_BYTES - 1U)) != 0U ||
         ((uintptr_t)buffers->expanded_weight_alt &
@@ -776,7 +809,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (header->attention_pack_mode &
          ~((uint32_t)QBH_BLOCK_ATTENTION_PACK_HVX)) != 0U ||
         header->attention_pipeline_mode >
-            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM ||
+            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM_V_CACHE ||
         header->attention_hvx_contexts == 0U ||
         header->attention_hvx_contexts >
             QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS ||
@@ -1995,7 +2028,15 @@ static int qbh_attention_gqa_enabled(uint32_t mode) {
            mode == QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP;
 }
 
+static uint32_t qbh_attention_u8_base_mode(uint32_t mode) {
+    return mode ==
+                   QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM_V_CACHE
+               ? QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM
+               : mode;
+}
+
 static int qbh_attention_u8_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_base_mode(mode);
     return mode == QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA ||
            mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_FUSED_K ||
@@ -2018,6 +2059,7 @@ static int qbh_attention_u8_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_fused_k_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_base_mode(mode);
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_FUSED_K ||
            mode ==
@@ -2039,6 +2081,7 @@ static int qbh_attention_u8_fused_k_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_qkv_overlap_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_base_mode(mode);
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP ||
            mode ==
@@ -2058,6 +2101,7 @@ static int qbh_attention_u8_qkv_overlap_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_vgather_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_base_mode(mode);
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER ||
            mode ==
@@ -2075,6 +2119,7 @@ static int qbh_attention_u8_vgather_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_vdeal_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_base_mode(mode);
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL ||
            mode ==
@@ -2090,6 +2135,7 @@ static int qbh_attention_u8_vdeal_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_fused_qk_requant_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_base_mode(mode);
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT ||
            mode ==
@@ -2103,6 +2149,7 @@ static int qbh_attention_u8_fused_qk_requant_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_hmx_batch_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_base_mode(mode);
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH ||
            mode ==
@@ -2114,6 +2161,7 @@ static int qbh_attention_u8_hmx_batch_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_lut_templates_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_base_mode(mode);
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES ||
            mode ==
@@ -2123,6 +2171,7 @@ static int qbh_attention_u8_lut_templates_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_gqa_hmx_batch_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_base_mode(mode);
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH ||
            mode ==
@@ -2130,8 +2179,14 @@ static int qbh_attention_u8_gqa_hmx_batch_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_dependency_stream_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_base_mode(mode);
     return mode ==
            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM;
+}
+
+static int qbh_attention_u8_persistent_v_cache_enabled(uint32_t mode) {
+    return mode ==
+           QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM_V_CACHE;
 }
 
 static int qbh_attention_qk_norm_wait_head(
@@ -6732,6 +6787,60 @@ static int qbh_block_attention_config_valid(
            config->av_multiplier <= QBH_ATTENTION_MAX_MULTIPLIER;
 }
 
+static int qbh_prepare_attention_v_cache(
+    struct qbh_block_header *header,
+    struct qbh_block_buffers *buffers,
+    struct qbh_block_persistent_state *persistent) {
+    if (!qbh_attention_u8_persistent_v_cache_enabled(
+            header->attention_pipeline_mode)) {
+        return 0;
+    }
+    if (persistent == NULL || buffers->attention_v_cache == NULL ||
+        buffers->attention_v_recenter_lut_cache == NULL ||
+        buffers->attention_av_bias_cache == NULL) {
+        return -1;
+    }
+
+    header->u8_attention_v_cache_bytes =
+        QBH_ATTN_U8_PERSISTENT_V_CACHE_BYTES;
+    if (persistent->attention_v_cache_valid == 0U) {
+        const uint64_t config_hash = qbh_fnv1a64_bytes(
+            (const uint8_t *)buffers->attention_configs,
+            QBH_BLOCK_ATTENTION_CONFIG_BYTES);
+        for (uint32_t group = 0U;
+             group < QBH_BLOCK_KV_HEADS; ++group) {
+            const struct qbh_attention_config *config =
+                &buffers->attention_configs[group];
+            int16_t *recenter_lut =
+                buffers->attention_v_recenter_lut_cache +
+                (size_t)group *
+                    (QBH_ATTN_U8_VGATHER_LUT_BYTES /
+                     sizeof(int16_t));
+            uint32_t *av_bias = buffers->attention_av_bias_cache +
+                (size_t)group *
+                    (QBH_ATTN_U8_AV_BIAS_BYTES /
+                     sizeof(uint32_t));
+            if (!qbh_block_attention_config_valid(
+                    header, config, group)) {
+                return -1;
+            }
+            qbh_attention_u8_build_v_recenter_lut_and_av_bias(
+                config, recenter_lut, av_bias);
+            ++header->u8_attention_v_cache_build_group_count;
+        }
+        persistent->attention_v_cache_valid = 1U;
+        persistent->attention_v_cache_config_hash = config_hash;
+        persistent->attention_v_cache_session_build_group_count +=
+            QBH_BLOCK_KV_HEADS;
+    }
+    header->u8_attention_v_cache_config_hash =
+        persistent->attention_v_cache_config_hash;
+    header->u8_attention_v_cache_session_build_group_count =
+        persistent->attention_v_cache_session_build_group_count;
+    asm volatile("barrier" ::: "memory");
+    return 0;
+}
+
 static int qbh_attention_u8_integer(
     struct qbh_block_header *header,
     struct qbh_block_buffers *buffers,
@@ -7637,6 +7746,7 @@ struct qbh_attention_u8_group_view {
     int8_t *v_weight;
     uint32_t *qk_bias;
     uint32_t *av_bias;
+    const int16_t *v_recenter_lut;
 };
 
 static int qbh_attention_u8_group_view_init(
@@ -7678,8 +7788,20 @@ static int qbh_attention_u8_group_view_init(
         scratch + QBH_ATTN_U8_V_WEIGHT_OFFSET);
     view->qk_bias = (uint32_t *)(
         scratch + QBH_ATTN_U8_QK_BIAS_OFFSET);
-    view->av_bias = (uint32_t *)(
-        scratch + QBH_ATTN_U8_AV_BIAS_OFFSET);
+    if (qbh_attention_u8_persistent_v_cache_enabled(
+            header->attention_pipeline_mode)) {
+        view->av_bias = buffers->attention_av_bias_cache +
+            (size_t)group *
+                (QBH_ATTN_U8_AV_BIAS_BYTES / sizeof(uint32_t));
+        view->v_recenter_lut =
+            buffers->attention_v_recenter_lut_cache +
+            (size_t)group *
+                (QBH_ATTN_U8_VGATHER_LUT_BYTES / sizeof(int16_t));
+    } else {
+        view->av_bias = (uint32_t *)(
+            scratch + QBH_ATTN_U8_AV_BIAS_OFFSET);
+        view->v_recenter_lut = NULL;
+    }
     return 0;
 }
 
@@ -7718,11 +7840,21 @@ static void qbh_attention_u8_dependency_stream_run_tasks(
         group_scratch = buffers->attention_concat +
             (size_t)group * QBH_ATTN_U8_GROUP_SCRATCH_BYTES;
         start = HAP_perf_get_qtimer_count();
-        qbh_attention_u8_pack_v_native_vgather_vdeal(
-            view.v_head, view.config, view.v_weight, view.av_bias,
-            group_scratch,
-            telemetry_ptr != NULL
-                ? &telemetry.v_recenter_saturation_count : NULL);
+        if (qbh_attention_u8_persistent_v_cache_enabled(
+                header->attention_pipeline_mode)) {
+            qbh_attention_u8_pack_v_native_vgather_vdeal_prebuilt(
+                view.v_head, view.config, view.v_weight,
+                view.v_recenter_lut, group_scratch,
+                telemetry_ptr != NULL
+                    ? &telemetry.v_recenter_saturation_count : NULL);
+            ++job->u8_attention_v_cache_reuse_group_count;
+        } else {
+            qbh_attention_u8_pack_v_native_vgather_vdeal(
+                view.v_head, view.config, view.v_weight, view.av_bias,
+                group_scratch,
+                telemetry_ptr != NULL
+                    ? &telemetry.v_recenter_saturation_count : NULL);
+        }
         job->u8_attention_v_pack_ticks +=
             HAP_perf_get_qtimer_count() - start;
         if (qbh_attention_u8_pool_submit(
@@ -8251,6 +8383,8 @@ static void qbh_attention_u8_accumulate_job(
         job->u8_attention_hmx_queue_wait_ticks;
     header->u8_attention_fused_k_operand_mismatch_count +=
         job->u8_attention_fused_k_operand_mismatch_count;
+    header->u8_attention_v_cache_reuse_group_count +=
+        job->u8_attention_v_cache_reuse_group_count;
     header->u8_attention_score_saturation_count +=
         job->u8_attention_score_saturation_count;
     header->u8_attention_v_recenter_saturation_count +=
@@ -8320,6 +8454,7 @@ static int qbh_hvx_pool_u8_attention(
         job->u8_attention_v_recenter_saturation_count = 0U;
         job->u8_attention_probability_mask_violation_count = 0U;
         job->u8_attention_fused_k_operand_mismatch_count = 0U;
+        job->u8_attention_v_cache_reuse_group_count = 0U;
         job->u8_attention_probability_row_sum_min = UINT32_MAX;
         job->u8_attention_probability_row_sum_max = 0U;
         job->u8_attention_qk_norm_rope_ticks = 0U;
@@ -10040,7 +10175,8 @@ w4u8_mlp_complete:
 AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
                             uint8_t *vtcm, uint32_t vtcm_bytes,
                             uint32_t hmx_context_id,
-                            uint32_t prepared_session_run_index) {
+                            uint32_t prepared_session_run_index,
+                            struct qbh_block_persistent_state *persistent) {
     struct qbh_block_header *header = NULL;
     struct qbh_block_buffers buffers;
     struct qbh_block_hmx_worker worker;
@@ -10211,6 +10347,12 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
     }
     if (qbh_stage_metadata(header, shared, &buffers) != 0) {
         header->dsp_status = QBH_BLOCK_STATUS_METADATA_DMA_FAILED;
+        result = AEE_EFAILED;
+        goto stop_worker;
+    }
+    if (qbh_prepare_attention_v_cache(
+            header, &buffers, persistent) != 0) {
+        header->dsp_status = QBH_BLOCK_STATUS_ATTENTION_PIPELINE_FAILED;
         result = AEE_EFAILED;
         goto stop_worker;
     }

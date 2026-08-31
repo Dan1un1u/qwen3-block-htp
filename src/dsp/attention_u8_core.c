@@ -421,11 +421,9 @@ void qbh_attention_u8_pack_v_native_vgather(
     asm volatile("barrier" ::: "memory");
 }
 
-void qbh_attention_u8_pack_v_native_vgather_vdeal(
-    const uint8_t *v_head_tiles,
+void qbh_attention_u8_build_v_recenter_lut_and_av_bias(
     const struct qbh_attention_config *config,
-    int8_t *weight_tiles, uint32_t *bias_words, uint8_t *scratch,
-    uint32_t *saturation_count) {
+    int16_t *recenter_lut, uint32_t *bias_words) {
     const uint32_t divisor = UINT32_C(1) << config->av_shift;
     const int32_t rounding = config->av_shift == 0U
                                  ? 0
@@ -436,11 +434,6 @@ void qbh_attention_u8_pack_v_native_vgather_vdeal(
         config->av_multiplier == 1U
             ? config->output_zero_point
             : (int32_t)QBH_ATTENTION_HMX_CENTER;
-    int16_t *recenter_lut = (int16_t *)(
-        scratch + QBH_ATTN_U8_VGATHER_LUT_OFFSET);
-    int16_t *gathered_low = (int16_t *)(
-        scratch + QBH_ATTN_U8_VGATHER_SCRATCH_OFFSET);
-    int16_t *gathered_high = gathered_low + 64;
 
     for (uint32_t code = 0U; code <= UINT8_MAX; ++code) {
         const int32_t centered =
@@ -452,6 +445,31 @@ void qbh_attention_u8_pack_v_native_vgather_vdeal(
         recenter_lut[code] = (int16_t)qbh_attention_u8_clip_s8(
             requantized, NULL);
     }
+    for (uint32_t n_tile = 0U;
+         n_tile < QBH_ATTENTION_HEAD_DIM_TILES; ++n_tile) {
+        uint32_t *bias = bias_words +
+            (size_t)n_tile *
+                (QBH_HMX_BIAS_BYTES / sizeof(uint32_t));
+        for (uint32_t output = 0U;
+             output < QBH_HMX_OUTPUT_CHANNELS; ++output) {
+            bias[output] = conversion;
+            bias[QBH_HMX_OUTPUT_CHANNELS + output] =
+                (uint32_t)(hmx_output_zero_point *
+                               (int32_t)divisor +
+                           rounding);
+        }
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
+void qbh_attention_u8_pack_v_native_vgather_vdeal_prebuilt(
+    const uint8_t *v_head_tiles,
+    const struct qbh_attention_config *config,
+    int8_t *weight_tiles, const int16_t *recenter_lut,
+    uint8_t *scratch, uint32_t *saturation_count) {
+    int16_t *gathered_low = (int16_t *)(
+        scratch + QBH_ATTN_U8_VGATHER_SCRATCH_OFFSET);
+    int16_t *gathered_high = gathered_low + 64;
 
     for (uint32_t n_tile = 0U;
          n_tile < QBH_ATTENTION_HEAD_DIM_TILES; ++n_tile) {
@@ -522,21 +540,23 @@ void qbh_attention_u8_pack_v_native_vgather_vdeal(
                     recentered;
             }
         }
-        {
-            uint32_t *bias = bias_words +
-                (size_t)n_tile *
-                    (QBH_HMX_BIAS_BYTES / sizeof(uint32_t));
-            for (uint32_t output = 0U;
-                 output < QBH_HMX_OUTPUT_CHANNELS; ++output) {
-                bias[output] = conversion;
-                bias[QBH_HMX_OUTPUT_CHANNELS + output] =
-                    (uint32_t)(hmx_output_zero_point *
-                                   (int32_t)divisor +
-                               rounding);
-            }
-        }
     }
     asm volatile("barrier" ::: "memory");
+}
+
+void qbh_attention_u8_pack_v_native_vgather_vdeal(
+    const uint8_t *v_head_tiles,
+    const struct qbh_attention_config *config,
+    int8_t *weight_tiles, uint32_t *bias_words, uint8_t *scratch,
+    uint32_t *saturation_count) {
+    int16_t *recenter_lut = (int16_t *)(
+        scratch + QBH_ATTN_U8_VGATHER_LUT_OFFSET);
+
+    qbh_attention_u8_build_v_recenter_lut_and_av_bias(
+        config, recenter_lut, bias_words);
+    qbh_attention_u8_pack_v_native_vgather_vdeal_prebuilt(
+        v_head_tiles, config, weight_tiles, recenter_lut, scratch,
+        saturation_count);
 }
 
 static HVX_Vector qbh_attention_u8_requant_centered(

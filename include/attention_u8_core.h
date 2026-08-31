@@ -24,6 +24,14 @@
 #define QBH_ATTN_U8_VGATHER_SCRATCH_BYTES UINT32_C(256)
 #define QBH_ATTN_U8_VGATHER_LUT_OFFSET UINT32_C(18432)
 #define QBH_ATTN_U8_VGATHER_LUT_BYTES UINT32_C(512)
+#define QBH_ATTN_U8_PERSISTENT_GROUPS UINT32_C(8)
+#define QBH_ATTN_U8_PERSISTENT_V_LUT_CACHE_BYTES \
+    (QBH_ATTN_U8_PERSISTENT_GROUPS * QBH_ATTN_U8_VGATHER_LUT_BYTES)
+#define QBH_ATTN_U8_PERSISTENT_AV_BIAS_CACHE_BYTES \
+    (QBH_ATTN_U8_PERSISTENT_GROUPS * QBH_ATTN_U8_AV_BIAS_BYTES)
+#define QBH_ATTN_U8_PERSISTENT_V_CACHE_BYTES \
+    (QBH_ATTN_U8_PERSISTENT_V_LUT_CACHE_BYTES + \
+     QBH_ATTN_U8_PERSISTENT_AV_BIAS_CACHE_BYTES)
 
 struct qbh_attention_u8_telemetry {
     uint32_t score_saturation_count;
@@ -55,6 +63,16 @@ void qbh_attention_u8_pack_v_native_vgather_vdeal(
     const struct qbh_attention_config *config,
     int8_t *weight_tiles, uint32_t *bias_words, uint8_t *scratch,
     uint32_t *saturation_count);
+
+void qbh_attention_u8_build_v_recenter_lut_and_av_bias(
+    const struct qbh_attention_config *config,
+    int16_t *recenter_lut, uint32_t *bias_words);
+
+void qbh_attention_u8_pack_v_native_vgather_vdeal_prebuilt(
+    const uint8_t *v_head_tiles,
+    const struct qbh_attention_config *config,
+    int8_t *weight_tiles, const int16_t *recenter_lut,
+    uint8_t *scratch, uint32_t *saturation_count);
 
 void qbh_attention_u8_requant_qk(
     uint8_t *score_tiles,

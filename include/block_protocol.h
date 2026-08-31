@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(42)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(84)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(43)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(94)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -145,6 +145,7 @@ enum qbh_block_attention_pipeline_mode {
     QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES = 13,
     QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH = 14,
     QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM = 15,
+    QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM_V_CACHE = 16,
 };
 
 enum qbh_block_mlp_mode {
@@ -426,6 +427,11 @@ struct qbh_block_header {
     uint32_t u8_attention_direct_o_tile_count;
     uint32_t u8_attention_qkv_unpack_skipped;
     uint32_t u8_attention_fused_k_operand_mismatch_count;
+    uint32_t u8_attention_v_cache_bytes;
+    uint32_t u8_attention_v_cache_build_group_count;
+    uint32_t u8_attention_v_cache_reuse_group_count;
+    uint32_t u8_attention_v_cache_session_build_group_count;
+    uint64_t u8_attention_v_cache_config_hash;
     uint32_t w4u8_qkv_batch_n_tiles;
     uint32_t w4u8_qkv_batch_count;
     uint32_t w4u8_qkvo_prefetch_count;

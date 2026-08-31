@@ -49,6 +49,7 @@ struct qbh_probe_session {
     int power_context;
     int dcvs_powered;
     int hmx_powered;
+    struct qbh_block_persistent_state block_persistent;
 };
 
 static struct qbh_probe_session probe_session;
@@ -135,6 +136,8 @@ static AEEResult qbh_release_prepared_resources(
     session->power_context = 0;
     session->prepared = 0U;
     session->prepared_run_count = 0U;
+    memset(&session->block_persistent, 0,
+           sizeof(session->block_persistent));
     return result;
 }
 
@@ -291,6 +294,8 @@ AEEResult qwen3_probe_prepare(remote_handle64 handle) {
     }
     session->prepared = 1U;
     session->prepared_run_count = 0U;
+    memset(&session->block_persistent, 0,
+           sizeof(session->block_persistent));
     session->prepare_result = AEE_SUCCESS;
     return AEE_SUCCESS;
 
@@ -1648,5 +1653,6 @@ AEEResult qwen3_probe_run_block(remote_handle64 handle, int32 shared_fd,
     run_index = ++session->prepared_run_count;
     return qbh_run_block_rpc(shared_fd, shared_bytes, session->vtcm,
                              session->vtcm_granted_bytes,
-                             session->hmx_context_id, run_index);
+                             session->hmx_context_id, run_index,
+                             &session->block_persistent);
 }
