@@ -9320,20 +9320,22 @@ experiments:
     variants:
       - exp0111_join_only_control
       - w4f16_gate_up_semaphore_join_without_extra_barrier
-    execution_state: running
-    evidence_validity: pending
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4f16-gate-up-pool-join-barrier
     source_branches:
       - codex/exp-0114-w4f16-gate-up-pool-join-barrier
-    source_commits: []
+    source_commits:
+      - a26ccdf84179c5fa17727e50aa8f296457cac33d
     record: docs/experiments/EXP-0114.md
     approval_ref: 'User message 2026-09-01: 既然有收益，那就采用。继续针对W4A16和W4A8开展loop优化。'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0114-w4f16-gate-up-pool-join-barrier
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0112
       source_parent_commit: 5429c70bc6eb155af96bb7dd987094bb8fb941b1
@@ -9354,3 +9356,26 @@ experiments:
       static_gate: candidate_gate_up_path_waits_all_active_worker_semaphores_and_omits_only_the_trailing_full_barrier_control_and_all_other_pool_waits_retain_it
       speed_gate: gate_up_plus_swiglu_and_complete_host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
       completion_gate: five_rounds_pc027_pc028_complete_profiling_then_accept_or_reject_without_automatic_baseline_promotion
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0114/20260831T190227Z_a26ccdf84179_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0114/artifacts/a26ccdf84179/20260831T190227Z_formal'
+      runtime_source_commit: a26ccdf84179c5fa17727e50aa8f296457cac33d
+      static_gate_result: pass_candidate_waits_all_worker_semaphores_and_omits_only_trailing_barrier_no_qnn
+      correctness_gate_result: pass_control_candidate_byte_exact_output_f18b9abbe1487231_expansion_audit_zero_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_weight_dma_hmx_and_peak_vtcm
+      repeat1_gate_up_change_percent: 0.10784425019865207
+      repeat1_gate_up_paired_change_percent: 0.2945007645692943
+      repeat1_host_change_percent: -0.19327535993833855
+      repeat1_host_paired_change_percent: 0.2561771656072853
+      repeat10_gate_up_change_percent: 0.022676636828000696
+      repeat10_gate_up_paired_change_percent: 0.10553371121209132
+      repeat10_host_change_percent: -0.19453430272384775
+      repeat10_host_paired_change_percent: -0.2587073691996289
+      repeat10_join_wait_change_percent: -40.07597340930674
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_reused_exp0109_f16f16_w4u8_and_exp0114_control_w4f16
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: 83551720c10af3ace31fd59f2eb4400115e5ca6949e5249bb53249256bcc76e3
+      full_profiling_report_sha256: 1d30d657d9061101d68382c76ed978d1daf6be5acce8c745151c0d8745f6c51f
+      evidence_sha256_ledger_sha256: 769b49d16d7a98171d61e7937ff7b990c71e4527fba9cc63de58d37e55e75564
+      conclusion: removing_the_post_semaphore_join_barrier_reduces_join_wait_but_not_gate_up_or_complete_host_robustly_so_the_local_gate_fails_and_exp0111_join_only_remains_the_w4f16_candidate
+      selected_baseline_changed: false
