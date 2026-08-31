@@ -9379,3 +9379,45 @@ experiments:
       evidence_sha256_ledger_sha256: 769b49d16d7a98171d61e7937ff7b990c71e4527fba9cc63de58d37e55e75564
       conclusion: removing_the_post_semaphore_join_barrier_reduces_join_wait_but_not_gate_up_or_complete_host_robustly_so_the_local_gate_fails_and_exp0111_join_only_remains_the_w4f16_candidate
       selected_baseline_changed: false
+  - id: EXP-0115
+    slug: w4f16-gate-up-unmasked-low-nibble
+    title: W4F16 Gate/Up direct low-nibble vlut16 decode
+    parent: EXP-0112
+    variants:
+      - exp0111_join_only_masked_low_control
+      - w4f16_gate_up_unmasked_low_vlut16_candidate
+    execution_state: running
+    evidence_validity: pending
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4f16-gate-up-unmasked-low-vlut16
+    source_branches:
+      - codex/exp-0115-w4f16-gate-up-unmasked-low-nibble
+    source_commits: []
+    record: docs/experiments/EXP-0115.md
+    approval_ref: 'User message 2026-09-01: 既然有收益，那就采用。继续针对W4A16和W4A8开展loop优化。'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0115-w4f16-gate-up-unmasked-low-nibble
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0112
+      source_parent_commit: 5429c70bc6eb155af96bb7dd987094bb8fb941b1
+      selected_w4f16_runtime_parent: EXP-0111-join_only
+      recipe_scope: W4F16_gate_up_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      reference_basis: htp_ops_lib_mat_mul_q4_fp16_vlut16_path_uses_unmasked_low_packed_bytes
+      hypothesis: hexagon_vlut16_uses_the_required_low_nibble_index_for_this_table_so_the_per_vector_vand_before_low_nibble_decode_is_redundant_and_can_be_removed_from_gate_up_expansion
+      implementation_boundary: runtime_selectable_gate_up_join_only_decode_helper_for_main_and_pool_workers_only_keep_high_shift_deal_vlut_shuffle_stores_and_all_publication_ordering_unchanged
+      excluded_changes: no_scale_arithmetic_layout_dma_hmx_ring_worker_attention_down_public_w4u8_or_join_barrier_changes
+      correctness_gate: candidate_byte_exact_to_exp0111_join_only_final_output_and_w4f16_expansion_audit_zero_mismatch_zero_max_lsb
+      physical_gate: exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_dma_hmx_commands_tile_work_and_peak_vtcm
+      static_gate: control_relaxed_unpack_contains_vand_candidate_relaxed_unpack_contains_no_vand_and_both_retain_high_shift_vlut16_deal_shuffle_and_identical_store_count
+      speed_gate: gate_up_plus_swiglu_and_complete_host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
+      completion_gate: five_rounds_pc027_pc028_complete_profiling_then_accept_or_reject_without_automatic_baseline_promotion
