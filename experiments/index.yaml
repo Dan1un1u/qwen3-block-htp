@@ -9529,20 +9529,22 @@ experiments:
     variants:
       - exp0112_single_fence_u16_lut_control
       - w4u8_single_fence_packed_pair_lut_candidate
-    execution_state: running
-    evidence_validity: pending
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-packed-pair-swiglu-lut
     source_branches:
       - codex/exp-0117-w4u8-packed-pair-swiglu-lut
-    source_commits: []
+    source_commits:
+      - 65377d4132ec5a7bb15e1521a773c2734443f06e
     record: docs/experiments/EXP-0117.md
     approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0117-w4u8-packed-pair-swiglu-lut
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0112
       source_parent_commit: 5429c70bc6eb155af96bb7dd987094bb8fb941b1
@@ -9564,3 +9566,34 @@ experiments:
       physical_gate: exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_bytes_boundary_bytes_dma_descriptors_hmx_commands_tile_work_pair_publication_and_peak_vtcm
       speed_gate: activation_work_gate_up_and_complete_host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
       completion_gate: offline_math_static_correctness_and_physical_gates_then_five_rounds_pc027_pc028_complete_profiling_and_accept_or_reject_without_automatic_baseline_promotion
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0117/20260831T201239Z_65377d4132ec_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0117/artifacts/65377d4132ec/20260831T201239Z_formal'
+      runtime_source_commit: 65377d4132ec5a7bb15e1521a773c2734443f06e
+      offline_math_gate_result: pass_65536_mappings_zero_mismatch_original_131072_bytes_packed_65536_bytes
+      static_gate_result: pass_control_four_gathers_candidate_two_unpredicated_gathers_no_stack_frame_no_qnn
+      correctness_gate_result: pass_control_candidate_byte_exact_output_69f22eeb035e5ec5_zero_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_traffic_commands_tile_work_pair_publication_and_peak_vtcm
+      repeat1_activation_work_change_percent: -4.2477876106194685
+      repeat1_activation_work_paired_change_percent: -3.88423457730388
+      repeat1_gate_up_change_percent: 0.24858230404722903
+      repeat1_gate_up_paired_change_percent: 0.24858230404722903
+      repeat1_host_change_percent: -0.46883894608883425
+      repeat1_host_paired_change_percent: -0.46883894608883425
+      repeat10_activation_work_change_percent: -4.39075444812932
+      repeat10_activation_work_paired_change_percent: -4.3939126265048145
+      repeat10_gate_up_change_percent: -0.777117431078489
+      repeat10_gate_up_paired_change_percent: -0.521529716247171
+      repeat10_host_change_percent: 0.13433162214047112
+      repeat10_host_paired_change_percent: -0.4896660588993518
+      repeat10_control_host_wall_us: 1733.099
+      repeat10_candidate_host_wall_us: 1735.4271
+      repeat10_control_gate_up_module_us: 669.5416666666667
+      repeat10_candidate_gate_up_module_us: 664.3385416666666
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_exp0109_f16f16_exp0111_w4f16_exp0117_control_and_candidate_w4u8
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: 416cf4ba16a8dfb81ac75732a4d7db8b54d5e077186347e03e5df3312c1b61d6
+      full_profiling_report_sha256: 6f65e31ef32223051cb1ce126c394dddfc7e10375f9c1ff5aeac897b6fb3343f
+      evidence_sha256_ledger_sha256: 349348c2b24943b9bb9fb1b1f11e5ff4b1697baf3e47041cdbe281f11ec6894e
+      conclusion: exact_packed_pair_lookup_halves_gathers_and_reduces_activation_work_but_the_existing_parallel_stream_hides_it_and_complete_repeat10_host_does_not_improve
+      selected_baseline_changed: false
