@@ -9913,3 +9913,45 @@ experiments:
       evidence_sha256_ledger_sha256: e9abf7ede115c67fdc29d51abe250859f13d5b8d76e40bb5a80250224f281e28
       conclusion: fourth_worker_turns_removed_queue_backpressure_into_hvx_hmx_contention_and_is_rejected
       selected_baseline_changed: false
+  - id: EXP-0122
+    slug: w4u8-gate-up-ring16-dma-chain8
+    title: W4U8 ring16 Gate/Up eight-bundle linked-DMA chain
+    parent: EXP-0120
+    variants:
+      - exp0120_ring16_dma_chain4_control
+      - w4u8_ring16_dma_chain8_candidate
+    execution_state: running
+    evidence_validity: pending
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-ring16-gate-up-dma-chain8
+    source_branches:
+      - codex/exp-0122-w4u8-gate-up-ring16-dma-chain8
+    source_commits: []
+    record: docs/experiments/EXP-0122.md
+    approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0122-w4u8-gate-up-ring16-dma-chain8
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0120
+      source_parent_commit: fa410c4c237903931c95112dc7f26235738a6905
+      selected_w4u8_runtime_parent: EXP-0120-ring16-worker3
+      recipe_scope: W4U8_gate_up_linked_dma_chain_length_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      prior_negative_boundary: EXP-0121_extra_hvx_concurrency_increases_hvx_hmx_contention
+      hypothesis: one_eight_bundle_linked_dma_chain_matches_the_batch8_hmx_consumer_and_reduces_dma_submit_wait_and_publication_overhead_without_adding_hvx_contention
+      implementation_boundary: runtime_selectable_chain4_or_chain8_ring16_worker3_batch8_single_fence_same_queue_decoder_and_math
+      excluded_changes: no_ring_depth_worker_count_hmx_batch_stream_region_decoder_lut_pair_slot_down_qkv_attention_residual_w4f16_or_public_changes
+      static_gate: exact_runtime_chain4_chain8_selection_eight_descriptor_chain_ring16_worker3_batch8_single_fence_no_qnn
+      correctness_gate: candidate_byte_exact_to_exp0120_ring16_final_output_and_existing_stage_audits_zero_mismatch_zero_max_lsb
+      physical_gate: exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_bytes_dma_descriptor_count_hmx_commands_tile_pairs_and_peak_vtcm_declared_dma_chain_submit_delta_only
+      speed_gate: gate_up_and_complete_host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
+      completion_gate: static_correctness_physical_then_five_rotated_rounds_pc027_pc028_and_accept_or_reject_without_automatic_baseline_promotion
