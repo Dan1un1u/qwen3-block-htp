@@ -783,6 +783,10 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (header->w4u8_stream_fence_mode !=
              QBH_BLOCK_W4U8_STREAM_FENCE_CONTROL &&
          header->variant != QBH_BLOCK_W4U8) ||
+        (header->w4u8_gate_up_ring_slots != 8U &&
+         header->w4u8_gate_up_ring_slots != 16U) ||
+        (header->variant != QBH_BLOCK_W4U8 &&
+         header->w4u8_gate_up_ring_slots != 8U) ||
         (header->qkv_schedule_mode !=
              QBH_BLOCK_QKV_SCHEDULE_CONTROL &&
          (header->variant != QBH_BLOCK_W4F16 ||
@@ -9484,16 +9488,18 @@ static int qbh_configure_w4u8_gate_up_layout(
 }
 
 static int qbh_init_w4u8_gate_up_layout(
-    struct qbh_projection_layout *layout) {
+    struct qbh_projection_layout *layout, uint32_t ring_slots) {
+    if (ring_slots != 8U && ring_slots != 16U) {
+        return -1;
+    }
     if (qbh_projection_layout_init(
             QBH_PROJECTION_GATE_UP_PAIR,
             QBH_WEIGHT_PACKED_W4_HMX_SCALE,
-            QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4, 8U,
+            QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4, ring_slots,
             QBH_W4_COARSE_CHUNK_TILES, layout) != 0) {
         return -1;
     }
-    layout->expanded_slot_count =
-        QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES;
+    layout->expanded_slot_count = ring_slots;
     return qbh_configure_w4u8_gate_up_layout(layout);
 }
 
@@ -9624,7 +9630,8 @@ static int qbh_run_w4u8_streaming_mlp(
          (hvx_pool == NULL ||
           hvx_pool->worker_count <
               QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS)) ||
-        qbh_init_w4u8_gate_up_layout(&gate_up_layout) != 0 ||
+        qbh_init_w4u8_gate_up_layout(
+            &gate_up_layout, header->w4u8_gate_up_ring_slots) != 0 ||
         qbh_init_w4u8_down_layout(&down_layout) != 0 ||
         header->w4u8_gate_up_bundle_bytes !=
             gate_up_layout.stored_weight_bytes ||
@@ -9893,7 +9900,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     memset(&cross_prefetch, 0, sizeof(cross_prefetch));
     if (w4u8_mlp_native_input_enabled != 0U) {
         if (qbh_init_w4u8_gate_up_layout(
-                &w4u8_gate_up_layout) != 0) {
+                &w4u8_gate_up_layout,
+                header->w4u8_gate_up_ring_slots) != 0) {
             return QBH_BLOCK_STATUS_MLP_STREAM_FAILED;
         }
         w4u8_mlp_native_activation = buffers->q +

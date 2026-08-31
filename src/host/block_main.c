@@ -1509,6 +1509,7 @@ int main(int argc, char **argv) {
         QBH_BLOCK_W4F16_GROUP_FENCE_CONTROL;
     uint32_t w4u8_stream_fence_mode =
         QBH_BLOCK_W4U8_STREAM_FENCE_CONTROL;
+    uint32_t w4u8_gate_up_ring_slots = 8U;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t w4u8_gate_up_bundle_offset = 0U;
@@ -1584,6 +1585,13 @@ int main(int argc, char **argv) {
             } else {
                 w4u8_stream_fence_mode = UINT32_MAX;
             }
+        }
+    }
+    {
+        const char *ring_slots = getenv("QBH_W4U8_GATE_UP_RING_SLOTS");
+        if (ring_slots != NULL && ring_slots[0] != '\0' &&
+            qbh_parse_u32(ring_slots, &w4u8_gate_up_ring_slots) != 0) {
+            w4u8_gate_up_ring_slots = UINT32_MAX;
         }
     }
     if (argc < 3 || argc > 26 ||
@@ -1754,6 +1762,10 @@ int main(int argc, char **argv) {
          w4u8_down_hmx_batch_outputs != 4U) ||
         (variant != QBH_BLOCK_W4U8 &&
          w4u8_down_hmx_batch_outputs != 1U) ||
+        (w4u8_gate_up_ring_slots != 8U &&
+         w4u8_gate_up_ring_slots != 16U) ||
+        (variant != QBH_BLOCK_W4U8 &&
+         w4u8_gate_up_ring_slots != 8U) ||
         (variant == QBH_BLOCK_W4U8 &&
          fp16_common_schedule_mode !=
              QBH_BLOCK_FP16_COMMON_SCHEDULE_CONTROL) ||
@@ -2222,6 +2234,7 @@ int main(int argc, char **argv) {
     header->qkv_schedule_mode = qkv_schedule_mode;
     header->w4f16_group_fence_mode = w4f16_group_fence_mode;
     header->w4u8_stream_fence_mode = w4u8_stream_fence_mode;
+    header->w4u8_gate_up_ring_slots = w4u8_gate_up_ring_slots;
     header->w4u8_qk_pair_kernel_mode =
         w4u8_qk_pair_kernel_mode;
     header->input_offset = input_slot.offset;
@@ -2497,7 +2510,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0112\","
+        "{\"experiment\":\"EXP-0120\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","

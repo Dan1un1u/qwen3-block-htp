@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(47)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(112)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(48)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(120)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -339,6 +339,7 @@ struct qbh_block_header {
     uint32_t qkv_schedule_mode;
     uint32_t w4f16_group_fence_mode;
     uint32_t w4u8_stream_fence_mode;
+    uint32_t w4u8_gate_up_ring_slots;
 
     uint32_t input_offset;
     uint32_t input_bytes;

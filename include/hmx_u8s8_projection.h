@@ -98,12 +98,13 @@ static inline int qbh_projection_layout_init(
     if ((physical_plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_BATCH2 &&
          compressed_slot_count != 4U) ||
         ((physical_plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_BATCH4 ||
-          physical_plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_CHAIN4 ||
-          physical_plan ==
-              QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4 ||
+          physical_plan == QBH_PHYSICAL_PLAN_CHUNKED_E7_DMA_CHAIN4) &&
+         compressed_slot_count != 8U) ||
+        ((physical_plan == QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4 ||
           physical_plan ==
               QBH_PHYSICAL_PLAN_STREAMING_CAP2_E7_DMA_CHAIN4) &&
-         compressed_slot_count != 8U)) {
+         compressed_slot_count != 8U &&
+         compressed_slot_count != 16U)) {
         return -1;
     }
     if (((physical_plan == QBH_PHYSICAL_PLAN_STREAMING_DMA_BATCH2 ||
@@ -116,7 +117,8 @@ static inline int qbh_projection_layout_init(
           physical_plan ==
               QBH_PHYSICAL_PLAN_STREAMING_CAP2_E7_DMA_CHAIN4) &&
          (variant != QBH_PROJECTION_GATE_UP_PAIR ||
-          compressed_slot_count != 8U ||
+          (compressed_slot_count != 8U &&
+           compressed_slot_count != 16U) ||
           chunk_tiles != QBH_W4_COARSE_CHUNK_TILES))) {
         return -1;
     }
