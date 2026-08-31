@@ -224,9 +224,12 @@ def build_summary(result_dir: Path, exp0109_dir: Path,
         )
         physical = physical_equal(sides["control"], sides["candidate"])
         execution = (
-            values["w4u8_qkv_worker_assist_region_count"]["control"] == 0.0
-            and values["w4u8_qkv_worker_assist_region_count"]["candidate"] > 0.0
-            and values["w4u8_qkv_worker_max_region_k_tiles"]["candidate"] == 16.0
+            all(int(row["w4u8_qkv_worker_assist_region_count"]) == 0
+                for row in sides["control"])
+            and all(int(row["w4u8_qkv_worker_assist_region_count"]) > 0
+                    for row in sides["candidate"])
+            and all(int(row["w4u8_qkv_worker_max_region_k_tiles"]) == 16
+                    for row in sides["candidate"])
         )
         comparisons[f"repeat{repeat}"] = {
             "metrics": values,
