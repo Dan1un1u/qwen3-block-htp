@@ -8817,3 +8817,44 @@ experiments:
         - baseline-fair-exp0106
         - baseline-w4u8-fastest-exp0106
       selected_baseline_changed: true
+  - id: EXP-0107
+    slug: common-interleaved-mlp-pipeline
+    title: Common interleaved Gate/Up-SwiGLU-Down pipeline
+    parent: EXP-0106
+    variants:
+      - exp0106_f16f16_gate_then_up_control
+      - f16f16_gate8_interleaved_candidate
+      - exp0106_w4f16_interleaved_parity_control
+      - exp0106_w4u8_interleaved_parity_control
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-common-interleaved-mlp-pipeline
+    source_branches:
+      - codex/exp-0107-common-interleaved-mlp-pipeline
+    source_commits: []
+    record: docs/experiments/EXP-0107.md
+    decided_by: user
+    decided_on: '2026-08-31'
+    approval_ref: 'User message 2026-08-31: 同意，做这两项实验，然后汇报结果，并给出是否冻结的建议判断'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0107-common-interleaved-mlp-pipeline
+      started_on: '2026-08-31'
+      completed_on: null
+    evidence:
+      formal_results: null
+      retained_artifacts: null
+      source_parent_commit: 837714ba5ea2bbdef5799fe959996fb8fe862c8d
+      accepted_fair_authority: EXP-0106
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      correctness_gate: accepted_output_hashes_and_independent_audit_preserved
+      physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner
+      speed_gate: f16f16_gate_up_swiglu_and_complete_host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10_w4f16_w4u8_within_one_percent
+      completion_gate: same_source_three_recipe_controls_candidates_pc027_pc028_and_explicit_adoption_decision
