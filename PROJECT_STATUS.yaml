@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0123
+  active_experiment: null
   next_experiment_number: 124
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,25 +27,58 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0122
-  last_completed_source_commit: 521841bd0140047e5ca73067b1a3443238cecc11
+  last_completed_experiment: EXP-0123
+  last_completed_source_commit: e95989e440d4fc658375a00ecac044871b14ca60
   provisional_source_parent: EXP-0120
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: registered
+  active_experiment_stage: none
   active_experiment_evidence: null
-  active_experiment_gate: not_run
-  active_recipe_specialization: W4F16
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0122/20260831T222533Z_521841bd0140_formal'
+  active_experiment_gate: none
+  active_recipe_specialization: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0123/20260831T224649Z_4882846c3c0f_formal'
   last_rejected_specialization:
-    id: EXP-0122
-    source_branch: codex/exp-0122-w4u8-gate-up-ring16-dma-chain8
-    source_head: 521841bd0140047e5ca73067b1a3443238cecc11
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0122/20260831T222533Z_521841bd0140_formal'
+    id: EXP-0123
+    source_branch: codex/exp-0123-w4f16-gate-up-persistent-expand
+    source_head: e95989e440d4fc658375a00ecac044871b14ca60
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0123/20260831T224649Z_4882846c3c0f_formal'
     local_gate: fail
     adoption_status: rejected
-    reason: chain8_reduces_dma_control_work_but_delays_publication_and_regresses_gate_up_and_complete_host
+    reason: persistent_workers_remove_stream_join_tail_but_spin_per_generation_and_increase_expand_wait_gate_up_and_complete_host
+  latest_w4f16_gate_up_persistent_candidate:
+    id: EXP-0123
+    source_branch: codex/exp-0123-w4f16-gate-up-persistent-expand
+    runtime_source_head: 4882846c3c0f9e10eb85b8a0723dfa85959d2b01
+    validator_source_head: e95989e440d4fc658375a00ecac044871b14ca60
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0123/20260831T224649Z_4882846c3c0f_formal'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0123/artifacts/4882846c3c0f/20260831T224649Z_formal'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    selected_cell: join_only_control
+    correctness_gate: pass_byte_exact_output_f18b9abbe1487231_expansion_audit_zero_mismatch_zero_max_lsb
+    physical_gate: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_dma_hmx_work_and_peak_vtcm
+    repeat1_gate_up_change_percent: 0.5221043073605269
+    repeat1_gate_up_paired_change_percent: 0.1918735891647927
+    repeat1_host_change_percent: 0.35106626365812854
+    repeat1_host_paired_change_percent: 0.3966860844504927
+    repeat10_gate_up_change_percent: 0.42588181921288104
+    repeat10_gate_up_paired_change_percent: 0.34153469720656915
+    repeat10_host_change_percent: 0.06129941568375763
+    repeat10_host_paired_change_percent: 0.11419050310408352
+    repeat10_expand_pool_wait_change_percent: 567.2101449275362
+    repeat10_stream_join_wait_change_percent: -48.19608477592623
+    repeat10_control_host_wall_us: 2107.1979
+    repeat10_candidate_host_wall_us: 2108.4896
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass_exp0109_f16f16_exp0123_join_only_w4f16_exp0120_ring16_w4u8
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    gate_summary_sha256: b49d0985756ed5b8f5f0f26b4c0b6731d1284512d00c8b0e7bb93813195aca45
+    full_profiling_report_sha256: 7259b1e8e1668ecbe42b1f56814d73f5a2c6b48f01c1fbe66b5d5854bf7c4400
+    evidence_sha256_ledger_sha256: 9339086b7fb34090547c77eb34e126ca5d99e7bbbaddd9c2f8fe05642b0f1242
+    conclusion: persistent_worker_lifetime_is_not_the_missing_w4f16_gate_up_speedup
+    selected_baseline_changed: false
   latest_w4u8_gate_up_dma_chain_candidate:
     id: EXP-0122
     source_branch: codex/exp-0122-w4u8-gate-up-ring16-dma-chain8

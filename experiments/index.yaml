@@ -9999,20 +9999,23 @@ experiments:
     variants:
       - exp0111_join_only_epoch_workers_control
       - w4f16_gate_up_persistent_expand_candidate
-    execution_state: running
-    evidence_validity: pending
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4f16-gate-up-persistent-expand
     source_branches:
       - codex/exp-0123-w4f16-gate-up-persistent-expand
-    source_commits: []
+    source_commits:
+      - 4882846c3c0f9e10eb85b8a0723dfa85959d2b01
+      - e95989e440d4fc658375a00ecac044871b14ca60
     record: docs/experiments/EXP-0123.md
     approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0123-w4f16-gate-up-persistent-expand
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0120
       source_parent_commit: fa410c4c237903931c95112dc7f26235738a6905
@@ -10034,3 +10037,37 @@ experiments:
       physical_gate: exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_dma_hmx_tile_work_and_peak_vtcm
       speed_gate: gate_up_and_complete_host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
       completion_gate: static_correctness_physical_then_five_rotated_rounds_pc027_pc028_and_accept_or_reject_without_automatic_baseline_promotion
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0123/20260831T224649Z_4882846c3c0f_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0123/artifacts/4882846c3c0f/20260831T224649Z_formal'
+      runtime_source_commit: 4882846c3c0f9e10eb85b8a0723dfa85959d2b01
+      validator_source_commit: e95989e440d4fc658375a00ecac044871b14ca60
+      static_gate_result: pass_persistent_two_workers_generation_release_one_dispatch_no_qnn
+      correctness_gate_result: pass_byte_exact_output_f18b9abbe1487231_expansion_audit_zero_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_dma_hmx_work_and_peak_vtcm
+      selected_cell: join_only_control
+      repeat1_gate_up_change_percent: 0.5221043073605269
+      repeat1_gate_up_paired_change_percent: 0.1918735891647927
+      repeat1_host_change_percent: 0.35106626365812854
+      repeat1_host_paired_change_percent: 0.3966860844504927
+      repeat10_gate_up_change_percent: 0.42588181921288104
+      repeat10_gate_up_paired_change_percent: 0.34153469720656915
+      repeat10_host_change_percent: 0.06129941568375763
+      repeat10_host_paired_change_percent: 0.11419050310408352
+      repeat10_expand_change_percent: 1.371904578608163
+      repeat10_expand_pool_wait_change_percent: 567.2101449275362
+      repeat10_stream_join_wait_change_percent: -48.19608477592623
+      persistent_dispatches_per_block: 2
+      persistent_jobs_per_block: 48
+      persistent_completions_per_block: 96
+      persistent_failures: 0
+      repeat10_control_host_wall_us: 2107.1979
+      repeat10_candidate_host_wall_us: 2108.4896
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_exp0109_f16f16_exp0123_join_only_w4f16_exp0120_ring16_w4u8
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: b49d0985756ed5b8f5f0f26b4c0b6731d1284512d00c8b0e7bb93813195aca45
+      full_profiling_report_sha256: 7259b1e8e1668ecbe42b1f56814d73f5a2c6b48f01c1fbe66b5d5854bf7c4400
+      evidence_sha256_ledger_sha256: 9339086b7fb34090547c77eb34e126ca5d99e7bbbaddd9c2f8fe05642b0f1242
+      conclusion: persistent_workers_remove_stream_join_tail_but_spin_per_generation_and_increase_expand_wait_gate_up_and_complete_host
+      reopen_condition: bounded_multi_group_queue_overlaps_useful_work_without_per_generation_spin_polling
+      selected_baseline_changed: false
