@@ -237,7 +237,7 @@ static int qbh_start_linked_weight_bundles(
     struct qbh_dma_aligned_desc_1d *descriptors,
     const uint8_t *source, uint8_t *destination,
     uint32_t bundle_bytes, uint32_t bundle_count) {
-    if (bundle_count < 2U || bundle_count > 4U ||
+    if (bundle_count < 2U || bundle_count > 8U ||
         qbh_record_dma_wait(header) != 0) {
         return -1;
     }
@@ -1470,7 +1470,7 @@ static int qbh_run_chunked_w4_pipeline_impl(
     for (uint32_t repeat = 0; repeat < header->repeat_count; ++repeat) {
         for (uint32_t output_base = 0; output_base < layout->n_tiles;
              output_base += dma_bundle_batch) {
-            struct qbh_dma_aligned_desc_1d linked_descriptors[4];
+            struct qbh_dma_aligned_desc_1d linked_descriptors[8];
             uint32_t linear_base = repeat * layout->n_tiles + output_base;
             uint32_t first_compressed_slot =
                 linear_base % layout->compressed_slot_count;

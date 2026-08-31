@@ -787,6 +787,10 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          header->w4u8_gate_up_ring_slots != 16U) ||
         (header->variant != QBH_BLOCK_W4U8 &&
          header->w4u8_gate_up_ring_slots != 8U) ||
+        (header->w4u8_gate_up_dma_chain_bundles != 4U &&
+         header->w4u8_gate_up_dma_chain_bundles != 8U) ||
+        (header->variant != QBH_BLOCK_W4U8 &&
+         header->w4u8_gate_up_dma_chain_bundles != 4U) ||
         (header->qkv_schedule_mode !=
              QBH_BLOCK_QKV_SCHEDULE_CONTROL &&
          (header->variant != QBH_BLOCK_W4F16 ||
@@ -9488,14 +9492,21 @@ static int qbh_configure_w4u8_gate_up_layout(
 }
 
 static int qbh_init_w4u8_gate_up_layout(
-    struct qbh_projection_layout *layout, uint32_t ring_slots) {
+    struct qbh_projection_layout *layout, uint32_t ring_slots,
+    uint32_t dma_chain_bundles) {
     if (ring_slots != 8U && ring_slots != 16U) {
+        return -1;
+    }
+    if (dma_chain_bundles != 4U && dma_chain_bundles != 8U) {
         return -1;
     }
     if (qbh_projection_layout_init(
             QBH_PROJECTION_GATE_UP_PAIR,
             QBH_WEIGHT_PACKED_W4_HMX_SCALE,
-            QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4, ring_slots,
+            dma_chain_bundles == 8U
+                ? QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN8
+                : QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4,
+            ring_slots,
             QBH_W4_COARSE_CHUNK_TILES, layout) != 0) {
         return -1;
     }
@@ -9543,6 +9554,9 @@ static void qbh_accumulate_w4u8_phase_metrics(
     header->weight_dma_ticks += phase->weight_stage_ticks;
     header->weight_ddr_read_bytes += layout->stored_weight_bytes;
     header->weight_dma_descriptor_count += phase->dma_descriptor_count;
+    header->w4u8_mlp_dma_submit_count += phase->dma_submit_count;
+    header->w4u8_mlp_dma_wait_count += phase->dma_wait_count;
+    header->w4u8_mlp_dma_chain_count += phase->dma_chain_count;
     header->w4u8_mlp_weight_stage_ticks += phase->weight_stage_ticks;
     header->w4u8_mlp_weight_expand_ticks += phase->weight_expand_ticks;
     header->w4u8_mlp_hmx_compute_ticks += phase->hmx_compute_ticks;
@@ -9631,7 +9645,8 @@ static int qbh_run_w4u8_streaming_mlp(
           hvx_pool->worker_count <
               QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS)) ||
         qbh_init_w4u8_gate_up_layout(
-            &gate_up_layout, header->w4u8_gate_up_ring_slots) != 0 ||
+            &gate_up_layout, header->w4u8_gate_up_ring_slots,
+            header->w4u8_gate_up_dma_chain_bundles) != 0 ||
         qbh_init_w4u8_down_layout(&down_layout) != 0 ||
         header->w4u8_gate_up_bundle_bytes !=
             gate_up_layout.stored_weight_bytes ||
@@ -9901,7 +9916,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     if (w4u8_mlp_native_input_enabled != 0U) {
         if (qbh_init_w4u8_gate_up_layout(
                 &w4u8_gate_up_layout,
-                header->w4u8_gate_up_ring_slots) != 0) {
+                header->w4u8_gate_up_ring_slots,
+                header->w4u8_gate_up_dma_chain_bundles) != 0) {
             return QBH_BLOCK_STATUS_MLP_STREAM_FAILED;
         }
         w4u8_mlp_native_activation = buffers->q +

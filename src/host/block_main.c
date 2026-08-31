@@ -1510,6 +1510,7 @@ int main(int argc, char **argv) {
     uint32_t w4u8_stream_fence_mode =
         QBH_BLOCK_W4U8_STREAM_FENCE_CONTROL;
     uint32_t w4u8_gate_up_ring_slots = 8U;
+    uint32_t w4u8_gate_up_dma_chain_bundles = 4U;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t w4u8_gate_up_bundle_offset = 0U;
@@ -1592,6 +1593,14 @@ int main(int argc, char **argv) {
         if (ring_slots != NULL && ring_slots[0] != '\0' &&
             qbh_parse_u32(ring_slots, &w4u8_gate_up_ring_slots) != 0) {
             w4u8_gate_up_ring_slots = UINT32_MAX;
+        }
+    }
+    {
+        const char *dma_chain = getenv("QBH_W4U8_GATE_UP_DMA_CHAIN");
+        if (dma_chain != NULL && dma_chain[0] != '\0' &&
+            qbh_parse_u32(
+                dma_chain, &w4u8_gate_up_dma_chain_bundles) != 0) {
+            w4u8_gate_up_dma_chain_bundles = UINT32_MAX;
         }
     }
     if (argc < 3 || argc > 26 ||
@@ -1766,6 +1775,10 @@ int main(int argc, char **argv) {
          w4u8_gate_up_ring_slots != 16U) ||
         (variant != QBH_BLOCK_W4U8 &&
          w4u8_gate_up_ring_slots != 8U) ||
+        (w4u8_gate_up_dma_chain_bundles != 4U &&
+         w4u8_gate_up_dma_chain_bundles != 8U) ||
+        (variant != QBH_BLOCK_W4U8 &&
+         w4u8_gate_up_dma_chain_bundles != 4U) ||
         (variant == QBH_BLOCK_W4U8 &&
          fp16_common_schedule_mode !=
              QBH_BLOCK_FP16_COMMON_SCHEDULE_CONTROL) ||
@@ -1967,7 +1980,10 @@ int main(int argc, char **argv) {
         (qbh_projection_layout_init(
              QBH_PROJECTION_GATE_UP_PAIR,
              QBH_WEIGHT_PACKED_W4_HMX_SCALE,
-             QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4, 8U,
+             w4u8_gate_up_dma_chain_bundles == 8U
+                 ? QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN8
+                 : QBH_PHYSICAL_PLAN_STREAMING_E7_DMA_CHAIN4,
+             w4u8_gate_up_ring_slots,
              QBH_W4_COARSE_CHUNK_TILES,
              &w4u8_gate_up_layout) != 0 ||
          qbh_projection_layout_init(
@@ -2235,6 +2251,8 @@ int main(int argc, char **argv) {
     header->w4f16_group_fence_mode = w4f16_group_fence_mode;
     header->w4u8_stream_fence_mode = w4u8_stream_fence_mode;
     header->w4u8_gate_up_ring_slots = w4u8_gate_up_ring_slots;
+    header->w4u8_gate_up_dma_chain_bundles =
+        w4u8_gate_up_dma_chain_bundles;
     header->w4u8_qk_pair_kernel_mode =
         w4u8_qk_pair_kernel_mode;
     header->input_offset = input_slot.offset;
@@ -2510,7 +2528,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0120\","
+        "{\"experiment\":\"EXP-0122\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2521,6 +2539,7 @@ int main(int argc, char **argv) {
         "\"qkv_schedule_mode\":\"%s\","
         "\"w4f16_group_fence_mode\":\"%s\","
         "\"w4u8_stream_fence_mode\":\"%s\","
+        "\"w4u8_gate_up_dma_chain_bundles\":%" PRIu32 ","
         "\"fp16_norm_rows_per_task\":%" PRIu32 ","
         "\"fp16_norm_contexts\":%" PRIu32 ","
         "\"w4u8_down_hmx_batch_outputs\":%" PRIu32 ","
@@ -2783,6 +2802,9 @@ int main(int argc, char **argv) {
         "\"w4u8_mlp_hmx_ready_wait_ticks\":%" PRIu64 ","
         "\"w4u8_mlp_producer_slot_wait_ticks\":%" PRIu64 ","
         "\"w4u8_mlp_expanded_slot_wait_ticks\":%" PRIu64 ","
+        "\"w4u8_mlp_dma_submit_count\":%" PRIu32 ","
+        "\"w4u8_mlp_dma_wait_count\":%" PRIu32 ","
+        "\"w4u8_mlp_dma_chain_count\":%" PRIu32 ","
         "\"w4u8_gate_up_persistent_hvx_dispatch_count\":%" PRIu32 ","
         "\"w4u8_gate_up_persistent_hvx_worker_count\":%" PRIu32 ","
         "\"w4u8_gate_up_transient_hvx_thread_count\":%" PRIu32 ","
@@ -2848,6 +2870,7 @@ int main(int argc, char **argv) {
             header->w4f16_group_fence_mode),
         qbh_w4u8_stream_fence_mode_name(
             header->w4u8_stream_fence_mode),
+        header->w4u8_gate_up_dma_chain_bundles,
         header->fp16_norm_rows_per_task,
         header->fp16_norm_contexts,
         header->w4u8_down_hmx_batch_outputs,
@@ -3104,6 +3127,9 @@ int main(int argc, char **argv) {
         header->w4u8_mlp_hmx_ready_wait_ticks,
         header->w4u8_mlp_producer_slot_wait_ticks,
         header->w4u8_mlp_expanded_slot_wait_ticks,
+        header->w4u8_mlp_dma_submit_count,
+        header->w4u8_mlp_dma_wait_count,
+        header->w4u8_mlp_dma_chain_count,
         header->w4u8_gate_up_persistent_hvx_dispatch_count,
         header->w4u8_gate_up_persistent_hvx_worker_count,
         header->w4u8_gate_up_transient_hvx_thread_count,

@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(48)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(120)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(50)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(122)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -340,6 +340,7 @@ struct qbh_block_header {
     uint32_t w4f16_group_fence_mode;
     uint32_t w4u8_stream_fence_mode;
     uint32_t w4u8_gate_up_ring_slots;
+    uint32_t w4u8_gate_up_dma_chain_bundles;
 
     uint32_t input_offset;
     uint32_t input_bytes;
@@ -667,6 +668,9 @@ struct qbh_block_header {
     uint64_t w4u8_mlp_hmx_ready_wait_ticks;
     uint64_t w4u8_mlp_producer_slot_wait_ticks;
     uint64_t w4u8_mlp_expanded_slot_wait_ticks;
+    uint32_t w4u8_mlp_dma_submit_count;
+    uint32_t w4u8_mlp_dma_wait_count;
+    uint32_t w4u8_mlp_dma_chain_count;
     uint32_t w4u8_gate_up_persistent_hvx_dispatch_count;
     uint32_t w4u8_gate_up_persistent_hvx_worker_count;
     uint32_t w4u8_gate_up_transient_hvx_thread_count;
