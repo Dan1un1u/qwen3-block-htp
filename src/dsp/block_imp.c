@@ -86,7 +86,8 @@ _Static_assert(
      QBH_BLOCK_MLP_CROUTON_GROUP_TILES)
 #define QBH_BLOCK_MLP_CROUTON_RING_SLOTS \
     QBH_BLOCK_MLP_CROUTON_GROUPS
-#define QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS UINT32_C(3)
+#define QBH_BLOCK_W4U8_GATE_UP_MIN_HVX_WORKERS UINT32_C(3)
+#define QBH_BLOCK_W4U8_GATE_UP_MAX_HVX_WORKERS UINT32_C(4)
 #define QBH_BLOCK_W4U8_DOWN_HVX_WORKERS UINT32_C(6)
 #define QBH_BLOCK_W4U8_DOWN_PERSISTENT_HVX_WORKERS UINT32_C(5)
 #define QBH_BLOCK_W4U8_GATE_UP_PAIR_SLOTS UINT32_C(8)
@@ -98,7 +99,7 @@ _Static_assert(
 #define QBH_BLOCK_W4U8_SOFTMAX_ROWS_PER_SLICE \
     (QBH_ATTENTION_M / QBH_BLOCK_W4U8_SOFTMAX_ROW_SLICES)
 #define QBH_BLOCK_W4U8_GATHER_SCRATCH_BYTES \
-    (QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS * \
+    (QBH_BLOCK_W4U8_GATE_UP_MAX_HVX_WORKERS * \
      QBH_MLP_GATHER_SCRATCH_BYTES)
 
 enum qbh_block_hvx_pool_job_kind {
@@ -978,8 +979,10 @@ static int qbh_header_valid(const struct qbh_block_header *header,
           (header->common_ops_mask & QBH_BLOCK_COMMON_OP_SILU) == 0U)) ||
         (qbh_block_mlp_is_w4u8_streaming(header->mlp_mode) &&
          (header->variant != QBH_BLOCK_W4U8 ||
-          header->mlp_hvx_contexts !=
-              QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS)) ||
+          header->mlp_hvx_contexts <
+              QBH_BLOCK_W4U8_GATE_UP_MIN_HVX_WORKERS ||
+          header->mlp_hvx_contexts >
+              QBH_BLOCK_W4U8_GATE_UP_MAX_HVX_WORKERS)) ||
         (header->mlp_mode == QBH_BLOCK_MLP_STREAMING &&
          (header->mlp_hvx_contexts != 4U ||
           (header->variant == QBH_BLOCK_F16F16 &&
@@ -9628,8 +9631,7 @@ static int qbh_run_w4u8_streaming_mlp(
         (qbh_block_mlp_uses_persistent_gate_up_hvx(
              header->mlp_mode) &&
          (hvx_pool == NULL ||
-          hvx_pool->worker_count <
-              QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS)) ||
+          hvx_pool->worker_count < header->mlp_hvx_contexts)) ||
         qbh_init_w4u8_gate_up_layout(
             &gate_up_layout, header->w4u8_gate_up_ring_slots) != 0 ||
         qbh_init_w4u8_down_layout(&down_layout) != 0 ||
@@ -9647,7 +9649,7 @@ static int qbh_run_w4u8_streaming_mlp(
         header->w4u8_mlp_vtcm_plan_bytes = down_layout.vtcm_plan_bytes;
     }
     header->w4u8_mlp_gate_up_hvx_workers =
-        QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS;
+        header->mlp_hvx_contexts;
     header->w4u8_mlp_down_hvx_workers =
         QBH_BLOCK_W4U8_DOWN_HVX_WORKERS;
     header->w4u8_mlp_gate_up_hmx_batch_n_tiles =
@@ -9688,7 +9690,7 @@ static int qbh_run_w4u8_streaming_mlp(
             .stream_fence_mode = header->w4u8_stream_fence_mode,
         };
         qbh_reset_w4u8_phase_header(
-            &gate_up_phase, QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS);
+            &gate_up_phase, header->mlp_hvx_contexts);
         start = HAP_perf_get_qtimer_count();
         if (qbh_block_mlp_uses_persistent_gate_up_hvx(
                 header->mlp_mode)) {
@@ -9699,7 +9701,7 @@ static int qbh_run_w4u8_streaming_mlp(
                 mlp_arena, &handoff, &runner, &hvx_runner);
             ++header->w4u8_gate_up_persistent_hvx_dispatch_count;
             header->w4u8_gate_up_persistent_hvx_worker_count +=
-                QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS;
+                header->mlp_hvx_contexts;
         } else {
             result = qbh_run_chunked_w4_pipeline_external(
                 &gate_up_phase, &gate_up_layout,
@@ -9707,7 +9709,7 @@ static int qbh_run_w4u8_streaming_mlp(
                 mlp_arena + gate_up_layout.vtcm_activation_offset,
                 mlp_arena, &handoff, &runner);
             header->w4u8_gate_up_transient_hvx_thread_count +=
-                QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS;
+                header->mlp_hvx_contexts;
         }
         header->gate_up_ticks += HAP_perf_get_qtimer_count() - start;
         header->w4u8_mlp_activation_work_ticks +=

@@ -1828,7 +1828,8 @@ int main(int argc, char **argv) {
          (variant == QBH_BLOCK_W4U8 ||
           (common_ops_mask & QBH_BLOCK_COMMON_OP_SILU) == 0U)) ||
         (qbh_block_mlp_is_w4u8_streaming(mlp_mode) &&
-         (variant != QBH_BLOCK_W4U8 || mlp_hvx_contexts != 3U)) ||
+         (variant != QBH_BLOCK_W4U8 || mlp_hvx_contexts < 3U ||
+          mlp_hvx_contexts > 4U)) ||
         (mlp_mode == QBH_BLOCK_MLP_STREAMING &&
          (mlp_hvx_contexts != 4U ||
           (variant == QBH_BLOCK_F16F16 &&
@@ -2510,7 +2511,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0120\","
+        "{\"experiment\":\"EXP-0121\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
