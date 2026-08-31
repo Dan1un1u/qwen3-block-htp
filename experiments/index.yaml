@@ -9037,13 +9037,14 @@ experiments:
       - w4f16_q_prefix4_only
       - w4f16_qkv_norms_q_prefix4_combined
     execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4f16-qkv-specialization-factorial
     source_branches:
       - codex/exp-0110-w4f16-qkv-specialization-factorial
-    source_commits: []
+    source_commits:
+      - d18e901339f4eadd760b590e91f004c3f76e9cb6
     record: docs/experiments/EXP-0110.md
     decided_by: user
     decided_on: '2026-09-01'
@@ -9073,4 +9074,30 @@ experiments:
       prefix_gate: prefix_cells_publish_exactly_q0_to_q3_then_k0_to_k7_then_q4_to_q15_then_v0_to_v7_without_changed_head_semantics
       speed_gate: select_the_lowest_complete_host_cell_among_candidates_that_strictly_improve_qkv_plus_qk_norm_rope_and_complete_host_in_ordinary_and_paired_repeat1_and_repeat10_versus_control
       completion_gate: correctness_physical_factorial_five_rounds_pc027_pc028_then_explicit_user_adoption_decision
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0110/20260831T163813Z_d18e901339f4_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0110/artifacts/d18e901339f4/20260831T163813Z_formal'
+      runtime_source_commit: d18e901339f4eadd760b590e91f004c3f76e9cb6
+      static_gate_result: pass_w4f16_only_four_cell_factorial_no_qnn
+      correctness_gate_result: pass_all_four_cells_byte_exact_independent_qkv_operand_audit_zero_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_w4_bytes_hmx_work
+      carrier_gate_result: pass_three_direct_qkv_128_unpack_skipped_24_qk_operands_8_av_weights_zero_operand_mismatches
+      prefix_gate_result: pass_exact_64_command_trace_020bd2ecac75eb83_repeat1_75942e8f4d761383_repeat10
+      selected_candidate: w4f16_qkv_norms_carrier_only
+      repeat1_carrier_qkv_qknorm_change_percent: -6.860096323270293
+      repeat1_carrier_qkv_qknorm_paired_change_percent: -6.475583864118894
+      repeat1_carrier_host_change_percent: -1.2743140431568767
+      repeat1_carrier_host_paired_change_percent: -1.2270764607366869
+      repeat10_carrier_qkv_qknorm_change_percent: -6.443877248174756
+      repeat10_carrier_qkv_qknorm_paired_change_percent: -6.135805835833108
+      repeat10_carrier_host_change_percent: -1.9138080758702825
+      repeat10_carrier_host_paired_change_percent: -2.019126418042616
+      prefix4_gate: fail_repeat10_ordinary_host_regression_0.329482_percent
+      combined_candidate_eligible: true_but_slower_than_carrier_at_repeat1_and_repeat10
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_reused_exp0109_frozen_public_overview
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: 8eb6b07a115d5f3948cd1e0f4e761ac5721743f6a5c67d2196fb00a3144b9b4d
+      full_profiling_report_sha256: ead4696f022d643192120c64ac4bace32941eca844cb789aff215622ba5b142a
+      evidence_sha256_ledger_sha256: d90e3b8613e122a2cac426c312e2188687983672e0623cdac30925837f9996ea
+      conclusion: carrier_only_passes_as_the_selected_w4f16_recipe_specialization_candidate_while_q_prefix4_is_rejected_and_the_combination_weakens_carrier
       selected_baseline_changed: false
