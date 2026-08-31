@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0093
+  active_experiment: null
   next_experiment_number: 94
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,16 +27,49 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0092
-  last_completed_source_commit: 889a2a4aacee8a6b6c94d9e0ad76cc8ba7451e65
+  last_completed_experiment: EXP-0093
+  last_completed_source_commit: 0f93c11946bd2437e67ffcfbdd609a27a09cab83
   provisional_source_parent: EXP-0084
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: four_row_native_residual_shuffle
+  active_experiment_stage: null
   active_experiment_evidence: null
-  active_experiment_gate: not_run
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0092/stage_a_889a2a4aacee'
+  active_experiment_gate: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0093/stage_c_0f93c11946bd'
+  latest_w4u8_four_row_residual_shuffle_candidate:
+    id: EXP-0093
+    source_branch: codex/exp-0093-w4u8-four-row-native-residual-shuffle
+    source_head: 0f93c11946bd2437e67ffcfbdd609a27a09cab83
+    direct_control: W4U8-EXP0084-FAIR-CANONICAL
+    candidate: four_row_two_level_vshuff_native_output_residual
+    preliminary_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0093/stage_b_9d8eb8af6422'
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0093/stage_c_0f93c11946bd'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0093/artifacts/0f93c11946bd/stage_c'
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending_user_decision
+    static_gate: pass_four_vshuff_zero_vgather_zero_vector_stack_spill
+    correctness_gate: pass_final_input_norm_qk_probability_av_byte_exact_zero_mismatch_zero_max_lsb
+    physical_gate: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_25444352_weight_bytes_512_dma_descriptors_176_hmx_commands_49408_u8s8_tile_pairs
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass_reused_exp0084_canonical_f16f16_w4f16
+    preliminary_five_round_gate: pass
+    seven_round_confirmation_gate: pass
+    repeat1_combined_residual_change_percent: -39.8964
+    repeat1_combined_residual_paired_change_percent: -40.2073
+    repeat1_host_change_percent: -1.3033
+    repeat1_host_paired_change_percent: -1.9637
+    repeat10_combined_residual_change_percent: -41.0755
+    repeat10_combined_residual_paired_change_percent: -41.1789
+    repeat10_host_change_percent: -1.2591
+    repeat10_host_paired_change_percent: -1.7119
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    gate_summary_sha256: fbd856b40351ccf17158ebc9902b0759691655dbad738caaaa40c01796fb38b5
+    full_profiling_report_sha256: ec66bd6eee9fa4be5cc831e4d5fd047926aa65868cbf97fb4c86d5c6628e0967
+    evidence_sha256_ledger_sha256: 3989bcb86ebab9c2a7c0a9e829d94d92c06fc4d226ef87de798f172454f25820
+    conclusion: four_row_register_shuffle_removes_native_output_gather_scratch_round_trip_and_strictly_improves_both_residual_boundaries_and_complete_host_wall_at_repeat1_and_repeat10
+    selected_baseline_changed: false
   latest_w4u8_gate_up_interference_factorial_experiment:
     id: EXP-0092
     source_branch: codex/exp-0092-w4u8-gate-up-interference-factorial

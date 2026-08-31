@@ -654,3 +654,9 @@ stops before priority-queue implementation. EXP-0084 remains the selected
 W4U8 baseline.
 _Avoid_: hidden long activation backlog, priority scheduling as an established
 bottleneck, implementing the rejected dual-class queue without a new hypothesis
+
+**Four-Row Native U8 Residual Shuffle**:
+The locally eligible EXP-0093 residual boundary plan that reconstructs four
+contiguous activation rows from native integer-HMX tiles in registers while
+preserving byte-exact residual semantics and VTCM residency.
+_Avoid_: accepted baseline, changed residual arithmetic, residual approximation
