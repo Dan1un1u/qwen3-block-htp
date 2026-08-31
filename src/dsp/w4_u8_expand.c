@@ -302,9 +302,10 @@ __attribute__((noinline)) void qbh_expand_w4_to_s8_hvx(
     asm volatile("barrier" : : : "memory");
 }
 
-__attribute__((noinline)) void qbh_unpack_w4_to_s8_hvx(
+static __attribute__((always_inline)) inline void
+qbh_unpack_w4_to_s8_hvx_impl(
     const uint8_t *packed_w4, int8_t *expanded_s8,
-    uint32_t k_tiles) {
+    uint32_t k_tiles, uint32_t publish_fence) {
     const HVX_Vector v_lut = *(const HVX_Vector *)qbh_signed_w4_lut;
     const HVX_Vector v_nibble_mask = Q6_Vb_vsplat_R(0x0f);
 
@@ -328,7 +329,23 @@ __attribute__((noinline)) void qbh_unpack_w4_to_s8_hvx(
         destination[0] = Q6_V_lo_W(v_unpacked);
         destination[1] = Q6_V_hi_W(v_unpacked);
     }
-    asm volatile("barrier" : : : "memory");
+    if (publish_fence != 0U) {
+        asm volatile("barrier" : : : "memory");
+    }
+}
+
+__attribute__((noinline)) void qbh_unpack_w4_to_s8_hvx(
+    const uint8_t *packed_w4, int8_t *expanded_s8,
+    uint32_t k_tiles) {
+    qbh_unpack_w4_to_s8_hvx_impl(
+        packed_w4, expanded_s8, k_tiles, 1U);
+}
+
+__attribute__((noinline)) void qbh_unpack_w4_to_s8_hvx_relaxed(
+    const uint8_t *packed_w4, int8_t *expanded_s8,
+    uint32_t k_tiles) {
+    qbh_unpack_w4_to_s8_hvx_impl(
+        packed_w4, expanded_s8, k_tiles, 0U);
 }
 
 __attribute__((noinline)) void qbh_copy_s8_hmx_tiles_hvx(
@@ -344,12 +361,26 @@ __attribute__((noinline)) void qbh_copy_s8_hmx_tiles_hvx(
     asm volatile("barrier" : : : "memory");
 }
 
-__attribute__((noinline)) void qbh_copy_hmx_bias_hvx(
-    const uint8_t *source, uint8_t *destination) {
+static __attribute__((always_inline)) inline void
+qbh_copy_hmx_bias_hvx_impl(
+    const uint8_t *source, uint8_t *destination,
+    uint32_t publish_fence) {
     const HVX_Vector *source_vectors = (const HVX_Vector *)source;
     HVX_Vector *destination_vectors = (HVX_Vector *)destination;
 
     destination_vectors[0] = source_vectors[0];
     destination_vectors[1] = source_vectors[1];
-    asm volatile("barrier" : : : "memory");
+    if (publish_fence != 0U) {
+        asm volatile("barrier" : : : "memory");
+    }
+}
+
+__attribute__((noinline)) void qbh_copy_hmx_bias_hvx(
+    const uint8_t *source, uint8_t *destination) {
+    qbh_copy_hmx_bias_hvx_impl(source, destination, 1U);
+}
+
+__attribute__((noinline)) void qbh_copy_hmx_bias_hvx_relaxed(
+    const uint8_t *source, uint8_t *destination) {
+    qbh_copy_hmx_bias_hvx_impl(source, destination, 0U);
 }

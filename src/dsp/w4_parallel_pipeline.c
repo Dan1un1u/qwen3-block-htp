@@ -364,6 +364,10 @@ static int qbh_hvx_worker_run(struct qbh_hvx_worker_job *job,
     struct qbh_parallel_state *state = job->state;
     const struct qbh_projection_layout *layout = state->layout;
     int exit_status = AEE_SUCCESS;
+    const uint32_t stream_fence_mode =
+        state->mlp_handoff != NULL
+            ? state->mlp_handoff->stream_fence_mode
+            : QBH_W4_STREAM_FENCE_CONTROL;
 
     job->lock_status = manage_hvx_context != 0U
         ? qurt_hvx_lock(QURT_HVX_MODE_128B) : AEE_SUCCESS;
@@ -479,9 +483,18 @@ static int qbh_hvx_worker_run(struct qbh_hvx_worker_job *job,
                 (int8_t *)(expanded + expanded_offset), region_tiles);
         } else if (layout->weight_storage_variant ==
             QBH_WEIGHT_PACKED_W4_HMX_SCALE) {
-            qbh_unpack_w4_to_s8_hvx(
-                compressed + source_offset,
-                (int8_t *)(expanded + expanded_offset), region_tiles);
+            if (stream_fence_mode >=
+                QBH_W4_STREAM_FENCE_SINGLE) {
+                qbh_unpack_w4_to_s8_hvx_relaxed(
+                    compressed + source_offset,
+                    (int8_t *)(expanded + expanded_offset),
+                    region_tiles);
+            } else {
+                qbh_unpack_w4_to_s8_hvx(
+                    compressed + source_offset,
+                    (int8_t *)(expanded + expanded_offset),
+                    region_tiles);
+            }
         } else {
             qbh_expand_w4_to_s8_hvx(
                 compressed + source_offset,
@@ -491,13 +504,21 @@ static int qbh_hvx_worker_run(struct qbh_hvx_worker_job *job,
         if (task.chunk_index == 0U &&
             (!qbh_physical_plan_is_streaming(layout->physical_plan) ||
              task.stream_region_index == 0U)) {
-            qbh_copy_hmx_bias_hvx(
-                compressed +
-                    (layout->weight_storage_variant ==
-                             QBH_WEIGHT_EXPANDED_S8
-                         ? layout->expanded_weight_chunk_bytes
-                         : layout->w4_bias_offset),
-                expanded + layout->expanded_chunk_weight_bytes);
+            const uint8_t *bias_source = compressed +
+                (layout->weight_storage_variant ==
+                         QBH_WEIGHT_EXPANDED_S8
+                     ? layout->expanded_weight_chunk_bytes
+                     : layout->w4_bias_offset);
+            if (stream_fence_mode >=
+                QBH_W4_STREAM_FENCE_SINGLE) {
+                qbh_copy_hmx_bias_hvx_relaxed(
+                    bias_source,
+                    expanded + layout->expanded_chunk_weight_bytes);
+            } else {
+                qbh_copy_hmx_bias_hvx(
+                    bias_source,
+                    expanded + layout->expanded_chunk_weight_bytes);
+            }
         }
         qbh_hvx_region_end(state);
         end = HAP_perf_get_qtimer_count();
@@ -505,7 +526,10 @@ static int qbh_hvx_worker_run(struct qbh_hvx_worker_job *job,
         job->expand_ticks += end - start;
         ++job->expand_count;
 
-        asm volatile("barrier" : : : "memory");
+        if (stream_fence_mode !=
+            QBH_W4_STREAM_FENCE_RELEASE_ONLY) {
+            asm volatile("barrier" : : : "memory");
+        }
         if (qbh_physical_plan_is_streaming(layout->physical_plan)) {
             volatile uint32_t *ready =
                 &state->stream_ready_generation[task.expanded_slot]

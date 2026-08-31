@@ -11,6 +11,10 @@ void qbh_unpack_w4_to_s8_hvx(const uint8_t *packed_w4,
                              int8_t *expanded_s8,
                              uint32_t k_tiles);
 
+void qbh_unpack_w4_to_s8_hvx_relaxed(const uint8_t *packed_w4,
+                                     int8_t *expanded_s8,
+                                     uint32_t k_tiles);
+
 void qbh_copy_s8_hmx_tiles_hvx(const int8_t *source,
                                int8_t *destination,
                                uint32_t k_tiles);
@@ -39,5 +43,8 @@ uint32_t qbh_audit_unscaled_w4_to_f16_tile(
     uint32_t *actual_half_bits);
 
 void qbh_copy_hmx_bias_hvx(const uint8_t *source, uint8_t *destination);
+
+void qbh_copy_hmx_bias_hvx_relaxed(const uint8_t *source,
+                                   uint8_t *destination);
 
 #endif

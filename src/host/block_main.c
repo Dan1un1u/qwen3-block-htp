@@ -1070,6 +1070,17 @@ static const char *qbh_w4f16_group_fence_mode_name(uint32_t mode) {
                ? "join_only" : "control";
 }
 
+static const char *qbh_w4u8_stream_fence_mode_name(uint32_t mode) {
+    switch (mode) {
+        case QBH_BLOCK_W4U8_STREAM_FENCE_SINGLE:
+            return "single_fence";
+        case QBH_BLOCK_W4U8_STREAM_FENCE_RELEASE_ONLY:
+            return "release_only";
+        default:
+            return "control";
+    }
+}
+
 static uint64_t qbh_fnv1a64(const uint8_t *data, size_t bytes) {
     uint64_t hash = UINT64_C(1469598103934665603);
     for (size_t index = 0; index < bytes; ++index) {
@@ -1496,6 +1507,8 @@ int main(int argc, char **argv) {
     uint32_t qkv_schedule_mode = QBH_BLOCK_QKV_SCHEDULE_CONTROL;
     uint32_t w4f16_group_fence_mode =
         QBH_BLOCK_W4F16_GROUP_FENCE_CONTROL;
+    uint32_t w4u8_stream_fence_mode =
+        QBH_BLOCK_W4U8_STREAM_FENCE_CONTROL;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t w4u8_gate_up_bundle_offset = 0U;
@@ -1553,6 +1566,23 @@ int main(int argc, char **argv) {
                     QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY;
             } else {
                 w4f16_group_fence_mode = UINT32_MAX;
+            }
+        }
+    }
+    {
+        const char *stream_fence = getenv("QBH_W4U8_STREAM_FENCE");
+        if (stream_fence != NULL && stream_fence[0] != '\0') {
+            if (strcmp(stream_fence, "control") == 0) {
+                w4u8_stream_fence_mode =
+                    QBH_BLOCK_W4U8_STREAM_FENCE_CONTROL;
+            } else if (strcmp(stream_fence, "single_fence") == 0) {
+                w4u8_stream_fence_mode =
+                    QBH_BLOCK_W4U8_STREAM_FENCE_SINGLE;
+            } else if (strcmp(stream_fence, "release_only") == 0) {
+                w4u8_stream_fence_mode =
+                    QBH_BLOCK_W4U8_STREAM_FENCE_RELEASE_ONLY;
+            } else {
+                w4u8_stream_fence_mode = UINT32_MAX;
             }
         }
     }
@@ -2191,6 +2221,7 @@ int main(int argc, char **argv) {
         w4u8_down_hmx_batch_outputs;
     header->qkv_schedule_mode = qkv_schedule_mode;
     header->w4f16_group_fence_mode = w4f16_group_fence_mode;
+    header->w4u8_stream_fence_mode = w4u8_stream_fence_mode;
     header->w4u8_qk_pair_kernel_mode =
         w4u8_qk_pair_kernel_mode;
     header->input_offset = input_slot.offset;
@@ -2466,7 +2497,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0111\","
+        "{\"experiment\":\"EXP-0112\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2476,6 +2507,7 @@ int main(int argc, char **argv) {
         "\"fp16_common_schedule_mode\":\"%s\","
         "\"qkv_schedule_mode\":\"%s\","
         "\"w4f16_group_fence_mode\":\"%s\","
+        "\"w4u8_stream_fence_mode\":\"%s\","
         "\"fp16_norm_rows_per_task\":%" PRIu32 ","
         "\"fp16_norm_contexts\":%" PRIu32 ","
         "\"w4u8_down_hmx_batch_outputs\":%" PRIu32 ","
@@ -2801,6 +2833,8 @@ int main(int argc, char **argv) {
         qbh_qkv_schedule_mode_name(header->qkv_schedule_mode),
         qbh_w4f16_group_fence_mode_name(
             header->w4f16_group_fence_mode),
+        qbh_w4u8_stream_fence_mode_name(
+            header->w4u8_stream_fence_mode),
         header->fp16_norm_rows_per_task,
         header->fp16_norm_contexts,
         header->w4u8_down_hmx_batch_outputs,

@@ -9,6 +9,12 @@
 #define QBH_W4_HMX_MAX_BATCH_OUTPUTS UINT32_C(8)
 #define QBH_W4_HMX_MAX_CONTINUATION_CHUNKS UINT32_C(1)
 
+enum qbh_w4_stream_fence_mode {
+    QBH_W4_STREAM_FENCE_CONTROL = 0,
+    QBH_W4_STREAM_FENCE_SINGLE = 1,
+    QBH_W4_STREAM_FENCE_RELEASE_ONLY = 2,
+};
+
 struct qbh_mlp_gate_up_handoff {
     uint8_t *middle_activation;
     const uint16_t *activation_lut;
@@ -18,6 +24,7 @@ struct qbh_mlp_gate_up_handoff {
     uint32_t *pair_publish_count;
     uint32_t *pair_consume_count;
     uint64_t *activation_ticks;
+    uint32_t stream_fence_mode;
 };
 
 struct qbh_w4_hmx_request {
