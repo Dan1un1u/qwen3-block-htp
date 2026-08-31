@@ -1510,6 +1510,7 @@ int main(int argc, char **argv) {
     uint32_t w4u8_stream_fence_mode =
         QBH_BLOCK_W4U8_STREAM_FENCE_CONTROL;
     uint32_t w4u8_gate_up_ring_slots = 8U;
+    uint32_t w4u8_qkv_ring_expand_workers = 0U;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t w4u8_gate_up_bundle_offset = 0U;
@@ -1592,6 +1593,16 @@ int main(int argc, char **argv) {
         if (ring_slots != NULL && ring_slots[0] != '\0' &&
             qbh_parse_u32(ring_slots, &w4u8_gate_up_ring_slots) != 0) {
             w4u8_gate_up_ring_slots = UINT32_MAX;
+        }
+    }
+    {
+        const char *expand_workers =
+            getenv("QBH_W4U8_QKV_RING_EXPAND_WORKERS");
+        if (expand_workers != NULL && expand_workers[0] != '\0' &&
+            qbh_parse_u32(
+                expand_workers,
+                &w4u8_qkv_ring_expand_workers) != 0) {
+            w4u8_qkv_ring_expand_workers = UINT32_MAX;
         }
     }
     if (argc < 3 || argc > 26 ||
@@ -1766,6 +1777,17 @@ int main(int argc, char **argv) {
          w4u8_gate_up_ring_slots != 16U) ||
         (variant != QBH_BLOCK_W4U8 &&
          w4u8_gate_up_ring_slots != 8U) ||
+        w4u8_qkv_ring_expand_workers > 3U ||
+        (variant != QBH_BLOCK_W4U8 &&
+         w4u8_qkv_ring_expand_workers != 0U) ||
+        (w4u8_qkv_ring_expand_workers != 0U &&
+         (w4u8_qkvo_pipeline_mode !=
+              QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS ||
+          !qbh_attention_u8_qkv_overlap_enabled(
+              attention_pipeline_mode) ||
+          attention_hvx_contexts != 6U ||
+          (crouton_boundary_mode &
+           QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT) == 0U)) ||
         (variant == QBH_BLOCK_W4U8 &&
          fp16_common_schedule_mode !=
              QBH_BLOCK_FP16_COMMON_SCHEDULE_CONTROL) ||
@@ -2235,6 +2257,8 @@ int main(int argc, char **argv) {
     header->w4f16_group_fence_mode = w4f16_group_fence_mode;
     header->w4u8_stream_fence_mode = w4u8_stream_fence_mode;
     header->w4u8_gate_up_ring_slots = w4u8_gate_up_ring_slots;
+    header->w4u8_qkv_ring_expand_workers =
+        w4u8_qkv_ring_expand_workers;
     header->w4u8_qk_pair_kernel_mode =
         w4u8_qk_pair_kernel_mode;
     header->input_offset = input_slot.offset;
@@ -2510,7 +2534,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0120\","
+        "{\"experiment\":\"EXP-0124\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2521,6 +2545,7 @@ int main(int argc, char **argv) {
         "\"qkv_schedule_mode\":\"%s\","
         "\"w4f16_group_fence_mode\":\"%s\","
         "\"w4u8_stream_fence_mode\":\"%s\","
+        "\"w4u8_qkv_ring_expand_workers\":%" PRIu32 ","
         "\"fp16_norm_rows_per_task\":%" PRIu32 ","
         "\"fp16_norm_contexts\":%" PRIu32 ","
         "\"w4u8_down_hmx_batch_outputs\":%" PRIu32 ","
@@ -2713,6 +2738,21 @@ int main(int argc, char **argv) {
         "\"w4u8_qkvo_weight_expand_ticks\":%" PRIu64 ","
         "\"w4u8_qkvo_prefetch_wait_ticks\":%" PRIu64 ","
         "\"w4u8_qkvo_hmx_lifetime_ticks\":%" PRIu64 ","
+        "\"w4u8_qkv_ring_slot_count\":%" PRIu32 ","
+        "\"w4u8_qkv_ring_expand_worker_count\":%" PRIu32 ","
+        "\"w4u8_qkv_ring_prep_worker_count\":%" PRIu32 ","
+        "\"w4u8_qkv_ring_dispatch_count\":%" PRIu32 ","
+        "\"w4u8_qkv_ring_batch_count\":%" PRIu32 ","
+        "\"w4u8_qkv_ring_expand_task_count\":%" PRIu32 ","
+        "\"w4u8_qkv_ring_hmx_dispatch_count\":%" PRIu32 ","
+        "\"w4u8_qkv_ring_head_publish_count\":%" PRIu32 ","
+        "\"w4u8_qkv_ring_pipeline_ticks\":%" PRIu64 ","
+        "\"w4u8_qkv_ring_dma_wait_ticks\":%" PRIu64 ","
+        "\"w4u8_qkv_ring_producer_slot_wait_ticks\":%" PRIu64 ","
+        "\"w4u8_qkv_ring_expand_ticks\":%" PRIu64 ","
+        "\"w4u8_qkv_ring_hmx_ready_wait_ticks\":%" PRIu64 ","
+        "\"w4u8_qkv_ring_hmx_compute_ticks\":%" PRIu64 ","
+        "\"w4u8_qkv_ring_pool_wait_ticks\":%" PRIu64 ","
         "\"w4u8_input_norm_task_count\":%" PRIu32 ","
         "\"w4u8_input_norm_main_work_ticks\":%" PRIu64 ","
         "\"w4u8_input_norm_worker_work_ticks\":%" PRIu64 ","
@@ -2848,6 +2888,7 @@ int main(int argc, char **argv) {
             header->w4f16_group_fence_mode),
         qbh_w4u8_stream_fence_mode_name(
             header->w4u8_stream_fence_mode),
+        header->w4u8_qkv_ring_expand_workers,
         header->fp16_norm_rows_per_task,
         header->fp16_norm_contexts,
         header->w4u8_down_hmx_batch_outputs,
@@ -3034,6 +3075,21 @@ int main(int argc, char **argv) {
         header->w4u8_qkvo_weight_expand_ticks,
         header->w4u8_qkvo_prefetch_wait_ticks,
         header->w4u8_qkvo_hmx_lifetime_ticks,
+        header->w4u8_qkv_ring_slot_count,
+        header->w4u8_qkv_ring_expand_worker_count,
+        header->w4u8_qkv_ring_prep_worker_count,
+        header->w4u8_qkv_ring_dispatch_count,
+        header->w4u8_qkv_ring_batch_count,
+        header->w4u8_qkv_ring_expand_task_count,
+        header->w4u8_qkv_ring_hmx_dispatch_count,
+        header->w4u8_qkv_ring_head_publish_count,
+        header->w4u8_qkv_ring_pipeline_ticks,
+        header->w4u8_qkv_ring_dma_wait_ticks,
+        header->w4u8_qkv_ring_producer_slot_wait_ticks,
+        header->w4u8_qkv_ring_expand_ticks,
+        header->w4u8_qkv_ring_hmx_ready_wait_ticks,
+        header->w4u8_qkv_ring_hmx_compute_ticks,
+        header->w4u8_qkv_ring_pool_wait_ticks,
         header->w4u8_input_norm_task_count,
         header->w4u8_input_norm_main_work_ticks,
         header->w4u8_input_norm_worker_work_ticks,

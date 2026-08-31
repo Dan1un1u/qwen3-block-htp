@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(48)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(120)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(49)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(124)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -340,6 +340,7 @@ struct qbh_block_header {
     uint32_t w4f16_group_fence_mode;
     uint32_t w4u8_stream_fence_mode;
     uint32_t w4u8_gate_up_ring_slots;
+    uint32_t w4u8_qkv_ring_expand_workers;
 
     uint32_t input_offset;
     uint32_t input_bytes;
@@ -673,6 +674,21 @@ struct qbh_block_header {
     uint32_t w4u8_down_persistent_hvx_dispatch_count;
     uint32_t w4u8_down_persistent_hvx_worker_count;
     uint32_t w4u8_down_transient_hvx_thread_count;
+    uint32_t w4u8_qkv_ring_slot_count;
+    uint32_t w4u8_qkv_ring_expand_worker_count;
+    uint32_t w4u8_qkv_ring_prep_worker_count;
+    uint32_t w4u8_qkv_ring_dispatch_count;
+    uint32_t w4u8_qkv_ring_batch_count;
+    uint32_t w4u8_qkv_ring_expand_task_count;
+    uint32_t w4u8_qkv_ring_hmx_dispatch_count;
+    uint32_t w4u8_qkv_ring_head_publish_count;
+    uint64_t w4u8_qkv_ring_pipeline_ticks;
+    uint64_t w4u8_qkv_ring_dma_wait_ticks;
+    uint64_t w4u8_qkv_ring_producer_slot_wait_ticks;
+    uint64_t w4u8_qkv_ring_expand_ticks;
+    uint64_t w4u8_qkv_ring_hmx_ready_wait_ticks;
+    uint64_t w4u8_qkv_ring_hmx_compute_ticks;
+    uint64_t w4u8_qkv_ring_pool_wait_ticks;
 };
 
 #endif
