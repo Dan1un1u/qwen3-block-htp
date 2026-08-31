@@ -9673,3 +9673,50 @@ experiments:
       evidence_sha256_ledger_sha256: 63c18f4264bbc88c54b74c4b381f3add3d9bd9e4db4b1e9e9e5995cedd260298
       conclusion: bounded_worker_turns_consistently_reduce_q_expand_and_qkv_but_still_raise_qk_prep_wait_and_fail_repeat10_paired_host
       selected_baseline_changed: false
+  - id: EXP-0119
+    slug: w4u8-qkv-assist-granularity
+    title: W4U8 Q-expansion worker-assistance granularity
+    parent: EXP-0112
+    variants:
+      - exp0112_main_hvx_q_expand_control
+      - q_worker_assist_16_k_tiles
+      - q_worker_assist_8_k_tiles
+      - q_worker_assist_4_k_tiles
+    execution_state: running
+    evidence_validity: pending
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-qkv-assist-granularity
+    source_branches:
+      - codex/exp-0119-w4u8-qkv-assist-granularity
+    source_commits: []
+    record: docs/experiments/EXP-0119.md
+    approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0119-w4u8-qkv-assist-granularity
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0112
+      source_parent_commit: 5429c70bc6eb155af96bb7dd987094bb8fb941b1
+      implementation_parent_experiment: EXP-0118
+      implementation_parent_commit: cc091ab2bd095d8d9d4a7de084104d3b0fccde09
+      selected_w4u8_runtime_parent: EXP-0112-single_fence
+      recipe_scope: W4U8_q_projection_expansion_schedule_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      prior_negative_boundary: EXP-0118_16k_turn_reduced_qkv_but_increased_qk_prep_wait_and_failed_repeat10_paired_host
+      hypothesis: reducing_each_assistance_turn_to_8_or_4_k_tiles_preserves_parallel_q_expansion_while_shortening_qk_dependency_service_delay
+      implementation_boundary: runtime_selectable_control_16k_8k_4k_q_only_region_granularity_with_one_region_per_dependency_recheck
+      excluded_changes: no_k_v_o_attention_math_qk_norm_rope_math_qparam_weight_layout_dma_hmx_command_mlp_residual_w4f16_or_public_changes
+      static_gate: exact_runtime_region_choices_atomic_claim_generation_safety_one_region_per_dependency_recheck_no_qnn
+      correctness_gate: every_cell_byte_exact_to_exp0112_final_output_and_existing_stage_audits_zero_mismatch_zero_max_lsb
+      execution_gate: positive_assistance_selected_max_region_observed_all_twelve_qk_pair_tasks_once_closed_k_tile_accounting
+      physical_gate: exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_boundary_bytes_dma_descriptors_hmx_commands_tile_pairs_and_peak_vtcm
+      speed_gate: select_only_a_cell_where_qkv_projection_and_complete_host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
+      completion_gate: five_rotated_rounds_pc027_pc028_then_accept_or_reject_without_automatic_baseline_promotion
