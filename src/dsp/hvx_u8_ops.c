@@ -1042,8 +1042,7 @@ void qbh_hvx_qk_norm_rope_u8_native_head_pair(
                     active_values[0], input_zero_point_half_bits,
                     output_inverse_scale, output_zero_point,
                     &gamma_sf32, rope,
-                    input_qparam->scale * inverse_sqrt[0][local_row],
-                    0.0f);
+                    input_qparam->scale * inverse_sqrt[0][local_row]);
                 qbh_qk_norm_rope_one_head_u8_hoisted_constants(
                     active_values[1], input_zero_point_half_bits,
                     output_inverse_scale, output_zero_point,
@@ -1267,8 +1266,7 @@ void qbh_hvx_qk_norm_rope_u8_native_k_head_pair(
                     active_values[0], input_zero_point_half_bits,
                     output_inverse_scale, output_zero_point,
                     &gamma_sf32, rope,
-                    input_qparam->scale * inverse_sqrt[0][local_row],
-                    0.0f);
+                    input_qparam->scale * inverse_sqrt[0][local_row]);
                 qbh_qk_norm_rope_one_head_u8_hoisted_constants(
                     active_values[1], input_zero_point_half_bits,
                     output_inverse_scale, output_zero_point,
