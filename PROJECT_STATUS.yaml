@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0105
+  active_experiment: null
   next_experiment_number: 106
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,16 +27,50 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0104
-  last_completed_source_commit: c751d40d801c5a740dca5eca8c6f8b339c4f7063
+  last_completed_experiment: EXP-0105
+  last_completed_source_commit: 78e6ba62da03112391dcbc6110c74992e4f1cc3a
   provisional_source_parent: EXP-0084
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: dual_head_u8_softmax_reduction_fusion
+  active_experiment_stage: null
   active_experiment_evidence: null
-  active_experiment_gate: none
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0104/formal_c751d40d801c'
+  active_experiment_gate: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0105/formal_78e6ba62da03'
+  latest_w4u8_dual_head_softmax_reduction_experiment:
+    id: EXP-0105
+    source_branch: codex/exp-0105-w4u8-dual-head-softmax-reductions
+    source_head: 78e6ba62da03112391dcbc6110c74992e4f1cc3a
+    direct_control: W4U8-EXP0084-FAIR-CANONICAL
+    candidate: dual_head_interleaved_softmax_reductions
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0105/formal_78e6ba62da03'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0105/artifacts/78e6ba62da03/formal'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    static_gate: pass_three_explicit_dual_head_helpers_552_bytes_zero_vector_stack_access_no_carrier_layout_change_no_qnn
+    correctness_gate: pass_final_input_norm_qk_probability_av_byte_exact_zero_mismatch_zero_max_lsb
+    physical_gate: pass_same_5306080_peak_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_weight_bytes_512_dma_descriptors_176_hmx_commands_and_49408_tile_pairs
+    repeat1_softmax_change_percent: 0.720
+    repeat1_softmax_paired_change_percent: 1.595
+    repeat1_attention_change_percent: 0.263
+    repeat1_attention_paired_change_percent: 0.316
+    repeat1_host_change_percent: 0.378
+    repeat1_host_paired_change_percent: 1.101
+    repeat10_softmax_change_percent: 0.030
+    repeat10_softmax_paired_change_percent: -0.030
+    repeat10_attention_change_percent: 0.444
+    repeat10_attention_paired_change_percent: 0.074
+    repeat10_host_change_percent: -0.093
+    repeat10_host_paired_change_percent: -0.174
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass_reused_exp0084_canonical_f16f16_w4f16
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    gate_summary_sha256: 61262677a98c94ffd895512929cdaf27eb228ad81a0f9dde3370a95593097f96
+    full_profiling_report_sha256: 2b1f91d980810f4e1cb0831949ca0089eb54ced0187e5eaac06e8c496275768d
+    evidence_sha256_ledger_sha256: c35e1d721f6451a1758f1f01a1980bffc4cd028bf1dc0f49daadf4bfc473bc19
+    conclusion: explicit_dual_head_helpers_preserve_math_and_physical_contract_but_function_call_and_scalar_result_store_boundaries_erase_theoretical_reduction_ilp_and_fail_softmax_attention_and_host_gates
+    selected_baseline_changed: false
   latest_w4u8_qk_quarter_tiled_candidate:
     id: EXP-0104
     source_branch: codex/exp-0104-w4u8-quarter-tiled-interleaved-qk-pair

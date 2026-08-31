@@ -8667,14 +8667,15 @@ experiments:
     variants:
       - exp0084_serial_per_head_softmax_reductions_control
       - dual_head_interleaved_softmax_reductions_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-dual-head-softmax-reductions
     source_branches:
       - codex/exp-0105-w4u8-dual-head-softmax-reductions
-    source_commits: []
+    source_commits:
+      - 78e6ba62da03112391dcbc6110c74992e4f1cc3a
     record: docs/experiments/EXP-0105.md
     decided_by: user
     decided_on: '2026-08-31'
@@ -8683,10 +8684,10 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0105-w4u8-dual-head-softmax-reductions
       started_on: '2026-08-31'
-      completed_on: null
+      completed_on: '2026-08-31'
     evidence:
-      formal_results: null
-      retained_artifacts: null
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0105/formal_78e6ba62da03'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0105/artifacts/78e6ba62da03/formal'
       source_parent_commit: 6dc437fe08eaccf119c4cbce82937e22f125da0b
       direct_w4u8_control: W4U8-EXP0084-FAIR-CANONICAL
       contextual_w4f16_comparator: W4F16-EXP0084-COMMON-NORM-POOLS
@@ -8704,3 +8705,28 @@ experiments:
       physical_gate: same_peak_exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_same_weight_bytes_dma_descriptors_hmx_commands_and_49408_tile_pairs
       speed_gate: softmax_work_attention_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: static_correctness_and_physical_gates_then_five_order_rotated_rounds_and_pc027_pc028_complete_profiling_closure
+      runtime_source_commit: 78e6ba62da03112391dcbc6110c74992e4f1cc3a
+      static_gate_result: pass_three_explicit_dual_head_helpers_552_bytes_zero_vector_stack_access_no_carrier_layout_change_no_qnn
+      correctness_gate_result: pass_final_input_norm_qk_probability_av_byte_exact_zero_mismatch_zero_max_lsb
+      physical_gate_result: pass_same_5306080_peak_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_weight_bytes_512_dma_descriptors_176_hmx_commands_and_49408_tile_pairs
+      repeat1_softmax_change_percent: 0.720
+      repeat1_softmax_paired_change_percent: 1.595
+      repeat1_attention_change_percent: 0.263
+      repeat1_attention_paired_change_percent: 0.316
+      repeat1_host_change_percent: 0.378
+      repeat1_host_paired_change_percent: 1.101
+      repeat10_softmax_change_percent: 0.030
+      repeat10_softmax_paired_change_percent: -0.030
+      repeat10_attention_change_percent: 0.444
+      repeat10_attention_paired_change_percent: 0.074
+      repeat10_host_change_percent: -0.093
+      repeat10_host_paired_change_percent: -0.174
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_reused_exp0084_canonical_f16f16_w4f16
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: 61262677a98c94ffd895512929cdaf27eb228ad81a0f9dde3370a95593097f96
+      full_profiling_report_sha256: 2b1f91d980810f4e1cb0831949ca0089eb54ced0187e5eaac06e8c496275768d
+      evidence_sha256_ledger_sha256: c35e1d721f6451a1758f1f01a1980bffc4cd028bf1dc0f49daadf4bfc473bc19
+      conclusion: explicit_dual_head_helpers_preserve_math_and_physical_contract_but_function_call_and_scalar_result_store_boundaries_erase_theoretical_reduction_ilp_and_fail_softmax_attention_and_host_gates
+      reopen_condition: only_with_a_single_inline_dual_head_pipeline_that_removes_call_and_scalar_store_boundaries_not_another_out_of_line_paired_helper
+      selected_baseline_changed: false
