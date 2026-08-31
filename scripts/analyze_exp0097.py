@@ -47,6 +47,8 @@ PHYSICAL = tuple(dict.fromkeys((
     "block_invocation_count", "w4u8_mlp_pair_publish_count",
     "w4u8_mlp_pair_consume_count",
     "w4u8_mlp_exact_affine_activation_task_count",
+    "w4u8_mlp_lut_vtcm_bytes",
+    "w4u8_mlp_gather_scratch_vtcm_bytes",
 )))
 
 
