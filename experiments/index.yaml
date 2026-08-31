@@ -9522,3 +9522,45 @@ experiments:
       evidence_sha256_ledger_sha256: daff64df6d699f849dd8782baf2cd47136f9628ca167683a2da525c5eba8af86
       conclusion: down_publication_fence_elision_is_byte_exact_and_locally_faster_but_increases_shared_pool_expansion_and_join_pressure_enough_to_regress_complete_host
       selected_baseline_changed: false
+  - id: EXP-0117
+    slug: w4u8-packed-pair-swiglu-lut
+    title: W4U8 packed-pair exact SwiGLU lookup table
+    parent: EXP-0112
+    variants:
+      - exp0112_single_fence_u16_lut_control
+      - w4u8_single_fence_packed_pair_lut_candidate
+    execution_state: running
+    evidence_validity: pending
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-packed-pair-swiglu-lut
+    source_branches:
+      - codex/exp-0117-w4u8-packed-pair-swiglu-lut
+    source_commits: []
+    record: docs/experiments/EXP-0117.md
+    approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0117-w4u8-packed-pair-swiglu-lut
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0112
+      source_parent_commit: 5429c70bc6eb155af96bb7dd987094bb8fb941b1
+      selected_w4u8_runtime_parent: EXP-0112-single_fence
+      recipe_scope: W4U8_gate_up_activation_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      hypothesis: packing_even_and_odd_up_outputs_into_one_halfword_reduces_the_exact_256x256_u8_mapping_from_four_split_region_gathers_to_two_unpredicated_gathers_per_128_outputs
+      implementation_boundary: runtime_selectable_host_in_place_pair_packing_and_new_hvx_lookup_kernel_only_keep_original_128kib_transfer_and_reservation_for_single_variable_attribution
+      excluded_changes: no_qparam_formula_output_code_weight_layout_dma_hmx_task_cadence_pair_publication_attention_residual_down_w4f16_or_public_changes
+      offline_math_gate: all_65536_original_u16_entries_pack_and_decode_to_the_same_u8_code_zero_mismatch
+      static_gate: candidate_hot_loop_has_two_unpredicated_halfword_gathers_per_128_outputs_no_predicated_split_gather_and_zero_vector_stack_spill
+      correctness_gate: candidate_byte_exact_to_exp0112_single_fence_final_output_and_existing_w4u8_stage_audits_zero_mismatch_zero_max_lsb
+      physical_gate: exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_bytes_boundary_bytes_dma_descriptors_hmx_commands_tile_work_pair_publication_and_peak_vtcm
+      speed_gate: activation_work_gate_up_and_complete_host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
+      completion_gate: offline_math_static_correctness_and_physical_gates_then_five_rounds_pc027_pc028_complete_profiling_and_accept_or_reject_without_automatic_baseline_promotion
