@@ -4122,7 +4122,7 @@ static __attribute__((noinline)) int qbh_run_f16f16_pipelined_projection(
 }
 
 /*
- * EXP-0107 keeps the accepted FP16 HMX/Crouton contract, but presents Gate
+ * EXP-0109 keeps the accepted FP16 HMX/Crouton contract, but presents Gate
  * and Up as one producer stream.  A command consumes one eight-output-tile
  * weight slot while DMA fills the other slot for the matched projection.
  * Publishing an Up group releases the already-complete Gate/Up pair to the

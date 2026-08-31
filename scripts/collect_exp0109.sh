@@ -3,32 +3,32 @@ set -euo pipefail
 
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 adb_exe="${ADB_EXE:-/mnt/c/adb/adb.exe}"
-fp16_package="${QBH_EXP0107_FP16_PACKAGE:-/mnt/d/llm_exp/models/qwen3-block-htp/exp0022/block_package_layer14_m64}"
-u8_package="${QBH_EXP0107_U8_PACKAGE:-/mnt/d/llm_exp/models/qwen3-block-htp/exp0042/block_package_layer14_m64_integer_attention_parallel}"
-result_root="${QBH_EXP0107_RESULT_ROOT:-/mnt/d/llm_exp/results/qwen3-block-htp/exp0107}"
-artifact_root="${QBH_EXP0107_ARTIFACT_ROOT:-/mnt/d/llm_exp/models/qwen3-block-htp/exp0107/artifacts}"
+fp16_package="${QBH_EXP0109_FP16_PACKAGE:-/mnt/d/llm_exp/models/qwen3-block-htp/exp0022/block_package_layer14_m64}"
+u8_package="${QBH_EXP0109_U8_PACKAGE:-/mnt/d/llm_exp/models/qwen3-block-htp/exp0042/block_package_layer14_m64_integer_attention_parallel}"
+result_root="${QBH_EXP0109_RESULT_ROOT:-/mnt/d/llm_exp/results/qwen3-block-htp/exp0109}"
+artifact_root="${QBH_EXP0109_ARTIFACT_ROOT:-/mnt/d/llm_exp/models/qwen3-block-htp/exp0109/artifacts}"
 source_head="$(git -C "${project_root}" rev-parse HEAD)"
 source_short="$(git -C "${project_root}" rev-parse --short=12 HEAD)"
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
 result_dir="${result_root}/${timestamp}_${source_short}_formal"
 artifact_dir="${artifact_root}/${source_short}/${timestamp}_formal"
-cells=(control_f16f16 candidate_f16f16 control_w4f16 candidate_w4f16 control_w4u8 candidate_w4u8)
+cells=(control_f16f16 frozen_f16f16 fair_w4f16 fair_w4u8 fastest_w4u8)
 
 if ! git -C "${project_root}" diff --quiet || \
    ! git -C "${project_root}" diff --cached --quiet || \
    [[ -n "$(git -C "${project_root}" ls-files --others --exclude-standard)" ]]; then
-    printf 'source worktree must be clean before EXP-0107 formal collection\n' >&2
+    printf 'source worktree must be clean before EXP-0109 formal collection\n' >&2
     exit 1
 fi
 python3 /home/daniuniu/work/qwen3-block-htp-project-memory/scripts/project_memory.py \
     preflight --source-worktree "${project_root}"
 mkdir -p "${result_dir}" "${artifact_dir}"
 
-"${project_root}/scripts/build_exp0107.sh" > "${result_dir}/build.log" 2>&1
-"${project_root}/scripts/check_exp0107_static.sh" > "${result_dir}/static_gate.json"
-QBH_EXP0107_FP16_PACKAGE="${fp16_package}" \
-QBH_EXP0107_U8_PACKAGE="${u8_package}" \
-    "${project_root}/scripts/deploy_exp0107_block.sh" > "${result_dir}/deploy.log" 2>&1
+"${project_root}/scripts/build_exp0109.sh" > "${result_dir}/build.log" 2>&1
+"${project_root}/scripts/check_exp0109_static.sh" > "${result_dir}/static_gate.json"
+QBH_EXP0109_FP16_PACKAGE="${fp16_package}" \
+QBH_EXP0109_U8_PACKAGE="${u8_package}" \
+    "${project_root}/scripts/deploy_exp0109_block.sh" > "${result_dir}/deploy.log" 2>&1
 
 "${adb_exe}" devices -l > "${result_dir}/adb_devices.txt"
 "${adb_exe}" shell getprop ro.product.model > "${result_dir}/device_model.txt"
@@ -40,25 +40,25 @@ git -C "${project_root}" status --short --branch > "${result_dir}/source_status.
 
 for cell in "${cells[@]}"; do
     raw="${result_dir}/correctness_${cell}_raw.jsonl"
-    "${project_root}/scripts/run_exp0107.sh" "${cell}" 1 on on > "${raw}"
+    "${project_root}/scripts/run_exp0109.sh" "${cell}" 1 on on > "${raw}"
     grep execution_unit "${raw}" > "${result_dir}/correctness_${cell}.jsonl"
     : > "${result_dir}/paired_${cell}_r1.jsonl"
     : > "${result_dir}/paired_${cell}_r10.jsonl"
 done
 
 for round in 1 2 3 4 5; do
-    printf 'EXP-0107 round %d/5\n' "${round}"
+    printf 'EXP-0109 round %d/5\n' "${round}"
     if ((round % 2 == 1)); then
         repeats=(1 10)
         order=("${cells[@]}")
     else
         repeats=(10 1)
-        order=(candidate_w4u8 control_w4u8 candidate_w4f16 control_w4f16 candidate_f16f16 control_f16f16)
+        order=(fastest_w4u8 fair_w4u8 fair_w4f16 frozen_f16f16 control_f16f16)
     fi
     for repeat in "${repeats[@]}"; do
         for cell in "${order[@]}"; do
             raw="${result_dir}/round_${round}_${cell}_r${repeat}_raw.jsonl"
-            "${project_root}/scripts/run_exp0107.sh" "${cell}" "${repeat}" on off > "${raw}"
+            "${project_root}/scripts/run_exp0109.sh" "${cell}" "${repeat}" on off > "${raw}"
             grep execution_unit "${raw}" >> "${result_dir}/paired_${cell}_r${repeat}.jsonl"
         done
     done
@@ -66,8 +66,8 @@ done
 
 "${adb_exe}" shell cat /proc/sys/kernel/random/boot_id > "${result_dir}/boot_id_after.txt"
 cmp "${result_dir}/boot_id_before.txt" "${result_dir}/boot_id_after.txt"
-python3 "${project_root}/scripts/analyze_exp0107.py" "${result_dir}" > "${result_dir}/gate_summary.json"
-python3 "${project_root}/scripts/analyze_exp0107.py" "${result_dir}" --report > "${result_dir}/full_profiling_report.md"
+python3 "${project_root}/scripts/analyze_exp0109.py" "${result_dir}" > "${result_dir}/gate_summary.json"
+python3 "${project_root}/scripts/analyze_exp0109.py" "${result_dir}" --report > "${result_dir}/full_profiling_report.md"
 
 cp "${fp16_package}/manifest.json" "${result_dir}/fp16_package_manifest.json"
 cp "${u8_package}/manifest.json" "${result_dir}/w4u8_package_manifest.json"
@@ -75,8 +75,9 @@ cp "${project_root}/android_ReleaseG_aarch64/ship/qwen3_block_cli" "${artifact_d
 cp "${project_root}/android_ReleaseG_aarch64/ship/libqwen3_probe.so" "${artifact_dir}/"
 cp "${project_root}/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so" "${artifact_dir}/"
 {
-    printf 'experiment=EXP-0107\nsource_head=%s\n' "${source_head}"
+    printf 'experiment=EXP-0109\nsource_head=%s\n' "${source_head}"
     printf 'parent=EXP-0106\ncells=%s\n' "${cells[*]}"
+    printf 'accepted_component=EXP-0107\nrejected_public_component=EXP-0108\n'
     printf 'repeat_contract=repeat1,repeat10\nrounds=5\n'
     printf 'physical_contract=exact_8mib_vtcm_zero_intermediate_ddr_one_hmx_owner\n'
     printf 'result_dir=%s\nartifact_dir=%s\n' "${result_dir}" "${artifact_dir}"
