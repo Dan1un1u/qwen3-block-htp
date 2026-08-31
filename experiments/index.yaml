@@ -2520,7 +2520,7 @@ experiments:
     execution_state: complete
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending_user_decision
+    adoption_status: superseded
     evidence_profile: real-qwen3-block-w4u8-down-generation-safe-batch4
     source_branches:
       - codex/exp-0099-w4u8-down-generation-safe-batch4
@@ -2538,6 +2538,7 @@ experiments:
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0099/formal_ee375b880581'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0099/artifacts/ee375b880581/formal'
+      superseded_by: EXP-0106
       source_parent_commit: 6dc437fe08eaccf119c4cbce82937e22f125da0b
       direct_w4u8_control: W4U8-EXP0084-FAIR-CANONICAL
       contextual_w4f16_comparator: W4F16-EXP0084-COMMON-NORM-POOLS
@@ -7866,7 +7867,7 @@ experiments:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending_user_decision
+    adoption_status: superseded
     evidence_profile: real-qwen3-block-w4u8-four-row-native-residual-shuffle
     source_branches:
       - codex/exp-0093-w4u8-four-row-native-residual-shuffle
@@ -7887,6 +7888,7 @@ experiments:
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0093/stage_c_0f93c11946bd'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0093/artifacts/0f93c11946bd/stage_c'
+      superseded_by: EXP-0106
       source_parent_commit: 6dc437fe08eaccf119c4cbce82937e22f125da0b
       direct_w4u8_control: W4U8-EXP0084-FAIR-CANONICAL
       contextual_w4f16_comparator: W4F16-EXP0084-COMMON-NORM-POOLS
@@ -8016,7 +8018,7 @@ experiments:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending_user_decision
+    adoption_status: superseded
     evidence_profile: real-qwen3-block-w4u8-four-row-native-softmax-carrier-shuffle
     source_branches:
       - codex/exp-0095-w4u8-four-row-native-softmax-carrier-shuffle
@@ -8034,6 +8036,7 @@ experiments:
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0095/formal_b54490b8de77'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0095/artifacts/b54490b8de77/formal'
+      superseded_by: EXP-0106
       source_parent_commit: 6dc437fe08eaccf119c4cbce82937e22f125da0b
       direct_w4u8_control: W4U8-EXP0084-FAIR-CANONICAL
       contextual_w4f16_comparator: W4F16-EXP0084-COMMON-NORM-POOLS
@@ -8598,7 +8601,7 @@ experiments:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending_user_decision
+    adoption_status: superseded
     evidence_profile: real-qwen3-block-w4u8-quarter-tiled-interleaved-qk-pair
     source_branches:
       - codex/exp-0104-w4u8-quarter-tiled-interleaved-qk-pair
@@ -8616,6 +8619,7 @@ experiments:
     evidence:
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0104/formal_c751d40d801c'
       retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0104/artifacts/c751d40d801c/formal'
+      superseded_by: EXP-0106
       source_parent_commit: 6dc437fe08eaccf119c4cbce82937e22f125da0b
       direct_w4u8_control: W4U8-EXP0084-FAIR-CANONICAL
       contextual_w4f16_comparator: W4F16-EXP0084-COMMON-NORM-POOLS
@@ -8740,15 +8744,16 @@ experiments:
       - exp0084_w4u8_fair_control
       - exp0099_down_batch4_fastest_control
       - integrated_w4u8_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: accepted
     evidence_profile: real-qwen3-block-integrated-fair-and-fastest-baselines
     source_branches:
       - codex/exp-0106-integrated-fair-fastest-baselines
     source_commits:
       - 4deccaeb7a914a38398cfc7061916f3ba859ce52
+      - 837714ba5ea2bbdef5799fe959996fb8fe862c8d
     record: docs/experiments/EXP-0106.md
     decided_by: user
     decided_on: '2026-08-31'
@@ -8757,10 +8762,10 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0106-integrated-fair-fastest-baselines
       started_on: '2026-08-31'
-      completed_on: null
+      completed_on: '2026-08-31'
     evidence:
-      formal_results: null
-      retained_artifacts: null
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0106/20260831T133046Z_837714ba5ea2_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0106/artifacts/837714ba5ea2/20260831T133046Z_formal'
       source_parent_commit: ee375b8805814e56e8948443e1879acb89117fad
       accepted_fair_authority: EXP-0084
       fastest_complete_parent: EXP-0099
@@ -8783,8 +8788,32 @@ experiments:
       speed_gate: select_lowest_valid_incremental_cell_then_strictly_improve_complete_host_wall_over_exp0099_in_ordinary_and_paired_repeat1_and_repeat10
       fair_matrix_gate: same_source_same_boot_f16f16_w4f16_w4u8_output_hashes_preserved_and_no_material_f16f16_or_w4f16_regression
       completion_gate: incremental_component_matrix_then_same_source_three_recipe_pc027_pc028_complete_profiling_and_explicit_user_promotion
-      preliminary_formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0106/20260831T130757Z_4deccaeb7a91_formal'
-      preliminary_retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0106/artifacts/4deccaeb7a91/20260831T130757Z_formal'
-      preliminary_w4u8_gate: pass_static_correctness_physical_and_incremental_speed
-      preliminary_fair_matrix_gate: requires_recollection_f16f16_and_w4f16_used_contexts4_instead_of_accepted_common_contexts3
-      selected_baseline_changed: false
+      runtime_source_commit: 837714ba5ea2bbdef5799fe959996fb8fe862c8d
+      static_gate_result: pass_all_four_runtime_selectable_paths_context3_fair_schedule_rejected_exp0105_helper_absent_no_qnn
+      correctness_gate_result: pass_final_input_norm_qk_probability_av_byte_exact_zero_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_parent_equivalent_weight_dma_and_hmx_tile_work
+      repeat1_down4_host_wall_ns_per_block_median: 2283959.0
+      repeat1_integrated_host_wall_ns_per_block_median: 2165208.0
+      repeat1_integrated_change_percent: -5.199349
+      repeat1_integrated_paired_change_percent: -6.345887
+      repeat10_down4_host_wall_ns_per_block_median: 1840281.2
+      repeat10_integrated_host_wall_ns_per_block_median: 1756661.4
+      repeat10_integrated_change_percent: -4.543860
+      repeat10_integrated_paired_change_percent: -5.292724
+      fair_f16f16_repeat10_host_wall_ns_per_block_median: 2438713.6
+      fair_w4f16_repeat10_host_wall_ns_per_block_median: 2153369.8
+      fair_w4u8_repeat10_host_wall_ns_per_block_median: 1956942.7
+      fp16_no_material_regression_gate: pass_exact_exp0084_rows4_contexts3_schedule
+      selected_fastest_w4u8_cell: integrated
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_same_source_fair_and_fastest
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: 60187a62d10eba5ccdc62bc8d203031e68adc0eea72667511976092a397292a1
+      full_profiling_report_sha256: 46c2f33dcf99e9f1c01cb0520e2e90eb3b886e09dc031430cb3b3b658befbb86
+      evidence_sha256_ledger_sha256: 3a39311f7107e89e0390625ed8571caa1e128babe72a6328915f5c5c9c7b5908
+      promoted_fair_baseline: EXP0106-FAIR-COMMON-SOURCE
+      promoted_fastest_w4u8_baseline: W4U8-EXP0106-INTEGRATED-FASTEST
+      source_tags:
+        - baseline-fair-exp0106
+        - baseline-w4u8-fastest-exp0106
+      selected_baseline_changed: true
