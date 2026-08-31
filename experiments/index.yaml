@@ -8891,14 +8891,15 @@ experiments:
       - exp0106_norms_qkv_control_w4f16
       - qkv_norms_crouton_candidate_w4f16
       - exp0106_w4u8_native_qkv_parity_control
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: pending_user_decision
     evidence_profile: real-qwen3-block-common-qkv-carrier-revalidation
     source_branches:
       - codex/exp-0108-common-qkv-carrier-revalidation
-    source_commits: []
+    source_commits:
+      - 79130ef6f02f13c7fc16d6d8d521ec35bb217179
     record: docs/experiments/EXP-0108.md
     decided_by: user
     decided_on: '2026-08-31'
@@ -8907,10 +8908,10 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0108-common-qkv-carrier-revalidation
       started_on: '2026-08-31'
-      completed_on: null
+      completed_on: '2026-08-31'
     evidence:
-      formal_results: null
-      retained_artifacts: null
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0108/20260831T144457Z_79130ef6f02f_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0108/artifacts/79130ef6f02f/20260831T144457Z_formal'
       source_parent_commit: 837714ba5ea2bbdef5799fe959996fb8fe862c8d
       accepted_fair_authority: EXP-0106
       prior_negative_evidence: EXP-0038-stage-a
@@ -8925,3 +8926,28 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_and_expected_qkv_native_carrier_telemetry
       speed_gate: f16f16_and_w4f16_qkv_plus_qk_norm_rope_and_complete_host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10_w4u8_within_one_percent
       completion_gate: same_source_three_recipe_controls_candidates_pc027_pc028_and_freeze_recommendation
+      runtime_source_commit: 79130ef6f02f13c7fc16d6d8d521ec35bb217179
+      static_gate_result: pass_existing_qkv_crouton_carrier_qkv_norms_runtime_no_qnn
+      correctness_gate_result: pass_byte_exact_qkv_operand_audit_zero_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_128_unpack_tiles_skipped_24_qk_operands_8_av_weights
+      repeat1_f16f16_qkv_qknorm_change_percent: 0.411796
+      repeat1_f16f16_qkv_qknorm_paired_change_percent: 0.386615
+      repeat1_f16f16_host_change_percent: 2.396685
+      repeat1_f16f16_host_paired_change_percent: 0.849184
+      repeat10_f16f16_qkv_qknorm_change_percent: -0.431125
+      repeat10_f16f16_qkv_qknorm_paired_change_percent: -1.084590
+      repeat10_f16f16_host_change_percent: 0.905984
+      repeat10_f16f16_host_paired_change_percent: 0.905984
+      repeat1_w4f16_qkv_qknorm_change_percent: -6.440997
+      repeat1_w4f16_host_change_percent: -0.593996
+      repeat10_w4f16_qkv_qknorm_change_percent: -6.358271
+      repeat10_w4f16_host_change_percent: -1.526293
+      w4u8_parity_gate: fail_repeat1_identical_host_measurement_noise
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_same_source_three_recipe
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: ce7a9af6bfe9e663d4145d3fc5ee2c810ef4cafe9f736bf4a4440df80465690b
+      full_profiling_report_sha256: 752462a85cab576d7ed00cbfebf8311485bc0f513f0753b84477200cd443a1d6
+      evidence_sha256_ledger_sha256: 3942bcd1620f4dc8fddc2c045ebb08e633e68e0113b451d7ed247e3464231fa5
+      conclusion: current_baseline_revalidation_reproduces_w4f16_local_gain_but_f16f16_host_regression_so_public_qkv_carrier_fails
+      selected_baseline_changed: false
