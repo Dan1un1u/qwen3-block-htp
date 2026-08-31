@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(43)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(99)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(44)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(106)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -64,6 +64,7 @@ enum qbh_block_residual_mode {
     QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM = 2,
     QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4 = 3,
     QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6 = 4,
+    QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6_SHUFFLE4 = 5,
 };
 
 enum qbh_block_f16f16_projection_mode {
@@ -108,6 +109,11 @@ enum qbh_block_u8_norm_reduction_mode {
     QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE_PARALLEL_INPUT = 4,
 };
 
+enum qbh_block_w4u8_qk_pair_kernel_mode {
+    QBH_BLOCK_W4U8_QK_PAIR_SERIAL_INNER = 0,
+    QBH_BLOCK_W4U8_QK_PAIR_QUARTER_TILED = 1,
+};
+
 enum qbh_block_fp16_common_schedule_mode {
     QBH_BLOCK_FP16_COMMON_SCHEDULE_CONTROL = 0,
     QBH_BLOCK_FP16_COMMON_SCHEDULE_QK_HEAD_PAIRS = 1U << 0,
@@ -145,6 +151,7 @@ enum qbh_block_attention_pipeline_mode {
     QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES = 13,
     QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH = 14,
     QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM = 15,
+    QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM_SOFTMAX_SHUFFLE4 = 16,
 };
 
 enum qbh_block_mlp_mode {
@@ -307,6 +314,7 @@ struct qbh_block_header {
     uint32_t crouton_boundary_mode;
     uint32_t w4u8_qkvo_pipeline_mode;
     uint32_t u8_norm_reduction_mode;
+    uint32_t w4u8_qk_pair_kernel_mode;
     uint32_t fp16_common_schedule_mode;
     uint32_t fp16_norm_rows_per_task;
     uint32_t fp16_norm_contexts;
@@ -405,6 +413,7 @@ struct qbh_block_header {
     uint32_t attention_qk_norm_task_count;
     uint32_t fp16_qk_norm_pair_task_count;
     uint32_t attention_softmax_task_count;
+    uint32_t u8_attention_softmax_shuffle4_row_group_count;
     uint32_t attention_gqa_group_count;
     uint32_t crouton_qkv_projection_count;
     uint32_t crouton_qkv_unpack_skipped;
@@ -431,6 +440,8 @@ struct qbh_block_header {
     uint32_t w4u8_qkv_batch_count;
     uint32_t w4u8_qkvo_prefetch_count;
     uint32_t w4u8_qkvo_overlap_schedule_count;
+    uint32_t w4u8_qk_pair_kernel_mode_observed;
+    uint32_t w4u8_qk_quarter_pair_count;
     uint64_t u8_attention_actual_score_hash;
     uint64_t u8_attention_actual_probability_hash;
     uint64_t u8_attention_actual_av_hash;
