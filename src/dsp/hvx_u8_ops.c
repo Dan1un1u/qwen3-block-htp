@@ -38,9 +38,16 @@ struct qbh_qf32_quad {
 
 static uint32_t qbh_u8_norm_reduction_mode =
     QBH_BLOCK_U8_NORM_REDUCTION_SCALAR;
+static uint32_t qbh_u8_qk_pair_kernel_mode =
+    QBH_BLOCK_W4U8_QK_PAIR_SERIAL_INNER;
 
 void qbh_hvx_u8_set_norm_reduction_mode(uint32_t mode) {
     qbh_u8_norm_reduction_mode = mode;
+    asm volatile("barrier" ::: "memory");
+}
+
+void qbh_hvx_u8_set_qk_pair_kernel_mode(uint32_t mode) {
+    qbh_u8_qk_pair_kernel_mode = mode;
     asm volatile("barrier" ::: "memory");
 }
 
@@ -748,6 +755,245 @@ static void qbh_qk_norm_rope_one_head_u8_preconverted_coefficient(
     *(HVX_Vector *)values = qbh_pack_qf32_to_u8(&encoded);
 }
 
+static inline HVX_Vector qbh_qk_norm_quarter_sf32(
+    HVX_Vector centered_half, HVX_Vector gamma,
+    HVX_Vector coefficient, HVX_Vector zero,
+    uint32_t upper) {
+    const HVX_VectorPair centered_sf = Q6_Wsf_vcvt_Vhf(centered_half);
+    HVX_Vector product = Q6_Vqf32_vmpy_VsfVsf(
+        upper == 0U ? Q6_V_lo_W(centered_sf) : Q6_V_hi_W(centered_sf),
+        gamma);
+
+    product = Q6_Vqf32_vmpy_VsfVsf(
+        Q6_Vsf_equals_Vqf32(product), coefficient);
+    return Q6_Vsf_vadd_VsfVsf(
+        Q6_Vsf_equals_Vqf32(product), zero);
+}
+
+static inline HVX_Vector qbh_qk_requant_quarter_sf32(
+    HVX_Vector value, HVX_Vector inverse_scale,
+    HVX_Vector output_zero_point) {
+    const HVX_Vector scaled = Q6_Vqf32_vmpy_VsfVsf(
+        value, inverse_scale);
+    return Q6_Vsf_vadd_VsfVsf(
+        Q6_Vsf_equals_Vqf32(scaled), output_zero_point);
+}
+
+static void qbh_qk_norm_rope_two_heads_u8_quarter_tiled(
+    uint8_t *first_values, uint8_t *second_values,
+    int32_t input_zero_point,
+    const struct qbh_block_qparam *output_qparam,
+    const struct qbh_qk_norm_rope_gamma_sf32 *gamma,
+    const struct qbh_qk_norm_rope_row_sf32 *rope,
+    float first_norm_coefficient,
+    float second_norm_coefficient) {
+    const __fp16 zero_point_half = (__fp16)input_zero_point;
+    const HVX_Vector input_zero_point_half = Q6_Vh_vsplat_R(
+        *(const uint16_t *)&zero_point_half);
+    const HVX_Vector first_coefficient =
+        qbh_splat_sf(first_norm_coefficient);
+    const HVX_Vector second_coefficient =
+        qbh_splat_sf(second_norm_coefficient);
+    const HVX_Vector inverse_scale =
+        qbh_splat_sf(1.0f / output_qparam->scale);
+    const HVX_Vector output_zero_point =
+        qbh_splat_sf((float)output_qparam->zero_point);
+    const HVX_Vector zero = qbh_splat_sf(0.0f);
+    const HVX_Vector rounding = qbh_splat_sf(0.5f);
+    HVX_Vector first_part_0;
+    HVX_Vector first_part_1;
+    HVX_Vector second_part_0;
+    HVX_Vector second_part_1;
+
+    {
+        HVX_Vector first_a;
+        HVX_Vector first_b;
+        HVX_Vector second_a;
+        HVX_Vector second_b;
+        {
+            const HVX_VectorPair unpacked = Q6_Wuh_vunpack_Vub(
+                *(const HVX_Vector *)first_values);
+            first_a = qbh_qk_norm_quarter_sf32(
+                Q6_Vhf_vsub_VhfVhf(
+                    Q6_Vhf_vcvt_Vuh(Q6_V_lo_W(unpacked)),
+                    input_zero_point_half),
+                gamma->lane[0], first_coefficient, zero, 0U);
+            first_b = qbh_qk_norm_quarter_sf32(
+                Q6_Vhf_vsub_VhfVhf(
+                    Q6_Vhf_vcvt_Vuh(Q6_V_hi_W(unpacked)),
+                    input_zero_point_half),
+                gamma->lane[2], first_coefficient, zero, 0U);
+        }
+        {
+            const HVX_VectorPair unpacked = Q6_Wuh_vunpack_Vub(
+                *(const HVX_Vector *)second_values);
+            second_a = qbh_qk_norm_quarter_sf32(
+                Q6_Vhf_vsub_VhfVhf(
+                    Q6_Vhf_vcvt_Vuh(Q6_V_lo_W(unpacked)),
+                    input_zero_point_half),
+                gamma->lane[0], second_coefficient, zero, 0U);
+            second_b = qbh_qk_norm_quarter_sf32(
+                Q6_Vhf_vsub_VhfVhf(
+                    Q6_Vhf_vcvt_Vuh(Q6_V_hi_W(unpacked)),
+                    input_zero_point_half),
+                gamma->lane[2], second_coefficient, zero, 0U);
+        }
+        const HVX_Vector first_rotated_a = Q6_Vsf_equals_Vqf32(
+            Q6_Vqf32_vsub_Vqf32Vqf32(
+                Q6_Vqf32_vmpy_VsfVsf(
+                    first_a, rope->cosine[0]),
+                Q6_Vqf32_vmpy_VsfVsf(
+                    first_b, rope->sine[0])));
+        const HVX_Vector second_rotated_a = Q6_Vsf_equals_Vqf32(
+            Q6_Vqf32_vsub_Vqf32Vqf32(
+                Q6_Vqf32_vmpy_VsfVsf(
+                    second_a, rope->cosine[0]),
+                Q6_Vqf32_vmpy_VsfVsf(
+                    second_b, rope->sine[0])));
+        const HVX_Vector first_rotated_b = Q6_Vsf_equals_Vqf32(
+            Q6_Vqf32_vadd_Vqf32Vqf32(
+                Q6_Vqf32_vmpy_VsfVsf(
+                    first_b, rope->cosine[2]),
+                Q6_Vqf32_vmpy_VsfVsf(
+                    first_a, rope->sine[2])));
+        const HVX_Vector second_rotated_b = Q6_Vsf_equals_Vqf32(
+            Q6_Vqf32_vadd_Vqf32Vqf32(
+                Q6_Vqf32_vmpy_VsfVsf(
+                    second_b, rope->cosine[2]),
+                Q6_Vqf32_vmpy_VsfVsf(
+                    second_a, rope->sine[2])));
+
+        const HVX_Vector first_words_a = Q6_Vw_equals_Vsf(
+            Q6_Vsf_vadd_VsfVsf(
+                qbh_qk_requant_quarter_sf32(
+                    first_rotated_a, inverse_scale,
+                    output_zero_point),
+                rounding));
+        const HVX_Vector second_words_a = Q6_Vw_equals_Vsf(
+            Q6_Vsf_vadd_VsfVsf(
+                qbh_qk_requant_quarter_sf32(
+                    second_rotated_a, inverse_scale,
+                    output_zero_point),
+                rounding));
+        const HVX_Vector first_words_b = Q6_Vw_equals_Vsf(
+            Q6_Vsf_vadd_VsfVsf(
+                qbh_qk_requant_quarter_sf32(
+                    first_rotated_b, inverse_scale,
+                    output_zero_point),
+                rounding));
+        const HVX_Vector second_words_b = Q6_Vw_equals_Vsf(
+            Q6_Vsf_vadd_VsfVsf(
+                qbh_qk_requant_quarter_sf32(
+                    second_rotated_b, inverse_scale,
+                    output_zero_point),
+                rounding));
+
+        first_part_0 = Q6_Vh_vpack_VwVw_sat(
+            first_words_b, first_words_a);
+        second_part_0 = Q6_Vh_vpack_VwVw_sat(
+            second_words_b, second_words_a);
+    }
+    {
+        HVX_Vector first_a;
+        HVX_Vector first_b;
+        HVX_Vector second_a;
+        HVX_Vector second_b;
+        {
+            const HVX_VectorPair unpacked = Q6_Wuh_vunpack_Vub(
+                *(const HVX_Vector *)first_values);
+            first_a = qbh_qk_norm_quarter_sf32(
+                Q6_Vhf_vsub_VhfVhf(
+                    Q6_Vhf_vcvt_Vuh(Q6_V_lo_W(unpacked)),
+                    input_zero_point_half),
+                gamma->lane[1], first_coefficient, zero, 1U);
+            first_b = qbh_qk_norm_quarter_sf32(
+                Q6_Vhf_vsub_VhfVhf(
+                    Q6_Vhf_vcvt_Vuh(Q6_V_hi_W(unpacked)),
+                    input_zero_point_half),
+                gamma->lane[3], first_coefficient, zero, 1U);
+        }
+        {
+            const HVX_VectorPair unpacked = Q6_Wuh_vunpack_Vub(
+                *(const HVX_Vector *)second_values);
+            second_a = qbh_qk_norm_quarter_sf32(
+                Q6_Vhf_vsub_VhfVhf(
+                    Q6_Vhf_vcvt_Vuh(Q6_V_lo_W(unpacked)),
+                    input_zero_point_half),
+                gamma->lane[1], second_coefficient, zero, 1U);
+            second_b = qbh_qk_norm_quarter_sf32(
+                Q6_Vhf_vsub_VhfVhf(
+                    Q6_Vhf_vcvt_Vuh(Q6_V_hi_W(unpacked)),
+                    input_zero_point_half),
+                gamma->lane[3], second_coefficient, zero, 1U);
+        }
+        const HVX_Vector first_rotated_a = Q6_Vsf_equals_Vqf32(
+            Q6_Vqf32_vsub_Vqf32Vqf32(
+                Q6_Vqf32_vmpy_VsfVsf(
+                    first_a, rope->cosine[1]),
+                Q6_Vqf32_vmpy_VsfVsf(
+                    first_b, rope->sine[1])));
+        const HVX_Vector second_rotated_a = Q6_Vsf_equals_Vqf32(
+            Q6_Vqf32_vsub_Vqf32Vqf32(
+                Q6_Vqf32_vmpy_VsfVsf(
+                    second_a, rope->cosine[1]),
+                Q6_Vqf32_vmpy_VsfVsf(
+                    second_b, rope->sine[1])));
+        const HVX_Vector first_rotated_b = Q6_Vsf_equals_Vqf32(
+            Q6_Vqf32_vadd_Vqf32Vqf32(
+                Q6_Vqf32_vmpy_VsfVsf(
+                    first_b, rope->cosine[3]),
+                Q6_Vqf32_vmpy_VsfVsf(
+                    first_a, rope->sine[3])));
+        const HVX_Vector second_rotated_b = Q6_Vsf_equals_Vqf32(
+            Q6_Vqf32_vadd_Vqf32Vqf32(
+                Q6_Vqf32_vmpy_VsfVsf(
+                    second_b, rope->cosine[3]),
+                Q6_Vqf32_vmpy_VsfVsf(
+                    second_a, rope->sine[3])));
+
+        const HVX_Vector first_words_a = Q6_Vw_equals_Vsf(
+            Q6_Vsf_vadd_VsfVsf(
+                qbh_qk_requant_quarter_sf32(
+                    first_rotated_a, inverse_scale,
+                    output_zero_point),
+                rounding));
+        const HVX_Vector second_words_a = Q6_Vw_equals_Vsf(
+            Q6_Vsf_vadd_VsfVsf(
+                qbh_qk_requant_quarter_sf32(
+                    second_rotated_a, inverse_scale,
+                    output_zero_point),
+                rounding));
+        const HVX_Vector first_words_b = Q6_Vw_equals_Vsf(
+            Q6_Vsf_vadd_VsfVsf(
+                qbh_qk_requant_quarter_sf32(
+                    first_rotated_b, inverse_scale,
+                    output_zero_point),
+                rounding));
+        const HVX_Vector second_words_b = Q6_Vw_equals_Vsf(
+            Q6_Vsf_vadd_VsfVsf(
+                qbh_qk_requant_quarter_sf32(
+                    second_rotated_b, inverse_scale,
+                    output_zero_point),
+                rounding));
+
+        first_part_1 = Q6_Vh_vpack_VwVw_sat(
+            first_words_b, first_words_a);
+        second_part_1 = Q6_Vh_vpack_VwVw_sat(
+            second_words_b, second_words_a);
+    }
+    {
+        const HVX_VectorPair first_halves = Q6_W_vdeal_VVR(
+            first_part_1, first_part_0, -64);
+        const HVX_VectorPair second_halves = Q6_W_vdeal_VVR(
+            second_part_1, second_part_0, -64);
+
+        *(HVX_Vector *)first_values = Q6_Vub_vpack_VhVh_sat(
+            Q6_V_hi_W(first_halves), Q6_V_lo_W(first_halves));
+        *(HVX_Vector *)second_values = Q6_Vub_vpack_VhVh_sat(
+            Q6_V_hi_W(second_halves), Q6_V_lo_W(second_halves));
+    }
+}
+
 static void qbh_qk_norm_rope_one_head_u8_preconverted(
     uint8_t *values,
     const struct qbh_block_qparam *input_qparam,
@@ -932,7 +1178,16 @@ void qbh_hvx_qk_norm_rope_u8_native_head_pair(
                     sine + (size_t)row * QBH_BLOCK_HEAD_DIM,
                     &rope_sf32);
             }
-            for (uint32_t pair = 0U; pair < 2U; ++pair) {
+            if (batched_rsqrt != 0U &&
+                qbh_u8_qk_pair_kernel_mode ==
+                    QBH_BLOCK_W4U8_QK_PAIR_QUARTER_TILED) {
+                qbh_qk_norm_rope_two_heads_u8_quarter_tiled(
+                    active_values[0], active_values[1],
+                    input_qparam->zero_point, output_qparam,
+                    &gamma_sf32, rope,
+                    input_qparam->scale * inverse_sqrt[0][local_row],
+                    input_qparam->scale * inverse_sqrt[1][local_row]);
+            } else for (uint32_t pair = 0U; pair < 2U; ++pair) {
                 if (batched_rsqrt != 0U) {
                     qbh_qk_norm_rope_one_head_u8_preconverted_coefficient(
                         active_values[pair], input_qparam->zero_point,
@@ -1129,7 +1384,16 @@ void qbh_hvx_qk_norm_rope_u8_native_k_head_pair(
                     sine + (size_t)row * QBH_BLOCK_HEAD_DIM,
                     &rope_sf32);
             }
-            for (uint32_t pair = 0U; pair < 2U; ++pair) {
+            if (batched_rsqrt != 0U &&
+                qbh_u8_qk_pair_kernel_mode ==
+                    QBH_BLOCK_W4U8_QK_PAIR_QUARTER_TILED) {
+                qbh_qk_norm_rope_two_heads_u8_quarter_tiled(
+                    active_values[0], active_values[1],
+                    input_qparam->zero_point, output_qparam,
+                    &gamma_sf32, rope,
+                    input_qparam->scale * inverse_sqrt[0][local_row],
+                    input_qparam->scale * inverse_sqrt[1][local_row]);
+            } else for (uint32_t pair = 0U; pair < 2U; ++pair) {
                 if (batched_rsqrt != 0U) {
                     qbh_qk_norm_rope_one_head_u8_preconverted_coefficient(
                         active_values[pair], input_qparam->zero_point,

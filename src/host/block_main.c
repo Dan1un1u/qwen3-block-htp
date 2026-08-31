@@ -1430,6 +1430,8 @@ int main(int argc, char **argv) {
         QBH_BLOCK_FP16_COMMON_SCHEDULE_CONTROL;
     uint32_t fp16_norm_rows_per_task = 4U;
     uint32_t fp16_norm_contexts = 4U;
+    uint32_t w4u8_qk_pair_kernel_mode =
+        QBH_BLOCK_W4U8_QK_PAIR_SERIAL_INNER;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t w4u8_gate_up_bundle_offset = 0U;
@@ -1463,7 +1465,7 @@ int main(int argc, char **argv) {
     memset(attention_audit_slots, 0, sizeof(attention_audit_slots));
     memset(&w4u8_gate_up_layout, 0, sizeof(w4u8_gate_up_layout));
     memset(&w4u8_down_layout, 0, sizeof(w4u8_down_layout));
-    if (argc < 3 || argc > 24 ||
+    if (argc < 3 || argc > 25 ||
         qbh_parse_variant(argv[2], &variant) != 0 ||
         (argc >= 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
         (argc >= 5 && qbh_parse_u32(
@@ -1506,6 +1508,8 @@ int main(int argc, char **argv) {
                            argv[22], &fp16_norm_rows_per_task) != 0) ||
         (argc >= 24 && qbh_parse_u32(
                            argv[23], &fp16_norm_contexts) != 0) ||
+        (argc >= 25 && qbh_parse_u32(
+                           argv[24], &w4u8_qk_pair_kernel_mode) != 0) ||
         repeats == 0U || repeats > 100U ||
         w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
         (variant == QBH_BLOCK_W4U8 &&
@@ -1595,9 +1599,18 @@ int main(int argc, char **argv) {
             QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS ||
         u8_norm_reduction_mode >
             QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE_PARALLEL_INPUT ||
+        w4u8_qk_pair_kernel_mode >
+            QBH_BLOCK_W4U8_QK_PAIR_QUARTER_TILED ||
         (variant != QBH_BLOCK_W4U8 &&
          u8_norm_reduction_mode !=
              QBH_BLOCK_U8_NORM_REDUCTION_SCALAR) ||
+        (variant != QBH_BLOCK_W4U8 &&
+         w4u8_qk_pair_kernel_mode !=
+             QBH_BLOCK_W4U8_QK_PAIR_SERIAL_INNER) ||
+        (w4u8_qk_pair_kernel_mode ==
+             QBH_BLOCK_W4U8_QK_PAIR_QUARTER_TILED &&
+         u8_norm_reduction_mode <
+             QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT) ||
         fp16_common_schedule_mode >
             QBH_BLOCK_FP16_COMMON_SCHEDULE_ALL ||
         (fp16_norm_rows_per_task != 2U &&
@@ -1782,7 +1795,8 @@ int main(int argc, char **argv) {
                         "input_norm_pool_post_norm_pool|"
                         "qk_head_pairs_input_norm_pool|all] "
                         "[fp16_norm_rows_per_task:2|4|8] "
-                        "[fp16_norm_contexts:2|3|4]\n",
+                        "[fp16_norm_contexts:2|3|4] "
+                        "[w4u8_qk_pair_kernel:0|1]\n",
                 argv[0]);
         return 2;
     }
@@ -2057,6 +2071,8 @@ int main(int argc, char **argv) {
     header->fp16_common_schedule_mode = fp16_common_schedule_mode;
     header->fp16_norm_rows_per_task = fp16_norm_rows_per_task;
     header->fp16_norm_contexts = fp16_norm_contexts;
+    header->w4u8_qk_pair_kernel_mode =
+        w4u8_qk_pair_kernel_mode;
     header->input_offset = input_slot.offset;
     header->input_bytes = input_slot.expected_bytes;
     header->output_bytes = output_bytes;
@@ -2330,12 +2346,13 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0084\","
+        "{\"experiment\":\"EXP-0104\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
         "\"common_ops_mode\":\"%s\","
         "\"u8_norm_reduction_mode\":\"%s\","
+        "\"w4u8_qk_pair_kernel_mode\":%" PRIu32 ","
         "\"fp16_common_schedule_mode\":\"%s\","
         "\"fp16_norm_rows_per_task\":%" PRIu32 ","
         "\"fp16_norm_contexts\":%" PRIu32 ","
@@ -2425,6 +2442,8 @@ int main(int argc, char **argv) {
         "\"w4u8_qkv_batch_count\":%" PRIu32 ","
         "\"w4u8_qkvo_prefetch_count\":%" PRIu32 ","
         "\"w4u8_qkvo_overlap_schedule_count\":%" PRIu32 ","
+        "\"w4u8_qk_pair_kernel_mode_observed\":%" PRIu32 ","
+        "\"w4u8_qk_quarter_pair_count\":%" PRIu32 ","
         "\"u8_attention_expected_score_hash\":\"%016" PRIx64 "\","
         "\"u8_attention_actual_score_hash\":\"%016" PRIx64 "\","
         "\"u8_attention_expected_probability_hash\":\"%016" PRIx64 "\","
@@ -2646,6 +2665,7 @@ int main(int argc, char **argv) {
         qbh_common_ops_mode_name(header->common_ops_mask),
         qbh_u8_norm_reduction_mode_name(
             header->u8_norm_reduction_mode),
+        header->w4u8_qk_pair_kernel_mode,
         qbh_fp16_common_schedule_mode_name(
             header->fp16_common_schedule_mode),
         header->fp16_norm_rows_per_task,
@@ -2740,6 +2760,8 @@ int main(int argc, char **argv) {
         header->w4u8_qkv_batch_count,
         header->w4u8_qkvo_prefetch_count,
         header->w4u8_qkvo_overlap_schedule_count,
+        header->w4u8_qk_pair_kernel_mode_observed,
+        header->w4u8_qk_quarter_pair_count,
         header->u8_attention_expected_score_hash,
         header->u8_attention_actual_score_hash,
         header->u8_attention_expected_probability_hash,
