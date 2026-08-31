@@ -59,6 +59,7 @@ def validate_record(record: dict, repeat: int, cell: str,
     compatible["mlp_hvx_contexts"] = 3
     compatible["w4u8_mlp_gate_up_hvx_workers"] = 3
     compatible["w4u8_gate_up_persistent_hvx_worker_count"] = 3 * repeat
+    compatible["vtcm_peak_plan_bytes"] = 5_306_080
     exp106.validate_w4(compatible, repeat, "integrated", audit=audit)
     base.require(record, "experiment", "EXP-0121")
     base.require(record, "w4u8_stream_fence_mode", "single_fence")
