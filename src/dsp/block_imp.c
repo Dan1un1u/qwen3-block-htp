@@ -210,6 +210,7 @@ struct qbh_block_w4f16_job {
     uint32_t fp16_qk_norm_pair_task_count;
     uint64_t attention_qk_norm_ticks;
     uint32_t attention_softmax_task_count;
+    uint32_t u8_attention_softmax_shuffle4_row_group_count;
     uint64_t attention_softmax_ticks;
     uint32_t attention_gqa_group_count;
     uint64_t attention_gqa_ticks;
@@ -388,6 +389,7 @@ static int qbh_attention_u8_fused_qk_requant_enabled(uint32_t mode);
 static int qbh_attention_u8_hmx_batch_enabled(uint32_t mode);
 static int qbh_attention_u8_gqa_hmx_batch_enabled(uint32_t mode);
 static int qbh_attention_u8_dependency_stream_enabled(uint32_t mode);
+static int qbh_attention_u8_softmax_shuffle4_enabled(uint32_t mode);
 static void qbh_attention_gqa_pool_run_tasks(
     struct qbh_block_w4f16_pool *pool,
     struct qbh_block_w4f16_job *job);
@@ -776,7 +778,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (header->attention_pack_mode &
          ~((uint32_t)QBH_BLOCK_ATTENTION_PACK_HVX)) != 0U ||
         header->attention_pipeline_mode >
-            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM ||
+            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM_SOFTMAX_SHUFFLE4 ||
         header->attention_hvx_contexts == 0U ||
         header->attention_hvx_contexts >
             QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS ||
@@ -1995,7 +1997,15 @@ static int qbh_attention_gqa_enabled(uint32_t mode) {
            mode == QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP;
 }
 
+static uint32_t qbh_attention_u8_base_mode(uint32_t mode) {
+    return mode ==
+                   QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM_SOFTMAX_SHUFFLE4
+               ? QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM
+               : mode;
+}
+
 static int qbh_attention_u8_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_base_mode(mode);
     return mode == QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA ||
            mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_FUSED_K ||
@@ -2018,6 +2028,7 @@ static int qbh_attention_u8_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_fused_k_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_base_mode(mode);
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_FUSED_K ||
            mode ==
@@ -2039,6 +2050,7 @@ static int qbh_attention_u8_fused_k_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_qkv_overlap_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_base_mode(mode);
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP ||
            mode ==
@@ -2058,6 +2070,7 @@ static int qbh_attention_u8_qkv_overlap_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_vgather_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_base_mode(mode);
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER ||
            mode ==
@@ -2075,6 +2088,7 @@ static int qbh_attention_u8_vgather_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_vdeal_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_base_mode(mode);
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL ||
            mode ==
@@ -2090,6 +2104,7 @@ static int qbh_attention_u8_vdeal_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_fused_qk_requant_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_base_mode(mode);
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT ||
            mode ==
@@ -2103,6 +2118,7 @@ static int qbh_attention_u8_fused_qk_requant_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_hmx_batch_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_base_mode(mode);
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH ||
            mode ==
@@ -2114,6 +2130,7 @@ static int qbh_attention_u8_hmx_batch_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_lut_templates_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_base_mode(mode);
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES ||
            mode ==
@@ -2123,6 +2140,7 @@ static int qbh_attention_u8_lut_templates_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_gqa_hmx_batch_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_base_mode(mode);
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH ||
            mode ==
@@ -2130,8 +2148,14 @@ static int qbh_attention_u8_gqa_hmx_batch_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_dependency_stream_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_base_mode(mode);
     return mode ==
            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM;
+}
+
+static int qbh_attention_u8_softmax_shuffle4_enabled(uint32_t mode) {
+    return mode ==
+           QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM_SOFTMAX_SHUFFLE4;
 }
 
 static int qbh_attention_qk_norm_wait_head(
@@ -7792,10 +7816,26 @@ static void qbh_attention_u8_dependency_stream_run_tasks(
         telemetry_ptr = header->numerical_audit_enabled != 0U
             ? &telemetry : NULL;
         start = HAP_perf_get_qtimer_count();
-        qbh_attention_u8_requant_softmax_group_rows_prebuilt_templates(
-            view.score_group, view.probability_group,
-            softmax_scratch, view.config, telemetry_ptr,
-            first_row, QBH_BLOCK_W4U8_SOFTMAX_ROWS_PER_SLICE);
+        if (qbh_attention_u8_softmax_shuffle4_enabled(
+                header->attention_pipeline_mode)) {
+            qbh_attention_u8_requant_softmax_group_rows_prebuilt_templates_shuffle4(
+                view.score_group, view.probability_group,
+                softmax_scratch,
+                buffers->attention_projection +
+                    (size_t)QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS *
+                        QBH_ATTN_U8_SOFTMAX_SCRATCH_BYTES +
+                    (size_t)job->worker_index *
+                        QBH_ATTN_U8_SOFTMAX_CARRIER_BYTES,
+                view.config, telemetry_ptr,
+                first_row, QBH_BLOCK_W4U8_SOFTMAX_ROWS_PER_SLICE);
+            job->u8_attention_softmax_shuffle4_row_group_count +=
+                QBH_BLOCK_W4U8_SOFTMAX_ROWS_PER_SLICE / 4U;
+        } else {
+            qbh_attention_u8_requant_softmax_group_rows_prebuilt_templates(
+                view.score_group, view.probability_group,
+                softmax_scratch, view.config, telemetry_ptr,
+                first_row, QBH_BLOCK_W4U8_SOFTMAX_ROWS_PER_SLICE);
+        }
         job->u8_attention_softmax_ticks +=
             HAP_perf_get_qtimer_count() - start;
         ++job->attention_softmax_task_count;
@@ -8231,6 +8271,8 @@ static void qbh_attention_u8_accumulate_job(
     const struct qbh_block_w4f16_job *job) {
     header->attention_softmax_task_count +=
         job->attention_softmax_task_count;
+    header->u8_attention_softmax_shuffle4_row_group_count +=
+        job->u8_attention_softmax_shuffle4_row_group_count;
     header->u8_attention_qk_norm_rope_ticks +=
         job->u8_attention_qk_norm_rope_ticks;
     header->u8_attention_k_pack_ticks +=
@@ -8315,6 +8357,7 @@ static int qbh_hvx_pool_u8_attention(
         struct qbh_block_w4f16_job *job =
             &pool->jobs[worker_index];
         job->attention_softmax_task_count = 0U;
+        job->u8_attention_softmax_shuffle4_row_group_count = 0U;
         job->u8_attention_group_count = 0U;
         job->u8_attention_score_saturation_count = 0U;
         job->u8_attention_v_recenter_saturation_count = 0U;

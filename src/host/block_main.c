@@ -580,10 +580,26 @@ static int qbh_parse_attention_pipeline_mode(
             QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM;
         return 0;
     }
+    if (strcmp(text,
+               "u8_log2_gqa_qkv_overlap_vgather_vdeal_fused_qk_requant_hmx_batch_lut_templates_gqa_batch_dependency_stream_softmax_shuffle4") == 0 ||
+        strcmp(text,
+               "integer_gqa_qkv_overlap_vgather_vdeal_fused_qk_requant_hmx_batch_lut_templates_gqa_batch_dependency_stream_softmax_shuffle4") == 0) {
+        *mode =
+            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM_SOFTMAX_SHUFFLE4;
+        return 0;
+    }
     return -1;
 }
 
+static uint32_t qbh_attention_u8_base_mode(uint32_t mode) {
+    return mode ==
+                   QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM_SOFTMAX_SHUFFLE4
+               ? QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM
+               : mode;
+}
+
 static int qbh_attention_u8_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_base_mode(mode);
     return mode == QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA ||
            mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_FUSED_K ||
@@ -606,6 +622,7 @@ static int qbh_attention_u8_enabled(uint32_t mode) {
 }
 
 static int qbh_attention_u8_qkv_overlap_enabled(uint32_t mode) {
+    mode = qbh_attention_u8_base_mode(mode);
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP ||
            mode ==
@@ -679,6 +696,10 @@ static const char *qbh_attention_pipeline_mode_name(uint32_t mode) {
     if (mode ==
         QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM) {
         return "u8_log2_gqa_qkv_overlap_vgather_vdeal_fused_qk_requant_hmx_batch_lut_templates_gqa_batch_dependency_stream";
+    }
+    if (mode ==
+        QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM_SOFTMAX_SHUFFLE4) {
+        return "u8_log2_gqa_qkv_overlap_vgather_vdeal_fused_qk_requant_hmx_batch_lut_templates_gqa_batch_dependency_stream_softmax_shuffle4";
     }
     return "control";
 }
@@ -1526,7 +1547,7 @@ int main(int argc, char **argv) {
           (mlp_mode != QBH_BLOCK_MLP_CONTROL &&
            !qbh_block_mlp_is_w4u8_streaming(mlp_mode)))) ||
         attention_pipeline_mode >
-            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM ||
+            QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM_SOFTMAX_SHUFFLE4 ||
         attention_hvx_contexts == 0U ||
         attention_hvx_contexts > 6U ||
         (attention_pipeline_mode ==
@@ -2330,7 +2351,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0084\","
+        "{\"experiment\":\"EXP-0095\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2409,6 +2430,7 @@ int main(int argc, char **argv) {
         "\"attention_qk_norm_task_count\":%" PRIu32 ","
         "\"fp16_qk_norm_pair_task_count\":%" PRIu32 ","
         "\"attention_softmax_task_count\":%" PRIu32 ","
+        "\"u8_attention_softmax_shuffle4_row_group_count\":%" PRIu32 ","
         "\"attention_gqa_group_count\":%" PRIu32 ","
         "\"u8_attention_group_count\":%" PRIu32 ","
         "\"u8_attention_qk_execution_count\":%" PRIu32 ","
@@ -2724,6 +2746,7 @@ int main(int argc, char **argv) {
         header->attention_qk_norm_task_count,
         header->fp16_qk_norm_pair_task_count,
         header->attention_softmax_task_count,
+        header->u8_attention_softmax_shuffle4_row_group_count,
         header->attention_gqa_group_count,
         header->u8_attention_group_count,
         header->u8_attention_qk_execution_count,

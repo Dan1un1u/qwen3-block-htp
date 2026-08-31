@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(42)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(84)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(43)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(95)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -145,6 +145,7 @@ enum qbh_block_attention_pipeline_mode {
     QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES = 13,
     QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH = 14,
     QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM = 15,
+    QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM_SOFTMAX_SHUFFLE4 = 16,
 };
 
 enum qbh_block_mlp_mode {
@@ -404,6 +405,7 @@ struct qbh_block_header {
     uint32_t attention_qk_norm_task_count;
     uint32_t fp16_qk_norm_pair_task_count;
     uint32_t attention_softmax_task_count;
+    uint32_t u8_attention_softmax_shuffle4_row_group_count;
     uint32_t attention_gqa_group_count;
     uint32_t crouton_qkv_projection_count;
     uint32_t crouton_qkv_unpack_skipped;

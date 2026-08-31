@@ -1104,6 +1104,291 @@ static void qbh_attention_u8_requant_softmax_group_impl(
     asm volatile("barrier" ::: "memory");
 }
 
+static inline __attribute__((always_inline)) void
+qbh_attention_u8_transpose_four_32byte_quarters(
+    HVX_Vector source0, HVX_Vector source1,
+    HVX_Vector source2, HVX_Vector source3,
+    HVX_Vector *destination0, HVX_Vector *destination1,
+    HVX_Vector *destination2, HVX_Vector *destination3) {
+    const HVX_VectorPair source01 = Q6_W_vshuff_VVR(
+        source1, source0, -32);
+    const HVX_VectorPair source23 = Q6_W_vshuff_VVR(
+        source3, source2, -32);
+    const HVX_VectorPair destination01 = Q6_W_vshuff_VVR(
+        Q6_V_lo_W(source23), Q6_V_lo_W(source01), -64);
+    const HVX_VectorPair destination23 = Q6_W_vshuff_VVR(
+        Q6_V_hi_W(source23), Q6_V_hi_W(source01), -64);
+
+    *destination0 = Q6_V_lo_W(destination01);
+    *destination1 = Q6_V_hi_W(destination01);
+    *destination2 = Q6_V_lo_W(destination23);
+    *destination3 = Q6_V_hi_W(destination23);
+}
+
+static inline __attribute__((always_inline)) void
+qbh_attention_u8_update_probability_extrema(
+    uint32_t sum0, uint32_t sum1,
+    uint32_t *minimum, uint32_t *maximum) {
+    if (sum0 < *minimum) {
+        *minimum = sum0;
+    }
+    if (sum1 < *minimum) {
+        *minimum = sum1;
+    }
+    if (sum0 > *maximum) {
+        *maximum = sum0;
+    }
+    if (sum1 > *maximum) {
+        *maximum = sum1;
+    }
+}
+
+static __attribute__((noinline)) void
+qbh_attention_u8_record_score_saturation(
+    HVX_Vector score,
+    const struct qbh_attention_config *config,
+    struct qbh_attention_u8_telemetry *telemetry) {
+    const uint8_t *raw = (const uint8_t *)&score;
+
+    if (telemetry == NULL) {
+        return;
+    }
+    for (uint32_t column = 0U;
+         column < QBH_ATTN_U8_HVX_BYTES; ++column) {
+        const int32_t centered =
+            (int32_t)raw[column] -
+            (int32_t)QBH_ATTENTION_HMX_CENTER;
+        const int32_t value =
+            centered * (int32_t)config->score_multiplier +
+            QBH_ATTN_U8_SCORE_ZP;
+        telemetry->score_saturation_count +=
+            value < 0 || value > UINT8_MAX;
+    }
+}
+
+static __attribute__((noinline)) HVX_Vector
+qbh_attention_u8_softmax_requantized_pair(
+    HVX_Vector score, uint32_t row,
+    const struct qbh_attention_config *config,
+    uint8_t *lut, const uint8_t *lut_templates,
+    uint32_t use_sole_templates,
+    struct qbh_attention_u8_telemetry *telemetry,
+    HVX_Vector *converted_score,
+    uint32_t *probability_sum0,
+    uint32_t *probability_sum1) {
+    const uint32_t valid_count = row + 1U;
+    const HVX_Vector lane =
+        *(const HVX_Vector *)qbh_attention_u8_lane_index;
+    const HVX_VectorPred lower_half = Q6_Q_vcmp_gt_VubVub(
+        Q6_Vb_vsplat_R(64), lane);
+    if (telemetry != NULL) {
+        qbh_attention_u8_record_score_saturation(
+            score, config, telemetry);
+    }
+    score = qbh_attention_u8_requant_centered(
+        score, config->score_multiplier,
+        QBH_ATTN_U8_SCORE_ZP);
+    if (converted_score != NULL) {
+        *converted_score = score;
+    }
+    const HVX_Vector codes = qbh_attention_u8_log2_codes_paired(
+        score, row, config->fraction_bits);
+    const HVX_VectorPair code_h = Q6_Wuh_vunpack_Vub(codes);
+    const uint32_t weight_sum0 =
+        qbh_attention_u8_sum_log2_weights_half(
+            Q6_V_lo_W(code_h));
+    const uint32_t weight_sum1 =
+        qbh_attention_u8_sum_log2_weights_half(
+            Q6_V_hi_W(code_h));
+    HVX_Vector probabilities;
+
+    if (use_sole_templates != 0U && valid_count != 1U) {
+        memcpy(lut,
+               qbh_attention_u8_select_sole_lut_template(
+                   lut_templates, weight_sum0),
+               QBH_ATTN_U8_LUT_TEMPLATE_BYTES);
+        memcpy(lut + QBH_ATTN_U8_LUT_TEMPLATE_BYTES,
+               qbh_attention_u8_select_sole_lut_template(
+                   lut_templates, weight_sum1),
+               QBH_ATTN_U8_LUT_TEMPLATE_BYTES);
+    } else {
+        memset(lut, 0, QBH_ATTN_U8_HVX_BYTES);
+        qbh_attention_u8_build_probability_lut_entries(
+            lut, 0U, weight_sum0,
+            config->division_mode, valid_count);
+        qbh_attention_u8_build_probability_lut_entries(
+            lut, 16U, weight_sum1,
+            config->division_mode, valid_count);
+    }
+    {
+        const HVX_Vector banked_codes = Q6_V_vmux_QVV(
+            lower_half, codes,
+            Q6_Vb_vadd_VbVb(codes, Q6_Vb_vsplat_R(16)));
+        const HVX_Vector repeated_lane = Q6_V_vand_VV(
+            lane, Q6_Vb_vsplat_R(63));
+        const HVX_VectorPred valid = Q6_Q_not_Q(
+            Q6_Q_vcmp_gt_VubVub(
+                repeated_lane, Q6_Vb_vsplat_R(row)));
+        probabilities = Q6_V_vmux_QVV(
+            valid,
+            Q6_Vb_vlut32_VbVbR_nomatch(
+                banked_codes, *(const HVX_Vector *)lut, 0),
+            Q6_V_vzero());
+    }
+    {
+        const HVX_VectorPair probability_h =
+            Q6_Wuh_vunpack_Vub(probabilities);
+        *probability_sum0 =
+            qbh_attention_u8_sum_probability_half(
+                Q6_V_lo_W(probability_h));
+        *probability_sum1 =
+            qbh_attention_u8_sum_probability_half(
+                Q6_V_hi_W(probability_h));
+    }
+    if (telemetry != NULL) {
+        const uint8_t *bytes = (const uint8_t *)&probabilities;
+        for (uint32_t column = valid_count;
+             column < QBH_ATTENTION_M; ++column) {
+            telemetry->probability_mask_violation_count +=
+                bytes[column] != 0U;
+            telemetry->probability_mask_violation_count +=
+                bytes[QBH_ATTENTION_M + column] != 0U;
+        }
+    }
+    return probabilities;
+}
+
+void qbh_attention_u8_requant_softmax_group_rows_prebuilt_templates_shuffle4(
+    uint8_t *score_tiles, uint8_t *probability_tiles,
+    uint8_t *scratch, uint8_t *carrier_scratch,
+    const struct qbh_attention_config *config,
+    struct qbh_attention_u8_telemetry *telemetry,
+    uint32_t first_row, uint32_t row_count) {
+    uint8_t *lut = scratch + QBH_ATTN_U8_HVX_BYTES;
+    const uint8_t *lut_templates =
+        scratch + 2U * QBH_ATTN_U8_HVX_BYTES;
+    uint8_t *score0 = score_tiles;
+    uint8_t *score1 = score_tiles +
+        QBH_ATTENTION_SCORE_TILES * QBH_HMX_OUTPUT_BYTES;
+    uint8_t *probability0 = probability_tiles;
+    uint8_t *probability1 = probability_tiles +
+        QBH_ATTENTION_SCORE_TILES * QBH_HMX_ACTIVATION_BYTES;
+    const uint32_t use_sole_templates =
+        config->division_mode == QBH_ATTENTION_DIVISION_SOLE;
+    uint32_t row_sum_min = UINT_MAX;
+    uint32_t row_sum_max = 0U;
+
+    if ((first_row & 3U) != 0U || (row_count & 3U) != 0U ||
+        carrier_scratch == NULL ||
+        (((uintptr_t)carrier_scratch) &
+         (QBH_ATTN_U8_HVX_BYTES - 1U)) != 0U) {
+        qbh_attention_u8_requant_softmax_group_impl(
+            score_tiles, probability_tiles, scratch,
+            config, telemetry, 1U, 0U,
+            first_row, row_count);
+        return;
+    }
+
+    for (uint32_t row = first_row;
+         row < first_row + row_count; row += 4U) {
+        const size_t row_offset =
+            (size_t)row * QBH_HMX_OUTPUT_CHANNELS;
+        uint8_t *converted_scratch =
+            carrier_scratch + 4U * QBH_ATTN_U8_HVX_BYTES;
+        HVX_Vector tile0 = *(const HVX_Vector *)(
+            score0 + row_offset);
+        HVX_Vector tile1 = *(const HVX_Vector *)(
+            score0 + QBH_HMX_OUTPUT_BYTES + row_offset);
+        HVX_Vector tile2 = *(const HVX_Vector *)(
+            score1 + row_offset);
+        HVX_Vector tile3 = *(const HVX_Vector *)(
+            score1 + QBH_HMX_OUTPUT_BYTES + row_offset);
+        HVX_Vector row0;
+        HVX_Vector row1;
+        HVX_Vector row2;
+        HVX_Vector row3;
+
+        qbh_attention_u8_transpose_four_32byte_quarters(
+            tile0, tile1, tile2, tile3,
+            &row0, &row1, &row2, &row3);
+        *(HVX_Vector *)(carrier_scratch +
+                        0U * QBH_ATTN_U8_HVX_BYTES) = row0;
+        *(HVX_Vector *)(carrier_scratch +
+                        1U * QBH_ATTN_U8_HVX_BYTES) = row1;
+        *(HVX_Vector *)(carrier_scratch +
+                        2U * QBH_ATTN_U8_HVX_BYTES) = row2;
+        *(HVX_Vector *)(carrier_scratch +
+                        3U * QBH_ATTN_U8_HVX_BYTES) = row3;
+
+        for (uint32_t local_row = 0U;
+             local_row < 4U; ++local_row) {
+            uint32_t probability_sum0;
+            uint32_t probability_sum1;
+            HVX_Vector value = *(const HVX_Vector *)(
+                carrier_scratch +
+                (size_t)local_row * QBH_ATTN_U8_HVX_BYTES);
+
+            value = qbh_attention_u8_softmax_requantized_pair(
+                value, row + local_row, config,
+                lut, lut_templates,
+                use_sole_templates, telemetry,
+                telemetry != NULL
+                    ? (HVX_Vector *)(converted_scratch +
+                        (size_t)local_row * QBH_ATTN_U8_HVX_BYTES)
+                    : NULL,
+                &probability_sum0, &probability_sum1);
+            *(HVX_Vector *)(carrier_scratch +
+                (size_t)local_row * QBH_ATTN_U8_HVX_BYTES) = value;
+            qbh_attention_u8_update_probability_extrema(
+                probability_sum0, probability_sum1,
+                &row_sum_min, &row_sum_max);
+        }
+
+        if (telemetry != NULL) {
+            row0 = *(const HVX_Vector *)(converted_scratch +
+                0U * QBH_ATTN_U8_HVX_BYTES);
+            row1 = *(const HVX_Vector *)(converted_scratch +
+                1U * QBH_ATTN_U8_HVX_BYTES);
+            row2 = *(const HVX_Vector *)(converted_scratch +
+                2U * QBH_ATTN_U8_HVX_BYTES);
+            row3 = *(const HVX_Vector *)(converted_scratch +
+                3U * QBH_ATTN_U8_HVX_BYTES);
+            qbh_attention_u8_transpose_four_32byte_quarters(
+                row0, row1, row2, row3,
+                &tile0, &tile1, &tile2, &tile3);
+            *(HVX_Vector *)(score0 + row_offset) = tile0;
+            *(HVX_Vector *)(score0 + QBH_HMX_OUTPUT_BYTES +
+                            row_offset) = tile1;
+            *(HVX_Vector *)(score1 + row_offset) = tile2;
+            *(HVX_Vector *)(score1 + QBH_HMX_OUTPUT_BYTES +
+                            row_offset) = tile3;
+        }
+
+        row0 = *(const HVX_Vector *)(carrier_scratch +
+            0U * QBH_ATTN_U8_HVX_BYTES);
+        row1 = *(const HVX_Vector *)(carrier_scratch +
+            1U * QBH_ATTN_U8_HVX_BYTES);
+        row2 = *(const HVX_Vector *)(carrier_scratch +
+            2U * QBH_ATTN_U8_HVX_BYTES);
+        row3 = *(const HVX_Vector *)(carrier_scratch +
+            3U * QBH_ATTN_U8_HVX_BYTES);
+        qbh_attention_u8_transpose_four_32byte_quarters(
+            row0, row1, row2, row3,
+            &tile0, &tile1, &tile2, &tile3);
+        *(HVX_Vector *)(probability0 + row_offset) = tile0;
+        *(HVX_Vector *)(probability0 + QBH_HMX_ACTIVATION_BYTES +
+                        row_offset) = tile1;
+        *(HVX_Vector *)(probability1 + row_offset) = tile2;
+        *(HVX_Vector *)(probability1 + QBH_HMX_ACTIVATION_BYTES +
+                        row_offset) = tile3;
+    }
+    if (telemetry != NULL) {
+        telemetry->probability_row_sum_min = row_sum_min;
+        telemetry->probability_row_sum_max = row_sum_max;
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
 void qbh_attention_u8_requant_softmax_group(
     uint8_t *score_tiles, uint8_t *probability_tiles,
     uint8_t *scratch,
