@@ -774,7 +774,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->qkv_schedule_mode >
             QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL ||
         header->w4f16_group_fence_mode >
-            QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY ||
+            QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY_DOWN ||
         (header->w4f16_group_fence_mode !=
              QBH_BLOCK_W4F16_GROUP_FENCE_CONTROL &&
          header->variant != QBH_BLOCK_W4F16) ||
@@ -4705,6 +4705,10 @@ static int qbh_run_w4f16_projection(
     uint32_t cross_prefetch_attempted = 0U;
     uint32_t active_workers;
     uint32_t region_tiles;
+    const uint32_t relaxed_down_group_fence =
+        desc == &header->projections[QBH_BLOCK_PROJ_DOWN] &&
+        header->w4f16_group_fence_mode ==
+            QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY_DOWN;
     const uint32_t direct_qkv =
         qbh_projection_direct_qkv_crouton(header, desc);
 
@@ -4778,7 +4782,8 @@ static int qbh_run_w4f16_projection(
         header, pool, compressed_slots[0], projection_scales,
         expanded_slots[0], ready, 1U,
         k_tiles * QBH_BLOCK_W4F16_HMX_BATCH_N_TILES,
-        region_tiles, active_workers, 0U, 0U);
+        region_tiles, active_workers, 0U,
+        relaxed_down_group_fence);
     header->w4f16_expand_ticks +=
         HAP_perf_get_qtimer_count() - phase_start;
     header->w4f16_first_expand_ticks +=
@@ -4925,7 +4930,8 @@ static int qbh_run_w4f16_projection(
                     expanded_slots[next_expanded_slot], ready,
                     group_index + 2U,
                     k_tiles * next_group_tiles,
-                    region_tiles, active_workers, 0U, 0U);
+                    region_tiles, active_workers, 0U,
+                    relaxed_down_group_fence);
                 header->w4f16_expand_ticks +=
                     HAP_perf_get_qtimer_count() - expand_start;
                 header->w4f16_steady_expand_ticks +=
