@@ -935,9 +935,20 @@ static int qbh_parse_w4u8_qkvo_pipeline_mode(
     }
     if (strcmp(text,
                "qkvo_batch4_qk_head_pairs_q_preemptible_expand") == 0 ||
-        strcmp(text, "q_preemptible_expand") == 0) {
+        strcmp(text, "q_preemptible_expand") == 0 ||
+        strcmp(text, "q_assist16") == 0) {
         *mode =
             QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_PREEMPTIBLE_EXPAND;
+        return 0;
+    }
+    if (strcmp(text, "qkvo_batch4_qk_head_pairs_q_assist8") == 0 ||
+        strcmp(text, "q_assist8") == 0) {
+        *mode = QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_ASSIST8;
+        return 0;
+    }
+    if (strcmp(text, "qkvo_batch4_qk_head_pairs_q_assist4") == 0 ||
+        strcmp(text, "q_assist4") == 0) {
+        *mode = QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_ASSIST4;
         return 0;
     }
     return -1;
@@ -957,6 +968,10 @@ static const char *qbh_w4u8_qkvo_pipeline_mode_name(uint32_t mode) {
             return "qkvo_batch4_qk_head_pairs";
         case QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_PREEMPTIBLE_EXPAND:
             return "qkvo_batch4_qk_head_pairs_q_preemptible_expand";
+        case QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_ASSIST8:
+            return "qkvo_batch4_qk_head_pairs_q_assist8";
+        case QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_ASSIST4:
+            return "qkvo_batch4_qk_head_pairs_q_assist4";
         default:
             return "serial";
     }
@@ -1730,7 +1745,7 @@ int main(int argc, char **argv) {
            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT |
            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT)) != 0U) ||
         w4u8_qkvo_pipeline_mode >
-            QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_PREEMPTIBLE_EXPAND ||
+            QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_ASSIST4 ||
         u8_norm_reduction_mode >
             QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE_PARALLEL_INPUT ||
         w4u8_qk_pair_kernel_mode >
@@ -1940,6 +1955,8 @@ int main(int argc, char **argv) {
                         "[w4u8_qkvo_pipeline:serial|qkv_batch2|"
                         "qkv_batch4|qkvo_batch4|"
                         "qkvo_batch4_qk_head_pairs_q_preemptible_expand|"
+                        "qkvo_batch4_qk_head_pairs_q_assist8|"
+                        "qkvo_batch4_qk_head_pairs_q_assist4|"
                         "qkvo_batch4_qk_head_tasks|"
                         "qkvo_batch4_qk_head_pairs] "
                         "[u8_norm_reduction:scalar|hvx_tree|"
@@ -2507,7 +2524,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0118\","
+        "{\"experiment\":\"EXP-0119\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","

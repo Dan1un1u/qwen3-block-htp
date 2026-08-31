@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(48)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(118)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(49)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(119)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -101,13 +101,14 @@ enum qbh_block_w4u8_qkvo_pipeline_mode {
     QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_TASKS = 4,
     QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS = 5,
     QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_PREEMPTIBLE_EXPAND = 6,
+    QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_ASSIST8 = 7,
+    QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_ASSIST4 = 8,
 };
 
 static inline uint32_t qbh_block_w4u8_qkvo_uses_qk_head_pairs(
     uint32_t mode) {
-    return mode == QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS ||
-           mode ==
-               QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_PREEMPTIBLE_EXPAND;
+    return mode >= QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS &&
+           mode <= QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_ASSIST4;
 }
 
 enum qbh_block_u8_norm_reduction_mode {

@@ -92,7 +92,9 @@ _Static_assert(
 #define QBH_BLOCK_W4U8_GATE_UP_PAIR_SLOTS UINT32_C(8)
 #define QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES UINT32_C(8)
 #define QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES UINT32_C(4)
-#define QBH_BLOCK_W4U8_QKV_ASSIST_REGION_K_TILES UINT32_C(16)
+#define QBH_BLOCK_W4U8_QKV_ASSIST16_REGION_K_TILES UINT32_C(16)
+#define QBH_BLOCK_W4U8_QKV_ASSIST8_REGION_K_TILES UINT32_C(8)
+#define QBH_BLOCK_W4U8_QKV_ASSIST4_REGION_K_TILES UINT32_C(4)
 #define QBH_BLOCK_W4U8_INPUT_NORM_ROWS_PER_TASK UINT32_C(4)
 #define QBH_BLOCK_W4U8_RESIDUAL_ROWS_PER_TASK UINT32_C(4)
 #define QBH_BLOCK_W4U8_SOFTMAX_ROW_SLICES UINT32_C(2)
@@ -916,7 +918,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT |
            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT)) != 0U) ||
         header->w4u8_qkvo_pipeline_mode >
-            QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_PREEMPTIBLE_EXPAND ||
+            QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_ASSIST4 ||
         (header->variant != QBH_BLOCK_W4U8 &&
          header->w4u8_qkvo_pipeline_mode !=
              QBH_BLOCK_W4U8_QKVO_SERIAL) ||
@@ -5518,7 +5520,8 @@ static int qbh_w4u8_qkv_expand_preemptible(
     struct qbh_block_header *header,
     struct qbh_block_w4f16_pool *pool,
     const uint8_t *compressed, uint8_t *expanded,
-    uint32_t k_tiles, uint32_t tiles) {
+    uint32_t k_tiles, uint32_t tiles,
+    uint32_t region_k_tiles) {
     uint32_t generation;
     uint32_t main_regions = 0U;
     uint64_t main_work_ticks = 0U;
@@ -5527,8 +5530,8 @@ static int qbh_w4u8_qkv_expand_preemptible(
 
     if (header == NULL || pool == NULL || compressed == NULL ||
         expanded == NULL || tiles == 0U ||
-        k_tiles == 0U ||
-        k_tiles % QBH_BLOCK_W4U8_QKV_ASSIST_REGION_K_TILES != 0U ||
+        k_tiles == 0U || region_k_tiles == 0U ||
+        k_tiles % region_k_tiles != 0U ||
         pool->active_worker_count == 0U ||
         pool->active_worker_count > pool->worker_count) {
         return -1;
@@ -5542,8 +5545,7 @@ static int qbh_w4u8_qkv_expand_preemptible(
     pool->qkv_expand_expanded = expanded;
     pool->qkv_expand_k_tiles = k_tiles;
     pool->qkv_expand_tiles = tiles;
-    pool->qkv_expand_region_k_tiles =
-        QBH_BLOCK_W4U8_QKV_ASSIST_REGION_K_TILES;
+    pool->qkv_expand_region_k_tiles = region_k_tiles;
     pool->qkv_expand_region_count =
         tiles * k_tiles / pool->qkv_expand_region_k_tiles;
     pool->qkv_expand_next_region = 0U;
@@ -5652,6 +5654,20 @@ static uint32_t qbh_w4u8_qkvo_batch_tiles(
     return 0U;
 }
 
+static uint32_t qbh_w4u8_qkv_assist_region_k_tiles(
+    uint32_t mode) {
+    switch (mode) {
+        case QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_PREEMPTIBLE_EXPAND:
+            return QBH_BLOCK_W4U8_QKV_ASSIST16_REGION_K_TILES;
+        case QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_ASSIST8:
+            return QBH_BLOCK_W4U8_QKV_ASSIST8_REGION_K_TILES;
+        case QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_ASSIST4:
+            return QBH_BLOCK_W4U8_QKV_ASSIST4_REGION_K_TILES;
+        default:
+            return 0U;
+    }
+}
+
 static int qbh_run_w4u8_qkvo_pipelined_projection(
     struct qbh_block_header *header, const uint8_t *shared,
     const struct qbh_block_projection_desc *desc,
@@ -5747,14 +5763,16 @@ static int qbh_run_w4u8_qkvo_pipelined_projection(
         }
 
         expand_start = HAP_perf_get_qtimer_count();
-        if (header->w4u8_qkvo_pipeline_mode ==
-                QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS_Q_PREEMPTIBLE_EXPAND &&
+        if (qbh_w4u8_qkv_assist_region_k_tiles(
+                header->w4u8_qkvo_pipeline_mode) != 0U &&
             desc == &header->projections[QBH_BLOCK_PROJ_Q] &&
             w4f16_pool != NULL && tiles == batch_tiles &&
             tiles == QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES) {
             result = qbh_w4u8_qkv_expand_preemptible(
                 header, w4f16_pool, compressed_slots[slot],
-                expanded_slots[slot], k_tiles, tiles);
+                expanded_slots[slot], k_tiles, tiles,
+                qbh_w4u8_qkv_assist_region_k_tiles(
+                    header->w4u8_qkvo_pipeline_mode));
             if (result != 0) {
                 if (hmx_active != 0) {
                     (void)qbh_hmx_wait(worker);
