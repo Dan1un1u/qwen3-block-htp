@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(42)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(84)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(43)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(101)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -145,6 +145,11 @@ enum qbh_block_attention_pipeline_mode {
     QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES = 13,
     QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH = 14,
     QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM = 15,
+};
+
+enum qbh_block_w4u8_attention_scheduler_mode {
+    QBH_BLOCK_W4U8_ATTENTION_SCHEDULER_CLAIM_THEN_WAIT = 0,
+    QBH_BLOCK_W4U8_ATTENTION_SCHEDULER_READY_ONLY = 1,
 };
 
 enum qbh_block_mlp_mode {
@@ -310,6 +315,7 @@ struct qbh_block_header {
     uint32_t fp16_common_schedule_mode;
     uint32_t fp16_norm_rows_per_task;
     uint32_t fp16_norm_contexts;
+    uint32_t w4u8_attention_scheduler_mode;
 
     uint32_t input_offset;
     uint32_t input_bytes;
@@ -430,6 +436,11 @@ struct qbh_block_header {
     uint32_t w4u8_qkv_batch_count;
     uint32_t w4u8_qkvo_prefetch_count;
     uint32_t w4u8_qkvo_overlap_schedule_count;
+    uint32_t w4u8_attention_scheduler_mode_observed;
+    uint32_t w4u8_attention_ready_softmax_claim_count;
+    uint32_t w4u8_attention_ready_av_claim_count;
+    uint32_t w4u8_attention_predependency_claim_count;
+    uint32_t w4u8_attention_scheduler_idle_poll_count;
     uint64_t u8_attention_actual_score_hash;
     uint64_t u8_attention_actual_probability_hash;
     uint64_t u8_attention_actual_av_hash;

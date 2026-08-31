@@ -233,6 +233,10 @@ struct qbh_block_w4f16_job {
     uint64_t u8_attention_av_hmx_ticks;
     uint64_t u8_attention_av_requant_ticks;
     uint64_t u8_attention_hmx_queue_wait_ticks;
+    uint32_t u8_attention_ready_softmax_claim_count;
+    uint32_t u8_attention_ready_av_claim_count;
+    uint32_t u8_attention_predependency_claim_count;
+    uint32_t u8_attention_scheduler_idle_poll_count;
     uint32_t u8_post_residual_task_count;
     uint32_t u8_final_residual_task_count;
     uint64_t u8_post_residual_ticks;
@@ -313,6 +317,14 @@ struct qbh_block_w4f16_pool {
     volatile uint32_t u8_attention_qk_ready[QBH_BLOCK_KV_HEADS];
     volatile uint32_t u8_attention_softmax_ready[
         QBH_BLOCK_KV_HEADS * QBH_BLOCK_W4U8_SOFTMAX_ROW_SLICES];
+    volatile uint32_t u8_attention_softmax_claimed_mask;
+    volatile uint32_t u8_attention_softmax_runnable_mask;
+    volatile uint32_t u8_attention_softmax_done_mask;
+    volatile uint32_t u8_attention_softmax_completed;
+    volatile uint32_t u8_attention_av_claimed_mask;
+    volatile uint32_t u8_attention_av_runnable_mask;
+    volatile uint32_t u8_attention_av_inflight;
+    volatile uint32_t u8_attention_av_completed;
     uint32_t u8_attention_dependency_generation;
     volatile uint32_t attention_qk_ready[
         QBH_BLOCK_HEADS + QBH_BLOCK_KV_HEADS];
@@ -433,6 +445,34 @@ static uint32_t qbh_atomic_fetch_increment(volatile uint32_t *target) {
         : "r"(target)
         : "p0");
     return original;
+}
+
+static uint32_t qbh_atomic_fetch_or(volatile uint32_t *target,
+                                    uint32_t mask) {
+    uint32_t original;
+    uint32_t updated;
+    __asm__ __volatile__(
+        "1:     %0 = memw_locked(%3)\n"
+        "       %1 = or(%0, %4)\n"
+        "       memw_locked(%3, p0) = %1\n"
+        "       if !p0 jump 1b\n"
+        : "=&r"(original), "=&r"(updated), "+m"(*target)
+        : "r"(target), "r"(mask)
+        : "p0");
+    return original;
+}
+
+static uint32_t qbh_atomic_decrement_return(volatile uint32_t *target) {
+    uint32_t result;
+    __asm__ __volatile__(
+        "1:     %0 = memw_locked(%2)\n"
+        "       %0 = add(%0, #-1)\n"
+        "       memw_locked(%2, p0) = %0\n"
+        "       if !p0 jump 1b\n"
+        : "=&r"(result), "+m"(*target)
+        : "r"(target)
+        : "p0");
+    return result;
 }
 
 static uint32_t qbh_align_up(uint32_t value, uint32_t alignment) {
@@ -767,6 +807,15 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          header->fp16_norm_rows_per_task != 8U) ||
         header->fp16_norm_contexts < 2U ||
         header->fp16_norm_contexts > 4U ||
+        header->w4u8_attention_scheduler_mode >
+            QBH_BLOCK_W4U8_ATTENTION_SCHEDULER_READY_ONLY ||
+        (header->variant != QBH_BLOCK_W4U8 &&
+         header->w4u8_attention_scheduler_mode !=
+             QBH_BLOCK_W4U8_ATTENTION_SCHEDULER_CLAIM_THEN_WAIT) ||
+        (header->w4u8_attention_scheduler_mode ==
+             QBH_BLOCK_W4U8_ATTENTION_SCHEDULER_READY_ONLY &&
+         !qbh_attention_u8_dependency_stream_enabled(
+             header->attention_pipeline_mode)) ||
         (header->variant != QBH_BLOCK_W4U8 &&
          header->u8_norm_reduction_mode !=
              QBH_BLOCK_U8_NORM_REDUCTION_SCALAR) ||
@@ -7683,6 +7732,290 @@ static int qbh_attention_u8_group_view_init(
     return 0;
 }
 
+static int qbh_attention_u8_ready_try_claim_softmax(
+    struct qbh_block_w4f16_pool *pool, uint32_t *task_out) {
+    uint32_t available = pool->u8_attention_softmax_runnable_mask &
+        ~pool->u8_attention_softmax_claimed_mask;
+
+    while (available != 0U) {
+        const uint32_t task = (uint32_t)__builtin_ctz(available);
+        const uint32_t mask = 1U << task;
+        if ((qbh_atomic_fetch_or(
+                 &pool->u8_attention_softmax_claimed_mask, mask) &
+             mask) == 0U) {
+            asm volatile("barrier" ::: "memory");
+            *task_out = task;
+            return 1;
+        }
+        available &= ~mask;
+    }
+    return 0;
+}
+
+static int qbh_attention_u8_ready_try_claim_av(
+    struct qbh_block_w4f16_pool *pool, uint32_t *group_out) {
+    uint32_t available = pool->u8_attention_av_runnable_mask &
+        ~pool->u8_attention_av_claimed_mask;
+    if (available == 0U) {
+        return 0;
+    }
+    if (qbh_atomic_fetch_increment(
+            &pool->u8_attention_av_inflight) != 0U) {
+        (void)qbh_atomic_decrement_return(
+            &pool->u8_attention_av_inflight);
+        return 0;
+    }
+    available = pool->u8_attention_av_runnable_mask &
+        ~pool->u8_attention_av_claimed_mask;
+    while (available != 0U) {
+        const uint32_t group = (uint32_t)__builtin_ctz(available);
+        const uint32_t mask = 1U << group;
+        if ((qbh_atomic_fetch_or(
+                 &pool->u8_attention_av_claimed_mask, mask) & mask) == 0U) {
+            asm volatile("barrier" ::: "memory");
+            *group_out = group;
+            return 1;
+        }
+        available &= ~mask;
+    }
+    (void)qbh_atomic_decrement_return(
+        &pool->u8_attention_av_inflight);
+    return 0;
+}
+
+static int qbh_attention_u8_ready_run_qk(
+    struct qbh_block_w4f16_pool *pool,
+    struct qbh_block_w4f16_job *job, uint32_t group) {
+    struct qbh_block_header *header = pool->attention_header;
+    struct qbh_block_buffers *buffers = pool->attention_buffers;
+    struct qbh_attention_u8_group_view view;
+    struct qbh_attention_u8_telemetry telemetry;
+    struct qbh_attention_u8_telemetry *telemetry_ptr;
+    uint8_t *group_scratch;
+    uint64_t start;
+
+    if (qbh_attention_u8_group_view_init(
+            header, buffers, group, &view) != 0) {
+        return -1;
+    }
+    memset(&telemetry, 0, sizeof(telemetry));
+    telemetry_ptr = header->numerical_audit_enabled != 0U
+        ? &telemetry : NULL;
+    group_scratch = buffers->attention_concat +
+        (size_t)group * QBH_ATTN_U8_GROUP_SCRATCH_BYTES;
+    start = HAP_perf_get_qtimer_count();
+    qbh_attention_u8_pack_v_native_vgather_vdeal(
+        view.v_head, view.config, view.v_weight, view.av_bias,
+        group_scratch,
+        telemetry_ptr != NULL
+            ? &telemetry.v_recenter_saturation_count : NULL);
+    job->u8_attention_v_pack_ticks +=
+        HAP_perf_get_qtimer_count() - start;
+    if (qbh_attention_u8_pool_submit(
+            pool, job, view.q_group, view.k_weight,
+            view.qk_bias, view.score_group,
+            QBH_ATTENTION_Q_HEADS_PER_GROUP,
+            QBH_ATTENTION_HEAD_DIM_TILES,
+            QBH_ATTENTION_SCORE_TILES,
+            &job->u8_attention_qk_hmx_ticks) != 0) {
+        return -1;
+    }
+    if (telemetry_ptr != NULL) {
+        job->u8_attention_v_recenter_saturation_count +=
+            telemetry.v_recenter_saturation_count;
+    }
+    pool->u8_attention_qk_ready[group] =
+        pool->u8_attention_dependency_generation;
+    asm volatile("release(%0):at"
+                 :
+                 : "r"(&pool->u8_attention_qk_ready[group])
+                 : "memory");
+    (void)qbh_atomic_fetch_or(
+        &pool->u8_attention_softmax_runnable_mask,
+        (1U << group) | (1U << (group + QBH_BLOCK_KV_HEADS)));
+    return 0;
+}
+
+static int qbh_attention_u8_ready_run_softmax(
+    struct qbh_block_w4f16_pool *pool,
+    struct qbh_block_w4f16_job *job, uint32_t task,
+    uint8_t *softmax_scratch, uint32_t *templates_built) {
+    struct qbh_block_header *header = pool->attention_header;
+    struct qbh_block_buffers *buffers = pool->attention_buffers;
+    const uint32_t group = task % QBH_BLOCK_KV_HEADS;
+    const uint32_t slice = task / QBH_BLOCK_KV_HEADS;
+    const uint32_t first_row =
+        slice * QBH_BLOCK_W4U8_SOFTMAX_ROWS_PER_SLICE;
+    const uint32_t ready_index =
+        group * QBH_BLOCK_W4U8_SOFTMAX_ROW_SLICES + slice;
+    struct qbh_attention_u8_group_view view;
+    struct qbh_attention_u8_telemetry telemetry;
+    struct qbh_attention_u8_telemetry *telemetry_ptr;
+    uint64_t start;
+
+    if (pool->u8_attention_qk_ready[group] !=
+        pool->u8_attention_dependency_generation) {
+        ++job->u8_attention_predependency_claim_count;
+        return -1;
+    }
+    if (qbh_attention_u8_group_view_init(
+            header, buffers, group, &view) != 0) {
+        return -1;
+    }
+    if (*templates_built == 0U) {
+        start = HAP_perf_get_qtimer_count();
+        qbh_attention_u8_build_sole_lut_template_bank(
+            softmax_scratch + QBH_ATTN_U8_SOFTMAX_TEMPLATE_OFFSET);
+        asm volatile("barrier" ::: "memory");
+        job->u8_attention_softmax_ticks +=
+            HAP_perf_get_qtimer_count() - start;
+        *templates_built = 1U;
+    }
+    memset(&telemetry, 0, sizeof(telemetry));
+    telemetry_ptr = header->numerical_audit_enabled != 0U
+        ? &telemetry : NULL;
+    start = HAP_perf_get_qtimer_count();
+    qbh_attention_u8_requant_softmax_group_rows_prebuilt_templates(
+        view.score_group, view.probability_group,
+        softmax_scratch, view.config, telemetry_ptr,
+        first_row, QBH_BLOCK_W4U8_SOFTMAX_ROWS_PER_SLICE);
+    job->u8_attention_softmax_ticks +=
+        HAP_perf_get_qtimer_count() - start;
+    ++job->attention_softmax_task_count;
+    ++job->u8_attention_ready_softmax_claim_count;
+    if (telemetry_ptr != NULL) {
+        job->u8_attention_score_saturation_count +=
+            telemetry.score_saturation_count;
+        job->u8_attention_probability_mask_violation_count +=
+            telemetry.probability_mask_violation_count;
+        if (telemetry.probability_row_sum_min <
+            job->u8_attention_probability_row_sum_min) {
+            job->u8_attention_probability_row_sum_min =
+                telemetry.probability_row_sum_min;
+        }
+        if (telemetry.probability_row_sum_max >
+            job->u8_attention_probability_row_sum_max) {
+            job->u8_attention_probability_row_sum_max =
+                telemetry.probability_row_sum_max;
+        }
+    }
+    pool->u8_attention_softmax_ready[ready_index] =
+        pool->u8_attention_dependency_generation;
+    asm volatile("release(%0):at"
+                 :
+                 : "r"(&pool->u8_attention_softmax_ready[ready_index])
+                 : "memory");
+    {
+        const uint32_t task_mask = 1U << task;
+        const uint32_t done = qbh_atomic_fetch_or(
+            &pool->u8_attention_softmax_done_mask, task_mask) | task_mask;
+        const uint32_t pair =
+            (1U << group) | (1U << (group + QBH_BLOCK_KV_HEADS));
+        if ((done & pair) == pair) {
+            (void)qbh_atomic_fetch_or(
+                &pool->u8_attention_av_runnable_mask, 1U << group);
+        }
+    }
+    (void)qbh_atomic_fetch_increment(
+        &pool->u8_attention_softmax_completed);
+    return 0;
+}
+
+static int qbh_attention_u8_ready_run_av(
+    struct qbh_block_w4f16_pool *pool,
+    struct qbh_block_w4f16_job *job, uint32_t group) {
+    struct qbh_block_header *header = pool->attention_header;
+    struct qbh_block_buffers *buffers = pool->attention_buffers;
+    const uint32_t first =
+        group * QBH_BLOCK_W4U8_SOFTMAX_ROW_SLICES;
+    struct qbh_attention_u8_group_view view;
+    uint64_t start;
+
+    if (pool->u8_attention_softmax_ready[first] !=
+            pool->u8_attention_dependency_generation ||
+        pool->u8_attention_softmax_ready[first + 1U] !=
+            pool->u8_attention_dependency_generation) {
+        ++job->u8_attention_predependency_claim_count;
+        return -1;
+    }
+    if (qbh_attention_u8_group_view_init(
+            header, buffers, group, &view) != 0) {
+        return -1;
+    }
+    if (qbh_attention_u8_pool_submit(
+            pool, job, view.probability_group, view.v_weight,
+            view.av_bias, view.output_group,
+            QBH_ATTENTION_Q_HEADS_PER_GROUP,
+            QBH_ATTENTION_SCORE_TILES,
+            QBH_ATTENTION_HEAD_DIM_TILES,
+            &job->u8_attention_av_hmx_ticks) != 0) {
+        return -1;
+    }
+    start = HAP_perf_get_qtimer_count();
+    qbh_attention_u8_requant_av(view.output_group, view.config);
+    job->u8_attention_av_requant_ticks +=
+        HAP_perf_get_qtimer_count() - start;
+    ++job->u8_attention_group_count;
+    ++job->u8_attention_ready_av_claim_count;
+    (void)qbh_atomic_fetch_increment(&pool->u8_attention_av_completed);
+    (void)qbh_atomic_decrement_return(
+        &pool->u8_attention_av_inflight);
+    return 0;
+}
+
+static void qbh_attention_u8_ready_only_run_tasks(
+    struct qbh_block_w4f16_pool *pool,
+    struct qbh_block_w4f16_job *job) {
+    struct qbh_block_buffers *buffers = pool->attention_buffers;
+    uint8_t *softmax_scratch = buffers->attention_projection +
+        (size_t)job->worker_index * QBH_ATTN_U8_SOFTMAX_SCRATCH_BYTES;
+    uint32_t templates_built = 0U;
+
+    job->u8_attention_probability_row_sum_min = UINT32_MAX;
+    while (pool->u8_attention_av_completed < QBH_BLOCK_KV_HEADS &&
+           pool->attention_gqa_abort == 0U) {
+        uint32_t task;
+        uint32_t group;
+
+        if (qbh_attention_u8_ready_try_claim_softmax(pool, &task)) {
+            if (qbh_attention_u8_ready_run_softmax(
+                    pool, job, task, softmax_scratch,
+                    &templates_built) != 0) {
+                pool->attention_gqa_abort = 1U;
+                asm volatile("barrier" ::: "memory");
+                return;
+            }
+            continue;
+        }
+        if (qbh_attention_u8_ready_try_claim_av(pool, &group)) {
+            if (qbh_attention_u8_ready_run_av(
+                    pool, job, group) != 0) {
+                pool->attention_gqa_abort = 1U;
+                asm volatile("barrier" ::: "memory");
+                return;
+            }
+            continue;
+        }
+        if (pool->next_attention_task < QBH_BLOCK_KV_HEADS) {
+            group = qbh_atomic_fetch_increment(
+                &pool->next_attention_task);
+            if (group < QBH_BLOCK_KV_HEADS) {
+                if (qbh_attention_u8_ready_run_qk(
+                        pool, job, group) != 0) {
+                    pool->attention_gqa_abort = 1U;
+                    asm volatile("barrier" ::: "memory");
+                    return;
+                }
+                continue;
+            }
+        }
+        ++job->u8_attention_scheduler_idle_poll_count;
+        for (uint32_t backoff = 0U; backoff < 8U; ++backoff) {
+            asm volatile("pause(#8)" : : : "memory");
+        }
+    }
+}
+
 static void qbh_attention_u8_dependency_stream_run_tasks(
     struct qbh_block_w4f16_pool *pool,
     struct qbh_block_w4f16_job *job) {
@@ -7876,6 +8209,11 @@ static void qbh_attention_u8_pool_run_tasks(
 
     if (qbh_attention_u8_dependency_stream_enabled(
             header->attention_pipeline_mode)) {
+        if (header->w4u8_attention_scheduler_mode ==
+            QBH_BLOCK_W4U8_ATTENTION_SCHEDULER_READY_ONLY) {
+            qbh_attention_u8_ready_only_run_tasks(pool, job);
+            return;
+        }
         qbh_attention_u8_dependency_stream_run_tasks(pool, job);
         return;
     }
@@ -8249,6 +8587,14 @@ static void qbh_attention_u8_accumulate_job(
         job->u8_attention_av_requant_ticks;
     header->u8_attention_pipeline_wait_ticks +=
         job->u8_attention_hmx_queue_wait_ticks;
+    header->w4u8_attention_ready_softmax_claim_count +=
+        job->u8_attention_ready_softmax_claim_count;
+    header->w4u8_attention_ready_av_claim_count +=
+        job->u8_attention_ready_av_claim_count;
+    header->w4u8_attention_predependency_claim_count +=
+        job->u8_attention_predependency_claim_count;
+    header->w4u8_attention_scheduler_idle_poll_count +=
+        job->u8_attention_scheduler_idle_poll_count;
     header->u8_attention_fused_k_operand_mismatch_count +=
         job->u8_attention_fused_k_operand_mismatch_count;
     header->u8_attention_score_saturation_count +=
@@ -8296,8 +8642,18 @@ static int qbh_hvx_pool_u8_attention(
     pool->next_attention_task = 0U;
     pool->next_attention_softmax_task = 0U;
     pool->next_attention_av_task = 0U;
+    pool->u8_attention_softmax_claimed_mask = 0U;
+    pool->u8_attention_softmax_runnable_mask = 0U;
+    pool->u8_attention_softmax_done_mask = 0U;
+    pool->u8_attention_softmax_completed = 0U;
+    pool->u8_attention_av_claimed_mask = 0U;
+    pool->u8_attention_av_runnable_mask = 0U;
+    pool->u8_attention_av_inflight = 0U;
+    pool->u8_attention_av_completed = 0U;
     pool->attention_gqa_abort = 0U;
     pool->active_worker_count = header->attention_hvx_contexts - 1U;
+    header->w4u8_attention_scheduler_mode_observed =
+        header->w4u8_attention_scheduler_mode;
     header->u8_attention_probability_row_sum_min = UINT32_MAX;
     if (qbh_attention_u8_dependency_stream_enabled(
             header->attention_pipeline_mode)) {
@@ -8331,6 +8687,10 @@ static int qbh_hvx_pool_u8_attention(
         job->u8_attention_av_hmx_ticks = 0U;
         job->u8_attention_av_requant_ticks = 0U;
         job->u8_attention_hmx_queue_wait_ticks = 0U;
+        job->u8_attention_ready_softmax_claim_count = 0U;
+        job->u8_attention_ready_av_claim_count = 0U;
+        job->u8_attention_predependency_claim_count = 0U;
+        job->u8_attention_scheduler_idle_poll_count = 0U;
         job->command_kind =
             QBH_BLOCK_HVX_POOL_U8_GQA_ATTENTION;
     }
