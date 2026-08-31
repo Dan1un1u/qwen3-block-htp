@@ -133,7 +133,7 @@ def per_block(record: dict[str, object], field: str) -> float:
         "u8_attention_v_cache_session_build_group_count",
     }
     if field in not_scaled:
-        return float(record[field])
+        return float(record.get(field, 0.0))
     return float(record.get(field, 0.0)) / int(record["repeat_count"])
 
 
