@@ -8521,14 +8521,15 @@ experiments:
     variants:
       - exp0084_serial_inner_two_head_qk_kernel_control
       - interleaved_two_head_qk_kernel_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-interleaved-qk-pair-kernel
     source_branches:
       - codex/exp-0103-w4u8-interleaved-qk-pair-kernel
-    source_commits: []
+    source_commits:
+      - 66a9cb6162f85a48622cb54a8414a74ebfeace91
     record: docs/experiments/EXP-0103.md
     decided_by: user
     decided_on: '2026-08-31'
@@ -8537,10 +8538,10 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0103-w4u8-interleaved-qk-pair-kernel
       started_on: '2026-08-31'
-      completed_on: null
+      completed_on: '2026-08-31'
     evidence:
-      formal_results: null
-      retained_artifacts: null
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0103/formal_66a9cb6162f8'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0103/artifacts/66a9cb6162f8/formal'
       source_parent_commit: 6dc437fe08eaccf119c4cbce82937e22f125da0b
       direct_w4u8_control: W4U8-EXP0084-FAIR-CANONICAL
       contextual_w4f16_comparator: W4F16-EXP0084-COMMON-NORM-POOLS
@@ -8558,3 +8559,32 @@ experiments:
       physical_gate: same_peak_exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_same_weight_bytes_dma_descriptors_hmx_commands_and_49408_tile_pairs
       speed_gate: qk_norm_rope_work_qkv_projection_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: static_correctness_and_physical_gates_then_five_order_rotated_rounds_and_pc027_pc028_complete_profiling_closure
+      runtime_source_commit: 66a9cb6162f85a48622cb54a8414a74ebfeace91
+      first_static_candidate_result: rejected_before_device_simultaneous_two_head_helper_allocated_3584_byte_vector_stack_frame
+      measured_candidate: spill_free_shared_invariant_qk_pair_helper_preserving_per_head_arithmetic_order
+      static_gate_result: pass_candidate_540_bytes_control_704_bytes_zero_allocframe_zero_vector_stack_access_no_qnn
+      correctness_gate_result: pass_final_input_norm_qk_probability_av_byte_exact_zero_mismatch_zero_max_lsb
+      physical_gate_result: pass_same_5306080_peak_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_weight_bytes_512_dma_descriptors_176_hmx_commands_and_49408_tile_pairs
+      repeat1_qk_work_change_percent: -4.450
+      repeat1_qk_work_paired_change_percent: -4.405
+      repeat1_qkv_change_percent: -3.838
+      repeat1_qkv_paired_change_percent: -3.732
+      repeat1_host_change_percent: 8.616
+      repeat1_host_paired_change_percent: -1.510
+      repeat10_qk_work_change_percent: -4.217
+      repeat10_qk_work_paired_change_percent: -4.217
+      repeat10_qkv_change_percent: -3.462
+      repeat10_qkv_paired_change_percent: -3.334
+      repeat10_host_change_percent: -0.847
+      repeat10_host_paired_change_percent: -0.875
+      repeat10_qk_pool_wait_change_percent: -22.946
+      repeat10_qk_pool_wait_paired_change_percent: -23.196
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_reused_exp0084_canonical_f16f16_w4f16
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: f887d0f7320d829aac5f5ff6254830829e2e5a87108672da41271f90d9413ad0
+      full_profiling_report_sha256: 87c3fb90459ecf2e779e254148768cda58ef742dde6f85efdbca4272a15c3a7a
+      evidence_sha256_ledger_sha256: 72308f910e852dc3b76d722b94650903e03a8cc99882bcd04cff43c550f5df14
+      conclusion: shared_invariant_spill_free_helper_reduces_qk_work_qkv_ledger_and_repeat10_host_but_fails_strict_repeat1_ordinary_host_gate
+      reopen_condition: only_with_a_new_paired_kernel_hypothesis_that_reduces_a_larger_critical_interval_and_passes_both_repeat_counts_not_another_constant_hoist
+      selected_baseline_changed: false

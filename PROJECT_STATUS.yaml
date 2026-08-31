@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0103
+  active_experiment: null
   next_experiment_number: 104
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,16 +27,53 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0102
-  last_completed_source_commit: 794ffdef3a092785882428f2e2010ee3842dd374
+  last_completed_experiment: EXP-0103
+  last_completed_source_commit: 66a9cb6162f85a48622cb54a8414a74ebfeace91
   provisional_source_parent: EXP-0084
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: interleaved_two_head_u8_qk_norm_rope
+  active_experiment_stage: null
   active_experiment_evidence: null
-  active_experiment_gate: none
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0102/formal_794ffdef3a09'
+  active_experiment_gate: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0103/formal_66a9cb6162f8'
+  latest_w4u8_qk_pair_kernel_experiment:
+    id: EXP-0103
+    source_branch: codex/exp-0103-w4u8-interleaved-qk-pair-kernel
+    source_head: 66a9cb6162f85a48622cb54a8414a74ebfeace91
+    direct_control: W4U8-EXP0084-FAIR-CANONICAL
+    candidate: spill_free_shared_invariant_qk_pair_kernel
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0103/formal_66a9cb6162f8'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0103/artifacts/66a9cb6162f8/formal'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    static_gate: pass_candidate_540_bytes_control_704_bytes_zero_allocframe_zero_vector_stack_access_no_qnn
+    abandoned_static_variant: simultaneous_two_head_helper_rejected_before_device_for_3584_byte_stack_frame
+    correctness_gate: pass_final_input_norm_qk_probability_av_byte_exact_zero_mismatch_zero_max_lsb
+    physical_gate: pass_same_5306080_peak_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_weight_bytes_512_dma_descriptors_176_hmx_commands_and_49408_tile_pairs
+    repeat1_qk_work_change_percent: -4.450
+    repeat1_qk_work_paired_change_percent: -4.405
+    repeat1_qkv_change_percent: -3.838
+    repeat1_qkv_paired_change_percent: -3.732
+    repeat1_host_change_percent: 8.616
+    repeat1_host_paired_change_percent: -1.510
+    repeat10_qk_work_change_percent: -4.217
+    repeat10_qk_work_paired_change_percent: -4.217
+    repeat10_qkv_change_percent: -3.462
+    repeat10_qkv_paired_change_percent: -3.334
+    repeat10_host_change_percent: -0.847
+    repeat10_host_paired_change_percent: -0.875
+    repeat10_qk_pool_wait_change_percent: -22.946
+    repeat10_qk_pool_wait_paired_change_percent: -23.196
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass_reused_exp0084_canonical_f16f16_w4f16
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    gate_summary_sha256: f887d0f7320d829aac5f5ff6254830829e2e5a87108672da41271f90d9413ad0
+    full_profiling_report_sha256: 87c3fb90459ecf2e779e254148768cda58ef742dde6f85efdbca4272a15c3a7a
+    evidence_sha256_ledger_sha256: 72308f910e852dc3b76d722b94650903e03a8cc99882bcd04cff43c550f5df14
+    conclusion: shared_invariant_spill_free_helper_reduces_qk_work_qkv_ledger_and_repeat10_host_but_fails_strict_repeat1_ordinary_host_gate
+    selected_baseline_changed: false
   latest_w4u8_qkv_head_pair_batch_experiment:
     id: EXP-0102
     source_branch: codex/exp-0102-w4u8-qkv-head-pair-batch8
