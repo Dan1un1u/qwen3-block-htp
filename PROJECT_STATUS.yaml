@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0101
+  active_experiment: null
   next_experiment_number: 102
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,16 +27,47 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0100
-  last_completed_source_commit: 57dd701391ca445299037bbf936e9abfe65a24ed
+  last_completed_experiment: EXP-0101
+  last_completed_source_commit: d8a5a0795847f66364acc28efe5b22efed66d85e
   provisional_source_parent: EXP-0084
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: readiness_aware_attention_scheduler
+  active_experiment_stage: null
   active_experiment_evidence: null
-  active_experiment_gate: none
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0100/formal_57dd701391ca'
+  active_experiment_gate: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0101/formal_d8a5a0795847'
+  latest_w4u8_ready_attention_scheduler_experiment:
+    id: EXP-0101
+    source_branch: codex/exp-0101-w4u8-readiness-aware-attention-scheduler
+    source_head: d8a5a0795847f66364acc28efe5b22efed66d85e
+    direct_control: W4U8-EXP0084-FAIR-CANONICAL
+    candidate: ready_only_nonblocking_bitmask_scheduler
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0101/formal_d8a5a0795847'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0101/artifacts/d8a5a0795847/formal'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    correctness_gate: pass_final_input_norm_qk_probability_av_byte_exact_zero_mismatch_zero_max_lsb
+    scheduler_gate: pass_16_softmax_8_av_zero_predependency_claims
+    physical_gate: pass_same_5306080_peak_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_same_traffic_commands_and_tile_pairs
+    repeat1_attention_change_percent: 7.1505
+    repeat1_attention_paired_change_percent: 7.5507
+    repeat1_host_change_percent: 0.4066
+    repeat1_host_paired_change_percent: 1.2854
+    repeat10_attention_change_percent: 6.3511
+    repeat10_attention_paired_change_percent: 6.2903
+    repeat10_host_change_percent: 0.5383
+    repeat10_host_paired_change_percent: 0.4911
+    repeat10_pipeline_wait_change_percent: -36.0392
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass_reused_exp0084_canonical_f16f16_w4f16
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    gate_summary_sha256: 776b4b6adff69e2edf679b09dcf417918aeda91cb4c0b5def8e96ae7be4302d9
+    full_profiling_report_sha256: 3a48c688c6f8811bc25d55ccb5b82d64911acd40099f4f95472518338cdf2d1f
+    evidence_sha256_ledger_sha256: ed28b3a04dac64b8f3898cb3f4bfe19c0fe8a23e98ee2ee32110b61a2a4d227e
+    conclusion: ready_only_reduces_overlapped_queue_wait_but_lowers_cross_worker_parallelism_and_regresses_attention_and_host_wall
+    selected_baseline_changed: false
   latest_w4u8_o_batch8_experiment:
     id: EXP-0100
     source_branch: codex/exp-0100-w4u8-o-projection-batch8

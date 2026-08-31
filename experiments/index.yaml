@@ -8379,14 +8379,15 @@ experiments:
     variants:
       - exp0084_claim_then_wait_dependency_stream_control
       - ready_only_nonblocking_stage_work_stealing_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-readiness-aware-attention-scheduler
     source_branches:
       - codex/exp-0101-w4u8-readiness-aware-attention-scheduler
-    source_commits: []
+    source_commits:
+      - d8a5a0795847f66364acc28efe5b22efed66d85e
     record: docs/experiments/EXP-0101.md
     decided_by: user
     decided_on: '2026-08-31'
@@ -8395,10 +8396,10 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0101-w4u8-readiness-aware-attention-scheduler
       started_on: '2026-08-31'
-      completed_on: null
+      completed_on: '2026-08-31'
     evidence:
-      formal_results: null
-      retained_artifacts: null
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0101/formal_d8a5a0795847'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0101/artifacts/d8a5a0795847/formal'
       source_parent_commit: 6dc437fe08eaccf119c4cbce82937e22f125da0b
       direct_w4u8_control: W4U8-EXP0084-FAIR-CANONICAL
       contextual_w4f16_comparator: W4F16-EXP0084-COMMON-NORM-POOLS
@@ -8416,3 +8417,27 @@ experiments:
       scheduler_gate: all_16_softmax_slices_and_8_av_groups_execute_once_no_predependency_claim_no_early_worker_exit_no_global_stage_barrier
       speed_gate: attention_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
       completion_gate: static_correctness_physical_scheduler_gates_then_five_order_rotated_rounds_and_pc027_pc028_complete_profiling_closure
+      runtime_source_commit: d8a5a0795847f66364acc28efe5b22efed66d85e
+      static_gate_result: pass_ready_bitmask_scheduler_no_global_stage_barrier_no_qnn
+      correctness_gate_result: pass_final_input_norm_qk_probability_av_byte_exact_zero_mismatch_zero_max_lsb
+      physical_gate_result: pass_same_5306080_peak_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_same_traffic_commands_and_tile_pairs
+      scheduler_gate_result: pass_16_softmax_8_av_zero_predependency_claims
+      repeat1_attention_change_percent: 7.1505
+      repeat1_attention_paired_change_percent: 7.5507
+      repeat1_host_change_percent: 0.4066
+      repeat1_host_paired_change_percent: 1.2854
+      repeat10_attention_change_percent: 6.3511
+      repeat10_attention_paired_change_percent: 6.2903
+      repeat10_host_change_percent: 0.5383
+      repeat10_host_paired_change_percent: 0.4911
+      repeat10_pipeline_wait_change_percent: -36.0392
+      repeat10_softmax_work_change_percent: -1.5270
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_reused_exp0084_canonical_f16f16_w4f16
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: 776b4b6adff69e2edf679b09dcf417918aeda91cb4c0b5def8e96ae7be4302d9
+      full_profiling_report_sha256: 3a48c688c6f8811bc25d55ccb5b82d64911acd40099f4f95472518338cdf2d1f
+      evidence_sha256_ledger_sha256: ed28b3a04dac64b8f3898cb3f4bfe19c0fe8a23e98ee2ee32110b61a2a4d227e
+      conclusion: ready_only_reduces_overlapped_queue_wait_but_lowers_cross_worker_parallelism_and_regresses_attention_and_host_wall
+      reopen_condition: only_with_a_new_scheduler_that_preserves_preassigned_cross_worker_parallelism_not_another_ready_polling_or_queue_wait_reduction
+      selected_baseline_changed: false
