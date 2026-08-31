@@ -774,7 +774,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->qkv_schedule_mode >
             QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL ||
         header->w4f16_group_fence_mode >
-            QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY ||
+            QBH_BLOCK_W4F16_GROUP_FENCE_SEMAPHORE_ONLY ||
         (header->w4f16_group_fence_mode !=
              QBH_BLOCK_W4F16_GROUP_FENCE_CONTROL &&
          header->variant != QBH_BLOCK_W4F16) ||
@@ -2746,6 +2746,15 @@ static void qbh_w4f16_pool_wait(
     asm volatile("barrier" ::: "memory");
 }
 
+static __attribute__((noinline)) void
+qbh_w4f16_pool_wait_semaphore_only(
+    struct qbh_block_w4f16_pool *pool) {
+    for (uint32_t worker = 0; worker < pool->active_worker_count;
+         ++worker) {
+        qurt_sem_down(&pool->command_done[worker]);
+    }
+}
+
 static int qbh_w4u8_pipeline_pool_start(
     void *context, void *const *worker_contexts,
     uint32_t worker_count) {
@@ -3819,7 +3828,11 @@ static void qbh_w4f16_expand_with_main(
     header->w4f16_expand_region_count += main_regions;
     {
         uint64_t wait_start = HAP_perf_get_qtimer_count();
-        qbh_w4f16_pool_wait(pool);
+        if (relaxed_group_fence >= 2U) {
+            qbh_w4f16_pool_wait_semaphore_only(pool);
+        } else {
+            qbh_w4f16_pool_wait(pool);
+        }
         header->w4f16_expand_pool_wait_ticks +=
             HAP_perf_get_qtimer_count() - wait_start;
     }
@@ -5141,8 +5154,7 @@ static int qbh_w4f16_mlp_prepare_group(
         group + 1U,
         state->k_tiles * state->group_tiles,
         region_tiles, 2U, 0U,
-        header->w4f16_group_fence_mode ==
-            QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY);
+        header->w4f16_group_fence_mode);
     header->w4f16_expand_ticks +=
         HAP_perf_get_qtimer_count() - expand_start;
     if (group == 0U) {
