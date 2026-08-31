@@ -9451,3 +9451,44 @@ experiments:
       evidence_sha256_ledger_sha256: f24befb9ce56d9e2aacbf7a59491cf004952240a70188badc5d2052a2cb57642
       conclusion: removing_the_low_nibble_vand_is_byte_exact_but_the_decode_instruction_is_hidden_and_join_variance_dominates_so_the_candidate_is_rejected
       selected_baseline_changed: false
+  - id: EXP-0116
+    slug: w4f16-down-publication-fence
+    title: W4F16 Down redundant publication-fence elimination
+    parent: EXP-0112
+    variants:
+      - exp0111_join_only_gate_up_ordered_down_control
+      - w4f16_join_only_gate_up_and_down_candidate
+    execution_state: running
+    evidence_validity: pending
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4f16-down-publication-fence
+    source_branches:
+      - codex/exp-0116-w4f16-down-publication-fence
+    source_commits: []
+    record: docs/experiments/EXP-0116.md
+    approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0116-w4f16-down-publication-fence
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0112
+      source_parent_commit: 5429c70bc6eb155af96bb7dd987094bb8fb941b1
+      selected_w4f16_runtime_parent: EXP-0111-join_only
+      recipe_scope: W4F16_down_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      hypothesis: down_hmx_submission_occurs_only_after_all_expansion_workers_join_so_per_region_barriers_and_generation_publication_are_redundant_just_as_in_exp0111_gate_up
+      implementation_boundary: runtime_selectable_join_only_down_mode_applies_existing_relaxed_unpack_only_to_generic_down_group_expansion_and_retains_the_pool_join_barrier
+      excluded_changes: no_decode_math_weight_scale_layout_dma_hmx_ring_worker_qkv_attention_o_gate_up_w4u8_or_public_changes
+      correctness_gate: candidate_byte_exact_to_exp0111_join_only_final_output_zero_mismatch_zero_max_lsb
+      physical_gate: exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_bytes_dma_descriptors_hmx_commands_tile_work_and_peak_vtcm
+      static_gate: new_mode_is_selected_only_for_down_generic_expansion_relaxed_helper_has_no_per_region_publication_and_pool_wait_retains_final_barrier
+      speed_gate: down_projection_and_complete_host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
+      completion_gate: five_rounds_pc027_pc028_complete_profiling_then_accept_or_reject_without_automatic_baseline_promotion
