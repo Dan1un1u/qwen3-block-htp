@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(44)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(109)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(45)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(110)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -124,6 +124,11 @@ enum qbh_block_fp16_common_schedule_mode {
         QBH_BLOCK_FP16_COMMON_SCHEDULE_QK_HEAD_PAIRS |
         QBH_BLOCK_FP16_COMMON_SCHEDULE_INPUT_NORM_POOL |
         QBH_BLOCK_FP16_COMMON_SCHEDULE_POST_RESIDUAL_NORM_POOL,
+};
+
+enum qbh_block_qkv_schedule_mode {
+    QBH_BLOCK_QKV_SCHEDULE_CONTROL = 0,
+    QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL = 1,
 };
 
 enum qbh_block_attention_pack_mode {
@@ -320,6 +325,7 @@ struct qbh_block_header {
     uint32_t fp16_norm_rows_per_task;
     uint32_t fp16_norm_contexts;
     uint32_t w4u8_down_hmx_batch_outputs;
+    uint32_t qkv_schedule_mode;
 
     uint32_t input_offset;
     uint32_t input_bytes;
@@ -426,6 +432,9 @@ struct qbh_block_header {
     uint32_t crouton_q_operand_mismatch_count;
     uint32_t crouton_k_operand_mismatch_count;
     uint32_t crouton_v_operand_mismatch_count;
+    uint32_t qkv_operand_audit_tensor_count;
+    uint32_t qkv_schedule_command_count;
+    uint64_t qkv_schedule_trace_hash;
     uint32_t u8_attention_group_count;
     uint32_t u8_attention_qk_execution_count;
     uint32_t u8_attention_av_execution_count;
