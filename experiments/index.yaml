@@ -9027,3 +9027,50 @@ experiments:
         - baseline-w4u8-fastest-exp0109-public-freeze
       conclusion: public_common_layer_frozen_with_exp0107_f16f16_interleaving_exp0108_public_qkv_carrier_excluded_and_exp0106_w4_plans_retained
       selected_baseline_changed: true
+  - id: EXP-0110
+    slug: w4f16-qkv-specialization-factorial
+    title: W4F16 QKV carrier and Q-prefix specialization factorial
+    parent: EXP-0109
+    variants:
+      - frozen_w4f16_norms_q_major_control
+      - w4f16_qkv_norms_carrier_only
+      - w4f16_q_prefix4_only
+      - w4f16_qkv_norms_q_prefix4_combined
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4f16-qkv-specialization-factorial
+    source_branches:
+      - codex/exp-0110-w4f16-qkv-specialization-factorial
+    source_commits: []
+    record: docs/experiments/EXP-0110.md
+    decided_by: user
+    decided_on: '2026-09-01'
+    approval_ref: 'User message 2026-09-01: 可以，按你建议开始实现'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0110-w4f16-qkv-specialization-factorial
+      started_on: '2026-09-01'
+      completed_on: null
+    evidence:
+      source_parent_experiment: EXP-0109
+      source_parent_commit: 42e2a33012929ccbb05e8c2741124b6fd539552c
+      reopened_carrier_evidence: EXP-0108
+      reopened_order_evidence: EXP-0085-q_prefix4_k_all
+      recipe_scope: W4F16_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      tuning_budget: exactly_four_predeclared_factorial_cells_no_additional_order_or_batch_search
+      correctness_gate: all_cells_preserve_f18b9abbe1487231_and_independent_qkv_operand_audit_zero_mismatches_zero_max_lsb
+      physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_w4_bytes_hmx_tile_pairs_and_projection_math
+      carrier_gate: carrier_cells_report_128_qkv_unpack_tiles_skipped_24_direct_qk_operands_8_direct_av_weights_and_zero_operand_mismatches
+      prefix_gate: prefix_cells_publish_exactly_q0_to_q3_then_k0_to_k7_then_q4_to_q15_then_v0_to_v7_without_changed_head_semantics
+      speed_gate: select_the_lowest_complete_host_cell_among_candidates_that_strictly_improve_qkv_plus_qk_norm_rope_and_complete_host_in_ordinary_and_paired_repeat1_and_repeat10_versus_control
+      completion_gate: correctness_physical_factorial_five_rounds_pc027_pc028_then_explicit_user_adoption_decision
+      selected_baseline_changed: false
