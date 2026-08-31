@@ -9313,3 +9313,44 @@ experiments:
       evidence_sha256_ledger_sha256: 46489b9e37c85c9aed654708e0d90edf9d0cfc7d241361dfe4df2c0c86c21736
       conclusion: producer_address_release_elision_is_byte_exact_but_increases_hmx_ready_wait_and_regresses_repeat10_gate_up_and_complete_host_so_exp0112_single_fence_remains_the_provisional_w4u8_parent
       selected_baseline_changed: false
+  - id: EXP-0114
+    slug: w4f16-gate-up-pool-join-barrier
+    title: W4F16 Gate/Up redundant post-semaphore join-barrier elimination
+    parent: EXP-0112
+    variants:
+      - exp0111_join_only_control
+      - w4f16_gate_up_semaphore_join_without_extra_barrier
+    execution_state: running
+    evidence_validity: pending
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4f16-gate-up-pool-join-barrier
+    source_branches:
+      - codex/exp-0114-w4f16-gate-up-pool-join-barrier
+    source_commits: []
+    record: docs/experiments/EXP-0114.md
+    approval_ref: 'User message 2026-09-01: 既然有收益，那就采用。继续针对W4A16和W4A8开展loop优化。'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0114-w4f16-gate-up-pool-join-barrier
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0112
+      source_parent_commit: 5429c70bc6eb155af96bb7dd987094bb8fb941b1
+      selected_w4f16_runtime_parent: EXP-0111-join_only
+      recipe_scope: W4F16_gate_up_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      hypothesis: qurt_semaphore_command_done_handoff_already_provides_worker_to_waiter_visibility_for_expanded_vtcm_and_the_additional_full_barrier_after_all_semaphore_downs_is_redundant
+      implementation_boundary: runtime_selectable_gate_up_join_only_path_skip_only_post_semaphore_barrier_all_other_pool_waits_streaming_publication_main_unpack_hmx_and_w4u8_unchanged
+      excluded_changes: no_worker_region_barrier_retry_no_weight_scale_layout_dma_hmx_ring_worker_attention_down_public_or_w4u8_changes
+      correctness_gate: candidate_byte_exact_to_exp0111_join_only_final_output_and_w4f16_expansion_audit_zero_mismatch_zero_max_lsb
+      physical_gate: exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_dma_hmx_commands_tile_work_and_peak_vtcm
+      static_gate: candidate_gate_up_path_waits_all_active_worker_semaphores_and_omits_only_the_trailing_full_barrier_control_and_all_other_pool_waits_retain_it
+      speed_gate: gate_up_plus_swiglu_and_complete_host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
+      completion_gate: five_rounds_pc027_pc028_complete_profiling_then_accept_or_reject_without_automatic_baseline_promotion
