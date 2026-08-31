@@ -815,6 +815,13 @@ static int qbh_parse_crouton_boundary_mode(
                 QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM;
         return 0;
     }
+    if (strcmp(text, "qkv_norms") == 0 ||
+        strcmp(text, "qkv_input_post_norm") == 0) {
+        *mode = QBH_BLOCK_CROUTON_BOUNDARY_QKV |
+                QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM |
+                QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM;
+        return 0;
+    }
     if (strcmp(text, "all") == 0) {
         *mode = QBH_BLOCK_CROUTON_BOUNDARY_QKV |
                 QBH_BLOCK_CROUTON_BOUNDARY_AV_TO_O |
@@ -860,6 +867,10 @@ static const char *qbh_crouton_boundary_mode_name(uint32_t mode) {
         case QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM |
              QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM:
             return "norms";
+        case QBH_BLOCK_CROUTON_BOUNDARY_QKV |
+             QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM |
+             QBH_BLOCK_CROUTON_BOUNDARY_POST_NORM:
+            return "qkv_norms";
         case QBH_BLOCK_CROUTON_BOUNDARY_QKV |
              QBH_BLOCK_CROUTON_BOUNDARY_AV_TO_O |
              QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM |
@@ -2395,7 +2406,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0106\","
+        "{\"experiment\":\"EXP-0108\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
