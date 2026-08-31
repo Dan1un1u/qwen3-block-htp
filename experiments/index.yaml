@@ -8301,3 +8301,49 @@ experiments:
       evidence_sha256_ledger_sha256: c4b226d8b026e10c982de334085bd6d0f4ede41639d9256932c36fb64bbf5e7f
       conclusion: generation_safe_two_output_commands_halve_down_command_submissions_reduce_expanded_slot_wait_and_improve_down_and_complete_host_wall_without_changing_traffic_or_math
       selected_baseline_changed: false
+  - id: EXP-0100
+    slug: w4u8-o-projection-batch8
+    title: W4U8 O-projection batch-eight pipeline
+    parent: EXP-0084
+    variants:
+      - o_projection_batch4_control
+      - o_projection_batch8_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-o-projection-batch8
+    source_branches:
+      - codex/exp-0100-w4u8-o-projection-batch8
+    source_commits: []
+    record: docs/experiments/EXP-0100.md
+    decided_by: user
+    decided_on: '2026-08-31'
+    approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary recoverable issues independently'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0100-w4u8-o-projection-batch8
+      started_on: '2026-08-31'
+      completed_on: null
+    evidence:
+      formal_results: null
+      retained_artifacts: null
+      source_parent_commit: 6dc437fe08eaccf119c4cbce82937e22f125da0b
+      direct_w4u8_control: W4U8-EXP0084-FAIR-CANONICAL
+      contextual_w4f16_comparator: W4F16-EXP0084-COMMON-NORM-POOLS
+      contextual_f16f16_comparator: F16F16-EXP0084-FAIR-CANONICAL
+      execution_unit: qwen3_layer14_complete_block_m64
+      primary_scope: o_projection_dma_expand_hmx_batch_cardinality
+      hypothesis: o_has_no_fine_grained_downstream_publication_and_can_use_batch8_to_halve_commands_and_prefetch_descriptors_without_the_gate_up_tail_penalty
+      fixed_qkv_batch_n_tiles: 4
+      control_o_batch_n_tiles: 4
+      candidate_o_batch_n_tiles: 8
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      correctness_gate: final_output_and_audited_input_norm_qk_probability_av_boundaries_byte_exact_to_exp0084_and_independent_reference_zero_mismatches_zero_max_lsb
+      physical_gate: same_enlarged_vtcm_plan_exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_weight_bytes_and_49408_tile_pairs_control_16_o_176_total_commands_512_descriptors_candidate_8_o_168_total_commands_496_descriptors
+      speed_gate: o_projection_ledger_and_complete_host_wall_strictly_improve_in_ordinary_and_paired_medians_at_repeat1_and_repeat10
+      completion_gate: static_buffer_correctness_and_physical_gates_then_five_order_rotated_rounds_and_pc027_pc028_complete_profiling_closure
