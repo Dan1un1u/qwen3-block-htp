@@ -149,8 +149,11 @@ def build_summary(result_dir: Path, exp0109_dir: Path,
         for repeat in REPEATS for cell in CELLS
         for row in records[repeat][cell]
     )
+    selected_cell = "worker4" if speed_gate else "worker3"
     pc028 = exp120.baseline_pc028(exp0109_dir, exp0111_dir)
-    pc028["w4u8"] = exp109.module_medians(records[10]["worker4"])
+    pc028["w4u8"] = exp109.module_medians(
+        records[10][selected_cell]
+    )
     return {
         "experiment": "EXP-0121",
         "source_commit":
@@ -162,13 +165,14 @@ def build_summary(result_dir: Path, exp0109_dir: Path,
         "physical_equality_gate": physical_gate,
         "speed_gate": speed_gate,
         "local_gate_pass": speed_gate and physical_gate and plan_gate,
-        "selected_cell": "worker4" if speed_gate else "worker3",
+        "selected_cell": selected_cell,
         "comparisons": comparisons,
         "pc028": pc028,
         "pc028_provenance": {
             "f16f16": str(exp0109_dir),
             "w4f16": str(exp0111_dir) + "/paired_candidate_r10.jsonl",
-            "w4u8": str(result_dir) + "/paired_worker4_r10.jsonl",
+            "w4u8": str(result_dir) +
+                    f"/paired_{selected_cell}_r10.jsonl",
         },
     }
 
