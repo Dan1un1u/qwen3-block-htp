@@ -8747,7 +8747,8 @@ experiments:
     evidence_profile: real-qwen3-block-integrated-fair-and-fastest-baselines
     source_branches:
       - codex/exp-0106-integrated-fair-fastest-baselines
-    source_commits: []
+    source_commits:
+      - 4deccaeb7a914a38398cfc7061916f3ba859ce52
     record: docs/experiments/EXP-0106.md
     decided_by: user
     decided_on: '2026-08-31'
@@ -8782,3 +8783,8 @@ experiments:
       speed_gate: select_lowest_valid_incremental_cell_then_strictly_improve_complete_host_wall_over_exp0099_in_ordinary_and_paired_repeat1_and_repeat10
       fair_matrix_gate: same_source_same_boot_f16f16_w4f16_w4u8_output_hashes_preserved_and_no_material_f16f16_or_w4f16_regression
       completion_gate: incremental_component_matrix_then_same_source_three_recipe_pc027_pc028_complete_profiling_and_explicit_user_promotion
+      preliminary_formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0106/20260831T130757Z_4deccaeb7a91_formal'
+      preliminary_retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0106/artifacts/4deccaeb7a91/20260831T130757Z_formal'
+      preliminary_w4u8_gate: pass_static_correctness_physical_and_incremental_speed
+      preliminary_fair_matrix_gate: requires_recollection_f16f16_and_w4f16_used_contexts4_instead_of_accepted_common_contexts3
+      selected_baseline_changed: false

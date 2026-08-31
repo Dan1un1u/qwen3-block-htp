@@ -33,9 +33,9 @@ current_scope:
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: integrated_fair_and_fastest_baseline_consolidation
-  active_experiment_evidence: null
-  active_experiment_gate: none
+  active_experiment_stage: fair_common_context3_recollection
+  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0106/20260831T130757Z_4deccaeb7a91_formal'
+  active_experiment_gate: w4u8_integration_pass_fair_fp16_context4_measurement_requires_context3_recollection
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0105/formal_78e6ba62da03'
   latest_w4u8_dual_head_softmax_reduction_experiment:
     id: EXP-0105
