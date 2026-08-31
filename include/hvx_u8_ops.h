@@ -14,6 +14,7 @@
     (QBH_BLOCK_M * 8U * QBH_BLOCK_HEAD_DIM)
 
 void qbh_hvx_u8_set_norm_reduction_mode(uint32_t mode);
+void qbh_hvx_u8_set_qk_pair_kernel_mode(uint32_t mode);
 
 void qbh_hvx_qk_rope_preconvert_sf32(
     const __fp16 *cosine, const __fp16 *sine,

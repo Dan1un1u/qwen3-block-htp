@@ -224,6 +224,7 @@ struct qbh_block_w4f16_job {
     uint32_t u8_attention_probability_row_sum_max;
     uint32_t u8_attention_fused_k_operand_mismatch_count;
     uint32_t u8_attention_prepared_group_count;
+    uint32_t u8_qk_interleaved_pair_count;
     uint64_t u8_attention_qk_norm_rope_ticks;
     uint64_t u8_attention_k_pack_ticks;
     uint64_t u8_attention_v_pack_ticks;
@@ -760,6 +761,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH ||
         header->u8_norm_reduction_mode >
             QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE_PARALLEL_INPUT ||
+        header->w4u8_qk_pair_kernel_mode >
+            QBH_BLOCK_W4U8_QK_PAIR_INTERLEAVED ||
         header->fp16_common_schedule_mode >
             QBH_BLOCK_FP16_COMMON_SCHEDULE_ALL ||
         (header->fp16_norm_rows_per_task != 2U &&
@@ -770,6 +773,13 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (header->variant != QBH_BLOCK_W4U8 &&
          header->u8_norm_reduction_mode !=
              QBH_BLOCK_U8_NORM_REDUCTION_SCALAR) ||
+        (header->variant != QBH_BLOCK_W4U8 &&
+         header->w4u8_qk_pair_kernel_mode !=
+             QBH_BLOCK_W4U8_QK_PAIR_SERIAL_INNER) ||
+        (header->w4u8_qk_pair_kernel_mode ==
+             QBH_BLOCK_W4U8_QK_PAIR_INTERLEAVED &&
+         header->u8_norm_reduction_mode <
+             QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT) ||
         (header->variant == QBH_BLOCK_W4U8 &&
          header->fp16_common_schedule_mode !=
              QBH_BLOCK_FP16_COMMON_SCHEDULE_CONTROL) ||
@@ -7319,6 +7329,10 @@ static void qbh_attention_u8_qk_prep_pool_run_head_pair_tasks(
                         QBH_QK_PAIR_RSQRT_SCRATCH_BYTES,
                 buffers->attention_projection +
                     QBH_QK_ROPE_SF32_CACHE_OFFSET);
+            if (header->w4u8_qk_pair_kernel_mode ==
+                QBH_BLOCK_W4U8_QK_PAIR_INTERLEAVED) {
+                ++job->u8_qk_interleaved_pair_count;
+            }
             job->u8_attention_qk_norm_rope_ticks +=
                 HAP_perf_get_qtimer_count() - start;
             job->attention_qk_norm_task_count += 2U;
@@ -7394,6 +7408,10 @@ static void qbh_attention_u8_qk_prep_pool_run_head_pair_tasks(
                         QBH_QK_PAIR_RSQRT_SCRATCH_BYTES,
                 buffers->attention_projection +
                     QBH_QK_ROPE_SF32_CACHE_OFFSET);
+            if (header->w4u8_qk_pair_kernel_mode ==
+                QBH_BLOCK_W4U8_QK_PAIR_INTERLEAVED) {
+                ++job->u8_qk_interleaved_pair_count;
+            }
             job->u8_attention_qk_norm_rope_ticks +=
                 HAP_perf_get_qtimer_count() - start;
             job->attention_qk_norm_task_count += 2U;
@@ -7495,6 +7513,7 @@ static int qbh_hvx_pool_u8_qk_prep_start_async(
     for (uint32_t worker = 0U; worker < worker_count; ++worker) {
         struct qbh_block_w4f16_job *job = &pool->jobs[worker];
         job->u8_attention_prepared_group_count = 0U;
+        job->u8_qk_interleaved_pair_count = 0U;
         job->u8_attention_fused_k_operand_mismatch_count = 0U;
         job->u8_attention_qk_norm_rope_ticks = 0U;
         job->u8_attention_k_pack_ticks = 0U;
@@ -7578,6 +7597,8 @@ static int qbh_hvx_pool_u8_qk_prep_wait_async(
         completed_groups += job->u8_attention_prepared_group_count;
         header->u8_attention_qk_norm_rope_ticks +=
             job->u8_attention_qk_norm_rope_ticks;
+        header->w4u8_qk_interleaved_pair_count +=
+            job->u8_qk_interleaved_pair_count;
         header->attention_qk_norm_task_count +=
             job->attention_qk_norm_task_count;
         job->attention_qk_norm_task_count = 0U;
@@ -10091,6 +10112,10 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
     header->vtcm_acquired_bytes = vtcm_bytes;
     qbh_hvx_u8_set_norm_reduction_mode(
         header->u8_norm_reduction_mode);
+    qbh_hvx_u8_set_qk_pair_kernel_mode(
+        header->w4u8_qk_pair_kernel_mode);
+    header->w4u8_qk_pair_kernel_mode_observed =
+        header->w4u8_qk_pair_kernel_mode;
 
     if (qbh_plan_buffers(vtcm, vtcm_bytes, header->variant,
                          header->f16f16_projection_mode,

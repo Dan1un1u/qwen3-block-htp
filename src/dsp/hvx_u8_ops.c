@@ -38,9 +38,16 @@ struct qbh_qf32_quad {
 
 static uint32_t qbh_u8_norm_reduction_mode =
     QBH_BLOCK_U8_NORM_REDUCTION_SCALAR;
+static uint32_t qbh_u8_qk_pair_kernel_mode =
+    QBH_BLOCK_W4U8_QK_PAIR_SERIAL_INNER;
 
 void qbh_hvx_u8_set_norm_reduction_mode(uint32_t mode) {
     qbh_u8_norm_reduction_mode = mode;
+    asm volatile("barrier" ::: "memory");
+}
+
+void qbh_hvx_u8_set_qk_pair_kernel_mode(uint32_t mode) {
+    qbh_u8_qk_pair_kernel_mode = mode;
     asm volatile("barrier" ::: "memory");
 }
 
@@ -546,6 +553,13 @@ static HVX_Vector qbh_sf32_scale_and_offset(
         Q6_Vsf_equals_Vqf32(scaled), qbh_splat_sf(offset));
 }
 
+static HVX_Vector qbh_sf32_scale_and_offset_vectors(
+    HVX_Vector value, HVX_Vector scale, HVX_Vector offset) {
+    const HVX_Vector scaled = Q6_Vqf32_vmpy_VsfVsf(value, scale);
+    return Q6_Vsf_vadd_VsfVsf(
+        Q6_Vsf_equals_Vqf32(scaled), offset);
+}
+
 static void qbh_qk_norm_rope_one_head_u8(
     uint8_t *values, const struct qbh_block_qparam *input_qparam,
     const struct qbh_block_qparam *output_qparam,
@@ -748,6 +762,83 @@ static void qbh_qk_norm_rope_one_head_u8_preconverted_coefficient(
     *(HVX_Vector *)values = qbh_pack_qf32_to_u8(&encoded);
 }
 
+static void qbh_qk_norm_rope_one_head_u8_hoisted_constants(
+    uint8_t *values, uint16_t input_zero_point_half_bits,
+    float output_inverse_scale, float output_zero_point,
+    const struct qbh_qk_norm_rope_gamma_sf32 *gamma,
+    const struct qbh_qk_norm_rope_row_sf32 *rope,
+    float norm_coefficient) {
+    const HVX_VectorPair unpacked = Q6_Wuh_vunpack_Vub(
+        *(const HVX_Vector *)values);
+    const HVX_Vector input_offset =
+        Q6_Vh_vsplat_R(input_zero_point_half_bits);
+    HVX_DV centered;
+    const HVX_Vector norm = qbh_splat_sf(norm_coefficient);
+    const HVX_Vector output_scale = qbh_splat_sf(output_inverse_scale);
+    const HVX_Vector output_offset = qbh_splat_sf(output_zero_point);
+    const HVX_Vector zero = qbh_splat_sf(0.0f);
+    HVX_Vector first[2];
+    HVX_Vector second[2];
+    struct qbh_qf32_quad encoded;
+
+    centered.V.lo = Q6_Vhf_vsub_VhfVhf(
+        Q6_Vhf_vcvt_Vuh(Q6_V_lo_W(unpacked)), input_offset);
+    centered.V.hi = Q6_Vhf_vsub_VhfVhf(
+        Q6_Vhf_vcvt_Vuh(Q6_V_hi_W(unpacked)), input_offset);
+
+    for (uint32_t half = 0U; half < 2U; ++half) {
+        const HVX_Vector active = half == 0U
+            ? centered.V.lo : centered.V.hi;
+        const HVX_VectorPair active_sf = Q6_Wsf_vcvt_Vhf(active);
+        const uint32_t lane = half * 2U;
+        HVX_Vector product = Q6_Vqf32_vmpy_VsfVsf(
+            Q6_V_lo_W(active_sf), gamma->lane[lane]);
+
+        product = Q6_Vqf32_vmpy_VsfVsf(
+            Q6_Vsf_equals_Vqf32(product), norm);
+        if (half == 0U) {
+            first[0] = Q6_Vsf_vadd_VsfVsf(
+                Q6_Vsf_equals_Vqf32(product), zero);
+        } else {
+            second[0] = Q6_Vsf_vadd_VsfVsf(
+                Q6_Vsf_equals_Vqf32(product), zero);
+        }
+
+        product = Q6_Vqf32_vmpy_VsfVsf(
+            Q6_V_hi_W(active_sf), gamma->lane[lane + 1U]);
+        product = Q6_Vqf32_vmpy_VsfVsf(
+            Q6_Vsf_equals_Vqf32(product), norm);
+        if (half == 0U) {
+            first[1] = Q6_Vsf_vadd_VsfVsf(
+                Q6_Vsf_equals_Vqf32(product), zero);
+        } else {
+            second[1] = Q6_Vsf_vadd_VsfVsf(
+                Q6_Vsf_equals_Vqf32(product), zero);
+        }
+    }
+
+    for (uint32_t part = 0U; part < 2U; ++part) {
+        const HVX_Vector first_rotated = Q6_Vsf_equals_Vqf32(
+            Q6_Vqf32_vsub_Vqf32Vqf32(
+                Q6_Vqf32_vmpy_VsfVsf(
+                    first[part], rope->cosine[part]),
+                Q6_Vqf32_vmpy_VsfVsf(
+                    second[part], rope->sine[part])));
+        const HVX_Vector second_rotated = Q6_Vsf_equals_Vqf32(
+            Q6_Vqf32_vadd_Vqf32Vqf32(
+                Q6_Vqf32_vmpy_VsfVsf(
+                    second[part], rope->cosine[part + 2U]),
+                Q6_Vqf32_vmpy_VsfVsf(
+                    first[part], rope->sine[part + 2U])));
+
+        encoded.lane[part] = qbh_sf32_scale_and_offset_vectors(
+            first_rotated, output_scale, output_offset);
+        encoded.lane[part + 2U] = qbh_sf32_scale_and_offset_vectors(
+            second_rotated, output_scale, output_offset);
+    }
+    *(HVX_Vector *)values = qbh_pack_qf32_to_u8(&encoded);
+}
+
 static void qbh_qk_norm_rope_one_head_u8_preconverted(
     uint8_t *values,
     const struct qbh_block_qparam *input_qparam,
@@ -884,8 +975,20 @@ void qbh_hvx_qk_norm_rope_u8_native_head_pair(
     const uint32_t shared_rope =
         qbh_u8_norm_reduction_mode >=
         QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE;
+    uint16_t input_zero_point_half_bits = 0U;
+    float output_inverse_scale = 0.0f;
+    float output_zero_point = 0.0f;
 
     qbh_qk_norm_rope_load_gamma_sf32(gamma, &gamma_sf32);
+    if (qbh_u8_qk_pair_kernel_mode ==
+        QBH_BLOCK_W4U8_QK_PAIR_INTERLEAVED) {
+        const __fp16 input_zero_point_half =
+            (__fp16)input_qparam->zero_point;
+        input_zero_point_half_bits =
+            *(const uint16_t *)&input_zero_point_half;
+        output_inverse_scale = 1.0f / output_qparam->scale;
+        output_zero_point = (float)output_qparam->zero_point;
+    }
     for (uint32_t first_row = 0U; first_row < QBH_BLOCK_M;
          first_row += QBH_QK_PAIR_RSQRT_ROWS) {
         if (batched_rsqrt != 0U) {
@@ -932,17 +1035,33 @@ void qbh_hvx_qk_norm_rope_u8_native_head_pair(
                     sine + (size_t)row * QBH_BLOCK_HEAD_DIM,
                     &rope_sf32);
             }
-            for (uint32_t pair = 0U; pair < 2U; ++pair) {
-                if (batched_rsqrt != 0U) {
-                    qbh_qk_norm_rope_one_head_u8_preconverted_coefficient(
-                        active_values[pair], input_qparam->zero_point,
-                        output_qparam, &gamma_sf32, rope,
-                        input_qparam->scale *
-                            inverse_sqrt[pair][local_row]);
-                } else {
-                    qbh_qk_norm_rope_one_head_u8_preconverted(
-                        active_values[pair], input_qparam, output_qparam,
-                        &gamma_sf32, rope);
+            if (batched_rsqrt != 0U &&
+                qbh_u8_qk_pair_kernel_mode ==
+                    QBH_BLOCK_W4U8_QK_PAIR_INTERLEAVED) {
+                qbh_qk_norm_rope_one_head_u8_hoisted_constants(
+                    active_values[0], input_zero_point_half_bits,
+                    output_inverse_scale, output_zero_point,
+                    &gamma_sf32, rope,
+                    input_qparam->scale * inverse_sqrt[0][local_row],
+                    0.0f);
+                qbh_qk_norm_rope_one_head_u8_hoisted_constants(
+                    active_values[1], input_zero_point_half_bits,
+                    output_inverse_scale, output_zero_point,
+                    &gamma_sf32, rope,
+                    input_qparam->scale * inverse_sqrt[1][local_row]);
+            } else {
+                for (uint32_t pair = 0U; pair < 2U; ++pair) {
+                    if (batched_rsqrt != 0U) {
+                        qbh_qk_norm_rope_one_head_u8_preconverted_coefficient(
+                            active_values[pair], input_qparam->zero_point,
+                            output_qparam, &gamma_sf32, rope,
+                            input_qparam->scale *
+                                inverse_sqrt[pair][local_row]);
+                    } else {
+                        qbh_qk_norm_rope_one_head_u8_preconverted(
+                            active_values[pair], input_qparam, output_qparam,
+                            &gamma_sf32, rope);
+                    }
                 }
             }
             for (uint32_t tile = 0U;
@@ -1070,8 +1189,20 @@ void qbh_hvx_qk_norm_rope_u8_native_k_head_pair(
     const uint32_t shared_rope =
         qbh_u8_norm_reduction_mode >=
         QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE;
+    uint16_t input_zero_point_half_bits = 0U;
+    float output_inverse_scale = 0.0f;
+    float output_zero_point = 0.0f;
 
     qbh_qk_norm_rope_load_gamma_sf32(gamma, &gamma_sf32);
+    if (qbh_u8_qk_pair_kernel_mode ==
+        QBH_BLOCK_W4U8_QK_PAIR_INTERLEAVED) {
+        const __fp16 input_zero_point_half =
+            (__fp16)input_qparam->zero_point;
+        input_zero_point_half_bits =
+            *(const uint16_t *)&input_zero_point_half;
+        output_inverse_scale = 1.0f / output_qparam->scale;
+        output_zero_point = (float)output_qparam->zero_point;
+    }
     for (uint32_t first_row = 0U; first_row < QBH_BLOCK_M;
          first_row += QBH_QK_PAIR_RSQRT_ROWS) {
         if (batched_rsqrt != 0U) {
@@ -1129,17 +1260,33 @@ void qbh_hvx_qk_norm_rope_u8_native_k_head_pair(
                     sine + (size_t)row * QBH_BLOCK_HEAD_DIM,
                     &rope_sf32);
             }
-            for (uint32_t pair = 0U; pair < 2U; ++pair) {
-                if (batched_rsqrt != 0U) {
-                    qbh_qk_norm_rope_one_head_u8_preconverted_coefficient(
-                        active_values[pair], input_qparam->zero_point,
-                        output_qparam, &gamma_sf32, rope,
-                        input_qparam->scale *
-                            inverse_sqrt[pair][local_row]);
-                } else {
-                    qbh_qk_norm_rope_one_head_u8_preconverted(
-                        active_values[pair], input_qparam, output_qparam,
-                        &gamma_sf32, rope);
+            if (batched_rsqrt != 0U &&
+                qbh_u8_qk_pair_kernel_mode ==
+                    QBH_BLOCK_W4U8_QK_PAIR_INTERLEAVED) {
+                qbh_qk_norm_rope_one_head_u8_hoisted_constants(
+                    active_values[0], input_zero_point_half_bits,
+                    output_inverse_scale, output_zero_point,
+                    &gamma_sf32, rope,
+                    input_qparam->scale * inverse_sqrt[0][local_row],
+                    0.0f);
+                qbh_qk_norm_rope_one_head_u8_hoisted_constants(
+                    active_values[1], input_zero_point_half_bits,
+                    output_inverse_scale, output_zero_point,
+                    &gamma_sf32, rope,
+                    input_qparam->scale * inverse_sqrt[1][local_row]);
+            } else {
+                for (uint32_t pair = 0U; pair < 2U; ++pair) {
+                    if (batched_rsqrt != 0U) {
+                        qbh_qk_norm_rope_one_head_u8_preconverted_coefficient(
+                            active_values[pair], input_qparam->zero_point,
+                            output_qparam, &gamma_sf32, rope,
+                            input_qparam->scale *
+                                inverse_sqrt[pair][local_row]);
+                    } else {
+                        qbh_qk_norm_rope_one_head_u8_preconverted(
+                            active_values[pair], input_qparam, output_qparam,
+                            &gamma_sf32, rope);
+                    }
                 }
             }
 
