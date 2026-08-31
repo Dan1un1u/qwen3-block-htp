@@ -767,6 +767,10 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          header->fp16_norm_rows_per_task != 8U) ||
         header->fp16_norm_contexts < 2U ||
         header->fp16_norm_contexts > 4U ||
+        (header->w4u8_down_hmx_batch_outputs != 1U &&
+         header->w4u8_down_hmx_batch_outputs != 2U) ||
+        (header->variant != QBH_BLOCK_W4U8 &&
+         header->w4u8_down_hmx_batch_outputs != 1U) ||
         (header->variant != QBH_BLOCK_W4U8 &&
          header->u8_norm_reduction_mode !=
              QBH_BLOCK_U8_NORM_REDUCTION_SCALAR) ||
@@ -1650,6 +1654,101 @@ static void qbh_hmx_worker_main(void *opaque) {
                 uint64_t continuation_ready_wait_before =
                     request->ready_wait_ticks != NULL
                         ? *request->ready_wait_ticks : 0U;
+                if (request->batch_output_count != 0U) {
+                    const uint8_t *continuation_activation =
+                        request->continuation_chunks[0]
+                            .activation_tiles;
+                    uint32_t continuation_chunk_tiles =
+                        request->continuation_chunks[0].chunk_tiles;
+
+                    if (request->batch_output_count >
+                            QBH_W4_HMX_MAX_BATCH_OUTPUTS ||
+                        request->activation_tiles == NULL ||
+                        request->chunk_tiles == 0U ||
+                        request->continuation_chunk_count != 1U ||
+                        continuation_activation == NULL ||
+                        continuation_chunk_tiles == 0U ||
+                        request->ready_wait_ticks == NULL ||
+                        request->abort_status == NULL ||
+                        request->in_command_slot_release_count == NULL) {
+                        worker->command_status = AEE_EBADPARM;
+                    }
+                    for (uint32_t batch_index = 0U;
+                         worker->command_status == AEE_SUCCESS &&
+                         batch_index < request->batch_output_count;
+                         ++batch_index) {
+                        const int8_t *first_weight =
+                            request->batch_outputs[batch_index]
+                                .expanded_weight_tiles;
+                        const uint32_t *bias =
+                            request->batch_outputs[batch_index]
+                                .bias_words;
+                        uint8_t *output =
+                            request->batch_outputs[batch_index]
+                                .output_tiles;
+                        qurt_sem_t *first_ready = (qurt_sem_t *)
+                            request->batch_outputs[batch_index]
+                                .ready_semaphore;
+                        qurt_sem_t *first_free = (qurt_sem_t *)
+                            request->batch_outputs[batch_index]
+                                .free_semaphore;
+                        const int8_t *continuation_weight =
+                            request->batch_outputs[batch_index]
+                                .continuation_expanded_weight_tiles;
+                        qurt_sem_t *continuation_ready = (qurt_sem_t *)
+                            request->batch_outputs[batch_index]
+                                .continuation_ready_semaphore;
+                        qurt_sem_t *continuation_free = (qurt_sem_t *)
+                            request->batch_outputs[batch_index]
+                                .continuation_free_semaphore;
+
+                        if (first_weight == NULL || bias == NULL ||
+                            output == NULL || first_free == NULL ||
+                            continuation_weight == NULL ||
+                            continuation_ready == NULL ||
+                            continuation_free == NULL) {
+                            worker->command_status = AEE_EBADPARM;
+                            break;
+                        }
+                        if (first_ready != NULL) {
+                            uint64_t wait_start =
+                                HAP_perf_get_qtimer_count();
+                            qurt_sem_down(first_ready);
+                            *request->ready_wait_ticks +=
+                                HAP_perf_get_qtimer_count() - wait_start;
+                        }
+                        if (*request->abort_status != 0) {
+                            worker->command_status = AEE_EFAILED;
+                            break;
+                        }
+                        qbh_hmx_begin_u8s8_output(bias);
+                        streams += qbh_hmx_accumulate_u8s8_projection(
+                            request->activation_tiles, first_weight,
+                            request->chunk_tiles);
+                        {
+                            uint64_t wait_start =
+                                HAP_perf_get_qtimer_count();
+                            qurt_sem_down(continuation_ready);
+                            *request->ready_wait_ticks +=
+                                HAP_perf_get_qtimer_count() - wait_start;
+                        }
+                        if (*request->abort_status != 0) {
+                            worker->command_status = AEE_EFAILED;
+                            break;
+                        }
+                        streams += qbh_hmx_accumulate_u8s8_projection(
+                            continuation_activation,
+                            continuation_weight,
+                            continuation_chunk_tiles);
+                        qbh_hmx_store_u8_output(output);
+                        qurt_sem_up(first_free);
+                        qurt_sem_up(continuation_free);
+                        *request->in_command_slot_release_count += 2U;
+                    }
+                    worker->ready_wait_ticks +=
+                        *request->ready_wait_ticks -
+                        continuation_ready_wait_before;
+                } else {
                 if (request->begin_output != 0U) {
                     if (request->bias_words == NULL) {
                         worker->command_status = AEE_EBADPARM;
@@ -1719,9 +1818,11 @@ static void qbh_hmx_worker_main(void *opaque) {
                         *request->ready_wait_ticks -
                         continuation_ready_wait_before;
                 }
+                }
             }
             if (worker->command_status == AEE_SUCCESS &&
                 request->streaming == 0U &&
+                request->batch_output_count == 0U &&
                 request->store_output != 0U) {
                 if (request->output_tiles == NULL) {
                     worker->command_status = AEE_EBADPARM;
@@ -8625,7 +8726,9 @@ static void qbh_accumulate_w4u8_phase_metrics(
                   QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES
             : gate_up_phase == 0U &&
                       layout->chunks_per_output == 2U
-                  ? layout->n_tiles
+                  ? (layout->n_tiles +
+                     header->w4u8_down_hmx_batch_outputs - 1U) /
+                        header->w4u8_down_hmx_batch_outputs
                   : layout->n_tiles * layout->chunks_per_output;
     header->weight_dma_ticks += phase->weight_stage_ticks;
     header->weight_ddr_read_bytes += layout->stored_weight_bytes;
@@ -8649,6 +8752,12 @@ static void qbh_accumulate_w4u8_phase_metrics(
         header->w4u8_mlp_gate_up_hvx_parallel_overlap |=
             phase->hvx_parallel_overlap_observed;
     } else {
+        header->w4u8_mlp_down_hmx_batch_n_tiles =
+            header->w4u8_down_hmx_batch_outputs;
+        header->w4u8_mlp_down_in_command_slot_release_count +=
+            phase->hmx_in_command_slot_release_count;
+        header->w4u8_mlp_down_producer_progress_command_count +=
+            phase->hmx_producer_progress_command_count;
         header->w4u8_mlp_down_pipeline_ticks += phase->pipeline_ticks;
         header->w4u8_mlp_down_hmx_command_count += command_count;
         header->w4u8_mlp_down_hvx_hmx_overlap |=
@@ -8673,6 +8782,8 @@ static int qbh_run_w4u8_streaming_mlp(
         .context = worker,
         .max_batch_outputs =
             QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES,
+        .max_nonstreaming_batch_outputs =
+            header->w4u8_down_hmx_batch_outputs,
         .max_chunks_per_command = 2U,
         .submit = qbh_block_w4_hmx_submit,
     };

@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define QBH_PROBE_MAGIC UINT32_C(0x51424850)
-#define QBH_PROBE_ABI_VERSION UINT32_C(20)
+#define QBH_PROBE_ABI_VERSION UINT32_C(21)
 #define QBH_PROBE_ALIGNMENT UINT32_C(4096)
 
 #define QBH_HMX_SPATIAL UINT32_C(64)
@@ -285,6 +285,10 @@ struct qbh_probe_header {
     int32_t sync_status;
     uint32_t streaming_region_publish_count;
     uint32_t streaming_ready_timeout_count;
+    uint32_t hmx_batch_output_count;
+    uint32_t hmx_in_command_slot_release_count;
+    uint32_t hmx_producer_progress_command_count;
+    uint32_t hmx_batch_reserved;
 
     uint32_t hvx_units_128b;
     uint32_t hvx_workers_created;
@@ -322,7 +326,7 @@ struct qbh_probe_header {
     uint64_t hvx_worker_ticks[QBH_MAX_HVX_WORKERS];
 };
 
-_Static_assert(sizeof(struct qbh_probe_header) == 608,
+_Static_assert(sizeof(struct qbh_probe_header) == 624,
                "probe header ABI changed");
 
 #endif

@@ -101,6 +101,9 @@ struct qbh_chunked_hmx_job {
     uint32_t execution_count;
     uint32_t stream_count;
     uint32_t output_tile_count;
+    uint32_t max_batch_output_count;
+    uint32_t in_command_slot_release_count;
+    uint32_t producer_progress_command_count;
     uint64_t compute_ticks;
     uint64_t ready_wait_ticks;
     uint64_t first_compute_start;
@@ -691,6 +694,142 @@ static void qbh_chunked_hmx_main(void *opaque) {
                     qbh_queue_push(&state->queue, &activation_task);
                     ++*state->mlp_handoff->pair_publish_count;
                 }
+            }
+        }
+        goto unlock;
+    }
+
+    if (job->runner != NULL &&
+        job->runner->max_nonstreaming_batch_outputs > 1U &&
+        job->runner->max_nonstreaming_batch_outputs <=
+            QBH_W4_HMX_MAX_BATCH_OUTPUTS &&
+        !qbh_physical_plan_is_streaming(layout->physical_plan) &&
+        layout->chunks_per_output == 2U) {
+        uint32_t batch_capacity =
+            job->runner->max_nonstreaming_batch_outputs;
+        for (uint32_t repeat = 0U;
+             repeat < state->header->repeat_count; ++repeat) {
+            for (uint32_t output_base = 0U;
+                 output_base < layout->n_tiles;
+                 output_base += batch_capacity) {
+                uint32_t batch_outputs = layout->n_tiles - output_base;
+                uint32_t first_chunk_tiles =
+                    qbh_projection_chunk_tiles(layout, 0U);
+                uint32_t second_chunk_tiles =
+                    qbh_projection_chunk_tiles(layout, 1U);
+                uint32_t first_linear_output =
+                    repeat * layout->n_tiles + output_base;
+                uint32_t first_sequence = first_linear_output * 2U;
+                uint32_t first_slot =
+                    first_sequence % layout->expanded_slot_count;
+                uint32_t staged_before;
+                uint64_t wait_start = HAP_perf_get_qtimer_count();
+                uint64_t command_ready_wait = 0U;
+                uint64_t core_start;
+                uint64_t core_end;
+                uint32_t executed_streams = 0U;
+                struct qbh_w4_hmx_request request;
+
+                if (batch_outputs > batch_capacity) {
+                    batch_outputs = batch_capacity;
+                }
+                qurt_sem_down(&state->expanded_ready[first_slot]);
+                job->ready_wait_ticks +=
+                    HAP_perf_get_qtimer_count() - wait_start;
+                if (state->abort_status != 0) {
+                    exit_status = state->abort_status;
+                    goto unlock;
+                }
+
+                memset(&request, 0, sizeof(request));
+                request.activation_tiles = state->activation_tiles;
+                request.chunk_tiles = first_chunk_tiles;
+                request.begin_output = 1U;
+                request.store_output = 1U;
+                request.abort_status = &state->abort_status;
+                request.ready_wait_ticks = &command_ready_wait;
+                request.executed_stream_count = &executed_streams;
+                request.batch_output_count = batch_outputs;
+                request.continuation_chunk_count = 1U;
+                request.continuation_chunks[0].activation_tiles =
+                    state->activation_tiles +
+                    (size_t)layout->chunk_tiles *
+                        QBH_HMX_ACTIVATION_BYTES;
+                request.continuation_chunks[0].chunk_tiles =
+                    second_chunk_tiles;
+                request.in_command_slot_release_count =
+                    &job->in_command_slot_release_count;
+
+                for (uint32_t batch_index = 0U;
+                     batch_index < batch_outputs; ++batch_index) {
+                    uint32_t linear_output =
+                        first_linear_output + batch_index;
+                    uint32_t sequence = linear_output * 2U;
+                    uint32_t output_tile = output_base + batch_index;
+                    uint32_t output_first_slot =
+                        sequence % layout->expanded_slot_count;
+                    uint32_t output_second_slot =
+                        (sequence + 1U) % layout->expanded_slot_count;
+
+                    request.batch_outputs[batch_index]
+                        .expanded_weight_tiles = (const int8_t *)
+                            state->expanded_slots[output_first_slot];
+                    request.batch_outputs[batch_index].bias_words =
+                        (const uint32_t *)(
+                            state->expanded_slots[output_first_slot] +
+                            layout->expanded_chunk_weight_bytes);
+                    request.batch_outputs[batch_index].output_tiles =
+                        state->output_tiles +
+                        (size_t)output_tile * QBH_HMX_OUTPUT_BYTES;
+                    request.batch_outputs[batch_index].ready_semaphore =
+                        batch_index == 0U
+                            ? NULL
+                            : &state->expanded_ready[output_first_slot];
+                    request.batch_outputs[batch_index].free_semaphore =
+                        &state->expanded_free[output_first_slot];
+                    request.batch_outputs[batch_index]
+                        .continuation_expanded_weight_tiles =
+                            (const int8_t *)
+                                state->expanded_slots[output_second_slot];
+                    request.batch_outputs[batch_index]
+                        .continuation_ready_semaphore =
+                            &state->expanded_ready[output_second_slot];
+                    request.batch_outputs[batch_index]
+                        .continuation_free_semaphore =
+                            &state->expanded_free[output_second_slot];
+                }
+
+                staged_before = state->header->weight_bundle_stage_count;
+                core_start = HAP_perf_get_qtimer_count();
+                if (job->first_compute_start == 0U) {
+                    job->first_compute_start = core_start;
+                }
+                qbh_hmx_region_begin(state);
+                if (job->runner->submit(job->runner->context,
+                                        &request) != 0) {
+                    qbh_hmx_region_end(state);
+                    exit_status = AEE_EFAILED;
+                    qbh_abort_pipeline(state, exit_status);
+                    goto unlock;
+                }
+                qbh_hmx_region_end(state);
+                core_end = HAP_perf_get_qtimer_count();
+                asm volatile("barrier" : : : "memory");
+                if (state->header->weight_bundle_stage_count >
+                    staged_before) {
+                    ++job->producer_progress_command_count;
+                }
+                if (batch_outputs > job->max_batch_output_count) {
+                    job->max_batch_output_count = batch_outputs;
+                }
+                job->ready_wait_ticks += command_ready_wait;
+                job->stream_count += executed_streams;
+                job->execution_count += batch_outputs *
+                    (first_chunk_tiles + second_chunk_tiles);
+                job->output_tile_count += batch_outputs;
+                job->last_compute_end = core_end;
+                job->compute_ticks +=
+                    core_end - core_start - command_ready_wait;
             }
         }
         goto unlock;
@@ -1452,6 +1591,12 @@ stop_workers:
     header->output_tile_count = hmx_job.output_tile_count;
     header->hmx_compute_ticks = hmx_job.compute_ticks;
     header->hmx_ready_wait_ticks = hmx_job.ready_wait_ticks;
+    header->hmx_batch_output_count =
+        hmx_job.max_batch_output_count;
+    header->hmx_in_command_slot_release_count =
+        hmx_job.in_command_slot_release_count;
+    header->hmx_producer_progress_command_count =
+        hmx_job.producer_progress_command_count;
     header->hmx_window_start = hmx_job.first_compute_start;
     header->hmx_window_end = hmx_job.last_compute_end;
     header->hvx_max_active_workers = state.max_active_hvx_workers;
