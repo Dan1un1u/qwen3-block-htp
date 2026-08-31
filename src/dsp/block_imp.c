@@ -503,7 +503,9 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
                 f16f16_projection_mode ==
                     QBH_BLOCK_F16F16_PROJECTION_GATE4 ||
                 f16f16_projection_mode ==
-                    QBH_BLOCK_F16F16_PROJECTION_GATE8)
+                    QBH_BLOCK_F16F16_PROJECTION_GATE8 ||
+                f16f16_projection_mode ==
+                    QBH_BLOCK_F16F16_PROJECTION_GATE8_INTERLEAVED)
                    ? QBH_BLOCK_F16F16_BATCH_N_TILES
                    : 1U);
     uint32_t expanded_buffer_bytes =
@@ -759,7 +761,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->residual_mode >
             QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6_SHUFFLE4 ||
         header->f16f16_projection_mode >
-            QBH_BLOCK_F16F16_PROJECTION_GATE8 ||
+            QBH_BLOCK_F16F16_PROJECTION_GATE8_INTERLEAVED ||
         header->w4f16_pipeline_mode >
             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH ||
         header->u8_norm_reduction_mode >
@@ -984,7 +986,9 @@ static int qbh_header_valid(const struct qbh_block_header *header,
                QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH) ||
           (header->variant == QBH_BLOCK_F16F16 &&
            header->f16f16_projection_mode !=
-               QBH_BLOCK_F16F16_PROJECTION_GATE8))) ||
+               QBH_BLOCK_F16F16_PROJECTION_GATE8 &&
+           header->f16f16_projection_mode !=
+               QBH_BLOCK_F16F16_PROJECTION_GATE8_INTERLEAVED))) ||
         (header->variant != QBH_BLOCK_F16F16 &&
          header->f16f16_projection_mode !=
              QBH_BLOCK_F16F16_PROJECTION_SERIAL) ||
@@ -3966,7 +3970,9 @@ static __attribute__((noinline)) int qbh_run_f16f16_pipelined_projection(
         header->f16f16_projection_mode ==
             QBH_BLOCK_F16F16_PROJECTION_GATE4 ||
         header->f16f16_projection_mode ==
-            QBH_BLOCK_F16F16_PROJECTION_GATE8) {
+            QBH_BLOCK_F16F16_PROJECTION_GATE8 ||
+        header->f16f16_projection_mode ==
+            QBH_BLOCK_F16F16_PROJECTION_GATE8_INTERLEAVED) {
         batch_n_tiles = QBH_BLOCK_F16F16_BATCH_N_TILES;
     }
     if (header->f16f16_projection_mode ==
@@ -3977,6 +3983,12 @@ static __attribute__((noinline)) int qbh_run_f16f16_pipelined_projection(
     }
     if (header->f16f16_projection_mode ==
             QBH_BLOCK_F16F16_PROJECTION_GATE8 &&
+        (desc == &header->projections[QBH_BLOCK_PROJ_GATE] ||
+         desc == &header->projections[QBH_BLOCK_PROJ_UP])) {
+        batch_n_tiles = 8U;
+    }
+    if (header->f16f16_projection_mode ==
+            QBH_BLOCK_F16F16_PROJECTION_GATE8_INTERLEAVED &&
         (desc == &header->projections[QBH_BLOCK_PROJ_GATE] ||
          desc == &header->projections[QBH_BLOCK_PROJ_UP])) {
         batch_n_tiles = 8U;
@@ -4102,6 +4114,135 @@ static __attribute__((noinline)) int qbh_run_f16f16_pipelined_projection(
             qbh_record_projection_failure(
                 header, desc, n_tile,
                 hmx_result != 0 ? 22U : 23U,
+                hmx_result != 0 ? hmx_result : prefetch_result);
+            return -1;
+        }
+    }
+    return 0;
+}
+
+/*
+ * EXP-0107 keeps the accepted FP16 HMX/Crouton contract, but presents Gate
+ * and Up as one producer stream.  A command consumes one eight-output-tile
+ * weight slot while DMA fills the other slot for the matched projection.
+ * Publishing an Up group releases the already-complete Gate/Up pair to the
+ * existing streaming SwiGLU workers.  There is still exactly one HMX owner.
+ */
+static __attribute__((noinline)) int
+qbh_run_f16f16_interleaved_gate_up(
+    struct qbh_block_header *header, const uint8_t *shared,
+    struct qbh_block_buffers *buffers,
+    struct qbh_block_hmx_worker *worker,
+    struct qbh_block_w4f16_pool *pool,
+    const void *activation_tiles) {
+    const struct qbh_block_projection_desc *descs[2] = {
+        &header->projections[QBH_BLOCK_PROJ_GATE],
+        &header->projections[QBH_BLOCK_PROJ_UP]};
+    void *outputs[2] = {buffers->gate, buffers->up};
+    uint8_t *weight_slots[2] = {
+        buffers->expanded_weight, buffers->expanded_weight_alt};
+    struct qbh_dma_aligned_desc_1d prefetch_descriptor
+        __attribute__((aligned(64)));
+    const uint32_t group_tiles = 8U;
+    uint32_t k_tiles = descs[0]->k / QBH_HMX_FP16_COLS;
+    uint32_t n_tiles = descs[0]->n / QBH_HMX_FP16_COLS;
+    uint32_t group_count = n_tiles / group_tiles;
+    uint32_t weight_bytes =
+        group_tiles * k_tiles * QBH_HMX_FP16_TILE_BYTES;
+    uint32_t output_group_elements =
+        (QBH_BLOCK_M / QBH_HMX_FP16_ROWS) * group_tiles *
+        QBH_HMX_FP16_TILE_ELEMENTS;
+    uint32_t command_count = group_count * 2U;
+
+    if (header->variant != QBH_BLOCK_F16F16 || pool == NULL ||
+        header->mlp_mode != QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 ||
+        descs[0]->k != descs[1]->k ||
+        descs[0]->n != descs[1]->n ||
+        n_tiles == 0U || n_tiles % group_tiles != 0U) {
+        return -1;
+    }
+    header->f16f16_weight_batch_n_tiles = group_tiles;
+    if (qbh_dma_copy(
+            header, weight_slots[0],
+            shared + descs[0]->weight_offset,
+            weight_bytes, 1U) != 0) {
+        qbh_record_projection_failure(
+            header, descs[0], 0U, 60U, -1);
+        return -1;
+    }
+    header->weight_ddr_read_bytes += weight_bytes;
+    ++header->weight_dma_descriptor_count;
+
+    for (uint32_t command = 0U; command < command_count; ++command) {
+        uint32_t projection = command & 1U;
+        uint32_t group = command >> 1U;
+        uint32_t slot = command & 1U;
+        uint64_t hmx_start;
+        uint64_t prefetch_start = 0U;
+        int hmx_result;
+        int prefetch_result = 0;
+        int prefetch_active = 0;
+
+        if (projection == 0U &&
+            qbh_mlp_crouton_wait_slot(header, pool, group) != 0) {
+            qbh_record_projection_failure(
+                header, descs[projection], group * group_tiles,
+                61U, -1);
+            return -1;
+        }
+
+        hmx_start = HAP_perf_get_qtimer_count();
+        qbh_hmx_start(
+            worker, QBH_BLOCK_HMX_FP16, activation_tiles,
+            weight_slots[slot], buffers->scale_or_bias,
+            (__fp16 *)outputs[projection] +
+                (size_t)group * output_group_elements,
+            2U, k_tiles, group_tiles);
+
+        if (command + 1U < command_count) {
+            uint32_t next_command = command + 1U;
+            uint32_t next_projection = next_command & 1U;
+            uint32_t next_group = next_command >> 1U;
+            uint32_t next_slot = next_command & 1U;
+            prefetch_start = HAP_perf_get_qtimer_count();
+            prefetch_result = qbh_dma_start_weight_prefetch(
+                &prefetch_descriptor, weight_slots[next_slot],
+                shared + descs[next_projection]->weight_offset +
+                    (size_t)next_group * weight_bytes,
+                weight_bytes);
+            if (prefetch_result == 0) {
+                prefetch_active = 1;
+                ++header->f16f16_prefetch_count;
+                header->weight_ddr_read_bytes += weight_bytes;
+                ++header->weight_dma_descriptor_count;
+            }
+        }
+
+        hmx_result = qbh_hmx_wait(worker);
+        header->projection_hmx_wait_ticks +=
+            HAP_perf_get_qtimer_count() - hmx_start;
+        header->hmx_fp16_tile_pair_count +=
+            2U * k_tiles * group_tiles;
+        ++header->hmx_command_count;
+
+        if (hmx_result == 0 && projection == 1U &&
+            qbh_mlp_crouton_publish_up_group(
+                header, descs[projection], pool, group) != 0) {
+            hmx_result = -1;
+        }
+        if (prefetch_active != 0) {
+            uint64_t wait_start = HAP_perf_get_qtimer_count();
+            prefetch_result = qbh_dma_wait_weight_prefetch(
+                &prefetch_descriptor);
+            header->f16f16_prefetch_wait_ticks +=
+                HAP_perf_get_qtimer_count() - wait_start;
+            header->weight_dma_ticks +=
+                HAP_perf_get_qtimer_count() - prefetch_start;
+        }
+        if (hmx_result != 0 || prefetch_result != 0) {
+            qbh_record_projection_failure(
+                header, descs[projection], group * group_tiles,
+                hmx_result != 0 ? 62U : 63U,
                 hmx_result != 0 ? hmx_result : prefetch_result);
             return -1;
         }
@@ -9991,7 +10132,35 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         gate_up_hmx_command_before = header->hmx_command_count;
     }
     start = HAP_perf_get_qtimer_count();
-    if (header->variant == QBH_BLOCK_W4F16 &&
+    if (header->variant == QBH_BLOCK_F16F16 &&
+        header->f16f16_projection_mode ==
+            QBH_BLOCK_F16F16_PROJECTION_GATE8_INTERLEAVED &&
+        header->mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8) {
+        if (crouton_post_norm_enabled == 0U) {
+            uint64_t pack_start = HAP_perf_get_qtimer_count();
+            qbh_pack_fp16_activation(
+                (const __fp16 *)buffers->normalized,
+                QBH_BLOCK_HIDDEN, QBH_BLOCK_HIDDEN,
+                (__fp16 *)buffers->hmx_activation);
+            header->projection_pack_ticks +=
+                HAP_perf_get_qtimer_count() - pack_start;
+        }
+        if (qbh_mlp_stream_pipeline_start(
+                header, w4f16_pool,
+                (const __fp16 *)buffers->gate,
+                (const __fp16 *)buffers->up,
+                (__fp16 *)buffers->middle,
+                (__fp16 *)buffers->q) != 0) {
+            return QBH_BLOCK_STATUS_MLP_STREAM_FAILED;
+        }
+        if (qbh_run_f16f16_interleaved_gate_up(
+                header, shared, buffers, worker, w4f16_pool,
+                buffers->hmx_activation) != 0) {
+            (void)qbh_mlp_stream_pipeline_wait(
+                header, w4f16_pool, 1U);
+            return QBH_BLOCK_STATUS_GATE_UP_FAILED;
+        }
+    } else if (header->variant == QBH_BLOCK_W4F16 &&
         (header->mlp_mode == QBH_BLOCK_MLP_STREAMING ||
          header->mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE ||
          header->mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8)) {

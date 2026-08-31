@@ -307,10 +307,18 @@ static int qbh_parse_f16f16_projection_mode(const char *text,
         *mode = QBH_BLOCK_F16F16_PROJECTION_GATE8;
         return 0;
     }
+    if (strcmp(text, "gate8_interleaved") == 0 ||
+        strcmp(text, "gate_up_batch8_interleaved") == 0) {
+        *mode = QBH_BLOCK_F16F16_PROJECTION_GATE8_INTERLEAVED;
+        return 0;
+    }
     return -1;
 }
 
 static const char *qbh_f16f16_projection_mode_name(uint32_t mode) {
+    if (mode == QBH_BLOCK_F16F16_PROJECTION_GATE8_INTERLEAVED) {
+        return "gate_up_batch8_interleaved";
+    }
     if (mode == QBH_BLOCK_F16F16_PROJECTION_GATE8) {
         return "gate_up_batch8";
     }
@@ -1750,7 +1758,9 @@ int main(int argc, char **argv) {
                QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH) ||
           (variant == QBH_BLOCK_F16F16 &&
            f16f16_projection_mode !=
-               QBH_BLOCK_F16F16_PROJECTION_GATE8))) ||
+               QBH_BLOCK_F16F16_PROJECTION_GATE8 &&
+           f16f16_projection_mode !=
+               QBH_BLOCK_F16F16_PROJECTION_GATE8_INTERLEAVED))) ||
         (mlp_chunk_vectors != 16U && mlp_chunk_vectors != 32U &&
          mlp_chunk_vectors != 64U && mlp_chunk_vectors != 128U &&
          mlp_chunk_vectors != 256U) ||
@@ -2395,7 +2405,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0106\","
+        "{\"experiment\":\"EXP-0107\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
