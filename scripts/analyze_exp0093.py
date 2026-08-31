@@ -12,7 +12,7 @@ import validate_exp0050 as base
 import validate_exp0084 as exp84
 
 
-SAMPLES = 5
+SAMPLES = 7
 REPEATS = (1, 10)
 MODES = ("control", "candidate")
 VTCM_BYTES = 8_388_608
@@ -118,6 +118,43 @@ def validate_record(record: dict[str, object], repeat: int,
     add_derived(record)
 
 
+def per_block(record: dict[str, object], field: str) -> float:
+    if field == "host_wall_ns_per_block" or \
+            field in base.RESOURCES or \
+            field == "w4u8_residual_active_contexts":
+        return float(record[field])
+    return float(record[field]) / int(record["repeat_count"])
+
+
+def summarize(control: list[dict[str, object]],
+              candidate: list[dict[str, object]],
+              field: str) -> dict[str, float | None]:
+    if len(control) != len(candidate):
+        raise SystemExit(f"unpaired record count for {field}")
+    left = [per_block(record, field) for record in control]
+    right = [per_block(record, field) for record in candidate]
+    left_median = float(statistics.median(left))
+    right_median = float(statistics.median(right))
+    paired = [
+        (right_value / left_value - 1.0) * 100.0
+        for left_value, right_value in zip(left, right)
+        if left_value != 0.0
+    ]
+    return {
+        "control": left_median,
+        "candidate": right_median,
+        "change_percent": (
+            (right_median / left_median - 1.0) * 100.0
+            if left_median != 0.0 else None
+        ),
+        "paired_change_percent_median": (
+            float(statistics.median(paired)) if paired else None
+        ),
+        "paired_change_percent_min": min(paired) if paired else None,
+        "paired_change_percent_max": max(paired) if paired else None,
+    }
+
+
 def metric_set(control: list[dict[str, object]],
                candidate: list[dict[str, object]]) -> dict[str, object]:
     fields = tuple(dict.fromkeys((
@@ -125,7 +162,7 @@ def metric_set(control: list[dict[str, object]],
         *LEDGER, *OVERLAP, *PHYSICAL,
     )))
     return {
-        field: base.summarize(control, candidate, field)
+        field: summarize(control, candidate, field)
         for field in fields
     }
 
@@ -149,7 +186,7 @@ def contextual_modules(variant: str) -> dict[str, float]:
 def build_summary(result_dir: Path, package_dir: Path) -> dict[str, object]:
     if (result_dir / "boot_id_before.txt").read_bytes() != \
             (result_dir / "boot_id_after.txt").read_bytes():
-        raise SystemExit("device boot ID changed during EXP-0093")
+        raise SystemExit("device boot ID changed during EXP-0093 confirmation")
 
     correctness: dict[str, object] = {}
     for mode in MODES:

@@ -8,9 +8,9 @@ result_root="${QBH_EXP0093_RESULT_ROOT:-/mnt/d/llm_exp/results/qwen3-block-htp/e
 artifact_root="${QBH_EXP0093_ARTIFACT_ROOT:-/mnt/d/llm_exp/models/qwen3-block-htp/exp0093/artifacts}"
 source_head="$(git -C "${project_root}" rev-parse HEAD)"
 source_short="$(git -C "${project_root}" rev-parse --short=12 HEAD)"
-result_dir="${result_root}/stage_b_${source_short}"
-artifact_dir="${artifact_root}/${source_short}/stage_b"
-rounds=5
+result_dir="${result_root}/stage_c_${source_short}"
+artifact_dir="${artifact_root}/${source_short}/stage_c"
+rounds=7
 modes=(control candidate)
 
 if ! git -C "${project_root}" diff --quiet || \
@@ -88,7 +88,8 @@ cp "${project_root}/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so" \
     printf 'experiment=EXP-0093\nsource_head=%s\n' "${source_head}"
     printf 'control=exp0084_per_row_vgather\n'
     printf 'candidate=four_row_two_level_vshuff\n'
-    printf 'repeat_contract=repeat1,repeat10\npaired_rounds=%d\n' "${rounds}"
+    printf 'repeat_contract=repeat1,repeat10\nconfirmation_rounds=%d\n' "${rounds}"
+    printf 'preliminary_stage_b=/mnt/d/llm_exp/results/qwen3-block-htp/exp0093/stage_b_9d8eb8af6422\n'
     printf 'physical_contract=exact_8mib_vtcm_zero_intermediate_ddr_one_hmx_owner\n'
     printf 'package=%s\nresult_dir=%s\nartifact_dir=%s\n' \
         "${package}" "${result_dir}" "${artifact_dir}"
