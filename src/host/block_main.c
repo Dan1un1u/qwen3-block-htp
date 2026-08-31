@@ -1061,8 +1061,14 @@ static const char *qbh_fp16_common_schedule_mode_name(uint32_t mode) {
 }
 
 static const char *qbh_qkv_schedule_mode_name(uint32_t mode) {
-    return mode == QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL
-               ? "q_prefix4_k_all" : "control";
+    switch (mode) {
+        case QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL:
+            return "q_prefix4_k_all";
+        case QBH_BLOCK_QKV_SCHEDULE_HEAD_ALIGNED_BATCH4:
+            return "head_aligned_batch4";
+        default:
+            return "control";
+    }
 }
 
 static const char *qbh_w4f16_group_fence_mode_name(uint32_t mode) {
@@ -1551,6 +1557,10 @@ int main(int argc, char **argv) {
             } else if (strcmp(schedule, "q_prefix4_k_all") == 0) {
                 qkv_schedule_mode =
                     QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL;
+            } else if (strcmp(schedule,
+                              "head_aligned_batch4") == 0) {
+                qkv_schedule_mode =
+                    QBH_BLOCK_QKV_SCHEDULE_HEAD_ALIGNED_BATCH4;
             } else {
                 qkv_schedule_mode = UINT32_MAX;
             }
@@ -1751,7 +1761,7 @@ int main(int argc, char **argv) {
          fp16_norm_rows_per_task != 8U) ||
         fp16_norm_contexts < 2U || fp16_norm_contexts > 4U ||
         qkv_schedule_mode >
-            QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL ||
+            QBH_BLOCK_QKV_SCHEDULE_HEAD_ALIGNED_BATCH4 ||
         (qkv_schedule_mode != QBH_BLOCK_QKV_SCHEDULE_CONTROL &&
          (variant != QBH_BLOCK_W4F16 ||
           attention_pipeline_mode !=

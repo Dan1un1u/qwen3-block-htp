@@ -772,7 +772,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->fp16_common_schedule_mode >
             QBH_BLOCK_FP16_COMMON_SCHEDULE_ALL ||
         header->qkv_schedule_mode >
-            QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL ||
+            QBH_BLOCK_QKV_SCHEDULE_HEAD_ALIGNED_BATCH4 ||
         header->w4f16_group_fence_mode >
             QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY ||
         (header->w4f16_group_fence_mode !=
@@ -4433,6 +4433,21 @@ static uint32_t qbh_w4f16_gate_up_group_tiles(
                ? 4U : QBH_BLOCK_W4F16_HMX_BATCH_N_TILES;
 }
 
+/* EXP-0126: a Qwen3 Q/K/V head is four 32-channel HMX output tiles.
+ * Keep every non-QKV projection on its established batching contract. */
+static uint32_t qbh_w4f16_projection_group_tiles(
+    const struct qbh_block_header *header,
+    const struct qbh_block_projection_desc *desc) {
+    if (header->qkv_schedule_mode ==
+            QBH_BLOCK_QKV_SCHEDULE_HEAD_ALIGNED_BATCH4 &&
+        (desc == &header->projections[QBH_BLOCK_PROJ_Q] ||
+         desc == &header->projections[QBH_BLOCK_PROJ_K] ||
+         desc == &header->projections[QBH_BLOCK_PROJ_V])) {
+        return QBH_BLOCK_HEAD_DIM / QBH_HMX_FP16_COLS;
+    }
+    return QBH_BLOCK_W4F16_HMX_BATCH_N_TILES;
+}
+
 static void qbh_w4f16_note_effective_region(
     struct qbh_block_header *header, uint32_t region_tiles) {
     if (header->w4f16_effective_region_min == 0U ||
@@ -4709,6 +4724,8 @@ static int qbh_run_w4f16_projection(
     uint32_t cross_prefetch_attempted = 0U;
     uint32_t active_workers;
     uint32_t region_tiles;
+    const uint32_t hmx_batch_tiles =
+        qbh_w4f16_projection_group_tiles(header, desc);
     const uint32_t direct_qkv =
         qbh_projection_direct_qkv_crouton(header, desc);
 
@@ -4781,7 +4798,7 @@ static int qbh_run_w4f16_projection(
     qbh_w4f16_expand_with_main(
         header, pool, compressed_slots[0], projection_scales,
         expanded_slots[0], ready, 1U,
-        k_tiles * QBH_BLOCK_W4F16_HMX_BATCH_N_TILES,
+        k_tiles * hmx_batch_tiles,
         region_tiles, active_workers, 0U, 0U);
     header->w4f16_expand_ticks +=
         HAP_perf_get_qtimer_count() - phase_start;
@@ -4801,16 +4818,15 @@ static int qbh_run_w4f16_projection(
     }
 
     for (uint32_t n_tile = 0; n_tile < n_tiles;
-         n_tile += QBH_BLOCK_W4F16_HMX_BATCH_N_TILES) {
+         n_tile += hmx_batch_tiles) {
         uint32_t group_tiles = n_tiles - n_tile;
-        uint32_t group_index =
-            n_tile / QBH_BLOCK_W4F16_HMX_BATCH_N_TILES;
+        uint32_t group_index = n_tile / hmx_batch_tiles;
         uint32_t current_expanded_slot = group_index & 1U;
         uint32_t next_tile;
         __fp16 *hmx_output = (__fp16 *)buffers->hmx_output;
 
-        if (group_tiles > QBH_BLOCK_W4F16_HMX_BATCH_N_TILES) {
-            group_tiles = QBH_BLOCK_W4F16_HMX_BATCH_N_TILES;
+        if (group_tiles > hmx_batch_tiles) {
+            group_tiles = hmx_batch_tiles;
         }
         if (direct_qkv != 0U) {
             const uint32_t output_group_elements =
@@ -4857,12 +4873,10 @@ static int qbh_run_w4f16_projection(
                 next_tile % QBH_BLOCK_W4F16_DMA_BATCH_N_TILES;
             uint32_t next_compressed_slot = next_batch & 1U;
             uint32_t next_expanded_slot =
-                (next_tile / QBH_BLOCK_W4F16_HMX_BATCH_N_TILES) & 1U;
+                (next_tile / hmx_batch_tiles) & 1U;
 
-            if (next_group_tiles >
-                QBH_BLOCK_W4F16_HMX_BATCH_N_TILES) {
-                next_group_tiles =
-                    QBH_BLOCK_W4F16_HMX_BATCH_N_TILES;
+            if (next_group_tiles > hmx_batch_tiles) {
+                next_group_tiles = hmx_batch_tiles;
             }
 
             if (next_in_batch == 0U) {

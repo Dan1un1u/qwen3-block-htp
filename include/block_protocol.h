@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(48)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(120)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(49)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(126)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -129,6 +129,7 @@ enum qbh_block_fp16_common_schedule_mode {
 enum qbh_block_qkv_schedule_mode {
     QBH_BLOCK_QKV_SCHEDULE_CONTROL = 0,
     QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL = 1,
+    QBH_BLOCK_QKV_SCHEDULE_HEAD_ALIGNED_BATCH4 = 2,
 };
 
 enum qbh_block_w4f16_group_fence_mode {
