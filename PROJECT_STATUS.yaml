@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0100
+  active_experiment: null
   next_experiment_number: 101
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,16 +27,46 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0099
-  last_completed_source_commit: ee375b8805814e56e8948443e1879acb89117fad
+  last_completed_experiment: EXP-0100
+  last_completed_source_commit: 57dd701391ca445299037bbf936e9abfe65a24ed
   provisional_source_parent: EXP-0084
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: o_projection_batch8
+  active_experiment_stage: null
   active_experiment_evidence: null
-  active_experiment_gate: none
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0099/formal_ee375b880581'
+  active_experiment_gate: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0100/formal_57dd701391ca'
+  latest_w4u8_o_batch8_experiment:
+    id: EXP-0100
+    source_branch: codex/exp-0100-w4u8-o-projection-batch8
+    source_head: 57dd701391ca445299037bbf936e9abfe65a24ed
+    direct_control: W4U8-EXP0084-FAIR-CANONICAL
+    candidate: o_projection_eight_output_tiles_per_hmx_command
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0100/formal_57dd701391ca'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0100/artifacts/57dd701391ca/formal'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    correctness_gate: pass_final_input_norm_qk_probability_av_byte_exact_zero_mismatch_zero_max_lsb
+    physical_gate: pass_same_5570272_peak_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_weight_bytes_and_49408_tile_pairs
+    command_gate: pass_o_16_to_8_total_176_to_168_dma_descriptors_512_to_496
+    repeat1_o_change_percent: -6.9449
+    repeat1_o_paired_change_percent: -7.0972
+    repeat1_host_change_percent: 0.0154
+    repeat1_host_paired_change_percent: 5.1110
+    repeat10_o_change_percent: -7.0273
+    repeat10_o_paired_change_percent: -7.1150
+    repeat10_host_change_percent: -0.6684
+    repeat10_host_paired_change_percent: -0.9421
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass_reused_exp0084_canonical_f16f16_w4f16
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    gate_summary_sha256: a014af843c18bbfdc4e8777ba492a3d3fe72cf2a68bbcfedbd96ae68b4469015
+    full_profiling_report_sha256: a13981e01f4ea40e87002e83e24e873d423009af56a4bf668a33d4f2b5e3bb65
+    evidence_sha256_ledger_sha256: fa3a2c72e09210caa330887e8c84be0e66522c1ef8681b3479176d21a6c59237
+    conclusion: o_batch8_is_a_real_local_o_improvement_but_fails_complete_host_repeat1_gate_and_is_rejected
+    selected_baseline_changed: false
   latest_w4u8_down_batch4_candidate:
     id: EXP-0099
     source_branch: codex/exp-0099-w4u8-down-generation-safe-batch4
