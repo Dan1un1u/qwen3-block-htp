@@ -8963,14 +8963,16 @@ experiments:
       - exp0106_w4f16_fair_unchanged
       - exp0106_w4u8_fair_unchanged
       - exp0106_w4u8_fastest_unchanged
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: accepted
     evidence_profile: real-qwen3-block-public-common-freeze-consolidation
     source_branches:
       - codex/exp-0109-public-common-freeze-consolidation
-    source_commits: []
+    source_commits:
+      - d847296ea8a088c73268d354591f163d082f1614
+      - 42e2a33012929ccbb05e8c2741124b6fd539552c
     record: docs/experiments/EXP-0109.md
     decided_by: user
     decided_on: '2026-08-31'
@@ -8979,7 +8981,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0109-public-common-freeze-consolidation
       started_on: '2026-08-31'
-      completed_on: null
+      completed_on: '2026-08-31'
     evidence:
       source_parent_experiment: EXP-0106
       source_parent_commit: 837714ba5ea2bbdef5799fe959996fb8fe862c8d
@@ -8996,4 +8998,32 @@ experiments:
       physical_gate: exact_full_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner
       speed_gate: reproduce_the_accepted_f16f16_interleaved_improvement_in_ordinary_and_paired_repeat1_and_repeat10_while_preserving_exp0106_w4_fair_and_fastest_plans
       completion_gate: same_source_frozen_fair_three_recipe_and_fastest_w4u8_pc027_pc028_formal_evidence_then_user_approved_promotion_and_tags
-      selected_baseline_changed: false
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0109/20260831T155519Z_42e2a3301292_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0109/artifacts/42e2a3301292/20260831T155519Z_formal'
+      runtime_source_commit: 42e2a33012929ccbb05e8c2741124b6fd539552c
+      static_gate_result: pass_exp0107_f16f16_interleaved_present_exp0108_qkv_norms_absent_exp0106_w4_plans_retained_no_qnn
+      correctness_gate_result: pass_byte_exact_all_five_cells_zero_mismatches_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner
+      repeat1_f16f16_gate_up_change_percent: -8.356311632471847
+      repeat1_f16f16_gate_up_paired_change_percent: -8.646634055439083
+      repeat1_f16f16_host_change_percent: -2.565787384208207
+      repeat1_f16f16_host_paired_change_percent: -2.5973643121932954
+      repeat10_f16f16_gate_up_change_percent: -8.221163705512769
+      repeat10_f16f16_gate_up_paired_change_percent: -7.815800001860806
+      repeat10_f16f16_host_change_percent: -3.4077764005784217
+      repeat10_f16f16_host_paired_change_percent: -4.275606357949135
+      fair_f16f16_repeat10_host_wall_ns_per_block_median: 2335630.2
+      fair_w4f16_repeat10_host_wall_ns_per_block_median: 2181062.5
+      fair_w4u8_repeat10_host_wall_ns_per_block_median: 1956098.9
+      fastest_w4u8_repeat10_host_wall_ns_per_block_median: 1749349.0
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_same_source_frozen_fair_three_recipe_and_fastest_w4u8
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: f423046b94bc798d011cf81fa744964d1879224fc6e49f59fa70d5b124fa6cc1
+      full_profiling_report_sha256: 36cbcfaa7db4505f12703685b0f1ba89237b208a7f33d9450f773f41768fb1b9
+      evidence_sha256_ledger_sha256: c3c311efc95dd56f54d1bfe005cfaa5c9a38e81c7dab81604ab97e708e1ba0d8
+      source_tags:
+        - baseline-fair-exp0109-public-freeze
+        - baseline-w4u8-fastest-exp0109-public-freeze
+      conclusion: public_common_layer_frozen_with_exp0107_f16f16_interleaving_exp0108_public_qkv_carrier_excluded_and_exp0106_w4_plans_retained
+      selected_baseline_changed: true

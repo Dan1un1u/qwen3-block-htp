@@ -1,85 +1,81 @@
-# Selected Baseline — W4F16-EXP0038-NORMS
+# Frozen Public Baseline — EXP-0109
 
-The user promoted this Project Variant on 2026-08-29. `PROJECT_STATUS.yaml` is
-the authoritative pointer; this document records the complete runnable and
-evidence identity.
+The user promoted EXP-0109 on 2026-08-31 as the Frozen Public Baseline.
+`PROJECT_STATUS.yaml` remains the authoritative pointer; this document records
+the runnable source, fair-comparison cells, fastest retained W4U8 cell and
+formal evidence identity.
 
 ## Identity
 
 - Execution Unit: real Qwen3-1.7B layer-14 complete middle block, `M=64`.
-- Numerical variant: W4F16 with signed symmetric per-output-channel W4 and
-  FP16 activations on FP16 HMX.
-- Source branch: `codex/exp-0038-crouton-native-boundaries`.
-- Implementation commit: `db791a430631eaba8f90bf3d0e8914c4998a15f5`.
-- Source head including the formal evidence validator:
-  `24917512fc35adfd22f97b5123473bb6a7518fd0`.
+- Backend: standalone FastRPC/DSP implementation on SM8750 HTP V79; no QNN.
+- Source branch: `codex/exp-0109-public-common-freeze-consolidation`.
+- Source commit: `42e2a33012929ccbb05e8c2741124b6fd539552c`.
+- Frozen fair tag: `baseline-fair-exp0109-public-freeze`.
+- Fastest W4U8 tag: `baseline-w4u8-fastest-exp0109-public-freeze`.
 - Formal evidence:
-  `D:\llm_exp\results\qwen3-block-htp\exp0038\20260828T193721Z_db791a430631`.
+  `D:\llm_exp\results\qwen3-block-htp\exp0109\20260831T155519Z_42e2a3301292_formal`.
 - Retained binaries:
-  `D:\llm_exp\models\qwen3-block-htp\exp0038\artifacts\db791a430631`.
+  `D:\llm_exp\models\qwen3-block-htp\exp0109\artifacts\42e2a3301292\20260831T155519Z_formal`.
 
-## Runtime selection
+## Frozen plans
 
-The Baseline uses three W4F16 HVX workers, 32-tile regions,
-`adaptive_down96_gate4_dma8_cross_prefetch`, `combined_hvx` Attention packing,
-the four-context `gqa_qkv_overlap` Attention pipeline, and the four-context
-`crouton_native_batch8` MLP with 64-vector chunks. Common operators use
-`hvx_fp16`, residual mode is `hvx_fused_post_norm`, and the selected EXP-0038
-boundary mode is exactly `norms`.
+The fair matrix builds F16F16, W4F16 and W4U8 from the same source revision.
+F16F16 uses the accepted EXP-0107 eight-output-tile Gate/Up interleaving while
+preserving the prior arithmetic, Crouton carrier, one-HMX-owner and streaming
+SwiGLU contracts. W4F16 and fair W4U8 retain their EXP-0106 runtime plans.
+The separate fastest W4U8 cell retains Down batch4, four-row native Softmax
+and residual carrier shuffles, and the quarter-tiled paired Q/K kernel.
 
-`qkv`, `av_to_o`, and `all` are not Baseline modes. The QKV and AV-to-O
-candidates reduced their local boundaries but failed their cross-variant
-complete-block speed gates.
+EXP-0108 `qkv_norms` is not part of the frozen public plan. Its W4F16-local
+benefit remains valid evidence, but its F16F16 Host regression makes it a
+future recipe specialization rather than a common component.
 
-## Formal result
+## Formal gate result
 
-The output hash is `f18b9abbe1487231`, byte-exact with the paired W4F16
-control and independent implementation reference. The plan requests exactly
-8,388,608 VTCM bytes, reports a peak plan of 8,171,008 bytes, uses one FastRPC
-Execution Unit and one HMX owner, and records zero intermediate DDR, zero
-spill/fill, and no QNN dependency.
+All EXP-0109 gates passed. Every selected cell preserved its accepted output
+hash with zero independent-audit mismatches and zero maximum LSB. The plan
+requests exactly 8,388,608 VTCM bytes, records zero intermediate DDR and
+spill/fill, uses one FastRPC invocation and one HMX owner, and contains no QNN
+dependency.
 
-Median Host wall is 2,661,771 ns per block at repeat one and 2,229,682.3 ns per
-block at repeat ten. Against the same-run F16F16 `norms` comparator, W4F16 is
-7.50% faster at repeat one and 10.39% faster at repeat ten. Against the inherited
-W4F16 control without direct Norm stores, it is 0.61% and 0.58% faster. An
-additional eleven-round paired W4F16 check measured median improvements of
-0.48% and 1.05% at repeat one and repeat ten.
+The accepted F16F16 interleaving reduced Gate/Up by 8.36% at repeat one and
+8.22% at repeat ten. Complete Host wall improved by 2.57% and 3.41%; paired
+medians improved by 2.60% and 4.28%. This reproduces the causal EXP-0107
+result without repeating identical W4 candidate/control cells.
 
-## Repeat-ten profiling
+| Frozen cell | repeat1 Host wall | repeat10 Host wall | Output hash |
+|---|---:|---:|---|
+| F16F16 fair | 2,761.042 us | 2,335.630 us | `704252c89780e695` |
+| W4F16 fair | 2,665.261 us | 2,181.063 us | `f18b9abbe1487231` |
+| W4U8 fair | 2,292.187 us | 1,956.099 us | `69f22eeb035e5ec5` |
+| W4U8 fastest | 2,184.791 us | 1,749.349 us | `69f22eeb035e5ec5` |
 
-The primary steady-state Host result is 2,229.7 microseconds per block. The
-exclusive DSP ledger contains 41,376.1 qtimer ticks, or approximately 2,155.0
-microseconds at 19.2 MHz. The remaining approximately 74.7 microseconds is the
-per-block Host/FastRPC envelope. At repeat one the Host result is 2,661.8
-microseconds while the DSP ledger is approximately 2,230.1 microseconds; most
-of the repeat-one versus repeat-ten difference is therefore invocation-envelope
-amortization rather than a radically different DSP pipeline.
+The fastest W4U8 cell is 4.69% faster than fair W4U8 at repeat one and 10.57%
+faster at repeat ten in this formal run. This is a hardware-execution and
+local numerical-correctness result for one block; it is not a full-model
+quantization-accuracy claim.
 
-| Exclusive ledger stage | Median ticks/block | Approx. us | Ledger share |
-| --- | ---: | ---: | ---: |
-| Gate + Up + Crouton-native SwiGLU | 18,675.6 | 972.7 | 45.14% |
-| Q/K/V projections | 8,432.3 | 439.2 | 20.38% |
-| Down projection | 6,285.0 | 327.3 | 15.19% |
-| O projection | 3,338.5 | 173.9 | 8.07% |
-| GQA Attention pipeline | 2,700.5 | 140.7 | 6.53% |
-| Input RMSNorm direct Crouton | 819.9 | 42.7 | 1.98% |
-| Post-Attention residual/direct Norm handoff | 791.5 | 41.2 | 1.91% |
-| Final residual | 95.4 | 5.0 | 0.23% |
-| Runtime, metadata, I/O and remaining ledger | 238.0 | 12.4 | 0.58% |
+## Repeat-ten module wall-time
 
-Projection stages account for approximately 88.8% of the steady-state DSP
-ledger. Gate/Up plus Down alone account for approximately 60.3%. Against the
-same-run F16F16 `norms` comparator, W4F16 is 10.59% slower in QKV but 13.70%
-faster in O, 12.88% faster in Gate/Up, and 28.82% faster in Down. Attention and
-the shared common operators are essentially numerical-variant neutral.
+| Module | F16F16 fair | W4F16 fair | W4U8 fair | W4U8 fastest |
+|---|---:|---:|---:|---:|
+| I/O and metadata | 6.6 us | 7.6 us | 4.1 us | 4.1 us |
+| Input RMSNorm | 17.2 us | 17.3 us | 19.0 us | 19.1 us |
+| QKV + Q/K Norm/RoPE | 396.9 us | 437.4 us | 423.6 us | 410.2 us |
+| QK-Softmax-AV | 139.2 us | 140.0 us | 195.9 us | 121.9 us |
+| O projection | 198.0 us | 171.3 us | 170.8 us | 170.8 us |
+| Post-attn residual + RMSNorm | 16.7 us | 16.8 us | 33.8 us | 22.9 us |
+| Gate/Up + SwiGLU | 1,025.6 us | 969.9 us | 694.1 us | 686.9 us |
+| Down projection | 457.6 us | 328.0 us | 318.9 us | 227.6 us |
+| Final residual | 5.0 us | 5.0 us | 17.2 us | 6.7 us |
+| Host/RPC and closure | 73.9 us | 83.0 us | 80.6 us | 81.3 us |
+| Complete block Host wall | 2,335.6 us | 2,181.1 us | 1,956.1 us | 1,749.3 us |
 
-Engine work counters are overlapping diagnostics and must not be added to the
-ledger. Per block they report about 25.18 MB of W4 weight DDR reads, 208 HMX
-commands, 98,816 FP16 HMX tile pairs, 41,467.9 weight-DMA ticks, 24,863.8 W4
-expansion interval ticks, 51,057.7 aggregate expansion-work ticks, 4,240.9 HMX
-compute ticks and 27,173.5 projection HMX-wait ticks. Gate/Up alone reports
-25,238.7 weight-DMA ticks, 11,769.0 expansion ticks, 12,615.2 HMX-wait ticks and
-48 HMX commands. These counters show that compressed-weight delivery,
-expansion/readiness and command completion dominate the projection critical
-path; raw HMX arithmetic is not the sole limiting resource.
+## Governance consequence
+
+The Public Common Layer is frozen at EXP-0109. New performance work branches
+from this source and is recorded as a Recipe Specialization unless the user
+explicitly approves a new public-layer contract. Fair three-recipe reporting
+must continue to use the frozen cells; fastest-per-recipe reporting remains a
+separate table and cannot silently redefine the fair baseline.
