@@ -783,6 +783,12 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (header->w4u8_stream_fence_mode !=
              QBH_BLOCK_W4U8_STREAM_FENCE_CONTROL &&
          header->variant != QBH_BLOCK_W4U8) ||
+        header->w4u8_activation_lut_mode >
+            QBH_BLOCK_W4U8_ACTIVATION_LUT_PACKED_PAIR ||
+        (header->w4u8_activation_lut_mode !=
+             QBH_BLOCK_W4U8_ACTIVATION_LUT_U16 &&
+         (header->variant != QBH_BLOCK_W4U8 ||
+          !qbh_block_mlp_is_w4u8_streaming(header->mlp_mode))) ||
         (header->qkv_schedule_mode !=
              QBH_BLOCK_QKV_SCHEDULE_CONTROL &&
          (header->variant != QBH_BLOCK_W4F16 ||
@@ -9679,6 +9685,7 @@ static int qbh_run_w4u8_streaming_mlp(
             .pair_consume_count = &pair_consume_count,
             .activation_ticks = &activation_work_ticks,
             .stream_fence_mode = header->w4u8_stream_fence_mode,
+            .activation_lut_mode = header->w4u8_activation_lut_mode,
         };
         qbh_reset_w4u8_phase_header(
             &gate_up_phase, QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS);

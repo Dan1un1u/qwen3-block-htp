@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(47)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(112)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(48)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(117)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -140,6 +140,11 @@ enum qbh_block_w4u8_stream_fence_mode {
     QBH_BLOCK_W4U8_STREAM_FENCE_CONTROL = 0,
     QBH_BLOCK_W4U8_STREAM_FENCE_SINGLE = 1,
     QBH_BLOCK_W4U8_STREAM_FENCE_RELEASE_ONLY = 2,
+};
+
+enum qbh_block_w4u8_activation_lut_mode {
+    QBH_BLOCK_W4U8_ACTIVATION_LUT_U16 = 0,
+    QBH_BLOCK_W4U8_ACTIVATION_LUT_PACKED_PAIR = 1,
 };
 
 enum qbh_block_attention_pack_mode {
@@ -339,6 +344,7 @@ struct qbh_block_header {
     uint32_t qkv_schedule_mode;
     uint32_t w4f16_group_fence_mode;
     uint32_t w4u8_stream_fence_mode;
+    uint32_t w4u8_activation_lut_mode;
 
     uint32_t input_offset;
     uint32_t input_bytes;

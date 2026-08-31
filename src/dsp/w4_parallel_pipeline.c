@@ -420,6 +420,17 @@ static int qbh_hvx_worker_run(struct qbh_hvx_worker_job *job,
                     multipliers,
                     multipliers + QBH_HMX_OUTPUT_CHANNELS,
                     QBH_MLP_GATE_ZERO_POINT, QBH_MLP_UP_ZERO_POINT);
+            } else if (state->mlp_handoff->activation_lut_mode ==
+                       QBH_W4_ACTIVATION_LUT_PACKED_PAIR) {
+                qbh_mlp_gate_up_packed_pair_lut_hvx(
+                    pair, pair + QBH_HMX_OUTPUT_BYTES,
+                    state->mlp_handoff->middle_activation +
+                        (size_t)task.mlp_pair_index * QBH_HMX_OUTPUT_BYTES,
+                    QBH_HMX_OUTPUT_BYTES,
+                    state->mlp_handoff->activation_lut,
+                    state->mlp_handoff->activation_gather_scratch +
+                        (size_t)job->worker_index *
+                            QBH_MLP_GATHER_SCRATCH_BYTES);
             } else {
                 qbh_mlp_gate_up_lut_hvx(
                     pair, pair + QBH_HMX_OUTPUT_BYTES,

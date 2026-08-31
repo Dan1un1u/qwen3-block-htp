@@ -10,6 +10,9 @@
 #define QBH_MLP_PRODUCT_SHIFT UINT32_C(5)
 #define QBH_MLP_LUT_ENTRIES UINT32_C(65536)
 #define QBH_MLP_LUT_BYTES (QBH_MLP_LUT_ENTRIES * sizeof(uint16_t))
+#define QBH_MLP_PACKED_PAIR_LUT_ENTRIES UINT32_C(32768)
+#define QBH_MLP_PACKED_PAIR_LUT_BYTES \
+    (QBH_MLP_PACKED_PAIR_LUT_ENTRIES * sizeof(uint16_t))
 #define QBH_MLP_GATHER_SCRATCH_BYTES UINT32_C(256)
 
 static inline int32_t qbh_floor_div_pow2(int32_t value,
@@ -64,6 +67,10 @@ void qbh_mlp_gate_up_lut_hvx(const uint8_t *gate, const uint8_t *up,
                              uint8_t *middle, size_t elements,
                              const uint16_t *lut,
                              uint8_t *gather_scratch);
+
+void qbh_mlp_gate_up_packed_pair_lut_hvx(
+    const uint8_t *gate, const uint8_t *up, uint8_t *middle,
+    size_t elements, const uint16_t *lut, uint8_t *gather_scratch);
 
 void qbh_mlp_gate_up_requant_lut_hvx(
     const uint8_t *gate, const uint8_t *up, uint8_t *middle,

@@ -15,6 +15,11 @@ enum qbh_w4_stream_fence_mode {
     QBH_W4_STREAM_FENCE_RELEASE_ONLY = 2,
 };
 
+enum qbh_w4_activation_lut_mode {
+    QBH_W4_ACTIVATION_LUT_U16 = 0,
+    QBH_W4_ACTIVATION_LUT_PACKED_PAIR = 1,
+};
+
 struct qbh_mlp_gate_up_handoff {
     uint8_t *middle_activation;
     const uint16_t *activation_lut;
@@ -25,6 +30,7 @@ struct qbh_mlp_gate_up_handoff {
     uint32_t *pair_consume_count;
     uint64_t *activation_ticks;
     uint32_t stream_fence_mode;
+    uint32_t activation_lut_mode;
 };
 
 struct qbh_w4_hmx_request {

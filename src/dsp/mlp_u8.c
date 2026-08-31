@@ -29,6 +29,29 @@ static inline HVX_Vector qbh_mlp_gather_half(
     return *(volatile HVX_Vector *)scratch;
 }
 
+static inline HVX_Vector qbh_mlp_gather_packed_pair_half(
+    HVX_Vector gate, HVX_Vector up, const uint16_t *lut,
+    HVX_Vector *scratch) {
+    const HVX_Vector one = Q6_Vh_vsplat_R(1);
+    const HVX_Vector even_mask = Q6_Vh_vsplat_R(0x00fe);
+    const HVX_Vector byte_mask = Q6_Vh_vsplat_R(0x00ff);
+    HVX_Vector offsets = Q6_Vh_vadd_VhVh(
+        Q6_Vh_vasl_VhR(gate, 8), Q6_V_vand_VV(up, even_mask));
+    HVX_Vector packed;
+    HVX_Vector low;
+    HVX_Vector high;
+    HVX_VectorPred odd;
+
+    Q6_vgather_ARMVh(
+        scratch, (int32_t)(uintptr_t)lut,
+        QBH_MLP_GATHER_REGION_MASK, offsets);
+    packed = *(volatile HVX_Vector *)scratch;
+    low = Q6_V_vand_VV(packed, byte_mask);
+    high = Q6_Vuh_vlsr_VuhR(packed, 8);
+    odd = Q6_Q_vcmp_eq_VhVh(Q6_V_vand_VV(up, one), one);
+    return Q6_V_vmux_QVV(odd, high, low);
+}
+
 static inline HVX_Vector qbh_mlp_requant_vector(
     HVX_Vector input, HVX_Vector multipliers,
     HVX_Vector output_zero_point) {
@@ -130,6 +153,27 @@ __attribute__((noinline)) void qbh_mlp_gate_up_lut_hvx(
         HVX_Vector middle_lo = qbh_mlp_gather_half(
             Q6_V_lo_W(gate_h), Q6_V_lo_W(up_h), lut, scratch);
         HVX_Vector middle_hi = qbh_mlp_gather_half(
+            Q6_V_hi_W(gate_h), Q6_V_hi_W(up_h), lut, scratch + 1);
+        *(HVX_Vector *)(middle + offset) =
+            Q6_Vub_vpack_VhVh_sat(middle_hi, middle_lo);
+    }
+    asm volatile("barrier" : : : "memory");
+}
+
+__attribute__((noinline)) void qbh_mlp_gate_up_packed_pair_lut_hvx(
+    const uint8_t *gate, const uint8_t *up, uint8_t *middle,
+    size_t elements, const uint16_t *lut, uint8_t *gather_scratch) {
+    HVX_Vector *scratch = (HVX_Vector *)gather_scratch;
+
+    for (size_t offset = 0; offset < elements;
+         offset += sizeof(HVX_Vector)) {
+        HVX_Vector gate_u8 = *(const HVX_Vector *)(gate + offset);
+        HVX_Vector up_u8 = *(const HVX_Vector *)(up + offset);
+        HVX_VectorPair gate_h = Q6_Wuh_vunpack_Vub(gate_u8);
+        HVX_VectorPair up_h = Q6_Wuh_vunpack_Vub(up_u8);
+        HVX_Vector middle_lo = qbh_mlp_gather_packed_pair_half(
+            Q6_V_lo_W(gate_h), Q6_V_lo_W(up_h), lut, scratch);
+        HVX_Vector middle_hi = qbh_mlp_gather_packed_pair_half(
             Q6_V_hi_W(gate_h), Q6_V_hi_W(up_h), lut, scratch + 1);
         *(HVX_Vector *)(middle + offset) =
             Q6_Vub_vpack_VhVh_sat(middle_hi, middle_lo);

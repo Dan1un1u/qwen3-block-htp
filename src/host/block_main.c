@@ -1081,6 +1081,11 @@ static const char *qbh_w4u8_stream_fence_mode_name(uint32_t mode) {
     }
 }
 
+static const char *qbh_w4u8_activation_lut_mode_name(uint32_t mode) {
+    return mode == QBH_BLOCK_W4U8_ACTIVATION_LUT_PACKED_PAIR
+               ? "packed_pair" : "control";
+}
+
 static uint64_t qbh_fnv1a64(const uint8_t *data, size_t bytes) {
     uint64_t hash = UINT64_C(1469598103934665603);
     for (size_t index = 0; index < bytes; ++index) {
@@ -1167,6 +1172,23 @@ static int qbh_read_slot(uint8_t *shared,
                        stream);
     if (fclose(stream) != 0 || read_bytes != slot->expected_bytes) {
         return -1;
+    }
+    return 0;
+}
+
+static int qbh_pack_w4u8_activation_lut_pairs(uint8_t *shared,
+                                              uint32_t offset) {
+    uint16_t *lut = (uint16_t *)(shared + offset);
+    for (uint32_t gate = 0; gate < 256U; ++gate) {
+        for (uint32_t pair = 0; pair < 128U; ++pair) {
+            uint16_t low = lut[gate * 256U + pair * 2U];
+            uint16_t high = lut[gate * 256U + pair * 2U + 1U];
+            if (low > UINT8_MAX || high > UINT8_MAX) {
+                return -1;
+            }
+            lut[gate * 128U + pair] =
+                (uint16_t)(low | (uint16_t)(high << 8));
+        }
     }
     return 0;
 }
@@ -1509,6 +1531,8 @@ int main(int argc, char **argv) {
         QBH_BLOCK_W4F16_GROUP_FENCE_CONTROL;
     uint32_t w4u8_stream_fence_mode =
         QBH_BLOCK_W4U8_STREAM_FENCE_CONTROL;
+    uint32_t w4u8_activation_lut_mode =
+        QBH_BLOCK_W4U8_ACTIVATION_LUT_U16;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t w4u8_gate_up_bundle_offset = 0U;
@@ -1583,6 +1607,21 @@ int main(int argc, char **argv) {
                     QBH_BLOCK_W4U8_STREAM_FENCE_RELEASE_ONLY;
             } else {
                 w4u8_stream_fence_mode = UINT32_MAX;
+            }
+        }
+    }
+    {
+        const char *activation_lut =
+            getenv("QBH_W4U8_ACTIVATION_LUT");
+        if (activation_lut != NULL && activation_lut[0] != '\0') {
+            if (strcmp(activation_lut, "control") == 0) {
+                w4u8_activation_lut_mode =
+                    QBH_BLOCK_W4U8_ACTIVATION_LUT_U16;
+            } else if (strcmp(activation_lut, "packed_pair") == 0) {
+                w4u8_activation_lut_mode =
+                    QBH_BLOCK_W4U8_ACTIVATION_LUT_PACKED_PAIR;
+            } else {
+                w4u8_activation_lut_mode = UINT32_MAX;
             }
         }
     }
@@ -2174,6 +2213,14 @@ int main(int argc, char **argv) {
         qbh_read_slot(shared, &w4u8_lut_slot) != 0) {
         goto cleanup;
     }
+    if (qbh_block_mlp_is_w4u8_streaming(mlp_mode) &&
+        w4u8_activation_lut_mode ==
+            QBH_BLOCK_W4U8_ACTIVATION_LUT_PACKED_PAIR &&
+        qbh_pack_w4u8_activation_lut_pairs(
+            shared, w4u8_lut_slot.offset) != 0) {
+        fprintf(stderr, "W4U8 packed-pair LUT conversion failed\n");
+        goto cleanup;
+    }
     if (qbh_attention_u8_enabled(attention_pipeline_mode) &&
         (qbh_read_slot(shared, &attention_config_slot) != 0 ||
          qbh_read_slot(shared, &attention_audit_slots[0]) != 0 ||
@@ -2222,6 +2269,7 @@ int main(int argc, char **argv) {
     header->qkv_schedule_mode = qkv_schedule_mode;
     header->w4f16_group_fence_mode = w4f16_group_fence_mode;
     header->w4u8_stream_fence_mode = w4u8_stream_fence_mode;
+    header->w4u8_activation_lut_mode = w4u8_activation_lut_mode;
     header->w4u8_qk_pair_kernel_mode =
         w4u8_qk_pair_kernel_mode;
     header->input_offset = input_slot.offset;
@@ -2497,7 +2545,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0112\","
+        "{\"experiment\":\"EXP-0117\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2508,6 +2556,7 @@ int main(int argc, char **argv) {
         "\"qkv_schedule_mode\":\"%s\","
         "\"w4f16_group_fence_mode\":\"%s\","
         "\"w4u8_stream_fence_mode\":\"%s\","
+        "\"w4u8_activation_lut_mode\":\"%s\","
         "\"fp16_norm_rows_per_task\":%" PRIu32 ","
         "\"fp16_norm_contexts\":%" PRIu32 ","
         "\"w4u8_down_hmx_batch_outputs\":%" PRIu32 ","
@@ -2835,6 +2884,8 @@ int main(int argc, char **argv) {
             header->w4f16_group_fence_mode),
         qbh_w4u8_stream_fence_mode_name(
             header->w4u8_stream_fence_mode),
+        qbh_w4u8_activation_lut_mode_name(
+            header->w4u8_activation_lut_mode),
         header->fp16_norm_rows_per_task,
         header->fp16_norm_contexts,
         header->w4u8_down_hmx_batch_outputs,
