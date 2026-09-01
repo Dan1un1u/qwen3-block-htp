@@ -9,6 +9,7 @@ from pathlib import Path
 
 import analyze_exp0107 as exp107
 import analyze_exp0109 as exp109
+import analyze_exp0129 as exp129
 import analyze_exp0135 as parent
 import validate_exp0050 as base
 
@@ -25,9 +26,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("result_dir", type=Path)
     parser.add_argument("--report", action="store_true")
     parser.add_argument("--exp0109-formal", type=Path,
-                        default=parent.parent.EXP0109_FORMAL)
+                        default=exp129.EXP0109_FORMAL)
     parser.add_argument("--exp0124-formal", type=Path,
-                        default=parent.parent.EXP0124_FORMAL)
+                        default=exp129.EXP0124_FORMAL)
     return parser.parse_args()
 
 
@@ -88,10 +89,10 @@ def build_summary(result_dir: Path, exp0109_dir: Path,
             for row in rows:
                 validate_record(row, repeat, cell)
             sides[cell] = rows
-        values = parent.parent.metrics(sides["group8"], sides["group4"])
+        values = exp129.metrics(sides["group8"], sides["group4"])
         repeat_results[f"repeat{repeat}"] = {"metrics": values}
         records[repeat] = sides
-        physical_cells.append(parent.parent.physical_equal(
+        physical_cells.append(exp129.physical_equal(
             sides["group8"], sides["group4"]))
         for field in ("gate_up_ticks", "host_wall_ns_per_block"):
             speed_cells.extend((
@@ -119,7 +120,7 @@ def build_summary(result_dir: Path, exp0109_dir: Path,
         "speed_gate": speed_gate,
         "local_gate_pass": speed_gate and physical_gate,
         "repeat_results": repeat_results,
-        "pc028": parent.parent.baseline_pc028(
+        "pc028": exp129.baseline_pc028(
             exp0109_dir, exp0124_dir, records[10]["group8"]),
         "pc028_provenance": {
             "f16f16": str(exp0109_dir),
@@ -159,14 +160,14 @@ def render_report(summary: dict) -> str:
     for repeat in REPEATS:
         values = summary["repeat_results"][f"repeat{repeat}"]["metrics"]
         lines.extend([f"## Repeat {repeat}", ""])
-        parent.parent.add_table(lines, "Primary targets", TARGETS, values)
-        parent.parent.add_table(lines, "Additive Block Timing Ledger",
-                                exp107.LEDGER, values)
-        parent.parent.add_table(
+        exp129.add_table(lines, "Primary targets", TARGETS, values)
+        exp129.add_table(lines, "Additive Block Timing Ledger",
+                         exp107.LEDGER, values)
+        exp129.add_table(
             lines, "Overlapping HMX/HVX/DMA and waits",
             tuple(dict.fromkeys((*exp107.OVERLAP, *W4F16_PIPELINE))), values)
-        parent.parent.add_table(lines, "Traffic, commands and residency",
-                                exp107.PHYSICAL, values)
+        exp129.add_table(lines, "Traffic, commands and residency",
+                         exp107.PHYSICAL, values)
     lines.extend([
         "## Gates", "", "| Gate | Result |", "|---|---:|",
         f"| Gate/Up and Host speed | {'PASS' if summary['speed_gate'] else 'FAIL'} |",
