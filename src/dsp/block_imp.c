@@ -795,7 +795,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
              QBH_BLOCK_W4F16_GROUP_FENCE_CONTROL &&
          header->variant != QBH_BLOCK_W4F16) ||
         (header->w4f16_expand_claim_regions != 1U &&
-         header->w4f16_expand_claim_regions != 2U) ||
+         header->w4f16_expand_claim_regions != 2U &&
+         header->w4f16_expand_claim_regions != 3U) ||
         (header->w4f16_expand_claim_regions != 1U &&
          (header->variant != QBH_BLOCK_W4F16 ||
           header->w4f16_group_fence_mode !=
@@ -2590,7 +2591,33 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
             break;
         }
         if (job->command_kind == QBH_BLOCK_HVX_POOL_W4_EXPAND) {
-            for (;;) {
+            if (pool->claim_regions == 3U) {
+                const uint32_t worker = job->worker_index;
+                const uint32_t base_regions =
+                    pool->region_count / pool->active_worker_count;
+                const uint32_t extra_regions =
+                    pool->region_count % pool->active_worker_count;
+                const uint32_t first_region =
+                    worker * base_regions +
+                    (worker < extra_regions ? worker : extra_regions);
+                const uint32_t claimed_regions =
+                    base_regions + (worker < extra_regions ? 1U : 0U);
+                const uint64_t start = HAP_perf_get_qtimer_count();
+                if (claimed_regions != 0U) {
+                    qbh_unpack_w4_to_f16_hvx_relaxed(
+                        pool->compressed_weight +
+                            (size_t)first_region * pool->region_tiles *
+                                QBH_W4_PACKED_TILE_BYTES,
+                        pool->expanded_weight +
+                            (size_t)first_region * pool->region_tiles *
+                                QBH_HMX_FP16_TILE_BYTES,
+                        claimed_regions * pool->region_tiles);
+                }
+                job->expand_ticks +=
+                    HAP_perf_get_qtimer_count() - start;
+                job->expand_count += claimed_regions;
+            } else {
+              for (;;) {
                 uint32_t region = pool->claim_regions == 2U
                     ? qbh_atomic_fetch_add_two(&pool->next_region)
                     : qbh_atomic_fetch_increment(&pool->next_region);
@@ -2634,6 +2661,7 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
                                  : "r"(&pool->ready_generations[region])
                                  : "memory");
                 }
+            }
             }
         } else if (job->command_kind == QBH_BLOCK_HVX_POOL_SILU) {
             qbh_silu_pool_run_chunks(

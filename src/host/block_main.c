@@ -1937,7 +1937,8 @@ int main(int argc, char **argv) {
         (w4f16_region_tiles != 8U && w4f16_region_tiles != 16U &&
          w4f16_region_tiles != 32U && w4f16_region_tiles != 64U) ||
         (w4f16_expand_claim_regions != 1U &&
-         w4f16_expand_claim_regions != 2U) ||
+         w4f16_expand_claim_regions != 2U &&
+         w4f16_expand_claim_regions != 3U) ||
         (w4f16_expand_claim_regions != 1U &&
          (variant != QBH_BLOCK_W4F16 ||
           w4f16_group_fence_mode !=
@@ -2548,7 +2549,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0132\","
+        "{\"experiment\":\"EXP-0133\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
