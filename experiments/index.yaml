@@ -10391,14 +10391,15 @@ experiments:
     variants:
       - ring16_stream32_control
       - ring16_stream16_candidate
-    execution_state: running
-    evidence_validity: pending
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: complete
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-gate-up-stream-region16
     source_branches:
       - codex/exp-0128-w4u8-gate-up-stream-region16
-    source_commits: []
+    source_commits:
+      - 7f9641c6a389767993e0f9a3a587b05f6c409f02
     record: docs/experiments/EXP-0128.md
     approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently'
     runtime:
@@ -10426,3 +10427,31 @@ experiments:
       physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_identical_weight_DMA_expanded_bytes_and_HMX_tile_pairs
       speed_gate: Gate_Up_plus_SwiGLU_and_complete_Host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
       completion_gate: bounded_diagnostic_then_five_rotated_rounds_PC027_PC028_and_no_automatic_baseline_promotion
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0128/20260901T002210Z_7f9641c6a389_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0128/artifacts/7f9641c6a389/20260901T002210Z_formal'
+      static_gate_result: pass_runtime_stream32_stream16_ring16_batch8_three_workers_single_fence_no_qnn
+      correctness_gate_result: pass_both_69f22eeb035e5ec5_zero_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_dma_and_hmx_tile_work
+      selected_cell: ring16_stream32_control
+      repeat1_host_change_percent: 5.885854055058437
+      repeat1_host_paired_change_percent: 6.538765293976323
+      repeat1_gate_up_change_percent: 24.41516279957987
+      repeat1_gate_up_paired_change_percent: 22.588978185993103
+      repeat10_host_change_percent: 7.8833134187317855
+      repeat10_host_paired_change_percent: 7.297744513792193
+      repeat10_gate_up_change_percent: 21.897143072516222
+      repeat10_gate_up_paired_change_percent: 22.016713197012017
+      repeat10_hmx_ready_wait_change_percent: 13.494378608325741
+      repeat10_hmx_compute_change_percent: 7.891705069124422
+      repeat10_weight_expand_change_percent: 2.9744581814495463
+      repeat10_producer_slot_wait_change_percent: 26.856316297010597
+      hmx_stream_count_change: 768_to_1536_per_block
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_exp0109_f16f16_exp0127_control_w4f16_exp0128_stream16_w4u8
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: fc6b1cec7658e1da57e47d894127fa769494267606a8fe99bdb9e51d794b6fde
+      full_profiling_report_sha256: 77d647a3e56d4b30d2c165b92e088d329c91eb043482a79b6cdbcd1427528121
+      evidence_sha256_ledger_sha256: 83342c83f07c45eba66b9b4a61017399d3ba23341522aed44ecdcae3e423005c
+      conclusion: half_region_publication_doubles_HMX_streams_and_increases_ready_wait_compute_and_complete_host
+      reopen_condition: new_multi_region_HMX_issue_or_readiness_aggregation_that_does_not_double_stream_command_overhead
+      selected_baseline_changed: false

@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0128
+  active_experiment: null
   next_experiment_number: 129
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,25 +27,54 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0127
-  last_completed_source_commit: b3afdc39a5b58fb6cdd45d103b8325eb973a5465
+  last_completed_experiment: EXP-0128
+  last_completed_source_commit: 7f9641c6a389767993e0f9a3a587b05f6c409f02
   provisional_source_parent: EXP-0120
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: registered
+  active_experiment_stage: none
   active_experiment_evidence: null
-  active_experiment_gate: not_run
-  active_recipe_specialization: W4U8
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0127/20260901T000359Z_b3afdc39a5b5_formal'
+  active_experiment_gate: none
+  active_recipe_specialization: none
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0128/20260901T002210Z_7f9641c6a389_formal'
   last_rejected_specialization:
-    id: EXP-0127
-    source_branch: codex/exp-0127-w4f16-qkv-selective-batch4
-    source_head: b3afdc39a5b58fb6cdd45d103b8325eb973a5465
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0127/20260901T000359Z_b3afdc39a5b5_formal'
+    id: EXP-0128
+    source_branch: codex/exp-0128-w4u8-gate-up-stream-region16
+    source_head: 7f9641c6a389767993e0f9a3a587b05f6c409f02
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0128/20260901T002210Z_7f9641c6a389_formal'
     local_gate: fail
     adoption_status: rejected
-    reason: projection_selective_batch4_shortens_QKV_but_not_complete_host_and_increases_expansion_readiness_wait
+    reason: half_region_publication_doubles_HMX_streams_and_increases_ready_wait_compute_and_complete_host
+  latest_w4u8_gate_up_stream_region_candidate:
+    id: EXP-0128
+    source_branch: codex/exp-0128-w4u8-gate-up-stream-region16
+    source_head: 7f9641c6a389767993e0f9a3a587b05f6c409f02
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0128/20260901T002210Z_7f9641c6a389_formal'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0128/artifacts/7f9641c6a389/20260901T002210Z_formal'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    selected_cell: ring16_stream32_control
+    correctness_gate: pass_both_69f22eeb035e5ec5_zero_mismatch_zero_max_lsb
+    physical_gate: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_dma_and_hmx_tile_work
+    repeat1_gate_up_change_percent: 24.41516279957987
+    repeat1_host_change_percent: 5.885854055058437
+    repeat10_gate_up_change_percent: 21.897143072516222
+    repeat10_host_change_percent: 7.8833134187317855
+    repeat10_hmx_ready_wait_change_percent: 13.494378608325741
+    repeat10_hmx_compute_change_percent: 7.891705069124422
+    repeat10_weight_expand_change_percent: 2.9744581814495463
+    hmx_stream_count_change: 768_to_1536_per_block
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass_exp0109_f16f16_exp0127_control_w4f16_exp0128_stream16_w4u8
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    gate_summary_sha256: fc6b1cec7658e1da57e47d894127fa769494267606a8fe99bdb9e51d794b6fde
+    full_profiling_report_sha256: 77d647a3e56d4b30d2c165b92e088d329c91eb043482a79b6cdbcd1427528121
+    evidence_sha256_ledger_sha256: 83342c83f07c45eba66b9b4a61017399d3ba23341522aed44ecdcae3e423005c
+    conclusion: half_region_publication_doubles_HMX_streams_and_increases_ready_wait_compute_and_complete_host
+    reopen_condition: new_multi_region_HMX_issue_or_readiness_aggregation_that_does_not_double_stream_command_overhead
+    selected_baseline_changed: false
   latest_w4f16_qkv_selective_batch4_candidate:
     id: EXP-0127
     source_branch: codex/exp-0127-w4f16-qkv-selective-batch4
