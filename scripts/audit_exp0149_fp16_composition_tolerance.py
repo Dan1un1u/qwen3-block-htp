@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Audit a composition-aware FP16 tolerance candidate for EXP-0149.
+"""Verify the approved composition-aware FP16 gate for EXP-0149.
 
-The current authoritative gate remains unchanged.  This script quantifies why
-the inherited single-layer absolute threshold fails after three layers and
-tests a candidate mixed tolerance without promoting or accepting it.
+The user approved this three-layer gate on 2026-09-01. The independent
+software output and cache references remain authoritative; device physical
+cache goldens are not used by this verifier.
 """
 
 from __future__ import annotations
@@ -87,7 +87,7 @@ def metrics(
         "max_fp16_ulp_distance": int(np.max(ulp_distance)),
         "mixed_tolerance_violation_count": mixed_violations,
         "max_required_rtol_after_atol": float(np.max(required_rtol)),
-        "candidate_pass": (
+        "gate_pass": (
             nonfinite == 0 and mixed_violations == 0 and
             value_cosine >= minimum_cosine
         ),
@@ -136,8 +136,9 @@ def main() -> None:
     report = {
         "experiment": "EXP-0149",
         "recipe": args.recipe,
-        "status": "candidate_gate_not_authoritative",
-        "candidate_tolerance": {
+        "status": "authoritative_exp0149_composition_gate",
+        "approved_on": "2026-09-01",
+        "gate_tolerance": {
             "absolute": args.atol,
             "relative": args.rtol,
             "minimum_cosine": args.minimum_cosine,
@@ -147,8 +148,8 @@ def main() -> None:
             value["absolute_only_violation_count"] == 0
             for value in tensors.values()
         ),
-        "candidate_gate_pass": all(
-            bool(value["candidate_pass"]) for value in tensors.values()
+        "composition_gate_pass": all(
+            bool(value["gate_pass"]) for value in tensors.values()
         ),
         "maximum_required_rtol_after_atol": max(
             float(value["max_required_rtol_after_atol"])
@@ -166,7 +167,7 @@ def main() -> None:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(text, encoding="utf-8")
     print(text, end="")
-    if not report["candidate_gate_pass"]:
+    if not report["composition_gate_pass"]:
         raise SystemExit(1)
 
 

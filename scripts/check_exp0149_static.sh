@@ -20,6 +20,14 @@ grep -q 'QBH_VERTICAL_SLICE_FIRST_LAYER UINT32_C(13)' \
     "${project_root}/include/block_protocol.h"
 grep -q 'QBH_VERTICAL_SLICE_LAYER_COUNT UINT32_C(3)' \
     "${project_root}/include/block_protocol.h"
+grep -q '#define QBH_REPLAY_FP16_ATOL (0.0625)' \
+    "${project_root}/src/host/block_main.c"
+grep -q '#define QBH_REPLAY_FP16_RTOL (0.002)' \
+    "${project_root}/src/host/block_main.c"
+grep -q '#define QBH_REPLAY_FP16_MIN_COSINE (0.99999)' \
+    "${project_root}/src/host/block_main.c"
+grep -q 'output_mixed_tolerance_violations' \
+    "${project_root}/src/host/block_main.c"
 
 if grep -RInE 'QnnGraph|QnnContext|QnnBackend|libQnn' \
         "${project_root}/src" "${project_root}/include" >/dev/null; then
@@ -67,4 +75,4 @@ for recipe in ("f16f16", "w4f16", "w4u8"):
     assert qparams[14]["block_output"] == qparams[15]["block_input"]
 PY
 
-printf '%s\n' '{"experiment":"EXP-0149","static_gate":"pass","execution_unit":"qwen3_real_layers13_14_15_one_dsp_invocation","decode_session_abi":2,"active_layers":[13,14,15],"declared_layer_count":28,"prefill_positions":"0-63","decode_positions":"64-71","cache_capacity_per_layer":72,"host_hidden_handoff":false,"one_fastrpc_per_three_layer_step":true,"one_hmx_owner":true,"exact_vtcm_request_bytes":8388608,"intermediate_ddr_allowed":false,"persistent_kv_cache_ddr_allowed":true,"qnn_dependency":false}'
+printf '%s\n' '{"experiment":"EXP-0149","static_gate":"pass","execution_unit":"qwen3_real_layers13_14_15_one_dsp_invocation","decode_session_abi":2,"active_layers":[13,14,15],"declared_layer_count":28,"prefill_positions":"0-63","decode_positions":"64-71","cache_capacity_per_layer":72,"host_hidden_handoff":false,"one_fastrpc_per_three_layer_step":true,"one_hmx_owner":true,"exact_vtcm_request_bytes":8388608,"intermediate_ddr_allowed":false,"persistent_kv_cache_ddr_allowed":true,"fp16_composition_gate":"abs(actual-reference)<=0.0625+0.002*abs(reference);cosine>=0.99999;no_nonfinite","w4u8_gate":"exact_zero_lsb","qnn_dependency":false}'

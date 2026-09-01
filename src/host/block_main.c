@@ -21,6 +21,9 @@
 
 #define QBH_HOST_ALIGNMENT ((size_t)128)
 #define QBH_HOST_PATH_BYTES ((size_t)1024)
+#define QBH_REPLAY_FP16_ATOL (0.0625)
+#define QBH_REPLAY_FP16_RTOL (0.002)
+#define QBH_REPLAY_FP16_MIN_COSINE (0.99999)
 
 struct qbh_file_slot {
     char path[QBH_HOST_PATH_BYTES];
@@ -57,6 +60,9 @@ struct qbh_error_metrics {
     double cosine;
     uint64_t mismatches;
     uint32_t max_lsb;
+    uint64_t mixed_tolerance_violations;
+    uint64_t nonfinite_count;
+    double max_required_rtol_after_atol;
 };
 
 #define QBH_REPLAY_DECODE_STEPS UINT32_C(8)
@@ -1832,10 +1838,32 @@ static struct qbh_error_metrics qbh_compare_scan_f16(
             memcpy(&b_f16, &b_bits, sizeof(b_f16));
             a_f32 = (float)a_f16;
             b_f32 = (float)b_f16;
-            difference = fabs((double)a_f32 - (double)b_f32);
             metrics.mismatches += a_bits != b_bits;
+            if (!isfinite(a_f32) || !isfinite(b_f32)) {
+                ++metrics.nonfinite_count;
+                ++metrics.mixed_tolerance_violations;
+                metrics.max_abs = INFINITY;
+                metrics.max_required_rtol_after_atol = INFINITY;
+                ++elements;
+                continue;
+            }
+            difference = fabs((double)a_f32 - (double)b_f32);
             if (difference > metrics.max_abs) {
                 metrics.max_abs = difference;
+            }
+            if (difference > QBH_REPLAY_FP16_ATOL +
+                                 QBH_REPLAY_FP16_RTOL * fabs((double)b_f32)) {
+                ++metrics.mixed_tolerance_violations;
+            }
+            if (difference > QBH_REPLAY_FP16_ATOL) {
+                const double required_rtol = b_f32 != 0.0f
+                    ? (difference - QBH_REPLAY_FP16_ATOL) /
+                          fabs((double)b_f32)
+                    : INFINITY;
+                if (required_rtol >
+                        metrics.max_required_rtol_after_atol) {
+                    metrics.max_required_rtol_after_atol = required_rtol;
+                }
             }
             absolute_sum += difference;
             squared_sum += difference * difference;
@@ -1902,9 +1930,10 @@ static int qbh_replay_step_pass(
     uint32_t variant, const struct qbh_replay_step_result *result) {
     const int output_pass = variant == QBH_BLOCK_W4U8
         ? result->output.mismatches == 0U
-        : result->output.max_abs <= 0.0625 &&
+        : result->output.mixed_tolerance_violations == 0U &&
+              result->output.nonfinite_count == 0U &&
               isfinite(result->output.cosine) &&
-              result->output.cosine >= 0.99999;
+              result->output.cosine >= QBH_REPLAY_FP16_MIN_COSINE;
     return output_pass && result->cache_prefix_mismatches == 0U &&
            result->cache_mismatches == 0U &&
            result->dsp_status == QBH_BLOCK_STATUS_OK &&
@@ -1939,6 +1968,10 @@ static void qbh_print_replay_profile(
         "\"host_wall_ns\":%" PRIu64 ","
         "\"output_mismatches\":%" PRIu64 ","
         "\"output_max_abs\":%.9g,\"output_cosine\":%.9g,"
+        "\"output_mixed_tolerance_violations\":%" PRIu64 ","
+        "\"output_nonfinite_count\":%" PRIu64 ","
+        "\"output_max_required_rtol_after_atol\":%.9g,"
+        "\"output_fp16_atol\":%.9g,\"output_fp16_rtol\":%.9g,"
         "\"output_max_lsb\":%" PRIu32 ","
         "\"output_hash\":\"%016" PRIx64 "\","
         "\"cache_prefix_mismatches\":%" PRIu64 ","
@@ -1950,6 +1983,10 @@ static void qbh_print_replay_profile(
         result->first_position, result->valid_length,
         result->host_wall_ns, result->output.mismatches,
         result->output.max_abs, result->output.cosine,
+        result->output.mixed_tolerance_violations,
+        result->output.nonfinite_count,
+        result->output.max_required_rtol_after_atol,
+        QBH_REPLAY_FP16_ATOL, QBH_REPLAY_FP16_RTOL,
         result->output.max_lsb, qbh_fnv1a64(output, output_bytes),
         result->cache_prefix_mismatches, result->cache_mismatches);
 
@@ -2352,6 +2389,10 @@ static int qbh_run_replay_sequence(
             "\"host_wall_ns\":%" PRIu64 ","
             "\"output_mismatches\":%" PRIu64 ","
             "\"output_max_abs\":%.9g,\"output_cosine\":%.9g,"
+            "\"output_mixed_tolerance_violations\":%" PRIu64 ","
+            "\"output_nonfinite_count\":%" PRIu64 ","
+            "\"output_max_required_rtol_after_atol\":%.9g,"
+            "\"output_fp16_atol\":%.9g,\"output_fp16_rtol\":%.9g,"
             "\"cache_prefix_mismatches\":%" PRIu64 ","
             "\"cache_mismatches\":%" PRIu64 ","
             "\"cache_ddr_read_bytes\":%" PRIu64 ","
@@ -2371,6 +2412,10 @@ static int qbh_run_replay_sequence(
             step_result->first_position, step_result->valid_length,
             step_result->host_wall_ns, step_result->output.mismatches,
             step_result->output.max_abs, step_result->output.cosine,
+            step_result->output.mixed_tolerance_violations,
+            step_result->output.nonfinite_count,
+            step_result->output.max_required_rtol_after_atol,
+            QBH_REPLAY_FP16_ATOL, QBH_REPLAY_FP16_RTOL,
             step_result->cache_prefix_mismatches,
             step_result->cache_mismatches,
             step_result->scan_cache_ddr_read_bytes,
