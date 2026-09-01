@@ -447,7 +447,7 @@ def run_w4u8_layer(
     k_u8 = encoded["k_rope"].cpu().numpy().reshape(
         TOTAL_M, KV_HEADS, HEAD_DIM
     )
-    v_u8 = v_flat.cpu().numpy().reshape(
+    v_u8 = encoded["v"].cpu().numpy().reshape(
         TOTAL_M, KV_HEADS, HEAD_DIM
     )
     config = retained_config or build_attention_config(v_u8, qparams)
