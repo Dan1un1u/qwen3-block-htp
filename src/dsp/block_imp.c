@@ -266,6 +266,7 @@ struct qbh_block_w4f16_pool {
     uint32_t region_count;
     uint32_t region_tiles;
     uint32_t publish_ready;
+    uint32_t claim_regions;
     uint32_t worker_count;
     uint32_t active_worker_count;
     uint32_t created_workers;
@@ -433,6 +434,20 @@ static uint32_t qbh_atomic_fetch_increment(volatile uint32_t *target) {
     __asm__ __volatile__(
         "1:     %0 = memw_locked(%3)\n"
         "       %1 = add(%0, #1)\n"
+        "       memw_locked(%3, p0) = %1\n"
+        "       if !p0 jump 1b\n"
+        : "=&r"(original), "=&r"(updated), "+m"(*target)
+        : "r"(target)
+        : "p0");
+    return original;
+}
+
+static uint32_t qbh_atomic_fetch_add_two(volatile uint32_t *target) {
+    uint32_t original;
+    uint32_t updated;
+    __asm__ __volatile__(
+        "1:     %0 = memw_locked(%3)\n"
+        "       %1 = add(%0, #2)\n"
         "       memw_locked(%3, p0) = %1\n"
         "       if !p0 jump 1b\n"
         : "=&r"(original), "=&r"(updated), "+m"(*target)
@@ -779,6 +794,12 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (header->w4f16_group_fence_mode !=
              QBH_BLOCK_W4F16_GROUP_FENCE_CONTROL &&
          header->variant != QBH_BLOCK_W4F16) ||
+        (header->w4f16_expand_claim_regions != 1U &&
+         header->w4f16_expand_claim_regions != 2U) ||
+        (header->w4f16_expand_claim_regions != 1U &&
+         (header->variant != QBH_BLOCK_W4F16 ||
+          header->w4f16_group_fence_mode !=
+              QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY)) ||
         header->w4u8_stream_fence_mode >
             QBH_BLOCK_W4U8_STREAM_FENCE_RELEASE_ONLY ||
         (header->w4u8_stream_fence_mode !=
@@ -2570,11 +2591,17 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
         }
         if (job->command_kind == QBH_BLOCK_HVX_POOL_W4_EXPAND) {
             for (;;) {
-                uint32_t region =
-                    qbh_atomic_fetch_increment(&pool->next_region);
+                uint32_t region = pool->claim_regions == 2U
+                    ? qbh_atomic_fetch_add_two(&pool->next_region)
+                    : qbh_atomic_fetch_increment(&pool->next_region);
+                uint32_t claimed_regions;
                 uint64_t start;
                 if (region >= pool->region_count) {
                     break;
+                }
+                claimed_regions = pool->region_count - region;
+                if (claimed_regions > pool->claim_regions) {
+                    claimed_regions = pool->claim_regions;
                 }
                 start = HAP_perf_get_qtimer_count();
                 if (pool->publish_ready != 0U) {
@@ -2594,11 +2621,11 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
                         pool->expanded_weight +
                             (size_t)region * pool->region_tiles *
                                 QBH_HMX_FP16_TILE_BYTES,
-                        pool->region_tiles);
+                        claimed_regions * pool->region_tiles);
                 }
                 job->expand_ticks +=
                     HAP_perf_get_qtimer_count() - start;
-                ++job->expand_count;
+                job->expand_count += claimed_regions;
                 if (pool->publish_ready != 0U) {
                     pool->ready_generations[region] =
                         pool->expected_generation;
@@ -2732,7 +2759,7 @@ static void qbh_w4f16_pool_start(
     uint8_t *expanded_weight, volatile uint32_t *ready_generations,
     uint32_t expected_generation, uint32_t region_count,
     uint32_t region_tiles, uint32_t active_worker_count,
-    uint32_t publish_ready) {
+    uint32_t publish_ready, uint32_t claim_regions) {
     pool->compressed_weight = compressed_weight;
     pool->channel_scale = channel_scale;
     pool->expanded_weight = expanded_weight;
@@ -2741,6 +2768,7 @@ static void qbh_w4f16_pool_start(
     pool->region_count = region_count;
     pool->region_tiles = region_tiles;
     pool->publish_ready = publish_ready;
+    pool->claim_regions = publish_ready != 0U ? 1U : claim_regions;
     pool->active_worker_count = active_worker_count;
     pool->next_region = 0U;
     for (uint32_t worker = 0; worker < pool->active_worker_count;
@@ -3807,7 +3835,9 @@ static void qbh_w4f16_expand_with_main(
         ready_generations + main_regions, expected_generation,
         pool_regions, region_tiles,
         active_worker_count,
-        publish_ready != 0U || relaxed_group_fence == 0U);
+        publish_ready != 0U || relaxed_group_fence == 0U,
+        relaxed_group_fence != 0U
+            ? header->w4f16_expand_claim_regions : 1U);
     main_start = HAP_perf_get_qtimer_count();
     if (publish_ready == 0U && relaxed_group_fence != 0U) {
         qbh_unpack_w4_to_f16_hvx_relaxed(
@@ -6433,7 +6463,7 @@ static int qbh_run_projection(
                     buffers->expanded_weight, w4f16_ready,
                     generation, region_count,
                     header->w4f16_region_tiles,
-                    w4f16_pool->worker_count, 1U);
+                    w4f16_pool->worker_count, 1U, 1U);
                 qbh_w4f16_pool_wait(w4f16_pool);
                 header->w4f16_expand_ticks +=
                     HAP_perf_get_qtimer_count() - expand_start;
