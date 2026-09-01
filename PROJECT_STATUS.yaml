@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0145
+  active_experiment: null
   next_experiment_number: 146
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,17 +27,17 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0144
-  last_completed_source_commit: 919aaa74870661d78b92e64976e695a4fa87f955
-  provisional_source_parent: EXP-0144_candidate
+  last_completed_experiment: EXP-0145
+  last_completed_source_commit: 895febfa3543844ffc376be1d86f19c9e16d114a
+  provisional_source_parent: EXP-0144_selected_fastest_w4u8_baseline
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: approved_implementation
+  active_experiment_stage: none
   active_experiment_evidence: null
-  active_experiment_gate: w4u8_down_hmx_batch8
-  active_recipe_specialization: W4U8
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0144/20260901T045939Z_919aaa748706_formal'
+  active_experiment_gate: null
+  active_recipe_specialization: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0145/20260901T050905Z_895febfa3543_formal'
   latest_w4u8_qk_output_simd_candidate:
     id: EXP-0144
     source_branch: codex/exp-0144-w4u8-qk-output-simd-transpose
@@ -46,8 +46,8 @@ current_scope:
     retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0144/artifacts/919aaa748706/20260901T045939Z_formal'
     evidence_validity: valid
     local_gate: fail
-    adoption_status: rejected
-    selected_cell: exp0143_simd_input_pack_memcpy_output_control
+    adoption_status: accepted
+    selected_cell: w4u8_simd_input_and_output_transpose_candidate
     correctness_gate: pass_both_69f22eeb035e5ec5_identical_input_norm_score_probability_AV_hashes_zero_mismatch_zero_max_lsb
     physical_gate: pass_exact_8mib_vtcm_identical_5306080_peak_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner
     repeat1_qkv_change_percent: -42.919
@@ -78,8 +78,48 @@ current_scope:
     gate_summary_sha256: 1d1ce7755bfd931583c8b0f8c7712099508c92bc788d1804267ce8b036580276
     full_profiling_report_sha256: d314d60852f4d9fc582178078d5e82eb7d53c91c9c4fb5fb460ae0b5f72d55d4
     evidence_sha256_ledger_sha256: aeabca0c731a975666cfb3ec4f48b01195fa379e751c6969ae05af64d8a42184
-    conclusion: SIMD_output_transpose_is_byte_exact_and_removes_two_thirds_of_remaining_QK_work_with_large_QKV_and_Host_gains_but_fails_strict_GateUp_and_Down_preservation
-    reopen_condition: only_as_an_explicit_fastest_candidate_parent_or_with_phase_arrival_stabilization_not_another_output_transpose_variant
+    conclusion: SIMD_output_transpose_is_byte_exact_and_removes_two_thirds_of_remaining_QK_work_with_large_QKV_and_Host_gains_and_is_user_promoted_under_PC029
+    historical_local_gate: fail_preservation_only
+    documented_gate_exception: module_preservation_is_diagnostic_and_does_not_veto_lower_eligible_formal_paired_repeat10_complete_Host_wall
+    promoted_as: selected_fastest_w4u8_recipe_specialized_baseline
+    source_tag: baseline-w4u8-fastest-exp0144-qk-simd-io
+    promoted_by: user
+    promoted_on: '2026-09-01'
+    promotion_ref: 'User message 2026-09-01: 同意，先晋升144'
+    reopen_condition: selected_baseline_may_be_superseded_only_by_an_eligible_lower_formal_paired_repeat10_complete_Host_wall
+    selected_baseline_changed: true
+  latest_w4u8_down_batch8_candidate:
+    id: EXP-0145
+    source_branch: codex/exp-0145-w4u8-down-hmx-batch8
+    source_head: 895febfa3543844ffc376be1d86f19c9e16d114a
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0145/20260901T050905Z_895febfa3543_formal'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0145/artifacts/895febfa3543/20260901T050905Z_formal'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    selected_cell: exp0144_simd_io_down_batch4_control
+    correctness_gate: pass_both_69f22eeb035e5ec5_identical_stage_audits_zero_mismatch_zero_max_lsb
+    physical_gate: pass_exact_8mib_vtcm_identical_5306080_peak_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner
+    repeat1_down_change_percent: -0.275
+    repeat1_down_paired_change_percent: -0.252
+    repeat1_host_change_percent: -0.737
+    repeat1_host_paired_change_percent: 0.141
+    repeat10_down_change_percent: -1.486
+    repeat10_down_paired_change_percent: -1.491
+    repeat10_host_change_percent: -0.808
+    repeat10_host_paired_change_percent: -0.727
+    repeat10_hmx_compute_change_percent: -13.279
+    repeat10_hmx_ready_wait_change_percent: 13.267
+    repeat10_control_host_us: 1367.734
+    repeat10_candidate_host_us: 1356.677
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass_exp0109_f16f16_exp0110_selected_w4f16_EXP0144_selected_w4u8
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    gate_summary_sha256: e2fa16b9610df61be2a2c8ee35444d3c9c27ba3066ef3ebec7e2a3fc0ef0516d
+    full_profiling_report_sha256: 364865ca8e9f099e2e6bc0ec2811a91c036ccc67a3feef95495ed236d6b3328b
+    evidence_sha256_ledger_sha256: 6ca08962a702d6c33afe4fcced924999361ff0c9bd4f5f2a8830aac6369b26b2
+    conclusion: batch8_halves_Down_commands_but_moves_HMX_compute_to_ready_wait_and_the_sub_one_percent_gain_is_not_selected_under_the_noise_rule
+    reopen_condition: only_with_a_new_producer_progress_mechanism_not_another_fixed_batch_width_sweep
     selected_baseline_changed: false
   latest_w4u8_qk_row_cache_simd_candidate:
     id: EXP-0143
@@ -1883,28 +1923,30 @@ current_scope:
     promoted_on: '2026-08-31'
     promotion_ref: 'User message 2026-08-31: 同意你的建议'
   selected_fastest_w4u8_baseline:
-    id: W4U8-EXP0109-FROZEN-FASTEST
-    experiment: EXP-0109
+    id: W4U8-EXP0144-QK-SIMD-IO
+    experiment: EXP-0144
     project_variant: W4U8
-    source_branch: codex/exp-0109-public-common-freeze-consolidation
-    source_head: 42e2a33012929ccbb05e8c2741124b6fd539552c
-    source_tag: baseline-w4u8-fastest-exp0109-public-freeze
-    physical_plan: down_batch4_softmax_shuffle4_residual_shuffle4_qk_quarter_tiled
+    source_branch: codex/exp-0144-w4u8-qk-output-simd-transpose
+    source_head: 919aaa74870661d78b92e64976e695a4fa87f955
+    source_tag: baseline-w4u8-fastest-exp0144-qk-simd-io
+    physical_plan: exp0124_ring3_qk_quarter_tiled_plus_four_row_SIMD_input_and_output_transpose_down_batch4
     runtime:
       residual_mode: hvx_fused_post_norm_pool6_shuffle4
       attention_pipeline_mode: u8_log2_gqa_qkv_overlap_vgather_vdeal_fused_qk_requant_hmx_batch_lut_templates_gqa_batch_dependency_stream_softmax_shuffle4
-      w4u8_qk_pair_kernel_mode: quarter_tiled
+      w4u8_qk_pair_kernel_mode: quarter_tiled_simd_io
       w4u8_down_hmx_batch_outputs: 4
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0109/20260831T155519Z_42e2a3301292_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0109/artifacts/42e2a3301292/20260831T155519Z_formal'
-    repeat1_host_wall_ns_per_block_median: 2184791.0
-    repeat10_host_wall_ns_per_block_median: 1749349.0
-    repeat1_change_vs_fair_w4u8_percent: -4.685307088819545
-    repeat10_change_vs_fair_w4u8_percent: -10.569501368259038
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0144/20260901T045939Z_919aaa748706_formal'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0144/artifacts/919aaa748706/20260901T045939Z_formal'
+    repeat1_host_wall_ns_per_block_median: 1762396.0
+    repeat10_host_wall_ns_per_block_median: 1364625.0
+    repeat1_change_vs_fair_w4u8_percent: -23.113
+    repeat10_change_vs_fair_w4u8_percent: -30.237
     output_hash: 69f22eeb035e5ec5
     promoted_by: user
-    promoted_on: '2026-08-31'
-    promotion_ref: 'User message 2026-08-31: 同意你的建议'
+    promoted_on: '2026-09-01'
+    promotion_ref: 'User message 2026-09-01: 同意，先晋升144'
+    promotion_rule: PC029_formal_rotated_pair_repeat10_complete_block_Host_wall_only_among_eligible_candidates
+    historical_local_gate: fail_preservation_only_documented_exception
   selected_baseline:
     id: W4F16-EXP0109-FROZEN-FAIR-COMMON
     experiment: EXP-0109

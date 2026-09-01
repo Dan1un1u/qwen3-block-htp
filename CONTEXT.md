@@ -77,6 +77,23 @@ A Selected Baseline approved for one numerical recipe after the Public Common
 Layer is frozen; it may diverge from the fair cross-recipe configuration.
 _Avoid_: Public Common Baseline, fair comparator, local candidate
 
+**Recipe-Fastest Promotion Score**:
+The formal rotated-pair repeat-ten complete-block Host wall latency used as the
+only performance-ranking metric among candidates that already satisfy the
+mathematical, physical, scope and evidence eligibility contract. Repeat-one,
+module timings and engine counters remain required diagnostics, not promotion
+vetoes. Near-noise results require additional paired rounds and otherwise stay
+tied.
+_Avoid_: one lucky run, module-local gate, work-cycle ranking, correctness gate
+
+**Enabling Candidate**:
+An evidence-valid structural implementation retained as a possible parent even
+when its standalone repeat-ten wall is slower than the Selected recipe-fastest
+baseline. It exists to keep the search from becoming single-path greedy, but it
+cannot be called a baseline and a later combination must still beat the current
+baseline before promotion.
+_Avoid_: selected baseline, permission to ignore final wall time, automatic adoption
+
 **Provisional Source Parent**:
 An accepted experiment explicitly chosen by the user as the implementation
 starting point for the next experiment, without promoting it to Selected

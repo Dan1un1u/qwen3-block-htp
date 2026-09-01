@@ -118,3 +118,21 @@ Changing any item requires explicit user approval and a committed amendment.
   variant reuses the latest valid formal evidence for the other columns and
   states that provenance. This overview supplements rather than replaces the
   repeat-one/repeat-ten direct-control tables required by PC-027.
+- **PC-029 — Recipe-fastest baseline ranking.** Mathematical correctness,
+  physical-contract compliance, equivalent execution scope, valid evidence and
+  measurement reproducibility are eligibility requirements rather than
+  performance-ranking dimensions. Among eligible candidates for one recipe,
+  the only promotion ranking metric is the formal rotated-pair repeat-ten
+  complete-block Host wall latency. Repeat-one latency, module-preservation
+  deltas, qtimer work, HMX/HVX/DMA counters and local gates remain mandatory
+  diagnostics but do not veto a lower eligible repeat-ten wall result. A raw
+  best run is never a ranking result; gains near measured device noise require
+  additional paired rounds and remain tied until reproducible.
+- **PC-030 — Non-greedy specialization search.** The Selected recipe-fastest
+  baseline records the lowest eligible repeat-ten Host wall observed and may
+  advance monotonically, but experiments are not required to branch only from
+  it. An evidence-valid slower structural candidate may be retained as an
+  explicit enabling parent when it tests a new physical hypothesis. Such a
+  candidate is not a baseline; any completed combination must still beat the
+  current recipe-fastest baseline under PC-029 before promotion. The frozen
+  Public Common Baseline and PC-017 fair-comparison rules remain separate.

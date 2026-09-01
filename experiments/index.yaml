@@ -13,20 +13,22 @@ experiments:
     variants:
       - exp0144_simd_io_down_batch4_control
       - w4u8_simd_io_down_batch8_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-down-hmx-batch8
     source_branches:
       - codex/exp-0145-w4u8-down-hmx-batch8
-    source_commits: []
+    source_commits:
+      - 895febfa3543844ffc376be1d86f19c9e16d114a
     record: docs/experiments/EXP-0145.md
     approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently without interruption'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0145-w4u8-down-hmx-batch8
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0144_candidate
       source_parent_commit: 919aaa74870661d78b92e64976e695a4fa87f955
@@ -47,6 +49,47 @@ experiments:
       physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_identical_weight_DMA_tile_work_qparams_carriers_and_peak_plan_declared_Down_command_grouping_only
       speed_gate: candidate_Down_and_complete_Host_strictly_improve_ordinary_and_paired_repeat1_and_repeat10_and_QKV_Attention_GateUp_regression_at_most_0p5_percent
       completion_gate: bounded_smoke_then_five_rotated_formal_rounds_PC027_PC028_and_no_automatic_baseline_promotion
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0145/20260901T050905Z_895febfa3543_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0145/artifacts/895febfa3543/20260901T050905Z_formal'
+      source_commit: 895febfa3543844ffc376be1d86f19c9e16d114a
+      static_gate_result: pass_runtime_Down_batch4_or_batch8_runner_max8_and_in_command_slot_release_retained
+      correctness_gate_result: pass_both_69f22eeb035e5ec5_identical_stage_audits_zero_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_identical_5306080_peak_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner
+      command_gate_result: pass_Down_commands_16_to_8_total_HMX_commands_128_to_120_in_command_slot_release_128_unchanged
+      selected_cell: exp0144_simd_io_down_batch4_control
+      repeat1_down_change_percent: -0.275
+      repeat1_down_paired_change_percent: -0.252
+      repeat1_host_change_percent: -0.737
+      repeat1_host_paired_change_percent: 0.141
+      repeat1_qkv_change_percent: 0.660
+      repeat1_qkv_paired_change_percent: 1.031
+      repeat1_attention_change_percent: 0.384
+      repeat1_attention_paired_change_percent: 1.067
+      repeat1_gate_up_change_percent: 1.135
+      repeat1_gate_up_paired_change_percent: 1.327
+      repeat10_down_change_percent: -1.486
+      repeat10_down_paired_change_percent: -1.491
+      repeat10_host_change_percent: -0.808
+      repeat10_host_paired_change_percent: -0.727
+      repeat10_qkv_change_percent: -1.299
+      repeat10_qkv_paired_change_percent: -0.667
+      repeat10_attention_change_percent: -1.179
+      repeat10_attention_paired_change_percent: -0.426
+      repeat10_gate_up_change_percent: 0.375
+      repeat10_gate_up_paired_change_percent: -0.012
+      repeat10_hmx_compute_change_percent: -13.279
+      repeat10_hmx_ready_wait_change_percent: 13.267
+      repeat10_control_host_us: 1367.734
+      repeat10_candidate_host_us: 1356.677
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_exp0109_f16f16_exp0110_selected_w4f16_EXP0144_selected_w4u8
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: e2fa16b9610df61be2a2c8ee35444d3c9c27ba3066ef3ebec7e2a3fc0ef0516d
+      full_profiling_report_sha256: 364865ca8e9f099e2e6bc0ec2811a91c036ccc67a3feef95495ed236d6b3328b
+      evidence_sha256_ledger_sha256: 6ca08962a702d6c33afe4fcced924999361ff0c9bd4f5f2a8830aac6369b26b2
+      conclusion: batch8_halves_Down_commands_but_moves_HMX_compute_to_HMX_ready_wait_and_the_sub_one_percent_repeat10_gain_is_not_selected_under_the_noise_rule
+      reopen_condition: only_with_a_new_producer_progress_mechanism_not_another_fixed_Down_batch_width_sweep
+      selected_baseline_changed: false
   - id: EXP-0144
     slug: w4u8-qk-output-simd-transpose
     title: W4U8 Q/K Norm-RoPE SIMD output transpose
@@ -57,7 +100,7 @@ experiments:
     execution_state: completed
     evidence_validity: valid
     local_gate: fail
-    adoption_status: rejected
+    adoption_status: accepted
     evidence_profile: real-qwen3-block-w4u8-qk-output-simd-transpose
     source_branches:
       - codex/exp-0144-w4u8-qk-output-simd-transpose
@@ -97,7 +140,7 @@ experiments:
       physical_gate_result: pass_exact_8mib_vtcm_identical_5306080_peak_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner
       speed_gate_result: pass_QK_work_QKV_complete_Host_strictly_improve_at_both_repeats
       preservation_gate_result: fail_GateUp_repeat1_plus1p508_ordinary_and_paired_repeat10_plus0p986_ordinary_plus0p904_paired_and_Down_repeat10_plus0p884_ordinary_plus0p986_paired
-      selected_cell: exp0143_simd_input_pack_memcpy_output_control
+      selected_cell: w4u8_simd_input_and_output_transpose_candidate
       repeat1_qkv_change_percent: -42.91910239487082
       repeat1_qkv_paired_change_percent: -41.74364896073903
       repeat1_qk_work_change_percent: -67.20358789716379
@@ -124,9 +167,15 @@ experiments:
       gate_summary_sha256: 1d1ce7755bfd931583c8b0f8c7712099508c92bc788d1804267ce8b036580276
       full_profiling_report_sha256: d314d60852f4d9fc582178078d5e82eb7d53c91c9c4fb5fb460ae0b5f72d55d4
       evidence_sha256_ledger_sha256: aeabca0c731a975666cfb3ec4f48b01195fa379e751c6969ae05af64d8a42184
-      conclusion: SIMD_output_transpose_is_byte_exact_and_removes_two_thirds_of_remaining_QK_work_with_large_QKV_and_Host_gains_but_fails_strict_GateUp_and_Down_preservation
-      reopen_condition: only_as_an_explicit_fastest_candidate_parent_or_with_phase_arrival_stabilization_not_another_output_transpose_variant
-      selected_baseline_changed: false
+      conclusion: SIMD_output_transpose_is_byte_exact_and_removes_two_thirds_of_remaining_QK_work_with_large_QKV_and_Host_gains_and_is_promoted_under_PC029_despite_the_preserved_historical_local_gate_failure
+      documented_gate_exception: user_approved_recipe_fastest_promotion_ranks_eligible_candidates_only_by_formal_paired_repeat10_complete_Host_wall
+      promoted_as: selected_fastest_w4u8_recipe_specialized_baseline
+      source_tag: baseline-w4u8-fastest-exp0144-qk-simd-io
+      promoted_by: user
+      promoted_on: '2026-09-01'
+      promotion_ref: 'User message 2026-09-01: 同意，先晋升144'
+      reopen_condition: selected_baseline_may_be_superseded_only_by_an_eligible_lower_formal_paired_repeat10_complete_Host_wall
+      selected_baseline_changed: true
   - id: EXP-0143
     slug: w4u8-qk-row-cache-simd-transpose
     title: W4U8 Q/K Norm-RoPE SIMD row-cache transpose
