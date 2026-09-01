@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(56)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(136)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(58)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(138)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -345,6 +345,7 @@ struct qbh_block_header {
     uint32_t w4f16_gate_up_extra_expand_worker;
     uint32_t w4f16_gate_up_extra_stream_worker;
     uint32_t w4f16_gate_up_stream_group_tiles;
+    uint32_t w4f16_gate_up_initial_up_dma_overlap;
     uint32_t w4u8_stream_fence_mode;
     uint32_t w4u8_gate_up_ring_slots;
 
@@ -641,6 +642,10 @@ struct qbh_block_header {
     uint64_t w4f16_gate_up_stream_join_wait_ticks;
     uint64_t w4f16_gate_up_hmx_command_count;
     uint64_t w4f16_gate_up_scale_init_ticks;
+    uint64_t w4f16_gate_up_initial_up_dma_wait_ticks;
+    uint64_t w4f16_gate_up_first_gate_hmx_start_tick;
+    uint64_t w4f16_gate_up_initial_up_dma_wait_start_tick;
+    uint32_t w4f16_gate_up_initial_up_dma_overlap_count;
 
     uint32_t w4u8_mlp_vtcm_base_offset;
     uint32_t w4u8_mlp_vtcm_plan_bytes;

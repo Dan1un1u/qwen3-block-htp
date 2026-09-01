@@ -824,6 +824,18 @@ static int qbh_header_valid(const struct qbh_block_header *header,
           header->variant != QBH_BLOCK_W4F16 ||
           header->w4f16_requested_hvx_workers != 4U ||
           header->mlp_mode != QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8)) ||
+        header->w4f16_gate_up_initial_up_dma_overlap > 1U ||
+        (header->w4f16_gate_up_initial_up_dma_overlap != 0U &&
+         (header->variant != QBH_BLOCK_W4F16 ||
+          header->w4f16_pipeline_mode !=
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH ||
+          header->w4f16_group_fence_mode !=
+              QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY ||
+          header->w4f16_requested_hvx_workers != 4U ||
+          header->w4f16_gate_up_extra_expand_worker == 0U ||
+          header->w4f16_gate_up_extra_stream_worker == 0U ||
+          header->w4f16_gate_up_stream_group_tiles != 4U ||
+          header->mlp_mode != QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8)) ||
         header->w4u8_stream_fence_mode >
             QBH_BLOCK_W4U8_STREAM_FENCE_RELEASE_ONLY ||
         (header->w4u8_stream_fence_mode !=
@@ -5255,7 +5267,9 @@ static int qbh_w4f16_mlp_wait_batch(
     uint64_t end;
     int result;
 
-    if (batch == 0U) {
+    if (batch == 0U &&
+        (state->prefetch_active == 0U ||
+         state->prefetched_batch != 0U)) {
         return 0;
     }
     if (state->prefetch_active == 0U ||
@@ -5263,9 +5277,28 @@ static int qbh_w4f16_mlp_wait_batch(
         return -1;
     }
     wait_start = HAP_perf_get_qtimer_count();
+    if (batch == 0U &&
+        header->w4f16_gate_up_initial_up_dma_overlap != 0U &&
+        state->desc ==
+            &header->projections[QBH_BLOCK_PROJ_UP]) {
+        header->w4f16_gate_up_initial_up_dma_wait_start_tick =
+            wait_start;
+        if (header->w4f16_gate_up_first_gate_hmx_start_tick != 0U &&
+            header->w4f16_gate_up_first_gate_hmx_start_tick <=
+                wait_start) {
+            ++header->w4f16_gate_up_initial_up_dma_overlap_count;
+        }
+    }
     result = qbh_dma_wait_weight_prefetch(
         &state->prefetch_descriptor);
     end = HAP_perf_get_qtimer_count();
+    if (batch == 0U &&
+        header->w4f16_gate_up_initial_up_dma_overlap != 0U &&
+        state->desc ==
+            &header->projections[QBH_BLOCK_PROJ_UP]) {
+        header->w4f16_gate_up_initial_up_dma_wait_ticks +=
+            end - wait_start;
+    }
     header->w4f16_prefetch_wait_ticks += end - wait_start;
     header->weight_dma_ticks += end - state->prefetch_start;
     state->prefetch_active = 0U;
@@ -5385,6 +5418,13 @@ static void qbh_w4f16_mlp_start_group(
         state->expanded_slots[expanded_slot],
         scale_blocks, output_tiles, 2U,
         state->k_tiles, state->group_tiles);
+    if (group == 0U &&
+        header->w4f16_gate_up_initial_up_dma_overlap != 0U &&
+        state->desc ==
+            &header->projections[QBH_BLOCK_PROJ_GATE]) {
+        header->w4f16_gate_up_first_gate_hmx_start_tick =
+            HAP_perf_get_qtimer_count();
+    }
     ++header->w4f16_streamed_command_count;
 }
 
@@ -5579,20 +5619,28 @@ static int qbh_run_w4f16_interleaved_gate_up(
         header->weight_ddr_read_bytes += compressed_batch_bytes;
         ++header->weight_dma_descriptor_count;
     }
-    if (qbh_dma_copy(
-            header, up.compressed_slots[0],
-            shared + up.desc->weight_offset,
-            compressed_batch_bytes, 1U) != 0) {
+    if (header->w4f16_gate_up_initial_up_dma_overlap == 0U) {
+        if (qbh_dma_copy(
+                header, up.compressed_slots[0],
+                shared + up.desc->weight_offset,
+                compressed_batch_bytes, 1U) != 0) {
+            qbh_record_projection_failure(
+                header, up.desc, 0U, 52U, -1);
+            return -1;
+        }
+        header->weight_ddr_read_bytes += compressed_batch_bytes;
+        ++header->weight_dma_descriptor_count;
+    } else if (qbh_w4f16_mlp_start_prefetch(
+                   header, shared, &up, 0U) != 0) {
         qbh_record_projection_failure(
             header, up.desc, 0U, 52U, -1);
         return -1;
     }
-    header->weight_ddr_read_bytes += compressed_batch_bytes;
-    ++header->weight_dma_descriptor_count;
     if (qbh_w4f16_mlp_start_prefetch(
             header, shared, &gate, 1U) != 0 ||
-        qbh_w4f16_mlp_start_prefetch(
-            header, shared, &up, 1U) != 0) {
+        (header->w4f16_gate_up_initial_up_dma_overlap == 0U &&
+         qbh_w4f16_mlp_start_prefetch(
+             header, shared, &up, 1U) != 0)) {
         qbh_w4f16_mlp_drain_prefetch(header, &gate);
         qbh_w4f16_mlp_drain_prefetch(header, &up);
         qbh_record_projection_failure(

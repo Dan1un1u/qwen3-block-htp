@@ -1521,6 +1521,7 @@ int main(int argc, char **argv) {
     uint32_t w4f16_gate_up_extra_expand_worker = 0U;
     uint32_t w4f16_gate_up_extra_stream_worker = 0U;
     uint32_t w4f16_gate_up_stream_group_tiles = 8U;
+    uint32_t w4f16_gate_up_initial_up_dma_overlap = 0U;
     uint32_t w4u8_stream_fence_mode =
         QBH_BLOCK_W4U8_STREAM_FENCE_CONTROL;
     uint32_t w4u8_gate_up_ring_slots = 8U;
@@ -1629,6 +1630,16 @@ int main(int argc, char **argv) {
                 group_tiles,
                 &w4f16_gate_up_stream_group_tiles) != 0) {
             w4f16_gate_up_stream_group_tiles = UINT32_MAX;
+        }
+    }
+    {
+        const char *overlap =
+            getenv("QBH_W4F16_GATE_UP_INITIAL_UP_DMA_OVERLAP");
+        if (overlap != NULL && overlap[0] != '\0' &&
+            qbh_parse_u32(
+                overlap,
+                &w4f16_gate_up_initial_up_dma_overlap) != 0) {
+            w4f16_gate_up_initial_up_dma_overlap = UINT32_MAX;
         }
     }
     {
@@ -1995,6 +2006,18 @@ int main(int argc, char **argv) {
           variant != QBH_BLOCK_W4F16 ||
           w4f16_hvx_workers != 4U ||
           mlp_mode != QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8)) ||
+        w4f16_gate_up_initial_up_dma_overlap > 1U ||
+        (w4f16_gate_up_initial_up_dma_overlap != 0U &&
+         (variant != QBH_BLOCK_W4F16 ||
+          w4f16_pipeline_mode !=
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH ||
+          w4f16_group_fence_mode !=
+              QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY ||
+          w4f16_hvx_workers != 4U ||
+          w4f16_gate_up_extra_expand_worker == 0U ||
+          w4f16_gate_up_extra_stream_worker == 0U ||
+          w4f16_gate_up_stream_group_tiles != 4U ||
+          mlp_mode != QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8)) ||
         (w4f16_pipeline_mode == QBH_BLOCK_W4F16_PIPELINE_EARLY_REGION &&
          w4f16_region_tiles > 32U)) {
         fprintf(stderr, "usage: %s PACKAGE_DIR VARIANT [repeat_count] "
@@ -2330,6 +2353,8 @@ int main(int argc, char **argv) {
         w4f16_gate_up_extra_stream_worker;
     header->w4f16_gate_up_stream_group_tiles =
         w4f16_gate_up_stream_group_tiles;
+    header->w4f16_gate_up_initial_up_dma_overlap =
+        w4f16_gate_up_initial_up_dma_overlap;
     header->w4u8_stream_fence_mode = w4u8_stream_fence_mode;
     header->w4u8_gate_up_ring_slots = w4u8_gate_up_ring_slots;
     header->w4u8_qk_pair_kernel_mode =
@@ -2607,7 +2632,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0136\","
+        "{\"experiment\":\"EXP-0138\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2621,6 +2646,7 @@ int main(int argc, char **argv) {
         "\"w4f16_gate_up_extra_expand_worker\":%" PRIu32 ","
         "\"w4f16_gate_up_extra_stream_worker\":%" PRIu32 ","
         "\"w4f16_gate_up_stream_group_tiles\":%" PRIu32 ","
+        "\"w4f16_gate_up_initial_up_dma_overlap\":%" PRIu32 ","
         "\"w4u8_stream_fence_mode\":\"%s\","
         "\"fp16_norm_rows_per_task\":%" PRIu32 ","
         "\"fp16_norm_contexts\":%" PRIu32 ","
@@ -2852,6 +2878,10 @@ int main(int argc, char **argv) {
         "\"w4f16_gate_up_stream_join_wait_ticks\":%" PRIu64 ","
         "\"w4f16_gate_up_hmx_command_count\":%" PRIu64 ","
         "\"w4f16_gate_up_scale_init_ticks\":%" PRIu64 ","
+        "\"w4f16_gate_up_initial_up_dma_wait_ticks\":%" PRIu64 ","
+        "\"w4f16_gate_up_first_gate_hmx_start_tick\":%" PRIu64 ","
+        "\"w4f16_gate_up_initial_up_dma_wait_start_tick\":%" PRIu64 ","
+        "\"w4f16_gate_up_initial_up_dma_overlap_count\":%" PRIu32 ","
         "\"w4u8_mlp_vtcm_base_offset\":%" PRIu32 ","
         "\"w4u8_mlp_vtcm_plan_bytes\":%" PRIu32 ","
         "\"w4u8_mlp_lut_vtcm_bytes\":%" PRIu32 ","
@@ -2951,6 +2981,7 @@ int main(int argc, char **argv) {
         header->w4f16_gate_up_extra_expand_worker,
         header->w4f16_gate_up_extra_stream_worker,
         header->w4f16_gate_up_stream_group_tiles,
+        header->w4f16_gate_up_initial_up_dma_overlap,
         qbh_w4u8_stream_fence_mode_name(
             header->w4u8_stream_fence_mode),
         header->fp16_norm_rows_per_task,
@@ -3177,6 +3208,10 @@ int main(int argc, char **argv) {
         header->w4f16_gate_up_stream_join_wait_ticks,
         header->w4f16_gate_up_hmx_command_count,
         header->w4f16_gate_up_scale_init_ticks,
+        header->w4f16_gate_up_initial_up_dma_wait_ticks,
+        header->w4f16_gate_up_first_gate_hmx_start_tick,
+        header->w4f16_gate_up_initial_up_dma_wait_start_tick,
+        header->w4f16_gate_up_initial_up_dma_overlap_count,
         header->w4u8_mlp_vtcm_base_offset,
         header->w4u8_mlp_vtcm_plan_bytes,
         header->w4u8_mlp_lut_vtcm_bytes,
