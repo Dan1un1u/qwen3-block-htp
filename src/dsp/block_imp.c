@@ -462,7 +462,8 @@ static void qbh_hvx_pool_u8_qk_prep_publish(
     uint32_t first_n_tile, uint32_t n_tiles);
 static int qbh_hvx_pool_u8_qk_prep_wait_async(
     struct qbh_block_header *header,
-    struct qbh_block_w4f16_pool *pool);
+    struct qbh_block_w4f16_pool *pool,
+    struct qbh_block_w4f16_job *extra_job);
 static float qbh_f16_max_abs(
     const struct qbh_block_header *header,
     const __fp16 *data, uint32_t elements);
@@ -840,6 +841,12 @@ static int qbh_header_valid(const struct qbh_block_header *header,
               QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS ||
           (header->crouton_boundary_mode &
            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT) == 0U)) ||
+        header->w4u8_qkv_tail_prep_mode >
+            QBH_BLOCK_W4U8_QKV_TAIL_PREP_MAIN_DRAIN ||
+        (header->w4u8_qkv_tail_prep_mode !=
+             QBH_BLOCK_W4U8_QKV_TAIL_PREP_CONTROL &&
+         (header->variant != QBH_BLOCK_W4U8 ||
+          header->w4u8_qkv_ring_expand_workers != 3U)) ||
         (header->qkv_schedule_mode !=
              QBH_BLOCK_QKV_SCHEDULE_CONTROL &&
          (header->variant != QBH_BLOCK_W4F16 ||
@@ -5935,6 +5942,7 @@ static int qbh_run_w4u8_qkv_ring(
     int hmx_started = 0;
     int pool_started = 0;
     uint64_t local_expand_ticks = 0U;
+    struct qbh_block_w4f16_job main_prep_job;
     int result = -1;
 
     if (header == NULL || shared == NULL || buffers == NULL ||
@@ -5951,6 +5959,7 @@ static int qbh_run_w4u8_qkv_ring(
     }
 
     memset(&state, 0, sizeof(state));
+    memset(&main_prep_job, 0, sizeof(main_prep_job));
     state.header = header;
     state.shared = shared;
     state.pool = pool;
@@ -5959,6 +5968,8 @@ static int qbh_run_w4u8_qkv_ring(
     state.k_tiles = QBH_BLOCK_HIDDEN / QBH_HMX_INPUT_CHANNELS;
     state.expand_worker_count =
         header->w4u8_qkv_ring_expand_workers;
+    main_prep_job.pool = pool;
+    main_prep_job.worker_index = pool->worker_count;
     state.compressed_slots[0] = buffers->compressed_weight;
     state.compressed_slots[1] = buffers->compressed_weight_alt;
     state.compressed_slots[2] = buffers->middle;
@@ -6117,6 +6128,21 @@ static int qbh_run_w4u8_qkv_ring(
     }
 
 finish:
+    if (hmx_started != 0 && pool_started != 0 &&
+        state.abort_status == 0U &&
+        header->w4u8_qkv_tail_prep_mode ==
+            QBH_BLOCK_W4U8_QKV_TAIL_PREP_MAIN_DRAIN) {
+        const uint64_t prep_start = HAP_perf_get_qtimer_count();
+        qbh_attention_u8_qk_prep_pool_run_tasks(
+            pool, &main_prep_job);
+        header->w4u8_qkv_ring_main_prep_ticks +=
+            HAP_perf_get_qtimer_count() - prep_start;
+        header->w4u8_qkv_ring_main_prep_task_count +=
+            main_prep_job.attention_qk_norm_task_count / 2U;
+        if (pool->attention_qk_stream_abort != 0U) {
+            qbh_w4u8_qkv_ring_abort(&state);
+        }
+    }
     if (hmx_started != 0) {
         uint64_t wait_start = HAP_perf_get_qtimer_count();
         const int hmx_result = qbh_hmx_wait(worker);
@@ -6131,7 +6157,12 @@ finish:
     }
     if (pool_started != 0) {
         uint64_t wait_before = header->attention_qk_norm_pool_wait_ticks;
-        if (qbh_hvx_pool_u8_qk_prep_wait_async(header, pool) != 0) {
+        if (qbh_hvx_pool_u8_qk_prep_wait_async(
+                header, pool,
+                header->w4u8_qkv_tail_prep_mode ==
+                        QBH_BLOCK_W4U8_QKV_TAIL_PREP_MAIN_DRAIN
+                    ? &main_prep_job
+                    : NULL) != 0) {
             qbh_w4u8_qkv_ring_abort(&state);
         }
         header->w4u8_qkv_ring_pool_wait_ticks +=
@@ -8914,7 +8945,8 @@ static void qbh_hvx_pool_u8_qk_prep_publish(
 
 static int qbh_hvx_pool_u8_qk_prep_wait_async(
     struct qbh_block_header *header,
-    struct qbh_block_w4f16_pool *pool) {
+    struct qbh_block_w4f16_pool *pool,
+    struct qbh_block_w4f16_job *extra_job) {
     uint64_t wait_start;
     uint32_t completed_groups = 0U;
 
@@ -8946,6 +8978,20 @@ static int qbh_hvx_pool_u8_qk_prep_wait_async(
             job->u8_attention_k_pack_ticks;
         header->u8_attention_fused_k_operand_mismatch_count +=
             job->u8_attention_fused_k_operand_mismatch_count;
+    }
+    if (extra_job != NULL) {
+        completed_groups +=
+            extra_job->u8_attention_prepared_group_count;
+        header->u8_attention_qk_norm_rope_ticks +=
+            extra_job->u8_attention_qk_norm_rope_ticks;
+        header->w4u8_qk_quarter_pair_count +=
+            extra_job->u8_qk_quarter_pair_count;
+        header->attention_qk_norm_task_count +=
+            extra_job->attention_qk_norm_task_count;
+        header->u8_attention_k_pack_ticks +=
+            extra_job->u8_attention_k_pack_ticks;
+        header->u8_attention_fused_k_operand_mismatch_count +=
+            extra_job->u8_attention_fused_k_operand_mismatch_count;
     }
     pool->attention_qk_streaming = 0U;
     return pool->attention_qk_stream_abort == 0U &&
@@ -10577,7 +10623,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         if (u8_qkv_overlap_enabled != 0U) {
             qbh_hvx_pool_u8_qk_prep_abort_async(w4f16_pool);
             (void)qbh_hvx_pool_u8_qk_prep_wait_async(
-                header, w4f16_pool);
+                header, w4f16_pool, NULL);
         }
         return QBH_BLOCK_STATUS_QKV_FAILED;
     }
@@ -10597,7 +10643,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         if (u8_qkv_overlap_enabled != 0U) {
             qbh_hvx_pool_u8_qk_prep_abort_async(w4f16_pool);
             (void)qbh_hvx_pool_u8_qk_prep_wait_async(
-                header, w4f16_pool);
+                header, w4f16_pool, NULL);
         }
         return QBH_BLOCK_STATUS_QKV_FAILED;
     }
@@ -10611,7 +10657,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         if (u8_qkv_overlap_enabled != 0U) {
             qbh_hvx_pool_u8_qk_prep_abort_async(w4f16_pool);
             (void)qbh_hvx_pool_u8_qk_prep_wait_async(
-                header, w4f16_pool);
+                header, w4f16_pool, NULL);
         }
         return QBH_BLOCK_STATUS_QKV_FAILED;
     }
@@ -10619,7 +10665,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     if (u8_qkv_overlap_enabled != 0U &&
         w4u8_qkv_ring_enabled == 0U &&
         qbh_hvx_pool_u8_qk_prep_wait_async(
-            header, w4f16_pool) != 0) {
+            header, w4f16_pool, NULL) != 0) {
         return QBH_BLOCK_STATUS_QK_NORM_ROPE_FAILED;
     }
     if (qkv_overlap_enabled != 0U) {
