@@ -100,6 +100,12 @@ def f16(value: torch.Tensor) -> np.ndarray:
 
 def load_qparams(package: Path) -> dict[str, dict[str, object]]:
     manifest = json.loads((package / "manifest.json").read_text(encoding="utf-8"))
+    if "u8_qparams" in manifest:
+        return manifest["u8_qparams"]
+    if "reference_source" not in manifest:
+        if "source_package" not in manifest:
+            raise KeyError(f"no qparam provenance in {package / 'manifest.json'}")
+        return load_qparams(Path(manifest["source_package"]))
     reference = Path(manifest["reference_source"])
     reference_manifest = json.loads(
         (reference / "manifest.json").read_text(encoding="utf-8")
