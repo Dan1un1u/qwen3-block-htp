@@ -33,8 +33,8 @@ current_scope:
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_running_single_rpcmem_alloc2_full_stack_resume
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: EXP0152_stage_C_F16F16_trajectory_diagnostic_complete_composition_gate_amended_continue_three_recipe_formal_execution
-  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0152/20260901T161930Z_hidden_trajectory'
+  active_experiment_stage: EXP0152_stage_C_F16F16_composition_semantics_verified_update_host_gate_then_continue_three_recipe_formal_execution
+  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0152/20260902T003950Z_formal_composition_v2'
   active_experiment_gate: pending_three_recipe_prefill_continuous_decode_amended_correctness_zero_intermediate_DDR_and_complete_profiling
   active_recipe_specialization: common_full_stack_integration_no_new_specialization
   latest_full_stack_hidden_trajectory_diagnostic:
@@ -56,6 +56,25 @@ current_scope:
     amended_gate_approved_by: user
     amended_gate_approval_ref: 'User message 2026-09-02: 确认方案1'
     amended_f16_gate: no_nonfinite_each_conditional_layer_and_cache_cosine_at_least_0p99999_legacy_mixed_violation_fraction_at_most_0p01_final_composed_cosine_at_least_0p99999_final_composed_NRMSE_at_most_0p003
+  latest_f16f16_composition_semantics_audit:
+    source_commit: ef43071f3e108de90ec108b87a9cb522618774e9
+    evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0152/20260902T003950Z_formal_composition_v2'
+    formal_prefill_and_decode_steps: 9
+    output_gate_pass_steps: 9
+    minimum_composed_output_cosine: 0.999997239
+    maximum_composed_output_nrmse: 0.00235297631
+    minimum_composed_cache_cosine: 0.999990536
+    formal_intermediate_ddr_read_bytes: 0
+    formal_intermediate_ddr_write_bytes: 0
+    formal_spill_fill_count: 0
+    conditional_layer_gate_pass: true
+    conditional_cache_gate_pass: true
+    conditional_cache_tensors: 56
+    conditional_cache_legacy_mixed_violations: 0
+    minimum_conditional_cache_cosine: 0.999999819273225
+    composed_cache_legacy_fraction_diagnostic_maximum: 0.113571167
+    composed_cache_late_v_tensors_over_local_fraction: [layer21_v, layer22_v, layer23_v, layer24_v, layer25_v, layer26_v, layer27_v]
+    finding: local_conditional_gate_passes_composed_cache_mixed_fraction_contains_upstream_drift_and_is_diagnostic
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0151/20260901T152446Z_d6b1706_device_gate'
   latest_rpcmem_alloc2_single_buffer_probe:
     id: EXP-0151

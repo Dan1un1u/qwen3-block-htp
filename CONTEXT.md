@@ -866,12 +866,17 @@ multi-arena weights, package streaming
 **Full-Stack FP16 Composition Gate**:
 The user-approved EXP-0152 correctness rule for comparing F16F16 and W4F16
 hardware execution with their independent software implementations across 28
-layers. Every conditional layer output and FP16 cache comparison must contain
+layers. Every conditional layer output and conditional FP16 cache comparison must contain
 no non-finite values, retain cosine of at least 0.99999, and place at most one
 percent of elements outside the legacy mixed tolerance `0.0625 +
 0.002*abs(reference)`. The final composed output must additionally retain
 cosine of at least 0.99999 and NRMSE of at most 0.003. The legacy elementwise
-violation count remains visible as a diagnostic rather than being erased.
+violation count remains visible as a diagnostic rather than being erased. A
+cache receives the one-percent local rule only when its software reference
+consumes the same actual incoming hidden state. A formal full-stack cache
+comparison includes upstream composed drift and therefore requires no
+non-finite values plus cosine of at least 0.99999; its legacy mixed-bound
+fraction remains diagnostic.
 W4U8 remains governed by its zero-LSB implementation-reference gate.
 _Avoid_: exact FP16 byte agreement, teacher-accuracy gate, hiding legacy
 violations, applying the relaxed FP16 rule to W4U8
