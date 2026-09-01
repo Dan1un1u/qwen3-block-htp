@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0149
+  active_experiment: null
   next_experiment_number: 150
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,17 +27,42 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_layers13_14_15_real_replay_prefill_continuous_decode_vertical_slice
-  last_completed_experiment: EXP-0148
-  last_completed_source_commit: 63575b8812f485936d35d8843c57aa41c9e2103c
-  provisional_source_parent: EXP-0148_real_layer_replay_decode_session
+  last_completed_experiment: EXP-0149
+  last_completed_source_commit: f75c5e0e0b6ec09ac4422496a9254d82092e9e40
+  provisional_source_parent: EXP-0149_three_layer_vertical_slice
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
-  full_model: staged_future_scope_after_real_single_layer_and_vertical_slice_gates
-  qwen3_middle_block: active_three_consecutive_layer_vertical_slice_scope
-  active_experiment_stage: composition_aware_FP16_gate_approved_pending_formal_revalidation_and_profiling
+  full_model: next_eligible_scope_requires_separate_experiment_registration
+  qwen3_middle_block: completed_three_consecutive_layer_vertical_slice
+  active_experiment_stage: none_EXP0149_completed
   active_experiment_evidence: null
-  active_experiment_gate: pending
-  active_recipe_specialization: common_three_layer_vertical_slice_substrate
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0148/20260901T112200Z_63575b8812f4_formal'
+  active_experiment_gate: not_applicable
+  active_recipe_specialization: none
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0149/20260901T141700Z_f75c5e0e0b6e_formal'
+  latest_three_layer_vertical_slice:
+    id: EXP-0149
+    source_branch: codex/exp-0149-three-layer-vertical-slice
+    source_head: f75c5e0e0b6ec09ac4422496a9254d82092e9e40
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0149/20260901T141700Z_f75c5e0e0b6e_formal'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0149/artifacts/f75c5e0e0b6e/20260901T141700Z_formal'
+    evidence_validity: valid
+    execution_state: completed
+    local_gate: pass
+    adoption_status: not_applicable
+    selected_baseline_changed: false
+    execution_layer_indices: [13, 14, 15]
+    cache_length_transition_per_layer: [0, 64, 72]
+    correctness_gate: pass_independent_FP16_nine_outputs_and_six_caches_at_abs_0p0625_plus_0p002_times_abs_reference_cosine_0p99999_W4U8_final_outputs_zero_LSB
+    physical_gate: pass_one_three_layer_FastRPC_per_step_VTCM_only_layer_handoff_exact_8mib_zero_intermediate_DDR_zero_spill_fill_three_persistent_layer_caches_one_HMX_owner_no_QNN
+    prefill_repeat10_us: {f16f16: 10650.0, w4f16: 13528.0, w4u8: 5967.1}
+    continuous_decode_repeat10_us: {f16f16: 10739.4, w4f16: 9735.4, w4u8: 39726.2}
+    w4u8_prefill_speed_vs_w4f16_percent: 126.7
+    w4u8_decode_speed_vs_w4f16_percent: -75.5
+    continuous_decode_attention_us: {f16f16: 3567.5, w4f16: 3583.8, w4u8: 34711.7}
+    conclusion: real_three_layer_composition_and_state_ownership_pass; W4U8_prefill_preserves_projection_gains_but_decode_is_dominated_by_repacking_the_full_persistent_KV_cache_into_HMX_carriers_each_step
+    next_priority: register_full_transformer_stack_as_EXP0150_then_develop_cache_native_W4U8_decode_attention_without_per_step_full_cache_repack
+    gate_summary_sha256: baba0dc2e155c0fffe571c25664e3f23b2e44b92fcb553d34df079cab4b0e301
+    full_profiling_report_sha256: 52e31d45e51de4e69b26db083ea55a8225a8279f5ec86089ddf3674027ac1f8f
+    evidence_sha256_ledger_sha256: 6ee86b0e8b1488098e360f013e70e3898ebd1c9b9976df5a38757a16cebff024
   latest_real_layer_replay_decode_session:
     id: EXP-0148
     source_branch: codex/exp-0148-real-layer-replay-decode-session

@@ -14,14 +14,15 @@ experiments:
       - f16f16_layers13_14_15_slice
       - w4f16_layers13_14_15_slice
       - w4u8_layers13_14_15_slice
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: not_applicable
     evidence_profile: real-qwen3-layers13-15-prefill-plus-eight-consecutive-decode-steps
     source_branches:
       - codex/exp-0149-three-layer-vertical-slice
-    source_commits: []
+    source_commits:
+      - f75c5e0e0b6ec09ac4422496a9254d82092e9e40
     record: docs/experiments/EXP-0149.md
     approval_ref: 'User messages 2026-09-01: 那就按这个方向开始吧; 允许（完成单层 gate 后继续连续层切片）; 批准更新门槛，然后继续实验'
     runtime:
@@ -29,6 +30,7 @@ experiments:
       source_branch: codex/exp-0149-three-layer-vertical-slice
       approved_on: '2026-09-01'
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0148
       source_parent_commit: 63575b8812f485936d35d8843c57aa41c9e2103c
@@ -58,6 +60,24 @@ experiments:
       completion_gate: immutable_three_layer_teacher_and_packages_then_static_capacity_audit_then_prefill_and_continuous_decode_correctness_then_physical_and_complete_profiling_evidence
       next_gate_on_success: full_transformer_stack_registration_separate_experiment
       selected_baseline_changed: false
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0149/20260901T141700Z_f75c5e0e0b6e_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0149/artifacts/f75c5e0e0b6e/20260901T141700Z_formal'
+      source_commit: f75c5e0e0b6ec09ac4422496a9254d82092e9e40
+      static_gate_result: pass_three_real_layers_versioned28_layer_session_one_RPC_per_three_layer_step_no_QNN
+      correctness_gate_result: pass_independent_FP16_nine_outputs_and_six_caches_composition_tolerance_W4U8_nine_outputs_zero_LSB
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_VTCM_only_hidden_handoff_three_independent_persistent_caches_one_HMX_owner
+      profiling_gate_result: pass_PC027_slice_and_each_layer_repeat1_and_ten_rotated_fresh_sessions
+      repeat10_prefill_host_us: {f16f16: 10650.0, w4f16: 13528.0, w4u8: 5967.1}
+      repeat10_decode_host_us: {f16f16: 10739.4, w4f16: 9735.4, w4u8: 39726.2}
+      repeat10_w4u8_prefill_speed_vs_w4f16_percent: 126.7
+      repeat10_w4u8_decode_speed_vs_w4f16_percent: -75.5
+      repeat10_decode_attention_us: {f16f16: 3567.5, w4f16: 3583.8, w4u8: 34711.7}
+      fp16_max_required_rtol_after_atol: {f16f16: 0.00081833062, w4f16: 0.00123762374}
+      gate_summary_sha256: baba0dc2e155c0fffe571c25664e3f23b2e44b92fcb553d34df079cab4b0e301
+      full_profiling_report_sha256: 52e31d45e51de4e69b26db083ea55a8225a8279f5ec86089ddf3674027ac1f8f
+      evidence_sha256_ledger_sha256: 6ee86b0e8b1488098e360f013e70e3898ebd1c9b9976df5a38757a16cebff024
+      conclusion: three_layer_runtime_ownership_and_VTCM_only_handoff_pass_while_W4U8_prefill_scales_well_and_cache_backed_decode_repeats_head_major_to_HMX_KV_pack_cost
+      next_priority: register_full_transformer_stack_integration_then_make_W4U8_decode_cache_native_instead_of_repacking_full_cache_each_step
   - id: EXP-0148
     slug: real-layer-replay-decode-session
     title: Real layer replay and full-stack-compatible Prepared Decode Session
