@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(55)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(135)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(56)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(136)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -344,6 +344,7 @@ struct qbh_block_header {
     uint32_t w4f16_expand_claim_regions;
     uint32_t w4f16_gate_up_extra_expand_worker;
     uint32_t w4f16_gate_up_extra_stream_worker;
+    uint32_t w4f16_gate_up_stream_group_tiles;
     uint32_t w4u8_stream_fence_mode;
     uint32_t w4u8_gate_up_ring_slots;
 

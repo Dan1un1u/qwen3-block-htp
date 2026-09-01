@@ -1520,6 +1520,7 @@ int main(int argc, char **argv) {
     uint32_t w4f16_expand_claim_regions = 1U;
     uint32_t w4f16_gate_up_extra_expand_worker = 0U;
     uint32_t w4f16_gate_up_extra_stream_worker = 0U;
+    uint32_t w4f16_gate_up_stream_group_tiles = 8U;
     uint32_t w4u8_stream_fence_mode =
         QBH_BLOCK_W4U8_STREAM_FENCE_CONTROL;
     uint32_t w4u8_gate_up_ring_slots = 8U;
@@ -1618,6 +1619,16 @@ int main(int argc, char **argv) {
                 extra_worker,
                 &w4f16_gate_up_extra_stream_worker) != 0) {
             w4f16_gate_up_extra_stream_worker = UINT32_MAX;
+        }
+    }
+    {
+        const char *group_tiles =
+            getenv("QBH_W4F16_GATE_UP_STREAM_GROUP_TILES");
+        if (group_tiles != NULL && group_tiles[0] != '\0' &&
+            qbh_parse_u32(
+                group_tiles,
+                &w4f16_gate_up_stream_group_tiles) != 0) {
+            w4f16_gate_up_stream_group_tiles = UINT32_MAX;
         }
     }
     {
@@ -1976,6 +1987,14 @@ int main(int argc, char **argv) {
          (w4f16_gate_up_extra_expand_worker == 0U ||
           variant != QBH_BLOCK_W4F16 ||
           w4f16_hvx_workers != 4U)) ||
+        (w4f16_gate_up_stream_group_tiles != 4U &&
+         w4f16_gate_up_stream_group_tiles != 8U) ||
+        (w4f16_gate_up_stream_group_tiles != 8U &&
+         (w4f16_gate_up_extra_expand_worker == 0U ||
+          w4f16_gate_up_extra_stream_worker == 0U ||
+          variant != QBH_BLOCK_W4F16 ||
+          w4f16_hvx_workers != 4U ||
+          mlp_mode != QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8)) ||
         (w4f16_pipeline_mode == QBH_BLOCK_W4F16_PIPELINE_EARLY_REGION &&
          w4f16_region_tiles > 32U)) {
         fprintf(stderr, "usage: %s PACKAGE_DIR VARIANT [repeat_count] "
@@ -2309,6 +2328,8 @@ int main(int argc, char **argv) {
         w4f16_gate_up_extra_expand_worker;
     header->w4f16_gate_up_extra_stream_worker =
         w4f16_gate_up_extra_stream_worker;
+    header->w4f16_gate_up_stream_group_tiles =
+        w4f16_gate_up_stream_group_tiles;
     header->w4u8_stream_fence_mode = w4u8_stream_fence_mode;
     header->w4u8_gate_up_ring_slots = w4u8_gate_up_ring_slots;
     header->w4u8_qk_pair_kernel_mode =
@@ -2586,7 +2607,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0135\","
+        "{\"experiment\":\"EXP-0136\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2599,6 +2620,7 @@ int main(int argc, char **argv) {
         "\"w4f16_expand_claim_regions\":%" PRIu32 ","
         "\"w4f16_gate_up_extra_expand_worker\":%" PRIu32 ","
         "\"w4f16_gate_up_extra_stream_worker\":%" PRIu32 ","
+        "\"w4f16_gate_up_stream_group_tiles\":%" PRIu32 ","
         "\"w4u8_stream_fence_mode\":\"%s\","
         "\"fp16_norm_rows_per_task\":%" PRIu32 ","
         "\"fp16_norm_contexts\":%" PRIu32 ","
@@ -2928,6 +2950,7 @@ int main(int argc, char **argv) {
         header->w4f16_expand_claim_regions,
         header->w4f16_gate_up_extra_expand_worker,
         header->w4f16_gate_up_extra_stream_worker,
+        header->w4f16_gate_up_stream_group_tiles,
         qbh_w4u8_stream_fence_mode_name(
             header->w4u8_stream_fence_mode),
         header->fp16_norm_rows_per_task,

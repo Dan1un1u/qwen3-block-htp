@@ -949,10 +949,12 @@ void qbh_hvx_silu_multiply_f16_channel64(
     }
 }
 
-void qbh_hvx_silu_multiply_f16_crouton_tiles(
+void qbh_hvx_silu_multiply_f16_crouton_tile_range(
     const __fp16 *gate_tiles, const __fp16 *up_tiles,
-    __fp16 *down_tiles, uint32_t m_tiles, uint32_t n_tiles,
-    uint32_t down_k_tiles, uint32_t first_k_tile) {
+    __fp16 *down_tiles, uint32_t m_tiles,
+    uint32_t source_n_tiles, uint32_t first_source_tile,
+    uint32_t n_tiles, uint32_t down_k_tiles,
+    uint32_t first_k_tile) {
     const uint32_t vectors_per_tile =
         QBH_HMX_FP16_TILE_BYTES / sizeof(HVX_Vector);
 
@@ -961,7 +963,8 @@ void qbh_hvx_silu_multiply_f16_crouton_tiles(
              column_tile < n_tiles; ++column_tile) {
             const size_t source_tile =
                 qbh_hmx_fp16_matrix_tile_offset(
-                    row_tile, column_tile, n_tiles);
+                    row_tile, first_source_tile + column_tile,
+                    source_n_tiles);
             const size_t destination_tile =
                 qbh_hmx_fp16_matrix_tile_offset(
                     row_tile, first_k_tile + column_tile,
@@ -982,6 +985,15 @@ void qbh_hvx_silu_multiply_f16_crouton_tiles(
         }
     }
     asm volatile("barrier" ::: "memory");
+}
+
+void qbh_hvx_silu_multiply_f16_crouton_tiles(
+    const __fp16 *gate_tiles, const __fp16 *up_tiles,
+    __fp16 *down_tiles, uint32_t m_tiles, uint32_t n_tiles,
+    uint32_t down_k_tiles, uint32_t first_k_tile) {
+    qbh_hvx_silu_multiply_f16_crouton_tile_range(
+        gate_tiles, up_tiles, down_tiles, m_tiles,
+        n_tiles, 0U, n_tiles, down_k_tiles, first_k_tile);
 }
 
 void qbh_hvx_silu_multiply_f16_audit(

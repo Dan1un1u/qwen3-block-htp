@@ -287,12 +287,15 @@ struct qbh_block_w4f16_pool {
     volatile uint32_t mlp_up_group_ready[QBH_BLOCK_MLP_STREAM_GROUPS];
     volatile uint32_t mlp_crouton_slot_consumed[
         QBH_BLOCK_MLP_CROUTON_RING_SLOTS];
+    volatile uint32_t mlp_crouton_subgroup_done[
+        QBH_BLOCK_MLP_CROUTON_GROUPS];
     uint32_t mlp_stream_generation;
     uint32_t mlp_stream_first_worker;
     uint32_t mlp_stream_worker_count;
     uint32_t mlp_crouton_native;
     uint32_t mlp_stream_group_limit;
     uint32_t mlp_crouton_group_tiles;
+    uint32_t mlp_crouton_stream_group_tiles;
     uint32_t mlp_crouton_slot_elements;
     __fp16 *attention_q;
     __fp16 *attention_k;
@@ -813,6 +816,14 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          (header->w4f16_gate_up_extra_expand_worker == 0U ||
           header->variant != QBH_BLOCK_W4F16 ||
           header->w4f16_requested_hvx_workers != 4U)) ||
+        (header->w4f16_gate_up_stream_group_tiles != 4U &&
+         header->w4f16_gate_up_stream_group_tiles != 8U) ||
+        (header->w4f16_gate_up_stream_group_tiles != 8U &&
+         (header->w4f16_gate_up_extra_expand_worker == 0U ||
+          header->w4f16_gate_up_extra_stream_worker == 0U ||
+          header->variant != QBH_BLOCK_W4F16 ||
+          header->w4f16_requested_hvx_workers != 4U ||
+          header->mlp_mode != QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8)) ||
         header->w4u8_stream_fence_mode >
             QBH_BLOCK_W4U8_STREAM_FENCE_RELEASE_ONLY ||
         (header->w4u8_stream_fence_mode !=
@@ -2127,26 +2138,39 @@ static void qbh_mlp_stream_worker_run(
 
         work_start = HAP_perf_get_qtimer_count();
         if (pool->mlp_crouton_native != 0U) {
+            const uint32_t subgroups_per_hmx =
+                pool->mlp_crouton_group_tiles /
+                pool->mlp_crouton_stream_group_tiles;
+            const uint32_t hmx_group = group / subgroups_per_hmx;
+            const uint32_t first_source_tile =
+                (group % subgroups_per_hmx) *
+                pool->mlp_crouton_stream_group_tiles;
             const uint32_t slot =
-                group % QBH_BLOCK_MLP_CROUTON_RING_SLOTS;
+                hmx_group % QBH_BLOCK_MLP_CROUTON_RING_SLOTS;
             const __fp16 *gate_tiles = pool->mlp_gate +
                 (size_t)slot * pool->mlp_crouton_slot_elements;
             const __fp16 *up_tiles = pool->mlp_up +
                 (size_t)slot * pool->mlp_crouton_slot_elements;
 
-            qbh_hvx_silu_multiply_f16_crouton_tiles(
+            qbh_hvx_silu_multiply_f16_crouton_tile_range(
                 gate_tiles, up_tiles, pool->mlp_hmx_activation,
                 QBH_BLOCK_M / QBH_HMX_FP16_ROWS,
                 pool->mlp_crouton_group_tiles,
+                first_source_tile,
+                pool->mlp_crouton_stream_group_tiles,
                 QBH_BLOCK_INTERMEDIATE / QBH_HMX_FP16_COLS,
-                group * pool->mlp_crouton_group_tiles);
-            pool->mlp_crouton_slot_consumed[slot] = group + 1U;
-            asm volatile("release(%0):at"
-                         :
-                         : "r"(&pool->mlp_crouton_slot_consumed[slot])
-                         : "memory");
+                group * pool->mlp_crouton_stream_group_tiles);
+            if (qbh_atomic_fetch_increment(
+                    &pool->mlp_crouton_subgroup_done[hmx_group]) + 1U ==
+                subgroups_per_hmx) {
+                pool->mlp_crouton_slot_consumed[slot] = hmx_group + 1U;
+                asm volatile("release(%0):at"
+                             :
+                             : "r"(&pool->mlp_crouton_slot_consumed[slot])
+                             : "memory");
+            }
             job->stream_group_count +=
-                pool->mlp_crouton_group_tiles /
+                pool->mlp_crouton_stream_group_tiles /
                 (QBH_BLOCK_MLP_STREAM_CHANNELS /
                  QBH_HMX_FP16_COLS);
         } else {
@@ -3686,9 +3710,14 @@ static int qbh_mlp_stream_pipeline_start(
     pool->mlp_crouton_group_tiles =
         header->mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8
             ? 8U : QBH_BLOCK_MLP_CROUTON_GROUP_TILES;
+    pool->mlp_crouton_stream_group_tiles =
+        header->variant == QBH_BLOCK_W4F16 &&
+        header->mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8
+            ? header->w4f16_gate_up_stream_group_tiles
+            : pool->mlp_crouton_group_tiles;
     pool->mlp_stream_group_limit = pool->mlp_crouton_native != 0U
         ? QBH_BLOCK_INTERMEDIATE / QBH_HMX_FP16_COLS /
-              pool->mlp_crouton_group_tiles
+              pool->mlp_crouton_stream_group_tiles
         : QBH_BLOCK_MLP_STREAM_GROUPS;
     pool->mlp_crouton_slot_elements =
         (QBH_BLOCK_M / QBH_HMX_FP16_ROWS) *
@@ -3696,6 +3725,8 @@ static int qbh_mlp_stream_pipeline_start(
         QBH_HMX_FP16_TILE_ELEMENTS;
     memset((void *)pool->mlp_crouton_slot_consumed, 0,
            sizeof(pool->mlp_crouton_slot_consumed));
+    memset((void *)pool->mlp_crouton_subgroup_done, 0,
+           sizeof(pool->mlp_crouton_subgroup_done));
     ++pool->mlp_stream_generation;
     if (pool->mlp_stream_generation == 0U) {
         memset((void *)pool->mlp_up_group_ready, 0,
@@ -3756,14 +3787,29 @@ static int qbh_mlp_crouton_publish_up_group(
         desc != &header->projections[QBH_BLOCK_PROJ_UP]) {
         return 0;
     }
-    if (pool == NULL || group >= pool->mlp_stream_group_limit) {
+    uint32_t subgroups_per_hmx;
+    uint32_t first_stream_group;
+
+    if (pool == NULL || pool->mlp_crouton_stream_group_tiles == 0U) {
         return -1;
     }
-    pool->mlp_up_group_ready[group] = pool->mlp_stream_generation;
-    asm volatile("release(%0):at"
-                 :
-                 : "r"(&pool->mlp_up_group_ready[group])
-                 : "memory");
+    subgroups_per_hmx = pool->mlp_crouton_group_tiles /
+        pool->mlp_crouton_stream_group_tiles;
+    if (subgroups_per_hmx == 0U ||
+        group >= pool->mlp_stream_group_limit / subgroups_per_hmx) {
+        return -1;
+    }
+    first_stream_group = group * subgroups_per_hmx;
+    for (uint32_t subgroup = 0U;
+         subgroup < subgroups_per_hmx; ++subgroup) {
+        const uint32_t stream_group = first_stream_group + subgroup;
+        pool->mlp_up_group_ready[stream_group] =
+            pool->mlp_stream_generation;
+        asm volatile("release(%0):at"
+                     :
+                     : "r"(&pool->mlp_up_group_ready[stream_group])
+                     : "memory");
+    }
     return 0;
 }
 

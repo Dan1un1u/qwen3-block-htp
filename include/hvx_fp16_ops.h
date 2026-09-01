@@ -69,6 +69,13 @@ void qbh_hvx_silu_multiply_f16_crouton_tiles(
     __fp16 *down_tiles, uint32_t m_tiles, uint32_t n_tiles,
     uint32_t down_k_tiles, uint32_t first_k_tile);
 
+void qbh_hvx_silu_multiply_f16_crouton_tile_range(
+    const __fp16 *gate_tiles, const __fp16 *up_tiles,
+    __fp16 *down_tiles, uint32_t m_tiles,
+    uint32_t source_n_tiles, uint32_t first_source_tile,
+    uint32_t n_tiles, uint32_t down_k_tiles,
+    uint32_t first_k_tile);
+
 void qbh_hvx_silu_multiply_f16_audit(
     const __fp16 *gate, const __fp16 *up, const __fp16 *middle,
     uint32_t elements, struct qbh_hvx_check_metrics *check);
