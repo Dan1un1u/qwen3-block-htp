@@ -33,7 +33,7 @@ current_scope:
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: staged_future_scope_after_real_single_layer_and_vertical_slice_gates
   qwen3_middle_block: active_three_consecutive_layer_vertical_slice_scope
-  active_experiment_stage: export_real_layers13_15_and_slice_ABI_static_audit
+  active_experiment_stage: composition_aware_FP16_gate_approved_pending_formal_revalidation_and_profiling
   active_experiment_evidence: null
   active_experiment_gate: pending
   active_recipe_specialization: common_three_layer_vertical_slice_substrate
