@@ -12060,7 +12060,9 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             header, shared, &header->projections[QBH_BLOCK_PROJ_O],
             buffers, worker, w4f16_pool,
             scan_dynamic_attention != 0U
-                ? buffers->hmx_activation
+                ? (header->variant == QBH_BLOCK_W4U8
+                       ? buffers->q
+                       : buffers->hmx_activation)
                 : (crouton_av_o_enabled != 0U
                        ? buffers->hmx_activation
                        : buffers->attention_concat),
