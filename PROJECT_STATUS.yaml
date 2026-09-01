@@ -33,7 +33,7 @@ current_scope:
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_running_single_rpcmem_alloc2_full_stack_resume
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: EXP0152_stage_C_F16F16_composition_semantics_verified_update_host_gate_then_continue_three_recipe_formal_execution
+  active_experiment_stage: EXP0152_stage_C_two_FP16_recipe_conditional_and_composed_output_gates_verified_remove_unapproved_composed_cache_cosine_veto_then_continue_W4U8
   active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0152/20260902T003950Z_formal_composition_v2'
   active_experiment_gate: pending_three_recipe_prefill_continuous_decode_amended_correctness_zero_intermediate_DDR_and_complete_profiling
   active_recipe_specialization: common_full_stack_integration_no_new_specialization
@@ -75,6 +75,22 @@ current_scope:
     composed_cache_legacy_fraction_diagnostic_maximum: 0.113571167
     composed_cache_late_v_tensors_over_local_fraction: [layer21_v, layer22_v, layer23_v, layer24_v, layer25_v, layer26_v, layer27_v]
     finding: local_conditional_gate_passes_composed_cache_mixed_fraction_contains_upstream_drift_and_is_diagnostic
+  latest_w4f16_composition_semantics_audit:
+    source_commit: a208abe6dfa26479b483403d73b50c698c8d7f95
+    evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0152/20260902T003950Z_formal_composition_v2'
+    formal_prefill_and_decode_steps: 9
+    output_gate_pass_steps: 9
+    minimum_composed_output_cosine: 0.999996579
+    maximum_composed_output_nrmse: 0.00263641738
+    conditional_layer_gate_pass: true
+    conditional_cache_gate_pass: true
+    conditional_cache_tensors: 56
+    conditional_cache_legacy_mixed_violations: 0
+    formal_intermediate_ddr_read_bytes: 0
+    formal_intermediate_ddr_write_bytes: 0
+    formal_spill_fill_count: 0
+    minimum_composed_cache_cosine_diagnostic: 0.999959682
+    finding: user_approved_local_and_final_composed_output_gates_pass_composed_cache_cosine_is_upstream_drift_diagnostic_not_an_extra_gate
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0151/20260901T152446Z_d6b1706_device_gate'
   latest_rpcmem_alloc2_single_buffer_probe:
     id: EXP-0151

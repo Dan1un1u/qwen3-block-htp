@@ -874,9 +874,10 @@ cosine of at least 0.99999 and NRMSE of at most 0.003. The legacy elementwise
 violation count remains visible as a diagnostic rather than being erased. A
 cache receives the one-percent local rule only when its software reference
 consumes the same actual incoming hidden state. A formal full-stack cache
-comparison includes upstream composed drift and therefore requires no
-non-finite values plus cosine of at least 0.99999; its legacy mixed-bound
-fraction remains diagnostic.
+comparison includes upstream composed drift and therefore requires valid
+structure, byte-stable old prefixes and no non-finite values; its cosine,
+NRMSE and legacy mixed-bound fraction remain diagnostic. Do not invent an
+additional composed-cache cosine gate beyond the user-approved scheme 1.
 W4U8 remains governed by its zero-LSB implementation-reference gate.
 _Avoid_: exact FP16 byte agreement, teacher-accuracy gate, hiding legacy
 violations, applying the relaxed FP16 rule to W4U8
