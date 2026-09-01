@@ -10736,20 +10736,22 @@ experiments:
     variants:
       - w4f16_gate_up_dynamic_claim1_control
       - w4f16_gate_up_balanced_static_candidate
-    execution_state: running
-    evidence_validity: pending
-    local_gate: pending
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4f16-gate-up-balanced-partition
     source_branches:
       - codex/exp-0133-w4f16-gate-up-balanced-partition
-    source_commits: []
+    source_commits:
+      - 646ded5a54bf4c541f8c63534a15bd58a611964d
     record: docs/experiments/EXP-0133.md
     approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently without interruption'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0133-w4f16-gate-up-balanced-partition
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0132
       source_parent_commit: 9936277a2793406498a8b5101e0db201ea97e8ba
@@ -10771,3 +10773,30 @@ experiments:
       physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_identical_weight_DMA_HMX_commands_tiles_and_peak_plan
       speed_gate: Gate_Up_plus_SwiGLU_and_complete_Host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
       completion_gate: bounded_smoke_then_five_rotated_formal_rounds_PC027_PC028_and_no_automatic_baseline_promotion
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0133/20260901T014439Z_646ded5a54bf_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0133/artifacts/646ded5a54bf/20260901T014439Z_formal'
+      source_commit: 646ded5a54bf4c541f8c63534a15bd58a611964d
+      static_gate_result: pass_dynamic_claim1_or_static_main6_pool5_pool5_no_qnn
+      correctness_gate_result: pass_both_f18b9abbe1487231_zero_expansion_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_dma_hmx_tiles_and_peak_plan
+      selected_cell: w4f16_gate_up_dynamic_claim1_control
+      repeat1_gate_up_change_percent: 0.2498296615943696
+      repeat1_gate_up_paired_change_percent: -0.017114495978098887
+      repeat1_host_change_percent: -0.2422814667292661
+      repeat1_host_paired_change_percent: -0.9054609517254342
+      repeat10_gate_up_change_percent: -0.15977246587836058
+      repeat10_gate_up_paired_change_percent: -0.2112213463803525
+      repeat10_host_change_percent: 0.14905659660986448
+      repeat10_host_paired_change_percent: -0.14088878679786587
+      repeat10_expand_change_percent: -0.2876631079478109
+      repeat10_expand_pool_wait_change_percent: -26.975945017182134
+      repeat10_hmx_wait_change_percent: -0.37287642329658643
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_exp0109_f16f16_exp0133_dynamic_w4f16_exp0124_control_w4u8
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: cc33bfbfab444061f4d2f4ba1abf28e3423af109bbbcebc0abc483e07bf424a7
+      full_profiling_report_sha256: aa162b62d8e37c3627619023092852c3c023282438fb5cfc62914b18040e0f5d
+      evidence_sha256_ledger_sha256: bf204582d4dcf8175c1dafcf11fc2b0e20e3373bbbd3e52674489c5b2a7aa452
+      conclusion: balanced_static_partition_reduces_pool_wait_but_not_the_strict_module_and_host_critical_path
+      reopen_condition: only_with_a_new_worker_that_changes_the_main_share_or_with_downstream_stream_join_fusion
+      selected_baseline_changed: false

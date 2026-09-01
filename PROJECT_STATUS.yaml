@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0133
+  active_experiment: null
   next_experiment_number: 134
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,25 +27,53 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0132
-  last_completed_source_commit: 9936277a2793406498a8b5101e0db201ea97e8ba
-  provisional_source_parent: EXP-0129
+  last_completed_experiment: EXP-0133
+  last_completed_source_commit: 646ded5a54bf4c541f8c63534a15bd58a611964d
+  provisional_source_parent: EXP-0132
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: registered
+  active_experiment_stage: none
   active_experiment_evidence: null
-  active_experiment_gate: pending_preflight
-  active_recipe_specialization: W4F16_gate_up_balanced_static_partition
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0132/20260901T013657Z_9936277a2793_formal'
+  active_experiment_gate: none
+  active_recipe_specialization: none
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0133/20260901T014439Z_646ded5a54bf_formal'
   last_rejected_specialization:
-    id: EXP-0132
-    source_branch: codex/exp-0132-w4f16-gate-up-chunk2-claim
-    source_head: 9936277a2793406498a8b5101e0db201ea97e8ba
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0132/20260901T013657Z_9936277a2793_formal'
+    id: EXP-0133
+    source_branch: codex/exp-0133-w4f16-gate-up-balanced-partition
+    source_head: 646ded5a54bf4c541f8c63534a15bd58a611964d
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0133/20260901T014439Z_646ded5a54bf_formal'
     local_gate: fail
     adoption_status: rejected
-    reason: chunk2_claims_remove_join_tail_but_create_pool_load_imbalance_and_make_gate_up_about_2_percent_slower
+    reason: balanced_partition_reduces_pool_wait_but_does_not_pass_repeat1_gate_up_or_repeat10_complete_host
+  latest_w4f16_gate_up_balanced_partition_candidate:
+    id: EXP-0133
+    source_branch: codex/exp-0133-w4f16-gate-up-balanced-partition
+    source_head: 646ded5a54bf4c541f8c63534a15bd58a611964d
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0133/20260901T014439Z_646ded5a54bf_formal'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0133/artifacts/646ded5a54bf/20260901T014439Z_formal'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    selected_cell: w4f16_gate_up_dynamic_claim1_control
+    correctness_gate: pass_both_f18b9abbe1487231_zero_expansion_mismatch_zero_max_lsb
+    physical_gate: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_dma_hmx_and_peak_plan
+    repeat1_gate_up_change_percent: 0.2498296615943696
+    repeat1_host_change_percent: -0.2422814667292661
+    repeat10_gate_up_change_percent: -0.15977246587836058
+    repeat10_host_change_percent: 0.14905659660986448
+    repeat10_expand_change_percent: -0.2876631079478109
+    repeat10_expand_pool_wait_change_percent: -26.975945017182134
+    repeat10_hmx_wait_change_percent: -0.37287642329658643
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass_exp0109_f16f16_exp0133_dynamic_w4f16_exp0124_control_w4u8
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    gate_summary_sha256: cc33bfbfab444061f4d2f4ba1abf28e3423af109bbbcebc0abc483e07bf424a7
+    full_profiling_report_sha256: aa162b62d8e37c3627619023092852c3c023282438fb5cfc62914b18040e0f5d
+    evidence_sha256_ledger_sha256: bf204582d4dcf8175c1dafcf11fc2b0e20e3373bbbd3e52674489c5b2a7aa452
+    conclusion: static_6_5_5_partition_reduces_pool_wait_but_queue_overhead_is_not_on_the_complete_block_critical_path
+    reopen_condition: only_with_a_new_worker_that_changes_the_main_share_or_with_downstream_stream_join_fusion
+    selected_baseline_changed: false
   latest_w4f16_gate_up_chunk2_claim_candidate:
     id: EXP-0132
     source_branch: codex/exp-0132-w4f16-gate-up-chunk2-claim
