@@ -5345,7 +5345,10 @@ static int qbh_w4f16_mlp_prepare_group(
     uint64_t expand_start;
     int result;
 
-    if (in_batch == 0U && batch != 0U) {
+    if (in_batch == 0U &&
+        (batch != 0U ||
+         (state->prefetch_active != 0U &&
+          state->prefetched_batch == 0U))) {
         result = qbh_w4f16_mlp_wait_batch(
             header, shared, state, batch);
         if (result != 0) {
