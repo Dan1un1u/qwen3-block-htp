@@ -19,25 +19,53 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0148
-  next_experiment_number: 149
+  active_experiment: EXP-0149
+  next_experiment_number: 150
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
-  execution_unit: qwen3_layer14_real_replay_prefill_continuous_decode
-  last_completed_experiment: EXP-0147
-  last_completed_source_commit: 8052d42c347667ddd37a9555486d918569960b1d
-  provisional_source_parent: EXP-0147_shape_and_cache_characterization
+  execution_unit: qwen3_layers13_14_15_real_replay_prefill_continuous_decode_vertical_slice
+  last_completed_experiment: EXP-0148
+  last_completed_source_commit: 63575b8812f485936d35d8843c57aa41c9e2103c
+  provisional_source_parent: EXP-0148_real_layer_replay_decode_session
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: staged_future_scope_after_real_single_layer_and_vertical_slice_gates
-  qwen3_middle_block: active_real_replay_decode_scope
-  active_experiment_stage: contract_replay_source_and_cache_ABI_audit
+  qwen3_middle_block: active_three_consecutive_layer_vertical_slice_scope
+  active_experiment_stage: export_real_layers13_15_and_slice_ABI_static_audit
   active_experiment_evidence: null
   active_experiment_gate: pending
-  active_recipe_specialization: common_replay_decode_substrate
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0147'
+  active_recipe_specialization: common_three_layer_vertical_slice_substrate
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0148/20260901T112200Z_63575b8812f4_formal'
+  latest_real_layer_replay_decode_session:
+    id: EXP-0148
+    source_branch: codex/exp-0148-real-layer-replay-decode-session
+    source_head: 63575b8812f485936d35d8843c57aa41c9e2103c
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0148/20260901T112200Z_63575b8812f4_formal'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0148/artifacts/63575b8812f4/20260901T112200Z_formal'
+    evidence_validity: valid
+    execution_state: completed
+    local_gate: pass
+    adoption_status: not_applicable
+    selected_baseline_changed: false
+    execution_layer_index: 14
+    declared_transformer_layer_count: 28
+    prefill_positions: [0, 63]
+    decode_positions: [64, 71]
+    cache_length_transition: [0, 64, 72]
+    correctness_gate: pass_F16F16_and_W4F16_max_abs_at_most_0p0625_cosine_at_least_0p999_and_W4U8_zero_LSB_with_independent_QK_log2Softmax_AV_and_tail_recomputation
+    physical_gate: pass_exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_step_one_HMX_owner_no_QNN_explicit_persistent_cache_traffic
+    prefill_repeat10_us: {f16f16: 3830.183, w4f16: 4801.042, w4u8: 2338.021}
+    continuous_decode_repeat10_us: {f16f16: 3823.509, w4f16: 3496.230, w4u8: 13712.217}
+    w4u8_prefill_speed_vs_w4f16_percent: 105.35
+    w4u8_decode_speed_vs_w4f16_percent: -74.50
+    decode_bottleneck: W4U8_cache_backed_Attention_11563p6_us_average_with_K_pack_3925p3_us_and_V_pack_7363p4_us
+    conclusion: real_single_layer_state_ownership_and_full_stack_compatible_cache_ABI_pass_while_W4U8_decode_exposes_a_cache_carrier_packing_cliff_not_a_projection_or_cache_byte_volume_limit
+    next_priority: three_consecutive_layer_vertical_slice_layers13_14_15_then_cache_native_decode_Attention_optimization
+    gate_summary_sha256: b923d7ce91bc390206318e724cdbbedc5406b848381bfb8c63bcb1ece52c3004
+    full_profiling_report_sha256: a528980f812f0e84862fa5ac6e9ea10c810d5ec752dc85b748fed9e19027d360
+    evidence_sha256_ledger_sha256: 86629da3d877f79663c7499c79bbe3e162606e3135ee4cf73ad83c60dbb65eef
   latest_multi_m_kv_cache_characterization:
     id: EXP-0147
     source_branch: codex/exp-0147-multi-m-kv-cache-scan

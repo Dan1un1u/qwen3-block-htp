@@ -6,6 +6,58 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0149
+    slug: three-layer-vertical-slice
+    title: Real consecutive-layer replay vertical slice
+    parent: EXP-0148
+    variants:
+      - f16f16_layers13_14_15_slice
+      - w4f16_layers13_14_15_slice
+      - w4u8_layers13_14_15_slice
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-layers13-15-prefill-plus-eight-consecutive-decode-steps
+    source_branches:
+      - codex/exp-0149-three-layer-vertical-slice
+    source_commits: []
+    record: docs/experiments/EXP-0149.md
+    approval_ref: 'User messages 2026-09-01: 那就按这个方向开始吧; 允许（完成单层 gate 后继续连续层切片）'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0149-three-layer-vertical-slice
+      approved_on: '2026-09-01'
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0148
+      source_parent_commit: 63575b8812f485936d35d8843c57aa41c9e2103c
+      execution_layer_indices: [13, 14, 15]
+      declared_transformer_layer_count: 28
+      slice_layer_count: 3
+      execution_unit: one_three_layer_slice_per_prefill_or_decode_step
+      prefill_positions: [0, 63]
+      decode_positions: [64, 71]
+      initial_cache_length_per_layer: 0
+      post_prefill_cache_length_per_layer: 64
+      final_cache_length_per_layer: 72
+      teacher_boundary: real_hidden_state_entering_layer13_plus_position_metadata
+      host_intermediate_hidden_allowed: false
+      runtime_kv_import_allowed: false
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      persistent_per_layer_kv_cache_ddr_allowed: true
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      implementation_boundary: preserve_EXP0148_per_recipe_block_math_and_physical_kernels_add_layer_indexed_weight_descriptors_three_independent_caches_and_VTCM_hidden_handoff_only
+      correctness_gate: independent_three_layer_recipe_reference_final_output_and_each_layers_cache_after_prefill_and_each_decode_step_W4U8_zero_LSB_FP16_existing_tolerance
+      physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_three_layer_step_one_HMX_owner_no_QNN_only_per_layer_cache_DDR
+      profiling_gate: complete_slice_and_per_layer_PC027_ledgers_for_prefill_and_each_decode_step_with_cache_traffic_separated_by_layer
+      speed_gate: not_applicable_vertical_slice_integration_experiment
+      stop_conditions: any_Host_roundtrip_between_layers_or_imported_runtime_KV_or_hidden_DDR_spill_or_cache_ABI_replacement_or_recipe_math_change
+      completion_gate: immutable_three_layer_teacher_and_packages_then_static_capacity_audit_then_prefill_and_continuous_decode_correctness_then_physical_and_complete_profiling_evidence
+      next_gate_on_success: full_transformer_stack_registration_separate_experiment
+      selected_baseline_changed: false
   - id: EXP-0148
     slug: real-layer-replay-decode-session
     title: Real layer replay and full-stack-compatible Prepared Decode Session
@@ -14,14 +66,15 @@ experiments:
       - f16f16_real_replay
       - w4f16_real_replay
       - w4u8_real_replay
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: not_applicable
     evidence_profile: real-qwen3-layer14-prefill-plus-eight-consecutive-decode-steps
     source_branches:
       - codex/exp-0148-real-layer-replay-decode-session
-    source_commits: []
+    source_commits:
+      - 63575b8812f485936d35d8843c57aa41c9e2103c
     record: docs/experiments/EXP-0148.md
     approval_ref: 'User message 2026-09-01: 那就按这个方向开始吧（接受先单层真实 replay decode、再连续层切片、最后全模）'
     runtime:
@@ -29,6 +82,7 @@ experiments:
       source_branch: codex/exp-0148-real-layer-replay-decode-session
       approved_on: '2026-09-01'
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0147
       source_parent_commit: 8052d42c347667ddd37a9555486d918569960b1d
@@ -54,6 +108,28 @@ experiments:
       completion_gate: genuine_trace_then_versioned_layer_indexed_session_then_continuous_state_correctness_then_physical_and_profiling_evidence
       next_gate_on_success: separate_two_to_three_consecutive_layer_vertical_slice
       selected_baseline_changed: false
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0148/20260901T112200Z_63575b8812f4_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0148/artifacts/63575b8812f4/20260901T112200Z_formal'
+      source_commit: 63575b8812f485936d35d8843c57aa41c9e2103c
+      static_gate_result: pass_versioned_layer_indexed_session_ABI_active_layer14_declared28_no_QNN
+      correctness_gate_result: pass_all_nine_steps_F16F16_and_W4F16_max_abs_at_most_0p0625_cosine_at_least_0p999_W4U8_zero_LSB_independent_QK_log2Softmax_AV_and_tail_zero_mismatch
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_step_one_HMX_owner_explicit_only_cache_DDR
+      profiling_gate_result: pass_PC027_and_PC028_prefill_plus_continuous_decode_repeat1_and_ten_rotated_fresh_sessions
+      repeat10_prefill_host_us: {f16f16: 3830.183, w4f16: 4801.042, w4u8: 2338.021}
+      repeat10_decode_host_us: {f16f16: 3823.509, w4f16: 3496.230, w4u8: 13712.217}
+      repeat10_w4u8_prefill_speed_vs_w4f16_percent: 105.35
+      repeat10_w4u8_decode_speed_vs_w4f16_percent: -74.50
+      w4u8_decode_attention_us: 11563.555
+      w4u8_decode_k_pack_us: 3925.306
+      w4u8_decode_v_pack_us: 7363.350
+      pc027_complete_profiling_report: pass
+      pc028_three_variant_overviews: pass_prefill_and_continuous_decode
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: b923d7ce91bc390206318e724cdbbedc5406b848381bfb8c63bcb1ece52c3004
+      full_profiling_report_sha256: a528980f812f0e84862fa5ac6e9ea10c810d5ec752dc85b748fed9e19027d360
+      evidence_sha256_ledger_sha256: 86629da3d877f79663c7499c79bbe3e162606e3135ee4cf73ad83c60dbb65eef
+      conclusion: real_single_layer_replay_and_persistent_state_gate_passes_but_W4U8_continuous_decode_is_dominated_by_serial_cache_carrier_K_and_V_packing
+      baseline_promotion: none_substrate_and_correctness_experiment
   - id: EXP-0147
     slug: multi-m-kv-cache-scan
     title: Selected-baseline multi-M and KV-cache generalization scan

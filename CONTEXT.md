@@ -795,6 +795,10 @@ repair into the physical generalization experiment
 A single-layer execution driven in token order by hidden states and position
 metadata captured from a declared full-model teacher; the tested layer still
 computes its own K/V, cache updates, Attention and block output.
+EXP-0148 completed this gate for layer 14 over positions 0-71 with all three
+recipes, a versioned 28-layer state ABI and cache lengths 0→64→72.  Its W4U8
+decode result exposes a cache-carrier packing cliff rather than a failure of
+state ownership or intermediate residency.
 _Avoid_: synthetic cache snapshot, imported runtime K/V, autonomous text
 generation, or feeding one layer's output back as its next-token input
 
@@ -816,6 +820,9 @@ intermediate DDR alone
 Two to three adjacent Qwen3 transformer layers executed as one DSP unit with
 independent per-layer caches and no Host boundary for their intermediate hidden
 states.
+EXP-0149 fixes this slice to layers 13, 14 and 15.  The teacher supplies only
+the layer-13 input; both internal hidden handoffs remain VTCM-resident, while
+the three cache descriptors persist independently in the existing 28-layer ABI.
 _Avoid_: duplicated isolated block calls, full transformer stack, or layer
 outputs replayed from files between the selected layers
 
