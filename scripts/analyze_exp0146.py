@@ -80,12 +80,11 @@ def validate_record(record: dict, repeat: int, cell: str,
     base.require(record, "block_invocation_count", repeat)
     base.require(record, "rpc_result", 0)
     base.require(record, "output_hash", OUTPUT_HASH)
-    base.require(record, "crouton_qkv_projection_count", 3)
-    base.require(record, "crouton_qkv_unpack_skipped", 128)
-    base.require(record, "qkv_operand_audit_tensor_count", 3)
+    base.require(record, "crouton_qkv_projection_count", 3 * repeat)
+    base.require(record, "crouton_qkv_unpack_skipped", 128 * repeat)
     base.require(record, "hmx_u8s8_tile_pair_count", 0)
     if cell == "candidate":
-        base.require(record, "qkv_schedule_command_count", 64)
+        base.require(record, "qkv_schedule_command_count", 64 * repeat)
         if int(record["qkv_schedule_trace_hash"], 16) == 0:
             raise SystemExit("candidate: empty QKV schedule trace")
     else:
@@ -101,6 +100,8 @@ def validate_record(record: dict, repeat: int, cell: str,
     if audit and (int(record.get("mismatches", -1)) != 0 or
                   int(record.get("max_lsb", -1)) != 0):
         raise SystemExit(f"{cell}: audited output mismatch")
+    if audit:
+        base.require(record, "qkv_operand_audit_tensor_count", 3)
 
 
 def physical_equal(control: list[dict], candidate: list[dict]) -> bool:
