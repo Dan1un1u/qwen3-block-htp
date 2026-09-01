@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(53)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(147)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(54)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(148)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -23,6 +23,10 @@
 #define QBH_BLOCK_HEAD_DIM UINT32_C(128)
 #define QBH_BLOCK_KV_HIDDEN \
     (QBH_BLOCK_KV_HEADS * QBH_BLOCK_HEAD_DIM)
+#define QBH_QWEN3_TRANSFORMER_LAYERS UINT32_C(28)
+#define QBH_REPLAY_LAYER_INDEX UINT32_C(14)
+#define QBH_DECODE_SESSION_MAGIC UINT32_C(0x51445353)
+#define QBH_DECODE_SESSION_ABI_VERSION UINT32_C(1)
 #define QBH_BLOCK_PROJECTION_COUNT UINT32_C(7)
 #define QBH_BLOCK_QPARAM_COUNT UINT32_C(17)
 #define QBH_BLOCK_QPARAM_RECORD_BYTES UINT32_C(48)
@@ -56,6 +60,22 @@ enum qbh_block_scan_mode {
     QBH_BLOCK_SCAN_DISABLED = 0,
     QBH_BLOCK_SCAN_PREFILL = 1,
     QBH_BLOCK_SCAN_DECODE = 2,
+};
+
+enum qbh_block_replay_mode {
+    QBH_BLOCK_REPLAY_DISABLED = 0,
+    QBH_BLOCK_REPLAY_CONTINUOUS = 1,
+};
+
+enum qbh_kv_cache_element_type {
+    QBH_KV_CACHE_ELEMENT_NONE = 0,
+    QBH_KV_CACHE_ELEMENT_F16 = 1,
+    QBH_KV_CACHE_ELEMENT_U8 = 2,
+};
+
+enum qbh_kv_cache_format {
+    QBH_KV_CACHE_FORMAT_NONE = 0,
+    QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1 = 1,
 };
 
 enum qbh_block_common_ops_mask {
@@ -325,6 +345,37 @@ struct qbh_block_projection_desc {
     uint32_t bias_bytes;
 };
 
+struct qbh_decode_layer_state {
+    uint32_t layer_index;
+    uint32_t element_type;
+    uint32_t k_format;
+    uint32_t v_format;
+    uint32_t capacity;
+    uint32_t valid_length;
+    uint32_t k_offset;
+    uint32_t k_bytes;
+    uint32_t v_offset;
+    uint32_t v_bytes;
+    uint32_t head_count;
+    uint32_t head_dim;
+    uint32_t head_stride_bytes;
+    uint32_t token_stride_bytes;
+    uint32_t append_count;
+    uint32_t reserved;
+};
+
+struct qbh_decode_session_state {
+    uint32_t magic;
+    uint32_t abi_version;
+    uint32_t state_bytes;
+    uint32_t declared_layer_count;
+    uint32_t active_layer;
+    uint32_t completed_step_count;
+    uint32_t next_position;
+    uint32_t flags;
+    struct qbh_decode_layer_state layers[QBH_QWEN3_TRANSFORMER_LAYERS];
+};
+
 struct qbh_block_header {
     uint32_t magic;
     uint32_t abi_version;
@@ -371,6 +422,13 @@ struct qbh_block_header {
     uint32_t logical_m;
     uint32_t initial_kv_length;
     uint32_t kv_cache_capacity;
+
+    /* EXP-0148 persistent, layer-indexed replay session. */
+    uint32_t replay_mode;
+    uint32_t replay_session_offset;
+    uint32_t replay_session_bytes;
+    uint32_t replay_expected_step;
+    uint32_t replay_first_position;
 
     uint32_t input_offset;
     uint32_t input_bytes;

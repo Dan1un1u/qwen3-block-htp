@@ -45,6 +45,28 @@ struct qbh_error_metrics {
     uint32_t max_lsb;
 };
 
+#define QBH_REPLAY_DECODE_STEPS UINT32_C(8)
+#define QBH_REPLAY_TOTAL_STEPS (UINT32_C(1) + QBH_REPLAY_DECODE_STEPS)
+
+struct qbh_replay_step_result {
+    uint64_t host_wall_ns;
+    struct qbh_error_metrics output;
+    uint64_t cache_mismatches;
+    uint32_t step_index;
+    uint32_t first_position;
+    uint32_t valid_length;
+    uint32_t dsp_status;
+    uint32_t numerical_status;
+    uint32_t vtcm_requested_bytes;
+    uint32_t vtcm_acquired_bytes;
+    uint64_t intermediate_ddr_read_bytes;
+    uint64_t intermediate_ddr_write_bytes;
+    uint32_t intermediate_spill_fill_count;
+    uint64_t scan_cache_ddr_read_bytes;
+    uint64_t scan_cache_ddr_write_bytes;
+    uint64_t scan_dynamic_attention_ticks;
+};
+
 _Static_assert(sizeof(struct qbh_qparam_record) ==
                    QBH_BLOCK_QPARAM_RECORD_BYTES,
                "qparam package record changed");
@@ -1599,6 +1621,241 @@ static uint64_t qbh_count_byte_mismatches(
     return mismatches;
 }
 
+static int qbh_read_named_tensor(
+    const char *root, const char *name, uint8_t *destination,
+    uint32_t bytes) {
+    char path[QBH_HOST_PATH_BYTES];
+    FILE *stream;
+    size_t read_bytes;
+    if (qbh_make_path(path, sizeof(path), root, name) != 0 ||
+        qbh_file_size(path, bytes) != 0) {
+        return -1;
+    }
+    stream = fopen(path, "rb");
+    if (stream == NULL) {
+        return -1;
+    }
+    read_bytes = fread(destination, 1U, bytes, stream);
+    return fclose(stream) == 0 && read_bytes == bytes ? 0 : -1;
+}
+
+static uint64_t qbh_cache_prefix_mismatches(
+    const uint8_t *actual, const uint8_t *reference,
+    uint32_t capacity, uint32_t valid_length,
+    uint32_t element_bytes) {
+    const uint32_t head_stride =
+        capacity * QBH_BLOCK_HEAD_DIM * element_bytes;
+    const uint32_t valid_bytes =
+        valid_length * QBH_BLOCK_HEAD_DIM * element_bytes;
+    uint64_t mismatches = 0U;
+    for (uint32_t head = 0U; head < QBH_BLOCK_KV_HEADS; ++head) {
+        mismatches += qbh_count_byte_mismatches(
+            actual + (size_t)head * head_stride,
+            reference + (size_t)head * head_stride,
+            valid_bytes);
+    }
+    return mismatches;
+}
+
+static int qbh_replay_step_pass(
+    uint32_t variant, const struct qbh_replay_step_result *result) {
+    const int output_pass = variant == QBH_BLOCK_W4U8
+        ? result->output.mismatches == 0U
+        : result->output.max_abs <= 0.0625 &&
+              isfinite(result->output.cosine) &&
+              result->output.cosine >= 0.99999;
+    return output_pass && result->cache_mismatches == 0U &&
+           result->dsp_status == QBH_BLOCK_STATUS_OK &&
+           result->numerical_status == QBH_BLOCK_NUMERICAL_OK &&
+           result->vtcm_requested_bytes ==
+               QBH_EXPECTED_FULL_VTCM_BYTES &&
+           result->vtcm_acquired_bytes ==
+               QBH_EXPECTED_FULL_VTCM_BYTES &&
+           result->intermediate_ddr_read_bytes == 0U &&
+           result->intermediate_ddr_write_bytes == 0U &&
+           result->intermediate_spill_fill_count == 0U;
+}
+
+static int qbh_run_replay_sequence(
+    struct qbh_session *session, int shared_fd, uint8_t *shared,
+    uint32_t total_bytes, const char *package_root,
+    struct qbh_block_header *header,
+    const struct qbh_file_slot *input_slot,
+    const struct qbh_file_slot *reference_slot,
+    const struct qbh_file_slot rope_slots[2],
+    const struct qbh_file_slot kv_cache_slots[2],
+    const struct qbh_file_slot kv_reference_slots[2],
+    uint32_t variant) {
+    struct qbh_decode_session_state *state =
+        (struct qbh_decode_session_state *)(
+            shared + header->replay_session_offset);
+    struct qbh_decode_layer_state *layer =
+        &state->layers[state->active_layer];
+    struct qbh_replay_step_result results[QBH_REPLAY_TOTAL_STEPS];
+    const uint32_t element_bytes =
+        variant == QBH_BLOCK_W4U8 ? 1U : 2U;
+    const char *tensor_suffix =
+        variant == QBH_BLOCK_W4U8 ? "u8" : "f16";
+    int all_pass = 1;
+
+    memset(results, 0, sizeof(results));
+    for (uint32_t step = 0U; step < QBH_REPLAY_TOTAL_STEPS; ++step) {
+        struct qbh_replay_step_result *step_result = &results[step];
+        uint64_t start;
+        uint64_t end;
+        int rpc_result;
+
+        if (step == 0U) {
+            header->scan_mode = QBH_BLOCK_SCAN_PREFILL;
+            header->logical_m = QBH_BLOCK_M;
+        } else {
+            char name[128];
+            const uint32_t decode_index = step - 1U;
+            header->scan_mode = QBH_BLOCK_SCAN_DECODE;
+            header->logical_m = 1U;
+            if (snprintf(name, sizeof(name),
+                         "replay_decode_input_%02" PRIu32 "_%s.bin",
+                         decode_index, tensor_suffix) < 0 ||
+                qbh_read_named_tensor(
+                    package_root, name,
+                    shared + input_slot->offset,
+                    input_slot->expected_bytes) != 0 ||
+                snprintf(name, sizeof(name),
+                         "replay_decode_reference_%02" PRIu32 "_%s.bin",
+                         decode_index, tensor_suffix) < 0 ||
+                qbh_read_named_tensor(
+                    package_root, name,
+                    shared + reference_slot->offset,
+                    reference_slot->expected_bytes) != 0 ||
+                snprintf(name, sizeof(name),
+                         "replay_decode_rope_cos_%02" PRIu32 "_f16.bin",
+                         decode_index) < 0 ||
+                qbh_read_named_tensor(
+                    package_root, name,
+                    shared + rope_slots[0].offset,
+                    rope_slots[0].expected_bytes) != 0 ||
+                snprintf(name, sizeof(name),
+                         "replay_decode_rope_sin_%02" PRIu32 "_f16.bin",
+                         decode_index) < 0 ||
+                qbh_read_named_tensor(
+                    package_root, name,
+                    shared + rope_slots[1].offset,
+                    rope_slots[1].expected_bytes) != 0) {
+                fprintf(stderr, "failed to stage replay decode step %" PRIu32 "\n",
+                        decode_index);
+                return -1;
+            }
+        }
+
+        header->initial_kv_length = layer->valid_length;
+        header->replay_expected_step = state->completed_step_count;
+        header->replay_first_position = state->next_position;
+        header->repeat_count = 1U;
+        header->dsp_status = QBH_BLOCK_STATUS_HOST_READY;
+        memset(shared + header->output_offset, 0xa5, header->output_bytes);
+        if (qbh_prepare_gate_up_scale_cache(header, shared) != 0) {
+            return -1;
+        }
+        start = qbh_monotonic_ns();
+        rpc_result = qwen3_probe_run_block(
+            session->handle, shared_fd, total_bytes);
+        end = qbh_monotonic_ns();
+        if (rpc_result != AEE_SUCCESS) {
+            fprintf(stderr, "replay step %" PRIu32 " RPC failed: 0x%08x\n",
+                    step, (unsigned int)rpc_result);
+            return -1;
+        }
+
+        step_result->host_wall_ns = end - start;
+        step_result->step_index = step;
+        step_result->first_position = header->replay_first_position;
+        step_result->valid_length = layer->valid_length;
+        step_result->dsp_status = (uint32_t)header->dsp_status;
+        step_result->numerical_status = (uint32_t)header->numerical_status;
+        step_result->vtcm_requested_bytes = header->vtcm_requested_bytes;
+        step_result->vtcm_acquired_bytes = header->vtcm_acquired_bytes;
+        step_result->intermediate_ddr_read_bytes =
+            header->intermediate_ddr_read_bytes;
+        step_result->intermediate_ddr_write_bytes =
+            header->intermediate_ddr_write_bytes;
+        step_result->intermediate_spill_fill_count =
+            header->intermediate_spill_fill_count;
+        step_result->scan_cache_ddr_read_bytes =
+            header->scan_cache_ddr_read_bytes;
+        step_result->scan_cache_ddr_write_bytes =
+            header->scan_cache_ddr_write_bytes;
+        step_result->scan_dynamic_attention_ticks =
+            header->scan_dynamic_attention_ticks;
+        step_result->output = variant == QBH_BLOCK_W4U8
+            ? qbh_compare_scan_u8(
+                  shared + header->output_offset,
+                  shared + header->reference_offset,
+                  header->logical_m,
+                  &header->qparams[QBH_BLOCK_QP_BLOCK_OUTPUT])
+            : qbh_compare_scan_f16(
+                  (const uint16_t *)(shared + header->output_offset),
+                  (const uint16_t *)(shared + header->reference_offset),
+                  header->logical_m);
+        step_result->cache_mismatches =
+            qbh_cache_prefix_mismatches(
+                shared + kv_cache_slots[0].offset,
+                shared + kv_reference_slots[0].offset,
+                layer->capacity, layer->valid_length,
+                element_bytes) +
+            qbh_cache_prefix_mismatches(
+                shared + kv_cache_slots[1].offset,
+                shared + kv_reference_slots[1].offset,
+                layer->capacity, layer->valid_length,
+                element_bytes);
+        all_pass &= qbh_replay_step_pass(variant, step_result);
+        printf(
+            "{\"experiment\":148,\"variant\":\"%s\","
+            "\"replay_step\":%" PRIu32 ",\"mode\":\"%s\","
+            "\"first_position\":%" PRIu32 ","
+            "\"valid_length\":%" PRIu32 ","
+            "\"host_wall_ns\":%" PRIu64 ","
+            "\"output_mismatches\":%" PRIu64 ","
+            "\"output_max_abs\":%.9g,\"output_cosine\":%.9g,"
+            "\"cache_mismatches\":%" PRIu64 ","
+            "\"cache_ddr_read_bytes\":%" PRIu64 ","
+            "\"cache_ddr_write_bytes\":%" PRIu64 ","
+            "\"dynamic_attention_ticks\":%" PRIu64 ","
+            "\"vtcm_requested_bytes\":%" PRIu32 ","
+            "\"vtcm_acquired_bytes\":%" PRIu32 ","
+            "\"intermediate_ddr_read_bytes\":%" PRIu64 ","
+            "\"intermediate_ddr_write_bytes\":%" PRIu64 ","
+            "\"intermediate_spill_fill_count\":%" PRIu32 ","
+            "\"pass\":%s}\n",
+            qbh_variant_name(variant), step,
+            step == 0U ? "prefill" : "decode",
+            step_result->first_position, step_result->valid_length,
+            step_result->host_wall_ns, step_result->output.mismatches,
+            step_result->output.max_abs, step_result->output.cosine,
+            step_result->cache_mismatches,
+            step_result->scan_cache_ddr_read_bytes,
+            step_result->scan_cache_ddr_write_bytes,
+            step_result->scan_dynamic_attention_ticks,
+            step_result->vtcm_requested_bytes,
+            step_result->vtcm_acquired_bytes,
+            step_result->intermediate_ddr_read_bytes,
+            step_result->intermediate_ddr_write_bytes,
+            step_result->intermediate_spill_fill_count,
+            qbh_replay_step_pass(variant, step_result) ? "true" : "false");
+    }
+    printf(
+        "{\"experiment\":148,\"variant\":\"%s\","
+        "\"replay_sequence_complete\":true,"
+        "\"completed_steps\":%" PRIu32 ","
+        "\"final_valid_length\":%" PRIu32 ","
+        "\"all_steps_pass\":%s}\n",
+        qbh_variant_name(variant), state->completed_step_count,
+        layer->valid_length, all_pass ? "true" : "false");
+    return all_pass && state->completed_step_count ==
+                           QBH_REPLAY_TOTAL_STEPS &&
+                       layer->valid_length == 72U
+        ? 0 : -1;
+}
+
 int main(int argc, char **argv) {
     struct qbh_session session = {(remote_handle64)-1, 0};
     struct qbh_file_slot input_slot;
@@ -1664,6 +1921,8 @@ int main(int argc, char **argv) {
     uint32_t initial_kv_length = 0U;
     uint32_t kv_cache_capacity = 0U;
     uint32_t physical_chunks = 1U;
+    uint32_t replay_mode = QBH_BLOCK_REPLAY_DISABLED;
+    uint32_t replay_session_offset = 0U;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t w4u8_gate_up_bundle_offset = 0U;
@@ -1846,6 +2105,18 @@ int main(int argc, char **argv) {
                 (logical_m + QBH_BLOCK_M - 1U) / QBH_BLOCK_M;
         }
     }
+    {
+        const char *replay = getenv("QBH_REPLAY_SEQUENCE");
+        if (replay != NULL && replay[0] != '\0') {
+            if (strcmp(replay, "0") == 0) {
+                replay_mode = QBH_BLOCK_REPLAY_DISABLED;
+            } else if (strcmp(replay, "1") == 0) {
+                replay_mode = QBH_BLOCK_REPLAY_CONTINUOUS;
+            } else {
+                replay_mode = UINT32_MAX;
+            }
+        }
+    }
     if (argc < 3 || argc > 26 ||
         qbh_parse_variant(argv[2], &variant) != 0 ||
         (argc >= 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
@@ -1897,6 +2168,12 @@ int main(int argc, char **argv) {
                            &w4u8_qk_pair_kernel_mode) != 0) ||
         repeats == 0U || repeats > 100U ||
         scan_mode > QBH_BLOCK_SCAN_DECODE ||
+        replay_mode > QBH_BLOCK_REPLAY_CONTINUOUS ||
+        (replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS &&
+         (scan_mode != QBH_BLOCK_SCAN_PREFILL ||
+          logical_m != QBH_BLOCK_M || initial_kv_length != 0U ||
+          kv_cache_capacity != QBH_BLOCK_M + QBH_REPLAY_DECODE_STEPS ||
+          physical_chunks != 1U)) ||
         (scan_mode == QBH_BLOCK_SCAN_DISABLED &&
          (logical_m != QBH_BLOCK_M || initial_kv_length != 0U ||
           kv_cache_capacity != 0U || physical_chunks != 1U)) ||
@@ -2276,6 +2553,16 @@ int main(int argc, char **argv) {
     element_bytes = variant == QBH_BLOCK_W4U8 ? 1U : 2U;
     output_bytes = physical_chunks * QBH_BLOCK_M *
                    QBH_BLOCK_HIDDEN * element_bytes;
+    if (replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS) {
+        cursor = qbh_align_up_size(cursor, QBH_HOST_ALIGNMENT);
+        replay_session_offset = (uint32_t)cursor;
+        if (cursor > UINT32_MAX ||
+            sizeof(struct qbh_decode_session_state) >
+                UINT32_MAX - cursor) {
+            return 2;
+        }
+        cursor += sizeof(struct qbh_decode_session_state);
+    }
     if (qbh_block_mlp_is_w4u8_streaming(mlp_mode) &&
         (qbh_projection_layout_init(
              QBH_PROJECTION_GATE_UP_PAIR,
@@ -2631,6 +2918,13 @@ int main(int argc, char **argv) {
     header->logical_m = logical_m;
     header->initial_kv_length = initial_kv_length;
     header->kv_cache_capacity = kv_cache_capacity;
+    header->replay_mode = replay_mode;
+    header->replay_session_offset = replay_session_offset;
+    header->replay_session_bytes =
+        replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS
+            ? (uint32_t)sizeof(struct qbh_decode_session_state) : 0U;
+    header->replay_expected_step = 0U;
+    header->replay_first_position = 0U;
     header->input_offset = input_slot.offset;
     header->input_bytes = input_slot.expected_bytes;
     header->output_bytes = output_bytes;
@@ -2655,6 +2949,38 @@ int main(int argc, char **argv) {
         header->kv_cache_k_bytes = kv_cache_slots[0].expected_bytes;
         header->kv_cache_v_offset = kv_cache_slots[1].offset;
         header->kv_cache_v_bytes = kv_cache_slots[1].expected_bytes;
+    }
+    if (replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS) {
+        struct qbh_decode_session_state *state =
+            (struct qbh_decode_session_state *)(
+                shared + replay_session_offset);
+        struct qbh_decode_layer_state *layer =
+            &state->layers[QBH_REPLAY_LAYER_INDEX];
+        memset(state, 0, sizeof(*state));
+        state->magic = QBH_DECODE_SESSION_MAGIC;
+        state->abi_version = QBH_DECODE_SESSION_ABI_VERSION;
+        state->state_bytes = (uint32_t)sizeof(*state);
+        state->declared_layer_count = QBH_QWEN3_TRANSFORMER_LAYERS;
+        state->active_layer = QBH_REPLAY_LAYER_INDEX;
+        for (uint32_t index = 0U;
+             index < QBH_QWEN3_TRANSFORMER_LAYERS; ++index) {
+            state->layers[index].layer_index = index;
+        }
+        layer->element_type = variant == QBH_BLOCK_W4U8
+            ? QBH_KV_CACHE_ELEMENT_U8 : QBH_KV_CACHE_ELEMENT_F16;
+        layer->k_format = QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1;
+        layer->v_format = QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1;
+        layer->capacity = kv_cache_capacity;
+        layer->k_offset = header->kv_cache_k_offset;
+        layer->k_bytes = header->kv_cache_k_bytes;
+        layer->v_offset = header->kv_cache_v_offset;
+        layer->v_bytes = header->kv_cache_v_bytes;
+        layer->head_count = QBH_BLOCK_KV_HEADS;
+        layer->head_dim = QBH_BLOCK_HEAD_DIM;
+        layer->head_stride_bytes =
+            kv_cache_capacity * QBH_BLOCK_HEAD_DIM * element_bytes;
+        layer->token_stride_bytes =
+            QBH_BLOCK_HEAD_DIM * element_bytes;
     }
     if (qbh_attention_u8_enabled(attention_pipeline_mode)) {
         header->attention_config_offset =
@@ -2757,6 +3083,15 @@ int main(int argc, char **argv) {
     mapped = 1;
     prepare_result = qbh_session_prepare(&session);
     if (prepare_result != AEE_SUCCESS) {
+        goto cleanup;
+    }
+
+    if (replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS) {
+        exit_code = qbh_run_replay_sequence(
+            &session, shared_fd, shared, (uint32_t)total_bytes,
+            argv[1], header, &input_slot, &reference_slot, rope_slots,
+            kv_cache_slots, kv_reference_slots, variant) == 0
+            ? 0 : 1;
         goto cleanup;
     }
 

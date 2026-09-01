@@ -786,6 +786,65 @@ static int qbh_range_valid(uint32_t offset, uint32_t bytes,
            offset <= shared_bytes && bytes <= shared_bytes - offset;
 }
 
+static int qbh_replay_session_valid(
+    const struct qbh_block_header *header, uint32_t shared_bytes,
+    uint32_t element_bytes) {
+    const struct qbh_decode_session_state *state;
+    const struct qbh_decode_layer_state *layer;
+    uint32_t cache_bytes;
+    uint32_t expected_element;
+
+    if (header->replay_mode == QBH_BLOCK_REPLAY_DISABLED) {
+        return header->replay_session_offset == 0U &&
+               header->replay_session_bytes == 0U &&
+               header->replay_expected_step == 0U &&
+               header->replay_first_position == 0U;
+    }
+    if (header->replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS ||
+        header->repeat_count != 1U ||
+        header->scan_mode == QBH_BLOCK_SCAN_DISABLED ||
+        header->replay_session_bytes !=
+            sizeof(struct qbh_decode_session_state) ||
+        !qbh_range_valid(header->replay_session_offset,
+                         header->replay_session_bytes, shared_bytes)) {
+        return 0;
+    }
+    state = (const struct qbh_decode_session_state *)(
+        (const uint8_t *)header + header->replay_session_offset);
+    if (state->magic != QBH_DECODE_SESSION_MAGIC ||
+        state->abi_version != QBH_DECODE_SESSION_ABI_VERSION ||
+        state->state_bytes != sizeof(*state) ||
+        state->declared_layer_count != QBH_QWEN3_TRANSFORMER_LAYERS ||
+        state->active_layer != QBH_REPLAY_LAYER_INDEX ||
+        state->completed_step_count != header->replay_expected_step ||
+        state->next_position != header->replay_first_position ||
+        state->next_position != header->initial_kv_length) {
+        return 0;
+    }
+    layer = &state->layers[state->active_layer];
+    expected_element = header->variant == QBH_BLOCK_W4U8
+        ? QBH_KV_CACHE_ELEMENT_U8 : QBH_KV_CACHE_ELEMENT_F16;
+    cache_bytes = layer->capacity * QBH_BLOCK_KV_HIDDEN * element_bytes;
+    return layer->layer_index == QBH_REPLAY_LAYER_INDEX &&
+           layer->element_type == expected_element &&
+           layer->k_format == QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1 &&
+           layer->v_format == QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1 &&
+           layer->capacity == header->kv_cache_capacity &&
+           layer->valid_length == header->initial_kv_length &&
+           layer->valid_length + header->logical_m <= layer->capacity &&
+           layer->k_offset == header->kv_cache_k_offset &&
+           layer->k_bytes == header->kv_cache_k_bytes &&
+           layer->v_offset == header->kv_cache_v_offset &&
+           layer->v_bytes == header->kv_cache_v_bytes &&
+           layer->k_bytes == cache_bytes && layer->v_bytes == cache_bytes &&
+           layer->head_count == QBH_BLOCK_KV_HEADS &&
+           layer->head_dim == QBH_BLOCK_HEAD_DIM &&
+           layer->head_stride_bytes ==
+               layer->capacity * QBH_BLOCK_HEAD_DIM * element_bytes &&
+           layer->token_stride_bytes ==
+               QBH_BLOCK_HEAD_DIM * element_bytes;
+}
+
 static int qbh_projection_shape_valid(uint32_t index,
                                       const struct qbh_block_projection_desc *desc) {
     static const uint32_t expected_k[QBH_BLOCK_PROJECTION_COUNT] = {
@@ -833,11 +892,17 @@ static int qbh_scan_request_valid(const struct qbh_block_header *header,
             return 0;
         }
     } else if (header->scan_mode == QBH_BLOCK_SCAN_DECODE) {
+        const int replay_length_valid =
+            header->replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS &&
+            header->initial_kv_length >= 64U &&
+            header->initial_kv_length < header->kv_cache_capacity;
+        const int scan_length_valid =
+            header->initial_kv_length == 64U ||
+            header->initial_kv_length == 256U ||
+            header->initial_kv_length == 1024U ||
+            header->initial_kv_length == 4096U;
         if (header->logical_m != 1U ||
-            (header->initial_kv_length != 64U &&
-             header->initial_kv_length != 256U &&
-             header->initial_kv_length != 1024U &&
-             header->initial_kv_length != 4096U)) {
+            (!replay_length_valid && !scan_length_valid)) {
             return 0;
         }
     } else {
@@ -876,8 +941,13 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->shared_bytes != shared_bytes ||
         (header->variant != QBH_BLOCK_F16F16 &&
          header->variant != QBH_BLOCK_W4F16 &&
-         header->variant != QBH_BLOCK_W4U8) ||
+        header->variant != QBH_BLOCK_W4U8) ||
         header->repeat_count == 0U || header->repeat_count > 100U) {
+        return 0;
+    }
+    element_bytes = header->variant == QBH_BLOCK_W4U8 ? 1U : 2U;
+    if (!qbh_replay_session_valid(
+            header, shared_bytes, element_bytes)) {
         return 0;
     }
     if ((header->common_ops_mask &
@@ -12795,6 +12865,17 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
         teardown_start = HAP_perf_get_qtimer_count();
     }
     header->dsp_status = QBH_BLOCK_STATUS_OK;
+    if (header->replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS) {
+        struct qbh_decode_session_state *state =
+            (struct qbh_decode_session_state *)(
+                shared + header->replay_session_offset);
+        struct qbh_decode_layer_state *layer =
+            &state->layers[state->active_layer];
+        layer->valid_length += header->logical_m;
+        layer->append_count += header->logical_m;
+        state->next_position += header->logical_m;
+        ++state->completed_step_count;
+    }
     result = AEE_SUCCESS;
 
 stop_worker:
