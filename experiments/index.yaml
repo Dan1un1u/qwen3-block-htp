@@ -6,6 +6,48 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0141
+    slug: w4u8-o-batch8-ring3
+    title: W4U8 O-projection batch-eight revalidation on ring3
+    parent: EXP-0124
+    variants:
+      - exp0124_ring3_o_batch4_control
+      - w4u8_ring3_o_batch8_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-o-batch8-after-ring3
+    source_branches:
+      - codex/exp-0141-w4u8-o-batch8-ring3
+    source_commits: []
+    record: docs/experiments/EXP-0141.md
+    approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently without interruption'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0141-w4u8-o-batch8-ring3
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0124
+      source_parent_commit: 95fadff5930d9081678ad99bb62ef84849ee1897
+      logical_w4u8_parent: EXP0120_ring16_plus_EXP0124_QKV_ring3
+      recipe_scope: W4U8_O_projection_HMX_batch_width_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      prior_positive_boundary: EXP0100_O_batch8_reduces_O_about_7_percent_but_fails_old_repeat1_complete_Host_gate
+      changed_reopen_condition: EXP0120_ring16_and_EXP0124_ring3_materially_change_downstream_and_upstream_execution_lifecycles
+      implementation_boundary: EXP0124_ring3_O_batch4_control_or_same_plan_with_O_batch8_only
+      excluded_changes: no_weights_qparams_QKV_ring_Attention_residual_GateUp_Down_public_DDR_FastRPC_or_QNN_changes
+      static_gate: runtime_O_batch4_or_batch8_selection_and_only_O_uses_batch8
+      correctness_gate: both_cells_byte_exact_output_69f22eeb035e5ec5_all_existing_stage_audits_zero_mismatch_zero_max_lsb
+      physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_identical_weight_tile_work_qparams_carriers_and_peak_plan_declared_O_command_grouping_only
+      speed_gate: candidate_O_and_complete_Host_strictly_improve_ordinary_and_paired_repeat1_and_repeat10_and_GateUp_Down_regression_at_most_0p5_percent
+      completion_gate: bounded_smoke_then_five_rotated_formal_rounds_PC027_PC028_and_no_automatic_baseline_promotion
   - id: EXP-0140
     slug: w4f16-down-join-only-subgroup4
     title: W4F16 Down join-only revalidation after subgroup4
