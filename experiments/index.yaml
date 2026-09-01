@@ -13,14 +13,15 @@ experiments:
     variants:
       - exp0140_sequential_qkv_control
       - w4f16_batch2_cross_projection_ring_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4f16-qkv-cross-projection-ring
     source_branches:
       - codex/exp-0146-w4f16-qkv-cross-projection-ring
-    source_commits: []
+    source_commits:
+      - 6dddc6b5279db04743a4c7d77b86a4eb78d8eb4e
     record: docs/experiments/EXP-0146.md
     approval_ref: 'User message 2026-09-01: 可以，这个作为下一个实验立即开展'
     runtime:
@@ -28,6 +29,7 @@ experiments:
       source_branch: codex/exp-0146-w4f16-qkv-cross-projection-ring
       approved_on: '2026-09-01'
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0140
       source_parent_commit: e75563457293de9430f8c9d20a04ced6147e4737
@@ -50,6 +52,37 @@ experiments:
       physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_identical_weight_bytes_DMA_bytes_HMX_tile_pairs_carriers_and_math_declared_ring_delta_only
       speed_gate: candidate_QKV_plus_QK_Norm_RoPE_and_complete_Host_strictly_improve_ordinary_and_paired_repeat1_and_repeat10
       completion_gate: static_capacity_audit_then_bounded_smoke_then_five_rotated_formal_rounds_PC027_PC028_and_no_automatic_baseline_promotion
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0146/20260901T064149Z_6dddc6b5279d_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0146/artifacts/6dddc6b5279d/20260901T064149Z_formal'
+      source_commit: 6dddc6b5279db04743a4c7d77b86a4eb78d8eb4e
+      static_gate_result: pass_batch2_two_compressed_two_expanded_slots_no_new_large_VTCM_per_head_publish_one_HMX_owner_no_QNN
+      correctness_gate_result: pass_both_f18b9abbe1487231_zero_mismatch_zero_max_lsb_zero_W4F16_expand_and_QKV_operand_mismatch
+      physical_gate_result: pass_exact_8mib_vtcm_identical_8171008_peak_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_identical_weight_DMA_HMX_and_carrier_work
+      selected_cell: exp0140_sequential_qkv_control
+      repeat1_qkv_change_percent: -0.794
+      repeat1_qkv_paired_change_percent: 0.616
+      repeat1_host_change_percent: 0.545
+      repeat1_host_paired_change_percent: 1.389
+      repeat10_qkv_change_percent: 0.879
+      repeat10_qkv_paired_change_percent: 0.879
+      repeat10_host_change_percent: -0.380
+      repeat10_host_paired_change_percent: -0.192
+      repeat10_first_expand_change_percent: -19.537
+      repeat10_hmx_tail_wait_change_percent: -15.089
+      repeat10_weight_dma_ticks_change_percent: 1.793
+      repeat10_steady_expand_change_percent: 0.885
+      repeat10_control_host_us: 1962.974
+      repeat10_candidate_host_us: 1955.505
+      repeat10_control_qkv_us: 416.344
+      repeat10_candidate_qkv_us: 420.005
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_control_and_candidate_complete_block
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: f3067751f4abccbbe52b3a507beadb1d8eef3da6e362dfcacd523ba1fbaba816
+      full_profiling_report_sha256: fa9a32ac94e2f707c19da93a465c9d674f64935d3b502ba8fe8de08f3131b1c3
+      evidence_sha256_ledger_sha256: 6dc8378cdba60ea37141a8fd5eeee5a65cf1380f43cac5416b39531ceb06da4c
+      conclusion: cross_projection_ring_removes_first_expand_and_HMX_tail_wait_but_increases_DMA_lifetime_and_steady_expand_so_repeat10_QKV_regresses_and_the_strict_speed_gate_fails
+      reopen_condition: only_with_a_new_DMA_descriptor_or_expansion_ownership_mechanism_that_removes_the_observed_steady_state_cost_not_another_QKV_order_or_batch_width_search
       selected_baseline_changed: false
   - id: EXP-0145
     slug: w4u8-down-hmx-batch8
