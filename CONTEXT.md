@@ -862,3 +862,25 @@ contract is permitted. Static exact-size audit and real package mapping precede
 all model execution.
 _Avoid_: reopening EXP-0150 in place, mapping probe as full-model correctness,
 multi-arena weights, package streaming
+
+**Full-Stack FP16 Composition Gate**:
+The user-approved EXP-0152 correctness rule for comparing F16F16 and W4F16
+hardware execution with their independent software implementations across 28
+layers. Every conditional layer output and FP16 cache comparison must contain
+no non-finite values, retain cosine of at least 0.99999, and place at most one
+percent of elements outside the legacy mixed tolerance `0.0625 +
+0.002*abs(reference)`. The final composed output must additionally retain
+cosine of at least 0.99999 and NRMSE of at most 0.003. The legacy elementwise
+violation count remains visible as a diagnostic rather than being erased.
+W4U8 remains governed by its zero-LSB implementation-reference gate.
+_Avoid_: exact FP16 byte agreement, teacher-accuracy gate, hiding legacy
+violations, applying the relaxed FP16 rule to W4U8
+
+**Full-Stack Hidden-Trajectory Diagnostic**:
+The isolated EXP-0152 mode that copies each layer's final residual from VTCM
+into one explicit 28-layer DDR capture solely to distinguish conditional local
+error from composed drift. Its 7,340,032-byte diagnostic write is separately
+reported, and the mode is never formal zero-intermediate-DDR or performance
+evidence. The ordinary RUN ABI keeps the capture offset and byte count at zero.
+_Avoid_: formal runtime, hidden intermediate DDR, performance result, replacing
+the ordinary zero-DDR physical gate

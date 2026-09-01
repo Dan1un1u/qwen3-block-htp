@@ -33,10 +33,29 @@ current_scope:
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_running_single_rpcmem_alloc2_full_stack_resume
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: EXP0152_approved_pending_source_preflight_and_exact_package_layout
-  active_experiment_evidence: null
-  active_experiment_gate: pending_exact_three_recipe_package_capacity_then_real_mapping_prefill_decode_correctness_physical_and_profiling
+  active_experiment_stage: EXP0152_stage_C_F16F16_trajectory_diagnostic_complete_composition_gate_amended_continue_three_recipe_formal_execution
+  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0152/20260901T161930Z_hidden_trajectory'
+  active_experiment_gate: pending_three_recipe_prefill_continuous_decode_amended_correctness_zero_intermediate_DDR_and_complete_profiling
   active_recipe_specialization: common_full_stack_integration_no_new_specialization
+  latest_full_stack_hidden_trajectory_diagnostic:
+    id: EXP-0152
+    source_commit: 0f306b9012812c2ae8565aaae53b55f312320ecd
+    evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0152/20260901T161930Z_hidden_trajectory'
+    diagnostic_only: true
+    formal_physical_evidence: false
+    captured_layers: 28
+    layer_bytes: 262144
+    explicit_diagnostic_ddr_write_bytes: 7340032
+    capture_output_byte_mismatches: 0
+    conditional_failure_layers_under_legacy_elementwise_gate: [10, 20, 21, 22, 23, 24, 25, 26, 27]
+    maximum_legacy_mixed_tolerance_violation_fraction: 0.0054473876953125
+    minimum_conditional_layer_cosine: 0.9999989713039642
+    final_composed_output_cosine: 0.9999972390311772
+    final_composed_output_nrmse: 0.0023529763067414297
+    nonfinite_count: 0
+    amended_gate_approved_by: user
+    amended_gate_approval_ref: 'User message 2026-09-02: 确认方案1'
+    amended_f16_gate: no_nonfinite_each_conditional_layer_and_cache_cosine_at_least_0p99999_legacy_mixed_violation_fraction_at_most_0p01_final_composed_cosine_at_least_0p99999_final_composed_NRMSE_at_most_0p003
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0151/20260901T152446Z_d6b1706_device_gate'
   latest_rpcmem_alloc2_single_buffer_probe:
     id: EXP-0151
