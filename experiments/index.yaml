@@ -10657,3 +10657,45 @@ experiments:
       conclusion: post_DMA_main_context_help_requires_a_third_concurrent_QK_pair_context_that_is_not_boundary_exact_and_serializing_the_shared_K_scatter_path_overwhelms_any_join_reduction
       reopen_condition: only_with_a_proven_reentrant_three_context_QK_kernel_or_a_task_partition_that_never_adds_concurrent_K_scatter
       selected_baseline_changed: false
+  - id: EXP-0132
+    slug: w4f16-gate-up-chunk2-claim
+    title: W4F16 Gate/Up two-region HVX expansion claims
+    parent: EXP-0129
+    variants:
+      - w4f16_gate_up_claim1_control
+      - w4f16_gate_up_claim2_candidate
+    execution_state: running
+    evidence_validity: pending
+    local_gate: pending
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4f16-gate-up-chunk2-claim
+    source_branches:
+      - codex/exp-0132-w4f16-gate-up-chunk2-claim
+    source_commits: []
+    record: docs/experiments/EXP-0132.md
+    approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently without interruption'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0132-w4f16-gate-up-chunk2-claim
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0129
+      source_parent_commit: cfda9253fbf7f0a57f68a10f0c5c2ad579889a34
+      logical_w4f16_parent: EXP-0111-join_only
+      recipe_scope: W4F16_Gate_Up_HVX_expansion_claim_granularity_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      prior_negative_boundary: EXP0129_proves_more_workers_do_not_advance_FP16_expansion_or_HMX_readiness
+      hypothesis: each_pool_worker_claiming_and_decoding_two_adjacent_region32_units_per_atomic_operation_reduces_queue_and_call_granularity_without_changing_the_three_context_work_budget
+      implementation_boundary: runtime_claim1_or_claim2_same_region32_two_pool_workers_plus_main_DMA8_scale_cache_batch8_HMX_math_layout_and_output
+      excluded_changes: no_weights_scales_qparams_worker_count_region_size_main_share_DMA_HMX_commands_QKV_attention_O_down_residual_public_DDR_FastRPC_or_QNN_changes
+      static_gate: candidate_uses_atomic_add2_only_for_relaxed_join_only_Gate_Up_pool_work_and_combines_at_most_two_adjacent_regions_per_decode_call
+      correctness_gate: both_cells_byte_exact_output_f18b9abbe1487231_expansion_audit_zero_mismatch_zero_max_lsb
+      physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_identical_weight_DMA_HMX_commands_tiles_and_peak_plan
+      speed_gate: Gate_Up_plus_SwiGLU_and_complete_Host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
+      completion_gate: bounded_smoke_then_five_rotated_formal_rounds_PC027_PC028_and_no_automatic_baseline_promotion
