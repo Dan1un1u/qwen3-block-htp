@@ -363,6 +363,7 @@ struct qbh_block_w4f16_pool {
     uint32_t fp16_post_residual_norm_crouton;
     uint32_t fp16_norm_rows_per_task;
     void *qkv_ring_state;
+    uint32_t attention_qk_main_completed_groups;
 };
 
 struct qbh_w4u8_qkv_ring_batch {
@@ -831,6 +832,16 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->w4u8_qkv_ring_expand_workers > 3U ||
         (header->variant != QBH_BLOCK_W4U8 &&
          header->w4u8_qkv_ring_expand_workers != 0U) ||
+        header->w4u8_qkv_main_prep_assist > 1U ||
+        (header->w4u8_qkv_main_prep_assist != 0U &&
+         (header->variant != QBH_BLOCK_W4U8 ||
+          header->w4u8_qkv_ring_expand_workers != 3U ||
+          header->w4u8_qkvo_pipeline_mode !=
+              QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS ||
+          !qbh_attention_u8_qkv_overlap_enabled(
+              header->attention_pipeline_mode) ||
+          header->attention_hvx_contexts !=
+              QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS)) ||
         (header->w4u8_qkv_ring_expand_workers != 0U &&
          (header->w4u8_qkvo_pipeline_mode !=
               QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS ||
@@ -5935,6 +5946,7 @@ static int qbh_run_w4u8_qkv_ring(
     int hmx_started = 0;
     int pool_started = 0;
     uint64_t local_expand_ticks = 0U;
+    struct qbh_block_w4f16_job main_prep_job;
     int result = -1;
 
     if (header == NULL || shared == NULL || buffers == NULL ||
@@ -6017,6 +6029,7 @@ static int qbh_run_w4u8_qkv_ring(
     pool->next_attention_task = 0U;
     pool->attention_qk_stream_abort = 0U;
     pool->attention_qk_streaming = 1U;
+    pool->attention_qk_main_completed_groups = 0U;
     pool->active_worker_count = pool->worker_count;
     ++pool->attention_qk_generation;
     if (pool->attention_qk_generation == 0U) {
@@ -6116,9 +6129,48 @@ static int qbh_run_w4u8_qkv_ring(
                      : "memory");
     }
 
+    if (header->w4u8_qkv_main_prep_assist != 0U &&
+        state.abort_status == 0U) {
+        const uint64_t assist_start = HAP_perf_get_qtimer_count();
+
+        memset(&main_prep_job, 0, sizeof(main_prep_job));
+        main_prep_job.pool = pool;
+        main_prep_job.worker_index = pool->worker_count;
+        header->w4u8_qkv_dma_feed_complete_tick = assist_start;
+        header->w4u8_qkv_main_prep_start_tick =
+            HAP_perf_get_qtimer_count();
+        qbh_attention_u8_qk_prep_pool_run_tasks(
+            pool, &main_prep_job);
+        header->w4u8_qkv_main_prep_end_tick =
+            HAP_perf_get_qtimer_count();
+        header->w4u8_qkv_main_prep_ticks +=
+            header->w4u8_qkv_main_prep_end_tick -
+            header->w4u8_qkv_main_prep_start_tick;
+        header->w4u8_qkv_main_prep_task_count +=
+            main_prep_job.attention_qk_norm_task_count;
+        if (main_prep_job.attention_qk_norm_task_count != 0U) {
+            ++header->w4u8_qkv_main_prep_assist_count;
+        }
+        pool->attention_qk_main_completed_groups =
+            main_prep_job.u8_attention_prepared_group_count;
+        header->u8_attention_qk_norm_rope_ticks +=
+            main_prep_job.u8_attention_qk_norm_rope_ticks;
+        header->w4u8_qk_quarter_pair_count +=
+            main_prep_job.u8_qk_quarter_pair_count;
+        header->attention_qk_norm_task_count +=
+            main_prep_job.attention_qk_norm_task_count;
+        header->u8_attention_k_pack_ticks +=
+            main_prep_job.u8_attention_k_pack_ticks;
+        header->u8_attention_fused_k_operand_mismatch_count +=
+            main_prep_job.u8_attention_fused_k_operand_mismatch_count;
+    }
+
 finish:
     if (hmx_started != 0) {
         uint64_t wait_start = HAP_perf_get_qtimer_count();
+        if (header->w4u8_qkv_main_prep_assist != 0U) {
+            header->w4u8_qkv_main_hmx_wait_start_tick = wait_start;
+        }
         const int hmx_result = qbh_hmx_wait(worker);
         header->projection_hmx_wait_ticks +=
             HAP_perf_get_qtimer_count() - wait_start;
@@ -8916,13 +8968,14 @@ static int qbh_hvx_pool_u8_qk_prep_wait_async(
     struct qbh_block_header *header,
     struct qbh_block_w4f16_pool *pool) {
     uint64_t wait_start;
-    uint32_t completed_groups = 0U;
+    uint32_t completed_groups;
 
     if (header == NULL || pool == NULL ||
         pool->active_worker_count == 0U ||
         pool->active_worker_count > pool->worker_count) {
         return -1;
     }
+    completed_groups = pool->attention_qk_main_completed_groups;
     wait_start = HAP_perf_get_qtimer_count();
     for (uint32_t worker = 0U;
          worker < pool->active_worker_count; ++worker) {
@@ -8947,6 +9000,7 @@ static int qbh_hvx_pool_u8_qk_prep_wait_async(
         header->u8_attention_fused_k_operand_mismatch_count +=
             job->u8_attention_fused_k_operand_mismatch_count;
     }
+    pool->attention_qk_main_completed_groups = 0U;
     pool->attention_qk_streaming = 0U;
     return pool->attention_qk_stream_abort == 0U &&
                    completed_groups == QBH_BLOCK_KV_HEADS

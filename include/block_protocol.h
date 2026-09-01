@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(49)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(124)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(51)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(139)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -341,6 +341,7 @@ struct qbh_block_header {
     uint32_t w4u8_stream_fence_mode;
     uint32_t w4u8_gate_up_ring_slots;
     uint32_t w4u8_qkv_ring_expand_workers;
+    uint32_t w4u8_qkv_main_prep_assist;
 
     uint32_t input_offset;
     uint32_t input_bytes;
@@ -689,6 +690,13 @@ struct qbh_block_header {
     uint64_t w4u8_qkv_ring_hmx_ready_wait_ticks;
     uint64_t w4u8_qkv_ring_hmx_compute_ticks;
     uint64_t w4u8_qkv_ring_pool_wait_ticks;
+    uint32_t w4u8_qkv_main_prep_assist_count;
+    uint32_t w4u8_qkv_main_prep_task_count;
+    uint64_t w4u8_qkv_main_prep_ticks;
+    uint64_t w4u8_qkv_dma_feed_complete_tick;
+    uint64_t w4u8_qkv_main_prep_start_tick;
+    uint64_t w4u8_qkv_main_prep_end_tick;
+    uint64_t w4u8_qkv_main_hmx_wait_start_tick;
 };
 
 #endif
