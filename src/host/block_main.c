@@ -1502,6 +1502,7 @@ int main(int argc, char **argv) {
     uint32_t fp16_norm_rows_per_task = 4U;
     uint32_t fp16_norm_contexts = 4U;
     uint32_t w4u8_down_hmx_batch_outputs = 1U;
+    uint32_t w4u8_o_batch_n_tiles = 4U;
     uint32_t w4u8_qk_pair_kernel_mode =
         QBH_BLOCK_W4U8_QK_PAIR_SERIAL_INNER;
     uint32_t qkv_schedule_mode = QBH_BLOCK_QKV_SCHEDULE_CONTROL;
@@ -1603,6 +1604,15 @@ int main(int argc, char **argv) {
                 expand_workers,
                 &w4u8_qkv_ring_expand_workers) != 0) {
             w4u8_qkv_ring_expand_workers = UINT32_MAX;
+        }
+    }
+    {
+        const char *o_batch_tiles =
+            getenv("QBH_W4U8_O_BATCH_N_TILES");
+        if (o_batch_tiles != NULL && o_batch_tiles[0] != '\0' &&
+            qbh_parse_u32(
+                o_batch_tiles, &w4u8_o_batch_n_tiles) != 0) {
+            w4u8_o_batch_n_tiles = UINT32_MAX;
         }
     }
     if (argc < 3 || argc > 26 ||
@@ -1773,6 +1783,10 @@ int main(int argc, char **argv) {
          w4u8_down_hmx_batch_outputs != 4U) ||
         (variant != QBH_BLOCK_W4U8 &&
          w4u8_down_hmx_batch_outputs != 1U) ||
+        (w4u8_o_batch_n_tiles != 4U &&
+         w4u8_o_batch_n_tiles != 8U) ||
+        (variant != QBH_BLOCK_W4U8 &&
+         w4u8_o_batch_n_tiles != 4U) ||
         (w4u8_gate_up_ring_slots != 8U &&
          w4u8_gate_up_ring_slots != 16U) ||
         (variant != QBH_BLOCK_W4U8 &&
@@ -2253,6 +2267,7 @@ int main(int argc, char **argv) {
     header->fp16_norm_contexts = fp16_norm_contexts;
     header->w4u8_down_hmx_batch_outputs =
         w4u8_down_hmx_batch_outputs;
+    header->w4u8_o_batch_n_tiles = w4u8_o_batch_n_tiles;
     header->qkv_schedule_mode = qkv_schedule_mode;
     header->w4f16_group_fence_mode = w4f16_group_fence_mode;
     header->w4u8_stream_fence_mode = w4u8_stream_fence_mode;
@@ -2534,7 +2549,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0124\","
+        "{\"experiment\":\"EXP-0141\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2549,6 +2564,7 @@ int main(int argc, char **argv) {
         "\"fp16_norm_rows_per_task\":%" PRIu32 ","
         "\"fp16_norm_contexts\":%" PRIu32 ","
         "\"w4u8_down_hmx_batch_outputs\":%" PRIu32 ","
+        "\"w4u8_o_batch_n_tiles\":%" PRIu32 ","
         "\"attribution_mode\":\"%s\","
         "\"numerical_audit_mode\":\"%s\","
         "\"residual_mode\":\"%s\","
@@ -2636,6 +2652,8 @@ int main(int argc, char **argv) {
         "\"w4u8_qkv_batch_count\":%" PRIu32 ","
         "\"w4u8_qkvo_prefetch_count\":%" PRIu32 ","
         "\"w4u8_qkvo_overlap_schedule_count\":%" PRIu32 ","
+        "\"w4u8_o_batch_n_tiles_observed\":%" PRIu32 ","
+        "\"w4u8_o_batch_count\":%" PRIu32 ","
         "\"w4u8_qk_pair_kernel_mode_observed\":%" PRIu32 ","
         "\"w4u8_qk_quarter_pair_count\":%" PRIu32 ","
         "\"u8_attention_expected_score_hash\":\"%016" PRIx64 "\","
@@ -2892,6 +2910,7 @@ int main(int argc, char **argv) {
         header->fp16_norm_rows_per_task,
         header->fp16_norm_contexts,
         header->w4u8_down_hmx_batch_outputs,
+        header->w4u8_o_batch_n_tiles,
         header->attribution_enabled != 0U ? "on" : "off",
         header->numerical_audit_enabled != 0U ? "on" : "off",
         qbh_residual_mode_name(header->residual_mode),
@@ -2983,6 +3002,8 @@ int main(int argc, char **argv) {
         header->w4u8_qkv_batch_count,
         header->w4u8_qkvo_prefetch_count,
         header->w4u8_qkvo_overlap_schedule_count,
+        header->w4u8_o_batch_n_tiles_observed,
+        header->w4u8_o_batch_count,
         header->w4u8_qk_pair_kernel_mode_observed,
         header->w4u8_qk_quarter_pair_count,
         header->u8_attention_expected_score_hash,

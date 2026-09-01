@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(49)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(124)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(50)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(141)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -336,6 +336,7 @@ struct qbh_block_header {
     uint32_t fp16_norm_rows_per_task;
     uint32_t fp16_norm_contexts;
     uint32_t w4u8_down_hmx_batch_outputs;
+    uint32_t w4u8_o_batch_n_tiles;
     uint32_t qkv_schedule_mode;
     uint32_t w4f16_group_fence_mode;
     uint32_t w4u8_stream_fence_mode;
@@ -465,6 +466,8 @@ struct qbh_block_header {
     uint32_t w4u8_qkv_batch_count;
     uint32_t w4u8_qkvo_prefetch_count;
     uint32_t w4u8_qkvo_overlap_schedule_count;
+    uint32_t w4u8_o_batch_n_tiles_observed;
+    uint32_t w4u8_o_batch_count;
     uint32_t w4u8_qk_pair_kernel_mode_observed;
     uint32_t w4u8_qk_quarter_pair_count;
     uint64_t u8_attention_actual_score_hash;

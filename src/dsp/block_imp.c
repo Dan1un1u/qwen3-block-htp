@@ -92,7 +92,10 @@ _Static_assert(
 #define QBH_BLOCK_W4U8_DOWN_PERSISTENT_HVX_WORKERS UINT32_C(5)
 #define QBH_BLOCK_W4U8_GATE_UP_PAIR_SLOTS UINT32_C(8)
 #define QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES UINT32_C(8)
-#define QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES UINT32_C(4)
+#define QBH_BLOCK_W4U8_QKV_BATCH_N_TILES UINT32_C(4)
+#define QBH_BLOCK_W4U8_O_MAX_BATCH_N_TILES UINT32_C(8)
+#define QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES \
+    QBH_BLOCK_W4U8_O_MAX_BATCH_N_TILES
 #define QBH_BLOCK_W4U8_QKV_RING_SLOTS UINT32_C(4)
 #define QBH_BLOCK_W4U8_QKV_RING_BATCHES UINT32_C(32)
 #define QBH_BLOCK_W4U8_QKV_RING_TILES_PER_BATCH UINT32_C(4)
@@ -535,7 +538,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         variant == QBH_BLOCK_W4F16
             ? QBH_BLOCK_W4F16_DMA_BATCH_N_TILES
             : (variant == QBH_BLOCK_W4U8
-                   ? QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES : 1U);
+                   ? QBH_BLOCK_W4U8_QKV_BATCH_N_TILES : 1U);
     uint32_t expanded_batch_factor =
         variant == QBH_BLOCK_W4F16
             ? QBH_BLOCK_W4F16_HMX_BATCH_N_TILES
@@ -551,13 +554,16 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
                    ? QBH_BLOCK_F16F16_BATCH_N_TILES
                    : 1U);
     uint32_t expanded_buffer_bytes =
-        QBH_BLOCK_MAX_K * QBH_HMX_OUTPUT_CHANNELS *
-        sizeof(uint16_t) * expanded_batch_factor;
+        variant == QBH_BLOCK_W4U8
+            ? QBH_BLOCK_HIDDEN * QBH_HMX_OUTPUT_CHANNELS *
+                  QBH_BLOCK_W4U8_O_MAX_BATCH_N_TILES
+            : QBH_BLOCK_MAX_K * QBH_HMX_OUTPUT_CHANNELS *
+                  sizeof(uint16_t) * expanded_batch_factor;
     uint32_t scale_batch_factor =
         variant == QBH_BLOCK_W4F16
             ? 4U
             : (variant == QBH_BLOCK_W4U8
-                   ? 2U * QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES : 1U);
+                   ? 2U * QBH_BLOCK_W4U8_O_MAX_BATCH_N_TILES : 1U);
 
     memset(buffers, 0, sizeof(*buffers));
     buffers->input_norm_weight = qbh_arena_alloc(
@@ -856,6 +862,10 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          header->w4u8_down_hmx_batch_outputs != 4U) ||
         (header->variant != QBH_BLOCK_W4U8 &&
          header->w4u8_down_hmx_batch_outputs != 1U) ||
+        (header->w4u8_o_batch_n_tiles != 4U &&
+         header->w4u8_o_batch_n_tiles != 8U) ||
+        (header->variant != QBH_BLOCK_W4U8 &&
+         header->w4u8_o_batch_n_tiles != 4U) ||
         (header->variant != QBH_BLOCK_W4U8 &&
          header->u8_norm_reduction_mode !=
              QBH_BLOCK_U8_NORM_REDUCTION_SCALAR) ||
@@ -5683,12 +5693,12 @@ static uint32_t qbh_w4u8_qkvo_batch_tiles(
         desc == &header->projections[QBH_BLOCK_PROJ_V]) {
         return header->w4u8_qkvo_pipeline_mode ==
                        QBH_BLOCK_W4U8_QKV_BATCH2
-                   ? 2U : 4U;
+                   ? 2U : QBH_BLOCK_W4U8_QKV_BATCH_N_TILES;
     }
     if (desc == &header->projections[QBH_BLOCK_PROJ_O] &&
         header->w4u8_qkvo_pipeline_mode >=
             QBH_BLOCK_W4U8_QKVO_BATCH4) {
-        return 4U;
+        return header->w4u8_o_batch_n_tiles;
     }
     return 0U;
 }
@@ -5732,6 +5742,8 @@ static int qbh_run_w4u8_qkvo_pipelined_projection(
     }
     if (desc != &header->projections[QBH_BLOCK_PROJ_O]) {
         header->w4u8_qkv_batch_n_tiles = batch_tiles;
+    } else {
+        header->w4u8_o_batch_n_tiles_observed = batch_tiles;
     }
 
     for (uint32_t batch_base = 0U; batch_base < n_tiles;
@@ -5855,6 +5867,8 @@ static int qbh_run_w4u8_qkvo_pipelined_projection(
         ++header->hmx_command_count;
         if (desc != &header->projections[QBH_BLOCK_PROJ_O]) {
             ++header->w4u8_qkv_batch_count;
+        } else {
+            ++header->w4u8_o_batch_count;
         }
         if (batch_base + batch_tiles < n_tiles) {
             ++header->w4u8_qkvo_overlap_schedule_count;
