@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0132
+  active_experiment: null
   next_experiment_number: 133
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,25 +27,54 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0131
-  last_completed_source_commit: 9b74c81651b908495ded09bd991b3e11374a326e
-  provisional_source_parent: EXP-0124
+  last_completed_experiment: EXP-0132
+  last_completed_source_commit: 9936277a2793406498a8b5101e0db201ea97e8ba
+  provisional_source_parent: EXP-0129
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: registered
+  active_experiment_stage: none
   active_experiment_evidence: null
-  active_experiment_gate: pending_preflight
-  active_recipe_specialization: W4F16_gate_up_chunked_region_claim
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0131/20260901T011921Z_9b74c81651b9_formal'
+  active_experiment_gate: none
+  active_recipe_specialization: none
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0132/20260901T013657Z_9936277a2793_formal'
   last_rejected_specialization:
-    id: EXP-0131
-    source_branch: codex/exp-0131-w4u8-qkv-hmx-tail-main-prep
-    source_head: 9b74c81651b908495ded09bd991b3e11374a326e
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0131/20260901T011921Z_9b74c81651b9_formal'
+    id: EXP-0132
+    source_branch: codex/exp-0132-w4f16-gate-up-chunk2-claim
+    source_head: 9936277a2793406498a8b5101e0db201ea97e8ba
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0132/20260901T013657Z_9936277a2793_formal'
     local_gate: fail
     adoption_status: rejected
-    reason: third_QK_prep_context_is_not_boundary_exact_without_serialization_and_serialization_makes_QKV_about_80_percent_slower
+    reason: chunk2_claims_remove_join_tail_but_create_pool_load_imbalance_and_make_gate_up_about_2_percent_slower
+  latest_w4f16_gate_up_chunk2_claim_candidate:
+    id: EXP-0132
+    source_branch: codex/exp-0132-w4f16-gate-up-chunk2-claim
+    source_head: 9936277a2793406498a8b5101e0db201ea97e8ba
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0132/20260901T013657Z_9936277a2793_formal'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0132/artifacts/9936277a2793/20260901T013657Z_formal'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    selected_cell: w4f16_gate_up_claim1_control
+    correctness_gate: pass_both_f18b9abbe1487231_zero_expansion_mismatch_zero_max_lsb
+    physical_gate: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_dma_hmx_and_peak_plan
+    repeat1_gate_up_change_percent: 1.9605621033544907
+    repeat1_host_change_percent: 0.523858806602151
+    repeat10_gate_up_change_percent: 2.0388503558638194
+    repeat10_host_change_percent: 0.7650480430365203
+    repeat10_expand_change_percent: 9.03017305278555
+    repeat10_expand_pool_wait_change_percent: 676.0070052539404
+    repeat10_hmx_wait_change_percent: 9.373746215851476
+    repeat10_stream_join_wait_change_percent: -98.99378514353359
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass_exp0109_f16f16_exp0132_claim1_w4f16_exp0124_control_w4u8
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    gate_summary_sha256: f3269c0edfe3a5beae53242b11b48749fe08751a19dbc3ac6fc6d20ed410f4b6
+    full_profiling_report_sha256: 1fb844dd05ef8cc5407156e10314abbe6e1262b63ca7f426cd9fe0621e9126d8
+    evidence_sha256_ledger_sha256: 36c0ef5b36d54a5401d0f2a7e64ec7e637dcbeee9a7b5c00b19f7f910c1f20b8
+    conclusion: two_region_claims_eliminate_the_join_tail_but_imbalance_the_two_pool_workers_and_delay_the_next_HMX_group
+    reopen_condition: only_with_order_preserving_balanced_partitioning_not_fixed_multi_region_claims
+    selected_baseline_changed: false
   latest_w4f16_gate_up_worker4_candidate:
     id: EXP-0129
     source_branch: codex/exp-0129-w4f16-gate-up-worker4
