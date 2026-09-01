@@ -808,6 +808,11 @@ static int qbh_header_valid(const struct qbh_block_header *header,
           header->w4f16_group_fence_mode !=
               QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY ||
           header->w4f16_requested_hvx_workers != 4U)) ||
+        header->w4f16_gate_up_extra_stream_worker > 1U ||
+        (header->w4f16_gate_up_extra_stream_worker != 0U &&
+         (header->w4f16_gate_up_extra_expand_worker == 0U ||
+          header->variant != QBH_BLOCK_W4F16 ||
+          header->w4f16_requested_hvx_workers != 4U)) ||
         header->w4u8_stream_fence_mode >
             QBH_BLOCK_W4U8_STREAM_FENCE_RELEASE_ONLY ||
         (header->w4u8_stream_fence_mode !=
@@ -3817,16 +3822,28 @@ static int qbh_mlp_stream_pipeline_wait(
     } else if (header->variant == QBH_BLOCK_W4F16 &&
                pool->mlp_stream_first_worker == 2U &&
                pool->mlp_stream_worker_count == 1U) {
+        const uint32_t extra_stream_worker =
+            header->w4f16_gate_up_extra_stream_worker != 0U
+                ? 3U : UINT32_MAX;
         memset(&main_job, 0, sizeof(main_job));
         pool->jobs[0].command_kind =
             QBH_BLOCK_HVX_POOL_MLP_STREAM;
         pool->jobs[1].command_kind =
             QBH_BLOCK_HVX_POOL_MLP_STREAM;
+        if (extra_stream_worker != UINT32_MAX) {
+            pool->jobs[extra_stream_worker].command_kind =
+                QBH_BLOCK_HVX_POOL_MLP_STREAM;
+        }
         asm volatile("barrier" ::: "memory");
         (void)qurt_sem_up(&pool->command_ready[0]);
         (void)qurt_sem_up(&pool->command_ready[1]);
+        if (extra_stream_worker != UINT32_MAX) {
+            (void)qurt_sem_up(
+                &pool->command_ready[extra_stream_worker]);
+        }
         pool->mlp_stream_first_worker = 0U;
-        pool->mlp_stream_worker_count = 3U;
+        pool->mlp_stream_worker_count =
+            extra_stream_worker != UINT32_MAX ? 4U : 3U;
         qbh_mlp_stream_worker_run(pool, &main_job);
         header->mlp_stream_main_work_ticks +=
             main_job.stream_ticks;
