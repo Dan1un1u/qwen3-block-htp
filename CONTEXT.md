@@ -890,3 +890,16 @@ reported, and the mode is never formal zero-intermediate-DDR or performance
 evidence. The ordinary RUN ABI keeps the capture offset and byte count at zero.
 _Avoid_: formal runtime, hidden intermediate DDR, performance result, replacing
 the ordinary zero-DDR physical gate
+
+**Completed Full Transformer Stack Integration**:
+EXP-0152's completed execution of real Qwen3 transformer layers 0-27 for one
+M64 prefill followed by eight continuous decode steps, using one exact-size
+`rpcmem_alloc2` arena and one FastRPC call per stack step. It ends at layer 27
+before final model RMSNorm or LM head and therefore is not a complete text
+generation model. Both FP16 recipes pass the user-approved scheme-1 local and
+composed-output gates. The W4U8 implementation matches an independent integer
+reference exactly for all nine outputs and all 56 final K/V caches. Its prefill
+preserves the low-bit projection benefit, while its decode is dominated by
+repacking each persistent U8 K/V cache into HMX carriers on every token.
+_Avoid_: full tokenizer-to-sampler model, teacher-accuracy proof, promoted
+baseline, cache-native U8 Attention

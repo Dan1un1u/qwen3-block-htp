@@ -7,7 +7,7 @@ project:
   source_root: /home/daniuniu/work/qwen3-block-htp
   memory_branch: codex/qwen3-block-project-memory
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
-  updated_on: '2026-09-01'
+  updated_on: '2026-09-02'
 toolchain:
   qnn_runtime: none
   qairt_runtime: none
@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0152
+  active_experiment: null
   next_experiment_number: 153
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,16 +27,53 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_layers0_27_real_replay_prefill_continuous_decode_full_transformer_stack
-  last_completed_experiment: EXP-0151
-  last_completed_source_commit: bb9531f457dce01e97a1770020bd1a1890c8114b
-  provisional_source_parent: EXP-0151_rpcmem_alloc2_single_buffer
+  last_completed_experiment: EXP-0152
+  last_completed_source_commit: f64104da172510753be67056967e80770b181e76
+  provisional_source_parent: EXP-0152_full_stack_rpcmem2_pass
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
-  full_model: EXP0152_running_single_rpcmem_alloc2_full_stack_resume
+  full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: EXP0152_stage_C_two_FP16_recipe_conditional_and_composed_output_gates_verified_remove_unapproved_composed_cache_cosine_veto_then_continue_W4U8
-  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0152/20260902T003950Z_formal_composition_v2'
-  active_experiment_gate: pending_three_recipe_prefill_continuous_decode_amended_correctness_zero_intermediate_DDR_and_complete_profiling
-  active_recipe_specialization: common_full_stack_integration_no_new_specialization
+  active_experiment_stage: none
+  active_experiment_evidence: null
+  active_experiment_gate: none
+  active_recipe_specialization: none
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0152/20260901T193925Z_f64104d_formal'
+  latest_full_transformer_stack:
+    id: EXP-0152
+    source_branch: codex/exp-0152-full-stack-rpcmem2-resume
+    source_head: f64104da172510753be67056967e80770b181e76
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0152/20260901T193925Z_f64104d_formal'
+    retained_w4u8_exact_reference: 'D:/llm_exp/models/qwen3-block-htp/exp0152/w4u8_exact_reference_v1'
+    evidence_validity: valid
+    execution_state: completed
+    local_gate: pass
+    adoption_status: not_applicable
+    selected_baseline_changed: false
+    execution_layer_indices: [0, 27]
+    execution_transformer_layer_count: 28
+    output_boundary: layer27_block_output_before_final_model_norm_or_lm_head
+    prefill_positions: [0, 63]
+    decode_positions: [64, 71]
+    final_cache_length_per_layer: 72
+    package_sizes_bytes: {f16f16: 2836201344, w4f16: 727318400, w4u8: 1259091840}
+    mapping_gate: pass_one_exact_size_rpcmem_alloc2_arena_one_fd_one_persistent_cDSP_mapping_per_recipe
+    f16_correctness_gate: pass_user_approved_scheme1_conditional_local_and_final_composed_output_contract
+    w4u8_exact_output_steps: 9
+    w4u8_exact_output_mismatches: 0
+    w4u8_exact_output_max_lsb: 0
+    w4u8_exact_final_cache_tensors: 56
+    w4u8_exact_final_cache_mismatches: 0
+    w4u8_exact_final_cache_max_lsb: 0
+    physical_gate: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_stack_step_one_HMX_owner_no_QNN
+    prefill_repeat10_us: {f16f16: 94294.1, w4f16: 118109.2, w4u8: 53624.7}
+    prefill_repeat10_tokens_per_second: {f16f16: 678.727, w4f16: 541.871, w4u8: 1193.481}
+    decode_L64_L71_repeat10_us: {f16f16: 96592.3, w4f16: 84112.3, w4u8: 366137.3}
+    decode_L64_L71_repeat10_tokens_per_second: {f16f16: 10.353, w4f16: 11.889, w4u8: 2.731}
+    conclusion: full_transformer_stack_integration_passes; W4U8_prefill_is_fastest_but_decode_is_dominated_by_full_persistent_KV_cache_repacking_in_non_cache_native_U8_Attention
+    next_priority: separately_registered_cache_native_W4U8_decode_Attention
+    gate_summary_sha256: cfce132829c98b72eb307247bcdf9dba05a90dfc43d522ddcf62cabb4a2885cd
+    full_profiling_report_sha256: 046901212c5b2b205e9bdf4dbfb35e8b7d6c3f0a9ed9fdc8346b02e7a987d610
+    evidence_sha256_ledger_sha256: 42b4fe34b25fb26dc8b9daf1493233a3ba0c3ec099363553cb7d5a366201d3d5
   latest_full_stack_hidden_trajectory_diagnostic:
     id: EXP-0152
     source_commit: 0f306b9012812c2ae8565aaae53b55f312320ecd
@@ -91,7 +128,6 @@ current_scope:
     formal_spill_fill_count: 0
     minimum_composed_cache_cosine_diagnostic: 0.999959682
     finding: user_approved_local_and_final_composed_output_gates_pass_composed_cache_cosine_is_upstream_drift_diagnostic_not_an_extra_gate
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0151/20260901T152446Z_d6b1706_device_gate'
   latest_rpcmem_alloc2_single_buffer_probe:
     id: EXP-0151
     source_branch: codex/exp-0151-rpcmem-alloc2-single-buffer

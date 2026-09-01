@@ -14,14 +14,16 @@ experiments:
       - f16f16_layers0_27_rpcmem2_stack
       - w4f16_layers0_27_rpcmem2_stack
       - w4u8_layers0_27_rpcmem2_stack
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: not_applicable
     evidence_profile: real-qwen3-layers0-27-prefill-plus-eight-continuous-decode-steps-single-rpcmem2-arena
     source_branches:
       - codex/exp-0152-full-stack-rpcmem2-resume
-    source_commits: []
+    source_commits:
+      - 3c6ae9ba6ea9e00183923f4aa09c95ac5a76cb4e
+      - f64104da172510753be67056967e80770b181e76
     record: docs/experiments/EXP-0152.md
     approval_ref: 'User message 2026-09-01: 继续（在 EXP-0151 单 buffer gate 通过后继续 EXP-0152）'
     runtime:
@@ -29,6 +31,7 @@ experiments:
       source_branch: codex/exp-0152-full-stack-rpcmem2-resume
       approved_on: '2026-09-01'
       started_on: '2026-09-01'
+      completed_on: '2026-09-02'
     evidence:
       source_parent_experiment: EXP-0151
       source_parent_commit: bb9531f457dce01e97a1770020bd1a1890c8114b
@@ -75,6 +78,28 @@ experiments:
       excluded_change: cache_native_Attention_recipe_specialization_tokenizer_sampler_final_model_norm_or_lm_head_requires_a_separate_experiment
       next_gate_on_success: cache_native_W4U8_decode_Attention_or_model_head_scope_requires_separate_registration
       selected_baseline_changed: false
+      closure_source_commit: f64104da172510753be67056967e80770b181e76
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0152/20260901T193925Z_f64104d_formal'
+      retained_exact_reference: 'D:/llm_exp/models/qwen3-block-htp/exp0152/w4u8_exact_reference_v1'
+      package_sizes_bytes: {f16f16: 2836201344, w4f16: 727318400, w4u8: 1259091840}
+      mapping_gate_result: pass_one_rpcmem_alloc2_arena_one_fd_one_persistent_cDSP_mapping_for_each_recipe
+      correctness_gate_result: pass_user_approved_scheme1_for_both_FP16_recipes_and_exact_independent_W4U8_reference
+      w4u8_exact_output_steps: 9
+      w4u8_exact_output_mismatches: 0
+      w4u8_exact_output_max_lsb: 0
+      w4u8_exact_final_cache_tensors: 56
+      w4u8_exact_final_cache_mismatches: 0
+      w4u8_exact_final_cache_max_lsb: 0
+      physical_gate_result: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_stack_step_one_HMX_owner_no_QNN
+      prefill_repeat10_host_us: {f16f16: 94294.1, w4f16: 118109.2, w4u8: 53624.7}
+      prefill_repeat10_tokens_per_second: {f16f16: 678.727, w4f16: 541.871, w4u8: 1193.481}
+      decode_L64_L71_repeat10_host_us: {f16f16: 96592.3, w4f16: 84112.3, w4u8: 366137.3}
+      decode_L64_L71_repeat10_tokens_per_second: {f16f16: 10.353, w4f16: 11.889, w4u8: 2.731}
+      conclusion: full_transformer_stack_integration_gate_passes_before_final_model_norm_or_lm_head_W4U8_prefill_preserves_projection_gain_but_decode_is_dominated_by_non_cache_native_U8_Attention
+      next_priority: separately_register_cache_native_W4U8_decode_Attention_before_any_model_head_or_tokenizer_scope
+      gate_summary_sha256: cfce132829c98b72eb307247bcdf9dba05a90dfc43d522ddcf62cabb4a2885cd
+      full_profiling_report_sha256: 046901212c5b2b205e9bdf4dbfb35e8b7d6c3f0a9ed9fdc8346b02e7a987d610
+      evidence_sha256_ledger_sha256: 42b4fe34b25fb26dc8b9daf1493233a3ba0c3ec099363553cb7d5a366201d3d5
   - id: EXP-0151
     slug: rpcmem-alloc2-single-buffer
     title: Single-buffer rpcmem_alloc2 cDSP mapping feasibility
