@@ -230,11 +230,12 @@ current_scope:
     id: EXP-0140
     source_branch: codex/exp-0140-w4f16-down-join-only-subgroup4
     source_head: e75563457293de9430f8c9d20a04ced6147e4737
+    source_tag: baseline-w4f16-fastest-exp0140-subgroup4-down-join-only
     formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0140/20260901T040452Z_e75563457293_formal'
     retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0140/artifacts/e75563457293/20260901T040452Z_formal'
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending_user_decision
+    adoption_status: accepted
     selected_cell: w4f16_subgroup4_down_join_only_candidate
     correctness_gate: pass_both_f18b9abbe1487231_zero_expansion_mismatch_zero_max_lsb
     physical_gate: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_dma_hmx_tiles_carriers_and_peak_plan
@@ -256,8 +257,13 @@ current_scope:
     gate_summary_sha256: b7fdfa21fe3baa49e391136d6c0e7f5273000f5fe4e71ce0de3e64b9bc620529
     full_profiling_report_sha256: 96a92331ae86f44ef981f888bf028e13a89e245701c4e53ea4a28e9b0b13601f
     evidence_sha256_ledger_sha256: 3c7ad59a9de1af726f3e93da7beb37535d5931424b55d585902e69e6d21abddd
-    conclusion: corrected_single_variable_Down_join_only_preserves_EXP0136_GateUp_and_strictly_improves_Down_and_complete_Host_at_both_repeats
-    selected_baseline_changed: false
+    conclusion: corrected_single_variable_Down_join_only_preserves_EXP0136_GateUp_and_strictly_improves_Down_and_complete_Host_at_both_repeats_promoted_as_selected_fastest_W4F16_baseline
+    promoted_as: selected_fastest_w4f16_recipe_specialized_baseline
+    promoted_by: user
+    promoted_on: '2026-09-01'
+    promotion_ref: 'User message 2026-09-01: 同意晋升，然后重新列总表'
+    promotion_rule: PC029_formal_rotated_pair_repeat10_complete_block_Host_wall_only_among_eligible_candidates
+    selected_baseline_changed: true
   latest_w4u8_qkv_main_prep_assist_candidate:
     id: EXP-0139
     source_branch: codex/exp-0139-w4u8-qkv-main-prep-assist
@@ -1922,6 +1928,37 @@ current_scope:
     promoted_by: user
     promoted_on: '2026-08-31'
     promotion_ref: 'User message 2026-08-31: 同意你的建议'
+  selected_fastest_w4f16_baseline:
+    id: W4F16-EXP0140-SUBGROUP4-DOWN-JOIN-ONLY
+    experiment: EXP-0140
+    project_variant: W4F16
+    source_branch: codex/exp-0140-w4f16-down-join-only-subgroup4
+    source_head: e75563457293de9430f8c9d20a04ced6147e4737
+    source_tag: baseline-w4f16-fastest-exp0140-subgroup4-down-join-only
+    physical_plan: exp0110_carrier_only_plus_gate_up_join_only_four_expand_context_four_worker_plus_main_final_drain_subgroup4_plus_down_join_only
+    runtime:
+      common_ops_mode: hvx_fp16
+      residual_mode: hvx_fused_post_norm
+      w4f16_hvx_workers: 4
+      w4f16_pipeline_mode: adaptive_down96_gate4_dma8_cross_prefetch
+      w4f16_group_fence_mode: join_only
+      gate_up_stream_subgroup_tiles: 4
+      down_publication_mode: join_only
+      attention_pipeline_mode: gqa_qkv_overlap
+      mlp_mode: crouton_native_batch8
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0140/20260901T040452Z_e75563457293_formal'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0140/artifacts/e75563457293/20260901T040452Z_formal'
+    repeat1_host_wall_ns_per_block_median: 2391250.0
+    repeat10_host_wall_ns_per_block_median: 1955000.0
+    repeat10_latency_change_vs_previous_selected_w4f16_exp0110_percent: -7.900
+    repeat10_throughput_change_vs_previous_selected_w4f16_exp0110_percent: 8.578
+    output_hash: f18b9abbe1487231
+    correctness_gate: pass_byte_exact_zero_expansion_mismatch_zero_max_lsb
+    physical_gate: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner
+    promoted_by: user
+    promoted_on: '2026-09-01'
+    promotion_ref: 'User message 2026-09-01: 同意晋升，然后重新列总表'
+    promotion_rule: PC029_formal_rotated_pair_repeat10_complete_block_Host_wall_only_among_eligible_candidates
   selected_fastest_w4u8_baseline:
     id: W4U8-EXP0144-QK-SIMD-IO
     experiment: EXP-0144
