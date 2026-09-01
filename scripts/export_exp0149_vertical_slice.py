@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export the real Qwen3 layers 13 -> 14 -> 15 replay slice for EXP-0149.
+"""Export a consecutive real-Qwen3 replay stack.
 
 Only the hidden state entering layer 13 is taken from the BF16 teacher.  Every
 recipe then executes all three layers consecutively, so the references exercise
@@ -51,6 +51,7 @@ TOTAL_M = PREFILL_M + DECODE_STEPS
 PHYSICAL_M = 64
 LAYERS = (13, 14, 15)
 DECLARED_LAYERS = 28
+EXPERIMENT = "EXP-0149"
 HIDDEN = 2048
 INTERMEDIATE = 6144
 HEADS = 16
@@ -112,6 +113,9 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=Path("/home/daniuniu/.cache/qwen3-block-htp-exp0149"),
     )
+    parser.add_argument("--experiment", default=EXPERIMENT)
+    parser.add_argument("--first-layer", type=int, default=LAYERS[0])
+    parser.add_argument("--layer-count", type=int, default=len(LAYERS))
     return parser.parse_args()
 
 
@@ -272,15 +276,18 @@ def derive_qparams(
             "observer": "fixed_probability_u8",
         }
 
-    # Preserve EXP-0148 layer-14 encodings and make both resident handoffs
-    # byte-preserving.  There is no hidden U8 -> float -> U8 conversion in the
-    # DSP path, so producer output and consumer input must have one encoding.
-    result[13]["block_output"] = copy.deepcopy(
-        result[14]["block_input"]
-    )
-    result[15]["block_input"] = copy.deepcopy(
-        result[14]["block_output"]
-    )
+    # Every resident handoff must be byte preserving because the DSP path has
+    # no hidden U8 -> float -> U8 conversion.  Preserve both retained layer-14
+    # boundary encodings and use the consumer input encoding elsewhere.
+    for producer, consumer in zip(LAYERS, LAYERS[1:]):
+        if producer == 14:
+            result[consumer]["block_input"] = copy.deepcopy(
+                result[producer]["block_output"]
+            )
+        else:
+            result[producer]["block_output"] = copy.deepcopy(
+                result[consumer]["block_input"]
+            )
     return result
 
 
@@ -473,7 +480,7 @@ def build_recipe_references(
     retained_layer14_config: bytes,
 ) -> dict[str, dict[str, object]]:
     result: dict[str, dict[str, object]] = {}
-    initial = teacher[13]["block_input"]
+    initial = teacher[LAYERS[0]]["block_input"]
     for recipe in ("f16f16", "w4f16"):
         hidden = initial
         layer_data: dict[int, dict[str, np.ndarray]] = {}
@@ -501,7 +508,7 @@ def build_recipe_references(
         }
 
     encoded_hidden = base.quantize_u8(
-        initial, qparams[13]["block_input"]
+        initial, qparams[LAYERS[0]]["block_input"]
     ).cpu().numpy().reshape(TOTAL_M, HIDDEN)
     u8_layers: dict[int, dict[str, object]] = {}
     for layer in LAYERS:
@@ -522,7 +529,7 @@ def build_recipe_references(
         encoded_hidden = final
     result["w4u8"] = {
         "input": base.quantize_u8(
-            initial, qparams[13]["block_input"]
+            initial, qparams[LAYERS[0]]["block_input"]
         ).cpu().numpy().reshape(TOTAL_M, HIDDEN),
         "output": encoded_hidden.reshape(TOTAL_M, HIDDEN),
         "layers": u8_layers,
@@ -549,11 +556,11 @@ def publish_recipe(
     destination = archive / recipe
     suffix = "u8" if recipe == "w4u8" else "f16"
     element_fill = (
-        int(qparams[13]["block_input"]["zero_point"])
+        int(qparams[LAYERS[0]]["block_input"]["zero_point"])
         if recipe == "w4u8" else 0
     )
     output_fill = (
-        int(qparams[15]["block_output"]["zero_point"])
+        int(qparams[LAYERS[-1]]["block_output"]["zero_point"])
         if recipe == "w4u8" else 0
     )
     try:
@@ -681,10 +688,10 @@ def publish_recipe(
             if path.is_file()
         }
         manifest = {
-            "experiment": "EXP-0149",
+            "experiment": EXPERIMENT,
             "recipe": recipe,
             "execution_unit":
-                "qwen3_real_layers13_14_15_one_dsp_invocation",
+                f"qwen3_real_layers{LAYERS[0]}_{LAYERS[-1]}_one_dsp_invocation",
             "token_ids": token_ids,
             "contract": {
                 "declared_transformer_layers": DECLARED_LAYERS,
@@ -695,15 +702,13 @@ def publish_recipe(
                 "runtime_kv_imported": False,
                 "host_hidden_handoff": False,
                 "intermediate_hidden_residency": "VTCM",
-                "one_rpc_per_three_layer_step": True,
+                "one_rpc_per_full_stack_step": True,
             },
             "handoff_qparams": {
-                "layer13_output_equals_layer14_input":
-                    qparams[13]["block_output"] ==
-                    qparams[14]["block_input"],
-                "layer14_output_equals_layer15_input":
-                    qparams[14]["block_output"] ==
-                    qparams[15]["block_input"],
+                f"layer{producer}_output_equals_layer{consumer}_input":
+                    qparams[producer]["block_output"] ==
+                    qparams[consumer]["block_input"]
+                for producer, consumer in zip(LAYERS, LAYERS[1:])
             },
             "files": files,
         }
@@ -717,14 +722,22 @@ def publish_recipe(
 
 
 def main() -> None:
+    global EXPERIMENT, LAYERS
     args = parse_args()
+    EXPERIMENT = args.experiment
+    if (args.first_layer < 0 or args.layer_count < 1 or
+            args.first_layer + args.layer_count > DECLARED_LAYERS):
+        raise ValueError("active layer range is outside Qwen3 layers 0..27")
+    LAYERS = tuple(range(
+        args.first_layer, args.first_layer + args.layer_count
+    ))
     model = args.model.resolve()
     exp0148_root = args.exp0148_root.resolve()
     output = args.output.resolve()
     staging_root = args.staging_root.resolve()
     if output.exists():
         raise FileExistsError(
-            f"refusing to replace existing EXP-0149 archive: {output}"
+            f"refusing to replace existing {EXPERIMENT} archive: {output}"
         )
     retained_w4u8 = exp0148_root / "w4u8_formal"
     if not (retained_w4u8 / "manifest.json").is_file():
@@ -809,7 +822,9 @@ def main() -> None:
                 token_ids,
             )
 
-        trace = archive / "teacher_trace_layers13_15_p64_d8"
+        trace = archive / (
+            f"teacher_trace_layers{LAYERS[0]}_{LAYERS[-1]}_p64_d8"
+        )
         trace.mkdir()
         write(trace / "token_ids_i32.bin", np.asarray(token_ids, dtype="<i4"))
         for layer in LAYERS:
@@ -824,9 +839,9 @@ def main() -> None:
         (trace / "manifest.json").write_text(
             json.dumps(
                 {
-                    "experiment": "EXP-0149",
+                    "experiment": EXPERIMENT,
                     "authority":
-                        "original_Qwen3_BF16_layers_0_through_15",
+                        f"original_Qwen3_BF16_layers_0_through_{LAYERS[-1]}",
                     "active_layers": list(LAYERS),
                     "positions": TOTAL_M,
                     "token_ids": token_ids,
@@ -845,7 +860,7 @@ def main() -> None:
         print(
             json.dumps(
                 {
-                    "experiment": "EXP-0149",
+                    "experiment": EXPERIMENT,
                     "output": str(output),
                     "recipes": ["f16f16", "w4f16", "w4u8"],
                     "layers": list(LAYERS),

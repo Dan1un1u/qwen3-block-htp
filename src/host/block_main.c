@@ -19,6 +19,8 @@
 #include "mlp_u8.h"
 #include "qwen3_probe.h"
 
+#pragma weak rpcmem_alloc2
+
 #define QBH_HOST_ALIGNMENT ((size_t)128)
 #define QBH_HOST_PATH_BYTES ((size_t)1024)
 #define QBH_REPLAY_FP16_ATOL (0.0625)
@@ -1960,7 +1962,7 @@ static void qbh_print_replay_profile(
     printf(",\"" #field "\":%" PRIu64, header->field)
 
     printf(
-        "{\"experiment\":149,\"record\":\"replay_profile\","
+        "{\"experiment\":152,\"record\":\"replay_profile\","
         "\"variant\":\"%s\",\"replay_step\":%" PRIu32 ","
         "\"mode\":\"%s\",\"logical_m\":%" PRIu32 ","
         "\"first_position\":%" PRIu32 ","
@@ -2180,6 +2182,11 @@ static int qbh_run_replay_sequence(
     const size_t snapshot_bytes =
         (size_t)QBH_VERTICAL_SLICE_LAYER_COUNT * 2U * cache_bytes;
     uint8_t *cache_snapshots = malloc(snapshot_bytes);
+    const uint32_t first_layer = QBH_VERTICAL_SLICE_FIRST_LAYER;
+    const uint32_t middle_layer =
+        first_layer + QBH_VERTICAL_SLICE_LAYER_COUNT / 2U;
+    const uint32_t last_layer =
+        first_layer + QBH_VERTICAL_SLICE_LAYER_COUNT - 1U;
     int all_pass = 1;
 
     if (cache_snapshots == NULL) {
@@ -2382,7 +2389,7 @@ static int qbh_run_replay_sequence(
         }
         all_pass &= qbh_replay_step_pass(variant, step_result);
         printf(
-            "{\"experiment\":149,\"variant\":\"%s\","
+            "{\"experiment\":152,\"variant\":\"%s\","
             "\"replay_step\":%" PRIu32 ",\"mode\":\"%s\","
             "\"first_position\":%" PRIu32 ","
             "\"valid_length\":%" PRIu32 ","
@@ -2403,9 +2410,12 @@ static int qbh_run_replay_sequence(
             "\"intermediate_ddr_read_bytes\":%" PRIu64 ","
             "\"intermediate_ddr_write_bytes\":%" PRIu64 ","
             "\"intermediate_spill_fill_count\":%" PRIu32 ","
-            "\"layer13_valid_length\":%" PRIu32 ","
-            "\"layer14_valid_length\":%" PRIu32 ","
-            "\"layer15_valid_length\":%" PRIu32 ","
+            "\"first_layer\":%" PRIu32 ","
+            "\"first_layer_valid_length\":%" PRIu32 ","
+            "\"middle_layer\":%" PRIu32 ","
+            "\"middle_layer_valid_length\":%" PRIu32 ","
+            "\"last_layer\":%" PRIu32 ","
+            "\"last_layer_valid_length\":%" PRIu32 ","
             "\"pass\":%s}\n",
             qbh_variant_name(variant), step,
             step == 0U ? "prefill" : "decode",
@@ -2426,9 +2436,9 @@ static int qbh_run_replay_sequence(
             step_result->intermediate_ddr_read_bytes,
             step_result->intermediate_ddr_write_bytes,
             step_result->intermediate_spill_fill_count,
-            state->layers[13].valid_length,
-            state->layers[14].valid_length,
-            state->layers[15].valid_length,
+            first_layer, state->layers[first_layer].valid_length,
+            middle_layer, state->layers[middle_layer].valid_length,
+            last_layer, state->layers[last_layer].valid_length,
             qbh_replay_step_pass(variant, step_result) ? "true" : "false");
         qbh_print_replay_profile(
             variant, step, header, step_result,
@@ -2456,25 +2466,31 @@ static int qbh_run_replay_sequence(
             }
         }
     }
+    for (uint32_t slice_index = 0U;
+         slice_index < QBH_VERTICAL_SLICE_LAYER_COUNT; ++slice_index) {
+        if (state->layers[first_layer + slice_index].valid_length != 72U) {
+            all_pass = 0;
+        }
+    }
     printf(
-        "{\"experiment\":149,\"variant\":\"%s\","
+        "{\"experiment\":152,\"variant\":\"%s\","
         "\"replay_sequence_complete\":true,"
         "\"completed_steps\":%" PRIu32 ","
-        "\"layer13_final_valid_length\":%" PRIu32 ","
-        "\"layer14_final_valid_length\":%" PRIu32 ","
-        "\"layer15_final_valid_length\":%" PRIu32 ","
+        "\"first_layer\":%" PRIu32 ","
+        "\"first_layer_final_valid_length\":%" PRIu32 ","
+        "\"middle_layer\":%" PRIu32 ","
+        "\"middle_layer_final_valid_length\":%" PRIu32 ","
+        "\"last_layer\":%" PRIu32 ","
+        "\"last_layer_final_valid_length\":%" PRIu32 ","
         "\"all_steps_pass\":%s}\n",
         qbh_variant_name(variant), state->completed_step_count,
-        state->layers[13].valid_length,
-        state->layers[14].valid_length,
-        state->layers[15].valid_length,
+        first_layer, state->layers[first_layer].valid_length,
+        middle_layer, state->layers[middle_layer].valid_length,
+        last_layer, state->layers[last_layer].valid_length,
         all_pass ? "true" : "false");
     free(cache_snapshots);
     return all_pass &&
-                   state->completed_step_count == QBH_REPLAY_TOTAL_STEPS &&
-                   state->layers[13].valid_length == 72U &&
-                   state->layers[14].valid_length == 72U &&
-                   state->layers[15].valid_length == 72U
+                   state->completed_step_count == QBH_REPLAY_TOTAL_STEPS
                ? 0 : -1;
 }
 
@@ -2753,7 +2769,7 @@ int main(int argc, char **argv) {
             if (strcmp(slice, "0") == 0) {
                 vertical_slice_mode = QBH_BLOCK_SLICE_DISABLED;
             } else if (strcmp(slice, "1") == 0) {
-                vertical_slice_mode = QBH_BLOCK_SLICE_LAYERS_13_15;
+                vertical_slice_mode = QBH_BLOCK_SLICE_ACTIVE_RANGE;
             } else {
                 vertical_slice_mode = UINT32_MAX;
             }
@@ -2811,13 +2827,13 @@ int main(int argc, char **argv) {
         repeats == 0U || repeats > 100U ||
         scan_mode > QBH_BLOCK_SCAN_DECODE ||
         replay_mode > QBH_BLOCK_REPLAY_CONTINUOUS ||
-        vertical_slice_mode > QBH_BLOCK_SLICE_LAYERS_13_15 ||
-        (vertical_slice_mode == QBH_BLOCK_SLICE_LAYERS_13_15 &&
+        vertical_slice_mode > QBH_BLOCK_SLICE_ACTIVE_RANGE ||
+        (vertical_slice_mode == QBH_BLOCK_SLICE_ACTIVE_RANGE &&
          replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS) ||
-        (vertical_slice_mode == QBH_BLOCK_SLICE_LAYERS_13_15 &&
+        (vertical_slice_mode == QBH_BLOCK_SLICE_ACTIVE_RANGE &&
          numerical_audit_enabled != 0U) ||
         (replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS &&
-         vertical_slice_mode != QBH_BLOCK_SLICE_LAYERS_13_15) ||
+         vertical_slice_mode != QBH_BLOCK_SLICE_ACTIVE_RANGE) ||
         (replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS &&
          (scan_mode != QBH_BLOCK_SCAN_PREFILL ||
           logical_m != QBH_BLOCK_M || initial_kv_length != 0U ||
@@ -3259,7 +3275,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "package common tensor audit failed\n");
         return 2;
     }
-    if (vertical_slice_mode == QBH_BLOCK_SLICE_LAYERS_13_15) {
+    if (vertical_slice_mode == QBH_BLOCK_SLICE_ACTIVE_RANGE) {
         for (uint32_t slice_index = 0U;
              slice_index < QBH_VERTICAL_SLICE_LAYER_COUNT;
              ++slice_index) {
@@ -3472,7 +3488,7 @@ int main(int argc, char **argv) {
             }
             cursor += cache_bytes;
         }
-        if (vertical_slice_mode == QBH_BLOCK_SLICE_LAYERS_13_15) {
+        if (vertical_slice_mode == QBH_BLOCK_SLICE_ACTIVE_RANGE) {
             for (uint32_t slice_index = 0U;
                  slice_index < QBH_VERTICAL_SLICE_LAYER_COUNT;
                  ++slice_index) {
@@ -3553,14 +3569,33 @@ int main(int argc, char **argv) {
             cursor += QBH_BLOCK_SCAN_F16_AUDIT_BYTES;
         }
         total_bytes = cursor;
-        if (total_bytes > INT_MAX) {
-            fprintf(stderr, "rpcmem package too large: %zu\n", total_bytes);
+        if (total_bytes > UINT32_MAX) {
+            fprintf(stderr, "32-bit rpcmem package too large: %zu\n",
+                    total_bytes);
             return 2;
         }
-        shared = rpcmem_alloc(RPCMEM_HEAP_ID_SYSTEM,
-                              RPCMEM_FLAG_UNCACHED, (int)total_bytes);
+        {
+            const char *layout_only = getenv("QBH_LAYOUT_ONLY");
+            if (layout_only != NULL && strcmp(layout_only, "1") == 0) {
+                printf(
+                    "{\"experiment\":152,\"layout_only\":true,"
+                    "\"variant\":\"%s\",\"layer_first\":%" PRIu32
+                    ",\"layer_count\":%" PRIu32
+                    ",\"shared_bytes\":%zu,\"uint32_fit\":true}\n",
+                    qbh_variant_name(variant),
+                    QBH_VERTICAL_SLICE_FIRST_LAYER,
+                    QBH_VERTICAL_SLICE_LAYER_COUNT, total_bytes);
+                return 0;
+            }
+        }
+        if (rpcmem_alloc2 == NULL) {
+            fprintf(stderr, "rpcmem_alloc2 symbol is unavailable\n");
+            return 2;
+        }
+        shared = rpcmem_alloc2(RPCMEM_HEAP_ID_SYSTEM,
+                               RPCMEM_FLAG_UNCACHED, total_bytes);
         if (shared == NULL) {
-            fprintf(stderr, "rpcmem_alloc failed for %zu bytes\n",
+            fprintf(stderr, "rpcmem_alloc2 failed for %zu bytes\n",
                     total_bytes);
             return 2;
         }
@@ -3579,7 +3614,7 @@ int main(int argc, char **argv) {
             goto cleanup;
         }
     }
-    if (vertical_slice_mode == QBH_BLOCK_SLICE_LAYERS_13_15) {
+    if (vertical_slice_mode == QBH_BLOCK_SLICE_ACTIVE_RANGE) {
         for (uint32_t slice_index = 0U;
              slice_index < QBH_VERTICAL_SLICE_LAYER_COUNT;
              ++slice_index) {
@@ -3693,11 +3728,16 @@ int main(int argc, char **argv) {
     header->replay_first_position = 0U;
     header->slice_mode = vertical_slice_mode;
     header->slice_first_layer =
-        vertical_slice_mode == QBH_BLOCK_SLICE_LAYERS_13_15
+        vertical_slice_mode == QBH_BLOCK_SLICE_ACTIVE_RANGE
             ? QBH_VERTICAL_SLICE_FIRST_LAYER : 0U;
     header->slice_layer_count =
-        vertical_slice_mode == QBH_BLOCK_SLICE_LAYERS_13_15
+        vertical_slice_mode == QBH_BLOCK_SLICE_ACTIVE_RANGE
             ? QBH_VERTICAL_SLICE_LAYER_COUNT : 0U;
+    header->full_stack_stage_mode =
+        getenv("QBH_MAP_ONLY") != NULL &&
+                strcmp(getenv("QBH_MAP_ONLY"), "1") == 0
+            ? QBH_BLOCK_FULL_STACK_MAP_GATE
+            : QBH_BLOCK_FULL_STACK_RUN;
     header->w4f16_gate_up_scale_cache_offset =
         (uint32_t)single_gate_up_scale_cache_offset;
     header->w4f16_gate_up_scale_cache_bytes =
@@ -3827,7 +3867,7 @@ int main(int argc, char **argv) {
         goto cleanup;
     }
 
-    if (vertical_slice_mode == QBH_BLOCK_SLICE_LAYERS_13_15) {
+    if (vertical_slice_mode == QBH_BLOCK_SLICE_ACTIVE_RANGE) {
         for (uint32_t slice_index = 0U;
              slice_index < QBH_VERTICAL_SLICE_LAYER_COUNT;
              ++slice_index) {
@@ -4020,6 +4060,40 @@ int main(int argc, char **argv) {
     mapped = 1;
     prepare_result = qbh_session_prepare(&session);
     if (prepare_result != AEE_SUCCESS) {
+        goto cleanup;
+    }
+
+    if (header->full_stack_stage_mode ==
+        QBH_BLOCK_FULL_STACK_MAP_GATE) {
+        int map_gate_result = qwen3_probe_run_block(
+            session.handle, shared_fd, (uint32_t)total_bytes);
+        printf(
+            "{\"experiment\":152,\"map_gate\":true,"
+            "\"variant\":\"%s\",\"shared_bytes\":%zu,"
+            "\"rpc_result\":%d,\"dsp_status\":%d,"
+            "\"layer_count\":%" PRIu32 ","
+            "\"all_layers_hash\":\"%016" PRIx64 "\","
+            "\"first_layer_hash\":\"%016" PRIx64 "\","
+            "\"middle_layer_hash\":\"%016" PRIx64 "\","
+            "\"last_layer_hash\":\"%016" PRIx64 "\","
+            "\"gate_pass\":%s}\n",
+            qbh_variant_name(variant), total_bytes, map_gate_result,
+            header->dsp_status,
+            header->full_stack_map_gate_layer_count,
+            header->full_stack_map_gate_hash,
+            header->full_stack_map_gate_first_layer_hash,
+            header->full_stack_map_gate_middle_layer_hash,
+            header->full_stack_map_gate_last_layer_hash,
+            map_gate_result == AEE_SUCCESS &&
+                    header->dsp_status == QBH_BLOCK_STATUS_OK &&
+                    header->full_stack_map_gate_layer_count ==
+                        QBH_VERTICAL_SLICE_LAYER_COUNT
+                ? "true" : "false");
+        exit_code = map_gate_result == AEE_SUCCESS &&
+                            header->dsp_status == QBH_BLOCK_STATUS_OK &&
+                            header->full_stack_map_gate_layer_count ==
+                                QBH_VERTICAL_SLICE_LAYER_COUNT
+                        ? 0 : 1;
         goto cleanup;
     }
 

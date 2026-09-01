@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(56)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(149)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(57)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(152)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -25,8 +25,8 @@
     (QBH_BLOCK_KV_HEADS * QBH_BLOCK_HEAD_DIM)
 #define QBH_QWEN3_TRANSFORMER_LAYERS UINT32_C(28)
 #define QBH_REPLAY_LAYER_INDEX UINT32_C(14)
-#define QBH_VERTICAL_SLICE_FIRST_LAYER UINT32_C(13)
-#define QBH_VERTICAL_SLICE_LAYER_COUNT UINT32_C(3)
+#define QBH_VERTICAL_SLICE_FIRST_LAYER UINT32_C(0)
+#define QBH_VERTICAL_SLICE_LAYER_COUNT QBH_QWEN3_TRANSFORMER_LAYERS
 #define QBH_DECODE_SESSION_MAGIC UINT32_C(0x51445353)
 #define QBH_DECODE_SESSION_ABI_VERSION UINT32_C(2)
 #define QBH_BLOCK_PROJECTION_COUNT UINT32_C(7)
@@ -88,7 +88,12 @@ enum qbh_block_replay_mode {
 
 enum qbh_block_slice_mode {
     QBH_BLOCK_SLICE_DISABLED = 0,
-    QBH_BLOCK_SLICE_LAYERS_13_15 = 1,
+    QBH_BLOCK_SLICE_ACTIVE_RANGE = 1,
+};
+
+enum qbh_block_full_stack_stage_mode {
+    QBH_BLOCK_FULL_STACK_RUN = 0,
+    QBH_BLOCK_FULL_STACK_MAP_GATE = 1,
 };
 
 enum qbh_kv_cache_element_type {
@@ -514,11 +519,12 @@ struct qbh_block_header {
     uint32_t replay_expected_step;
     uint32_t replay_first_position;
 
-    /* EXP-0149 consecutive-layer execution contract. */
+    /* EXP-0152 consecutive-layer full-stack execution contract. */
     uint32_t slice_mode;
     uint32_t slice_first_layer;
     uint32_t slice_layer_count;
     uint32_t w4f16_gate_up_scale_cache_offset;
+    uint32_t full_stack_stage_mode;
 
     uint32_t input_offset;
     uint32_t input_bytes;
@@ -579,6 +585,11 @@ struct qbh_block_header {
     int32_t input_dma_status;
     int32_t output_dma_status;
     int32_t numerical_status;
+    uint32_t full_stack_map_gate_layer_count;
+    uint64_t full_stack_map_gate_hash;
+    uint64_t full_stack_map_gate_first_layer_hash;
+    uint64_t full_stack_map_gate_middle_layer_hash;
+    uint64_t full_stack_map_gate_last_layer_hash;
     float attention_qk_max_abs;
     float attention_probability_max_abs;
     float attention_av_max_abs;

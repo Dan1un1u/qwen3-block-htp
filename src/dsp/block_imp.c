@@ -538,6 +538,52 @@ static uint64_t qbh_fnv1a64_bytes(const uint8_t *data, uint32_t bytes) {
     return hash;
 }
 
+static uint64_t qbh_map_gate_mix_range(
+    uint64_t hash, const uint8_t *shared, uint32_t offset, uint32_t bytes) {
+    if (bytes == 0U) {
+        return hash;
+    }
+    hash ^= shared[offset];
+    hash *= UINT64_C(1099511628211);
+    hash ^= shared[offset + bytes - 1U];
+    hash *= UINT64_C(1099511628211);
+    return hash;
+}
+
+static uint64_t qbh_map_gate_layer_hash(
+    const uint8_t *shared, const struct qbh_block_layer_desc *layer) {
+    uint64_t hash = qbh_fnv1a64_bytes(
+        (const uint8_t *)layer, (uint32_t)sizeof(*layer));
+#define QBH_MAP_GATE_RANGE(name) \
+    hash = qbh_map_gate_mix_range( \
+        hash, shared, layer->name##_offset, layer->name##_bytes)
+    QBH_MAP_GATE_RANGE(qparam);
+    QBH_MAP_GATE_RANGE(input_norm_weight);
+    QBH_MAP_GATE_RANGE(post_norm_weight);
+    QBH_MAP_GATE_RANGE(q_norm_weight);
+    QBH_MAP_GATE_RANGE(k_norm_weight);
+    QBH_MAP_GATE_RANGE(w4u8_gate_up_bundle);
+    QBH_MAP_GATE_RANGE(w4u8_down_bundle);
+    QBH_MAP_GATE_RANGE(w4u8_silu_lut);
+    QBH_MAP_GATE_RANGE(attention_config);
+    QBH_MAP_GATE_RANGE(kv_cache_k);
+    QBH_MAP_GATE_RANGE(kv_cache_v);
+    QBH_MAP_GATE_RANGE(w4f16_gate_up_scale_cache);
+#undef QBH_MAP_GATE_RANGE
+    for (uint32_t projection = 0U;
+         projection < QBH_BLOCK_PROJECTION_COUNT; ++projection) {
+        const struct qbh_block_projection_desc *desc =
+            &layer->projections[projection];
+        hash = qbh_map_gate_mix_range(
+            hash, shared, desc->weight_offset, desc->weight_bytes);
+        hash = qbh_map_gate_mix_range(
+            hash, shared, desc->scale_offset, desc->scale_bytes);
+        hash = qbh_map_gate_mix_range(
+            hash, shared, desc->bias_offset, desc->bias_bytes);
+    }
+    return hash;
+}
+
 static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
                             uint32_t variant,
                             uint32_t f16f16_projection_mode,
@@ -790,7 +836,7 @@ static int qbh_range_valid(uint32_t offset, uint32_t bytes,
 }
 
 static int qbh_slice_enabled(const struct qbh_block_header *header) {
-    return header->slice_mode == QBH_BLOCK_SLICE_LAYERS_13_15 &&
+    return header->slice_mode == QBH_BLOCK_SLICE_ACTIVE_RANGE &&
            header->slice_first_layer == QBH_VERTICAL_SLICE_FIRST_LAYER &&
            header->slice_layer_count == QBH_VERTICAL_SLICE_LAYER_COUNT;
 }
@@ -1137,6 +1183,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          ~((uint32_t)QBH_BLOCK_COMMON_OPS_HVX_FP16)) != 0U ||
         header->attribution_enabled > 1U ||
         header->numerical_audit_enabled > 1U ||
+        header->full_stack_stage_mode >
+            QBH_BLOCK_FULL_STACK_MAP_GATE ||
         header->residual_mode >
             QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6_SHUFFLE4 ||
         header->f16f16_projection_mode >
@@ -12939,6 +12987,34 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
         header->w4u8_qk_pair_kernel_mode);
     header->w4u8_qk_pair_kernel_mode_observed =
         header->w4u8_qk_pair_kernel_mode;
+
+    if (header->full_stack_stage_mode ==
+        QBH_BLOCK_FULL_STACK_MAP_GATE) {
+        uint64_t all_layers_hash = UINT64_C(1469598103934665603);
+        const uint32_t middle = QBH_VERTICAL_SLICE_LAYER_COUNT / 2U;
+        for (uint32_t slice_index = 0U;
+             slice_index < QBH_VERTICAL_SLICE_LAYER_COUNT;
+             ++slice_index) {
+            uint64_t layer_hash = qbh_map_gate_layer_hash(
+                shared, &header->slice_layers[slice_index]);
+            all_layers_hash ^= layer_hash;
+            all_layers_hash *= UINT64_C(1099511628211);
+            if (slice_index == 0U) {
+                header->full_stack_map_gate_first_layer_hash = layer_hash;
+            }
+            if (slice_index == middle) {
+                header->full_stack_map_gate_middle_layer_hash = layer_hash;
+            }
+            if (slice_index + 1U == QBH_VERTICAL_SLICE_LAYER_COUNT) {
+                header->full_stack_map_gate_last_layer_hash = layer_hash;
+            }
+            ++header->full_stack_map_gate_layer_count;
+        }
+        header->full_stack_map_gate_hash = all_layers_hash;
+        header->dsp_status = QBH_BLOCK_STATUS_OK;
+        result = AEE_SUCCESS;
+        goto publish;
+    }
 
     if (qbh_plan_buffers(vtcm, vtcm_bytes, header->variant,
                          header->f16f16_projection_mode,
