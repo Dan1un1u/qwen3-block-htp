@@ -6991,6 +6991,12 @@ static int qbh_run_projection(
              desc == &header->projections[QBH_BLOCK_PROJ_DOWN])) {
             return -1;
         }
+        /* A prepacked input is an explicit physical carrier contract.  In
+         * particular, cache-native decode writes AV into buffers->q while
+         * the fixed-M prefill path writes AV into buffers->hmx_activation.
+         * Always consume the caller's declared carrier instead of assuming
+         * that every ready activation aliases the latter workspace. */
+        projection_activation = (uint8_t *)(uintptr_t)input;
     } else if (header->variant == QBH_BLOCK_W4U8) {
         qbh_pack_u8_activation((const uint8_t *)input, desc->k,
                                desc->k, projection_activation);
