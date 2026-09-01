@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0141
+  active_experiment: null
   next_experiment_number: 142
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,17 +27,50 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0140
-  last_completed_source_commit: e75563457293de9430f8c9d20a04ced6147e4737
+  last_completed_experiment: EXP-0141
+  last_completed_source_commit: 0b472a9946570a473307ff6d4f06d6f39a0f5769
   provisional_source_parent: EXP-0124
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: approved_implementation
+  active_experiment_stage: idle
   active_experiment_evidence: null
-  active_experiment_gate: w4u8_o_batch8_after_ring3
-  active_recipe_specialization: W4U8
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0140/20260901T040452Z_e75563457293_formal'
+  active_experiment_gate: null
+  active_recipe_specialization: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0141/20260901T041921Z_0b472a994657_formal'
+  latest_w4u8_o_batch8_candidate:
+    id: EXP-0141
+    source_branch: codex/exp-0141-w4u8-o-batch8-ring3
+    runtime_source_head: 1904a6581642a115df3b84f79a27890c89958dcc
+    validator_source_head: 0b472a9946570a473307ff6d4f06d6f39a0f5769
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0141/20260901T041921Z_0b472a994657_formal'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0141/artifacts/0b472a994657/20260901T041921Z_formal'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    selected_cell: exp0124_ring3_o_batch4_control
+    correctness_gate: pass_both_69f22eeb035e5ec5_identical_input_norm_score_probability_AV_hashes_zero_mismatch_zero_max_lsb
+    physical_gate: pass_exact_8mib_vtcm_identical_5570272_peak_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner
+    command_gate: pass_O_16_to_8_total_HMX_128_to_120_DMA_descriptors_512_to_496_prefetch_44_to_36
+    repeat1_o_change_percent: -7.267
+    repeat1_o_paired_change_percent: -6.907
+    repeat1_host_change_percent: -0.615
+    repeat1_host_paired_change_percent: -0.589
+    repeat10_o_change_percent: -7.531
+    repeat10_o_paired_change_percent: -7.442
+    repeat10_host_change_percent: -0.983
+    repeat10_host_paired_change_percent: -0.826
+    repeat10_down_change_percent: 0.810
+    repeat10_down_paired_change_percent: 0.490
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass_exp0109_f16f16_exp0110_selected_w4f16_EXP0141_control_w4u8
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    gate_summary_sha256: a6b5900aa46977cda83197c284e30ef5a0e2b3093ffc991da44029e479d6a47c
+    full_profiling_report_sha256: 775fefe3f5030195a2b23d1fc50b67350c6ef792c86ec44e93d286ec4b3505cc
+    evidence_sha256_ledger_sha256: 3cfd0d29d62e1fa907c5208dd624f61c1ed59bc7bf40accc86223253961ea147
+    conclusion: O_batch8_and_net_Host_gain_are_real_but_Down_preservation_gate_fails
+    reopen_condition: only_with_explicit_phase_handoff_or_user_gate_exception_not_batch_width_sweep
+    selected_baseline_changed: false
   latest_w4f16_down_join_only_candidate:
     id: EXP-0140
     source_branch: codex/exp-0140-w4f16-down-join-only-subgroup4

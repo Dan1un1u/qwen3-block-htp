@@ -13,20 +13,23 @@ experiments:
     variants:
       - exp0124_ring3_o_batch4_control
       - w4u8_ring3_o_batch8_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-o-batch8-after-ring3
     source_branches:
       - codex/exp-0141-w4u8-o-batch8-ring3
-    source_commits: []
+    source_commits:
+      - 1904a6581642a115df3b84f79a27890c89958dcc
+      - 0b472a9946570a473307ff6d4f06d6f39a0f5769
     record: docs/experiments/EXP-0141.md
     approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently without interruption'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0141-w4u8-o-batch8-ring3
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0124
       source_parent_commit: 95fadff5930d9081678ad99bb62ef84849ee1897
@@ -48,6 +51,34 @@ experiments:
       physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_identical_weight_tile_work_qparams_carriers_and_peak_plan_declared_O_command_grouping_only
       speed_gate: candidate_O_and_complete_Host_strictly_improve_ordinary_and_paired_repeat1_and_repeat10_and_GateUp_Down_regression_at_most_0p5_percent
       completion_gate: bounded_smoke_then_five_rotated_formal_rounds_PC027_PC028_and_no_automatic_baseline_promotion
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0141/20260901T041921Z_0b472a994657_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0141/artifacts/0b472a994657/20260901T041921Z_formal'
+      runtime_source_commit: 1904a6581642a115df3b84f79a27890c89958dcc
+      validator_source_commit: 0b472a9946570a473307ff6d4f06d6f39a0f5769
+      correctness_gate_result: pass_both_69f22eeb035e5ec5_identical_input_norm_score_probability_AV_hashes_zero_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_identical_5570272_peak_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_and_tile_work_declared_command_grouping_only
+      command_gate_result: pass_O_16_to_8_total_HMX_128_to_120_DMA_descriptors_512_to_496_prefetch_44_to_36
+      speed_gate_result: fail_repeat10_Down_ordinary_regression_0p810_percent_exceeds_0p5_preservation_limit
+      selected_cell: exp0124_ring3_o_batch4_control
+      repeat1_o_change_percent: -7.266646397081178
+      repeat1_o_paired_change_percent: -6.907090464547682
+      repeat1_host_change_percent: -0.6154973952022025
+      repeat1_host_paired_change_percent: -0.5887249550757478
+      repeat10_o_change_percent: -7.530525030525026
+      repeat10_o_paired_change_percent: -7.442059560936832
+      repeat10_host_change_percent: -0.9831944506186407
+      repeat10_host_paired_change_percent: -0.8259210769732461
+      repeat10_down_change_percent: 0.8100214484552559
+      repeat10_down_paired_change_percent: 0.4897114610874942
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_exp0109_f16f16_exp0110_selected_w4f16_EXP0141_control_w4u8
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: a6b5900aa46977cda83197c284e30ef5a0e2b3093ffc991da44029e479d6a47c
+      full_profiling_report_sha256: 775fefe3f5030195a2b23d1fc50b67350c6ef792c86ec44e93d286ec4b3505cc
+      evidence_sha256_ledger_sha256: 3cfd0d29d62e1fa907c5208dd624f61c1ed59bc7bf40accc86223253961ea147
+      conclusion: O_batch8_command_reduction_and_net_Host_gain_are_real_but_predeclared_Down_preservation_gate_fails
+      reopen_condition: only_with_an_explicit_phase_handoff_that_preserves_Down_timing_or_a_user_gate_exception_not_another_batch_width_sweep
+      selected_baseline_changed: false
   - id: EXP-0140
     slug: w4f16-down-join-only-subgroup4
     title: W4F16 Down join-only revalidation after subgroup4
