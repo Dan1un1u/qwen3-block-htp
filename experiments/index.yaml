@@ -6,6 +6,53 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0147
+    slug: multi-m-kv-cache-scan
+    title: Selected-baseline multi-M and KV-cache generalization scan
+    parent: EXP-0109+EXP-0140+EXP-0144
+    variants:
+      - selected_f16f16_exp0109_shape_family
+      - selected_w4f16_exp0140_shape_family
+      - selected_w4u8_exp0144_shape_family
+    execution_state: approved
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-layer14-multi-m-prefill-and-kv-cache-decode
+    source_branches:
+      - codex/exp-0147-multi-m-kv-cache-scan
+    source_commits: []
+    record: docs/experiments/EXP-0147.md
+    approval_ref: 'User message 2026-09-01: 开始（针对建议的 EXP-0147 多 M 形状与 KV-cache 长度扫描）'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0147-multi-m-kv-cache-scan
+      approved_on: '2026-09-01'
+    evidence:
+      source_parent_experiments: EXP-0109_EXP-0140_EXP-0144
+      f16f16_source_commit: 42e2a33012929ccbb05e8c2741124b6fd539552c
+      w4f16_source_commit: e75563457293de9430f8c9d20a04ced6147e4737
+      w4u8_source_commit: 919aaa74870661d78b92e64976e695a4fa87f955
+      experiment_role: shape_generalization_and_characterization_not_recipe_fastest_promotion
+      execution_unit: qwen3_layer14_complete_block_variable_rows_and_declared_KV_cache
+      prefill_rows: [16, 32, 64, 128]
+      prefill_kv_length_rule: kv_length_equals_query_rows_with_causal_mask
+      decode_rows: 1
+      decode_kv_lengths: [64, 256, 1024, 4096]
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      declared_persistent_kv_cache_ddr_allowed: true
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      m64_preservation_gate: selected_source_identity_output_and_physical_contract_preserved_for_EXP0109_EXP0140_EXP0144
+      correctness_gate: recipe_specific_independent_reference_for_all_supported_prefill_outputs_and_decode_outputs_plus_KV_append_W4U8_zero_LSB_FP16_existing_tolerance
+      physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN_and_explicit_KV_cache_traffic
+      profiling_gate: complete_PC027_ledger_and_engine_counters_for_all_supported_cells_with_latency_useful_throughput_padding_utilization_and_KV_traffic
+      speed_gate: not_applicable_characterization_only
+      stop_conditions: selected_M64_path_not_preservable_or_KV_cache_requires_intermediate_DDR_spill_or_shape_requires_recipe_math_change
+      completion_gate: static_capability_audit_then_correctness_then_physical_gate_then_repeat1_repeat10_scan_PC027_PC028_no_baseline_promotion
+      selected_baseline_changed: false
   - id: EXP-0146
     slug: w4f16-qkv-cross-projection-ring
     title: W4F16 batch-two cross-projection QKV ring

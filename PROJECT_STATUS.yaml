@@ -20,7 +20,7 @@ toolchain:
   accelerator: HTP V79
 governance:
   active_experiment: null
-  next_experiment_number: 147
+  next_experiment_number: 148
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -37,6 +37,12 @@ current_scope:
   active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0146/20260901T064149Z_6dddc6b5279d_formal'
   active_experiment_gate: fail
   active_recipe_specialization: null
+  next_approved_experiment:
+    id: EXP-0147
+    title: Selected-baseline multi-M and KV-cache generalization scan
+    parent: EXP-0109+EXP-0140+EXP-0144
+    source_branch: codex/exp-0147-multi-m-kv-cache-scan
+    approval_ref: 'User message 2026-09-01: 开始（针对建议的 EXP-0147 多 M 形状与 KV-cache 长度扫描）'
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0146/20260901T064149Z_6dddc6b5279d_formal'
   latest_w4f16_qkv_cross_projection_ring_candidate:
     id: EXP-0146
