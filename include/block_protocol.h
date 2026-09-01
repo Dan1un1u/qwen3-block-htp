@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(49)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(124)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(50)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(143)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -113,6 +113,7 @@ enum qbh_block_u8_norm_reduction_mode {
 enum qbh_block_w4u8_qk_pair_kernel_mode {
     QBH_BLOCK_W4U8_QK_PAIR_SERIAL_INNER = 0,
     QBH_BLOCK_W4U8_QK_PAIR_QUARTER_TILED = 1,
+    QBH_BLOCK_W4U8_QK_PAIR_QUARTER_TILED_SIMD_ROW_PACK = 2,
 };
 
 enum qbh_block_fp16_common_schedule_mode {
