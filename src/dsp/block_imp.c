@@ -792,7 +792,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->fp16_common_schedule_mode >
             QBH_BLOCK_FP16_COMMON_SCHEDULE_ALL ||
         header->qkv_schedule_mode >
-            QBH_BLOCK_QKV_SCHEDULE_KV_BATCH4 ||
+            QBH_BLOCK_QKV_SCHEDULE_CROSS_PROJECTION_RING ||
         header->w4f16_group_fence_mode >
             QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY_DOWN ||
         (header->w4f16_group_fence_mode !=
@@ -5909,7 +5909,7 @@ struct qbh_w4f16_qkv_schedule_task {
     uint32_t n_tiles;
 };
 
-static int qbh_w4f16_qkv_prefix4_task_init(
+static int qbh_w4f16_qkv_schedule_task_init(
     struct qbh_block_header *header,
     struct qbh_block_buffers *buffers,
     uint32_t command, uint32_t batch_tiles,
@@ -5930,10 +5930,40 @@ static int qbh_w4f16_qkv_prefix4_task_init(
     uint32_t projection_local;
 
     if (header == NULL || buffers == NULL || task == NULL ||
-        header->qkv_schedule_mode !=
-            QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL ||
+        (header->qkv_schedule_mode !=
+             QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL &&
+         header->qkv_schedule_mode !=
+             QBH_BLOCK_QKV_SCHEDULE_CROSS_PROJECTION_RING) ||
         (batch_tiles != 2U && batch_tiles != 4U)) {
         return -1;
+    }
+    if (header->qkv_schedule_mode ==
+            QBH_BLOCK_QKV_SCHEDULE_CROSS_PROJECTION_RING) {
+        const uint32_t q_commands =
+            (QBH_BLOCK_HIDDEN / QBH_HMX_FP16_COLS) / batch_tiles;
+        const uint32_t kv_commands =
+            (QBH_BLOCK_KV_HIDDEN / QBH_HMX_FP16_COLS) / batch_tiles;
+        if (command < q_commands) {
+            projection = QBH_BLOCK_PROJ_Q;
+            task->first_n_tile = command * batch_tiles;
+            task->output = buffers->q;
+        } else if (command < q_commands + kv_commands) {
+            local = command - q_commands;
+            projection = QBH_BLOCK_PROJ_K;
+            task->first_n_tile = local * batch_tiles;
+            task->output = buffers->k;
+        } else {
+            local = command - q_commands - kv_commands;
+            if (local >= kv_commands) {
+                return -1;
+            }
+            projection = QBH_BLOCK_PROJ_V;
+            task->first_n_tile = local * batch_tiles;
+            task->output = buffers->v;
+        }
+        task->desc = &header->projections[projection];
+        task->n_tiles = batch_tiles;
+        return 0;
     }
     if (command < prefix_q_commands) {
         projection = QBH_BLOCK_PROJ_Q;
@@ -6011,10 +6041,11 @@ static void qbh_w4f16_qkv_trace_command(
     ++header->qkv_schedule_command_count;
 }
 
-/* EXP-0110: W4F16-only Q-prefix schedule.  It preserves the frozen
- * projection math and supports either row-major or direct Crouton Q/K/V
- * output so projection order and carrier remain independent factors. */
-static int qbh_run_w4f16_qkv_prefix4(
+/* EXP-0110/0146: W4F16-only continuous QKV schedule.  EXP-0146 keeps
+ * serial Q->K->V order but extends the two compressed/expanded slots across
+ * projection boundaries, allowing the next projection's first batch-two
+ * group to expand while the current projection's last HMX command runs. */
+static int qbh_run_w4f16_qkv_schedule(
     struct qbh_block_header *header, const uint8_t *shared,
     struct qbh_block_buffers *buffers,
     struct qbh_block_hmx_worker *worker,
@@ -6051,10 +6082,10 @@ static int qbh_run_w4f16_qkv_prefix4(
     uint32_t region_tiles;
 
     if (header->variant != QBH_BLOCK_W4F16 || pool == NULL ||
-        qbh_w4f16_qkv_prefix4_task_init(
+        qbh_w4f16_qkv_schedule_task_init(
             header, buffers, 0U, dma_batch_tiles,
             &first_dma) != 0 ||
-        qbh_w4f16_qkv_prefix4_task_init(
+        qbh_w4f16_qkv_schedule_task_init(
             header, buffers, 0U, hmx_batch_tiles,
             &first_hmx) != 0) {
         return -1;
@@ -6082,7 +6113,7 @@ static int qbh_run_w4f16_qkv_prefix4(
     ++header->weight_dma_descriptor_count;
     if (total_batches > 1U) {
         struct qbh_w4f16_qkv_schedule_task next_dma;
-        if (qbh_w4f16_qkv_prefix4_task_init(
+        if (qbh_w4f16_qkv_schedule_task_init(
                 header, buffers, 1U, dma_batch_tiles,
                 &next_dma) != 0) {
             return -1;
@@ -6134,7 +6165,7 @@ static int qbh_run_w4f16_qkv_prefix4(
         uint64_t command_start;
         int cross_prefetch_result = 0;
 
-        if (qbh_w4f16_qkv_prefix4_task_init(
+        if (qbh_w4f16_qkv_schedule_task_init(
                 header, buffers, command, hmx_batch_tiles,
                 &current) != 0) {
             return -1;
@@ -6189,7 +6220,7 @@ static int qbh_run_w4f16_qkv_prefix4(
             const float *next_scales;
             const uint8_t *next_compressed;
 
-            if (qbh_w4f16_qkv_prefix4_task_init(
+            if (qbh_w4f16_qkv_schedule_task_init(
                     header, buffers, next_command,
                     hmx_batch_tiles, &next) != 0) {
                 (void)qbh_hmx_wait(worker);
@@ -6217,7 +6248,7 @@ static int qbh_run_w4f16_qkv_prefix4(
                 }
                 if (next_batch + 1U < total_batches) {
                     struct qbh_w4f16_qkv_schedule_task following;
-                    if (qbh_w4f16_qkv_prefix4_task_init(
+                    if (qbh_w4f16_qkv_schedule_task_init(
                             header, buffers, next_batch + 1U,
                             dma_batch_tiles, &following) != 0) {
                         (void)qbh_hmx_wait(worker);
@@ -10282,8 +10313,10 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         return QBH_BLOCK_STATUS_QK_NORM_ROPE_FAILED;
     }
     if (header->qkv_schedule_mode ==
-            QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL) {
-        if (qbh_run_w4f16_qkv_prefix4(
+            QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL ||
+        header->qkv_schedule_mode ==
+            QBH_BLOCK_QKV_SCHEDULE_CROSS_PROJECTION_RING) {
+        if (qbh_run_w4f16_qkv_schedule(
                 header, shared, buffers, worker, w4f16_pool,
                 buffers->hmx_activation, &cross_prefetch) != 0) {
             if (qkv_overlap_enabled != 0U) {

@@ -1070,6 +1070,8 @@ static const char *qbh_qkv_schedule_mode_name(uint32_t mode) {
             return "v_batch4";
         case QBH_BLOCK_QKV_SCHEDULE_KV_BATCH4:
             return "kv_batch4";
+        case QBH_BLOCK_QKV_SCHEDULE_CROSS_PROJECTION_RING:
+            return "cross_projection_ring";
         default:
             return "control";
     }
@@ -1579,6 +1581,10 @@ int main(int argc, char **argv) {
                 qkv_schedule_mode = QBH_BLOCK_QKV_SCHEDULE_V_BATCH4;
             } else if (strcmp(schedule, "kv_batch4") == 0) {
                 qkv_schedule_mode = QBH_BLOCK_QKV_SCHEDULE_KV_BATCH4;
+            } else if (strcmp(schedule,
+                              "cross_projection_ring") == 0) {
+                qkv_schedule_mode =
+                    QBH_BLOCK_QKV_SCHEDULE_CROSS_PROJECTION_RING;
             } else {
                 qkv_schedule_mode = UINT32_MAX;
             }
@@ -1822,7 +1828,7 @@ int main(int argc, char **argv) {
          fp16_norm_rows_per_task != 8U) ||
         fp16_norm_contexts < 2U || fp16_norm_contexts > 4U ||
         qkv_schedule_mode >
-            QBH_BLOCK_QKV_SCHEDULE_KV_BATCH4 ||
+            QBH_BLOCK_QKV_SCHEDULE_CROSS_PROJECTION_RING ||
         (qkv_schedule_mode != QBH_BLOCK_QKV_SCHEDULE_CONTROL &&
          (variant != QBH_BLOCK_W4F16 ||
           attention_pipeline_mode !=
@@ -2620,7 +2626,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0140\","
+        "{\"experiment\":\"EXP-0146\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
