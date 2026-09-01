@@ -267,6 +267,7 @@ struct qbh_block_w4f16_pool {
     uint32_t region_tiles;
     uint32_t publish_ready;
     uint32_t claim_regions;
+    uint32_t extra_expand_worker_index;
     uint32_t worker_count;
     uint32_t active_worker_count;
     uint32_t created_workers;
@@ -801,6 +802,12 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          (header->variant != QBH_BLOCK_W4F16 ||
           header->w4f16_group_fence_mode !=
               QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY)) ||
+        header->w4f16_gate_up_extra_expand_worker > 1U ||
+        (header->w4f16_gate_up_extra_expand_worker != 0U &&
+         (header->variant != QBH_BLOCK_W4F16 ||
+          header->w4f16_group_fence_mode !=
+              QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY ||
+          header->w4f16_requested_hvx_workers != 4U)) ||
         header->w4u8_stream_fence_mode >
             QBH_BLOCK_W4U8_STREAM_FENCE_RELEASE_ONLY ||
         (header->w4u8_stream_fence_mode !=
@@ -2720,6 +2727,7 @@ static int qbh_w4f16_pool_create(
     memset(pool, 0, sizeof(*pool));
     qurt_mutex_init(&pool->attention_hmx_mutex);
     pool->worker_count = worker_count;
+    pool->extra_expand_worker_index = UINT32_MAX;
     for (uint32_t worker = 0; worker < pool->worker_count; ++worker) {
         qurt_sem_init_val(&pool->command_ready[worker], 0U);
         qurt_sem_init_val(&pool->command_done[worker], 0U);
@@ -2787,7 +2795,8 @@ static void qbh_w4f16_pool_start(
     uint8_t *expanded_weight, volatile uint32_t *ready_generations,
     uint32_t expected_generation, uint32_t region_count,
     uint32_t region_tiles, uint32_t active_worker_count,
-    uint32_t publish_ready, uint32_t claim_regions) {
+    uint32_t publish_ready, uint32_t claim_regions,
+    uint32_t extra_expand_worker_index) {
     pool->compressed_weight = compressed_weight;
     pool->channel_scale = channel_scale;
     pool->expanded_weight = expanded_weight;
@@ -2798,16 +2807,25 @@ static void qbh_w4f16_pool_start(
     pool->publish_ready = publish_ready;
     pool->claim_regions = publish_ready != 0U ? 1U : claim_regions;
     pool->active_worker_count = active_worker_count;
+    pool->extra_expand_worker_index = extra_expand_worker_index;
     pool->next_region = 0U;
     for (uint32_t worker = 0; worker < pool->active_worker_count;
          ++worker) {
         pool->jobs[worker].command_kind =
             QBH_BLOCK_HVX_POOL_W4_EXPAND;
     }
+    if (pool->extra_expand_worker_index != UINT32_MAX) {
+        pool->jobs[pool->extra_expand_worker_index].command_kind =
+            QBH_BLOCK_HVX_POOL_W4_EXPAND;
+    }
     asm volatile("barrier" ::: "memory");
     for (uint32_t worker = 0; worker < pool->active_worker_count;
          ++worker) {
         (void)qurt_sem_up(&pool->command_ready[worker]);
+    }
+    if (pool->extra_expand_worker_index != UINT32_MAX) {
+        (void)qurt_sem_up(
+            &pool->command_ready[pool->extra_expand_worker_index]);
     }
 }
 
@@ -2816,6 +2834,11 @@ static void qbh_w4f16_pool_wait(
     for (uint32_t worker = 0; worker < pool->active_worker_count;
          ++worker) {
         qurt_sem_down(&pool->command_done[worker]);
+    }
+    if (pool->extra_expand_worker_index != UINT32_MAX) {
+        qurt_sem_down(
+            &pool->command_done[pool->extra_expand_worker_index]);
+        pool->extra_expand_worker_index = UINT32_MAX;
     }
     asm volatile("barrier" ::: "memory");
 }
@@ -3834,6 +3857,13 @@ static void qbh_w4f16_expand_with_main(
     uint32_t region_tiles, uint32_t active_worker_count,
     uint32_t publish_ready, uint32_t relaxed_group_fence) {
     uint32_t total_regions = k_tiles / region_tiles;
+    const uint32_t extra_expand_worker =
+        relaxed_group_fence != 0U &&
+                header->w4f16_gate_up_extra_expand_worker != 0U
+            ? 3U : UINT32_MAX;
+    const uint32_t expansion_worker_count =
+        active_worker_count +
+        (extra_expand_worker != UINT32_MAX ? 1U : 0U);
     uint32_t main_regions;
     uint32_t main_tiles;
     uint32_t pool_regions;
@@ -3847,8 +3877,8 @@ static void qbh_w4f16_expand_with_main(
         main_regions = (2U * total_regions + 2U) / 3U;
     } else {
         main_regions =
-            (total_regions + active_worker_count) /
-            (active_worker_count + 1U);
+            (total_regions + expansion_worker_count) /
+            (expansion_worker_count + 1U);
     }
     main_tiles = main_regions * region_tiles;
     pool_regions = total_regions - main_regions;
@@ -3865,7 +3895,8 @@ static void qbh_w4f16_expand_with_main(
         active_worker_count,
         publish_ready != 0U || relaxed_group_fence == 0U,
         relaxed_group_fence != 0U
-            ? header->w4f16_expand_claim_regions : 1U);
+            ? header->w4f16_expand_claim_regions : 1U,
+        extra_expand_worker);
     main_start = HAP_perf_get_qtimer_count();
     if (publish_ready == 0U && relaxed_group_fence != 0U) {
         qbh_unpack_w4_to_f16_hvx_relaxed(
@@ -5449,7 +5480,8 @@ static int qbh_run_w4f16_interleaved_gate_up(
     gate.output = (__fp16 *)buffers->gate;
     up.output = (__fp16 *)buffers->up;
     group_count = gate.n_tiles / group_tiles;
-    qbh_w4f16_note_active_workers(header, 2U);
+    qbh_w4f16_note_active_workers(
+        header, 2U + header->w4f16_gate_up_extra_expand_worker);
     qbh_w4f16_note_effective_region(
         header, qbh_w4f16_gate_up_region_tiles(header));
     header->w4f16_gate_up_effective_region_tiles =
@@ -6491,7 +6523,7 @@ static int qbh_run_projection(
                     buffers->expanded_weight, w4f16_ready,
                     generation, region_count,
                     header->w4f16_region_tiles,
-                    w4f16_pool->worker_count, 1U, 1U);
+                    w4f16_pool->worker_count, 1U, 1U, UINT32_MAX);
                 qbh_w4f16_pool_wait(w4f16_pool);
                 header->w4f16_expand_ticks +=
                     HAP_perf_get_qtimer_count() - expand_start;
