@@ -50,7 +50,14 @@ Q_BYTES = PHYSICAL_M * HIDDEN
 KV_BYTES = PHYSICAL_M * KV_HEADS * HEAD_DIM
 SCORE_BYTES = HEADS * PHYSICAL_M * PHYSICAL_M
 AV_OFFSET = Q_BYTES + 2 * KV_BYTES + 2 * SCORE_BYTES
-AUDIT_BYTES = AV_OFFSET + Q_BYTES
+CORE_AUDIT_BYTES = AV_OFFSET + Q_BYTES
+O_OFFSET = CORE_AUDIT_BYTES
+POST_RESIDUAL_OFFSET = O_OFFSET + Q_BYTES
+POST_NORM_OFFSET = POST_RESIDUAL_OFFSET + Q_BYTES
+MIDDLE_OFFSET = POST_NORM_OFFSET + Q_BYTES
+DOWN_OFFSET = MIDDLE_OFFSET + PHYSICAL_M * INTERMEDIATE
+FINAL_OFFSET = DOWN_OFFSET + Q_BYTES
+AUDIT_BYTES = FINAL_OFFSET + Q_BYTES
 PROJECTION_SHAPES = {
     "o": (HIDDEN, HIDDEN),
     "gate": (INTERMEDIATE, HIDDEN),
@@ -127,11 +134,33 @@ def decode_av(
     return output
 
 
+def padded_rows(row: np.ndarray, zero_point: int) -> np.ndarray:
+    output = np.full((PHYSICAL_M, row.size), zero_point, dtype=np.uint8)
+    output[0] = row
+    return output
+
+
+def tile_major_carrier(row: np.ndarray, zero_point: int) -> np.ndarray:
+    logical = padded_rows(row, zero_point)
+    return np.ascontiguousarray(
+        logical.reshape(PHYSICAL_M, row.size // 32, 32).transpose(1, 0, 2)
+    ).reshape(-1)
+
+
+def first_tile_major_row(value: np.ndarray, channels: int) -> np.ndarray:
+    expected = PHYSICAL_M * channels
+    if value.size != expected:
+        raise ValueError(f"tile-major bytes {value.size}, expected {expected}")
+    return np.ascontiguousarray(
+        value.reshape(channels // 32, PHYSICAL_M, 32)[:, 0, :]
+    ).reshape(channels)
+
+
 def tail_output(
     input_row: np.ndarray, av: np.ndarray,
     weights: dict[str, torch.Tensor], post_weight: torch.Tensor,
     qparams: dict[str, dict[str, object]],
-) -> np.ndarray:
+) -> tuple[np.ndarray, dict[str, np.ndarray]]:
     hidden_encoded = torch.from_numpy(input_row.reshape(1, 1, HIDDEN).copy())
     hidden = base.dequantize_u8(
         hidden_encoded, qparams["block_input"]
@@ -141,25 +170,51 @@ def tail_output(
         av_encoded, qparams["attention_concat"]
     ).to(torch.float16)
 
-    def boundary(name: str, value: torch.Tensor) -> torch.Tensor:
-        return base.dequantize_u8(
-            base.quantize_u8(value, qparams[name]), qparams[name]
-        ).to(torch.float16)
+    def boundary(
+        name: str, value: torch.Tensor,
+    ) -> tuple[np.ndarray, torch.Tensor]:
+        encoded = base.quantize_u8(value, qparams[name])
+        logical = encoded.cpu().numpy().reshape(-1).astype(np.uint8, copy=False)
+        decoded = base.dequantize_u8(encoded, qparams[name]).to(torch.float16)
+        return logical, decoded
 
-    projected = boundary(
+    projected_u8, projected = boundary(
         "attention_projection", base.linear_half(attention, weights["o"])
     )
-    residual = boundary("post_attention_residual", hidden + projected)
-    normalized = boundary(
+    residual_u8, residual = boundary("post_attention_residual", hidden + projected)
+    normalized_u8, normalized = boundary(
         "post_attention_norm", base.rms_norm(residual, post_weight)
     )
-    gate = boundary("gate", base.linear_half(normalized, weights["gate"]))
-    up = boundary("up", base.linear_half(normalized, weights["up"]))
-    middle = boundary("middle", F.silu(gate.float()) * up.float())
-    down = boundary("down", base.linear_half(middle, weights["down"]))
-    return base.quantize_u8(
+    _gate_u8, gate = boundary(
+        "gate", base.linear_half(normalized, weights["gate"])
+    )
+    _up_u8, up = boundary("up", base.linear_half(normalized, weights["up"]))
+    middle_u8, middle = boundary("middle", F.silu(gate.float()) * up.float())
+    down_u8, down = boundary("down", base.linear_half(middle, weights["down"]))
+    final = base.quantize_u8(
         residual + down, qparams["block_output"]
     ).cpu().numpy().reshape(HIDDEN)
+    boundaries = {
+        "o": tile_major_carrier(
+            projected_u8, int(qparams["attention_projection"]["zero_point"])
+        ),
+        "post_residual": padded_rows(
+            residual_u8, int(qparams["post_attention_residual"]["zero_point"])
+        ).reshape(-1),
+        "post_norm": tile_major_carrier(
+            normalized_u8, int(qparams["post_attention_norm"]["zero_point"])
+        ),
+        "middle": tile_major_carrier(
+            middle_u8, int(qparams["middle"]["zero_point"])
+        ),
+        "down": tile_major_carrier(
+            down_u8, int(qparams["down"]["zero_point"])
+        ),
+        "final": padded_rows(
+            final, int(qparams["block_output"]["zero_point"])
+        ).reshape(-1),
+    }
+    return final, boundaries
 
 
 def main() -> None:
@@ -208,7 +263,9 @@ def main() -> None:
         if audit.size != AUDIT_BYTES:
             raise ValueError(f"step {step}: audit bytes {audit.size}")
         q = unpack_feature(audit[:Q_BYTES], HEADS)
-        actual_av = unpack_feature(audit[AV_OFFSET:], HEADS)[0]
+        actual_av = unpack_feature(
+            audit[AV_OFFSET:CORE_AUDIT_BYTES], HEADS
+        )[0]
         valid = PREFILL_M + step
         expected_av = decode_av(q[0], k_cache, v_cache, valid, config_bytes)
         av_mismatches = int(np.count_nonzero(actual_av != expected_av))
@@ -216,7 +273,7 @@ def main() -> None:
             source / f"replay_decode_input_{index:02d}_u8.bin",
             dtype=np.uint8,
         ).reshape(PHYSICAL_M, HIDDEN)[0]
-        expected_output = tail_output(
+        expected_output, expected_boundaries = tail_output(
             input_row, expected_av, weights, post_weight, qparams
         )
         actual_output = np.fromfile(
@@ -224,12 +281,58 @@ def main() -> None:
             dtype=np.uint8,
         ).reshape(PHYSICAL_M, HIDDEN)[0]
         output_mismatches = int(np.count_nonzero(actual_output != expected_output))
+        actual_boundaries = {
+            "o": audit[O_OFFSET:POST_RESIDUAL_OFFSET],
+            "post_residual": audit[POST_RESIDUAL_OFFSET:POST_NORM_OFFSET],
+            "post_norm": audit[POST_NORM_OFFSET:MIDDLE_OFFSET],
+            "middle": audit[MIDDLE_OFFSET:DOWN_OFFSET],
+            "down": audit[DOWN_OFFSET:FINAL_OFFSET],
+            "final": audit[FINAL_OFFSET:AUDIT_BYTES],
+        }
+        physical_boundary_mismatches = {
+            name: int(np.count_nonzero(actual_boundaries[name] != expected))
+            for name, expected in expected_boundaries.items()
+        }
+        actual_active = {
+            "o": first_tile_major_row(actual_boundaries["o"], HIDDEN),
+            "post_residual": actual_boundaries["post_residual"][:HIDDEN],
+            "post_norm": first_tile_major_row(
+                actual_boundaries["post_norm"], HIDDEN
+            ),
+            "middle": first_tile_major_row(
+                actual_boundaries["middle"], INTERMEDIATE
+            ),
+            "down": first_tile_major_row(actual_boundaries["down"], HIDDEN),
+            "final": actual_boundaries["final"][:HIDDEN],
+        }
+        expected_active = {
+            "o": first_tile_major_row(expected_boundaries["o"], HIDDEN),
+            "post_residual": expected_boundaries["post_residual"][:HIDDEN],
+            "post_norm": first_tile_major_row(
+                expected_boundaries["post_norm"], HIDDEN
+            ),
+            "middle": first_tile_major_row(
+                expected_boundaries["middle"], INTERMEDIATE
+            ),
+            "down": first_tile_major_row(expected_boundaries["down"], HIDDEN),
+            "final": expected_boundaries["final"][:HIDDEN],
+        }
+        boundary_mismatches = {
+            name: int(np.count_nonzero(actual_active[name] != expected))
+            for name, expected in expected_active.items()
+        }
         step_reports.append(
             {
                 "step": step,
                 "position": PREFILL_M + index,
                 "valid_length": valid,
                 "attention_av_mismatches": av_mismatches,
+                "teacher_internal_boundary_mismatches_diagnostic":
+                    boundary_mismatches,
+                "inactive_physical_boundary_mismatches_diagnostic": {
+                    name: physical_boundary_mismatches[name] - mismatches
+                    for name, mismatches in boundary_mismatches.items()
+                },
                 "tail_output_mismatches": output_mismatches,
                 "q_sha256": hashlib_array(q[0]),
                 "expected_av_sha256": hashlib_array(expected_av),
