@@ -19,25 +19,68 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0144
-  next_experiment_number: 145
+  active_experiment: EXP-0145
+  next_experiment_number: 146
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0143
-  last_completed_source_commit: cd82ee4d0e6f9fc9eddb435f5b133997d411d2b3
-  provisional_source_parent: EXP-0143_candidate
+  last_completed_experiment: EXP-0144
+  last_completed_source_commit: 919aaa74870661d78b92e64976e695a4fa87f955
+  provisional_source_parent: EXP-0144_candidate
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
   active_experiment_stage: approved_implementation
   active_experiment_evidence: null
-  active_experiment_gate: w4u8_qk_output_simd_transpose
+  active_experiment_gate: w4u8_down_hmx_batch8
   active_recipe_specialization: W4U8
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0143/20260901T045005Z_cd82ee4d0e6f_formal'
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0144/20260901T045939Z_919aaa748706_formal'
+  latest_w4u8_qk_output_simd_candidate:
+    id: EXP-0144
+    source_branch: codex/exp-0144-w4u8-qk-output-simd-transpose
+    source_head: 919aaa74870661d78b92e64976e695a4fa87f955
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0144/20260901T045939Z_919aaa748706_formal'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0144/artifacts/919aaa748706/20260901T045939Z_formal'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    selected_cell: exp0143_simd_input_pack_memcpy_output_control
+    correctness_gate: pass_both_69f22eeb035e5ec5_identical_input_norm_score_probability_AV_hashes_zero_mismatch_zero_max_lsb
+    physical_gate: pass_exact_8mib_vtcm_identical_5306080_peak_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner
+    repeat1_qkv_change_percent: -42.919
+    repeat1_qkv_paired_change_percent: -41.744
+    repeat1_qk_work_change_percent: -67.204
+    repeat1_qk_work_paired_change_percent: -67.469
+    repeat1_host_change_percent: -0.678
+    repeat1_host_paired_change_percent: -5.938
+    repeat1_gate_up_change_percent: 1.508
+    repeat1_gate_up_paired_change_percent: 1.508
+    repeat10_qkv_change_percent: -41.779
+    repeat10_qkv_paired_change_percent: -41.263
+    repeat10_qk_work_change_percent: -67.587
+    repeat10_qk_work_paired_change_percent: -67.536
+    repeat10_host_change_percent: -6.736
+    repeat10_host_paired_change_percent: -6.712
+    repeat10_attention_change_percent: -0.056
+    repeat10_attention_paired_change_percent: 0.013
+    repeat10_gate_up_change_percent: 0.986
+    repeat10_gate_up_paired_change_percent: 0.904
+    repeat10_down_change_percent: 0.884
+    repeat10_down_paired_change_percent: 0.986
+    repeat10_control_host_us: 1463.188
+    repeat10_candidate_host_us: 1364.625
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass_exp0109_f16f16_exp0110_selected_w4f16_EXP0144_control_w4u8
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    gate_summary_sha256: 1d1ce7755bfd931583c8b0f8c7712099508c92bc788d1804267ce8b036580276
+    full_profiling_report_sha256: d314d60852f4d9fc582178078d5e82eb7d53c91c9c4fb5fb460ae0b5f72d55d4
+    evidence_sha256_ledger_sha256: aeabca0c731a975666cfb3ec4f48b01195fa379e751c6969ae05af64d8a42184
+    conclusion: SIMD_output_transpose_is_byte_exact_and_removes_two_thirds_of_remaining_QK_work_with_large_QKV_and_Host_gains_but_fails_strict_GateUp_and_Down_preservation
+    reopen_condition: only_as_an_explicit_fastest_candidate_parent_or_with_phase_arrival_stabilization_not_another_output_transpose_variant
+    selected_baseline_changed: false
   latest_w4u8_qk_row_cache_simd_candidate:
     id: EXP-0143
     source_branch: codex/exp-0143-w4u8-qk-row-cache-simd-transpose
@@ -49,7 +92,7 @@ current_scope:
     adoption_status: rejected
     selected_cell: exp0124_ring3_quarter_tiled_memcpy_control
     correctness_gate: pass_both_69f22eeb035e5ec5_identical_input_norm_score_probability_AV_hashes_zero_mismatch_zero_max_lsb
-    physical_gate: pass_exact_8mib_vtcm_identical_5570272_peak_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner
+    physical_gate: pass_exact_8mib_vtcm_identical_5306080_peak_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner
     repeat1_qkv_change_percent: -29.378
     repeat1_qkv_paired_change_percent: -30.033
     repeat1_qk_work_change_percent: -42.368
