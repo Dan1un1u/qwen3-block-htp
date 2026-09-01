@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0134
+  active_experiment: null
   next_experiment_number: 135
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,25 +27,61 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0133
-  last_completed_source_commit: 646ded5a54bf4c541f8c63534a15bd58a611964d
-  provisional_source_parent: EXP-0132
+  last_completed_experiment: EXP-0134
+  last_completed_source_commit: d43e4d7e35bb0512c8a4753b129cc786f941afb3
+  provisional_source_parent: EXP-0133
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: registered
+  active_experiment_stage: none
   active_experiment_evidence: null
-  active_experiment_gate: pending_preflight
-  active_recipe_specialization: W4F16_gate_up_actual_fourth_expand_context
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0133/20260901T014439Z_646ded5a54bf_formal'
+  active_experiment_gate: none
+  active_recipe_specialization: none
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0134/20260901T015433Z_d43e4d7e35bb_formal'
   last_rejected_specialization:
-    id: EXP-0133
-    source_branch: codex/exp-0133-w4f16-gate-up-balanced-partition
-    source_head: 646ded5a54bf4c541f8c63534a15bd58a611964d
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0133/20260901T014439Z_646ded5a54bf_formal'
+    id: EXP-0134
+    source_branch: codex/exp-0134-w4f16-gate-up-worker3-dispatch
+    source_head: d43e4d7e35bb0512c8a4753b129cc786f941afb3
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0134/20260901T015433Z_d43e4d7e35bb_formal'
     local_gate: fail
     adoption_status: rejected
-    reason: balanced_partition_reduces_pool_wait_but_does_not_pass_repeat1_gate_up_or_repeat10_complete_host
+    reason: fourth_expansion_context_improves_repeat10_but_fails_paired_repeat1_complete_host
+  latest_w4f16_gate_up_actual_fourth_context_candidate:
+    id: EXP-0134
+    source_branch: codex/exp-0134-w4f16-gate-up-worker3-dispatch
+    source_head: d43e4d7e35bb0512c8a4753b129cc786f941afb3
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0134/20260901T015433Z_d43e4d7e35bb_formal'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0134/artifacts/d43e4d7e35bb/20260901T015433Z_formal'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    selected_cell: w4f16_gate_up_three_context_control
+    correctness_gate: pass_both_f18b9abbe1487231_zero_expansion_mismatch_zero_max_lsb
+    physical_gate: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_dma_hmx_and_peak_plan_declared_worker_count_difference
+    repeat1_gate_up_change_percent: -1.798439090600612
+    repeat1_gate_up_paired_change_percent: -1.8650389962699188
+    repeat1_host_change_percent: -0.4062734642327315
+    repeat1_host_paired_change_percent: 0.1402607320651672
+    repeat10_gate_up_change_percent: -1.6599791439970812
+    repeat10_gate_up_paired_change_percent: -1.564766956837138
+    repeat10_host_change_percent: -1.763378349443001
+    repeat10_host_paired_change_percent: -1.7539211751226302
+    repeat10_gate_up_expand_change_percent: -10.102766798418973
+    repeat10_gate_up_expand_work_change_percent: -30.227627761660347
+    repeat10_gate_up_expand_pool_wait_change_percent: 982.3159784560144
+    repeat10_gate_up_hmx_wait_change_percent: -8.814013470284243
+    repeat10_gate_up_stream_join_wait_change_percent: 100.80421114197983
+    repeat10_runtime_setup_change_percent: 22.11155378486054
+    repeat10_runtime_teardown_change_percent: 21.967963386727686
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass_exp0109_f16f16_exp0134_worker3_w4f16_exp0124_control_w4u8
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    gate_summary_sha256: bc00e67e0cd51c0d80cb7c911bf5a5dc12cb6f559b7998bd566da54b9caeb8cb
+    full_profiling_report_sha256: 2363e1d70bed4016c6eaff22e6762b2f7cc03edb9d1847b3f00cc3c74d0f49e4
+    evidence_sha256_ledger_sha256: 611135ac1bbf29c299b56c2407e223548b5a777f575c67ec991a396fcb00b81f
+    conclusion: actual_fourth_context_advances_expansion_and_repeat10_host_but_thread_management_and_join_tail_fail_paired_repeat1_host
+    reopen_condition: only_with_persistent_worker_lifetime_or_join_fusion_that_preserves_four_context_expansion_without_per_invocation_overhead
+    selected_baseline_changed: false
   latest_w4f16_gate_up_balanced_partition_candidate:
     id: EXP-0133
     source_branch: codex/exp-0133-w4f16-gate-up-balanced-partition

@@ -10807,20 +10807,22 @@ experiments:
     variants:
       - w4f16_gate_up_three_context_control
       - w4f16_gate_up_four_context_candidate
-    execution_state: running
-    evidence_validity: pending
-    local_gate: pending
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4f16-gate-up-worker3-dispatch
     source_branches:
       - codex/exp-0134-w4f16-gate-up-worker3-dispatch
-    source_commits: []
+    source_commits:
+      - d43e4d7e35bb0512c8a4753b129cc786f941afb3
     record: docs/experiments/EXP-0134.md
     approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently without interruption'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0134-w4f16-gate-up-worker3-dispatch
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0133
       source_parent_commit: 646ded5a54bf4c541f8c63534a15bd58a611964d
@@ -10842,3 +10844,34 @@ experiments:
       physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_identical_weight_DMA_HMX_commands_tiles_and_peak_plan_worker_count_difference_declared
       speed_gate: Gate_Up_plus_SwiGLU_and_complete_Host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
       completion_gate: bounded_smoke_then_five_rotated_formal_rounds_PC027_PC028_and_no_automatic_baseline_promotion
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0134/20260901T015433Z_d43e4d7e35bb_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0134/artifacts/d43e4d7e35bb/20260901T015433Z_formal'
+      source_commit: d43e4d7e35bb0512c8a4753b129cc786f941afb3
+      static_gate_result: pass_main_plus_workers0_1_3_expansion_reserved_worker2_streaming_no_qnn
+      correctness_gate_result: pass_both_f18b9abbe1487231_zero_expansion_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_dma_hmx_tiles_and_peak_plan_declared_worker_count_difference
+      selected_cell: w4f16_gate_up_three_context_control
+      repeat1_gate_up_change_percent: -1.798439090600612
+      repeat1_gate_up_paired_change_percent: -1.8650389962699188
+      repeat1_host_change_percent: -0.4062734642327315
+      repeat1_host_paired_change_percent: 0.1402607320651672
+      repeat10_gate_up_change_percent: -1.6599791439970812
+      repeat10_gate_up_paired_change_percent: -1.564766956837138
+      repeat10_host_change_percent: -1.763378349443001
+      repeat10_host_paired_change_percent: -1.7539211751226302
+      repeat10_gate_up_expand_change_percent: -10.102766798418973
+      repeat10_gate_up_expand_work_change_percent: -30.227627761660347
+      repeat10_gate_up_expand_pool_wait_change_percent: 982.3159784560144
+      repeat10_gate_up_hmx_wait_change_percent: -8.814013470284243
+      repeat10_gate_up_stream_join_wait_change_percent: 100.80421114197983
+      repeat10_runtime_setup_change_percent: 22.11155378486054
+      repeat10_runtime_teardown_change_percent: 21.967963386727686
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_exp0109_f16f16_exp0134_worker3_w4f16_exp0124_control_w4u8
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: bc00e67e0cd51c0d80cb7c911bf5a5dc12cb6f559b7998bd566da54b9caeb8cb
+      full_profiling_report_sha256: 2363e1d70bed4016c6eaff22e6762b2f7cc03edb9d1847b3f00cc3c74d0f49e4
+      evidence_sha256_ledger_sha256: 611135ac1bbf29c299b56c2407e223548b5a777f575c67ec991a396fcb00b81f
+      conclusion: actual_fourth_context_advances_expansion_and_repeat10_host_but_thread_management_and_join_tail_fail_paired_repeat1_host
+      reopen_condition: only_with_persistent_worker_lifetime_or_join_fusion_that_preserves_four_context_expansion_without_per_invocation_overhead
+      selected_baseline_changed: false
