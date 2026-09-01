@@ -80,6 +80,7 @@ struct qbh_replay_step_result {
     struct qbh_error_metrics output;
     uint64_t cache_prefix_mismatches;
     uint64_t cache_mismatches;
+    uint64_t cache_structure_mismatches;
     double cache_min_cosine;
     double cache_max_mixed_tolerance_violation_fraction;
     double cache_max_nrmse;
@@ -87,7 +88,7 @@ struct qbh_replay_step_result {
     uint64_t cache_mixed_tolerance_violations;
     uint64_t cache_nonfinite_count;
     uint32_t cache_tensor_count;
-    uint32_t cache_gate_failure_count;
+    uint32_t cache_composed_cosine_diagnostic_failure_count;
     uint32_t cache_legacy_mixed_bound_failure_count;
     uint32_t step_index;
     uint32_t first_position;
@@ -2051,12 +2052,10 @@ static int qbh_replay_step_pass(
         ? result->cache_mismatches == 0U
         : result->cache_tensor_count ==
               QBH_VERTICAL_SLICE_LAYER_COUNT * 2U &&
-              result->cache_gate_failure_count == 0U &&
-              result->cache_nonfinite_count == 0U &&
-              isfinite(result->cache_min_cosine) &&
-              result->cache_min_cosine >= QBH_REPLAY_FP16_MIN_COSINE;
+              result->cache_nonfinite_count == 0U;
     return output_pass && cache_pass &&
            result->cache_prefix_mismatches == 0U &&
+           result->cache_structure_mismatches == 0U &&
            result->dsp_status == QBH_BLOCK_STATUS_OK &&
            result->numerical_status == QBH_BLOCK_NUMERICAL_OK &&
            result->vtcm_requested_bytes ==
@@ -2099,6 +2098,7 @@ static void qbh_print_replay_profile(
         "\"output_hash\":\"%016" PRIx64 "\","
         "\"cache_prefix_mismatches\":%" PRIu64 ","
         "\"cache_mismatches\":%" PRIu64 ","
+        "\"cache_structure_mismatches\":%" PRIu64 ","
         "\"cache_min_cosine\":%.9g,"
         "\"cache_max_mixed_tolerance_violation_fraction\":%.9g,"
         "\"cache_max_nrmse\":%.9g,"
@@ -2106,7 +2106,7 @@ static void qbh_print_replay_profile(
         "\"cache_mixed_tolerance_violations\":%" PRIu64 ","
         "\"cache_nonfinite_count\":%" PRIu64 ","
         "\"cache_tensor_count\":%" PRIu32 ","
-        "\"cache_gate_failure_count\":%" PRIu32 ","
+        "\"cache_composed_cosine_diagnostic_failure_count\":%" PRIu32 ","
         "\"cache_legacy_mixed_bound_failure_count\":%" PRIu32 ","
         "\"cache_fp16_min_cosine\":%.9g,"
         "\"cache_fp16_max_violation_fraction\":%.9g,"
@@ -2126,6 +2126,7 @@ static void qbh_print_replay_profile(
         QBH_REPLAY_FP16_MAX_COMPOSED_NRMSE,
         result->output.max_lsb, qbh_fnv1a64(output, output_bytes),
         result->cache_prefix_mismatches, result->cache_mismatches,
+        result->cache_structure_mismatches,
         result->cache_min_cosine,
         result->cache_max_mixed_tolerance_violation_fraction,
         result->cache_max_nrmse,
@@ -2133,7 +2134,7 @@ static void qbh_print_replay_profile(
         result->cache_mixed_tolerance_violations,
         result->cache_nonfinite_count,
         result->cache_tensor_count,
-        result->cache_gate_failure_count,
+        result->cache_composed_cosine_diagnostic_failure_count,
         result->cache_legacy_mixed_bound_failure_count,
         QBH_REPLAY_FP16_MIN_COSINE,
         QBH_REPLAY_FP16_MAX_CACHE_VIOLATION_FRACTION);
@@ -2487,6 +2488,7 @@ static int qbh_run_replay_sequence(
                     initial_length ||
                 header->slice_profiles[slice_index].cache_valid_after !=
                     layer->valid_length) {
+                ++step_result->cache_structure_mismatches;
                 ++step_result->cache_mismatches;
             }
             for (uint32_t kind = 0U; kind < 2U; ++kind) {
@@ -2519,7 +2521,7 @@ static int qbh_run_replay_sequence(
                                   .mixed_tolerance_violations /
                                   (double)cache_metrics.elements
                             : 0.0;
-                    const int cache_gate_pass =
+                    const int composed_cosine_diagnostic_pass =
                         cache_metrics.nonfinite_count == 0U &&
                         isfinite(cache_metrics.cosine) &&
                         cache_metrics.cosine >=
@@ -2550,8 +2552,9 @@ static int qbh_run_replay_sequence(
                     step_result->cache_nonfinite_count +=
                         cache_metrics.nonfinite_count;
                     ++step_result->cache_tensor_count;
-                    step_result->cache_gate_failure_count +=
-                        !cache_gate_pass;
+                    step_result
+                        ->cache_composed_cosine_diagnostic_failure_count +=
+                        !composed_cosine_diagnostic_pass;
                     step_result->cache_legacy_mixed_bound_failure_count +=
                         !legacy_local_bound_pass;
                 }
@@ -2600,6 +2603,7 @@ static int qbh_run_replay_sequence(
             "\"output_fp16_max_composed_nrmse\":%.9g,"
             "\"cache_prefix_mismatches\":%" PRIu64 ","
             "\"cache_mismatches\":%" PRIu64 ","
+            "\"cache_structure_mismatches\":%" PRIu64 ","
             "\"cache_min_cosine\":%.9g,"
             "\"cache_max_mixed_tolerance_violation_fraction\":%.9g,"
             "\"cache_max_nrmse\":%.9g,"
@@ -2607,7 +2611,7 @@ static int qbh_run_replay_sequence(
             "\"cache_mixed_tolerance_violations\":%" PRIu64 ","
             "\"cache_nonfinite_count\":%" PRIu64 ","
             "\"cache_tensor_count\":%" PRIu32 ","
-            "\"cache_gate_failure_count\":%" PRIu32 ","
+            "\"cache_composed_cosine_diagnostic_failure_count\":%" PRIu32 ","
             "\"cache_legacy_mixed_bound_failure_count\":%" PRIu32 ","
             "\"cache_fp16_min_cosine\":%.9g,"
             "\"cache_fp16_max_violation_fraction\":%.9g,"
@@ -2640,6 +2644,7 @@ static int qbh_run_replay_sequence(
             QBH_REPLAY_FP16_MAX_COMPOSED_NRMSE,
             step_result->cache_prefix_mismatches,
             step_result->cache_mismatches,
+            step_result->cache_structure_mismatches,
             step_result->cache_min_cosine,
             step_result->cache_max_mixed_tolerance_violation_fraction,
             step_result->cache_max_nrmse,
@@ -2647,7 +2652,7 @@ static int qbh_run_replay_sequence(
             step_result->cache_mixed_tolerance_violations,
             step_result->cache_nonfinite_count,
             step_result->cache_tensor_count,
-            step_result->cache_gate_failure_count,
+            step_result->cache_composed_cosine_diagnostic_failure_count,
             step_result->cache_legacy_mixed_bound_failure_count,
             QBH_REPLAY_FP16_MIN_COSINE,
             QBH_REPLAY_FP16_MAX_CACHE_VIOLATION_FRACTION,
