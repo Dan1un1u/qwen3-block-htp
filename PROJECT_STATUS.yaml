@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0147
+  active_experiment: null
   next_experiment_number: 148
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,17 +27,46 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0146
-  last_completed_source_commit: 6dddc6b5279db04743a4c7d77b86a4eb78d8eb4e
+  last_completed_experiment: EXP-0147
+  last_completed_source_commit: 8052d42c347667ddd37a9555486d918569960b1d
   provisional_source_parent: EXP-0109_EXP-0140_EXP-0144_selected_baselines
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: static_source_capability_audit
+  active_experiment_stage: null
   active_experiment_evidence: null
-  active_experiment_gate: pending
-  active_recipe_specialization: cross_recipe_shape_generalization
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0146/20260901T064149Z_6dddc6b5279d_formal'
+  active_experiment_gate: null
+  active_recipe_specialization: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0147'
+  latest_multi_m_kv_cache_characterization:
+    id: EXP-0147
+    source_branch: codex/exp-0147-multi-m-kv-cache-scan
+    source_head: 8052d42c347667ddd37a9555486d918569960b1d
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0147'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0147'
+    evidence_validity: valid
+    execution_state: completed
+    local_gate: fail
+    adoption_status: not_applicable
+    selected_baseline_changed: false
+    experiment_role: selected_baseline_shape_generalization_and_characterization
+    recipes: EXP0109_F16F16_EXP0140_W4F16_EXP0144_W4U8
+    prefill_rows: [16, 32, 64, 128]
+    decode_past_lengths: [64, 256, 1024, 4096]
+    formal_reproducibility_gate: pass_all_24_cells_zero_output_and_cache_mismatch
+    physical_gate: pass_all_24_cells_exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner
+    independent_correctness_gate: fail_W4F16_aggregate_max_abs_0p125_exceeds_immutable_0p0625_threshold_at_selected_large_shapes_despite_cosine_at_least_0p999999
+    prefill_m16_us: {f16f16: 2580.719, w4f16: 2543.708, w4u8: 1676.365}
+    prefill_m32_us: {f16f16: 2818.609, w4f16: 3116.391, w4u8: 1704.839}
+    prefill_m64_us: {f16f16: 3311.641, w4f16: 4254.787, w4u8: 1812.234}
+    prefill_m128_us: {f16f16: 27754.214, w4f16: 29397.318, w4u8: 37992.495}
+    decode_l64_us: {f16f16: 3349.026, w4f16: 3060.667, w4u8: 12420.609}
+    decode_l256_us: {f16f16: 4095.875, w4f16: 3744.031, w4u8: 44168.859}
+    decode_l1024_us: {f16f16: 6956.427, w4f16: 6581.630, w4u8: 170169.172}
+    decode_l4096_us: {f16f16: 18608.646, w4f16: 18590.276, w4u8: 674402.948}
+    conclusion: selected_W4U8_schedule_generalizes_well_only_through_M64_then_cache_backed_generalized_Attention_dominates_M128_and_decode_while_W4F16_cache_export_exposes_a_separate_carrier_boundary_cost
+    next_priority: cache_native_generalized_Attention_starting_with_decode_then_reuse_for_M128_before_M1_projection_tail_specialization
+    reopen_condition: not_applicable_characterization_complete
   latest_w4f16_qkv_cross_projection_ring_candidate:
     id: EXP-0146
     source_branch: codex/exp-0146-w4f16-qkv-cross-projection-ring

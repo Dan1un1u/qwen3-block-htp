@@ -755,3 +755,38 @@ Longer HVX tasks increase pair-slot and HMX ready waits, so Gate/Up and complete
 Host wall regress.
 _Avoid_: smaller table implies faster kernel, gather count as the sole latency
 proxy, accepted optimization, reopening without lower total HVX latency
+
+**Selected-Baseline Shape and KV-Cache Characterization**:
+EXP-0147's completed comparison of selected F16F16 EXP-0109, W4F16 EXP-0140
+and W4U8 EXP-0144 across prefill `M={16,32,64,128}` and decode `M=1` with
+`past={64,256,1024,4096}`.  It preserves the selected M64 kernel identities and
+adds only shape mechanics plus an explicit persistent cache boundary.  All 24
+formal cells pass reproducibility and the physical contract; the aggregate
+local gate remains failed because several large-shape W4F16 independent audits
+reach one FP16 ULP (`max_abs=0.125`) above the immutable 0.0625 threshold.
+_Avoid_: new baseline, recipe retuning, proof of teacher-level quantization
+accuracy, or describing formal device reproducibility as an independent
+mathematical proof
+
+**Persistent KV-Cache Native Boundary**:
+The declared K/V state that survives one block invocation and may reside in
+DDR.  Its traffic is reported separately from forbidden intermediate DDR.
+EXP-0147 uses a logical head-major representation for characterization, but
+shows that serial export from HMX-native K and grouped-HMX V is especially
+expensive for W4F16.  A future cache-native representation must be directly
+consumable by generalized Attention rather than repeatedly repacked.
+_Avoid_: relabeling scratch as cache, assuming half-sized U8 cache traffic is
+sufficient for speedup, or treating the current head-major carrier as fixed
+
+**Generalized Attention Cliff**:
+The EXP-0147 transition outside the selected 64-token Attention schedule.  At
+W4U8 M128, generalized Attention consumes about 90.5% of block wall time; in
+decode its share grows from about 88.8% at L64 to 99.8% at L4096.  The cliff is
+caused by cache-carrier conversion, repeated scans, synchronization and a
+padded 64-row HMX query carrier with one useful decode row, not by projection
+math or KV-cache byte volume alone.  The next approved hypothesis has not yet
+been registered: first compare cache-native M1 HVX dot-product and padded-HMX
+paths with online tile-wise Softmax, then reuse the winning substrate for M128.
+_Avoid_: projection-tail optimization as the immediate priority, M64 schedule
+retuning, full score/probability DDR tensors, or mixing quantization-fidelity
+repair into the physical generalization experiment

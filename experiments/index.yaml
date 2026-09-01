@@ -14,14 +14,15 @@ experiments:
       - selected_f16f16_exp0109_shape_family
       - selected_w4f16_exp0140_shape_family
       - selected_w4u8_exp0144_shape_family
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: not_applicable
     evidence_profile: real-qwen3-layer14-multi-m-prefill-and-kv-cache-decode
     source_branches:
       - codex/exp-0147-multi-m-kv-cache-scan
-    source_commits: []
+    source_commits:
+      - 8052d42c347667ddd37a9555486d918569960b1d
     record: docs/experiments/EXP-0147.md
     approval_ref: 'User message 2026-09-01: 开始（针对建议的 EXP-0147 多 M 形状与 KV-cache 长度扫描）'
     runtime:
@@ -29,6 +30,7 @@ experiments:
       source_branch: codex/exp-0147-multi-m-kv-cache-scan
       approved_on: '2026-09-01'
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiments: EXP-0109_EXP-0140_EXP-0144
       f16f16_source_commit: 42e2a33012929ccbb05e8c2741124b6fd539552c
@@ -54,6 +56,15 @@ experiments:
       stop_conditions: selected_M64_path_not_preservable_or_KV_cache_requires_intermediate_DDR_spill_or_shape_requires_recipe_math_change
       completion_gate: static_capability_audit_then_correctness_then_physical_gate_then_repeat1_repeat10_scan_PC027_PC028_no_baseline_promotion
       selected_baseline_changed: false
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0147'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0147'
+      result_report: 'D:/llm_exp/results/qwen3-block-htp/exp0147/EXP-0147_RESULTS.md'
+      formal_reproducibility_result: pass_all_24_cells_zero_output_and_cache_mismatch
+      physical_result: pass_all_24_cells_exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner
+      independent_correctness_result: fail_W4F16_aggregate_max_abs_0p125_exceeds_immutable_0p0625_threshold_at_M128_and_decode_L256_L1024_L4096_and_prefill_V_cache_despite_one_FP16_ULP_and_cosine_at_least_0p999999
+      performance_characterization: W4U8_is_fastest_through_M64_but_generalized_cache_backed_Attention_causes_M128_and_decode_cliffs_while_W4F16_exposes_separate_head_major_cache_export_cost
+      next_priority: cache_native_generalized_Attention_start_with_decode_then_extend_to_M128_before_projection_tail_work
+      baseline_promotion: none_characterization_only
   - id: EXP-0146
     slug: w4f16-qkv-cross-projection-ring
     title: W4F16 batch-two cross-projection QKV ring
