@@ -6,6 +6,50 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0139
+    slug: w4u8-qkv-main-prep-assist
+    title: W4U8 QKV main-context prep assist
+    parent: EXP-0124
+    variants:
+      - exp0120_sequential_qkv_control
+      - exp0124_ring3_control
+      - w4u8_ring3_main_prep_assist_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-qkv-main-context-prep-assist
+    source_branches:
+      - codex/exp-0139-w4u8-qkv-main-prep-assist
+    source_commits: []
+    record: docs/experiments/EXP-0139.md
+    approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently without interruption'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0139-w4u8-qkv-main-prep-assist
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0124
+      source_parent_commit: 95fadff5930d9081678ad99bb62ef84849ee1897
+      logical_w4u8_parent: EXP0120_ring16_plus_EXP0124_QKV_ring3
+      recipe_scope: W4U8_QKV_main_context_QK_prep_assist_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      prior_positive_boundary: EXP0124_ring3_reduces_repeat10_QKV_4p852_percent_and_Host_1p180_percent_but_fails_repeat1_ordinary_Host
+      hypothesis: main_context_can_close_QK_prep_tail_after_DMA_feed_without_reducing_three_worker_V_expansion_capacity
+      implementation_boundary: sequential_control_ring3_control_or_ring3_main_prep_assist_same_ring_DMA_expand_pool_HMX_math_and_output
+      excluded_changes: no_weights_qparams_math_ring_slots_DMA_order_expand_workers_prep_workers_HMX_commands_attention_MLP_residual_public_DDR_FastRPC_or_QNN_changes
+      static_gate: assist_after_final_DMA_publish_before_HMX_wait_and_no_pool_worker_role_change
+      correctness_gate: all_cells_byte_exact_output_69f22eeb035e5ec5_all_stage_audits_zero_mismatch_zero_max_lsb
+      physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_identical_weight_DMA_HMX_tiles_qparams_carriers_and_peak_plan
+      dynamic_gate: assisted_main_context_executes_at_least_one_QK_prep_task_per_block_and_controls_execute_zero
+      speed_gate: assisted_ring_QKV_plus_QK_prep_and_complete_Host_strictly_improve_over_both_controls_in_ordinary_and_paired_repeat1_and_repeat10
+      completion_gate: bounded_smoke_then_five_rotated_formal_rounds_PC027_PC028_and_no_automatic_baseline_promotion
   - id: EXP-0001
     slug: fastrpc-bringup
     title: FastRPC U8 vector bring-up
