@@ -68,7 +68,7 @@ _Static_assert(
     "Q/K rsqrt scratch must follow numerical-audit scratch");
 _Static_assert(
     QBH_QK_PAIR_RSQRT_SCRATCH_OFFSET +
-            QBH_BLOCK_W4F16_HVX_WORKERS *
+            QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS *
                 QBH_QK_PAIR_RSQRT_SCRATCH_BYTES <=
         QBH_QK_ROPE_SF32_CACHE_OFFSET,
     "Q/K rsqrt scratch must not overlap shared RoPE cache");
@@ -8550,8 +8550,11 @@ static void qbh_attention_u8_qk_prep_pool_run_group_tasks(
             const uint32_t audit_slice_bytes =
                 QBH_ATTN_U8_K_WEIGHT_BYTES +
                 QBH_ATTN_U8_QK_BIAS_BYTES;
-            uint8_t *reference = buffers->attention_projection +
-                (size_t)job->worker_index * audit_slice_bytes;
+            uint8_t *reference =
+                job->worker_index == pool->worker_count
+                    ? buffers->scores
+                    : buffers->attention_projection +
+                          (size_t)job->worker_index * audit_slice_bytes;
             int8_t *reference_weight = (int8_t *)reference;
             uint32_t *reference_bias = (uint32_t *)(
                 reference + QBH_ATTN_U8_K_WEIGHT_BYTES);
@@ -8647,8 +8650,12 @@ static void qbh_attention_u8_qk_prep_pool_run_head_tasks(
                 const uint32_t audit_slice_bytes =
                     QBH_ATTN_U8_K_WEIGHT_BYTES +
                     QBH_ATTN_U8_QK_BIAS_BYTES;
-                uint8_t *reference = buffers->attention_projection +
-                    (size_t)job->worker_index * audit_slice_bytes;
+                uint8_t *reference =
+                    job->worker_index == pool->worker_count
+                        ? buffers->scores
+                        : buffers->attention_projection +
+                              (size_t)job->worker_index *
+                                  audit_slice_bytes;
                 int8_t *reference_weight = (int8_t *)reference;
                 uint32_t *reference_bias = (uint32_t *)(
                     reference + QBH_ATTN_U8_K_WEIGHT_BYTES);
@@ -8812,8 +8819,12 @@ static void qbh_attention_u8_qk_prep_pool_run_head_pair_tasks(
                 const uint32_t audit_slice_bytes =
                     QBH_ATTN_U8_K_WEIGHT_BYTES +
                     QBH_ATTN_U8_QK_BIAS_BYTES;
-                uint8_t *reference = buffers->attention_projection +
-                    (size_t)job->worker_index * audit_slice_bytes;
+                uint8_t *reference =
+                    job->worker_index == pool->worker_count
+                        ? buffers->scores
+                        : buffers->attention_projection +
+                              (size_t)job->worker_index *
+                                  audit_slice_bytes;
                 int8_t *reference_weight = (int8_t *)reference;
                 uint32_t *reference_bias = (uint32_t *)(
                     reference + QBH_ATTN_U8_K_WEIGHT_BYTES);
