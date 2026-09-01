@@ -782,6 +782,70 @@ static int qbh_projection_shape_valid(uint32_t index,
            desc->k == expected_k[index] && desc->n == expected_n[index];
 }
 
+static uint32_t qbh_scan_physical_chunks(
+    const struct qbh_block_header *header) {
+    if (header->scan_mode == QBH_BLOCK_SCAN_DISABLED) {
+        return 1U;
+    }
+    return (header->logical_m + QBH_BLOCK_M - 1U) / QBH_BLOCK_M;
+}
+
+static int qbh_scan_request_valid(const struct qbh_block_header *header,
+                                  uint32_t shared_bytes,
+                                  uint32_t element_bytes) {
+    uint32_t chunks;
+    uint32_t tensor_bytes;
+    uint32_t cache_bytes;
+
+    if (header->scan_mode == QBH_BLOCK_SCAN_DISABLED) {
+        return header->logical_m == QBH_BLOCK_M &&
+               header->initial_kv_length == 0U &&
+               header->kv_cache_capacity == 0U &&
+               header->kv_cache_k_offset == 0U &&
+               header->kv_cache_k_bytes == 0U &&
+               header->kv_cache_v_offset == 0U &&
+               header->kv_cache_v_bytes == 0U;
+    }
+    if (header->scan_mode == QBH_BLOCK_SCAN_PREFILL) {
+        if ((header->logical_m != 16U && header->logical_m != 32U &&
+             header->logical_m != 64U && header->logical_m != 128U) ||
+            header->initial_kv_length != 0U) {
+            return 0;
+        }
+    } else if (header->scan_mode == QBH_BLOCK_SCAN_DECODE) {
+        if (header->logical_m != 1U ||
+            (header->initial_kv_length != 64U &&
+             header->initial_kv_length != 256U &&
+             header->initial_kv_length != 1024U &&
+             header->initial_kv_length != 4096U)) {
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+    if (header->initial_kv_length + header->logical_m >
+            QBH_BLOCK_SCAN_MAX_KV ||
+        header->kv_cache_capacity <
+            header->initial_kv_length + header->logical_m ||
+        header->kv_cache_capacity > QBH_BLOCK_SCAN_MAX_KV) {
+        return 0;
+    }
+    chunks = qbh_scan_physical_chunks(header);
+    tensor_bytes = chunks * QBH_BLOCK_M * QBH_BLOCK_HIDDEN *
+                   element_bytes;
+    cache_bytes = header->kv_cache_capacity * QBH_BLOCK_KV_HIDDEN *
+                  element_bytes;
+    return header->input_bytes == tensor_bytes &&
+           header->output_bytes == tensor_bytes &&
+           header->reference_bytes == tensor_bytes &&
+           header->kv_cache_k_bytes == cache_bytes &&
+           header->kv_cache_v_bytes == cache_bytes &&
+           qbh_range_valid(header->kv_cache_k_offset,
+                           header->kv_cache_k_bytes, shared_bytes) &&
+           qbh_range_valid(header->kv_cache_v_offset,
+                           header->kv_cache_v_bytes, shared_bytes);
+}
+
 static int qbh_header_valid(const struct qbh_block_header *header,
                             uint32_t shared_bytes) {
     uint32_t element_bytes;
@@ -1131,10 +1195,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         return 0;
     }
     element_bytes = header->variant == QBH_BLOCK_W4U8 ? 1U : 2U;
-    if (header->input_bytes !=
-            QBH_BLOCK_M * QBH_BLOCK_HIDDEN * element_bytes ||
-        header->output_bytes != header->input_bytes ||
-        header->reference_bytes != header->output_bytes ||
+    if (!qbh_scan_request_valid(header, shared_bytes, element_bytes) ||
         header->qparam_bytes !=
             QBH_BLOCK_QPARAM_COUNT * QBH_BLOCK_QPARAM_RECORD_BYTES ||
         !qbh_range_valid(header->input_offset, header->input_bytes,
@@ -1154,7 +1215,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->k_norm_weight_bytes !=
             QBH_BLOCK_HEAD_DIM * sizeof(uint16_t) ||
         header->rope_cos_bytes !=
-            QBH_BLOCK_M * QBH_BLOCK_HEAD_DIM * sizeof(uint16_t) ||
+            qbh_scan_physical_chunks(header) * QBH_BLOCK_M *
+                QBH_BLOCK_HEAD_DIM * sizeof(uint16_t) ||
         header->rope_sin_bytes != header->rope_cos_bytes) {
         return 0;
     }
@@ -1714,7 +1776,7 @@ static void qbh_hmx_worker_main(void *opaque) {
                    worker->m_tiles <= QBH_ATTENTION_Q_HEADS_PER_GROUP &&
                    worker->n_tiles >= 1U &&
                    worker->n_tiles <=
-                       QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES) {
+                       QBH_BLOCK_SCAN_MAX_KV_TILES) {
             for (uint32_t m_tile = 0U;
                  m_tile < worker->m_tiles; ++m_tile) {
                 const uint8_t *activation =
@@ -9816,6 +9878,8 @@ static void qbh_silu_multiply_u8(
 static int qbh_stage_metadata(struct qbh_block_header *header,
                               const uint8_t *shared,
                               struct qbh_block_buffers *buffers) {
+    const uint32_t rope_chunk_bytes =
+        QBH_BLOCK_M * QBH_BLOCK_HEAD_DIM * sizeof(uint16_t);
     const uint32_t offsets[] = {
         header->input_norm_weight_offset,
         header->post_norm_weight_offset,
@@ -9829,8 +9893,8 @@ static int qbh_stage_metadata(struct qbh_block_header *header,
         header->post_norm_weight_bytes,
         header->q_norm_weight_bytes,
         header->k_norm_weight_bytes,
-        header->rope_cos_bytes,
-        header->rope_sin_bytes,
+        rope_chunk_bytes,
+        rope_chunk_bytes,
     };
     void *destinations[] = {
         buffers->input_norm_weight,
@@ -9923,6 +9987,39 @@ static int qbh_stage_metadata(struct qbh_block_header *header,
         }
     }
     header->metadata_stage_ticks += HAP_perf_get_qtimer_count() - start;
+    return 0;
+}
+
+static int qbh_scan_stage_rope_chunk(
+    struct qbh_block_header *header, const uint8_t *shared,
+    struct qbh_block_buffers *buffers, uint32_t chunk) {
+    const uint32_t bytes =
+        QBH_BLOCK_M * QBH_BLOCK_HEAD_DIM * sizeof(uint16_t);
+    const uint32_t chunks = qbh_scan_physical_chunks(header);
+    uint64_t start;
+
+    if (header->scan_mode == QBH_BLOCK_SCAN_DISABLED ||
+        chunks == 1U) {
+        return 0;
+    }
+    if (chunk >= chunks) {
+        return -1;
+    }
+    start = HAP_perf_get_qtimer_count();
+    if (qbh_dma_copy(
+            header, buffers->rope_cos,
+            shared + header->rope_cos_offset + (size_t)chunk * bytes,
+            bytes, 1U) != 0 ||
+        qbh_dma_copy(
+            header, buffers->rope_sin,
+            shared + header->rope_sin_offset + (size_t)chunk * bytes,
+            bytes, 1U) != 0) {
+        return -1;
+    }
+    header->boundary_ddr_read_bytes += 2U * bytes;
+    header->boundary_dma_descriptor_count += 2U;
+    header->metadata_stage_ticks +=
+        HAP_perf_get_qtimer_count() - start;
     return 0;
 }
 
@@ -10268,11 +10365,226 @@ static void qbh_record_f16_nonfinite(struct qbh_block_header *header,
     }
 }
 
+static int qbh_scan_cache_dma(struct qbh_block_header *header,
+                              void *destination, const void *source,
+                              uint32_t bytes, uint32_t ddr_to_vtcm) {
+    const uint64_t weight_ticks_before = header->weight_dma_ticks;
+    const uint64_t start = HAP_perf_get_qtimer_count();
+    int result = qbh_dma_copy(
+        header, destination, source, bytes, ddr_to_vtcm);
+    const uint64_t elapsed = HAP_perf_get_qtimer_count() - start;
+
+    /* Cache is a declared boundary, not projection weight traffic. */
+    header->weight_dma_ticks = weight_ticks_before;
+    if (result != 0) {
+        return result;
+    }
+    ++header->scan_cache_dma_descriptor_count;
+    if (ddr_to_vtcm != 0U) {
+        header->scan_cache_ddr_read_bytes += bytes;
+        header->scan_cache_stage_ticks += elapsed;
+    } else {
+        header->scan_cache_ddr_write_bytes += bytes;
+        header->scan_cache_append_ticks += elapsed;
+    }
+    return 0;
+}
+
+static int qbh_scan_append_u8_kv(
+    struct qbh_block_header *header, uint8_t *shared,
+    struct qbh_block_buffers *buffers, uint32_t logical_rows,
+    uint32_t past_tokens) {
+    uint8_t *row_scratch = buffers->attention_projection;
+    const uint32_t append_bytes =
+        logical_rows * QBH_BLOCK_HEAD_DIM;
+    const uint32_t head_stride =
+        header->kv_cache_capacity * QBH_BLOCK_HEAD_DIM;
+
+    for (uint32_t head = 0U; head < QBH_BLOCK_KV_HEADS; ++head) {
+        const uint8_t *k_head = buffers->k +
+            (size_t)head * QBH_ATTENTION_HEAD_DIM_TILES *
+                QBH_HMX_ACTIVATION_BYTES;
+        const uint8_t *v_head = buffers->v +
+            (size_t)head * QBH_ATTENTION_HEAD_DIM_TILES *
+                QBH_HMX_ACTIVATION_BYTES;
+        uint8_t *k_destination = shared + header->kv_cache_k_offset +
+            (size_t)head * head_stride +
+            (size_t)past_tokens * QBH_BLOCK_HEAD_DIM;
+        uint8_t *v_destination = shared + header->kv_cache_v_offset +
+            (size_t)head * head_stride +
+            (size_t)past_tokens * QBH_BLOCK_HEAD_DIM;
+
+        qbh_attention_u8_native_head_to_row_major(
+            k_head, row_scratch, logical_rows);
+        if (qbh_scan_cache_dma(
+                header, k_destination, row_scratch,
+                append_bytes, 0U) != 0) {
+            return -1;
+        }
+        qbh_attention_u8_native_head_to_row_major(
+            v_head, row_scratch, logical_rows);
+        if (qbh_scan_cache_dma(
+                header, v_destination, row_scratch,
+                append_bytes, 0U) != 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+static int qbh_scan_u8_attention(
+    struct qbh_block_header *header, uint8_t *shared,
+    struct qbh_block_buffers *buffers,
+    struct qbh_block_hmx_worker *worker,
+    uint32_t logical_rows, uint32_t past_tokens) {
+    const uint32_t valid_tokens = past_tokens + logical_rows;
+    const uint32_t padded_tokens = qbh_align_up(
+        valid_tokens, QBH_HMX_INPUT_CHANNELS);
+    const uint32_t kv_tiles =
+        padded_tokens / QBH_HMX_INPUT_CHANNELS;
+    const uint32_t plane_bytes =
+        padded_tokens * QBH_BLOCK_HEAD_DIM;
+    const uint32_t qk_bias_bytes =
+        kv_tiles * QBH_HMX_BIAS_BYTES;
+    const uint32_t required_bytes =
+        3U * plane_bytes + qk_bias_bytes +
+        QBH_ATTENTION_HEAD_DIM_TILES * QBH_HMX_BIAS_BYTES;
+    const uint32_t overlay_capacity =
+        (uint32_t)(buffers->compressed_weight - buffers->scores);
+    uint8_t *plane_a = buffers->scores;
+    int8_t *weight = (int8_t *)(plane_a + plane_bytes);
+    uint8_t *plane_c = plane_a + 2U * plane_bytes;
+    uint32_t *qk_bias = (uint32_t *)(plane_a + 3U * plane_bytes);
+    uint32_t *av_bias = (uint32_t *)((uint8_t *)qk_bias + qk_bias_bytes);
+    const uint32_t cache_head_stride =
+        header->kv_cache_capacity * QBH_BLOCK_HEAD_DIM;
+    const uint64_t dynamic_start = HAP_perf_get_qtimer_count();
+
+    header->scan_attention_overlay_capacity_bytes = overlay_capacity;
+    header->scan_attention_overlay_required_bytes = required_bytes;
+    header->scan_total_kv_length = valid_tokens;
+    header->scan_padded_kv_length = padded_tokens;
+    if (required_bytes > overlay_capacity ||
+        padded_tokens >
+            QBH_BLOCK_SCAN_MAX_KV_TILES * QBH_HMX_INPUT_CHANNELS) {
+        return -1;
+    }
+
+    for (uint32_t group = 0U; group < QBH_BLOCK_KV_HEADS; ++group) {
+        const struct qbh_attention_config *config =
+            &buffers->attention_configs[group];
+        const uint32_t first_q_head =
+            group * QBH_ATTENTION_Q_HEADS_PER_GROUP;
+        uint8_t *q_group = buffers->q +
+            (size_t)first_q_head * QBH_ATTENTION_HEAD_DIM_TILES *
+                QBH_HMX_ACTIVATION_BYTES;
+        const uint8_t *cache_k =
+            shared + header->kv_cache_k_offset +
+            (size_t)group * cache_head_stride;
+        const uint8_t *cache_v =
+            shared + header->kv_cache_v_offset +
+            (size_t)group * cache_head_stride;
+        struct qbh_attention_u8_telemetry telemetry;
+        uint64_t start;
+
+        memset(&telemetry, 0, sizeof(telemetry));
+        memset(plane_a, 0, plane_bytes);
+        if (qbh_scan_cache_dma(
+                header, plane_a, cache_k,
+                valid_tokens * QBH_BLOCK_HEAD_DIM, 1U) != 0) {
+            return -1;
+        }
+        start = HAP_perf_get_qtimer_count();
+        qbh_attention_u8_pack_k_row_major(
+            plane_a, valid_tokens, padded_tokens,
+            config, weight, qk_bias);
+        header->u8_attention_k_pack_ticks +=
+            HAP_perf_get_qtimer_count() - start;
+        start = HAP_perf_get_qtimer_count();
+        if (qbh_hmx_submit(
+                worker, QBH_BLOCK_HMX_U8S8,
+                q_group, weight, qk_bias, plane_c,
+                QBH_ATTENTION_Q_HEADS_PER_GROUP,
+                QBH_ATTENTION_HEAD_DIM_TILES, kv_tiles) != 0) {
+            return -1;
+        }
+        header->u8_attention_qk_hmx_ticks +=
+            HAP_perf_get_qtimer_count() - start;
+        start = HAP_perf_get_qtimer_count();
+        qbh_attention_u8_requant_softmax_dynamic(
+            plane_c, plane_a, logical_rows, past_tokens,
+            valid_tokens, padded_tokens, config, &telemetry);
+        header->u8_attention_softmax_ticks +=
+            HAP_perf_get_qtimer_count() - start;
+
+        /* Scores are dead after Softmax, so plane C becomes V staging. */
+        memset(plane_c, 0, plane_bytes);
+        if (qbh_scan_cache_dma(
+                header, plane_c, cache_v,
+                valid_tokens * QBH_BLOCK_HEAD_DIM, 1U) != 0) {
+            return -1;
+        }
+        start = HAP_perf_get_qtimer_count();
+        qbh_attention_u8_pack_v_row_major(
+            plane_c, valid_tokens, padded_tokens,
+            config, weight, av_bias,
+            &telemetry.v_recenter_saturation_count);
+        header->u8_attention_v_pack_ticks +=
+            HAP_perf_get_qtimer_count() - start;
+        start = HAP_perf_get_qtimer_count();
+        if (qbh_hmx_submit(
+                worker, QBH_BLOCK_HMX_U8S8,
+                plane_a, weight, av_bias, q_group,
+                QBH_ATTENTION_Q_HEADS_PER_GROUP,
+                kv_tiles, QBH_ATTENTION_HEAD_DIM_TILES) != 0) {
+            return -1;
+        }
+        qbh_attention_u8_requant_av(q_group, config);
+        header->u8_attention_av_hmx_ticks +=
+            HAP_perf_get_qtimer_count() - start;
+        header->u8_attention_score_saturation_count +=
+            telemetry.score_saturation_count;
+        header->u8_attention_v_recenter_saturation_count +=
+            telemetry.v_recenter_saturation_count;
+        header->u8_attention_probability_mask_violation_count +=
+            telemetry.probability_mask_violation_count;
+        if (header->u8_attention_probability_row_sum_min == 0U ||
+            telemetry.probability_row_sum_min <
+                header->u8_attention_probability_row_sum_min) {
+            header->u8_attention_probability_row_sum_min =
+                telemetry.probability_row_sum_min;
+        }
+        if (telemetry.probability_row_sum_max >
+            header->u8_attention_probability_row_sum_max) {
+            header->u8_attention_probability_row_sum_max =
+                telemetry.probability_row_sum_max;
+        }
+    }
+    header->u8_attention_group_count += QBH_BLOCK_KV_HEADS;
+    header->u8_attention_qk_execution_count +=
+        QBH_BLOCK_KV_HEADS * QBH_ATTENTION_Q_HEADS_PER_GROUP * kv_tiles;
+    header->u8_attention_av_execution_count +=
+        QBH_BLOCK_KV_HEADS * QBH_ATTENTION_Q_HEADS_PER_GROUP *
+        QBH_ATTENTION_HEAD_DIM_TILES;
+    header->hmx_command_count += 2U * QBH_BLOCK_KV_HEADS;
+    header->hmx_u8s8_tile_pair_count +=
+        2U * QBH_BLOCK_KV_HEADS * QBH_ATTENTION_Q_HEADS_PER_GROUP *
+        QBH_ATTENTION_HEAD_DIM_TILES * kv_tiles;
+    header->u8_attention_direct_o_tile_count +=
+        QBH_BLOCK_HEADS * QBH_ATTENTION_HEAD_DIM_TILES;
+    header->scan_dynamic_attention_ticks +=
+        HAP_perf_get_qtimer_count() - dynamic_start;
+    return 0;
+}
+
 static int qbh_run_one_block(struct qbh_block_header *header,
-                             const uint8_t *shared,
+                             uint8_t *shared,
                              struct qbh_block_buffers *buffers,
                              struct qbh_block_hmx_worker *worker,
-                             struct qbh_block_w4f16_pool *w4f16_pool) {
+                             struct qbh_block_w4f16_pool *w4f16_pool,
+                             uint32_t input_offset,
+                             uint32_t logical_rows,
+                             uint32_t past_tokens) {
     uint32_t hidden_elements = QBH_BLOCK_M * QBH_BLOCK_HIDDEN;
     uint32_t intermediate_elements =
         QBH_BLOCK_M * QBH_BLOCK_INTERMEDIATE;
@@ -10318,6 +10630,10 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     uint32_t u8_integer_attention_enabled =
         qbh_attention_u8_enabled(
             header->attention_pipeline_mode);
+    uint32_t scan_enabled =
+        header->scan_mode != QBH_BLOCK_SCAN_DISABLED;
+    uint32_t scan_dynamic_attention =
+        scan_enabled != 0U && past_tokens != 0U;
     uint32_t u8_qkv_overlap_enabled =
         qbh_attention_u8_qkv_overlap_enabled(
             header->attention_pipeline_mode);
@@ -10391,12 +10707,16 @@ static int qbh_run_one_block(struct qbh_block_header *header,
 
     start = HAP_perf_get_qtimer_count();
     if (qbh_dma_copy(header, buffers->residual,
-                     shared + header->input_offset,
-                     header->input_bytes, 1U) != 0) {
+                     shared + input_offset,
+                     QBH_BLOCK_M * QBH_BLOCK_HIDDEN *
+                         (header->variant == QBH_BLOCK_W4U8 ? 1U : 2U),
+                     1U) != 0) {
         header->input_dma_status = -1;
         return QBH_BLOCK_STATUS_INPUT_DMA_FAILED;
     }
-    header->boundary_ddr_read_bytes += header->input_bytes;
+    header->boundary_ddr_read_bytes +=
+        QBH_BLOCK_M * QBH_BLOCK_HIDDEN *
+        (header->variant == QBH_BLOCK_W4U8 ? 1U : 2U);
     ++header->boundary_dma_descriptor_count;
     header->input_stage_ticks += HAP_perf_get_qtimer_count() - start;
 
@@ -10793,23 +11113,39 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     }
     header->qk_norm_rope_ticks += HAP_perf_get_qtimer_count() - start;
 
+    if (scan_enabled != 0U) {
+        if (header->variant != QBH_BLOCK_W4U8 ||
+            u8_integer_attention_enabled == 0U ||
+            qbh_scan_append_u8_kv(
+                header, shared, buffers, logical_rows,
+                past_tokens) != 0) {
+            return QBH_BLOCK_STATUS_ATTENTION_FAILED;
+        }
+    }
+
     if (header->attribution_enabled != 0U) {
         attention_attributed_before =
             qbh_attention_attributed_ticks(header);
     }
     start = HAP_perf_get_qtimer_count();
     if ((u8_integer_attention_enabled != 0U
-             ? (w4f16_pool != NULL
-                    ? qbh_hvx_pool_u8_attention(
-                          header, w4f16_pool, buffers, worker)
-                    : qbh_attention_u8_integer(
-                          header, buffers, worker))
+             ? (scan_dynamic_attention != 0U
+                    ? qbh_scan_u8_attention(
+                          header, shared, buffers, worker,
+                          logical_rows, past_tokens)
+                    : (w4f16_pool != NULL
+                           ? qbh_hvx_pool_u8_attention(
+                                 header, w4f16_pool, buffers, worker)
+                           : qbh_attention_u8_integer(
+                                 header, buffers, worker)))
              : qbh_attention_f16(
                    header, buffers, worker, w4f16_pool,
                    softmax_check)) != 0) {
         return QBH_BLOCK_STATUS_ATTENTION_FAILED;
     }
     if (u8_integer_attention_enabled != 0U &&
+        scan_dynamic_attention == 0U &&
+        header->scan_mode == QBH_BLOCK_SCAN_DISABLED &&
         header->numerical_audit_enabled != 0U) {
         if (header->numerical_status ==
                 QBH_BLOCK_NUMERICAL_UNCHECKED &&
@@ -10879,6 +11215,23 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             header->u8_attention_audit_ddr_write_bytes += offset;
         }
     }
+    if (u8_integer_attention_enabled != 0U &&
+        scan_dynamic_attention != 0U &&
+        header->numerical_audit_enabled != 0U) {
+        uint8_t *audit = shared +
+            header->u8_attention_audit_output_offset;
+        const uint32_t av_offset =
+            QBH_BLOCK_U8_ATTENTION_Q_BYTES +
+            2U * QBH_BLOCK_U8_ATTENTION_KV_BYTES +
+            2U * QBH_BLOCK_U8_ATTENTION_SCORE_BYTES;
+        if (qbh_dma_copy(
+                header, audit + av_offset, buffers->q,
+                QBH_BLOCK_U8_ATTENTION_AV_BYTES, 0U) != 0) {
+            return QBH_BLOCK_STATUS_ATTENTION_FAILED;
+        }
+        header->u8_attention_audit_ddr_write_bytes +=
+            QBH_BLOCK_U8_ATTENTION_AV_BYTES;
+    }
     if (crouton_qkv_enabled != 0U) {
         header->crouton_av_weight_count += QBH_BLOCK_KV_HEADS;
     }
@@ -10920,8 +11273,11 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     if (qbh_run_projection(
             header, shared, &header->projections[QBH_BLOCK_PROJ_O],
             buffers, worker, w4f16_pool,
-            crouton_av_o_enabled != 0U
-                ? buffers->hmx_activation : buffers->attention_concat,
+            scan_dynamic_attention != 0U
+                ? buffers->q
+                : (crouton_av_o_enabled != 0U
+                       ? buffers->hmx_activation
+                       : buffers->attention_concat),
             buffers->attention_projection,
             crouton_av_o_enabled,
             &header->projections[QBH_BLOCK_PROJ_GATE],
@@ -11678,18 +12034,72 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
         result = AEE_EFAILED;
         goto stop_worker;
     }
+    header->scan_logical_m_observed = header->logical_m;
+    header->scan_physical_chunk_count = qbh_scan_physical_chunks(header);
+    header->scan_total_kv_length =
+        header->initial_kv_length + header->logical_m;
+    header->scan_padded_kv_length = qbh_align_up(
+        header->scan_total_kv_length, QBH_HMX_INPUT_CHANNELS);
+    header->scan_useful_query_rows = header->logical_m;
+    header->scan_physical_query_rows =
+        header->scan_physical_chunk_count * QBH_BLOCK_M;
     for (uint32_t repeat = 0; repeat < header->repeat_count; ++repeat) {
-        int block_status = qbh_run_one_block(
-            header, shared, &buffers, &worker,
-            hvx_pool_created != 0 ? &w4f16_pool : NULL);
-        if (block_status != QBH_BLOCK_STATUS_OK) {
-            header->dsp_status = block_status;
-            result = AEE_EFAILED;
-            goto stop_worker;
+        for (uint32_t chunk = 0U;
+             chunk < header->scan_physical_chunk_count; ++chunk) {
+            const uint32_t first_row = chunk * QBH_BLOCK_M;
+            const uint32_t remaining = header->logical_m - first_row;
+            const uint32_t logical_rows =
+                remaining < QBH_BLOCK_M ? remaining : QBH_BLOCK_M;
+            const uint32_t element_bytes =
+                header->variant == QBH_BLOCK_W4U8 ? 1U : 2U;
+            const uint32_t physical_tensor_bytes =
+                QBH_BLOCK_M * QBH_BLOCK_HIDDEN * element_bytes;
+            const uint32_t input_offset =
+                header->input_offset + chunk * physical_tensor_bytes;
+            int block_status;
+
+            if (qbh_scan_stage_rope_chunk(
+                    header, shared, &buffers, chunk) != 0) {
+                header->dsp_status =
+                    QBH_BLOCK_STATUS_METADATA_DMA_FAILED;
+                result = AEE_EFAILED;
+                goto stop_worker;
+            }
+            block_status = qbh_run_one_block(
+                header, shared, &buffers, &worker,
+                hvx_pool_created != 0 ? &w4f16_pool : NULL,
+                input_offset, logical_rows,
+                header->initial_kv_length + first_row);
+            if (block_status != QBH_BLOCK_STATUS_OK) {
+                header->dsp_status = block_status;
+                result = AEE_EFAILED;
+                goto stop_worker;
+            }
+            if (header->scan_mode != QBH_BLOCK_SCAN_DISABLED &&
+                repeat + 1U == header->repeat_count) {
+                uint64_t output_start = HAP_perf_get_qtimer_count();
+                if (qbh_dma_copy(
+                        header,
+                        shared + header->output_offset +
+                            chunk * physical_tensor_bytes,
+                        buffers.residual, physical_tensor_bytes,
+                        0U) != 0) {
+                    header->output_dma_status = -1;
+                    header->dsp_status =
+                        QBH_BLOCK_STATUS_OUTPUT_DMA_FAILED;
+                    result = AEE_EFAILED;
+                    goto stop_worker;
+                }
+                header->boundary_ddr_write_bytes +=
+                    physical_tensor_bytes;
+                ++header->boundary_dma_descriptor_count;
+                header->output_stage_ticks +=
+                    HAP_perf_get_qtimer_count() - output_start;
+            }
         }
         ++header->block_invocation_count;
     }
-    {
+    if (header->scan_mode == QBH_BLOCK_SCAN_DISABLED) {
         uint64_t output_start = HAP_perf_get_qtimer_count();
         if (qbh_dma_copy(header, shared + header->output_offset,
                          buffers.residual, header->output_bytes, 0U) != 0) {
@@ -11707,6 +12117,8 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
                 teardown_start = output_end;
             }
         }
+    } else if (header->attribution_enabled != 0U) {
+        teardown_start = HAP_perf_get_qtimer_count();
     }
     header->dsp_status = QBH_BLOCK_STATUS_OK;
     result = AEE_SUCCESS;

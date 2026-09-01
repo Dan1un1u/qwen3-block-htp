@@ -1437,3 +1437,314 @@ void qbh_attention_u8_requant_av(
         asm volatile("barrier" ::: "memory");
     }
 }
+
+void qbh_attention_u8_native_head_to_row_major(
+    const uint8_t *head_tiles, uint8_t *rows,
+    uint32_t valid_rows) {
+    if (head_tiles == NULL || rows == NULL ||
+        valid_rows > QBH_ATTENTION_M) {
+        return;
+    }
+    for (uint32_t row = 0U; row < valid_rows; ++row) {
+        for (uint32_t tile = 0U;
+             tile < QBH_ATTENTION_HEAD_DIM_TILES; ++tile) {
+            memcpy(rows + (size_t)row * QBH_ATTENTION_HEAD_DIM +
+                       tile * QBH_HMX_INPUT_CHANNELS,
+                   head_tiles + (size_t)tile * QBH_HMX_ACTIVATION_BYTES +
+                       (size_t)row * QBH_HMX_INPUT_CHANNELS,
+                   QBH_HMX_INPUT_CHANNELS);
+        }
+    }
+}
+
+void qbh_attention_u8_pack_k_row_major(
+    const uint8_t *rows, uint32_t valid_tokens,
+    uint32_t padded_tokens,
+    const struct qbh_attention_config *config,
+    int8_t *weight_tiles, uint32_t *bias_words) {
+    const uint32_t divisor = UINT32_C(1) << config->score_shift;
+    const int32_t rounding = config->score_shift == 0U
+                                 ? 0
+                                 : (int32_t)(divisor / 2U);
+    const uint16_t conversion = qbh_attention_u8_float_to_half_bits(
+        512.0f / (float)divisor);
+    const uint32_t n_tiles = padded_tokens / QBH_HMX_OUTPUT_CHANNELS;
+
+    memset(weight_tiles, 0,
+           (size_t)n_tiles * QBH_ATTENTION_HEAD_DIM_TILES *
+               QBH_HMX_WEIGHT_BYTES);
+    memset(bias_words, 0,
+           (size_t)n_tiles * QBH_HMX_BIAS_BYTES);
+    for (uint32_t n_tile = 0U; n_tile < n_tiles; ++n_tile) {
+        int32_t sums[QBH_HMX_OUTPUT_CHANNELS] = {0};
+        for (uint32_t k_tile = 0U;
+             k_tile < QBH_ATTENTION_HEAD_DIM_TILES; ++k_tile) {
+            int8_t *destination = weight_tiles +
+                ((size_t)n_tile * QBH_ATTENTION_HEAD_DIM_TILES + k_tile) *
+                    QBH_HMX_WEIGHT_BYTES;
+            for (uint32_t input_group = 0U;
+                 input_group < QBH_HMX_INPUT_CHANNELS / 4U;
+                 ++input_group) {
+                uint32_t *packed = (uint32_t *)(destination +
+                    (size_t)input_group * 128U);
+                for (uint32_t output = 0U;
+                     output < QBH_HMX_OUTPUT_CHANNELS; ++output) {
+                    const uint32_t token =
+                        n_tile * QBH_HMX_OUTPUT_CHANNELS + output;
+                    uint32_t word = 0U;
+                    for (uint32_t lane = 0U; lane < 4U; ++lane) {
+                        int32_t centered = 0;
+                        if (token < valid_tokens) {
+                            const uint32_t channel =
+                                k_tile * QBH_HMX_INPUT_CHANNELS +
+                                input_group * 4U + lane;
+                            centered = (int32_t)rows[
+                                (size_t)token * QBH_ATTENTION_HEAD_DIM +
+                                channel] - config->k_zero_point;
+                        }
+                        if (centered < INT8_MIN) {
+                            centered = INT8_MIN;
+                        } else if (centered > INT8_MAX) {
+                            centered = INT8_MAX;
+                        }
+                        sums[output] += centered;
+                        word |= (uint32_t)(uint8_t)(int8_t)centered <<
+                                (lane * 8U);
+                    }
+                    packed[output] = word;
+                }
+            }
+        }
+        {
+            uint32_t *bias = bias_words +
+                (size_t)n_tile *
+                    (QBH_HMX_BIAS_BYTES / sizeof(uint32_t));
+            for (uint32_t output = 0U;
+                 output < QBH_HMX_OUTPUT_CHANNELS; ++output) {
+                bias[output] = conversion;
+                bias[QBH_HMX_OUTPUT_CHANNELS + output] =
+                    (uint32_t)(-config->q_zero_point * sums[output] +
+                               QBH_ATTN_U8_SCORE_ZP * (int32_t)divisor +
+                               rounding);
+            }
+        }
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
+void qbh_attention_u8_pack_v_row_major(
+    const uint8_t *rows, uint32_t valid_tokens,
+    uint32_t padded_tokens,
+    const struct qbh_attention_config *config,
+    int8_t *weight_tiles, uint32_t *bias_words,
+    uint32_t *saturation_count) {
+    const uint32_t divisor = UINT32_C(1) << config->av_shift;
+    const int32_t rounding = config->av_shift == 0U
+                                 ? 0
+                                 : (int32_t)(divisor / 2U);
+    const uint16_t conversion = qbh_attention_u8_float_to_half_bits(
+        512.0f / (float)divisor);
+    const int32_t hmx_output_zero_point =
+        config->av_multiplier == 1U
+            ? config->output_zero_point
+            : (int32_t)QBH_ATTENTION_HMX_CENTER;
+    const uint32_t k_tiles = padded_tokens / QBH_HMX_INPUT_CHANNELS;
+
+    memset(weight_tiles, 0,
+           (size_t)QBH_ATTENTION_HEAD_DIM_TILES * k_tiles *
+               QBH_HMX_WEIGHT_BYTES);
+    memset(bias_words, 0,
+           (size_t)QBH_ATTENTION_HEAD_DIM_TILES * QBH_HMX_BIAS_BYTES);
+    for (uint32_t n_tile = 0U;
+         n_tile < QBH_ATTENTION_HEAD_DIM_TILES; ++n_tile) {
+        for (uint32_t k_tile = 0U; k_tile < k_tiles; ++k_tile) {
+            int8_t *destination = weight_tiles +
+                ((size_t)n_tile * k_tiles + k_tile) *
+                    QBH_HMX_WEIGHT_BYTES;
+            for (uint32_t input_group = 0U;
+                 input_group < QBH_HMX_INPUT_CHANNELS / 4U;
+                 ++input_group) {
+                uint32_t *packed = (uint32_t *)(destination +
+                    (size_t)input_group * 128U);
+                for (uint32_t output = 0U;
+                     output < QBH_HMX_OUTPUT_CHANNELS; ++output) {
+                    uint32_t word = 0U;
+                    const uint32_t channel =
+                        n_tile * QBH_HMX_OUTPUT_CHANNELS + output;
+                    for (uint32_t lane = 0U; lane < 4U; ++lane) {
+                        const uint32_t token =
+                            k_tile * QBH_HMX_INPUT_CHANNELS +
+                            input_group * 4U + lane;
+                        int32_t requantized = 0;
+                        if (token < valid_tokens) {
+                            const int32_t centered =
+                                (int32_t)rows[
+                                    (size_t)token *
+                                        QBH_ATTENTION_HEAD_DIM +
+                                    channel] - config->v_zero_point;
+                            requantized =
+                                qbh_attention_u8_round_div_signed(
+                                    centered * (int32_t)
+                                        config->v_recenter_numerator,
+                                    (int32_t)
+                                        config->v_recenter_denominator);
+                            if (saturation_count != NULL) {
+                                *saturation_count +=
+                                    requantized < INT8_MIN ||
+                                    requantized > INT8_MAX;
+                            }
+                            requantized = qbh_attention_u8_clip_s8(
+                                requantized, NULL);
+                        }
+                        word |=
+                            (uint32_t)(uint8_t)(int8_t)requantized <<
+                            (lane * 8U);
+                    }
+                    packed[output] = word;
+                }
+            }
+        }
+        {
+            uint32_t *bias = bias_words +
+                (size_t)n_tile *
+                    (QBH_HMX_BIAS_BYTES / sizeof(uint32_t));
+            for (uint32_t output = 0U;
+                 output < QBH_HMX_OUTPUT_CHANNELS; ++output) {
+                bias[output] = conversion;
+                bias[QBH_HMX_OUTPUT_CHANNELS + output] =
+                    (uint32_t)(hmx_output_zero_point *
+                                   (int32_t)divisor +
+                               rounding);
+            }
+        }
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
+static uint8_t qbh_attention_u8_dynamic_score_at(
+    const uint8_t *score_tiles, uint32_t head,
+    uint32_t row, uint32_t column, uint32_t n_tiles) {
+    const uint32_t tile = column / QBH_HMX_OUTPUT_CHANNELS;
+    const uint32_t lane = column % QBH_HMX_OUTPUT_CHANNELS;
+    return score_tiles[
+        (size_t)head * n_tiles * QBH_HMX_OUTPUT_BYTES +
+        (size_t)tile * QBH_HMX_OUTPUT_BYTES +
+        (size_t)row * QBH_HMX_OUTPUT_CHANNELS + lane];
+}
+
+static void qbh_attention_u8_dynamic_probability_set(
+    uint8_t *probability_tiles, uint32_t head,
+    uint32_t row, uint32_t column, uint32_t k_tiles,
+    uint8_t value) {
+    const uint32_t tile = column / QBH_HMX_INPUT_CHANNELS;
+    const uint32_t lane = column % QBH_HMX_INPUT_CHANNELS;
+    probability_tiles[
+        (size_t)head * k_tiles * QBH_HMX_ACTIVATION_BYTES +
+        (size_t)tile * QBH_HMX_ACTIVATION_BYTES +
+        (size_t)row * QBH_HMX_INPUT_CHANNELS + lane] = value;
+}
+
+void qbh_attention_u8_requant_softmax_dynamic(
+    uint8_t *score_tiles, uint8_t *probability_tiles,
+    uint32_t query_rows, uint32_t past_tokens,
+    uint32_t valid_tokens, uint32_t padded_tokens,
+    const struct qbh_attention_config *config,
+    struct qbh_attention_u8_telemetry *telemetry) {
+    const uint32_t tiles = padded_tokens / QBH_HMX_INPUT_CHANNELS;
+    uint32_t row_sum_min = UINT_MAX;
+    uint32_t row_sum_max = 0U;
+    uint8_t lut[QBH_ATTN_U8_HVX_BYTES]
+        __attribute__((aligned(QBH_ATTN_U8_HVX_BYTES)));
+
+    memset(probability_tiles, 0,
+           (size_t)QBH_ATTENTION_Q_HEADS_PER_GROUP * tiles *
+               QBH_HMX_ACTIVATION_BYTES);
+    for (uint32_t head = 0U;
+         head < QBH_ATTENTION_Q_HEADS_PER_GROUP; ++head) {
+        for (uint32_t row = 0U; row < query_rows; ++row) {
+            const uint32_t valid_count = past_tokens + row + 1U;
+            uint32_t weight_sum = 0U;
+            uint32_t probability_sum = 0U;
+            uint8_t maximum = 0U;
+
+            for (uint32_t column = 0U;
+                 column < valid_count; ++column) {
+                const uint8_t raw = qbh_attention_u8_dynamic_score_at(
+                    score_tiles, head, row, column, tiles);
+                const int32_t centered =
+                    (int32_t)raw - (int32_t)QBH_ATTENTION_HMX_CENTER;
+                const int32_t converted =
+                    centered * (int32_t)config->score_multiplier +
+                    QBH_ATTN_U8_SCORE_ZP;
+                const uint8_t score =
+                    qbh_attention_u8_clip_u8(converted);
+                if (telemetry != NULL) {
+                    telemetry->score_saturation_count +=
+                        converted < 0 || converted > UINT8_MAX;
+                }
+                if (score > maximum) {
+                    maximum = score;
+                }
+            }
+            for (uint32_t column = 0U;
+                 column < valid_count; ++column) {
+                const uint8_t raw = qbh_attention_u8_dynamic_score_at(
+                    score_tiles, head, row, column, tiles);
+                const int32_t centered =
+                    (int32_t)raw - (int32_t)QBH_ATTENTION_HMX_CENTER;
+                const uint8_t score = qbh_attention_u8_clip_u8(
+                    centered * (int32_t)config->score_multiplier +
+                    QBH_ATTN_U8_SCORE_ZP);
+                uint32_t code =
+                    ((uint32_t)maximum - score +
+                     (UINT32_C(1) << (config->fraction_bits - 1U))) >>
+                    config->fraction_bits;
+                if (code > 15U) {
+                    code = 15U;
+                }
+                weight_sum += UINT32_C(1) <<
+                    (QBH_ATTN_U8_EXP_FRAC_BITS - code);
+            }
+            qbh_attention_u8_build_probability_lut(
+                lut, weight_sum, config->division_mode, valid_count);
+            for (uint32_t column = 0U;
+                 column < valid_count; ++column) {
+                const uint8_t raw = qbh_attention_u8_dynamic_score_at(
+                    score_tiles, head, row, column, tiles);
+                const int32_t centered =
+                    (int32_t)raw - (int32_t)QBH_ATTENTION_HMX_CENTER;
+                const uint8_t score = qbh_attention_u8_clip_u8(
+                    centered * (int32_t)config->score_multiplier +
+                    QBH_ATTN_U8_SCORE_ZP);
+                uint32_t code =
+                    ((uint32_t)maximum - score +
+                     (UINT32_C(1) << (config->fraction_bits - 1U))) >>
+                    config->fraction_bits;
+                uint8_t probability;
+                if (code > 15U) {
+                    code = 15U;
+                }
+                probability = lut[2U * code];
+                probability_sum += probability;
+                qbh_attention_u8_dynamic_probability_set(
+                    probability_tiles, head, row, column, tiles,
+                    probability);
+            }
+            if (valid_count > valid_tokens && telemetry != NULL) {
+                telemetry->probability_mask_violation_count +=
+                    valid_count - valid_tokens;
+            }
+            if (probability_sum < row_sum_min) {
+                row_sum_min = probability_sum;
+            }
+            if (probability_sum > row_sum_max) {
+                row_sum_max = probability_sum;
+            }
+        }
+    }
+    if (telemetry != NULL) {
+        telemetry->probability_row_sum_min = row_sum_min;
+        telemetry->probability_row_sum_max = row_sum_max;
+    }
+    asm volatile("barrier" ::: "memory");
+}

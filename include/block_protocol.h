@@ -7,10 +7,15 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(51)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(144)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(52)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(147)
 
 #define QBH_BLOCK_M UINT32_C(64)
+#define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
+#define QBH_BLOCK_SCAN_MAX_KV UINT32_C(4097)
+#define QBH_BLOCK_SCAN_MAX_KV_TILES \
+    ((QBH_BLOCK_SCAN_MAX_KV + QBH_HMX_OUTPUT_CHANNELS - 1U) / \
+     QBH_HMX_OUTPUT_CHANNELS)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
 #define QBH_BLOCK_INTERMEDIATE UINT32_C(6144)
 #define QBH_BLOCK_HEADS UINT32_C(16)
@@ -43,6 +48,12 @@ enum qbh_block_variant {
     QBH_BLOCK_F16F16 = 1,
     QBH_BLOCK_W4F16 = 2,
     QBH_BLOCK_W4U8 = 3,
+};
+
+enum qbh_block_scan_mode {
+    QBH_BLOCK_SCAN_DISABLED = 0,
+    QBH_BLOCK_SCAN_PREFILL = 1,
+    QBH_BLOCK_SCAN_DECODE = 2,
 };
 
 enum qbh_block_common_ops_mask {
@@ -344,6 +355,13 @@ struct qbh_block_header {
     uint32_t w4u8_gate_up_ring_slots;
     uint32_t w4u8_qkv_ring_expand_workers;
 
+    /* EXP-0147 logical-shape wrapper.  QBH_BLOCK_M remains the immutable
+     * physical projection tile. */
+    uint32_t scan_mode;
+    uint32_t logical_m;
+    uint32_t initial_kv_length;
+    uint32_t kv_cache_capacity;
+
     uint32_t input_offset;
     uint32_t input_bytes;
     uint32_t output_offset;
@@ -373,6 +391,10 @@ struct qbh_block_header {
     uint32_t w4u8_silu_lut_bytes;
     uint32_t attention_config_offset;
     uint32_t attention_config_bytes;
+    uint32_t kv_cache_k_offset;
+    uint32_t kv_cache_k_bytes;
+    uint32_t kv_cache_v_offset;
+    uint32_t kv_cache_v_bytes;
 
     struct qbh_block_projection_desc
         projections[QBH_BLOCK_PROJECTION_COUNT];
@@ -474,6 +496,22 @@ struct qbh_block_header {
     uint64_t u8_attention_actual_av_hash;
     uint64_t u8_input_norm_actual_hash;
     uint32_t u8_attention_audit_ddr_write_bytes;
+
+    uint32_t scan_logical_m_observed;
+    uint32_t scan_physical_chunk_count;
+    uint32_t scan_total_kv_length;
+    uint32_t scan_padded_kv_length;
+    uint32_t scan_useful_query_rows;
+    uint32_t scan_physical_query_rows;
+    uint32_t scan_attention_overlay_capacity_bytes;
+    uint32_t scan_attention_overlay_required_bytes;
+    uint32_t scan_cache_dma_descriptor_count;
+    uint32_t scan_cache_append_mismatch_count;
+    uint64_t scan_cache_ddr_read_bytes;
+    uint64_t scan_cache_ddr_write_bytes;
+    uint64_t scan_cache_stage_ticks;
+    uint64_t scan_cache_append_ticks;
+    uint64_t scan_dynamic_attention_ticks;
 
     uint32_t prepared_session_run_index;
     uint32_t resource_vtcm_address;

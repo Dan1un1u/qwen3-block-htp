@@ -147,6 +147,19 @@ static const char *qbh_variant_name(uint32_t variant) {
     }
 }
 
+static const char *qbh_scan_mode_name(uint32_t mode) {
+    switch (mode) {
+        case QBH_BLOCK_SCAN_DISABLED:
+            return "disabled";
+        case QBH_BLOCK_SCAN_PREFILL:
+            return "prefill";
+        case QBH_BLOCK_SCAN_DECODE:
+            return "decode";
+        default:
+            return "invalid";
+    }
+}
+
 static int qbh_parse_variant(const char *text, uint32_t *variant) {
     if (strcmp(text, "F16F16") == 0 || strcmp(text, "f16f16") == 0 ||
         strcmp(text, "W16A16") == 0 || strcmp(text, "w16a16") == 0) {
@@ -1457,6 +1470,67 @@ static struct qbh_error_metrics qbh_compare_u8(
     return metrics;
 }
 
+static struct qbh_error_metrics qbh_compare_scan_u8(
+    const uint8_t *actual, const uint8_t *reference,
+    uint32_t logical_m, const struct qbh_block_qparam *qparam) {
+    struct qbh_error_metrics metrics;
+    double absolute_sum = 0.0;
+    double squared_sum = 0.0;
+    double dot = 0.0;
+    double actual_norm = 0.0;
+    double reference_norm = 0.0;
+    uint64_t elements = 0U;
+
+    memset(&metrics, 0, sizeof(metrics));
+    for (uint32_t logical_row = 0U;
+         logical_row < logical_m; ++logical_row) {
+        const uint32_t chunk = logical_row / QBH_BLOCK_M;
+        const uint32_t row = logical_row % QBH_BLOCK_M;
+        const size_t base =
+            ((size_t)chunk * QBH_BLOCK_M + row) * QBH_BLOCK_HIDDEN;
+        for (uint32_t channel = 0U;
+             channel < QBH_BLOCK_HIDDEN; ++channel) {
+            const uint8_t a_code = actual[base + channel];
+            const uint8_t b_code = reference[base + channel];
+            const uint32_t lsb = a_code > b_code
+                ? a_code - b_code : b_code - a_code;
+            const double a =
+                ((double)a_code - qparam->zero_point) * qparam->scale;
+            const double b =
+                ((double)b_code - qparam->zero_point) * qparam->scale;
+            const double difference = fabs(a - b);
+            metrics.mismatches += lsb != 0U;
+            if (lsb > metrics.max_lsb) {
+                metrics.max_lsb = lsb;
+            }
+            if (difference > metrics.max_abs) {
+                metrics.max_abs = difference;
+            }
+            absolute_sum += difference;
+            squared_sum += difference * difference;
+            dot += a * b;
+            actual_norm += a * a;
+            reference_norm += b * b;
+            ++elements;
+        }
+    }
+    metrics.mean_abs = absolute_sum / (double)elements;
+    metrics.rmse = sqrt(squared_sum / (double)elements);
+    metrics.cosine = actual_norm > 0.0 && reference_norm > 0.0
+        ? dot / sqrt(actual_norm * reference_norm) : 0.0;
+    return metrics;
+}
+
+static uint64_t qbh_count_byte_mismatches(
+    const uint8_t *actual, const uint8_t *reference,
+    uint32_t bytes) {
+    uint64_t mismatches = 0U;
+    for (uint32_t index = 0U; index < bytes; ++index) {
+        mismatches += actual[index] != reference[index];
+    }
+    return mismatches;
+}
+
 int main(int argc, char **argv) {
     struct qbh_session session = {(remote_handle64)-1, 0};
     struct qbh_file_slot input_slot;
@@ -1466,6 +1540,8 @@ int main(int argc, char **argv) {
     struct qbh_file_slot attention_audit_slots[3];
     struct qbh_file_slot norm_slots[4];
     struct qbh_file_slot rope_slots[2];
+    struct qbh_file_slot kv_cache_slots[2];
+    struct qbh_file_slot kv_reference_slots[2];
     struct qbh_file_slot w4u8_lut_slot;
     struct qbh_file_slot weight_slots[QBH_BLOCK_PROJECTION_COUNT];
     struct qbh_file_slot scale_slots[QBH_BLOCK_PROJECTION_COUNT];
@@ -1511,6 +1587,11 @@ int main(int argc, char **argv) {
         QBH_BLOCK_W4U8_STREAM_FENCE_CONTROL;
     uint32_t w4u8_gate_up_ring_slots = 8U;
     uint32_t w4u8_qkv_ring_expand_workers = 0U;
+    uint32_t scan_mode = QBH_BLOCK_SCAN_DISABLED;
+    uint32_t logical_m = QBH_BLOCK_M;
+    uint32_t initial_kv_length = 0U;
+    uint32_t kv_cache_capacity = 0U;
+    uint32_t physical_chunks = 1U;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t w4u8_gate_up_bundle_offset = 0U;
@@ -1534,6 +1615,7 @@ int main(int argc, char **argv) {
     struct qbh_error_metrics measured_metrics;
     uint32_t warmup_run_index = 0U;
     uint64_t output_hash = 0U;
+    uint64_t kv_cache_mismatches = 0U;
     int exit_code = 1;
     char file_name[128];
 
@@ -1542,6 +1624,8 @@ int main(int argc, char **argv) {
     memset(&w4u8_lut_slot, 0, sizeof(w4u8_lut_slot));
     memset(&attention_config_slot, 0, sizeof(attention_config_slot));
     memset(attention_audit_slots, 0, sizeof(attention_audit_slots));
+    memset(kv_cache_slots, 0, sizeof(kv_cache_slots));
+    memset(kv_reference_slots, 0, sizeof(kv_reference_slots));
     memset(&w4u8_gate_up_layout, 0, sizeof(w4u8_gate_up_layout));
     memset(&w4u8_down_layout, 0, sizeof(w4u8_down_layout));
     {
@@ -1605,6 +1689,40 @@ int main(int argc, char **argv) {
             w4u8_qkv_ring_expand_workers = UINT32_MAX;
         }
     }
+    {
+        const char *mode = getenv("QBH_SCAN_MODE");
+        const char *logical = getenv("QBH_LOGICAL_M");
+        const char *past = getenv("QBH_KV_CACHE_LENGTH");
+        const char *capacity = getenv("QBH_KV_CACHE_CAPACITY");
+        if (mode != NULL && mode[0] != '\0') {
+            if (strcmp(mode, "disabled") == 0) {
+                scan_mode = QBH_BLOCK_SCAN_DISABLED;
+            } else if (strcmp(mode, "prefill") == 0) {
+                scan_mode = QBH_BLOCK_SCAN_PREFILL;
+            } else if (strcmp(mode, "decode") == 0) {
+                scan_mode = QBH_BLOCK_SCAN_DECODE;
+            } else {
+                scan_mode = UINT32_MAX;
+            }
+        }
+        if (logical != NULL && logical[0] != '\0' &&
+            qbh_parse_u32(logical, &logical_m) != 0) {
+            logical_m = UINT32_MAX;
+        }
+        if (past != NULL && past[0] != '\0' &&
+            qbh_parse_u32(past, &initial_kv_length) != 0) {
+            initial_kv_length = UINT32_MAX;
+        }
+        if (scan_mode != QBH_BLOCK_SCAN_DISABLED) {
+            kv_cache_capacity = initial_kv_length + logical_m;
+            if (capacity != NULL && capacity[0] != '\0' &&
+                qbh_parse_u32(capacity, &kv_cache_capacity) != 0) {
+                kv_cache_capacity = UINT32_MAX;
+            }
+            physical_chunks =
+                (logical_m + QBH_BLOCK_M - 1U) / QBH_BLOCK_M;
+        }
+    }
     if (argc < 3 || argc > 26 ||
         qbh_parse_variant(argv[2], &variant) != 0 ||
         (argc >= 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
@@ -1655,6 +1773,24 @@ int main(int argc, char **argv) {
                            argv[25],
                            &w4u8_qk_pair_kernel_mode) != 0) ||
         repeats == 0U || repeats > 100U ||
+        scan_mode > QBH_BLOCK_SCAN_DECODE ||
+        (scan_mode == QBH_BLOCK_SCAN_DISABLED &&
+         (logical_m != QBH_BLOCK_M || initial_kv_length != 0U ||
+          kv_cache_capacity != 0U || physical_chunks != 1U)) ||
+        (scan_mode == QBH_BLOCK_SCAN_PREFILL &&
+         ((logical_m != 16U && logical_m != 32U &&
+           logical_m != 64U && logical_m != 128U) ||
+          initial_kv_length != 0U)) ||
+        (scan_mode == QBH_BLOCK_SCAN_DECODE &&
+         (logical_m != 1U ||
+          (initial_kv_length != 64U &&
+           initial_kv_length != 256U &&
+           initial_kv_length != 1024U &&
+           initial_kv_length != 4096U))) ||
+        (scan_mode != QBH_BLOCK_SCAN_DISABLED &&
+         (variant != QBH_BLOCK_W4U8 ||
+          kv_cache_capacity < initial_kv_length + logical_m ||
+          kv_cache_capacity > QBH_BLOCK_SCAN_MAX_KV)) ||
         w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
         (variant == QBH_BLOCK_W4U8 &&
          ((!qbh_attention_u8_enabled(attention_pipeline_mode) &&
@@ -1984,7 +2120,8 @@ int main(int argc, char **argv) {
         common_ops_mask = QBH_BLOCK_COMMON_OPS_SCALAR;
     }
     element_bytes = variant == QBH_BLOCK_W4U8 ? 1U : 2U;
-    output_bytes = QBH_BLOCK_M * QBH_BLOCK_HIDDEN * element_bytes;
+    output_bytes = physical_chunks * QBH_BLOCK_M *
+                   QBH_BLOCK_HIDDEN * element_bytes;
     if (qbh_block_mlp_is_w4u8_streaming(mlp_mode) &&
         (qbh_projection_layout_init(
              QBH_PROJECTION_GATE_UP_PAIR,
@@ -2040,11 +2177,13 @@ int main(int argc, char **argv) {
                          QBH_BLOCK_HEAD_DIM * sizeof(uint16_t),
                          &cursor) != 0 ||
         qbh_prepare_slot(&rope_slots[0], argv[1], "rope_cos_f16.bin",
-                         QBH_BLOCK_M * QBH_BLOCK_HEAD_DIM *
+                         physical_chunks * QBH_BLOCK_M *
+                             QBH_BLOCK_HEAD_DIM *
                              sizeof(uint16_t),
                          &cursor) != 0 ||
         qbh_prepare_slot(&rope_slots[1], argv[1], "rope_sin_f16.bin",
-                         QBH_BLOCK_M * QBH_BLOCK_HEAD_DIM *
+                         physical_chunks * QBH_BLOCK_M *
+                             QBH_BLOCK_HEAD_DIM *
                              sizeof(uint16_t),
                          &cursor) != 0) {
         fprintf(stderr, "package common tensor audit failed\n");
@@ -2059,6 +2198,7 @@ int main(int argc, char **argv) {
         return 2;
     }
     if (qbh_attention_u8_enabled(attention_pipeline_mode) &&
+        scan_mode == QBH_BLOCK_SCAN_DISABLED &&
         (qbh_prepare_slot(
              &attention_audit_slots[0], argv[1],
              "reference_w4u8_integer_attention_score_tiles_u8.bin",
@@ -2075,6 +2215,49 @@ int main(int argc, char **argv) {
              QBH_BLOCK_M * QBH_BLOCK_HIDDEN, &cursor) != 0)) {
         fprintf(stderr, "integer Attention stage-reference audit failed\n");
         return 2;
+    }
+    if (scan_mode != QBH_BLOCK_SCAN_DISABLED) {
+        const uint32_t cache_bytes =
+            kv_cache_capacity * QBH_BLOCK_KV_HIDDEN * element_bytes;
+        const char *suffix = variant == QBH_BLOCK_W4U8 ? "u8" : "f16";
+        int status = snprintf(
+            file_name, sizeof(file_name), "kv_cache_k_%s.bin", suffix);
+        if (status < 0 || (size_t)status >= sizeof(file_name) ||
+            qbh_prepare_slot(
+                &kv_cache_slots[0], argv[1], file_name,
+                cache_bytes, &cursor) != 0) {
+            fprintf(stderr, "K cache package audit failed\n");
+            return 2;
+        }
+        status = snprintf(
+            file_name, sizeof(file_name), "kv_cache_v_%s.bin", suffix);
+        if (status < 0 || (size_t)status >= sizeof(file_name) ||
+            qbh_prepare_slot(
+                &kv_cache_slots[1], argv[1], file_name,
+                cache_bytes, &cursor) != 0) {
+            fprintf(stderr, "V cache package audit failed\n");
+            return 2;
+        }
+        status = snprintf(
+            file_name, sizeof(file_name),
+            "reference_kv_cache_k_%s.bin", suffix);
+        if (status < 0 || (size_t)status >= sizeof(file_name) ||
+            qbh_prepare_slot(
+                &kv_reference_slots[0], argv[1], file_name,
+                cache_bytes, &cursor) != 0) {
+            fprintf(stderr, "K cache reference audit failed\n");
+            return 2;
+        }
+        status = snprintf(
+            file_name, sizeof(file_name),
+            "reference_kv_cache_v_%s.bin", suffix);
+        if (status < 0 || (size_t)status >= sizeof(file_name) ||
+            qbh_prepare_slot(
+                &kv_reference_slots[1], argv[1], file_name,
+                cache_bytes, &cursor) != 0) {
+            fprintf(stderr, "V cache reference audit failed\n");
+            return 2;
+        }
     }
     if (qbh_block_mlp_is_w4u8_streaming(mlp_mode) &&
         qbh_prepare_slot(&w4u8_lut_slot, argv[1],
@@ -2209,10 +2392,21 @@ int main(int argc, char **argv) {
         goto cleanup;
     }
     if (qbh_attention_u8_enabled(attention_pipeline_mode) &&
-        (qbh_read_slot(shared, &attention_config_slot) != 0 ||
-         qbh_read_slot(shared, &attention_audit_slots[0]) != 0 ||
+        qbh_read_slot(shared, &attention_config_slot) != 0) {
+        goto cleanup;
+    }
+    if (qbh_attention_u8_enabled(attention_pipeline_mode) &&
+        scan_mode == QBH_BLOCK_SCAN_DISABLED &&
+        (qbh_read_slot(shared, &attention_audit_slots[0]) != 0 ||
          qbh_read_slot(shared, &attention_audit_slots[1]) != 0 ||
          qbh_read_slot(shared, &attention_audit_slots[2]) != 0)) {
+        goto cleanup;
+    }
+    if (scan_mode != QBH_BLOCK_SCAN_DISABLED &&
+        (qbh_read_slot(shared, &kv_cache_slots[0]) != 0 ||
+         qbh_read_slot(shared, &kv_cache_slots[1]) != 0 ||
+         qbh_read_slot(shared, &kv_reference_slots[0]) != 0 ||
+         qbh_read_slot(shared, &kv_reference_slots[1]) != 0)) {
         goto cleanup;
     }
     for (uint32_t projection = 0;
@@ -2261,6 +2455,10 @@ int main(int argc, char **argv) {
         w4u8_qkv_ring_expand_workers;
     header->w4u8_qk_pair_kernel_mode =
         w4u8_qk_pair_kernel_mode;
+    header->scan_mode = scan_mode;
+    header->logical_m = logical_m;
+    header->initial_kv_length = initial_kv_length;
+    header->kv_cache_capacity = kv_cache_capacity;
     header->input_offset = input_slot.offset;
     header->input_bytes = input_slot.expected_bytes;
     header->output_bytes = output_bytes;
@@ -2280,6 +2478,12 @@ int main(int argc, char **argv) {
     header->rope_cos_bytes = rope_slots[0].expected_bytes;
     header->rope_sin_offset = rope_slots[1].offset;
     header->rope_sin_bytes = rope_slots[1].expected_bytes;
+    if (scan_mode != QBH_BLOCK_SCAN_DISABLED) {
+        header->kv_cache_k_offset = kv_cache_slots[0].offset;
+        header->kv_cache_k_bytes = kv_cache_slots[0].expected_bytes;
+        header->kv_cache_v_offset = kv_cache_slots[1].offset;
+        header->kv_cache_v_bytes = kv_cache_slots[1].expected_bytes;
+    }
     if (qbh_attention_u8_enabled(attention_pipeline_mode)) {
         header->attention_config_offset =
             attention_config_slot.offset;
@@ -2408,11 +2612,17 @@ int main(int argc, char **argv) {
         goto cleanup;
     }
     warmup_metrics = variant == QBH_BLOCK_W4U8
-        ? qbh_compare_u8(
+        ? (scan_mode != QBH_BLOCK_SCAN_DISABLED
+               ? qbh_compare_scan_u8(
+                     shared + header->output_offset,
+                     shared + header->reference_offset,
+                     logical_m,
+                     &header->qparams[QBH_BLOCK_QP_BLOCK_OUTPUT])
+               : qbh_compare_u8(
               shared + header->output_offset,
               shared + header->reference_offset,
               QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
-              &header->qparams[QBH_BLOCK_QP_BLOCK_OUTPUT])
+              &header->qparams[QBH_BLOCK_QP_BLOCK_OUTPUT]))
         : qbh_compare_f16(
               (const uint16_t *)(shared + header->output_offset),
               (const uint16_t *)(shared + header->reference_offset),
@@ -2449,17 +2659,36 @@ int main(int argc, char **argv) {
         goto cleanup;
     }
     measured_metrics = variant == QBH_BLOCK_W4U8
-        ? qbh_compare_u8(
+        ? (scan_mode != QBH_BLOCK_SCAN_DISABLED
+               ? qbh_compare_scan_u8(
+                     shared + header->output_offset,
+                     shared + header->reference_offset,
+                     logical_m,
+                     &header->qparams[QBH_BLOCK_QP_BLOCK_OUTPUT])
+               : qbh_compare_u8(
               shared + header->output_offset,
               shared + header->reference_offset,
               QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
-              &header->qparams[QBH_BLOCK_QP_BLOCK_OUTPUT])
+              &header->qparams[QBH_BLOCK_QP_BLOCK_OUTPUT]))
         : qbh_compare_f16(
               (const uint16_t *)(shared + header->output_offset),
               (const uint16_t *)(shared + header->reference_offset),
               QBH_BLOCK_M * QBH_BLOCK_HIDDEN);
     output_hash = qbh_fnv1a64(
         shared + header->output_offset, header->output_bytes);
+    if (scan_mode != QBH_BLOCK_SCAN_DISABLED) {
+        kv_cache_mismatches = qbh_count_byte_mismatches(
+            shared + kv_cache_slots[0].offset,
+            shared + kv_reference_slots[0].offset,
+            kv_cache_slots[0].expected_bytes) +
+            qbh_count_byte_mismatches(
+                shared + kv_cache_slots[1].offset,
+                shared + kv_reference_slots[1].offset,
+                kv_cache_slots[1].expected_bytes);
+        header->scan_cache_append_mismatch_count =
+            kv_cache_mismatches > UINT32_MAX
+                ? UINT32_MAX : (uint32_t)kv_cache_mismatches;
+    }
     {
         const char *dump_path = getenv("QBH_DUMP_OUTPUT_PATH");
         if (dump_path != NULL && dump_path[0] != '\0') {
@@ -2534,8 +2763,26 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0144\","
-        "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
+        "{\"experiment\":\"EXP-0147\","
+        "\"execution_unit\":\"qwen3_layer14_shape_kv_scan\","
+        "\"scan_mode\":\"%s\","
+        "\"logical_m\":%" PRIu32 ","
+        "\"initial_kv_length\":%" PRIu32 ","
+        "\"kv_cache_capacity\":%" PRIu32 ","
+        "\"scan_physical_chunk_count\":%" PRIu32 ","
+        "\"scan_total_kv_length\":%" PRIu32 ","
+        "\"scan_padded_kv_length\":%" PRIu32 ","
+        "\"scan_useful_query_rows\":%" PRIu32 ","
+        "\"scan_physical_query_rows\":%" PRIu32 ","
+        "\"scan_attention_overlay_capacity_bytes\":%" PRIu32 ","
+        "\"scan_attention_overlay_required_bytes\":%" PRIu32 ","
+        "\"scan_cache_dma_descriptor_count\":%" PRIu32 ","
+        "\"scan_cache_ddr_read_bytes\":%" PRIu64 ","
+        "\"scan_cache_ddr_write_bytes\":%" PRIu64 ","
+        "\"scan_cache_stage_ticks\":%" PRIu64 ","
+        "\"scan_cache_append_ticks\":%" PRIu64 ","
+        "\"scan_dynamic_attention_ticks\":%" PRIu64 ","
+        "\"scan_cache_mismatches\":%" PRIu64 ","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
         "\"common_ops_mode\":\"%s\","
@@ -2871,6 +3118,24 @@ int main(int argc, char **argv) {
         "\"crouton_av_o_copy_ticks\":%" PRIu64 ","
         "\"crouton_norm_store_ticks\":%" PRIu64 ","
         "\"release_result\":%d,\"close_result\":%d}\n",
+        qbh_scan_mode_name(scan_mode),
+        logical_m,
+        initial_kv_length,
+        kv_cache_capacity,
+        header->scan_physical_chunk_count,
+        header->scan_total_kv_length,
+        header->scan_padded_kv_length,
+        header->scan_useful_query_rows,
+        header->scan_physical_query_rows,
+        header->scan_attention_overlay_capacity_bytes,
+        header->scan_attention_overlay_required_bytes,
+        header->scan_cache_dma_descriptor_count,
+        header->scan_cache_ddr_read_bytes,
+        header->scan_cache_ddr_write_bytes,
+        header->scan_cache_stage_ticks,
+        header->scan_cache_append_ticks,
+        header->scan_dynamic_attention_ticks,
+        kv_cache_mismatches,
         qbh_variant_name(variant),
         qbh_attention_u8_enabled(attention_pipeline_mode)
             ? "U8xS8_HMX_log2_softmax"
@@ -3224,6 +3489,9 @@ int main(int argc, char **argv) {
                         header->intermediate_ddr_write_bytes == 0U &&
                         header->intermediate_dma_descriptor_count == 0U &&
                         header->intermediate_spill_fill_count == 0U &&
+                        (scan_mode == QBH_BLOCK_SCAN_DISABLED ||
+                         (kv_cache_mismatches == 0U &&
+                          measured_metrics.mismatches == 0U)) &&
                         (!qbh_block_mlp_is_w4u8_streaming(mlp_mode) ||
                          measured_metrics.mismatches == 0U) &&
                         isfinite(measured_metrics.cosine) &&

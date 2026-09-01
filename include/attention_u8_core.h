@@ -101,4 +101,30 @@ void qbh_attention_u8_requant_av(
     uint8_t *output_tiles,
     const struct qbh_attention_config *config);
 
+/* EXP-0147 generalized-cache helpers.  These deliberately coexist with the
+ * immutable 64x64 fast path above. */
+void qbh_attention_u8_native_head_to_row_major(
+    const uint8_t *head_tiles, uint8_t *rows,
+    uint32_t valid_rows);
+
+void qbh_attention_u8_pack_k_row_major(
+    const uint8_t *rows, uint32_t valid_tokens,
+    uint32_t padded_tokens,
+    const struct qbh_attention_config *config,
+    int8_t *weight_tiles, uint32_t *bias_words);
+
+void qbh_attention_u8_pack_v_row_major(
+    const uint8_t *rows, uint32_t valid_tokens,
+    uint32_t padded_tokens,
+    const struct qbh_attention_config *config,
+    int8_t *weight_tiles, uint32_t *bias_words,
+    uint32_t *saturation_count);
+
+void qbh_attention_u8_requant_softmax_dynamic(
+    uint8_t *score_tiles, uint8_t *probability_tiles,
+    uint32_t query_rows, uint32_t past_tokens,
+    uint32_t valid_tokens, uint32_t padded_tokens,
+    const struct qbh_attention_config *config,
+    struct qbh_attention_u8_telemetry *telemetry);
+
 #endif
