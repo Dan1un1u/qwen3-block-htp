@@ -10462,14 +10462,15 @@ experiments:
     variants:
       - w4f16_gate_up_worker3_control
       - w4f16_gate_up_worker4_candidate
-    execution_state: running
-    evidence_validity: pending
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: complete
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4f16-gate-up-worker4
     source_branches:
       - codex/exp-0129-w4f16-gate-up-worker4
-    source_commits: []
+    source_commits:
+      - cfda9253fbf7f0a57f68a10f0c5c2ad579889a34
     record: docs/experiments/EXP-0129.md
     approval_ref: 'User message 2026-09-01: continue W4F16 and W4U8 loop and resolve routine issues independently'
     runtime:
@@ -10497,3 +10498,28 @@ experiments:
       physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_identical_weight_DMA_HMX_commands_tiles_and_peak_plan
       speed_gate: Gate_Up_plus_SwiGLU_and_complete_Host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
       completion_gate: bounded_diagnostic_then_five_rotated_rounds_PC027_PC028_and_no_automatic_baseline_promotion
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0129/20260901T003731Z_cfda9253fbf7_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0129/artifacts/cfda9253fbf7/20260901T003731Z_formal'
+      correctness_gate_result: pass_both_f18b9abbe1487231_zero_expansion_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_dma_hmx_and_peak_plan
+      selected_cell: w4f16_gate_up_worker3_control
+      repeat1_host_change_percent: 2.180554933127654
+      repeat1_host_paired_change_percent: 0.229593577205911
+      repeat1_gate_up_change_percent: -0.0793246076264964
+      repeat1_gate_up_paired_change_percent: -0.04536690484291395
+      repeat10_host_change_percent: -0.5179300708129553
+      repeat10_host_paired_change_percent: -0.5179300708129553
+      repeat10_gate_up_change_percent: 0.07029916831546856
+      repeat10_gate_up_paired_change_percent: 0.04765768168071283
+      repeat10_expand_change_percent: 0.002968680421555625
+      repeat10_hmx_wait_change_percent: 0.03744223849790895
+      repeat10_stream_join_wait_change_percent: 3.8461538461538547
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_exp0109_f16f16_exp0129_worker3_w4f16_exp0124_control_w4u8
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: 2f023943178364c7fdf19f78dfe291a09b28b337ee429ee1f44126847810d1c7
+      full_profiling_report_sha256: 60a37fe74dda6c9b7b546172525671250ba62a0791fc52ddb8771af6512a6a19
+      evidence_sha256_ledger_sha256: 030e9aa1520cf77f9894a3487448d091743c5e44ced811d45a8ed05a1ed2ba15
+      conclusion: fourth_worker_does_not_reduce_FP16_expansion_or_HMX_readiness_and_adds_join_contention
+      reopen_condition: new_partitioned_work_queue_or_more_expansion_work_per_publication_not_another_worker_count
+      selected_baseline_changed: false
