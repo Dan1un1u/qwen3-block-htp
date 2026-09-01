@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(56)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(136)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(57)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(137)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -347,6 +347,7 @@ struct qbh_block_header {
     uint32_t w4f16_gate_up_stream_group_tiles;
     uint32_t w4u8_stream_fence_mode;
     uint32_t w4u8_gate_up_ring_slots;
+    uint32_t w4u8_gate_up_hvx_lead_cap_regions;
 
     uint32_t input_offset;
     uint32_t input_bytes;
@@ -674,6 +675,11 @@ struct qbh_block_header {
     uint64_t w4u8_mlp_hmx_ready_wait_ticks;
     uint64_t w4u8_mlp_producer_slot_wait_ticks;
     uint64_t w4u8_mlp_expanded_slot_wait_ticks;
+    uint64_t w4u8_gate_up_adaptive_hvx_wait_ticks;
+    uint32_t w4u8_gate_up_adaptive_hvx_wait_count;
+    uint32_t w4u8_gate_up_adaptive_hvx_max_lead_regions;
+    uint32_t w4u8_gate_up_streaming_region_publish_count;
+    uint32_t w4u8_gate_up_streaming_region_consume_count;
     uint32_t w4u8_gate_up_persistent_hvx_dispatch_count;
     uint32_t w4u8_gate_up_persistent_hvx_worker_count;
     uint32_t w4u8_gate_up_transient_hvx_thread_count;

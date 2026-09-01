@@ -1524,6 +1524,7 @@ int main(int argc, char **argv) {
     uint32_t w4u8_stream_fence_mode =
         QBH_BLOCK_W4U8_STREAM_FENCE_CONTROL;
     uint32_t w4u8_gate_up_ring_slots = 8U;
+    uint32_t w4u8_gate_up_hvx_lead_cap_regions = 0U;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t w4u8_gate_up_bundle_offset = 0U;
@@ -1653,6 +1654,15 @@ int main(int argc, char **argv) {
         if (ring_slots != NULL && ring_slots[0] != '\0' &&
             qbh_parse_u32(ring_slots, &w4u8_gate_up_ring_slots) != 0) {
             w4u8_gate_up_ring_slots = UINT32_MAX;
+        }
+    }
+    {
+        const char *lead_cap =
+            getenv("QBH_W4U8_GATE_UP_HVX_LEAD_CAP_REGIONS");
+        if (lead_cap != NULL && lead_cap[0] != '\0' &&
+            qbh_parse_u32(
+                lead_cap, &w4u8_gate_up_hvx_lead_cap_regions) != 0) {
+            w4u8_gate_up_hvx_lead_cap_regions = UINT32_MAX;
         }
     }
     if (argc < 3 || argc > 26 ||
@@ -1828,6 +1838,14 @@ int main(int argc, char **argv) {
          w4u8_gate_up_ring_slots != 16U) ||
         (variant != QBH_BLOCK_W4U8 &&
          w4u8_gate_up_ring_slots != 8U) ||
+        (w4u8_gate_up_hvx_lead_cap_regions != 0U &&
+         w4u8_gate_up_hvx_lead_cap_regions != 8U &&
+         w4u8_gate_up_hvx_lead_cap_regions != 16U) ||
+        (w4u8_gate_up_hvx_lead_cap_regions != 0U &&
+         (variant != QBH_BLOCK_W4U8 ||
+          w4u8_gate_up_ring_slots != 16U ||
+          mlp_mode !=
+              QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX)) ||
         (variant == QBH_BLOCK_W4U8 &&
          fp16_common_schedule_mode !=
              QBH_BLOCK_FP16_COMMON_SCHEDULE_CONTROL) ||
@@ -2332,6 +2350,8 @@ int main(int argc, char **argv) {
         w4f16_gate_up_stream_group_tiles;
     header->w4u8_stream_fence_mode = w4u8_stream_fence_mode;
     header->w4u8_gate_up_ring_slots = w4u8_gate_up_ring_slots;
+    header->w4u8_gate_up_hvx_lead_cap_regions =
+        w4u8_gate_up_hvx_lead_cap_regions;
     header->w4u8_qk_pair_kernel_mode =
         w4u8_qk_pair_kernel_mode;
     header->input_offset = input_slot.offset;
@@ -2607,7 +2627,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0136\","
+        "{\"experiment\":\"EXP-0137\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2622,6 +2642,7 @@ int main(int argc, char **argv) {
         "\"w4f16_gate_up_extra_stream_worker\":%" PRIu32 ","
         "\"w4f16_gate_up_stream_group_tiles\":%" PRIu32 ","
         "\"w4u8_stream_fence_mode\":\"%s\","
+        "\"w4u8_gate_up_hvx_lead_cap_regions\":%" PRIu32 ","
         "\"fp16_norm_rows_per_task\":%" PRIu32 ","
         "\"fp16_norm_contexts\":%" PRIu32 ","
         "\"w4u8_down_hmx_batch_outputs\":%" PRIu32 ","
@@ -2884,6 +2905,11 @@ int main(int argc, char **argv) {
         "\"w4u8_mlp_hmx_ready_wait_ticks\":%" PRIu64 ","
         "\"w4u8_mlp_producer_slot_wait_ticks\":%" PRIu64 ","
         "\"w4u8_mlp_expanded_slot_wait_ticks\":%" PRIu64 ","
+        "\"w4u8_gate_up_adaptive_hvx_wait_ticks\":%" PRIu64 ","
+        "\"w4u8_gate_up_adaptive_hvx_wait_count\":%" PRIu32 ","
+        "\"w4u8_gate_up_adaptive_hvx_max_lead_regions\":%" PRIu32 ","
+        "\"w4u8_gate_up_streaming_region_publish_count\":%" PRIu32 ","
+        "\"w4u8_gate_up_streaming_region_consume_count\":%" PRIu32 ","
         "\"w4u8_gate_up_persistent_hvx_dispatch_count\":%" PRIu32 ","
         "\"w4u8_gate_up_persistent_hvx_worker_count\":%" PRIu32 ","
         "\"w4u8_gate_up_transient_hvx_thread_count\":%" PRIu32 ","
@@ -2953,6 +2979,7 @@ int main(int argc, char **argv) {
         header->w4f16_gate_up_stream_group_tiles,
         qbh_w4u8_stream_fence_mode_name(
             header->w4u8_stream_fence_mode),
+        header->w4u8_gate_up_hvx_lead_cap_regions,
         header->fp16_norm_rows_per_task,
         header->fp16_norm_contexts,
         header->w4u8_down_hmx_batch_outputs,
@@ -3209,6 +3236,11 @@ int main(int argc, char **argv) {
         header->w4u8_mlp_hmx_ready_wait_ticks,
         header->w4u8_mlp_producer_slot_wait_ticks,
         header->w4u8_mlp_expanded_slot_wait_ticks,
+        header->w4u8_gate_up_adaptive_hvx_wait_ticks,
+        header->w4u8_gate_up_adaptive_hvx_wait_count,
+        header->w4u8_gate_up_adaptive_hvx_max_lead_regions,
+        header->w4u8_gate_up_streaming_region_publish_count,
+        header->w4u8_gate_up_streaming_region_consume_count,
         header->w4u8_gate_up_persistent_hvx_dispatch_count,
         header->w4u8_gate_up_persistent_hvx_worker_count,
         header->w4u8_gate_up_transient_hvx_thread_count,

@@ -63,6 +63,7 @@ struct qbh_parallel_state {
     qurt_sem_t expanded_ready[QBH_W4_MAX_EXPANDED_CHUNK_SLOT_COUNT];
     qurt_sem_t hmx_started;
     qurt_sem_t hvx_started;
+    qurt_sem_t hmx_progress;
     qurt_sem_t mlp_pair_free[QBH_W4_MAX_COMPRESSED_SLOT_COUNT];
     qurt_mutex_t metrics_mutex;
 
@@ -73,7 +74,11 @@ struct qbh_parallel_state {
         [QBH_W4_MAX_STREAM_REGIONS];
     volatile uint32_t active_hvx_workers;
     volatile uint32_t streaming_hmx_consumption_started;
+    volatile uint32_t streaming_region_consumed_count;
     uint32_t max_active_hvx_workers;
+    uint32_t adaptive_hvx_wait_count;
+    uint32_t adaptive_hvx_max_lead_regions;
+    uint64_t adaptive_hvx_wait_ticks;
     uint32_t hmx_active;
     uint32_t hvx_hmx_overlap_observed;
     uint32_t hvx_parallel_overlap_observed;
@@ -304,13 +309,32 @@ static int qbh_wait_linked_descriptor(
     }
 }
 
-static int qbh_hvx_region_begin(struct qbh_parallel_state *state) {
+static int qbh_hvx_region_begin(struct qbh_parallel_state *state,
+                                uint32_t adaptive_throttle_eligible) {
     uint32_t active;
     for (;;) {
+        const uint32_t capped_streaming =
+            qbh_physical_plan_is_capped_streaming(
+                state->layout->physical_plan);
+        const uint32_t hmx_started =
+            state->streaming_hmx_consumption_started;
+        const uint32_t adaptive_cap =
+            state->header->adaptive_hvx_lead_regions;
+        const uint32_t published =
+            state->header->streaming_region_publish_count;
+        const uint32_t consumed =
+            state->streaming_region_consumed_count;
+        const uint32_t lead = published >= consumed
+            ? published - consumed : 0U;
+        const uint32_t legacy_cap_hit =
+            capped_streaming != 0U && hmx_started != 0U;
+        const uint32_t adaptive_cap_hit =
+            capped_streaming == 0U &&
+            adaptive_throttle_eligible != 0U &&
+            adaptive_cap != 0U && hmx_started != 0U &&
+            lead >= adaptive_cap;
         active = qbh_atomic_inc_return(&state->active_hvx_workers);
-        if (!qbh_physical_plan_is_capped_streaming(
-                state->layout->physical_plan) ||
-            state->streaming_hmx_consumption_started == 0U ||
+        if ((legacy_cap_hit == 0U && adaptive_cap_hit == 0U) ||
             active <= 2U) {
             break;
         }
@@ -318,7 +342,23 @@ static int qbh_hvx_region_begin(struct qbh_parallel_state *state) {
         if (state->abort_status != 0) {
             return -1;
         }
-        asm volatile("pause(#8)" : : : "memory");
+        if (adaptive_cap_hit != 0U) {
+            const uint64_t wait_start =
+                HAP_perf_get_qtimer_count();
+            qurt_mutex_lock(&state->metrics_mutex);
+            ++state->adaptive_hvx_wait_count;
+            if (lead > state->adaptive_hvx_max_lead_regions) {
+                state->adaptive_hvx_max_lead_regions = lead;
+            }
+            qurt_mutex_unlock(&state->metrics_mutex);
+            qurt_sem_down(&state->hmx_progress);
+            qurt_mutex_lock(&state->metrics_mutex);
+            state->adaptive_hvx_wait_ticks +=
+                HAP_perf_get_qtimer_count() - wait_start;
+            qurt_mutex_unlock(&state->metrics_mutex);
+        } else {
+            asm volatile("pause(#8)" : : : "memory");
+        }
     }
     if (active > state->max_active_hvx_workers) {
         qurt_mutex_lock(&state->metrics_mutex);
@@ -397,7 +437,7 @@ static int qbh_hvx_worker_run(struct qbh_hvx_worker_job *job,
             uint8_t *pair = state->output_tiles +
                 (size_t)task.mlp_pair_slot * 2U *
                     QBH_HMX_OUTPUT_BYTES;
-            if (qbh_hvx_region_begin(state) != 0) {
+            if (qbh_hvx_region_begin(state, 0U) != 0) {
                 exit_status = AEE_EFAILED;
                 break;
             }
@@ -471,7 +511,7 @@ static int qbh_hvx_worker_run(struct qbh_hvx_worker_job *job,
         if (job->first_expand_start == 0U) {
             job->first_expand_start = start;
         }
-        admission_status = qbh_hvx_region_begin(state);
+        admission_status = qbh_hvx_region_begin(state, 1U);
         if (admission_status != 0) {
             exit_status = AEE_EFAILED;
             break;
@@ -641,6 +681,9 @@ static void qbh_chunked_hmx_main(void *opaque) {
             request.ready_wait_ticks = &stream_ready_wait;
             request.hmx_consumption_started =
                 &state->streaming_hmx_consumption_started;
+            request.consumed_stream_count =
+                &state->streaming_region_consumed_count;
+            request.hmx_progress_semaphore = &state->hmx_progress;
             request.executed_stream_count = &executed_streams;
             request.batch_output_count = batch_outputs;
 
@@ -1040,6 +1083,10 @@ static void qbh_chunked_hmx_main(void *opaque) {
                             .ready_wait_ticks = &stream_ready_wait,
                             .hmx_consumption_started =
                                 &state->streaming_hmx_consumption_started,
+                            .consumed_stream_count =
+                                &state->streaming_region_consumed_count,
+                            .hmx_progress_semaphore =
+                                &state->hmx_progress,
                             .executed_stream_count = &executed_streams,
                         };
                         streams = job->runner->submit(
@@ -1079,6 +1126,16 @@ static void qbh_chunked_hmx_main(void *opaque) {
                         goto unlock;
                     }
                     job->stream_count += (uint32_t)streams;
+                    if (job->runner == NULL) {
+                        state->streaming_region_consumed_count +=
+                            (uint32_t)streams;
+                        asm volatile("release(%0):at"
+                                     :
+                                     : "r"(&state->
+                                         streaming_region_consumed_count)
+                                     : "memory");
+                        qurt_sem_up(&state->hmx_progress);
+                    }
                     job->execution_count += chunk_tiles;
                     if (final_chunk != 0U) {
                         if (state->mlp_handoff != NULL) {
@@ -1207,6 +1264,10 @@ static void qbh_abort_pipeline(struct qbh_parallel_state *state,
     for (uint32_t slot = 0;
          slot < layout->compressed_slot_count; ++slot) {
         qurt_sem_up(&state->compressed_free[slot]);
+    }
+    for (uint32_t worker = 0U;
+         worker < QBH_MAX_HVX_WORKERS; ++worker) {
+        qurt_sem_up(&state->hmx_progress);
     }
 }
 
@@ -1368,6 +1429,7 @@ static int qbh_run_chunked_w4_pipeline_impl(
     qurt_mutex_init(&state.metrics_mutex);
     qurt_sem_init_val(&state.hmx_started, 0);
     qurt_sem_init_val(&state.hvx_started, 0);
+    qurt_sem_init_val(&state.hmx_progress, 0);
     for (uint32_t slot = 0; slot < layout->compressed_slot_count;
          ++slot) {
         qurt_sem_init_val(&state.compressed_free[slot], 1);
@@ -1621,6 +1683,14 @@ stop_workers:
         hmx_job.in_command_slot_release_count;
     header->hmx_producer_progress_command_count =
         hmx_job.producer_progress_command_count;
+    header->adaptive_hvx_wait_count =
+        state.adaptive_hvx_wait_count;
+    header->adaptive_hvx_max_lead_regions =
+        state.adaptive_hvx_max_lead_regions;
+    header->adaptive_hvx_consumed_regions =
+        state.streaming_region_consumed_count;
+    header->adaptive_hvx_wait_ticks =
+        state.adaptive_hvx_wait_ticks;
     header->hmx_window_start = hmx_job.first_compute_start;
     header->hmx_window_end = hmx_job.last_compute_end;
     header->hvx_max_active_workers = state.max_active_hvx_workers;

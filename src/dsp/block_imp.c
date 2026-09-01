@@ -833,6 +833,14 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          header->w4u8_gate_up_ring_slots != 16U) ||
         (header->variant != QBH_BLOCK_W4U8 &&
          header->w4u8_gate_up_ring_slots != 8U) ||
+        (header->w4u8_gate_up_hvx_lead_cap_regions != 0U &&
+         header->w4u8_gate_up_hvx_lead_cap_regions != 8U &&
+         header->w4u8_gate_up_hvx_lead_cap_regions != 16U) ||
+        (header->w4u8_gate_up_hvx_lead_cap_regions != 0U &&
+         (header->variant != QBH_BLOCK_W4U8 ||
+          header->w4u8_gate_up_ring_slots != 16U ||
+          header->mlp_mode !=
+              QBH_BLOCK_MLP_W4U8_STREAMING_PERSISTENT_MLP_HVX)) ||
         (header->qkv_schedule_mode !=
              QBH_BLOCK_QKV_SCHEDULE_CONTROL &&
          (header->variant != QBH_BLOCK_W4F16 ||
@@ -1740,6 +1748,19 @@ static void qbh_hmx_worker_main(void *opaque) {
                         streams += (uint32_t)stream_result;
                         if (request->store_output != 0U) {
                             qbh_hmx_store_u8_output(output_tiles);
+                        }
+                        if (request->consumed_stream_count != NULL) {
+                            *request->consumed_stream_count +=
+                                (uint32_t)stream_result;
+                            asm volatile("release(%0):at"
+                                         :
+                                         : "r"(request->
+                                             consumed_stream_count)
+                                         : "memory");
+                            if (request->hmx_progress_semaphore != NULL) {
+                                qurt_sem_up((qurt_sem_t *)request->
+                                    hmx_progress_semaphore);
+                            }
                         }
                     }
                     worker->ready_wait_ticks +=
@@ -9763,6 +9784,19 @@ static void qbh_accumulate_w4u8_phase_metrics(
     header->hmx_u8s8_tile_pair_count += layout->hmx_pairs_per_repeat;
     header->hmx_command_count += command_count;
     if (gate_up_phase != 0U) {
+        header->w4u8_gate_up_adaptive_hvx_wait_ticks +=
+            phase->adaptive_hvx_wait_ticks;
+        header->w4u8_gate_up_adaptive_hvx_wait_count +=
+            phase->adaptive_hvx_wait_count;
+        if (phase->adaptive_hvx_max_lead_regions >
+            header->w4u8_gate_up_adaptive_hvx_max_lead_regions) {
+            header->w4u8_gate_up_adaptive_hvx_max_lead_regions =
+                phase->adaptive_hvx_max_lead_regions;
+        }
+        header->w4u8_gate_up_streaming_region_publish_count +=
+            phase->streaming_region_publish_count;
+        header->w4u8_gate_up_streaming_region_consume_count +=
+            phase->adaptive_hvx_consumed_regions;
         header->w4u8_mlp_gate_up_pipeline_ticks += phase->pipeline_ticks;
         header->w4u8_mlp_gate_up_hmx_command_count += command_count;
         header->w4u8_mlp_gate_up_hvx_hmx_overlap |=
@@ -9897,6 +9931,8 @@ static int qbh_run_w4u8_streaming_mlp(
         };
         qbh_reset_w4u8_phase_header(
             &gate_up_phase, QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS);
+        gate_up_phase.adaptive_hvx_lead_regions =
+            header->w4u8_gate_up_hvx_lead_cap_regions;
         start = HAP_perf_get_qtimer_count();
         if (qbh_block_mlp_uses_persistent_gate_up_hvx(
                 header->mlp_mode)) {

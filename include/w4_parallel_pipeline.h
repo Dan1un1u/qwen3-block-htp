@@ -43,6 +43,8 @@ struct qbh_w4_hmx_request {
     uint64_t timeout_ticks;
     uint64_t *ready_wait_ticks;
     volatile uint32_t *hmx_consumption_started;
+    volatile uint32_t *consumed_stream_count;
+    void *hmx_progress_semaphore;
     uint32_t *executed_stream_count;
     uint32_t batch_output_count;
     struct {
