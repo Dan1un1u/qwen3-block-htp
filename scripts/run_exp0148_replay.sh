@@ -6,7 +6,8 @@ adb_exe="${ADB_EXE:-/mnt/c/adb/adb.exe}"
 model_root="${QBH_EXP0148_MODEL_ROOT:-/mnt/d/llm_exp/models/qwen3-block-htp/exp0148}"
 recipe="${1:?f16f16, w4f16, or w4u8 required}"
 remote_root="${EXP0148_REMOTE_ROOT:-/data/local/tmp/qwen3-block-htp/exp0148-${recipe}}"
-package="${model_root}/${recipe}"
+package="${QBH_EXP0148_PACKAGE:-${model_root}/${recipe}}"
+capture_root="${QBH_REPLAY_CAPTURE_ROOT:-}"
 
 case "${recipe}" in
     f16f16)
@@ -37,5 +38,19 @@ if [[ "${QBH_EXP0148_DEPLOY:-0}" == 1 ]]; then
 fi
 
 "${adb_exe}" get-state >/dev/null
+capture_env=""
+if [[ -n "${capture_root}" ]]; then
+    mkdir -p "${capture_root}"
+    "${adb_exe}" shell "mkdir -p ${remote_root}/replay_capture && rm -f ${remote_root}/replay_capture/*"
+    capture_env="QBH_REPLAY_DUMP_DIR=${remote_root}/replay_capture"
+fi
+set +e
 "${adb_exe}" shell \
-    "cd ${remote_root} && ${runtime_env} QBH_REPLAY_SEQUENCE=1 QBH_SCAN_MODE=prefill QBH_LOGICAL_M=64 QBH_KV_CACHE_LENGTH=0 QBH_KV_CACHE_CAPACITY=72 LD_LIBRARY_PATH=${remote_root} DSP_LIBRARY_PATH=${remote_root} ADSP_LIBRARY_PATH=${remote_root} ./qwen3_block_cli ${remote_root}/block_package_layer14_m64 ${variant} 1 ${runtime_args}"
+    "cd ${remote_root} && ${runtime_env} ${capture_env} QBH_REPLAY_SEQUENCE=1 QBH_SCAN_MODE=prefill QBH_LOGICAL_M=64 QBH_KV_CACHE_LENGTH=0 QBH_KV_CACHE_CAPACITY=72 LD_LIBRARY_PATH=${remote_root} DSP_LIBRARY_PATH=${remote_root} ADSP_LIBRARY_PATH=${remote_root} ./qwen3_block_cli ${remote_root}/block_package_layer14_m64 ${variant} 1 ${runtime_args}"
+run_status=$?
+set -e
+if [[ -n "${capture_root}" ]]; then
+    "${adb_exe}" pull "${remote_root}/replay_capture/." \
+        "$(wslpath -w "${capture_root}")" >/dev/null
+fi
+exit "${run_status}"
