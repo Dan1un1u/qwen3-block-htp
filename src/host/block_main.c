@@ -1076,8 +1076,14 @@ static const char *qbh_qkv_schedule_mode_name(uint32_t mode) {
 }
 
 static const char *qbh_w4f16_group_fence_mode_name(uint32_t mode) {
-    return mode == QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY
-               ? "join_only" : "control";
+    switch (mode) {
+        case QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY:
+            return "join_only";
+        case QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY_DOWN:
+            return "join_only_down";
+        default:
+            return "control";
+    }
 }
 
 static const char *qbh_w4u8_stream_fence_mode_name(uint32_t mode) {
@@ -1587,6 +1593,9 @@ int main(int argc, char **argv) {
             } else if (strcmp(group_fence, "join_only") == 0) {
                 w4f16_group_fence_mode =
                     QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY;
+            } else if (strcmp(group_fence, "join_only_down") == 0) {
+                w4f16_group_fence_mode =
+                    QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY_DOWN;
             } else {
                 w4f16_group_fence_mode = UINT32_MAX;
             }
@@ -1974,13 +1983,17 @@ int main(int argc, char **argv) {
          w4f16_expand_claim_regions != 3U) ||
         (w4f16_expand_claim_regions != 1U &&
          (variant != QBH_BLOCK_W4F16 ||
-          w4f16_group_fence_mode !=
-              QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY)) ||
+          (w4f16_group_fence_mode !=
+               QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY &&
+           w4f16_group_fence_mode !=
+               QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY_DOWN))) ||
         w4f16_gate_up_extra_expand_worker > 1U ||
         (w4f16_gate_up_extra_expand_worker != 0U &&
          (variant != QBH_BLOCK_W4F16 ||
-          w4f16_group_fence_mode !=
-              QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY ||
+          (w4f16_group_fence_mode !=
+               QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY &&
+           w4f16_group_fence_mode !=
+               QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY_DOWN) ||
           w4f16_hvx_workers != 4U)) ||
         w4f16_gate_up_extra_stream_worker > 1U ||
         (w4f16_gate_up_extra_stream_worker != 0U &&
@@ -2607,7 +2620,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0136\","
+        "{\"experiment\":\"EXP-0140\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
