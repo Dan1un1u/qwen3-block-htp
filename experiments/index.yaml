@@ -14,14 +14,15 @@ experiments:
       - f16f16_layers0_27_stack
       - w4f16_layers0_27_stack
       - w4u8_layers0_27_stack
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: aborted
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: not_applicable
     evidence_profile: real-qwen3-layers0-27-prefill-plus-eight-consecutive-decode-steps
     source_branches:
       - codex/exp-0150-full-transformer-stack
-    source_commits: []
+    source_commits:
+      - 8f46fb8
     record: docs/experiments/EXP-0150.md
     approval_ref: 'User message 2026-09-01: 继续下一阶段（在 EXP-0149 通过后进入完整 transformer stack）'
     runtime:
@@ -62,6 +63,15 @@ experiments:
       excluded_change: cache_native_Attention_or_any_new_recipe_specialization_requires_a_separate_followup_experiment
       next_gate_on_success: cache_native_W4U8_decode_Attention_or_model_head_scope_requires_separate_registration
       selected_baseline_changed: false
+      source_head: 8f46fb8
+      failed_stage: static_package_capacity_before_package_generation_or_device_execution
+      static_gate_result: fail_F16F16_28_layer_projection_weights_alone_are_2818572288_bytes_and_exceed_rpcmem_alloc_INT_MAX_by_671088641_bytes
+      evidence_path: 'D:/llm_exp/results/qwen3-block-htp/exp0150/20260901T150000Z_f75c5e0e0b6e_static_gate'
+      package_capacity_sha256: 656a64118c69895db8ab41aa9229fc243afae1a6a2a75dbeb3638c2f65d9d039
+      device_execution_attempted: false
+      package_generation_attempted: false
+      conclusion: current_single_rpcmem_single_shared_fd_ABI_cannot_represent_the_required_three_recipe_28_layer_stack
+      reopen_condition: user_approves_a_new_segmented_persistent_mapping_ABI_experiment_without_Host_refill_or_per_layer_RPC
   - id: EXP-0149
     slug: three-layer-vertical-slice
     title: Real consecutive-layer replay vertical slice

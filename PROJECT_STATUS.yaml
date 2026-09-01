@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0150
+  active_experiment: null
   next_experiment_number: 151
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -31,13 +31,30 @@ current_scope:
   last_completed_source_commit: f75c5e0e0b6ec09ac4422496a9254d82092e9e40
   provisional_source_parent: EXP-0149_three_layer_vertical_slice
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
-  full_model: active_EXP0150_all_28_transformer_layers_only
+  full_model: blocked_requires_user_approved_segmented_persistent_mapping_ABI
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: package_ABI_and_device_mapping_gate_before_full_stack_execution
-  active_experiment_evidence: null
-  active_experiment_gate: pending
+  active_experiment_stage: none_EXP0150_aborted_at_static_package_capacity_gate
+  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0150/20260901T150000Z_f75c5e0e0b6e_static_gate'
+  active_experiment_gate: fail_single_rpcmem_signed_int_capacity
   active_recipe_specialization: common_full_stack_integration_no_new_specialization
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0149/20260901T141700Z_f75c5e0e0b6e_formal'
+  latest_full_transformer_stack_attempt:
+    id: EXP-0150
+    source_branch: codex/exp-0150-full-transformer-stack
+    source_head: 8f46fb8
+    evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0150/20260901T150000Z_f75c5e0e0b6e_static_gate'
+    evidence_validity: valid
+    execution_state: aborted
+    local_gate: fail
+    adoption_status: not_applicable
+    failed_stage: static_package_capacity_before_package_generation_or_device_execution
+    f16_weight_bytes_per_layer: 100663296
+    f16_28_layer_weight_lower_bound_bytes: 2818572288
+    rpcmem_alloc_signed_int_max_bytes: 2147483647
+    bytes_over_rpcmem_limit_before_other_payloads: 671088641
+    conclusion: current_single_rpcmem_single_shared_fd_ABI_cannot_represent_the_required_three_recipe_28_layer_stack_because_F16F16_weights_alone_exceed_the_allocation_limit
+    required_next_decision: approve_a_segmented_persistent_mapping_ABI_that_retains_one_FastRPC_per_stack_step_and_forbids_Host_refill_between_layers
+    package_capacity_sha256: 656a64118c69895db8ab41aa9229fc243afae1a6a2a75dbeb3638c2f65d9d039
   latest_three_layer_vertical_slice:
     id: EXP-0149
     source_branch: codex/exp-0149-three-layer-vertical-slice
