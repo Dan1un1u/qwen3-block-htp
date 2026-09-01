@@ -869,6 +869,26 @@ static int qbh_full_stack_hidden_capture_valid(
                header->full_stack_hidden_capture_bytes, shared_bytes);
 }
 
+static int qbh_w4u8_boundary_audit_valid(
+    const struct qbh_block_header *header, uint32_t shared_bytes) {
+    const uint32_t expected_bytes = QBH_BLOCK_M * QBH_BLOCK_HIDDEN;
+
+    if (header->w4u8_boundary_audit_enabled == 0U) {
+        return header->w4u8_boundary_audit_output_offset == 0U &&
+               header->w4u8_boundary_audit_output_bytes == 0U;
+    }
+    return header->w4u8_boundary_audit_enabled == 1U &&
+           header->variant == QBH_BLOCK_W4U8 &&
+           header->slice_mode == QBH_BLOCK_SLICE_DISABLED &&
+           header->numerical_audit_enabled != 0U &&
+           (header->crouton_boundary_mode &
+            QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT) != 0U &&
+           header->w4u8_boundary_audit_output_bytes == expected_bytes &&
+           qbh_range_valid(
+               header->w4u8_boundary_audit_output_offset,
+               header->w4u8_boundary_audit_output_bytes, shared_bytes);
+}
+
 static void qbh_bind_slice_layer(struct qbh_block_header *header,
                                  uint32_t slice_index) {
     const struct qbh_block_layer_desc *layer =
@@ -1195,6 +1215,9 @@ static int qbh_header_valid(const struct qbh_block_header *header,
     }
     if (!qbh_full_stack_hidden_capture_valid(
             header, shared_bytes, element_bytes)) {
+        return 0;
+    }
+    if (!qbh_w4u8_boundary_audit_valid(header, shared_bytes)) {
         return 0;
     }
     if (qbh_slice_enabled(header)) {
@@ -11846,6 +11869,17 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         header->u8_input_norm_actual_hash = qbh_fnv1a64_bytes(
             buffers->hmx_activation,
             QBH_BLOCK_M * QBH_BLOCK_HIDDEN);
+    }
+    if (header->w4u8_boundary_audit_enabled != 0U) {
+        const uint32_t boundary_bytes =
+            QBH_BLOCK_M * QBH_BLOCK_HIDDEN;
+        if (qbh_dma_copy(
+                header,
+                shared + header->w4u8_boundary_audit_output_offset,
+                buffers->hmx_activation, boundary_bytes, 0U) != 0) {
+            return QBH_BLOCK_STATUS_INPUT_NORM_FAILED;
+        }
+        header->w4u8_boundary_audit_ddr_write_bytes += boundary_bytes;
     }
     header->input_norm_ticks += HAP_perf_get_qtimer_count() - start;
 

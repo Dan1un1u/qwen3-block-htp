@@ -7,7 +7,7 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(58)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(59)
 #define QBH_BLOCK_EXPERIMENT UINT32_C(152)
 
 #define QBH_BLOCK_M UINT32_C(64)
@@ -581,6 +581,11 @@ struct qbh_block_header {
     uint32_t u8_attention_audit_output_bytes;
     uint32_t scan_attention_audit_output_offset;
     uint32_t scan_attention_audit_output_bytes;
+    /* Diagnostic-only W4U8 boundary capture.  Enabling this explicit DDR
+     * export invalidates physical and performance evidence. */
+    uint32_t w4u8_boundary_audit_enabled;
+    uint32_t w4u8_boundary_audit_output_offset;
+    uint32_t w4u8_boundary_audit_output_bytes;
 
     int32_t dsp_status;
     int32_t cache_status;
@@ -678,6 +683,7 @@ struct qbh_block_header {
     uint64_t u8_attention_actual_av_hash;
     uint64_t u8_input_norm_actual_hash;
     uint32_t u8_attention_audit_ddr_write_bytes;
+    uint32_t w4u8_boundary_audit_ddr_write_bytes;
 
     uint32_t scan_logical_m_observed;
     uint32_t scan_physical_chunk_count;

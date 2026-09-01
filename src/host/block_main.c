@@ -2894,6 +2894,7 @@ int main(int argc, char **argv) {
     uint32_t replay_mode = QBH_BLOCK_REPLAY_DISABLED;
     uint32_t vertical_slice_mode = QBH_BLOCK_SLICE_DISABLED;
     uint32_t full_stack_stage_mode = QBH_BLOCK_FULL_STACK_RUN;
+    uint32_t w4u8_boundary_audit_enabled = 0U;
     uint32_t replay_session_offset = 0U;
     uint32_t element_bytes;
     uint32_t output_bytes;
@@ -2904,6 +2905,7 @@ int main(int argc, char **argv) {
     size_t single_gate_up_scale_cache_offset = 0U;
     size_t attention_audit_output_offset = 0U;
     size_t scan_attention_audit_output_offset = 0U;
+    size_t w4u8_boundary_audit_output_offset = 0U;
     size_t full_stack_hidden_capture_offset = 0U;
     size_t full_stack_hidden_capture_bytes = 0U;
     size_t cursor = qbh_align_up_size(sizeof(*header), QBH_HOST_ALIGNMENT);
@@ -3124,6 +3126,18 @@ int main(int argc, char **argv) {
                 QBH_BLOCK_FULL_STACK_HIDDEN_CAPTURE;
         }
     }
+    {
+        const char *boundary_audit = getenv("QBH_W4U8_BOUNDARY_AUDIT");
+        if (boundary_audit != NULL && boundary_audit[0] != '\0') {
+            if (strcmp(boundary_audit, "0") == 0) {
+                w4u8_boundary_audit_enabled = 0U;
+            } else if (strcmp(boundary_audit, "1") == 0) {
+                w4u8_boundary_audit_enabled = 1U;
+            } else {
+                w4u8_boundary_audit_enabled = UINT32_MAX;
+            }
+        }
+    }
     if (argc < 3 || argc > 26 ||
         qbh_parse_variant(argv[2], &variant) != 0 ||
         (argc >= 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
@@ -3185,6 +3199,11 @@ int main(int argc, char **argv) {
          vertical_slice_mode != QBH_BLOCK_SLICE_ACTIVE_RANGE) ||
         full_stack_stage_mode >
             QBH_BLOCK_FULL_STACK_HIDDEN_CAPTURE ||
+        w4u8_boundary_audit_enabled > 1U ||
+        (w4u8_boundary_audit_enabled != 0U &&
+         (variant != QBH_BLOCK_W4U8 ||
+          vertical_slice_mode != QBH_BLOCK_SLICE_DISABLED ||
+          numerical_audit_enabled == 0U)) ||
         (full_stack_stage_mode != QBH_BLOCK_FULL_STACK_RUN &&
          (replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS ||
           vertical_slice_mode != QBH_BLOCK_SLICE_ACTIVE_RANGE)) ||
@@ -3911,6 +3930,16 @@ int main(int argc, char **argv) {
             }
             cursor += QBH_BLOCK_U8_ATTENTION_AUDIT_BYTES;
         }
+        if (w4u8_boundary_audit_enabled != 0U) {
+            const size_t boundary_bytes =
+                (size_t)QBH_BLOCK_M * QBH_BLOCK_HIDDEN;
+            cursor = qbh_align_up_size(cursor, QBH_HOST_ALIGNMENT);
+            w4u8_boundary_audit_output_offset = cursor;
+            if (boundary_bytes > UINT32_MAX - cursor) {
+                return 2;
+            }
+            cursor += boundary_bytes;
+        }
         if (vertical_slice_mode == QBH_BLOCK_SLICE_DISABLED &&
             scan_mode != QBH_BLOCK_SCAN_DISABLED &&
             variant != QBH_BLOCK_W4U8 &&
@@ -4220,6 +4249,14 @@ int main(int argc, char **argv) {
             (uint32_t)scan_attention_audit_output_offset;
         header->scan_attention_audit_output_bytes =
             QBH_BLOCK_SCAN_F16_AUDIT_BYTES;
+    }
+    header->w4u8_boundary_audit_enabled =
+        w4u8_boundary_audit_enabled;
+    if (w4u8_boundary_audit_enabled != 0U) {
+        header->w4u8_boundary_audit_output_offset =
+            (uint32_t)w4u8_boundary_audit_output_offset;
+        header->w4u8_boundary_audit_output_bytes =
+            QBH_BLOCK_M * QBH_BLOCK_HIDDEN;
     }
     if (vertical_slice_mode == QBH_BLOCK_SLICE_DISABLED &&
         qbh_block_mlp_is_w4u8_streaming(mlp_mode)) {
@@ -4727,6 +4764,17 @@ int main(int argc, char **argv) {
             }
         }
     }
+    if (w4u8_boundary_audit_enabled != 0U) {
+        const char *dump_root = getenv("QBH_DUMP_BOUNDARY_DIR");
+        if (dump_root != NULL && dump_root[0] != '\0' &&
+            qbh_write_named_tensor(
+                dump_root, "actual_input_norm_tiles_u8.bin",
+                shared + header->w4u8_boundary_audit_output_offset,
+                header->w4u8_boundary_audit_output_bytes) != 0) {
+            fprintf(stderr, "failed to write W4U8 boundary dump\n");
+            goto cleanup;
+        }
+    }
     if (scan_mode != QBH_BLOCK_SCAN_DISABLED &&
         variant != QBH_BLOCK_W4U8 &&
         numerical_audit_enabled != 0U) {
@@ -4905,6 +4953,8 @@ int main(int argc, char **argv) {
         "\"u8_attention_actual_av_hash\":\"%016" PRIx64 "\","
         "\"u8_input_norm_actual_hash\":\"%016" PRIx64 "\","
         "\"u8_attention_audit_ddr_write_bytes\":%" PRIu32 ","
+        "\"w4u8_boundary_audit_enabled\":%" PRIu32 ","
+        "\"w4u8_boundary_audit_ddr_write_bytes\":%" PRIu32 ","
         "\"crouton_qkv_projection_count\":%" PRIu32 ","
         "\"crouton_qkv_unpack_skipped\":%" PRIu32 ","
         "\"crouton_qk_operand_count\":%" PRIu32 ","
@@ -5274,6 +5324,8 @@ int main(int argc, char **argv) {
         header->u8_attention_actual_av_hash,
         header->u8_input_norm_actual_hash,
         header->u8_attention_audit_ddr_write_bytes,
+        header->w4u8_boundary_audit_enabled,
+        header->w4u8_boundary_audit_ddr_write_bytes,
         header->crouton_qkv_projection_count,
         header->crouton_qkv_unpack_skipped,
         header->crouton_qk_operand_count,
