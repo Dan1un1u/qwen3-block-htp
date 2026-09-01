@@ -5969,7 +5969,10 @@ static int qbh_run_w4u8_qkv_ring(
     state.expand_worker_count =
         header->w4u8_qkv_ring_expand_workers;
     main_prep_job.pool = pool;
-    main_prep_job.worker_index = pool->worker_count;
+    /* The first three pool jobs only expand V weights in this phase, so
+     * scratch slot zero is free for Q/K prep.  Slots four and five overlap
+     * the legacy numerical-audit/rsqrt overlay and are not safe here. */
+    main_prep_job.worker_index = 0U;
     state.compressed_slots[0] = buffers->compressed_weight;
     state.compressed_slots[1] = buffers->compressed_weight_alt;
     state.compressed_slots[2] = buffers->middle;
