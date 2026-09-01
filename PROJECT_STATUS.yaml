@@ -19,8 +19,8 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 142
+  active_experiment: EXP-0142
+  next_experiment_number: 143
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -29,14 +29,14 @@ current_scope:
   execution_unit: qwen3_middle_block
   last_completed_experiment: EXP-0141
   last_completed_source_commit: 0b472a9946570a473307ff6d4f06d6f39a0f5769
-  provisional_source_parent: EXP-0124
+  provisional_source_parent: EXP-0140
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: idle
+  active_experiment_stage: approved_implementation
   active_experiment_evidence: null
-  active_experiment_gate: null
-  active_recipe_specialization: null
+  active_experiment_gate: w4f16_o_projection_join_only_after_down_join_only
+  active_recipe_specialization: W4F16
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0141/20260901T041921Z_0b472a994657_formal'
   latest_w4u8_o_batch8_candidate:
     id: EXP-0141
