@@ -780,10 +780,165 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
     return 0;
 }
 
+static int qbh_projection_shape_valid(
+    uint32_t index, const struct qbh_block_projection_desc *desc);
+
 static int qbh_range_valid(uint32_t offset, uint32_t bytes,
                            uint32_t shared_bytes) {
     return offset >= sizeof(struct qbh_block_header) &&
            offset <= shared_bytes && bytes <= shared_bytes - offset;
+}
+
+static int qbh_slice_enabled(const struct qbh_block_header *header) {
+    return header->slice_mode == QBH_BLOCK_SLICE_LAYERS_13_15 &&
+           header->slice_first_layer == QBH_VERTICAL_SLICE_FIRST_LAYER &&
+           header->slice_layer_count == QBH_VERTICAL_SLICE_LAYER_COUNT;
+}
+
+static void qbh_bind_slice_layer(struct qbh_block_header *header,
+                                 uint32_t slice_index) {
+    const struct qbh_block_layer_desc *layer =
+        &header->slice_layers[slice_index];
+    header->qparam_offset = layer->qparam_offset;
+    header->qparam_bytes = layer->qparam_bytes;
+    header->input_norm_weight_offset = layer->input_norm_weight_offset;
+    header->input_norm_weight_bytes = layer->input_norm_weight_bytes;
+    header->post_norm_weight_offset = layer->post_norm_weight_offset;
+    header->post_norm_weight_bytes = layer->post_norm_weight_bytes;
+    header->q_norm_weight_offset = layer->q_norm_weight_offset;
+    header->q_norm_weight_bytes = layer->q_norm_weight_bytes;
+    header->k_norm_weight_offset = layer->k_norm_weight_offset;
+    header->k_norm_weight_bytes = layer->k_norm_weight_bytes;
+    header->w4u8_gate_up_bundle_offset =
+        layer->w4u8_gate_up_bundle_offset;
+    header->w4u8_gate_up_bundle_bytes =
+        layer->w4u8_gate_up_bundle_bytes;
+    header->w4u8_down_bundle_offset = layer->w4u8_down_bundle_offset;
+    header->w4u8_down_bundle_bytes = layer->w4u8_down_bundle_bytes;
+    header->w4u8_silu_lut_offset = layer->w4u8_silu_lut_offset;
+    header->w4u8_silu_lut_bytes = layer->w4u8_silu_lut_bytes;
+    header->attention_config_offset = layer->attention_config_offset;
+    header->attention_config_bytes = layer->attention_config_bytes;
+    header->kv_cache_k_offset = layer->kv_cache_k_offset;
+    header->kv_cache_k_bytes = layer->kv_cache_k_bytes;
+    header->kv_cache_v_offset = layer->kv_cache_v_offset;
+    header->kv_cache_v_bytes = layer->kv_cache_v_bytes;
+    header->w4f16_gate_up_scale_cache_offset =
+        layer->w4f16_gate_up_scale_cache_offset;
+    header->w4f16_gate_up_scale_cache_bytes =
+        layer->w4f16_gate_up_scale_cache_bytes;
+    memcpy(header->projections, layer->projections,
+           sizeof(header->projections));
+    memcpy(header->qparams, layer->qparams, sizeof(header->qparams));
+}
+
+static int qbh_slice_layer_desc_valid(
+    const struct qbh_block_header *header,
+    const struct qbh_block_layer_desc *layer,
+    uint32_t expected_layer, uint32_t shared_bytes,
+    uint32_t element_bytes) {
+    uint32_t cache_bytes =
+        header->kv_cache_capacity * QBH_BLOCK_KV_HIDDEN * element_bytes;
+
+    if (layer->layer_index != expected_layer ||
+        layer->qparam_bytes !=
+            QBH_BLOCK_QPARAM_COUNT * QBH_BLOCK_QPARAM_RECORD_BYTES ||
+        !qbh_range_valid(layer->qparam_offset, layer->qparam_bytes,
+                         shared_bytes) ||
+        layer->input_norm_weight_bytes !=
+            QBH_BLOCK_HIDDEN * sizeof(uint16_t) ||
+        layer->post_norm_weight_bytes !=
+            QBH_BLOCK_HIDDEN * sizeof(uint16_t) ||
+        layer->q_norm_weight_bytes !=
+            QBH_BLOCK_HEAD_DIM * sizeof(uint16_t) ||
+        layer->k_norm_weight_bytes !=
+            QBH_BLOCK_HEAD_DIM * sizeof(uint16_t) ||
+        !qbh_range_valid(layer->input_norm_weight_offset,
+                         layer->input_norm_weight_bytes, shared_bytes) ||
+        !qbh_range_valid(layer->post_norm_weight_offset,
+                         layer->post_norm_weight_bytes, shared_bytes) ||
+        !qbh_range_valid(layer->q_norm_weight_offset,
+                         layer->q_norm_weight_bytes, shared_bytes) ||
+        !qbh_range_valid(layer->k_norm_weight_offset,
+                         layer->k_norm_weight_bytes, shared_bytes) ||
+        layer->kv_cache_k_bytes != cache_bytes ||
+        layer->kv_cache_v_bytes != cache_bytes ||
+        !qbh_range_valid(layer->kv_cache_k_offset,
+                         layer->kv_cache_k_bytes, shared_bytes) ||
+        !qbh_range_valid(layer->kv_cache_v_offset,
+                         layer->kv_cache_v_bytes, shared_bytes)) {
+        return 0;
+    }
+    if (qbh_attention_u8_enabled(header->attention_pipeline_mode)) {
+        if (layer->attention_config_bytes !=
+                QBH_BLOCK_ATTENTION_CONFIG_BYTES ||
+            !qbh_range_valid(layer->attention_config_offset,
+                             layer->attention_config_bytes,
+                             shared_bytes)) {
+            return 0;
+        }
+    } else if (layer->attention_config_offset != 0U ||
+               layer->attention_config_bytes != 0U) {
+        return 0;
+    }
+    if (qbh_block_mlp_is_w4u8_streaming(header->mlp_mode)) {
+        if (layer->w4u8_silu_lut_bytes != QBH_MLP_LUT_BYTES ||
+            layer->w4u8_gate_up_bundle_bytes == 0U ||
+            layer->w4u8_down_bundle_bytes == 0U ||
+            !qbh_range_valid(layer->w4u8_silu_lut_offset,
+                             layer->w4u8_silu_lut_bytes, shared_bytes) ||
+            !qbh_range_valid(layer->w4u8_gate_up_bundle_offset,
+                             layer->w4u8_gate_up_bundle_bytes,
+                             shared_bytes) ||
+            !qbh_range_valid(layer->w4u8_down_bundle_offset,
+                             layer->w4u8_down_bundle_bytes,
+                             shared_bytes)) {
+            return 0;
+        }
+    }
+    if (header->w4f16_pipeline_mode ==
+            QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH &&
+        (layer->w4f16_gate_up_scale_cache_bytes == 0U ||
+         !qbh_range_valid(layer->w4f16_gate_up_scale_cache_offset,
+                          layer->w4f16_gate_up_scale_cache_bytes,
+                          shared_bytes))) {
+        return 0;
+    }
+    for (uint32_t index = 0U;
+         index < QBH_BLOCK_PROJECTION_COUNT; ++index) {
+        const struct qbh_block_projection_desc *desc =
+            &layer->projections[index];
+        uint32_t expected_weight =
+            header->variant == QBH_BLOCK_F16F16
+                ? desc->k * desc->n * sizeof(uint16_t)
+                : desc->k * desc->n / 2U;
+        if (!qbh_projection_shape_valid(index, desc) ||
+            desc->weight_bytes != expected_weight ||
+            !qbh_range_valid(desc->weight_offset, desc->weight_bytes,
+                             shared_bytes)) {
+            return 0;
+        }
+        if (header->variant != QBH_BLOCK_F16F16 &&
+            (desc->scale_bytes != desc->n * sizeof(float) ||
+             !qbh_range_valid(desc->scale_offset, desc->scale_bytes,
+                              shared_bytes))) {
+            return 0;
+        }
+        if (header->variant == QBH_BLOCK_W4U8 &&
+            (desc->bias_bytes !=
+                 desc->n / QBH_HMX_OUTPUT_CHANNELS * QBH_HMX_BIAS_BYTES ||
+             !qbh_range_valid(desc->bias_offset, desc->bias_bytes,
+                              shared_bytes))) {
+            return 0;
+        }
+    }
+    for (uint32_t index = 0U; index < QBH_BLOCK_QPARAM_COUNT; ++index) {
+        if (!(layer->qparams[index].scale > 0.0f) ||
+            !isfinite(layer->qparams[index].scale)) {
+            return 0;
+        }
+    }
+    return 1;
 }
 
 static int qbh_replay_session_valid(
@@ -798,7 +953,8 @@ static int qbh_replay_session_valid(
         return header->replay_session_offset == 0U &&
                header->replay_session_bytes == 0U &&
                header->replay_expected_step == 0U &&
-               header->replay_first_position == 0U;
+               header->replay_first_position == 0U &&
+               header->slice_mode == QBH_BLOCK_SLICE_DISABLED;
     }
     if (header->replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS ||
         header->repeat_count != 1U ||
@@ -815,34 +971,47 @@ static int qbh_replay_session_valid(
         state->abi_version != QBH_DECODE_SESSION_ABI_VERSION ||
         state->state_bytes != sizeof(*state) ||
         state->declared_layer_count != QBH_QWEN3_TRANSFORMER_LAYERS ||
-        state->active_layer != QBH_REPLAY_LAYER_INDEX ||
+        state->active_layer != QBH_VERTICAL_SLICE_FIRST_LAYER ||
+        state->active_layer_count != QBH_VERTICAL_SLICE_LAYER_COUNT ||
         state->completed_step_count != header->replay_expected_step ||
         state->next_position != header->replay_first_position ||
-        state->next_position != header->initial_kv_length) {
+        state->next_position != header->initial_kv_length ||
+        !qbh_slice_enabled(header)) {
         return 0;
     }
-    layer = &state->layers[state->active_layer];
     expected_element = header->variant == QBH_BLOCK_W4U8
         ? QBH_KV_CACHE_ELEMENT_U8 : QBH_KV_CACHE_ELEMENT_F16;
-    cache_bytes = layer->capacity * QBH_BLOCK_KV_HIDDEN * element_bytes;
-    return layer->layer_index == QBH_REPLAY_LAYER_INDEX &&
-           layer->element_type == expected_element &&
-           layer->k_format == QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1 &&
-           layer->v_format == QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1 &&
-           layer->capacity == header->kv_cache_capacity &&
-           layer->valid_length == header->initial_kv_length &&
-           layer->valid_length + header->logical_m <= layer->capacity &&
-           layer->k_offset == header->kv_cache_k_offset &&
-           layer->k_bytes == header->kv_cache_k_bytes &&
-           layer->v_offset == header->kv_cache_v_offset &&
-           layer->v_bytes == header->kv_cache_v_bytes &&
-           layer->k_bytes == cache_bytes && layer->v_bytes == cache_bytes &&
-           layer->head_count == QBH_BLOCK_KV_HEADS &&
-           layer->head_dim == QBH_BLOCK_HEAD_DIM &&
-           layer->head_stride_bytes ==
-               layer->capacity * QBH_BLOCK_HEAD_DIM * element_bytes &&
-           layer->token_stride_bytes ==
-               QBH_BLOCK_HEAD_DIM * element_bytes;
+    for (uint32_t slice_index = 0U;
+         slice_index < QBH_VERTICAL_SLICE_LAYER_COUNT; ++slice_index) {
+        const uint32_t layer_index =
+            QBH_VERTICAL_SLICE_FIRST_LAYER + slice_index;
+        const struct qbh_block_layer_desc *desc =
+            &header->slice_layers[slice_index];
+        layer = &state->layers[layer_index];
+        cache_bytes = layer->capacity * QBH_BLOCK_KV_HIDDEN * element_bytes;
+        if (layer->layer_index != layer_index ||
+            layer->element_type != expected_element ||
+            layer->k_format != QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1 ||
+            layer->v_format != QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1 ||
+            layer->capacity != header->kv_cache_capacity ||
+            layer->valid_length != header->initial_kv_length ||
+            layer->valid_length + header->logical_m > layer->capacity ||
+            layer->k_offset != desc->kv_cache_k_offset ||
+            layer->k_bytes != desc->kv_cache_k_bytes ||
+            layer->v_offset != desc->kv_cache_v_offset ||
+            layer->v_bytes != desc->kv_cache_v_bytes ||
+            layer->k_bytes != cache_bytes ||
+            layer->v_bytes != cache_bytes ||
+            layer->head_count != QBH_BLOCK_KV_HEADS ||
+            layer->head_dim != QBH_BLOCK_HEAD_DIM ||
+            layer->head_stride_bytes !=
+                layer->capacity * QBH_BLOCK_HEAD_DIM * element_bytes ||
+            layer->token_stride_bytes !=
+                QBH_BLOCK_HEAD_DIM * element_bytes) {
+            return 0;
+        }
+    }
+    return 1;
 }
 
 static int qbh_projection_shape_valid(uint32_t index,
@@ -948,6 +1117,20 @@ static int qbh_header_valid(const struct qbh_block_header *header,
     element_bytes = header->variant == QBH_BLOCK_W4U8 ? 1U : 2U;
     if (!qbh_replay_session_valid(
             header, shared_bytes, element_bytes)) {
+        return 0;
+    }
+    if (qbh_slice_enabled(header)) {
+        for (uint32_t slice_index = 0U;
+             slice_index < QBH_VERTICAL_SLICE_LAYER_COUNT;
+             ++slice_index) {
+            if (!qbh_slice_layer_desc_valid(
+                    header, &header->slice_layers[slice_index],
+                    QBH_VERTICAL_SLICE_FIRST_LAYER + slice_index,
+                    shared_bytes, element_bytes)) {
+                return 0;
+            }
+        }
+    } else if (header->slice_mode != QBH_BLOCK_SLICE_DISABLED) {
         return 0;
     }
     if ((header->common_ops_mask &
@@ -10272,7 +10455,9 @@ static int qbh_stage_metadata(struct qbh_block_header *header,
                     buffers->gate_up_scale_cache + cache_source_offset;
                 if (qbh_dma_copy(
                         header, cache_destination,
-                        shared + header->output_offset + cache_source_offset,
+                        shared +
+                            header->w4f16_gate_up_scale_cache_offset +
+                            cache_source_offset,
                         cache_bytes, 1U) != 0) {
                     return -1;
                 }
@@ -11341,7 +11526,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                              struct qbh_block_w4f16_pool *w4f16_pool,
                              uint32_t input_offset,
                              uint32_t logical_rows,
-                             uint32_t past_tokens) {
+                             uint32_t past_tokens,
+                             uint32_t input_resident) {
     uint32_t hidden_elements = QBH_BLOCK_M * QBH_BLOCK_HIDDEN;
     uint32_t intermediate_elements =
         QBH_BLOCK_M * QBH_BLOCK_INTERMEDIATE;
@@ -11463,18 +11649,18 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     }
 
     start = HAP_perf_get_qtimer_count();
-    if (qbh_dma_copy(header, buffers->residual,
-                     shared + input_offset,
-                     QBH_BLOCK_M * QBH_BLOCK_HIDDEN *
-                         (header->variant == QBH_BLOCK_W4U8 ? 1U : 2U),
-                     1U) != 0) {
-        header->input_dma_status = -1;
-        return QBH_BLOCK_STATUS_INPUT_DMA_FAILED;
+    if (input_resident == 0U) {
+        const uint32_t input_bytes =
+            QBH_BLOCK_M * QBH_BLOCK_HIDDEN *
+            (header->variant == QBH_BLOCK_W4U8 ? 1U : 2U);
+        if (qbh_dma_copy(header, buffers->residual,
+                         shared + input_offset, input_bytes, 1U) != 0) {
+            header->input_dma_status = -1;
+            return QBH_BLOCK_STATUS_INPUT_DMA_FAILED;
+        }
+        header->boundary_ddr_read_bytes += input_bytes;
+        ++header->boundary_dma_descriptor_count;
     }
-    header->boundary_ddr_read_bytes +=
-        QBH_BLOCK_M * QBH_BLOCK_HIDDEN *
-        (header->variant == QBH_BLOCK_W4U8 ? 1U : 2U);
-    ++header->boundary_dma_descriptor_count;
     header->input_stage_ticks += HAP_perf_get_qtimer_count() - start;
 
     start = HAP_perf_get_qtimer_count();
@@ -12871,11 +13057,6 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
         header->runtime_setup_ticks =
             header->qtimer_start - invocation_start;
     }
-    if (qbh_stage_metadata(header, shared, &buffers) != 0) {
-        header->dsp_status = QBH_BLOCK_STATUS_METADATA_DMA_FAILED;
-        result = AEE_EFAILED;
-        goto stop_worker;
-    }
     header->scan_logical_m_observed = header->logical_m;
     header->scan_physical_chunk_count = qbh_scan_physical_chunks(header);
     header->scan_total_kv_length =
@@ -12885,23 +13066,59 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
     header->scan_useful_query_rows = header->logical_m;
     header->scan_physical_query_rows =
         header->scan_physical_chunk_count * QBH_BLOCK_M;
-    for (uint32_t repeat = 0; repeat < header->repeat_count; ++repeat) {
-        for (uint32_t chunk = 0U;
-             chunk < header->scan_physical_chunk_count; ++chunk) {
-            const uint32_t first_row = chunk * QBH_BLOCK_M;
-            const uint32_t remaining = header->logical_m - first_row;
-            const uint32_t logical_rows =
-                remaining < QBH_BLOCK_M ? remaining : QBH_BLOCK_M;
-            const uint32_t element_bytes =
-                header->variant == QBH_BLOCK_W4U8 ? 1U : 2U;
-            const uint32_t physical_tensor_bytes =
-                QBH_BLOCK_M * QBH_BLOCK_HIDDEN * element_bytes;
-            const uint32_t input_offset =
-                header->input_offset + chunk * physical_tensor_bytes;
+    if (qbh_slice_enabled(header)) {
+        struct qbh_decode_session_state *state =
+            (struct qbh_decode_session_state *)(
+                shared + header->replay_session_offset);
+        const uint32_t physical_tensor_bytes =
+            QBH_BLOCK_M * QBH_BLOCK_HIDDEN *
+            (header->variant == QBH_BLOCK_W4U8 ? 1U : 2U);
+        if (header->repeat_count != 1U ||
+            header->scan_physical_chunk_count != 1U) {
+            header->dsp_status = QBH_BLOCK_STATUS_BAD_HEADER;
+            result = AEE_EBADPARM;
+            goto stop_worker;
+        }
+        for (uint32_t slice_index = 0U;
+             slice_index < QBH_VERTICAL_SLICE_LAYER_COUNT;
+             ++slice_index) {
+            const uint32_t layer_index =
+                QBH_VERTICAL_SLICE_FIRST_LAYER + slice_index;
+            struct qbh_decode_layer_state *layer =
+                &state->layers[layer_index];
+            struct qbh_block_slice_layer_profile *profile =
+                &header->slice_profiles[slice_index];
+            uint64_t layer_start = HAP_perf_get_qtimer_count();
+            uint64_t metadata_before = header->metadata_stage_ticks;
+            uint64_t input_before = header->input_stage_ticks;
+            uint64_t input_norm_before = header->input_norm_ticks;
+            uint64_t qkv_before = header->qkv_projection_ticks;
+            uint64_t qk_norm_before = header->qk_norm_rope_ticks;
+            uint64_t attention_before = header->attention_ticks;
+            uint64_t o_before = header->o_projection_ticks;
+            uint64_t post_residual_before =
+                header->post_attention_residual_ticks;
+            uint64_t post_norm_before =
+                header->post_attention_norm_ticks;
+            uint64_t gate_up_before = header->gate_up_ticks;
+            uint64_t activation_before = header->activation_ticks;
+            uint64_t down_before = header->down_ticks;
+            uint64_t final_before = header->final_residual_ticks;
+            uint64_t weight_bytes_before = header->weight_ddr_read_bytes;
+            uint64_t cache_read_before = header->scan_cache_ddr_read_bytes;
+            uint64_t cache_write_before =
+                header->scan_cache_ddr_write_bytes;
             int block_status;
 
-            if (qbh_scan_stage_rope_chunk(
-                    header, shared, &buffers, chunk) != 0) {
+            memset(profile, 0, sizeof(*profile));
+            profile->layer_index = layer_index;
+            profile->cache_valid_before = layer->valid_length;
+            qbh_bind_slice_layer(header, slice_index);
+            header->initial_kv_length = layer->valid_length;
+            if (qbh_stage_metadata(header, shared, &buffers) != 0 ||
+                qbh_scan_stage_rope_chunk(
+                    header, shared, &buffers, 0U) != 0) {
+                profile->status = QBH_BLOCK_STATUS_METADATA_DMA_FAILED;
                 header->dsp_status =
                     QBH_BLOCK_STATUS_METADATA_DMA_FAILED;
                 result = AEE_EFAILED;
@@ -12910,38 +13127,140 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
             block_status = qbh_run_one_block(
                 header, shared, &buffers, &worker,
                 hvx_pool_created != 0 ? &w4f16_pool : NULL,
-                input_offset, logical_rows,
-                header->initial_kv_length + first_row);
+                header->input_offset, header->logical_m,
+                layer->valid_length, slice_index != 0U);
+            profile->status = block_status;
             if (block_status != QBH_BLOCK_STATUS_OK) {
                 header->dsp_status = block_status;
                 result = AEE_EFAILED;
                 goto stop_worker;
             }
-            if (header->scan_mode != QBH_BLOCK_SCAN_DISABLED &&
-                repeat + 1U == header->repeat_count) {
-                uint64_t output_start = HAP_perf_get_qtimer_count();
-                if (qbh_dma_copy(
-                        header,
-                        shared + header->output_offset +
-                            chunk * physical_tensor_bytes,
-                        buffers.residual, physical_tensor_bytes,
-                        0U) != 0) {
-                    header->output_dma_status = -1;
+            layer->valid_length += header->logical_m;
+            layer->append_count += header->logical_m;
+            profile->cache_valid_after = layer->valid_length;
+            profile->hidden_ddr_read_bytes =
+                slice_index == 0U ? physical_tensor_bytes : 0U;
+            profile->metadata_stage_ticks =
+                header->metadata_stage_ticks - metadata_before;
+            profile->input_stage_ticks =
+                header->input_stage_ticks - input_before;
+            profile->input_norm_ticks =
+                header->input_norm_ticks - input_norm_before;
+            profile->qkv_projection_ticks =
+                header->qkv_projection_ticks - qkv_before;
+            profile->qk_norm_rope_ticks =
+                header->qk_norm_rope_ticks - qk_norm_before;
+            profile->attention_ticks =
+                header->attention_ticks - attention_before;
+            profile->o_projection_ticks =
+                header->o_projection_ticks - o_before;
+            profile->post_attention_residual_ticks =
+                header->post_attention_residual_ticks -
+                post_residual_before;
+            profile->post_attention_norm_ticks =
+                header->post_attention_norm_ticks - post_norm_before;
+            profile->gate_up_ticks =
+                header->gate_up_ticks - gate_up_before;
+            profile->activation_ticks =
+                header->activation_ticks - activation_before;
+            profile->down_ticks = header->down_ticks - down_before;
+            profile->final_residual_ticks =
+                header->final_residual_ticks - final_before;
+            profile->weight_ddr_read_bytes =
+                header->weight_ddr_read_bytes - weight_bytes_before;
+            profile->cache_ddr_read_bytes =
+                header->scan_cache_ddr_read_bytes - cache_read_before;
+            profile->cache_ddr_write_bytes =
+                header->scan_cache_ddr_write_bytes - cache_write_before;
+            profile->layer_ticks =
+                HAP_perf_get_qtimer_count() - layer_start;
+            ++header->block_invocation_count;
+        }
+        {
+            uint64_t output_start = HAP_perf_get_qtimer_count();
+            if (qbh_dma_copy(
+                    header, shared + header->output_offset,
+                    buffers.residual, physical_tensor_bytes, 0U) != 0) {
+                header->output_dma_status = -1;
+                header->dsp_status = QBH_BLOCK_STATUS_OUTPUT_DMA_FAILED;
+                result = AEE_EFAILED;
+                goto stop_worker;
+            }
+            header->boundary_ddr_write_bytes += physical_tensor_bytes;
+            ++header->boundary_dma_descriptor_count;
+            header->output_stage_ticks +=
+                HAP_perf_get_qtimer_count() - output_start;
+            header->slice_profiles[
+                QBH_VERTICAL_SLICE_LAYER_COUNT - 1U]
+                .hidden_ddr_write_bytes = physical_tensor_bytes;
+        }
+        state->next_position += header->logical_m;
+        ++state->completed_step_count;
+    } else {
+        if (qbh_stage_metadata(header, shared, &buffers) != 0) {
+            header->dsp_status = QBH_BLOCK_STATUS_METADATA_DMA_FAILED;
+            result = AEE_EFAILED;
+            goto stop_worker;
+        }
+        for (uint32_t repeat = 0; repeat < header->repeat_count; ++repeat) {
+            for (uint32_t chunk = 0U;
+                 chunk < header->scan_physical_chunk_count; ++chunk) {
+                const uint32_t first_row = chunk * QBH_BLOCK_M;
+                const uint32_t remaining = header->logical_m - first_row;
+                const uint32_t logical_rows =
+                    remaining < QBH_BLOCK_M ? remaining : QBH_BLOCK_M;
+                const uint32_t element_bytes =
+                    header->variant == QBH_BLOCK_W4U8 ? 1U : 2U;
+                const uint32_t physical_tensor_bytes =
+                    QBH_BLOCK_M * QBH_BLOCK_HIDDEN * element_bytes;
+                const uint32_t input_offset =
+                    header->input_offset + chunk * physical_tensor_bytes;
+                int block_status;
+
+                if (qbh_scan_stage_rope_chunk(
+                        header, shared, &buffers, chunk) != 0) {
                     header->dsp_status =
-                        QBH_BLOCK_STATUS_OUTPUT_DMA_FAILED;
+                        QBH_BLOCK_STATUS_METADATA_DMA_FAILED;
                     result = AEE_EFAILED;
                     goto stop_worker;
                 }
-                header->boundary_ddr_write_bytes +=
-                    physical_tensor_bytes;
-                ++header->boundary_dma_descriptor_count;
-                header->output_stage_ticks +=
-                    HAP_perf_get_qtimer_count() - output_start;
+                block_status = qbh_run_one_block(
+                    header, shared, &buffers, &worker,
+                    hvx_pool_created != 0 ? &w4f16_pool : NULL,
+                    input_offset, logical_rows,
+                    header->initial_kv_length + first_row, 0U);
+                if (block_status != QBH_BLOCK_STATUS_OK) {
+                    header->dsp_status = block_status;
+                    result = AEE_EFAILED;
+                    goto stop_worker;
+                }
+                if (header->scan_mode != QBH_BLOCK_SCAN_DISABLED &&
+                    repeat + 1U == header->repeat_count) {
+                    uint64_t output_start = HAP_perf_get_qtimer_count();
+                    if (qbh_dma_copy(
+                            header,
+                            shared + header->output_offset +
+                                chunk * physical_tensor_bytes,
+                            buffers.residual, physical_tensor_bytes,
+                            0U) != 0) {
+                        header->output_dma_status = -1;
+                        header->dsp_status =
+                            QBH_BLOCK_STATUS_OUTPUT_DMA_FAILED;
+                        result = AEE_EFAILED;
+                        goto stop_worker;
+                    }
+                    header->boundary_ddr_write_bytes +=
+                        physical_tensor_bytes;
+                    ++header->boundary_dma_descriptor_count;
+                    header->output_stage_ticks +=
+                        HAP_perf_get_qtimer_count() - output_start;
+                }
             }
+            ++header->block_invocation_count;
         }
-        ++header->block_invocation_count;
     }
-    if (header->scan_mode == QBH_BLOCK_SCAN_DISABLED) {
+    if (!qbh_slice_enabled(header) &&
+        header->scan_mode == QBH_BLOCK_SCAN_DISABLED) {
         uint64_t output_start = HAP_perf_get_qtimer_count();
         if (qbh_dma_copy(header, shared + header->output_offset,
                          buffers.residual, header->output_bytes, 0U) != 0) {
@@ -12963,7 +13282,8 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
         teardown_start = HAP_perf_get_qtimer_count();
     }
     header->dsp_status = QBH_BLOCK_STATUS_OK;
-    if (header->replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS) {
+    if (header->replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS &&
+        !qbh_slice_enabled(header)) {
         struct qbh_decode_session_state *state =
             (struct qbh_decode_session_state *)(
                 shared + header->replay_session_offset);

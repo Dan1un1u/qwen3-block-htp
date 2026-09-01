@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(55)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(148)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(56)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(149)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -25,8 +25,10 @@
     (QBH_BLOCK_KV_HEADS * QBH_BLOCK_HEAD_DIM)
 #define QBH_QWEN3_TRANSFORMER_LAYERS UINT32_C(28)
 #define QBH_REPLAY_LAYER_INDEX UINT32_C(14)
+#define QBH_VERTICAL_SLICE_FIRST_LAYER UINT32_C(13)
+#define QBH_VERTICAL_SLICE_LAYER_COUNT UINT32_C(3)
 #define QBH_DECODE_SESSION_MAGIC UINT32_C(0x51445353)
-#define QBH_DECODE_SESSION_ABI_VERSION UINT32_C(1)
+#define QBH_DECODE_SESSION_ABI_VERSION UINT32_C(2)
 #define QBH_BLOCK_PROJECTION_COUNT UINT32_C(7)
 #define QBH_BLOCK_QPARAM_COUNT UINT32_C(17)
 #define QBH_BLOCK_QPARAM_RECORD_BYTES UINT32_C(48)
@@ -82,6 +84,11 @@ enum qbh_block_scan_mode {
 enum qbh_block_replay_mode {
     QBH_BLOCK_REPLAY_DISABLED = 0,
     QBH_BLOCK_REPLAY_CONTINUOUS = 1,
+};
+
+enum qbh_block_slice_mode {
+    QBH_BLOCK_SLICE_DISABLED = 0,
+    QBH_BLOCK_SLICE_LAYERS_13_15 = 1,
 };
 
 enum qbh_kv_cache_element_type {
@@ -387,10 +394,70 @@ struct qbh_decode_session_state {
     uint32_t state_bytes;
     uint32_t declared_layer_count;
     uint32_t active_layer;
+    uint32_t active_layer_count;
     uint32_t completed_step_count;
     uint32_t next_position;
     uint32_t flags;
     struct qbh_decode_layer_state layers[QBH_QWEN3_TRANSFORMER_LAYERS];
+};
+
+/* Immutable, layer-indexed package view used by EXP-0149.  RoPE is position
+ * metadata shared by all layers and remains in the top-level request. */
+struct qbh_block_layer_desc {
+    uint32_t layer_index;
+    uint32_t qparam_offset;
+    uint32_t qparam_bytes;
+    uint32_t input_norm_weight_offset;
+    uint32_t input_norm_weight_bytes;
+    uint32_t post_norm_weight_offset;
+    uint32_t post_norm_weight_bytes;
+    uint32_t q_norm_weight_offset;
+    uint32_t q_norm_weight_bytes;
+    uint32_t k_norm_weight_offset;
+    uint32_t k_norm_weight_bytes;
+    uint32_t w4u8_gate_up_bundle_offset;
+    uint32_t w4u8_gate_up_bundle_bytes;
+    uint32_t w4u8_down_bundle_offset;
+    uint32_t w4u8_down_bundle_bytes;
+    uint32_t w4u8_silu_lut_offset;
+    uint32_t w4u8_silu_lut_bytes;
+    uint32_t attention_config_offset;
+    uint32_t attention_config_bytes;
+    uint32_t kv_cache_k_offset;
+    uint32_t kv_cache_k_bytes;
+    uint32_t kv_cache_v_offset;
+    uint32_t kv_cache_v_bytes;
+    uint32_t w4f16_gate_up_scale_cache_offset;
+    uint32_t w4f16_gate_up_scale_cache_bytes;
+    struct qbh_block_projection_desc
+        projections[QBH_BLOCK_PROJECTION_COUNT];
+    struct qbh_block_qparam qparams[QBH_BLOCK_QPARAM_COUNT];
+};
+
+struct qbh_block_slice_layer_profile {
+    uint32_t layer_index;
+    int32_t status;
+    uint32_t cache_valid_before;
+    uint32_t cache_valid_after;
+    uint32_t hidden_ddr_read_bytes;
+    uint32_t hidden_ddr_write_bytes;
+    uint64_t layer_ticks;
+    uint64_t metadata_stage_ticks;
+    uint64_t input_stage_ticks;
+    uint64_t input_norm_ticks;
+    uint64_t qkv_projection_ticks;
+    uint64_t qk_norm_rope_ticks;
+    uint64_t attention_ticks;
+    uint64_t o_projection_ticks;
+    uint64_t post_attention_residual_ticks;
+    uint64_t post_attention_norm_ticks;
+    uint64_t gate_up_ticks;
+    uint64_t activation_ticks;
+    uint64_t down_ticks;
+    uint64_t final_residual_ticks;
+    uint64_t weight_ddr_read_bytes;
+    uint64_t cache_ddr_read_bytes;
+    uint64_t cache_ddr_write_bytes;
 };
 
 struct qbh_block_header {
@@ -447,6 +514,12 @@ struct qbh_block_header {
     uint32_t replay_expected_step;
     uint32_t replay_first_position;
 
+    /* EXP-0149 consecutive-layer execution contract. */
+    uint32_t slice_mode;
+    uint32_t slice_first_layer;
+    uint32_t slice_layer_count;
+    uint32_t w4f16_gate_up_scale_cache_offset;
+
     uint32_t input_offset;
     uint32_t input_bytes;
     uint32_t output_offset;
@@ -484,6 +557,8 @@ struct qbh_block_header {
     struct qbh_block_projection_desc
         projections[QBH_BLOCK_PROJECTION_COUNT];
     struct qbh_block_qparam qparams[QBH_BLOCK_QPARAM_COUNT];
+    struct qbh_block_layer_desc
+        slice_layers[QBH_VERTICAL_SLICE_LAYER_COUNT];
 
     /* Host-computed FNV-1a hashes over independent, physical tile-order
      * references.  They are part of the immutable request and therefore sit
@@ -816,6 +891,8 @@ struct qbh_block_header {
     uint64_t w4u8_qkv_ring_hmx_ready_wait_ticks;
     uint64_t w4u8_qkv_ring_hmx_compute_ticks;
     uint64_t w4u8_qkv_ring_pool_wait_ticks;
+    struct qbh_block_slice_layer_profile
+        slice_profiles[QBH_VERTICAL_SLICE_LAYER_COUNT];
 };
 
 #endif
