@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0131
+  active_experiment: null
   next_experiment_number: 132
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,25 +27,25 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0130
-  last_completed_source_commit: e5541891db5d6ac6083987674df6da2c752cc095
+  last_completed_experiment: EXP-0131
+  last_completed_source_commit: 9b74c81651b908495ded09bd991b3e11374a326e
   provisional_source_parent: EXP-0124
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: registered
+  active_experiment_stage: none
   active_experiment_evidence: null
-  active_experiment_gate: pending
-  active_recipe_specialization: W4U8_QKV_post_DMA_HMX_tail_main_HVX_prep
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0130/20260901T010000Z_e554189_smoke'
+  active_experiment_gate: none
+  active_recipe_specialization: none
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0131/20260901T011921Z_9b74c81651b9_formal'
   last_rejected_specialization:
-    id: EXP-0130
-    source_branch: codex/exp-0130-w4u8-qkv-dma-flight-main-prep
-    source_head: e5541891db5d6ac6083987674df6da2c752cc095
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0130/20260901T010000Z_e554189_smoke'
+    id: EXP-0131
+    source_branch: codex/exp-0131-w4u8-qkv-hmx-tail-main-prep
+    source_head: 9b74c81651b908495ded09bd991b3e11374a326e
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0131/20260901T011921Z_9b74c81651b9_formal'
     local_gate: fail
     adoption_status: rejected
-    reason: one_ready_QK_pair_outlasts_V_DMA_and_delays_HMX_readiness_more_than_it_reduces_prep_pool_tail
+    reason: third_QK_prep_context_is_not_boundary_exact_without_serialization_and_serialization_makes_QKV_about_80_percent_slower
   latest_w4f16_gate_up_worker4_candidate:
     id: EXP-0129
     source_branch: codex/exp-0129-w4f16-gate-up-worker4

@@ -10593,20 +10593,22 @@ experiments:
     variants:
       - exp0124_ring3_control
       - ring3_post_dma_main_hvx_qk_prep_candidate
-    execution_state: running
-    evidence_validity: pending
-    local_gate: pending
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-qkv-hmx-tail-main-prep
     source_branches:
       - codex/exp-0131-w4u8-qkv-hmx-tail-main-prep
-    source_commits: []
+    source_commits:
+      - 9b74c81651b908495ded09bd991b3e11374a326e
     record: docs/experiments/EXP-0131.md
     approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently without interruption'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0131-w4u8-qkv-hmx-tail-main-prep
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0124
       source_parent_commit: 95fadff5930d9081678ad99bb62ef84849ee1897
@@ -10628,3 +10630,30 @@ experiments:
       physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_identical_weight_bytes_DMA_descriptors_HMX_commands_tile_pairs_qparams_and_peak_plan
       speed_gate: QKV_plus_QK_Norm_RoPE_and_complete_Host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
       completion_gate: bounded_smoke_then_five_rotated_formal_rounds_PC027_PC028_and_accept_or_reject_without_automatic_baseline_promotion
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0131/20260901T011921Z_9b74c81651b9_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0131/artifacts/9b74c81651b9/20260901T011921Z_formal'
+      source_commit: 9b74c81651b908495ded09bd991b3e11374a326e
+      correctness_gate_result: fail_main_drain_score_probability_and_AV_hashes_differ_despite_zero_final_LSB_and_zero_fused_K_operand_mismatch_after_scatter_serialization
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_dma_hmx_tiles_qparams_and_peak_plan
+      selected_cell: exp0124_ring3_control
+      repeat1_qkv_change_percent: 82.0875420875421
+      repeat1_qkv_paired_change_percent: 80.8888888888889
+      repeat1_host_change_percent: 13.770515073747557
+      repeat1_host_paired_change_percent: 15.836855698265651
+      repeat10_qkv_change_percent: 79.47996816131602
+      repeat10_qkv_paired_change_percent: 79.25118445884416
+      repeat10_host_change_percent: 18.227098763524996
+      repeat10_host_paired_change_percent: 18.305603146786176
+      repeat10_pool_wait_change_percent: 29.764187306042555
+      repeat10_hmx_ready_wait_change_percent: -1.941409783591952
+      candidate_main_prep_tasks_per_block: 2
+      candidate_main_prep_ticks_per_block: 4584.6
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_exp0109_f16f16_exp0111_w4f16_EXP0131_candidate_w4u8
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: 80b165acffe8d3091eb2e1537b6bec8edad3edeae529d434eae1bd33cb1661f0
+      full_profiling_report_sha256: 4c696eed8e83071ad00b24943f18e1cc5978a3cd8b3b327a79896baf0e37b22e
+      evidence_sha256_ledger_sha256: 68454e74b1862730cd68e899dd09d2cf9d0c655c45fc2eb6f94224e8976dd9a5
+      conclusion: post_DMA_main_context_help_requires_a_third_concurrent_QK_pair_context_that_is_not_boundary_exact_and_serializing_the_shared_K_scatter_path_overwhelms_any_join_reduction
+      reopen_condition: only_with_a_proven_reentrant_three_context_QK_kernel_or_a_task_partition_that_never_adds_concurrent_K_scatter
+      selected_baseline_changed: false
