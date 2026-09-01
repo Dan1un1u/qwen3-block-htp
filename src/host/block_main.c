@@ -1520,6 +1520,7 @@ int main(int argc, char **argv) {
     uint32_t w4u8_stream_fence_mode =
         QBH_BLOCK_W4U8_STREAM_FENCE_CONTROL;
     uint32_t w4u8_gate_up_ring_slots = 8U;
+    uint32_t w4u8_gate_up_stream_region_tiles = 32U;
     uint32_t element_bytes;
     uint32_t output_bytes;
     size_t w4u8_gate_up_bundle_offset = 0U;
@@ -1610,6 +1611,15 @@ int main(int argc, char **argv) {
         if (ring_slots != NULL && ring_slots[0] != '\0' &&
             qbh_parse_u32(ring_slots, &w4u8_gate_up_ring_slots) != 0) {
             w4u8_gate_up_ring_slots = UINT32_MAX;
+        }
+    }
+    {
+        const char *region_tiles = getenv(
+            "QBH_W4U8_GATE_UP_STREAM_REGION_TILES");
+        if (region_tiles != NULL && region_tiles[0] != '\0' &&
+            qbh_parse_u32(region_tiles,
+                          &w4u8_gate_up_stream_region_tiles) != 0) {
+            w4u8_gate_up_stream_region_tiles = UINT32_MAX;
         }
     }
     if (argc < 3 || argc > 26 ||
@@ -1784,6 +1794,10 @@ int main(int argc, char **argv) {
          w4u8_gate_up_ring_slots != 16U) ||
         (variant != QBH_BLOCK_W4U8 &&
          w4u8_gate_up_ring_slots != 8U) ||
+        (w4u8_gate_up_stream_region_tiles != 16U &&
+         w4u8_gate_up_stream_region_tiles != 32U) ||
+        (variant != QBH_BLOCK_W4U8 &&
+         w4u8_gate_up_stream_region_tiles != 32U) ||
         (variant == QBH_BLOCK_W4U8 &&
          fp16_common_schedule_mode !=
              QBH_BLOCK_FP16_COMMON_SCHEDULE_CONTROL) ||
@@ -2253,6 +2267,8 @@ int main(int argc, char **argv) {
     header->w4f16_group_fence_mode = w4f16_group_fence_mode;
     header->w4u8_stream_fence_mode = w4u8_stream_fence_mode;
     header->w4u8_gate_up_ring_slots = w4u8_gate_up_ring_slots;
+    header->w4u8_gate_up_stream_region_tiles =
+        w4u8_gate_up_stream_region_tiles;
     header->w4u8_qk_pair_kernel_mode =
         w4u8_qk_pair_kernel_mode;
     header->input_offset = input_slot.offset;
@@ -2528,7 +2544,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0127\","
+        "{\"experiment\":\"EXP-0128\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
@@ -2539,6 +2555,7 @@ int main(int argc, char **argv) {
         "\"qkv_schedule_mode\":\"%s\","
         "\"w4f16_group_fence_mode\":\"%s\","
         "\"w4u8_stream_fence_mode\":\"%s\","
+        "\"w4u8_gate_up_stream_region_tiles\":%" PRIu32 ","
         "\"fp16_norm_rows_per_task\":%" PRIu32 ","
         "\"fp16_norm_contexts\":%" PRIu32 ","
         "\"w4u8_down_hmx_batch_outputs\":%" PRIu32 ","
@@ -2792,6 +2809,7 @@ int main(int argc, char **argv) {
         "\"w4u8_mlp_output_unpack_ticks\":%" PRIu64 ","
         "\"w4u8_mlp_gate_up_pipeline_ticks\":%" PRIu64 ","
         "\"w4u8_mlp_gate_up_hmx_command_count\":%" PRIu64 ","
+        "\"w4u8_mlp_gate_up_hmx_stream_count\":%" PRIu64 ","
         "\"w4u8_mlp_down_pipeline_ticks\":%" PRIu64 ","
         "\"w4u8_mlp_down_hmx_command_count\":%" PRIu64 ","
         "\"w4u8_mlp_activation_work_ticks\":%" PRIu64 ","
@@ -2866,6 +2884,7 @@ int main(int argc, char **argv) {
             header->w4f16_group_fence_mode),
         qbh_w4u8_stream_fence_mode_name(
             header->w4u8_stream_fence_mode),
+        header->w4u8_gate_up_stream_region_tiles,
         header->fp16_norm_rows_per_task,
         header->fp16_norm_contexts,
         header->w4u8_down_hmx_batch_outputs,
@@ -3113,6 +3132,7 @@ int main(int argc, char **argv) {
         header->w4u8_mlp_output_unpack_ticks,
         header->w4u8_mlp_gate_up_pipeline_ticks,
         header->w4u8_mlp_gate_up_hmx_command_count,
+        header->w4u8_mlp_gate_up_hmx_stream_count,
         header->w4u8_mlp_down_pipeline_ticks,
         header->w4u8_mlp_down_hmx_command_count,
         header->w4u8_mlp_activation_work_ticks,

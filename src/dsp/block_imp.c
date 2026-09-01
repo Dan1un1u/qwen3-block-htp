@@ -787,6 +787,10 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          header->w4u8_gate_up_ring_slots != 16U) ||
         (header->variant != QBH_BLOCK_W4U8 &&
          header->w4u8_gate_up_ring_slots != 8U) ||
+        (header->w4u8_gate_up_stream_region_tiles != 16U &&
+         header->w4u8_gate_up_stream_region_tiles != 32U) ||
+        (header->variant != QBH_BLOCK_W4U8 &&
+         header->w4u8_gate_up_stream_region_tiles != 32U) ||
         (header->qkv_schedule_mode !=
              QBH_BLOCK_QKV_SCHEDULE_CONTROL &&
          (header->variant != QBH_BLOCK_W4F16 ||
@@ -1682,6 +1686,10 @@ static void qbh_hmx_worker_main(void *opaque) {
                             expanded_weight_tiles, bias_words,
                             request->begin_output, ready_generations,
                             expected_generation, request->stream_count,
+                            request->stream_count != 0U
+                                ? request->chunk_tiles /
+                                      request->stream_count
+                                : 0U,
                             request->abort_status, request->timeout_ticks,
                             request->ready_wait_ticks,
                             request->hmx_consumption_started);
@@ -9540,8 +9548,12 @@ static int qbh_configure_w4u8_gate_up_layout(
 }
 
 static int qbh_init_w4u8_gate_up_layout(
-    struct qbh_projection_layout *layout, uint32_t ring_slots) {
+    struct qbh_projection_layout *layout, uint32_t ring_slots,
+    uint32_t stream_region_tiles) {
     if (ring_slots != 8U && ring_slots != 16U) {
+        return -1;
+    }
+    if (stream_region_tiles != 16U && stream_region_tiles != 32U) {
         return -1;
     }
     if (qbh_projection_layout_init(
@@ -9552,6 +9564,7 @@ static int qbh_init_w4u8_gate_up_layout(
         return -1;
     }
     layout->expanded_slot_count = ring_slots;
+    layout->stream_region_tiles = stream_region_tiles;
     return qbh_configure_w4u8_gate_up_layout(layout);
 }
 
@@ -9609,6 +9622,8 @@ static void qbh_accumulate_w4u8_phase_metrics(
     if (gate_up_phase != 0U) {
         header->w4u8_mlp_gate_up_pipeline_ticks += phase->pipeline_ticks;
         header->w4u8_mlp_gate_up_hmx_command_count += command_count;
+        header->w4u8_mlp_gate_up_hmx_stream_count +=
+            phase->hmx_stream_count;
         header->w4u8_mlp_gate_up_hvx_hmx_overlap |=
             phase->hvx_hmx_overlap_observed;
         header->w4u8_mlp_gate_up_hvx_parallel_overlap |=
@@ -9683,7 +9698,8 @@ static int qbh_run_w4u8_streaming_mlp(
           hvx_pool->worker_count <
               QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS)) ||
         qbh_init_w4u8_gate_up_layout(
-            &gate_up_layout, header->w4u8_gate_up_ring_slots) != 0 ||
+            &gate_up_layout, header->w4u8_gate_up_ring_slots,
+            header->w4u8_gate_up_stream_region_tiles) != 0 ||
         qbh_init_w4u8_down_layout(&down_layout) != 0 ||
         header->w4u8_gate_up_bundle_bytes !=
             gate_up_layout.stored_weight_bytes ||
@@ -9953,7 +9969,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     if (w4u8_mlp_native_input_enabled != 0U) {
         if (qbh_init_w4u8_gate_up_layout(
                 &w4u8_gate_up_layout,
-                header->w4u8_gate_up_ring_slots) != 0) {
+                header->w4u8_gate_up_ring_slots,
+                header->w4u8_gate_up_stream_region_tiles) != 0) {
             return QBH_BLOCK_STATUS_MLP_STREAM_FAILED;
         }
         w4u8_mlp_native_activation = buffers->q +

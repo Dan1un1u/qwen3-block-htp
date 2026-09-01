@@ -64,6 +64,7 @@ __attribute__((noinline)) int32_t qbh_hmx_accumulate_u8s8_streaming(
     const uint32_t *bias_words, uint32_t begin_output,
     const volatile uint32_t *ready_generations,
     uint32_t expected_generation, uint32_t stream_count,
+    uint32_t stream_tiles,
     volatile int32_t *abort_status, uint64_t timeout_ticks,
     uint64_t *ready_wait_ticks,
     volatile uint32_t *hmx_consumption_started) {
@@ -74,7 +75,9 @@ __attribute__((noinline)) int32_t qbh_hmx_accumulate_u8s8_streaming(
         ready_wait_ticks == NULL || hmx_consumption_started == NULL ||
         expected_generation == 0U ||
         stream_count == 0U ||
-        stream_count > QBH_W4_MAX_STREAM_REGIONS) {
+        stream_count > QBH_W4_MAX_STREAM_REGIONS ||
+        stream_tiles == 0U ||
+        stream_tiles > QBH_HMX_MAX_STREAM_TILES) {
         return -1;
     }
 
@@ -111,12 +114,12 @@ __attribute__((noinline)) int32_t qbh_hmx_accumulate_u8s8_streaming(
         }
         qbh_hmx_issue_u8s8_stream(
             activation_tiles +
-                (size_t)stream * QBH_W4_STREAM_REGION_TILES *
+                (size_t)stream * stream_tiles *
                     QBH_HMX_ACTIVATION_BYTES,
             expanded_weight_tiles +
-                (size_t)stream * QBH_W4_STREAM_REGION_TILES *
+                (size_t)stream * stream_tiles *
                     QBH_HMX_WEIGHT_BYTES,
-            QBH_W4_STREAM_REGION_TILES);
+            stream_tiles);
     }
     *ready_wait_ticks += accumulated_wait;
     return (int32_t)stream_count;

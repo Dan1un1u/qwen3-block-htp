@@ -143,7 +143,7 @@ static uint32_t qbh_stream_region_count(
     const struct qbh_projection_layout *layout, uint32_t chunk_index) {
     uint32_t chunk_tiles =
         qbh_projection_chunk_tiles(layout, chunk_index);
-    return chunk_tiles / QBH_W4_STREAM_REGION_TILES;
+    return chunk_tiles / layout->stream_region_tiles;
 }
 
 static void qbh_queue_init(struct qbh_chunk_queue *queue) {
@@ -449,14 +449,14 @@ static int qbh_hvx_worker_run(struct qbh_hvx_worker_job *job,
             source_offset =
                 ((size_t)task.chunk_index * layout->chunk_tiles +
                  (size_t)task.stream_region_index *
-                     QBH_W4_STREAM_REGION_TILES) *
+                     layout->stream_region_tiles) *
                 (layout->weight_storage_variant ==
                          QBH_WEIGHT_EXPANDED_S8
                      ? QBH_HMX_WEIGHT_BYTES
                      : QBH_W4_PACKED_TILE_BYTES);
             expanded_offset =
                 (size_t)task.stream_region_index *
-                QBH_W4_STREAM_REGION_TILES * QBH_HMX_WEIGHT_BYTES;
+                layout->stream_region_tiles * QBH_HMX_WEIGHT_BYTES;
         } else {
             region_tiles = task.chunk_tiles;
             source_offset =
@@ -624,7 +624,7 @@ static void qbh_chunked_hmx_main(void *opaque) {
             if (stream_regions == 0U ||
                 stream_regions > QBH_W4_MAX_STREAM_REGIONS ||
                 chunk_tiles != stream_regions *
-                                   QBH_W4_STREAM_REGION_TILES) {
+                                   layout->stream_region_tiles) {
                 exit_status = AEE_EBADPARM;
                 state->abort_status = exit_status;
                 goto unlock;
@@ -984,7 +984,7 @@ static void qbh_chunked_hmx_main(void *opaque) {
                     if (stream_regions == 0U ||
                         stream_regions > QBH_W4_MAX_STREAM_REGIONS ||
                         chunk_tiles != stream_regions *
-                                           QBH_W4_STREAM_REGION_TILES) {
+                                           layout->stream_region_tiles) {
                         exit_status = AEE_EBADPARM;
                         state->abort_status = exit_status;
                         goto unlock;
@@ -1058,6 +1058,7 @@ static void qbh_chunked_hmx_main(void *opaque) {
                             chunk_index == 0U,
                             state->stream_ready_generation[expanded_slot],
                             generation, stream_regions,
+                            layout->stream_region_tiles,
                             &state->abort_status,
                             QBH_STREAM_READY_TIMEOUT_TICKS,
                             &stream_ready_wait,
@@ -1218,7 +1219,7 @@ static void qbh_publish_w4_bundle(
 
     state->compressed_remaining[compressed_slot] =
         qbh_physical_plan_is_streaming(layout->physical_plan)
-            ? layout->k_tiles / QBH_W4_STREAM_REGION_TILES
+            ? layout->k_tiles / layout->stream_region_tiles
             : layout->chunks_per_output;
     for (uint32_t chunk_index = 0;
          chunk_index < layout->chunks_per_output; ++chunk_index) {
@@ -1254,7 +1255,7 @@ static void qbh_publish_w4_bundle(
                     qbh_projection_chunk_tiles(layout, chunk_index);
                 task.stream_region_index = region;
                 task.stream_region_tiles =
-                    QBH_W4_STREAM_REGION_TILES;
+                    layout->stream_region_tiles;
                 task.stream_generation = generation;
                 qbh_queue_push(&state->queue, &task);
             }
@@ -1325,9 +1326,10 @@ static int qbh_run_chunked_w4_pipeline_impl(
         return AEE_EBADPARM;
     }
     if (qbh_physical_plan_is_streaming(layout->physical_plan) &&
-        ((layout->chunk_tiles % QBH_W4_STREAM_REGION_TILES) != 0U ||
-         (layout->k_tiles % QBH_W4_STREAM_REGION_TILES) != 0U ||
-         layout->chunk_tiles / QBH_W4_STREAM_REGION_TILES >
+        (layout->stream_region_tiles == 0U ||
+         (layout->chunk_tiles % layout->stream_region_tiles) != 0U ||
+         (layout->k_tiles % layout->stream_region_tiles) != 0U ||
+         layout->chunk_tiles / layout->stream_region_tiles >
              QBH_W4_MAX_STREAM_REGIONS)) {
         return AEE_EBADPARM;
     }
@@ -1675,7 +1677,7 @@ stop_workers:
                  (qbh_physical_plan_is_streaming(
                       layout->physical_plan)
                       ? layout->k_tiles /
-                            QBH_W4_STREAM_REGION_TILES
+                            layout->stream_region_tiles
                       : layout->chunks_per_output))) {
         result = AEE_EFAILED;
     }

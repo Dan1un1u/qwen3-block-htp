@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(50)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(127)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(51)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(128)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_HIDDEN UINT32_C(2048)
@@ -343,6 +343,7 @@ struct qbh_block_header {
     uint32_t w4f16_group_fence_mode;
     uint32_t w4u8_stream_fence_mode;
     uint32_t w4u8_gate_up_ring_slots;
+    uint32_t w4u8_gate_up_stream_region_tiles;
 
     uint32_t input_offset;
     uint32_t input_bytes;
@@ -661,6 +662,7 @@ struct qbh_block_header {
     uint64_t w4u8_mlp_output_unpack_ticks;
     uint64_t w4u8_mlp_gate_up_pipeline_ticks;
     uint64_t w4u8_mlp_gate_up_hmx_command_count;
+    uint64_t w4u8_mlp_gate_up_hmx_stream_count;
     uint64_t w4u8_mlp_down_pipeline_ticks;
     uint64_t w4u8_mlp_down_hmx_command_count;
     uint64_t w4u8_mlp_activation_work_ticks;

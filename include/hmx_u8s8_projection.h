@@ -38,6 +38,7 @@ struct qbh_projection_layout {
     uint32_t k_streams_per_output;
     uint32_t hmx_streams_per_repeat;
     uint32_t chunk_tiles;
+    uint32_t stream_region_tiles;
     uint32_t chunks_per_output;
     uint32_t expanded_chunk_weight_bytes;
     uint32_t expanded_chunk_slot_bytes;
@@ -183,6 +184,7 @@ static inline int qbh_projection_layout_init(
         (layout->k_tiles + QBH_HMX_MAX_STREAM_TILES - 1U) /
         QBH_HMX_MAX_STREAM_TILES;
     layout->chunk_tiles = chunk_tiles;
+    layout->stream_region_tiles = QBH_W4_STREAM_REGION_TILES;
     layout->chunks_per_output =
         (layout->k_tiles + chunk_tiles - 1U) / chunk_tiles;
     layout->hmx_streams_per_repeat =
@@ -284,6 +286,7 @@ int32_t qbh_hmx_accumulate_u8s8_streaming(
     const uint32_t *bias_words, uint32_t begin_output,
     const volatile uint32_t *ready_generations,
     uint32_t expected_generation, uint32_t stream_count,
+    uint32_t stream_tiles,
     volatile int32_t *abort_status, uint64_t timeout_ticks,
     uint64_t *ready_wait_ticks,
     volatile uint32_t *hmx_consumption_started);
