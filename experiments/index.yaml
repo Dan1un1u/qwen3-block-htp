@@ -2590,20 +2590,22 @@ experiments:
       - w4u8_ring16_unthrottled_control
       - w4u8_ring16_lead8_sleep_candidate
       - w4u8_ring16_lead16_sleep_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-gate-up-adaptive-hvx-lead-credit
     source_branches:
       - codex/exp-0137-w4u8-gate-up-adaptive-hvx-lead-credit
-    source_commits: []
+    source_commits:
+      - 3797e1b560523ea3f5d1e473855a80e01fb3c88a
     record: docs/experiments/EXP-0137.md
     approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently without interruption'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0137-w4u8-gate-up-adaptive-hvx-lead-credit
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0136
       source_parent_commit: 30fdf531939b8b96dce428c0d890adbf17714a10
@@ -2626,6 +2628,37 @@ experiments:
       physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_identical_worker_weight_DMA_expansion_HMX_commands_tiles_qparams_and_peak_plan
       speed_gate: best_candidate_Gate_Up_plus_SwiGLU_and_complete_Host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
       completion_gate: bounded_three_cell_smoke_then_five_rotated_formal_rounds_PC027_PC028_and_no_automatic_baseline_promotion
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0137/20260901T030537Z_3797e1b56052_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0137/artifacts/3797e1b56052/20260901T030537Z_formal'
+      source_commit: 3797e1b560523ea3f5d1e473855a80e01fb3c88a
+      static_gate_result: pass_generation_safe_published_consumed_accounting_blocking_progress_semaphore_two_unthrottled_expansion_contexts_activation_unthrottled_no_qnn
+      correctness_gate_result: pass_all_three_69f22eeb035e5ec5_zero_stage_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_dma_hmx_tiles_qparams_and_peak_plan
+      selected_cell: cap0_control
+      cap8_admission_effective: true_repeat1_33_waits_repeat10_33p7_waits_per_block_raw_max_lead_11_to_12
+      cap16_admission_effective: false_zero_waits_all_formal_samples
+      cap8_repeat1_gate_up_change_percent: 0.356
+      cap8_repeat1_gate_up_paired_change_percent: 0.799
+      cap8_repeat1_host_change_percent: -1.002
+      cap8_repeat1_host_paired_change_percent: -0.891
+      cap8_repeat10_gate_up_change_percent: 0.353
+      cap8_repeat10_gate_up_paired_change_percent: 0.092
+      cap8_repeat10_host_change_percent: 0.625
+      cap8_repeat10_host_paired_change_percent: 0.655
+      cap8_repeat10_hmx_ready_wait_change_percent: -4.031
+      cap8_repeat10_producer_slot_wait_change_percent: 39.670
+      cap8_repeat10_producer_slot_wait_paired_change_percent: 19.392
+      cap16_repeat10_gate_up_change_percent: 1.996
+      cap16_repeat10_host_change_percent: -0.217
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_exp0109_f16f16_exp0110_carrier_w4f16_exp0137_cap0_w4u8
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: c2569e56f2a2dd51c83099a4161818c7d325c5abb12ddc978ed855ff2fe853c3
+      full_profiling_report_sha256: 587c2f1b6cb94e52b352f5d57c99f3eababf5d05222840e7bcf57f23a5b97bb2
+      evidence_sha256_ledger_sha256: 9da265b500ad30a1d2e6e5ee4b0b94214761730e28769350932fdee9ef9478ba
+      conclusion: consumption_feedback_reduces_hmx_ready_wait_but_increases_producer_backpressure_and_does_not_shorten_gate_up_or_complete_host
+      reopen_condition: only_with_a_shared_progress_primitive_that_transfers_a_ready_region_directly_without_reentry_or_producer_slot_backpressure_not_another_lead_threshold
+      selected_baseline_changed: false
   - id: EXP-0136
     slug: w4f16-gate-up-stream-subgroup4
     title: W4F16 Gate/Up four-tile streaming subgroups
