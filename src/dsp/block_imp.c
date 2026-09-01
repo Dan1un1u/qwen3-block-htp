@@ -809,7 +809,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->u8_norm_reduction_mode >
             QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE_PARALLEL_INPUT ||
         header->w4u8_qk_pair_kernel_mode >
-            QBH_BLOCK_W4U8_QK_PAIR_QUARTER_TILED_SIMD_ROW_PACK ||
+            QBH_BLOCK_W4U8_QK_PAIR_QUARTER_TILED_SIMD_IO ||
         header->fp16_common_schedule_mode >
             QBH_BLOCK_FP16_COMMON_SCHEDULE_ALL ||
         header->qkv_schedule_mode >

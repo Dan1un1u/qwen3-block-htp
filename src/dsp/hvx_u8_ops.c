@@ -1141,6 +1141,49 @@ qbh_qk_norm_rope_pair_pack_rows_shuffle4(
     }
 }
 
+/* The four-by-four quarter transpose is symmetric.  Apply it to four
+ * completed logical rows to recreate four native HMX activation tiles with
+ * one aligned vector store per tile. */
+static __attribute__((noinline)) void
+qbh_qk_norm_rope_pair_store_rows_shuffle4(
+    uint8_t *first_head_tiles, uint8_t *second_head_tiles,
+    uint32_t first_row, const uint8_t *row_cache) {
+    uint8_t *head_tiles[2] = {
+        first_head_tiles, second_head_tiles,
+    };
+
+    for (uint32_t pair = 0U; pair < 2U; ++pair) {
+        const uint8_t *pair_cache = row_cache +
+            (size_t)pair * QBH_QK_PAIR_RSQRT_ROWS * QBH_HVX_BYTES;
+        for (uint32_t local_row = 0U;
+             local_row < QBH_QK_PAIR_RSQRT_ROWS; local_row += 4U) {
+            const HVX_Vector *rows = (const HVX_Vector *)(pair_cache +
+                (size_t)local_row * QBH_HVX_BYTES);
+            const HVX_VectorPair row01 = Q6_W_vshuff_VVR(
+                rows[1], rows[0], -32);
+            const HVX_VectorPair row23 = Q6_W_vshuff_VVR(
+                rows[3], rows[2], -32);
+            const HVX_VectorPair tiles01 = Q6_W_vshuff_VVR(
+                Q6_V_lo_W(row23), Q6_V_lo_W(row01), -64);
+            const HVX_VectorPair tiles23 = Q6_W_vshuff_VVR(
+                Q6_V_hi_W(row23), Q6_V_hi_W(row01), -64);
+            const size_t row_offset =
+                (size_t)(first_row + local_row) *
+                    QBH_HMX_INPUT_CHANNELS;
+            uint8_t *tile_group = head_tiles[pair] + row_offset;
+
+            *(HVX_Vector *)(tile_group +
+                0U * QBH_HMX_ACTIVATION_BYTES) = Q6_V_lo_W(tiles01);
+            *(HVX_Vector *)(tile_group +
+                1U * QBH_HMX_ACTIVATION_BYTES) = Q6_V_hi_W(tiles01);
+            *(HVX_Vector *)(tile_group +
+                2U * QBH_HMX_ACTIVATION_BYTES) = Q6_V_lo_W(tiles23);
+            *(HVX_Vector *)(tile_group +
+                3U * QBH_HMX_ACTIVATION_BYTES) = Q6_V_hi_W(tiles23);
+        }
+    }
+}
+
 static void qbh_qk_norm_rope_pair_batched_rsqrt(
     const uint8_t *first_head_tiles,
     const uint8_t *second_head_tiles,
@@ -1149,7 +1192,7 @@ static void qbh_qk_norm_rope_pair_batched_rsqrt(
     float inverse_sqrt[2][QBH_QK_PAIR_RSQRT_ROWS]) {
     const float input_scale = input_qparam->scale;
     const uint32_t simd_row_pack =
-        qbh_u8_qk_pair_kernel_mode ==
+        qbh_u8_qk_pair_kernel_mode >=
         QBH_BLOCK_W4U8_QK_PAIR_QUARTER_TILED_SIMD_ROW_PACK;
 
     if (simd_row_pack != 0U) {
@@ -1339,15 +1382,24 @@ void qbh_hvx_qk_norm_rope_u8_native_head_pair(
                         &gamma_sf32, rope);
                 }
             }
-            for (uint32_t tile = 0U;
-                 tile < QBH_BLOCK_HEAD_DIM / 32U; ++tile) {
-                const size_t tile_offset = (size_t)tile * 2048U +
-                    (size_t)row * 32U;
-                memcpy(first_head_tiles + tile_offset,
-                       active_values[0] + tile * 32U, 32U);
-                memcpy(second_head_tiles + tile_offset,
-                       active_values[1] + tile * 32U, 32U);
+            if (qbh_u8_qk_pair_kernel_mode <
+                QBH_BLOCK_W4U8_QK_PAIR_QUARTER_TILED_SIMD_IO) {
+                for (uint32_t tile = 0U;
+                     tile < QBH_BLOCK_HEAD_DIM / 32U; ++tile) {
+                    const size_t tile_offset = (size_t)tile * 2048U +
+                        (size_t)row * 32U;
+                    memcpy(first_head_tiles + tile_offset,
+                           active_values[0] + tile * 32U, 32U);
+                    memcpy(second_head_tiles + tile_offset,
+                           active_values[1] + tile * 32U, 32U);
+                }
             }
+        }
+        if (qbh_u8_qk_pair_kernel_mode >=
+            QBH_BLOCK_W4U8_QK_PAIR_QUARTER_TILED_SIMD_IO) {
+            qbh_qk_norm_rope_pair_store_rows_shuffle4(
+                first_head_tiles, second_head_tiles,
+                first_row, rsqrt_scratch);
         }
     }
     asm volatile("barrier" ::: "memory");
@@ -1555,17 +1607,20 @@ void qbh_hvx_qk_norm_rope_u8_native_k_head_pair(
                     (size_t)n_tile * QBH_ATTENTION_HEAD_DIM_TILES *
                         QBH_HMX_WEIGHT_BYTES;
 
-                for (uint32_t tile = 0U;
-                     tile < QBH_BLOCK_HEAD_DIM /
-                                QBH_HMX_INPUT_CHANNELS;
-                     ++tile) {
-                    const size_t tile_offset =
-                        (size_t)tile * QBH_HMX_ACTIVATION_BYTES +
-                        (size_t)row * QBH_HMX_INPUT_CHANNELS;
-                    memcpy(head_tiles + tile_offset,
-                           active_values[pair] +
-                               tile * QBH_HMX_INPUT_CHANNELS,
-                           QBH_HMX_INPUT_CHANNELS);
+                if (qbh_u8_qk_pair_kernel_mode <
+                    QBH_BLOCK_W4U8_QK_PAIR_QUARTER_TILED_SIMD_IO) {
+                    for (uint32_t tile = 0U;
+                         tile < QBH_BLOCK_HEAD_DIM /
+                                    QBH_HMX_INPUT_CHANNELS;
+                         ++tile) {
+                        const size_t tile_offset =
+                            (size_t)tile * QBH_HMX_ACTIVATION_BYTES +
+                            (size_t)row * QBH_HMX_INPUT_CHANNELS;
+                        memcpy(head_tiles + tile_offset,
+                               active_values[pair] +
+                                   tile * QBH_HMX_INPUT_CHANNELS,
+                               QBH_HMX_INPUT_CHANNELS);
+                    }
                 }
                 {
                     const HVX_Vector centered = qbh_center_u8_to_s8(
@@ -1581,6 +1636,12 @@ void qbh_hvx_qk_norm_rope_u8_native_k_head_pair(
                         offsets, centered);
                 }
             }
+        }
+        if (qbh_u8_qk_pair_kernel_mode >=
+            QBH_BLOCK_W4U8_QK_PAIR_QUARTER_TILED_SIMD_IO) {
+            qbh_qk_norm_rope_pair_store_rows_shuffle4(
+                first_head_tiles, second_head_tiles,
+                first_row, rsqrt_scratch);
         }
     }
 
