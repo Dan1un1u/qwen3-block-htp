@@ -6,6 +6,49 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0143
+    slug: w4u8-qk-row-cache-simd-transpose
+    title: W4U8 Q/K Norm-RoPE SIMD row-cache transpose
+    parent: EXP-0124
+    variants:
+      - exp0124_ring3_quarter_tiled_memcpy_control
+      - w4u8_ring3_quarter_tiled_simd_row_pack_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-qk-row-cache-simd-transpose
+    source_branches:
+      - codex/exp-0143-w4u8-qk-row-cache-simd-transpose
+    source_commits: []
+    record: docs/experiments/EXP-0143.md
+    approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently without interruption'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0143-w4u8-qk-row-cache-simd-transpose
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0124
+      source_parent_commit: 95fadff5930d9081678ad99bb62ef84849ee1897
+      logical_w4u8_parent: EXP0120_ring16_plus_EXP0124_QKV_ring3
+      recipe_scope: W4U8_Q_and_K_Norm_RoPE_row_cache_packing_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      prior_physical_observation: paired_QK_kernel_packs_each_128_channel_row_from_four_32_byte_Crouton_quarters_with_eight_small_memcpy_calls_per_row_pair
+      reused_positive_primitive: existing_residual_shuffle4_transposes_four_Crouton_rows_with_full_HVX_loads_and_vshuff_at_32_and_64_byte_granularity
+      hypothesis: four_row_four_tile_HVX_transpose_eliminates_small_memcpy_and_reduces_QK_prep_tail_without_changing_row_bytes_rsqrt_RoPE_or_qparams
+      implementation_boundary: EXP0124_quarter_tiled_control_or_same_kernel_with_SIMD_row_cache_pack_only
+      excluded_changes: no_weights_qparams_QKV_ring_DMA_HMX_projection_math_rsqrt_RoPE_math_Attention_O_residual_GateUp_Down_public_DDR_FastRPC_or_QNN_changes
+      static_gate: candidate_mode_uses_four_aligned_HVX_loads_and_vshuff_minus32_minus64_with_no_memcpy_in_the_row_pack_helper
+      correctness_gate: both_cells_byte_exact_output_69f22eeb035e5ec5_all_existing_input_norm_score_probability_AV_QKV_operand_and_expansion_audits_zero_mismatch_zero_max_lsb
+      physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_identical_weight_DMA_HMX_tiles_qparams_carriers_and_peak_plan
+      speed_gate: candidate_QKV_plus_QK_Norm_RoPE_complete_Host_and_QK_prep_work_strictly_improve_ordinary_and_paired_repeat1_and_repeat10_and_Attention_GateUp_Down_regression_at_most_0p5_percent
+      completion_gate: bounded_smoke_then_five_rotated_formal_rounds_PC027_PC028_and_no_automatic_baseline_promotion
   - id: EXP-0142
     slug: w4f16-o-join-only-subgroup4
     title: W4F16 O-projection join-only publication after subgroup4
