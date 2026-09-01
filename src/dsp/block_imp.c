@@ -10432,6 +10432,378 @@ static int qbh_scan_append_u8_kv(
     return 0;
 }
 
+static void qbh_scan_unpack_fp16_weight_rows(
+    const __fp16 *weight_tiles, __fp16 *rows,
+    uint32_t valid_rows) {
+    const uint32_t k_tiles =
+        QBH_BLOCK_HEAD_DIM / QBH_HMX_FP16_COLS;
+
+    for (uint32_t row = 0U; row < valid_rows; ++row) {
+        const uint32_t n_tile = row / QBH_HMX_FP16_COLS;
+        const uint32_t local_output = row % QBH_HMX_FP16_COLS;
+        for (uint32_t channel = 0U;
+             channel < QBH_BLOCK_HEAD_DIM; ++channel) {
+            const uint32_t k_tile = channel / QBH_HMX_FP16_ROWS;
+            const uint32_t local_input = channel % QBH_HMX_FP16_ROWS;
+            const size_t tile =
+                ((size_t)n_tile * k_tiles + k_tile) *
+                QBH_HMX_FP16_TILE_ELEMENTS;
+            rows[(size_t)row * QBH_BLOCK_HEAD_DIM + channel] =
+                weight_tiles[tile + qbh_hmx_fp16_tile_offset(
+                    local_input, local_output)];
+        }
+    }
+}
+
+static void qbh_scan_gather_fp16_head(
+    const __fp16 *source, uint32_t source_stride,
+    uint32_t head, __fp16 *rows, uint32_t valid_rows) {
+    for (uint32_t row = 0U; row < valid_rows; ++row) {
+        memcpy(
+            rows + (size_t)row * QBH_BLOCK_HEAD_DIM,
+            source + (size_t)row * source_stride +
+                (size_t)head * QBH_BLOCK_HEAD_DIM,
+            QBH_BLOCK_HEAD_DIM * sizeof(__fp16));
+    }
+}
+
+static int qbh_scan_append_f16_kv(
+    struct qbh_block_header *header, uint8_t *shared,
+    struct qbh_block_buffers *buffers, uint32_t logical_rows,
+    uint32_t past_tokens) {
+    __fp16 *row_scratch = (__fp16 *)buffers->gate;
+    const uint32_t append_bytes =
+        logical_rows * QBH_BLOCK_HEAD_DIM * sizeof(__fp16);
+    const uint32_t head_stride =
+        header->kv_cache_capacity * QBH_BLOCK_HEAD_DIM;
+    const uint32_t head_elements =
+        QBH_BLOCK_M * QBH_BLOCK_HEAD_DIM;
+    const uint32_t direct_qkv = qbh_crouton_qkv_enabled(header);
+
+    for (uint32_t head = 0U; head < QBH_BLOCK_KV_HEADS; ++head) {
+        __fp16 *k_destination = (__fp16 *)(
+            shared + header->kv_cache_k_offset) +
+            (size_t)head * head_stride +
+            (size_t)past_tokens * QBH_BLOCK_HEAD_DIM;
+        __fp16 *v_destination = (__fp16 *)(
+            shared + header->kv_cache_v_offset) +
+            (size_t)head * head_stride +
+            (size_t)past_tokens * QBH_BLOCK_HEAD_DIM;
+
+        if (direct_qkv != 0U) {
+            qbh_scan_unpack_fp16_weight_rows(
+                (const __fp16 *)buffers->scores +
+                    (size_t)head * head_elements,
+                row_scratch, logical_rows);
+        } else {
+            qbh_scan_gather_fp16_head(
+                (const __fp16 *)buffers->k,
+                QBH_BLOCK_KV_HIDDEN, head,
+                row_scratch, logical_rows);
+        }
+        if (qbh_scan_cache_dma(
+                header, k_destination, row_scratch,
+                append_bytes, 0U) != 0) {
+            return -1;
+        }
+
+        if (direct_qkv != 0U) {
+            qbh_unpack_fp16_output(
+                (const __fp16 *)buffers->v +
+                    (size_t)head * head_elements,
+                QBH_BLOCK_HEAD_DIM / QBH_HMX_FP16_COLS,
+                row_scratch, QBH_BLOCK_HEAD_DIM, 0U);
+        } else {
+            qbh_scan_gather_fp16_head(
+                (const __fp16 *)buffers->v,
+                QBH_BLOCK_KV_HIDDEN, head,
+                row_scratch, logical_rows);
+        }
+        if (qbh_scan_cache_dma(
+                header, v_destination, row_scratch,
+                append_bytes, 0U) != 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+static void qbh_scan_softmax_f16(
+    const __fp16 *scores, __fp16 *probability,
+    uint32_t logical_rows, uint32_t past_tokens,
+    uint32_t padded_tokens) {
+    const uint32_t head_plane = QBH_BLOCK_M * padded_tokens;
+    const float scale = 0.08838834764831845f;
+
+    memset(
+        probability, 0,
+        QBH_ATTENTION_Q_HEADS_PER_GROUP * head_plane *
+            sizeof(__fp16));
+    for (uint32_t head = 0U;
+         head < QBH_ATTENTION_Q_HEADS_PER_GROUP; ++head) {
+        for (uint32_t row = 0U; row < logical_rows; ++row) {
+            const uint32_t valid = past_tokens + row + 1U;
+            const __fp16 *score_row = scores +
+                (size_t)head * head_plane +
+                (size_t)row * padded_tokens;
+            __fp16 *probability_row = probability +
+                (size_t)head * head_plane +
+                (size_t)row * padded_tokens;
+            float maximum = -INFINITY;
+            float sum = 0.0f;
+
+            for (uint32_t token = 0U; token < valid; ++token) {
+                const float value = (float)score_row[token] * scale;
+                if (value > maximum) {
+                    maximum = value;
+                }
+            }
+            for (uint32_t token = 0U; token < valid; ++token) {
+                const float value =
+                    expf((float)score_row[token] * scale - maximum);
+                probability_row[token] = (__fp16)value;
+                sum += value;
+            }
+            for (uint32_t token = 0U; token < valid; ++token) {
+                probability_row[token] = (__fp16)(
+                    (float)probability_row[token] / sum);
+            }
+        }
+    }
+}
+
+static int qbh_scan_f16_attention(
+    struct qbh_block_header *header, uint8_t *shared,
+    struct qbh_block_buffers *buffers,
+    struct qbh_block_hmx_worker *worker,
+    uint32_t logical_rows, uint32_t past_tokens) {
+    const uint32_t valid_tokens = past_tokens + logical_rows;
+    const uint32_t padded_tokens = qbh_align_up(
+        valid_tokens, QBH_HMX_FP16_COLS);
+    const uint32_t kv_tiles =
+        padded_tokens / QBH_HMX_FP16_COLS;
+    const uint32_t plane_bytes =
+        padded_tokens * QBH_BLOCK_HEAD_DIM * sizeof(__fp16);
+    const uint32_t required_bytes = 3U * plane_bytes;
+    const uint32_t overlay_capacity =
+        (uint32_t)(buffers->compressed_weight - buffers->scores);
+    __fp16 *plane_a = (__fp16 *)buffers->scores;
+    __fp16 *weight = (__fp16 *)(buffers->scores + plane_bytes);
+    __fp16 *plane_c = (__fp16 *)(buffers->scores + 2U * plane_bytes);
+    const uint32_t cache_head_stride =
+        header->kv_cache_capacity * QBH_BLOCK_HEAD_DIM;
+    const uint32_t head_elements =
+        QBH_BLOCK_M * QBH_BLOCK_HEAD_DIM;
+    const uint32_t score_head_elements =
+        QBH_BLOCK_M * padded_tokens;
+    const uint32_t direct_qkv = qbh_crouton_qkv_enabled(header);
+    const uint64_t dynamic_start = HAP_perf_get_qtimer_count();
+
+    header->scan_attention_overlay_capacity_bytes = overlay_capacity;
+    header->scan_attention_overlay_required_bytes = required_bytes;
+    header->scan_total_kv_length = valid_tokens;
+    header->scan_padded_kv_length = padded_tokens;
+    if (required_bytes > overlay_capacity ||
+        kv_tiles > QBH_BLOCK_SCAN_MAX_KV_TILES) {
+        return -1;
+    }
+    qbh_hmx_fp16_init_unity_scale(buffers->scale_or_bias);
+
+    for (uint32_t group = 0U; group < QBH_BLOCK_KV_HEADS; ++group) {
+        const uint32_t first_q_head =
+            group * QBH_ATTENTION_Q_HEADS_PER_GROUP;
+        const __fp16 *cache_k =
+            (const __fp16 *)(shared + header->kv_cache_k_offset) +
+            (size_t)group * cache_head_stride;
+        const __fp16 *cache_v =
+            (const __fp16 *)(shared + header->kv_cache_v_offset) +
+            (size_t)group * cache_head_stride;
+        __fp16 *q_group;
+        uint64_t start;
+
+        memset(plane_a, 0, plane_bytes);
+        if (qbh_scan_cache_dma(
+                header, plane_a, cache_k,
+                valid_tokens * QBH_BLOCK_HEAD_DIM * sizeof(__fp16),
+                1U) != 0) {
+            return -1;
+        }
+        start = HAP_perf_get_qtimer_count();
+        qbh_pack_fp16_weight_rows_hvx(
+            plane_a, QBH_BLOCK_HEAD_DIM, 0U,
+            QBH_BLOCK_HEAD_DIM, padded_tokens, weight);
+        header->attention_qk_pack_ticks +=
+            HAP_perf_get_qtimer_count() - start;
+
+        if (direct_qkv != 0U) {
+            q_group = (__fp16 *)buffers->attention_projection +
+                (size_t)first_q_head * head_elements;
+        } else {
+            q_group = (__fp16 *)buffers->hmx_activation;
+            for (uint32_t local_head = 0U;
+                 local_head < QBH_ATTENTION_Q_HEADS_PER_GROUP;
+                 ++local_head) {
+                qbh_pack_fp16_activation(
+                    (const __fp16 *)buffers->q +
+                        (size_t)(first_q_head + local_head) *
+                            QBH_BLOCK_HEAD_DIM,
+                    QBH_BLOCK_HIDDEN, QBH_BLOCK_HEAD_DIM,
+                    q_group + (size_t)local_head * head_elements);
+            }
+        }
+        start = HAP_perf_get_qtimer_count();
+        if (qbh_hmx_submit(
+                worker, QBH_BLOCK_HMX_FP16,
+                q_group, weight, buffers->scale_or_bias, plane_c,
+                2U * QBH_ATTENTION_Q_HEADS_PER_GROUP,
+                QBH_BLOCK_HEAD_DIM / QBH_HMX_FP16_COLS,
+                kv_tiles) != 0) {
+            return -1;
+        }
+        header->attention_qk_hmx_ticks +=
+            HAP_perf_get_qtimer_count() - start;
+        start = HAP_perf_get_qtimer_count();
+        for (uint32_t local_head = 0U;
+             local_head < QBH_ATTENTION_Q_HEADS_PER_GROUP;
+             ++local_head) {
+            qbh_unpack_fp16_output(
+                plane_c + (size_t)local_head *
+                    2U * kv_tiles * QBH_HMX_FP16_TILE_ELEMENTS,
+                kv_tiles,
+                plane_a + (size_t)local_head * score_head_elements,
+                padded_tokens, 0U);
+        }
+        header->attention_qk_unpack_ticks +=
+            HAP_perf_get_qtimer_count() - start;
+
+        start = HAP_perf_get_qtimer_count();
+        qbh_scan_softmax_f16(
+            plane_a, plane_c, logical_rows,
+            past_tokens, padded_tokens);
+        header->attention_softmax_ticks +=
+            HAP_perf_get_qtimer_count() - start;
+
+        start = HAP_perf_get_qtimer_count();
+        for (uint32_t local_head = 0U;
+             local_head < QBH_ATTENTION_Q_HEADS_PER_GROUP;
+             ++local_head) {
+            qbh_pack_fp16_activation(
+                plane_c + (size_t)local_head * score_head_elements,
+                padded_tokens, padded_tokens,
+                plane_a + (size_t)local_head *
+                    2U * kv_tiles * QBH_HMX_FP16_TILE_ELEMENTS);
+        }
+        header->attention_av_pack_ticks +=
+            HAP_perf_get_qtimer_count() - start;
+
+        memset(plane_c, 0, plane_bytes);
+        if (qbh_scan_cache_dma(
+                header, plane_c, cache_v,
+                valid_tokens * QBH_BLOCK_HEAD_DIM * sizeof(__fp16),
+                1U) != 0) {
+            return -1;
+        }
+        start = HAP_perf_get_qtimer_count();
+        qbh_pack_fp16_weight_transposed_hvx(
+            plane_c, QBH_BLOCK_HEAD_DIM, 0U,
+            padded_tokens, QBH_BLOCK_HEAD_DIM, weight);
+        header->attention_av_pack_ticks +=
+            HAP_perf_get_qtimer_count() - start;
+        start = HAP_perf_get_qtimer_count();
+        if (qbh_hmx_submit(
+                worker, QBH_BLOCK_HMX_FP16,
+                plane_a, weight, buffers->scale_or_bias, q_group,
+                2U * QBH_ATTENTION_Q_HEADS_PER_GROUP,
+                kv_tiles,
+                QBH_BLOCK_HEAD_DIM / QBH_HMX_FP16_COLS) != 0) {
+            return -1;
+        }
+        header->attention_av_hmx_ticks +=
+            HAP_perf_get_qtimer_count() - start;
+        start = HAP_perf_get_qtimer_count();
+        for (uint32_t local_head = 0U;
+             local_head < QBH_ATTENTION_Q_HEADS_PER_GROUP;
+             ++local_head) {
+            qbh_unpack_fp16_output(
+                q_group + (size_t)local_head *
+                    2U * (QBH_BLOCK_HEAD_DIM / QBH_HMX_FP16_COLS) *
+                        QBH_HMX_FP16_TILE_ELEMENTS,
+                QBH_BLOCK_HEAD_DIM / QBH_HMX_FP16_COLS,
+                (__fp16 *)buffers->q, QBH_BLOCK_HIDDEN,
+                (first_q_head + local_head) * QBH_BLOCK_HEAD_DIM);
+        }
+        header->attention_av_unpack_ticks +=
+            HAP_perf_get_qtimer_count() - start;
+    }
+
+    memcpy(
+        buffers->attention_concat, buffers->q,
+        QBH_BLOCK_M * QBH_BLOCK_HIDDEN * sizeof(__fp16));
+    header->hmx_command_count += 2U * QBH_BLOCK_KV_HEADS;
+    header->hmx_fp16_tile_pair_count +=
+        32U * QBH_BLOCK_KV_HEADS * kv_tiles;
+    header->attention_gqa_group_count += QBH_BLOCK_KV_HEADS;
+    header->scan_dynamic_attention_ticks +=
+        HAP_perf_get_qtimer_count() - dynamic_start;
+    return 0;
+}
+
+static int qbh_scan_audit_f16_q(
+    struct qbh_block_header *header, uint8_t *shared,
+    struct qbh_block_buffers *buffers) {
+    __fp16 *scratch = (__fp16 *)buffers->gate;
+    const uint32_t bytes =
+        QBH_BLOCK_M * QBH_BLOCK_HIDDEN * sizeof(__fp16);
+    const __fp16 *source;
+
+    if (header->scan_attention_audit_output_bytes !=
+            QBH_BLOCK_SCAN_F16_AUDIT_BYTES ||
+        !qbh_range_valid(
+            header->scan_attention_audit_output_offset,
+            header->scan_attention_audit_output_bytes,
+            header->shared_bytes)) {
+        return -1;
+    }
+    if (qbh_crouton_qkv_enabled(header) != 0U) {
+        const uint32_t head_elements =
+            QBH_BLOCK_M * QBH_BLOCK_HEAD_DIM;
+        for (uint32_t head = 0U; head < QBH_BLOCK_HEADS; ++head) {
+            qbh_unpack_fp16_output(
+                (const __fp16 *)buffers->attention_projection +
+                    (size_t)head * head_elements,
+                QBH_BLOCK_HEAD_DIM / QBH_HMX_FP16_COLS,
+                scratch, QBH_BLOCK_HIDDEN,
+                head * QBH_BLOCK_HEAD_DIM);
+        }
+        source = scratch;
+    } else {
+        source = (const __fp16 *)buffers->q;
+    }
+    if (qbh_dma_copy(
+            header,
+            shared + header->scan_attention_audit_output_offset,
+            source, bytes, 0U) != 0) {
+        return -1;
+    }
+    header->u8_attention_audit_ddr_write_bytes += bytes;
+    return 0;
+}
+
+static int qbh_scan_audit_f16_attention(
+    struct qbh_block_header *header, uint8_t *shared,
+    struct qbh_block_buffers *buffers) {
+    const uint32_t bytes =
+        QBH_BLOCK_M * QBH_BLOCK_HIDDEN * sizeof(__fp16);
+    if (qbh_dma_copy(
+            header,
+            shared + header->scan_attention_audit_output_offset + bytes,
+            buffers->attention_concat, bytes, 0U) != 0) {
+        return -1;
+    }
+    header->u8_attention_audit_ddr_write_bytes += bytes;
+    return 0;
+}
+
 static int qbh_scan_u8_attention(
     struct qbh_block_header *header, uint8_t *shared,
     struct qbh_block_buffers *buffers,
@@ -11113,12 +11485,26 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     }
     header->qk_norm_rope_ticks += HAP_perf_get_qtimer_count() - start;
 
+    if (scan_dynamic_attention != 0U &&
+        header->variant != QBH_BLOCK_W4U8 &&
+        header->numerical_audit_enabled != 0U &&
+        qbh_scan_audit_f16_q(
+            header, shared, buffers) != 0) {
+        return QBH_BLOCK_STATUS_ATTENTION_FAILED;
+    }
+
     if (scan_enabled != 0U) {
-        if (header->variant != QBH_BLOCK_W4U8 ||
-            u8_integer_attention_enabled == 0U ||
-            qbh_scan_append_u8_kv(
-                header, shared, buffers, logical_rows,
-                past_tokens) != 0) {
+        int cache_status =
+            header->variant == QBH_BLOCK_W4U8
+                ? (u8_integer_attention_enabled != 0U
+                       ? qbh_scan_append_u8_kv(
+                             header, shared, buffers, logical_rows,
+                             past_tokens)
+                       : -1)
+                : qbh_scan_append_f16_kv(
+                      header, shared, buffers, logical_rows,
+                      past_tokens);
+        if (cache_status != 0) {
             return QBH_BLOCK_STATUS_ATTENTION_FAILED;
         }
     }
@@ -11138,9 +11524,20 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                                  header, w4f16_pool, buffers, worker)
                            : qbh_attention_u8_integer(
                                  header, buffers, worker)))
-             : qbh_attention_f16(
-                   header, buffers, worker, w4f16_pool,
-                   softmax_check)) != 0) {
+             : (scan_dynamic_attention != 0U
+                    ? qbh_scan_f16_attention(
+                          header, shared, buffers, worker,
+                          logical_rows, past_tokens)
+                    : qbh_attention_f16(
+                          header, buffers, worker, w4f16_pool,
+                          softmax_check))) != 0) {
+        return QBH_BLOCK_STATUS_ATTENTION_FAILED;
+    }
+    if (scan_dynamic_attention != 0U &&
+        header->variant != QBH_BLOCK_W4U8 &&
+        header->numerical_audit_enabled != 0U &&
+        qbh_scan_audit_f16_attention(
+            header, shared, buffers) != 0) {
         return QBH_BLOCK_STATUS_ATTENTION_FAILED;
     }
     if (u8_integer_attention_enabled != 0U &&

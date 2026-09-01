@@ -7,7 +7,7 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(52)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(53)
 #define QBH_BLOCK_EXPERIMENT UINT32_C(147)
 
 #define QBH_BLOCK_M UINT32_C(64)
@@ -43,6 +43,8 @@
      2U * QBH_BLOCK_U8_ATTENTION_KV_BYTES + \
      2U * QBH_BLOCK_U8_ATTENTION_SCORE_BYTES + \
      QBH_BLOCK_U8_ATTENTION_AV_BYTES)
+#define QBH_BLOCK_SCAN_F16_AUDIT_BYTES \
+    (2U * QBH_BLOCK_M * QBH_BLOCK_HIDDEN * sizeof(uint16_t))
 
 enum qbh_block_variant {
     QBH_BLOCK_F16F16 = 1,
@@ -408,6 +410,8 @@ struct qbh_block_header {
     uint64_t u8_attention_expected_av_hash;
     uint32_t u8_attention_audit_output_offset;
     uint32_t u8_attention_audit_output_bytes;
+    uint32_t scan_attention_audit_output_offset;
+    uint32_t scan_attention_audit_output_bytes;
 
     int32_t dsp_status;
     int32_t cache_status;

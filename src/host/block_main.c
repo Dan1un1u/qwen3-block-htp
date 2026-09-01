@@ -1521,6 +1521,58 @@ static struct qbh_error_metrics qbh_compare_scan_u8(
     return metrics;
 }
 
+static struct qbh_error_metrics qbh_compare_scan_f16(
+    const uint16_t *actual, const uint16_t *reference,
+    uint32_t logical_m) {
+    struct qbh_error_metrics metrics;
+    double absolute_sum = 0.0;
+    double squared_sum = 0.0;
+    double dot = 0.0;
+    double actual_norm = 0.0;
+    double reference_norm = 0.0;
+    uint64_t elements = 0U;
+
+    memset(&metrics, 0, sizeof(metrics));
+    for (uint32_t logical_row = 0U;
+         logical_row < logical_m; ++logical_row) {
+        const uint32_t chunk = logical_row / QBH_BLOCK_M;
+        const uint32_t row = logical_row % QBH_BLOCK_M;
+        const size_t base =
+            ((size_t)chunk * QBH_BLOCK_M + row) * QBH_BLOCK_HIDDEN;
+        for (uint32_t channel = 0U;
+             channel < QBH_BLOCK_HIDDEN; ++channel) {
+            const uint16_t a_bits = actual[base + channel];
+            const uint16_t b_bits = reference[base + channel];
+            float a_f32;
+            float b_f32;
+            double difference;
+            __fp16 a_f16;
+            __fp16 b_f16;
+
+            memcpy(&a_f16, &a_bits, sizeof(a_f16));
+            memcpy(&b_f16, &b_bits, sizeof(b_f16));
+            a_f32 = (float)a_f16;
+            b_f32 = (float)b_f16;
+            difference = fabs((double)a_f32 - (double)b_f32);
+            metrics.mismatches += a_bits != b_bits;
+            if (difference > metrics.max_abs) {
+                metrics.max_abs = difference;
+            }
+            absolute_sum += difference;
+            squared_sum += difference * difference;
+            dot += (double)a_f32 * (double)b_f32;
+            actual_norm += (double)a_f32 * (double)a_f32;
+            reference_norm += (double)b_f32 * (double)b_f32;
+            ++elements;
+        }
+    }
+    metrics.mean_abs = absolute_sum / (double)elements;
+    metrics.rmse = sqrt(squared_sum / (double)elements);
+    metrics.cosine = actual_norm > 0.0 && reference_norm > 0.0
+        ? dot / sqrt(actual_norm * reference_norm) : 0.0;
+    return metrics;
+}
+
 static uint64_t qbh_count_byte_mismatches(
     const uint8_t *actual, const uint8_t *reference,
     uint32_t bytes) {
@@ -1597,6 +1649,7 @@ int main(int argc, char **argv) {
     size_t w4u8_gate_up_bundle_offset = 0U;
     size_t w4u8_down_bundle_offset = 0U;
     size_t attention_audit_output_offset = 0U;
+    size_t scan_attention_audit_output_offset = 0U;
     size_t cursor = qbh_align_up_size(sizeof(*header), QBH_HOST_ALIGNMENT);
     size_t total_bytes;
     int shared_fd = -1;
@@ -1788,8 +1841,7 @@ int main(int argc, char **argv) {
            initial_kv_length != 1024U &&
            initial_kv_length != 4096U))) ||
         (scan_mode != QBH_BLOCK_SCAN_DISABLED &&
-         (variant != QBH_BLOCK_W4U8 ||
-          kv_cache_capacity < initial_kv_length + logical_m ||
+         (kv_cache_capacity < initial_kv_length + logical_m ||
           kv_cache_capacity > QBH_BLOCK_SCAN_MAX_KV)) ||
         w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
         (variant == QBH_BLOCK_W4U8 &&
@@ -2354,6 +2406,16 @@ int main(int argc, char **argv) {
             }
             cursor += QBH_BLOCK_U8_ATTENTION_AUDIT_BYTES;
         }
+        if (scan_mode != QBH_BLOCK_SCAN_DISABLED &&
+            variant != QBH_BLOCK_W4U8 &&
+            numerical_audit_enabled != 0U) {
+            cursor = qbh_align_up_size(cursor, QBH_HOST_ALIGNMENT);
+            scan_attention_audit_output_offset = cursor;
+            if (QBH_BLOCK_SCAN_F16_AUDIT_BYTES > UINT32_MAX - cursor) {
+                return 2;
+            }
+            cursor += QBH_BLOCK_SCAN_F16_AUDIT_BYTES;
+        }
         total_bytes = cursor;
         if (total_bytes > INT_MAX) {
             fprintf(stderr, "rpcmem package too large: %zu\n", total_bytes);
@@ -2506,6 +2568,14 @@ int main(int argc, char **argv) {
                 QBH_BLOCK_U8_ATTENTION_AUDIT_BYTES;
         }
     }
+    if (scan_mode != QBH_BLOCK_SCAN_DISABLED &&
+        variant != QBH_BLOCK_W4U8 &&
+        numerical_audit_enabled != 0U) {
+        header->scan_attention_audit_output_offset =
+            (uint32_t)scan_attention_audit_output_offset;
+        header->scan_attention_audit_output_bytes =
+            QBH_BLOCK_SCAN_F16_AUDIT_BYTES;
+    }
     if (qbh_block_mlp_is_w4u8_streaming(mlp_mode)) {
         header->w4u8_gate_up_bundle_offset =
             (uint32_t)w4u8_gate_up_bundle_offset;
@@ -2623,10 +2693,19 @@ int main(int argc, char **argv) {
               shared + header->reference_offset,
               QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
               &header->qparams[QBH_BLOCK_QP_BLOCK_OUTPUT]))
-        : qbh_compare_f16(
-              (const uint16_t *)(shared + header->output_offset),
-              (const uint16_t *)(shared + header->reference_offset),
-              QBH_BLOCK_M * QBH_BLOCK_HIDDEN);
+        : (scan_mode != QBH_BLOCK_SCAN_DISABLED
+               ? qbh_compare_scan_f16(
+                     (const uint16_t *)(
+                         shared + header->output_offset),
+                     (const uint16_t *)(
+                         shared + header->reference_offset),
+                     logical_m)
+               : qbh_compare_f16(
+                     (const uint16_t *)(
+                         shared + header->output_offset),
+                     (const uint16_t *)(
+                         shared + header->reference_offset),
+                     QBH_BLOCK_M * QBH_BLOCK_HIDDEN));
 
     header->repeat_count = repeats;
     header->dsp_status = QBH_BLOCK_STATUS_HOST_READY;
@@ -2670,10 +2749,19 @@ int main(int argc, char **argv) {
               shared + header->reference_offset,
               QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
               &header->qparams[QBH_BLOCK_QP_BLOCK_OUTPUT]))
-        : qbh_compare_f16(
-              (const uint16_t *)(shared + header->output_offset),
-              (const uint16_t *)(shared + header->reference_offset),
-              QBH_BLOCK_M * QBH_BLOCK_HIDDEN);
+        : (scan_mode != QBH_BLOCK_SCAN_DISABLED
+               ? qbh_compare_scan_f16(
+                     (const uint16_t *)(
+                         shared + header->output_offset),
+                     (const uint16_t *)(
+                         shared + header->reference_offset),
+                     logical_m)
+               : qbh_compare_f16(
+                     (const uint16_t *)(
+                         shared + header->output_offset),
+                     (const uint16_t *)(
+                         shared + header->reference_offset),
+                     QBH_BLOCK_M * QBH_BLOCK_HIDDEN));
     output_hash = qbh_fnv1a64(
         shared + header->output_offset, header->output_bytes);
     if (scan_mode != QBH_BLOCK_SCAN_DISABLED) {
@@ -2688,6 +2776,48 @@ int main(int argc, char **argv) {
         header->scan_cache_append_mismatch_count =
             kv_cache_mismatches > UINT32_MAX
                 ? UINT32_MAX : (uint32_t)kv_cache_mismatches;
+    }
+    if (scan_mode != QBH_BLOCK_SCAN_DISABLED) {
+        const char *cache_dump_root = getenv("QBH_DUMP_CACHE_DIR");
+        if (cache_dump_root != NULL && cache_dump_root[0] != '\0') {
+            const char *suffix =
+                variant == QBH_BLOCK_W4U8 ? "u8" : "f16";
+            const struct qbh_file_slot *slots[2] = {
+                &kv_cache_slots[0], &kv_cache_slots[1]};
+            const char *kinds[2] = {"k", "v"};
+            for (uint32_t index = 0U; index < 2U; ++index) {
+                char name[64];
+                char dump_path[512];
+                FILE *dump;
+                size_t written;
+                int status = snprintf(
+                    name, sizeof(name),
+                    "actual_kv_cache_%s_%s.bin",
+                    kinds[index], suffix);
+                if (status < 0 || (size_t)status >= sizeof(name) ||
+                    qbh_make_path(
+                        dump_path, sizeof(dump_path),
+                        cache_dump_root, name) != 0) {
+                    fprintf(stderr, "invalid cache dump path\n");
+                    goto cleanup;
+                }
+                dump = fopen(dump_path, "wb");
+                if (dump == NULL) {
+                    fprintf(stderr, "failed to open cache dump: %s\n",
+                            dump_path);
+                    goto cleanup;
+                }
+                written = fwrite(
+                    shared + slots[index]->offset, 1U,
+                    slots[index]->expected_bytes, dump);
+                if (fclose(dump) != 0 ||
+                    written != slots[index]->expected_bytes) {
+                    fprintf(stderr, "failed to write cache dump: %s\n",
+                            dump_path);
+                    goto cleanup;
+                }
+            }
+        }
     }
     {
         const char *dump_path = getenv("QBH_DUMP_OUTPUT_PATH");
@@ -2756,6 +2886,45 @@ int main(int argc, char **argv) {
                     goto cleanup;
                 }
                 audit_offset += bytes[index];
+            }
+        }
+    }
+    if (scan_mode != QBH_BLOCK_SCAN_DISABLED &&
+        variant != QBH_BLOCK_W4U8 &&
+        numerical_audit_enabled != 0U) {
+        const char *dump_root = getenv("QBH_DUMP_ATTENTION_DIR");
+        if (dump_root != NULL && dump_root[0] != '\0') {
+            static const char *const names[2] = {
+                "actual_scan_q_f16.bin",
+                "actual_scan_attention_f16.bin",
+            };
+            const uint32_t bytes =
+                QBH_BLOCK_M * QBH_BLOCK_HIDDEN * sizeof(uint16_t);
+            for (uint32_t index = 0U; index < 2U; ++index) {
+                char dump_path[512];
+                FILE *dump;
+                size_t written;
+                if (qbh_make_path(
+                        dump_path, sizeof(dump_path),
+                        dump_root, names[index]) != 0) {
+                    fprintf(stderr, "invalid FP16 Attention dump path\n");
+                    goto cleanup;
+                }
+                dump = fopen(dump_path, "wb");
+                if (dump == NULL) {
+                    fprintf(stderr, "failed to open FP16 Attention dump: %s\n",
+                            dump_path);
+                    goto cleanup;
+                }
+                written = fwrite(
+                    shared + header->scan_attention_audit_output_offset +
+                        (size_t)index * bytes,
+                    1U, bytes, dump);
+                if (fclose(dump) != 0 || written != bytes) {
+                    fprintf(stderr, "failed to write FP16 Attention dump: %s\n",
+                            dump_path);
+                    goto cleanup;
+                }
             }
         }
     }
