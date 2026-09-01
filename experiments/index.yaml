@@ -6,6 +6,48 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0138
+    slug: w4f16-gate-up-initial-up-dma-overlap
+    title: W4F16 Gate/Up initial Up-DMA overlap
+    parent: EXP-0136
+    variants:
+      - exp0136_serial_initial_gate_up_dma_control
+      - w4f16_initial_up_dma_overlap_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4f16-gate-up-initial-up-dma-overlap
+    source_branches:
+      - codex/exp-0138-w4f16-gate-up-initial-up-dma-overlap
+    source_commits: []
+    record: docs/experiments/EXP-0138.md
+    approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently without interruption'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0138-w4f16-gate-up-initial-up-dma-overlap
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0136
+      source_parent_commit: 30fdf531939b8b96dce428c0d890adbf17714a10
+      logical_w4f16_parent: EXP-0136-four_expand_four_worker_plus_main_stream_subgroup4
+      recipe_scope: W4F16_Gate_Up_initial_weight_DMA_order_and_overlap_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      prior_positive_boundary: EXP0136_four_tile_stream_subgroups_reduce_gate_up_4p080_percent_and_host_2p116_percent_repeat10
+      hypothesis: asynchronous_initial_Up_DMA_can_overlap_Gate_group0_expansion_and_first_Gate_HMX_without_changing_steady_state_work
+      implementation_boundary: runtime_serial_control_or_initial_Up_batch0_async_candidate_same_EXP0136_workers_subgroups_DMA_bytes_descriptors_expansion_HMX_and_output
+      excluded_changes: no_weights_scales_activation_math_region_size_worker_count_worker_roles_steady_state_prefetch_HMX_commands_SwiGLU_subgroups_QKV_attention_O_down_residual_public_DDR_FastRPC_or_QNN_changes
+      static_gate: candidate_starts_Up_batch0_DMA_before_Gate_group0_expansion_starts_Gate_HMX_before_waiting_Up_batch0_and_waits_completion_before_Up_expand
+      correctness_gate: both_cells_byte_exact_output_f18b9abbe1487231_expansion_audit_zero_mismatch_zero_max_lsb
+      physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_identical_weight_DMA_descriptor_count_expansion_HMX_commands_tiles_carriers_and_peak_plan
+      speed_gate: Gate_Up_plus_SwiGLU_and_complete_Host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
+      completion_gate: bounded_smoke_then_five_rotated_formal_rounds_PC027_PC028_and_no_automatic_baseline_promotion
   - id: EXP-0001
     slug: fastrpc-bringup
     title: FastRPC U8 vector bring-up
