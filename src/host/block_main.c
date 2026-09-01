@@ -1074,13 +1074,29 @@ static const char *qbh_fp16_common_schedule_mode_name(uint32_t mode) {
 }
 
 static const char *qbh_qkv_schedule_mode_name(uint32_t mode) {
-    return mode == QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL
-               ? "q_prefix4_k_all" : "control";
+    switch (mode) {
+        case QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL:
+            return "q_prefix4_k_all";
+        case QBH_BLOCK_QKV_SCHEDULE_HEAD_ALIGNED_BATCH4:
+            return "head_aligned_batch4";
+        case QBH_BLOCK_QKV_SCHEDULE_V_BATCH4:
+            return "v_batch4";
+        case QBH_BLOCK_QKV_SCHEDULE_KV_BATCH4:
+            return "kv_batch4";
+        default:
+            return "control";
+    }
 }
 
 static const char *qbh_w4f16_group_fence_mode_name(uint32_t mode) {
-    return mode == QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY
-               ? "join_only" : "control";
+    switch (mode) {
+        case QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY:
+            return "join_only";
+        case QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY_DOWN:
+            return "join_only_down";
+        default:
+            return "control";
+    }
 }
 
 static const char *qbh_w4u8_stream_fence_mode_name(uint32_t mode) {
@@ -1635,6 +1651,10 @@ int main(int argc, char **argv) {
     uint32_t qkv_schedule_mode = QBH_BLOCK_QKV_SCHEDULE_CONTROL;
     uint32_t w4f16_group_fence_mode =
         QBH_BLOCK_W4F16_GROUP_FENCE_CONTROL;
+    uint32_t w4f16_expand_claim_regions = 1U;
+    uint32_t w4f16_gate_up_extra_expand_worker = 0U;
+    uint32_t w4f16_gate_up_extra_stream_worker = 0U;
+    uint32_t w4f16_gate_up_stream_group_tiles = 8U;
     uint32_t w4u8_stream_fence_mode =
         QBH_BLOCK_W4U8_STREAM_FENCE_CONTROL;
     uint32_t w4u8_gate_up_ring_slots = 8U;
@@ -1689,6 +1709,14 @@ int main(int argc, char **argv) {
             } else if (strcmp(schedule, "q_prefix4_k_all") == 0) {
                 qkv_schedule_mode =
                     QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL;
+            } else if (strcmp(schedule,
+                              "head_aligned_batch4") == 0) {
+                qkv_schedule_mode =
+                    QBH_BLOCK_QKV_SCHEDULE_HEAD_ALIGNED_BATCH4;
+            } else if (strcmp(schedule, "v_batch4") == 0) {
+                qkv_schedule_mode = QBH_BLOCK_QKV_SCHEDULE_V_BATCH4;
+            } else if (strcmp(schedule, "kv_batch4") == 0) {
+                qkv_schedule_mode = QBH_BLOCK_QKV_SCHEDULE_KV_BATCH4;
             } else {
                 qkv_schedule_mode = UINT32_MAX;
             }
@@ -1703,9 +1731,51 @@ int main(int argc, char **argv) {
             } else if (strcmp(group_fence, "join_only") == 0) {
                 w4f16_group_fence_mode =
                     QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY;
+            } else if (strcmp(group_fence, "join_only_down") == 0) {
+                w4f16_group_fence_mode =
+                    QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY_DOWN;
             } else {
                 w4f16_group_fence_mode = UINT32_MAX;
             }
+        }
+    }
+    {
+        const char *claim_regions =
+            getenv("QBH_W4F16_EXPAND_CLAIM_REGIONS");
+        if (claim_regions != NULL && claim_regions[0] != '\0' &&
+            qbh_parse_u32(
+                claim_regions, &w4f16_expand_claim_regions) != 0) {
+            w4f16_expand_claim_regions = UINT32_MAX;
+        }
+    }
+    {
+        const char *extra_worker =
+            getenv("QBH_W4F16_GATE_UP_EXTRA_EXPAND_WORKER");
+        if (extra_worker != NULL && extra_worker[0] != '\0' &&
+            qbh_parse_u32(
+                extra_worker,
+                &w4f16_gate_up_extra_expand_worker) != 0) {
+            w4f16_gate_up_extra_expand_worker = UINT32_MAX;
+        }
+    }
+    {
+        const char *extra_worker =
+            getenv("QBH_W4F16_GATE_UP_EXTRA_STREAM_WORKER");
+        if (extra_worker != NULL && extra_worker[0] != '\0' &&
+            qbh_parse_u32(
+                extra_worker,
+                &w4f16_gate_up_extra_stream_worker) != 0) {
+            w4f16_gate_up_extra_stream_worker = UINT32_MAX;
+        }
+    }
+    {
+        const char *group_tiles =
+            getenv("QBH_W4F16_GATE_UP_STREAM_GROUP_TILES");
+        if (group_tiles != NULL && group_tiles[0] != '\0' &&
+            qbh_parse_u32(
+                group_tiles,
+                &w4f16_gate_up_stream_group_tiles) != 0) {
+            w4f16_gate_up_stream_group_tiles = UINT32_MAX;
         }
     }
     {
@@ -1843,7 +1913,7 @@ int main(int argc, char **argv) {
         (scan_mode != QBH_BLOCK_SCAN_DISABLED &&
          (kv_cache_capacity < initial_kv_length + logical_m ||
           kv_cache_capacity > QBH_BLOCK_SCAN_MAX_KV)) ||
-        w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
+        w4f16_hvx_workers == 0U || w4f16_hvx_workers > 4U ||
         (variant == QBH_BLOCK_W4U8 &&
          ((!qbh_attention_u8_enabled(attention_pipeline_mode) &&
            (attention_pack_mode !=
@@ -1899,7 +1969,8 @@ int main(int argc, char **argv) {
         (attention_pipeline_mode ==
              QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP &&
          variant == QBH_BLOCK_W4F16 &&
-         w4f16_hvx_workers != 3U) ||
+         w4f16_hvx_workers != 3U &&
+         w4f16_hvx_workers != 4U) ||
         (variant == QBH_BLOCK_W4U8 &&
          ((crouton_boundary_mode &
            ~((uint32_t)(QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
@@ -1950,7 +2021,7 @@ int main(int argc, char **argv) {
          fp16_norm_rows_per_task != 8U) ||
         fp16_norm_contexts < 2U || fp16_norm_contexts > 4U ||
         qkv_schedule_mode >
-            QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL ||
+            QBH_BLOCK_QKV_SCHEDULE_KV_BATCH4 ||
         (qkv_schedule_mode != QBH_BLOCK_QKV_SCHEDULE_CONTROL &&
          (variant != QBH_BLOCK_W4F16 ||
           attention_pipeline_mode !=
@@ -2098,7 +2169,8 @@ int main(int argc, char **argv) {
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH ||
           w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH) &&
-         w4f16_hvx_workers != 3U) ||
+         w4f16_hvx_workers != 3U &&
+         w4f16_hvx_workers != 4U) ||
         ((w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN64_CROSS_PREFETCH ||
           w4f16_pipeline_mode ==
@@ -2116,6 +2188,36 @@ int main(int argc, char **argv) {
          w4f16_region_tiles != 32U) ||
         (w4f16_region_tiles != 8U && w4f16_region_tiles != 16U &&
          w4f16_region_tiles != 32U && w4f16_region_tiles != 64U) ||
+        (w4f16_expand_claim_regions != 1U &&
+         w4f16_expand_claim_regions != 2U &&
+         w4f16_expand_claim_regions != 3U) ||
+        (w4f16_expand_claim_regions != 1U &&
+         (variant != QBH_BLOCK_W4F16 ||
+          (w4f16_group_fence_mode !=
+               QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY &&
+           w4f16_group_fence_mode !=
+               QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY_DOWN))) ||
+        w4f16_gate_up_extra_expand_worker > 1U ||
+        (w4f16_gate_up_extra_expand_worker != 0U &&
+         (variant != QBH_BLOCK_W4F16 ||
+          (w4f16_group_fence_mode !=
+               QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY &&
+           w4f16_group_fence_mode !=
+               QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY_DOWN) ||
+          w4f16_hvx_workers != 4U)) ||
+        w4f16_gate_up_extra_stream_worker > 1U ||
+        (w4f16_gate_up_extra_stream_worker != 0U &&
+         (w4f16_gate_up_extra_expand_worker == 0U ||
+          variant != QBH_BLOCK_W4F16 ||
+          w4f16_hvx_workers != 4U)) ||
+        (w4f16_gate_up_stream_group_tiles != 4U &&
+         w4f16_gate_up_stream_group_tiles != 8U) ||
+        (w4f16_gate_up_stream_group_tiles != 8U &&
+         (w4f16_gate_up_extra_expand_worker == 0U ||
+          w4f16_gate_up_extra_stream_worker == 0U ||
+          variant != QBH_BLOCK_W4F16 ||
+          w4f16_hvx_workers != 4U ||
+          mlp_mode != QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8)) ||
         (w4f16_pipeline_mode == QBH_BLOCK_W4F16_PIPELINE_EARLY_REGION &&
          w4f16_region_tiles > 32U)) {
         fprintf(stderr, "usage: %s PACKAGE_DIR VARIANT [repeat_count] "
@@ -2148,7 +2250,7 @@ int main(int argc, char **argv) {
                         "u8_log2_gqa_qkv_overlap_vgather_vdeal_fused_qk_requant] "
                         "[attention_hvx_contexts:1..6] "
                         "[crouton_boundary:control|qkv|av_to_o|"
-                        "input_norm|post_norm|norms|all|"
+                        "input_norm|post_norm|norms|qkv_norms|all|"
                         "w4u8_mlp_input|w4u8_mlp_io] "
                         "[w4u8_qkvo_pipeline:serial|qkv_batch2|"
                         "qkv_batch4|qkvo_batch4|"
@@ -2511,6 +2613,14 @@ int main(int argc, char **argv) {
         w4u8_down_hmx_batch_outputs;
     header->qkv_schedule_mode = qkv_schedule_mode;
     header->w4f16_group_fence_mode = w4f16_group_fence_mode;
+    header->w4f16_expand_claim_regions =
+        w4f16_expand_claim_regions;
+    header->w4f16_gate_up_extra_expand_worker =
+        w4f16_gate_up_extra_expand_worker;
+    header->w4f16_gate_up_extra_stream_worker =
+        w4f16_gate_up_extra_stream_worker;
+    header->w4f16_gate_up_stream_group_tiles =
+        w4f16_gate_up_stream_group_tiles;
     header->w4u8_stream_fence_mode = w4u8_stream_fence_mode;
     header->w4u8_gate_up_ring_slots = w4u8_gate_up_ring_slots;
     header->w4u8_qkv_ring_expand_workers =
@@ -2961,6 +3071,10 @@ int main(int argc, char **argv) {
         "\"fp16_common_schedule_mode\":\"%s\","
         "\"qkv_schedule_mode\":\"%s\","
         "\"w4f16_group_fence_mode\":\"%s\","
+        "\"w4f16_expand_claim_regions\":%" PRIu32 ","
+        "\"w4f16_gate_up_extra_expand_worker\":%" PRIu32 ","
+        "\"w4f16_gate_up_extra_stream_worker\":%" PRIu32 ","
+        "\"w4f16_gate_up_stream_group_tiles\":%" PRIu32 ","
         "\"w4u8_stream_fence_mode\":\"%s\","
         "\"w4u8_qkv_ring_expand_workers\":%" PRIu32 ","
         "\"fp16_norm_rows_per_task\":%" PRIu32 ","
@@ -3321,6 +3435,10 @@ int main(int argc, char **argv) {
         qbh_qkv_schedule_mode_name(header->qkv_schedule_mode),
         qbh_w4f16_group_fence_mode_name(
             header->w4f16_group_fence_mode),
+        header->w4f16_expand_claim_regions,
+        header->w4f16_gate_up_extra_expand_worker,
+        header->w4f16_gate_up_extra_stream_worker,
+        header->w4f16_gate_up_stream_group_tiles,
         qbh_w4u8_stream_fence_mode_name(
             header->w4u8_stream_fence_mode),
         header->w4u8_qkv_ring_expand_workers,

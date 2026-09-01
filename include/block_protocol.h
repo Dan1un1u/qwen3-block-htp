@@ -144,11 +144,15 @@ enum qbh_block_fp16_common_schedule_mode {
 enum qbh_block_qkv_schedule_mode {
     QBH_BLOCK_QKV_SCHEDULE_CONTROL = 0,
     QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL = 1,
+    QBH_BLOCK_QKV_SCHEDULE_HEAD_ALIGNED_BATCH4 = 2,
+    QBH_BLOCK_QKV_SCHEDULE_V_BATCH4 = 3,
+    QBH_BLOCK_QKV_SCHEDULE_KV_BATCH4 = 4,
 };
 
 enum qbh_block_w4f16_group_fence_mode {
     QBH_BLOCK_W4F16_GROUP_FENCE_CONTROL = 0,
     QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY = 1,
+    QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY_DOWN = 2,
 };
 
 enum qbh_block_w4u8_stream_fence_mode {
@@ -353,6 +357,10 @@ struct qbh_block_header {
     uint32_t w4u8_down_hmx_batch_outputs;
     uint32_t qkv_schedule_mode;
     uint32_t w4f16_group_fence_mode;
+    uint32_t w4f16_expand_claim_regions;
+    uint32_t w4f16_gate_up_extra_expand_worker;
+    uint32_t w4f16_gate_up_extra_stream_worker;
+    uint32_t w4f16_gate_up_stream_group_tiles;
     uint32_t w4u8_stream_fence_mode;
     uint32_t w4u8_gate_up_ring_slots;
     uint32_t w4u8_qkv_ring_expand_workers;

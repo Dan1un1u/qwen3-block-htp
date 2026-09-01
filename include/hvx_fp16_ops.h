@@ -47,7 +47,8 @@ void qbh_hvx_qk_norm_rope_f16_head(
 
 void qbh_hvx_qk_norm_rope_f16_crouton_head(
     const __fp16 *source_group_tiles, __fp16 *destination_tiles,
-    uint32_t head, uint32_t destination_is_weight,
+    uint32_t head, uint32_t source_group_tiles_per_command,
+    uint32_t destination_is_weight,
     const __fp16 *gamma, const __fp16 *cosine,
     const __fp16 *sine);
 
@@ -67,6 +68,13 @@ void qbh_hvx_silu_multiply_f16_crouton_tiles(
     const __fp16 *gate_tiles, const __fp16 *up_tiles,
     __fp16 *down_tiles, uint32_t m_tiles, uint32_t n_tiles,
     uint32_t down_k_tiles, uint32_t first_k_tile);
+
+void qbh_hvx_silu_multiply_f16_crouton_tile_range(
+    const __fp16 *gate_tiles, const __fp16 *up_tiles,
+    __fp16 *down_tiles, uint32_t m_tiles,
+    uint32_t source_n_tiles, uint32_t first_source_tile,
+    uint32_t n_tiles, uint32_t down_k_tiles,
+    uint32_t first_k_tile);
 
 void qbh_hvx_silu_multiply_f16_audit(
     const __fp16 *gate, const __fp16 *up, const __fp16 *middle,
