@@ -1696,6 +1696,162 @@ static int qbh_replay_step_pass(
            result->intermediate_spill_fill_count == 0U;
 }
 
+static void qbh_print_replay_profile(
+    uint32_t variant, uint32_t step,
+    const struct qbh_block_header *header,
+    const struct qbh_replay_step_result *result,
+    const uint8_t *output, uint32_t output_bytes) {
+#define QBH_REPLAY_PROFILE_U32(field) \
+    printf(",\"" #field "\":%" PRIu32, header->field)
+#define QBH_REPLAY_PROFILE_I32(field) \
+    printf(",\"" #field "\":%" PRId32, header->field)
+#define QBH_REPLAY_PROFILE_U64(field) \
+    printf(",\"" #field "\":%" PRIu64, header->field)
+
+    printf(
+        "{\"experiment\":148,\"record\":\"replay_profile\","
+        "\"variant\":\"%s\",\"replay_step\":%" PRIu32 ","
+        "\"mode\":\"%s\",\"logical_m\":%" PRIu32 ","
+        "\"first_position\":%" PRIu32 ","
+        "\"valid_length\":%" PRIu32 ","
+        "\"host_wall_ns\":%" PRIu64 ","
+        "\"output_mismatches\":%" PRIu64 ","
+        "\"output_max_abs\":%.9g,\"output_cosine\":%.9g,"
+        "\"output_max_lsb\":%" PRIu32 ","
+        "\"output_hash\":\"%016" PRIx64 "\","
+        "\"cache_prefix_mismatches\":%" PRIu64 ","
+        "\"cache_mismatches\":%" PRIu64 ","
+        "\"backend\":\"standalone_fastrpc_dsp\","
+        "\"qnn\":\"none\",\"intermediate_residency\":\"VTCM\"",
+        qbh_variant_name(variant), step,
+        step == 0U ? "prefill" : "decode", header->logical_m,
+        result->first_position, result->valid_length,
+        result->host_wall_ns, result->output.mismatches,
+        result->output.max_abs, result->output.cosine,
+        result->output.max_lsb, qbh_fnv1a64(output, output_bytes),
+        result->cache_prefix_mismatches, result->cache_mismatches);
+
+    QBH_REPLAY_PROFILE_U32(repeat_count);
+    QBH_REPLAY_PROFILE_U32(prepared_session_run_index);
+    QBH_REPLAY_PROFILE_U32(numerical_audit_enabled);
+    QBH_REPLAY_PROFILE_I32(dsp_status);
+    QBH_REPLAY_PROFILE_I32(numerical_status);
+    QBH_REPLAY_PROFILE_U32(scan_logical_m_observed);
+    QBH_REPLAY_PROFILE_U32(scan_total_kv_length);
+    QBH_REPLAY_PROFILE_U32(scan_padded_kv_length);
+    QBH_REPLAY_PROFILE_U32(scan_cache_dma_descriptor_count);
+    QBH_REPLAY_PROFILE_U32(scan_cache_append_mismatch_count);
+    QBH_REPLAY_PROFILE_U64(scan_cache_ddr_read_bytes);
+    QBH_REPLAY_PROFILE_U64(scan_cache_ddr_write_bytes);
+    QBH_REPLAY_PROFILE_U64(scan_cache_stage_ticks);
+    QBH_REPLAY_PROFILE_U64(scan_cache_append_ticks);
+    QBH_REPLAY_PROFILE_U64(scan_dynamic_attention_ticks);
+
+    QBH_REPLAY_PROFILE_U64(total_ticks);
+    QBH_REPLAY_PROFILE_U64(invocation_ticks);
+    QBH_REPLAY_PROFILE_U64(runtime_setup_ticks);
+    QBH_REPLAY_PROFILE_U64(runtime_teardown_ticks);
+    QBH_REPLAY_PROFILE_U64(stage_boundary_ticks);
+    QBH_REPLAY_PROFILE_U64(ledger_named_ticks);
+    QBH_REPLAY_PROFILE_U64(ledger_unattributed_ticks);
+    QBH_REPLAY_PROFILE_U64(input_stage_ticks);
+    QBH_REPLAY_PROFILE_U64(metadata_stage_ticks);
+    QBH_REPLAY_PROFILE_U64(input_norm_ticks);
+    QBH_REPLAY_PROFILE_U64(qkv_projection_ticks);
+    QBH_REPLAY_PROFILE_U64(qk_norm_rope_ticks);
+    QBH_REPLAY_PROFILE_U64(attention_ticks);
+    QBH_REPLAY_PROFILE_U64(o_projection_ticks);
+    QBH_REPLAY_PROFILE_U64(post_attention_residual_ticks);
+    QBH_REPLAY_PROFILE_U64(post_attention_norm_ticks);
+    QBH_REPLAY_PROFILE_U64(gate_up_ticks);
+    QBH_REPLAY_PROFILE_U64(activation_ticks);
+    QBH_REPLAY_PROFILE_U64(down_ticks);
+    QBH_REPLAY_PROFILE_U64(final_residual_ticks);
+    QBH_REPLAY_PROFILE_U64(output_stage_ticks);
+
+    QBH_REPLAY_PROFILE_U64(weight_dma_ticks);
+    QBH_REPLAY_PROFILE_U64(hmx_compute_ticks);
+    QBH_REPLAY_PROFILE_U64(projection_pack_ticks);
+    QBH_REPLAY_PROFILE_U64(projection_hmx_wait_ticks);
+    QBH_REPLAY_PROFILE_U64(projection_unpack_ticks);
+    QBH_REPLAY_PROFILE_U64(hmx_ready_wait_ticks);
+    QBH_REPLAY_PROFILE_U64(w4f16_expand_ticks);
+    QBH_REPLAY_PROFILE_U64(w4f16_expand_work_ticks);
+    QBH_REPLAY_PROFILE_U64(w4f16_expand_pool_wait_ticks);
+    QBH_REPLAY_PROFILE_U64(w4f16_prefetch_wait_ticks);
+    QBH_REPLAY_PROFILE_U64(w4f16_hmx_tail_wait_ticks);
+    QBH_REPLAY_PROFILE_U64(w4f16_cross_prefetch_wait_ticks);
+    QBH_REPLAY_PROFILE_U64(w4f16_cross_prefetch_lifetime_ticks);
+
+    QBH_REPLAY_PROFILE_U64(attention_setup_ticks);
+    QBH_REPLAY_PROFILE_U64(attention_qk_pack_ticks);
+    QBH_REPLAY_PROFILE_U64(attention_qk_hmx_ticks);
+    QBH_REPLAY_PROFILE_U64(attention_qk_unpack_ticks);
+    QBH_REPLAY_PROFILE_U64(attention_softmax_ticks);
+    QBH_REPLAY_PROFILE_U64(attention_av_pack_ticks);
+    QBH_REPLAY_PROFILE_U64(attention_av_hmx_ticks);
+    QBH_REPLAY_PROFILE_U64(attention_av_unpack_ticks);
+    QBH_REPLAY_PROFILE_U64(attention_gqa_pipeline_ticks);
+    QBH_REPLAY_PROFILE_U64(attention_unattributed_ticks);
+    QBH_REPLAY_PROFILE_U64(u8_attention_qk_norm_rope_ticks);
+    QBH_REPLAY_PROFILE_U64(u8_attention_k_pack_ticks);
+    QBH_REPLAY_PROFILE_U64(u8_attention_v_pack_ticks);
+    QBH_REPLAY_PROFILE_U64(u8_attention_qk_hmx_ticks);
+    QBH_REPLAY_PROFILE_U64(u8_attention_qk_requant_ticks);
+    QBH_REPLAY_PROFILE_U64(u8_attention_softmax_ticks);
+    QBH_REPLAY_PROFILE_U64(u8_attention_av_hmx_ticks);
+    QBH_REPLAY_PROFILE_U64(u8_attention_av_requant_ticks);
+    QBH_REPLAY_PROFILE_U64(u8_attention_pipeline_wait_ticks);
+    QBH_REPLAY_PROFILE_U64(w4u8_qkvo_weight_expand_ticks);
+    QBH_REPLAY_PROFILE_U64(w4u8_qkvo_prefetch_wait_ticks);
+    QBH_REPLAY_PROFILE_U64(w4u8_qkvo_hmx_lifetime_ticks);
+
+    QBH_REPLAY_PROFILE_U64(w4f16_gate_up_weight_dma_ticks);
+    QBH_REPLAY_PROFILE_U64(w4f16_gate_up_expand_ticks);
+    QBH_REPLAY_PROFILE_U64(w4f16_gate_up_expand_work_ticks);
+    QBH_REPLAY_PROFILE_U64(w4f16_gate_up_expand_pool_wait_ticks);
+    QBH_REPLAY_PROFILE_U64(w4f16_gate_up_hmx_wait_ticks);
+    QBH_REPLAY_PROFILE_U64(w4f16_gate_up_hmx_tail_wait_ticks);
+    QBH_REPLAY_PROFILE_U64(w4f16_gate_up_stream_work_ticks);
+    QBH_REPLAY_PROFILE_U64(w4f16_gate_up_stream_ready_wait_ticks);
+    QBH_REPLAY_PROFILE_U64(w4f16_gate_up_stream_join_wait_ticks);
+    QBH_REPLAY_PROFILE_U64(w4u8_mlp_gate_up_pipeline_ticks);
+    QBH_REPLAY_PROFILE_U64(w4u8_mlp_down_pipeline_ticks);
+    QBH_REPLAY_PROFILE_U64(w4u8_mlp_activation_work_ticks);
+    QBH_REPLAY_PROFILE_U64(w4u8_mlp_weight_stage_ticks);
+    QBH_REPLAY_PROFILE_U64(w4u8_mlp_weight_expand_ticks);
+    QBH_REPLAY_PROFILE_U64(w4u8_mlp_hmx_compute_ticks);
+    QBH_REPLAY_PROFILE_U64(w4u8_mlp_hmx_ready_wait_ticks);
+    QBH_REPLAY_PROFILE_U64(w4u8_mlp_producer_slot_wait_ticks);
+    QBH_REPLAY_PROFILE_U64(w4u8_mlp_expanded_slot_wait_ticks);
+
+    QBH_REPLAY_PROFILE_U32(vtcm_requested_bytes);
+    QBH_REPLAY_PROFILE_U32(vtcm_acquired_bytes);
+    QBH_REPLAY_PROFILE_U32(vtcm_peak_plan_bytes);
+    QBH_REPLAY_PROFILE_U32(block_invocation_count);
+    QBH_REPLAY_PROFILE_U32(hmx_command_count);
+    QBH_REPLAY_PROFILE_U32(hmx_fp16_tile_pair_count);
+    QBH_REPLAY_PROFILE_U32(hmx_u8s8_tile_pair_count);
+    QBH_REPLAY_PROFILE_U32(weight_dma_descriptor_count);
+    QBH_REPLAY_PROFILE_U32(boundary_dma_descriptor_count);
+    QBH_REPLAY_PROFILE_U32(intermediate_dma_descriptor_count);
+    QBH_REPLAY_PROFILE_U32(intermediate_spill_fill_count);
+    QBH_REPLAY_PROFILE_U64(weight_ddr_read_bytes);
+    QBH_REPLAY_PROFILE_U64(boundary_ddr_read_bytes);
+    QBH_REPLAY_PROFILE_U64(boundary_ddr_write_bytes);
+    QBH_REPLAY_PROFILE_U32(intermediate_ddr_read_bytes);
+    QBH_REPLAY_PROFILE_U32(intermediate_ddr_write_bytes);
+    QBH_REPLAY_PROFILE_U32(u8_attention_audit_ddr_write_bytes);
+    QBH_REPLAY_PROFILE_U32(u8_attention_probability_mask_violation_count);
+    QBH_REPLAY_PROFILE_U32(u8_attention_fused_k_operand_mismatch_count);
+    QBH_REPLAY_PROFILE_U32(w4f16_expand_mismatch_count);
+    printf("}\n");
+
+#undef QBH_REPLAY_PROFILE_U32
+#undef QBH_REPLAY_PROFILE_I32
+#undef QBH_REPLAY_PROFILE_U64
+}
+
 static int qbh_run_replay_sequence(
     struct qbh_session *session, int shared_fd, uint8_t *shared,
     uint32_t total_bytes, const char *package_root,
@@ -1912,6 +2068,9 @@ static int qbh_run_replay_sequence(
             step_result->intermediate_ddr_write_bytes,
             step_result->intermediate_spill_fill_count,
             qbh_replay_step_pass(variant, step_result) ? "true" : "false");
+        qbh_print_replay_profile(
+            variant, step, header, step_result,
+            shared + header->output_offset, header->output_bytes);
     }
     if (dump_root != NULL && dump_root[0] != '\0' &&
         (qbh_write_named_tensor(
