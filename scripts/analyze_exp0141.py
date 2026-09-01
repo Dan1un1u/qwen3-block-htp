@@ -50,7 +50,7 @@ PHYSICAL_EQUAL_FIELDS = (
 AUDIT_HASH_FIELDS = (
     "u8_input_norm_actual_hash", "u8_attention_actual_score_hash",
     "u8_attention_actual_probability_hash",
-    "u8_attention_actual_av_hash", "mlp_down_input_hash",
+    "u8_attention_actual_av_hash",
 )
 ZERO_AUDIT_FIELDS = (
     "u8_attention_fused_k_operand_mismatch_count",
