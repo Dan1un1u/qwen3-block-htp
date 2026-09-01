@@ -20,7 +20,7 @@ toolchain:
   accelerator: HTP V79
 governance:
   active_experiment: null
-  next_experiment_number: 146
+  next_experiment_number: 147
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -37,6 +37,12 @@ current_scope:
   active_experiment_evidence: null
   active_experiment_gate: null
   active_recipe_specialization: null
+  next_approved_experiment:
+    id: EXP-0146
+    title: W4F16 batch-two cross-projection QKV ring
+    parent: EXP-0140
+    source_branch: codex/exp-0146-w4f16-qkv-cross-projection-ring
+    approval_ref: 'User message 2026-09-01: 可以，这个作为下一个实验立即开展'
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0145/20260901T050905Z_895febfa3543_formal'
   latest_w4u8_qk_output_simd_candidate:
     id: EXP-0144

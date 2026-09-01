@@ -6,6 +6,50 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0146
+    slug: w4f16-qkv-cross-projection-ring
+    title: W4F16 batch-two cross-projection QKV ring
+    parent: EXP-0140
+    variants:
+      - exp0140_sequential_qkv_control
+      - w4f16_batch2_cross_projection_ring_candidate
+    execution_state: approved
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4f16-qkv-cross-projection-ring
+    source_branches:
+      - codex/exp-0146-w4f16-qkv-cross-projection-ring
+    source_commits: []
+    record: docs/experiments/EXP-0146.md
+    approval_ref: 'User message 2026-09-01: 可以，这个作为下一个实验立即开展'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0146-w4f16-qkv-cross-projection-ring
+      approved_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0140
+      source_parent_commit: e75563457293de9430f8c9d20a04ced6147e4737
+      recipe_scope: W4F16_QKV_cross_projection_pipeline_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      retained_parent_contract: EXP0140_batch2_direct_Crouton_QKV_carrier_one_HMX_owner_and_byte_exact_W4F16_math
+      prior_negative_boundaries: EXP0126_uniform_batch4_delays_head_readiness_and_EXP0127_selective_batch4_does_not_reduce_complete_Host
+      new_mechanism: one_bounded_cross_projection_ring_for_Q_K_V_with_batch2_HMX_early_head_publication_and_phase_overlaid_slots
+      hypothesis: preserve_batch2_head_readiness_while_removing_three_projection_lifecycle_boundaries_and_overlapping_DMA_W4_to_FP16_expansion_HMX_and_QK_preparation_across_Q_K_V
+      implementation_boundary: EXP0140_sequential_Q_K_V_control_or_same_math_carriers_batch2_and_one_HMX_owner_with_cross_projection_ring_only
+      excluded_changes: no_weights_scales_math_batch_width_QK_norm_RoPE_Attention_O_MLP_residual_public_DDR_FastRPC_or_QNN_changes
+      static_gate: exact_phase_overlay_fits_8mib_no_DDR_no_spill_batch2_only_per_head_publish_one_HMX_owner_and_no_QNN
+      correctness_gate: both_cells_byte_exact_output_f18b9abbe1487231_zero_W4F16_expansion_and_QKV_operand_mismatch_zero_max_lsb
+      physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_identical_weight_bytes_DMA_bytes_HMX_tile_pairs_carriers_and_math_declared_ring_delta_only
+      speed_gate: candidate_QKV_plus_QK_Norm_RoPE_and_complete_Host_strictly_improve_ordinary_and_paired_repeat1_and_repeat10
+      completion_gate: static_capacity_audit_then_bounded_smoke_then_five_rotated_formal_rounds_PC027_PC028_and_no_automatic_baseline_promotion
+      selected_baseline_changed: false
   - id: EXP-0145
     slug: w4u8-down-hmx-batch8
     title: W4U8 Down projection HMX batch-eight
