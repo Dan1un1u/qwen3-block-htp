@@ -10530,20 +10530,22 @@ experiments:
     variants:
       - exp0124_ring3_control
       - ring3_main_hvx_ready_qk_prep_candidate
-    execution_state: running
-    evidence_validity: pending
-    local_gate: pending
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-qkv-dma-flight-main-prep
     source_branches:
       - codex/exp-0130-w4u8-qkv-dma-flight-main-prep
-    source_commits: []
+    source_commits:
+      - e5541891db5d6ac6083987674df6da2c752cc095
     record: docs/experiments/EXP-0130.md
     approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently without interruption'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0130-w4u8-qkv-dma-flight-main-prep
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0124
       source_parent_commit: 95fadff5930d9081678ad99bb62ef84849ee1897
@@ -10565,3 +10567,22 @@ experiments:
       physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_identical_weight_bytes_DMA_descriptors_HMX_commands_tile_pairs_qparams_and_peak_plan
       speed_gate: QKV_plus_QK_Norm_RoPE_and_complete_Host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
       completion_gate: bounded_smoke_then_five_rotated_formal_rounds_PC027_PC028_and_accept_or_reject_without_automatic_baseline_promotion
+      bounded_smoke_results: 'D:/llm_exp/results/qwen3-block-htp/exp0130/20260901T010000Z_e554189_smoke'
+      source_commit: e5541891db5d6ac6083987674df6da2c752cc095
+      correctness_gate_result: pass_output_69f22eeb035e5ec5_zero_mismatch_zero_max_lsb_zero_fused_k_operand_mismatch
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_49408_u8s8_tile_pairs
+      selected_cell: exp0124_ring3_control
+      candidate_main_prep_tasks_per_block: 1
+      candidate_main_prep_ticks: 2160
+      repeat1_qkv_change_percent: 24.464334147002976
+      repeat1_host_change_percent: 21.2550023939728
+      repeat1_hmx_ready_wait_change_percent: 157.5036075036075
+      repeat1_pool_wait_change_percent: -6.868076535750256
+      formal_stage_status: not_run_after_bounded_smoke_failed_module_and_host_gates
+      pc027_failure_boundary_report: pass
+      pc028_module_table: reused_EXP0124_control_context
+      gate_summary_sha256: b56b46ee738da4a918bf20cce1105e72be1c71b4883f9f258c42a9346735295d
+      evidence_sha256_ledger_sha256: 8a915c4ef3cbc3d989fe716368ae1e847a921a220110a331f530556fbb7e7c27
+      conclusion: one_ready_QK_pair_outlasts_V_DMA_and_delays_HMX_readiness_more_than_it_reduces_prep_pool_tail
+      reopen_condition: only_run_main_context_prep_after_all_DMA_publication_or_with_a_preemptible_sub_DMA_sized_QK_kernel
+      selected_baseline_changed: false

@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0130
+  active_experiment: null
   next_experiment_number: 131
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,25 +27,25 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0129
-  last_completed_source_commit: cfda9253fbf7f0a57f68a10f0c5c2ad579889a34
+  last_completed_experiment: EXP-0130
+  last_completed_source_commit: e5541891db5d6ac6083987674df6da2c752cc095
   provisional_source_parent: EXP-0124
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: implementation
+  active_experiment_stage: none
   active_experiment_evidence: null
-  active_experiment_gate: pending
-  active_recipe_specialization: W4U8_QKV_DMA_flight_main_HVX_prep
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0129/20260901T003731Z_cfda9253fbf7_formal'
+  active_experiment_gate: none
+  active_recipe_specialization: none
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0130/20260901T010000Z_e554189_smoke'
   last_rejected_specialization:
-    id: EXP-0129
-    source_branch: codex/exp-0129-w4f16-gate-up-worker4
-    source_head: cfda9253fbf7f0a57f68a10f0c5c2ad579889a34
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0129/20260901T003731Z_cfda9253fbf7_formal'
+    id: EXP-0130
+    source_branch: codex/exp-0130-w4u8-qkv-dma-flight-main-prep
+    source_head: e5541891db5d6ac6083987674df6da2c752cc095
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0130/20260901T010000Z_e554189_smoke'
     local_gate: fail
     adoption_status: rejected
-    reason: fourth_worker_does_not_reduce_FP16_expansion_or_HMX_readiness_and_adds_join_contention
+    reason: one_ready_QK_pair_outlasts_V_DMA_and_delays_HMX_readiness_more_than_it_reduces_prep_pool_tail
   latest_w4f16_gate_up_worker4_candidate:
     id: EXP-0129
     source_branch: codex/exp-0129-w4f16-gate-up-worker4
