@@ -13,7 +13,7 @@ experiments:
     variants:
       - exp0140_sequential_qkv_control
       - w4f16_batch2_cross_projection_ring_candidate
-    execution_state: approved
+    execution_state: running
     evidence_validity: not_checked
     local_gate: not_run
     adoption_status: pending
@@ -27,6 +27,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0146-w4f16-qkv-cross-projection-ring
       approved_on: '2026-09-01'
+      started_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0140
       source_parent_commit: e75563457293de9430f8c9d20a04ced6147e4737
