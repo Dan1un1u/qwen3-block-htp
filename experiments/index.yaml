@@ -2582,6 +2582,48 @@ experiments:
       conclusion: already_locked_worker3_final_drain_reduces_main_context_stream_work_and_strictly_improves_gate_up_and_complete_host_at_both_repeats
       reopen_condition: none_for_local_candidate_further_changes_require_new_experiment
       selected_baseline_changed: false
+  - id: EXP-0136
+    slug: w4f16-gate-up-stream-subgroup4
+    title: W4F16 Gate/Up four-tile streaming subgroups
+    parent: EXP-0135
+    variants:
+      - w4f16_stream_group8_control
+      - w4f16_stream_subgroup4_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4f16-gate-up-stream-subgroup4
+    source_branches:
+      - codex/exp-0136-w4f16-gate-up-stream-subgroup4
+    source_commits: []
+    record: docs/experiments/EXP-0136.md
+    approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently without interruption'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0136-w4f16-gate-up-stream-subgroup4
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0135
+      source_parent_commit: 201c1c51529daf5561a3e0002f5d814f1cacebb3
+      logical_w4f16_parent: EXP-0135-four_expand_four_worker_plus_main_stream
+      recipe_scope: W4F16_Gate_Up_Crouton_native_SwiGLU_consumer_task_granularity_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      prior_positive_boundary: EXP0135_four_worker_plus_main_final_drain_reduces_Gate_Up_7p86_percent_and_host_3p74_percent_repeat10
+      hypothesis: split_each_unchanged_HMX_batch8_result_into_two_disjoint_four_tile_SwiGLU_tasks_to_reduce_final_drain_tail_and_main_context_share
+      implementation_boundary: runtime_stream_group8_or_subgroup4_same_four_context_expansion_four_pool_worker_plus_main_drain_HMX_batch8_Crouton_slots_math_and_output
+      excluded_changes: no_weights_scales_qparams_expansion_partition_worker_creation_DMA_HMX_commands_QKV_attention_O_down_residual_public_DDR_FastRPC_or_QNN_changes
+      static_gate: candidate_reads_four_tile_subsets_with_source_stride8_writes_disjoint_down_tiles_and_releases_each_HMX_slot_only_after_two_generation_safe_subgroup_completions
+      correctness_gate: both_cells_byte_exact_output_f18b9abbe1487231_expansion_audit_zero_mismatch_zero_max_lsb
+      physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_identical_workers_weight_DMA_expansion_HMX_commands_tiles_layout_and_peak_plan
+      speed_gate: Gate_Up_plus_SwiGLU_and_complete_Host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
+      completion_gate: bounded_smoke_then_five_rotated_formal_rounds_PC027_PC028_and_no_automatic_baseline_promotion
   - id: EXP-0099
     slug: w4u8-down-generation-safe-batch4
     title: Four-output generation-safe W4U8 Down batching
