@@ -58,7 +58,8 @@ current_scope:
     dsp_HAP_mmap_put_result: 0
     host_fastrpc_munmap_result: 0
     dsp_virtual_base: 1356857344
-    dsp_virtual_end: 4256849924
+    dsp_last_verified_end: 4256849924
+    declared_mapping_virtual_end: 4256857344
     dsp_physical_base: 22865248256
     sentinel_offsets: [4096, 1449996288, 2899992576]
     host_to_dsp_sentinel_mismatches: 0

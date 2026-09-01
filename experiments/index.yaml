@@ -68,7 +68,8 @@ experiments:
       map_ns: 11668802
       run_ns: 274010
       dsp_virtual_base: 1356857344
-      dsp_virtual_end: 4256849924
+      dsp_last_verified_end: 4256849924
+      declared_mapping_virtual_end: 4256857344
       dsp_physical_base: 22865248256
       device_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
       conclusion: rpcmem_alloc2_and_current_FastRPC_stack_can_back_one_full_stack_sized_single_shared_arena
