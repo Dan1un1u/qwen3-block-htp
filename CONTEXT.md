@@ -851,3 +851,14 @@ release all succeeded. This removes the legacy signed-int allocation limit as
 the immediate full-stack blocker, but a separately registered experiment must
 still prove the generated package size, runtime residency, correctness and
 profiling under the real 28-layer workload.
+
+**Single-Arena Full-Stack Resume**:
+The EXP-0152 continuation of the 28-layer integration contract after EXP-0151.
+Each recipe owns one exact-size `rpcmem_alloc2` package arena, one shared fd and
+one persistent cDSP mapping for a Prepared Runtime Session. Layer descriptors
+retain 32-bit offsets within that arena. No Host refill, segmented mapping,
+per-layer FastRPC call, delayed mapping, new recipe kernel or new numerical
+contract is permitted. Static exact-size audit and real package mapping precede
+all model execution.
+_Avoid_: reopening EXP-0150 in place, mapping probe as full-model correctness,
+multi-arena weights, package streaming

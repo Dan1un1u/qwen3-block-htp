@@ -6,6 +6,72 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0152
+    slug: full-stack-rpcmem2-resume
+    title: Real 28-layer Qwen3 full-stack resume on one rpcmem_alloc2 arena
+    parent: EXP-0151
+    variants:
+      - f16f16_layers0_27_rpcmem2_stack
+      - w4f16_layers0_27_rpcmem2_stack
+      - w4u8_layers0_27_rpcmem2_stack
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: not_applicable
+    evidence_profile: real-qwen3-layers0-27-prefill-plus-eight-continuous-decode-steps-single-rpcmem2-arena
+    source_branches:
+      - codex/exp-0152-full-stack-rpcmem2-resume
+    source_commits: []
+    record: docs/experiments/EXP-0152.md
+    approval_ref: 'User message 2026-09-01: 继续（在 EXP-0151 单 buffer gate 通过后继续 EXP-0152）'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0152-full-stack-rpcmem2-resume
+      approved_on: '2026-09-01'
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0151
+      source_parent_commit: bb9531f457dce01e97a1770020bd1a1890c8114b
+      implementation_contract_parent: EXP-0150
+      implementation_contract_source: EXP0149_plus_EXP0150_static_audit
+      execution_layer_indices: [0, 27]
+      declared_transformer_layer_count: 28
+      active_transformer_layer_count: 28
+      execution_unit: one_full_transformer_stack_per_prefill_or_decode_step
+      prefill_positions: [0, 63]
+      decode_positions: [64, 71]
+      initial_cache_length_per_layer: 0
+      post_prefill_cache_length_per_layer: 64
+      final_cache_length_per_layer: 72
+      teacher_boundary: real_embedding_hidden_state_entering_layer0_plus_position_metadata
+      output_boundary: layer27_block_output_before_final_model_norm
+      allocation_api: rpcmem_alloc2
+      mapping_contract: one_exact_size_arena_one_fd_one_persistent_cDSP_mapping_per_recipe_session
+      layer_descriptor_offset_bits: 32
+      package_size_limit_bytes: 4294967295
+      segmented_mapping_allowed: false
+      delayed_mapping_allowed: false
+      host_refill_allowed: false
+      host_intermediate_hidden_allowed: false
+      runtime_kv_import_allowed: false
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      persistent_per_layer_kv_cache_ddr_allowed: true
+      immutable_weight_ddr_allowed: true
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      implementation_boundary: replace_only_the_legacy_signed_int_package_allocation_and_capacity_guard_with_the_EXP0151_proven_size_t_rpcmem_alloc2_single_arena_contract_then_expand_EXP0149_layer_iteration_to_28
+      static_gate: exact_three_recipe_package_layout_offsets_alignment_and_total_bytes_fit_uint32_and_each_recipe_is_independently_materializable
+      mapping_gate: each_real_generated_package_allocates_one_exact_size_rpcmem2_arena_maps_to_cDSP_and_exposes_first_middle_last_plus_all_layer_descriptor_boundaries_without_reboot
+      correctness_gate: independent_full_stack_recipe_reference_final_layer27_output_and_all_28_layers_cache_after_prefill_and_each_decode_step_W4U8_zero_LSB_FP16_no_nonfinite_cosine_at_least_0p99999_and_elementwise_abs_at_most_0p0625_plus_0p002_times_abs_reference
+      physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_full_stack_step_one_HMX_owner_no_QNN_only_immutable_weights_and_per_layer_cache_DDR
+      profiling_gate: complete_full_stack_and_each_layer_PC027_ledgers_for_prefill_and_continuous_decode_with_cache_traffic_separated_by_layer_and_PC028_three_recipe_overview
+      speed_gate: not_applicable_full_stack_integration_experiment
+      stop_conditions: any_package_exceeds_uint32_or_real_package_mapping_failure_or_any_Host_roundtrip_between_layers_or_imported_runtime_KV_or_hidden_DDR_spill_or_cache_ABI_replacement_or_recipe_math_or_kernel_change
+      completion_gate: immutable_full_stack_teacher_and_three_packages_then_static_and_real_device_mapping_gate_then_prefill_and_continuous_decode_correctness_then_physical_and_complete_profiling_evidence
+      excluded_change: cache_native_Attention_recipe_specialization_tokenizer_sampler_final_model_norm_or_lm_head_requires_a_separate_experiment
+      next_gate_on_success: cache_native_W4U8_decode_Attention_or_model_head_scope_requires_separate_registration
+      selected_baseline_changed: false
   - id: EXP-0151
     slug: rpcmem-alloc2-single-buffer
     title: Single-buffer rpcmem_alloc2 cDSP mapping feasibility
