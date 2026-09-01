@@ -13,20 +13,22 @@ experiments:
     variants:
       - exp0136_ordered_down_control
       - w4f16_subgroup4_down_join_only_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: real-qwen3-block-w4f16-down-join-only-after-subgroup4
     source_branches:
       - codex/exp-0140-w4f16-down-join-only-subgroup4
-    source_commits: []
+    source_commits:
+      - e75563457293de9430f8c9d20a04ced6147e4737
     record: docs/experiments/EXP-0140.md
     approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently without interruption'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0140-w4f16-down-join-only-subgroup4
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0136
       source_parent_commit: 30fdf531939b8b96dce428c0d890adbf17714a10
@@ -47,6 +49,34 @@ experiments:
       physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_identical_weight_DMA_HMX_tiles_carriers_and_peak_plan
       speed_gate: candidate_Down_and_complete_Host_strictly_improve_ordinary_and_paired_repeat1_and_repeat10_and_GateUp_regression_at_most_0p5_percent
       completion_gate: bounded_smoke_then_five_rotated_formal_rounds_PC027_PC028_and_no_automatic_baseline_promotion
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0140/20260901T040452Z_e75563457293_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0140/artifacts/e75563457293/20260901T040452Z_formal'
+      source_commit: e75563457293de9430f8c9d20a04ced6147e4737
+      correctness_gate_result: pass_both_f18b9abbe1487231_zero_expansion_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_dma_hmx_tiles_carriers_and_peak_plan
+      speed_gate_result: pass_Down_and_complete_Host_all_ordinary_and_paired_repeat1_repeat10_GateUp_within_0p5_percent
+      selected_cell: w4f16_subgroup4_down_join_only_candidate
+      repeat1_down_change_percent: -6.055165660192586
+      repeat1_down_paired_change_percent: -6.97636511817441
+      repeat1_host_change_percent: -0.53723411777723
+      repeat1_host_paired_change_percent: -0.7603884257576188
+      repeat1_gate_up_change_percent: 0.2348949497585906
+      repeat1_gate_up_paired_change_percent: 0.09204470742931736
+      repeat10_down_change_percent: -6.795990105455029
+      repeat10_down_paired_change_percent: -6.898515818252838
+      repeat10_host_change_percent: -1.224952062524054
+      repeat10_host_paired_change_percent: -1.0259791471380675
+      repeat10_gate_up_change_percent: 0.19875386556655883
+      repeat10_gate_up_paired_change_percent: 0.08092568542097389
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_exp0109_f16f16_exp0110_selected_w4f16_exp0109_fastest_w4u8
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: b7fdfa21fe3baa49e391136d6c0e7f5273000f5fe4e71ce0de3e64b9bc620529
+      full_profiling_report_sha256: 96a92331ae86f44ef981f888bf028e13a89e245701c4e53ea4a28e9b0b13601f
+      evidence_sha256_ledger_sha256: 3c7ad59a9de1af726f3e93da7beb37535d5931424b55d585902e69e6d21abddd
+      conclusion: corrected_single_variable_Down_join_only_preserves_EXP0136_GateUp_and_strictly_improves_Down_and_complete_Host_at_both_repeats
+      reopen_condition: none_for_local_candidate_further_changes_require_new_experiment
+      selected_baseline_changed: false
   - id: EXP-0139
     slug: w4u8-qkv-main-prep-assist
     title: W4U8 QKV main-context prep assist
