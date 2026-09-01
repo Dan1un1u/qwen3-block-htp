@@ -60,7 +60,8 @@ set -e
 if [[ -n "${dump_root}" ]]; then
     for file in actual_block_output_f16.bin \
                 actual_kv_cache_k_f16.bin actual_kv_cache_v_f16.bin \
-                actual_scan_q_f16.bin actual_scan_attention_f16.bin; do
+                actual_scan_q_f16.bin actual_scan_attention_f16.bin \
+                actual_scan_o_projection_f16.bin; do
         "${adb_exe}" pull "${remote_root}/capture/${file}" \
             "$(wslpath -w "${dump_root}/${file}")" >/dev/null
     done

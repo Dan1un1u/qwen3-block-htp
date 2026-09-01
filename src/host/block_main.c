@@ -2894,13 +2894,14 @@ int main(int argc, char **argv) {
         numerical_audit_enabled != 0U) {
         const char *dump_root = getenv("QBH_DUMP_ATTENTION_DIR");
         if (dump_root != NULL && dump_root[0] != '\0') {
-            static const char *const names[2] = {
+            static const char *const names[3] = {
                 "actual_scan_q_f16.bin",
                 "actual_scan_attention_f16.bin",
+                "actual_scan_o_projection_f16.bin",
             };
             const uint32_t bytes =
                 QBH_BLOCK_M * QBH_BLOCK_HIDDEN * sizeof(uint16_t);
-            for (uint32_t index = 0U; index < 2U; ++index) {
+            for (uint32_t index = 0U; index < 3U; ++index) {
                 char dump_path[512];
                 FILE *dump;
                 size_t written;

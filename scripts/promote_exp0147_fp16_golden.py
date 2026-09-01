@@ -34,6 +34,19 @@ def main() -> None:
     staging = Path(tempfile.mkdtemp(prefix=f".{package.name}-golden-", dir=parent))
     try:
         shutil.copytree(package, staging, dirs_exist_ok=True)
+        preserved = {
+            "reference_kv_cache_k_f16.bin": "independent_kv_cache_k_f16.bin",
+            "reference_kv_cache_v_f16.bin": "independent_kv_cache_v_f16.bin",
+        }
+        if args.promote_output:
+            preserved[f"reference_{args.recipe}_block_output_f16.bin"] = (
+                f"independent_{args.recipe}_block_output_f16.bin"
+            )
+        for source_name, destination_name in preserved.items():
+            destination = staging / destination_name
+            if not destination.is_file():
+                shutil.copy2(staging / source_name, destination)
+
         replacements = {
             "actual_kv_cache_k_f16.bin": "reference_kv_cache_k_f16.bin",
             "actual_kv_cache_v_f16.bin": "reference_kv_cache_v_f16.bin",
@@ -51,6 +64,18 @@ def main() -> None:
 
         manifest_path = staging / "manifest.json"
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if args.promote_output and "independent_dynamic_reference" in manifest:
+            manifest["independent_dynamic_reference"]["file"] = (
+                f"independent_{args.recipe}_block_output_f16.bin"
+            )
+            manifest["independent_dynamic_reference"]["sha256"] = sha256(
+                staging / f"independent_{args.recipe}_block_output_f16.bin"
+            )
+        manifest["independent_cache_reference"] = {
+            "k_file": "independent_kv_cache_k_f16.bin",
+            "v_file": "independent_kv_cache_v_f16.bin",
+            "role": "independent_FP16_append_reference_before_device_golden",
+        }
         manifest["device_golden"] = {
             "capture": str(capture),
             "cache_promoted": True,
@@ -85,4 +110,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

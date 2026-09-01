@@ -44,7 +44,7 @@
      2U * QBH_BLOCK_U8_ATTENTION_SCORE_BYTES + \
      QBH_BLOCK_U8_ATTENTION_AV_BYTES)
 #define QBH_BLOCK_SCAN_F16_AUDIT_BYTES \
-    (2U * QBH_BLOCK_M * QBH_BLOCK_HIDDEN * sizeof(uint16_t))
+    (3U * QBH_BLOCK_M * QBH_BLOCK_HIDDEN * sizeof(uint16_t))
 
 enum qbh_block_variant {
     QBH_BLOCK_F16F16 = 1,

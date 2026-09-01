@@ -51,12 +51,14 @@ def sha256(path: Path) -> str:
 def unpack_fp16_weight(package: Path, name: str, n: int, k: int) -> torch.Tensor:
     packed = np.fromfile(package / f"{name}_weight_f16_hmx.bin", dtype="<f2")
     packed = packed.reshape(n // 32, k // 32, 16, 32, 2)
-    logical = (
-        packed.transpose(0, 1, 2, 4, 3)
-        .reshape(n // 32, k // 32, 32, 32)
-        .transpose(0, 2, 1, 3)
-        .reshape(n, k)
+    # pack_fp16_hmx_weight stores each logical [N,K] tile as
+    # [N32,K32,Kpair,Nlane,pair].  Restore [N32,Nlane,K32,Klane]
+    # before flattening; swapping the last two logical axes here silently
+    # produces a transposed-within-tile matrix.
+    tile = packed.transpose(0, 1, 2, 4, 3).reshape(
+        n // 32, k // 32, 32, 32
     )
+    logical = tile.transpose(0, 3, 1, 2).reshape(n, k)
     return torch.from_numpy(np.ascontiguousarray(logical).copy())
 
 
@@ -193,4 +195,3 @@ if __name__ == "__main__":
     torch.set_grad_enabled(False)
     torch.set_num_threads(max(1, min(16, os.cpu_count() or 1)))
     main()
-

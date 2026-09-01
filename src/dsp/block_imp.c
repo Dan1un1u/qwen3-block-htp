@@ -10598,6 +10598,7 @@ static int qbh_scan_f16_attention(
         QBH_BLOCK_M * padded_tokens;
     const uint32_t direct_qkv = qbh_crouton_qkv_enabled(header);
     const uint64_t dynamic_start = HAP_perf_get_qtimer_count();
+    __fp16 *q_group_scratch = (__fp16 *)buffers->k;
 
     header->scan_attention_overlay_capacity_bytes = overlay_capacity;
     header->scan_attention_overlay_required_bytes = required_bytes;
@@ -10609,6 +10610,24 @@ static int qbh_scan_f16_attention(
     }
     qbh_hmx_fp16_init_unity_scale(buffers->scale_or_bias);
 
+    /*
+     * The three long-context planes intentionally overlay the post-QKV VTCM
+     * lifetime through compressed_weight.  At L=4096 that range includes
+     * attention_projection and hmx_activation, so neither may remain the
+     * live Q/AV carrier.  Preserve logical Q before touching the planes and
+     * use the now-dead row-major K buffer as one bounded two-head HMX carrier.
+     */
+    if (direct_qkv != 0U) {
+        for (uint32_t head = 0U; head < QBH_BLOCK_HEADS; ++head) {
+            qbh_unpack_fp16_output(
+                (const __fp16 *)buffers->attention_projection +
+                    (size_t)head * head_elements,
+                QBH_BLOCK_HEAD_DIM / QBH_HMX_FP16_COLS,
+                (__fp16 *)buffers->q, QBH_BLOCK_HIDDEN,
+                head * QBH_BLOCK_HEAD_DIM);
+        }
+    }
+
     for (uint32_t group = 0U; group < QBH_BLOCK_KV_HEADS; ++group) {
         const uint32_t first_q_head =
             group * QBH_ATTENTION_Q_HEADS_PER_GROUP;
@@ -10618,7 +10637,7 @@ static int qbh_scan_f16_attention(
         const __fp16 *cache_v =
             (const __fp16 *)(shared + header->kv_cache_v_offset) +
             (size_t)group * cache_head_stride;
-        __fp16 *q_group;
+        __fp16 *q_group = q_group_scratch;
         uint64_t start;
 
         memset(plane_a, 0, plane_bytes);
@@ -10635,21 +10654,15 @@ static int qbh_scan_f16_attention(
         header->attention_qk_pack_ticks +=
             HAP_perf_get_qtimer_count() - start;
 
-        if (direct_qkv != 0U) {
-            q_group = (__fp16 *)buffers->attention_projection +
-                (size_t)first_q_head * head_elements;
-        } else {
-            q_group = (__fp16 *)buffers->hmx_activation;
-            for (uint32_t local_head = 0U;
-                 local_head < QBH_ATTENTION_Q_HEADS_PER_GROUP;
-                 ++local_head) {
-                qbh_pack_fp16_activation(
-                    (const __fp16 *)buffers->q +
-                        (size_t)(first_q_head + local_head) *
-                            QBH_BLOCK_HEAD_DIM,
-                    QBH_BLOCK_HIDDEN, QBH_BLOCK_HEAD_DIM,
-                    q_group + (size_t)local_head * head_elements);
-            }
+        for (uint32_t local_head = 0U;
+             local_head < QBH_ATTENTION_Q_HEADS_PER_GROUP;
+             ++local_head) {
+            qbh_pack_fp16_activation(
+                (const __fp16 *)buffers->q +
+                    (size_t)(first_q_head + local_head) *
+                        QBH_BLOCK_HEAD_DIM,
+                QBH_BLOCK_HIDDEN, QBH_BLOCK_HEAD_DIM,
+                q_group + (size_t)local_head * head_elements);
         }
         start = HAP_perf_get_qtimer_count();
         if (qbh_hmx_submit(
@@ -10798,6 +10811,22 @@ static int qbh_scan_audit_f16_attention(
             header,
             shared + header->scan_attention_audit_output_offset + bytes,
             buffers->attention_concat, bytes, 0U) != 0) {
+        return -1;
+    }
+    header->u8_attention_audit_ddr_write_bytes += bytes;
+    return 0;
+}
+
+static int qbh_scan_audit_f16_o_projection(
+    struct qbh_block_header *header, uint8_t *shared,
+    struct qbh_block_buffers *buffers) {
+    const uint32_t bytes =
+        QBH_BLOCK_M * QBH_BLOCK_HIDDEN * sizeof(__fp16);
+    if (qbh_dma_copy(
+            header,
+            shared + header->scan_attention_audit_output_offset +
+                2U * bytes,
+            buffers->attention_projection, bytes, 0U) != 0) {
         return -1;
     }
     header->u8_attention_audit_ddr_write_bytes += bytes;
@@ -11485,7 +11514,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     }
     header->qk_norm_rope_ticks += HAP_perf_get_qtimer_count() - start;
 
-    if (scan_dynamic_attention != 0U &&
+    if (scan_enabled != 0U &&
         header->variant != QBH_BLOCK_W4U8 &&
         header->numerical_audit_enabled != 0U &&
         qbh_scan_audit_f16_q(
@@ -11533,7 +11562,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                           softmax_check))) != 0) {
         return QBH_BLOCK_STATUS_ATTENTION_FAILED;
     }
-    if (scan_dynamic_attention != 0U &&
+    if (scan_enabled != 0U &&
         header->variant != QBH_BLOCK_W4U8 &&
         header->numerical_audit_enabled != 0U &&
         qbh_scan_audit_f16_attention(
@@ -11667,18 +11696,34 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     }
 
     start = HAP_perf_get_qtimer_count();
+    if (scan_dynamic_attention != 0U &&
+        header->variant != QBH_BLOCK_W4U8) {
+        qbh_pack_fp16_activation(
+            (const __fp16 *)buffers->q,
+            QBH_BLOCK_HIDDEN, QBH_BLOCK_HIDDEN,
+            (__fp16 *)buffers->hmx_activation);
+        qbh_hmx_fp16_init_unity_scale(buffers->scale_or_bias);
+    }
     if (qbh_run_projection(
             header, shared, &header->projections[QBH_BLOCK_PROJ_O],
             buffers, worker, w4f16_pool,
             scan_dynamic_attention != 0U
-                ? buffers->q
+                ? buffers->hmx_activation
                 : (crouton_av_o_enabled != 0U
                        ? buffers->hmx_activation
                        : buffers->attention_concat),
             buffers->attention_projection,
-            crouton_av_o_enabled,
+            scan_dynamic_attention != 0U
+                ? 1U : crouton_av_o_enabled,
             &header->projections[QBH_BLOCK_PROJ_GATE],
             &cross_prefetch) != 0) {
+        return QBH_BLOCK_STATUS_O_PROJECTION_FAILED;
+    }
+    if (scan_enabled != 0U &&
+        header->variant != QBH_BLOCK_W4U8 &&
+        header->numerical_audit_enabled != 0U &&
+        qbh_scan_audit_f16_o_projection(
+            header, shared, buffers) != 0) {
         return QBH_BLOCK_STATUS_O_PROJECTION_FAILED;
     }
     if (header->variant != QBH_BLOCK_W4U8) {

@@ -13,6 +13,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--markdown", type=Path, required=True)
+    parser.add_argument("--label", default="shape/KV")
     return parser.parse_args()
 
 
@@ -61,7 +62,7 @@ def main() -> None:
         encoding="utf-8",
     )
     lines = [
-        "# EXP-0147 W4U8 scan",
+        f"# EXP-0147 {args.label} scan",
         "",
         "| Cell | repeat1 (us) | repeat10/block (us) | useful tok/s | Attention (us) | KV read/block | KV write/block | zero-LSB | zero intermediate DDR |",
         "|---|---:|---:|---:|---:|---:|---:|:---:|:---:|",
