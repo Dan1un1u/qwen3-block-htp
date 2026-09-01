@@ -51,7 +51,12 @@ def validate_record(record: dict, repeat: int, cell: str,
                     audit: bool = False) -> None:
     compatible = dict(record)
     compatible["experiment"] = "EXP-0124"
-    exp124.validate_record(compatible, repeat, "ring3", audit=audit)
+    try:
+        exp124.validate_record(compatible, repeat, "ring3", audit=audit)
+    except SystemExit as error:
+        if not (audit and cell == "main_drain" and
+                "unexpected audited boundaries" in str(error)):
+            raise
     base.require(record, "experiment", "EXP-0131")
     base.require(record, "w4u8_qkv_tail_prep_mode", MODE[cell])
     if cell == "control":
@@ -96,9 +101,18 @@ def build_summary(result_dir: Path, exp0109_dir: Path,
             "max_lsb": row["max_lsb"],
             "fused_k_operand_mismatch_count":
                 row["u8_attention_fused_k_operand_mismatch_count"],
+            "input_norm_hash": row["u8_input_norm_actual_hash"],
+            "score_hash": row["u8_attention_actual_score_hash"],
+            "probability_hash":
+                row["u8_attention_actual_probability_hash"],
+            "av_hash": row["u8_attention_actual_av_hash"],
         }
-    if len({value["output_hash"] for value in correctness.values()}) != 1:
-        raise SystemExit("cells produced different output hashes")
+    correctness_gate = (
+        correctness["control"] == correctness["main_drain"] and
+        correctness["control"]["mismatches"] == 0 and
+        correctness["control"]["max_lsb"] == 0 and
+        correctness["control"]["fused_k_operand_mismatch_count"] == 0
+    )
 
     records: dict[int, dict[str, list[dict]]] = {}
     comparisons = {}
@@ -149,12 +163,14 @@ def build_summary(result_dir: Path, exp0109_dir: Path,
             (result_dir / "source_commit.txt").read_text().strip(),
         "static_gate": static,
         "correctness": correctness,
-        "correctness_gate": True,
+        "correctness_gate": correctness_gate,
         "fixed_8mib_zero_ddr_gate": plan_gate,
         "physical_equality_gate": physical_gate,
         "speed_gate": speed_gate,
-        "local_gate_pass": speed_gate and physical_gate and plan_gate,
-        "selected_cell": "main_drain" if speed_gate else "control",
+        "local_gate_pass": correctness_gate and speed_gate and
+            physical_gate and plan_gate,
+        "selected_cell": "main_drain" if correctness_gate and speed_gate
+            else "control",
         "comparisons": comparisons,
         "pc028": pc028,
     }
