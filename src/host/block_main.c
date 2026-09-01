@@ -1770,7 +1770,8 @@ int main(int argc, char **argv) {
           (crouton_boundary_mode &
            QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM) == 0U)) ||
         (w4u8_down_hmx_batch_outputs != 1U &&
-         w4u8_down_hmx_batch_outputs != 4U) ||
+         w4u8_down_hmx_batch_outputs != 4U &&
+         w4u8_down_hmx_batch_outputs != 8U) ||
         (variant != QBH_BLOCK_W4U8 &&
          w4u8_down_hmx_batch_outputs != 1U) ||
         (w4u8_gate_up_ring_slots != 8U &&
@@ -1975,8 +1976,8 @@ int main(int argc, char **argv) {
                         "qk_head_pairs_input_norm_pool|all] "
                         "[fp16_norm_rows_per_task:2|4|8] "
                         "[fp16_norm_contexts:2|3|4] "
-                        "[w4u8_down_hmx_batch_outputs:1|4] "
-                        "[w4u8_qk_pair_kernel:0|1]\n",
+                        "[w4u8_down_hmx_batch_outputs:1|4|8] "
+                        "[w4u8_qk_pair_kernel:0|1|2|3]\n",
                 argv[0]);
         return 2;
     }
@@ -2534,7 +2535,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0144\","
+        "{\"experiment\":\"EXP-0145\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
