@@ -20,6 +20,9 @@ grep -q 'QBH_REPLAY_FP16_MAX_COMPOSED_NRMSE (0.003)' \
 grep -q 'QBH_REPLAY_FP16_MAX_CACHE_VIOLATION_FRACTION (0.01)' \
     src/host/block_main.c
 grep -q 'fp16_gate_version.*composition_v2' src/host/block_main.c
+grep -q 'cache_structure_mismatches' src/host/block_main.c
+grep -q 'cache_composed_cosine_diagnostic_failure_count' \
+    src/host/block_main.c
 if grep -q 'total_bytes > INT_MAX' src/host/block_main.c; then
     printf 'legacy INT_MAX allocation guard remains\n' >&2
     exit 1
