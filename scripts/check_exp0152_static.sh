@@ -15,6 +15,11 @@ grep -q 'QBH_LAYOUT_ONLY' src/host/block_main.c
 grep -q 'QBH_BLOCK_FULL_STACK_HIDDEN_CAPTURE' include/block_protocol.h
 grep -q 'QBH_HIDDEN_CAPTURE_DIR' src/host/block_main.c
 grep -q 'full_stack_hidden_capture_ddr_write_bytes' src/dsp/block_imp.c
+grep -q 'QBH_REPLAY_FP16_MAX_COMPOSED_NRMSE (0.003)' \
+    src/host/block_main.c
+grep -q 'QBH_REPLAY_FP16_MAX_CACHE_VIOLATION_FRACTION (0.01)' \
+    src/host/block_main.c
+grep -q 'fp16_gate_version.*composition_v2' src/host/block_main.c
 if grep -q 'total_bytes > INT_MAX' src/host/block_main.c; then
     printf 'legacy INT_MAX allocation guard remains\n' >&2
     exit 1

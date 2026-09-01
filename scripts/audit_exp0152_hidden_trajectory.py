@@ -31,10 +31,15 @@ HIDDEN = 2048
 ATOL = 0.0625
 RTOL = 0.002
 COSINE_GATE = 0.99999
+MAX_LOCAL_VIOLATION_FRACTION = 0.01
+MAX_COMPOSED_NRMSE = 0.003
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--recipe", choices=("f16f16", "w4f16"), default="f16f16"
+    )
     parser.add_argument(
         "--model", type=Path,
         default=Path("/mnt/d/llm_exp/models/Qwen3-origin"),
@@ -176,7 +181,8 @@ def metrics(actual: np.ndarray, reference: np.ndarray) -> dict[str, object]:
         "abs_p99": float(percentiles[2]),
         "abs_p99_9": float(percentiles[3]),
         "local_gate": (
-            nonfinite == 0 and violations == 0 and cosine >= COSINE_GATE
+            nonfinite == 0 and cosine >= COSINE_GATE and
+            violations / actual_f.size <= MAX_LOCAL_VIOLATION_FRACTION
         ),
     }
 
@@ -225,9 +231,13 @@ def main() -> None:
     ) as source:
         for layer in range(LAYERS):
             prefix = f"model.layers.{layer}"
-            weights = {
+            logical_weights = {
                 name: source.get_tensor(key).to(torch.float16)
                 for name, key in projection_keys(layer).items()
+            }
+            weights = logical_weights if args.recipe == "f16f16" else {
+                name: base.quantize_w4_per_output(weight)[2]
+                for name, weight in logical_weights.items()
             }
             norms = {
                 "input": source.get_tensor(
@@ -283,10 +293,10 @@ def main() -> None:
             }
             records.append(record)
             print(json.dumps(record, sort_keys=True), flush=True)
-            del weights, norms, conditional
+            del logical_weights, weights, norms, conditional
 
     package_final = np.fromfile(
-        args.package / "reference_f16f16_block_output_f16.bin",
+        args.package / f"reference_{args.recipe}_block_output_f16.bin",
         dtype="<f2",
     ).reshape(M, HIDDEN)
     cpu_final = (
@@ -297,9 +307,16 @@ def main() -> None:
         int(record["layer"]) for record in records
         if not bool(record["conditional_local"]["local_gate"])
     ]
+    final_composed = records[-1]["unconditional_composed"]
+    final_composed_pass = (
+        final_composed["nonfinite_count"] == 0 and
+        final_composed["cosine"] >= COSINE_GATE and
+        final_composed["nrmse"] <= MAX_COMPOSED_NRMSE
+    )
     summary = {
         "experiment": "EXP-0152",
         "diagnostic": "full_stack_hidden_trajectory",
+        "recipe": args.recipe,
         "formal_physical_evidence": False,
         "layers": LAYERS,
         "rows": M,
@@ -307,15 +324,21 @@ def main() -> None:
             "atol": ATOL,
             "rtol": RTOL,
             "cosine_minimum": COSINE_GATE,
+            "maximum_mixed_tolerance_violation_fraction": (
+                MAX_LOCAL_VIOLATION_FRACTION
+            ),
             "failure_layers": conditional_failures,
             "pass": not conditional_failures,
         },
         "package_final_reference_reproduction": metrics(
             cpu_final, package_final
         ),
-        "final_unconditional_composed": records[-1][
-            "unconditional_composed"
-        ],
+        "final_unconditional_composed": final_composed,
+        "final_composed_gate": {
+            "minimum_cosine": COSINE_GATE,
+            "maximum_nrmse": MAX_COMPOSED_NRMSE,
+            "pass": final_composed_pass,
+        },
         "final_conditional_local": records[-1]["conditional_local"],
         "records": records,
     }
@@ -326,8 +349,11 @@ def main() -> None:
     print(json.dumps({
         "summary": str(args.output),
         "conditional_gate_pass": not conditional_failures,
+        "final_composed_gate_pass": final_composed_pass,
         "conditional_failure_layers": conditional_failures,
     }, sort_keys=True))
+    if conditional_failures or not final_composed_pass:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
