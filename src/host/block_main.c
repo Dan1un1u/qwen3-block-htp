@@ -51,6 +51,7 @@ struct qbh_error_metrics {
 struct qbh_replay_step_result {
     uint64_t host_wall_ns;
     struct qbh_error_metrics output;
+    uint64_t cache_prefix_mismatches;
     uint64_t cache_mismatches;
     uint32_t step_index;
     uint32_t first_position;
@@ -66,6 +67,24 @@ struct qbh_replay_step_result {
     uint64_t scan_cache_ddr_write_bytes;
     uint64_t scan_dynamic_attention_ticks;
 };
+
+static int qbh_write_named_tensor(
+    const char *root, const char *name,
+    const void *data, uint32_t bytes) {
+    char path[512];
+    FILE *stream;
+    size_t written;
+    int path_bytes = snprintf(path, sizeof(path), "%s/%s", root, name);
+    if (path_bytes < 0 || (size_t)path_bytes >= sizeof(path)) {
+        return -1;
+    }
+    stream = fopen(path, "wb");
+    if (stream == NULL) {
+        return -1;
+    }
+    written = fwrite(data, 1U, bytes, stream);
+    return fclose(stream) == 0 && written == bytes ? 0 : -1;
+}
 
 _Static_assert(sizeof(struct qbh_qparam_record) ==
                    QBH_BLOCK_QPARAM_RECORD_BYTES,
@@ -1664,7 +1683,8 @@ static int qbh_replay_step_pass(
         : result->output.max_abs <= 0.0625 &&
               isfinite(result->output.cosine) &&
               result->output.cosine >= 0.99999;
-    return output_pass && result->cache_mismatches == 0U &&
+    return output_pass && result->cache_prefix_mismatches == 0U &&
+           result->cache_mismatches == 0U &&
            result->dsp_status == QBH_BLOCK_STATUS_OK &&
            result->numerical_status == QBH_BLOCK_NUMERICAL_OK &&
            result->vtcm_requested_bytes ==
@@ -1696,8 +1716,19 @@ static int qbh_run_replay_sequence(
         variant == QBH_BLOCK_W4U8 ? 1U : 2U;
     const char *tensor_suffix =
         variant == QBH_BLOCK_W4U8 ? "u8" : "f16";
+    const char *dump_root = getenv("QBH_REPLAY_DUMP_DIR");
+    const uint32_t cache_bytes = layer->k_bytes;
+    uint8_t *cache_snapshot_k = malloc(cache_bytes);
+    uint8_t *cache_snapshot_v = malloc(cache_bytes);
     int all_pass = 1;
 
+    if (cache_snapshot_k == NULL || cache_snapshot_v == NULL) {
+        free(cache_snapshot_k);
+        free(cache_snapshot_v);
+        return -1;
+    }
+    memcpy(cache_snapshot_k, shared + kv_cache_slots[0].offset, cache_bytes);
+    memcpy(cache_snapshot_v, shared + kv_cache_slots[1].offset, cache_bytes);
     memset(results, 0, sizeof(results));
     for (uint32_t step = 0U; step < QBH_REPLAY_TOTAL_STEPS; ++step) {
         struct qbh_replay_step_result *step_result = &results[step];
@@ -1796,6 +1827,15 @@ static int qbh_run_replay_sequence(
                   (const uint16_t *)(shared + header->output_offset),
                   (const uint16_t *)(shared + header->reference_offset),
                   header->logical_m);
+        step_result->cache_prefix_mismatches =
+            qbh_cache_prefix_mismatches(
+                shared + kv_cache_slots[0].offset,
+                cache_snapshot_k, layer->capacity,
+                header->initial_kv_length, element_bytes) +
+            qbh_cache_prefix_mismatches(
+                shared + kv_cache_slots[1].offset,
+                cache_snapshot_v, layer->capacity,
+                header->initial_kv_length, element_bytes);
         step_result->cache_mismatches =
             qbh_cache_prefix_mismatches(
                 shared + kv_cache_slots[0].offset,
@@ -1807,6 +1847,22 @@ static int qbh_run_replay_sequence(
                 shared + kv_reference_slots[1].offset,
                 layer->capacity, layer->valid_length,
                 element_bytes);
+        memcpy(cache_snapshot_k, shared + kv_cache_slots[0].offset, cache_bytes);
+        memcpy(cache_snapshot_v, shared + kv_cache_slots[1].offset, cache_bytes);
+        if (dump_root != NULL && dump_root[0] != '\0') {
+            char name[128];
+            if (snprintf(
+                    name, sizeof(name),
+                    "actual_replay_output_%02" PRIu32 "_%s.bin",
+                    step, tensor_suffix) < 0 ||
+                qbh_write_named_tensor(
+                    dump_root, name, shared + header->output_offset,
+                    header->output_bytes) != 0) {
+                free(cache_snapshot_k);
+                free(cache_snapshot_v);
+                return -1;
+            }
+        }
         all_pass &= qbh_replay_step_pass(variant, step_result);
         printf(
             "{\"experiment\":148,\"variant\":\"%s\","
@@ -1816,6 +1872,7 @@ static int qbh_run_replay_sequence(
             "\"host_wall_ns\":%" PRIu64 ","
             "\"output_mismatches\":%" PRIu64 ","
             "\"output_max_abs\":%.9g,\"output_cosine\":%.9g,"
+            "\"cache_prefix_mismatches\":%" PRIu64 ","
             "\"cache_mismatches\":%" PRIu64 ","
             "\"cache_ddr_read_bytes\":%" PRIu64 ","
             "\"cache_ddr_write_bytes\":%" PRIu64 ","
@@ -1831,6 +1888,7 @@ static int qbh_run_replay_sequence(
             step_result->first_position, step_result->valid_length,
             step_result->host_wall_ns, step_result->output.mismatches,
             step_result->output.max_abs, step_result->output.cosine,
+            step_result->cache_prefix_mismatches,
             step_result->cache_mismatches,
             step_result->scan_cache_ddr_read_bytes,
             step_result->scan_cache_ddr_write_bytes,
@@ -1842,6 +1900,17 @@ static int qbh_run_replay_sequence(
             step_result->intermediate_spill_fill_count,
             qbh_replay_step_pass(variant, step_result) ? "true" : "false");
     }
+    if (dump_root != NULL && dump_root[0] != '\0' &&
+        (qbh_write_named_tensor(
+             dump_root, "actual_replay_k_cache.bin",
+             shared + kv_cache_slots[0].offset, cache_bytes) != 0 ||
+         qbh_write_named_tensor(
+             dump_root, "actual_replay_v_cache.bin",
+             shared + kv_cache_slots[1].offset, cache_bytes) != 0)) {
+        free(cache_snapshot_k);
+        free(cache_snapshot_v);
+        return -1;
+    }
     printf(
         "{\"experiment\":148,\"variant\":\"%s\","
         "\"replay_sequence_complete\":true,"
@@ -1850,10 +1919,12 @@ static int qbh_run_replay_sequence(
         "\"all_steps_pass\":%s}\n",
         qbh_variant_name(variant), state->completed_step_count,
         layer->valid_length, all_pass ? "true" : "false");
-    return all_pass && state->completed_step_count ==
-                           QBH_REPLAY_TOTAL_STEPS &&
-                       layer->valid_length == 72U
-        ? 0 : -1;
+    free(cache_snapshot_k);
+    free(cache_snapshot_v);
+    return all_pass &&
+                   state->completed_step_count == QBH_REPLAY_TOTAL_STEPS &&
+                   layer->valid_length == 72U
+               ? 0 : -1;
 }
 
 int main(int argc, char **argv) {
