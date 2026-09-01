@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0127
+  active_experiment: null
   next_experiment_number: 128
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,25 +27,58 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0126
-  last_completed_source_commit: 500122e068fd85c4a69734b095ba2913aad8c2ca
+  last_completed_experiment: EXP-0127
+  last_completed_source_commit: b3afdc39a5b58fb6cdd45d103b8325eb973a5465
   provisional_source_parent: EXP-0120
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: registered
-  active_experiment_evidence: null
-  active_experiment_gate: not_run
-  active_recipe_specialization: W4F16
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0126/20260831T235041Z_500122e068fd_formal'
+  active_experiment_stage: completed
+  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0127/20260901T000359Z_b3afdc39a5b5_formal'
+  active_experiment_gate: fail
+  active_recipe_specialization: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0127/20260901T000359Z_b3afdc39a5b5_formal'
   last_rejected_specialization:
-    id: EXP-0126
-    source_branch: codex/exp-0126-w4f16-qkv-head-aligned-batch4
-    source_head: 500122e068fd85c4a69734b095ba2913aad8c2ca
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0126/20260831T235041Z_500122e068fd_formal'
+    id: EXP-0127
+    source_branch: codex/exp-0127-w4f16-qkv-selective-batch4
+    source_head: b3afdc39a5b58fb6cdd45d103b8325eb973a5465
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0127/20260901T000359Z_b3afdc39a5b5_formal'
     local_gate: fail
     adoption_status: rejected
-    reason: uniform_head_batch4_saves_hmx_commands_but_delays_weight_and_QK_prep_readiness
+    reason: projection_selective_batch4_shortens_QKV_but_not_complete_host_and_increases_expansion_readiness_wait
+  latest_w4f16_qkv_selective_batch4_candidate:
+    id: EXP-0127
+    source_branch: codex/exp-0127-w4f16-qkv-selective-batch4
+    source_head: b3afdc39a5b58fb6cdd45d103b8325eb973a5465
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0127/20260901T000359Z_b3afdc39a5b5_formal'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0127/artifacts/b3afdc39a5b5/20260901T000359Z_formal'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    selected_cell: qkv_hmx_batch2_control
+    correctness_gate: pass_all_f18b9abbe1487231_zero_final_and_QKV_operand_mismatch_zero_max_lsb
+    physical_gate: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_and_hmx_tile_work
+    v_repeat1_host_change_percent: -0.7400238278069016
+    v_repeat1_qkv_change_percent: 0.273393811358269
+    v_repeat10_host_change_percent: 0.0022291151045017443
+    v_repeat10_qkv_change_percent: -0.2216764279866501
+    kv_repeat1_host_change_percent: -0.48375879521193044
+    kv_repeat1_qkv_change_percent: 0.06213495712688033
+    kv_repeat10_host_change_percent: 0.003222473434694173
+    kv_repeat10_qkv_change_percent: -0.42697902890609374
+    v_repeat10_expand_pool_wait_change_percent: 19.569
+    kv_repeat10_expand_pool_wait_change_percent: 36.9451
+    v_repeat10_first_expand_change_percent: 7.8818
+    kv_repeat10_first_expand_change_percent: 14.1947
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass_exp0109_f16f16_exp0127_control_w4f16_exp0124_control_w4u8
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    gate_summary_sha256: 3e301ce20dbc7104ae0b4411650a7b1ecc4135bd5fcc6775170ebf11da34ec87
+    full_profiling_report_sha256: 177947bef8932af0b8a8211dcb855ee009760817de90eeddafa64ac1b264e761
+    evidence_sha256_ledger_sha256: 193309a97701e68fffe064b8af8345d20d9796009219403ce864d27919809556
+    conclusion: selective_V_or_KV_batch4_reduces_QKV_repeat10_but_does_not_reduce_complete_host
+    reopen_condition: new_readiness_or_weight_expansion_mechanism_not_further_batch_width_search
+    selected_baseline_changed: false
   latest_w4f16_qkv_head_batch4_candidate:
     id: EXP-0126
     source_branch: codex/exp-0126-w4f16-qkv-head-aligned-batch4

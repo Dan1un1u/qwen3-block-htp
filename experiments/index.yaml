@@ -10306,20 +10306,22 @@ experiments:
       - qkv_hmx_batch2_control
       - v_hmx_batch4_candidate
       - kv_hmx_batch4_candidate
-    execution_state: running
-    evidence_validity: pending
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4f16-qkv-selective-batch4
     source_branches:
       - codex/exp-0127-w4f16-qkv-selective-batch4
-    source_commits: []
+    source_commits:
+      - b3afdc39a5b58fb6cdd45d103b8325eb973a5465
     record: docs/experiments/EXP-0127.md
     approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0127-w4f16-qkv-selective-batch4
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0126
       source_parent_commit: 500122e068fd85c4a69734b095ba2913aad8c2ca
@@ -10342,3 +10344,43 @@ experiments:
       physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_identical_weight_bytes_and_HMX_tile_pairs_expected_selective_command_counts
       speed_gate: QKV_plus_QK_Norm_RoPE_and_complete_Host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
       completion_gate: bounded_diagnostic_then_five_rotated_rounds_PC027_PC028_and_no_automatic_baseline_promotion
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0127/20260901T000359Z_b3afdc39a5b5_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0127/artifacts/b3afdc39a5b5/20260901T000359Z_formal'
+      source_commit: b3afdc39a5b58fb6cdd45d103b8325eb973a5465
+      static_gate_result: pass_projection_selective_batch_widths_one_hmx_no_qnn
+      correctness_gate_result: pass_all_f18b9abbe1487231_zero_final_and_QKV_operand_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_and_hmx_tile_work
+      selected_cell: qkv_hmx_batch2_control
+      v_repeat1_host_change_percent: -0.7400238278069016
+      v_repeat1_host_paired_change_percent: -0.7400238278069016
+      v_repeat1_qkv_change_percent: 0.273393811358269
+      v_repeat1_qkv_paired_change_percent: 0.3603379721669908
+      v_repeat10_host_change_percent: 0.0022291151045017443
+      v_repeat10_host_paired_change_percent: -0.13119317301220068
+      v_repeat10_qkv_change_percent: -0.2216764279866501
+      v_repeat10_qkv_paired_change_percent: -0.2552051748534456
+      kv_repeat1_host_change_percent: -0.48375879521193044
+      kv_repeat1_host_paired_change_percent: -0.2137849245517187
+      kv_repeat1_qkv_change_percent: 0.06213495712688033
+      kv_repeat1_qkv_paired_change_percent: 0.04970178926442248
+      kv_repeat10_host_change_percent: 0.003222473434694173
+      kv_repeat10_host_paired_change_percent: -0.001482838356015037
+      kv_repeat10_qkv_change_percent: -0.42697902890609374
+      kv_repeat10_qkv_paired_change_percent: -0.5075886390830675
+      v_hmx_command_change: 208_to_200_per_block
+      kv_hmx_command_change: 208_to_192_per_block
+      v_streamed_command_change: 176_to_168_per_block
+      kv_streamed_command_change: 176_to_160_per_block
+      v_repeat10_expand_pool_wait_change_percent: 19.569
+      kv_repeat10_expand_pool_wait_change_percent: 36.9451
+      v_repeat10_first_expand_change_percent: 7.8818
+      kv_repeat10_first_expand_change_percent: 14.1947
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_exp0109_f16f16_exp0127_control_w4f16_exp0124_control_w4u8
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: 3e301ce20dbc7104ae0b4411650a7b1ecc4135bd5fcc6775170ebf11da34ec87
+      full_profiling_report_sha256: 177947bef8932af0b8a8211dcb855ee009760817de90eeddafa64ac1b264e761
+      evidence_sha256_ledger_sha256: 193309a97701e68fffe064b8af8345d20d9796009219403ce864d27919809556
+      conclusion: selective_V_or_KV_batch4_reduces_QKV_repeat10_but_does_not_reduce_complete_host
+      reopen_condition: new_readiness_or_weight_expansion_mechanism_not_further_batch_width_search
+      selected_baseline_changed: false
