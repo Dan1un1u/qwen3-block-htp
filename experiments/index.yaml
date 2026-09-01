@@ -6,6 +6,62 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0150
+    slug: full-transformer-stack
+    title: Real 28-layer Qwen3 transformer stack
+    parent: EXP-0149
+    variants:
+      - f16f16_layers0_27_stack
+      - w4f16_layers0_27_stack
+      - w4u8_layers0_27_stack
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-layers0-27-prefill-plus-eight-consecutive-decode-steps
+    source_branches:
+      - codex/exp-0150-full-transformer-stack
+    source_commits: []
+    record: docs/experiments/EXP-0150.md
+    approval_ref: 'User message 2026-09-01: 继续下一阶段（在 EXP-0149 通过后进入完整 transformer stack）'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0150-full-transformer-stack
+      approved_on: '2026-09-01'
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0149
+      source_parent_commit: f75c5e0e0b6ec09ac4422496a9254d82092e9e40
+      execution_layer_indices: [0, 27]
+      declared_transformer_layer_count: 28
+      active_transformer_layer_count: 28
+      execution_unit: one_full_transformer_stack_per_prefill_or_decode_step
+      prefill_positions: [0, 63]
+      decode_positions: [64, 71]
+      initial_cache_length_per_layer: 0
+      post_prefill_cache_length_per_layer: 64
+      final_cache_length_per_layer: 72
+      teacher_boundary: real_embedding_hidden_state_entering_layer0_plus_position_metadata
+      output_boundary: layer27_block_output_before_final_model_norm
+      host_intermediate_hidden_allowed: false
+      runtime_kv_import_allowed: false
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      persistent_per_layer_kv_cache_ddr_allowed: true
+      immutable_weight_ddr_allowed: true
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      implementation_boundary: preserve_EXP0149_per_recipe_block_math_kernels_cache_ABI_and_phase_overlay_expand_layer_descriptors_and_runtime_iteration_from_three_to_all_28_layers_only
+      correctness_gate: independent_full_stack_recipe_reference_final_layer27_output_and_all_28_layers_cache_after_prefill_and_each_decode_step_W4U8_zero_LSB_FP16_no_nonfinite_cosine_at_least_0p99999_and_elementwise_abs_at_most_0p0625_plus_0p002_times_abs_reference
+      physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_full_stack_step_one_HMX_owner_no_QNN_only_immutable_weights_and_per_layer_cache_DDR
+      profiling_gate: complete_full_stack_and_each_layer_PC027_ledgers_for_prefill_and_continuous_decode_with_cache_traffic_separated_by_layer
+      package_mapping_gate: all_28_layer_offsets_and_total_shared_bytes_fit_declared_ABI_then_real_device_rpcmem_and_FastRPC_mapping_succeeds_without_Host_refill
+      speed_gate: not_applicable_full_stack_integration_experiment
+      stop_conditions: shared_package_or_offset_contract_cannot_represent_all_layers_or_any_Host_roundtrip_between_layers_or_imported_runtime_KV_or_hidden_DDR_spill_or_cache_ABI_replacement_or_recipe_math_or_kernel_change
+      completion_gate: immutable_full_stack_teacher_and_three_packages_then_static_and_device_mapping_gate_then_prefill_and_continuous_decode_correctness_then_physical_and_complete_profiling_evidence
+      excluded_change: cache_native_Attention_or_any_new_recipe_specialization_requires_a_separate_followup_experiment
+      next_gate_on_success: cache_native_W4U8_decode_Attention_or_model_head_scope_requires_separate_registration
+      selected_baseline_changed: false
   - id: EXP-0149
     slug: three-layer-vertical-slice
     title: Real consecutive-layer replay vertical slice
