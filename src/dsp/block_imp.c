@@ -841,6 +841,34 @@ static int qbh_slice_enabled(const struct qbh_block_header *header) {
            header->slice_layer_count == QBH_VERTICAL_SLICE_LAYER_COUNT;
 }
 
+static int qbh_full_stack_hidden_capture_valid(
+    const struct qbh_block_header *header, uint32_t shared_bytes,
+    uint32_t element_bytes) {
+    const uint32_t layer_bytes =
+        QBH_BLOCK_M * QBH_BLOCK_HIDDEN * element_bytes;
+    const uint64_t capture_bytes =
+        (uint64_t)QBH_VERTICAL_SLICE_LAYER_COUNT * layer_bytes;
+
+    if (header->full_stack_stage_mode !=
+        QBH_BLOCK_FULL_STACK_HIDDEN_CAPTURE) {
+        return header->full_stack_hidden_capture_offset == 0U &&
+               header->full_stack_hidden_capture_bytes == 0U &&
+               header->full_stack_hidden_capture_layer_bytes == 0U;
+    }
+    return qbh_slice_enabled(header) &&
+           header->scan_mode == QBH_BLOCK_SCAN_PREFILL &&
+           header->logical_m == QBH_BLOCK_M &&
+           header->initial_kv_length == 0U &&
+           header->repeat_count == 1U &&
+           capture_bytes <= UINT32_MAX &&
+           header->full_stack_hidden_capture_layer_bytes == layer_bytes &&
+           header->full_stack_hidden_capture_bytes ==
+               (uint32_t)capture_bytes &&
+           qbh_range_valid(
+               header->full_stack_hidden_capture_offset,
+               header->full_stack_hidden_capture_bytes, shared_bytes);
+}
+
 static void qbh_bind_slice_layer(struct qbh_block_header *header,
                                  uint32_t slice_index) {
     const struct qbh_block_layer_desc *layer =
@@ -1165,6 +1193,10 @@ static int qbh_header_valid(const struct qbh_block_header *header,
             header, shared_bytes, element_bytes)) {
         return 0;
     }
+    if (!qbh_full_stack_hidden_capture_valid(
+            header, shared_bytes, element_bytes)) {
+        return 0;
+    }
     if (qbh_slice_enabled(header)) {
         for (uint32_t slice_index = 0U;
              slice_index < QBH_VERTICAL_SLICE_LAYER_COUNT;
@@ -1184,7 +1216,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->attribution_enabled > 1U ||
         header->numerical_audit_enabled > 1U ||
         header->full_stack_stage_mode >
-            QBH_BLOCK_FULL_STACK_MAP_GATE ||
+            QBH_BLOCK_FULL_STACK_HIDDEN_CAPTURE ||
         header->residual_mode >
             QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6_SHUFFLE4 ||
         header->f16f16_projection_mode >
@@ -13210,6 +13242,30 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
                 header->dsp_status = block_status;
                 result = AEE_EFAILED;
                 goto stop_worker;
+            }
+            if (header->full_stack_stage_mode ==
+                QBH_BLOCK_FULL_STACK_HIDDEN_CAPTURE) {
+                const uint64_t capture_start =
+                    HAP_perf_get_qtimer_count();
+                uint8_t *capture_destination = shared +
+                    header->full_stack_hidden_capture_offset +
+                    slice_index *
+                        header->full_stack_hidden_capture_layer_bytes;
+                if (qbh_dma_copy(
+                        header, capture_destination, buffers.residual,
+                        physical_tensor_bytes, 0U) != 0) {
+                    header->output_dma_status = -2;
+                    header->dsp_status =
+                        QBH_BLOCK_STATUS_HIDDEN_CAPTURE_DMA_FAILED;
+                    result = AEE_EFAILED;
+                    goto stop_worker;
+                }
+                ++header->full_stack_hidden_capture_layer_count;
+                ++header->full_stack_hidden_capture_dma_descriptor_count;
+                header->full_stack_hidden_capture_ddr_write_bytes +=
+                    physical_tensor_bytes;
+                header->full_stack_hidden_capture_ticks +=
+                    HAP_perf_get_qtimer_count() - capture_start;
             }
             layer->valid_length += header->logical_m;
             layer->append_count += header->logical_m;

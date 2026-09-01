@@ -2494,6 +2494,108 @@ static int qbh_run_replay_sequence(
                ? 0 : -1;
 }
 
+static int qbh_run_full_stack_hidden_capture(
+    struct qbh_session *session, int shared_fd, uint8_t *shared,
+    uint32_t total_bytes, struct qbh_block_header *header,
+    uint32_t variant) {
+    struct qbh_decode_session_state *state =
+        (struct qbh_decode_session_state *)(
+            shared + header->replay_session_offset);
+    const char *dump_root = getenv("QBH_HIDDEN_CAPTURE_DIR");
+    const char *suffix = variant == QBH_BLOCK_W4U8 ? "u8" : "f16";
+    const uint32_t layer_bytes =
+        header->full_stack_hidden_capture_layer_bytes;
+    const uint8_t *last_layer =
+        shared + header->full_stack_hidden_capture_offset +
+        (QBH_VERTICAL_SLICE_LAYER_COUNT - 1U) * layer_bytes;
+    uint64_t host_start;
+    uint64_t host_end;
+    uint64_t final_output_mismatches;
+    char name[128];
+    int rpc_result;
+    int gate_pass;
+
+    if (dump_root == NULL || dump_root[0] == '\0' ||
+        header->full_stack_stage_mode !=
+            QBH_BLOCK_FULL_STACK_HIDDEN_CAPTURE ||
+        header->full_stack_hidden_capture_bytes == 0U ||
+        layer_bytes == 0U) {
+        return -1;
+    }
+    header->scan_mode = QBH_BLOCK_SCAN_PREFILL;
+    header->logical_m = QBH_BLOCK_M;
+    header->initial_kv_length = 0U;
+    header->replay_expected_step = state->completed_step_count;
+    header->replay_first_position = state->next_position;
+    header->repeat_count = 1U;
+    qbh_bind_host_slice_layer(header, 0U);
+    header->dsp_status = QBH_BLOCK_STATUS_HOST_READY;
+    memset(shared + header->output_offset, 0xa5, header->output_bytes);
+    memset(shared + header->full_stack_hidden_capture_offset, 0xa5,
+           header->full_stack_hidden_capture_bytes);
+    host_start = qbh_monotonic_ns();
+    rpc_result = qwen3_probe_run_block(
+        session->handle, shared_fd, total_bytes);
+    host_end = qbh_monotonic_ns();
+
+    final_output_mismatches = qbh_count_byte_mismatches(
+        last_layer, shared + header->output_offset, layer_bytes);
+    gate_pass = rpc_result == AEE_SUCCESS &&
+        header->dsp_status == QBH_BLOCK_STATUS_OK &&
+        header->full_stack_hidden_capture_layer_count ==
+            QBH_VERTICAL_SLICE_LAYER_COUNT &&
+        header->full_stack_hidden_capture_dma_descriptor_count ==
+            QBH_VERTICAL_SLICE_LAYER_COUNT &&
+        header->full_stack_hidden_capture_ddr_write_bytes ==
+            header->full_stack_hidden_capture_bytes &&
+        header->intermediate_ddr_read_bytes == 0U &&
+        header->intermediate_ddr_write_bytes == 0U &&
+        header->intermediate_spill_fill_count == 0U &&
+        state->completed_step_count == 1U &&
+        final_output_mismatches == 0U;
+
+    if (snprintf(name, sizeof(name),
+                 "actual_hidden_stack_%s.bin", suffix) < 0 ||
+        qbh_write_named_tensor(
+            dump_root, name,
+            shared + header->full_stack_hidden_capture_offset,
+            header->full_stack_hidden_capture_bytes) != 0 ||
+        snprintf(name, sizeof(name),
+                 "actual_full_stack_output_%s.bin", suffix) < 0 ||
+        qbh_write_named_tensor(
+            dump_root, name, shared + header->output_offset,
+            header->output_bytes) != 0) {
+        gate_pass = 0;
+    }
+    printf(
+        "{\"experiment\":152,\"hidden_capture\":true,"
+        "\"variant\":\"%s\",\"host_wall_ns\":%" PRIu64 ","
+        "\"rpc_result\":%d,\"dsp_status\":%d,"
+        "\"captured_layers\":%" PRIu32 ","
+        "\"layer_bytes\":%" PRIu32 ","
+        "\"capture_bytes\":%" PRIu32 ","
+        "\"diagnostic_ddr_write_bytes\":%" PRIu64 ","
+        "\"diagnostic_dma_descriptors\":%" PRIu32 ","
+        "\"diagnostic_capture_ticks\":%" PRIu64 ","
+        "\"formal_intermediate_ddr_read_bytes\":%" PRIu32 ","
+        "\"formal_intermediate_ddr_write_bytes\":%" PRIu32 ","
+        "\"formal_intermediate_spill_fill_count\":%" PRIu32 ","
+        "\"final_output_capture_mismatches\":%" PRIu64 ","
+        "\"formal_physical_evidence\":false,\"gate_pass\":%s}\n",
+        qbh_variant_name(variant), host_end - host_start, rpc_result,
+        header->dsp_status,
+        header->full_stack_hidden_capture_layer_count, layer_bytes,
+        header->full_stack_hidden_capture_bytes,
+        header->full_stack_hidden_capture_ddr_write_bytes,
+        header->full_stack_hidden_capture_dma_descriptor_count,
+        header->full_stack_hidden_capture_ticks,
+        header->intermediate_ddr_read_bytes,
+        header->intermediate_ddr_write_bytes,
+        header->intermediate_spill_fill_count,
+        final_output_mismatches, gate_pass ? "true" : "false");
+    return gate_pass ? 0 : -1;
+}
+
 int main(int argc, char **argv) {
     struct qbh_session session = {(remote_handle64)-1, 0};
     struct qbh_file_slot input_slot;
@@ -2563,6 +2665,7 @@ int main(int argc, char **argv) {
     uint32_t physical_chunks = 1U;
     uint32_t replay_mode = QBH_BLOCK_REPLAY_DISABLED;
     uint32_t vertical_slice_mode = QBH_BLOCK_SLICE_DISABLED;
+    uint32_t full_stack_stage_mode = QBH_BLOCK_FULL_STACK_RUN;
     uint32_t replay_session_offset = 0U;
     uint32_t element_bytes;
     uint32_t output_bytes;
@@ -2573,6 +2676,8 @@ int main(int argc, char **argv) {
     size_t single_gate_up_scale_cache_offset = 0U;
     size_t attention_audit_output_offset = 0U;
     size_t scan_attention_audit_output_offset = 0U;
+    size_t full_stack_hidden_capture_offset = 0U;
+    size_t full_stack_hidden_capture_bytes = 0U;
     size_t cursor = qbh_align_up_size(sizeof(*header), QBH_HOST_ALIGNMENT);
     size_t total_bytes;
     int shared_fd = -1;
@@ -2775,6 +2880,22 @@ int main(int argc, char **argv) {
             }
         }
     }
+    {
+        const char *map_only = getenv("QBH_MAP_ONLY");
+        const char *hidden_capture = getenv("QBH_HIDDEN_CAPTURE");
+        const int map_enabled =
+            map_only != NULL && strcmp(map_only, "1") == 0;
+        const int capture_enabled =
+            hidden_capture != NULL && strcmp(hidden_capture, "1") == 0;
+        if (map_enabled && capture_enabled) {
+            full_stack_stage_mode = UINT32_MAX;
+        } else if (map_enabled) {
+            full_stack_stage_mode = QBH_BLOCK_FULL_STACK_MAP_GATE;
+        } else if (capture_enabled) {
+            full_stack_stage_mode =
+                QBH_BLOCK_FULL_STACK_HIDDEN_CAPTURE;
+        }
+    }
     if (argc < 3 || argc > 26 ||
         qbh_parse_variant(argv[2], &variant) != 0 ||
         (argc >= 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
@@ -2834,6 +2955,11 @@ int main(int argc, char **argv) {
          numerical_audit_enabled != 0U) ||
         (replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS &&
          vertical_slice_mode != QBH_BLOCK_SLICE_ACTIVE_RANGE) ||
+        full_stack_stage_mode >
+            QBH_BLOCK_FULL_STACK_HIDDEN_CAPTURE ||
+        (full_stack_stage_mode != QBH_BLOCK_FULL_STACK_RUN &&
+         (replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS ||
+          vertical_slice_mode != QBH_BLOCK_SLICE_ACTIVE_RANGE)) ||
         (replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS &&
          (scan_mode != QBH_BLOCK_SCAN_PREFILL ||
           logical_m != QBH_BLOCK_M || initial_kv_length != 0U ||
@@ -3568,6 +3694,19 @@ int main(int argc, char **argv) {
             }
             cursor += QBH_BLOCK_SCAN_F16_AUDIT_BYTES;
         }
+        if (full_stack_stage_mode ==
+            QBH_BLOCK_FULL_STACK_HIDDEN_CAPTURE) {
+            cursor = qbh_align_up_size(cursor, QBH_HOST_ALIGNMENT);
+            full_stack_hidden_capture_offset = cursor;
+            full_stack_hidden_capture_bytes =
+                (size_t)QBH_VERTICAL_SLICE_LAYER_COUNT * output_bytes;
+            if (cursor > UINT32_MAX ||
+                full_stack_hidden_capture_bytes >
+                    UINT32_MAX - cursor) {
+                return 2;
+            }
+            cursor += full_stack_hidden_capture_bytes;
+        }
         total_bytes = cursor;
         if (total_bytes > UINT32_MAX) {
             fprintf(stderr, "32-bit rpcmem package too large: %zu\n",
@@ -3581,10 +3720,13 @@ int main(int argc, char **argv) {
                     "{\"experiment\":152,\"layout_only\":true,"
                     "\"variant\":\"%s\",\"layer_first\":%" PRIu32
                     ",\"layer_count\":%" PRIu32
-                    ",\"shared_bytes\":%zu,\"uint32_fit\":true}\n",
+                    ",\"shared_bytes\":%zu,"
+                    "\"hidden_capture_bytes\":%zu,"
+                    "\"uint32_fit\":true}\n",
                     qbh_variant_name(variant),
                     QBH_VERTICAL_SLICE_FIRST_LAYER,
-                    QBH_VERTICAL_SLICE_LAYER_COUNT, total_bytes);
+                    QBH_VERTICAL_SLICE_LAYER_COUNT, total_bytes,
+                    full_stack_hidden_capture_bytes);
                 return 0;
             }
         }
@@ -3733,11 +3875,14 @@ int main(int argc, char **argv) {
     header->slice_layer_count =
         vertical_slice_mode == QBH_BLOCK_SLICE_ACTIVE_RANGE
             ? QBH_VERTICAL_SLICE_LAYER_COUNT : 0U;
-    header->full_stack_stage_mode =
-        getenv("QBH_MAP_ONLY") != NULL &&
-                strcmp(getenv("QBH_MAP_ONLY"), "1") == 0
-            ? QBH_BLOCK_FULL_STACK_MAP_GATE
-            : QBH_BLOCK_FULL_STACK_RUN;
+    header->full_stack_stage_mode = full_stack_stage_mode;
+    header->full_stack_hidden_capture_offset =
+        (uint32_t)full_stack_hidden_capture_offset;
+    header->full_stack_hidden_capture_bytes =
+        (uint32_t)full_stack_hidden_capture_bytes;
+    header->full_stack_hidden_capture_layer_bytes =
+        full_stack_stage_mode == QBH_BLOCK_FULL_STACK_HIDDEN_CAPTURE
+            ? output_bytes : 0U;
     header->w4f16_gate_up_scale_cache_offset =
         (uint32_t)single_gate_up_scale_cache_offset;
     header->w4f16_gate_up_scale_cache_bytes =
@@ -4094,6 +4239,15 @@ int main(int argc, char **argv) {
                             header->full_stack_map_gate_layer_count ==
                                 QBH_VERTICAL_SLICE_LAYER_COUNT
                         ? 0 : 1;
+        goto cleanup;
+    }
+
+    if (header->full_stack_stage_mode ==
+        QBH_BLOCK_FULL_STACK_HIDDEN_CAPTURE) {
+        exit_code = qbh_run_full_stack_hidden_capture(
+            &session, shared_fd, shared, (uint32_t)total_bytes,
+            header, variant) == 0
+            ? 0 : 1;
         goto cleanup;
     }
 

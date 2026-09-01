@@ -35,6 +35,7 @@ esac
 case "${mode}" in
     layout) stage_env="QBH_LAYOUT_ONLY=1" ;;
     map) stage_env="QBH_MAP_ONLY=1" ;;
+    capture) stage_env="QBH_HIDDEN_CAPTURE=1" ;;
     replay) stage_env="" ;;
     *) printf 'unknown mode: %s\n' "${mode}" >&2; exit 2 ;;
 esac
@@ -52,6 +53,15 @@ if [[ "${mode}" == replay && -n "${capture_root}" ]]; then
     "${adb_exe}" shell \
         "mkdir -p ${remote_root}/replay_capture && rm -f ${remote_root}/replay_capture/*"
     capture_env="QBH_REPLAY_DUMP_DIR=${remote_root}/replay_capture"
+elif [[ "${mode}" == capture ]]; then
+    if [[ -z "${capture_root}" ]]; then
+        printf 'QBH_REPLAY_CAPTURE_ROOT is required for capture mode\n' >&2
+        exit 2
+    fi
+    mkdir -p "${capture_root}"
+    "${adb_exe}" shell \
+        "mkdir -p ${remote_root}/hidden_capture && rm -f ${remote_root}/hidden_capture/*"
+    capture_env="QBH_HIDDEN_CAPTURE_DIR=${remote_root}/hidden_capture"
 fi
 set +e
 "${adb_exe}" shell \
@@ -60,6 +70,9 @@ run_status=$?
 set -e
 if [[ "${mode}" == replay && -n "${capture_root}" ]]; then
     "${adb_exe}" pull "${remote_root}/replay_capture/." \
+        "$(wslpath -w "${capture_root}")" >/dev/null
+elif [[ "${mode}" == capture ]]; then
+    "${adb_exe}" pull "${remote_root}/hidden_capture/." \
         "$(wslpath -w "${capture_root}")" >/dev/null
 fi
 exit "${run_status}"
