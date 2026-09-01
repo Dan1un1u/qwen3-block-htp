@@ -10586,3 +10586,45 @@ experiments:
       conclusion: one_ready_QK_pair_outlasts_V_DMA_and_delays_HMX_readiness_more_than_it_reduces_prep_pool_tail
       reopen_condition: only_run_main_context_prep_after_all_DMA_publication_or_with_a_preemptible_sub_DMA_sized_QK_kernel
       selected_baseline_changed: false
+  - id: EXP-0131
+    slug: w4u8-qkv-hmx-tail-main-prep
+    title: W4U8 QKV post-DMA HMX-tail main-context Q/K preparation
+    parent: EXP-0124
+    variants:
+      - exp0124_ring3_control
+      - ring3_post_dma_main_hvx_qk_prep_candidate
+    execution_state: running
+    evidence_validity: pending
+    local_gate: pending
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-qkv-hmx-tail-main-prep
+    source_branches:
+      - codex/exp-0131-w4u8-qkv-hmx-tail-main-prep
+    source_commits: []
+    record: docs/experiments/EXP-0131.md
+    approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently without interruption'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0131-w4u8-qkv-hmx-tail-main-prep
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0124
+      source_parent_commit: 95fadff5930d9081678ad99bb62ef84849ee1897
+      selected_w4u8_runtime_parent: EXP-0124-ring3
+      recipe_scope: W4U8_QKV_post_DMA_HMX_tail_main_HVX_prep_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      prior_negative_boundary: EXP0130_proves_one_QK_pair_is_longer_than_a_V_DMA_window_and_starves_ordered_HMX_readiness
+      hypothesis: after_all_QKV_DMA_publication_the_main_HVX_context_can_drain_remaining_QK_prep_concurrently_with_the_final_V_HMX_tail_without_delaying_any_DMA_or_HMX_operand_readiness
+      implementation_boundary: runtime_control_or_candidate_same_ring4_three_expand_workers_two_prep_workers_one_HMX_owner_candidate_runs_existing_pair_kernel_only_after_all_QKV_DMA_publication_and_before_HMX_join
+      excluded_changes: no_weights_scales_qparams_ring_depth_DMA_order_HMX_commands_projection_math_norm_rope_math_attention_O_MLP_residual_public_DDR_FastRPC_QNN_or_worker_count_changes
+      static_gate: candidate_main_context_never_executes_prep_before_all_QKV_DMA_publication_and_uses_a_unique_existing_HVX_scratch_context_no_qnn
+      correctness_gate: both_cells_byte_exact_to_EXP0124_output_and_existing_input_norm_score_probability_AV_and_expansion_audits_zero_mismatch_zero_max_lsb
+      physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_identical_weight_bytes_DMA_descriptors_HMX_commands_tile_pairs_qparams_and_peak_plan
+      speed_gate: QKV_plus_QK_Norm_RoPE_and_complete_Host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
+      completion_gate: bounded_smoke_then_five_rotated_formal_rounds_PC027_PC028_and_accept_or_reject_without_automatic_baseline_promotion
