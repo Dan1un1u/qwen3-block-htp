@@ -10433,8 +10433,28 @@ static void qbh_accumulate_w4u8_phase_metrics(
     }
 }
 
+static int qbh_copy_w4u8_tail_audit(
+    struct qbh_block_header *header, uint8_t *shared,
+    uint32_t audit_offset, const void *source, uint32_t bytes) {
+    if (header->numerical_audit_enabled == 0U) {
+        return 0;
+    }
+    if (header->u8_attention_audit_output_bytes !=
+            QBH_BLOCK_U8_ATTENTION_AUDIT_BYTES ||
+        audit_offset > header->u8_attention_audit_output_bytes ||
+        bytes > header->u8_attention_audit_output_bytes - audit_offset ||
+        qbh_dma_copy(
+            header,
+            shared + header->u8_attention_audit_output_offset + audit_offset,
+            source, bytes, 0U) != 0) {
+        return -1;
+    }
+    header->u8_attention_audit_ddr_write_bytes += bytes;
+    return 0;
+}
+
 static int qbh_run_w4u8_streaming_mlp(
-    struct qbh_block_header *header, const uint8_t *shared,
+    struct qbh_block_header *header, uint8_t *shared,
     struct qbh_block_buffers *buffers,
     struct qbh_block_hmx_worker *worker,
     struct qbh_block_w4f16_pool *hvx_pool,
@@ -10576,6 +10596,13 @@ static int qbh_run_w4u8_streaming_mlp(
             result = -1;
             goto relock;
         }
+        if (qbh_copy_w4u8_tail_audit(
+                header, shared, QBH_BLOCK_U8_TAIL_MIDDLE_OFFSET,
+                mlp_arena,
+                QBH_BLOCK_M * QBH_BLOCK_INTERMEDIATE) != 0) {
+            result = -1;
+            goto relock;
+        }
         qbh_accumulate_w4u8_phase_metrics(
             header, &gate_up_phase, &gate_up_layout, 1U);
     }
@@ -10604,6 +10631,13 @@ static int qbh_run_w4u8_streaming_mlp(
     }
     header->down_ticks += HAP_perf_get_qtimer_count() - start;
     if (result != AEE_SUCCESS) {
+        result = -1;
+        goto relock;
+    }
+    if (qbh_copy_w4u8_tail_audit(
+            header, shared, QBH_BLOCK_U8_TAIL_DOWN_OFFSET,
+            mlp_arena + down_layout.vtcm_output_offset,
+            QBH_BLOCK_M * QBH_BLOCK_HIDDEN) != 0) {
         result = -1;
         goto relock;
     }
@@ -12031,6 +12065,13 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             &cross_prefetch) != 0) {
         return QBH_BLOCK_STATUS_O_PROJECTION_FAILED;
     }
+    if (header->variant == QBH_BLOCK_W4U8 &&
+        qbh_copy_w4u8_tail_audit(
+            header, shared, QBH_BLOCK_U8_TAIL_O_OFFSET,
+            buffers->attention_projection,
+            QBH_BLOCK_M * QBH_BLOCK_HIDDEN) != 0) {
+        return QBH_BLOCK_STATUS_O_PROJECTION_FAILED;
+    }
     if (scan_enabled != 0U &&
         header->variant != QBH_BLOCK_W4U8 &&
         header->numerical_audit_enabled != 0U &&
@@ -12206,6 +12247,13 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             header, audit_start,
             &header->post_attention_residual_audit_ticks);
     }
+    if (header->variant == QBH_BLOCK_W4U8 &&
+        qbh_copy_w4u8_tail_audit(
+            header, shared, QBH_BLOCK_U8_TAIL_POST_RESIDUAL_OFFSET,
+            buffers->residual,
+            QBH_BLOCK_M * QBH_BLOCK_HIDDEN) != 0) {
+        return QBH_BLOCK_STATUS_RESIDUAL_POOL_FAILED;
+    }
     header->post_attention_residual_ticks +=
         HAP_perf_get_qtimer_count() - start;
 
@@ -12279,6 +12327,14 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         qbh_attribution_accumulate(
             header, audit_start,
             &header->post_attention_norm_audit_ticks);
+    }
+    if (header->variant == QBH_BLOCK_W4U8 &&
+        w4u8_mlp_native_activation != NULL &&
+        qbh_copy_w4u8_tail_audit(
+            header, shared, QBH_BLOCK_U8_TAIL_POST_NORM_OFFSET,
+            w4u8_mlp_native_activation,
+            QBH_BLOCK_M * QBH_BLOCK_HIDDEN) != 0) {
+        return QBH_BLOCK_STATUS_RESIDUAL_POOL_FAILED;
     }
     header->post_attention_norm_ticks +=
         HAP_perf_get_qtimer_count() - start;
@@ -12580,6 +12636,13 @@ w4u8_mlp_complete:
             QBH_BLOCK_NUMERICAL_OUTPUT);
         qbh_attribution_accumulate(
             header, audit_start, &header->final_residual_audit_ticks);
+    }
+    if (header->variant == QBH_BLOCK_W4U8 &&
+        qbh_copy_w4u8_tail_audit(
+            header, shared, QBH_BLOCK_U8_TAIL_FINAL_OFFSET,
+            buffers->residual,
+            QBH_BLOCK_M * QBH_BLOCK_HIDDEN) != 0) {
+        return QBH_BLOCK_STATUS_RESIDUAL_POOL_FAILED;
     }
     if (header->numerical_status == QBH_BLOCK_NUMERICAL_UNCHECKED) {
         header->numerical_status = QBH_BLOCK_NUMERICAL_OK;
