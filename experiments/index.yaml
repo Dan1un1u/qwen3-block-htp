@@ -2510,6 +2510,49 @@ experiments:
       stage_a_gate_result: pass
       stage_b_gate_result: fail
       selected_baseline_changed: false
+  - id: EXP-0135
+    slug: w4f16-gate-up-worker3-stream-drain
+    title: W4F16 Gate/Up worker-3 streaming drain
+    parent: EXP-0134
+    variants:
+      - w4f16_four_expand_three_worker_plus_main_stream_control
+      - w4f16_four_expand_four_worker_plus_main_stream_candidate
+    execution_state: running
+    evidence_validity: pending
+    local_gate: pending
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4f16-gate-up-worker3-stream-drain
+    source_branches:
+      - codex/exp-0135-w4f16-gate-up-worker3-stream-drain
+    source_commits: []
+    record: docs/experiments/EXP-0135.md
+    approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently without interruption'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0135-w4f16-gate-up-worker3-stream-drain
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0134
+      source_parent_commit: d43e4d7e35bb0512c8a4753b129cc786f941afb3
+      logical_w4f16_parent: EXP-0111-join_only
+      recipe_scope: W4F16_Gate_Up_final_streaming_drain_worker_participation_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      prior_positive_boundary: EXP0134_proves_actual_fourth_expansion_context_advances_expansion_HMX_readiness_and_repeat10_complete_host
+      prior_negative_boundary: EXP0134_fourth_expansion_context_doubles_stream_join_tail_and_fails_paired_repeat1_complete_host
+      hypothesis: letting_already_locked_worker3_join_only_the_final_streaming_queue_drain_recovers_the_backlog_without_changing_expansion_or_HMX_work
+      implementation_boundary: same_four_context_expansion_control_or_candidate_worker3_final_stream_drain_existing_atomic_queue_only
+      excluded_changes: no_weights_scales_qparams_worker_creation_expansion_partition_region_claim_DMA_HMX_commands_QKV_attention_O_down_residual_public_DDR_FastRPC_or_QNN_changes
+      static_gate: worker3_stream_command_is_post_expansion_only_and_all_four_pool_workers_are_joined_before_down
+      correctness_gate: both_cells_byte_exact_output_f18b9abbe1487231_expansion_audit_zero_mismatch_zero_max_lsb
+      physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_identical_worker_count_weight_DMA_HMX_commands_tiles_and_peak_plan
+      speed_gate: Gate_Up_plus_SwiGLU_and_complete_Host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
+      completion_gate: bounded_smoke_then_five_rotated_formal_rounds_PC027_PC028_and_no_automatic_baseline_promotion
   - id: EXP-0099
     slug: w4u8-down-generation-safe-batch4
     title: Four-output generation-safe W4U8 Down batching
