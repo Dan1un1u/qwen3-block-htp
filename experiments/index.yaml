@@ -10729,3 +10729,45 @@ experiments:
       conclusion: chunk2_claims_remove_the_stream_join_tail_but_create_pool_load_imbalance_and_delay_HMX_readiness
       reopen_condition: only_with_order_preserving_balanced_partitioning_not_fixed_multi_region_claims
       selected_baseline_changed: false
+  - id: EXP-0133
+    slug: w4f16-gate-up-balanced-partition
+    title: W4F16 Gate/Up balanced static HVX partition
+    parent: EXP-0132
+    variants:
+      - w4f16_gate_up_dynamic_claim1_control
+      - w4f16_gate_up_balanced_static_candidate
+    execution_state: running
+    evidence_validity: pending
+    local_gate: pending
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4f16-gate-up-balanced-partition
+    source_branches:
+      - codex/exp-0133-w4f16-gate-up-balanced-partition
+    source_commits: []
+    record: docs/experiments/EXP-0133.md
+    approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently without interruption'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0133-w4f16-gate-up-balanced-partition
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0132
+      source_parent_commit: 9936277a2793406498a8b5101e0db201ea97e8ba
+      logical_w4f16_parent: EXP-0111-join_only
+      recipe_scope: W4F16_Gate_Up_HVX_expansion_work_partition_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      prior_negative_boundary: EXP0132_proves_fixed_chunk2_claims_remove_join_overhead_but_imbalance_two_pool_workers
+      hypothesis: assigning_each_of_two_pool_workers_exactly_five_contiguous_regions_eliminates_atomic_claim_and_call_overhead_without_the_chunk2_load_imbalance
+      implementation_boundary: runtime_dynamic_claim1_or_balanced_static_same_main6_pool5_pool5_region32_three_HVX_contexts_DMA8_scale_cache_batch8_HMX_math_layout_and_output
+      excluded_changes: no_weights_scales_qparams_worker_count_region_size_main_share_DMA_HMX_commands_QKV_attention_O_down_residual_public_DDR_FastRPC_or_QNN_changes
+      static_gate: candidate_uses_worker_index_to_partition_all_pool_regions_once_and_does_not_touch_the_atomic_queue
+      correctness_gate: both_cells_byte_exact_output_f18b9abbe1487231_expansion_audit_zero_mismatch_zero_max_lsb
+      physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_identical_weight_DMA_HMX_commands_tiles_and_peak_plan
+      speed_gate: Gate_Up_plus_SwiGLU_and_complete_Host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
+      completion_gate: bounded_smoke_then_five_rotated_formal_rounds_PC027_PC028_and_no_automatic_baseline_promotion
