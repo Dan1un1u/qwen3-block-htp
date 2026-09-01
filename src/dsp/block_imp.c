@@ -312,6 +312,7 @@ struct qbh_block_w4f16_pool {
     struct qbh_block_buffers *attention_buffers;
     struct qbh_block_hmx_worker *attention_hmx_worker;
     qurt_mutex_t attention_hmx_mutex;
+    qurt_mutex_t attention_k_pair_mutex;
     volatile uint32_t attention_gqa_abort;
     float attention_gqa_qk_max_abs[QBH_BLOCK_HEADS];
     volatile uint32_t next_attention_task;
@@ -2847,6 +2848,7 @@ static int qbh_w4f16_pool_create(
     }
     memset(pool, 0, sizeof(*pool));
     qurt_mutex_init(&pool->attention_hmx_mutex);
+    qurt_mutex_init(&pool->attention_k_pair_mutex);
     pool->worker_count = worker_count;
     for (uint32_t worker = 0; worker < pool->worker_count; ++worker) {
         qurt_sem_init_val(&pool->command_ready[worker], 0U);
@@ -2903,6 +2905,7 @@ static int qbh_w4f16_pool_create(
             qurt_sem_destroy(&pool->command_done[worker]);
             qurt_sem_destroy(&pool->command_ready[worker]);
         }
+        qurt_mutex_destroy(&pool->attention_k_pair_mutex);
         qurt_mutex_destroy(&pool->attention_hmx_mutex);
         return -1;
     }
@@ -4048,6 +4051,7 @@ static int qbh_w4f16_pool_destroy(
         qurt_sem_destroy(&pool->command_done[worker]);
         qurt_sem_destroy(&pool->command_ready[worker]);
     }
+    qurt_mutex_destroy(&pool->attention_k_pair_mutex);
     qurt_mutex_destroy(&pool->attention_hmx_mutex);
     return result;
 }
@@ -8765,6 +8769,10 @@ static void qbh_attention_u8_qk_prep_pool_run_head_pair_tasks(
             second_qk_bias = (uint32_t *)(
                 second_scratch + QBH_ATTN_U8_QK_BIAS_OFFSET);
 
+            if (header->w4u8_qkv_tail_prep_mode ==
+                QBH_BLOCK_W4U8_QKV_TAIL_PREP_MAIN_DRAIN) {
+                qurt_mutex_lock(&pool->attention_k_pair_mutex);
+            }
             start = HAP_perf_get_qtimer_count();
             qbh_hvx_qk_norm_rope_u8_native_k_head_pair(
                 first_k_head, second_k_head,
@@ -8823,6 +8831,10 @@ static void qbh_attention_u8_qk_prep_pool_run_head_pair_tasks(
                             (const uint8_t *)reference_bias,
                             QBH_ATTN_U8_QK_BIAS_BYTES);
                 }
+            }
+            if (header->w4u8_qkv_tail_prep_mode ==
+                QBH_BLOCK_W4U8_QKV_TAIL_PREP_MAIN_DRAIN) {
+                qurt_mutex_unlock(&pool->attention_k_pair_mutex);
             }
             job->u8_attention_prepared_group_count += 2U;
         }
