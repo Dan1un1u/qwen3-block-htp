@@ -831,3 +831,15 @@ All Qwen3 transformer layers executed by the project runtime after the real
 single-layer replay and Consecutive-Layer Vertical Slice gates pass.
 _Avoid_: tokenizer, sampler, general graph compiler, or a collection of
 Host-separated block invocations
+
+**Single-Buffer rpcmem_alloc2 Mapping Probe**:
+The EXP-0151 capacity Execution Unit that allocates one exactly 2,900,000,000
+byte uncached Host buffer with `rpcmem_alloc2`, maps that same file descriptor
+into cDSP with `fastrpc_mmap`, obtains the DSP virtual address with
+`HAP_mmap_get`, and validates Host/DSP sentinel exchange near the beginning,
+middle and end of the mapping before releasing it. It establishes only whether
+the current device and FastRPC stack can represent one full-stack-sized shared
+arena; it does not prove that a generated 28-layer package fits, remains
+resident under workload pressure, or executes correctly.
+_Avoid_: segmented mapping, delayed mapping, successful full-stack package,
+performance baseline, Host refill

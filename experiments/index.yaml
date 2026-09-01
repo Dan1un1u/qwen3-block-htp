@@ -6,6 +6,50 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0151
+    slug: rpcmem-alloc2-single-buffer
+    title: Single-buffer rpcmem_alloc2 cDSP mapping feasibility
+    parent: EXP-0150
+    variants:
+      - rpcmem_alloc2_single_2900000000_byte_mapping
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: not_applicable
+    evidence_profile: rpcmem-alloc2-symbol-host-allocation-fastrpc-map-dsp-sentinel-roundtrip
+    source_branches:
+      - codex/exp-0151-rpcmem-alloc2-single-buffer
+    source_commits: []
+    record: docs/experiments/EXP-0151.md
+    approval_ref: 'User message 2026-09-01: 做这条方案，若失败，停止并与我讨论'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0151-rpcmem-alloc2-single-buffer
+      approved_on: '2026-09-01'
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0150
+      source_parent_commit: 8f46fb8534ab60ec9719021f06e5307d8c82bf05
+      execution_unit: one_single_buffer_mapping_probe
+      requested_shared_bytes: 2900000000
+      allocation_api: rpcmem_alloc2
+      allocation_flags: uncached
+      host_map_api: fastrpc_mmap_FASTRPC_MAP_FD
+      dsp_map_api: HAP_mmap_get
+      qnn_dependency_allowed: false
+      full_package_generation_allowed: false
+      full_stack_execution_allowed: false
+      alternative_mapping_allowed: false
+      segmented_mapping_allowed: false
+      delayed_mapping_allowed: false
+      correctness_gate: Host_and_DSP_exchange_exact_sentinels_at_aligned_begin_middle_and_end_offsets
+      physical_gate: one_2900000000_byte_rpcmem_alloc2_allocation_one_fd_one_contiguous_cDSP_mapping_no_QNN_device_boot_unchanged
+      speed_gate: not_applicable_capacity_feasibility_probe
+      stop_conditions: rpcmem_alloc2_symbol_missing_or_allocation_failure_or_invalid_fd_or_fastrpc_mmap_failure_or_HAP_mmap_get_failure_or_any_sentinel_mismatch_or_device_disconnect_or_reboot
+      completion_gate: all_symbol_allocation_fd_host_map_DSP_map_sentinel_and_release_stages_pass_with_retained_evidence
+      next_gate_on_success: separate_full_stack_package_ABI_resume_experiment_using_the_proven_single_buffer_contract
+      next_action_on_failure: stop_without_segmented_or_delayed_mapping_and_discuss_with_user
+      selected_baseline_changed: false
   - id: EXP-0150
     slug: full-transformer-stack
     title: Real 28-layer Qwen3 transformer stack
