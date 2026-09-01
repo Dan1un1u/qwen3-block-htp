@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0135
+  active_experiment: null
   next_experiment_number: 136
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,17 +27,49 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0134
-  last_completed_source_commit: d43e4d7e35bb0512c8a4753b129cc786f941afb3
-  provisional_source_parent: EXP-0133
+  last_completed_experiment: EXP-0135
+  last_completed_source_commit: 201c1c51529daf5561a3e0002f5d814f1cacebb3
+  provisional_source_parent: EXP-0134
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: registered
+  active_experiment_stage: none
   active_experiment_evidence: null
-  active_experiment_gate: pending_preflight
-  active_recipe_specialization: W4F16_gate_up_worker3_stream_drain
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0134/20260901T015433Z_d43e4d7e35bb_formal'
+  active_experiment_gate: none
+  active_recipe_specialization: none
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0135/20260901T020459Z_201c1c51529d_formal'
+  latest_w4f16_gate_up_worker3_stream_drain_candidate:
+    id: EXP-0135
+    source_branch: codex/exp-0135-w4f16-gate-up-worker3-stream-drain
+    source_head: 201c1c51529daf5561a3e0002f5d814f1cacebb3
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0135/20260901T020459Z_201c1c51529d_formal'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0135/artifacts/201c1c51529d/20260901T020459Z_formal'
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending_user_decision
+    selected_cell: w4f16_four_expand_four_worker_plus_main_stream_candidate
+    correctness_gate: pass_both_f18b9abbe1487231_zero_expansion_mismatch_zero_max_lsb
+    physical_gate: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_worker_weight_dma_hmx_and_peak_plan
+    repeat1_gate_up_change_percent: -8.185217141213686
+    repeat1_gate_up_paired_change_percent: -8.077275854161892
+    repeat1_host_change_percent: -2.7214986029629906
+    repeat1_host_paired_change_percent: -3.4362043338809323
+    repeat10_gate_up_change_percent: -7.859248681392083
+    repeat10_gate_up_paired_change_percent: -7.84916699779441
+    repeat10_host_change_percent: -3.7369253364505584
+    repeat10_host_paired_change_percent: -3.5432196059586696
+    repeat10_stream_worker_work_change_percent: 5.641513838432455
+    repeat10_stream_main_work_change_percent: -25.796949891067545
+    repeat10_stream_join_wait_change_percent: 11.070615034168574
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass_exp0109_f16f16_exp0135_stream3_w4f16_exp0124_control_w4u8
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    gate_summary_sha256: 5b50a19194d79356ead87478ab80f64cb3b073fd1d94d2e8e37e07f72f1c119a
+    full_profiling_report_sha256: f6f83744e111bbdc1773c5fc82d76312d2c8de833ae413813ee8af14005b6a2b
+    evidence_sha256_ledger_sha256: 25503ec5b6faec03dbe3532378eb650584654ec6ef89394a47e48c0c7a2996ac
+    conclusion: already_locked_worker3_final_drain_reduces_main_context_stream_work_and_strictly_improves_gate_up_and_complete_host_at_both_repeats
+    reopen_condition: none_for_local_candidate_further_changes_require_new_experiment
+    selected_baseline_changed: false
   last_rejected_specialization:
     id: EXP-0134
     source_branch: codex/exp-0134-w4f16-gate-up-worker3-dispatch

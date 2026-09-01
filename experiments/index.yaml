@@ -2517,20 +2517,22 @@ experiments:
     variants:
       - w4f16_four_expand_three_worker_plus_main_stream_control
       - w4f16_four_expand_four_worker_plus_main_stream_candidate
-    execution_state: running
-    evidence_validity: pending
-    local_gate: pending
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending_user_decision
     evidence_profile: real-qwen3-block-w4f16-gate-up-worker3-stream-drain
     source_branches:
       - codex/exp-0135-w4f16-gate-up-worker3-stream-drain
-    source_commits: []
+    source_commits:
+      - 201c1c51529daf5561a3e0002f5d814f1cacebb3
     record: docs/experiments/EXP-0135.md
     approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently without interruption'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0135-w4f16-gate-up-worker3-stream-drain
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0134
       source_parent_commit: d43e4d7e35bb0512c8a4753b129cc786f941afb3
@@ -2553,6 +2555,33 @@ experiments:
       physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_identical_worker_count_weight_DMA_HMX_commands_tiles_and_peak_plan
       speed_gate: Gate_Up_plus_SwiGLU_and_complete_Host_strictly_improve_in_ordinary_and_paired_repeat1_and_repeat10
       completion_gate: bounded_smoke_then_five_rotated_formal_rounds_PC027_PC028_and_no_automatic_baseline_promotion
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0135/20260901T020459Z_201c1c51529d_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0135/artifacts/201c1c51529d/20260901T020459Z_formal'
+      source_commit: 201c1c51529daf5561a3e0002f5d814f1cacebb3
+      static_gate_result: pass_four_expansion_contexts_control_three_worker_plus_main_drain_candidate_four_worker_plus_main_drain_no_qnn
+      correctness_gate_result: pass_both_f18b9abbe1487231_zero_expansion_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_worker_weight_dma_hmx_tiles_and_peak_plan
+      selected_cell: w4f16_four_expand_four_worker_plus_main_stream_candidate
+      repeat1_gate_up_change_percent: -8.185217141213686
+      repeat1_gate_up_paired_change_percent: -8.077275854161892
+      repeat1_host_change_percent: -2.7214986029629906
+      repeat1_host_paired_change_percent: -3.4362043338809323
+      repeat10_gate_up_change_percent: -7.859248681392083
+      repeat10_gate_up_paired_change_percent: -7.84916699779441
+      repeat10_host_change_percent: -3.7369253364505584
+      repeat10_host_paired_change_percent: -3.5432196059586696
+      repeat10_stream_worker_work_change_percent: 5.641513838432455
+      repeat10_stream_main_work_change_percent: -25.796949891067545
+      repeat10_stream_join_wait_change_percent: 11.070615034168574
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_exp0109_f16f16_exp0135_stream3_w4f16_exp0124_control_w4u8
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: 5b50a19194d79356ead87478ab80f64cb3b073fd1d94d2e8e37e07f72f1c119a
+      full_profiling_report_sha256: f6f83744e111bbdc1773c5fc82d76312d2c8de833ae413813ee8af14005b6a2b
+      evidence_sha256_ledger_sha256: 25503ec5b6faec03dbe3532378eb650584654ec6ef89394a47e48c0c7a2996ac
+      conclusion: already_locked_worker3_final_drain_reduces_main_context_stream_work_and_strictly_improves_gate_up_and_complete_host_at_both_repeats
+      reopen_condition: none_for_local_candidate_further_changes_require_new_experiment
+      selected_baseline_changed: false
   - id: EXP-0099
     slug: w4u8-down-generation-safe-batch4
     title: Four-output generation-safe W4U8 Down batching
