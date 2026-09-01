@@ -6,6 +6,47 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0144
+    slug: w4u8-qk-output-simd-transpose
+    title: W4U8 Q/K Norm-RoPE SIMD output transpose
+    parent: EXP-0143
+    variants:
+      - exp0143_simd_input_pack_memcpy_output_control
+      - w4u8_simd_input_and_output_transpose_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-block-w4u8-qk-output-simd-transpose
+    source_branches:
+      - codex/exp-0144-w4u8-qk-output-simd-transpose
+    source_commits: []
+    record: docs/experiments/EXP-0144.md
+    approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently without interruption'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0144-w4u8-qk-output-simd-transpose
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0143_candidate
+      source_parent_commit: cd82ee4d0e6f9fc9eddb435f5b133997d411d2b3
+      recipe_scope: W4U8_Q_and_K_Norm_RoPE_output_tile_store_only
+      public_common_layer_changes_allowed: false
+      execution_unit: qwen3_layer14_complete_block_m64
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      repeat_contract: repeat1_and_repeat10
+      prior_positive_evidence: EXP0143_SIMD_input_row_pack_reduces_QK_work_43_percent_QKV_30_percent_and_repeat10_Host_7p4_percent_but_fails_Attention_preservation
+      hypothesis: transpose_four_completed_logical_rows_back_to_four_Crouton_tiles_with_the_same_symmetric_HVX_shuffle_removes_the_remaining_per_row_output_memcpy_without_changing_K_weight_scatter_or_math
+      implementation_boundary: EXP0143_candidate_control_or_same_kernel_with_deferred_four_row_HVX_output_transpose_only
+      excluded_changes: no_weights_qparams_QKV_ring_DMA_HMX_projection_math_rsqrt_RoPE_math_K_weight_scatter_Attention_O_residual_GateUp_Down_public_DDR_FastRPC_or_QNN_changes
+      static_gate: candidate_mode_uses_four_row_inverse_HVX_vshuff_transpose_and_no_memcpy_in_the_output_store_helper
+      correctness_gate: both_cells_byte_exact_output_69f22eeb035e5ec5_all_existing_input_norm_score_probability_AV_QKV_operand_and_expansion_audits_zero_mismatch_zero_max_lsb
+      physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_identical_weight_DMA_HMX_tiles_qparams_carriers_and_peak_plan
+      speed_gate: candidate_QKV_plus_QK_Norm_RoPE_complete_Host_and_QK_prep_work_strictly_improve_ordinary_and_paired_repeat1_and_repeat10_and_Attention_GateUp_Down_regression_at_most_0p5_percent
+      completion_gate: bounded_smoke_then_five_rotated_formal_rounds_PC027_PC028_and_no_automatic_baseline_promotion
   - id: EXP-0143
     slug: w4u8-qk-row-cache-simd-transpose
     title: W4U8 Q/K Norm-RoPE SIMD row-cache transpose
@@ -13,20 +54,22 @@ experiments:
     variants:
       - exp0124_ring3_quarter_tiled_memcpy_control
       - w4u8_ring3_quarter_tiled_simd_row_pack_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-qk-row-cache-simd-transpose
     source_branches:
       - codex/exp-0143-w4u8-qk-row-cache-simd-transpose
-    source_commits: []
+    source_commits:
+      - cd82ee4d0e6f9fc9eddb435f5b133997d411d2b3
     record: docs/experiments/EXP-0143.md
     approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently without interruption'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0143-w4u8-qk-row-cache-simd-transpose
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0124
       source_parent_commit: 95fadff5930d9081678ad99bb62ef84849ee1897
@@ -49,6 +92,39 @@ experiments:
       physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_identical_weight_DMA_HMX_tiles_qparams_carriers_and_peak_plan
       speed_gate: candidate_QKV_plus_QK_Norm_RoPE_complete_Host_and_QK_prep_work_strictly_improve_ordinary_and_paired_repeat1_and_repeat10_and_Attention_GateUp_Down_regression_at_most_0p5_percent
       completion_gate: bounded_smoke_then_five_rotated_formal_rounds_PC027_PC028_and_no_automatic_baseline_promotion
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0143/20260901T045005Z_cd82ee4d0e6f_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0143/artifacts/cd82ee4d0e6f/20260901T045005Z_formal'
+      source_commit: cd82ee4d0e6f9fc9eddb435f5b133997d411d2b3
+      correctness_gate_result: pass_both_69f22eeb035e5ec5_identical_input_norm_score_probability_AV_hashes_zero_mismatch_zero_max_lsb
+      physical_gate_result: pass_exact_8mib_vtcm_identical_5570272_peak_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner
+      speed_gate_result: pass_QK_work_QKV_complete_Host_strictly_improve_at_both_repeats
+      preservation_gate_result: fail_Attention_repeat1_plus3p746_ordinary_plus3p230_paired_repeat10_plus2p324_ordinary_plus2p605_paired
+      selected_cell: exp0124_ring3_quarter_tiled_memcpy_control
+      repeat1_qkv_change_percent: -29.377926421404688
+      repeat1_qkv_paired_change_percent: -30.033134526176276
+      repeat1_qk_work_change_percent: -42.368035452628575
+      repeat1_qk_work_paired_change_percent: -42.91479344401572
+      repeat1_host_change_percent: -13.045290379112606
+      repeat1_host_paired_change_percent: -16.372393093786297
+      repeat1_attention_change_percent: 3.746143675628022
+      repeat1_attention_paired_change_percent: 3.2300305543430774
+      repeat10_qkv_change_percent: -30.236522480289796
+      repeat10_qkv_paired_change_percent: -30.104677178776907
+      repeat10_qk_work_change_percent: -43.23313743941196
+      repeat10_qk_work_paired_change_percent: -43.01145860317889
+      repeat10_host_change_percent: -7.428644650978844
+      repeat10_host_paired_change_percent: -7.428644650978844
+      repeat10_attention_change_percent: 2.324364397540446
+      repeat10_attention_paired_change_percent: 2.6051406949941125
+      pc027_complete_profiling_report: pass
+      pc028_module_table: pass_exp0109_f16f16_exp0110_selected_w4f16_EXP0143_control_w4u8
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      gate_summary_sha256: d03e371c8d7c8840e8b7f453fbb43dd90d7e3f3f9f508e44513a3fd17fadb796
+      full_profiling_report_sha256: 3648a547e0f69f4abb2eb515ae342f645a85b5fad12b16e8416c53a93431daaf
+      evidence_sha256_ledger_sha256: 1c5142c1389b2821e777426736dcc07f36e7367e9fb6f40637898b9fcab098df
+      conclusion: SIMD_row_pack_is_byte_exact_and_materially_shortens_QK_work_QKV_and_complete_Host_but_changes_downstream_arrival_timing_and_fails_the_strict_Attention_preservation_bound
+      reopen_condition: only_as_an_explicit_carrier_followup_or_with_arrival_aware_Attention_scheduling_not_another_input_row_pack_variant
+      selected_baseline_changed: false
   - id: EXP-0142
     slug: w4f16-o-join-only-subgroup4
     title: W4F16 O-projection join-only publication after subgroup4
