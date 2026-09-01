@@ -59,6 +59,11 @@ if(${OS_TYPE} MATCHES "HLOS")
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host/session
     )
 
+    add_executable(qwen3_rpcmem2_cli
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host/rpcmem2_main
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host/session
+    )
+
     set_common_compile_and_link_options(qwen3_probe_cli)
     target_compile_options(qwen3_probe_cli PRIVATE -Wall -Wextra -Werror)
     set_common_compile_and_link_options(qwen3_mlp_cli)
@@ -72,6 +77,9 @@ if(${OS_TYPE} MATCHES "HLOS")
     target_compile_options(qwen3_block_cli PRIVATE -Wall -Wextra -Werror)
     set_common_compile_and_link_options(qwen3_attention_cli)
     target_compile_options(qwen3_attention_cli PRIVATE
+                           -Wall -Wextra -Werror)
+    set_common_compile_and_link_options(qwen3_rpcmem2_cli)
+    target_compile_options(qwen3_rpcmem2_cli PRIVATE
                            -Wall -Wextra -Werror)
 
     choose_dsprpc(${DSP_TYPE} dsprpc)
@@ -89,6 +97,8 @@ if(${OS_TYPE} MATCHES "HLOS")
     target_link_libraries(qwen3_block_cli qwen3_probe)
     add_dependencies(qwen3_attention_cli qwen3_probe)
     target_link_libraries(qwen3_attention_cli qwen3_probe)
+    add_dependencies(qwen3_rpcmem2_cli qwen3_probe)
+    target_link_libraries(qwen3_rpcmem2_cli qwen3_probe)
 
     if(${CMAKE_SYSTEM_NAME} MATCHES "Android")
         target_link_options(qwen3_probe_cli PRIVATE -llog -ldl)
@@ -97,11 +107,13 @@ if(${OS_TYPE} MATCHES "HLOS")
         target_link_options(qwen3_vtcm_cli PRIVATE -llog -ldl)
         target_link_options(qwen3_block_cli PRIVATE -llog -ldl -lm)
         target_link_options(qwen3_attention_cli PRIVATE -llog -ldl)
+        target_link_options(qwen3_rpcmem2_cli PRIVATE -llog -ldl)
     endif()
 
     copy_binaries(qwen3_probe_cli qwen3_mlp_cli
                   qwen3_hmx_convert_cli qwen3_vtcm_cli
-                  qwen3_block_cli qwen3_attention_cli qwen3_probe)
+                  qwen3_block_cli qwen3_attention_cli qwen3_rpcmem2_cli
+                  qwen3_probe)
 else()
     add_library(qwen3_probe_skel SHARED
         ${CMAKE_CURRENT_BINARY_DIR}/qwen3_probe_skel
@@ -118,6 +130,7 @@ else()
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/attention_u8_core
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/attention_imp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/block_imp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/rpcmem2_imp
     )
     build_idl(include/qwen3_probe.idl qwen3_probe_skel)
     target_compile_options(qwen3_probe_skel PRIVATE
