@@ -790,3 +790,37 @@ paths with online tile-wise Softmax, then reuse the winning substrate for M128.
 _Avoid_: projection-tail optimization as the immediate priority, M64 schedule
 retuning, full score/probability DDR tensors, or mixing quantization-fidelity
 repair into the physical generalization experiment
+
+**Real Layer Replay**:
+A single-layer execution driven in token order by hidden states and position
+metadata captured from a declared full-model teacher; the tested layer still
+computes its own K/V, cache updates, Attention and block output.
+_Avoid_: synthetic cache snapshot, imported runtime K/V, autonomous text
+generation, or feeding one layer's output back as its next-token input
+
+**Prepared Decode Session**:
+The persistent runtime state that owns versioned per-layer cache descriptors,
+valid lengths and storage across one prefill followed by consecutive decode
+steps.
+_Avoid_: one frozen timing snapshot, cache files reloaded for every token, or
+Host-owned intermediate state
+
+**Cache-Native Attention**:
+Attention whose persistent K/V representation is directly consumable by its
+QK and AV paths without reconstructing a separate logical cache carrier on
+every step.
+_Avoid_: cache-aware Attention, head-major cache as a required format, or zero
+intermediate DDR alone
+
+**Consecutive-Layer Vertical Slice**:
+Two to three adjacent Qwen3 transformer layers executed as one DSP unit with
+independent per-layer caches and no Host boundary for their intermediate hidden
+states.
+_Avoid_: duplicated isolated block calls, full transformer stack, or layer
+outputs replayed from files between the selected layers
+
+**Full Transformer Stack**:
+All Qwen3 transformer layers executed by the project runtime after the real
+single-layer replay and Consecutive-Layer Vertical Slice gates pass.
+_Avoid_: tokenizer, sampler, general graph compiler, or a collection of
+Host-separated block invocations

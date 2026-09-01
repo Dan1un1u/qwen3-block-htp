@@ -1,4 +1,4 @@
-# Standalone HTP Block Laboratory Contract
+# Standalone HTP Qwen3 Runtime Contract
 
 Changing any item requires explicit user approval and a committed amendment.
 
@@ -15,11 +15,15 @@ Changing any item requires explicit user approval and a committed amendment.
 - **PC-004 — Owned physical contract.** The project owns tensor packing, VTCM
   allocation, DDR-to-VTCM movement, DMA ordering, HVX work, HMX work, waits, and
   buffer reuse inside each Execution Unit.
-- **PC-005 — Fixed-scope prototype.** The target outcome is a usable Qwen3
-  middle block, not tokenizer, sampling, whole-model orchestration, or a general
-  graph compiler.
-- **PC-006 — RPC boundary.** A tested Execution Unit uses one Host-to-DSP run
-  invocation. Per-tile and per-kernel FastRPC calls are outside the contract.
+- **PC-005 — Staged runtime scope.** The approved roadmap advances through a
+  real single-layer replay prefill/decode gate, a two-to-three consecutive-layer
+  vertical slice, and only then the full Qwen3 transformer stack. Tokenizer,
+  sampling, and a general graph compiler remain outside scope unless separately
+  approved.
+- **PC-006 — RPC boundary.** An experiment declares its Execution Unit as one
+  replay block step, one consecutive-layer slice, or one full-stack token/pass;
+  that unit uses one Host-to-DSP run invocation. Per-tile and per-kernel FastRPC
+  calls remain outside the contract.
 
 ## Hardware and toolchain
 
@@ -136,3 +140,23 @@ Changing any item requires explicit user approval and a committed amendment.
   candidate is not a baseline; any completed combination must still beat the
   current recipe-fastest baseline under PC-029 before promotion. The frozen
   Public Common Baseline and PC-017 fair-comparison rules remain separate.
+- **PC-031 — Real layer replay authority.** Before the project owns the full
+  preceding stack, a declared full-model teacher supplies the real input hidden
+  state and position metadata for the selected layer at each prompt/decode
+  position. The DSP runtime must compute and append that layer's K/V itself;
+  imported runtime K/V is not a real replay execution.
+- **PC-032 — Persistent per-layer cache state.** A Prepared Decode Session owns
+  each layer's K/V capacity, valid length, physical format, and storage for the
+  lifetime of the session. Prefill and each decode step append exactly once,
+  state persists across calls, and repeated timing of one frozen snapshot must
+  never be described as continuous decode.
+- **PC-033 — Full-stack-compatible state ABI.** New session and cache interfaces
+  are layer-indexed and explicitly versioned even while only one layer is
+  executed. A one-layer-only cache ABI that must be replaced for the vertical
+  slice does not pass the single-layer gate.
+- **PC-034 — Vertical-slice gate before full expansion.** After real single-layer
+  replay passes, the next integration target is two to three consecutive layers
+  whose intermediate hidden state remains inside the DSP Execution Unit. The
+  project does not replicate the block across the full transformer stack until
+  that slice proves state ownership, layer transitions, and independent
+  correctness.

@@ -6,6 +6,54 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0148
+    slug: real-layer-replay-decode-session
+    title: Real layer replay and full-stack-compatible Prepared Decode Session
+    parent: EXP-0147
+    variants:
+      - f16f16_real_replay
+      - w4f16_real_replay
+      - w4u8_real_replay
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: real-qwen3-layer14-prefill-plus-eight-consecutive-decode-steps
+    source_branches:
+      - codex/exp-0148-real-layer-replay-decode-session
+    source_commits: []
+    record: docs/experiments/EXP-0148.md
+    approval_ref: 'User message 2026-09-01: 那就按这个方向开始吧（接受先单层真实 replay decode、再连续层切片、最后全模）'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0148-real-layer-replay-decode-session
+      approved_on: '2026-09-01'
+      started_on: '2026-09-01'
+    evidence:
+      source_parent_experiment: EXP-0147
+      source_parent_commit: 8052d42c347667ddd37a9555486d918569960b1d
+      execution_layer_index: 14
+      declared_transformer_layer_count: 28
+      prefill_positions: [0, 63]
+      decode_positions: [64, 71]
+      initial_cache_length: 0
+      post_prefill_cache_length: 64
+      final_cache_length: 72
+      runtime_kv_import_allowed: false
+      teacher_hidden_replay_required: true
+      prepared_session_persistence_required: true
+      fixed_vtcm_request_bytes: 8388608
+      intermediate_ddr_allowed: false
+      persistent_kv_cache_ddr_allowed: true
+      hmx_ownership_domains: 1
+      qnn_dependency_allowed: false
+      correctness_gate: independent_recipe_reference_output_and_cache_after_prefill_and_each_of_eight_decode_steps_W4U8_zero_LSB_FP16_existing_tolerance
+      physical_gate: exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_step_one_HMX_owner_no_QNN_explicit_cache_traffic
+      profiling_gate: complete_prefill_and_per_decode_step_PC027_ledgers_with_reset_repeat_diagnostics_separately_labelled
+      speed_gate: not_applicable_substrate_and_correctness_experiment
+      completion_gate: genuine_trace_then_versioned_layer_indexed_session_then_continuous_state_correctness_then_physical_and_profiling_evidence
+      next_gate_on_success: separate_two_to_three_consecutive_layer_vertical_slice
+      selected_baseline_changed: false
   - id: EXP-0147
     slug: multi-m-kv-cache-scan
     title: Selected-baseline multi-M and KV-cache generalization scan
