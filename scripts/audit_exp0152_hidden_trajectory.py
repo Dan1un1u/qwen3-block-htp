@@ -51,6 +51,10 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument("--capture", type=Path, required=True)
+    parser.add_argument(
+        "--cache-capture", type=Path,
+        help="optional formal replay capture containing final K/V caches",
+    )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--threads", type=int, default=0)
     return parser.parse_args()
@@ -253,18 +257,19 @@ def main() -> None:
                     f"{prefix}.self_attn.k_norm.weight"
                 ).to(torch.float16),
             }
-            unconditional, _ = base.layer_forward_f16(
+            unconditional, unconditional_boundaries = base.layer_forward_f16(
                 unconditional, weights, norms, cos, sin
             )
             if layer == 0:
                 conditional = unconditional
+                conditional_boundaries = unconditional_boundaries
                 conditional_input_np = initial_np
             else:
                 conditional_input_np = actual_np[layer - 1]
                 conditional_input = torch.from_numpy(
                     conditional_input_np.copy()
                 ).reshape(1, M, HIDDEN)
-                conditional, _ = base.layer_forward_f16(
+                conditional, conditional_boundaries = base.layer_forward_f16(
                     conditional_input, weights, norms, cos, sin
                 )
             actual = actual_np[layer]
@@ -291,9 +296,30 @@ def main() -> None:
                     actual, unconditional_np
                 ),
             }
+            if args.cache_capture is not None:
+                conditional_caches: dict[str, dict[str, object]] = {}
+                for kind, boundary_name in (("k", "k_rope"), ("v", "v")):
+                    actual_cache = np.fromfile(
+                        args.cache_capture /
+                        f"actual_layer{layer}_replay_{kind}_cache.bin",
+                        dtype="<f2",
+                    ).reshape(base.KV_HEADS, -1, base.HEAD_DIM)[:, :M]
+                    conditional_cache = (
+                        conditional_boundaries[boundary_name]
+                        .detach().cpu().numpy().astype("<f2", copy=False)
+                        .reshape(M, base.KV_HEADS, base.HEAD_DIM)
+                        .transpose(1, 0, 2)
+                    )
+                    conditional_caches[kind] = metrics(
+                        actual_cache, conditional_cache
+                    )
+                record["conditional_cache"] = conditional_caches
             records.append(record)
             print(json.dumps(record, sort_keys=True), flush=True)
-            del logical_weights, weights, norms, conditional
+            del (
+                logical_weights, weights, norms, conditional,
+                conditional_boundaries, unconditional_boundaries
+            )
 
     package_final = np.fromfile(
         args.package / f"reference_{args.recipe}_block_output_f16.bin",
@@ -306,6 +332,14 @@ def main() -> None:
     conditional_failures = [
         int(record["layer"]) for record in records
         if not bool(record["conditional_local"]["local_gate"])
+    ]
+    conditional_cache_failures = [
+        f"layer{record['layer']}_{kind}"
+        for record in records
+        for kind, cache_metrics in record.get(
+            "conditional_cache", {}
+        ).items()
+        if not bool(cache_metrics["local_gate"])
     ]
     final_composed = records[-1]["unconditional_composed"]
     final_composed_pass = (
@@ -328,7 +362,8 @@ def main() -> None:
                 MAX_LOCAL_VIOLATION_FRACTION
             ),
             "failure_layers": conditional_failures,
-            "pass": not conditional_failures,
+            "cache_failures": conditional_cache_failures,
+            "pass": not conditional_failures and not conditional_cache_failures,
         },
         "package_final_reference_reproduction": metrics(
             cpu_final, package_final
@@ -349,10 +384,13 @@ def main() -> None:
     print(json.dumps({
         "summary": str(args.output),
         "conditional_gate_pass": not conditional_failures,
+        "conditional_cache_gate_pass": not conditional_cache_failures,
         "final_composed_gate_pass": final_composed_pass,
         "conditional_failure_layers": conditional_failures,
+        "conditional_cache_failures": conditional_cache_failures,
     }, sort_keys=True))
-    if conditional_failures or not final_composed_pass:
+    if (conditional_failures or conditional_cache_failures or
+            not final_composed_pass):
         raise SystemExit(1)
 
 

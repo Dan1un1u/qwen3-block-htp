@@ -26,5 +26,6 @@ if grep -q 'total_bytes > INT_MAX' src/host/block_main.c; then
 fi
 /home/daniuniu/.cache/qwen3-block-htp-py/bin/python -m py_compile \
     scripts/export_exp0149_vertical_slice.py \
-    scripts/audit_exp0152_hidden_trajectory.py
+    scripts/audit_exp0152_hidden_trajectory.py \
+    scripts/audit_exp0152_replay_composition.py
 printf 'EXP-0152 static gate passed\n'

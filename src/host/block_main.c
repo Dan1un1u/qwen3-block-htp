@@ -1,5 +1,6 @@
 #include <AEEStdErr.h>
 #include <errno.h>
+#include <float.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <math.h>
@@ -87,6 +88,7 @@ struct qbh_replay_step_result {
     uint64_t cache_nonfinite_count;
     uint32_t cache_tensor_count;
     uint32_t cache_gate_failure_count;
+    uint32_t cache_legacy_mixed_bound_failure_count;
     uint32_t step_index;
     uint32_t first_position;
     uint32_t valid_length;
@@ -1722,7 +1724,7 @@ static struct qbh_error_metrics qbh_compare_f16(
     metrics.rmse = sqrt(squared_sum / elements);
     metrics.nrmse = reference_norm > 0.0
                         ? sqrt(squared_sum / reference_norm)
-                        : (squared_sum == 0.0 ? 0.0 : INFINITY);
+                        : (squared_sum == 0.0 ? 0.0 : DBL_MAX);
     metrics.cosine = actual_norm > 0.0 && reference_norm > 0.0
                          ? dot / sqrt(actual_norm * reference_norm)
                          : 0.0;
@@ -1769,7 +1771,7 @@ static struct qbh_error_metrics qbh_compare_u8(
     metrics.rmse = sqrt(squared_sum / elements);
     metrics.nrmse = reference_norm > 0.0
                         ? sqrt(squared_sum / reference_norm)
-                        : (squared_sum == 0.0 ? 0.0 : INFINITY);
+                        : (squared_sum == 0.0 ? 0.0 : DBL_MAX);
     metrics.cosine = actual_norm > 0.0 && reference_norm > 0.0
                          ? dot / sqrt(actual_norm * reference_norm)
                          : 0.0;
@@ -1825,7 +1827,7 @@ static struct qbh_error_metrics qbh_compare_scan_u8(
     metrics.rmse = sqrt(squared_sum / (double)elements);
     metrics.nrmse = reference_norm > 0.0
         ? sqrt(squared_sum / reference_norm)
-        : (squared_sum == 0.0 ? 0.0 : INFINITY);
+        : (squared_sum == 0.0 ? 0.0 : DBL_MAX);
     metrics.cosine = actual_norm > 0.0 && reference_norm > 0.0
         ? dot / sqrt(actual_norm * reference_norm) : 0.0;
     metrics.elements = elements;
@@ -1868,8 +1870,8 @@ static struct qbh_error_metrics qbh_compare_scan_f16(
             if (!isfinite(a_f32) || !isfinite(b_f32)) {
                 ++metrics.nonfinite_count;
                 ++metrics.mixed_tolerance_violations;
-                metrics.max_abs = INFINITY;
-                metrics.max_required_rtol_after_atol = INFINITY;
+                metrics.max_abs = DBL_MAX;
+                metrics.max_required_rtol_after_atol = DBL_MAX;
                 ++elements;
                 continue;
             }
@@ -1885,7 +1887,7 @@ static struct qbh_error_metrics qbh_compare_scan_f16(
                 const double required_rtol = b_f32 != 0.0f
                     ? (difference - QBH_REPLAY_FP16_ATOL) /
                           fabs((double)b_f32)
-                    : INFINITY;
+                    : DBL_MAX;
                 if (required_rtol >
                         metrics.max_required_rtol_after_atol) {
                     metrics.max_required_rtol_after_atol = required_rtol;
@@ -1903,7 +1905,7 @@ static struct qbh_error_metrics qbh_compare_scan_f16(
     metrics.rmse = sqrt(squared_sum / (double)elements);
     metrics.nrmse = reference_norm > 0.0
         ? sqrt(squared_sum / reference_norm)
-        : (squared_sum == 0.0 ? 0.0 : INFINITY);
+        : (squared_sum == 0.0 ? 0.0 : DBL_MAX);
     metrics.cosine = actual_norm > 0.0 && reference_norm > 0.0
         ? dot / sqrt(actual_norm * reference_norm) : 0.0;
     metrics.elements = elements;
@@ -1988,8 +1990,8 @@ static struct qbh_error_metrics qbh_compare_cache_prefix_f16(
                 if (!isfinite(a) || !isfinite(b)) {
                     ++metrics.nonfinite_count;
                     ++metrics.mixed_tolerance_violations;
-                    metrics.max_abs = INFINITY;
-                    metrics.max_required_rtol_after_atol = INFINITY;
+                    metrics.max_abs = DBL_MAX;
+                    metrics.max_required_rtol_after_atol = DBL_MAX;
                     continue;
                 }
                 difference = fabs(a - b);
@@ -2003,7 +2005,7 @@ static struct qbh_error_metrics qbh_compare_cache_prefix_f16(
                 if (difference > QBH_REPLAY_FP16_ATOL) {
                     const double required_rtol = b != 0.0
                         ? (difference - QBH_REPLAY_FP16_ATOL) / fabs(b)
-                        : INFINITY;
+                        : DBL_MAX;
                     if (required_rtol >
                             metrics.max_required_rtol_after_atol) {
                         metrics.max_required_rtol_after_atol = required_rtol;
@@ -2018,9 +2020,9 @@ static struct qbh_error_metrics qbh_compare_cache_prefix_f16(
         }
     }
     if (metrics.elements == 0U || metrics.nonfinite_count != 0U) {
-        metrics.mean_abs = metrics.elements == 0U ? 0.0 : INFINITY;
-        metrics.rmse = metrics.elements == 0U ? 0.0 : INFINITY;
-        metrics.nrmse = metrics.elements == 0U ? 0.0 : INFINITY;
+        metrics.mean_abs = metrics.elements == 0U ? 0.0 : DBL_MAX;
+        metrics.rmse = metrics.elements == 0U ? 0.0 : DBL_MAX;
+        metrics.nrmse = metrics.elements == 0U ? 0.0 : DBL_MAX;
         metrics.cosine = metrics.elements == 0U ? 1.0 : 0.0;
         return metrics;
     }
@@ -2028,7 +2030,7 @@ static struct qbh_error_metrics qbh_compare_cache_prefix_f16(
     metrics.rmse = sqrt(squared_sum / (double)metrics.elements);
     metrics.nrmse = reference_norm > 0.0
         ? sqrt(squared_sum / reference_norm)
-        : (squared_sum == 0.0 ? 0.0 : INFINITY);
+        : (squared_sum == 0.0 ? 0.0 : DBL_MAX);
     metrics.cosine = actual_norm > 0.0 && reference_norm > 0.0
         ? dot / sqrt(actual_norm * reference_norm)
         : (actual_norm == 0.0 && reference_norm == 0.0 ? 1.0 : 0.0);
@@ -2052,9 +2054,7 @@ static int qbh_replay_step_pass(
               result->cache_gate_failure_count == 0U &&
               result->cache_nonfinite_count == 0U &&
               isfinite(result->cache_min_cosine) &&
-              result->cache_min_cosine >= QBH_REPLAY_FP16_MIN_COSINE &&
-              result->cache_max_mixed_tolerance_violation_fraction <=
-                  QBH_REPLAY_FP16_MAX_CACHE_VIOLATION_FRACTION;
+              result->cache_min_cosine >= QBH_REPLAY_FP16_MIN_COSINE;
     return output_pass && cache_pass &&
            result->cache_prefix_mismatches == 0U &&
            result->dsp_status == QBH_BLOCK_STATUS_OK &&
@@ -2107,6 +2107,7 @@ static void qbh_print_replay_profile(
         "\"cache_nonfinite_count\":%" PRIu64 ","
         "\"cache_tensor_count\":%" PRIu32 ","
         "\"cache_gate_failure_count\":%" PRIu32 ","
+        "\"cache_legacy_mixed_bound_failure_count\":%" PRIu32 ","
         "\"cache_fp16_min_cosine\":%.9g,"
         "\"cache_fp16_max_violation_fraction\":%.9g,"
         "\"fp16_gate_version\":\"composition_v2\","
@@ -2133,6 +2134,7 @@ static void qbh_print_replay_profile(
         result->cache_nonfinite_count,
         result->cache_tensor_count,
         result->cache_gate_failure_count,
+        result->cache_legacy_mixed_bound_failure_count,
         QBH_REPLAY_FP16_MIN_COSINE,
         QBH_REPLAY_FP16_MAX_CACHE_VIOLATION_FRACTION);
 
@@ -2521,7 +2523,8 @@ static int qbh_run_replay_sequence(
                         cache_metrics.nonfinite_count == 0U &&
                         isfinite(cache_metrics.cosine) &&
                         cache_metrics.cosine >=
-                            QBH_REPLAY_FP16_MIN_COSINE &&
+                            QBH_REPLAY_FP16_MIN_COSINE;
+                    const int legacy_local_bound_pass =
                         violation_fraction <=
                             QBH_REPLAY_FP16_MAX_CACHE_VIOLATION_FRACTION;
                     if (cache_metrics.cosine <
@@ -2549,6 +2552,8 @@ static int qbh_run_replay_sequence(
                     ++step_result->cache_tensor_count;
                     step_result->cache_gate_failure_count +=
                         !cache_gate_pass;
+                    step_result->cache_legacy_mixed_bound_failure_count +=
+                        !legacy_local_bound_pass;
                 }
                 memcpy(snapshot, actual, cache_bytes);
             }
@@ -2603,6 +2608,7 @@ static int qbh_run_replay_sequence(
             "\"cache_nonfinite_count\":%" PRIu64 ","
             "\"cache_tensor_count\":%" PRIu32 ","
             "\"cache_gate_failure_count\":%" PRIu32 ","
+            "\"cache_legacy_mixed_bound_failure_count\":%" PRIu32 ","
             "\"cache_fp16_min_cosine\":%.9g,"
             "\"cache_fp16_max_violation_fraction\":%.9g,"
             "\"fp16_gate_version\":\"composition_v2\","
@@ -2642,6 +2648,7 @@ static int qbh_run_replay_sequence(
             step_result->cache_nonfinite_count,
             step_result->cache_tensor_count,
             step_result->cache_gate_failure_count,
+            step_result->cache_legacy_mixed_bound_failure_count,
             QBH_REPLAY_FP16_MIN_COSINE,
             QBH_REPLAY_FP16_MAX_CACHE_VIOLATION_FRACTION,
             step_result->scan_cache_ddr_read_bytes,
