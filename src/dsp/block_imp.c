@@ -12631,6 +12631,19 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
     cache_status = qurt_mem_cache_clean(
         (qurt_addr_t)header, (qurt_size_t)sizeof(*header),
         QURT_MEM_CACHE_INVALIDATE, QURT_MEM_DCACHE);
+    if (cache_status == 0 &&
+        header->replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS &&
+        header->replay_session_bytes ==
+            sizeof(struct qbh_decode_session_state) &&
+        header->replay_session_offset >= sizeof(*header) &&
+        header->replay_session_offset <= shared_bytes &&
+        header->replay_session_bytes <=
+            shared_bytes - header->replay_session_offset) {
+        cache_status = qurt_mem_cache_clean(
+            (qurt_addr_t)(shared + header->replay_session_offset),
+            (qurt_size_t)header->replay_session_bytes,
+            QURT_MEM_CACHE_INVALIDATE, QURT_MEM_DCACHE);
+    }
     if (cache_status != 0 || !qbh_header_valid(header, shared_bytes)) {
         if (cache_status == 0) {
             header->dsp_status = QBH_BLOCK_STATUS_BAD_HEADER;
@@ -13010,6 +13023,19 @@ publish:
         int flush_status = qurt_mem_cache_clean(
             (qurt_addr_t)header, (qurt_size_t)sizeof(*header),
             QURT_MEM_CACHE_FLUSH, QURT_MEM_DCACHE);
+        if (flush_status == 0 &&
+            header->replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS &&
+            header->replay_session_bytes ==
+                sizeof(struct qbh_decode_session_state) &&
+            header->replay_session_offset >= sizeof(*header) &&
+            header->replay_session_offset <= shared_bytes &&
+            header->replay_session_bytes <=
+                shared_bytes - header->replay_session_offset) {
+            flush_status = qurt_mem_cache_clean(
+                (qurt_addr_t)(shared + header->replay_session_offset),
+                (qurt_size_t)header->replay_session_bytes,
+                QURT_MEM_CACHE_FLUSH, QURT_MEM_DCACHE);
+        }
         if (flush_status != 0 && result == AEE_SUCCESS) {
             result = AEE_EFAILED;
         }
