@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
+  active_experiment: EXP-0147
   next_experiment_number: 148
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -29,20 +29,14 @@ current_scope:
   execution_unit: qwen3_middle_block
   last_completed_experiment: EXP-0146
   last_completed_source_commit: 6dddc6b5279db04743a4c7d77b86a4eb78d8eb4e
-  provisional_source_parent: EXP-0140_selected_fastest_w4f16_baseline
+  provisional_source_parent: EXP-0109_EXP-0140_EXP-0144_selected_baselines
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: completed
-  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0146/20260901T064149Z_6dddc6b5279d_formal'
-  active_experiment_gate: fail
-  active_recipe_specialization: null
-  next_approved_experiment:
-    id: EXP-0147
-    title: Selected-baseline multi-M and KV-cache generalization scan
-    parent: EXP-0109+EXP-0140+EXP-0144
-    source_branch: codex/exp-0147-multi-m-kv-cache-scan
-    approval_ref: 'User message 2026-09-01: 开始（针对建议的 EXP-0147 多 M 形状与 KV-cache 长度扫描）'
+  active_experiment_stage: static_source_capability_audit
+  active_experiment_evidence: null
+  active_experiment_gate: pending
+  active_recipe_specialization: cross_recipe_shape_generalization
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0146/20260901T064149Z_6dddc6b5279d_formal'
   latest_w4f16_qkv_cross_projection_ring_candidate:
     id: EXP-0146

@@ -14,7 +14,7 @@ experiments:
       - selected_f16f16_exp0109_shape_family
       - selected_w4f16_exp0140_shape_family
       - selected_w4u8_exp0144_shape_family
-    execution_state: approved
+    execution_state: running
     evidence_validity: not_checked
     local_gate: not_run
     adoption_status: pending
@@ -28,6 +28,7 @@ experiments:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0147-multi-m-kv-cache-scan
       approved_on: '2026-09-01'
+      started_on: '2026-09-01'
     evidence:
       source_parent_experiments: EXP-0109_EXP-0140_EXP-0144
       f16f16_source_commit: 42e2a33012929ccbb05e8c2741124b6fd539552c
