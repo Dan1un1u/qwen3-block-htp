@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0136
+  active_experiment: null
   next_experiment_number: 137
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,17 +27,50 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0135
-  last_completed_source_commit: 201c1c51529daf5561a3e0002f5d814f1cacebb3
-  provisional_source_parent: EXP-0134
+  last_completed_experiment: EXP-0136
+  last_completed_source_commit: 30fdf531939b8b96dce428c0d890adbf17714a10
+  provisional_source_parent: EXP-0136
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: approved_implementation
+  active_experiment_stage: null
   active_experiment_evidence: null
-  active_experiment_gate: w4f16_gate_up_stream_subgroup4
+  active_experiment_gate: null
   active_recipe_specialization: W4F16
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0135/20260901T020459Z_201c1c51529d_formal'
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0136/20260901T022940Z_30fdf531939b_formal'
+  latest_w4f16_gate_up_stream_subgroup4_candidate:
+    id: EXP-0136
+    source_branch: codex/exp-0136-w4f16-gate-up-stream-subgroup4
+    source_head: 30fdf531939b8b96dce428c0d890adbf17714a10
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0136/20260901T022940Z_30fdf531939b_formal'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0136/artifacts/30fdf531939b/20260901T022940Z_formal'
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending_user_decision
+    selected_cell: w4f16_stream_subgroup4_candidate
+    correctness_gate: pass_both_f18b9abbe1487231_zero_expansion_mismatch_zero_max_lsb
+    physical_gate: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_workers_weight_dma_expansion_hmx_layout_and_peak_plan
+    repeat1_gate_up_change_percent: -4.586
+    repeat1_gate_up_paired_change_percent: -4.640
+    repeat1_host_change_percent: -1.752
+    repeat1_host_paired_change_percent: -1.555
+    repeat10_gate_up_change_percent: -4.080
+    repeat10_gate_up_paired_change_percent: -4.115
+    repeat10_host_change_percent: -2.116
+    repeat10_host_paired_change_percent: -2.621
+    repeat10_stream_join_wait_change_percent: -98.558
+    repeat10_stream_main_work_change_percent: 6.265
+    repeat10_stream_worker_work_change_percent: -0.513
+    repeat10_hmx_wait_change_percent: -0.063
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass_exp0109_f16f16_exp0136_subgroup4_w4f16_exp0124_control_w4u8
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    gate_summary_sha256: 4cc53ef91b629f4f858923e68a01b1bcb617b0a3949481a2484c81eb9abc9d5b
+    full_profiling_report_sha256: dfd41f9e94e8a19e191b833f6f51ea8cad0b05a422aa4103c3dec3b51a109d03
+    evidence_sha256_ledger_sha256: 181d0052b3e2d96ab3fc263c58ec09cfb9b4059291606920a71b0b7be9127113
+    conclusion: subgroup4_eliminates_the_final_stream_join_tail_and_strictly_improves_gate_up_and_complete_host_at_both_repeats
+    reopen_condition: none_for_local_candidate_further_changes_require_new_experiment
+    selected_baseline_changed: false
   latest_w4f16_gate_up_worker3_stream_drain_candidate:
     id: EXP-0135
     source_branch: codex/exp-0135-w4f16-gate-up-worker3-stream-drain
