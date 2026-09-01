@@ -1662,7 +1662,7 @@ int main(int argc, char **argv) {
                            argv[25],
                            &w4u8_qk_pair_kernel_mode) != 0) ||
         repeats == 0U || repeats > 100U ||
-        w4f16_hvx_workers == 0U || w4f16_hvx_workers > 3U ||
+        w4f16_hvx_workers == 0U || w4f16_hvx_workers > 4U ||
         (variant == QBH_BLOCK_W4U8 &&
          ((!qbh_attention_u8_enabled(attention_pipeline_mode) &&
            (attention_pack_mode !=
@@ -1718,7 +1718,8 @@ int main(int argc, char **argv) {
         (attention_pipeline_mode ==
              QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP &&
          variant == QBH_BLOCK_W4F16 &&
-         w4f16_hvx_workers != 3U) ||
+         w4f16_hvx_workers != 3U &&
+         w4f16_hvx_workers != 4U) ||
         (variant == QBH_BLOCK_W4U8 &&
          ((crouton_boundary_mode &
            ~((uint32_t)(QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
@@ -1906,7 +1907,8 @@ int main(int argc, char **argv) {
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH ||
           w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH) &&
-         w4f16_hvx_workers != 3U) ||
+         w4f16_hvx_workers != 3U &&
+         w4f16_hvx_workers != 4U) ||
         ((w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN64_CROSS_PREFETCH ||
           w4f16_pipeline_mode ==
@@ -2528,7 +2530,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0127\","
+        "{\"experiment\":\"EXP-0129\","
         "\"execution_unit\":\"qwen3_layer14_complete_block_m64\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","

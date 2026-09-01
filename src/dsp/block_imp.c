@@ -53,6 +53,7 @@ enum qbh_block_hmx_command_kind {
     (QBH_BLOCK_MAX_K / 32U * QBH_BLOCK_W4F16_HMX_BATCH_N_TILES / \
      QBH_BLOCK_W4F16_MIN_REGION_TILES)
 #define QBH_BLOCK_W4F16_HVX_WORKERS UINT32_C(4)
+#define QBH_BLOCK_W4F16_MAX_REQUESTED_HVX_WORKERS UINT32_C(4)
 #define QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS UINT32_C(6)
 #define QBH_BLOCK_MAX_POOL_HVX_WORKERS \
     (QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS - 1U)
@@ -864,7 +865,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (header->attention_pipeline_mode ==
              QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP &&
          header->variant == QBH_BLOCK_W4F16 &&
-         header->w4f16_requested_hvx_workers != 3U) ||
+         header->w4f16_requested_hvx_workers != 3U &&
+         header->w4f16_requested_hvx_workers != 4U) ||
         (header->crouton_boundary_mode &
          ~((uint32_t)(QBH_BLOCK_CROUTON_BOUNDARY_QKV |
                       QBH_BLOCK_CROUTON_BOUNDARY_AV_TO_O |
@@ -1037,7 +1039,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH ||
           header->w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH) &&
-         header->w4f16_requested_hvx_workers != 3U) ||
+         header->w4f16_requested_hvx_workers != 3U &&
+         header->w4f16_requested_hvx_workers != 4U) ||
         ((header->w4f16_pipeline_mode ==
               QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN64_CROSS_PREFETCH ||
           header->w4f16_pipeline_mode ==
@@ -1067,7 +1070,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
     }
     if (header->w4f16_requested_hvx_workers == 0U ||
         header->w4f16_requested_hvx_workers >
-            QBH_BLOCK_W4F16_HVX_WORKERS - 1U ||
+            QBH_BLOCK_W4F16_MAX_REQUESTED_HVX_WORKERS ||
         (header->w4f16_region_tiles != 8U &&
          header->w4f16_region_tiles != 16U &&
          header->w4f16_region_tiles != 32U &&
