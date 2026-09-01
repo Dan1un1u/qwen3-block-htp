@@ -1862,6 +1862,19 @@ static int qbh_run_replay_sequence(
                 free(cache_snapshot_v);
                 return -1;
             }
+            if (header->u8_attention_audit_output_bytes != 0U &&
+                (snprintf(
+                     name, sizeof(name),
+                     "actual_replay_attention_audit_%02" PRIu32 ".bin",
+                     step) < 0 ||
+                 qbh_write_named_tensor(
+                     dump_root, name,
+                     shared + header->u8_attention_audit_output_offset,
+                     header->u8_attention_audit_output_bytes) != 0)) {
+                free(cache_snapshot_k);
+                free(cache_snapshot_v);
+                return -1;
+            }
         }
         all_pass &= qbh_replay_step_pass(variant, step_result);
         printf(

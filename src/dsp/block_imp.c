@@ -11172,6 +11172,16 @@ static int qbh_scan_u8_attention(
             QBH_BLOCK_SCAN_MAX_KV_TILES * QBH_HMX_INPUT_CHANNELS) {
         return -1;
     }
+    if (header->numerical_audit_enabled != 0U) {
+        uint8_t *audit = shared + header->u8_attention_audit_output_offset;
+        if (qbh_dma_copy(
+                header, audit, buffers->q,
+                QBH_BLOCK_U8_ATTENTION_Q_BYTES, 0U) != 0) {
+            return -1;
+        }
+        header->u8_attention_audit_ddr_write_bytes +=
+            QBH_BLOCK_U8_ATTENTION_Q_BYTES;
+    }
 
     for (uint32_t group = 0U; group < QBH_BLOCK_KV_HEADS; ++group) {
         const struct qbh_attention_config *config =
