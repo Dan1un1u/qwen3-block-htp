@@ -794,7 +794,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->qkv_schedule_mode >
             QBH_BLOCK_QKV_SCHEDULE_KV_BATCH4 ||
         header->w4f16_group_fence_mode >
-            QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY_DOWN ||
+            QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY_DOWN_O ||
         (header->w4f16_group_fence_mode !=
              QBH_BLOCK_W4F16_GROUP_FENCE_CONTROL &&
          header->variant != QBH_BLOCK_W4F16) ||
@@ -806,14 +806,18 @@ static int qbh_header_valid(const struct qbh_block_header *header,
           (header->w4f16_group_fence_mode !=
                QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY &&
            header->w4f16_group_fence_mode !=
-               QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY_DOWN))) ||
+               QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY_DOWN &&
+           header->w4f16_group_fence_mode !=
+               QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY_DOWN_O))) ||
         header->w4f16_gate_up_extra_expand_worker > 1U ||
         (header->w4f16_gate_up_extra_expand_worker != 0U &&
          (header->variant != QBH_BLOCK_W4F16 ||
           (header->w4f16_group_fence_mode !=
                QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY &&
            header->w4f16_group_fence_mode !=
-               QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY_DOWN) ||
+               QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY_DOWN &&
+           header->w4f16_group_fence_mode !=
+               QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY_DOWN_O) ||
           header->w4f16_requested_hvx_workers != 4U)) ||
         header->w4f16_gate_up_extra_stream_worker > 1U ||
         (header->w4f16_gate_up_extra_stream_worker != 0U &&
@@ -4900,10 +4904,15 @@ static int qbh_run_w4f16_projection(
     uint32_t region_tiles;
     const uint32_t hmx_batch_tiles =
         qbh_w4f16_projection_group_tiles(header, desc);
-    const uint32_t relaxed_down_group_fence =
-        desc == &header->projections[QBH_BLOCK_PROJ_DOWN] &&
-        header->w4f16_group_fence_mode ==
-            QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY_DOWN;
+    const uint32_t relaxed_projection_group_fence =
+        (desc == &header->projections[QBH_BLOCK_PROJ_DOWN] &&
+         (header->w4f16_group_fence_mode ==
+              QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY_DOWN ||
+          header->w4f16_group_fence_mode ==
+              QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY_DOWN_O)) ||
+        (desc == &header->projections[QBH_BLOCK_PROJ_O] &&
+         header->w4f16_group_fence_mode ==
+             QBH_BLOCK_W4F16_GROUP_FENCE_JOIN_ONLY_DOWN_O);
     const uint32_t direct_qkv =
         qbh_projection_direct_qkv_crouton(header, desc);
 
@@ -4978,7 +4987,7 @@ static int qbh_run_w4f16_projection(
         expanded_slots[0], ready, 1U,
         k_tiles * hmx_batch_tiles,
         region_tiles, active_workers, 0U,
-        relaxed_down_group_fence);
+        relaxed_projection_group_fence);
     header->w4f16_expand_ticks +=
         HAP_perf_get_qtimer_count() - phase_start;
     header->w4f16_first_expand_ticks +=
@@ -5123,7 +5132,7 @@ static int qbh_run_w4f16_projection(
                     group_index + 2U,
                     k_tiles * next_group_tiles,
                     region_tiles, active_workers, 0U,
-                    relaxed_down_group_fence);
+                    relaxed_projection_group_fence);
                 header->w4f16_expand_ticks +=
                     HAP_perf_get_qtimer_count() - expand_start;
                 header->w4f16_steady_expand_ticks +=
