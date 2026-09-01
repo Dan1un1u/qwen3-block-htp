@@ -732,7 +732,8 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         QBH_HMX_FP16_SCALE_BYTES);
     if (qbh_block_mlp_is_w4u8_streaming(mlp_mode)) {
         buffers->w4u8_silu_lut = qbh_arena_alloc_aligned(
-            &arena, QBH_MLP_LUT_BYTES, QBH_BLOCK_ALIGNMENT);
+            &arena, QBH_MLP_LUT_BYTES,
+            QBH_MLP_GATHER_HALF_BYTES);
         buffers->w4u8_gather_scratch = qbh_arena_alloc_aligned(
             &arena, QBH_BLOCK_W4U8_GATHER_SCRATCH_BYTES,
             QBH_BLOCK_ALIGNMENT);
@@ -12227,7 +12228,6 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     }
     if (u8_integer_attention_enabled != 0U &&
         scan_dynamic_attention == 0U &&
-        header->scan_mode == QBH_BLOCK_SCAN_DISABLED &&
         header->numerical_audit_enabled != 0U) {
         if (header->numerical_status ==
                 QBH_BLOCK_NUMERICAL_UNCHECKED &&

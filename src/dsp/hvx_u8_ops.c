@@ -117,14 +117,23 @@ static HVX_Vector qbh_pack_qf32_to_u8(
     const struct qbh_qf32_quad *values) {
     HVX_Vector words[4];
     HVX_Vector halves[2];
+    HVX_VectorPair ordered_words;
     const HVX_Vector rounding = qbh_splat_sf(0.5f);
 
     for (uint32_t index = 0U; index < 4U; ++index) {
         words[index] = Q6_Vw_equals_Vsf(
             Q6_Vsf_vadd_VsfVsf(values->lane[index], rounding));
     }
-    halves[0] = Q6_Vh_vpack_VwVw_sat(words[1], words[0]);
-    halves[1] = Q6_Vh_vpack_VwVw_sat(words[3], words[2]);
+    /* SF32 widening separates adjacent FP16 lanes into even/odd word
+     * vectors.  Re-interleave at word granularity before narrowing;
+     * otherwise each 64-channel group is emitted as all even channels
+     * followed by all odd channels instead of the canonical HMX carrier. */
+    ordered_words = Q6_W_vshuff_VVR(words[1], words[0], -4);
+    halves[0] = Q6_Vh_vpack_VwVw_sat(
+        Q6_V_hi_W(ordered_words), Q6_V_lo_W(ordered_words));
+    ordered_words = Q6_W_vshuff_VVR(words[3], words[2], -4);
+    halves[1] = Q6_Vh_vpack_VwVw_sat(
+        Q6_V_hi_W(ordered_words), Q6_V_lo_W(ordered_words));
     return Q6_Vub_vpack_VhVh_sat(halves[1], halves[0]);
 }
 
@@ -342,27 +351,46 @@ static int32_t qbh_repeat_signed_half(int32_t value) {
 static HVX_Vector qbh_residual_half_q14(
     HVX_Vector left, HVX_Vector right,
     int32_t left_coefficient, int32_t right_coefficient,
-    int32_t output_zero_point) {
+    int32_t output_zero_point, uint32_t fraction_bits) {
     HVX_VectorPair accumulated = Q6_Ww_vmpy_VhRh(
         left, qbh_repeat_signed_half(left_coefficient));
     accumulated = Q6_Ww_vmpyacc_WwVhRh(
         accumulated, right,
         qbh_repeat_signed_half(right_coefficient));
     const HVX_Vector offset = Q6_V_vsplat_R(
-        output_zero_point << QBH_U8_RESIDUAL_FRAC_BITS);
+        output_zero_point << fraction_bits);
     const HVX_Vector lower = Q6_Vw_vadd_VwVw(
         Q6_V_lo_W(accumulated), offset);
     const HVX_Vector upper = Q6_Vw_vadd_VwVw(
         Q6_V_hi_W(accumulated), offset);
     return Q6_Vh_vasr_VwVwR_rnd_sat(
-        upper, lower, QBH_U8_RESIDUAL_FRAC_BITS);
+        upper, lower, fraction_bits);
+}
+
+static uint32_t qbh_residual_fraction_bits(
+    const struct qbh_block_qparam *left_qparam,
+    const struct qbh_block_qparam *right_qparam,
+    const struct qbh_block_qparam *output_qparam) {
+    const float left_ratio = fabsf(
+        left_qparam->scale / output_qparam->scale);
+    const float right_ratio = fabsf(
+        right_qparam->scale / output_qparam->scale);
+    const float maximum_ratio = fmaxf(left_ratio, right_ratio);
+    uint32_t fraction_bits = QBH_U8_RESIDUAL_FRAC_BITS;
+
+    while (fraction_bits != 0U &&
+           roundf(maximum_ratio *
+                  (float)(UINT32_C(1) << fraction_bits)) > 32767.0f) {
+        --fraction_bits;
+    }
+    return fraction_bits;
 }
 
 static HVX_Vector qbh_residual_add_u8_vector(
     HVX_Vector left, HVX_Vector right,
     HVX_Vector left_offset, HVX_Vector right_offset,
     int32_t left_coefficient, int32_t right_coefficient,
-    int32_t output_zero_point) {
+    int32_t output_zero_point, uint32_t fraction_bits) {
     const HVX_VectorPair left_unpacked = Q6_Wuh_vunpack_Vub(left);
     const HVX_VectorPair right_unpacked = Q6_Wuh_vunpack_Vub(right);
     const HVX_Vector left_lower = Q6_Vh_vsub_VhVh(
@@ -375,10 +403,10 @@ static HVX_Vector qbh_residual_add_u8_vector(
         Q6_V_hi_W(right_unpacked), right_offset);
     const HVX_Vector result_lower = qbh_residual_half_q14(
         left_lower, right_lower, left_coefficient,
-        right_coefficient, output_zero_point);
+        right_coefficient, output_zero_point, fraction_bits);
     const HVX_Vector result_upper = qbh_residual_half_q14(
         left_upper, right_upper, left_coefficient,
-        right_coefficient, output_zero_point);
+        right_coefficient, output_zero_point, fraction_bits);
 
     return Q6_Vub_vpack_VhVh_sat(result_upper, result_lower);
 }
@@ -391,8 +419,10 @@ void qbh_hvx_residual_add_u8(
     uint8_t *output,
     const struct qbh_block_qparam *output_qparam,
     uint32_t elements) {
+    const uint32_t fraction_bits = qbh_residual_fraction_bits(
+        left_qparam, right_qparam, output_qparam);
     const float fixed_scale =
-        (float)(UINT32_C(1) << QBH_U8_RESIDUAL_FRAC_BITS);
+        (float)(UINT32_C(1) << fraction_bits);
     const int32_t left_coefficient = (int32_t)roundf(
         left_qparam->scale / output_qparam->scale * fixed_scale);
     const int32_t right_coefficient = (int32_t)roundf(
@@ -408,7 +438,8 @@ void qbh_hvx_residual_add_u8(
             *(const HVX_Vector *)(left + element),
             *(const HVX_Vector *)(right + element),
             left_offset, right_offset, left_coefficient,
-            right_coefficient, output_qparam->zero_point);
+            right_coefficient, output_qparam->zero_point,
+            fraction_bits);
     }
     asm volatile("barrier" ::: "memory");
 }
@@ -420,8 +451,10 @@ void qbh_hvx_residual_add_u8_native_output_rows(
     const struct qbh_block_qparam *addition_qparam,
     const struct qbh_block_qparam *output_qparam,
     uint32_t first_row, uint32_t row_count, uint32_t width) {
+    const uint32_t fraction_bits = qbh_residual_fraction_bits(
+        residual_qparam, addition_qparam, output_qparam);
     const float fixed_scale =
-        (float)(UINT32_C(1) << QBH_U8_RESIDUAL_FRAC_BITS);
+        (float)(UINT32_C(1) << fraction_bits);
     const int32_t residual_coefficient = (int32_t)roundf(
         residual_qparam->scale / output_qparam->scale * fixed_scale);
     const int32_t addition_coefficient = (int32_t)roundf(
@@ -461,7 +494,7 @@ void qbh_hvx_residual_add_u8_native_output_rows(
                 residual_value, *(volatile HVX_Vector *)destination,
                 residual_offset, addition_offset,
                 residual_coefficient, addition_coefficient,
-                output_qparam->zero_point);
+                output_qparam->zero_point, fraction_bits);
         }
     }
     asm volatile("barrier" ::: "memory");
@@ -474,8 +507,10 @@ void qbh_hvx_residual_add_u8_native_output_rows_shuffle4(
     const struct qbh_block_qparam *addition_qparam,
     const struct qbh_block_qparam *output_qparam,
     uint32_t first_row, uint32_t row_count, uint32_t width) {
+    const uint32_t fraction_bits = qbh_residual_fraction_bits(
+        residual_qparam, addition_qparam, output_qparam);
     const float fixed_scale =
-        (float)(UINT32_C(1) << QBH_U8_RESIDUAL_FRAC_BITS);
+        (float)(UINT32_C(1) << fraction_bits);
     const int32_t residual_coefficient = (int32_t)roundf(
         residual_qparam->scale / output_qparam->scale * fixed_scale);
     const int32_t addition_coefficient = (int32_t)roundf(
@@ -535,22 +570,22 @@ void qbh_hvx_residual_add_u8_native_output_rows_shuffle4(
                 *residual0, Q6_V_lo_W(rows01),
                 residual_offset, addition_offset,
                 residual_coefficient, addition_coefficient,
-                output_qparam->zero_point);
+                output_qparam->zero_point, fraction_bits);
             *residual1 = qbh_residual_add_u8_vector(
                 *residual1, Q6_V_hi_W(rows01),
                 residual_offset, addition_offset,
                 residual_coefficient, addition_coefficient,
-                output_qparam->zero_point);
+                output_qparam->zero_point, fraction_bits);
             *residual2 = qbh_residual_add_u8_vector(
                 *residual2, Q6_V_lo_W(rows23),
                 residual_offset, addition_offset,
                 residual_coefficient, addition_coefficient,
-                output_qparam->zero_point);
+                output_qparam->zero_point, fraction_bits);
             *residual3 = qbh_residual_add_u8_vector(
                 *residual3, Q6_V_hi_W(rows23),
                 residual_offset, addition_offset,
                 residual_coefficient, addition_coefficient,
-                output_qparam->zero_point);
+                output_qparam->zero_point, fraction_bits);
         }
     }
     asm volatile("barrier" ::: "memory");
@@ -1062,10 +1097,13 @@ static void qbh_qk_norm_rope_two_heads_u8_quarter_tiled(
             second_words_b, second_words_a);
     }
     {
-        const HVX_VectorPair first_halves = Q6_W_vdeal_VVR(
-            first_part_1, first_part_0, -64);
-        const HVX_VectorPair second_halves = Q6_W_vdeal_VVR(
-            second_part_1, second_part_0, -64);
+        /* The two passes carry alternating 16-bit lanes.  Shuffle them at
+         * halfword granularity before the final U8 narrowing so Q/K retain
+         * canonical channel order for the following integer-HMX QK. */
+        const HVX_VectorPair first_halves = Q6_W_vshuff_VVR(
+            first_part_1, first_part_0, -2);
+        const HVX_VectorPair second_halves = Q6_W_vshuff_VVR(
+            second_part_1, second_part_0, -2);
 
         *(HVX_Vector *)first_values = Q6_Vub_vpack_VhVh_sat(
             Q6_V_hi_W(first_halves), Q6_V_lo_W(first_halves));

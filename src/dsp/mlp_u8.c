@@ -5,7 +5,6 @@
 
 #include "mlp_u8.h"
 
-#define QBH_MLP_GATHER_HALF_BYTES UINT32_C(65536)
 #define QBH_MLP_GATHER_REGION_MASK UINT32_C(65535)
 
 static inline HVX_Vector qbh_mlp_gather_half(

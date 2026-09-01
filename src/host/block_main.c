@@ -4762,6 +4762,46 @@ int main(int argc, char **argv) {
                 }
                 audit_offset += bytes[index];
             }
+            {
+                static const char *const tail_names[6] = {
+                    "actual_o_tiles_u8.bin",
+                    "actual_post_residual_u8.bin",
+                    "actual_post_norm_tiles_u8.bin",
+                    "actual_middle_tiles_u8.bin",
+                    "actual_down_tiles_u8.bin",
+                    "actual_final_u8.bin",
+                };
+                static const uint32_t tail_offsets[6] = {
+                    QBH_BLOCK_U8_TAIL_O_OFFSET,
+                    QBH_BLOCK_U8_TAIL_POST_RESIDUAL_OFFSET,
+                    QBH_BLOCK_U8_TAIL_POST_NORM_OFFSET,
+                    QBH_BLOCK_U8_TAIL_MIDDLE_OFFSET,
+                    QBH_BLOCK_U8_TAIL_DOWN_OFFSET,
+                    QBH_BLOCK_U8_TAIL_FINAL_OFFSET,
+                };
+                static const uint32_t tail_bytes[6] = {
+                    QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
+                    QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
+                    QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
+                    QBH_BLOCK_M * QBH_BLOCK_INTERMEDIATE,
+                    QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
+                    QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
+                };
+
+                for (uint32_t index = 0U; index < 6U; ++index) {
+                    if (qbh_write_named_tensor(
+                            dump_root, tail_names[index],
+                            shared +
+                                header->u8_attention_audit_output_offset +
+                                tail_offsets[index],
+                            tail_bytes[index]) != 0) {
+                        fprintf(stderr,
+                                "failed to write W4U8 tail dump: %s\n",
+                                tail_names[index]);
+                        goto cleanup;
+                    }
+                }
+            }
         }
     }
     if (w4u8_boundary_audit_enabled != 0U) {
