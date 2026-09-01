@@ -12,14 +12,16 @@ experiments:
     parent: EXP-0150
     variants:
       - rpcmem_alloc2_single_2900000000_byte_mapping
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: not_applicable
     evidence_profile: rpcmem-alloc2-symbol-host-allocation-fastrpc-map-dsp-sentinel-roundtrip
     source_branches:
       - codex/exp-0151-rpcmem-alloc2-single-buffer
-    source_commits: []
+    source_commits:
+      - d6b1706bdc3829c966441be468abf2f7952ee2a9
+      - bb9531f457dce01e97a1770020bd1a1890c8114b
     record: docs/experiments/EXP-0151.md
     approval_ref: 'User message 2026-09-01: 做这条方案，若失败，停止并与我讨论'
     runtime:
@@ -27,6 +29,7 @@ experiments:
       source_branch: codex/exp-0151-rpcmem-alloc2-single-buffer
       approved_on: '2026-09-01'
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0150
       source_parent_commit: 8f46fb8534ab60ec9719021f06e5307d8c82bf05
@@ -50,6 +53,28 @@ experiments:
       next_gate_on_success: separate_full_stack_package_ABI_resume_experiment_using_the_proven_single_buffer_contract
       next_action_on_failure: stop_without_segmented_or_delayed_mapping_and_discuss_with_user
       selected_baseline_changed: false
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0151/20260901T152446Z_d6b1706_device_gate'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0151/artifacts/d6b1706/20260901T152446Z_device_gate'
+      gate_source_commit: d6b1706bdc3829c966441be468abf2f7952ee2a9
+      closure_source_commit: bb9531f457dce01e97a1770020bd1a1890c8114b
+      symbol_gate_result: pass_rpcmem_alloc2_runtime_resolved
+      allocation_gate_result: pass_one_2900000000_byte_uncached_allocation_fd5
+      mapping_gate_result: pass_fastrpc_mmap_and_DSP_HAP_mmap_get_contiguous_address_range
+      correctness_gate_result: pass_three_bidirectional_aligned_sentinels_zero_mismatch
+      release_gate_result: pass_HAP_mmap_put_session_close_fastrpc_munmap_rpcmem_free
+      physical_gate_result: pass_one_allocation_one_fd_one_mapping_no_QNN_same_device_boot
+      profiling_gate_result: not_applicable_capacity_probe_diagnostic_stage_timing_only
+      allocation_ns: 54663750
+      map_ns: 11668802
+      run_ns: 274010
+      dsp_virtual_base: 1356857344
+      dsp_virtual_end: 4256849924
+      dsp_physical_base: 22865248256
+      device_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      conclusion: rpcmem_alloc2_and_current_FastRPC_stack_can_back_one_full_stack_sized_single_shared_arena
+      gate_result_sha256: 355e361ae9ed82da3fc2efa9ca0dee311b6d595ca9cd4aba8713aac8f022a6ad
+      full_profiling_report_sha256: 1a38a51910bad44a320685d751eed0007ceaad450650c039cbe4daf0e780b759
+      evidence_sha256_ledger_sha256: 0350319bb0b1b3b4b79217777e184c2970b42d00d5d58298f301a0ba0d5905a2
   - id: EXP-0150
     slug: full-transformer-stack
     title: Real 28-layer Qwen3 transformer stack

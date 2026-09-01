@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0151
+  active_experiment: null
   next_experiment_number: 152
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,17 +27,52 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_layers0_27_real_replay_prefill_continuous_decode_full_transformer_stack
-  last_completed_experiment: EXP-0149
-  last_completed_source_commit: f75c5e0e0b6ec09ac4422496a9254d82092e9e40
-  provisional_source_parent: EXP-0149_three_layer_vertical_slice
+  last_completed_experiment: EXP-0151
+  last_completed_source_commit: bb9531f457dce01e97a1770020bd1a1890c8114b
+  provisional_source_parent: EXP-0151_rpcmem_alloc2_single_buffer
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
-  full_model: blocked_pending_single_buffer_rpcmem_alloc2_mapping_gate
+  full_model: ready_for_separate_full_stack_package_resume_on_proven_single_rpcmem_alloc2_mapping
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: EXP0151_approved_pending_source_preflight
-  active_experiment_evidence: null
-  active_experiment_gate: pending_rpcmem_alloc2_symbol_allocation_mapping_and_DSP_sentinel_access
+  active_experiment_stage: none_EXP0151_completed
+  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0151/20260901T152446Z_d6b1706_device_gate'
+  active_experiment_gate: pass_single_2900000000_byte_rpcmem_alloc2_contiguous_cDSP_mapping_and_sentinels
   active_recipe_specialization: common_full_stack_integration_no_new_specialization
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0149/20260901T141700Z_f75c5e0e0b6e_formal'
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0151/20260901T152446Z_d6b1706_device_gate'
+  latest_rpcmem_alloc2_single_buffer_probe:
+    id: EXP-0151
+    source_branch: codex/exp-0151-rpcmem-alloc2-single-buffer
+    gate_source_commit: d6b1706bdc3829c966441be468abf2f7952ee2a9
+    closure_source_commit: bb9531f457dce01e97a1770020bd1a1890c8114b
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0151/20260901T152446Z_d6b1706_device_gate'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0151/artifacts/d6b1706/20260901T152446Z_device_gate'
+    evidence_validity: valid
+    execution_state: completed
+    local_gate: pass
+    adoption_status: not_applicable
+    requested_bytes: 2900000000
+    rpcmem_alloc2_symbol_present: true
+    allocation_result: pass
+    shared_fd: 5
+    fastrpc_mmap_result: 0
+    dsp_HAP_mmap_get_result: 0
+    dsp_HAP_mmap_put_result: 0
+    host_fastrpc_munmap_result: 0
+    dsp_virtual_base: 1356857344
+    dsp_virtual_end: 4256849924
+    dsp_physical_base: 22865248256
+    sentinel_offsets: [4096, 1449996288, 2899992576]
+    host_to_dsp_sentinel_mismatches: 0
+    dsp_to_host_sentinel_mismatches: 0
+    allocation_ms: 54.663750
+    map_ms: 11.668802
+    probe_ms: 0.274010
+    boot_id_before: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    boot_id_after: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    conclusion: one_2p9GB_rpcmem_alloc2_fd_is_contiguously_addressable_from_cDSP_and_removes_the_legacy_rpcmem_INT_MAX_blocker
+    next_priority: separate_EXP0152_resume_full_stack_package_generation_static_layout_real_device_mapping_correctness_and_profiling_without_segmented_mapping
+    gate_result_sha256: 355e361ae9ed82da3fc2efa9ca0dee311b6d595ca9cd4aba8713aac8f022a6ad
+    full_profiling_report_sha256: 1a38a51910bad44a320685d751eed0007ceaad450650c039cbe4daf0e780b759
+    evidence_sha256_ledger_sha256: 0350319bb0b1b3b4b79217777e184c2970b42d00d5d58298f301a0ba0d5905a2
   latest_full_transformer_stack_attempt:
     id: EXP-0150
     source_branch: codex/exp-0150-full-transformer-stack
@@ -54,6 +89,7 @@ current_scope:
     bytes_over_rpcmem_limit_before_other_payloads: 671088641
     conclusion: current_single_rpcmem_single_shared_fd_ABI_cannot_represent_the_required_three_recipe_28_layer_stack_because_F16F16_weights_alone_exceed_the_allocation_limit
     required_next_decision: approve_a_segmented_persistent_mapping_ABI_that_retains_one_FastRPC_per_stack_step_and_forbids_Host_refill_between_layers
+    capacity_assumption_superseded_by: EXP0151_single_rpcmem_alloc2_2900000000_byte_mapping_pass
     package_capacity_sha256: 656a64118c69895db8ab41aa9229fc243afae1a6a2a75dbeb3638c2f65d9d039
   latest_three_layer_vertical_slice:
     id: EXP-0149

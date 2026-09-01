@@ -843,3 +843,11 @@ arena; it does not prove that a generated 28-layer package fits, remains
 resident under workload pressure, or executes correctly.
 _Avoid_: segmented mapping, delayed mapping, successful full-stack package,
 performance baseline, Host refill
+
+EXP-0151 passed on PJZ110 without a reboot. The runtime-resolved symbol,
+allocation, shared fd, `fastrpc_mmap`, DSP `HAP_mmap_get`, aligned
+begin/middle/end bidirectional sentinel exchange, `HAP_mmap_put`, Host unmap and
+release all succeeded. This removes the legacy signed-int allocation limit as
+the immediate full-stack blocker, but a separately registered experiment must
+still prove the generated package size, runtime residency, correctness and
+profiling under the real 28-layer workload.
