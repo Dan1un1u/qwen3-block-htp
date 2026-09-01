@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0139
+  active_experiment: null
   next_experiment_number: 140
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,17 +27,49 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_middle_block
-  last_completed_experiment: EXP-0138
-  last_completed_source_commit: 8b5aa01da8d81f1f87525af9e472a1d0bffa7e34
+  last_completed_experiment: EXP-0139
+  last_completed_source_commit: addb7c08f80d242a305ffb493a1899ae1d9f0dc5
   provisional_source_parent: EXP-0124
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: out_of_scope
   qwen3_middle_block: active_scope
-  active_experiment_stage: approved_implementation
+  active_experiment_stage: idle
   active_experiment_evidence: null
-  active_experiment_gate: w4u8_qkv_main_context_prep_assist
-  active_recipe_specialization: W4U8
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0138/20260901T032740Z_8b5aa01da8d8_formal'
+  active_experiment_gate: null
+  active_recipe_specialization: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0139/20260901T035026Z_addb7c08f80d_formal'
+  latest_w4u8_qkv_main_prep_assist_candidate:
+    id: EXP-0139
+    source_branch: codex/exp-0139-w4u8-qkv-main-prep-assist
+    source_head: addb7c08f80d242a305ffb493a1899ae1d9f0dc5
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0139/20260901T035026Z_addb7c08f80d_formal'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0139/artifacts/addb7c08f80d/20260901T035026Z_formal'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    selected_cell: exp0124_ring3_control
+    correctness_gate: pass_all_three_69f22eeb035e5ec5_zero_stage_mismatch_zero_max_lsb
+    physical_gate: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_dma_hmx_tiles_qparams_carriers_and_peak_plan
+    dynamic_assist_gate: pass_four_qk_prep_heads_per_block_after_final_dma_feed
+    repeat1_qkv_change_percent_vs_ring3: 0.921
+    repeat1_qkv_paired_change_percent_vs_ring3: -0.474
+    repeat1_host_change_percent_vs_ring3: -0.631
+    repeat1_host_paired_change_percent_vs_ring3: 0.795
+    repeat10_qkv_change_percent_vs_ring3: -1.500
+    repeat10_qkv_paired_change_percent_vs_ring3: -1.790
+    repeat10_host_change_percent_vs_ring3: -0.123
+    repeat10_host_paired_change_percent_vs_ring3: -0.243
+    repeat1_pool_wait_change_percent_vs_ring3: -94.993
+    repeat10_pool_wait_change_percent_vs_ring3: -95.053
+    pc027_complete_profiling_report: pass
+    pc028_module_table: pass_exp0109_f16f16_exp0110_selected_w4f16_exp0139_assist_w4u8
+    stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+    gate_summary_sha256: b4bf26266cd6476f2b11d45d73db55154783308ae3f689ca8fd3b007905093f8
+    full_profiling_report_sha256: 3162c2114769e2ade08af536195ac3ffcacee44ec76f508f2141b0109faea638
+    evidence_sha256_ledger_sha256: 49e3eec5209106b6ec0c52959603f91f89788c35ec51b35364b9e766f7c86de4
+    conclusion: main_assist_eliminates_qk_prep_pool_tail_and_helps_repeat10_but_does_not_stably_shorten_repeat1_qkv_and_complete_host
+    reopen_condition: only_with_shared_continuation_or_work_stealing_that_does_not_extend_hmx_lifetime_or_perturb_downstream_scheduling_not_another_synchronous_post_feed_assist
+    selected_baseline_changed: false
   latest_w4f16_gate_up_initial_up_dma_overlap_candidate:
     id: EXP-0138
     source_branch: codex/exp-0138-w4f16-gate-up-initial-up-dma-overlap
@@ -138,13 +170,13 @@ current_scope:
     reopen_condition: none_for_local_candidate_further_changes_require_new_experiment
     selected_baseline_changed: false
   last_rejected_specialization:
-    id: EXP-0138
-    source_branch: codex/exp-0138-w4f16-gate-up-initial-up-dma-overlap
-    source_head: 8b5aa01da8d81f1f87525af9e472a1d0bffa7e34
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0138/20260901T032740Z_8b5aa01da8d8_formal'
+    id: EXP-0139
+    source_branch: codex/exp-0139-w4u8-qkv-main-prep-assist
+    source_head: addb7c08f80d242a305ffb493a1899ae1d9f0dc5
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0139/20260901T035026Z_addb7c08f80d_formal'
     local_gate: fail
     adoption_status: rejected
-    reason: asynchronous_initial_up_dma_reduces_ready_wait_but_increases_join_tail_and_leaves_repeat10_host_unchanged
+    reason: main_assist_removes_qk_prep_pool_tail_but_fails_repeat1_ordinary_qkv_and_paired_host_speed
   latest_w4u8_gate_up_adaptive_hvx_lead_candidate:
     id: EXP-0137
     source_branch: codex/exp-0137-w4u8-gate-up-adaptive-hvx-lead-credit

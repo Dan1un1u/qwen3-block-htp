@@ -14,20 +14,23 @@ experiments:
       - exp0120_sequential_qkv_control
       - exp0124_ring3_control
       - w4u8_ring3_main_prep_assist_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: real-qwen3-block-w4u8-qkv-main-context-prep-assist
     source_branches:
       - codex/exp-0139-w4u8-qkv-main-prep-assist
-    source_commits: []
+    source_commits:
+      - 20ba5b2fc8b2e544b1f8ad4f694b440b4034e73c
+      - addb7c08f80d242a305ffb493a1899ae1d9f0dc5
     record: docs/experiments/EXP-0139.md
     approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine issues independently without interruption'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0139-w4u8-qkv-main-prep-assist
       started_on: '2026-09-01'
+      completed_on: '2026-09-01'
     evidence:
       source_parent_experiment: EXP-0124
       source_parent_commit: 95fadff5930d9081678ad99bb62ef84849ee1897
@@ -50,6 +53,19 @@ experiments:
       dynamic_gate: assisted_main_context_executes_at_least_one_QK_prep_task_per_block_and_controls_execute_zero
       speed_gate: assisted_ring_QKV_plus_QK_prep_and_complete_Host_strictly_improve_over_both_controls_in_ordinary_and_paired_repeat1_and_repeat10
       completion_gate: bounded_smoke_then_five_rotated_formal_rounds_PC027_PC028_and_no_automatic_baseline_promotion
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0139/20260901T035026Z_addb7c08f80d_formal'
+      retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0139/artifacts/addb7c08f80d/20260901T035026Z_formal'
+      output_hash: 69f22eeb035e5ec5
+      correctness_gate_result: pass
+      physical_gate_result: pass
+      dynamic_gate_result: pass_four_qk_prep_heads_per_block_after_final_dma_feed
+      speed_gate_result: fail_repeat1_ordinary_qkv_plus_paired_host_vs_ring3
+      selected_cell: exp0124_ring3_control
+      gate_summary_sha256: b4bf26266cd6476f2b11d45d73db55154783308ae3f689ca8fd3b007905093f8
+      full_profiling_report_sha256: 3162c2114769e2ade08af536195ac3ffcacee44ec76f508f2141b0109faea638
+      evidence_sha256_ledger_sha256: 49e3eec5209106b6ec0c52959603f91f89788c35ec51b35364b9e766f7c86de4
+      conclusion: main_assist_eliminates_qk_prep_pool_tail_and_helps_repeat10_but_does_not_stably_shorten_repeat1_qkv_and_complete_host
+      reopen_condition: only_with_shared_continuation_or_work_stealing_that_does_not_extend_hmx_lifetime_or_perturb_downstream_scheduling_not_another_synchronous_post_feed_assist
   - id: EXP-0001
     slug: fastrpc-bringup
     title: FastRPC U8 vector bring-up
