@@ -1,4 +1,5 @@
 /build-*/
+/build/
 /android_*/
 /hexagon_*/
 /.cache/
