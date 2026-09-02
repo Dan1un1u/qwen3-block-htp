@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0154
+  active_experiment: null
   next_experiment_number: 155
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,17 +27,43 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_layers0_27_real_replay_prefill_continuous_decode_full_transformer_stack
-  last_completed_experiment: EXP-0153
+  last_completed_experiment: EXP-0154
   last_completed_source_commit: 21ea7dac13f6da7da3c22bb262fe5a7044ee96e9
-  provisional_source_parent: EXP-0152_full_stack_rpcmem2_pass
+  provisional_source_parent: EXP-0153_corrected_full_stack_profiling_source
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: EXP0154_approved_pending_source_preflight
+  active_experiment_stage: none
   active_experiment_evidence: null
-  active_experiment_gate: fresh_clean_build_device_mapping_ten_rotated_three_recipe_profile_reproduction
+  active_experiment_gate: none
   active_recipe_specialization: none_instrumentation_only
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0153/20260902_ledger_closure_formal/final'
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0154/20260902_profile_rerun_v1/final'
+  latest_profiling_reproduction:
+    id: EXP-0154
+    source_branch: codex/exp-0154-full-stack-profile-rerun
+    source_head: 21ea7dac13f6da7da3c22bb262fe5a7044ee96e9
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0154/20260902_profile_rerun_v1/final'
+    evidence_validity: valid
+    execution_state: completed
+    local_gate: pass
+    adoption_status: not_applicable
+    selected_baseline_changed: false
+    instrumentation_only: true
+    formal_replay_record_count: 270
+    maximum_DSP_invocation_residual_percent: 0.014644579115813195
+    maximum_per_layer_residual_percent: 0.06271643988765577
+    maximum_complete_ledger_unattributed_ticks: 0
+    prefill_repeat10_us: {f16f16: 94320.5, w4f16: 118158.7, w4u8: 53509.9}
+    prefill_KV_cache_carrier_conversion_us: {f16f16: 26497.4, w4f16: 63718.2, w4u8: 9490.0}
+    decode_repeat10_us: {f16f16: 96286.1, w4f16: 84252.4, w4u8: 363509.0}
+    decode_attention_us: {f16f16: 33236.1, w4f16: 33432.8, w4u8: 324529.1}
+    decode_w4u8_K_pack_us: 109957.839
+    decode_w4u8_V_pack_us: 207208.750
+    conclusion: EXP0153_corrected_ledger_reproduces_and_identifies_persistent_cache_physical_format_as_the_common_prefill_and_decode_bottleneck
+    next_priority: separately_registered_persistent_HMX_native_KV_cache_ABI_gate
+    gate_summary_sha256: 21992ab731869146d6ca8dbfa43f1243972a53e6307a4b95869bbcfdf96aed73
+    full_profiling_report_sha256: 1656b1e952e727ad952b28384d901ad97ec775cbc7330e230b69c7e52c465a7a
+    evidence_sha256_ledger_sha256: 59d250408a81a652a8613e4b31ec958154c534c291cffbdf3b3bc58664603932
   latest_profiling_closure:
     id: EXP-0153
     source_branch: codex/exp-0153-full-stack-profiling-closure

@@ -14,14 +14,15 @@ experiments:
       - f16f16_layers0_27_profile_reproduction
       - w4f16_layers0_27_profile_reproduction
       - w4u8_layers0_27_profile_reproduction
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: not_applicable
     evidence_profile: instrumentation-only-fresh-build-fresh-device-three-recipe-rotated-full-stack-profile-reproduction
     source_branches:
       - codex/exp-0154-full-stack-profile-rerun
-    source_commits: []
+    source_commits:
+      - 21ea7dac13f6da7da3c22bb262fe5a7044ee96e9
     record: docs/experiments/EXP-0154.md
     approval_ref: 'User message 2026-09-02: 请重新跑一次最新profiling结果并报告，然后讨论下一步改进方向（主要是kv cache问题）'
     runtime:
@@ -29,6 +30,7 @@ experiments:
       source_branch: codex/exp-0154-full-stack-profile-rerun
       approved_on: '2026-09-02'
       started_on: '2026-09-02'
+      completed_on: '2026-09-02'
     evidence:
       source_parent_experiment: EXP-0153
       source_parent_commit: 21ea7dac13f6da7da3c22bb262fe5a7044ee96e9
@@ -44,6 +46,34 @@ experiments:
       stop_conditions: any_source_or_model_change_or_any_mapping_correctness_physical_or_ledger_gate_failure_or_device_reboot
       completion_gate: synchronized_parent_then_clean_build_and_deploy_then_mapping_then_ten_rotated_rounds_then_corrected_PC027_PC028_report
       selected_baseline_changed: false
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0154/20260902_profile_rerun_v1/final'
+      closure_source_commit: 21ea7dac13f6da7da3c22bb262fe5a7044ee96e9
+      clean_build_result: pass
+      local_device_binary_hash_match: true
+      device_boot_id: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      mapping_gate_result: pass
+      correctness_gate_result: pass_inherited_scheme1_FP16_and_independent_exact_W4U8_authorities_plus_all_fresh_replay_completions
+      physical_gate_result: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN
+      profiling_gate_result: pass_all_270_records_complete_and_per_layer_ledgers_below_0p1_percent_unattributed
+      maximum_DSP_invocation_residual_percent: 0.014644579115813195
+      maximum_per_layer_residual_percent: 0.06271643988765577
+      maximum_complete_ledger_unattributed_ticks: 0
+      prefill_repeat10_host_us: {f16f16: 94320.5, w4f16: 118158.7, w4u8: 53509.9}
+      prefill_repeat10_tokens_per_second: {f16f16: 678.537, w4f16: 541.644, w4u8: 1196.040}
+      prefill_KV_cache_carrier_conversion_us: {f16f16: 26497.4, w4f16: 63718.2, w4u8: 9490.0}
+      prefill_KV_cache_carrier_conversion_host_percent: {f16f16: 28.1, w4f16: 53.9, w4u8: 17.7}
+      decode_repeat10_host_us: {f16f16: 96286.1, w4f16: 84252.4, w4u8: 363509.0}
+      decode_repeat10_tokens_per_second: {f16f16: 10.386, w4f16: 11.869, w4u8: 2.751}
+      decode_attention_us: {f16f16: 33236.1, w4f16: 33432.8, w4u8: 324529.1}
+      decode_w4u8_K_pack_us: 109957.839
+      decode_w4u8_V_pack_us: 207208.750
+      reproduction_delta_vs_EXP0153_prefill_percent: {f16f16: -0.4168, w4f16: 0.0199, w4u8: -0.3957}
+      reproduction_delta_vs_EXP0153_decode_percent: {f16f16: -0.8054, w4f16: 0.1247, w4u8: -0.3289}
+      conclusion: corrected_ledger_and_KV_cache_bottlenecks_reproduce; W4F16_prefill_is_dominated_by_projection_carrier_to_row_major_cache_conversion_and_W4U8_decode_by_full_prefix_row_major_to_HMX_KV_repacking
+      next_priority: separately_register_persistent_HMX_native_KV_cache_ABI_gate_starting_with_W4U8_prefill_to_continuous_decode_then_adapt_to_W4F16
+      gate_summary_sha256: 21992ab731869146d6ca8dbfa43f1243972a53e6307a4b95869bbcfdf96aed73
+      full_profiling_report_sha256: 1656b1e952e727ad952b28384d901ad97ec775cbc7330e230b69c7e52c465a7a
+      evidence_sha256_ledger_sha256: 59d250408a81a652a8613e4b31ec958154c534c291cffbdf3b3bc58664603932
   - id: EXP-0153
     slug: full-stack-profiling-closure
     title: Exact 28-layer profiling closure and KV-cache append attribution
