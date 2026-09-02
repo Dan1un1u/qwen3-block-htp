@@ -13,14 +13,15 @@ experiments:
     variants:
       - w4u8_delta_journal_serial_reconstruction_control
       - w4u8_delta_journal_group_pipeline_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: full-stack-W4U8-prefill-continuous-decode-group-pipelined-delta-tail-reconstruction
     source_branches:
       - codex/exp-0160-w4u8-delta-reconstruction-pipeline
-    source_commits: []
+    source_commits:
+      - b33e88e3971c35851450d0737a0689bd0bd077aa
     record: docs/experiments/EXP-0160.md
     approval_ref: 'User message 2026-09-02: 同意晋升，继续下一步实验'
     runtime:
@@ -45,6 +46,19 @@ experiments:
       prefill_preservation_gate: candidate_M64_prefill_Host_wall_at_most_1p01_times_same_binary_control
       completion_gate: instrumentation_closure_then_bounded_smoke_then_28_layer_correctness_and_physical_gates_then_ten_rotated_same_binary_control_candidate_replays
       selected_baseline_changed: false
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0160/20260902T141223Z_b33e88e3971c_formal'
+      source_commit: b33e88e3971c35851450d0737a0689bd0bd077aa
+      completed_on: '2026-09-02'
+      formal_result: pass
+      serial_prefill_host_us: 43992.761
+      pipeline_prefill_host_us: 43936.433
+      serial_decode_host_us_per_token: 50293.320
+      pipeline_decode_host_us_per_token: 49042.240
+      serial_decode_attention_us: 10128.688
+      pipeline_decode_attention_us: 8962.383
+      decode_speed_improvement_percent: 2.551
+      decode_attention_speed_improvement_percent: 13.013
+      all_gates_pass: true
   - id: EXP-0159
     slug: w4u8-delta-journal-cache
     title: Compact delta journal for persistent W4U8 HMX-native KV cache

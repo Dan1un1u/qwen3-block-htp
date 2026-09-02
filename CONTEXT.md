@@ -966,13 +966,17 @@ changed Softmax approximation, changed projection schedule, A16 modification,
 automatic extrapolation beyond positions 64-71
 
 **Group-Pipelined Delta-Tail Reconstruction Candidate**:
-The approved EXP-0160 W4U8-only experiment that retains the accepted EXP-0159
+The completed, local-gate-passing EXP-0160 W4U8-only experiment that retains the accepted EXP-0159
 persistent cache ABI and arithmetic while changing only its decode Attention
 consumer. It tests direct compact-base DMA into final HMX locations, clearing
 only the unpopulated tail, and a two-slot GQA group pipeline so DMA/HVX work for
 group g+1 overlaps HMX work for group g. The target is to recover the 2.859 ms
 Attention tax observed when EXP-0159 moved cache work from persistent DDR
-read-modify-write to VTCM reconstruction.
+read-modify-write to VTCM reconstruction. Ten rotated same-binary replays show
+QK-Softmax-AV improving from 10.129 to 8.962 ms and complete decode improving
+from 50.293 to 49.042 ms/token, with exact outputs/cache, unchanged HMX work,
+8 MiB VTCM and zero intermediate DDR/spill. Adoption is still pending explicit
+user approval.
 _Avoid_: changed cache contents, qparams, Softmax approximation, HMX command
 count, projection scheduling, A16 changes, intermediate DDR, claimed overlap
 without complete Host-wall improvement

@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0160
+  active_experiment: null
   next_experiment_number: 161
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,29 +27,52 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_layers0_27_real_replay_prefill_continuous_decode_full_transformer_stack
-  last_completed_experiment: EXP-0159
-  last_completed_source_commit: 4c27bea705c21835b7f444841096a9d6828048cd
+  last_completed_experiment: EXP-0160
+  last_completed_source_commit: b33e88e3971c35851450d0737a0689bd0bd077aa
   provisional_source_parent: selected_EXP0159_full_stack_W4U8_delta_journal_baseline
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: approved
+  active_experiment_stage: completed
   active_experiment_evidence: null
-  active_experiment_gate: static_then_same_binary_full_stack_correctness_physical_and_rotated_pair_profile
-  active_recipe_specialization: W4U8_group_pipelined_delta_tail_reconstruction
-  active_experiment_contract:
+  active_experiment_gate: null
+  active_recipe_specialization: null
+  active_experiment_contract: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0160/20260902T141223Z_b33e88e3971c_formal'
+  latest_w4u8_delta_reconstruction_candidate:
     id: EXP-0160
     source_branch: codex/exp-0160-w4u8-delta-reconstruction-pipeline
-    source_parent: EXP-0159
-    source_parent_commit: 4c27bea705c21835b7f444841096a9d6828048cd
-    direct_control: selected_EXP0159_compact_M64_HMX_base_plus_U8_delta_journal_with_serial_tail_reconstruction
-    candidate: direct_final_layout_base_placement_minimal_tail_clear_and_two_slot_group_pipeline_overlapping_DMA_HVX_reconstruction_with_HMX
-    required_unchanged: persistent_cache_ABI_package_journal_append_qparams_W4_values_Attention_math_HMX_commands_tile_pairs_projection_schedules_A16_paths
-    correctness_gate: exact_zero_LSB_all_nine_outputs_and_all_cache_references
-    structural_gate: no_full_carrier_clear_no_intermediate_V_base_staging_copy_and_no_DDR_native_tile_RMW_or_full_prefix_pack
-    physical_gate: exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_step_one_HMX_owner_no_QNN
-    speed_gate: candidate_decode_Host_wall_strictly_below_same_binary_EXP0159_control_and_selected_50p249834_ms_per_token_with_prefill_within_1_percent
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0159/20260902T130337Z_4c27bea705c2_formal'
+    source_head: b33e88e3971c35851450d0737a0689bd0bd077aa
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0160/20260902T141223Z_b33e88e3971c_formal'
+    retained_candidate_package: 'D:/llm_exp/models/qwen3-block-htp/exp0159/w4u8_hmx_delta_v2_compact'
+    evidence_validity: valid
+    execution_state: completed
+    local_gate: pass
+    adoption_status: pending
+    selected_baseline_changed: false
+    execution_unit: real_Qwen3_layers0_27_M64_prefill_continuous_decode_positions64_71
+    control: same_binary_serial_compact_base_and_delta_tail_reconstruction
+    candidate: direct_final_layout_base_DMA_minimal_tail_clear_and_two_slot_GQA_group_pipeline
+    correctness_gate: pass_zero_LSB_all_nine_outputs_and_all_cache_references
+    structural_gate: pass_direct_V_2D_DMA_no_full_prefix_pack_no_persistent_tile_RMW_and_two_VTCM_attention_slots
+    physical_gate: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_step_one_HMX_owner_no_QNN
+    unchanged_compute_gate: pass_identical_HMX_command_tile_pair_projection_weight_and_cache_byte_contract
+    prefill_host_us: {serial: 43992.761, pipeline: 43936.433}
+    prefill_tokens_per_second: {serial: 1454.785, pipeline: 1456.650}
+    prefill_speed_improvement_percent: 0.128
+    decode_host_us_per_token: {serial: 50293.320, pipeline: 49042.240}
+    decode_tokens_per_second: {serial: 19.883, pipeline: 20.391}
+    decode_speed_improvement_percent: 2.551
+    decode_attention_us: {serial: 10128.688, pipeline: 8962.383}
+    decode_attention_speed_improvement_percent: 13.013
+    serial_attention_overlay_required_bytes: 38656
+    pipeline_attention_overlay_required_bytes: 77824
+    conclusion: two_slot_cross_group_DMA_HVX_HMX_overlap_recovers_1p166_ms_of_decode_Attention_and_1p251_ms_end_to_end_without_changing_cache_or_compute_contract
+    next_priority: user_adoption_decision_then_longer_KV_length_segmented_cache_validation
+    full_profiling_report_sha256: 618aa4d24045e1523bd0d605997e482fc8b18c9d8cea8cee84f8ad28fa9caaeb
+    summary_sha256: 0bfba5d13c800ceca16b3c39b55576ca9545dcea2a073011340287ee7069ec99
+    evidence_sha256_ledger_sha256: 83f05720fd4a83860011fb432cd8aa1d16e82e571ba3a03e93c98bee605f465d
+    package_manifest_sha256: d15cac4cde14a79dac25ad0e4b78830ccb87dd8a79ec68c404c71fc384bdf667
   latest_w4u8_delta_journal_candidate:
     id: EXP-0159
     source_branch: codex/exp-0159-w4u8-delta-journal-cache
