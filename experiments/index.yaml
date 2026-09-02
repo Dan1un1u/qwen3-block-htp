@@ -6,6 +6,46 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0157
+    slug: w4u8-prefill-hmx-carrier-reuse
+    title: Reuse prefill HMX carriers for persistent W4U8 KV cache
+    parent: EXP-0156
+    variants:
+      - w4u8_hmx_native_duplicate_prefill_carrier_control
+      - w4u8_hmx_native_reused_prefill_carrier_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: full-stack-prefill-continuous-decode-prefill-HMX-carrier-reuse
+    source_branches:
+      - codex/exp-0157-w4u8-prefill-hmx-carrier-reuse
+    source_commits: []
+    record: docs/experiments/EXP-0157.md
+    approval_ref: 'User message 2026-09-02: 同意，继续修复'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0157-w4u8-prefill-hmx-carrier-reuse
+      approved_on: '2026-09-02'
+      started_on: '2026-09-02'
+      completed_on: null
+    evidence:
+      source_parent_experiment: EXP-0156
+      source_parent_commit: 5cec25408a33ed5a670bc5e97761296bc874bdc3
+      execution_unit: real_Qwen3_layers0_27_M64_prefill_then_continuous_decode_positions64_through71
+      recipe_scope: W4U8_only
+      implementation_boundary: change_only_prefill_persistent_HMX_cache_initialization_and_required_VTCM_lifetime_DMA_handoff
+      direct_control: EXP0156_HMX_native_W4U8_with_duplicate_post_Attention_prefill_carrier_construction
+      candidate_contract: reuse_or_directly_DMA_QK_and_AV_prefill_HMX_carriers_and_initialize_only_unused_padded_tail_tile
+      forbidden_changes: decode_cache_update_or_consumption_projection_kernels_Attention_math_MLP_qparams_W4_values_cache_ABI_row_major_intermediate_Host_repack_or_DDR_workspace
+      correctness_gate: exact_zero_LSB_nine_full_stack_outputs_all_logical_caches_and_all_retained_HMX_carriers
+      structural_gate: zero_duplicate_prefill_full_carrier_construction_and_zero_decode_complete_prefix_pack_for_all_28_layers
+      physical_gate: exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_full_stack_step_one_HMX_owner_no_QNN
+      prefill_speed_gate: candidate_M64_prefill_Host_wall_strictly_below_EXP0156_HMX_native_control
+      decode_preservation_gate: candidate_continuous_decode_Host_wall_at_most_1p02_times_same_binary_direct_control
+      stop_conditions: any_correctness_structural_physical_or_speed_gate_failure_or_device_reboot
+      completion_gate: static_and_package_audit_then_full_stack_correctness_and_physical_gates_then_rotated_pair_prefill_and_decode_profile
+      selected_baseline_changed: false
   - id: EXP-0156
     slug: w4u8-hmx-native-kv-cache-full-stack-scaling
     title: Full-stack scaling of persistent HMX-native W4U8 KV cache
