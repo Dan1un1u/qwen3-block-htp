@@ -6,6 +6,47 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0155
+    slug: w4u8-hmx-native-kv-cache
+    title: Persistent HMX-native W4U8 KV-cache ABI gate
+    parent: EXP-0154
+    variants:
+      - w4u8_layer14_row_major_cache_control
+      - w4u8_layer14_hmx_native_cache_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: one-real-layer-prefill-continuous-decode-versioned-persistent-HMX-native-W4U8-KV-cache
+    source_branches:
+      - codex/exp-0155-w4u8-hmx-native-kv-cache
+    source_commits: []
+    record: docs/experiments/EXP-0155.md
+    approval_ref: 'User message 2026-09-02: 同意方向，开始吧'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0155-w4u8-hmx-native-kv-cache
+      approved_on: '2026-09-02'
+      started_on: '2026-09-02'
+    evidence:
+      source_parent_experiment: EXP-0154
+      source_parent_commit: 21ea7dac13f6da7da3c22bb262fe5a7044ee96e9
+      implementation_parent: EXP-0153_corrected_full_stack_profiling_source
+      execution_unit: real_Qwen3_layer14_M64_prefill_then_continuous_decode_positions64_through71
+      recipe_scope: W4U8_only
+      implementation_boundary: replace_only_W4U8_persistent_KV_cache_physical_ABI_append_and_attention_consumption_without_changing_projection_Softmax_MLP_qparams_or_recipe_math
+      control_contract: byte_identical_existing_row_major_cache_W4U8_path_from_source_parent
+      candidate_contract: versioned_HMX_native_tiled_K_and_V_persistent_cache_with_only_current_token_tile_incrementally_updated_and_no_hot_path_row_major_duplicate
+      persistent_DDR_contract: only_immutable_weights_and_the_versioned_persistent_KV_cache_are_legal_DDR_tensors
+      audit_contract: offline_or_non_profiled_logical_cache_unpack_is_allowed_only_for_exact_reference_comparison
+      correctness_gate: exact_zero_LSB_block_output_and_logical_KV_cache_after_prefill_and_after_each_decode_step_against_the_existing_independent_integer_reference
+      structural_gate: decode_complete_prefix_K_pack_and_V_pack_counters_are_zero_and_append_work_is_bounded_by_the_current_tile_not_cache_length
+      physical_gate: exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN
+      speed_gate: candidate_complete_single_layer_continuous_decode_Host_wall_must_not_exceed_the_row_major_control
+      stop_conditions: any_correctness_structural_physical_or_speed_gate_failure_or_device_reboot
+      completion_gate: versioned_ABI_static_audit_then_single_layer_control_and_candidate_correctness_and_physical_gates_then_rotated_wall_clock_profile
+      expansion_gate: a_passing_single_layer_gate_requires_a_separate_experiment_before_any_28_layer_integration
+      selected_baseline_changed: false
   - id: EXP-0154
     slug: full-stack-profile-rerun
     title: Fresh reproduction of the corrected 28-layer profiling ledger
