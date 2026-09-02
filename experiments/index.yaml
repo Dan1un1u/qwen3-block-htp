@@ -6,6 +6,49 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0153
+    slug: full-stack-profiling-closure
+    title: Exact 28-layer profiling closure and KV-cache append attribution
+    parent: EXP-0152
+    variants:
+      - f16f16_layers0_27_attribution_only
+      - w4f16_layers0_27_attribution_only
+      - w4u8_layers0_27_attribution_only
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: not_applicable
+    evidence_profile: instrumentation-only-three-recipe-full-stack-prefill-and-continuous-decode-ledger-closure
+    source_branches:
+      - codex/exp-0153-full-stack-profiling-closure
+    source_commits: []
+    record: docs/experiments/EXP-0153.md
+    approval_ref: 'User message 2026-09-02: 要首先解决一下闭合项问题，这个值太大了，使得我们的数据没有意义'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0153-full-stack-profiling-closure
+      approved_on: '2026-09-02'
+      started_on: '2026-09-02'
+    evidence:
+      source_parent_experiment: EXP-0152
+      source_parent_commit: f64104da172510753be67056967e80770b181e76
+      execution_unit: unchanged_EXP0152_real_layers0_27_prefill_plus_eight_continuous_decode_steps
+      implementation_boundary: instrumentation_and_report_only_no_kernel_recipe_schedule_layout_cache_ABI_or_model_artifact_change
+      observed_problem: EXP0152_PC028_mislabels_stage_boundary_ticks_as_Host_RPC_closure_and_omits_KV_cache_append_carrier_conversion
+      initial_prefill_host_us: {f16f16: 94294.1, w4f16: 118109.2, w4u8: 53624.7}
+      initial_prefill_stage_boundary_us: {f16f16: 27090.9, w4f16: 64345.3, w4u8: 9884.4}
+      initial_prefill_cache_append_dma_us: {f16f16: 564.9, w4f16: 595.3, w4u8: 329.5}
+      initial_prefill_non_DMA_boundary_residual_us: {f16f16: 26526.0, w4f16: 63750.0, w4u8: 9554.9}
+      initial_host_minus_DSP_invocation_us: {f16f16: 2251.6, w4f16: 608.8, w4u8: 2188.3}
+      attribution_contract: explicit_KV_carrier_pack_or_unpack_cache_DMA_layer_bookkeeping_runtime_setup_teardown_and_true_Host_minus_DSP_invocation
+      per_layer_contract: each_layer_total_equals_all_explicit_layer_intervals_plus_residual
+      correctness_gate: preserve_EXP0152_scheme1_FP16_and_exact_zero_LSB_W4U8_results
+      physical_gate: preserve_EXP0152_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN
+      profiling_gate: every_recipe_prefill_and_decode_DSP_invocation_and_each_layer_ledger_closure_error_at_most_0p1_percent_and_PC028_contains_no_mixed_Host_RPC_closure_bucket
+      speed_gate: not_applicable_instrumentation_only
+      stop_conditions: any_recipe_math_schedule_layout_cache_ABI_model_package_or_execution_scope_change_or_any_correctness_or_physical_regression
+      completion_gate: static_build_then_three_recipe_correctness_and_physical_gates_then_ten_rotated_full_stack_rounds_and_corrected_PC027_PC028_report
+      selected_baseline_changed: false
   - id: EXP-0152
     slug: full-stack-rpcmem2-resume
     title: Real 28-layer Qwen3 full-stack resume on one rpcmem_alloc2 arena

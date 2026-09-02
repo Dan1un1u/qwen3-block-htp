@@ -19,8 +19,8 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 153
+  active_experiment: EXP-0153
+  next_experiment_number: 154
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -33,10 +33,10 @@ current_scope:
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: none
-  active_experiment_evidence: null
-  active_experiment_gate: none
-  active_recipe_specialization: none
+  active_experiment_stage: EXP0153_instrument_KV_cache_append_and_repair_full_stack_PC027_PC028_closure
+  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0152/20260901T193925Z_f64104d_formal'
+  active_experiment_gate: pending_three_recipe_DSP_and_per_layer_closure_at_most_0p1_percent_without_mixed_Host_RPC_remainder
+  active_recipe_specialization: none_instrumentation_only
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0152/20260901T193925Z_f64104d_formal'
   latest_full_transformer_stack:
     id: EXP-0152
