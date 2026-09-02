@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0161
+  active_experiment: null
   next_experiment_number: 162
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,31 +27,72 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_layers0_27_real_replay_prefill_continuous_decode_full_transformer_stack
-  last_completed_experiment: EXP-0160
-  last_completed_source_commit: b33e88e3971c35851450d0737a0689bd0bd077aa
+  last_completed_experiment: EXP-0161
+  last_completed_source_commit: efea24712241dbcb62f468665b98c758c5ef5461
   provisional_source_parent: selected_EXP0160_full_stack_W4U8_pipelined_delta_reconstruction_baseline
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: running
-  active_experiment_evidence: null
-  active_experiment_gate: characterize_monolithic_length_scaling_then_segmented_cache_micrograph_correctness_physical_and_wall_speed
-  active_recipe_specialization: W4U8_long_KV_segmented_cache_native_attention
-  active_experiment_contract:
+  active_experiment_stage: completed_awaiting_adoption_decision
+  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0161/20260902T191200Z_efea24712241_phase_b'
+  active_experiment_gate: all_EXP0161_candidate_gates_passed
+  active_recipe_specialization: W4U8_long_KV_segmented_cache_native_attention_candidate
+  active_experiment_contract: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0161/20260902T191200Z_efea24712241_phase_b'
+  latest_w4u8_segmented_long_kv_candidate:
     id: EXP-0161
     source_branch: codex/exp-0161-w4u8-segmented-long-kv-cache
-    source_parent: EXP-0160
-    source_parent_commit: b33e88e3971c35851450d0737a0689bd0bd077aa
-    phase_a: characterize_selected_EXP0160_monolithic_delta_reconstruction_at_L64_L256_L1024_L4096
-    phase_b_trigger: full_length_reconstruction_cost_or_two_slot_VTCM_capacity_is_material
-    phase_b_candidate: immutable_32_token_HMX_native_segments_plus_compact_active_tail_with_segment_streamed_QK_and_AV
-    execution_scope: synthetic_single_real_layer14_decode_snapshot_with_independent_CPU_reference_not_continuous_decode
-    required_unchanged: W4U8_qparams_W4_values_QK_Softmax_AV_math_projection_kernels_and_one_HMX_owner
-    correctness_gate: exact_zero_LSB_block_output_and_cache_append_at_each_test_length
-    physical_gate: exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_block_no_QNN
-    structural_gate: candidate_attention_scratch_bounded_by_segment_size_no_full_prefix_pack_and_only_active_tail_mutable
-    speed_gate: candidate_not_slower_at_L64_and_strictly_faster_than_best_valid_monolithic_control_at_L256_L1024_L4096
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0160/20260902T141223Z_b33e88e3971c_formal'
+    source_head: efea24712241dbcb62f468665b98c758c5ef5461
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0161/20260902T191200Z_efea24712241_phase_b'
+    retained_exact_logical_sources: 'D:/llm_exp/models/qwen3-block-htp/exp0161/exact_logical_v1'
+    retained_control_packages: 'D:/llm_exp/models/qwen3-block-htp/exp0161/decode_l{64,256,1024,4096}_w4u8_hmx_delta_v3_exact'
+    retained_candidate_packages: 'D:/llm_exp/models/qwen3-block-htp/exp0161/decode_l{64,256,1024,4096}_w4u8_hmx_segmented_v4c_exact'
+    evidence_validity: valid
+    execution_state: completed
+    local_gate: pass
+    adoption_status: pending
+    selected_baseline_changed: false
+    selected_baseline_remains: EXP-0160
+    execution_unit: synthetic_single_real_layer14_decode_snapshot_at_L64_L256_L1024_L4096
+    candidate_cache_contract: immutable_32_token_HMX_native_segments_plus_one_mutable_32_token_tail
+    long_attention_contract: fixed_26_slot_double_bank_HVX_path_with_one_HMX_owner
+    reference_correction: replaced_EXP0147_legacy_device_dump_current_KV_row_with_independent_exact_host_HMX_HVX_reference
+    correctness_gate: pass_candidate_zero_LSB_block_output_and_current_KV_append_at_all_lengths
+    control_numerical_diagnostic: L4096_monolithic_HMX_control_max_2_LSB_output_difference_cache_append_zero_LSB
+    physical_gate: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_block_no_QNN
+    structural_gate: pass_zero_full_prefix_pack_fixed_long_attention_overlay_only_active_tail_mutable
+    speed_gate: pass_repeat10_five_round_paired_median
+    wall_us_repeat10:
+      L64: {control: 1802.6041, candidate: 1807.9531}
+      L256: {control: 3022.5937, candidate: 2226.0781}
+      L1024: {control: 7869.0886, candidate: 3798.9583}
+      L4096: {control: 27280.3593, candidate: 9291.2083}
+    paired_speed_improvement_percent:
+      L64: 0.038487342431503535
+      L256: 35.26009821594294
+      L1024: 106.61170175371085
+      L4096: 193.86466172314113
+    paired_median_candidate_minus_control_us:
+      L64: -0.6927000000000589
+      L256: -794.0521000000003
+      L1024: -4057.0677000000005
+      L4096: -17997.0521
+    candidate_attention_us:
+      L64: 308.219
+      L256: 734.026
+      L1024: 2420.219
+      L4096: 7923.760
+    fixed_long_attention_overlay_bytes: 2641920
+    conclusion: segmented_KV_removes_monolithic_full_prefix_reconstruction_and_changes_long_context_scaling_from_27p280_ms_to_9p291_ms_at_L4096_without_candidate_numerical_or_physical_contract_regression
+    next_priority: explicit_user_adoption_then_validate_segmented_cache_in_continuous_multilayer_decode_and_design_segment_sealing_lifecycle
+    phase_b_report_sha256: e0bc0911c250c921dd56f81f6a7005958c452688a9774e59bfbd84a6a89151ff
+    phase_b_summary_sha256: c063ee0e903ec962df9bb95c9345b350217b4e8adde42307d742af86fc83ec9d
+    evidence_sha256_ledger_sha256: 60af22930c9bd133f93b0b4edba737ffa27975c365b99625e49366618ee45e58
+    candidate_manifest_sha256:
+      L64: 03f3dff7160d8cd42769b31d44edbbcc616f39753b4bef838f863c7eb8ba86a6
+      L256: 82b7652c60e6a6d5863745c07149e997f4f129454ce6b0f7ddb85b1a719a2843
+      L1024: 0d3f0fb9b88107da8985c8a8399f6017faa9aad1cde441b6842d279c67a2c2d6
+      L4096: aec0ddfa3cfd23dc5bfda6083e326cabc153c4c217e23f64bd43870803170a33
   latest_w4u8_delta_reconstruction_candidate:
     id: EXP-0160
     source_branch: codex/exp-0160-w4u8-delta-reconstruction-pipeline

@@ -13,26 +13,28 @@ experiments:
     variants:
       - selected_exp0160_monolithic_delta_reconstruction_control
       - segment_sealed_hmx_native_cache_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: W4U8-layer14-long-KV-cache-consumer-scan-and-segmented-Attention
     source_branches:
       - codex/exp-0161-w4u8-segmented-long-kv-cache
-    source_commits: []
+    source_commits:
+      - efea24712241dbcb62f468665b98c758c5ef5461
     record: docs/experiments/EXP-0161.md
     approval_ref: 'User message 2026-09-02: 同意晋升，继续下一步'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0161-w4u8-segmented-long-kv-cache
       approved_on: '2026-09-02'
+      completed_on: '2026-09-02'
     evidence:
       source_parent_experiment: EXP-0160
       source_parent_commit: b33e88e3971c35851450d0737a0689bd0bd077aa
       execution_unit: synthetic_single_real_layer14_decode_snapshot_at_declared_KV_length
       continuous_decode_claim: false
-      independent_reference_source: EXP0147_CPU_integer_attention_and_complete_block_reference
+      independent_reference_source: EXP0161_exact_host_HMX_HVX_simulator_after_rejecting_EXP0147_legacy_device_dump_current_KV_golden
       lengths: [64, 256, 1024, 4096]
       phase_a_control: selected_EXP0160_compact_M64_base_plus_full_contiguous_delta_journal_reconstructed_as_one_HMX_carrier
       phase_b_trigger: measured_full_length_reconstruction_tax_or_two_slot_VTCM_capacity_pressure
@@ -41,9 +43,28 @@ experiments:
       correctness_gate: exact_zero_LSB_complete_block_output_and_current_token_cache_append_at_every_length
       physical_gate: exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_block_one_HMX_owner_no_QNN
       structural_gate: candidate_VTCM_Attention_scratch_independent_of_total_KV_length_zero_full_prefix_pack_immutable_sealed_segments_and_only_active_tail_mutable
-      speed_gate: candidate_L64_not_slower_than_selected_control_and_candidate_strictly_faster_than_best_valid_monolithic_control_at_L256_L1024_L4096
+      speed_gate: pass_five_round_repeat10_paired_median_candidate_not_slower_at_L64_and_strictly_faster_at_L256_L1024_L4096
       stop_condition: correctness_or_physical_failure_stops_candidate_before_full_stack_integration
       selected_baseline_changed: false
+      selected_baseline_remains: EXP-0160
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0161/20260902T191200Z_efea24712241_phase_b'
+      correctness_gate_result: pass_candidate_zero_LSB_complete_block_output_and_current_KV_append_at_all_lengths
+      control_numerical_diagnostic: L4096_monolithic_control_max_2_LSB_complete_output_and_zero_LSB_cache_append_timing_only
+      physical_gate_result: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_block_no_QNN
+      structural_gate_result: pass_zero_full_prefix_pack_fixed_2641920_byte_long_attention_overlay_and_only_active_tail_mutable
+      wall_us_repeat10:
+        L64: {control: 1802.6041, candidate: 1807.9531}
+        L256: {control: 3022.5937, candidate: 2226.0781}
+        L1024: {control: 7869.0886, candidate: 3798.9583}
+        L4096: {control: 27280.3593, candidate: 9291.2083}
+      paired_speed_improvement_percent:
+        L64: 0.038487342431503535
+        L256: 35.26009821594294
+        L1024: 106.61170175371085
+        L4096: 193.86466172314113
+      phase_b_report_sha256: e0bc0911c250c921dd56f81f6a7005958c452688a9774e59bfbd84a6a89151ff
+      phase_b_summary_sha256: c063ee0e903ec962df9bb95c9345b350217b4e8adde42307d742af86fc83ec9d
+      evidence_sha256_ledger_sha256: 60af22930c9bd133f93b0b4edba737ffa27975c365b99625e49366618ee45e58
   - id: EXP-0160
     slug: w4u8-delta-reconstruction-pipeline
     title: Pipeline compact W4U8 delta-tail reconstruction with HMX Attention
