@@ -20,12 +20,15 @@ the latest valid F16F16 result, the Selected-Baseline W4F16 result, and the
 latest eligible W4U8 result. Its fixed rows are I/O and metadata, Input
 RMSNorm, QKV plus Q/K Norm-RoPE preparation, QK-Softmax-AV, O projection,
 Post-Attention residual plus RMSNorm, Gate/Up plus SwiGLU, Down projection,
-Final residual, Host/RPC and profiling-closure remainder, and complete Host
-wall. Every module cell contains microseconds and percent of Host wall. The
-last column reports `W4F16_time / W4U8_time - 1`; positive means W4U8 is
-faster. Columns reused from older formal evidence are identified in the text.
-This overview is mandatory even when the new experiment changes only one
-module or one Project Variant.
+Final residual, KV-cache carrier conversion, KV-cache append DMA, block
+internal orchestration, layer bookkeeping, DSP unattributed residual, DSP
+runtime setup/teardown, the true Host-DSP boundary, and complete Host wall.
+The report must never combine Host/RPC time with DSP profiling residual. Every
+module cell contains microseconds and percent of Host wall. The last column
+reports `W4F16_time / W4U8_time - 1`; positive means W4U8 is faster. Columns
+reused from older formal evidence are identified in the text. This overview is
+mandatory even when the new experiment changes only one module or one Project
+Variant.
 
 For repeat one and repeat ten, every numeric row shows the control median,
 candidate median, and candidate-versus-control percentage. The report contains:
@@ -54,6 +57,11 @@ Block Timing Ledger rows are mutually exclusive and may be summed. Engine-work
 and wait counters may overlap one another and are diagnostic only; their table
 must say so explicitly. Bytes or setup work amortized by a Prepared Runtime
 Session are reported per block using the experiment's declared normalization.
+For a completed full-stack profile, every DSP invocation and every per-layer
+ledger must leave at most 0.1 percent unattributed. `Host-DSP boundary` is
+computed directly as Host wall minus DSP invocation for each record and then
+aggregated; it is not obtained by subtracting a reduced module list from Host
+wall.
 
 ## Missing data and closure state
 

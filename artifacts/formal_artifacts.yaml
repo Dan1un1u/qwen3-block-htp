@@ -1,6 +1,12 @@
 schema_version: 1
 project: qwen3-block-htp
 artifacts:
+  - id: EXP-0153-results
+    experiment: EXP-0153
+    kind: formal-result-set
+    path: 'D:\llm_exp\results\qwen3-block-htp\exp0153\20260902_ledger_closure_formal\final'
+    source_commit: 21ea7dac13f6da7da3c22bb262fe5a7044ee96e9
+    manifest: 'D:\llm_exp\results\qwen3-block-htp\exp0153\20260902_ledger_closure_formal\final\gate_summary.json'
   - id: EXP-0152-results
     experiment: EXP-0152
     kind: formal-result-set

@@ -14,14 +14,15 @@ experiments:
       - f16f16_layers0_27_attribution_only
       - w4f16_layers0_27_attribution_only
       - w4u8_layers0_27_attribution_only
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: not_applicable
     evidence_profile: instrumentation-only-three-recipe-full-stack-prefill-and-continuous-decode-ledger-closure
     source_branches:
       - codex/exp-0153-full-stack-profiling-closure
-    source_commits: []
+    source_commits:
+      - 21ea7dac13f6da7da3c22bb262fe5a7044ee96e9
     record: docs/experiments/EXP-0153.md
     approval_ref: 'User message 2026-09-02: 要首先解决一下闭合项问题，这个值太大了，使得我们的数据没有意义'
     runtime:
@@ -29,6 +30,7 @@ experiments:
       source_branch: codex/exp-0153-full-stack-profiling-closure
       approved_on: '2026-09-02'
       started_on: '2026-09-02'
+      completed_on: '2026-09-02'
     evidence:
       source_parent_experiment: EXP-0152
       source_parent_commit: f64104da172510753be67056967e80770b181e76
@@ -48,6 +50,22 @@ experiments:
       speed_gate: not_applicable_instrumentation_only
       stop_conditions: any_recipe_math_schedule_layout_cache_ABI_model_package_or_execution_scope_change_or_any_correctness_or_physical_regression
       completion_gate: static_build_then_three_recipe_correctness_and_physical_gates_then_ten_rotated_full_stack_rounds_and_corrected_PC027_PC028_report
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0153/20260902_ledger_closure_formal/final'
+      closure_source_commit: 21ea7dac13f6da7da3c22bb262fe5a7044ee96e9
+      mapping_gate_result: pass
+      correctness_gate_result: pass_inherited_EXP0152_scheme1_FP16_and_exact_zero_LSB_W4U8
+      physical_gate_result: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_standalone_FastRPC_no_QNN
+      profiling_gate_result: pass_all_270_records_DSP_invocation_and_each_layer_below_0p1_percent_unattributed
+      maximum_DSP_invocation_residual_percent: 0.014069716464626897
+      maximum_per_layer_residual_percent: 0.04793715593492918
+      maximum_complete_ledger_unattributed_ticks: 0
+      prefill_repeat10_host_us: {f16f16: 94715.3, w4f16: 118135.2, w4u8: 53722.5}
+      prefill_KV_cache_carrier_conversion_us: {f16f16: 26494.2, w4f16: 63715.7, w4u8: 9489.0}
+      prefill_true_Host_DSP_boundary_us: {f16f16: 2236.0, w4f16: 557.2, w4u8: 2393.6}
+      conclusion: old_mixed_closure_bucket_was_DSP_side_projection_carrier_to_persistent_KV_cache_conversion_not_Host_RPC_overhead
+      gate_summary_sha256: b7ee73c11f070c31ad7a546500545f4080125b2a1484f6388f79dd85d42f1dea
+      full_profiling_report_sha256: 3e96956234df52056cbe17e426c1cc7601c227ca6897ecaa269c5bfbe40a67c3
+      evidence_sha256_ledger_sha256: 2b4891fb89de1197dcf88cc3320fa37a6be7e1a14e9cf2072380392be3a1cccd
       selected_baseline_changed: false
   - id: EXP-0152
     slug: full-stack-rpcmem2-resume
