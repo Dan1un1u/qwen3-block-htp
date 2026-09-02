@@ -18,7 +18,7 @@ experiments:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending
+    adoption_status: accepted
     evidence_profile: full-stack-two-A16-recipe-prefill-continuous-decode-HMX-native-KV-cache-parity
     source_branches:
       - codex/exp-0158-a16-hmx-native-kv-cache-parity
@@ -48,7 +48,14 @@ experiments:
       fairness_gate: both_A16_recipes_receive_the_same_cache_native_lifetime_and_incremental_update_principle_with_recipe_specific_carrier_encoding_only
       stop_conditions: any_correctness_structural_physical_or_two_recipe_speed_gate_failure_or_device_reboot
       completion_gate: static_and_package_audit_then_single_layer_smoke_for_each_recipe_then_28_layer_correctness_and_physical_gates_then_rotated_four_variant_profile
-      selected_baseline_changed: false
+      selected_baseline_changed: true
+      promoted_as: selected_full_stack_f16f16_and_w4f16_cache_native_baselines
+      promoted_baselines:
+        - selected_f16f16_full_stack_cache_native_baseline
+        - selected_w4f16_full_stack_cache_native_baseline
+      promoted_by: user
+      promoted_on: '2026-09-02'
+      promotion_ref: 'User message 2026-09-02: 同意，进行晋升'
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0158/20260902T071708Z_264c911a65a3_formal'
       retained_packages:
         f16f16: 'D:/llm_exp/models/qwen3-block-htp/exp0158/f16f16'
@@ -72,7 +79,7 @@ experiments:
         row_major_decode_per_token: 84123.951625
         hmx_native_decode_per_token: 83679.518125
       conclusion: both_A16_recipes_remove_duplicate_prefill_cache_carrier_conversion_and_preserve_cache_native_decode_under_one_shared_physical_principle
-      next_priority: explicit_user_adoption_decision_then_longer_cache_capacity_segmented_native_carrier_design_or_next_full_stack_stage
+      next_priority: longer_cache_capacity_segmented_native_carrier_design_or_next_full_stack_stage
       full_profiling_report_sha256: 95699253fcf1df12cae6d38b220d460c940bed8cd7d7279e0662fb741d5972de
       summary_sha256: 5d03cda9eac4eeb8c31fbef5ef64c9c3c711a2e9b55e28705ffec9f5478998cc
       evidence_sha256_ledger_sha256: 3df1fa4f0cfe8c7b7c1d5b482e019b87d156a023f10a4dd753bb0e1048da8786

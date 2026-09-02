@@ -49,8 +49,15 @@ current_scope:
     evidence_validity: valid
     execution_state: completed
     local_gate: pass
-    adoption_status: pending
-    selected_baseline_changed: false
+    adoption_status: accepted
+    selected_baseline_changed: true
+    promoted_as: selected_full_stack_f16f16_and_w4f16_cache_native_baselines
+    promoted_baselines:
+      - selected_f16f16_full_stack_cache_native_baseline
+      - selected_w4f16_full_stack_cache_native_baseline
+    promoted_by: user
+    promoted_on: '2026-09-02'
+    promotion_ref: 'User message 2026-09-02: 同意，进行晋升'
     execution_unit: real_Qwen3_layers0_27_M64_prefill_continuous_decode_positions64_71
     cache_contract: exact_M64_HMX_carrier_plus_contiguous_8_token_delta_journal
     correctness_gate: pass_user_approved_scheme1_all_nine_outputs_valid_cache_structure_stable_prefixes_and_no_nonfinite
@@ -80,7 +87,7 @@ current_scope:
     candidate_decode_average_cache_read_bytes: 7856128
     candidate_decode_cache_write_bytes_per_step: 114688
     conclusion: A16_prefill_carrier_conversion_was_a_physical_cache_boundary_tax_and_both_A16_recipes_can_reuse_exact_HMX_carriers_while_preserving_or_slightly_improving_decode
-    next_priority: explicit_user_adoption_decision_then_longer_cache_capacity_segmented_native_carrier_design_or_next_full_stack_stage
+    next_priority: longer_cache_capacity_segmented_native_carrier_design_or_next_full_stack_stage
     full_profiling_report_sha256: 95699253fcf1df12cae6d38b220d460c940bed8cd7d7279e0662fb741d5972de
     summary_sha256: 5d03cda9eac4eeb8c31fbef5ef64c9c3c711a2e9b55e28705ffec9f5478998cc
     evidence_sha256_ledger_sha256: 3df1fa4f0cfe8c7b7c1d5b482e019b87d156a023f10a4dd753bb0e1048da8786
@@ -2447,6 +2454,44 @@ current_scope:
     promotion_ref: 'User message 2026-09-01: 同意，先晋升144'
     promotion_rule: PC029_formal_rotated_pair_repeat10_complete_block_Host_wall_only_among_eligible_candidates
     historical_local_gate: fail_preservation_only_documented_exception
+  selected_f16f16_full_stack_cache_native_baseline:
+    id: F16F16-EXP0158-HMX-NATIVE-CACHE-PARITY
+    experiment: EXP-0158
+    project_variant: F16F16
+    source_branch: codex/exp-0158-a16-hmx-native-kv-cache-parity
+    source_head: 264c911a65a341f00450855cf89b2d89bbd5f108
+    physical_plan: persistent_exact_M64_FP16_HMX_KV_carrier_plus_contiguous_8_token_delta_journal_with_prefill_carrier_reuse_and_HVX_decode_tail_patch
+    execution_scope: real_Qwen3_layers0_27_M64_prefill_continuous_decode_positions64_71
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0158/20260902T071708Z_264c911a65a3_formal'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0158/f16f16'
+    prefill_host_us: 67212.8125
+    prefill_tokens_per_second: 952.1994039454903
+    decode_host_us_per_token: 95282.4675
+    decode_tokens_per_second: 10.495110236308689
+    correctness_gate: pass_user_approved_scheme1_all_nine_outputs_valid_cache_structure_stable_prefixes_and_no_nonfinite
+    physical_gate: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN
+    promoted_by: user
+    promoted_on: '2026-09-02'
+    promotion_ref: 'User message 2026-09-02: 同意，进行晋升'
+  selected_w4f16_full_stack_cache_native_baseline:
+    id: W4F16-EXP0158-HMX-NATIVE-CACHE-PARITY
+    experiment: EXP-0158
+    project_variant: W4F16
+    source_branch: codex/exp-0158-a16-hmx-native-kv-cache-parity
+    source_head: 264c911a65a341f00450855cf89b2d89bbd5f108
+    physical_plan: persistent_exact_M64_FP16_HMX_KV_carrier_plus_contiguous_8_token_delta_journal_with_prefill_carrier_reuse_and_HVX_decode_tail_patch
+    execution_scope: real_Qwen3_layers0_27_M64_prefill_continuous_decode_positions64_71
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0158/20260902T071708Z_264c911a65a3_formal'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0158/w4f16'
+    prefill_host_us: 54443.2815
+    prefill_tokens_per_second: 1175.5353137558398
+    decode_host_us_per_token: 83679.518125
+    decode_tokens_per_second: 11.950355623537478
+    correctness_gate: pass_user_approved_scheme1_all_nine_outputs_valid_cache_structure_stable_prefixes_and_no_nonfinite
+    physical_gate: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN
+    promoted_by: user
+    promoted_on: '2026-09-02'
+    promotion_ref: 'User message 2026-09-02: 同意，进行晋升'
   selected_w4u8_full_stack_cache_native_baseline:
     id: W4U8-EXP0157-HMX-NATIVE-CACHE-REUSE
     experiment: EXP-0157

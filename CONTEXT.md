@@ -930,15 +930,18 @@ recipe-fastest W4U8 baseline because those have different execution scopes.
 _Avoid_: complete text-generation model, common three-recipe cache contract,
 teacher-accuracy baseline, replacement for the single-block baseline
 
-**A16 HMX-Native Cache Parity Candidate**:
-The completed EXP-0158 implementation that applies one cache-lifetime
-principle to F16F16 and W4F16: persist the exact M64 prefill QK/AV HMX
-carriers, append each decode token to a bounded contiguous journal, and patch
-only the journal tail into the padded carrier in VTCM with HVX. It removes
-the duplicate prefill carrier conversion for both recipes while keeping QK,
-Softmax, AV, projections and model values unchanged. Ten rotated formal runs
-pass correctness, physical, structural, fairness and strict prefill/decode
-speed gates. Adoption remains pending explicit user promotion.
+**Selected Full-Stack A16 Cache-Native Baselines**:
+The user-promoted EXP-0158 F16F16 and W4F16 implementations for the real
+28-layer M64 prefill and continuous-decode execution scope. Both apply one
+cache-lifetime principle: persist the exact M64 prefill QK/AV HMX carriers,
+append each decode token to a bounded contiguous journal, and patch only the
+journal tail into the padded carrier in VTCM with HVX. They remove duplicate
+prefill carrier conversion while keeping QK, Softmax, AV, projections and
+model values unchanged. Ten rotated formal runs pass correctness, physical,
+structural, fairness and strict prefill/decode speed gates. These two selected
+full-stack baselines are separate from the frozen Public Common Baseline and
+the single-block recipe-fastest baselines because those have different
+execution scopes.
 _Avoid_: row-major cache, full-prefix decode pack, scalar tail patch, changed
-Attention arithmetic, automatic A16 baseline promotion, arbitrary cache
-length beyond the bounded M64-plus-eight contract
+Attention arithmetic, replacement for a single-block baseline, arbitrary
+cache length beyond the bounded M64-plus-eight contract
