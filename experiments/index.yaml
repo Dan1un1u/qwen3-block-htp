@@ -6,6 +6,44 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0161
+    slug: w4u8-segmented-long-kv-cache
+    title: Long-KV scaling and segmented HMX-native W4U8 cache
+    parent: EXP-0160
+    variants:
+      - selected_exp0160_monolithic_delta_reconstruction_control
+      - segment_sealed_hmx_native_cache_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: W4U8-layer14-long-KV-cache-consumer-scan-and-segmented-Attention
+    source_branches:
+      - codex/exp-0161-w4u8-segmented-long-kv-cache
+    source_commits: []
+    record: docs/experiments/EXP-0161.md
+    approval_ref: 'User message 2026-09-02: 同意晋升，继续下一步'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0161-w4u8-segmented-long-kv-cache
+      approved_on: '2026-09-02'
+    evidence:
+      source_parent_experiment: EXP-0160
+      source_parent_commit: b33e88e3971c35851450d0737a0689bd0bd077aa
+      execution_unit: synthetic_single_real_layer14_decode_snapshot_at_declared_KV_length
+      continuous_decode_claim: false
+      independent_reference_source: EXP0147_CPU_integer_attention_and_complete_block_reference
+      lengths: [64, 256, 1024, 4096]
+      phase_a_control: selected_EXP0160_compact_M64_base_plus_full_contiguous_delta_journal_reconstructed_as_one_HMX_carrier
+      phase_b_trigger: measured_full_length_reconstruction_tax_or_two_slot_VTCM_capacity_pressure
+      phase_b_candidate: immutable_32_token_HMX_native_segments_plus_compact_active_tail_and_segment_streamed_QK_AV
+      required_unchanged: asymmetric_U8_qparams_W4_values_QK_log2_Softmax_AV_math_projection_kernels_and_one_HMX_owner
+      correctness_gate: exact_zero_LSB_complete_block_output_and_current_token_cache_append_at_every_length
+      physical_gate: exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_block_one_HMX_owner_no_QNN
+      structural_gate: candidate_VTCM_Attention_scratch_independent_of_total_KV_length_zero_full_prefix_pack_immutable_sealed_segments_and_only_active_tail_mutable
+      speed_gate: candidate_L64_not_slower_than_selected_control_and_candidate_strictly_faster_than_best_valid_monolithic_control_at_L256_L1024_L4096
+      stop_condition: correctness_or_physical_failure_stops_candidate_before_full_stack_integration
+      selected_baseline_changed: false
   - id: EXP-0160
     slug: w4u8-delta-reconstruction-pipeline
     title: Pipeline compact W4U8 delta-tail reconstruction with HMX Attention
@@ -16,7 +54,7 @@ experiments:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending
+    adoption_status: accepted
     evidence_profile: full-stack-W4U8-prefill-continuous-decode-group-pipelined-delta-tail-reconstruction
     source_branches:
       - codex/exp-0160-w4u8-delta-reconstruction-pipeline
@@ -45,7 +83,7 @@ experiments:
       full_stack_speed_gate: candidate_continuous_decode_Host_wall_strictly_below_same_binary_control_and_selected_EXP0159_50249p834_us_per_token
       prefill_preservation_gate: candidate_M64_prefill_Host_wall_at_most_1p01_times_same_binary_control
       completion_gate: instrumentation_closure_then_bounded_smoke_then_28_layer_correctness_and_physical_gates_then_ten_rotated_same_binary_control_candidate_replays
-      selected_baseline_changed: false
+      selected_baseline_changed: true
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0160/20260902T141223Z_b33e88e3971c_formal'
       source_commit: b33e88e3971c35851450d0737a0689bd0bd077aa
       completed_on: '2026-09-02'
@@ -59,6 +97,10 @@ experiments:
       decode_speed_improvement_percent: 2.551
       decode_attention_speed_improvement_percent: 13.013
       all_gates_pass: true
+      promoted_as: selected_full_stack_w4u8_cache_native_baseline
+      promoted_by: user
+      promoted_on: '2026-09-02'
+      promotion_ref: 'User message 2026-09-02: 同意晋升，继续下一步'
   - id: EXP-0159
     slug: w4u8-delta-journal-cache
     title: Compact delta journal for persistent W4U8 HMX-native KV cache
@@ -69,7 +111,7 @@ experiments:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: accepted
+    adoption_status: superseded
     evidence_profile: full-stack-W4U8-prefill-continuous-decode-compact-delta-journal-cache-update
     source_branches:
       - codex/exp-0159-w4u8-delta-journal-cache

@@ -19,8 +19,8 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 161
+  active_experiment: EXP-0161
+  next_experiment_number: 162
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -29,15 +29,28 @@ current_scope:
   execution_unit: qwen3_layers0_27_real_replay_prefill_continuous_decode_full_transformer_stack
   last_completed_experiment: EXP-0160
   last_completed_source_commit: b33e88e3971c35851450d0737a0689bd0bd077aa
-  provisional_source_parent: selected_EXP0159_full_stack_W4U8_delta_journal_baseline
+  provisional_source_parent: selected_EXP0160_full_stack_W4U8_pipelined_delta_reconstruction_baseline
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: completed
+  active_experiment_stage: running
   active_experiment_evidence: null
-  active_experiment_gate: null
-  active_recipe_specialization: null
-  active_experiment_contract: null
+  active_experiment_gate: characterize_monolithic_length_scaling_then_segmented_cache_micrograph_correctness_physical_and_wall_speed
+  active_recipe_specialization: W4U8_long_KV_segmented_cache_native_attention
+  active_experiment_contract:
+    id: EXP-0161
+    source_branch: codex/exp-0161-w4u8-segmented-long-kv-cache
+    source_parent: EXP-0160
+    source_parent_commit: b33e88e3971c35851450d0737a0689bd0bd077aa
+    phase_a: characterize_selected_EXP0160_monolithic_delta_reconstruction_at_L64_L256_L1024_L4096
+    phase_b_trigger: full_length_reconstruction_cost_or_two_slot_VTCM_capacity_is_material
+    phase_b_candidate: immutable_32_token_HMX_native_segments_plus_compact_active_tail_with_segment_streamed_QK_and_AV
+    execution_scope: synthetic_single_real_layer14_decode_snapshot_with_independent_CPU_reference_not_continuous_decode
+    required_unchanged: W4U8_qparams_W4_values_QK_Softmax_AV_math_projection_kernels_and_one_HMX_owner
+    correctness_gate: exact_zero_LSB_block_output_and_cache_append_at_each_test_length
+    physical_gate: exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_block_no_QNN
+    structural_gate: candidate_attention_scratch_bounded_by_segment_size_no_full_prefix_pack_and_only_active_tail_mutable
+    speed_gate: candidate_not_slower_at_L64_and_strictly_faster_than_best_valid_monolithic_control_at_L256_L1024_L4096
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0160/20260902T141223Z_b33e88e3971c_formal'
   latest_w4u8_delta_reconstruction_candidate:
     id: EXP-0160
@@ -48,8 +61,12 @@ current_scope:
     evidence_validity: valid
     execution_state: completed
     local_gate: pass
-    adoption_status: pending
-    selected_baseline_changed: false
+    adoption_status: accepted
+    selected_baseline_changed: true
+    promoted_as: selected_full_stack_w4u8_cache_native_baseline
+    promoted_by: user
+    promoted_on: '2026-09-02'
+    promotion_ref: 'User message 2026-09-02: 同意晋升，继续下一步'
     execution_unit: real_Qwen3_layers0_27_M64_prefill_continuous_decode_positions64_71
     control: same_binary_serial_compact_base_and_delta_tail_reconstruction
     candidate: direct_final_layout_base_DMA_minimal_tail_clear_and_two_slot_GQA_group_pipeline
@@ -68,7 +85,7 @@ current_scope:
     serial_attention_overlay_required_bytes: 38656
     pipeline_attention_overlay_required_bytes: 77824
     conclusion: two_slot_cross_group_DMA_HVX_HMX_overlap_recovers_1p166_ms_of_decode_Attention_and_1p251_ms_end_to_end_without_changing_cache_or_compute_contract
-    next_priority: user_adoption_decision_then_longer_KV_length_segmented_cache_validation
+    next_priority: longer_KV_length_segmented_cache_validation
     full_profiling_report_sha256: 618aa4d24045e1523bd0d605997e482fc8b18c9d8cea8cee84f8ad28fa9caaeb
     summary_sha256: 0bfba5d13c800ceca16b3c39b55576ca9545dcea2a073011340287ee7069ec99
     evidence_sha256_ledger_sha256: 83f05720fd4a83860011fb432cd8aa1d16e82e571ba3a03e93c98bee605f465d
@@ -82,12 +99,14 @@ current_scope:
     evidence_validity: valid
     execution_state: completed
     local_gate: pass
-    adoption_status: accepted
+    adoption_status: superseded
     selected_baseline_changed: true
     promoted_as: selected_full_stack_w4u8_cache_native_baseline
     promoted_by: user
     promoted_on: '2026-09-02'
     promotion_ref: 'User message 2026-09-02: 同意晋升，继续下一步实验'
+    superseded_by: EXP-0160
+    superseded_on: '2026-09-02'
     execution_unit: real_Qwen3_layers0_27_M64_prefill_continuous_decode_positions64_71
     control_cache_contract: capacity96_persistent_HMX_tiles_with_per_token_DDR_read_modify_write
     candidate_cache_contract: compact_immutable_M64_HMX_carrier_plus_contiguous_U8_KV_delta_journal_reconstructed_in_VTCM

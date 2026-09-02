@@ -922,17 +922,18 @@ _Avoid_: row-major cache, duplicate prefill pack, zero-copy claim, decode
 speedup, baseline promotion
 
 **Selected Full-Stack W4U8 Cache-Native Baseline**:
-The user-promoted EXP-0159 implementation for the real 28-layer M64 prefill and
-continuous-decode execution scope. It combines Prefill HMX Carrier Reuse with
-an immutable compact M64 HMX base and contiguous U8 K/V delta journal. Decode
-reconstructs the bounded tail in VTCM and performs no persistent native-tile
-DDR read-modify-write. Its formal M64 prefill is 44.080 ms and its decode over
-positions 64-71 is 50.250 ms/token. It is
+The user-promoted EXP-0160 implementation for the real 28-layer M64 prefill and
+continuous-decode execution scope. It retains EXP-0159's immutable compact M64
+HMX base and contiguous U8 K/V delta journal, directly places base fragments in
+their final HMX layout, clears only the tail and uses two VTCM slots to overlap
+DMA/HVX reconstruction with the single HMX owner across GQA groups. Its formal
+M64 prefill is 43.936 ms and its decode over positions 64-71 is 49.042 ms/token.
+It is
 separate from both the frozen Public Common Baseline and the single-block
 recipe-fastest W4U8 baseline because those have different execution scopes.
 _Avoid_: complete text-generation model, common three-recipe cache contract,
 teacher-accuracy baseline, replacement for the single-block baseline,
-EXP-0157 as the current full-stack W4U8 baseline
+EXP-0157 or EXP-0159 as the current full-stack W4U8 baseline
 
 **Selected Full-Stack A16 Cache-Native Baselines**:
 The user-promoted EXP-0158 F16F16 and W4F16 implementations for the real
@@ -965,8 +966,8 @@ _Avoid_: row-major cache, complete-prefix repack, DDR HMX tile read-modify-write
 changed Softmax approximation, changed projection schedule, A16 modification,
 automatic extrapolation beyond positions 64-71
 
-**Group-Pipelined Delta-Tail Reconstruction Candidate**:
-The completed, local-gate-passing EXP-0160 W4U8-only experiment that retains the accepted EXP-0159
+**Group-Pipelined Delta-Tail Reconstruction Baseline**:
+The accepted EXP-0160 W4U8-only implementation that retains the accepted EXP-0159
 persistent cache ABI and arithmetic while changing only its decode Attention
 consumer. It tests direct compact-base DMA into final HMX locations, clearing
 only the unpopulated tail, and a two-slot GQA group pipeline so DMA/HVX work for
@@ -975,8 +976,19 @@ Attention tax observed when EXP-0159 moved cache work from persistent DDR
 read-modify-write to VTCM reconstruction. Ten rotated same-binary replays show
 QK-Softmax-AV improving from 10.129 to 8.962 ms and complete decode improving
 from 50.293 to 49.042 ms/token, with exact outputs/cache, unchanged HMX work,
-8 MiB VTCM and zero intermediate DDR/spill. Adoption is still pending explicit
-user approval.
+8 MiB VTCM and zero intermediate DDR/spill. It is now the selected full-stack
+W4U8 cache-native baseline.
 _Avoid_: changed cache contents, qparams, Softmax approximation, HMX command
 count, projection scheduling, A16 changes, intermediate DDR, claimed overlap
 without complete Host-wall improvement
+
+**Long-KV Segmented Cache Experiment**:
+The active EXP-0161 W4U8 layer-14 experiment. It first characterizes the
+selected monolithic delta reconstruction at L64, L256, L1024 and L4096 using
+independent CPU references. A measured scaling or two-slot VTCM limitation
+activates a candidate with immutable 32-token HMX-native segments and one
+compact mutable tail, so Attention scratch is bounded by segment size rather
+than total KV length. These are synthetic decode snapshots and must not be
+reported as continuous full-stack decode throughput.
+_Avoid_: automatic long-context extrapolation, imported-cache real-replay
+claim, total-length VTCM carrier in the segmented candidate, A16 modification
