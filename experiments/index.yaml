@@ -6,6 +6,44 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0154
+    slug: full-stack-profile-rerun
+    title: Fresh reproduction of the corrected 28-layer profiling ledger
+    parent: EXP-0153
+    variants:
+      - f16f16_layers0_27_profile_reproduction
+      - w4f16_layers0_27_profile_reproduction
+      - w4u8_layers0_27_profile_reproduction
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: not_applicable
+    evidence_profile: instrumentation-only-fresh-build-fresh-device-three-recipe-rotated-full-stack-profile-reproduction
+    source_branches:
+      - codex/exp-0154-full-stack-profile-rerun
+    source_commits: []
+    record: docs/experiments/EXP-0154.md
+    approval_ref: 'User message 2026-09-02: 请重新跑一次最新profiling结果并报告，然后讨论下一步改进方向（主要是kv cache问题）'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0154-full-stack-profile-rerun
+      approved_on: '2026-09-02'
+      started_on: '2026-09-02'
+    evidence:
+      source_parent_experiment: EXP-0153
+      source_parent_commit: 21ea7dac13f6da7da3c22bb262fe5a7044ee96e9
+      execution_unit: unchanged_real_layers0_27_M64_prefill_plus_eight_continuous_decode_steps
+      implementation_boundary: no_source_kernel_recipe_schedule_layout_cache_ABI_model_or_report_schema_change_rebuild_and_rerun_only
+      package_contract: reuse_byte_identical_EXP0152_f16f16_w4f16_and_exact_reference_w4u8_packages
+      build_gate: clean_build_of_source_parent_then_local_and_device_binary_hash_match
+      mapping_gate: fresh_layout_and_real_device_single_arena_mapping_for_all_three_recipes
+      correctness_gate: every_fresh_replay_preserves_no_nonfinite_and_cache_prefix_structure_counters_reuse_immutable_scheme1_FP16_and_independent_exact_W4U8_reference_authorities
+      physical_gate: exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_stack_step_one_HMX_owner_no_QNN
+      profiling_gate: ten_fresh_rotated_three_recipe_rounds_270_replay_records_corrected_complete_ledger_and_each_layer_residual_at_most_0p1_percent
+      speed_gate: not_applicable_reproduction_only
+      stop_conditions: any_source_or_model_change_or_any_mapping_correctness_physical_or_ledger_gate_failure_or_device_reboot
+      completion_gate: synchronized_parent_then_clean_build_and_deploy_then_mapping_then_ten_rotated_rounds_then_corrected_PC027_PC028_report
+      selected_baseline_changed: false
   - id: EXP-0153
     slug: full-stack-profiling-closure
     title: Exact 28-layer profiling closure and KV-cache append attribution
