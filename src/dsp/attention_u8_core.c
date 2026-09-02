@@ -1621,6 +1621,97 @@ void qbh_attention_u8_pack_v_row_major(
     asm volatile("barrier" ::: "memory");
 }
 
+void qbh_attention_u8_update_k_native_token(
+    const uint8_t *k_head_tiles, uint32_t source_row,
+    uint32_t output_lane,
+    const struct qbh_attention_config *config,
+    int8_t *n_tile_weight, uint32_t *n_tile_bias) {
+    int32_t sum = 0;
+    const uint32_t divisor = UINT32_C(1) << config->score_shift;
+    const int32_t rounding = config->score_shift == 0U
+                                 ? 0
+                                 : (int32_t)(divisor / 2U);
+
+    if (k_head_tiles == NULL || config == NULL ||
+        n_tile_weight == NULL || n_tile_bias == NULL ||
+        source_row >= QBH_ATTENTION_M ||
+        output_lane >= QBH_HMX_OUTPUT_CHANNELS) {
+        return;
+    }
+    for (uint32_t k_tile = 0U;
+         k_tile < QBH_ATTENTION_HEAD_DIM_TILES; ++k_tile) {
+        const uint8_t *source = k_head_tiles +
+            (size_t)k_tile * QBH_HMX_ACTIVATION_BYTES +
+            (size_t)source_row * QBH_HMX_INPUT_CHANNELS;
+        int8_t *destination = n_tile_weight +
+            (size_t)k_tile * QBH_HMX_WEIGHT_BYTES;
+        for (uint32_t input_group = 0U;
+             input_group < QBH_HMX_INPUT_CHANNELS / 4U;
+             ++input_group) {
+            uint32_t word = 0U;
+            for (uint32_t lane = 0U; lane < 4U; ++lane) {
+                int32_t centered =
+                    (int32_t)source[input_group * 4U + lane] -
+                    config->k_zero_point;
+                centered = qbh_attention_u8_clip_s8(centered, NULL);
+                sum += centered;
+                word |= (uint32_t)(uint8_t)(int8_t)centered <<
+                        (lane * 8U);
+            }
+            ((uint32_t *)(destination +
+                (size_t)input_group * 128U))[output_lane] = word;
+        }
+    }
+    n_tile_bias[output_lane] = qbh_attention_u8_float_to_half_bits(
+        512.0f / (float)divisor);
+    n_tile_bias[QBH_HMX_OUTPUT_CHANNELS + output_lane] =
+        (uint32_t)(-config->q_zero_point * sum +
+                   QBH_ATTN_U8_SCORE_ZP * (int32_t)divisor +
+                   rounding);
+    asm volatile("barrier" ::: "memory");
+}
+
+void qbh_attention_u8_update_v_native_token(
+    const uint8_t *v_head_tiles, uint32_t source_row,
+    uint32_t input_lane,
+    const struct qbh_attention_config *config,
+    int8_t *k_tile_weights, uint32_t *saturation_count) {
+    const uint32_t input_group = input_lane / 4U;
+    const uint32_t byte_lane = input_lane % 4U;
+
+    if (v_head_tiles == NULL || config == NULL ||
+        k_tile_weights == NULL || source_row >= QBH_ATTENTION_M ||
+        input_lane >= QBH_HMX_INPUT_CHANNELS) {
+        return;
+    }
+    for (uint32_t n_tile = 0U;
+         n_tile < QBH_ATTENTION_HEAD_DIM_TILES; ++n_tile) {
+        const uint8_t *source = v_head_tiles +
+            (size_t)n_tile * QBH_HMX_ACTIVATION_BYTES +
+            (size_t)source_row * QBH_HMX_INPUT_CHANNELS;
+        int8_t *destination = k_tile_weights +
+            (size_t)n_tile * QBH_HMX_WEIGHT_BYTES;
+        for (uint32_t output = 0U;
+             output < QBH_HMX_OUTPUT_CHANNELS; ++output) {
+            const int32_t centered =
+                (int32_t)source[output] - config->v_zero_point;
+            int32_t requantized = qbh_attention_u8_round_div_signed(
+                centered * (int32_t)config->v_recenter_numerator,
+                (int32_t)config->v_recenter_denominator);
+            if (saturation_count != NULL) {
+                *saturation_count +=
+                    requantized < INT8_MIN || requantized > INT8_MAX;
+            }
+            requantized = qbh_attention_u8_clip_s8(requantized, NULL);
+            ((uint8_t *)(destination +
+                (size_t)input_group * 128U +
+                (size_t)output * sizeof(uint32_t)))[byte_lane] =
+                    (uint8_t)(int8_t)requantized;
+        }
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
 static uint8_t qbh_attention_u8_dynamic_score_at(
     const uint8_t *score_tiles, uint32_t head,
     uint32_t row, uint32_t column, uint32_t n_tiles) {

@@ -120,6 +120,21 @@ void qbh_attention_u8_pack_v_row_major(
     int8_t *weight_tiles, uint32_t *bias_words,
     uint32_t *saturation_count);
 
+/* EXP-0155 fixed-carrier append helpers.  The K helper updates one output
+ * lane of one [N=32,K=128] carrier tile.  The V helper updates one input
+ * lane across the four [N=32,K=32] head-dimension tiles. */
+void qbh_attention_u8_update_k_native_token(
+    const uint8_t *k_head_tiles, uint32_t source_row,
+    uint32_t output_lane,
+    const struct qbh_attention_config *config,
+    int8_t *n_tile_weight, uint32_t *n_tile_bias);
+
+void qbh_attention_u8_update_v_native_token(
+    const uint8_t *v_head_tiles, uint32_t source_row,
+    uint32_t input_lane,
+    const struct qbh_attention_config *config,
+    int8_t *k_tile_weights, uint32_t *saturation_count);
+
 void qbh_attention_u8_requant_softmax_dynamic(
     uint8_t *score_tiles, uint8_t *probability_tiles,
     uint32_t query_rows, uint32_t past_tokens,

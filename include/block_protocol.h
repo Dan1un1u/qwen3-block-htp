@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(60)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(153)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(61)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(155)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -25,10 +25,10 @@
     (QBH_BLOCK_KV_HEADS * QBH_BLOCK_HEAD_DIM)
 #define QBH_QWEN3_TRANSFORMER_LAYERS UINT32_C(28)
 #define QBH_REPLAY_LAYER_INDEX UINT32_C(14)
-#define QBH_VERTICAL_SLICE_FIRST_LAYER UINT32_C(0)
-#define QBH_VERTICAL_SLICE_LAYER_COUNT QBH_QWEN3_TRANSFORMER_LAYERS
+#define QBH_VERTICAL_SLICE_FIRST_LAYER QBH_REPLAY_LAYER_INDEX
+#define QBH_VERTICAL_SLICE_LAYER_COUNT UINT32_C(1)
 #define QBH_DECODE_SESSION_MAGIC UINT32_C(0x51445353)
-#define QBH_DECODE_SESSION_ABI_VERSION UINT32_C(2)
+#define QBH_DECODE_SESSION_ABI_VERSION UINT32_C(3)
 #define QBH_BLOCK_PROJECTION_COUNT UINT32_C(7)
 #define QBH_BLOCK_QPARAM_COUNT UINT32_C(17)
 #define QBH_BLOCK_QPARAM_RECORD_BYTES UINT32_C(48)
@@ -106,7 +106,30 @@ enum qbh_kv_cache_element_type {
 enum qbh_kv_cache_format {
     QBH_KV_CACHE_FORMAT_NONE = 0,
     QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1 = 1,
+    QBH_KV_CACHE_FORMAT_HMX_U8_K_WEIGHT_V1 = 2,
+    QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_V1 = 3,
 };
+
+#define QBH_KV_CACHE_HMX_PADDED_CAPACITY(capacity_) \
+    (((capacity_) + QBH_HMX_INPUT_CHANNELS - 1U) / \
+     QBH_HMX_INPUT_CHANNELS * QBH_HMX_INPUT_CHANNELS)
+#define QBH_KV_CACHE_HMX_WEIGHT_BYTES_PER_HEAD(capacity_) \
+    (QBH_KV_CACHE_HMX_PADDED_CAPACITY(capacity_) * QBH_BLOCK_HEAD_DIM)
+#define QBH_KV_CACHE_HMX_K_BIAS_BYTES_PER_HEAD(capacity_) \
+    (QBH_KV_CACHE_HMX_PADDED_CAPACITY(capacity_) / \
+     QBH_HMX_OUTPUT_CHANNELS * QBH_HMX_BIAS_BYTES)
+#define QBH_KV_CACHE_HMX_V_BIAS_BYTES_PER_HEAD \
+    (QBH_BLOCK_HEAD_DIM / QBH_HMX_OUTPUT_CHANNELS * QBH_HMX_BIAS_BYTES)
+#define QBH_KV_CACHE_HMX_K_HEAD_BYTES(capacity_) \
+    (QBH_KV_CACHE_HMX_WEIGHT_BYTES_PER_HEAD(capacity_) + \
+     QBH_KV_CACHE_HMX_K_BIAS_BYTES_PER_HEAD(capacity_))
+#define QBH_KV_CACHE_HMX_V_HEAD_BYTES(capacity_) \
+    (QBH_KV_CACHE_HMX_WEIGHT_BYTES_PER_HEAD(capacity_) + \
+     QBH_KV_CACHE_HMX_V_BIAS_BYTES_PER_HEAD)
+#define QBH_KV_CACHE_HMX_K_BYTES(capacity_) \
+    (QBH_BLOCK_KV_HEADS * QBH_KV_CACHE_HMX_K_HEAD_BYTES(capacity_))
+#define QBH_KV_CACHE_HMX_V_BYTES(capacity_) \
+    (QBH_BLOCK_KV_HEADS * QBH_KV_CACHE_HMX_V_HEAD_BYTES(capacity_))
 
 enum qbh_block_common_ops_mask {
     QBH_BLOCK_COMMON_OPS_SCALAR = 0,
@@ -393,6 +416,13 @@ struct qbh_decode_layer_state {
     uint32_t token_stride_bytes;
     uint32_t append_count;
     uint32_t reserved;
+    uint32_t padded_capacity;
+    uint32_t k_head_stride_bytes;
+    uint32_t v_head_stride_bytes;
+    uint32_t k_weight_bytes_per_head;
+    uint32_t v_weight_bytes_per_head;
+    uint32_t k_bias_bytes_per_head;
+    uint32_t v_bias_bytes_per_head;
 };
 
 struct qbh_decode_session_state {
@@ -430,6 +460,9 @@ struct qbh_block_layer_desc {
     uint32_t w4u8_silu_lut_bytes;
     uint32_t attention_config_offset;
     uint32_t attention_config_bytes;
+    uint32_t kv_cache_k_format;
+    uint32_t kv_cache_v_format;
+    uint32_t kv_cache_padded_capacity;
     uint32_t kv_cache_k_offset;
     uint32_t kv_cache_k_bytes;
     uint32_t kv_cache_v_offset;
@@ -565,6 +598,9 @@ struct qbh_block_header {
     uint32_t w4u8_silu_lut_bytes;
     uint32_t attention_config_offset;
     uint32_t attention_config_bytes;
+    uint32_t kv_cache_k_format;
+    uint32_t kv_cache_v_format;
+    uint32_t kv_cache_padded_capacity;
     uint32_t kv_cache_k_offset;
     uint32_t kv_cache_k_bytes;
     uint32_t kv_cache_v_offset;
@@ -791,6 +827,10 @@ struct qbh_block_header {
     uint64_t u8_attention_qk_norm_rope_ticks;
     uint64_t u8_attention_k_pack_ticks;
     uint64_t u8_attention_v_pack_ticks;
+    uint64_t u8_cache_native_append_update_ticks;
+    uint32_t u8_cache_native_prefill_build_count;
+    uint32_t u8_cache_native_incremental_append_count;
+    uint32_t u8_cache_full_prefix_pack_count;
     uint64_t u8_attention_qk_hmx_ticks;
     uint64_t u8_attention_qk_requant_ticks;
     uint64_t u8_attention_softmax_ticks;
