@@ -20,12 +20,11 @@ cd "${project_root}"
 bash scripts/check_exp0161_static.sh > "${result_dir}/static_gate.log"
 bash scripts/build_exp0161.sh > "${result_dir}/build.log"
 
-# The inherited CLI exit gate still compares scan runs against the pre-EXP-0161
-# device golden and cache carrier. EXP-0161 deliberately changed both
-# authorities: the independent CPU logical output and logical current-token K/V
-# are checked from the captures below. Accept a timing invocation here only
-# when the DSP/physical contract itself completed; retain the raw CLI status for
-# audit instead of pretending that the legacy self-check passed.
+# Candidate timing and capture runs must pass both the CLI's exact host-reference
+# gate and the physical contract below. The only control exception is L4096:
+# its monolithic integer-HMX path has an independently measured <=2-LSB block
+# output difference while the candidate is byte exact. It remains a timing
+# comparator only and must still append the current K/V row byte exactly.
 validate_exp0161_run() {
     local jsonl="$1"
     local expected_repeats="$2"
@@ -64,10 +63,44 @@ raise SystemExit(0 if valid else 1)
 PY
 }
 
+validate_exp0161_reference() {
+    local jsonl="$1"
+    local mode="$2"
+    local length="$3"
+    local runner_status="$4"
+    if (( runner_status == 0 )); then
+        return 0
+    fi
+    if [[ "${mode}" != control || "${length}" != 4096 ]]; then
+        return 1
+    fi
+    "${python_exe}" - "${jsonl}" <<'PY'
+import json
+import pathlib
+import sys
+
+record = None
+for line in reversed(pathlib.Path(sys.argv[1]).read_text(errors="ignore").splitlines()):
+    try:
+        candidate = json.loads(line)
+    except json.JSONDecodeError:
+        continue
+    if candidate.get("experiment") == "EXP-0161":
+        record = candidate
+        break
+valid = (
+    record is not None
+    and int(record.get("scan_cache_mismatches", -1)) == 0
+    and int(record.get("max_lsb", 255)) <= 2
+)
+raise SystemExit(0 if valid else 1)
+PY
+}
+
 for length in 64 256 1024 4096; do
-    cp "/mnt/d/llm_exp/models/qwen3-block-htp/exp0161/decode_l${length}_w4u8_hmx_delta_v2/manifest.json" \
+    cp "/mnt/d/llm_exp/models/qwen3-block-htp/exp0161/decode_l${length}_w4u8_hmx_delta_v3_exact/manifest.json" \
         "${result_dir}/control_manifest_l${length}.json"
-    cp "/mnt/d/llm_exp/models/qwen3-block-htp/exp0161/decode_l${length}_w4u8_hmx_segmented_v4b/manifest.json" \
+    cp "/mnt/d/llm_exp/models/qwen3-block-htp/exp0161/decode_l${length}_w4u8_hmx_segmented_v4c_exact/manifest.json" \
         "${result_dir}/candidate_manifest_l${length}.json"
     bash scripts/deploy_exp0161.sh "${length}" delta \
         > "${result_dir}/deploy_control_l${length}.log"
@@ -105,7 +138,10 @@ for repeat_count in 1 10; do
                         > "${output}" 2> "${error}"
                     runner_status=$?
                     set -e
-                    if validate_exp0161_run "${output}" "${repeat_count}"; then
+                    if validate_exp0161_reference \
+                            "${output}" "${mode}" "${length}" \
+                            "${runner_status}" && \
+                        validate_exp0161_run "${output}" "${repeat_count}"; then
                         status=0
                         break
                     fi
@@ -148,7 +184,10 @@ for length in 64 256 1024 4096; do
                     2> "${local_capture}/run.stderr"
             capture_runner_status=$?
             set -e
-            if validate_exp0161_run "${local_capture}/run.jsonl" 1; then
+            if validate_exp0161_reference \
+                    "${local_capture}/run.jsonl" "${mode}" "${length}" \
+                    "${capture_runner_status}" && \
+                validate_exp0161_run "${local_capture}/run.jsonl" 1; then
                 capture_status=0
                 break
             fi

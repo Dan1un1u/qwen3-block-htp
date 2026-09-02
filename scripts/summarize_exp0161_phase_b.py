@@ -101,6 +101,7 @@ def main() -> None:
         parts = path.stem.split("_")
         length = int(parts[0][1:])
         repeat_count = int(parts[1][1:])
+        round_index = int(parts[parts.index("round") + 1])
         mode = parts[-1]
         status = int(Path(str(path) + ".status").read_text().strip())
         record = read_json_record(path)
@@ -113,6 +114,7 @@ def main() -> None:
                 "stderr": str(path.with_suffix(".stderr")),
             })
         else:
+            record["_formal_round"] = round_index
             records[(length, repeat_count, mode)].append(record)
 
     cells: dict[str, dict[str, object]] = {}
@@ -175,12 +177,33 @@ def main() -> None:
         candidate = cells[f"l{length}_r10_candidate"]
         control_us = float(control["host_us_per_block"])
         candidate_us = float(candidate["host_us_per_block"])
-        improvement = (control_us / candidate_us - 1.0) * 100.0
+        control_by_round = {
+            int(run["_formal_round"]):
+                float(run["host_wall_ns_per_block"]) / 1000.0
+            for run in records[(length, 10, "control")]
+        }
+        candidate_by_round = {
+            int(run["_formal_round"]):
+                float(run["host_wall_ns_per_block"]) / 1000.0
+            for run in records[(length, 10, "candidate")]
+        }
+        paired_rounds = sorted(set(control_by_round) & set(candidate_by_round))
+        paired_delta_us = median([
+            candidate_by_round[round_index] - control_by_round[round_index]
+            for round_index in paired_rounds
+        ])
+        paired_improvement = median([
+            (control_by_round[round_index] /
+             candidate_by_round[round_index] - 1.0) * 100.0
+            for round_index in paired_rounds
+        ])
         speed[f"l{length}"] = {
             "control_us": control_us,
             "candidate_us": candidate_us,
-            "improvement_percent": improvement,
-            "pass": improvement >= 0.0 if length == 64 else improvement > 0.0,
+            "paired_rounds": len(paired_rounds),
+            "paired_median_delta_us": paired_delta_us,
+            "improvement_percent": paired_improvement,
+            "pass": paired_delta_us <= 0.0 if length == 64 else paired_delta_us < 0.0,
         }
 
     capture: dict[str, dict[str, object]] = {}
@@ -194,7 +217,7 @@ def main() -> None:
         logical_control = control_output[:2048]
         logical_candidate = candidate_output[:2048]
         reference_root = (
-            MODEL_ROOT / f"decode_l{length}_w4u8_hmx_segmented_v4b"
+            MODEL_ROOT / f"decode_l{length}_w4u8_hmx_segmented_v4c_exact"
         )
         logical_reference = (
             reference_root / "reference_exp0147_cpu_block_output_u8.bin"

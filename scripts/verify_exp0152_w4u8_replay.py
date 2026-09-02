@@ -75,8 +75,12 @@ def run_layer_decode(
     """Execute one logical decode row and append this layer's cache."""
     if input_u8.shape != (1, HIDDEN):
         raise ValueError(f"invalid decode input {input_u8.shape}")
-    if k_cache.shape != (KV_HEADS, CACHE_CAPACITY, HEAD_DIM) or (
-        v_cache.shape != k_cache.shape
+    if (
+        k_cache.ndim != 3
+        or k_cache.shape[0] != KV_HEADS
+        or k_cache.shape[2] != HEAD_DIM
+        or v_cache.shape != k_cache.shape
+        or past_tokens >= k_cache.shape[1]
     ):
         raise ValueError(
             f"invalid replay cache k={k_cache.shape} v={v_cache.shape}"

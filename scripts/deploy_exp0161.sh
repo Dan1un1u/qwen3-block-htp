@@ -7,10 +7,10 @@ cache_layout="${2:-delta}"
 
 case "${cache_layout}" in
 delta)
-    package_suffix="hmx_delta_v2"
+    package_suffix="hmx_delta_v3_exact"
     ;;
 segmented)
-    package_suffix="hmx_segmented_v4b"
+    package_suffix="hmx_segmented_v4c_exact"
     ;;
 *)
     echo "cache layout must be delta or segmented" >&2

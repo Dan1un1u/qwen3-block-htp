@@ -16,7 +16,10 @@ grep -q 'QBH_BLOCK_U8_SEGMENT_RING_SLOTS UINT32_C(26)' src/dsp/block_imp.c
 grep -q 'qbh_scan_u8_attention_segmented_short_pipeline' src/dsp/block_imp.c
 grep -q 'qbh_scan_run_u8_segmented_async_phase' src/dsp/block_imp.c
 grep -q 'hmx_native_u8_segmented_v4' src/host/block_main.c
+grep -q 'hmx_segmented_v4c_exact' scripts/deploy_exp0161.sh
+python3 -m py_compile scripts/prepare_exp0161_exact_logical_sources.py
 python3 -m py_compile scripts/prepare_exp0161_long_delta_cache.py
 python3 -m py_compile scripts/prepare_exp0161_segmented_cache.py
+python3 -m py_compile scripts/diagnose_exp0161_boundaries.py
 python3 -m py_compile scripts/summarize_exp0161_phase_b.py
 printf 'EXP-0161 static gate: PASS\n'

@@ -223,7 +223,9 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--source-root", type=Path,
-        default=Path("/mnt/d/llm_exp/models/qwen3-block-htp/exp0147"),
+        default=Path(
+            "/mnt/d/llm_exp/models/qwen3-block-htp/exp0161/exact_logical_v1"
+        ),
     )
     parser.add_argument(
         "--output-root", type=Path,
@@ -235,7 +237,8 @@ def main() -> None:
     for past_length in tuple(args.length or SUPPORTED_LENGTHS):
         result = publish_one(
             source_package(args.source_root.resolve(), past_length),
-            args.output_root.resolve() / f"decode_l{past_length}_w4u8_hmx_segmented_v4b",
+            args.output_root.resolve() /
+                f"decode_l{past_length}_w4u8_hmx_segmented_v4c_exact",
             past_length,
         )
         results.append(result)

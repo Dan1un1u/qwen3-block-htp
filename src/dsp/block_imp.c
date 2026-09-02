@@ -14132,8 +14132,21 @@ static int qbh_scan_u8_attention_segmented(
                 QBH_BLOCK_U8_ATTENTION_Q_BYTES, 0U) != 0) {
             return -1;
         }
+        if (qbh_dma_copy(
+                header, audit + QBH_BLOCK_U8_ATTENTION_Q_BYTES,
+                buffers->k, QBH_BLOCK_U8_ATTENTION_KV_BYTES, 0U) != 0) {
+            return -1;
+        }
+        if (qbh_dma_copy(
+                header,
+                audit + QBH_BLOCK_U8_ATTENTION_Q_BYTES +
+                    QBH_BLOCK_U8_ATTENTION_KV_BYTES,
+                buffers->v, QBH_BLOCK_U8_ATTENTION_KV_BYTES, 0U) != 0) {
+            return -1;
+        }
         header->u8_attention_audit_ddr_write_bytes +=
-            QBH_BLOCK_U8_ATTENTION_Q_BYTES;
+            QBH_BLOCK_U8_ATTENTION_Q_BYTES +
+            2U * QBH_BLOCK_U8_ATTENTION_KV_BYTES;
     }
 
     if (fused_short != 0U) {
