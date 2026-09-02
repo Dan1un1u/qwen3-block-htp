@@ -6,6 +6,45 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0159
+    slug: w4u8-delta-journal-cache
+    title: Compact delta journal for persistent W4U8 HMX-native KV cache
+    parent: EXP-0158
+    variants:
+      - w4u8_hmx_native_tile_rmw_control
+      - w4u8_hmx_native_base_plus_delta_journal_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: full-stack-W4U8-prefill-continuous-decode-compact-delta-journal-cache-update
+    source_branches:
+      - codex/exp-0159-w4u8-delta-journal-cache
+    source_commits: []
+    record: docs/experiments/EXP-0159.md
+    approval_ref: 'User message 2026-09-02: 同意方向，开始工作'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0159-w4u8-delta-journal-cache
+      approved_on: '2026-09-02'
+      started_on: '2026-09-02'
+    evidence:
+      source_parent_experiment: EXP-0158
+      source_parent_commit: 264c911a65a341f00450855cf89b2d89bbd5f108
+      execution_unit: real_Qwen3_layers0_27_M64_prefill_then_continuous_decode_positions64_through71
+      recipe_scope: W4U8_only
+      implementation_boundary: change_only_W4U8_persistent_cache_decode_append_ABI_tail_patch_and_corresponding_cache_consumer
+      direct_control: same_binary_EXP0157_style_HMX_native_cache_with_per_token_DDR_tile_read_modify_write
+      candidate_contract: immutable_M64_prefill_HMX_base_carrier_plus_contiguous_quantized_KV_delta_journal_patched_into_current_tail_tile_only_in_VTCM
+      forbidden_changes: QK_Softmax_AV_math_projection_kernels_or_schedules_qparams_W4_values_prefill_carrier_reuse_A16_paths_Host_repack_or_intermediate_DDR_workspace
+      correctness_gate: exact_zero_LSB_nine_full_stack_outputs_all_logical_caches_and_all_retained_HMX_carrier_references
+      structural_gate: zero_DDR_native_tile_read_modify_write_zero_complete_prefix_pack_and_exactly_one_current_token_journal_append_per_layer_per_decode_step
+      physical_gate: exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_full_stack_step_one_HMX_owner_no_QNN
+      decode_speed_gate: candidate_continuous_decode_Host_wall_strictly_below_same_binary_tile_RMW_control
+      prefill_preservation_gate: candidate_M64_prefill_Host_wall_at_most_1p01_times_same_binary_control
+      stop_conditions: any_correctness_structural_physical_or_speed_gate_failure_or_device_reboot
+      completion_gate: static_and_package_audit_then_single_layer_smoke_then_28_layer_correctness_and_physical_gates_then_rotated_pair_prefill_and_decode_profile
+      selected_baseline_changed: false
   - id: EXP-0158
     slug: a16-hmx-native-kv-cache-parity
     title: HMX-native persistent KV cache for both A16 recipes

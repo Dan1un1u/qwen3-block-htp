@@ -945,3 +945,16 @@ execution scopes.
 _Avoid_: row-major cache, full-prefix decode pack, scalar tail patch, changed
 Attention arithmetic, replacement for a single-block baseline, arbitrary
 cache length beyond the bounded M64-plus-eight contract
+
+**W4U8 Compact Delta Journal Candidate**:
+The approved EXP-0159 experiment that keeps the selected W4U8 prefill HMX
+base carriers immutable after initialization, appends each decode token's
+quantized K/V rows to one contiguous per-layer journal, and patches only the
+bounded tail into HMX K/V tiles in VTCM immediately before QK and AV. It tests
+whether the A16 journal principle can remove W4U8's per-token DDR tile
+read-modify-write, excess DMA descriptors and cache-write amplification
+without changing Attention mathematics, qparams, projection schedules or the
+accepted prefill carrier-reuse path.
+_Avoid_: row-major cache, complete-prefix repack, DDR HMX tile read-modify-write,
+changed Softmax approximation, changed projection schedule, A16 modification,
+automatic baseline promotion
