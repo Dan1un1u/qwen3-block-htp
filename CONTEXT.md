@@ -922,13 +922,17 @@ _Avoid_: row-major cache, duplicate prefill pack, zero-copy claim, decode
 speedup, baseline promotion
 
 **Selected Full-Stack W4U8 Cache-Native Baseline**:
-The user-promoted EXP-0157 implementation for the real 28-layer M64 prefill and
-continuous-decode execution scope.  It combines persistent HMX-native U8 K/V
-cache, current-token-only decode updates and Prefill HMX Carrier Reuse.  It is
+The user-promoted EXP-0159 implementation for the real 28-layer M64 prefill and
+continuous-decode execution scope. It combines Prefill HMX Carrier Reuse with
+an immutable compact M64 HMX base and contiguous U8 K/V delta journal. Decode
+reconstructs the bounded tail in VTCM and performs no persistent native-tile
+DDR read-modify-write. Its formal M64 prefill is 44.080 ms and its decode over
+positions 64-71 is 50.250 ms/token. It is
 separate from both the frozen Public Common Baseline and the single-block
 recipe-fastest W4U8 baseline because those have different execution scopes.
 _Avoid_: complete text-generation model, common three-recipe cache contract,
-teacher-accuracy baseline, replacement for the single-block baseline
+teacher-accuracy baseline, replacement for the single-block baseline,
+EXP-0157 as the current full-stack W4U8 baseline
 
 **Selected Full-Stack A16 Cache-Native Baselines**:
 The user-promoted EXP-0158 F16F16 and W4F16 implementations for the real
@@ -946,8 +950,8 @@ _Avoid_: row-major cache, full-prefix decode pack, scalar tail patch, changed
 Attention arithmetic, replacement for a single-block baseline, arbitrary
 cache length beyond the bounded M64-plus-eight contract
 
-**W4U8 Compact Delta Journal Candidate**:
-The completed, evidence-valid EXP-0159 candidate that keeps the selected W4U8 prefill HMX
+**W4U8 Compact Delta Journal Cache Contract**:
+The accepted EXP-0159 baseline contract that keeps the selected W4U8 prefill HMX
 base carriers immutable after initialization, appends each decode token's
 quantized K/V rows to one contiguous per-layer journal, and patches only the
 bounded tail into HMX K/V tiles in VTCM immediately before QK and AV. It tests
@@ -959,4 +963,16 @@ carrier-reuse path. The candidate is 2.979% faster end to end, while some saved
 write-side time reappears as VTCM tail-reconstruction work inside Attention.
 _Avoid_: row-major cache, complete-prefix repack, DDR HMX tile read-modify-write,
 changed Softmax approximation, changed projection schedule, A16 modification,
-automatic baseline promotion
+automatic extrapolation beyond positions 64-71
+
+**Group-Pipelined Delta-Tail Reconstruction Candidate**:
+The approved EXP-0160 W4U8-only experiment that retains the accepted EXP-0159
+persistent cache ABI and arithmetic while changing only its decode Attention
+consumer. It tests direct compact-base DMA into final HMX locations, clearing
+only the unpopulated tail, and a two-slot GQA group pipeline so DMA/HVX work for
+group g+1 overlaps HMX work for group g. The target is to recover the 2.859 ms
+Attention tax observed when EXP-0159 moved cache work from persistent DDR
+read-modify-write to VTCM reconstruction.
+_Avoid_: changed cache contents, qparams, Softmax approximation, HMX command
+count, projection scheduling, A16 changes, intermediate DDR, claimed overlap
+without complete Host-wall improvement

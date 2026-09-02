@@ -6,6 +6,45 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0160
+    slug: w4u8-delta-reconstruction-pipeline
+    title: Pipeline compact W4U8 delta-tail reconstruction with HMX Attention
+    parent: EXP-0159
+    variants:
+      - w4u8_delta_journal_serial_reconstruction_control
+      - w4u8_delta_journal_group_pipeline_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: full-stack-W4U8-prefill-continuous-decode-group-pipelined-delta-tail-reconstruction
+    source_branches:
+      - codex/exp-0160-w4u8-delta-reconstruction-pipeline
+    source_commits: []
+    record: docs/experiments/EXP-0160.md
+    approval_ref: 'User message 2026-09-02: 同意晋升，继续下一步实验'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0160-w4u8-delta-reconstruction-pipeline
+      approved_on: '2026-09-02'
+    evidence:
+      source_parent_experiment: EXP-0159
+      source_parent_commit: 4c27bea705c21835b7f444841096a9d6828048cd
+      execution_unit: real_Qwen3_layers0_27_M64_prefill_then_continuous_decode_positions64_through71
+      recipe_scope: W4U8_only
+      direct_control: same_binary_selected_EXP0159_compact_base_plus_delta_journal_serial_reconstruction
+      hypothesis: direct_final_layout_DMA_minimal_tail_clear_and_two_slot_group_pipeline_can_hide_or_remove_the_2p859_ms_Attention_reconstruction_tax_without_restoring_DDR_tile_RMW
+      implementation_boundary: change_only_W4U8_decode_Attention_cache_consumer_base_placement_tail_reconstruction_buffering_and_scheduling
+      candidate_contract: DMA_compact_KV_base_into_final_HMX_locations_clear_only_unpopulated_tail_and_prepare_group_g_plus_1_while_group_g_uses_HMX
+      forbidden_changes: persistent_cache_ABI_package_or_append_qparams_W4_values_QK_Softmax_AV_math_HMX_command_or_tile_count_projection_schedules_A16_paths_Host_repack_QNN_or_intermediate_DDR_workspace
+      correctness_gate: exact_zero_LSB_nine_full_stack_outputs_all_logical_caches_and_all_retained_cache_references
+      structural_gate: no_full_carrier_clear_no_intermediate_V_base_staging_copy_zero_DDR_native_tile_RMW_zero_full_prefix_pack_and_one_current_token_journal_append_per_layer
+      physical_gate: exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_full_stack_step_one_HMX_owner_no_QNN
+      local_performance_gate: candidate_decode_QK_Softmax_AV_strictly_below_same_binary_serial_control
+      full_stack_speed_gate: candidate_continuous_decode_Host_wall_strictly_below_same_binary_control_and_selected_EXP0159_50249p834_us_per_token
+      prefill_preservation_gate: candidate_M64_prefill_Host_wall_at_most_1p01_times_same_binary_control
+      completion_gate: instrumentation_closure_then_bounded_smoke_then_28_layer_correctness_and_physical_gates_then_ten_rotated_same_binary_control_candidate_replays
+      selected_baseline_changed: false
   - id: EXP-0159
     slug: w4u8-delta-journal-cache
     title: Compact delta journal for persistent W4U8 HMX-native KV cache
@@ -16,7 +55,7 @@ experiments:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending
+    adoption_status: accepted
     evidence_profile: full-stack-W4U8-prefill-continuous-decode-compact-delta-journal-cache-update
     source_branches:
       - codex/exp-0159-w4u8-delta-journal-cache
@@ -69,7 +108,11 @@ experiments:
       summary_sha256: 2ad1419c9e613afd2a36a33ab8ee0b45a1d6808fdb68addae78382e512a67582
       evidence_sha256_ledger_sha256: 134e8ff74ee499d515269d9684617fe65f6075b6ebbb72f07516d1ff83c8d181
       package_manifest_sha256: d15cac4cde14a79dac25ad0e4b78830ccb87dd8a79ec68c404c71fc384bdf667
-      selected_baseline_changed: false
+      selected_baseline_changed: true
+      promoted_as: selected_full_stack_w4u8_cache_native_baseline
+      promoted_by: user
+      promoted_on: '2026-09-02'
+      promotion_ref: 'User message 2026-09-02: 同意晋升，继续下一步实验'
   - id: EXP-0158
     slug: a16-hmx-native-kv-cache-parity
     title: HMX-native persistent KV cache for both A16 recipes
@@ -157,7 +200,7 @@ experiments:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: accepted
+    adoption_status: superseded
     evidence_profile: full-stack-prefill-continuous-decode-prefill-HMX-carrier-reuse
     source_branches:
       - codex/exp-0157-w4u8-prefill-hmx-carrier-reuse
@@ -192,6 +235,8 @@ experiments:
       promoted_by: user
       promoted_on: '2026-09-02'
       promotion_ref: 'User message 2026-09-02: 你的建议非常好，这正是我所想的'
+      superseded_by: EXP-0159
+      superseded_on: '2026-09-02'
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0157/20260902T061809Z_0a3557d075dc_formal'
       retained_candidate_package: 'D:/llm_exp/models/qwen3-block-htp/exp0156/w4u8_hmx_native_v1'
       source_commit: 0a3557d075dc4c2b3e4a0d9e05910acb3cf4bf6b
