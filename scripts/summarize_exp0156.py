@@ -31,6 +31,15 @@ MODULES = {
     "Gate/Up + SwiGLU": ("gate_up_ticks", "activation_ticks"),
     "Down projection": ("down_ticks",),
     "Final residual": ("final_residual_ticks",),
+    "KV-cache carrier conversion/update": ("scan_cache_pack_ticks",),
+    "KV-cache append DMA": ("scan_cache_append_ticks",),
+    "DSP orchestration/bookkeeping": (
+        "block_orchestration_ticks",
+        "layer_bookkeeping_ticks",
+        "runtime_setup_ticks",
+        "runtime_teardown_ticks",
+        "stage_boundary_ticks",
+    ),
 }
 
 
