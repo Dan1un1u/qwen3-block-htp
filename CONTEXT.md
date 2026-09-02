@@ -947,14 +947,16 @@ Attention arithmetic, replacement for a single-block baseline, arbitrary
 cache length beyond the bounded M64-plus-eight contract
 
 **W4U8 Compact Delta Journal Candidate**:
-The approved EXP-0159 experiment that keeps the selected W4U8 prefill HMX
+The completed, evidence-valid EXP-0159 candidate that keeps the selected W4U8 prefill HMX
 base carriers immutable after initialization, appends each decode token's
 quantized K/V rows to one contiguous per-layer journal, and patches only the
 bounded tail into HMX K/V tiles in VTCM immediately before QK and AV. It tests
-whether the A16 journal principle can remove W4U8's per-token DDR tile
-read-modify-write, excess DMA descriptors and cache-write amplification
-without changing Attention mathematics, qparams, projection schedules or the
-accepted prefill carrier-reuse path.
+and proves that the A16 journal principle removes W4U8's per-token DDR tile
+read-modify-write, halves cache DMA descriptors and reduces cache-write bytes
+from 1,892,352 to 57,344 per full-stack decode token without changing
+Attention mathematics, qparams, projection schedules or the accepted prefill
+carrier-reuse path. The candidate is 2.979% faster end to end, while some saved
+write-side time reappears as VTCM tail-reconstruction work inside Attention.
 _Avoid_: row-major cache, complete-prefix repack, DDR HMX tile read-modify-write,
 changed Softmax approximation, changed projection schedule, A16 modification,
 automatic baseline promotion

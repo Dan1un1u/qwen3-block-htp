@@ -13,14 +13,15 @@ experiments:
     variants:
       - w4u8_hmx_native_tile_rmw_control
       - w4u8_hmx_native_base_plus_delta_journal_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: full-stack-W4U8-prefill-continuous-decode-compact-delta-journal-cache-update
     source_branches:
       - codex/exp-0159-w4u8-delta-journal-cache
-    source_commits: []
+    source_commits:
+      - 4c27bea705c21835b7f444841096a9d6828048cd
     record: docs/experiments/EXP-0159.md
     approval_ref: 'User message 2026-09-02: 同意方向，开始工作'
     runtime:
@@ -44,6 +45,30 @@ experiments:
       prefill_preservation_gate: candidate_M64_prefill_Host_wall_at_most_1p01_times_same_binary_control
       stop_conditions: any_correctness_structural_physical_or_speed_gate_failure_or_device_reboot
       completion_gate: static_and_package_audit_then_single_layer_smoke_then_28_layer_correctness_and_physical_gates_then_rotated_pair_prefill_and_decode_profile
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0159/20260902T130337Z_4c27bea705c2_formal'
+      retained_candidate_package: 'D:/llm_exp/models/qwen3-block-htp/exp0159/w4u8_hmx_delta_v2_compact'
+      source_commit: 4c27bea705c21835b7f444841096a9d6828048cd
+      completed_on: '2026-09-02'
+      correctness_gate_result: pass_zero_LSB_all_nine_outputs_and_all_cache_references
+      structural_gate_result: pass_zero_full_prefix_pack_zero_persistent_HMX_tile_RMW_and_one_current_token_append_per_layer
+      physical_gate_result: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_step_one_HMX_owner_no_QNN
+      unchanged_compute_gate_result: pass_identical_HMX_commands_tile_pairs_and_projection_weight_bytes
+      speed_gate_result: pass_prefill_plus0p288_percent_decode_plus2p979_percent
+      prefill_host_us: {control: 44207.318, candidate: 44080.182}
+      decode_host_us_per_token: {control: 51746.930, candidate: 50249.834}
+      decode_cache_update_us: {control: 4246.888, candidate: 157.269}
+      decode_cache_append_DMA_us: {control: 446.136, candidate: 129.977}
+      decode_attention_us: {control: 7222.933, candidate: 10081.517}
+      decode_cache_DDR_read_bytes: {control: 7798784, candidate_average: 4272128}
+      decode_cache_DDR_write_bytes: {control: 1892352, candidate: 57344}
+      decode_cache_DMA_descriptors: {control: 3584, candidate: 1792}
+      stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
+      conclusion: zero_RMW_journal_is_faster_but_moves_part_of_the_cost_from_cache_update_to_Attention_tail_reconstruction
+      next_priority: eliminate_or_overlap_read_side_tail_reconstruction_before_longer_cache_scaling
+      full_profiling_report_sha256: 5d058f0fa911e013c2141b3073c0a973c7c28af248209d401e23f1efdc3e32d6
+      summary_sha256: 2ad1419c9e613afd2a36a33ab8ee0b45a1d6808fdb68addae78382e512a67582
+      evidence_sha256_ledger_sha256: 134e8ff74ee499d515269d9684617fe65f6075b6ebbb72f07516d1ff83c8d181
+      package_manifest_sha256: d15cac4cde14a79dac25ad0e4b78830ccb87dd8a79ec68c404c71fc384bdf667
       selected_baseline_changed: false
   - id: EXP-0158
     slug: a16-hmx-native-kv-cache-parity
