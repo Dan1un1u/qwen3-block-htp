@@ -22,4 +22,5 @@ grep -q 'QBH_VERTICAL_SLICE_LAYER_COUNT UINT32_C(1)' \
 python_bin="${QBH_PYTHON:-/home/daniuniu/.cache/qwen3-block-htp-py/bin/python}"
 "${python_bin}" -m py_compile scripts/prepare_exp0155_hmx_cache.py
 "${python_bin}" -m py_compile scripts/prepare_exp0155_logical_reference.py
+"${python_bin}" -m py_compile scripts/summarize_exp0155.py
 printf 'EXP-0155 static gate passed\n'
