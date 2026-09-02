@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0155
+  active_experiment: null
   next_experiment_number: 156
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,17 +27,42 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_layers0_27_real_replay_prefill_continuous_decode_full_transformer_stack
-  last_completed_experiment: EXP-0154
-  last_completed_source_commit: 21ea7dac13f6da7da3c22bb262fe5a7044ee96e9
+  last_completed_experiment: EXP-0155
+  last_completed_source_commit: c10256023e7465dd4146d4d991326e75c9c7cb87
   provisional_source_parent: EXP-0153_corrected_full_stack_profiling_source
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: registered_before_source_branch_and_preflight
+  active_experiment_stage: null
   active_experiment_evidence: null
-  active_experiment_gate: single_real_layer_W4U8_HMX_native_persistent_KV_cache
-  active_recipe_specialization: W4U8_cache_ABI_only
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0154/20260902_profile_rerun_v1/final'
+  active_experiment_gate: null
+  active_recipe_specialization: null
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0155/20260902T050807Z_c10256023e74_formal'
+  latest_w4u8_hmx_native_cache_candidate:
+    id: EXP-0155
+    source_branch: codex/exp-0155-w4u8-hmx-native-kv-cache
+    source_head: c10256023e7465dd4146d4d991326e75c9c7cb87
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0155/20260902T050807Z_c10256023e74_formal'
+    retained_logical_reference: 'D:/llm_exp/models/qwen3-block-htp/exp0155/layer14_logical_reference_v1'
+    retained_candidate_package: 'D:/llm_exp/models/qwen3-block-htp/exp0155/layer14_hmx_cache_v1'
+    evidence_validity: valid
+    execution_state: completed
+    local_gate: pass
+    adoption_status: pending
+    selected_baseline_changed: false
+    execution_unit: real_Qwen3_layer14_M64_prefill_continuous_decode_positions64_71
+    correctness_gate: pass_nine_outputs_logical_caches_and_HMX_carriers_exact
+    physical_gate: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN
+    decode_full_prefix_pack_count_per_step: {row_major: 16, hmx_native_u8: 0}
+    prefill_host_us: {row_major: 2450.7035, hmx_native_u8: 3876.094}
+    decode_host_us_per_token: {row_major: 13579.7101875, hmx_native_u8: 2358.307375}
+    decode_speedup_x: 5.7582443796156975
+    complete_sequence_speedup_x: 4.861528472004154
+    conclusion: HMX_native_persistent_cache_eliminates_W4U8_decode_prefix_repack_bottleneck_but_adds_one_time_prefill_carrier_build_cost
+    next_priority: explicit_user_adoption_then_separate_28_layer_integration_or_prefill_build_parallelization
+    full_profiling_report_sha256: 8bf8c889f572b30a72b9b0c0e6b98e025812551163f6bd50bbee363fc9da2aef
+    summary_sha256: 4e4471986da7bd4a860dbd07b0937ccc24ea0c80357ccc4933d09f358d88e33c
+    evidence_sha256_ledger_sha256: 2955b28372dc072a80dfbf75fc220177453215e65db3805d3bbe4abcc8eed6b0
   latest_profiling_reproduction:
     id: EXP-0154
     source_branch: codex/exp-0154-full-stack-profile-rerun

@@ -13,14 +13,15 @@ experiments:
     variants:
       - w4u8_layer14_row_major_cache_control
       - w4u8_layer14_hmx_native_cache_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: one-real-layer-prefill-continuous-decode-versioned-persistent-HMX-native-W4U8-KV-cache
     source_branches:
       - codex/exp-0155-w4u8-hmx-native-kv-cache
-    source_commits: []
+    source_commits:
+      - c10256023e7465dd4146d4d991326e75c9c7cb87
     record: docs/experiments/EXP-0155.md
     approval_ref: 'User message 2026-09-02: 同意方向，开始吧'
     runtime:
@@ -28,6 +29,7 @@ experiments:
       source_branch: codex/exp-0155-w4u8-hmx-native-kv-cache
       approved_on: '2026-09-02'
       started_on: '2026-09-02'
+      completed_on: '2026-09-02'
     evidence:
       source_parent_experiment: EXP-0154
       source_parent_commit: 21ea7dac13f6da7da3c22bb262fe5a7044ee96e9
@@ -47,6 +49,33 @@ experiments:
       completion_gate: versioned_ABI_static_audit_then_single_layer_control_and_candidate_correctness_and_physical_gates_then_rotated_wall_clock_profile
       expansion_gate: a_passing_single_layer_gate_requires_a_separate_experiment_before_any_28_layer_integration
       selected_baseline_changed: false
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0155/20260902T050807Z_c10256023e74_formal'
+      retained_logical_reference: 'D:/llm_exp/models/qwen3-block-htp/exp0155/layer14_logical_reference_v1'
+      retained_candidate_package: 'D:/llm_exp/models/qwen3-block-htp/exp0155/layer14_hmx_cache_v1'
+      source_commit: c10256023e7465dd4146d4d991326e75c9c7cb87
+      correctness_gate_result: pass_nine_outputs_nine_logical_caches_and_nine_HMX_native_carriers_zero_LSB_or_byte_mismatch
+      structural_gate_result: pass_decode_full_prefix_pack_count_zero_current_K_output_lane_and_V_input_lane_only_incremental_update
+      physical_gate_result: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN
+      speed_gate_result: pass_candidate_complete_continuous_decode_strictly_faster_than_row_major_control
+      row_major_prefill_host_us: 2450.7035
+      hmx_native_prefill_host_us: 3876.094
+      prefill_latency_change_percent: 58.16250313430411
+      row_major_decode_host_us_per_token: 13579.7101875
+      hmx_native_decode_host_us_per_token: 2358.307375
+      decode_speedup_x: 5.7582443796156975
+      decode_latency_reduction_percent: 82.63359569211718
+      row_major_prefill_plus_eight_decode_us: 111134.9225
+      hmx_native_prefill_plus_eight_decode_us: 22860.0785
+      complete_sequence_speedup_x: 4.861528472004154
+      row_major_decode_full_prefix_pack_count_per_step: 16
+      hmx_native_decode_full_prefix_pack_count_per_step: 0
+      conclusion: persistent_HMX_native_W4U8_KV_cache_eliminates_complete_prefix_repack_and_recovers_decode_performance_at_the_cost_of_one_time_prefill_carrier_construction
+      next_priority: user_adoption_decision_then_separate_28_layer_integration_with_prefill_carrier_build_parallelization_as_a_followup
+      full_profiling_report_sha256: 8bf8c889f572b30a72b9b0c0e6b98e025812551163f6bd50bbee363fc9da2aef
+      summary_sha256: 4e4471986da7bd4a860dbd07b0937ccc24ea0c80357ccc4933d09f358d88e33c
+      evidence_sha256_ledger_sha256: 2955b28372dc072a80dfbf75fc220177453215e65db3805d3bbe4abcc8eed6b0
+      logical_reference_manifest_sha256: 32580c6f0f66a4071b6119a752ea9e82f939f05f5c95db9848c247f7d5ec39ec
+      candidate_package_manifest_sha256: c3edd49834970f85dfae30b680538a771ba4ee699ee2332b59a110212b044fac
   - id: EXP-0154
     slug: full-stack-profile-rerun
     title: Fresh reproduction of the corrected 28-layer profiling ledger

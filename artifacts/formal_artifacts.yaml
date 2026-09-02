@@ -1,6 +1,24 @@
 schema_version: 1
 project: qwen3-block-htp
 artifacts:
+  - id: EXP-0155-results
+    experiment: EXP-0155
+    kind: formal-result-set
+    path: 'D:\llm_exp\results\qwen3-block-htp\exp0155\20260902T050807Z_c10256023e74_formal'
+    source_commit: c10256023e7465dd4146d4d991326e75c9c7cb87
+    manifest: 'D:\llm_exp\results\qwen3-block-htp\exp0155\20260902T050807Z_c10256023e74_formal\summary.json'
+  - id: EXP-0155-logical-reference
+    experiment: EXP-0155
+    kind: retained-model-reference
+    path: 'D:\llm_exp\models\qwen3-block-htp\exp0155\layer14_logical_reference_v1'
+    source_commit: c10256023e7465dd4146d4d991326e75c9c7cb87
+    manifest: 'D:\llm_exp\models\qwen3-block-htp\exp0155\layer14_logical_reference_v1\manifest.json'
+  - id: EXP-0155-hmx-native-package
+    experiment: EXP-0155
+    kind: retained-model-package
+    path: 'D:\llm_exp\models\qwen3-block-htp\exp0155\layer14_hmx_cache_v1'
+    source_commit: c10256023e7465dd4146d4d991326e75c9c7cb87
+    manifest: 'D:\llm_exp\models\qwen3-block-htp\exp0155\layer14_hmx_cache_v1\manifest_exp0155.json'
   - id: EXP-0154-results
     experiment: EXP-0154
     kind: formal-result-set
