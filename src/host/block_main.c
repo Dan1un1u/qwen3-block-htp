@@ -1280,8 +1280,20 @@ static int qbh_read_slot(uint8_t *shared,
 
 static int qbh_hmx_native_u8_cache_formats(uint32_t k_format,
                                             uint32_t v_format) {
-    return k_format == QBH_KV_CACHE_FORMAT_HMX_U8_K_WEIGHT_V1 &&
-           v_format == QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_V1;
+    return (k_format == QBH_KV_CACHE_FORMAT_HMX_U8_K_WEIGHT_V1 &&
+            v_format == QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_V1) ||
+           (k_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_K_WEIGHT_DELTA_V2 &&
+            v_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_DELTA_V2);
+}
+
+static int qbh_hmx_native_u8_delta_cache_formats(
+    uint32_t k_format, uint32_t v_format) {
+    return k_format ==
+               QBH_KV_CACHE_FORMAT_HMX_U8_K_WEIGHT_DELTA_V2 &&
+           v_format ==
+               QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_DELTA_V2;
 }
 
 static int qbh_hmx_native_f16_cache_formats(uint32_t k_format,
@@ -1304,6 +1316,11 @@ static uint32_t qbh_host_k_cache_bytes(uint32_t variant,
         k_format == QBH_KV_CACHE_FORMAT_HMX_U8_K_WEIGHT_V1) {
         return QBH_KV_CACHE_HMX_K_BYTES(capacity);
     }
+    if (variant == QBH_BLOCK_W4U8 &&
+        k_format ==
+            QBH_KV_CACHE_FORMAT_HMX_U8_K_WEIGHT_DELTA_V2) {
+        return QBH_KV_CACHE_HMX_U8_K_DELTA_BYTES(capacity);
+    }
     if (variant != QBH_BLOCK_W4U8 &&
         k_format == QBH_KV_CACHE_FORMAT_HMX_F16_K_WEIGHT_V1) {
         return QBH_KV_CACHE_HMX_F16_K_BYTES(capacity);
@@ -1318,6 +1335,11 @@ static uint32_t qbh_host_v_cache_bytes(uint32_t variant,
     if (variant == QBH_BLOCK_W4U8 &&
         v_format == QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_V1) {
         return QBH_KV_CACHE_HMX_V_BYTES(capacity);
+    }
+    if (variant == QBH_BLOCK_W4U8 &&
+        v_format ==
+            QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_DELTA_V2) {
+        return QBH_KV_CACHE_HMX_U8_V_DELTA_BYTES(capacity);
     }
     if (variant != QBH_BLOCK_W4U8 &&
         v_format == QBH_KV_CACHE_FORMAT_HMX_F16_V_WEIGHT_V1) {
@@ -1395,16 +1417,21 @@ static int qbh_prepare_vertical_layer_slots(
         const char *cache_kinds[2] = {"k", "v"};
         const int hmx_native_u8 = qbh_hmx_native_u8_cache_formats(
             k_cache_format, v_cache_format);
+        const int hmx_native_u8_delta =
+            qbh_hmx_native_u8_delta_cache_formats(
+                k_cache_format, v_cache_format);
         const int hmx_native_f16 = qbh_hmx_native_f16_cache_formats(
             k_cache_format, v_cache_format);
         const int hmx_native = hmx_native_u8 || hmx_native_f16;
+        const char *hmx_suffix = hmx_native_u8_delta
+            ? "u8_delta" : (hmx_native_u8 ? "u8" : "f16");
         for (uint32_t index = 0U; index < 2U; ++index) {
             if (hmx_native) {
                 status = snprintf(
                     name, sizeof(name),
                     "layer%" PRIu32 "/kv_cache_%s_hmx_%s.bin",
                     layer_index, cache_kinds[index],
-                    hmx_native_u8 ? "u8" : "f16");
+                    hmx_suffix);
             } else {
                 status = snprintf(
                     name, sizeof(name),
@@ -1422,7 +1449,7 @@ static int qbh_prepare_vertical_layer_slots(
                     "layer%" PRIu32
                     "/reference_kv_cache_%s_hmx_%s_step00.bin",
                     layer_index, cache_kinds[index],
-                    hmx_native_u8 ? "u8" : "f16");
+                    hmx_suffix);
             } else {
                 status = snprintf(
                     name, sizeof(name),
@@ -2089,6 +2116,20 @@ static int qbh_hmx_cache_byte_is_appended_token(
         }
     }
 
+    if (qbh_hmx_native_u8_delta_cache_formats(
+            layer->k_format, layer->v_format)) {
+        const uint32_t bias_bytes = kind == 0U
+            ? layer->k_bias_bytes_per_head
+            : layer->v_bias_bytes_per_head;
+        const uint32_t delta_offset = weight_bytes + bias_bytes;
+        if (head_relative < delta_offset || token < QBH_BLOCK_M) {
+            return 0;
+        }
+        return (head_relative - delta_offset) /
+                   QBH_BLOCK_HEAD_DIM ==
+               token - QBH_BLOCK_M;
+    }
+
     if (kind == 0U) {
         const uint32_t n_tile = token / QBH_HMX_OUTPUT_CHANNELS;
         const uint32_t output = token % QBH_HMX_OUTPUT_CHANNELS;
@@ -2380,7 +2421,7 @@ static void qbh_print_replay_profile(
     printf(",\"" #field "\":%" PRIu64, header->field)
 
     printf(
-        "{\"experiment\":158,\"record\":\"replay_profile\","
+        "{\"experiment\":159,\"record\":\"replay_profile\","
         "\"variant\":\"%s\",\"replay_step\":%" PRIu32 ","
         "\"mode\":\"%s\",\"logical_m\":%" PRIu32 ","
         "\"first_position\":%" PRIu32 ","
@@ -2837,6 +2878,9 @@ static int qbh_run_replay_sequence(
                 const int hmx_native_u8 =
                     qbh_hmx_native_u8_cache_formats(
                         layer->k_format, layer->v_format);
+                const int hmx_native_u8_delta =
+                    qbh_hmx_native_u8_delta_cache_formats(
+                        layer->k_format, layer->v_format);
                 const int hmx_native_f16 =
                     qbh_hmx_native_f16_cache_formats(
                         layer->k_format, layer->v_format);
@@ -2851,7 +2895,10 @@ static int qbh_run_replay_sequence(
                             PRIu32 ".bin",
                             layer->layer_index,
                             kind == 0U ? 'k' : 'v',
-                            hmx_native_u8 ? "u8" : "f16", step) < 0 ||
+                            hmx_native_u8_delta
+                                ? "u8_delta"
+                                : (hmx_native_u8 ? "u8" : "f16"),
+                            step) < 0 ||
                         qbh_read_named_tensor(
                             package_root, cache_reference_name,
                             shared + vertical_slots[slice_index]
@@ -2969,7 +3016,7 @@ static int qbh_run_replay_sequence(
         }
         all_pass &= qbh_replay_step_pass(variant, step_result);
         printf(
-            "{\"experiment\":158,\"variant\":\"%s\","
+            "{\"experiment\":159,\"variant\":\"%s\","
             "\"replay_step\":%" PRIu32 ",\"mode\":\"%s\","
             "\"first_position\":%" PRIu32 ","
             "\"valid_length\":%" PRIu32 ","
@@ -3088,7 +3135,7 @@ static int qbh_run_replay_sequence(
         }
     }
     printf(
-        "{\"experiment\":158,\"variant\":\"%s\","
+        "{\"experiment\":159,\"variant\":\"%s\","
         "\"replay_sequence_complete\":true,"
         "\"completed_steps\":%" PRIu32 ","
         "\"first_layer\":%" PRIu32 ","
@@ -3183,7 +3230,7 @@ static int qbh_run_full_stack_hidden_capture(
         gate_pass = 0;
     }
     printf(
-        "{\"experiment\":158,\"hidden_capture\":true,"
+        "{\"experiment\":159,\"hidden_capture\":true,"
         "\"variant\":\"%s\",\"host_wall_ns\":%" PRIu64 ","
         "\"rpc_result\":%d,\"dsp_status\":%d,"
         "\"captured_layers\":%" PRIu32 ","
@@ -3518,6 +3565,11 @@ int main(int argc, char **argv) {
                     QBH_KV_CACHE_FORMAT_HMX_U8_K_WEIGHT_V1;
                 kv_cache_v_format =
                     QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_V1;
+            } else if (strcmp(layout, "hmx_native_u8_delta") == 0) {
+                kv_cache_k_format =
+                    QBH_KV_CACHE_FORMAT_HMX_U8_K_WEIGHT_DELTA_V2;
+                kv_cache_v_format =
+                    QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_DELTA_V2;
             } else if (strcmp(layout, "hmx_native_f16") == 0) {
                 kv_cache_k_format =
                     QBH_KV_CACHE_FORMAT_HMX_F16_K_WEIGHT_V1;
@@ -3628,11 +3680,15 @@ int main(int argc, char **argv) {
          kv_cache_k_format !=
              QBH_KV_CACHE_FORMAT_HMX_U8_K_WEIGHT_V1 &&
          kv_cache_k_format !=
+             QBH_KV_CACHE_FORMAT_HMX_U8_K_WEIGHT_DELTA_V2 &&
+         kv_cache_k_format !=
              QBH_KV_CACHE_FORMAT_HMX_F16_K_WEIGHT_V1) ||
         (kv_cache_v_format !=
              QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1 &&
          kv_cache_v_format !=
              QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_V1 &&
+         kv_cache_v_format !=
+             QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_DELTA_V2 &&
          kv_cache_v_format !=
              QBH_KV_CACHE_FORMAT_HMX_F16_V_WEIGHT_V1) ||
         (qbh_hmx_native_u8_cache_formats(
@@ -4435,7 +4491,7 @@ int main(int argc, char **argv) {
             const char *layout_only = getenv("QBH_LAYOUT_ONLY");
             if (layout_only != NULL && strcmp(layout_only, "1") == 0) {
                 printf(
-                    "{\"experiment\":158,\"layout_only\":true,"
+                    "{\"experiment\":159,\"layout_only\":true,"
                     "\"variant\":\"%s\",\"layer_first\":%" PRIu32
                     ",\"layer_count\":%" PRIu32
                     ",\"shared_bytes\":%zu,"
@@ -4691,28 +4747,43 @@ int main(int argc, char **argv) {
                     kv_cache_k_format, kv_cache_v_format)) {
                 const int native_u8 = qbh_hmx_native_u8_cache_formats(
                     kv_cache_k_format, kv_cache_v_format);
+                const int native_u8_delta =
+                    qbh_hmx_native_u8_delta_cache_formats(
+                        kv_cache_k_format, kv_cache_v_format);
                 layer->padded_capacity =
                     QBH_KV_CACHE_HMX_PADDED_CAPACITY(
                         kv_cache_capacity);
                 layer->k_head_stride_bytes = native_u8
-                    ? QBH_KV_CACHE_HMX_K_HEAD_BYTES(kv_cache_capacity)
+                    ? (native_u8_delta
+                           ? QBH_KV_CACHE_HMX_U8_K_DELTA_HEAD_BYTES(
+                                 kv_cache_capacity)
+                           : QBH_KV_CACHE_HMX_K_HEAD_BYTES(
+                                 kv_cache_capacity))
                     : QBH_KV_CACHE_HMX_F16_K_HEAD_BYTES(kv_cache_capacity);
                 layer->v_head_stride_bytes = native_u8
-                    ? QBH_KV_CACHE_HMX_V_HEAD_BYTES(kv_cache_capacity)
+                    ? (native_u8_delta
+                           ? QBH_KV_CACHE_HMX_U8_V_DELTA_HEAD_BYTES(
+                                 kv_cache_capacity)
+                           : QBH_KV_CACHE_HMX_V_HEAD_BYTES(
+                                 kv_cache_capacity))
                     : QBH_KV_CACHE_HMX_F16_V_HEAD_BYTES(kv_cache_capacity);
                 layer->head_stride_bytes =
                     layer->k_head_stride_bytes;
                 layer->token_stride_bytes = 0U;
                 layer->k_weight_bytes_per_head = native_u8
-                    ? QBH_KV_CACHE_HMX_WEIGHT_BYTES_PER_HEAD(
-                          kv_cache_capacity)
+                    ? (native_u8_delta
+                           ? QBH_KV_CACHE_HMX_U8_BASE_WEIGHT_BYTES_PER_HEAD
+                           : QBH_KV_CACHE_HMX_WEIGHT_BYTES_PER_HEAD(
+                                 kv_cache_capacity))
                     : QBH_KV_CACHE_HMX_F16_WEIGHT_BYTES_PER_HEAD(
                           kv_cache_capacity);
                 layer->v_weight_bytes_per_head =
                     layer->k_weight_bytes_per_head;
                 layer->k_bias_bytes_per_head = native_u8
-                    ? QBH_KV_CACHE_HMX_K_BIAS_BYTES_PER_HEAD(
-                          kv_cache_capacity)
+                    ? (native_u8_delta
+                           ? QBH_KV_CACHE_HMX_U8_K_BASE_BIAS_BYTES_PER_HEAD
+                           : QBH_KV_CACHE_HMX_K_BIAS_BYTES_PER_HEAD(
+                                 kv_cache_capacity))
                     : 0U;
                 layer->v_bias_bytes_per_head = native_u8
                     ? QBH_KV_CACHE_HMX_V_BIAS_BYTES_PER_HEAD
@@ -4999,7 +5070,7 @@ int main(int argc, char **argv) {
         int map_gate_result = qwen3_probe_run_block(
             session.handle, shared_fd, (uint32_t)total_bytes);
         printf(
-            "{\"experiment\":158,\"map_gate\":true,"
+            "{\"experiment\":159,\"map_gate\":true,"
             "\"variant\":\"%s\",\"shared_bytes\":%zu,"
             "\"rpc_result\":%d,\"dsp_status\":%d,"
             "\"layer_count\":%" PRIu32 ","

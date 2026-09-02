@@ -135,6 +135,33 @@ void qbh_attention_u8_update_v_native_token(
     const struct qbh_attention_config *config,
     int8_t *k_tile_weights, uint32_t *saturation_count);
 
+/* EXP-0159 delta-journal helpers.  Rows are contiguous logical U8 vectors;
+ * only journaled lanes are patched into the immutable prefill carrier. */
+void qbh_attention_u8_update_k_native_row(
+    const uint8_t *row, uint32_t output_lane,
+    const struct qbh_attention_config *config,
+    int8_t *n_tile_weight, uint32_t *n_tile_bias);
+
+void qbh_attention_u8_update_v_native_row(
+    const uint8_t *row, uint32_t input_lane,
+    const struct qbh_attention_config *config,
+    int8_t *k_tile_weights, uint32_t k_tile_stride_bytes,
+    uint32_t *saturation_count);
+
+void qbh_attention_u8_patch_k_delta_rows_hvx(
+    const uint8_t *rows, uint32_t row_count,
+    const struct qbh_attention_config *config,
+    int8_t *n_tile_weight, uint32_t *n_tile_bias);
+
+void qbh_attention_u8_prepare_v_delta_lut(
+    const struct qbh_attention_config *config, uint8_t *scratch);
+
+void qbh_attention_u8_patch_v_delta_rows_hvx(
+    const uint8_t *rows, uint32_t row_count,
+    const struct qbh_attention_config *config,
+    int8_t *k_tile_weights, uint32_t k_tile_stride_bytes,
+    uint8_t *scratch, uint32_t *saturation_count);
+
 void qbh_attention_u8_requant_softmax_dynamic(
     uint8_t *score_tiles, uint8_t *probability_tiles,
     uint32_t query_rows, uint32_t past_tokens,

@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(64)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(158)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(65)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(159)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -110,6 +110,8 @@ enum qbh_kv_cache_format {
     QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_V1 = 3,
     QBH_KV_CACHE_FORMAT_HMX_F16_K_WEIGHT_V1 = 4,
     QBH_KV_CACHE_FORMAT_HMX_F16_V_WEIGHT_V1 = 5,
+    QBH_KV_CACHE_FORMAT_HMX_U8_K_WEIGHT_DELTA_V2 = 6,
+    QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_DELTA_V2 = 7,
 };
 
 enum qbh_w4u8_prefill_cache_mode {
@@ -137,6 +139,33 @@ enum qbh_w4u8_prefill_cache_mode {
     (QBH_BLOCK_KV_HEADS * QBH_KV_CACHE_HMX_K_HEAD_BYTES(capacity_))
 #define QBH_KV_CACHE_HMX_V_BYTES(capacity_) \
     (QBH_BLOCK_KV_HEADS * QBH_KV_CACHE_HMX_V_HEAD_BYTES(capacity_))
+
+/* U8 delta-journal storage keeps the immutable compact M64 HMX carrier
+ * produced by prefill, then appends only the logical U8 K/V rows for the
+ * bounded decode tail.  Attention reconstructs the padded tail HMX tile in
+ * VTCM; decode never reads or rewrites a persistent HMX tile in DDR. */
+#define QBH_KV_CACHE_HMX_U8_DELTA_ROWS(capacity_) \
+    ((capacity_) - QBH_BLOCK_M)
+#define QBH_KV_CACHE_HMX_U8_DELTA_BYTES_PER_HEAD(capacity_) \
+    (QBH_KV_CACHE_HMX_U8_DELTA_ROWS(capacity_) * QBH_BLOCK_HEAD_DIM)
+#define QBH_KV_CACHE_HMX_U8_BASE_WEIGHT_BYTES_PER_HEAD \
+    (QBH_BLOCK_M * QBH_BLOCK_HEAD_DIM)
+#define QBH_KV_CACHE_HMX_U8_K_BASE_BIAS_BYTES_PER_HEAD \
+    (QBH_BLOCK_M / QBH_HMX_OUTPUT_CHANNELS * QBH_HMX_BIAS_BYTES)
+#define QBH_KV_CACHE_HMX_U8_K_DELTA_HEAD_BYTES(capacity_) \
+    (QBH_KV_CACHE_HMX_U8_BASE_WEIGHT_BYTES_PER_HEAD + \
+     QBH_KV_CACHE_HMX_U8_K_BASE_BIAS_BYTES_PER_HEAD + \
+     QBH_KV_CACHE_HMX_U8_DELTA_BYTES_PER_HEAD(capacity_))
+#define QBH_KV_CACHE_HMX_U8_V_DELTA_HEAD_BYTES(capacity_) \
+    (QBH_KV_CACHE_HMX_U8_BASE_WEIGHT_BYTES_PER_HEAD + \
+     QBH_KV_CACHE_HMX_V_BIAS_BYTES_PER_HEAD + \
+     QBH_KV_CACHE_HMX_U8_DELTA_BYTES_PER_HEAD(capacity_))
+#define QBH_KV_CACHE_HMX_U8_K_DELTA_BYTES(capacity_) \
+    (QBH_BLOCK_KV_HEADS * \
+     QBH_KV_CACHE_HMX_U8_K_DELTA_HEAD_BYTES(capacity_))
+#define QBH_KV_CACHE_HMX_U8_V_DELTA_BYTES(capacity_) \
+    (QBH_BLOCK_KV_HEADS * \
+     QBH_KV_CACHE_HMX_U8_V_DELTA_HEAD_BYTES(capacity_))
 
 /* FP16 cache-native storage keeps the exact M64 HMX weight operands consumed
  * by prefill QK/AV plus a contiguous row journal for the bounded decode tail.
