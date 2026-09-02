@@ -12180,6 +12180,10 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     }
 
     if (scan_enabled != 0U) {
+        const uint64_t cache_append_start =
+            HAP_perf_get_qtimer_count();
+        const uint64_t cache_append_dma_before =
+            header->scan_cache_append_ticks;
         int cache_status =
             header->variant == QBH_BLOCK_W4U8
                 ? (u8_integer_attention_enabled != 0U
@@ -12190,6 +12194,15 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                 : qbh_scan_append_f16_kv(
                       header, shared, buffers, logical_rows,
                       past_tokens);
+        const uint64_t cache_append_elapsed =
+            HAP_perf_get_qtimer_count() - cache_append_start;
+        const uint64_t cache_append_dma =
+            header->scan_cache_append_ticks -
+            cache_append_dma_before;
+        if (cache_append_elapsed >= cache_append_dma) {
+            header->scan_cache_pack_ticks +=
+                cache_append_elapsed - cache_append_dma;
+        }
         if (cache_status != 0) {
             return QBH_BLOCK_STATUS_ATTENTION_FAILED;
         }
@@ -13250,6 +13263,12 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
             uint64_t cache_read_before = header->scan_cache_ddr_read_bytes;
             uint64_t cache_write_before =
                 header->scan_cache_ddr_write_bytes;
+            uint64_t cache_pack_before =
+                header->scan_cache_pack_ticks;
+            uint64_t cache_append_dma_before =
+                header->scan_cache_append_ticks;
+            uint64_t block_orchestration_ticks = 0U;
+            uint64_t layer_bookkeeping_ticks;
             int block_status;
 
             memset(profile, 0, sizeof(*profile));
@@ -13257,6 +13276,8 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
             profile->cache_valid_before = layer->valid_length;
             qbh_bind_slice_layer(header, slice_index);
             header->initial_kv_length = layer->valid_length;
+            layer_bookkeeping_ticks =
+                HAP_perf_get_qtimer_count() - layer_start;
             if (qbh_stage_metadata(header, shared, &buffers) != 0 ||
                 qbh_scan_stage_rope_chunk(
                     header, shared, &buffers, 0U) != 0) {
@@ -13266,11 +13287,41 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
                 result = AEE_EFAILED;
                 goto stop_worker;
             }
-            block_status = qbh_run_one_block(
-                header, shared, &buffers, &worker,
-                hvx_pool_created != 0 ? &w4f16_pool : NULL,
-                header->input_offset, header->logical_m,
-                layer->valid_length, slice_index != 0U);
+            {
+                const uint64_t block_start =
+                    HAP_perf_get_qtimer_count();
+                uint64_t block_named_ticks;
+                uint64_t block_end;
+                block_status = qbh_run_one_block(
+                    header, shared, &buffers, &worker,
+                    hvx_pool_created != 0 ? &w4f16_pool : NULL,
+                    header->input_offset, header->logical_m,
+                    layer->valid_length, slice_index != 0U);
+                block_end = HAP_perf_get_qtimer_count();
+                block_named_ticks =
+                    (header->input_stage_ticks - input_before) +
+                    (header->input_norm_ticks - input_norm_before) +
+                    (header->qkv_projection_ticks - qkv_before) +
+                    (header->qk_norm_rope_ticks - qk_norm_before) +
+                    (header->attention_ticks - attention_before) +
+                    (header->o_projection_ticks - o_before) +
+                    (header->post_attention_residual_ticks -
+                        post_residual_before) +
+                    (header->post_attention_norm_ticks - post_norm_before) +
+                    (header->gate_up_ticks - gate_up_before) +
+                    (header->activation_ticks - activation_before) +
+                    (header->down_ticks - down_before) +
+                    (header->final_residual_ticks - final_before) +
+                    (header->scan_cache_pack_ticks - cache_pack_before) +
+                    (header->scan_cache_append_ticks -
+                        cache_append_dma_before);
+                if (block_end - block_start > block_named_ticks) {
+                    block_orchestration_ticks =
+                        block_end - block_start - block_named_ticks;
+                    header->block_orchestration_ticks +=
+                        block_orchestration_ticks;
+                }
+            }
             profile->status = block_status;
             if (block_status != QBH_BLOCK_STATUS_OK) {
                 header->dsp_status = block_status;
@@ -13301,46 +13352,87 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
                 header->full_stack_hidden_capture_ticks +=
                     HAP_perf_get_qtimer_count() - capture_start;
             }
-            layer->valid_length += header->logical_m;
-            layer->append_count += header->logical_m;
-            profile->cache_valid_after = layer->valid_length;
-            profile->hidden_ddr_read_bytes =
-                slice_index == 0U ? physical_tensor_bytes : 0U;
-            profile->metadata_stage_ticks =
-                header->metadata_stage_ticks - metadata_before;
-            profile->input_stage_ticks =
-                header->input_stage_ticks - input_before;
-            profile->input_norm_ticks =
-                header->input_norm_ticks - input_norm_before;
-            profile->qkv_projection_ticks =
-                header->qkv_projection_ticks - qkv_before;
-            profile->qk_norm_rope_ticks =
-                header->qk_norm_rope_ticks - qk_norm_before;
-            profile->attention_ticks =
-                header->attention_ticks - attention_before;
-            profile->o_projection_ticks =
-                header->o_projection_ticks - o_before;
-            profile->post_attention_residual_ticks =
-                header->post_attention_residual_ticks -
-                post_residual_before;
-            profile->post_attention_norm_ticks =
-                header->post_attention_norm_ticks - post_norm_before;
-            profile->gate_up_ticks =
-                header->gate_up_ticks - gate_up_before;
-            profile->activation_ticks =
-                header->activation_ticks - activation_before;
-            profile->down_ticks = header->down_ticks - down_before;
-            profile->final_residual_ticks =
-                header->final_residual_ticks - final_before;
-            profile->weight_ddr_read_bytes =
-                header->weight_ddr_read_bytes - weight_bytes_before;
-            profile->cache_ddr_read_bytes =
-                header->scan_cache_ddr_read_bytes - cache_read_before;
-            profile->cache_ddr_write_bytes =
-                header->scan_cache_ddr_write_bytes - cache_write_before;
-            profile->layer_ticks =
-                HAP_perf_get_qtimer_count() - layer_start;
-            ++header->block_invocation_count;
+            {
+                const uint64_t bookkeeping_start =
+                    HAP_perf_get_qtimer_count();
+                uint64_t layer_named_ticks;
+                uint64_t layer_end;
+                layer->valid_length += header->logical_m;
+                layer->append_count += header->logical_m;
+                ++header->block_invocation_count;
+                profile->cache_valid_after = layer->valid_length;
+                profile->hidden_ddr_read_bytes =
+                    slice_index == 0U ? physical_tensor_bytes : 0U;
+                profile->metadata_stage_ticks =
+                    header->metadata_stage_ticks - metadata_before;
+                profile->input_stage_ticks =
+                    header->input_stage_ticks - input_before;
+                profile->input_norm_ticks =
+                    header->input_norm_ticks - input_norm_before;
+                profile->qkv_projection_ticks =
+                    header->qkv_projection_ticks - qkv_before;
+                profile->qk_norm_rope_ticks =
+                    header->qk_norm_rope_ticks - qk_norm_before;
+                profile->attention_ticks =
+                    header->attention_ticks - attention_before;
+                profile->o_projection_ticks =
+                    header->o_projection_ticks - o_before;
+                profile->post_attention_residual_ticks =
+                    header->post_attention_residual_ticks -
+                    post_residual_before;
+                profile->post_attention_norm_ticks =
+                    header->post_attention_norm_ticks - post_norm_before;
+                profile->gate_up_ticks =
+                    header->gate_up_ticks - gate_up_before;
+                profile->activation_ticks =
+                    header->activation_ticks - activation_before;
+                profile->down_ticks = header->down_ticks - down_before;
+                profile->final_residual_ticks =
+                    header->final_residual_ticks - final_before;
+                profile->cache_append_pack_ticks =
+                    header->scan_cache_pack_ticks - cache_pack_before;
+                profile->cache_append_dma_ticks =
+                    header->scan_cache_append_ticks -
+                    cache_append_dma_before;
+                profile->block_orchestration_ticks =
+                    block_orchestration_ticks;
+                profile->weight_ddr_read_bytes =
+                    header->weight_ddr_read_bytes - weight_bytes_before;
+                profile->cache_ddr_read_bytes =
+                    header->scan_cache_ddr_read_bytes - cache_read_before;
+                profile->cache_ddr_write_bytes =
+                    header->scan_cache_ddr_write_bytes - cache_write_before;
+                layer_end = HAP_perf_get_qtimer_count();
+                layer_bookkeeping_ticks +=
+                    layer_end - bookkeeping_start;
+                profile->layer_bookkeeping_ticks =
+                    layer_bookkeeping_ticks;
+                header->layer_bookkeeping_ticks +=
+                    layer_bookkeeping_ticks;
+                profile->layer_ticks = layer_end - layer_start;
+                layer_named_ticks =
+                    profile->metadata_stage_ticks +
+                    profile->input_stage_ticks +
+                    profile->input_norm_ticks +
+                    profile->qkv_projection_ticks +
+                    profile->qk_norm_rope_ticks +
+                    profile->attention_ticks +
+                    profile->o_projection_ticks +
+                    profile->post_attention_residual_ticks +
+                    profile->post_attention_norm_ticks +
+                    profile->gate_up_ticks +
+                    profile->activation_ticks +
+                    profile->down_ticks +
+                    profile->final_residual_ticks +
+                    profile->cache_append_pack_ticks +
+                    profile->cache_append_dma_ticks +
+                    profile->block_orchestration_ticks +
+                    profile->layer_bookkeeping_ticks;
+                if (profile->layer_ticks > layer_named_ticks) {
+                    profile->layer_unattributed_ticks =
+                        profile->layer_ticks - layer_named_ticks;
+                }
+            }
         }
         {
             uint64_t output_start = HAP_perf_get_qtimer_count();
@@ -13571,6 +13663,10 @@ stop_worker:
                       header->down_ticks +
                       header->final_residual_ticks +
                       header->output_stage_ticks +
+                      header->scan_cache_pack_ticks +
+                      header->scan_cache_append_ticks +
+                      header->block_orchestration_ticks +
+                      header->layer_bookkeeping_ticks +
                       header->runtime_teardown_ticks;
         if (header->invocation_ticks > named_ticks) {
             header->stage_boundary_ticks =

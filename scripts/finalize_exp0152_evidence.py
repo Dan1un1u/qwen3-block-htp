@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create the formal EXP-0152 three-recipe evidence and PC-027/PC-028 report."""
+"""Create the formal EXP-0153 profiling-closure evidence and report."""
 
 from __future__ import annotations
 
@@ -28,6 +28,14 @@ MODULES = (
     ("Gate/Up + SwiGLU", ("gate_up_ticks", "activation_ticks")),
     ("Down projection", ("down_ticks",)),
     ("Final residual", ("final_residual_ticks",)),
+    ("KV-cache carrier conversion", ("scan_cache_pack_ticks",)),
+    ("KV-cache append DMA", ("scan_cache_append_ticks",)),
+    ("Block internal orchestration", ("block_orchestration_ticks",)),
+    ("Layer bookkeeping", ("layer_bookkeeping_ticks",)),
+    ("DSP unattributed residual", ("stage_boundary_ticks",)),
+    ("DSP runtime setup/teardown", (
+        "runtime_setup_ticks", "runtime_teardown_ticks",
+    )),
 )
 PRIMARY = (
     ("Host wall", "host_wall_ns", "host_ns"),
@@ -35,6 +43,11 @@ PRIMARY = (
     ("DSP invocation", "invocation_ticks", "ticks"),
     ("Runtime setup", "runtime_setup_ticks", "ticks"),
     ("Runtime teardown", "runtime_teardown_ticks", "ticks"),
+    ("KV-cache carrier conversion", "scan_cache_pack_ticks", "ticks"),
+    ("KV-cache append DMA", "scan_cache_append_ticks", "ticks"),
+    ("Block internal orchestration", "block_orchestration_ticks", "ticks"),
+    ("Layer bookkeeping", "layer_bookkeeping_ticks", "ticks"),
+    ("DSP unattributed residual", "stage_boundary_ticks", "ticks"),
     ("Named ledger total", "ledger_named_ticks", "ticks"),
     ("Unattributed ledger", "ledger_unattributed_ticks", "ticks"),
 )
@@ -53,6 +66,11 @@ LEDGER = (
     ("Down", "down_ticks", "ticks"),
     ("Final residual", "final_residual_ticks", "ticks"),
     ("Output", "output_stage_ticks", "ticks"),
+    ("KV-cache carrier conversion", "scan_cache_pack_ticks", "ticks"),
+    ("KV-cache append DMA", "scan_cache_append_ticks", "ticks"),
+    ("Block internal orchestration", "block_orchestration_ticks", "ticks"),
+    ("Layer bookkeeping", "layer_bookkeeping_ticks", "ticks"),
+    ("DSP unattributed residual", "stage_boundary_ticks", "ticks"),
 )
 PROJECTION_DIAGNOSTICS = (
     "weight_dma_ticks", "hmx_compute_ticks", "projection_pack_ticks",
@@ -148,6 +166,10 @@ def parse_log(path: Path) -> tuple[list[dict[str, object]], dict[str, object]]:
             completion = record
     if len(profiles) != 9 or completion is None:
         raise ValueError(f"{path}: incomplete replay log")
+    if any(int(record.get("experiment", -1)) != 153 for record in profiles):
+        raise ValueError(f"{path}: replay profile is not EXP-0153")
+    if int(completion.get("experiment", -1)) != 153:
+        raise ValueError(f"{path}: replay completion is not EXP-0153")
     return sorted(profiles, key=lambda row: int(row["replay_step"])), completion
 
 
@@ -209,8 +231,12 @@ def module_values(
         ]
         values.append((label, median(per_record)))
     host = numeric_median(records, "host_wall_ns") / 1000.0
-    named = sum(value for _, value in values)
-    values.append(("Host/RPC 与 profiling closure remainder", host - named))
+    host_boundary = median([
+        float(record["host_wall_ns"]) / 1000.0 -
+        float(record["invocation_ticks"]) / QTIMER_MHZ
+        for record in records
+    ])
+    values.append(("Host-DSP boundary", host_boundary))
     return values, host
 
 
@@ -287,8 +313,8 @@ def per_layer_table(
     records = samples(runs, recipe, phase, "repeat_ten")
     lines = [
         f"### Per-layer ledger — {DISPLAY[recipe]} {phase}", "",
-        "| Layer | Total us | QKV us | Attention us | O us | Gate/Up us | Down us | Weight DDR MiB | Cache read KiB | Cache write KiB |",
-        "|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "| Layer | Total us | QKV us | Attention us | O us | Gate/Up us | Down us | KV pack us | Cache DMA us | Block orchestration us | Bookkeeping us | Unattributed us | Weight DDR MiB | Cache read KiB | Cache write KiB |",
+        "|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for layer in range(28):
         values = [record[f"slice_layer_{layer}"] for record in records]
@@ -300,6 +326,11 @@ def per_layer_table(
             f"{med('o_projection_ticks') / QTIMER_MHZ:.3f} | "
             f"{med('gate_up_ticks') / QTIMER_MHZ:.3f} | "
             f"{med('down_ticks') / QTIMER_MHZ:.3f} | "
+            f"{med('cache_append_pack_ticks') / QTIMER_MHZ:.3f} | "
+            f"{med('cache_append_dma_ticks') / QTIMER_MHZ:.3f} | "
+            f"{med('block_orchestration_ticks') / QTIMER_MHZ:.3f} | "
+            f"{med('layer_bookkeeping_ticks') / QTIMER_MHZ:.3f} | "
+            f"{med('layer_unattributed_ticks') / QTIMER_MHZ:.3f} | "
             f"{med('weight_ddr_read_bytes') / (1024.0 * 1024.0):.3f} | "
             f"{med('cache_ddr_read_bytes') / 1024.0:.3f} | "
             f"{med('cache_ddr_write_bytes') / 1024.0:.3f} |"
@@ -377,6 +408,17 @@ def main() -> None:
         bool(mapping_records[recipe]["gate_pass"])
         for recipe in RECIPES
     )
+    profiling_pass = all(
+        int(record["ledger_unattributed_ticks"]) == 0 and
+        int(record["stage_boundary_ticks"]) <=
+            0.001 * int(record["invocation_ticks"]) and
+        all(
+            int(record[f"slice_layer_{layer}"]["layer_unattributed_ticks"]) <=
+                0.001 * int(record[f"slice_layer_{layer}"]["layer_ticks"])
+            for layer in range(28)
+        )
+        for record in all_profiles
+    )
 
     aggregates: dict[str, object] = {}
     for scope in ("repeat_one", "repeat_ten"):
@@ -408,7 +450,7 @@ def main() -> None:
             "hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so",
     }
     identity = {
-        "experiment": "EXP-0152",
+        "experiment": "EXP-0153",
         "source_branch": args.source_branch,
         "source_commit": args.source_commit,
         "execution_unit": "Qwen3 layers 0-27, M64 prefill plus 8 continuous decode tokens",
@@ -433,12 +475,14 @@ def main() -> None:
         **identity,
         "execution_state": "completed",
         "evidence_validity": "valid",
-        "local_gate": "pass" if mapping_pass and correctness_pass and physical_pass else "fail",
+        "local_gate": "pass" if (
+            mapping_pass and correctness_pass and physical_pass and profiling_pass
+        ) else "fail",
         "adoption_status": "not_applicable",
         "mapping_gate_pass": mapping_pass,
         "correctness_gate_pass": correctness_pass,
         "physical_gate_pass": physical_pass,
-        "profiling_gate_pass": True,
+        "profiling_gate_pass": profiling_pass,
         "speed_gate": "not_applicable",
         "layout": layout_records,
         "mapping": mapping_records,
@@ -447,8 +491,8 @@ def main() -> None:
     }
 
     lines = [
-        "# EXP-0152 full profiling report", "",
-        f"Source: `{args.source_branch}` at `{args.source_commit}`.  The execution unit is one real 28-layer transformer stack in one FastRPC call per step, with M=64 prefill followed by positions 64-71 in one Prepared Runtime Session. Ten rounds are paired and recipe order is rotated. There is no speed gate and no baseline-promotion authority.",
+        "# EXP-0153 full profiling closure report", "",
+        f"Source: `{args.source_branch}` at `{args.source_commit}`. The execution unit and kernels are unchanged from EXP-0152. This instrumentation-only experiment separates KV-cache carrier conversion, cache DMA, block orchestration, layer bookkeeping, DSP unattributed residual and the true Host-DSP boundary.",
         "",
     ]
     lines += module_overview(runs, "prefill")
@@ -489,6 +533,7 @@ def main() -> None:
         f"- Mapping/layout: {'PASS' if mapping_pass else 'FAIL'}; all three packages fit uint32 and map as one rpcmem_alloc2 arena.",
         f"- Correctness: {'PASS' if correctness_pass else 'FAIL'}; W4U8 prefill, 8 decode outputs and 56 final caches are byte exact (0 LSB).",
         f"- Physical: {'PASS' if physical_pass else 'FAIL'}; every formal record requests/acquires 8 MiB VTCM, has zero intermediate DDR and spill/fill, standalone FastRPC backend, and no QNN.",
+        f"- Profiling closure: {'PASS' if profiling_pass else 'FAIL'}; DSP invocation and every per-layer ledger leave at most 0.1% unattributed after explicit KV conversion, cache DMA, block orchestration and bookkeeping intervals.",
         "- Persistent K/V cache DDR and immutable weight DDR are legal declared boundaries and are reported separately.",
         "- Engine work and wait counters overlap; only the Block Timing Ledger is additive.",
         "",
@@ -536,7 +581,7 @@ def main() -> None:
         }
         (staging / "evidence_sha256.json").write_text(
             json.dumps({
-                "experiment": "EXP-0152",
+                "experiment": "EXP-0153",
                 "source_commit": args.source_commit,
                 "files": ledger,
             }, indent=2, sort_keys=True) + "\n",
@@ -553,6 +598,7 @@ def main() -> None:
         "mapping_gate_pass": mapping_pass,
         "correctness_gate_pass": correctness_pass,
         "physical_gate_pass": physical_pass,
+        "profiling_gate_pass": profiling_pass,
         "full_profiling_report_sha256": sha256(output / "full_profiling_report.md"),
         "gate_summary_sha256": sha256(output / "gate_summary.json"),
         "evidence_sha256_ledger_sha256": sha256(output / "evidence_sha256.json"),

@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(59)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(152)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(60)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(153)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -462,6 +462,11 @@ struct qbh_block_slice_layer_profile {
     uint64_t activation_ticks;
     uint64_t down_ticks;
     uint64_t final_residual_ticks;
+    uint64_t cache_append_pack_ticks;
+    uint64_t cache_append_dma_ticks;
+    uint64_t block_orchestration_ticks;
+    uint64_t layer_bookkeeping_ticks;
+    uint64_t layer_unattributed_ticks;
     uint64_t weight_ddr_read_bytes;
     uint64_t cache_ddr_read_bytes;
     uint64_t cache_ddr_write_bytes;
@@ -699,6 +704,9 @@ struct qbh_block_header {
     uint64_t scan_cache_ddr_write_bytes;
     uint64_t scan_cache_stage_ticks;
     uint64_t scan_cache_append_ticks;
+    uint64_t scan_cache_pack_ticks;
+    uint64_t block_orchestration_ticks;
+    uint64_t layer_bookkeeping_ticks;
     uint64_t scan_dynamic_attention_ticks;
 
     uint32_t prepared_session_run_index;

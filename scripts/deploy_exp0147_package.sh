@@ -22,7 +22,8 @@ done
     "${remote_root}/libqwen3_probe.so" >/dev/null
 "${adb_exe}" push "$(wslpath -w "${artifacts[2]}")" \
     "${remote_root}/libqwen3_probe_skel.so" >/dev/null
-"${adb_exe}" push "$(wslpath -w "${package}")/." \
-    "${remote_root}/block_package_layer14_m64/" >/dev/null
+if [[ "${QBH_DEPLOY_BINARIES_ONLY:-0}" != 1 ]]; then
+    "${adb_exe}" push "$(wslpath -w "${package}")/." \
+        "${remote_root}/block_package_layer14_m64/" >/dev/null
+fi
 "${adb_exe}" shell "chmod 755 ${remote_root}/qwen3_block_cli"
-

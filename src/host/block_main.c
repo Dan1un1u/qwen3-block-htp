@@ -2080,7 +2080,7 @@ static void qbh_print_replay_profile(
     printf(",\"" #field "\":%" PRIu64, header->field)
 
     printf(
-        "{\"experiment\":152,\"record\":\"replay_profile\","
+        "{\"experiment\":153,\"record\":\"replay_profile\","
         "\"variant\":\"%s\",\"replay_step\":%" PRIu32 ","
         "\"mode\":\"%s\",\"logical_m\":%" PRIu32 ","
         "\"first_position\":%" PRIu32 ","
@@ -2153,6 +2153,9 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U64(scan_cache_ddr_write_bytes);
     QBH_REPLAY_PROFILE_U64(scan_cache_stage_ticks);
     QBH_REPLAY_PROFILE_U64(scan_cache_append_ticks);
+    QBH_REPLAY_PROFILE_U64(scan_cache_pack_ticks);
+    QBH_REPLAY_PROFILE_U64(block_orchestration_ticks);
+    QBH_REPLAY_PROFILE_U64(layer_bookkeeping_ticks);
     QBH_REPLAY_PROFILE_U64(scan_dynamic_attention_ticks);
 
     QBH_REPLAY_PROFILE_U64(total_ticks);
@@ -2279,6 +2282,11 @@ static void qbh_print_replay_profile(
             "\"activation_ticks\":%" PRIu64 ","
             "\"down_ticks\":%" PRIu64 ","
             "\"final_residual_ticks\":%" PRIu64 ","
+            "\"cache_append_pack_ticks\":%" PRIu64 ","
+            "\"cache_append_dma_ticks\":%" PRIu64 ","
+            "\"block_orchestration_ticks\":%" PRIu64 ","
+            "\"layer_bookkeeping_ticks\":%" PRIu64 ","
+            "\"layer_unattributed_ticks\":%" PRIu64 ","
             "\"weight_ddr_read_bytes\":%" PRIu64 ","
             "\"cache_ddr_read_bytes\":%" PRIu64 ","
             "\"cache_ddr_write_bytes\":%" PRIu64 "}",
@@ -2294,6 +2302,11 @@ static void qbh_print_replay_profile(
             profile->post_attention_norm_ticks,
             profile->gate_up_ticks, profile->activation_ticks,
             profile->down_ticks, profile->final_residual_ticks,
+            profile->cache_append_pack_ticks,
+            profile->cache_append_dma_ticks,
+            profile->block_orchestration_ticks,
+            profile->layer_bookkeeping_ticks,
+            profile->layer_unattributed_ticks,
             profile->weight_ddr_read_bytes,
             profile->cache_ddr_read_bytes,
             profile->cache_ddr_write_bytes);
@@ -2588,7 +2601,7 @@ static int qbh_run_replay_sequence(
         }
         all_pass &= qbh_replay_step_pass(variant, step_result);
         printf(
-            "{\"experiment\":152,\"variant\":\"%s\","
+            "{\"experiment\":153,\"variant\":\"%s\","
             "\"replay_step\":%" PRIu32 ",\"mode\":\"%s\","
             "\"first_position\":%" PRIu32 ","
             "\"valid_length\":%" PRIu32 ","
@@ -2701,7 +2714,7 @@ static int qbh_run_replay_sequence(
         }
     }
     printf(
-        "{\"experiment\":152,\"variant\":\"%s\","
+        "{\"experiment\":153,\"variant\":\"%s\","
         "\"replay_sequence_complete\":true,"
         "\"completed_steps\":%" PRIu32 ","
         "\"first_layer\":%" PRIu32 ","
@@ -2796,7 +2809,7 @@ static int qbh_run_full_stack_hidden_capture(
         gate_pass = 0;
     }
     printf(
-        "{\"experiment\":152,\"hidden_capture\":true,"
+        "{\"experiment\":153,\"hidden_capture\":true,"
         "\"variant\":\"%s\",\"host_wall_ns\":%" PRIu64 ","
         "\"rpc_result\":%d,\"dsp_status\":%d,"
         "\"captured_layers\":%" PRIu32 ","
@@ -3974,7 +3987,7 @@ int main(int argc, char **argv) {
             const char *layout_only = getenv("QBH_LAYOUT_ONLY");
             if (layout_only != NULL && strcmp(layout_only, "1") == 0) {
                 printf(
-                    "{\"experiment\":152,\"layout_only\":true,"
+                    "{\"experiment\":153,\"layout_only\":true,"
                     "\"variant\":\"%s\",\"layer_first\":%" PRIu32
                     ",\"layer_count\":%" PRIu32
                     ",\"shared_bytes\":%zu,"
@@ -4478,7 +4491,7 @@ int main(int argc, char **argv) {
         int map_gate_result = qwen3_probe_run_block(
             session.handle, shared_fd, (uint32_t)total_bytes);
         printf(
-            "{\"experiment\":152,\"map_gate\":true,"
+            "{\"experiment\":153,\"map_gate\":true,"
             "\"variant\":\"%s\",\"shared_bytes\":%zu,"
             "\"rpc_result\":%d,\"dsp_status\":%d,"
             "\"layer_count\":%" PRIu32 ","

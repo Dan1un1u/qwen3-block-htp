@@ -17,11 +17,11 @@ for ((round = 1; round <= rounds; ++round)); do
         case "${recipe}" in
             f16f16|w4f16)
                 package="${model_root}/${recipe}"
-                remote_root="/data/local/tmp/qwen3-block-htp/exp0152-${recipe}"
+                remote_root="/data/local/tmp/qwen3-block-htp/exp0153-${recipe}"
                 ;;
             w4u8)
                 package="${w4u8_package}"
-                remote_root="/data/local/tmp/qwen3-block-htp/exp0152-w4u8-exact-ref-v1"
+                remote_root="/data/local/tmp/qwen3-block-htp/exp0153-w4u8-exact-ref-v1"
                 ;;
         esac
         EXP0152_REMOTE_ROOT="${remote_root}" \

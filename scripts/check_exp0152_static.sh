@@ -4,8 +4,14 @@ set -euo pipefail
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${project_root}"
 
-grep -q 'QBH_BLOCK_ABI_VERSION UINT32_C(59)' include/block_protocol.h
-grep -q 'QBH_BLOCK_EXPERIMENT UINT32_C(152)' include/block_protocol.h
+grep -q 'QBH_BLOCK_ABI_VERSION UINT32_C(60)' include/block_protocol.h
+grep -q 'QBH_BLOCK_EXPERIMENT UINT32_C(153)' include/block_protocol.h
+grep -q 'scan_cache_pack_ticks' include/block_protocol.h
+grep -q 'block_orchestration_ticks' include/block_protocol.h
+grep -q 'layer_bookkeeping_ticks' include/block_protocol.h
+grep -q 'layer_unattributed_ticks' include/block_protocol.h
+grep -q '\\"experiment\\\":153,\\\"record\\\":\\\"replay_profile\\\"' \
+    src/host/block_main.c
 grep -q 'QBH_VERTICAL_SLICE_FIRST_LAYER UINT32_C(0)' include/block_protocol.h
 grep -q 'QBH_VERTICAL_SLICE_LAYER_COUNT QBH_QWEN3_TRANSFORMER_LAYERS' \
     include/block_protocol.h
@@ -34,5 +40,6 @@ fi
 /home/daniuniu/.cache/qwen3-block-htp-py/bin/python -m py_compile \
     scripts/export_exp0149_vertical_slice.py \
     scripts/audit_exp0152_hidden_trajectory.py \
-    scripts/audit_exp0152_replay_composition.py
-printf 'EXP-0152 static gate passed\n'
+    scripts/audit_exp0152_replay_composition.py \
+    scripts/finalize_exp0152_evidence.py
+printf 'EXP-0153 static gate passed\n'
