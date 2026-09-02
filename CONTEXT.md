@@ -816,6 +816,11 @@ every step.
 _Avoid_: cache-aware Attention, head-major cache as a required format, or zero
 intermediate DDR alone
 
+**Full-Stack Cache-Native Scaling**:
+Evidence that Cache-Native Attention retains its local benefit when the same
+persistent state ABI is composed across every transformer layer.
+_Avoid_: single-layer extrapolation, Softmax speedup, or baseline promotion
+
 **Consecutive-Layer Vertical Slice**:
 Two to three adjacent Qwen3 transformer layers executed as one DSP unit with
 independent per-layer caches and no Host boundary for their intermediate hidden
