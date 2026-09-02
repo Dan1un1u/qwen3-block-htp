@@ -908,3 +908,15 @@ preserves the low-bit projection benefit, while its decode is dominated by
 repacking each persistent U8 K/V cache into HMX carriers on every token.
 _Avoid_: full tokenizer-to-sampler model, teacher-accuracy proof, promoted
 baseline, cache-native U8 Attention
+
+**Prefill HMX Carrier Reuse**:
+The EXP-0157 W4U8 cache-initialization path that retains the HMX-native K and V
+carriers already constructed for prefill QK and AV, copies their populated
+tiles with aligned HVX vectors, initializes only the padded capacity tail and
+then performs the declared persistent-cache DMA.  It eliminates a second full
+carrier construction while keeping the versioned persistent cache ABI and
+decode consumer unchanged.  This is a cache-lifetime and handoff optimization,
+not a change to Attention mathematics, quantization parameters or the HMX
+compute workload.
+_Avoid_: row-major cache, duplicate prefill pack, zero-copy claim, decode
+speedup, baseline promotion
