@@ -3372,6 +3372,8 @@ int main(int argc, char **argv) {
     uint32_t warmup_run_index = 0U;
     uint64_t output_hash = 0U;
     uint64_t kv_cache_mismatches = 0U;
+    uint64_t kv_cache_k_hash = 0U;
+    uint64_t kv_cache_v_hash = 0U;
     int exit_code = 1;
     char file_name[128];
 
@@ -3719,7 +3721,9 @@ int main(int argc, char **argv) {
         (qbh_hmx_native_u8_cache_formats(
              kv_cache_k_format, kv_cache_v_format) &&
          (variant != QBH_BLOCK_W4U8 ||
-          replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS)) ||
+          (replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS &&
+           !(vertical_slice_mode == QBH_BLOCK_SLICE_DISABLED &&
+             scan_mode == QBH_BLOCK_SCAN_DECODE)))) ||
         (qbh_hmx_native_f16_cache_formats(
              kv_cache_k_format, kv_cache_v_format) &&
          (variant == QBH_BLOCK_W4U8 ||
@@ -4259,44 +4263,70 @@ int main(int argc, char **argv) {
     }
     if (vertical_slice_mode == QBH_BLOCK_SLICE_DISABLED &&
         scan_mode != QBH_BLOCK_SCAN_DISABLED) {
-        const uint32_t cache_bytes =
-            kv_cache_capacity * QBH_BLOCK_KV_HIDDEN * element_bytes;
+        const uint32_t cache_bytes[2] = {
+            qbh_host_k_cache_bytes(
+                variant, kv_cache_capacity, element_bytes,
+                kv_cache_k_format),
+            qbh_host_v_cache_bytes(
+                variant, kv_cache_capacity, element_bytes,
+                kv_cache_v_format),
+        };
         const char *suffix = variant == QBH_BLOCK_W4U8 ? "u8" : "f16";
-        int status = snprintf(
-            file_name, sizeof(file_name), "kv_cache_k_%s.bin", suffix);
+        const int hmx_native_u8 = qbh_hmx_native_u8_cache_formats(
+            kv_cache_k_format, kv_cache_v_format);
+        const int hmx_native_u8_delta =
+            qbh_hmx_native_u8_delta_cache_formats(
+                kv_cache_k_format, kv_cache_v_format);
+        const int hmx_native_f16 = qbh_hmx_native_f16_cache_formats(
+            kv_cache_k_format, kv_cache_v_format);
+        const int hmx_native = hmx_native_u8 || hmx_native_f16;
+        const char *hmx_suffix = hmx_native_u8_delta
+            ? "u8_delta" : (hmx_native_u8 ? "u8" : "f16");
+        int status = hmx_native
+            ? snprintf(file_name, sizeof(file_name),
+                       "kv_cache_k_hmx_%s.bin", hmx_suffix)
+            : snprintf(file_name, sizeof(file_name),
+                       "kv_cache_k_%s.bin", suffix);
         if (status < 0 || (size_t)status >= sizeof(file_name) ||
             qbh_prepare_slot(
                 &kv_cache_slots[0], argv[1], file_name,
-                cache_bytes, &cursor) != 0) {
+                cache_bytes[0], &cursor) != 0) {
             fprintf(stderr, "K cache package audit failed\n");
             return 2;
         }
-        status = snprintf(
-            file_name, sizeof(file_name), "kv_cache_v_%s.bin", suffix);
+        status = hmx_native
+            ? snprintf(file_name, sizeof(file_name),
+                       "kv_cache_v_hmx_%s.bin", hmx_suffix)
+            : snprintf(file_name, sizeof(file_name),
+                       "kv_cache_v_%s.bin", suffix);
         if (status < 0 || (size_t)status >= sizeof(file_name) ||
             qbh_prepare_slot(
                 &kv_cache_slots[1], argv[1], file_name,
-                cache_bytes, &cursor) != 0) {
+                cache_bytes[1], &cursor) != 0) {
             fprintf(stderr, "V cache package audit failed\n");
             return 2;
         }
-        status = snprintf(
-            file_name, sizeof(file_name),
-            "reference_kv_cache_k_%s.bin", suffix);
+        status = hmx_native
+            ? snprintf(file_name, sizeof(file_name),
+                       "reference_kv_cache_k_hmx_%s.bin", hmx_suffix)
+            : snprintf(file_name, sizeof(file_name),
+                       "reference_kv_cache_k_%s.bin", suffix);
         if (status < 0 || (size_t)status >= sizeof(file_name) ||
             qbh_prepare_slot(
                 &kv_reference_slots[0], argv[1], file_name,
-                cache_bytes, &cursor) != 0) {
+                cache_bytes[0], &cursor) != 0) {
             fprintf(stderr, "K cache reference audit failed\n");
             return 2;
         }
-        status = snprintf(
-            file_name, sizeof(file_name),
-            "reference_kv_cache_v_%s.bin", suffix);
+        status = hmx_native
+            ? snprintf(file_name, sizeof(file_name),
+                       "reference_kv_cache_v_hmx_%s.bin", hmx_suffix)
+            : snprintf(file_name, sizeof(file_name),
+                       "reference_kv_cache_v_%s.bin", suffix);
         if (status < 0 || (size_t)status >= sizeof(file_name) ||
             qbh_prepare_slot(
                 &kv_reference_slots[1], argv[1], file_name,
-                cache_bytes, &cursor) != 0) {
+                cache_bytes[1], &cursor) != 0) {
             fprintf(stderr, "V cache reference audit failed\n");
             return 2;
         }
@@ -5265,8 +5295,14 @@ int main(int argc, char **argv) {
             kv_cache_slots[0].expected_bytes) +
             qbh_count_byte_mismatches(
                 shared + kv_cache_slots[1].offset,
-                shared + kv_reference_slots[1].offset,
-                kv_cache_slots[1].expected_bytes);
+            shared + kv_reference_slots[1].offset,
+            kv_cache_slots[1].expected_bytes);
+        kv_cache_k_hash = qbh_fnv1a64(
+            shared + kv_cache_slots[0].offset,
+            kv_cache_slots[0].expected_bytes);
+        kv_cache_v_hash = qbh_fnv1a64(
+            shared + kv_cache_slots[1].offset,
+            kv_cache_slots[1].expected_bytes);
         header->scan_cache_append_mismatch_count =
             kv_cache_mismatches > UINT32_MAX
                 ? UINT32_MAX : (uint32_t)kv_cache_mismatches;
@@ -5478,7 +5514,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0147\","
+        "{\"experiment\":\"EXP-0161\","
         "\"execution_unit\":\"qwen3_layer14_shape_kv_scan\","
         "\"scan_mode\":\"%s\","
         "\"logical_m\":%" PRIu32 ","
@@ -5498,6 +5534,8 @@ int main(int argc, char **argv) {
         "\"scan_cache_append_ticks\":%" PRIu64 ","
         "\"scan_dynamic_attention_ticks\":%" PRIu64 ","
         "\"scan_cache_mismatches\":%" PRIu64 ","
+        "\"scan_cache_k_hash\":\"%016" PRIx64 "\","
+        "\"scan_cache_v_hash\":\"%016" PRIx64 "\","
         "\"variant\":\"%s\",\"attention_compute\":\"%s\","
         "\"projection_compute\":\"%s\","
         "\"common_ops_mode\":\"%s\","
@@ -5857,6 +5895,8 @@ int main(int argc, char **argv) {
         header->scan_cache_append_ticks,
         header->scan_dynamic_attention_ticks,
         kv_cache_mismatches,
+        kv_cache_k_hash,
+        kv_cache_v_hash,
         qbh_variant_name(variant),
         qbh_attention_u8_enabled(attention_pipeline_mode)
             ? "U8xS8_HMX_log2_softmax"
