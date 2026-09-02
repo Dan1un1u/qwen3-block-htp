@@ -12734,6 +12734,9 @@ static int qbh_scan_prepare_u8_delta_k(
     uint32_t *tail_bias = slot->qk_bias +
         (size_t)(QBH_BLOCK_M / QBH_HMX_OUTPUT_CHANNELS) *
             (QBH_HMX_BIAS_BYTES / sizeof(uint32_t));
+    const uint32_t tail_tiles =
+        (decode_rows + QBH_HMX_OUTPUT_CHANNELS - 1U) /
+        QBH_HMX_OUTPUT_CHANNELS;
     const uint32_t divisor = UINT32_C(1) << config->score_shift;
     const int32_t rounding = config->score_shift == 0U
         ? 0 : (int32_t)(divisor / 2U);
@@ -12757,11 +12760,16 @@ static int qbh_scan_prepare_u8_delta_k(
             1U) != 0) {
         return -1;
     }
-    for (uint32_t output = 0U;
-         output < QBH_HMX_OUTPUT_CHANNELS; ++output) {
-        tail_bias[output] = slot->qk_bias[0];
-        tail_bias[QBH_HMX_OUTPUT_CHANNELS + output] =
-            UINT32_C(128) * divisor + rounding;
+    for (uint32_t tile = 0U; tile < tail_tiles; ++tile) {
+        uint32_t *tile_bias = tail_bias +
+            (size_t)tile *
+                (QBH_HMX_BIAS_BYTES / sizeof(uint32_t));
+        for (uint32_t output = 0U;
+             output < QBH_HMX_OUTPUT_CHANNELS; ++output) {
+            tile_bias[output] = slot->qk_bias[0];
+            tile_bias[QBH_HMX_OUTPUT_CHANNELS + output] =
+                UINT32_C(128) * divisor + rounding;
+        }
     }
     if (qbh_scan_cache_dma(
             header, delta_rows,
@@ -12772,15 +12780,26 @@ static int qbh_scan_prepare_u8_delta_k(
         return -1;
     }
     start = HAP_perf_get_qtimer_count();
-    qbh_attention_u8_patch_k_delta_rows_hvx(
-        delta_rows, decode_rows, config,
-        slot->weight +
-            (size_t)(QBH_BLOCK_M / QBH_HMX_OUTPUT_CHANNELS) *
-                QBH_ATTENTION_HEAD_DIM_TILES *
-                QBH_HMX_WEIGHT_BYTES,
-        slot->qk_bias +
-            (size_t)(QBH_BLOCK_M / QBH_HMX_OUTPUT_CHANNELS) *
-                (QBH_HMX_BIAS_BYTES / sizeof(uint32_t)));
+    for (uint32_t first = 0U; first < decode_rows;
+         first += QBH_HMX_OUTPUT_CHANNELS) {
+        const uint32_t count =
+            decode_rows - first < QBH_HMX_OUTPUT_CHANNELS
+                ? decode_rows - first
+                : QBH_HMX_OUTPUT_CHANNELS;
+        const uint32_t tile = first / QBH_HMX_OUTPUT_CHANNELS;
+        qbh_attention_u8_patch_k_delta_rows_hvx(
+            delta_rows + (size_t)first * QBH_BLOCK_HEAD_DIM,
+            count, config,
+            slot->weight +
+                (size_t)(QBH_BLOCK_M /
+                         QBH_HMX_OUTPUT_CHANNELS + tile) *
+                    QBH_ATTENTION_HEAD_DIM_TILES *
+                    QBH_HMX_WEIGHT_BYTES,
+            slot->qk_bias +
+                (size_t)(QBH_BLOCK_M /
+                         QBH_HMX_OUTPUT_CHANNELS + tile) *
+                    (QBH_HMX_BIAS_BYTES / sizeof(uint32_t)));
+    }
     header->u8_attention_k_pack_ticks +=
         HAP_perf_get_qtimer_count() - start;
     return 0;
@@ -12834,15 +12853,25 @@ static int qbh_scan_prepare_u8_delta_v(
         return -1;
     }
     start = HAP_perf_get_qtimer_count();
-    qbh_attention_u8_patch_v_delta_rows_hvx(
-        delta_rows, decode_rows, config,
-        slot->weight +
-            (size_t)(QBH_BLOCK_M / QBH_HMX_INPUT_CHANNELS) *
-                QBH_HMX_WEIGHT_BYTES,
-        destination_tile_stride, delta_lut,
-        header->numerical_audit_enabled != 0U
-            ? &slot->telemetry.v_recenter_saturation_count
-            : NULL);
+    for (uint32_t first = 0U; first < decode_rows;
+         first += QBH_HMX_INPUT_CHANNELS) {
+        const uint32_t count =
+            decode_rows - first < QBH_HMX_INPUT_CHANNELS
+                ? decode_rows - first
+                : QBH_HMX_INPUT_CHANNELS;
+        const uint32_t tile = first / QBH_HMX_INPUT_CHANNELS;
+        qbh_attention_u8_patch_v_delta_rows_hvx(
+            delta_rows + (size_t)first * QBH_BLOCK_HEAD_DIM,
+            count, config,
+            slot->weight +
+                (size_t)(QBH_BLOCK_M /
+                         QBH_HMX_INPUT_CHANNELS + tile) *
+                    QBH_HMX_WEIGHT_BYTES,
+            destination_tile_stride, delta_lut,
+            header->numerical_audit_enabled != 0U
+                ? &slot->telemetry.v_recenter_saturation_count
+                : NULL);
+    }
     header->u8_attention_v_pack_ticks +=
         HAP_perf_get_qtimer_count() - start;
     return 0;
@@ -14689,6 +14718,9 @@ static int qbh_scan_u8_attention(
                     (size_t)(QBH_BLOCK_M /
                              QBH_HMX_OUTPUT_CHANNELS) *
                         (QBH_HMX_BIAS_BYTES / sizeof(uint32_t));
+                const uint32_t tail_tiles =
+                    (decode_rows + QBH_HMX_OUTPUT_CHANNELS - 1U) /
+                    QBH_HMX_OUTPUT_CHANNELS;
                 const uint32_t divisor =
                     UINT32_C(1) << config->score_shift;
                 const int32_t rounding = config->score_shift == 0U
@@ -14715,11 +14747,16 @@ static int qbh_scan_u8_attention(
                         1U) != 0) {
                     return -1;
                 }
-                for (uint32_t output = 0U;
-                     output < QBH_HMX_OUTPUT_CHANNELS; ++output) {
-                    tail_bias[output] = qk_bias[0];
-                    tail_bias[QBH_HMX_OUTPUT_CHANNELS + output] =
-                        UINT32_C(128) * divisor + rounding;
+                for (uint32_t tile = 0U; tile < tail_tiles; ++tile) {
+                    uint32_t *tile_bias = tail_bias +
+                        (size_t)tile *
+                            (QBH_HMX_BIAS_BYTES / sizeof(uint32_t));
+                    for (uint32_t output = 0U;
+                         output < QBH_HMX_OUTPUT_CHANNELS; ++output) {
+                        tile_bias[output] = qk_bias[0];
+                        tile_bias[QBH_HMX_OUTPUT_CHANNELS + output] =
+                            UINT32_C(128) * divisor + rounding;
+                    }
                 }
                 if (qbh_scan_cache_dma(
                         header, delta_rows,
@@ -14730,18 +14767,30 @@ static int qbh_scan_u8_attention(
                     return -1;
                 }
                 start = HAP_perf_get_qtimer_count();
-                qbh_attention_u8_patch_k_delta_rows_hvx(
-                    delta_rows, decode_rows, config,
-                    weight +
-                        (size_t)(QBH_BLOCK_M /
-                                 QBH_HMX_OUTPUT_CHANNELS) *
-                            QBH_ATTENTION_HEAD_DIM_TILES *
-                            QBH_HMX_WEIGHT_BYTES,
-                    qk_bias +
-                        (size_t)(QBH_BLOCK_M /
-                                 QBH_HMX_OUTPUT_CHANNELS) *
-                            (QBH_HMX_BIAS_BYTES /
-                             sizeof(uint32_t)));
+                for (uint32_t first = 0U; first < decode_rows;
+                     first += QBH_HMX_OUTPUT_CHANNELS) {
+                    const uint32_t count =
+                        decode_rows - first <
+                                QBH_HMX_OUTPUT_CHANNELS
+                            ? decode_rows - first
+                            : QBH_HMX_OUTPUT_CHANNELS;
+                    const uint32_t tile =
+                        first / QBH_HMX_OUTPUT_CHANNELS;
+                    qbh_attention_u8_patch_k_delta_rows_hvx(
+                        delta_rows +
+                            (size_t)first * QBH_BLOCK_HEAD_DIM,
+                        count, config,
+                        weight +
+                            (size_t)(QBH_BLOCK_M /
+                                     QBH_HMX_OUTPUT_CHANNELS + tile) *
+                                QBH_ATTENTION_HEAD_DIM_TILES *
+                                QBH_HMX_WEIGHT_BYTES,
+                        qk_bias +
+                            (size_t)(QBH_BLOCK_M /
+                                     QBH_HMX_OUTPUT_CHANNELS + tile) *
+                                (QBH_HMX_BIAS_BYTES /
+                                 sizeof(uint32_t)));
+                }
                 header->u8_attention_k_pack_ticks +=
                     HAP_perf_get_qtimer_count() - start;
             } else if (qbh_scan_cache_dma(
@@ -14849,17 +14898,29 @@ static int qbh_scan_u8_attention(
                     return -1;
                 }
                 start = HAP_perf_get_qtimer_count();
-                qbh_attention_u8_patch_v_delta_rows_hvx(
-                    delta_rows, decode_rows, config,
-                    weight +
-                        (size_t)(QBH_BLOCK_M /
-                                 QBH_HMX_INPUT_CHANNELS) *
-                            QBH_HMX_WEIGHT_BYTES,
-                    kv_tiles * QBH_HMX_WEIGHT_BYTES,
-                    buffers->up,
-                    header->numerical_audit_enabled != 0U
-                        ? &telemetry.v_recenter_saturation_count
-                        : NULL);
+                for (uint32_t first = 0U; first < decode_rows;
+                     first += QBH_HMX_INPUT_CHANNELS) {
+                    const uint32_t count =
+                        decode_rows - first <
+                                QBH_HMX_INPUT_CHANNELS
+                            ? decode_rows - first
+                            : QBH_HMX_INPUT_CHANNELS;
+                    const uint32_t tile =
+                        first / QBH_HMX_INPUT_CHANNELS;
+                    qbh_attention_u8_patch_v_delta_rows_hvx(
+                        delta_rows +
+                            (size_t)first * QBH_BLOCK_HEAD_DIM,
+                        count, config,
+                        weight +
+                            (size_t)(QBH_BLOCK_M /
+                                     QBH_HMX_INPUT_CHANNELS + tile) *
+                                QBH_HMX_WEIGHT_BYTES,
+                        kv_tiles * QBH_HMX_WEIGHT_BYTES,
+                        buffers->up,
+                        header->numerical_audit_enabled != 0U
+                            ? &telemetry.v_recenter_saturation_count
+                            : NULL);
+                }
                 header->u8_attention_v_pack_ticks +=
                     HAP_perf_get_qtimer_count() - start;
             } else if (qbh_scan_cache_dma(

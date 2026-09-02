@@ -22,6 +22,7 @@ SEGMENT_TOKENS = 32
 HMX_BIAS_BYTES = 256
 HMX_WEIGHT_BYTES = 1024
 HEAD_DIM_TILES = 4
+MODEL_ROOT = Path("/mnt/d/llm_exp/models/qwen3-block-htp/exp0161")
 
 
 def parse_args() -> argparse.Namespace:
@@ -69,6 +70,26 @@ def current_cache_row(data: bytes, length: int, mode: str, kind: str) -> bytes:
         first = head * head_bytes + row_offset
         rows.append(data[first:first + HEAD_DIM])
     return b"".join(rows)
+
+
+def reference_cache_row(data: bytes, length: int) -> bytes:
+    capacity = length + 1
+    head_bytes = capacity * HEAD_DIM
+    row_offset = length * HEAD_DIM
+    return b"".join(
+        data[head * head_bytes + row_offset:
+             head * head_bytes + row_offset + HEAD_DIM]
+        for head in range(HEADS)
+    )
+
+
+def difference_metrics(actual: bytes, expected: bytes) -> tuple[int, int]:
+    if len(actual) != len(expected):
+        raise ValueError(
+            f"comparison size mismatch: actual={len(actual)}, expected={len(expected)}"
+        )
+    differences = [abs(left - right) for left, right in zip(actual, expected)]
+    return sum(value != 0 for value in differences), max(differences, default=0)
 
 
 def main() -> None:
@@ -170,35 +191,57 @@ def main() -> None:
         candidate_output = (roots["candidate"] / "block_output_u8.bin").read_bytes()
         logical_control = control_output[:2048]
         logical_candidate = candidate_output[:2048]
+        reference_root = (
+            MODEL_ROOT / f"decode_l{length}_w4u8_hmx_segmented_v4b"
+        )
+        logical_reference = (
+            reference_root / "reference_exp0147_cpu_block_output_u8.bin"
+        ).read_bytes()[:2048]
+        candidate_cpu_mismatches, candidate_cpu_max_lsb = difference_metrics(
+            logical_candidate, logical_reference
+        )
+        control_cpu_mismatches, control_cpu_max_lsb = difference_metrics(
+            logical_control, logical_reference
+        )
+        pair_mismatches, pair_max_lsb = difference_metrics(
+            logical_candidate, logical_control
+        )
         entry: dict[str, object] = {
-            "logical_output_mismatches": sum(
-                left != right for left, right in zip(logical_control, logical_candidate)
-            ),
-            "logical_output_max_lsb": max(
-                (abs(left - right) for left, right in zip(logical_control, logical_candidate)),
-                default=0,
-            ),
+            "candidate_cpu_output_mismatches": candidate_cpu_mismatches,
+            "candidate_cpu_output_max_lsb": candidate_cpu_max_lsb,
+            "control_cpu_output_mismatches": control_cpu_mismatches,
+            "control_cpu_output_max_lsb": control_cpu_max_lsb,
+            "candidate_control_output_mismatches": pair_mismatches,
+            "candidate_control_output_max_lsb": pair_max_lsb,
             "control_output_sha256": digest(control_output),
             "candidate_output_sha256": digest(candidate_output),
+            "cpu_reference_sha256": digest(logical_reference),
         }
         for kind in ("k", "v"):
             control_cache = (roots["control"] / f"actual_kv_cache_{kind}_u8.bin").read_bytes()
             candidate_cache = (roots["candidate"] / f"actual_kv_cache_{kind}_u8.bin").read_bytes()
+            reference_cache = (
+                reference_root / f"reference_kv_cache_{kind}_u8.bin"
+            ).read_bytes()
             control_row = current_cache_row(control_cache, length, "control", kind)
             candidate_row = current_cache_row(candidate_cache, length, "candidate", kind)
-            entry[f"current_{kind}_mismatches"] = sum(
-                left != right for left, right in zip(control_row, candidate_row)
-            )
-            entry[f"current_{kind}_max_lsb"] = max(
-                (abs(left - right) for left, right in zip(control_row, candidate_row)),
-                default=0,
-            )
+            reference_row = reference_cache_row(reference_cache, length)
+            for name, actual in (
+                ("candidate", candidate_row),
+                ("control", control_row),
+            ):
+                mismatches, max_lsb = difference_metrics(actual, reference_row)
+                entry[f"{name}_current_{kind}_mismatches"] = mismatches
+                entry[f"{name}_current_{kind}_max_lsb"] = max_lsb
         entry["pass"] = all(
             int(entry[key]) == 0
             for key in (
-                "logical_output_mismatches", "logical_output_max_lsb",
-                "current_k_mismatches", "current_k_max_lsb",
-                "current_v_mismatches", "current_v_max_lsb",
+                "candidate_cpu_output_mismatches",
+                "candidate_cpu_output_max_lsb",
+                "candidate_current_k_mismatches",
+                "candidate_current_k_max_lsb",
+                "candidate_current_v_mismatches",
+                "candidate_current_v_max_lsb",
             )
         )
         capture[f"l{length}"] = entry
@@ -231,9 +274,10 @@ def main() -> None:
         "speed_gate_pass": speed_pass,
         "unavailable_runs": failures,
         "reference_note": (
-            "The inherited EXP-0147 reference discrepancy remains <=3 LSB. "
-            "Candidate versus monolithic control is byte-exact for the logical "
-            "output row and the appended current K/V token at every length."
+            "The correctness gate uses the retained independent EXP-0147 CPU "
+            "integer block output and logical current-token K/V references. "
+            "Candidate-versus-control differences are diagnostic only because "
+            "long-KV HMX conversion can use a different rounding path."
         ),
     }
     (result_dir / "phase_b_summary.json").write_text(
@@ -264,14 +308,14 @@ def main() -> None:
         "",
         "## Gates",
         "",
-        f"- Correctness (logical output plus current K/V token byte exact): {'PASS' if correctness_pass else 'FAIL'}",
+        f"- Correctness (candidate vs independent CPU output and current K/V token, byte exact): {'PASS' if correctness_pass else 'FAIL'}",
         f"- Physical (8 MiB VTCM, zero intermediate DDR, zero spill/fill): {'PASS' if physical_pass else 'FAIL'}",
         f"- Structural (zero full-prefix pack and constant long-KV overlay): {'PASS' if structural_pass else 'FAIL'}",
         f"- Speed (L64 non-regression; L256/L1024/L4096 strictly faster): {'PASS' if speed_pass else 'FAIL'}",
         "",
         "The short path consumes at most one fixed 26-segment window; the long path uses the same 26-slot double bank at L1024 and L4096. No scratch allocation scales beyond that fixed window.",
         "",
-        "The inherited independent-reference mismatch is reported separately and is not used to hide candidate/control equivalence.",
+        "The monolithic control's independent-reference and candidate/control differences are reported as diagnostics; they do not replace the candidate's independent correctness gate.",
     ]
     (result_dir / "phase_b_report.md").write_text(
         "\n".join(lines) + "\n", encoding="utf-8"

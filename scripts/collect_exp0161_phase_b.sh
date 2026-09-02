@@ -52,12 +52,19 @@ for repeat_count in 1 10; do
                 fi
                 output="${result_dir}/raw/l${length}_r${repeat_count}_round_${round_name}_${mode}.jsonl"
                 error="${result_dir}/raw/l${length}_r${repeat_count}_round_${round_name}_${mode}.stderr"
-                set +e
-                bash scripts/run_exp0161.sh \
-                    "${length}" "${reconstruction}" "${repeat_count}" on \
-                    > "${output}" 2> "${error}"
-                status=$?
-                set -e
+                status=1
+                for attempt in 1 2 3; do
+                    set +e
+                    bash scripts/run_exp0161.sh \
+                        "${length}" "${reconstruction}" "${repeat_count}" on \
+                        > "${output}" 2> "${error}"
+                    status=$?
+                    set -e
+                    if (( status == 0 )); then
+                        break
+                    fi
+                    sleep 1
+                done
                 printf '%s\n' "${status}" > "${output}.status"
             done
         done
@@ -81,12 +88,27 @@ for length in 64 256 1024 4096; do
         local_capture="${result_dir}/capture/l${length}_${mode}"
         mkdir -p "${local_capture}"
         "${adb_exe}" shell "mkdir -p ${remote_capture}"
-        QBH_EXP0161_DUMP_CACHE_REMOTE="${remote_capture}" \
-        QBH_EXP0161_DUMP_OUTPUT_REMOTE="${remote_capture}/block_output_u8.bin" \
-            bash scripts/run_exp0161.sh \
-                "${length}" "${reconstruction}" 1 on \
-                > "${local_capture}/run.jsonl" \
-                2> "${local_capture}/run.stderr" || true
+        capture_status=1
+        for attempt in 1 2 3; do
+            set +e
+            QBH_EXP0161_DUMP_CACHE_REMOTE="${remote_capture}" \
+            QBH_EXP0161_DUMP_OUTPUT_REMOTE="${remote_capture}/block_output_u8.bin" \
+                bash scripts/run_exp0161.sh \
+                    "${length}" "${reconstruction}" 1 on \
+                    > "${local_capture}/run.jsonl" \
+                    2> "${local_capture}/run.stderr"
+            capture_status=$?
+            set -e
+            if (( capture_status == 0 )); then
+                break
+            fi
+            sleep 1
+        done
+        if (( capture_status != 0 )); then
+            printf 'capture failed for L%s %s\n' \
+                "${length}" "${mode}" >&2
+            exit "${capture_status}"
+        fi
         for file in block_output_u8.bin actual_kv_cache_k_u8.bin actual_kv_cache_v_u8.bin; do
             "${adb_exe}" pull "${remote_capture}/${file}" \
                 "$(wslpath -w "${local_capture}/${file}")" >/dev/null
