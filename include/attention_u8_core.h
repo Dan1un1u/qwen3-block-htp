@@ -169,4 +169,20 @@ void qbh_attention_u8_requant_softmax_dynamic(
     const struct qbh_attention_config *config,
     struct qbh_attention_u8_telemetry *telemetry);
 
+/* EXP-0161 segmented decode helper.  It converts a histogram of raw HMX QK
+ * bytes into the exact per-raw-byte probability map used by the existing
+ * log2 Softmax, without retaining a sequence-length probability tensor. */
+void qbh_attention_u8_probability_map_from_raw_histogram(
+    const uint32_t histogram[256], uint32_t valid_count,
+    const struct qbh_attention_config *config,
+    uint8_t probability_by_raw[256],
+    uint32_t *probability_sum, uint32_t *score_saturation_count);
+
+void qbh_attention_u8_probability_map_from_active_histogram(
+    const uint32_t histogram[256], const uint8_t *active_scores,
+    uint32_t active_count, uint32_t valid_count,
+    const struct qbh_attention_config *config,
+    uint8_t probability_by_raw[256],
+    uint32_t *probability_sum, uint32_t *score_saturation_count);
+
 #endif

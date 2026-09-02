@@ -2080,3 +2080,159 @@ void qbh_attention_u8_requant_softmax_dynamic(
     }
     asm volatile("barrier" ::: "memory");
 }
+
+void qbh_attention_u8_probability_map_from_raw_histogram(
+    const uint32_t histogram[256], uint32_t valid_count,
+    const struct qbh_attention_config *config,
+    uint8_t probability_by_raw[256],
+    uint32_t *probability_sum, uint32_t *score_saturation_count) {
+    uint8_t code_lut[QBH_ATTN_U8_HVX_BYTES]
+        __attribute__((aligned(QBH_ATTN_U8_HVX_BYTES)));
+    uint8_t maximum = 0U;
+    uint32_t weight_sum = 0U;
+    uint32_t local_probability_sum = 0U;
+    uint32_t local_saturation_count = 0U;
+
+    if (histogram == NULL || config == NULL ||
+        probability_by_raw == NULL || valid_count == 0U) {
+        return;
+    }
+    for (uint32_t raw = 0U; raw <= UINT8_MAX; ++raw) {
+        if (histogram[raw] != 0U) {
+            const int32_t converted =
+                ((int32_t)raw - (int32_t)QBH_ATTENTION_HMX_CENTER) *
+                    (int32_t)config->score_multiplier +
+                QBH_ATTN_U8_SCORE_ZP;
+            const uint8_t score = qbh_attention_u8_clip_u8(converted);
+            if (score > maximum) {
+                maximum = score;
+            }
+            if (converted < 0 || converted > UINT8_MAX) {
+                local_saturation_count += histogram[raw];
+            }
+        }
+    }
+    for (uint32_t raw = 0U; raw <= UINT8_MAX; ++raw) {
+        if (histogram[raw] != 0U) {
+            const int32_t converted =
+                ((int32_t)raw - (int32_t)QBH_ATTENTION_HMX_CENTER) *
+                    (int32_t)config->score_multiplier +
+                QBH_ATTN_U8_SCORE_ZP;
+            const uint8_t score = qbh_attention_u8_clip_u8(converted);
+            uint32_t code =
+                ((uint32_t)maximum - score +
+                 (UINT32_C(1) << (config->fraction_bits - 1U))) >>
+                config->fraction_bits;
+            if (code > 15U) {
+                code = 15U;
+            }
+            weight_sum += histogram[raw] *
+                (UINT32_C(1) << (QBH_ATTN_U8_EXP_FRAC_BITS - code));
+        }
+    }
+    qbh_attention_u8_build_probability_lut(
+        code_lut, weight_sum, config->division_mode, valid_count);
+    for (uint32_t raw = 0U; raw <= UINT8_MAX; ++raw) {
+        const int32_t converted =
+            ((int32_t)raw - (int32_t)QBH_ATTENTION_HMX_CENTER) *
+                (int32_t)config->score_multiplier +
+            QBH_ATTN_U8_SCORE_ZP;
+        const uint8_t score = qbh_attention_u8_clip_u8(converted);
+        uint32_t code =
+            ((uint32_t)maximum - score +
+             (UINT32_C(1) << (config->fraction_bits - 1U))) >>
+            config->fraction_bits;
+        if (code > 15U) {
+            code = 15U;
+        }
+        probability_by_raw[raw] = code_lut[2U * code];
+        local_probability_sum +=
+            histogram[raw] * probability_by_raw[raw];
+    }
+    if (probability_sum != NULL) {
+        *probability_sum = local_probability_sum;
+    }
+    if (score_saturation_count != NULL) {
+        *score_saturation_count = local_saturation_count;
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
+void qbh_attention_u8_probability_map_from_active_histogram(
+    const uint32_t histogram[256], const uint8_t *active_scores,
+    uint32_t active_count, uint32_t valid_count,
+    const struct qbh_attention_config *config,
+    uint8_t probability_by_raw[256],
+    uint32_t *probability_sum, uint32_t *score_saturation_count) {
+    uint8_t code_lut[QBH_ATTN_U8_HVX_BYTES]
+        __attribute__((aligned(QBH_ATTN_U8_HVX_BYTES)));
+    uint8_t maximum = 0U;
+    uint32_t weight_sum = 0U;
+    uint32_t local_probability_sum = 0U;
+    uint32_t local_saturation_count = 0U;
+
+    if (histogram == NULL || active_scores == NULL ||
+        config == NULL || probability_by_raw == NULL ||
+        active_count == 0U || active_count > 256U ||
+        valid_count == 0U) {
+        return;
+    }
+    for (uint32_t index = 0U; index < active_count; ++index) {
+        const uint8_t raw = active_scores[index];
+        const int32_t converted =
+            ((int32_t)raw - (int32_t)QBH_ATTENTION_HMX_CENTER) *
+                (int32_t)config->score_multiplier +
+            QBH_ATTN_U8_SCORE_ZP;
+        const uint8_t score = qbh_attention_u8_clip_u8(converted);
+        if (score > maximum) {
+            maximum = score;
+        }
+        if (converted < 0 || converted > UINT8_MAX) {
+            local_saturation_count += histogram[raw];
+        }
+    }
+    for (uint32_t index = 0U; index < active_count; ++index) {
+        const uint8_t raw = active_scores[index];
+        const int32_t converted =
+            ((int32_t)raw - (int32_t)QBH_ATTENTION_HMX_CENTER) *
+                (int32_t)config->score_multiplier +
+            QBH_ATTN_U8_SCORE_ZP;
+        const uint8_t score = qbh_attention_u8_clip_u8(converted);
+        uint32_t code =
+            ((uint32_t)maximum - score +
+             (UINT32_C(1) << (config->fraction_bits - 1U))) >>
+            config->fraction_bits;
+        if (code > 15U) {
+            code = 15U;
+        }
+        weight_sum += histogram[raw] *
+            (UINT32_C(1) << (QBH_ATTN_U8_EXP_FRAC_BITS - code));
+    }
+    qbh_attention_u8_build_probability_lut(
+        code_lut, weight_sum, config->division_mode, valid_count);
+    for (uint32_t index = 0U; index < active_count; ++index) {
+        const uint8_t raw = active_scores[index];
+        const int32_t converted =
+            ((int32_t)raw - (int32_t)QBH_ATTENTION_HMX_CENTER) *
+                (int32_t)config->score_multiplier +
+            QBH_ATTN_U8_SCORE_ZP;
+        const uint8_t score = qbh_attention_u8_clip_u8(converted);
+        uint32_t code =
+            ((uint32_t)maximum - score +
+             (UINT32_C(1) << (config->fraction_bits - 1U))) >>
+            config->fraction_bits;
+        if (code > 15U) {
+            code = 15U;
+        }
+        probability_by_raw[raw] = code_lut[2U * code];
+        local_probability_sum +=
+            histogram[raw] * probability_by_raw[raw];
+    }
+    if (probability_sum != NULL) {
+        *probability_sum = local_probability_sum;
+    }
+    if (score_saturation_count != NULL) {
+        *score_saturation_count = local_saturation_count;
+    }
+    asm volatile("barrier" ::: "memory");
+}

@@ -1285,7 +1285,11 @@ static int qbh_hmx_native_u8_cache_formats(uint32_t k_format,
            (k_format ==
                 QBH_KV_CACHE_FORMAT_HMX_U8_K_WEIGHT_DELTA_V2 &&
             v_format ==
-                QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_DELTA_V2);
+                QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_DELTA_V2) ||
+           (k_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_K_SEGMENTED_V4 &&
+            v_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_V_SEGMENTED_V4);
 }
 
 static int qbh_hmx_native_u8_delta_cache_formats(
@@ -1294,6 +1298,14 @@ static int qbh_hmx_native_u8_delta_cache_formats(
                QBH_KV_CACHE_FORMAT_HMX_U8_K_WEIGHT_DELTA_V2 &&
            v_format ==
                QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_DELTA_V2;
+}
+
+static int qbh_hmx_native_u8_segmented_cache_formats(
+    uint32_t k_format, uint32_t v_format) {
+    return k_format ==
+               QBH_KV_CACHE_FORMAT_HMX_U8_K_SEGMENTED_V4 &&
+           v_format ==
+               QBH_KV_CACHE_FORMAT_HMX_U8_V_SEGMENTED_V4;
 }
 
 static int qbh_hmx_native_f16_cache_formats(uint32_t k_format,
@@ -1321,6 +1333,10 @@ static uint32_t qbh_host_k_cache_bytes(uint32_t variant,
             QBH_KV_CACHE_FORMAT_HMX_U8_K_WEIGHT_DELTA_V2) {
         return QBH_KV_CACHE_HMX_U8_K_DELTA_BYTES(capacity);
     }
+    if (variant == QBH_BLOCK_W4U8 &&
+        k_format == QBH_KV_CACHE_FORMAT_HMX_U8_K_SEGMENTED_V4) {
+        return QBH_KV_CACHE_HMX_U8_K_SEGMENTED_BYTES(capacity);
+    }
     if (variant != QBH_BLOCK_W4U8 &&
         k_format == QBH_KV_CACHE_FORMAT_HMX_F16_K_WEIGHT_V1) {
         return QBH_KV_CACHE_HMX_F16_K_BYTES(capacity);
@@ -1340,6 +1356,10 @@ static uint32_t qbh_host_v_cache_bytes(uint32_t variant,
         v_format ==
             QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_DELTA_V2) {
         return QBH_KV_CACHE_HMX_U8_V_DELTA_BYTES(capacity);
+    }
+    if (variant == QBH_BLOCK_W4U8 &&
+        v_format == QBH_KV_CACHE_FORMAT_HMX_U8_V_SEGMENTED_V4) {
+        return QBH_KV_CACHE_HMX_U8_V_SEGMENTED_BYTES(capacity);
     }
     if (variant != QBH_BLOCK_W4U8 &&
         v_format == QBH_KV_CACHE_FORMAT_HMX_F16_V_WEIGHT_V1) {
@@ -1420,11 +1440,16 @@ static int qbh_prepare_vertical_layer_slots(
         const int hmx_native_u8_delta =
             qbh_hmx_native_u8_delta_cache_formats(
                 k_cache_format, v_cache_format);
+        const int hmx_native_u8_segmented =
+            qbh_hmx_native_u8_segmented_cache_formats(
+                k_cache_format, v_cache_format);
         const int hmx_native_f16 = qbh_hmx_native_f16_cache_formats(
             k_cache_format, v_cache_format);
         const int hmx_native = hmx_native_u8 || hmx_native_f16;
-        const char *hmx_suffix = hmx_native_u8_delta
-            ? "u8_delta" : (hmx_native_u8 ? "u8" : "f16");
+        const char *hmx_suffix = hmx_native_u8_segmented
+            ? "u8_segmented"
+            : (hmx_native_u8_delta
+                   ? "u8_delta" : (hmx_native_u8 ? "u8" : "f16"));
         for (uint32_t index = 0U; index < 2U; ++index) {
             if (hmx_native) {
                 status = snprintf(
@@ -3595,6 +3620,11 @@ int main(int argc, char **argv) {
                     QBH_KV_CACHE_FORMAT_HMX_U8_K_WEIGHT_DELTA_V2;
                 kv_cache_v_format =
                     QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_DELTA_V2;
+            } else if (strcmp(layout, "hmx_native_u8_segmented_v4") == 0) {
+                kv_cache_k_format =
+                    QBH_KV_CACHE_FORMAT_HMX_U8_K_SEGMENTED_V4;
+                kv_cache_v_format =
+                    QBH_KV_CACHE_FORMAT_HMX_U8_V_SEGMENTED_V4;
             } else if (strcmp(layout, "hmx_native_f16") == 0) {
                 kv_cache_k_format =
                     QBH_KV_CACHE_FORMAT_HMX_F16_K_WEIGHT_V1;
@@ -3709,6 +3739,8 @@ int main(int argc, char **argv) {
          kv_cache_k_format !=
              QBH_KV_CACHE_FORMAT_HMX_U8_K_WEIGHT_DELTA_V2 &&
          kv_cache_k_format !=
+             QBH_KV_CACHE_FORMAT_HMX_U8_K_SEGMENTED_V4 &&
+         kv_cache_k_format !=
              QBH_KV_CACHE_FORMAT_HMX_F16_K_WEIGHT_V1) ||
         (kv_cache_v_format !=
              QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1 &&
@@ -3716,6 +3748,8 @@ int main(int argc, char **argv) {
              QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_V1 &&
          kv_cache_v_format !=
              QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_DELTA_V2 &&
+         kv_cache_v_format !=
+             QBH_KV_CACHE_FORMAT_HMX_U8_V_SEGMENTED_V4 &&
          kv_cache_v_format !=
              QBH_KV_CACHE_FORMAT_HMX_F16_V_WEIGHT_V1) ||
         (qbh_hmx_native_u8_cache_formats(
@@ -4277,11 +4311,16 @@ int main(int argc, char **argv) {
         const int hmx_native_u8_delta =
             qbh_hmx_native_u8_delta_cache_formats(
                 kv_cache_k_format, kv_cache_v_format);
+        const int hmx_native_u8_segmented =
+            qbh_hmx_native_u8_segmented_cache_formats(
+                kv_cache_k_format, kv_cache_v_format);
         const int hmx_native_f16 = qbh_hmx_native_f16_cache_formats(
             kv_cache_k_format, kv_cache_v_format);
         const int hmx_native = hmx_native_u8 || hmx_native_f16;
-        const char *hmx_suffix = hmx_native_u8_delta
-            ? "u8_delta" : (hmx_native_u8 ? "u8" : "f16");
+        const char *hmx_suffix = hmx_native_u8_segmented
+            ? "u8_segmented"
+            : (hmx_native_u8_delta
+                   ? "u8_delta" : (hmx_native_u8 ? "u8" : "f16"));
         int status = hmx_native
             ? snprintf(file_name, sizeof(file_name),
                        "kv_cache_k_hmx_%s.bin", hmx_suffix)
@@ -4807,40 +4846,55 @@ int main(int argc, char **argv) {
                 const int native_u8_delta =
                     qbh_hmx_native_u8_delta_cache_formats(
                         kv_cache_k_format, kv_cache_v_format);
+                const int native_u8_segmented =
+                    qbh_hmx_native_u8_segmented_cache_formats(
+                        kv_cache_k_format, kv_cache_v_format);
                 layer->padded_capacity =
                     QBH_KV_CACHE_HMX_PADDED_CAPACITY(
                         kv_cache_capacity);
                 layer->k_head_stride_bytes = native_u8
-                    ? (native_u8_delta
+                    ? (native_u8_segmented
+                           ? QBH_KV_CACHE_HMX_U8_K_SEGMENTED_HEAD_BYTES(
+                                 kv_cache_capacity)
+                           : (native_u8_delta
                            ? QBH_KV_CACHE_HMX_U8_K_DELTA_HEAD_BYTES(
                                  kv_cache_capacity)
                            : QBH_KV_CACHE_HMX_K_HEAD_BYTES(
-                                 kv_cache_capacity))
+                                 kv_cache_capacity)))
                     : QBH_KV_CACHE_HMX_F16_K_HEAD_BYTES(kv_cache_capacity);
                 layer->v_head_stride_bytes = native_u8
-                    ? (native_u8_delta
+                    ? (native_u8_segmented
+                           ? QBH_KV_CACHE_HMX_U8_V_SEGMENTED_HEAD_BYTES(
+                                 kv_cache_capacity)
+                           : (native_u8_delta
                            ? QBH_KV_CACHE_HMX_U8_V_DELTA_HEAD_BYTES(
                                  kv_cache_capacity)
                            : QBH_KV_CACHE_HMX_V_HEAD_BYTES(
-                                 kv_cache_capacity))
+                                 kv_cache_capacity)))
                     : QBH_KV_CACHE_HMX_F16_V_HEAD_BYTES(kv_cache_capacity);
                 layer->head_stride_bytes =
                     layer->k_head_stride_bytes;
                 layer->token_stride_bytes = 0U;
                 layer->k_weight_bytes_per_head = native_u8
-                    ? (native_u8_delta
+                    ? (native_u8_segmented
+                           ? QBH_KV_CACHE_HMX_U8_SEGMENT_COUNT(
+                                 kv_cache_capacity) *
+                                 QBH_KV_CACHE_HMX_U8_SEGMENT_K_BYTES
+                           : (native_u8_delta
                            ? QBH_KV_CACHE_HMX_U8_BASE_WEIGHT_BYTES_PER_HEAD
                            : QBH_KV_CACHE_HMX_WEIGHT_BYTES_PER_HEAD(
-                                 kv_cache_capacity))
+                                 kv_cache_capacity)))
                     : QBH_KV_CACHE_HMX_F16_WEIGHT_BYTES_PER_HEAD(
                           kv_cache_capacity);
                 layer->v_weight_bytes_per_head =
                     layer->k_weight_bytes_per_head;
                 layer->k_bias_bytes_per_head = native_u8
-                    ? (native_u8_delta
+                    ? (native_u8_segmented
+                           ? 0U
+                           : (native_u8_delta
                            ? QBH_KV_CACHE_HMX_U8_K_BASE_BIAS_BYTES_PER_HEAD
                            : QBH_KV_CACHE_HMX_K_BIAS_BYTES_PER_HEAD(
-                                 kv_cache_capacity))
+                                 kv_cache_capacity)))
                     : 0U;
                 layer->v_bias_bytes_per_head = native_u8
                     ? QBH_KV_CACHE_HMX_V_BIAS_BYTES_PER_HEAD

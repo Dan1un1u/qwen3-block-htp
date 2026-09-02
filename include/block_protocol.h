@@ -7,7 +7,7 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(67)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(69)
 #define QBH_BLOCK_EXPERIMENT UINT32_C(161)
 
 #define QBH_BLOCK_M UINT32_C(64)
@@ -112,6 +112,8 @@ enum qbh_kv_cache_format {
     QBH_KV_CACHE_FORMAT_HMX_F16_V_WEIGHT_V1 = 5,
     QBH_KV_CACHE_FORMAT_HMX_U8_K_WEIGHT_DELTA_V2 = 6,
     QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_DELTA_V2 = 7,
+    QBH_KV_CACHE_FORMAT_HMX_U8_K_SEGMENTED_V4 = 8,
+    QBH_KV_CACHE_FORMAT_HMX_U8_V_SEGMENTED_V4 = 9,
 };
 
 enum qbh_w4u8_prefill_cache_mode {
@@ -172,6 +174,44 @@ enum qbh_w4u8_delta_reconstruction_mode {
 #define QBH_KV_CACHE_HMX_U8_V_DELTA_BYTES(capacity_) \
     (QBH_BLOCK_KV_HEADS * \
      QBH_KV_CACHE_HMX_U8_V_DELTA_HEAD_BYTES(capacity_))
+
+/* EXP-0161 Phase B stores every immutable 32-token prefix segment in the
+ * exact HMX operand layout.  K is segment-major.  V uses 32-segment blocks
+ * that are output-tile-major within each block, so one 2-D DMA reconstructs
+ * an AV segment while every hardware stride remains below 64 KiB.
+ * One fixed 32-row logical journal follows the sealed prefix and is the only
+ * mutable region.  The experiment packages use capacity=past+1, so
+ * capacity-1 determines the number of sealed tiles. */
+#define QBH_KV_CACHE_HMX_U8_SEGMENT_TOKENS QBH_HMX_INPUT_CHANNELS
+#define QBH_KV_CACHE_HMX_U8_SEGMENT_WEIGHT_BYTES \
+    (QBH_BLOCK_HEAD_DIM * QBH_KV_CACHE_HMX_U8_SEGMENT_TOKENS)
+#define QBH_KV_CACHE_HMX_U8_SEGMENT_K_BYTES \
+    (QBH_KV_CACHE_HMX_U8_SEGMENT_WEIGHT_BYTES + QBH_HMX_BIAS_BYTES)
+#define QBH_KV_CACHE_HMX_U8_SEGMENT_V_BYTES \
+    QBH_KV_CACHE_HMX_U8_SEGMENT_WEIGHT_BYTES
+#define QBH_KV_CACHE_HMX_U8_SEGMENT_COUNT(capacity_) \
+    (((capacity_) - 1U) / QBH_KV_CACHE_HMX_U8_SEGMENT_TOKENS)
+#define QBH_KV_CACHE_HMX_U8_V_SEGMENT_BLOCK_SEGMENTS UINT32_C(32)
+#define QBH_KV_CACHE_HMX_U8_V_SEGMENT_PLANE_BYTES(capacity_) \
+    (QBH_KV_CACHE_HMX_U8_SEGMENT_COUNT(capacity_) * \
+     QBH_HMX_WEIGHT_BYTES)
+#define QBH_KV_CACHE_HMX_U8_SEGMENT_TAIL_BYTES \
+    (QBH_KV_CACHE_HMX_U8_SEGMENT_TOKENS * QBH_BLOCK_HEAD_DIM)
+#define QBH_KV_CACHE_HMX_U8_K_SEGMENTED_HEAD_BYTES(capacity_) \
+    (QBH_KV_CACHE_HMX_U8_SEGMENT_COUNT(capacity_) * \
+         QBH_KV_CACHE_HMX_U8_SEGMENT_K_BYTES + \
+     QBH_KV_CACHE_HMX_U8_SEGMENT_TAIL_BYTES)
+#define QBH_KV_CACHE_HMX_U8_V_SEGMENTED_HEAD_BYTES(capacity_) \
+    (QBH_KV_CACHE_HMX_U8_SEGMENT_COUNT(capacity_) * \
+         QBH_KV_CACHE_HMX_U8_SEGMENT_V_BYTES + \
+     QBH_KV_CACHE_HMX_V_BIAS_BYTES_PER_HEAD + \
+     QBH_KV_CACHE_HMX_U8_SEGMENT_TAIL_BYTES)
+#define QBH_KV_CACHE_HMX_U8_K_SEGMENTED_BYTES(capacity_) \
+    (QBH_BLOCK_KV_HEADS * \
+     QBH_KV_CACHE_HMX_U8_K_SEGMENTED_HEAD_BYTES(capacity_))
+#define QBH_KV_CACHE_HMX_U8_V_SEGMENTED_BYTES(capacity_) \
+    (QBH_BLOCK_KV_HEADS * \
+     QBH_KV_CACHE_HMX_U8_V_SEGMENTED_HEAD_BYTES(capacity_))
 
 /* FP16 cache-native storage keeps the exact M64 HMX weight operands consumed
  * by prefill QK/AV plus a contiguous row journal for the bounded decode tail.
