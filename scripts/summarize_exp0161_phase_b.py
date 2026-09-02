@@ -104,7 +104,7 @@ def main() -> None:
         mode = parts[-1]
         status = int(Path(str(path) + ".status").read_text().strip())
         record = read_json_record(path)
-        if record is None:
+        if record is None or status != 0:
             failures.append({
                 "length": length,
                 "repeat": repeat_count,
@@ -127,12 +127,14 @@ def main() -> None:
                 divisor = float(repeat_count)
                 physical = all(
                     int(run["rpc_result"]) == 0
+                    and int(run["dsp_status"]) == 3
                     and int(run["vtcm_requested_bytes"]) == 8 * 1024 * 1024
                     and int(run["vtcm_acquired_bytes"]) == 8 * 1024 * 1024
                     and int(run["intermediate_ddr_read_bytes"]) == 0
                     and int(run["intermediate_ddr_write_bytes"]) == 0
                     and int(run["intermediate_spill_fill_count"]) == 0
                     and int(run["ledger_unattributed_ticks"]) == 0
+                    and int(run["block_invocation_count"]) == repeat_count
                     and run["intermediate_residency"] == "VTCM"
                     for run in runs
                 )
@@ -246,7 +248,13 @@ def main() -> None:
         )
         capture[f"l{length}"] = entry
 
-    physical_pass = all(
+    complete_cells = all(
+        len(records.get((length, repeat_count, mode), [])) == 5
+        for length in LENGTHS
+        for repeat_count in REPEATS
+        for mode in MODES
+    )
+    physical_pass = complete_cells and not failures and all(
         bool(cell.get("physical_pass"))
         for cell in cells.values() if cell.get("available")
     )
