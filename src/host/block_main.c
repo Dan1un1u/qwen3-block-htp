@@ -2421,7 +2421,7 @@ static void qbh_print_replay_profile(
     printf(",\"" #field "\":%" PRIu64, header->field)
 
     printf(
-        "{\"experiment\":159,\"record\":\"replay_profile\","
+        "{\"experiment\":160,\"record\":\"replay_profile\","
         "\"variant\":\"%s\",\"replay_step\":%" PRIu32 ","
         "\"mode\":\"%s\",\"logical_m\":%" PRIu32 ","
         "\"first_position\":%" PRIu32 ","
@@ -2484,11 +2484,14 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U32(prepared_session_run_index);
     QBH_REPLAY_PROFILE_U32(numerical_audit_enabled);
     QBH_REPLAY_PROFILE_U32(w4u8_prefill_cache_mode);
+    QBH_REPLAY_PROFILE_U32(w4u8_delta_reconstruction_mode);
     QBH_REPLAY_PROFILE_I32(dsp_status);
     QBH_REPLAY_PROFILE_I32(numerical_status);
     QBH_REPLAY_PROFILE_U32(scan_logical_m_observed);
     QBH_REPLAY_PROFILE_U32(scan_total_kv_length);
     QBH_REPLAY_PROFILE_U32(scan_padded_kv_length);
+    QBH_REPLAY_PROFILE_U32(scan_attention_overlay_capacity_bytes);
+    QBH_REPLAY_PROFILE_U32(scan_attention_overlay_required_bytes);
     QBH_REPLAY_PROFILE_U32(scan_cache_dma_descriptor_count);
     QBH_REPLAY_PROFILE_U32(scan_cache_append_mismatch_count);
     QBH_REPLAY_PROFILE_U64(scan_cache_ddr_read_bytes);
@@ -3016,7 +3019,7 @@ static int qbh_run_replay_sequence(
         }
         all_pass &= qbh_replay_step_pass(variant, step_result);
         printf(
-            "{\"experiment\":159,\"variant\":\"%s\","
+            "{\"experiment\":160,\"variant\":\"%s\","
             "\"replay_step\":%" PRIu32 ",\"mode\":\"%s\","
             "\"first_position\":%" PRIu32 ","
             "\"valid_length\":%" PRIu32 ","
@@ -3135,7 +3138,7 @@ static int qbh_run_replay_sequence(
         }
     }
     printf(
-        "{\"experiment\":159,\"variant\":\"%s\","
+        "{\"experiment\":160,\"variant\":\"%s\","
         "\"replay_sequence_complete\":true,"
         "\"completed_steps\":%" PRIu32 ","
         "\"first_layer\":%" PRIu32 ","
@@ -3230,7 +3233,7 @@ static int qbh_run_full_stack_hidden_capture(
         gate_pass = 0;
     }
     printf(
-        "{\"experiment\":159,\"hidden_capture\":true,"
+        "{\"experiment\":160,\"hidden_capture\":true,"
         "\"variant\":\"%s\",\"host_wall_ns\":%" PRIu64 ","
         "\"rpc_result\":%d,\"dsp_status\":%d,"
         "\"captured_layers\":%" PRIu32 ","
@@ -3322,6 +3325,8 @@ int main(int argc, char **argv) {
     uint32_t w4u8_qkv_ring_expand_workers = 0U;
     uint32_t w4u8_prefill_cache_mode =
         QBH_BLOCK_W4U8_PREFILL_CACHE_DUPLICATE_BUILD;
+    uint32_t w4u8_delta_reconstruction_mode =
+        QBH_BLOCK_W4U8_DELTA_RECONSTRUCTION_SERIAL;
     uint32_t scan_mode = QBH_BLOCK_SCAN_DISABLED;
     uint32_t logical_m = QBH_BLOCK_M;
     uint32_t initial_kv_length = 0U;
@@ -3507,6 +3512,24 @@ int main(int argc, char **argv) {
         }
     }
     {
+        const char *mode =
+            getenv("QBH_W4U8_DELTA_RECONSTRUCTION");
+        if (mode != NULL && mode[0] != '\0') {
+            if (strcmp(mode, "serial") == 0) {
+                w4u8_delta_reconstruction_mode =
+                    QBH_BLOCK_W4U8_DELTA_RECONSTRUCTION_SERIAL;
+            } else if (strcmp(mode, "direct") == 0) {
+                w4u8_delta_reconstruction_mode =
+                    QBH_BLOCK_W4U8_DELTA_RECONSTRUCTION_DIRECT;
+            } else if (strcmp(mode, "pipeline") == 0) {
+                w4u8_delta_reconstruction_mode =
+                    QBH_BLOCK_W4U8_DELTA_RECONSTRUCTION_PIPELINE;
+            } else {
+                w4u8_delta_reconstruction_mode = UINT32_MAX;
+            }
+        }
+    }
+    {
         const char *mode = getenv("QBH_SCAN_MODE");
         const char *logical = getenv("QBH_LOGICAL_M");
         const char *past = getenv("QBH_KV_CACHE_LENGTH");
@@ -3673,6 +3696,8 @@ int main(int argc, char **argv) {
         repeats == 0U || repeats > 100U ||
         w4u8_prefill_cache_mode >
             QBH_BLOCK_W4U8_PREFILL_CACHE_REUSE_ATTENTION_CARRIERS ||
+        w4u8_delta_reconstruction_mode >
+            QBH_BLOCK_W4U8_DELTA_RECONSTRUCTION_PIPELINE ||
         scan_mode > QBH_BLOCK_SCAN_DECODE ||
         replay_mode > QBH_BLOCK_REPLAY_CONTINUOUS ||
         (kv_cache_k_format !=
@@ -4491,7 +4516,7 @@ int main(int argc, char **argv) {
             const char *layout_only = getenv("QBH_LAYOUT_ONLY");
             if (layout_only != NULL && strcmp(layout_only, "1") == 0) {
                 printf(
-                    "{\"experiment\":159,\"layout_only\":true,"
+                    "{\"experiment\":160,\"layout_only\":true,"
                     "\"variant\":\"%s\",\"layer_first\":%" PRIu32
                     ",\"layer_count\":%" PRIu32
                     ",\"shared_bytes\":%zu,"
@@ -4631,6 +4656,8 @@ int main(int argc, char **argv) {
         w4u8_qkv_ring_expand_workers;
     header->w4u8_prefill_cache_mode =
         w4u8_prefill_cache_mode;
+    header->w4u8_delta_reconstruction_mode =
+        w4u8_delta_reconstruction_mode;
     header->w4u8_qk_pair_kernel_mode =
         w4u8_qk_pair_kernel_mode;
     header->scan_mode = scan_mode;
@@ -5070,7 +5097,7 @@ int main(int argc, char **argv) {
         int map_gate_result = qwen3_probe_run_block(
             session.handle, shared_fd, (uint32_t)total_bytes);
         printf(
-            "{\"experiment\":159,\"map_gate\":true,"
+            "{\"experiment\":160,\"map_gate\":true,"
             "\"variant\":\"%s\",\"shared_bytes\":%zu,"
             "\"rpc_result\":%d,\"dsp_status\":%d,"
             "\"layer_count\":%" PRIu32 ","

@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(65)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(159)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(66)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(160)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -117,6 +117,12 @@ enum qbh_kv_cache_format {
 enum qbh_w4u8_prefill_cache_mode {
     QBH_BLOCK_W4U8_PREFILL_CACHE_DUPLICATE_BUILD = 0,
     QBH_BLOCK_W4U8_PREFILL_CACHE_REUSE_ATTENTION_CARRIERS = 1,
+};
+
+enum qbh_w4u8_delta_reconstruction_mode {
+    QBH_BLOCK_W4U8_DELTA_RECONSTRUCTION_SERIAL = 0,
+    QBH_BLOCK_W4U8_DELTA_RECONSTRUCTION_DIRECT = 1,
+    QBH_BLOCK_W4U8_DELTA_RECONSTRUCTION_PIPELINE = 2,
 };
 
 #define QBH_KV_CACHE_HMX_PADDED_CAPACITY(capacity_) \
@@ -605,6 +611,7 @@ struct qbh_block_header {
     uint32_t w4u8_gate_up_ring_slots;
     uint32_t w4u8_qkv_ring_expand_workers;
     uint32_t w4u8_prefill_cache_mode;
+    uint32_t w4u8_delta_reconstruction_mode;
 
     /* EXP-0147 logical-shape wrapper.  QBH_BLOCK_M remains the immutable
      * physical projection tile. */

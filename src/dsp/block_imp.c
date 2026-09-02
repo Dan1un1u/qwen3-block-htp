@@ -1425,6 +1425,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->repeat_count == 0U || header->repeat_count > 100U ||
         header->w4u8_prefill_cache_mode >
             QBH_BLOCK_W4U8_PREFILL_CACHE_REUSE_ATTENTION_CARRIERS ||
+        header->w4u8_delta_reconstruction_mode >
+            QBH_BLOCK_W4U8_DELTA_RECONSTRUCTION_PIPELINE ||
         (header->w4u8_prefill_cache_mode ==
              QBH_BLOCK_W4U8_PREFILL_CACHE_REUSE_ATTENTION_CARRIERS &&
          (header->variant != QBH_BLOCK_W4U8 ||
@@ -11264,6 +11266,51 @@ static int qbh_scan_cache_dma(struct qbh_block_header *header,
     return 0;
 }
 
+static int qbh_scan_cache_dma_2d(
+    struct qbh_block_header *header, void *destination,
+    const void *source, uint32_t row_bytes, uint32_t rows,
+    uint32_t source_stride, uint32_t destination_stride) {
+    struct qbh_dma_aligned_desc_2d aligned;
+    struct qbh_dma_desc_2d *descriptor = &aligned.descriptor;
+    const uint64_t start = HAP_perf_get_qtimer_count();
+
+    if (destination == NULL || source == NULL || row_bytes == 0U ||
+        rows == 0U || row_bytes > UINT16_MAX || rows > UINT16_MAX ||
+        source_stride > UINT16_MAX || destination_stride > UINT16_MAX) {
+        return -1;
+    }
+    if (qbh_dma_wait_idle() != 0) {
+        return -2;
+    }
+    memset(&aligned, 0, sizeof(aligned));
+    descriptor->type = QBH_DMA_TYPE_2D;
+    descriptor->src_bypass = 1;
+    descriptor->dst_bypass = 0;
+    descriptor->ordered = 1;
+    descriptor->dstate = QBH_DMA_DESC_PENDING;
+    descriptor->src = (uint32_t)(uintptr_t)source;
+    descriptor->dst = (uint32_t)(uintptr_t)destination;
+    descriptor->roi_width = (uint16_t)row_bytes;
+    descriptor->roi_height = (uint16_t)rows;
+    descriptor->src_stride = (uint16_t)source_stride;
+    descriptor->dst_stride = (uint16_t)destination_stride;
+    if (qbh_dma_start(descriptor) != 0) {
+        return -3;
+    }
+    if (qbh_dma_wait_idle() != 0) {
+        return -4;
+    }
+    if (descriptor->dstate != QBH_DMA_DESC_COMPLETE) {
+        return -5;
+    }
+    ++header->scan_cache_dma_descriptor_count;
+    header->scan_cache_ddr_read_bytes +=
+        (uint64_t)row_bytes * rows;
+    header->scan_cache_stage_ticks +=
+        HAP_perf_get_qtimer_count() - start;
+    return 0;
+}
+
 static void qbh_hvx_copy_aligned_bytes(
     void *destination, const void *source, uint32_t bytes) {
     HVX_Vector *output = (HVX_Vector *)destination;
@@ -11284,6 +11331,22 @@ static void qbh_hvx_zero_aligned_bytes(void *destination,
 
     for (uint32_t index = 0U; index < vectors; ++index) {
         output[index] = zero;
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
+static void qbh_hvx_zero_strided_bytes(
+    void *destination, uint32_t row_bytes, uint32_t rows,
+    uint32_t destination_stride) {
+    const HVX_Vector zero = Q6_V_vzero();
+    const uint32_t vectors = row_bytes / sizeof(HVX_Vector);
+
+    for (uint32_t row = 0U; row < rows; ++row) {
+        HVX_Vector *output = (HVX_Vector *)(
+            (uint8_t *)destination + (size_t)row * destination_stride);
+        for (uint32_t index = 0U; index < vectors; ++index) {
+            output[index] = zero;
+        }
     }
     asm volatile("barrier" ::: "memory");
 }
@@ -12473,6 +12536,408 @@ static int qbh_scan_audit_f16_o_projection(
     return 0;
 }
 
+struct qbh_scan_u8_delta_attention_slot {
+    uint8_t *probability;
+    int8_t *weight;
+    uint8_t *scores;
+    uint32_t *qk_bias;
+    uint32_t *av_bias;
+    struct qbh_attention_u8_telemetry telemetry;
+};
+
+static void qbh_scan_u8_delta_slot_init(
+    struct qbh_scan_u8_delta_attention_slot *slot,
+    uint8_t *base, uint32_t plane_bytes, uint32_t qk_bias_bytes) {
+    slot->probability = base;
+    slot->weight = (int8_t *)(base + plane_bytes);
+    slot->scores = base + 2U * plane_bytes;
+    slot->qk_bias = (uint32_t *)(base + 3U * plane_bytes);
+    slot->av_bias = (uint32_t *)(
+        (uint8_t *)slot->qk_bias + qk_bias_bytes);
+    memset(&slot->telemetry, 0, sizeof(slot->telemetry));
+}
+
+static int qbh_scan_prepare_u8_delta_k(
+    struct qbh_block_header *header,
+    struct qbh_scan_u8_delta_attention_slot *slot,
+    const uint8_t *cache_k, uint8_t *delta_rows,
+    uint32_t decode_rows, uint32_t delta_bytes,
+    uint32_t plane_bytes,
+    const struct qbh_attention_config *config) {
+    uint32_t *tail_bias = slot->qk_bias +
+        (size_t)(QBH_BLOCK_M / QBH_HMX_OUTPUT_CHANNELS) *
+            (QBH_HMX_BIAS_BYTES / sizeof(uint32_t));
+    const uint32_t divisor = UINT32_C(1) << config->score_shift;
+    const int32_t rounding = config->score_shift == 0U
+        ? 0 : (int32_t)(divisor / 2U);
+    uint64_t start;
+
+    memset(&slot->telemetry, 0, sizeof(slot->telemetry));
+    qbh_hvx_zero_aligned_bytes(
+        slot->weight +
+            QBH_KV_CACHE_HMX_U8_BASE_WEIGHT_BYTES_PER_HEAD,
+        plane_bytes -
+            QBH_KV_CACHE_HMX_U8_BASE_WEIGHT_BYTES_PER_HEAD);
+    if (qbh_scan_cache_dma(
+            header, slot->weight, cache_k,
+            QBH_KV_CACHE_HMX_U8_BASE_WEIGHT_BYTES_PER_HEAD,
+            1U) != 0 ||
+        qbh_scan_cache_dma(
+            header, slot->qk_bias,
+            cache_k +
+                QBH_KV_CACHE_HMX_U8_BASE_WEIGHT_BYTES_PER_HEAD,
+            QBH_KV_CACHE_HMX_U8_K_BASE_BIAS_BYTES_PER_HEAD,
+            1U) != 0) {
+        return -1;
+    }
+    for (uint32_t output = 0U;
+         output < QBH_HMX_OUTPUT_CHANNELS; ++output) {
+        tail_bias[output] = slot->qk_bias[0];
+        tail_bias[QBH_HMX_OUTPUT_CHANNELS + output] =
+            UINT32_C(128) * divisor + rounding;
+    }
+    if (qbh_scan_cache_dma(
+            header, delta_rows,
+            cache_k +
+                QBH_KV_CACHE_HMX_U8_BASE_WEIGHT_BYTES_PER_HEAD +
+                QBH_KV_CACHE_HMX_U8_K_BASE_BIAS_BYTES_PER_HEAD,
+            delta_bytes, 1U) != 0) {
+        return -1;
+    }
+    start = HAP_perf_get_qtimer_count();
+    qbh_attention_u8_patch_k_delta_rows_hvx(
+        delta_rows, decode_rows, config,
+        slot->weight +
+            (size_t)(QBH_BLOCK_M / QBH_HMX_OUTPUT_CHANNELS) *
+                QBH_ATTENTION_HEAD_DIM_TILES *
+                QBH_HMX_WEIGHT_BYTES,
+        slot->qk_bias +
+            (size_t)(QBH_BLOCK_M / QBH_HMX_OUTPUT_CHANNELS) *
+                (QBH_HMX_BIAS_BYTES / sizeof(uint32_t)));
+    header->u8_attention_k_pack_ticks +=
+        HAP_perf_get_qtimer_count() - start;
+    return 0;
+}
+
+static int qbh_scan_prepare_u8_delta_v(
+    struct qbh_block_header *header,
+    struct qbh_scan_u8_delta_attention_slot *slot,
+    const uint8_t *cache_v, uint8_t *delta_rows,
+    uint8_t *delta_lut, uint32_t decode_rows,
+    uint32_t delta_bytes, uint32_t kv_tiles,
+    int32_t *delta_lut_v_zero_point,
+    uint32_t *delta_lut_numerator,
+    uint32_t *delta_lut_denominator,
+    const struct qbh_attention_config *config) {
+    const uint32_t base_tile_bytes =
+        QBH_ATTENTION_SCORE_TILES * QBH_HMX_WEIGHT_BYTES;
+    const uint32_t destination_tile_stride =
+        kv_tiles * QBH_HMX_WEIGHT_BYTES;
+    const uint32_t tail_tile_bytes =
+        destination_tile_stride - base_tile_bytes;
+    uint64_t start;
+
+    if (config->v_zero_point != *delta_lut_v_zero_point ||
+        config->v_recenter_numerator != *delta_lut_numerator ||
+        config->v_recenter_denominator != *delta_lut_denominator) {
+        qbh_attention_u8_prepare_v_delta_lut(config, delta_lut);
+        *delta_lut_v_zero_point = config->v_zero_point;
+        *delta_lut_numerator = config->v_recenter_numerator;
+        *delta_lut_denominator = config->v_recenter_denominator;
+    }
+    qbh_hvx_zero_strided_bytes(
+        slot->weight + base_tile_bytes, tail_tile_bytes,
+        QBH_ATTENTION_HEAD_DIM_TILES, destination_tile_stride);
+    if (qbh_scan_cache_dma_2d(
+            header, slot->weight, cache_v,
+            base_tile_bytes, QBH_ATTENTION_HEAD_DIM_TILES,
+            base_tile_bytes, destination_tile_stride) != 0 ||
+        qbh_scan_cache_dma(
+            header, slot->av_bias,
+            cache_v +
+                QBH_KV_CACHE_HMX_U8_BASE_WEIGHT_BYTES_PER_HEAD,
+            QBH_KV_CACHE_HMX_V_BIAS_BYTES_PER_HEAD,
+            1U) != 0 ||
+        qbh_scan_cache_dma(
+            header, delta_rows,
+            cache_v +
+                QBH_KV_CACHE_HMX_U8_BASE_WEIGHT_BYTES_PER_HEAD +
+                QBH_KV_CACHE_HMX_V_BIAS_BYTES_PER_HEAD,
+            delta_bytes, 1U) != 0) {
+        return -1;
+    }
+    start = HAP_perf_get_qtimer_count();
+    qbh_attention_u8_patch_v_delta_rows_hvx(
+        delta_rows, decode_rows, config,
+        slot->weight +
+            (size_t)(QBH_BLOCK_M / QBH_HMX_INPUT_CHANNELS) *
+                QBH_HMX_WEIGHT_BYTES,
+        destination_tile_stride, delta_lut,
+        header->numerical_audit_enabled != 0U
+            ? &slot->telemetry.v_recenter_saturation_count
+            : NULL);
+    header->u8_attention_v_pack_ticks +=
+        HAP_perf_get_qtimer_count() - start;
+    return 0;
+}
+
+static void qbh_scan_accumulate_u8_attention_telemetry(
+    struct qbh_block_header *header,
+    const struct qbh_attention_u8_telemetry *telemetry) {
+    header->u8_attention_score_saturation_count +=
+        telemetry->score_saturation_count;
+    header->u8_attention_v_recenter_saturation_count +=
+        telemetry->v_recenter_saturation_count;
+    header->u8_attention_probability_mask_violation_count +=
+        telemetry->probability_mask_violation_count;
+    if (header->u8_attention_probability_row_sum_min == 0U ||
+        telemetry->probability_row_sum_min <
+            header->u8_attention_probability_row_sum_min) {
+        header->u8_attention_probability_row_sum_min =
+            telemetry->probability_row_sum_min;
+    }
+    if (telemetry->probability_row_sum_max >
+        header->u8_attention_probability_row_sum_max) {
+        header->u8_attention_probability_row_sum_max =
+            telemetry->probability_row_sum_max;
+    }
+}
+
+static int qbh_scan_u8_attention_delta_pipeline(
+    struct qbh_block_header *header, uint8_t *shared,
+    struct qbh_block_buffers *buffers,
+    struct qbh_block_hmx_worker *worker,
+    uint32_t logical_rows, uint32_t past_tokens,
+    uint32_t valid_tokens, uint32_t padded_tokens,
+    uint32_t kv_tiles, uint32_t plane_bytes,
+    uint32_t qk_bias_bytes, uint32_t slot_stride,
+    uint32_t k_cache_head_stride,
+    uint32_t v_cache_head_stride,
+    uint32_t decode_rows, uint32_t delta_bytes,
+    uint64_t dynamic_start) {
+    struct qbh_scan_u8_delta_attention_slot slots[2];
+    uint8_t *delta_rows = buffers->gate;
+    int32_t delta_lut_v_zero_point =
+        buffers->attention_configs[0].v_zero_point;
+    uint32_t delta_lut_numerator =
+        buffers->attention_configs[0].v_recenter_numerator;
+    uint32_t delta_lut_denominator =
+        buffers->attention_configs[0].v_recenter_denominator;
+    uint64_t active_qk_compute_before;
+
+    qbh_scan_u8_delta_slot_init(
+        &slots[0], buffers->scores, plane_bytes, qk_bias_bytes);
+    qbh_scan_u8_delta_slot_init(
+        &slots[1], buffers->scores + slot_stride,
+        plane_bytes, qk_bias_bytes);
+
+    {
+        const uint8_t *cache_k =
+            shared + header->kv_cache_k_offset;
+        uint8_t *q_group = buffers->q;
+        if (qbh_scan_prepare_u8_delta_k(
+                header, &slots[0], cache_k, delta_rows,
+                decode_rows, delta_bytes, plane_bytes,
+                &buffers->attention_configs[0]) != 0) {
+            return -1;
+        }
+        active_qk_compute_before = worker->compute_ticks;
+        qbh_hmx_start(
+            worker, QBH_BLOCK_HMX_U8S8,
+            q_group, slots[0].weight, slots[0].qk_bias,
+            slots[0].scores,
+            QBH_ATTENTION_Q_HEADS_PER_GROUP,
+            QBH_ATTENTION_HEAD_DIM_TILES, kv_tiles);
+    }
+
+    for (uint32_t first = 0U;
+         first < QBH_BLOCK_KV_HEADS; first += 2U) {
+        const uint32_t second = first + 1U;
+        const uint32_t next = first + 2U;
+        struct qbh_scan_u8_delta_attention_slot *first_slot =
+            &slots[first & 1U];
+        struct qbh_scan_u8_delta_attention_slot *second_slot =
+            &slots[second & 1U];
+        const struct qbh_attention_config *first_config =
+            &buffers->attention_configs[first];
+        const struct qbh_attention_config *second_config =
+            &buffers->attention_configs[second];
+        uint8_t *first_q_group = buffers->q +
+            (size_t)first * QBH_ATTENTION_Q_HEADS_PER_GROUP *
+                QBH_ATTENTION_HEAD_DIM_TILES *
+                QBH_HMX_ACTIVATION_BYTES;
+        uint8_t *second_q_group = buffers->q +
+            (size_t)second * QBH_ATTENTION_Q_HEADS_PER_GROUP *
+                QBH_ATTENTION_HEAD_DIM_TILES *
+                QBH_HMX_ACTIVATION_BYTES;
+        const uint8_t *second_cache_k =
+            shared + header->kv_cache_k_offset +
+            (size_t)second * k_cache_head_stride;
+        const uint8_t *first_cache_v =
+            shared + header->kv_cache_v_offset +
+            (size_t)first * v_cache_head_stride;
+        const uint8_t *second_cache_v =
+            shared + header->kv_cache_v_offset +
+            (size_t)second * v_cache_head_stride;
+        uint64_t wait_start;
+        uint64_t compute_before;
+        uint64_t start;
+
+        /* QK[first] is active while K[second] is reconstructed. */
+        if (qbh_scan_prepare_u8_delta_k(
+                header, second_slot, second_cache_k, delta_rows,
+                decode_rows, delta_bytes, plane_bytes,
+                second_config) != 0) {
+            return -1;
+        }
+        wait_start = HAP_perf_get_qtimer_count();
+        if (qbh_hmx_wait(worker) != 0) {
+            return -1;
+        }
+        header->u8_attention_pipeline_wait_ticks +=
+            HAP_perf_get_qtimer_count() - wait_start;
+        header->u8_attention_qk_hmx_ticks +=
+            worker->compute_ticks - active_qk_compute_before;
+
+        active_qk_compute_before = worker->compute_ticks;
+        qbh_hmx_start(
+            worker, QBH_BLOCK_HMX_U8S8,
+            second_q_group, second_slot->weight,
+            second_slot->qk_bias, second_slot->scores,
+            QBH_ATTENTION_Q_HEADS_PER_GROUP,
+            QBH_ATTENTION_HEAD_DIM_TILES, kv_tiles);
+
+        start = HAP_perf_get_qtimer_count();
+        qbh_attention_u8_requant_softmax_dynamic(
+            first_slot->scores, first_slot->probability,
+            logical_rows, past_tokens, valid_tokens,
+            padded_tokens, first_config, &first_slot->telemetry);
+        header->u8_attention_softmax_ticks +=
+            HAP_perf_get_qtimer_count() - start;
+        if (qbh_scan_prepare_u8_delta_v(
+                header, first_slot, first_cache_v, delta_rows,
+                buffers->up, decode_rows, delta_bytes, kv_tiles,
+                &delta_lut_v_zero_point, &delta_lut_numerator,
+                &delta_lut_denominator, first_config) != 0) {
+            return -1;
+        }
+
+        wait_start = HAP_perf_get_qtimer_count();
+        if (qbh_hmx_wait(worker) != 0) {
+            return -1;
+        }
+        header->u8_attention_pipeline_wait_ticks +=
+            HAP_perf_get_qtimer_count() - wait_start;
+        header->u8_attention_qk_hmx_ticks +=
+            worker->compute_ticks - active_qk_compute_before;
+
+        compute_before = worker->compute_ticks;
+        qbh_hmx_start(
+            worker, QBH_BLOCK_HMX_U8S8,
+            first_slot->probability, first_slot->weight,
+            first_slot->av_bias, first_q_group,
+            QBH_ATTENTION_Q_HEADS_PER_GROUP,
+            kv_tiles, QBH_ATTENTION_HEAD_DIM_TILES);
+
+        start = HAP_perf_get_qtimer_count();
+        qbh_attention_u8_requant_softmax_dynamic(
+            second_slot->scores, second_slot->probability,
+            logical_rows, past_tokens, valid_tokens,
+            padded_tokens, second_config, &second_slot->telemetry);
+        header->u8_attention_softmax_ticks +=
+            HAP_perf_get_qtimer_count() - start;
+        if (qbh_scan_prepare_u8_delta_v(
+                header, second_slot, second_cache_v, delta_rows,
+                buffers->up, decode_rows, delta_bytes, kv_tiles,
+                &delta_lut_v_zero_point, &delta_lut_numerator,
+                &delta_lut_denominator, second_config) != 0) {
+            return -1;
+        }
+
+        wait_start = HAP_perf_get_qtimer_count();
+        if (qbh_hmx_wait(worker) != 0) {
+            return -1;
+        }
+        header->u8_attention_pipeline_wait_ticks +=
+            HAP_perf_get_qtimer_count() - wait_start;
+        header->u8_attention_av_hmx_ticks +=
+            worker->compute_ticks - compute_before;
+
+        compute_before = worker->compute_ticks;
+        qbh_hmx_start(
+            worker, QBH_BLOCK_HMX_U8S8,
+            second_slot->probability, second_slot->weight,
+            second_slot->av_bias, second_q_group,
+            QBH_ATTENTION_Q_HEADS_PER_GROUP,
+            kv_tiles, QBH_ATTENTION_HEAD_DIM_TILES);
+
+        start = HAP_perf_get_qtimer_count();
+        qbh_attention_u8_requant_av(first_q_group, first_config);
+        header->u8_attention_av_requant_ticks +=
+            HAP_perf_get_qtimer_count() - start;
+        qbh_scan_accumulate_u8_attention_telemetry(
+            header, &first_slot->telemetry);
+
+        if (next < QBH_BLOCK_KV_HEADS) {
+            const uint8_t *next_cache_k =
+                shared + header->kv_cache_k_offset +
+                (size_t)next * k_cache_head_stride;
+            if (qbh_scan_prepare_u8_delta_k(
+                    header, first_slot, next_cache_k, delta_rows,
+                    decode_rows, delta_bytes, plane_bytes,
+                    &buffers->attention_configs[next]) != 0) {
+                return -1;
+            }
+        }
+
+        wait_start = HAP_perf_get_qtimer_count();
+        if (qbh_hmx_wait(worker) != 0) {
+            return -1;
+        }
+        header->u8_attention_pipeline_wait_ticks +=
+            HAP_perf_get_qtimer_count() - wait_start;
+        header->u8_attention_av_hmx_ticks +=
+            worker->compute_ticks - compute_before;
+
+        if (next < QBH_BLOCK_KV_HEADS) {
+            uint8_t *next_q_group = buffers->q +
+                (size_t)next * QBH_ATTENTION_Q_HEADS_PER_GROUP *
+                    QBH_ATTENTION_HEAD_DIM_TILES *
+                    QBH_HMX_ACTIVATION_BYTES;
+            active_qk_compute_before = worker->compute_ticks;
+            qbh_hmx_start(
+                worker, QBH_BLOCK_HMX_U8S8,
+                next_q_group, first_slot->weight,
+                first_slot->qk_bias, first_slot->scores,
+                QBH_ATTENTION_Q_HEADS_PER_GROUP,
+                QBH_ATTENTION_HEAD_DIM_TILES, kv_tiles);
+        }
+
+        start = HAP_perf_get_qtimer_count();
+        qbh_attention_u8_requant_av(second_q_group, second_config);
+        header->u8_attention_av_requant_ticks +=
+            HAP_perf_get_qtimer_count() - start;
+        qbh_scan_accumulate_u8_attention_telemetry(
+            header, &second_slot->telemetry);
+    }
+
+    header->u8_attention_group_count += QBH_BLOCK_KV_HEADS;
+    header->u8_attention_qk_execution_count +=
+        QBH_BLOCK_KV_HEADS * QBH_ATTENTION_Q_HEADS_PER_GROUP * kv_tiles;
+    header->u8_attention_av_execution_count +=
+        QBH_BLOCK_KV_HEADS * QBH_ATTENTION_Q_HEADS_PER_GROUP *
+        QBH_ATTENTION_HEAD_DIM_TILES;
+    header->hmx_command_count += 2U * QBH_BLOCK_KV_HEADS;
+    header->hmx_u8s8_tile_pair_count +=
+        2U * QBH_BLOCK_KV_HEADS * QBH_ATTENTION_Q_HEADS_PER_GROUP *
+        QBH_ATTENTION_HEAD_DIM_TILES * kv_tiles;
+    header->u8_attention_direct_o_tile_count +=
+        QBH_BLOCK_HEADS * QBH_ATTENTION_HEAD_DIM_TILES;
+    header->scan_dynamic_attention_ticks +=
+        HAP_perf_get_qtimer_count() - dynamic_start;
+    return 0;
+}
+
 static int qbh_scan_u8_attention(
     struct qbh_block_header *header, uint8_t *shared,
     struct qbh_block_buffers *buffers,
@@ -12485,6 +12950,14 @@ static int qbh_scan_u8_attention(
         qbh_hmx_native_u8_delta_cache_formats(
             header->kv_cache_k_format,
             header->kv_cache_v_format);
+    const int direct_delta_reconstruction =
+        hmx_delta_cache &&
+        header->w4u8_delta_reconstruction_mode >=
+            QBH_BLOCK_W4U8_DELTA_RECONSTRUCTION_DIRECT;
+    const int delta_reconstruction_pipeline =
+        hmx_delta_cache &&
+        header->w4u8_delta_reconstruction_mode ==
+            QBH_BLOCK_W4U8_DELTA_RECONSTRUCTION_PIPELINE;
     const uint32_t padded_tokens = hmx_native_cache
         ? header->kv_cache_padded_capacity
         : qbh_align_up(valid_tokens, QBH_HMX_INPUT_CHANNELS);
@@ -12494,9 +12967,13 @@ static int qbh_scan_u8_attention(
         padded_tokens * QBH_BLOCK_HEAD_DIM;
     const uint32_t qk_bias_bytes =
         kv_tiles * QBH_HMX_BIAS_BYTES;
-    const uint32_t required_bytes =
+    const uint32_t single_slot_bytes =
         3U * plane_bytes + qk_bias_bytes +
         QBH_ATTENTION_HEAD_DIM_TILES * QBH_HMX_BIAS_BYTES;
+    const uint32_t slot_stride = qbh_align_up(
+        single_slot_bytes, QBH_HMX_FP16_TILE_BYTES);
+    const uint32_t required_bytes = delta_reconstruction_pipeline
+        ? 2U * slot_stride : single_slot_bytes;
     const uint32_t overlay_capacity =
         (uint32_t)(buffers->compressed_weight - buffers->scores);
     uint8_t *plane_a = buffers->scores;
@@ -12555,6 +13032,15 @@ static int qbh_scan_u8_attention(
         delta_lut_numerator = config->v_recenter_numerator;
         delta_lut_denominator = config->v_recenter_denominator;
     }
+    if (delta_reconstruction_pipeline) {
+        return qbh_scan_u8_attention_delta_pipeline(
+            header, shared, buffers, worker,
+            logical_rows, past_tokens, valid_tokens,
+            padded_tokens, kv_tiles, plane_bytes,
+            qk_bias_bytes, slot_stride,
+            k_cache_head_stride, v_cache_head_stride,
+            decode_rows, delta_bytes, dynamic_start);
+    }
 
     for (uint32_t group = 0U; group < QBH_BLOCK_KV_HEADS; ++group) {
         const struct qbh_attention_config *config =
@@ -12594,7 +13080,15 @@ static int qbh_scan_u8_attention(
                 const int32_t rounding = config->score_shift == 0U
                     ? 0 : (int32_t)(divisor / 2U);
 
-                qbh_hvx_zero_aligned_bytes(weight, plane_bytes);
+                if (direct_delta_reconstruction) {
+                    qbh_hvx_zero_aligned_bytes(
+                        weight +
+                            QBH_KV_CACHE_HMX_U8_BASE_WEIGHT_BYTES_PER_HEAD,
+                        plane_bytes -
+                            QBH_KV_CACHE_HMX_U8_BASE_WEIGHT_BYTES_PER_HEAD);
+                } else {
+                    qbh_hvx_zero_aligned_bytes(weight, plane_bytes);
+                }
                 if (qbh_scan_cache_dma(
                         header, weight, cache_k,
                         QBH_KV_CACHE_HMX_U8_BASE_WEIGHT_BYTES_PER_HEAD,
@@ -12681,12 +13175,34 @@ static int qbh_scan_u8_attention(
         if (hmx_native_cache) {
             if (hmx_delta_cache) {
                 uint8_t *base_weight = buffers->attention_projection;
+                const uint32_t base_tile_bytes =
+                    QBH_ATTENTION_SCORE_TILES *
+                    QBH_HMX_WEIGHT_BYTES;
+                const uint32_t destination_tile_stride =
+                    kv_tiles * QBH_HMX_WEIGHT_BYTES;
+                const uint32_t tail_tile_bytes =
+                    destination_tile_stride - base_tile_bytes;
 
-                qbh_hvx_zero_aligned_bytes(weight, plane_bytes);
-                if (qbh_scan_cache_dma(
-                        header, base_weight, cache_v,
-                        QBH_KV_CACHE_HMX_U8_BASE_WEIGHT_BYTES_PER_HEAD,
-                        1U) != 0 ||
+                if (direct_delta_reconstruction) {
+                    qbh_hvx_zero_strided_bytes(
+                        weight + base_tile_bytes,
+                        tail_tile_bytes,
+                        QBH_ATTENTION_HEAD_DIM_TILES,
+                        destination_tile_stride);
+                } else {
+                    qbh_hvx_zero_aligned_bytes(weight, plane_bytes);
+                }
+                if ((direct_delta_reconstruction
+                         ? qbh_scan_cache_dma_2d(
+                               header, weight, cache_v,
+                               base_tile_bytes,
+                               QBH_ATTENTION_HEAD_DIM_TILES,
+                               base_tile_bytes,
+                               destination_tile_stride)
+                         : qbh_scan_cache_dma(
+                               header, base_weight, cache_v,
+                               QBH_KV_CACHE_HMX_U8_BASE_WEIGHT_BYTES_PER_HEAD,
+                               1U)) != 0 ||
                     qbh_scan_cache_dma(
                         header, av_bias,
                         cache_v +
@@ -12695,19 +13211,20 @@ static int qbh_scan_u8_attention(
                         1U) != 0) {
                     return -1;
                 }
-                for (uint32_t output_tile = 0U;
-                     output_tile < QBH_ATTENTION_HEAD_DIM_TILES;
-                     ++output_tile) {
-                    qbh_hvx_copy_aligned_bytes(
-                        weight +
-                            (size_t)output_tile * kv_tiles *
-                                QBH_HMX_WEIGHT_BYTES,
-                        base_weight +
-                            (size_t)output_tile *
-                                QBH_ATTENTION_SCORE_TILES *
-                                QBH_HMX_WEIGHT_BYTES,
-                        QBH_ATTENTION_SCORE_TILES *
-                            QBH_HMX_WEIGHT_BYTES);
+                if (!direct_delta_reconstruction) {
+                    for (uint32_t output_tile = 0U;
+                         output_tile < QBH_ATTENTION_HEAD_DIM_TILES;
+                         ++output_tile) {
+                        qbh_hvx_copy_aligned_bytes(
+                            weight +
+                                (size_t)output_tile * kv_tiles *
+                                    QBH_HMX_WEIGHT_BYTES,
+                            base_weight +
+                                (size_t)output_tile *
+                                    QBH_ATTENTION_SCORE_TILES *
+                                    QBH_HMX_WEIGHT_BYTES,
+                            base_tile_bytes);
+                    }
                 }
                 if (qbh_scan_cache_dma(
                         header, delta_rows,
