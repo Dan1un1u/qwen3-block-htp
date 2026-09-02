@@ -1284,6 +1284,18 @@ static int qbh_hmx_native_u8_cache_formats(uint32_t k_format,
            v_format == QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_V1;
 }
 
+static int qbh_hmx_native_f16_cache_formats(uint32_t k_format,
+                                             uint32_t v_format) {
+    return k_format == QBH_KV_CACHE_FORMAT_HMX_F16_K_WEIGHT_V1 &&
+           v_format == QBH_KV_CACHE_FORMAT_HMX_F16_V_WEIGHT_V1;
+}
+
+static int qbh_hmx_native_cache_formats(uint32_t k_format,
+                                         uint32_t v_format) {
+    return qbh_hmx_native_u8_cache_formats(k_format, v_format) ||
+           qbh_hmx_native_f16_cache_formats(k_format, v_format);
+}
+
 static uint32_t qbh_host_k_cache_bytes(uint32_t variant,
                                        uint32_t capacity,
                                        uint32_t element_bytes,
@@ -1291,6 +1303,10 @@ static uint32_t qbh_host_k_cache_bytes(uint32_t variant,
     if (variant == QBH_BLOCK_W4U8 &&
         k_format == QBH_KV_CACHE_FORMAT_HMX_U8_K_WEIGHT_V1) {
         return QBH_KV_CACHE_HMX_K_BYTES(capacity);
+    }
+    if (variant != QBH_BLOCK_W4U8 &&
+        k_format == QBH_KV_CACHE_FORMAT_HMX_F16_K_WEIGHT_V1) {
+        return QBH_KV_CACHE_HMX_F16_K_BYTES(capacity);
     }
     return capacity * QBH_BLOCK_KV_HIDDEN * element_bytes;
 }
@@ -1302,6 +1318,10 @@ static uint32_t qbh_host_v_cache_bytes(uint32_t variant,
     if (variant == QBH_BLOCK_W4U8 &&
         v_format == QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_V1) {
         return QBH_KV_CACHE_HMX_V_BYTES(capacity);
+    }
+    if (variant != QBH_BLOCK_W4U8 &&
+        v_format == QBH_KV_CACHE_FORMAT_HMX_F16_V_WEIGHT_V1) {
+        return QBH_KV_CACHE_HMX_F16_V_BYTES(capacity);
     }
     return capacity * QBH_BLOCK_KV_HIDDEN * element_bytes;
 }
@@ -1373,28 +1393,43 @@ static int qbh_prepare_vertical_layer_slots(
                 v_cache_format),
         };
         const char *cache_kinds[2] = {"k", "v"};
-        const int hmx_native = qbh_hmx_native_u8_cache_formats(
+        const int hmx_native_u8 = qbh_hmx_native_u8_cache_formats(
             k_cache_format, v_cache_format);
+        const int hmx_native_f16 = qbh_hmx_native_f16_cache_formats(
+            k_cache_format, v_cache_format);
+        const int hmx_native = hmx_native_u8 || hmx_native_f16;
         for (uint32_t index = 0U; index < 2U; ++index) {
-            status = snprintf(
-                name, sizeof(name),
-                hmx_native
-                    ? "layer%" PRIu32 "/kv_cache_%s_hmx_u8.bin"
-                    : "layer%" PRIu32 "/kv_cache_%s_%s.bin",
-                layer_index, cache_kinds[index], suffix);
+            if (hmx_native) {
+                status = snprintf(
+                    name, sizeof(name),
+                    "layer%" PRIu32 "/kv_cache_%s_hmx_%s.bin",
+                    layer_index, cache_kinds[index],
+                    hmx_native_u8 ? "u8" : "f16");
+            } else {
+                status = snprintf(
+                    name, sizeof(name),
+                    "layer%" PRIu32 "/kv_cache_%s_%s.bin",
+                    layer_index, cache_kinds[index], suffix);
+            }
             if (status < 0 || (size_t)status >= sizeof(name) ||
                 qbh_prepare_slot(&slots->caches[index], root, name,
                                  cache_bytes[index], cursor) != 0) {
                 return -1;
             }
-            status = snprintf(
-                name, sizeof(name),
-                hmx_native
-                    ? "layer%" PRIu32
-                      "/reference_kv_cache_%s_hmx_u8_step00.bin"
-                    : "layer%" PRIu32
-                      "/reference_kv_cache_%s_%s.bin",
-                layer_index, cache_kinds[index], suffix);
+            if (hmx_native) {
+                status = snprintf(
+                    name, sizeof(name),
+                    "layer%" PRIu32
+                    "/reference_kv_cache_%s_hmx_%s_step00.bin",
+                    layer_index, cache_kinds[index],
+                    hmx_native_u8 ? "u8" : "f16");
+            } else {
+                status = snprintf(
+                    name, sizeof(name),
+                    "layer%" PRIu32
+                    "/reference_kv_cache_%s_%s.bin",
+                    layer_index, cache_kinds[index], suffix);
+            }
             if (status < 0 || (size_t)status >= sizeof(name) ||
                 qbh_prepare_slot(
                     &slots->cache_references[index], root, name,
@@ -2009,8 +2044,50 @@ static uint64_t qbh_cache_prefix_mismatches(
 static int qbh_hmx_cache_byte_is_appended_token(
     const struct qbh_decode_layer_state *layer, uint32_t kind,
     uint32_t head_relative, uint32_t token) {
-    const uint32_t weight_bytes =
-        layer->k_weight_bytes_per_head;
+    const uint32_t weight_bytes = layer->k_weight_bytes_per_head;
+
+    if (qbh_hmx_native_f16_cache_formats(
+            layer->k_format, layer->v_format)) {
+        if (head_relative >= weight_bytes) {
+            if (token < QBH_BLOCK_M) {
+                return 0;
+            }
+            const uint32_t delta_relative =
+                head_relative - weight_bytes;
+            const uint32_t token_relative = token - QBH_BLOCK_M;
+            return delta_relative /
+                       (QBH_BLOCK_HEAD_DIM * sizeof(uint16_t)) ==
+                       token_relative;
+        }
+        const uint32_t element_relative = head_relative / 2U;
+        const uint32_t byte_in_element = head_relative & 1U;
+        const uint32_t tile =
+            element_relative / QBH_HMX_FP16_TILE_ELEMENTS;
+        const uint32_t within =
+            element_relative % QBH_HMX_FP16_TILE_ELEMENTS;
+        (void)byte_in_element;
+        if (kind == 0U) {
+            const uint32_t token_tile =
+                token / QBH_HMX_FP16_COLS;
+            const uint32_t token_lane =
+                token % QBH_HMX_FP16_COLS;
+            return tile / QBH_ATTENTION_HEAD_DIM_TILES == token_tile &&
+                   ((within / 2U) % QBH_HMX_FP16_COLS) == token_lane;
+        }
+        {
+            const uint32_t capacity_k_tiles =
+                layer->padded_capacity / QBH_HMX_FP16_ROWS;
+            const uint32_t token_tile =
+                token / QBH_HMX_FP16_ROWS;
+            const uint32_t token_lane =
+                token % QBH_HMX_FP16_ROWS;
+            const uint32_t physical_row =
+                ((within / (2U * QBH_HMX_FP16_COLS)) * 2U) +
+                (within & 1U);
+            return tile % capacity_k_tiles == token_tile &&
+                   physical_row == token_lane;
+        }
+    }
 
     if (kind == 0U) {
         const uint32_t n_tile = token / QBH_HMX_OUTPUT_CHANNELS;
@@ -2157,6 +2234,110 @@ static struct qbh_error_metrics qbh_compare_cache_prefix_f16(
     return metrics;
 }
 
+static uint16_t qbh_hmx_f16_cache_value(
+    const uint16_t *cache, const struct qbh_decode_layer_state *layer,
+    uint32_t kind, uint32_t head, uint32_t token, uint32_t channel) {
+    const uint32_t head_stride_elements =
+        (kind == 0U ? layer->k_head_stride_bytes
+                    : layer->v_head_stride_bytes) /
+        sizeof(uint16_t);
+    if (token >= QBH_BLOCK_M) {
+        const uint32_t weight_elements =
+            (kind == 0U ? layer->k_weight_bytes_per_head
+                        : layer->v_weight_bytes_per_head) /
+            sizeof(uint16_t);
+        return cache[(size_t)head * head_stride_elements +
+                     weight_elements +
+                     (size_t)(token - QBH_BLOCK_M) *
+                         QBH_BLOCK_HEAD_DIM +
+                     channel];
+    }
+    const uint32_t k_tiles = kind == 0U
+        ? QBH_ATTENTION_HEAD_DIM_TILES
+        : QBH_BLOCK_M / QBH_HMX_FP16_ROWS;
+    const uint32_t input = kind == 0U ? channel : token;
+    const uint32_t output = kind == 0U ? token : channel;
+    const uint32_t k_tile = input / QBH_HMX_FP16_ROWS;
+    const uint32_t n_tile = output / QBH_HMX_FP16_COLS;
+    const size_t tile = ((size_t)n_tile * k_tiles + k_tile) *
+        QBH_HMX_FP16_TILE_ELEMENTS;
+    return cache[(size_t)head * head_stride_elements + tile +
+                 qbh_hmx_fp16_tile_offset(
+                     input % QBH_HMX_FP16_ROWS,
+                     output % QBH_HMX_FP16_COLS)];
+}
+
+static struct qbh_error_metrics qbh_compare_hmx_f16_cache_prefix(
+    const uint16_t *actual, const uint16_t *reference,
+    const struct qbh_decode_layer_state *layer, uint32_t kind,
+    uint32_t valid_length) {
+    struct qbh_error_metrics metrics;
+    double absolute_sum = 0.0;
+    double squared_sum = 0.0;
+    double dot = 0.0;
+    double actual_norm = 0.0;
+    double reference_norm = 0.0;
+
+    memset(&metrics, 0, sizeof(metrics));
+    for (uint32_t head = 0U; head < layer->head_count; ++head) {
+        for (uint32_t token = 0U; token < valid_length; ++token) {
+            for (uint32_t channel = 0U;
+                 channel < layer->head_dim; ++channel) {
+                const uint16_t a_bits = qbh_hmx_f16_cache_value(
+                    actual, layer, kind, head, token, channel);
+                const uint16_t b_bits = qbh_hmx_f16_cache_value(
+                    reference, layer, kind, head, token, channel);
+                const double a = qbh_half_bits_to_float(a_bits);
+                const double b = qbh_half_bits_to_float(b_bits);
+                double difference;
+                ++metrics.elements;
+                metrics.mismatches += a_bits != b_bits;
+                if (!isfinite(a) || !isfinite(b)) {
+                    ++metrics.nonfinite_count;
+                    ++metrics.mixed_tolerance_violations;
+                    metrics.max_abs = DBL_MAX;
+                    metrics.max_required_rtol_after_atol = DBL_MAX;
+                    continue;
+                }
+                difference = fabs(a - b);
+                if (difference > metrics.max_abs) metrics.max_abs = difference;
+                if (difference > QBH_REPLAY_FP16_ATOL +
+                                     QBH_REPLAY_FP16_RTOL * fabs(b)) {
+                    ++metrics.mixed_tolerance_violations;
+                }
+                if (difference > QBH_REPLAY_FP16_ATOL) {
+                    const double required_rtol = b != 0.0
+                        ? (difference - QBH_REPLAY_FP16_ATOL) / fabs(b)
+                        : DBL_MAX;
+                    if (required_rtol > metrics.max_required_rtol_after_atol)
+                        metrics.max_required_rtol_after_atol = required_rtol;
+                }
+                absolute_sum += difference;
+                squared_sum += difference * difference;
+                dot += a * b;
+                actual_norm += a * a;
+                reference_norm += b * b;
+            }
+        }
+    }
+    if (metrics.elements == 0U || metrics.nonfinite_count != 0U) {
+        metrics.mean_abs = metrics.elements == 0U ? 0.0 : DBL_MAX;
+        metrics.rmse = metrics.elements == 0U ? 0.0 : DBL_MAX;
+        metrics.nrmse = metrics.elements == 0U ? 0.0 : DBL_MAX;
+        metrics.cosine = metrics.elements == 0U ? 1.0 : 0.0;
+        return metrics;
+    }
+    metrics.mean_abs = absolute_sum / (double)metrics.elements;
+    metrics.rmse = sqrt(squared_sum / (double)metrics.elements);
+    metrics.nrmse = reference_norm > 0.0
+        ? sqrt(squared_sum / reference_norm)
+        : (squared_sum == 0.0 ? 0.0 : DBL_MAX);
+    metrics.cosine = actual_norm > 0.0 && reference_norm > 0.0
+        ? dot / sqrt(actual_norm * reference_norm)
+        : (actual_norm == 0.0 && reference_norm == 0.0 ? 1.0 : 0.0);
+    return metrics;
+}
+
 static int qbh_replay_step_pass(
     uint32_t variant, const struct qbh_replay_step_result *result) {
     const int output_pass = variant == QBH_BLOCK_W4U8
@@ -2199,7 +2380,7 @@ static void qbh_print_replay_profile(
     printf(",\"" #field "\":%" PRIu64, header->field)
 
     printf(
-        "{\"experiment\":157,\"record\":\"replay_profile\","
+        "{\"experiment\":158,\"record\":\"replay_profile\","
         "\"variant\":\"%s\",\"replay_step\":%" PRIu32 ","
         "\"mode\":\"%s\",\"logical_m\":%" PRIu32 ","
         "\"first_position\":%" PRIu32 ","
@@ -2334,6 +2515,12 @@ static void qbh_print_replay_profile(
         u8_cache_native_prefill_reused_carrier_bytes);
     QBH_REPLAY_PROFILE_U32(u8_cache_native_incremental_append_count);
     QBH_REPLAY_PROFILE_U32(u8_cache_full_prefix_pack_count);
+    QBH_REPLAY_PROFILE_U32(f16_cache_native_prefill_reuse_count);
+    QBH_REPLAY_PROFILE_U64(
+        f16_cache_native_prefill_reused_carrier_bytes);
+    QBH_REPLAY_PROFILE_U32(f16_cache_native_incremental_append_count);
+    QBH_REPLAY_PROFILE_U32(f16_cache_full_prefix_pack_count);
+    QBH_REPLAY_PROFILE_U64(f16_cache_native_append_update_ticks);
     QBH_REPLAY_PROFILE_U64(u8_attention_qk_hmx_ticks);
     QBH_REPLAY_PROFILE_U64(u8_attention_qk_requant_ticks);
     QBH_REPLAY_PROFILE_U64(u8_attention_softmax_ticks);
@@ -2647,19 +2834,24 @@ static int qbh_run_replay_sequence(
                     shared + vertical_slots[slice_index]
                                  .caches[kind].offset;
                 const uint8_t *reference;
-                const int hmx_native =
+                const int hmx_native_u8 =
                     qbh_hmx_native_u8_cache_formats(
                         layer->k_format, layer->v_format);
+                const int hmx_native_f16 =
+                    qbh_hmx_native_f16_cache_formats(
+                        layer->k_format, layer->v_format);
+                const int hmx_native = hmx_native_u8 || hmx_native_f16;
                 if (hmx_native) {
                     char cache_reference_name[160];
                     if (snprintf(
                             cache_reference_name,
                             sizeof(cache_reference_name),
                             "layer%" PRIu32
-                            "/reference_kv_cache_%c_hmx_u8_step%02"
+                            "/reference_kv_cache_%c_hmx_%s_step%02"
                             PRIu32 ".bin",
                             layer->layer_index,
-                            kind == 0U ? 'k' : 'v', step) < 0 ||
+                            kind == 0U ? 'k' : 'v',
+                            hmx_native_u8 ? "u8" : "f16", step) < 0 ||
                         qbh_read_named_tensor(
                             package_root, cache_reference_name,
                             shared + vertical_slots[slice_index]
@@ -2694,10 +2886,16 @@ static int qbh_run_replay_sequence(
                 }
                 if (variant != QBH_BLOCK_W4U8) {
                     const struct qbh_error_metrics cache_metrics =
-                        qbh_compare_cache_prefix_f16(
-                            (const uint16_t *)actual,
-                            (const uint16_t *)reference,
-                            layer->capacity, layer->valid_length);
+                        hmx_native_f16
+                            ? qbh_compare_hmx_f16_cache_prefix(
+                                  (const uint16_t *)actual,
+                                  (const uint16_t *)reference,
+                                  layer, kind, layer->valid_length)
+                            : qbh_compare_cache_prefix_f16(
+                                  (const uint16_t *)actual,
+                                  (const uint16_t *)reference,
+                                  layer->capacity,
+                                  layer->valid_length);
                     const double violation_fraction =
                         cache_metrics.elements != 0U
                             ? (double)cache_metrics
@@ -2771,7 +2969,7 @@ static int qbh_run_replay_sequence(
         }
         all_pass &= qbh_replay_step_pass(variant, step_result);
         printf(
-            "{\"experiment\":157,\"variant\":\"%s\","
+            "{\"experiment\":158,\"variant\":\"%s\","
             "\"replay_step\":%" PRIu32 ",\"mode\":\"%s\","
             "\"first_position\":%" PRIu32 ","
             "\"valid_length\":%" PRIu32 ","
@@ -2890,7 +3088,7 @@ static int qbh_run_replay_sequence(
         }
     }
     printf(
-        "{\"experiment\":157,\"variant\":\"%s\","
+        "{\"experiment\":158,\"variant\":\"%s\","
         "\"replay_sequence_complete\":true,"
         "\"completed_steps\":%" PRIu32 ","
         "\"first_layer\":%" PRIu32 ","
@@ -2985,7 +3183,7 @@ static int qbh_run_full_stack_hidden_capture(
         gate_pass = 0;
     }
     printf(
-        "{\"experiment\":157,\"hidden_capture\":true,"
+        "{\"experiment\":158,\"hidden_capture\":true,"
         "\"variant\":\"%s\",\"host_wall_ns\":%" PRIu64 ","
         "\"rpc_result\":%d,\"dsp_status\":%d,"
         "\"captured_layers\":%" PRIu32 ","
@@ -3320,6 +3518,11 @@ int main(int argc, char **argv) {
                     QBH_KV_CACHE_FORMAT_HMX_U8_K_WEIGHT_V1;
                 kv_cache_v_format =
                     QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_V1;
+            } else if (strcmp(layout, "hmx_native_f16") == 0) {
+                kv_cache_k_format =
+                    QBH_KV_CACHE_FORMAT_HMX_F16_K_WEIGHT_V1;
+                kv_cache_v_format =
+                    QBH_KV_CACHE_FORMAT_HMX_F16_V_WEIGHT_V1;
             } else {
                 kv_cache_k_format = UINT32_MAX;
                 kv_cache_v_format = UINT32_MAX;
@@ -3423,14 +3626,22 @@ int main(int argc, char **argv) {
         (kv_cache_k_format !=
              QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1 &&
          kv_cache_k_format !=
-             QBH_KV_CACHE_FORMAT_HMX_U8_K_WEIGHT_V1) ||
+             QBH_KV_CACHE_FORMAT_HMX_U8_K_WEIGHT_V1 &&
+         kv_cache_k_format !=
+             QBH_KV_CACHE_FORMAT_HMX_F16_K_WEIGHT_V1) ||
         (kv_cache_v_format !=
              QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1 &&
          kv_cache_v_format !=
-             QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_V1) ||
+             QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_V1 &&
+         kv_cache_v_format !=
+             QBH_KV_CACHE_FORMAT_HMX_F16_V_WEIGHT_V1) ||
         (qbh_hmx_native_u8_cache_formats(
              kv_cache_k_format, kv_cache_v_format) &&
          (variant != QBH_BLOCK_W4U8 ||
+          replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS)) ||
+        (qbh_hmx_native_f16_cache_formats(
+             kv_cache_k_format, kv_cache_v_format) &&
+         (variant == QBH_BLOCK_W4U8 ||
           replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS)) ||
         (w4u8_prefill_cache_mode ==
              QBH_BLOCK_W4U8_PREFILL_CACHE_REUSE_ATTENTION_CARRIERS &&
@@ -4224,7 +4435,7 @@ int main(int argc, char **argv) {
             const char *layout_only = getenv("QBH_LAYOUT_ONLY");
             if (layout_only != NULL && strcmp(layout_only, "1") == 0) {
                 printf(
-                    "{\"experiment\":157,\"layout_only\":true,"
+                    "{\"experiment\":158,\"layout_only\":true,"
                     "\"variant\":\"%s\",\"layer_first\":%" PRIu32
                     ",\"layer_count\":%" PRIu32
                     ",\"shared_bytes\":%zu,"
@@ -4377,7 +4588,7 @@ int main(int argc, char **argv) {
     header->kv_cache_padded_capacity =
         scan_mode == QBH_BLOCK_SCAN_DISABLED
             ? 0U
-            : (qbh_hmx_native_u8_cache_formats(
+            : (qbh_hmx_native_cache_formats(
                    kv_cache_k_format, kv_cache_v_format)
                    ? QBH_KV_CACHE_HMX_PADDED_CAPACITY(
                          kv_cache_capacity)
@@ -4476,31 +4687,36 @@ int main(int argc, char **argv) {
             layer->v_bytes = slots->caches[1].expected_bytes;
             layer->head_count = QBH_BLOCK_KV_HEADS;
             layer->head_dim = QBH_BLOCK_HEAD_DIM;
-            if (qbh_hmx_native_u8_cache_formats(
+            if (qbh_hmx_native_cache_formats(
                     kv_cache_k_format, kv_cache_v_format)) {
+                const int native_u8 = qbh_hmx_native_u8_cache_formats(
+                    kv_cache_k_format, kv_cache_v_format);
                 layer->padded_capacity =
                     QBH_KV_CACHE_HMX_PADDED_CAPACITY(
                         kv_cache_capacity);
-                layer->k_head_stride_bytes =
-                    QBH_KV_CACHE_HMX_K_HEAD_BYTES(
-                        kv_cache_capacity);
-                layer->v_head_stride_bytes =
-                    QBH_KV_CACHE_HMX_V_HEAD_BYTES(
-                        kv_cache_capacity);
+                layer->k_head_stride_bytes = native_u8
+                    ? QBH_KV_CACHE_HMX_K_HEAD_BYTES(kv_cache_capacity)
+                    : QBH_KV_CACHE_HMX_F16_K_HEAD_BYTES(kv_cache_capacity);
+                layer->v_head_stride_bytes = native_u8
+                    ? QBH_KV_CACHE_HMX_V_HEAD_BYTES(kv_cache_capacity)
+                    : QBH_KV_CACHE_HMX_F16_V_HEAD_BYTES(kv_cache_capacity);
                 layer->head_stride_bytes =
                     layer->k_head_stride_bytes;
                 layer->token_stride_bytes = 0U;
-                layer->k_weight_bytes_per_head =
-                    QBH_KV_CACHE_HMX_WEIGHT_BYTES_PER_HEAD(
-                        kv_cache_capacity);
+                layer->k_weight_bytes_per_head = native_u8
+                    ? QBH_KV_CACHE_HMX_WEIGHT_BYTES_PER_HEAD(
+                          kv_cache_capacity)
+                    : QBH_KV_CACHE_HMX_F16_WEIGHT_BYTES_PER_HEAD(
+                          kv_cache_capacity);
                 layer->v_weight_bytes_per_head =
-                    QBH_KV_CACHE_HMX_WEIGHT_BYTES_PER_HEAD(
-                        kv_cache_capacity);
-                layer->k_bias_bytes_per_head =
-                    QBH_KV_CACHE_HMX_K_BIAS_BYTES_PER_HEAD(
-                        kv_cache_capacity);
-                layer->v_bias_bytes_per_head =
-                    QBH_KV_CACHE_HMX_V_BIAS_BYTES_PER_HEAD;
+                    layer->k_weight_bytes_per_head;
+                layer->k_bias_bytes_per_head = native_u8
+                    ? QBH_KV_CACHE_HMX_K_BIAS_BYTES_PER_HEAD(
+                          kv_cache_capacity)
+                    : 0U;
+                layer->v_bias_bytes_per_head = native_u8
+                    ? QBH_KV_CACHE_HMX_V_BIAS_BYTES_PER_HEAD
+                    : 0U;
             } else {
                 layer->padded_capacity = kv_cache_capacity;
                 layer->k_head_stride_bytes =
@@ -4601,7 +4817,7 @@ int main(int argc, char **argv) {
             layer->kv_cache_k_format = kv_cache_k_format;
             layer->kv_cache_v_format = kv_cache_v_format;
             layer->kv_cache_padded_capacity =
-                qbh_hmx_native_u8_cache_formats(
+                qbh_hmx_native_cache_formats(
                     kv_cache_k_format, kv_cache_v_format)
                     ? QBH_KV_CACHE_HMX_PADDED_CAPACITY(
                           kv_cache_capacity)
@@ -4783,7 +4999,7 @@ int main(int argc, char **argv) {
         int map_gate_result = qwen3_probe_run_block(
             session.handle, shared_fd, (uint32_t)total_bytes);
         printf(
-            "{\"experiment\":157,\"map_gate\":true,"
+            "{\"experiment\":158,\"map_gate\":true,"
             "\"variant\":\"%s\",\"shared_bytes\":%zu,"
             "\"rpc_result\":%d,\"dsp_status\":%d,"
             "\"layer_count\":%" PRIu32 ","

@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(63)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(157)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(64)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(158)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -108,6 +108,8 @@ enum qbh_kv_cache_format {
     QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1 = 1,
     QBH_KV_CACHE_FORMAT_HMX_U8_K_WEIGHT_V1 = 2,
     QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_V1 = 3,
+    QBH_KV_CACHE_FORMAT_HMX_F16_K_WEIGHT_V1 = 4,
+    QBH_KV_CACHE_FORMAT_HMX_F16_V_WEIGHT_V1 = 5,
 };
 
 enum qbh_w4u8_prefill_cache_mode {
@@ -135,6 +137,30 @@ enum qbh_w4u8_prefill_cache_mode {
     (QBH_BLOCK_KV_HEADS * QBH_KV_CACHE_HMX_K_HEAD_BYTES(capacity_))
 #define QBH_KV_CACHE_HMX_V_BYTES(capacity_) \
     (QBH_BLOCK_KV_HEADS * QBH_KV_CACHE_HMX_V_HEAD_BYTES(capacity_))
+
+/* FP16 cache-native storage keeps the exact M64 HMX weight operands consumed
+ * by prefill QK/AV plus a contiguous row journal for the bounded decode tail.
+ * Decode patches that journal into a padded VTCM carrier with HVX.  Unlike
+ * U8xS8, FP16 HMX needs neither a correction bias nor a cache scale block. */
+#define QBH_KV_CACHE_HMX_F16_WEIGHT_BYTES_PER_HEAD(capacity_) \
+    (QBH_BLOCK_M * QBH_BLOCK_HEAD_DIM * sizeof(uint16_t))
+#define QBH_KV_CACHE_HMX_F16_DELTA_ROWS(capacity_) \
+    ((capacity_) - QBH_BLOCK_M)
+#define QBH_KV_CACHE_HMX_F16_DELTA_BYTES_PER_HEAD(capacity_) \
+    (QBH_KV_CACHE_HMX_F16_DELTA_ROWS(capacity_) * \
+     QBH_BLOCK_HEAD_DIM * sizeof(uint16_t))
+#define QBH_KV_CACHE_HMX_F16_K_HEAD_BYTES(capacity_) \
+    (QBH_KV_CACHE_HMX_F16_WEIGHT_BYTES_PER_HEAD(capacity_) + \
+     QBH_KV_CACHE_HMX_F16_DELTA_BYTES_PER_HEAD(capacity_))
+#define QBH_KV_CACHE_HMX_F16_V_HEAD_BYTES(capacity_) \
+    (QBH_KV_CACHE_HMX_F16_WEIGHT_BYTES_PER_HEAD(capacity_) + \
+     QBH_KV_CACHE_HMX_F16_DELTA_BYTES_PER_HEAD(capacity_))
+#define QBH_KV_CACHE_HMX_F16_K_BYTES(capacity_) \
+    (QBH_BLOCK_KV_HEADS * \
+     QBH_KV_CACHE_HMX_F16_K_HEAD_BYTES(capacity_))
+#define QBH_KV_CACHE_HMX_F16_V_BYTES(capacity_) \
+    (QBH_BLOCK_KV_HEADS * \
+     QBH_KV_CACHE_HMX_F16_V_HEAD_BYTES(capacity_))
 
 enum qbh_block_common_ops_mask {
     QBH_BLOCK_COMMON_OPS_SCALAR = 0,
@@ -839,6 +865,11 @@ struct qbh_block_header {
     uint64_t u8_cache_native_prefill_reused_carrier_bytes;
     uint32_t u8_cache_native_incremental_append_count;
     uint32_t u8_cache_full_prefix_pack_count;
+    uint32_t f16_cache_native_prefill_reuse_count;
+    uint64_t f16_cache_native_prefill_reused_carrier_bytes;
+    uint32_t f16_cache_native_incremental_append_count;
+    uint32_t f16_cache_full_prefix_pack_count;
+    uint64_t f16_cache_native_append_update_ticks;
     uint64_t u8_attention_qk_hmx_ticks;
     uint64_t u8_attention_qk_requant_ticks;
     uint64_t u8_attention_softmax_ticks;
