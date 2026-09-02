@@ -19,8 +19,8 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 158
+  active_experiment: EXP-0158
+  next_experiment_number: 159
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -33,10 +33,10 @@ current_scope:
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: null
-  active_experiment_evidence: null
-  active_experiment_gate: null
-  active_recipe_specialization: null
+  active_experiment_stage: registered_A16_HMX_native_KV_cache_parity
+  active_experiment_evidence: pending
+  active_experiment_gate: two_recipe_correctness_physical_prefill_decode_and_fair_cache_contract
+  active_recipe_specialization: F16F16_and_W4F16_cache_native_only
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0157/20260902T061809Z_0a3557d075dc_formal'
   latest_w4u8_prefill_hmx_carrier_reuse_candidate:
     id: EXP-0157
@@ -47,8 +47,12 @@ current_scope:
     evidence_validity: valid
     execution_state: completed
     local_gate: pass
-    adoption_status: pending
-    selected_baseline_changed: false
+    adoption_status: accepted
+    selected_baseline_changed: true
+    promoted_as: selected_full_stack_w4u8_cache_native_baseline
+    promoted_by: user
+    promoted_on: '2026-09-02'
+    promotion_ref: 'User message 2026-09-02: 你的建议非常好，这正是我所想的'
     execution_unit: real_Qwen3_layers0_27_M64_prefill_continuous_decode_positions64_71
     correctness_gate: pass_nine_outputs_all_logical_caches_and_all_retained_HMX_carriers_exact
     structural_gate: pass_zero_duplicate_prefill_full_carrier_build_and_zero_decode_complete_prefix_pack
@@ -2394,6 +2398,24 @@ current_scope:
     promotion_ref: 'User message 2026-09-01: 同意，先晋升144'
     promotion_rule: PC029_formal_rotated_pair_repeat10_complete_block_Host_wall_only_among_eligible_candidates
     historical_local_gate: fail_preservation_only_documented_exception
+  selected_w4u8_full_stack_cache_native_baseline:
+    id: W4U8-EXP0157-HMX-NATIVE-CACHE-REUSE
+    experiment: EXP-0157
+    project_variant: W4U8
+    source_branch: codex/exp-0157-w4u8-prefill-hmx-carrier-reuse
+    source_head: 0a3557d075dc4c2b3e4a0d9e05910acb3cf4bf6b
+    physical_plan: persistent_HMX_native_U8_KV_cache_with_prefill_QK_AV_carrier_reuse_and_current_token_decode_update
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0157/20260902T061809Z_0a3557d075dc_formal'
+    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0156/w4u8_hmx_native_v1'
+    prefill_host_us: 44334.818
+    prefill_tokens_per_second: 1443.5606795543854
+    decode_host_us_per_token: 51830.592375
+    decode_tokens_per_second: 19.293624752827263
+    correctness_gate: pass_exact_independent_W4U8_implementation_reference
+    physical_gate: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN
+    promoted_by: user
+    promoted_on: '2026-09-02'
+    promotion_ref: 'User message 2026-09-02: 你的建议非常好，这正是我所想的'
   selected_baseline:
     id: W4F16-EXP0109-FROZEN-FAIR-COMMON
     experiment: EXP-0109

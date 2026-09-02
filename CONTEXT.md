@@ -920,3 +920,12 @@ not a change to Attention mathematics, quantization parameters or the HMX
 compute workload.
 _Avoid_: row-major cache, duplicate prefill pack, zero-copy claim, decode
 speedup, baseline promotion
+
+**Selected Full-Stack W4U8 Cache-Native Baseline**:
+The user-promoted EXP-0157 implementation for the real 28-layer M64 prefill and
+continuous-decode execution scope.  It combines persistent HMX-native U8 K/V
+cache, current-token-only decode updates and Prefill HMX Carrier Reuse.  It is
+separate from both the frozen Public Common Baseline and the single-block
+recipe-fastest W4U8 baseline because those have different execution scopes.
+_Avoid_: complete text-generation model, common three-recipe cache contract,
+teacher-accuracy baseline, replacement for the single-block baseline

@@ -6,6 +6,48 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0158
+    slug: a16-hmx-native-kv-cache-parity
+    title: HMX-native persistent KV cache for both A16 recipes
+    parent: EXP-0157
+    variants:
+      - f16f16_row_major_cache_control
+      - f16f16_hmx_native_cache_candidate
+      - w4f16_row_major_cache_control
+      - w4f16_hmx_native_cache_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: full-stack-two-A16-recipe-prefill-continuous-decode-HMX-native-KV-cache-parity
+    source_branches:
+      - codex/exp-0158-a16-hmx-native-kv-cache-parity
+    source_commits: []
+    record: docs/experiments/EXP-0158.md
+    approval_ref: 'User message 2026-09-02: 另外两个A16 recipe也应用同样方案对cache进行优化，以确保公平比较'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0158-a16-hmx-native-kv-cache-parity
+      approved_on: '2026-09-02'
+      started_on: '2026-09-02'
+      completed_on: null
+    evidence:
+      source_parent_experiment: EXP-0157
+      source_parent_commit: 0a3557d075dc4c2b3e4a0d9e05910acb3cf4bf6b
+      execution_unit: real_Qwen3_layers0_27_M64_prefill_then_continuous_decode_positions64_through71
+      recipe_scope: F16F16_and_W4F16_only
+      implementation_boundary: change_only_A16_persistent_KV_cache_physical_ABI_prefill_carrier_lifetime_decode_incremental_update_and_cache_consumption
+      direct_controls: same_binary_existing_row_major_F16F16_and_W4F16_cache_paths
+      candidate_contract: persistent_HMX_native_FP16_K_and_V_carriers_prefill_reuses_QK_and_AV_carriers_and_decode_updates_only_current_token_lane
+      forbidden_changes: projection_weights_projection_schedules_RMSNorm_RoPE_Softmax_AV_or_QK_math_MLP_W4_values_FP16_values_or_W4U8_path
+      correctness_gate: preserve_user_approved_scheme1_FP16_conditional_and_composed_output_contract_cache_structure_old_prefix_and_no_nonfinite_with_direct_control_diagnostics
+      structural_gate: zero_duplicate_prefill_full_carrier_construction_and_zero_decode_complete_prefix_pack_for_all_28_layers_in_both_recipes
+      physical_gate: exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_full_stack_step_one_HMX_owner_no_QNN
+      speed_gate: each_A16_candidate_prefill_and_continuous_decode_Host_wall_strictly_below_its_same_binary_row_major_control
+      fairness_gate: both_A16_recipes_receive_the_same_cache_native_lifetime_and_incremental_update_principle_with_recipe_specific_carrier_encoding_only
+      stop_conditions: any_correctness_structural_physical_or_two_recipe_speed_gate_failure_or_device_reboot
+      completion_gate: static_and_package_audit_then_single_layer_smoke_for_each_recipe_then_28_layer_correctness_and_physical_gates_then_rotated_four_variant_profile
+      selected_baseline_changed: false
   - id: EXP-0157
     slug: w4u8-prefill-hmx-carrier-reuse
     title: Reuse prefill HMX carriers for persistent W4U8 KV cache
@@ -16,7 +58,7 @@ experiments:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending
+    adoption_status: accepted
     evidence_profile: full-stack-prefill-continuous-decode-prefill-HMX-carrier-reuse
     source_branches:
       - codex/exp-0157-w4u8-prefill-hmx-carrier-reuse
@@ -46,7 +88,11 @@ experiments:
       decode_preservation_gate: candidate_continuous_decode_Host_wall_at_most_1p02_times_same_binary_direct_control
       stop_conditions: any_correctness_structural_physical_or_speed_gate_failure_or_device_reboot
       completion_gate: static_and_package_audit_then_full_stack_correctness_and_physical_gates_then_rotated_pair_prefill_and_decode_profile
-      selected_baseline_changed: false
+      selected_baseline_changed: true
+      promoted_as: selected_full_stack_w4u8_cache_native_baseline
+      promoted_by: user
+      promoted_on: '2026-09-02'
+      promotion_ref: 'User message 2026-09-02: 你的建议非常好，这正是我所想的'
       formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0157/20260902T061809Z_0a3557d075dc_formal'
       retained_candidate_package: 'D:/llm_exp/models/qwen3-block-htp/exp0156/w4u8_hmx_native_v1'
       source_commit: 0a3557d075dc4c2b3e4a0d9e05910acb3cf4bf6b
