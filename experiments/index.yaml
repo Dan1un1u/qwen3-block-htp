@@ -15,14 +15,15 @@ experiments:
       - f16f16_hmx_native_cache_candidate
       - w4f16_row_major_cache_control
       - w4f16_hmx_native_cache_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: full-stack-two-A16-recipe-prefill-continuous-decode-HMX-native-KV-cache-parity
     source_branches:
       - codex/exp-0158-a16-hmx-native-kv-cache-parity
-    source_commits: []
+    source_commits:
+      - 264c911a65a341f00450855cf89b2d89bbd5f108
     record: docs/experiments/EXP-0158.md
     approval_ref: 'User message 2026-09-02: 另外两个A16 recipe也应用同样方案对cache进行优化，以确保公平比较'
     runtime:
@@ -30,7 +31,7 @@ experiments:
       source_branch: codex/exp-0158-a16-hmx-native-kv-cache-parity
       approved_on: '2026-09-02'
       started_on: '2026-09-02'
-      completed_on: null
+      completed_on: '2026-09-02'
     evidence:
       source_parent_experiment: EXP-0157
       source_parent_commit: 0a3557d075dc4c2b3e4a0d9e05910acb3cf4bf6b
@@ -48,6 +49,33 @@ experiments:
       stop_conditions: any_correctness_structural_physical_or_two_recipe_speed_gate_failure_or_device_reboot
       completion_gate: static_and_package_audit_then_single_layer_smoke_for_each_recipe_then_28_layer_correctness_and_physical_gates_then_rotated_four_variant_profile
       selected_baseline_changed: false
+      formal_results: 'D:/llm_exp/results/qwen3-block-htp/exp0158/20260902T071708Z_264c911a65a3_formal'
+      retained_packages:
+        f16f16: 'D:/llm_exp/models/qwen3-block-htp/exp0158/f16f16'
+        w4f16: 'D:/llm_exp/models/qwen3-block-htp/exp0158/w4f16'
+      source_commit: 264c911a65a341f00450855cf89b2d89bbd5f108
+      cache_contract: exact_M64_HMX_carrier_plus_contiguous_8_token_delta_journal
+      correctness_gate_result: pass_user_approved_scheme1_all_nine_outputs_valid_cache_structure_stable_prefixes_and_no_nonfinite
+      structural_gate_result: pass_prefill_reuse_28_of_28_and_decode_zero_full_prefix_pack_with_current_token_only_updates
+      physical_gate_result: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_step_one_HMX_owner_no_QNN
+      fairness_gate_result: pass_same_cache_native_lifetime_and_incremental_update_principle_for_F16F16_and_W4F16
+      f16f16_speed_gate_result: pass_prefill_plus39p290_percent_decode_plus0p264_percent
+      w4f16_speed_gate_result: pass_prefill_plus117p110_percent_decode_plus0p531_percent
+      f16f16_host_us:
+        row_major_prefill: 93620.469
+        hmx_native_prefill: 67212.8125
+        row_major_decode_per_token: 95533.5808125
+        hmx_native_decode_per_token: 95282.4675
+      w4f16_host_us:
+        row_major_prefill: 118201.5625
+        hmx_native_prefill: 54443.2815
+        row_major_decode_per_token: 84123.951625
+        hmx_native_decode_per_token: 83679.518125
+      conclusion: both_A16_recipes_remove_duplicate_prefill_cache_carrier_conversion_and_preserve_cache_native_decode_under_one_shared_physical_principle
+      next_priority: explicit_user_adoption_decision_then_longer_cache_capacity_segmented_native_carrier_design_or_next_full_stack_stage
+      full_profiling_report_sha256: 95699253fcf1df12cae6d38b220d460c940bed8cd7d7279e0662fb741d5972de
+      summary_sha256: 5d03cda9eac4eeb8c31fbef5ef64c9c3c711a2e9b55e28705ffec9f5478998cc
+      evidence_sha256_ledger_sha256: 3df1fa4f0cfe8c7b7c1d5b482e019b87d156a023f10a4dd753bb0e1048da8786
   - id: EXP-0157
     slug: w4u8-prefill-hmx-carrier-reuse
     title: Reuse prefill HMX carriers for persistent W4U8 KV cache

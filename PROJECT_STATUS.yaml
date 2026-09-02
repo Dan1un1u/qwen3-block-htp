@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0158
+  active_experiment: null
   next_experiment_number: 159
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,17 +27,66 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_layers0_27_real_replay_prefill_continuous_decode_full_transformer_stack
-  last_completed_experiment: EXP-0157
-  last_completed_source_commit: 0a3557d075dc4c2b3e4a0d9e05910acb3cf4bf6b
-  provisional_source_parent: EXP-0153_corrected_full_stack_profiling_source
+  last_completed_experiment: EXP-0158
+  last_completed_source_commit: 264c911a65a341f00450855cf89b2d89bbd5f108
+  provisional_source_parent: EXP0158_three_recipe_cache_native_source
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: registered_A16_HMX_native_KV_cache_parity
-  active_experiment_evidence: pending
-  active_experiment_gate: two_recipe_correctness_physical_prefill_decode_and_fair_cache_contract
-  active_recipe_specialization: F16F16_and_W4F16_cache_native_only
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0157/20260902T061809Z_0a3557d075dc_formal'
+  active_experiment_stage: none
+  active_experiment_evidence: null
+  active_experiment_gate: none
+  active_recipe_specialization: none
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0158/20260902T071708Z_264c911a65a3_formal'
+  latest_a16_hmx_native_cache_parity_candidate:
+    id: EXP-0158
+    source_branch: codex/exp-0158-a16-hmx-native-kv-cache-parity
+    source_head: 264c911a65a341f00450855cf89b2d89bbd5f108
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0158/20260902T071708Z_264c911a65a3_formal'
+    retained_packages:
+      f16f16: 'D:/llm_exp/models/qwen3-block-htp/exp0158/f16f16'
+      w4f16: 'D:/llm_exp/models/qwen3-block-htp/exp0158/w4f16'
+    evidence_validity: valid
+    execution_state: completed
+    local_gate: pass
+    adoption_status: pending
+    selected_baseline_changed: false
+    execution_unit: real_Qwen3_layers0_27_M64_prefill_continuous_decode_positions64_71
+    cache_contract: exact_M64_HMX_carrier_plus_contiguous_8_token_delta_journal
+    correctness_gate: pass_user_approved_scheme1_all_nine_outputs_valid_cache_structure_stable_prefixes_and_no_nonfinite
+    structural_gate: pass_prefill_reuse_28_of_28_and_decode_zero_full_prefix_pack_with_current_token_only_updates
+    physical_gate: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_step_one_HMX_owner_no_QNN
+    fairness_gate: pass_same_cache_native_lifetime_and_incremental_update_principle_for_F16F16_and_W4F16
+    f16f16:
+      row_major_prefill_host_us: 93620.469
+      hmx_native_prefill_host_us: 67212.8125
+      prefill_speed_improvement_percent: 39.289616842026966
+      row_major_decode_host_us_per_token: 95533.5808125
+      hmx_native_decode_host_us_per_token: 95282.4675
+      decode_speed_improvement_percent: 0.26354618964921084
+      hmx_native_prefill_tokens_per_second: 952.1994039454903
+      hmx_native_decode_tokens_per_second: 10.495110236308689
+    w4f16:
+      row_major_prefill_host_us: 118201.5625
+      hmx_native_prefill_host_us: 54443.2815
+      prefill_speed_improvement_percent: 117.10954821854375
+      row_major_decode_host_us_per_token: 84123.951625
+      hmx_native_decode_host_us_per_token: 83679.518125
+      decode_speed_improvement_percent: 0.531113837601338
+      hmx_native_prefill_tokens_per_second: 1175.5353137558398
+      hmx_native_decode_tokens_per_second: 11.950355623537478
+    prefill_reused_carrier_bytes: 7340032
+    candidate_prefill_cache_write_bytes: 8257536
+    candidate_decode_average_cache_read_bytes: 7856128
+    candidate_decode_cache_write_bytes_per_step: 114688
+    conclusion: A16_prefill_carrier_conversion_was_a_physical_cache_boundary_tax_and_both_A16_recipes_can_reuse_exact_HMX_carriers_while_preserving_or_slightly_improving_decode
+    next_priority: explicit_user_adoption_decision_then_longer_cache_capacity_segmented_native_carrier_design_or_next_full_stack_stage
+    full_profiling_report_sha256: 95699253fcf1df12cae6d38b220d460c940bed8cd7d7279e0662fb741d5972de
+    summary_sha256: 5d03cda9eac4eeb8c31fbef5ef64c9c3c711a2e9b55e28705ffec9f5478998cc
+    evidence_sha256_ledger_sha256: 3df1fa4f0cfe8c7b7c1d5b482e019b87d156a023f10a4dd753bb0e1048da8786
+    package_manifest_sha256:
+      f16f16: f90cbfb251874f18204889896c21952afd770c7064eeb3bb4b03496179f57ebf
+      w4f16: 8c37067013cd326af2906ac4fc09be9ef1cb43815b5b9605e685268c87b6d939
   latest_w4u8_prefill_hmx_carrier_reuse_candidate:
     id: EXP-0157
     source_branch: codex/exp-0157-w4u8-prefill-hmx-carrier-reuse
