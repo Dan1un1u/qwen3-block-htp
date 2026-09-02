@@ -1325,7 +1325,15 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (header->variant != QBH_BLOCK_F16F16 &&
          header->variant != QBH_BLOCK_W4F16 &&
         header->variant != QBH_BLOCK_W4U8) ||
-        header->repeat_count == 0U || header->repeat_count > 100U) {
+        header->repeat_count == 0U || header->repeat_count > 100U ||
+        header->w4u8_prefill_cache_mode >
+            QBH_BLOCK_W4U8_PREFILL_CACHE_REUSE_ATTENTION_CARRIERS ||
+        (header->w4u8_prefill_cache_mode ==
+             QBH_BLOCK_W4U8_PREFILL_CACHE_REUSE_ATTENTION_CARRIERS &&
+         (header->variant != QBH_BLOCK_W4U8 ||
+          !qbh_hmx_native_u8_cache_formats(
+              header->kv_cache_k_format,
+              header->kv_cache_v_format)))) {
         return 0;
     }
     element_bytes = header->variant == QBH_BLOCK_W4U8 ? 1U : 2U;
@@ -11130,6 +11138,30 @@ static int qbh_scan_cache_dma(struct qbh_block_header *header,
     return 0;
 }
 
+static void qbh_hvx_copy_aligned_bytes(
+    void *destination, const void *source, uint32_t bytes) {
+    HVX_Vector *output = (HVX_Vector *)destination;
+    const HVX_Vector *input = (const HVX_Vector *)source;
+    const uint32_t vectors = bytes / sizeof(HVX_Vector);
+
+    for (uint32_t index = 0U; index < vectors; ++index) {
+        output[index] = input[index];
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
+static void qbh_hvx_zero_aligned_bytes(void *destination,
+                                       uint32_t bytes) {
+    HVX_Vector *output = (HVX_Vector *)destination;
+    const uint32_t vectors = bytes / sizeof(HVX_Vector);
+    const HVX_Vector zero = Q6_V_vzero();
+
+    for (uint32_t index = 0U; index < vectors; ++index) {
+        output[index] = zero;
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
 static int qbh_scan_append_u8_kv_row_major(
     struct qbh_block_header *header, uint8_t *shared,
     struct qbh_block_buffers *buffers, uint32_t logical_rows,
@@ -11395,6 +11427,143 @@ static int qbh_scan_append_u8_kv_hmx_native(
         return -1;
     }
 
+    header->u8_cache_native_append_update_ticks +=
+        HAP_perf_get_qtimer_count() - update_start;
+    return 0;
+}
+
+static int qbh_scan_persist_u8_prefill_attention_carriers(
+    struct qbh_block_header *header, uint8_t *shared,
+    struct qbh_block_buffers *buffers, uint32_t logical_rows,
+    uint32_t past_tokens) {
+    const uint32_t padded_capacity =
+        QBH_KV_CACHE_HMX_PADDED_CAPACITY(header->kv_cache_capacity);
+    const uint32_t capacity_k_tiles =
+        padded_capacity / QBH_HMX_INPUT_CHANNELS;
+    const uint32_t weight_bytes =
+        QBH_KV_CACHE_HMX_WEIGHT_BYTES_PER_HEAD(
+            header->kv_cache_capacity);
+    const uint32_t k_bias_bytes =
+        QBH_KV_CACHE_HMX_K_BIAS_BYTES_PER_HEAD(
+            header->kv_cache_capacity);
+    const uint32_t k_head_bytes =
+        QBH_KV_CACHE_HMX_K_HEAD_BYTES(header->kv_cache_capacity);
+    const uint32_t v_head_bytes =
+        QBH_KV_CACHE_HMX_V_HEAD_BYTES(header->kv_cache_capacity);
+    const uint32_t existing_v_output_bytes =
+        QBH_ATTENTION_SCORE_TILES * QBH_HMX_WEIGHT_BYTES;
+    const uint64_t update_start = HAP_perf_get_qtimer_count();
+    uint8_t *staged_weight = buffers->attention_projection;
+    uint32_t *staged_bias = (uint32_t *)(
+        staged_weight + weight_bytes);
+
+    if (header->w4u8_prefill_cache_mode !=
+            QBH_BLOCK_W4U8_PREFILL_CACHE_REUSE_ATTENTION_CARRIERS ||
+        !qbh_hmx_native_u8_cache_formats(
+            header->kv_cache_k_format,
+            header->kv_cache_v_format) ||
+        logical_rows != QBH_BLOCK_M || past_tokens != 0U ||
+        capacity_k_tiles < QBH_ATTENTION_SCORE_TILES ||
+        header->kv_cache_padded_capacity != padded_capacity ||
+        header->kv_cache_k_bytes !=
+            QBH_KV_CACHE_HMX_K_BYTES(header->kv_cache_capacity) ||
+        header->kv_cache_v_bytes !=
+            QBH_KV_CACHE_HMX_V_BYTES(header->kv_cache_capacity) ||
+        !qbh_attention_u8_qkv_overlap_enabled(
+            header->attention_pipeline_mode)) {
+        return -1;
+    }
+
+    for (uint32_t head = 0U;
+         head < QBH_BLOCK_KV_HEADS; ++head) {
+        const struct qbh_attention_config *config =
+            &buffers->attention_configs[head];
+        const uint8_t *group_scratch =
+            buffers->attention_concat +
+            (size_t)head * QBH_ATTN_U8_GROUP_SCRATCH_BYTES;
+        const int8_t *k_weight = (const int8_t *)(
+            group_scratch + QBH_ATTN_U8_K_WEIGHT_OFFSET);
+        const int8_t *v_weight = (const int8_t *)(
+            group_scratch + QBH_ATTN_U8_V_WEIGHT_OFFSET);
+        const uint32_t *qk_bias = (const uint32_t *)(
+            group_scratch + QBH_ATTN_U8_QK_BIAS_OFFSET);
+        const uint32_t *av_bias = (const uint32_t *)(
+            group_scratch + QBH_ATTN_U8_AV_BIAS_OFFSET);
+        uint8_t *k_destination =
+            shared + header->kv_cache_k_offset +
+            (size_t)head * k_head_bytes;
+        uint8_t *v_destination =
+            shared + header->kv_cache_v_offset +
+            (size_t)head * v_head_bytes;
+
+        qbh_hvx_zero_aligned_bytes(staged_weight, weight_bytes);
+        qbh_hvx_copy_aligned_bytes(
+            staged_weight, k_weight, QBH_ATTN_U8_K_WEIGHT_BYTES);
+        qbh_hvx_zero_aligned_bytes(staged_bias, k_bias_bytes);
+        qbh_hvx_copy_aligned_bytes(
+            staged_bias, qk_bias, QBH_ATTN_U8_QK_BIAS_BYTES);
+        {
+            const uint32_t divisor =
+                UINT32_C(1) << config->score_shift;
+            const int32_t rounding = config->score_shift == 0U
+                                         ? 0
+                                         : (int32_t)(divisor / 2U);
+            const __fp16 conversion_value =
+                (__fp16)(512.0f / (float)divisor);
+            uint16_t conversion_bits;
+            memcpy(&conversion_bits, &conversion_value,
+                   sizeof(conversion_bits));
+            for (uint32_t n_tile = QBH_ATTENTION_SCORE_TILES;
+                 n_tile < capacity_k_tiles; ++n_tile) {
+                uint32_t *tile_bias = staged_bias +
+                    (size_t)n_tile *
+                        (QBH_HMX_BIAS_BYTES / sizeof(uint32_t));
+                for (uint32_t output = 0U;
+                     output < QBH_HMX_OUTPUT_CHANNELS; ++output) {
+                    tile_bias[output] = conversion_bits;
+                    tile_bias[QBH_HMX_OUTPUT_CHANNELS + output] =
+                        UINT32_C(128) * divisor + rounding;
+                }
+            }
+        }
+        if (qbh_scan_cache_dma(
+                header, k_destination, staged_weight,
+                weight_bytes, 0U) != 0 ||
+            qbh_scan_cache_dma(
+                header, k_destination + weight_bytes,
+                staged_bias, k_bias_bytes, 0U) != 0) {
+            return -1;
+        }
+
+        qbh_hvx_zero_aligned_bytes(staged_weight, weight_bytes);
+        for (uint32_t output_tile = 0U;
+             output_tile < QBH_ATTENTION_HEAD_DIM_TILES;
+             ++output_tile) {
+            qbh_hvx_copy_aligned_bytes(
+                staged_weight + (size_t)output_tile *
+                    capacity_k_tiles * QBH_HMX_WEIGHT_BYTES,
+                v_weight + (size_t)output_tile *
+                    existing_v_output_bytes,
+                existing_v_output_bytes);
+        }
+        if (qbh_scan_cache_dma(
+                header, v_destination, staged_weight,
+                weight_bytes, 0U) != 0 ||
+            qbh_scan_cache_dma(
+                header, v_destination + weight_bytes,
+                av_bias, QBH_KV_CACHE_HMX_V_BIAS_BYTES_PER_HEAD,
+                0U) != 0) {
+            return -1;
+        }
+    }
+
+    ++header->u8_cache_native_prefill_reuse_count;
+    header->u8_cache_native_prefill_reused_carrier_bytes +=
+        (uint64_t)QBH_BLOCK_KV_HEADS *
+        (QBH_ATTN_U8_K_WEIGHT_BYTES +
+         QBH_ATTN_U8_QK_BIAS_BYTES +
+         QBH_ATTN_U8_V_WEIGHT_BYTES +
+         QBH_ATTN_U8_AV_BIAS_BYTES);
     header->u8_cache_native_append_update_ticks +=
         HAP_perf_get_qtimer_count() - update_start;
     return 0;
@@ -12076,6 +12245,16 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         header->scan_mode != QBH_BLOCK_SCAN_DISABLED;
     uint32_t scan_dynamic_attention =
         scan_enabled != 0U && past_tokens != 0U;
+    uint32_t reuse_prefill_attention_carriers =
+        scan_enabled != 0U && past_tokens == 0U &&
+        logical_rows == QBH_BLOCK_M &&
+        header->variant == QBH_BLOCK_W4U8 &&
+        u8_integer_attention_enabled != 0U &&
+        header->w4u8_prefill_cache_mode ==
+            QBH_BLOCK_W4U8_PREFILL_CACHE_REUSE_ATTENTION_CARRIERS &&
+        qbh_hmx_native_u8_cache_formats(
+            header->kv_cache_k_format,
+            header->kv_cache_v_format);
     uint32_t u8_qkv_overlap_enabled =
         qbh_attention_u8_qkv_overlap_enabled(
             header->attention_pipeline_mode);
@@ -12574,7 +12753,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         return QBH_BLOCK_STATUS_ATTENTION_FAILED;
     }
 
-    if (scan_enabled != 0U) {
+    if (scan_enabled != 0U &&
+        reuse_prefill_attention_carriers == 0U) {
         const uint64_t cache_append_start =
             HAP_perf_get_qtimer_count();
         const uint64_t cache_append_dma_before =
@@ -12756,6 +12936,28 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                 header->attention_unattributed_ticks +=
                     attention_elapsed - attributed_delta;
             }
+        }
+    }
+
+    if (reuse_prefill_attention_carriers != 0U) {
+        const uint64_t cache_append_start =
+            HAP_perf_get_qtimer_count();
+        const uint64_t cache_append_dma_before =
+            header->scan_cache_append_ticks;
+        int cache_status =
+            qbh_scan_persist_u8_prefill_attention_carriers(
+                header, shared, buffers, logical_rows, past_tokens);
+        const uint64_t cache_append_elapsed =
+            HAP_perf_get_qtimer_count() - cache_append_start;
+        const uint64_t cache_append_dma =
+            header->scan_cache_append_ticks -
+            cache_append_dma_before;
+        if (cache_append_elapsed >= cache_append_dma) {
+            header->scan_cache_pack_ticks +=
+                cache_append_elapsed - cache_append_dma;
+        }
+        if (cache_status != 0) {
+            return QBH_BLOCK_STATUS_ATTENTION_FAILED;
         }
     }
 

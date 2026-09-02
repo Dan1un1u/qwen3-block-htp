@@ -2199,7 +2199,7 @@ static void qbh_print_replay_profile(
     printf(",\"" #field "\":%" PRIu64, header->field)
 
     printf(
-        "{\"experiment\":156,\"record\":\"replay_profile\","
+        "{\"experiment\":157,\"record\":\"replay_profile\","
         "\"variant\":\"%s\",\"replay_step\":%" PRIu32 ","
         "\"mode\":\"%s\",\"logical_m\":%" PRIu32 ","
         "\"first_position\":%" PRIu32 ","
@@ -2261,6 +2261,7 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U32(repeat_count);
     QBH_REPLAY_PROFILE_U32(prepared_session_run_index);
     QBH_REPLAY_PROFILE_U32(numerical_audit_enabled);
+    QBH_REPLAY_PROFILE_U32(w4u8_prefill_cache_mode);
     QBH_REPLAY_PROFILE_I32(dsp_status);
     QBH_REPLAY_PROFILE_I32(numerical_status);
     QBH_REPLAY_PROFILE_U32(scan_logical_m_observed);
@@ -2328,6 +2329,9 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U64(u8_attention_v_pack_ticks);
     QBH_REPLAY_PROFILE_U64(u8_cache_native_append_update_ticks);
     QBH_REPLAY_PROFILE_U32(u8_cache_native_prefill_build_count);
+    QBH_REPLAY_PROFILE_U32(u8_cache_native_prefill_reuse_count);
+    QBH_REPLAY_PROFILE_U64(
+        u8_cache_native_prefill_reused_carrier_bytes);
     QBH_REPLAY_PROFILE_U32(u8_cache_native_incremental_append_count);
     QBH_REPLAY_PROFILE_U32(u8_cache_full_prefix_pack_count);
     QBH_REPLAY_PROFILE_U64(u8_attention_qk_hmx_ticks);
@@ -2767,7 +2771,7 @@ static int qbh_run_replay_sequence(
         }
         all_pass &= qbh_replay_step_pass(variant, step_result);
         printf(
-            "{\"experiment\":156,\"variant\":\"%s\","
+            "{\"experiment\":157,\"variant\":\"%s\","
             "\"replay_step\":%" PRIu32 ",\"mode\":\"%s\","
             "\"first_position\":%" PRIu32 ","
             "\"valid_length\":%" PRIu32 ","
@@ -2886,7 +2890,7 @@ static int qbh_run_replay_sequence(
         }
     }
     printf(
-        "{\"experiment\":156,\"variant\":\"%s\","
+        "{\"experiment\":157,\"variant\":\"%s\","
         "\"replay_sequence_complete\":true,"
         "\"completed_steps\":%" PRIu32 ","
         "\"first_layer\":%" PRIu32 ","
@@ -2981,7 +2985,7 @@ static int qbh_run_full_stack_hidden_capture(
         gate_pass = 0;
     }
     printf(
-        "{\"experiment\":156,\"hidden_capture\":true,"
+        "{\"experiment\":157,\"hidden_capture\":true,"
         "\"variant\":\"%s\",\"host_wall_ns\":%" PRIu64 ","
         "\"rpc_result\":%d,\"dsp_status\":%d,"
         "\"captured_layers\":%" PRIu32 ","
@@ -3071,6 +3075,8 @@ int main(int argc, char **argv) {
         QBH_BLOCK_W4U8_STREAM_FENCE_CONTROL;
     uint32_t w4u8_gate_up_ring_slots = 8U;
     uint32_t w4u8_qkv_ring_expand_workers = 0U;
+    uint32_t w4u8_prefill_cache_mode =
+        QBH_BLOCK_W4U8_PREFILL_CACHE_DUPLICATE_BUILD;
     uint32_t scan_mode = QBH_BLOCK_SCAN_DISABLED;
     uint32_t logical_m = QBH_BLOCK_M;
     uint32_t initial_kv_length = 0U;
@@ -3242,6 +3248,20 @@ int main(int argc, char **argv) {
         }
     }
     {
+        const char *mode = getenv("QBH_W4U8_PREFILL_CACHE_MODE");
+        if (mode != NULL && mode[0] != '\0') {
+            if (strcmp(mode, "duplicate") == 0) {
+                w4u8_prefill_cache_mode =
+                    QBH_BLOCK_W4U8_PREFILL_CACHE_DUPLICATE_BUILD;
+            } else if (strcmp(mode, "reuse") == 0) {
+                w4u8_prefill_cache_mode =
+                    QBH_BLOCK_W4U8_PREFILL_CACHE_REUSE_ATTENTION_CARRIERS;
+            } else {
+                w4u8_prefill_cache_mode = UINT32_MAX;
+            }
+        }
+    }
+    {
         const char *mode = getenv("QBH_SCAN_MODE");
         const char *logical = getenv("QBH_LOGICAL_M");
         const char *past = getenv("QBH_KV_CACHE_LENGTH");
@@ -3396,6 +3416,8 @@ int main(int argc, char **argv) {
                            argv[25],
                            &w4u8_qk_pair_kernel_mode) != 0) ||
         repeats == 0U || repeats > 100U ||
+        w4u8_prefill_cache_mode >
+            QBH_BLOCK_W4U8_PREFILL_CACHE_REUSE_ATTENTION_CARRIERS ||
         scan_mode > QBH_BLOCK_SCAN_DECODE ||
         replay_mode > QBH_BLOCK_REPLAY_CONTINUOUS ||
         (kv_cache_k_format !=
@@ -3409,6 +3431,12 @@ int main(int argc, char **argv) {
         (qbh_hmx_native_u8_cache_formats(
              kv_cache_k_format, kv_cache_v_format) &&
          (variant != QBH_BLOCK_W4U8 ||
+          replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS)) ||
+        (w4u8_prefill_cache_mode ==
+             QBH_BLOCK_W4U8_PREFILL_CACHE_REUSE_ATTENTION_CARRIERS &&
+         (!qbh_hmx_native_u8_cache_formats(
+              kv_cache_k_format, kv_cache_v_format) ||
+          variant != QBH_BLOCK_W4U8 ||
           replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS)) ||
         vertical_slice_mode > QBH_BLOCK_SLICE_ACTIVE_RANGE ||
         (vertical_slice_mode == QBH_BLOCK_SLICE_ACTIVE_RANGE &&
@@ -4196,7 +4224,7 @@ int main(int argc, char **argv) {
             const char *layout_only = getenv("QBH_LAYOUT_ONLY");
             if (layout_only != NULL && strcmp(layout_only, "1") == 0) {
                 printf(
-                    "{\"experiment\":156,\"layout_only\":true,"
+                    "{\"experiment\":157,\"layout_only\":true,"
                     "\"variant\":\"%s\",\"layer_first\":%" PRIu32
                     ",\"layer_count\":%" PRIu32
                     ",\"shared_bytes\":%zu,"
@@ -4334,6 +4362,8 @@ int main(int argc, char **argv) {
     header->w4u8_gate_up_ring_slots = w4u8_gate_up_ring_slots;
     header->w4u8_qkv_ring_expand_workers =
         w4u8_qkv_ring_expand_workers;
+    header->w4u8_prefill_cache_mode =
+        w4u8_prefill_cache_mode;
     header->w4u8_qk_pair_kernel_mode =
         w4u8_qk_pair_kernel_mode;
     header->scan_mode = scan_mode;
@@ -4753,7 +4783,7 @@ int main(int argc, char **argv) {
         int map_gate_result = qwen3_probe_run_block(
             session.handle, shared_fd, (uint32_t)total_bytes);
         printf(
-            "{\"experiment\":156,\"map_gate\":true,"
+            "{\"experiment\":157,\"map_gate\":true,"
             "\"variant\":\"%s\",\"shared_bytes\":%zu,"
             "\"rpc_result\":%d,\"dsp_status\":%d,"
             "\"layer_count\":%" PRIu32 ","

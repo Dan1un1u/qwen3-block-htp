@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(62)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(156)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(63)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(157)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -108,6 +108,11 @@ enum qbh_kv_cache_format {
     QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1 = 1,
     QBH_KV_CACHE_FORMAT_HMX_U8_K_WEIGHT_V1 = 2,
     QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_V1 = 3,
+};
+
+enum qbh_w4u8_prefill_cache_mode {
+    QBH_BLOCK_W4U8_PREFILL_CACHE_DUPLICATE_BUILD = 0,
+    QBH_BLOCK_W4U8_PREFILL_CACHE_REUSE_ATTENTION_CARRIERS = 1,
 };
 
 #define QBH_KV_CACHE_HMX_PADDED_CAPACITY(capacity_) \
@@ -544,6 +549,7 @@ struct qbh_block_header {
     uint32_t w4u8_stream_fence_mode;
     uint32_t w4u8_gate_up_ring_slots;
     uint32_t w4u8_qkv_ring_expand_workers;
+    uint32_t w4u8_prefill_cache_mode;
 
     /* EXP-0147 logical-shape wrapper.  QBH_BLOCK_M remains the immutable
      * physical projection tile. */
@@ -829,6 +835,8 @@ struct qbh_block_header {
     uint64_t u8_attention_v_pack_ticks;
     uint64_t u8_cache_native_append_update_ticks;
     uint32_t u8_cache_native_prefill_build_count;
+    uint32_t u8_cache_native_prefill_reuse_count;
+    uint64_t u8_cache_native_prefill_reused_carrier_bytes;
     uint32_t u8_cache_native_incremental_append_count;
     uint32_t u8_cache_full_prefix_pack_count;
     uint64_t u8_attention_qk_hmx_ticks;
