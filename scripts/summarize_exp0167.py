@@ -134,7 +134,9 @@ def validate(runs: list[list[dict[str, object]]], audit: dict[str, object]) -> d
         "u8_logit_encoding_explicit": encoding,
         "stable_across_ten_sessions": stable,
         "matches_independent_audit_sequence": sequences[0] == audit_tokens,
-        "independent_integer_reference": audit.get("implementation_gate") == "pass",
+        "independent_integer_reference": (
+            audit.get("summary", {}).get("implementation_gate") == "pass"
+        ),
         "physical_contract": physical,
         "complete_ledger": ledger,
         "hidden_residency_structure": layers,
