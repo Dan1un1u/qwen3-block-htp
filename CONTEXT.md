@@ -1007,3 +1007,17 @@ full-stack scope. EXP-0161 remains the separate synthetic long-KV snapshot
 baseline.
 _Avoid_: capacity-derived fixed sealed count, per-snapshot cache package,
 repacking a sealed prefix, mutable sealed segment, automatic baseline promotion
+
+**Multi-Seal Full-Stack Cache Candidate**:
+The completed, locally passing EXP-0163 W4U8 candidate that extends the
+Dynamic Segmented Cache Lifecycle from one seal to six. One M64 prefill and
+192 continuous decode steps reach valid length 256 while publishing 28 layer
+segments at each of positions 95, 127, 159, 191, 223 and 255. Ten rotated
+sessions are byte exact and preserve the 8 MiB VTCM, zero-intermediate-DDR,
+one-FastRPC and no-QNN contracts. Against the equal-capacity monolithic delta
+control, complete decode improves 16.598% and positions 224-255 improve
+30.273%; the first seal's one-step cost is amortized by later reads. Adoption
+is pending, so EXP-0162 remains the Selected Full-Stack W4U8 Cache-Native
+Baseline until the user explicitly promotes EXP-0163.
+_Avoid_: automatic promotion, fixed imported snapshot, unbounded VTCM growth,
+full-prefix reconstruction, changed Attention arithmetic, full-model accuracy claim

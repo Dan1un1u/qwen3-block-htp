@@ -13,20 +13,22 @@ experiments:
     variants:
       - exp0160_compatible_monolithic_delta_control_capacity257
       - promoted_exp0162_dynamic_segmented_candidate_capacity257
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: full-stack-W4U8-M64-prefill-continuous-decode-six-seal-L256
     source_branches:
       - codex/exp-0163-w4u8-multiseal-l256
-    source_commits: []
+    source_commits:
+      - 63de1de7028c5a478f4494c4e64993d34deac503
     record: docs/experiments/EXP-0163.md
     approval_ref: 'User message 2026-09-03: 晋升，继续下一步'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0163-w4u8-multiseal-l256
       approved_on: '2026-09-03'
+      completed_on: '2026-09-03'
     evidence:
       source_parent_experiment: EXP-0162
       source_parent_commit: a3b9607dee88719341763204566bac8a9ed5e3cd
@@ -46,6 +48,34 @@ experiments:
       seal_reporting_gate: report_each_of_six_seal_steps_separately_and_its_amortization_without_requiring_each_seal_step_to_win
       stop_conditions: any_correctness_lifecycle_physical_or_structural_gate_failure_or_device_reboot
       selected_baseline_changed: false
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0163/20260903T073822Z_63de1de7028c_formal'
+      source_commit: 63de1de7028c5a478f4494c4e64993d34deac503
+      correctness_gate_result: pass_zero_LSB_all_193_outputs_and_all_retained_28_layer_dynamic_cache_references
+      lifecycle_gate_result: pass_exactly_28_seals_at_each_position95_127_159_191_223_255_and_no_other_step_with_sealed_prefix_immutable
+      physical_gate_result: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_step_one_HMX_owner_no_QNN
+      structural_gate_result: pass_zero_full_prefix_reconstruction_bounded_attention_overlay_and_valid_length256
+      speed_gate_result: pass_prefill_early_complete_decode_and_tail_windows_over_ten_rotated_sessions
+      host_wall_us:
+        prefill: {control: 44445.000, candidate: 44076.536}
+        early_decode_positions64_71: {control: 49180.628, candidate: 49181.028}
+        all_decode_positions64_255: {control: 65548.449, candidate: 56217.389}
+        tail_decode_positions224_255: {control: 79833.851, candidate: 61300.697}
+      paired_speed_improvement_percent:
+        prefill: 0.7319896023628369
+        early_decode_positions64_71: 0.16348277740726447
+        all_decode_positions64_255: 16.597815505668933
+        tail_decode_positions224_255: 30.273290581575665
+      seal_position_paired_speed_improvement_percent:
+        position95: -0.9284558379227703
+        position127: 5.814668477592044
+        position159: 12.094946402148766
+        position191: 17.422227163981862
+        position223: 22.96626146155213
+        position255: 27.79072847699915
+      full_profiling_report_sha256: 10a876cc04eac0a2a97f6f7d2f14c724f8722a78caca97893aab8d1085d4a8ac
+      summary_sha256: f8478f0d66e3d3600d289dc5f601cf99a1c747050bee30b2f35b8f572a6d4903
+      evidence_sha256_ledger_sha256: ad525be166b914b0bdff296fccacc49a392154e7f815e11d14a4005ed0c13cc3
+      conclusion: dynamic_segment_lifecycle_remains_exact_and_stable_across_six_seals_and_converts_monolithic_attention_scaling_into_a_16p598_percent_complete_decode_speedup
   - id: EXP-0162
     slug: w4u8-full-stack-segmented-cache
     title: Full-stack dynamic segmented W4U8 KV-cache lifecycle
