@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(69)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(161)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(70)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(162)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -28,7 +28,7 @@
 #define QBH_VERTICAL_SLICE_FIRST_LAYER UINT32_C(0)
 #define QBH_VERTICAL_SLICE_LAYER_COUNT QBH_QWEN3_TRANSFORMER_LAYERS
 #define QBH_DECODE_SESSION_MAGIC UINT32_C(0x51445353)
-#define QBH_DECODE_SESSION_ABI_VERSION UINT32_C(3)
+#define QBH_DECODE_SESSION_ABI_VERSION UINT32_C(4)
 #define QBH_BLOCK_PROJECTION_COUNT UINT32_C(7)
 #define QBH_BLOCK_QPARAM_COUNT UINT32_C(17)
 #define QBH_BLOCK_QPARAM_RECORD_BYTES UINT32_C(48)
@@ -179,9 +179,13 @@ enum qbh_w4u8_delta_reconstruction_mode {
  * exact HMX operand layout.  K is segment-major.  V uses 32-segment blocks
  * that are output-tile-major within each block, so one 2-D DMA reconstructs
  * an AV segment while every hardware stride remains below 64 KiB.
- * One fixed 32-row logical journal follows the sealed prefix and is the only
- * mutable region.  The experiment packages use capacity=past+1, so
- * capacity-1 determines the number of sealed tiles. */
+ * EXP-0162 makes the same physical ABI dynamic: capacity-1 determines the
+ * maximum number of immutable segment slots, while valid_length determines
+ * how many slots are sealed at a given step.  One fixed 32-row logical tail
+ * follows those reserved slots and is the only mutable region.  When the
+ * tail reaches 32 rows it is packed exactly once into the next reserved slot
+ * and the logical tail starts over.  EXP-0161's capacity=past+1 snapshots
+ * remain a compatible special case of this layout. */
 #define QBH_KV_CACHE_HMX_U8_SEGMENT_TOKENS QBH_HMX_INPUT_CHANNELS
 #define QBH_KV_CACHE_HMX_U8_SEGMENT_WEIGHT_BYTES \
     (QBH_BLOCK_HEAD_DIM * QBH_KV_CACHE_HMX_U8_SEGMENT_TOKENS)
@@ -941,6 +945,9 @@ struct qbh_block_header {
     uint64_t u8_cache_native_prefill_reused_carrier_bytes;
     uint32_t u8_cache_native_incremental_append_count;
     uint32_t u8_cache_full_prefix_pack_count;
+    uint32_t u8_cache_segment_tail_append_count;
+    uint32_t u8_cache_segment_seal_count;
+    uint64_t u8_cache_segment_sealed_bytes;
     uint32_t f16_cache_native_prefill_reuse_count;
     uint64_t f16_cache_native_prefill_reused_carrier_bytes;
     uint32_t f16_cache_native_incremental_append_count;

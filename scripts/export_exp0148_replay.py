@@ -174,10 +174,15 @@ def integer_attention(
     q: np.ndarray, k: np.ndarray, v: np.ndarray, config_bytes: bytes,
 ) -> np.ndarray:
     """Run the accepted causal integer Attention contract for all 72 rows."""
-    output = np.empty((TOTAL_M, HEADS, HEAD_DIM), dtype=np.uint8)
+    rows = int(q.shape[0])
+    if k.shape[0] != rows or v.shape[0] != rows:
+        raise ValueError(
+            f"Q/K/V row mismatch: q={q.shape} k={k.shape} v={v.shape}"
+        )
+    output = np.empty((rows, HEADS, HEAD_DIM), dtype=np.uint8)
     if len(config_bytes) != KV_HEADS * CONFIG.size:
         raise ValueError("unexpected integer Attention config size")
-    for position in range(TOTAL_M):
+    for position in range(rows):
         valid = position + 1
         for group in range(KV_HEADS):
             fields = CONFIG.unpack_from(config_bytes, group * CONFIG.size)
@@ -226,8 +231,14 @@ def w4u8_output_from_attention(
     post_weight: torch.Tensor,
     qparams: dict[str, dict[str, object]],
 ) -> np.ndarray:
+    rows = int(encoded_input.shape[1])
+    if attention_output.shape[0] != rows:
+        raise ValueError(
+            "Attention/output row mismatch: "
+            f"input={rows} attention={attention_output.shape[0]}"
+        )
     hidden = base.dequantize_u8(encoded_input, qparams["block_input"]).to(torch.float16)
-    attention_encoded = torch.from_numpy(attention_output.reshape(1, TOTAL_M, HIDDEN))
+    attention_encoded = torch.from_numpy(attention_output.reshape(1, rows, HIDDEN))
     attention_half = base.dequantize_u8(
         attention_encoded, qparams["attention_concat"]
     ).to(torch.float16)
@@ -250,7 +261,7 @@ def w4u8_output_from_attention(
     down = boundary("down", base.linear_half(middle, weights["down"]))
     return base.quantize_u8(
         residual + down, qparams["block_output"]
-    ).cpu().numpy().reshape(TOTAL_M, HIDDEN)
+    ).cpu().numpy().reshape(rows, HIDDEN)
 
 
 def padded_rows(value: np.ndarray, fill: int | float = 0) -> np.ndarray:

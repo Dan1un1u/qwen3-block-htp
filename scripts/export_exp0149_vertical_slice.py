@@ -116,6 +116,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--experiment", default=EXPERIMENT)
     parser.add_argument("--first-layer", type=int, default=LAYERS[0])
     parser.add_argument("--layer-count", type=int, default=len(LAYERS))
+    parser.add_argument("--decode-steps", type=int, default=DECODE_STEPS)
+    parser.add_argument(
+        "--recipe", choices=("f16f16", "w4f16", "w4u8"),
+        action="append",
+        help="publish only the selected recipe; repeat to select several",
+    )
     return parser.parse_args()
 
 
@@ -478,10 +484,13 @@ def build_recipe_references(
     cos: torch.Tensor,
     sin: torch.Tensor,
     retained_layer14_config: bytes,
+    recipes: tuple[str, ...] = ("f16f16", "w4f16", "w4u8"),
 ) -> dict[str, dict[str, object]]:
     result: dict[str, dict[str, object]] = {}
     initial = teacher[LAYERS[0]]["block_input"]
     for recipe in ("f16f16", "w4f16"):
+        if recipe not in recipes:
+            continue
         hidden = initial
         layer_data: dict[int, dict[str, np.ndarray]] = {}
         for layer in LAYERS:
@@ -507,33 +516,34 @@ def build_recipe_references(
             "layers": layer_data,
         }
 
-    encoded_hidden = base.quantize_u8(
-        initial, qparams[LAYERS[0]]["block_input"]
-    ).cpu().numpy().reshape(TOTAL_M, HIDDEN)
-    u8_layers: dict[int, dict[str, object]] = {}
-    for layer in LAYERS:
-        final, k, v, config = run_w4u8_layer(
-            encoded_hidden.reshape(1, TOTAL_M, HIDDEN),
-            w4[layer],
-            norms[layer],
-            qparams[layer],
-            cos,
-            sin,
-            retained_layer14_config if layer == 14 else None,
-        )
-        u8_layers[layer] = {
-            "k": np.ascontiguousarray(k.transpose(1, 0, 2)),
-            "v": np.ascontiguousarray(v.transpose(1, 0, 2)),
-            "config": config,
-        }
-        encoded_hidden = final
-    result["w4u8"] = {
-        "input": base.quantize_u8(
+    if "w4u8" in recipes:
+        encoded_hidden = base.quantize_u8(
             initial, qparams[LAYERS[0]]["block_input"]
-        ).cpu().numpy().reshape(TOTAL_M, HIDDEN),
-        "output": encoded_hidden.reshape(TOTAL_M, HIDDEN),
-        "layers": u8_layers,
-    }
+        ).cpu().numpy().reshape(TOTAL_M, HIDDEN)
+        u8_layers: dict[int, dict[str, object]] = {}
+        for layer in LAYERS:
+            final, k, v, config = run_w4u8_layer(
+                encoded_hidden.reshape(1, TOTAL_M, HIDDEN),
+                w4[layer],
+                norms[layer],
+                qparams[layer],
+                cos,
+                sin,
+                retained_layer14_config if layer == 14 else None,
+            )
+            u8_layers[layer] = {
+                "k": np.ascontiguousarray(k.transpose(1, 0, 2)),
+                "v": np.ascontiguousarray(v.transpose(1, 0, 2)),
+                "config": config,
+            }
+            encoded_hidden = final
+        result["w4u8"] = {
+            "input": base.quantize_u8(
+                initial, qparams[LAYERS[0]]["block_input"]
+            ).cpu().numpy().reshape(TOTAL_M, HIDDEN),
+            "output": encoded_hidden.reshape(TOTAL_M, HIDDEN),
+            "layers": u8_layers,
+        }
     return result
 
 
@@ -722,9 +732,14 @@ def publish_recipe(
 
 
 def main() -> None:
-    global EXPERIMENT, LAYERS
+    global EXPERIMENT, LAYERS, DECODE_STEPS, TOTAL_M
     args = parse_args()
     EXPERIMENT = args.experiment
+    if args.decode_steps < 1 or PREFILL_M + args.decode_steps > 4097:
+        raise ValueError("decode steps must keep total tokens in [65,4097]")
+    DECODE_STEPS = args.decode_steps
+    TOTAL_M = PREFILL_M + DECODE_STEPS
+    recipes = tuple(args.recipe or ("f16f16", "w4f16", "w4u8"))
     if (args.first_layer < 0 or args.layer_count < 1 or
             args.first_layer + args.layer_count > DECLARED_LAYERS):
         raise ValueError("active layer range is outside Qwen3 layers 0..27")
@@ -806,8 +821,9 @@ def main() -> None:
             cos_t,
             sin_t,
             retained_config,
+            recipes,
         )
-        for recipe in ("f16f16", "w4f16", "w4u8"):
+        for recipe in recipes:
             publish_recipe(
                 recipe,
                 archive,

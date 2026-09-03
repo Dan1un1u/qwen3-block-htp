@@ -72,8 +72,6 @@ struct qbh_error_metrics {
     double max_required_rtol_after_atol;
 };
 
-#define QBH_REPLAY_DECODE_STEPS UINT32_C(8)
-#define QBH_REPLAY_TOTAL_STEPS (UINT32_C(1) + QBH_REPLAY_DECODE_STEPS)
 
 struct qbh_replay_step_result {
     uint64_t host_wall_ns;
@@ -2098,6 +2096,72 @@ static int qbh_hmx_cache_byte_is_appended_token(
     uint32_t head_relative, uint32_t token) {
     const uint32_t weight_bytes = layer->k_weight_bytes_per_head;
 
+    if (qbh_hmx_native_u8_segmented_cache_formats(
+            layer->k_format, layer->v_format)) {
+        const uint32_t max_segments =
+            QBH_KV_CACHE_HMX_U8_SEGMENT_COUNT(layer->capacity);
+        const uint32_t tail_row =
+            token % QBH_KV_CACHE_HMX_U8_SEGMENT_TOKENS;
+        const int seals_segment =
+            tail_row + 1U == QBH_KV_CACHE_HMX_U8_SEGMENT_TOKENS;
+        const uint32_t segment =
+            token / QBH_KV_CACHE_HMX_U8_SEGMENT_TOKENS;
+        uint32_t tail_offset;
+
+        if (kind == 0U) {
+            tail_offset =
+                max_segments * QBH_KV_CACHE_HMX_U8_SEGMENT_K_BYTES;
+            if (head_relative >=
+                    tail_offset + tail_row * QBH_BLOCK_HEAD_DIM &&
+                head_relative <
+                    tail_offset +
+                    (tail_row + 1U) * QBH_BLOCK_HEAD_DIM) {
+                return 1;
+            }
+            return seals_segment && segment < max_segments &&
+                   head_relative >=
+                       segment * QBH_KV_CACHE_HMX_U8_SEGMENT_K_BYTES &&
+                   head_relative <
+                       (segment + 1U) *
+                           QBH_KV_CACHE_HMX_U8_SEGMENT_K_BYTES;
+        }
+
+        tail_offset =
+            max_segments * QBH_KV_CACHE_HMX_U8_SEGMENT_V_BYTES +
+            QBH_KV_CACHE_HMX_V_BIAS_BYTES_PER_HEAD;
+        if (head_relative >=
+                tail_offset + tail_row * QBH_BLOCK_HEAD_DIM &&
+            head_relative <
+                tail_offset + (tail_row + 1U) * QBH_BLOCK_HEAD_DIM) {
+            return 1;
+        }
+        if (seals_segment && segment < max_segments) {
+            const uint32_t block_first =
+                (segment /
+                 QBH_KV_CACHE_HMX_U8_V_SEGMENT_BLOCK_SEGMENTS) *
+                QBH_KV_CACHE_HMX_U8_V_SEGMENT_BLOCK_SEGMENTS;
+            const uint32_t block_count =
+                max_segments - block_first <
+                        QBH_KV_CACHE_HMX_U8_V_SEGMENT_BLOCK_SEGMENTS
+                    ? max_segments - block_first
+                    : QBH_KV_CACHE_HMX_U8_V_SEGMENT_BLOCK_SEGMENTS;
+            for (uint32_t output_tile = 0U;
+                 output_tile < QBH_ATTENTION_HEAD_DIM_TILES;
+                 ++output_tile) {
+                const uint32_t first =
+                    block_first *
+                        QBH_KV_CACHE_HMX_U8_SEGMENT_WEIGHT_BYTES +
+                    (output_tile * block_count +
+                     (segment - block_first)) * QBH_HMX_WEIGHT_BYTES;
+                if (head_relative >= first &&
+                    head_relative < first + QBH_HMX_WEIGHT_BYTES) {
+                    return 1;
+                }
+            }
+        }
+        return 0;
+    }
+
     if (qbh_hmx_native_f16_cache_formats(
             layer->k_format, layer->v_format)) {
         if (head_relative >= weight_bytes) {
@@ -2446,7 +2510,7 @@ static void qbh_print_replay_profile(
     printf(",\"" #field "\":%" PRIu64, header->field)
 
     printf(
-        "{\"experiment\":160,\"record\":\"replay_profile\","
+        "{\"experiment\":162,\"record\":\"replay_profile\","
         "\"variant\":\"%s\",\"replay_step\":%" PRIu32 ","
         "\"mode\":\"%s\",\"logical_m\":%" PRIu32 ","
         "\"first_position\":%" PRIu32 ","
@@ -2584,6 +2648,9 @@ static void qbh_print_replay_profile(
         u8_cache_native_prefill_reused_carrier_bytes);
     QBH_REPLAY_PROFILE_U32(u8_cache_native_incremental_append_count);
     QBH_REPLAY_PROFILE_U32(u8_cache_full_prefix_pack_count);
+    QBH_REPLAY_PROFILE_U32(u8_cache_segment_tail_append_count);
+    QBH_REPLAY_PROFILE_U32(u8_cache_segment_seal_count);
+    QBH_REPLAY_PROFILE_U64(u8_cache_segment_sealed_bytes);
     QBH_REPLAY_PROFILE_U32(f16_cache_native_prefill_reuse_count);
     QBH_REPLAY_PROFILE_U64(
         f16_cache_native_prefill_reused_carrier_bytes);
@@ -2714,7 +2781,10 @@ static int qbh_run_replay_sequence(
     struct qbh_decode_session_state *state =
         (struct qbh_decode_session_state *)(
             shared + header->replay_session_offset);
-    struct qbh_replay_step_result results[QBH_REPLAY_TOTAL_STEPS];
+    struct qbh_replay_step_result step_storage;
+    const uint32_t decode_steps =
+        header->kv_cache_capacity - QBH_BLOCK_M;
+    const uint32_t total_steps = 1U + decode_steps;
     const uint32_t element_bytes =
         variant == QBH_BLOCK_W4U8 ? 1U : 2U;
     const char *tensor_suffix =
@@ -2758,15 +2828,15 @@ static int qbh_run_replay_sequence(
                 bytes);
         }
     }
-    memset(results, 0, sizeof(results));
-    for (uint32_t step = 0U; step < QBH_REPLAY_TOTAL_STEPS; ++step) {
-        struct qbh_replay_step_result *step_result = &results[step];
+    for (uint32_t step = 0U; step < total_steps; ++step) {
+        struct qbh_replay_step_result *step_result = &step_storage;
         uint32_t initial_length =
             state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER].valid_length;
         uint64_t start;
         uint64_t end;
         int rpc_result;
 
+        memset(step_result, 0, sizeof(*step_result));
         step_result->cache_min_cosine = 1.0;
 
         for (uint32_t slice_index = 1U;
@@ -2909,6 +2979,9 @@ static int qbh_run_replay_sequence(
                 const int hmx_native_u8_delta =
                     qbh_hmx_native_u8_delta_cache_formats(
                         layer->k_format, layer->v_format);
+                const int hmx_native_u8_segmented =
+                    qbh_hmx_native_u8_segmented_cache_formats(
+                        layer->k_format, layer->v_format);
                 const int hmx_native_f16 =
                     qbh_hmx_native_f16_cache_formats(
                         layer->k_format, layer->v_format);
@@ -2923,7 +2996,9 @@ static int qbh_run_replay_sequence(
                             PRIu32 ".bin",
                             layer->layer_index,
                             kind == 0U ? 'k' : 'v',
-                            hmx_native_u8_delta
+                            hmx_native_u8_segmented
+                                ? "u8_segmented"
+                            : hmx_native_u8_delta
                                 ? "u8_delta"
                                 : (hmx_native_u8 ? "u8" : "f16"),
                             step) < 0 ||
@@ -3044,7 +3119,7 @@ static int qbh_run_replay_sequence(
         }
         all_pass &= qbh_replay_step_pass(variant, step_result);
         printf(
-            "{\"experiment\":160,\"variant\":\"%s\","
+            "{\"experiment\":162,\"variant\":\"%s\","
             "\"replay_step\":%" PRIu32 ",\"mode\":\"%s\","
             "\"first_position\":%" PRIu32 ","
             "\"valid_length\":%" PRIu32 ","
@@ -3158,12 +3233,13 @@ static int qbh_run_replay_sequence(
     }
     for (uint32_t slice_index = 0U;
          slice_index < QBH_VERTICAL_SLICE_LAYER_COUNT; ++slice_index) {
-        if (state->layers[first_layer + slice_index].valid_length != 72U) {
+        if (state->layers[first_layer + slice_index].valid_length !=
+                header->kv_cache_capacity) {
             all_pass = 0;
         }
     }
     printf(
-        "{\"experiment\":160,\"variant\":\"%s\","
+        "{\"experiment\":162,\"variant\":\"%s\","
         "\"replay_sequence_complete\":true,"
         "\"completed_steps\":%" PRIu32 ","
         "\"first_layer\":%" PRIu32 ","
@@ -3179,8 +3255,7 @@ static int qbh_run_replay_sequence(
         last_layer, state->layers[last_layer].valid_length,
         all_pass ? "true" : "false");
     free(cache_snapshots);
-    return all_pass &&
-                   state->completed_step_count == QBH_REPLAY_TOTAL_STEPS
+    return all_pass && state->completed_step_count == total_steps
                ? 0 : -1;
 }
 
@@ -3258,7 +3333,7 @@ static int qbh_run_full_stack_hidden_capture(
         gate_pass = 0;
     }
     printf(
-        "{\"experiment\":160,\"hidden_capture\":true,"
+        "{\"experiment\":162,\"hidden_capture\":true,"
         "\"variant\":\"%s\",\"host_wall_ns\":%" PRIu64 ","
         "\"rpc_result\":%d,\"dsp_status\":%d,"
         "\"captured_layers\":%" PRIu32 ","
@@ -3788,7 +3863,8 @@ int main(int argc, char **argv) {
         (replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS &&
          (scan_mode != QBH_BLOCK_SCAN_PREFILL ||
           logical_m != QBH_BLOCK_M || initial_kv_length != 0U ||
-          kv_cache_capacity != QBH_BLOCK_M + QBH_REPLAY_DECODE_STEPS ||
+          kv_cache_capacity <= QBH_BLOCK_M ||
+          kv_cache_capacity > QBH_BLOCK_SCAN_MAX_KV ||
           physical_chunks != 1U)) ||
         (scan_mode == QBH_BLOCK_SCAN_DISABLED &&
          (logical_m != QBH_BLOCK_M || initial_kv_length != 0U ||
@@ -4585,7 +4661,7 @@ int main(int argc, char **argv) {
             const char *layout_only = getenv("QBH_LAYOUT_ONLY");
             if (layout_only != NULL && strcmp(layout_only, "1") == 0) {
                 printf(
-                    "{\"experiment\":160,\"layout_only\":true,"
+                    "{\"experiment\":162,\"layout_only\":true,"
                     "\"variant\":\"%s\",\"layer_first\":%" PRIu32
                     ",\"layer_count\":%" PRIu32
                     ",\"shared_bytes\":%zu,"
@@ -5181,7 +5257,7 @@ int main(int argc, char **argv) {
         int map_gate_result = qwen3_probe_run_block(
             session.handle, shared_fd, (uint32_t)total_bytes);
         printf(
-            "{\"experiment\":160,\"map_gate\":true,"
+            "{\"experiment\":162,\"map_gate\":true,"
             "\"variant\":\"%s\",\"shared_bytes\":%zu,"
             "\"rpc_result\":%d,\"dsp_status\":%d,"
             "\"layer_count\":%" PRIu32 ","
@@ -5568,7 +5644,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0161\","
+        "{\"experiment\":\"EXP-0162\","
         "\"execution_unit\":\"qwen3_layer14_shape_kv_scan\","
         "\"scan_mode\":\"%s\","
         "\"logical_m\":%" PRIu32 ","
