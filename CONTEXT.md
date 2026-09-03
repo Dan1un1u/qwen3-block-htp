@@ -1039,3 +1039,19 @@ adoption of this result.
 _Avoid_: offline hidden injection described as inference, claiming BF16 token
 identity, timed full-logit DDR materialization, stochastic sampling, broad
 quality proof from one prompt, or automatic baseline promotion
+
+**Completed W4F16 Prefill Generation-Boundary Candidate**:
+The evidence-valid EXP-0165 candidate that keeps EXP-0164's transformer,
+persistent cache, model values, prompt, tokenizer and generated sequence fixed,
+while optimizing only the newly added token-to-token boundary. It uses an HVX
+FP16 maximum reduction with stable first-lane tie resolution and a phase-overlaid
+batch-eight streamed W4 LM head. The overlay reuses VTCM regions whose
+transformer lifetime has ended; it neither increases the 8 MiB request nor
+materializes logits in DDR. Ten rotated formal pairs reduce complete M64
+prefill from 82.847 to 65.670 ms and the LM-head-plus-argmax interval from
+26.484 to 9.397 ms. All 160 tokens and selected FP16 logit bits match the
+control and independent W4F16 reference. This is a passing candidate awaiting
+user adoption, not an automatically promoted baseline.
+_Avoid_: changed transformer or cache, changed W4 values or scales, full-logit
+DDR output, attributing the gain to reduced model bytes, broad accuracy claim,
+or baseline promotion without user approval

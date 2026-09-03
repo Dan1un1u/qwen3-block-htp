@@ -13,20 +13,23 @@ experiments:
     variants:
       - exp0164_streaming_generation_boundary_control
       - optimized_prefill_generation_boundary_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: paired-repeat10-full-generation-prefill-boundary
     source_branches:
       - codex/exp-0165-w4f16-prefill-boundary-pipeline
-    source_commits: []
+    source_commits:
+      - c005032a6d27d08a213257745a368459cff99593
+      - d7720319e2b46d44556a8c11cfe66457d40f5d1d
     record: docs/experiments/EXP-0165.md
     approval_ref: 'User message 2026-09-03: 我们一步一步解决，先解决第一个问题，先针对prefill我们新引入的首尾部分进行优化'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0165-w4f16-prefill-boundary-pipeline
       approved_on: '2026-09-03'
+      completed_on: '2026-09-03'
     evidence:
       source_parent_experiment: EXP-0164
       source_parent_commit: 6a6801193f16fff3ef5e88a25a87f0600b40c18f
@@ -43,6 +46,49 @@ experiments:
       decode_policy: report_only_not_promotion_metric_for_EXP0165
       stop_conditions: correctness_semantic_physical_or_ledger_failure
       selected_baseline_changed: false
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0165/20260903T122920Z_c005032a6d27_formal'
+      runtime_source_commit: c005032a6d27d08a213257745a368459cff99593
+      evidence_source_commit: d7720319e2b46d44556a8c11cfe66457d40f5d1d
+      formal_sessions: 10_rotated_control_candidate_pairs
+      prompt_tokens: 64
+      generated_tokens_per_session: 16
+      generated_token_checks: 160
+      generated_token_mismatches: 0
+      generated_text: '低比特量化（Low-Bitwidth Quantization）在大模型推理中'
+      correctness_gate_result: pass_candidate_tokens_independent_reference_and_selected_FP16_logit_bits_exact_to_control
+      semantic_gate_result: pass_ten_identical_nonempty_readable_decoded_strings
+      transformer_regression_result: pass_all_nine_EXP0158_W4F16_replay_steps
+      physical_gate_result: pass_exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_interlayer_or_timed_full_logit_DDR_zero_spill_fill
+      ledger_gate_result: pass_zero_unattributed_ticks_for_every_full_invocation
+      host_wall_us:
+        prefill: {control: 82846.693, candidate: 65669.610}
+        decode_mean_per_token: {control: 112594.748, candidate: 95349.049}
+        complete_16_pass_sequence: {control: 1771884.323, candidate: 1495364.089}
+      paired_median_speed_improvement_percent:
+        prefill: 26.442
+        decode_report_only: 18.215
+        complete_16_pass_sequence: 18.583
+      prefill_boundary_ledger_us:
+        token_embedding: {control: 57.161, candidate: 57.604}
+        final_model_RMSNorm: {control: 48.021, candidate: 48.125}
+        streamed_W4_lm_head_plus_argmax: {control: 26484.010, candidate: 9396.536}
+      lm_head_diagnostics_us:
+        weight_DMA: {control: 4447.214, candidate: 2912.161}
+        scale_DMA: {control: 910.859, candidate: 266.615}
+        W4_expansion: {control: 8763.255, candidate: 4582.630}
+        HMX: {control: 4772.969, candidate: 1139.141}
+        argmax: {control: 6193.047, candidate: 343.516}
+      lm_head_command_count: {control: 2374, candidate: 594}
+      lm_head_output_batch: {control: 2, candidate: 8}
+      lm_head_DDR_read_bytes: {control: 156190208, candidate: 156190208}
+      complete_model_weight_DDR_read_bytes: {control: 864507392, candidate: 864507392}
+      VTCM_peak_bytes: {control: 8171008, candidate: 8171008}
+      performance_gate_result: pass_prefill_complete_Host_wall_strictly_lower_in_rotated_pair_repeat10
+      local_diagnostic_gate_result: pass_boundary_ledger_reduction_is_entirely_attributed_to_lm_head_without_Host_or_unattributed_cost_shift
+      conclusion: batch8_phase_overlay_and_HVX_argmax_reduce_the_streamed_lm_head_from_26p484_to_9p397_ms_and_complete_M64_prefill_from_82p847_to_65p670_ms
+      full_profiling_report_sha256: 93f220fce18394e27725ef843b50bb6295d8f47203fa3f3d05614ee87d6a546c
+      summary_sha256: f2ff41cd74858d7f6efb5c7f2b313e562b30c18ac23bf216dc10297944b9af79
+      evidence_sha256_ledger_sha256: fd7a7c15ca5a7c7ab9c4ff1835bf534b9d1cb21aee62f202dbb7e73c0e37f1ff
   - id: EXP-0164
     slug: w4f16-greedy-generation
     title: W4F16 deterministic end-to-end token-generation boundary
