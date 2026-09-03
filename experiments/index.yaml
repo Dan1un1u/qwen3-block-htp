@@ -13,20 +13,23 @@ experiments:
     variants:
       - exp0167_batch4_two_slot_control
       - w4u8_batch8_resident_bias_pipeline_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: paired-full-stack-W4U8-generation-lm-head-pipeline
     source_branches:
       - codex/exp-0168-w4u8-lm-head-batch8-overlap
-    source_commits: []
+    source_commits:
+      - bcf327142e451ed25c84f32d13e802230397d65a
     record: docs/experiments/EXP-0168.md
     approval_ref: 'User message 2026-09-04: 同意下一步方案，可以将我们之前对A16做的优化套用一下，试图达到相近甚至超越的速度。'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0168-w4u8-lm-head-batch8-overlap
       approved_on: '2026-09-04'
+      started_on: '2026-09-04'
+      completed_on: '2026-09-04'
     evidence:
       source_parent_experiment: EXP-0167
       source_parent_commit: 9909ddf579cf465064f548b1b69845772b13a044
@@ -40,6 +43,37 @@ experiments:
       performance_gate: ten_rotated_control_candidate_sessions_candidate_strictly_faster_for_direct_M64_prefill_continuous_decode_and_complete_16_pass_Host_wall
       diagnostic_target: compare_candidate_lm_head_wall_command_count_DMA_HVX_expand_HMX_lifetime_and_waits_with_EXP0167_and_selected_EXP0166_W4F16
       selected_baseline_changed: false
+      source_commit: bcf327142e451ed25c84f32d13e802230397d65a
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0168/20260904T_exp0168_bcf3271_formal'
+      formal_sessions: ten_rotated_control_candidate_complete_sessions_each_one_M64_prefill_plus_fifteen_continuous_decode_tokens
+      implementation: batch8_594_integer_HMX_commands_full_1215488_byte_bias_requant_carrier_resident_in_phase_overlaid_VTCM_async_next_group_W4_DMA_four_context_HVX_expand_and_previous_HMX_overlap
+      correctness_gate_result: pass_exact_EXP0167_token_IDs_and_U8_max_codes_all_sessions_plus_16_of_16_independent_integer_reference_and_EXP0163_193_step_zero_LSB_cache_regression
+      physical_gate_result: pass_exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_interlayer_or_timed_full_logit_DDR_zero_spill_fill
+      direct_end_to_end:
+        prefill_control_host_us: 56974.609
+        prefill_candidate_host_us: 49012.344
+        prefill_control_tokens_per_second: 1123.307392
+        prefill_candidate_tokens_per_second: 1305.793509
+        decode_control_host_us_per_token: 62471.741
+        decode_candidate_host_us_per_token: 54382.172
+        decode_control_tokens_per_second: 16.007237
+        decode_candidate_tokens_per_second: 18.388379
+        complete_control_16_pass_host_us: 994111.773
+        complete_candidate_16_pass_host_us: 864800.208
+      paired_median_speed_improvement_percent:
+        prefill: 16.176209
+        decode: 14.902013
+        complete_16_pass_session: 14.961734
+      lm_head_decode_median_us: {control: 13181.458, candidate: 5180.170}
+      speed_vs_selected_EXP0166_W4F16_percent:
+        prefill: 28.487456
+        decode: 70.272899
+      semantic_gate_result: disabled_by_user_contract
+      conclusion: W4U8_lm_head_now_exceeds_the_W4F16_structural_target_and_improves_direct_prefill_decode_and_complete_session_while_preserving_exact_integer_outputs
+      full_profiling_report_sha256: 5bab23ef731d66ddfe9dbb95600bb7ea58aafeb642d458572deaa7e1cefba419
+      summary_sha256: 372b20f16380abfddea796b9471333fffc31f2aa11929130c0fd997f78bf5423
+      independent_reference_sha256: 6a01a5b62e8f420f00835df1d226ff3df5792cb03b2e9d3e3c44722e125620c1
+      exp0163_regression_sha256: 6457c52a2729fd24b53f441214e3a3a97c8a92d26c6e9122424e9c4ff397eb37
   - id: EXP-0167
     slug: w4u8-greedy-generation
     title: W4U8 deterministic end-to-end token-generation boundary
