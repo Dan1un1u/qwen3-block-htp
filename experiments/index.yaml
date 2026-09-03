@@ -13,20 +13,23 @@ experiments:
     variants:
       - full_tile_control
       - decode_row4_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: ten-rotated-pair-full-stack-W4U8-long-decode-row-selective-SwiGLU
     source_branches:
       - codex/exp-0171-w4u8-decode-row4-swiglu
-    source_commits: []
+    source_commits:
+      - 49727b9d8b374cb951fc0493ab69b44fd784d1b4
     record: docs/experiments/EXP-0171.md
     approval_ref: 'User message 2026-09-04: 同意晋升。开启loop优化，针对decode，尽量不中断。'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0171-w4u8-decode-row4-swiglu
       approved_on: '2026-09-04'
+      started_on: '2026-09-04'
+      completed_on: '2026-09-04'
     evidence:
       source_parent_experiment: EXP-0170
       source_parent_commit: 042dbfd8907c23af255092a03ac28b13f8e740bc
@@ -39,6 +42,29 @@ experiments:
       physical_gate: exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_intermediate_or_timed_full_logit_DDR_zero_spill_fill_unchanged_projection_work_and_zero_unattributed_ticks
       performance_gate: ten_rotated_pairs_candidate_strictly_faster_for_direct_complete_L64_L255_decode_and_Gate_Up_wall_with_prefill_preserved_as_diagnostic
       selected_baseline_changed: false
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0171/20260904T_exp0171_49727b9_formal'
+      formal_sessions: ten_rotated_pairs_each_mode_one_M64_prefill_plus_192_continuous_decode_tokens
+      correctness_gate_result: pass_1032192_row4_calls_byte_exact_all20_output_hashes_and_tokens_exact_all193_independent_checks_and_EXP0163_regression
+      physical_gate_result: pass_exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_intermediate_or_timed_full_logit_DDR_zero_spill_fill
+      ledger_gate_result: pass_zero_unattributed_ticks_every_invocation
+      performance_gate_result: fail_candidate_lost_all_ten_pairs
+      direct_end_to_end:
+        control_prefill_tokens_per_second: 1290.356
+        candidate_prefill_tokens_per_second: 1292.050
+        control_decode_host_us_per_token: 50769.349
+        candidate_decode_host_us_per_token: 53481.010
+        control_decode_tokens_per_second: 19.696924
+        candidate_decode_tokens_per_second: 18.698226
+        candidate_decode_speed_percent: -5.070324
+      module_wall_us:
+        Gate_Up_SwiGLU_control: 16901.032
+        Gate_Up_SwiGLU_candidate: 19660.545
+      conclusion: rejected_removed_LUT_work_was_not_critical_and_row4_publication_exposed_more_HMX_lifetime_and_ready_wait
+      reopen_condition: new_scheduling_mechanism_that_preserves_DMA_expand_HMX_overlap
+      full_profiling_report_sha256: a6e4c3b57bc45f18fb0cf58f044fcf4cfed3ec6d7ab72bc8c559694194dfb33e
+      summary_sha256: b19647ef667091fa8d1a367b2d4c03ccc17e4fc0eaddada27c89ac9304bd6169
+      independent_reference_sha256: 49dbcabcc888ff181d035f22216a436cce827e7e9e67f4669c131a621c344ddb
+      exp0163_regression_sha256: d175714e47be174bfc28f85b927fb03f746b453f46d8da6c429b6dd969747ae2
   - id: EXP-0170
     slug: w4u8-decode-hvx-softmax
     title: HVX-tiled W4U8 dynamic decode Softmax

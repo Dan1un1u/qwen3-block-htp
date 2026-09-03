@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0171
+  active_experiment: null
   next_experiment_number: 172
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,33 +27,52 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0170
-  last_completed_source_commit: 23c00feaee20ccef30165d47ed03b5774c70e649
+  last_completed_experiment: EXP-0171
+  last_completed_source_commit: 49727b9d8b374cb951fc0493ab69b44fd784d1b4
   provisional_source_parent: selected_EXP0170_W4U8_token_generation_baseline
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: approved_pending_preflight
-  active_experiment_evidence: null
-  active_experiment_gate: not_run
-  active_recipe_specialization: W4U8_M1_row_selective_SwiGLU
-  active_experiment_contract:
-    id: EXP-0171
-    source_branch: codex/exp-0171-w4u8-decode-row4-swiglu
-    source_parent: selected_EXP0170_W4U8_token_generation_baseline
-    source_parent_commit: 042dbfd8907c23af255092a03ac28b13f8e740bc
-    execution_scope: real_token_ID_M64_prefill_then_192_continuous_W4U8_decode_steps_to_valid_length256
-    direct_control: same_binary_full_2048byte_SwiGLU_tile
-    candidate: M1_decode_first_128byte_HVX_vector_per_Gate_Up_tile
-    allowed_changes: decode_M1_Gate_Up_activation_element_count_dispatch_telemetry_and_experiment_tools_only
-    forbidden_changes: valid_row_math_LUT_qparams_weights_DMA_W4_expand_HMX_ring_worker_chain_Down_other_modules_cache_F16F16_W4F16_QNN
-    correctness_gate: byte_exact_valid_rows_cache_tokens_codes_independent_head_regression_and_padding_poison_invariance
-    physical_gate: exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_timed_intermediate_or_full_logit_DDR_zero_spill_fill_unchanged_projection_work_zero_unattributed_ticks
-    performance_gate: ten_rotated_pairs_candidate_strictly_higher_direct_L64_L255_decode_tokens_per_second_and_lower_Gate_Up_wall
-    stop_conditions: correctness_physical_ledger_or_device_stability_failure
+  active_experiment_stage: completed
+  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0171/20260904T_exp0171_49727b9_formal'
+  active_experiment_gate: fail
+  active_recipe_specialization: none
+  active_experiment_contract: null
   final_profiling_summary_standard: direct_full_stack_prefill_and_decode_tokens_per_second_plus_exact_Host_wall
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0170/20260904T_exp0170_23c00fe_formal'
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0171/20260904T_exp0171_49727b9_formal'
+  latest_w4u8_decode_swiglu_candidate:
+    id: EXP-0171
+    source_branch: codex/exp-0171-w4u8-decode-row4-swiglu
+    source_head: 49727b9d8b374cb951fc0493ab69b44fd784d1b4
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0171/20260904T_exp0171_49727b9_formal'
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    selected_baseline_changed: false
+    execution_unit: real_token_ID_M64_prefill_then_192_continuous_W4U8_decode_steps_to_valid_length256
+    implementation: M1_decode_computes_only_first_128byte_HVX_vector_of_each_2048byte_Gate_Up_SwiGLU_tile
+    correctness_gate: pass_1032192_activation_calls_byte_exact_all20_sessions_identical_all193_independent_checks_and_EXP0163_regression
+    semantic_gate: disabled_by_user_contract
+    physical_gate: pass_exact_8mib_VTCM_zero_intermediate_or_timed_full_logit_DDR_zero_spill_fill_one_FastRPC_per_pass_no_QNN
+    ledger_gate: pass_zero_unattributed_ticks_every_invocation
+    performance_gate: fail_zero_of_ten_rotated_pair_wins
+    direct_end_to_end:
+      control_prefill_tokens_per_second: 1290.356
+      candidate_prefill_tokens_per_second: 1292.050
+      control_decode_host_us_per_token: 50769.349
+      candidate_decode_host_us_per_token: 53481.010
+      control_decode_tokens_per_second: 19.696924
+      candidate_decode_tokens_per_second: 18.698226
+      candidate_decode_speed_percent: -5.070324
+    Gate_Up_SwiGLU_us: {control: 16901.032, candidate: 19660.545}
+    diagnosis: removed_SwiGLU_work_was_overlapped_not_critical_and_short_tasks_exposed_more_HMX_lifetime_and_ready_wait
+    reopen_condition: new_Gate_Up_scheduling_mechanism_preserving_DMA_expand_HMX_overlap_not_further_element_count_reduction
+    full_profiling_report_sha256: a6e4c3b57bc45f18fb0cf58f044fcf4cfed3ec6d7ab72bc8c559694194dfb33e
+    summary_sha256: b19647ef667091fa8d1a367b2d4c03ccc17e4fc0eaddada27c89ac9304bd6169
+    independent_reference_sha256: 49dbcabcc888ff181d035f22216a436cce827e7e9e67f4669c131a621c344ddb
+    exp0163_regression_sha256: d175714e47be174bfc28f85b927fb03f746b453f46d8da6c429b6dd969747ae2
   latest_w4u8_decode_softmax_candidate:
     id: EXP-0170
     source_branch: codex/exp-0170-w4u8-decode-hvx-softmax
