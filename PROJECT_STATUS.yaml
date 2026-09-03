@@ -29,7 +29,7 @@ current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
   last_completed_experiment: EXP-0170
   last_completed_source_commit: 23c00feaee20ccef30165d47ed03b5774c70e649
-  provisional_source_parent: selected_EXP0168_W4U8_token_generation_baseline
+  provisional_source_parent: selected_EXP0170_W4U8_token_generation_baseline
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
@@ -50,8 +50,13 @@ current_scope:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending
-    selected_baseline_changed: false
+    adoption_status: accepted
+    selected_baseline_changed: true
+    promoted_as: selected_w4u8_token_generation_baseline
+    promoted_by: user
+    promoted_on: '2026-09-04'
+    promotion_ref: 'User message 2026-09-04: 同意晋升。开启loop优化，针对decode，尽量不中断。'
+    source_tag: baseline-w4u8-token-generation-exp0170
     execution_unit: real_token_ID_M64_prefill_then_192_continuous_W4U8_decode_steps_to_valid_length256
     implementation: two_heads_by_two_32_token_tiles_per_128byte_HVX_unit_two_score_scans_resident_log2_codes_vector_LUT_direct_AV_carrier_publication
     correctness_gate: pass_43008_probability_calls_byte_exact_all20_sessions_identical_all193_integer_head_checks_and_EXP0163_regression
@@ -156,27 +161,28 @@ current_scope:
     independent_reference_sha256: 6a01a5b62e8f420f00835df1d226ff3df5792cb03b2e9d3e3c44722e125620c1
     exp0163_regression_sha256: 6457c52a2729fd24b53f441214e3a3a97c8a92d26c6e9122424e9c4ff397eb37
   selected_w4u8_token_generation_baseline:
-    id: W4U8-EXP0168-BATCH8-LM-HEAD-PIPELINE
-    experiment: EXP-0168
+    id: W4U8-EXP0170-HVX-DECODE-SOFTMAX
+    experiment: EXP-0170
     project_variant: W4U8
-    source_branch: codex/exp-0168-w4u8-lm-head-batch8-overlap
-    source_head: bcf327142e451ed25c84f32d13e802230397d65a
-    source_tag: baseline-w4u8-token-generation-exp0168
-    physical_plan: batch8_resident_bias_requant_plus_two_slot_DMA_four_context_HVX_W4_to_S8_expansion_integer_HMX_and_VTCM_argmax_pipeline
-    execution_scope: real_token_ID_M64_prefill_then_15_feedback_decode_calls_producing_16_selected_tokens
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0168/20260904T_exp0168_bcf3271_formal'
-    retained_generation_package: 'D:/llm_exp/models/qwen3-block-htp/exp0167/w4u8_greedy16'
-    prefill_host_us: 49012.344
-    prefill_tokens_per_second: 1305.793509
-    decode_host_us_per_token: 54382.172
-    decode_tokens_per_second: 18.388379
-    complete_16_pass_sequence_host_us: 864800.208
-    correctness_gate: pass_exact_EXP0167_tokens_and_U8_codes_all_sessions_plus_independent_integer_reference_and_EXP0163_193_step_zero_LSB_regression
+    source_branch: codex/exp-0170-w4u8-decode-hvx-softmax
+    source_head: 042dbfd8907c23af255092a03ac28b13f8e740bc
+    runtime_source_commit: 23c00feaee20ccef30165d47ed03b5774c70e649
+    source_tag: baseline-w4u8-token-generation-exp0170
+    physical_plan: EXP0168_batch8_LM_head_plus_segmented_cache_and_two_head_by_two_tile_HVX_dynamic_decode_Softmax_direct_AV_carrier
+    execution_scope: real_token_ID_M64_prefill_then_192_continuous_decode_steps_to_valid_length256
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0170/20260904T_exp0170_23c00fe_formal'
+    retained_generation_package: 'D:/llm_exp/models/qwen3-block-htp/exp0169/w4u8_greedy193_overlay'
+    prefill_host_us: 49475.7555
+    prefill_tokens_per_second: 1293.562864
+    decode_host_us_per_token: 50669.130844
+    decode_tokens_per_second: 19.735882
+    decode_cache_length_range: L64_L255
+    correctness_gate: pass_43008_probability_calls_byte_exact_all20_sessions_identical_all193_integer_head_checks_and_EXP0163_regression
     semantic_gate: disabled_by_user_contract
     physical_gate: pass_exact_8mib_VTCM_zero_intermediate_or_timed_full_logit_DDR_zero_spill_fill_one_FastRPC_per_pass_no_QNN
     promoted_by: user
     promoted_on: '2026-09-04'
-    promotion_ref: 'User message 2026-09-04: 确认晋升。下一步是不是该专注decode和kv cache的优化了？'
+    promotion_ref: 'User message 2026-09-04: 同意晋升。开启loop优化，针对decode，尽量不中断。'
   latest_w4f16_token_generation_candidate:
     id: EXP-0166
     source_branch: codex/exp-0166-w4f16-lm-head-overlap

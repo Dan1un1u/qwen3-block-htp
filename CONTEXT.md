@@ -1088,25 +1088,21 @@ output pruning, full-logit DDR, more than one FastRPC call, or attributing the
 gain to transformer changes
 
 **Selected W4U8 Token-Generation Baseline**:
-The user-promoted EXP-0168 implementation for the complete W4U8 token-generation
-scope. It retains EXP-0167's transformer, segmented persistent KV cache,
-quantized model values, embedding, final U8 RMSNorm and greedy token feedback,
-while optimizing only the W4U8 LM head. It batches eight output tiles, keeps the
-complete bias/requant carrier resident in phase-overlaid VTCM, and overlaps an
-asynchronous compressed-weight DMA with four-context HVX W4-to-S8 expansion and
-integer-HMX consumption through two compressed and two expanded slots. Ten
-rotated pairs reduce M64 prefill from 56.975 to 49.012 ms and continuous decode
-from 62.472 to 54.382 ms/token. The directly measured rates are 1,305.794
-prefill tok/s and 18.388 decode tok/s. Exact integer implementation, the
-193-step transformer/cache regression, exact 8 MiB VTCM, one FastRPC per pass,
-zero timed intermediate or full-logit DDR, zero spill/fill and zero unattributed
-ticks all pass. Semantic quality remains disabled and is not claimed. The user
-promoted EXP-0168 on 2026-09-04; it is the parent for subsequent W4U8
-token-generation optimization.
-_Avoid_: describing the diagnostic generated text as usable, changing existing
-qparams without a separate experiment, projecting throughput from partial
-measurements, or replacing this baseline without an eligible direct full-stack
-comparison
+The user-promoted EXP-0170 implementation for complete W4U8 token generation
+and long decode. It retains EXP-0168's transformer, segmented persistent KV
+cache, quantized model values and batch-eight LM-head pipeline, and replaces
+only the M=1 dynamic scalar Softmax with an exact HVX-tiled implementation.
+Ten rotated pairs over M64 prefill followed by 192 continuous decode tokens
+measure 50.669 ms/token or 19.736 token/s for L64-L255, versus 60.025 ms and
+16.660 token/s for the same-binary scalar control. All 43,008 probability calls
+are byte exact; physical, cache, ledger and regression gates pass. Semantic
+quality remains disabled and is not claimed. The user promoted EXP-0170 on
+2026-09-04 under tag `baseline-w4u8-token-generation-exp0170`; it is the sole
+default parent for subsequent W4U8 token-generation and decode optimization.
+_Avoid_: describing diagnostic text as usable, changing qparams without a
+separate experiment, projecting throughput from partial measurements, using
+the short EXP-0168 decode rate as an equivalent L64-L255 comparator, or
+replacing this baseline without an eligible direct full-stack comparison
 
 **W4U8 Long-Decode Scaling Attribution**:
 The completed EXP-0169 characterization of the unchanged selected EXP-0168
@@ -1128,8 +1124,9 @@ _Avoid_: attributing the long-cache decline primarily to KV DDR bandwidth,
 calling the scalar dynamic decode path HVX-vectorized, averaging away seal
 spikes, changing EXP-0168 baseline status, semantic-quality claim
 
-**W4U8 HVX-Tiled Decode Softmax Candidate**:
-The completed EXP-0170 candidate that changes only M=1 dynamic W4U8 Softmax.
+**W4U8 HVX-Tiled Decode Softmax Result**:
+The completed and user-promoted EXP-0170 result that changes only M=1 dynamic
+W4U8 Softmax.
 It processes two query heads and two adjacent 32-token tiles as one 128-byte
 HVX unit, retains log2 codes in dead VTCM carrier padding, uses vector LUT
 lookup, and publishes probability directly in the existing AV HMX carrier.
@@ -1139,8 +1136,7 @@ gain. Dynamic Softmax falls from 9.878 to 0.545 ms, and the complete-wall slope
 falls from 62.673 to 4.042 us per added cache token. The gain grows from 9.09%
 at L64-95 to 27.60% at L224-255. All 43,008 on-device probability comparisons
 are byte-exact, all twenty output sequences match, and all physical, cache,
-ledger and regression gates pass. Semantic quality remains disabled. Adoption
-is pending explicit user approval; EXP-0168 remains the selected W4U8 baseline.
-_Avoid_: calling EXP-0170 the selected baseline before user promotion, claiming
-semantic quality, attributing the gain to QK/AV HMX or KV-cache bandwidth,
-applying the timed audit comparator to performance runs
+ledger and regression gates pass. Semantic quality remains disabled. EXP-0170
+is the selected W4U8 baseline.
+_Avoid_: claiming semantic quality, attributing the gain to QK/AV HMX or
+KV-cache bandwidth, or applying the audit comparator to performance runs

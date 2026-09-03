@@ -16,7 +16,7 @@ experiments:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending
+    adoption_status: accepted
     evidence_profile: ten-rotated-pair-full-stack-W4U8-long-decode-softmax
     source_branches:
       - codex/exp-0170-w4u8-decode-hvx-softmax
@@ -42,7 +42,7 @@ experiments:
       correctness_gate: byte_exact_scalar_control_probability_block_outputs_cache_tokens_codes_all193_integer_head_reference_and_transformer_cache_regression
       physical_gate: exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_intermediate_or_timed_full_logit_DDR_zero_spill_fill_unchanged_QK_AV_HMX_work_and_zero_unattributed_ticks
       performance_gate: ten_rotated_pairs_candidate_strictly_faster_for_direct_complete_L64_L255_decode_Host_wall_and_tokens_per_second
-      selected_baseline_changed: false
+      selected_baseline_changed: true
       runtime_source_commit: 23c00feaee20ccef30165d47ed03b5774c70e649
       reporting_source_commit: 042dbfd8907c23af255092a03ac28b13f8e740bc
       formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0170/20260904T_exp0170_23c00fe_formal'
@@ -65,7 +65,12 @@ experiments:
       cache_bucket_speed_percent: {L64_95: 9.09, L224_255: 27.60}
       complete_wall_slope_us_per_cache_token: {scalar: 62.672718, candidate: 4.042320}
       softmax_slope_us_per_cache_token: {scalar: 60.590611, candidate: 1.991718}
-      adoption_decision: pending_explicit_user_approval
+      adoption_decision: accepted_by_user
+      promoted_as: selected_w4u8_token_generation_baseline
+      promoted_by: user
+      promoted_on: '2026-09-04'
+      promotion_ref: 'User message 2026-09-04: 同意晋升。开启loop优化，针对decode，尽量不中断。'
+      source_tag: baseline-w4u8-token-generation-exp0170
       full_profiling_report_sha256: 6ec4c61d6feb350f0a0434cb1b0d6fae147114574117b2fffb587e295eafff55
       summary_sha256: f98919292333a3949ec542ad63c4d7d09c37550f9900536f841ecbe825b1fd6d
       independent_reference_sha256: 1af189544717a77cee146bc9d0bb30011f5e1bbbabac15e841fb3e8040ba93a1
