@@ -922,18 +922,18 @@ _Avoid_: row-major cache, duplicate prefill pack, zero-copy claim, decode
 speedup, baseline promotion
 
 **Selected Full-Stack W4U8 Cache-Native Baseline**:
-The user-promoted EXP-0160 implementation for the real 28-layer M64 prefill and
-continuous-decode execution scope. It retains EXP-0159's immutable compact M64
-HMX base and contiguous U8 K/V delta journal, directly places base fragments in
-their final HMX layout, clears only the tail and uses two VTCM slots to overlap
-DMA/HVX reconstruction with the single HMX owner across GQA groups. Its formal
-M64 prefill is 43.936 ms and its decode over positions 64-71 is 49.042 ms/token.
-It is
+The user-promoted EXP-0162 implementation for the real 28-layer M64 prefill and
+continuous-decode execution scope. It extends the EXP-0160 two-slot bounded
+Attention consumer with immutable 32-token HMX-native K/V segments and one
+mutable tail whose sealed/tail state is derived from runtime valid length.
+Its formal M64 prefill is 43.596 ms; over positions 64-103 it averages 49.715
+ms/token, and after the first seal it averages 49.325 ms/token. All 41 outputs
+and all 28-layer cache lifecycle references are byte exact. It is
 separate from both the frozen Public Common Baseline and the single-block
 recipe-fastest W4U8 baseline because those have different execution scopes.
 _Avoid_: complete text-generation model, common three-recipe cache contract,
 teacher-accuracy baseline, replacement for the single-block baseline,
-EXP-0157 or EXP-0159 as the current full-stack W4U8 baseline
+EXP-0157, EXP-0159 or EXP-0160 as the current full-stack W4U8 baseline
 
 **Selected Full-Stack A16 Cache-Native Baselines**:
 The user-promoted EXP-0158 F16F16 and W4F16 implementations for the real
@@ -993,7 +993,7 @@ _Avoid_: continuous-decode claim, full-stack baseline, imported-cache
 real-replay claim, total-length VTCM carrier, A16 modification
 
 **Dynamic Segmented Cache Lifecycle**:
-The completed, locally passing EXP-0162 candidate. One persistent per-layer W4U8 cache
+The accepted EXP-0162 Selected Full-Stack W4U8 Cache-Native Baseline. One persistent per-layer W4U8 cache
 derives its sealed-segment count and active-tail length from runtime valid
 length, appends each token once, seals a complete 32-token tail exactly once,
 and subsequently treats that segment as immutable. The first test runs one
@@ -1002,7 +1002,8 @@ cross the 96-token sealing boundary. It compares against an equal-capacity
 EXP-0160-compatible monolithic delta control and does not change model math.
 Ten rotated sessions pass exact correctness and the physical contract; post-seal
 decode improves 7.500% and the complete 40-token decode average improves
-1.261%. Adoption is pending, so EXP-0160 remains the Selected Full-Stack W4U8
-Baseline.
+1.261%. The user promoted it on 2026-09-03, superseding EXP-0160 for this
+full-stack scope. EXP-0161 remains the separate synthetic long-KV snapshot
+baseline.
 _Avoid_: capacity-derived fixed sealed count, per-snapshot cache package,
 repacking a sealed prefix, mutable sealed segment, automatic baseline promotion

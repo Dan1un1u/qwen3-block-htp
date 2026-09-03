@@ -6,6 +6,46 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0163
+    slug: w4u8-multiseal-l256
+    title: Full-stack W4U8 continuous decode through six dynamic cache seals
+    parent: EXP-0162
+    variants:
+      - exp0160_compatible_monolithic_delta_control_capacity257
+      - promoted_exp0162_dynamic_segmented_candidate_capacity257
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: full-stack-W4U8-M64-prefill-continuous-decode-six-seal-L256
+    source_branches:
+      - codex/exp-0163-w4u8-multiseal-l256
+    source_commits: []
+    record: docs/experiments/EXP-0163.md
+    approval_ref: 'User message 2026-09-03: 晋升，继续下一步'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0163-w4u8-multiseal-l256
+      approved_on: '2026-09-03'
+    evidence:
+      source_parent_experiment: EXP-0162
+      source_parent_commit: a3b9607dee88719341763204566bac8a9ed5e3cd
+      execution_unit: real_Qwen3_layers0_27_M64_prefill_continuous_decode_positions64_255_capacity257
+      recipe_scope: W4U8_only
+      direct_control: EXP0160_compatible_monolithic_compact_base_plus_delta_journal_at_identical_capacity257
+      candidate_contract: promoted_EXP0162_dynamic_immutable_32_token_segments_plus_one_mutable_tail_unchanged_at_capacity257
+      reference_source: independently_generated_host_HMX_HVX_exact_full_stack_replay_and_dynamic_segment_carrier_reference
+      forbidden_changes: W4_values_qparams_projection_schedules_QK_log2_Softmax_AV_math_input_sequence_A16_paths_Host_hidden_handoff_QNN_or_intermediate_DDR
+      correctness_gate: zero_LSB_all_193_full_stack_outputs_and_all_per_layer_current_KV_appends
+      lifecycle_gate: exactly_28_layer_seals_at_each_position95_127_159_191_223_255_each_segment_once_sealed_prefix_immutable_only_active_tail_mutable
+      physical_gate: exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_full_stack_step_one_HMX_owner_no_QNN
+      structural_gate: bounded_attention_scratch_zero_full_prefix_reconstruction_and_runtime_counts_correct_through_valid_length256
+      prefill_gate: candidate_host_wall_at_most_1p01_times_same_binary_control
+      early_decode_gate: positions64_71_do_not_regress_outside_paired_device_noise
+      long_decode_speed_gate: complete_positions64_255_and_tail_positions224_255_strictly_faster_than_control_over_ten_rotated_sessions
+      seal_reporting_gate: report_each_of_six_seal_steps_separately_and_its_amortization_without_requiring_each_seal_step_to_win
+      stop_conditions: any_correctness_lifecycle_physical_or_structural_gate_failure_or_device_reboot
+      selected_baseline_changed: false
   - id: EXP-0162
     slug: w4u8-full-stack-segmented-cache
     title: Full-stack dynamic segmented W4U8 KV-cache lifecycle
@@ -16,7 +56,7 @@ experiments:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending
+    adoption_status: accepted
     evidence_profile: full-stack-W4U8-M64-prefill-continuous-decode-dynamic-segment-sealing
     source_branches:
       - codex/exp-0162-w4u8-full-stack-segmented-cache
@@ -43,7 +83,11 @@ experiments:
       physical_gate: exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_full_stack_step_one_HMX_owner_no_QNN
       structural_gate: bounded_attention_scratch_zero_full_prefix_reconstruction_dynamic_sealed_and_tail_counts
       speed_gate: prefill_within_1_percent_early_decode_no_regression_post_seal_and_full_40_token_average_strictly_faster_under_ten_rotated_sessions
-      selected_baseline_changed: false
+      selected_baseline_changed: true
+      promoted_as: selected_full_stack_w4u8_cache_native_baseline
+      promoted_by: user
+      promoted_on: '2026-09-03'
+      promotion_ref: 'User message 2026-09-03: 晋升，继续下一步'
       formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0162/20260903T045521Z_a3b9607dee88_formal'
       source_commit: a3b9607dee88719341763204566bac8a9ed5e3cd
       correctness_gate_result: pass_zero_LSB_all_41_outputs_and_all_dynamic_cache_references
