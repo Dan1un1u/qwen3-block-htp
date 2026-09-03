@@ -15,7 +15,20 @@ control.
 
 ## Required tables
 
-The user-facing response starts with a stable repeat-ten overview table for
+When the Execution Unit owns a real token boundary, the user-facing response
+starts with a direct full-stack end-to-end throughput table. For both prefill
+and continuous decode it shows the measured token count, complete Host wall,
+tokens/s, direct control, candidate, and paired delta. Prefill throughput is
+`prompt_tokens / complete_prefill_seconds`; decode throughput is
+`generated_tokens / complete_continuous_decode_seconds`, excluding prefill.
+Every value must come from the same directly measured token-in/token-out run
+through all model layers, final normalization, LM head and token selection.
+Block, layer, module, or transformer-only timing may not be extrapolated into
+tokens/s. The exact Host-wall denominator remains visible beside every
+throughput number. If no token boundary exists, this table is `N/A` with the
+reason and Host wall remains the primary result.
+
+The response then shows a stable repeat-ten overview table for
 the latest valid F16F16 result, the Selected-Baseline W4F16 result, and the
 latest eligible W4U8 result. Its fixed rows are I/O and metadata, Input
 RMSNorm, QKV plus Q/K Norm-RoPE preparation, QK-Softmax-AV, O projection,
@@ -33,8 +46,11 @@ Variant.
 For repeat one and repeat ten, every numeric row shows the control median,
 candidate median, and candidate-versus-control percentage. The report contains:
 
-1. Primary latency: Host wall per block, DSP block total, invocation, runtime
-   setup and teardown, named ledger total, and unattributed ledger time.
+1. Primary end-to-end performance: direct full-stack prefill/decode tokens/s
+   when a real token boundary exists, plus the exact Host wall used for each
+   denominator; otherwise Host wall per block. DSP block total, invocation,
+   runtime setup and teardown, named ledger total, and unattributed ledger time
+   remain mandatory attribution.
 2. The complete additive Block Timing Ledger: input, metadata, input norm, QKV,
    QK Norm/RoPE, Attention, O, post-Attention residual, post-Attention norm,
    Gate/Up, activation, Down, final residual, and output. Fused stages remain

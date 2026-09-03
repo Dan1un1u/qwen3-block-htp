@@ -78,13 +78,16 @@ Layer is frozen; it may diverge from the fair cross-recipe configuration.
 _Avoid_: Public Common Baseline, fair comparator, local candidate
 
 **Recipe-Fastest Promotion Score**:
-The formal rotated-pair repeat-ten complete-block Host wall latency used as the
-only performance-ranking metric among candidates that already satisfy the
-mathematical, physical, scope and evidence eligibility contract. Repeat-one,
-module timings and engine counters remain required diagnostics, not promotion
-vetoes. Near-noise results require additional paired rounds and otherwise stay
-tied.
-_Avoid_: one lucky run, module-local gate, work-cycle ranking, correctness gate
+The formal rotated-pair score used among candidates that already satisfy the
+mathematical, physical, scope and evidence eligibility contract. A real
+token-boundary scope ranks by directly measured full-stack tokens/s, whose
+fixed token count makes it exactly the inverse ordering of complete Host wall.
+A scope without a token boundary ranks by repeat-ten complete-block Host wall.
+Repeat-one, module timings and engine counters remain required diagnostics, not
+promotion vetoes. Near-noise results require additional paired rounds and
+otherwise stay tied.
+_Avoid_: projected token throughput, one lucky run, module-local gate,
+work-cycle ranking, correctness gate
 
 **Enabling Candidate**:
 An evidence-valid structural implementation retained as a possible parent even
@@ -431,6 +434,17 @@ when a field is unchanged or zero. Additive ledger intervals and overlapping
 HMX/HVX/DMA work are always placed in separate tables.
 _Avoid_: gate-only summary, selected-stage-only table, link-only handoff, sum of
 overlapping engine counters
+
+**Direct Full-Stack Token Throughput**:
+The primary user-facing performance expression once an Execution Unit owns a
+real token boundary. Prefill tokens/s divides the measured prompt-token count
+by the complete prefill Host wall; decode tokens/s divides the measured
+generated-token count by the complete continuous-decode Host wall, excluding
+prefill. Both values come from the same direct token-in/token-out execution
+through all 28 layers, final normalization, LM head and token selection. The
+exact Host-wall denominator remains visible and authoritative for attribution.
+_Avoid_: projected tokens/s from one block, module-only throughput, hiding Host
+wall, mixing prompt and decode token counts
 
 **Generation-Safe Two-Chunk Down Command**:
 The EXP-0050 W4U8 Down schedule in which one integer-HMX worker command begins
@@ -1040,7 +1054,7 @@ _Avoid_: offline hidden injection described as inference, claiming BF16 token
 identity, timed full-logit DDR materialization, stochastic sampling, broad
 quality proof from one prompt, or automatic baseline promotion
 
-**Selected W4F16 Token-Generation Baseline**:
+**Superseded W4F16 Token-Generation Baseline (EXP-0165)**:
 The user-promoted, evidence-valid EXP-0165 baseline that keeps EXP-0164's transformer,
 persistent cache, model values, prompt, tokenizer and generated sequence fixed,
 while optimizing only the newly added token-to-token boundary. It uses an HVX
@@ -1051,20 +1065,24 @@ materializes logits in DDR. Ten rotated formal pairs reduce complete M64
 prefill from 82.847 to 65.670 ms and the LM-head-plus-argmax interval from
 26.484 to 9.397 ms. All 160 tokens and selected FP16 logit bits match the
 control and independent W4F16 reference. The user promoted it on 2026-09-03;
-it supersedes EXP-0164 for the complete W4F16 token-generation scope and is the
-direct control for subsequent LM-head optimization.
+it superseded EXP-0164 and became the direct control for subsequent LM-head
+optimization. EXP-0166 later superseded it for the same complete W4F16
+token-generation scope.
 _Avoid_: changed transformer or cache, changed W4 values or scales, full-logit
 DDR output, attributing the gain to reduced model bytes, broad accuracy claim,
 or using a smaller transformer-only scope as its direct performance control
 
-**Active W4F16 Streamed LM-Head Overlap Experiment**:
-EXP-0166's user-approved test of whether the remaining EXP-0165 LM-head path can
-overlap compressed-weight DMA, HVX W4-to-FP16 expansion and HMX consumption.
-It may also retain immutable LM-head scales in VTCM regions released after the
-transformer phase. It cannot change model values, output tiles, argmax math,
-transformer/cache execution or the 8 MiB VTCM and zero-intermediate-DDR
-contracts. Complete M64 prefill Host wall is the promotion metric; decode is
-report-only.
-_Avoid_: reducing weight bytes, changing scales, output pruning, full-logit DDR,
-more than one FastRPC call, or accepting a local LM-head win without complete
-prefill improvement
+**Selected W4F16 Streamed LM-Head Overlap Baseline**:
+The user-promoted EXP-0166 implementation for the complete W4F16 token-generation
+scope. It retains EXP-0165's model values, transformer, cache, output tiles and
+greedy argmax while keeping immutable LM-head scales resident and using a
+coarse two-slot pipeline across compressed-weight DMA, HVX W4-to-FP16 expansion,
+HMX consumption and HVX argmax. Ten rotated pairs reduce M64 prefill from
+65.794 to 62.975 ms and decode from 95.542 to 92.598 ms/token. The directly
+measured full-stack rates are 1,016.281 prefill tok/s and 10.799 decode tok/s.
+All 160 selected tokens and selected FP16 logit bits are exact, and the 8 MiB
+VTCM, one-FastRPC, zero-intermediate-DDR, zero-spill/fill and no-QNN contracts
+remain intact. EXP-0166 supersedes EXP-0165 for this scope.
+_Avoid_: projected token throughput, reduced weight bytes, changed scales,
+output pruning, full-logit DDR, more than one FastRPC call, or attributing the
+gain to transformer changes

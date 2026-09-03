@@ -61,9 +61,17 @@ Changing any item requires explicit user approval and a committed amendment.
 
 - **PC-015 — Self-comparison.** Formal performance conclusions compare project
   variants with one another. Matching or exceeding Qualcomm QNN is not a gate.
-- **PC-016 — Primary metric.** Equivalent-scope device wall latency is primary.
-  DSP qtimer stages, DMA waits, bytes, and overlap measurements explain the
-  result but do not replace wall latency.
+- **PC-016 — Primary metric.** Once an Execution Unit owns a real token boundary,
+  directly measured full-stack throughput is the primary user-facing summary
+  and performance-ranking expression: prefill tokens/s is the measured prompt
+  token count divided by complete prefill Host wall, and decode tokens/s is the
+  measured generated-token count divided by complete continuous-decode Host
+  wall. The exact Host wall used as each denominator remains mandatory beside
+  throughput and remains the attribution authority. Throughput may never be
+  projected from a block, module, layer, or partial-model measurement. For an
+  Execution Unit without a token boundary, equivalent-scope device wall latency
+  remains primary. DSP qtimer stages, DMA waits, bytes, and overlap measurements
+  explain the result but do not replace these end-to-end measures.
 - **PC-017 — Fair tuning.** Final variant comparisons give each variant the
   same schedule-search budget and selection rule. A common canonical plan is
   used first for correctness and diagnosis.
@@ -113,8 +121,13 @@ Changing any item requires explicit user approval and a committed amendment.
   may not be recorded as completed without this report, except when execution
   ended before profiling was possible, in which case the report records the
   failure boundary and marks the unavailable sections explicitly.
-- **PC-028 — Three-variant completion overview.** Every user-facing experiment
-  closure begins with one stable module table comparing the latest valid
+- **PC-028 — Three-variant completion overview.** When the measured Execution
+  Unit owns a real token boundary, every user-facing experiment closure begins
+  with a direct full-stack throughput table containing the measured token
+  counts, complete Host wall and tokens/s for prefill and continuous decode.
+  Non-equivalent variants remain `N/A` with a reason; they are never filled by
+  extrapolation. The response then presents one stable module table comparing
+  the latest valid
   `F16F16`, Selected-Baseline `W4F16`, and latest eligible `W4U8` results at
   repeat ten. Each module cell contains absolute wall time in microseconds and
   its share of complete Host wall; the final column reports W4U8 speed relative
@@ -126,8 +139,12 @@ Changing any item requires explicit user approval and a committed amendment.
   physical-contract compliance, equivalent execution scope, valid evidence and
   measurement reproducibility are eligibility requirements rather than
   performance-ranking dimensions. Among eligible candidates for one recipe,
-  the only promotion ranking metric is the formal rotated-pair repeat-ten
-  complete-block Host wall latency. Repeat-one latency, module-preservation
+  a token-boundary experiment ranks by formal rotated-pair directly measured
+  full-stack tokens/s; because token counts and scope are fixed, this ordering
+  must be exactly the inverse of its paired complete Host wall, and any mismatch
+  is a hard evidence failure. A scope without a token boundary continues to rank
+  by formal rotated-pair repeat-ten complete-block Host wall latency. Repeat-one
+  latency, module-preservation
   deltas, qtimer work, HMX/HVX/DMA counters and local gates remain mandatory
   diagnostics but do not veto a lower eligible repeat-ten wall result. A raw
   best run is never a ranking result; gains near measured device noise require

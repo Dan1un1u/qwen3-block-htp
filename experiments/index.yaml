@@ -16,7 +16,7 @@ experiments:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending
+    adoption_status: accepted
     evidence_profile: paired-repeat10-complete-prefill-lm-head-overlap
     source_branches:
       - codex/exp-0166-w4f16-lm-head-overlap
@@ -43,9 +43,27 @@ experiments:
       local_diagnostic_gate: streamed_lm_head_wall_strictly_lower_with_closed_DMA_HVX_HMX_wait_and_command_attribution
       decode_policy: report_only_not_promotion_metric_for_EXP0166
       stop_conditions: correctness_regression_physical_or_ledger_failure
-      selected_baseline_changed: false
+      selected_baseline_changed: true
+      promoted_as: selected_w4f16_token_generation_baseline
+      promoted_by: user
+      promoted_on: '2026-09-03'
+      promotion_ref: 'User message 2026-09-03: 同意晋升，然后报告新的profiling结果。接下来的profiling最终汇总结果在墙钟之外，加上直接的全模端到端实测token/s，并以此为新的标准，更加直观。'
       formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0166/20260903T_exp0166_8e0dcf8_formal'
       result: pass_4.433_percent_paired_prefill_speed_and_exact_generation
+      host_wall_us:
+        prefill_control: 65793.646
+        prefill_candidate: 62974.714
+        decode_control_per_token: 95541.920
+        decode_candidate_per_token: 92598.101
+        complete_16_pass_control: 1498162.238
+        complete_16_pass_candidate: 1451748.411
+      direct_end_to_end_tokens_per_second:
+        prefill_control: 972.738310
+        prefill_candidate: 1016.280924
+        decode_control: 10.466610
+        decode_candidate: 10.799358
+        complete_16_pass_control_effective: 10.679751
+        complete_16_pass_candidate_effective: 11.021193
   - id: EXP-0165
     slug: w4f16-prefill-boundary-pipeline
     title: W4F16 prefill embedding, final-norm and LM-head pipeline optimization
