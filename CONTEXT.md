@@ -1040,8 +1040,8 @@ _Avoid_: offline hidden injection described as inference, claiming BF16 token
 identity, timed full-logit DDR materialization, stochastic sampling, broad
 quality proof from one prompt, or automatic baseline promotion
 
-**Completed W4F16 Prefill Generation-Boundary Candidate**:
-The evidence-valid EXP-0165 candidate that keeps EXP-0164's transformer,
+**Selected W4F16 Token-Generation Baseline**:
+The user-promoted, evidence-valid EXP-0165 baseline that keeps EXP-0164's transformer,
 persistent cache, model values, prompt, tokenizer and generated sequence fixed,
 while optimizing only the newly added token-to-token boundary. It uses an HVX
 FP16 maximum reduction with stable first-lane tie resolution and a phase-overlaid
@@ -1050,8 +1050,21 @@ transformer lifetime has ended; it neither increases the 8 MiB request nor
 materializes logits in DDR. Ten rotated formal pairs reduce complete M64
 prefill from 82.847 to 65.670 ms and the LM-head-plus-argmax interval from
 26.484 to 9.397 ms. All 160 tokens and selected FP16 logit bits match the
-control and independent W4F16 reference. This is a passing candidate awaiting
-user adoption, not an automatically promoted baseline.
+control and independent W4F16 reference. The user promoted it on 2026-09-03;
+it supersedes EXP-0164 for the complete W4F16 token-generation scope and is the
+direct control for subsequent LM-head optimization.
 _Avoid_: changed transformer or cache, changed W4 values or scales, full-logit
 DDR output, attributing the gain to reduced model bytes, broad accuracy claim,
-or baseline promotion without user approval
+or using a smaller transformer-only scope as its direct performance control
+
+**Active W4F16 Streamed LM-Head Overlap Experiment**:
+EXP-0166's user-approved test of whether the remaining EXP-0165 LM-head path can
+overlap compressed-weight DMA, HVX W4-to-FP16 expansion and HMX consumption.
+It may also retain immutable LM-head scales in VTCM regions released after the
+transformer phase. It cannot change model values, output tiles, argmax math,
+transformer/cache execution or the 8 MiB VTCM and zero-intermediate-DDR
+contracts. Complete M64 prefill Host wall is the promotion metric; decode is
+report-only.
+_Avoid_: reducing weight bytes, changing scales, output pruning, full-logit DDR,
+more than one FastRPC call, or accepting a local LM-head win without complete
+prefill improvement

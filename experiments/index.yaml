@@ -6,6 +6,43 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0166
+    slug: w4f16-lm-head-overlap
+    title: W4F16 streamed LM-head DMA-HVX-HMX overlap and scale residency
+    parent: EXP-0165
+    variants:
+      - selected_exp0165_batch8_hvx_argmax_control
+      - pipelined_lm_head_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: paired-repeat10-complete-prefill-lm-head-overlap
+    source_branches:
+      - codex/exp-0166-w4f16-lm-head-overlap
+    source_commits: []
+    record: docs/experiments/EXP-0166.md
+    approval_ref: 'User message 2026-09-03: 同意晋升，继续实验'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0166-w4f16-lm-head-overlap
+      approved_on: '2026-09-03'
+    evidence:
+      source_parent_experiment: EXP-0165
+      source_parent_commit: d7720319e2b46d44556a8c11cfe66457d40f5d1d
+      execution_unit: real_token_ID_M64_prefill_to_selected_token_with_complete_generation_regression
+      recipe_scope: W4F16_only
+      direct_control: selected_EXP0165_phase_overlaid_batch8_HVX_argmax
+      optimization_scope: streamed_lm_head_scale_residency_weight_DMA_prefetch_W4_expansion_ping_pong_HMX_consumption_synchronization_and_phase_overlay_only
+      forbidden_changes: embedding_final_RMSNorm_argmax_math_transformer_layers0_27_KV_cache_weights_scales_quantization_tokenizer_prompt_or_generated_sequence
+      correctness_gate: exact_selected_token_selected_FP16_logit_bits_and_16_token_sequence_against_EXP0165_and_independent_W4F16_reference
+      regression_gate: existing_EXP0158_transformer_hidden_and_cache_replay_pass
+      physical_gate: exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_interlayer_or_timed_full_logit_DDR_zero_spill_fill_unchanged_weight_bytes_HMX_tiles_and_output_tiles
+      performance_gate: candidate_strictly_faster_than_selected_EXP0165_control_for_rotated_pair_repeat10_complete_M64_prefill_Host_wall
+      local_diagnostic_gate: streamed_lm_head_wall_strictly_lower_with_closed_DMA_HVX_HMX_wait_and_command_attribution
+      decode_policy: report_only_not_promotion_metric_for_EXP0166
+      stop_conditions: correctness_regression_physical_or_ledger_failure
+      selected_baseline_changed: false
   - id: EXP-0165
     slug: w4f16-prefill-boundary-pipeline
     title: W4F16 prefill embedding, final-norm and LM-head pipeline optimization
@@ -16,7 +53,7 @@ experiments:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending
+    adoption_status: accepted
     evidence_profile: paired-repeat10-full-generation-prefill-boundary
     source_branches:
       - codex/exp-0165-w4f16-prefill-boundary-pipeline
@@ -45,7 +82,11 @@ experiments:
       local_diagnostic_gate: embedding_plus_final_norm_plus_lm_head_ledger_strictly_lower_without_moving_cost_to_unattributed_or_Host_boundary
       decode_policy: report_only_not_promotion_metric_for_EXP0165
       stop_conditions: correctness_semantic_physical_or_ledger_failure
-      selected_baseline_changed: false
+      selected_baseline_changed: true
+      promoted_as: selected_w4f16_token_generation_baseline
+      promoted_by: user
+      promoted_on: '2026-09-03'
+      promotion_ref: 'User message 2026-09-03: 同意晋升，继续实验'
       formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0165/20260903T122920Z_c005032a6d27_formal'
       runtime_source_commit: c005032a6d27d08a213257745a368459cff99593
       evidence_source_commit: d7720319e2b46d44556a8c11cfe66457d40f5d1d

@@ -19,8 +19,8 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 166
+  active_experiment: EXP-0166
+  next_experiment_number: 167
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -29,15 +29,28 @@ current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
   last_completed_experiment: EXP-0165
   last_completed_source_commit: d7720319e2b46d44556a8c11cfe66457d40f5d1d
-  provisional_source_parent: completed_EXP0165_W4F16_prefill_generation_boundary_candidate
+  provisional_source_parent: selected_EXP0165_W4F16_token_generation_baseline
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: none
+  active_experiment_stage: approved_pending_preflight
   active_experiment_evidence: null
-  active_experiment_gate: none
-  active_recipe_specialization: null
-  active_experiment_contract: null
+  active_experiment_gate: not_run
+  active_recipe_specialization: W4F16_streaming_lm_head_DMA_HVX_HMX_pipeline
+  active_experiment_contract:
+    id: EXP-0166
+    source_branch: codex/exp-0166-w4f16-lm-head-overlap
+    source_parent: EXP-0165
+    source_parent_commit: d7720319e2b46d44556a8c11cfe66457d40f5d1d
+    execution_scope: real_token_ID_M64_prefill_through_selected_token_with_complete_16_pass_generation_regression
+    direct_control: selected_EXP0165_phase_overlaid_batch8_HVX_argmax
+    allowed_changes: streamed_lm_head_scale_residency_weight_DMA_prefetch_W4_expansion_buffering_HMX_consumption_synchronization_and_phase_overlaid_VTCM_lifetime_only
+    forbidden_changes: embedding_final_RMSNorm_argmax_math_transformer_layers_KV_cache_weights_scales_quantization_tokenizer_prompt_or_generated_sequence
+    correctness_gate: exact_EXP0165_selected_tokens_selected_FP16_logit_bits_and_independent_W4F16_reference_with_existing_transformer_regression
+    physical_gate: exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_interlayer_or_timed_full_logit_DDR_zero_spill_fill_unchanged_weight_bytes_and_HMX_tile_pairs
+    performance_gate: strict_lower_rotated_pair_repeat10_complete_M64_prefill_Host_wall_than_selected_EXP0165_control
+    local_diagnostic_gate: strict_lower_streamed_lm_head_wall_with_attributed_DMA_HVX_HMX_wait_and_command_counters
+    decode_policy: report_complete_decode_wall_but_do_not_use_as_this_prefill_experiments_promotion_metric
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0165/20260903T122920Z_c005032a6d27_formal'
   latest_w4f16_token_generation_candidate:
     id: EXP-0165
@@ -49,8 +62,12 @@ current_scope:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending
-    selected_baseline_changed: false
+    adoption_status: accepted
+    selected_baseline_changed: true
+    promoted_as: selected_w4f16_token_generation_baseline
+    promoted_by: user
+    promoted_on: '2026-09-03'
+    promotion_ref: 'User message 2026-09-03: 同意晋升，继续实验'
     execution_unit: real_token_ID_M64_prefill_then_15_feedback_decode_calls_producing_16_selected_tokens
     generated_text: '低比特量化（Low-Bitwidth Quantization）在大模型推理中'
     correctness_gate: pass_160_of_160_generated_tokens_exact_against_independent_W4F16_reference_and_identical_selected_FP16_logit_bits_to_control
@@ -82,6 +99,27 @@ current_scope:
     full_profiling_report_sha256: 93f220fce18394e27725ef843b50bb6295d8f47203fa3f3d05614ee87d6a546c
     summary_sha256: f2ff41cd74858d7f6efb5c7f2b313e562b30c18ac23bf216dc10297944b9af79
     evidence_sha256_ledger_sha256: fd7a7c15ca5a7c7ab9c4ff1835bf534b9d1cb21aee62f202dbb7e73c0e37f1ff
+  selected_w4f16_token_generation_baseline:
+    id: W4F16-EXP0165-BATCH8-HVX-ARGMAX
+    experiment: EXP-0165
+    project_variant: W4F16
+    source_branch: codex/exp-0165-w4f16-prefill-boundary-pipeline
+    source_head: d7720319e2b46d44556a8c11cfe66457d40f5d1d
+    source_tag: baseline-w4f16-token-generation-exp0165
+    physical_plan: phase_overlaid_batch8_streamed_W4_lm_head_plus_HVX_FP16_argmax
+    execution_scope: real_token_ID_M64_prefill_then_15_feedback_decode_calls_producing_16_selected_tokens
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0165/20260903T122920Z_c005032a6d27_formal'
+    retained_generation_package: 'D:/llm_exp/models/qwen3-block-htp/exp0164/w4f16_greedy16'
+    prefill_host_us: 65669.610
+    prefill_tokens_per_second: 974.576
+    decode_host_us_per_token: 95349.049
+    decode_tokens_per_second: 10.488
+    complete_16_pass_sequence_host_us: 1495364.089
+    correctness_gate: pass_160_of_160_tokens_and_selected_FP16_logit_bits_exact
+    physical_gate: pass_exact_8mib_VTCM_zero_intermediate_or_timed_full_logit_DDR_zero_spill_fill_one_FastRPC_per_pass_no_QNN
+    promoted_by: user
+    promoted_on: '2026-09-03'
+    promotion_ref: 'User message 2026-09-03: 同意晋升，继续实验'
   latest_w4u8_multiseal_full_stack_candidate:
     id: EXP-0163
     source_branch: codex/exp-0163-w4u8-multiseal-l256
