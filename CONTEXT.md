@@ -1021,15 +1021,21 @@ promoted it on 2026-09-03, superseding EXP-0162 for the full-stack scope.
 _Avoid_: fixed imported snapshot, unbounded VTCM growth,
 full-prefix reconstruction, changed Attention arithmetic, full-model accuracy claim
 
-**Deterministic Token-Generation Boundary**:
-The approved EXP-0164 scope that extends the standalone runtime from offline
-hidden-state replay to a closed token loop: Host tokenization, runtime embedding,
-layers 0-27 with persistent cache, final RMSNorm, a streamed LM-head, greedy
-argmax, and token feedback. W4F16 is the first anchor because its corresponding
-mllm W4A16 model is known to generate usable text. Timed execution returns only
-the selected token; full logits are legal only in an explicitly untimed audit
-mode. W4U8 does not enter this scope until W4F16 exactness and readable text
-pass.
-_Avoid_: offline hidden injection described as inference, W4U8-first diagnosis,
-timed full-logit DDR materialization, stochastic sampling, full-model quality
-claim from implementation self-consistency alone
+**Completed Deterministic W4F16 Token-Generation Boundary**:
+The completed EXP-0164 standalone path from real token IDs through embedding,
+Qwen3 layers 0-27 with persistent cache, final RMSNorm, a streamed
+per-output-channel W4-to-FP16 HMX LM head, greedy argmax and selected-token
+feedback. Ten independent sessions each run one M64 prefill and fifteen decode
+calls. All 160 selected tokens exactly match an independent W4F16 reference and
+all sessions decode to the same readable prefix,
+`低比特量化（Low-Bitwidth Quantization）在大模型推理中`. The timed path returns
+only the selected token and never materializes full logits in DDR. Exact 8 MiB
+VTCM, one FastRPC call per pass, no QNN, zero inter-layer hidden DDR and zero
+spill/fill are preserved. This closes implementation correctness and semantic
+usability for W4F16, but it is not a broad model-quality claim or a speed
+baseline: the LM head is correctness-first and no earlier evidence has the same
+token-to-token boundary. W4U8 may now be considered only after explicit user
+adoption of this result.
+_Avoid_: offline hidden injection described as inference, claiming BF16 token
+identity, timed full-logit DDR materialization, stochastic sampling, broad
+quality proof from one prompt, or automatic baseline promotion

@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0164
+  active_experiment: null
   next_experiment_number: 165
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,15 +27,15 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0163
-  last_completed_source_commit: 63de1de7028c5a478f4494c4e64993d34deac503
-  provisional_source_parent: selected_EXP0163_W4U8_full_stack_multiseal_cache_baseline
+  last_completed_experiment: EXP-0164
+  last_completed_source_commit: 6a6801193f16fff3ef5e88a25a87f0600b40c18f
+  provisional_source_parent: completed_EXP0164_W4F16_generation_candidate_pending_adoption
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: approved_pending_preflight
-  active_experiment_evidence: null
-  active_experiment_gate: not_run
+  active_experiment_stage: completed_awaiting_user_adoption
+  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0164/20260903T112809Z_c676c4ac8f34_formal'
+  active_experiment_gate: pass
   active_recipe_specialization: W4F16_generation_boundary
   active_experiment_contract:
     id: EXP-0164
@@ -49,7 +49,33 @@ current_scope:
     semantic_gate: stable_nonempty_readable_W4F16_text_on_fixed_prompts_else_stop_before_W4U8
     physical_gate: exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_interlayer_or_timed_full_logit_DDR_zero_spill_fill
     speed_gate: report_only
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0163/20260903T073822Z_63de1de7028c_formal'
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0164/20260903T112809Z_c676c4ac8f34_formal'
+  latest_w4f16_token_generation_candidate:
+    id: EXP-0164
+    source_branch: codex/exp-0164-w4f16-greedy-generation
+    source_head: 6a6801193f16fff3ef5e88a25a87f0600b40c18f
+    runtime_source_commit: c676c4ac8f3439071c2645b859a6b22e8ba1c578
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0164/20260903T112809Z_c676c4ac8f34_formal'
+    retained_generation_package: 'D:/llm_exp/models/qwen3-block-htp/exp0164/w4f16_greedy16'
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending
+    selected_baseline_changed: false
+    execution_unit: real_token_ID_M64_prefill_then_15_feedback_decode_calls_producing_16_selected_tokens
+    generated_text: '低比特量化（Low-Bitwidth Quantization）在大模型推理中'
+    correctness_gate: pass_160_of_160_generated_tokens_exact_against_independent_W4F16_reference
+    stability_gate: pass_ten_of_ten_sessions_identical
+    semantic_gate: pass_nonempty_readable_text
+    regression_gate: pass_all_nine_EXP0158_W4F16_transformer_replay_steps
+    physical_gate: pass_exact_8mib_VTCM_zero_interlayer_or_timed_full_logit_DDR_zero_spill_fill_one_FastRPC_per_pass_no_QNN
+    ledger_gate: pass_zero_unattributed_ticks_across_4480_layer_profiles_and_every_full_invocation
+    host_wall_us:
+      prefill_ten_session_median: 82911.797
+      decode_mean_per_token_ten_session_median: 113290.889
+      complete_16_pass_sequence_ten_session_median: 1781464.400
+    speed_gate: report_only_no_same_scope_control
+    conclusion: real_token_to_token_W4F16_generation_boundary_is_functionally_closed_and_ready_for_user_adoption_review
   latest_w4u8_multiseal_full_stack_candidate:
     id: EXP-0163
     source_branch: codex/exp-0163-w4u8-multiseal-l256

@@ -13,20 +13,26 @@ experiments:
     variants:
       - independent_host_w4f16_generation_reference
       - standalone_dsp_w4f16_greedy_generation
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: full-stack-W4F16-real-token-input-final-head-greedy-loop
     source_branches:
       - codex/exp-0164-w4f16-greedy-generation
-    source_commits: []
+    source_commits:
+      - 916425b1bf080d4689a1842dbcf7fed9394d682b
+      - fcc8b155e45a9fe554939082ab0e3c174e9a401b
+      - c676c4ac8f3439071c2645b859a6b22e8ba1c578
+      - 47c7ae7bd67215a792f1c8c47252e4e885fdc98e
+      - 6a6801193f16fff3ef5e88a25a87f0600b40c18f
     record: docs/experiments/EXP-0164.md
     approval_ref: 'User message 2026-09-03: 同意，可以开始。先确认W16A16或 W4A16 能稳定生成合理文本是非常重要的'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0164-w4f16-greedy-generation
       approved_on: '2026-09-03'
+      completed_on: '2026-09-03'
     evidence:
       source_parent_experiment: EXP-0163
       source_parent_commit: 63de1de7028c5a478f4494c4e64993d34deac503
@@ -42,6 +48,35 @@ experiments:
       legal_DDR_boundaries: persistent_weights_cache_input_token_ID_selected_token_and_explicit_untimed_logit_audit_output
       stop_conditions: W4F16_reference_mismatch_unusable_text_device_reboot_or_physical_contract_failure_before_W4U8
       selected_baseline_changed: false
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0164/20260903T112809Z_c676c4ac8f34_formal'
+      retained_generation_package: 'D:/llm_exp/models/qwen3-block-htp/exp0164/w4f16_greedy16'
+      runtime_source_commit: c676c4ac8f3439071c2645b859a6b22e8ba1c578
+      evidence_source_commit: 6a6801193f16fff3ef5e88a25a87f0600b40c18f
+      formal_sessions: 10_unpaired_complete_generation_sessions
+      prompt_tokens: 64
+      generated_tokens_per_session: 16
+      generated_token_checks: 160
+      generated_token_mismatches: 0
+      generated_text: '低比特量化（Low-Bitwidth Quantization）在大模型推理中'
+      independent_w4f16_reference_result: pass_exact_160_of_160_generated_tokens
+      semantic_gate_result: pass_ten_identical_nonempty_readable_decoded_strings
+      transformer_regression_result: pass_all_nine_EXP0158_replay_steps_under_existing_hidden_and_cache_gates
+      physical_gate_result: pass_exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_interlayer_or_full_logit_DDR_zero_spill_fill
+      ledger_gate_result: pass_4480_layer_profiles_zero_layer_unattributed_ticks_and_zero_full_ledger_residual
+      build_gate_result: pass
+      static_gate_result: pass
+      host_wall_us:
+        prefill_ten_session_median: 82911.797
+        decode_mean_per_token_ten_session_median: 113290.889
+        complete_16_pass_sequence_ten_session_median: 1781464.400
+      performance_control: unavailable_same_scope
+      speed_gate_result: report_only
+      full_profiling_report_sha256: 842c69f2fe5ed4635fd166b52e819d8358490d37b4a1cd63c809692d91d8dc20
+      summary_sha256: 36ddf26b561a950b8210c0cb1b68926e903484661edf8809496ee6a0bbdacd1f
+      stability_summary_sha256: 9b8fc0f3d0e2565302610cbbc831d04f52bca3233ca93df022b5e240b235cc50
+      evidence_sha256_ledger_sha256: 6468b0493164536dafb821be6ad708785053567e4f1f682b465781b5cd9737eb
+      generation_package_manifest_sha256: 301d3636b6912d4a46e75ca944740e4f0ae69e6c9af0942592a9f444f3a02ade
+      conclusion: W4F16_real_token_to_token_boundary_is_exact_against_an_independent_W4F16_reference_stable_across_ten_sessions_and_generates_readable_text_without_violating_the_physical_contract
   - id: EXP-0163
     slug: w4u8-multiseal-l256
     title: Full-stack W4U8 continuous decode through six dynamic cache seals
