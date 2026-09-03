@@ -1086,3 +1086,24 @@ remain intact. EXP-0166 supersedes EXP-0165 for this scope.
 _Avoid_: projected token throughput, reduced weight bytes, changed scales,
 output pruning, full-logit DDR, more than one FastRPC call, or attributing the
 gain to transformer changes
+
+**Selected W4U8 Token-Generation Baseline**:
+The user-promoted EXP-0168 implementation for the complete W4U8 token-generation
+scope. It retains EXP-0167's transformer, segmented persistent KV cache,
+quantized model values, embedding, final U8 RMSNorm and greedy token feedback,
+while optimizing only the W4U8 LM head. It batches eight output tiles, keeps the
+complete bias/requant carrier resident in phase-overlaid VTCM, and overlaps an
+asynchronous compressed-weight DMA with four-context HVX W4-to-S8 expansion and
+integer-HMX consumption through two compressed and two expanded slots. Ten
+rotated pairs reduce M64 prefill from 56.975 to 49.012 ms and continuous decode
+from 62.472 to 54.382 ms/token. The directly measured rates are 1,305.794
+prefill tok/s and 18.388 decode tok/s. Exact integer implementation, the
+193-step transformer/cache regression, exact 8 MiB VTCM, one FastRPC per pass,
+zero timed intermediate or full-logit DDR, zero spill/fill and zero unattributed
+ticks all pass. Semantic quality remains disabled and is not claimed. The user
+promoted EXP-0168 on 2026-09-04; it is the parent for subsequent W4U8
+token-generation optimization.
+_Avoid_: describing the diagnostic generated text as usable, changing existing
+qparams without a separate experiment, projecting throughput from partial
+measurements, or replacing this baseline without an eligible direct full-stack
+comparison

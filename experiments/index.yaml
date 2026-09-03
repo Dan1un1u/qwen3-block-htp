@@ -16,7 +16,7 @@ experiments:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending
+    adoption_status: accepted
     evidence_profile: paired-full-stack-W4U8-generation-lm-head-pipeline
     source_branches:
       - codex/exp-0168-w4u8-lm-head-batch8-overlap
@@ -42,7 +42,12 @@ experiments:
       physical_gate: exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_interlayer_or_timed_full_logit_DDR_zero_spill_fill
       performance_gate: ten_rotated_control_candidate_sessions_candidate_strictly_faster_for_direct_M64_prefill_continuous_decode_and_complete_16_pass_Host_wall
       diagnostic_target: compare_candidate_lm_head_wall_command_count_DMA_HVX_expand_HMX_lifetime_and_waits_with_EXP0167_and_selected_EXP0166_W4F16
-      selected_baseline_changed: false
+      selected_baseline_changed: true
+      promoted_as: selected_w4u8_token_generation_baseline
+      promoted_by: user
+      promoted_on: '2026-09-04'
+      promotion_ref: 'User message 2026-09-04: 确认晋升。下一步是不是该专注decode和kv cache的优化了？'
+      source_tag: baseline-w4u8-token-generation-exp0168
       source_commit: bcf327142e451ed25c84f32d13e802230397d65a
       formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0168/20260904T_exp0168_bcf3271_formal'
       formal_sessions: ten_rotated_control_candidate_complete_sessions_each_one_M64_prefill_plus_fifteen_continuous_decode_tokens
