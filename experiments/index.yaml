@@ -13,20 +13,23 @@ experiments:
     variants:
       - selected_batch8_control
       - decode_batch16_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: bounded-rotated-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0173-w4u8-decode-lm-head-batch16
-    source_commits: []
+    source_commits:
+      - 9e30f824c6ac1c0aa72ffcdd0f64631b66f469ef
     record: docs/experiments/EXP-0173.md
     approval_ref: 'User message 2026-09-04: 同意晋升。开启loop优化，针对decode，尽量不中断。'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0173-w4u8-decode-lm-head-batch16
       approved_on: '2026-09-04'
+      started_on: '2026-09-04'
+      completed_on: '2026-09-04'
     evidence:
       source_parent_experiment: EXP-0170
       source_parent_commit: 042dbfd8907c23af255092a03ac28b13f8e740bc
@@ -37,6 +40,24 @@ experiments:
       forbidden_changes: prefill_math_weights_qparams_transformer_cache_Softmax_projection_RMSNorm_embedding_feedback_F16F16_W4F16_QNN
       short_gate: byte_exact_tokens_codes_hashes_batch_telemetry_and_lower_LM_head_plus_complete_decode_wall
       formal_gate: ten_rotated_pairs_candidate_strictly_faster_direct_decode_with_all_correctness_and_physical_contracts
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0173/20260904T_exp0173_9e30f82_formal'
+      correctness_gate_result: pass_all20_sessions_byte_exact_all193_independent_integer_head_checks_and_EXP0163_regression
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_or_timed_full_logit_DDR_zero_spill_fill_one_FastRPC_per_pass_no_QNN_zero_unattributed_ticks
+      performance_gate_result: pass_candidate_20_172775_tps_vs_control_19_743719_tps_all_ten_rotated_pairs
+      direct_end_to_end:
+        control_prefill_tokens_per_second: 1292.886445
+        candidate_prefill_tokens_per_second: 1296.506840
+        control_decode_host_us_per_token: 50649.017831
+        candidate_decode_host_us_per_token: 49571.762505
+        control_decode_tokens_per_second: 19.743719
+        candidate_decode_tokens_per_second: 20.172775
+        candidate_decode_speed_percent: 2.173123
+      LM_head_us: {control: 5200.045302, candidate: 4128.867188}
+      conclusion: batch16_halves_LM_head_command_and_prefetch_count_and_improves_DMA_expand_HMX_overlap_without_changing_math_or_prefill
+      full_profiling_report_sha256: f9ea7326898872f10ad11cbcb3263f0567d9a30710120c69310c04396b866967
+      summary_sha256: e3825b1d656e3ad88466b31801dcb6d48399379884750984423c9e7be461537e
+      independent_reference_sha256: 5135073bb9e0548bdb9a8b4634981ad00f5189a008cb6749587446b9c747f5de
+      exp0163_regression_sha256: ea08a2fe1eb09526f7315be1cb128c0716a673936c297d61c65dd2f26aa81ed6
       selected_baseline_changed: false
   - id: EXP-0172
     slug: w4u8-decode-gate-up-hvx-gemv
