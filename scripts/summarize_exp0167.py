@@ -128,7 +128,7 @@ def validate(runs: list[list[dict[str, object]]], audit: dict[str, object]) -> d
                 )
         sequences.append(tokens)
     stable = all(sequence == sequences[0] for sequence in sequences[1:])
-    audit_tokens = [int(item["selected_token_id"]) for item in audit["steps"]]
+    audit_tokens = [int(item["device_token"]) for item in audit["steps"]]
     return {
         "all_steps_execute": execution,
         "u8_logit_encoding_explicit": encoding,
