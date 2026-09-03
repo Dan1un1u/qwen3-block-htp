@@ -3,6 +3,7 @@ set -euo pipefail
 
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 result_dir="${1:?formal result directory required}"
+python_exe="${QBH_PYTHON:-/home/daniuniu/.cache/qwen3-block-htp-py/bin/python}"
 
 mkdir -p "${result_dir}/raw" "${result_dir}/audit"
 
@@ -11,7 +12,7 @@ QBH_GENERATION_AUDIT_DIR="${result_dir}/audit" \
     "${project_root}/scripts/run_exp0167.sh" \
     > "${result_dir}/audit/device.jsonl" 2>&1
 
-"${project_root}/scripts/verify_exp0167_generation.py" \
+"${python_exe}" "${project_root}/scripts/verify_exp0167_generation.py" \
     --package-dir "/mnt/d/llm_exp/models/qwen3-block-htp/exp0167/w4u8_greedy16" \
     --audit-dir "${result_dir}/audit" \
     --device-log "${result_dir}/audit/device.jsonl" \
