@@ -13,10 +13,7 @@ QBH_GENERATION_AUDIT_DIR="${result_dir}/audit" \
     > "${result_dir}/audit/device.jsonl" 2>&1
 
 "${python_exe}" "${project_root}/scripts/verify_exp0167_generation.py" \
-    --package-dir "/mnt/d/llm_exp/models/qwen3-block-htp/exp0167/w4u8_greedy16" \
     --audit-dir "${result_dir}/audit" \
-    --device-log "${result_dir}/audit/device.jsonl" \
-    --output "${result_dir}/audit/independent_reference.json" \
     > "${result_dir}/audit/verify.log" 2>&1
 
 for round in $(seq 1 10); do
