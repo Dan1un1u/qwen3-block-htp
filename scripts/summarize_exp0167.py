@@ -144,6 +144,29 @@ def validate(runs: list[list[dict[str, object]]], audit: dict[str, object]) -> d
     }
 
 
+def validate_exp0163_regression(path: Path) -> bool:
+    records = base.read_json_lines(path)
+    profiles = [item for item in records if item.get("record") == "replay_profile"]
+    finals = [item for item in records if item.get("replay_sequence_complete") is True]
+    return (
+        len(profiles) == 193
+        and len(finals) == 1
+        and finals[0].get("all_steps_pass") is True
+        and int(finals[0].get("completed_steps", -1)) == 193
+        and all(
+            int(item.get("output_max_lsb", -1)) == 0
+            and int(item.get("cache_mismatches", -1)) == 0
+            and int(item.get("cache_structure_mismatches", -1)) == 0
+            and int(item.get("intermediate_ddr_read_bytes", -1)) == 0
+            and int(item.get("intermediate_ddr_write_bytes", -1)) == 0
+            and int(item.get("intermediate_spill_fill_count", -1)) == 0
+            and int(item.get("ledger_unattributed_ticks", -1)) == 0
+            and int(item.get("vtcm_acquired_bytes", -1)) == 8 * 1024 * 1024
+            for item in profiles
+        )
+    )
+
+
 def row_summary(
     runs: list[list[dict[str, object]]], indices: tuple[int, ...], rows: tuple[str, ...],
 ) -> dict[str, float]:
@@ -170,6 +193,10 @@ def main() -> None:
     runs = load_runs(result_dir)
     audit = json.loads((result_dir / "audit" / "independent_reference.json").read_text())
     gates = validate(runs, audit)
+    regression_log = result_dir / "w4u8_exp0163_regression.log"
+    gates["exp0163_transformer_and_cache_regression"] = (
+        validate_exp0163_regression(regression_log)
+    )
     gates["all_required"] = all(gates.values())
 
     prefill_indices = (0,)
@@ -224,6 +251,8 @@ def main() -> None:
         "w4f16_comparison": comparison,
         "provenance": {
             "audit_reference": str(result_dir / "audit" / "independent_reference.json"),
+            "exp0163_regression": str(regression_log),
+            "exp0163_regression_sha256": sha256_file(regression_log),
             "logs": {
                 path.name: sha256_file(path)
                 for path in sorted((result_dir / "raw").glob("*.log"))
