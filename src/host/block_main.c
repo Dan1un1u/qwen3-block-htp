@@ -1197,6 +1197,11 @@ static const char *qbh_w4u8_stream_fence_mode_name(uint32_t mode) {
     }
 }
 
+static const char *qbh_w4u8_decode_softmax_mode_name(uint32_t mode) {
+    return mode == QBH_BLOCK_W4U8_DECODE_SOFTMAX_HVX_TILE4
+        ? "hvx_tile4" : "scalar";
+}
+
 static uint64_t qbh_fnv1a64(const uint8_t *data, size_t bytes) {
     uint64_t hash = UINT64_C(1469598103934665603);
     for (size_t index = 0; index < bytes; ++index) {
@@ -2624,6 +2629,9 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U32(numerical_audit_enabled);
     QBH_REPLAY_PROFILE_U32(w4u8_prefill_cache_mode);
     QBH_REPLAY_PROFILE_U32(w4u8_delta_reconstruction_mode);
+    QBH_REPLAY_PROFILE_U32(w4u8_decode_softmax_mode);
+    QBH_REPLAY_PROFILE_U32(w4u8_decode_softmax_hvx_tile4_call_count);
+    QBH_REPLAY_PROFILE_U32(w4u8_decode_softmax_hvx_tile4_mismatch_count);
     QBH_REPLAY_PROFILE_I32(dsp_status);
     QBH_REPLAY_PROFILE_I32(numerical_status);
     QBH_REPLAY_PROFILE_U32(scan_logical_m_observed);
@@ -3370,7 +3378,7 @@ static int qbh_run_generation_sequence(
         return -1;
     }
     experiment = generation_steps > QBH_GENERATION_DEFAULT_TOKENS
-        ? 169U
+        ? 170U
         : (header->generation_mode ==
                    QBH_BLOCK_GENERATION_GREEDY_W4U8_BATCH8_RESIDENT_BIAS
                ? 168U
@@ -3806,6 +3814,8 @@ int main(int argc, char **argv) {
         QBH_BLOCK_W4U8_PREFILL_CACHE_DUPLICATE_BUILD;
     uint32_t w4u8_delta_reconstruction_mode =
         QBH_BLOCK_W4U8_DELTA_RECONSTRUCTION_SERIAL;
+    uint32_t w4u8_decode_softmax_mode =
+        QBH_BLOCK_W4U8_DECODE_SOFTMAX_SCALAR;
     uint32_t scan_mode = QBH_BLOCK_SCAN_DISABLED;
     uint32_t logical_m = QBH_BLOCK_M;
     uint32_t initial_kv_length = 0U;
@@ -4024,6 +4034,20 @@ int main(int argc, char **argv) {
                     QBH_BLOCK_W4U8_DELTA_RECONSTRUCTION_PIPELINE;
             } else {
                 w4u8_delta_reconstruction_mode = UINT32_MAX;
+            }
+        }
+    }
+    {
+        const char *mode = getenv("QBH_W4U8_DECODE_SOFTMAX");
+        if (mode != NULL && mode[0] != '\0') {
+            if (strcmp(mode, "scalar") == 0) {
+                w4u8_decode_softmax_mode =
+                    QBH_BLOCK_W4U8_DECODE_SOFTMAX_SCALAR;
+            } else if (strcmp(mode, "hvx_tile4") == 0) {
+                w4u8_decode_softmax_mode =
+                    QBH_BLOCK_W4U8_DECODE_SOFTMAX_HVX_TILE4;
+            } else {
+                w4u8_decode_softmax_mode = UINT32_MAX;
             }
         }
     }
@@ -4251,6 +4275,11 @@ int main(int argc, char **argv) {
             QBH_BLOCK_W4U8_PREFILL_CACHE_REUSE_ATTENTION_CARRIERS ||
         w4u8_delta_reconstruction_mode >
             QBH_BLOCK_W4U8_DELTA_RECONSTRUCTION_PIPELINE ||
+        w4u8_decode_softmax_mode >
+            QBH_BLOCK_W4U8_DECODE_SOFTMAX_HVX_TILE4 ||
+        (w4u8_decode_softmax_mode !=
+             QBH_BLOCK_W4U8_DECODE_SOFTMAX_SCALAR &&
+         variant != QBH_BLOCK_W4U8) ||
         scan_mode > QBH_BLOCK_SCAN_DECODE ||
         replay_mode > QBH_BLOCK_REPLAY_CONTINUOUS ||
         (kv_cache_k_format !=
@@ -5337,6 +5366,8 @@ int main(int argc, char **argv) {
         w4u8_prefill_cache_mode;
     header->w4u8_delta_reconstruction_mode =
         w4u8_delta_reconstruction_mode;
+    header->w4u8_decode_softmax_mode =
+        w4u8_decode_softmax_mode;
     header->w4u8_qk_pair_kernel_mode =
         w4u8_qk_pair_kernel_mode;
     header->scan_mode = scan_mode;
@@ -6267,6 +6298,7 @@ int main(int argc, char **argv) {
         "\"w4f16_gate_up_extra_stream_worker\":%" PRIu32 ","
         "\"w4f16_gate_up_stream_group_tiles\":%" PRIu32 ","
         "\"w4u8_stream_fence_mode\":\"%s\","
+        "\"w4u8_decode_softmax_mode\":\"%s\","
         "\"w4u8_qkv_ring_expand_workers\":%" PRIu32 ","
         "\"fp16_norm_rows_per_task\":%" PRIu32 ","
         "\"fp16_norm_contexts\":%" PRIu32 ","
@@ -6360,6 +6392,8 @@ int main(int argc, char **argv) {
         "\"w4u8_qkvo_overlap_schedule_count\":%" PRIu32 ","
         "\"w4u8_qk_pair_kernel_mode_observed\":%" PRIu32 ","
         "\"w4u8_qk_quarter_pair_count\":%" PRIu32 ","
+        "\"w4u8_decode_softmax_hvx_tile4_call_count\":%" PRIu32 ","
+        "\"w4u8_decode_softmax_hvx_tile4_mismatch_count\":%" PRIu32 ","
         "\"u8_attention_expected_score_hash\":\"%016" PRIx64 "\","
         "\"u8_attention_actual_score_hash\":\"%016" PRIx64 "\","
         "\"u8_attention_expected_probability_hash\":\"%016" PRIx64 "\","
@@ -6636,6 +6670,8 @@ int main(int argc, char **argv) {
         header->w4f16_gate_up_stream_group_tiles,
         qbh_w4u8_stream_fence_mode_name(
             header->w4u8_stream_fence_mode),
+        qbh_w4u8_decode_softmax_mode_name(
+            header->w4u8_decode_softmax_mode),
         header->w4u8_qkv_ring_expand_workers,
         header->fp16_norm_rows_per_task,
         header->fp16_norm_contexts,
@@ -6733,6 +6769,8 @@ int main(int argc, char **argv) {
         header->w4u8_qkvo_overlap_schedule_count,
         header->w4u8_qk_pair_kernel_mode_observed,
         header->w4u8_qk_quarter_pair_count,
+        header->w4u8_decode_softmax_hvx_tile4_call_count,
+        header->w4u8_decode_softmax_hvx_tile4_mismatch_count,
         header->u8_attention_expected_score_hash,
         header->u8_attention_actual_score_hash,
         header->u8_attention_expected_probability_hash,

@@ -32,6 +32,8 @@ struct qbh_attention_u8_telemetry {
     uint32_t probability_mask_violation_count;
     uint32_t probability_row_sum_min;
     uint32_t probability_row_sum_max;
+    uint32_t dynamic_hvx_tile4_call_count;
+    uint32_t dynamic_hvx_tile4_mismatch_count;
 };
 
 void qbh_attention_u8_pack_k_native(
@@ -167,7 +169,8 @@ void qbh_attention_u8_requant_softmax_dynamic(
     uint32_t query_rows, uint32_t past_tokens,
     uint32_t valid_tokens, uint32_t padded_tokens,
     const struct qbh_attention_config *config,
-    struct qbh_attention_u8_telemetry *telemetry);
+    struct qbh_attention_u8_telemetry *telemetry,
+    uint32_t use_hvx_tile4, uint32_t verify_hvx_tile4);
 
 /* EXP-0161 segmented decode helper.  It converts a histogram of raw HMX QK
  * bytes into the exact per-raw-byte probability map used by the existing
