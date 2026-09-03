@@ -29,11 +29,11 @@ current_scope:
   execution_unit: qwen3_layers0_27_real_replay_M64_prefill_continuous_decode_positions64_255_multiseal
   last_completed_experiment: EXP-0163
   last_completed_source_commit: 63de1de7028c5a478f4494c4e64993d34deac503
-  provisional_source_parent: selected_EXP0162_W4U8_full_stack_dynamic_segmented_cache_baseline
+  provisional_source_parent: selected_EXP0163_W4U8_full_stack_multiseal_cache_baseline
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: completed_pending_adoption
+  active_experiment_stage: completed_selected
   active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0163/20260903T073822Z_63de1de7028c_formal'
   active_experiment_gate: pass
   active_recipe_specialization: null
@@ -64,9 +64,12 @@ current_scope:
     evidence_validity: valid
     execution_state: completed
     local_gate: pass
-    adoption_status: pending
-    selected_baseline_changed: false
-    selected_full_stack_w4u8_baseline_remains: EXP-0162
+    adoption_status: accepted
+    selected_baseline_changed: true
+    promoted_as: selected_full_stack_w4u8_cache_native_baseline
+    promoted_by: user
+    promoted_on: '2026-09-03'
+    promotion_ref: 'User message 2026-09-03: 同意晋升。依你意见，下一步我们可以进入到补齐首尾输入输出，跑真实推理了吗？'
     execution_unit: real_Qwen3_layers0_27_M64_prefill_continuous_decode_positions64_255
     correctness_gate: pass_zero_LSB_all_193_full_stack_outputs_and_all_retained_28_layer_cache_references
     lifecycle_gate: pass_six_28_layer_seals_at_positions95_127_159_191_223_255_each_published_once_and_immutable
@@ -91,7 +94,7 @@ current_scope:
       position223: 22.96626146155213
       position255: 27.79072847699915
     conclusion: six_seal_full_stack_replay_is_exact_and_stable_and_reduces_complete_192_token_decode_wall_by_16p598_percent_with_30p273_percent_tail_gain
-    next_priority: explicit_user_adoption_decision_then_choose_longer_context_validation_or_complete_token_generation_boundary
+    next_priority: register_EXP0164_complete_token_generation_boundary
     full_profiling_report_sha256: 10a876cc04eac0a2a97f6f7d2f14c724f8722a78caca97893aab8d1085d4a8ac
     summary_sha256: f8478f0d66e3d3600d289dc5f601cf99a1c747050bee30b2f35b8f572a6d4903
     evidence_sha256_ledger_sha256: ad525be166b914b0bdff296fccacc49a392154e7f815e11d14a4005ed0c13cc3
@@ -110,12 +113,14 @@ current_scope:
     evidence_validity: valid
     execution_state: completed
     local_gate: pass
-    adoption_status: accepted
+    adoption_status: superseded
     selected_baseline_changed: true
     promoted_as: selected_full_stack_w4u8_cache_native_baseline
     promoted_by: user
     promoted_on: '2026-09-03'
     promotion_ref: 'User message 2026-09-03: 晋升，继续下一步'
+    superseded_by: EXP-0163
+    superseded_on: '2026-09-03'
     execution_unit: real_Qwen3_layers0_27_M64_prefill_continuous_decode_positions64_103
     correctness_gate: pass_zero_LSB_all_41_full_stack_outputs_and_all_28_layer_cache_lifecycle_references
     lifecycle_gate: pass_dynamic_tail_append_one_seal_per_layer_at_position95_immutable_prefix_and_first_post_seal_reuse

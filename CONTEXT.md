@@ -993,7 +993,7 @@ _Avoid_: continuous-decode claim, full-stack baseline, imported-cache
 real-replay claim, total-length VTCM carrier, A16 modification
 
 **Dynamic Segmented Cache Lifecycle**:
-The accepted EXP-0162 Selected Full-Stack W4U8 Cache-Native Baseline. One persistent per-layer W4U8 cache
+The accepted EXP-0162 predecessor to the current full-stack W4U8 cache baseline. One persistent per-layer W4U8 cache
 derives its sealed-segment count and active-tail length from runtime valid
 length, appends each token once, seals a complete 32-token tail exactly once,
 and subsequently treats that segment as immutable. The first test runs one
@@ -1003,21 +1003,20 @@ EXP-0160-compatible monolithic delta control and does not change model math.
 Ten rotated sessions pass exact correctness and the physical contract; post-seal
 decode improves 7.500% and the complete 40-token decode average improves
 1.261%. The user promoted it on 2026-09-03, superseding EXP-0160 for this
-full-stack scope. EXP-0161 remains the separate synthetic long-KV snapshot
-baseline.
+full-stack scope; EXP-0163 later superseded it after six-seal validation.
+EXP-0161 remains the separate synthetic long-KV snapshot baseline.
 _Avoid_: capacity-derived fixed sealed count, per-snapshot cache package,
 repacking a sealed prefix, mutable sealed segment, automatic baseline promotion
 
-**Multi-Seal Full-Stack Cache Candidate**:
-The completed, locally passing EXP-0163 W4U8 candidate that extends the
+**Selected Multi-Seal Full-Stack Cache Baseline**:
+The accepted EXP-0163 W4U8 baseline that extends the
 Dynamic Segmented Cache Lifecycle from one seal to six. One M64 prefill and
 192 continuous decode steps reach valid length 256 while publishing 28 layer
 segments at each of positions 95, 127, 159, 191, 223 and 255. Ten rotated
 sessions are byte exact and preserve the 8 MiB VTCM, zero-intermediate-DDR,
 one-FastRPC and no-QNN contracts. Against the equal-capacity monolithic delta
 control, complete decode improves 16.598% and positions 224-255 improve
-30.273%; the first seal's one-step cost is amortized by later reads. Adoption
-is pending, so EXP-0162 remains the Selected Full-Stack W4U8 Cache-Native
-Baseline until the user explicitly promotes EXP-0163.
-_Avoid_: automatic promotion, fixed imported snapshot, unbounded VTCM growth,
+30.273%; the first seal's one-step cost is amortized by later reads. The user
+promoted it on 2026-09-03, superseding EXP-0162 for the full-stack scope.
+_Avoid_: fixed imported snapshot, unbounded VTCM growth,
 full-prefix reconstruction, changed Attention arithmetic, full-model accuracy claim

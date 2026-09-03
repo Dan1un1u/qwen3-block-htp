@@ -16,7 +16,7 @@ experiments:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending
+    adoption_status: accepted
     evidence_profile: full-stack-W4U8-M64-prefill-continuous-decode-six-seal-L256
     source_branches:
       - codex/exp-0163-w4u8-multiseal-l256
@@ -47,7 +47,11 @@ experiments:
       long_decode_speed_gate: complete_positions64_255_and_tail_positions224_255_strictly_faster_than_control_over_ten_rotated_sessions
       seal_reporting_gate: report_each_of_six_seal_steps_separately_and_its_amortization_without_requiring_each_seal_step_to_win
       stop_conditions: any_correctness_lifecycle_physical_or_structural_gate_failure_or_device_reboot
-      selected_baseline_changed: false
+      selected_baseline_changed: true
+      promoted_as: selected_full_stack_w4u8_cache_native_baseline
+      promoted_by: user
+      promoted_on: '2026-09-03'
+      promotion_ref: 'User message 2026-09-03: 同意晋升。依你意见，下一步我们可以进入到补齐首尾输入输出，跑真实推理了吗？'
       formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0163/20260903T073822Z_63de1de7028c_formal'
       source_commit: 63de1de7028c5a478f4494c4e64993d34deac503
       correctness_gate_result: pass_zero_LSB_all_193_outputs_and_all_retained_28_layer_dynamic_cache_references
@@ -86,7 +90,7 @@ experiments:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: accepted
+    adoption_status: superseded
     evidence_profile: full-stack-W4U8-M64-prefill-continuous-decode-dynamic-segment-sealing
     source_branches:
       - codex/exp-0162-w4u8-full-stack-segmented-cache
@@ -118,6 +122,8 @@ experiments:
       promoted_by: user
       promoted_on: '2026-09-03'
       promotion_ref: 'User message 2026-09-03: 晋升，继续下一步'
+      superseded_by: EXP-0163
+      superseded_on: '2026-09-03'
       formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0162/20260903T045521Z_a3b9607dee88_formal'
       source_commit: a3b9607dee88719341763204566bac8a9ed5e3cd
       correctness_gate_result: pass_zero_LSB_all_41_outputs_and_all_dynamic_cache_references
