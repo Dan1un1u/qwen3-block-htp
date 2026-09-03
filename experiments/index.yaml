@@ -6,6 +6,40 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0168
+    slug: w4u8-lm-head-batch8-overlap
+    title: W4U8 batch-eight phase-overlaid LM-head pipeline
+    parent: EXP-0167
+    variants:
+      - exp0167_batch4_two_slot_control
+      - w4u8_batch8_resident_bias_pipeline_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: paired-full-stack-W4U8-generation-lm-head-pipeline
+    source_branches:
+      - codex/exp-0168-w4u8-lm-head-batch8-overlap
+    source_commits: []
+    record: docs/experiments/EXP-0168.md
+    approval_ref: 'User message 2026-09-04: 同意下一步方案，可以将我们之前对A16做的优化套用一下，试图达到相近甚至超越的速度。'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0168-w4u8-lm-head-batch8-overlap
+      approved_on: '2026-09-04'
+    evidence:
+      source_parent_experiment: EXP-0167
+      source_parent_commit: 9909ddf579cf465064f548b1b69845772b13a044
+      execution_unit: real_token_ID_M64_prefill_then_15_continuous_decode_tokens_through_complete_W4U8_generation_stack
+      recipe_scope: W4U8_generation_lm_head_only
+      direct_control: completed_EXP0167_batch4_two_slot_streamed_W4U8_lm_head
+      optimization_scope: batch8_output_tiles_phase_overlaid_compressed_expanded_and_bias_slots_resident_bias_requant_carrier_coarse_DMA_HVX_HMX_prefetch_and_wait_structure
+      forbidden_changes: embedding_final_RMSNorm_argmax_math_weights_W4_codes_scales_qparams_layers0_27_attention_MLP_KV_cache_prompt_tokenizer_F16F16_or_W4F16_paths
+      correctness_gate: exact_EXP0167_selected_tokens_and_U8_codes_plus_independent_integer_reference_and_EXP0163_zero_LSB_transformer_cache_regression
+      physical_gate: exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_interlayer_or_timed_full_logit_DDR_zero_spill_fill
+      performance_gate: ten_rotated_control_candidate_sessions_candidate_strictly_faster_for_direct_M64_prefill_continuous_decode_and_complete_16_pass_Host_wall
+      diagnostic_target: compare_candidate_lm_head_wall_command_count_DMA_HVX_expand_HMX_lifetime_and_waits_with_EXP0167_and_selected_EXP0166_W4F16
+      selected_baseline_changed: false
   - id: EXP-0167
     slug: w4u8-greedy-generation
     title: W4U8 deterministic end-to-end token-generation boundary
