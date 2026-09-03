@@ -46,6 +46,7 @@ enum qbh_block_hmx_command_kind {
     QBH_BLOCK_HMX_FP16_TILE_SCALES_STREAMING = 5,
     QBH_BLOCK_HMX_U8S8_PIPELINE = 6,
     QBH_BLOCK_HMX_U8S8_QKV_RING = 7,
+    QBH_BLOCK_HVX_U8S8_GEMV_PIPELINE = 8,
 };
 
 #define QBH_BLOCK_W4F16_MIN_REGION_TILES UINT32_C(8)
@@ -240,6 +241,12 @@ struct qbh_block_hmx_worker {
     int32_t command_status;
     uint64_t compute_ticks;
     uint64_t ready_wait_ticks;
+    uint32_t w4u8_gate_up_compute_mode;
+    uint32_t w4u8_gate_up_direct_verify;
+    uint32_t w4u8_gate_up_direct_call_count;
+    uint32_t w4u8_gate_up_direct_mismatch_count;
+    uint64_t w4u8_gate_up_direct_hvx_ticks;
+    uint64_t w4u8_gate_up_direct_convert_ticks;
 };
 
 struct qbh_block_w4f16_pool;
@@ -1666,8 +1673,13 @@ static int qbh_header_valid(const struct qbh_block_header *header,
             QBH_BLOCK_W4U8_DELTA_RECONSTRUCTION_PIPELINE ||
         header->w4u8_decode_softmax_mode >
             QBH_BLOCK_W4U8_DECODE_SOFTMAX_HVX_TILE4 ||
+        header->w4u8_decode_gate_up_compute_mode >
+            QBH_BLOCK_W4U8_DECODE_GATE_UP_HVX_GEMV ||
         (header->w4u8_decode_softmax_mode !=
              QBH_BLOCK_W4U8_DECODE_SOFTMAX_SCALAR &&
+         header->variant != QBH_BLOCK_W4U8) ||
+        (header->w4u8_decode_gate_up_compute_mode !=
+             QBH_BLOCK_W4U8_DECODE_GATE_UP_HMX &&
          header->variant != QBH_BLOCK_W4U8) ||
         (header->w4u8_prefill_cache_mode ==
              QBH_BLOCK_W4U8_PREFILL_CACHE_REUSE_ATTENTION_CARRIERS &&
@@ -2597,6 +2609,172 @@ static int qbh_hmx_run_w4u8_qkv_ring(
     return 0;
 }
 
+static int qbh_w4u8_gate_up_hvx_gemv_batch(
+    struct qbh_block_hmx_worker *worker,
+    const struct qbh_w4_hmx_request *request) {
+    uint32_t batch_output_count;
+    int lock_status;
+    int result = AEE_SUCCESS;
+
+    if (worker == NULL || request == NULL ||
+        request->streaming == 0U ||
+        request->batch_output_count == 0U ||
+        request->batch_output_count > QBH_W4_HMX_MAX_BATCH_OUTPUTS ||
+        request->activation_tiles == NULL ||
+        request->stream_count == 0U ||
+        request->stream_count > QBH_W4_MAX_STREAM_REGIONS ||
+        request->abort_status == NULL ||
+        request->ready_wait_ticks == NULL ||
+        request->hmx_consumption_started == NULL ||
+        request->executed_stream_count == NULL) {
+        return AEE_EBADPARM;
+    }
+    batch_output_count = request->batch_output_count;
+    lock_status = qurt_hvx_lock(QURT_HVX_MODE_128B);
+    if (lock_status != AEE_SUCCESS) {
+        return AEE_EFAILED;
+    }
+
+    for (uint32_t batch_index = 0U;
+         batch_index < batch_output_count; ++batch_index) {
+        const int8_t *expanded_weight_tiles =
+            request->batch_outputs[batch_index].expanded_weight_tiles;
+        const uint32_t *bias_words =
+            request->batch_outputs[batch_index].bias_words;
+        uint8_t *output_tiles =
+            request->batch_outputs[batch_index].output_tiles;
+        const volatile uint32_t *ready_generations =
+            request->batch_outputs[batch_index].ready_generations;
+        const uint32_t expected_generation =
+            request->batch_outputs[batch_index].expected_generation;
+        uint32_t *dynamic_bias;
+        uint8_t candidate_row[QBH_HMX_OUTPUT_CHANNELS];
+        HVX_Vector accumulator = Q6_V_vzero();
+
+        if (expanded_weight_tiles == NULL || bias_words == NULL ||
+            output_tiles == NULL || ready_generations == NULL ||
+            expected_generation == 0U) {
+            result = AEE_EBADPARM;
+            break;
+        }
+        dynamic_bias = (uint32_t *)(
+            output_tiles + QBH_HMX_OUTPUT_BYTES - QBH_HMX_BIAS_BYTES);
+
+        for (uint32_t stream = 0U;
+             stream < request->stream_count; ++stream) {
+            const uint64_t wait_start = HAP_perf_get_qtimer_count();
+            uint32_t spins = 0U;
+            while (ready_generations[stream] != expected_generation) {
+                if (*request->abort_status != 0) {
+                    result = AEE_EFAILED;
+                    break;
+                }
+                ++spins;
+                if ((spins & UINT32_C(255)) == 0U &&
+                    HAP_perf_get_qtimer_count() - wait_start >
+                        request->timeout_ticks) {
+                    result = AEE_EFAILED;
+                    break;
+                }
+            }
+            *request->ready_wait_ticks +=
+                HAP_perf_get_qtimer_count() - wait_start;
+            if (result != AEE_SUCCESS) {
+                break;
+            }
+            asm volatile("barrier" : : : "memory");
+            if (*request->hmx_consumption_started == 0U) {
+                *request->hmx_consumption_started = 1U;
+                asm volatile("release(%0):at"
+                             :
+                             : "r"(request->hmx_consumption_started)
+                             : "memory");
+            }
+
+            {
+                const uint64_t hvx_start =
+                    HAP_perf_get_qtimer_count();
+                for (uint32_t local_tile = 0U;
+                     local_tile < QBH_W4_STREAM_REGION_TILES;
+                     ++local_tile) {
+                    const uint32_t k_tile =
+                        stream * QBH_W4_STREAM_REGION_TILES +
+                        local_tile;
+                    const uint8_t *activation_tile =
+                        request->activation_tiles +
+                        (size_t)k_tile * QBH_HMX_ACTIVATION_BYTES;
+                    const int8_t *weight_tile =
+                        expanded_weight_tiles +
+                        (size_t)k_tile * QBH_HMX_WEIGHT_BYTES;
+                    for (uint32_t input_group = 0U;
+                         input_group <
+                             QBH_HMX_INPUT_CHANNELS / 4U;
+                         ++input_group) {
+                        uint32_t activation_word;
+                        const HVX_Vector weights =
+                            *(const HVX_Vector *)(
+                                weight_tile +
+                                (size_t)input_group *
+                                    QBH_BLOCK_ALIGNMENT);
+                        memcpy(&activation_word,
+                               activation_tile + input_group * 4U,
+                               sizeof(activation_word));
+                        accumulator = Q6_Vw_vrmpyacc_VwVubVb(
+                            accumulator,
+                            Q6_V_vsplat_R(activation_word), weights);
+                    }
+                }
+                worker->w4u8_gate_up_direct_hvx_ticks +=
+                    HAP_perf_get_qtimer_count() - hvx_start;
+            }
+        }
+        if (result != AEE_SUCCESS) {
+            break;
+        }
+
+        /* Q6_bias_mxmem2_A requires a VTCM-resident carrier.  Reuse the
+         * aligned tail of this output tile: the bias is consumed before the
+         * following HMX store overwrites the complete tile. */
+        *(HVX_Vector *)dynamic_bias =
+            *(const HVX_Vector *)bias_words;
+        *(HVX_Vector *)(dynamic_bias + QBH_HMX_OUTPUT_CHANNELS) =
+            Q6_Vw_vadd_VwVw(
+                accumulator,
+                *(const HVX_Vector *)(
+                    bias_words + QBH_HMX_OUTPUT_CHANNELS));
+        {
+            const uint64_t convert_start =
+                HAP_perf_get_qtimer_count();
+            qbh_hmx_begin_u8s8_output(dynamic_bias);
+            qbh_hmx_store_u8_output(output_tiles);
+            worker->w4u8_gate_up_direct_convert_ticks +=
+                HAP_perf_get_qtimer_count() - convert_start;
+        }
+        ++worker->w4u8_gate_up_direct_call_count;
+
+        if (worker->w4u8_gate_up_direct_verify != 0U) {
+            memcpy(candidate_row, output_tiles,
+                   sizeof(candidate_row));
+            qbh_hmx_begin_u8s8_output(bias_words);
+            (void)qbh_hmx_accumulate_u8s8_projection(
+                request->activation_tiles, expanded_weight_tiles,
+                request->chunk_tiles);
+            qbh_hmx_store_u8_output(output_tiles);
+            for (uint32_t output = 0U;
+                 output < QBH_HMX_OUTPUT_CHANNELS; ++output) {
+                worker->w4u8_gate_up_direct_mismatch_count +=
+                    candidate_row[output] != output_tiles[output];
+            }
+        }
+    }
+    *request->executed_stream_count =
+        batch_output_count * request->stream_count;
+    if (qurt_hvx_unlock() != AEE_SUCCESS && result == AEE_SUCCESS) {
+        result = AEE_EFAILED;
+    }
+    return result;
+}
+
 static void qbh_hmx_worker_main(void *opaque) {
     struct qbh_block_hmx_worker *worker =
         (struct qbh_block_hmx_worker *)opaque;
@@ -2690,6 +2868,12 @@ static void qbh_hmx_worker_main(void *opaque) {
                 (struct qbh_w4u8_qkv_ring_state *)
                     worker->qkv_ring_request) == 0
                 ? AEE_SUCCESS : AEE_EFAILED;
+        } else if (worker->kind ==
+                       QBH_BLOCK_HVX_U8S8_GEMV_PIPELINE &&
+                   worker->w4_pipeline_request != NULL) {
+            worker->command_status =
+                qbh_w4u8_gate_up_hvx_gemv_batch(
+                    worker, worker->w4_pipeline_request);
         } else if (worker->kind == QBH_BLOCK_HMX_U8S8_PIPELINE &&
                    worker->w4_pipeline_request != NULL) {
             const struct qbh_w4_hmx_request *request =
@@ -2999,7 +3183,10 @@ static int qbh_block_w4_hmx_submit(
     if (worker == NULL || request == NULL) {
         return -1;
     }
-    worker->kind = QBH_BLOCK_HMX_U8S8_PIPELINE;
+    worker->kind = worker->w4u8_gate_up_compute_mode ==
+            QBH_BLOCK_W4U8_DECODE_GATE_UP_HVX_GEMV
+        ? QBH_BLOCK_HVX_U8S8_GEMV_PIPELINE
+        : QBH_BLOCK_HMX_U8S8_PIPELINE;
     worker->w4_pipeline_request = request;
     worker->command_status = AEE_EFAILED;
     asm volatile("barrier" ::: "memory");
@@ -12795,6 +12982,24 @@ static int qbh_run_w4u8_streaming_mlp(
         return -1;
     }
 
+    worker->w4u8_gate_up_compute_mode =
+        header->w4u8_decode_gate_up_compute_mode ==
+                QBH_BLOCK_W4U8_DECODE_GATE_UP_HVX_GEMV &&
+            header->scan_mode == QBH_BLOCK_SCAN_DECODE &&
+            header->logical_m == 1U
+            ? QBH_BLOCK_W4U8_DECODE_GATE_UP_HVX_GEMV
+            : QBH_BLOCK_W4U8_DECODE_GATE_UP_HMX;
+    worker->w4u8_gate_up_direct_verify =
+        worker->w4u8_gate_up_compute_mode ==
+                QBH_BLOCK_W4U8_DECODE_GATE_UP_HVX_GEMV &&
+            (header->numerical_audit_enabled != 0U ||
+             header->generation_boundary_audit_enabled != 0U);
+    worker->w4u8_gate_up_direct_call_count = 0U;
+    worker->w4u8_gate_up_direct_mismatch_count = 0U;
+    worker->w4u8_gate_up_direct_hvx_ticks = 0U;
+    worker->w4u8_gate_up_direct_convert_ticks = 0U;
+    asm volatile("barrier" : : : "memory");
+
     {
         struct qbh_mlp_gate_up_handoff handoff = {
             .middle_activation = mlp_arena,
@@ -12852,6 +13057,19 @@ static int qbh_run_w4u8_streaming_mlp(
         qbh_accumulate_w4u8_phase_metrics(
             header, &gate_up_phase, &gate_up_layout, 1U);
     }
+
+    header->w4u8_decode_gate_up_hvx_gemv_call_count +=
+        worker->w4u8_gate_up_direct_call_count;
+    header->w4u8_decode_gate_up_hvx_gemv_mismatch_count +=
+        worker->w4u8_gate_up_direct_mismatch_count;
+    header->w4u8_decode_gate_up_hvx_gemv_ticks +=
+        worker->w4u8_gate_up_direct_hvx_ticks;
+    header->w4u8_decode_gate_up_bias_convert_ticks +=
+        worker->w4u8_gate_up_direct_convert_ticks;
+    worker->w4u8_gate_up_compute_mode =
+        QBH_BLOCK_W4U8_DECODE_GATE_UP_HMX;
+    worker->w4u8_gate_up_direct_verify = 0U;
+    asm volatile("barrier" : : : "memory");
 
     qbh_reset_w4u8_phase_header(
         &down_phase, QBH_BLOCK_W4U8_DOWN_HVX_WORKERS);
