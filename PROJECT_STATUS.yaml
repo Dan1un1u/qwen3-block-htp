@@ -19,8 +19,8 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 167
+  active_experiment: EXP-0167
+  next_experiment_number: 168
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -33,11 +33,24 @@ current_scope:
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: none
+  active_experiment_stage: approved_pending_preflight
   active_experiment_evidence: null
-  active_experiment_gate: not_applicable
-  active_recipe_specialization: none
-  active_experiment_contract: null
+  active_experiment_gate: not_run
+  active_recipe_specialization: W4U8_token_generation_boundary
+  active_experiment_contract:
+    id: EXP-0167
+    source_branch: codex/exp-0167-w4u8-greedy-generation
+    source_parent: EXP-0166
+    source_parent_commit: 8e0dcf82cb22851a767418805431490fe3699ad2
+    implementation_anchor: selected_EXP0163_W4U8_full_stack_segmented_cache_path_retained_in_EXP0166_source
+    execution_scope: real_token_ID_M64_prefill_then_15_continuous_decode_tokens_through_embedding_layers0_27_final_RMSNorm_streaming_W4U8_lm_head_and_greedy_feedback
+    direct_performance_comparator: selected_EXP0166_W4F16_complete_token_generation_baseline_at_identical_prompt_and_decode_scope
+    allowed_changes: W4U8_token_embedding_input_quantization_final_model_U8_RMSNorm_streaming_integer_HMX_W4U8_lm_head_real_domain_online_argmax_token_feedback_package_and_boundary_profiling_only
+    forbidden_changes: layers0_27_projection_attention_MLP_schedules_EXP0163_segmented_KV_cache_W4_values_existing_qparams_W4F16_or_F16F16_paths_prompt_tokenizer_or_physical_contract
+    implementation_correctness_gate: exact_selected_tokens_and_declared_integer_or_quantized_intermediates_against_independent_W4U8_reference_plus_existing_EXP0163_zero_LSB_transformer_and_cache_regression
+    model_accuracy_policy: no_W4F16_token_match_teacher_accuracy_or_readable_text_gate_record_generated_text_as_diagnostic_only
+    physical_gate: exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_interlayer_or_timed_full_logit_DDR_zero_spill_fill
+    performance_policy: report_direct_full_stack_M64_prefill_and_continuous_decode_tokens_per_second_plus_exact_Host_wall_without_minimum_speed_gate
   final_profiling_summary_standard: direct_full_stack_prefill_and_decode_tokens_per_second_plus_exact_Host_wall
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0166/20260903T_exp0166_8e0dcf8_formal'

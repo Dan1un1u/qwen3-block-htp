@@ -6,6 +6,42 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0167
+    slug: w4u8-greedy-generation
+    title: W4U8 deterministic end-to-end token-generation boundary
+    parent: EXP-0166
+    variants:
+      - independent_host_w4u8_generation_reference
+      - standalone_dsp_w4u8_greedy_generation
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: full-stack-W4U8-real-token-input-final-head-greedy-loop
+    source_branches:
+      - codex/exp-0167-w4u8-greedy-generation
+    source_commits: []
+    record: docs/experiments/EXP-0167.md
+    approval_ref: 'User message 2026-09-04: 是的。我就是这个意思，把W4A8的输入输出也做完。预期输出文本是不可用的，没有关系，暂不设精度gate，先关注推理速度。'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0167-w4u8-greedy-generation
+      approved_on: '2026-09-04'
+    evidence:
+      source_parent_experiment: EXP-0166
+      source_parent_commit: 8e0dcf82cb22851a767418805431490fe3699ad2
+      implementation_anchor: selected_EXP0163_W4U8_full_stack_segmented_cache_path_retained_in_EXP0166_source
+      execution_unit: real_token_ID_M64_prefill_then_15_continuous_decode_tokens_through_embedding_layers0_27_final_RMSNorm_streaming_W4U8_lm_head_and_greedy_feedback
+      recipe_scope: W4U8_only
+      direct_performance_comparator: selected_EXP0166_W4F16_identical_prompt_and_decode_scope
+      optimization_scope: W4U8_embedding_input_quantization_final_U8_RMSNorm_streamed_integer_HMX_lm_head_real_domain_online_argmax_token_feedback_and_boundary_profiling
+      forbidden_changes: layers0_27_projection_attention_MLP_schedules_EXP0163_segmented_KV_cache_W4_values_existing_qparams_F16F16_W4F16_paths_prompt_tokenizer_or_physical_contract
+      implementation_correctness_gate: exact_selected_tokens_and_declared_integer_or_quantized_intermediates_against_independent_W4U8_reference_plus_EXP0163_zero_LSB_transformer_and_cache_regression
+      model_accuracy_policy: no_match_to_W4F16_no_teacher_accuracy_and_no_readable_text_gate_generated_text_is_diagnostic_only
+      physical_gate: exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_interlayer_or_timed_full_logit_DDR_zero_spill_fill
+      performance_policy: report_direct_full_stack_M64_prefill_and_continuous_decode_tokens_per_second_plus_exact_Host_wall_without_minimum_speed_gate
+      stop_conditions: implementation_reference_mismatch_physical_failure_device_reboot_or_invalid_evidence
+      selected_baseline_changed: false
   - id: EXP-0166
     slug: w4f16-lm-head-overlap
     title: W4F16 streamed LM-head DMA-HVX-HMX overlap and scale residency
