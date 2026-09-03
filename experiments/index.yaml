@@ -13,14 +13,15 @@ experiments:
     variants:
       - selected_exp0165_batch8_hvx_argmax_control
       - pipelined_lm_head_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: paired-repeat10-complete-prefill-lm-head-overlap
     source_branches:
       - codex/exp-0166-w4f16-lm-head-overlap
-    source_commits: []
+    source_commits:
+      - 8e0dcf82cb22851a767418805431490fe3699ad2
     record: docs/experiments/EXP-0166.md
     approval_ref: 'User message 2026-09-03: 同意晋升，继续实验'
     runtime:
@@ -43,6 +44,8 @@ experiments:
       decode_policy: report_only_not_promotion_metric_for_EXP0166
       stop_conditions: correctness_regression_physical_or_ledger_failure
       selected_baseline_changed: false
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0166/20260903T_exp0166_8e0dcf8_formal'
+      result: pass_4.433_percent_paired_prefill_speed_and_exact_generation
   - id: EXP-0165
     slug: w4f16-prefill-boundary-pipeline
     title: W4F16 prefill embedding, final-norm and LM-head pipeline optimization
