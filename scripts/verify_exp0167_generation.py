@@ -29,6 +29,8 @@ QPARAM_RECORD = struct.Struct("<32sfi2f")
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--audit-dir", type=Path, required=True)
+    parser.add_argument("--experiment-record", type=int, default=167)
+    parser.add_argument("--experiment-label", default="EXP-0167")
     parser.add_argument(
         "--package", type=Path,
         default=Path(
@@ -61,14 +63,14 @@ def load_generation_qparams(path: Path) -> dict[str, dict[str, object]]:
     return result
 
 
-def load_device_steps(path: Path) -> list[dict[str, object]]:
+def load_device_steps(path: Path, experiment_record: int) -> list[dict[str, object]]:
     result: dict[int, dict[str, object]] = {}
     for line in path.read_text(encoding="utf-8").splitlines():
         try:
             record = json.loads(line)
         except json.JSONDecodeError:
             continue
-        if (record.get("experiment") == 167 and
+        if (record.get("experiment") == experiment_record and
                 "generation_step" in record and
                 "selected_token_id" in record):
             result[int(record["generation_step"])] = record
@@ -103,7 +105,9 @@ def main() -> None:
     args = parse_args()
     audit_dir = args.audit_dir.resolve()
     package = args.package.resolve()
-    device_steps = load_device_steps(audit_dir / "device.jsonl")
+    device_steps = load_device_steps(
+        audit_dir / "device.jsonl", args.experiment_record
+    )
     layer_qparams = load_qparams_bin(package / "layer27/qparams_u8.bin")
     generation_qparams = load_generation_qparams(
         package / "generation_qparams_u8.bin"
@@ -152,7 +156,7 @@ def main() -> None:
         print(json.dumps(records[-1], sort_keys=True), flush=True)
 
     summary = {
-        "experiment": "EXP-0167",
+        "experiment": args.experiment_label,
         "bias_carrier_mismatches": bias_mismatches,
         "verified_steps": len(records),
         "token_and_code_matches": sum(bool(x["match"]) for x in records),
@@ -166,7 +170,7 @@ def main() -> None:
     )
     print(json.dumps(summary, sort_keys=True))
     if not all_match:
-        raise SystemExit("EXP-0167 implementation gate failed")
+        raise SystemExit(f"{args.experiment_label} implementation gate failed")
 
 
 if __name__ == "__main__":

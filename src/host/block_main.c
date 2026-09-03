@@ -229,7 +229,9 @@ static int qbh_generation_w4f16_enabled(uint32_t mode) {
 }
 
 static int qbh_generation_w4u8_enabled(uint32_t mode) {
-    return mode == QBH_BLOCK_GENERATION_GREEDY_W4U8_COARSE_PIPELINE;
+    return mode == QBH_BLOCK_GENERATION_GREEDY_W4U8_COARSE_PIPELINE ||
+           mode ==
+               QBH_BLOCK_GENERATION_GREEDY_W4U8_BATCH8_RESIDENT_BIAS;
 }
 
 static const char *qbh_scan_mode_name(uint32_t mode) {
@@ -3348,7 +3350,10 @@ static int qbh_run_generation_sequence(
     uint64_t total_wall_ns = 0U;
     const uint32_t w4u8 =
         qbh_generation_w4u8_enabled(header->generation_mode);
-    const uint32_t experiment = w4u8 != 0U ? 167U : 166U;
+    const uint32_t experiment =
+        header->generation_mode ==
+                QBH_BLOCK_GENERATION_GREEDY_W4U8_BATCH8_RESIDENT_BIAS
+            ? 168U : (w4u8 != 0U ? 167U : 166U);
     const uint32_t generation_variant =
         w4u8 != 0U ? QBH_BLOCK_W4U8 : QBH_BLOCK_W4F16;
     const char *audit_root = getenv("QBH_GENERATION_AUDIT_DIR");
@@ -4079,6 +4084,9 @@ int main(int argc, char **argv) {
             } else if (strcmp(generation, "8") == 0) {
                 generation_mode =
                     QBH_BLOCK_GENERATION_GREEDY_W4U8_COARSE_PIPELINE;
+            } else if (strcmp(generation, "9") == 0) {
+                generation_mode =
+                    QBH_BLOCK_GENERATION_GREEDY_W4U8_BATCH8_RESIDENT_BIAS;
             } else {
                 generation_mode = UINT32_MAX;
             }
@@ -4271,7 +4279,7 @@ int main(int argc, char **argv) {
         (replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS &&
          vertical_slice_mode != QBH_BLOCK_SLICE_ACTIVE_RANGE) ||
         generation_mode >
-            QBH_BLOCK_GENERATION_GREEDY_W4U8_COARSE_PIPELINE ||
+            QBH_BLOCK_GENERATION_GREEDY_W4U8_BATCH8_RESIDENT_BIAS ||
         generation_boundary_audit_enabled > 1U ||
         (generation_boundary_audit_enabled != 0U &&
          !qbh_generation_w4u8_enabled(generation_mode)) ||
