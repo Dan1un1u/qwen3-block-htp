@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0170
+  active_experiment: null
   next_experiment_number: 171
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,33 +27,56 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0169
-  last_completed_source_commit: f4722419596931035583e98e4b5a304b528d1cd2
+  last_completed_experiment: EXP-0170
+  last_completed_source_commit: 23c00feaee20ccef30165d47ed03b5774c70e649
   provisional_source_parent: selected_EXP0168_W4U8_token_generation_baseline
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: approved_pending_preflight
+  active_experiment_stage: none
   active_experiment_evidence: null
-  active_experiment_gate: not_run
-  active_recipe_specialization: W4U8_decode_HVX_tile_Softmax
-  active_experiment_contract:
-    id: EXP-0170
-    source_branch: codex/exp-0170-w4u8-decode-hvx-softmax
-    source_parent: EXP-0169
-    source_parent_commit: f4722419596931035583e98e4b5a304b528d1cd2
-    execution_scope: real_token_ID_M64_prefill_then_192_continuous_W4U8_decode_steps_to_valid_length256
-    direct_control: same_binary_EXP0169_scalar_dynamic_U8_Softmax
-    candidate: four_query_heads_by_32_KV_tokens_HVX_tiled_dynamic_U8_Softmax
-    allowed_changes: M1_W4U8_decode_Softmax_local_VTCM_scratch_dispatch_telemetry_profiling_and_experiment_scripts_only
-    forbidden_changes: prefill_Softmax_integer_math_probability_values_KV_cache_ABI_DMA_seal_QK_AV_HMX_projection_MLP_LM_head_weights_scales_qparams_prompt_feedback_F16F16_W4F16_or_QNN
-    correctness_gate: byte_exact_probability_block_outputs_cache_selected_tokens_and_codes_to_scalar_control_plus_all193_independent_integer_head_checks_and_transformer_cache_regression
-    physical_gate: exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_timed_interlayer_or_full_logit_DDR_zero_spill_fill_unchanged_QK_AV_HMX_work_monotonic_cache_lengths_zero_unattributed_ticks
-    performance_gate: ten_rotated_scalar_candidate_pairs_candidate_strictly_higher_direct_decode_tokens_per_second_over_L64_L255_with_prefill_preserved_as_diagnostic
-    stop_conditions: correctness_physical_ledger_or_device_stability_failure
+  active_experiment_gate: not_applicable
+  active_recipe_specialization: null
+  active_experiment_contract: null
   final_profiling_summary_standard: direct_full_stack_prefill_and_decode_tokens_per_second_plus_exact_Host_wall
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0169/20260904T_exp0169_f472241_formal'
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0170/20260904T_exp0170_23c00fe_formal'
+  latest_w4u8_decode_softmax_candidate:
+    id: EXP-0170
+    source_branch: codex/exp-0170-w4u8-decode-hvx-softmax
+    source_head: 042dbfd8907c23af255092a03ac28b13f8e740bc
+    runtime_source_commit: 23c00feaee20ccef30165d47ed03b5774c70e649
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0170/20260904T_exp0170_23c00fe_formal'
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending
+    selected_baseline_changed: false
+    execution_unit: real_token_ID_M64_prefill_then_192_continuous_W4U8_decode_steps_to_valid_length256
+    implementation: two_heads_by_two_32_token_tiles_per_128byte_HVX_unit_two_score_scans_resident_log2_codes_vector_LUT_direct_AV_carrier_publication
+    correctness_gate: pass_43008_probability_calls_byte_exact_all20_sessions_identical_all193_integer_head_checks_and_EXP0163_regression
+    semantic_gate: disabled_by_user_contract
+    physical_gate: pass_exact_8mib_VTCM_zero_intermediate_or_timed_full_logit_DDR_zero_spill_fill_one_FastRPC_per_pass_no_QNN
+    ledger_gate: pass_zero_unattributed_ticks_every_invocation_and_layer
+    performance_gate: pass_all_ten_rotated_pairs
+    direct_end_to_end:
+      scalar_prefill_tokens_per_second: 1294.944475
+      candidate_prefill_tokens_per_second: 1293.562864
+      scalar_decode_host_us_per_token: 60024.837492
+      candidate_decode_host_us_per_token: 50669.130844
+      scalar_decode_tokens_per_second: 16.659770
+      candidate_decode_tokens_per_second: 19.735882
+      candidate_decode_speed_percent: 18.464312
+    dynamic_softmax_us: {scalar: 9877.865533, candidate: 545.234918}
+    QK_softmax_AV_us: {scalar: 15963.855, candidate: 6573.034}
+    cache_bucket_speed_percent: {L64_95: 9.09, L224_255: 27.60}
+    complete_wall_slope_us_per_cache_token: {scalar: 62.672718, candidate: 4.042320}
+    softmax_slope_us_per_cache_token: {scalar: 60.590611, candidate: 1.991718}
+    conclusion: HVX_decode_Softmax_eliminates_the_dominant_EXP0169_long_cache_slope_without_changing_math_or_physical_contract_and_is_eligible_for_user_promotion
+    full_profiling_report_sha256: 6ec4c61d6feb350f0a0434cb1b0d6fae147114574117b2fffb587e295eafff55
+    summary_sha256: f98919292333a3949ec542ad63c4d7d09c37550f9900536f841ecbe825b1fd6d
+    independent_reference_sha256: 1af189544717a77cee146bc9d0bb30011f5e1bbbabac15e841fb3e8040ba93a1
+    exp0163_regression_sha256: d20d68beb7e72db4a405716e5e647355578722797390884020974664bfba2bdf
   latest_w4u8_long_decode_characterization:
     id: EXP-0169
     source_branch: codex/exp-0169-w4u8-long-decode-attribution

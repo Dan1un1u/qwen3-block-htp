@@ -1127,3 +1127,20 @@ selected EXP-0168 baseline remains unchanged.
 _Avoid_: attributing the long-cache decline primarily to KV DDR bandwidth,
 calling the scalar dynamic decode path HVX-vectorized, averaging away seal
 spikes, changing EXP-0168 baseline status, semantic-quality claim
+
+**W4U8 HVX-Tiled Decode Softmax Candidate**:
+The completed EXP-0170 candidate that changes only M=1 dynamic W4U8 Softmax.
+It processes two query heads and two adjacent 32-token tiles as one 128-byte
+HVX unit, retains log2 codes in dead VTCM carrier padding, uses vector LUT
+lookup, and publishes probability directly in the existing AV HMX carrier.
+Ten rotated pairs reduce L64-L255 decode from 60.025 to 50.669 ms/token and
+increase direct throughput from 16.660 to 19.736 token/s, an 18.464% speed
+gain. Dynamic Softmax falls from 9.878 to 0.545 ms, and the complete-wall slope
+falls from 62.673 to 4.042 us per added cache token. The gain grows from 9.09%
+at L64-95 to 27.60% at L224-255. All 43,008 on-device probability comparisons
+are byte-exact, all twenty output sequences match, and all physical, cache,
+ledger and regression gates pass. Semantic quality remains disabled. Adoption
+is pending explicit user approval; EXP-0168 remains the selected W4U8 baseline.
+_Avoid_: calling EXP-0170 the selected baseline before user promotion, claiming
+semantic quality, attributing the gain to QK/AV HMX or KV-cache bandwidth,
+applying the timed audit comparator to performance runs

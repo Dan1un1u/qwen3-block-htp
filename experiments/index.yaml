@@ -13,20 +13,24 @@ experiments:
     variants:
       - scalar_dynamic_softmax_control
       - four_head_by_32_token_HVX_tiled_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: ten-rotated-pair-full-stack-W4U8-long-decode-softmax
     source_branches:
       - codex/exp-0170-w4u8-decode-hvx-softmax
-    source_commits: []
+    source_commits:
+      - 23c00feaee20ccef30165d47ed03b5774c70e649
+      - 042dbfd8907c23af255092a03ac28b13f8e740bc
     record: docs/experiments/EXP-0170.md
     approval_ref: 'User message 2026-09-04: 同意优化方向，开始实现'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0170-w4u8-decode-hvx-softmax
       approved_on: '2026-09-04'
+      started_on: '2026-09-04'
+      completed_on: '2026-09-04'
     evidence:
       source_parent_experiment: EXP-0169
       source_parent_commit: f4722419596931035583e98e4b5a304b528d1cd2
@@ -39,6 +43,34 @@ experiments:
       physical_gate: exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_intermediate_or_timed_full_logit_DDR_zero_spill_fill_unchanged_QK_AV_HMX_work_and_zero_unattributed_ticks
       performance_gate: ten_rotated_pairs_candidate_strictly_faster_for_direct_complete_L64_L255_decode_Host_wall_and_tokens_per_second
       selected_baseline_changed: false
+      runtime_source_commit: 23c00feaee20ccef30165d47ed03b5774c70e649
+      reporting_source_commit: 042dbfd8907c23af255092a03ac28b13f8e740bc
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0170/20260904T_exp0170_23c00fe_formal'
+      formal_sessions: ten_rotated_pairs_each_mode_one_M64_prefill_plus_192_continuous_decode_tokens
+      correctness_gate_result: pass_43008_of_43008_probability_calls_byte_exact_all20_output_hashes_and_tokens_exact_all193_integer_head_checks_and_EXP0163_regression
+      physical_gate_result: pass_exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_intermediate_or_timed_full_logit_DDR_zero_spill_fill
+      ledger_gate_result: pass_zero_unattributed_ticks_every_invocation_and_layer
+      performance_gate_result: pass_candidate_wins_all_ten_pairs
+      direct_end_to_end:
+        scalar_prefill_tokens_per_second: 1294.944475
+        candidate_prefill_tokens_per_second: 1293.562864
+        scalar_decode_host_us_per_token: 60024.837492
+        candidate_decode_host_us_per_token: 50669.130844
+        scalar_decode_tokens_per_second: 16.659770
+        candidate_decode_tokens_per_second: 19.735882
+        candidate_decode_speed_percent: 18.464312
+        candidate_decode_wall_reduction_percent: 15.586392
+      dynamic_softmax_us: {scalar: 9877.865533, candidate: 545.234918}
+      QK_softmax_AV_us: {scalar: 15963.855, candidate: 6573.034}
+      cache_bucket_speed_percent: {L64_95: 9.09, L224_255: 27.60}
+      complete_wall_slope_us_per_cache_token: {scalar: 62.672718, candidate: 4.042320}
+      softmax_slope_us_per_cache_token: {scalar: 60.590611, candidate: 1.991718}
+      adoption_decision: pending_explicit_user_approval
+      full_profiling_report_sha256: 6ec4c61d6feb350f0a0434cb1b0d6fae147114574117b2fffb587e295eafff55
+      summary_sha256: f98919292333a3949ec542ad63c4d7d09c37550f9900536f841ecbe825b1fd6d
+      independent_reference_sha256: 1af189544717a77cee146bc9d0bb30011f5e1bbbabac15e841fb3e8040ba93a1
+      audit_device_sha256: 0a4da7cde81b63e9bc40a58ed20c9475bce84e71a736d31f8f408d91588c873e
+      exp0163_regression_sha256: d20d68beb7e72db4a405716e5e647355578722797390884020974664bfba2bdf
   - id: EXP-0169
     slug: w4u8-long-decode-attribution
     title: W4U8 real continuous-decode KV-length scaling attribution
