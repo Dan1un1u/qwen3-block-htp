@@ -6,6 +6,8 @@ cd "${project_root}"
 
 grep -q 'QBH_BLOCK_ABI_VERSION UINT32_C(70)' include/block_protocol.h
 grep -q 'QBH_BLOCK_EXPERIMENT UINT32_C(163)' include/block_protocol.h
+! grep -q 'experiment\\\":162' src/host/block_main.c
+! grep -q 'EXP-0162' src/host/block_main.c
 grep -q 'QBH_DECODE_SESSION_ABI_VERSION UINT32_C(4)' include/block_protocol.h
 grep -q 'QBH_KV_CACHE_HMX_U8_SEGMENT_COUNT(capacity_)' include/block_protocol.h
 grep -q 'qbh_scan_append_u8_kv_hmx_segmented' src/dsp/block_imp.c

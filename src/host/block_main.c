@@ -2510,7 +2510,7 @@ static void qbh_print_replay_profile(
     printf(",\"" #field "\":%" PRIu64, header->field)
 
     printf(
-        "{\"experiment\":162,\"record\":\"replay_profile\","
+        "{\"experiment\":163,\"record\":\"replay_profile\","
         "\"variant\":\"%s\",\"replay_step\":%" PRIu32 ","
         "\"mode\":\"%s\",\"logical_m\":%" PRIu32 ","
         "\"first_position\":%" PRIu32 ","
@@ -3128,7 +3128,7 @@ static int qbh_run_replay_sequence(
         }
         all_pass &= qbh_replay_step_pass(variant, step_result);
         printf(
-            "{\"experiment\":162,\"variant\":\"%s\","
+            "{\"experiment\":163,\"variant\":\"%s\","
             "\"replay_step\":%" PRIu32 ",\"mode\":\"%s\","
             "\"first_position\":%" PRIu32 ","
             "\"valid_length\":%" PRIu32 ","
@@ -3248,7 +3248,7 @@ static int qbh_run_replay_sequence(
         }
     }
     printf(
-        "{\"experiment\":162,\"variant\":\"%s\","
+        "{\"experiment\":163,\"variant\":\"%s\","
         "\"replay_sequence_complete\":true,"
         "\"completed_steps\":%" PRIu32 ","
         "\"first_layer\":%" PRIu32 ","
@@ -3342,7 +3342,7 @@ static int qbh_run_full_stack_hidden_capture(
         gate_pass = 0;
     }
     printf(
-        "{\"experiment\":162,\"hidden_capture\":true,"
+        "{\"experiment\":163,\"hidden_capture\":true,"
         "\"variant\":\"%s\",\"host_wall_ns\":%" PRIu64 ","
         "\"rpc_result\":%d,\"dsp_status\":%d,"
         "\"captured_layers\":%" PRIu32 ","
@@ -4670,7 +4670,7 @@ int main(int argc, char **argv) {
             const char *layout_only = getenv("QBH_LAYOUT_ONLY");
             if (layout_only != NULL && strcmp(layout_only, "1") == 0) {
                 printf(
-                    "{\"experiment\":162,\"layout_only\":true,"
+                    "{\"experiment\":163,\"layout_only\":true,"
                     "\"variant\":\"%s\",\"layer_first\":%" PRIu32
                     ",\"layer_count\":%" PRIu32
                     ",\"shared_bytes\":%zu,"
@@ -5266,7 +5266,7 @@ int main(int argc, char **argv) {
         int map_gate_result = qwen3_probe_run_block(
             session.handle, shared_fd, (uint32_t)total_bytes);
         printf(
-            "{\"experiment\":162,\"map_gate\":true,"
+            "{\"experiment\":163,\"map_gate\":true,"
             "\"variant\":\"%s\",\"shared_bytes\":%zu,"
             "\"rpc_result\":%d,\"dsp_status\":%d,"
             "\"layer_count\":%" PRIu32 ","
@@ -5653,7 +5653,7 @@ int main(int argc, char **argv) {
     release_result = qbh_session_release(&session);
     close_result = qbh_session_close(&session);
     printf(
-        "{\"experiment\":\"EXP-0162\","
+        "{\"experiment\":\"EXP-0163\","
         "\"execution_unit\":\"qwen3_layer14_shape_kv_scan\","
         "\"scan_mode\":\"%s\","
         "\"logical_m\":%" PRIu32 ","
