@@ -222,11 +222,12 @@ def append_pc028(
         f16 = float(variants["F16F16"]["modules_us"][name])
         w4f16 = float(variants["W4F16"]["modules_us"][name])
         w4u8 = float(variants["W4U8"]["modules_us"][name])
+        comparison = "N/A" if w4u8 == 0.0 else f"{speed(w4f16, w4u8):+.1f}%"
         lines.append(
             f"| {name} | {fmt_cell(f16, float(variants['F16F16']['wall_us']))} | "
             f"{fmt_cell(w4f16, float(variants['W4F16']['wall_us']))} | "
             f"{fmt_cell(w4u8, float(variants['W4U8']['wall_us']))} | "
-            f"{speed(w4f16, w4u8):+.1f}% |"
+            f"{comparison} |"
         )
     lines.append("")
 
