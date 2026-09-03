@@ -6,6 +6,40 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0169
+    slug: w4u8-long-decode-attribution
+    title: W4U8 real continuous-decode KV-length scaling attribution
+    parent: EXP-0168
+    variants:
+      - selected_exp0168_w4u8_at_L64_through_L255
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: not_applicable
+    evidence_profile: ten-session-full-stack-W4U8-continuous-decode-length-scan
+    source_branches:
+      - codex/exp-0169-w4u8-long-decode-attribution
+    source_commits: []
+    record: docs/experiments/EXP-0169.md
+    approval_ref: 'User message 2026-09-04: 好的，按你方向做，先定位问题'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0169-w4u8-long-decode-attribution
+      approved_on: '2026-09-04'
+    evidence:
+      source_parent_experiment: EXP-0168
+      source_parent_commit: bcf327142e451ed25c84f32d13e802230397d65a
+      execution_unit: real_token_ID_M64_prefill_then_192_continuous_W4U8_decode_steps_to_valid_length256
+      recipe_scope: W4U8_token_generation_characterization_only
+      direct_control: selected_EXP0168_with_unchanged_kernel_math_layout_and_schedule
+      allowed_changes: generation_harness_runtime_step_count_capacity257_package_publication_checkpoint_audit_and_length_bucket_profiler
+      forbidden_changes: all_DSP_kernel_math_layout_schedule_weights_qparams_F16F16_and_W4F16_paths
+      correctness_gate: first16_exact_EXP0168_outputs_plus_all193_independent_integer_head_checks_plus_EXP0163_193_step_transformer_cache_regression
+      physical_gate: exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_timed_interlayer_or_full_logit_DDR_zero_spill_fill_monotonic_synchronous_layer_cache_lengths
+      profiling_gate: ten_complete_sessions_zero_unattributed_ticks_with_L64_95_L96_127_L128_159_L160_191_L192_223_and_L224_255_buckets
+      performance_policy: no_speed_gate_characterization_only_direct_tokens_per_second_and_exact_Host_wall_by_bucket
+      diagnostic_target: identify_cache_length_slope_segment_seal_discontinuities_and_attention_substage_growth_without_conflating_fixed_projection_or_lm_head_cost
+      selected_baseline_changed: false
   - id: EXP-0168
     slug: w4u8-lm-head-batch8-overlap
     title: W4U8 batch-eight phase-overlaid LM-head pipeline

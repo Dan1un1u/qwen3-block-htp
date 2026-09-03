@@ -19,8 +19,8 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 169
+  active_experiment: EXP-0169
+  next_experiment_number: 170
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -33,11 +33,24 @@ current_scope:
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: none
+  active_experiment_stage: approved_pending_preflight
   active_experiment_evidence: null
-  active_experiment_gate: not_applicable
-  active_recipe_specialization: none
-  active_experiment_contract: null
+  active_experiment_gate: not_run
+  active_recipe_specialization: W4U8_long_continuous_decode_scaling_attribution
+  active_experiment_contract:
+    id: EXP-0169
+    source_branch: codex/exp-0169-w4u8-long-decode-attribution
+    source_parent: EXP-0168
+    source_parent_commit: bcf327142e451ed25c84f32d13e802230397d65a
+    execution_scope: real_token_ID_M64_prefill_then_192_continuous_W4U8_decode_steps_to_valid_length256
+    direct_control: selected_EXP0168_W4U8_token_generation_baseline_with_unchanged_kernels_and_physical_plan
+    allowed_changes: generation_harness_runtime_step_count_capacity257_package_publication_checkpoint_audit_and_length_bucket_profiling_only
+    forbidden_changes: transformer_embedding_final_RMSNorm_lm_head_argmax_attention_MLP_or_KV_cache_math_layout_schedule_weights_W4_codes_scales_qparams_F16F16_or_W4F16_paths
+    correctness_gate: first16_tokens_and_U8_codes_exact_to_EXP0168_all193_head_outputs_match_independent_integer_reference_and_EXP0163_193_step_transformer_cache_regression
+    physical_gate: exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_timed_interlayer_or_full_logit_DDR_zero_spill_fill_monotonic_layer_synchronous_cache_lengths
+    profiling_gate: ten_complete_sessions_with_per_step_and_per_layer_closed_ledgers_for_L64_through_L255_and_zero_unattributed_ticks
+    performance_policy: characterization_only_no_speed_or_adoption_gate_report_direct_decode_tokens_per_second_by_32_token_cache_length_bucket
+    diagnostic_target: separate_fixed_decode_floor_from_cache_length_dependent_QK_softmax_AV_carrier_DMA_tail_pack_and_segment_seal_costs
   final_profiling_summary_standard: direct_full_stack_prefill_and_decode_tokens_per_second_plus_exact_Host_wall
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0168/20260904T_exp0168_bcf3271_formal'
