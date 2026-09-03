@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(70)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(163)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(71)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(164)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -24,6 +24,8 @@
 #define QBH_BLOCK_KV_HIDDEN \
     (QBH_BLOCK_KV_HEADS * QBH_BLOCK_HEAD_DIM)
 #define QBH_QWEN3_TRANSFORMER_LAYERS UINT32_C(28)
+#define QBH_QWEN3_VOCAB_SIZE UINT32_C(151936)
+#define QBH_GENERATION_MAX_TOKENS UINT32_C(16)
 #define QBH_REPLAY_LAYER_INDEX UINT32_C(14)
 #define QBH_VERTICAL_SLICE_FIRST_LAYER UINT32_C(0)
 #define QBH_VERTICAL_SLICE_LAYER_COUNT QBH_QWEN3_TRANSFORMER_LAYERS
@@ -95,6 +97,11 @@ enum qbh_block_full_stack_stage_mode {
     QBH_BLOCK_FULL_STACK_RUN = 0,
     QBH_BLOCK_FULL_STACK_MAP_GATE = 1,
     QBH_BLOCK_FULL_STACK_HIDDEN_CAPTURE = 2,
+};
+
+enum qbh_block_generation_mode {
+    QBH_BLOCK_GENERATION_DISABLED = 0,
+    QBH_BLOCK_GENERATION_GREEDY_W4F16 = 1,
 };
 
 enum qbh_kv_cache_element_type {
@@ -467,6 +474,10 @@ enum qbh_block_status {
     QBH_BLOCK_STATUS_ATTENTION_PIPELINE_FAILED = -21,
     QBH_BLOCK_STATUS_RESIDUAL_POOL_FAILED = -22,
     QBH_BLOCK_STATUS_HIDDEN_CAPTURE_DMA_FAILED = -23,
+    QBH_BLOCK_STATUS_EMBEDDING_FAILED = -24,
+    QBH_BLOCK_STATUS_FINAL_NORM_FAILED = -25,
+    QBH_BLOCK_STATUS_LM_HEAD_FAILED = -26,
+    QBH_BLOCK_STATUS_GENERATION_REFERENCE_FAILED = -27,
 };
 
 enum qbh_block_numerical_status {
@@ -740,6 +751,21 @@ struct qbh_block_header {
     uint32_t w4u8_boundary_audit_output_offset;
     uint32_t w4u8_boundary_audit_output_bytes;
 
+    /* EXP-0164 immutable token-generation request.  These fields precede
+     * dsp_status so the per-run telemetry clear cannot erase them. */
+    uint32_t generation_mode;
+    uint32_t generation_token_ids_offset;
+    uint32_t generation_token_ids_bytes;
+    uint32_t generation_token_count;
+    uint32_t generation_embedding_offset;
+    uint32_t generation_embedding_bytes;
+    uint32_t generation_final_norm_offset;
+    uint32_t generation_final_norm_bytes;
+    struct qbh_block_projection_desc generation_lm_head;
+    uint32_t generation_expected_token_ids_offset;
+    uint32_t generation_expected_token_ids_bytes;
+    uint32_t generation_expected_token_count;
+
     int32_t dsp_status;
     int32_t cache_status;
     int32_t hmx_worker_status;
@@ -876,6 +902,25 @@ struct qbh_block_header {
     uint64_t weight_ddr_read_bytes;
     uint64_t boundary_ddr_read_bytes;
     uint64_t boundary_ddr_write_bytes;
+
+    uint32_t generation_selected_token_id;
+    uint32_t generation_expected_token_id;
+    uint32_t generation_token_match;
+    uint32_t generation_input_token_count_observed;
+    uint32_t generation_lm_head_batch_n_tiles;
+    uint32_t generation_lm_head_command_count;
+    uint32_t generation_lm_head_n_tiles;
+    uint32_t generation_selected_logit_half_bits;
+    uint64_t generation_embedding_ticks;
+    uint64_t generation_final_norm_ticks;
+    uint64_t generation_lm_head_ticks;
+    uint64_t generation_lm_head_weight_dma_ticks;
+    uint64_t generation_lm_head_scale_dma_ticks;
+    uint64_t generation_lm_head_expand_ticks;
+    uint64_t generation_lm_head_hmx_ticks;
+    uint64_t generation_lm_head_argmax_ticks;
+    uint64_t generation_embedding_ddr_read_bytes;
+    uint64_t generation_lm_head_ddr_read_bytes;
 
     uint64_t qtimer_start;
     uint64_t qtimer_end;

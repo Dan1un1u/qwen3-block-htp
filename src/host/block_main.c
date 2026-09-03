@@ -3268,6 +3268,200 @@ static int qbh_run_replay_sequence(
                ? 0 : -1;
 }
 
+static int qbh_run_generation_sequence(
+    struct qbh_session *session, int shared_fd, uint8_t *shared,
+    uint32_t total_bytes, const char *package_root,
+    struct qbh_block_header *header,
+    const struct qbh_file_slot *token_slot,
+    const struct qbh_file_slot rope_slots[2]) {
+    struct qbh_decode_session_state *state =
+        (struct qbh_decode_session_state *)(
+            shared + header->replay_session_offset);
+    uint32_t generated[QBH_GENERATION_MAX_TOKENS];
+    uint64_t total_wall_ns = 0U;
+    int all_pass = 1;
+
+    memset(generated, 0, sizeof(generated));
+    for (uint32_t step = 0U; step < QBH_GENERATION_MAX_TOKENS;
+         ++step) {
+        const uint32_t initial_length =
+            state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER].valid_length;
+        uint64_t start;
+        uint64_t end;
+        int rpc_result;
+        int step_pass;
+
+        for (uint32_t slice_index = 1U;
+             slice_index < QBH_VERTICAL_SLICE_LAYER_COUNT;
+             ++slice_index) {
+            if (state->layers[
+                    QBH_VERTICAL_SLICE_FIRST_LAYER + slice_index]
+                    .valid_length != initial_length) {
+                fprintf(stderr,
+                        "generation cache lengths diverged before step "
+                        "%" PRIu32 "\n", step);
+                return -1;
+            }
+        }
+        if (step == 0U) {
+            header->scan_mode = QBH_BLOCK_SCAN_PREFILL;
+            header->logical_m = QBH_BLOCK_M;
+            header->generation_token_count = QBH_BLOCK_M;
+        } else {
+            char name[128];
+            uint32_t *token_ids =
+                (uint32_t *)(shared + token_slot->offset);
+            token_ids[0] = generated[step - 1U];
+            memset(token_ids + 1, 0,
+                   token_slot->expected_bytes - sizeof(*token_ids));
+            header->scan_mode = QBH_BLOCK_SCAN_DECODE;
+            header->logical_m = 1U;
+            header->generation_token_count = 1U;
+            if (snprintf(
+                    name, sizeof(name),
+                    "generation_decode_rope_cos_%02" PRIu32
+                    "_f16.bin", step - 1U) < 0 ||
+                qbh_read_named_tensor(
+                    package_root, name,
+                    shared + rope_slots[0].offset,
+                    rope_slots[0].expected_bytes) != 0 ||
+                snprintf(
+                    name, sizeof(name),
+                    "generation_decode_rope_sin_%02" PRIu32
+                    "_f16.bin", step - 1U) < 0 ||
+                qbh_read_named_tensor(
+                    package_root, name,
+                    shared + rope_slots[1].offset,
+                    rope_slots[1].expected_bytes) != 0) {
+                fprintf(stderr,
+                        "failed to stage generation RoPE step %" PRIu32
+                        "\n", step);
+                return -1;
+            }
+        }
+
+        qbh_bind_host_slice_layer(header, 0U);
+        header->initial_kv_length = initial_length;
+        header->replay_expected_step = state->completed_step_count;
+        header->replay_first_position = state->next_position;
+        header->repeat_count = 1U;
+        header->dsp_status = QBH_BLOCK_STATUS_HOST_READY;
+        start = qbh_monotonic_ns();
+        rpc_result = qwen3_probe_run_block(
+            session->handle, shared_fd, total_bytes);
+        end = qbh_monotonic_ns();
+        total_wall_ns += end - start;
+        generated[step] = header->generation_selected_token_id;
+
+        step_pass =
+            rpc_result == AEE_SUCCESS &&
+            header->dsp_status == QBH_BLOCK_STATUS_OK &&
+            header->generation_token_match != 0U &&
+            header->generation_input_token_count_observed ==
+                header->generation_token_count &&
+            header->vtcm_requested_bytes == QBH_EXPECTED_FULL_VTCM_BYTES &&
+            header->vtcm_acquired_bytes == QBH_EXPECTED_FULL_VTCM_BYTES &&
+            header->intermediate_ddr_read_bytes == 0U &&
+            header->intermediate_ddr_write_bytes == 0U &&
+            header->intermediate_spill_fill_count == 0U &&
+            header->boundary_ddr_write_bytes == 0U &&
+            state->completed_step_count == step + 1U;
+        for (uint32_t slice_index = 0U;
+             slice_index < QBH_VERTICAL_SLICE_LAYER_COUNT;
+             ++slice_index) {
+            const struct qbh_decode_layer_state *layer =
+                &state->layers[
+                    QBH_VERTICAL_SLICE_FIRST_LAYER + slice_index];
+            if (layer->valid_length !=
+                    initial_length + header->logical_m ||
+                header->slice_profiles[slice_index].cache_valid_before !=
+                    initial_length ||
+                header->slice_profiles[slice_index].cache_valid_after !=
+                    layer->valid_length ||
+                header->slice_profiles[slice_index]
+                        .hidden_ddr_write_bytes != 0U) {
+                step_pass = 0;
+            }
+        }
+        all_pass &= step_pass;
+        printf(
+            "{\"experiment\":164,\"generation_step\":%" PRIu32
+            ",\"mode\":\"%s\",\"first_position\":%" PRIu32
+            ",\"valid_length\":%" PRIu32
+            ",\"host_wall_ns\":%" PRIu64
+            ",\"selected_token_id\":%" PRIu32
+            ",\"expected_token_id\":%" PRIu32
+            ",\"token_match\":%s"
+            ",\"selected_logit_half_bits\":%" PRIu32
+            ",\"embedding_ticks\":%" PRIu64
+            ",\"final_norm_ticks\":%" PRIu64
+            ",\"lm_head_ticks\":%" PRIu64
+            ",\"lm_head_weight_dma_ticks\":%" PRIu64
+            ",\"lm_head_scale_dma_ticks\":%" PRIu64
+            ",\"lm_head_expand_ticks\":%" PRIu64
+            ",\"lm_head_hmx_ticks\":%" PRIu64
+            ",\"lm_head_argmax_ticks\":%" PRIu64
+            ",\"lm_head_commands\":%" PRIu32
+            ",\"lm_head_n_tiles\":%" PRIu32
+            ",\"embedding_ddr_read_bytes\":%" PRIu64
+            ",\"lm_head_ddr_read_bytes\":%" PRIu64
+            ",\"boundary_ddr_write_bytes\":%" PRIu64
+            ",\"intermediate_ddr_read_bytes\":%" PRIu32
+            ",\"intermediate_ddr_write_bytes\":%" PRIu32
+            ",\"intermediate_spill_fill_count\":%" PRIu32
+            ",\"vtcm_acquired_bytes\":%" PRIu32
+            ",\"rpc_result\":%d,\"dsp_status\":%d"
+            ",\"pass\":%s}\n",
+            step, step == 0U ? "prefill" : "decode",
+            header->replay_first_position,
+            state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER].valid_length,
+            end - start, header->generation_selected_token_id,
+            header->generation_expected_token_id,
+            header->generation_token_match != 0U ? "true" : "false",
+            header->generation_selected_logit_half_bits,
+            header->generation_embedding_ticks,
+            header->generation_final_norm_ticks,
+            header->generation_lm_head_ticks,
+            header->generation_lm_head_weight_dma_ticks,
+            header->generation_lm_head_scale_dma_ticks,
+            header->generation_lm_head_expand_ticks,
+            header->generation_lm_head_hmx_ticks,
+            header->generation_lm_head_argmax_ticks,
+            header->generation_lm_head_command_count,
+            header->generation_lm_head_n_tiles,
+            header->generation_embedding_ddr_read_bytes,
+            header->generation_lm_head_ddr_read_bytes,
+            header->boundary_ddr_write_bytes,
+            header->intermediate_ddr_read_bytes,
+            header->intermediate_ddr_write_bytes,
+            header->intermediate_spill_fill_count,
+            header->vtcm_acquired_bytes, rpc_result,
+            header->dsp_status, step_pass ? "true" : "false");
+        if (rpc_result != AEE_SUCCESS ||
+            header->dsp_status != QBH_BLOCK_STATUS_OK) {
+            return -1;
+        }
+    }
+
+    printf(
+        "{\"experiment\":164,\"generation_sequence_complete\":true,"
+        "\"variant\":\"W4F16\",\"completed_steps\":%" PRIu32
+        ",\"total_host_wall_ns\":%" PRIu64
+        ",\"token_ids\":[",
+        state->completed_step_count, total_wall_ns);
+    for (uint32_t index = 0U; index < QBH_GENERATION_MAX_TOKENS;
+         ++index) {
+        printf("%s%" PRIu32, index == 0U ? "" : ",",
+               generated[index]);
+    }
+    printf("],\"all_steps_pass\":%s}\n",
+           all_pass ? "true" : "false");
+    return all_pass &&
+                   state->completed_step_count ==
+                       QBH_GENERATION_MAX_TOKENS
+               ? 0 : -1;
+}
+
 static int qbh_run_full_stack_hidden_capture(
     struct qbh_session *session, int shared_fd, uint8_t *shared,
     uint32_t total_bytes, struct qbh_block_header *header,
@@ -3384,6 +3578,12 @@ int main(int argc, char **argv) {
     struct qbh_file_slot w4u8_lut_slot;
     struct qbh_file_slot weight_slots[QBH_BLOCK_PROJECTION_COUNT];
     struct qbh_file_slot scale_slots[QBH_BLOCK_PROJECTION_COUNT];
+    struct qbh_file_slot generation_token_slot;
+    struct qbh_file_slot generation_embedding_slot;
+    struct qbh_file_slot generation_final_norm_slot;
+    struct qbh_file_slot generation_lm_head_weight_slot;
+    struct qbh_file_slot generation_lm_head_scale_slot;
+    struct qbh_file_slot generation_expected_token_slot;
     struct qbh_vertical_layer_slots
         vertical_slots[QBH_VERTICAL_SLICE_LAYER_COUNT];
     struct qbh_projection_layout w4u8_gate_up_layout;
@@ -3447,6 +3647,7 @@ int main(int argc, char **argv) {
     uint32_t physical_chunks = 1U;
     uint32_t replay_mode = QBH_BLOCK_REPLAY_DISABLED;
     uint32_t vertical_slice_mode = QBH_BLOCK_SLICE_DISABLED;
+    uint32_t generation_mode = QBH_BLOCK_GENERATION_DISABLED;
     uint32_t full_stack_stage_mode = QBH_BLOCK_FULL_STACK_RUN;
     uint32_t w4u8_boundary_audit_enabled = 0U;
     uint32_t replay_session_offset = 0U;
@@ -3493,6 +3694,17 @@ int main(int argc, char **argv) {
     memset(attention_audit_slots, 0, sizeof(attention_audit_slots));
     memset(kv_cache_slots, 0, sizeof(kv_cache_slots));
     memset(kv_reference_slots, 0, sizeof(kv_reference_slots));
+    memset(&generation_token_slot, 0, sizeof(generation_token_slot));
+    memset(&generation_embedding_slot, 0,
+           sizeof(generation_embedding_slot));
+    memset(&generation_final_norm_slot, 0,
+           sizeof(generation_final_norm_slot));
+    memset(&generation_lm_head_weight_slot, 0,
+           sizeof(generation_lm_head_weight_slot));
+    memset(&generation_lm_head_scale_slot, 0,
+           sizeof(generation_lm_head_scale_slot));
+    memset(&generation_expected_token_slot, 0,
+           sizeof(generation_expected_token_slot));
     memset(vertical_slots, 0, sizeof(vertical_slots));
     memset(vertical_bias_offsets, 0, sizeof(vertical_bias_offsets));
     memset(&w4u8_gate_up_layout, 0, sizeof(w4u8_gate_up_layout));
@@ -3687,6 +3899,19 @@ int main(int argc, char **argv) {
         }
     }
     {
+        const char *generation = getenv("QBH_GENERATION_SEQUENCE");
+        if (generation != NULL && generation[0] != '\0') {
+            if (strcmp(generation, "0") == 0) {
+                generation_mode = QBH_BLOCK_GENERATION_DISABLED;
+            } else if (strcmp(generation, "1") == 0) {
+                generation_mode =
+                    QBH_BLOCK_GENERATION_GREEDY_W4F16;
+            } else {
+                generation_mode = UINT32_MAX;
+            }
+        }
+    }
+    {
         const char *layout = getenv("QBH_KV_CACHE_LAYOUT");
         if (layout != NULL && layout[0] != '\0') {
             if (strcmp(layout, "row_major") == 0) {
@@ -3859,6 +4084,19 @@ int main(int argc, char **argv) {
          numerical_audit_enabled != 0U) ||
         (replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS &&
          vertical_slice_mode != QBH_BLOCK_SLICE_ACTIVE_RANGE) ||
+        generation_mode > QBH_BLOCK_GENERATION_GREEDY_W4F16 ||
+        (generation_mode != QBH_BLOCK_GENERATION_DISABLED &&
+         (generation_mode != QBH_BLOCK_GENERATION_GREEDY_W4F16 ||
+          variant != QBH_BLOCK_W4F16 ||
+          replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS ||
+          vertical_slice_mode != QBH_BLOCK_SLICE_ACTIVE_RANGE ||
+          full_stack_stage_mode != QBH_BLOCK_FULL_STACK_RUN ||
+          scan_mode != QBH_BLOCK_SCAN_PREFILL ||
+          logical_m != QBH_BLOCK_M ||
+          initial_kv_length != 0U ||
+          kv_cache_capacity != 80U ||
+          !qbh_hmx_native_f16_cache_formats(
+              kv_cache_k_format, kv_cache_v_format))) ||
         full_stack_stage_mode >
             QBH_BLOCK_FULL_STACK_HIDDEN_CAPTURE ||
         w4u8_boundary_audit_enabled > 1U ||
@@ -4311,6 +4549,41 @@ int main(int argc, char **argv) {
         fprintf(stderr, "package common tensor audit failed\n");
         return 2;
     }
+    if (generation_mode != QBH_BLOCK_GENERATION_DISABLED &&
+        (qbh_prepare_slot(
+             &generation_token_slot, argv[1],
+             "generation_prompt_token_ids_u32.bin",
+             QBH_BLOCK_M * (uint32_t)sizeof(uint32_t), &cursor) != 0 ||
+         qbh_prepare_slot(
+             &generation_embedding_slot, argv[1],
+             "generation_embedding_weight_f16.bin",
+             QBH_QWEN3_VOCAB_SIZE * QBH_BLOCK_HIDDEN *
+                 (uint32_t)sizeof(uint16_t),
+             &cursor) != 0 ||
+         qbh_prepare_slot(
+             &generation_final_norm_slot, argv[1],
+             "generation_final_norm_weight_f16.bin",
+             QBH_BLOCK_HIDDEN * (uint32_t)sizeof(uint16_t),
+             &cursor) != 0 ||
+         qbh_prepare_slot(
+             &generation_lm_head_weight_slot, argv[1],
+             "generation_lm_head_weight_w4_hmx.bin",
+             QBH_QWEN3_VOCAB_SIZE * QBH_BLOCK_HIDDEN / 2U,
+             &cursor) != 0 ||
+         qbh_prepare_slot(
+             &generation_lm_head_scale_slot, argv[1],
+             "generation_lm_head_weight_w4_scale_f32.bin",
+             QBH_QWEN3_VOCAB_SIZE * (uint32_t)sizeof(float),
+             &cursor) != 0 ||
+         qbh_prepare_slot(
+             &generation_expected_token_slot, argv[1],
+             "generation_expected_token_ids_u32.bin",
+             QBH_GENERATION_MAX_TOKENS *
+                 (uint32_t)sizeof(uint32_t),
+             &cursor) != 0)) {
+        fprintf(stderr, "generation boundary package audit failed\n");
+        return 2;
+    }
     if (vertical_slice_mode == QBH_BLOCK_SLICE_ACTIVE_RANGE) {
         for (uint32_t slice_index = 0U;
              slice_index < QBH_VERTICAL_SLICE_LAYER_COUNT;
@@ -4704,6 +4977,16 @@ int main(int argc, char **argv) {
         fprintf(stderr, "package boundary tensor read failed\n");
         goto cleanup;
     }
+    if (generation_mode != QBH_BLOCK_GENERATION_DISABLED &&
+        (qbh_read_slot(shared, &generation_token_slot) != 0 ||
+         qbh_read_slot(shared, &generation_embedding_slot) != 0 ||
+         qbh_read_slot(shared, &generation_final_norm_slot) != 0 ||
+         qbh_read_slot(shared, &generation_lm_head_weight_slot) != 0 ||
+         qbh_read_slot(shared, &generation_lm_head_scale_slot) != 0 ||
+         qbh_read_slot(shared, &generation_expected_token_slot) != 0)) {
+        fprintf(stderr, "generation boundary tensor read failed\n");
+        goto cleanup;
+    }
     for (uint32_t index = 0; index < 2U; ++index) {
         if (qbh_read_slot(shared, &rope_slots[index]) != 0) {
             goto cleanup;
@@ -4866,6 +5149,38 @@ int main(int argc, char **argv) {
     header->output_bytes = output_bytes;
     header->reference_offset = reference_slot.offset;
     header->reference_bytes = reference_slot.expected_bytes;
+    header->generation_mode = generation_mode;
+    if (generation_mode != QBH_BLOCK_GENERATION_DISABLED) {
+        header->generation_token_ids_offset =
+            generation_token_slot.offset;
+        header->generation_token_ids_bytes =
+            generation_token_slot.expected_bytes;
+        header->generation_token_count = QBH_BLOCK_M;
+        header->generation_embedding_offset =
+            generation_embedding_slot.offset;
+        header->generation_embedding_bytes =
+            generation_embedding_slot.expected_bytes;
+        header->generation_final_norm_offset =
+            generation_final_norm_slot.offset;
+        header->generation_final_norm_bytes =
+            generation_final_norm_slot.expected_bytes;
+        header->generation_lm_head.k = QBH_BLOCK_HIDDEN;
+        header->generation_lm_head.n = QBH_QWEN3_VOCAB_SIZE;
+        header->generation_lm_head.weight_offset =
+            generation_lm_head_weight_slot.offset;
+        header->generation_lm_head.weight_bytes =
+            generation_lm_head_weight_slot.expected_bytes;
+        header->generation_lm_head.scale_offset =
+            generation_lm_head_scale_slot.offset;
+        header->generation_lm_head.scale_bytes =
+            generation_lm_head_scale_slot.expected_bytes;
+        header->generation_expected_token_ids_offset =
+            generation_expected_token_slot.offset;
+        header->generation_expected_token_ids_bytes =
+            generation_expected_token_slot.expected_bytes;
+        header->generation_expected_token_count =
+            QBH_GENERATION_MAX_TOKENS;
+    }
     if (vertical_slice_mode == QBH_BLOCK_SLICE_DISABLED) {
         header->qparam_offset = qparam_slot.offset;
         header->qparam_bytes = qparam_slot.expected_bytes;
@@ -5300,6 +5615,14 @@ int main(int argc, char **argv) {
         exit_code = qbh_run_full_stack_hidden_capture(
             &session, shared_fd, shared, (uint32_t)total_bytes,
             header, variant) == 0
+            ? 0 : 1;
+        goto cleanup;
+    }
+
+    if (generation_mode != QBH_BLOCK_GENERATION_DISABLED) {
+        exit_code = qbh_run_generation_sequence(
+            &session, shared_fd, shared, (uint32_t)total_bytes,
+            argv[1], header, &generation_token_slot, rope_slots) == 0
             ? 0 : 1;
         goto cleanup;
     }
