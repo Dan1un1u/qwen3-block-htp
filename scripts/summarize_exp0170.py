@@ -231,6 +231,15 @@ def fmt(value: float, wall: float) -> str:
     return f"{value:.3f} us ({100.0 * value / wall:.1f}%)"
 
 
+def fmt_speed(control: float, candidate: float) -> str:
+    """Format a speed delta without dividing by a fused zero-time row."""
+    if candidate > 0.0:
+        return f"{(control / candidate - 1.0) * 100.0:+.2f}%"
+    if control == 0.0:
+        return "+0.00%"
+    return "removed/fused"
+
+
 def main() -> None:
     args = parse_args()
     result_dir = args.result_dir.resolve()
@@ -378,7 +387,7 @@ def main() -> None:
         lines.append(
             f"| {name} | {fmt(scalar, scalar_wall)} | "
             f"{fmt(candidate, candidate_wall)} | "
-            f"{(scalar / candidate - 1.0) * 100.0:+.2f}% |")
+            f"{fmt_speed(scalar, candidate)} |")
     lines += [
         "", "## Cache-length buckets", "",
         "| L before decode | Scalar wall | HVX wall | Scalar Softmax | HVX Softmax | Speed |",
