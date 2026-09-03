@@ -13,20 +13,23 @@ experiments:
     variants:
       - independent_host_w4u8_generation_reference
       - standalone_dsp_w4u8_greedy_generation
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: full-stack-W4U8-real-token-input-final-head-greedy-loop
     source_branches:
       - codex/exp-0167-w4u8-greedy-generation
-    source_commits: []
+    source_commits:
+      - 9909ddf579cf465064f548b1b69845772b13a044
     record: docs/experiments/EXP-0167.md
     approval_ref: 'User message 2026-09-04: 是的。我就是这个意思，把W4A8的输入输出也做完。预期输出文本是不可用的，没有关系，暂不设精度gate，先关注推理速度。'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0167-w4u8-greedy-generation
       approved_on: '2026-09-04'
+      started_on: '2026-09-04'
+      completed_on: '2026-09-04'
     evidence:
       source_parent_experiment: EXP-0166
       source_parent_commit: 8e0dcf82cb22851a767418805431490fe3699ad2
@@ -42,6 +45,31 @@ experiments:
       performance_policy: report_direct_full_stack_M64_prefill_and_continuous_decode_tokens_per_second_plus_exact_Host_wall_without_minimum_speed_gate
       stop_conditions: implementation_reference_mismatch_physical_failure_device_reboot_or_invalid_evidence
       selected_baseline_changed: false
+      source_commit: 9909ddf579cf465064f548b1b69845772b13a044
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0167/20260904T011000_2cacc2c_formal'
+      retained_generation_package: 'D:/llm_exp/models/qwen3-block-htp/exp0167/w4u8_greedy16'
+      formal_sessions: ten_complete_sessions_each_one_M64_prefill_plus_fifteen_continuous_decode_tokens
+      generated_token_ids: [124491, 51272, 51272, 9092, 51272, 128014, 23186, 85301, 23186, 23186, 23186, 23186, 105260, 37440, 23186, 5205]
+      generated_text_diagnostic: 'ảoordoordoalysisordoытаAPHcdbAPHAPHAPHAPH副主任��APHlang'
+      implementation_gate_result: pass_16_of_16_selected_tokens_and_U8_codes_exact_against_independent_integer_reference_and_zero_bias_carrier_mismatches
+      transformer_regression_result: pass_193_of_193_EXP0163_replay_steps_zero_LSB_zero_cache_mismatch
+      physical_gate_result: pass_exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_intermediate_and_timed_boundary_DDR_zero_spill_fill
+      stability_gate_result: pass_ten_of_ten_sessions_identical
+      quality_gate_result: disabled_by_user_contract_generated_text_is_diagnostic_only
+      direct_end_to_end:
+        prefill_host_us: 57035.312
+        prefill_tokens_per_second: 1122.111859
+        decode_host_us_per_token: 62534.365
+        decode_tokens_per_second: 15.991207
+      speed_vs_selected_EXP0166_W4F16_percent:
+        prefill: 10.413551
+        decode: 48.075544
+      conclusion: W4U8_real_token_input_to_selected_token_boundary_is_implemented_and_physically_valid_with_direct_speed_benefit_but_no_semantic_quality_claim
+      full_profiling_report_sha256: e152caaac3da947aaf7d053a53594e19e719f70ba02f18d245d5337381e7d63d
+      summary_sha256: 68e754877c7caa1a109bc3726c1eac4813227b623ba8385273313806c479db4e
+      independent_reference_sha256: f8119d3eb8c755970a0844e6c3784accbc18978a08796d69dec8025645ee1ab2
+      exp0163_regression_sha256: 9423b08d244a514a5f6240f3a80a21f9c28eb4abe8735985d4a2039d5b5f43b3
+      generation_package_manifest_sha256: a4faac4bb11961c518d313e8d8752fb42f07708cab551cb219a055223a7c3707
   - id: EXP-0166
     slug: w4f16-lm-head-overlap
     title: W4F16 streamed LM-head DMA-HVX-HMX overlap and scale residency

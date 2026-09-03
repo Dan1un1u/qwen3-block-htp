@@ -7,7 +7,7 @@ project:
   source_root: /home/daniuniu/work/qwen3-block-htp
   memory_branch: codex/qwen3-block-project-memory
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
-  updated_on: '2026-09-03'
+  updated_on: '2026-09-04'
 toolchain:
   qnn_runtime: none
   qairt_runtime: none
@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0167
+  active_experiment: null
   next_experiment_number: 168
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,33 +27,51 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0166
-  last_completed_source_commit: 8e0dcf82cb22851a767418805431490fe3699ad2
+  last_completed_experiment: EXP-0167
+  last_completed_source_commit: 9909ddf579cf465064f548b1b69845772b13a044
   provisional_source_parent: selected_EXP0166_W4F16_token_generation_baseline
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: approved_pending_preflight
+  active_experiment_stage: none
   active_experiment_evidence: null
-  active_experiment_gate: not_run
-  active_recipe_specialization: W4U8_token_generation_boundary
-  active_experiment_contract:
-    id: EXP-0167
-    source_branch: codex/exp-0167-w4u8-greedy-generation
-    source_parent: EXP-0166
-    source_parent_commit: 8e0dcf82cb22851a767418805431490fe3699ad2
-    implementation_anchor: selected_EXP0163_W4U8_full_stack_segmented_cache_path_retained_in_EXP0166_source
-    execution_scope: real_token_ID_M64_prefill_then_15_continuous_decode_tokens_through_embedding_layers0_27_final_RMSNorm_streaming_W4U8_lm_head_and_greedy_feedback
-    direct_performance_comparator: selected_EXP0166_W4F16_complete_token_generation_baseline_at_identical_prompt_and_decode_scope
-    allowed_changes: W4U8_token_embedding_input_quantization_final_model_U8_RMSNorm_streaming_integer_HMX_W4U8_lm_head_real_domain_online_argmax_token_feedback_package_and_boundary_profiling_only
-    forbidden_changes: layers0_27_projection_attention_MLP_schedules_EXP0163_segmented_KV_cache_W4_values_existing_qparams_W4F16_or_F16F16_paths_prompt_tokenizer_or_physical_contract
-    implementation_correctness_gate: exact_selected_tokens_and_declared_integer_or_quantized_intermediates_against_independent_W4U8_reference_plus_existing_EXP0163_zero_LSB_transformer_and_cache_regression
-    model_accuracy_policy: no_W4F16_token_match_teacher_accuracy_or_readable_text_gate_record_generated_text_as_diagnostic_only
-    physical_gate: exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_interlayer_or_timed_full_logit_DDR_zero_spill_fill
-    performance_policy: report_direct_full_stack_M64_prefill_and_continuous_decode_tokens_per_second_plus_exact_Host_wall_without_minimum_speed_gate
+  active_experiment_gate: not_applicable
+  active_recipe_specialization: none
+  active_experiment_contract: null
   final_profiling_summary_standard: direct_full_stack_prefill_and_decode_tokens_per_second_plus_exact_Host_wall
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0166/20260903T_exp0166_8e0dcf8_formal'
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0167/20260904T011000_2cacc2c_formal'
+  latest_w4u8_token_generation_candidate:
+    id: EXP-0167
+    source_branch: codex/exp-0167-w4u8-greedy-generation
+    source_head: 9909ddf579cf465064f548b1b69845772b13a044
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0167/20260904T011000_2cacc2c_formal'
+    retained_generation_package: 'D:/llm_exp/models/qwen3-block-htp/exp0167/w4u8_greedy16'
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending
+    selected_baseline_changed: false
+    execution_unit: real_token_ID_M64_prefill_then_15_feedback_decode_calls_producing_16_selected_tokens
+    generated_token_ids: [124491, 51272, 51272, 9092, 51272, 128014, 23186, 85301, 23186, 23186, 23186, 23186, 105260, 37440, 23186, 5205]
+    generated_text_diagnostic: 'ảoordoordoalysisordoытаAPHcdbAPHAPHAPHAPH副主任��APHlang'
+    correctness_gate: pass_independent_integer_final_norm_W4U8_lm_head_and_argmax_16_of_16_exact_plus_EXP0163_193_step_zero_LSB_regression
+    stability_gate: pass_ten_of_ten_sessions_identical
+    semantic_gate: disabled_by_user_contract
+    physical_gate: pass_exact_8mib_VTCM_zero_intermediate_or_timed_full_logit_DDR_zero_spill_fill_one_FastRPC_per_pass_no_QNN
+    ledger_gate: pass_zero_unattributed_ticks_every_full_invocation_and_all_193_regression_profiles
+    host_wall_us:
+      prefill_ten_session_median: 57035.312
+      decode_mean_per_token_ten_session_median: 62534.365
+    direct_end_to_end_tokens_per_second:
+      prefill: 1122.111859
+      decode: 15.991207
+    speed_vs_selected_EXP0166_W4F16_percent:
+      prefill: 10.413551
+      decode: 48.075544
+    conclusion: W4U8_token_boundary_is_complete_and_physically_valid_with_direct_speed_gain_semantic_quality_not_claimed
+    full_profiling_report_sha256: e152caaac3da947aaf7d053a53594e19e719f70ba02f18d245d5337381e7d63d
+    summary_sha256: 68e754877c7caa1a109bc3726c1eac4813227b623ba8385273313806c479db4e
   latest_w4f16_token_generation_candidate:
     id: EXP-0166
     source_branch: codex/exp-0166-w4f16-lm-head-overlap
