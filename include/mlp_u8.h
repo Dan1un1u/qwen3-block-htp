@@ -12,6 +12,7 @@
 #define QBH_MLP_LUT_BYTES (QBH_MLP_LUT_ENTRIES * sizeof(uint16_t))
 #define QBH_MLP_GATHER_SCRATCH_BYTES UINT32_C(256)
 #define QBH_MLP_GATHER_HALF_BYTES UINT32_C(65536)
+#define QBH_MLP_HVX_VECTOR_BYTES UINT32_C(128)
 
 static inline int32_t qbh_floor_div_pow2(int32_t value,
                                          uint32_t shift) {

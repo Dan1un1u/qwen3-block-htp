@@ -24,6 +24,9 @@ struct qbh_mlp_gate_up_handoff {
     uint32_t *pair_publish_count;
     uint32_t *pair_consume_count;
     uint64_t *activation_ticks;
+    uint32_t activation_elements;
+    uint32_t verify_activation_elements;
+    uint32_t *activation_mismatch_count;
     uint32_t stream_fence_mode;
 };
 

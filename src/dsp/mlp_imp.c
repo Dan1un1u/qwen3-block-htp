@@ -507,6 +507,9 @@ AEEResult qbh_run_mlp_rpc(int32_t shared_fd, uint32_t shared_bytes,
             .pair_publish_count = &pair_publish_count,
             .pair_consume_count = &pair_consume_count,
             .activation_ticks = &activation_ticks,
+            .activation_elements = QBH_HMX_OUTPUT_BYTES,
+            .verify_activation_elements = 0U,
+            .activation_mismatch_count = NULL,
         };
 
         if (qbh_stage_activation(

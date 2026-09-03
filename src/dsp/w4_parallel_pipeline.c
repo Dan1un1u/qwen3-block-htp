@@ -394,9 +394,13 @@ static int qbh_hvx_worker_run(struct qbh_hvx_worker_job *job,
 
         if (task.mlp_activation != 0U) {
             uint64_t activation_start = HAP_perf_get_qtimer_count();
+            uint32_t activation_mismatches = 0U;
             uint8_t *pair = state->output_tiles +
                 (size_t)task.mlp_pair_slot * 2U *
                     QBH_HMX_OUTPUT_BYTES;
+            uint8_t *middle =
+                state->mlp_handoff->middle_activation +
+                (size_t)task.mlp_pair_index * QBH_HMX_OUTPUT_BYTES;
             if (qbh_hvx_region_begin(state) != 0) {
                 exit_status = AEE_EFAILED;
                 break;
@@ -407,11 +411,11 @@ static int qbh_hvx_worker_run(struct qbh_hvx_worker_job *job,
                           (size_t)task.mlp_pair_index * 2U *
                               QBH_HMX_OUTPUT_CHANNELS
                     : NULL;
-            if (multipliers != NULL) {
+            if (multipliers != NULL &&
+                state->mlp_handoff->verify_activation_elements != 0U) {
                 qbh_mlp_gate_up_requant_lut_hvx(
                     pair, pair + QBH_HMX_OUTPUT_BYTES,
-                    state->mlp_handoff->middle_activation +
-                        (size_t)task.mlp_pair_index * QBH_HMX_OUTPUT_BYTES,
+                    middle,
                     QBH_HMX_OUTPUT_BYTES,
                     state->mlp_handoff->activation_lut,
                     state->mlp_handoff->activation_gather_scratch +
@@ -420,21 +424,68 @@ static int qbh_hvx_worker_run(struct qbh_hvx_worker_job *job,
                     multipliers,
                     multipliers + QBH_HMX_OUTPUT_CHANNELS,
                     QBH_MLP_GATE_ZERO_POINT, QBH_MLP_UP_ZERO_POINT);
-            } else {
+                qbh_mlp_gate_up_requant_lut_hvx(
+                    pair, pair + QBH_HMX_OUTPUT_BYTES, pair,
+                    state->mlp_handoff->activation_elements,
+                    state->mlp_handoff->activation_lut,
+                    state->mlp_handoff->activation_gather_scratch +
+                        (size_t)job->worker_index *
+                            QBH_MLP_GATHER_SCRATCH_BYTES,
+                    multipliers,
+                    multipliers + QBH_HMX_OUTPUT_CHANNELS,
+                    QBH_MLP_GATE_ZERO_POINT, QBH_MLP_UP_ZERO_POINT);
+            } else if (multipliers != NULL) {
+                qbh_mlp_gate_up_requant_lut_hvx(
+                    pair, pair + QBH_HMX_OUTPUT_BYTES, middle,
+                    state->mlp_handoff->activation_elements,
+                    state->mlp_handoff->activation_lut,
+                    state->mlp_handoff->activation_gather_scratch +
+                        (size_t)job->worker_index *
+                            QBH_MLP_GATHER_SCRATCH_BYTES,
+                    multipliers,
+                    multipliers + QBH_HMX_OUTPUT_CHANNELS,
+                    QBH_MLP_GATE_ZERO_POINT, QBH_MLP_UP_ZERO_POINT);
+            } else if (
+                state->mlp_handoff->verify_activation_elements != 0U) {
                 qbh_mlp_gate_up_lut_hvx(
                     pair, pair + QBH_HMX_OUTPUT_BYTES,
-                    state->mlp_handoff->middle_activation +
-                        (size_t)task.mlp_pair_index * QBH_HMX_OUTPUT_BYTES,
+                    middle,
                     QBH_HMX_OUTPUT_BYTES,
+                    state->mlp_handoff->activation_lut,
+                    state->mlp_handoff->activation_gather_scratch +
+                        (size_t)job->worker_index *
+                            QBH_MLP_GATHER_SCRATCH_BYTES);
+                qbh_mlp_gate_up_lut_hvx(
+                    pair, pair + QBH_HMX_OUTPUT_BYTES, pair,
+                    state->mlp_handoff->activation_elements,
+                    state->mlp_handoff->activation_lut,
+                    state->mlp_handoff->activation_gather_scratch +
+                        (size_t)job->worker_index *
+                            QBH_MLP_GATHER_SCRATCH_BYTES);
+            } else {
+                qbh_mlp_gate_up_lut_hvx(
+                    pair, pair + QBH_HMX_OUTPUT_BYTES, middle,
+                    state->mlp_handoff->activation_elements,
                     state->mlp_handoff->activation_lut,
                     state->mlp_handoff->activation_gather_scratch +
                         (size_t)job->worker_index *
                             QBH_MLP_GATHER_SCRATCH_BYTES);
             }
             qbh_hvx_region_end(state);
+            if (state->mlp_handoff->verify_activation_elements != 0U) {
+                for (uint32_t index = 0U;
+                     index < state->mlp_handoff->activation_elements;
+                     ++index) {
+                    activation_mismatches += pair[index] != middle[index];
+                }
+            }
             qurt_mutex_lock(&state->metrics_mutex);
             *state->mlp_handoff->activation_ticks +=
                 HAP_perf_get_qtimer_count() - activation_start;
+            if (state->mlp_handoff->activation_mismatch_count != NULL) {
+                *state->mlp_handoff->activation_mismatch_count +=
+                    activation_mismatches;
+            }
             ++*state->mlp_handoff->pair_consume_count;
             qurt_mutex_unlock(&state->metrics_mutex);
             asm volatile("barrier" : : : "memory");
@@ -1319,6 +1370,10 @@ static int qbh_run_chunked_w4_pipeline_impl(
          handoff->pair_publish_count == NULL ||
          handoff->pair_consume_count == NULL ||
          handoff->activation_ticks == NULL ||
+         (handoff->activation_elements != QBH_MLP_HVX_VECTOR_BYTES &&
+          handoff->activation_elements != QBH_HMX_OUTPUT_BYTES) ||
+         (handoff->verify_activation_elements != 0U &&
+          handoff->activation_mismatch_count == NULL) ||
          handoff->pair_slot_count == 0U ||
          handoff->pair_slot_count > QBH_W4_MAX_COMPRESSED_SLOT_COUNT ||
          (layout->n_tiles & 1U) != 0U)) {

@@ -1666,8 +1666,13 @@ static int qbh_header_valid(const struct qbh_block_header *header,
             QBH_BLOCK_W4U8_DELTA_RECONSTRUCTION_PIPELINE ||
         header->w4u8_decode_softmax_mode >
             QBH_BLOCK_W4U8_DECODE_SOFTMAX_HVX_TILE4 ||
+        header->w4u8_decode_swiglu_mode >
+            QBH_BLOCK_W4U8_DECODE_SWIGLU_ROW4 ||
         (header->w4u8_decode_softmax_mode !=
              QBH_BLOCK_W4U8_DECODE_SOFTMAX_SCALAR &&
+         header->variant != QBH_BLOCK_W4U8) ||
+        (header->w4u8_decode_swiglu_mode !=
+             QBH_BLOCK_W4U8_DECODE_SWIGLU_FULL_TILE &&
          header->variant != QBH_BLOCK_W4U8) ||
         (header->w4u8_prefill_cache_mode ==
              QBH_BLOCK_W4U8_PREFILL_CACHE_REUSE_ATTENTION_CARRIERS &&
@@ -12738,6 +12743,7 @@ static int qbh_run_w4u8_streaming_mlp(
     uint8_t *mlp_arena = buffers->q;
     uint32_t pair_publish_count = 0U;
     uint32_t pair_consume_count = 0U;
+    uint32_t activation_mismatch_count = 0U;
     uint64_t activation_work_ticks = 0U;
     uint64_t unpack_ticks = 0U;
     uint64_t start;
@@ -12807,6 +12813,21 @@ static int qbh_run_w4u8_streaming_mlp(
             .pair_publish_count = &pair_publish_count,
             .pair_consume_count = &pair_consume_count,
             .activation_ticks = &activation_work_ticks,
+            .activation_elements =
+                header->w4u8_decode_swiglu_mode ==
+                        QBH_BLOCK_W4U8_DECODE_SWIGLU_ROW4 &&
+                    header->scan_mode == QBH_BLOCK_SCAN_DECODE &&
+                    header->logical_m == 1U
+                    ? QBH_MLP_HVX_VECTOR_BYTES
+                    : QBH_HMX_OUTPUT_BYTES,
+            .verify_activation_elements =
+                header->w4u8_decode_swiglu_mode ==
+                        QBH_BLOCK_W4U8_DECODE_SWIGLU_ROW4 &&
+                    header->scan_mode == QBH_BLOCK_SCAN_DECODE &&
+                    header->logical_m == 1U &&
+                    (header->numerical_audit_enabled != 0U ||
+                     header->generation_boundary_audit_enabled != 0U),
+            .activation_mismatch_count = &activation_mismatch_count,
             .stream_fence_mode = header->w4u8_stream_fence_mode,
         };
         qbh_reset_w4u8_phase_header(
@@ -12836,6 +12857,12 @@ static int qbh_run_w4u8_streaming_mlp(
             activation_work_ticks;
         header->w4u8_mlp_pair_publish_count += pair_publish_count;
         header->w4u8_mlp_pair_consume_count += pair_consume_count;
+        if (handoff.activation_elements == QBH_MLP_HVX_VECTOR_BYTES) {
+            header->w4u8_decode_swiglu_row4_call_count +=
+                pair_consume_count;
+            header->w4u8_decode_swiglu_row4_mismatch_count +=
+                activation_mismatch_count;
+        }
         if (result != AEE_SUCCESS ||
             pair_publish_count != gate_up_layout.n_tiles / 2U ||
             pair_consume_count != pair_publish_count) {
