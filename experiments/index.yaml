@@ -13,20 +13,22 @@ experiments:
     variants:
       - exp0160_compatible_monolithic_delta_control_capacity104
       - dynamic_segmented_cache_candidate_capacity104
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: full-stack-W4U8-M64-prefill-continuous-decode-dynamic-segment-sealing
     source_branches:
       - codex/exp-0162-w4u8-full-stack-segmented-cache
-    source_commits: []
+    source_commits:
+      - a3b9607dee88719341763204566bac8a9ed5e3cd
     record: docs/experiments/EXP-0162.md
     approval_ref: 'User message 2026-09-03: 晋升，然后继续下一步'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0162-w4u8-full-stack-segmented-cache
       approved_on: '2026-09-03'
+      completed_on: '2026-09-03'
     evidence:
       source_parent_experiment: EXP-0161
       source_parent_commit: efea24712241dbcb62f468665b98c758c5ef5461
@@ -42,6 +44,32 @@ experiments:
       structural_gate: bounded_attention_scratch_zero_full_prefix_reconstruction_dynamic_sealed_and_tail_counts
       speed_gate: prefill_within_1_percent_early_decode_no_regression_post_seal_and_full_40_token_average_strictly_faster_under_ten_rotated_sessions
       selected_baseline_changed: false
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0162/20260903T045521Z_a3b9607dee88_formal'
+      source_commit: a3b9607dee88719341763204566bac8a9ed5e3cd
+      correctness_gate_result: pass_zero_LSB_all_41_outputs_and_all_dynamic_cache_references
+      lifecycle_gate_result: pass_28_tail_appends_per_decode_step_exactly_28_seals_at_position95_sealed_prefix_immutable_and_postseal_reuse_correct
+      physical_gate_result: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_step_no_QNN
+      structural_gate_result: pass_zero_full_prefix_pack_bounded_overlay_and_dynamic_sealed_tail_counts
+      speed_gate_result: pass_all_required_windows_over_ten_rotated_sessions
+      host_wall_us:
+        prefill: {control: 43604.870, candidate: 43595.651}
+        early_decode_positions64_71: {control: 48692.829, candidate: 48284.788}
+        preseal_decode_positions72_94: {control: 50297.796, candidate: 50289.936}
+        seal_position95: {control: 52045.104, candidate: 52376.823}
+        postseal_decode_positions96_103: {control: 53055.908, candidate: 49325.290}
+        all_decode_positions64_103: {control: 50521.020, candidate: 49714.973}
+      paired_speed_improvement_percent:
+        prefill: 0.3233369649023432
+        early_decode_positions64_71: 0.7396538546224463
+        preseal_decode_positions72_94: -0.5399894205558142
+        seal_position95: -0.6596331916505049
+        postseal_decode_positions96_103: 7.500149575175518
+        all_decode_positions64_103: 1.261495834372317
+      seal_pack_optimization: full_scalar_KV_repack_replaced_by_HVX_scatter_gather_pack
+      full_profiling_report_sha256: a90ce0e109e1efa141b3dfd94fa3c67336c2183dabf6a0af463f4aba9c9498a9
+      summary_sha256: 1ad2788a7829778d7340ff0be960c72d9493cb50e4479039b12383557c7c3875
+      evidence_sha256_ledger_sha256: b5ced0e22594a1ba8d7b885cc9cf4f3ffbffb7f0190d7b153cd500ffa9fe26c7
+      conclusion: dynamic_segmented_cache_is_full_stack_correct_and_strictly_faster_after_seal_and_over_the_complete_40_token_decode_window
   - id: EXP-0161
     slug: w4u8-segmented-long-kv-cache
     title: Long-KV scaling and segmented HMX-native W4U8 cache

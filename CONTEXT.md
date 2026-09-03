@@ -993,12 +993,16 @@ _Avoid_: continuous-decode claim, full-stack baseline, imported-cache
 real-replay claim, total-length VTCM carrier, A16 modification
 
 **Dynamic Segmented Cache Lifecycle**:
-The active EXP-0162 integration contract. One persistent per-layer W4U8 cache
+The completed, locally passing EXP-0162 candidate. One persistent per-layer W4U8 cache
 derives its sealed-segment count and active-tail length from runtime valid
 length, appends each token once, seals a complete 32-token tail exactly once,
 and subsequently treats that segment as immutable. The first test runs one
 real M64 prefill and forty continuous full-stack decode steps so all 28 layers
 cross the 96-token sealing boundary. It compares against an equal-capacity
 EXP-0160-compatible monolithic delta control and does not change model math.
+Ten rotated sessions pass exact correctness and the physical contract; post-seal
+decode improves 7.500% and the complete 40-token decode average improves
+1.261%. Adoption is pending, so EXP-0160 remains the Selected Full-Stack W4U8
+Baseline.
 _Avoid_: capacity-derived fixed sealed count, per-snapshot cache package,
 repacking a sealed prefix, mutable sealed segment, automatic baseline promotion

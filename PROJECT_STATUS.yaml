@@ -7,7 +7,7 @@ project:
   source_root: /home/daniuniu/work/qwen3-block-htp
   memory_branch: codex/qwen3-block-project-memory
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
-  updated_on: '2026-09-02'
+  updated_on: '2026-09-03'
 toolchain:
   qnn_runtime: none
   qairt_runtime: none
@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0162
+  active_experiment: null
   next_experiment_number: 163
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,16 +27,16 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_layers0_27_real_replay_prefill_continuous_decode_full_transformer_stack
-  last_completed_experiment: EXP-0161
-  last_completed_source_commit: efea24712241dbcb62f468665b98c758c5ef5461
+  last_completed_experiment: EXP-0162
+  last_completed_source_commit: a3b9607dee88719341763204566bac8a9ed5e3cd
   provisional_source_parent: selected_EXP0161_W4U8_long_KV_segmented_cache_baseline
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: running
-  active_experiment_evidence: null
-  active_experiment_gate: dynamic_segment_sealing_then_28_layer_continuous_decode_correctness_physical_and_wall_speed
-  active_recipe_specialization: W4U8_full_stack_dynamic_segmented_KV_cache_lifecycle
+  active_experiment_stage: completed_pending_adoption
+  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0162/20260903T045521Z_a3b9607dee88_formal'
+  active_experiment_gate: pass
+  active_recipe_specialization: null
   active_experiment_contract:
     id: EXP-0162
     source_branch: codex/exp-0162-w4u8-full-stack-segmented-cache
@@ -51,7 +51,51 @@ current_scope:
     physical_gate: exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_full_stack_step_no_QNN
     structural_gate: bounded_attention_scratch_zero_full_prefix_reconstruction_dynamic_sealed_and_tail_counts
     speed_gate: prefill_within_1_percent_early_decode_no_regression_post_seal_and_40_token_average_strictly_faster_over_ten_rotated_sessions
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0161/20260902T191200Z_efea24712241_phase_b'
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0162/20260903T045521Z_a3b9607dee88_formal'
+  latest_w4u8_dynamic_segmented_full_stack_candidate:
+    id: EXP-0162
+    source_branch: codex/exp-0162-w4u8-full-stack-segmented-cache
+    source_head: a3b9607dee88719341763204566bac8a9ed5e3cd
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0162/20260903T045521Z_a3b9607dee88_formal'
+    retained_exact_logical_source: 'D:/llm_exp/models/qwen3-block-htp/exp0162/w4u8_exact_logical_capacity104'
+    retained_control_package: 'D:/llm_exp/models/qwen3-block-htp/exp0162/control_delta_capacity104'
+    retained_candidate_package: 'D:/llm_exp/models/qwen3-block-htp/exp0162/candidate_segmented_capacity104'
+    evidence_validity: valid
+    execution_state: completed
+    local_gate: pass
+    adoption_status: pending
+    selected_baseline_changed: false
+    selected_full_stack_w4u8_baseline_remains: EXP-0160
+    execution_unit: real_Qwen3_layers0_27_M64_prefill_continuous_decode_positions64_103
+    correctness_gate: pass_zero_LSB_all_41_full_stack_outputs_and_all_28_layer_cache_lifecycle_references
+    lifecycle_gate: pass_dynamic_tail_append_one_seal_per_layer_at_position95_immutable_prefix_and_first_post_seal_reuse
+    physical_gate: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_step_no_QNN
+    structural_gate: pass_zero_full_prefix_pack_bounded_attention_overlay_dynamic_segment_and_tail_counts
+    formal_sessions: 10_rotated_control_candidate_pairs
+    host_wall_us:
+      prefill: {control: 43604.870, candidate: 43595.651}
+      early_decode_positions64_71: {control: 48692.829, candidate: 48284.788}
+      preseal_decode_positions72_94: {control: 50297.796, candidate: 50289.936}
+      seal_position95: {control: 52045.104, candidate: 52376.823}
+      postseal_decode_positions96_103: {control: 53055.908, candidate: 49325.290}
+      all_decode_positions64_103: {control: 50521.020, candidate: 49714.973}
+    paired_median_speed_improvement_percent:
+      prefill: 0.3233369649023432
+      early_decode_positions64_71: 0.7396538546224463
+      preseal_decode_positions72_94: -0.5399894205558142
+      seal_position95: -0.6596331916505049
+      postseal_decode_positions96_103: 7.500149575175518
+      all_decode_positions64_103: 1.261495834372317
+    seal_pack_optimization: replaced_full_scalar_KV_repack_with_existing_HVX_scatter_gather_path
+    seal_pack_smoke_change: approximately_143ms_to_5p5ms_for_28_layers
+    conclusion: dynamic_segment_lifecycle_is_full_stack_correct_and_recovers_post_seal_attention_scaling_while_amortizing_one_seal_to_a_net_1p261_percent_complete_decode_speedup
+    next_priority: user_adoption_decision_then_extend_continuous_decode_across_multiple_seals_and_longer_context
+    full_profiling_report_sha256: a90ce0e109e1efa141b3dfd94fa3c67336c2183dabf6a0af463f4aba9c9498a9
+    summary_sha256: 1ad2788a7829778d7340ff0be960c72d9493cb50e4479039b12383557c7c3875
+    evidence_sha256_ledger_sha256: b5ced0e22594a1ba8d7b885cc9cf4f3ffbffb7f0190d7b153cd500ffa9fe26c7
+    exact_logical_manifest_sha256: 5bbeb1a5448d0ce97661f63ae98adaac0b2a802af81a07d1cbea056e5b71c265
+    control_manifest_sha256: 2eab43f602e7f665150943194b7a082f6add7190632018d195a181c14e4c347a
+    candidate_manifest_sha256: cb305bb45bd5cc063fc623fc67b506885118f49269d253c7345711ac02ee2292
   latest_w4u8_segmented_long_kv_candidate:
     id: EXP-0161
     source_branch: codex/exp-0161-w4u8-segmented-long-kv-cache
