@@ -6,6 +6,39 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0174
+    slug: w4u8-decode-gate-up-inline-publish
+    title: Decode W4U8 Gate/Up intra-command pair publication
+    parent: EXP-0173
+    variants:
+      - batch8_post_command_control
+      - batch8_inline_pair_publish
+      - batch16_inline_pair_publish
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: bounded-three-cell-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0174-w4u8-decode-gate-up-inline-publish
+    source_commits: []
+    record: docs/experiments/EXP-0174.md
+    approval_ref: 'User message 2026-09-04: 同意晋升。开启loop优化，针对decode，尽量不中断。'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0174-w4u8-decode-gate-up-inline-publish
+      approved_on: '2026-09-04'
+    evidence:
+      source_parent_experiment: EXP-0173
+      source_parent_commit: 9e30f824c6ac1c0aa72ffcdd0f64631b66f469ef
+      execution_unit: real_token_ID_M64_prefill_then_continuous_W4U8_decode
+      direct_control: EXP0173_batch8_post_command_Gate_Up_publication_with_LM_head_batch16
+      candidates: decode_M1_inline_pair_publication_batch8_and_batch16
+      optimization_scope: decode_only_Gate_Up_HMX_batch_width_per_output_release_pair_publication_telemetry_and_tools
+      forbidden_changes: prefill_math_weights_qparams_ring_capacity_pair_slots_SwiGLU_Down_QKV_Attention_O_cache_RMSNorm_embedding_feedback_LM_head_F16F16_W4F16_QNN
+      short_gate: byte_exact_requested_publication_geometry_and_lower_Gate_Up_plus_complete_decode_wall
+      formal_gate: ten_rotated_pairs_selected_candidate_strictly_faster_direct_decode_with_all_correctness_and_physical_contracts
+      selected_baseline_changed: false
   - id: EXP-0173
     slug: w4u8-decode-lm-head-batch16
     title: Decode W4U8 LM-head batch-sixteen pipeline
