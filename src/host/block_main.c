@@ -2782,9 +2782,10 @@ static int qbh_run_replay_sequence(
         (struct qbh_decode_session_state *)(
             shared + header->replay_session_offset);
     struct qbh_replay_step_result step_storage;
-    const uint32_t decode_steps =
+    uint32_t decode_steps =
         header->kv_cache_capacity - QBH_BLOCK_M;
-    const uint32_t total_steps = 1U + decode_steps;
+    const char *decode_steps_env = getenv("QBH_REPLAY_DECODE_STEPS");
+    uint32_t total_steps;
     const uint32_t element_bytes =
         variant == QBH_BLOCK_W4U8 ? 1U : 2U;
     const char *tensor_suffix =
@@ -2799,6 +2800,14 @@ static int qbh_run_replay_sequence(
     const uint32_t last_layer =
         first_layer + QBH_VERTICAL_SLICE_LAYER_COUNT - 1U;
     int all_pass = 1;
+
+    if (decode_steps_env != NULL && decode_steps_env[0] != '\0' &&
+        (qbh_parse_u32(decode_steps_env, &decode_steps) != 0 ||
+         decode_steps == 0U ||
+         decode_steps > header->kv_cache_capacity - QBH_BLOCK_M)) {
+        return -1;
+    }
+    total_steps = 1U + decode_steps;
 
     for (uint32_t slice_index = 0U;
          slice_index < QBH_VERTICAL_SLICE_LAYER_COUNT; ++slice_index) {

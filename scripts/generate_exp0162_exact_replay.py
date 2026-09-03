@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Publish byte-exact 28-layer M64 + 40-token W4U8 replay references."""
+"""Publish byte-exact 28-layer W4U8 replay references.
+
+EXP-0162 remains the default contract.  Later experiments may extend the same
+accepted arithmetic by declaring a larger capacity and experiment identity.
+"""
 
 from __future__ import annotations
 
@@ -56,11 +60,21 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--prior", type=Path, required=True)
     parser.add_argument("--converter", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--capacity", type=int, default=CAPACITY)
+    parser.add_argument("--decode-steps", type=int, default=DECODE_STEPS)
+    parser.add_argument("--experiment", default="EXP-0162")
     return parser.parse_args()
 
 
 def main() -> None:
+    global CAPACITY, DECODE_STEPS
     args = parse_args()
+    if args.capacity <= M:
+        raise ValueError("capacity must exceed the M64 prefill")
+    CAPACITY = args.capacity
+    DECODE_STEPS = args.decode_steps
+    if DECODE_STEPS < 1 or M + DECODE_STEPS > CAPACITY:
+        raise ValueError("decode steps exceed the declared cache capacity")
     source = args.source.resolve()
     prior = args.prior.resolve()
     output = args.output.resolve()
@@ -108,14 +122,32 @@ def main() -> None:
                         f"immutable layer payload changed: layer{layer}/{name}"
                     )
 
+        prior_manifest = json.loads(
+            (prior / "manifest.json").read_text(encoding="utf-8")
+        )
+        prior_exact = prior_manifest.get("exact_reference_revision", {})
+        prior_steps = int(prior_exact.get(
+            "decode_steps",
+            prior_manifest.get("contract", {}).get(
+                "cache_capacity_per_layer",
+                prior_manifest.get("contract", {}).get("cache_capacity", M),
+            ) - M,
+        ))
+        prior_capacity = int(prior_exact.get(
+            "capacity",
+            prior_manifest.get("contract", {}).get(
+                "cache_capacity_per_layer",
+                prior_manifest.get("contract", {}).get("cache_capacity", M),
+            ),
+        ))
         for name in (
             "reference_w4u8_block_input_u8.bin",
             *(f"replay_decode_input_{index:02d}_u8.bin"
-              for index in range(8)),
+              for index in range(prior_steps)),
             *(f"replay_decode_rope_cos_{index:02d}_f16.bin"
-              for index in range(8)),
+              for index in range(prior_steps)),
             *(f"replay_decode_rope_sin_{index:02d}_f16.bin"
-              for index in range(8)),
+              for index in range(prior_steps)),
         ):
             if sha256(source / name) != sha256(prior / name):
                 raise ValueError(f"retained replay prefix changed: {name}")
@@ -187,7 +219,7 @@ def main() -> None:
             replace_array(reference_path, physical)
             changed.append(reference_path)
             step_hashes.append(sha256(reference_path))
-            if decode_index < 8 and sha256(reference_path) != sha256(
+            if decode_index < prior_steps and sha256(reference_path) != sha256(
                 prior / f"replay_decode_reference_{decode_index:02d}_u8.bin"
             ):
                 raise ValueError(
@@ -205,9 +237,9 @@ def main() -> None:
                 changed.append(path)
                 prior_cache = read_exact(
                     prior / f"layer{layer}/reference_kv_cache_{kind}_u8.bin",
-                    np.uint8, (KV_HEADS, 72, HEAD_DIM),
+                    np.uint8, (KV_HEADS, prior_capacity, HEAD_DIM),
                 )
-                if not np.array_equal(cache[:, :72], prior_cache):
+                if not np.array_equal(cache[:, :prior_capacity], prior_cache):
                     raise ValueError(
                         f"exact retained cache prefix changed: layer{layer}/{kind}"
                     )
@@ -223,14 +255,17 @@ def main() -> None:
                 "sha256": sha256(path),
             }
         exact_record = {
-            "kind": "independent_exact_W4U8_28_layer_M64_plus_40_decode",
+            "kind": (
+                "independent_exact_W4U8_28_layer_M64_plus_"
+                f"{DECODE_STEPS}_decode"
+            ),
             "converter": str(args.converter.resolve()),
             "capacity": CAPACITY,
             "decode_steps": DECODE_STEPS,
             "retained_exp0152_prefix_bytes_exact": True,
             "step_reference_sha256": step_hashes,
         }
-        source_manifest["experiment"] = "EXP-0162"
+        source_manifest["experiment"] = args.experiment
         source_manifest["exact_reference_revision"] = exact_record
         source_manifest["clone_mode"] = clone_mode
         manifest_path = staging / "manifest.json"
@@ -241,7 +276,7 @@ def main() -> None:
         )
         os.rename(staging, output)
         print(json.dumps({
-            "experiment": "EXP-0162",
+            "experiment": args.experiment,
             "output": str(output),
             "clone_mode": clone_mode,
             "decode_steps": DECODE_STEPS,

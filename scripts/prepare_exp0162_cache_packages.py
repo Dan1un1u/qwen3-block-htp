@@ -34,9 +34,11 @@ from prepare_exp0161_segmented_cache import (
 
 
 LAYERS = 28
+EXPERIMENT = "EXP-0162"
 PREFILL = 64
 CAPACITY = 104
 DECODE_STEPS = CAPACITY - PREFILL
+DELTA_ROWS = CAPACITY - PREFILL
 MAX_SEGMENTS = (CAPACITY - 1) // SEGMENT_TOKENS
 V_BIAS_BYTES = HEAD_DIM_TILES * BIAS_BYTES
 
@@ -74,7 +76,7 @@ def delta_cache(
         base = base_weight + packed[
             full_weight_bytes:full_weight_bytes + V_BIAS_BYTES
         ].tobytes()
-    journal = np.zeros((DECODE_STEPS, HEAD_DIM), dtype=np.uint8)
+    journal = np.zeros((DELTA_ROWS, HEAD_DIM), dtype=np.uint8)
     if valid > PREFILL:
         journal[:valid - PREFILL] = rows[PREFILL:valid]
     return base + journal.tobytes()
@@ -83,20 +85,13 @@ def delta_cache(
 def segmented_cache(
     rows: np.ndarray, kind: str, valid: int, config: tuple[int, ...],
     tail: np.ndarray,
+    prepacked: tuple[list[bytes], bytes] | None = None,
 ) -> bytes:
     sealed_segments = valid // SEGMENT_TOKENS
-    sealed: list[bytes] = []
-    v_bias = b""
-    for segment in range(sealed_segments):
-        first = segment * SEGMENT_TOKENS
-        segment_rows = rows[first:first + SEGMENT_TOKENS]
-        if kind == "k":
-            sealed.append(pack_k_segment(segment_rows, config))
-        else:
-            weight, bias = pack_v_segment(segment_rows, config)
-            sealed.append(weight)
-            if not v_bias:
-                v_bias = bias
+    if prepacked is None:
+        prepacked = prepack_segments(rows, kind, config)
+    sealed_all, v_bias = prepacked
+    sealed = sealed_all[:sealed_segments]
 
     if kind == "k":
         prefix = b"".join(sealed)
@@ -116,11 +111,29 @@ def segmented_cache(
                     ])
                 else:
                     blocks.append(bytes(1024))
-    if not v_bias:
+    return b"".join(blocks) + v_bias + tail.tobytes()
+
+
+def prepack_segments(
+    rows: np.ndarray, kind: str, config: tuple[int, ...]
+) -> tuple[list[bytes], bytes]:
+    sealed: list[bytes] = []
+    v_bias = b""
+    for segment in range(MAX_SEGMENTS):
+        first = segment * SEGMENT_TOKENS
+        segment_rows = rows[first:first + SEGMENT_TOKENS]
+        if kind == "k":
+            sealed.append(pack_k_segment(segment_rows, config))
+        else:
+            weight, bias = pack_v_segment(segment_rows, config)
+            sealed.append(weight)
+            if not v_bias:
+                v_bias = bias
+    if kind == "v" and not v_bias:
         _, v_bias = pack_v_segment(
             np.zeros((SEGMENT_TOKENS, HEAD_DIM), dtype=np.uint8), config
         )
-    return b"".join(blocks) + v_bias + tail.tobytes()
+    return sealed, v_bias
 
 
 def publish(source: Path, output: Path, mode: str) -> dict[str, object]:
@@ -144,9 +157,9 @@ def publish(source: Path, output: Path, mode: str) -> dict[str, object]:
         generated: list[Path] = []
         if mode == "control":
             k_head_bytes = PREFILL * HEAD_DIM + 2 * BIAS_BYTES + \
-                DECODE_STEPS * HEAD_DIM
+                DELTA_ROWS * HEAD_DIM
             v_head_bytes = PREFILL * HEAD_DIM + V_BIAS_BYTES + \
-                DECODE_STEPS * HEAD_DIM
+                DELTA_ROWS * HEAD_DIM
             suffix = "u8_delta"
         else:
             k_head_bytes = MAX_SEGMENTS * SEGMENT_K_BYTES + TAIL_BYTES
@@ -168,6 +181,12 @@ def publish(source: Path, output: Path, mode: str) -> dict[str, object]:
             }
             for kind in ("k", "v"):
                 head_bytes = k_head_bytes if kind == "k" else v_head_bytes
+                prepacked = (
+                    [prepack_segments(
+                        logical[kind][head], kind, configs[head]
+                    ) for head in range(HEADS)]
+                    if mode == "candidate" else None
+                )
                 initial = layer / f"kv_cache_{kind}_hmx_{suffix}.bin"
                 initial.write_bytes(bytes(HEADS * head_bytes))
                 generated.append(initial)
@@ -185,6 +204,7 @@ def publish(source: Path, output: Path, mode: str) -> dict[str, object]:
                         ) if mode == "control" else segmented_cache(
                             logical[kind][head], kind, valid, configs[head],
                             tails[head],
+                            prepacked[head],
                         ))
                         for head in range(HEADS)
                     )
@@ -212,7 +232,7 @@ def publish(source: Path, output: Path, mode: str) -> dict[str, object]:
                 "sha256": sha256(path),
             }
         manifest.update({
-            "experiment": "EXP-0162",
+            "experiment": EXPERIMENT,
             "source_package": str(source),
             "source_manifest_sha256": sha256(source / "manifest.json"),
             "clone_mode": clone_mode,
@@ -263,17 +283,39 @@ def publish(source: Path, output: Path, mode: str) -> dict[str, object]:
 
 
 def main() -> None:
+    global CAPACITY, DECODE_STEPS, DELTA_ROWS, MAX_SEGMENTS, EXPERIMENT
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", type=Path, required=True)
     parser.add_argument("--output-root", type=Path, required=True)
+    parser.add_argument("--capacity", type=int, default=CAPACITY)
+    parser.add_argument("--decode-steps", type=int, default=DECODE_STEPS)
+    parser.add_argument("--experiment", default="EXP-0162")
+    parser.add_argument("--control-name", default="control_delta_capacity104")
+    parser.add_argument(
+        "--candidate-name", default="candidate_segmented_capacity104"
+    )
+    parser.add_argument(
+        "--mode", choices=("control", "candidate"), action="append"
+    )
     args = parser.parse_args()
+    if args.capacity <= PREFILL:
+        raise ValueError("capacity must exceed the M64 prefill")
+    if args.decode_steps < 1 or PREFILL + args.decode_steps > args.capacity:
+        raise ValueError("decode steps exceed the declared cache capacity")
+    CAPACITY = args.capacity
+    DECODE_STEPS = args.decode_steps
+    DELTA_ROWS = CAPACITY - PREFILL
+    MAX_SEGMENTS = (CAPACITY - 1) // SEGMENT_TOKENS
+    EXPERIMENT = args.experiment
     source = args.source.resolve()
     root = args.output_root.resolve()
-    results = [
-        publish(source, root / "control_delta_capacity104", "control"),
-        publish(source, root / "candidate_segmented_capacity104", "candidate"),
-    ]
-    print(json.dumps({"experiment": "EXP-0162", "packages": results},
+    modes = tuple(args.mode or ("control", "candidate"))
+    names = {
+        "control": args.control_name,
+        "candidate": args.candidate_name,
+    }
+    results = [publish(source, root / names[mode], mode) for mode in modes]
+    print(json.dumps({"experiment": EXPERIMENT, "packages": results},
                      indent=2, sort_keys=True))
 
 
