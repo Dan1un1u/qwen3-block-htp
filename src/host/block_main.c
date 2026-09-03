@@ -3347,20 +3347,37 @@ static int qbh_run_generation_sequence(
         (struct qbh_decode_session_state *)(
             shared + header->replay_session_offset);
     uint32_t generated[QBH_GENERATION_MAX_TOKENS];
+    uint32_t generation_steps = QBH_GENERATION_DEFAULT_TOKENS;
+    const char *generation_steps_env = getenv("QBH_GENERATION_STEPS");
     uint64_t total_wall_ns = 0U;
     const uint32_t w4u8 =
         qbh_generation_w4u8_enabled(header->generation_mode);
-    const uint32_t experiment =
-        header->generation_mode ==
-                QBH_BLOCK_GENERATION_GREEDY_W4U8_BATCH8_RESIDENT_BIAS
-            ? 168U : (w4u8 != 0U ? 167U : 166U);
+    uint32_t experiment;
     const uint32_t generation_variant =
         w4u8 != 0U ? QBH_BLOCK_W4U8 : QBH_BLOCK_W4F16;
     const char *audit_root = getenv("QBH_GENERATION_AUDIT_DIR");
     int all_pass = 1;
 
+    if (generation_steps_env != NULL && generation_steps_env[0] != '\0' &&
+        (qbh_parse_u32(generation_steps_env, &generation_steps) != 0 ||
+         generation_steps == 0U ||
+         generation_steps > QBH_GENERATION_MAX_TOKENS ||
+         header->kv_cache_capacity < QBH_BLOCK_M ||
+         generation_steps - 1U >
+             header->kv_cache_capacity - QBH_BLOCK_M ||
+         (w4u8 == 0U &&
+          generation_steps > header->generation_expected_token_count))) {
+        return -1;
+    }
+    experiment = generation_steps > QBH_GENERATION_DEFAULT_TOKENS
+        ? 169U
+        : (header->generation_mode ==
+                   QBH_BLOCK_GENERATION_GREEDY_W4U8_BATCH8_RESIDENT_BIAS
+               ? 168U
+               : (w4u8 != 0U ? 167U : 166U));
+
     memset(generated, 0, sizeof(generated));
-    for (uint32_t step = 0U; step < QBH_GENERATION_MAX_TOKENS;
+    for (uint32_t step = 0U; step < generation_steps;
          ++step) {
         const uint32_t initial_length =
             state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER].valid_length;
@@ -3593,13 +3610,14 @@ static int qbh_run_generation_sequence(
         "{\"experiment\":%" PRIu32
         ",\"generation_sequence_complete\":true,"
         "\"generation_mode\":%" PRIu32 ","
-        "\"variant\":\"%s\",\"completed_steps\":%" PRIu32
+        "\"variant\":\"%s\",\"requested_steps\":%" PRIu32
+        ",\"completed_steps\":%" PRIu32
         ",\"total_host_wall_ns\":%" PRIu64
         ",\"token_ids\":[",
         experiment, header->generation_mode,
         qbh_variant_name(generation_variant),
-        state->completed_step_count, total_wall_ns);
-    for (uint32_t index = 0U; index < QBH_GENERATION_MAX_TOKENS;
+        generation_steps, state->completed_step_count, total_wall_ns);
+    for (uint32_t index = 0U; index < generation_steps;
          ++index) {
         printf("%s%" PRIu32, index == 0U ? "" : ",",
                generated[index]);
@@ -3608,7 +3626,7 @@ static int qbh_run_generation_sequence(
            all_pass ? "true" : "false");
     return all_pass &&
                    state->completed_step_count ==
-                       QBH_GENERATION_MAX_TOKENS
+                       generation_steps
                ? 0 : -1;
 }
 
@@ -4299,7 +4317,8 @@ int main(int argc, char **argv) {
           scan_mode != QBH_BLOCK_SCAN_PREFILL ||
           logical_m != QBH_BLOCK_M ||
           initial_kv_length != 0U ||
-          kv_cache_capacity != 80U)) ||
+          (kv_cache_capacity != 80U &&
+           kv_cache_capacity != 257U))) ||
         full_stack_stage_mode >
             QBH_BLOCK_FULL_STACK_HIDDEN_CAPTURE ||
         w4u8_boundary_audit_enabled > 1U ||
@@ -4798,7 +4817,7 @@ int main(int argc, char **argv) {
          qbh_prepare_slot(
              &generation_expected_token_slot, argv[1],
              "generation_expected_token_ids_u32.bin",
-             QBH_GENERATION_MAX_TOKENS *
+             QBH_GENERATION_DEFAULT_TOKENS *
                  (uint32_t)sizeof(uint32_t),
              &cursor) != 0)) {
         fprintf(stderr, "generation boundary package audit failed\n");
@@ -5410,7 +5429,7 @@ int main(int argc, char **argv) {
         header->generation_expected_token_ids_bytes =
             generation_expected_token_slot.expected_bytes;
         header->generation_expected_token_count =
-            QBH_GENERATION_MAX_TOKENS;
+            QBH_GENERATION_DEFAULT_TOKENS;
     }
     if (vertical_slice_mode == QBH_BLOCK_SLICE_DISABLED) {
         header->qparam_offset = qparam_slot.offset;

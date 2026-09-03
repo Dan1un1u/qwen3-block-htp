@@ -1495,9 +1495,9 @@ static int qbh_generation_request_valid(
         header->generation_final_norm_bytes !=
             QBH_BLOCK_HIDDEN * sizeof(uint16_t) ||
         header->generation_expected_token_ids_bytes !=
-            QBH_GENERATION_MAX_TOKENS * sizeof(uint32_t) ||
+            QBH_GENERATION_DEFAULT_TOKENS * sizeof(uint32_t) ||
         header->generation_expected_token_count !=
-            QBH_GENERATION_MAX_TOKENS ||
+            QBH_GENERATION_DEFAULT_TOKENS ||
         header->generation_boundary_audit_enabled > 1U ||
         !qbh_range_valid(header->generation_token_ids_offset,
                          header->generation_token_ids_bytes,
@@ -6226,7 +6226,6 @@ static int qbh_run_generation_head_w4u8(
     if (!qbh_generation_w4u8_enabled(header->generation_mode) ||
         (resident_bias != 0U && pool == NULL) ||
         logical_rows == 0U ||
-        generation_step >= header->generation_expected_token_count ||
         n_tiles == 0U || group_count == 0U ||
         group_limit * k_tiles * QBH_HMX_WEIGHT_BYTES >
             expanded_capacity ||
@@ -6563,11 +6562,16 @@ static int qbh_run_generation_head_w4u8(
 w4u8_generation_complete:
     header->generation_selected_token_id = best_token;
     header->generation_selected_logit_half_bits = best_code;
-    header->generation_expected_token_id =
-        ((const uint32_t *)(shared +
-          header->generation_expected_token_ids_offset))[generation_step];
-    header->generation_token_match =
-        best_token == header->generation_expected_token_id;
+    if (generation_step < header->generation_expected_token_count) {
+        header->generation_expected_token_id =
+            ((const uint32_t *)(shared +
+              header->generation_expected_token_ids_offset))[generation_step];
+        header->generation_token_match =
+            best_token == header->generation_expected_token_id;
+    } else {
+        header->generation_expected_token_id = UINT32_MAX;
+        header->generation_token_match = 0U;
+    }
     header->generation_lm_head_ticks +=
         HAP_perf_get_qtimer_count() - head_start;
     return 0;

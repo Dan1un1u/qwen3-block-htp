@@ -31,6 +31,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--audit-dir", type=Path, required=True)
     parser.add_argument("--experiment-record", type=int, default=167)
     parser.add_argument("--experiment-label", default="EXP-0167")
+    parser.add_argument("--steps", type=int, default=16)
     parser.add_argument(
         "--package", type=Path,
         default=Path(
@@ -44,6 +45,10 @@ def parse_args() -> argparse.Namespace:
             "/home/daniuniu/work/qwen3-block-htp/build/reference/"
             "qbh_hmx_u8_reference.so"
         ),
+    )
+    parser.add_argument(
+        "--transformer-package", type=Path, default=None,
+        help="package containing layer27/qparams_u8.bin",
     )
     return parser.parse_args()
 
@@ -63,7 +68,9 @@ def load_generation_qparams(path: Path) -> dict[str, dict[str, object]]:
     return result
 
 
-def load_device_steps(path: Path, experiment_record: int) -> list[dict[str, object]]:
+def load_device_steps(
+    path: Path, experiment_record: int, steps: int,
+) -> list[dict[str, object]]:
     result: dict[int, dict[str, object]] = {}
     for line in path.read_text(encoding="utf-8").splitlines():
         try:
@@ -74,9 +81,9 @@ def load_device_steps(path: Path, experiment_record: int) -> list[dict[str, obje
                 "generation_step" in record and
                 "selected_token_id" in record):
             result[int(record["generation_step"])] = record
-    if sorted(result) != list(range(16)):
+    if sorted(result) != list(range(steps)):
         raise ValueError(f"missing device generation steps: {sorted(result)}")
-    return [result[index] for index in range(16)]
+    return [result[index] for index in range(steps)]
 
 
 def audit_bias(package: Path, final_qparam: dict[str, object],
@@ -105,10 +112,18 @@ def main() -> None:
     args = parse_args()
     audit_dir = args.audit_dir.resolve()
     package = args.package.resolve()
-    device_steps = load_device_steps(
-        audit_dir / "device.jsonl", args.experiment_record
+    transformer_package = (
+        args.transformer_package.resolve()
+        if args.transformer_package is not None else package
     )
-    layer_qparams = load_qparams_bin(package / "layer27/qparams_u8.bin")
+    if args.steps <= 0:
+        raise ValueError("--steps must be positive")
+    device_steps = load_device_steps(
+        audit_dir / "device.jsonl", args.experiment_record, args.steps
+    )
+    layer_qparams = load_qparams_bin(
+        transformer_package / "layer27/qparams_u8.bin"
+    )
     generation_qparams = load_generation_qparams(
         package / "generation_qparams_u8.bin"
     )
