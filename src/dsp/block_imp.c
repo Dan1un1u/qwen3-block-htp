@@ -1416,6 +1416,13 @@ static int qbh_projection_shape_valid(uint32_t index,
            desc->k == expected_k[index] && desc->n == expected_n[index];
 }
 
+static int qbh_generation_w4f16_enabled(uint32_t mode) {
+    return mode == QBH_BLOCK_GENERATION_GREEDY_W4F16 ||
+           mode == QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX ||
+           mode == QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX_BATCH4 ||
+           mode == QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX_BATCH8;
+}
+
 static int qbh_generation_request_valid(
     const struct qbh_block_header *header, uint32_t shared_bytes) {
     const struct qbh_block_projection_desc *head;
@@ -1440,8 +1447,7 @@ static int qbh_generation_request_valid(
                header->generation_expected_token_ids_bytes == 0U &&
                header->generation_expected_token_count == 0U;
     }
-    if (header->generation_mode !=
-            QBH_BLOCK_GENERATION_GREEDY_W4F16 ||
+    if (!qbh_generation_w4f16_enabled(header->generation_mode) ||
         header->variant != QBH_BLOCK_W4F16 ||
         header->replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS ||
         !qbh_slice_enabled(header) ||
@@ -5095,6 +5101,19 @@ static void qbh_pack_fp16_activation_row0(
     asm volatile("barrier" ::: "memory");
 }
 
+static float qbh_hvx_reduce_max_f16(HVX_Vector value) {
+    const HVX_Vector negative_max = Q6_Vh_vsplat_R(0xfbff);
+    __fp16 lanes[QBH_BLOCK_HVX_F16_LANES]
+        __attribute__((aligned(QBH_BLOCK_ALIGNMENT)));
+
+    for (int shift = 64; shift >= 2; shift >>= 1) {
+        value = Q6_Vhf_vmax_VhfVhf(
+            value, Q6_V_vlalign_VVR(value, negative_max, shift));
+    }
+    *(HVX_Vector *)lanes = value;
+    return (float)lanes[QBH_BLOCK_HVX_F16_LANES - 1U];
+}
+
 static int qbh_stage_generation_embedding(
     struct qbh_block_header *header, uint8_t *shared,
     struct qbh_block_buffers *buffers) {
@@ -5105,8 +5124,7 @@ static int qbh_stage_generation_embedding(
     const uint64_t start = HAP_perf_get_qtimer_count();
     uint32_t *token_ids = (uint32_t *)buffers->scale_or_bias;
 
-    if (header->generation_mode !=
-            QBH_BLOCK_GENERATION_GREEDY_W4F16 ||
+    if (!qbh_generation_w4f16_enabled(header->generation_mode) ||
         qbh_dma_copy(header, token_ids,
                      shared + header->generation_token_ids_offset,
                      token_bytes, 1U) != 0) {
@@ -5150,7 +5168,13 @@ static int qbh_run_generation_head_w4f16(
     const uint32_t n_tiles = QBH_QWEN3_VOCAB_SIZE /
         QBH_HMX_FP16_COLS;
     const uint32_t group_limit =
-        QBH_BLOCK_W4F16_HMX_BATCH_N_TILES;
+        header->generation_mode ==
+                QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX_BATCH8
+            ? 8U
+            : header->generation_mode ==
+                QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX_BATCH4
+            ? QBH_BLOCK_W4F16_DMA_BATCH_N_TILES
+            : QBH_BLOCK_W4F16_HMX_BATCH_N_TILES;
     const uint32_t compressed_tile_bytes =
         k_tiles * QBH_W4_PACKED_TILE_BYTES;
     const uint32_t scale_tile_bytes =
@@ -5159,6 +5183,14 @@ static int qbh_run_generation_head_w4f16(
     float best_value = -INFINITY;
     uint32_t best_token = 0U;
     uint16_t best_bits = 0U;
+    uint8_t *head_compressed_weight =
+        header->generation_mode ==
+                QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX_BATCH8
+            ? buffers->gate : buffers->compressed_weight;
+    uint8_t *head_scale_blocks =
+        header->generation_mode ==
+                QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX_BATCH8
+            ? buffers->middle : buffers->scale_or_bias;
 
     if (pool == NULL || logical_rows == 0U ||
         generation_step >= header->generation_expected_token_count) {
@@ -5203,7 +5235,7 @@ static int qbh_run_generation_head_w4f16(
         memset((void *)ready, 0, sizeof(ready));
         stage_start = HAP_perf_get_qtimer_count();
         if (qbh_dma_copy(
-                header, buffers->compressed_weight,
+                header, head_compressed_weight,
                 shared + head->weight_offset +
                     (size_t)n_tile * compressed_tile_bytes,
                 group_tiles * compressed_tile_bytes, 1U) != 0) {
@@ -5235,14 +5267,14 @@ static int qbh_run_generation_head_w4f16(
 
         for (uint32_t tile = 0U; tile < group_tiles; ++tile) {
             qbh_hmx_fp16_init_channel_scales(
-                buffers->scale_or_bias +
+                head_scale_blocks +
                     (size_t)tile * QBH_HMX_FP16_SCALE_BYTES,
                 (const float *)buffers->projection_scales +
                     (size_t)tile * QBH_HMX_FP16_COLS);
         }
         stage_start = HAP_perf_get_qtimer_count();
         qbh_w4f16_expand_with_main(
-            header, pool, buffers->compressed_weight,
+            header, pool, head_compressed_weight,
             (const float *)buffers->projection_scales,
             buffers->expanded_weight, ready, generation,
             k_tiles * group_tiles, header->w4f16_region_tiles,
@@ -5254,7 +5286,7 @@ static int qbh_run_generation_head_w4f16(
         if (qbh_hmx_submit(
                 worker, QBH_BLOCK_HMX_FP16_TILE_SCALES,
                 buffers->hmx_activation, buffers->expanded_weight,
-                buffers->scale_or_bias, buffers->hmx_output,
+                head_scale_blocks, buffers->hmx_output,
                 1U, k_tiles, group_tiles) != 0) {
             return -5;
         }
@@ -5265,22 +5297,61 @@ static int qbh_run_generation_head_w4f16(
         header->hmx_fp16_tile_pair_count += k_tiles * group_tiles;
 
         stage_start = HAP_perf_get_qtimer_count();
-        for (uint32_t tile = 0U; tile < group_tiles; ++tile) {
-            const size_t matrix_tile = qbh_hmx_fp16_matrix_tile_offset(
-                0U, tile, group_tiles);
-            for (uint32_t channel = 0U;
-                 channel < QBH_HMX_FP16_COLS; ++channel) {
-                const __fp16 candidate =
-                    ((__fp16 *)buffers->hmx_output)[
-                        matrix_tile +
-                        qbh_hmx_fp16_tile_offset(0U, channel)];
-                const float value = (float)candidate;
-                const uint32_t token =
-                    (n_tile + tile) * QBH_HMX_FP16_COLS + channel;
-                if (value > best_value) {
-                    best_value = value;
-                    best_token = token;
-                    memcpy(&best_bits, &candidate, sizeof(best_bits));
+        if (header->generation_mode !=
+                QBH_BLOCK_GENERATION_GREEDY_W4F16 &&
+            group_tiles >= 2U && group_tiles <= 8U &&
+            group_tiles % 2U == 0U) {
+            for (uint32_t tile_pair = 0U; tile_pair < group_tiles;
+                 tile_pair += 2U) {
+                const size_t matrix_tile = qbh_hmx_fp16_matrix_tile_offset(
+                    0U, tile_pair, group_tiles);
+                const HVX_Vector *tile0 =
+                    (const HVX_Vector *)((const __fp16 *)
+                        buffers->hmx_output + matrix_tile);
+                const HVX_Vector *tile1 = tile0 +
+                    QBH_HMX_FP16_TILE_BYTES / sizeof(HVX_Vector);
+                const HVX_VectorPair rows = Q6_W_vdeal_VVR(
+                    *tile1, *tile0, -2);
+                const HVX_Vector row0 = Q6_V_lo_W(rows);
+                const float group_max = qbh_hvx_reduce_max_f16(row0);
+
+                if (group_max > best_value) {
+                    __fp16 lanes[QBH_BLOCK_HVX_F16_LANES]
+                        __attribute__((aligned(QBH_BLOCK_ALIGNMENT)));
+                    *(HVX_Vector *)lanes = row0;
+                    for (uint32_t lane = 0U;
+                         lane < QBH_BLOCK_HVX_F16_LANES; ++lane) {
+                        const __fp16 candidate = lanes[lane];
+                        const float value = (float)candidate;
+                        if (value > best_value) {
+                            best_value = value;
+                            best_token =
+                                (n_tile + tile_pair) *
+                                    QBH_HMX_FP16_COLS + lane;
+                            memcpy(&best_bits, &candidate,
+                                   sizeof(best_bits));
+                        }
+                    }
+                }
+            }
+        } else {
+            for (uint32_t tile = 0U; tile < group_tiles; ++tile) {
+                const size_t matrix_tile = qbh_hmx_fp16_matrix_tile_offset(
+                    0U, tile, group_tiles);
+                for (uint32_t channel = 0U;
+                     channel < QBH_HMX_FP16_COLS; ++channel) {
+                    const __fp16 candidate =
+                        ((__fp16 *)buffers->hmx_output)[
+                            matrix_tile +
+                            qbh_hmx_fp16_tile_offset(0U, channel)];
+                    const float value = (float)candidate;
+                    const uint32_t token =
+                        (n_tile + tile) * QBH_HMX_FP16_COLS + channel;
+                    if (value > best_value) {
+                        best_value = value;
+                        best_token = token;
+                        memcpy(&best_bits, &candidate, sizeof(best_bits));
+                    }
                 }
             }
         }
@@ -17217,8 +17288,7 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
             (struct qbh_decode_session_state *)(
                 shared + header->replay_session_offset);
         const uint32_t generation_enabled =
-            header->generation_mode ==
-                QBH_BLOCK_GENERATION_GREEDY_W4F16;
+            qbh_generation_w4f16_enabled(header->generation_mode);
         const uint32_t generation_step = state->completed_step_count;
         const uint32_t physical_tensor_bytes =
             QBH_BLOCK_M * QBH_BLOCK_HIDDEN *

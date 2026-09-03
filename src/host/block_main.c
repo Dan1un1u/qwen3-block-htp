@@ -2622,6 +2622,7 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U64(generation_lm_head_expand_ticks);
     QBH_REPLAY_PROFILE_U64(generation_lm_head_hmx_ticks);
     QBH_REPLAY_PROFILE_U64(generation_lm_head_argmax_ticks);
+    QBH_REPLAY_PROFILE_U32(generation_lm_head_batch_n_tiles);
     QBH_REPLAY_PROFILE_U32(generation_lm_head_command_count);
     QBH_REPLAY_PROFILE_U32(generation_lm_head_n_tiles);
     QBH_REPLAY_PROFILE_U64(generation_embedding_ddr_read_bytes);
@@ -3400,7 +3401,8 @@ static int qbh_run_generation_sequence(
         }
         all_pass &= step_pass;
         printf(
-            "{\"experiment\":164,\"generation_step\":%" PRIu32
+            "{\"experiment\":165,\"generation_step\":%" PRIu32
+            ",\"generation_mode\":%" PRIu32
             ",\"mode\":\"%s\",\"first_position\":%" PRIu32
             ",\"valid_length\":%" PRIu32
             ",\"host_wall_ns\":%" PRIu64
@@ -3427,7 +3429,8 @@ static int qbh_run_generation_sequence(
             ",\"vtcm_acquired_bytes\":%" PRIu32
             ",\"rpc_result\":%d,\"dsp_status\":%d"
             ",\"pass\":%s}\n",
-            step, step == 0U ? "prefill" : "decode",
+            step, header->generation_mode,
+            step == 0U ? "prefill" : "decode",
             header->replay_first_position,
             state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER].valid_length,
             end - start, header->generation_selected_token_id,
@@ -3484,7 +3487,7 @@ static int qbh_run_generation_sequence(
         profile_result.scan_dynamic_attention_ticks =
             header->scan_dynamic_attention_ticks;
         qbh_print_replay_profile(
-            164U, "generation_profile", "generation_step",
+            165U, "generation_profile", "generation_step",
             QBH_BLOCK_W4F16, step, header, &profile_result,
             (const uint8_t *)&generated[step], sizeof(generated[step]));
         if (rpc_result != AEE_SUCCESS ||
@@ -3494,11 +3497,12 @@ static int qbh_run_generation_sequence(
     }
 
     printf(
-        "{\"experiment\":164,\"generation_sequence_complete\":true,"
+        "{\"experiment\":165,\"generation_sequence_complete\":true,"
+        "\"generation_mode\":%" PRIu32 ","
         "\"variant\":\"W4F16\",\"completed_steps\":%" PRIu32
         ",\"total_host_wall_ns\":%" PRIu64
         ",\"token_ids\":[",
-        state->completed_step_count, total_wall_ns);
+        header->generation_mode, state->completed_step_count, total_wall_ns);
     for (uint32_t index = 0U; index < QBH_GENERATION_MAX_TOKENS;
          ++index) {
         printf("%s%" PRIu32, index == 0U ? "" : ",",
@@ -3956,6 +3960,15 @@ int main(int argc, char **argv) {
             } else if (strcmp(generation, "1") == 0) {
                 generation_mode =
                     QBH_BLOCK_GENERATION_GREEDY_W4F16;
+            } else if (strcmp(generation, "2") == 0) {
+                generation_mode =
+                    QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX;
+            } else if (strcmp(generation, "3") == 0) {
+                generation_mode =
+                    QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX_BATCH4;
+            } else if (strcmp(generation, "4") == 0) {
+                generation_mode =
+                    QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX_BATCH8;
             } else {
                 generation_mode = UINT32_MAX;
             }
@@ -4134,9 +4147,16 @@ int main(int argc, char **argv) {
          numerical_audit_enabled != 0U) ||
         (replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS &&
          vertical_slice_mode != QBH_BLOCK_SLICE_ACTIVE_RANGE) ||
-        generation_mode > QBH_BLOCK_GENERATION_GREEDY_W4F16 ||
+        generation_mode >
+            QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX_BATCH8 ||
         (generation_mode != QBH_BLOCK_GENERATION_DISABLED &&
-         (generation_mode != QBH_BLOCK_GENERATION_GREEDY_W4F16 ||
+         ((generation_mode != QBH_BLOCK_GENERATION_GREEDY_W4F16 &&
+           generation_mode !=
+               QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX &&
+           generation_mode !=
+               QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX_BATCH4 &&
+           generation_mode !=
+               QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX_BATCH8) ||
           variant != QBH_BLOCK_W4F16 ||
           replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS ||
           vertical_slice_mode != QBH_BLOCK_SLICE_ACTIVE_RANGE ||
