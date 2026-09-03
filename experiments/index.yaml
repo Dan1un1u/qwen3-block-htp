@@ -12,20 +12,23 @@ experiments:
     parent: EXP-0168
     variants:
       - selected_exp0168_w4u8_at_L64_through_L255
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: not_applicable
     evidence_profile: ten-session-full-stack-W4U8-continuous-decode-length-scan
     source_branches:
       - codex/exp-0169-w4u8-long-decode-attribution
-    source_commits: []
+    source_commits:
+      - f4722419596931035583e98e4b5a304b528d1cd2
     record: docs/experiments/EXP-0169.md
     approval_ref: 'User message 2026-09-04: 好的，按你方向做，先定位问题'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0169-w4u8-long-decode-attribution
       approved_on: '2026-09-04'
+      started_on: '2026-09-04'
+      completed_on: '2026-09-04'
     evidence:
       source_parent_experiment: EXP-0168
       source_parent_commit: bcf327142e451ed25c84f32d13e802230397d65a
@@ -40,6 +43,33 @@ experiments:
       performance_policy: no_speed_gate_characterization_only_direct_tokens_per_second_and_exact_Host_wall_by_bucket
       diagnostic_target: identify_cache_length_slope_segment_seal_discontinuities_and_attention_substage_growth_without_conflating_fixed_projection_or_lm_head_cost
       selected_baseline_changed: false
+      source_commit: f4722419596931035583e98e4b5a304b528d1cd2
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0169/20260904T_exp0169_f472241_formal'
+      formal_sessions: ten_complete_sessions_each_one_M64_prefill_plus_192_continuous_decode_tokens
+      retained_overlay: 'D:/llm_exp/models/qwen3-block-htp/exp0169/w4u8_greedy193_overlay'
+      correctness_gate_result: pass_first16_EXP0168_tokens_and_codes_exact_193_of_193_independent_integer_head_results_exact_and_EXP0163_193_step_transformer_cache_regression
+      physical_gate_result: pass_exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_intermediate_or_timed_full_logit_DDR_zero_spill_fill
+      stability_gate_result: pass_ten_of_ten_sessions_identical
+      ledger_gate_result: pass_zero_unattributed_ticks_every_invocation_and_layer
+      direct_end_to_end:
+        prefill_host_us: 49370.677
+        prefill_tokens_per_second: 1296.316043
+        decode_L64_L255_host_us_per_token: 59947.791
+        decode_L64_L255_tokens_per_second: 16.681182
+        decode_L64_L95_tokens_per_second: 18.033907
+        decode_L224_L255_tokens_per_second: 15.440605
+      linear_slope_per_added_cache_token:
+        complete_host_wall_us: 62.207678
+        QK_softmax_AV_us: 63.567036
+        cache_DDR_read_bytes: 59384.653
+      diagnosis: decode_dynamic_U8_Softmax_three_scalar_passes_dominate_length_slope_while_cache_reads_match_expected_segmented_payload_and_QK_AV_HMX_are_minor
+      segment_seal_result: one_1892352_byte_write_every_32_tokens_about_2ms_wall_spike_not_dominant
+      next_hypothesis: decode_specific_HVX_tile_Softmax_preserving_exact_log2_LUT_math_and_direct_AV_carrier
+      full_profiling_report_sha256: 698a2cedf018444f21f9f96c300f6b442e52e4f09f011811ca990f2cf83bedf3
+      summary_sha256: c0908e8f2ec712385954ef7932d47554e1bd2fdf4a00a311b672638c3b3bc488
+      independent_reference_sha256: 658778c47aec3b10ed029cb1c4a302d40f65e812b6f2c8d217c6bf7ea301299c
+      exp0163_regression_sha256: b7dc331c194fc6f2986bb9e087f51efb21192eae2bef25ed5e519c777c7ebb5a
+      overlay_manifest_sha256: dece398dd5463bcb581ae2a8563c88271c16bc26db41de6effdc472b19425115
   - id: EXP-0168
     slug: w4u8-lm-head-batch8-overlap
     title: W4U8 batch-eight phase-overlaid LM-head pipeline

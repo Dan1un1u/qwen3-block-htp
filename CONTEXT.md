@@ -1107,3 +1107,23 @@ _Avoid_: describing the diagnostic generated text as usable, changing existing
 qparams without a separate experiment, projecting throughput from partial
 measurements, or replacing this baseline without an eligible direct full-stack
 comparison
+
+**W4U8 Long-Decode Scaling Attribution**:
+The completed EXP-0169 characterization of the unchanged selected EXP-0168
+implementation over one real M64 prefill and 192 continuous decode calls,
+covering cache lengths 64 through 255. Ten sessions measure 59.948 ms/token or
+16.681 token/s overall; throughput declines from 18.034 token/s at L64-95 to
+15.441 token/s at L224-255. Complete Host wall grows by 62.208 us per added
+cache token and QK-Softmax-AV grows by 63.567 us. Nearly all of that growth is
+the decode-only dynamic U8 Softmax: it performs scalar maximum, log2-weight-sum
+and probability/scatter passes over every valid score, while the HVX shuffle4
+Softmax optimization is prefill-only. Cache reads scale close to the expected
+segmented-carrier payload, QK/AV HMX growth is small, and regular cache append
+is exactly one logical U8 K/V row. A 1,892,352-byte full-stack segment seal
+causes a real roughly 2 ms spike every 32 tokens but is only a small amortized
+cost. All 193 independent integer head checks, the transformer/cache replay,
+physical contracts and ledgers pass. This is a diagnosis, not a baseline; the
+selected EXP-0168 baseline remains unchanged.
+_Avoid_: attributing the long-cache decline primarily to KV DDR bandwidth,
+calling the scalar dynamic decode path HVX-vectorized, averaging away seal
+spikes, changing EXP-0168 baseline status, semantic-quality claim
