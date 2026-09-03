@@ -223,6 +223,15 @@ static const char *qbh_variant_name(uint32_t variant) {
     }
 }
 
+static int qbh_generation_w4f16_enabled(uint32_t mode) {
+    return mode >= QBH_BLOCK_GENERATION_GREEDY_W4F16 &&
+           mode <= QBH_BLOCK_GENERATION_GREEDY_W4F16_COARSE_PIPELINE;
+}
+
+static int qbh_generation_w4u8_enabled(uint32_t mode) {
+    return mode == QBH_BLOCK_GENERATION_GREEDY_W4U8_COARSE_PIPELINE;
+}
+
 static const char *qbh_scan_mode_name(uint32_t mode) {
     switch (mode) {
         case QBH_BLOCK_SCAN_DISABLED:
@@ -1667,6 +1676,44 @@ static int qbh_load_qparams_array(
 static int qbh_load_qparams(struct qbh_block_header *header,
                             const uint8_t *records) {
     return qbh_load_qparams_array(header->qparams, records);
+}
+
+static int qbh_load_generation_qparams(
+    struct qbh_block_header *header, const uint8_t *records) {
+    static const char *const names[QBH_GENERATION_QPARAM_COUNT] = {
+        "generation_final_norm_output",
+        "generation_lm_head_output",
+    };
+    struct qbh_block_qparam *targets[QBH_GENERATION_QPARAM_COUNT] = {
+        &header->generation_final_norm_output_qparam,
+        &header->generation_lm_head_output_qparam,
+    };
+    const struct qbh_qparam_record *source =
+        (const struct qbh_qparam_record *)records;
+
+    for (uint32_t target = 0U;
+         target < QBH_GENERATION_QPARAM_COUNT; ++target) {
+        int found = 0;
+        for (uint32_t record = 0U;
+             record < QBH_GENERATION_QPARAM_COUNT; ++record) {
+            if (strncmp(source[record].name, names[target],
+                        sizeof(source[record].name)) == 0) {
+                targets[target]->scale = source[record].scale;
+                targets[target]->zero_point = source[record].zero_point;
+                targets[target]->minimum = source[record].minimum;
+                targets[target]->maximum = source[record].maximum;
+                found = 1;
+                break;
+            }
+        }
+        if (found == 0 || !(targets[target]->scale > 0.0f) ||
+            !isfinite(targets[target]->scale) ||
+            targets[target]->zero_point < 0 ||
+            targets[target]->zero_point > UINT8_MAX) {
+            return -1;
+        }
+    }
+    return 0;
 }
 
 static void qbh_bind_host_slice_layer(
@@ -3299,6 +3346,12 @@ static int qbh_run_generation_sequence(
             shared + header->replay_session_offset);
     uint32_t generated[QBH_GENERATION_MAX_TOKENS];
     uint64_t total_wall_ns = 0U;
+    const uint32_t w4u8 =
+        qbh_generation_w4u8_enabled(header->generation_mode);
+    const uint32_t experiment = w4u8 != 0U ? 167U : 166U;
+    const uint32_t generation_variant =
+        w4u8 != 0U ? QBH_BLOCK_W4U8 : QBH_BLOCK_W4F16;
+    const char *audit_root = getenv("QBH_GENERATION_AUDIT_DIR");
     int all_pass = 1;
 
     memset(generated, 0, sizeof(generated));
@@ -3377,7 +3430,7 @@ static int qbh_run_generation_sequence(
         step_pass =
             rpc_result == AEE_SUCCESS &&
             header->dsp_status == QBH_BLOCK_STATUS_OK &&
-            header->generation_token_match != 0U &&
+            (w4u8 != 0U || header->generation_token_match != 0U) &&
             header->generation_input_token_count_observed ==
                 header->generation_token_count &&
             header->vtcm_requested_bytes == QBH_EXPECTED_FULL_VTCM_BYTES &&
@@ -3385,7 +3438,9 @@ static int qbh_run_generation_sequence(
             header->intermediate_ddr_read_bytes == 0U &&
             header->intermediate_ddr_write_bytes == 0U &&
             header->intermediate_spill_fill_count == 0U &&
-            header->boundary_ddr_write_bytes == 0U &&
+            header->boundary_ddr_write_bytes ==
+                (header->generation_boundary_audit_enabled != 0U
+                     ? QBH_BLOCK_HIDDEN : 0U) &&
             state->completed_step_count == step + 1U;
         for (uint32_t slice_index = 0U;
              slice_index < QBH_VERTICAL_SLICE_LAYER_COUNT;
@@ -3404,9 +3459,25 @@ static int qbh_run_generation_sequence(
                 step_pass = 0;
             }
         }
+        if (w4u8 != 0U &&
+            header->generation_boundary_audit_enabled != 0U &&
+            audit_root != NULL && audit_root[0] != '\0') {
+            char audit_name[96];
+            if (snprintf(
+                    audit_name, sizeof(audit_name),
+                    "generation_hidden_step%02" PRIu32 "_u8.bin",
+                    step) < 0 ||
+                qbh_write_named_tensor(
+                    audit_root, audit_name,
+                    shared + header->output_offset,
+                    QBH_BLOCK_HIDDEN) != 0) {
+                step_pass = 0;
+            }
+        }
         all_pass &= step_pass;
         printf(
-            "{\"experiment\":166,\"generation_step\":%" PRIu32
+            "{\"experiment\":%" PRIu32
+            ",\"generation_step\":%" PRIu32
             ",\"generation_mode\":%" PRIu32
             ",\"mode\":\"%s\",\"first_position\":%" PRIu32
             ",\"valid_length\":%" PRIu32
@@ -3415,6 +3486,7 @@ static int qbh_run_generation_sequence(
             ",\"expected_token_id\":%" PRIu32
             ",\"token_match\":%s"
             ",\"selected_logit_half_bits\":%" PRIu32
+            ",\"selected_logit_encoding\":\"%s\""
             ",\"embedding_ticks\":%" PRIu64
             ",\"final_norm_ticks\":%" PRIu64
             ",\"lm_head_ticks\":%" PRIu64
@@ -3439,7 +3511,7 @@ static int qbh_run_generation_sequence(
             ",\"vtcm_acquired_bytes\":%" PRIu32
             ",\"rpc_result\":%d,\"dsp_status\":%d"
             ",\"pass\":%s}\n",
-            step, header->generation_mode,
+            experiment, step, header->generation_mode,
             step == 0U ? "prefill" : "decode",
             header->replay_first_position,
             state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER].valid_length,
@@ -3447,6 +3519,7 @@ static int qbh_run_generation_sequence(
             header->generation_expected_token_id,
             header->generation_token_match != 0U ? "true" : "false",
             header->generation_selected_logit_half_bits,
+            w4u8 != 0U ? "u8_code" : "fp16_bits",
             header->generation_embedding_ticks,
             header->generation_final_norm_ticks,
             header->generation_lm_head_ticks,
@@ -3502,8 +3575,8 @@ static int qbh_run_generation_sequence(
         profile_result.scan_dynamic_attention_ticks =
             header->scan_dynamic_attention_ticks;
         qbh_print_replay_profile(
-            166U, "generation_profile", "generation_step",
-            QBH_BLOCK_W4F16, step, header, &profile_result,
+            experiment, "generation_profile", "generation_step",
+            generation_variant, step, header, &profile_result,
             (const uint8_t *)&generated[step], sizeof(generated[step]));
         if (rpc_result != AEE_SUCCESS ||
             header->dsp_status != QBH_BLOCK_STATUS_OK) {
@@ -3512,12 +3585,15 @@ static int qbh_run_generation_sequence(
     }
 
     printf(
-        "{\"experiment\":166,\"generation_sequence_complete\":true,"
+        "{\"experiment\":%" PRIu32
+        ",\"generation_sequence_complete\":true,"
         "\"generation_mode\":%" PRIu32 ","
-        "\"variant\":\"W4F16\",\"completed_steps\":%" PRIu32
+        "\"variant\":\"%s\",\"completed_steps\":%" PRIu32
         ",\"total_host_wall_ns\":%" PRIu64
         ",\"token_ids\":[",
-        header->generation_mode, state->completed_step_count, total_wall_ns);
+        experiment, header->generation_mode,
+        qbh_variant_name(generation_variant),
+        state->completed_step_count, total_wall_ns);
     for (uint32_t index = 0U; index < QBH_GENERATION_MAX_TOKENS;
          ++index) {
         printf("%s%" PRIu32, index == 0U ? "" : ",",
@@ -3652,6 +3728,8 @@ int main(int argc, char **argv) {
     struct qbh_file_slot generation_final_norm_slot;
     struct qbh_file_slot generation_lm_head_weight_slot;
     struct qbh_file_slot generation_lm_head_scale_slot;
+    struct qbh_file_slot generation_lm_head_bias_slot;
+    struct qbh_file_slot generation_qparam_slot;
     struct qbh_file_slot generation_expected_token_slot;
     struct qbh_vertical_layer_slots
         vertical_slots[QBH_VERTICAL_SLICE_LAYER_COUNT];
@@ -3717,6 +3795,7 @@ int main(int argc, char **argv) {
     uint32_t replay_mode = QBH_BLOCK_REPLAY_DISABLED;
     uint32_t vertical_slice_mode = QBH_BLOCK_SLICE_DISABLED;
     uint32_t generation_mode = QBH_BLOCK_GENERATION_DISABLED;
+    uint32_t generation_boundary_audit_enabled = 0U;
     uint32_t full_stack_stage_mode = QBH_BLOCK_FULL_STACK_RUN;
     uint32_t w4u8_boundary_audit_enabled = 0U;
     uint32_t replay_session_offset = 0U;
@@ -3772,6 +3851,10 @@ int main(int argc, char **argv) {
            sizeof(generation_lm_head_weight_slot));
     memset(&generation_lm_head_scale_slot, 0,
            sizeof(generation_lm_head_scale_slot));
+    memset(&generation_lm_head_bias_slot, 0,
+           sizeof(generation_lm_head_bias_slot));
+    memset(&generation_qparam_slot, 0,
+           sizeof(generation_qparam_slot));
     memset(&generation_expected_token_slot, 0,
            sizeof(generation_expected_token_slot));
     memset(vertical_slots, 0, sizeof(vertical_slots));
@@ -3993,8 +4076,24 @@ int main(int argc, char **argv) {
             } else if (strcmp(generation, "7") == 0) {
                 generation_mode =
                     QBH_BLOCK_GENERATION_GREEDY_W4F16_COARSE_PIPELINE;
+            } else if (strcmp(generation, "8") == 0) {
+                generation_mode =
+                    QBH_BLOCK_GENERATION_GREEDY_W4U8_COARSE_PIPELINE;
             } else {
                 generation_mode = UINT32_MAX;
+            }
+        }
+    }
+    {
+        const char *generation_audit =
+            getenv("QBH_GENERATION_BOUNDARY_AUDIT");
+        if (generation_audit != NULL && generation_audit[0] != '\0') {
+            if (strcmp(generation_audit, "0") == 0) {
+                generation_boundary_audit_enabled = 0U;
+            } else if (strcmp(generation_audit, "1") == 0) {
+                generation_boundary_audit_enabled = 1U;
+            } else {
+                generation_boundary_audit_enabled = UINT32_MAX;
             }
         }
     }
@@ -4172,31 +4271,27 @@ int main(int argc, char **argv) {
         (replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS &&
          vertical_slice_mode != QBH_BLOCK_SLICE_ACTIVE_RANGE) ||
         generation_mode >
-            QBH_BLOCK_GENERATION_GREEDY_W4F16_COARSE_PIPELINE ||
+            QBH_BLOCK_GENERATION_GREEDY_W4U8_COARSE_PIPELINE ||
+        generation_boundary_audit_enabled > 1U ||
+        (generation_boundary_audit_enabled != 0U &&
+         !qbh_generation_w4u8_enabled(generation_mode)) ||
         (generation_mode != QBH_BLOCK_GENERATION_DISABLED &&
-         ((generation_mode != QBH_BLOCK_GENERATION_GREEDY_W4F16 &&
-           generation_mode !=
-               QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX &&
-           generation_mode !=
-               QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX_BATCH4 &&
-           generation_mode !=
-               QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX_BATCH8 &&
-           generation_mode !=
-               QBH_BLOCK_GENERATION_GREEDY_W4F16_LM_HEAD_OVERLAP &&
-           generation_mode !=
-               QBH_BLOCK_GENERATION_GREEDY_W4F16_DMA_HVX_OVERLAP &&
-           generation_mode !=
-               QBH_BLOCK_GENERATION_GREEDY_W4F16_COARSE_PIPELINE) ||
-          variant != QBH_BLOCK_W4F16 ||
+         ((!qbh_generation_w4f16_enabled(generation_mode) &&
+           !qbh_generation_w4u8_enabled(generation_mode)) ||
+          (qbh_generation_w4f16_enabled(generation_mode)
+               ? (variant != QBH_BLOCK_W4F16 ||
+                  !qbh_hmx_native_f16_cache_formats(
+                      kv_cache_k_format, kv_cache_v_format))
+               : (variant != QBH_BLOCK_W4U8 ||
+                  !qbh_hmx_native_u8_segmented_cache_formats(
+                      kv_cache_k_format, kv_cache_v_format))) ||
           replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS ||
           vertical_slice_mode != QBH_BLOCK_SLICE_ACTIVE_RANGE ||
           full_stack_stage_mode != QBH_BLOCK_FULL_STACK_RUN ||
           scan_mode != QBH_BLOCK_SCAN_PREFILL ||
           logical_m != QBH_BLOCK_M ||
           initial_kv_length != 0U ||
-          kv_cache_capacity != 80U ||
-          !qbh_hmx_native_f16_cache_formats(
-              kv_cache_k_format, kv_cache_v_format))) ||
+          kv_cache_capacity != 80U)) ||
         full_stack_stage_mode >
             QBH_BLOCK_FULL_STACK_HIDDEN_CAPTURE ||
         w4u8_boundary_audit_enabled > 1U ||
@@ -4656,9 +4751,13 @@ int main(int argc, char **argv) {
              QBH_BLOCK_M * (uint32_t)sizeof(uint32_t), &cursor) != 0 ||
          qbh_prepare_slot(
              &generation_embedding_slot, argv[1],
-             "generation_embedding_weight_f16.bin",
+             qbh_generation_w4u8_enabled(generation_mode)
+                 ? "generation_embedding_weight_u8.bin"
+                 : "generation_embedding_weight_f16.bin",
              QBH_QWEN3_VOCAB_SIZE * QBH_BLOCK_HIDDEN *
-                 (uint32_t)sizeof(uint16_t),
+                 (qbh_generation_w4u8_enabled(generation_mode)
+                      ? (uint32_t)sizeof(uint8_t)
+                      : (uint32_t)sizeof(uint16_t)),
              &cursor) != 0 ||
          qbh_prepare_slot(
              &generation_final_norm_slot, argv[1],
@@ -4675,6 +4774,19 @@ int main(int argc, char **argv) {
              "generation_lm_head_weight_w4_scale_f32.bin",
              QBH_QWEN3_VOCAB_SIZE * (uint32_t)sizeof(float),
              &cursor) != 0 ||
+         (qbh_generation_w4u8_enabled(generation_mode) &&
+          (qbh_prepare_slot(
+               &generation_lm_head_bias_slot, argv[1],
+               "generation_lm_head_bias_u32.bin",
+               (QBH_QWEN3_VOCAB_SIZE /
+                QBH_HMX_OUTPUT_CHANNELS) * QBH_HMX_BIAS_BYTES,
+               &cursor) != 0 ||
+           qbh_prepare_slot(
+               &generation_qparam_slot, argv[1],
+               "generation_qparams_u8.bin",
+               QBH_GENERATION_QPARAM_COUNT *
+                   QBH_BLOCK_QPARAM_RECORD_BYTES,
+               &cursor) != 0)) ||
          qbh_prepare_slot(
              &generation_expected_token_slot, argv[1],
              "generation_expected_token_ids_u32.bin",
@@ -5083,6 +5195,9 @@ int main(int argc, char **argv) {
          qbh_read_slot(shared, &generation_final_norm_slot) != 0 ||
          qbh_read_slot(shared, &generation_lm_head_weight_slot) != 0 ||
          qbh_read_slot(shared, &generation_lm_head_scale_slot) != 0 ||
+         (qbh_generation_w4u8_enabled(generation_mode) &&
+          (qbh_read_slot(shared, &generation_lm_head_bias_slot) != 0 ||
+           qbh_read_slot(shared, &generation_qparam_slot) != 0)) ||
          qbh_read_slot(shared, &generation_expected_token_slot) != 0)) {
         fprintf(stderr, "generation boundary tensor read failed\n");
         goto cleanup;
@@ -5274,6 +5389,14 @@ int main(int argc, char **argv) {
             generation_lm_head_scale_slot.offset;
         header->generation_lm_head.scale_bytes =
             generation_lm_head_scale_slot.expected_bytes;
+        if (qbh_generation_w4u8_enabled(generation_mode)) {
+            header->generation_lm_head.bias_offset =
+                generation_lm_head_bias_slot.offset;
+            header->generation_lm_head.bias_bytes =
+                generation_lm_head_bias_slot.expected_bytes;
+        }
+        header->generation_boundary_audit_enabled =
+            generation_boundary_audit_enabled;
         header->generation_expected_token_ids_offset =
             generation_expected_token_slot.offset;
         header->generation_expected_token_ids_bytes =
@@ -5654,6 +5777,12 @@ int main(int argc, char **argv) {
             header, shared, &w4u8_gate_up_layout,
             &w4u8_down_layout) != 0) {
         fprintf(stderr, "W4U8 streaming bundle construction failed\n");
+        goto cleanup;
+    }
+    if (qbh_generation_w4u8_enabled(generation_mode) &&
+        qbh_load_generation_qparams(
+            header, shared + generation_qparam_slot.offset) != 0) {
+        fprintf(stderr, "generation qparam record audit failed\n");
         goto cleanup;
     }
     header->dsp_status = QBH_BLOCK_STATUS_HOST_READY;

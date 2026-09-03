@@ -176,9 +176,15 @@ def publish(source: Path, output: Path, mode: str) -> dict[str, object]:
                 kind: np.fromfile(
                     layer / f"reference_kv_cache_{kind}_u8.bin",
                     dtype=np.uint8,
-                ).reshape(HEADS, CAPACITY, HEAD_DIM)
+                ).reshape(HEADS, -1, HEAD_DIM)[:, :CAPACITY]
                 for kind in ("k", "v")
             }
+            if any(values.shape[1] != CAPACITY
+                   for values in logical.values()):
+                raise ValueError(
+                    f"layer {layer_index} logical cache is shorter than "
+                    f"capacity {CAPACITY}"
+                )
             for kind in ("k", "v"):
                 head_bytes = k_head_bytes if kind == "k" else v_head_bytes
                 prepacked = (

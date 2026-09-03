@@ -1426,6 +1426,22 @@ static int qbh_generation_w4f16_enabled(uint32_t mode) {
            mode == QBH_BLOCK_GENERATION_GREEDY_W4F16_COARSE_PIPELINE;
 }
 
+static int qbh_generation_w4u8_enabled(uint32_t mode) {
+    return mode == QBH_BLOCK_GENERATION_GREEDY_W4U8_COARSE_PIPELINE;
+}
+
+static int qbh_generation_enabled(uint32_t mode) {
+    return qbh_generation_w4f16_enabled(mode) ||
+           qbh_generation_w4u8_enabled(mode);
+}
+
+static int qbh_generation_u8_qparam_valid(
+    const struct qbh_block_qparam *qparam) {
+    return qparam != NULL && qparam->scale > 0.0f &&
+           isfinite(qparam->scale) && qparam->zero_point >= 0 &&
+           qparam->zero_point <= UINT8_MAX;
+}
+
 static int qbh_generation_request_valid(
     const struct qbh_block_header *header, uint32_t shared_bytes) {
     const struct qbh_block_projection_desc *head;
@@ -1446,12 +1462,15 @@ static int qbh_generation_request_valid(
                header->generation_lm_head.scale_bytes == 0U &&
                header->generation_lm_head.bias_offset == 0U &&
                header->generation_lm_head.bias_bytes == 0U &&
+               header->generation_boundary_audit_enabled == 0U &&
                header->generation_expected_token_ids_offset == 0U &&
                header->generation_expected_token_ids_bytes == 0U &&
                header->generation_expected_token_count == 0U;
     }
-    if (!qbh_generation_w4f16_enabled(header->generation_mode) ||
-        header->variant != QBH_BLOCK_W4F16 ||
+    if (!qbh_generation_enabled(header->generation_mode) ||
+        (qbh_generation_w4f16_enabled(header->generation_mode)
+             ? header->variant != QBH_BLOCK_W4F16
+             : header->variant != QBH_BLOCK_W4U8) ||
         header->replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS ||
         !qbh_slice_enabled(header) ||
         header->full_stack_stage_mode != QBH_BLOCK_FULL_STACK_RUN ||
@@ -1462,13 +1481,16 @@ static int qbh_generation_request_valid(
         header->generation_token_ids_bytes !=
             QBH_BLOCK_M * sizeof(uint32_t) ||
         header->generation_embedding_bytes !=
-            QBH_QWEN3_VOCAB_SIZE * QBH_BLOCK_HIDDEN * sizeof(uint16_t) ||
+            QBH_QWEN3_VOCAB_SIZE * QBH_BLOCK_HIDDEN *
+                (qbh_generation_w4u8_enabled(header->generation_mode)
+                     ? sizeof(uint8_t) : sizeof(uint16_t)) ||
         header->generation_final_norm_bytes !=
             QBH_BLOCK_HIDDEN * sizeof(uint16_t) ||
         header->generation_expected_token_ids_bytes !=
             QBH_GENERATION_MAX_TOKENS * sizeof(uint32_t) ||
         header->generation_expected_token_count !=
             QBH_GENERATION_MAX_TOKENS ||
+        header->generation_boundary_audit_enabled > 1U ||
         !qbh_range_valid(header->generation_token_ids_offset,
                          header->generation_token_ids_bytes,
                          shared_bytes) ||
@@ -1484,6 +1506,27 @@ static int qbh_generation_request_valid(
         return 0;
     }
     head = &header->generation_lm_head;
+    if (head->k != QBH_BLOCK_HIDDEN ||
+        head->n != QBH_QWEN3_VOCAB_SIZE ||
+        head->weight_bytes != head->k * head->n / 2U ||
+        head->scale_bytes != head->n * sizeof(float) ||
+        !qbh_range_valid(head->weight_offset, head->weight_bytes,
+                         shared_bytes) ||
+        !qbh_range_valid(head->scale_offset, head->scale_bytes,
+                         shared_bytes)) {
+        return 0;
+    }
+    if (qbh_generation_w4u8_enabled(header->generation_mode)) {
+        return head->bias_bytes ==
+                   (head->n / QBH_HMX_OUTPUT_CHANNELS) *
+                       QBH_HMX_BIAS_BYTES &&
+               qbh_range_valid(head->bias_offset, head->bias_bytes,
+                               shared_bytes) &&
+               qbh_generation_u8_qparam_valid(
+                   &header->generation_final_norm_output_qparam) &&
+               qbh_generation_u8_qparam_valid(
+                   &header->generation_lm_head_output_qparam);
+    }
     return head->k == QBH_BLOCK_HIDDEN &&
            head->n == QBH_QWEN3_VOCAB_SIZE &&
            head->weight_bytes == head->k * head->n / 2U &&
@@ -5123,12 +5166,14 @@ static int qbh_stage_generation_embedding(
     struct qbh_block_buffers *buffers) {
     const uint32_t token_bytes =
         QBH_BLOCK_M * (uint32_t)sizeof(uint32_t);
-    const uint32_t embedding_row_bytes =
-        QBH_BLOCK_HIDDEN * (uint32_t)sizeof(uint16_t);
+    const uint32_t embedding_row_bytes = QBH_BLOCK_HIDDEN *
+        (qbh_generation_w4u8_enabled(header->generation_mode)
+             ? (uint32_t)sizeof(uint8_t)
+             : (uint32_t)sizeof(uint16_t));
     const uint64_t start = HAP_perf_get_qtimer_count();
     uint32_t *token_ids = (uint32_t *)buffers->scale_or_bias;
 
-    if (!qbh_generation_w4f16_enabled(header->generation_mode) ||
+    if (!qbh_generation_enabled(header->generation_mode) ||
         qbh_dma_copy(header, token_ids,
                      shared + header->generation_token_ids_offset,
                      token_bytes, 1U) != 0) {
@@ -5923,6 +5968,261 @@ static int qbh_run_generation_head_w4f16(
     }
     header->generation_selected_token_id = best_token;
     header->generation_selected_logit_half_bits = best_bits;
+    header->generation_expected_token_id =
+        ((const uint32_t *)(shared +
+          header->generation_expected_token_ids_offset))[generation_step];
+    header->generation_token_match =
+        best_token == header->generation_expected_token_id;
+    header->generation_lm_head_ticks +=
+        HAP_perf_get_qtimer_count() - head_start;
+    return 0;
+}
+
+#define QBH_GENERATION_W4U8_GROUP_TILES UINT32_C(4)
+
+static uint8_t qbh_generation_hvx_reduce_max_u8(HVX_Vector value) {
+    const HVX_Vector zero = Q6_V_vzero();
+    for (uint32_t shift = 64U; shift != 0U; shift >>= 1U) {
+        value = Q6_Vub_vmax_VubVub(
+            value, Q6_V_vlalign_VVR(value, zero, shift));
+    }
+    return (uint8_t)(Q6_R_vextract_VR(value, 124) >> 24U);
+}
+
+static void qbh_generation_hvx_argmax_u8_group(
+    const uint8_t *hmx_output, uint32_t first_n_tile,
+    uint32_t group_tiles, uint8_t *scratch,
+    uint8_t *best_code, uint32_t *best_token) {
+    for (uint32_t tile = 0U; tile < group_tiles; ++tile) {
+        memcpy(scratch + tile * QBH_HMX_OUTPUT_CHANNELS,
+               hmx_output + (size_t)tile * QBH_HMX_OUTPUT_BYTES,
+               QBH_HMX_OUTPUT_CHANNELS);
+    }
+    if (group_tiles < QBH_GENERATION_W4U8_GROUP_TILES) {
+        memset(scratch + group_tiles * QBH_HMX_OUTPUT_CHANNELS, 0,
+               (QBH_GENERATION_W4U8_GROUP_TILES - group_tiles) *
+                   QBH_HMX_OUTPUT_CHANNELS);
+    }
+    {
+        const uint8_t group_max = qbh_generation_hvx_reduce_max_u8(
+            *(const HVX_Vector *)scratch);
+        if (group_max > *best_code) {
+            const uint32_t valid =
+                group_tiles * QBH_HMX_OUTPUT_CHANNELS;
+            for (uint32_t lane = 0U; lane < valid; ++lane) {
+                if (scratch[lane] == group_max) {
+                    *best_code = group_max;
+                    *best_token =
+                        first_n_tile * QBH_HMX_OUTPUT_CHANNELS + lane;
+                    break;
+                }
+            }
+        }
+    }
+}
+
+static int qbh_stage_generation_w4u8_group(
+    struct qbh_block_header *header, const uint8_t *shared,
+    const struct qbh_block_projection_desc *head,
+    uint32_t first_n_tile, uint32_t group_tiles,
+    uint8_t *compressed, uint8_t *expanded, uint8_t *bias) {
+    const uint32_t k_tiles = head->k / QBH_HMX_INPUT_CHANNELS;
+    const uint32_t compressed_tile_bytes =
+        k_tiles * QBH_W4_PACKED_TILE_BYTES;
+    const uint32_t compressed_bytes =
+        group_tiles * compressed_tile_bytes;
+    const uint32_t bias_bytes = group_tiles * QBH_HMX_BIAS_BYTES;
+    uint64_t start = HAP_perf_get_qtimer_count();
+
+    if (qbh_dma_copy(
+            header, compressed,
+            shared + head->weight_offset +
+                (size_t)first_n_tile * compressed_tile_bytes,
+            compressed_bytes, 1U) != 0) {
+        return -1;
+    }
+    header->generation_lm_head_weight_dma_ticks +=
+        HAP_perf_get_qtimer_count() - start;
+    header->generation_lm_head_ddr_read_bytes += compressed_bytes;
+    header->weight_ddr_read_bytes += compressed_bytes;
+    ++header->weight_dma_descriptor_count;
+
+    start = HAP_perf_get_qtimer_count();
+    if (qbh_dma_copy(
+            header, bias,
+            shared + head->bias_offset +
+                (size_t)first_n_tile * QBH_HMX_BIAS_BYTES,
+            bias_bytes, 1U) != 0) {
+        return -2;
+    }
+    header->generation_lm_head_scale_dma_ticks +=
+        HAP_perf_get_qtimer_count() - start;
+    header->generation_lm_head_ddr_read_bytes += bias_bytes;
+    header->weight_ddr_read_bytes += bias_bytes;
+    ++header->weight_dma_descriptor_count;
+
+    start = HAP_perf_get_qtimer_count();
+    for (uint32_t tile = 0U; tile < group_tiles; ++tile) {
+        qbh_unpack_w4_to_s8_hvx_relaxed(
+            compressed + (size_t)tile * compressed_tile_bytes,
+            (int8_t *)(expanded +
+                (size_t)tile * k_tiles * QBH_HMX_WEIGHT_BYTES),
+            k_tiles);
+    }
+    asm volatile("barrier" ::: "memory");
+    header->generation_lm_head_expand_ticks +=
+        HAP_perf_get_qtimer_count() - start;
+    return 0;
+}
+
+/* EXP-0167 adds the real token boundary to the selected cache-native W4U8
+ * stack.  Final RMSNorm writes the last logical row directly into integer
+ * HMX activation tiles.  The LM head keeps W4 in DDR, expands four output
+ * tiles at a time in VTCM, and uses precomputed HMX bias/requant carriers to
+ * map every vocabulary channel into one shared U8 logit domain.  Only the
+ * selected token leaves the DSP; full logits are never materialized in DDR. */
+static int qbh_run_generation_head_w4u8(
+    struct qbh_block_header *header, uint8_t *shared,
+    struct qbh_block_buffers *buffers,
+    struct qbh_block_hmx_worker *worker,
+    uint32_t logical_rows, uint32_t generation_step) {
+    const struct qbh_block_projection_desc *head =
+        &header->generation_lm_head;
+    const uint32_t k_tiles = head->k / QBH_HMX_INPUT_CHANNELS;
+    const uint32_t n_tiles = head->n / QBH_HMX_OUTPUT_CHANNELS;
+    const uint32_t group_limit = QBH_GENERATION_W4U8_GROUP_TILES;
+    const uint32_t group_count =
+        (n_tiles + group_limit - 1U) / group_limit;
+    uint8_t *compressed_slots[2] = {
+        buffers->compressed_weight, buffers->compressed_weight_alt};
+    uint8_t *expanded_slots[2] = {
+        buffers->expanded_weight, buffers->expanded_weight_alt};
+    uint8_t *bias_slots[2] = {
+        buffers->scale_or_bias,
+        buffers->scale_or_bias +
+            group_limit * QBH_HMX_BIAS_BYTES};
+    uint8_t *argmax_scratch = buffers->channel_scale;
+    uint8_t best_code = 0U;
+    uint32_t best_token = 0U;
+    const uint64_t head_start = HAP_perf_get_qtimer_count();
+    int result;
+
+    if (!qbh_generation_w4u8_enabled(header->generation_mode) ||
+        logical_rows == 0U ||
+        generation_step >= header->generation_expected_token_count ||
+        n_tiles == 0U || group_count == 0U ||
+        group_limit * k_tiles * QBH_HMX_WEIGHT_BYTES >
+            QBH_BLOCK_MAX_K * QBH_HMX_OUTPUT_CHANNELS *
+                sizeof(uint16_t) ||
+        2U * group_limit * QBH_HMX_BIAS_BYTES >
+            2U * QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES *
+                QBH_HMX_FP16_SCALE_BYTES) {
+        return -1;
+    }
+
+    if (header->generation_boundary_audit_enabled != 0U) {
+        if (qbh_dma_copy(
+                header, shared + header->output_offset,
+                buffers->residual +
+                    (size_t)(logical_rows - 1U) * QBH_BLOCK_HIDDEN,
+                QBH_BLOCK_HIDDEN, 0U) != 0) {
+            return -2;
+        }
+        header->boundary_ddr_write_bytes += QBH_BLOCK_HIDDEN;
+        ++header->boundary_dma_descriptor_count;
+    }
+
+    {
+        const uint64_t norm_start = HAP_perf_get_qtimer_count();
+        if (qbh_dma_copy(
+                header, buffers->input_norm_weight,
+                shared + header->generation_final_norm_offset,
+                header->generation_final_norm_bytes, 1U) != 0) {
+            return -2;
+        }
+        header->weight_ddr_read_bytes +=
+            header->generation_final_norm_bytes;
+        qbh_hvx_rms_norm_u8_native_activation(
+            buffers->residual +
+                (size_t)(logical_rows - 1U) * QBH_BLOCK_HIDDEN,
+            &header->qparams[QBH_BLOCK_QP_BLOCK_OUTPUT],
+            (const __fp16 *)buffers->input_norm_weight,
+            buffers->hmx_activation,
+            &header->generation_final_norm_output_qparam,
+            1U, QBH_BLOCK_HIDDEN);
+        header->generation_final_norm_ticks +=
+            HAP_perf_get_qtimer_count() - norm_start;
+    }
+
+    header->generation_lm_head_batch_n_tiles = group_limit;
+    header->generation_lm_head_n_tiles = n_tiles;
+    result = qbh_stage_generation_w4u8_group(
+        header, shared, head, 0U,
+        n_tiles < group_limit ? n_tiles : group_limit,
+        compressed_slots[0], expanded_slots[0], bias_slots[0]);
+    if (result != 0) {
+        return -3;
+    }
+
+    for (uint32_t group = 0U; group < group_count; ++group) {
+        const uint32_t slot = group & 1U;
+        const uint32_t first_n_tile = group * group_limit;
+        uint32_t group_tiles = n_tiles - first_n_tile;
+        uint64_t hmx_start;
+        uint64_t wait_start;
+        if (group_tiles > group_limit) {
+            group_tiles = group_limit;
+        }
+
+        hmx_start = HAP_perf_get_qtimer_count();
+        qbh_hmx_start(
+            worker, QBH_BLOCK_HMX_U8S8,
+            buffers->hmx_activation, expanded_slots[slot],
+            bias_slots[slot], buffers->hmx_output,
+            1U, k_tiles, group_tiles);
+        if (group + 1U < group_count) {
+            const uint32_t next_group = group + 1U;
+            const uint32_t next_slot = next_group & 1U;
+            const uint32_t next_first = next_group * group_limit;
+            uint32_t next_tiles = n_tiles - next_first;
+            if (next_tiles > group_limit) {
+                next_tiles = group_limit;
+            }
+            result = qbh_stage_generation_w4u8_group(
+                header, shared, head, next_first, next_tiles,
+                compressed_slots[next_slot], expanded_slots[next_slot],
+                bias_slots[next_slot]);
+            if (result != 0) {
+                (void)qbh_hmx_wait(worker);
+                return -4;
+            }
+            ++header->generation_lm_head_prefetch_count;
+        }
+        wait_start = HAP_perf_get_qtimer_count();
+        result = qbh_hmx_wait(worker);
+        header->generation_lm_head_hmx_tail_wait_ticks +=
+            HAP_perf_get_qtimer_count() - wait_start;
+        header->generation_lm_head_hmx_ticks +=
+            HAP_perf_get_qtimer_count() - hmx_start;
+        if (result != 0) {
+            return -5;
+        }
+        ++header->generation_lm_head_command_count;
+        ++header->hmx_command_count;
+        header->hmx_u8s8_tile_pair_count += k_tiles * group_tiles;
+
+        {
+            const uint64_t argmax_start = HAP_perf_get_qtimer_count();
+            qbh_generation_hvx_argmax_u8_group(
+                buffers->hmx_output, first_n_tile, group_tiles,
+                argmax_scratch, &best_code, &best_token);
+            header->generation_lm_head_argmax_ticks +=
+                HAP_perf_get_qtimer_count() - argmax_start;
+        }
+    }
+
+    header->generation_selected_token_id = best_token;
+    header->generation_selected_logit_half_bits = best_code;
     header->generation_expected_token_id =
         ((const uint32_t *)(shared +
           header->generation_expected_token_ids_offset))[generation_step];
@@ -17851,7 +18151,7 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
             (struct qbh_decode_session_state *)(
                 shared + header->replay_session_offset);
         const uint32_t generation_enabled =
-            qbh_generation_w4f16_enabled(header->generation_mode);
+            qbh_generation_enabled(header->generation_mode);
         const uint32_t generation_step = state->completed_step_count;
         const uint32_t physical_tensor_bytes =
             QBH_BLOCK_M * QBH_BLOCK_HIDDEN *
@@ -18075,10 +18375,14 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
         }
         if (generation_enabled != 0U) {
             const int generation_status =
-                qbh_run_generation_head_w4f16(
-                    header, shared, &buffers, &worker,
-                    hvx_pool_created != 0 ? &w4f16_pool : NULL,
-                    header->logical_m, generation_step);
+                qbh_generation_w4u8_enabled(header->generation_mode)
+                    ? qbh_run_generation_head_w4u8(
+                          header, shared, &buffers, &worker,
+                          header->logical_m, generation_step)
+                    : qbh_run_generation_head_w4f16(
+                          header, shared, &buffers, &worker,
+                          hvx_pool_created != 0 ? &w4f16_pool : NULL,
+                          header->logical_m, generation_step);
             if (generation_status != 0) {
                 header->dsp_status = generation_status == -2
                     ? QBH_BLOCK_STATUS_FINAL_NORM_FAILED

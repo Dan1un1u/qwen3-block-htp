@@ -26,6 +26,7 @@
 #define QBH_QWEN3_TRANSFORMER_LAYERS UINT32_C(28)
 #define QBH_QWEN3_VOCAB_SIZE UINT32_C(151936)
 #define QBH_GENERATION_MAX_TOKENS UINT32_C(16)
+#define QBH_GENERATION_QPARAM_COUNT UINT32_C(2)
 #define QBH_REPLAY_LAYER_INDEX UINT32_C(14)
 #define QBH_VERTICAL_SLICE_FIRST_LAYER UINT32_C(0)
 #define QBH_VERTICAL_SLICE_LAYER_COUNT QBH_QWEN3_TRANSFORMER_LAYERS
@@ -108,6 +109,7 @@ enum qbh_block_generation_mode {
     QBH_BLOCK_GENERATION_GREEDY_W4F16_LM_HEAD_OVERLAP = 5,
     QBH_BLOCK_GENERATION_GREEDY_W4F16_DMA_HVX_OVERLAP = 6,
     QBH_BLOCK_GENERATION_GREEDY_W4F16_COARSE_PIPELINE = 7,
+    QBH_BLOCK_GENERATION_GREEDY_W4U8_COARSE_PIPELINE = 8,
 };
 
 enum qbh_kv_cache_element_type {
@@ -768,6 +770,9 @@ struct qbh_block_header {
     uint32_t generation_final_norm_offset;
     uint32_t generation_final_norm_bytes;
     struct qbh_block_projection_desc generation_lm_head;
+    struct qbh_block_qparam generation_final_norm_output_qparam;
+    struct qbh_block_qparam generation_lm_head_output_qparam;
+    uint32_t generation_boundary_audit_enabled;
     uint32_t generation_expected_token_ids_offset;
     uint32_t generation_expected_token_ids_bytes;
     uint32_t generation_expected_token_count;
