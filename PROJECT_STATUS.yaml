@@ -19,8 +19,8 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 170
+  active_experiment: EXP-0170
+  next_experiment_number: 171
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -33,11 +33,24 @@ current_scope:
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: none
+  active_experiment_stage: approved_pending_preflight
   active_experiment_evidence: null
-  active_experiment_gate: not_applicable
-  active_recipe_specialization: null
-  active_experiment_contract: null
+  active_experiment_gate: not_run
+  active_recipe_specialization: W4U8_decode_HVX_tile_Softmax
+  active_experiment_contract:
+    id: EXP-0170
+    source_branch: codex/exp-0170-w4u8-decode-hvx-softmax
+    source_parent: EXP-0169
+    source_parent_commit: f4722419596931035583e98e4b5a304b528d1cd2
+    execution_scope: real_token_ID_M64_prefill_then_192_continuous_W4U8_decode_steps_to_valid_length256
+    direct_control: same_binary_EXP0169_scalar_dynamic_U8_Softmax
+    candidate: four_query_heads_by_32_KV_tokens_HVX_tiled_dynamic_U8_Softmax
+    allowed_changes: M1_W4U8_decode_Softmax_local_VTCM_scratch_dispatch_telemetry_profiling_and_experiment_scripts_only
+    forbidden_changes: prefill_Softmax_integer_math_probability_values_KV_cache_ABI_DMA_seal_QK_AV_HMX_projection_MLP_LM_head_weights_scales_qparams_prompt_feedback_F16F16_W4F16_or_QNN
+    correctness_gate: byte_exact_probability_block_outputs_cache_selected_tokens_and_codes_to_scalar_control_plus_all193_independent_integer_head_checks_and_transformer_cache_regression
+    physical_gate: exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_timed_interlayer_or_full_logit_DDR_zero_spill_fill_unchanged_QK_AV_HMX_work_monotonic_cache_lengths_zero_unattributed_ticks
+    performance_gate: ten_rotated_scalar_candidate_pairs_candidate_strictly_higher_direct_decode_tokens_per_second_over_L64_L255_with_prefill_preserved_as_diagnostic
+    stop_conditions: correctness_physical_ledger_or_device_stability_failure
   final_profiling_summary_standard: direct_full_stack_prefill_and_decode_tokens_per_second_plus_exact_Host_wall
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0169/20260904T_exp0169_f472241_formal'
