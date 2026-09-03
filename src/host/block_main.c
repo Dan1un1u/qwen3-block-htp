@@ -3243,7 +3243,7 @@ static int qbh_run_replay_sequence(
     for (uint32_t slice_index = 0U;
          slice_index < QBH_VERTICAL_SLICE_LAYER_COUNT; ++slice_index) {
         if (state->layers[first_layer + slice_index].valid_length !=
-                header->kv_cache_capacity) {
+                QBH_BLOCK_M + decode_steps) {
             all_pass = 0;
         }
     }
