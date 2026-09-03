@@ -1020,3 +1020,16 @@ control, complete decode improves 16.598% and positions 224-255 improve
 promoted it on 2026-09-03, superseding EXP-0162 for the full-stack scope.
 _Avoid_: fixed imported snapshot, unbounded VTCM growth,
 full-prefix reconstruction, changed Attention arithmetic, full-model accuracy claim
+
+**Deterministic Token-Generation Boundary**:
+The approved EXP-0164 scope that extends the standalone runtime from offline
+hidden-state replay to a closed token loop: Host tokenization, runtime embedding,
+layers 0-27 with persistent cache, final RMSNorm, a streamed LM-head, greedy
+argmax, and token feedback. W4F16 is the first anchor because its corresponding
+mllm W4A16 model is known to generate usable text. Timed execution returns only
+the selected token; full logits are legal only in an explicitly untimed audit
+mode. W4U8 does not enter this scope until W4F16 exactness and readable text
+pass.
+_Avoid_: offline hidden injection described as inference, W4U8-first diagnosis,
+timed full-logit DDR materialization, stochastic sampling, full-model quality
+claim from implementation self-consistency alone

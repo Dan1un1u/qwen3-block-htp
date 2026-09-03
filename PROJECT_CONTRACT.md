@@ -160,3 +160,15 @@ Changing any item requires explicit user approval and a committed amendment.
   project does not replicate the block across the full transformer stack until
   that slice proves state ownership, layer transitions, and independent
   correctness.
+- **PC-035 — Deterministic token-generation boundary.** Beginning with
+  EXP-0164, project scope includes Host tokenizer/text decoding and a
+  project-owned embedding, final RMSNorm, LM-head, and greedy next-token path.
+  One timed accelerator pass accepts token IDs and persistent session state,
+  executes the complete transformer and output head, and returns the selected
+  token without storing inter-layer hidden tensors or the full logits vector in
+  DDR. A separately declared untimed audit mode may expose logits as a legal
+  output boundary. W4F16 is the first semantic and implementation anchor;
+  W4U8 integration follows only after W4F16 produces the independently
+  reproduced token sequence and stable readable text. Top-p/top-k sampling,
+  batching, arbitrary prompt lengths, and a general graph compiler remain out
+  of scope until separately approved.

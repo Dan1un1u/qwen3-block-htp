@@ -6,6 +6,42 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0164
+    slug: w4f16-greedy-generation
+    title: W4F16 deterministic end-to-end token-generation boundary
+    parent: EXP-0163
+    variants:
+      - independent_host_w4f16_generation_reference
+      - standalone_dsp_w4f16_greedy_generation
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: full-stack-W4F16-real-token-input-final-head-greedy-loop
+    source_branches:
+      - codex/exp-0164-w4f16-greedy-generation
+    source_commits: []
+    record: docs/experiments/EXP-0164.md
+    approval_ref: 'User message 2026-09-03: 同意，可以开始。先确认W16A16或 W4A16 能稳定生成合理文本是非常重要的'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0164-w4f16-greedy-generation
+      approved_on: '2026-09-03'
+    evidence:
+      source_parent_experiment: EXP-0163
+      source_parent_commit: 63de1de7028c5a478f4494c4e64993d34deac503
+      implementation_anchor: selected_EXP0158_W4F16_full_stack_cache_native_path_carried_forward_in_EXP0163_source
+      execution_unit: real_token_ID_M_at_most64_prefill_then_16_greedy_decode_tokens_through_embedding_layers0_27_final_norm_lm_head
+      recipe_scope: W4F16_first_W16A16_diagnostic_only_W4U8_deferred
+      model_source: 'D:/llm_exp/models/Qwen3-origin'
+      correctness_gate: independent_W4F16_reference_first_token_and_16_token_sequence_exact_with_existing_hidden_and_KV_checks
+      semantic_gate: fixed_prompts_decode_to_stable_nonempty_readable_text_else_stop_before_W4U8
+      physical_gate: exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_interlayer_or_timed_full_logit_DDR_zero_spill_fill
+      structural_gate: token_ID_in_embedding_28_layers_final_RMSNorm_streaming_W4_lm_head_greedy_token_out_and_feedback_closed_loop
+      speed_gate: report_only_not_adoption_gate
+      legal_DDR_boundaries: persistent_weights_cache_input_token_ID_selected_token_and_explicit_untimed_logit_audit_output
+      stop_conditions: W4F16_reference_mismatch_unusable_text_device_reboot_or_physical_contract_failure_before_W4U8
+      selected_baseline_changed: false
   - id: EXP-0163
     slug: w4u8-multiseal-l256
     title: Full-stack W4U8 continuous decode through six dynamic cache seals
