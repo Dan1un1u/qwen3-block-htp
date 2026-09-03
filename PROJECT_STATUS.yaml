@@ -19,8 +19,8 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 171
+  active_experiment: EXP-0171
+  next_experiment_number: 172
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -33,11 +33,24 @@ current_scope:
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: none
+  active_experiment_stage: approved_pending_preflight
   active_experiment_evidence: null
-  active_experiment_gate: not_applicable
-  active_recipe_specialization: null
-  active_experiment_contract: null
+  active_experiment_gate: not_run
+  active_recipe_specialization: W4U8_M1_row_selective_SwiGLU
+  active_experiment_contract:
+    id: EXP-0171
+    source_branch: codex/exp-0171-w4u8-decode-row4-swiglu
+    source_parent: selected_EXP0170_W4U8_token_generation_baseline
+    source_parent_commit: 042dbfd8907c23af255092a03ac28b13f8e740bc
+    execution_scope: real_token_ID_M64_prefill_then_192_continuous_W4U8_decode_steps_to_valid_length256
+    direct_control: same_binary_full_2048byte_SwiGLU_tile
+    candidate: M1_decode_first_128byte_HVX_vector_per_Gate_Up_tile
+    allowed_changes: decode_M1_Gate_Up_activation_element_count_dispatch_telemetry_and_experiment_tools_only
+    forbidden_changes: valid_row_math_LUT_qparams_weights_DMA_W4_expand_HMX_ring_worker_chain_Down_other_modules_cache_F16F16_W4F16_QNN
+    correctness_gate: byte_exact_valid_rows_cache_tokens_codes_independent_head_regression_and_padding_poison_invariance
+    physical_gate: exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_timed_intermediate_or_full_logit_DDR_zero_spill_fill_unchanged_projection_work_zero_unattributed_ticks
+    performance_gate: ten_rotated_pairs_candidate_strictly_higher_direct_L64_L255_decode_tokens_per_second_and_lower_Gate_Up_wall
+    stop_conditions: correctness_physical_ledger_or_device_stability_failure
   final_profiling_summary_standard: direct_full_stack_prefill_and_decode_tokens_per_second_plus_exact_Host_wall
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0170/20260904T_exp0170_23c00fe_formal'
