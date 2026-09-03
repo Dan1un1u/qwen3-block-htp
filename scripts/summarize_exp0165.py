@@ -31,6 +31,32 @@ def parse_args() -> argparse.Namespace:
         "--source-branch",
         default="codex/exp-0165-w4f16-prefill-boundary-pipeline",
     )
+    parser.add_argument("--experiment", type=int, default=EXPERIMENT)
+    parser.add_argument("--control-mode", type=int, default=CONTROL_MODE)
+    parser.add_argument("--candidate-mode", type=int, default=CANDIDATE_MODE)
+    parser.add_argument(
+        "--control-description",
+        default="generation mode 1, scalar online argmax and batch2 LM head",
+    )
+    parser.add_argument(
+        "--candidate-description",
+        default=(
+            "generation mode 4, HVX group-max with stable lane resolution "
+            "and phase-overlaid batch8 LM head"
+        ),
+    )
+    parser.add_argument(
+        "--conclusion",
+        default=(
+            "The candidate changes no model math. It reduces the online "
+            "argmax from a full scalar vocabulary scan to one HVX maximum "
+            "reduction per 64 logits, using scalar lane resolution only when "
+            "a group establishes a new global maximum. It then batches eight "
+            "output tiles by reusing VTCM regions whose transformer-phase "
+            "lifetimes have ended, reducing LM-head HMX commands without "
+            "increasing the 8 MiB allocation."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -233,7 +259,12 @@ def append_pc028(
 
 
 def main() -> None:
+    global EXPERIMENT, CONTROL_MODE, CANDIDATE_MODE
     args = parse_args()
+    EXPERIMENT = args.experiment
+    CONTROL_MODE = args.control_mode
+    CANDIDATE_MODE = args.candidate_mode
+    experiment_name = f"EXP-{EXPERIMENT:04d}"
     result_dir = args.result_dir.resolve()
     semantic = json.loads(base.SEMANTIC_REFERENCE.read_text(encoding="utf-8"))
     expected = [int(item) for item in semantic["w4f16"]["token_ids"]]
@@ -331,6 +362,12 @@ def main() -> None:
     physical_fields = base.PHYSICAL_FIELDS + (
         "generation_lm_head_batch_n_tiles",
     )
+    if EXPERIMENT >= 166:
+        physical_fields += (
+            "generation_lm_head_prefetch_count",
+            "generation_lm_head_scale_resident_bytes",
+            "generation_lm_head_ddr_read_bytes",
+        )
     head_fields = (
         "generation_lm_head_weight_dma_ticks",
         "generation_lm_head_scale_dma_ticks",
@@ -338,6 +375,12 @@ def main() -> None:
         "generation_lm_head_hmx_ticks",
         "generation_lm_head_argmax_ticks",
     )
+    if EXPERIMENT >= 166:
+        head_fields += (
+            "generation_lm_head_weight_dma_wait_ticks",
+            "generation_lm_head_scale_init_ticks",
+            "generation_lm_head_hmx_tail_wait_ticks",
+        )
     engine_fields = tuple(dict.fromkeys(
         base.PROJECTION_DIAGNOSTICS
         + base.ATTENTION_DIAGNOSTICS
@@ -345,7 +388,7 @@ def main() -> None:
     ))
 
     summary = {
-        "experiment": "EXP-0165",
+        "experiment": experiment_name,
         "source_branch": args.source_branch,
         "source_commit": args.source_commit,
         "formal_evidence": str(result_dir),
@@ -379,12 +422,12 @@ def main() -> None:
     )
 
     lines = [
-        "# EXP-0165 full profiling report", "",
+        f"# {experiment_name} full profiling report", "",
         "## Identity and scope", "",
         f"- Source: `{args.source_branch}` @ `{args.source_commit}`",
         f"- Formal evidence: `{result_dir}`",
-        "- Direct control: generation mode 1, EXP-0164 scalar online argmax and batch2 LM head.",
-        "- Candidate: generation mode 4, HVX group-max with stable lane resolution and phase-overlaid batch8 LM head.",
+        f"- Direct control: {args.control_description}.",
+        f"- Candidate: {args.candidate_description}.",
         "- Ten rotated control/candidate pairs; one complete Prepared Session per cell.",
         "- Transformer layers, KV cache, weights, scales, tokenizer, prompt and token sequence are identical.", "",
         "The PC-028 table retains the shared transformer-only comparison from EXP-0158/EXP-0163. Only W4F16 currently owns the complete token-to-token output boundary, so those archived rows are context rather than the direct EXP-0165 control.", "",
@@ -485,14 +528,14 @@ def main() -> None:
     ):
         lines.append(f"| {name} | {'PASS' if gates[name] else 'FAIL'} |")
     lines += [
-        "", "The candidate changes no model math. It reduces the online argmax from a full scalar vocabulary scan to one HVX maximum reduction per 64 logits, using scalar lane resolution only when a group establishes a new global maximum. It then batches eight output tiles by reusing VTCM regions whose transformer-phase lifetimes have ended, reducing LM-head HMX commands without increasing the 8 MiB allocation.", "",
+        "", args.conclusion, "",
         f"Generated text: `{semantic['w4f16']['text']}`", "",
     ]
     (result_dir / "full_profiling_report.md").write_text(
         "\n".join(lines), encoding="utf-8"
     )
     print(json.dumps({
-        "experiment": "EXP-0165",
+        "experiment": experiment_name,
         "all_gates_pass": gates["all_with_performance"],
         "representative_pair": representative + 1,
         "prefill_control_us": control_prefill,
@@ -504,7 +547,7 @@ def main() -> None:
         "result_dir": str(result_dir),
     }, indent=2))
     if not gates["all_with_performance"]:
-        raise SystemExit("EXP-0165 gate failed")
+        raise SystemExit(f"{experiment_name} gate failed")
 
 
 if __name__ == "__main__":

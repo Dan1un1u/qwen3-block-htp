@@ -2622,9 +2622,14 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U64(generation_lm_head_expand_ticks);
     QBH_REPLAY_PROFILE_U64(generation_lm_head_hmx_ticks);
     QBH_REPLAY_PROFILE_U64(generation_lm_head_argmax_ticks);
+    QBH_REPLAY_PROFILE_U64(generation_lm_head_weight_dma_wait_ticks);
+    QBH_REPLAY_PROFILE_U64(generation_lm_head_scale_init_ticks);
+    QBH_REPLAY_PROFILE_U64(generation_lm_head_hmx_tail_wait_ticks);
     QBH_REPLAY_PROFILE_U32(generation_lm_head_batch_n_tiles);
     QBH_REPLAY_PROFILE_U32(generation_lm_head_command_count);
     QBH_REPLAY_PROFILE_U32(generation_lm_head_n_tiles);
+    QBH_REPLAY_PROFILE_U32(generation_lm_head_prefetch_count);
+    QBH_REPLAY_PROFILE_U32(generation_lm_head_scale_resident_bytes);
     QBH_REPLAY_PROFILE_U64(generation_embedding_ddr_read_bytes);
     QBH_REPLAY_PROFILE_U64(generation_lm_head_ddr_read_bytes);
 
@@ -3401,7 +3406,7 @@ static int qbh_run_generation_sequence(
         }
         all_pass &= step_pass;
         printf(
-            "{\"experiment\":165,\"generation_step\":%" PRIu32
+            "{\"experiment\":166,\"generation_step\":%" PRIu32
             ",\"generation_mode\":%" PRIu32
             ",\"mode\":\"%s\",\"first_position\":%" PRIu32
             ",\"valid_length\":%" PRIu32
@@ -3418,8 +3423,13 @@ static int qbh_run_generation_sequence(
             ",\"lm_head_expand_ticks\":%" PRIu64
             ",\"lm_head_hmx_ticks\":%" PRIu64
             ",\"lm_head_argmax_ticks\":%" PRIu64
+            ",\"lm_head_weight_dma_wait_ticks\":%" PRIu64
+            ",\"lm_head_scale_init_ticks\":%" PRIu64
+            ",\"lm_head_hmx_tail_wait_ticks\":%" PRIu64
             ",\"lm_head_commands\":%" PRIu32
             ",\"lm_head_n_tiles\":%" PRIu32
+            ",\"lm_head_prefetch_count\":%" PRIu32
+            ",\"lm_head_scale_resident_bytes\":%" PRIu32
             ",\"embedding_ddr_read_bytes\":%" PRIu64
             ",\"lm_head_ddr_read_bytes\":%" PRIu64
             ",\"boundary_ddr_write_bytes\":%" PRIu64
@@ -3445,8 +3455,13 @@ static int qbh_run_generation_sequence(
             header->generation_lm_head_expand_ticks,
             header->generation_lm_head_hmx_ticks,
             header->generation_lm_head_argmax_ticks,
+            header->generation_lm_head_weight_dma_wait_ticks,
+            header->generation_lm_head_scale_init_ticks,
+            header->generation_lm_head_hmx_tail_wait_ticks,
             header->generation_lm_head_command_count,
             header->generation_lm_head_n_tiles,
+            header->generation_lm_head_prefetch_count,
+            header->generation_lm_head_scale_resident_bytes,
             header->generation_embedding_ddr_read_bytes,
             header->generation_lm_head_ddr_read_bytes,
             header->boundary_ddr_write_bytes,
@@ -3487,7 +3502,7 @@ static int qbh_run_generation_sequence(
         profile_result.scan_dynamic_attention_ticks =
             header->scan_dynamic_attention_ticks;
         qbh_print_replay_profile(
-            165U, "generation_profile", "generation_step",
+            166U, "generation_profile", "generation_step",
             QBH_BLOCK_W4F16, step, header, &profile_result,
             (const uint8_t *)&generated[step], sizeof(generated[step]));
         if (rpc_result != AEE_SUCCESS ||
@@ -3497,7 +3512,7 @@ static int qbh_run_generation_sequence(
     }
 
     printf(
-        "{\"experiment\":165,\"generation_sequence_complete\":true,"
+        "{\"experiment\":166,\"generation_sequence_complete\":true,"
         "\"generation_mode\":%" PRIu32 ","
         "\"variant\":\"W4F16\",\"completed_steps\":%" PRIu32
         ",\"total_host_wall_ns\":%" PRIu64
@@ -3969,6 +3984,15 @@ int main(int argc, char **argv) {
             } else if (strcmp(generation, "4") == 0) {
                 generation_mode =
                     QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX_BATCH8;
+            } else if (strcmp(generation, "5") == 0) {
+                generation_mode =
+                    QBH_BLOCK_GENERATION_GREEDY_W4F16_LM_HEAD_OVERLAP;
+            } else if (strcmp(generation, "6") == 0) {
+                generation_mode =
+                    QBH_BLOCK_GENERATION_GREEDY_W4F16_DMA_HVX_OVERLAP;
+            } else if (strcmp(generation, "7") == 0) {
+                generation_mode =
+                    QBH_BLOCK_GENERATION_GREEDY_W4F16_COARSE_PIPELINE;
             } else {
                 generation_mode = UINT32_MAX;
             }
@@ -4148,7 +4172,7 @@ int main(int argc, char **argv) {
         (replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS &&
          vertical_slice_mode != QBH_BLOCK_SLICE_ACTIVE_RANGE) ||
         generation_mode >
-            QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX_BATCH8 ||
+            QBH_BLOCK_GENERATION_GREEDY_W4F16_COARSE_PIPELINE ||
         (generation_mode != QBH_BLOCK_GENERATION_DISABLED &&
          ((generation_mode != QBH_BLOCK_GENERATION_GREEDY_W4F16 &&
            generation_mode !=
@@ -4156,7 +4180,13 @@ int main(int argc, char **argv) {
            generation_mode !=
                QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX_BATCH4 &&
            generation_mode !=
-               QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX_BATCH8) ||
+               QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX_BATCH8 &&
+           generation_mode !=
+               QBH_BLOCK_GENERATION_GREEDY_W4F16_LM_HEAD_OVERLAP &&
+           generation_mode !=
+               QBH_BLOCK_GENERATION_GREEDY_W4F16_DMA_HVX_OVERLAP &&
+           generation_mode !=
+               QBH_BLOCK_GENERATION_GREEDY_W4F16_COARSE_PIPELINE) ||
           variant != QBH_BLOCK_W4F16 ||
           replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS ||
           vertical_slice_mode != QBH_BLOCK_SLICE_ACTIVE_RANGE ||

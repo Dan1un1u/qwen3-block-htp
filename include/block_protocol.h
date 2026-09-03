@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(71)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(165)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(72)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(166)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -105,6 +105,9 @@ enum qbh_block_generation_mode {
     QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX = 2,
     QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX_BATCH4 = 3,
     QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX_BATCH8 = 4,
+    QBH_BLOCK_GENERATION_GREEDY_W4F16_LM_HEAD_OVERLAP = 5,
+    QBH_BLOCK_GENERATION_GREEDY_W4F16_DMA_HVX_OVERLAP = 6,
+    QBH_BLOCK_GENERATION_GREEDY_W4F16_COARSE_PIPELINE = 7,
 };
 
 enum qbh_kv_cache_element_type {
@@ -914,6 +917,8 @@ struct qbh_block_header {
     uint32_t generation_lm_head_command_count;
     uint32_t generation_lm_head_n_tiles;
     uint32_t generation_selected_logit_half_bits;
+    uint32_t generation_lm_head_prefetch_count;
+    uint32_t generation_lm_head_scale_resident_bytes;
     uint64_t generation_embedding_ticks;
     uint64_t generation_final_norm_ticks;
     uint64_t generation_lm_head_ticks;
@@ -922,6 +927,9 @@ struct qbh_block_header {
     uint64_t generation_lm_head_expand_ticks;
     uint64_t generation_lm_head_hmx_ticks;
     uint64_t generation_lm_head_argmax_ticks;
+    uint64_t generation_lm_head_weight_dma_wait_ticks;
+    uint64_t generation_lm_head_scale_init_ticks;
+    uint64_t generation_lm_head_hmx_tail_wait_ticks;
     uint64_t generation_embedding_ddr_read_bytes;
     uint64_t generation_lm_head_ddr_read_bytes;
 

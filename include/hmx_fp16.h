@@ -13,6 +13,9 @@
 void qbh_hmx_fp16_init_unity_scale(void *scale_block);
 void qbh_hmx_fp16_init_channel_scales(void *scale_block,
                                       const float *channel_scales);
+void qbh_hmx_fp16_init_channel_scale_tiles(
+    void *scale_blocks, const float *channel_scales,
+    uint32_t n_tiles);
 uint32_t qbh_hmx_fp16_audit_channel_scales(
     const void *scale_block, const float *channel_scales,
     uint32_t *first_channel, uint32_t *expected_half_bits,

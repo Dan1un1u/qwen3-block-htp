@@ -61,6 +61,24 @@ void qbh_hmx_fp16_init_channel_scales(void *scale_block,
     asm volatile("barrier" ::: "memory");
 }
 
+void qbh_hmx_fp16_init_channel_scale_tiles(
+    void *scale_blocks, const float *channel_scales,
+    uint32_t n_tiles) {
+    const HVX_Vector zero = Q6_V_vzero();
+    uint8_t *blocks = (uint8_t *)scale_blocks;
+
+    for (uint32_t tile = 0U; tile < n_tiles; ++tile) {
+        const HVX_Vector scale_f32 = *(const HVX_Vector *)(
+            channel_scales +
+            (size_t)tile * QBH_HMX_FP16_COLS);
+        HVX_Vector *values = (HVX_Vector *)(
+            blocks + (size_t)tile * QBH_HMX_FP16_SCALE_BYTES);
+        values[0] = Q6_Vhf_vcvt_VsfVsf(scale_f32, zero);
+        values[1] = zero;
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
 uint32_t qbh_hmx_fp16_audit_channel_scales(
     const void *scale_block, const float *channel_scales,
     uint32_t *first_channel, uint32_t *expected_half_bits,
@@ -217,7 +235,8 @@ int qbh_hmx_fp16_matmul_tile_scales_streaming(
         scale_blocks == NULL || output_tiles == NULL ||
         ready_generations == NULL || ready_wait_ticks == NULL ||
         m_tiles == 0U || k_tiles == 0U || n_tiles == 0U ||
-        n_tiles > 2U || region_tiles == 0U || region_tiles > 32U ||
+        m_tiles > 8U / n_tiles || region_tiles == 0U ||
+        region_tiles > 32U ||
         k_tiles % region_tiles != 0U) {
         return -1;
     }
