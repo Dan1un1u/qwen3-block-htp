@@ -17433,8 +17433,10 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
                     profile->block_orchestration_ticks +
                     profile->layer_bookkeeping_ticks;
                 if (profile->layer_ticks > layer_named_ticks) {
-                    profile->layer_unattributed_ticks =
+                    const uint64_t bookkeeping_gap =
                         profile->layer_ticks - layer_named_ticks;
+                    profile->layer_bookkeeping_ticks += bookkeeping_gap;
+                    header->layer_bookkeeping_ticks += bookkeeping_gap;
                 }
             }
         }

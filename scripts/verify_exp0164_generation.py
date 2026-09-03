@@ -61,12 +61,22 @@ def main() -> None:
 
     for path in args.logs:
         records = read_records(path)
-        steps = [r for r in records if "generation_step" in r]
+        steps = [
+            r
+            for r in records
+            if "generation_step" in r
+            and r.get("record") != "generation_profile"
+        ]
+        profiles = [
+            r for r in records if r.get("record") == "generation_profile"
+        ]
         finals = [
             r for r in records if r.get("generation_sequence_complete")
         ]
-        if len(steps) != 16 or len(finals) != 1:
-            raise ValueError(f"{path}: expected 16 steps and one final record")
+        if len(steps) != 16 or len(profiles) != 16 or len(finals) != 1:
+            raise ValueError(
+                f"{path}: expected 16 steps, 16 profiles and one final record"
+            )
         actual = [int(step["selected_token_id"]) for step in steps]
         for index, step in enumerate(steps):
             required = (
@@ -82,6 +92,37 @@ def main() -> None:
             )
             if not required:
                 raise ValueError(f"{path}: device gate failed at step {index}")
+            profile = profiles[index]
+            invocation_ticks = int(profile["invocation_ticks"])
+            if (
+                int(profile["generation_step"]) != index
+                or int(profile["ledger_unattributed_ticks"]) != 0
+                or int(profile["block_invocation_count"]) != 28
+                or profile["backend"] != "standalone_fastrpc_dsp"
+                or profile["qnn"] != "none"
+                or int(profile["vtcm_acquired_bytes"]) != 8 * 1024 * 1024
+                or int(profile["intermediate_ddr_read_bytes"]) != 0
+                or int(profile["intermediate_ddr_write_bytes"]) != 0
+                or int(profile["intermediate_spill_fill_count"]) != 0
+                or int(profile["boundary_ddr_write_bytes"]) != 0
+                or invocation_ticks <= 0
+            ):
+                raise ValueError(f"{path}: profile gate failed at step {index}")
+            for layer_index in range(28):
+                layer = profile[f"slice_layer_{layer_index}"]
+                layer_ticks = int(layer["layer_ticks"])
+                if (
+                    int(layer["layer_index"]) != layer_index
+                    or int(layer["hidden_ddr_read_bytes"]) != 0
+                    or int(layer["hidden_ddr_write_bytes"]) != 0
+                    or layer_ticks <= 0
+                    or int(layer["layer_unattributed_ticks"])
+                    > layer_ticks * 0.001
+                ):
+                    raise ValueError(
+                        f"{path}: layer profile gate failed at "
+                        f"step {index}, layer {layer_index}"
+                    )
         if actual != expected or finals[0]["token_ids"] != expected:
             raise ValueError(f"{path}: token sequence mismatch")
         if not finals[0]["all_steps_pass"]:
@@ -125,6 +166,9 @@ def main() -> None:
             "timed_full_logits_ddr_write_bytes": 0,
             "spill_fill_count": 0,
             "fastrpc_calls_per_pass": 1,
+            "complete_profiles_per_run": 16,
+            "layers_per_profile": 28,
+            "ledger_unattributed_ticks": 0,
         },
         "runs": runs,
     }
