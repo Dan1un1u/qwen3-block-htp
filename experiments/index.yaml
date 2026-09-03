@@ -13,20 +13,23 @@ experiments:
     variants:
       - selected_hmx_control
       - expanded_s8_direct_hvx_gemv_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: short-real-Gate-Up-gate-then-ten-rotated-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0172-w4u8-decode-gate-up-hvx-gemv
-    source_commits: []
+    source_commits:
+      - 575ec0e270738313c42c68b7d90e02fe2c8f55d1
     record: docs/experiments/EXP-0172.md
     approval_ref: 'User message 2026-09-04: 同意晋升。开启loop优化，针对decode，尽量不中断。'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0172-w4u8-decode-gate-up-hvx-gemv
       approved_on: '2026-09-04'
+      started_on: '2026-09-04'
+      completed_on: '2026-09-04'
     evidence:
       source_parent_experiment: EXP-0170
       source_parent_commit: 042dbfd8907c23af255092a03ac28b13f8e740bc
@@ -37,6 +40,23 @@ experiments:
       forbidden_changes: prefill_W4_DMA_W4_expand_qparams_weights_SwiGLU_Down_QKV_Attention_O_cache_LM_head_F16F16_W4F16_QNN
       short_gate: byte_exact_real_Gate_Up_valid_row_no_deadlock_and_lower_Gate_Up_wall
       formal_gate: ten_rotated_pairs_candidate_strictly_faster_direct_decode_with_all_correctness_and_physical_contracts
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0172/short_gate'
+      correctness_gate_result: pass_10752_real_Gate_Up_tile_calls_zero_mismatch_independent_generation_2_of_2
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_no_QNN_zero_unattributed_ticks
+      performance_gate_result: fail_candidate_decode_2_117_tps_vs_control_19_864_tps
+      formal_run: skipped_by_contract_after_short_gate_failure
+      direct_end_to_end:
+        control_decode_host_us_per_token: 50343.594
+        candidate_decode_host_us_per_token: 472268.881
+        control_decode_tokens_per_second: 19.863500
+        candidate_decode_tokens_per_second: 2.117438
+        candidate_decode_speed_percent: -89.340057
+      Gate_Up_us: {control: 16561.224, candidate: 438998.464}
+      candidate_HVX_GEMV_us: 429324.323
+      conclusion: expanded_S8_direct_HVX_GEMV_replaces_cheap_HMX_overcompute_with_serial_weight_load_and_accumulation_critical_path
+      reopen_condition: only_with_a_true_M1_matrix_engine_or_packed_W4_kernel_that_does_not_move_the_projection_critical_path_to_HVX
+      short_report_sha256: 194c685b5c3d300a89eac2cb9462add2ab2b4cf5afa7c6575dcda1970af15e8c
+      audit_device_jsonl_sha256: 8616e841462afc20d89737258369b34cd6ddd30e204d6426a474859bee9a2fd6
       selected_baseline_changed: false
   - id: EXP-0171
     slug: w4u8-decode-row4-swiglu
