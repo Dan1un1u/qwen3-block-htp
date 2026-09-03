@@ -19,8 +19,8 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 165
+  active_experiment: EXP-0165
+  next_experiment_number: 166
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -29,26 +29,27 @@ current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
   last_completed_experiment: EXP-0164
   last_completed_source_commit: 6a6801193f16fff3ef5e88a25a87f0600b40c18f
-  provisional_source_parent: completed_EXP0164_W4F16_generation_candidate_pending_adoption
+  provisional_source_parent: completed_EXP0164_W4F16_generation_candidate
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: completed_awaiting_user_adoption
-  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0164/20260903T112809Z_c676c4ac8f34_formal'
-  active_experiment_gate: pass
-  active_recipe_specialization: W4F16_generation_boundary
+  active_experiment_stage: approved_pending_preflight
+  active_experiment_evidence: null
+  active_experiment_gate: not_run
+  active_recipe_specialization: W4F16_prefill_generation_boundary
   active_experiment_contract:
-    id: EXP-0164
-    source_branch: codex/exp-0164-w4f16-greedy-generation
-    source_parent: EXP-0163
-    source_parent_commit: 63de1de7028c5a478f4494c4e64993d34deac503
-    execution_scope: real_token_ID_prefill_at_most64_then_16_continuous_greedy_decode_tokens
-    implementation_anchor: selected_EXP0158_W4F16_full_stack_cache_native_path_in_EXP0163_source
-    required_path: Host_tokenizer_to_embedding_to_layers0_27_to_final_RMSNorm_to_streaming_W4F16_lm_head_to_greedy_token_feedback
-    correctness_gate: exact_independent_W4F16_first_token_and_16_token_sequence_with_existing_hidden_and_KV_checks
-    semantic_gate: stable_nonempty_readable_W4F16_text_on_fixed_prompts_else_stop_before_W4U8
+    id: EXP-0165
+    source_branch: codex/exp-0165-w4f16-prefill-boundary-pipeline
+    source_parent: EXP-0164
+    source_parent_commit: 6a6801193f16fff3ef5e88a25a87f0600b40c18f
+    execution_scope: real_token_ID_M64_prefill_through_embedding_layers0_27_final_RMSNorm_streaming_W4F16_lm_head_and_greedy_token
+    direct_control: EXP0164_identical_token_to_token_W4F16_generation_scope
+    allowed_changes: token_embedding_final_RMSNorm_streaming_lm_head_online_argmax_VTCM_lifetime_and_cross_stage_scheduling_only
+    forbidden_changes: transformer_layers_KV_cache_attention_MLP_projection_weights_scales_quantization_prompt_tokenizer_or_generated_sequence
+    correctness_gate: exact_EXP0164_selected_tokens_plus_independent_W4F16_reference_and_existing_transformer_hidden_cache_regression
     physical_gate: exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_interlayer_or_timed_full_logit_DDR_zero_spill_fill
-    speed_gate: report_only
+    performance_gate: strict_lower_rotated_pair_repeat10_complete_prefill_Host_wall_than_EXP0164_control
+    decode_policy: report_complete_decode_wall_but_do_not_use_as_this_prefill_experiments_promotion_metric
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0164/20260903T112809Z_c676c4ac8f34_formal'
   latest_w4f16_token_generation_candidate:
     id: EXP-0164

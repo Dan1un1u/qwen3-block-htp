@@ -6,6 +6,43 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0165
+    slug: w4f16-prefill-boundary-pipeline
+    title: W4F16 prefill embedding, final-norm and LM-head pipeline optimization
+    parent: EXP-0164
+    variants:
+      - exp0164_streaming_generation_boundary_control
+      - optimized_prefill_generation_boundary_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: paired-repeat10-full-generation-prefill-boundary
+    source_branches:
+      - codex/exp-0165-w4f16-prefill-boundary-pipeline
+    source_commits: []
+    record: docs/experiments/EXP-0165.md
+    approval_ref: 'User message 2026-09-03: 我们一步一步解决，先解决第一个问题，先针对prefill我们新引入的首尾部分进行优化'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0165-w4f16-prefill-boundary-pipeline
+      approved_on: '2026-09-03'
+    evidence:
+      source_parent_experiment: EXP-0164
+      source_parent_commit: 6a6801193f16fff3ef5e88a25a87f0600b40c18f
+      execution_unit: real_token_ID_M64_prefill_to_selected_token_with_optional_generation_sequence_regression
+      recipe_scope: W4F16_only
+      direct_control: EXP0164_same_prompt_same_weights_same_complete_token_to_token_scope
+      optimization_scope: embedding_final_model_RMSNorm_streaming_W4_lm_head_online_argmax_and_their_VTCM_lifetime_or_pipeline_only
+      forbidden_changes: transformer_layers0_27_KV_cache_attention_MLP_projection_schedules_W4_values_per_output_scales_qparams_tokenizer_prompt_or_expected_sequence
+      correctness_gate: exact_selected_token_and_16_token_sequence_against_EXP0164_and_independent_W4F16_reference_with_existing_transformer_replay_pass
+      semantic_gate: decoded_text_identical_to_EXP0164
+      physical_gate: exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_interlayer_hidden_or_timed_full_logit_DDR_zero_spill_fill
+      performance_gate: candidate_strictly_faster_than_control_for_rotated_pair_repeat10_complete_M64_prefill_Host_wall
+      local_diagnostic_gate: embedding_plus_final_norm_plus_lm_head_ledger_strictly_lower_without_moving_cost_to_unattributed_or_Host_boundary
+      decode_policy: report_only_not_promotion_metric_for_EXP0165
+      stop_conditions: correctness_semantic_physical_or_ledger_failure
+      selected_baseline_changed: false
   - id: EXP-0164
     slug: w4f16-greedy-generation
     title: W4F16 deterministic end-to-end token-generation boundary
