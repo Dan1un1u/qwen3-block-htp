@@ -522,7 +522,7 @@ def main() -> None:
         "representative_session_index": representative + 1,
         "generated_token_ids": expected,
         "generated_text": semantic["w4f16"]["text"],
-        "bf16_teacher_text": semantic["bf16_teacher"]["text"],
+        "bf16_teacher_text": semantic["teacher_bf16"]["text"],
         "gates": gates,
         "generation": generation_summary,
         "total_sequence_host_wall_us": {
@@ -571,7 +571,7 @@ def main() -> None:
     lines += [
         "## Semantic result", "",
         f"- Independent W4F16 and device text: `{semantic['w4f16']['text']}`",
-        f"- BF16 teacher diagnostic: `{semantic['bf16_teacher']['text']}`",
+        f"- BF16 teacher diagnostic: `{semantic['teacher_bf16']['text']}`",
         "- Device token IDs: `" + ", ".join(map(str, expected)) + "`",
         "- Exactness: 160/160 generated steps match the independent W4F16 "
         "reference across ten sessions; all ten decoded strings are identical.",
