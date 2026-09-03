@@ -982,13 +982,23 @@ _Avoid_: changed cache contents, qparams, Softmax approximation, HMX command
 count, projection scheduling, A16 changes, intermediate DDR, claimed overlap
 without complete Host-wall improvement
 
-**Long-KV Segmented Cache Experiment**:
-The active EXP-0161 W4U8 layer-14 experiment. It first characterizes the
-selected monolithic delta reconstruction at L64, L256, L1024 and L4096 using
-independent CPU references. A measured scaling or two-slot VTCM limitation
-activates a candidate with immutable 32-token HMX-native segments and one
-compact mutable tail, so Attention scratch is bounded by segment size rather
-than total KV length. These are synthetic decode snapshots and must not be
-reported as continuous full-stack decode throughput.
-_Avoid_: automatic long-context extrapolation, imported-cache real-replay
-claim, total-length VTCM carrier in the segmented candidate, A16 modification
+**Selected W4U8 Long-KV Segmented-Cache Baseline**:
+The user-promoted EXP-0161 layer-14 baseline. It stores immutable 32-token
+HMX-native K/V segments plus one compact mutable tail and consumes long context
+with a fixed-size Attention overlay instead of reconstructing a total-length
+carrier. Its candidate is byte exact at L64, L256, L1024 and L4096 and reduces
+L4096 wall time from 27.280 ms to 9.291 ms. It remains a synthetic snapshot
+baseline and is distinct from the Selected Full-Stack W4U8 baseline.
+_Avoid_: continuous-decode claim, full-stack baseline, imported-cache
+real-replay claim, total-length VTCM carrier, A16 modification
+
+**Dynamic Segmented Cache Lifecycle**:
+The active EXP-0162 integration contract. One persistent per-layer W4U8 cache
+derives its sealed-segment count and active-tail length from runtime valid
+length, appends each token once, seals a complete 32-token tail exactly once,
+and subsequently treats that segment as immutable. The first test runs one
+real M64 prefill and forty continuous full-stack decode steps so all 28 layers
+cross the 96-token sealing boundary. It compares against an equal-capacity
+EXP-0160-compatible monolithic delta control and does not change model math.
+_Avoid_: capacity-derived fixed sealed count, per-snapshot cache package,
+repacking a sealed prefix, mutable sealed segment, automatic baseline promotion
