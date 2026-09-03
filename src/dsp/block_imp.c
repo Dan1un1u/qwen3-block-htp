@@ -1666,6 +1666,10 @@ static int qbh_header_valid(const struct qbh_block_header *header,
             QBH_BLOCK_W4U8_DELTA_RECONSTRUCTION_PIPELINE ||
         header->w4u8_decode_softmax_mode >
             QBH_BLOCK_W4U8_DECODE_SOFTMAX_HVX_TILE4 ||
+        (header->w4u8_decode_lm_head_group_tiles != 8U &&
+         header->w4u8_decode_lm_head_group_tiles != 16U) ||
+        (header->w4u8_decode_lm_head_group_tiles != 8U &&
+         header->variant != QBH_BLOCK_W4U8) ||
         (header->w4u8_decode_softmax_mode !=
              QBH_BLOCK_W4U8_DECODE_SOFTMAX_SCALAR &&
          header->variant != QBH_BLOCK_W4U8) ||
@@ -6200,9 +6204,16 @@ static int qbh_run_generation_head_w4u8(
     const uint32_t resident_bias =
         header->generation_mode ==
             QBH_BLOCK_GENERATION_GREEDY_W4U8_BATCH8_RESIDENT_BIAS;
-    const uint32_t group_limit = resident_bias != 0U
-        ? QBH_GENERATION_W4U8_BATCH8_GROUP_TILES
-        : QBH_GENERATION_W4U8_CONTROL_GROUP_TILES;
+    const uint32_t decode_batch16 =
+        resident_bias != 0U &&
+        header->scan_mode == QBH_BLOCK_SCAN_DECODE &&
+        logical_rows == 1U &&
+        header->w4u8_decode_lm_head_group_tiles == 16U;
+    const uint32_t group_limit = decode_batch16 != 0U
+        ? 16U
+        : (resident_bias != 0U
+               ? QBH_GENERATION_W4U8_BATCH8_GROUP_TILES
+               : QBH_GENERATION_W4U8_CONTROL_GROUP_TILES);
     const uint32_t group_count =
         (n_tiles + group_limit - 1U) / group_limit;
     const uint32_t expanded_capacity =
@@ -6223,6 +6234,7 @@ static int qbh_run_generation_head_w4u8(
             QBH_GENERATION_W4U8_CONTROL_GROUP_TILES *
                 QBH_HMX_BIAS_BYTES};
     uint8_t *argmax_scratch = buffers->channel_scale;
+    uint8_t *hmx_output = buffers->hmx_output;
     uint8_t best_code = 0U;
     uint32_t best_token = 0U;
     const uint64_t head_start = HAP_perf_get_qtimer_count();
@@ -6245,6 +6257,40 @@ static int qbh_run_generation_head_w4u8(
                   (uintptr_t)resident_bias_table <
               head->bias_bytes))) {
         return -1;
+    }
+
+    if (decode_batch16 != 0U) {
+        const size_t activation_bytes =
+            (size_t)k_tiles * QBH_HMX_ACTIVATION_BYTES;
+        const size_t compressed_group_bytes =
+            (size_t)group_limit * k_tiles * QBH_W4_PACKED_TILE_BYTES;
+        const size_t output_group_bytes =
+            (size_t)group_limit * QBH_HMX_OUTPUT_BYTES;
+        const size_t argmax_bytes =
+            (size_t)group_limit * QBH_HMX_OUTPUT_CHANNELS;
+
+        if (activation_bytes + compressed_group_bytes >
+                (size_t)QBH_BLOCK_M * QBH_BLOCK_MAX_K *
+                    sizeof(uint16_t) ||
+            (uintptr_t)buffers->attention_projection <
+                (uintptr_t)resident_bias_table + head->bias_bytes ||
+            (uintptr_t)buffers->up <
+                (uintptr_t)buffers->attention_projection ||
+            (uintptr_t)buffers->up -
+                    (uintptr_t)buffers->attention_projection <
+                compressed_group_bytes ||
+            output_group_bytes + argmax_bytes >
+                (size_t)QBH_BLOCK_M * QBH_BLOCK_INTERMEDIATE) {
+            return -1;
+        }
+        /* Transformer activations are dead at the token boundary.  Reuse
+         * their non-overlapping VTCM ranges so batch sixteen does not change
+         * the fixed arena plan or move the selected batch-eight buffers. */
+        compressed_slots[0] =
+            buffers->hmx_activation + activation_bytes;
+        compressed_slots[1] = buffers->attention_projection;
+        hmx_output = buffers->up;
+        argmax_scratch = hmx_output + output_group_bytes;
     }
 
     if (header->generation_boundary_audit_enabled != 0U) {
@@ -6445,7 +6491,7 @@ static int qbh_run_generation_head_w4u8(
                 }
                 start = HAP_perf_get_qtimer_count();
                 qbh_generation_hvx_argmax_u8_group(
-                    buffers->hmx_output, previous_first_n_tile,
+                    hmx_output, previous_first_n_tile,
                     previous_group_tiles, argmax_scratch,
                     &best_code, &best_token);
                 header->generation_lm_head_argmax_ticks +=
@@ -6458,7 +6504,7 @@ static int qbh_run_generation_head_w4u8(
                 buffers->hmx_activation, expanded_slots[slot],
                 resident_bias_table +
                     (size_t)first_n_tile * QBH_HMX_BIAS_BYTES,
-                buffers->hmx_output, 1U, k_tiles, group_tiles);
+                hmx_output, 1U, k_tiles, group_tiles);
             hmx_active = 1U;
             previous_first_n_tile = first_n_tile;
             previous_group_tiles = group_tiles;
@@ -6480,7 +6526,7 @@ static int qbh_run_generation_head_w4u8(
             }
             start = HAP_perf_get_qtimer_count();
             qbh_generation_hvx_argmax_u8_group(
-                buffers->hmx_output, previous_first_n_tile,
+                hmx_output, previous_first_n_tile,
                 previous_group_tiles, argmax_scratch,
                 &best_code, &best_token);
             header->generation_lm_head_argmax_ticks +=
