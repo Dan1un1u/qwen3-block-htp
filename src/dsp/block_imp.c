@@ -17666,6 +17666,7 @@ stop_worker:
         header->invocation_ticks =
             header->qtimer_end - invocation_start;
         named_ticks = header->runtime_setup_ticks +
+                      header->generation_embedding_ticks +
                       header->metadata_stage_ticks +
                       header->input_stage_ticks +
                       header->input_norm_ticks +
@@ -17684,6 +17685,7 @@ stop_worker:
                       header->scan_cache_append_ticks +
                       header->block_orchestration_ticks +
                       header->layer_bookkeeping_ticks +
+                      header->generation_lm_head_ticks +
                       header->runtime_teardown_ticks;
         if (header->invocation_ticks > named_ticks) {
             header->stage_boundary_ticks =

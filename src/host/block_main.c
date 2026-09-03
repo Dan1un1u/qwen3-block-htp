@@ -2498,7 +2498,8 @@ static int qbh_replay_step_pass(
 }
 
 static void qbh_print_replay_profile(
-    uint32_t variant, uint32_t step,
+    uint32_t experiment, const char *record,
+    const char *step_key, uint32_t variant, uint32_t step,
     const struct qbh_block_header *header,
     const struct qbh_replay_step_result *result,
     const uint8_t *output, uint32_t output_bytes) {
@@ -2510,8 +2511,8 @@ static void qbh_print_replay_profile(
     printf(",\"" #field "\":%" PRIu64, header->field)
 
     printf(
-        "{\"experiment\":163,\"record\":\"replay_profile\","
-        "\"variant\":\"%s\",\"replay_step\":%" PRIu32 ","
+        "{\"experiment\":%" PRIu32 ",\"record\":\"%s\","
+        "\"variant\":\"%s\",\"%s\":%" PRIu32 ","
         "\"mode\":\"%s\",\"logical_m\":%" PRIu32 ","
         "\"first_position\":%" PRIu32 ","
         "\"valid_length\":%" PRIu32 ","
@@ -2543,7 +2544,7 @@ static void qbh_print_replay_profile(
         "\"fp16_gate_version\":\"composition_v2\","
         "\"backend\":\"standalone_fastrpc_dsp\","
         "\"qnn\":\"none\",\"intermediate_residency\":\"VTCM\"",
-        qbh_variant_name(variant), step,
+        experiment, record, qbh_variant_name(variant), step_key, step,
         step == 0U ? "prefill" : "decode", header->logical_m,
         result->first_position, result->valid_length,
         result->host_wall_ns, result->output.mismatches,
@@ -2613,6 +2614,18 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U64(down_ticks);
     QBH_REPLAY_PROFILE_U64(final_residual_ticks);
     QBH_REPLAY_PROFILE_U64(output_stage_ticks);
+    QBH_REPLAY_PROFILE_U64(generation_embedding_ticks);
+    QBH_REPLAY_PROFILE_U64(generation_final_norm_ticks);
+    QBH_REPLAY_PROFILE_U64(generation_lm_head_ticks);
+    QBH_REPLAY_PROFILE_U64(generation_lm_head_weight_dma_ticks);
+    QBH_REPLAY_PROFILE_U64(generation_lm_head_scale_dma_ticks);
+    QBH_REPLAY_PROFILE_U64(generation_lm_head_expand_ticks);
+    QBH_REPLAY_PROFILE_U64(generation_lm_head_hmx_ticks);
+    QBH_REPLAY_PROFILE_U64(generation_lm_head_argmax_ticks);
+    QBH_REPLAY_PROFILE_U32(generation_lm_head_command_count);
+    QBH_REPLAY_PROFILE_U32(generation_lm_head_n_tiles);
+    QBH_REPLAY_PROFILE_U64(generation_embedding_ddr_read_bytes);
+    QBH_REPLAY_PROFILE_U64(generation_lm_head_ddr_read_bytes);
 
     QBH_REPLAY_PROFILE_U64(weight_dma_ticks);
     QBH_REPLAY_PROFILE_U64(hmx_compute_ticks);
@@ -3209,6 +3222,7 @@ static int qbh_run_replay_sequence(
             last_layer, state->layers[last_layer].valid_length,
             qbh_replay_step_pass(variant, step_result) ? "true" : "false");
         qbh_print_replay_profile(
+            163U, "replay_profile", "replay_step",
             variant, step, header, step_result,
             shared + header->output_offset, header->output_bytes);
     }
@@ -3290,6 +3304,7 @@ static int qbh_run_generation_sequence(
         uint64_t end;
         int rpc_result;
         int step_pass;
+        struct qbh_replay_step_result profile_result;
 
         for (uint32_t slice_index = 1U;
              slice_index < QBH_VERTICAL_SLICE_LAYER_COUNT;
@@ -3437,6 +3452,41 @@ static int qbh_run_generation_sequence(
             header->intermediate_spill_fill_count,
             header->vtcm_acquired_bytes, rpc_result,
             header->dsp_status, step_pass ? "true" : "false");
+        memset(&profile_result, 0, sizeof(profile_result));
+        profile_result.host_wall_ns = end - start;
+        profile_result.output.elements = 1U;
+        profile_result.output.mismatches =
+            header->generation_token_match != 0U ? 0U : 1U;
+        profile_result.output.cosine =
+            header->generation_token_match != 0U ? 1.0 : 0.0;
+        profile_result.cache_min_cosine = 1.0;
+        profile_result.step_index = step;
+        profile_result.first_position = header->replay_first_position;
+        profile_result.valid_length =
+            state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER].valid_length;
+        profile_result.dsp_status = (uint32_t)header->dsp_status;
+        profile_result.numerical_status =
+            (uint32_t)header->numerical_status;
+        profile_result.vtcm_requested_bytes =
+            header->vtcm_requested_bytes;
+        profile_result.vtcm_acquired_bytes =
+            header->vtcm_acquired_bytes;
+        profile_result.intermediate_ddr_read_bytes =
+            header->intermediate_ddr_read_bytes;
+        profile_result.intermediate_ddr_write_bytes =
+            header->intermediate_ddr_write_bytes;
+        profile_result.intermediate_spill_fill_count =
+            header->intermediate_spill_fill_count;
+        profile_result.scan_cache_ddr_read_bytes =
+            header->scan_cache_ddr_read_bytes;
+        profile_result.scan_cache_ddr_write_bytes =
+            header->scan_cache_ddr_write_bytes;
+        profile_result.scan_dynamic_attention_ticks =
+            header->scan_dynamic_attention_ticks;
+        qbh_print_replay_profile(
+            164U, "generation_profile", "generation_step",
+            QBH_BLOCK_W4F16, step, header, &profile_result,
+            (const uint8_t *)&generated[step], sizeof(generated[step]));
         if (rpc_result != AEE_SUCCESS ||
             header->dsp_status != QBH_BLOCK_STATUS_OK) {
             return -1;
