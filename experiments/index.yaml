@@ -6,6 +6,41 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0200
+    slug: w4u8-direct-n-o-gate-prefetch
+    title: Decode O-to-Gate direct-n cross-prefetch
+    parent: EXP-0199
+    variants:
+      - evidence_valid_EXP0199_no_O_Gate_prefetch_control
+      - O_to_Gate_first_batch_cross_prefetch_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0200-w4u8-direct-n-o-gate-prefetch
+    source_commits: []
+    record: docs/experiments/EXP-0200.md
+    approval_ref: 'User message 2026-09-05: 开始decode优化loop'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0200-w4u8-direct-n-o-gate-prefetch
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    evidence:
+      source_parent_experiment: EXP-0199
+      source_parent_commit: aef3582fd1f4b06bf147b1f28f18ea812e541391
+      direct_control: same_binary_without_O_to_Gate_prefetch
+      candidate: first_Gate_batch32_DMA_overlapped_by_post_attention_residual_norm
+      hypothesis: remove_serialized_first_Gate_transfer_without_changing_work
+      optimization_scope: decode_only_O_to_Gate_direct_n_prefetch_lifetime_telemetry_and_tools
+      forbidden_changes: weights_values_scales_qparams_QKV_Attention_O_math_residual_norm_math_Gate_Up_math_SwiGLU_Down_cache_LM_head_M64_prefill_F16F16_W4F16_QNN
+      correctness_gate: byte_exact_post_norm_Gate_Up_middle_hidden_cache_selected_codes_and_tokens
+      physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_descriptors_commands_and_tile_pairs
+      short_gate: five_rotated_pairs_with_strict_decode_and_Gate_Up_speed_pass
+      formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      selected_baseline_changed: false
   - id: EXP-0199
     slug: w4u8-direct-n-qkv-batch16
     title: Direct-n QKV batch-sixteen two-slot ring
@@ -13,14 +48,15 @@ experiments:
     variants:
       - evidence_valid_EXP0198_QKV_batch8_control
       - QKV_batch16_two_slot_direct_n_ring_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0199-w4u8-direct-n-qkv-batch16
-    source_commits: []
+    source_commits:
+      - aef3582fd1f4b06bf147b1f28f18ea812e541391
     record: docs/experiments/EXP-0199.md
     approval_ref: 'User message 2026-09-05: 开始decode优化loop'
     runtime:
@@ -28,6 +64,7 @@ experiments:
       source_branch: codex/exp-0199-w4u8-direct-n-qkv-batch16
       approved_on: '2026-09-05'
       started_on: '2026-09-05'
+      completed_on: '2026-09-05'
     evidence:
       source_parent_experiment: EXP-0198
       source_parent_commit: 59284b2d0bec68103e9f8c96af93f000f8e16ad1
@@ -40,6 +77,11 @@ experiments:
       physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_and_HMX_tile_pairs
       short_gate: five_rotated_pairs_with_strict_decode_and_QKV_speed_pass
       formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0199/20260905_short_gate_aef3582'
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0199/20260905_formal_aef3582'
+      formal_decode_tokens_per_second: 42.314055
+      formal_decode_speed_percent: 1.326063
+      pair_wins: 10
       selected_baseline_changed: false
   - id: EXP-0198
     slug: w4u8-direct-n-gate-up-continuous-ring

@@ -19,42 +19,83 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0199
-  next_experiment_number: 200
+  active_experiment: EXP-0200
+  next_experiment_number: 201
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0198
-  last_completed_source_commit: 59284b2d0bec68103e9f8c96af93f000f8e16ad1
-  provisional_source_parent: evidence_valid_EXP0198_continuous_Gate_to_Up_candidate
+  last_completed_experiment: EXP-0199
+  last_completed_source_commit: aef3582fd1f4b06bf147b1f28f18ea812e541391
+  provisional_source_parent: evidence_valid_EXP0199_QKV_batch16_candidate
   device_execution_state: ready
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
   active_experiment_stage: registered_pending_source_branch_and_preflight
   active_experiment_evidence: null
   active_experiment_gate: not_run
-  active_recipe_specialization: W4U8_direct_n_decode_QKV_batch16_two_slot_ring
+  active_recipe_specialization: W4U8_direct_n_decode_O_to_Gate_cross_prefetch
   active_experiment_contract:
-    id: EXP-0199
-    source_branch: codex/exp-0199-w4u8-direct-n-qkv-batch16
-    source_parent: evidence_valid_EXP0198_continuous_Gate_to_Up_candidate
-    source_parent_commit: 59284b2d0bec68103e9f8c96af93f000f8e16ad1
+    id: EXP-0200
+    source_branch: codex/exp-0200-w4u8-direct-n-o-gate-prefetch
+    source_parent: evidence_valid_EXP0199_QKV_batch16_candidate
+    source_parent_commit: aef3582fd1f4b06bf147b1f28f18ea812e541391
     execution_scope: real_token_ID_M64_prefill_then_192_continuous_W4U8_decode_steps_to_valid_length256
-    direct_control: evidence_valid_EXP0198_W4U8_direct_n_QKV_batch8_ring
-    candidate: EXP0198_with_QKV_batch16_two_slot_direct_n_ring
-    allowed_changes: decode_only_QKV_direct_n_batch_schedule_slot_mapping_telemetry_and_experiment_tools
-    forbidden_changes: weights_values_scales_qparams_InputNorm_Attention_O_MLP_residual_cache_LM_head_M64_prefill_F16F16_W4F16_QNN
-    correctness_gate: byte_exact_QKV_QK_preparation_hidden_cache_selected_codes_and_tokens_to_QKV_batch8_control
-    physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_per_pass_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_and_HMX_tile_pairs
+    direct_control: evidence_valid_EXP0199_without_O_to_Gate_prefetch
+    candidate: EXP0199_with_first_Gate_batch32_DMA_overlapped_by_post_attention_residual_norm
+    allowed_changes: decode_only_O_to_Gate_direct_n_prefetch_lifetime_telemetry_and_experiment_tools
+    forbidden_changes: weights_values_scales_qparams_QKV_Attention_O_math_residual_norm_math_Gate_Up_math_SwiGLU_Down_cache_LM_head_M64_prefill_F16F16_W4F16_QNN
+    correctness_gate: byte_exact_post_norm_Gate_Up_middle_hidden_cache_selected_codes_and_tokens_to_no_prefetch_control
+    physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_per_pass_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_DMA_descriptors_HMX_commands_and_tile_pairs
     performance_gate: five_pair_short_gate_then_ten_rotated_193_step_pairs_if_strictly_faster
-    preservation_gate: M64_prefill_and_all_non_QKV_decode_modules_remain_EXP0198_byte_exact
-    stop_conditions: reject_without_formal_if_QKV_or_full_decode_does_not_improve
+    preservation_gate: M64_prefill_and_all_decode_math_remain_EXP0199_byte_exact
+    stop_conditions: reject_without_formal_if_Gate_Up_or_full_decode_does_not_improve
   final_profiling_summary_standard: direct_full_stack_prefill_and_decode_tokens_per_second_plus_exact_Host_wall
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0198/20260905_formal_confirmation_59284b2'
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0199/20260905_formal_aef3582'
+  latest_w4u8_direct_n_qkv_batch16_candidate:
+    id: EXP-0199
+    source_branch: codex/exp-0199-w4u8-direct-n-qkv-batch16
+    source_head: aef3582fd1f4b06bf147b1f28f18ea812e541391
+    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0199/20260905_short_gate_aef3582'
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0199/20260905_formal_aef3582'
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending
+    selected_baseline_changed: false
+    direct_end_to_end:
+      control_prefill_tokens_per_second: 1270.339
+      candidate_prefill_tokens_per_second: 1277.058
+      control_decode_host_us_per_token: 23946.2
+      candidate_decode_host_us_per_token: 23632.8
+      control_decode_tokens_per_second: 41.760287
+      candidate_decode_tokens_per_second: 42.314055
+      candidate_decode_speed_percent: 1.326063
+    target_stage_us_per_token:
+      control_qkv_plus_qk_preparation: 2913.9
+      candidate_qkv_plus_qk_preparation: 2602.4
+    physical:
+      control_qkv_batches_per_token: 448
+      candidate_qkv_batches_per_token: 224
+      control_direct_n_hmx_commands_per_token: 2277
+      candidate_direct_n_hmx_commands_per_token: 2053
+      control_weight_dma_descriptors_per_token: 4406
+      candidate_weight_dma_descriptors_per_token: 3958
+      hmx_tile_pairs_per_token: 1699840
+      weight_ddr_read_bytes_per_token: 866032640
+      intermediate_ddr_bytes: 0
+      spill_fill: 0
+    pair_wins: 10
+    short_summary_sha256: b13f7863ba42bd7f8808bda47e209c36ed982083939c6d76a56a2ce19b7c5065
+    short_report_sha256: 908e4ae1989dbb51e874f30fca17262dfa089befec0aff950f2810da1e92731c
+    static_gate_sha256: 50afde9bc258da5241d7eee806f057f1d8f0350ebdc321bd4f819fa804699015
+    formal_summary_sha256: 3d4bd01aa907c268c228792f550716bba96ca5c0db9cef88a007945a411546c0
+    formal_report_sha256: d3b1cf3a652164b2a007205133bf7878cdaa38a05b062b84f6e70936b1de4708
+    conclusion: QKV_batch16_halves_ring_groups_and_improves_QKV_wall_twelve_percent_and_full_decode_1_33_percent
+    next_decision: retain_as_fastest_pending_decode_candidate_and_parent_of_EXP0200
   latest_w4u8_direct_n_gate_up_continuous_candidate:
     id: EXP-0198
     source_branch: codex/exp-0198-w4u8-direct-n-gate-up-continuous-ring

@@ -1409,11 +1409,20 @@ _Avoid_: changing the gate after observing noise, claiming prefill benefit,
 or describing pending evidence as an accepted baseline
 
 **Direct-N QKV Batch-Sixteen Two-Slot Ring**:
-The active EXP-0199 hypothesis retains direct packed W4 and exact QKV math but
-uses sixteen output tiles per Q, K and V group.  At the real shapes it should
-reduce sixteen QKV HMX groups per layer to eight
-without reducing HMX tile pairs or weight bytes.  Only capacity-checked known
-HMX carriers may be used; correctness, QKV wall and full decode must all pass.
-_Avoid_: assuming K/V contain only eight physical tiles, changing Q/K preparation,
-reintroducing expansion, allocating arbitrary VTCM carriers, or accepting a
-local command-count win without end-to-end acceleration
+EXP-0199 retained direct packed W4 and exact QKV math while changing all Q, K
+and V groups from batch eight to batch sixteen on two known HMX slots.  It
+reduced QKV groups from 448 to 224/token, improved QKV plus preparation by
+12.0%, and passed 10/10 formal pairs at 41.760 to 42.314 token/s.  HMX work,
+weight bytes and outputs remained exact. Evidence is valid and pending.
+_Avoid_: assuming K/V contain only eight physical tiles, changing Q/K
+preparation, reintroducing expansion, or treating pending evidence as accepted
+
+**Decode O-to-Gate Direct-N Cross-Prefetch**:
+The active EXP-0200 hypothesis starts the first batch-thirty-two Gate packed-W4
+DMA after O and overlaps it with unchanged post-attention residual/RMSNorm.
+The existing Gate-to-Up ring then consumes that prefetched known HMX slot.
+All bytes, descriptors, HMX work and outputs must remain identical; both
+Gate/Up wall and complete decode must improve.
+_Avoid_: allocating a new slot, overwriting live RoPE data before Attention
+finishes, changing residual math, adding a second DMA owner, or counting a
+long asynchronous lifetime as additive wall time
