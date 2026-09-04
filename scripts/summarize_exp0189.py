@@ -98,7 +98,8 @@ def require_equal(actual: object, expected: object, context: str) -> None:
 
 
 def validate_run(
-    run: dict[str, object], rows: int, steps: int, poison: int = 0
+    run: dict[str, object], rows: int, steps: int, poison: int = 0,
+    experiment: int = 189,
 ) -> None:
     summaries = run["summaries"]
     profiles = run["profiles"]
@@ -106,9 +107,9 @@ def validate_run(
     for index, (summary, profile) in enumerate(zip(summaries, profiles)):
         assert isinstance(summary, dict) and isinstance(profile, dict)
         context = f"{run['path']} step {index}"
-        require_equal(int(summary["experiment"]), 189,
+        require_equal(int(summary["experiment"]), experiment,
                       context + " experiment")
-        require_equal(int(profile["experiment"]), 189,
+        require_equal(int(profile["experiment"]), experiment,
                       context + " profile experiment")
         require_equal(int(summary["rpc_result"]), 0, context + " RPC")
         require_equal(int(summary["dsp_status"]), 3, context + " DSP status")
