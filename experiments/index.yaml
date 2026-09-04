@@ -6,6 +6,39 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0180
+    slug: w4u8-decode-quartet-native-v-tail
+    title: Quartet-native mutable V-cache tail for W4U8 decode
+    parent: EXP-0179
+    variants:
+      - segmented_v4_row_major_v_tail_control
+      - quartet_native_v_tail_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: boundary-audit-then-five-pair-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0180-w4u8-decode-quartet-native-v-tail
+    source_commits: []
+    record: docs/experiments/EXP-0180.md
+    approval_ref: 'User message 2026-09-04: 允许; continuation of the authorized uninterrupted decode optimization loop'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0180-w4u8-decode-quartet-native-v-tail
+      approved_on: '2026-09-04'
+    evidence:
+      source_parent_experiment: EXP-0179
+      source_parent_commit: 828e4d7f5caf8001f135e225704ed6f83b52dc53
+      execution_unit: real_token_ID_M64_prefill_then_continuous_W4U8_decode
+      direct_control: EXP0179_segmented_v4_row_major_mutable_V_tail
+      candidate: versioned_HMX_native_32row_V_tail_plus_at_most_3row_microjournal
+      optimization_scope: W4U8_decode_V_cache_tail_ABI_append_seal_Attention_consumer_telemetry_and_tools_only
+      forbidden_changes: QK_Softmax_AV_math_qparams_K_cache_QKV_O_MLP_embedding_feedback_LM_head_weights_prefill_math_F16F16_W4F16_QNN
+      prior_negative_boundary: EXP0159_rejects_full_native_tile_read_modify_write_but_does_not_test_four_row_append_only_publication
+      short_gate: exact_quartet_and_segment_boundaries_plus_five_rotated_pairs_lower_Attention_and_complete_decode_Host_wall
+      formal_gate: ten_rotated_193_step_pairs_candidate_strictly_faster_direct_decode_with_all_correctness_and_physical_contracts
+      selected_baseline_changed: false
   - id: EXP-0179
     slug: w4u8-decode-row4-qk-norm-rope
     title: Decode W4U8 row-four Q/K normalization and RoPE
@@ -13,20 +46,23 @@ experiments:
     variants:
       - decode_full64_qk_prep_control
       - decode_row4_qk_prep_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: bounded-rotated-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0179-w4u8-decode-row4-qk-norm-rope
-    source_commits: []
+    source_commits:
+      - 828e4d7f5caf8001f135e225704ed6f83b52dc53
     record: docs/experiments/EXP-0179.md
     approval_ref: 'User message 2026-09-04: 允许; continuation of the authorized uninterrupted decode optimization loop'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0179-w4u8-decode-row4-qk-norm-rope
       approved_on: '2026-09-04'
+      started_on: '2026-09-04'
+      completed_on: '2026-09-04'
     evidence:
       source_parent_experiment: EXP-0178
       source_parent_commit: cea103935829404274ae069248795fc1c83ae587
@@ -37,6 +73,35 @@ experiments:
       forbidden_changes: valid_row_math_prefill_QKV_HMX_ring_DMA_head_publication_cache_append_QK_Softmax_AV_O_residual_MLP_weights_qparams_embedding_feedback_LM_head_F16F16_W4F16_QNN
       short_gate: byte_exact_valid_rows_cache_padding_invariance_and_lower_QKV_plus_QK_prep_and_complete_decode_Host_wall
       formal_gate: ten_rotated_pairs_candidate_strictly_faster_direct_decode_with_all_correctness_and_physical_contracts
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0179/20260904T_exp0179_828e4d7_short'
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0179/20260904T_exp0179_828e4d7_formal'
+      source_commit: 828e4d7f5caf8001f135e225704ed6f83b52dc53
+      correctness_gate_result: pass_all20_sessions_byte_exact_valid_QK_boundaries_hidden_hashes_logit_codes_tokens_193_of_193_independent_integer_head_padding_poison_and_EXP0163_regression
+      physical_gate_result: pass_exact_8mib_VTCM_zero_timed_intermediate_or_full_logit_DDR_zero_spill_fill_one_FastRPC_per_pass_no_QNN_zero_unattributed_ticks
+      performance_gate_result: pass_candidate_22_756159_tps_vs_control_20_902527_tps_wins_10_of_10_pairs
+      direct_end_to_end:
+        control_prefill_tokens_per_second: 1278.232447
+        candidate_prefill_tokens_per_second: 1279.121269
+        control_decode_host_us_per_token: 47841.106219
+        candidate_decode_host_us_per_token: 43944.146464
+        control_decode_tokens_per_second: 20.902527
+        candidate_decode_tokens_per_second: 22.756159
+        candidate_decode_speed_percent: 8.867984
+      qkv_qk_preparation_us: {control: 7715.338677, candidate: 3707.368300}
+      qkv_qk_preparation_speed_percent: 108.108233
+      hmx_command_count: {control: 3657, candidate: 3657}
+      hmx_u8s8_tile_pair_count: {control: 1699840, candidate: 1699840}
+      weight_ddr_read_bytes: {control: 869243904, candidate: 869243904}
+      q_pair_row4_calls_per_token: 224
+      k_pair_row4_calls_per_token: 112
+      skipped_temporary_k_carriers_per_token: 224
+      full_profiling_report_sha256: 0186e2a8d7dbcaa2248e8ec84f4a363a020bfd8e76b7376270c4860c6a2f4bb3
+      summary_sha256: 03be51e78fccd6645f14654647433827a912faeb24ceeb11c0e31cd41bbd0568
+      static_gate_sha256: 37c69fe9c6663d7e93e0acf5172f44af51ef13ece1ccd38d1f43c87f5751679a
+      independent_reference_sha256: f58c2eaf41c382d68a68e20dcbd0a5de0a769ca95cf7c4ae791289b333ad0d54
+      padding_poison_sha256: 72bd02db658fba19553efa272c27cc563e29e7cf9e624a065ccd6191dd045407
+      exp0163_regression_sha256: f9b333630a24cb8acdb274d608dc546836354cf9f8af57f588d8be95500193b5
+      conclusion: decode_row4_QK_Norm_RoPE_and_dead_temporary_K_carrier_removal_improve_direct_decode_8_868_percent_without_changing_HMX_or_weight_work
       selected_baseline_changed: false
   - id: EXP-0178
     slug: w4u8-decode-row4-common-ops

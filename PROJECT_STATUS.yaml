@@ -19,41 +19,75 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0179
-  next_experiment_number: 180
+  active_experiment: EXP-0180
+  next_experiment_number: 181
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0178
-  last_completed_source_commit: cea103935829404274ae069248795fc1c83ae587
-  provisional_source_parent: eligible_EXP0178_W4U8_decode_row4_common_ops_candidate
+  last_completed_experiment: EXP-0179
+  last_completed_source_commit: 828e4d7f5caf8001f135e225704ed6f83b52dc53
+  provisional_source_parent: eligible_EXP0179_W4U8_decode_row4_QK_preparation_candidate
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
   active_experiment_stage: approved_pending_preflight
   active_experiment_evidence: null
   active_experiment_gate: not_run
-  active_recipe_specialization: W4U8_decode_row4_QK_Norm_RoPE_preparation
+  active_recipe_specialization: W4U8_decode_quartet_native_mutable_V_cache_tail
   active_experiment_contract:
-    id: EXP-0179
-    source_branch: codex/exp-0179-w4u8-decode-row4-qk-norm-rope
-    source_parent: eligible_EXP0178_W4U8_decode_row4_common_ops_candidate
-    source_parent_commit: cea103935829404274ae069248795fc1c83ae587
+    id: EXP-0180
+    source_branch: codex/exp-0180-w4u8-decode-quartet-native-v-tail
+    source_parent: eligible_EXP0179_W4U8_decode_row4_QK_preparation_candidate
+    source_parent_commit: 828e4d7f5caf8001f135e225704ed6f83b52dc53
     execution_scope: real_token_ID_M64_prefill_then_continuous_W4U8_decode
-    direct_control: EXP0178_row4_common_ops_with_full64_QK_preparation
-    candidates: decode_M1_first_4_rows_Q_and_K_Norm_RoPE_and_skip_unused_temporary_K_carrier_pack
-    allowed_changes: decode_only_QK_preparation_row_extent_dead_K_pack_removal_telemetry_padding_poison_and_experiment_tools
-    forbidden_changes: valid_row_math_prefill_QKV_HMX_ring_DMA_head_publication_cache_append_QK_Softmax_AV_O_residual_MLP_weights_qparams_embedding_feedback_LM_head_F16F16_W4F16_QNN
-    correctness_gate: byte_exact_valid_QK_rows_cache_stage_tokens_codes_hashes_padding_poison_invariance_independent_reference_and_EXP0163_regression
+    direct_control: EXP0179_segmented_v4_row_major_mutable_V_tail
+    candidates: versioned_HMX_native_32row_V_tail_plus_at_most_3row_microjournal
+    allowed_changes: W4U8_decode_V_cache_tail_ABI_append_seal_Attention_consumer_telemetry_and_experiment_tools
+    forbidden_changes: QK_Softmax_AV_math_qparams_K_cache_QKV_O_MLP_embedding_feedback_LM_head_weights_prefill_math_F16F16_W4F16_QNN
+    correctness_gate: byte_exact_logical_cache_consumed_AV_carrier_hidden_hashes_tokens_codes_quartet_and_segment_boundaries_independent_reference_and_EXP0163_regression
     physical_gate: exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_timed_intermediate_or_full_logit_DDR_zero_spill_fill_zero_unattributed_ticks
-    performance_gate: five_rotated_short_pairs_lower_QKV_plus_QK_preparation_and_complete_decode_wall_then_ten_rotated_193_step_pairs_higher_direct_decode_tokens_per_second
-    stop_conditions: row4_QK_preparation_does_not_beat_full64_complete_decode_wall_rejects_without_formal_full_stack_run
+    performance_gate: five_rotated_short_pairs_lower_QK_Softmax_AV_and_complete_decode_wall_then_ten_rotated_193_step_pairs_higher_direct_decode_tokens_per_second
+    stop_conditions: quartet_native_V_tail_does_not_beat_segmented_v4_complete_decode_wall_rejects_without_formal_full_stack_run
   final_profiling_summary_standard: direct_full_stack_prefill_and_decode_tokens_per_second_plus_exact_Host_wall
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0178/20260904T_exp0178_cea1039_formal'
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0179/20260904T_exp0179_828e4d7_formal'
+  latest_w4u8_decode_row4_qk_candidate:
+    id: EXP-0179
+    source_branch: codex/exp-0179-w4u8-decode-row4-qk-norm-rope
+    source_head: 828e4d7f5caf8001f135e225704ed6f83b52dc53
+    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0179/20260904T_exp0179_828e4d7_short'
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0179/20260904T_exp0179_828e4d7_formal'
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending
+    selected_baseline_changed: false
+    execution_unit: real_token_ID_M64_prefill_then_192_continuous_W4U8_decode_steps_to_valid_length256
+    implementation: decode_M1_first_4_rows_Q_and_K_Norm_RoPE_plus_skip_unused_temporary_K_carrier_prefill_full64_unchanged
+    correctness_gate: pass_all20_sessions_exact_QK_boundaries_hidden_hashes_codes_tokens_193_of_193_independent_integer_head_padding_poison_and_EXP0163_regression
+    semantic_gate: disabled_by_user_contract
+    physical_gate: pass_exact_8mib_VTCM_zero_intermediate_or_timed_full_logit_DDR_zero_spill_fill_one_FastRPC_per_pass_no_QNN_zero_unattributed_ticks
+    performance_gate: pass_candidate_wins_10_of_10_rotated_pairs
+    direct_end_to_end:
+      control_prefill_tokens_per_second: 1278.232447
+      candidate_prefill_tokens_per_second: 1279.121269
+      control_decode_host_us_per_token: 47841.106219
+      candidate_decode_host_us_per_token: 43944.146464
+      control_decode_tokens_per_second: 20.902527
+      candidate_decode_tokens_per_second: 22.756159
+      candidate_decode_speed_percent: 8.867984
+    qkv_qk_preparation_us: {control: 7715.338677, candidate: 3707.368300}
+    hmx_u8s8_tile_pair_count: {control: 1699840, candidate: 1699840}
+    full_profiling_report_sha256: 0186e2a8d7dbcaa2248e8ec84f4a363a020bfd8e76b7376270c4860c6a2f4bb3
+    summary_sha256: 03be51e78fccd6645f14654647433827a912faeb24ceeb11c0e31cd41bbd0568
+    static_gate_sha256: 37c69fe9c6663d7e93e0acf5172f44af51ef13ece1ccd38d1f43c87f5751679a
+    independent_reference_sha256: f58c2eaf41c382d68a68e20dcbd0a5de0a769ca95cf7c4ae791289b333ad0d54
+    padding_poison_sha256: 72bd02db658fba19553efa272c27cc563e29e7cf9e624a065ccd6191dd045407
+    exp0163_regression_sha256: f9b333630a24cb8acdb274d608dc546836354cf9f8af57f588d8be95500193b5
+    conclusion: decode_row4_QK_preparation_and_dead_K_carrier_removal_improve_direct_decode_8_868_percent
   latest_w4u8_decode_row4_common_candidate:
     id: EXP-0178
     source_branch: codex/exp-0178-w4u8-decode-row4-common-ops

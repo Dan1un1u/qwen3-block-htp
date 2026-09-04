@@ -1186,14 +1186,35 @@ altering Gate/Up or SwiGLU, allowing dead padding to affect a later layer,
 removing padding-poison evidence, or automatic baseline promotion
 
 **Decode Row-Four Q/K Norm-RoPE Preparation**:
-The EXP-0179 hypothesis that cache-native logical-M=1 decode should normalize
-and rotate only physical rows zero through three of every Q and K head. The
-current pair kernels process all 64 rows, and the K helper also builds a
-temporary 64-token QK weight/bias carrier. Dynamic segmented Attention does not
-consume that temporary carrier: normalized K row zero is appended to the
-persistent cache and QK operands are reconstructed from the cache. The
-candidate preserves the QKV ring, HMX work, readiness order and M64 prefill,
-while using exact row-four Q/K math and omitting the decode-only dead K pack.
+The completed EXP-0179 W4U8 candidate proving that cache-native logical-M=1
+decode should normalize and rotate only physical rows zero through three of
+every Q and K head. It also omits the temporary 64-token K weight/bias carrier
+that dynamic segmented Attention never consumes. A first implementation
+silently did no work because the shared row helper still required a multiple of
+16; the accepted implementation adds a genuine four-row tail while retaining
+the 16-row rsqrt-vector layout. Ten of ten rotated formal pairs improve direct
+decode from 20.902527 to 22.756159 token/s (+8.867984%), and QKV plus Q/K
+preparation falls from 7,715.339 to 3,707.368 microseconds per token. Valid Q/K
+boundaries, all hidden hashes, logit codes and tokens are byte exact; padding
+poison proves rows four through 63 are dead. HMX commands, U8xS8 tile pairs,
+weight traffic and M64 prefill remain unchanged. The result is locally eligible
+but pending explicit user promotion.
 _Avoid_: changing valid row-zero math, cache ABI or append, applying the short
 path to prefill, changing QKV ring/HMX/DMA scheduling, reusing poisoned padding,
-or automatic baseline promotion
+restoring the rejected no-op multiple-of-16 wrapper, or automatic baseline
+promotion
+
+**Quartet-Native Mutable V-Cache Tail**:
+The EXP-0180 hypothesis that the segmented-v4 row-major mutable V tail causes
+avoidable recurring work. At each decode step the current one-to-31-row tail is
+repacked into AV HMX weight layout; in EXP-0179 this costs about 1,447.791
+microseconds per full-stack token. The candidate retains sealed 32-token
+segments exactly as-is, but stores completed groups of four mutable rows in a
+native V carrier and keeps at most three rows in a logical microjournal. A
+four-row group is published without reading the existing tile, so this is not a
+retry of EXP-0159's rejected full-tile read-modify-write path. Attention should
+DMA completed groups directly and pack no more than three rows.
+_Avoid_: adding a full logical V-cache duplicate, reading a native tail before
+publication, changing K-cache or Attention mathematics, treating V-pack work
+ticks as the performance gate instead of direct full-stack token/s, or automatic
+baseline promotion
