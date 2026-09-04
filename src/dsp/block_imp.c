@@ -97,7 +97,7 @@ _Static_assert(
 #define QBH_BLOCK_W4U8_QKV_BATCH_N_TILES UINT32_C(4)
 #define QBH_BLOCK_W4U8_O_MAX_BATCH_N_TILES UINT32_C(8)
 #define QBH_BLOCK_W4U8_DIRECT_N_SAFE_BATCH_N_TILES UINT32_C(4)
-#define QBH_BLOCK_W4U8_DIRECT_N_MAX_BATCH_N_TILES UINT32_C(16)
+#define QBH_BLOCK_W4U8_DIRECT_N_MAX_BATCH_N_TILES UINT32_C(32)
 #define QBH_BLOCK_W4U8_DIRECT_N_DOWN_BATCH_N_TILES UINT32_C(2)
 #define QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES \
     QBH_BLOCK_W4U8_O_MAX_BATCH_N_TILES
@@ -8696,12 +8696,16 @@ static int qbh_run_w4u8_direct_n_projection(
         use_decode_phase_overlay != 0U
             ? buffers->expanded_weight_alt : buffers->compressed_weight_alt};
     uint8_t *bias_slots[2] = {
-        buffers->scale_or_bias,
-        batch_tiles > QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES
+        batch_tiles == 32U
             ? buffers->input_norm_weight
-            : buffers->scale_or_bias +
-                  QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES *
-                      QBH_HMX_BIAS_BYTES};
+            : buffers->scale_or_bias,
+        batch_tiles == 32U
+            ? buffers->post_norm_weight
+            : (batch_tiles > QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES
+                   ? buffers->input_norm_weight
+                   : buffers->scale_or_bias +
+                         QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES *
+                             QBH_HMX_BIAS_BYTES)};
     const uint32_t k_tiles = desc->k / QBH_HMX_INPUT_CHANNELS;
     const uint32_t n_tiles = desc->n / QBH_HMX_OUTPUT_CHANNELS;
     const uint32_t tile_bytes =

@@ -270,7 +270,8 @@ def main() -> None:
         "",
         "## End-to-end gate",
         "",
-        "| Metric | Batch4 control | Batch8 candidate | Change |",
+        f"| Metric | Batch{args.control_batch} control | "
+        f"Batch{args.candidate_batch} candidate | Change |",
         "|---|---:|---:|---:|",
         f"| Decode throughput | {control_tps:.3f} tok/s | "
         f"{candidate_tps:.3f} tok/s | "
@@ -289,7 +290,8 @@ def main() -> None:
         "",
         "## Decode module wall attribution",
         "",
-        "| Module | Batch4 control | Batch8 candidate | Candidate speed change |",
+        f"| Module | Batch{args.control_batch} control | "
+        f"Batch{args.candidate_batch} candidate | Candidate speed change |",
         "|---|---:|---:|---:|",
         *module_rows,
         f"| Complete decode host wall | {control_latency * 1000.0:.1f} "
