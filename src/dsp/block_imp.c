@@ -6941,7 +6941,8 @@ static int qbh_run_generation_head_w4u8(
                 }
             }
 
-            if (group != 0U && group + 1U < group_count) {
+            if (group != 0U && group + 1U < group_count &&
+                direct_n_batch64 == 0U) {
                 const uint32_t next_group = group + 1U;
                 const uint32_t next_slot = next_group & 1U;
                 const uint32_t next_first = next_group * group_limit;
@@ -7024,6 +7025,47 @@ static int qbh_run_generation_head_w4u8(
                     &best_code, &best_token);
                 header->generation_lm_head_argmax_ticks +=
                     HAP_perf_get_qtimer_count() - start;
+            }
+
+            if (group != 0U && group + 1U < group_count &&
+                direct_n_batch64 != 0U) {
+                const uint32_t next_group = group + 1U;
+                const uint32_t next_slot = next_group & 1U;
+                const uint32_t next_first = next_group * group_limit;
+                uint32_t next_tiles = n_tiles - next_first;
+                if (next_tiles > group_limit) {
+                    next_tiles = group_limit;
+                }
+                /* A two-MiB group keeps the previous HMX command live long
+                 * enough that reusing its ping-pong slot before qbh_hmx_wait
+                 * can overwrite packed W4 still being consumed.  Retire the
+                 * previous command above, then launch the next DMA so it
+                 * overlaps only with the current group. */
+                prefetch_start = HAP_perf_get_qtimer_count();
+                prefetch_bytes = next_tiles * compressed_tile_bytes;
+                result = qbh_dma_start_weight_prefetch_split2(
+                    prefetch_descriptors,
+                    compressed_slots[next_slot],
+                    shared + (direct_n_decode != 0U
+                                  ? head->direct_n_weight_offset
+                                  : head->weight_offset) +
+                        (size_t)next_first * compressed_tile_bytes,
+                    prefetch_bytes);
+                if (result != 0) {
+                    return -7;
+                }
+                prefetch_active = 1U;
+                ++header->generation_lm_head_prefetch_count;
+                header->generation_lm_head_ddr_read_bytes +=
+                    next_tiles * compressed_tile_bytes;
+                header->w4u8_decode_direct_n_weight_ddr_read_bytes +=
+                    next_tiles * compressed_tile_bytes;
+                header->weight_ddr_read_bytes +=
+                    next_tiles * compressed_tile_bytes;
+                header->weight_dma_descriptor_count +=
+                    (prefetch_bytes +
+                     QBH_BLOCK_DMA_MAX_WEIGHT_1D_BYTES - 1U) /
+                    QBH_BLOCK_DMA_MAX_WEIGHT_1D_BYTES;
             }
 
             hmx_start = HAP_perf_get_qtimer_count();
