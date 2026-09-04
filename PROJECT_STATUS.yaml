@@ -28,7 +28,7 @@ governance:
 current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
   last_completed_experiment: EXP-0173
-  last_completed_source_commit: 9e30f824c6ac1c0aa72ffcdd0f64631b66f469ef
+  last_completed_source_commit: 9e30f822731da3b5d0d924babe7ccb5cb4142f94
   provisional_source_parent: eligible_EXP0173_W4U8_decode_LM_head_batch16_candidate
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
@@ -41,7 +41,7 @@ current_scope:
     id: EXP-0174
     source_branch: codex/exp-0174-w4u8-decode-gate-up-inline-publish
     source_parent: eligible_EXP0173_W4U8_decode_LM_head_batch16_candidate
-    source_parent_commit: 9e30f824c6ac1c0aa72ffcdd0f64631b66f469ef
+    source_parent_commit: 9e30f822731da3b5d0d924babe7ccb5cb4142f94
     execution_scope: real_token_ID_M64_prefill_then_continuous_W4U8_decode
     direct_control: EXP0173_batch8_post_command_Gate_Up_publication_with_LM_head_batch16
     candidates: decode_M1_inline_pair_publication_batch8_and_batch16
@@ -57,7 +57,7 @@ current_scope:
   latest_w4u8_decode_lm_head_batch16_candidate:
     id: EXP-0173
     source_branch: codex/exp-0173-w4u8-decode-lm-head-batch16
-    source_head: 9e30f824c6ac1c0aa72ffcdd0f64631b66f469ef
+    source_head: 9e30f822731da3b5d0d924babe7ccb5cb4142f94
     formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0173/20260904T_exp0173_9e30f82_formal'
     execution_state: completed
     evidence_validity: valid
@@ -81,8 +81,8 @@ current_scope:
     LM_head_us: {control: 5200.045302, candidate: 4128.867188}
     LM_head_speed_percent: 25.94364
     conclusion: batch16_halves_LM_head_command_and_prefetch_count_and_improves_DMA_expand_HMX_overlap_without_changing_math_or_prefill
-    full_profiling_report_sha256: f9ea7326898872f10ad11cbcb3263f0567d9a30710120c69310c04396b866967
-    summary_sha256: e3825b1d656e3ad88466b31801dcb6d48399379884750984423c9e7be461537e
+    full_profiling_report_sha256: ac933d4cb6ea0f0c3e3942dbac6791127ecaee96144bb78c72250ef9ea88f7d1
+    summary_sha256: 1a756ca3c01564187cfead0888a7dd1ca7ffaf9bbea6d34f70bf4ba263fd0037
     independent_reference_sha256: 5135073bb9e0548bdb9a8b4634981ad00f5189a008cb6749587446b9c747f5de
     exp0163_regression_sha256: ea08a2fe1eb09526f7315be1cb128c0716a673936c297d61c65dd2f26aa81ed6
   latest_w4u8_decode_gate_up_hvx_gemv_candidate:

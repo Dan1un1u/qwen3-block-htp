@@ -30,7 +30,7 @@ experiments:
       approved_on: '2026-09-04'
     evidence:
       source_parent_experiment: EXP-0173
-      source_parent_commit: 9e30f824c6ac1c0aa72ffcdd0f64631b66f469ef
+      source_parent_commit: 9e30f822731da3b5d0d924babe7ccb5cb4142f94
       execution_unit: real_token_ID_M64_prefill_then_continuous_W4U8_decode
       direct_control: EXP0173_batch8_post_command_Gate_Up_publication_with_LM_head_batch16
       candidates: decode_M1_inline_pair_publication_batch8_and_batch16
@@ -54,7 +54,7 @@ experiments:
     source_branches:
       - codex/exp-0173-w4u8-decode-lm-head-batch16
     source_commits:
-      - 9e30f824c6ac1c0aa72ffcdd0f64631b66f469ef
+      - 9e30f822731da3b5d0d924babe7ccb5cb4142f94
     record: docs/experiments/EXP-0173.md
     approval_ref: 'User message 2026-09-04: 同意晋升。开启loop优化，针对decode，尽量不中断。'
     runtime:
@@ -87,8 +87,8 @@ experiments:
         candidate_decode_speed_percent: 2.173123
       LM_head_us: {control: 5200.045302, candidate: 4128.867188}
       conclusion: batch16_halves_LM_head_command_and_prefetch_count_and_improves_DMA_expand_HMX_overlap_without_changing_math_or_prefill
-      full_profiling_report_sha256: f9ea7326898872f10ad11cbcb3263f0567d9a30710120c69310c04396b866967
-      summary_sha256: e3825b1d656e3ad88466b31801dcb6d48399379884750984423c9e7be461537e
+      full_profiling_report_sha256: ac933d4cb6ea0f0c3e3942dbac6791127ecaee96144bb78c72250ef9ea88f7d1
+      summary_sha256: 1a756ca3c01564187cfead0888a7dd1ca7ffaf9bbea6d34f70bf4ba263fd0037
       independent_reference_sha256: 5135073bb9e0548bdb9a8b4634981ad00f5189a008cb6749587446b9c747f5de
       exp0163_regression_sha256: ea08a2fe1eb09526f7315be1cb128c0716a673936c297d61c65dd2f26aa81ed6
       selected_baseline_changed: false
