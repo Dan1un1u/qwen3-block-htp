@@ -6,6 +6,41 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0209
+    slug: w4u8-direct-n-q32-kv16
+    title: Direct-W4 mixed Q32 and K/V16 command granularity
+    parent: EXP-0207
+    variants:
+      - evidence_valid_EXP0207_uniform_QKV_batch16_control
+      - direct_W4_Q32_KV16_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0209-w4u8-direct-n-q32-kv16
+    source_commits: []
+    record: docs/experiments/EXP-0209.md
+    approval_ref: 'User message 2026-09-05: 开始decode优化loop'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0209-w4u8-direct-n-q32-kv16
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    evidence:
+      source_parent_experiment: EXP-0207
+      source_parent_commit: f036c756a6609312bb439e8592bb66ac8be06d6e
+      direct_control: same_binary_EXP0207_uniform_QKV_batch16_and_Down_single_DMA
+      candidate: Q_projection_batch32_with_K_and_V_projection_batch16
+      hypothesis: reduce_Q_commands_without_repeating_EXP0206_KV_head_readiness_delay
+      optimization_scope: decode_only_projection_specific_QKV_batching_ring_slots_bias_placement_selector_telemetry_and_experiment_tools
+      forbidden_changes: weights_values_scales_qparams_arithmetic_QKV_tile_work_QK_preparation_Attention_O_Gate_Up_SwiGLU_Down_residual_norm_cache_LM_head_M64_prefill_F16F16_W4F16_QNN
+      correctness_gate: byte_exact_QKV_prepared_QK_hidden_cache_selected_codes_and_tokens
+      physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_and_HMX_tile_pairs_QKV_commands_224_to_168_and_112_fewer_DMA_descriptors
+      short_gate: five_rotated_pairs_with_strict_QKV_wall_and_decode_speed_pass
+      formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      selected_baseline_changed: false
   - id: EXP-0208
     slug: w4u8-direct-n-qkv-batch16-single-dma
     title: Direct-W4 QKV batch16 single-descriptor DMA
@@ -13,14 +48,15 @@ experiments:
     variants:
       - evidence_valid_EXP0207_QKV_split3_control
       - direct_W4_QKV_batch16_weight1_bias1_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: aborted
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0208-w4u8-direct-n-qkv-single-dma
-    source_commits: []
+    source_commits:
+      - c074cac9b44b35c545817790488278c231ae8b37
     record: docs/experiments/EXP-0208.md
     approval_ref: 'User message 2026-09-05: 开始decode优化loop'
     runtime:
@@ -28,6 +64,7 @@ experiments:
       source_branch: codex/exp-0208-w4u8-direct-n-qkv-single-dma
       approved_on: '2026-09-05'
       started_on: '2026-09-05'
+      completed_on: '2026-09-05'
     evidence:
       source_parent_experiment: EXP-0207
       source_parent_commit: f036c756a6609312bb439e8592bb66ac8be06d6e
@@ -40,6 +77,14 @@ experiments:
       physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_HMX_commands_and_tile_pairs_224_fewer_DMA_descriptors
       short_gate: five_rotated_pairs_with_strict_QKV_wall_and_decode_speed_pass
       formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      source_commit: c074cac9b44b35c545817790488278c231ae8b37
+      correctness_gate_result: pass_smoke
+      physical_gate_result: fail_candidate_descriptor_count_2614_equals_control_instead_of_expected_2390
+      performance_gate_result: unavailable_stopped_before_timed_AB
+      failure_boundary: source_audit_found_QKV_ring_already_calls_weight_plus_bias_two_descriptor_chain_directly
+      unavailable: paired_throughput_module_deltas_and_formal_profile
+      local_optimum_e2e_regression_streak: 0
+      conclusion: candidate_selector_was_not_a_new_physical_plan_because_QKV_never_used_the_Down_split3_helper
       selected_baseline_changed: false
   - id: EXP-0207
     slug: w4u8-direct-n-down-batch4-single-dma
