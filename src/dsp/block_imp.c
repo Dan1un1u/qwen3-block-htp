@@ -173,6 +173,7 @@ enum qbh_block_hvx_pool_job_kind {
     QBH_BLOCK_HVX_POOL_W4U8_QKV_RING = 14,
     QBH_BLOCK_HVX_POOL_U8_SEGMENTED_ATTENTION = 15,
     QBH_BLOCK_HVX_POOL_W4U8_GENERATION_EXPAND = 16,
+    QBH_BLOCK_HVX_POOL_U8_SWIGLU_STREAM = 17,
 };
 
 enum qbh_block_u8_residual_kind {
@@ -312,6 +313,9 @@ struct qbh_block_w4f16_job {
     uint64_t fp16_post_residual_norm_ticks;
     uint32_t generation_expand_count;
     uint64_t generation_expand_ticks;
+    uint32_t u8_swiglu_stream_group_count;
+    uint64_t u8_swiglu_stream_ticks;
+    uint64_t u8_swiglu_stream_ready_wait_ticks;
     void *w4u8_pipeline_worker_context;
     int32_t w4u8_pipeline_worker_status;
 };
@@ -428,6 +432,22 @@ struct qbh_block_w4f16_pool {
     uint32_t fp16_post_residual_norm_task_count;
     uint32_t fp16_post_residual_norm_crouton;
     uint32_t fp16_norm_rows_per_task;
+    const uint8_t *u8_swiglu_gate;
+    const uint8_t *u8_swiglu_up;
+    uint8_t *u8_swiglu_middle;
+    const uint16_t *u8_swiglu_lut;
+    uint8_t *u8_swiglu_gather_scratch;
+    volatile uint32_t u8_swiglu_ready[6];
+    volatile uint32_t u8_swiglu_complete[6];
+    volatile uint32_t u8_swiglu_abort;
+    uint32_t u8_swiglu_generation;
+    uint32_t u8_swiglu_group_count;
+    uint32_t u8_swiglu_group_tiles;
+    uint32_t u8_swiglu_rows;
+    uint32_t u8_swiglu_padding_poison;
+    uint32_t u8_swiglu_job_group_count_before;
+    uint64_t u8_swiglu_job_ticks_before;
+    uint64_t u8_swiglu_job_ready_wait_before;
     void *qkv_ring_state;
     uint8_t *segmented_attention_scratch;
     uint32_t segmented_attention_group_stride;
@@ -575,6 +595,8 @@ static void qbh_hvx_pool_u8_qk_prep_publish(
 static int qbh_hvx_pool_u8_qk_prep_wait_async(
     struct qbh_block_header *header,
     struct qbh_block_w4f16_pool *pool);
+static void qbh_w4u8_poison_swiglu_padding(
+    uint8_t *tile, uint32_t tile_index);
 static float qbh_f16_max_abs(
     const struct qbh_block_header *header,
     const __fp16 *data, uint32_t elements);
@@ -1954,6 +1976,16 @@ static int qbh_header_valid(const struct qbh_block_header *header,
            QBH_BLOCK_W4U8_DIRECT_N_MLP) == 0U ||
           header->w4u8_decode_direct_n_gate_up_batch_n_tiles != 32U ||
           header->w4u8_decode_direct_n_gate_up_continuous == 0U)) ||
+        header->w4u8_decode_direct_n_gate_up_swiglu_stream > 1U ||
+        (header->w4u8_decode_direct_n_gate_up_swiglu_stream != 0U &&
+         (header->variant != QBH_BLOCK_W4U8 ||
+          header->w4u8_decode_projection_mode !=
+              QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
+          (header->w4u8_decode_direct_n_mask &
+           QBH_BLOCK_W4U8_DIRECT_N_MLP) == 0U ||
+          header->w4u8_decode_direct_n_gate_up_batch_n_tiles != 32U ||
+          header->w4u8_decode_direct_n_gate_up_continuous == 0U ||
+          header->w4u8_decode_direct_n_o_gate_prefetch == 0U)) ||
         (header->w4u8_decode_swiglu_rows !=
              QBH_BLOCK_W4U8_SWIGLU_FULL_ROWS &&
          header->w4u8_decode_swiglu_rows !=
@@ -4089,6 +4121,65 @@ static void qbh_w4u8_generation_expand_worker_run(
     }
 }
 
+/* EXP-0201 keeps the exact row-4 LUT kernel but turns it into a consumer of
+ * completed Gate/Up channel groups.  One persistent HVX worker is enough:
+ * each 32-tile group is much shorter than the next direct-n HMX pair, while
+ * using one worker preserves the single gather-scratch ownership contract. */
+static void qbh_w4u8_swiglu_stream_worker_run(
+    struct qbh_block_w4f16_pool *pool,
+    struct qbh_block_w4f16_job *job) {
+    const uint32_t generation = pool->u8_swiglu_generation;
+
+    for (uint32_t group = 0U;
+         group < pool->u8_swiglu_group_count; ++group) {
+        const uint32_t first_tile =
+            group * pool->u8_swiglu_group_tiles;
+        uint64_t wait_start = HAP_perf_get_qtimer_count();
+        uint64_t work_start;
+
+        while (pool->u8_swiglu_ready[group] != generation) {
+            if (pool->u8_swiglu_abort != 0U) {
+                return;
+            }
+            asm volatile("pause(#8)" : : : "memory");
+        }
+        asm volatile("barrier" ::: "memory");
+        job->u8_swiglu_stream_ready_wait_ticks +=
+            HAP_perf_get_qtimer_count() - wait_start;
+        work_start = HAP_perf_get_qtimer_count();
+        for (uint32_t tile = 0U;
+             tile < pool->u8_swiglu_group_tiles; ++tile) {
+            const uint32_t output_tile = first_tile + tile;
+            qbh_mlp_gate_up_lut_hvx(
+                pool->u8_swiglu_gate +
+                    (size_t)output_tile * QBH_HMX_OUTPUT_BYTES,
+                pool->u8_swiglu_up +
+                    (size_t)output_tile * QBH_HMX_OUTPUT_BYTES,
+                pool->u8_swiglu_middle +
+                    (size_t)output_tile * QBH_HMX_OUTPUT_BYTES,
+                pool->u8_swiglu_rows * QBH_HMX_OUTPUT_CHANNELS,
+                pool->u8_swiglu_lut,
+                pool->u8_swiglu_gather_scratch);
+            if (pool->u8_swiglu_rows ==
+                    QBH_BLOCK_W4U8_SWIGLU_DECODE_ROWS &&
+                pool->u8_swiglu_padding_poison != 0U) {
+                qbh_w4u8_poison_swiglu_padding(
+                    pool->u8_swiglu_middle +
+                        (size_t)output_tile * QBH_HMX_OUTPUT_BYTES,
+                    output_tile);
+            }
+        }
+        job->u8_swiglu_stream_ticks +=
+            HAP_perf_get_qtimer_count() - work_start;
+        ++job->u8_swiglu_stream_group_count;
+        pool->u8_swiglu_complete[group] = generation;
+        asm volatile("release(%0):at"
+                     :
+                     : "r"(&pool->u8_swiglu_complete[group])
+                     : "memory");
+    }
+}
+
 static void qbh_w4f16_hvx_worker_main(void *opaque) {
     struct qbh_block_w4f16_job *job =
         (struct qbh_block_w4f16_job *)opaque;
@@ -4219,6 +4310,9 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
         } else if (job->command_kind ==
                    QBH_BLOCK_HVX_POOL_W4U8_GENERATION_EXPAND) {
             qbh_w4u8_generation_expand_worker_run(pool, job);
+        } else if (job->command_kind ==
+                   QBH_BLOCK_HVX_POOL_U8_SWIGLU_STREAM) {
+            qbh_w4u8_swiglu_stream_worker_run(pool, job);
         } else if (job->command_kind ==
                    QBH_BLOCK_HVX_POOL_W4U8_PIPELINE) {
             job->w4u8_pipeline_worker_status =
@@ -8974,6 +9068,117 @@ static void qbh_drain_w4u8_direct_n_gate_prefetch(
         state->bias_slot, state->n_tiles);
 }
 
+static int qbh_start_w4u8_gate_up_swiglu_stream(
+    struct qbh_block_header *header,
+    struct qbh_block_w4f16_pool *pool,
+    struct qbh_block_buffers *buffers,
+    const uint8_t *gate, const uint8_t *up, uint8_t *middle,
+    uint32_t group_tiles, uint32_t rows) {
+    const uint32_t tile_count =
+        QBH_BLOCK_INTERMEDIATE / QBH_HMX_OUTPUT_CHANNELS;
+    const uint32_t group_count = tile_count / group_tiles;
+
+    if (header == NULL || pool == NULL || buffers == NULL ||
+        gate == NULL || up == NULL || middle == NULL ||
+        header->w4u8_decode_direct_n_gate_up_swiglu_stream == 0U ||
+        pool->worker_count == 0U || group_tiles != 32U ||
+        tile_count % group_tiles != 0U || group_count != 6U ||
+        rows != QBH_BLOCK_W4U8_SWIGLU_DECODE_ROWS) {
+        return -1;
+    }
+    for (uint32_t worker = 0U; worker < pool->worker_count; ++worker) {
+        if (pool->jobs[worker].command_kind !=
+            QBH_BLOCK_HVX_POOL_NONE) {
+            return -1;
+        }
+    }
+    ++pool->u8_swiglu_generation;
+    if (pool->u8_swiglu_generation == 0U) {
+        ++pool->u8_swiglu_generation;
+    }
+    pool->u8_swiglu_gate = gate;
+    pool->u8_swiglu_up = up;
+    pool->u8_swiglu_middle = middle;
+    pool->u8_swiglu_lut =
+        (const uint16_t *)buffers->w4u8_silu_lut;
+    pool->u8_swiglu_gather_scratch = buffers->w4u8_gather_scratch;
+    pool->u8_swiglu_abort = 0U;
+    pool->u8_swiglu_group_count = group_count;
+    pool->u8_swiglu_group_tiles = group_tiles;
+    pool->u8_swiglu_rows = rows;
+    pool->u8_swiglu_padding_poison =
+        header->w4u8_decode_swiglu_padding_poison;
+    pool->u8_swiglu_job_group_count_before =
+        pool->jobs[0].u8_swiglu_stream_group_count;
+    pool->u8_swiglu_job_ticks_before =
+        pool->jobs[0].u8_swiglu_stream_ticks;
+    pool->u8_swiglu_job_ready_wait_before =
+        pool->jobs[0].u8_swiglu_stream_ready_wait_ticks;
+    pool->active_worker_count = 1U;
+    pool->extra_expand_worker_index = UINT32_MAX;
+    pool->jobs[0].command_kind =
+        QBH_BLOCK_HVX_POOL_U8_SWIGLU_STREAM;
+    asm volatile("barrier" ::: "memory");
+    (void)qurt_sem_up(&pool->command_ready[0]);
+    return 0;
+}
+
+static int qbh_publish_w4u8_gate_up_swiglu_group(
+    struct qbh_block_header *header,
+    struct qbh_block_w4f16_pool *pool, uint32_t group) {
+    if (header == NULL || pool == NULL ||
+        group >= pool->u8_swiglu_group_count ||
+        pool->u8_swiglu_abort != 0U) {
+        return -1;
+    }
+    if (group != 0U &&
+        pool->u8_swiglu_complete[group - 1U] ==
+            pool->u8_swiglu_generation) {
+        header->w4u8_gate_up_swiglu_overlap_observed = 1U;
+    }
+    pool->u8_swiglu_ready[group] = pool->u8_swiglu_generation;
+    asm volatile("release(%0):at"
+                 :
+                 : "r"(&pool->u8_swiglu_ready[group])
+                 : "memory");
+    ++header->w4u8_gate_up_swiglu_publish_count;
+    return 0;
+}
+
+static int qbh_finish_w4u8_gate_up_swiglu_stream(
+    struct qbh_block_header *header,
+    struct qbh_block_w4f16_pool *pool, uint32_t abort_stream) {
+    uint64_t join_start;
+    uint32_t consumed;
+
+    if (header == NULL || pool == NULL ||
+        pool->active_worker_count != 1U) {
+        return -1;
+    }
+    if (abort_stream != 0U) {
+        pool->u8_swiglu_abort = 1U;
+        asm volatile("barrier" ::: "memory");
+    }
+    join_start = HAP_perf_get_qtimer_count();
+    qbh_w4f16_pool_wait(pool);
+    header->w4u8_gate_up_swiglu_join_wait_ticks +=
+        HAP_perf_get_qtimer_count() - join_start;
+    pool->active_worker_count = 0U;
+    consumed = pool->jobs[0].u8_swiglu_stream_group_count -
+        pool->u8_swiglu_job_group_count_before;
+    header->w4u8_gate_up_swiglu_consume_count += consumed;
+    header->w4u8_gate_up_swiglu_worker_ticks +=
+        pool->jobs[0].u8_swiglu_stream_ticks -
+        pool->u8_swiglu_job_ticks_before;
+    header->w4u8_gate_up_swiglu_ready_wait_ticks +=
+        pool->jobs[0].u8_swiglu_stream_ready_wait_ticks -
+        pool->u8_swiglu_job_ready_wait_before;
+    if (abort_stream != 0U) {
+        return -1;
+    }
+    return consumed == pool->u8_swiglu_group_count ? 0 : -1;
+}
+
 /* EXP-0198 decode-only Gate/Up schedule.  Both projections consume the same
  * activation and have identical K/N shapes.  Flatten their six batch-32
  * groups into one ping-pong sequence so the first Up DMA is issued while the
@@ -8982,9 +9187,11 @@ static int qbh_run_w4u8_direct_n_gate_up_pair(
     struct qbh_block_header *header, const uint8_t *shared,
     struct qbh_block_buffers *buffers,
     struct qbh_block_hmx_worker *worker,
+    struct qbh_block_w4f16_pool *pool,
     struct qbh_block_w4u8_gate_prefetch *gate_prefetch,
     const uint8_t *activation_tiles,
-    uint8_t *gate_output_tiles, uint8_t *up_output_tiles) {
+    uint8_t *gate_output_tiles, uint8_t *up_output_tiles,
+    uint8_t *middle_output_tiles, uint32_t swiglu_rows) {
     struct qbh_dma_aligned_desc_1d descriptors[2]
         __attribute__((aligned(64)));
     const struct qbh_block_projection_desc *descs[2] = {
@@ -9008,12 +9215,17 @@ static int qbh_run_w4u8_direct_n_gate_up_pair(
     uint32_t current_tiles =
         n_tiles < batch_tiles ? n_tiles : batch_tiles;
     uint32_t current_slot = 0U;
+    const uint32_t swiglu_stream = header != NULL
+        ? header->w4u8_decode_direct_n_gate_up_swiglu_stream : 0U;
+    uint32_t stream_started = 0U;
     uint64_t dma_start;
     int result;
 
     if (header == NULL || shared == NULL || buffers == NULL ||
         worker == NULL || activation_tiles == NULL ||
         gate_output_tiles == NULL || up_output_tiles == NULL ||
+        (swiglu_stream != 0U &&
+         (pool == NULL || middle_output_tiles == NULL)) ||
         header->variant != QBH_BLOCK_W4U8 || header->logical_m != 1U ||
         header->w4u8_decode_projection_mode !=
             QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
@@ -9061,12 +9273,22 @@ static int qbh_run_w4u8_direct_n_gate_up_pair(
         header->weight_dma_descriptor_count += 2U;
     }
 
+    if (swiglu_stream != 0U) {
+        if (qbh_start_w4u8_gate_up_swiglu_stream(
+                header, pool, buffers, gate_output_tiles,
+                up_output_tiles, middle_output_tiles,
+                batch_tiles, swiglu_rows) != 0) {
+            return -1;
+        }
+        stream_started = 1U;
+    }
+
     for (;;) {
         const struct qbh_block_projection_desc *current_desc =
             descs[projection];
         const uint64_t hmx_start = HAP_perf_get_qtimer_count();
-        uint32_t next_projection = projection;
-        uint32_t next_first = current_first + current_tiles;
+        uint32_t next_projection;
+        uint32_t next_first;
         uint32_t next_tiles = 0U;
         const uint32_t next_slot = current_slot ^ 1U;
         uint64_t wait_start;
@@ -9082,9 +9304,24 @@ static int qbh_run_w4u8_direct_n_gate_up_pair(
         header->hmx_u8s8_tile_pair_count +=
             (uint64_t)k_tiles * current_tiles;
 
-        if (next_first >= n_tiles) {
-            ++next_projection;
-            next_first = 0U;
+        if (swiglu_stream != 0U) {
+            if (projection == 0U) {
+                next_projection = 1U;
+                next_first = current_first;
+            } else if (current_first + current_tiles < n_tiles) {
+                next_projection = 0U;
+                next_first = current_first + current_tiles;
+            } else {
+                next_projection = 2U;
+                next_first = 0U;
+            }
+        } else {
+            next_projection = projection;
+            next_first = current_first + current_tiles;
+            if (next_first >= n_tiles) {
+                ++next_projection;
+                next_first = 0U;
+            }
         }
         if (next_projection < 2U) {
             const struct qbh_block_projection_desc *next_desc =
@@ -9109,6 +9346,10 @@ static int qbh_run_w4u8_direct_n_gate_up_pair(
                 HAP_perf_get_qtimer_count() - dma_start;
             if (result != 0) {
                 (void)qbh_hmx_wait(worker);
+                if (stream_started != 0U) {
+                    (void)qbh_finish_w4u8_gate_up_swiglu_stream(
+                        header, pool, 1U);
+                }
                 qbh_record_projection_failure(
                     header, next_desc, next_first, 84U, result);
                 return -1;
@@ -9130,8 +9371,19 @@ static int qbh_run_w4u8_direct_n_gate_up_pair(
         header->w4u8_qkvo_hmx_lifetime_ticks +=
             HAP_perf_get_qtimer_count() - hmx_start;
         if (result != 0) {
+            if (stream_started != 0U) {
+                (void)qbh_finish_w4u8_gate_up_swiglu_stream(
+                    header, pool, 1U);
+            }
             qbh_record_projection_failure(
                 header, current_desc, current_first, 85U, result);
+            return -1;
+        }
+        if (swiglu_stream != 0U && projection == 1U &&
+            qbh_publish_w4u8_gate_up_swiglu_group(
+                header, pool, current_first / batch_tiles) != 0) {
+            (void)qbh_finish_w4u8_gate_up_swiglu_stream(
+                header, pool, 1U);
             return -1;
         }
         if (next_projection >= 2U) {
@@ -9141,6 +9393,12 @@ static int qbh_run_w4u8_direct_n_gate_up_pair(
         current_first = next_first;
         current_tiles = next_tiles;
         current_slot = next_slot;
+    }
+
+    if (stream_started != 0U &&
+        qbh_finish_w4u8_gate_up_swiglu_stream(
+            header, pool, 0U) != 0) {
+        return -1;
     }
 
     header->w4u8_decode_direct_n_projection_count += 2U;
@@ -13865,6 +14123,7 @@ static int qbh_run_w4u8_direct_n_mlp(
     struct qbh_block_header *header, uint8_t *shared,
     struct qbh_block_buffers *buffers,
     struct qbh_block_hmx_worker *worker,
+    struct qbh_block_w4f16_pool *pool,
     struct qbh_block_w4u8_gate_prefetch *gate_prefetch,
     uint32_t activation_prepacked, uint32_t output_native) {
     struct qbh_projection_layout gate_up_layout;
@@ -13923,9 +14182,10 @@ static int qbh_run_w4u8_direct_n_mlp(
     start = HAP_perf_get_qtimer_count();
     if (header->w4u8_decode_direct_n_gate_up_continuous != 0U) {
         if (qbh_run_w4u8_direct_n_gate_up_pair(
-                header, shared, buffers, worker, gate_prefetch,
+                header, shared, buffers, worker, pool, gate_prefetch,
                 mlp_arena + gate_up_layout.vtcm_activation_offset,
-                gate_native, up_native) != 0) {
+                gate_native, up_native, middle_native,
+                swiglu_rows) != 0) {
             return -1;
         }
     } else {
@@ -13949,31 +14209,46 @@ static int qbh_run_w4u8_direct_n_mlp(
         2U * (QBH_BLOCK_INTERMEDIATE / QBH_HMX_OUTPUT_CHANNELS /
               header->w4u8_decode_direct_n_gate_up_batch_n_tiles);
 
-    start = HAP_perf_get_qtimer_count();
-    for (uint32_t tile = 0U;
-         tile < QBH_BLOCK_INTERMEDIATE / QBH_HMX_OUTPUT_CHANNELS;
-         ++tile) {
-        qbh_mlp_gate_up_lut_hvx(
-            gate_native + (size_t)tile * QBH_HMX_OUTPUT_BYTES,
-            up_native + (size_t)tile * QBH_HMX_OUTPUT_BYTES,
-            middle_native + (size_t)tile * QBH_HMX_OUTPUT_BYTES,
-            swiglu_bytes,
-            (const uint16_t *)buffers->w4u8_silu_lut,
-            buffers->w4u8_gather_scratch);
+    if (header->w4u8_decode_direct_n_gate_up_swiglu_stream != 0U) {
+        const uint32_t tile_count =
+            QBH_BLOCK_INTERMEDIATE / QBH_HMX_OUTPUT_CHANNELS;
         if (swiglu_rows == QBH_BLOCK_W4U8_SWIGLU_DECODE_ROWS) {
-            ++header->w4u8_decode_swiglu_row4_call_count;
+            header->w4u8_decode_swiglu_row4_call_count += tile_count;
             header->w4u8_decode_swiglu_vector_count +=
-                swiglu_bytes / sizeof(HVX_Vector);
+                tile_count * swiglu_bytes / sizeof(HVX_Vector);
             if (header->w4u8_decode_swiglu_padding_poison != 0U) {
-                qbh_w4u8_poison_swiglu_padding(
-                    middle_native +
-                        (size_t)tile * QBH_HMX_OUTPUT_BYTES,
-                    tile);
-                ++header->w4u8_decode_swiglu_padding_poison_count;
+                header->w4u8_decode_swiglu_padding_poison_count +=
+                    tile_count;
             }
         }
+    } else {
+        start = HAP_perf_get_qtimer_count();
+        for (uint32_t tile = 0U;
+             tile < QBH_BLOCK_INTERMEDIATE / QBH_HMX_OUTPUT_CHANNELS;
+             ++tile) {
+            qbh_mlp_gate_up_lut_hvx(
+                gate_native + (size_t)tile * QBH_HMX_OUTPUT_BYTES,
+                up_native + (size_t)tile * QBH_HMX_OUTPUT_BYTES,
+                middle_native + (size_t)tile * QBH_HMX_OUTPUT_BYTES,
+                swiglu_bytes,
+                (const uint16_t *)buffers->w4u8_silu_lut,
+                buffers->w4u8_gather_scratch);
+            if (swiglu_rows == QBH_BLOCK_W4U8_SWIGLU_DECODE_ROWS) {
+                ++header->w4u8_decode_swiglu_row4_call_count;
+                header->w4u8_decode_swiglu_vector_count +=
+                    swiglu_bytes / sizeof(HVX_Vector);
+                if (header->w4u8_decode_swiglu_padding_poison != 0U) {
+                    qbh_w4u8_poison_swiglu_padding(
+                        middle_native +
+                            (size_t)tile * QBH_HMX_OUTPUT_BYTES,
+                        tile);
+                    ++header->w4u8_decode_swiglu_padding_poison_count;
+                }
+            }
+        }
+        header->activation_ticks +=
+            HAP_perf_get_qtimer_count() - start;
     }
-    header->activation_ticks += HAP_perf_get_qtimer_count() - start;
     if (header->generation_boundary_audit_enabled != 0U ||
         header->numerical_audit_enabled != 0U) {
         qbh_mix_observed_hash(
@@ -19895,7 +20170,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                     (header->w4u8_decode_direct_n_mask &
                      QBH_BLOCK_W4U8_DIRECT_N_MLP) != 0U
                 ? qbh_run_w4u8_direct_n_mlp(
-                      header, shared, buffers, worker, &gate_prefetch,
+                      header, shared, buffers, worker, w4f16_pool,
+                      &gate_prefetch,
                       w4u8_mlp_native_input_enabled,
                       w4u8_mlp_native_output_enabled)
                 : qbh_run_w4u8_streaming_mlp(

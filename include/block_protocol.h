@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(95)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(200)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(96)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(201)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -771,6 +771,7 @@ struct qbh_block_header {
     uint32_t w4u8_decode_direct_n_gate_up_batch_n_tiles;
     uint32_t w4u8_decode_direct_n_gate_up_continuous;
     uint32_t w4u8_decode_direct_n_o_gate_prefetch;
+    uint32_t w4u8_decode_direct_n_gate_up_swiglu_stream;
     uint32_t w4u8_decode_direct_n_qkv_batch_n_tiles;
     uint32_t w4u8_decode_swiglu_rows;
     uint32_t w4u8_decode_swiglu_padding_poison;
@@ -969,6 +970,12 @@ struct qbh_block_header {
     uint32_t w4u8_o_gate_prefetch_consume_count;
     uint64_t w4u8_o_gate_prefetch_wait_ticks;
     uint64_t w4u8_o_gate_prefetch_lifetime_ticks;
+    uint32_t w4u8_gate_up_swiglu_publish_count;
+    uint32_t w4u8_gate_up_swiglu_consume_count;
+    uint32_t w4u8_gate_up_swiglu_overlap_observed;
+    uint64_t w4u8_gate_up_swiglu_worker_ticks;
+    uint64_t w4u8_gate_up_swiglu_ready_wait_ticks;
+    uint64_t w4u8_gate_up_swiglu_join_wait_ticks;
     uint32_t w4u8_o_batch_n_tiles_observed;
     uint32_t w4u8_o_batch_count;
     uint32_t w4u8_av_requant_rows_observed;
