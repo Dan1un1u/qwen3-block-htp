@@ -6,6 +6,41 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0205
+    slug: w4u8-direct-n-down-batch4
+    title: Direct-W4 decode Down-projection batch4 command granularity
+    parent: EXP-0204
+    variants:
+      - evidence_valid_EXP0204_Down_batch2_control
+      - direct_W4_Down_batch4_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0205-w4u8-direct-n-down-batch4
+    source_commits: []
+    record: docs/experiments/EXP-0205.md
+    approval_ref: 'User message 2026-09-05: 开始decode优化loop'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0205-w4u8-direct-n-down-batch4
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    evidence:
+      source_parent_experiment: EXP-0204
+      source_parent_commit: 79319bf1d5f41953d522b582300d7e80d0975605
+      direct_control: same_binary_EXP0204_direct_W4_Down_batch2
+      candidate: direct_W4_Down_batch4_using_existing_safe_compressed_slots
+      hypothesis: halve_Down_command_and_weight_DMA_descriptor_granularity_without_changing_weight_bytes_or_HMX_tile_work
+      optimization_scope: decode_only_Down_projection_batch_size_protocol_host_DSP_selector_telemetry_and_experiment_tools
+      forbidden_changes: weights_values_scales_qparams_arithmetic_QKV_Gate_Up_SwiGLU_Attention_O_residual_norm_cache_LM_head_M64_prefill_F16F16_W4F16_QNN
+      correctness_gate: byte_exact_hidden_cache_selected_codes_and_tokens
+      physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_and_HMX_tile_pairs_reduced_Down_commands_and_DMA_descriptors
+      short_gate: five_rotated_pairs_with_strict_Down_wall_and_decode_speed_pass
+      formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      selected_baseline_changed: false
   - id: EXP-0204
     slug: w4u8-direct-n-o-batch8
     title: Direct-W4 decode O-projection batch8 command granularity
@@ -13,14 +48,15 @@ experiments:
     variants:
       - evidence_valid_EXP0201_O_batch4_control
       - direct_W4_O_batch8_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0204-w4u8-direct-n-o-batch8
-    source_commits: []
+    source_commits:
+      - 79319bf1d5f41953d522b582300d7e80d0975605
     record: docs/experiments/EXP-0204.md
     approval_ref: 'User message 2026-09-05: 开始decode优化loop'
     runtime:
@@ -28,6 +64,7 @@ experiments:
       source_branch: codex/exp-0204-w4u8-direct-n-o-batch8
       approved_on: '2026-09-05'
       started_on: '2026-09-05'
+      completed_on: '2026-09-05'
     evidence:
       source_parent_experiment: EXP-0201
       source_parent_commit: f22a12f0b935da5853ea487eb8ab5a6e7c49db5b
@@ -40,6 +77,25 @@ experiments:
       physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_and_HMX_tile_pairs_reduced_O_commands_and_DMA_descriptors
       short_gate: five_rotated_pairs_with_strict_O_wall_and_decode_speed_pass
       formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0204/20260905_short_gate_79319bf'
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0204/20260905_formal_79319bf'
+      control_decode_tokens_per_second: 43.389197
+      candidate_decode_tokens_per_second: 43.997668
+      decode_speed_percent: 1.402356
+      control_decode_latency_ms: 23.047212
+      candidate_decode_latency_ms: 22.728477
+      control_o_us_per_token: 1649.606
+      candidate_o_us_per_token: 1356.107
+      control_o_commands_per_token: 448
+      candidate_o_commands_per_token: 224
+      control_dma_descriptors_per_token: 3958
+      candidate_dma_descriptors_per_token: 3510
+      pair_wins: 10
+      short_summary_sha256: 378c78966ca651aedbc15a6c0b946d3d08760d031388d1b255c96e1c9a683111
+      short_report_sha256: 03daeae17075f4b3fe02f1c3eae430846f1a2ae8410e2de50fc7eb8191d89a02
+      formal_summary_sha256: 5a6861cff5726387c99af6a4ad1d8376ecf81bd8ea0093237ffab1d48d671967
+      formal_report_sha256: 43264c0c5eeb2d42346468c4202f53a2c981c8137a60ae76a5272c7428ee79f4
+      conclusion: direct_W4_O_batch8_halves_commands_and_reduces_O_wall_21_64_percent_while_improving_full_decode_1_40_percent
       selected_baseline_changed: false
   - id: EXP-0203
     slug: w4u8-direct-n-next-q-prefetch

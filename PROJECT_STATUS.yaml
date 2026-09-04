@@ -19,42 +19,64 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0204
-  next_experiment_number: 205
+  active_experiment: EXP-0205
+  next_experiment_number: 206
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0203
-  last_completed_source_commit: 765c4be5ae55c3c55a8bd4dbf4dcc154457d7297
-  provisional_source_parent: evidence_valid_EXP0201_Gate_Up_async_SwiGLU_candidate
+  last_completed_experiment: EXP-0204
+  last_completed_source_commit: 79319bf1d5f41953d522b582300d7e80d0975605
+  provisional_source_parent: evidence_valid_EXP0204_direct_W4_O_batch8_candidate
   device_execution_state: ready
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
   active_experiment_stage: registered_pending_source_branch_and_preflight
   active_experiment_evidence: null
   active_experiment_gate: not_run
-  active_recipe_specialization: W4U8_direct_n_decode_O_projection_batch8
+  active_recipe_specialization: W4U8_direct_n_decode_Down_projection_batch4
   active_experiment_contract:
-    id: EXP-0204
-    source_branch: codex/exp-0204-w4u8-direct-n-o-batch8
-    source_parent: evidence_valid_EXP0201_Gate_Up_async_SwiGLU_candidate
-    source_parent_commit: f22a12f0b935da5853ea487eb8ab5a6e7c49db5b
+    id: EXP-0205
+    source_branch: codex/exp-0205-w4u8-direct-n-down-batch4
+    source_parent: evidence_valid_EXP0204_direct_W4_O_batch8_candidate
+    source_parent_commit: 79319bf1d5f41953d522b582300d7e80d0975605
     execution_scope: real_token_ID_M64_prefill_then_192_continuous_W4U8_decode_steps_to_valid_length256
-    direct_control: evidence_valid_EXP0201_direct_W4_O_batch4
-    candidate: EXP0201_with_direct_W4_O_batch8
-    allowed_changes: decode_only_O_projection_batch_size_selector_telemetry_protocol_and_experiment_tools
-    forbidden_changes: weights_values_scales_qparams_arithmetic_QKV_Gate_Up_SwiGLU_Down_Attention_residual_norm_cache_LM_head_M64_prefill_F16F16_W4F16_QNN
+    direct_control: evidence_valid_EXP0204_direct_W4_Down_batch2
+    candidate: EXP0204_with_direct_W4_Down_batch4
+    allowed_changes: decode_only_Down_projection_batch_size_protocol_host_DSP_selector_telemetry_and_experiment_tools
+    forbidden_changes: weights_values_scales_qparams_arithmetic_QKV_Gate_Up_SwiGLU_Attention_O_residual_norm_cache_LM_head_M64_prefill_F16F16_W4F16_QNN
     correctness_gate: byte_exact_hidden_cache_selected_codes_and_tokens_to_EXP0201_control
-    physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_per_pass_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_and_HMX_tile_pairs_reduced_O_commands_and_DMA_descriptors
+    physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_per_pass_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_and_HMX_tile_pairs_reduced_Down_commands_and_DMA_descriptors
     performance_gate: five_pair_short_gate_then_ten_rotated_193_step_pairs_if_strictly_faster
     preservation_gate: M64_prefill_and_all_decode_math_remain_EXP0201_byte_exact
-    stop_conditions: reject_without_formal_if_O_or_full_decode_does_not_improve_and_apply_user_defined_consecutive_local_optimum_E2E_regression_gate
+    stop_conditions: reject_without_formal_if_Down_or_full_decode_does_not_improve_and_apply_user_defined_consecutive_local_optimum_E2E_regression_gate
   final_profiling_summary_standard: direct_full_stack_prefill_and_decode_tokens_per_second_plus_exact_Host_wall
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0203/20260905_short_gate_765c4be'
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0204/20260905_formal_79319bf'
+  latest_w4u8_direct_n_o_batch8_candidate:
+    id: EXP-0204
+    source_branch: codex/exp-0204-w4u8-direct-n-o-batch8
+    source_head: 79319bf1d5f41953d522b582300d7e80d0975605
+    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0204/20260905_short_gate_79319bf'
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0204/20260905_formal_79319bf'
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending
+    selected_baseline_changed: false
+    control_decode_tokens_per_second: 43.389197
+    candidate_decode_tokens_per_second: 43.997668
+    candidate_decode_speed_percent: 1.402356
+    control_o_us_per_token: 1649.606
+    candidate_o_us_per_token: 1356.107
+    pair_wins: 10
+    short_summary_sha256: 378c78966ca651aedbc15a6c0b946d3d08760d031388d1b255c96e1c9a683111
+    formal_summary_sha256: 5a6861cff5726387c99af6a4ad1d8376ecf81bd8ea0093237ffab1d48d671967
+    formal_report_sha256: 43264c0c5eeb2d42346468c4202f53a2c981c8137a60ae76a5272c7428ee79f4
+    conclusion: O_batch8_reduces_command_and_DMA_descriptor_granularity_and_improves_full_decode
+    next_decision: use_as_fastest_pending_parent_and_test_Down_batch4
   latest_w4u8_direct_n_next_q_prefetch_result:
     id: EXP-0203
     source_branch: codex/exp-0203-w4u8-direct-n-next-q-prefetch
