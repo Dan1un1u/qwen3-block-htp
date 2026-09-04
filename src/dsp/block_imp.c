@@ -1918,7 +1918,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
               QBH_BLOCK_W4U8_QK_PREP_DECODE_ROWS)) ||
         (header->w4u8_decode_direct_n_gate_up_batch_n_tiles != 4U &&
          header->w4u8_decode_direct_n_gate_up_batch_n_tiles != 8U &&
-         header->w4u8_decode_direct_n_gate_up_batch_n_tiles != 16U) ||
+         header->w4u8_decode_direct_n_gate_up_batch_n_tiles != 16U &&
+         header->w4u8_decode_direct_n_gate_up_batch_n_tiles != 32U) ||
         (header->w4u8_decode_direct_n_gate_up_batch_n_tiles != 4U &&
          (header->variant != QBH_BLOCK_W4U8 ||
           header->w4u8_decode_projection_mode !=
