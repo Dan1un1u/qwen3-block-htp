@@ -6657,6 +6657,8 @@ static int qbh_run_generation_head_w4u8(
                       : QBH_GENERATION_W4U8_CONTROL_GROUP_TILES));
     const uint32_t group_count =
         (n_tiles + group_limit - 1U) / group_limit;
+    const uint32_t direct_n_batch64 =
+        direct_n_decode != 0U && group_limit == 64U;
     const uint32_t expanded_capacity =
         header->mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 ||
                 header->generation_mode ==
@@ -6676,6 +6678,7 @@ static int qbh_run_generation_head_w4u8(
                 QBH_HMX_BIAS_BYTES};
     uint8_t *argmax_scratch = buffers->channel_scale;
     uint8_t *hmx_output = buffers->hmx_output;
+    uint8_t *hmx_activation = buffers->hmx_activation;
     uint8_t best_code = 0U;
     uint32_t best_token = 0U;
     const uint64_t head_start = HAP_perf_get_qtimer_count();
@@ -6687,11 +6690,12 @@ static int qbh_run_generation_head_w4u8(
         (direct_n_decode != 0U &&
          head->direct_n_weight_bytes != head->weight_bytes) ||
         n_tiles == 0U || group_count == 0U ||
-        group_limit * k_tiles *
+        (direct_n_batch64 == 0U &&
+         group_limit * k_tiles *
                 (direct_n_decode != 0U
                      ? QBH_W4_PACKED_TILE_BYTES
                      : QBH_HMX_WEIGHT_BYTES) >
-            expanded_capacity ||
+             expanded_capacity) ||
         (resident_bias == 0U &&
          2U * group_limit * QBH_HMX_BIAS_BYTES >
             2U * QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES *
@@ -6725,12 +6729,46 @@ static int qbh_run_generation_head_w4u8(
          * their non-overlapping VTCM ranges so batch sixteen does not change
          * the fixed arena plan or move the selected batch-eight buffers. */
         if (direct_n_decode != 0U) {
-            /* EXP-0196: after the final Transformer layer, both expanded
-             * weight arenas are phase-dead.  A batch of 32 direct-n tiles
-             * occupies exactly one MiB in each slot, so the LM head can
-             * double-buffer packed W4 without increasing the arena peak. */
-            compressed_slots[0] = buffers->expanded_weight;
-            compressed_slots[1] = buffers->expanded_weight_alt;
+            if (direct_n_batch64 != 0U) {
+                const uintptr_t phase_start =
+                    ((uintptr_t)resident_bias_table + head->bias_bytes +
+                     QBH_HMX_FP16_TILE_BYTES - 1U) &
+                    ~(uintptr_t)(QBH_HMX_FP16_TILE_BYTES - 1U);
+                uint8_t *persistent_limit = buffers->persistent_v_tail;
+                const uintptr_t phase_end =
+                    phase_start + 2U * compressed_group_bytes +
+                    activation_bytes + output_group_bytes + argmax_bytes;
+
+                if (persistent_limit == NULL ||
+                    (buffers->persistent_k_tail != NULL &&
+                     buffers->persistent_k_tail < persistent_limit)) {
+                    persistent_limit = buffers->persistent_k_tail;
+                }
+                if (persistent_limit == NULL ||
+                    phase_end > (uintptr_t)persistent_limit) {
+                    return -1;
+                }
+                /* EXP-0197 phase overlay: the resident bias occupies the
+                 * arena prefix and persistent KV tails occupy the suffix.
+                 * Everything between them is dead after final RMSNorm, so
+                 * carve two 2-MiB packed-W4 slots followed by activation,
+                 * output, and argmax scratch without changing the plan. */
+                compressed_slots[0] = (uint8_t *)phase_start;
+                compressed_slots[1] =
+                    compressed_slots[0] + compressed_group_bytes;
+                hmx_activation =
+                    compressed_slots[1] + compressed_group_bytes;
+                hmx_output = hmx_activation + activation_bytes;
+                argmax_scratch = hmx_output + output_group_bytes;
+            } else {
+                /* EXP-0196: after the final Transformer layer, both expanded
+                 * weight arenas are phase-dead.  A batch of 32 direct-n tiles
+                 * occupies exactly one MiB in each slot. */
+                compressed_slots[0] = buffers->expanded_weight;
+                compressed_slots[1] = buffers->expanded_weight_alt;
+                hmx_output = buffers->up;
+                argmax_scratch = hmx_output + output_group_bytes;
+            }
         } else {
             if (activation_bytes + compressed_group_bytes >
                     (size_t)QBH_BLOCK_M * QBH_BLOCK_MAX_K *
@@ -6747,9 +6785,9 @@ static int qbh_run_generation_head_w4u8(
             compressed_slots[0] =
                 buffers->hmx_activation + activation_bytes;
             compressed_slots[1] = buffers->attention_projection;
+            hmx_output = buffers->up;
+            argmax_scratch = hmx_output + output_group_bytes;
         }
-        hmx_output = buffers->up;
-        argmax_scratch = hmx_output + output_group_bytes;
     }
 
     if (header->generation_boundary_audit_enabled != 0U) {
@@ -6779,7 +6817,7 @@ static int qbh_run_generation_head_w4u8(
                 (size_t)(logical_rows - 1U) * QBH_BLOCK_HIDDEN,
             &header->qparams[QBH_BLOCK_QP_BLOCK_OUTPUT],
             (const __fp16 *)buffers->input_norm_weight,
-            buffers->hmx_activation,
+            hmx_activation,
             &header->generation_final_norm_output_qparam,
             1U, QBH_BLOCK_HIDDEN);
         header->generation_final_norm_ticks +=
@@ -6993,7 +7031,7 @@ static int qbh_run_generation_head_w4u8(
                 worker,
                 direct_n_decode != 0U
                     ? QBH_BLOCK_HMX_U8N4 : QBH_BLOCK_HMX_U8S8,
-                buffers->hmx_activation,
+                hmx_activation,
                 direct_n_decode != 0U
                     ? compressed_slots[slot] : expanded_slots[slot],
                 resident_bias_table +
@@ -7060,7 +7098,7 @@ static int qbh_run_generation_head_w4u8(
         hmx_start = HAP_perf_get_qtimer_count();
         qbh_hmx_start(
             worker, QBH_BLOCK_HMX_U8S8,
-            buffers->hmx_activation, expanded_slots[slot],
+            hmx_activation, expanded_slots[slot],
             resident_bias != 0U
                 ? resident_bias_table +
                     (size_t)first_n_tile * QBH_HMX_BIAS_BYTES
