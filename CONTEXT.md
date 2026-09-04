@@ -1467,10 +1467,21 @@ _Avoid_: using the persistent-cache-overlaid compressed slot upper half,
 retaining diagnostic serialization, or promoting without explicit user action
 
 **Direct-W4 QKV Batch-Thirty-Two Experiment**:
-The active EXP-0206 experiment compares QKV batch16 with batch32 using two
-known HMX-accessible one-MiB weight slots. It tests a real tradeoff: halving
-command groups and reducing DMA descriptors may help, but publishing complete
-Q/K heads later may reduce preparation overlap. Both QKV wall and complete
-decode token/s must improve.
+The completed EXP-0206 experiment compares QKV batch16 with batch32 using two
+known HMX-accessible one-MiB weight slots. It halves QKV groups and improves
+the median QKV interval by 3.4% and E2E decode by 0.73%, but only three of five
+rotated pairs win. Evidence and outputs are valid; the strict local gate fails,
+formal testing is skipped and adoption is rejected. Because median E2E did not
+regress, this is not a local-win/E2E-regression event.
 _Avoid_: assuming fewer groups are faster, changing Q/K math, applying the
 candidate to M64 prefill, or allocating an arbitrary HMX weight carrier
+
+**Direct-W4 Down Single-Descriptor Experiment**:
+The active EXP-0207 experiment retains EXP-0205's phase-safe Down batch4 HMX
+carrier but removes its obsolete safety split. One 393216-byte weight
+descriptor plus one bias descriptor replaces a synchronized half transfer and
+a second weight-plus-bias chain. Existing larger QKV, Gate/Up and LM-head DMA
+descriptors establish that transfer size is legal; the experiment tests whether
+the full prefetch improves Down and E2E without reopening the VTCM alias.
+_Avoid_: restoring the cache-overlaid carrier, changing Down HMX batch width,
+or treating fewer DMA descriptors as success without full-token acceleration

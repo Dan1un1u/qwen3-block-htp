@@ -6,6 +6,41 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0207
+    slug: w4u8-direct-n-down-batch4-single-dma
+    title: Direct-W4 Down batch4 single-descriptor DMA
+    parent: EXP-0205
+    variants:
+      - evidence_valid_EXP0205_Down_split3_control
+      - direct_W4_Down_batch4_weight1_bias1_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0207-w4u8-direct-n-down-single-dma
+    source_commits: []
+    record: docs/experiments/EXP-0207.md
+    approval_ref: 'User message 2026-09-05: 开始decode优化loop'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0207-w4u8-direct-n-down-single-dma
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    evidence:
+      source_parent_experiment: EXP-0205
+      source_parent_commit: fb2d4c0fb34aaee771f496dc1d9ea600a496a8fc
+      direct_control: same_binary_EXP0205_Down_batch4_split3_DMA
+      candidate: Down_batch4_one_weight_descriptor_plus_one_bias_descriptor_in_phase_safe_slots
+      hypothesis: remove_the_obsolete_half_group_wait_and_448_DMA_descriptors_after_proving_the_actual_failure_was_VTCM_aliasing
+      optimization_scope: decode_only_Down_batch4_DMA_submission_selector_telemetry_and_experiment_tools
+      forbidden_changes: weights_values_scales_qparams_arithmetic_QKV_Attention_O_Gate_Up_SwiGLU_Down_HMX_residual_norm_cache_LM_head_M64_prefill_F16F16_W4F16_QNN
+      correctness_gate: byte_exact_hidden_cache_selected_codes_and_tokens
+      physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_HMX_commands_and_tile_pairs_448_fewer_DMA_descriptors
+      short_gate: five_rotated_pairs_with_strict_Down_wall_and_decode_speed_pass
+      formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      selected_baseline_changed: false
   - id: EXP-0206
     slug: w4u8-direct-n-qkv-batch32
     title: Direct-W4 decode QKV batch32 command granularity
@@ -13,14 +48,15 @@ experiments:
     variants:
       - evidence_valid_EXP0205_QKV_batch16_control
       - direct_W4_QKV_batch32_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0206-w4u8-direct-n-qkv-batch32
-    source_commits: []
+    source_commits:
+      - 60c8ccf9b8c1a9f77bbb3ce0c6b7fba471a28026
     record: docs/experiments/EXP-0206.md
     approval_ref: 'User message 2026-09-05: 开始decode优化loop'
     runtime:
@@ -28,6 +64,7 @@ experiments:
       source_branch: codex/exp-0206-w4u8-direct-n-qkv-batch32
       approved_on: '2026-09-05'
       started_on: '2026-09-05'
+      completed_on: '2026-09-05'
     evidence:
       source_parent_experiment: EXP-0205
       source_parent_commit: fb2d4c0fb34aaee771f496dc1d9ea600a496a8fc
@@ -40,6 +77,27 @@ experiments:
       physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_and_HMX_tile_pairs_QKV_commands_224_to_112_and_reduced_DMA_descriptors
       short_gate: five_rotated_pairs_with_strict_QKV_wall_and_decode_speed_pass
       formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0206/20260905_short_gate_60c8ccf'
+      source_commit: 60c8ccf9b8c1a9f77bbb3ce0c6b7fba471a28026
+      correctness_gate_result: pass_byte_exact_QKV_prepared_QK_hidden_cache_codes_and_tokens
+      physical_gate_result: pass_8mib_zero_intermediate_ddr_zero_spill_one_fastrpc_one_hmx_no_qnn_zero_expansion_preserved_bytes_and_tiles
+      performance_gate_result: fail_only_3_of_5_pairs_despite_positive_median_QKV_and_E2E
+      control_decode_tokens_per_second: 44.361701
+      candidate_decode_tokens_per_second: 44.686094
+      decode_speed_percent: 0.731245
+      control_qkv_us_per_token: 2573.1
+      candidate_qkv_us_per_token: 2489.0
+      control_qkv_batches_per_token: 224
+      candidate_qkv_batches_per_token: 112
+      control_direct_n_hmx_commands_per_token: 1381
+      candidate_direct_n_hmx_commands_per_token: 1269
+      control_dma_descriptors_per_token: 3062
+      candidate_dma_descriptors_per_token: 2838
+      pair_wins: 3
+      local_optimum_e2e_regression_streak: 0
+      summary_sha256: cd0823c78d3788442d57a6c9d1c2cafed8a957fb9c20fe5a6086fce901dbec3a
+      report_sha256: 1747aefbf81fa75ad9edc5c778a57783cf6c026b0a2558e714fbe3bd341618a8
+      conclusion: batch32_reduces_QKV_wall_and_positive_median_E2E_but_fails_strict_all_pairs_gate
       selected_baseline_changed: false
   - id: EXP-0205
     slug: w4u8-direct-n-down-batch4
