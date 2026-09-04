@@ -1913,6 +1913,22 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          (header->variant != QBH_BLOCK_W4U8 ||
           header->w4u8_decode_qk_norm_rope_rows !=
               QBH_BLOCK_W4U8_QK_PREP_DECODE_ROWS)) ||
+        (header->w4u8_decode_swiglu_rows !=
+             QBH_BLOCK_W4U8_SWIGLU_FULL_ROWS &&
+         header->w4u8_decode_swiglu_rows !=
+             QBH_BLOCK_W4U8_SWIGLU_DECODE_ROWS) ||
+        (header->w4u8_decode_swiglu_rows !=
+             QBH_BLOCK_W4U8_SWIGLU_FULL_ROWS &&
+         (header->variant != QBH_BLOCK_W4U8 ||
+          header->w4u8_decode_projection_mode !=
+              QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
+          (header->w4u8_decode_direct_n_mask &
+           QBH_BLOCK_W4U8_DIRECT_N_MLP) == 0U)) ||
+        header->w4u8_decode_swiglu_padding_poison > 1U ||
+        (header->w4u8_decode_swiglu_padding_poison != 0U &&
+         (header->variant != QBH_BLOCK_W4U8 ||
+          header->w4u8_decode_swiglu_rows !=
+              QBH_BLOCK_W4U8_SWIGLU_DECODE_ROWS)) ||
         (header->w4u8_decode_lm_head_group_tiles != 8U &&
          header->w4u8_decode_lm_head_group_tiles != 16U) ||
         (header->w4u8_decode_lm_head_group_tiles != 8U &&
@@ -13410,6 +13426,48 @@ static int qbh_copy_w4u8_tail_audit(
     return 0;
 }
 
+static void qbh_w4u8_record_swiglu_rows(
+    struct qbh_block_header *header, uint32_t rows) {
+    if (header->w4u8_swiglu_rows_observed == 0U) {
+        header->w4u8_swiglu_rows_observed = rows;
+    } else if (header->w4u8_swiglu_rows_observed != rows) {
+        header->w4u8_swiglu_rows_observed = UINT32_MAX;
+    }
+}
+
+static void qbh_w4u8_poison_swiglu_padding(
+    uint8_t *tile, uint32_t tile_index) {
+    const HVX_Vector poison = Q6_V_vsplat_R(
+        (int)(UINT32_C(0x6da53cc7) ^
+              (tile_index * UINT32_C(0x01010101))));
+    const uint32_t valid_bytes =
+        QBH_BLOCK_W4U8_SWIGLU_DECODE_ROWS *
+        QBH_HMX_OUTPUT_CHANNELS;
+
+    for (uint32_t offset = valid_bytes;
+         offset < QBH_HMX_OUTPUT_BYTES;
+         offset += sizeof(HVX_Vector)) {
+        *(HVX_Vector *)(tile + offset) = poison;
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
+static uint64_t qbh_fnv1a64_u8_native_tile_row(
+    const uint8_t *tiles, uint32_t tile_count, uint32_t row) {
+    uint64_t hash = UINT64_C(1469598103934665603);
+    for (uint32_t tile = 0U; tile < tile_count; ++tile) {
+        const uint8_t *values = tiles +
+            (size_t)tile * QBH_HMX_OUTPUT_BYTES +
+            (size_t)row * QBH_HMX_OUTPUT_CHANNELS;
+        for (uint32_t channel = 0U;
+             channel < QBH_HMX_OUTPUT_CHANNELS; ++channel) {
+            hash ^= values[channel];
+            hash *= UINT64_C(1099511628211);
+        }
+    }
+    return hash;
+}
+
 static int qbh_run_w4u8_direct_n_mlp(
     struct qbh_block_header *header, uint8_t *shared,
     struct qbh_block_buffers *buffers,
@@ -13422,6 +13480,8 @@ static int qbh_run_w4u8_direct_n_mlp(
     uint8_t *up_native = buffers->up;
     uint8_t *middle_native;
     uint8_t *down_native;
+    uint32_t swiglu_rows;
+    uint32_t swiglu_bytes;
     uint64_t start;
 
     if (header == NULL || shared == NULL || buffers == NULL ||
@@ -13445,6 +13505,9 @@ static int qbh_run_w4u8_direct_n_mlp(
      * in the dedicated Down buffer instead; it is already sized for all
      * 64 physical rows and remains directly consumable by final residual. */
     down_native = buffers->down;
+    swiglu_rows = header->w4u8_decode_swiglu_rows;
+    swiglu_bytes = swiglu_rows * QBH_HMX_OUTPUT_CHANNELS;
+    qbh_w4u8_record_swiglu_rows(header, swiglu_rows);
     header->w4u8_mlp_vtcm_base_offset =
         (uint32_t)((uintptr_t)mlp_arena -
                    (uintptr_t)header->resource_vtcm_address);
@@ -13489,11 +13552,32 @@ static int qbh_run_w4u8_direct_n_mlp(
             gate_native + (size_t)tile * QBH_HMX_OUTPUT_BYTES,
             up_native + (size_t)tile * QBH_HMX_OUTPUT_BYTES,
             middle_native + (size_t)tile * QBH_HMX_OUTPUT_BYTES,
-            QBH_HMX_OUTPUT_BYTES,
+            swiglu_bytes,
             (const uint16_t *)buffers->w4u8_silu_lut,
             buffers->w4u8_gather_scratch);
+        if (swiglu_rows == QBH_BLOCK_W4U8_SWIGLU_DECODE_ROWS) {
+            ++header->w4u8_decode_swiglu_row4_call_count;
+            header->w4u8_decode_swiglu_vector_count +=
+                swiglu_bytes / sizeof(HVX_Vector);
+            if (header->w4u8_decode_swiglu_padding_poison != 0U) {
+                qbh_w4u8_poison_swiglu_padding(
+                    middle_native +
+                        (size_t)tile * QBH_HMX_OUTPUT_BYTES,
+                    tile);
+                ++header->w4u8_decode_swiglu_padding_poison_count;
+            }
+        }
     }
     header->activation_ticks += HAP_perf_get_qtimer_count() - start;
+    if (header->generation_boundary_audit_enabled != 0U ||
+        header->numerical_audit_enabled != 0U) {
+        qbh_mix_observed_hash(
+            &header->w4u8_decode_swiglu_valid_row_hash,
+            qbh_fnv1a64_u8_native_tile_row(
+                middle_native,
+                QBH_BLOCK_INTERMEDIATE / QBH_HMX_OUTPUT_CHANNELS,
+                0U));
+    }
     if (qbh_copy_w4u8_tail_audit(
             header, shared, QBH_BLOCK_U8_TAIL_MIDDLE_OFFSET,
             middle_native,
@@ -13616,6 +13700,8 @@ static int qbh_run_w4u8_streaming_mlp(
         QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES;
     header->w4u8_mlp_gate_up_expanded_slot_count =
         gate_up_layout.expanded_slot_count;
+    qbh_w4u8_record_swiglu_rows(
+        header, QBH_BLOCK_W4U8_SWIGLU_FULL_ROWS);
 
     if (activation_prepacked != 0U) {
         ++header->w4u8_mlp_input_pack_skipped;

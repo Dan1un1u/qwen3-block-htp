@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(85)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(188)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(86)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(189)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -175,6 +175,8 @@ enum qbh_w4u8_decode_direct_n_mask {
 #define QBH_BLOCK_W4U8_COMMON_OP_DECODE_ROWS UINT32_C(4)
 #define QBH_BLOCK_W4U8_QK_PREP_FULL_ROWS UINT32_C(64)
 #define QBH_BLOCK_W4U8_QK_PREP_DECODE_ROWS UINT32_C(4)
+#define QBH_BLOCK_W4U8_SWIGLU_FULL_ROWS UINT32_C(64)
+#define QBH_BLOCK_W4U8_SWIGLU_DECODE_ROWS UINT32_C(4)
 
 #define QBH_KV_CACHE_HMX_PADDED_CAPACITY(capacity_) \
     (((capacity_) + QBH_HMX_INPUT_CHANNELS - 1U) / \
@@ -766,6 +768,8 @@ struct qbh_block_header {
     uint32_t w4u8_decode_qk_padding_poison;
     uint32_t w4u8_decode_projection_mode;
     uint32_t w4u8_decode_direct_n_mask;
+    uint32_t w4u8_decode_swiglu_rows;
+    uint32_t w4u8_decode_swiglu_padding_poison;
 
     /* EXP-0147 logical-shape wrapper.  QBH_BLOCK_M remains the immutable
      * physical projection tile. */
@@ -980,6 +984,11 @@ struct qbh_block_header {
     uint32_t w4u8_qk_quarter_pair_count;
     uint32_t w4u8_decode_softmax_hvx_tile4_call_count;
     uint32_t w4u8_decode_softmax_hvx_tile4_mismatch_count;
+    uint32_t w4u8_swiglu_rows_observed;
+    uint32_t w4u8_decode_swiglu_row4_call_count;
+    uint32_t w4u8_decode_swiglu_vector_count;
+    uint32_t w4u8_decode_swiglu_padding_poison_count;
+    uint64_t w4u8_decode_swiglu_valid_row_hash;
     uint64_t u8_attention_actual_score_hash;
     uint64_t u8_attention_actual_probability_hash;
     uint64_t u8_attention_actual_av_hash;

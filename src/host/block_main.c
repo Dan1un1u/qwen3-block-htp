@@ -2887,6 +2887,8 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U32(w4u8_decode_qk_padding_poison);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_projection_mode);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_direct_n_mask);
+    QBH_REPLAY_PROFILE_U32(w4u8_decode_swiglu_rows);
+    QBH_REPLAY_PROFILE_U32(w4u8_decode_swiglu_padding_poison);
     QBH_REPLAY_PROFILE_U32(w4u8_qk_norm_rope_rows_observed);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_q_pair_row4_call_count);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_k_pair_row4_call_count);
@@ -2910,6 +2912,11 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U64(w4u8_final_residual_pool_wait_ticks);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_softmax_hvx_tile4_call_count);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_softmax_hvx_tile4_mismatch_count);
+    QBH_REPLAY_PROFILE_U32(w4u8_swiglu_rows_observed);
+    QBH_REPLAY_PROFILE_U32(w4u8_decode_swiglu_row4_call_count);
+    QBH_REPLAY_PROFILE_U32(w4u8_decode_swiglu_vector_count);
+    QBH_REPLAY_PROFILE_U32(w4u8_decode_swiglu_padding_poison_count);
+    QBH_REPLAY_PROFILE_U64(w4u8_decode_swiglu_valid_row_hash);
     QBH_REPLAY_PROFILE_I32(dsp_status);
     QBH_REPLAY_PROFILE_I32(numerical_status);
     QBH_REPLAY_PROFILE_U32(scan_logical_m_observed);
@@ -4149,6 +4156,9 @@ int main(int argc, char **argv) {
     uint32_t w4u8_decode_projection_mode =
         QBH_BLOCK_W4U8_DECODE_PROJECTION_EXPANDED_S8;
     uint32_t w4u8_decode_direct_n_mask = 0U;
+    uint32_t w4u8_decode_swiglu_rows =
+        QBH_BLOCK_W4U8_SWIGLU_FULL_ROWS;
+    uint32_t w4u8_decode_swiglu_padding_poison = 0U;
     uint32_t scan_mode = QBH_BLOCK_SCAN_DISABLED;
     uint32_t logical_m = QBH_BLOCK_M;
     uint32_t initial_kv_length = 0U;
@@ -4442,6 +4452,22 @@ int main(int argc, char **argv) {
             qbh_parse_u32(
                 value, &w4u8_decode_qk_padding_poison) != 0) {
             w4u8_decode_qk_padding_poison = UINT32_MAX;
+        }
+    }
+    {
+        const char *value = getenv("QBH_W4U8_DECODE_SWIGLU_ROWS");
+        if (value != NULL && value[0] != '\0' &&
+            qbh_parse_u32(value, &w4u8_decode_swiglu_rows) != 0) {
+            w4u8_decode_swiglu_rows = UINT32_MAX;
+        }
+    }
+    {
+        const char *value = getenv(
+            "QBH_W4U8_DECODE_SWIGLU_PADDING_POISON");
+        if (value != NULL && value[0] != '\0' &&
+            qbh_parse_u32(
+                value, &w4u8_decode_swiglu_padding_poison) != 0) {
+            w4u8_decode_swiglu_padding_poison = UINT32_MAX;
         }
     }
     {
@@ -4787,6 +4813,22 @@ int main(int argc, char **argv) {
          (variant != QBH_BLOCK_W4U8 ||
           w4u8_decode_qk_norm_rope_rows !=
               QBH_BLOCK_W4U8_QK_PREP_DECODE_ROWS)) ||
+        (w4u8_decode_swiglu_rows !=
+             QBH_BLOCK_W4U8_SWIGLU_FULL_ROWS &&
+         w4u8_decode_swiglu_rows !=
+             QBH_BLOCK_W4U8_SWIGLU_DECODE_ROWS) ||
+        (w4u8_decode_swiglu_rows !=
+             QBH_BLOCK_W4U8_SWIGLU_FULL_ROWS &&
+         (variant != QBH_BLOCK_W4U8 ||
+          w4u8_decode_projection_mode !=
+              QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
+          (w4u8_decode_direct_n_mask &
+           QBH_BLOCK_W4U8_DIRECT_N_MLP) == 0U)) ||
+        w4u8_decode_swiglu_padding_poison > 1U ||
+        (w4u8_decode_swiglu_padding_poison != 0U &&
+         (variant != QBH_BLOCK_W4U8 ||
+          w4u8_decode_swiglu_rows !=
+              QBH_BLOCK_W4U8_SWIGLU_DECODE_ROWS)) ||
         (w4u8_decode_lm_head_group_tiles != 8U &&
          w4u8_decode_lm_head_group_tiles != 16U) ||
         (w4u8_decode_lm_head_group_tiles != 8U &&
@@ -5941,6 +5983,10 @@ int main(int argc, char **argv) {
         w4u8_decode_projection_mode;
     header->w4u8_decode_direct_n_mask =
         w4u8_decode_direct_n_mask;
+    header->w4u8_decode_swiglu_rows =
+        w4u8_decode_swiglu_rows;
+    header->w4u8_decode_swiglu_padding_poison =
+        w4u8_decode_swiglu_padding_poison;
     header->w4u8_qk_pair_kernel_mode =
         w4u8_qk_pair_kernel_mode;
     header->scan_mode = scan_mode;

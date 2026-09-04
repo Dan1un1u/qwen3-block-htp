@@ -15,12 +15,14 @@ qk_norm_rope_rows="${QBH_EXP0179_QK_NORM_ROPE_ROWS:-64}"
 qk_padding_poison="${QBH_EXP0179_QK_PADDING_POISON:-0}"
 decode_projection_mode="${QBH_EXP0188_DECODE_PROJECTION_MODE:-expanded_s8}"
 decode_direct_n_mask="${QBH_W4U8_DECODE_DIRECT_N_MASK:-0}"
+decode_swiglu_rows="${QBH_EXP0189_SWIGLU_ROWS:-64}"
+decode_swiglu_padding_poison="${QBH_EXP0189_SWIGLU_PADDING_POISON:-0}"
 kv_cache_layout="${QBH_EXP0183_KV_CACHE_LAYOUT:-${QBH_EXP0182_KV_CACHE_LAYOUT:-${QBH_EXP0181_KV_CACHE_LAYOUT:-${QBH_EXP0180_KV_CACHE_LAYOUT:-hmx_native_u8_segmented_v4}}}}"
 audit="${QBH_GENERATION_BOUNDARY_AUDIT:-0}"
 audit_dir="${QBH_GENERATION_AUDIT_DIR:-}"
 layout_only="${QBH_LAYOUT_ONLY:-0}"
 remote_audit_dir="${remote_root}/generation-audit-batch${group_tiles}"
-runtime_env="QBH_W4U8_STREAM_FENCE=single_fence QBH_W4U8_GATE_UP_RING_SLOTS=16 QBH_W4U8_QKV_RING_EXPAND_WORKERS=3 QBH_KV_CACHE_LAYOUT=${kv_cache_layout} QBH_W4U8_PREFILL_CACHE_MODE=reuse QBH_W4U8_DELTA_RECONSTRUCTION=serial QBH_W4U8_DECODE_SOFTMAX=hvx_tile4 QBH_W4U8_DECODE_LM_HEAD_GROUP_TILES=${group_tiles} QBH_W4U8_DECODE_O_BATCH_N_TILES=${o_batch_tiles} QBH_W4U8_DECODE_AV_REQUANT_ROWS=${av_requant_rows} QBH_W4U8_DECODE_AV_PADDING_POISON=${av_padding_poison} QBH_W4U8_DECODE_COMMON_OP_ROWS=${common_op_rows} QBH_W4U8_DECODE_COMMON_PADDING_POISON=${common_padding_poison} QBH_W4U8_DECODE_QK_NORM_ROPE_ROWS=${qk_norm_rope_rows} QBH_W4U8_DECODE_QK_PADDING_POISON=${qk_padding_poison} QBH_W4U8_DECODE_PROJECTION_MODE=${decode_projection_mode} QBH_W4U8_DECODE_DIRECT_N_MASK=${decode_direct_n_mask} QBH_LAYOUT_ONLY=${layout_only}"
+runtime_env="QBH_W4U8_STREAM_FENCE=single_fence QBH_W4U8_GATE_UP_RING_SLOTS=16 QBH_W4U8_QKV_RING_EXPAND_WORKERS=3 QBH_KV_CACHE_LAYOUT=${kv_cache_layout} QBH_W4U8_PREFILL_CACHE_MODE=reuse QBH_W4U8_DELTA_RECONSTRUCTION=serial QBH_W4U8_DECODE_SOFTMAX=hvx_tile4 QBH_W4U8_DECODE_LM_HEAD_GROUP_TILES=${group_tiles} QBH_W4U8_DECODE_O_BATCH_N_TILES=${o_batch_tiles} QBH_W4U8_DECODE_AV_REQUANT_ROWS=${av_requant_rows} QBH_W4U8_DECODE_AV_PADDING_POISON=${av_padding_poison} QBH_W4U8_DECODE_COMMON_OP_ROWS=${common_op_rows} QBH_W4U8_DECODE_COMMON_PADDING_POISON=${common_padding_poison} QBH_W4U8_DECODE_QK_NORM_ROPE_ROWS=${qk_norm_rope_rows} QBH_W4U8_DECODE_QK_PADDING_POISON=${qk_padding_poison} QBH_W4U8_DECODE_PROJECTION_MODE=${decode_projection_mode} QBH_W4U8_DECODE_DIRECT_N_MASK=${decode_direct_n_mask} QBH_W4U8_DECODE_SWIGLU_ROWS=${decode_swiglu_rows} QBH_W4U8_DECODE_SWIGLU_PADDING_POISON=${decode_swiglu_padding_poison} QBH_LAYOUT_ONLY=${layout_only}"
 runtime_args="2 32 rms_rope_softmax on off fused_pool6_shuffle4 serial control hvx w4u8_streaming_persistent_mlp_hvx 3 64 u8_log2_gqa_qkv_overlap_vgather_vdeal_fused_qk_requant_hmx_batch_lut_templates_gqa_batch_dependency_stream_softmax_shuffle4 6 w4u8_mlp_io_qkv_o qkvo_batch4_qk_head_pairs hvx_tree_qk_batched_rsqrt_shared_rope_parallel_input control 4 4 4 2"
 
 case "${group_tiles}" in
@@ -71,6 +73,25 @@ case "${decode_projection_mode}" in
 expanded_s8|direct_n) ;;
 *) printf 'invalid EXP-0188 decode projection mode: %s\n' "${decode_projection_mode}" >&2; exit 2 ;;
 esac
+case "${decode_swiglu_rows}" in
+4|64) ;;
+*) printf 'invalid EXP-0189 SwiGLU rows: %s\n' "${decode_swiglu_rows}" >&2; exit 2 ;;
+esac
+case "${decode_swiglu_padding_poison}" in
+0|1) ;;
+*) printf 'invalid EXP-0189 SwiGLU padding poison: %s\n' "${decode_swiglu_padding_poison}" >&2; exit 2 ;;
+esac
+if [[ "${decode_swiglu_rows}" == 4 &&
+      ("${decode_projection_mode}" != direct_n ||
+       $((decode_direct_n_mask & 4)) -eq 0) ]]; then
+    printf 'four-row SwiGLU requires direct-n MLP\n' >&2
+    exit 2
+fi
+if [[ "${decode_swiglu_padding_poison}" == 1 &&
+      "${decode_swiglu_rows}" != 4 ]]; then
+    printf 'SwiGLU padding poison requires four-row SwiGLU\n' >&2
+    exit 2
+fi
 if [[ "${common_padding_poison}" == 1 && "${common_op_rows}" != 4 ]]; then
     printf 'common padding poison requires four-row common ops\n' >&2
     exit 2
