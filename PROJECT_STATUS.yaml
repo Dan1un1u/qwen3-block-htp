@@ -19,16 +19,16 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0174
-  next_experiment_number: 175
+  active_experiment: EXP-0175
+  next_experiment_number: 176
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0173
-  last_completed_source_commit: 9e30f822731da3b5d0d924babe7ccb5cb4142f94
+  last_completed_experiment: EXP-0174
+  last_completed_source_commit: 1e0adcc695b3485d234b7dc22ec12ff9a83a45fd
   provisional_source_parent: eligible_EXP0173_W4U8_decode_LM_head_batch16_candidate
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
@@ -36,24 +36,58 @@ current_scope:
   active_experiment_stage: approved_pending_preflight
   active_experiment_evidence: null
   active_experiment_gate: not_run
-  active_recipe_specialization: W4U8_decode_Gate_Up_intra_command_pair_publication
+  active_recipe_specialization: W4U8_decode_Gate_Up_prequeued_pair_ready_publication
   active_experiment_contract:
-    id: EXP-0174
-    source_branch: codex/exp-0174-w4u8-decode-gate-up-inline-publish
+    id: EXP-0175
+    source_branch: codex/exp-0175-w4u8-decode-gate-up-pair-ready
     source_parent: eligible_EXP0173_W4U8_decode_LM_head_batch16_candidate
     source_parent_commit: 9e30f822731da3b5d0d924babe7ccb5cb4142f94
     execution_scope: real_token_ID_M64_prefill_then_continuous_W4U8_decode
     direct_control: EXP0173_batch8_post_command_Gate_Up_publication_with_LM_head_batch16
-    candidates: decode_M1_inline_pair_publication_batch8_and_batch16
-    allowed_changes: decode_only_Gate_Up_HMX_batch_width_per_output_expanded_slot_release_pair_publication_telemetry_and_experiment_tools
+    candidates: decode_M1_prequeued_activation_tasks_with_pair_ready_signal_batch8_and_batch16
+    allowed_changes: decode_only_Gate_Up_HMX_batch_width_prequeued_activation_tasks_pair_ready_signal_telemetry_and_experiment_tools
     forbidden_changes: prefill_math_weights_qparams_ring_capacity_pair_slot_capacity_SwiGLU_math_Down_QKV_Attention_O_cache_RMSNorm_embedding_feedback_LM_head_F16F16_W4F16_QNN
     correctness_gate: byte_exact_stage_tokens_codes_hashes_and_independent_reference
     physical_gate: exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_timed_intermediate_or_full_logit_DDR_zero_spill_fill_zero_unattributed_ticks
     performance_gate: bounded_Gate_Up_and_complete_decode_wall_then_ten_rotated_pairs_higher_direct_decode_tokens_per_second
-    stop_conditions: no_inline_cell_beats_control_rejects_without_formal_full_stack_run
+    stop_conditions: no_pair_ready_cell_beats_control_rejects_without_formal_full_stack_run
   final_profiling_summary_standard: direct_full_stack_prefill_and_decode_tokens_per_second_plus_exact_Host_wall
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0173/20260904T_exp0173_9e30f82_formal'
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0174/20260904T_exp0174_993fc52_short_gate'
+  latest_w4u8_decode_gate_up_inline_candidate:
+    id: EXP-0174
+    source_branch: codex/exp-0174-w4u8-decode-gate-up-inline-publish
+    source_head: 1e0adcc695b3485d234b7dc22ec12ff9a83a45fd
+    runtime_source_commit: 993fc52109fdda9d9911fc3eeccb62bc97cb0842
+    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0174/20260904T_exp0174_993fc52_short_gate'
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    selected_baseline_changed: false
+    execution_unit: real_token_ID_M64_prefill_then_16_continuous_W4U8_decode_steps
+    implementation: HMX_worker_releases_each_expanded_slot_and_pushes_each_completed_Gate_Up_pair_to_the_HVX_queue_inside_the_batch
+    correctness_gate: pass_all15_sessions_byte_exact_hashes_and_identical_tokens
+    semantic_gate: disabled_by_user_contract
+    physical_gate: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_pass_no_QNN_zero_unattributed_ticks
+    performance_gate: fail_both_inline_cells_slower_in_Gate_Up_and_direct_decode
+    direct_end_to_end:
+      control_decode_host_us_per_token: 49094.951000
+      inline_batch8_decode_host_us_per_token: 51008.636188
+      inline_batch16_decode_host_us_per_token: 51111.774188
+      control_decode_tokens_per_second: 20.368693
+      inline_batch8_decode_tokens_per_second: 19.604523
+      inline_batch16_decode_tokens_per_second: 19.564964
+      inline_batch8_speed_percent: -3.751689
+      inline_batch16_speed_percent: -3.945907
+    Gate_Up_us:
+      control: 16672.936000
+      inline_batch8: 18607.077000
+      inline_batch16: 18579.951000
+    diagnosis: queue_mutex_and_semaphore_work_inside_the_single_HMX_owner_serializes_the_matrix_pipeline_and_raises_HMX_attributed_time_more_than_early_SwiGLU_publication_can_hide
+    conclusion: per_output_heavy_callback_is_rejected_but_lightweight_prequeued_pair_ready_notification_remains_a_distinct_hypothesis
+    short_gate_report_sha256: 83774b617632043c7b270ed925638e77ba0311c1c39c29dd2ec505968a529770
+    summary_sha256: 5b42777ff12f85bf23d69d7184648b67fb56a88f3a75e5f4ec96f04c69c67aca
   latest_w4u8_decode_lm_head_batch16_candidate:
     id: EXP-0173
     source_branch: codex/exp-0173-w4u8-decode-lm-head-batch16

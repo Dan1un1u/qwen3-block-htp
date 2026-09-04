@@ -6,6 +6,39 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0175
+    slug: w4u8-decode-gate-up-pair-ready
+    title: Decode W4U8 Gate/Up prequeued pair-ready publication
+    parent: EXP-0173
+    variants:
+      - batch8_post_command_control
+      - batch8_prequeued_pair_ready
+      - batch16_prequeued_pair_ready
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: bounded-three-cell-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0175-w4u8-decode-gate-up-pair-ready
+    source_commits: []
+    record: docs/experiments/EXP-0175.md
+    approval_ref: 'User message 2026-09-04: 同意晋升。开启loop优化，针对decode，尽量不中断。'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0175-w4u8-decode-gate-up-pair-ready
+      approved_on: '2026-09-04'
+    evidence:
+      source_parent_experiment: EXP-0173
+      source_parent_commit: 9e30f822731da3b5d0d924babe7ccb5cb4142f94
+      execution_unit: real_token_ID_M64_prefill_then_continuous_W4U8_decode
+      direct_control: EXP0173_batch8_post_command_Gate_Up_publication_with_LM_head_batch16
+      candidates: decode_M1_prequeued_activation_tasks_with_pair_ready_signal_batch8_and_batch16
+      optimization_scope: decode_only_Gate_Up_HMX_batch_width_prequeued_activation_tasks_pair_ready_notification_telemetry_and_tools
+      forbidden_changes: prefill_math_weights_qparams_ring_capacity_pair_slots_SwiGLU_Down_QKV_Attention_O_cache_RMSNorm_embedding_feedback_LM_head_F16F16_W4F16_QNN
+      short_gate: byte_exact_requested_publication_geometry_and_lower_Gate_Up_plus_complete_decode_wall
+      formal_gate: ten_rotated_pairs_selected_candidate_strictly_faster_direct_decode_with_all_correctness_and_physical_contracts
+      selected_baseline_changed: false
   - id: EXP-0174
     slug: w4u8-decode-gate-up-inline-publish
     title: Decode W4U8 Gate/Up intra-command pair publication
@@ -14,20 +47,23 @@ experiments:
       - batch8_post_command_control
       - batch8_inline_pair_publish
       - batch16_inline_pair_publish
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: bounded-three-cell-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0174-w4u8-decode-gate-up-inline-publish
-    source_commits: []
+    source_commits:
+      - 1e0adcc695b3485d234b7dc22ec12ff9a83a45fd
     record: docs/experiments/EXP-0174.md
     approval_ref: 'User message 2026-09-04: 同意晋升。开启loop优化，针对decode，尽量不中断。'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0174-w4u8-decode-gate-up-inline-publish
       approved_on: '2026-09-04'
+      started_on: '2026-09-04'
+      completed_on: '2026-09-04'
     evidence:
       source_parent_experiment: EXP-0173
       source_parent_commit: 9e30f822731da3b5d0d924babe7ccb5cb4142f94
@@ -38,6 +74,21 @@ experiments:
       forbidden_changes: prefill_math_weights_qparams_ring_capacity_pair_slots_SwiGLU_Down_QKV_Attention_O_cache_RMSNorm_embedding_feedback_LM_head_F16F16_W4F16_QNN
       short_gate: byte_exact_requested_publication_geometry_and_lower_Gate_Up_plus_complete_decode_wall
       formal_gate: ten_rotated_pairs_selected_candidate_strictly_faster_direct_decode_with_all_correctness_and_physical_contracts
+      runtime_source_commit: 993fc52109fdda9d9911fc3eeccb62bc97cb0842
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0174/20260904T_exp0174_993fc52_short_gate'
+      correctness_gate_result: pass_all15_sessions_byte_exact_hashes_and_identical_tokens
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_no_qnn_zero_unattributed_ticks
+      performance_gate_result: fail_inline_batch8_minus3_751689_percent_inline_batch16_minus3_945907_percent_direct_decode
+      direct_end_to_end:
+        control_decode_host_us_per_token: 49094.951000
+        inline_batch8_decode_host_us_per_token: 51008.636188
+        inline_batch16_decode_host_us_per_token: 51111.774188
+        control_decode_tokens_per_second: 20.368693
+        inline_batch8_decode_tokens_per_second: 19.604523
+        inline_batch16_decode_tokens_per_second: 19.564964
+      diagnosis: in_HMX_owner_queue_mutex_and_semaphore_callbacks_raise_Gate_Up_by_about_10_3_percent
+      short_gate_report_sha256: 83774b617632043c7b270ed925638e77ba0311c1c39c29dd2ec505968a529770
+      summary_sha256: 5b42777ff12f85bf23d69d7184648b67fb56a88f3a75e5f4ec96f04c69c67aca
       selected_baseline_changed: false
   - id: EXP-0173
     slug: w4u8-decode-lm-head-batch16
