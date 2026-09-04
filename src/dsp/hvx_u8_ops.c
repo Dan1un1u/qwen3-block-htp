@@ -1138,7 +1138,8 @@ static __attribute__((noinline)) void
 qbh_qk_norm_rope_pair_pack_rows_shuffle4(
     const uint8_t *first_head_tiles,
     const uint8_t *second_head_tiles,
-    uint32_t first_row, uint8_t *row_cache) {
+    uint32_t first_row, uint32_t row_count,
+    uint8_t *row_cache) {
     const uint8_t *head_tiles[2] = {
         first_head_tiles, second_head_tiles,
     };
@@ -1147,7 +1148,7 @@ qbh_qk_norm_rope_pair_pack_rows_shuffle4(
         uint8_t *pair_cache = row_cache +
             (size_t)pair * QBH_QK_PAIR_RSQRT_ROWS * QBH_HVX_BYTES;
         for (uint32_t local_row = 0U;
-             local_row < QBH_QK_PAIR_RSQRT_ROWS; local_row += 4U) {
+             local_row < row_count; local_row += 4U) {
             const size_t row_offset =
                 (size_t)(first_row + local_row) *
                     QBH_HMX_INPUT_CHANNELS;
@@ -1185,7 +1186,8 @@ qbh_qk_norm_rope_pair_pack_rows_shuffle4(
 static __attribute__((noinline)) void
 qbh_qk_norm_rope_pair_store_rows_shuffle4(
     uint8_t *first_head_tiles, uint8_t *second_head_tiles,
-    uint32_t first_row, const uint8_t *row_cache) {
+    uint32_t first_row, uint32_t row_count,
+    const uint8_t *row_cache) {
     uint8_t *head_tiles[2] = {
         first_head_tiles, second_head_tiles,
     };
@@ -1194,7 +1196,7 @@ qbh_qk_norm_rope_pair_store_rows_shuffle4(
         const uint8_t *pair_cache = row_cache +
             (size_t)pair * QBH_QK_PAIR_RSQRT_ROWS * QBH_HVX_BYTES;
         for (uint32_t local_row = 0U;
-             local_row < QBH_QK_PAIR_RSQRT_ROWS; local_row += 4U) {
+             local_row < row_count; local_row += 4U) {
             const HVX_Vector *rows = (const HVX_Vector *)(pair_cache +
                 (size_t)local_row * QBH_HVX_BYTES);
             const HVX_VectorPair row01 = Q6_W_vshuff_VVR(
@@ -1226,7 +1228,8 @@ static void qbh_qk_norm_rope_pair_batched_rsqrt(
     const uint8_t *first_head_tiles,
     const uint8_t *second_head_tiles,
     const struct qbh_block_qparam *input_qparam,
-    uint32_t first_row, uint8_t *row_cache,
+    uint32_t first_row, uint32_t row_count,
+    uint8_t *row_cache,
     float inverse_sqrt[2][QBH_QK_PAIR_RSQRT_ROWS]) {
     const float input_scale = input_qparam->scale;
     const uint32_t simd_row_pack =
@@ -1235,11 +1238,12 @@ static void qbh_qk_norm_rope_pair_batched_rsqrt(
 
     if (simd_row_pack != 0U) {
         qbh_qk_norm_rope_pair_pack_rows_shuffle4(
-            first_head_tiles, second_head_tiles, first_row, row_cache);
+            first_head_tiles, second_head_tiles, first_row,
+            row_count, row_cache);
     }
 
     for (uint32_t local_row = 0U;
-         local_row < QBH_QK_PAIR_RSQRT_ROWS; ++local_row) {
+         local_row < row_count; ++local_row) {
         const uint32_t row = first_row + local_row;
         uint8_t *row_values[2] = {
             row_cache +
@@ -1331,13 +1335,13 @@ void qbh_hvx_qk_norm_rope_u8_native_head(
     asm volatile("barrier" ::: "memory");
 }
 
-void qbh_hvx_qk_norm_rope_u8_native_head_pair(
+static void qbh_hvx_qk_norm_rope_u8_native_head_pair_impl(
     uint8_t *first_head_tiles, uint8_t *second_head_tiles,
     const struct qbh_block_qparam *input_qparam,
     const struct qbh_block_qparam *output_qparam,
     const __fp16 *gamma, const __fp16 *cosine,
     const __fp16 *sine, uint8_t *rsqrt_scratch,
-    const uint8_t *rope_sf32_cache) {
+    const uint8_t *rope_sf32_cache, uint32_t rows) {
     uint8_t row_values[2][QBH_HVX_BYTES]
         __attribute__((aligned(QBH_HVX_BYTES)));
     float inverse_sqrt[2][QBH_QK_PAIR_RSQRT_ROWS]
@@ -1352,15 +1356,23 @@ void qbh_hvx_qk_norm_rope_u8_native_head_pair(
         QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE;
 
     qbh_qk_norm_rope_load_gamma_sf32(gamma, &gamma_sf32);
-    for (uint32_t first_row = 0U; first_row < QBH_BLOCK_M;
+    for (uint32_t first_row = 0U; first_row < rows;
          first_row += QBH_QK_PAIR_RSQRT_ROWS) {
+        const uint32_t row_count =
+            rows - first_row < QBH_QK_PAIR_RSQRT_ROWS
+                ? rows - first_row
+                : QBH_QK_PAIR_RSQRT_ROWS;
         if (batched_rsqrt != 0U) {
+            if (row_count != QBH_QK_PAIR_RSQRT_ROWS) {
+                *(HVX_Vector *)inverse_sqrt =
+                    Q6_V_vsplat_R(0x3f800000);
+            }
             qbh_qk_norm_rope_pair_batched_rsqrt(
                 first_head_tiles, second_head_tiles, input_qparam,
-                first_row, rsqrt_scratch, inverse_sqrt);
+                first_row, row_count, rsqrt_scratch, inverse_sqrt);
         }
         for (uint32_t local_row = 0U;
-             local_row < QBH_QK_PAIR_RSQRT_ROWS; ++local_row) {
+             local_row < row_count; ++local_row) {
             const uint32_t row = first_row + local_row;
             uint8_t *active_values[2] = {
                 batched_rsqrt != 0U
@@ -1437,7 +1449,64 @@ void qbh_hvx_qk_norm_rope_u8_native_head_pair(
             QBH_BLOCK_W4U8_QK_PAIR_QUARTER_TILED_SIMD_IO) {
             qbh_qk_norm_rope_pair_store_rows_shuffle4(
                 first_head_tiles, second_head_tiles,
-                first_row, rsqrt_scratch);
+                first_row, row_count, rsqrt_scratch);
+        }
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
+void qbh_hvx_qk_norm_rope_u8_native_head_pair(
+    uint8_t *first_head_tiles, uint8_t *second_head_tiles,
+    const struct qbh_block_qparam *input_qparam,
+    const struct qbh_block_qparam *output_qparam,
+    const __fp16 *gamma, const __fp16 *cosine,
+    const __fp16 *sine, uint8_t *rsqrt_scratch,
+    const uint8_t *rope_sf32_cache) {
+    qbh_hvx_qk_norm_rope_u8_native_head_pair_impl(
+        first_head_tiles, second_head_tiles,
+        input_qparam, output_qparam, gamma, cosine, sine,
+        rsqrt_scratch, rope_sf32_cache, QBH_BLOCK_M);
+}
+
+void qbh_hvx_qk_norm_rope_u8_native_head_pair_rows(
+    uint8_t *first_head_tiles, uint8_t *second_head_tiles,
+    const struct qbh_block_qparam *input_qparam,
+    const struct qbh_block_qparam *output_qparam,
+    const __fp16 *gamma, const __fp16 *cosine,
+    const __fp16 *sine, uint8_t *rsqrt_scratch,
+    const uint8_t *rope_sf32_cache, uint32_t rows) {
+    if (rows == 0U || rows > QBH_BLOCK_M || rows % 4U != 0U) {
+        return;
+    }
+    qbh_hvx_qk_norm_rope_u8_native_head_pair_impl(
+        first_head_tiles, second_head_tiles,
+        input_qparam, output_qparam, gamma, cosine, sine,
+        rsqrt_scratch, rope_sf32_cache, rows);
+}
+
+void qbh_hvx_poison_u8_native_head_pair_padding(
+    uint8_t *first_head_tiles, uint8_t *second_head_tiles,
+    uint32_t first_padding_row) {
+    const HVX_Vector poison = Q6_V_vsplat_R(0x5ac39e71);
+    uint8_t *heads[2] = {first_head_tiles, second_head_tiles};
+    const uint32_t first_byte =
+        first_padding_row * QBH_HMX_INPUT_CHANNELS;
+
+    if (first_padding_row >= QBH_BLOCK_M ||
+        first_byte % sizeof(HVX_Vector) != 0U) {
+        return;
+    }
+    for (uint32_t head = 0U; head < 2U; ++head) {
+        for (uint32_t tile = 0U;
+             tile < QBH_BLOCK_HEAD_DIM / QBH_HMX_INPUT_CHANNELS;
+             ++tile) {
+            uint8_t *tile_base = heads[head] +
+                (size_t)tile * QBH_HMX_ACTIVATION_BYTES;
+            for (uint32_t offset = first_byte;
+                 offset < QBH_HMX_ACTIVATION_BYTES;
+                 offset += sizeof(HVX_Vector)) {
+                *(HVX_Vector *)(tile_base + offset) = poison;
+            }
         }
     }
     asm volatile("barrier" ::: "memory");
@@ -1561,7 +1630,8 @@ void qbh_hvx_qk_norm_rope_u8_native_k_head_pair(
         if (batched_rsqrt != 0U) {
             qbh_qk_norm_rope_pair_batched_rsqrt(
                 first_head_tiles, second_head_tiles, input_qparam,
-                first_row, rsqrt_scratch, inverse_sqrt);
+                first_row, QBH_QK_PAIR_RSQRT_ROWS,
+                rsqrt_scratch, inverse_sqrt);
         }
         for (uint32_t local_row = 0U;
              local_row < QBH_QK_PAIR_RSQRT_ROWS; ++local_row) {
@@ -1679,7 +1749,8 @@ void qbh_hvx_qk_norm_rope_u8_native_k_head_pair(
             QBH_BLOCK_W4U8_QK_PAIR_QUARTER_TILED_SIMD_IO) {
             qbh_qk_norm_rope_pair_store_rows_shuffle4(
                 first_head_tiles, second_head_tiles,
-                first_row, rsqrt_scratch);
+                first_row, QBH_QK_PAIR_RSQRT_ROWS,
+                rsqrt_scratch);
         }
     }
 

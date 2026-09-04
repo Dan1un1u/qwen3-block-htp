@@ -2647,6 +2647,16 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U32(w4u8_post_residual_direct_row4_call_count);
     QBH_REPLAY_PROFILE_U32(w4u8_final_residual_direct_row4_call_count);
     QBH_REPLAY_PROFILE_U32(w4u8_common_padding_poison_count);
+    QBH_REPLAY_PROFILE_U32(w4u8_decode_qk_norm_rope_rows);
+    QBH_REPLAY_PROFILE_U32(w4u8_decode_qk_padding_poison);
+    QBH_REPLAY_PROFILE_U32(w4u8_qk_norm_rope_rows_observed);
+    QBH_REPLAY_PROFILE_U32(w4u8_decode_q_pair_row4_call_count);
+    QBH_REPLAY_PROFILE_U32(w4u8_decode_k_pair_row4_call_count);
+    QBH_REPLAY_PROFILE_U32(w4u8_decode_qk_rows_processed);
+    QBH_REPLAY_PROFILE_U32(w4u8_decode_k_temp_carrier_skipped_count);
+    QBH_REPLAY_PROFILE_U32(w4u8_qk_padding_poison_pair_count);
+    QBH_REPLAY_PROFILE_U64(w4u8_decode_q_valid_row_hash);
+    QBH_REPLAY_PROFILE_U64(w4u8_decode_k_valid_row_hash);
     QBH_REPLAY_PROFILE_U32(w4u8_input_norm_task_count);
     QBH_REPLAY_PROFILE_U64(w4u8_input_norm_main_work_ticks);
     QBH_REPLAY_PROFILE_U64(w4u8_input_norm_worker_work_ticks);
@@ -3849,6 +3859,9 @@ int main(int argc, char **argv) {
     uint32_t w4u8_decode_common_op_rows =
         QBH_BLOCK_W4U8_COMMON_OP_FULL_ROWS;
     uint32_t w4u8_decode_common_padding_poison = 0U;
+    uint32_t w4u8_decode_qk_norm_rope_rows =
+        QBH_BLOCK_W4U8_QK_PREP_FULL_ROWS;
+    uint32_t w4u8_decode_qk_padding_poison = 0U;
     uint32_t scan_mode = QBH_BLOCK_SCAN_DISABLED;
     uint32_t logical_m = QBH_BLOCK_M;
     uint32_t initial_kv_length = 0U;
@@ -4128,6 +4141,22 @@ int main(int argc, char **argv) {
         }
     }
     {
+        const char *value = getenv("QBH_W4U8_DECODE_QK_NORM_ROPE_ROWS");
+        if (value != NULL && value[0] != '\0' &&
+            qbh_parse_u32(
+                value, &w4u8_decode_qk_norm_rope_rows) != 0) {
+            w4u8_decode_qk_norm_rope_rows = UINT32_MAX;
+        }
+    }
+    {
+        const char *value = getenv("QBH_W4U8_DECODE_QK_PADDING_POISON");
+        if (value != NULL && value[0] != '\0' &&
+            qbh_parse_u32(
+                value, &w4u8_decode_qk_padding_poison) != 0) {
+            w4u8_decode_qk_padding_poison = UINT32_MAX;
+        }
+    }
+    {
         const char *mode = getenv("QBH_SCAN_MODE");
         const char *logical = getenv("QBH_LOGICAL_M");
         const char *past = getenv("QBH_KV_CACHE_LENGTH");
@@ -4381,6 +4410,18 @@ int main(int argc, char **argv) {
          (variant != QBH_BLOCK_W4U8 ||
           w4u8_decode_common_op_rows !=
               QBH_BLOCK_W4U8_COMMON_OP_DECODE_ROWS)) ||
+        (w4u8_decode_qk_norm_rope_rows !=
+             QBH_BLOCK_W4U8_QK_PREP_FULL_ROWS &&
+         w4u8_decode_qk_norm_rope_rows !=
+             QBH_BLOCK_W4U8_QK_PREP_DECODE_ROWS) ||
+        (w4u8_decode_qk_norm_rope_rows !=
+             QBH_BLOCK_W4U8_QK_PREP_FULL_ROWS &&
+         variant != QBH_BLOCK_W4U8) ||
+        w4u8_decode_qk_padding_poison > 1U ||
+        (w4u8_decode_qk_padding_poison != 0U &&
+         (variant != QBH_BLOCK_W4U8 ||
+          w4u8_decode_qk_norm_rope_rows !=
+              QBH_BLOCK_W4U8_QK_PREP_DECODE_ROWS)) ||
         (w4u8_decode_lm_head_group_tiles != 8U &&
          w4u8_decode_lm_head_group_tiles != 16U) ||
         (w4u8_decode_lm_head_group_tiles != 8U &&
@@ -5488,6 +5529,10 @@ int main(int argc, char **argv) {
         w4u8_decode_common_op_rows;
     header->w4u8_decode_common_padding_poison =
         w4u8_decode_common_padding_poison;
+    header->w4u8_decode_qk_norm_rope_rows =
+        w4u8_decode_qk_norm_rope_rows;
+    header->w4u8_decode_qk_padding_poison =
+        w4u8_decode_qk_padding_poison;
     header->w4u8_qk_pair_kernel_mode =
         w4u8_qk_pair_kernel_mode;
     header->scan_mode = scan_mode;

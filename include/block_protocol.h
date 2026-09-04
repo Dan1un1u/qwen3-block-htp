@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(77)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(178)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(78)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(179)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -153,6 +153,8 @@ enum qbh_w4u8_decode_softmax_mode {
 #define QBH_BLOCK_W4U8_AV_REQUANT_DECODE_ROWS UINT32_C(4)
 #define QBH_BLOCK_W4U8_COMMON_OP_FULL_ROWS UINT32_C(64)
 #define QBH_BLOCK_W4U8_COMMON_OP_DECODE_ROWS UINT32_C(4)
+#define QBH_BLOCK_W4U8_QK_PREP_FULL_ROWS UINT32_C(64)
+#define QBH_BLOCK_W4U8_QK_PREP_DECODE_ROWS UINT32_C(4)
 
 #define QBH_KV_CACHE_HMX_PADDED_CAPACITY(capacity_) \
     (((capacity_) + QBH_HMX_INPUT_CHANNELS - 1U) / \
@@ -694,6 +696,8 @@ struct qbh_block_header {
     uint32_t w4u8_decode_av_padding_poison;
     uint32_t w4u8_decode_common_op_rows;
     uint32_t w4u8_decode_common_padding_poison;
+    uint32_t w4u8_decode_qk_norm_rope_rows;
+    uint32_t w4u8_decode_qk_padding_poison;
 
     /* EXP-0147 logical-shape wrapper.  QBH_BLOCK_M remains the immutable
      * physical projection tile. */
@@ -896,6 +900,14 @@ struct qbh_block_header {
     uint32_t w4u8_post_residual_direct_row4_call_count;
     uint32_t w4u8_final_residual_direct_row4_call_count;
     uint32_t w4u8_common_padding_poison_count;
+    uint32_t w4u8_qk_norm_rope_rows_observed;
+    uint32_t w4u8_decode_q_pair_row4_call_count;
+    uint32_t w4u8_decode_k_pair_row4_call_count;
+    uint32_t w4u8_decode_qk_rows_processed;
+    uint32_t w4u8_decode_k_temp_carrier_skipped_count;
+    uint32_t w4u8_qk_padding_poison_pair_count;
+    uint64_t w4u8_decode_q_valid_row_hash;
+    uint64_t w4u8_decode_k_valid_row_hash;
     uint32_t w4u8_qk_pair_kernel_mode_observed;
     uint32_t w4u8_qk_quarter_pair_count;
     uint32_t w4u8_decode_softmax_hvx_tile4_call_count;

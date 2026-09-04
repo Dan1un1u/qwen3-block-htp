@@ -147,6 +147,18 @@ void qbh_hvx_qk_norm_rope_u8_native_head_pair(
     const __fp16 *sine, uint8_t *rsqrt_scratch,
     const uint8_t *rope_sf32_cache);
 
+void qbh_hvx_qk_norm_rope_u8_native_head_pair_rows(
+    uint8_t *first_head_tiles, uint8_t *second_head_tiles,
+    const struct qbh_block_qparam *input_qparam,
+    const struct qbh_block_qparam *output_qparam,
+    const __fp16 *gamma, const __fp16 *cosine,
+    const __fp16 *sine, uint8_t *rsqrt_scratch,
+    const uint8_t *rope_sf32_cache, uint32_t rows);
+
+void qbh_hvx_poison_u8_native_head_pair_padding(
+    uint8_t *first_head_tiles, uint8_t *second_head_tiles,
+    uint32_t first_padding_row);
+
 void qbh_hvx_qk_norm_rope_u8_native_k_head(
     uint8_t *head_tiles,
     const struct qbh_block_qparam *input_qparam,
