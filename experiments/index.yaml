@@ -6,6 +6,44 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0190
+    slug: w4u8-direct-n-gate-up-batch8
+    title: Direct-n decode Gate/Up batch-eight phase overlay
+    parent: EXP-0189
+    variants:
+      - accepted_EXP0189_direct_n_Gate_Up_batch4_control
+      - direct_n_decode_Gate_Up_batch8_phase_overlay_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0190-w4u8-direct-n-gate-up-batch8
+    source_commits: []
+    record: docs/experiments/EXP-0190.md
+    approval_ref: 'User message 2026-09-05: 开始decode优化loop'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0190-w4u8-direct-n-gate-up-batch8
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    evidence:
+      source_parent_experiment: EXP-0189
+      source_parent_commit: 15becf9cf8bda0d9320d8cdcb43fab108c865ef8
+      source_parent_role: accepted_W4U8_direct_n_row4_SwiGLU_baseline
+      direct_control: same_binary_EXP0189_direct_n_Gate_Up_batch4
+      candidate: decode_only_Gate_Up_batch8_using_phase_dead_expanded_weight_slots
+      hypothesis: doubling_direct_n_Gate_Up_N_tiles_per_HMX_command_halves_command_and_DMA_descriptor_granularity_while_preserving_weight_bytes_and_math
+      optimization_scope: decode_only_direct_n_Gate_Up_batch_size_weight_slot_phase_alias_dispatch_telemetry_and_tools
+      forbidden_changes: weights_values_scales_qparams_projection_math_SwiGLU_Down_QKVO_Attention_cache_M64_prefill_LM_head_F16F16_W4F16_QNN
+      correctness_gate: byte_exact_hidden_hashes_codes_tokens_and_cache_to_batch4_control_plus_independent_integer_references
+      physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN_zero_transformer_expansion_identical_weight_bytes_and_half_Gate_Up_direct_n_HMX_commands
+      short_gate: five_rotated_pairs_with_correctness_physical_and_strict_decode_speed_pass
+      formal_gate: ten_rotated_193_step_pairs_with_strictly_higher_direct_full_stack_decode_tokens_per_second_than_EXP0189
+      prefill_preservation: M64_prefill_uses_unchanged_EXP0189_full64_Expanded_S8_path
+      stop_condition: reject_without_formal_if_short_correctness_physical_or_performance_gate_fails
+      selected_baseline_changed: false
   - id: EXP-0189
     slug: w4u8-direct-n-row4-swiglu
     title: Direct-n decode row-four SwiGLU

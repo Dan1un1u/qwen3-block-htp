@@ -1288,3 +1288,13 @@ Selected W4U8 Token-Generation Baseline under immutable tag
 _Avoid_: retrying the old Expanded-S8 schedule, applying row4 to M64 prefill,
 changing LUT or qparams, claiming dead padding is mathematically meaningful,
 or claiming semantic quality
+
+**Direct-N Decode Gate/Up Batch-Eight Candidate**:
+The active EXP-0190 hypothesis reuses decode-phase-dead Expanded-S8 VTCM
+buffers as two packed-W4 `weight.n` slots and doubles only Gate/Up direct-n
+batch size from four to eight output tiles.  It aims to halve HMX command and
+DMA descriptor granularity while preserving weight bytes, row-four SwiGLU,
+all mathematics and the complete EXP-0189 token path.
+_Avoid_: changing Down or QKVO in the same candidate, applying the alias during
+M64 prefill, counting fewer commands as success without higher full-stack
+decode token/s, or automatic baseline promotion
