@@ -6,7 +6,8 @@ grep -q '#define QBH_BLOCK_ABI_VERSION UINT32_C(90)' include/block_protocol.h
 grep -q '#define QBH_BLOCK_EXPERIMENT UINT32_C(195)' include/block_protocol.h
 grep -q 'QBH_BLOCK_W4U8_DIRECT_N_MAX_BATCH_N_TILES UINT32_C(32)' src/dsp/block_imp.c
 grep -q 'batch_tiles == 32U' src/dsp/block_imp.c
-grep -q '? buffers->post_norm_weight' src/dsp/block_imp.c
+grep -q '? buffers->rope_cos' src/dsp/block_imp.c
+grep -q 'batch_tiles \* QBH_HMX_BIAS_BYTES' src/dsp/block_imp.c
 grep -q 'w4u8_decode_direct_n_gate_up_batch_n_tiles != 32U' src/dsp/block_imp.c
 grep -q 'QBH_W4U8_DECODE_DIRECT_N_GATE_UP_BATCH_N_TILES' \
     src/host/block_main.c scripts/run_exp0173.sh scripts/run_exp0195.sh

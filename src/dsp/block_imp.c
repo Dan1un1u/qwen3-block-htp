@@ -8698,10 +8698,11 @@ static int qbh_run_w4u8_direct_n_projection(
             ? buffers->expanded_weight_alt : buffers->compressed_weight_alt};
     uint8_t *bias_slots[2] = {
         batch_tiles == 32U
-            ? buffers->input_norm_weight
+            ? buffers->rope_cos
             : buffers->scale_or_bias,
         batch_tiles == 32U
-            ? buffers->post_norm_weight
+            ? buffers->rope_cos +
+                  batch_tiles * QBH_HMX_BIAS_BYTES
             : (batch_tiles > QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES
                    ? buffers->input_norm_weight
                    : buffers->scale_or_bias +
