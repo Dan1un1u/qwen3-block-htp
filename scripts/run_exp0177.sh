@@ -20,7 +20,7 @@ case "${cell}" in
     *) printf 'invalid EXP-0177 cell: %s\n' "${cell}" >&2; exit 2 ;;
 esac
 
-EXP0173_REMOTE_ROOT=/data/local/tmp/qwen3-block-htp/exp0177-w4u8 \
+EXP0173_REMOTE_ROOT=/data/local/tmp/qwen3-block-htp/exp0173-exp0177-w4u8 \
 QBH_EXP0173_LM_HEAD_GROUP_TILES=16 \
 QBH_EXP0176_O_BATCH_TILES=8 \
 QBH_EXP0177_AV_REQUANT_ROWS="${av_requant_rows}" \
