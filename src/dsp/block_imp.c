@@ -2002,6 +2002,14 @@ static int qbh_header_valid(const struct qbh_block_header *header,
           (header->w4u8_decode_direct_n_mask &
            QBH_BLOCK_W4U8_DIRECT_N_MLP) == 0U ||
           header->w4u8_decode_direct_n_down_batch_n_tiles != 4U)) ||
+        header->w4u8_decode_direct_n_qkv_single_dma > 1U ||
+        (header->w4u8_decode_direct_n_qkv_single_dma != 0U &&
+         (header->variant != QBH_BLOCK_W4U8 ||
+          header->w4u8_decode_projection_mode !=
+              QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
+          (header->w4u8_decode_direct_n_mask &
+           QBH_BLOCK_W4U8_DIRECT_N_QKV) == 0U ||
+          header->w4u8_decode_direct_n_qkv_batch_n_tiles != 16U)) ||
         (header->w4u8_decode_swiglu_rows !=
              QBH_BLOCK_W4U8_SWIGLU_FULL_ROWS &&
          header->w4u8_decode_swiglu_rows !=
@@ -2775,10 +2783,9 @@ static int qbh_dma_wait_w4u8_batch_prefetch(
     return qbh_dma_wait_idle() == 0 ? 0 : -3;
 }
 
-/* The direct-N Down batch4 carrier is 393216 bytes.  Keep each user-DMA
- * transfer no larger than the 262144-byte size already proven by O batch8.
- * The first half completes as a standalone descriptor; the second half and
- * the combined bias then use the existing two-descriptor ordered chain. */
+/* Direct-N groups larger than the O-batch8-proven 262144-byte transfer use a
+ * conservative split by default.  Experiment selectors may opt a projection
+ * into one complete weight descriptor plus its ordered bias descriptor. */
 #define QBH_BLOCK_DIRECT_N_DMA_SINGLE_BYTES UINT32_C(262144)
 
 static int qbh_dma_start_w4u8_direct_n_prefetch(
@@ -8942,6 +8949,14 @@ static int qbh_run_w4u8_direct_n_projection(
     const uint32_t n_tiles = desc->n / QBH_HMX_OUTPUT_CHANNELS;
     const uint32_t tile_bytes =
         k_tiles * QBH_W4_PACKED_TILE_BYTES;
+    const uint32_t single_weight_descriptor =
+        desc == &header->projections[QBH_BLOCK_PROJ_DOWN]
+            ? header->w4u8_decode_direct_n_down_single_dma
+            : ((desc == &header->projections[QBH_BLOCK_PROJ_Q] ||
+                desc == &header->projections[QBH_BLOCK_PROJ_K] ||
+                desc == &header->projections[QBH_BLOCK_PROJ_V])
+                   ? header->w4u8_decode_direct_n_qkv_single_dma
+                   : 0U);
     uint32_t current_first = 0U;
     uint32_t current_tiles = n_tiles < batch_tiles
         ? n_tiles : batch_tiles;
@@ -8976,8 +8991,7 @@ static int qbh_run_w4u8_direct_n_projection(
         current_tiles * tile_bytes, bias_slots[0],
         shared + desc->bias_offset,
         current_tiles * QBH_HMX_BIAS_BYTES,
-        desc == &header->projections[QBH_BLOCK_PROJ_DOWN]
-            ? header->w4u8_decode_direct_n_down_single_dma : 0U,
+        single_weight_descriptor,
         &descriptor_count);
     if (result == 0) {
         result = qbh_dma_wait_w4u8_direct_n_prefetch(
@@ -9026,8 +9040,7 @@ static int qbh_run_w4u8_direct_n_projection(
                 shared + desc->bias_offset +
                     (size_t)next_first * QBH_HMX_BIAS_BYTES,
                 next_tiles * QBH_HMX_BIAS_BYTES,
-                desc == &header->projections[QBH_BLOCK_PROJ_DOWN]
-                    ? header->w4u8_decode_direct_n_down_single_dma : 0U,
+                single_weight_descriptor,
                 &descriptor_count);
             if (result == 0) {
                 result = qbh_dma_wait_w4u8_direct_n_prefetch(
