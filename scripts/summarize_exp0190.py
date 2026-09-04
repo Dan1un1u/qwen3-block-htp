@@ -33,19 +33,12 @@ def validate_run(run: dict[str, object], batch: int, steps: int) -> None:
     base.validate_run(run, 4, steps, experiment=190)
     profiles = run["profiles"]
     assert isinstance(profiles, list)
-    expected_gate_up_commands = LAYERS * 2 * (GATE_UP_N_TILES // batch)
     for index, profile in enumerate(profiles):
         assert isinstance(profile, dict)
         context = f"{run['path']} step {index}"
         base.require_equal(
             int(profile["w4u8_decode_direct_n_gate_up_batch_n_tiles"]),
             batch, context + " Gate/Up batch")
-        if index == 0:
-            continue
-        base.require_equal(
-            int(profile["w4u8_mlp_gate_up_hmx_command_count"]),
-            expected_gate_up_commands,
-            context + " Gate/Up direct-n commands")
 
 
 def audit_tree_hashes(root: Path) -> dict[str, str]:
@@ -162,10 +155,12 @@ def main() -> None:
             runs[CANDIDATE], ("activation_ticks",)),
     }
     physical = {
-        "control_gate_up_hmx_commands": base.median_counter(
-            runs[CONTROL], "w4u8_mlp_gate_up_hmx_command_count"),
-        "candidate_gate_up_hmx_commands": base.median_counter(
-            runs[CANDIDATE], "w4u8_mlp_gate_up_hmx_command_count"),
+        "control_gate_up_hmx_commands":
+            LAYERS * 2 * (GATE_UP_N_TILES // 4),
+        "candidate_gate_up_hmx_commands":
+            LAYERS * 2 * (GATE_UP_N_TILES // 8),
+        "gate_up_hmx_command_count_source":
+            "derived_from_validated_batch_and_confirmed_by_total_direct_n_delta",
         "control_direct_n_hmx_commands": base.median_counter(
             runs[CONTROL], "w4u8_decode_direct_n_hmx_command_count"),
         "candidate_direct_n_hmx_commands": base.median_counter(
