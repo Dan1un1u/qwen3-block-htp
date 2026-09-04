@@ -1398,14 +1398,22 @@ altering prefill or argmax order, using incomplete counters as performance, or
 claiming a win from fewer intended commands
 
 **Continuous Direct-N Gate-to-Up Projection Ring**:
-The active EXP-0198 hypothesis keeps the valid batch-thirty-two HMX-accessible
-weight slots and all arithmetic unchanged.  Gate and Up currently drain two
-independent three-group rings even though they share one activation.  The
-candidate flattens them into one six-group schedule, allowing first-Up weight
-DMA to overlap final-Gate HMX and removing one serialized projection-start
-bubble per layer.  Weight bytes, DMA descriptor count, HMX commands, tile pairs,
-outputs, M64 prefill and all non-Gate/Up modules must remain identical; only a
-strict full-decode and Gate/Up wall improvement can pass.
-_Avoid_: changing batch size, allocating new VTCM, moving SwiGLU into the ring,
-altering outputs or quantization, or treating a local overlap counter as an
-end-to-end win
+EXP-0198 flattened the two independent three-group batch-thirty-two Gate and
+Up calls into one six-group ring.  It preserved all arithmetic, commands,
+descriptors, tile pairs and weight bytes, while overlapping first-Up DMA with
+final-Gate HMX.  Short evidence won 5/5; the first formal set won 9/10 and an
+independent confirmation won 10/10.  Confirmation improved complete decode
+from 41.357 to 41.798 token/s and Gate/Up from 6781.887 to 6559.790 us/token.
+Evidence is valid and adoption is pending; it is the fastest pending parent.
+_Avoid_: changing the gate after observing noise, claiming prefill benefit,
+or describing pending evidence as an accepted baseline
+
+**Heterogeneous Direct-N Q16/KV8 Ring**:
+The active EXP-0199 hypothesis retains direct packed W4 and exact QKV math but
+uses sixteen output tiles for each Q group while K and V remain eight-tile
+whole-projection groups.  It should reduce ten QKV HMX groups per layer to six
+without reducing HMX tile pairs or weight bytes.  Only capacity-checked known
+HMX carriers may be used; correctness, QKV wall and full decode must all pass.
+_Avoid_: widening K/V beyond their eight tiles, changing Q/K preparation,
+reintroducing expansion, allocating arbitrary VTCM carriers, or accepting a
+local command-count win without end-to-end acceleration

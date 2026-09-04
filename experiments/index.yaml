@@ -6,6 +6,41 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0199
+    slug: w4u8-direct-n-q16-kv8-ring
+    title: Heterogeneous direct-n Q16/KV8 ring
+    parent: EXP-0198
+    variants:
+      - evidence_valid_EXP0198_Q8_KV8_control
+      - Q16_KV8_two_slot_direct_n_ring_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0199-w4u8-direct-n-q16-kv8-ring
+    source_commits: []
+    record: docs/experiments/EXP-0199.md
+    approval_ref: 'User message 2026-09-05: 开始decode优化loop'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0199-w4u8-direct-n-q16-kv8-ring
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    evidence:
+      source_parent_experiment: EXP-0198
+      source_parent_commit: 59284b2d0bec68103e9f8c96af93f000f8e16ad1
+      direct_control: same_binary_Q8_KV8_direct_n_ring
+      candidate: Q16_KV8_two_slot_direct_n_ring
+      hypothesis: reduce_QKV_groups_per_layer_from_ten_to_six_while_preserving_work_and_head_readiness
+      optimization_scope: decode_only_QKV_direct_n_batch_schedule_slot_mapping_telemetry_and_tools
+      forbidden_changes: weights_values_scales_qparams_InputNorm_Attention_O_MLP_residual_cache_LM_head_M64_prefill_F16F16_W4F16_QNN
+      correctness_gate: byte_exact_QKV_QK_preparation_hidden_cache_selected_codes_and_tokens
+      physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_and_HMX_tile_pairs
+      short_gate: five_rotated_pairs_with_strict_decode_and_QKV_speed_pass
+      formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      selected_baseline_changed: false
   - id: EXP-0198
     slug: w4u8-direct-n-gate-up-continuous-ring
     title: Continuous direct-n Gate-to-Up projection ring
@@ -13,14 +48,16 @@ experiments:
     variants:
       - evidence_valid_EXP0196_independent_Gate_Up_calls_control
       - continuous_batch32_Gate_to_Up_ring_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0198-w4u8-direct-n-gate-up-continuous-ring
-    source_commits: []
+    source_commits:
+      - d96355142f08a7a2c383faa64d5d2c588a54ba6b
+      - 59284b2d0bec68103e9f8c96af93f000f8e16ad1
     record: docs/experiments/EXP-0198.md
     approval_ref: 'User message 2026-09-05: 开始decode优化loop'
     runtime:
@@ -28,6 +65,7 @@ experiments:
       source_branch: codex/exp-0198-w4u8-direct-n-gate-up-continuous-ring
       approved_on: '2026-09-05'
       started_on: '2026-09-05'
+      completed_on: '2026-09-05'
     evidence:
       source_parent_experiment: EXP-0196
       source_parent_commit: c8e8b7d35a1aa93f04d1685ae791853f74d4a927
@@ -40,6 +78,13 @@ experiments:
       physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_DMA_descriptors_HMX_commands_and_tile_pairs
       short_gate: five_rotated_pairs_with_strict_decode_and_Gate_Up_speed_pass
       formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0198/20260905_short_gate_d963551'
+      first_formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0198/20260905_formal_59284b2'
+      confirmation_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0198/20260905_formal_confirmation_59284b2'
+      confirmation_decode_tokens_per_second: 41.798013
+      confirmation_decode_speed_percent: 1.067193
+      combined_formal_pair_wins: 19
+      combined_formal_pairs: 20
       selected_baseline_changed: false
   - id: EXP-0197
     slug: w4u8-direct-n-lm-head-batch64
