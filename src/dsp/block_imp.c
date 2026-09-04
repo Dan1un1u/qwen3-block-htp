@@ -6646,17 +6646,7 @@ static int qbh_run_generation_head_w4u8(
         const size_t argmax_bytes =
             (size_t)group_limit * QBH_HMX_OUTPUT_CHANNELS;
 
-        if (activation_bytes + compressed_group_bytes >
-                (size_t)QBH_BLOCK_M * QBH_BLOCK_MAX_K *
-                    sizeof(uint16_t) ||
-            (uintptr_t)buffers->attention_projection <
-                (uintptr_t)resident_bias_table + head->bias_bytes ||
-            (uintptr_t)buffers->up <
-                (uintptr_t)buffers->attention_projection ||
-            (uintptr_t)buffers->up -
-                    (uintptr_t)buffers->attention_projection <
-                compressed_group_bytes ||
-            output_group_bytes + argmax_bytes >
+        if (output_group_bytes + argmax_bytes >
                 (size_t)QBH_BLOCK_M * QBH_BLOCK_INTERMEDIATE) {
             return -1;
         }
@@ -6671,6 +6661,18 @@ static int qbh_run_generation_head_w4u8(
             compressed_slots[0] = buffers->expanded_weight;
             compressed_slots[1] = buffers->expanded_weight_alt;
         } else {
+            if (activation_bytes + compressed_group_bytes >
+                    (size_t)QBH_BLOCK_M * QBH_BLOCK_MAX_K *
+                        sizeof(uint16_t) ||
+                (uintptr_t)buffers->attention_projection <
+                    (uintptr_t)resident_bias_table + head->bias_bytes ||
+                (uintptr_t)buffers->up <
+                    (uintptr_t)buffers->attention_projection ||
+                (uintptr_t)buffers->up -
+                        (uintptr_t)buffers->attention_projection <
+                    compressed_group_bytes) {
+                return -1;
+            }
             compressed_slots[0] =
                 buffers->hmx_activation + activation_bytes;
             compressed_slots[1] = buffers->attention_projection;
