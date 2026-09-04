@@ -89,6 +89,8 @@ _Static_assert(
 #define QBH_BLOCK_MLP_CROUTON_RING_SLOTS \
     QBH_BLOCK_MLP_CROUTON_GROUPS
 #define QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS UINT32_C(3)
+#define QBH_BLOCK_W4U8_GATE_UP_PAIR_READY_HVX_WORKERS UINT32_C(4)
+#define QBH_BLOCK_W4U8_GATE_UP_PAIR_READY_WORKER_INDEX UINT32_C(3)
 #define QBH_BLOCK_W4U8_DOWN_HVX_WORKERS UINT32_C(6)
 #define QBH_BLOCK_W4U8_DOWN_PERSISTENT_HVX_WORKERS UINT32_C(5)
 #define QBH_BLOCK_W4U8_GATE_UP_PAIR_SLOTS UINT32_C(8)
@@ -1666,12 +1668,17 @@ static int qbh_header_valid(const struct qbh_block_header *header,
             QBH_BLOCK_W4U8_DELTA_RECONSTRUCTION_PIPELINE ||
         header->w4u8_decode_softmax_mode >
             QBH_BLOCK_W4U8_DECODE_SOFTMAX_HVX_TILE4 ||
+        header->w4u8_decode_gate_up_mode >
+            QBH_BLOCK_W4U8_DECODE_GATE_UP_PAIR_READY_BATCH16 ||
         (header->w4u8_decode_lm_head_group_tiles != 8U &&
          header->w4u8_decode_lm_head_group_tiles != 16U) ||
         (header->w4u8_decode_lm_head_group_tiles != 8U &&
          header->variant != QBH_BLOCK_W4U8) ||
         (header->w4u8_decode_softmax_mode !=
              QBH_BLOCK_W4U8_DECODE_SOFTMAX_SCALAR &&
+         header->variant != QBH_BLOCK_W4U8) ||
+        (header->w4u8_decode_gate_up_mode !=
+             QBH_BLOCK_W4U8_DECODE_GATE_UP_POST_BATCH8 &&
          header->variant != QBH_BLOCK_W4U8) ||
         (header->w4u8_prefill_cache_mode ==
              QBH_BLOCK_W4U8_PREFILL_CACHE_REUSE_ATTENTION_CARRIERS &&
@@ -2741,6 +2748,16 @@ static void qbh_hmx_worker_main(void *opaque) {
                                 ? request->batch_outputs[batch_index]
                                       .expected_generation
                                 : request->expected_generation;
+                        void *output_ready_semaphore =
+                            request->batch_output_count != 0U
+                                ? request->batch_outputs[batch_index]
+                                      .output_ready_semaphore
+                                : NULL;
+                        uint32_t *output_ready_count =
+                            request->batch_output_count != 0U
+                                ? request->batch_outputs[batch_index]
+                                      .output_ready_count
+                                : NULL;
                         int32_t stream_result;
 
                         if (expanded_weight_tiles == NULL ||
@@ -2748,7 +2765,9 @@ static void qbh_hmx_worker_main(void *opaque) {
                             (request->begin_output != 0U &&
                              bias_words == NULL) ||
                             (request->store_output != 0U &&
-                             output_tiles == NULL)) {
+                             output_tiles == NULL) ||
+                            ((output_ready_semaphore == NULL) !=
+                             (output_ready_count == NULL))) {
                             worker->command_status = AEE_EBADPARM;
                             break;
                         }
@@ -2767,6 +2786,12 @@ static void qbh_hmx_worker_main(void *opaque) {
                         streams += (uint32_t)stream_result;
                         if (request->store_output != 0U) {
                             qbh_hmx_store_u8_output(output_tiles);
+                        }
+                        if (output_ready_semaphore != NULL) {
+                            asm volatile("barrier" : : : "memory");
+                            ++*output_ready_count;
+                            qurt_sem_up((qurt_sem_t *)
+                                output_ready_semaphore);
                         }
                     }
                     worker->ready_wait_ticks +=
@@ -12680,8 +12705,8 @@ static void qbh_accumulate_w4u8_phase_metrics(
         gate_up_phase != 0U &&
                 qbh_physical_plan_is_streaming(layout->physical_plan)
             ? (layout->n_tiles +
-               QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES - 1U) /
-                  QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES
+               header->w4u8_mlp_gate_up_hmx_batch_n_tiles - 1U) /
+                  header->w4u8_mlp_gate_up_hmx_batch_n_tiles
             : gate_up_phase == 0U &&
                       layout->chunks_per_output == 2U
                   ? (layout->n_tiles +
@@ -12756,10 +12781,23 @@ static int qbh_run_w4u8_streaming_mlp(
     struct qbh_projection_layout down_layout;
     struct qbh_probe_header gate_up_phase;
     struct qbh_probe_header down_phase;
+    uint32_t pair_ready_mode =
+        header->scan_mode == QBH_BLOCK_SCAN_DECODE &&
+        header->logical_m == 1U &&
+        header->w4u8_decode_gate_up_mode !=
+            QBH_BLOCK_W4U8_DECODE_GATE_UP_POST_BATCH8;
+    uint32_t gate_up_hmx_batch =
+        pair_ready_mode != 0U &&
+                header->w4u8_decode_gate_up_mode ==
+                    QBH_BLOCK_W4U8_DECODE_GATE_UP_PAIR_READY_BATCH16
+            ? 16U : QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES;
+    uint32_t gate_up_hvx_workers =
+        pair_ready_mode != 0U
+            ? QBH_BLOCK_W4U8_GATE_UP_PAIR_READY_HVX_WORKERS
+            : QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS;
     struct qbh_w4_hmx_runner runner = {
         .context = worker,
-        .max_batch_outputs =
-            QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES,
+        .max_batch_outputs = gate_up_hmx_batch,
         .max_nonstreaming_batch_outputs =
             header->w4u8_down_hmx_batch_outputs,
         .max_chunks_per_command = 2U,
@@ -12784,6 +12822,7 @@ static int qbh_run_w4u8_streaming_mlp(
     uint8_t *mlp_arena = buffers->q;
     uint32_t pair_publish_count = 0U;
     uint32_t pair_consume_count = 0U;
+    uint32_t pair_ready_consume_count = 0U;
     uint64_t activation_work_ticks = 0U;
     uint64_t unpack_ticks = 0U;
     uint64_t start;
@@ -12797,7 +12836,7 @@ static int qbh_run_w4u8_streaming_mlp(
              header->mlp_mode) &&
          (hvx_pool == NULL ||
           hvx_pool->worker_count <
-              QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS)) ||
+              gate_up_hvx_workers)) ||
         qbh_init_w4u8_gate_up_layout(
             &gate_up_layout, header->w4u8_gate_up_ring_slots) != 0 ||
         qbh_init_w4u8_down_layout(&down_layout) != 0 ||
@@ -12815,11 +12854,15 @@ static int qbh_run_w4u8_streaming_mlp(
         header->w4u8_mlp_vtcm_plan_bytes = down_layout.vtcm_plan_bytes;
     }
     header->w4u8_mlp_gate_up_hvx_workers =
-        QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS;
+        gate_up_hvx_workers;
     header->w4u8_mlp_down_hvx_workers =
         QBH_BLOCK_W4U8_DOWN_HVX_WORKERS;
     header->w4u8_mlp_gate_up_hmx_batch_n_tiles =
-        QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES;
+        gate_up_hmx_batch;
+    header->w4u8_mlp_gate_up_pair_ready_worker_index =
+        pair_ready_mode != 0U
+            ? QBH_BLOCK_W4U8_GATE_UP_PAIR_READY_WORKER_INDEX
+            : UINT32_MAX;
     header->w4u8_mlp_gate_up_expanded_slot_count =
         gate_up_layout.expanded_slot_count;
 
@@ -12854,9 +12897,13 @@ static int qbh_run_w4u8_streaming_mlp(
             .pair_consume_count = &pair_consume_count,
             .activation_ticks = &activation_work_ticks,
             .stream_fence_mode = header->w4u8_stream_fence_mode,
+            .pair_ready_mode = pair_ready_mode,
+            .pair_ready_worker_index =
+                QBH_BLOCK_W4U8_GATE_UP_PAIR_READY_WORKER_INDEX,
+            .pair_ready_consume_count = &pair_ready_consume_count,
         };
         qbh_reset_w4u8_phase_header(
-            &gate_up_phase, QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS);
+            &gate_up_phase, gate_up_hvx_workers);
         start = HAP_perf_get_qtimer_count();
         if (qbh_block_mlp_uses_persistent_gate_up_hvx(
                 header->mlp_mode)) {
@@ -12867,7 +12914,7 @@ static int qbh_run_w4u8_streaming_mlp(
                 mlp_arena, &handoff, &runner, &hvx_runner);
             ++header->w4u8_gate_up_persistent_hvx_dispatch_count;
             header->w4u8_gate_up_persistent_hvx_worker_count +=
-                QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS;
+                gate_up_hvx_workers;
         } else {
             result = qbh_run_chunked_w4_pipeline_external(
                 &gate_up_phase, &gate_up_layout,
@@ -12875,16 +12922,24 @@ static int qbh_run_w4u8_streaming_mlp(
                 mlp_arena + gate_up_layout.vtcm_activation_offset,
                 mlp_arena, &handoff, &runner);
             header->w4u8_gate_up_transient_hvx_thread_count +=
-                QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS;
+                gate_up_hvx_workers;
         }
         header->gate_up_ticks += HAP_perf_get_qtimer_count() - start;
         header->w4u8_mlp_activation_work_ticks +=
             activation_work_ticks;
         header->w4u8_mlp_pair_publish_count += pair_publish_count;
         header->w4u8_mlp_pair_consume_count += pair_consume_count;
+        if (pair_ready_mode != 0U) {
+            header->w4u8_mlp_gate_up_pair_ready_publish_count +=
+                pair_publish_count;
+            header->w4u8_mlp_gate_up_pair_ready_consume_count +=
+                pair_ready_consume_count;
+        }
         if (result != AEE_SUCCESS ||
             pair_publish_count != gate_up_layout.n_tiles / 2U ||
-            pair_consume_count != pair_publish_count) {
+            pair_consume_count != pair_publish_count ||
+            (pair_ready_mode != 0U &&
+             pair_ready_consume_count != pair_publish_count)) {
             result = -1;
             goto relock;
         }
