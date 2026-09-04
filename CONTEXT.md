@@ -1251,3 +1251,19 @@ and Down gains survive the complete continuous-decode token boundary while M64
 prefill remains unchanged.
 _Avoid_: native four-bit arithmetic proof, single-row HMX kernel, accepted
 full-stack baseline, automatic M64 prefill optimization, changed W4 recipe
+
+**Full-Stack Decode Direct-N W4U8 Candidate**:
+The completed EXP-0188 candidate applies direct packed-W4 `weight.n` HMX input
+to Q/K/V/O and Gate/Up/Down across all 28 transformer layers, 196 projections
+per decode token.  The formal candidate intentionally retains the EXP-0185
+group-16 Expanded-S8 LM head because the tested direct-n LM-head schedule both
+changed tied U8 argmax results and ran slower.  Ten alternating 193-step pairs
+improve directly measured decode from 23.621560 to 27.623484 token/s
+(+16.943925%); all 1,930 paired hidden hashes and tokens are exact, all ten
+pairs win, and the 8 MiB VTCM, zero-intermediate-DDR, zero-spill/fill,
+one-FastRPC, one-HMX-owner and no-QNN contracts pass.  M64 prefill is unchanged.
+The result is evidence-valid and locally passes, but adoption is pending the
+user and the selected baseline remains EXP-0185.
+_Avoid_: claiming a true one-row HMX kernel, including LM head in direct-n,
+claiming prefill acceleration, automatic baseline promotion, or semantic
+quality

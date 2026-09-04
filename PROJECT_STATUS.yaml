@@ -7,7 +7,7 @@ project:
   source_root: /home/daniuniu/work/qwen3-block-htp
   memory_branch: codex/qwen3-block-project-memory
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
-  updated_on: '2026-09-04'
+  updated_on: '2026-09-05'
 toolchain:
   qnn_runtime: none
   qairt_runtime: none
@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0188
+  active_experiment: null
   next_experiment_number: 189
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,16 +27,16 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0187
-  last_completed_source_commit: 5e9ff6ade5ab10da8d3640d259e0867bc94cf422
-  provisional_source_parent: evidence_valid_EXP0187_direct_n_M1_projection_candidate
+  last_completed_experiment: EXP-0188
+  last_completed_source_commit: 17068d8b7d505381a4c524a7ad7cfe21c9f5abad
+  provisional_source_parent: evidence_valid_EXP0188_full_stack_decode_direct_n_candidate
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: registered_pending_source_branch_and_preflight
-  active_experiment_evidence: null
-  active_experiment_gate: not_run
-  active_recipe_specialization: W4U8_full_stack_decode_direct_n_projection_rollout
+  active_experiment_stage: completed_awaiting_user_adoption_decision
+  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0188/20260905_formal_direct_n'
+  active_experiment_gate: pass
+  active_recipe_specialization: W4U8_full_stack_decode_direct_n_candidate_complete
   active_experiment_contract:
     id: EXP-0188
     source_branch: codex/exp-0188-w4u8-full-stack-decode-direct-n
@@ -54,7 +54,39 @@ current_scope:
     stop_conditions: stop_before_prefill_direct_n_experiment_if_full_stack_decode_correctness_or_physical_gate_fails_or_direct_decode_does_not_improve
   final_profiling_summary_standard: direct_full_stack_prefill_and_decode_tokens_per_second_plus_exact_Host_wall
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0187/20260904_real_layer14_formal_5e9ff6a'
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0188/20260905_formal_direct_n'
+  latest_w4u8_full_stack_direct_n_candidate:
+    id: EXP-0188
+    source_branch: codex/exp-0188-w4u8-full-stack-decode-direct-n
+    source_head: 17068d8b7d505381a4c524a7ad7cfe21c9f5abad
+    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0188/short_gate_mask7'
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0188/20260905_formal_direct_n'
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending
+    selected_baseline_changed: false
+    implementation: decode_only_direct_integer_HMX_activation_ub_weight_n_for_196_QKV_O_Gate_Up_Down_transformer_projections
+    lm_head_disposition: retained_EXP0185_group16_expanded_S8_path_after_direct_n_LM_head_changed_U8_argmax_ties_and_was_slower
+    correctness_gate: pass_all_1930_formal_step_pairs_byte_exact_hidden_hash_and_token_sequence_with_zero_cache_mismatch
+    physical_gate: pass_exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN_zero_QKVO_and_MLP_expansion_for_all_reported_direct_n_projections
+    performance_gate: pass_candidate_won_10_of_10_rotated_193_step_pairs
+    direct_end_to_end:
+      control_prefill_tokens_per_second: 1277.275
+      candidate_prefill_tokens_per_second: 1274.424
+      control_decode_host_us_per_token: 42334.2
+      candidate_decode_host_us_per_token: 36201.1
+      control_decode_tokens_per_second: 23.621560
+      candidate_decode_tokens_per_second: 27.623484
+      candidate_decode_speed_percent: 16.943925
+    candidate_direct_projection_count_per_decode_token: 196
+    candidate_direct_weight_mib_per_decode_token: 672.0
+    candidate_expanded_S8_carrier_mib_avoided_per_decode_token: 1344.0
+    summary_sha256: 75283272e2b9dfe7d8457023f25f5c8d11d9d0d1032850f20c95b659dd8d39cf
+    report_sha256: 1606ddbead8d8e7e9789d3d6b90d9082431c795cc36637051ca5b9542587294f
+    static_gate_sha256: ef504692a3da1aca2002123da9dea09325c27d6c6c167f88240829ca217de843
+    conclusion: transformer_direct_n_removes_W4_to_S8_expansion_and_improves_full_stack_decode_16_94_percent_but_is_not_a_true_M1_HMX_kernel_and_does_not_include_LM_head
+    next_decision: explicit_user_adoption_required_before_baseline_change_or_separate_M64_prefill_direct_n_experiment
   latest_w4u8_direct_n_m1_projection_candidate:
     id: EXP-0187
     source_branch: codex/exp-0187-w4u8-decode-native-m1-pipeline-gate

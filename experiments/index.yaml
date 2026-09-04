@@ -13,14 +13,15 @@ experiments:
     variants:
       - accepted_EXP0185_W4U8_token_generation_control
       - EXP0185_with_decode_only_direct_n_W4_HMX_projection_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0188-w4u8-full-stack-decode-direct-n
-    source_commits: []
+    source_commits:
+      - 17068d8b7d505381a4c524a7ad7cfe21c9f5abad
     record: docs/experiments/EXP-0188.md
     approval_ref: 'User message 2026-09-04: 同意你的方向，开始吧'
     runtime:
@@ -28,6 +29,7 @@ experiments:
       source_branch: codex/exp-0188-w4u8-full-stack-decode-direct-n
       approved_on: '2026-09-04'
       started_on: '2026-09-04'
+      completed_on: '2026-09-05'
     evidence:
       source_parent_experiment: EXP-0187
       source_parent_commit: 5e9ff6ade5ab10da8d3640d259e0867bc94cf422
@@ -43,6 +45,30 @@ experiments:
       formal_gate: ten_rotated_193_step_pairs_with_strictly_higher_direct_full_stack_decode_tokens_per_second_than_EXP0185
       prefill_preservation: M64_prefill_uses_unchanged_EXP0185_projection_dispatch_and_is_byte_exact
       stop_condition: no_prefill_direct_n_followup_if_full_stack_decode_gate_fails
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0188/short_gate_mask7'
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0188/20260905_formal_direct_n'
+      source_commit: 17068d8b7d505381a4c524a7ad7cfe21c9f5abad
+      implemented_direct_n_mask: 7
+      implemented_transformer_projections_per_decode_token: 196
+      direct_n_projection_scope: QKV_O_Gate_Up_Down_across_28_layers
+      lm_head_disposition: retained_EXP0185_group16_expanded_S8_after_direct_n_diagnostic_changed_argmax_ties_and_was_slower
+      correctness_gate_result: pass_all_1930_formal_step_pairs_byte_exact_hidden_hash_and_token_sequence_zero_cache_mismatch
+      physical_gate_result: pass_exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN_zero_QKVO_and_MLP_expansion
+      performance_gate_result: pass_candidate_won_10_of_10_rotated_193_step_pairs
+      control_prefill_tokens_per_second: 1277.275
+      candidate_prefill_tokens_per_second: 1274.424
+      control_decode_host_us_per_token: 42334.2
+      candidate_decode_host_us_per_token: 36201.1
+      control_decode_tokens_per_second: 23.621560
+      candidate_decode_tokens_per_second: 27.623484
+      candidate_decode_speed_percent: 16.943925
+      candidate_direct_weight_mib_per_decode_token: 672.0
+      candidate_expanded_S8_carrier_mib_avoided_per_decode_token: 1344.0
+      pair_wins: 10
+      summary_sha256: 75283272e2b9dfe7d8457023f25f5c8d11d9d0d1032850f20c95b659dd8d39cf
+      report_sha256: 1606ddbead8d8e7e9789d3d6b90d9082431c795cc36637051ca5b9542587294f
+      static_gate_sha256: ef504692a3da1aca2002123da9dea09325c27d6c6c167f88240829ca217de843
+      conclusion: transformer_direct_n_improves_full_stack_decode_but_remains_a_64_row_physical_HMX_path_and_excludes_LM_head
       selected_baseline_changed: false
   - id: EXP-0187
     slug: w4u8-decode-native-m1-pipeline-gate

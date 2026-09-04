@@ -1,6 +1,12 @@
 schema_version: 1
 project: qwen3-block-htp
 artifacts:
+  - id: EXP-0188-results
+    experiment: EXP-0188
+    kind: formal-result-set
+    path: 'D:\llm_exp\results\qwen3-block-htp\exp0188\20260905_formal_direct_n'
+    source_commit: 17068d8b7d505381a4c524a7ad7cfe21c9f5abad
+    manifest: 'D:\llm_exp\results\qwen3-block-htp\exp0188\20260905_formal_direct_n\summary.json'
   - id: EXP-0167-results
     experiment: EXP-0167
     kind: formal-result-set
