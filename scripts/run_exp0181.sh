@@ -9,11 +9,11 @@ case "${cell}" in
         cache_layout=hmx_native_u8_segmented_v4
         qk_padding_poison=0
         ;;
-    attention_publish)
+    quartet|attention_publish)
         cache_layout=hmx_native_u8_segmented_attention_publish_v6
         qk_padding_poison=0
         ;;
-    attention_publish_poison)
+    quartet_poison|attention_publish_poison)
         cache_layout=hmx_native_u8_segmented_attention_publish_v6
         qk_padding_poison=1
         ;;
