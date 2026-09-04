@@ -6,6 +6,38 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0184
+    slug: w4u8-decode-hvx-k-tail-update
+    title: HVX single-row native K-tail update for W4U8 decode
+    parent: EXP-0183
+    variants:
+      - exp0182_vtcm_resident_v_tail_control
+      - exp0183_k13_with_hvx_row_update_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: boundary-audit-then-five-pair-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0184-w4u8-decode-hvx-k-tail-update
+    source_commits: []
+    record: docs/experiments/EXP-0184.md
+    approval_ref: 'User message 2026-09-04: 同意，继续吧; continuation of the authorized uninterrupted decode optimization loop'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0184-w4u8-decode-hvx-k-tail-update
+      approved_on: '2026-09-04'
+    evidence:
+      source_parent_experiment: EXP-0183
+      source_parent_commit: 6db6a59a2f15385163a189b0bd952814a90fa895
+      source_parent_role: rejected_but_evidence_valid_K_tail_residency_structure
+      direct_control: EXP0182_V7_prepared_session_VTCM_resident_mutable_V_tail
+      candidate: EXP0183_K13_partial_VTCM_tail_with_HVX_single_row_update
+      optimization_scope: W4U8_cached_K_tail_append_update_primitive_and_telemetry_tools_only
+      forbidden_changes: cache_math_external_journal_Attention_Softmax_qparams_V_cache_QKV_O_MLP_embedding_feedback_LM_head_F16F16_W4F16_QNN
+      short_gate: exact_34_step_boundary_plus_five_of_five_rotated_pairs_lower_cache_update_and_complete_decode_wall
+      formal_gate: ten_rotated_193_step_pairs_candidate_strictly_faster_direct_decode_with_all_correctness_and_physical_contracts
+      selected_baseline_changed: false
   - id: EXP-0183
     slug: w4u8-decode-vtcm-native-k-tail
     title: Partial prepared-session VTCM-native mutable K tail for W4U8 decode
@@ -13,14 +45,15 @@ experiments:
     variants:
       - exp0182_vtcm_resident_v_tail_control
       - seven_head_vtcm_native_k_tail_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: boundary-audit-then-five-pair-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0183-w4u8-decode-vtcm-native-k-tail
-    source_commits: []
+    source_commits:
+      - 6db6a59a2f15385163a189b0bd952814a90fa895
     record: docs/experiments/EXP-0183.md
     approval_ref: 'User message 2026-09-04: 同意，继续吧; continuation of the authorized uninterrupted decode optimization loop'
     runtime:
@@ -38,6 +71,26 @@ experiments:
       forbidden_changes: QK_Softmax_AV_math_qparams_V_cache_QKV_O_MLP_embedding_feedback_LM_head_weights_prefill_math_F16F16_W4F16_QNN
       short_gate: exact_quartet_and_segment_boundaries_plus_exact_seven_cached_one_fallback_dispatch_plus_five_of_five_rotated_pairs_lower_Attention_and_complete_decode_Host_wall
       formal_gate: ten_rotated_193_step_pairs_candidate_strictly_faster_direct_decode_with_all_correctness_and_physical_contracts
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0183/20260904T_exp0183_6db6a59_short'
+      source_commit: 6db6a59a2f15385163a189b0bd952814a90fa895
+      correctness_gate_result: pass_exact_34_step_hidden_hashes_tokens_codes_K_carriers_segment_seal_padding_poison_and_physical_contract
+      physical_gate_result: pass_exact_8mib_VTCM_seven_cached_one_fallback_K_heads_zero_cached_tail_DDR_reads_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_no_QNN_zero_unattributed_ticks
+      performance_gate_result: fail_candidate_23_196371_tps_vs_control_23_312463_tps_wins_1_of_5_pairs
+      control_prefill_tokens_per_second: 1286.840354
+      candidate_prefill_tokens_per_second: 1280.486841
+      control_decode_tokens_per_second: 23.312463
+      candidate_decode_tokens_per_second: 23.196371
+      candidate_decode_speed_percent: -0.497982
+      attention_us: {control: 3689.893, candidate: 3383.874}
+      attention_speed_percent: 9.043449
+      cache_conversion_update_us: {control: 250.938, candidate: 893.187}
+      pair_wins: 1
+      summary_sha256: bb555ccdc9996da9bffe2c7825fe22374c8c0d98115b9fdb430aa6a21f288fec
+      short_report_sha256: 28534655449e401c8e5de722b59613f797ac65b8a875cfa6341046c2e20b818e
+      static_gate_sha256: b1317dd14453870979d893873b29ee41970afd4b26f3b2959627f96ff505f736
+      boundary_candidate_sha256: 6b1b3cd73ab83e19ad29ed29e1f6a0e65091e07edf07c35695f9517ab7edf377
+      conclusion: cached_K_tail_reduces_Attention_but_scalar_per_head_append_maintenance_exceeds_the_saving
+      reopen_condition: vectorized_single_row_native_K_carrier_update_with_unchanged_math_and_external_journal
       selected_baseline_changed: false
   - id: EXP-0182
     slug: w4u8-decode-vtcm-resident-v-tail
