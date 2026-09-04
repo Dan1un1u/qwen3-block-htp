@@ -6,6 +6,44 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0191
+    slug: w4u8-direct-n-gate-up-batch16
+    title: Direct-n decode Gate/Up batch-sixteen phase overlay
+    parent: EXP-0190
+    variants:
+      - evidence_valid_EXP0190_Gate_Up_batch8_control
+      - direct_n_decode_Gate_Up_batch16_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0191-w4u8-direct-n-gate-up-batch16
+    source_commits: []
+    record: docs/experiments/EXP-0191.md
+    approval_ref: 'User message 2026-09-05: 开始decode优化loop'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0191-w4u8-direct-n-gate-up-batch16
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    evidence:
+      source_parent_experiment: EXP-0190
+      source_parent_commit: fb6e6617daa42e2942c762968459e1c47e382465
+      source_parent_role: evidence_valid_fastest_W4U8_decode_candidate
+      direct_control: same_binary_EXP0190_Gate_Up_batch8
+      candidate: decode_only_Gate_Up_batch16_with_phase_dead_input_norm_gamma_as_second_bias_slot
+      hypothesis: batch16_further_halves_Gate_Up_HMX_command_granularity_while_large_DMA_still_overlaps_HMX
+      optimization_scope: decode_only_direct_n_Gate_Up_batch_size_bias_slot_phase_alias_dispatch_telemetry_and_tools
+      forbidden_changes: weights_values_scales_qparams_projection_math_SwiGLU_Down_QKVO_Attention_cache_M64_prefill_LM_head_F16F16_W4F16_QNN
+      correctness_gate: byte_exact_hidden_hashes_codes_tokens_and_cache_to_batch8_control_plus_independent_integer_references
+      physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN_zero_transformer_expansion_identical_weight_bytes_and_Gate_Up_commands_1344_to_672
+      short_gate: five_rotated_pairs_with_correctness_physical_and_strict_decode_speed_pass
+      formal_gate: ten_rotated_193_step_pairs_with_strictly_higher_direct_full_stack_decode_tokens_per_second_than_EXP0190
+      prefill_preservation: M64_prefill_uses_unchanged_EXP0189_full64_Expanded_S8_path
+      stop_condition: reject_without_formal_if_short_correctness_physical_or_performance_gate_fails
+      selected_baseline_changed: false
   - id: EXP-0190
     slug: w4u8-direct-n-gate-up-batch8
     title: Direct-n decode Gate/Up batch-eight phase overlay
@@ -13,14 +51,16 @@ experiments:
     variants:
       - accepted_EXP0189_direct_n_Gate_Up_batch4_control
       - direct_n_decode_Gate_Up_batch8_phase_overlay_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0190-w4u8-direct-n-gate-up-batch8
-    source_commits: []
+    source_commits:
+      - 3ab8da923bd3097d0f09d8a0c5e0420221faf494
+      - fb6e6617daa42e2942c762968459e1c47e382465
     record: docs/experiments/EXP-0190.md
     approval_ref: 'User message 2026-09-05: 开始decode优化loop'
     runtime:
@@ -28,6 +68,7 @@ experiments:
       source_branch: codex/exp-0190-w4u8-direct-n-gate-up-batch8
       approved_on: '2026-09-05'
       started_on: '2026-09-05'
+      completed_on: '2026-09-05'
     evidence:
       source_parent_experiment: EXP-0189
       source_parent_commit: 15becf9cf8bda0d9320d8cdcb43fab108c865ef8
@@ -43,6 +84,30 @@ experiments:
       formal_gate: ten_rotated_193_step_pairs_with_strictly_higher_direct_full_stack_decode_tokens_per_second_than_EXP0189
       prefill_preservation: M64_prefill_uses_unchanged_EXP0189_full64_Expanded_S8_path
       stop_condition: reject_without_formal_if_short_correctness_physical_or_performance_gate_fails
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0190/20260905_short_gate_3ab8da9'
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0190/20260905_formal_fb6e661'
+      source_commit: fb6e6617daa42e2942c762968459e1c47e382465
+      correctness_gate_result: pass_all_formal_hidden_hashes_tokens_and_cache_exact_plus_short_audit_hidden_tensor_identity
+      physical_gate_result: pass_exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN_zero_transformer_expansion_identical_weight_bytes_and_tile_pairs
+      performance_gate_result: pass_candidate_won_10_of_10_rotated_pairs
+      control_prefill_tokens_per_second: 1272.069595
+      candidate_prefill_tokens_per_second: 1275.910499
+      control_decode_host_us_per_token: 28955.807427
+      candidate_decode_host_us_per_token: 27229.373612
+      control_decode_tokens_per_second: 34.535391
+      candidate_decode_tokens_per_second: 36.725046
+      candidate_decode_speed_percent: 6.340322
+      control_gate_up_projection_us: 9608.707
+      candidate_gate_up_projection_us: 7843.832
+      control_direct_n_hmx_commands: 4928
+      candidate_direct_n_hmx_commands: 3584
+      pair_wins: 10
+      short_summary_sha256: 42069d8606ce26a078f69b2ac355138fce21cd8e612056b53a546f3535d078f9
+      short_report_sha256: 5d2515d3cb3f088aad1133454451df21f9d0f02d994495eb2b16c8dfe9027add
+      formal_summary_sha256: ab3ce6e3d129324ae3dc84ce707e7d8399e4ee8613494a0105ce68b7b55fb94f
+      formal_report_sha256: e9bc17bd6f4edac6ad4893f54d9bda164b7441052b8c3004e846763949bbf968
+      static_gate_sha256: 7a10247445ee4a83af01cb6490b7d8dda30e16fa7e6427eab6cdffb36cd76ab7
+      conclusion: Gate_Up_batch8_improves_direct_full_stack_decode_6_34_percent_by_halving_command_granularity
       selected_baseline_changed: false
   - id: EXP-0189
     slug: w4u8-direct-n-row4-swiglu

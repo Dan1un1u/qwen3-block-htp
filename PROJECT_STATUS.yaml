@@ -19,42 +19,83 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0190
-  next_experiment_number: 191
+  active_experiment: EXP-0191
+  next_experiment_number: 192
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0189
-  last_completed_source_commit: 15becf9cf8bda0d9320d8cdcb43fab108c865ef8
-  provisional_source_parent: accepted_EXP0189_direct_n_row4_SwiGLU_baseline
+  last_completed_experiment: EXP-0190
+  last_completed_source_commit: fb6e6617daa42e2942c762968459e1c47e382465
+  provisional_source_parent: evidence_valid_EXP0190_direct_n_Gate_Up_batch8_candidate
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
   active_experiment_stage: registered_pending_source_branch_and_preflight
   active_experiment_evidence: null
   active_experiment_gate: not_run
-  active_recipe_specialization: W4U8_direct_n_decode_Gate_Up_batch8_phase_overlay
+  active_recipe_specialization: W4U8_direct_n_decode_Gate_Up_batch16_phase_overlay
   active_experiment_contract:
-    id: EXP-0190
-    source_branch: codex/exp-0190-w4u8-direct-n-gate-up-batch8
-    source_parent: accepted_EXP0189_direct_n_row4_SwiGLU_baseline
-    source_parent_commit: 15becf9cf8bda0d9320d8cdcb43fab108c865ef8
+    id: EXP-0191
+    source_branch: codex/exp-0191-w4u8-direct-n-gate-up-batch16
+    source_parent: evidence_valid_EXP0190_direct_n_Gate_Up_batch8_candidate
+    source_parent_commit: fb6e6617daa42e2942c762968459e1c47e382465
     execution_scope: real_token_ID_M64_prefill_then_192_continuous_W4U8_decode_steps_to_valid_length256
-    direct_control: accepted_EXP0189_W4U8_direct_n_Gate_Up_batch4
-    candidate: EXP0189_with_decode_only_Gate_Up_batch8_using_dead_expanded_weight_VTCM_slots
-    allowed_changes: decode_only_direct_n_Gate_Up_batch_size_weight_slot_phase_alias_dispatch_telemetry_and_experiment_tools
+    direct_control: evidence_valid_EXP0190_W4U8_direct_n_Gate_Up_batch8
+    candidate: EXP0190_with_decode_only_Gate_Up_batch16_and_dead_gamma_bias_slot_overlay
+    allowed_changes: decode_only_direct_n_Gate_Up_batch_size_bias_slot_phase_alias_dispatch_telemetry_and_experiment_tools
     forbidden_changes: weights_values_scales_qparams_projection_math_SwiGLU_Down_QKVO_Attention_cache_M64_prefill_LM_head_F16F16_W4F16_QNN
-    correctness_gate: byte_exact_all_hidden_hashes_codes_tokens_and_cache_state_to_same_binary_batch4_control_plus_unchanged_independent_integer_references
-    physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_per_pass_one_HMX_owner_no_QNN_zero_transformer_expansion_identical_weight_bytes_and_half_Gate_Up_direct_n_HMX_commands
-    performance_gate: five_pair_short_gate_then_ten_rotated_193_step_pairs_with_strictly_higher_direct_full_stack_decode_tokens_per_second_and_lower_Gate_Up_plus_SwiGLU_wall_than_EXP0189_control
-    preservation_gate: M64_prefill_and_all_non_Gate_Up_decode_modules_remain_EXP0189_byte_exact
+    correctness_gate: byte_exact_all_hidden_hashes_codes_tokens_and_cache_state_to_same_binary_batch8_control_plus_unchanged_independent_integer_references
+    physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_per_pass_one_HMX_owner_no_QNN_zero_transformer_expansion_identical_weight_bytes_and_Gate_Up_commands_1344_to_672
+    performance_gate: five_pair_short_gate_then_ten_rotated_193_step_pairs_with_strictly_higher_direct_full_stack_decode_tokens_per_second_and_lower_Gate_Up_wall_than_EXP0190_control
+    preservation_gate: M64_prefill_and_all_non_Gate_Up_decode_modules_remain_EXP0190_byte_exact
     stop_conditions: reject_before_formal_if_correctness_or_physical_gate_fails_or_five_pair_short_decode_gate_does_not_improve
   final_profiling_summary_standard: direct_full_stack_prefill_and_decode_tokens_per_second_plus_exact_Host_wall
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0189/20260905_formal_15becf9'
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0190/20260905_formal_fb6e661'
+  latest_w4u8_direct_n_gate_up_batch8_candidate:
+    id: EXP-0190
+    source_branch: codex/exp-0190-w4u8-direct-n-gate-up-batch8
+    source_head: fb6e6617daa42e2942c762968459e1c47e382465
+    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0190/20260905_short_gate_3ab8da9'
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0190/20260905_formal_fb6e661'
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending
+    selected_baseline_changed: false
+    direct_end_to_end:
+      control_prefill_tokens_per_second: 1272.069595
+      candidate_prefill_tokens_per_second: 1275.910499
+      control_decode_host_us_per_token: 28955.807427
+      candidate_decode_host_us_per_token: 27229.373612
+      control_decode_tokens_per_second: 34.535391
+      candidate_decode_tokens_per_second: 36.725046
+      candidate_decode_speed_percent: 6.340322
+    target_stage_us_per_token:
+      control_gate_up_projection: 9608.707
+      candidate_gate_up_projection: 7843.832
+      control_swiglu: 488.371
+      candidate_swiglu: 488.505
+    physical:
+      control_direct_n_hmx_commands_per_token: 4928
+      candidate_direct_n_hmx_commands_per_token: 3584
+      control_gate_up_hmx_commands_per_token: 2688
+      candidate_gate_up_hmx_commands_per_token: 1344
+      hmx_tile_pairs_per_token: 1699840
+      weight_ddr_read_bytes_per_token: 866032640
+      control_weight_dma_descriptors_per_token: 10154
+      candidate_weight_dma_descriptors_per_token: 7466
+    pair_wins: 10
+    short_summary_sha256: 42069d8606ce26a078f69b2ac355138fce21cd8e612056b53a546f3535d078f9
+    short_report_sha256: 5d2515d3cb3f088aad1133454451df21f9d0f02d994495eb2b16c8dfe9027add
+    formal_summary_sha256: ab3ce6e3d129324ae3dc84ce707e7d8399e4ee8613494a0105ce68b7b55fb94f
+    formal_report_sha256: e9bc17bd6f4edac6ad4893f54d9bda164b7441052b8c3004e846763949bbf968
+    static_gate_sha256: 7a10247445ee4a83af01cb6490b7d8dda30e16fa7e6427eab6cdffb36cd76ab7
+    conclusion: batch8_halves_Gate_Up_command_and_descriptor_granularity_and_improves_full_stack_decode_6_34_percent_without_changing_math_or_weight_work
+    next_decision: retained_as_fastest_pending_decode_candidate_and_parent_of_EXP0191
   latest_w4u8_direct_n_row4_swiglu_candidate:
     id: EXP-0189
     source_branch: codex/exp-0189-w4u8-direct-n-row4-swiglu

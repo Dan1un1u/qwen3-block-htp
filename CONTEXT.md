@@ -1290,11 +1290,25 @@ changing LUT or qparams, claiming dead padding is mathematically meaningful,
 or claiming semantic quality
 
 **Direct-N Decode Gate/Up Batch-Eight Candidate**:
-The active EXP-0190 hypothesis reuses decode-phase-dead Expanded-S8 VTCM
+The completed EXP-0190 candidate reuses decode-phase-dead Expanded-S8 VTCM
 buffers as two packed-W4 `weight.n` slots and doubles only Gate/Up direct-n
 batch size from four to eight output tiles.  It aims to halve HMX command and
 DMA descriptor granularity while preserving weight bytes, row-four SwiGLU,
-all mathematics and the complete EXP-0189 token path.
+all mathematics and the complete EXP-0189 token path.  Ten formal pairs improve
+decode from 34.535391 to 36.725046 token/s (+6.340322%); all pairs win and all
+correctness and physical gates pass.  It is the fastest pending decode
+candidate and the enabling parent of EXP-0191, not an automatically selected
+baseline.
 _Avoid_: changing Down or QKVO in the same candidate, applying the alias during
 M64 prefill, counting fewer commands as success without higher full-stack
 decode token/s, or automatic baseline promotion
+
+**Direct-N Decode Gate/Up Batch-Sixteen Candidate**:
+The active EXP-0191 hypothesis doubles the EXP-0190 Gate/Up group from eight to
+sixteen tiles.  Packed W4 remains in phase-dead Expanded-S8 buffers; the second
+bias slot aliases the current layer's already-consumed input-norm gamma range.
+The experiment is valid only if large-group DMA continues to overlap HMX and
+direct full-stack decode exceeds EXP-0190.
+_Avoid_: treating command-count reduction as performance, using the gamma alias
+before input norm completes, changing any non-Gate/Up module, or automatic
+baseline promotion
