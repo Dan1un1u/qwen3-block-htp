@@ -51,7 +51,9 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def load_run(path: Path) -> list[dict[str, object]]:
+def load_run(
+    path: Path, expected_steps: int = STEPS,
+) -> list[dict[str, object]]:
     records = base.read_json_lines(path)
     steps = [item for item in records
              if "generation_step" in item and "record" not in item]
@@ -59,11 +61,12 @@ def load_run(path: Path) -> list[dict[str, object]]:
                 if item.get("record") == "generation_profile"]
     finals = [item for item in records
               if item.get("generation_sequence_complete") is True]
-    if len(steps) != STEPS or len(profiles) != STEPS or len(finals) != 1:
+    if (len(steps) != expected_steps or
+            len(profiles) != expected_steps or len(finals) != 1):
         raise ValueError(f"incomplete run: {path}")
     if not (finals[0].get("all_steps_pass") is True
-            and int(finals[0].get("requested_steps", -1)) == STEPS
-            and int(finals[0].get("completed_steps", -1)) == STEPS):
+            and int(finals[0].get("requested_steps", -1)) == expected_steps
+            and int(finals[0].get("completed_steps", -1)) == expected_steps):
         raise ValueError(f"failed final record: {path}")
     for index, (step, profile) in enumerate(zip(steps, profiles)):
         if not (int(step.get("experiment", -1)) == 177
