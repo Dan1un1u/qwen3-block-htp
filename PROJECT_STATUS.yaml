@@ -19,41 +19,76 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0182
-  next_experiment_number: 183
+  active_experiment: EXP-0183
+  next_experiment_number: 184
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0181
-  last_completed_source_commit: d2114dafc285b6b3189b0a5ee404c518e942f758
-  provisional_source_parent: rejected_EXP0181_enabling_attention_publication_candidate
+  last_completed_experiment: EXP-0182
+  last_completed_source_commit: 803c4a104b2b16bfd8b0cf5d456a76ea8738b4cb
+  provisional_source_parent: locally_eligible_EXP0182_VTCM_resident_V_tail_candidate_pending_user_promotion
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
   active_experiment_stage: running_pending_preflight
   active_experiment_evidence: null
   active_experiment_gate: not_run
-  active_recipe_specialization: W4U8_decode_prepared_session_VTCM_resident_mutable_V_tail
+  active_recipe_specialization: W4U8_decode_partial_prepared_session_VTCM_native_mutable_K_tail
   active_experiment_contract:
-    id: EXP-0182
-    source_branch: codex/exp-0182-w4u8-decode-vtcm-resident-v-tail
-    source_parent: rejected_EXP0181_enabling_attention_publication_candidate
-    source_parent_commit: d2114dafc285b6b3189b0a5ee404c518e942f758
+    id: EXP-0183
+    source_branch: codex/exp-0183-w4u8-decode-vtcm-native-k-tail
+    source_parent: locally_eligible_EXP0182_VTCM_resident_V_tail_candidate_pending_user_promotion
+    source_parent_commit: 803c4a104b2b16bfd8b0cf5d456a76ea8738b4cb
     execution_scope: real_token_ID_M64_prefill_then_continuous_W4U8_decode
-    direct_control: EXP0179_segmented_v4_row_major_mutable_V_tail
-    candidates: versioned_V7_prepared_session_VTCM_resident_mutable_V_tail_with_DDR_row_major_journal
-    allowed_changes: W4U8_decode_V_cache_tail_ABI_VTCM_allocator_append_seal_Attention_consumer_telemetry_and_experiment_tools
-    forbidden_changes: QK_Softmax_AV_math_qparams_K_cache_QKV_O_MLP_embedding_feedback_LM_head_weights_prefill_math_F16F16_W4F16_QNN
-    correctness_gate: byte_exact_external_row_major_cache_consumed_AV_carrier_hidden_hashes_tokens_codes_quartet_and_segment_boundaries_independent_reference_padding_poison_and_EXP0163_regression
-    physical_gate: exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_zero_mutable_V_tail_DDR_reads_in_Attention_zero_timed_intermediate_or_full_logit_DDR_zero_spill_fill_zero_unattributed_ticks_no_VTCM_overlap
+    direct_control: EXP0182_V7_prepared_session_VTCM_resident_mutable_V_tail
+    candidates: versioned_K_format_with_seven_of_eight_KV_heads_native_in_prepared_session_VTCM_and_one_DDR_fallback_head
+    allowed_changes: W4U8_decode_K_cache_tail_ABI_VTCM_allocator_append_seal_Attention_consumer_telemetry_and_experiment_tools
+    forbidden_changes: QK_Softmax_AV_math_qparams_V_cache_QKV_O_MLP_embedding_feedback_LM_head_weights_prefill_math_F16F16_W4F16_QNN
+    correctness_gate: byte_exact_external_KV_cache_consumed_QK_AV_carriers_hidden_hashes_tokens_codes_quartet_and_segment_boundaries_independent_reference_padding_poison_and_EXP0163_regression
+    physical_gate: exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_exact_seven_cached_one_fallback_KV_heads_zero_cached_K_tail_DDR_reads_zero_timed_intermediate_or_full_logit_DDR_zero_spill_fill_zero_unattributed_ticks_no_VTCM_overlap
     performance_gate: five_rotated_short_pairs_lower_QK_Softmax_AV_and_complete_decode_wall_then_ten_rotated_193_step_pairs_higher_direct_decode_tokens_per_second
     stop_conditions: boundary_or_physical_gate_failure_or_fewer_than_five_of_five_short_pair_wins_rejects_without_formal_full_stack_run
   final_profiling_summary_standard: direct_full_stack_prefill_and_decode_tokens_per_second_plus_exact_Host_wall
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0181/20260904T_exp0181_d2114da_short'
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0182/20260904T_exp0182_803c4a1_formal'
+  latest_w4u8_vtcm_resident_v_tail_candidate:
+    id: EXP-0182
+    source_branch: codex/exp-0182-w4u8-decode-vtcm-resident-v-tail
+    source_head: 803c4a104b2b16bfd8b0cf5d456a76ea8738b4cb
+    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0182/20260904T_exp0182_803c4a1_short'
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0182/20260904T_exp0182_803c4a1_formal'
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending
+    selected_baseline_changed: false
+    correctness_gate: pass_193_of_193_independent_reference_exact_cache_carriers_hidden_hashes_codes_tokens_padding_poison_and_EXP0163_regression
+    physical_gate: pass_exact_8mib_VTCM_zero_mutable_V_tail_Attention_DDR_reads_zero_timed_intermediate_or_full_logit_DDR_zero_spill_fill_one_FastRPC_no_QNN_zero_unattributed_ticks
+    performance_gate: pass_candidate_won_10_of_10_formal_rotated_pairs
+    direct_end_to_end:
+      control_prefill_tokens_per_second: 1275.872031
+      candidate_prefill_tokens_per_second: 1272.951046
+      control_decode_host_us_per_token: 43987.094966
+      candidate_decode_host_us_per_token: 42668.130698
+      control_decode_tokens_per_second: 22.733941
+      candidate_decode_tokens_per_second: 23.436696
+      candidate_decode_speed_percent: 3.091216
+    attention_us: {control: 5419.609, candidate: 4103.222}
+    attention_speed_percent: 32.081785
+    pair_wins: 10
+    vtcm_atlas_payload_bytes: 917504
+    vtcm_peak_plan_bytes: 7537920
+    summary_sha256: 2348f5bdda45fcf4f8d623325a99ddd32d5eee76fafdfa77ba3fea3b25bdc314
+    full_profiling_report_sha256: 79aa2acedece0d1e8076f6af8df2f93865b923171a16d91af9d63eb5154b050e
+    static_gate_sha256: 0457503dbfb36227719591e1381f1c52b8654ea189b80e97049d3619a87b349b
+    boundary_candidate_sha256: 92382e372d3f200c1775afb2d1b88d891293b39fa80f8955155ea6ef19f215e7
+    padding_poison_sha256: 9df87e2a4100892403bf577bfecbe0d897d3467664518fa39be526797e12ed76
+    independent_reference_sha256: 336a205ea27bf25cdc5a8a176b417a2f98300dc3e7d2bb48c5e2c26c261b2d8a
+    exp0163_regression_sha256: 9a898c2a1f5bd34c6fac4ede292ea2c10e419c32e4995e06e489a00580cc64f1
+    conclusion: prepared_session_VTCM_resident_V_tail_removes_repeated_tail_reconstruction_and_improves_direct_long_decode_3_091_percent
   latest_w4u8_attention_publish_v_tail_negative:
     id: EXP-0181
     source_branch: codex/exp-0181-w4u8-decode-attention-publish-v-tail

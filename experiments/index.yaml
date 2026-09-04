@@ -6,6 +6,39 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0183
+    slug: w4u8-decode-vtcm-native-k-tail
+    title: Partial prepared-session VTCM-native mutable K tail for W4U8 decode
+    parent: EXP-0182
+    variants:
+      - exp0182_vtcm_resident_v_tail_control
+      - seven_head_vtcm_native_k_tail_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: boundary-audit-then-five-pair-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0183-w4u8-decode-vtcm-native-k-tail
+    source_commits: []
+    record: docs/experiments/EXP-0183.md
+    approval_ref: 'User message 2026-09-04: 同意，继续吧; continuation of the authorized uninterrupted decode optimization loop'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0183-w4u8-decode-vtcm-native-k-tail
+      approved_on: '2026-09-04'
+    evidence:
+      source_parent_experiment: EXP-0182
+      source_parent_commit: 803c4a104b2b16bfd8b0cf5d456a76ea8738b4cb
+      source_parent_role: locally_eligible_candidate_pending_user_promotion
+      execution_unit: real_token_ID_M64_prefill_then_continuous_W4U8_decode
+      direct_control: EXP0182_V7_prepared_session_VTCM_resident_mutable_V_tail
+      candidate: versioned_K_format_with_seven_native_cached_and_one_segmented_fallback_KV_head_per_layer
+      optimization_scope: W4U8_decode_K_cache_tail_ABI_VTCM_allocator_append_seal_Attention_consumer_telemetry_and_tools_only
+      forbidden_changes: QK_Softmax_AV_math_qparams_V_cache_QKV_O_MLP_embedding_feedback_LM_head_weights_prefill_math_F16F16_W4F16_QNN
+      short_gate: exact_quartet_and_segment_boundaries_plus_exact_seven_cached_one_fallback_dispatch_plus_five_of_five_rotated_pairs_lower_Attention_and_complete_decode_Host_wall
+      formal_gate: ten_rotated_193_step_pairs_candidate_strictly_faster_direct_decode_with_all_correctness_and_physical_contracts
+      selected_baseline_changed: false
   - id: EXP-0182
     slug: w4u8-decode-vtcm-resident-v-tail
     title: Prepared-session VTCM-resident mutable V tail for W4U8 decode
@@ -13,14 +46,15 @@ experiments:
     variants:
       - segmented_v4_row_major_v_tail_control
       - prepared_session_vtcm_resident_v_tail_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: boundary-audit-then-five-pair-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0182-w4u8-decode-vtcm-resident-v-tail
-    source_commits: []
+    source_commits:
+      - 803c4a104b2b16bfd8b0cf5d456a76ea8738b4cb
     record: docs/experiments/EXP-0182.md
     approval_ref: 'User message 2026-09-04: 同意，继续吧; continuation of the authorized uninterrupted decode optimization loop'
     runtime:
@@ -39,6 +73,25 @@ experiments:
       prior_negative_boundary: EXP0181_proves_Attention_side_conversion_reduces_Attention_but_persistent_DDR_publication_is_not_stable_end_to_end
       short_gate: exact_quartet_and_segment_boundaries_zero_mutable_tail_Attention_DDR_reads_plus_five_rotated_pairs_lower_Attention_and_complete_decode_Host_wall
       formal_gate: ten_rotated_193_step_pairs_candidate_strictly_faster_direct_decode_with_all_correctness_and_physical_contracts
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0182/20260904T_exp0182_803c4a1_short'
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0182/20260904T_exp0182_803c4a1_formal'
+      source_commit: 803c4a104b2b16bfd8b0cf5d456a76ea8738b4cb
+      correctness_gate_result: pass_193_of_193_independent_reference_exact_cache_carriers_hidden_hashes_codes_tokens_padding_poison_and_EXP0163_regression
+      physical_gate_result: pass_exact_8mib_VTCM_zero_mutable_V_tail_Attention_DDR_reads_zero_timed_intermediate_or_full_logit_DDR_zero_spill_fill_one_FastRPC_no_QNN_zero_unattributed_ticks
+      performance_gate_result: pass_candidate_23_436696_tps_vs_control_22_733941_tps_wins_10_of_10_pairs
+      control_prefill_tokens_per_second: 1275.872031
+      candidate_prefill_tokens_per_second: 1272.951046
+      control_decode_tokens_per_second: 22.733941
+      candidate_decode_tokens_per_second: 23.436696
+      candidate_decode_speed_percent: 3.091216
+      attention_us: {control: 5419.609, candidate: 4103.222}
+      attention_speed_percent: 32.081785
+      pair_wins: 10
+      summary_sha256: 2348f5bdda45fcf4f8d623325a99ddd32d5eee76fafdfa77ba3fea3b25bdc314
+      full_profiling_report_sha256: 79aa2acedece0d1e8076f6af8df2f93865b923171a16d91af9d63eb5154b050e
+      static_gate_sha256: 0457503dbfb36227719591e1381f1c52b8654ea189b80e97049d3619a87b349b
+      independent_reference_sha256: 336a205ea27bf25cdc5a8a176b417a2f98300dc3e7d2bb48c5e2c26c261b2d8a
+      conclusion: prepared_session_VTCM_resident_V_tail_removes_repeated_tail_reconstruction_and_improves_direct_long_decode_3_091_percent
       selected_baseline_changed: false
   - id: EXP-0181
     slug: w4u8-decode-attention-publish-v-tail
