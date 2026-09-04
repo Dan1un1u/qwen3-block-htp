@@ -335,6 +335,9 @@ void qbh_hmx_begin_u8s8_output(const uint32_t *bias_words);
 uint32_t qbh_hmx_accumulate_u8s8_projection(
     const uint8_t *activation_tiles, const int8_t *packed_weight_tiles,
     uint32_t k_tiles);
+uint32_t qbh_hmx_accumulate_u8n4_projection(
+    const uint8_t *activation_tiles, const uint8_t *packed_weight_tiles,
+    uint32_t k_tiles);
 void qbh_hmx_store_u8_output(uint8_t *output);
 
 #endif

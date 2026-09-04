@@ -63,11 +63,17 @@ enum qbh_weight_storage_variant {
     QBH_WEIGHT_EXPANDED_S8 = 1,
     QBH_WEIGHT_PACKED_W4 = 2,
     QBH_WEIGHT_PACKED_W4_HMX_SCALE = 3,
+    QBH_WEIGHT_PACKED_W4_DIRECT_N = 4,
 };
 
 static inline int qbh_weight_storage_is_packed_w4(uint32_t storage) {
     return storage == QBH_WEIGHT_PACKED_W4 ||
-           storage == QBH_WEIGHT_PACKED_W4_HMX_SCALE;
+           storage == QBH_WEIGHT_PACKED_W4_HMX_SCALE ||
+           storage == QBH_WEIGHT_PACKED_W4_DIRECT_N;
+}
+
+static inline int qbh_weight_storage_is_direct_n(uint32_t storage) {
+    return storage == QBH_WEIGHT_PACKED_W4_DIRECT_N;
 }
 
 enum qbh_physical_plan {

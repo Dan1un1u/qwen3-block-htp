@@ -30,6 +30,23 @@ static inline void qbh_hmx_issue_u8s8_stream(
                  : "memory");
 }
 
+static inline void qbh_hmx_issue_u8n4_stream(
+    const uint8_t *activation_tiles, const uint8_t *packed_weight_tiles,
+    uint32_t stream_tiles) {
+    uint32_t activation_rt =
+        QBH_HMX_ACTIVATION_RT_BASE +
+        (stream_tiles - 1U) * QBH_HMX_ACTIVATION_BYTES;
+    uint32_t weight_rt =
+        stream_tiles * QBH_W4_PACKED_TILE_BYTES - 1U;
+
+    asm volatile("{ activation.ub = mxmem(%0, %1):deep:cm\n"
+                 "  weight.n = mxmem(%2, %3) }\n"
+                 :
+                 : "r"(activation_tiles), "r"(activation_rt),
+                   "r"(packed_weight_tiles), "r"(weight_rt)
+                 : "memory");
+}
+
 __attribute__((noinline)) void qbh_hmx_begin_u8s8_output(
     const uint32_t *bias_words) {
     Q6_bias_mxmem2_A((void *)bias_words);
@@ -53,6 +70,29 @@ __attribute__((noinline)) uint32_t qbh_hmx_accumulate_u8s8_projection(
             (size_t)stream_tiles * QBH_HMX_ACTIVATION_BYTES;
         packed_weight_tiles +=
             (size_t)stream_tiles * QBH_HMX_WEIGHT_BYTES;
+        k_tiles -= stream_tiles;
+        ++stream_count;
+    }
+    return stream_count;
+}
+
+__attribute__((noinline)) uint32_t qbh_hmx_accumulate_u8n4_projection(
+    const uint8_t *activation_tiles, const uint8_t *packed_weight_tiles,
+    uint32_t k_tiles) {
+    uint32_t stream_count = 0;
+
+    while (k_tiles != 0U) {
+        uint32_t stream_tiles =
+            k_tiles > QBH_HMX_MAX_STREAM_TILES
+                ? QBH_HMX_MAX_STREAM_TILES
+                : k_tiles;
+        qbh_hmx_issue_u8n4_stream(
+            activation_tiles, packed_weight_tiles, stream_tiles);
+
+        activation_tiles +=
+            (size_t)stream_tiles * QBH_HMX_ACTIVATION_BYTES;
+        packed_weight_tiles +=
+            (size_t)stream_tiles * QBH_W4_PACKED_TILE_BYTES;
         k_tiles -= stream_tiles;
         ++stream_count;
     }

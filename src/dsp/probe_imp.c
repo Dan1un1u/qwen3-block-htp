@@ -68,6 +68,7 @@ struct qbh_projection_worker_job {
     uint32_t repeat_count;
     uint32_t k_tiles;
     uint32_t n_tiles;
+    uint32_t direct_n_weights;
     qurt_sem_t *ready[2];
     qurt_sem_t *free_slot[2];
     qurt_sem_t *started;
@@ -860,10 +861,18 @@ static void hmx_worker_main(void *opaque) {
             bias_words = job->bias_slots[slot];
             uint64_t core_start = HAP_perf_get_qtimer_count();
             qbh_hmx_begin_u8s8_output(bias_words);
-            job->hmx_stream_count += qbh_hmx_accumulate_u8s8_projection(
-                job->activation_tiles,
-                (const int8_t *)job->weight_slots[slot],
-                job->k_tiles);
+            if (job->direct_n_weights != 0U) {
+                job->hmx_stream_count +=
+                    qbh_hmx_accumulate_u8n4_projection(
+                        job->activation_tiles,
+                        job->weight_slots[slot], job->k_tiles);
+            } else {
+                job->hmx_stream_count +=
+                    qbh_hmx_accumulate_u8s8_projection(
+                        job->activation_tiles,
+                        (const int8_t *)job->weight_slots[slot],
+                        job->k_tiles);
+            }
             job->hmx_execution_count += job->k_tiles;
             qbh_hmx_store_u8_output(
                 job->output_tiles +
@@ -1260,8 +1269,12 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
     memset(&hmx_job, 0, sizeof(hmx_job));
     hmx_job.hmx_context_id = hmx_context_id;
     hmx_job.activation_tiles = activation_tiles;
-    hmx_job.weight_slots[0] = expanded_slots[0];
-    hmx_job.weight_slots[1] = expanded_slots[1];
+    hmx_job.direct_n_weights = qbh_weight_storage_is_direct_n(
+        layout.weight_storage_variant);
+    hmx_job.weight_slots[0] = hmx_job.direct_n_weights != 0U
+        ? compressed_slots[0] : expanded_slots[0];
+    hmx_job.weight_slots[1] = hmx_job.direct_n_weights != 0U
+        ? compressed_slots[1] : expanded_slots[1];
     if (qbh_weight_storage_is_packed_w4(
             layout.weight_storage_variant)) {
         hmx_job.bias_slots[0] = (const uint32_t *)(
@@ -1402,6 +1415,8 @@ AEEResult qwen3_probe_run(remote_handle64 handle, int32 shared_fd,
                      batch_index < dma_bundle_batch; ++batch_index) {
                     uint32_t slot = first_slot + batch_index;
                     if (qbh_weight_storage_is_packed_w4(
+                            layout.weight_storage_variant) &&
+                        !qbh_weight_storage_is_direct_n(
                             layout.weight_storage_variant)) {
                         uint64_t expand_start =
                             HAP_perf_get_qtimer_count();
