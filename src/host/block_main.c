@@ -1302,8 +1302,10 @@ static int qbh_hmx_native_u8_cache_formats(uint32_t k_format,
                 QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_DELTA_V2) ||
            (k_format ==
                 QBH_KV_CACHE_FORMAT_HMX_U8_K_SEGMENTED_V4 &&
-            v_format ==
-                QBH_KV_CACHE_FORMAT_HMX_U8_V_SEGMENTED_V4);
+            (v_format ==
+                 QBH_KV_CACHE_FORMAT_HMX_U8_V_SEGMENTED_V4 ||
+             v_format ==
+                 QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5));
 }
 
 static int qbh_hmx_native_u8_delta_cache_formats(
@@ -1318,8 +1320,10 @@ static int qbh_hmx_native_u8_segmented_cache_formats(
     uint32_t k_format, uint32_t v_format) {
     return k_format ==
                QBH_KV_CACHE_FORMAT_HMX_U8_K_SEGMENTED_V4 &&
-           v_format ==
-               QBH_KV_CACHE_FORMAT_HMX_U8_V_SEGMENTED_V4;
+           (v_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_V_SEGMENTED_V4 ||
+            v_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5);
 }
 
 static int qbh_hmx_native_f16_cache_formats(uint32_t k_format,
@@ -1374,6 +1378,10 @@ static uint32_t qbh_host_v_cache_bytes(uint32_t variant,
     if (variant == QBH_BLOCK_W4U8 &&
         v_format == QBH_KV_CACHE_FORMAT_HMX_U8_V_SEGMENTED_V4) {
         return QBH_KV_CACHE_HMX_U8_V_SEGMENTED_BYTES(capacity);
+    }
+    if (variant == QBH_BLOCK_W4U8 &&
+        v_format == QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5) {
+        return QBH_KV_CACHE_HMX_U8_V_QUARTET_BYTES(capacity);
     }
     if (variant != QBH_BLOCK_W4U8 &&
         v_format == QBH_KV_CACHE_FORMAT_HMX_F16_V_WEIGHT_V1) {
@@ -2183,10 +2191,32 @@ static int qbh_hmx_cache_byte_is_appended_token(
         tail_offset =
             max_segments * QBH_KV_CACHE_HMX_U8_SEGMENT_V_BYTES +
             QBH_KV_CACHE_HMX_V_BIAS_BYTES_PER_HEAD;
-        if (head_relative >=
-                tail_offset + tail_row * QBH_BLOCK_HEAD_DIM &&
-            head_relative <
-                tail_offset + (tail_row + 1U) * QBH_BLOCK_HEAD_DIM) {
+        if (layer->v_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5) {
+            const uint32_t group = tail_row / 4U;
+            const uint32_t lane = tail_row % 4U;
+            for (uint32_t output_tile = 0U;
+                 output_tile < QBH_ATTENTION_HEAD_DIM_TILES;
+                 ++output_tile) {
+                const uint32_t group_first = tail_offset +
+                    output_tile * QBH_HMX_WEIGHT_BYTES +
+                    group * 128U;
+                const uint32_t first = lane + 1U == 4U
+                    ? group_first
+                    : group_first +
+                        lane * QBH_HMX_OUTPUT_CHANNELS;
+                const uint32_t bytes = lane + 1U == 4U
+                    ? 128U : QBH_HMX_OUTPUT_CHANNELS;
+                if (head_relative >= first &&
+                    head_relative < first + bytes) {
+                    return 1;
+                }
+            }
+        } else if (head_relative >=
+                       tail_offset + tail_row * QBH_BLOCK_HEAD_DIM &&
+                   head_relative <
+                       tail_offset +
+                           (tail_row + 1U) * QBH_BLOCK_HEAD_DIM) {
             return 1;
         }
         if (seals_segment && segment < max_segments) {
@@ -2314,6 +2344,139 @@ static int qbh_hmx_cache_byte_is_appended_token(
                input_group ==
                    (token % QBH_HMX_INPUT_CHANNELS) / 4U &&
                word_byte % sizeof(uint32_t) == token % 4U;
+    }
+    return 0;
+}
+
+static int32_t qbh_host_round_div_signed(
+    int32_t numerator, int32_t denominator) {
+    if (numerator >= 0) {
+        return (numerator + denominator / 2) / denominator;
+    }
+    return -((-numerator + denominator / 2) / denominator);
+}
+
+/* Convert the canonical segmented-v4 reference tail to the EXP-0180 V5
+ * physical state.  The immutable segment and bias regions are already
+ * identical.  The mutable tail starts as zero after M64 prefill, retains the
+ * most recently sealed decode segment thereafter, publishes complete groups
+ * of four rows as final HMX carrier bytes, and keeps only the active partial
+ * group in tile-major raw-U8 form. */
+static int qbh_prepare_quartet_v_reference(
+    uint8_t *reference,
+    const struct qbh_decode_layer_state *layer,
+    const struct qbh_attention_config *configs,
+    uint32_t valid_length) {
+    const uint32_t max_segments =
+        QBH_KV_CACHE_HMX_U8_SEGMENT_COUNT(layer->capacity);
+    const uint32_t sealed_segments =
+        valid_length / QBH_KV_CACHE_HMX_U8_SEGMENT_TOKENS;
+    const uint32_t tail_rows =
+        valid_length % QBH_KV_CACHE_HMX_U8_SEGMENT_TOKENS;
+    const uint32_t decoded_rows = valid_length > QBH_BLOCK_M
+        ? valid_length - QBH_BLOCK_M : 0U;
+    const uint32_t completed_decode_segments =
+        decoded_rows / QBH_KV_CACHE_HMX_U8_SEGMENT_TOKENS;
+    const uint32_t tail_offset =
+        max_segments * QBH_KV_CACHE_HMX_U8_SEGMENT_V_BYTES +
+        QBH_KV_CACHE_HMX_V_BIAS_BYTES_PER_HEAD;
+    uint8_t logical_tail[QBH_KV_CACHE_HMX_U8_SEGMENT_TAIL_BYTES];
+    uint8_t physical_tail[QBH_KV_CACHE_HMX_U8_SEGMENT_TAIL_BYTES];
+
+    if (reference == NULL || layer == NULL || configs == NULL ||
+        layer->v_format !=
+            QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5 ||
+        valid_length > layer->capacity ||
+        sealed_segments > max_segments ||
+        layer->v_head_stride_bytes <
+            tail_offset + QBH_KV_CACHE_HMX_U8_SEGMENT_TAIL_BYTES) {
+        return -1;
+    }
+    for (uint32_t head = 0U; head < layer->head_count; ++head) {
+        uint8_t *head_reference = reference +
+            (size_t)head * layer->v_head_stride_bytes;
+        uint8_t *tail = head_reference + tail_offset;
+        const struct qbh_attention_config *config = &configs[head];
+
+        if (config->v_recenter_denominator == 0U) {
+            return -1;
+        }
+        memcpy(logical_tail, tail, sizeof(logical_tail));
+        memset(physical_tail, 0, sizeof(physical_tail));
+        if (completed_decode_segments != 0U) {
+            const uint32_t segment = sealed_segments - 1U;
+            const uint32_t block_first =
+                (segment /
+                 QBH_KV_CACHE_HMX_U8_V_SEGMENT_BLOCK_SEGMENTS) *
+                QBH_KV_CACHE_HMX_U8_V_SEGMENT_BLOCK_SEGMENTS;
+            const uint32_t block_count =
+                max_segments - block_first <
+                        QBH_KV_CACHE_HMX_U8_V_SEGMENT_BLOCK_SEGMENTS
+                    ? max_segments - block_first
+                    : QBH_KV_CACHE_HMX_U8_V_SEGMENT_BLOCK_SEGMENTS;
+            for (uint32_t output_tile = 0U;
+                 output_tile < QBH_ATTENTION_HEAD_DIM_TILES;
+                 ++output_tile) {
+                const uint32_t segment_offset =
+                    block_first *
+                        QBH_KV_CACHE_HMX_U8_SEGMENT_WEIGHT_BYTES +
+                    (output_tile * block_count +
+                     (segment - block_first)) * QBH_HMX_WEIGHT_BYTES;
+                memcpy(physical_tail +
+                           output_tile * QBH_HMX_WEIGHT_BYTES,
+                       head_reference + segment_offset,
+                       QBH_HMX_WEIGHT_BYTES);
+            }
+        }
+        for (uint32_t group = 0U; group < tail_rows / 4U; ++group) {
+            for (uint32_t output_tile = 0U;
+                 output_tile < QBH_ATTENTION_HEAD_DIM_TILES;
+                 ++output_tile) {
+                uint8_t *destination = physical_tail +
+                    output_tile * QBH_HMX_WEIGHT_BYTES +
+                    group * 128U;
+                for (uint32_t output = 0U;
+                     output < QBH_HMX_OUTPUT_CHANNELS; ++output) {
+                    for (uint32_t lane = 0U; lane < 4U; ++lane) {
+                        const uint8_t code = logical_tail[
+                            (group * 4U + lane) * QBH_BLOCK_HEAD_DIM +
+                            output_tile * QBH_HMX_OUTPUT_CHANNELS +
+                            output];
+                        int32_t value = qbh_host_round_div_signed(
+                            ((int32_t)code - config->v_zero_point) *
+                                (int32_t)config->v_recenter_numerator,
+                            (int32_t)config->v_recenter_denominator);
+                        if (value < INT8_MIN) {
+                            value = INT8_MIN;
+                        } else if (value > INT8_MAX) {
+                            value = INT8_MAX;
+                        }
+                        destination[output * 4U + lane] =
+                            (uint8_t)(int8_t)value;
+                    }
+                }
+            }
+        }
+        if (tail_rows % 4U != 0U) {
+            const uint32_t group = tail_rows / 4U;
+            const uint32_t partial_rows = tail_rows % 4U;
+            for (uint32_t output_tile = 0U;
+                 output_tile < QBH_ATTENTION_HEAD_DIM_TILES;
+                 ++output_tile) {
+                for (uint32_t lane = 0U; lane < partial_rows; ++lane) {
+                    memcpy(
+                        physical_tail +
+                            output_tile * QBH_HMX_WEIGHT_BYTES +
+                            group * 128U +
+                            lane * QBH_HMX_OUTPUT_CHANNELS,
+                        logical_tail +
+                            (group * 4U + lane) * QBH_BLOCK_HEAD_DIM +
+                            output_tile * QBH_HMX_OUTPUT_CHANNELS,
+                        QBH_HMX_OUTPUT_CHANNELS);
+                }
+            }
+        }
+        memcpy(tail, physical_tail, sizeof(physical_tail));
     }
     return 0;
 }
@@ -2627,6 +2790,8 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U32(repeat_count);
     QBH_REPLAY_PROFILE_U32(prepared_session_run_index);
     QBH_REPLAY_PROFILE_U32(numerical_audit_enabled);
+    QBH_REPLAY_PROFILE_U32(kv_cache_k_format);
+    QBH_REPLAY_PROFILE_U32(kv_cache_v_format);
     QBH_REPLAY_PROFILE_U32(w4u8_prefill_cache_mode);
     QBH_REPLAY_PROFILE_U32(w4u8_delta_reconstruction_mode);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_softmax_mode);
@@ -2767,6 +2932,11 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U32(u8_cache_segment_tail_append_count);
     QBH_REPLAY_PROFILE_U32(u8_cache_segment_seal_count);
     QBH_REPLAY_PROFILE_U64(u8_cache_segment_sealed_bytes);
+    QBH_REPLAY_PROFILE_U32(u8_cache_v_quartet_append_count);
+    QBH_REPLAY_PROFILE_U32(u8_cache_v_quartet_publish_count);
+    QBH_REPLAY_PROFILE_U32(u8_cache_v_quartet_partial_pack_rows);
+    QBH_REPLAY_PROFILE_U32(u8_cache_v_quartet_full_tile_rmw_count);
+    QBH_REPLAY_PROFILE_U64(u8_cache_v_quartet_native_load_bytes);
     QBH_REPLAY_PROFILE_U32(f16_cache_native_prefill_reuse_count);
     QBH_REPLAY_PROFILE_U64(
         f16_cache_native_prefill_reused_carrier_bytes);
@@ -3097,7 +3267,7 @@ static int qbh_run_replay_sequence(
                 const uint8_t *actual =
                     shared + vertical_slots[slice_index]
                                  .caches[kind].offset;
-                const uint8_t *reference;
+                uint8_t *reference;
                 const int hmx_native_u8 =
                     qbh_hmx_native_u8_cache_formats(
                         layer->k_format, layer->v_format);
@@ -3139,6 +3309,18 @@ static int qbh_run_replay_sequence(
                 reference =
                     shared + vertical_slots[slice_index]
                                  .cache_references[kind].offset;
+                if (kind == 1U &&
+                    layer->v_format ==
+                        QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5 &&
+                    qbh_prepare_quartet_v_reference(
+                        reference, layer,
+                        (const struct qbh_attention_config *)(
+                            shared + vertical_slots[slice_index]
+                                         .attention_config.offset),
+                        layer->valid_length) != 0) {
+                    free(cache_snapshots);
+                    return -1;
+                }
                 if (hmx_native) {
                     if (step != 0U) {
                         step_result->cache_prefix_mismatches +=
@@ -4275,6 +4457,13 @@ int main(int argc, char **argv) {
                     QBH_KV_CACHE_FORMAT_HMX_U8_K_SEGMENTED_V4;
                 kv_cache_v_format =
                     QBH_KV_CACHE_FORMAT_HMX_U8_V_SEGMENTED_V4;
+            } else if (strcmp(
+                           layout,
+                           "hmx_native_u8_segmented_quartet_v5") == 0) {
+                kv_cache_k_format =
+                    QBH_KV_CACHE_FORMAT_HMX_U8_K_SEGMENTED_V4;
+                kv_cache_v_format =
+                    QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5;
             } else if (strcmp(layout, "hmx_native_f16") == 0) {
                 kv_cache_k_format =
                     QBH_KV_CACHE_FORMAT_HMX_F16_K_WEIGHT_V1;
@@ -4449,6 +4638,8 @@ int main(int argc, char **argv) {
              QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_DELTA_V2 &&
          kv_cache_v_format !=
              QBH_KV_CACHE_FORMAT_HMX_U8_V_SEGMENTED_V4 &&
+         kv_cache_v_format !=
+             QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5 &&
          kv_cache_v_format !=
              QBH_KV_CACHE_FORMAT_HMX_F16_V_WEIGHT_V1) ||
         (qbh_hmx_native_u8_cache_formats(

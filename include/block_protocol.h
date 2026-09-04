@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(78)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(179)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(79)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(180)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -131,6 +131,7 @@ enum qbh_kv_cache_format {
     QBH_KV_CACHE_FORMAT_HMX_U8_V_WEIGHT_DELTA_V2 = 7,
     QBH_KV_CACHE_FORMAT_HMX_U8_K_SEGMENTED_V4 = 8,
     QBH_KV_CACHE_FORMAT_HMX_U8_V_SEGMENTED_V4 = 9,
+    QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5 = 10,
 };
 
 enum qbh_w4u8_prefill_cache_mode {
@@ -245,6 +246,16 @@ enum qbh_w4u8_decode_softmax_mode {
 #define QBH_KV_CACHE_HMX_U8_V_SEGMENTED_BYTES(capacity_) \
     (QBH_BLOCK_KV_HEADS * \
      QBH_KV_CACHE_HMX_U8_V_SEGMENTED_HEAD_BYTES(capacity_))
+
+/* EXP-0180 keeps the V-cache allocation byte-compatible with segmented-v4,
+ * but changes the mutable 32-row tail contract.  Complete groups of four rows
+ * occupy their final HMX weight bytes.  The active incomplete group reuses the
+ * same 4 x 128-byte region as four tile-major logical row fragments until it
+ * is published.  No duplicate tail storage or full-tile RMW is required. */
+#define QBH_KV_CACHE_HMX_U8_V_QUARTET_HEAD_BYTES(capacity_) \
+    QBH_KV_CACHE_HMX_U8_V_SEGMENTED_HEAD_BYTES(capacity_)
+#define QBH_KV_CACHE_HMX_U8_V_QUARTET_BYTES(capacity_) \
+    QBH_KV_CACHE_HMX_U8_V_SEGMENTED_BYTES(capacity_)
 
 /* FP16 cache-native storage keeps the exact M64 HMX weight operands consumed
  * by prefill QK/AV plus a contiguous row journal for the bounded decode tail.
@@ -1053,6 +1064,11 @@ struct qbh_block_header {
     uint32_t u8_cache_segment_tail_append_count;
     uint32_t u8_cache_segment_seal_count;
     uint64_t u8_cache_segment_sealed_bytes;
+    uint32_t u8_cache_v_quartet_append_count;
+    uint32_t u8_cache_v_quartet_publish_count;
+    uint32_t u8_cache_v_quartet_partial_pack_rows;
+    uint32_t u8_cache_v_quartet_full_tile_rmw_count;
+    uint64_t u8_cache_v_quartet_native_load_bytes;
     uint32_t f16_cache_native_prefill_reuse_count;
     uint64_t f16_cache_native_prefill_reused_carrier_bytes;
     uint32_t f16_cache_native_incremental_append_count;

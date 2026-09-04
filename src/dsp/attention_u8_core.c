@@ -2007,6 +2007,86 @@ void qbh_attention_u8_patch_v_delta_rows_hvx(
     asm volatile("barrier" ::: "memory");
 }
 
+void qbh_attention_u8_publish_v_row_group_hvx(
+    uint8_t *raw_group_tiles, uint32_t tile_stride_bytes,
+    uint32_t row_count, const struct qbh_attention_config *config,
+    uint8_t *scratch, uint32_t *saturation_count) {
+    int16_t *recenter_lut = (int16_t *)(
+        scratch + QBH_ATTN_U8_VGATHER_LUT_OFFSET);
+    int16_t *gathered_low = (int16_t *)(
+        scratch + QBH_ATTN_U8_VGATHER_SCRATCH_OFFSET);
+    int16_t *gathered_high = gathered_low + 64;
+    uint8_t row_group[QBH_ATTN_U8_HVX_BYTES]
+        __attribute__((aligned(QBH_ATTN_U8_HVX_BYTES)));
+
+    if (raw_group_tiles == NULL || config == NULL || scratch == NULL ||
+        row_count == 0U || row_count > 4U ||
+        tile_stride_bytes < sizeof(HVX_Vector)) {
+        return;
+    }
+    for (uint32_t n_tile = 0U;
+         n_tile < QBH_ATTENTION_HEAD_DIM_TILES; ++n_tile) {
+        uint8_t *group = raw_group_tiles +
+            (size_t)n_tile * tile_stride_bytes;
+        const HVX_VectorPred all_lanes = Q6_Q_vcmp_eq_VwVw(
+            Q6_V_vzero(), Q6_V_vzero());
+        HVX_Vector values;
+        HVX_VectorPair value_h;
+        HVX_Vector offsets_low;
+        HVX_Vector offsets_high;
+        HVX_Vector recentered;
+
+        *(HVX_Vector *)row_group = *(const HVX_Vector *)group;
+        if (row_count < 4U) {
+            memset(row_group +
+                       row_count * QBH_HMX_OUTPUT_CHANNELS,
+                   (uint8_t)config->v_zero_point,
+                   (4U - row_count) * QBH_HMX_OUTPUT_CHANNELS);
+        }
+        if (saturation_count != NULL) {
+            for (uint32_t row = 0U; row < row_count; ++row) {
+                for (uint32_t output = 0U;
+                     output < QBH_HMX_OUTPUT_CHANNELS; ++output) {
+                    const uint8_t code = row_group[
+                        row * QBH_HMX_OUTPUT_CHANNELS + output];
+                    const int32_t centered =
+                        (int32_t)code - config->v_zero_point;
+                    const int32_t requantized =
+                        qbh_attention_u8_round_div_signed(
+                            centered *
+                                (int32_t)config->v_recenter_numerator,
+                            (int32_t)config->v_recenter_denominator);
+                    *saturation_count +=
+                        requantized < INT8_MIN || requantized > INT8_MAX;
+                }
+            }
+        }
+
+        values = *(const HVX_Vector *)row_group;
+        value_h = Q6_Wuh_vunpack_Vub(values);
+        offsets_low = Q6_Vh_vasl_VhR(Q6_V_lo_W(value_h), 1);
+        offsets_high = Q6_Vh_vasl_VhR(Q6_V_hi_W(value_h), 1);
+        Q6_vgather_AQRMVh(
+            gathered_low, all_lanes,
+            (int32_t)(uintptr_t)recenter_lut,
+            QBH_ATTN_U8_VGATHER_LUT_BYTES - 1U, offsets_low);
+        Q6_vgather_AQRMVh(
+            gathered_high, all_lanes,
+            (int32_t)(uintptr_t)recenter_lut,
+            QBH_ATTN_U8_VGATHER_LUT_BYTES - 1U, offsets_high);
+        recentered = Q6_Vb_vpack_VhVh_sat(
+            *(volatile HVX_Vector *)gathered_high,
+            *(volatile HVX_Vector *)gathered_low);
+        recentered = Q6_Vb_vdeal_Vb(recentered);
+        recentered = Q6_Vb_vdeal_Vb(recentered);
+        recentered = Q6_Vb_vdeal_Vb(recentered);
+        recentered = Q6_Vb_vdeal_Vb(recentered);
+        recentered = Q6_Vb_vdeal_Vb(recentered);
+        *(HVX_Vector *)group = recentered;
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
 static uint8_t qbh_attention_u8_dynamic_score_at(
     const uint8_t *score_tiles, uint32_t head,
     uint32_t row, uint32_t column, uint32_t n_tiles) {
