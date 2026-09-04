@@ -6,6 +6,41 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0198
+    slug: w4u8-direct-n-gate-up-continuous-ring
+    title: Continuous direct-n Gate-to-Up projection ring
+    parent: EXP-0196
+    variants:
+      - evidence_valid_EXP0196_independent_Gate_Up_calls_control
+      - continuous_batch32_Gate_to_Up_ring_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0198-w4u8-direct-n-gate-up-continuous-ring
+    source_commits: []
+    record: docs/experiments/EXP-0198.md
+    approval_ref: 'User message 2026-09-05: 开始decode优化loop'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0198-w4u8-direct-n-gate-up-continuous-ring
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    evidence:
+      source_parent_experiment: EXP-0196
+      source_parent_commit: c8e8b7d35a1aa93f04d1685ae791853f74d4a927
+      direct_control: same_binary_independent_batch32_Gate_and_Up_calls
+      candidate: one_continuous_six_group_batch32_Gate_to_Up_direct_n_ring
+      hypothesis: overlap_first_Up_weight_DMA_with_final_Gate_HMX_and_remove_one_projection_start_bubble_per_layer
+      optimization_scope: decode_only_Gate_Up_direct_n_orchestration_boundary_telemetry_and_tools
+      forbidden_changes: weights_values_scales_qparams_QKV_Attention_O_SwiGLU_Down_residual_cache_LM_head_M64_prefill_F16F16_W4F16_QNN
+      correctness_gate: byte_exact_Gate_Up_middle_hidden_cache_selected_codes_and_tokens_to_independent_call_control
+      physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_DMA_descriptors_HMX_commands_and_tile_pairs
+      short_gate: five_rotated_pairs_with_strict_decode_and_Gate_Up_speed_pass
+      formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      selected_baseline_changed: false
   - id: EXP-0197
     slug: w4u8-direct-n-lm-head-batch64
     title: Direct-n decode LM-head batch-sixty-four
@@ -13,14 +48,20 @@ experiments:
     variants:
       - evidence_valid_EXP0196_direct_n_LM_head_batch32_control
       - direct_n_decode_LM_head_batch64_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0197-w4u8-direct-n-lm-head-batch64
-    source_commits: []
+    source_commits:
+      - f1be7a51043b00cb367486013db627f7b645aeb0
+      - ee2cdf6302f5b17c70e0ad468e30c075c3fd7f5f
+      - e1ee4cb38af9d9cf97b46e42d57e557353aeee15
+      - fd87e1deae958eb65cbe004ee24c67d7c742648c
+      - 6b609018ba815e2c61e38806ebf333e096e69c0f
+      - a1346bb0f5dc8debb671b5f7f3aa228d1afa031b
     record: docs/experiments/EXP-0197.md
     approval_ref: 'User message 2026-09-05: 开始decode优化loop'
     runtime:
@@ -28,6 +69,7 @@ experiments:
       source_branch: codex/exp-0197-w4u8-direct-n-lm-head-batch64
       approved_on: '2026-09-05'
       started_on: '2026-09-05'
+      completed_on: '2026-09-05'
     evidence:
       source_parent_experiment: EXP-0196
       source_parent_commit: c8e8b7d35a1aa93f04d1685ae791853f74d4a927
@@ -40,6 +82,29 @@ experiments:
       short_gate: five_rotated_pairs_with_strict_decode_and_LM_head_speed_pass
       formal_gate: ten_rotated_193_step_pairs_if_short_passes
       stop_condition: close_further_LM_head_batch_search_if_short_does_not_improve
+      failure_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0197/20260905_short_gate_a1346bb'
+      source_commit: a1346bb0f5dc8debb671b5f7f3aa228d1afa031b
+      static_gate_result: pass_batch64_mode_phase_overlay_split_DMA_no_QNN
+      physical_gate_result: fail_precise_cDSP_exception_in_qbh_hmx_accumulate_u8n4_projection_after_two_LM_head_commands
+      failure_boundary: unchanged_M64_prefill_completed_first_decode_LM_head_reset_cDSP_before_completion
+      observed_in_incomplete_decode:
+        generation_lm_head_command_count: 2
+        generation_lm_head_ddr_read_bytes: 9604096
+        generation_lm_head_expand_ticks: 0
+        intermediate_ddr_read_bytes: 0
+        intermediate_ddr_write_bytes: 0
+        intermediate_spill_fill_count: 0
+      crash:
+        thread: qbh-block-hmx
+        symbol: qbh_hmx_accumulate_u8n4_projection+0x20
+        bad_virtual_address: '0xFF3FD000'
+        error_code: '0x2601'
+      unavailable: post_LM_correctness_paired_throughput_formal_module_profile_due_to_physical_stop
+      control_audit_sha256: 2462da14271c4eaab402026f6bec3f0634cc51a55624e0c813705876347bfe68
+      candidate_audit_sha256: 2078786e753b5d02c6b6786e1115c90bfc2d9c3b945e9ed2f049c73c47830367
+      static_gate_sha256: 7ce9980448e3edb5d9131de3b70227c9738c78c477c5b3a9fd2b05689e641563
+      conclusion: two_MiB_phase_overlay_is_DMA_addressable_but_not_a_valid_complete_HMX_weight_n_carrier
+      reopen_condition: only_with_a_proven_HMX_accessible_two_MiB_double_buffer_mapping_not_an_arbitrary_phase_overlay
       selected_baseline_changed: false
   - id: EXP-0196
     slug: w4u8-direct-n-lm-head-batch32

@@ -1382,12 +1382,30 @@ allowing group-size-dependent tie selection, applying direct-n to M64 prefill,
 or counting expansion removal without end-to-end acceleration
 
 **Direct-N Decode LM-Head Batch-Sixty-Four Candidate**:
-The active EXP-0197 hypothesis fills each existing two-MiB phase-dead
-expanded-weight slot with sixty-four packed-W4 LM-head tiles.  It compares
-against EXP-0196 batch thirty-two and changes only decode command granularity.
-The target is to reduce 149 commands to 75 without changing 156.8 MB/token of
-LM-head DDR reads or 303872 LM-head HMX tile pairs.  A short failure closes
-further LM-head batch-width search rather than triggering more parameter
-sweeps.
-_Avoid_: enlarging the VTCM plan, altering prefill, changing argmax order,
-changing weights or quantization, or claiming a win from fewer commands alone
+The rejected EXP-0197 hypothesis attempted to reduce LM-head commands from 149
+to 75 with sixty-four packed-W4 tiles per group.  Each real group is two MiB,
+not one MiB, so the retained implementation first carved two capacity-checked
+slots from Transformer-phase-dead VTCM between the resident-bias prefix and
+persistent KV tails.  DMA populated that overlay, but the first decode reset
+cDSP after two HMX commands.  Crash telemetry identifies a precise exception
+in `qbh_hmx_accumulate_u8n4_projection+0x20` at bad VA `0xFF3FD000`.  Retiring
+the previous HMX command before ping-pong reuse reproduced the same failure.
+Thus arbitrary dead VTCM is not automatically a valid large `weight.n` carrier.
+No correctness or speed claim exists beyond the failure boundary, and EXP-0196
+batch thirty-two remains the valid LM-head candidate.
+_Avoid_: retrying arbitrary two-MiB phase overlays, enlarging the VTCM plan,
+altering prefill or argmax order, using incomplete counters as performance, or
+claiming a win from fewer intended commands
+
+**Continuous Direct-N Gate-to-Up Projection Ring**:
+The active EXP-0198 hypothesis keeps the valid batch-thirty-two HMX-accessible
+weight slots and all arithmetic unchanged.  Gate and Up currently drain two
+independent three-group rings even though they share one activation.  The
+candidate flattens them into one six-group schedule, allowing first-Up weight
+DMA to overlap final-Gate HMX and removing one serialized projection-start
+bubble per layer.  Weight bytes, DMA descriptor count, HMX commands, tile pairs,
+outputs, M64 prefill and all non-Gate/Up modules must remain identical; only a
+strict full-decode and Gate/Up wall improvement can pass.
+_Avoid_: changing batch size, allocating new VTCM, moving SwiGLU into the ring,
+altering outputs or quantization, or treating a local overlap counter as an
+end-to-end win
