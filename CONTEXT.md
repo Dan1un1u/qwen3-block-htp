@@ -1270,13 +1270,17 @@ _Avoid_: claiming a true one-row HMX kernel, including LM head in direct-n,
 claiming prefill acceleration, or semantic quality
 
 **Direct-N Decode Row-Four SwiGLU Candidate**:
-The active EXP-0189 hypothesis applies the unchanged U8 LUT SwiGLU to one
+The completed EXP-0189 candidate applies the unchanged U8 LUT SwiGLU to one
 128-byte HVX vector (four physical rows) instead of all 64 HMX carrier rows
 during logical-M1 direct-n decode.  Unlike rejected EXP-0171, EXP-0188 completes
 its blocking Gate and Up direct-n HMX calls before entering a standalone
-SwiGLU scan and performs no timed W4-to-S8 expansion.  This changed producer
-contract satisfies EXP-0171's reopen condition and makes dead-row elimination
-a serial-critical-path hypothesis rather than an overlapped-work hypothesis.
+SwiGLU scan and performs no timed W4-to-S8 expansion.  Ten rotated pairs improve
+decode from 27.594909 to 34.446836 token/s (+24.830404%); SwiGLU falls from
+7.755558 to 0.488133 ms/token while Gate/Up projection, HMX work and weight
+traffic remain unchanged.  Full64, row4 and poisoned-row4 audits have identical
+valid-row hashes, hidden tensors, selected tokens and cache state.  Evidence is
+valid and the local gate passes, but adoption remains pending the user and
+EXP-0188 remains the Selected W4U8 Token-Generation Baseline.
 _Avoid_: retrying the old Expanded-S8 schedule, applying row4 to M64 prefill,
 changing LUT or qparams, claiming dead padding is mathematically meaningful,
-or accepting the candidate without direct full-stack evidence
+automatic baseline promotion, or claiming semantic quality
