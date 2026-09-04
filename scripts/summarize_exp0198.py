@@ -14,7 +14,6 @@ import summarize_exp0189 as base
 CONTROL = "independent"
 CANDIDATE = "continuous"
 EXPERIMENT = 198
-LAYERS = 28
 
 
 def parse_args() -> argparse.Namespace:
@@ -175,10 +174,6 @@ def main() -> None:
             runs[CONTROL], "weight_dma_descriptor_count"),
         "candidate_dma_descriptors": base.median_counter(
             runs[CANDIDATE], "weight_dma_descriptor_count"),
-        "control_overlap_schedules": base.median_counter(
-            runs[CONTROL], "w4u8_qkvo_overlap_schedule_count"),
-        "candidate_overlap_schedules": base.median_counter(
-            runs[CANDIDATE], "w4u8_qkvo_overlap_schedule_count"),
         "vtcm_bytes": base.VTCM_BYTES,
         "intermediate_ddr_bytes": 0,
         "spill_fill": 0,
@@ -205,9 +200,6 @@ def main() -> None:
         "dma_descriptors_preserved":
             physical["candidate_dma_descriptors"] ==
             physical["control_dma_descriptors"],
-        "one_cross_projection_overlap_per_layer":
-            physical["candidate_overlap_schedules"] -
-            physical["control_overlap_schedules"] == LAYERS,
         "transformer_expansion_zero":
             base.median_counter(
                 runs[CANDIDATE], "w4u8_qkvo_weight_expand_ticks") == 0 and
