@@ -2577,48 +2577,41 @@ static int qbh_dma_wait_weight_prefetch(
 }
 
 /* User DMA rejects the two-MiB 1D descriptor needed by an LM-head batch of
- * sixty-four.  Keep the HMX group intact but publish it through a linked pair
- * of one-MiB descriptors. */
+ * sixty-four.  Keep the HMX group intact but publish it through two one-MiB
+ * descriptors.  Starting the second half after the first completes avoids
+ * relying on a two-MiB linked-chain contract that the device also rejects. */
 static int qbh_dma_start_weight_prefetch_split2(
     struct qbh_dma_aligned_desc_1d aligned[2],
     void *weight_destination, const void *weight_source,
     uint32_t weight_bytes) {
-    struct qbh_dma_desc_1d *first = &aligned[0].descriptor;
-    struct qbh_dma_desc_1d *second = &aligned[1].descriptor;
     const uint32_t first_bytes = weight_bytes <
             QBH_BLOCK_DMA_MAX_WEIGHT_1D_BYTES
         ? weight_bytes : QBH_BLOCK_DMA_MAX_WEIGHT_1D_BYTES;
     const uint32_t second_bytes = weight_bytes - first_bytes;
+    int result;
 
     if (second_bytes == 0U) {
         return qbh_dma_start_weight_prefetch(
             &aligned[0], weight_destination, weight_source, weight_bytes);
     }
     if (weight_destination == NULL || weight_source == NULL ||
-        second_bytes > QBH_BLOCK_DMA_MAX_WEIGHT_1D_BYTES ||
-        qbh_dma_wait_idle() != 0) {
+        second_bytes > QBH_BLOCK_DMA_MAX_WEIGHT_1D_BYTES) {
         return -1;
     }
-    memset(aligned, 0, 2U * sizeof(*aligned));
-    first->next = (uint32_t)(uintptr_t)second;
-    first->length = first_bytes;
-    first->type = QBH_DMA_TYPE_1D;
-    first->src_bypass = 1;
-    first->ordered = 1;
-    first->dstate = QBH_DMA_DESC_PENDING;
-    first->src = (uint32_t)(uintptr_t)weight_source;
-    first->dst = (uint32_t)(uintptr_t)weight_destination;
-
-    second->length = second_bytes;
-    second->type = QBH_DMA_TYPE_1D;
-    second->src_bypass = 1;
-    second->ordered = 1;
-    second->dstate = QBH_DMA_DESC_PENDING;
-    second->src = (uint32_t)(uintptr_t)weight_source + first_bytes;
-    second->dst = (uint32_t)(uintptr_t)weight_destination + first_bytes;
-    asm volatile("release(%0):at" : : "r"(second) : "memory");
-    asm volatile("release(%0):at" : : "r"(first) : "memory");
-    return qbh_dma_start(first) == 0 ? 0 : -2;
+    result = qbh_dma_start_weight_prefetch(
+        &aligned[0], weight_destination, weight_source, first_bytes);
+    if (result != 0) {
+        return -2;
+    }
+    result = qbh_dma_wait_weight_prefetch(&aligned[0]);
+    if (result != 0) {
+        return -3;
+    }
+    return qbh_dma_start_weight_prefetch(
+        &aligned[1],
+        (uint8_t *)weight_destination + first_bytes,
+        (const uint8_t *)weight_source + first_bytes,
+        second_bytes);
 }
 
 static int qbh_dma_wait_weight_prefetch_split2(
@@ -2637,20 +2630,19 @@ static int qbh_dma_wait_weight_prefetch_split2(
 static int qbh_dma_copy_weight_split2(
     struct qbh_block_header *header, void *weight_destination,
     const void *weight_source, uint32_t weight_bytes) {
-    struct qbh_dma_aligned_desc_1d aligned[2]
-        __attribute__((aligned(64)));
-    const uint64_t start = HAP_perf_get_qtimer_count();
-    int result = qbh_dma_start_weight_prefetch_split2(
-        aligned, weight_destination, weight_source, weight_bytes);
-    if (result == 0) {
-        result = qbh_dma_wait_weight_prefetch_split2(
-            aligned, weight_bytes);
+    const uint32_t first_bytes = weight_bytes <
+            QBH_BLOCK_DMA_MAX_WEIGHT_1D_BYTES
+        ? weight_bytes : QBH_BLOCK_DMA_MAX_WEIGHT_1D_BYTES;
+    const uint32_t second_bytes = weight_bytes - first_bytes;
+    int result = qbh_dma_copy(
+        header, weight_destination, weight_source, first_bytes, 1U);
+    if (result != 0 || second_bytes == 0U) {
+        return result;
     }
-    if (result == 0) {
-        header->weight_dma_ticks +=
-            HAP_perf_get_qtimer_count() - start;
-    }
-    return result;
+    return qbh_dma_copy(
+        header, (uint8_t *)weight_destination + first_bytes,
+        (const uint8_t *)weight_source + first_bytes,
+        second_bytes, 1U);
 }
 
 static void qbh_fp16_input_norm_pool_run_tasks(
