@@ -6,6 +6,41 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0201
+    slug: w4u8-direct-n-gate-up-swiglu-stream
+    title: Interleaved Gate/Up producer with asynchronous U8 SwiGLU
+    parent: EXP-0199
+    variants:
+      - evidence_valid_EXP0199_control
+      - EXP0200_prefetch_plus_interleaved_Gate_Up_async_SwiGLU_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0201-w4u8-direct-n-gate-up-swiglu-stream
+    source_commits: []
+    record: docs/experiments/EXP-0201.md
+    approval_ref: 'User message 2026-09-05: 开始decode优化loop'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0201-w4u8-direct-n-gate-up-swiglu-stream
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    evidence:
+      source_parent_experiment: EXP-0200-enabling-source
+      source_parent_commit: d28657d0cbf977d0e45103f32f86a2da34c44567
+      direct_control: same_binary_EXP0199_without_O_Gate_prefetch_or_SwiGLU_stream
+      candidate: EXP0200_prefetch_plus_batch32_Gate_Up_group_interleave_and_one_HVX_worker_SwiGLU_consumer
+      hypothesis: hide_existing_U8_LUT_SwiGLU_under_later_direct_W4_HMX_groups
+      optimization_scope: decode_only_Gate_Up_projection_order_async_SwiGLU_worker_bounded_group_state_telemetry_and_tools
+      forbidden_changes: weights_values_scales_qparams_arithmetic_HMX_tile_operations_QKV_Attention_O_residual_norm_Down_cache_LM_head_M64_prefill_F16F16_W4F16_QNN
+      correctness_gate: byte_exact_Gate_Up_middle_hidden_cache_selected_codes_and_tokens
+      physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_descriptors_commands_and_tile_pairs_six_groups_per_layer
+      short_gate: five_rotated_pairs_with_strict_decode_and_Gate_Up_SwiGLU_speed_pass
+      formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      selected_baseline_changed: false
   - id: EXP-0200
     slug: w4u8-direct-n-o-gate-prefetch
     title: Decode O-to-Gate direct-n cross-prefetch
@@ -13,14 +48,15 @@ experiments:
     variants:
       - evidence_valid_EXP0199_no_O_Gate_prefetch_control
       - O_to_Gate_first_batch_cross_prefetch_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0200-w4u8-direct-n-o-gate-prefetch
-    source_commits: []
+    source_commits:
+      - d28657d0cbf977d0e45103f32f86a2da34c44567
     record: docs/experiments/EXP-0200.md
     approval_ref: 'User message 2026-09-05: 开始decode优化loop'
     runtime:
@@ -28,6 +64,7 @@ experiments:
       source_branch: codex/exp-0200-w4u8-direct-n-o-gate-prefetch
       approved_on: '2026-09-05'
       started_on: '2026-09-05'
+      completed_on: '2026-09-05'
     evidence:
       source_parent_experiment: EXP-0199
       source_parent_commit: aef3582fd1f4b06bf147b1f28f18ea812e541391
@@ -40,6 +77,16 @@ experiments:
       physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_descriptors_commands_and_tile_pairs
       short_gate: five_rotated_pairs_with_strict_decode_and_Gate_Up_speed_pass
       formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0200/20260905_short_gate_d28657d'
+      first_formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0200/20260905_formal_d28657d'
+      confirmation_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0200/20260905_formal_confirmation_d28657d'
+      first_formal_decode_tokens_per_second: 42.611212
+      first_formal_decode_speed_percent: 0.799930
+      confirmation_decode_tokens_per_second: 42.588502
+      confirmation_decode_speed_percent: 0.882902
+      combined_formal_pair_wins: 17
+      combined_formal_pairs: 20
+      strict_gate_failure: each_formal_run_contained_at_least_one_negative_pair
       selected_baseline_changed: false
   - id: EXP-0199
     slug: w4u8-direct-n-qkv-batch16
