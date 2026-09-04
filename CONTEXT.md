@@ -1154,12 +1154,28 @@ automatic baseline promotion, or describing the 0.724% gain without its 9/10
 pair stability evidence
 
 **Decode Row-Selective AV Requantization**:
-The EXP-0177 hypothesis that logical-M=1 decode needs the exact post-HMX AV
+The completed EXP-0177 W4U8 candidate proving that logical-M=1 decode needs the exact post-HMX AV
 affine requantization only for physical row zero. One 128-byte HVX operation
 per output tile covers row zero plus three dead padding rows, replacing the
 full 64-row carrier scan while leaving QK, Softmax, AV HMX and the valid-row
-mathematics unchanged. Padding invariance and full-stack token identity are
-mandatory because unchanged dead HMX codes may remain in rows four through 63.
+mathematics unchanged. Ten of ten rotated formal pairs improve direct decode
+from 20.344415 to 20.893466 token/s, while Attention falls 21.32% and AV
+requantization falls from 1.341 to 0.165 ms/token. Padding invariance,
+full-stack token identity and every physical gate pass. It is locally eligible
+but remains pending explicit promotion.
 _Avoid_: changing AV qparams, folding the two-rounding affine transform into
 HMX, processing only 32 unaligned bytes, using the decode path for M64 prefill,
-or treating padding equality as a mathematical requirement
+automatic baseline promotion, or treating padding equality as a mathematical
+requirement
+
+**Decode Row-Four Common Nonlinear Operators**:
+The EXP-0178 hypothesis that logical-M=1 decode should directly process one
+four-row HVX carrier vector in Input RMSNorm, fused post-attention residual plus
+RMSNorm, and final residual instead of waking the six-context pools to process
+all 64 physical rows. The exact existing row helpers and valid row-zero math are
+retained; M64 prefill remains on the full pool path. This is separate from the
+rejected row-selective SwiGLU experiment because Gate/Up producer pacing and
+all projection work remain unchanged.
+_Avoid_: changing RMSNorm or residual arithmetic, applying row4 to prefill,
+altering Gate/Up or SwiGLU, allowing dead padding to affect a later layer,
+removing padding-poison evidence, or automatic baseline promotion
