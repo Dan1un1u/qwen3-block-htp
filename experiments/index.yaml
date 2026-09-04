@@ -6,6 +6,40 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0181
+    slug: w4u8-decode-attention-publish-v-tail
+    title: Attention-side quartet publication for W4U8 decode
+    parent: EXP-0180
+    variants:
+      - segmented_v4_row_major_v_tail_control
+      - attention_publish_quartet_v_tail_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: boundary-audit-then-five-pair-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0181-w4u8-decode-attention-publish-v-tail
+    source_commits: []
+    record: docs/experiments/EXP-0181.md
+    approval_ref: 'User message 2026-09-04: 允许; continuation of the authorized uninterrupted decode optimization loop'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0181-w4u8-decode-attention-publish-v-tail
+      approved_on: '2026-09-04'
+    evidence:
+      source_parent_experiment: EXP-0180
+      source_parent_commit: 073cbd6da8a9f70f75a193298def5484787a6f83
+      source_parent_role: rejected_but_evidence_valid_enabling_carrier_candidate
+      execution_unit: real_token_ID_M64_prefill_then_continuous_W4U8_decode
+      direct_control: EXP0179_segmented_v4_row_major_mutable_V_tail
+      candidate: versioned_V6_Attention_side_quartet_conversion_consumption_and_persistent_publication
+      optimization_scope: W4U8_decode_V_cache_publication_location_DMA_order_ABI_telemetry_and_tools_only
+      forbidden_changes: QK_Softmax_AV_math_qparams_K_cache_QKV_O_MLP_embedding_feedback_LM_head_weights_prefill_math_F16F16_W4F16_QNN
+      prior_negative_boundary: EXP0180_proves_append_side_read_convert_write_publication_improves_Attention_but_regresses_complete_decode
+      short_gate: exact_quartet_and_segment_boundaries_plus_five_rotated_pairs_lower_Attention_and_complete_decode_Host_wall
+      formal_gate: ten_rotated_193_step_pairs_candidate_strictly_faster_direct_decode_with_all_correctness_and_physical_contracts
+      selected_baseline_changed: false
   - id: EXP-0180
     slug: w4u8-decode-quartet-native-v-tail
     title: Quartet-native mutable V-cache tail for W4U8 decode
@@ -13,20 +47,23 @@ experiments:
     variants:
       - segmented_v4_row_major_v_tail_control
       - quartet_native_v_tail_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: boundary-audit-then-five-pair-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0180-w4u8-decode-quartet-native-v-tail
-    source_commits: []
+    source_commits:
+      - 073cbd6da8a9f70f75a193298def5484787a6f83
     record: docs/experiments/EXP-0180.md
     approval_ref: 'User message 2026-09-04: 允许; continuation of the authorized uninterrupted decode optimization loop'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0180-w4u8-decode-quartet-native-v-tail
       approved_on: '2026-09-04'
+      started_on: '2026-09-04'
+      completed_on: '2026-09-04'
     evidence:
       source_parent_experiment: EXP-0179
       source_parent_commit: 828e4d7f5caf8001f135e225704ed6f83b52dc53
@@ -38,6 +75,25 @@ experiments:
       prior_negative_boundary: EXP0159_rejects_full_native_tile_read_modify_write_but_does_not_test_four_row_append_only_publication
       short_gate: exact_quartet_and_segment_boundaries_plus_five_rotated_pairs_lower_Attention_and_complete_decode_Host_wall
       formal_gate: ten_rotated_193_step_pairs_candidate_strictly_faster_direct_decode_with_all_correctness_and_physical_contracts
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0180/20260904T_exp0180_073cbd6_short'
+      source_commit: 073cbd6da8a9f70f75a193298def5484787a6f83
+      correctness_gate_result: pass_exact_quartet_and_segment_boundaries_cache_hidden_hashes_logit_codes_tokens_padding_poison_and_physical_contract
+      physical_gate_result: pass_exact_8mib_VTCM_zero_timed_intermediate_or_full_logit_DDR_zero_spill_fill_one_FastRPC_per_pass_no_QNN_zero_unattributed_ticks
+      performance_gate_result: fail_candidate_22_715331_tps_vs_control_22_839162_tps_and_3_of_5_pair_wins
+      control_decode_tokens_per_second: 22.839162
+      candidate_decode_tokens_per_second: 22.715331
+      candidate_decode_speed_percent: -0.542188
+      attention_us: {control: 4482.171, candidate: 3747.585}
+      attention_speed_percent: 19.601601
+      cache_conversion_update_us: {control: 159.883, candidate: 604.180}
+      cache_append_dma_us: {control: 175.856, candidate: 198.672}
+      pair_wins: 3
+      summary_sha256: e2108e05d3638fde187ae536015f008e86b27327590f8f4c436202d705359257
+      short_report_sha256: 60b88336b6c441a1df1c69e4040bc30e587c158f6e920bc821a40c51bc3b564e
+      static_gate_sha256: 7e9c2e49c1d9968427b68c2bdc762fcf44d3d955846dfd3cd6cb39c40b769d14
+      boundary_quartet_sha256: 97a2bd49b0a5bdaf309bdee3c94b4dd90eb63a6c7364258479506d4290946c23
+      conclusion: append_side_quartet_publication_reduces_Attention_but_publication_cost_regresses_complete_decode
+      reopen_condition: only_with_publication_reusing_the_Attention_tail_load_or_an_asynchronous_persistent_write_not_append_side_group_read_convert_write
       selected_baseline_changed: false
   - id: EXP-0179
     slug: w4u8-decode-row4-qk-norm-rope
