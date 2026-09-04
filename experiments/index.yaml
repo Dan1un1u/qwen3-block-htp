@@ -6,6 +6,38 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0185
+    slug: w4u8-decode-vtcm-k-tail-no-journal
+    title: Session-native K tail without mutable DDR journal
+    parent: EXP-0184
+    variants:
+      - exp0182_vtcm_resident_v_tail_control
+      - k13_hvx_tail_without_cached_head_DDR_row_journal_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: boundary-audit-then-five-pair-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0185-w4u8-decode-vtcm-k-tail-no-journal
+    source_commits: []
+    record: docs/experiments/EXP-0185.md
+    approval_ref: 'User message 2026-09-04: 同意，继续吧; continuation of the authorized uninterrupted decode optimization loop'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0185-w4u8-decode-vtcm-k-tail-no-journal
+      approved_on: '2026-09-04'
+    evidence:
+      source_parent_experiment: EXP-0184
+      source_parent_commit: 67a066ec528f2ff061632c45cf98128653448973
+      source_parent_role: rejected_but_evidence_valid_HVX_K_tail_structure
+      direct_control: EXP0182_V7_prepared_session_VTCM_resident_mutable_V_tail
+      candidate: versioned_session_native_partial_K_tail_without_cached_head_mutable_DDR_journal
+      optimization_scope: W4U8_K_tail_cache_ABI_cached_head_append_DDR_write_and_tools_only
+      forbidden_changes: cache_math_immutable_segments_Attention_Softmax_qparams_V_cache_QKV_O_MLP_embedding_feedback_LM_head_F16F16_W4F16_QNN
+      short_gate: exact_34_step_consumed_and_sealed_boundaries_plus_exact_DDR_write_elimination_plus_five_of_five_rotated_pairs_lower_cache_update_Attention_and_complete_decode
+      formal_gate: ten_rotated_193_step_pairs_candidate_strictly_faster_direct_decode_with_all_correctness_and_physical_contracts
+      selected_baseline_changed: false
   - id: EXP-0184
     slug: w4u8-decode-hvx-k-tail-update
     title: HVX single-row native K-tail update for W4U8 decode
@@ -13,14 +45,15 @@ experiments:
     variants:
       - exp0182_vtcm_resident_v_tail_control
       - exp0183_k13_with_hvx_row_update_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: boundary-audit-then-five-pair-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0184-w4u8-decode-hvx-k-tail-update
-    source_commits: []
+    source_commits:
+      - 67a066ec528f2ff061632c45cf98128653448973
     record: docs/experiments/EXP-0184.md
     approval_ref: 'User message 2026-09-04: 同意，继续吧; continuation of the authorized uninterrupted decode optimization loop'
     runtime:
@@ -37,6 +70,25 @@ experiments:
       forbidden_changes: cache_math_external_journal_Attention_Softmax_qparams_V_cache_QKV_O_MLP_embedding_feedback_LM_head_F16F16_W4F16_QNN
       short_gate: exact_34_step_boundary_plus_five_of_five_rotated_pairs_lower_cache_update_and_complete_decode_wall
       formal_gate: ten_rotated_193_step_pairs_candidate_strictly_faster_direct_decode_with_all_correctness_and_physical_contracts
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0184/20260904T_exp0184_67a066e_short'
+      source_commit: 67a066ec528f2ff061632c45cf98128653448973
+      correctness_gate_result: pass_exact_hidden_hashes_tokens_codes_K_carriers_segment_seal_padding_poison_and_physical_contract
+      physical_gate_result: pass_exact_8mib_VTCM_seven_cached_one_fallback_K_heads_zero_cached_tail_DDR_reads_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_no_QNN_zero_unattributed_ticks
+      performance_gate_result: fail_candidate_23_650115_tps_vs_control_23_425041_tps_wins_4_of_5_and_cache_update_remains_higher
+      control_decode_tokens_per_second: 23.425041
+      candidate_decode_tokens_per_second: 23.650115
+      candidate_decode_speed_percent: 0.960825
+      attention_us: {control: 3683.740, candidate: 3383.174}
+      attention_speed_percent: 8.884155
+      cache_conversion_update_us: {control: 251.087, candidate: 291.354}
+      hvx_k_row_update_us: 39.069
+      pair_wins: 4
+      summary_sha256: 97eac2b2802c13549a8c77bb8c691cdf2c24335db830f1d0096d89a06325a340
+      short_report_sha256: 4f6701ff8b830c0c21db941d6fcdd9628e806f97a948eeca6c7f51761a66b466
+      static_gate_sha256: 62769c21698b145d40f906acf61c97671ecb6f7ab6c7389ef031670c22417fb4
+      boundary_candidate_sha256: f26ffbd78bee5fda4422d4ec369baff4ff6be8510dd3de5c29633941559ca7ee
+      conclusion: HVX_row_update_recovers_positive_median_but_fails_stability_and_total_cache_update_gates
+      reopen_condition: session_native_K_tail_that_removes_redundant_DDR_row_journal_or_a_distinct_update_schedule
       selected_baseline_changed: false
   - id: EXP-0183
     slug: w4u8-decode-vtcm-native-k-tail
