@@ -4875,7 +4875,8 @@ int main(int argc, char **argv) {
               QBH_BLOCK_W4U8_SWIGLU_DECODE_ROWS)) ||
         (w4u8_decode_lm_head_group_tiles != 8U &&
          w4u8_decode_lm_head_group_tiles != 16U &&
-         w4u8_decode_lm_head_group_tiles != 32U) ||
+         w4u8_decode_lm_head_group_tiles != 32U &&
+         w4u8_decode_lm_head_group_tiles != 64U) ||
         (w4u8_decode_lm_head_group_tiles != 8U &&
          variant != QBH_BLOCK_W4U8) ||
         (w4u8_decode_softmax_mode !=

@@ -13,9 +13,6 @@ import summarize_exp0189 as base
 
 CONTROL = "expanded16"
 CANDIDATE = "direct32"
-EXPERIMENT = 196
-CONTROL_MASK = 7
-CANDIDATE_MASK = 15
 VOCAB_N_TILES = 151936 // 32
 K_TILES = 2048 // 32
 
@@ -29,6 +26,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--require-audit", action="store_true")
     parser.add_argument("--formal", action="store_true")
     parser.add_argument("--gate", action="store_true")
+    parser.add_argument("--experiment", type=int, default=196)
+    parser.add_argument("--control-group", type=int, default=16)
+    parser.add_argument("--candidate-group", type=int, default=32)
+    parser.add_argument("--control-mask", type=int, default=7)
+    parser.add_argument("--candidate-mask", type=int, default=15)
+    parser.add_argument("--control-direct", action="store_true")
+    parser.add_argument("--control-cell", default=CONTROL)
+    parser.add_argument("--candidate-cell", default=CANDIDATE)
     return parser.parse_args()
 
 
@@ -47,12 +52,16 @@ def signatures(run: dict[str, object]) -> tuple[list[int], list[int], list[str]]
     )
 
 
-def validate_run(run: dict[str, object], cell: str, steps: int) -> None:
-    direct = cell == CANDIDATE
-    group_tiles = 32 if direct else 16
-    direct_mask = CANDIDATE_MASK if direct else CONTROL_MASK
+def validate_run(
+    run: dict[str, object], cell: str, steps: int, args: argparse.Namespace
+) -> None:
+    direct = cell == CANDIDATE or args.control_direct
+    group_tiles = (
+        args.candidate_group if cell == CANDIDATE else args.control_group)
+    direct_mask = (
+        args.candidate_mask if cell == CANDIDATE else args.control_mask)
     base.validate_run(
-        run, 4, steps, experiment=EXPERIMENT,
+        run, 4, steps, experiment=args.experiment,
         direct_mask=direct_mask, lm_head_direct=direct)
     profiles = run["profiles"]
     assert isinstance(profiles, list)
@@ -69,13 +78,15 @@ def validate_run(run: dict[str, object], cell: str, steps: int) -> None:
             group_tiles, context + " observed LM-head batch")
 
 
-def validate_audit(result_dir: Path) -> dict[str, bool]:
+def validate_audit(
+    result_dir: Path, args: argparse.Namespace
+) -> dict[str, bool]:
     runs = {
         cell: base.load_run(result_dir / "raw" / f"audit_{cell}.log", 4)
         for cell in (CONTROL, CANDIDATE)
     }
     for cell, run in runs.items():
-        validate_run(run, cell, 4)
+        validate_run(run, cell, 4, args)
     result = {
         "tokens_logit_codes_and_output_hashes_equal":
             signatures(runs[CONTROL]) == signatures(runs[CANDIDATE]),
@@ -88,7 +99,10 @@ def validate_audit(result_dir: Path) -> dict[str, bool]:
 
 
 def main() -> None:
+    global CONTROL, CANDIDATE
     args = parse_args()
+    CONTROL = args.control_cell
+    CANDIDATE = args.candidate_cell
     result_dir = args.result_dir.resolve()
     runs: dict[str, list[dict[str, object]]] = {
         CONTROL: [], CANDIDATE: []}
@@ -101,7 +115,7 @@ def main() -> None:
         for cell in (CONTROL, CANDIDATE):
             path = result_dir / "raw" / f"pair_{round_number:02d}_{cell}.log"
             run = base.load_run(path, args.steps)
-            validate_run(run, cell, args.steps)
+            validate_run(run, cell, args.steps, args)
             runs[cell].append(run)
             pair[cell] = run
         exact = signatures(pair[CONTROL]) == signatures(pair[CANDIDATE])
@@ -187,9 +201,10 @@ def main() -> None:
         "control_lm_head_commands": control_commands,
         "candidate_lm_head_commands": candidate_commands,
         "expected_control_lm_head_commands":
-            (VOCAB_N_TILES + 15) // 16,
+            (VOCAB_N_TILES + args.control_group - 1) // args.control_group,
         "expected_candidate_lm_head_commands":
-            (VOCAB_N_TILES + 31) // 32,
+            (VOCAB_N_TILES + args.candidate_group - 1) //
+            args.candidate_group,
         "control_direct_n_hmx_commands": base.median_counter(
             runs[CONTROL], "w4u8_decode_direct_n_hmx_command_count"),
         "candidate_direct_n_hmx_commands": base.median_counter(
@@ -217,7 +232,13 @@ def main() -> None:
         "fastrpc_calls_per_token": 1,
         "hmx_owners": 1,
     }
-    audit = validate_audit(result_dir) if args.require_audit else None
+    audit = validate_audit(result_dir, args) if args.require_audit else None
+    expected_control_commands = (
+        VOCAB_N_TILES + args.control_group - 1) // args.control_group
+    expected_candidate_commands = (
+        VOCAB_N_TILES + args.candidate_group - 1) // args.candidate_group
+    control_expansion = base.median_counter(
+        runs[CONTROL], "generation_lm_head_expand_ticks")
     gates = {
         "rotated_pairs_present": args.rounds in (5, 10),
         "all_pair_outputs_byte_exact": all(pair_exact),
@@ -226,15 +247,15 @@ def main() -> None:
         "median_full_stack_decode_faster": candidate_tps > control_tps,
         "lm_head_wall_faster":
             target["lm_head_us"][CANDIDATE] < target["lm_head_us"][CONTROL],
-        "lm_head_commands_297_to_149":
-            control_commands == (VOCAB_N_TILES + 15) // 16 and
-            candidate_commands == (VOCAB_N_TILES + 31) // 32,
+        "lm_head_commands_match_groups":
+            control_commands == expected_control_commands and
+            candidate_commands == expected_candidate_commands,
         "candidate_lm_head_expansion_zero":
             base.median_counter(
                 runs[CANDIDATE], "generation_lm_head_expand_ticks") == 0,
-        "control_lm_head_expansion_present":
-            base.median_counter(
-                runs[CONTROL], "generation_lm_head_expand_ticks") > 0,
+        "control_lm_head_expansion_matches_contract":
+            (control_expansion == 0 if args.control_direct
+             else control_expansion > 0),
         "hmx_tile_pairs_preserved":
             physical["candidate_hmx_tile_pairs"] ==
             physical["control_hmx_tile_pairs"],
@@ -255,7 +276,7 @@ def main() -> None:
     gates["all_pass"] = all(gates.values())
 
     summary = {
-        "experiment": "EXP-0196",
+        "experiment": f"EXP-{args.experiment:04d}",
         "source_commit": args.source_commit,
         "rounds": args.rounds,
         "generation_steps": args.steps,
@@ -289,18 +310,19 @@ def main() -> None:
             f"| {label} | {control:.1f} | {candidate:.1f} | "
             f"{speed_change} |")
     report = [
-        "# EXP-0196 direct-W4 LM-head batch32 report",
+        f"# EXP-{args.experiment:04d} LM-head batch report",
         "",
         f"Source commit: `{args.source_commit}`",
         "",
-        "The control keeps the EXP-0195 transformer and expands LM-head "
-        "W4 into S8 in batches of 16. The candidate keeps every other "
-        "path identical, feeds packed W4 directly to integer HMX, and "
-        "batches 32 output tiles using phase-dead VTCM buffers.",
+        f"The control uses {'direct packed W4' if args.control_direct else 'Expanded-S8'} "
+        f"LM-head groups of {args.control_group} tiles. The candidate keeps "
+        f"every other path identical and uses direct packed-W4 groups of "
+        f"{args.candidate_group} tiles in phase-dead VTCM buffers.",
         "",
         "## End-to-end gate",
         "",
-        "| Metric | Expanded-S8 batch16 | Direct-W4 batch32 | Change |",
+        f"| Metric | {'Direct-W4' if args.control_direct else 'Expanded-S8'} "
+        f"batch{args.control_group} | Direct-W4 batch{args.candidate_group} | Change |",
         "|---|---:|---:|---:|",
         f"| Decode throughput | {control_tps:.3f} tok/s | "
         f"{candidate_tps:.3f} tok/s | "
@@ -319,7 +341,8 @@ def main() -> None:
         "",
         "## Decode module wall attribution",
         "",
-        "| Module | Expanded-S8 batch16 | Direct-W4 batch32 | Candidate speed change |",
+        f"| Module | {'Direct-W4' if args.control_direct else 'Expanded-S8'} "
+        f"batch{args.control_group} | Direct-W4 batch{args.candidate_group} | Candidate speed change |",
         "|---|---:|---:|---:|",
         *module_rows,
         f"| Complete decode host wall | {control_latency * 1000.0:.1f} "
@@ -328,7 +351,9 @@ def main() -> None:
         "",
         "## LM-head target breakdown",
         "",
-        "| Counter | Expanded-S8 batch16 us/token | Direct-W4 batch32 us/token | Speed change |",
+        f"| Counter | {'Direct-W4' if args.control_direct else 'Expanded-S8'} "
+        f"batch{args.control_group} us/token | Direct-W4 "
+        f"batch{args.candidate_group} us/token | Speed change |",
         "|---|---:|---:|---:|",
         *target_rows,
         "",

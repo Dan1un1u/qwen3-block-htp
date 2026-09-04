@@ -28,7 +28,7 @@ runtime_env="QBH_W4U8_STREAM_FENCE=single_fence QBH_W4U8_GATE_UP_RING_SLOTS=16 Q
 runtime_args="2 32 rms_rope_softmax on off fused_pool6_shuffle4 serial control hvx w4u8_streaming_persistent_mlp_hvx 3 64 u8_log2_gqa_qkv_overlap_vgather_vdeal_fused_qk_requant_hmx_batch_lut_templates_gqa_batch_dependency_stream_softmax_shuffle4 6 w4u8_mlp_io_qkv_o qkvo_batch4_qk_head_pairs hvx_tree_qk_batched_rsqrt_shared_rope_parallel_input control 4 4 4 2"
 
 case "${group_tiles}" in
-8|16|32) ;;
+8|16|32|64) ;;
 *) printf 'invalid EXP-0173 LM-head group tiles: %s\n' "${group_tiles}" >&2; exit 2 ;;
 esac
 case "${o_batch_tiles}" in
