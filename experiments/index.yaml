@@ -6,6 +6,38 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0176
+    slug: w4u8-decode-o-batch8
+    title: Decode W4U8 O-projection HMX batch-eight
+    parent: EXP-0173
+    variants:
+      - decode_o_batch4_control
+      - decode_o_batch8_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: bounded-rotated-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0176-w4u8-decode-o-batch8
+    source_commits: []
+    record: docs/experiments/EXP-0176.md
+    approval_ref: 'User message 2026-09-04: 同意晋升。开启loop优化，针对decode，尽量不中断。'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0176-w4u8-decode-o-batch8
+      approved_on: '2026-09-04'
+    evidence:
+      source_parent_experiment: EXP-0173
+      source_parent_commit: 9e30f822731da3b5d0d924babe7ccb5cb4142f94
+      execution_unit: real_token_ID_M64_prefill_then_continuous_W4U8_decode
+      direct_control: selected_EXP0173_decode_O_batch4_with_LM_head_batch16
+      candidate: decode_M1_O_projection_HMX_batch8
+      optimization_scope: decode_only_O_HMX_batch_width_expanded_carrier_capacity_telemetry_and_tools
+      forbidden_changes: prefill_math_weights_qparams_QKV_Attention_residual_GateUp_SwiGLU_Down_cache_RMSNorm_embedding_feedback_LM_head_F16F16_W4F16_QNN
+      short_gate: byte_exact_requested_O_geometry_and_lower_complete_decode_Host_wall
+      formal_gate: ten_rotated_pairs_candidate_strictly_faster_direct_decode_with_all_correctness_and_physical_contracts
+      selected_baseline_changed: false
   - id: EXP-0175
     slug: w4u8-decode-gate-up-pair-ready
     title: Decode W4U8 Gate/Up prequeued pair-ready publication
@@ -16,20 +48,24 @@ experiments:
       - batch16_dedicated_pair_ready
       - batch8_two_dedicated_pair_ready
       - batch16_two_dedicated_pair_ready
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: bounded-three-cell-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0175-w4u8-decode-gate-up-pair-ready
-    source_commits: []
+    source_commits:
+      - b9b45538967347f73f79e3dfd6ca5b44dff929ae
+      - de3c90e15427a8f375ea38092cbaa8f80d71cd25
     record: docs/experiments/EXP-0175.md
     approval_ref: 'User message 2026-09-04: 同意晋升。开启loop优化，针对decode，尽量不中断。'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0175-w4u8-decode-gate-up-pair-ready
       approved_on: '2026-09-04'
+      started_on: '2026-09-04'
+      completed_on: '2026-09-04'
     evidence:
       source_parent_experiment: EXP-0173
       source_parent_commit: 9e30f822731da3b5d0d924babe7ccb5cb4142f94
@@ -40,6 +76,22 @@ experiments:
       forbidden_changes: prefill_math_weights_qparams_ring_capacity_pair_slots_SwiGLU_Down_QKV_Attention_O_cache_RMSNorm_embedding_feedback_LM_head_F16F16_W4F16_QNN
       short_gate: byte_exact_requested_publication_geometry_and_lower_Gate_Up_plus_complete_decode_wall
       formal_gate: ten_rotated_pairs_selected_candidate_strictly_faster_direct_decode_with_all_correctness_and_physical_contracts
+      runtime_source_commit: b9b45538967347f73f79e3dfd6ca5b44dff929ae
+      reporting_source_commit: de3c90e15427a8f375ea38092cbaa8f80d71cd25
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0175/20260904T_exp0175_de3c90e_short_gate'
+      correctness_gate_result: pass_all25_sessions_byte_exact_hashes_and_identical_tokens
+      physical_gate_result: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_no_qnn_zero_unattributed_ticks
+      performance_gate_result: fail_all_four_candidates_slower_in_Gate_Up_and_direct_decode
+      direct_end_to_end:
+        control_decode_host_us_per_token: 49654.043125
+        control_decode_tokens_per_second: 20.139347
+        pair_ready_batch8_speed_percent: -9.919479
+        pair_ready_batch16_speed_percent: -12.363126
+        pair_ready2_batch8_speed_percent: -10.736462
+        pair_ready2_batch16_speed_percent: -12.789623
+      diagnosis: dedicated_pair_ready_consumers_destroy_activation_load_balance_and_increase_HMX_HVX_interference_even_without_queue_work_inside_the_HMX_owner
+      short_gate_report_sha256: edfc58e084e2426bb6ba6330e25845e5345672059cb0b1798c854a6d4dcb159a
+      summary_sha256: 2534fd38748888f813cc9a78bfd5754e69a2d9de2956359304e9aed01d02bf52
       selected_baseline_changed: false
   - id: EXP-0174
     slug: w4u8-decode-gate-up-inline-publish
@@ -102,7 +154,7 @@ experiments:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending
+    adoption_status: accepted
     evidence_profile: bounded-rotated-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0173-w4u8-decode-lm-head-batch16
@@ -144,7 +196,12 @@ experiments:
       summary_sha256: 1a756ca3c01564187cfead0888a7dd1ca7ffaf9bbea6d34f70bf4ba263fd0037
       independent_reference_sha256: 5135073bb9e0548bdb9a8b4634981ad00f5189a008cb6749587446b9c747f5de
       exp0163_regression_sha256: ea08a2fe1eb09526f7315be1cb128c0716a673936c297d61c65dd2f26aa81ed6
-      selected_baseline_changed: false
+      promoted_as: selected_w4u8_token_generation_baseline
+      promoted_by: user
+      promoted_on: '2026-09-04'
+      promotion_ref: 'User message 2026-09-04: 同意晋升。开启loop优化，针对decode，尽量不中断。'
+      source_tag: baseline-w4u8-token-generation-exp0173
+      selected_baseline_changed: true
   - id: EXP-0172
     slug: w4u8-decode-gate-up-hvx-gemv
     title: Decode-M1 Gate/Up direct HVX GEMV feasibility
