@@ -7,7 +7,7 @@ case "${cell}" in
     row4) swiglu_rows=4 ;;
     *) printf 'invalid EXP-0189 cell: %s\n' "${cell}" >&2; exit 2 ;;
 esac
-EXP0173_REMOTE_ROOT=/data/local/tmp/qwen3-block-htp/exp0189-direct-n-row4-swiglu \
+EXP0173_REMOTE_ROOT=/data/local/tmp/qwen3-block-htp/exp0173-exp0189-row4-swiglu \
 QBH_EXP0173_LM_HEAD_GROUP_TILES=16 QBH_EXP0176_O_BATCH_TILES=4 \
 QBH_EXP0177_AV_REQUANT_ROWS=4 QBH_EXP0177_AV_PADDING_POISON=0 \
 QBH_EXP0178_COMMON_OP_ROWS=4 QBH_EXP0178_COMMON_PADDING_POISON=0 \
