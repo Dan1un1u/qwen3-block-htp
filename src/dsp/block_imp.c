@@ -1994,6 +1994,14 @@ static int qbh_header_valid(const struct qbh_block_header *header,
               QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
           (header->w4u8_decode_direct_n_mask &
            QBH_BLOCK_W4U8_DIRECT_N_MLP) == 0U)) ||
+        header->w4u8_decode_direct_n_down_single_dma > 1U ||
+        (header->w4u8_decode_direct_n_down_single_dma != 0U &&
+         (header->variant != QBH_BLOCK_W4U8 ||
+          header->w4u8_decode_projection_mode !=
+              QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
+          (header->w4u8_decode_direct_n_mask &
+           QBH_BLOCK_W4U8_DIRECT_N_MLP) == 0U ||
+          header->w4u8_decode_direct_n_down_batch_n_tiles != 4U)) ||
         (header->w4u8_decode_swiglu_rows !=
              QBH_BLOCK_W4U8_SWIGLU_FULL_ROWS &&
          header->w4u8_decode_swiglu_rows !=
@@ -2778,6 +2786,7 @@ static int qbh_dma_start_w4u8_direct_n_prefetch(
     void *weight_destination, const void *weight_source,
     uint32_t weight_bytes, void *bias_destination,
     const void *bias_source, uint32_t bias_bytes,
+    uint32_t single_weight_descriptor,
     uint32_t *descriptor_count) {
     uint32_t first_bytes;
     int result;
@@ -2785,7 +2794,8 @@ static int qbh_dma_start_w4u8_direct_n_prefetch(
     if (descriptor_count == NULL) {
         return -1;
     }
-    if (weight_bytes <= QBH_BLOCK_DIRECT_N_DMA_SINGLE_BYTES) {
+    if (single_weight_descriptor != 0U ||
+        weight_bytes <= QBH_BLOCK_DIRECT_N_DMA_SINGLE_BYTES) {
         *descriptor_count = 2U;
         return qbh_dma_start_w4u8_batch_prefetch(
             descriptors, weight_destination, weight_source,
@@ -8966,6 +8976,8 @@ static int qbh_run_w4u8_direct_n_projection(
         current_tiles * tile_bytes, bias_slots[0],
         shared + desc->bias_offset,
         current_tiles * QBH_HMX_BIAS_BYTES,
+        desc == &header->projections[QBH_BLOCK_PROJ_DOWN]
+            ? header->w4u8_decode_direct_n_down_single_dma : 0U,
         &descriptor_count);
     if (result == 0) {
         result = qbh_dma_wait_w4u8_direct_n_prefetch(
@@ -9014,6 +9026,8 @@ static int qbh_run_w4u8_direct_n_projection(
                 shared + desc->bias_offset +
                     (size_t)next_first * QBH_HMX_BIAS_BYTES,
                 next_tiles * QBH_HMX_BIAS_BYTES,
+                desc == &header->projections[QBH_BLOCK_PROJ_DOWN]
+                    ? header->w4u8_decode_direct_n_down_single_dma : 0U,
                 &descriptor_count);
             if (result == 0) {
                 result = qbh_dma_wait_w4u8_direct_n_prefetch(
