@@ -1088,15 +1088,17 @@ output pruning, full-logit DDR, more than one FastRPC call, or attributing the
 gain to transformer changes
 
 **Selected W4U8 Token-Generation Baseline**:
-The user-promoted EXP-0185 result is the current authoritative W4U8
+The user-promoted EXP-0188 result is the current authoritative W4U8
 token-generation and long-decode reference, identified by immutable tag
-`baseline-w4u8-token-generation-exp0185`. It supersedes EXP-0173 for baseline
-selection while retaining the accepted transformer, HVX decode Softmax,
-batch-sixteen LM head, VTCM-resident V tail and session-native K tail lineage;
-semantic quality remains disabled and is not claimed.
+`baseline-w4u8-token-generation-exp0188`. It supersedes EXP-0185 for baseline
+selection while retaining its HVX decode Softmax, batch-sixteen LM head,
+VTCM-resident V tail and session-native K tail lineage. Decode-only Q/K/V/O and
+Gate/Up/Down now feed packed W4 directly to integer HMX through `weight.n`,
+while M64 prefill and the LM head retain Expanded-S8. Semantic quality remains
+disabled and is not claimed.
 _Avoid_: describing diagnostic text as usable, changing qparams without a
 separate experiment, projecting throughput from partial measurements, using
-an older EXP-0170/0173 result as the current baseline, or replacing this
+an older EXP-0170/0173/0185 result as the current baseline, or replacing this
 baseline without an eligible direct full-stack comparison
 
 **W4U8 Long-Decode Scaling Attribution**:
@@ -1252,8 +1254,8 @@ prefill remains unchanged.
 _Avoid_: native four-bit arithmetic proof, single-row HMX kernel, accepted
 full-stack baseline, automatic M64 prefill optimization, changed W4 recipe
 
-**Full-Stack Decode Direct-N W4U8 Candidate**:
-The completed EXP-0188 candidate applies direct packed-W4 `weight.n` HMX input
+**Full-Stack Decode Direct-N W4U8 Baseline**:
+The completed and user-promoted EXP-0188 baseline applies direct packed-W4 `weight.n` HMX input
 to Q/K/V/O and Gate/Up/Down across all 28 transformer layers, 196 projections
 per decode token.  The formal candidate intentionally retains the EXP-0185
 group-16 Expanded-S8 LM head because the tested direct-n LM-head schedule both
@@ -1262,8 +1264,7 @@ improve directly measured decode from 23.621560 to 27.623484 token/s
 (+16.943925%); all 1,930 paired hidden hashes and tokens are exact, all ten
 pairs win, and the 8 MiB VTCM, zero-intermediate-DDR, zero-spill/fill,
 one-FastRPC, one-HMX-owner and no-QNN contracts pass.  M64 prefill is unchanged.
-The result is evidence-valid and locally passes, but adoption is pending the
-user and the selected baseline remains EXP-0185.
+The result is evidence-valid, locally passes, and was promoted by the user on
+2026-09-05 as the Selected W4U8 Token-Generation Baseline.
 _Avoid_: claiming a true one-row HMX kernel, including LM head in direct-n,
-claiming prefill acceleration, automatic baseline promotion, or semantic
-quality
+claiming prefill acceleration, or semantic quality

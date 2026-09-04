@@ -16,7 +16,7 @@ experiments:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending
+    adoption_status: accepted
     evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0188-w4u8-full-stack-decode-direct-n
@@ -69,7 +69,12 @@ experiments:
       report_sha256: 1606ddbead8d8e7e9789d3d6b90d9082431c795cc36637051ca5b9542587294f
       static_gate_sha256: ef504692a3da1aca2002123da9dea09325c27d6c6c167f88240829ca217de843
       conclusion: transformer_direct_n_improves_full_stack_decode_but_remains_a_64_row_physical_HMX_path_and_excludes_LM_head
-      selected_baseline_changed: false
+      promoted_as: selected_w4u8_token_generation_baseline
+      promoted_by: user
+      promoted_on: '2026-09-05'
+      promotion_ref: 'User message 2026-09-05: 同意晋升，先报告最新profiling结果'
+      source_tag: baseline-w4u8-token-generation-exp0188
+      selected_baseline_changed: true
   - id: EXP-0187
     slug: w4u8-decode-native-m1-pipeline-gate
     title: Decode-native M1 projection and pipeline feasibility gate
