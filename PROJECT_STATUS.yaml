@@ -546,7 +546,7 @@ current_scope:
   latest_w4u8_decode_swiglu_candidate:
     id: EXP-0171
     source_branch: codex/exp-0171-w4u8-decode-row4-swiglu
-    source_head: 49727b9d8b374cb951fc0493ab69b44fd784d1b4
+    source_head: 49727b9a2f2e5f1f97f2cb2ec6617a7746fbdb58
     formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0171/20260904T_exp0171_49727b9_formal'
     execution_state: completed
     evidence_validity: valid

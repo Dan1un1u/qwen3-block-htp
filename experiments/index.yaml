@@ -1040,7 +1040,7 @@ experiments:
     source_branches:
       - codex/exp-0171-w4u8-decode-row4-swiglu
     source_commits:
-      - 49727b9d8b374cb951fc0493ab69b44fd784d1b4
+      - 49727b9a2f2e5f1f97f2cb2ec6617a7746fbdb58
     record: docs/experiments/EXP-0171.md
     approval_ref: 'User message 2026-09-04: 同意晋升。开启loop优化，针对decode，尽量不中断。'
     runtime:
