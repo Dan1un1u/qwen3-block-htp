@@ -500,6 +500,7 @@ struct qbh_w4u8_qkv_ring_state {
     uint32_t batch_count;
     uint32_t expected_batch_count;
     uint32_t tiles_per_batch;
+    uint32_t q_tiles_per_batch;
     uint32_t slot_count;
     uint32_t k_tiles;
     uint32_t expand_worker_count;
@@ -1994,6 +1995,15 @@ static int qbh_header_valid(const struct qbh_block_header *header,
               QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
           (header->w4u8_decode_direct_n_mask &
            QBH_BLOCK_W4U8_DIRECT_N_MLP) == 0U)) ||
+        (header->w4u8_decode_direct_n_q_batch_n_tiles != 0U &&
+         header->w4u8_decode_direct_n_q_batch_n_tiles != 32U) ||
+        (header->w4u8_decode_direct_n_q_batch_n_tiles != 0U &&
+         (header->variant != QBH_BLOCK_W4U8 ||
+          header->w4u8_decode_projection_mode !=
+              QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
+          (header->w4u8_decode_direct_n_mask &
+           QBH_BLOCK_W4U8_DIRECT_N_QKV) == 0U ||
+          header->w4u8_decode_direct_n_qkv_batch_n_tiles != 16U)) ||
         header->w4u8_decode_direct_n_down_single_dma > 1U ||
         (header->w4u8_decode_direct_n_down_single_dma != 0U &&
          (header->variant != QBH_BLOCK_W4U8 ||
@@ -9786,18 +9796,27 @@ static int qbh_run_w4u8_qkv_ring(
     state.tiles_per_batch = state.direct_n_weights != 0U
         ? header->w4u8_decode_direct_n_qkv_batch_n_tiles
         : QBH_BLOCK_W4U8_QKV_RING_TILES_PER_BATCH;
+    state.q_tiles_per_batch = state.direct_n_weights != 0U &&
+            header->w4u8_decode_direct_n_q_batch_n_tiles != 0U
+        ? header->w4u8_decode_direct_n_q_batch_n_tiles
+        : state.tiles_per_batch;
+    if (state.q_tiles_per_batch > state.tiles_per_batch) {
+        state.tiles_per_batch = state.q_tiles_per_batch;
+    }
     if (state.tiles_per_batch != 4U &&
         state.tiles_per_batch != 8U &&
-        state.tiles_per_batch != 16U) {
+        state.tiles_per_batch != 16U &&
+        state.tiles_per_batch != 32U) {
         return -1;
     }
     state.slot_count = state.direct_n_weights != 0U &&
-            state.tiles_per_batch == 16U
+            state.tiles_per_batch >= 16U
         ? 2U : QBH_BLOCK_W4U8_QKV_RING_SLOTS;
     state.expected_batch_count =
-        (QBH_BLOCK_HIDDEN / QBH_HMX_OUTPUT_CHANNELS +
-         2U * (QBH_BLOCK_KV_HIDDEN / QBH_HMX_OUTPUT_CHANNELS)) /
-        state.tiles_per_batch;
+        (QBH_BLOCK_HIDDEN / QBH_HMX_OUTPUT_CHANNELS) /
+            state.q_tiles_per_batch +
+        2U * (QBH_BLOCK_KV_HIDDEN / QBH_HMX_OUTPUT_CHANNELS) /
+            header->w4u8_decode_direct_n_qkv_batch_n_tiles;
     if (state.expected_batch_count >
             QBH_BLOCK_W4U8_QKV_RING_BATCHES) {
         return -1;
@@ -9849,6 +9868,11 @@ static int qbh_run_w4u8_qkv_ring(
         ~((uintptr_t)QBH_HMX_FP16_TILE_BYTES - 1U));
     for (uint32_t slot = 0U; slot < state.slot_count; ++slot) {
         if (state.direct_n_weights != 0U &&
+            state.tiles_per_batch == 32U) {
+            state.bias_slots[slot] = slot == 0U
+                ? buffers->gate
+                : buffers->up;
+        } else if (state.direct_n_weights != 0U &&
             state.tiles_per_batch == 16U) {
             state.bias_slots[slot] = slot == 0U
                 ? buffers->scale_or_bias
@@ -9876,12 +9900,16 @@ static int qbh_run_w4u8_qkv_ring(
         const struct qbh_block_projection_desc *desc = descs[projection];
         const uint32_t n_tiles =
             desc->n / QBH_HMX_OUTPUT_CHANNELS;
+        const uint32_t projection_batch_tiles = projection == 0U
+            ? state.q_tiles_per_batch
+            : header->w4u8_decode_direct_n_qkv_batch_n_tiles;
         if (desc->k != QBH_BLOCK_HIDDEN ||
-            n_tiles % state.tiles_per_batch != 0U) {
+            projection_batch_tiles == 0U ||
+            n_tiles % projection_batch_tiles != 0U) {
             goto cleanup;
         }
         for (uint32_t first = 0U; first < n_tiles;
-             first += state.tiles_per_batch) {
+             first += projection_batch_tiles) {
             struct qbh_w4u8_qkv_ring_batch *batch;
             if (state.batch_count >=
                 QBH_BLOCK_W4U8_QKV_RING_BATCHES) {
@@ -9891,7 +9919,7 @@ static int qbh_run_w4u8_qkv_ring(
             batch->desc = desc;
             batch->output = outputs[projection];
             batch->first_n_tile = first;
-            batch->n_tiles = state.tiles_per_batch;
+            batch->n_tiles = projection_batch_tiles;
         }
     }
     if (state.batch_count != state.expected_batch_count) {

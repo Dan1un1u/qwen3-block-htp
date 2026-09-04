@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(100)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(207)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(102)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(209)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -773,6 +773,7 @@ struct qbh_block_header {
     uint32_t w4u8_decode_direct_n_o_gate_prefetch;
     uint32_t w4u8_decode_direct_n_gate_up_swiglu_stream;
     uint32_t w4u8_decode_direct_n_qkv_batch_n_tiles;
+    uint32_t w4u8_decode_direct_n_q_batch_n_tiles;
     uint32_t w4u8_decode_direct_n_down_batch_n_tiles;
     uint32_t w4u8_decode_direct_n_down_single_dma;
     uint32_t w4u8_decode_swiglu_rows;
