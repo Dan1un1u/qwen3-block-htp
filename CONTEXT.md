@@ -1337,12 +1337,25 @@ _Avoid_: retrying Down DMA4 with HMX2, enlarging the Down live group through a
 different alias, using incomplete ticks as performance, or baseline promotion
 
 **Direct-N Decode QKV Head-Pair Batch-Eight Candidate**:
-The active EXP-0194 hypothesis reopens the old QKV batch-eight question under
+The completed EXP-0194 candidate reopens the old QKV batch-eight question under
 the new direct-n contract.  Unlike EXP-0102, no W4-to-S8 expansion producer is
 present, and eight output tiles align with the existing two-head Q/K preparation
 task.  Four phase-dead slots carry packed W4 and bias groups without changing
-the 8 MiB VTCM plan.  The target is to halve QKV commands and descriptors while
-preserving every Q/K publication and full-token result.
+the 8 MiB VTCM plan.  Ten formal pairs improve decode from 37.759952 to
+38.651475 token/s (+2.361%); QKV plus Q/K Norm/RoPE falls from 3.530 to
+2.906 ms/token.  Commands and descriptors halve while every Q/K publication,
+weight byte, HMX tile pair and full-token result is preserved.  It is the
+fastest pending candidate, not an automatically selected baseline.
 _Avoid_: applying batch eight to M64 prefill, delaying Q/K publication beyond a
 head pair, changing Attention math, counting commands without higher decode
 token/s, or automatic baseline promotion
+
+**Direct-N Decode Gate/Up Batch-Thirty-Two Candidate**:
+The active EXP-0195 hypothesis extends the successful command-granularity
+sequence from Gate/Up batch sixteen to thirty-two.  Each packed-W4 group exactly
+fills one phase-dead Expanded-S8 slot.  Two 4 KiB bias groups reuse the already
+consumed Input- and Post-Attention-RMSNorm gamma regions.  No new VTCM or weight
+work is introduced; the target is to halve the remaining Gate/Up commands.
+_Avoid_: changing QKV batch eight, touching M64 prefill, reusing a gamma before
+its norm completes, exceeding one MiB per weight slot, or automatic baseline
+promotion

@@ -6,6 +6,44 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0195
+    slug: w4u8-direct-n-gate-up-batch32
+    title: Direct-n decode Gate/Up batch-thirty-two
+    parent: EXP-0194
+    variants:
+      - evidence_valid_EXP0194_Gate_Up_batch16_control
+      - direct_n_decode_Gate_Up_batch32_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0195-w4u8-direct-n-gate-up-batch32
+    source_commits: []
+    record: docs/experiments/EXP-0195.md
+    approval_ref: 'User message 2026-09-05: 开始decode优化loop'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0195-w4u8-direct-n-gate-up-batch32
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    evidence:
+      source_parent_experiment: EXP-0194
+      source_parent_commit: 8b62c9cd30f8a8fc70a7074b515c855b66a16d3e
+      source_parent_role: evidence_valid_fastest_W4U8_decode_candidate
+      direct_control: same_binary_EXP0194_Gate_Up_batch16
+      candidate: decode_only_Gate_Up_batch32_using_one_MiB_weight_slots_and_dead_norm_gamma_bias_slots
+      hypothesis: halving_remaining_Gate_Up_command_and_descriptor_granularity_reduces_the_largest_decode_module
+      optimization_scope: decode_only_direct_n_Gate_Up_batch32_bias_alias_validation_telemetry_and_tools
+      forbidden_changes: weights_values_scales_qparams_projection_math_QKV_batch8_SwiGLU_O_Down_Attention_cache_M64_prefill_LM_head_F16F16_W4F16_QNN
+      correctness_gate: byte_exact_hidden_hashes_tokens_and_cache_to_Gate_Up_batch16_control_plus_independent_integer_references
+      physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN_zero_transformer_expansion_identical_weight_bytes_and_tile_pairs_direct_commands_2464_to2128_and_weight_DMA_descriptors_5226_to4554
+      short_gate: five_rotated_pairs_with_correctness_physical_and_strict_decode_and_Gate_Up_speed_pass
+      formal_gate: ten_rotated_193_step_pairs_with_strictly_higher_direct_full_stack_decode_tokens_per_second_than_EXP0194
+      prefill_preservation: M64_prefill_uses_unchanged_EXP0189_full64_Expanded_S8_path
+      stop_condition: reject_without_formal_if_short_correctness_physical_or_performance_gate_fails
+      selected_baseline_changed: false
   - id: EXP-0194
     slug: w4u8-direct-n-qkv-batch8
     title: Direct-n decode QKV head-pair batch-eight
@@ -13,14 +51,15 @@ experiments:
     variants:
       - evidence_valid_EXP0191_direct_n_QKV_batch4_control
       - direct_n_decode_QKV_head_pair_batch8_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0194-w4u8-direct-n-qkv-batch8
-    source_commits: []
+    source_commits:
+      - 8b62c9cd30f8a8fc70a7074b515c855b66a16d3e
     record: docs/experiments/EXP-0194.md
     approval_ref: 'User message 2026-09-05: 开始decode优化loop'
     runtime:
@@ -28,6 +67,7 @@ experiments:
       source_branch: codex/exp-0194-w4u8-direct-n-qkv-batch8
       approved_on: '2026-09-05'
       started_on: '2026-09-05'
+      completed_on: '2026-09-05'
     evidence:
       source_parent_experiment: EXP-0191
       source_parent_commit: 0cdd367f89475c73de4695bab9e9348dbd955aeb
@@ -43,6 +83,32 @@ experiments:
       formal_gate: ten_rotated_193_step_pairs_with_strictly_higher_direct_full_stack_decode_tokens_per_second_than_EXP0191
       prefill_preservation: M64_prefill_uses_unchanged_EXP0189_full64_Expanded_S8_path
       stop_condition: reject_without_formal_if_short_correctness_physical_or_performance_gate_fails
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0194/20260905_short_gate_8b62c9c'
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0194/20260905_formal_8b62c9c'
+      source_commit: 8b62c9cd30f8a8fc70a7074b515c855b66a16d3e
+      static_gate_result: pass
+      correctness_gate_result: pass_byte_exact_hidden_hashes_tokens_cache_and_audit_tensors
+      physical_gate_result: pass_8mib_zero_intermediate_ddr_zero_spill_one_fastrpc_one_hmx_no_qnn_preserved_work
+      performance_gate_result: pass_10_of_10_pairs_and_2_361027_percent_decode_gain
+      control_decode_tokens_per_second: 37.759952
+      candidate_decode_tokens_per_second: 38.651475
+      control_decode_host_us_per_token: 26483.1
+      candidate_decode_host_us_per_token: 25872.2
+      control_qkv_plus_qk_norm_rope_us: 3529.5
+      candidate_qkv_plus_qk_norm_rope_us: 2905.5
+      control_direct_n_hmx_commands: 2912
+      candidate_direct_n_hmx_commands: 2464
+      control_weight_dma_descriptors: 6122
+      candidate_weight_dma_descriptors: 5226
+      qk_head_publications: 672
+      hmx_tile_pairs: 1699840
+      weight_ddr_read_bytes: 866032640
+      short_summary_sha256: c4b0b4d1ad2a1cdb3046e646717019e490a847658779ed9745d4a8b6598e9886
+      short_report_sha256: 60e260d739a27b5d40b411b201441fa9871458acef94405bd8bf1264fec52d63
+      formal_summary_sha256: 264b182f496faa82e53c6ccebe365cc77f7f1f762180dbe302eb82b8260940af
+      formal_report_sha256: 24d7813f6912435ee988099437d8b8f584a6aa0ab29fa972b628603e219417ff
+      static_gate_sha256: 7ce43b95ef6868e62a76fd28f14076256368666eb705bc99a8fa1e95bc84439a
+      conclusion: direct_n_QKV_batch8_reopens_and_passes_after_removing_the_old_expansion_producer
       selected_baseline_changed: false
   - id: EXP-0193
     slug: w4u8-direct-n-down-dma4-hmx2
