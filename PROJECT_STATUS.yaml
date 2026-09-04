@@ -19,8 +19,8 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 186
+  active_experiment: EXP-0186
+  next_experiment_number: 187
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -29,15 +29,28 @@ current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
   last_completed_experiment: EXP-0185
   last_completed_source_commit: 537650293920eb62c3cc49833df613246e8fb0b9
-  provisional_source_parent: locally_eligible_EXP0185_session_native_K_tail_candidate_pending_user_promotion
+  provisional_source_parent: accepted_EXP0185_session_native_K_tail_baseline
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: none
+  active_experiment_stage: registered_source_branch_remote_synced_pending_preflight
   active_experiment_evidence: null
-  active_experiment_gate: none
-  active_recipe_specialization: none
-  active_experiment_contract: null
+  active_experiment_gate: not_run
+  active_recipe_specialization: W4U8_decode_session_native_V_tail_direct_append
+  active_experiment_contract:
+    id: EXP-0186
+    source_branch: codex/exp-0186-w4u8-decode-vtcm-v-tail-no-journal
+    source_parent: accepted_EXP0185_session_native_K_tail_baseline
+    source_parent_commit: 537650293920eb62c3cc49833df613246e8fb0b9
+    execution_scope: real_token_ID_M64_prefill_then_continuous_W4U8_decode
+    direct_control: EXP0185_K14_V12_session_native_K_tail
+    candidates: versioned_session_native_V_tail_direct_projection_carrier_append_without_mutable_DDR_journal
+    allowed_changes: W4U8_V_tail_cache_ABI_direct_native_append_DDR_write_telemetry_and_experiment_tools
+    forbidden_changes: K_cache_QK_Softmax_AV_math_qparams_QKV_O_MLP_embedding_feedback_LM_head_weights_prefill_math_F16F16_W4F16_QNN
+    correctness_gate: byte_exact_consumed_AV_carriers_hidden_hashes_tokens_codes_segment_seal_independent_reference_padding_poison_and_EXP0163_regression
+    physical_gate: exact_8mib_VTCM_one_FastRPC_no_QNN_224_V_tail_DDR_write_descriptors_and_28672_bytes_removed_no_session_V_row_major_bounce_zero_timed_intermediate_DDR_zero_spill_fill_zero_unattributed_ticks
+    performance_gate: five_rotated_short_pairs_lower_cache_conversion_update_append_DMA_and_complete_decode_wall_then_ten_rotated_193_step_pairs_higher_direct_decode_tokens_per_second
+    stop_conditions: correctness_or_physical_failure_or_fewer_than_five_of_five_short_pair_wins_rejects_without_formal_run
   final_profiling_summary_standard: direct_full_stack_prefill_and_decode_tokens_per_second_plus_exact_Host_wall
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0185/20260904T_exp0185_5376502_formal'
@@ -50,8 +63,8 @@ current_scope:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    adoption_status: pending
-    selected_baseline_changed: false
+    adoption_status: accepted
+    selected_baseline_changed: true
     correctness_gate: pass_193_of_193_independent_reference_exact_34_step_segment_seal_hidden_hashes_codes_tokens_padding_poison_and_EXP0163_regression
     physical_gate: pass_exact_8mib_VTCM_196_cached_K_tail_DDR_write_descriptors_and_25088_bytes_removed_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_no_QNN_zero_unattributed_ticks
     performance_gate: pass_candidate_won_8_of_10_formal_rotated_pairs
@@ -78,6 +91,11 @@ current_scope:
     independent_reference_sha256: 36ae9caf74682ae7e4c674d54a9fdce1fca24c04abd73182fd6b0fde3974ff45
     exp0163_regression_sha256: c778d8bc9797008f4f91e6b61a01b0d8bf174ea0cbbf2aed2ae36d7c0d609695
     conclusion: session_native_K_tail_removes_redundant_mutable_DDR_journal_and_improves_direct_long_decode_1_160_percent
+    promoted_as: selected_w4u8_token_generation_baseline
+    promoted_by: user
+    promoted_on: '2026-09-04'
+    promotion_ref: 'User message 2026-09-04: 允许将最新最快成果晋升为基线，然后继续'
+    source_tag: baseline-w4u8-token-generation-exp0185
   latest_w4u8_vtcm_resident_v_tail_candidate:
     id: EXP-0182
     source_branch: codex/exp-0182-w4u8-decode-vtcm-resident-v-tail
@@ -581,28 +599,28 @@ current_scope:
     independent_reference_sha256: 6a01a5b62e8f420f00835df1d226ff3df5792cb03b2e9d3e3c44722e125620c1
     exp0163_regression_sha256: 6457c52a2729fd24b53f441214e3a3a97c8a92d26c6e9122424e9c4ff397eb37
   selected_w4u8_token_generation_baseline:
-    id: W4U8-EXP0173-LM-HEAD-BATCH16
-    experiment: EXP-0173
+    id: W4U8-EXP0185-SESSION-NATIVE-K-TAIL
+    experiment: EXP-0185
     project_variant: W4U8
-    source_branch: codex/exp-0173-w4u8-decode-lm-head-batch16
-    source_head: 9e30f822731da3b5d0d924babe7ccb5cb4142f94
-    runtime_source_commit: 9e30f822731da3b5d0d924babe7ccb5cb4142f94
-    source_tag: baseline-w4u8-token-generation-exp0173
-    physical_plan: EXP0170_HVX_decode_Softmax_plus_EXP0173_decode_LM_head_batch16
+    source_branch: codex/exp-0185-w4u8-decode-vtcm-k-tail-no-journal
+    source_head: 537650293920eb62c3cc49833df613246e8fb0b9
+    runtime_source_commit: 537650293920eb62c3cc49833df613246e8fb0b9
+    source_tag: baseline-w4u8-token-generation-exp0185
+    physical_plan: EXP0170_HVX_decode_Softmax_plus_EXP0173_decode_LM_head_batch16_plus_EXP0182_VTCM_resident_V_tail_plus_EXP0185_session_native_K_tail
     execution_scope: real_token_ID_M64_prefill_then_192_continuous_decode_steps_to_valid_length256
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0173/20260904T_exp0173_9e30f82_formal'
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0185/20260904T_exp0185_5376502_formal'
     retained_generation_package: 'D:/llm_exp/models/qwen3-block-htp/exp0169/w4u8_greedy193_overlay'
-    prefill_host_us: 49363.010
-    prefill_tokens_per_second: 1296.506840
-    decode_host_us_per_token: 49571.762505
-    decode_tokens_per_second: 20.172775
+    prefill_host_us: 50128.932
+    prefill_tokens_per_second: 1276.707817
+    decode_host_us_per_token: 42083.706456
+    decode_tokens_per_second: 23.762166
     decode_cache_length_range: L64_L255
-    correctness_gate: pass_all20_sessions_byte_exact_all193_independent_integer_head_checks_and_EXP0163_regression
+    correctness_gate: pass_193_of_193_independent_reference_exact_34_step_segment_seal_hidden_hashes_codes_tokens_padding_poison_and_EXP0163_regression
     semantic_gate: disabled_by_user_contract
-    physical_gate: pass_exact_8mib_VTCM_zero_intermediate_or_timed_full_logit_DDR_zero_spill_fill_one_FastRPC_per_pass_no_QNN
+    physical_gate: pass_exact_8mib_VTCM_196_cached_K_tail_DDR_write_descriptors_and_25088_bytes_removed_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_no_QNN_zero_unattributed_ticks
     promoted_by: user
     promoted_on: '2026-09-04'
-    promotion_ref: 'User message 2026-09-04: 同意晋升。开启loop优化，针对decode，尽量不中断。'
+    promotion_ref: 'User message 2026-09-04: 允许将最新最快成果晋升为基线，然后继续'
   latest_w4f16_token_generation_candidate:
     id: EXP-0166
     source_branch: codex/exp-0166-w4f16-lm-head-overlap
