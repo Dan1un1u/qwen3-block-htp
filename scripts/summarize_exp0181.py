@@ -22,6 +22,16 @@ import summarize_exp0178_short as exp178  # noqa: E402
 LAYERS = 28
 KV_HEADS = 8
 HEAD_TILES = 4
+EXPERIMENT_NUMBER = 181
+EXPERIMENT_NAME = "EXP-0181"
+DEFAULT_SOURCE_BRANCH = (
+    "codex/exp-0181-w4u8-decode-attention-publish-v-tail"
+)
+CANDIDATE_FORMAT = 11
+CANDIDATE_LABEL = "Attention-publish-v6"
+REPORT_TITLE = "Attention-side quartet V-cache publication"
+VTCM_TAIL_MODE = False
+VTCM_TAIL_ATLAS_BYTES = LAYERS * KV_HEADS * 32 * 128
 CELLS = ("control", "quartet")
 ROWS = exp178.ROWS
 TARGET_ROW = "QK-Softmax-AV"
@@ -42,6 +52,13 @@ COUNTERS = (
     "u8_cache_v_quartet_partial_pack_rows",
     "u8_cache_v_quartet_full_tile_rmw_count",
     "u8_cache_v_quartet_native_load_bytes",
+    "u8_cache_v_vtcm_tail_init_count",
+    "u8_cache_v_vtcm_tail_row_update_count",
+    "u8_cache_v_vtcm_tail_publish_count",
+    "u8_cache_v_vtcm_tail_seal_count",
+    "u8_cache_v_vtcm_tail_partial_pack_rows",
+    "u8_cache_v_vtcm_tail_init_bytes",
+    "u8_cache_v_vtcm_tail_native_load_bytes",
     "hmx_u8s8_tile_pair_count",
     "hmx_command_count",
     "weight_ddr_read_bytes",
@@ -57,7 +74,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--formal", action="store_true")
     parser.add_argument(
         "--source-branch",
-        default="codex/exp-0181-w4u8-decode-attention-publish-v-tail",
+        default=DEFAULT_SOURCE_BRANCH,
     )
     return parser.parse_args()
 
@@ -87,8 +104,8 @@ def load_run(path: Path, expected_steps: int) -> list[dict[str, object]]:
             and int(final.get("completed_steps", -1)) == expected_steps):
         raise ValueError(f"failed final record: {path}")
     for index, (step, profile) in enumerate(zip(steps, profiles)):
-        if not (int(step.get("experiment", -1)) == 181
-                and int(profile.get("experiment", -1)) == 181
+        if not (int(step.get("experiment", -1)) == EXPERIMENT_NUMBER
+                and int(profile.get("experiment", -1)) == EXPERIMENT_NUMBER
                 and int(step.get("generation_step", -1)) == index
                 and int(profile.get("generation_step", -1)) == index
                 and int(step.get("generation_mode", -1)) == 9):
@@ -137,8 +154,10 @@ def validate_layout(run: list[dict[str, object]], cell: str) -> bool:
     for index, profile in enumerate(run):
         if not (
             int(profile["kv_cache_k_format"]) == 8
-            and int(profile["kv_cache_v_format"]) == (11 if candidate else 9)
-            and int(profile["u8_cache_v_quartet_full_tile_rmw_count"]) == 0
+            and int(profile["kv_cache_v_format"]) == (
+                CANDIDATE_FORMAT if candidate else 9)
+            and int(profile.get(
+                "u8_cache_v_quartet_full_tile_rmw_count", 0)) == 0
         ):
             return False
         quartet_fields = (
@@ -148,12 +167,37 @@ def validate_layout(run: list[dict[str, object]], cell: str) -> bool:
             "u8_cache_v_quartet_partial_pack_rows",
             "u8_cache_v_quartet_native_load_bytes",
         )
+        vtcm_fields = (
+            "u8_cache_v_vtcm_tail_init_count",
+            "u8_cache_v_vtcm_tail_row_update_count",
+            "u8_cache_v_vtcm_tail_publish_count",
+            "u8_cache_v_vtcm_tail_seal_count",
+            "u8_cache_v_vtcm_tail_partial_pack_rows",
+            "u8_cache_v_vtcm_tail_init_bytes",
+            "u8_cache_v_vtcm_tail_native_load_bytes",
+        )
         if not candidate:
-            if any(int(profile[field]) != 0 for field in quartet_fields):
+            if any(int(profile.get(field, 0)) != 0
+                   for field in quartet_fields + vtcm_fields):
                 return False
             continue
         if index == 0:
-            if any(int(profile[field]) != 0 for field in quartet_fields):
+            if VTCM_TAIL_MODE:
+                if (any(int(profile.get(field, 0)) != 0
+                        for field in quartet_fields)
+                        or int(profile.get(
+                            "u8_cache_v_vtcm_tail_init_count", 0)) != 1
+                        or int(profile.get(
+                            "u8_cache_v_vtcm_tail_init_bytes", 0)) !=
+                            VTCM_TAIL_ATLAS_BYTES
+                        or any(int(profile.get(field, 0)) != 0
+                               for field in vtcm_fields
+                               if field not in (
+                                   "u8_cache_v_vtcm_tail_init_count",
+                                   "u8_cache_v_vtcm_tail_init_bytes"))):
+                    return False
+            elif any(int(profile.get(field, 0)) != 0
+                     for field in quartet_fields):
                 return False
             continue
         valid = int(profile["valid_length"])
@@ -167,6 +211,30 @@ def validate_layout(run: list[dict[str, object]], cell: str) -> bool:
         expected_native_bytes = (
             LAYERS * KV_HEADS * HEAD_TILES * groups * 128
         )
+        if VTCM_TAIL_MODE:
+            if (any(int(profile.get(field, 0)) != 0
+                    for field in quartet_fields)
+                    or int(profile.get(
+                        "u8_cache_v_vtcm_tail_init_count", 0)) != 0
+                    or int(profile.get(
+                        "u8_cache_v_vtcm_tail_init_bytes", 0)) != 0
+                    or int(profile.get(
+                        "u8_cache_v_vtcm_tail_row_update_count", 0)) !=
+                        expected_append
+                    or int(profile.get(
+                        "u8_cache_v_vtcm_tail_publish_count", 0)) !=
+                        expected_publish
+                    or int(profile.get(
+                        "u8_cache_v_vtcm_tail_seal_count", 0)) !=
+                        (expected_append if tail_rows == 0 else 0)
+                    or int(profile.get(
+                        "u8_cache_v_vtcm_tail_partial_pack_rows", 0)) !=
+                        expected_partial
+                    or int(profile.get(
+                        "u8_cache_v_vtcm_tail_native_load_bytes", 0)) !=
+                        expected_native_bytes):
+                return False
+            continue
         if not (
             int(profile["u8_cache_v_quartet_append_count"])
                 == expected_append
@@ -183,6 +251,34 @@ def validate_layout(run: list[dict[str, object]], cell: str) -> bool:
     return True
 
 
+def validate_vtcm_read_contract(
+    control: list[dict[str, object]],
+    candidate: list[dict[str, object]],
+) -> bool:
+    if not VTCM_TAIL_MODE or len(control) != len(candidate):
+        return not VTCM_TAIL_MODE
+    for index, (control_profile, candidate_profile) in enumerate(
+            zip(control, candidate)):
+        control_read = int(control_profile["scan_cache_ddr_read_bytes"])
+        candidate_read = int(candidate_profile["scan_cache_ddr_read_bytes"])
+        if index == 0:
+            expected_saved = 0
+        else:
+            tail_rows = int(candidate_profile["valid_length"]) % 32
+            expected_saved = LAYERS * KV_HEADS * (
+                tail_rows * 128 + (4096 if tail_rows == 0 else 0))
+        if control_read - candidate_read != expected_saved:
+            return False
+        if (int(candidate_profile["scan_cache_ddr_write_bytes"])
+                != int(control_profile["scan_cache_ddr_write_bytes"])):
+            return False
+        if (int(candidate_profile["vtcm_peak_plan_bytes"])
+                - int(control_profile["vtcm_peak_plan_bytes"])
+                != VTCM_TAIL_ATLAS_BYTES):
+            return False
+    return True
+
+
 def validate_boundary(result_dir: Path) -> bool:
     control = load_run(result_dir / "boundary_control.log", 34)
     candidate = load_run(result_dir / "boundary_quartet.log", 34)
@@ -191,6 +287,7 @@ def validate_boundary(result_dir: Path) -> bool:
         and exp178.validate_physical(candidate)
         and validate_layout(control, "control")
         and validate_layout(candidate, "quartet")
+        and validate_vtcm_read_contract(control, candidate)
         and sequence(control) == sequence(candidate)
         and logit_codes(control) == logit_codes(candidate)
         and output_hashes(control) == output_hashes(candidate)
@@ -252,7 +349,8 @@ def main() -> None:
         cell: {
             field: median_metric(
                 runs[cell], decode_indices,
-                lambda record, field=field: float(record[field]),
+                lambda record, field=field:
+                float(record.get(field, 0)),
             ) for field in COUNTERS
         } for cell in CELLS
     }
@@ -291,6 +389,10 @@ def main() -> None:
         "control_and_candidate_layout_dispatch": all(
             validate_layout(run, cell)
             for cell in CELLS for run in runs[cell]),
+        "vtcm_tail_exact_DDR_read_elimination_and_journal_writes": all(
+            validate_vtcm_read_contract(control, candidate)
+            for control, candidate in zip(
+                runs["control"], runs["quartet"])),
         "quartet_and_segment_boundary_34_step_exact":
             validate_boundary(result_dir),
         "all_sessions_byte_exact_valid_hidden_hashes": exact_hashes,
@@ -298,7 +400,8 @@ def main() -> None:
         "all_sessions_identical_token_sequences": exact_sequences,
         "unchanged_hmx_and_weight_work": invariant_work,
         "zero_full_tile_read_modify_write": all(
-            int(item["u8_cache_v_quartet_full_tile_rmw_count"]) == 0
+            int(item.get(
+                "u8_cache_v_quartet_full_tile_rmw_count", 0)) == 0
             for run in runs["quartet"] for item in run),
         "padding_poison_physical_contract":
             exp178.validate_physical(poison),
@@ -384,7 +487,7 @@ def main() -> None:
         else "reject_candidate"
     )
     summary = {
-        "experiment": "EXP-0181",
+        "experiment": EXPERIMENT_NAME,
         "source_branch": args.source_branch,
         "source_commit": args.source_commit,
         "evidence": str(result_dir),
@@ -405,7 +508,7 @@ def main() -> None:
         + "\n", encoding="utf-8")
 
     lines = [
-        "# EXP-0181 Attention-side quartet V-cache publication", "",
+        f"# {EXPERIMENT_NAME} {REPORT_TITLE}", "",
         f"Source: `{args.source_branch}` @ `{args.source_commit}`", "",
         "## Direct full-stack result", "",
         "| Cell | Prefill wall | Prefill tok/s | Decode wall/token | "
@@ -426,7 +529,7 @@ def main() -> None:
         f"{direct['decode_speed_percent']:+.3f}% | "
         f"{direct['attention_speed_percent']:+.3f}% |", "",
         "## Complete decode module table", "",
-        "| Module | Segmented-v4 control | Attention-publish-v6 candidate | "
+        f"| Module | Segmented-v4 control | {CANDIDATE_LABEL} candidate | "
         "Candidate speed |",
         "|---|---:|---:|---:|",
     ]
@@ -438,7 +541,7 @@ def main() -> None:
             f"{fmt(candidate, candidate_wall)} | "
             f"{fmt_speed(control, candidate)} |")
     lines += ["", "## Cache and Attention diagnostics", "",
-              "| Field | Segmented-v4 | Attention-publish-v6 | Delta |",
+              f"| Field | Segmented-v4 | {CANDIDATE_LABEL} | Delta |",
               "|---|---:|---:|---:|"]
     for field in DIAGNOSTICS:
         name = field.replace("_ticks", "_us")
@@ -461,19 +564,24 @@ def main() -> None:
     for name, passed in gates.items():
         lines.append(f"| {name} | {'PASS' if passed else 'FAIL'} |")
     lines += ["", "## Conclusion", "", conclusion, "",
-              "The candidate changes only the W4U8 mutable V-cache publication "
-              "schedule. Attention converts the already-loaded fourth-row "
-              "group for immediate AV consumption and persistent reuse; the "
-              "append path performs no redundant group read. K cache, "
-              "Attention math, qparams, HMX work, projections, MLP and M64 "
-              "prefill math remain unchanged.", ""]
+              ("The candidate keeps the mutable V-tail carrier in the "
+               "prepared-session VTCM allocation while retaining the "
+               "segmented-v4 DDR journal and immutable segments. Attention "
+               "loads and publishes quartet carriers entirely in VTCM."
+               if VTCM_TAIL_MODE else
+               "The candidate changes only the W4U8 mutable V-cache "
+               "publication schedule. Attention converts the already-loaded "
+               "fourth-row group for immediate AV consumption and persistent "
+               "reuse; the append path performs no redundant group read.") +
+              " K cache, Attention math, qparams, HMX work, projections, MLP "
+              "and M64 prefill math remain unchanged.", ""]
     report_name = (
         "full_profiling_report.md" if args.formal
         else "short_gate_report.md")
     (result_dir / report_name).write_text(
         "\n".join(lines), encoding="utf-8")
     print(json.dumps({
-        "experiment": "EXP-0181",
+        "experiment": EXPERIMENT_NAME,
         "conclusion": conclusion,
         "control_decode_tok_s": 1e6 / control_wall,
         "candidate_decode_tok_s": 1e6 / candidate_wall,
@@ -484,10 +592,8 @@ def main() -> None:
         "result_dir": str(result_dir),
     }, ensure_ascii=False, indent=2, sort_keys=True))
     if not gates["all_required"]:
-        raise SystemExit("EXP-0181 required gate failed")
+        raise SystemExit(f"{EXPERIMENT_NAME} required gate failed")
 
 
 if __name__ == "__main__":
     main()
-
-
