@@ -30,6 +30,7 @@ DEFAULT_SOURCE_BRANCH = (
 CANDIDATE_FORMAT = 11
 CANDIDATE_LABEL = "Attention-publish-v6"
 REPORT_TITLE = "Attention-side quartet V-cache publication"
+REPORT_DESCRIPTION = None
 VTCM_TAIL_MODE = False
 VTCM_TAIL_ATLAS_BYTES = LAYERS * KV_HEADS * 32 * 128
 VTCM_TAIL_ALIGNMENT_BYTES = 128
@@ -571,6 +572,7 @@ def main() -> None:
     for name, passed in gates.items():
         lines.append(f"| {name} | {'PASS' if passed else 'FAIL'} |")
     lines += ["", "## Conclusion", "", conclusion, "",
+              (REPORT_DESCRIPTION if REPORT_DESCRIPTION is not None else
               ("The candidate keeps the mutable V-tail carrier in the "
                "prepared-session VTCM allocation while retaining the "
                "segmented-v4 DDR journal and immutable segments. Attention "
@@ -579,7 +581,7 @@ def main() -> None:
                "The candidate changes only the W4U8 mutable V-cache "
                "publication schedule. Attention converts the already-loaded "
                "fourth-row group for immediate AV consumption and persistent "
-               "reuse; the append path performs no redundant group read.") +
+               "reuse; the append path performs no redundant group read.")) +
               " K cache, Attention math, qparams, HMX work, projections, MLP "
               "and M64 prefill math remain unchanged.", ""]
     report_name = (

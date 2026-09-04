@@ -217,6 +217,7 @@ struct qbh_block_buffers {
     uint8_t *w4u8_silu_lut;
     uint8_t *w4u8_gather_scratch;
     uint8_t *persistent_v_tail;
+    uint8_t *persistent_k_tail;
     struct qbh_attention_config *attention_configs;
 };
 
@@ -708,6 +709,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
                             uint32_t attention_pipeline_mode,
                             uint32_t mlp_mode,
                             uint32_t generation_mode,
+                            uint32_t kv_cache_k_format,
                             uint32_t kv_cache_v_format,
                             struct qbh_block_buffers *buffers,
                             uint32_t *peak_bytes) {
@@ -885,6 +887,13 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
             &arena, QBH_KV_CACHE_HMX_U8_V_VTCM_TAIL_ATLAS_BYTES,
             QBH_BLOCK_ALIGNMENT);
     }
+    if (variant == QBH_BLOCK_W4U8 &&
+        kv_cache_k_format ==
+            QBH_KV_CACHE_FORMAT_HMX_U8_K_PARTIAL_VTCM_TAIL_V8) {
+        buffers->persistent_k_tail = qbh_arena_alloc_aligned(
+            &arena, QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_ATLAS_BYTES,
+            QBH_BLOCK_ALIGNMENT);
+    }
 
     if (buffers->input_norm_weight == NULL ||
         buffers->post_norm_weight == NULL ||
@@ -914,6 +923,10 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
          kv_cache_v_format ==
              QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7 &&
          buffers->persistent_v_tail == NULL) ||
+        (variant == QBH_BLOCK_W4U8 &&
+         kv_cache_k_format ==
+             QBH_KV_CACHE_FORMAT_HMX_U8_K_PARTIAL_VTCM_TAIL_V8 &&
+         buffers->persistent_k_tail == NULL) ||
         (variant == QBH_BLOCK_W4F16 &&
          (buffers->projection_scales == NULL ||
           (w4f16_pipeline_mode ==
@@ -986,7 +999,11 @@ static int qbh_hmx_native_u8_cache_formats(uint32_t k_format,
              v_format ==
                  QBH_KV_CACHE_FORMAT_HMX_U8_V_ATTENTION_PUBLISH_V6 ||
              v_format ==
-                 QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7));
+                 QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7))
+           || (k_format ==
+                   QBH_KV_CACHE_FORMAT_HMX_U8_K_PARTIAL_VTCM_TAIL_V8 &&
+               v_format ==
+                   QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7);
 }
 
 static int qbh_hmx_native_u8_delta_cache_formats(
@@ -999,8 +1016,10 @@ static int qbh_hmx_native_u8_delta_cache_formats(
 
 static int qbh_hmx_native_u8_segmented_cache_formats(
     uint32_t k_format, uint32_t v_format) {
-    return k_format ==
-               QBH_KV_CACHE_FORMAT_HMX_U8_K_SEGMENTED_V4 &&
+    return (k_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_K_SEGMENTED_V4 ||
+            k_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_K_PARTIAL_VTCM_TAIL_V8) &&
            (v_format ==
                 QBH_KV_CACHE_FORMAT_HMX_U8_V_SEGMENTED_V4 ||
             v_format ==
@@ -1013,8 +1032,18 @@ static int qbh_hmx_native_u8_segmented_cache_formats(
 
 static int qbh_hmx_native_u8_vtcm_tail_v_cache_formats(
     uint32_t k_format, uint32_t v_format) {
+    return (k_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_K_SEGMENTED_V4 ||
+            k_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_K_PARTIAL_VTCM_TAIL_V8) &&
+           v_format ==
+               QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7;
+}
+
+static int qbh_hmx_native_u8_partial_k_vtcm_tail_cache_formats(
+    uint32_t k_format, uint32_t v_format) {
     return k_format ==
-               QBH_KV_CACHE_FORMAT_HMX_U8_K_SEGMENTED_V4 &&
+               QBH_KV_CACHE_FORMAT_HMX_U8_K_PARTIAL_VTCM_TAIL_V8 &&
            v_format ==
                QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7;
 }
@@ -1065,7 +1094,9 @@ static uint32_t qbh_expected_k_cache_bytes(uint32_t variant,
         return QBH_KV_CACHE_HMX_U8_K_DELTA_BYTES(capacity);
     }
     if (variant == QBH_BLOCK_W4U8 &&
-        k_format == QBH_KV_CACHE_FORMAT_HMX_U8_K_SEGMENTED_V4) {
+        (k_format == QBH_KV_CACHE_FORMAT_HMX_U8_K_SEGMENTED_V4 ||
+         k_format ==
+             QBH_KV_CACHE_FORMAT_HMX_U8_K_PARTIAL_VTCM_TAIL_V8)) {
         return QBH_KV_CACHE_HMX_U8_K_SEGMENTED_BYTES(capacity);
     }
     if (variant != QBH_BLOCK_W4U8 &&
@@ -13748,6 +13779,9 @@ static int qbh_scan_append_u8_kv_hmx_segmented(
     const int vtcm_tail_v =
         qbh_hmx_native_u8_vtcm_tail_v_cache_formats(
             header->kv_cache_k_format, header->kv_cache_v_format);
+    const int partial_k_vtcm =
+        qbh_hmx_native_u8_partial_k_vtcm_tail_cache_formats(
+            header->kv_cache_k_format, header->kv_cache_v_format);
     const uint32_t max_segments =
         QBH_KV_CACHE_HMX_U8_SEGMENT_COUNT(header->kv_cache_capacity);
     const uint32_t sealed_segments_before =
@@ -13769,6 +13803,8 @@ static int qbh_scan_append_u8_kv_hmx_segmented(
     uint8_t *packed = buffers->gate;
     uint8_t *v_lut_scratch = packed +
         QBH_KV_CACHE_HMX_U8_SEGMENT_K_BYTES;
+    uint32_t *k_bias_scratch =
+        (uint32_t *)buffers->scale_or_bias;
     int32_t lut_v_zero_point = 0;
     uint32_t lut_v_numerator = 0U;
     uint32_t lut_v_denominator = 0U;
@@ -13808,11 +13844,31 @@ static int qbh_scan_append_u8_kv_hmx_segmented(
             (size_t)head * v_head_bytes + v_tail_offset;
         uint8_t *v_tail = v_tail_base +
             (size_t)active_row * QBH_BLOCK_HEAD_DIM;
+        uint8_t *k_vtcm_head = partial_k_vtcm &&
+                head < QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_CACHED_HEADS
+            ? buffers->persistent_k_tail +
+                  (size_t)head *
+                      QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_HEAD_BYTES
+            : NULL;
 
         qbh_attention_u8_native_head_to_row_major(k_head, row, 1U);
         if (qbh_scan_cache_dma(
                 header, k_tail, row, QBH_BLOCK_HEAD_DIM, 0U) != 0) {
             return -1;
+        }
+        if (k_vtcm_head != NULL) {
+            qbh_attention_u8_update_k_native_row(
+                row, active_row,
+                &buffers->attention_configs[head],
+                (int8_t *)k_vtcm_head, k_bias_scratch);
+            ((uint32_t *)(k_vtcm_head +
+                QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_WEIGHT_BYTES))
+                    [active_row] =
+                k_bias_scratch[QBH_HMX_OUTPUT_CHANNELS + active_row];
+            ++header->u8_cache_k_vtcm_tail_row_update_count;
+            ++header->u8_cache_k_vtcm_tail_cached_head_count;
+        } else if (partial_k_vtcm) {
+            ++header->u8_cache_k_vtcm_tail_fallback_head_count;
         }
         qbh_attention_u8_native_head_to_row_major(v_head, row, 1U);
         if (quartet_v) {
@@ -13921,12 +13977,7 @@ static int qbh_scan_append_u8_kv_hmx_segmented(
                     ? max_segments - block_first
                     : QBH_KV_CACHE_HMX_U8_V_SEGMENT_BLOCK_SEGMENTS;
 
-            if (segment >= max_segments || block_count == 0U ||
-                qbh_scan_cache_dma(
-                    header, row,
-                    shared + header->kv_cache_k_offset +
-                        (size_t)head * k_head_bytes + k_tail_offset,
-                    QBH_KV_CACHE_HMX_U8_SEGMENT_TAIL_BYTES, 1U) != 0) {
+            if (segment >= max_segments || block_count == 0U) {
                 return -1;
             }
             /* The original EXP-0162 seal path called the scalar full-matrix
@@ -13935,12 +13986,38 @@ static int qbh_scan_append_u8_kv_hmx_segmented(
              * use the same HVX scatter kernel as the bounded-tail Attention
              * consumer.  It writes all 32 output lanes and their bias words
              * exactly once, preserving the physical segment ABI. */
-            qbh_attention_u8_patch_k_delta_rows_hvx(
-                row, QBH_KV_CACHE_HMX_U8_SEGMENT_TOKENS,
-                &buffers->attention_configs[head],
-                (int8_t *)packed,
-                (uint32_t *)(packed +
-                    QBH_KV_CACHE_HMX_U8_SEGMENT_WEIGHT_BYTES));
+            if (k_vtcm_head != NULL) {
+                uint32_t *packed_bias = (uint32_t *)(packed +
+                    QBH_KV_CACHE_HMX_U8_SEGMENT_WEIGHT_BYTES);
+                qbh_hvx_copy_aligned_bytes(
+                    packed, k_vtcm_head,
+                    QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_WEIGHT_BYTES);
+                for (uint32_t output = 0U;
+                     output < QBH_HMX_OUTPUT_CHANNELS; ++output) {
+                    packed_bias[output] =
+                        k_bias_scratch[active_row];
+                }
+                qbh_hvx_copy_aligned_bytes(
+                    packed_bias + QBH_HMX_OUTPUT_CHANNELS,
+                    k_vtcm_head +
+                        QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_WEIGHT_BYTES,
+                    QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_CORRECTION_BYTES);
+                ++header->u8_cache_k_vtcm_tail_seal_count;
+            } else {
+                if (qbh_scan_cache_dma(
+                        header, row,
+                        shared + header->kv_cache_k_offset +
+                            (size_t)head * k_head_bytes + k_tail_offset,
+                        QBH_KV_CACHE_HMX_U8_SEGMENT_TAIL_BYTES, 1U) != 0) {
+                    return -1;
+                }
+                qbh_attention_u8_patch_k_delta_rows_hvx(
+                    row, QBH_KV_CACHE_HMX_U8_SEGMENT_TOKENS,
+                    &buffers->attention_configs[head],
+                    (int8_t *)packed,
+                    (uint32_t *)(packed +
+                        QBH_KV_CACHE_HMX_U8_SEGMENT_WEIGHT_BYTES));
+            }
             if (qbh_scan_cache_dma(
                     header,
                     shared + header->kv_cache_k_offset +
@@ -13950,6 +14027,11 @@ static int qbh_scan_append_u8_kv_hmx_segmented(
                     packed, QBH_KV_CACHE_HMX_U8_SEGMENT_K_BYTES,
                     0U) != 0) {
                 return -1;
+            }
+            if (k_vtcm_head != NULL) {
+                qbh_hvx_zero_aligned_bytes(
+                    k_vtcm_head,
+                    QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_HEAD_BYTES);
             }
             if (quartet_v) {
                 if (qbh_scan_cache_dma(
@@ -15488,6 +15570,7 @@ static int qbh_scan_prepare_u8_segmented_short_k(
     struct qbh_block_header *header,
     struct qbh_scan_u8_delta_attention_slot *slot,
     const uint8_t *cache_k, const uint8_t *tail_k_rows,
+    const uint8_t *vtcm_k_head,
     uint8_t *row_scratch,
     uint32_t sealed_segments, uint32_t tail_rows,
     const struct qbh_attention_config *config) {
@@ -15520,14 +15603,61 @@ static int qbh_scan_prepare_u8_segmented_short_k(
     if (tail_rows == 0U) {
         return 0;
     }
-    qbh_hvx_zero_aligned_bytes(
-        tail_weight, QBH_KV_CACHE_HMX_U8_SEGMENT_WEIGHT_BYTES);
     for (uint32_t output = 0U;
          output < QBH_HMX_OUTPUT_CHANNELS; ++output) {
         tail_bias[output] = slot->qk_bias[0];
         tail_bias[QBH_HMX_OUTPUT_CHANNELS + output] =
             UINT32_C(128) * divisor + rounding;
     }
+    if (vtcm_k_head != NULL) {
+        if (header->generation_boundary_audit_enabled != 0U) {
+            int8_t *audit_weight = (int8_t *)(row_scratch +
+                QBH_KV_CACHE_HMX_U8_SEGMENT_TAIL_BYTES);
+            uint32_t *audit_bias = (uint32_t *)(audit_weight +
+                QBH_KV_CACHE_HMX_U8_SEGMENT_WEIGHT_BYTES);
+            if (tail_k_rows == NULL ||
+                qbh_scan_cache_dma(
+                    header, row_scratch, tail_k_rows,
+                    tail_rows * QBH_BLOCK_HEAD_DIM, 1U) != 0) {
+                return -1;
+            }
+            qbh_hvx_zero_aligned_bytes(
+                audit_weight,
+                QBH_KV_CACHE_HMX_U8_SEGMENT_WEIGHT_BYTES);
+            for (uint32_t output = 0U;
+                 output < QBH_HMX_OUTPUT_CHANNELS; ++output) {
+                audit_bias[output] = slot->qk_bias[0];
+                audit_bias[QBH_HMX_OUTPUT_CHANNELS + output] =
+                    UINT32_C(128) * divisor + rounding;
+            }
+            qbh_attention_u8_patch_k_delta_rows_hvx(
+                row_scratch, tail_rows, config,
+                audit_weight, audit_bias);
+            header->u8_attention_fused_k_operand_mismatch_count +=
+                memcmp(audit_weight, vtcm_k_head,
+                       QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_WEIGHT_BYTES) != 0;
+            header->u8_attention_fused_k_operand_mismatch_count +=
+                memcmp(audit_bias + QBH_HMX_OUTPUT_CHANNELS,
+                       vtcm_k_head +
+                           QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_WEIGHT_BYTES,
+                       tail_rows * sizeof(uint32_t)) != 0;
+        }
+        qbh_hvx_copy_aligned_bytes(
+            tail_weight, vtcm_k_head,
+            QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_WEIGHT_BYTES);
+        memcpy(
+            tail_bias + QBH_HMX_OUTPUT_CHANNELS,
+            vtcm_k_head +
+                QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_WEIGHT_BYTES,
+            tail_rows * sizeof(uint32_t));
+        header->u8_cache_k_vtcm_tail_native_load_bytes +=
+            QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_WEIGHT_BYTES;
+        header->u8_cache_k_vtcm_tail_correction_load_bytes +=
+            tail_rows * sizeof(uint32_t);
+        return 0;
+    }
+    qbh_hvx_zero_aligned_bytes(
+        tail_weight, QBH_KV_CACHE_HMX_U8_SEGMENT_WEIGHT_BYTES);
     if (tail_k_rows == NULL ||
         qbh_scan_cache_dma(
             header, row_scratch, tail_k_rows,
@@ -15740,6 +15870,9 @@ static int qbh_scan_u8_attention_segmented_short_pipeline(
     const int vtcm_tail_v =
         qbh_hmx_native_u8_vtcm_tail_v_cache_formats(
             header->kv_cache_k_format, header->kv_cache_v_format);
+    const int partial_k_vtcm =
+        qbh_hmx_native_u8_partial_k_vtcm_tail_cache_formats(
+            header->kv_cache_k_format, header->kv_cache_v_format);
     struct qbh_scan_u8_delta_attention_slot slots[2];
     uint8_t *row_scratch = buffers->gate;
     uint8_t *pack_scratch = buffers->up;
@@ -15765,6 +15898,9 @@ static int qbh_scan_u8_attention_segmented_short_pipeline(
             shared + header->kv_cache_k_offset +
                 (size_t)max_segments *
                     QBH_KV_CACHE_HMX_U8_SEGMENT_K_BYTES,
+            partial_k_vtcm
+                ? buffers->persistent_k_tail
+                : NULL,
             row_scratch, sealed_segments, tail_rows,
             &buffers->attention_configs[0]) != 0) {
         return -1;
@@ -15808,6 +15944,13 @@ static int qbh_scan_u8_attention_segmented_short_pipeline(
                     (size_t)second * k_cache_head_stride +
                     (size_t)max_segments *
                         QBH_KV_CACHE_HMX_U8_SEGMENT_K_BYTES,
+                partial_k_vtcm &&
+                        second <
+                            QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_CACHED_HEADS
+                    ? buffers->persistent_k_tail +
+                          (size_t)second *
+                              QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_HEAD_BYTES
+                    : NULL,
                 row_scratch, sealed_segments, tail_rows,
                 second_config) != 0) {
             return -1;
@@ -15946,6 +16089,13 @@ static int qbh_scan_u8_attention_segmented_short_pipeline(
                     (size_t)next * k_cache_head_stride +
                     (size_t)max_segments *
                         QBH_KV_CACHE_HMX_U8_SEGMENT_K_BYTES,
+                partial_k_vtcm &&
+                        next <
+                            QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_CACHED_HEADS
+                    ? buffers->persistent_k_tail +
+                          (size_t)next *
+                              QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_HEAD_BYTES
+                    : NULL,
                 row_scratch, sealed_segments, tail_rows,
                 &buffers->attention_configs[next]) != 0) {
             return -1;
@@ -19089,6 +19239,7 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
     struct qbh_block_header *header = NULL;
     struct qbh_block_buffers buffers;
     uint8_t *persistent_v_tail_atlas = NULL;
+    uint8_t *persistent_k_tail_atlas = NULL;
     struct qbh_block_hmx_worker worker;
     struct qbh_block_w4f16_pool w4f16_pool;
     qurt_thread_attr_t attributes;
@@ -19188,6 +19339,7 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
                          header->w4f16_pipeline_mode,
                          header->attention_pipeline_mode,
                          header->mlp_mode, header->generation_mode,
+                         header->kv_cache_k_format,
                          header->kv_cache_v_format,
                          &buffers,
                          &header->vtcm_peak_plan_bytes) != 0) {
@@ -19196,6 +19348,7 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
         goto publish;
     }
     persistent_v_tail_atlas = buffers.persistent_v_tail;
+    persistent_k_tail_atlas = buffers.persistent_k_tail;
 
     if (header->attribution_enabled != 0U) {
         invocation_start = HAP_perf_get_qtimer_count();
@@ -19336,6 +19489,14 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
             header->u8_cache_v_vtcm_tail_init_bytes +=
                 QBH_KV_CACHE_HMX_U8_V_VTCM_TAIL_ATLAS_BYTES;
         }
+        if (persistent_k_tail_atlas != NULL && generation_step == 0U) {
+            qbh_hvx_zero_aligned_bytes(
+                persistent_k_tail_atlas,
+                QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_ATLAS_BYTES);
+            ++header->u8_cache_k_vtcm_tail_init_count;
+            header->u8_cache_k_vtcm_tail_init_bytes +=
+                QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_ATLAS_BYTES;
+        }
         if (generation_enabled != 0U &&
             qbh_stage_generation_embedding(
                 header, shared, &buffers) != 0) {
@@ -19388,6 +19549,11 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
                 buffers.persistent_v_tail = persistent_v_tail_atlas +
                     (size_t)slice_index *
                         QBH_KV_CACHE_HMX_U8_V_VTCM_TAIL_LAYER_BYTES;
+            }
+            if (persistent_k_tail_atlas != NULL) {
+                buffers.persistent_k_tail = persistent_k_tail_atlas +
+                    (size_t)slice_index *
+                        QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_LAYER_BYTES;
             }
             header->initial_kv_length = layer->valid_length;
             layer_bookkeeping_ticks =

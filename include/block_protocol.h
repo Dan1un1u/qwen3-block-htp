@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(81)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(182)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(82)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(183)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -134,6 +134,7 @@ enum qbh_kv_cache_format {
     QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5 = 10,
     QBH_KV_CACHE_FORMAT_HMX_U8_V_ATTENTION_PUBLISH_V6 = 11,
     QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7 = 12,
+    QBH_KV_CACHE_FORMAT_HMX_U8_K_PARTIAL_VTCM_TAIL_V8 = 13,
 };
 
 enum qbh_w4u8_prefill_cache_mode {
@@ -272,6 +273,25 @@ enum qbh_w4u8_decode_softmax_mode {
 #define QBH_KV_CACHE_HMX_U8_V_VTCM_TAIL_ATLAS_BYTES \
     (QBH_VERTICAL_SLICE_LAYER_COUNT * \
      QBH_KV_CACHE_HMX_U8_V_VTCM_TAIL_LAYER_BYTES)
+
+/* EXP-0183 uses the remaining prepared-session VTCM for seven of the eight
+ * mutable K tails in every layer.  A cached head stores the exact 4 KiB HMX
+ * weight carrier plus only the 32 variable correction words; the invariant
+ * conversion half of the HMX bias is regenerated in the Attention slot. */
+#define QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_CACHED_HEADS UINT32_C(7)
+#define QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_WEIGHT_BYTES \
+    QBH_KV_CACHE_HMX_U8_SEGMENT_WEIGHT_BYTES
+#define QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_CORRECTION_BYTES \
+    (QBH_HMX_OUTPUT_CHANNELS * sizeof(uint32_t))
+#define QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_HEAD_BYTES \
+    (QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_WEIGHT_BYTES + \
+     QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_CORRECTION_BYTES)
+#define QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_LAYER_BYTES \
+    (QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_CACHED_HEADS * \
+     QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_HEAD_BYTES)
+#define QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_ATLAS_BYTES \
+    (QBH_VERTICAL_SLICE_LAYER_COUNT * \
+     QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_LAYER_BYTES)
 
 /* FP16 cache-native storage keeps the exact M64 HMX weight operands consumed
  * by prefill QK/AV plus a contiguous row journal for the bounded decode tail.
@@ -1093,6 +1113,14 @@ struct qbh_block_header {
     uint32_t u8_cache_v_vtcm_tail_partial_pack_rows;
     uint64_t u8_cache_v_vtcm_tail_init_bytes;
     uint64_t u8_cache_v_vtcm_tail_native_load_bytes;
+    uint32_t u8_cache_k_vtcm_tail_init_count;
+    uint32_t u8_cache_k_vtcm_tail_row_update_count;
+    uint32_t u8_cache_k_vtcm_tail_seal_count;
+    uint32_t u8_cache_k_vtcm_tail_cached_head_count;
+    uint32_t u8_cache_k_vtcm_tail_fallback_head_count;
+    uint64_t u8_cache_k_vtcm_tail_init_bytes;
+    uint64_t u8_cache_k_vtcm_tail_native_load_bytes;
+    uint64_t u8_cache_k_vtcm_tail_correction_load_bytes;
     uint32_t f16_cache_native_prefill_reuse_count;
     uint64_t f16_cache_native_prefill_reused_carrier_bytes;
     uint32_t f16_cache_native_incremental_append_count;
