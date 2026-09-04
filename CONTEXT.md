@@ -1328,11 +1328,21 @@ _Avoid_: retrying a four-output Down HMX worker command, reporting incomplete
 ticks as performance, blaming the Gate/Up gamma alias, or baseline promotion
 
 **Direct-N Decode Down DMA-Four / HMX-Two Candidate**:
-The active EXP-0193 hypothesis decouples transfer and compute granularity.
-Four packed-W4 Down tiles are prefetched into an existing slot, but HMX consumes
-them as two validated two-output commands. Down HMX commands and tile pairs
-remain unchanged; only DMA descriptors and associated synchronization should
-fall. The candidate must still improve direct full-stack decode.
-_Avoid_: issuing a four-output Down HMX command, adding VTCM, changing Down
-math, counting descriptor reduction without end-to-end speed, or automatic
-baseline promotion
+The rejected EXP-0193 hypothesis decoupled transfer and compute granularity.
+Four packed-W4 Down tiles were prefetched into one slot and consumed as two
+validated two-output commands.  The candidate still reproducibly reset cDSP in
+the first decode layer before Down completion.  Therefore the invalid boundary
+is the four-tile Down live weight group, not merely a four-output HMX command.
+_Avoid_: retrying Down DMA4 with HMX2, enlarging the Down live group through a
+different alias, using incomplete ticks as performance, or baseline promotion
+
+**Direct-N Decode QKV Head-Pair Batch-Eight Candidate**:
+The active EXP-0194 hypothesis reopens the old QKV batch-eight question under
+the new direct-n contract.  Unlike EXP-0102, no W4-to-S8 expansion producer is
+present, and eight output tiles align with the existing two-head Q/K preparation
+task.  Four phase-dead slots carry packed W4 and bias groups without changing
+the 8 MiB VTCM plan.  The target is to halve QKV commands and descriptors while
+preserving every Q/K publication and full-token result.
+_Avoid_: applying batch eight to M64 prefill, delaying Q/K publication beyond a
+head pair, changing Attention math, counting commands without higher decode
+token/s, or automatic baseline promotion

@@ -6,6 +6,44 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0194
+    slug: w4u8-direct-n-qkv-batch8
+    title: Direct-n decode QKV head-pair batch-eight
+    parent: EXP-0191
+    variants:
+      - evidence_valid_EXP0191_direct_n_QKV_batch4_control
+      - direct_n_decode_QKV_head_pair_batch8_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0194-w4u8-direct-n-qkv-batch8
+    source_commits: []
+    record: docs/experiments/EXP-0194.md
+    approval_ref: 'User message 2026-09-05: 开始decode优化loop'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0194-w4u8-direct-n-qkv-batch8
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    evidence:
+      source_parent_experiment: EXP-0191
+      source_parent_commit: 0cdd367f89475c73de4695bab9e9348dbd955aeb
+      source_parent_role: evidence_valid_fastest_W4U8_decode_candidate
+      direct_control: same_binary_EXP0191_direct_n_QKV_batch4
+      candidate: decode_only_direct_n_QKV_head_pair_batch8_with_four_phase_dead_slots
+      reopen_basis: EXP0102_batch8_failure_depended_on_the_removed_W4_to_S8_expansion_producer
+      optimization_scope: decode_only_direct_n_QKV_batch_size_slot_alias_head_pair_publication_validation_telemetry_and_tools
+      forbidden_changes: weights_values_scales_qparams_projection_math_Gate_Up_batch16_SwiGLU_O_Down_Attention_cache_M64_prefill_LM_head_F16F16_W4F16_QNN
+      correctness_gate: byte_exact_QK_probability_AV_hidden_hashes_tokens_and_cache_to_QKV_batch4_control_plus_independent_integer_references
+      physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN_zero_transformer_expansion_identical_weight_bytes_and_tile_pairs_QKV_commands_896_to448_and_weight_DMA_descriptors_6122_to5226
+      short_gate: five_rotated_pairs_with_correctness_physical_and_strict_decode_and_QKV_stage_speed_pass
+      formal_gate: ten_rotated_193_step_pairs_with_strictly_higher_direct_full_stack_decode_tokens_per_second_than_EXP0191
+      prefill_preservation: M64_prefill_uses_unchanged_EXP0189_full64_Expanded_S8_path
+      stop_condition: reject_without_formal_if_short_correctness_physical_or_performance_gate_fails
+      selected_baseline_changed: false
   - id: EXP-0193
     slug: w4u8-direct-n-down-dma4-hmx2
     title: Direct-n decode Down DMA-four / HMX-two
@@ -13,14 +51,15 @@ experiments:
     variants:
       - evidence_valid_EXP0191_Down_DMA2_HMX2_control
       - direct_n_decode_Down_DMA4_HMX2_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0193-w4u8-direct-n-down-dma4-hmx2
-    source_commits: []
+    source_commits:
+      - af00ab4917e7941d05f033b48a361123c8bfbdfe
     record: docs/experiments/EXP-0193.md
     approval_ref: 'User message 2026-09-05: 开始decode优化loop'
     runtime:
@@ -28,6 +67,7 @@ experiments:
       source_branch: codex/exp-0193-w4u8-direct-n-down-dma4-hmx2
       approved_on: '2026-09-05'
       started_on: '2026-09-05'
+      completed_on: '2026-09-05'
     evidence:
       source_parent_experiment: EXP-0191
       source_parent_commit: 0cdd367f89475c73de4695bab9e9348dbd955aeb
@@ -44,6 +84,18 @@ experiments:
       formal_gate: ten_rotated_193_step_pairs_with_strictly_higher_direct_full_stack_decode_tokens_per_second_than_EXP0191
       prefill_preservation: M64_prefill_uses_unchanged_EXP0189_full64_Expanded_S8_path
       stop_condition: reject_without_formal_if_short_correctness_physical_or_performance_gate_fails
+      failed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0193/20260905_short_gate_af00ab4'
+      source_commit: af00ab4917e7941d05f033b48a361123c8bfbdfe
+      static_gate_result: pass
+      correctness_gate_result: unavailable_candidate_did_not_complete_first_decode_layer
+      physical_gate_result: fail_cDSP_reset_before_Down_completion_with_Down_DMA4_HMX2
+      performance_gate_result: not_run
+      failure_direct_n_command_count: 76
+      failure_down_ticks: 0
+      audit_dma2_hmx2_sha256: 49171aaab9bcc78644f9769c7fc552f52a16a3e170c35c547ad921c01b281b12
+      audit_dma4_hmx2_sha256: 5a6d5c5ac5afda51066f3f018f67adc237afd1c3cef709db64fd9dcc5938b79a
+      static_gate_sha256: a91ff5ef2a66af26e28c138f8ed5a8a6cd975effd69a9944049d834e8b414b06
+      conclusion: Down_four_tile_live_weight_group_is_not_executable_even_with_two_output_HMX_subcommands
       selected_baseline_changed: false
   - id: EXP-0192
     slug: w4u8-direct-n-down-batch4
