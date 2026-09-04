@@ -9,6 +9,17 @@ adb_exe="${ADB_EXE:-/mnt/c/adb/adb.exe}"
 package="${QBH_EXP0173_OVERLAY:-/mnt/d/llm_exp/models/qwen3-block-htp/exp0169/w4u8_greedy193_overlay}"
 transformer_package="${QBH_EXP0173_TRANSFORMER_PACKAGE:-/mnt/d/llm_exp/models/qwen3-block-htp/exp0163/candidate_segmented_capacity257}"
 
+if ! git -C "${project_root}" cat-file -e "${source_commit}^{commit}" 2>/dev/null; then
+    printf 'source commit does not exist: %s\n' "${source_commit}" >&2
+    exit 2
+fi
+actual_head="$(git -C "${project_root}" rev-parse HEAD)"
+if [[ "${source_commit}" != "${actual_head}" ]]; then
+    printf 'source commit mismatch: requested=%s HEAD=%s\n' \
+        "${source_commit}" "${actual_head}" >&2
+    exit 2
+fi
+
 mkdir -p "${result_dir}/raw" "${result_dir}/audit"
 "${project_root}/scripts/check_exp0173_static.sh" \
     > "${result_dir}/static_gate.json"
