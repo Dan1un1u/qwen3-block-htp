@@ -79,6 +79,7 @@ _Static_assert(
         QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
     "shared RoPE cache must fit the W4U8 Attention projection overlay");
 #define QBH_BLOCK_DMA_DESCRIPTOR_TIMEOUT_TICKS UINT64_C(1920000)
+#define QBH_BLOCK_DMA_MAX_WEIGHT_1D_BYTES UINT32_C(1048576)
 #define QBH_BLOCK_HVX_F16_LANES UINT32_C(64)
 #define QBH_BLOCK_MLP_STREAM_CHANNELS UINT32_C(64)
 #define QBH_BLOCK_MLP_STREAM_GROUPS \
@@ -2573,6 +2574,83 @@ static int qbh_dma_wait_weight_prefetch(
             return -2;
         }
     }
+}
+
+/* User DMA rejects the two-MiB 1D descriptor needed by an LM-head batch of
+ * sixty-four.  Keep the HMX group intact but publish it through a linked pair
+ * of one-MiB descriptors. */
+static int qbh_dma_start_weight_prefetch_split2(
+    struct qbh_dma_aligned_desc_1d aligned[2],
+    void *weight_destination, const void *weight_source,
+    uint32_t weight_bytes) {
+    struct qbh_dma_desc_1d *first = &aligned[0].descriptor;
+    struct qbh_dma_desc_1d *second = &aligned[1].descriptor;
+    const uint32_t first_bytes = weight_bytes <
+            QBH_BLOCK_DMA_MAX_WEIGHT_1D_BYTES
+        ? weight_bytes : QBH_BLOCK_DMA_MAX_WEIGHT_1D_BYTES;
+    const uint32_t second_bytes = weight_bytes - first_bytes;
+
+    if (second_bytes == 0U) {
+        return qbh_dma_start_weight_prefetch(
+            &aligned[0], weight_destination, weight_source, weight_bytes);
+    }
+    if (weight_destination == NULL || weight_source == NULL ||
+        second_bytes > QBH_BLOCK_DMA_MAX_WEIGHT_1D_BYTES ||
+        qbh_dma_wait_idle() != 0) {
+        return -1;
+    }
+    memset(aligned, 0, 2U * sizeof(*aligned));
+    first->next = (uint32_t)(uintptr_t)second;
+    first->length = first_bytes;
+    first->type = QBH_DMA_TYPE_1D;
+    first->src_bypass = 1;
+    first->ordered = 1;
+    first->dstate = QBH_DMA_DESC_PENDING;
+    first->src = (uint32_t)(uintptr_t)weight_source;
+    first->dst = (uint32_t)(uintptr_t)weight_destination;
+
+    second->length = second_bytes;
+    second->type = QBH_DMA_TYPE_1D;
+    second->src_bypass = 1;
+    second->ordered = 1;
+    second->dstate = QBH_DMA_DESC_PENDING;
+    second->src = (uint32_t)(uintptr_t)weight_source + first_bytes;
+    second->dst = (uint32_t)(uintptr_t)weight_destination + first_bytes;
+    asm volatile("release(%0):at" : : "r"(second) : "memory");
+    asm volatile("release(%0):at" : : "r"(first) : "memory");
+    return qbh_dma_start(first) == 0 ? 0 : -2;
+}
+
+static int qbh_dma_wait_weight_prefetch_split2(
+    struct qbh_dma_aligned_desc_1d aligned[2],
+    uint32_t weight_bytes) {
+    struct qbh_dma_aligned_desc_1d *terminal =
+        weight_bytes > QBH_BLOCK_DMA_MAX_WEIGHT_1D_BYTES
+            ? &aligned[1] : &aligned[0];
+    const int result = qbh_dma_wait_weight_prefetch(terminal);
+    if (result != 0) {
+        return result;
+    }
+    return qbh_dma_wait_idle() == 0 ? 0 : -3;
+}
+
+static int qbh_dma_copy_weight_split2(
+    struct qbh_block_header *header, void *weight_destination,
+    const void *weight_source, uint32_t weight_bytes) {
+    struct qbh_dma_aligned_desc_1d aligned[2]
+        __attribute__((aligned(64)));
+    const uint64_t start = HAP_perf_get_qtimer_count();
+    int result = qbh_dma_start_weight_prefetch_split2(
+        aligned, weight_destination, weight_source, weight_bytes);
+    if (result == 0) {
+        result = qbh_dma_wait_weight_prefetch_split2(
+            aligned, weight_bytes);
+    }
+    if (result == 0) {
+        header->weight_dma_ticks +=
+            HAP_perf_get_qtimer_count() - start;
+    }
+    return result;
 }
 
 static void qbh_fp16_input_norm_pool_run_tasks(
@@ -5973,8 +6051,8 @@ static int qbh_run_generation_head_w4f16_overlap(
                 hmx_active = 0U;
                 if (result != 0) {
                     if (prefetch_active != 0U) {
-                        (void)qbh_dma_wait_weight_prefetch(
-                            &prefetch_descriptor);
+                        (void)qbh_dma_wait_weight_prefetch_split2(
+                            prefetch_descriptors, prefetch_bytes);
                     }
                     return -12;
                 }
@@ -6735,10 +6813,11 @@ static int qbh_run_generation_head_w4u8(
     header->generation_lm_head_batch_n_tiles = group_limit;
     header->generation_lm_head_n_tiles = n_tiles;
     if (resident_bias != 0U) {
-        struct qbh_dma_aligned_desc_1d prefetch_descriptor
+        struct qbh_dma_aligned_desc_1d prefetch_descriptors[2]
             __attribute__((aligned(64)));
         uint64_t prefetch_start = 0U;
         uint64_t hmx_start = 0U;
+        uint32_t prefetch_bytes = 0U;
         uint32_t prefetch_active = 0U;
         uint32_t hmx_active = 0U;
         uint32_t previous_first_n_tile = 0U;
@@ -6749,12 +6828,12 @@ static int qbh_run_generation_head_w4u8(
             k_tiles * QBH_W4_PACKED_TILE_BYTES;
         uint64_t start = HAP_perf_get_qtimer_count();
 
-        if (qbh_dma_copy(
+        if (qbh_dma_copy_weight_split2(
                 header, compressed_slots[0],
                 shared + (direct_n_decode != 0U
                               ? head->direct_n_weight_offset
                               : head->weight_offset),
-                first_tiles * compressed_tile_bytes, 1U) != 0) {
+                first_tiles * compressed_tile_bytes) != 0) {
             return -4;
         }
         header->generation_lm_head_weight_dma_ticks +=
@@ -6767,7 +6846,10 @@ static int qbh_run_generation_head_w4u8(
         }
         header->weight_ddr_read_bytes +=
             first_tiles * compressed_tile_bytes;
-        ++header->weight_dma_descriptor_count;
+        header->weight_dma_descriptor_count +=
+            (first_tiles * compressed_tile_bytes +
+             QBH_BLOCK_DMA_MAX_WEIGHT_1D_BYTES - 1U) /
+            QBH_BLOCK_DMA_MAX_WEIGHT_1D_BYTES;
 
         if (group_count > 1U) {
             uint32_t next_tiles = n_tiles - group_limit;
@@ -6775,13 +6857,14 @@ static int qbh_run_generation_head_w4u8(
                 next_tiles = group_limit;
             }
             prefetch_start = HAP_perf_get_qtimer_count();
-            result = qbh_dma_start_weight_prefetch(
-                &prefetch_descriptor, compressed_slots[1],
+            prefetch_bytes = next_tiles * compressed_tile_bytes;
+            result = qbh_dma_start_weight_prefetch_split2(
+                prefetch_descriptors, compressed_slots[1],
                 shared + (direct_n_decode != 0U
                               ? head->direct_n_weight_offset
                               : head->weight_offset) +
                     (size_t)group_limit * compressed_tile_bytes,
-                next_tiles * compressed_tile_bytes);
+                prefetch_bytes);
             if (result != 0) {
                 return -5;
             }
@@ -6795,7 +6878,9 @@ static int qbh_run_generation_head_w4u8(
             }
             header->weight_ddr_read_bytes +=
                 next_tiles * compressed_tile_bytes;
-            ++header->weight_dma_descriptor_count;
+            header->weight_dma_descriptor_count +=
+                (prefetch_bytes + QBH_BLOCK_DMA_MAX_WEIGHT_1D_BYTES - 1U) /
+                QBH_BLOCK_DMA_MAX_WEIGHT_1D_BYTES;
         }
 
         for (uint32_t group = 0U; group < group_count; ++group) {
@@ -6809,8 +6894,8 @@ static int qbh_run_generation_head_w4u8(
             if (group != 0U) {
                 const uint64_t wait_start =
                     HAP_perf_get_qtimer_count();
-                result = qbh_dma_wait_weight_prefetch(
-                    &prefetch_descriptor);
+                result = qbh_dma_wait_weight_prefetch_split2(
+                    prefetch_descriptors, prefetch_bytes);
                 header->generation_lm_head_weight_dma_wait_ticks +=
                     HAP_perf_get_qtimer_count() - wait_start;
                 header->generation_lm_head_weight_dma_ticks +=
@@ -6835,14 +6920,15 @@ static int qbh_run_generation_head_w4u8(
                     next_tiles = group_limit;
                 }
                 prefetch_start = HAP_perf_get_qtimer_count();
-                result = qbh_dma_start_weight_prefetch(
-                    &prefetch_descriptor,
+                prefetch_bytes = next_tiles * compressed_tile_bytes;
+                result = qbh_dma_start_weight_prefetch_split2(
+                    prefetch_descriptors,
                     compressed_slots[next_slot],
                     shared + (direct_n_decode != 0U
                                   ? head->direct_n_weight_offset
                                   : head->weight_offset) +
                         (size_t)next_first * compressed_tile_bytes,
-                    next_tiles * compressed_tile_bytes);
+                    prefetch_bytes);
                 if (result != 0) {
                     if (hmx_active != 0U) {
                         (void)qbh_hmx_wait(worker);
@@ -6859,7 +6945,10 @@ static int qbh_run_generation_head_w4u8(
                 }
                 header->weight_ddr_read_bytes +=
                     next_tiles * compressed_tile_bytes;
-                ++header->weight_dma_descriptor_count;
+                header->weight_dma_descriptor_count +=
+                    (prefetch_bytes +
+                     QBH_BLOCK_DMA_MAX_WEIGHT_1D_BYTES - 1U) /
+                    QBH_BLOCK_DMA_MAX_WEIGHT_1D_BYTES;
             }
 
             if (direct_n_decode == 0U) {
@@ -6875,8 +6964,8 @@ static int qbh_run_generation_head_w4u8(
                         (void)qbh_hmx_wait(worker);
                     }
                     if (prefetch_active != 0U) {
-                        (void)qbh_dma_wait_weight_prefetch(
-                            &prefetch_descriptor);
+                        (void)qbh_dma_wait_weight_prefetch_split2(
+                            prefetch_descriptors, prefetch_bytes);
                     }
                     return -8;
                 }

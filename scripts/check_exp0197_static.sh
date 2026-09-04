@@ -10,6 +10,8 @@ grep -q '8|16|32|64' scripts/run_exp0173.sh
 grep -q 'QBH_W4U8_DECODE_DIRECT_N_MASK=15' scripts/run_exp0197.sh
 grep -q 'group_tiles=64' scripts/run_exp0197.sh
 grep -q 'compressed_slots\[0\] = buffers->expanded_weight' src/dsp/block_imp.c
+grep -q 'QBH_BLOCK_DMA_MAX_WEIGHT_1D_BYTES UINT32_C(1048576)' src/dsp/block_imp.c
+grep -q 'qbh_dma_start_weight_prefetch_split2' src/dsp/block_imp.c
 if grep -RIn -E 'Qnn|QAIRT|qti\.aisw' src include CMakeLists.txt | \
         grep -v 'qnn":"none' >/dev/null; then
     printf 'unexpected QNN dependency\n' >&2
