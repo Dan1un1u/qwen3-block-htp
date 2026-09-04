@@ -5083,7 +5083,14 @@ int main(int argc, char **argv) {
           (crouton_boundary_mode &
            QBH_BLOCK_CROUTON_BOUNDARY_INPUT_NORM) == 0U)) ||
         (w4u8_down_hmx_batch_outputs != 1U &&
+         w4u8_down_hmx_batch_outputs != 2U &&
          w4u8_down_hmx_batch_outputs != 4U) ||
+        (w4u8_down_hmx_batch_outputs == 2U &&
+         (variant != QBH_BLOCK_W4U8 ||
+          w4u8_decode_projection_mode !=
+              QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
+          (w4u8_decode_direct_n_mask &
+           QBH_BLOCK_W4U8_DIRECT_N_MLP) == 0U)) ||
         (variant != QBH_BLOCK_W4U8 &&
          w4u8_down_hmx_batch_outputs != 1U) ||
         (w4u8_gate_up_ring_slots != 8U &&
@@ -5319,7 +5326,7 @@ int main(int argc, char **argv) {
                         "qk_head_pairs_input_norm_pool|all] "
                         "[fp16_norm_rows_per_task:2|4|8] "
                         "[fp16_norm_contexts:2|3|4] "
-                        "[w4u8_down_hmx_batch_outputs:1|4] "
+                        "[w4u8_down_hmx_batch_outputs:1|2|4] "
                         "[w4u8_qk_pair_kernel:0|1]\n",
                 argv[0]);
         return 2;
