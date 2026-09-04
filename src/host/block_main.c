@@ -2861,6 +2861,10 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U32(repeat_count);
     QBH_REPLAY_PROFILE_U32(prepared_session_run_index);
     QBH_REPLAY_PROFILE_U32(numerical_audit_enabled);
+    QBH_REPLAY_PROFILE_I32(projection_failure_result);
+    QBH_REPLAY_PROFILE_U32(projection_failure_index);
+    QBH_REPLAY_PROFILE_U32(projection_failure_n_tile);
+    QBH_REPLAY_PROFILE_U32(projection_failure_step);
     QBH_REPLAY_PROFILE_U32(kv_cache_k_format);
     QBH_REPLAY_PROFILE_U32(kv_cache_v_format);
     QBH_REPLAY_PROFILE_U32(w4u8_prefill_cache_mode);
@@ -2994,6 +2998,7 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U64(generation_lm_head_ddr_read_bytes);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_direct_n_projection_count);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_direct_n_hmx_command_count);
+    QBH_REPLAY_PROFILE_U64(w4u8_mlp_down_hmx_command_count);
     QBH_REPLAY_PROFILE_U64(w4u8_decode_direct_n_weight_ddr_read_bytes);
     QBH_REPLAY_PROFILE_U64(w4u8_decode_direct_n_expand_bytes_avoided);
 

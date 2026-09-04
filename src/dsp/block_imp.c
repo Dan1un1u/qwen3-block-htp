@@ -2768,9 +2768,9 @@ static int qbh_dma_wait_w4u8_batch_prefetch(
 }
 
 /* The direct-N Down batch4 carrier is 393216 bytes.  Keep each user-DMA
- * descriptor no larger than the 262144-byte size already proven by O
- * batch8, but retain one ordered chain so the HMX consumer still observes a
- * single prefetched batch. */
+ * transfer no larger than the 262144-byte size already proven by O batch8.
+ * The first half completes as a standalone descriptor; the second half and
+ * the combined bias then use the existing two-descriptor ordered chain. */
 #define QBH_BLOCK_DIRECT_N_DMA_SINGLE_BYTES UINT32_C(262144)
 
 static int qbh_dma_start_w4u8_direct_n_prefetch(
@@ -2779,10 +2779,8 @@ static int qbh_dma_start_w4u8_direct_n_prefetch(
     uint32_t weight_bytes, void *bias_destination,
     const void *bias_source, uint32_t bias_bytes,
     uint32_t *descriptor_count) {
-    struct qbh_dma_desc_1d *first = &descriptors[0].descriptor;
-    struct qbh_dma_desc_1d *second = &descriptors[1].descriptor;
-    struct qbh_dma_desc_1d *bias = &descriptors[2].descriptor;
     uint32_t first_bytes;
+    int result;
 
     if (descriptor_count == NULL) {
         return -1;
@@ -2805,39 +2803,21 @@ static int qbh_dma_start_w4u8_direct_n_prefetch(
             QBH_BLOCK_DIRECT_N_DMA_SINGLE_BYTES) {
         return -1;
     }
-    memset(descriptors, 0, 3U * sizeof(*descriptors));
-    first->next = (uint32_t)(uintptr_t)second;
-    first->length = first_bytes;
-    first->type = QBH_DMA_TYPE_1D;
-    first->src_bypass = 1;
-    first->ordered = 1;
-    first->dstate = QBH_DMA_DESC_PENDING;
-    first->src = (uint32_t)(uintptr_t)weight_source;
-    first->dst = (uint32_t)(uintptr_t)weight_destination;
-
-    second->next = (uint32_t)(uintptr_t)bias;
-    second->length = weight_bytes - first_bytes;
-    second->type = QBH_DMA_TYPE_1D;
-    second->src_bypass = 1;
-    second->ordered = 1;
-    second->dstate = QBH_DMA_DESC_PENDING;
-    second->src = (uint32_t)(uintptr_t)
-        ((const uint8_t *)weight_source + first_bytes);
-    second->dst = (uint32_t)(uintptr_t)
-        ((uint8_t *)weight_destination + first_bytes);
-
-    bias->length = bias_bytes;
-    bias->type = QBH_DMA_TYPE_1D;
-    bias->src_bypass = 1;
-    bias->ordered = 1;
-    bias->dstate = QBH_DMA_DESC_PENDING;
-    bias->src = (uint32_t)(uintptr_t)bias_source;
-    bias->dst = (uint32_t)(uintptr_t)bias_destination;
-    asm volatile("release(%0):at" : : "r"(bias) : "memory");
-    asm volatile("release(%0):at" : : "r"(second) : "memory");
-    asm volatile("release(%0):at" : : "r"(first) : "memory");
+    result = qbh_dma_start_weight_prefetch(
+        &descriptors[0], weight_destination, weight_source, first_bytes);
+    if (result == 0) {
+        result = qbh_dma_wait_weight_prefetch(&descriptors[0]);
+    }
+    if (result != 0 || qbh_dma_wait_idle() != 0) {
+        return result != 0 ? result : -3;
+    }
     *descriptor_count = 3U;
-    return qbh_dma_start(first) == 0 ? 0 : -2;
+    return qbh_dma_start_w4u8_batch_prefetch(
+        &descriptors[1],
+        (uint8_t *)weight_destination + first_bytes,
+        (const uint8_t *)weight_source + first_bytes,
+        weight_bytes - first_bytes,
+        bias_destination, bias_source, bias_bytes);
 }
 
 static int qbh_dma_wait_w4u8_direct_n_prefetch(
@@ -8928,7 +8908,9 @@ static int qbh_run_w4u8_direct_n_projection(
     struct qbh_dma_aligned_desc_1d descriptors[3]
         __attribute__((aligned(64)));
     const uint32_t use_decode_phase_overlay =
-        batch_tiles > QBH_BLOCK_W4U8_DIRECT_N_SAFE_BATCH_N_TILES;
+        batch_tiles > QBH_BLOCK_W4U8_DIRECT_N_SAFE_BATCH_N_TILES ||
+        (desc == &header->projections[QBH_BLOCK_PROJ_DOWN] &&
+         batch_tiles == 4U);
     uint8_t *weight_slots[2] = {
         use_decode_phase_overlay != 0U
             ? buffers->expanded_weight : buffers->compressed_weight,
@@ -8971,9 +8953,12 @@ static int qbh_run_w4u8_direct_n_projection(
          desc != &header->projections[QBH_BLOCK_PROJ_GATE] &&
          desc != &header->projections[QBH_BLOCK_PROJ_UP]) ||
         n_tiles == 0U) {
+        if (header != NULL && desc != NULL) {
+            qbh_record_projection_failure(
+                header, desc, 0U, 79U, -1);
+        }
         return -1;
     }
-
     dma_start = HAP_perf_get_qtimer_count();
     result = qbh_dma_start_w4u8_direct_n_prefetch(
         descriptors, weight_slots[0],
