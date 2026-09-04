@@ -9,6 +9,7 @@ import summarize_exp0181 as implementation
 LAYERS = 28
 KV_HEADS = 8
 CACHED_HEADS = 7
+CANDIDATE_K_FORMAT = 13
 HEAD_TILES = 4
 V_ATLAS_BYTES = LAYERS * KV_HEADS * 32 * 128
 K_HEAD_BYTES = 4096 + 32 * 4
@@ -67,7 +68,8 @@ def validate_layout(run: list[dict[str, object]], cell: str) -> bool:
     )
     for index, profile in enumerate(run):
         if not (
-            int(profile["kv_cache_k_format"]) == (13 if candidate else 8)
+            int(profile["kv_cache_k_format"]) ==
+                (CANDIDATE_K_FORMAT if candidate else 8)
             and int(profile["kv_cache_v_format"]) == 12
             and all(int(profile.get(field, 0)) == 0
                     for field in quartet_fields)

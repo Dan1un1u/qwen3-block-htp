@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(83)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(184)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(84)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(185)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -135,6 +135,7 @@ enum qbh_kv_cache_format {
     QBH_KV_CACHE_FORMAT_HMX_U8_V_ATTENTION_PUBLISH_V6 = 11,
     QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7 = 12,
     QBH_KV_CACHE_FORMAT_HMX_U8_K_PARTIAL_VTCM_TAIL_V8 = 13,
+    QBH_KV_CACHE_FORMAT_HMX_U8_K_SESSION_VTCM_TAIL_V9 = 14,
 };
 
 enum qbh_w4u8_prefill_cache_mode {
@@ -1123,6 +1124,8 @@ struct qbh_block_header {
     uint64_t u8_cache_k_vtcm_tail_correction_load_bytes;
     uint32_t u8_cache_k_vtcm_tail_hvx_row_update_count;
     uint64_t u8_cache_k_vtcm_tail_hvx_row_update_ticks;
+    uint32_t u8_cache_k_vtcm_tail_ddr_write_skip_count;
+    uint64_t u8_cache_k_vtcm_tail_ddr_write_skip_bytes;
     uint32_t f16_cache_native_prefill_reuse_count;
     uint64_t f16_cache_native_prefill_reused_carrier_bytes;
     uint32_t f16_cache_native_incremental_append_count;
