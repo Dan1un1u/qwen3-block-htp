@@ -1943,7 +1943,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
           header->w4u8_decode_swiglu_rows !=
               QBH_BLOCK_W4U8_SWIGLU_DECODE_ROWS)) ||
         (header->w4u8_decode_lm_head_group_tiles != 8U &&
-         header->w4u8_decode_lm_head_group_tiles != 16U) ||
+         header->w4u8_decode_lm_head_group_tiles != 16U &&
+         header->w4u8_decode_lm_head_group_tiles != 32U) ||
         (header->w4u8_decode_lm_head_group_tiles != 8U &&
          header->variant != QBH_BLOCK_W4U8) ||
         (header->w4u8_decode_softmax_mode !=
@@ -6577,7 +6578,7 @@ static int qbh_run_generation_head_w4u8(
         logical_rows == 1U &&
         header->w4u8_decode_lm_head_group_tiles == 16U;
     const uint32_t group_limit = direct_n_decode != 0U
-        ? QBH_BLOCK_W4U8_DIRECT_N_SAFE_BATCH_N_TILES
+        ? header->w4u8_decode_lm_head_group_tiles
         : (decode_batch16 != 0U
                ? 16U
                : (resident_bias != 0U
@@ -6615,7 +6616,10 @@ static int qbh_run_generation_head_w4u8(
         (direct_n_decode != 0U &&
          head->direct_n_weight_bytes != head->weight_bytes) ||
         n_tiles == 0U || group_count == 0U ||
-        group_limit * k_tiles * QBH_HMX_WEIGHT_BYTES >
+        group_limit * k_tiles *
+                (direct_n_decode != 0U
+                     ? QBH_W4_PACKED_TILE_BYTES
+                     : QBH_HMX_WEIGHT_BYTES) >
             expanded_capacity ||
         (resident_bias == 0U &&
          2U * group_limit * QBH_HMX_BIAS_BYTES >
@@ -6630,7 +6634,9 @@ static int qbh_run_generation_head_w4u8(
         return -1;
     }
 
-    if (decode_batch16 != 0U) {
+    if (decode_batch16 != 0U ||
+        (direct_n_decode != 0U &&
+         group_limit > QBH_BLOCK_W4U8_DIRECT_N_SAFE_BATCH_N_TILES)) {
         const size_t activation_bytes =
             (size_t)k_tiles * QBH_HMX_ACTIVATION_BYTES;
         const size_t compressed_group_bytes =
@@ -6657,9 +6663,18 @@ static int qbh_run_generation_head_w4u8(
         /* Transformer activations are dead at the token boundary.  Reuse
          * their non-overlapping VTCM ranges so batch sixteen does not change
          * the fixed arena plan or move the selected batch-eight buffers. */
-        compressed_slots[0] =
-            buffers->hmx_activation + activation_bytes;
-        compressed_slots[1] = buffers->attention_projection;
+        if (direct_n_decode != 0U) {
+            /* EXP-0196: after the final Transformer layer, both expanded
+             * weight arenas are phase-dead.  A batch of 32 direct-n tiles
+             * occupies exactly one MiB in each slot, so the LM head can
+             * double-buffer packed W4 without increasing the arena peak. */
+            compressed_slots[0] = buffers->expanded_weight;
+            compressed_slots[1] = buffers->expanded_weight_alt;
+        } else {
+            compressed_slots[0] =
+                buffers->hmx_activation + activation_bytes;
+            compressed_slots[1] = buffers->attention_projection;
+        }
         hmx_output = buffers->up;
         argmax_scratch = hmx_output + output_group_bytes;
     }

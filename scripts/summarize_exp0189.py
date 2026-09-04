@@ -99,7 +99,8 @@ def require_equal(actual: object, expected: object, context: str) -> None:
 
 def validate_run(
     run: dict[str, object], rows: int, steps: int, poison: int = 0,
-    experiment: int = 189,
+    experiment: int = 189, direct_mask: int = DIRECT_MASK,
+    lm_head_direct: bool = False,
 ) -> None:
     summaries = run["summaries"]
     profiles = run["profiles"]
@@ -146,7 +147,7 @@ def validate_run(
                       context + " profile mode")
         require_equal(int(profile["w4u8_decode_projection_mode"]), 1,
                       context + " direct-n mode")
-        require_equal(int(profile["w4u8_decode_direct_n_mask"]), DIRECT_MASK,
+        require_equal(int(profile["w4u8_decode_direct_n_mask"]), direct_mask,
                       context + " direct-n mask")
         require_equal(int(profile["w4u8_decode_swiglu_rows"]), rows,
                       context + " requested SwiGLU rows")
@@ -167,14 +168,20 @@ def validate_run(
                           context + " decode SwiGLU rows")
             require_equal(
                 int(profile["w4u8_decode_direct_n_projection_count"]),
-                DIRECT_PROJECTIONS_PER_DECODE,
+                DIRECT_PROJECTIONS_PER_DECODE +
+                (1 if lm_head_direct else 0),
                 context + " direct projection count")
             require_equal(int(profile["w4u8_qkvo_weight_expand_ticks"]), 0,
                           context + " QKVO expansion")
             require_equal(int(profile["w4u8_mlp_weight_expand_ticks"]), 0,
                           context + " MLP expansion")
-            if int(profile["generation_lm_head_expand_ticks"]) <= 0:
-                raise ValueError(f"{context}: LM-head fallback expansion missing")
+            if lm_head_direct:
+                require_equal(
+                    int(profile["generation_lm_head_expand_ticks"]), 0,
+                    context + " direct LM-head expansion")
+            elif int(profile["generation_lm_head_expand_ticks"]) <= 0:
+                raise ValueError(
+                    f"{context}: LM-head fallback expansion missing")
             expected_calls = ROW4_CALLS_PER_DECODE if rows == 4 else 0
             require_equal(
                 int(profile["w4u8_decode_swiglu_row4_call_count"]),
