@@ -26,11 +26,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--require-audit", action="store_true")
     parser.add_argument("--formal", action="store_true")
     parser.add_argument("--gate", action="store_true")
+    parser.add_argument("--experiment", type=int, default=190)
+    parser.add_argument("--control-batch", type=int, default=4)
+    parser.add_argument("--candidate-batch", type=int, default=8)
     return parser.parse_args()
 
 
-def validate_run(run: dict[str, object], batch: int, steps: int) -> None:
-    base.validate_run(run, 4, steps, experiment=190)
+def validate_run(
+    run: dict[str, object], batch: int, steps: int, experiment: int = 190
+) -> None:
+    base.validate_run(run, 4, steps, experiment=experiment)
     profiles = run["profiles"]
     assert isinstance(profiles, list)
     for index, profile in enumerate(profiles):
@@ -45,13 +50,18 @@ def audit_tree_hashes(root: Path) -> dict[str, str]:
     return base.audit_tree_hashes(root)
 
 
-def validate_audit(result_dir: Path) -> dict[str, bool]:
+def validate_audit(
+    result_dir: Path, control_batch: int, candidate_batch: int,
+    experiment: int,
+) -> dict[str, bool]:
     runs = {
-        CONTROL: base.load_run(result_dir / "raw/audit_batch4.log", 4),
-        CANDIDATE: base.load_run(result_dir / "raw/audit_batch8.log", 4),
+        CONTROL: base.load_run(
+            result_dir / "raw" / f"audit_batch{control_batch}.log", 4),
+        CANDIDATE: base.load_run(
+            result_dir / "raw" / f"audit_batch{candidate_batch}.log", 4),
     }
-    validate_run(runs[CONTROL], 4, 4)
-    validate_run(runs[CANDIDATE], 8, 4)
+    validate_run(runs[CONTROL], control_batch, 4, experiment)
+    validate_run(runs[CANDIDATE], candidate_batch, 4, experiment)
     signatures_equal = (
         base.run_signatures(runs[CONTROL]) ==
         base.run_signatures(runs[CANDIDATE]))
@@ -71,7 +81,10 @@ def median(values: list[float]) -> float:
 
 
 def main() -> None:
+    global CONTROL, CANDIDATE
     args = parse_args()
+    CONTROL = f"batch{args.control_batch}"
+    CANDIDATE = f"batch{args.candidate_batch}"
     result_dir = args.result_dir.resolve()
     runs: dict[str, list[dict[str, object]]] = {CONTROL: [], CANDIDATE: []}
     pair_exact: list[bool] = []
@@ -80,10 +93,13 @@ def main() -> None:
 
     for round_number in range(1, args.rounds + 1):
         pair: dict[str, dict[str, object]] = {}
-        for cell, batch in ((CONTROL, 4), (CANDIDATE, 8)):
+        for cell, batch in (
+            (CONTROL, args.control_batch),
+            (CANDIDATE, args.candidate_batch),
+        ):
             path = result_dir / "raw" / f"pair_{round_number:02d}_{cell}.log"
             run = base.load_run(path, args.steps)
-            validate_run(run, batch, args.steps)
+            validate_run(run, batch, args.steps, args.experiment)
             runs[cell].append(run)
             pair[cell] = run
         exact = (
@@ -156,9 +172,9 @@ def main() -> None:
     }
     physical = {
         "control_gate_up_hmx_commands":
-            LAYERS * 2 * (GATE_UP_N_TILES // 4),
+            LAYERS * 2 * (GATE_UP_N_TILES // args.control_batch),
         "candidate_gate_up_hmx_commands":
-            LAYERS * 2 * (GATE_UP_N_TILES // 8),
+            LAYERS * 2 * (GATE_UP_N_TILES // args.candidate_batch),
         "gate_up_hmx_command_count_source":
             "derived_from_validated_batch_and_confirmed_by_total_direct_n_delta",
         "control_direct_n_hmx_commands": base.median_counter(
@@ -183,7 +199,9 @@ def main() -> None:
         "fastrpc_calls_per_token": 1,
         "hmx_owners": 1,
     }
-    audit = validate_audit(result_dir) if args.require_audit else None
+    audit = validate_audit(
+        result_dir, args.control_batch, args.candidate_batch,
+        args.experiment) if args.require_audit else None
     gates = {
         "rotated_pairs_present": args.rounds in (5, 10),
         "all_pair_outputs_byte_exact": all(pair_exact),
@@ -197,7 +215,9 @@ def main() -> None:
         "direct_hmx_command_delta_exact":
             physical["control_direct_n_hmx_commands"] -
             physical["candidate_direct_n_hmx_commands"] ==
-            LAYERS * GATE_UP_N_TILES // 4,
+            LAYERS * 2 * (
+                GATE_UP_N_TILES // args.control_batch -
+                GATE_UP_N_TILES // args.candidate_batch),
         "hmx_tile_pairs_preserved":
             physical["candidate_hmx_tile_pairs"] ==
             physical["control_hmx_tile_pairs"],
@@ -215,7 +235,7 @@ def main() -> None:
     gates["all_pass"] = all(gates.values())
 
     summary = {
-        "experiment": "EXP-0190",
+        "experiment": f"EXP-{args.experiment:04d}",
         "source_commit": args.source_commit,
         "rounds": args.rounds,
         "generation_steps": args.steps,
@@ -240,13 +260,13 @@ def main() -> None:
         encoding="utf-8")
 
     report = [
-        "# EXP-0190 direct-n Gate/Up batch-eight report",
+        f"# EXP-{args.experiment:04d} direct-n Gate/Up batch report",
         "",
         f"Source commit: `{args.source_commit}`",
         "",
-        "The candidate changes only logical-M1 direct-n Gate/Up from four "
-        "to eight output tiles per HMX command, using decode-phase-dead "
-        "Expanded-S8 buffers as packed-W4 slots.",
+        f"The candidate changes only logical-M1 direct-n Gate/Up from "
+        f"{args.control_batch} to {args.candidate_batch} output tiles per "
+        "HMX command, using decode-phase-dead buffers as packed-W4 slots.",
         "",
         "## End-to-end gate",
         "",

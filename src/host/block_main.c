@@ -4786,7 +4786,8 @@ int main(int argc, char **argv) {
           replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS ||
           !qbh_generation_w4u8_enabled(generation_mode))) ||
         (w4u8_decode_direct_n_gate_up_batch_n_tiles != 4U &&
-         w4u8_decode_direct_n_gate_up_batch_n_tiles != 8U) ||
+         w4u8_decode_direct_n_gate_up_batch_n_tiles != 8U &&
+         w4u8_decode_direct_n_gate_up_batch_n_tiles != 16U) ||
         (w4u8_decode_direct_n_gate_up_batch_n_tiles != 4U &&
          (variant != QBH_BLOCK_W4U8 ||
           w4u8_decode_projection_mode !=

@@ -97,7 +97,7 @@ _Static_assert(
 #define QBH_BLOCK_W4U8_QKV_BATCH_N_TILES UINT32_C(4)
 #define QBH_BLOCK_W4U8_O_MAX_BATCH_N_TILES UINT32_C(8)
 #define QBH_BLOCK_W4U8_DIRECT_N_SAFE_BATCH_N_TILES UINT32_C(4)
-#define QBH_BLOCK_W4U8_DIRECT_N_MAX_BATCH_N_TILES UINT32_C(8)
+#define QBH_BLOCK_W4U8_DIRECT_N_MAX_BATCH_N_TILES UINT32_C(16)
 #define QBH_BLOCK_W4U8_DIRECT_N_DOWN_BATCH_N_TILES UINT32_C(2)
 #define QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES \
     QBH_BLOCK_W4U8_O_MAX_BATCH_N_TILES
@@ -1915,7 +1915,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
           header->w4u8_decode_qk_norm_rope_rows !=
               QBH_BLOCK_W4U8_QK_PREP_DECODE_ROWS)) ||
         (header->w4u8_decode_direct_n_gate_up_batch_n_tiles != 4U &&
-         header->w4u8_decode_direct_n_gate_up_batch_n_tiles != 8U) ||
+         header->w4u8_decode_direct_n_gate_up_batch_n_tiles != 8U &&
+         header->w4u8_decode_direct_n_gate_up_batch_n_tiles != 16U) ||
         (header->w4u8_decode_direct_n_gate_up_batch_n_tiles != 4U &&
          (header->variant != QBH_BLOCK_W4U8 ||
           header->w4u8_decode_projection_mode !=
@@ -8695,9 +8696,11 @@ static int qbh_run_w4u8_direct_n_projection(
             ? buffers->expanded_weight_alt : buffers->compressed_weight_alt};
     uint8_t *bias_slots[2] = {
         buffers->scale_or_bias,
-        buffers->scale_or_bias +
-            QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES *
-                QBH_HMX_BIAS_BYTES};
+        batch_tiles > QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES
+            ? buffers->input_norm_weight
+            : buffers->scale_or_bias +
+                  QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES *
+                      QBH_HMX_BIAS_BYTES};
     const uint32_t k_tiles = desc->k / QBH_HMX_INPUT_CHANNELS;
     const uint32_t n_tiles = desc->n / QBH_HMX_OUTPUT_CHANNELS;
     const uint32_t tile_bytes =
@@ -8718,6 +8721,9 @@ static int qbh_run_w4u8_direct_n_projection(
         desc->direct_n_weight_bytes != desc->weight_bytes ||
         batch_tiles == 0U ||
         batch_tiles > QBH_BLOCK_W4U8_DIRECT_N_MAX_BATCH_N_TILES ||
+        (batch_tiles > QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES &&
+         desc != &header->projections[QBH_BLOCK_PROJ_GATE] &&
+         desc != &header->projections[QBH_BLOCK_PROJ_UP]) ||
         n_tiles == 0U) {
         return -1;
     }

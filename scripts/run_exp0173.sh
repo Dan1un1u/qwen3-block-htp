@@ -79,7 +79,7 @@ case "${decode_swiglu_rows}" in
 *) printf 'invalid EXP-0189 SwiGLU rows: %s\n' "${decode_swiglu_rows}" >&2; exit 2 ;;
 esac
 case "${decode_direct_n_gate_up_batch_tiles}" in
-4|8) ;;
+4|8|16) ;;
 *) printf 'invalid direct-n Gate/Up batch tiles: %s\n' "${decode_direct_n_gate_up_batch_tiles}" >&2; exit 2 ;;
 esac
 case "${decode_swiglu_padding_poison}" in
