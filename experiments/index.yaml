@@ -6,6 +6,44 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0189
+    slug: w4u8-direct-n-row4-swiglu
+    title: Direct-n decode row-four SwiGLU
+    parent: EXP-0188
+    variants:
+      - accepted_EXP0188_full64_SwiGLU_control
+      - direct_n_decode_row4_SwiGLU_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0189-w4u8-direct-n-row4-swiglu
+    source_commits: []
+    record: docs/experiments/EXP-0189.md
+    approval_ref: 'User message 2026-09-05: 继续优化decode'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0189-w4u8-direct-n-row4-swiglu
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    evidence:
+      source_parent_experiment: EXP-0188
+      source_parent_commit: 17068d8b7d505381a4c524a7ad7cfe21c9f5abad
+      source_parent_role: accepted_W4U8_full_stack_decode_direct_n_baseline
+      direct_control: same_binary_EXP0188_direct_n_full64_SwiGLU
+      candidate: decode_only_first4_physical_rows_HVX_SwiGLU_after_blocking_direct_n_Gate_Up
+      new_hypothesis_vs_EXP0171: direct_n_removes_the_Expanded_S8_DMA_expand_HMX_producer_pipeline_and_places_SwiGLU_on_a_serial_post_projection_critical_path
+      optimization_scope: decode_only_direct_n_W4U8_SwiGLU_row_count_dispatch_padding_audit_telemetry_and_tools
+      forbidden_changes: weights_values_scales_qparams_LUT_valid_row_math_projection_HMX_commands_weight_DMA_Attention_cache_other_non_linears_M64_prefill_LM_head_F16F16_W4F16_QNN
+      correctness_gate: byte_exact_valid_row_middle_hidden_hashes_codes_tokens_and_cache_to_full64_control_plus_independent_integer_reference_and_padding_poison
+      physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN_unchanged_direct_n_projection_work_and_zero_QKVO_MLP_expansion
+      short_gate: five_rotated_pairs_with_all_correctness_physical_gates_and_strict_decode_and_Gate_Up_plus_SwiGLU_speed_pass
+      formal_gate: ten_rotated_193_step_pairs_with_strictly_higher_direct_full_stack_decode_tokens_per_second_than_EXP0188_control
+      prefill_preservation: M64_prefill_uses_full64_SwiGLU_and_remains_byte_exact
+      stop_condition: no_formal_run_if_short_correctness_physical_or_performance_gate_fails
+      selected_baseline_changed: false
   - id: EXP-0188
     slug: w4u8-full-stack-decode-direct-n
     title: Full-stack decode-only direct-n W4 HMX projection rollout

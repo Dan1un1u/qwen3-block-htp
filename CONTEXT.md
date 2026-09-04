@@ -1268,3 +1268,15 @@ The result is evidence-valid, locally passes, and was promoted by the user on
 2026-09-05 as the Selected W4U8 Token-Generation Baseline.
 _Avoid_: claiming a true one-row HMX kernel, including LM head in direct-n,
 claiming prefill acceleration, or semantic quality
+
+**Direct-N Decode Row-Four SwiGLU Candidate**:
+The active EXP-0189 hypothesis applies the unchanged U8 LUT SwiGLU to one
+128-byte HVX vector (four physical rows) instead of all 64 HMX carrier rows
+during logical-M1 direct-n decode.  Unlike rejected EXP-0171, EXP-0188 completes
+its blocking Gate and Up direct-n HMX calls before entering a standalone
+SwiGLU scan and performs no timed W4-to-S8 expansion.  This changed producer
+contract satisfies EXP-0171's reopen condition and makes dead-row elimination
+a serial-critical-path hypothesis rather than an overlapped-work hypothesis.
+_Avoid_: retrying the old Expanded-S8 schedule, applying row4 to M64 prefill,
+changing LUT or qparams, claiming dead padding is mathematically meaningful,
+or accepting the candidate without direct full-stack evidence
