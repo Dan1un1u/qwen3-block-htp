@@ -18,7 +18,7 @@ case "${group_tiles}" in
 *) printf 'invalid EXP-0173 LM-head group tiles: %s\n' "${group_tiles}" >&2; exit 2 ;;
 esac
 case "${gate_up_mode}" in
-post_batch8|pair_ready_batch8|pair_ready_batch16) ;;
+post_batch8|pair_ready_batch8|pair_ready_batch16|pair_ready2_batch8|pair_ready2_batch16) ;;
 *) printf 'invalid EXP-0175 Gate/Up mode: %s\n' "${gate_up_mode}" >&2; exit 2 ;;
 esac
 if [[ "${QBH_EXP0173_DEPLOY:-0}" == 1 ]]; then

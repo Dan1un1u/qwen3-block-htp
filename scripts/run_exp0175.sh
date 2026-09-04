@@ -8,6 +8,8 @@ case "${cell}" in
     post_batch8) gate_up_mode=post_batch8 ;;
     pair_ready_batch8) gate_up_mode=pair_ready_batch8 ;;
     pair_ready_batch16) gate_up_mode=pair_ready_batch16 ;;
+    pair_ready2_batch8) gate_up_mode=pair_ready2_batch8 ;;
+    pair_ready2_batch16) gate_up_mode=pair_ready2_batch16 ;;
     *) printf 'invalid EXP-0175 cell: %s\n' "${cell}" >&2; exit 2 ;;
 esac
 

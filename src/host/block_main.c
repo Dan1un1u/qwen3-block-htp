@@ -1208,6 +1208,10 @@ static const char *qbh_w4u8_decode_gate_up_mode_name(uint32_t mode) {
             return "pair_ready_batch8";
         case QBH_BLOCK_W4U8_DECODE_GATE_UP_PAIR_READY_BATCH16:
             return "pair_ready_batch16";
+        case QBH_BLOCK_W4U8_DECODE_GATE_UP_PAIR_READY2_BATCH8:
+            return "pair_ready2_batch8";
+        case QBH_BLOCK_W4U8_DECODE_GATE_UP_PAIR_READY2_BATCH16:
+            return "pair_ready2_batch16";
         default:
             return "post_batch8";
     }
@@ -2765,6 +2769,18 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U64(w4f16_gate_up_stream_work_ticks);
     QBH_REPLAY_PROFILE_U64(w4f16_gate_up_stream_ready_wait_ticks);
     QBH_REPLAY_PROFILE_U64(w4f16_gate_up_stream_join_wait_ticks);
+    QBH_REPLAY_PROFILE_U32(w4u8_mlp_gate_up_hvx_workers);
+    QBH_REPLAY_PROFILE_U32(w4u8_mlp_gate_up_hmx_batch_n_tiles);
+    QBH_REPLAY_PROFILE_U32(
+        w4u8_mlp_gate_up_pair_ready_worker_index);
+    QBH_REPLAY_PROFILE_U32(
+        w4u8_mlp_gate_up_pair_ready_worker_count);
+    QBH_REPLAY_PROFILE_U32(
+        w4u8_mlp_gate_up_pair_ready_publish_count);
+    QBH_REPLAY_PROFILE_U32(
+        w4u8_mlp_gate_up_pair_ready_consume_count);
+    QBH_REPLAY_PROFILE_U32(w4u8_mlp_pair_publish_count);
+    QBH_REPLAY_PROFILE_U32(w4u8_mlp_pair_consume_count);
     QBH_REPLAY_PROFILE_U64(w4u8_mlp_gate_up_pipeline_ticks);
     QBH_REPLAY_PROFILE_U64(w4u8_mlp_down_pipeline_ticks);
     QBH_REPLAY_PROFILE_U64(w4u8_mlp_activation_work_ticks);
@@ -4081,6 +4097,12 @@ int main(int argc, char **argv) {
             } else if (strcmp(mode, "pair_ready_batch16") == 0) {
                 w4u8_decode_gate_up_mode =
                     QBH_BLOCK_W4U8_DECODE_GATE_UP_PAIR_READY_BATCH16;
+            } else if (strcmp(mode, "pair_ready2_batch8") == 0) {
+                w4u8_decode_gate_up_mode =
+                    QBH_BLOCK_W4U8_DECODE_GATE_UP_PAIR_READY2_BATCH8;
+            } else if (strcmp(mode, "pair_ready2_batch16") == 0) {
+                w4u8_decode_gate_up_mode =
+                    QBH_BLOCK_W4U8_DECODE_GATE_UP_PAIR_READY2_BATCH16;
             } else {
                 w4u8_decode_gate_up_mode = UINT32_MAX;
             }
@@ -4313,7 +4335,7 @@ int main(int argc, char **argv) {
         w4u8_decode_softmax_mode >
             QBH_BLOCK_W4U8_DECODE_SOFTMAX_HVX_TILE4 ||
         w4u8_decode_gate_up_mode >
-            QBH_BLOCK_W4U8_DECODE_GATE_UP_PAIR_READY_BATCH16 ||
+            QBH_BLOCK_W4U8_DECODE_GATE_UP_PAIR_READY2_BATCH16 ||
         (w4u8_decode_lm_head_group_tiles != 8U &&
          w4u8_decode_lm_head_group_tiles != 16U) ||
         (w4u8_decode_lm_head_group_tiles != 8U &&
@@ -6607,6 +6629,7 @@ int main(int argc, char **argv) {
         "\"w4u8_mlp_down_hvx_workers\":%" PRIu32 ","
         "\"w4u8_mlp_gate_up_hmx_batch_n_tiles\":%" PRIu32 ","
         "\"w4u8_mlp_gate_up_pair_ready_worker_index\":%" PRIu32 ","
+        "\"w4u8_mlp_gate_up_pair_ready_worker_count\":%" PRIu32 ","
         "\"w4u8_mlp_gate_up_pair_ready_publish_count\":%" PRIu32 ","
         "\"w4u8_mlp_gate_up_pair_ready_consume_count\":%" PRIu32 ","
         "\"w4u8_mlp_down_hmx_batch_n_tiles\":%" PRIu32 ","
@@ -6980,6 +7003,7 @@ int main(int argc, char **argv) {
         header->w4u8_mlp_down_hvx_workers,
         header->w4u8_mlp_gate_up_hmx_batch_n_tiles,
         header->w4u8_mlp_gate_up_pair_ready_worker_index,
+        header->w4u8_mlp_gate_up_pair_ready_worker_count,
         header->w4u8_mlp_gate_up_pair_ready_publish_count,
         header->w4u8_mlp_gate_up_pair_ready_consume_count,
         header->w4u8_mlp_down_hmx_batch_n_tiles,

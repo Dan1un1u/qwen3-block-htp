@@ -434,11 +434,17 @@ static int qbh_hvx_worker_run(struct qbh_hvx_worker_job *job,
 
     if (state->mlp_handoff != NULL &&
         state->mlp_handoff->pair_ready_mode != 0U &&
-        job->worker_index ==
-            state->mlp_handoff->pair_ready_worker_index) {
+        job->worker_index >=
+            state->mlp_handoff->pair_ready_worker_index &&
+        job->worker_index <
+            state->mlp_handoff->pair_ready_worker_index +
+                state->mlp_handoff->pair_ready_worker_count) {
         const uint32_t pair_count = state->layout->n_tiles / 2U;
-        for (uint32_t pair_index = 0U;
-             pair_index < pair_count; ++pair_index) {
+        const uint32_t worker_lane = job->worker_index -
+            state->mlp_handoff->pair_ready_worker_index;
+        for (uint32_t pair_index = worker_lane;
+             pair_index < pair_count;
+             pair_index += state->mlp_handoff->pair_ready_worker_count) {
             const uint32_t pair_slot = pair_index %
                 state->mlp_handoff->pair_slot_count;
             qurt_sem_down(&state->mlp_pair_ready[pair_slot]);
@@ -1380,8 +1386,12 @@ static int qbh_run_chunked_w4_pipeline_impl(
          handoff->activation_ticks == NULL ||
          (handoff->pair_ready_mode != 0U &&
           (handoff->pair_ready_consume_count == NULL ||
+           handoff->pair_ready_worker_count == 0U ||
            handoff->pair_ready_worker_index >=
-               header->requested_hvx_workers)) ||
+               header->requested_hvx_workers ||
+           handoff->pair_ready_worker_count >
+               header->requested_hvx_workers -
+                   handoff->pair_ready_worker_index)) ||
          handoff->pair_slot_count == 0U ||
          handoff->pair_slot_count > QBH_W4_MAX_COMPRESSED_SLOT_COUNT ||
          (layout->n_tiles & 1U) != 0U)) {

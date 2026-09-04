@@ -1669,7 +1669,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->w4u8_decode_softmax_mode >
             QBH_BLOCK_W4U8_DECODE_SOFTMAX_HVX_TILE4 ||
         header->w4u8_decode_gate_up_mode >
-            QBH_BLOCK_W4U8_DECODE_GATE_UP_PAIR_READY_BATCH16 ||
+            QBH_BLOCK_W4U8_DECODE_GATE_UP_PAIR_READY2_BATCH16 ||
         (header->w4u8_decode_lm_head_group_tiles != 8U &&
          header->w4u8_decode_lm_head_group_tiles != 16U) ||
         (header->w4u8_decode_lm_head_group_tiles != 8U &&
@@ -12786,14 +12786,22 @@ static int qbh_run_w4u8_streaming_mlp(
         header->logical_m == 1U &&
         header->w4u8_decode_gate_up_mode !=
             QBH_BLOCK_W4U8_DECODE_GATE_UP_POST_BATCH8;
+    uint32_t pair_ready_worker_count =
+        pair_ready_mode != 0U &&
+                header->w4u8_decode_gate_up_mode >=
+                    QBH_BLOCK_W4U8_DECODE_GATE_UP_PAIR_READY2_BATCH8
+            ? 2U : (pair_ready_mode != 0U ? 1U : 0U);
     uint32_t gate_up_hmx_batch =
         pair_ready_mode != 0U &&
-                header->w4u8_decode_gate_up_mode ==
-                    QBH_BLOCK_W4U8_DECODE_GATE_UP_PAIR_READY_BATCH16
+                (header->w4u8_decode_gate_up_mode ==
+                     QBH_BLOCK_W4U8_DECODE_GATE_UP_PAIR_READY_BATCH16 ||
+                 header->w4u8_decode_gate_up_mode ==
+                     QBH_BLOCK_W4U8_DECODE_GATE_UP_PAIR_READY2_BATCH16)
             ? 16U : QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES;
     uint32_t gate_up_hvx_workers =
         pair_ready_mode != 0U
-            ? QBH_BLOCK_W4U8_GATE_UP_PAIR_READY_HVX_WORKERS
+            ? QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS +
+                  pair_ready_worker_count
             : QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS;
     struct qbh_w4_hmx_runner runner = {
         .context = worker,
@@ -12863,6 +12871,8 @@ static int qbh_run_w4u8_streaming_mlp(
         pair_ready_mode != 0U
             ? QBH_BLOCK_W4U8_GATE_UP_PAIR_READY_WORKER_INDEX
             : UINT32_MAX;
+    header->w4u8_mlp_gate_up_pair_ready_worker_count =
+        pair_ready_worker_count;
     header->w4u8_mlp_gate_up_expanded_slot_count =
         gate_up_layout.expanded_slot_count;
 
@@ -12900,6 +12910,7 @@ static int qbh_run_w4u8_streaming_mlp(
             .pair_ready_mode = pair_ready_mode,
             .pair_ready_worker_index =
                 QBH_BLOCK_W4U8_GATE_UP_PAIR_READY_WORKER_INDEX,
+            .pair_ready_worker_count = pair_ready_worker_count,
             .pair_ready_consume_count = &pair_ready_consume_count,
         };
         qbh_reset_w4u8_phase_header(

@@ -153,6 +153,8 @@ enum qbh_w4u8_decode_gate_up_mode {
     QBH_BLOCK_W4U8_DECODE_GATE_UP_POST_BATCH8 = 0,
     QBH_BLOCK_W4U8_DECODE_GATE_UP_PAIR_READY_BATCH8 = 1,
     QBH_BLOCK_W4U8_DECODE_GATE_UP_PAIR_READY_BATCH16 = 2,
+    QBH_BLOCK_W4U8_DECODE_GATE_UP_PAIR_READY2_BATCH8 = 3,
+    QBH_BLOCK_W4U8_DECODE_GATE_UP_PAIR_READY2_BATCH16 = 4,
 };
 
 #define QBH_KV_CACHE_HMX_PADDED_CAPACITY(capacity_) \
@@ -1121,6 +1123,7 @@ struct qbh_block_header {
     uint32_t w4u8_mlp_down_hvx_workers;
     uint32_t w4u8_mlp_gate_up_hmx_batch_n_tiles;
     uint32_t w4u8_mlp_gate_up_pair_ready_worker_index;
+    uint32_t w4u8_mlp_gate_up_pair_ready_worker_count;
     uint32_t w4u8_mlp_gate_up_pair_ready_publish_count;
     uint32_t w4u8_mlp_gate_up_pair_ready_consume_count;
     uint32_t w4u8_mlp_down_hmx_batch_n_tiles;

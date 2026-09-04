@@ -27,6 +27,7 @@ struct qbh_mlp_gate_up_handoff {
     uint32_t stream_fence_mode;
     uint32_t pair_ready_mode;
     uint32_t pair_ready_worker_index;
+    uint32_t pair_ready_worker_count;
     uint32_t *pair_ready_consume_count;
 };
 
