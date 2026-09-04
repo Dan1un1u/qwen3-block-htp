@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0185
+  active_experiment: null
   next_experiment_number: 186
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,33 +27,57 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0184
-  last_completed_source_commit: 67a066ec528f2ff061632c45cf98128653448973
-  provisional_source_parent: locally_eligible_EXP0182_VTCM_resident_V_tail_candidate_pending_user_promotion
+  last_completed_experiment: EXP-0185
+  last_completed_source_commit: 537650293920eb62c3cc49833df613246e8fb0b9
+  provisional_source_parent: locally_eligible_EXP0185_session_native_K_tail_candidate_pending_user_promotion
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: running_pending_source_branch_and_preflight
+  active_experiment_stage: none
   active_experiment_evidence: null
-  active_experiment_gate: not_run
-  active_recipe_specialization: W4U8_decode_session_native_K_tail_without_mutable_DDR_journal
-  active_experiment_contract:
-    id: EXP-0185
-    source_branch: codex/exp-0185-w4u8-decode-vtcm-k-tail-no-journal
-    source_parent: rejected_but_evidence_valid_EXP0184_HVX_K_tail_structure
-    source_parent_commit: 67a066ec528f2ff061632c45cf98128653448973
-    execution_scope: real_token_ID_M64_prefill_then_continuous_W4U8_decode
-    direct_control: EXP0182_V7_prepared_session_VTCM_resident_mutable_V_tail
-    candidates: versioned_session_native_partial_K_tail_without_cached_head_mutable_DDR_journal
-    allowed_changes: W4U8_K_tail_cache_ABI_cached_head_append_DDR_write_telemetry_and_experiment_tools
-    forbidden_changes: QK_Softmax_AV_math_qparams_V_cache_QKV_O_MLP_embedding_feedback_LM_head_weights_prefill_math_F16F16_W4F16_QNN
-    correctness_gate: byte_exact_external_KV_cache_consumed_QK_AV_carriers_hidden_hashes_tokens_codes_quartet_and_segment_boundaries_independent_reference_padding_poison_and_EXP0163_regression
-    physical_gate: exact_8mib_VTCM_one_FastRPC_per_pass_no_QNN_exact_seven_cached_one_fallback_KV_heads_zero_cached_K_tail_DDR_reads_zero_timed_intermediate_or_full_logit_DDR_zero_spill_fill_zero_unattributed_ticks_no_VTCM_overlap
-    performance_gate: five_rotated_short_pairs_lower_cache_carrier_update_QK_Softmax_AV_and_complete_decode_wall_then_ten_rotated_193_step_pairs_higher_direct_decode_tokens_per_second
-    stop_conditions: boundary_or_physical_gate_failure_or_fewer_than_five_of_five_short_pair_wins_rejects_without_formal_full_stack_run
+  active_experiment_gate: none
+  active_recipe_specialization: none
+  active_experiment_contract: null
   final_profiling_summary_standard: direct_full_stack_prefill_and_decode_tokens_per_second_plus_exact_Host_wall
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0182/20260904T_exp0182_803c4a1_formal'
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0185/20260904T_exp0185_5376502_formal'
+  latest_w4u8_session_native_k_tail_candidate:
+    id: EXP-0185
+    source_branch: codex/exp-0185-w4u8-decode-vtcm-k-tail-no-journal
+    source_head: 537650293920eb62c3cc49833df613246e8fb0b9
+    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0185/20260904T_exp0185_5376502_short'
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0185/20260904T_exp0185_5376502_formal'
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending
+    selected_baseline_changed: false
+    correctness_gate: pass_193_of_193_independent_reference_exact_34_step_segment_seal_hidden_hashes_codes_tokens_padding_poison_and_EXP0163_regression
+    physical_gate: pass_exact_8mib_VTCM_196_cached_K_tail_DDR_write_descriptors_and_25088_bytes_removed_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_no_QNN_zero_unattributed_ticks
+    performance_gate: pass_candidate_won_8_of_10_formal_rotated_pairs
+    direct_end_to_end:
+      control_prefill_tokens_per_second: 1277.848282
+      candidate_prefill_tokens_per_second: 1276.707817
+      control_decode_host_us_per_token: 42571.735172
+      candidate_decode_host_us_per_token: 42083.706456
+      control_decode_tokens_per_second: 23.489764
+      candidate_decode_tokens_per_second: 23.762166
+      candidate_decode_speed_percent: 1.159662
+    attention_us: {control: 4084.770, candidate: 3616.125}
+    attention_speed_percent: 12.959853
+    cache_append_dma_us: {control: 197.029, candidate: 148.832}
+    cache_ddr_write_bytes: {control: 116480, candidate: 91392}
+    cache_ddr_read_bytes: {control: 9277184, candidate: 8863232}
+    pair_wins: 8
+    vtcm_peak_plan_bytes: 8365824
+    summary_sha256: d8cc53dd7f7f2c228458385d8efc9631af4c564afeaa6ca7d55119a8d74714ed
+    full_profiling_report_sha256: bfa65bf01778c2f2d50a88462b93c393c65bcf7c6b5d6f5affb7126b99482e26
+    static_gate_sha256: a824fc7a59abccfd68601f06ce4e1d1060ada06dd746566cc69ce0bfb90a6284
+    boundary_candidate_sha256: 8817a18276c5e83a98a1fa5e3e3b41537cd0d7614042c534302b3891b60a2d89
+    padding_poison_sha256: 405c3dfc292bee8d2fa90196ea6b57b85522f0a91345eac5cd50185ea9e98869
+    independent_reference_sha256: 36ae9caf74682ae7e4c674d54a9fdce1fca24c04abd73182fd6b0fde3974ff45
+    exp0163_regression_sha256: c778d8bc9797008f4f91e6b61a01b0d8bf174ea0cbbf2aed2ae36d7c0d609695
+    conclusion: session_native_K_tail_removes_redundant_mutable_DDR_journal_and_improves_direct_long_decode_1_160_percent
   latest_w4u8_vtcm_resident_v_tail_candidate:
     id: EXP-0182
     source_branch: codex/exp-0182-w4u8-decode-vtcm-resident-v-tail

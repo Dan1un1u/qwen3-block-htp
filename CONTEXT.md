@@ -1218,3 +1218,20 @@ _Avoid_: adding a full logical V-cache duplicate, reading a native tail before
 publication, changing K-cache or Attention mathematics, treating V-pack work
 ticks as the performance gate instead of direct full-stack token/s, or automatic
 baseline promotion
+
+**Session-Native Partial K-Cache Tail Candidate**:
+The completed EXP-0185 W4U8 candidate keeps the mutable unsealed K tail for
+seven of eight KV heads per layer only in the prepared session's persistent
+VTCM atlas.  It removes exactly 196 redundant DDR row writes and 25,088 bytes
+per ordinary full-stack decode token; the eighth head remains a documented DDR
+fallback and each complete 32-token segment is sealed into the unchanged
+immutable native DDR carrier.  Ten rotated 193-step pairs improve direct decode
+from 23.489764 to 23.762166 token/s (+1.159662%) and reduce QK-Softmax-AV from
+4,084.770 to 3,616.125 us/token (+12.959853%), with eight pair wins.  All 193
+independent reference checks, the 34-step seal boundary, padding poison,
+EXP-0163 regression, exact 8 MiB VTCM, zero timed intermediate DDR, zero
+spill/fill, one FastRPC and complete-ledger gates pass.  It is locally eligible
+but remains pending explicit user promotion.
+_Avoid_: treating stale cached-head mutable DDR-tail bytes as authoritative
+session state, removing the fallback head without a new VTCM plan, changing
+sealed-history ABI, claiming semantic quality, or automatic baseline promotion

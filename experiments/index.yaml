@@ -12,21 +12,24 @@ experiments:
     parent: EXP-0184
     variants:
       - exp0182_vtcm_resident_v_tail_control
-      - k13_hvx_tail_without_cached_head_DDR_row_journal_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+      - k14_session_native_tail_without_cached_head_DDR_row_journal_candidate
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: boundary-audit-then-five-pair-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0185-w4u8-decode-vtcm-k-tail-no-journal
-    source_commits: []
+    source_commits:
+      - 537650293920eb62c3cc49833df613246e8fb0b9
     record: docs/experiments/EXP-0185.md
     approval_ref: 'User message 2026-09-04: 同意，继续吧; continuation of the authorized uninterrupted decode optimization loop'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       source_branch: codex/exp-0185-w4u8-decode-vtcm-k-tail-no-journal
       approved_on: '2026-09-04'
+      started_on: '2026-09-04'
+      completed_on: '2026-09-04'
     evidence:
       source_parent_experiment: EXP-0184
       source_parent_commit: 67a066ec528f2ff061632c45cf98128653448973
@@ -37,6 +40,31 @@ experiments:
       forbidden_changes: cache_math_immutable_segments_Attention_Softmax_qparams_V_cache_QKV_O_MLP_embedding_feedback_LM_head_F16F16_W4F16_QNN
       short_gate: exact_34_step_consumed_and_sealed_boundaries_plus_exact_DDR_write_elimination_plus_five_of_five_rotated_pairs_lower_cache_update_Attention_and_complete_decode
       formal_gate: ten_rotated_193_step_pairs_candidate_strictly_faster_direct_decode_with_all_correctness_and_physical_contracts
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0185/20260904T_exp0185_5376502_short'
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0185/20260904T_exp0185_5376502_formal'
+      source_commit: 537650293920eb62c3cc49833df613246e8fb0b9
+      correctness_gate_result: pass_193_of_193_independent_reference_exact_hidden_hashes_tokens_codes_34_step_segment_seal_padding_poison_and_EXP0163_regression
+      physical_gate_result: pass_exact_8mib_VTCM_196_write_descriptors_and_25088_K_tail_DDR_write_bytes_removed_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_no_QNN_zero_unattributed_ticks
+      performance_gate_result: pass_candidate_23_762166_tps_vs_control_23_489764_tps_wins_8_of_10_pairs
+      control_prefill_tokens_per_second: 1277.848282
+      candidate_prefill_tokens_per_second: 1276.707817
+      control_decode_tokens_per_second: 23.489764
+      candidate_decode_tokens_per_second: 23.762166
+      candidate_decode_speed_percent: 1.159662
+      attention_us: {control: 4084.770, candidate: 3616.125}
+      attention_speed_percent: 12.959853
+      cache_append_dma_us: {control: 197.029, candidate: 148.832}
+      cache_ddr_write_bytes: {control: 116480, candidate: 91392}
+      cache_ddr_read_bytes: {control: 9277184, candidate: 8863232}
+      pair_wins: 8
+      summary_sha256: d8cc53dd7f7f2c228458385d8efc9631af4c564afeaa6ca7d55119a8d74714ed
+      full_profiling_report_sha256: bfa65bf01778c2f2d50a88462b93c393c65bcf7c6b5d6f5affb7126b99482e26
+      static_gate_sha256: a824fc7a59abccfd68601f06ce4e1d1060ada06dd746566cc69ce0bfb90a6284
+      boundary_candidate_sha256: 8817a18276c5e83a98a1fa5e3e3b41537cd0d7614042c534302b3891b60a2d89
+      padding_poison_sha256: 405c3dfc292bee8d2fa90196ea6b57b85522f0a91345eac5cd50185ea9e98869
+      independent_reference_sha256: 36ae9caf74682ae7e4c674d54a9fdce1fca24c04abd73182fd6b0fde3974ff45
+      exp0163_regression_sha256: c778d8bc9797008f4f91e6b61a01b0d8bf174ea0cbbf2aed2ae36d7c0d609695
+      conclusion: session_native_K_tail_eliminates_redundant_mutable_DDR_journal_and_improves_direct_long_decode_1_160_percent
       selected_baseline_changed: false
   - id: EXP-0184
     slug: w4u8-decode-hvx-k-tail-update
