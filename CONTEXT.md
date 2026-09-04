@@ -1367,15 +1367,27 @@ _Avoid_: restoring the live Post-Norm alias, changing QKV batch eight, touching
 M64 prefill, exceeding one MiB per weight slot, or automatic baseline promotion
 
 **Direct-N Decode LM-Head Batch-Thirty-Two Candidate**:
-The active EXP-0196 hypothesis targets the last major decode projection that
-still performs explicit W4-to-S8 expansion.  Its control is EXP-0195 with the
-Expanded-S8 LM head at batch sixteen; the candidate feeds direct packed W4 to
-HMX at batch thirty-two using phase-dead one-MiB slots and dead transformer
-activation space for HMX output and argmax scratch.  EXP-0188 only tested the
-noncompetitive direct-n batch-four schedule, so it does not close this physical
-hypothesis.  Success requires byte-exact selected tokens and audited codes,
-zero LM-head expansion, unchanged weight bytes/HMX tile pairs, and higher
-direct full-stack decode token/s.
+The completed EXP-0196 candidate targets the last major decode projection that
+still performed explicit W4-to-S8 expansion.  It feeds direct packed W4 to HMX
+at batch thirty-two using phase-dead expanded-weight slots and dead `up` space
+for HMX output and argmax scratch.  Ten formal pairs all win: full decode rises
+from 39.170758 to 41.403837 token/s (+5.700882%) and LM-head wall falls from
+4.1419 to 2.7520 ms/token.  Expansion becomes exactly zero; commands fall from
+297 to 149 while weight bytes, HMX work, selected codes, tokens, hidden state,
+cache, 8 MiB VTCM and zero-intermediate-DDR remain unchanged.  EXP-0196 is the
+fastest evidence-valid pending candidate, not an automatically selected
+baseline.
 _Avoid_: changing transformer kernels, quantization or vocabulary order,
 allowing group-size-dependent tie selection, applying direct-n to M64 prefill,
 or counting expansion removal without end-to-end acceleration
+
+**Direct-N Decode LM-Head Batch-Sixty-Four Candidate**:
+The active EXP-0197 hypothesis fills each existing two-MiB phase-dead
+expanded-weight slot with sixty-four packed-W4 LM-head tiles.  It compares
+against EXP-0196 batch thirty-two and changes only decode command granularity.
+The target is to reduce 149 commands to 75 without changing 156.8 MB/token of
+LM-head DDR reads or 303872 LM-head HMX tile pairs.  A short failure closes
+further LM-head batch-width search rather than triggering more parameter
+sweeps.
+_Avoid_: enlarging the VTCM plan, altering prefill, changing argmax order,
+changing weights or quantization, or claiming a win from fewer commands alone

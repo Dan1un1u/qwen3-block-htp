@@ -19,42 +19,81 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0196
-  next_experiment_number: 197
+  active_experiment: EXP-0197
+  next_experiment_number: 198
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0195
-  last_completed_source_commit: 5e94019617a55d11650f567e26980e3069f373d9
-  provisional_source_parent: evidence_valid_EXP0195_direct_n_Gate_Up_batch32_candidate
-  device_execution_state: ready_after_EXP0195_formal
+  last_completed_experiment: EXP-0196
+  last_completed_source_commit: c8e8b7d35a1aa93f04d1685ae791853f74d4a927
+  provisional_source_parent: evidence_valid_EXP0196_direct_n_LM_head_batch32_candidate
+  device_execution_state: ready_after_EXP0196_formal
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
   active_experiment_stage: registered_pending_source_branch_and_preflight
   active_experiment_evidence: null
   active_experiment_gate: not_run
-  active_recipe_specialization: W4U8_direct_n_decode_LM_head_batch32
+  active_recipe_specialization: W4U8_direct_n_decode_LM_head_batch64
   active_experiment_contract:
-    id: EXP-0196
-    source_branch: codex/exp-0196-w4u8-direct-n-lm-head-batch32
-    source_parent: evidence_valid_EXP0195_direct_n_Gate_Up_batch32_candidate
-    source_parent_commit: 5e94019617a55d11650f567e26980e3069f373d9
+    id: EXP-0197
+    source_branch: codex/exp-0197-w4u8-direct-n-lm-head-batch64
+    source_parent: evidence_valid_EXP0196_direct_n_LM_head_batch32_candidate
+    source_parent_commit: c8e8b7d35a1aa93f04d1685ae791853f74d4a927
     execution_scope: real_token_ID_M64_prefill_then_192_continuous_W4U8_decode_steps_to_valid_length256
-    direct_control: evidence_valid_EXP0195_W4U8_Expanded_S8_LM_head_batch16
-    candidate: EXP0195_with_decode_only_direct_n_LM_head_batch32_using_phase_dead_one_MiB_weight_slots
-    allowed_changes: decode_only_LM_head_direct_n_batch32_phase_overlay_argmax_tie_preservation_validation_telemetry_and_experiment_tools
-    forbidden_changes: weights_values_scales_qparams_transformer_QKV_batch8_Gate_Up_batch32_SwiGLU_O_Down_Attention_cache_M64_prefill_F16F16_W4F16_QNN
-    correctness_gate: byte_exact_LM_head_codes_when_audited_selected_tokens_hidden_hashes_and_cache_to_same_binary_Expanded_S8_batch16_control
-    physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_per_pass_one_HMX_owner_no_QNN_zero_transformer_and_decode_LM_head_expansion_identical_weight_bytes_and_HMX_tile_pairs
-    performance_gate: five_pair_short_gate_then_ten_rotated_193_step_pairs_with_strictly_higher_direct_full_stack_decode_tokens_per_second_and_lower_LM_head_wall_than_EXP0195_control
-    preservation_gate: M64_prefill_and_all_transformer_decode_modules_remain_EXP0195_byte_exact
-    stop_conditions: reject_before_formal_if_correctness_or_physical_gate_fails_or_five_pair_short_decode_gate_does_not_improve
+    direct_control: evidence_valid_EXP0196_W4U8_direct_n_LM_head_batch32
+    candidate: EXP0196_with_decode_only_direct_n_LM_head_batch64_using_phase_dead_two_MiB_weight_slots
+    allowed_changes: decode_only_LM_head_group64_validation_telemetry_and_experiment_tools
+    forbidden_changes: weights_values_scales_qparams_transformer_kernels_Attention_cache_M64_prefill_F16F16_W4F16_QNN
+    correctness_gate: byte_exact_selected_tokens_codes_hashes_audited_hidden_and_cache_to_batch32_control
+    physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_per_pass_one_HMX_owner_no_QNN_zero_LM_head_expansion_identical_weight_bytes_and_HMX_tile_pairs_commands_149_to75
+    performance_gate: five_pair_short_gate_then_ten_rotated_193_step_pairs_if_strictly_faster
+    preservation_gate: M64_prefill_and_all_transformer_decode_modules_remain_EXP0196_byte_exact
+    stop_conditions: close_further_LM_head_batch_width_search_if_short_gate_does_not_improve
   final_profiling_summary_standard: direct_full_stack_prefill_and_decode_tokens_per_second_plus_exact_Host_wall
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0195/20260905_formal_5e94019'
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0196/20260905_formal_c8e8b7d'
+  latest_w4u8_direct_n_lm_head_batch32_candidate:
+    id: EXP-0196
+    source_branch: codex/exp-0196-w4u8-direct-n-lm-head-batch32
+    source_head: c8e8b7d35a1aa93f04d1685ae791853f74d4a927
+    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0196/20260905_short_gate_6a1cf57'
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0196/20260905_formal_c8e8b7d'
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending
+    selected_baseline_changed: false
+    direct_end_to_end:
+      control_prefill_tokens_per_second: 1272.319
+      candidate_prefill_tokens_per_second: 1275.009
+      control_decode_host_us_per_token: 25529.3
+      candidate_decode_host_us_per_token: 24152.4
+      control_decode_tokens_per_second: 39.170758
+      candidate_decode_tokens_per_second: 41.403837
+      candidate_decode_speed_percent: 5.700882
+    target_stage_us_per_token:
+      control_lm_head: 4141.9
+      candidate_lm_head: 2752.0
+      control_expansion: 3053.3
+      candidate_expansion: 0.0
+    physical:
+      control_lm_head_commands_per_token: 297
+      candidate_lm_head_commands_per_token: 149
+      control_weight_dma_descriptors_per_token: 4554
+      candidate_weight_dma_descriptors_per_token: 4406
+      hmx_tile_pairs_per_token: 1699840
+      weight_ddr_read_bytes_per_token: 866032640
+    pair_wins: 10
+    short_summary_sha256: fc8c18c778bf7caadc7392ff8fc11288c4acc0b9d74a9d3c8398fd305b3dcc9c
+    short_report_sha256: 07da63bd4784e2a2b7c38dd81fba627971efa106f1231372f09b2dc4a2e12347
+    formal_summary_sha256: 6f8d33aad508cce35d3afa8e5a053f2e6cfb67eb64cc2837dadd9c1c4f34496d
+    formal_report_sha256: a5aed91a7302b564915cc862902fa5bbe4681d3ff26464d44a63eeb478f142a1
+    static_gate_sha256: e211197e093247f18698878f47fd0d5696f4a1355742f0b460c688fc25e9296d
+    conclusion: direct_W4_LM_head_batch32_removes_all_decode_LM_head_expansion_and_crosses_40_token_per_second
+    next_decision: retained_as_fastest_pending_decode_candidate_and_parent_of_EXP0197
   latest_w4u8_direct_n_gate_up_batch32_candidate:
     id: EXP-0195
     source_branch: codex/exp-0195-w4u8-direct-n-gate-up-batch32

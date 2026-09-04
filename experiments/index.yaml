@@ -6,6 +6,41 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0197
+    slug: w4u8-direct-n-lm-head-batch64
+    title: Direct-n decode LM-head batch-sixty-four
+    parent: EXP-0196
+    variants:
+      - evidence_valid_EXP0196_direct_n_LM_head_batch32_control
+      - direct_n_decode_LM_head_batch64_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0197-w4u8-direct-n-lm-head-batch64
+    source_commits: []
+    record: docs/experiments/EXP-0197.md
+    approval_ref: 'User message 2026-09-05: 开始decode优化loop'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0197-w4u8-direct-n-lm-head-batch64
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    evidence:
+      source_parent_experiment: EXP-0196
+      source_parent_commit: c8e8b7d35a1aa93f04d1685ae791853f74d4a927
+      direct_control: same_binary_direct_n_decode_LM_head_batch32
+      candidate: decode_only_direct_n_LM_head_batch64_using_phase_dead_two_MiB_weight_slots
+      optimization_scope: decode_only_LM_head_group64_validation_telemetry_and_tools
+      forbidden_changes: weights_values_scales_qparams_transformer_kernels_Attention_cache_M64_prefill_F16F16_W4F16_QNN
+      correctness_gate: byte_exact_selected_tokens_codes_hashes_audited_hidden_and_cache_to_batch32_control
+      physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_LM_head_expansion_identical_weight_bytes_and_tile_pairs_commands_149_to75
+      short_gate: five_rotated_pairs_with_strict_decode_and_LM_head_speed_pass
+      formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      stop_condition: close_further_LM_head_batch_search_if_short_does_not_improve
+      selected_baseline_changed: false
   - id: EXP-0196
     slug: w4u8-direct-n-lm-head-batch32
     title: Direct-n decode LM-head batch-thirty-two
@@ -13,14 +48,17 @@ experiments:
     variants:
       - evidence_valid_EXP0195_expanded_S8_LM_head_batch16_control
       - direct_n_decode_LM_head_batch32_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0196-w4u8-direct-n-lm-head-batch32
-    source_commits: []
+    source_commits:
+      - ebf6421a828b5ef89a8aadb99a73061d2b4c3ec1
+      - 6a1cf57342a329c7adab9be13294ad09ca4ef06a
+      - c8e8b7d35a1aa93f04d1685ae791853f74d4a927
     record: docs/experiments/EXP-0196.md
     approval_ref: 'User message 2026-09-05: 开始decode优化loop'
     runtime:
@@ -28,6 +66,7 @@ experiments:
       source_branch: codex/exp-0196-w4u8-direct-n-lm-head-batch32
       approved_on: '2026-09-05'
       started_on: '2026-09-05'
+      completed_on: '2026-09-05'
     evidence:
       source_parent_experiment: EXP-0195
       source_parent_commit: 5e94019617a55d11650f567e26980e3069f373d9
@@ -44,6 +83,30 @@ experiments:
       prefill_preservation: M64_prefill_uses_unchanged_EXP0195_Expanded_S8_LM_head_and_transformer_paths
       stop_condition: reject_without_formal_if_short_correctness_physical_or_performance_gate_fails
       selected_baseline_changed: false
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0196/20260905_short_gate_6a1cf57'
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0196/20260905_formal_c8e8b7d'
+      source_commit: c8e8b7d35a1aa93f04d1685ae791853f74d4a927
+      correctness_gate_result: pass_byte_exact_tokens_selected_codes_hashes_audited_hidden_and_cache
+      physical_gate_result: pass_8mib_zero_intermediate_ddr_zero_spill_one_fastrpc_one_hmx_no_qnn_zero_LM_head_expansion_preserved_work
+      performance_gate_result: pass_10_of_10_pairs_and_5_700882_percent_decode_gain
+      control_decode_tokens_per_second: 39.170758
+      candidate_decode_tokens_per_second: 41.403837
+      control_decode_host_us_per_token: 25529.3
+      candidate_decode_host_us_per_token: 24152.4
+      control_lm_head_us: 4141.9
+      candidate_lm_head_us: 2752.0
+      control_lm_head_commands: 297
+      candidate_lm_head_commands: 149
+      control_weight_dma_descriptors: 4554
+      candidate_weight_dma_descriptors: 4406
+      hmx_tile_pairs: 1699840
+      weight_ddr_read_bytes: 866032640
+      short_summary_sha256: fc8c18c778bf7caadc7392ff8fc11288c4acc0b9d74a9d3c8398fd305b3dcc9c
+      short_report_sha256: 07da63bd4784e2a2b7c38dd81fba627971efa106f1231372f09b2dc4a2e12347
+      formal_summary_sha256: 6f8d33aad508cce35d3afa8e5a053f2e6cfb67eb64cc2837dadd9c1c4f34496d
+      formal_report_sha256: a5aed91a7302b564915cc862902fa5bbe4681d3ff26464d44a63eeb478f142a1
+      static_gate_sha256: e211197e093247f18698878f47fd0d5696f4a1355742f0b460c688fc25e9296d
+      conclusion: direct_packed_W4_LM_head_batch32_removes_expansion_and_crosses_40_token_per_second
   - id: EXP-0195
     slug: w4u8-direct-n-gate-up-batch32
     title: Direct-n decode Gate/Up batch-thirty-two
