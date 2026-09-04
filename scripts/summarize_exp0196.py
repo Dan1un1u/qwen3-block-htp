@@ -282,9 +282,12 @@ def main() -> None:
     for label, values in target.items():
         control = values[CONTROL]
         candidate = values[CANDIDATE]
+        speed_change = (
+            "removed" if candidate == 0.0 and control > 0.0
+            else f"{(control / candidate - 1.0) * 100.0:+.1f}%")
         target_rows.append(
             f"| {label} | {control:.1f} | {candidate:.1f} | "
-            f"{(control / candidate - 1.0) * 100.0:+.1f}% |")
+            f"{speed_change} |")
     report = [
         "# EXP-0196 direct-W4 LM-head batch32 report",
         "",
