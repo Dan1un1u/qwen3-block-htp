@@ -2889,6 +2889,8 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U32(w4u8_decode_direct_n_mask);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_direct_n_gate_up_batch_n_tiles);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_direct_n_qkv_batch_n_tiles);
+    QBH_REPLAY_PROFILE_U32(w4u8_qkv_ring_batch_count);
+    QBH_REPLAY_PROFILE_U32(w4u8_qkv_ring_head_publish_count);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_swiglu_rows);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_swiglu_padding_poison);
     QBH_REPLAY_PROFILE_U32(w4u8_qk_norm_rope_rows_observed);
