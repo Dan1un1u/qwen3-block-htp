@@ -1140,3 +1140,26 @@ ledger and regression gates pass. Semantic quality remains disabled. EXP-0170
 is the selected W4U8 baseline.
 _Avoid_: claiming semantic quality, attributing the gain to QK/AV HMX or
 KV-cache bandwidth, or applying the audit comparator to performance runs
+
+**Decode O Batch-Eight Candidate**:
+The evidence-valid EXP-0176 W4U8 candidate that retains the selected EXP-0173
+token-generation path and changes only logical-M=1 O-projection HMX grouping
+from four to eight output tiles. Ten rotated 193-step pairs reduce O wall from
+4.834 to 4.478 ms/token and raise direct decode throughput from 20.181 to
+20.327 token/s while preserving byte-exact outputs, unchanged HMX tile work,
+the cache regression and all physical contracts. It is locally eligible but
+not a Selected Baseline until the user explicitly promotes it.
+_Avoid_: claiming prefill change, changed O arithmetic, reduced HMX tile work,
+automatic baseline promotion, or describing the 0.724% gain without its 9/10
+pair stability evidence
+
+**Decode Row-Selective AV Requantization**:
+The EXP-0177 hypothesis that logical-M=1 decode needs the exact post-HMX AV
+affine requantization only for physical row zero. One 128-byte HVX operation
+per output tile covers row zero plus three dead padding rows, replacing the
+full 64-row carrier scan while leaving QK, Softmax, AV HMX and the valid-row
+mathematics unchanged. Padding invariance and full-stack token identity are
+mandatory because unchanged dead HMX codes may remain in rows four through 63.
+_Avoid_: changing AV qparams, folding the two-rounding affine transform into
+HMX, processing only 32 unaligned bytes, using the decode path for M64 prefill,
+or treating padding equality as a mathematical requirement
