@@ -1926,6 +1926,14 @@ static int qbh_header_valid(const struct qbh_block_header *header,
               QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
           (header->w4u8_decode_direct_n_mask &
            QBH_BLOCK_W4U8_DIRECT_N_MLP) == 0U)) ||
+        header->w4u8_decode_direct_n_gate_up_continuous > 1U ||
+        (header->w4u8_decode_direct_n_gate_up_continuous != 0U &&
+         (header->variant != QBH_BLOCK_W4U8 ||
+          header->w4u8_decode_projection_mode !=
+              QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
+          (header->w4u8_decode_direct_n_mask &
+           QBH_BLOCK_W4U8_DIRECT_N_MLP) == 0U ||
+          header->w4u8_decode_direct_n_gate_up_batch_n_tiles != 32U)) ||
         (header->w4u8_decode_swiglu_rows !=
              QBH_BLOCK_W4U8_SWIGLU_FULL_ROWS &&
          header->w4u8_decode_swiglu_rows !=
@@ -8853,6 +8861,170 @@ static int qbh_run_w4u8_direct_n_projection(
     return 0;
 }
 
+/* EXP-0198 decode-only Gate/Up schedule.  Both projections consume the same
+ * activation and have identical K/N shapes.  Flatten their six batch-32
+ * groups into one ping-pong sequence so the first Up DMA is issued while the
+ * final Gate HMX command is active instead of after a full ring drain. */
+static int qbh_run_w4u8_direct_n_gate_up_pair(
+    struct qbh_block_header *header, const uint8_t *shared,
+    struct qbh_block_buffers *buffers,
+    struct qbh_block_hmx_worker *worker,
+    const uint8_t *activation_tiles,
+    uint8_t *gate_output_tiles, uint8_t *up_output_tiles) {
+    struct qbh_dma_aligned_desc_1d descriptors[2]
+        __attribute__((aligned(64)));
+    const struct qbh_block_projection_desc *descs[2] = {
+        &header->projections[QBH_BLOCK_PROJ_GATE],
+        &header->projections[QBH_BLOCK_PROJ_UP]};
+    uint8_t *outputs[2] = {gate_output_tiles, up_output_tiles};
+    uint8_t *weight_slots[2] = {
+        buffers->expanded_weight, buffers->expanded_weight_alt};
+    uint8_t *bias_slots[2] = {
+        buffers->rope_cos,
+        buffers->rope_cos + 32U * QBH_HMX_BIAS_BYTES};
+    const uint32_t batch_tiles = 32U;
+    const uint32_t k_tiles =
+        descs[0]->k / QBH_HMX_INPUT_CHANNELS;
+    const uint32_t n_tiles =
+        descs[0]->n / QBH_HMX_OUTPUT_CHANNELS;
+    const uint32_t tile_bytes =
+        k_tiles * QBH_W4_PACKED_TILE_BYTES;
+    uint32_t projection = 0U;
+    uint32_t current_first = 0U;
+    uint32_t current_tiles =
+        n_tiles < batch_tiles ? n_tiles : batch_tiles;
+    uint32_t current_slot = 0U;
+    uint64_t dma_start;
+    int result;
+
+    if (header == NULL || shared == NULL || buffers == NULL ||
+        worker == NULL || activation_tiles == NULL ||
+        gate_output_tiles == NULL || up_output_tiles == NULL ||
+        header->variant != QBH_BLOCK_W4U8 || header->logical_m != 1U ||
+        header->w4u8_decode_projection_mode !=
+            QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
+        header->w4u8_decode_direct_n_gate_up_continuous == 0U ||
+        header->w4u8_decode_direct_n_gate_up_batch_n_tiles != batch_tiles ||
+        (header->w4u8_decode_direct_n_mask &
+         QBH_BLOCK_W4U8_DIRECT_N_MLP) == 0U ||
+        descs[0]->k != descs[1]->k ||
+        descs[0]->n != descs[1]->n ||
+        descs[0]->direct_n_weight_bytes != descs[0]->weight_bytes ||
+        descs[1]->direct_n_weight_bytes != descs[1]->weight_bytes ||
+        n_tiles == 0U || n_tiles % batch_tiles != 0U) {
+        return -1;
+    }
+
+    dma_start = HAP_perf_get_qtimer_count();
+    result = qbh_dma_start_w4u8_batch_prefetch(
+        descriptors, weight_slots[0],
+        shared + descs[0]->direct_n_weight_offset,
+        current_tiles * tile_bytes, bias_slots[0],
+        shared + descs[0]->bias_offset,
+        current_tiles * QBH_HMX_BIAS_BYTES);
+    if (result == 0) {
+        result = qbh_dma_wait_w4u8_batch_prefetch(descriptors);
+    }
+    header->weight_dma_ticks += HAP_perf_get_qtimer_count() - dma_start;
+    if (result != 0) {
+        qbh_record_projection_failure(header, descs[0], 0U, 83U, result);
+        return -1;
+    }
+    header->weight_ddr_read_bytes +=
+        (uint64_t)current_tiles *
+            (tile_bytes + QBH_HMX_BIAS_BYTES);
+    header->w4u8_decode_direct_n_weight_ddr_read_bytes +=
+        (uint64_t)current_tiles * tile_bytes;
+    header->weight_dma_descriptor_count += 2U;
+
+    for (;;) {
+        const struct qbh_block_projection_desc *current_desc =
+            descs[projection];
+        const uint64_t hmx_start = HAP_perf_get_qtimer_count();
+        uint32_t next_projection = projection;
+        uint32_t next_first = current_first + current_tiles;
+        uint32_t next_tiles = 0U;
+        const uint32_t next_slot = current_slot ^ 1U;
+        uint64_t wait_start;
+
+        qbh_hmx_start(
+            worker, QBH_BLOCK_HMX_U8N4, activation_tiles,
+            weight_slots[current_slot], bias_slots[current_slot],
+            outputs[projection] +
+                (size_t)current_first * QBH_HMX_OUTPUT_BYTES,
+            1U, k_tiles, current_tiles);
+        ++header->hmx_command_count;
+        ++header->w4u8_decode_direct_n_hmx_command_count;
+        header->hmx_u8s8_tile_pair_count +=
+            (uint64_t)k_tiles * current_tiles;
+
+        if (next_first >= n_tiles) {
+            ++next_projection;
+            next_first = 0U;
+        }
+        if (next_projection < 2U) {
+            const struct qbh_block_projection_desc *next_desc =
+                descs[next_projection];
+            next_tiles = n_tiles - next_first;
+            if (next_tiles > batch_tiles) {
+                next_tiles = batch_tiles;
+            }
+            dma_start = HAP_perf_get_qtimer_count();
+            result = qbh_dma_start_w4u8_batch_prefetch(
+                descriptors, weight_slots[next_slot],
+                shared + next_desc->direct_n_weight_offset +
+                    (size_t)next_first * tile_bytes,
+                next_tiles * tile_bytes, bias_slots[next_slot],
+                shared + next_desc->bias_offset +
+                    (size_t)next_first * QBH_HMX_BIAS_BYTES,
+                next_tiles * QBH_HMX_BIAS_BYTES);
+            if (result == 0) {
+                result = qbh_dma_wait_w4u8_batch_prefetch(descriptors);
+            }
+            header->weight_dma_ticks +=
+                HAP_perf_get_qtimer_count() - dma_start;
+            if (result != 0) {
+                (void)qbh_hmx_wait(worker);
+                qbh_record_projection_failure(
+                    header, next_desc, next_first, 84U, result);
+                return -1;
+            }
+            header->weight_ddr_read_bytes +=
+                (uint64_t)next_tiles *
+                    (tile_bytes + QBH_HMX_BIAS_BYTES);
+            header->w4u8_decode_direct_n_weight_ddr_read_bytes +=
+                (uint64_t)next_tiles * tile_bytes;
+            header->weight_dma_descriptor_count += 2U;
+            ++header->w4u8_qkvo_prefetch_count;
+            ++header->w4u8_qkvo_overlap_schedule_count;
+        }
+
+        wait_start = HAP_perf_get_qtimer_count();
+        result = qbh_hmx_wait(worker);
+        header->projection_hmx_wait_ticks +=
+            HAP_perf_get_qtimer_count() - wait_start;
+        header->w4u8_qkvo_hmx_lifetime_ticks +=
+            HAP_perf_get_qtimer_count() - hmx_start;
+        if (result != 0) {
+            qbh_record_projection_failure(
+                header, current_desc, current_first, 85U, result);
+            return -1;
+        }
+        if (next_projection >= 2U) {
+            break;
+        }
+        projection = next_projection;
+        current_first = next_first;
+        current_tiles = next_tiles;
+        current_slot = next_slot;
+    }
+
+    header->w4u8_decode_direct_n_projection_count += 2U;
+    header->w4u8_decode_direct_n_expand_bytes_avoided +=
+        2U * (uint64_t)n_tiles * k_tiles * QBH_HMX_WEIGHT_BYTES;
+    return 0;
+}
+
 static int qbh_run_w4u8_qkvo_pipelined_projection(
     struct qbh_block_header *header, const uint8_t *shared,
     const struct qbh_block_projection_desc *desc,
@@ -13620,19 +13792,28 @@ static int qbh_run_w4u8_direct_n_mlp(
     }
 
     start = HAP_perf_get_qtimer_count();
-    if (qbh_run_w4u8_direct_n_projection(
-            header, shared,
-            &header->projections[QBH_BLOCK_PROJ_GATE], buffers, worker,
-            mlp_arena + gate_up_layout.vtcm_activation_offset,
-            gate_native,
-            header->w4u8_decode_direct_n_gate_up_batch_n_tiles) != 0 ||
-        qbh_run_w4u8_direct_n_projection(
-            header, shared,
-            &header->projections[QBH_BLOCK_PROJ_UP], buffers, worker,
-            mlp_arena + gate_up_layout.vtcm_activation_offset,
-            up_native,
-            header->w4u8_decode_direct_n_gate_up_batch_n_tiles) != 0) {
-        return -1;
+    if (header->w4u8_decode_direct_n_gate_up_continuous != 0U) {
+        if (qbh_run_w4u8_direct_n_gate_up_pair(
+                header, shared, buffers, worker,
+                mlp_arena + gate_up_layout.vtcm_activation_offset,
+                gate_native, up_native) != 0) {
+            return -1;
+        }
+    } else {
+        if (qbh_run_w4u8_direct_n_projection(
+                header, shared,
+                &header->projections[QBH_BLOCK_PROJ_GATE], buffers, worker,
+                mlp_arena + gate_up_layout.vtcm_activation_offset,
+                gate_native,
+                header->w4u8_decode_direct_n_gate_up_batch_n_tiles) != 0 ||
+            qbh_run_w4u8_direct_n_projection(
+                header, shared,
+                &header->projections[QBH_BLOCK_PROJ_UP], buffers, worker,
+                mlp_arena + gate_up_layout.vtcm_activation_offset,
+                up_native,
+                header->w4u8_decode_direct_n_gate_up_batch_n_tiles) != 0) {
+            return -1;
+        }
     }
     header->gate_up_ticks += HAP_perf_get_qtimer_count() - start;
     header->w4u8_mlp_gate_up_hmx_command_count +=
