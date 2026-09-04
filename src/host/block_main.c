@@ -45,6 +45,7 @@ struct qbh_vertical_layer_slots {
     struct qbh_file_slot silu_lut;
     struct qbh_file_slot weights[QBH_BLOCK_PROJECTION_COUNT];
     struct qbh_file_slot scales[QBH_BLOCK_PROJECTION_COUNT];
+    size_t direct_n_weight_offsets[QBH_BLOCK_PROJECTION_COUNT];
     size_t gate_up_bundle_offset;
     size_t down_bundle_offset;
     size_t gate_up_scale_cache_offset;
@@ -1290,6 +1291,44 @@ static int qbh_read_slot(uint8_t *shared,
         return -1;
     }
     return 0;
+}
+
+/* Convert one 32x32 signed-W4 tile from the historical HVX-expansion
+ * carrier to the nibble lane order consumed by HMX weight.n.  The values are
+ * unchanged; only the four nibbles belonging to each K8/N lane are shuffled.
+ */
+static void qbh_repack_w4_direct_n(uint8_t *destination,
+                                  const uint8_t *source,
+                                  uint32_t bytes) {
+    const uint32_t tile_bytes = QBH_W4_PACKED_TILE_BYTES;
+    for (uint32_t tile_offset = 0U; tile_offset < bytes;
+         tile_offset += tile_bytes) {
+        const uint8_t *input = source + tile_offset;
+        uint8_t *output = destination + tile_offset;
+        for (uint32_t k8 = 0U; k8 < 4U; ++k8) {
+            const uint8_t *low = input + (size_t)(2U * k8) * 64U;
+            const uint8_t *high = low + 64U;
+            uint8_t *packed = output + (size_t)k8 * 128U;
+            for (uint32_t channel = 0U; channel < 32U; ++channel) {
+                const uint8_t low01 = low[2U * channel];
+                const uint8_t low23 = low[2U * channel + 1U];
+                const uint8_t high01 = high[2U * channel];
+                const uint8_t high23 = high[2U * channel + 1U];
+                packed[4U * channel] =
+                    (low01 & UINT8_C(0x0f)) |
+                    (uint8_t)(high01 << 4U);
+                packed[4U * channel + 1U] =
+                    (uint8_t)(low01 >> 4U) |
+                    (high01 & UINT8_C(0xf0));
+                packed[4U * channel + 2U] =
+                    (low23 & UINT8_C(0x0f)) |
+                    (uint8_t)(high23 << 4U);
+                packed[4U * channel + 3U] =
+                    (uint8_t)(low23 >> 4U) |
+                    (high23 & UINT8_C(0xf0));
+            }
+        }
+    }
 }
 
 static int qbh_hmx_native_u8_cache_formats(uint32_t k_format,
@@ -2846,6 +2885,8 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U32(w4u8_common_padding_poison_count);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_qk_norm_rope_rows);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_qk_padding_poison);
+    QBH_REPLAY_PROFILE_U32(w4u8_decode_projection_mode);
+    QBH_REPLAY_PROFILE_U32(w4u8_decode_direct_n_mask);
     QBH_REPLAY_PROFILE_U32(w4u8_qk_norm_rope_rows_observed);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_q_pair_row4_call_count);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_k_pair_row4_call_count);
@@ -2926,6 +2967,10 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U32(generation_lm_head_scale_resident_bytes);
     QBH_REPLAY_PROFILE_U64(generation_embedding_ddr_read_bytes);
     QBH_REPLAY_PROFILE_U64(generation_lm_head_ddr_read_bytes);
+    QBH_REPLAY_PROFILE_U32(w4u8_decode_direct_n_projection_count);
+    QBH_REPLAY_PROFILE_U32(w4u8_decode_direct_n_hmx_command_count);
+    QBH_REPLAY_PROFILE_U64(w4u8_decode_direct_n_weight_ddr_read_bytes);
+    QBH_REPLAY_PROFILE_U64(w4u8_decode_direct_n_expand_bytes_avoided);
 
     QBH_REPLAY_PROFILE_U64(weight_dma_ticks);
     QBH_REPLAY_PROFILE_U64(hmx_compute_ticks);
@@ -3057,6 +3102,7 @@ static void qbh_print_replay_profile(
             "\"cache_valid_after\":%" PRIu32 ","
             "\"hidden_ddr_read_bytes\":%" PRIu32 ","
             "\"hidden_ddr_write_bytes\":%" PRIu32 ","
+            "\"output_hash\":\"%016" PRIx64 "\","
             "\"layer_ticks\":%" PRIu64 ","
             "\"metadata_stage_ticks\":%" PRIu64 ","
             "\"input_stage_ticks\":%" PRIu64 ","
@@ -3082,7 +3128,8 @@ static void qbh_print_replay_profile(
             slice_index, profile->layer_index, profile->status,
             profile->cache_valid_before, profile->cache_valid_after,
             profile->hidden_ddr_read_bytes,
-            profile->hidden_ddr_write_bytes, profile->layer_ticks,
+            profile->hidden_ddr_write_bytes, profile->output_hash,
+            profile->layer_ticks,
             profile->metadata_stage_ticks, profile->input_stage_ticks,
             profile->input_norm_ticks, profile->qkv_projection_ticks,
             profile->qk_norm_rope_ticks, profile->attention_ticks,
@@ -4099,6 +4146,9 @@ int main(int argc, char **argv) {
     uint32_t w4u8_decode_qk_norm_rope_rows =
         QBH_BLOCK_W4U8_QK_PREP_FULL_ROWS;
     uint32_t w4u8_decode_qk_padding_poison = 0U;
+    uint32_t w4u8_decode_projection_mode =
+        QBH_BLOCK_W4U8_DECODE_PROJECTION_EXPANDED_S8;
+    uint32_t w4u8_decode_direct_n_mask = 0U;
     uint32_t scan_mode = QBH_BLOCK_SCAN_DISABLED;
     uint32_t logical_m = QBH_BLOCK_M;
     uint32_t initial_kv_length = 0U;
@@ -4121,6 +4171,7 @@ int main(int argc, char **argv) {
     size_t w4u8_down_bundle_offset = 0U;
     size_t vertical_bias_offsets[QBH_VERTICAL_SLICE_LAYER_COUNT]
                                 [QBH_BLOCK_PROJECTION_COUNT];
+    size_t generation_lm_head_direct_n_weight_offset = 0U;
     size_t single_gate_up_scale_cache_offset = 0U;
     size_t attention_audit_output_offset = 0U;
     size_t scan_attention_audit_output_offset = 0U;
@@ -4394,6 +4445,29 @@ int main(int argc, char **argv) {
         }
     }
     {
+        const char *mode = getenv("QBH_W4U8_DECODE_PROJECTION_MODE");
+        if (mode != NULL && mode[0] != '\0') {
+            if (strcmp(mode, "expanded_s8") == 0) {
+                w4u8_decode_projection_mode =
+                    QBH_BLOCK_W4U8_DECODE_PROJECTION_EXPANDED_S8;
+            } else if (strcmp(mode, "direct_n") == 0) {
+                w4u8_decode_projection_mode =
+                    QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N;
+                w4u8_decode_direct_n_mask =
+                    QBH_BLOCK_W4U8_DIRECT_N_ALL;
+            } else {
+                w4u8_decode_projection_mode = UINT32_MAX;
+            }
+        }
+    }
+    {
+        const char *value = getenv("QBH_W4U8_DECODE_DIRECT_N_MASK");
+        if (value != NULL && value[0] != '\0' &&
+            qbh_parse_u32(value, &w4u8_decode_direct_n_mask) != 0) {
+            w4u8_decode_direct_n_mask = UINT32_MAX;
+        }
+    }
+    {
         const char *mode = getenv("QBH_SCAN_MODE");
         const char *logical = getenv("QBH_LOGICAL_M");
         const char *past = getenv("QBH_KV_CACHE_LENGTH");
@@ -4656,6 +4730,23 @@ int main(int argc, char **argv) {
             QBH_BLOCK_W4U8_DELTA_RECONSTRUCTION_PIPELINE ||
         w4u8_decode_softmax_mode >
             QBH_BLOCK_W4U8_DECODE_SOFTMAX_HVX_TILE4 ||
+        w4u8_decode_projection_mode >
+            QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
+        w4u8_decode_direct_n_mask > QBH_BLOCK_W4U8_DIRECT_N_ALL ||
+        (w4u8_decode_projection_mode ==
+             QBH_BLOCK_W4U8_DECODE_PROJECTION_EXPANDED_S8 &&
+         w4u8_decode_direct_n_mask != 0U) ||
+        (w4u8_decode_projection_mode ==
+             QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N &&
+         w4u8_decode_direct_n_mask == 0U) ||
+        (w4u8_decode_projection_mode !=
+             QBH_BLOCK_W4U8_DECODE_PROJECTION_EXPANDED_S8 &&
+         variant != QBH_BLOCK_W4U8) ||
+        (w4u8_decode_projection_mode ==
+             QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N &&
+         (vertical_slice_mode != QBH_BLOCK_SLICE_ACTIVE_RANGE ||
+          replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS ||
+          !qbh_generation_w4u8_enabled(generation_mode))) ||
         (w4u8_decode_o_batch_n_tiles != 4U &&
          w4u8_decode_o_batch_n_tiles != 8U) ||
         (w4u8_decode_o_batch_n_tiles != 4U &&
@@ -5486,6 +5577,17 @@ int main(int argc, char **argv) {
     {
         size_t output_offset = cursor;
         cursor += output_bytes;
+        if (w4u8_decode_projection_mode ==
+                QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N &&
+            generation_mode != QBH_BLOCK_GENERATION_DISABLED) {
+            cursor = qbh_align_up_size(cursor, QBH_HOST_ALIGNMENT);
+            generation_lm_head_direct_n_weight_offset = cursor;
+            if (generation_lm_head_weight_slot.expected_bytes >
+                UINT32_MAX - cursor) {
+                return 2;
+            }
+            cursor += generation_lm_head_weight_slot.expected_bytes;
+        }
         if (vertical_slice_mode == QBH_BLOCK_SLICE_DISABLED &&
             variant == QBH_BLOCK_W4U8) {
             for (uint32_t projection = 0;
@@ -5570,6 +5672,24 @@ int main(int argc, char **argv) {
                         return 2;
                     }
                     cursor += w4u8_down_layout.stored_weight_bytes;
+                }
+                if (w4u8_decode_projection_mode ==
+                    QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N) {
+                    for (uint32_t projection = 0U;
+                         projection < QBH_BLOCK_PROJECTION_COUNT;
+                         ++projection) {
+                        const size_t weight_bytes =
+                            vertical_slots[slice_index]
+                                .weights[projection].expected_bytes;
+                        cursor = qbh_align_up_size(
+                            cursor, QBH_HOST_ALIGNMENT);
+                        vertical_slots[slice_index]
+                            .direct_n_weight_offsets[projection] = cursor;
+                        if (weight_bytes > UINT32_MAX - cursor) {
+                            return 2;
+                        }
+                        cursor += weight_bytes;
+                    }
                 }
                 if (w4f16_pipeline_mode ==
                     QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH) {
@@ -5817,6 +5937,10 @@ int main(int argc, char **argv) {
         w4u8_decode_qk_norm_rope_rows;
     header->w4u8_decode_qk_padding_poison =
         w4u8_decode_qk_padding_poison;
+    header->w4u8_decode_projection_mode =
+        w4u8_decode_projection_mode;
+    header->w4u8_decode_direct_n_mask =
+        w4u8_decode_direct_n_mask;
     header->w4u8_qk_pair_kernel_mode =
         w4u8_qk_pair_kernel_mode;
     header->scan_mode = scan_mode;
@@ -5892,6 +6016,17 @@ int main(int argc, char **argv) {
             generation_lm_head_weight_slot.offset;
         header->generation_lm_head.weight_bytes =
             generation_lm_head_weight_slot.expected_bytes;
+        if (w4u8_decode_projection_mode ==
+            QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N) {
+            header->generation_lm_head.direct_n_weight_offset =
+                (uint32_t)generation_lm_head_direct_n_weight_offset;
+            header->generation_lm_head.direct_n_weight_bytes =
+                generation_lm_head_weight_slot.expected_bytes;
+            qbh_repack_w4_direct_n(
+                shared + generation_lm_head_direct_n_weight_offset,
+                shared + generation_lm_head_weight_slot.offset,
+                generation_lm_head_weight_slot.expected_bytes);
+        }
         header->generation_lm_head.scale_offset =
             generation_lm_head_scale_slot.offset;
         header->generation_lm_head.scale_bytes =
@@ -6178,6 +6313,17 @@ int main(int argc, char **argv) {
                 desc->weight_offset = slots->weights[projection].offset;
                 desc->weight_bytes =
                     slots->weights[projection].expected_bytes;
+                if (w4u8_decode_projection_mode ==
+                    QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N) {
+                    desc->direct_n_weight_offset = (uint32_t)
+                        slots->direct_n_weight_offsets[projection];
+                    desc->direct_n_weight_bytes =
+                        slots->weights[projection].expected_bytes;
+                    qbh_repack_w4_direct_n(
+                        shared + desc->direct_n_weight_offset,
+                        shared + desc->weight_offset,
+                        desc->weight_bytes);
+                }
                 if (variant != QBH_BLOCK_F16F16) {
                     desc->scale_offset = slots->scales[projection].offset;
                     desc->scale_bytes =

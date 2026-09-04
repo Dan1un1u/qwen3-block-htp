@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(84)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(185)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(85)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(188)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -152,6 +152,21 @@ enum qbh_w4u8_delta_reconstruction_mode {
 enum qbh_w4u8_decode_softmax_mode {
     QBH_BLOCK_W4U8_DECODE_SOFTMAX_SCALAR = 0,
     QBH_BLOCK_W4U8_DECODE_SOFTMAX_HVX_TILE4 = 1,
+};
+
+/* EXP-0188 keeps the accepted expanded-S8 path for M64 prefill and selects
+ * the packed-W4 HMX weight.n carrier only for logical-M1 decode. */
+enum qbh_w4u8_decode_projection_mode {
+    QBH_BLOCK_W4U8_DECODE_PROJECTION_EXPANDED_S8 = 0,
+    QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N = 1,
+};
+
+enum qbh_w4u8_decode_direct_n_mask {
+    QBH_BLOCK_W4U8_DIRECT_N_QKV = 1U << 0,
+    QBH_BLOCK_W4U8_DIRECT_N_O = 1U << 1,
+    QBH_BLOCK_W4U8_DIRECT_N_MLP = 1U << 2,
+    QBH_BLOCK_W4U8_DIRECT_N_LM_HEAD = 1U << 3,
+    QBH_BLOCK_W4U8_DIRECT_N_ALL = (1U << 4) - 1U,
 };
 
 #define QBH_BLOCK_W4U8_AV_REQUANT_FULL_ROWS UINT32_C(64)
@@ -588,6 +603,8 @@ struct qbh_block_projection_desc {
     uint32_t scale_bytes;
     uint32_t bias_offset;
     uint32_t bias_bytes;
+    uint32_t direct_n_weight_offset;
+    uint32_t direct_n_weight_bytes;
 };
 
 struct qbh_decode_layer_state {
@@ -672,6 +689,7 @@ struct qbh_block_slice_layer_profile {
     uint32_t cache_valid_after;
     uint32_t hidden_ddr_read_bytes;
     uint32_t hidden_ddr_write_bytes;
+    uint64_t output_hash;
     uint64_t layer_ticks;
     uint64_t metadata_stage_ticks;
     uint64_t input_stage_ticks;
@@ -746,6 +764,8 @@ struct qbh_block_header {
     uint32_t w4u8_decode_common_padding_poison;
     uint32_t w4u8_decode_qk_norm_rope_rows;
     uint32_t w4u8_decode_qk_padding_poison;
+    uint32_t w4u8_decode_projection_mode;
+    uint32_t w4u8_decode_direct_n_mask;
 
     /* EXP-0147 logical-shape wrapper.  QBH_BLOCK_M remains the immutable
      * physical projection tile. */
@@ -1265,6 +1285,10 @@ struct qbh_block_header {
     uint64_t w4u8_qkv_ring_hmx_ready_wait_ticks;
     uint64_t w4u8_qkv_ring_hmx_compute_ticks;
     uint64_t w4u8_qkv_ring_pool_wait_ticks;
+    uint32_t w4u8_decode_direct_n_projection_count;
+    uint32_t w4u8_decode_direct_n_hmx_command_count;
+    uint64_t w4u8_decode_direct_n_weight_ddr_read_bytes;
+    uint64_t w4u8_decode_direct_n_expand_bytes_avoided;
     struct qbh_block_slice_layer_profile
         slice_profiles[QBH_VERTICAL_SLICE_LAYER_COUNT];
 };
