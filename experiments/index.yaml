@@ -13,14 +13,15 @@ experiments:
     variants:
       - exp0185_k14_v12_session_native_K_tail_control
       - k14_v15_session_native_KV_tail_direct_V_append_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: boundary-audit-then-five-pair-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0186-w4u8-decode-vtcm-v-tail-no-journal
-    source_commits: []
+    source_commits:
+      - 5a3f81dba0b5730f6002a05186862b73f6dd0f6f
     record: docs/experiments/EXP-0186.md
     approval_ref: 'User message 2026-09-04: 同意，继续吧; continuation of the authorized uninterrupted decode optimization loop'
     runtime:
@@ -28,6 +29,7 @@ experiments:
       source_branch: codex/exp-0186-w4u8-decode-vtcm-v-tail-no-journal
       approved_on: '2026-09-04'
       started_on: '2026-09-04'
+      completed_on: '2026-09-04'
     evidence:
       source_parent_experiment: EXP-0185
       source_parent_commit: 537650293920eb62c3cc49833df613246e8fb0b9
@@ -38,6 +40,33 @@ experiments:
       forbidden_changes: K_cache_Attention_Softmax_qparams_QKV_O_MLP_embedding_feedback_LM_head_F16F16_W4F16_QNN
       short_gate: exact_34_step_consumed_and_sealed_boundaries_plus_exact_DDR_write_elimination_plus_five_of_five_rotated_pairs_lower_cache_update_append_DMA_and_complete_decode
       formal_gate: ten_rotated_193_step_pairs_candidate_strictly_faster_direct_decode_with_all_correctness_and_physical_contracts
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0186/20260904T192112_5a3f81d_short'
+      formal_evidence: null
+      source_commit: 5a3f81dba0b5730f6002a05186862b73f6dd0f6f
+      static_gate_result: pass_session_native_K14_V15_direct_V_append_no_QNN
+      correctness_gate_result: pass_34_step_segment_boundary_all_short_sessions_byte_exact_hidden_hashes_tokens_codes_and_padding_poison
+      physical_gate_result: pass_exact_8mib_VTCM_224_V_tail_DDR_write_descriptors_and_28672_bytes_removed_unchanged_DDR_reads_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_no_QNN
+      performance_gate_result: fail_candidate_won_3_of_5_short_pairs_and_Attention_regressed_0_555_percent
+      control_prefill_tokens_per_second: 1288.458187
+      candidate_prefill_tokens_per_second: 1284.318521
+      control_decode_host_us_per_token: 42371.565875
+      candidate_decode_host_us_per_token: 42237.047562
+      control_decode_tokens_per_second: 23.600733
+      candidate_decode_tokens_per_second: 23.675897
+      candidate_decode_speed_percent: 0.318484
+      control_attention_us_per_token: 3390.338542
+      candidate_attention_us_per_token: 3409.261068
+      candidate_attention_speed_percent: -0.555033
+      cache_carrier_update_us: {control: 423.835, candidate: 239.157}
+      cache_append_dma_us: {control: 132.770, candidate: 24.701}
+      cache_ddr_write_bytes: {control: 32256, candidate: 3584}
+      cache_dma_descriptor_count: {control: 1176, candidate: 952}
+      pair_wins: 3
+      formal_result: not_run_due_to_mandatory_short_gate_stop
+      summary_sha256: 0f73f2449d8a56e829292337e9c9e1ec1cba05e8ca0651863417d4c021d52d3d
+      short_gate_report_sha256: 15d2256459e8a98cf21cf9206a738d267c105205a2d70f971f3bcac32fc679b5
+      conclusion: direct_V_append_removes_the_expected_DDR_journal_but_does_not_reliably_reduce_the_full_decode_critical_path
+      reopen_condition: only_with_a_new_mechanism_that_fuses_the_V_tail_update_into_QKV_publication_or_otherwise_hides_it_without_regressing_Attention
       selected_baseline_changed: false
   - id: EXP-0185
     slug: w4u8-decode-vtcm-k-tail-no-journal

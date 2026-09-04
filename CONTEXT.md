@@ -1232,3 +1232,10 @@ _Avoid_: treating stale cached-head mutable DDR-tail bytes as authoritative
 session state, removing the fallback head without a new VTCM plan, changing
 sealed-history ABI, claiming semantic quality, or describing EXP-0185 as a
 pending candidate
+
+**Session-Native V-Tail Direct Append**:
+A rejected W4U8 cache candidate in which the mutable V tail is authoritative
+only in prepared-session VTCM until each immutable segment is sealed. It removes
+the DDR row journal but is not a baseline because it failed short-pair stability
+and did not improve Attention.
+_Avoid_: accepted V-cache optimization, EXP-0186 baseline, no-DDR cache history
