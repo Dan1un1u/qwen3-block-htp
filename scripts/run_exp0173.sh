@@ -19,6 +19,7 @@ decode_direct_n_gate_up_batch_tiles="${QBH_W4U8_DECODE_DIRECT_N_GATE_UP_BATCH_N_
 decode_direct_n_gate_up_continuous="${QBH_W4U8_DECODE_DIRECT_N_GATE_UP_CONTINUOUS:-0}"
 decode_direct_n_o_gate_prefetch="${QBH_W4U8_DECODE_DIRECT_N_O_GATE_PREFETCH:-0}"
 decode_direct_n_gate_up_swiglu_stream="${QBH_W4U8_DECODE_DIRECT_N_GATE_UP_SWIGLU_STREAM:-0}"
+decode_direct_n_down_prefetch="${QBH_W4U8_DECODE_DIRECT_N_DOWN_PREFETCH:-0}"
 decode_direct_n_qkv_batch_tiles="${QBH_W4U8_DECODE_DIRECT_N_QKV_BATCH_N_TILES:-4}"
 decode_swiglu_rows="${QBH_EXP0189_SWIGLU_ROWS:-64}"
 decode_swiglu_padding_poison="${QBH_EXP0189_SWIGLU_PADDING_POISON:-0}"
@@ -27,7 +28,7 @@ audit="${QBH_GENERATION_BOUNDARY_AUDIT:-0}"
 audit_dir="${QBH_GENERATION_AUDIT_DIR:-}"
 layout_only="${QBH_LAYOUT_ONLY:-0}"
 remote_audit_dir="${remote_root}/generation-audit-batch${group_tiles}"
-runtime_env="QBH_W4U8_STREAM_FENCE=single_fence QBH_W4U8_GATE_UP_RING_SLOTS=16 QBH_W4U8_QKV_RING_EXPAND_WORKERS=3 QBH_KV_CACHE_LAYOUT=${kv_cache_layout} QBH_W4U8_PREFILL_CACHE_MODE=reuse QBH_W4U8_DELTA_RECONSTRUCTION=serial QBH_W4U8_DECODE_SOFTMAX=hvx_tile4 QBH_W4U8_DECODE_LM_HEAD_GROUP_TILES=${group_tiles} QBH_W4U8_DECODE_O_BATCH_N_TILES=${o_batch_tiles} QBH_W4U8_DECODE_AV_REQUANT_ROWS=${av_requant_rows} QBH_W4U8_DECODE_AV_PADDING_POISON=${av_padding_poison} QBH_W4U8_DECODE_COMMON_OP_ROWS=${common_op_rows} QBH_W4U8_DECODE_COMMON_PADDING_POISON=${common_padding_poison} QBH_W4U8_DECODE_QK_NORM_ROPE_ROWS=${qk_norm_rope_rows} QBH_W4U8_DECODE_QK_PADDING_POISON=${qk_padding_poison} QBH_W4U8_DECODE_PROJECTION_MODE=${decode_projection_mode} QBH_W4U8_DECODE_DIRECT_N_MASK=${decode_direct_n_mask} QBH_W4U8_DECODE_DIRECT_N_GATE_UP_BATCH_N_TILES=${decode_direct_n_gate_up_batch_tiles} QBH_W4U8_DECODE_DIRECT_N_GATE_UP_CONTINUOUS=${decode_direct_n_gate_up_continuous} QBH_W4U8_DECODE_DIRECT_N_O_GATE_PREFETCH=${decode_direct_n_o_gate_prefetch} QBH_W4U8_DECODE_DIRECT_N_GATE_UP_SWIGLU_STREAM=${decode_direct_n_gate_up_swiglu_stream} QBH_W4U8_DECODE_DIRECT_N_QKV_BATCH_N_TILES=${decode_direct_n_qkv_batch_tiles} QBH_W4U8_DECODE_SWIGLU_ROWS=${decode_swiglu_rows} QBH_W4U8_DECODE_SWIGLU_PADDING_POISON=${decode_swiglu_padding_poison} QBH_LAYOUT_ONLY=${layout_only}"
+runtime_env="QBH_W4U8_STREAM_FENCE=single_fence QBH_W4U8_GATE_UP_RING_SLOTS=16 QBH_W4U8_QKV_RING_EXPAND_WORKERS=3 QBH_KV_CACHE_LAYOUT=${kv_cache_layout} QBH_W4U8_PREFILL_CACHE_MODE=reuse QBH_W4U8_DELTA_RECONSTRUCTION=serial QBH_W4U8_DECODE_SOFTMAX=hvx_tile4 QBH_W4U8_DECODE_LM_HEAD_GROUP_TILES=${group_tiles} QBH_W4U8_DECODE_O_BATCH_N_TILES=${o_batch_tiles} QBH_W4U8_DECODE_AV_REQUANT_ROWS=${av_requant_rows} QBH_W4U8_DECODE_AV_PADDING_POISON=${av_padding_poison} QBH_W4U8_DECODE_COMMON_OP_ROWS=${common_op_rows} QBH_W4U8_DECODE_COMMON_PADDING_POISON=${common_padding_poison} QBH_W4U8_DECODE_QK_NORM_ROPE_ROWS=${qk_norm_rope_rows} QBH_W4U8_DECODE_QK_PADDING_POISON=${qk_padding_poison} QBH_W4U8_DECODE_PROJECTION_MODE=${decode_projection_mode} QBH_W4U8_DECODE_DIRECT_N_MASK=${decode_direct_n_mask} QBH_W4U8_DECODE_DIRECT_N_GATE_UP_BATCH_N_TILES=${decode_direct_n_gate_up_batch_tiles} QBH_W4U8_DECODE_DIRECT_N_GATE_UP_CONTINUOUS=${decode_direct_n_gate_up_continuous} QBH_W4U8_DECODE_DIRECT_N_O_GATE_PREFETCH=${decode_direct_n_o_gate_prefetch} QBH_W4U8_DECODE_DIRECT_N_GATE_UP_SWIGLU_STREAM=${decode_direct_n_gate_up_swiglu_stream} QBH_W4U8_DECODE_DIRECT_N_DOWN_PREFETCH=${decode_direct_n_down_prefetch} QBH_W4U8_DECODE_DIRECT_N_QKV_BATCH_N_TILES=${decode_direct_n_qkv_batch_tiles} QBH_W4U8_DECODE_SWIGLU_ROWS=${decode_swiglu_rows} QBH_W4U8_DECODE_SWIGLU_PADDING_POISON=${decode_swiglu_padding_poison} QBH_LAYOUT_ONLY=${layout_only}"
 runtime_args="2 32 rms_rope_softmax on off fused_pool6_shuffle4 serial control hvx w4u8_streaming_persistent_mlp_hvx 3 64 u8_log2_gqa_qkv_overlap_vgather_vdeal_fused_qk_requant_hmx_batch_lut_templates_gqa_batch_dependency_stream_softmax_shuffle4 6 w4u8_mlp_io_qkv_o qkvo_batch4_qk_head_pairs hvx_tree_qk_batched_rsqrt_shared_rope_parallel_input control 4 4 4 2"
 
 case "${group_tiles}" in
@@ -121,6 +122,17 @@ if [[ "${decode_direct_n_gate_up_swiglu_stream}" == 1 &&
        "${decode_swiglu_rows}" != 4 ||
        $((decode_direct_n_mask & 4)) -eq 0) ]]; then
     printf 'Gate/Up SwiGLU stream requires prefetched continuous direct-n MLP batch32 with row4 SwiGLU\n' >&2
+    exit 2
+fi
+case "${decode_direct_n_down_prefetch}" in
+0|1) ;;
+*) printf 'invalid direct-n Down prefetch: %s\n' "${decode_direct_n_down_prefetch}" >&2; exit 2 ;;
+esac
+if [[ "${decode_direct_n_down_prefetch}" == 1 &&
+      ("${decode_projection_mode}" != direct_n ||
+       "${decode_direct_n_gate_up_swiglu_stream}" != 1 ||
+       $((decode_direct_n_mask & 4)) -eq 0) ]]; then
+    printf 'Down prefetch requires streamed direct-n MLP\n' >&2
     exit 2
 fi
 case "${decode_direct_n_qkv_batch_tiles}" in
