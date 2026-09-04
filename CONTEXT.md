@@ -1239,3 +1239,15 @@ only in prepared-session VTCM until each immutable segment is sealed. It removes
 the DDR row journal but is not a baseline because it failed short-pair stability
 and did not improve Attention.
 _Avoid_: accepted V-cache optimization, EXP-0186 baseline, no-DDR cache history
+
+**Direct-N Packed-W4 Integer HMX Projection**:
+The evidence-valid EXP-0187 projection carrier that supplies asymmetric-U8
+activation through HMX `activation.ub` and a project-packed signed-W4 tile
+through HMX `weight.n`.  The observed hot path contains no HVX W4-to-S8
+expansion and is byte exact to the prior expanded-S8 integer-HMX arithmetic.
+It is not a true M1 matrix engine: logical M1 and M64 still execute the same
+64-row physical HMX spatial tile.  EXP-0188 evaluates whether its local Gate/Up
+and Down gains survive the complete continuous-decode token boundary while M64
+prefill remains unchanged.
+_Avoid_: native four-bit arithmetic proof, single-row HMX kernel, accepted
+full-stack baseline, automatic M64 prefill optimization, changed W4 recipe

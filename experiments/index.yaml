@@ -6,6 +6,44 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0188
+    slug: w4u8-full-stack-decode-direct-n
+    title: Full-stack decode-only direct-n W4 HMX projection rollout
+    parent: EXP-0187
+    variants:
+      - accepted_EXP0185_W4U8_token_generation_control
+      - EXP0185_with_decode_only_direct_n_W4_HMX_projection_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0188-w4u8-full-stack-decode-direct-n
+    source_commits: []
+    record: docs/experiments/EXP-0188.md
+    approval_ref: 'User message 2026-09-04: 同意你的方向，开始吧'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0188-w4u8-full-stack-decode-direct-n
+      approved_on: '2026-09-04'
+      started_on: '2026-09-04'
+    evidence:
+      source_parent_experiment: EXP-0187
+      source_parent_commit: 5e9ff6ade5ab10da8d3640d259e0867bc94cf422
+      source_parent_role: evidence_valid_direct_n_M1_projection_candidate
+      direct_control: accepted_EXP0185_W4U8_token_generation_baseline
+      execution_unit: real_token_ID_M64_prefill_then_192_continuous_W4U8_decode_steps_to_valid_length256
+      candidate: full_stack_decode_only_direct_integer_HMX_activation_ub_weight_n_packed_W4_carrier
+      optimization_scope: decode_only_W4U8_projection_weight_carrier_dispatch_VTCM_schedule_package_format_telemetry_and_tools
+      forbidden_changes: weights_values_scales_qparams_projection_math_Attention_cache_non_linear_math_M64_prefill_F16F16_W4F16_QNN
+      correctness_gate: byte_exact_decode_projection_boundaries_hidden_hashes_codes_tokens_and_cache_state_to_EXP0185_plus_independent_integer_reference
+      physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_per_pass_one_HMX_owner_no_QNN_and_zero_timed_HVX_W4_to_S8_expansion_for_direct_n_projections
+      short_gate: five_rotated_pairs_with_correctness_physical_and_strict_direct_decode_speed_pass
+      formal_gate: ten_rotated_193_step_pairs_with_strictly_higher_direct_full_stack_decode_tokens_per_second_than_EXP0185
+      prefill_preservation: M64_prefill_uses_unchanged_EXP0185_projection_dispatch_and_is_byte_exact
+      stop_condition: no_prefill_direct_n_followup_if_full_stack_decode_gate_fails
+      selected_baseline_changed: false
   - id: EXP-0187
     slug: w4u8-decode-native-m1-pipeline-gate
     title: Decode-native M1 projection and pipeline feasibility gate
@@ -13,14 +51,15 @@ experiments:
     variants:
       - exp0185_W4U8_M1_projection_schedule_control
       - decode_native_M1_physical_mapping_or_cross_projection_pipeline_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: audit-timeline-then-bounded-real-middle-layer-M1-projection-gate
     source_branches:
       - codex/exp-0187-w4u8-decode-native-m1-pipeline-gate
-    source_commits: []
+    source_commits:
+      - 5e9ff6ade5ab10da8d3640d259e0867bc94cf422
     record: docs/experiments/EXP-0187.md
     approval_ref: 'User message 2026-09-04: 同意你的方案，开始初步验证实验'
     runtime:
@@ -28,6 +67,7 @@ experiments:
       source_branch: codex/exp-0187-w4u8-decode-native-m1-pipeline-gate
       approved_on: '2026-09-04'
       started_on: '2026-09-04'
+      completed_on: '2026-09-04'
     evidence:
       source_parent_experiment: EXP-0185
       source_parent_commit: 537650293920eb62c3cc49833df613246e8fb0b9
@@ -41,6 +81,19 @@ experiments:
       physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN_complete_timeline_closure
       feasibility_gate: reduced_M1_physical_work_or_increased_DMA_HVX_HMX_overlap_must_lower_equivalent_scope_M1_wall
       stop_condition: no_full_stack_rollout_without_equivalent_scope_M1_wall_improvement
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0187/20260904_real_layer14_formal_5e9ff6a'
+      source_commit: 5e9ff6ade5ab10da8d3640d259e0867bc94cf422
+      implementation: direct_integer_HMX_activation_ub_weight_n_packed_W4_carrier_without_timed_HVX_W4_to_S8_expansion
+      physical_audit_result: logical_M1_and_M64_still_execute_the_same_64_row_physical_HMX_spatial_tile
+      correctness_gate_result: pass_all_80_formal_device_runs_zero_mismatch_against_prior_HMX_path_and_independent_integer_reference
+      physical_gate_result: pass_exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN_and_zero_timed_W4_expansion
+      gate_up_repeat10_host_ms: {control: 8.984, candidate: 6.283}
+      gate_up_repeat10_speedup: 1.430
+      down_repeat10_host_ms: {control: 4.101, candidate: 2.387}
+      down_repeat10_speedup: 1.718
+      summary_sha256: bafa6ee2456657bca39b99549a6270fd06a2c74ff610e982b29449703589b8d8
+      report_sha256: c42ddf43d2b998938926833c2ed454e418b66e87bed15f5dda493003785c3773
+      conclusion: direct_n_is_a_valid_and_faster_M1_projection_carrier_but_not_a_true_single_row_HMX_kernel_and_requires_full_stack_decode_validation
       selected_baseline_changed: false
   - id: EXP-0186
     slug: w4u8-decode-vtcm-v-tail-no-journal
