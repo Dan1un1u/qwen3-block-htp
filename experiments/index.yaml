@@ -6,6 +6,41 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0202
+    slug: w4u8-direct-n-down-prefetch
+    title: Gate/Up-lifetime prefetch of first Down direct-W4 group
+    parent: EXP-0201
+    variants:
+      - evidence_valid_EXP0201_control
+      - first_valid_Down_batch2_cross_prefetch_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0202-w4u8-direct-n-down-prefetch
+    source_commits: []
+    record: docs/experiments/EXP-0202.md
+    approval_ref: 'User message 2026-09-05: 开始decode优化loop'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0202-w4u8-direct-n-down-prefetch
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    evidence:
+      source_parent_experiment: EXP-0201
+      source_parent_commit: f22a12f0b935da5853ea487eb8ab5a6e7c49db5b
+      direct_control: same_binary_EXP0201_without_Down_cross_prefetch
+      candidate: first_valid_Down_batch2_DMA_hidden_under_Gate_Up_and_SwiGLU
+      hypothesis: remove_serialized_first_Down_transfer_without_changing_live_group_or_HMX_work
+      optimization_scope: decode_only_first_Down_group_prefetch_lifetime_consumption_telemetry_and_tools
+      forbidden_changes: weights_values_scales_qparams_arithmetic_HMX_batch_size_Gate_Up_SwiGLU_QKV_Attention_O_residual_norm_cache_LM_head_M64_prefill_F16F16_W4F16_QNN
+      correctness_gate: byte_exact_Down_hidden_cache_selected_codes_and_tokens
+      physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_descriptors_commands_and_tile_pairs_one_prefetch_per_layer
+      short_gate: five_rotated_pairs_with_strict_decode_and_Down_speed_pass
+      formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      selected_baseline_changed: false
   - id: EXP-0201
     slug: w4u8-direct-n-gate-up-swiglu-stream
     title: Interleaved Gate/Up producer with asynchronous U8 SwiGLU
@@ -13,14 +48,15 @@ experiments:
     variants:
       - evidence_valid_EXP0199_control
       - EXP0200_prefetch_plus_interleaved_Gate_Up_async_SwiGLU_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0201-w4u8-direct-n-gate-up-swiglu-stream
-    source_commits: []
+    source_commits:
+      - f22a12f0b935da5853ea487eb8ab5a6e7c49db5b
     record: docs/experiments/EXP-0201.md
     approval_ref: 'User message 2026-09-05: 开始decode优化loop'
     runtime:
@@ -28,6 +64,7 @@ experiments:
       source_branch: codex/exp-0201-w4u8-direct-n-gate-up-swiglu-stream
       approved_on: '2026-09-05'
       started_on: '2026-09-05'
+      completed_on: '2026-09-05'
     evidence:
       source_parent_experiment: EXP-0200-enabling-source
       source_parent_commit: d28657d0cbf977d0e45103f32f86a2da34c44567
@@ -40,6 +77,12 @@ experiments:
       physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_descriptors_commands_and_tile_pairs_six_groups_per_layer
       short_gate: five_rotated_pairs_with_strict_decode_and_Gate_Up_SwiGLU_speed_pass
       formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0201/20260905_short_gate_f22a12f'
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0201/20260905_formal_f22a12f'
+      formal_decode_tokens_per_second: 43.474400
+      formal_decode_speed_percent: 2.359983
+      formal_gate_up_swiglu_speed_percent: 8.2
+      pair_wins: 10
       selected_baseline_changed: false
   - id: EXP-0200
     slug: w4u8-direct-n-o-gate-prefetch
