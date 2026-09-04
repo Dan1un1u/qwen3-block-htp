@@ -1351,11 +1351,31 @@ head pair, changing Attention math, counting commands without higher decode
 token/s, or automatic baseline promotion
 
 **Direct-N Decode Gate/Up Batch-Thirty-Two Candidate**:
-The active EXP-0195 hypothesis extends the successful command-granularity
-sequence from Gate/Up batch sixteen to thirty-two.  Each packed-W4 group exactly
-fills one phase-dead Expanded-S8 slot.  Two 4 KiB bias groups reuse the already
-consumed Input- and Post-Attention-RMSNorm gamma regions.  No new VTCM or weight
-work is introduced; the target is to halve the remaining Gate/Up commands.
-_Avoid_: changing QKV batch eight, touching M64 prefill, reusing a gamma before
-its norm completes, exceeding one MiB per weight slot, or automatic baseline
-promotion
+The completed EXP-0195 candidate extends Gate/Up direct-n batching from sixteen
+to thirty-two.  Each packed-W4 group exactly fills one phase-dead one-MiB
+Expanded-S8 slot.  The first implementation reused Input- and Post-Norm gamma
+storage and was correctly rejected during development because 193-step output
+varied across runs even though a four-step audit happened to pass.  The retained
+implementation uses two bias slots in the RoPE region only after Attention has
+completed.  Ten formal pairs all win: decode improves from 38.606195 to
+39.102150 token/s (+1.284652%) and Gate/Up projection falls from 7.0951 to
+6.7912 ms/token.  Gate/Up commands halve from 672 to 336 while weight bytes,
+HMX tile pairs, outputs, 8 MiB VTCM and zero-intermediate-DDR contracts remain
+unchanged.  EXP-0195 is the fastest pending candidate, not an automatically
+selected baseline.
+_Avoid_: restoring the live Post-Norm alias, changing QKV batch eight, touching
+M64 prefill, exceeding one MiB per weight slot, or automatic baseline promotion
+
+**Direct-N Decode LM-Head Batch-Thirty-Two Candidate**:
+The active EXP-0196 hypothesis targets the last major decode projection that
+still performs explicit W4-to-S8 expansion.  Its control is EXP-0195 with the
+Expanded-S8 LM head at batch sixteen; the candidate feeds direct packed W4 to
+HMX at batch thirty-two using phase-dead one-MiB slots and dead transformer
+activation space for HMX output and argmax scratch.  EXP-0188 only tested the
+noncompetitive direct-n batch-four schedule, so it does not close this physical
+hypothesis.  Success requires byte-exact selected tokens and audited codes,
+zero LM-head expansion, unchanged weight bytes/HMX tile pairs, and higher
+direct full-stack decode token/s.
+_Avoid_: changing transformer kernels, quantization or vocabulary order,
+allowing group-size-dependent tie selection, applying direct-n to M64 prefill,
+or counting expansion removal without end-to-end acceleration
