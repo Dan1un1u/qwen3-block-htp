@@ -6,15 +6,20 @@ adb_exe="${ADB_EXE:-/mnt/c/adb/adb.exe}"
 remote_root="${EXP0173_REMOTE_ROOT:-/data/local/tmp/qwen3-block-htp/exp0173-w4u8}"
 generation_steps="${QBH_EXP0173_GENERATION_STEPS:-193}"
 group_tiles="${QBH_EXP0173_LM_HEAD_GROUP_TILES:-8}"
+o_batch_tiles="${QBH_EXP0176_O_BATCH_TILES:-4}"
 audit="${QBH_GENERATION_BOUNDARY_AUDIT:-0}"
 audit_dir="${QBH_GENERATION_AUDIT_DIR:-}"
 remote_audit_dir="${remote_root}/generation-audit-batch${group_tiles}"
-runtime_env="QBH_W4U8_STREAM_FENCE=single_fence QBH_W4U8_GATE_UP_RING_SLOTS=16 QBH_W4U8_QKV_RING_EXPAND_WORKERS=3 QBH_KV_CACHE_LAYOUT=hmx_native_u8_segmented_v4 QBH_W4U8_PREFILL_CACHE_MODE=reuse QBH_W4U8_DELTA_RECONSTRUCTION=serial QBH_W4U8_DECODE_SOFTMAX=hvx_tile4 QBH_W4U8_DECODE_LM_HEAD_GROUP_TILES=${group_tiles}"
+runtime_env="QBH_W4U8_STREAM_FENCE=single_fence QBH_W4U8_GATE_UP_RING_SLOTS=16 QBH_W4U8_QKV_RING_EXPAND_WORKERS=3 QBH_KV_CACHE_LAYOUT=hmx_native_u8_segmented_v4 QBH_W4U8_PREFILL_CACHE_MODE=reuse QBH_W4U8_DELTA_RECONSTRUCTION=serial QBH_W4U8_DECODE_SOFTMAX=hvx_tile4 QBH_W4U8_DECODE_LM_HEAD_GROUP_TILES=${group_tiles} QBH_W4U8_DECODE_O_BATCH_N_TILES=${o_batch_tiles}"
 runtime_args="2 32 rms_rope_softmax on off fused_pool6_shuffle4 serial control hvx w4u8_streaming_persistent_mlp_hvx 3 64 u8_log2_gqa_qkv_overlap_vgather_vdeal_fused_qk_requant_hmx_batch_lut_templates_gqa_batch_dependency_stream_softmax_shuffle4 6 w4u8_mlp_io_qkv_o qkvo_batch4_qk_head_pairs hvx_tree_qk_batched_rsqrt_shared_rope_parallel_input control 4 4 4 2"
 
 case "${group_tiles}" in
 8|16) ;;
 *) printf 'invalid EXP-0173 LM-head group tiles: %s\n' "${group_tiles}" >&2; exit 2 ;;
+esac
+case "${o_batch_tiles}" in
+4|8) ;;
+*) printf 'invalid EXP-0176 O batch tiles: %s\n' "${o_batch_tiles}" >&2; exit 2 ;;
 esac
 if [[ "${QBH_EXP0173_DEPLOY:-0}" == 1 ]]; then
     "${project_root}/scripts/deploy_exp0173.sh"

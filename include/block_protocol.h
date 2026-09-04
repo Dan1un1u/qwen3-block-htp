@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(74)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(173)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(75)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(176)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -684,6 +684,7 @@ struct qbh_block_header {
     uint32_t w4u8_delta_reconstruction_mode;
     uint32_t w4u8_decode_softmax_mode;
     uint32_t w4u8_decode_lm_head_group_tiles;
+    uint32_t w4u8_decode_o_batch_n_tiles;
 
     /* EXP-0147 logical-shape wrapper.  QBH_BLOCK_M remains the immutable
      * physical projection tile. */
@@ -875,6 +876,8 @@ struct qbh_block_header {
     uint32_t w4u8_qkv_batch_count;
     uint32_t w4u8_qkvo_prefetch_count;
     uint32_t w4u8_qkvo_overlap_schedule_count;
+    uint32_t w4u8_o_batch_n_tiles_observed;
+    uint32_t w4u8_o_batch_count;
     uint32_t w4u8_qk_pair_kernel_mode_observed;
     uint32_t w4u8_qk_quarter_pair_count;
     uint32_t w4u8_decode_softmax_hvx_tile4_call_count;

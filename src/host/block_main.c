@@ -2631,6 +2631,9 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U32(w4u8_delta_reconstruction_mode);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_softmax_mode);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_lm_head_group_tiles);
+    QBH_REPLAY_PROFILE_U32(w4u8_decode_o_batch_n_tiles);
+    QBH_REPLAY_PROFILE_U32(w4u8_o_batch_n_tiles_observed);
+    QBH_REPLAY_PROFILE_U32(w4u8_o_batch_count);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_softmax_hvx_tile4_call_count);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_softmax_hvx_tile4_mismatch_count);
     QBH_REPLAY_PROFILE_I32(dsp_status);
@@ -3813,6 +3816,7 @@ int main(int argc, char **argv) {
     uint32_t w4u8_decode_softmax_mode =
         QBH_BLOCK_W4U8_DECODE_SOFTMAX_SCALAR;
     uint32_t w4u8_decode_lm_head_group_tiles = 8U;
+    uint32_t w4u8_decode_o_batch_n_tiles = 4U;
     uint32_t scan_mode = QBH_BLOCK_SCAN_DISABLED;
     uint32_t logical_m = QBH_BLOCK_M;
     uint32_t initial_kv_length = 0U;
@@ -4056,6 +4060,13 @@ int main(int argc, char **argv) {
         }
     }
     {
+        const char *value = getenv("QBH_W4U8_DECODE_O_BATCH_N_TILES");
+        if (value != NULL && value[0] != '\0' &&
+            qbh_parse_u32(value, &w4u8_decode_o_batch_n_tiles) != 0) {
+            w4u8_decode_o_batch_n_tiles = UINT32_MAX;
+        }
+    }
+    {
         const char *mode = getenv("QBH_SCAN_MODE");
         const char *logical = getenv("QBH_LOGICAL_M");
         const char *past = getenv("QBH_KV_CACHE_LENGTH");
@@ -4281,6 +4292,10 @@ int main(int argc, char **argv) {
             QBH_BLOCK_W4U8_DELTA_RECONSTRUCTION_PIPELINE ||
         w4u8_decode_softmax_mode >
             QBH_BLOCK_W4U8_DECODE_SOFTMAX_HVX_TILE4 ||
+        (w4u8_decode_o_batch_n_tiles != 4U &&
+         w4u8_decode_o_batch_n_tiles != 8U) ||
+        (w4u8_decode_o_batch_n_tiles != 4U &&
+         variant != QBH_BLOCK_W4U8) ||
         (w4u8_decode_lm_head_group_tiles != 8U &&
          w4u8_decode_lm_head_group_tiles != 16U) ||
         (w4u8_decode_lm_head_group_tiles != 8U &&
@@ -5378,6 +5393,8 @@ int main(int argc, char **argv) {
         w4u8_decode_softmax_mode;
     header->w4u8_decode_lm_head_group_tiles =
         w4u8_decode_lm_head_group_tiles;
+    header->w4u8_decode_o_batch_n_tiles =
+        w4u8_decode_o_batch_n_tiles;
     header->w4u8_qk_pair_kernel_mode =
         w4u8_qk_pair_kernel_mode;
     header->scan_mode = scan_mode;
