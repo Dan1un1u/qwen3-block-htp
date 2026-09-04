@@ -11,7 +11,7 @@ grep -q 'QBH_W4U8_DECODE_DIRECT_N_GATE_UP_SWIGLU_STREAM' \
     src/host/block_main.c scripts/run_exp0173.sh scripts/run_exp0203.sh
 grep -q 'QBH_W4U8_DECODE_DIRECT_N_QKV_BATCH_N_TILES=16' scripts/run_exp0203.sh
 grep -q 'QBH_W4U8_DECODE_DIRECT_N_NEXT_Q_PREFETCH' \
-    src/host/block_main.c scripts/run_exp0203.sh
+    src/host/block_main.c scripts/run_exp0173.sh scripts/run_exp0203.sh
 grep -q 'qbh_start_w4u8_next_q_weight_prefetch' src/dsp/block_imp.c
 grep -q 'qbh_consume_w4u8_next_q_weight_prefetch' src/dsp/block_imp.c
 if grep -RIn -E 'Qnn|QAIRT|qti\.aisw' src include CMakeLists.txt | \
