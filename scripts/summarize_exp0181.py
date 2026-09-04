@@ -32,6 +32,7 @@ CANDIDATE_LABEL = "Attention-publish-v6"
 REPORT_TITLE = "Attention-side quartet V-cache publication"
 VTCM_TAIL_MODE = False
 VTCM_TAIL_ATLAS_BYTES = LAYERS * KV_HEADS * 32 * 128
+VTCM_TAIL_ALIGNMENT_BYTES = 128
 CELLS = ("control", "quartet")
 ROWS = exp178.ROWS
 TARGET_ROW = "QK-Softmax-AV"
@@ -272,9 +273,15 @@ def validate_vtcm_read_contract(
         if (int(candidate_profile["scan_cache_ddr_write_bytes"])
                 != int(control_profile["scan_cache_ddr_write_bytes"])):
             return False
+        control_peak = int(control_profile["vtcm_peak_plan_bytes"])
+        expected_candidate_peak = (
+            (control_peak + VTCM_TAIL_ALIGNMENT_BYTES - 1)
+            // VTCM_TAIL_ALIGNMENT_BYTES
+            * VTCM_TAIL_ALIGNMENT_BYTES
+            + VTCM_TAIL_ATLAS_BYTES
+        )
         if (int(candidate_profile["vtcm_peak_plan_bytes"])
-                - int(control_profile["vtcm_peak_plan_bytes"])
-                != VTCM_TAIL_ATLAS_BYTES):
+                != expected_candidate_peak):
             return False
     return True
 
