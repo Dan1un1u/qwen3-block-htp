@@ -1088,21 +1088,16 @@ output pruning, full-logit DDR, more than one FastRPC call, or attributing the
 gain to transformer changes
 
 **Selected W4U8 Token-Generation Baseline**:
-The user-promoted EXP-0170 implementation for complete W4U8 token generation
-and long decode. It retains EXP-0168's transformer, segmented persistent KV
-cache, quantized model values and batch-eight LM-head pipeline, and replaces
-only the M=1 dynamic scalar Softmax with an exact HVX-tiled implementation.
-Ten rotated pairs over M64 prefill followed by 192 continuous decode tokens
-measure 50.669 ms/token or 19.736 token/s for L64-L255, versus 60.025 ms and
-16.660 token/s for the same-binary scalar control. All 43,008 probability calls
-are byte exact; physical, cache, ledger and regression gates pass. Semantic
-quality remains disabled and is not claimed. The user promoted EXP-0170 on
-2026-09-04 under tag `baseline-w4u8-token-generation-exp0170`; it is the sole
-default parent for subsequent W4U8 token-generation and decode optimization.
+The user-promoted EXP-0185 result is the current authoritative W4U8
+token-generation and long-decode reference, identified by immutable tag
+`baseline-w4u8-token-generation-exp0185`. It supersedes EXP-0173 for baseline
+selection while retaining the accepted transformer, HVX decode Softmax,
+batch-sixteen LM head, VTCM-resident V tail and session-native K tail lineage;
+semantic quality remains disabled and is not claimed.
 _Avoid_: describing diagnostic text as usable, changing qparams without a
 separate experiment, projecting throughput from partial measurements, using
-the short EXP-0168 decode rate as an equivalent L64-L255 comparator, or
-replacing this baseline without an eligible direct full-stack comparison
+an older EXP-0170/0173 result as the current baseline, or replacing this
+baseline without an eligible direct full-stack comparison
 
 **W4U8 Long-Decode Scaling Attribution**:
 The completed EXP-0169 characterization of the unchanged selected EXP-0168
@@ -1137,7 +1132,8 @@ falls from 62.673 to 4.042 us per added cache token. The gain grows from 9.09%
 at L64-95 to 27.60% at L224-255. All 43,008 on-device probability comparisons
 are byte-exact, all twenty output sequences match, and all physical, cache,
 ledger and regression gates pass. Semantic quality remains disabled. EXP-0170
-is the selected W4U8 baseline.
+remains the accepted Softmax component in the current EXP-0185 lineage, but is
+no longer the selected whole-runtime baseline.
 _Avoid_: claiming semantic quality, attributing the gain to QK/AV HMX or
 KV-cache bandwidth, or applying the audit comparator to performance runs
 
@@ -1219,7 +1215,7 @@ publication, changing K-cache or Attention mathematics, treating V-pack work
 ticks as the performance gate instead of direct full-stack token/s, or automatic
 baseline promotion
 
-**Session-Native Partial K-Cache Tail Candidate**:
+**Session-Native Partial K-Cache Tail Baseline**:
 The completed EXP-0185 W4U8 candidate keeps the mutable unsealed K tail for
 seven of eight KV heads per layer only in the prepared session's persistent
 VTCM atlas.  It removes exactly 196 redundant DDR row writes and 25,088 bytes
@@ -1230,8 +1226,9 @@ from 23.489764 to 23.762166 token/s (+1.159662%) and reduce QK-Softmax-AV from
 4,084.770 to 3,616.125 us/token (+12.959853%), with eight pair wins.  All 193
 independent reference checks, the 34-step seal boundary, padding poison,
 EXP-0163 regression, exact 8 MiB VTCM, zero timed intermediate DDR, zero
-spill/fill, one FastRPC and complete-ledger gates pass.  It is locally eligible
-but remains pending explicit user promotion.
+spill/fill, one FastRPC and complete-ledger gates pass.  The user promoted it
+on 2026-09-04 as the Selected W4U8 Token-Generation Baseline.
 _Avoid_: treating stale cached-head mutable DDR-tail bytes as authoritative
 session state, removing the fallback head without a new VTCM plan, changing
-sealed-history ABI, claiming semantic quality, or automatic baseline promotion
+sealed-history ABI, claiming semantic quality, or describing EXP-0185 as a
+pending candidate
