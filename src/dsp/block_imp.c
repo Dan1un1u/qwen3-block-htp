@@ -881,8 +881,10 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         }
     }
     if (variant == QBH_BLOCK_W4U8 &&
-        kv_cache_v_format ==
-            QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7) {
+        (kv_cache_v_format ==
+             QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7 ||
+         kv_cache_v_format ==
+             QBH_KV_CACHE_FORMAT_HMX_U8_V_SESSION_VTCM_TAIL_V10)) {
         buffers->persistent_v_tail = qbh_arena_alloc_aligned(
             &arena, QBH_KV_CACHE_HMX_U8_V_VTCM_TAIL_ATLAS_BYTES,
             QBH_BLOCK_ALIGNMENT);
@@ -922,8 +924,10 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         (qbh_attention_u8_enabled(attention_pipeline_mode) &&
          buffers->attention_configs == NULL) ||
         (variant == QBH_BLOCK_W4U8 &&
-         kv_cache_v_format ==
-             QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7 &&
+         (kv_cache_v_format ==
+              QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7 ||
+          kv_cache_v_format ==
+              QBH_KV_CACHE_FORMAT_HMX_U8_V_SESSION_VTCM_TAIL_V10) &&
          buffers->persistent_v_tail == NULL) ||
         (variant == QBH_BLOCK_W4U8 &&
          kv_cache_k_format ==
@@ -1012,8 +1016,10 @@ static int qbh_hmx_native_u8_cache_formats(uint32_t k_format,
                    QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7)
            || (k_format ==
                    QBH_KV_CACHE_FORMAT_HMX_U8_K_SESSION_VTCM_TAIL_V9 &&
-               v_format ==
-                   QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7);
+               (v_format ==
+                    QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7 ||
+                v_format ==
+                    QBH_KV_CACHE_FORMAT_HMX_U8_V_SESSION_VTCM_TAIL_V10));
 }
 
 static int qbh_hmx_native_u8_delta_cache_formats(
@@ -1039,7 +1045,9 @@ static int qbh_hmx_native_u8_segmented_cache_formats(
             v_format ==
                 QBH_KV_CACHE_FORMAT_HMX_U8_V_ATTENTION_PUBLISH_V6 ||
             v_format ==
-                QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7);
+                QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7 ||
+            v_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_V_SESSION_VTCM_TAIL_V10);
 }
 
 static int qbh_hmx_native_u8_vtcm_tail_v_cache_formats(
@@ -1050,8 +1058,10 @@ static int qbh_hmx_native_u8_vtcm_tail_v_cache_formats(
                 QBH_KV_CACHE_FORMAT_HMX_U8_K_PARTIAL_VTCM_TAIL_V8 ||
             k_format ==
                 QBH_KV_CACHE_FORMAT_HMX_U8_K_SESSION_VTCM_TAIL_V9) &&
-           v_format ==
-               QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7;
+           (v_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7 ||
+            v_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_V_SESSION_VTCM_TAIL_V10);
 }
 
 static int qbh_hmx_native_u8_partial_k_vtcm_tail_cache_formats(
@@ -1060,16 +1070,28 @@ static int qbh_hmx_native_u8_partial_k_vtcm_tail_cache_formats(
                 QBH_KV_CACHE_FORMAT_HMX_U8_K_PARTIAL_VTCM_TAIL_V8 ||
             k_format ==
                 QBH_KV_CACHE_FORMAT_HMX_U8_K_SESSION_VTCM_TAIL_V9) &&
-           v_format ==
-               QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7;
+           (v_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7 ||
+            v_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_V_SESSION_VTCM_TAIL_V10);
 }
 
 static int qbh_hmx_native_u8_session_k_vtcm_tail_cache_formats(
     uint32_t k_format, uint32_t v_format) {
     return k_format ==
                QBH_KV_CACHE_FORMAT_HMX_U8_K_SESSION_VTCM_TAIL_V9 &&
+           (v_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7 ||
+            v_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_V_SESSION_VTCM_TAIL_V10);
+}
+
+static int qbh_hmx_native_u8_session_v_vtcm_tail_cache_formats(
+    uint32_t k_format, uint32_t v_format) {
+    return k_format ==
+               QBH_KV_CACHE_FORMAT_HMX_U8_K_SESSION_VTCM_TAIL_V9 &&
            v_format ==
-               QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7;
+               QBH_KV_CACHE_FORMAT_HMX_U8_V_SESSION_VTCM_TAIL_V10;
 }
 
 static int qbh_hmx_native_u8_quartet_v_cache_formats(
@@ -1148,7 +1170,9 @@ static uint32_t qbh_expected_v_cache_bytes(uint32_t variant,
     if (variant == QBH_BLOCK_W4U8 &&
         (v_format == QBH_KV_CACHE_FORMAT_HMX_U8_V_SEGMENTED_V4 ||
          v_format ==
-             QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7)) {
+             QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7 ||
+         v_format ==
+             QBH_KV_CACHE_FORMAT_HMX_U8_V_SESSION_VTCM_TAIL_V10)) {
         return QBH_KV_CACHE_HMX_U8_V_SEGMENTED_BYTES(capacity);
     }
     if (variant == QBH_BLOCK_W4U8 &&
@@ -13455,6 +13479,21 @@ static void qbh_hvx_update_v_tail_row(
     asm volatile("barrier" ::: "memory");
 }
 
+static void qbh_hvx_update_v_tail_native_row(
+    uint8_t *tail, const uint8_t *native_head,
+    uint32_t source_row, uint32_t active_row) {
+    for (uint32_t tile = 0U;
+         tile < QBH_ATTENTION_HEAD_DIM_TILES; ++tile) {
+        memcpy(
+            tail + (size_t)tile * QBH_HMX_WEIGHT_BYTES +
+                (size_t)active_row * QBH_HMX_OUTPUT_CHANNELS,
+            native_head + (size_t)tile * QBH_HMX_ACTIVATION_BYTES +
+                (size_t)source_row * QBH_HMX_OUTPUT_CHANNELS,
+            QBH_HMX_OUTPUT_CHANNELS);
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
 static int qbh_scan_append_u8_kv_row_major(
     struct qbh_block_header *header, uint8_t *shared,
     struct qbh_block_buffers *buffers, uint32_t logical_rows,
@@ -13811,6 +13850,9 @@ static int qbh_scan_append_u8_kv_hmx_segmented(
     const int session_k_vtcm =
         qbh_hmx_native_u8_session_k_vtcm_tail_cache_formats(
             header->kv_cache_k_format, header->kv_cache_v_format);
+    const int session_v_vtcm =
+        qbh_hmx_native_u8_session_v_vtcm_tail_cache_formats(
+            header->kv_cache_k_format, header->kv_cache_v_format);
     const uint32_t max_segments =
         QBH_KV_CACHE_HMX_U8_SEGMENT_COUNT(header->kv_cache_capacity);
     const uint32_t sealed_segments_before =
@@ -13906,8 +13948,9 @@ static int qbh_scan_append_u8_kv_hmx_segmented(
         } else if (partial_k_vtcm) {
             ++header->u8_cache_k_vtcm_tail_fallback_head_count;
         }
-        qbh_attention_u8_native_head_to_row_major(v_head, row, 1U);
         if (quartet_v) {
+            qbh_attention_u8_native_head_to_row_major(
+                v_head, row, 1U);
             const uint32_t group = active_row / 4U;
             const uint32_t lane = active_row % 4U;
             uint8_t *group_destination = v_tail_base +
@@ -13984,7 +14027,25 @@ static int qbh_scan_append_u8_kv_hmx_segmented(
                 }
                 ++header->u8_cache_v_quartet_publish_count;
             }
+        } else if (session_v_vtcm) {
+            uint8_t *vtcm_head = buffers->persistent_v_tail +
+                (size_t)head *
+                    QBH_KV_CACHE_HMX_U8_V_VTCM_TAIL_HEAD_BYTES;
+            const uint64_t v_update_start =
+                HAP_perf_get_qtimer_count();
+
+            qbh_hvx_update_v_tail_native_row(
+                vtcm_head, v_head, 0U, active_row);
+            header->u8_cache_v_vtcm_tail_direct_row_update_ticks +=
+                HAP_perf_get_qtimer_count() - v_update_start;
+            ++header->u8_cache_v_vtcm_tail_direct_row_update_count;
+            ++header->u8_cache_v_vtcm_tail_row_update_count;
+            ++header->u8_cache_v_vtcm_tail_ddr_write_skip_count;
+            header->u8_cache_v_vtcm_tail_ddr_write_skip_bytes +=
+                QBH_BLOCK_HEAD_DIM;
         } else {
+            qbh_attention_u8_native_head_to_row_major(
+                v_head, row, 1U);
             if (qbh_scan_cache_dma(
                     header, v_tail, row,
                     QBH_BLOCK_HEAD_DIM, 0U) != 0) {

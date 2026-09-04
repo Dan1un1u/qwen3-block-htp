@@ -61,8 +61,8 @@ if [[ "${qk_padding_poison}" == 1 && "${qk_norm_rope_rows}" != 4 ]]; then
     exit 2
 fi
 case "${kv_cache_layout}" in
-hmx_native_u8_segmented_v4|hmx_native_u8_segmented_quartet_v5|hmx_native_u8_segmented_attention_publish_v6|hmx_native_u8_segmented_vtcm_tail_v7|hmx_native_u8_segmented_vtcm_k7_v8|hmx_native_u8_segmented_vtcm_k7_session_v9) ;;
-*) printf 'invalid EXP-0180/0181/0182/0183 KV-cache layout: %s\n' "${kv_cache_layout}" >&2; exit 2 ;;
+hmx_native_u8_segmented_v4|hmx_native_u8_segmented_quartet_v5|hmx_native_u8_segmented_attention_publish_v6|hmx_native_u8_segmented_vtcm_tail_v7|hmx_native_u8_segmented_vtcm_k7_v8|hmx_native_u8_segmented_vtcm_k7_session_v9|hmx_native_u8_segmented_vtcm_kv_session_v10) ;;
+*) printf 'invalid EXP-0180..EXP-0186 KV-cache layout: %s\n' "${kv_cache_layout}" >&2; exit 2 ;;
 esac
 if [[ "${common_padding_poison}" == 1 && "${common_op_rows}" != 4 ]]; then
     printf 'common padding poison requires four-row common ops\n' >&2

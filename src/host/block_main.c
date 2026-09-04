@@ -1316,8 +1316,10 @@ static int qbh_hmx_native_u8_cache_formats(uint32_t k_format,
                    QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7)
            || (k_format ==
                    QBH_KV_CACHE_FORMAT_HMX_U8_K_SESSION_VTCM_TAIL_V9 &&
-               v_format ==
-                   QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7);
+               (v_format ==
+                    QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7 ||
+                v_format ==
+                    QBH_KV_CACHE_FORMAT_HMX_U8_V_SESSION_VTCM_TAIL_V10));
 }
 
 static int qbh_hmx_native_u8_delta_cache_formats(
@@ -1343,7 +1345,9 @@ static int qbh_hmx_native_u8_segmented_cache_formats(
             v_format ==
                 QBH_KV_CACHE_FORMAT_HMX_U8_V_ATTENTION_PUBLISH_V6 ||
             v_format ==
-                QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7);
+                QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7 ||
+            v_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_V_SESSION_VTCM_TAIL_V10);
 }
 
 static int qbh_hmx_native_f16_cache_formats(uint32_t k_format,
@@ -1402,7 +1406,9 @@ static uint32_t qbh_host_v_cache_bytes(uint32_t variant,
     if (variant == QBH_BLOCK_W4U8 &&
         (v_format == QBH_KV_CACHE_FORMAT_HMX_U8_V_SEGMENTED_V4 ||
          v_format ==
-             QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7)) {
+             QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7 ||
+         v_format ==
+             QBH_KV_CACHE_FORMAT_HMX_U8_V_SESSION_VTCM_TAIL_V10)) {
         return QBH_KV_CACHE_HMX_U8_V_SEGMENTED_BYTES(capacity);
     }
     if (variant == QBH_BLOCK_W4U8 &&
@@ -2978,6 +2984,14 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U32(u8_cache_v_vtcm_tail_partial_pack_rows);
     QBH_REPLAY_PROFILE_U64(u8_cache_v_vtcm_tail_init_bytes);
     QBH_REPLAY_PROFILE_U64(u8_cache_v_vtcm_tail_native_load_bytes);
+    QBH_REPLAY_PROFILE_U32(
+        u8_cache_v_vtcm_tail_direct_row_update_count);
+    QBH_REPLAY_PROFILE_U64(
+        u8_cache_v_vtcm_tail_direct_row_update_ticks);
+    QBH_REPLAY_PROFILE_U32(
+        u8_cache_v_vtcm_tail_ddr_write_skip_count);
+    QBH_REPLAY_PROFILE_U64(
+        u8_cache_v_vtcm_tail_ddr_write_skip_bytes);
     QBH_REPLAY_PROFILE_U32(u8_cache_k_vtcm_tail_init_count);
     QBH_REPLAY_PROFILE_U32(u8_cache_k_vtcm_tail_row_update_count);
     QBH_REPLAY_PROFILE_U32(u8_cache_k_vtcm_tail_seal_count);
@@ -4549,6 +4563,14 @@ int main(int argc, char **argv) {
                     QBH_KV_CACHE_FORMAT_HMX_U8_K_SESSION_VTCM_TAIL_V9;
                 kv_cache_v_format =
                     QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7;
+            } else if (strcmp(
+                           layout,
+                           "hmx_native_u8_segmented_vtcm_kv_session_v10") ==
+                       0) {
+                kv_cache_k_format =
+                    QBH_KV_CACHE_FORMAT_HMX_U8_K_SESSION_VTCM_TAIL_V9;
+                kv_cache_v_format =
+                    QBH_KV_CACHE_FORMAT_HMX_U8_V_SESSION_VTCM_TAIL_V10;
             } else if (strcmp(layout, "hmx_native_f16") == 0) {
                 kv_cache_k_format =
                     QBH_KV_CACHE_FORMAT_HMX_F16_K_WEIGHT_V1;
@@ -4733,6 +4755,8 @@ int main(int argc, char **argv) {
              QBH_KV_CACHE_FORMAT_HMX_U8_V_ATTENTION_PUBLISH_V6 &&
          kv_cache_v_format !=
              QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7 &&
+         kv_cache_v_format !=
+             QBH_KV_CACHE_FORMAT_HMX_U8_V_SESSION_VTCM_TAIL_V10 &&
          kv_cache_v_format !=
              QBH_KV_CACHE_FORMAT_HMX_F16_V_WEIGHT_V1) ||
         (qbh_hmx_native_u8_cache_formats(

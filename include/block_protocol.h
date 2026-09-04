@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(84)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(185)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(85)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(186)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -136,6 +136,7 @@ enum qbh_kv_cache_format {
     QBH_KV_CACHE_FORMAT_HMX_U8_V_VTCM_TAIL_V7 = 12,
     QBH_KV_CACHE_FORMAT_HMX_U8_K_PARTIAL_VTCM_TAIL_V8 = 13,
     QBH_KV_CACHE_FORMAT_HMX_U8_K_SESSION_VTCM_TAIL_V9 = 14,
+    QBH_KV_CACHE_FORMAT_HMX_U8_V_SESSION_VTCM_TAIL_V10 = 15,
 };
 
 enum qbh_w4u8_prefill_cache_mode {
@@ -274,6 +275,11 @@ enum qbh_w4u8_decode_softmax_mode {
 #define QBH_KV_CACHE_HMX_U8_V_VTCM_TAIL_ATLAS_BYTES \
     (QBH_VERTICAL_SLICE_LAYER_COUNT * \
      QBH_KV_CACHE_HMX_U8_V_VTCM_TAIL_LAYER_BYTES)
+
+/* EXP-0186 keeps the same persistent VTCM carrier and sealed DDR segment
+ * layout as V7, but makes the mutable V tail session-native.  Decode appends
+ * directly from the QKV projection carrier and does not maintain a duplicate
+ * row-major DDR journal between segment seals. */
 
 /* EXP-0183 uses the remaining prepared-session VTCM for seven of the eight
  * mutable K tails in every layer.  A cached head stores the exact 4 KiB HMX
@@ -1114,6 +1120,10 @@ struct qbh_block_header {
     uint32_t u8_cache_v_vtcm_tail_partial_pack_rows;
     uint64_t u8_cache_v_vtcm_tail_init_bytes;
     uint64_t u8_cache_v_vtcm_tail_native_load_bytes;
+    uint32_t u8_cache_v_vtcm_tail_direct_row_update_count;
+    uint64_t u8_cache_v_vtcm_tail_direct_row_update_ticks;
+    uint32_t u8_cache_v_vtcm_tail_ddr_write_skip_count;
+    uint64_t u8_cache_v_vtcm_tail_ddr_write_skip_bytes;
     uint32_t u8_cache_k_vtcm_tail_init_count;
     uint32_t u8_cache_k_vtcm_tail_row_update_count;
     uint32_t u8_cache_k_vtcm_tail_seal_count;
