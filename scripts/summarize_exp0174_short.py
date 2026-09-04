@@ -201,13 +201,13 @@ def main() -> None:
                 )
 
     control_wall = rows["post_batch8"]["decode"]["Complete Host wall"]
-    control_gate = rows["post_batch8"]["decode"]["Gate/Up projection"]
+    control_gate = rows["post_batch8"]["decode"]["Gate/Up + SwiGLU"]
     eligible: dict[str, bool] = {}
     direct: dict[str, dict[str, float]] = {}
     for cell in CELLS:
         prefill_wall = rows[cell]["prefill"]["Complete Host wall"]
         decode_wall = rows[cell]["decode"]["Complete Host wall"]
-        gate_wall = rows[cell]["decode"]["Gate/Up projection"]
+        gate_wall = rows[cell]["decode"]["Gate/Up + SwiGLU"]
         direct[cell] = {
             "prefill_wall_us": prefill_wall,
             "prefill_tok_s": 64e6 / prefill_wall,
