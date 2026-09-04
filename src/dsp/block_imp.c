@@ -969,7 +969,9 @@ static int qbh_hmx_native_u8_cache_formats(uint32_t k_format,
             (v_format ==
                  QBH_KV_CACHE_FORMAT_HMX_U8_V_SEGMENTED_V4 ||
              v_format ==
-                 QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5));
+                 QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5 ||
+             v_format ==
+                 QBH_KV_CACHE_FORMAT_HMX_U8_V_ATTENTION_PUBLISH_V6));
 }
 
 static int qbh_hmx_native_u8_delta_cache_formats(
@@ -987,15 +989,29 @@ static int qbh_hmx_native_u8_segmented_cache_formats(
            (v_format ==
                 QBH_KV_CACHE_FORMAT_HMX_U8_V_SEGMENTED_V4 ||
             v_format ==
-                QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5);
+                QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5 ||
+            v_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_V_ATTENTION_PUBLISH_V6);
 }
 
 static int qbh_hmx_native_u8_quartet_v_cache_formats(
     uint32_t k_format, uint32_t v_format) {
+    return (k_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_K_SEGMENTED_V4 &&
+            v_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5) ||
+           (k_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_K_SEGMENTED_V4 &&
+            v_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_V_ATTENTION_PUBLISH_V6);
+}
+
+static int qbh_hmx_native_u8_attention_publish_v_cache_formats(
+    uint32_t k_format, uint32_t v_format) {
     return k_format ==
                QBH_KV_CACHE_FORMAT_HMX_U8_K_SEGMENTED_V4 &&
            v_format ==
-               QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5;
+               QBH_KV_CACHE_FORMAT_HMX_U8_V_ATTENTION_PUBLISH_V6;
 }
 
 static int qbh_hmx_native_f16_cache_formats(uint32_t k_format,
@@ -1052,7 +1068,9 @@ static uint32_t qbh_expected_v_cache_bytes(uint32_t variant,
         return QBH_KV_CACHE_HMX_U8_V_SEGMENTED_BYTES(capacity);
     }
     if (variant == QBH_BLOCK_W4U8 &&
-        v_format == QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5) {
+        (v_format == QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5 ||
+         v_format ==
+             QBH_KV_CACHE_FORMAT_HMX_U8_V_ATTENTION_PUBLISH_V6)) {
         return QBH_KV_CACHE_HMX_U8_V_QUARTET_BYTES(capacity);
     }
     if (variant != QBH_BLOCK_W4U8 &&
@@ -13684,6 +13702,9 @@ static int qbh_scan_append_u8_kv_hmx_segmented(
     uint32_t past_tokens) {
     const int quartet_v = qbh_hmx_native_u8_quartet_v_cache_formats(
         header->kv_cache_k_format, header->kv_cache_v_format);
+    const int attention_publish_v =
+        qbh_hmx_native_u8_attention_publish_v_cache_formats(
+            header->kv_cache_k_format, header->kv_cache_v_format);
     const uint32_t max_segments =
         QBH_KV_CACHE_HMX_U8_SEGMENT_COUNT(header->kv_cache_capacity);
     const uint32_t sealed_segments_before =
@@ -13767,7 +13788,15 @@ static int qbh_scan_append_u8_kv_hmx_segmented(
                 return -1;
             }
             ++header->u8_cache_v_quartet_append_count;
-            if (lane + 1U == 4U) {
+            /* V6 leaves complete non-sealing groups in raw tile-major form.
+             * The Attention consumer already has to load that group, so it
+             * converts and persists the carrier there.  Row 31 remains an
+             * append-side exception because sealing consumes the tail before
+             * Attention can publish it. */
+            if (lane + 1U == 4U &&
+                (!attention_publish_v ||
+                 active_row + 1U ==
+                     QBH_KV_CACHE_HMX_U8_SEGMENT_TOKENS)) {
                 if (qbh_scan_cache_dma_2d(
                         header, packed,
                         v_tail_base +
@@ -15414,7 +15443,7 @@ static int qbh_scan_prepare_u8_segmented_short_k(
 static int qbh_scan_prepare_u8_segmented_short_v(
     struct qbh_block_header *header,
     struct qbh_scan_u8_delta_attention_slot *slot,
-    const uint8_t *cache_v, const uint8_t *tail_v_rows,
+    const uint8_t *cache_v, uint8_t *tail_v_rows,
     uint8_t *row_scratch,
     uint8_t *pack_scratch, uint32_t max_segments,
     uint32_t sealed_segments,
@@ -15425,6 +15454,9 @@ static int qbh_scan_prepare_u8_segmented_short_v(
     const struct qbh_attention_config *config) {
     const int quartet_v = qbh_hmx_native_u8_quartet_v_cache_formats(
         header->kv_cache_k_format, header->kv_cache_v_format);
+    const int attention_publish_v =
+        qbh_hmx_native_u8_attention_publish_v_cache_formats(
+            header->kv_cache_k_format, header->kv_cache_v_format);
     const uint32_t destination_stride =
         segment_count * QBH_HMX_WEIGHT_BYTES;
     const uint32_t source_plane_bytes =
@@ -15482,6 +15514,38 @@ static int qbh_scan_prepare_u8_segmented_short_v(
         header->u8_cache_v_quartet_native_load_bytes +=
             (uint64_t)transferred_bytes *
             QBH_ATTENTION_HEAD_DIM_TILES;
+        if (attention_publish_v && partial_rows == 0U &&
+            completed_groups != 0U) {
+            const uint32_t group = completed_groups - 1U;
+            uint8_t *group_in_slot = (uint8_t *)slot->weight +
+                (size_t)sealed_segments * QBH_HMX_WEIGHT_BYTES +
+                (size_t)group * sizeof(HVX_Vector);
+
+            /* The last complete group is still raw on V6.  Convert the copy
+             * already loaded for AV, then persist that exact HMX carrier so
+             * later decode steps can consume it without repacking. */
+            start = HAP_perf_get_qtimer_count();
+            qbh_attention_u8_publish_v_row_group_hvx(
+                group_in_slot, destination_stride, 4U, config,
+                pack_scratch,
+                header->numerical_audit_enabled != 0U
+                    ? &slot->telemetry.v_recenter_saturation_count
+                    : NULL);
+            header->u8_attention_v_pack_ticks +=
+                HAP_perf_get_qtimer_count() - start;
+            if (qbh_scan_cache_dma_2d_write(
+                    header,
+                    tail_v_rows +
+                        (size_t)group * sizeof(HVX_Vector),
+                    group_in_slot, sizeof(HVX_Vector),
+                    QBH_ATTENTION_HEAD_DIM_TILES,
+                    destination_stride,
+                    QBH_HMX_WEIGHT_BYTES) != 0) {
+                return -1;
+            }
+            ++header->u8_cache_v_quartet_publish_count;
+            ++header->u8_cache_v_quartet_attention_publish_count;
+        }
         if (partial_rows != 0U) {
             start = HAP_perf_get_qtimer_count();
             qbh_attention_u8_publish_v_row_group_hvx(

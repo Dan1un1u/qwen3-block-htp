@@ -1305,7 +1305,9 @@ static int qbh_hmx_native_u8_cache_formats(uint32_t k_format,
             (v_format ==
                  QBH_KV_CACHE_FORMAT_HMX_U8_V_SEGMENTED_V4 ||
              v_format ==
-                 QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5));
+                 QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5 ||
+             v_format ==
+                 QBH_KV_CACHE_FORMAT_HMX_U8_V_ATTENTION_PUBLISH_V6));
 }
 
 static int qbh_hmx_native_u8_delta_cache_formats(
@@ -1323,7 +1325,9 @@ static int qbh_hmx_native_u8_segmented_cache_formats(
            (v_format ==
                 QBH_KV_CACHE_FORMAT_HMX_U8_V_SEGMENTED_V4 ||
             v_format ==
-                QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5);
+                QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5 ||
+            v_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_V_ATTENTION_PUBLISH_V6);
 }
 
 static int qbh_hmx_native_f16_cache_formats(uint32_t k_format,
@@ -1380,7 +1384,9 @@ static uint32_t qbh_host_v_cache_bytes(uint32_t variant,
         return QBH_KV_CACHE_HMX_U8_V_SEGMENTED_BYTES(capacity);
     }
     if (variant == QBH_BLOCK_W4U8 &&
-        v_format == QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5) {
+        (v_format == QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5 ||
+         v_format ==
+             QBH_KV_CACHE_FORMAT_HMX_U8_V_ATTENTION_PUBLISH_V6)) {
         return QBH_KV_CACHE_HMX_U8_V_QUARTET_BYTES(capacity);
     }
     if (variant != QBH_BLOCK_W4U8 &&
@@ -2192,7 +2198,9 @@ static int qbh_hmx_cache_byte_is_appended_token(
             max_segments * QBH_KV_CACHE_HMX_U8_SEGMENT_V_BYTES +
             QBH_KV_CACHE_HMX_V_BIAS_BYTES_PER_HEAD;
         if (layer->v_format ==
-                QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5) {
+                QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5 ||
+            layer->v_format ==
+                QBH_KV_CACHE_FORMAT_HMX_U8_V_ATTENTION_PUBLISH_V6) {
             const uint32_t group = tail_row / 4U;
             const uint32_t lane = tail_row % 4U;
             for (uint32_t output_tile = 0U;
@@ -2356,7 +2364,7 @@ static int32_t qbh_host_round_div_signed(
     return -((-numerator + denominator / 2) / denominator);
 }
 
-/* Convert the canonical segmented-v4 reference tail to the EXP-0180 V5
+/* Convert the canonical segmented-v4 reference tail to the EXP-0180/0181
  * physical state.  The immutable segment and bias regions are already
  * identical.  The mutable tail starts as zero after M64 prefill, retains the
  * most recently sealed decode segment thereafter, publishes complete groups
@@ -2384,8 +2392,10 @@ static int qbh_prepare_quartet_v_reference(
     uint8_t physical_tail[QBH_KV_CACHE_HMX_U8_SEGMENT_TAIL_BYTES];
 
     if (reference == NULL || layer == NULL || configs == NULL ||
-        layer->v_format !=
-            QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5 ||
+        (layer->v_format !=
+             QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5 &&
+         layer->v_format !=
+             QBH_KV_CACHE_FORMAT_HMX_U8_V_ATTENTION_PUBLISH_V6) ||
         valid_length > layer->capacity ||
         sealed_segments > max_segments ||
         layer->v_head_stride_bytes <
@@ -2934,6 +2944,8 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U64(u8_cache_segment_sealed_bytes);
     QBH_REPLAY_PROFILE_U32(u8_cache_v_quartet_append_count);
     QBH_REPLAY_PROFILE_U32(u8_cache_v_quartet_publish_count);
+    QBH_REPLAY_PROFILE_U32(
+        u8_cache_v_quartet_attention_publish_count);
     QBH_REPLAY_PROFILE_U32(u8_cache_v_quartet_partial_pack_rows);
     QBH_REPLAY_PROFILE_U32(u8_cache_v_quartet_full_tile_rmw_count);
     QBH_REPLAY_PROFILE_U64(u8_cache_v_quartet_native_load_bytes);
@@ -3310,8 +3322,10 @@ static int qbh_run_replay_sequence(
                     shared + vertical_slots[slice_index]
                                  .cache_references[kind].offset;
                 if (kind == 1U &&
-                    layer->v_format ==
-                        QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5 &&
+                    (layer->v_format ==
+                         QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5 ||
+                     layer->v_format ==
+                         QBH_KV_CACHE_FORMAT_HMX_U8_V_ATTENTION_PUBLISH_V6) &&
                     qbh_prepare_quartet_v_reference(
                         reference, layer,
                         (const struct qbh_attention_config *)(
@@ -4464,6 +4478,14 @@ int main(int argc, char **argv) {
                     QBH_KV_CACHE_FORMAT_HMX_U8_K_SEGMENTED_V4;
                 kv_cache_v_format =
                     QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5;
+            } else if (strcmp(
+                           layout,
+                           "hmx_native_u8_segmented_attention_publish_v6") ==
+                       0) {
+                kv_cache_k_format =
+                    QBH_KV_CACHE_FORMAT_HMX_U8_K_SEGMENTED_V4;
+                kv_cache_v_format =
+                    QBH_KV_CACHE_FORMAT_HMX_U8_V_ATTENTION_PUBLISH_V6;
             } else if (strcmp(layout, "hmx_native_f16") == 0) {
                 kv_cache_k_format =
                     QBH_KV_CACHE_FORMAT_HMX_F16_K_WEIGHT_V1;
@@ -4640,6 +4662,8 @@ int main(int argc, char **argv) {
              QBH_KV_CACHE_FORMAT_HMX_U8_V_SEGMENTED_V4 &&
          kv_cache_v_format !=
              QBH_KV_CACHE_FORMAT_HMX_U8_V_QUARTET_TAIL_V5 &&
+         kv_cache_v_format !=
+             QBH_KV_CACHE_FORMAT_HMX_U8_V_ATTENTION_PUBLISH_V6 &&
          kv_cache_v_format !=
              QBH_KV_CACHE_FORMAT_HMX_F16_V_WEIGHT_V1) ||
         (qbh_hmx_native_u8_cache_formats(

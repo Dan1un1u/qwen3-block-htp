@@ -13,7 +13,7 @@ common_op_rows="${QBH_EXP0178_COMMON_OP_ROWS:-64}"
 common_padding_poison="${QBH_EXP0178_COMMON_PADDING_POISON:-0}"
 qk_norm_rope_rows="${QBH_EXP0179_QK_NORM_ROPE_ROWS:-64}"
 qk_padding_poison="${QBH_EXP0179_QK_PADDING_POISON:-0}"
-kv_cache_layout="${QBH_EXP0180_KV_CACHE_LAYOUT:-hmx_native_u8_segmented_v4}"
+kv_cache_layout="${QBH_EXP0181_KV_CACHE_LAYOUT:-${QBH_EXP0180_KV_CACHE_LAYOUT:-hmx_native_u8_segmented_v4}}"
 audit="${QBH_GENERATION_BOUNDARY_AUDIT:-0}"
 audit_dir="${QBH_GENERATION_AUDIT_DIR:-}"
 remote_audit_dir="${remote_root}/generation-audit-batch${group_tiles}"
@@ -61,8 +61,8 @@ if [[ "${qk_padding_poison}" == 1 && "${qk_norm_rope_rows}" != 4 ]]; then
     exit 2
 fi
 case "${kv_cache_layout}" in
-hmx_native_u8_segmented_v4|hmx_native_u8_segmented_quartet_v5) ;;
-*) printf 'invalid EXP-0180 KV-cache layout: %s\n' "${kv_cache_layout}" >&2; exit 2 ;;
+hmx_native_u8_segmented_v4|hmx_native_u8_segmented_quartet_v5|hmx_native_u8_segmented_attention_publish_v6) ;;
+*) printf 'invalid EXP-0180/0181 KV-cache layout: %s\n' "${kv_cache_layout}" >&2; exit 2 ;;
 esac
 if [[ "${common_padding_poison}" == 1 && "${common_op_rows}" != 4 ]]; then
     printf 'common padding poison requires four-row common ops\n' >&2
