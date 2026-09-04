@@ -110,6 +110,8 @@ def fmt(value: float, wall: float) -> str:
 
 
 def fmt_speed(control: float, candidate: float) -> str:
+    if candidate == 0.0:
+        return "+0.00%" if control == 0.0 else "removed/fused"
     return f"{(control / candidate - 1.0) * 100.0:+.2f}%"
 
 
