@@ -110,6 +110,11 @@ struct qbh_chunked_hmx_job {
     uint64_t last_compute_end;
 };
 
+struct qbh_streaming_batch_completion {
+    struct qbh_parallel_state *state;
+    uint32_t output_base;
+};
+
 static void qbh_abort_pipeline(struct qbh_parallel_state *state,
                                int32_t status);
 
@@ -357,6 +362,31 @@ static void qbh_hmx_region_end(struct qbh_parallel_state *state) {
     }
     asm volatile("barrier" : : : "memory");
     state->hmx_active = 0U;
+}
+
+static void qbh_streaming_batch_output_complete(
+    void *opaque, uint32_t batch_index) {
+    struct qbh_streaming_batch_completion *completion =
+        (struct qbh_streaming_batch_completion *)opaque;
+    struct qbh_parallel_state *state = completion->state;
+    uint32_t output_tile = completion->output_base + batch_index;
+    uint32_t expanded_slot =
+        output_tile % state->layout->expanded_slot_count;
+
+    qurt_sem_up(&state->expanded_free[expanded_slot]);
+    ++*state->mlp_handoff->inline_slot_release_count;
+    if ((output_tile & 1U) != 0U) {
+        uint32_t pair_index = output_tile / 2U;
+        struct qbh_chunk_task activation_task;
+        memset(&activation_task, 0, sizeof(activation_task));
+        activation_task.mlp_activation = 1U;
+        activation_task.mlp_pair_index = pair_index;
+        activation_task.mlp_pair_slot = pair_index %
+            state->mlp_handoff->pair_slot_count;
+        qbh_queue_push(&state->queue, &activation_task);
+        ++*state->mlp_handoff->pair_publish_count;
+        ++*state->mlp_handoff->inline_pair_publish_count;
+    }
 }
 
 static int qbh_hvx_worker_run(struct qbh_hvx_worker_job *job,
@@ -617,6 +647,7 @@ static void qbh_chunked_hmx_main(void *opaque) {
             uint64_t core_end;
             uint32_t executed_streams = 0U;
             struct qbh_w4_hmx_request request;
+            struct qbh_streaming_batch_completion completion;
 
             if (batch_outputs > batch_capacity) {
                 batch_outputs = batch_capacity;
@@ -643,6 +674,13 @@ static void qbh_chunked_hmx_main(void *opaque) {
                 &state->streaming_hmx_consumption_started;
             request.executed_stream_count = &executed_streams;
             request.batch_output_count = batch_outputs;
+            if (state->mlp_handoff->inline_pair_publication != 0U) {
+                completion.state = state;
+                completion.output_base = output_base;
+                request.batch_output_complete_context = &completion;
+                request.batch_output_complete =
+                    qbh_streaming_batch_output_complete;
+            }
 
             for (uint32_t batch_index = 0U;
                  batch_index < batch_outputs; ++batch_index) {
@@ -701,22 +739,26 @@ static void qbh_chunked_hmx_main(void *opaque) {
             job->compute_ticks +=
                 core_end - core_start - stream_ready_wait;
 
-            for (uint32_t batch_index = 0U;
-                 batch_index < batch_outputs; ++batch_index) {
-                uint32_t output_tile = output_base + batch_index;
-                uint32_t expanded_slot =
-                    output_tile % layout->expanded_slot_count;
-                qurt_sem_up(&state->expanded_free[expanded_slot]);
-                if ((output_tile & 1U) != 0U) {
-                    uint32_t pair_index = output_tile / 2U;
-                    struct qbh_chunk_task activation_task;
-                    memset(&activation_task, 0, sizeof(activation_task));
-                    activation_task.mlp_activation = 1U;
-                    activation_task.mlp_pair_index = pair_index;
-                    activation_task.mlp_pair_slot = pair_index %
-                        state->mlp_handoff->pair_slot_count;
-                    qbh_queue_push(&state->queue, &activation_task);
-                    ++*state->mlp_handoff->pair_publish_count;
+            if (state->mlp_handoff->inline_pair_publication == 0U) {
+                for (uint32_t batch_index = 0U;
+                     batch_index < batch_outputs; ++batch_index) {
+                    uint32_t output_tile = output_base + batch_index;
+                    uint32_t expanded_slot =
+                        output_tile % layout->expanded_slot_count;
+                    qurt_sem_up(&state->expanded_free[expanded_slot]);
+                    if ((output_tile & 1U) != 0U) {
+                        uint32_t pair_index = output_tile / 2U;
+                        struct qbh_chunk_task activation_task;
+                        memset(&activation_task, 0,
+                               sizeof(activation_task));
+                        activation_task.mlp_activation = 1U;
+                        activation_task.mlp_pair_index = pair_index;
+                        activation_task.mlp_pair_slot = pair_index %
+                            state->mlp_handoff->pair_slot_count;
+                        qbh_queue_push(&state->queue,
+                                       &activation_task);
+                        ++*state->mlp_handoff->pair_publish_count;
+                    }
                 }
             }
         }
@@ -1319,6 +1361,9 @@ static int qbh_run_chunked_w4_pipeline_impl(
          handoff->pair_publish_count == NULL ||
          handoff->pair_consume_count == NULL ||
          handoff->activation_ticks == NULL ||
+         (handoff->inline_pair_publication != 0U &&
+          (handoff->inline_slot_release_count == NULL ||
+           handoff->inline_pair_publish_count == NULL)) ||
          handoff->pair_slot_count == 0U ||
          handoff->pair_slot_count > QBH_W4_MAX_COMPRESSED_SLOT_COUNT ||
          (layout->n_tiles & 1U) != 0U)) {

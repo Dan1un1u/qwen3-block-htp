@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(74)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(173)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(75)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(174)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -147,6 +147,12 @@ enum qbh_w4u8_delta_reconstruction_mode {
 enum qbh_w4u8_decode_softmax_mode {
     QBH_BLOCK_W4U8_DECODE_SOFTMAX_SCALAR = 0,
     QBH_BLOCK_W4U8_DECODE_SOFTMAX_HVX_TILE4 = 1,
+};
+
+enum qbh_w4u8_decode_gate_up_mode {
+    QBH_BLOCK_W4U8_DECODE_GATE_UP_POST_BATCH8 = 0,
+    QBH_BLOCK_W4U8_DECODE_GATE_UP_INLINE_BATCH8 = 1,
+    QBH_BLOCK_W4U8_DECODE_GATE_UP_INLINE_BATCH16 = 2,
 };
 
 #define QBH_KV_CACHE_HMX_PADDED_CAPACITY(capacity_) \
@@ -684,6 +690,7 @@ struct qbh_block_header {
     uint32_t w4u8_delta_reconstruction_mode;
     uint32_t w4u8_decode_softmax_mode;
     uint32_t w4u8_decode_lm_head_group_tiles;
+    uint32_t w4u8_decode_gate_up_mode;
 
     /* EXP-0147 logical-shape wrapper.  QBH_BLOCK_M remains the immutable
      * physical projection tile. */
@@ -1113,6 +1120,8 @@ struct qbh_block_header {
     uint32_t w4u8_mlp_gate_up_hvx_workers;
     uint32_t w4u8_mlp_down_hvx_workers;
     uint32_t w4u8_mlp_gate_up_hmx_batch_n_tiles;
+    uint32_t w4u8_mlp_gate_up_inline_slot_release_count;
+    uint32_t w4u8_mlp_gate_up_inline_pair_publish_count;
     uint32_t w4u8_mlp_down_hmx_batch_n_tiles;
     uint32_t w4u8_mlp_down_in_command_slot_release_count;
     uint32_t w4u8_mlp_down_producer_progress_command_count;

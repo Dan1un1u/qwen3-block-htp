@@ -1202,6 +1202,17 @@ static const char *qbh_w4u8_decode_softmax_mode_name(uint32_t mode) {
         ? "hvx_tile4" : "scalar";
 }
 
+static const char *qbh_w4u8_decode_gate_up_mode_name(uint32_t mode) {
+    switch (mode) {
+        case QBH_BLOCK_W4U8_DECODE_GATE_UP_INLINE_BATCH8:
+            return "inline_batch8";
+        case QBH_BLOCK_W4U8_DECODE_GATE_UP_INLINE_BATCH16:
+            return "inline_batch16";
+        default:
+            return "post_batch8";
+    }
+}
+
 static uint64_t qbh_fnv1a64(const uint8_t *data, size_t bytes) {
     uint64_t hash = UINT64_C(1469598103934665603);
     for (size_t index = 0; index < bytes; ++index) {
@@ -2631,6 +2642,7 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U32(w4u8_delta_reconstruction_mode);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_softmax_mode);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_lm_head_group_tiles);
+    QBH_REPLAY_PROFILE_U32(w4u8_decode_gate_up_mode);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_softmax_hvx_tile4_call_count);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_softmax_hvx_tile4_mismatch_count);
     QBH_REPLAY_PROFILE_I32(dsp_status);
@@ -2753,6 +2765,11 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U64(w4f16_gate_up_stream_work_ticks);
     QBH_REPLAY_PROFILE_U64(w4f16_gate_up_stream_ready_wait_ticks);
     QBH_REPLAY_PROFILE_U64(w4f16_gate_up_stream_join_wait_ticks);
+    QBH_REPLAY_PROFILE_U32(w4u8_mlp_gate_up_hmx_batch_n_tiles);
+    QBH_REPLAY_PROFILE_U32(
+        w4u8_mlp_gate_up_inline_slot_release_count);
+    QBH_REPLAY_PROFILE_U32(
+        w4u8_mlp_gate_up_inline_pair_publish_count);
     QBH_REPLAY_PROFILE_U64(w4u8_mlp_gate_up_pipeline_ticks);
     QBH_REPLAY_PROFILE_U64(w4u8_mlp_down_pipeline_ticks);
     QBH_REPLAY_PROFILE_U64(w4u8_mlp_activation_work_ticks);
@@ -3813,6 +3830,8 @@ int main(int argc, char **argv) {
     uint32_t w4u8_decode_softmax_mode =
         QBH_BLOCK_W4U8_DECODE_SOFTMAX_SCALAR;
     uint32_t w4u8_decode_lm_head_group_tiles = 8U;
+    uint32_t w4u8_decode_gate_up_mode =
+        QBH_BLOCK_W4U8_DECODE_GATE_UP_POST_BATCH8;
     uint32_t scan_mode = QBH_BLOCK_SCAN_DISABLED;
     uint32_t logical_m = QBH_BLOCK_M;
     uint32_t initial_kv_length = 0U;
@@ -4056,6 +4075,23 @@ int main(int argc, char **argv) {
         }
     }
     {
+        const char *mode = getenv("QBH_W4U8_DECODE_GATE_UP");
+        if (mode != NULL && mode[0] != '\0') {
+            if (strcmp(mode, "post_batch8") == 0) {
+                w4u8_decode_gate_up_mode =
+                    QBH_BLOCK_W4U8_DECODE_GATE_UP_POST_BATCH8;
+            } else if (strcmp(mode, "inline_batch8") == 0) {
+                w4u8_decode_gate_up_mode =
+                    QBH_BLOCK_W4U8_DECODE_GATE_UP_INLINE_BATCH8;
+            } else if (strcmp(mode, "inline_batch16") == 0) {
+                w4u8_decode_gate_up_mode =
+                    QBH_BLOCK_W4U8_DECODE_GATE_UP_INLINE_BATCH16;
+            } else {
+                w4u8_decode_gate_up_mode = UINT32_MAX;
+            }
+        }
+    }
+    {
         const char *mode = getenv("QBH_SCAN_MODE");
         const char *logical = getenv("QBH_LOGICAL_M");
         const char *past = getenv("QBH_KV_CACHE_LENGTH");
@@ -4281,12 +4317,17 @@ int main(int argc, char **argv) {
             QBH_BLOCK_W4U8_DELTA_RECONSTRUCTION_PIPELINE ||
         w4u8_decode_softmax_mode >
             QBH_BLOCK_W4U8_DECODE_SOFTMAX_HVX_TILE4 ||
+        w4u8_decode_gate_up_mode >
+            QBH_BLOCK_W4U8_DECODE_GATE_UP_INLINE_BATCH16 ||
         (w4u8_decode_lm_head_group_tiles != 8U &&
          w4u8_decode_lm_head_group_tiles != 16U) ||
         (w4u8_decode_lm_head_group_tiles != 8U &&
          variant != QBH_BLOCK_W4U8) ||
         (w4u8_decode_softmax_mode !=
              QBH_BLOCK_W4U8_DECODE_SOFTMAX_SCALAR &&
+         variant != QBH_BLOCK_W4U8) ||
+        (w4u8_decode_gate_up_mode !=
+             QBH_BLOCK_W4U8_DECODE_GATE_UP_POST_BATCH8 &&
          variant != QBH_BLOCK_W4U8) ||
         scan_mode > QBH_BLOCK_SCAN_DECODE ||
         replay_mode > QBH_BLOCK_REPLAY_CONTINUOUS ||
@@ -5378,6 +5419,8 @@ int main(int argc, char **argv) {
         w4u8_decode_softmax_mode;
     header->w4u8_decode_lm_head_group_tiles =
         w4u8_decode_lm_head_group_tiles;
+    header->w4u8_decode_gate_up_mode =
+        w4u8_decode_gate_up_mode;
     header->w4u8_qk_pair_kernel_mode =
         w4u8_qk_pair_kernel_mode;
     header->scan_mode = scan_mode;
@@ -6310,6 +6353,7 @@ int main(int argc, char **argv) {
         "\"w4u8_stream_fence_mode\":\"%s\","
         "\"w4u8_decode_softmax_mode\":\"%s\","
         "\"w4u8_decode_lm_head_group_tiles\":%" PRIu32 ","
+        "\"w4u8_decode_gate_up_mode\":\"%s\","
         "\"w4u8_qkv_ring_expand_workers\":%" PRIu32 ","
         "\"fp16_norm_rows_per_task\":%" PRIu32 ","
         "\"fp16_norm_contexts\":%" PRIu32 ","
@@ -6684,6 +6728,8 @@ int main(int argc, char **argv) {
         qbh_w4u8_decode_softmax_mode_name(
             header->w4u8_decode_softmax_mode),
         header->w4u8_decode_lm_head_group_tiles,
+        qbh_w4u8_decode_gate_up_mode_name(
+            header->w4u8_decode_gate_up_mode),
         header->w4u8_qkv_ring_expand_workers,
         header->fp16_norm_rows_per_task,
         header->fp16_norm_contexts,

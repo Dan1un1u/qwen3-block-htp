@@ -6,7 +6,7 @@
 #include "hmx_u8s8_projection.h"
 #include "probe_protocol.h"
 
-#define QBH_W4_HMX_MAX_BATCH_OUTPUTS UINT32_C(8)
+#define QBH_W4_HMX_MAX_BATCH_OUTPUTS UINT32_C(16)
 #define QBH_W4_HMX_MAX_CONTINUATION_CHUNKS UINT32_C(1)
 
 enum qbh_w4_stream_fence_mode {
@@ -25,6 +25,9 @@ struct qbh_mlp_gate_up_handoff {
     uint32_t *pair_consume_count;
     uint64_t *activation_ticks;
     uint32_t stream_fence_mode;
+    uint32_t inline_pair_publication;
+    uint32_t *inline_slot_release_count;
+    uint32_t *inline_pair_publish_count;
 };
 
 struct qbh_w4_hmx_request {
@@ -45,6 +48,8 @@ struct qbh_w4_hmx_request {
     volatile uint32_t *hmx_consumption_started;
     uint32_t *executed_stream_count;
     uint32_t batch_output_count;
+    void *batch_output_complete_context;
+    void (*batch_output_complete)(void *context, uint32_t batch_index);
     struct {
         const int8_t *expanded_weight_tiles;
         const uint32_t *bias_words;
