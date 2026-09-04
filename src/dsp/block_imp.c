@@ -13803,8 +13803,6 @@ static int qbh_scan_append_u8_kv_hmx_segmented(
     uint8_t *packed = buffers->gate;
     uint8_t *v_lut_scratch = packed +
         QBH_KV_CACHE_HMX_U8_SEGMENT_K_BYTES;
-    uint32_t *k_bias_scratch =
-        (uint32_t *)buffers->scale_or_bias;
     int32_t lut_v_zero_point = 0;
     uint32_t lut_v_numerator = 0U;
     uint32_t lut_v_denominator = 0U;
@@ -13857,14 +13855,16 @@ static int qbh_scan_append_u8_kv_hmx_segmented(
             return -1;
         }
         if (k_vtcm_head != NULL) {
-            qbh_attention_u8_update_k_native_row(
+            const uint64_t k_update_start = HAP_perf_get_qtimer_count();
+            qbh_attention_u8_update_k_native_row_hvx(
                 row, active_row,
                 &buffers->attention_configs[head],
-                (int8_t *)k_vtcm_head, k_bias_scratch);
-            ((uint32_t *)(k_vtcm_head +
-                QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_WEIGHT_BYTES))
-                    [active_row] =
-                k_bias_scratch[QBH_HMX_OUTPUT_CHANNELS + active_row];
+                (int8_t *)k_vtcm_head,
+                (uint32_t *)(k_vtcm_head +
+                    QBH_KV_CACHE_HMX_U8_K_VTCM_TAIL_WEIGHT_BYTES));
+            header->u8_cache_k_vtcm_tail_hvx_row_update_ticks +=
+                HAP_perf_get_qtimer_count() - k_update_start;
+            ++header->u8_cache_k_vtcm_tail_hvx_row_update_count;
             ++header->u8_cache_k_vtcm_tail_row_update_count;
             ++header->u8_cache_k_vtcm_tail_cached_head_count;
         } else if (partial_k_vtcm) {
@@ -13995,7 +13995,8 @@ static int qbh_scan_append_u8_kv_hmx_segmented(
                 for (uint32_t output = 0U;
                      output < QBH_HMX_OUTPUT_CHANNELS; ++output) {
                     packed_bias[output] =
-                        k_bias_scratch[active_row];
+                        qbh_attention_u8_k_conversion_word(
+                            &buffers->attention_configs[head]);
                 }
                 qbh_hvx_copy_aligned_bytes(
                     packed_bias + QBH_HMX_OUTPUT_CHANNELS,

@@ -152,6 +152,16 @@ void qbh_attention_u8_update_k_native_row(
     const struct qbh_attention_config *config,
     int8_t *n_tile_weight, uint32_t *n_tile_bias);
 
+/* EXP-0184 updates an arbitrary output lane with one centered HVX row and a
+ * single vscatter, retaining only the variable correction half of the bias. */
+void qbh_attention_u8_update_k_native_row_hvx(
+    const uint8_t *row, uint32_t output_lane,
+    const struct qbh_attention_config *config,
+    int8_t *n_tile_weight, uint32_t *correction_words);
+
+uint32_t qbh_attention_u8_k_conversion_word(
+    const struct qbh_attention_config *config);
+
 void qbh_attention_u8_update_v_native_row(
     const uint8_t *row, uint32_t input_lane,
     const struct qbh_attention_config *config,

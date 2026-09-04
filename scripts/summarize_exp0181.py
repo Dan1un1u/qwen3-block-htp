@@ -31,6 +31,7 @@ CANDIDATE_FORMAT = 11
 CANDIDATE_LABEL = "Attention-publish-v6"
 REPORT_TITLE = "Attention-side quartet V-cache publication"
 REPORT_DESCRIPTION = None
+EXTRA_GATE_BUILDER = None
 VTCM_TAIL_MODE = False
 VTCM_TAIL_ATLAS_BYTES = LAYERS * KV_HEADS * 32 * 128
 VTCM_TAIL_ALIGNMENT_BYTES = 128
@@ -426,6 +427,9 @@ def main() -> None:
         "candidate_wins_required_rotated_pairs":
             pair_wins >= (6 if args.formal else 5),
     }
+    if EXTRA_GATE_BUILDER is not None:
+        gates.update(EXTRA_GATE_BUILDER(
+            diagnostics, counters, module_rows, runs))
     if args.formal:
         audit = json.loads(
             (result_dir / "audit/independent_reference.json").read_text())

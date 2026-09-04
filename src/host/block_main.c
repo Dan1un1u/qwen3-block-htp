@@ -2978,6 +2978,8 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U64(u8_cache_k_vtcm_tail_init_bytes);
     QBH_REPLAY_PROFILE_U64(u8_cache_k_vtcm_tail_native_load_bytes);
     QBH_REPLAY_PROFILE_U64(u8_cache_k_vtcm_tail_correction_load_bytes);
+    QBH_REPLAY_PROFILE_U32(u8_cache_k_vtcm_tail_hvx_row_update_count);
+    QBH_REPLAY_PROFILE_U64(u8_cache_k_vtcm_tail_hvx_row_update_ticks);
     QBH_REPLAY_PROFILE_U32(f16_cache_native_prefill_reuse_count);
     QBH_REPLAY_PROFILE_U64(
         f16_cache_native_prefill_reused_carrier_bytes);

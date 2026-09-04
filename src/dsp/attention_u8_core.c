@@ -1812,6 +1812,49 @@ void qbh_attention_u8_update_k_native_row(
                    rounding);
 }
 
+uint32_t qbh_attention_u8_k_conversion_word(
+    const struct qbh_attention_config *config) {
+    if (config == NULL) {
+        return 0U;
+    }
+    return qbh_attention_u8_float_to_half_bits(
+        512.0f / (float)(UINT32_C(1) << config->score_shift));
+}
+
+void qbh_attention_u8_update_k_native_row_hvx(
+    const uint8_t *row, uint32_t output_lane,
+    const struct qbh_attention_config *config,
+    int8_t *n_tile_weight, uint32_t *correction_words) {
+    const uint32_t divisor = config == NULL
+        ? 1U : UINT32_C(1) << config->score_shift;
+    const int32_t rounding = config == NULL || config->score_shift == 0U
+        ? 0 : (int32_t)(divisor / 2U);
+
+    if (row == NULL || config == NULL || n_tile_weight == NULL ||
+        correction_words == NULL ||
+        output_lane >= QBH_HMX_OUTPUT_CHANNELS) {
+        return;
+    }
+    {
+        const HVX_Vector centered = qbh_attention_u8_center_u8_to_s8(
+            *(const HVX_Vector *)row, config->k_zero_point);
+        const HVX_Vector offsets = Q6_Vw_vadd_VwVw(
+            *(const HVX_Vector *)qbh_attention_u8_vscatter_offsets,
+            Q6_V_vsplat_R(output_lane * sizeof(uint32_t)));
+        const int32_t sum = qbh_attention_u8_sum_signed_bytes(centered);
+
+        Q6_vscatter_RMVwV(
+            (uint32_t)(uintptr_t)n_tile_weight,
+            QBH_ATTENTION_HEAD_DIM_TILES * QBH_HMX_WEIGHT_BYTES - 1U,
+            offsets, centered);
+        correction_words[output_lane] =
+            (uint32_t)(-config->q_zero_point * sum +
+                       QBH_ATTN_U8_SCORE_ZP * (int32_t)divisor +
+                       rounding);
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
 void qbh_attention_u8_update_v_native_row(
     const uint8_t *row, uint32_t input_lane,
     const struct qbh_attention_config *config,
