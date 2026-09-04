@@ -1169,13 +1169,31 @@ automatic baseline promotion, or treating padding equality as a mathematical
 requirement
 
 **Decode Row-Four Common Nonlinear Operators**:
-The EXP-0178 hypothesis that logical-M=1 decode should directly process one
-four-row HVX carrier vector in Input RMSNorm, fused post-attention residual plus
-RMSNorm, and final residual instead of waking the six-context pools to process
-all 64 physical rows. The exact existing row helpers and valid row-zero math are
-retained; M64 prefill remains on the full pool path. This is separate from the
-rejected row-selective SwiGLU experiment because Gate/Up producer pacing and
-all projection work remain unchanged.
+The completed EXP-0178 W4U8 candidate proving that logical-M=1 decode should
+directly process one four-row HVX carrier vector in Input RMSNorm, fused
+post-attention residual plus RMSNorm, and final residual instead of waking the
+six-context pools to process all 64 physical rows. The exact existing row
+helpers and valid row-zero math are retained; M64 prefill remains on the full
+pool path. Ten of ten rotated formal pairs improve direct decode from
+20.911983 to 21.258242 token/s (+1.655797%), while the three target stages fall
+from 1404.042 to 384.272 microseconds per token. All full-stack correctness,
+padding poison and physical gates pass. The result is locally eligible but
+remains pending explicit user promotion. This is separate from the rejected
+row-selective SwiGLU experiment because Gate/Up producer pacing and all
+projection work remain unchanged.
 _Avoid_: changing RMSNorm or residual arithmetic, applying row4 to prefill,
 altering Gate/Up or SwiGLU, allowing dead padding to affect a later layer,
 removing padding-poison evidence, or automatic baseline promotion
+
+**Decode Row-Four Q/K Norm-RoPE Preparation**:
+The EXP-0179 hypothesis that cache-native logical-M=1 decode should normalize
+and rotate only physical rows zero through three of every Q and K head. The
+current pair kernels process all 64 rows, and the K helper also builds a
+temporary 64-token QK weight/bias carrier. Dynamic segmented Attention does not
+consume that temporary carrier: normalized K row zero is appended to the
+persistent cache and QK operands are reconstructed from the cache. The
+candidate preserves the QKV ring, HMX work, readiness order and M64 prefill,
+while using exact row-four Q/K math and omitting the decode-only dead K pack.
+_Avoid_: changing valid row-zero math, cache ABI or append, applying the short
+path to prefill, changing QKV ring/HMX/DMA scheduling, reusing poisoned padding,
+or automatic baseline promotion
