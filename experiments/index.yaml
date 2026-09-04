@@ -6,6 +6,42 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0187
+    slug: w4u8-decode-native-m1-pipeline-gate
+    title: Decode-native M1 projection and pipeline feasibility gate
+    parent: EXP-0185
+    variants:
+      - exp0185_W4U8_M1_projection_schedule_control
+      - decode_native_M1_physical_mapping_or_cross_projection_pipeline_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: audit-timeline-then-bounded-real-middle-layer-M1-projection-gate
+    source_branches:
+      - codex/exp-0187-w4u8-decode-native-m1-pipeline-gate
+    source_commits: []
+    record: docs/experiments/EXP-0187.md
+    approval_ref: 'User message 2026-09-04: 同意你的方案，开始初步验证实验'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0187-w4u8-decode-native-m1-pipeline-gate
+      approved_on: '2026-09-04'
+      started_on: '2026-09-04'
+    evidence:
+      source_parent_experiment: EXP-0185
+      source_parent_commit: 537650293920eb62c3cc49833df613246e8fb0b9
+      source_parent_role: accepted_selected_W4U8_token_generation_baseline
+      execution_unit: real_Qwen3_middle_layer_M1_projection_audit_and_bounded_pipeline_gate
+      direct_control: EXP0185_W4U8_M1_projection_schedule
+      audit_scope: closed_weight_DMA_HVX_expand_HMX_wait_union_and_overlap_intervals_for_M1_and_M64
+      bounded_candidate: one_decode_only_M1_mapping_or_cross_projection_pipeline_selected_by_audit
+      forbidden_changes: weights_scales_qparams_projection_math_Attention_cache_non_linear_math_LM_head_M64_prefill_F16F16_W4F16_QNN
+      correctness_gate: byte_exact_valid_M1_projection_outputs_to_EXP0185_and_independent_integer_reference
+      physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN_complete_timeline_closure
+      feasibility_gate: reduced_M1_physical_work_or_increased_DMA_HVX_HMX_overlap_must_lower_equivalent_scope_M1_wall
+      stop_condition: no_full_stack_rollout_without_equivalent_scope_M1_wall_improvement
+      selected_baseline_changed: false
   - id: EXP-0186
     slug: w4u8-decode-vtcm-v-tail-no-journal
     title: Session-native V tail with direct native append
