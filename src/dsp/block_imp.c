@@ -1986,6 +1986,14 @@ static int qbh_header_valid(const struct qbh_block_header *header,
           header->w4u8_decode_direct_n_gate_up_batch_n_tiles != 32U ||
           header->w4u8_decode_direct_n_gate_up_continuous == 0U ||
           header->w4u8_decode_direct_n_o_gate_prefetch == 0U)) ||
+        (header->w4u8_decode_direct_n_down_batch_n_tiles != 2U &&
+         header->w4u8_decode_direct_n_down_batch_n_tiles != 4U) ||
+        (header->w4u8_decode_direct_n_down_batch_n_tiles != 2U &&
+         (header->variant != QBH_BLOCK_W4U8 ||
+          header->w4u8_decode_projection_mode !=
+              QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
+          (header->w4u8_decode_direct_n_mask &
+           QBH_BLOCK_W4U8_DIRECT_N_MLP) == 0U)) ||
         (header->w4u8_decode_swiglu_rows !=
              QBH_BLOCK_W4U8_SWIGLU_FULL_ROWS &&
          header->w4u8_decode_swiglu_rows !=
@@ -14270,13 +14278,13 @@ static int qbh_run_w4u8_direct_n_mlp(
             header, shared,
             &header->projections[QBH_BLOCK_PROJ_DOWN], buffers, worker,
             middle_native, down_native,
-            QBH_BLOCK_W4U8_DIRECT_N_DOWN_BATCH_N_TILES) != 0) {
+            header->w4u8_decode_direct_n_down_batch_n_tiles) != 0) {
         return -1;
     }
     header->down_ticks += HAP_perf_get_qtimer_count() - start;
     header->w4u8_mlp_down_hmx_command_count +=
         QBH_BLOCK_HIDDEN / QBH_HMX_OUTPUT_CHANNELS /
-            QBH_BLOCK_W4U8_DIRECT_N_DOWN_BATCH_N_TILES;
+            header->w4u8_decode_direct_n_down_batch_n_tiles;
     if (qbh_copy_w4u8_tail_audit(
             header, shared, QBH_BLOCK_U8_TAIL_DOWN_OFFSET,
             down_native, QBH_BLOCK_M * QBH_BLOCK_HIDDEN) != 0) {
