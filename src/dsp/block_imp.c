@@ -1686,6 +1686,18 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          (header->variant != QBH_BLOCK_W4U8 ||
           header->w4u8_decode_av_requant_rows !=
               QBH_BLOCK_W4U8_AV_REQUANT_DECODE_ROWS)) ||
+        (header->w4u8_decode_common_op_rows !=
+             QBH_BLOCK_W4U8_COMMON_OP_FULL_ROWS &&
+         header->w4u8_decode_common_op_rows !=
+             QBH_BLOCK_W4U8_COMMON_OP_DECODE_ROWS) ||
+        (header->w4u8_decode_common_op_rows !=
+             QBH_BLOCK_W4U8_COMMON_OP_FULL_ROWS &&
+         header->variant != QBH_BLOCK_W4U8) ||
+        header->w4u8_decode_common_padding_poison > 1U ||
+        (header->w4u8_decode_common_padding_poison != 0U &&
+         (header->variant != QBH_BLOCK_W4U8 ||
+          header->w4u8_decode_common_op_rows !=
+              QBH_BLOCK_W4U8_COMMON_OP_DECODE_ROWS)) ||
         (header->w4u8_decode_lm_head_group_tiles != 8U &&
          header->w4u8_decode_lm_head_group_tiles != 16U) ||
         (header->w4u8_decode_lm_head_group_tiles != 8U &&
@@ -4562,6 +4574,29 @@ static int qbh_hvx_pool_u8_native_residual(
             worker_ticks_after - worker_ticks_before;
         return task_count == pool->u8_residual_task_count ? 0 : -1;
     }
+}
+
+static void qbh_w4u8_record_common_op_rows(
+    struct qbh_block_header *header, uint32_t rows) {
+    if (header->w4u8_common_op_rows_observed == 0U) {
+        header->w4u8_common_op_rows_observed = rows;
+    } else if (header->w4u8_common_op_rows_observed != rows) {
+        header->w4u8_common_op_rows_observed = UINT32_MAX;
+    }
+}
+
+static void qbh_w4u8_poison_decode_residual_padding(
+    uint8_t *residual) {
+    const HVX_Vector poison = Q6_V_vsplat_R(0x6da53cc7);
+    uint8_t *padding = residual + QBH_BLOCK_HIDDEN;
+    const uint32_t padding_bytes =
+        (QBH_BLOCK_M - 1U) * QBH_BLOCK_HIDDEN;
+
+    for (uint32_t offset = 0U; offset < padding_bytes;
+         offset += sizeof(HVX_Vector)) {
+        *(HVX_Vector *)(padding + offset) = poison;
+    }
+    asm volatile("barrier" ::: "memory");
 }
 
 static int qbh_hvx_pool_silu(
@@ -17023,6 +17058,11 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         header->scan_mode != QBH_BLOCK_SCAN_DISABLED;
     uint32_t scan_dynamic_attention =
         scan_enabled != 0U && past_tokens != 0U;
+    uint32_t w4u8_decode_row4_common_enabled =
+        header->variant == QBH_BLOCK_W4U8 &&
+        scan_dynamic_attention != 0U && logical_rows == 1U &&
+        header->w4u8_decode_common_op_rows ==
+            QBH_BLOCK_W4U8_COMMON_OP_DECODE_ROWS;
     uint32_t reuse_prefill_attention_carriers =
         scan_enabled != 0U && past_tokens == 0U &&
         logical_rows == QBH_BLOCK_M &&
@@ -17125,13 +17165,31 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         header->boundary_ddr_read_bytes += input_bytes;
         ++header->boundary_dma_descriptor_count;
     }
+    if (w4u8_decode_row4_common_enabled != 0U &&
+        header->w4u8_decode_common_padding_poison != 0U) {
+        qbh_w4u8_poison_decode_residual_padding(buffers->residual);
+        ++header->w4u8_common_padding_poison_count;
+    }
     header->input_stage_ticks += HAP_perf_get_qtimer_count() - start;
 
     start = HAP_perf_get_qtimer_count();
     if (header->variant == QBH_BLOCK_W4U8) {
         if ((header->common_ops_mask &
              QBH_BLOCK_COMMON_OP_RMS_NORM) != 0U) {
-            if (w4u8_qkv_native_input_enabled != 0U &&
+            if (w4u8_decode_row4_common_enabled != 0U &&
+                w4u8_qkv_native_input_enabled != 0U) {
+                qbh_hvx_rms_norm_u8_native_activation_rows(
+                    buffers->residual,
+                    &header->qparams[QBH_BLOCK_QP_BLOCK_INPUT],
+                    (const __fp16 *)buffers->input_norm_weight,
+                    buffers->hmx_activation,
+                    &header->qparams[QBH_BLOCK_QP_INPUT_NORM],
+                    0U, QBH_BLOCK_W4U8_COMMON_OP_DECODE_ROWS,
+                    QBH_BLOCK_HIDDEN);
+                qbh_w4u8_record_common_op_rows(
+                    header, QBH_BLOCK_W4U8_COMMON_OP_DECODE_ROWS);
+                ++header->w4u8_input_norm_direct_row4_call_count;
+            } else if (w4u8_qkv_native_input_enabled != 0U &&
                 header->u8_norm_reduction_mode ==
                     QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE_PARALLEL_INPUT) {
                 if (qbh_hvx_pool_u8_input_norm(
@@ -17142,6 +17200,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                         &header->qparams[QBH_BLOCK_QP_INPUT_NORM]) != 0) {
                     return QBH_BLOCK_STATUS_INPUT_NORM_FAILED;
                 }
+                qbh_w4u8_record_common_op_rows(
+                    header, QBH_BLOCK_W4U8_COMMON_OP_FULL_ROWS);
             } else if (w4u8_qkv_native_input_enabled != 0U) {
                 qbh_hvx_rms_norm_u8_native_activation(
                     buffers->residual,
@@ -17150,6 +17210,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                     buffers->hmx_activation,
                     &header->qparams[QBH_BLOCK_QP_INPUT_NORM],
                     QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+                qbh_w4u8_record_common_op_rows(
+                    header, QBH_BLOCK_W4U8_COMMON_OP_FULL_ROWS);
             } else {
                 qbh_hvx_rms_norm_u8(
                     buffers->residual,
@@ -17158,6 +17220,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                     buffers->normalized,
                     &header->qparams[QBH_BLOCK_QP_INPUT_NORM],
                     QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+                qbh_w4u8_record_common_op_rows(
+                    header, QBH_BLOCK_W4U8_COMMON_OP_FULL_ROWS);
             }
         } else {
             qbh_rms_norm_u8(
@@ -17167,6 +17231,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                 buffers->normalized,
                 &header->qparams[QBH_BLOCK_QP_INPUT_NORM],
                 QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+            qbh_w4u8_record_common_op_rows(
+                header, QBH_BLOCK_W4U8_COMMON_OP_FULL_ROWS);
         }
     } else {
         if ((header->fp16_common_schedule_mode &
@@ -17837,18 +17903,55 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                             QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6 ||
                         header->residual_mode ==
                             QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6_SHUFFLE4) {
-                        if (qbh_hvx_pool_u8_native_residual(
-                                header, w4f16_pool,
-                                buffers->residual,
-                                &header->qparams[QBH_BLOCK_QP_BLOCK_INPUT],
-                                buffers->attention_projection,
-                                &header->qparams[QBH_BLOCK_QP_ATTENTION_PROJECTION],
-                                &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_RESIDUAL],
-                                (const __fp16 *)buffers->post_norm_weight,
-                                w4u8_mlp_native_activation,
-                                &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_NORM],
-                                QBH_BLOCK_U8_RESIDUAL_POST_NORM) != 0) {
-                            return QBH_BLOCK_STATUS_RESIDUAL_POOL_FAILED;
+                        if (w4u8_decode_row4_common_enabled != 0U) {
+                            if (header->residual_mode ==
+                                    QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6_SHUFFLE4) {
+                                qbh_hvx_residual_rms_norm_u8_native_io_rows_shuffle4(
+                                    buffers->residual,
+                                    &header->qparams[QBH_BLOCK_QP_BLOCK_INPUT],
+                                    buffers->attention_projection,
+                                    &header->qparams[QBH_BLOCK_QP_ATTENTION_PROJECTION],
+                                    &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_RESIDUAL],
+                                    (const __fp16 *)buffers->post_norm_weight,
+                                    w4u8_mlp_native_activation,
+                                    &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_NORM],
+                                    0U,
+                                    QBH_BLOCK_W4U8_COMMON_OP_DECODE_ROWS,
+                                    QBH_BLOCK_HIDDEN);
+                            } else {
+                                qbh_hvx_residual_rms_norm_u8_native_io_rows(
+                                    buffers->residual,
+                                    &header->qparams[QBH_BLOCK_QP_BLOCK_INPUT],
+                                    buffers->attention_projection,
+                                    &header->qparams[QBH_BLOCK_QP_ATTENTION_PROJECTION],
+                                    &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_RESIDUAL],
+                                    (const __fp16 *)buffers->post_norm_weight,
+                                    w4u8_mlp_native_activation,
+                                    &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_NORM],
+                                    0U,
+                                    QBH_BLOCK_W4U8_COMMON_OP_DECODE_ROWS,
+                                    QBH_BLOCK_HIDDEN);
+                            }
+                            qbh_w4u8_record_common_op_rows(
+                                header,
+                                QBH_BLOCK_W4U8_COMMON_OP_DECODE_ROWS);
+                            ++header->w4u8_post_residual_direct_row4_call_count;
+                        } else {
+                            if (qbh_hvx_pool_u8_native_residual(
+                                    header, w4f16_pool,
+                                    buffers->residual,
+                                    &header->qparams[QBH_BLOCK_QP_BLOCK_INPUT],
+                                    buffers->attention_projection,
+                                    &header->qparams[QBH_BLOCK_QP_ATTENTION_PROJECTION],
+                                    &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_RESIDUAL],
+                                    (const __fp16 *)buffers->post_norm_weight,
+                                    w4u8_mlp_native_activation,
+                                    &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_NORM],
+                                    QBH_BLOCK_U8_RESIDUAL_POST_NORM) != 0) {
+                                return QBH_BLOCK_STATUS_RESIDUAL_POOL_FAILED;
+                            }
+                            qbh_w4u8_record_common_op_rows(
+                                header, QBH_BLOCK_W4U8_COMMON_OP_FULL_ROWS);
                         }
                     } else {
                         qbh_hvx_residual_rms_norm_u8_native_io(
@@ -17861,6 +17964,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                             w4u8_mlp_native_activation,
                             &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_NORM],
                             QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+                        qbh_w4u8_record_common_op_rows(
+                            header, QBH_BLOCK_W4U8_COMMON_OP_FULL_ROWS);
                     }
                 } else {
                     qbh_hvx_residual_rms_norm_u8_native_activation(
@@ -18311,16 +18416,44 @@ w4u8_mlp_complete:
                     QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6 ||
                 header->residual_mode ==
                     QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6_SHUFFLE4) {
-                if (qbh_hvx_pool_u8_native_residual(
-                        header, w4f16_pool,
-                        buffers->residual,
-                        &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_RESIDUAL],
-                        w4u8_mlp_native_output,
-                        &header->qparams[QBH_BLOCK_QP_DOWN],
-                        &header->qparams[QBH_BLOCK_QP_BLOCK_OUTPUT],
-                        NULL, NULL, NULL,
-                        QBH_BLOCK_U8_RESIDUAL_FINAL) != 0) {
-                    return QBH_BLOCK_STATUS_RESIDUAL_POOL_FAILED;
+                if (w4u8_decode_row4_common_enabled != 0U) {
+                    if (header->residual_mode ==
+                            QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL6_SHUFFLE4) {
+                        qbh_hvx_residual_add_u8_native_output_rows_shuffle4(
+                            buffers->residual,
+                            &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_RESIDUAL],
+                            w4u8_mlp_native_output,
+                            &header->qparams[QBH_BLOCK_QP_DOWN],
+                            &header->qparams[QBH_BLOCK_QP_BLOCK_OUTPUT],
+                            0U, QBH_BLOCK_W4U8_COMMON_OP_DECODE_ROWS,
+                            QBH_BLOCK_HIDDEN);
+                    } else {
+                        qbh_hvx_residual_add_u8_native_output_rows(
+                            buffers->residual,
+                            &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_RESIDUAL],
+                            w4u8_mlp_native_output,
+                            &header->qparams[QBH_BLOCK_QP_DOWN],
+                            &header->qparams[QBH_BLOCK_QP_BLOCK_OUTPUT],
+                            0U, QBH_BLOCK_W4U8_COMMON_OP_DECODE_ROWS,
+                            QBH_BLOCK_HIDDEN);
+                    }
+                    qbh_w4u8_record_common_op_rows(
+                        header, QBH_BLOCK_W4U8_COMMON_OP_DECODE_ROWS);
+                    ++header->w4u8_final_residual_direct_row4_call_count;
+                } else {
+                    if (qbh_hvx_pool_u8_native_residual(
+                            header, w4f16_pool,
+                            buffers->residual,
+                            &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_RESIDUAL],
+                            w4u8_mlp_native_output,
+                            &header->qparams[QBH_BLOCK_QP_DOWN],
+                            &header->qparams[QBH_BLOCK_QP_BLOCK_OUTPUT],
+                            NULL, NULL, NULL,
+                            QBH_BLOCK_U8_RESIDUAL_FINAL) != 0) {
+                        return QBH_BLOCK_STATUS_RESIDUAL_POOL_FAILED;
+                    }
+                    qbh_w4u8_record_common_op_rows(
+                        header, QBH_BLOCK_W4U8_COMMON_OP_FULL_ROWS);
                 }
             } else {
                 qbh_hvx_residual_add_u8_native_output(
@@ -18330,6 +18463,8 @@ w4u8_mlp_complete:
                     &header->qparams[QBH_BLOCK_QP_DOWN],
                     &header->qparams[QBH_BLOCK_QP_BLOCK_OUTPUT],
                     QBH_BLOCK_M, QBH_BLOCK_HIDDEN);
+                qbh_w4u8_record_common_op_rows(
+                    header, QBH_BLOCK_W4U8_COMMON_OP_FULL_ROWS);
             }
         } else if (header->residual_mode != QBH_BLOCK_RESIDUAL_SCALAR) {
             qbh_hvx_residual_add_u8(
