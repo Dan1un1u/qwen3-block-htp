@@ -1088,18 +1088,21 @@ output pruning, full-logit DDR, more than one FastRPC call, or attributing the
 gain to transformer changes
 
 **Selected W4U8 Token-Generation Baseline**:
-The user-promoted EXP-0188 result is the current authoritative W4U8
+The user-promoted EXP-0189 result is the current authoritative W4U8
 token-generation and long-decode reference, identified by immutable tag
-`baseline-w4u8-token-generation-exp0188`. It supersedes EXP-0185 for baseline
-selection while retaining its HVX decode Softmax, batch-sixteen LM head,
-VTCM-resident V tail and session-native K tail lineage. Decode-only Q/K/V/O and
-Gate/Up/Down now feed packed W4 directly to integer HMX through `weight.n`,
-while M64 prefill and the LM head retain Expanded-S8. Semantic quality remains
-disabled and is not claimed.
+`baseline-w4u8-token-generation-exp0189`. It supersedes EXP-0188 while
+retaining its cache-native lineage, HVX decode Softmax, batch-sixteen LM head
+and direct packed-W4 integer-HMX Q/K/V/O and Gate/Up/Down projections. During
+logical-M1 decode, SwiGLU processes one aligned 128-byte HVX vector per tile
+instead of scanning all 64 physical carrier rows; M64 prefill remains full64.
+Formal long decode measures 34.446836 token/s and 29.030243 ms/token, with all
+hidden hashes, tokens and cache state exact to EXP-0188. Semantic quality
+remains disabled and is not claimed.
 _Avoid_: describing diagnostic text as usable, changing qparams without a
 separate experiment, projecting throughput from partial measurements, using
-an older EXP-0170/0173/0185 result as the current baseline, or replacing this
-baseline without an eligible direct full-stack comparison
+an older EXP-0170/0173/0185/0188 result as the current baseline, applying row4
+to M64 prefill, or replacing this baseline without an eligible direct
+full-stack comparison
 
 **W4U8 Long-Decode Scaling Attribution**:
 The completed EXP-0169 characterization of the unchanged selected EXP-0168
@@ -1269,8 +1272,8 @@ The result is evidence-valid, locally passes, and was promoted by the user on
 _Avoid_: claiming a true one-row HMX kernel, including LM head in direct-n,
 claiming prefill acceleration, or semantic quality
 
-**Direct-N Decode Row-Four SwiGLU Candidate**:
-The completed EXP-0189 candidate applies the unchanged U8 LUT SwiGLU to one
+**Direct-N Decode Row-Four SwiGLU Baseline**:
+The completed and user-promoted EXP-0189 baseline applies the unchanged U8 LUT SwiGLU to one
 128-byte HVX vector (four physical rows) instead of all 64 HMX carrier rows
 during logical-M1 direct-n decode.  Unlike rejected EXP-0171, EXP-0188 completes
 its blocking Gate and Up direct-n HMX calls before entering a standalone
@@ -1279,8 +1282,9 @@ decode from 27.594909 to 34.446836 token/s (+24.830404%); SwiGLU falls from
 7.755558 to 0.488133 ms/token while Gate/Up projection, HMX work and weight
 traffic remain unchanged.  Full64, row4 and poisoned-row4 audits have identical
 valid-row hashes, hidden tensors, selected tokens and cache state.  Evidence is
-valid and the local gate passes, but adoption remains pending the user and
-EXP-0188 remains the Selected W4U8 Token-Generation Baseline.
+valid, the local gate passes, and the user promoted it on 2026-09-05 as the
+Selected W4U8 Token-Generation Baseline under immutable tag
+`baseline-w4u8-token-generation-exp0189`.
 _Avoid_: retrying the old Expanded-S8 schedule, applying row4 to M64 prefill,
 changing LUT or qparams, claiming dead padding is mathematically meaningful,
-automatic baseline promotion, or claiming semantic quality
+or claiming semantic quality
