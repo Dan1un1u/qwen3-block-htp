@@ -6,6 +6,41 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0204
+    slug: w4u8-direct-n-o-batch8
+    title: Direct-W4 decode O-projection batch8 command granularity
+    parent: EXP-0201
+    variants:
+      - evidence_valid_EXP0201_O_batch4_control
+      - direct_W4_O_batch8_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0204-w4u8-direct-n-o-batch8
+    source_commits: []
+    record: docs/experiments/EXP-0204.md
+    approval_ref: 'User message 2026-09-05: 开始decode优化loop'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0204-w4u8-direct-n-o-batch8
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    evidence:
+      source_parent_experiment: EXP-0201
+      source_parent_commit: f22a12f0b935da5853ea487eb8ab5a6e7c49db5b
+      direct_control: same_binary_EXP0201_direct_W4_O_batch4
+      candidate: direct_W4_O_batch8_with_unchanged_O_to_Gate_prefetch_and_Gate_Up_async_SwiGLU
+      hypothesis: halve_O_projection_command_and_weight_DMA_descriptor_granularity_without_changing_weight_bytes_or_HMX_tile_work
+      optimization_scope: decode_only_O_projection_batch_size_selector_telemetry_protocol_and_experiment_tools
+      forbidden_changes: weights_values_scales_qparams_arithmetic_QKV_Gate_Up_SwiGLU_Down_Attention_residual_norm_cache_LM_head_M64_prefill_F16F16_W4F16_QNN
+      correctness_gate: byte_exact_hidden_cache_selected_codes_and_tokens
+      physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_and_HMX_tile_pairs_reduced_O_commands_and_DMA_descriptors
+      short_gate: five_rotated_pairs_with_strict_O_wall_and_decode_speed_pass
+      formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      selected_baseline_changed: false
   - id: EXP-0203
     slug: w4u8-direct-n-next-q-prefetch
     title: Down-tail prefetch of next-layer first Q direct-W4 weight
@@ -13,14 +48,16 @@ experiments:
     variants:
       - evidence_valid_EXP0201_control
       - Down_tail_next_layer_first_Q_weight_prefetch_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0203-w4u8-direct-n-next-q-prefetch
-    source_commits: []
+    source_commits:
+      - 0fa0a8978fff138c175d0d152f707776cd871157
+      - 765c4be5ae55c3c55a8bd4dbf4dcc154457d7297
     record: docs/experiments/EXP-0203.md
     approval_ref: 'User message 2026-09-05: 开始decode优化loop'
     runtime:
@@ -28,6 +65,7 @@ experiments:
       source_branch: codex/exp-0203-w4u8-direct-n-next-q-prefetch
       approved_on: '2026-09-05'
       started_on: '2026-09-05'
+      completed_on: '2026-09-05'
     evidence:
       source_parent_experiment: EXP-0201
       source_parent_commit: f22a12f0b935da5853ea487eb8ab5a6e7c49db5b
@@ -40,6 +78,22 @@ experiments:
       physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_descriptors_commands_and_tile_pairs_27_prefetches_per_token
       short_gate: five_rotated_pairs_with_strict_QKV_and_decode_speed_pass
       formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0203/20260905_short_gate_765c4be'
+      control_decode_tokens_per_second: 43.498065
+      candidate_decode_tokens_per_second: 43.515278
+      decode_speed_percent: 0.039572
+      control_qkv_us_per_token: 2580.4
+      candidate_qkv_us_per_token: 2330.5
+      control_down_us_per_token: 4158.0
+      candidate_down_us_per_token: 4417.8
+      prefetch_start_consume_overlap_per_token: 27
+      prefetch_wait_us_per_token: 260.26
+      prefetch_lifetime_us_per_token: 852.69
+      pair_wins: 3
+      summary_sha256: 000a99ed0116d4ebecc634fa24f86fad93345233049086defe36bf3f53e0b50a
+      report_sha256: c547f4db78e4e0a107ffaa44100367648be1320b278d91b71eb1305c81c80f0a
+      conclusion: prefetch_moved_about_250us_from_QKV_to_Down_and_left_E2E_within_noise_because_the_final_Down_HMX_tail_could_not_hide_the_weight_DMA
+      local_optimum_e2e_regression_streak: 0
       selected_baseline_changed: false
   - id: EXP-0202
     slug: w4u8-direct-n-down-prefetch
