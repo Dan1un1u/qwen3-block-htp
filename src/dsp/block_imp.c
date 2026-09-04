@@ -499,6 +499,16 @@ struct qbh_block_w4f16_cross_prefetch {
     uint32_t active;
 };
 
+struct qbh_block_w4u8_gate_prefetch {
+    struct qbh_dma_aligned_desc_1d descriptors[2];
+    const struct qbh_block_projection_desc *target;
+    uint8_t *weight_slot;
+    uint8_t *bias_slot;
+    uint64_t start_ticks;
+    uint32_t n_tiles;
+    uint32_t active;
+};
+
 struct qbh_block_w4u8_hybrid_hvx_runner {
     struct qbh_block_w4f16_pool *pool;
     qurt_thread_t transient_thread;
@@ -1935,6 +1945,15 @@ static int qbh_header_valid(const struct qbh_block_header *header,
           (header->w4u8_decode_direct_n_mask &
            QBH_BLOCK_W4U8_DIRECT_N_MLP) == 0U ||
           header->w4u8_decode_direct_n_gate_up_batch_n_tiles != 32U)) ||
+        header->w4u8_decode_direct_n_o_gate_prefetch > 1U ||
+        (header->w4u8_decode_direct_n_o_gate_prefetch != 0U &&
+         (header->variant != QBH_BLOCK_W4U8 ||
+          header->w4u8_decode_projection_mode !=
+              QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
+          (header->w4u8_decode_direct_n_mask &
+           QBH_BLOCK_W4U8_DIRECT_N_MLP) == 0U ||
+          header->w4u8_decode_direct_n_gate_up_batch_n_tiles != 32U ||
+          header->w4u8_decode_direct_n_gate_up_continuous == 0U)) ||
         (header->w4u8_decode_swiglu_rows !=
              QBH_BLOCK_W4U8_SWIGLU_FULL_ROWS &&
          header->w4u8_decode_swiglu_rows !=
@@ -8863,6 +8882,98 @@ static int qbh_run_w4u8_direct_n_projection(
     return 0;
 }
 
+static int qbh_start_w4u8_direct_n_gate_prefetch(
+    struct qbh_block_header *header, const uint8_t *shared,
+    struct qbh_block_buffers *buffers,
+    struct qbh_block_w4u8_gate_prefetch *state) {
+    const struct qbh_block_projection_desc *desc =
+        &header->projections[QBH_BLOCK_PROJ_GATE];
+    const uint32_t n_tiles = 32U;
+    const uint32_t k_tiles = desc->k / QBH_HMX_INPUT_CHANNELS;
+    const uint32_t tile_bytes = k_tiles * QBH_W4_PACKED_TILE_BYTES;
+    int result;
+
+    if (header == NULL || shared == NULL || buffers == NULL ||
+        state == NULL || state->active != 0U ||
+        header->variant != QBH_BLOCK_W4U8 || header->logical_m != 1U ||
+        header->w4u8_decode_direct_n_o_gate_prefetch == 0U ||
+        header->w4u8_decode_projection_mode !=
+            QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
+        (header->w4u8_decode_direct_n_mask &
+         QBH_BLOCK_W4U8_DIRECT_N_MLP) == 0U ||
+        header->w4u8_decode_direct_n_gate_up_batch_n_tiles != n_tiles ||
+        header->w4u8_decode_direct_n_gate_up_continuous == 0U ||
+        desc->direct_n_weight_bytes != desc->weight_bytes ||
+        desc->n / QBH_HMX_OUTPUT_CHANNELS < n_tiles) {
+        return -1;
+    }
+
+    state->target = desc;
+    state->weight_slot = buffers->expanded_weight;
+    state->bias_slot = buffers->rope_cos;
+    state->n_tiles = n_tiles;
+    state->start_ticks = HAP_perf_get_qtimer_count();
+    result = qbh_dma_start_w4u8_batch_prefetch(
+        state->descriptors, state->weight_slot,
+        shared + desc->direct_n_weight_offset,
+        n_tiles * tile_bytes, state->bias_slot,
+        shared + desc->bias_offset,
+        n_tiles * QBH_HMX_BIAS_BYTES);
+    if (result != 0) {
+        memset(state, 0, sizeof(*state));
+        qbh_record_projection_failure(header, desc, 0U, 86U, result);
+        return -1;
+    }
+    state->active = 1U;
+    header->weight_ddr_read_bytes +=
+        (uint64_t)n_tiles * (tile_bytes + QBH_HMX_BIAS_BYTES);
+    header->w4u8_decode_direct_n_weight_ddr_read_bytes +=
+        (uint64_t)n_tiles * tile_bytes;
+    header->weight_dma_descriptor_count += 2U;
+    ++header->w4u8_o_gate_prefetch_start_count;
+    return 0;
+}
+
+static int qbh_consume_w4u8_direct_n_gate_prefetch(
+    struct qbh_block_header *header,
+    struct qbh_block_w4u8_gate_prefetch *state,
+    const struct qbh_block_projection_desc *target,
+    uint8_t *weight_slot, uint8_t *bias_slot, uint32_t n_tiles) {
+    const uint64_t wait_start = HAP_perf_get_qtimer_count();
+    uint64_t end;
+    int result;
+
+    if (header == NULL || state == NULL || state->active == 0U ||
+        state->target != target || state->weight_slot != weight_slot ||
+        state->bias_slot != bias_slot || state->n_tiles != n_tiles) {
+        return -1;
+    }
+    result = qbh_dma_wait_w4u8_batch_prefetch(state->descriptors);
+    end = HAP_perf_get_qtimer_count();
+    header->w4u8_o_gate_prefetch_wait_ticks += end - wait_start;
+    header->w4u8_o_gate_prefetch_lifetime_ticks +=
+        end - state->start_ticks;
+    header->weight_dma_ticks += end - state->start_ticks;
+    state->active = 0U;
+    if (result != 0) {
+        qbh_record_projection_failure(header, target, 0U, 87U, result);
+        return -1;
+    }
+    ++header->w4u8_o_gate_prefetch_consume_count;
+    return 0;
+}
+
+static void qbh_drain_w4u8_direct_n_gate_prefetch(
+    struct qbh_block_header *header,
+    struct qbh_block_w4u8_gate_prefetch *state) {
+    if (header == NULL || state == NULL || state->active == 0U) {
+        return;
+    }
+    (void)qbh_consume_w4u8_direct_n_gate_prefetch(
+        header, state, state->target, state->weight_slot,
+        state->bias_slot, state->n_tiles);
+}
+
 /* EXP-0198 decode-only Gate/Up schedule.  Both projections consume the same
  * activation and have identical K/N shapes.  Flatten their six batch-32
  * groups into one ping-pong sequence so the first Up DMA is issued while the
@@ -8871,6 +8982,7 @@ static int qbh_run_w4u8_direct_n_gate_up_pair(
     struct qbh_block_header *header, const uint8_t *shared,
     struct qbh_block_buffers *buffers,
     struct qbh_block_hmx_worker *worker,
+    struct qbh_block_w4u8_gate_prefetch *gate_prefetch,
     const uint8_t *activation_tiles,
     uint8_t *gate_output_tiles, uint8_t *up_output_tiles) {
     struct qbh_dma_aligned_desc_1d descriptors[2]
@@ -8917,27 +9029,37 @@ static int qbh_run_w4u8_direct_n_gate_up_pair(
         return -1;
     }
 
-    dma_start = HAP_perf_get_qtimer_count();
-    result = qbh_dma_start_w4u8_batch_prefetch(
-        descriptors, weight_slots[0],
-        shared + descs[0]->direct_n_weight_offset,
-        current_tiles * tile_bytes, bias_slots[0],
-        shared + descs[0]->bias_offset,
-        current_tiles * QBH_HMX_BIAS_BYTES);
-    if (result == 0) {
-        result = qbh_dma_wait_w4u8_batch_prefetch(descriptors);
+    if (header->w4u8_decode_direct_n_o_gate_prefetch != 0U) {
+        if (qbh_consume_w4u8_direct_n_gate_prefetch(
+                header, gate_prefetch, descs[0], weight_slots[0],
+                bias_slots[0], current_tiles) != 0) {
+            return -1;
+        }
+    } else {
+        dma_start = HAP_perf_get_qtimer_count();
+        result = qbh_dma_start_w4u8_batch_prefetch(
+            descriptors, weight_slots[0],
+            shared + descs[0]->direct_n_weight_offset,
+            current_tiles * tile_bytes, bias_slots[0],
+            shared + descs[0]->bias_offset,
+            current_tiles * QBH_HMX_BIAS_BYTES);
+        if (result == 0) {
+            result = qbh_dma_wait_w4u8_batch_prefetch(descriptors);
+        }
+        header->weight_dma_ticks +=
+            HAP_perf_get_qtimer_count() - dma_start;
+        if (result != 0) {
+            qbh_record_projection_failure(
+                header, descs[0], 0U, 83U, result);
+            return -1;
+        }
+        header->weight_ddr_read_bytes +=
+            (uint64_t)current_tiles *
+                (tile_bytes + QBH_HMX_BIAS_BYTES);
+        header->w4u8_decode_direct_n_weight_ddr_read_bytes +=
+            (uint64_t)current_tiles * tile_bytes;
+        header->weight_dma_descriptor_count += 2U;
     }
-    header->weight_dma_ticks += HAP_perf_get_qtimer_count() - dma_start;
-    if (result != 0) {
-        qbh_record_projection_failure(header, descs[0], 0U, 83U, result);
-        return -1;
-    }
-    header->weight_ddr_read_bytes +=
-        (uint64_t)current_tiles *
-            (tile_bytes + QBH_HMX_BIAS_BYTES);
-    header->w4u8_decode_direct_n_weight_ddr_read_bytes +=
-        (uint64_t)current_tiles * tile_bytes;
-    header->weight_dma_descriptor_count += 2U;
 
     for (;;) {
         const struct qbh_block_projection_desc *current_desc =
@@ -13743,6 +13865,7 @@ static int qbh_run_w4u8_direct_n_mlp(
     struct qbh_block_header *header, uint8_t *shared,
     struct qbh_block_buffers *buffers,
     struct qbh_block_hmx_worker *worker,
+    struct qbh_block_w4u8_gate_prefetch *gate_prefetch,
     uint32_t activation_prepacked, uint32_t output_native) {
     struct qbh_projection_layout gate_up_layout;
     struct qbh_projection_layout down_layout;
@@ -13800,7 +13923,7 @@ static int qbh_run_w4u8_direct_n_mlp(
     start = HAP_perf_get_qtimer_count();
     if (header->w4u8_decode_direct_n_gate_up_continuous != 0U) {
         if (qbh_run_w4u8_direct_n_gate_up_pair(
-                header, shared, buffers, worker,
+                header, shared, buffers, worker, gate_prefetch,
                 mlp_arena + gate_up_layout.vtcm_activation_offset,
                 gate_native, up_native) != 0) {
             return -1;
@@ -18574,6 +18697,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     struct qbh_hvx_check_metrics softmax_check_metrics;
     struct qbh_hvx_check_metrics silu_check_metrics;
     struct qbh_block_w4f16_cross_prefetch cross_prefetch;
+    struct qbh_block_w4u8_gate_prefetch gate_prefetch;
     struct qbh_hvx_check_metrics *rms_check =
         header->numerical_audit_enabled != 0U &&
         header->common_ops_mask == QBH_BLOCK_COMMON_OP_RMS_NORM
@@ -18692,6 +18816,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     qbh_hvx_check_reset(&softmax_check_metrics);
     qbh_hvx_check_reset(&silu_check_metrics);
     memset(&cross_prefetch, 0, sizeof(cross_prefetch));
+    memset(&gate_prefetch, 0, sizeof(gate_prefetch));
     if (w4u8_mlp_native_input_enabled != 0U) {
         if (qbh_init_w4u8_gate_up_layout(
                 &w4u8_gate_up_layout,
@@ -19464,6 +19589,12 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     header->o_projection_ticks += HAP_perf_get_qtimer_count() - start;
 
     start = HAP_perf_get_qtimer_count();
+    if (header->logical_m == 1U &&
+        header->w4u8_decode_direct_n_o_gate_prefetch != 0U &&
+        qbh_start_w4u8_direct_n_gate_prefetch(
+            header, shared, buffers, &gate_prefetch) != 0) {
+        return QBH_BLOCK_STATUS_RESIDUAL_POOL_FAILED;
+    }
     if (header->variant == QBH_BLOCK_W4U8) {
         if (header->residual_mode ==
                 QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM ||
@@ -19665,6 +19796,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             header, shared, QBH_BLOCK_U8_TAIL_POST_RESIDUAL_OFFSET,
             buffers->residual,
             QBH_BLOCK_M * QBH_BLOCK_HIDDEN) != 0) {
+        qbh_drain_w4u8_direct_n_gate_prefetch(
+            header, &gate_prefetch);
         return QBH_BLOCK_STATUS_RESIDUAL_POOL_FAILED;
     }
     header->post_attention_residual_ticks +=
@@ -19747,6 +19880,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             header, shared, QBH_BLOCK_U8_TAIL_POST_NORM_OFFSET,
             w4u8_mlp_native_activation,
             QBH_BLOCK_M * QBH_BLOCK_HIDDEN) != 0) {
+        qbh_drain_w4u8_direct_n_gate_prefetch(
+            header, &gate_prefetch);
         return QBH_BLOCK_STATUS_RESIDUAL_POOL_FAILED;
     }
     header->post_attention_norm_ticks +=
@@ -19760,7 +19895,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                     (header->w4u8_decode_direct_n_mask &
                      QBH_BLOCK_W4U8_DIRECT_N_MLP) != 0U
                 ? qbh_run_w4u8_direct_n_mlp(
-                      header, shared, buffers, worker,
+                      header, shared, buffers, worker, &gate_prefetch,
                       w4u8_mlp_native_input_enabled,
                       w4u8_mlp_native_output_enabled)
                 : qbh_run_w4u8_streaming_mlp(
