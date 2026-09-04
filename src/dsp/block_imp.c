@@ -9774,11 +9774,12 @@ static int qbh_run_w4u8_qkv_ring(
         : QBH_BLOCK_W4U8_QKV_RING_TILES_PER_BATCH;
     if (state.tiles_per_batch != 4U &&
         state.tiles_per_batch != 8U &&
-        state.tiles_per_batch != 16U) {
+        state.tiles_per_batch != 16U &&
+        state.tiles_per_batch != 32U) {
         return -1;
     }
     state.slot_count = state.direct_n_weights != 0U &&
-            state.tiles_per_batch == 16U
+            state.tiles_per_batch >= 16U
         ? 2U : QBH_BLOCK_W4U8_QKV_RING_SLOTS;
     state.expected_batch_count =
         (QBH_BLOCK_HIDDEN / QBH_HMX_OUTPUT_CHANNELS +
@@ -9835,6 +9836,11 @@ static int qbh_run_w4u8_qkv_ring(
         ~((uintptr_t)QBH_HMX_FP16_TILE_BYTES - 1U));
     for (uint32_t slot = 0U; slot < state.slot_count; ++slot) {
         if (state.direct_n_weights != 0U &&
+            state.tiles_per_batch == 32U) {
+            state.bias_slots[slot] = slot == 0U
+                ? buffers->gate
+                : buffers->up;
+        } else if (state.direct_n_weights != 0U &&
             state.tiles_per_batch == 16U) {
             state.bias_slots[slot] = slot == 0U
                 ? buffers->scale_or_bias

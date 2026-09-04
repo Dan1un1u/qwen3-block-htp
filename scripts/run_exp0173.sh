@@ -125,7 +125,7 @@ if [[ "${decode_direct_n_gate_up_swiglu_stream}" == 1 &&
     exit 2
 fi
 case "${decode_direct_n_qkv_batch_tiles}" in
-4|8|16) ;;
+4|8|16|32) ;;
 *) printf 'invalid direct-n QKV batch tiles: %s\n' "${decode_direct_n_qkv_batch_tiles}" >&2; exit 2 ;;
 esac
 case "${decode_direct_n_down_batch_tiles}" in
