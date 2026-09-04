@@ -1418,11 +1418,59 @@ _Avoid_: assuming K/V contain only eight physical tiles, changing Q/K
 preparation, reintroducing expansion, or treating pending evidence as accepted
 
 **Decode O-to-Gate Direct-N Cross-Prefetch**:
-The active EXP-0200 hypothesis starts the first batch-thirty-two Gate packed-W4
-DMA after O and overlaps it with unchanged post-attention residual/RMSNorm.
-The existing Gate-to-Up ring then consumes that prefetched known HMX slot.
-All bytes, descriptors, HMX work and outputs must remain identical; both
-Gate/Up wall and complete decode must improve.
+EXP-0200 starts the first batch-thirty-two Gate packed-W4 DMA after O and
+overlaps it with unchanged post-attention residual/RMSNorm. Two formal runs
+reproduced about 0.8--0.9% median decode gain, but each lost one rotated pair,
+so its strict local gate failed. EXP-0201 retains this structurally useful
+cross-prefetch while testing the combined stream against the earlier control.
 _Avoid_: allocating a new slot, overwriting live RoPE data before Attention
 finishes, changing residual math, adding a second DMA owner, or counting a
 long asynchronous lifetime as additive wall time
+
+**Asynchronous Direct-N Gate/Up-to-SwiGLU Stream**:
+The completed EXP-0201 candidate interleaves each Gate and Up batch32 pair and
+publishes it to a persistent HVX SwiGLU worker while DMA/HMX continue with the
+next channel group. Only the final join tail remains exposed. Formal decode
+improves 42.472 to 43.474 token/s (+2.36%) with 10/10 wins; all arithmetic,
+bytes, HMX work and outputs remain exact.
+_Avoid_: describing the worker's total work as additive wall, adding another
+HMX owner, changing the LUT, or applying the M1 stream to M64 prefill
+
+**Decode Prefetch Redistribution Negative Boundary**:
+EXP-0202 made Down locally faster but moved DMA contention into Gate/Up and
+reduced E2E decode by 0.31%. EXP-0203 made QKV about 250 us faster by
+prefetching the next layer's first Q group, but moved the same wait into Down
+and left E2E within noise. These show that moving a wait label across module
+boundaries is not a system optimization; directly measured full-token wall is
+the authority.
+_Avoid_: promoting local stage wins, summing overlapping lifetimes, or
+reopening the same prefetch window without a new idle-resource hypothesis
+
+**Direct-W4 O Batch-Eight Candidate**:
+The completed EXP-0204 candidate doubles only O projection command granularity
+from four to eight output tiles. Formal decode improves 43.389 to 43.998
+token/s (+1.40%) with 10/10 wins; O wall falls 21.64%, commands halve and DMA
+descriptors fall while weight bytes, HMX tile pairs and outputs remain exact.
+It is evidence-valid and pending explicit promotion.
+_Avoid_: applying the setting to prefill, changing O-to-Gate prefetch, or
+equating command reduction with success without E2E improvement
+
+**Phase-Safe Direct-W4 Down Batch-Four Candidate**:
+The completed EXP-0205 candidate revisits the old Down batch4 failure after
+proving that its cause was a VTCM lifetime alias, not an invalid four-output
+HMX command. The retained path stores its two 393216-byte packed-W4 groups in
+phase-dead Expanded-S8 slots and restores DMA--HMX overlap. Formal decode
+improves 43.957 to 44.262 token/s (+0.69%) with 10/10 wins; Down wall falls
+4.1%, Down commands halve and all mathematical and physical gates pass. It is
+the fastest evidence-valid pending candidate.
+_Avoid_: using the persistent-cache-overlaid compressed slot upper half,
+retaining diagnostic serialization, or promoting without explicit user action
+
+**Direct-W4 QKV Batch-Thirty-Two Experiment**:
+The active EXP-0206 experiment compares QKV batch16 with batch32 using two
+known HMX-accessible one-MiB weight slots. It tests a real tradeoff: halving
+command groups and reducing DMA descriptors may help, but publishing complete
+Q/K heads later may reduce preparation overlap. Both QKV wall and complete
+decode token/s must improve.
+_Avoid_: assuming fewer groups are faster, changing Q/K math, applying the
+candidate to M64 prefill, or allocating an arbitrary HMX weight carrier

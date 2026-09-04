@@ -6,6 +6,41 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0206
+    slug: w4u8-direct-n-qkv-batch32
+    title: Direct-W4 decode QKV batch32 command granularity
+    parent: EXP-0205
+    variants:
+      - evidence_valid_EXP0205_QKV_batch16_control
+      - direct_W4_QKV_batch32_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0206-w4u8-direct-n-qkv-batch32
+    source_commits: []
+    record: docs/experiments/EXP-0206.md
+    approval_ref: 'User message 2026-09-05: 开始decode优化loop'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0206-w4u8-direct-n-qkv-batch32
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    evidence:
+      source_parent_experiment: EXP-0205
+      source_parent_commit: fb2d4c0fb34aaee771f496dc1d9ea600a496a8fc
+      direct_control: same_binary_EXP0205_direct_W4_QKV_batch16
+      candidate: direct_W4_QKV_batch32_using_two_known_one_MiB_HMX_weight_slots
+      hypothesis: halve_QKV_command_granularity_and_reduce_DMA_descriptors_without_losing_more_to_delayed_head_readiness
+      optimization_scope: decode_only_QKV_batch_size_bounded_DMA_split_protocol_host_DSP_selector_telemetry_and_experiment_tools
+      forbidden_changes: weights_values_scales_qparams_arithmetic_QK_preparation_Attention_O_Gate_Up_SwiGLU_Down_residual_norm_cache_LM_head_M64_prefill_F16F16_W4F16_QNN
+      correctness_gate: byte_exact_QKV_prepared_QK_hidden_cache_selected_codes_and_tokens
+      physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_and_HMX_tile_pairs_QKV_commands_224_to_112_and_reduced_DMA_descriptors
+      short_gate: five_rotated_pairs_with_strict_QKV_wall_and_decode_speed_pass
+      formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      selected_baseline_changed: false
   - id: EXP-0205
     slug: w4u8-direct-n-down-batch4
     title: Direct-W4 decode Down-projection batch4 command granularity
@@ -13,14 +48,17 @@ experiments:
     variants:
       - evidence_valid_EXP0204_Down_batch2_control
       - direct_W4_Down_batch4_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0205-w4u8-direct-n-down-batch4
-    source_commits: []
+    source_commits:
+      - a112529b59cffc3f5688bbdb010e554ae130878f
+      - 7cef819f5638bb6676acb89bb98f1a2fa6e64e7c
+      - fb2d4c0fb34aaee771f496dc1d9ea600a496a8fc
     record: docs/experiments/EXP-0205.md
     approval_ref: 'User message 2026-09-05: 开始decode优化loop'
     runtime:
@@ -28,11 +66,12 @@ experiments:
       source_branch: codex/exp-0205-w4u8-direct-n-down-batch4
       approved_on: '2026-09-05'
       started_on: '2026-09-05'
+      completed_on: '2026-09-05'
     evidence:
       source_parent_experiment: EXP-0204
       source_parent_commit: 79319bf1d5f41953d522b582300d7e80d0975605
       direct_control: same_binary_EXP0204_direct_W4_Down_batch2
-      candidate: direct_W4_Down_batch4_using_existing_safe_compressed_slots
+      candidate: direct_W4_Down_batch4_using_phase_dead_expanded_weight_slots
       hypothesis: halve_Down_command_and_weight_DMA_descriptor_granularity_without_changing_weight_bytes_or_HMX_tile_work
       optimization_scope: decode_only_Down_projection_batch_size_protocol_host_DSP_selector_telemetry_and_experiment_tools
       forbidden_changes: weights_values_scales_qparams_arithmetic_QKV_Gate_Up_SwiGLU_Attention_O_residual_norm_cache_LM_head_M64_prefill_F16F16_W4F16_QNN
@@ -40,6 +79,33 @@ experiments:
       physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_and_HMX_tile_pairs_reduced_Down_commands_and_DMA_descriptors
       short_gate: five_rotated_pairs_with_strict_Down_wall_and_decode_speed_pass
       formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0205/20260905_short_gate_fb2d4c0'
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0205/20260905_formal_fb2d4c0'
+      source_commit: fb2d4c0fb34aaee771f496dc1d9ea600a496a8fc
+      correctness_gate_result: pass_byte_exact_outputs_tokens_hidden_and_cache
+      physical_gate_result: pass_8mib_zero_intermediate_ddr_zero_spill_one_fastrpc_one_hmx_no_qnn_zero_expansion_preserved_bytes_and_tiles
+      performance_gate_result: pass_10_of_10_pairs_and_0_691943_percent_decode_gain
+      control_decode_tokens_per_second: 43.957344
+      candidate_decode_tokens_per_second: 44.261504
+      decode_speed_percent: 0.691943
+      control_decode_host_us_per_token: 22749.3
+      candidate_decode_host_us_per_token: 22593.0
+      control_down_us_per_token: 4179.5
+      candidate_down_us_per_token: 4016.2
+      control_down_commands_per_token: 896
+      candidate_down_commands_per_token: 448
+      control_direct_n_hmx_commands_per_token: 1829
+      candidate_direct_n_hmx_commands_per_token: 1381
+      control_dma_descriptors_per_token: 3510
+      candidate_dma_descriptors_per_token: 3062
+      hmx_tile_pairs_per_token: 1699840
+      weight_ddr_read_bytes_per_token: 866032640
+      pair_wins: 10
+      short_summary_sha256: a0abfe56cfcd36dae991c3ec6b8d9810b6d57f728818e700a4f8fb78e84a925f
+      short_report_sha256: 6e44e5bc7ed0714d99920b63b69a10716193232ee740e3503ddc48f3ea7ff480
+      formal_summary_sha256: d2317b8ac09f414e8b1f4a091d914966015a957fe3f1a54313bfe4a8c2b954e3
+      formal_report_sha256: 4b3d71b18e4a738d73954ceb571c90f6b1a8964063e33ff4d1e23c22f59d649f
+      conclusion: phase_safe_Down_batch4_halves_commands_reduces_Down_wall_4_1_percent_and_improves_full_decode_0_69_percent
       selected_baseline_changed: false
   - id: EXP-0204
     slug: w4u8-direct-n-o-batch8
