@@ -36,18 +36,18 @@ current_scope:
   active_experiment_stage: registered_pending_source_branch_and_preflight
   active_experiment_evidence: null
   active_experiment_gate: not_run
-  active_recipe_specialization: W4U8_direct_n_decode_heterogeneous_Q16_KV8_ring
+  active_recipe_specialization: W4U8_direct_n_decode_QKV_batch16_two_slot_ring
   active_experiment_contract:
     id: EXP-0199
-    source_branch: codex/exp-0199-w4u8-direct-n-q16-kv8-ring
+    source_branch: codex/exp-0199-w4u8-direct-n-qkv-batch16
     source_parent: evidence_valid_EXP0198_continuous_Gate_to_Up_candidate
     source_parent_commit: 59284b2d0bec68103e9f8c96af93f000f8e16ad1
     execution_scope: real_token_ID_M64_prefill_then_192_continuous_W4U8_decode_steps_to_valid_length256
-    direct_control: evidence_valid_EXP0198_W4U8_direct_n_Q8_KV8_ring
-    candidate: EXP0198_with_Q_batch16_and_KV_batch8_two_slot_direct_n_ring
+    direct_control: evidence_valid_EXP0198_W4U8_direct_n_QKV_batch8_ring
+    candidate: EXP0198_with_QKV_batch16_two_slot_direct_n_ring
     allowed_changes: decode_only_QKV_direct_n_batch_schedule_slot_mapping_telemetry_and_experiment_tools
     forbidden_changes: weights_values_scales_qparams_InputNorm_Attention_O_MLP_residual_cache_LM_head_M64_prefill_F16F16_W4F16_QNN
-    correctness_gate: byte_exact_QKV_QK_preparation_hidden_cache_selected_codes_and_tokens_to_Q8_KV8_control
+    correctness_gate: byte_exact_QKV_QK_preparation_hidden_cache_selected_codes_and_tokens_to_QKV_batch8_control
     physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_per_pass_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_and_HMX_tile_pairs
     performance_gate: five_pair_short_gate_then_ten_rotated_193_step_pairs_if_strictly_faster
     preservation_gate: M64_prefill_and_all_non_QKV_decode_modules_remain_EXP0198_byte_exact

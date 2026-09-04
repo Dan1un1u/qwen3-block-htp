@@ -7,33 +7,33 @@ allowed_values:
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
   - id: EXP-0199
-    slug: w4u8-direct-n-q16-kv8-ring
-    title: Heterogeneous direct-n Q16/KV8 ring
+    slug: w4u8-direct-n-qkv-batch16
+    title: Direct-n QKV batch-sixteen two-slot ring
     parent: EXP-0198
     variants:
-      - evidence_valid_EXP0198_Q8_KV8_control
-      - Q16_KV8_two_slot_direct_n_ring_candidate
+      - evidence_valid_EXP0198_QKV_batch8_control
+      - QKV_batch16_two_slot_direct_n_ring_candidate
     execution_state: running
     evidence_validity: not_checked
     local_gate: not_run
     adoption_status: pending
     evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
-      - codex/exp-0199-w4u8-direct-n-q16-kv8-ring
+      - codex/exp-0199-w4u8-direct-n-qkv-batch16
     source_commits: []
     record: docs/experiments/EXP-0199.md
     approval_ref: 'User message 2026-09-05: 开始decode优化loop'
     runtime:
       source_worktree: /home/daniuniu/work/qwen3-block-htp
-      source_branch: codex/exp-0199-w4u8-direct-n-q16-kv8-ring
+      source_branch: codex/exp-0199-w4u8-direct-n-qkv-batch16
       approved_on: '2026-09-05'
       started_on: '2026-09-05'
     evidence:
       source_parent_experiment: EXP-0198
       source_parent_commit: 59284b2d0bec68103e9f8c96af93f000f8e16ad1
-      direct_control: same_binary_Q8_KV8_direct_n_ring
-      candidate: Q16_KV8_two_slot_direct_n_ring
-      hypothesis: reduce_QKV_groups_per_layer_from_ten_to_six_while_preserving_work_and_head_readiness
+      direct_control: same_binary_QKV_batch8_direct_n_ring
+      candidate: QKV_batch16_two_slot_direct_n_ring
+      hypothesis: reduce_QKV_groups_per_layer_from_sixteen_to_eight_while_preserving_work_and_head_readiness
       optimization_scope: decode_only_QKV_direct_n_batch_schedule_slot_mapping_telemetry_and_tools
       forbidden_changes: weights_values_scales_qparams_InputNorm_Attention_O_MLP_residual_cache_LM_head_M64_prefill_F16F16_W4F16_QNN
       correctness_gate: byte_exact_QKV_QK_preparation_hidden_cache_selected_codes_and_tokens

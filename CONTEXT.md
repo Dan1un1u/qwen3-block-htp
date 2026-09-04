@@ -1408,12 +1408,12 @@ Evidence is valid and adoption is pending; it is the fastest pending parent.
 _Avoid_: changing the gate after observing noise, claiming prefill benefit,
 or describing pending evidence as an accepted baseline
 
-**Heterogeneous Direct-N Q16/KV8 Ring**:
+**Direct-N QKV Batch-Sixteen Two-Slot Ring**:
 The active EXP-0199 hypothesis retains direct packed W4 and exact QKV math but
-uses sixteen output tiles for each Q group while K and V remain eight-tile
-whole-projection groups.  It should reduce ten QKV HMX groups per layer to six
+uses sixteen output tiles per Q, K and V group.  At the real shapes it should
+reduce sixteen QKV HMX groups per layer to eight
 without reducing HMX tile pairs or weight bytes.  Only capacity-checked known
 HMX carriers may be used; correctness, QKV wall and full decode must all pass.
-_Avoid_: widening K/V beyond their eight tiles, changing Q/K preparation,
+_Avoid_: assuming K/V contain only eight physical tiles, changing Q/K preparation,
 reintroducing expansion, allocating arbitrary VTCM carriers, or accepting a
 local command-count win without end-to-end acceleration
