@@ -1674,6 +1674,18 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          header->w4u8_decode_o_batch_n_tiles != 8U) ||
         (header->w4u8_decode_o_batch_n_tiles != 4U &&
          header->variant != QBH_BLOCK_W4U8) ||
+        (header->w4u8_decode_av_requant_rows !=
+             QBH_BLOCK_W4U8_AV_REQUANT_FULL_ROWS &&
+         header->w4u8_decode_av_requant_rows !=
+             QBH_BLOCK_W4U8_AV_REQUANT_DECODE_ROWS) ||
+        (header->w4u8_decode_av_requant_rows !=
+             QBH_BLOCK_W4U8_AV_REQUANT_FULL_ROWS &&
+         header->variant != QBH_BLOCK_W4U8) ||
+        header->w4u8_decode_av_padding_poison > 1U ||
+        (header->w4u8_decode_av_padding_poison != 0U &&
+         (header->variant != QBH_BLOCK_W4U8 ||
+          header->w4u8_decode_av_requant_rows !=
+              QBH_BLOCK_W4U8_AV_REQUANT_DECODE_ROWS)) ||
         (header->w4u8_decode_lm_head_group_tiles != 8U &&
          header->w4u8_decode_lm_head_group_tiles != 16U) ||
         (header->w4u8_decode_lm_head_group_tiles != 8U &&
@@ -14757,6 +14769,37 @@ static void qbh_scan_accumulate_u8_attention_telemetry(
     }
 }
 
+static void qbh_scan_u8_requant_av(
+    struct qbh_block_header *header, uint8_t *output_group,
+    const struct qbh_attention_config *config,
+    uint32_t logical_rows) {
+    uint32_t physical_rows = QBH_BLOCK_W4U8_AV_REQUANT_FULL_ROWS;
+
+    if (logical_rows == 1U &&
+        header->w4u8_decode_av_requant_rows ==
+            QBH_BLOCK_W4U8_AV_REQUANT_DECODE_ROWS) {
+        physical_rows = QBH_BLOCK_W4U8_AV_REQUANT_DECODE_ROWS;
+    }
+    qbh_attention_u8_requant_av_rows(
+        output_group, config, physical_rows);
+    if (header->w4u8_av_requant_rows_observed == 0U) {
+        header->w4u8_av_requant_rows_observed = physical_rows;
+    } else if (header->w4u8_av_requant_rows_observed != physical_rows) {
+        header->w4u8_av_requant_rows_observed = UINT32_MAX;
+    }
+    ++header->w4u8_av_requant_call_count;
+    header->w4u8_av_requant_vector_count +=
+        QBH_ATTENTION_Q_HEADS_PER_GROUP *
+        QBH_ATTENTION_HEAD_DIM_TILES * physical_rows /
+        (sizeof(HVX_Vector) / QBH_HMX_OUTPUT_CHANNELS);
+    if (physical_rows == QBH_BLOCK_W4U8_AV_REQUANT_DECODE_ROWS &&
+        header->w4u8_decode_av_padding_poison != 0U) {
+        qbh_attention_u8_poison_av_padding(
+            output_group, physical_rows);
+        ++header->w4u8_av_padding_poison_count;
+    }
+}
+
 static int qbh_scan_u8_attention_delta_pipeline(
     struct qbh_block_header *header, uint8_t *shared,
     struct qbh_block_buffers *buffers,
@@ -14934,7 +14977,8 @@ static int qbh_scan_u8_attention_delta_pipeline(
             kv_tiles, QBH_ATTENTION_HEAD_DIM_TILES);
 
         start = HAP_perf_get_qtimer_count();
-        qbh_attention_u8_requant_av(first_q_group, first_config);
+        qbh_scan_u8_requant_av(
+            header, first_q_group, first_config, logical_rows);
         header->u8_attention_av_requant_ticks +=
             HAP_perf_get_qtimer_count() - start;
         qbh_scan_accumulate_u8_attention_telemetry(
@@ -14976,7 +15020,8 @@ static int qbh_scan_u8_attention_delta_pipeline(
         }
 
         start = HAP_perf_get_qtimer_count();
-        qbh_attention_u8_requant_av(second_q_group, second_config);
+        qbh_scan_u8_requant_av(
+            header, second_q_group, second_config, logical_rows);
         header->u8_attention_av_requant_ticks +=
             HAP_perf_get_qtimer_count() - start;
         qbh_scan_accumulate_u8_attention_telemetry(
@@ -15321,7 +15366,8 @@ static int qbh_scan_u8_attention_segmented_short_pipeline(
             segment_count, QBH_ATTENTION_HEAD_DIM_TILES);
 
         start = HAP_perf_get_qtimer_count();
-        qbh_attention_u8_requant_av(first_q_group, first_config);
+        qbh_scan_u8_requant_av(
+            header, first_q_group, first_config, logical_rows);
         header->u8_attention_av_requant_ticks +=
             HAP_perf_get_qtimer_count() - start;
         qbh_scan_accumulate_u8_attention_telemetry(
@@ -15366,7 +15412,8 @@ static int qbh_scan_u8_attention_segmented_short_pipeline(
         }
 
         start = HAP_perf_get_qtimer_count();
-        qbh_attention_u8_requant_av(second_q_group, second_config);
+        qbh_scan_u8_requant_av(
+            header, second_q_group, second_config, logical_rows);
         header->u8_attention_av_requant_ticks +=
             HAP_perf_get_qtimer_count() - start;
         qbh_scan_accumulate_u8_attention_telemetry(

@@ -103,6 +103,14 @@ void qbh_attention_u8_requant_av(
     uint8_t *output_tiles,
     const struct qbh_attention_config *config);
 
+void qbh_attention_u8_requant_av_rows(
+    uint8_t *output_tiles,
+    const struct qbh_attention_config *config,
+    uint32_t physical_rows);
+
+void qbh_attention_u8_poison_av_padding(
+    uint8_t *output_tiles, uint32_t first_padding_row);
+
 /* EXP-0147 generalized-cache helpers.  These deliberately coexist with the
  * immutable 64x64 fast path above. */
 void qbh_attention_u8_native_head_to_row_major(

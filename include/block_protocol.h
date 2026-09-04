@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(75)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(176)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(76)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(177)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -148,6 +148,9 @@ enum qbh_w4u8_decode_softmax_mode {
     QBH_BLOCK_W4U8_DECODE_SOFTMAX_SCALAR = 0,
     QBH_BLOCK_W4U8_DECODE_SOFTMAX_HVX_TILE4 = 1,
 };
+
+#define QBH_BLOCK_W4U8_AV_REQUANT_FULL_ROWS UINT32_C(64)
+#define QBH_BLOCK_W4U8_AV_REQUANT_DECODE_ROWS UINT32_C(4)
 
 #define QBH_KV_CACHE_HMX_PADDED_CAPACITY(capacity_) \
     (((capacity_) + QBH_HMX_INPUT_CHANNELS - 1U) / \
@@ -685,6 +688,8 @@ struct qbh_block_header {
     uint32_t w4u8_decode_softmax_mode;
     uint32_t w4u8_decode_lm_head_group_tiles;
     uint32_t w4u8_decode_o_batch_n_tiles;
+    uint32_t w4u8_decode_av_requant_rows;
+    uint32_t w4u8_decode_av_padding_poison;
 
     /* EXP-0147 logical-shape wrapper.  QBH_BLOCK_M remains the immutable
      * physical projection tile. */
@@ -878,6 +883,10 @@ struct qbh_block_header {
     uint32_t w4u8_qkvo_overlap_schedule_count;
     uint32_t w4u8_o_batch_n_tiles_observed;
     uint32_t w4u8_o_batch_count;
+    uint32_t w4u8_av_requant_rows_observed;
+    uint32_t w4u8_av_requant_call_count;
+    uint32_t w4u8_av_requant_vector_count;
+    uint32_t w4u8_av_padding_poison_count;
     uint32_t w4u8_qk_pair_kernel_mode_observed;
     uint32_t w4u8_qk_quarter_pair_count;
     uint32_t w4u8_decode_softmax_hvx_tile4_call_count;

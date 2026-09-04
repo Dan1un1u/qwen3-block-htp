@@ -1438,6 +1438,60 @@ void qbh_attention_u8_requant_av(
     }
 }
 
+void qbh_attention_u8_requant_av_rows(
+    uint8_t *output_tiles,
+    const struct qbh_attention_config *config,
+    uint32_t physical_rows) {
+    if (config->av_multiplier != 1U) {
+        const uint32_t vectors_per_tile =
+            physical_rows * QBH_HMX_OUTPUT_CHANNELS /
+            sizeof(HVX_Vector);
+        for (uint32_t head = 0U;
+             head < QBH_ATTENTION_Q_HEADS_PER_GROUP; ++head) {
+            for (uint32_t tile = 0U;
+                 tile < QBH_ATTENTION_HEAD_DIM_TILES; ++tile) {
+                HVX_Vector *output = (HVX_Vector *)(
+                    output_tiles +
+                    ((size_t)head * QBH_ATTENTION_HEAD_DIM_TILES +
+                     tile) * QBH_HMX_OUTPUT_BYTES);
+                for (uint32_t vector = 0U;
+                     vector < vectors_per_tile; ++vector) {
+                    output[vector] = qbh_attention_u8_requant_centered(
+                        output[vector], config->av_multiplier,
+                        config->output_zero_point);
+                }
+            }
+        }
+        asm volatile("barrier" ::: "memory");
+    }
+}
+
+void qbh_attention_u8_poison_av_padding(
+    uint8_t *output_tiles, uint32_t first_padding_row) {
+    const uint32_t first_vector =
+        first_padding_row * QBH_HMX_OUTPUT_CHANNELS /
+        sizeof(HVX_Vector);
+    const uint32_t vectors_per_tile =
+        QBH_HMX_OUTPUT_BYTES / sizeof(HVX_Vector);
+    const HVX_Vector poison = Q6_V_vsplat_R(0xa55ac33c);
+
+    for (uint32_t head = 0U;
+         head < QBH_ATTENTION_Q_HEADS_PER_GROUP; ++head) {
+        for (uint32_t tile = 0U;
+             tile < QBH_ATTENTION_HEAD_DIM_TILES; ++tile) {
+            HVX_Vector *output = (HVX_Vector *)(
+                output_tiles +
+                ((size_t)head * QBH_ATTENTION_HEAD_DIM_TILES + tile) *
+                    QBH_HMX_OUTPUT_BYTES);
+            for (uint32_t vector = first_vector;
+                 vector < vectors_per_tile; ++vector) {
+                output[vector] = poison;
+            }
+        }
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
 void qbh_attention_u8_native_head_to_row_major(
     const uint8_t *head_tiles, uint8_t *rows,
     uint32_t valid_rows) {
