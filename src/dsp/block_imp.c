@@ -6051,8 +6051,8 @@ static int qbh_run_generation_head_w4f16_overlap(
                 hmx_active = 0U;
                 if (result != 0) {
                     if (prefetch_active != 0U) {
-                        (void)qbh_dma_wait_weight_prefetch_split2(
-                            prefetch_descriptors, prefetch_bytes);
+                        (void)qbh_dma_wait_weight_prefetch(
+                            &prefetch_descriptor);
                     }
                     return -12;
                 }
@@ -6982,8 +6982,8 @@ static int qbh_run_generation_head_w4u8(
                 hmx_active = 0U;
                 if (result != 0) {
                     if (prefetch_active != 0U) {
-                        (void)qbh_dma_wait_weight_prefetch(
-                            &prefetch_descriptor);
+                        (void)qbh_dma_wait_weight_prefetch_split2(
+                            prefetch_descriptors, prefetch_bytes);
                     }
                     return -9;
                 }
