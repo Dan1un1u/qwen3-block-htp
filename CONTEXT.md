@@ -1304,11 +1304,25 @@ M64 prefill, counting fewer commands as success without higher full-stack
 decode token/s, or automatic baseline promotion
 
 **Direct-N Decode Gate/Up Batch-Sixteen Candidate**:
-The active EXP-0191 hypothesis doubles the EXP-0190 Gate/Up group from eight to
-sixteen tiles.  Packed W4 remains in phase-dead Expanded-S8 buffers; the second
-bias slot aliases the current layer's already-consumed input-norm gamma range.
-The experiment is valid only if large-group DMA continues to overlap HMX and
-direct full-stack decode exceeds EXP-0190.
+The completed EXP-0191 candidate doubles the EXP-0190 Gate/Up group from eight
+to sixteen tiles. Packed W4 remains in phase-dead Expanded-S8 buffers; the
+second bias slot aliases the current layer's already-consumed input-norm gamma
+range. Ten formal rotated pairs improve complete decode from 36.858078 to
+37.739069 token/s (+2.390225%), and Gate/Up projection falls from 7.813459 to
+7.085739 ms/token. Gate/Up commands halve from 1,344 to 672 while HMX tile
+pairs, weight bytes, outputs and every physical contract remain unchanged. It
+is the fastest evidence-valid pending candidate and parent of EXP-0192, not an
+automatically selected baseline.
 _Avoid_: treating command-count reduction as performance, using the gamma alias
 before input norm completes, changing any non-Gate/Up module, or automatic
 baseline promotion
+
+**Direct-N Decode Down Batch-Four Candidate**:
+The active EXP-0192 hypothesis raises only direct-n Down from two to four output
+tiles per HMX command. Existing compressed-weight double buffers are large
+enough, so the experiment changes no VTCM capacity or phase alias. The target
+is to halve Down commands from 896 to 448 per token while preserving EXP-0191
+Gate/Up batch-sixteen, all mathematics, weight traffic and M64 prefill.
+_Avoid_: changing Gate/Up, using phase-dead Expanded-S8 slots unnecessarily,
+counting fewer commands as success without lower full-stack decode latency, or
+automatic baseline promotion
