@@ -1318,11 +1318,21 @@ before input norm completes, changing any non-Gate/Up module, or automatic
 baseline promotion
 
 **Direct-N Decode Down Batch-Four Candidate**:
-The active EXP-0192 hypothesis raises only direct-n Down from two to four output
-tiles per HMX command. Existing compressed-weight double buffers are large
-enough, so the experiment changes no VTCM capacity or phase alias. The target
-is to halve Down commands from 896 to 448 per token while preserving EXP-0191
-Gate/Up batch-sixteen, all mathematics, weight traffic and M64 prefill.
-_Avoid_: changing Gate/Up, using phase-dead Expanded-S8 slots unnecessarily,
-counting fewer commands as success without lower full-stack decode latency, or
-automatic baseline promotion
+The rejected EXP-0192 candidate raised direct-n Down from two to four output
+tiles per HMX command. It completed M64 prefill but reproducibly reset the cDSP
+domain in the first decode layer at the second Down group. The failure is also
+present with Gate/Up batch eight, excluding EXP-0191's phase alias. No paired
+performance claim is valid because the candidate did not complete one decode
+layer.
+_Avoid_: retrying a four-output Down HMX worker command, reporting incomplete
+ticks as performance, blaming the Gate/Up gamma alias, or baseline promotion
+
+**Direct-N Decode Down DMA-Four / HMX-Two Candidate**:
+The active EXP-0193 hypothesis decouples transfer and compute granularity.
+Four packed-W4 Down tiles are prefetched into an existing slot, but HMX consumes
+them as two validated two-output commands. Down HMX commands and tile pairs
+remain unchanged; only DMA descriptors and associated synchronization should
+fall. The candidate must still improve direct full-stack decode.
+_Avoid_: issuing a four-output Down HMX command, adding VTCM, changing Down
+math, counting descriptor reduction without end-to-end speed, or automatic
+baseline promotion

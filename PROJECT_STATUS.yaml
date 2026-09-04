@@ -19,16 +19,16 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0192
-  next_experiment_number: 193
+  active_experiment: EXP-0193
+  next_experiment_number: 194
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0191
-  last_completed_source_commit: 0cdd367f89475c73de4695bab9e9348dbd955aeb
+  last_completed_experiment: EXP-0192
+  last_completed_source_commit: d109be8599eef175867e4fcc93d82e98ea3eb11b
   provisional_source_parent: evidence_valid_EXP0191_direct_n_Gate_Up_batch16_candidate
   device_execution_state: ready_after_manual_restart_boot_77ccafe0-8817-4976-bdae-15af5608d4ff
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
@@ -36,25 +36,43 @@ current_scope:
   active_experiment_stage: registered_pending_source_branch_and_preflight
   active_experiment_evidence: null
   active_experiment_gate: not_run
-  active_recipe_specialization: W4U8_direct_n_decode_Down_batch4
+  active_recipe_specialization: W4U8_direct_n_decode_Down_DMA4_HMX2
   active_experiment_contract:
-    id: EXP-0192
-    source_branch: codex/exp-0192-w4u8-direct-n-down-batch4
+    id: EXP-0193
+    source_branch: codex/exp-0193-w4u8-direct-n-down-dma4-hmx2
     source_parent: evidence_valid_EXP0191_direct_n_Gate_Up_batch16_candidate
     source_parent_commit: 0cdd367f89475c73de4695bab9e9348dbd955aeb
     execution_scope: real_token_ID_M64_prefill_then_192_continuous_W4U8_decode_steps_to_valid_length256
-    direct_control: evidence_valid_EXP0191_W4U8_direct_n_Down_batch2
-    candidate: EXP0191_with_decode_only_Down_batch4_using_existing_compressed_weight_slots
-    allowed_changes: decode_only_direct_n_Down_batch_size_dispatch_validation_telemetry_and_experiment_tools
+    direct_control: evidence_valid_EXP0191_W4U8_direct_n_Down_DMA2_HMX2
+    candidate: EXP0191_with_decode_only_Down_DMA4_and_HMX2_using_existing_compressed_weight_slots
+    allowed_changes: decode_only_direct_n_Down_DMA_group_size_HMX_subgroup_decoupling_dispatch_validation_telemetry_and_experiment_tools
     forbidden_changes: weights_values_scales_qparams_projection_math_Gate_Up_batch16_SwiGLU_QKVO_Attention_cache_M64_prefill_LM_head_F16F16_W4F16_QNN
-    correctness_gate: byte_exact_all_hidden_hashes_codes_tokens_and_cache_state_to_same_binary_Down_batch2_control_plus_unchanged_independent_integer_references
-    physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_per_pass_one_HMX_owner_no_QNN_zero_transformer_expansion_identical_weight_bytes_and_Down_commands_896_to_448
+    correctness_gate: byte_exact_all_hidden_hashes_codes_tokens_and_cache_state_to_same_binary_Down_DMA2_HMX2_control_plus_unchanged_independent_integer_references
+    physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_per_pass_one_HMX_owner_no_QNN_zero_transformer_expansion_identical_weight_bytes_identical_Down_HMX_commands_896_and_weight_DMA_descriptors_6122_to_5226
     performance_gate: five_pair_short_gate_then_ten_rotated_193_step_pairs_with_strictly_higher_direct_full_stack_decode_tokens_per_second_and_lower_Down_wall_than_EXP0191_control
     preservation_gate: M64_prefill_and_all_non_Down_decode_modules_remain_EXP0191_byte_exact
     stop_conditions: reject_before_formal_if_correctness_or_physical_gate_fails_or_five_pair_short_decode_gate_does_not_improve
   final_profiling_summary_standard: direct_full_stack_prefill_and_decode_tokens_per_second_plus_exact_Host_wall
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0191/20260905_formal_0cdd367'
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0192/20260905_short_gate_d109be8'
+  latest_w4u8_direct_n_down_batch4_failure:
+    id: EXP-0192
+    source_branch: codex/exp-0192-w4u8-direct-n-down-batch4
+    source_head: d109be8599eef175867e4fcc93d82e98ea3eb11b
+    failed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0192/20260905_short_gate_d109be8'
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    selected_baseline_changed: false
+    failure_boundary: candidate_completed_M64_prefill_then_reset_cDSP_on_first_decode_layer_second_Down_batch4_HMX_group_with_74_direct_n_commands_and_zero_completed_Down_ticks
+    reproducibility: clean_redeploy_reproduced_and_Gate_Up_batch8_control_also_reproduced_at_corresponding_Down_group
+    unavailable: complete_candidate_correctness_physical_contract_performance_pairs_and_formal_profile
+    audit_down2_sha256: 278161d8c8783c910fc3bd56aedaba5964a1c5ac5ae1cb3bc610e2f9b8dca397
+    audit_down4_sha256: aa808561734f04d93d686d26a13c6d7c5448508bd5e88c75e92567353fab146c
+    static_gate_sha256: 2442cd0b6118080049c78c18f350642f50b4e8bb181a44db3e84a25d4b3aa19d
+    conclusion: direct_n_Down_HMX_batch4_is_not_a_valid_execution_contract_on_the_current_runtime
+    next_decision: retain_HMX_batch2_and_test_DMA4_prefetch_decoupling_in_EXP0193
   latest_w4u8_direct_n_gate_up_batch16_candidate:
     id: EXP-0191
     source_branch: codex/exp-0191-w4u8-direct-n-gate-up-batch16
