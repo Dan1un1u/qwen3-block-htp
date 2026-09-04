@@ -2888,6 +2888,7 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U32(w4u8_decode_projection_mode);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_direct_n_mask);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_direct_n_gate_up_batch_n_tiles);
+    QBH_REPLAY_PROFILE_U32(w4u8_decode_direct_n_down_dma_batch_n_tiles);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_swiglu_rows);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_swiglu_padding_poison);
     QBH_REPLAY_PROFILE_U32(w4u8_qk_norm_rope_rows_observed);
@@ -4158,6 +4159,7 @@ int main(int argc, char **argv) {
         QBH_BLOCK_W4U8_DECODE_PROJECTION_EXPANDED_S8;
     uint32_t w4u8_decode_direct_n_mask = 0U;
     uint32_t w4u8_decode_direct_n_gate_up_batch_n_tiles = 4U;
+    uint32_t w4u8_decode_direct_n_down_dma_batch_n_tiles = 2U;
     uint32_t w4u8_decode_swiglu_rows =
         QBH_BLOCK_W4U8_SWIGLU_FULL_ROWS;
     uint32_t w4u8_decode_swiglu_padding_poison = 0U;
@@ -4464,6 +4466,16 @@ int main(int argc, char **argv) {
                 value,
                 &w4u8_decode_direct_n_gate_up_batch_n_tiles) != 0) {
             w4u8_decode_direct_n_gate_up_batch_n_tiles = UINT32_MAX;
+        }
+    }
+    {
+        const char *value = getenv(
+            "QBH_W4U8_DECODE_DIRECT_N_DOWN_DMA_BATCH_N_TILES");
+        if (value != NULL && value[0] != '\0' &&
+            qbh_parse_u32(
+                value,
+                &w4u8_decode_direct_n_down_dma_batch_n_tiles) != 0) {
+            w4u8_decode_direct_n_down_dma_batch_n_tiles = UINT32_MAX;
         }
     }
     {
@@ -4789,6 +4801,14 @@ int main(int argc, char **argv) {
          w4u8_decode_direct_n_gate_up_batch_n_tiles != 8U &&
          w4u8_decode_direct_n_gate_up_batch_n_tiles != 16U) ||
         (w4u8_decode_direct_n_gate_up_batch_n_tiles != 4U &&
+         (variant != QBH_BLOCK_W4U8 ||
+          w4u8_decode_projection_mode !=
+              QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
+          (w4u8_decode_direct_n_mask &
+           QBH_BLOCK_W4U8_DIRECT_N_MLP) == 0U)) ||
+        (w4u8_decode_direct_n_down_dma_batch_n_tiles != 2U &&
+         w4u8_decode_direct_n_down_dma_batch_n_tiles != 4U) ||
+        (w4u8_decode_direct_n_down_dma_batch_n_tiles != 2U &&
          (variant != QBH_BLOCK_W4U8 ||
           w4u8_decode_projection_mode !=
               QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
@@ -6006,6 +6026,8 @@ int main(int argc, char **argv) {
         w4u8_decode_direct_n_mask;
     header->w4u8_decode_direct_n_gate_up_batch_n_tiles =
         w4u8_decode_direct_n_gate_up_batch_n_tiles;
+    header->w4u8_decode_direct_n_down_dma_batch_n_tiles =
+        w4u8_decode_direct_n_down_dma_batch_n_tiles;
     header->w4u8_decode_swiglu_rows =
         w4u8_decode_swiglu_rows;
     header->w4u8_decode_swiglu_padding_poison =

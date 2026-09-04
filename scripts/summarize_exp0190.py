@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate and summarize EXP-0190 direct-n Gate/Up batch-eight evidence."""
+"""Validate direct-n projection batch-granularity evidence."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ import summarize_exp0189 as base
 CONTROL = "batch4"
 CANDIDATE = "batch8"
 GATE_UP_N_TILES = 6144 // 32
+DOWN_N_TILES = 2048 // 32
 LAYERS = 28
 
 
@@ -29,11 +30,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--experiment", type=int, default=190)
     parser.add_argument("--control-batch", type=int, default=4)
     parser.add_argument("--candidate-batch", type=int, default=8)
+    parser.add_argument(
+        "--target", choices=("gate-up", "down-dma"), default="gate-up")
     return parser.parse_args()
 
 
 def validate_run(
-    run: dict[str, object], batch: int, steps: int, experiment: int = 190
+    run: dict[str, object], batch: int, steps: int, experiment: int = 190,
+    target: str = "gate-up",
 ) -> None:
     base.validate_run(run, 4, steps, experiment=experiment)
     profiles = run["profiles"]
@@ -41,9 +45,12 @@ def validate_run(
     for index, profile in enumerate(profiles):
         assert isinstance(profile, dict)
         context = f"{run['path']} step {index}"
+        field = (
+            "w4u8_decode_direct_n_gate_up_batch_n_tiles"
+            if target == "gate-up"
+            else "w4u8_decode_direct_n_down_dma_batch_n_tiles")
         base.require_equal(
-            int(profile["w4u8_decode_direct_n_gate_up_batch_n_tiles"]),
-            batch, context + " Gate/Up batch")
+            int(profile[field]), batch, context + f" {target} batch")
 
 
 def audit_tree_hashes(root: Path) -> dict[str, str]:
@@ -52,7 +59,7 @@ def audit_tree_hashes(root: Path) -> dict[str, str]:
 
 def validate_audit(
     result_dir: Path, control_batch: int, candidate_batch: int,
-    experiment: int,
+    experiment: int, target: str,
 ) -> dict[str, bool]:
     runs = {
         CONTROL: base.load_run(
@@ -60,8 +67,8 @@ def validate_audit(
         CANDIDATE: base.load_run(
             result_dir / "raw" / f"audit_batch{candidate_batch}.log", 4),
     }
-    validate_run(runs[CONTROL], control_batch, 4, experiment)
-    validate_run(runs[CANDIDATE], candidate_batch, 4, experiment)
+    validate_run(runs[CONTROL], control_batch, 4, experiment, target)
+    validate_run(runs[CANDIDATE], candidate_batch, 4, experiment, target)
     signatures_equal = (
         base.run_signatures(runs[CONTROL]) ==
         base.run_signatures(runs[CANDIDATE]))
@@ -85,6 +92,14 @@ def main() -> None:
     args = parse_args()
     CONTROL = f"batch{args.control_batch}"
     CANDIDATE = f"batch{args.candidate_batch}"
+    target_label = "Gate/Up" if args.target == "gate-up" else "Down"
+    target_field = "gate_up_ticks" if args.target == "gate-up" else "down_ticks"
+    target_n_tiles = (
+        GATE_UP_N_TILES if args.target == "gate-up" else DOWN_N_TILES)
+    target_projections = 2 if args.target == "gate-up" else 1
+    control_hmx_batch = args.control_batch if args.target == "gate-up" else 2
+    candidate_hmx_batch = (
+        args.candidate_batch if args.target == "gate-up" else 2)
     result_dir = args.result_dir.resolve()
     runs: dict[str, list[dict[str, object]]] = {CONTROL: [], CANDIDATE: []}
     pair_exact: list[bool] = []
@@ -99,7 +114,8 @@ def main() -> None:
         ):
             path = result_dir / "raw" / f"pair_{round_number:02d}_{cell}.log"
             run = base.load_run(path, args.steps)
-            validate_run(run, batch, args.steps, args.experiment)
+            validate_run(
+                run, batch, args.steps, args.experiment, args.target)
             runs[cell].append(run)
             pair[cell] = run
         exact = (
@@ -160,10 +176,10 @@ def main() -> None:
         f"({candidate_host_us / (candidate_latency * 10.0):.1f}%) | "
         f"{host_speed:+.1f}% |")
 
-    gate_up = {
-        CONTROL: base.median_module_us(runs[CONTROL], ("gate_up_ticks",)),
+    target = {
+        CONTROL: base.median_module_us(runs[CONTROL], (target_field,)),
         CANDIDATE: base.median_module_us(
-            runs[CANDIDATE], ("gate_up_ticks",)),
+            runs[CANDIDATE], (target_field,)),
     }
     swiglu = {
         CONTROL: base.median_module_us(runs[CONTROL], ("activation_ticks",)),
@@ -171,11 +187,13 @@ def main() -> None:
             runs[CANDIDATE], ("activation_ticks",)),
     }
     physical = {
-        "control_gate_up_hmx_commands":
-            LAYERS * 2 * (GATE_UP_N_TILES // args.control_batch),
-        "candidate_gate_up_hmx_commands":
-            LAYERS * 2 * (GATE_UP_N_TILES // args.candidate_batch),
-        "gate_up_hmx_command_count_source":
+        "control_target_hmx_commands":
+            LAYERS * target_projections *
+            (target_n_tiles // control_hmx_batch),
+        "candidate_target_hmx_commands":
+            LAYERS * target_projections *
+            (target_n_tiles // candidate_hmx_batch),
+        "target_hmx_command_count_source":
             "derived_from_validated_batch_and_confirmed_by_total_direct_n_delta",
         "control_direct_n_hmx_commands": base.median_counter(
             runs[CONTROL], "w4u8_decode_direct_n_hmx_command_count"),
@@ -201,23 +219,14 @@ def main() -> None:
     }
     audit = validate_audit(
         result_dir, args.control_batch, args.candidate_batch,
-        args.experiment) if args.require_audit else None
+        args.experiment, args.target) if args.require_audit else None
     gates = {
         "rotated_pairs_present": args.rounds in (5, 10),
         "all_pair_outputs_byte_exact": all(pair_exact),
         "all_pairs_candidate_faster": all(
             value > 1.0 for value in pair_speedups),
         "median_full_stack_decode_faster": candidate_tps > control_tps,
-        "gate_up_wall_faster": gate_up[CANDIDATE] < gate_up[CONTROL],
-        "gate_up_hmx_commands_halved":
-            physical["candidate_gate_up_hmx_commands"] * 2 ==
-            physical["control_gate_up_hmx_commands"],
-        "direct_hmx_command_delta_exact":
-            physical["control_direct_n_hmx_commands"] -
-            physical["candidate_direct_n_hmx_commands"] ==
-            LAYERS * 2 * (
-                GATE_UP_N_TILES // args.control_batch -
-                GATE_UP_N_TILES // args.candidate_batch),
+        "target_wall_faster": target[CANDIDATE] < target[CONTROL],
         "hmx_tile_pairs_preserved":
             physical["candidate_hmx_tile_pairs"] ==
             physical["control_hmx_tile_pairs"],
@@ -230,6 +239,29 @@ def main() -> None:
             base.median_counter(
                 runs[CANDIDATE], "w4u8_mlp_weight_expand_ticks") == 0,
     }
+    if args.target == "gate-up":
+        gates["target_hmx_commands_halved"] = (
+            physical["candidate_target_hmx_commands"] * 2 ==
+            physical["control_target_hmx_commands"])
+        gates["direct_hmx_command_delta_exact"] = (
+            physical["control_direct_n_hmx_commands"] -
+            physical["candidate_direct_n_hmx_commands"] ==
+            LAYERS * target_projections * (
+                target_n_tiles // args.control_batch -
+                target_n_tiles // args.candidate_batch))
+    else:
+        gates["target_hmx_commands_preserved"] = (
+            physical["candidate_target_hmx_commands"] ==
+            physical["control_target_hmx_commands"])
+        gates["direct_hmx_commands_preserved"] = (
+            physical["candidate_direct_n_hmx_commands"] ==
+            physical["control_direct_n_hmx_commands"])
+        gates["dma_descriptor_delta_exact"] = (
+            physical["control_dma_descriptors"] -
+            physical["candidate_dma_descriptors"] ==
+            LAYERS * 2 * (
+                target_n_tiles // args.control_batch -
+                target_n_tiles // args.candidate_batch))
     if audit is not None:
         gates["audit_pass"] = bool(audit["all_pass"])
     gates["all_pass"] = all(gates.values())
@@ -249,7 +281,8 @@ def main() -> None:
         "candidate_prefill_tok_s_median": candidate_prefill,
         "pair_speedups": pair_speedups,
         "module_us_per_decode_token": module_summary,
-        "gate_up_projection_us": gate_up,
+        "target": args.target,
+        "target_projection_us": target,
         "swiglu_us": swiglu,
         "physical": physical,
         "audit": audit,
@@ -260,17 +293,18 @@ def main() -> None:
         encoding="utf-8")
 
     report = [
-        f"# EXP-{args.experiment:04d} direct-n Gate/Up batch report",
+        f"# EXP-{args.experiment:04d} direct-n {target_label} batch report",
         "",
         f"Source commit: `{args.source_commit}`",
         "",
-        f"The candidate changes only logical-M1 direct-n Gate/Up from "
+        f"The candidate changes only logical-M1 direct-n {target_label} DMA from "
         f"{args.control_batch} to {args.candidate_batch} output tiles per "
-        "HMX command, using decode-phase-dead buffers as packed-W4 slots.",
+        "transfer group while preserving the declared HMX command group.",
         "",
         "## End-to-end gate",
         "",
-        "| Metric | Batch4 control | Batch8 candidate | Change |",
+        f"| Metric | Batch{args.control_batch} control | "
+        f"Batch{args.candidate_batch} candidate | Change |",
         "|---|---:|---:|---:|",
         f"| Decode throughput | {control_tps:.3f} tok/s | "
         f"{candidate_tps:.3f} tok/s | "
@@ -289,7 +323,8 @@ def main() -> None:
         "",
         "## Decode module wall attribution",
         "",
-        "| Module | Batch4 control | Batch8 candidate | Candidate speed change |",
+        f"| Module | Batch{args.control_batch} control | "
+        f"Batch{args.candidate_batch} candidate | Candidate speed change |",
         "|---|---:|---:|---:|",
         *module_rows,
         f"| Complete decode host wall | {control_latency * 1000.0:.1f} "
@@ -298,8 +333,8 @@ def main() -> None:
         "",
         "## Target and physical counters",
         "",
-        f"Gate/Up wall: {gate_up[CONTROL]:.1f} -> "
-        f"{gate_up[CANDIDATE]:.1f} us/token.  SwiGLU: "
+        f"{target_label} wall: {target[CONTROL]:.1f} -> "
+        f"{target[CANDIDATE]:.1f} us/token.  SwiGLU: "
         f"{swiglu[CONTROL]:.1f} -> {swiglu[CANDIDATE]:.1f} us/token.",
         "",
         f"Physical counters: `{json.dumps(physical, sort_keys=True)}`.",
