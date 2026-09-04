@@ -16,5 +16,7 @@ if grep -RIn -E 'Qnn|QAIRT|qti\.aisw' src include CMakeLists.txt \
     exit 1
 fi
 bash -n scripts/build_exp0175.sh scripts/deploy_exp0175.sh \
-    scripts/run_exp0175.sh scripts/check_exp0175_static.sh
+    scripts/run_exp0175.sh scripts/run_exp0175_short_gate.sh \
+    scripts/check_exp0175_static.sh
+python3 -m py_compile scripts/summarize_exp0175_short.py
 printf '%s\n' '{"experiment":"EXP-0175","static_gate":"pass","variant":"W4U8","control":"post_batch8","candidates":["pair_ready_batch8","pair_ready_batch16","pair_ready2_batch8","pair_ready2_batch16"],"qnn_dependency":false}'
