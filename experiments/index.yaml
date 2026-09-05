@@ -11,19 +11,26 @@ experiments:
     title: Unified lightweight device quality and speed evaluation
     parent: EXP-0217
     record: docs/experiments/EXP-0218.md
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
     adoption_status: pending
     approval_ref: 'User message 2026-09-05: 同意你的评测方案，按此方案实现，然后报告评测结果。'
     source_branches:
     - codex/exp-0218-three-recipe-lightweight-evaluation
-    source_commits: []
+    source_commits:
+    - f2068ed54755384043d6c0457603554328324ba4
+    - 242754b470bfb116158bc40d4b3089bdc19d4088
+    - 87830bd7e952e184c5160fd76fbf1a1c86d4ddca
+    - c48b9a0c2f6ffefd18be53e534e897e415d554ec
+    - d981072513d06ed61731c14743c76ac6bc81617f
+    - b2904bbc60b25e6b80f53351655b1c585fd97db2
     runtime:
       source_branch: codex/exp-0218-three-recipe-lightweight-evaluation
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       approved_on: '2026-09-05'
       started_on: '2026-09-05'
+      completed_on: '2026-09-05'
     variants:
     - F16F16
     - Selected_W4F16
@@ -37,6 +44,115 @@ experiments:
       quality_gate: measure_and_report_W4U8_failure_without_repair
       physical_gate: 8MiB_zero_timed_intermediate_DDR_one_FastRPC_no_QNN
       selected_baseline_changed: false
+      source_head: b2904bbc60b25e6b80f53351655b1c585fd97db2
+      formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0218
+      retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0218/artifacts
+      full_profiling_report: docs/experiments/EXP-0218-PROFILE.md
+      full_profiling_report_sha256: 521be8903db7f87ed69a162628bbfeb578091f7177ae8cc8876d57b341c0450d
+      quality_summary_sha256: f12e8feb218fb55aad7ac85402a3e7a4db3ec3700ec0250e5d8bc83b23eca41d
+      speed_summary_sha256: 04e4fec9484836cdcb5f7d99c3b180795e0886c781a1cc53c95524097ba385c5
+      evidence_sha256_ledger_sha256: 1d8f8e5eeeac7ea40a747698d71f8b78f58a9aa501512a4721926d262d2259e7
+      dataset_version: qbh-lite-v1
+      dataset_sha256: 745331b85f7ad6c3711dc7eadb30df2efe632da8b50d9c4f3a8e2bf5e2cfe8de
+      formal_sessions_per_recipe: 10
+      invocation_ledgers_checked: 480
+      layer_ledgers_checked: 13440
+      speed_gate_result: pass_warmup_then_5_short_then_10_rotated_formal
+      physical_gate_result: pass_exact_8MiB_zero_intermediate_DDR_no_spill_1_FastRPC_no_QNN
+      ledger_gate_result: pass_480_invocations_13440_layers_exact
+      quality_determinism:
+        f16f16: pass
+        w4f16: pass
+        w4u8: fail_diagnostic_only
+      quality_snapshot:
+        BF16 teacher:
+          nll: 3.6419517509639263
+          ppl: 38.16625510389282
+          delta_nll_teacher: 0.0
+          tasks_correct: 22
+          tasks_total: 24
+          teacher_top1_agreement: 1
+        f16f16:
+          nll: 3.6336079680275555
+          ppl: 37.84912901127567
+          delta_nll_teacher: -0.008343782936370836
+          tasks_correct: 22
+          tasks_total: 24
+          teacher_top1_agreement: 0.97265625
+        w4f16:
+          nll: 4.231668471946213
+          ppl: 68.83198064863572
+          delta_nll_teacher: 0.5897167209822864
+          tasks_correct: 8
+          tasks_total: 24
+          teacher_top1_agreement: 0.55078125
+        w4u8:
+          nll: 18.368196572285157
+          ppl: 94886933.99566276
+          delta_nll_teacher: 14.726244821321231
+          tasks_correct: 0
+          tasks_total: 24
+          teacher_top1_agreement: 0
+      quality_interpretation: F16F16_close_to_BF16_W4F16_quality_degraded_W4U8_diagnostic_only_not_certified
+      software_w4f16_diagnostic: 8_of_24_NLL_4.250193_top1_445_of_512_agreement_with_DSP_not_numerically_equivalent
+      throughput:
+        f16f16:
+          prefill_tokens: 64
+          prefill_host_us: 80692.1875
+          prefill_tokens_per_second: 793.1375016943244
+          decode_tokens: 15
+          decode_host_us: 1644005.3655
+          decode_tokens_per_second: 9.12405781317993
+          generation_loop_median_us: 1731394.791
+          cold_startup_median_ns:
+            model_staging_ns: 1138580442.0
+            session_open_map_ns: 46820443.0
+            prepare_ns: 2012395.5
+            ready_ns: 1192969426.5
+          frontend_median:
+            tokenize_template_ns: 431917.5
+            incremental_detokenize_ns: 1706128.0
+            launch_to_first_text_s: 1.4300670459633693
+        w4f16:
+          prefill_tokens: 64
+          prefill_host_us: 62693.75
+          prefill_tokens_per_second: 1020.8354102282923
+          decode_tokens: 15
+          decode_host_us: 1384732.447
+          decode_tokens_per_second: 10.832417505993488
+          generation_loop_median_us: 1453909.557
+          cold_startup_median_ns:
+            model_staging_ns: 528018281.0
+            session_open_map_ns: 51032552.0
+            prepare_ns: 2063411.5
+            ready_ns: 585612239.5
+          frontend_median:
+            tokenize_template_ns: 484473.0
+            incremental_detokenize_ns: 1739720.0
+            launch_to_first_text_s: 0.7764752879738808
+        w4u8:
+          prefill_tokens: 64
+          prefill_host_us: 39575.937000000005
+          prefill_tokens_per_second: 1617.1442763313473
+          decode_tokens: 15
+          decode_host_us: 341462.08400000003
+          decode_tokens_per_second: 43.92874261260585
+          generation_loop_median_us: 387484.3225
+          cold_startup_median_ns:
+            model_staging_ns: 5085238540.0
+            session_open_map_ns: 55979244.5
+            prepare_ns: 2037422.0
+            ready_ns: 5141097680.5
+          frontend_median:
+            tokenize_template_ns: 433158.0
+            incremental_detokenize_ns: 1224207.0
+            launch_to_first_text_s: 5.482110387994908
+      w4u8_specialization: paused_by_user
+      quality_runtime_source_commit: 87830bd7e952e184c5160fd76fbf1a1c86d4ddca
+      speed_runtime_source_commit: d981072513d06ed61731c14743c76ac6bc81617f
+      dsp_identical_between_quality_and_speed: true
+      local_gate_failure_scope: W4U8_quality_determinism_only; evaluation execution complete and failure evidence retained;
+        A16 and all speed/physical/ledger gates pass
   - id: EXP-0217
     slug: f16f16-greedy-generation
     title: F16F16 complete deterministic token-generation boundary

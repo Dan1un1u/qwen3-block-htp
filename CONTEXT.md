@@ -1555,3 +1555,8 @@ EXP-0217 completes fixed M64 token input, FP16 embedding, unchanged 28-layer F16
 
 **Unified Lightweight Device Evaluation**:
 EXP-0218 is approved to implement and run the retained bilingual NLL/short-task plus M64+15 speed protocol. Evaluate actual DSP heads and self-computed KV under common token inputs. Freeze data, answers and hashes before outputs. W4U8 quality may fail without triggering specialization. Original BF16 teacher scores are cached once. Routine gate defects are repaired under PC037.
+
+
+## EXP-0218 lightweight evaluation closure (2026-09-05)
+
+qbh-lite-v1 is a frozen diagnostic set: 512 conditional target tokens and 24 short tasks, not a general quality benchmark. DSP F16F16 is close to BF16; DSP W4F16 and its independent software diagnostic both score 8/24. Readability is not accuracy acceptance. A16 score snapshots are deterministic. W4U8 scores are provisional diagnostics because repeated logit statistics differ; its local quality gate failed while speed/physical/ledger checks passed. Failed evidence is retained and no baseline was promoted. W4U8 specialization remains paused. See EXP-0218-RESULTS.md and SESSION_HANDOFF_EXP0218.md.
