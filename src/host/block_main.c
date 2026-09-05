@@ -2899,6 +2899,7 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U32(w4u8_decode_direct_n_q_batch_n_tiles);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_direct_n_down_batch_n_tiles);
     QBH_REPLAY_PROFILE_U32(w4u8_decode_direct_n_down_single_dma);
+    QBH_REPLAY_PROFILE_U32(w4u8_decode_direct_n_o_single_dma);
     QBH_REPLAY_PROFILE_U32(w4u8_qkv_ring_batch_count);
     QBH_REPLAY_PROFILE_U32(w4u8_qkv_ring_head_publish_count);
     QBH_REPLAY_PROFILE_U32(w4u8_o_gate_prefetch_start_count);
@@ -4189,6 +4190,7 @@ int main(int argc, char **argv) {
     uint32_t w4u8_decode_direct_n_q_batch_n_tiles = 0U;
     uint32_t w4u8_decode_direct_n_down_batch_n_tiles = 2U;
     uint32_t w4u8_decode_direct_n_down_single_dma = 0U;
+    uint32_t w4u8_decode_direct_n_o_single_dma = 0U;
     uint32_t w4u8_decode_swiglu_rows =
         QBH_BLOCK_W4U8_SWIGLU_FULL_ROWS;
     uint32_t w4u8_decode_swiglu_padding_poison = 0U;
@@ -4535,6 +4537,16 @@ int main(int argc, char **argv) {
                 value,
                 &w4u8_decode_direct_n_down_single_dma) != 0) {
             w4u8_decode_direct_n_down_single_dma = UINT32_MAX;
+        }
+    }
+    {
+        const char *value = getenv(
+            "QBH_W4U8_DECODE_DIRECT_N_O_SINGLE_DMA");
+        if (value != NULL && value[0] != '\0' &&
+            qbh_parse_u32(
+                value,
+                &w4u8_decode_direct_n_o_single_dma) != 0) {
+            w4u8_decode_direct_n_o_single_dma = UINT32_MAX;
         }
     }
     {
@@ -4957,8 +4969,17 @@ int main(int argc, char **argv) {
           (w4u8_decode_direct_n_mask &
            QBH_BLOCK_W4U8_DIRECT_N_MLP) == 0U ||
           w4u8_decode_direct_n_down_batch_n_tiles != 4U)) ||
+        w4u8_decode_direct_n_o_single_dma > 1U ||
+        (w4u8_decode_direct_n_o_single_dma != 0U &&
+         (variant != QBH_BLOCK_W4U8 ||
+          w4u8_decode_projection_mode !=
+              QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
+          (w4u8_decode_direct_n_mask &
+           QBH_BLOCK_W4U8_DIRECT_N_O) == 0U ||
+          w4u8_decode_o_batch_n_tiles != 16U)) ||
         (w4u8_decode_o_batch_n_tiles != 4U &&
-         w4u8_decode_o_batch_n_tiles != 8U) ||
+         w4u8_decode_o_batch_n_tiles != 8U &&
+         w4u8_decode_o_batch_n_tiles != 16U) ||
         (w4u8_decode_o_batch_n_tiles != 4U &&
          variant != QBH_BLOCK_W4U8) ||
         (w4u8_decode_av_requant_rows !=
@@ -6184,6 +6205,8 @@ int main(int argc, char **argv) {
         w4u8_decode_direct_n_down_batch_n_tiles;
     header->w4u8_decode_direct_n_down_single_dma =
         w4u8_decode_direct_n_down_single_dma;
+    header->w4u8_decode_direct_n_o_single_dma =
+        w4u8_decode_direct_n_o_single_dma;
     header->w4u8_decode_swiglu_rows =
         w4u8_decode_swiglu_rows;
     header->w4u8_decode_swiglu_padding_poison =

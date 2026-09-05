@@ -95,7 +95,7 @@ _Static_assert(
 #define QBH_BLOCK_W4U8_GATE_UP_PAIR_SLOTS UINT32_C(8)
 #define QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES UINT32_C(8)
 #define QBH_BLOCK_W4U8_QKV_BATCH_N_TILES UINT32_C(4)
-#define QBH_BLOCK_W4U8_O_MAX_BATCH_N_TILES UINT32_C(8)
+#define QBH_BLOCK_W4U8_O_MAX_BATCH_N_TILES UINT32_C(16)
 #define QBH_BLOCK_W4U8_DIRECT_N_SAFE_BATCH_N_TILES UINT32_C(4)
 #define QBH_BLOCK_W4U8_DIRECT_N_MAX_BATCH_N_TILES UINT32_C(32)
 #define QBH_BLOCK_W4U8_DIRECT_N_DOWN_BATCH_N_TILES UINT32_C(2)
@@ -1912,7 +1912,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
           header->replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS ||
           !qbh_generation_w4u8_enabled(header->generation_mode))) ||
         (header->w4u8_decode_o_batch_n_tiles != 4U &&
-         header->w4u8_decode_o_batch_n_tiles != 8U) ||
+         header->w4u8_decode_o_batch_n_tiles != 8U &&
+         header->w4u8_decode_o_batch_n_tiles != 16U) ||
         (header->w4u8_decode_o_batch_n_tiles != 4U &&
          header->variant != QBH_BLOCK_W4U8) ||
         (header->w4u8_decode_av_requant_rows !=
@@ -2013,6 +2014,14 @@ static int qbh_header_valid(const struct qbh_block_header *header,
           (header->w4u8_decode_direct_n_mask &
            QBH_BLOCK_W4U8_DIRECT_N_MLP) == 0U ||
           header->w4u8_decode_direct_n_down_batch_n_tiles != 4U)) ||
+        header->w4u8_decode_direct_n_o_single_dma > 1U ||
+        (header->w4u8_decode_direct_n_o_single_dma != 0U &&
+         (header->variant != QBH_BLOCK_W4U8 ||
+          header->w4u8_decode_projection_mode !=
+              QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
+          (header->w4u8_decode_direct_n_mask &
+           QBH_BLOCK_W4U8_DIRECT_N_O) == 0U ||
+          header->w4u8_decode_o_batch_n_tiles != 16U)) ||
         (header->w4u8_decode_swiglu_rows !=
              QBH_BLOCK_W4U8_SWIGLU_FULL_ROWS &&
          header->w4u8_decode_swiglu_rows !=
@@ -8958,6 +8967,12 @@ static int qbh_run_w4u8_direct_n_projection(
         ? n_tiles : batch_tiles;
     uint32_t current_slot = 0U;
     uint32_t descriptor_count = 0U;
+    const uint32_t single_weight_descriptor =
+        desc == &header->projections[QBH_BLOCK_PROJ_DOWN]
+            ? header->w4u8_decode_direct_n_down_single_dma
+            : (desc == &header->projections[QBH_BLOCK_PROJ_O]
+                   ? header->w4u8_decode_direct_n_o_single_dma
+                   : 0U);
     uint64_t dma_start;
     int result;
 
@@ -8987,8 +9002,7 @@ static int qbh_run_w4u8_direct_n_projection(
         current_tiles * tile_bytes, bias_slots[0],
         shared + desc->bias_offset,
         current_tiles * QBH_HMX_BIAS_BYTES,
-        desc == &header->projections[QBH_BLOCK_PROJ_DOWN]
-            ? header->w4u8_decode_direct_n_down_single_dma : 0U,
+        single_weight_descriptor,
         &descriptor_count);
     if (result == 0) {
         result = qbh_dma_wait_w4u8_direct_n_prefetch(
@@ -9037,8 +9051,7 @@ static int qbh_run_w4u8_direct_n_projection(
                 shared + desc->bias_offset +
                     (size_t)next_first * QBH_HMX_BIAS_BYTES,
                 next_tiles * QBH_HMX_BIAS_BYTES,
-                desc == &header->projections[QBH_BLOCK_PROJ_DOWN]
-                    ? header->w4u8_decode_direct_n_down_single_dma : 0U,
+                single_weight_descriptor,
                 &descriptor_count);
             if (result == 0) {
                 result = qbh_dma_wait_w4u8_direct_n_prefetch(
