@@ -38,7 +38,9 @@ def main():
     shutil.copytree('/mnt/d/llm_exp/models/qwen3-block-htp/exp0158/f16f16',
                     output, copy_function=base.copy_link)
     manifest = json.loads((output/'manifest.json').read_text())
-    files = manifest['files']
+    # Historical Windows manifests use backslashes; normalize before overlays.
+    files = {name.replace(chr(92), '/'): value for name, value in manifest['files'].items()}
+    manifest['files'] = files
     for name, values in [('generation_prompt_token_ids_u32.bin', ids[0].tolist()),
                          ('generation_expected_token_ids_u32.bin', generated['token_ids'])]:
         p = output/name
