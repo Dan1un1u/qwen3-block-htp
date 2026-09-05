@@ -33,10 +33,10 @@ current_scope:
   device_execution_state: ready
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: EXP0219_offline_rotation_implementation
+  active_experiment_stage: EXP0219_quality_complete_remaining_5_short_10_formal
   active_experiment_evidence: D:/llm_exp/results/qwen3-block-htp/exp0219
-  active_experiment_gate: pending
-  active_experiment_source_head: b2904bbc60b25e6b80f53351655b1c585fd97db2
+  active_experiment_gate: unquantized_equivalence_and_quality_determinism_pass_quality_effectiveness_fail
+  active_experiment_source_head: a8b930ff574bfc420a270abec4a8243f65fa22a5
   current_handoff: docs/experiments/EXP-0219.md
   active_recipe_specialization: W4F16_offline_R1R2_only
   last_completed_experiment_contract:
