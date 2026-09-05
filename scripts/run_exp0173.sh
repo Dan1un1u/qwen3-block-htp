@@ -39,7 +39,7 @@ case "${group_tiles}" in
 *) printf 'invalid EXP-0173 LM-head group tiles: %s\n' "${group_tiles}" >&2; exit 2 ;;
 esac
 case "${o_batch_tiles}" in
-4|8) ;;
+4|8|16) ;;
 *) printf 'invalid EXP-0176 O batch tiles: %s\n' "${o_batch_tiles}" >&2; exit 2 ;;
 esac
 case "${av_requant_rows}" in
