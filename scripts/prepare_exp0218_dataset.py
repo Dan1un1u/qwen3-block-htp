@@ -56,6 +56,8 @@ def main():
     samples = []
     for lang, docs in [("zh", ZH), ("en", EN)]:
         for doc_id, text in enumerate(docs):
+            if lang == "en":
+                text += " Later that day, the people involved checked their notes and made sure that nothing important had been forgotten."
             ids = tok.encode(text, add_special_tokens=False)
             for offset in ([0, 16] if doc_id < 8 else [0]):
                 assert len(ids) >= offset + 80, (lang, doc_id, len(ids))

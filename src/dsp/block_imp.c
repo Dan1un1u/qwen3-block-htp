@@ -6264,7 +6264,7 @@ static int qbh_run_generation_head_w4f16_overlap(
 
             if (previous_output != NULL) {
                 stage_start = HAP_perf_get_qtimer_count();
-                qbh_generation_hvx_argmax_group(header, (uint32_t *)buffers->down, 
+                qbh_generation_hvx_argmax_group(header, (uint32_t *)buffers->down,
                     previous_output, previous_n_tile,
                     previous_group_tiles, &best_value,
                     &best_token, &best_bits);
@@ -6289,7 +6289,7 @@ static int qbh_run_generation_head_w4f16_overlap(
         if (previous_output != NULL) {
             const uint64_t argmax_start =
                 HAP_perf_get_qtimer_count();
-            qbh_generation_hvx_argmax_group(header, (uint32_t *)buffers->down, 
+            qbh_generation_hvx_argmax_group(header, (uint32_t *)buffers->down,
                 previous_output, previous_n_tile,
                 previous_group_tiles, &best_value,
                 &best_token, &best_bits);
@@ -6398,7 +6398,7 @@ static int qbh_run_generation_head_w4f16_overlap(
                 hmx_output, 1U, k_tiles, group_tiles);
             if (last_hmx_output != NULL) {
                 stage_start = HAP_perf_get_qtimer_count();
-                qbh_generation_hvx_argmax_group(header, (uint32_t *)buffers->down, 
+                qbh_generation_hvx_argmax_group(header, (uint32_t *)buffers->down,
                     last_hmx_output, last_n_tile, last_group_tiles,
                     &best_value, &best_token, &best_bits);
                 header->generation_lm_head_argmax_ticks +=
@@ -6425,7 +6425,7 @@ static int qbh_run_generation_head_w4f16_overlap(
 
         if (stream_hmx != 0U) {
             stage_start = HAP_perf_get_qtimer_count();
-            qbh_generation_hvx_argmax_group(header, (uint32_t *)buffers->down, 
+            qbh_generation_hvx_argmax_group(header, (uint32_t *)buffers->down,
                 (const __fp16 *)hmx_output, n_tile, group_tiles,
                 &best_value, &best_token, &best_bits);
             header->generation_lm_head_argmax_ticks +=
@@ -6438,7 +6438,7 @@ static int qbh_run_generation_head_w4f16_overlap(
     }
     if (stream_hmx == 0U && last_hmx_output != NULL) {
         const uint64_t argmax_start = HAP_perf_get_qtimer_count();
-        qbh_generation_hvx_argmax_group(header, (uint32_t *)buffers->down, 
+        qbh_generation_hvx_argmax_group(header, (uint32_t *)buffers->down,
             last_hmx_output, last_n_tile, last_group_tiles,
             &best_value, &best_token, &best_bits);
         header->generation_lm_head_argmax_ticks +=
@@ -7249,7 +7249,7 @@ static int qbh_run_generation_head_w4u8(
                     return -9;
                 }
                 start = HAP_perf_get_qtimer_count();
-                qbh_generation_hvx_argmax_u8_group(header, (uint32_t *)buffers->down, 
+                qbh_generation_hvx_argmax_u8_group(header, (uint32_t *)buffers->down,
                     hmx_output, previous_first_n_tile,
                     previous_group_tiles, argmax_scratch,
                     &best_code, &best_token);
@@ -7291,7 +7291,7 @@ static int qbh_run_generation_head_w4u8(
                 return -10;
             }
             start = HAP_perf_get_qtimer_count();
-            qbh_generation_hvx_argmax_u8_group(header, (uint32_t *)buffers->down, 
+            qbh_generation_hvx_argmax_u8_group(header, (uint32_t *)buffers->down,
                 hmx_output, previous_first_n_tile,
                 previous_group_tiles, argmax_scratch,
                 &best_code, &best_token);
@@ -7373,7 +7373,7 @@ static int qbh_run_generation_head_w4u8(
 
         {
             const uint64_t argmax_start = HAP_perf_get_qtimer_count();
-            qbh_generation_hvx_argmax_u8_group(header, (uint32_t *)buffers->down, 
+            qbh_generation_hvx_argmax_u8_group(header, (uint32_t *)buffers->down,
                 buffers->hmx_output, first_n_tile, group_tiles,
                 argmax_scratch, &best_code, &best_token);
             header->generation_lm_head_argmax_ticks +=
