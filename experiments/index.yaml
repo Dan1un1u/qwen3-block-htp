@@ -6,6 +6,41 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0220
+    slug: gamma-fold-attribution-r2-only
+    title: Gamma-fold precision/location attribution and W4F16 R2-only validation
+    parent: EXP-0219
+    record: docs/experiments/EXP-0220.md
+    execution_state: running
+    evidence_validity: pending
+    local_gate: pending
+    adoption_status: pending
+    approval_ref: 'User 2026-09-05: 同意方向，开始实验; approved preceding ordered FP16 folding
+      control, folding-location attribution, and gamma-preserving R2-only; quantizer
+      changes conditional on a subsequent full-R1 direction.'
+    source_branches:
+    - codex/exp-0220-gamma-fold-attribution-r2-only
+    source_commits:
+    - 10a5a19e125c9d7894d3102aa3e289a68c39f914
+    runtime:
+      source_branch: codex/exp-0220-gamma-fold-attribution-r2-only
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      started_on: '2026-09-05'
+      approved_on: '2026-09-05'
+    variants:
+    - host_FP16_original
+    - host_FP16_gamma_fold
+    - W4_qkv_fold
+    - W4_mlp_fold
+    - W4_head_fold
+    - W4_R2_only
+    - frozen_original_W4_control
+    evidence_profile: qbh_lite_v1_precision_and_location_ablation_with_R2_only
+    evidence:
+      source_parent_commit: 10a5a19e125c9d7894d3102aa3e289a68c39f914
+      original_checkpoint_only: true
+      lpbq: false
+      selected_baseline_changed: false
   - id: EXP-0219
     slug: w4f16-r1r2-offline-rotation
     title: W4F16 full-model offline Hadamard R1/R2 quality validation
