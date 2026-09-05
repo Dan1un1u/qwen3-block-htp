@@ -10,6 +10,7 @@ import hashlib
 import json
 import math
 import random
+import subprocess
 import time
 from pathlib import Path
 import numpy as np
@@ -159,7 +160,7 @@ def save_checkpoint(path,model,opt,step,data_hash):
         orthogonality=orth,torch_rng=torch.get_rng_state(),cuda_rng=torch.cuda.get_rng_state_all(),python_rng=random.getstate())
     torch.save(value,path);return orth
 
-def train(smoke=False):
+def train(smoke=False,resume=False):
     from experiment_exp0220 import verify_origin
     from prepare_exp0164_generation_package import sha256_file
     assert torch.cuda.is_available(),'CUDA training environment required'
@@ -170,14 +171,27 @@ def train(smoke=False):
     assert data['plan']==PLAN
     origin=verify_origin();base=load_model(MODEL,torch.bfloat16);model=LearnedModel(base);del base;gc.collect()
     opt=optimizer([model.r1,*model.r2],PLAN['learning_rate'])
-    mode='smoke' if smoke else 'training';out=OUTPUT/mode;assert not out.exists()
-    out.mkdir(parents=True);rows=data['train'];gen=np.random.default_rng(SEED)
+    mode='smoke' if smoke else 'training';out=OUTPUT/mode
+    assert resume==out.exists(), 'Use --resume only for an existing retained run'
+    out.mkdir(parents=True,exist_ok=resume);rows=data['train'];gen=np.random.default_rng(SEED)
     en=gen.permutation([i for i,r in enumerate(rows) if r['language']=='en']);zh=gen.permutation([i for i,r in enumerate(rows) if r['language']=='zh'])
     schedule=np.stack([np.concatenate([en[i:i+4],zh[i:i+4]]) for i in range(0,400,4)])
-    orth=save_checkpoint(out/'step000.pt',model,opt,0,data_hash)
-    logpath=RESULT/(mode+'.jsonl');assert not logpath.exists()
+    first_step=0
+    if resume:
+        last=sorted(out.glob('step*.pt'))[-1];saved=torch.load(last,map_location='cpu',weights_only=False)
+        assert saved['plan']==PLAN and saved['data_sha256']==data_hash
+        with torch.no_grad():
+            model.r1.copy_(saved['rotations']['R1'])
+            for p,v in zip(model.r2,saved['rotations']['R2']):p.copy_(v)
+        opt.load_state_dict(saved['optimizer']);first_step=saved['step']
+        torch.set_rng_state(saved['torch_rng']);torch.cuda.set_rng_state_all(saved['cuda_rng']);random.setstate(saved['python_rng'])
+    else:save_checkpoint(out/'step000.pt',model,opt,0,data_hash)
+    suffix=('_resume_'+str(time.time_ns())) if resume else ''
+    logpath=RESULT/(mode+suffix+'.jsonl');assert not logpath.exists()
+    source_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=Path(__file__).resolve().parents[1],text=True).strip()
+    write_json(RESULT/(mode+suffix+'_start.json'),dict(source_head=source_head,data_sha256=data_hash,first_step=first_step,plan=PLAN))
     start=time.monotonic();steps=1 if smoke else PLAN['steps']
-    for step in range(steps):
+    for step in range(first_step,steps):
         ids=torch.tensor([rows[int(i)]['token_ids'] for i in schedule[step]],device='cuda')
         opt.zero_grad(set_to_none=True);lr=PLAN['learning_rate']*.5*(1+math.cos(math.pi*step/PLAN['steps']))
         opt.param_groups[0]['lr']=lr
@@ -187,11 +201,11 @@ def train(smoke=False):
         gradnorm=float(torch.linalg.vector_norm(torch.stack([g.norm() for g in grad])))
         opt.step();torch.cuda.synchronize()
         row=dict(step=step+1,loss=float(loss.detach()),lr=lr,grad_norm=gradnorm,elapsed_s=time.monotonic()-start,peak_gpu_bytes=torch.cuda.max_memory_allocated())
-        if smoke or step+1 in PLAN['checkpoints']:
+        if smoke or (step+1)%10==0:
             row['orthogonality']=save_checkpoint(out/f'step{step+1:03d}.pt',model,opt,step+1,data_hash)
         with logpath.open('a') as f:f.write(json.dumps(row)+'\n')
         print(json.dumps(row),flush=True)
     write_json(RESULT/(mode+'_complete.json'),dict(steps=steps,origin=origin,data_sha256=data_hash,plan=PLAN,torch=torch.__version__,gpu=torch.cuda.get_device_name(),elapsed_s=time.monotonic()-start))
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('phase',choices=['train','smoke']);a=p.parse_args();train(a.phase=='smoke')
+    p=argparse.ArgumentParser();p.add_argument('phase',choices=['train','smoke']);p.add_argument('--resume',action='store_true');a=p.parse_args();train(a.phase=='smoke',a.resume)
