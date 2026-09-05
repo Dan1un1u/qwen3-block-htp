@@ -6,6 +6,37 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0221
+    slug: w4f16-gptq-offline-rotation
+    title: Per-channel GPTQ original/folded/R1R2 quality validation
+    parent: EXP-0220
+    record: docs/experiments/EXP-0221.md
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    approval_ref: 'User 2026-09-05: 那就往这个方向做一做试试，同意你的方向; approved original/gamma-fold/R1R2
+      GPTQ with separate calibration.'
+    source_branches:
+    - codex/exp-0221-w4f16-gptq-offline-rotation
+    source_commits:
+    - e3a2c869b7a02061af3a976db536296c50f29850
+    runtime:
+      source_branch: codex/exp-0221-w4f16-gptq-offline-rotation
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      started_on: '2026-09-05'
+      approved_on: '2026-09-05'
+    variants:
+    - A_original_GPTQ
+    - B_gamma_fold_GPTQ
+    - C_R1R2_GPTQ
+    - frozen_RTN_control
+    evidence_profile: gptq_independent_calibration_frozen_qbh_lite_v1
+    evidence:
+      source_parent_commit: e3a2c869b7a02061af3a976db536296c50f29850
+      original_checkpoint_only: true
+      lpbq: false
+      selected_baseline_changed: false
   - id: EXP-0220
     slug: gamma-fold-attribution-r2-only
     title: Gamma-fold precision/location attribution and W4F16 R2-only validation
