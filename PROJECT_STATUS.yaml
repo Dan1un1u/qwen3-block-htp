@@ -33,9 +33,10 @@ current_scope:
   device_execution_state: ready
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: approved_pending_source_branch_and_preflight
-  active_experiment_evidence: null
-  active_experiment_gate: not_run
+  active_experiment_stage: source_pushed_smoke_passed_short_gate_not_run
+  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0216/20260905_smoke_worktree'
+  active_experiment_gate: preliminary_smoke_pass_not_formal_evidence
+  current_handoff: SESSION_HANDOFF_EXP0216.md
   active_recipe_specialization: W4U8_M64_prefill_direct_packed_W4_QKVO_HMX
   active_experiment_contract:
     id: EXP-0216

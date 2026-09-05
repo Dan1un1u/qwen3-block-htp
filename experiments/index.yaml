@@ -20,7 +20,8 @@ experiments:
     evidence_profile: paired-full-token-boundary-W4U8-prefill-direct-W4-QKVO
     source_branches:
       - codex/exp-0216-w4u8-prefill-direct-w4-qkvo
-    source_commits: []
+    source_commits:
+      - f724a22acdfd78b20c6e1ba123015a8fa213a7b2
     record: docs/experiments/EXP-0216.md
     approval_ref: 'User message 2026-09-05: continue prefill loop indefinitely after direct-W4 acceleration until manually stopped'
     runtime:
@@ -38,6 +39,9 @@ experiments:
       correctness_gate: byte_exact_complete_prefill_hidden_cache_selected_codes_and_tokens
       physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_QKVO_and_MLP_prefill_expansion
       performance_gate: paired_direct_complete_prefill_tokens_per_second_strictly_higher
+      preliminary_smoke_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0216/20260905_smoke_worktree'
+      preliminary_smoke_result: pass_candidate_about_39p130ms_vs_control_43p817ms_with_byte_exact_outputs_zero_QKVO_and_MLP_expansion
+      formal_gate_state: not_run
       selected_baseline_changed: false
   - id: EXP-0215
     slug: w4u8-prefill-direct-w4-mlp
