@@ -29,6 +29,14 @@ def deploy(variant):
     assert adb('shell',f'test ! -e {root} && echo absent').strip()=='absent'
     package=BASE if variant=='A' else OUTPUT/variant
     manifest=json.loads((package/'manifest.json').read_text())
+    # EXP-0164 retained Windows keys for inherited capacity-72 cache records
+    # and explicit POSIX keys for its capacity-80 overlay. Prefer the declared
+    # overlay, never an observed/recomputed replacement hash.
+    original_files=manifest['files']
+    manifest['files']={}
+    for name,record in original_files.items():
+        canonical=name.replace(chr(92),'/')
+        manifest['files'][canonical]=original_files.get(canonical,record)
     for name,record in manifest['files'].items():
         path=package/name.replace(chr(92),'/')
         assert file_record(path)==record, path
