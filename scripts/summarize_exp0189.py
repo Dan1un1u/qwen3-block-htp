@@ -101,6 +101,7 @@ def validate_run(
     run: dict[str, object], rows: int, steps: int, poison: int = 0,
     experiment: int = 189, direct_mask: int = DIRECT_MASK,
     lm_head_direct: bool = False,
+    prefill_direct_projections: int = 0,
 ) -> None:
     summaries = run["summaries"]
     profiles = run["profiles"]
@@ -161,7 +162,8 @@ def validate_run(
                 int(profile["w4u8_decode_swiglu_row4_call_count"]), 0,
                 context + " prefill row4 calls")
             require_equal(
-                int(profile["w4u8_decode_direct_n_projection_count"]), 0,
+                int(profile["w4u8_decode_direct_n_projection_count"]),
+                prefill_direct_projections,
                 context + " prefill direct projections")
         else:
             require_equal(int(profile["w4u8_swiglu_rows_observed"]), rows,

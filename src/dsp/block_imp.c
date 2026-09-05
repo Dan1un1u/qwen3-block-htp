@@ -8981,11 +8981,22 @@ static int qbh_run_w4u8_direct_n_projection(
                    : 0U);
     uint64_t dma_start;
     int result;
+    const uint32_t prefill_mlp =
+        header != NULL && desc != NULL &&
+        header->logical_m == QBH_BLOCK_M &&
+        header->w4u8_decode_projection_mode ==
+            QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N &&
+        (header->w4u8_decode_direct_n_mask &
+         QBH_BLOCK_W4U8_DIRECT_N_PREFILL_MLP) != 0U &&
+        (desc == &header->projections[QBH_BLOCK_PROJ_GATE] ||
+         desc == &header->projections[QBH_BLOCK_PROJ_UP] ||
+         desc == &header->projections[QBH_BLOCK_PROJ_DOWN]);
 
     if (header == NULL || shared == NULL || desc == NULL ||
         buffers == NULL || worker == NULL || activation_tiles == NULL ||
         output_tiles == NULL ||
-        header->variant != QBH_BLOCK_W4U8 || header->logical_m != 1U ||
+        header->variant != QBH_BLOCK_W4U8 ||
+        (header->logical_m != 1U && prefill_mlp == 0U) ||
         header->w4u8_decode_projection_mode !=
             QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
         desc->direct_n_weight_bytes != desc->weight_bytes ||
@@ -14289,10 +14300,16 @@ static int qbh_run_w4u8_direct_n_mlp(
     uint32_t swiglu_rows;
     uint32_t swiglu_bytes;
     uint64_t start;
+    const uint32_t prefill_direct =
+        header != NULL && header->logical_m == QBH_BLOCK_M &&
+        header->w4u8_decode_projection_mode ==
+            QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N &&
+        (header->w4u8_decode_direct_n_mask &
+         QBH_BLOCK_W4U8_DIRECT_N_PREFILL_MLP) != 0U;
 
     if (header == NULL || shared == NULL || buffers == NULL ||
         worker == NULL || header->variant != QBH_BLOCK_W4U8 ||
-        header->logical_m != 1U ||
+        (header->logical_m != 1U && prefill_direct == 0U) ||
         header->w4u8_decode_projection_mode !=
             QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
         (header->w4u8_decode_direct_n_mask &
@@ -14311,7 +14328,9 @@ static int qbh_run_w4u8_direct_n_mlp(
      * in the dedicated Down buffer instead; it is already sized for all
      * 64 physical rows and remains directly consumable by final residual. */
     down_native = buffers->down;
-    swiglu_rows = header->w4u8_decode_swiglu_rows;
+    swiglu_rows = prefill_direct != 0U
+        ? QBH_BLOCK_W4U8_SWIGLU_FULL_ROWS
+        : header->w4u8_decode_swiglu_rows;
     swiglu_bytes = swiglu_rows * QBH_HMX_OUTPUT_CHANNELS;
     qbh_w4u8_record_swiglu_rows(header, swiglu_rows);
     header->w4u8_mlp_vtcm_base_offset =
@@ -14333,7 +14352,8 @@ static int qbh_run_w4u8_direct_n_mlp(
     }
 
     start = HAP_perf_get_qtimer_count();
-    if (header->w4u8_decode_direct_n_gate_up_continuous != 0U) {
+    if (prefill_direct == 0U &&
+        header->w4u8_decode_direct_n_gate_up_continuous != 0U) {
         if (qbh_run_w4u8_direct_n_gate_up_pair(
                 header, shared, buffers, worker, pool, gate_prefetch,
                 mlp_arena + gate_up_layout.vtcm_activation_offset,
@@ -14362,7 +14382,8 @@ static int qbh_run_w4u8_direct_n_mlp(
         2U * (QBH_BLOCK_INTERMEDIATE / QBH_HMX_OUTPUT_CHANNELS /
               header->w4u8_decode_direct_n_gate_up_batch_n_tiles);
 
-    if (header->w4u8_decode_direct_n_gate_up_swiglu_stream != 0U) {
+    if (prefill_direct == 0U &&
+        header->w4u8_decode_direct_n_gate_up_swiglu_stream != 0U) {
         const uint32_t tile_count =
             QBH_BLOCK_INTERMEDIATE / QBH_HMX_OUTPUT_CHANNELS;
         if (swiglu_rows == QBH_BLOCK_W4U8_SWIGLU_DECODE_ROWS) {
@@ -19233,6 +19254,16 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         header->variant == QBH_BLOCK_W4U8 &&
         (header->crouton_boundary_mode &
          QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT) != 0U;
+    uint32_t w4u8_direct_n_mlp_enabled =
+        header->variant == QBH_BLOCK_W4U8 &&
+        header->w4u8_decode_projection_mode ==
+            QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N &&
+        (header->w4u8_decode_direct_n_mask &
+         QBH_BLOCK_W4U8_DIRECT_N_MLP) != 0U &&
+        (header->logical_m == 1U ||
+         (header->logical_m == QBH_BLOCK_M &&
+          (header->w4u8_decode_direct_n_mask &
+           QBH_BLOCK_W4U8_DIRECT_N_PREFILL_MLP) != 0U));
     struct qbh_projection_layout w4u8_gate_up_layout;
     struct qbh_projection_layout w4u8_down_layout;
     uint8_t *w4u8_mlp_native_activation = NULL;
@@ -19258,14 +19289,9 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         if (qbh_init_w4u8_down_layout(&w4u8_down_layout) != 0) {
             return QBH_BLOCK_STATUS_MLP_STREAM_FAILED;
         }
-        w4u8_mlp_native_output =
-            header->logical_m == 1U &&
-                    header->w4u8_decode_projection_mode ==
-                        QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N &&
-                    (header->w4u8_decode_direct_n_mask &
-                     QBH_BLOCK_W4U8_DIRECT_N_MLP) != 0U
-                ? buffers->down
-                : buffers->q + w4u8_down_layout.vtcm_output_offset;
+        w4u8_mlp_native_output = w4u8_direct_n_mlp_enabled != 0U
+            ? buffers->down
+            : buffers->q + w4u8_down_layout.vtcm_output_offset;
     }
 
     start = HAP_perf_get_qtimer_count();
@@ -20317,11 +20343,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
 
     if (qbh_block_mlp_is_w4u8_streaming(header->mlp_mode)) {
         const int mlp_result =
-            header->logical_m == 1U &&
-                    header->w4u8_decode_projection_mode ==
-                        QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N &&
-                    (header->w4u8_decode_direct_n_mask &
-                     QBH_BLOCK_W4U8_DIRECT_N_MLP) != 0U
+            w4u8_direct_n_mlp_enabled != 0U
                 ? qbh_run_w4u8_direct_n_mlp(
                       header, shared, buffers, worker, w4f16_pool,
                       &gate_prefetch,

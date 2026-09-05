@@ -4605,7 +4605,7 @@ int main(int argc, char **argv) {
                 w4u8_decode_projection_mode =
                     QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N;
                 w4u8_decode_direct_n_mask =
-                    QBH_BLOCK_W4U8_DIRECT_N_ALL;
+                    QBH_BLOCK_W4U8_DIRECT_N_DECODE_ALL;
             } else {
                 w4u8_decode_projection_mode = UINT32_MAX;
             }

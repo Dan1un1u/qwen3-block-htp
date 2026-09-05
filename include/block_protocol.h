@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(104)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(211)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(105)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(215)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -166,7 +166,11 @@ enum qbh_w4u8_decode_direct_n_mask {
     QBH_BLOCK_W4U8_DIRECT_N_O = 1U << 1,
     QBH_BLOCK_W4U8_DIRECT_N_MLP = 1U << 2,
     QBH_BLOCK_W4U8_DIRECT_N_LM_HEAD = 1U << 3,
-    QBH_BLOCK_W4U8_DIRECT_N_ALL = (1U << 4) - 1U,
+    QBH_BLOCK_W4U8_DIRECT_N_DECODE_ALL = (1U << 4) - 1U,
+    /* EXP-0215 keeps all decode bits unchanged and opts only M64 MLP into
+     * the direct packed-W4 HMX carrier. */
+    QBH_BLOCK_W4U8_DIRECT_N_PREFILL_MLP = 1U << 4,
+    QBH_BLOCK_W4U8_DIRECT_N_ALL = (1U << 5) - 1U,
 };
 
 #define QBH_BLOCK_W4U8_AV_REQUANT_FULL_ROWS UINT32_C(64)
