@@ -47,7 +47,10 @@ esac
 # identity between the expanded-S8 control and direct-W4 candidate.
 set +e
 output="$("${adb_exe}" shell \
-    "cd ${remote_root} && LD_LIBRARY_PATH=${remote_root} DSP_LIBRARY_PATH=${remote_root} ADSP_LIBRARY_PATH=${remote_root} ./qwen3_probe_cli ${storage} ${projection} identity ${repeat_count} ${plan} linked_2d_dma prepared_session single_invocation 64 ${remote_root}/package_hmxref ${zero_point}" 2>&1)"
+    "cd ${remote_root}
+LD_LIBRARY_PATH=${remote_root} DSP_LIBRARY_PATH=${remote_root} ADSP_LIBRARY_PATH=${remote_root} ./qwen3_probe_cli ${storage} ${projection} identity ${repeat_count} ${plan} linked_2d_dma prepared_session single_invocation 64 ${remote_root}/package_hmxref ${zero_point} 2>${remote_root}/exp0214_reference_diagnostic.log
+cat ${remote_root}/exp0214_reference_diagnostic.log
+true")"
 probe_status=$?
 set -e
 printf '%s\n' "${output}"
