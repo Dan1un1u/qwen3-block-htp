@@ -8926,8 +8926,8 @@ static uint32_t qbh_w4u8_qkvo_batch_tiles(
     return 0U;
 }
 
-/* EXP-0188 decode-only path.  The host keeps a second, value-identical W4
- * carrier in the lane order consumed by HMX weight.n.  Two VTCM slots let
+/* Direct packed-W4 path.  The host keeps a second, value-identical W4 carrier
+ * in the lane order consumed by HMX weight.n.  Two phase-safe VTCM slots let
  * the next packed-W4 DMA overlap the current HMX command; there is no HVX
  * W4->S8 materialization anywhere in this routine. */
 static int qbh_run_w4u8_direct_n_projection(
@@ -8983,8 +8983,20 @@ static int qbh_run_w4u8_direct_n_projection(
         (desc == &header->projections[QBH_BLOCK_PROJ_GATE] ||
          desc == &header->projections[QBH_BLOCK_PROJ_UP] ||
          desc == &header->projections[QBH_BLOCK_PROJ_DOWN]);
+    const uint32_t prefill_qkvo =
+        header != NULL && desc != NULL &&
+        header->logical_m == QBH_BLOCK_M &&
+        header->w4u8_decode_projection_mode ==
+            QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N &&
+        (header->w4u8_decode_direct_n_mask &
+         QBH_BLOCK_W4U8_DIRECT_N_PREFILL_QKVO) != 0U &&
+        (desc == &header->projections[QBH_BLOCK_PROJ_Q] ||
+         desc == &header->projections[QBH_BLOCK_PROJ_K] ||
+         desc == &header->projections[QBH_BLOCK_PROJ_V] ||
+         desc == &header->projections[QBH_BLOCK_PROJ_O]);
+    const uint32_t prefill_direct = prefill_mlp | prefill_qkvo;
     const uint32_t single_weight_descriptor =
-        prefill_mlp != 0U
+        prefill_direct != 0U
             ? 1U
             : desc == &header->projections[QBH_BLOCK_PROJ_DOWN]
             ? header->w4u8_decode_direct_n_down_single_dma
@@ -8998,7 +9010,7 @@ static int qbh_run_w4u8_direct_n_projection(
         buffers == NULL || worker == NULL || activation_tiles == NULL ||
         output_tiles == NULL ||
         header->variant != QBH_BLOCK_W4U8 ||
-        (header->logical_m != 1U && prefill_mlp == 0U) ||
+        (header->logical_m != 1U && prefill_direct == 0U) ||
         header->w4u8_decode_projection_mode !=
             QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
         desc->direct_n_weight_bytes != desc->weight_bytes ||
@@ -9823,11 +9835,14 @@ static int qbh_run_w4u8_qkv_ring(
     state.generation = 1U;
     state.k_tiles = QBH_BLOCK_HIDDEN / QBH_HMX_INPUT_CHANNELS;
     state.direct_n_weights =
-        logical_rows == 1U && past_tokens != 0U &&
         header->w4u8_decode_projection_mode ==
             QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N &&
         (header->w4u8_decode_direct_n_mask &
-         QBH_BLOCK_W4U8_DIRECT_N_QKV) != 0U;
+         QBH_BLOCK_W4U8_DIRECT_N_QKV) != 0U &&
+        ((logical_rows == 1U && past_tokens != 0U) ||
+         (logical_rows == QBH_BLOCK_M && past_tokens == 0U &&
+          (header->w4u8_decode_direct_n_mask &
+           QBH_BLOCK_W4U8_DIRECT_N_PREFILL_QKVO) != 0U));
     state.tiles_per_batch = state.direct_n_weights != 0U
         ? header->w4u8_decode_direct_n_qkv_batch_n_tiles
         : QBH_BLOCK_W4U8_QKV_RING_TILES_PER_BATCH;
@@ -10693,7 +10708,10 @@ static int qbh_run_projection(
         }
     }
     if (header->variant == QBH_BLOCK_W4U8) {
-        if (header->logical_m == 1U &&
+        if ((header->logical_m == 1U ||
+             (header->logical_m == QBH_BLOCK_M &&
+              (header->w4u8_decode_direct_n_mask &
+               QBH_BLOCK_W4U8_DIRECT_N_PREFILL_QKVO) != 0U)) &&
             header->w4u8_decode_projection_mode ==
                 QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N &&
             (header->w4u8_decode_direct_n_mask &
