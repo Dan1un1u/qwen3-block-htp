@@ -9,7 +9,7 @@ case "${cell}" in
     *) printf 'invalid EXP-0215 cell: %s\n' "${cell}" >&2; exit 2 ;;
 esac
 
-EXP0173_REMOTE_ROOT=/data/local/tmp/qwen3-block-htp/exp0215-prefill-direct-w4-mlp \
+EXP0173_REMOTE_ROOT=/data/local/tmp/qwen3-block-htp/exp0173-exp0215-prefill-direct-w4-mlp \
 QBH_EXP0173_LM_HEAD_GROUP_TILES=32 \
 QBH_EXP0176_O_BATCH_TILES=16 \
 QBH_EXP0177_AV_REQUANT_ROWS=4 QBH_EXP0177_AV_PADDING_POISON=0 \
