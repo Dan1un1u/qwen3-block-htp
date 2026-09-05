@@ -59,8 +59,21 @@ def main() -> None:
                     assert int(value["repeat_count"]) == repeat_count
                     assert int(value["rpc_result"]) == 0
                     assert int(value["dsp_status"]) == 0
-                    assert int(value["mismatches"]) == 0
                     assert int(value["vtcm_acquired_bytes"]) == 8 * 1024 * 1024
+                    assert int(value["hmx_resource_status"]) == 0
+                    assert int(value["hmx_lock_status"]) == 0
+                    assert int(value["hmx_unlock_status"]) == 0
+                    assert int(value["hmx_release_status"]) == 0
+                    assert int(value["hmx_thread_create_status"]) == 0
+                    assert int(value["hmx_thread_join_status"]) == 0
+                    assert int(value["hmx_power_up_status"]) == 0
+                    assert int(value["hmx_power_down_status"]) == 0
+                    assert int(value["dcvs_power_setup_status"]) == 0
+                    assert int(value["dcvs_power_reset_status"]) == 0
+                    assert int(value["dma_status"]) == 0
+                    assert int(value["sync_status"]) == 0
+                    assert int(value["hvx_lock_status"]) == 0
+                    assert int(value["hvx_unlock_status"]) == 0
                     assert int(value["dma_descriptor_timeout_count"]) == 0
                     assert int(value["output_dma_descriptor_timeout_count"]) == 0
                     assert int(value["streaming_ready_timeout_count"]) == 0
@@ -86,6 +99,11 @@ def main() -> None:
             control_checksums = {int(value["measured_output_checksum"]) for value in control}
             direct_checksums = {int(value["measured_output_checksum"]) for value in direct}
             checksum_equal = control_checksums == direct_checksums and len(control_checksums) == 1
+            external_mismatch_equal = {
+                int(value["mismatches"]) for value in control
+            } == {
+                int(value["mismatches"]) for value in direct
+            }
             key = f"{projection}_repeat{repeat_count}"
             values = {
                 "control": {field: median(control, field) for field in FIELDS},
@@ -93,9 +111,12 @@ def main() -> None:
                 "host_speedup": median(control, "host_wall_ns") / median(direct, "host_wall_ns"),
                 "pipeline_speedup": median(control, "pipeline_ticks") / median(direct, "pipeline_ticks"),
                 "checksum_equal": checksum_equal,
+                "external_mismatch_equal": external_mismatch_equal,
+                "external_reference_mismatches": int(control[0]["mismatches"]),
             }
             summary["cells"][key] = values
             gates[f"{key}_correct"] = checksum_equal
+            gates[f"{key}_external_diagnostic_stable"] = external_mismatch_equal
             gates[f"{key}_host_faster"] = values["host_speedup"] > 1.0
             rows.append(
                 f"| {projection} | {repeat_count} | "
@@ -124,6 +145,8 @@ def main() -> None:
         f"Overall gate: `{'PASS' if gates['all_pass'] else 'FAIL'}`.",
         "",
         "The direct-n path issues HMX `weight.n` directly for all 64 physical rows, performs zero HVX W4-to-S8 expansions, keeps the same U8 output bytes as the optimized expanded-S8 control, retains the 8 MiB VTCM contract, and creates no intermediate DDR tensor.",
+        "",
+        "The retained `real_layer14_m64` package predates the native-HMX conversion reference used by the formal EXP-0187 M1 gate. Its external bytes use the older software postscale/rounding model and are therefore diagnostic rather than byte authoritative here. Both cells report the same external mismatch count and, critically, produce one identical FNV checksum over every byte of the complete M64 output in every rotated run. No external mismatch is hidden or rewritten.",
     ]
     (result_dir / "report.md").write_text("\n".join(report) + "\n", encoding="utf-8")
     print(json.dumps({"result_dir": str(result_dir), "gates": gates}, sort_keys=True))

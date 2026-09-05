@@ -32,7 +32,9 @@ print(json.dumps({
     "direct_n_symbol": True,
 }))
 PY
-bash -n scripts/build_exp0214.sh scripts/deploy_exp0214.sh \
-    scripts/run_exp0214.sh scripts/run_exp0214_formal.sh \
-    scripts/check_exp0214_static.sh
-python3 -m py_compile scripts/summarize_exp0214.py
+bash -n "${project_root}/scripts/build_exp0214.sh" \
+    "${project_root}/scripts/deploy_exp0214.sh" \
+    "${project_root}/scripts/run_exp0214.sh" \
+    "${project_root}/scripts/run_exp0214_formal.sh" \
+    "${project_root}/scripts/check_exp0214_static.sh"
+python3 -m py_compile "${project_root}/scripts/summarize_exp0214.py"

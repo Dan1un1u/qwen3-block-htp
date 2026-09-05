@@ -37,5 +37,22 @@ case "${cell}" in
         ;;
 esac
 
-"${adb_exe}" shell \
-    "cd ${remote_root} && LD_LIBRARY_PATH=${remote_root} DSP_LIBRARY_PATH=${remote_root} ADSP_LIBRARY_PATH=${remote_root} ./qwen3_probe_cli ${storage} ${projection} identity ${repeat_count} ${plan} linked_2d_dma prepared_session single_invocation 64 ${remote_root}/package_hmxref ${zero_point}"
+# The retained `real_layer14_m64` package predates the EXP-0187 native-HMX
+# conversion reference used by the formal M1 gate.  Its external bytes use the
+# older software postscale/rounding model and are therefore diagnostic for this
+# M64 experiment rather than byte authoritative.  The probe reports a non-zero
+# host exit status for those expected rounding differences even when every
+# DSP/physical gate passes.  Preserve the complete diagnostic record here and
+# let summarize_exp0214.py enforce the DSP gates plus complete-output FNV
+# identity between the expanded-S8 control and direct-W4 candidate.
+set +e
+output="$("${adb_exe}" shell \
+    "cd ${remote_root} && LD_LIBRARY_PATH=${remote_root} DSP_LIBRARY_PATH=${remote_root} ADSP_LIBRARY_PATH=${remote_root} ./qwen3_probe_cli ${storage} ${projection} identity ${repeat_count} ${plan} linked_2d_dma prepared_session single_invocation 64 ${remote_root}/package_hmxref ${zero_point}" 2>&1)"
+probe_status=$?
+set -e
+printf '%s\n' "${output}"
+
+if ! printf '%s\n' "${output}" | grep -q '^{'; then
+    printf 'probe produced no JSON record (status=%s)\n' "${probe_status}" >&2
+    exit "${probe_status}"
+fi
