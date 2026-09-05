@@ -1588,3 +1588,9 @@ A: DSP NLL 3.873038 -> 3.969016, tasks 8 -> 4; B: DSP NLL 4.601481 -> 3.911864, 
 ## EXP-0224 post-GPTQ output-aware scales (approved 2026-09-05)
 
 Only first proposed direction authorized: original A and fixed R1R2 C, frozen8192calibration, per-row3candidate final-GPTQ output reconstruction using FP16 exported weights, unchanged per-channel format/runtime/head/embedding/norms. Controls EXP0221 A and EXP0223 C. Follow docs/experiments/EXP-0224.md; no additional direction or promotion.
+
+## EXP-0224 transformer post-GPTQ output scale (completed 2026-09-05)
+
+A: DSP NLL 3.873038 -> 3.660316, tasks 8 -> 19; C: DSP NLL 3.956556 -> 3.892162, tasks 9 -> 17. Fixed3candidate final-GPTQ output range selection plus same calibration, with frozen per-variant head/embedding/norms. All correctness/determinism/physical checks and4way5short/10formal complete. Per-variant effectiveness {"A": true, "C": true}; selected C versus selected A False. No promotion; see SESSION_HANDOFF_EXP0224.md before future work.
+
+Interpretation: new A is better than new C in both DSP NLL and strict tasks; no incremental rotation benefit established. A selects absmax/midpoint candidate identities on6492/573440rows (~1.13%), accounting for91.53% of clipping-candidate summed local SSE on current inputs; C1681rows/~0.293%. Candidate identity counts include ties and do not assert every such row has a strictly wider numerical scale. Largest local improvement is zero-based layer2/down; no isolated-layer ablation proves sole whole-model causation. See retained selection_diagnostics.json and report. Paired speed changes remain near zero; marginal prefill medians differ in sign from paired ratios, so no speed win claimed.
