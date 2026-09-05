@@ -47,7 +47,7 @@ artifact hash.
 
 - Active experiment: `EXP-0216`
 - Source branch: `codex/exp-0216-w4u8-prefill-direct-w4-qkvo`
-- Source commit: `d1349951b08e60c56ddd690a421379d45041caeb`
+- Source commit: `25b2fdfead7546a981ccb457d9106e081bb6cb34`
 - Source and memory branches were clean, pushed, and remote-synchronized at
   handoff time.
 - Device: PJZ110 was connected and authorized through Windows ADB.
@@ -76,17 +76,17 @@ After bootstrap and preflight, run the five-pair short gate:
 ```bash
 cd /home/daniuniu/work/qwen3-block-htp
 scripts/run_exp0216_short_gate.sh \
-  /mnt/d/llm_exp/results/qwen3-block-htp/exp0216/20260905_short_gate_d134995 \
-  d1349951b08e60c56ddd690a421379d45041caeb
+  /mnt/d/llm_exp/results/qwen3-block-htp/exp0216/20260905_short_gate_25b2fdf \
+  25b2fdfead7546a981ccb457d9106e081bb6cb34
 ```
 
 If the short gate passes, run the ten-pair formal comparison:
 
 ```bash
 scripts/run_exp0216_formal.sh \
-  /mnt/d/llm_exp/results/qwen3-block-htp/exp0216/20260905_formal_d134995 \
-  d1349951b08e60c56ddd690a421379d45041caeb \
-  /mnt/d/llm_exp/results/qwen3-block-htp/exp0216/20260905_short_gate_d134995
+  /mnt/d/llm_exp/results/qwen3-block-htp/exp0216/20260905_formal_25b2fdf \
+  25b2fdfead7546a981ccb457d9106e081bb6cb34 \
+  /mnt/d/llm_exp/results/qwen3-block-htp/exp0216/20260905_short_gate_25b2fdf
 ```
 
 Do not bypass the scripts' clean-tree and exact-commit checks. Poll long-running
@@ -169,3 +169,5 @@ stopped.
 ## Telemetry repair update
 
 Initial f724a22 five-pair collection stopped at summary because generation_profile omitted required QKV ring fields. Raw evidence remains in 20260905_short_gate_f724a22; it is not a passed gate. The user authorized repair. The commands above now target the pushed Host telemetry and strict-summary repair d134995; fresh collection is required.
+
+Additional audit completeness repair 25b2fdf exports all 56 prefill cache buffers and validates all 112 nonzero per-layer hidden hashes. d134995 short/formal passed existing script gates, but did not retain cache bytes; final closure will use freshly collected 25b2fdf evidence.

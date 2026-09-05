@@ -23,6 +23,7 @@ experiments:
     source_commits:
       - f724a22acdfd78b20c6e1ba123015a8fa213a7b2
       - d1349951b08e60c56ddd690a421379d45041caeb
+      - 25b2fdfead7546a981ccb457d9106e081bb6cb34
     record: docs/experiments/EXP-0216.md
     approval_ref: 'User message 2026-09-05: continue prefill loop indefinitely after direct-W4 acceleration until manually stopped'
     runtime:
@@ -43,6 +44,9 @@ experiments:
       preliminary_smoke_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0216/20260905_smoke_worktree'
       preliminary_smoke_result: pass_candidate_about_39p130ms_vs_control_43p817ms_with_byte_exact_outputs_zero_QKVO_and_MLP_expansion
       telemetry_repair_commit: d1349951b08e60c56ddd690a421379d45041caeb
+      audit_completeness_repair_commit: 25b2fdfead7546a981ccb457d9106e081bb6cb34
+      telemetry_only_collection: 'D:/llm_exp/results/qwen3-block-htp/exp0216/20260905_formal_d134995'
+      telemetry_only_collection_status: existing_script_gates_passed_but_prefill_cache_bytes_not_exported_recollect_after_audit_completion
       telemetry_repair_approval: 'User message 2026-09-05: 允许修复'
       incomplete_short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0216/20260905_short_gate_f724a22'
       incomplete_short_reason: generation_profile_omitted_QKV_ring_diagnostics_required_by_EXP0216_summary_no_gate_pass_no_hash_mismatch_claim
