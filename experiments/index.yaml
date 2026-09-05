@@ -6,6 +6,41 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0214
+    slug: w4u8-prefill-direct-w4-hmx-gate
+    title: M64 prefill direct-W4 HMX projection gate
+    parent: EXP-0211
+    variants:
+      - EXP0211_M64_expanded_S8_projection_control
+      - M64_direct_packed_W4_HMX_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: bounded-real-shape-M64-direct-W4-projection-gate
+    source_branches:
+      - codex/exp-0214-w4u8-prefill-direct-w4-hmx-gate
+    source_commits: []
+    record: docs/experiments/EXP-0214.md
+    approval_ref: 'User message 2026-09-05: after decode stop gate switch to endless prefill loop and eliminate explicit W4-to-S8 expansion with HMX direct W4'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0214-w4u8-prefill-direct-w4-hmx-gate
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    evidence:
+      source_parent_experiment: EXP-0211
+      source_parent_commit: b111cf7e49ee5a230ed93b54cd5b5b33e8d1ebfa
+      direct_control: EXP0211_M64_prefill_explicit_HVX_W4_to_S8_then_U8xS8_HMX
+      candidate: M64_activation_with_HMX_direct_read_of_reordered_packed_W4
+      hypothesis: removing_expanded_S8_materialization_reduces_VTCM_traffic_HVX_work_and_pipeline_pressure_for_prefill
+      optimization_scope: one_real_middle_layer_M64_projection_direct_W4_HMX_carrier_math_and_experiment_tools
+      forbidden_changes: weight_values_scales_qparams_output_encoding_activation_rows_shape_other_modules_KV_cache_decode_LM_head_F16F16_W4F16_QNN
+      correctness_gate: byte_exact_target_projection_output_to_expanded_S8_control
+      physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_HMX_owner_no_QNN_direct_packed_W4_HMX_and_zero_target_expansion
+      performance_gate: rotated_true_wall_candidate_strictly_faster_than_control
+      stop_condition: if_direct_W4_does_not_accelerate_stop_and_discuss_with_user_otherwise_expand_to_full_prefill_and_continue_loop
+      selected_baseline_changed: false
   - id: EXP-0213
     slug: w4u8-direct-n-deferred-next-q-prefetch
     title: Deferred completion of cross-layer Q32 prefetch
@@ -13,14 +48,15 @@ experiments:
     variants:
       - evidence_valid_EXP0211_no_cross_layer_prefetch_control
       - Down8_tail_deferred_next_Q32_prefetch_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0213-w4u8-direct-n-deferred-next-q-prefetch
-    source_commits: []
+    source_commits:
+      - 14d1ac1dba33749a58d49324a0ad585b4becd831
     record: docs/experiments/EXP-0213.md
     approval_ref: 'User message 2026-09-05: 开始decode优化loop and continue until the consecutive local-win/E2E-regression gate'
     runtime:
@@ -28,6 +64,7 @@ experiments:
       source_branch: codex/exp-0213-w4u8-direct-n-deferred-next-q-prefetch
       approved_on: '2026-09-05'
       started_on: '2026-09-05'
+      completed_on: '2026-09-05'
     evidence:
       source_parent_experiment: EXP-0212
       source_parent_commit: 1c3479db4089cc871192a524787b1dfd122ed1cd
@@ -42,6 +79,24 @@ experiments:
       short_gate: five_rotated_pairs_with_strict_QKV_wall_and_decode_speed_pass
       formal_gate: ten_rotated_193_step_pairs_if_short_passes
       local_optimum_e2e_regression_streak_at_entry: 1
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0213/20260905_short_gate_14d1ac1'
+      source_commit: 14d1ac1dba33749a58d49324a0ad585b4becd831
+      correctness_gate_result: pass_byte_exact_hidden_cache_codes_tokens_and_output_hashes
+      physical_gate_result: pass_exact_8mib_zero_intermediate_ddr_zero_spill_one_fastrpc_one_hmx_no_qnn_zero_expansion_27_prefetches_preserved_bytes_descriptors_commands_and_tiles
+      performance_gate_result: fail_QKV_local_faster_but_median_E2E_slower_due_to_metadata_DMA_serialization
+      control_decode_tokens_per_second: 46.30488605810228
+      candidate_decode_tokens_per_second: 46.25662681078694
+      candidate_decode_speed_percent: -0.10422063722342889
+      control_qkv_us_per_token: 2487.6833767361113
+      candidate_qkv_us_per_token: 2006.6563585069446
+      control_io_metadata_us_per_token: 227.64322916666669
+      candidate_io_metadata_us_per_token: 712.7113172743055
+      candidate_next_q_wait_us_per_token: 11.737196180555555
+      pair_wins: 2
+      local_optimum_e2e_regression_streak: 2
+      short_summary_sha256: 9f30c33bc1c0c277f3732c83756ba337358cd3d7d7eb57fb82b7e3c41025e6b6
+      short_report_sha256: 47326a3b8093336726a1587e907fae3bbde4b0bdff75185f7ab81f9ac2625b07
+      conclusion: deferred_wait_eliminates_Q_consumer_wait_but_serializes_next_metadata_DMA_and_does_not_shorten_E2E
       selected_baseline_changed: false
   - id: EXP-0212
     slug: w4u8-direct-n-down8-next-q-prefetch

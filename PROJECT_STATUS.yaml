@@ -19,48 +19,80 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0213
-  next_experiment_number: 214
+  active_experiment: EXP-0214
+  next_experiment_number: 215
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0212
-  last_completed_source_commit: 1c3479db4089cc871192a524787b1dfd122ed1cd
-  provisional_source_parent: EXP0212_source_with_EXP0211_performance_control
+  last_completed_experiment: EXP-0213
+  last_completed_source_commit: 14d1ac1dba33749a58d49324a0ad585b4becd831
+  provisional_source_parent: evidence_valid_EXP0211_Down8_fastest_pending_promotion_candidate
   device_execution_state: ready
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
   active_experiment_stage: approved_pending_source_branch_and_preflight
   active_experiment_evidence: null
   active_experiment_gate: not_run
-  active_recipe_specialization: W4U8_direct_n_decode_deferred_next_Q32_prefetch_completion
+  active_recipe_specialization: W4U8_M64_prefill_direct_packed_W4_HMX
   active_experiment_contract:
-    id: EXP-0213
-    source_branch: codex/exp-0213-w4u8-direct-n-deferred-next-q-prefetch
-    source_parent: EXP0212_source_with_EXP0211_performance_control
-    source_parent_commit: 1c3479db4089cc871192a524787b1dfd122ed1cd
-    execution_scope: real_token_ID_M64_prefill_then_192_continuous_W4U8_decode_steps_to_valid_length256
-    direct_control: evidence_valid_EXP0211_Down8_without_cross_layer_Q_prefetch
-    candidate: start_next_Q32_under_final_Down8_and_defer_completion_until_next_QKV_consumer
-    allowed_changes: decode_only_next_Q32_prefetch_completion_lifetime_error_drain_telemetry_and_experiment_tools
-    forbidden_changes: weights_values_scales_qparams_arithmetic_QKV_order_or_batch_QK_preparation_Attention_O_Gate_Up_SwiGLU_Down_commands_or_tile_work_residual_norm_cache_LM_head_M64_prefill_F16F16_W4F16_QNN
-    correctness_gate: byte_exact_hidden_cache_selected_codes_and_tokens_to_EXP0211_control
-    physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_per_pass_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_descriptors_commands_and_tile_pairs_exactly_27_started_consumed_cross_layer_Q_prefetches
-    performance_gate: five_pair_short_gate_then_ten_rotated_193_step_pairs_if_strictly_faster
-    preservation_gate: M64_prefill_and_all_decode_math_remain_EXP0209_byte_exact
-    stop_conditions: reject_without_formal_if_QKV_or_full_decode_does_not_improve_and_if_local_improves_but_E2E_regresses_advance_streak_to_two_stop_decode_loop_preserve_fastest_pending_candidate_and_switch_to_direct_W4_prefill
+    id: EXP-0214
+    source_branch: codex/exp-0214-w4u8-prefill-direct-w4-hmx-gate
+    source_parent: evidence_valid_EXP0211_Down8_fastest_pending_promotion_candidate
+    source_parent_commit: b111cf7e49ee5a230ed93b54cd5b5b33e8d1ebfa
+    execution_scope: bounded_real_middle_layer_M64_W4U8_projection_gate_then_full_prefill_if_pass
+    direct_control: EXP0211_M64_explicit_HVX_W4_to_S8_then_U8xS8_HMX
+    candidate: M64_HMX_direct_read_of_reordered_packed_W4
+    allowed_changes: M64_target_projection_direct_W4_HMX_carrier_selector_telemetry_and_experiment_tools
+    forbidden_changes: weights_values_scales_qparams_output_encoding_activation_rows_shape_other_modules_KV_cache_decode_LM_head_F16F16_W4F16_QNN
+    correctness_gate: byte_exact_target_projection_output_to_control
+    physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_HMX_owner_no_QNN_direct_packed_W4_HMX_zero_target_expansion
+    performance_gate: rotated_true_projection_wall_candidate_strictly_faster
+    preservation_gate: all_non_target_math_and_physical_contracts_unchanged
+    stop_conditions: if_direct_W4_does_not_accelerate_stop_and_discuss_otherwise_continue_prefill_loop_until_user_interrupts
   final_profiling_summary_standard: direct_full_stack_prefill_and_decode_tokens_per_second_plus_exact_Host_wall
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0212/20260905_short_gate_1c3479d'
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0213/20260905_short_gate_14d1ac1'
+  pending_w4u8_fastest_promotion_candidate:
+    id: EXP-0211
+    source_branch: codex/exp-0211-w4u8-direct-n-down-batch8
+    source_head: b111cf7e49ee5a230ed93b54cd5b5b33e8d1ebfa
+    evidence_validity: valid
+    selection_reason: fastest_effective_decode_structure_after_two_cross_layer_prefetch_regressions
+    formal_decode_tokens_per_second: 45.919316
+    promotion_authority: user_only
+    selected_baseline_changed: false
+  latest_w4u8_prefill_direct_w4_experiment:
+    id: EXP-0214
+    execution_state: running
+    source_branch: codex/exp-0214-w4u8-prefill-direct-w4-hmx-gate
+    source_parent_commit: b111cf7e49ee5a230ed93b54cd5b5b33e8d1ebfa
+    selected_baseline_changed: false
   latest_w4u8_deferred_next_q_prefetch_experiment:
     id: EXP-0213
-    execution_state: approved
+    execution_state: completed
     source_branch: codex/exp-0213-w4u8-direct-n-deferred-next-q-prefetch
-    source_parent_commit: 1c3479db4089cc871192a524787b1dfd122ed1cd
-    local_optimum_e2e_regression_streak_at_entry: 1
+    source_head: 14d1ac1dba33749a58d49324a0ad585b4becd831
+    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0213/20260905_short_gate_14d1ac1'
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    control_decode_tokens_per_second: 46.30488605810228
+    candidate_decode_tokens_per_second: 46.25662681078694
+    candidate_decode_speed_percent: -0.10422063722342889
+    control_qkv_us_per_token: 2487.6833767361113
+    candidate_qkv_us_per_token: 2006.6563585069446
+    control_io_metadata_us_per_token: 227.64322916666669
+    candidate_io_metadata_us_per_token: 712.7113172743055
+    candidate_next_q_wait_us_per_token: 11.737196180555555
+    pair_wins: 2
+    local_optimum_e2e_regression_streak: 2
+    summary_sha256: 9f30c33bc1c0c277f3732c83756ba337358cd3d7d7eb57fb82b7e3c41025e6b6
+    report_sha256: 47326a3b8093336726a1587e907fae3bbde4b0bdff75185f7ab81f9ac2625b07
+    conclusion: deferred_Q_DMA_completion_reduces_QKV_local_wall_but_serializes_next_metadata_DMA_and_regresses_E2E
+    next_decision: decode_stop_gate_met_select_EXP0211_pending_and_switch_to_prefill_direct_W4
     selected_baseline_changed: false
   latest_w4u8_down8_next_q_prefetch_result:
     id: EXP-0212
