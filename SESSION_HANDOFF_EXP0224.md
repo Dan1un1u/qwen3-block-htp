@@ -1,3 +1,5 @@
 # EXP-0224 registered
 
 Bootstrap/read authority/preflight. Branch codex/exp-0224-w4f16-post-gptq-output-scale parent c9c2491ff70875068f9a043a4305d07892cf5271. No model or device jobs yet. Follow fixed declaration docs/experiments/EXP-0224.md. Implementation pending. Do not change candidate set or use evaluation/holdout to tune.
+
+Implementation and independent oracles passed at source09aec376d74638703a497625e4e531a77c8db47e. Model generator session85839 runs A then C sequentially, logging execution_identity.json and execution.log per variant; each starts after preflight. Device pipeline53771 waits package.json then deploy/quick/full/repeat per variant. Do not duplicate or overwrite outputs. package.json means export and independent16tokens ready; software_quality.json means software full complete. All3scores per row retained models/exp0224/clip_stats, hidden checkpoints models/exp0224/checkpoints. After both pipelines exit0: summarize_exp0224.py --quality-only; preflight then four-way warmup/short/formal; summarize --speed-only; finish report/archive and memory. No speed job yet.
