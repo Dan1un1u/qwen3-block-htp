@@ -13,3 +13,5 @@ Scheduling update: step050 PID1964843 was SIGSTOP-paused to avoid two16thread ex
 Latest: step000 completed successfully, actual-export validation NLL3.355729741946493 (en3.4410850223714977 /zh3.2703744615214885). This is selection-set NLL, not qbh final PPL. step050 PID1964843 resumed with SIGCONT after step000 exit0; only step050 export now running. Source now0900322 (closure provenance checks only). After step050, run step100 sequentially, then control/select and remaining stages. No paused exporters remain.
 
 Final source archive and provenance now retained at0900322, closure-only source change; source stage heads remain separately recorded.
+
+Latest progress: step000 and exact step050 exports/validation completed exit0. Step050 selection-set NLL3.2973322616688785 (en3.301970086193225 /zh3.2926944371445326), versus initialization3.355729741946493. Step100 export running from0900322, followed by control/select/quality sequentially in the same supervised command (stop on failure). Do not duplicate these stages; inspect commands logs and processes. Neither prior exporter is paused or active. Final qbh quality remains pending until selection.
