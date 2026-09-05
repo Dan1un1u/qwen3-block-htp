@@ -36,7 +36,7 @@ current_scope:
   active_experiment_stage: EXP0220_FP16_fold_control_and_W4_gamma_location_R2_only
   active_experiment_evidence: D:/llm_exp/results/qwen3-block-htp/exp0220
   active_experiment_gate: pending
-  active_experiment_source_head: 10a5a19e125c9d7894d3102aa3e289a68c39f914
+  active_experiment_source_head: 1bebf5dcc47e5304dfe93b69cd9f4187fae3dfca
   current_handoff: docs/experiments/EXP-0220.md
   active_recipe_specialization: W4F16_gamma_attribution_R2_only
   last_completed_experiment_contract:
