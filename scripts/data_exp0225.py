@@ -39,7 +39,11 @@ def prepare():
                 rows.append(dict(language=lang,row_index=item['row_idx'],document=key,text_sha256=sha(text.encode()),token_ids=window))
             eligible=[r for r in rows if r['document'] not in banned_docs]
             chosen=eligible[:400];train_docs={r['document'] for r in chosen}
-            valid=[r for r in eligible[400:] if r['document'] not in train_docs][:16]
+            valid=[];valid_docs=set()
+            for r in eligible[400:]:
+                if r['document'] not in train_docs|valid_docs:
+                    valid.append(r);valid_docs.add(r['document'])
+                    if len(valid)==16:break
             if len(chosen)==400 and len(valid)==16:enough=True;break
             if not payload['rows']:break
         assert enough,(lang,len(eligible),len(valid))
@@ -55,6 +59,6 @@ def prepare():
         overlap_rejections=rejected,calibration_ids_sha256=calibration['ids_sha256'],
         tokenizer_sha256=ev.digest(ev.MODEL/'qwen3-tokenizer.json'),
         role='training and validation text only; no evaluation labels or scores',
-        train_validation_document_disjoint=True,all_roles_32gram_disjoint=True))
+        train_validation_document_disjoint=True,validation_distinct_documents_per_language=16,all_roles_32gram_disjoint=True))
     print('DATA_FROZEN',ev.digest(RESULT/'learning_data.json'),flush=True)
 if __name__=='__main__':prepare()

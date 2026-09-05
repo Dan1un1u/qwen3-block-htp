@@ -84,7 +84,7 @@ class LearnedModel(nn.Module):
                 layer.input_layernorm.weight.fill_(1);layer.post_attention_layernorm.weight.fill_(1)
                 layer.input_layernorm.half();layer.post_attention_layernorm.half()
                 layer.self_attn.q_norm.half();layer.self_attn.k_norm.half()
-        with torch.no_grad():self.body.norm.weight.fill_(1);self.body.norm.half()
+        with torch.no_grad():self.body.norm.weight.fill_(1);self.body.norm.half();self.body.rotary_emb.half()
         self.quantized=True;self.recompute=True;self.to(device)
         # .to moves Parameters in place; non-registered references still address them.
         for i,layer in enumerate(self.body.layers):
