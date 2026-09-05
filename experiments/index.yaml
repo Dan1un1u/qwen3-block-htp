@@ -6,6 +6,37 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0218
+    slug: three-recipe-lightweight-evaluation
+    title: Unified lightweight device quality and speed evaluation
+    parent: EXP-0217
+    record: docs/experiments/EXP-0218.md
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    approval_ref: 'User message 2026-09-05: 同意你的评测方案，按此方案实现，然后报告评测结果。'
+    source_branches:
+    - codex/exp-0218-three-recipe-lightweight-evaluation
+    source_commits: []
+    runtime:
+      source_branch: codex/exp-0218-three-recipe-lightweight-evaluation
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    variants:
+    - F16F16
+    - Selected_W4F16
+    - current_W4U8
+    - host_original_BF16_teacher
+    evidence_profile: frozen_lightweight_teacher_forcing_short_tasks_and_rotated_M64_15_decode
+    evidence:
+      source_parent_commit: bcea4e3b309a1f0e64422bc9dec189d78a9cc4d2
+      plan: docs/THREE_RECIPE_LIGHTWEIGHT_EVALUATION_PLAN.md
+      speed_gate: report_only_unified_fresh_three_recipe_scope
+      quality_gate: measure_and_report_W4U8_failure_without_repair
+      physical_gate: 8MiB_zero_timed_intermediate_DDR_one_FastRPC_no_QNN
+      selected_baseline_changed: false
   - id: EXP-0217
     slug: f16f16-greedy-generation
     title: F16F16 complete deterministic token-generation boundary

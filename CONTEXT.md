@@ -1552,3 +1552,6 @@ The user authorized repair of the EXP-0217 index indentation defect and changed 
 
 **Completed F16F16 Token Boundary**:
 EXP-0217 completes fixed M64 token input, FP16 embedding, unchanged 28-layer F16 transformer, final norm, streamed FP16 LM head and greedy feedback. Ten sessions match 160 independent FP16 reference tokens and produce a stable readable Chinese prefix. Prefill is 788.344 token/s and 15-step continuous decode is 9.028 token/s. Existing F16 replay and W4F16 generation regressions pass. Broader quality is not yet assessed; a lightweight three-recipe speed/quality proposal is retained. W4U8 specialization stays paused. No baseline was automatically promoted.
+
+**Unified Lightweight Device Evaluation**:
+EXP-0218 is approved to implement and run the retained bilingual NLL/short-task plus M64+15 speed protocol. Evaluate actual DSP heads and self-computed KV under common token inputs. Freeze data, answers and hashes before outputs. W4U8 quality may fail without triggering specialization. Original BF16 teacher scores are cached once. Routine gate defects are repaired under PC037.
