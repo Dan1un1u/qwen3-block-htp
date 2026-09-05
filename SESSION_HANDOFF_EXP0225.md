@@ -1,3 +1,3 @@
-# EXP-0225 active
+# EXP0225 active
 
-User approved implementation. Source parent cf8a239a636bb33dd9bf49c7aa03760df9af6c81. Registered branch codex/exp-0225-w4f16-learned-r1r2. Stage: implementation and data/environment preparation. No training or device jobs started. Bootstrap/read authority and preflight before continuation. See PC045.
+Source cc0ca695812b3d8057e23ef6cf6e584af108fdaa on codex/exp-0225-w4f16-learned-r1r2. Training, data, actual-GPTQ export and device drivers implemented. Independent CUDA venv /home/daniuniu/.cache/qwen3-block-htp-spinquant-py (torch2.8 cu128); CPU reference unchanged. Algebra/STE/Cayley/output-scale checks pass. Data d7642fef571ab0077ffd3d8ef98670dd8b679ee002072a90bb6de081f012978c. Full-model gate rerunning after early BF16-to-FP16 precision fix. No training or device work started. Next full-model gate, CUDA smoke,100steps,actual-export0/50/100,independent validation selection, final software/DSP,5short/10formal. No promotion.
