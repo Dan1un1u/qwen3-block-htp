@@ -163,6 +163,7 @@ def train(smoke=False):
     from experiment_exp0220 import verify_origin
     from prepare_exp0164_generation_package import sha256_file
     assert torch.cuda.is_available(),'CUDA training environment required'
+    assert all((RESULT/n).exists() for n in ['algebra_oracle.json','output_scale_oracle.json','full_model_oracle.json'])
     torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
     torch.set_num_threads(8);random.seed(SEED);torch.manual_seed(SEED)
     data=json.loads((RESULT/'learning_data.json').read_text());data_hash=sha256_file(RESULT/'learning_data.json')
