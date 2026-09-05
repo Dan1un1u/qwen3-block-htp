@@ -189,3 +189,7 @@ EXP-0221 may replace offline RTN with GPTQ for W4F16 only. Compare original high
 ## PC-042 — LM head precision attribution (user approved 2026-09-05)
 
 EXP-0222 is a host-only software ablation of EXP-0221 A/B/C: freeze transformer packages and compare W4 GPTQ heads with fresh correctly transformed FP16 heads. Retain norms, embedding, qbh-lite-v1, independent per-head greedy feedback and provenance. Reproduce software controls and repeat checks; no calibration/tuning, DSP changes, other-recipe changes or promotion. Profiling/E2E are explicitly N/A for this bounded diagnostic. Discuss results before selecting or executing another direction.
+
+## PC-043 — Per-channel clipping with GPTQ (user approved 2026-09-05)
+
+EXP-0223 tests fixed weight-local row scale/clipping selection before GPTQ on original/folded/fixed R1R2 W4F16 transformers, with frozen EXP0221 heads, embeddings and norms. Fixed independent calibration and frozen qbh-lite-v1, original tensors only, no grouping/LPBQ/learned rotation/evaluation tuning. Fresh model packages, software/device quality and six-way5short/10formal profiling use unchanged runtime and physical rules. Other recipes and baselines remain frozen. No automatic promotion or further direction.

@@ -6,6 +6,36 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0223
+    slug: w4f16-gptq-channel-clipping
+    title: Transformer per-channel clipping before GPTQ
+    parent: EXP-0222
+    record: docs/experiments/EXP-0223.md
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    approval_ref: 'User approved transformer per-channel scale/clipping: 那就做一下吧'
+    source_branches:
+    - codex/exp-0223-w4f16-gptq-channel-clipping
+    source_commits:
+    - 6c65970b523a80b9a9343f0b246451690332ded5
+    runtime:
+      source_branch: codex/exp-0223-w4f16-gptq-channel-clipping
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    variants:
+    - A_original_clipped_GPTQ
+    - B_fold_clipped_GPTQ
+    - C_R1R2_clipped_GPTQ
+    - A0_B0_C0_frozen_EXP0221
+    evidence_profile: fixed_row_clipping_transformer_only_GPTQ
+    evidence:
+      source_parent_commit: 6c65970b523a80b9a9343f0b246451690332ded5
+      calibration: frozen_EXP0221_8192tokens
+      lm_head: frozen_per_variant_EXP0221
+      selected_baseline_changed: false
   - id: EXP-0222
     slug: w4f16-lm-head-ablation
     title: Host LM head FP16 ablation on frozen GPTQ A B C
