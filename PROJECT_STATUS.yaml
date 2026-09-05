@@ -19,8 +19,8 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 219
+  active_experiment: EXP-0219
+  next_experiment_number: 220
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -33,12 +33,12 @@ current_scope:
   device_execution_state: ready
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: EXP0218_completed_evaluation_A16_snapshot_U8_diagnostic_only
-  active_experiment_evidence: D:/llm_exp/results/qwen3-block-htp/exp0218
-  active_experiment_gate: speed_physical_ledgers_A16_determinism_pass_W4U8_quality_determinism_fail
+  active_experiment_stage: EXP0219_offline_rotation_implementation
+  active_experiment_evidence: D:/llm_exp/results/qwen3-block-htp/exp0219
+  active_experiment_gate: pending
   active_experiment_source_head: b2904bbc60b25e6b80f53351655b1c585fd97db2
-  current_handoff: SESSION_HANDOFF_EXP0218.md
-  active_recipe_specialization: paused_by_user_20260905
+  current_handoff: docs/experiments/EXP-0219.md
+  active_recipe_specialization: W4F16_offline_R1R2_only
   last_completed_experiment_contract:
     id: EXP-0218
     execution_scope: frozen_512_target_24_task_quality_and_rotated_M64_plus15_speed
@@ -89,7 +89,7 @@ current_scope:
     execution_state: completed
     source_branch: codex/exp-0215-w4u8-prefill-direct-w4-mlp
     source_head: 0483c290f2a9fe0de34db104b3c9ad177cbb7065
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0215/20260905_formal_0483c29'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0215/20260905_formal_0483c29
     evidence_validity: valid
     local_gate: pass
     adoption_status: pending
@@ -114,7 +114,7 @@ current_scope:
     source_branch: codex/exp-0214-w4u8-prefill-direct-w4-hmx-gate
     measured_source_commit: 50db25ef0609bcd91e880fe1adde6c404d1865cd
     reporting_source_commit: 70dd554e507ab4705fb64d39f2708d8082e867ab
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0214/20260905_formal_50db25e'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0214/20260905_formal_50db25e
     evidence_validity: valid
     local_gate: pass
     adoption_status: pending
@@ -135,7 +135,7 @@ current_scope:
     execution_state: completed
     source_branch: codex/exp-0213-w4u8-direct-n-deferred-next-q-prefetch
     source_head: 14d1ac1dba33749a58d49324a0ad585b4becd831
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0213/20260905_short_gate_14d1ac1'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0213/20260905_short_gate_14d1ac1
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -158,7 +158,7 @@ current_scope:
     id: EXP-0212
     source_branch: codex/exp-0212-w4u8-direct-n-down8-next-q-prefetch
     source_head: 1c3479db4089cc871192a524787b1dfd122ed1cd
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0212/20260905_short_gate_1c3479d'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0212/20260905_short_gate_1c3479d
     execution_state: completed
     evidence_validity: valid
     local_gate: fail
@@ -181,8 +181,8 @@ current_scope:
     id: EXP-0211
     source_branch: codex/exp-0211-w4u8-direct-n-down-batch8
     source_head: b111cf7e49ee5a230ed93b54cd5b5b33e8d1ebfa
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0211/20260905_short_gate_b111cf7'
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0211/20260905_formal_b111cf7'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0211/20260905_short_gate_b111cf7
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0211/20260905_formal_b111cf7
     execution_state: completed
     evidence_validity: valid
     local_gate: fail_strict_all_pairs_one_of_ten_regressed
@@ -214,15 +214,15 @@ current_scope:
     id: EXP-0210
     source_branch: codex/exp-0210-w4u8-direct-n-o-batch16-single-dma
     source_head: 9b32f804879f1b041bd9def07c2ae80e7317dc9a
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0210/20260905_short_gate_9b32f80'
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0210/20260905_formal_9b32f80'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0210/20260905_short_gate_9b32f80
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0210/20260905_formal_9b32f80
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
     adoption_status: pending
     retained_as_enabling_parent: true
     selected_baseline_changed: false
-    short_control_decode_tokens_per_second: 45.458430
+    short_control_decode_tokens_per_second: 45.45843
     short_candidate_decode_tokens_per_second: 45.587525
     short_candidate_decode_speed_percent: 0.283986
     formal_control_decode_tokens_per_second: 45.259235
@@ -243,8 +243,8 @@ current_scope:
     id: EXP-0209
     source_branch: codex/exp-0209-w4u8-direct-n-q32-kv16
     source_head: 84f48b224fe3c1a01e64686e61705825c8038b81
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0209/20260905_short_gate_84f48b2'
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0209/20260905_formal_84f48b2'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0209/20260905_short_gate_84f48b2
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0209/20260905_formal_84f48b2
     execution_state: completed
     evidence_validity: valid
     local_gate: fail
@@ -256,7 +256,7 @@ current_scope:
     short_candidate_decode_speed_percent: 0.378807
     formal_control_decode_tokens_per_second: 45.057685
     formal_candidate_decode_tokens_per_second: 45.334056
-    formal_candidate_decode_speed_percent: 0.613370
+    formal_candidate_decode_speed_percent: 0.61337
     formal_control_qkv_us_per_token: 2587.596
     formal_candidate_qkv_us_per_token: 2500.438
     short_pair_wins: 5
@@ -289,19 +289,19 @@ current_scope:
     id: EXP-0207
     source_branch: codex/exp-0207-w4u8-direct-n-down-single-dma
     source_head: f036c756a6609312bb439e8592bb66ac8be06d6e
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0207/20260905_short_gate_f036c75'
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0207/20260905_formal_f036c75'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0207/20260905_short_gate_f036c75
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0207/20260905_formal_f036c75
     execution_state: completed
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
     retained_as_enabling_parent: true
     selected_baseline_changed: false
-    short_control_decode_tokens_per_second: 44.462290
+    short_control_decode_tokens_per_second: 44.46229
     short_candidate_decode_tokens_per_second: 45.374196
     short_candidate_decode_speed_percent: 2.050965
     formal_control_decode_tokens_per_second: 44.395916
-    formal_candidate_decode_tokens_per_second: 45.144910
+    formal_candidate_decode_tokens_per_second: 45.14491
     formal_candidate_decode_speed_percent: 1.687079
     formal_control_down_us_per_token: 4001.986
     formal_candidate_down_us_per_token: 3589.334
@@ -318,7 +318,7 @@ current_scope:
     id: EXP-0206
     source_branch: codex/exp-0206-w4u8-direct-n-qkv-batch32
     source_head: 60c8ccf9b8c1a9f77bbb3ce0c6b7fba471a28026
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0206/20260905_short_gate_60c8ccf'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0206/20260905_short_gate_60c8ccf
     execution_state: completed
     evidence_validity: valid
     local_gate: fail
@@ -339,8 +339,8 @@ current_scope:
     id: EXP-0205
     source_branch: codex/exp-0205-w4u8-direct-n-down-batch4
     source_head: fb2d4c0fb34aaee771f496dc1d9ea600a496a8fc
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0205/20260905_short_gate_fb2d4c0'
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0205/20260905_formal_fb2d4c0'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0205/20260905_short_gate_fb2d4c0
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0205/20260905_formal_fb2d4c0
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
@@ -361,8 +361,8 @@ current_scope:
     id: EXP-0204
     source_branch: codex/exp-0204-w4u8-direct-n-o-batch8
     source_head: 79319bf1d5f41953d522b582300d7e80d0975605
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0204/20260905_short_gate_79319bf'
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0204/20260905_formal_79319bf'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0204/20260905_short_gate_79319bf
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0204/20260905_formal_79319bf
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
@@ -383,7 +383,7 @@ current_scope:
     id: EXP-0203
     source_branch: codex/exp-0203-w4u8-direct-n-next-q-prefetch
     source_head: 765c4be5ae55c3c55a8bd4dbf4dcc154457d7297
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0203/20260905_short_gate_765c4be'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0203/20260905_short_gate_765c4be
     execution_state: completed
     evidence_validity: valid
     local_gate: fail
@@ -406,7 +406,7 @@ current_scope:
     id: EXP-0202
     source_branch: codex/exp-0202-w4u8-direct-n-down-prefetch
     source_head: dbbf863dc233242e64839323090fce5ff4b608b3
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0202/20260905_short_gate_dbbf863'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0202/20260905_short_gate_dbbf863
     execution_state: completed
     evidence_validity: valid
     local_gate: fail
@@ -414,7 +414,7 @@ current_scope:
     selected_baseline_changed: false
     control_decode_tokens_per_second: 43.543321
     candidate_decode_tokens_per_second: 43.406433
-    candidate_decode_speed_percent: -0.314370
+    candidate_decode_speed_percent: -0.31437
     control_gate_up_swiglu_us_per_token: 6462.4
     candidate_gate_up_swiglu_us_per_token: 6654.9
     control_down_us_per_token: 4157.7
@@ -428,8 +428,8 @@ current_scope:
     id: EXP-0201
     source_branch: codex/exp-0201-w4u8-direct-n-gate-up-swiglu-stream
     source_head: f22a12f0b935da5853ea487eb8ab5a6e7c49db5b
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0201/20260905_short_gate_f22a12f'
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0201/20260905_formal_f22a12f'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0201/20260905_short_gate_f22a12f
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0201/20260905_formal_f22a12f
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
@@ -441,7 +441,7 @@ current_scope:
       control_decode_host_us_per_token: 23544.9
       candidate_decode_host_us_per_token: 23002.0
       control_decode_tokens_per_second: 42.472067
-      candidate_decode_tokens_per_second: 43.474400
+      candidate_decode_tokens_per_second: 43.4744
       candidate_decode_speed_percent: 2.359983
     target_stage_us_per_token:
       control_gate_up_plus_swiglu: 7019.3
@@ -469,9 +469,9 @@ current_scope:
     id: EXP-0200
     source_branch: codex/exp-0200-w4u8-direct-n-o-gate-prefetch
     source_head: d28657d0cbf977d0e45103f32f86a2da34c44567
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0200/20260905_short_gate_d28657d'
-    first_formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0200/20260905_formal_d28657d'
-    confirmation_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0200/20260905_formal_confirmation_d28657d'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0200/20260905_short_gate_d28657d
+    first_formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0200/20260905_formal_d28657d
+    confirmation_evidence: D:/llm_exp/results/qwen3-block-htp/exp0200/20260905_formal_confirmation_d28657d
     execution_state: completed
     evidence_validity: valid
     local_gate: fail
@@ -482,7 +482,7 @@ current_scope:
       short_candidate_decode_tokens_per_second: 42.806625
       first_formal_control_decode_tokens_per_second: 42.273057
       first_formal_candidate_decode_tokens_per_second: 42.611212
-      first_formal_candidate_speed_percent: 0.799930
+      first_formal_candidate_speed_percent: 0.79993
       confirmation_control_decode_tokens_per_second: 42.215778
       confirmation_candidate_decode_tokens_per_second: 42.588502
       confirmation_candidate_speed_percent: 0.882902
@@ -517,8 +517,8 @@ current_scope:
     id: EXP-0199
     source_branch: codex/exp-0199-w4u8-direct-n-qkv-batch16
     source_head: aef3582fd1f4b06bf147b1f28f18ea812e541391
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0199/20260905_short_gate_aef3582'
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0199/20260905_formal_aef3582'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0199/20260905_short_gate_aef3582
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0199/20260905_formal_aef3582
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
@@ -558,9 +558,9 @@ current_scope:
     id: EXP-0198
     source_branch: codex/exp-0198-w4u8-direct-n-gate-up-continuous-ring
     source_head: 59284b2d0bec68103e9f8c96af93f000f8e16ad1
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0198/20260905_short_gate_d963551'
-    first_formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0198/20260905_formal_59284b2'
-    confirmation_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0198/20260905_formal_confirmation_59284b2'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0198/20260905_short_gate_d963551
+    first_formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0198/20260905_formal_59284b2
+    confirmation_evidence: D:/llm_exp/results/qwen3-block-htp/exp0198/20260905_formal_confirmation_59284b2
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
@@ -576,7 +576,7 @@ current_scope:
       candidate_decode_speed_percent: 1.067193
     target_stage_us_per_token:
       control_gate_up_projection: 6781.887
-      candidate_gate_up_projection: 6559.790
+      candidate_gate_up_projection: 6559.79
     physical:
       direct_n_hmx_commands_per_token: 2277
       hmx_tile_pairs_per_token: 1699840
@@ -602,7 +602,7 @@ current_scope:
     id: EXP-0197
     source_branch: codex/exp-0197-w4u8-direct-n-lm-head-batch64
     source_head: a1346bb0f5dc8debb671b5f7f3aa228d1afa031b
-    failed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0197/20260905_short_gate_a1346bb'
+    failed_evidence: D:/llm_exp/results/qwen3-block-htp/exp0197/20260905_short_gate_a1346bb
     execution_state: completed
     evidence_validity: valid
     local_gate: fail
@@ -624,8 +624,8 @@ current_scope:
     id: EXP-0196
     source_branch: codex/exp-0196-w4u8-direct-n-lm-head-batch32
     source_head: c8e8b7d35a1aa93f04d1685ae791853f74d4a927
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0196/20260905_short_gate_6a1cf57'
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0196/20260905_formal_c8e8b7d'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0196/20260905_short_gate_6a1cf57
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0196/20260905_formal_c8e8b7d
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
@@ -663,20 +663,20 @@ current_scope:
     id: EXP-0195
     source_branch: codex/exp-0195-w4u8-direct-n-gate-up-batch32
     source_head: 5e94019617a55d11650f567e26980e3069f373d9
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0195/20260905_short_gate_5e94019'
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0195/20260905_formal_5e94019'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0195/20260905_short_gate_5e94019
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0195/20260905_formal_5e94019
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
     adoption_status: pending
     selected_baseline_changed: false
     direct_end_to_end:
-      control_prefill_tokens_per_second: 1275.550
+      control_prefill_tokens_per_second: 1275.55
       candidate_prefill_tokens_per_second: 1270.068
       control_decode_host_us_per_token: 25902.6
       candidate_decode_host_us_per_token: 25574.1
       control_decode_tokens_per_second: 38.606195
-      candidate_decode_tokens_per_second: 39.102150
+      candidate_decode_tokens_per_second: 39.10215
       candidate_decode_speed_percent: 1.284652
     target_stage_us_per_token:
       control_gate_up_projection: 7095.1
@@ -702,8 +702,8 @@ current_scope:
     id: EXP-0194
     source_branch: codex/exp-0194-w4u8-direct-n-qkv-batch8
     source_head: 8b62c9cd30f8a8fc70a7074b515c855b66a16d3e
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0194/20260905_short_gate_8b62c9c'
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0194/20260905_formal_8b62c9c'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0194/20260905_short_gate_8b62c9c
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0194/20260905_formal_8b62c9c
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
@@ -742,7 +742,7 @@ current_scope:
     id: EXP-0193
     source_branch: codex/exp-0193-w4u8-direct-n-down-dma4-hmx2
     source_head: af00ab4917e7941d05f033b48a361123c8bfbdfe
-    failed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0193/20260905_short_gate_af00ab4'
+    failed_evidence: D:/llm_exp/results/qwen3-block-htp/exp0193/20260905_short_gate_af00ab4
     execution_state: completed
     evidence_validity: valid
     local_gate: fail
@@ -759,7 +759,7 @@ current_scope:
     id: EXP-0192
     source_branch: codex/exp-0192-w4u8-direct-n-down-batch4
     source_head: d109be8599eef175867e4fcc93d82e98ea3eb11b
-    failed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0192/20260905_short_gate_d109be8'
+    failed_evidence: D:/llm_exp/results/qwen3-block-htp/exp0192/20260905_short_gate_d109be8
     execution_state: completed
     evidence_validity: valid
     local_gate: fail
@@ -777,15 +777,15 @@ current_scope:
     id: EXP-0191
     source_branch: codex/exp-0191-w4u8-direct-n-gate-up-batch16
     source_head: 0cdd367f89475c73de4695bab9e9348dbd955aeb
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0191/20260905_short_gate_0cdd367'
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0191/20260905_formal_0cdd367'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0191/20260905_short_gate_0cdd367
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0191/20260905_formal_0cdd367
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
     adoption_status: pending
     selected_baseline_changed: false
     direct_end_to_end:
-      control_prefill_tokens_per_second: 1273.697050
+      control_prefill_tokens_per_second: 1273.69705
       candidate_prefill_tokens_per_second: 1272.826498
       control_decode_host_us_per_token: 27131.126573
       candidate_decode_host_us_per_token: 26497.738958
@@ -818,8 +818,8 @@ current_scope:
     id: EXP-0190
     source_branch: codex/exp-0190-w4u8-direct-n-gate-up-batch8
     source_head: fb6e6617daa42e2942c762968459e1c47e382465
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0190/20260905_short_gate_3ab8da9'
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0190/20260905_formal_fb6e661'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0190/20260905_short_gate_3ab8da9
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0190/20260905_formal_fb6e661
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
@@ -859,8 +859,8 @@ current_scope:
     id: EXP-0189
     source_branch: codex/exp-0189-w4u8-direct-n-row4-swiglu
     source_head: 15becf9cf8bda0d9320d8cdcb43fab108c865ef8
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0189/20260905_short_gate_15becf9'
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0189/20260905_formal_15becf9'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0189/20260905_short_gate_15becf9
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0189/20260905_formal_15becf9
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
@@ -884,7 +884,7 @@ current_scope:
       candidate_gate_up_projection: 9607.591
       control_swiglu: 7755.558
       candidate_swiglu: 488.133
-      control_gate_up_plus_swiglu: 17360.380
+      control_gate_up_plus_swiglu: 17360.38
       candidate_gate_up_plus_swiglu: 10095.668
     invariant_physical_work:
       direct_n_hmx_commands_per_token: 4928
@@ -908,8 +908,8 @@ current_scope:
     id: EXP-0188
     source_branch: codex/exp-0188-w4u8-full-stack-decode-direct-n
     source_head: 17068d8b7d505381a4c524a7ad7cfe21c9f5abad
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0188/short_gate_mask7'
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0188/20260905_formal_direct_n'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0188/short_gate_mask7
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0188/20260905_formal_direct_n
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
@@ -925,7 +925,7 @@ current_scope:
       candidate_prefill_tokens_per_second: 1274.424
       control_decode_host_us_per_token: 42334.2
       candidate_decode_host_us_per_token: 36201.1
-      control_decode_tokens_per_second: 23.621560
+      control_decode_tokens_per_second: 23.62156
       candidate_decode_tokens_per_second: 27.623484
       candidate_decode_speed_percent: 16.943925
     candidate_direct_projection_count_per_decode_token: 196
@@ -945,7 +945,7 @@ current_scope:
     id: EXP-0187
     source_branch: codex/exp-0187-w4u8-decode-native-m1-pipeline-gate
     source_head: 5e9ff6ade5ab10da8d3640d259e0867bc94cf422
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0187/20260904_real_layer14_formal_5e9ff6a'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0187/20260904_real_layer14_formal_5e9ff6a
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
@@ -955,9 +955,13 @@ current_scope:
     fixed_limitation: logical_M1_and_M64_still_execute_the_same_64_row_physical_HMX_spatial_tile
     correctness_gate: pass_all_80_formal_device_runs_zero_mismatch_against_prior_HMX_path_and_independent_integer_reference
     physical_gate: pass_exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN_and_zero_timed_W4_expansion
-    gate_up_repeat10_host_ms: {control: 8.984, candidate: 6.283}
-    gate_up_repeat10_speedup: 1.430
-    down_repeat10_host_ms: {control: 4.101, candidate: 2.387}
+    gate_up_repeat10_host_ms:
+      control: 8.984
+      candidate: 6.283
+    gate_up_repeat10_speedup: 1.43
+    down_repeat10_host_ms:
+      control: 4.101
+      candidate: 2.387
     down_repeat10_speedup: 1.718
     summary_sha256: bafa6ee2456657bca39b99549a6270fd06a2c74ff610e982b29449703589b8d8
     report_sha256: c42ddf43d2b998938926833c2ed454e418b66e87bed15f5dda493003785c3773
@@ -966,7 +970,7 @@ current_scope:
     id: EXP-0186
     source_branch: codex/exp-0186-w4u8-decode-vtcm-v-tail-no-journal
     source_head: 5a3f81dba0b5730f6002a05186862b73f6dd0f6f
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0186/20260904T192112_5a3f81d_short'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0186/20260904T192112_5a3f81d_short
     formal_evidence: null
     execution_state: completed
     evidence_validity: valid
@@ -987,10 +991,18 @@ current_scope:
       control_attention_us_per_token: 3390.338542
       candidate_attention_us_per_token: 3409.261068
       candidate_attention_speed_percent: -0.555033
-    cache_carrier_update_us: {control: 423.835, candidate: 239.157}
-    cache_append_dma_us: {control: 132.770, candidate: 24.701}
-    cache_ddr_write_bytes: {control: 32256, candidate: 3584}
-    cache_dma_descriptor_count: {control: 1176, candidate: 952}
+    cache_carrier_update_us:
+      control: 423.835
+      candidate: 239.157
+    cache_append_dma_us:
+      control: 132.77
+      candidate: 24.701
+    cache_ddr_write_bytes:
+      control: 32256
+      candidate: 3584
+    cache_dma_descriptor_count:
+      control: 1176
+      candidate: 952
     pair_wins: 3
     vtcm_peak_plan_bytes: 8365824
     formal_result: not_run_due_to_mandatory_short_gate_stop
@@ -1003,8 +1015,8 @@ current_scope:
     id: EXP-0185
     source_branch: codex/exp-0185-w4u8-decode-vtcm-k-tail-no-journal
     source_head: 537650293920eb62c3cc49833df613246e8fb0b9
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0185/20260904T_exp0185_5376502_short'
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0185/20260904T_exp0185_5376502_formal'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0185/20260904T_exp0185_5376502_short
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0185/20260904T_exp0185_5376502_formal
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
@@ -1021,11 +1033,19 @@ current_scope:
       control_decode_tokens_per_second: 23.489764
       candidate_decode_tokens_per_second: 23.762166
       candidate_decode_speed_percent: 1.159662
-    attention_us: {control: 4084.770, candidate: 3616.125}
+    attention_us:
+      control: 4084.77
+      candidate: 3616.125
     attention_speed_percent: 12.959853
-    cache_append_dma_us: {control: 197.029, candidate: 148.832}
-    cache_ddr_write_bytes: {control: 116480, candidate: 91392}
-    cache_ddr_read_bytes: {control: 9277184, candidate: 8863232}
+    cache_append_dma_us:
+      control: 197.029
+      candidate: 148.832
+    cache_ddr_write_bytes:
+      control: 116480
+      candidate: 91392
+    cache_ddr_read_bytes:
+      control: 9277184
+      candidate: 8863232
     pair_wins: 8
     vtcm_peak_plan_bytes: 8365824
     summary_sha256: d8cc53dd7f7f2c228458385d8efc9631af4c564afeaa6ca7d55119a8d74714ed
@@ -1045,8 +1065,8 @@ current_scope:
     id: EXP-0182
     source_branch: codex/exp-0182-w4u8-decode-vtcm-resident-v-tail
     source_head: 803c4a104b2b16bfd8b0cf5d456a76ea8738b4cb
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0182/20260904T_exp0182_803c4a1_short'
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0182/20260904T_exp0182_803c4a1_formal'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0182/20260904T_exp0182_803c4a1_short
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0182/20260904T_exp0182_803c4a1_formal
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
@@ -1063,7 +1083,9 @@ current_scope:
       control_decode_tokens_per_second: 22.733941
       candidate_decode_tokens_per_second: 23.436696
       candidate_decode_speed_percent: 3.091216
-    attention_us: {control: 5419.609, candidate: 4103.222}
+    attention_us:
+      control: 5419.609
+      candidate: 4103.222
     attention_speed_percent: 32.081785
     pair_wins: 10
     vtcm_atlas_payload_bytes: 917504
@@ -1080,7 +1102,7 @@ current_scope:
     id: EXP-0181
     source_branch: codex/exp-0181-w4u8-decode-attention-publish-v-tail
     source_head: d2114dafc285b6b3189b0a5ee404c518e942f758
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0181/20260904T_exp0181_d2114da_short'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0181/20260904T_exp0181_d2114da_short
     execution_state: completed
     evidence_validity: valid
     local_gate: fail
@@ -1090,12 +1112,18 @@ current_scope:
     performance_gate: fail_candidate_won_3_of_5_pairs_despite_0_445_percent_median_decode_gain
     direct_end_to_end:
       control_decode_tokens_per_second: 22.884282
-      candidate_decode_tokens_per_second: 22.986120
-      candidate_decode_speed_percent: 0.4450
-    attention_us: {control: 4476.683, candidate: 3758.776}
+      candidate_decode_tokens_per_second: 22.98612
+      candidate_decode_speed_percent: 0.445
+    attention_us:
+      control: 4476.683
+      candidate: 3758.776
     attention_speed_percent: 19.0995
-    cache_conversion_update_us: {control: 159.489, candidate: 159.186}
-    cache_append_dma_us: {control: 177.669, candidate: 245.977}
+    cache_conversion_update_us:
+      control: 159.489
+      candidate: 159.186
+    cache_append_dma_us:
+      control: 177.669
+      candidate: 245.977
     pair_wins: 3
     summary_sha256: 2acee96f5b40bcb3eefd9d4e502e6a0d01f7c185e76285821d2ac484f13c06f1
     short_report_sha256: 0be1abb3eab98a286d76e0ed4ff8772b7d6e628c3b8582a05575e963d0ed7b60
@@ -1106,7 +1134,7 @@ current_scope:
     id: EXP-0180
     source_branch: codex/exp-0180-w4u8-decode-quartet-native-v-tail
     source_head: 073cbd6da8a9f70f75a193298def5484787a6f83
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0180/20260904T_exp0180_073cbd6_short'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0180/20260904T_exp0180_073cbd6_short
     execution_state: completed
     evidence_validity: valid
     local_gate: fail
@@ -1116,8 +1144,12 @@ current_scope:
     performance_gate: fail_22_715331_tps_vs_22_839162_control_and_3_of_5_pair_wins
     attention_speed_percent: 19.601601
     decode_speed_percent: -0.542188
-    cache_conversion_update_us: {control: 159.883, candidate: 604.180}
-    cache_append_dma_us: {control: 175.856, candidate: 198.672}
+    cache_conversion_update_us:
+      control: 159.883
+      candidate: 604.18
+    cache_append_dma_us:
+      control: 175.856
+      candidate: 198.672
     summary_sha256: e2108e05d3638fde187ae536015f008e86b27327590f8f4c436202d705359257
     short_report_sha256: 60b88336b6c441a1df1c69e4040bc30e587c158f6e920bc821a40c51bc3b564e
     static_gate_sha256: 7e9c2e49c1d9968427b68c2bdc762fcf44d3d955846dfd3cd6cb39c40b769d14
@@ -1126,8 +1158,8 @@ current_scope:
     id: EXP-0179
     source_branch: codex/exp-0179-w4u8-decode-row4-qk-norm-rope
     source_head: 828e4d7f5caf8001f135e225704ed6f83b52dc53
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0179/20260904T_exp0179_828e4d7_short'
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0179/20260904T_exp0179_828e4d7_formal'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0179/20260904T_exp0179_828e4d7_short
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0179/20260904T_exp0179_828e4d7_formal
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
@@ -1147,8 +1179,12 @@ current_scope:
       control_decode_tokens_per_second: 20.902527
       candidate_decode_tokens_per_second: 22.756159
       candidate_decode_speed_percent: 8.867984
-    qkv_qk_preparation_us: {control: 7715.338677, candidate: 3707.368300}
-    hmx_u8s8_tile_pair_count: {control: 1699840, candidate: 1699840}
+    qkv_qk_preparation_us:
+      control: 7715.338677
+      candidate: 3707.3683
+    hmx_u8s8_tile_pair_count:
+      control: 1699840
+      candidate: 1699840
     full_profiling_report_sha256: 0186e2a8d7dbcaa2248e8ec84f4a363a020bfd8e76b7376270c4860c6a2f4bb3
     summary_sha256: 03be51e78fccd6645f14654647433827a912faeb24ceeb11c0e31cd41bbd0568
     static_gate_sha256: 37c69fe9c6663d7e93e0acf5172f44af51ef13ece1ccd38d1f43c87f5751679a
@@ -1160,8 +1196,8 @@ current_scope:
     id: EXP-0178
     source_branch: codex/exp-0178-w4u8-decode-row4-common-ops
     source_head: cea103935829404274ae069248795fc1c83ae587
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0178/20260904T_exp0178_cea1039_short_gate'
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0178/20260904T_exp0178_cea1039_formal'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0178/20260904T_exp0178_cea1039_short_gate
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0178/20260904T_exp0178_cea1039_formal
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
@@ -1174,18 +1210,28 @@ current_scope:
     physical_gate: pass_exact_8mib_VTCM_zero_intermediate_or_timed_full_logit_DDR_zero_spill_fill_one_FastRPC_per_pass_no_QNN_zero_unattributed_ticks
     performance_gate: pass_candidate_wins_10_of_10_rotated_pairs
     direct_end_to_end:
-      control_prefill_tokens_per_second: 1295.540
+      control_prefill_tokens_per_second: 1295.54
       candidate_prefill_tokens_per_second: 1299.397
       control_decode_host_us_per_token: 47819.473711
       candidate_decode_host_us_per_token: 47040.577331
       control_decode_tokens_per_second: 20.911983
       candidate_decode_tokens_per_second: 21.258242
       candidate_decode_speed_percent: 1.655797
-    common_target_stages_us: {control: 1404.042, candidate: 384.272}
-    input_RMSNorm_us: {control: 555.740, candidate: 149.835}
-    post_attention_residual_RMSNorm_us: {control: 655.236, candidate: 190.093}
-    final_residual_us: {control: 193.066, candidate: 44.344}
-    hmx_u8s8_tile_pair_count: {control: 1699840, candidate: 1699840}
+    common_target_stages_us:
+      control: 1404.042
+      candidate: 384.272
+    input_RMSNorm_us:
+      control: 555.74
+      candidate: 149.835
+    post_attention_residual_RMSNorm_us:
+      control: 655.236
+      candidate: 190.093
+    final_residual_us:
+      control: 193.066
+      candidate: 44.344
+    hmx_u8s8_tile_pair_count:
+      control: 1699840
+      candidate: 1699840
     full_profiling_report_sha256: e15de5ec78691fe312c2736248f73eafdbdefd17c37754df71cbeab14179bf36
     summary_sha256: d0cf45c22c3863efa68f85d2c8bf9d3ea7458d37b65a44bbb0038c90c5089d05
     static_gate_sha256: b254cac329e3ec7ec77292d74faa900d31c0e0e984c2a9be6a62e7bcbf2ec7a9
@@ -1197,8 +1243,8 @@ current_scope:
     id: EXP-0177
     source_branch: codex/exp-0177-w4u8-decode-av-row4-requant
     source_head: 7383bae0bd1ac8131f90297677771cf1b005977e
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0177/20260904T_exp0177_af9cecd_short_gate_retry1'
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0177/20260904T_exp0177_7383bae_formal'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0177/20260904T_exp0177_af9cecd_short_gate_retry1
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0177/20260904T_exp0177_7383bae_formal
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
@@ -1218,11 +1264,21 @@ current_scope:
       control_decode_tokens_per_second: 20.344415
       candidate_decode_tokens_per_second: 20.893466
       candidate_decode_speed_percent: 2.698781
-    Attention_us: {control: 6542.637, candidate: 5392.833}
-    AV_requant_us: {control: 1340.767, candidate: 165.223}
-    AV_requant_vectors_per_token: {control: 28672, candidate: 1792}
-    AV_requant_calls_per_token: {control: 224, candidate: 224}
-    hmx_u8s8_tile_pair_count: {control: 1699840, candidate: 1699840}
+    Attention_us:
+      control: 6542.637
+      candidate: 5392.833
+    AV_requant_us:
+      control: 1340.767
+      candidate: 165.223
+    AV_requant_vectors_per_token:
+      control: 28672
+      candidate: 1792
+    AV_requant_calls_per_token:
+      control: 224
+      candidate: 224
+    hmx_u8s8_tile_pair_count:
+      control: 1699840
+      candidate: 1699840
     full_profiling_report_sha256: 620135e8121d22114cd8b508cb1c6af382b037705cfcb12a6bfd6f27d6229b57
     summary_sha256: 5d92eaa756159b60ed1840f4ce5070bb5f8974c67c782b53f382957c540f1c96
     static_gate_sha256: 419fc2f373afbee710c27cdcda9ae1901f42681487496ce767035b73b2e7fff5
@@ -1234,7 +1290,7 @@ current_scope:
     id: EXP-0176
     source_branch: codex/exp-0176-w4u8-decode-o-batch8
     source_head: abca7660873595843e4a446d1faf642d9d706d15
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0176/20260904T_exp0176_abca766_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0176/20260904T_exp0176_abca766_formal
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
@@ -1250,13 +1306,19 @@ current_scope:
       control_prefill_tokens_per_second: 1294.111
       candidate_prefill_tokens_per_second: 1292.711
       control_decode_host_us_per_token: 49552.248
-      candidate_decode_host_us_per_token: 49196.130
+      candidate_decode_host_us_per_token: 49196.13
       control_decode_tokens_per_second: 20.180719
       candidate_decode_tokens_per_second: 20.326802
       candidate_decode_speed_percent: 0.723875
-    O_projection_us: {control: 4833.943, candidate: 4478.372}
-    O_command_count: {control: 448, candidate: 224}
-    hmx_u8s8_tile_pair_count: {control: 1699840, candidate: 1699840}
+    O_projection_us:
+      control: 4833.943
+      candidate: 4478.372
+    O_command_count:
+      control: 448
+      candidate: 224
+    hmx_u8s8_tile_pair_count:
+      control: 1699840
+      candidate: 1699840
     full_profiling_report_sha256: 97b216c348e46344ef0d7a51a0b129ea05150b7efc9cf5237b3d366297830153
     summary_sha256: f9464f0ae199f7c79bd7c5b14c58e89d05bfd100c3bb53015f33bc5d4a0b9d7a
     independent_reference_sha256: f7cb4abcf8d06eedac97ca9c212edb7af5d15ebb8520e17ba8fa752555c1def2
@@ -1267,7 +1329,7 @@ current_scope:
     source_branch: codex/exp-0175-w4u8-decode-gate-up-pair-ready
     source_head: de3c90e15427a8f375ea38092cbaa8f80d71cd25
     runtime_source_commit: b9b45538967347f73f79e3dfd6ca5b44dff929ae
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0175/20260904T_exp0175_de3c90e_short_gate'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0175/20260904T_exp0175_de3c90e_short_gate
     execution_state: completed
     evidence_validity: valid
     local_gate: fail
@@ -1301,7 +1363,7 @@ current_scope:
     source_branch: codex/exp-0174-w4u8-decode-gate-up-inline-publish
     source_head: 1e0adcc695b3485d234b7dc22ec12ff9a83a45fd
     runtime_source_commit: 993fc52109fdda9d9911fc3eeccb62bc97cb0842
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0174/20260904T_exp0174_993fc52_short_gate'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0174/20260904T_exp0174_993fc52_short_gate
     execution_state: completed
     evidence_validity: valid
     local_gate: fail
@@ -1314,7 +1376,7 @@ current_scope:
     physical_gate: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_pass_no_QNN_zero_unattributed_ticks
     performance_gate: fail_both_inline_cells_slower_in_Gate_Up_and_direct_decode
     direct_end_to_end:
-      control_decode_host_us_per_token: 49094.951000
+      control_decode_host_us_per_token: 49094.951
       inline_batch8_decode_host_us_per_token: 51008.636188
       inline_batch16_decode_host_us_per_token: 51111.774188
       control_decode_tokens_per_second: 20.368693
@@ -1323,9 +1385,9 @@ current_scope:
       inline_batch8_speed_percent: -3.751689
       inline_batch16_speed_percent: -3.945907
     Gate_Up_us:
-      control: 16672.936000
-      inline_batch8: 18607.077000
-      inline_batch16: 18579.951000
+      control: 16672.936
+      inline_batch8: 18607.077
+      inline_batch16: 18579.951
     diagnosis: queue_mutex_and_semaphore_work_inside_the_single_HMX_owner_serializes_the_matrix_pipeline_and_raises_HMX_attributed_time_more_than_early_SwiGLU_publication_can_hide
     conclusion: per_output_heavy_callback_is_rejected_but_lightweight_prequeued_pair_ready_notification_remains_a_distinct_hypothesis
     short_gate_report_sha256: 83774b617632043c7b270ed925638e77ba0311c1c39c29dd2ec505968a529770
@@ -1334,7 +1396,7 @@ current_scope:
     id: EXP-0173
     source_branch: codex/exp-0173-w4u8-decode-lm-head-batch16
     source_head: 9e30f822731da3b5d0d924babe7ccb5cb4142f94
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0173/20260904T_exp0173_9e30f82_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0173/20260904T_exp0173_9e30f82_formal
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
@@ -1348,13 +1410,15 @@ current_scope:
     performance_gate: pass_all_ten_rotated_pairs
     direct_end_to_end:
       control_prefill_tokens_per_second: 1292.886445
-      candidate_prefill_tokens_per_second: 1296.506840
+      candidate_prefill_tokens_per_second: 1296.50684
       control_decode_host_us_per_token: 50649.017831
       candidate_decode_host_us_per_token: 49571.762505
       control_decode_tokens_per_second: 19.743719
       candidate_decode_tokens_per_second: 20.172775
       candidate_decode_speed_percent: 2.173123
-    LM_head_us: {control: 5200.045302, candidate: 4128.867188}
+    LM_head_us:
+      control: 5200.045302
+      candidate: 4128.867188
     LM_head_speed_percent: 25.94364
     conclusion: batch16_halves_LM_head_command_and_prefetch_count_and_improves_DMA_expand_HMX_overlap_without_changing_math_or_prefill
     promoted_as: selected_w4u8_token_generation_baseline
@@ -1370,7 +1434,7 @@ current_scope:
     id: EXP-0172
     source_branch: codex/exp-0172-w4u8-decode-gate-up-hvx-gemv
     source_head: 575ec0e270738313c42c68b7d90e02fe2c8f55d1
-    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0172/short_gate'
+    short_evidence: D:/llm_exp/results/qwen3-block-htp/exp0172/short_gate
     execution_state: completed
     evidence_validity: valid
     local_gate: fail
@@ -1384,10 +1448,12 @@ current_scope:
     direct_end_to_end:
       control_decode_host_us_per_token: 50343.594
       candidate_decode_host_us_per_token: 472268.881
-      control_decode_tokens_per_second: 19.863500
+      control_decode_tokens_per_second: 19.8635
       candidate_decode_tokens_per_second: 2.117438
       candidate_decode_speed_percent: -89.340057
-    Gate_Up_us: {control: 16561.224, candidate: 438998.464}
+    Gate_Up_us:
+      control: 16561.224
+      candidate: 438998.464
     candidate_HVX_GEMV_us: 429324.323
     diagnosis: HMX_64row_overcompute_is_cheaper_than_serial_HVX_weight_load_and_accumulation_over_the_expanded_carrier
     reopen_condition: true_M1_matrix_engine_or_packed_W4_kernel_without_HVX_projection_critical_path
@@ -1396,7 +1462,7 @@ current_scope:
     id: EXP-0171
     source_branch: codex/exp-0171-w4u8-decode-row4-swiglu
     source_head: 49727b9a2f2e5f1f97f2cb2ec6617a7746fbdb58
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0171/20260904T_exp0171_49727b9_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0171/20260904T_exp0171_49727b9_formal
     execution_state: completed
     evidence_validity: valid
     local_gate: fail
@@ -1411,13 +1477,15 @@ current_scope:
     performance_gate: fail_zero_of_ten_rotated_pair_wins
     direct_end_to_end:
       control_prefill_tokens_per_second: 1290.356
-      candidate_prefill_tokens_per_second: 1292.050
+      candidate_prefill_tokens_per_second: 1292.05
       control_decode_host_us_per_token: 50769.349
-      candidate_decode_host_us_per_token: 53481.010
+      candidate_decode_host_us_per_token: 53481.01
       control_decode_tokens_per_second: 19.696924
       candidate_decode_tokens_per_second: 18.698226
       candidate_decode_speed_percent: -5.070324
-    Gate_Up_SwiGLU_us: {control: 16901.032, candidate: 19660.545}
+    Gate_Up_SwiGLU_us:
+      control: 16901.032
+      candidate: 19660.545
     diagnosis: removed_SwiGLU_work_was_overlapped_not_critical_and_short_tasks_exposed_more_HMX_lifetime_and_ready_wait
     reopen_condition: new_Gate_Up_scheduling_mechanism_preserving_DMA_expand_HMX_overlap_not_further_element_count_reduction
     full_profiling_report_sha256: a6e4c3b57bc45f18fb0cf58f044fcf4cfed3ec6d7ab72bc8c559694194dfb33e
@@ -1429,7 +1497,7 @@ current_scope:
     source_branch: codex/exp-0170-w4u8-decode-hvx-softmax
     source_head: 042dbfd8907c23af255092a03ac28b13f8e740bc
     runtime_source_commit: 23c00feaee20ccef30165d47ed03b5774c70e649
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0170/20260904T_exp0170_23c00fe_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0170/20260904T_exp0170_23c00fe_formal
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
@@ -1452,14 +1520,24 @@ current_scope:
       candidate_prefill_tokens_per_second: 1293.562864
       scalar_decode_host_us_per_token: 60024.837492
       candidate_decode_host_us_per_token: 50669.130844
-      scalar_decode_tokens_per_second: 16.659770
+      scalar_decode_tokens_per_second: 16.65977
       candidate_decode_tokens_per_second: 19.735882
       candidate_decode_speed_percent: 18.464312
-    dynamic_softmax_us: {scalar: 9877.865533, candidate: 545.234918}
-    QK_softmax_AV_us: {scalar: 15963.855, candidate: 6573.034}
-    cache_bucket_speed_percent: {L64_95: 9.09, L224_255: 27.60}
-    complete_wall_slope_us_per_cache_token: {scalar: 62.672718, candidate: 4.042320}
-    softmax_slope_us_per_cache_token: {scalar: 60.590611, candidate: 1.991718}
+    dynamic_softmax_us:
+      scalar: 9877.865533
+      candidate: 545.234918
+    QK_softmax_AV_us:
+      scalar: 15963.855
+      candidate: 6573.034
+    cache_bucket_speed_percent:
+      L64_95: 9.09
+      L224_255: 27.6
+    complete_wall_slope_us_per_cache_token:
+      scalar: 62.672718
+      candidate: 4.04232
+    softmax_slope_us_per_cache_token:
+      scalar: 60.590611
+      candidate: 1.991718
     conclusion: HVX_decode_Softmax_eliminates_the_dominant_EXP0169_long_cache_slope_without_changing_math_or_physical_contract_and_is_eligible_for_user_promotion
     full_profiling_report_sha256: 6ec4c61d6feb350f0a0434cb1b0d6fae147114574117b2fffb587e295eafff55
     summary_sha256: f98919292333a3949ec542ad63c4d7d09c37550f9900536f841ecbe825b1fd6d
@@ -1469,8 +1547,8 @@ current_scope:
     id: EXP-0169
     source_branch: codex/exp-0169-w4u8-long-decode-attribution
     source_head: f4722419596931035583e98e4b5a304b528d1cd2
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0169/20260904T_exp0169_f472241_formal'
-    retained_overlay: 'D:/llm_exp/models/qwen3-block-htp/exp0169/w4u8_greedy193_overlay'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0169/20260904T_exp0169_f472241_formal
+    retained_overlay: D:/llm_exp/models/qwen3-block-htp/exp0169/w4u8_greedy193_overlay
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
@@ -1505,8 +1583,8 @@ current_scope:
     id: EXP-0168
     source_branch: codex/exp-0168-w4u8-lm-head-batch8-overlap
     source_head: bcf327142e451ed25c84f32d13e802230397d65a
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0168/20260904T_exp0168_bcf3271_formal'
-    retained_generation_package: 'D:/llm_exp/models/qwen3-block-htp/exp0167/w4u8_greedy16'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0168/20260904T_exp0168_bcf3271_formal
+    retained_generation_package: D:/llm_exp/models/qwen3-block-htp/exp0167/w4u8_greedy16
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
@@ -1517,8 +1595,24 @@ current_scope:
     promoted_on: '2026-09-04'
     promotion_ref: 'User message 2026-09-04: 确认晋升。下一步是不是该专注decode和kv cache的优化了？'
     execution_unit: real_token_ID_M64_prefill_then_15_feedback_decode_calls_producing_16_selected_tokens
-    generated_token_ids: [124491, 51272, 51272, 9092, 51272, 128014, 23186, 85301, 23186, 23186, 23186, 23186, 105260, 37440, 23186, 5205]
-    generated_text_diagnostic: 'ảoordoordoalysisordoытаAPHcdbAPHAPHAPHAPH副主任��APHlang'
+    generated_token_ids:
+    - 124491
+    - 51272
+    - 51272
+    - 9092
+    - 51272
+    - 128014
+    - 23186
+    - 85301
+    - 23186
+    - 23186
+    - 23186
+    - 23186
+    - 105260
+    - 37440
+    - 23186
+    - 5205
+    generated_text_diagnostic: ảoordoordoalysisordoытаAPHcdbAPHAPHAPHAPH副主任��APHlang
     correctness_gate: pass_exact_EXP0167_tokens_and_U8_codes_all_sessions_plus_independent_integer_final_norm_W4U8_lm_head_and_argmax_16_of_16_exact_plus_EXP0163_193_step_zero_LSB_regression
     stability_gate: pass_ten_of_ten_sessions_identical
     semantic_gate: disabled_by_user_contract
@@ -1537,7 +1631,9 @@ current_scope:
       prefill: 16.176209
       decode: 14.902013
       complete_16_pass_session: 14.961734
-    lm_head_decode_median_us: {control: 13181.458, candidate: 5180.170}
+    lm_head_decode_median_us:
+      control: 13181.458
+      candidate: 5180.17
     conclusion: W4U8_batch8_phase_overlaid_lm_head_is_physically_and_mathematically_valid_and_exceeds_the_selected_W4F16_head_structural_target_semantic_quality_not_claimed
     full_profiling_report_sha256: 5bab23ef731d66ddfe9dbb95600bb7ea58aafeb642d458572deaa7e1cefba419
     summary_sha256: 372b20f16380abfddea796b9471333fffc31f2aa11929130c0fd997f78bf5423
@@ -1553,11 +1649,11 @@ current_scope:
     source_tag: baseline-w4u8-token-generation-exp0211
     physical_plan: direct_packed_W4_all_decode_transformer_projections_with_Q32_KV16_O16_Down8_single_descriptor_and_async_Gate_Up_SwiGLU_stream
     execution_scope: real_token_ID_M64_prefill_then_192_continuous_decode_steps_to_valid_length256
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0211/20260905_formal_b111cf7'
-    retained_generation_package: 'D:/llm_exp/models/qwen3-block-htp/exp0169/w4u8_greedy193_overlay'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0211/20260905_formal_b111cf7
+    retained_generation_package: D:/llm_exp/models/qwen3-block-htp/exp0169/w4u8_greedy193_overlay
     prefill_host_us: 49399.899769695454
     prefill_tokens_per_second: 1295.5491873135547
-    decode_host_us_per_token: 21777.339786458334
+    decode_host_us_per_token: 21777.339786458335
     decode_tokens_per_second: 45.91931648030151
     decode_cache_length_range: L64_L255
     correctness_gate: pass_all_formal_hidden_cache_selected_codes_tokens_and_output_hashes_byte_exact
@@ -1572,8 +1668,8 @@ current_scope:
     source_branch: codex/exp-0166-w4f16-lm-head-overlap
     source_head: 8e0dcf82cb22851a767418805431490fe3699ad2
     runtime_source_commit: 8e0dcf82cb22851a767418805431490fe3699ad2
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0166/20260903T_exp0166_8e0dcf8_formal'
-    retained_generation_package: 'D:/llm_exp/models/qwen3-block-htp/exp0164/w4f16_greedy16'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0166/20260903T_exp0166_8e0dcf8_formal
+    retained_generation_package: D:/llm_exp/models/qwen3-block-htp/exp0164/w4f16_greedy16
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
@@ -1584,7 +1680,7 @@ current_scope:
     promoted_on: '2026-09-03'
     promotion_ref: 'User message 2026-09-03: 同意晋升，然后报告新的profiling结果。接下来的profiling最终汇总结果在墙钟之外，加上直接的全模端到端实测token/s，并以此为新的标准，更加直观。'
     execution_unit: real_token_ID_M64_prefill_then_15_feedback_decode_calls_producing_16_selected_tokens
-    generated_text: '低比特量化（Low-Bitwidth Quantization）在大模型推理中'
+    generated_text: 低比特量化（Low-Bitwidth Quantization）在大模型推理中
     correctness_gate: pass_160_of_160_generated_tokens_exact_against_EXP0165_and_independent_W4F16_reference_with_identical_selected_FP16_logit_bits
     stability_gate: pass_ten_of_ten_sessions_identical
     semantic_gate: pass_nonempty_readable_text
@@ -1594,7 +1690,7 @@ current_scope:
     host_wall_us:
       prefill_control_ten_session_median: 65793.646
       prefill_candidate_ten_session_median: 62974.714
-      decode_control_mean_per_token_ten_session_median: 95541.920
+      decode_control_mean_per_token_ten_session_median: 95541.92
       decode_candidate_mean_per_token_ten_session_median: 92598.101
       complete_control_16_pass_sequence_ten_session_median: 1498162.238
       complete_candidate_16_pass_sequence_ten_session_median: 1451748.411
@@ -1603,9 +1699,9 @@ current_scope:
       decode_report_only: 3.148
       complete_16_pass_sequence: 3.225
     direct_end_to_end_tokens_per_second:
-      prefill_control: 972.738310
+      prefill_control: 972.73831
       prefill_candidate: 1016.280924
-      decode_control: 10.466610
+      decode_control: 10.46661
       decode_candidate: 10.799358
       complete_16_pass_control_effective: 10.679751
       complete_16_pass_candidate_effective: 11.021193
@@ -1634,8 +1730,8 @@ current_scope:
     source_tag: baseline-w4f16-token-generation-exp0166
     physical_plan: resident_scales_plus_coarse_two_slot_DMA_HVX_W4_expansion_HMX_consumption_and_HVX_argmax_pipeline
     execution_scope: real_token_ID_M64_prefill_then_15_feedback_decode_calls_producing_16_selected_tokens
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0166/20260903T_exp0166_8e0dcf8_formal'
-    retained_generation_package: 'D:/llm_exp/models/qwen3-block-htp/exp0164/w4f16_greedy16'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0166/20260903T_exp0166_8e0dcf8_formal
+    retained_generation_package: D:/llm_exp/models/qwen3-block-htp/exp0164/w4f16_greedy16
     prefill_host_us: 62974.714
     prefill_tokens_per_second: 1016.280924
     decode_host_us_per_token: 92598.101
@@ -1651,11 +1747,11 @@ current_scope:
     id: EXP-0163
     source_branch: codex/exp-0163-w4u8-multiseal-l256
     source_head: 63de1de7028c5a478f4494c4e64993d34deac503
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0163/20260903T073822Z_63de1de7028c_formal'
-    retained_logical_source: 'D:/llm_exp/models/qwen3-block-htp/exp0163/logical_capacity257_source'
-    retained_exact_logical_reference: 'D:/llm_exp/models/qwen3-block-htp/exp0163/w4u8_exact_logical_capacity257'
-    retained_control_package: 'D:/llm_exp/models/qwen3-block-htp/exp0163/control_delta_capacity257'
-    retained_candidate_package: 'D:/llm_exp/models/qwen3-block-htp/exp0163/candidate_segmented_capacity257'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0163/20260903T073822Z_63de1de7028c_formal
+    retained_logical_source: D:/llm_exp/models/qwen3-block-htp/exp0163/logical_capacity257_source
+    retained_exact_logical_reference: D:/llm_exp/models/qwen3-block-htp/exp0163/w4u8_exact_logical_capacity257
+    retained_control_package: D:/llm_exp/models/qwen3-block-htp/exp0163/control_delta_capacity257
+    retained_candidate_package: D:/llm_exp/models/qwen3-block-htp/exp0163/candidate_segmented_capacity257
     evidence_validity: valid
     execution_state: completed
     local_gate: pass
@@ -1672,10 +1768,18 @@ current_scope:
     structural_gate: pass_zero_full_prefix_reconstruction_bounded_attention_overlay_and_valid_length256
     formal_sessions: 10_rotated_control_candidate_pairs
     host_wall_us:
-      prefill: {control: 44445.000, candidate: 44076.536}
-      early_decode_positions64_71: {control: 49180.628, candidate: 49181.028}
-      all_decode_positions64_255: {control: 65548.449, candidate: 56217.389}
-      tail_decode_positions224_255: {control: 79833.851, candidate: 61300.697}
+      prefill:
+        control: 44445.0
+        candidate: 44076.536
+      early_decode_positions64_71:
+        control: 49180.628
+        candidate: 49181.028
+      all_decode_positions64_255:
+        control: 65548.449
+        candidate: 56217.389
+      tail_decode_positions224_255:
+        control: 79833.851
+        candidate: 61300.697
     paired_median_speed_improvement_percent:
       prefill: 0.7319896023628369
       early_decode_positions64_71: 0.16348277740726447
@@ -1701,10 +1805,10 @@ current_scope:
     id: EXP-0162
     source_branch: codex/exp-0162-w4u8-full-stack-segmented-cache
     source_head: a3b9607dee88719341763204566bac8a9ed5e3cd
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0162/20260903T045521Z_a3b9607dee88_formal'
-    retained_exact_logical_source: 'D:/llm_exp/models/qwen3-block-htp/exp0162/w4u8_exact_logical_capacity104'
-    retained_control_package: 'D:/llm_exp/models/qwen3-block-htp/exp0162/control_delta_capacity104'
-    retained_candidate_package: 'D:/llm_exp/models/qwen3-block-htp/exp0162/candidate_segmented_capacity104'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0162/20260903T045521Z_a3b9607dee88_formal
+    retained_exact_logical_source: D:/llm_exp/models/qwen3-block-htp/exp0162/w4u8_exact_logical_capacity104
+    retained_control_package: D:/llm_exp/models/qwen3-block-htp/exp0162/control_delta_capacity104
+    retained_candidate_package: D:/llm_exp/models/qwen3-block-htp/exp0162/candidate_segmented_capacity104
     evidence_validity: valid
     execution_state: completed
     local_gate: pass
@@ -1723,12 +1827,24 @@ current_scope:
     structural_gate: pass_zero_full_prefix_pack_bounded_attention_overlay_dynamic_segment_and_tail_counts
     formal_sessions: 10_rotated_control_candidate_pairs
     host_wall_us:
-      prefill: {control: 43604.870, candidate: 43595.651}
-      early_decode_positions64_71: {control: 48692.829, candidate: 48284.788}
-      preseal_decode_positions72_94: {control: 50297.796, candidate: 50289.936}
-      seal_position95: {control: 52045.104, candidate: 52376.823}
-      postseal_decode_positions96_103: {control: 53055.908, candidate: 49325.290}
-      all_decode_positions64_103: {control: 50521.020, candidate: 49714.973}
+      prefill:
+        control: 43604.87
+        candidate: 43595.651
+      early_decode_positions64_71:
+        control: 48692.829
+        candidate: 48284.788
+      preseal_decode_positions72_94:
+        control: 50297.796
+        candidate: 50289.936
+      seal_position95:
+        control: 52045.104
+        candidate: 52376.823
+      postseal_decode_positions96_103:
+        control: 53055.908
+        candidate: 49325.29
+      all_decode_positions64_103:
+        control: 50521.02
+        candidate: 49714.973
     paired_median_speed_improvement_percent:
       prefill: 0.3233369649023432
       early_decode_positions64_71: 0.7396538546224463
@@ -1750,10 +1866,10 @@ current_scope:
     id: EXP-0161
     source_branch: codex/exp-0161-w4u8-segmented-long-kv-cache
     source_head: efea24712241dbcb62f468665b98c758c5ef5461
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0161/20260902T191200Z_efea24712241_phase_b'
-    retained_exact_logical_sources: 'D:/llm_exp/models/qwen3-block-htp/exp0161/exact_logical_v1'
-    retained_control_packages: 'D:/llm_exp/models/qwen3-block-htp/exp0161/decode_l{64,256,1024,4096}_w4u8_hmx_delta_v3_exact'
-    retained_candidate_packages: 'D:/llm_exp/models/qwen3-block-htp/exp0161/decode_l{64,256,1024,4096}_w4u8_hmx_segmented_v4c_exact'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0161/20260902T191200Z_efea24712241_phase_b
+    retained_exact_logical_sources: D:/llm_exp/models/qwen3-block-htp/exp0161/exact_logical_v1
+    retained_control_packages: D:/llm_exp/models/qwen3-block-htp/exp0161/decode_l{64,256,1024,4096}_w4u8_hmx_delta_v3_exact
+    retained_candidate_packages: D:/llm_exp/models/qwen3-block-htp/exp0161/decode_l{64,256,1024,4096}_w4u8_hmx_segmented_v4c_exact
     evidence_validity: valid
     execution_state: completed
     local_gate: pass
@@ -1774,10 +1890,18 @@ current_scope:
     structural_gate: pass_zero_full_prefix_pack_fixed_long_attention_overlay_only_active_tail_mutable
     speed_gate: pass_repeat10_five_round_paired_median
     wall_us_repeat10:
-      L64: {control: 1802.6041, candidate: 1807.9531}
-      L256: {control: 3022.5937, candidate: 2226.0781}
-      L1024: {control: 7869.0886, candidate: 3798.9583}
-      L4096: {control: 27280.3593, candidate: 9291.2083}
+      L64:
+        control: 1802.6041
+        candidate: 1807.9531
+      L256:
+        control: 3022.5937
+        candidate: 2226.0781
+      L1024:
+        control: 7869.0886
+        candidate: 3798.9583
+      L4096:
+        control: 27280.3593
+        candidate: 9291.2083
     paired_speed_improvement_percent:
       L64: 0.038487342431503535
       L256: 35.26009821594294
@@ -1792,7 +1916,7 @@ current_scope:
       L64: 308.219
       L256: 734.026
       L1024: 2420.219
-      L4096: 7923.760
+      L4096: 7923.76
     fixed_long_attention_overlay_bytes: 2641920
     conclusion: segmented_KV_removes_monolithic_full_prefix_reconstruction_and_changes_long_context_scaling_from_27p280_ms_to_9p291_ms_at_L4096_without_candidate_numerical_or_physical_contract_regression
     next_priority: EXP0162_dynamic_segment_sealing_and_28_layer_continuous_decode
@@ -1808,8 +1932,8 @@ current_scope:
     id: EXP-0160
     source_branch: codex/exp-0160-w4u8-delta-reconstruction-pipeline
     source_head: b33e88e3971c35851450d0737a0689bd0bd077aa
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0160/20260902T141223Z_b33e88e3971c_formal'
-    retained_candidate_package: 'D:/llm_exp/models/qwen3-block-htp/exp0159/w4u8_hmx_delta_v2_compact'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0160/20260902T141223Z_b33e88e3971c_formal
+    retained_candidate_package: D:/llm_exp/models/qwen3-block-htp/exp0159/w4u8_hmx_delta_v2_compact
     evidence_validity: valid
     execution_state: completed
     local_gate: pass
@@ -1828,13 +1952,23 @@ current_scope:
     structural_gate: pass_direct_V_2D_DMA_no_full_prefix_pack_no_persistent_tile_RMW_and_two_VTCM_attention_slots
     physical_gate: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_step_one_HMX_owner_no_QNN
     unchanged_compute_gate: pass_identical_HMX_command_tile_pair_projection_weight_and_cache_byte_contract
-    prefill_host_us: {serial: 43992.761, pipeline: 43936.433}
-    prefill_tokens_per_second: {serial: 1454.785, pipeline: 1456.650}
+    prefill_host_us:
+      serial: 43992.761
+      pipeline: 43936.433
+    prefill_tokens_per_second:
+      serial: 1454.785
+      pipeline: 1456.65
     prefill_speed_improvement_percent: 0.128
-    decode_host_us_per_token: {serial: 50293.320, pipeline: 49042.240}
-    decode_tokens_per_second: {serial: 19.883, pipeline: 20.391}
+    decode_host_us_per_token:
+      serial: 50293.32
+      pipeline: 49042.24
+    decode_tokens_per_second:
+      serial: 19.883
+      pipeline: 20.391
     decode_speed_improvement_percent: 2.551
-    decode_attention_us: {serial: 10128.688, pipeline: 8962.383}
+    decode_attention_us:
+      serial: 10128.688
+      pipeline: 8962.383
     decode_attention_speed_improvement_percent: 13.013
     serial_attention_overlay_required_bytes: 38656
     pipeline_attention_overlay_required_bytes: 77824
@@ -1848,8 +1982,8 @@ current_scope:
     id: EXP-0159
     source_branch: codex/exp-0159-w4u8-delta-journal-cache
     source_head: 4c27bea705c21835b7f444841096a9d6828048cd
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0159/20260902T130337Z_4c27bea705c2_formal'
-    retained_candidate_package: 'D:/llm_exp/models/qwen3-block-htp/exp0159/w4u8_hmx_delta_v2_compact'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0159/20260902T130337Z_4c27bea705c2_formal
+    retained_candidate_package: D:/llm_exp/models/qwen3-block-htp/exp0159/w4u8_hmx_delta_v2_compact
     evidence_validity: valid
     execution_state: completed
     local_gate: pass
@@ -1868,18 +2002,38 @@ current_scope:
     structural_gate: pass_zero_full_prefix_pack_zero_persistent_HMX_tile_RMW_and_one_current_token_append_per_layer
     physical_gate: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_step_one_HMX_owner_no_QNN
     unchanged_compute_gate: pass_identical_HMX_command_tile_pair_and_projection_weight_byte_contract
-    prefill_host_us: {control: 44207.318, candidate: 44080.182}
-    prefill_tokens_per_second: {control: 1447.724, candidate: 1451.900}
+    prefill_host_us:
+      control: 44207.318
+      candidate: 44080.182
+    prefill_tokens_per_second:
+      control: 1447.724
+      candidate: 1451.9
     prefill_speed_improvement_percent: 0.288
-    decode_host_us_per_token: {control: 51746.930, candidate: 50249.834}
-    decode_tokens_per_second: {control: 19.325, candidate: 19.901}
+    decode_host_us_per_token:
+      control: 51746.93
+      candidate: 50249.834
+    decode_tokens_per_second:
+      control: 19.325
+      candidate: 19.901
     decode_speed_improvement_percent: 2.979
-    decode_cache_update_us: {control: 4246.888, candidate: 157.269}
-    decode_cache_append_DMA_us: {control: 446.136, candidate: 129.977}
-    decode_attention_us: {control: 7222.933, candidate: 10081.517}
-    decode_cache_DDR_read_bytes: {control: 7798784, candidate_average: 4272128}
-    decode_cache_DDR_write_bytes: {control: 1892352, candidate: 57344}
-    decode_cache_DMA_descriptors: {control: 3584, candidate: 1792}
+    decode_cache_update_us:
+      control: 4246.888
+      candidate: 157.269
+    decode_cache_append_DMA_us:
+      control: 446.136
+      candidate: 129.977
+    decode_attention_us:
+      control: 7222.933
+      candidate: 10081.517
+    decode_cache_DDR_read_bytes:
+      control: 7798784
+      candidate_average: 4272128
+    decode_cache_DDR_write_bytes:
+      control: 1892352
+      candidate: 57344
+    decode_cache_DMA_descriptors:
+      control: 3584
+      candidate: 1792
     hmx_commands_per_step: 3584
     hmx_u8s8_tile_pairs_decode: 1387008
     weight_DDR_read_bytes_per_step: 712441856
@@ -1894,10 +2048,10 @@ current_scope:
     id: EXP-0158
     source_branch: codex/exp-0158-a16-hmx-native-kv-cache-parity
     source_head: 264c911a65a341f00450855cf89b2d89bbd5f108
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0158/20260902T071708Z_264c911a65a3_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0158/20260902T071708Z_264c911a65a3_formal
     retained_packages:
-      f16f16: 'D:/llm_exp/models/qwen3-block-htp/exp0158/f16f16'
-      w4f16: 'D:/llm_exp/models/qwen3-block-htp/exp0158/w4f16'
+      f16f16: D:/llm_exp/models/qwen3-block-htp/exp0158/f16f16
+      w4f16: D:/llm_exp/models/qwen3-block-htp/exp0158/w4f16
     evidence_validity: valid
     execution_state: completed
     local_gate: pass
@@ -1905,8 +2059,8 @@ current_scope:
     selected_baseline_changed: true
     promoted_as: selected_full_stack_f16f16_and_w4f16_cache_native_baselines
     promoted_baselines:
-      - selected_f16f16_full_stack_cache_native_baseline
-      - selected_w4f16_full_stack_cache_native_baseline
+    - selected_f16f16_full_stack_cache_native_baseline
+    - selected_w4f16_full_stack_cache_native_baseline
     promoted_by: user
     promoted_on: '2026-09-02'
     promotion_ref: 'User message 2026-09-02: 同意，进行晋升'
@@ -1950,8 +2104,8 @@ current_scope:
     id: EXP-0157
     source_branch: codex/exp-0157-w4u8-prefill-hmx-carrier-reuse
     source_head: 0a3557d075dc4c2b3e4a0d9e05910acb3cf4bf6b
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0157/20260902T061809Z_0a3557d075dc_formal'
-    retained_candidate_package: 'D:/llm_exp/models/qwen3-block-htp/exp0156/w4u8_hmx_native_v1'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0157/20260902T061809Z_0a3557d075dc_formal
+    retained_candidate_package: D:/llm_exp/models/qwen3-block-htp/exp0156/w4u8_hmx_native_v1
     evidence_validity: valid
     execution_state: completed
     local_gate: pass
@@ -1980,8 +2134,12 @@ current_scope:
     decode_latency_change_percent: -0.04630350763243918
     w4f16_EXP0154_decode_host_us_per_token: 84269.4791875
     w4u8_speed_vs_w4f16_percent: 62.58637095598119
-    prefill_cache_pack_us: {duplicate: 47480.65104166667, reuse: 152.8125}
-    prefill_cache_append_DMA_us: {duplicate: 643.2552083333334, reuse: 402.00520833333337}
+    prefill_cache_pack_us:
+      duplicate: 47480.65104166667
+      reuse: 152.8125
+    prefill_cache_append_DMA_us:
+      duplicate: 643.2552083333334
+      reuse: 402.00520833333337
     reused_prefill_carrier_bytes: 4014080
     conclusion: existing_QK_and_AV_HMX_prefill_carriers_can_initialize_persistent_cache_without_duplicate_construction_recovering_prefill_while_preserving_28_layer_decode
     next_priority: user_adoption_decision_then_choose_cache_native_W4F16_adaptation_or_longer_KV_length_decode_scan
@@ -1993,8 +2151,8 @@ current_scope:
     id: EXP-0156
     source_branch: codex/exp-0156-w4u8-hmx-native-cache-scaling
     source_head: 5cec25408a33ed5a670bc5e97761296bc874bdc3
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0156/20260902T054011Z_5cec25408a33_formal'
-    retained_candidate_package: 'D:/llm_exp/models/qwen3-block-htp/exp0156/w4u8_hmx_native_v1'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0156/20260902T054011Z_5cec25408a33_formal
+    retained_candidate_package: D:/llm_exp/models/qwen3-block-htp/exp0156/w4u8_hmx_native_v1
     evidence_validity: valid
     execution_state: completed
     local_gate: pass
@@ -2004,21 +2162,49 @@ current_scope:
     correctness_gate: pass_nine_outputs_all_logical_caches_and_all_HMX_carriers_exact
     structural_gate: pass_zero_complete_prefix_pack_for_all_28_layers_and_all_decode_steps
     physical_gate: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_step_one_HMX_owner_no_QNN
-    decode_full_prefix_pack_count_per_step: {row_major: 448, hmx_native_u8: 0}
-    prefill_host_us: {row_major: 53750.625, hmx_native_u8: 91917.7345}
+    decode_full_prefix_pack_count_per_step:
+      row_major: 448
+      hmx_native_u8: 0
+    prefill_host_us:
+      row_major: 53750.625
+      hmx_native_u8: 91917.7345
     prefill_latency_change_percent: 71.0077509302229
-    decode_host_us_per_token: {row_major: 366219.0298125, hmx_native_u8: 51814.7199375}
-    decode_tokens_per_second: {row_major: 2.730606, hmx_native_u8: 19.299535}
+    decode_host_us_per_token:
+      row_major: 366219.0298125
+      hmx_native_u8: 51814.7199375
+    decode_tokens_per_second:
+      row_major: 2.730606
+      hmx_native_u8: 19.299535
     decode_speedup_x: 7.0678569768
     decode_latency_reduction_percent: 85.8514
     w4f16_EXP0154_decode_host_us_per_token: 84269.4791875
     w4u8_speed_vs_w4f16_percent: 62.63617614675445
     cumulative_layer_scaling:
-      1: {row_major_us: 12983.955, hmx_native_u8_us: 1703.968, speedup_x: 7.6198, native_us_per_layer: 1703.968}
-      3: {row_major_us: 38958.219, hmx_native_u8_us: 5129.036, speedup_x: 7.5956, native_us_per_layer: 1709.679}
-      7: {row_major_us: 90991.208, hmx_native_u8_us: 12180.586, speedup_x: 7.4702, native_us_per_layer: 1740.084}
-      14: {row_major_us: 181622.894, hmx_native_u8_us: 24589.980, speedup_x: 7.3861, native_us_per_layer: 1756.427}
-      28: {row_major_us: 364247.913, hmx_native_u8_us: 49447.347, speedup_x: 7.3664, native_us_per_layer: 1765.977}
+      1:
+        row_major_us: 12983.955
+        hmx_native_u8_us: 1703.968
+        speedup_x: 7.6198
+        native_us_per_layer: 1703.968
+      3:
+        row_major_us: 38958.219
+        hmx_native_u8_us: 5129.036
+        speedup_x: 7.5956
+        native_us_per_layer: 1709.679
+      7:
+        row_major_us: 90991.208
+        hmx_native_u8_us: 12180.586
+        speedup_x: 7.4702
+        native_us_per_layer: 1740.084
+      14:
+        row_major_us: 181622.894
+        hmx_native_u8_us: 24589.98
+        speedup_x: 7.3861
+        native_us_per_layer: 1756.427
+      28:
+        row_major_us: 364247.913
+        hmx_native_u8_us: 49447.347
+        speedup_x: 7.3664
+        native_us_per_layer: 1765.977
     conclusion: decode_benefit_scales_to_all_28_layers_without_a_superlinear_cliff_but_duplicate_prefill_carrier_construction_causes_a_71_percent_prefill_regression
     next_priority: user_discussion_then_reuse_existing_prefill_QK_and_AV_HMX_carriers_for_persistent_cache_initialization
     full_profiling_report_sha256: ac65974a93962b14e108f5ed23f3d63b6b4a6ae2996ee1e9fd1dfe47ad134243
@@ -2029,9 +2215,9 @@ current_scope:
     id: EXP-0155
     source_branch: codex/exp-0155-w4u8-hmx-native-kv-cache
     source_head: c10256023e7465dd4146d4d991326e75c9c7cb87
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0155/20260902T050807Z_c10256023e74_formal'
-    retained_logical_reference: 'D:/llm_exp/models/qwen3-block-htp/exp0155/layer14_logical_reference_v1'
-    retained_candidate_package: 'D:/llm_exp/models/qwen3-block-htp/exp0155/layer14_hmx_cache_v1'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0155/20260902T050807Z_c10256023e74_formal
+    retained_logical_reference: D:/llm_exp/models/qwen3-block-htp/exp0155/layer14_logical_reference_v1
+    retained_candidate_package: D:/llm_exp/models/qwen3-block-htp/exp0155/layer14_hmx_cache_v1
     evidence_validity: valid
     execution_state: completed
     local_gate: pass
@@ -2040,9 +2226,15 @@ current_scope:
     execution_unit: real_Qwen3_layer14_M64_prefill_continuous_decode_positions64_71
     correctness_gate: pass_nine_outputs_logical_caches_and_HMX_carriers_exact
     physical_gate: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN
-    decode_full_prefix_pack_count_per_step: {row_major: 16, hmx_native_u8: 0}
-    prefill_host_us: {row_major: 2450.7035, hmx_native_u8: 3876.094}
-    decode_host_us_per_token: {row_major: 13579.7101875, hmx_native_u8: 2358.307375}
+    decode_full_prefix_pack_count_per_step:
+      row_major: 16
+      hmx_native_u8: 0
+    prefill_host_us:
+      row_major: 2450.7035
+      hmx_native_u8: 3876.094
+    decode_host_us_per_token:
+      row_major: 13579.7101875
+      hmx_native_u8: 2358.307375
     decode_speedup_x: 5.7582443796156975
     complete_sequence_speedup_x: 4.861528472004154
     conclusion: HMX_native_persistent_cache_eliminates_W4U8_decode_prefix_repack_bottleneck_but_adds_one_time_prefill_carrier_build_cost
@@ -2054,7 +2246,7 @@ current_scope:
     id: EXP-0154
     source_branch: codex/exp-0154-full-stack-profile-rerun
     source_head: 21ea7dac13f6da7da3c22bb262fe5a7044ee96e9
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0154/20260902_profile_rerun_v1/final'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0154/20260902_profile_rerun_v1/final
     evidence_validity: valid
     execution_state: completed
     local_gate: pass
@@ -2065,12 +2257,24 @@ current_scope:
     maximum_DSP_invocation_residual_percent: 0.014644579115813195
     maximum_per_layer_residual_percent: 0.06271643988765577
     maximum_complete_ledger_unattributed_ticks: 0
-    prefill_repeat10_us: {f16f16: 94320.5, w4f16: 118158.7, w4u8: 53509.9}
-    prefill_KV_cache_carrier_conversion_us: {f16f16: 26497.4, w4f16: 63718.2, w4u8: 9490.0}
-    decode_repeat10_us: {f16f16: 96286.1, w4f16: 84252.4, w4u8: 363509.0}
-    decode_attention_us: {f16f16: 33236.1, w4f16: 33432.8, w4u8: 324529.1}
+    prefill_repeat10_us:
+      f16f16: 94320.5
+      w4f16: 118158.7
+      w4u8: 53509.9
+    prefill_KV_cache_carrier_conversion_us:
+      f16f16: 26497.4
+      w4f16: 63718.2
+      w4u8: 9490.0
+    decode_repeat10_us:
+      f16f16: 96286.1
+      w4f16: 84252.4
+      w4u8: 363509.0
+    decode_attention_us:
+      f16f16: 33236.1
+      w4f16: 33432.8
+      w4u8: 324529.1
     decode_w4u8_K_pack_us: 109957.839
-    decode_w4u8_V_pack_us: 207208.750
+    decode_w4u8_V_pack_us: 207208.75
     conclusion: EXP0153_corrected_ledger_reproduces_and_identifies_persistent_cache_physical_format_as_the_common_prefill_and_decode_bottleneck
     next_priority: separately_registered_persistent_HMX_native_KV_cache_ABI_gate
     gate_summary_sha256: 21992ab731869146d6ca8dbfa43f1243972a53e6307a4b95869bbcfdf96aed73
@@ -2080,7 +2284,7 @@ current_scope:
     id: EXP-0153
     source_branch: codex/exp-0153-full-stack-profiling-closure
     source_head: 21ea7dac13f6da7da3c22bb262fe5a7044ee96e9
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0153/20260902_ledger_closure_formal/final'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0153/20260902_ledger_closure_formal/final
     evidence_validity: valid
     execution_state: completed
     local_gate: pass
@@ -2091,10 +2295,22 @@ current_scope:
     maximum_DSP_invocation_residual_percent: 0.014069716464626897
     maximum_per_layer_residual_percent: 0.04793715593492918
     maximum_complete_ledger_unattributed_ticks: 0
-    prefill_repeat10_us: {f16f16: 94715.3, w4f16: 118135.2, w4u8: 53722.5}
-    prefill_KV_cache_carrier_conversion_us: {f16f16: 26494.2, w4f16: 63715.7, w4u8: 9489.0}
-    prefill_KV_cache_carrier_conversion_host_percent: {f16f16: 28.0, w4f16: 53.9, w4u8: 17.7}
-    prefill_true_Host_DSP_boundary_us: {f16f16: 2236.0, w4f16: 557.2, w4u8: 2393.6}
+    prefill_repeat10_us:
+      f16f16: 94715.3
+      w4f16: 118135.2
+      w4u8: 53722.5
+    prefill_KV_cache_carrier_conversion_us:
+      f16f16: 26494.2
+      w4f16: 63715.7
+      w4u8: 9489.0
+    prefill_KV_cache_carrier_conversion_host_percent:
+      f16f16: 28.0
+      w4f16: 53.9
+      w4u8: 17.7
+    prefill_true_Host_DSP_boundary_us:
+      f16f16: 2236.0
+      w4f16: 557.2
+      w4u8: 2393.6
     conclusion: old_Host_RPC_closure_bucket_was_mainly_DSP_side_projection_carrier_to_persistent_KV_cache_conversion
     gate_summary_sha256: b7ee73c11f070c31ad7a546500545f4080125b2a1484f6388f79dd85d42f1dea
     full_profiling_report_sha256: 3e96956234df52056cbe17e426c1cc7601c227ca6897ecaa269c5bfbe40a67c3
@@ -2103,20 +2319,29 @@ current_scope:
     id: EXP-0152
     source_branch: codex/exp-0152-full-stack-rpcmem2-resume
     source_head: f64104da172510753be67056967e80770b181e76
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0152/20260901T193925Z_f64104d_formal'
-    retained_w4u8_exact_reference: 'D:/llm_exp/models/qwen3-block-htp/exp0152/w4u8_exact_reference_v1'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0152/20260901T193925Z_f64104d_formal
+    retained_w4u8_exact_reference: D:/llm_exp/models/qwen3-block-htp/exp0152/w4u8_exact_reference_v1
     evidence_validity: valid
     execution_state: completed
     local_gate: pass
     adoption_status: not_applicable
     selected_baseline_changed: false
-    execution_layer_indices: [0, 27]
+    execution_layer_indices:
+    - 0
+    - 27
     execution_transformer_layer_count: 28
     output_boundary: layer27_block_output_before_final_model_norm_or_lm_head
-    prefill_positions: [0, 63]
-    decode_positions: [64, 71]
+    prefill_positions:
+    - 0
+    - 63
+    decode_positions:
+    - 64
+    - 71
     final_cache_length_per_layer: 72
-    package_sizes_bytes: {f16f16: 2836201344, w4f16: 727318400, w4u8: 1259091840}
+    package_sizes_bytes:
+      f16f16: 2836201344
+      w4f16: 727318400
+      w4u8: 1259091840
     mapping_gate: pass_one_exact_size_rpcmem_alloc2_arena_one_fd_one_persistent_cDSP_mapping_per_recipe
     f16_correctness_gate: pass_user_approved_scheme1_conditional_local_and_final_composed_output_contract
     w4u8_exact_output_steps: 9
@@ -2126,10 +2351,22 @@ current_scope:
     w4u8_exact_final_cache_mismatches: 0
     w4u8_exact_final_cache_max_lsb: 0
     physical_gate: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_stack_step_one_HMX_owner_no_QNN
-    prefill_repeat10_us: {f16f16: 94294.1, w4f16: 118109.2, w4u8: 53624.7}
-    prefill_repeat10_tokens_per_second: {f16f16: 678.727, w4f16: 541.871, w4u8: 1193.481}
-    decode_L64_L71_repeat10_us: {f16f16: 96592.3, w4f16: 84112.3, w4u8: 366137.3}
-    decode_L64_L71_repeat10_tokens_per_second: {f16f16: 10.353, w4f16: 11.889, w4u8: 2.731}
+    prefill_repeat10_us:
+      f16f16: 94294.1
+      w4f16: 118109.2
+      w4u8: 53624.7
+    prefill_repeat10_tokens_per_second:
+      f16f16: 678.727
+      w4f16: 541.871
+      w4u8: 1193.481
+    decode_L64_L71_repeat10_us:
+      f16f16: 96592.3
+      w4f16: 84112.3
+      w4u8: 366137.3
+    decode_L64_L71_repeat10_tokens_per_second:
+      f16f16: 10.353
+      w4f16: 11.889
+      w4u8: 2.731
     conclusion: full_transformer_stack_integration_passes; W4U8_prefill_is_fastest_but_decode_is_dominated_by_full_persistent_KV_cache_repacking_in_non_cache_native_U8_Attention
     next_priority: separately_registered_cache_native_W4U8_decode_Attention
     gate_summary_sha256: cfce132829c98b72eb307247bcdf9dba05a90dfc43d522ddcf62cabb4a2885cd
@@ -2138,14 +2375,23 @@ current_scope:
   latest_full_stack_hidden_trajectory_diagnostic:
     id: EXP-0152
     source_commit: 0f306b9012812c2ae8565aaae53b55f312320ecd
-    evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0152/20260901T161930Z_hidden_trajectory'
+    evidence: D:/llm_exp/results/qwen3-block-htp/exp0152/20260901T161930Z_hidden_trajectory
     diagnostic_only: true
     formal_physical_evidence: false
     captured_layers: 28
     layer_bytes: 262144
     explicit_diagnostic_ddr_write_bytes: 7340032
     capture_output_byte_mismatches: 0
-    conditional_failure_layers_under_legacy_elementwise_gate: [10, 20, 21, 22, 23, 24, 25, 26, 27]
+    conditional_failure_layers_under_legacy_elementwise_gate:
+    - 10
+    - 20
+    - 21
+    - 22
+    - 23
+    - 24
+    - 25
+    - 26
+    - 27
     maximum_legacy_mixed_tolerance_violation_fraction: 0.0054473876953125
     minimum_conditional_layer_cosine: 0.9999989713039642
     final_composed_output_cosine: 0.9999972390311772
@@ -2156,7 +2402,7 @@ current_scope:
     amended_f16_gate: no_nonfinite_each_conditional_layer_and_cache_cosine_at_least_0p99999_legacy_mixed_violation_fraction_at_most_0p01_final_composed_cosine_at_least_0p99999_final_composed_NRMSE_at_most_0p003
   latest_f16f16_composition_semantics_audit:
     source_commit: ef43071f3e108de90ec108b87a9cb522618774e9
-    evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0152/20260902T003950Z_formal_composition_v2'
+    evidence: D:/llm_exp/results/qwen3-block-htp/exp0152/20260902T003950Z_formal_composition_v2
     formal_prefill_and_decode_steps: 9
     output_gate_pass_steps: 9
     minimum_composed_output_cosine: 0.999997239
@@ -2171,11 +2417,18 @@ current_scope:
     conditional_cache_legacy_mixed_violations: 0
     minimum_conditional_cache_cosine: 0.999999819273225
     composed_cache_legacy_fraction_diagnostic_maximum: 0.113571167
-    composed_cache_late_v_tensors_over_local_fraction: [layer21_v, layer22_v, layer23_v, layer24_v, layer25_v, layer26_v, layer27_v]
+    composed_cache_late_v_tensors_over_local_fraction:
+    - layer21_v
+    - layer22_v
+    - layer23_v
+    - layer24_v
+    - layer25_v
+    - layer26_v
+    - layer27_v
     finding: local_conditional_gate_passes_composed_cache_mixed_fraction_contains_upstream_drift_and_is_diagnostic
   latest_w4f16_composition_semantics_audit:
     source_commit: a208abe6dfa26479b483403d73b50c698c8d7f95
-    evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0152/20260902T003950Z_formal_composition_v2'
+    evidence: D:/llm_exp/results/qwen3-block-htp/exp0152/20260902T003950Z_formal_composition_v2
     formal_prefill_and_decode_steps: 9
     output_gate_pass_steps: 9
     minimum_composed_output_cosine: 0.999996579
@@ -2194,8 +2447,8 @@ current_scope:
     source_branch: codex/exp-0151-rpcmem-alloc2-single-buffer
     gate_source_commit: d6b1706bdc3829c966441be468abf2f7952ee2a9
     closure_source_commit: bb9531f457dce01e97a1770020bd1a1890c8114b
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0151/20260901T152446Z_d6b1706_device_gate'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0151/artifacts/d6b1706/20260901T152446Z_device_gate'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0151/20260901T152446Z_d6b1706_device_gate
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0151/artifacts/d6b1706/20260901T152446Z_device_gate
     evidence_validity: valid
     execution_state: completed
     local_gate: pass
@@ -2212,12 +2465,15 @@ current_scope:
     dsp_last_verified_end: 4256849924
     declared_mapping_virtual_end: 4256857344
     dsp_physical_base: 22865248256
-    sentinel_offsets: [4096, 1449996288, 2899992576]
+    sentinel_offsets:
+    - 4096
+    - 1449996288
+    - 2899992576
     host_to_dsp_sentinel_mismatches: 0
     dsp_to_host_sentinel_mismatches: 0
-    allocation_ms: 54.663750
+    allocation_ms: 54.66375
     map_ms: 11.668802
-    probe_ms: 0.274010
+    probe_ms: 0.27401
     boot_id_before: 77ccafe0-8817-4976-bdae-15af5608d4ff
     boot_id_after: 77ccafe0-8817-4976-bdae-15af5608d4ff
     conclusion: one_2p9GB_rpcmem_alloc2_fd_is_contiguously_addressable_from_cDSP_and_removes_the_legacy_rpcmem_INT_MAX_blocker
@@ -2229,7 +2485,7 @@ current_scope:
     id: EXP-0150
     source_branch: codex/exp-0150-full-transformer-stack
     source_head: 8f46fb8
-    evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0150/20260901T150000Z_f75c5e0e0b6e_static_gate'
+    evidence: D:/llm_exp/results/qwen3-block-htp/exp0150/20260901T150000Z_f75c5e0e0b6e_static_gate
     evidence_validity: valid
     execution_state: aborted
     local_gate: fail
@@ -2247,22 +2503,37 @@ current_scope:
     id: EXP-0149
     source_branch: codex/exp-0149-three-layer-vertical-slice
     source_head: f75c5e0e0b6ec09ac4422496a9254d82092e9e40
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0149/20260901T141700Z_f75c5e0e0b6e_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0149/artifacts/f75c5e0e0b6e/20260901T141700Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0149/20260901T141700Z_f75c5e0e0b6e_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0149/artifacts/f75c5e0e0b6e/20260901T141700Z_formal
     evidence_validity: valid
     execution_state: completed
     local_gate: pass
     adoption_status: not_applicable
     selected_baseline_changed: false
-    execution_layer_indices: [13, 14, 15]
-    cache_length_transition_per_layer: [0, 64, 72]
+    execution_layer_indices:
+    - 13
+    - 14
+    - 15
+    cache_length_transition_per_layer:
+    - 0
+    - 64
+    - 72
     correctness_gate: pass_independent_FP16_nine_outputs_and_six_caches_at_abs_0p0625_plus_0p002_times_abs_reference_cosine_0p99999_W4U8_final_outputs_zero_LSB
     physical_gate: pass_one_three_layer_FastRPC_per_step_VTCM_only_layer_handoff_exact_8mib_zero_intermediate_DDR_zero_spill_fill_three_persistent_layer_caches_one_HMX_owner_no_QNN
-    prefill_repeat10_us: {f16f16: 10650.0, w4f16: 13528.0, w4u8: 5967.1}
-    continuous_decode_repeat10_us: {f16f16: 10739.4, w4f16: 9735.4, w4u8: 39726.2}
+    prefill_repeat10_us:
+      f16f16: 10650.0
+      w4f16: 13528.0
+      w4u8: 5967.1
+    continuous_decode_repeat10_us:
+      f16f16: 10739.4
+      w4f16: 9735.4
+      w4u8: 39726.2
     w4u8_prefill_speed_vs_w4f16_percent: 126.7
     w4u8_decode_speed_vs_w4f16_percent: -75.5
-    continuous_decode_attention_us: {f16f16: 3567.5, w4f16: 3583.8, w4u8: 34711.7}
+    continuous_decode_attention_us:
+      f16f16: 3567.5
+      w4f16: 3583.8
+      w4u8: 34711.7
     conclusion: real_three_layer_composition_and_state_ownership_pass; W4U8_prefill_preserves_projection_gains_but_decode_is_dominated_by_repacking_the_full_persistent_KV_cache_into_HMX_carriers_each_step
     next_priority: register_full_transformer_stack_as_EXP0150_then_develop_cache_native_W4U8_decode_attention_without_per_step_full_cache_repack
     gate_summary_sha256: baba0dc2e155c0fffe571c25664e3f23b2e44b92fcb553d34df079cab4b0e301
@@ -2272,8 +2543,8 @@ current_scope:
     id: EXP-0148
     source_branch: codex/exp-0148-real-layer-replay-decode-session
     source_head: 63575b8812f485936d35d8843c57aa41c9e2103c
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0148/20260901T112200Z_63575b8812f4_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0148/artifacts/63575b8812f4/20260901T112200Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0148/20260901T112200Z_63575b8812f4_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0148/artifacts/63575b8812f4/20260901T112200Z_formal
     evidence_validity: valid
     execution_state: completed
     local_gate: pass
@@ -2281,15 +2552,28 @@ current_scope:
     selected_baseline_changed: false
     execution_layer_index: 14
     declared_transformer_layer_count: 28
-    prefill_positions: [0, 63]
-    decode_positions: [64, 71]
-    cache_length_transition: [0, 64, 72]
+    prefill_positions:
+    - 0
+    - 63
+    decode_positions:
+    - 64
+    - 71
+    cache_length_transition:
+    - 0
+    - 64
+    - 72
     correctness_gate: pass_F16F16_and_W4F16_max_abs_at_most_0p0625_cosine_at_least_0p999_and_W4U8_zero_LSB_with_independent_QK_log2Softmax_AV_and_tail_recomputation
     physical_gate: pass_exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_per_step_one_HMX_owner_no_QNN_explicit_persistent_cache_traffic
-    prefill_repeat10_us: {f16f16: 3830.183, w4f16: 4801.042, w4u8: 2338.021}
-    continuous_decode_repeat10_us: {f16f16: 3823.509, w4f16: 3496.230, w4u8: 13712.217}
+    prefill_repeat10_us:
+      f16f16: 3830.183
+      w4f16: 4801.042
+      w4u8: 2338.021
+    continuous_decode_repeat10_us:
+      f16f16: 3823.509
+      w4f16: 3496.23
+      w4u8: 13712.217
     w4u8_prefill_speed_vs_w4f16_percent: 105.35
-    w4u8_decode_speed_vs_w4f16_percent: -74.50
+    w4u8_decode_speed_vs_w4f16_percent: -74.5
     decode_bottleneck: W4U8_cache_backed_Attention_11563p6_us_average_with_K_pack_3925p3_us_and_V_pack_7363p4_us
     conclusion: real_single_layer_state_ownership_and_full_stack_compatible_cache_ABI_pass_while_W4U8_decode_exposes_a_cache_carrier_packing_cliff_not_a_projection_or_cache_byte_volume_limit
     next_priority: three_consecutive_layer_vertical_slice_layers13_14_15_then_cache_native_decode_Attention_optimization
@@ -2300,8 +2584,8 @@ current_scope:
     id: EXP-0147
     source_branch: codex/exp-0147-multi-m-kv-cache-scan
     source_head: 8052d42c347667ddd37a9555486d918569960b1d
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0147'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0147'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0147
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0147
     evidence_validity: valid
     execution_state: completed
     local_gate: fail
@@ -2309,19 +2593,51 @@ current_scope:
     selected_baseline_changed: false
     experiment_role: selected_baseline_shape_generalization_and_characterization
     recipes: EXP0109_F16F16_EXP0140_W4F16_EXP0144_W4U8
-    prefill_rows: [16, 32, 64, 128]
-    decode_past_lengths: [64, 256, 1024, 4096]
+    prefill_rows:
+    - 16
+    - 32
+    - 64
+    - 128
+    decode_past_lengths:
+    - 64
+    - 256
+    - 1024
+    - 4096
     formal_reproducibility_gate: pass_all_24_cells_zero_output_and_cache_mismatch
     physical_gate: pass_all_24_cells_exact_8mib_vtcm_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner
     independent_correctness_gate: fail_W4F16_aggregate_max_abs_0p125_exceeds_immutable_0p0625_threshold_at_selected_large_shapes_despite_cosine_at_least_0p999999
-    prefill_m16_us: {f16f16: 2580.719, w4f16: 2543.708, w4u8: 1676.365}
-    prefill_m32_us: {f16f16: 2818.609, w4f16: 3116.391, w4u8: 1704.839}
-    prefill_m64_us: {f16f16: 3311.641, w4f16: 4254.787, w4u8: 1812.234}
-    prefill_m128_us: {f16f16: 27754.214, w4f16: 29397.318, w4u8: 37992.495}
-    decode_l64_us: {f16f16: 3349.026, w4f16: 3060.667, w4u8: 12420.609}
-    decode_l256_us: {f16f16: 4095.875, w4f16: 3744.031, w4u8: 44168.859}
-    decode_l1024_us: {f16f16: 6956.427, w4f16: 6581.630, w4u8: 170169.172}
-    decode_l4096_us: {f16f16: 18608.646, w4f16: 18590.276, w4u8: 674402.948}
+    prefill_m16_us:
+      f16f16: 2580.719
+      w4f16: 2543.708
+      w4u8: 1676.365
+    prefill_m32_us:
+      f16f16: 2818.609
+      w4f16: 3116.391
+      w4u8: 1704.839
+    prefill_m64_us:
+      f16f16: 3311.641
+      w4f16: 4254.787
+      w4u8: 1812.234
+    prefill_m128_us:
+      f16f16: 27754.214
+      w4f16: 29397.318
+      w4u8: 37992.495
+    decode_l64_us:
+      f16f16: 3349.026
+      w4f16: 3060.667
+      w4u8: 12420.609
+    decode_l256_us:
+      f16f16: 4095.875
+      w4f16: 3744.031
+      w4u8: 44168.859
+    decode_l1024_us:
+      f16f16: 6956.427
+      w4f16: 6581.63
+      w4u8: 170169.172
+    decode_l4096_us:
+      f16f16: 18608.646
+      w4f16: 18590.276
+      w4u8: 674402.948
     conclusion: selected_W4U8_schedule_generalizes_well_only_through_M64_then_cache_backed_generalized_Attention_dominates_M128_and_decode_while_W4F16_cache_export_exposes_a_separate_carrier_boundary_cost
     next_priority: cache_native_generalized_Attention_starting_with_decode_then_reuse_for_M128_before_M1_projection_tail_specialization
     reopen_condition: not_applicable_characterization_complete
@@ -2329,8 +2645,8 @@ current_scope:
     id: EXP-0146
     source_branch: codex/exp-0146-w4f16-qkv-cross-projection-ring
     source_head: 6dddc6b5279db04743a4c7d77b86a4eb78d8eb4e
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0146/20260901T064149Z_6dddc6b5279d_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0146/artifacts/6dddc6b5279d/20260901T064149Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0146/20260901T064149Z_6dddc6b5279d_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0146/artifacts/6dddc6b5279d/20260901T064149Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -2343,7 +2659,7 @@ current_scope:
     repeat1_host_paired_change_percent: 1.389
     repeat10_qkv_change_percent: 0.879
     repeat10_qkv_paired_change_percent: 0.879
-    repeat10_host_change_percent: -0.380
+    repeat10_host_change_percent: -0.38
     repeat10_host_paired_change_percent: -0.192
     repeat10_first_expand_change_percent: -19.537
     repeat10_hmx_tail_wait_change_percent: -15.089
@@ -2366,8 +2682,8 @@ current_scope:
     id: EXP-0144
     source_branch: codex/exp-0144-w4u8-qk-output-simd-transpose
     source_head: 919aaa74870661d78b92e64976e695a4fa87f955
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0144/20260901T045939Z_919aaa748706_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0144/artifacts/919aaa748706/20260901T045939Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0144/20260901T045939Z_919aaa748706_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0144/artifacts/919aaa748706/20260901T045939Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: accepted
@@ -2416,8 +2732,8 @@ current_scope:
     id: EXP-0145
     source_branch: codex/exp-0145-w4u8-down-hmx-batch8
     source_head: 895febfa3543844ffc376be1d86f19c9e16d114a
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0145/20260901T050905Z_895febfa3543_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0145/artifacts/895febfa3543/20260901T050905Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0145/20260901T050905Z_895febfa3543_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0145/artifacts/895febfa3543/20260901T050905Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -2449,8 +2765,8 @@ current_scope:
     id: EXP-0143
     source_branch: codex/exp-0143-w4u8-qk-row-cache-simd-transpose
     source_head: cd82ee4d0e6f9fc9eddb435f5b133997d411d2b3
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0143/20260901T045005Z_cd82ee4d0e6f_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0143/artifacts/cd82ee4d0e6f/20260901T045005Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0143/20260901T045005Z_cd82ee4d0e6f_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0143/artifacts/cd82ee4d0e6f/20260901T045005Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -2464,7 +2780,7 @@ current_scope:
     repeat1_host_change_percent: -13.045
     repeat1_host_paired_change_percent: -16.372
     repeat1_attention_change_percent: 3.746
-    repeat1_attention_paired_change_percent: 3.230
+    repeat1_attention_paired_change_percent: 3.23
     repeat10_qkv_change_percent: -30.237
     repeat10_qkv_paired_change_percent: -30.105
     repeat10_qk_work_change_percent: -43.233
@@ -2488,8 +2804,8 @@ current_scope:
     id: EXP-0142
     source_branch: codex/exp-0142-w4f16-o-join-only-subgroup4
     source_head: 77823c5168f499d4cf5727eb31521cae2ba73232
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0142/20260901T043025Z_77823c5168f4_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0142/artifacts/77823c5168f4/20260901T043025Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0142/20260901T043025Z_77823c5168f4_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0142/artifacts/77823c5168f4/20260901T043025Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -2501,10 +2817,10 @@ current_scope:
     repeat1_host_change_percent: 3.621
     repeat1_host_paired_change_percent: 3.859
     repeat10_o_change_percent: 7.199
-    repeat10_o_paired_change_percent: 7.130
+    repeat10_o_paired_change_percent: 7.13
     repeat10_host_change_percent: 0.544
     repeat10_host_paired_change_percent: 0.789
-    repeat10_down_change_percent: 0.520
+    repeat10_down_change_percent: 0.52
     repeat10_down_paired_change_percent: 0.516
     repeat10_projection_unpack_change_percent: 51.606
     repeat10_projection_unpack_paired_change_percent: 52.234
@@ -2522,8 +2838,8 @@ current_scope:
     source_branch: codex/exp-0141-w4u8-o-batch8-ring3
     runtime_source_head: 1904a6581642a115df3b84f79a27890c89958dcc
     validator_source_head: 0b472a9946570a473307ff6d4f06d6f39a0f5769
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0141/20260901T041921Z_0b472a994657_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0141/artifacts/0b472a994657/20260901T041921Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0141/20260901T041921Z_0b472a994657_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0141/artifacts/0b472a994657/20260901T041921Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -2539,8 +2855,8 @@ current_scope:
     repeat10_o_paired_change_percent: -7.442
     repeat10_host_change_percent: -0.983
     repeat10_host_paired_change_percent: -0.826
-    repeat10_down_change_percent: 0.810
-    repeat10_down_paired_change_percent: 0.490
+    repeat10_down_change_percent: 0.81
+    repeat10_down_paired_change_percent: 0.49
     pc027_complete_profiling_report: pass
     pc028_module_table: pass_exp0109_f16f16_exp0110_selected_w4f16_EXP0141_control_w4u8
     stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
@@ -2555,8 +2871,8 @@ current_scope:
     source_branch: codex/exp-0140-w4f16-down-join-only-subgroup4
     source_head: e75563457293de9430f8c9d20a04ced6147e4737
     source_tag: baseline-w4f16-fastest-exp0140-subgroup4-down-join-only
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0140/20260901T040452Z_e75563457293_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0140/artifacts/e75563457293/20260901T040452Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0140/20260901T040452Z_e75563457293_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0140/artifacts/e75563457293/20260901T040452Z_formal
     evidence_validity: valid
     local_gate: pass
     adoption_status: accepted
@@ -2566,7 +2882,7 @@ current_scope:
     repeat1_down_change_percent: -6.055
     repeat1_down_paired_change_percent: -6.976
     repeat1_host_change_percent: -0.537
-    repeat1_host_paired_change_percent: -0.760
+    repeat1_host_paired_change_percent: -0.76
     repeat10_down_change_percent: -6.796
     repeat10_down_paired_change_percent: -6.899
     repeat10_host_change_percent: -1.225
@@ -2592,8 +2908,8 @@ current_scope:
     id: EXP-0139
     source_branch: codex/exp-0139-w4u8-qkv-main-prep-assist
     source_head: addb7c08f80d242a305ffb493a1899ae1d9f0dc5
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0139/20260901T035026Z_addb7c08f80d_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0139/artifacts/addb7c08f80d/20260901T035026Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0139/20260901T035026Z_addb7c08f80d_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0139/artifacts/addb7c08f80d/20260901T035026Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -2605,8 +2921,8 @@ current_scope:
     repeat1_qkv_paired_change_percent_vs_ring3: -0.474
     repeat1_host_change_percent_vs_ring3: -0.631
     repeat1_host_paired_change_percent_vs_ring3: 0.795
-    repeat10_qkv_change_percent_vs_ring3: -1.500
-    repeat10_qkv_paired_change_percent_vs_ring3: -1.790
+    repeat10_qkv_change_percent_vs_ring3: -1.5
+    repeat10_qkv_paired_change_percent_vs_ring3: -1.79
     repeat10_host_change_percent_vs_ring3: -0.123
     repeat10_host_paired_change_percent_vs_ring3: -0.243
     repeat1_pool_wait_change_percent_vs_ring3: -94.993
@@ -2624,8 +2940,8 @@ current_scope:
     id: EXP-0138
     source_branch: codex/exp-0138-w4f16-gate-up-initial-up-dma-overlap
     source_head: 8b5aa01da8d81f1f87525af9e472a1d0bffa7e34
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0138/20260901T032740Z_8b5aa01da8d8_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0138/artifacts/8b5aa01da8d8/20260901T032740Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0138/20260901T032740Z_8b5aa01da8d8_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0138/artifacts/8b5aa01da8d8/20260901T032740Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -2633,7 +2949,7 @@ current_scope:
     correctness_gate: pass_both_f18b9abbe1487231_zero_expansion_mismatch_zero_max_lsb
     physical_gate: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_weight_dma_descriptors_hmx_tiles_carriers_and_peak_plan
     dynamic_overlap_gate: pass_gate_group0_hmx_precedes_up_batch0_wait_every_block
-    repeat1_gate_up_change_percent: -0.020
+    repeat1_gate_up_change_percent: -0.02
     repeat1_gate_up_paired_change_percent: -0.111
     repeat1_host_change_percent: -0.319
     repeat1_host_paired_change_percent: 0.063
@@ -2641,7 +2957,7 @@ current_scope:
     repeat10_gate_up_paired_change_percent: -0.192
     repeat10_host_change_percent: 0.005
     repeat10_host_paired_change_percent: 0.005
-    repeat10_stream_ready_wait_change_percent: -6.930
+    repeat10_stream_ready_wait_change_percent: -6.93
     repeat10_stream_ready_wait_paired_change_percent: -7.278
     repeat10_stream_join_wait_change_percent: 33.835
     repeat10_stream_join_wait_paired_change_percent: 51.807
@@ -2658,8 +2974,8 @@ current_scope:
     id: EXP-0136
     source_branch: codex/exp-0136-w4f16-gate-up-stream-subgroup4
     source_head: 30fdf531939b8b96dce428c0d890adbf17714a10
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0136/20260901T022940Z_30fdf531939b_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0136/artifacts/30fdf531939b/20260901T022940Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0136/20260901T022940Z_30fdf531939b_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0136/artifacts/30fdf531939b/20260901T022940Z_formal
     evidence_validity: valid
     local_gate: pass
     adoption_status: pending_user_decision
@@ -2667,10 +2983,10 @@ current_scope:
     correctness_gate: pass_both_f18b9abbe1487231_zero_expansion_mismatch_zero_max_lsb
     physical_gate: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_identical_workers_weight_dma_expansion_hmx_layout_and_peak_plan
     repeat1_gate_up_change_percent: -4.586
-    repeat1_gate_up_paired_change_percent: -4.640
+    repeat1_gate_up_paired_change_percent: -4.64
     repeat1_host_change_percent: -1.752
     repeat1_host_paired_change_percent: -1.555
-    repeat10_gate_up_change_percent: -4.080
+    repeat10_gate_up_change_percent: -4.08
     repeat10_gate_up_paired_change_percent: -4.115
     repeat10_host_change_percent: -2.116
     repeat10_host_paired_change_percent: -2.621
@@ -2691,8 +3007,8 @@ current_scope:
     id: EXP-0135
     source_branch: codex/exp-0135-w4f16-gate-up-worker3-stream-drain
     source_head: 201c1c51529daf5561a3e0002f5d814f1cacebb3
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0135/20260901T020459Z_201c1c51529d_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0135/artifacts/201c1c51529d/20260901T020459Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0135/20260901T020459Z_201c1c51529d_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0135/artifacts/201c1c51529d/20260901T020459Z_formal
     evidence_validity: valid
     local_gate: pass
     adoption_status: pending_user_decision
@@ -2723,7 +3039,7 @@ current_scope:
     id: EXP-0139
     source_branch: codex/exp-0139-w4u8-qkv-main-prep-assist
     source_head: addb7c08f80d242a305ffb493a1899ae1d9f0dc5
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0139/20260901T035026Z_addb7c08f80d_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0139/20260901T035026Z_addb7c08f80d_formal
     local_gate: fail
     adoption_status: rejected
     reason: main_assist_removes_qk_prep_pool_tail_but_fails_repeat1_ordinary_qkv_and_paired_host_speed
@@ -2731,8 +3047,8 @@ current_scope:
     id: EXP-0137
     source_branch: codex/exp-0137-w4u8-gate-up-adaptive-hvx-lead-credit
     source_head: 3797e1b560523ea3f5d1e473855a80e01fb3c88a
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0137/20260901T030537Z_3797e1b56052_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0137/artifacts/3797e1b56052/20260901T030537Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0137/20260901T030537Z_3797e1b56052_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0137/artifacts/3797e1b56052/20260901T030537Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -2750,7 +3066,7 @@ current_scope:
     cap8_repeat10_host_change_percent: 0.625
     cap8_repeat10_host_paired_change_percent: 0.655
     cap8_repeat10_hmx_ready_wait_change_percent: -4.031
-    cap8_repeat10_producer_slot_wait_change_percent: 39.670
+    cap8_repeat10_producer_slot_wait_change_percent: 39.67
     cap8_repeat10_producer_slot_wait_paired_change_percent: 19.392
     cap16_repeat10_gate_up_change_percent: 1.996
     cap16_repeat10_host_change_percent: -0.217
@@ -2767,8 +3083,8 @@ current_scope:
     id: EXP-0134
     source_branch: codex/exp-0134-w4f16-gate-up-worker3-dispatch
     source_head: d43e4d7e35bb0512c8a4753b129cc786f941afb3
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0134/20260901T015433Z_d43e4d7e35bb_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0134/artifacts/d43e4d7e35bb/20260901T015433Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0134/20260901T015433Z_d43e4d7e35bb_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0134/artifacts/d43e4d7e35bb/20260901T015433Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -2803,8 +3119,8 @@ current_scope:
     id: EXP-0133
     source_branch: codex/exp-0133-w4f16-gate-up-balanced-partition
     source_head: 646ded5a54bf4c541f8c63534a15bd58a611964d
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0133/20260901T014439Z_646ded5a54bf_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0133/artifacts/646ded5a54bf/20260901T014439Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0133/20260901T014439Z_646ded5a54bf_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0133/artifacts/646ded5a54bf/20260901T014439Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -2831,8 +3147,8 @@ current_scope:
     id: EXP-0132
     source_branch: codex/exp-0132-w4f16-gate-up-chunk2-claim
     source_head: 9936277a2793406498a8b5101e0db201ea97e8ba
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0132/20260901T013657Z_9936277a2793_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0132/artifacts/9936277a2793/20260901T013657Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0132/20260901T013657Z_9936277a2793_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0132/artifacts/9936277a2793/20260901T013657Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -2860,8 +3176,8 @@ current_scope:
     id: EXP-0129
     source_branch: codex/exp-0129-w4f16-gate-up-worker4
     source_head: cfda9253fbf7f0a57f68a10f0c5c2ad579889a34
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0129/20260901T003731Z_cfda9253fbf7_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0129/artifacts/cfda9253fbf7/20260901T003731Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0129/20260901T003731Z_cfda9253fbf7_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0129/artifacts/cfda9253fbf7/20260901T003731Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -2888,8 +3204,8 @@ current_scope:
     id: EXP-0128
     source_branch: codex/exp-0128-w4u8-gate-up-stream-region16
     source_head: 7f9641c6a389767993e0f9a3a587b05f6c409f02
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0128/20260901T002210Z_7f9641c6a389_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0128/artifacts/7f9641c6a389/20260901T002210Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0128/20260901T002210Z_7f9641c6a389_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0128/artifacts/7f9641c6a389/20260901T002210Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -2917,8 +3233,8 @@ current_scope:
     id: EXP-0127
     source_branch: codex/exp-0127-w4f16-qkv-selective-batch4
     source_head: b3afdc39a5b58fb6cdd45d103b8325eb973a5465
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0127/20260901T000359Z_b3afdc39a5b5_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0127/artifacts/b3afdc39a5b5/20260901T000359Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0127/20260901T000359Z_b3afdc39a5b5_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0127/artifacts/b3afdc39a5b5/20260901T000359Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -2950,8 +3266,8 @@ current_scope:
     id: EXP-0126
     source_branch: codex/exp-0126-w4f16-qkv-head-aligned-batch4
     source_head: 500122e068fd85c4a69734b095ba2913aad8c2ca
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0126/20260831T235041Z_500122e068fd_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0126/artifacts/500122e068fd/20260831T235041Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0126/20260831T235041Z_500122e068fd_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0126/artifacts/500122e068fd/20260831T235041Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -2986,8 +3302,8 @@ current_scope:
     id: EXP-0125
     source_branch: codex/exp-0125-w4u8-qkv-phase-handoff
     source_head: 9b4ee13ca709281d57d76bc303d46de95c66fb82
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0125/20260831T232947Z_9b4ee13ca709_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0125/artifacts/9b4ee13ca709/20260831T232947Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0125/20260831T232947Z_9b4ee13ca709_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0125/artifacts/9b4ee13ca709/20260831T232947Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -2997,11 +3313,11 @@ current_scope:
     handoff1_repeat1_host_change_percent: -1.576
     handoff1_repeat1_host_paired_change_percent: -2.472
     handoff1_repeat1_qkv_change_percent: -2.265
-    handoff1_repeat1_qkv_paired_change_percent: -0.700
+    handoff1_repeat1_qkv_paired_change_percent: -0.7
     handoff1_repeat10_host_change_percent: 1.265
     handoff1_repeat10_host_paired_change_percent: 0.784
     handoff1_repeat10_qkv_change_percent: 0.584
-    handoff1_repeat10_qkv_paired_change_percent: 0.950
+    handoff1_repeat10_qkv_paired_change_percent: 0.95
     handoff2_repeat1_host_change_percent: 1.621
     handoff2_repeat1_qkv_change_percent: 5.413
     handoff2_repeat10_host_change_percent: 2.205
@@ -3025,8 +3341,8 @@ current_scope:
     id: EXP-0124
     source_branch: codex/exp-0124-w4u8-qkv-producer-consumer-ring
     source_head: 95fadff5930d9081678ad99bb62ef84849ee1897
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0124/20260831T231805Z_95fadff5930d_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0124/artifacts/95fadff5930d/20260831T231805Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0124/20260831T231805Z_95fadff5930d_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0124/artifacts/95fadff5930d/20260831T231805Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -3058,8 +3374,8 @@ current_scope:
     source_branch: codex/exp-0123-w4f16-gate-up-persistent-expand
     runtime_source_head: 4882846c3c0f9e10eb85b8a0723dfa85959d2b01
     validator_source_head: e95989e440d4fc658375a00ecac044871b14ca60
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0123/20260831T224649Z_4882846c3c0f_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0123/artifacts/4882846c3c0f/20260831T224649Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0123/20260831T224649Z_4882846c3c0f_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0123/artifacts/4882846c3c0f/20260831T224649Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -3090,8 +3406,8 @@ current_scope:
     id: EXP-0122
     source_branch: codex/exp-0122-w4u8-gate-up-ring16-dma-chain8
     source_head: 521841bd0140047e5ca73067b1a3443238cecc11
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0122/20260831T222533Z_521841bd0140_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0122/artifacts/521841bd0140/20260831T222533Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0122/20260831T222533Z_521841bd0140_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0122/artifacts/521841bd0140/20260831T222533Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -3124,8 +3440,8 @@ current_scope:
     source_branch: codex/exp-0121-w4u8-gate-up-ring16-worker-count
     runtime_source_head: 1a724b42c77b174fd772f44139b175ff1c964aed
     validator_source_head: 2ebfbb7a2388e576003d161e6803173f1d3d1143
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0121/20260831T220137Z_1a724b42c77b_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0121/artifacts/1a724b42c77b/20260831T220137Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0121/20260831T220137Z_1a724b42c77b_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0121/artifacts/1a724b42c77b/20260831T220137Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -3162,8 +3478,8 @@ current_scope:
     id: EXP-0120
     source_branch: codex/exp-0120-w4u8-gate-up-double-buffered-ring
     source_head: fa410c4c237903931c95112dc7f26235738a6905
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0120/20260831T213709Z_fa410c4c2379_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0120/artifacts/fa410c4c2379/20260831T213709Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0120/20260831T213709Z_fa410c4c2379_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0120/artifacts/fa410c4c2379/20260831T213709Z_formal
     evidence_validity: valid
     local_gate: pass
     adoption_status: pending
@@ -3202,18 +3518,18 @@ current_scope:
     id: EXP-0119
     source_branch: codex/exp-0119-w4u8-qkv-assist-granularity
     source_head: f7d404b684269b303ff278ef443d0e6ae64e2074
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0119/20260831T210524Z_f7d404b68426_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0119/artifacts/f7d404b68426/20260831T210524Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0119/20260831T210524Z_f7d404b68426_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0119/artifacts/f7d404b68426/20260831T210524Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
     correctness_gate: pass_all_four_cells_byte_exact_zero_mismatch_zero_max_lsb
     physical_gate: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner
     assist16_repeat10_qkv_change_percent: -3.769
-    assist16_repeat10_host_change_percent: 0.180
+    assist16_repeat10_host_change_percent: 0.18
     assist8_repeat10_qkv_change_percent: -1.814
     assist8_repeat10_host_change_percent: 0.203
-    assist8_repeat10_qk_prep_pool_wait_change_percent: -17.540
+    assist8_repeat10_qk_prep_pool_wait_change_percent: -17.54
     assist4_repeat10_qkv_change_percent: 4.466
     assist4_repeat10_host_change_percent: 2.105
     eligible_cells: none
@@ -3231,8 +3547,8 @@ current_scope:
     source_branch: codex/exp-0118-w4u8-qkv-preemptible-worker-expand
     runtime_source_head: e806cce87c60e188c37c0e08acf5caaa72d74b67
     validator_source_head: cc091ab2bd095d8d9d4a7de084104d3b0fccde09
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0118/20260831T205015Z_e806cce87c60_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0118/artifacts/e806cce87c60/20260831T205015Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0118/20260831T205015Z_e806cce87c60_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0118/artifacts/e806cce87c60/20260831T205015Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -3258,8 +3574,8 @@ current_scope:
     id: EXP-0117
     source_branch: codex/exp-0117-w4u8-packed-pair-swiglu-lut
     source_head: 65377d4132ec5a7bb15e1521a773c2734443f06e
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0117/20260831T201239Z_65377d4132ec_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0117/artifacts/65377d4132ec/20260831T201239Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0117/20260831T201239Z_65377d4132ec_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0117/artifacts/65377d4132ec/20260831T201239Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -3285,8 +3601,8 @@ current_scope:
     id: EXP-0116
     source_branch: codex/exp-0116-w4f16-down-publication-fence
     source_head: 24819076de910d9c8457b8fc2da49d473cb0fdf2
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0116/20260831T193806Z_24819076de91_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0116/artifacts/24819076de91/20260831T193806Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0116/20260831T193806Z_24819076de91_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0116/artifacts/24819076de91/20260831T193806Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -3319,8 +3635,8 @@ current_scope:
     id: EXP-0115
     source_branch: codex/exp-0115-w4f16-gate-up-unmasked-low-nibble
     source_head: e7c07b5207b43a8c28420d500417508d4054abcf
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0115/20260831T192022Z_e7c07b5207b4_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0115/artifacts/e7c07b5207b4/20260831T192022Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0115/20260831T192022Z_e7c07b5207b4_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0115/artifacts/e7c07b5207b4/20260831T192022Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -3355,8 +3671,8 @@ current_scope:
     id: EXP-0112
     source_branch: codex/exp-0112-w4u8-gate-up-stream-release-fence
     source_head: 5429c70bc6eb155af96bb7dd987094bb8fb941b1
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0112/20260831T183443Z_5429c70bc6eb_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0112/artifacts/5429c70bc6eb/20260831T183443Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0112/20260831T183443Z_5429c70bc6eb_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0112/artifacts/5429c70bc6eb/20260831T183443Z_formal
     evidence_validity: valid
     local_gate: pass
     adoption_status: pending
@@ -3387,8 +3703,8 @@ current_scope:
     id: EXP-0111
     source_branch: codex/exp-0111-w4f16-gate-up-publication-fence
     source_head: eebd967a3e34279888b0b2c644ff451ee368c2c6
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0111/20260831T181039Z_eebd967a3e34_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0111/artifacts/eebd967a3e34/20260831T181039Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0111/20260831T181039Z_eebd967a3e34_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0111/artifacts/eebd967a3e34/20260831T181039Z_formal
     evidence_validity: valid
     local_gate: pass
     adoption_status: pending
@@ -3418,8 +3734,8 @@ current_scope:
     id: EXP-0110
     source_branch: codex/exp-0110-w4f16-qkv-specialization-factorial
     source_head: d18e901339f4eadd760b590e91f004c3f76e9cb6
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0110/20260831T163813Z_d18e901339f4_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0110/artifacts/d18e901339f4/20260831T163813Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0110/20260831T163813Z_d18e901339f4_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0110/artifacts/d18e901339f4/20260831T163813Z_formal
     evidence_validity: valid
     local_gate: pass
     adoption_status: accepted
@@ -3444,7 +3760,7 @@ current_scope:
     evidence_sha256_ledger_sha256: d90e3b8613e122a2cac426c312e2188687983672e0623cdac30925837f9996ea
     conclusion: carrier_only_passes_as_the_selected_w4f16_recipe_specialization_candidate_while_q_prefix4_is_rejected_and_the_combination_weakens_carrier
     source_tags:
-      - baseline-w4f16-specialized-exp0110
+    - baseline-w4f16-specialized-exp0110
     accepted_by: user
     accepted_on: '2026-09-01'
     acceptance_ref: 'User message 2026-09-01: 既然有收益，那就采用。继续针对W4A16和W4A8开展loop优化。'
@@ -3453,8 +3769,8 @@ current_scope:
     id: EXP-0109
     source_branch: codex/exp-0109-public-common-freeze-consolidation
     source_head: 42e2a33012929ccbb05e8c2741124b6fd539552c
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0109/20260831T155519Z_42e2a3301292_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0109/artifacts/42e2a3301292/20260831T155519Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0109/20260831T155519Z_42e2a3301292_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0109/artifacts/42e2a3301292/20260831T155519Z_formal
     evidence_validity: valid
     local_gate: pass
     adoption_status: accepted
@@ -3479,15 +3795,15 @@ current_scope:
     full_profiling_report_sha256: 36cbcfaa7db4505f12703685b0f1ba89237b208a7f33d9450f773f41768fb1b9
     evidence_sha256_ledger_sha256: c3c311efc95dd56f54d1bfe005cfaa5c9a38e81c7dab81604ab97e708e1ba0d8
     source_tags:
-      - baseline-fair-exp0109-public-freeze
-      - baseline-w4u8-fastest-exp0109-public-freeze
+    - baseline-fair-exp0109-public-freeze
+    - baseline-w4u8-fastest-exp0109-public-freeze
     selected_baseline_changed: true
   latest_common_qkv_carrier_revalidation:
     id: EXP-0108
     source_branch: codex/exp-0108-common-qkv-carrier-revalidation
     source_head: 79130ef6f02f13c7fc16d6d8d521ec35bb217179
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0108/20260831T144457Z_79130ef6f02f_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0108/artifacts/79130ef6f02f/20260831T144457Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0108/20260831T144457Z_79130ef6f02f_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0108/artifacts/79130ef6f02f/20260831T144457Z_formal
     prior_negative_evidence: EXP-0038-stage-a
     evidence_validity: valid
     local_gate: fail
@@ -3502,7 +3818,7 @@ current_scope:
     repeat1_f16f16_host_change_percent: 2.396685
     repeat1_f16f16_host_paired_change_percent: 0.849184
     repeat10_f16f16_qkv_qknorm_change_percent: -0.431125
-    repeat10_f16f16_qkv_qknorm_paired_change_percent: -1.084590
+    repeat10_f16f16_qkv_qknorm_paired_change_percent: -1.08459
     repeat10_f16f16_host_change_percent: 0.905984
     repeat10_f16f16_host_paired_change_percent: 0.905984
     repeat1_w4f16_qkv_qknorm_change_percent: -6.440997
@@ -3523,8 +3839,8 @@ current_scope:
     id: EXP-0107
     source_branch: codex/exp-0107-common-interleaved-mlp-pipeline
     source_head: c2fa6aaaf89e47b43181a27f9a7d3f7baf299a7e
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0107/20260831T142754Z_c2fa6aaaf89e_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0107/artifacts/c2fa6aaaf89e/20260831T142754Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0107/20260831T142754Z_c2fa6aaaf89e_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0107/artifacts/c2fa6aaaf89e/20260831T142754Z_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: accepted
@@ -3556,8 +3872,8 @@ current_scope:
     id: EXP-0106
     source_branch: codex/exp-0106-integrated-fair-fastest-baselines
     source_head: 837714ba5ea2bbdef5799fe959996fb8fe862c8d
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0106/20260831T133046Z_837714ba5ea2_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0106/artifacts/837714ba5ea2/20260831T133046Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0106/20260831T133046Z_837714ba5ea2_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0106/artifacts/837714ba5ea2/20260831T133046Z_formal
     evidence_validity: valid
     local_gate: pass
     adoption_status: accepted
@@ -3569,7 +3885,7 @@ current_scope:
     repeat1_integrated_paired_change_percent: -6.345887
     repeat10_down4_host_wall_ns_per_block_median: 1840281.2
     repeat10_integrated_host_wall_ns_per_block_median: 1756661.4
-    repeat10_integrated_change_percent: -4.543860
+    repeat10_integrated_change_percent: -4.54386
     repeat10_integrated_paired_change_percent: -5.292724
     fair_f16f16_repeat10_host_wall_ns_per_block_median: 2438713.6
     fair_w4f16_repeat10_host_wall_ns_per_block_median: 2153369.8
@@ -3578,8 +3894,8 @@ current_scope:
     physical_gate: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner
     fp16_no_material_regression_gate: pass_exact_exp0084_rows4_contexts3_schedule
     source_tags:
-      - baseline-fair-exp0106
-      - baseline-w4u8-fastest-exp0106
+    - baseline-fair-exp0106
+    - baseline-w4u8-fastest-exp0106
     selected_baseline_changed: true
   latest_w4u8_dual_head_softmax_reduction_experiment:
     id: EXP-0105
@@ -3587,22 +3903,22 @@ current_scope:
     source_head: 78e6ba62da03112391dcbc6110c74992e4f1cc3a
     direct_control: W4U8-EXP0084-FAIR-CANONICAL
     candidate: dual_head_interleaved_softmax_reductions
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0105/formal_78e6ba62da03'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0105/artifacts/78e6ba62da03/formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0105/formal_78e6ba62da03
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0105/artifacts/78e6ba62da03/formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
     static_gate: pass_three_explicit_dual_head_helpers_552_bytes_zero_vector_stack_access_no_carrier_layout_change_no_qnn
     correctness_gate: pass_final_input_norm_qk_probability_av_byte_exact_zero_mismatch_zero_max_lsb
     physical_gate: pass_same_5306080_peak_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_weight_bytes_512_dma_descriptors_176_hmx_commands_and_49408_tile_pairs
-    repeat1_softmax_change_percent: 0.720
+    repeat1_softmax_change_percent: 0.72
     repeat1_softmax_paired_change_percent: 1.595
     repeat1_attention_change_percent: 0.263
     repeat1_attention_paired_change_percent: 0.316
     repeat1_host_change_percent: 0.378
     repeat1_host_paired_change_percent: 1.101
-    repeat10_softmax_change_percent: 0.030
-    repeat10_softmax_paired_change_percent: -0.030
+    repeat10_softmax_change_percent: 0.03
+    repeat10_softmax_paired_change_percent: -0.03
     repeat10_attention_change_percent: 0.444
     repeat10_attention_paired_change_percent: 0.074
     repeat10_host_change_percent: -0.093
@@ -3621,8 +3937,8 @@ current_scope:
     source_head: c751d40d801c5a740dca5eca8c6f8b339c4f7063
     direct_control: W4U8-EXP0084-FAIR-CANONICAL
     candidate: quarter_tiled_interleaved_two_head_qk_kernel
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0104/formal_c751d40d801c'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0104/artifacts/c751d40d801c/formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0104/formal_c751d40d801c
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0104/artifacts/c751d40d801c/formal
     evidence_validity: valid
     local_gate: pass
     adoption_status: pending_user_decision
@@ -3637,12 +3953,12 @@ current_scope:
     repeat1_host_paired_change_percent: -0.079
     repeat10_qk_work_change_percent: -3.685
     repeat10_qk_work_paired_change_percent: -3.585
-    repeat10_qkv_change_percent: -3.170
+    repeat10_qkv_change_percent: -3.17
     repeat10_qkv_paired_change_percent: -3.124
     repeat10_host_change_percent: -0.518
     repeat10_host_paired_change_percent: -0.429
     repeat10_qk_pool_wait_change_percent: -19.863
-    repeat10_qk_pool_wait_paired_change_percent: -20.010
+    repeat10_qk_pool_wait_paired_change_percent: -20.01
     pc027_complete_profiling_report: pass
     pc028_module_table: pass_reused_exp0084_canonical_f16f16_w4f16
     stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
@@ -3657,8 +3973,8 @@ current_scope:
     source_head: 66a9cb6162f85a48622cb54a8414a74ebfeace91
     direct_control: W4U8-EXP0084-FAIR-CANONICAL
     candidate: spill_free_shared_invariant_qk_pair_kernel
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0103/formal_66a9cb6162f8'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0103/artifacts/66a9cb6162f8/formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0103/formal_66a9cb6162f8
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0103/artifacts/66a9cb6162f8/formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -3666,12 +3982,12 @@ current_scope:
     abandoned_static_variant: simultaneous_two_head_helper_rejected_before_device_for_3584_byte_stack_frame
     correctness_gate: pass_final_input_norm_qk_probability_av_byte_exact_zero_mismatch_zero_max_lsb
     physical_gate: pass_same_5306080_peak_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_weight_bytes_512_dma_descriptors_176_hmx_commands_and_49408_tile_pairs
-    repeat1_qk_work_change_percent: -4.450
+    repeat1_qk_work_change_percent: -4.45
     repeat1_qk_work_paired_change_percent: -4.405
     repeat1_qkv_change_percent: -3.838
     repeat1_qkv_paired_change_percent: -3.732
     repeat1_host_change_percent: 8.616
-    repeat1_host_paired_change_percent: -1.510
+    repeat1_host_paired_change_percent: -1.51
     repeat10_qk_work_change_percent: -4.217
     repeat10_qk_work_paired_change_percent: -4.217
     repeat10_qkv_change_percent: -3.462
@@ -3694,8 +4010,8 @@ current_scope:
     source_head: 794ffdef3a092785882428f2e2010ee3842dd374
     direct_control: W4U8-EXP0084-FAIR-CANONICAL
     candidate: qkv_head_pair_batch8
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0102/formal_794ffdef3a09'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0102/artifacts/794ffdef3a09/formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0102/formal_794ffdef3a09
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0102/artifacts/794ffdef3a09/formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -3703,7 +4019,7 @@ current_scope:
     dependency_gate: pass_all_16_q_and_8_k_head_dependencies_published_once
     physical_gate: pass_same_5570272_peak_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_unchanged_weight_bytes_and_49408_tile_pairs
     command_gate: pass_qkv_32_to_16_total_176_to_160_dma_descriptors_512_to_480
-    repeat1_qkv_change_percent: 0.660
+    repeat1_qkv_change_percent: 0.66
     repeat1_qkv_paired_change_percent: 1.405
     repeat1_host_change_percent: -0.569
     repeat1_host_paired_change_percent: -4.375
@@ -3727,8 +4043,8 @@ current_scope:
     source_head: d8a5a0795847f66364acc28efe5b22efed66d85e
     direct_control: W4U8-EXP0084-FAIR-CANONICAL
     candidate: ready_only_nonblocking_bitmask_scheduler
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0101/formal_d8a5a0795847'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0101/artifacts/d8a5a0795847/formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0101/formal_d8a5a0795847
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0101/artifacts/d8a5a0795847/formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -3758,8 +4074,8 @@ current_scope:
     source_head: 57dd701391ca445299037bbf936e9abfe65a24ed
     direct_control: W4U8-EXP0084-FAIR-CANONICAL
     candidate: o_projection_eight_output_tiles_per_hmx_command
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0100/formal_57dd701391ca'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0100/artifacts/57dd701391ca/formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0100/formal_57dd701391ca
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0100/artifacts/57dd701391ca/formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -3769,9 +4085,9 @@ current_scope:
     repeat1_o_change_percent: -6.9449
     repeat1_o_paired_change_percent: -7.0972
     repeat1_host_change_percent: 0.0154
-    repeat1_host_paired_change_percent: 5.1110
+    repeat1_host_paired_change_percent: 5.111
     repeat10_o_change_percent: -7.0273
-    repeat10_o_paired_change_percent: -7.1150
+    repeat10_o_paired_change_percent: -7.115
     repeat10_host_change_percent: -0.6684
     repeat10_host_paired_change_percent: -0.9421
     pc027_complete_profiling_report: pass
@@ -3788,15 +4104,15 @@ current_scope:
     source_head: ee375b8805814e56e8948443e1879acb89117fad
     direct_control: W4U8-EXP0084-FAIR-CANONICAL
     candidate: generation_safe_four_output_per_hmx_command
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0099/formal_ee375b880581'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0099/artifacts/ee375b880581/formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0099/formal_ee375b880581
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0099/artifacts/ee375b880581/formal
     evidence_validity: valid
     local_gate: pass
     adoption_status: pending_user_decision
     correctness_gate: pass_final_input_norm_qk_probability_av_byte_exact_zero_mismatch_zero_max_lsb
     physical_gate: pass_exact_8mib_vtcm_zero_intermediate_ddr_zero_spill_fill_one_fastrpc_one_hmx_owner_down_64_to_16_total_176_to_128_commands
     repeat1_down_change_percent: -28.0158
-    repeat1_host_change_percent: -3.7750
+    repeat1_host_change_percent: -3.775
     repeat1_host_paired_change_percent: -4.2008
     repeat10_down_change_percent: -27.2507
     repeat10_host_change_percent: -4.4383
@@ -3811,8 +4127,8 @@ current_scope:
     source_head: 2198e4e1552bc465308ec752ad0d60279d8126c6
     direct_control: W4U8-EXP0084-FAIR-CANONICAL
     candidate: generation_safe_two_output_per_hmx_command
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0098/formal_2198e4e1552b'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0098/artifacts/2198e4e1552b/formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0098/formal_2198e4e1552b
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0098/artifacts/2198e4e1552b/formal
     evidence_validity: valid
     local_gate: pass
     adoption_status: pending_user_decision
@@ -3840,8 +4156,8 @@ current_scope:
     runtime_source_commit: b9055ff6c7e618874a43b554de92cd03d296c810
     direct_control: W4U8-EXP0084-FAIR-CANONICAL
     candidate: 512byte_exact_piecewise_q15_q14_affine_carrier
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0097/formal_b9055ff6c7e6'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0097/artifacts/b9055ff6c7e6/formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0097/formal_b9055ff6c7e6
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0097/artifacts/b9055ff6c7e6/formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -3853,7 +4169,7 @@ current_scope:
     repeat1_activation_work_paired_change_percent: 31.6271
     repeat1_gate_up_change_percent: 4.7949
     repeat1_gate_up_paired_change_percent: 3.7983
-    repeat1_host_change_percent: 0.2680
+    repeat1_host_change_percent: 0.268
     repeat1_host_paired_change_percent: -2.3445
     repeat10_activation_work_change_percent: 32.0101
     repeat10_activation_work_paired_change_percent: 31.9631
@@ -3878,8 +4194,8 @@ current_scope:
     source_head: a1adfffef57334834178d1116bbec75bc2101c95
     direct_control: W4U8-EXP0084-FAIR-CANONICAL
     candidate: old_direct_hvx_clipped_q7_silu_q5_product
-    stage_a_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0096/stage_a_a1adfffef573'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0096/artifacts/a1adfffef573/stage_a'
+    stage_a_evidence: D:/llm_exp/results/qwen3-block-htp/exp0096/stage_a_a1adfffef573
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0096/artifacts/a1adfffef573/stage_a
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -3889,7 +4205,7 @@ current_scope:
     full_domain_mapping_mismatches: 57270
     full_domain_mapping_max_lsb: 65
     diagnostic_activation_work_change_percent: -60.4657
-    diagnostic_gate_up_change_percent: 9.5830
+    diagnostic_gate_up_change_percent: 9.583
     diagnostic_host_change_percent: 0.7975
     speed_gate: not_run_by_contract_after_correctness_failure
     pc027_failure_boundary_report: pass
@@ -3906,8 +4222,8 @@ current_scope:
     source_head: b54490b8de77b8dfc052360409e592da5c4ba5d5
     direct_control: W4U8-EXP0084-FAIR-CANONICAL
     candidate: worker_private_four_row_native_vshuff_score_probability_carrier
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0095/formal_b54490b8de77'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0095/artifacts/b54490b8de77/formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0095/formal_b54490b8de77
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0095/artifacts/b54490b8de77/formal
     evidence_validity: valid
     local_gate: pass
     adoption_status: pending_user_decision
@@ -3940,8 +4256,8 @@ current_scope:
     source_head: 6bfa0aec4b55914bd1cd216342143bed8ada2fb3
     direct_control: W4U8-EXP0084-FAIR-CANONICAL
     candidate: prepared_session_12288_byte_vtcm_v_recenter_lut_and_av_bias_cache
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0094/formal_6bfa0aec4b55'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0094/artifacts/6bfa0aec4b55/formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0094/formal_6bfa0aec4b55
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0094/artifacts/6bfa0aec4b55/formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -3957,9 +4273,9 @@ current_scope:
     repeat10_v_pack_change_percent: -45.9416
     repeat10_v_pack_paired_change_percent: -46.0167
     repeat10_attention_change_percent: -3.0471
-    repeat10_attention_paired_change_percent: -3.1560
+    repeat10_attention_paired_change_percent: -3.156
     repeat10_host_change_percent: -0.4394
-    repeat10_host_paired_change_percent: -0.6450
+    repeat10_host_paired_change_percent: -0.645
     pc027_complete_profiling_report: pass
     pc028_module_table: pass_reused_exp0084_canonical_f16f16_w4f16
     stable_device_boot: 77ccafe0-8817-4976-bdae-15af5608d4ff
@@ -3975,9 +4291,9 @@ current_scope:
     source_head: 0f93c11946bd2437e67ffcfbdd609a27a09cab83
     direct_control: W4U8-EXP0084-FAIR-CANONICAL
     candidate: four_row_two_level_vshuff_native_output_residual
-    preliminary_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0093/stage_b_9d8eb8af6422'
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0093/stage_c_0f93c11946bd'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0093/artifacts/0f93c11946bd/stage_c'
+    preliminary_evidence: D:/llm_exp/results/qwen3-block-htp/exp0093/stage_b_9d8eb8af6422
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0093/stage_c_0f93c11946bd
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0093/artifacts/0f93c11946bd/stage_c
     evidence_validity: valid
     local_gate: pass
     adoption_status: pending_user_decision
@@ -4007,8 +4323,8 @@ current_scope:
     source_branch: codex/exp-0092-w4u8-gate-up-interference-factorial
     source_head: 889a2a4aacee8a6b6c94d9e0ad76cc8ba7451e65
     direct_control: single_vector_vlut32_workers3_exp0084
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0092/stage_a_889a2a4aacee'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0092/artifacts/889a2a4aacee/stage_a'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0092/stage_a_889a2a4aacee
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0092/artifacts/889a2a4aacee/stage_a
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -4033,8 +4349,8 @@ current_scope:
     source_head: e2c39af9716d272ac2c95936495002ee04a10214
     direct_control: exp0084_w4u8_fair_canonical_single_vector_vlut32
     candidate: gate_up_two_way_interleaved_vlut32
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0091/stage_b_e2c39af9716d'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0091/artifacts/e2c39af9716d/stage_b'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0091/stage_b_e2c39af9716d
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0091/artifacts/e2c39af9716d/stage_b
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -4047,7 +4363,7 @@ current_scope:
     repeat1_hmx_ready_wait_delta_percent: -3.1677
     repeat1_gate_up_delta_percent: 1.2388
     repeat1_host_delta_percent: -2.0194
-    repeat10_weight_expand_delta_percent: -5.3190
+    repeat10_weight_expand_delta_percent: -5.319
     repeat10_hmx_ready_wait_delta_percent: -2.8767
     repeat10_gate_up_delta_percent: 0.9483
     repeat10_host_delta_percent: -0.2471
@@ -4060,8 +4376,8 @@ current_scope:
     runtime_source_head: 0792b2cbb8455fad66e5a6f5893cfa55e209ab16
     direct_control: exp0084_w4u8_fair_canonical_single_fifo
     candidate: not_implemented_by_stage_a_stop_contract
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0090/stage_a_0792b2cbb845'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0090/artifacts/0792b2cbb845/stage_a'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0090/stage_a_0792b2cbb845
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0090/artifacts/0792b2cbb845/stage_a
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -4083,8 +4399,8 @@ current_scope:
     runtime_source_head: 416825029ade972f925e3cda55c140eef0515250
     direct_control: exp0084_w4u8_fair_canonical_serial_gate_up_then_down
     candidate: four_output_down_first_chunk_prestaged_during_gate_up
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0089/stage_b_416825029ade'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0089/artifacts/416825029ade/stage_b_negative'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0089/stage_b_416825029ade
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0089/artifacts/416825029ade/stage_b_negative
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -4098,7 +4414,7 @@ current_scope:
     repeat1_host_delta_percent: -1.0159
     repeat10_gate_up_delta_percent: 0.6184
     repeat10_down_delta_percent: -1.4668
-    repeat10_gate_up_plus_down_delta_percent: -0.0400
+    repeat10_gate_up_plus_down_delta_percent: -0.04
     repeat10_host_delta_percent: 0.1742
     conclusion: down_first_chunk_prestage_shortens_down_but_borrows_dma_hvx_capacity_from_gate_up_regresses_gate_up_at_both_repeats_and_regresses_repeat10_ordinary_host_wall
     selected_baseline_changed: false
@@ -4109,8 +4425,8 @@ current_scope:
     runtime_source_head: 742e8c789709937cd61f734f3240a74fb1d49f27
     direct_control: exp0084_dependency_stream_with_per_block_private_lut_builds
     candidate: six_context_local_lut_banks_persistent_across_prepared_session_calls
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0088/stage_b_742e8c789709'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0088/artifacts/742e8c789709/stage_b_negative'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0088/stage_b_742e8c789709
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0088/artifacts/742e8c789709/stage_b_negative
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -4126,8 +4442,8 @@ current_scope:
     repeat10_attention_delta_percent: 0.3634
     repeat10_softmax_delta_percent: 0.3464
     ordinary_warmup_private_bank_builds: 6
-    candidate_repeat1_measured_builds_reuses: 0_6
-    candidate_repeat10_measured_builds_reuses: 0_60
+    candidate_repeat1_measured_builds_reuses: 6
+    candidate_repeat10_measured_builds_reuses: 48
     candidate_private_vtcm_bytes: 3072
     conclusion: eliminating_per_block_lut_construction_is_mathematically_and_physically_valid_but_does_not_shorten_the_attention_critical_path_and_slightly_regresses_repeat10_host_attention_and_softmax_medians
     selected_baseline_changed: false
@@ -4138,8 +4454,8 @@ current_scope:
     runtime_source_head: a1cae71f846093cc2ee669e18fcf60ac95a7103e
     direct_control: dependency_stream_two_32_row_softmax_tasks_per_group
     candidate: dependency_stream_four_16_row_softmax_tasks_per_group
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0087/stage_b_a1cae71'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0087/artifacts/a1cae71/stage_b_negative'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0087/stage_b_a1cae71
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0087/artifacts/a1cae71/stage_b_negative
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -4159,8 +4475,8 @@ current_scope:
     runtime_source_commit: af51e13b230eb54bbbef1d5adaae678ddecea3b4
     direct_control: down_split_96_96
     closest_candidate: down_split_64_128
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0086/formal_af51e13'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0086/artifacts/af51e13/stage_b_negative'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0086/formal_af51e13
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0086/artifacts/af51e13/stage_b_negative
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -4175,7 +4491,7 @@ current_scope:
     source_branch: codex/exp-0085-gqa-group-major-qkv
     source_head: 5161d8adb1095f262e58949bf6be6e41523f6afa
     candidate: q_prefix4_k_all
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0085/20260830T173432Z_5161d8adb109_stage_c_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0085/20260830T173432Z_5161d8adb109_stage_c_formal
     evidence_validity: valid
     local_gate: fail
     adoption_status: rejected
@@ -4187,7 +4503,7 @@ current_scope:
     source_branch: codex/exp-0084-cross-recipe-common-schedule-parity
     source_head: 6dc437fe08eaccf119c4cbce82937e22f125da0b
     physical_plan: fp16_input_and_post_residual_rmsnorm_persistent_pool_common_rows4_contexts3
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0084/20260830T160259Z_6dc437fe08ea_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0084/20260830T160259Z_6dc437fe08ea_formal
     adoption_status: accepted
     local_gate: pass
     candidate_status: promoted_as_fair_comparison_baselines
@@ -4208,7 +4524,7 @@ current_scope:
     physical_plan: exp0079_compatible_w4u8_path_measured_in_exp0084_fair_canonical_matrix
     source_branch: codex/exp-0084-cross-recipe-common-schedule-parity
     source_head: 6dc437fe08eaccf119c4cbce82937e22f125da0b
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0084/20260830T160259Z_6dc437fe08ea_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0084/20260830T160259Z_6dc437fe08ea_formal
     adoption_status: accepted
     local_gate: pass
     candidate_status: promoted_as_selected_w4u8_fair_baseline
@@ -4222,8 +4538,8 @@ current_scope:
     source_head: 42e2a33012929ccbb05e8c2741124b6fd539552c
     source_tag: baseline-fair-exp0109-public-freeze
     physical_plan: exp0106_recipe_compatible_paths_with_exp0107_f16f16_gate8_interleaved
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0109/20260831T155519Z_42e2a3301292_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0109/artifacts/42e2a3301292/20260831T155519Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0109/20260831T155519Z_42e2a3301292_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0109/artifacts/42e2a3301292/20260831T155519Z_formal
     f16f16_repeat1_host_wall_ns_per_block_median: 2761042.0
     f16f16_repeat10_host_wall_ns_per_block_median: 2335630.2
     w4f16_repeat1_host_wall_ns_per_block_median: 2665261.0
@@ -4244,8 +4560,8 @@ current_scope:
     source_head: 42e2a33012929ccbb05e8c2741124b6fd539552c
     source_tag: baseline-fair-exp0109-public-freeze
     physical_plan: exp0106_compatible_w4u8_fair_cell_emitted_by_frozen_source
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0109/20260831T155519Z_42e2a3301292_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0109/artifacts/42e2a3301292/20260831T155519Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0109/20260831T155519Z_42e2a3301292_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0109/artifacts/42e2a3301292/20260831T155519Z_formal
     repeat1_host_wall_ns_per_block_median: 2292187.0
     repeat10_host_wall_ns_per_block_median: 1956098.9
     output_hash: 69f22eeb035e5ec5
@@ -4270,11 +4586,11 @@ current_scope:
       down_publication_mode: join_only
       attention_pipeline_mode: gqa_qkv_overlap
       mlp_mode: crouton_native_batch8
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0140/20260901T040452Z_e75563457293_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0140/artifacts/e75563457293/20260901T040452Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0140/20260901T040452Z_e75563457293_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0140/artifacts/e75563457293/20260901T040452Z_formal
     repeat1_host_wall_ns_per_block_median: 2391250.0
     repeat10_host_wall_ns_per_block_median: 1955000.0
-    repeat10_latency_change_vs_previous_selected_w4f16_exp0110_percent: -7.900
+    repeat10_latency_change_vs_previous_selected_w4f16_exp0110_percent: -7.9
     repeat10_throughput_change_vs_previous_selected_w4f16_exp0110_percent: 8.578
     output_hash: f18b9abbe1487231
     correctness_gate: pass_byte_exact_zero_expansion_mismatch_zero_max_lsb
@@ -4296,8 +4612,8 @@ current_scope:
       attention_pipeline_mode: u8_log2_gqa_qkv_overlap_vgather_vdeal_fused_qk_requant_hmx_batch_lut_templates_gqa_batch_dependency_stream_softmax_shuffle4
       w4u8_qk_pair_kernel_mode: quarter_tiled_simd_io
       w4u8_down_hmx_batch_outputs: 4
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0144/20260901T045939Z_919aaa748706_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0144/artifacts/919aaa748706/20260901T045939Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0144/20260901T045939Z_919aaa748706_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0144/artifacts/919aaa748706/20260901T045939Z_formal
     repeat1_host_wall_ns_per_block_median: 1762396.0
     repeat10_host_wall_ns_per_block_median: 1364625.0
     repeat1_change_vs_fair_w4u8_percent: -23.113
@@ -4316,8 +4632,8 @@ current_scope:
     source_head: 264c911a65a341f00450855cf89b2d89bbd5f108
     physical_plan: persistent_exact_M64_FP16_HMX_KV_carrier_plus_contiguous_8_token_delta_journal_with_prefill_carrier_reuse_and_HVX_decode_tail_patch
     execution_scope: real_Qwen3_layers0_27_M64_prefill_continuous_decode_positions64_71
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0158/20260902T071708Z_264c911a65a3_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0158/f16f16'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0158/20260902T071708Z_264c911a65a3_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0158/f16f16
     prefill_host_us: 67212.8125
     prefill_tokens_per_second: 952.1994039454903
     decode_host_us_per_token: 95282.4675
@@ -4335,8 +4651,8 @@ current_scope:
     source_head: 264c911a65a341f00450855cf89b2d89bbd5f108
     physical_plan: persistent_exact_M64_FP16_HMX_KV_carrier_plus_contiguous_8_token_delta_journal_with_prefill_carrier_reuse_and_HVX_decode_tail_patch
     execution_scope: real_Qwen3_layers0_27_M64_prefill_continuous_decode_positions64_71
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0158/20260902T071708Z_264c911a65a3_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0158/w4f16'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0158/20260902T071708Z_264c911a65a3_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0158/w4f16
     prefill_host_us: 54443.2815
     prefill_tokens_per_second: 1175.5353137558398
     decode_host_us_per_token: 83679.518125
@@ -4354,7 +4670,7 @@ current_scope:
     source_head: efea24712241dbcb62f468665b98c758c5ef5461
     physical_plan: immutable_32_token_HMX_native_segments_plus_one_mutable_tail_and_fixed_long_attention_overlay
     execution_scope: synthetic_single_real_layer14_decode_snapshots_L64_L256_L1024_L4096
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0161/20260902T191200Z_efea24712241_phase_b'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0161/20260902T191200Z_efea24712241_phase_b
     L64_host_us: 1807.9531
     L256_host_us: 2226.0781
     L1024_host_us: 3798.9583
@@ -4372,13 +4688,13 @@ current_scope:
     source_head: a3b9607dee88719341763204566bac8a9ed5e3cd
     physical_plan: dynamic_immutable_32_token_HMX_native_segments_plus_one_mutable_tail_and_bounded_two_slot_attention_pipeline
     execution_scope: real_Qwen3_layers0_27_M64_prefill_continuous_decode_positions64_103
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0162/20260903T045521Z_a3b9607dee88_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0162/candidate_segmented_capacity104'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0162/20260903T045521Z_a3b9607dee88_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0162/candidate_segmented_capacity104
     prefill_host_us: 43595.651
     prefill_tokens_per_second: 1468.037
     decode_host_us_per_token: 49714.973
     decode_tokens_per_second: 20.115
-    postseal_decode_host_us_per_token: 49325.290
+    postseal_decode_host_us_per_token: 49325.29
     correctness_gate: pass_zero_LSB_all_41_outputs_and_all_28_layer_cache_lifecycle_references
     lifecycle_gate: pass_one_dynamic_seal_per_layer_at_position95_immutable_prefix_and_first_postseal_reuse
     physical_gate: pass_exact_8mib_VTCM_zero_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN
@@ -4406,8 +4722,8 @@ current_scope:
       mlp_hvx_contexts: 4
       mlp_chunk_vectors: 64
       crouton_boundary_mode: norms
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0109/20260831T155519Z_42e2a3301292_formal'
-    retained_artifacts: 'D:/llm_exp/models/qwen3-block-htp/exp0109/artifacts/42e2a3301292/20260831T155519Z_formal'
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0109/20260831T155519Z_42e2a3301292_formal
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0109/artifacts/42e2a3301292/20260831T155519Z_formal
     output_hash: f18b9abbe1487231
     repeat1_host_wall_ns_per_block_median: 2665261.0
     repeat10_host_wall_ns_per_block_median: 2181062.5
@@ -4445,7 +4761,6 @@ current_scope:
     ledger_gate_result: pass_160_invocation_and_4480_layer_ledgers_exact
     quality_evaluation: not_run_proposal_in_docs/THREE_RECIPE_LIGHTWEIGHT_EVALUATION_PLAN.md
     w4u8_specialization: paused_by_user
-
   latest_unified_lightweight_evaluation:
     source_head: b2904bbc60b25e6b80f53351655b1c585fd97db2
     formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0218
