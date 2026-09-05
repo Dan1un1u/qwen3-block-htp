@@ -224,6 +224,10 @@ static const char *qbh_variant_name(uint32_t variant) {
     }
 }
 
+static int qbh_generation_f16f16_enabled(uint32_t mode) {
+    return mode == QBH_BLOCK_GENERATION_GREEDY_F16F16;
+}
+
 static int qbh_generation_w4f16_enabled(uint32_t mode) {
     return mode >= QBH_BLOCK_GENERATION_GREEDY_W4F16 &&
            mode <= QBH_BLOCK_GENERATION_GREEDY_W4F16_COARSE_PIPELINE;
@@ -3732,7 +3736,7 @@ static int qbh_run_generation_sequence(
         qbh_generation_w4u8_enabled(header->generation_mode);
     uint32_t experiment;
     const uint32_t generation_variant =
-        w4u8 != 0U ? QBH_BLOCK_W4U8 : QBH_BLOCK_W4F16;
+        header->variant;
     const char *audit_root = getenv("QBH_GENERATION_AUDIT_DIR");
     int all_pass = 1;
 
@@ -4737,6 +4741,8 @@ int main(int argc, char **argv) {
             } else if (strcmp(generation, "8") == 0) {
                 generation_mode =
                     QBH_BLOCK_GENERATION_GREEDY_W4U8_COARSE_PIPELINE;
+            } else if (strcmp(generation, "10") == 0) {
+                generation_mode = QBH_BLOCK_GENERATION_GREEDY_F16F16;
             } else if (strcmp(generation, "9") == 0) {
                 generation_mode =
                     QBH_BLOCK_GENERATION_GREEDY_W4U8_BATCH8_RESIDENT_BIAS;
@@ -5144,15 +5150,17 @@ int main(int argc, char **argv) {
         (replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS &&
          vertical_slice_mode != QBH_BLOCK_SLICE_ACTIVE_RANGE) ||
         generation_mode >
-            QBH_BLOCK_GENERATION_GREEDY_W4U8_BATCH8_RESIDENT_BIAS ||
+            QBH_BLOCK_GENERATION_GREEDY_F16F16 ||
         generation_boundary_audit_enabled > 1U ||
         (generation_boundary_audit_enabled != 0U &&
          !qbh_generation_w4u8_enabled(generation_mode)) ||
         (generation_mode != QBH_BLOCK_GENERATION_DISABLED &&
-         ((!qbh_generation_w4f16_enabled(generation_mode) &&
+         ((!qbh_generation_f16f16_enabled(generation_mode) &&
+            !qbh_generation_w4f16_enabled(generation_mode) &&
            !qbh_generation_w4u8_enabled(generation_mode)) ||
-          (qbh_generation_w4f16_enabled(generation_mode)
-               ? (variant != QBH_BLOCK_W4F16 ||
+          (!qbh_generation_w4u8_enabled(generation_mode)
+               ? (variant != (qbh_generation_f16f16_enabled(generation_mode)
+                                  ? QBH_BLOCK_F16F16 : QBH_BLOCK_W4F16) ||
                   !qbh_hmx_native_f16_cache_formats(
                       kv_cache_k_format, kv_cache_v_format))
                : (variant != QBH_BLOCK_W4U8 ||
@@ -5640,14 +5648,18 @@ int main(int argc, char **argv) {
              &cursor) != 0 ||
          qbh_prepare_slot(
              &generation_lm_head_weight_slot, argv[1],
-             "generation_lm_head_weight_w4_hmx.bin",
-             QBH_QWEN3_VOCAB_SIZE * QBH_BLOCK_HIDDEN / 2U,
+             qbh_generation_f16f16_enabled(generation_mode)
+                 ? "generation_lm_head_weight_f16_hmx.bin"
+                 : "generation_lm_head_weight_w4_hmx.bin",
+             qbh_generation_f16f16_enabled(generation_mode)
+                 ? QBH_QWEN3_VOCAB_SIZE * QBH_BLOCK_HIDDEN * 2U
+                 : QBH_QWEN3_VOCAB_SIZE * QBH_BLOCK_HIDDEN / 2U,
              &cursor) != 0 ||
-         qbh_prepare_slot(
+         (!qbh_generation_f16f16_enabled(generation_mode) && qbh_prepare_slot(
              &generation_lm_head_scale_slot, argv[1],
              "generation_lm_head_weight_w4_scale_f32.bin",
              QBH_QWEN3_VOCAB_SIZE * (uint32_t)sizeof(float),
-             &cursor) != 0 ||
+             &cursor) != 0) ||
          (qbh_generation_w4u8_enabled(generation_mode) &&
           (qbh_prepare_slot(
                &generation_lm_head_bias_slot, argv[1],
@@ -6097,7 +6109,8 @@ int main(int argc, char **argv) {
          qbh_read_slot(shared, &generation_embedding_slot) != 0 ||
          qbh_read_slot(shared, &generation_final_norm_slot) != 0 ||
          qbh_read_slot(shared, &generation_lm_head_weight_slot) != 0 ||
-         qbh_read_slot(shared, &generation_lm_head_scale_slot) != 0 ||
+         (!qbh_generation_f16f16_enabled(generation_mode) &&
+          qbh_read_slot(shared, &generation_lm_head_scale_slot) != 0) ||
          (qbh_generation_w4u8_enabled(generation_mode) &&
           (qbh_read_slot(shared, &generation_lm_head_bias_slot) != 0 ||
            qbh_read_slot(shared, &generation_qparam_slot) != 0)) ||

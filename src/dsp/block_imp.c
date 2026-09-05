@@ -1639,6 +1639,10 @@ static int qbh_projection_shape_valid(uint32_t index,
            desc->k == expected_k[index] && desc->n == expected_n[index];
 }
 
+static int qbh_generation_f16f16_enabled(uint32_t mode) {
+    return mode == QBH_BLOCK_GENERATION_GREEDY_F16F16;
+}
+
 static int qbh_generation_w4f16_enabled(uint32_t mode) {
     return mode == QBH_BLOCK_GENERATION_GREEDY_W4F16 ||
            mode == QBH_BLOCK_GENERATION_GREEDY_W4F16_HVX_ARGMAX ||
@@ -1656,7 +1660,8 @@ static int qbh_generation_w4u8_enabled(uint32_t mode) {
 }
 
 static int qbh_generation_enabled(uint32_t mode) {
-    return qbh_generation_w4f16_enabled(mode) ||
+    return qbh_generation_f16f16_enabled(mode) ||
+           qbh_generation_w4f16_enabled(mode) ||
            qbh_generation_w4u8_enabled(mode);
 }
 
@@ -1695,9 +1700,11 @@ static int qbh_generation_request_valid(
                header->generation_expected_token_count == 0U;
     }
     if (!qbh_generation_enabled(header->generation_mode) ||
-        (qbh_generation_w4f16_enabled(header->generation_mode)
-             ? header->variant != QBH_BLOCK_W4F16
-             : header->variant != QBH_BLOCK_W4U8) ||
+        (header->variant !=
+             (qbh_generation_f16f16_enabled(header->generation_mode)
+                  ? QBH_BLOCK_F16F16
+                  : qbh_generation_w4f16_enabled(header->generation_mode)
+                        ? QBH_BLOCK_W4F16 : QBH_BLOCK_W4U8)) ||
         header->replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS ||
         !qbh_slice_enabled(header) ||
         header->full_stack_stage_mode != QBH_BLOCK_FULL_STACK_RUN ||
@@ -1733,6 +1740,15 @@ static int qbh_generation_request_valid(
         return 0;
     }
     head = &header->generation_lm_head;
+    if (qbh_generation_f16f16_enabled(header->generation_mode)) {
+        return head->k == QBH_BLOCK_HIDDEN &&
+               head->n == QBH_QWEN3_VOCAB_SIZE &&
+               head->weight_bytes == head->k * head->n * 2U &&
+               qbh_range_valid(head->weight_offset, head->weight_bytes, shared_bytes) &&
+               head->scale_offset == 0U && head->scale_bytes == 0U &&
+               head->bias_offset == 0U && head->bias_bytes == 0U &&
+               head->direct_n_weight_offset == 0U && head->direct_n_weight_bytes == 0U;
+    }
     if (head->k != QBH_BLOCK_HIDDEN ||
         head->n != QBH_QWEN3_VOCAB_SIZE ||
         head->weight_bytes != head->k * head->n / 2U ||
@@ -6428,6 +6444,72 @@ generation_complete:
         best_token == header->generation_expected_token_id;
     header->generation_lm_head_ticks +=
         HAP_perf_get_qtimer_count() - head_start;
+    return 0;
+}
+
+/* EXP-0217: FP16 stored head weights, streamed through existing aligned
+ * phase-dead projection buffers. No W4 expansion or logits DDR boundary. */
+static int qbh_run_generation_head_f16f16(
+    struct qbh_block_header *header, uint8_t *shared,
+    struct qbh_block_buffers *buffers, struct qbh_block_hmx_worker *worker,
+    uint32_t logical_rows, uint32_t generation_step) {
+    const struct qbh_block_projection_desc *head = &header->generation_lm_head;
+    const uint32_t k_tiles = QBH_BLOCK_HIDDEN / QBH_HMX_FP16_COLS;
+    const uint32_t n_tiles = QBH_QWEN3_VOCAB_SIZE / QBH_HMX_FP16_COLS;
+    const uint32_t group_limit = 8U;
+    const uint32_t tile_bytes = k_tiles * QBH_HMX_FP16_TILE_BYTES;
+    const uint64_t start = HAP_perf_get_qtimer_count();
+    float best_value = -INFINITY;
+    uint32_t best_token = 0U;
+    uint16_t best_bits = 0U;
+    if (logical_rows == 0U || generation_step >= header->generation_expected_token_count ||
+        header->mlp_mode != QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8) return -1;
+    if (qbh_dma_copy(header, buffers->input_norm_weight,
+                     shared + header->generation_final_norm_offset,
+                     header->generation_final_norm_bytes, 1U) != 0) return -2;
+    header->weight_ddr_read_bytes += header->generation_final_norm_bytes;
+    qbh_hvx_rms_norm_f16((const __fp16 *)buffers->residual,
+        (const __fp16 *)buffers->input_norm_weight,
+        (__fp16 *)buffers->normalized, logical_rows, QBH_BLOCK_HIDDEN, NULL);
+    header->generation_final_norm_ticks += HAP_perf_get_qtimer_count() - start;
+    qbh_pack_fp16_activation_row0((const __fp16 *)buffers->normalized +
+        (size_t)(logical_rows - 1U) * QBH_BLOCK_HIDDEN,
+        QBH_BLOCK_HIDDEN, (__fp16 *)buffers->hmx_activation);
+    qbh_hmx_fp16_init_unity_scale(buffers->scale_or_bias);
+    header->generation_lm_head_batch_n_tiles = group_limit;
+    header->generation_lm_head_n_tiles = n_tiles;
+    for (uint32_t n_tile = 0U; n_tile < n_tiles; n_tile += group_limit) {
+        uint32_t count = n_tiles - n_tile;
+        uint64_t stage;
+        if (count > group_limit) count = group_limit;
+        stage = HAP_perf_get_qtimer_count();
+        if (qbh_dma_copy(header, buffers->expanded_weight,
+            shared + head->weight_offset + (size_t)n_tile * tile_bytes,
+            count * tile_bytes, 1U) != 0) return -3;
+        header->generation_lm_head_weight_dma_ticks += HAP_perf_get_qtimer_count() - stage;
+        header->generation_lm_head_ddr_read_bytes += count * tile_bytes;
+        header->weight_ddr_read_bytes += count * tile_bytes;
+        ++header->weight_dma_descriptor_count;
+        stage = HAP_perf_get_qtimer_count();
+        if (qbh_hmx_submit(worker, QBH_BLOCK_HMX_FP16,
+            buffers->hmx_activation, buffers->expanded_weight, buffers->scale_or_bias,
+            buffers->hmx_output, 1U, k_tiles, count) != 0) return -5;
+        header->generation_lm_head_hmx_ticks += HAP_perf_get_qtimer_count() - stage;
+        ++header->generation_lm_head_command_count;
+        ++header->hmx_command_count;
+        header->hmx_fp16_tile_pair_count += k_tiles * count;
+        stage = HAP_perf_get_qtimer_count();
+        qbh_generation_hvx_argmax_group((const __fp16 *)buffers->hmx_output,
+            n_tile, count, &best_value, &best_token, &best_bits);
+        header->generation_lm_head_argmax_ticks += HAP_perf_get_qtimer_count() - stage;
+    }
+    if (!isfinite(best_value)) return -6;
+    header->generation_selected_token_id = best_token;
+    header->generation_selected_logit_half_bits = best_bits;
+    header->generation_expected_token_id = ((const uint32_t *)(shared +
+        header->generation_expected_token_ids_offset))[generation_step];
+    header->generation_token_match = best_token == header->generation_expected_token_id;
+    header->generation_lm_head_ticks += HAP_perf_get_qtimer_count() - start;
     return 0;
 }
 
@@ -21228,6 +21310,10 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
                     ? qbh_run_generation_head_w4u8(
                           header, shared, &buffers, &worker,
                           hvx_pool_created != 0 ? &w4f16_pool : NULL,
+                          header->logical_m, generation_step)
+                    : qbh_generation_f16f16_enabled(header->generation_mode)
+                    ? qbh_run_generation_head_f16f16(
+                          header, shared, &buffers, &worker,
                           header->logical_m, generation_step)
                     : qbh_run_generation_head_w4f16(
                           header, shared, &buffers, &worker,
