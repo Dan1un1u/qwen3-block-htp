@@ -33,12 +33,12 @@ def quality():
         for phase in ['quick','repeat']:
             d=json.loads((RESULT/phase/f'{v}.validated.json').read_text())
             for s in d['samples']:
-                if data[s['id']]['kind']!='nll':continue
                 for step,(a,b) in enumerate(zip(s['steps'],byid[s['id']]['steps'])):
-                    fields=[k for k in ['token_id','target_code','nll','rank','max_ties'] if a[k]!=b[k]]
+                    fields=[k for k in ['token_id','target_token','target_code','nll','rank','target_ties','max_ties','saturated'] if a[k]!=b[k]]
                     if fields:mismatch.append(dict(id=s['id'],step=step,fields=fields,phase=phase))
             if phase=='repeat':repeat=d['repeat_equal']
         determinism[v]=dict(repeat_equal=repeat,quick_repeat_full_mismatches=mismatch)
+        assert repeat and not mismatch,(v,determinism[v])
     teacher=json.loads((ev.ROOT/'teacher_bf16.json').read_text());teacher={s['id']:s for s in teacher['samples']}
     summaries={}
     for name,rows in entries.items():
@@ -55,6 +55,9 @@ def quality():
         conditional_projection_error=conditional,fp16_probe_logits=fp['probe_logits'],
         r2_effectiveness=c['nll']<a['nll'] and c['tasks_correct']>a['tasks_correct'],
         dataset_sha256=ev.digest(ev.ROOT/'dataset_v1.json'),holdout_used=False,baseline_promoted=False)
+    software=json.loads((RESULT/'r2_only/software_quality.json').read_text())['samples']
+    out['r2_software_diagnostic']=dict(nll=mean(x for r in software if r['kind']=='nll' for x in r['nll']),
+        tasks_correct=sum(r['correct'] for r in software if r['kind']=='task'),role='FP16 software from packed codes/scales; not bit-exact DSP')
     write_json(RESULT/'quality_summary.json',out)
     labels=['FP16 原始（Host）','FP16 全折叠（Host）','W4A16 原始（DSP，冻结）','W4A16 全折叠（DSP，冻结）',
         'W4A16 仅 QKV 折叠','W4A16 仅 Gate/Up 折叠','W4A16 仅最终 norm/head 折叠','W4A16 R2-only，保留 gamma']
@@ -86,9 +89,14 @@ def speed():
     module=table(['模块','F16A16 冻结 EXP-0218','W4A16 R2-only EXP-0220','W4A8 冻结 EXP-0218','W4A8 相对 W4A16 增速'],rows)
     (RESULT/'module_table.md').write_text(module)
     report=['# EXP-0220 complete profiling comparison','Same frozen ABI108 binary, independent original versus R2-only token sequences. One M64 plus15 feedback steps per session; five short then ten alternating formal rounds. Frozen other recipes are historical nonpaired columns; no activation-only attribution with different W4 values. Quality scoring disabled.',module]
-    for v in ['original','r2_only']:
-        for mode,series in data[v].items():
-            report.extend([f'## {v} {mode}',table(['Field','R1','R10 median'],[[k,f'{series[0][k]:.6f}',f'{median(x[k] for x in series):.6f}'] for k in sorted(series[0])])])
+    report.append('All numeric fields are retained below. Additive timing ledger fields are mutually exclusive; engine-work, waits and diagnostic counters overlap and must not be summed. Host-DSP boundary is computed for each record as Host wall minus DSP invocation. Relative changes below are candidate/control minus one, so positive timing changes mean slower. Zero control denominators are N/A, not omitted evidence.')
+    for mode in ['prefill','decode']:
+        a,b=data['original'][mode],data['r2_only'][mode];rows=[]
+        for k in sorted(a[0]):
+            vals=[a[0][k],b[0][k],median(x[k] for x in a),median(x[k] for x in b)]
+            pct=lambda x,y:f'{100*(y/x-1):+.4f}%' if x else 'N/A: zero control'
+            rows.append([k,f'{vals[0]:.6f}',f'{vals[1]:.6f}',pct(*vals[:2]),f'{vals[2]:.6f}',f'{vals[3]:.6f}',pct(*vals[2:])])
+        report.extend([f'## {mode}',table(['Field','R1 original','R1 R2-only','R1 change','R10 original median','R10 R2-only median','R10 change'],rows)])
     (RESULT/'full_profiling_report.md').write_text('\n\n'.join(report)+'\n')
     return out
 
