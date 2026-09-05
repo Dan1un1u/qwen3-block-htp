@@ -36,7 +36,7 @@ current_scope:
   active_experiment_stage: EXP0225_full_model_gate_and_CUDA_smoke
   active_experiment_evidence: D:/llm_exp/results/qwen3-block-htp/exp0225
   active_experiment_gate: running
-  active_experiment_source_head: cc0ca695812b3d8057e23ef6cf6e584af108fdaa
+  active_experiment_source_head: fab0779783fdc5c3e5d1df17bd7a770961ed1bcf
   current_handoff: SESSION_HANDOFF_EXP0225.md
   active_recipe_specialization: null
   last_completed_experiment_contract:
