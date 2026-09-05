@@ -6,6 +6,38 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0222
+    slug: w4f16-lm-head-ablation
+    title: Host LM head FP16 ablation on frozen GPTQ A B C
+    parent: EXP-0221
+    record: docs/experiments/EXP-0222.md
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: not_applicable
+    approval_ref: 'User: first LM head ablation then discuss before next direction'
+    source_branches:
+    - codex/exp-0222-w4f16-lm-head-ablation
+    source_commits:
+    - 08a67eee666fe5ca7335a8150f7207635019b588
+    runtime:
+      source_branch: codex/exp-0222-w4f16-lm-head-ablation
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    variants:
+    - A_W4_head
+    - A_FP16_head
+    - B_W4_head
+    - B_FP16_head
+    - C_W4_head
+    - C_FP16_head
+    evidence_profile: host_only_head_precision_attribution
+    evidence:
+      source_parent_commit: 08a67eee666fe5ca7335a8150f7207635019b588
+      device_work: false
+      profiling: N/A_host_only
+      selected_baseline_changed: false
   - id: EXP-0221
     slug: w4f16-gptq-offline-rotation
     title: Per-channel GPTQ original/folded/R1R2 quality validation

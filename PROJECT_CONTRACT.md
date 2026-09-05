@@ -185,3 +185,7 @@ EXP-0220 may run isolated host-only FP16 original/folded mathematical controls w
 ## PC-041 — Per-channel GPTQ and offline rotation (user approved 2026-09-05)
 
 EXP-0221 may replace offline RTN with GPTQ for W4F16 only. Compare original high-precision weights plus GPTQ, fresh gamma folds plus GPTQ, and fresh fixed H2048/H128 R1/R2 plus GPTQ. Preserve one FP32 scale per output row and signed [-7,7] carrier, frozen runtime and both other recipes. Calibration may use independent public training text, fixed and hashed before weight quantization, with overlap checks against evaluation. No LPBQ/group scales, already-folded upstream weights, learned rotations, quantizer hyperparameter search, evaluation/holdout tuning or automatic baseline promotion. Routine recovery follows PC-037.
+
+## PC-042 — LM head precision attribution (user approved 2026-09-05)
+
+EXP-0222 is a host-only software ablation of EXP-0221 A/B/C: freeze transformer packages and compare W4 GPTQ heads with fresh correctly transformed FP16 heads. Retain norms, embedding, qbh-lite-v1, independent per-head greedy feedback and provenance. Reproduce software controls and repeat checks; no calibration/tuning, DSP changes, other-recipe changes or promotion. Profiling/E2E are explicitly N/A for this bounded diagnostic. Discuss results before selecting or executing another direction.
