@@ -275,8 +275,8 @@ experiments:
       - direct_W4_Down_batch8_weight1_bias1_candidate
     execution_state: completed
     evidence_validity: valid
-    local_gate: fail
-    adoption_status: rejected
+    local_gate: fail_strict_all_pairs_one_of_ten_regressed
+    adoption_status: accepted_by_explicit_user_promotion
     evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0211-w4u8-direct-n-down-batch8
@@ -330,7 +330,11 @@ experiments:
       formal_summary_sha256: 08aa2c207197d10513ad45733bb2f4af5760d6e23ae9805053c317a6be032e2d
       formal_report_sha256: 9e47aa4b471b06c3165640b697cc00e237a386b3d1411a082a0c49b1230858d0
       conclusion: Down_batch8_reduces_local_Down_and_improves_median_E2E_but_fails_strict_all_pairs_gate
-      selected_baseline_changed: false
+      selected_baseline_changed: true
+      promoted_as: selected_w4u8_token_generation_baseline
+      promoted_by: user
+      promoted_on: '2026-09-05'
+      promotion_ref: 'User message 2026-09-05: 同意晋升，请你现在处理干净各种git和约束问题，做好开始新实验的准备。做好loop准备后通知我。'
   - id: EXP-0210
     slug: w4u8-direct-n-o-batch16-single-dma
     title: Direct-W4 O batch16 single-descriptor DMA

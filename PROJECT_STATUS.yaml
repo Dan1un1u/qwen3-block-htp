@@ -55,15 +55,19 @@ current_scope:
   final_profiling_summary_standard: direct_full_stack_prefill_and_decode_tokens_per_second_plus_exact_Host_wall
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0213/20260905_short_gate_14d1ac1'
-  pending_w4u8_fastest_promotion_candidate:
+  promoted_w4u8_fastest_decode_baseline:
     id: EXP-0211
     source_branch: codex/exp-0211-w4u8-direct-n-down-batch8
     source_head: b111cf7e49ee5a230ed93b54cd5b5b33e8d1ebfa
     evidence_validity: valid
     selection_reason: fastest_effective_decode_structure_after_two_cross_layer_prefetch_regressions
     formal_decode_tokens_per_second: 45.919316
-    promotion_authority: user_only
-    selected_baseline_changed: false
+    adoption_status: accepted
+    promoted_as: selected_w4u8_token_generation_baseline
+    promoted_by: user
+    promoted_on: '2026-09-05'
+    promotion_ref: 'User message 2026-09-05: 同意晋升，请你现在处理干净各种git和约束问题，做好开始新实验的准备。做好loop准备后通知我。'
+    selected_baseline_changed: true
   latest_w4u8_prefill_direct_w4_experiment:
     id: EXP-0216
     execution_state: running
@@ -171,10 +175,14 @@ current_scope:
     formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0211/20260905_formal_b111cf7'
     execution_state: completed
     evidence_validity: valid
-    local_gate: fail
-    adoption_status: rejected
+    local_gate: fail_strict_all_pairs_one_of_ten_regressed
+    adoption_status: accepted_by_explicit_user_promotion
     retained_as_enabling_parent: true
-    selected_baseline_changed: false
+    selected_baseline_changed: true
+    promoted_as: selected_w4u8_token_generation_baseline
+    promoted_by: user
+    promoted_on: '2026-09-05'
+    promotion_ref: 'User message 2026-09-05: 同意晋升，请你现在处理干净各种git和约束问题，做好开始新实验的准备。做好loop准备后通知我。'
     short_control_decode_tokens_per_second: 45.621114
     short_candidate_decode_tokens_per_second: 46.129865
     short_candidate_decode_speed_percent: 1.115167
@@ -1526,25 +1534,26 @@ current_scope:
     independent_reference_sha256: 6a01a5b62e8f420f00835df1d226ff3df5792cb03b2e9d3e3c44722e125620c1
     exp0163_regression_sha256: 6457c52a2729fd24b53f441214e3a3a97c8a92d26c6e9122424e9c4ff397eb37
   selected_w4u8_token_generation_baseline:
-    id: W4U8-EXP0189-DIRECT-N-ROW4-SWIGLU
-    experiment: EXP-0189
+    id: W4U8-EXP0211-DIRECT-N-DOWN-BATCH8
+    experiment: EXP-0211
     project_variant: W4U8
-    source_branch: codex/exp-0189-w4u8-direct-n-row4-swiglu
-    source_head: 15becf9cf8bda0d9320d8cdcb43fab108c865ef8
-    runtime_source_commit: 15becf9cf8bda0d9320d8cdcb43fab108c865ef8
-    source_tag: baseline-w4u8-token-generation-exp0189
-    physical_plan: EXP0188_direct_n_transformer_projections_plus_decode_only_one_128B_HVX_vector_per_SwiGLU_tile_and_group16_expanded_S8_LM_head
+    source_branch: codex/exp-0211-w4u8-direct-n-down-batch8
+    source_head: b111cf7e49ee5a230ed93b54cd5b5b33e8d1ebfa
+    runtime_source_commit: b111cf7e49ee5a230ed93b54cd5b5b33e8d1ebfa
+    source_tag: baseline-w4u8-token-generation-exp0211
+    physical_plan: direct_packed_W4_all_decode_transformer_projections_with_Q32_KV16_O16_Down8_single_descriptor_and_async_Gate_Up_SwiGLU_stream
     execution_scope: real_token_ID_M64_prefill_then_192_continuous_decode_steps_to_valid_length256
-    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0189/20260905_formal_15becf9'
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0211/20260905_formal_b111cf7'
     retained_generation_package: 'D:/llm_exp/models/qwen3-block-htp/exp0169/w4u8_greedy193_overlay'
-    prefill_host_us: 50199.034
-    prefill_tokens_per_second: 1274.924935
-    decode_host_us_per_token: 29030.242518
-    decode_tokens_per_second: 34.446836
+    prefill_host_us: 49399.899769695454
+    prefill_tokens_per_second: 1295.5491873135547
+    decode_host_us_per_token: 21777.339786458334
+    decode_tokens_per_second: 45.91931648030151
     decode_cache_length_range: L64_L255
-    correctness_gate: pass_all_formal_hidden_hashes_tokens_and_cache_exact_plus_padding_poison_invariance
+    correctness_gate: pass_all_formal_hidden_cache_selected_codes_tokens_and_output_hashes_byte_exact
     semantic_gate: disabled_by_user_contract
-    physical_gate: pass_exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN_identical_direct_n_projection_work_and_zero_transformer_expansion
+    physical_gate: pass_exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN_zero_transformer_expansion_preserved_weight_bytes_and_HMX_tile_pairs
+    selection_note: user_accepted_fastest_effective_decode_source_after_the_predeclared_two_experiment_local_win_E2E_regression_stop_gate_despite_one_of_ten_EXP0211_pairs_regressing
     promoted_by: user
     promoted_on: '2026-09-05'
     promotion_ref: 'User message 2026-09-05: 同意晋升，请你现在处理干净各种git和约束问题，做好开始新实验的准备。做好loop准备后通知我。'

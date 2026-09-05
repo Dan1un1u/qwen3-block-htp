@@ -1514,3 +1514,18 @@ descriptors establish that transfer size is legal; the experiment tests whether
 the full prefetch improves Down and E2E without reopening the VTCM alias.
 _Avoid_: restoring the cache-overlaid carrier, changing Down HMX batch width,
 or treating fewer DMA descriptors as success without full-token acceleration
+
+**Promoted W4U8 Decode Baseline after Local-Optimum Stop Gate**:
+After EXP-0212 and EXP-0213 each reduced the local QKV interval while increasing
+directly measured end-to-end decode latency, the predeclared two-experiment
+decode stop gate fired.  The user explicitly promoted EXP-0211 as the fastest
+effective decode source: 45.919316 token/s over 192 continuous decode steps,
+with exact outputs, exact 8 MiB VTCM, zero timed intermediate DDR, zero spill,
+one FastRPC invocation per token, one HMX owner and no QNN.  EXP-0211 won nine
+of ten rotated formal pairs and therefore retains its strict local-gate failure
+as evidence; the explicit promotion is a user adoption decision, not a rewrite
+of that measurement.  Tag `baseline-w4u8-token-generation-exp0211` identifies
+the immutable source commit `b111cf7e49ee5a230ed93b54cd5b5b33e8d1ebfa`.
+_Avoid_: calling EXP-0212 or EXP-0213 faster because their QKV label fell,
+erasing the one losing EXP-0211 pair, or changing the selected source without
+new formal full-token evidence and explicit user promotion
