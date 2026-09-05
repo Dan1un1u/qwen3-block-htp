@@ -1990,7 +1990,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
           header->w4u8_decode_direct_n_gate_up_continuous == 0U ||
           header->w4u8_decode_direct_n_o_gate_prefetch == 0U)) ||
         (header->w4u8_decode_direct_n_down_batch_n_tiles != 2U &&
-         header->w4u8_decode_direct_n_down_batch_n_tiles != 4U) ||
+         header->w4u8_decode_direct_n_down_batch_n_tiles != 4U &&
+         header->w4u8_decode_direct_n_down_batch_n_tiles != 8U) ||
         (header->w4u8_decode_direct_n_down_batch_n_tiles != 2U &&
          (header->variant != QBH_BLOCK_W4U8 ||
           header->w4u8_decode_projection_mode !=
@@ -2013,7 +2014,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
               QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
           (header->w4u8_decode_direct_n_mask &
            QBH_BLOCK_W4U8_DIRECT_N_MLP) == 0U ||
-          header->w4u8_decode_direct_n_down_batch_n_tiles != 4U)) ||
+          header->w4u8_decode_direct_n_down_batch_n_tiles != 4U &&
+          header->w4u8_decode_direct_n_down_batch_n_tiles != 8U)) ||
         header->w4u8_decode_direct_n_o_single_dma > 1U ||
         (header->w4u8_decode_direct_n_o_single_dma != 0U &&
          (header->variant != QBH_BLOCK_W4U8 ||

@@ -143,7 +143,7 @@ if [[ "${decode_direct_n_q_batch_tiles}" != 0 &&
     exit 2
 fi
 case "${decode_direct_n_down_batch_tiles}" in
-2|4) ;;
+2|4|8) ;;
 *) printf 'invalid direct-n Down batch tiles: %s\n' "${decode_direct_n_down_batch_tiles}" >&2; exit 2 ;;
 esac
 case "${decode_direct_n_down_single_dma}" in
@@ -152,9 +152,10 @@ case "${decode_direct_n_down_single_dma}" in
 esac
 if [[ "${decode_direct_n_down_single_dma}" == 1 &&
       ("${decode_projection_mode}" != direct_n ||
-       "${decode_direct_n_down_batch_tiles}" != 4 ||
+       ("${decode_direct_n_down_batch_tiles}" != 4 &&
+        "${decode_direct_n_down_batch_tiles}" != 8) ||
        $((decode_direct_n_mask & 4)) -eq 0) ]]; then
-    printf 'Down single-DMA requires direct-n MLP batch4\n' >&2
+    printf 'Down single-DMA requires direct-n MLP batch4 or batch8\n' >&2
     exit 2
 fi
 case "${decode_direct_n_o_single_dma}" in
