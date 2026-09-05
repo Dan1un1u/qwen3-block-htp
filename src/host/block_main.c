@@ -3739,6 +3739,8 @@ static int qbh_run_generation_sequence(
         header->variant;
     const char *audit_root = getenv("QBH_GENERATION_AUDIT_DIR");
     int all_pass = 1;
+    const uint64_t sequence_start = qbh_monotonic_ns();
+    const int quiet_eval = getenv("QBH_EVAL_QUIET") != NULL;
 
     if (generation_steps_env != NULL && generation_steps_env[0] != '\0' &&
         (qbh_parse_u32(generation_steps_env, &generation_steps) != 0 ||
@@ -3784,7 +3786,9 @@ static int qbh_run_generation_sequence(
             char name[128];
             uint32_t *token_ids =
                 (uint32_t *)(shared + token_slot->offset);
-            token_ids[0] = generated[step - 1U];
+            token_ids[0] = header->evaluation_mode == 1U
+                ? ((uint32_t *)(shared + header->generation_expected_token_ids_offset))[step - 1U]
+                : generated[step - 1U];
             memset(token_ids + 1, 0,
                    token_slot->expected_bytes - sizeof(*token_ids));
             header->scan_mode = QBH_BLOCK_SCAN_DECODE;
@@ -3813,6 +3817,10 @@ static int qbh_run_generation_sequence(
             }
         }
 
+        if (header->evaluation_mode == 1U) {
+            header->evaluation_target_token = ((uint32_t *)(shared +
+                header->generation_expected_token_ids_offset))[step];
+        }
         qbh_bind_host_slice_layer(header, 0U);
         header->initial_kv_length = initial_length;
         header->replay_expected_step = state->completed_step_count;
@@ -3829,7 +3837,7 @@ static int qbh_run_generation_sequence(
         step_pass =
             rpc_result == AEE_SUCCESS &&
             header->dsp_status == QBH_BLOCK_STATUS_OK &&
-            (w4u8 != 0U || header->generation_token_match != 0U) &&
+            (w4u8 != 0U || header->evaluation_mode != 0U || header->generation_token_match != 0U) &&
             header->generation_input_token_count_observed ==
                 header->generation_token_count &&
             header->vtcm_requested_bytes == QBH_EXPECTED_FULL_VTCM_BYTES &&
@@ -3905,6 +3913,25 @@ static int qbh_run_generation_sequence(
             }
         }
         all_pass &= step_pass;
+        if (header->evaluation_mode != 0U) {
+            printf("{\"record\":\"eval_step\",\"sample_id\":%u,\"step\":%u,\"teacher_forcing\":%s,"
+                   "\"token_id\":%u,\"target_token\":%u,\"target_code\":%u,\"nll\":%.9g,\"target_logit\":%.9g,"
+                   "\"logsumexp\":%.9g,\"rank\":%u,\"target_ties\":%u,\"max_ties\":%u,\"saturated\":%u,"
+                   "\"nonfinite\":%u,\"vocab_count\":%u,\"host_wall_ns\":%" PRIu64 ","
+                   "\"sequence_elapsed_ns\":%" PRIu64 ",\"pass\":%s,\"vtcm_bytes\":%u,"
+                   "\"intermediate_read\":%u,\"intermediate_write\":%u,\"spill\":%u,\"cache_valid\":%u}\n",
+                   header->evaluation_sample_id, step, header->evaluation_mode == 1U ? "true" : "false",
+                   generated[step], header->evaluation_target_token, header->evaluation_target_code,
+                   header->evaluation_nll, header->evaluation_target_logit, header->evaluation_logsumexp,
+                   header->evaluation_rank, header->evaluation_target_ties, header->evaluation_max_ties,
+                   header->evaluation_saturated, header->evaluation_nonfinite, header->evaluation_vocab_count,
+                   end - start, end - sequence_start, step_pass ? "true" : "false",
+                   header->vtcm_acquired_bytes, header->intermediate_ddr_read_bytes,
+                   header->intermediate_ddr_write_bytes, header->intermediate_spill_fill_count,
+                   state->layers[0].valid_length);
+            fflush(stdout);
+        }
+        if (!quiet_eval) {
         printf(
             "{\"experiment\":%" PRIu32
             ",\"generation_step\":%" PRIu32
@@ -4008,6 +4035,7 @@ static int qbh_run_generation_sequence(
             experiment, "generation_profile", "generation_step",
             generation_variant, step, header, &profile_result,
             (const uint8_t *)&generated[step], sizeof(generated[step]));
+        }
         if (rpc_result != AEE_SUCCESS ||
             header->dsp_status != QBH_BLOCK_STATUS_OK) {
             return -1;
@@ -4030,12 +4058,66 @@ static int qbh_run_generation_sequence(
         printf("%s%" PRIu32, index == 0U ? "" : ",",
                generated[index]);
     }
-    printf("],\"all_steps_pass\":%s}\n",
-           all_pass ? "true" : "false");
+    printf("],\"all_steps_pass\":%s,\"generation_loop_wall_ns\":%" PRIu64 "}\n",
+           all_pass ? "true" : "false", qbh_monotonic_ns() - sequence_start);
     return all_pass &&
                    state->completed_step_count ==
                        generation_steps
                ? 0 : -1;
+}
+
+/* EXP-0218: multiple independent samples reuse one loaded weight arena.
+ * Resource sessions are renewed between samples to reset private VTCM KV tails. */
+static int qbh_run_evaluation_suite(struct qbh_session *session, int shared_fd,
+    uint8_t *shared, uint32_t total_bytes, const char *package_root,
+    struct qbh_block_header *header, const struct qbh_file_slot *token_slot,
+    const struct qbh_file_slot rope_slots[2], const char *path) {
+    FILE *file = fopen(path, "rb");
+    uint32_t prefix[4], row[83];
+    struct qbh_decode_session_state *state = (struct qbh_decode_session_state *)(shared + header->replay_session_offset);
+    const struct qbh_decode_session_state initial = *state;
+    uint64_t suite_start = qbh_monotonic_ns();
+    if (!file) return -1;
+    if (fread(prefix, sizeof(uint32_t), 4U, file) != 4U ||
+        prefix[0] != UINT32_C(0x51424556) || prefix[1] != 1U ||
+        prefix[2] == 0U || prefix[2] > 128U || prefix[3] != 83U) { fclose(file); return -1; }
+    for (uint32_t sample = 0U; sample < prefix[2]; ++sample) {
+        char steps[16];
+        if (fread(row, sizeof(uint32_t), 83U, file) != 83U ||
+            (row[1] != 1U && row[1] != 2U) || row[2] == 0U || row[2] > 16U) { fclose(file); return -1; }
+        for (uint32_t i = 3U; i < 83U; ++i) {
+            if (row[i] >= QBH_QWEN3_VOCAB_SIZE) { fclose(file); return -1; }
+        }
+        if (sample != 0U && (qbh_session_release(session) != AEE_SUCCESS ||
+                             qbh_session_prepare(session) != AEE_SUCCESS)) { fclose(file); return -1; }
+        *state = initial;
+        for (uint32_t i = 0U; i < QBH_QWEN3_TRANSFORMER_LAYERS; ++i) {
+            memset(shared + state->layers[i].k_offset, 0, state->layers[i].k_bytes);
+            memset(shared + state->layers[i].v_offset, 0, state->layers[i].v_bytes);
+        }
+        memcpy(shared + token_slot->offset, row + 3U, 64U * sizeof(uint32_t));
+        memcpy(shared + header->generation_expected_token_ids_offset, row + 67U, 16U * sizeof(uint32_t));
+        if (qbh_read_named_tensor(package_root, "rope_cos_f16.bin", shared + rope_slots[0].offset,
+                                 rope_slots[0].expected_bytes) != 0 ||
+            qbh_read_named_tensor(package_root, "rope_sin_f16.bin", shared + rope_slots[1].offset,
+                                 rope_slots[1].expected_bytes) != 0) { fclose(file); return -1; }
+        memset(&header->evaluation_target_token, 0,
+               offsetof(struct qbh_block_header, evaluation_nll) + sizeof(float) -
+               offsetof(struct qbh_block_header, evaluation_target_token));
+        header->evaluation_mode = row[1];
+        header->evaluation_sample_id = row[0];
+        snprintf(steps, sizeof(steps), "%u", row[2]);
+        setenv("QBH_GENERATION_STEPS", steps, 1);
+        printf("{\"record\":\"eval_sample_begin\",\"sample_id\":%u,\"mode\":%u,\"steps\":%u}\n", row[0], row[1], row[2]);
+        fflush(stdout);
+        if (qbh_run_generation_sequence(session, shared_fd, shared, total_bytes,
+                package_root, header, token_slot, rope_slots) != 0) { fclose(file); return -1; }
+    }
+    if (fgetc(file) != EOF) { fclose(file); return -1; }
+    fclose(file);
+    printf("{\"record\":\"eval_suite_complete\",\"samples\":%u,\"suite_wall_ns\":%" PRIu64 "}\n",
+        prefix[2], qbh_monotonic_ns() - suite_start);
+    return 0;
 }
 
 static int qbh_run_full_stack_hidden_capture(
@@ -4141,6 +4223,7 @@ static int qbh_run_full_stack_hidden_capture(
 }
 
 int main(int argc, char **argv) {
+    const uint64_t main_start = qbh_monotonic_ns();
     struct qbh_session session = {(remote_handle64)-1, 0};
     struct qbh_file_slot input_slot;
     struct qbh_file_slot reference_slot;
@@ -6830,6 +6913,13 @@ int main(int argc, char **argv) {
         goto cleanup;
     }
 
+    if (generation_mode != QBH_BLOCK_GENERATION_DISABLED && getenv("QBH_EVAL_FILE") != NULL) {
+        printf("{\"record\":\"eval_model_ready\",\"model_ready_ns\":%" PRIu64 "}\n", qbh_monotonic_ns() - main_start);
+        fflush(stdout);
+        exit_code = qbh_run_evaluation_suite(&session, shared_fd, shared, (uint32_t)total_bytes,
+            argv[1], header, &generation_token_slot, rope_slots, getenv("QBH_EVAL_FILE")) == 0 ? 0 : 1;
+        goto cleanup;
+    }
     if (generation_mode != QBH_BLOCK_GENERATION_DISABLED) {
         exit_code = qbh_run_generation_sequence(
             &session, shared_fd, shared, (uint32_t)total_bytes,

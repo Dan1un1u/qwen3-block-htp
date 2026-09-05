@@ -1,3 +1,4 @@
+#include "eval_score.h"
 #include <AEEStdErr.h>
 #include <HAP_compute_res.h>
 #include <HAP_mem.h>
@@ -1699,7 +1700,13 @@ static int qbh_generation_request_valid(
                header->generation_expected_token_ids_bytes == 0U &&
                header->generation_expected_token_count == 0U;
     }
-    if (!qbh_generation_enabled(header->generation_mode) ||
+    if (header->evaluation_mode > 2U ||
+        (header->evaluation_mode == 1U &&
+         (header->evaluation_target_token >= QBH_QWEN3_VOCAB_SIZE ||
+          (header->generation_mode != QBH_BLOCK_GENERATION_GREEDY_F16F16 &&
+           header->generation_mode != QBH_BLOCK_GENERATION_GREEDY_W4F16_COARSE_PIPELINE &&
+           header->generation_mode != QBH_BLOCK_GENERATION_GREEDY_W4U8_BATCH8_RESIDENT_BIAS))) ||
+        !qbh_generation_enabled(header->generation_mode) ||
         (header->variant !=
              (qbh_generation_f16f16_enabled(header->generation_mode)
                   ? QBH_BLOCK_F16F16
@@ -5900,8 +5907,24 @@ static int qbh_stage_generation_embedding(
 }
 
 static void qbh_generation_hvx_argmax_group(
+    struct qbh_block_header *header, uint32_t *hist,
     const __fp16 *hmx_output, uint32_t n_tile, uint32_t group_tiles,
     float *best_value, uint32_t *best_token, uint16_t *best_bits) {
+    if (header->evaluation_mode == 1U) {
+        for (uint32_t tile = 0U; tile < group_tiles; ++tile) {
+            size_t offset = qbh_hmx_fp16_matrix_tile_offset(0U, tile, group_tiles);
+            for (uint32_t lane = 0U; lane < QBH_HMX_FP16_COLS; ++lane) {
+                uint16_t code;
+                const __fp16 *value = hmx_output + offset + qbh_hmx_fp16_tile_offset(0U, lane);
+                memcpy(&code, value, sizeof(code));
+                ++hist[code];
+                if ((n_tile + tile) * QBH_HMX_FP16_COLS + lane == header->evaluation_target_token) {
+                    header->evaluation_target_code = code;
+                    ++header->evaluation_target_seen;
+                }
+            }
+        }
+    }
     for (uint32_t tile_pair = 0U; tile_pair < group_tiles;
          tile_pair += 2U) {
         const size_t matrix_tile = qbh_hmx_fp16_matrix_tile_offset(
@@ -6241,7 +6264,7 @@ static int qbh_run_generation_head_w4f16_overlap(
 
             if (previous_output != NULL) {
                 stage_start = HAP_perf_get_qtimer_count();
-                qbh_generation_hvx_argmax_group(
+                qbh_generation_hvx_argmax_group(header, (uint32_t *)buffers->down, 
                     previous_output, previous_n_tile,
                     previous_group_tiles, &best_value,
                     &best_token, &best_bits);
@@ -6266,7 +6289,7 @@ static int qbh_run_generation_head_w4f16_overlap(
         if (previous_output != NULL) {
             const uint64_t argmax_start =
                 HAP_perf_get_qtimer_count();
-            qbh_generation_hvx_argmax_group(
+            qbh_generation_hvx_argmax_group(header, (uint32_t *)buffers->down, 
                 previous_output, previous_n_tile,
                 previous_group_tiles, &best_value,
                 &best_token, &best_bits);
@@ -6375,7 +6398,7 @@ static int qbh_run_generation_head_w4f16_overlap(
                 hmx_output, 1U, k_tiles, group_tiles);
             if (last_hmx_output != NULL) {
                 stage_start = HAP_perf_get_qtimer_count();
-                qbh_generation_hvx_argmax_group(
+                qbh_generation_hvx_argmax_group(header, (uint32_t *)buffers->down, 
                     last_hmx_output, last_n_tile, last_group_tiles,
                     &best_value, &best_token, &best_bits);
                 header->generation_lm_head_argmax_ticks +=
@@ -6402,7 +6425,7 @@ static int qbh_run_generation_head_w4f16_overlap(
 
         if (stream_hmx != 0U) {
             stage_start = HAP_perf_get_qtimer_count();
-            qbh_generation_hvx_argmax_group(
+            qbh_generation_hvx_argmax_group(header, (uint32_t *)buffers->down, 
                 (const __fp16 *)hmx_output, n_tile, group_tiles,
                 &best_value, &best_token, &best_bits);
             header->generation_lm_head_argmax_ticks +=
@@ -6415,7 +6438,7 @@ static int qbh_run_generation_head_w4f16_overlap(
     }
     if (stream_hmx == 0U && last_hmx_output != NULL) {
         const uint64_t argmax_start = HAP_perf_get_qtimer_count();
-        qbh_generation_hvx_argmax_group(
+        qbh_generation_hvx_argmax_group(header, (uint32_t *)buffers->down, 
             last_hmx_output, last_n_tile, last_group_tiles,
             &best_value, &best_token, &best_bits);
         header->generation_lm_head_argmax_ticks +=
@@ -6499,7 +6522,7 @@ static int qbh_run_generation_head_f16f16(
         ++header->hmx_command_count;
         header->hmx_fp16_tile_pair_count += k_tiles * count;
         stage = HAP_perf_get_qtimer_count();
-        qbh_generation_hvx_argmax_group((const __fp16 *)buffers->hmx_output,
+        qbh_generation_hvx_argmax_group(header, (uint32_t *)buffers->down, (const __fp16 *)buffers->hmx_output,
             n_tile, count, &best_value, &best_token, &best_bits);
         header->generation_lm_head_argmax_ticks += HAP_perf_get_qtimer_count() - stage;
     }
@@ -6751,9 +6774,22 @@ static uint8_t qbh_generation_hvx_reduce_max_u8(HVX_Vector value) {
 }
 
 static void qbh_generation_hvx_argmax_u8_group(
+    struct qbh_block_header *header, uint32_t *hist,
     const uint8_t *hmx_output, uint32_t first_n_tile,
     uint32_t group_tiles, uint8_t *scratch,
     uint8_t *best_code, uint32_t *best_token) {
+    if (header->evaluation_mode == 1U) {
+        for (uint32_t tile = 0U; tile < group_tiles; ++tile) {
+            for (uint32_t lane = 0U; lane < QBH_HMX_OUTPUT_CHANNELS; ++lane) {
+                uint8_t code = hmx_output[(size_t)tile * QBH_HMX_OUTPUT_BYTES + lane];
+                ++hist[code];
+                if ((first_n_tile + tile) * QBH_HMX_OUTPUT_CHANNELS + lane == header->evaluation_target_token) {
+                    header->evaluation_target_code = code;
+                    ++header->evaluation_target_seen;
+                }
+            }
+        }
+    }
     for (uint32_t tile = 0U; tile < group_tiles; ++tile) {
         memcpy(scratch + tile * QBH_HMX_OUTPUT_CHANNELS,
                hmx_output + (size_t)tile * QBH_HMX_OUTPUT_BYTES,
@@ -7213,7 +7249,7 @@ static int qbh_run_generation_head_w4u8(
                     return -9;
                 }
                 start = HAP_perf_get_qtimer_count();
-                qbh_generation_hvx_argmax_u8_group(
+                qbh_generation_hvx_argmax_u8_group(header, (uint32_t *)buffers->down, 
                     hmx_output, previous_first_n_tile,
                     previous_group_tiles, argmax_scratch,
                     &best_code, &best_token);
@@ -7255,7 +7291,7 @@ static int qbh_run_generation_head_w4u8(
                 return -10;
             }
             start = HAP_perf_get_qtimer_count();
-            qbh_generation_hvx_argmax_u8_group(
+            qbh_generation_hvx_argmax_u8_group(header, (uint32_t *)buffers->down, 
                 hmx_output, previous_first_n_tile,
                 previous_group_tiles, argmax_scratch,
                 &best_code, &best_token);
@@ -7337,7 +7373,7 @@ static int qbh_run_generation_head_w4u8(
 
         {
             const uint64_t argmax_start = HAP_perf_get_qtimer_count();
-            qbh_generation_hvx_argmax_u8_group(
+            qbh_generation_hvx_argmax_u8_group(header, (uint32_t *)buffers->down, 
                 buffers->hmx_output, first_n_tile, group_tiles,
                 argmax_scratch, &best_code, &best_token);
             header->generation_lm_head_argmax_ticks +=
@@ -21305,6 +21341,15 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
             }
         }
         if (generation_enabled != 0U) {
+            uint64_t evaluation_setup_ticks = 0U;
+            if (header->evaluation_mode == 1U) {
+                uint64_t start = HAP_perf_get_qtimer_count();
+                /* Down is dead after final residual. It is not a head DMA slot,
+                 * scale table, output carrier, or persistent KV tail. */
+                memset(buffers.down, 0, header->variant == QBH_BLOCK_W4U8 ? 1024U : 262144U);
+                header->evaluation_target_seen = 0U;
+                evaluation_setup_ticks = HAP_perf_get_qtimer_count() - start;
+            }
             const int generation_status =
                 qbh_generation_w4u8_enabled(header->generation_mode)
                     ? qbh_run_generation_head_w4u8(
@@ -21325,6 +21370,29 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
                     : QBH_BLOCK_STATUS_LM_HEAD_FAILED;
                 result = AEE_EFAILED;
                 goto stop_worker;
+            }
+            if (header->evaluation_mode == 1U) {
+                uint64_t start = HAP_perf_get_qtimer_count();
+                struct qbh_eval_score score = qbh_eval_reduce((const uint32_t *)buffers.down,
+                    header->variant == QBH_BLOCK_W4U8,
+                    header->generation_lm_head_output_qparam.scale,
+                    header->generation_lm_head_output_qparam.zero_point,
+                    header->evaluation_target_code);
+                header->evaluation_vocab_count = score.count;
+                header->evaluation_rank = score.rank;
+                header->evaluation_target_ties = score.target_ties;
+                header->evaluation_max_ties = score.max_ties;
+                header->evaluation_saturated = score.saturated;
+                header->evaluation_nonfinite = score.nonfinite;
+                header->evaluation_target_logit = score.target_logit;
+                header->evaluation_logsumexp = score.logsumexp;
+                header->evaluation_nll = score.nll;
+                header->generation_lm_head_ticks += evaluation_setup_ticks + HAP_perf_get_qtimer_count() - start;
+                if (score.count != QBH_QWEN3_VOCAB_SIZE || header->evaluation_target_seen != 1U) {
+                    header->dsp_status = QBH_BLOCK_STATUS_LM_HEAD_FAILED;
+                    result = AEE_EFAILED;
+                    goto stop_worker;
+                }
             }
         } else {
             uint64_t output_start = HAP_perf_get_qtimer_count();

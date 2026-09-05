@@ -7,8 +7,8 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(107)
-#define QBH_BLOCK_EXPERIMENT UINT32_C(217)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(108)
+#define QBH_BLOCK_EXPERIMENT UINT32_C(218)
 
 #define QBH_BLOCK_M UINT32_C(64)
 #define QBH_BLOCK_SCAN_MAX_M UINT32_C(128)
@@ -885,6 +885,21 @@ struct qbh_block_header {
     struct qbh_block_qparam generation_final_norm_output_qparam;
     struct qbh_block_qparam generation_lm_head_output_qparam;
     uint32_t generation_boundary_audit_enabled;
+    uint32_t evaluation_mode; /* 0 normal; 1 teacher forcing/scoring; 2 free generation */
+    uint32_t evaluation_sample_id;
+    uint32_t evaluation_target_token;
+    uint32_t evaluation_target_code;
+    uint32_t evaluation_target_seen;
+    uint32_t evaluation_vocab_count;
+    uint32_t evaluation_rank;
+    uint32_t evaluation_target_ties;
+    uint32_t evaluation_max_ties;
+    uint32_t evaluation_saturated;
+    uint32_t evaluation_nonfinite;
+    float evaluation_target_logit;
+    float evaluation_logsumexp;
+    float evaluation_nll;
+
     uint32_t generation_expected_token_ids_offset;
     uint32_t generation_expected_token_ids_bytes;
     uint32_t generation_expected_token_count;
