@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0217
+  active_experiment: null
   next_experiment_number: 218
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,36 +27,28 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0216
-  last_completed_source_commit: 25b2fdfead7546a981ccb457d9106e081bb6cb34
+  last_completed_experiment: EXP-0217
+  last_completed_source_commit: bcea4e3b309a1f0e64422bc9dec189d78a9cc4d2
   provisional_source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
   device_execution_state: ready
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: EXP0217_F16F16_token_boundary_integration
-  active_experiment_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0216/20260905_formal_25b2fdf'
-  active_experiment_gate: final_short_and_formal_pass_with_complete_prefill_cache_audit
-  active_experiment_source_head: 25b2fdfead7546a981ccb457d9106e081bb6cb34
+  active_experiment_stage: none_EXP0217_completed_pending_user_adoption
+  active_experiment_evidence: D:/llm_exp/results/qwen3-block-htp/exp0217/formal
+  active_experiment_gate: F16F16_token_boundary_pass_10_sessions
+  active_experiment_source_head: bcea4e3b309a1f0e64422bc9dec189d78a9cc4d2
   current_handoff: SESSION_HANDOFF_EXP0217.md
   active_recipe_specialization: paused_by_user_20260905
   last_completed_experiment_contract:
-    id: EXP-0216
-    source_branch: codex/exp-0216-w4u8-prefill-direct-w4-qkvo
-    source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
-    source_parent_commit: 0483c290f2a9fe0de34db104b3c9ad177cbb7065
-    execution_scope: full_token_boundary_W4U8_M64_prefill_with_direct_W4_Q_K_V_O_Gate_Up_Down
-    direct_control: EXP0215_full_stack_M64_prefill_with_direct_W4_MLP_and_explicit_HVX_W4_to_S8_QKVO
-    candidate: full_stack_M64_prefill_all_transformer_projections_HMX_direct_read_of_reordered_packed_W4
-    allowed_changes: M64_W4U8_QKVO_direct_W4_selectors_phase_safe_VTCM_carriers_batch_granularity_telemetry_and_experiment_tools
-    forbidden_changes: weight_values_scales_qparams_output_encoding_attention_math_KV_cache_decode_path_LM_head_F16F16_W4F16_QNN
-    correctness_gate: byte_exact_full_prefill_hidden_cache_selected_codes_and_tokens_to_control
-    physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN_direct_packed_W4_HMX_zero_QKVO_and_MLP_prefill_expansion
-    performance_gate: rotated_direct_full_stack_prefill_tokens_per_second_candidate_strictly_higher
-    preservation_gate: decode_attention_math_cache_LM_head_and_all_non_projection_contracts_unchanged
-    stop_conditions: no_autonomous_stop_after_EXP0214_gate_continue_prefill_loop_until_user_interrupts
+    id: EXP-0217
+    execution_scope: F16F16_M64_plus15_complete_generation
+    implementation: FP16_stored_head_shared_W4F16_token_boundary
+    correctness_gate: independent_FP16_selected_tokens_existing_transformer_regression_W4F16_regression
+    speed_gate: report_only
+    w4u8_specialization: paused_by_user
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0216/20260905_formal_25b2fdf'
+  last_completed_evidence: D:/llm_exp/results/qwen3-block-htp/exp0217/formal
   promoted_w4u8_fastest_decode_baseline:
     id: EXP-0211
     source_branch: codex/exp-0211-w4u8-direct-n-down-batch8
@@ -4422,3 +4414,34 @@ current_scope:
     promoted_by: user
     promoted_on: '2026-08-31'
     promotion_ref: 'User message 2026-08-31: 同意你的建议'
+  latest_f16f16_token_generation:
+    source_parent_commit: 25b2fdfead7546a981ccb457d9106e081bb6cb34
+    speed_gate: report_only_no_same_scope_prior_F16F16_control
+    physical_gate: exact_8MiB_VTCM_zero_timed_intermediate_DDR_one_FastRPC_one_HMX_owner_no_QNN
+    correctness_gate: independent_FP16_reference_diagnostics_existing_conditional_transformer_tolerance_stable_selected_tokens_readable_text
+    selected_baseline_changed: false
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0217/formal
+    retained_package: D:/llm_exp/models/qwen3-block-htp/exp0217/f16f16_greedy16
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0217/artifacts/bcea4e3b309a1f0e64422bc9dec189d78a9cc4d2
+    source_head: bcea4e3b309a1f0e64422bc9dec189d78a9cc4d2
+    binary_build_commit: c3c1e708c27528c627245677c9207b1e6479b69b
+    runtime_source_byte_identical: true
+    full_profiling_report: docs/experiments/EXP-0217-PROFILE.md
+    full_profiling_report_sha256: 0d4f0393eb4c228a337ece08a909ce4cd98f6fbfcd95b3802a984885e34e4812
+    summary_sha256: db8edf8838df7f3c8a91350956231e8d5c6fdab281d7daaa2727ac4a15335f56
+    evidence_sha256_ledger_sha256: c1ac7ac45924c34dd3b37181689182366eb959c33fa83e73aa715385e3d37fcf
+    package_manifest_sha256: 0f8a359b559f252cb13329f57d4cabd56f17ca9bfb64bc5643f4d6014795070f
+    formal_sessions: 10
+    selected_token_checks: 160
+    selected_token_mismatches: 0
+    selected_logit_bits_stable: true
+    generated_text: 低比特量化能够减少大模型推理的内存带宽，因为量化后
+    prefill_host_us: 81182.8385
+    prefill_tokens_per_second: 788.3439552313757
+    decode_host_us_15_steps: 1661407.9444999998
+    decode_tokens_per_second: 9.028486982776675
+    correctness_gate_result: pass_independent_160_tokens_stable_logit_bits_W4F16_generation_and_F16_transformer_regressions
+    physical_gate_result: pass_exact_8MiB_zero_timed_intermediate_DDR_one_FastRPC_one_HMX_owner_no_QNN
+    ledger_gate_result: pass_160_invocation_and_4480_layer_ledgers_exact
+    quality_evaluation: not_run_proposal_in_docs/THREE_RECIPE_LIGHTWEIGHT_EVALUATION_PLAN.md
+    w4u8_specialization: paused_by_user

@@ -11,21 +11,26 @@ experiments:
     title: F16F16 complete deterministic token-generation boundary
     parent: EXP-0216
     record: docs/experiments/EXP-0217.md
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     approval_ref: 'User message 2026-09-05: pause W4A8 specialization, complete F16A16
       tokenizer and LM head based on W4A16 for usable text, then propose lightweight
       common speed and quality evaluation'
     source_branches:
     - codex/exp-0217-f16f16-greedy-generation
-    source_commits: []
+    source_commits:
+    - c3c1e708c27528c627245677c9207b1e6479b69b
+    - fe9e47f50304fd74286b696735856bbd8d6d4b18
+    - 4cf5512ac483cc440fa2ff02926b06a0e4f093b5
+    - bcea4e3b309a1f0e64422bc9dec189d78a9cc4d2
     runtime:
       source_branch: codex/exp-0217-f16f16-greedy-generation
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       approved_on: '2026-09-05'
       started_on: '2026-09-05'
+      completed_on: '2026-09-05'
     variants:
     - independent_F16F16_reference
     - standalone_DSP_F16F16_greedy_generation
@@ -37,6 +42,31 @@ experiments:
       physical_gate: exact_8MiB_VTCM_zero_timed_intermediate_DDR_one_FastRPC_one_HMX_owner_no_QNN
       correctness_gate: independent_FP16_reference_diagnostics_existing_conditional_transformer_tolerance_stable_selected_tokens_readable_text
       selected_baseline_changed: false
+      formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0217/formal
+      retained_package: D:/llm_exp/models/qwen3-block-htp/exp0217/f16f16_greedy16
+      retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0217/artifacts/bcea4e3b309a1f0e64422bc9dec189d78a9cc4d2
+      source_head: bcea4e3b309a1f0e64422bc9dec189d78a9cc4d2
+      binary_build_commit: c3c1e708c27528c627245677c9207b1e6479b69b
+      runtime_source_byte_identical: true
+      full_profiling_report: docs/experiments/EXP-0217-PROFILE.md
+      full_profiling_report_sha256: 0d4f0393eb4c228a337ece08a909ce4cd98f6fbfcd95b3802a984885e34e4812
+      summary_sha256: db8edf8838df7f3c8a91350956231e8d5c6fdab281d7daaa2727ac4a15335f56
+      evidence_sha256_ledger_sha256: c1ac7ac45924c34dd3b37181689182366eb959c33fa83e73aa715385e3d37fcf
+      package_manifest_sha256: 0f8a359b559f252cb13329f57d4cabd56f17ca9bfb64bc5643f4d6014795070f
+      formal_sessions: 10
+      selected_token_checks: 160
+      selected_token_mismatches: 0
+      selected_logit_bits_stable: true
+      generated_text: 低比特量化能够减少大模型推理的内存带宽，因为量化后
+      prefill_host_us: 81182.8385
+      prefill_tokens_per_second: 788.3439552313757
+      decode_host_us_15_steps: 1661407.9444999998
+      decode_tokens_per_second: 9.028486982776675
+      correctness_gate_result: pass_independent_160_tokens_stable_logit_bits_W4F16_generation_and_F16_transformer_regressions
+      physical_gate_result: pass_exact_8MiB_zero_timed_intermediate_DDR_one_FastRPC_one_HMX_owner_no_QNN
+      ledger_gate_result: pass_160_invocation_and_4480_layer_ledgers_exact
+      quality_evaluation: not_run_proposal_in_docs/THREE_RECIPE_LIGHTWEIGHT_EVALUATION_PLAN.md
+      w4u8_specialization: paused_by_user
   - id: EXP-0216
     slug: w4u8-prefill-direct-w4-qkvo
     title: Full-stack M64 prefill direct-W4 QKV/O integration

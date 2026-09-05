@@ -1549,3 +1549,6 @@ The user paused further W4U8 specialization on 2026-09-05 and approved EXP-0217 
 
 **Autonomous Gate Recovery**:
 The user authorized repair of the EXP-0217 index indentation defect and changed the interruption policy on 2026-09-05. Attributable formatting, tooling and implementation defects are repaired and revalidated autonomously. A failed preflight blocks dependent execution, not its own repair. Evidence integrity, numerical and physical criteria, experiment ownership and user-only promotion remain intact. Do not request approval of routine repairs merely because a gate reported an error.
+
+**Completed F16F16 Token Boundary**:
+EXP-0217 completes fixed M64 token input, FP16 embedding, unchanged 28-layer F16 transformer, final norm, streamed FP16 LM head and greedy feedback. Ten sessions match 160 independent FP16 reference tokens and produce a stable readable Chinese prefix. Prefill is 788.344 token/s and 15-step continuous decode is 9.028 token/s. Existing F16 replay and W4F16 generation regressions pass. Broader quality is not yet assessed; a lightweight three-recipe speed/quality proposal is retained. W4U8 specialization stays paused. No baseline was automatically promoted.
