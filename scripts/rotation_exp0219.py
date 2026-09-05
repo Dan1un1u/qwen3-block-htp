@@ -70,7 +70,12 @@ def transform_layer(layer, rotate):
 def transform(model, rotate):
     assert model.config.hidden_size == 2048 and model.config.head_dim == 128
     assert model.config.num_attention_heads == 16 and model.config.num_key_value_heads == 8
-    assert not model.config.tie_word_embeddings, 'Tied head needs separate gamma handling'
+    # Qwen3 ties embedding/head in Transformers. The deployment already stores
+    # them independently (FP16 embedding, W4 head); detach before folding the
+    # final gamma so the embedding never receives that head-only factor.
+    if model.lm_head.weight.data_ptr() == model.model.embed_tokens.weight.data_ptr():
+        model.lm_head.weight = torch.nn.Parameter(model.lm_head.weight.detach().clone())
+        model.config.tie_word_embeddings = False
     for layer in model.model.layers:
         transform_layer(layer, rotate)
     # Chunk the two vocabulary-sized matrices to bound temporary memory.
