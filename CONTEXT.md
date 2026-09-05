@@ -1529,3 +1529,17 @@ the immutable source commit `b111cf7e49ee5a230ed93b54cd5b5b33e8d1ebfa`.
 _Avoid_: calling EXP-0212 or EXP-0213 faster because their QKV label fell,
 erasing the one losing EXP-0211 pair, or changing the selected source without
 new formal full-token evidence and explicit user promotion
+
+
+**Completed M64 Direct-W4 QKV/O Integration**:
+EXP-0216 preserves the EXP-0215 MLP path and feeds all 196 transformer
+projections directly from packed W4 during M64 prefill. Ten rotated pairs all
+win: full prefill is 1463.151 -> 1628.645 token/s (+11.311% by marginal
+medians; +11.171% median paired gain). Exact prefill cache bytes and all-layer
+hidden hashes pass after repairing missing Host profiling/audit outputs.
+QKVO and MLP explicit expansion are zero, weight bytes and HMX tile-pair work
+are unchanged, and decode is preserved at 45.942 token/s. The experiment is
+completed and evidence-valid; user adoption remains pending.
+_Avoid_: treating missing counters as zero, calling token hashes hidden-tensor
+hashes, using stale DDR mirrors as authoritative decode VTCM tails, counting
+final model norm twice inside LM head, or automatic baseline promotion.
