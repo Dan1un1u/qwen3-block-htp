@@ -3868,6 +3868,37 @@ static int qbh_run_generation_sequence(
                     QBH_BLOCK_HIDDEN) != 0) {
                 step_pass = 0;
             }
+            /* Prefill owns the complete persistent K/V boundary.  Export it
+             * only in audit mode, after the timed RPC; decode has VTCM-only
+             * mutable tails and must not call its DDR mirror authoritative. */
+            if (step == 0U) {
+                for (uint32_t slice_index = 0U;
+                     slice_index < QBH_VERTICAL_SLICE_LAYER_COUNT;
+                     ++slice_index) {
+                    const struct qbh_decode_layer_state *layer =
+                        &state->layers[
+                            QBH_VERTICAL_SLICE_FIRST_LAYER + slice_index];
+                    const uint32_t offsets[2] = {
+                        layer->k_offset, layer->v_offset};
+                    const uint32_t sizes[2] = {
+                        layer->k_bytes, layer->v_bytes};
+                    for (uint32_t kind = 0U; kind < 2U; ++kind) {
+                        if (sizes[kind] == 0U ||
+                            (uint64_t)offsets[kind] + sizes[kind] >
+                                (uint64_t)total_bytes ||
+                            snprintf(
+                                audit_name, sizeof(audit_name),
+                                "generation_prefill_layer%02" PRIu32
+                                "_%c_cache_u8.bin", layer->layer_index,
+                                kind == 0U ? 'k' : 'v') < 0 ||
+                            qbh_write_named_tensor(
+                                audit_root, audit_name,
+                                shared + offsets[kind], sizes[kind]) != 0) {
+                            step_pass = 0;
+                        }
+                    }
+                }
+            }
         }
         all_pass &= step_pass;
         printf(

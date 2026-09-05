@@ -142,12 +142,27 @@ def validate_audit(root: Path) -> dict[str, bool]:
     }
     for cell, run in runs.items():
         validate_run(run, cell, 4)
+    trees = {cell: base.audit_tree_hashes(root / "audit" / cell)
+             for cell in (CONTROL, CANDIDATE)}
+    expected_files = {
+        f"generation_hidden_step{step:02d}_u8.bin" for step in range(4)}
+    expected_files.update(
+        f"generation_prefill_layer{layer:02d}_{kind}_cache_u8.bin"
+        for layer in range(28) for kind in ("k", "v"))
+    layer_hashes = {
+        cell: [str(profile[f"slice_layer_{layer}"]["output_hash"])
+               for profile in run["profiles"] for layer in range(28)]
+        for cell, run in runs.items()}
     result = {
         "tokens_logit_codes_and_output_hashes_equal":
             signatures(runs[CONTROL]) == signatures(runs[CANDIDATE]),
         "audit_hidden_cache_and_boundary_tensors_equal":
-            base.audit_tree_hashes(root / "audit" / CONTROL) ==
-            base.audit_tree_hashes(root / "audit" / CANDIDATE),
+            trees[CONTROL] == trees[CANDIDATE],
+        "all_prefill_cache_and_hidden_files_present": all(
+            set(tree) == expected_files for tree in trees.values()),
+        "all_layer_hidden_hashes_nonzero_and_equal":
+            layer_hashes[CONTROL] == layer_hashes[CANDIDATE] and
+            all(int(value, 16) != 0 for value in layer_hashes[CONTROL]),
     }
     result["all_pass"] = all(result.values())
     return result
