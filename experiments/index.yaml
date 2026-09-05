@@ -6,37 +6,37 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
-- id: EXP-0219
-  slug: w4f16-r1r2-offline-rotation
-  title: W4F16 full-model offline Hadamard R1/R2 quality validation
-  parent: EXP-0218
-  record: docs/experiments/EXP-0219.md
-  execution_state: running
-  evidence_validity: pending
-  local_gate: pending
-  adoption_status: pending
-  approval_ref: 'User 2026-09-05: introduce offline Hadamard R1/R2 for W4A16 using
-    mllm qwen3-layer5-r1r2-offline-poc; verify rotation effectiveness; freeze both
-    other recipes.'
-  source_branches:
-  - codex/exp-0219-w4f16-r1r2-offline-rotation
-  source_commits:
-  - b2904bbc60b25e6b80f53351655b1c585fd97db2
-  runtime:
-    source_branch: codex/exp-0219-w4f16-r1r2-offline-rotation
-    source_worktree: /home/daniuniu/work/qwen3-block-htp
-    approved_on: '2026-09-05'
-    started_on: '2026-09-05'
-  variants:
-  - A_original_W4F16
-  - B_identity_gamma_fold_W4F16
-  - C_hadamard_R1_R2_W4F16
-  evidence_profile: offline_rotation_frozen_qbh_lite_v1
-  evidence:
-    source_parent_commit: b2904bbc60b25e6b80f53351655b1c585fd97db2
-    reference_commit: 2782f7ad9d1ee5e61f65d418cb89ae7217b5fb06
-    recipe_scope: W4F16_only_F16F16_and_W4U8_frozen
-    selected_baseline_changed: false
+  - id: EXP-0219
+    slug: w4f16-r1r2-offline-rotation
+    title: W4F16 full-model offline Hadamard R1/R2 quality validation
+    parent: EXP-0218
+    record: docs/experiments/EXP-0219.md
+    execution_state: running
+    evidence_validity: pending
+    local_gate: pending
+    adoption_status: pending
+    approval_ref: 'User 2026-09-05: introduce offline Hadamard R1/R2 for W4A16 using
+      mllm qwen3-layer5-r1r2-offline-poc; verify rotation effectiveness; freeze both
+      other recipes.'
+    source_branches:
+    - codex/exp-0219-w4f16-r1r2-offline-rotation
+    source_commits:
+    - b2904bbc60b25e6b80f53351655b1c585fd97db2
+    runtime:
+      source_branch: codex/exp-0219-w4f16-r1r2-offline-rotation
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    variants:
+    - A_original_W4F16
+    - B_identity_gamma_fold_W4F16
+    - C_hadamard_R1_R2_W4F16
+    evidence_profile: offline_rotation_frozen_qbh_lite_v1
+    evidence:
+      source_parent_commit: b2904bbc60b25e6b80f53351655b1c585fd97db2
+      reference_commit: 2782f7ad9d1ee5e61f65d418cb89ae7217b5fb06
+      recipe_scope: W4F16_only_F16F16_and_W4U8_frozen
+      selected_baseline_changed: false
   - id: EXP-0218
     slug: three-recipe-lightweight-evaluation
     title: Unified lightweight device quality and speed evaluation
