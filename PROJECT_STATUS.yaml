@@ -36,7 +36,7 @@ current_scope:
   active_experiment_stage: EXP0225_exact_Cayley_training_complete_actual_GPTQ_exports_running
   active_experiment_evidence: D:/llm_exp/results/qwen3-block-htp/exp0225
   active_experiment_gate: running
-  active_experiment_source_head: 89370973e730aefea4ab0628d59feec3722f9ac7
+  active_experiment_source_head: 0900322f71b8cbc6071a3a34e3f23679464bbfeb
   current_handoff: SESSION_HANDOFF_EXP0225.md
   active_recipe_specialization: null
   last_completed_experiment_contract:
