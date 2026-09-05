@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0223
+  active_experiment: null
   next_experiment_number: 224
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -27,28 +27,470 @@ governance:
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0222
-  last_completed_source_commit: 6c65970b523a80b9a9343f0b246451690332ded5
+  last_completed_experiment: EXP-0223
+  last_completed_source_commit: c9c2491ff70875068f9a043a4305d07892cf5271
   provisional_source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
   device_execution_state: ready
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: EXP0223_channel_clipping_generation
+  active_experiment_stage: EXP0223_completed_transformer_channel_clipping
   active_experiment_evidence: D:/llm_exp/results/qwen3-block-htp/exp0223
-  active_experiment_gate: pending
-  active_experiment_source_head: b396ac62de2d58b29de555432df016878b8982cb
+  active_experiment_gate: pass
+  active_experiment_source_head: c9c2491ff70875068f9a043a4305d07892cf5271
   current_handoff: SESSION_HANDOFF_EXP0223.md
-  active_recipe_specialization: W4F16_transformer_GPTQ_channel_clipping
+  active_recipe_specialization: null
   last_completed_experiment_contract:
-    id: EXP-0222
-    execution_scope: host_only_LM_head_precision_ablation
+    id: EXP-0223
+    execution_scope: transformer_only_per_channel_clipping_GPTQ
     correctness_gate: pass
-    quality_gate: report_only
-    speed_gate: N/A_host_only
+    quality_gate: pass
+    speed_gate: complete_6way_5short_10formal
     other_recipes: frozen
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: D:/llm_exp/results/qwen3-block-htp/exp0222
+  last_completed_evidence: D:/llm_exp/results/qwen3-block-htp/exp0223
+  latest_w4f16_channel_clipping_result:
+    id: EXP-0223
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending
+    source_head: c9c2491ff70875068f9a043a4305d07892cf5271
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0223
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0223/artifacts/c9c2491ff70875068f9a043a4305d07892cf5271
+    quality:
+      absmax_A:
+        nll: 3.8730384038316523
+        ppl: 48.088275934293996
+        tasks_correct: 8
+        tasks_total: 24
+        teacher_top1_agreement: 0.625
+        language_nll:
+          zh: 4.299019061204985
+          en: 3.4470577464583205
+      absmax_B:
+        nll: 4.601480963100742
+        ppl: 99.63175739345074
+        tasks_correct: 0
+        tasks_total: 24
+        teacher_top1_agreement: 0.4609375
+        language_nll:
+          zh: 5.095543813877031
+          en: 4.107418112324453
+      absmax_C:
+        nll: 4.320987664439608
+        ppl: 75.26292611106724
+        tasks_correct: 2
+        tasks_total: 24
+        teacher_top1_agreement: 0.578125
+        language_nll:
+          zh: 4.536909654665039
+          en: 4.105065674214176
+      clipped_A:
+        nll: 3.969015840249172
+        ppl: 52.93241124821612
+        tasks_correct: 4
+        tasks_total: 24
+        teacher_top1_agreement: 0.626953125
+        language_nll:
+          zh: 4.271144844310476
+          en: 3.6668868361878677
+      clipped_B:
+        nll: 3.9118636141259935
+        ppl: 49.992031069998305
+        tasks_correct: 2
+        tasks_total: 24
+        teacher_top1_agreement: 0.6015625
+        language_nll:
+          zh: 4.344360552783393
+          en: 3.4793666754685937
+      clipped_C:
+        nll: 3.9565564098927757
+        ppl: 52.276995091389715
+        tasks_correct: 9
+        tasks_total: 24
+        teacher_top1_agreement: 0.60546875
+        language_nll:
+          zh: 4.256829806008528
+          en: 3.6562830137770232
+    software_diagnostic:
+      A:
+        nll: 3.969574511051178
+        ppl: 52.96199130284732
+        tasks_correct: 3
+        tasks_total: 24
+        teacher_top1_agreement: 0.630859375
+        language_nll:
+          zh: 4.270898096263409
+          en: 3.6682509258389473
+      B:
+        nll: 3.912194263190031
+        ppl: 50.00856362136663
+        tasks_correct: 2
+        tasks_total: 24
+        teacher_top1_agreement: 0.599609375
+        language_nll:
+          zh: 4.345175914466381
+          en: 3.479212611913681
+      C:
+        nll: 3.957964614033699
+        ppl: 52.35066363034929
+        tasks_correct: 9
+        tasks_total: 24
+        teacher_top1_agreement: 0.599609375
+        language_nll:
+          zh: 4.258320279419422
+          en: 3.657608948647976
+    effectiveness:
+      A: false
+      B: true
+      C: true
+    C_incremental_rotation: true
+    profile_candidate: B
+    clipping:
+      A:
+        rows: 573440
+        clipped_rows: 573439
+        mean_ratio: 0.7043742152622767
+        ratio_histogram:
+        - 1
+        - 0
+        - 0
+        - 1
+        - 0
+        - 0
+        - 1
+        - 0
+        - 1
+        - 0
+        - 0
+        - 2
+        - 3
+        - 5
+        - 51
+        - 156
+        - 527
+        - 1435
+        - 3103
+        - 6120
+        - 10465
+        - 15794
+        - 22592
+        - 28241
+        - 33077
+        - 36748
+        - 39516
+        - 40382
+        - 39957
+        - 38440
+        - 34887
+        - 33633
+        - 29559
+        - 26053
+        - 22788
+        - 19566
+        - 16527
+        - 13967
+        - 11431
+        - 9305
+        - 7573
+        - 6265
+        - 4980
+        - 3967
+        - 3172
+        - 2446
+        - 2018
+        - 1632
+        - 1314
+        - 1098
+        - 884
+        - 759
+        - 541
+        - 373
+        - 312
+        - 236
+        - 231
+        - 181
+        - 176
+        - 156
+        - 126
+        - 116
+        - 98
+        - 83
+        - 77
+        - 71
+        - 56
+        - 47
+        - 42
+        - 43
+        - 29
+        - 4
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        probes_lower_than_clipped_RTN: 196
+        mean_clipped_RTN_probe_nrmse: 0.12494205249543061
+        mean_clipped_GPTQ_probe_nrmse: 0.055455133510144854
+      B:
+        rows: 573440
+        clipped_rows: 573401
+        mean_ratio: 0.6708959437779017
+        ratio_histogram:
+        - 39
+        - 20
+        - 15
+        - 27
+        - 48
+        - 94
+        - 96
+        - 137
+        - 141
+        - 96
+        - 64
+        - 43
+        - 51
+        - 54
+        - 77
+        - 122
+        - 316
+        - 732
+        - 1583
+        - 3205
+        - 5556
+        - 8671
+        - 12720
+        - 16683
+        - 20560
+        - 24153
+        - 27274
+        - 29479
+        - 30717
+        - 31415
+        - 31073
+        - 30828
+        - 29580
+        - 28178
+        - 26059
+        - 24242
+        - 22051
+        - 20434
+        - 18427
+        - 16587
+        - 14978
+        - 13360
+        - 11666
+        - 10291
+        - 9242
+        - 8133
+        - 7210
+        - 6653
+        - 6013
+        - 5820
+        - 5632
+        - 5027
+        - 3363
+        - 1785
+        - 752
+        - 318
+        - 244
+        - 182
+        - 176
+        - 156
+        - 126
+        - 116
+        - 98
+        - 83
+        - 77
+        - 71
+        - 56
+        - 47
+        - 42
+        - 43
+        - 29
+        - 4
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        probes_lower_than_clipped_RTN: 196
+        mean_clipped_RTN_probe_nrmse: 0.15027812426543724
+        mean_clipped_GPTQ_probe_nrmse: 0.06876682902344358
+      C:
+        rows: 573440
+        clipped_rows: 573439
+        mean_ratio: 0.719744873046875
+        ratio_histogram:
+        - 1
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 1
+        - 3
+        - 8
+        - 60
+        - 256
+        - 816
+        - 2095
+        - 4507
+        - 8753
+        - 14542
+        - 21121
+        - 28180
+        - 35016
+        - 40002
+        - 43399
+        - 44545
+        - 43787
+        - 42043
+        - 39171
+        - 35846
+        - 31583
+        - 27632
+        - 23302
+        - 19452
+        - 15664
+        - 12870
+        - 10246
+        - 7873
+        - 5781
+        - 4418
+        - 3333
+        - 2189
+        - 1646
+        - 1087
+        - 770
+        - 500
+        - 351
+        - 224
+        - 134
+        - 92
+        - 60
+        - 27
+        - 21
+        - 7
+        - 12
+        - 6
+        - 4
+        - 3
+        - 0
+        - 1
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        probes_lower_than_clipped_RTN: 196
+        mean_clipped_RTN_probe_nrmse: 0.1142975246031087
+        mean_clipped_GPTQ_probe_nrmse: 0.045510624241887836
+    speed:
+      A0:
+        prefill_tokens: 64
+        prefill_host_us: 63069.2965
+        prefill_tokens_per_second: 1014.7568397246987
+        decode_tokens: 15
+        decode_total_host_us: 1386578.6195
+        decode_tokens_per_second: 10.817994586855088
+      A:
+        prefill_tokens: 64
+        prefill_host_us: 63140.2865
+        prefill_tokens_per_second: 1013.615926497261
+        decode_tokens: 15
+        decode_total_host_us: 1387815.6775
+        decode_tokens_per_second: 10.80835174525545
+      B0:
+        prefill_tokens: 64
+        prefill_host_us: 62837.109
+        prefill_tokens_per_second: 1018.5064370163816
+        decode_tokens: 15
+        decode_total_host_us: 1384688.49
+        decode_tokens_per_second: 10.832761381586987
+      B:
+        prefill_tokens: 64
+        prefill_host_us: 63099.3485
+        prefill_tokens_per_second: 1014.2735467387591
+        decode_tokens: 15
+        decode_total_host_us: 1387656.2759999998
+        decode_tokens_per_second: 10.809593311708555
+      C0:
+        prefill_tokens: 64
+        prefill_host_us: 63101.198000000004
+        prefill_tokens_per_second: 1014.2438183186315
+        decode_tokens: 15
+        decode_total_host_us: 1387046.3785
+        decode_tokens_per_second: 10.81434639281602
+      C:
+        prefill_tokens: 64
+        prefill_host_us: 63242.3695
+        prefill_tokens_per_second: 1011.9797930721112
+        decode_tokens: 15
+        decode_total_host_us: 1388028.5915
+        decode_tokens_per_second: 10.806693818741845
+    paired_speed_percent:
+      A:
+        prefill: -0.1627881196463843
+        decode: -0.08914060633274934
+      B:
+        prefill: -0.33245670972336105
+        decode: -0.2061125939613384
+      C:
+        prefill: -0.2367729934462548
+        decode: -0.1645508532618134
+    correctness_gate_result: pass_scale_and_GPTQ_oracles_588_packing_168_forward_FP32_equivalence_independent_speed_tokens
+    determinism_gate_result: pass_all_three_quick_full_repeat
+    physical_gate_result: pass_exact8MiB_zero_timed_intermediate_DDR_spill_one_FastRPC_no_QNN
+    speed_gate_result: complete_6way_warmup_5short_10formal
+    formal_invocation_ledgers: 960
+    formal_layer_ledgers: 26880
+    lm_head_embedding_norms: frozen_byte_identical_EXP0221_per_variant
+    original_checkpoint_only: true
+    lpbq: false
+    other_recipes: frozen
+    selected_baseline_changed: false
+    holdout_scored: false
+    full_profiling_report: docs/experiments/EXP-0223-PROFILE.md
+    full_profiling_report_sha256: 143b089edd6431c0344f3be661d3fd2144491e236039c4414aa9d5d678400743
+    quality_summary_sha256: 4521c8819e97da716fb3d6712503bb08ae9bd94f5ad7eb430ed8efec532ae505
+    speed_summary_sha256: 13d86f6e59a62e06b278ffa6b8773aee6c475cd8fbfde690fb450a1cf9774ede
+    clipping_summary_sha256: 1e7ce4a81895455ad280b4ac97fade8920f7089ed678912531a068e0e7001bcb
+    closure_sha256: 5355f49db8b8d887ca0737a5e0a7468cfab1c4b9f9ec6ae030b5ea4518cf0d41
+    evidence_ledger_sha256: 7299b9e9ac5c462f5b144ba6dc1ddfb574323006d80fffca73f4c18e3c5ad413
+    evidence_files: 456
+    intermediate_files: 672
+    calibration_sha256: e65edb14cb774956df92b27b5dc728b976f7ba00e9435145004180c6538a1669
+    calibration_ids_sha256: a20ed2093b0e7fb075fe47a9532843402e9f69784c8ad0b0467194bee2fa8efd
+    conclusion: 'A: DSP NLL 3.873038 -> 3.969016, tasks 8 -> 4; B: DSP NLL 4.601481 -> 3.911864, tasks
+      0 -> 2; C: DSP NLL 4.320988 -> 3.956556, tasks 2 -> 9'
+    next_action: discuss_results_no_automatic_next_direction
   latest_w4f16_head_ablation_result:
     id: EXP-0222
     execution_state: completed

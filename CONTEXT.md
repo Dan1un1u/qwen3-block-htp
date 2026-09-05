@@ -1580,3 +1580,7 @@ Per-output-channel GPTQ using8192 frozen independent training tokens improves ac
 ## EXP-0222 LM head ablation (completed 2026-09-05)
 
 Host-only frozen GPTQ transformer pairs: A: NLL 3.874188 -> 3.853870, tasks 9 -> 8; B: NLL 4.600959 -> 4.413664, tasks 0 -> 0; C: NLL 4.323169 -> 4.293221, tasks 2 -> 2. Head is the only intervention; all other tensors hash-identical across paired runs. W4 software controls/repeats pass. No DSP/performance measurements, no baseline promotion. Discuss results before another direction; see SESSION_HANDOFF_EXP0222.md.
+
+## EXP-0223 transformer channel clipping (completed 2026-09-05)
+
+A: DSP NLL 3.873038 -> 3.969016, tasks 8 -> 4; B: DSP NLL 4.601481 -> 3.911864, tasks 0 -> 2; C: DSP NLL 4.320988 -> 3.956556, tasks 2 -> 9. Fixed80ratio L2.4 weight range search plus same GPTQ/calibration, with frozen per-variant head/embedding/norms. All correctness/determinism/physical checks and6way5short/10formal complete. Per-variant effectiveness {"A": false, "B": true, "C": true}; clipped C versus clipped A True. No promotion; see SESSION_HANDOFF_EXP0223.md before future work.
