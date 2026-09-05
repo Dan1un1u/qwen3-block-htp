@@ -45,10 +45,10 @@ def export(w,x,f,root,prefix):
         grid='3_fixed_final_GPTQ_output_ranges_signed_minus7_to7',groupsize=-1,act_order=True)
 
 def prepare(v):
-    rotation_checkpoint=OUTPUT/'training'/f'{v}.pt'
+    rotation_checkpoint=OUTPUT/'training_exact'/f'{v}.pt'
     state=torch.load(rotation_checkpoint,map_location='cpu',weights_only=False)
     assert state['plan']==PLAN and state['data_sha256']==ev.digest(RESULT/'learning_data.json')
-    rotations=state['rotations'];assert max(orthogonality(rotations).values())<.003
+    rotations=state['rotations'];assert max(orthogonality(rotations).values())<1e-4
     root=OUTPUT/v;result=RESULT/v;assert not root.exists() and not result.exists()
     assert (RESULT/'algebra_oracle.json').exists() and (RESULT/'output_scale_oracle.json').exists()
     calpath=RESULT.parent/'exp0221/calibration.json';assert ev.digest(calpath)=='e65edb14cb774956df92b27b5dc728b976f7ba00e9435145004180c6538a1669'

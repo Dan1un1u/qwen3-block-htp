@@ -147,16 +147,18 @@ def orthogonality(rotations):
     out={}
     for k,mats in rotations.items():
         if mats.ndim==2:mats=mats[None]
-        out[k]=max(float((m.double().T@m.double()-torch.eye(m.shape[0],device=m.device,dtype=torch.float64)).abs().max()) for m in mats)
+        errors=[m.double().T@m.double()-torch.eye(m.shape[0],device=m.device,dtype=torch.float64) for m in mats]
+        out[k]=max(float(e.abs().max()) for e in errors)
+        out[k+'_frobenius']=max(float(e.norm()) for e in errors)
     return out
 
 def optimizer(params,lr):
-    from spinquant_exp0225.optimizer import SGDG
-    return SGDG(params,lr=lr,stiefel=True)
+    from exact_cayley_exp0225 import ExactCayleySGD
+    return ExactCayleySGD(params,lr=lr)
 
 def save_checkpoint(path,model,opt,step,data_hash):
     path.parent.mkdir(parents=True,exist_ok=True);assert not path.exists()
-    rot=model.rotations();orth=orthogonality(rot);assert max(orth.values())<.003,orth
+    rot=model.rotations();orth=orthogonality(rot);assert max(orth.values())<1e-4,orth
     value=dict(rotations=rot,optimizer=opt.state_dict(),step=step,plan=PLAN,data_sha256=data_hash,
         orthogonality=orth,torch_rng=torch.get_rng_state(),cuda_rng=torch.cuda.get_rng_state_all(),python_rng=random.getstate())
     torch.save(value,path);return orth
@@ -165,14 +167,14 @@ def train(smoke=False,resume=False):
     from experiment_exp0220 import verify_origin
     from prepare_exp0164_generation_package import sha256_file
     assert torch.cuda.is_available(),'CUDA training environment required'
-    assert all((RESULT/n).exists() for n in ['algebra_oracle.json','output_scale_oracle.json','full_model_oracle.json'])
+    assert all((RESULT/n).exists() for n in ['algebra_oracle.json','output_scale_oracle.json','full_model_oracle.json','exact_cayley_oracle.json'])
     torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
     torch.set_num_threads(8);random.seed(SEED);torch.manual_seed(SEED)
     data=json.loads((RESULT/'learning_data.json').read_text());data_hash=sha256_file(RESULT/'learning_data.json')
     assert data['plan']==PLAN
     origin=verify_origin();base=load_model(MODEL,torch.bfloat16);model=LearnedModel(base);del base;gc.collect()
     opt=optimizer([model.r1,*model.r2],PLAN['learning_rate'])
-    mode='smoke' if smoke else 'training';out=OUTPUT/mode
+    mode='smoke_exact' if smoke else 'training_exact';out=OUTPUT/mode
     assert resume==out.exists(), 'Use --resume only for an existing retained run'
     out.mkdir(parents=True,exist_ok=resume);rows=data['train'];gen=np.random.default_rng(SEED)
     en=gen.permutation([i for i,r in enumerate(rows) if r['language']=='en']);zh=gen.permutation([i for i,r in enumerate(rows) if r['language']=='zh'])
