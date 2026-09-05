@@ -88,9 +88,13 @@ def factor(x):
         stats=dict(tokens=x.shape[0],width=x.shape[1],dead_columns=int(dead.sum()),damping=damping,
                    input_gram_sha256=sha(diag.numpy().tobytes()),factor_dtype='float64_then_float32'))
 
-def quantize(w,f,block=128):
+def quantize(w,f,block=128,explicit_scale=None):
     """Rows independent, factor shared. Returns codes in original input order."""
     maximum=w.abs().amax(1);scale=torch.where(maximum>0,maximum/7,torch.ones_like(maximum))
+    if explicit_scale is not None:
+        assert explicit_scale.shape == scale.shape
+        assert torch.isfinite(explicit_scale).all() and (explicit_scale > 0).all()
+        scale = explicit_scale
     work=w[:,f['perm']].clone();work[:,f['dead'][f['perm']]]=0
     qout=torch.empty_like(work,dtype=torch.int8);u=f['upper'];threads=torch.get_num_threads()
     for start in range(0,work.shape[1],block):
