@@ -3914,15 +3914,22 @@ static int qbh_run_generation_sequence(
         }
         all_pass &= step_pass;
         if (header->evaluation_mode != 0U) {
+            char nll[32], target_logit[32], logsumexp[32];
+            snprintf(nll, sizeof(nll), "%.9g", header->evaluation_nll);
+            snprintf(target_logit, sizeof(target_logit), "%.9g", header->evaluation_target_logit);
+            snprintf(logsumexp, sizeof(logsumexp), "%.9g", header->evaluation_logsumexp);
+            if (!isfinite(header->evaluation_nll)) strcpy(nll, "null");
+            if (!isfinite(header->evaluation_target_logit)) strcpy(target_logit, "null");
+            if (!isfinite(header->evaluation_logsumexp)) strcpy(logsumexp, "null");
             printf("{\"record\":\"eval_step\",\"sample_id\":%u,\"step\":%u,\"teacher_forcing\":%s,"
-                   "\"token_id\":%u,\"target_token\":%u,\"target_code\":%u,\"nll\":%.9g,\"target_logit\":%.9g,"
-                   "\"logsumexp\":%.9g,\"rank\":%u,\"target_ties\":%u,\"max_ties\":%u,\"saturated\":%u,"
+                   "\"token_id\":%u,\"target_token\":%u,\"target_code\":%u,\"nll\":%s,\"target_logit\":%s,"
+                   "\"logsumexp\":%s,\"rank\":%u,\"target_ties\":%u,\"max_ties\":%u,\"saturated\":%u,"
                    "\"nonfinite\":%u,\"vocab_count\":%u,\"host_wall_ns\":%" PRIu64 ","
                    "\"sequence_elapsed_ns\":%" PRIu64 ",\"pass\":%s,\"vtcm_bytes\":%u,"
                    "\"intermediate_read\":%u,\"intermediate_write\":%u,\"spill\":%u,\"cache_valid\":%u}\n",
                    header->evaluation_sample_id, step, header->evaluation_mode == 1U ? "true" : "false",
                    generated[step], header->evaluation_target_token, header->evaluation_target_code,
-                   header->evaluation_nll, header->evaluation_target_logit, header->evaluation_logsumexp,
+                   nll, target_logit, logsumexp,
                    header->evaluation_rank, header->evaluation_target_ties, header->evaluation_max_ties,
                    header->evaluation_saturated, header->evaluation_nonfinite, header->evaluation_vocab_count,
                    end - start, end - sequence_start, step_pass ? "true" : "false",
