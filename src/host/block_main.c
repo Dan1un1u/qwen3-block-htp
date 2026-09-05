@@ -4231,6 +4231,11 @@ static int qbh_run_full_stack_hidden_capture(
 
 int main(int argc, char **argv) {
     const uint64_t main_start = qbh_monotonic_ns();
+    uint64_t model_staging_ns = 0U;
+    uint64_t open_map_start = 0U;
+    uint64_t open_map_ns = 0U;
+    uint64_t prepare_start = 0U;
+    uint64_t prepare_ns = 0U;
     struct qbh_session session = {(remote_handle64)-1, 0};
     struct qbh_file_slot input_slot;
     struct qbh_file_slot reference_slot;
@@ -6862,6 +6867,8 @@ int main(int argc, char **argv) {
     if (shared_fd < 0) {
         goto cleanup;
     }
+    model_staging_ns = qbh_monotonic_ns() - main_start;
+    open_map_start = qbh_monotonic_ns();
     open_result = qbh_session_open(&session);
     if (open_result != AEE_SUCCESS) {
         goto cleanup;
@@ -6872,9 +6879,20 @@ int main(int argc, char **argv) {
         goto cleanup;
     }
     mapped = 1;
+    open_map_ns = qbh_monotonic_ns() - open_map_start;
+    prepare_start = qbh_monotonic_ns();
     prepare_result = qbh_session_prepare(&session);
+    prepare_ns = qbh_monotonic_ns() - prepare_start;
     if (prepare_result != AEE_SUCCESS) {
         goto cleanup;
+    }
+    if (generation_mode != QBH_BLOCK_GENERATION_DISABLED) {
+        printf("{\"record\":\"generation_startup\",\"model_staging_ns\":%" PRIu64
+               ",\"session_open_map_ns\":%" PRIu64 ",\"prepare_ns\":%" PRIu64
+               ",\"ready_ns\":%" PRIu64 "}\n",
+               model_staging_ns, open_map_ns, prepare_ns,
+               qbh_monotonic_ns() - main_start);
+        fflush(stdout);
     }
 
     if (header->full_stack_stage_mode ==

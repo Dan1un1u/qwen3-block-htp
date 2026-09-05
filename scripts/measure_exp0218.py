@@ -6,11 +6,12 @@ import json
 from pathlib import Path
 import subprocess
 import time
-from eval_exp0218 import ROOT,parse_device
+from eval_exp0218 import ROOT,MODEL,parse_device
 from summarize_exp0217 import normalized
 
 SOURCE=Path(__file__).resolve().parents[1]
 RECIPES=["f16f16","w4f16","w4u8"]
+TOKENIZER=None
 # Reuse the previously audited additive ledger, not prior measurements.
 tree=ast.parse((SOURCE/"scripts/summarize_exp0217.py").read_text())
 LEDGER=next(ast.literal_eval(n.value) for n in ast.walk(tree) if isinstance(n,ast.Assign)
@@ -52,12 +53,45 @@ def speed_validate(path,recipe):
 def run(recipe,suite,path):
     assert not path.exists(),f"Refusing to overwrite {path}"
     path.parent.mkdir(parents=True,exist_ok=True)
+    frontend={}
+    if not suite:
+        global TOKENIZER
+        if TOKENIZER is None:
+            from transformers import AutoTokenizer
+            t=time.monotonic_ns()
+            TOKENIZER=AutoTokenizer.from_pretrained(MODEL,local_files_only=True)
+            frontend["tokenizer_initial_load_ns"]=time.monotonic_ns()-t
+        reference=json.loads((ROOT.parent/"exp0217/semantic_reference.json").read_text())
+        t=time.monotonic_ns()
+        rendered=TOKENIZER.apply_chat_template([dict(role="user",content=reference["prompt"])],
+            tokenize=False,add_generation_prompt=True,enable_thinking=False)
+        ids=TOKENIZER.encode(rendered,add_special_tokens=False)
+        frontend["tokenize_template_ns"]=time.monotonic_ns()-t
+        assert ids==reference["prompt_token_ids"]
     started=time.monotonic()
     cmd=["bash",str(SOURCE/"scripts/run_exp0218.sh"),recipe]+([suite] if suite else [])
+    selected=[];detokenize_ns=0
     with path.open("w") as f:
-        p=subprocess.run(cmd,stdout=f,stderr=subprocess.STDOUT)
+        p=subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True)
+        for line in p.stdout:
+            f.write(line)
+            if not suite and line.startswith("{"):
+                record=json.loads(line)
+                if "generation_step" in record and record.get("record")!="generation_profile":
+                    selected.append(record["selected_token_id"])
+                    t=time.monotonic_ns()
+                    text=TOKENIZER.decode(selected,skip_special_tokens=False)
+                    detokenize_ns+=time.monotonic_ns()-t
+                    if len(selected)==1:
+                        frontend["launch_to_first_text_s"]=time.monotonic()-started
+                        frontend["first_text"]=text
+        p.wait()
     elapsed=time.monotonic()-started
-    metadata=dict(command=cmd,returncode=p.returncode,elapsed_s=elapsed)
+    if not suite:
+        frontend["incremental_detokenize_ns"]=detokenize_ns
+        frontend["text"]=TOKENIZER.decode(selected,skip_special_tokens=False)
+        frontend["timing_scope"]="Tokenizer and incremental detokenizer on WSL CPU; launch-to-text includes ADB transport and device cold staging. Device startup phases in raw generation_startup."
+    metadata=dict(command=cmd,returncode=p.returncode,elapsed_s=elapsed,frontend=frontend)
     path.with_suffix(".execution.json").write_text(json.dumps(metadata,indent=2)+"\n")
     assert p.returncode==0,(path,p.returncode)
     return metadata

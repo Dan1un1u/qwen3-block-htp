@@ -37,20 +37,23 @@ def dataset():
     assert digest(MODEL/"qwen3-tokenizer.json")==data["tokenizer_sha256"]
     return data
 
-def teacher():
+def teacher(w4_debug=False):
     import torch
     import transformers
-    from run_exp0164_semantic_gate import load_model
+    from run_exp0164_semantic_gate import load_model,quantize_linear_weights_w4
     data=dataset()
-    out=ROOT/"teacher_bf16.json"
+    out=ROOT/("software_w4f16_diagnostic.json" if w4_debug else "teacher_bf16.json")
     assert not out.exists(),"Refusing to replace frozen teacher"
     torch.set_num_threads(16)
     tok=transformers.AutoTokenizer.from_pretrained(MODEL,local_files_only=True)
-    start=time.monotonic();model=load_model(MODEL,torch.bfloat16)
+    start=time.monotonic();model=load_model(MODEL,torch.float16 if w4_debug else torch.bfloat16)
+    quantization=quantize_linear_weights_w4(model) if w4_debug else None
     record=dict(dataset_sha256=digest(ROOT/"dataset_v1.json"),
         checkpoint_index_sha256=digest(MODEL/"model.safetensors.index.json"),
         tokenizer_sha256=data["tokenizer_sha256"],torch_version=torch.__version__,
-        transformers_version=transformers.__version__,load_s=time.monotonic()-start,samples=[])
+        transformers_version=transformers.__version__,load_s=time.monotonic()-start,
+        role="software math diagnostic, not device recipe score" if w4_debug else "original BF16 teacher",
+        quantization=quantization,samples=[])
     for s in data["samples"]:
         if s["split"]!="full": continue
         started=time.monotonic()
@@ -111,10 +114,11 @@ def parse_device(path,expected_name):
         suite_wall_ns=complete[0]["suite_wall_ns"],samples=result)
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument("command",choices=["teacher","validate"])
+    p=argparse.ArgumentParser();p.add_argument("command",choices=["teacher","software-w4-diagnostic","validate"])
     p.add_argument("--raw",type=Path);p.add_argument("--suite",default="full")
     a=p.parse_args()
     if a.command=="teacher":teacher()
+    elif a.command=="software-w4-diagnostic":teacher(True)
     else:
         result=parse_device(a.raw,a.suite)
         a.raw.with_suffix(".validated.json").write_text(json.dumps(result,indent=2)+"\n")
