@@ -6,6 +6,40 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0215
+    slug: w4u8-prefill-direct-w4-mlp
+    title: Full-stack M64 prefill direct-W4 MLP integration
+    parent: EXP-0214
+    variants:
+      - EXP0211_full_stack_M64_expanded_S8_MLP_control
+      - M64_direct_packed_W4_Gate_Up_Down_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: paired-full-token-boundary-W4U8-prefill-direct-W4-MLP
+    source_branches:
+      - codex/exp-0215-w4u8-prefill-direct-w4-mlp
+    source_commits: []
+    record: docs/experiments/EXP-0215.md
+    approval_ref: 'User message 2026-09-05: if the direct-W4 gate accelerates, continue the prefill optimization loop until manually stopped'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0215-w4u8-prefill-direct-w4-mlp
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    evidence:
+      source_parent_experiment: EXP-0214
+      source_parent_commit: 70dd554e507ab4705fb64d39f2708d8082e867ab
+      enabling_gate: M64_real_projection_direct_W4_host_speedup_1p198x_to_1p702x
+      direct_control: EXP0211_complete_M64_prefill_with_explicit_HVX_W4_to_S8_Gate_Up_Down
+      candidate: same_complete_prefill_with_HMX_direct_W4_for_Gate_Up_Down
+      optimization_scope: W4U8_M64_Gate_Up_Down_direct_W4_selectors_phase_safe_VTCM_carriers_and_telemetry
+      forbidden_changes: weight_values_scales_qparams_output_encoding_attention_math_KV_cache_decode_LM_head_F16F16_W4F16_QNN
+      correctness_gate: byte_exact_complete_prefill_hidden_cache_selected_codes_and_tokens
+      physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_MLP_prefill_expansion
+      performance_gate: paired_direct_complete_prefill_tokens_per_second_strictly_higher
+      selected_baseline_changed: false
   - id: EXP-0214
     slug: w4u8-prefill-direct-w4-hmx-gate
     title: M64 prefill direct-W4 HMX projection gate
@@ -13,14 +47,16 @@ experiments:
     variants:
       - EXP0211_M64_expanded_S8_projection_control
       - M64_direct_packed_W4_HMX_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: bounded-real-shape-M64-direct-W4-projection-gate
     source_branches:
       - codex/exp-0214-w4u8-prefill-direct-w4-hmx-gate
-    source_commits: []
+    source_commits:
+      - 50db25ef0609bcd91e880fe1adde6c404d1865cd
+      - 70dd554e507ab4705fb64d39f2708d8082e867ab
     record: docs/experiments/EXP-0214.md
     approval_ref: 'User message 2026-09-05: after decode stop gate switch to endless prefill loop and eliminate explicit W4-to-S8 expansion with HMX direct W4'
     runtime:
@@ -28,6 +64,7 @@ experiments:
       source_branch: codex/exp-0214-w4u8-prefill-direct-w4-hmx-gate
       approved_on: '2026-09-05'
       started_on: '2026-09-05'
+      completed_on: '2026-09-05'
     evidence:
       source_parent_experiment: EXP-0211
       source_parent_commit: b111cf7e49ee5a230ed93b54cd5b5b33e8d1ebfa
@@ -41,6 +78,29 @@ experiments:
       performance_gate: rotated_true_wall_candidate_strictly_faster_than_control
       stop_condition: if_direct_W4_does_not_accelerate_stop_and_discuss_with_user_otherwise_expand_to_full_prefill_and_continue_loop
       selected_baseline_changed: false
+      measured_source_commit: 50db25ef0609bcd91e880fe1adde6c404d1865cd
+      reporting_source_commit: 70dd554e507ab4705fb64d39f2708d8082e867ab
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0214/20260905_formal_50db25e'
+      gate_up_repeat1_control_host_ms: 1.8442705
+      gate_up_repeat1_direct_host_ms: 1.540052
+      gate_up_repeat1_speedup: 1.1975378104115966
+      gate_up_repeat10_control_host_ms: 8.899297
+      gate_up_repeat10_direct_host_ms: 6.3946615
+      gate_up_repeat10_speedup: 1.3916760097465675
+      down_repeat1_control_host_ms: 0.8992185
+      down_repeat1_direct_host_ms: 0.686016
+      down_repeat1_speedup: 1.3107835677301987
+      down_repeat10_control_host_ms: 4.0787755
+      down_repeat10_direct_host_ms: 2.3964325
+      down_repeat10_speedup: 1.7020197731419515
+      direct_W4_expansion_calls: 0
+      complete_output_FNV_equal: true
+      exact_vtcm_bytes: 8388608
+      intermediate_DDR_bytes: 0
+      summary_sha256: 3158d3651226628ffb52f20a9d390411aed0dd24d52e90d42d1a6b21154f3f10
+      full_profiling_report: 'D:/llm_exp/results/qwen3-block-htp/exp0214/20260905_formal_50db25e/report.md'
+      full_profiling_report_sha256: 5ed8e31be3bcd527bbc5574801f33aa7015ad684f3eb39738b101f9a771a973d
+      static_gate_sha256: 9df9eb8987b7988e05df3e25256e7429e25218fe3011dfb97f7d5ec80b8dc9fd
   - id: EXP-0213
     slug: w4u8-direct-n-deferred-next-q-prefetch
     title: Deferred completion of cross-layer Q32 prefetch

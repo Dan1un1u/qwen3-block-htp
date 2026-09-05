@@ -1397,6 +1397,21 @@ _Avoid_: retrying arbitrary two-MiB phase overlays, enlarging the VTCM plan,
 altering prefill or argmax order, using incomplete counters as performance, or
 claiming a win from fewer intended commands
 
+**M64 HMX Direct-W4 Projection Gate**:
+EXP-0214 proved that the decode-discovered HMX `weight.n` packed-W4 contract is
+also beneficial for real M64 prefill projection shapes.  Against the optimized
+explicit-HVX-expand control, Gate/Up is 1.198x faster at repeat1 and 1.392x at
+repeat10; Down is 1.311x and 1.702x faster.  Candidate expansion is exactly
+zero, every complete M64 output FNV matches the control, VTCM remains exactly
+8 MiB and no intermediate DDR or fallback appears.  The stale M64 software
+postscale reference mismatch remains visible as a diagnostic and is identical
+between cells; it must not be confused with a candidate/control mismatch.
+EXP-0215 now integrates direct W4 into full-stack M64 Gate/Up/Down and ranks by
+actual prefill tokens/s.
+_Avoid_: treating the projection speedup as full-stack throughput, silently
+regenerating the old reference, changing qparams, applying M1 batch settings to
+M64, or calling EXP-0214 a Selected Baseline without user promotion
+
 **Continuous Direct-N Gate-to-Up Projection Ring**:
 EXP-0198 flattened the two independent three-group batch-thirty-two Gate and
 Up calls into one six-group ring.  It preserved all arithmetic, commands,

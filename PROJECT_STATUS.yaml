@@ -19,17 +19,17 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0214
-  next_experiment_number: 215
+  active_experiment: EXP-0215
+  next_experiment_number: 216
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0213
-  last_completed_source_commit: 14d1ac1dba33749a58d49324a0ad585b4becd831
-  provisional_source_parent: evidence_valid_EXP0211_Down8_fastest_pending_promotion_candidate
+  last_completed_experiment: EXP-0214
+  last_completed_source_commit: 70dd554e507ab4705fb64d39f2708d8082e867ab
+  provisional_source_parent: evidence_valid_EXP0214_M64_direct_W4_projection_gate
   device_execution_state: ready
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
@@ -38,20 +38,20 @@ current_scope:
   active_experiment_gate: not_run
   active_recipe_specialization: W4U8_M64_prefill_direct_packed_W4_HMX
   active_experiment_contract:
-    id: EXP-0214
-    source_branch: codex/exp-0214-w4u8-prefill-direct-w4-hmx-gate
-    source_parent: evidence_valid_EXP0211_Down8_fastest_pending_promotion_candidate
-    source_parent_commit: b111cf7e49ee5a230ed93b54cd5b5b33e8d1ebfa
-    execution_scope: bounded_real_middle_layer_M64_W4U8_projection_gate_then_full_prefill_if_pass
-    direct_control: EXP0211_M64_explicit_HVX_W4_to_S8_then_U8xS8_HMX
-    candidate: M64_HMX_direct_read_of_reordered_packed_W4
-    allowed_changes: M64_target_projection_direct_W4_HMX_carrier_selector_telemetry_and_experiment_tools
-    forbidden_changes: weights_values_scales_qparams_output_encoding_activation_rows_shape_other_modules_KV_cache_decode_LM_head_F16F16_W4F16_QNN
-    correctness_gate: byte_exact_target_projection_output_to_control
-    physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_HMX_owner_no_QNN_direct_packed_W4_HMX_zero_target_expansion
-    performance_gate: rotated_true_projection_wall_candidate_strictly_faster
-    preservation_gate: all_non_target_math_and_physical_contracts_unchanged
-    stop_conditions: if_direct_W4_does_not_accelerate_stop_and_discuss_otherwise_continue_prefill_loop_until_user_interrupts
+    id: EXP-0215
+    source_branch: codex/exp-0215-w4u8-prefill-direct-w4-mlp
+    source_parent: evidence_valid_EXP0214_M64_direct_W4_projection_gate
+    source_parent_commit: 70dd554e507ab4705fb64d39f2708d8082e867ab
+    execution_scope: full_token_boundary_W4U8_M64_prefill_with_direct_W4_Gate_Up_Down
+    direct_control: EXP0211_full_stack_M64_prefill_with_explicit_HVX_W4_to_S8_MLP
+    candidate: full_stack_M64_prefill_Gate_Up_Down_HMX_direct_read_of_reordered_packed_W4
+    allowed_changes: M64_W4U8_MLP_direct_W4_selectors_phase_safe_VTCM_carriers_telemetry_and_experiment_tools
+    forbidden_changes: weight_values_scales_qparams_output_encoding_attention_math_KV_cache_decode_path_LM_head_F16F16_W4F16_QNN
+    correctness_gate: byte_exact_full_prefill_hidden_cache_selected_codes_and_tokens_to_control
+    physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN_direct_packed_W4_HMX_zero_MLP_prefill_expansion
+    performance_gate: rotated_direct_full_stack_prefill_tokens_per_second_candidate_strictly_higher
+    preservation_gate: decode_and_all_non_MLP_prefill_math_and_physical_contracts_unchanged
+    stop_conditions: no_autonomous_stop_after_EXP0214_gate_continue_prefill_loop_until_user_interrupts
   final_profiling_summary_standard: direct_full_stack_prefill_and_decode_tokens_per_second_plus_exact_Host_wall
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
   last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0213/20260905_short_gate_14d1ac1'
@@ -65,10 +65,32 @@ current_scope:
     promotion_authority: user_only
     selected_baseline_changed: false
   latest_w4u8_prefill_direct_w4_experiment:
-    id: EXP-0214
+    id: EXP-0215
     execution_state: running
+    source_branch: codex/exp-0215-w4u8-prefill-direct-w4-mlp
+    source_parent_commit: 70dd554e507ab4705fb64d39f2708d8082e867ab
+    selected_baseline_changed: false
+  latest_w4u8_prefill_direct_w4_projection_gate:
+    id: EXP-0214
+    execution_state: completed
     source_branch: codex/exp-0214-w4u8-prefill-direct-w4-hmx-gate
-    source_parent_commit: b111cf7e49ee5a230ed93b54cd5b5b33e8d1ebfa
+    measured_source_commit: 50db25ef0609bcd91e880fe1adde6c404d1865cd
+    reporting_source_commit: 70dd554e507ab4705fb64d39f2708d8082e867ab
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0214/20260905_formal_50db25e'
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending
+    gate_up_repeat1_speedup: 1.1975378104115966
+    gate_up_repeat10_speedup: 1.3916760097465675
+    down_repeat1_speedup: 1.3107835677301987
+    down_repeat10_speedup: 1.7020197731419515
+    weight_expansion_eliminated: true
+    complete_output_FNV_equal: true
+    exact_vtcm_bytes: 8388608
+    intermediate_DDR_bytes: 0
+    summary_sha256: 3158d3651226628ffb52f20a9d390411aed0dd24d52e90d42d1a6b21154f3f10
+    full_profiling_report_sha256: 5ed8e31be3bcd527bbc5574801f33aa7015ad684f3eb39738b101f9a771a973d
+    static_gate_sha256: 9df9eb8987b7988e05df3e25256e7429e25218fe3011dfb97f7d5ec80b8dc9fd
     selected_baseline_changed: false
   latest_w4u8_deferred_next_q_prefetch_experiment:
     id: EXP-0213
