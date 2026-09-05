@@ -114,9 +114,10 @@ class LearnedModel(nn.Module):
                 target=target*((targets>=start)&(targets<end))
                 return torch.logsumexp(z,1),target
             lse,val=checkpoint(part,h,use_reentrant=False) if self.recompute and torch.is_grad_enabled() else part(h)
+            lse=lse.double()  # Accumulate 75 vocabulary partitions without FP32 merge drift.
             total_lse=lse if total_lse is None else torch.logaddexp(total_lse,lse)
             target_logits=target_logits+val
-        return (total_lse-target_logits).mean()
+        return (total_lse-target_logits.double()).mean().float()
     def rotations(self):return {'R1':self.r1.detach().cpu(),'R2':torch.stack([r.detach().cpu() for r in self.r2])}
     def set_quantized(self,enabled):
         self.quantized=enabled

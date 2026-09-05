@@ -29,7 +29,7 @@ def main():
         expected=F.cross_entropy(full_z.reshape(-1,full_z.shape[-1]),ids[:,1:].reshape(-1))
         actual=learned.loss(ids)
         print('CE_DIAGNOSTIC',float(expected),float(actual),float(expected-actual),flush=True)
-        write_json(RESULT/'chunked_ce_diagnostic.json',dict(expected=float(expected),actual=float(actual),difference=float(expected-actual),invariance=invariance,agreement=agreement))
+        write_json(RESULT/'chunked_ce_diagnostic_fp64_merge.json',dict(expected=float(expected),actual=float(actual),difference=float(expected-actual),invariance=invariance,agreement=agreement))
         assert abs(float(expected-actual))<1e-5
     write_json(RESULT/'full_model_oracle.json',dict(fp32_original_vs_folded=invariance,FP16_dynamic_vs_folded=agreement,chunked_CE=float(actual),full_CE=float(expected),data_role='training_text_only'))
     print('FULL_MODEL_ORACLE_PASS',invariance,agreement,flush=True)
