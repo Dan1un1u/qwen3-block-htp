@@ -27,7 +27,10 @@ def main():
         learned.set_quantized(True)
         full_h=learned.hidden(ids[:,:-1]);full_z=torch.cat([learned.head_chunk(full_h,i,min(i+2048,len(learned.head.weight))) for i in range(0,len(learned.head.weight),2048)],-1)
         expected=F.cross_entropy(full_z.reshape(-1,full_z.shape[-1]),ids[:,1:].reshape(-1))
-        actual=learned.loss(ids);assert abs(float(expected-actual))<1e-5
+        actual=learned.loss(ids)
+        print('CE_DIAGNOSTIC',float(expected),float(actual),float(expected-actual),flush=True)
+        write_json(RESULT/'chunked_ce_diagnostic.json',dict(expected=float(expected),actual=float(actual),difference=float(expected-actual),invariance=invariance,agreement=agreement))
+        assert abs(float(expected-actual))<1e-5
     write_json(RESULT/'full_model_oracle.json',dict(fp32_original_vs_folded=invariance,FP16_dynamic_vs_folded=agreement,chunked_CE=float(actual),full_CE=float(expected),data_role='training_text_only'))
     print('FULL_MODEL_ORACLE_PASS',invariance,agreement,flush=True)
 if __name__=='__main__':main()
