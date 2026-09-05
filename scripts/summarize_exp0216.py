@@ -78,6 +78,16 @@ def validate_run(run: dict[str, object], cell: str, steps: int) -> None:
     for index, profile in enumerate(profiles):
         assert isinstance(profile, dict)
         context = f"{run['path']} step {index}"
+        required_fields = set(PHYSICAL_FIELDS)
+        required_fields.update(field for _, field in OVERLAP_FIELDS)
+        required_fields.update(field for _, fields in base.MODULES
+                               for field in fields)
+        missing_fields = sorted(required_fields.difference(profile))
+        if missing_fields:
+            raise ValueError(
+                f"{context}: required profiling fields missing: "
+                + ", ".join(missing_fields)
+                + "; recollect with the complete generation_profile emitter")
         for field, expected in (
             ("w4u8_decode_direct_n_gate_up_batch_n_tiles", 32),
             ("w4u8_decode_direct_n_gate_up_continuous", 1),
