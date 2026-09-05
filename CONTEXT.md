@@ -1598,3 +1598,7 @@ Interpretation: new A is better than new C in both DSP NLL and strict tasks; no 
 ## EXP-0225 learned R1/R2 (approved 2026-09-06)
 
 User approved implementing SpinQuant Cayley SGD learned offline R1/R2 for W4F16. See PC045 and docs/experiments/EXP-0225.md. Only rotation matrices train; calibration8192 and other recipes frozen. Independent bilingual training/validation, final qbh-lite never selects checkpoints. No promotion.
+
+## EXP-0225 - bounded learned offline rotation completed
+
+SpinQuant-style learned global R1/per-layer R2 for W4F16 was implemented with frozen original weights and a100step bilingual protocol. Official approximate Cayley drift was repaired with an FP64 exact solve of the same update, preserving failures and unchanged full-model thresholds. Actual-export validation selected step100 without qbh/holdout leakage. Learning improves initialization validation NLL3.355730 to3.266698 but not unrotated EXP0224 A3.204854. Final DSP PPL50.224494 versus A38.873624, tasks20 versus19 of24: valid experiment, failed joint effectiveness gate. English conditional likelihood accounts for most regression. Runtime unchanged;5short/10paired formal complete, no meaningful speed gain. Other recipes frozen, no baseline promotion or automatic next direction. Full results and recovery details are authoritative under docs/experiments/EXP-0225*.md.

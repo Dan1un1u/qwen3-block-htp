@@ -19,36 +19,163 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0225
+  active_experiment: null
   next_experiment_number: 226
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
+  latest_w4f16_learned_rotation_result:
+    id: EXP-0225
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: pending
+    source_head: 0900322f71b8cbc6071a3a34e3f23679464bbfeb
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0225
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0225/artifacts/0900322f71b8cbc6071a3a34e3f23679464bbfeb
+    selected_checkpoint: step100
+    validation:
+      control_A:
+        nll: 3.2048538800660946
+        ppl: 24.65189761962084
+        language_nll:
+          en: 3.2361865780999466
+          zh: 3.1735211820322418
+      step000:
+        nll: 3.355729741946493
+        ppl: 28.666515718748805
+        language_nll:
+          en: 3.4410850223714977
+          zh: 3.2703744615214885
+      step050:
+        nll: 3.2973322616688785
+        ppl: 27.040405886807147
+        language_nll:
+          en: 3.301970086193225
+          zh: 3.2926944371445326
+      step100:
+        nll: 3.2666980737725555
+        ppl: 26.224604516612406
+        language_nll:
+          en: 3.2725920347674573
+          zh: 3.2608041127776533
+    quality:
+      control_A:
+        nll: 3.6603159678909947
+        ppl: 38.87362374795991
+        tasks_correct: 19
+        tasks_total: 24
+        teacher_top1_agreement: 0.66796875
+        language_nll:
+          zh: 3.993657737607181
+          en: 3.3269741981748084
+      selected_step100:
+        nll: 3.916502829899378
+        ppl: 50.22449369429062
+        tasks_correct: 20
+        tasks_total: 24
+        teacher_top1_agreement: 0.66015625
+        language_nll:
+          zh: 3.999019690086328
+          en: 3.833985969712428
+    software_diagnostic:
+      step100:
+        nll: 3.9172055199742317
+        ppl: 50.25979835018709
+        tasks_correct: 20
+        tasks_total: 24
+        teacher_top1_agreement: 0.66015625
+        language_nll:
+          zh: 3.9994031339883804
+          en: 3.835007905960083
+    effectiveness: false
+    interpretation: learned_rotation_improves_initialization_but_not_unrotated_A_PPL_29.1994pct_worse_tasks19_to20
+    speed:
+      A0:
+        prefill_tokens: 64
+        prefill_host_us: 63154.818
+        prefill_tokens_per_second: 1013.382700271577
+        decode_tokens: 15
+        decode_total_host_us: 1391436.6115
+        decode_tokens_per_second: 10.78022518311464
+      step100:
+        prefill_tokens: 64
+        prefill_host_us: 63152.577999999994
+        prefill_tokens_per_second: 1013.4186446038673
+        decode_tokens: 15
+        decode_total_host_us: 1395269.191
+        decode_tokens_per_second: 10.750613642697425
+    paired_speed_percent:
+      step100:
+        prefill: -0.05822461906492826
+        decode: -0.17204118314755323
+    correctness_gate_result: pass_exact_Cayley_and_full_model_invariance_STE_output_scale_GPTQ_packing_168_forward_checks_591_projection_roundtrips
+    determinism_gate_result: pass_quick_full_repeat_zero_overlap_mismatch
+    physical_gate_result: pass_exact8MiB_zero_timed_intermediate_DDR_spill_one_FastRPC_no_QNN
+    speed_gate_result: complete_warmup_5short_10two_way_formal
+    formal_invocation_ledgers: 320
+    formal_layer_ledgers: 8960
+    training_steps: 100
+    training_sequence_length: 128
+    training_samples: 800
+    validation_samples: 32
+    training_final_orthogonality:
+      R1: 6.731804658155482e-08
+      R1_frobenius: 1.5637048698883413e-05
+      R2: 1.789846810762441e-07
+      R2_frobenius: 3.969887103995807e-06
+    training_data_sha256: bcb67126349e8d086f29619807e9ab7ebba06253792b7fce4e5468f9d39e8280
+    calibration_sha256: e65edb14cb774956df92b27b5dc728b976f7ba00e9435145004180c6538a1669
+    dataset_sha256: 745331b85f7ad6c3711dc7eadb30df2efe632da8b50d9c4f3a8e2bf5e2cfe8de
+    holdout_scored: false
+    original_checkpoint_only: true
+    lpbq: false
+    other_recipes: frozen
+    runtime_unchanged: true
+    selected_baseline_changed: false
+    full_profiling_report: docs/experiments/EXP-0225-PROFILE.md
+    full_profiling_report_sha256: 9d127f161ecbca284d169f24a5b2677fa3be0a51666b13204a950b417dd7e5c0
+    results_report: docs/experiments/EXP-0225-RESULTS.md
+    results_report_sha256: 5efa8365d14a42df4d802cfbe36e2b08ec2f88cdf4f7b93eb0412592b66d5e4d
+    quality_summary_sha256: 8cc8e996942ec28f92a974db1933f5ed97df55a6f7bcce3f38cfaf5dd7edc96e
+    speed_summary_sha256: 4c49aa392dbf80e43f13ba60d1940a3c61dfd6744c6addd8d3c5d59c197d6d1f
+    selection_sha256: 2e700d645dbf2fe3657874d62321d9e07994c20486547ccefdb3b04b2de34dfa
+    closure_sha256: ad8e3d497d1c4da20680bb6c5fb2b825001bc90f243bf61a016ecc302861eaf7
+    evidence_ledger_sha256: 1d73989c7a6f4d5d8b91db553db32ee22fa023011f125c4ebe29718234ed95d8
+    evidence_files: 334
+    intermediate_files: 694
+    packages:
+      step000:
+        manifest_sha256: de788d23a754e1de635268fff1e0caebd21e61344b838cd242b2a3b74139c77b
+        rotation_checkpoint_sha256: 31b6295d6c904d93394e34aee69aab2a68e197632c61ca304fa6c2276c5e34b4
+      step050:
+        manifest_sha256: 86cfff69096b8f340742320548127b5c543dfda5a78fd7a14076474a8dcf19a2
+        rotation_checkpoint_sha256: 79664303307950a13bb46ee1f1ab8ec3d0c0af080433cf6045409dbbc7b357fa
+      step100:
+        manifest_sha256: 44ac941297f1aab82ec4daff2ca8191379def73f6796a1c9c5d7d700820c5673
+        rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
+    next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0224
-  last_completed_source_commit: cf8a239a636bb33dd9bf49c7aa03760df9af6c81
+  last_completed_experiment: EXP-0225
+  last_completed_source_commit: 0900322f71b8cbc6071a3a34e3f23679464bbfeb
   provisional_source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
   device_execution_state: ready
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: EXP0225_step100_selected_final_quality_running
-  active_experiment_evidence: D:/llm_exp/results/qwen3-block-htp/exp0225
-  active_experiment_gate: running
-  active_experiment_source_head: 0900322f71b8cbc6071a3a34e3f23679464bbfeb
   current_handoff: SESSION_HANDOFF_EXP0225.md
   active_recipe_specialization: null
   last_completed_experiment_contract:
-    id: EXP-0224
-    execution_scope: transformer_only_post_GPTQ_output_scale
+    id: EXP-0225
+    execution_scope: learned_offline_R1R2_W4F16_only
     correctness_gate: pass
-    quality_gate: pass
-    speed_gate: complete_4way_5short_10formal
+    quality_gate: fail_no_incremental_gain_over_unrotated_A
+    speed_gate: complete_2way_5short_10formal
     other_recipes: frozen
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: D:/llm_exp/results/qwen3-block-htp/exp0224
+  last_completed_evidence: D:/llm_exp/results/qwen3-block-htp/exp0225
   latest_w4f16_output_scale_result:
     id: EXP-0224
     execution_state: completed
