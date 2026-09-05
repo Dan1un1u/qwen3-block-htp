@@ -19,42 +19,72 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0212
-  next_experiment_number: 213
+  active_experiment: EXP-0213
+  next_experiment_number: 214
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0211
-  last_completed_source_commit: b111cf7e49ee5a230ed93b54cd5b5b33e8d1ebfa
-  provisional_source_parent: evidence_valid_EXP0211_Down8_enabling_candidate
+  last_completed_experiment: EXP-0212
+  last_completed_source_commit: 1c3479db4089cc871192a524787b1dfd122ed1cd
+  provisional_source_parent: EXP0212_source_with_EXP0211_performance_control
   device_execution_state: ready
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
   active_experiment_stage: approved_pending_source_branch_and_preflight
   active_experiment_evidence: null
   active_experiment_gate: not_run
-  active_recipe_specialization: W4U8_direct_n_decode_Down8_tail_next_Q32_prefetch
+  active_recipe_specialization: W4U8_direct_n_decode_deferred_next_Q32_prefetch_completion
   active_experiment_contract:
-    id: EXP-0212
-    source_branch: codex/exp-0212-w4u8-direct-n-down8-next-q-prefetch
-    source_parent: evidence_valid_EXP0211_Down8_enabling_candidate
-    source_parent_commit: b111cf7e49ee5a230ed93b54cd5b5b33e8d1ebfa
+    id: EXP-0213
+    source_branch: codex/exp-0213-w4u8-direct-n-deferred-next-q-prefetch
+    source_parent: EXP0212_source_with_EXP0211_performance_control
+    source_parent_commit: 1c3479db4089cc871192a524787b1dfd122ed1cd
     execution_scope: real_token_ID_M64_prefill_then_192_continuous_W4U8_decode_steps_to_valid_length256
     direct_control: evidence_valid_EXP0211_Down8_without_cross_layer_Q_prefetch
-    candidate: EXP0211_with_next_layer_first_Q32_weight_prefetched_under_final_Down8_HMX
-    allowed_changes: decode_only_cross_layer_first_Q32_weight_prefetch_lifetime_consumption_selector_telemetry_and_experiment_tools
+    candidate: start_next_Q32_under_final_Down8_and_defer_completion_until_next_QKV_consumer
+    allowed_changes: decode_only_next_Q32_prefetch_completion_lifetime_error_drain_telemetry_and_experiment_tools
     forbidden_changes: weights_values_scales_qparams_arithmetic_QKV_order_or_batch_QK_preparation_Attention_O_Gate_Up_SwiGLU_Down_commands_or_tile_work_residual_norm_cache_LM_head_M64_prefill_F16F16_W4F16_QNN
     correctness_gate: byte_exact_hidden_cache_selected_codes_and_tokens_to_EXP0211_control
     physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_per_pass_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_descriptors_commands_and_tile_pairs_exactly_27_started_consumed_cross_layer_Q_prefetches
     performance_gate: five_pair_short_gate_then_ten_rotated_193_step_pairs_if_strictly_faster
     preservation_gate: M64_prefill_and_all_decode_math_remain_EXP0209_byte_exact
-    stop_conditions: reject_without_formal_if_O_or_full_decode_does_not_improve_and_apply_user_defined_consecutive_local_optimum_E2E_regression_gate
+    stop_conditions: reject_without_formal_if_QKV_or_full_decode_does_not_improve_and_if_local_improves_but_E2E_regresses_advance_streak_to_two_stop_decode_loop_preserve_fastest_pending_candidate_and_switch_to_direct_W4_prefill
   final_profiling_summary_standard: direct_full_stack_prefill_and_decode_tokens_per_second_plus_exact_Host_wall
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0211/20260905_formal_b111cf7'
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0212/20260905_short_gate_1c3479d'
+  latest_w4u8_deferred_next_q_prefetch_experiment:
+    id: EXP-0213
+    execution_state: approved
+    source_branch: codex/exp-0213-w4u8-direct-n-deferred-next-q-prefetch
+    source_parent_commit: 1c3479db4089cc871192a524787b1dfd122ed1cd
+    local_optimum_e2e_regression_streak_at_entry: 1
+    selected_baseline_changed: false
+  latest_w4u8_down8_next_q_prefetch_result:
+    id: EXP-0212
+    source_branch: codex/exp-0212-w4u8-direct-n-down8-next-q-prefetch
+    source_head: 1c3479db4089cc871192a524787b1dfd122ed1cd
+    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0212/20260905_short_gate_1c3479d'
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    selected_baseline_changed: false
+    control_decode_tokens_per_second: 46.22092533838021
+    candidate_decode_tokens_per_second: 46.20224136905296
+    candidate_decode_speed_percent: -0.04042318320212068
+    control_qkv_us_per_token: 2485.3200954861113
+    candidate_qkv_us_per_token: 2004.6077473958335
+    control_down_us_per_token: 3336.0658094618057
+    candidate_down_us_per_token: 3823.261176215278
+    pair_wins: 1
+    local_optimum_e2e_regression_streak: 1
+    summary_sha256: 8dd4198da0e39dac9744b349f10d59410e806bbe59b60fd30a1e9d306e0dee40
+    report_sha256: dbdcf952b7bf5f3ed2aa066dadb26e84100936e271ef7c031ce3c9d6a5374b9c
+    conclusion: QKV_local_wall_falls_but_synchronous_prefetch_completion_moves_equal_wait_into_Down_and_median_E2E_regresses
+    next_decision: defer_completion_until_the_next_QKV_consumer_to_extend_the_overlap_window
   latest_w4u8_direct_n_down_batch8_result:
     id: EXP-0211
     source_branch: codex/exp-0211-w4u8-direct-n-down-batch8
