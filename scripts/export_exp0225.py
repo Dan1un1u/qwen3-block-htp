@@ -148,6 +148,8 @@ def load_package(root):
     if model.lm_head.weight.data_ptr()==model.model.embed_tokens.weight.data_ptr():
         model.lm_head.weight=torch.nn.Parameter(model.lm_head.weight.detach().clone());model.config.tie_word_embeddings=False
     manifest=json.loads((root/'manifest.json').read_text())
+    for name,entry in manifest['files'].items():
+        assert pack.sha256_file(root/name.replace(chr(92),'/'))==entry['sha256'],name
     for i,layer in enumerate(model.model.layers):
         for short,long in rot.PROJECTIONS.items():load_packed(layer.get_submodule(long).weight,root/f'layer{i}',short)
         for short,long in [('input','input_layernorm'),('post','post_attention_layernorm')]:
