@@ -6,6 +6,41 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0210
+    slug: w4u8-direct-n-o-batch16-single-dma
+    title: Direct-W4 O batch16 single-descriptor DMA
+    parent: EXP-0209
+    variants:
+      - evidence_valid_EXP0209_O_batch8_control
+      - direct_W4_O_batch16_weight1_bias1_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0210-w4u8-direct-n-o-batch16-single-dma
+    source_commits: []
+    record: docs/experiments/EXP-0210.md
+    approval_ref: 'User message 2026-09-05: 开始decode优化loop'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0210-w4u8-direct-n-o-batch16-single-dma
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    evidence:
+      source_parent_experiment: EXP-0209
+      source_parent_commit: 84f48b224fe3c1a01e64686e61705825c8038b81
+      direct_control: same_binary_EXP0209_Q32_KV16_Down_single_DMA_and_O_batch8
+      candidate: O_batch16_one_weight_descriptor_plus_one_bias_descriptor
+      hypothesis: halve_O_command_granularity_without_the_conservative_mid_group_DMA_wait
+      optimization_scope: decode_only_O_batch16_single_DMA_selector_validation_telemetry_and_experiment_tools
+      forbidden_changes: weights_values_scales_qparams_arithmetic_QKV_QK_preparation_Attention_O_tile_work_Gate_Up_SwiGLU_Down_residual_norm_cache_LM_head_M64_prefill_F16F16_W4F16_QNN
+      correctness_gate: byte_exact_O_hidden_cache_selected_codes_and_tokens
+      physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_and_HMX_tile_pairs_O_commands_224_to_112_and_224_fewer_DMA_descriptors
+      short_gate: five_rotated_pairs_with_strict_O_wall_and_decode_speed_pass
+      formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      selected_baseline_changed: false
   - id: EXP-0209
     slug: w4u8-direct-n-q32-kv16
     title: Direct-W4 mixed Q32 and K/V16 command granularity
@@ -13,14 +48,16 @@ experiments:
     variants:
       - evidence_valid_EXP0207_uniform_QKV_batch16_control
       - direct_W4_Q32_KV16_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0209-w4u8-direct-n-q32-kv16
-    source_commits: []
+    source_commits:
+      - 1229b83ae81ccd782cb7e33d31f9fb78af6151f4
+      - 84f48b224fe3c1a01e64686e61705825c8038b81
     record: docs/experiments/EXP-0209.md
     approval_ref: 'User message 2026-09-05: 开始decode优化loop'
     runtime:
@@ -28,6 +65,7 @@ experiments:
       source_branch: codex/exp-0209-w4u8-direct-n-q32-kv16
       approved_on: '2026-09-05'
       started_on: '2026-09-05'
+      completed_on: '2026-09-05'
     evidence:
       source_parent_experiment: EXP-0207
       source_parent_commit: f036c756a6609312bb439e8592bb66ac8be06d6e
@@ -40,6 +78,30 @@ experiments:
       physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_and_HMX_tile_pairs_QKV_commands_224_to_168_and_112_fewer_DMA_descriptors
       short_gate: five_rotated_pairs_with_strict_QKV_wall_and_decode_speed_pass
       formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0209/20260905_short_gate_84f48b2'
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0209/20260905_formal_84f48b2'
+      source_commit: 84f48b224fe3c1a01e64686e61705825c8038b81
+      correctness_gate_result: pass_byte_exact_QKV_prepared_outputs_hidden_cache_codes_and_tokens
+      physical_gate_result: pass_8mib_zero_intermediate_ddr_zero_spill_one_fastrpc_one_hmx_no_qnn_zero_expansion_preserved_bytes_and_tiles_exact_command_and_descriptor_deltas
+      performance_gate_result: fail_one_of_ten_formal_pairs_despite_0p613370_percent_positive_median
+      short_control_decode_tokens_per_second: 45.297773
+      short_candidate_decode_tokens_per_second: 45.469364
+      formal_control_decode_tokens_per_second: 45.057685
+      formal_candidate_decode_tokens_per_second: 45.334056
+      formal_decode_speed_percent: 0.613370
+      control_qkv_us_per_token: 2587.596
+      candidate_qkv_us_per_token: 2500.438
+      control_qkv_commands_per_token: 224
+      candidate_qkv_commands_per_token: 168
+      control_dma_descriptors_per_token: 2614
+      candidate_dma_descriptors_per_token: 2502
+      formal_pair_wins: 9
+      retained_as_enabling_parent: true
+      local_optimum_e2e_regression_streak: 0
+      short_summary_sha256: b9cfcefaf9bcffffd2cc89a3083bf9cd06687b9dbaadad9d6defe86235ce8e00
+      formal_summary_sha256: 9e6fa18597ae57de3ed257940720e52ea23c0277bf13e2842d14e6fcecadd03e
+      formal_report_sha256: 1a778b574821d0f2ee9058493f63ff454052372fa898d5af8b09b9f8c4084597
+      conclusion: Q32_KV16_reduces_local_QKV_and_median_E2E_but_fails_strict_all_pairs_gate
       selected_baseline_changed: false
   - id: EXP-0208
     slug: w4u8-direct-n-qkv-batch16-single-dma
