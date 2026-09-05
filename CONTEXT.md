@@ -1543,3 +1543,6 @@ completed and evidence-valid; user adoption remains pending.
 _Avoid_: treating missing counters as zero, calling token hashes hidden-tensor
 hashes, using stale DDR mirrors as authoritative decode VTCM tails, counting
 final model norm twice inside LM head, or automatic baseline promotion.
+
+**F16F16 Token-Boundary Integration and Evaluation Preparation**:
+The user paused further W4U8 specialization on 2026-09-05 and approved EXP-0217 to complete F16F16 text generation using the W4F16 boundary structure with FP16 stored LM-head weights. W4F16 readable text has not established general accuracy. W4U8 semantic quality may fail and is not a repair target here. A common lightweight repeated speed/quality protocol is to be proposed after the F16F16 boundary is usable. User-facing profiling now contains the stable three-recipe module table followed by E2E token/s; full diagnostic evidence stays archived.

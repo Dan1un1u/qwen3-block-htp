@@ -109,32 +109,8 @@ Changing any item requires explicit user approval and a committed amendment.
   Variant the same grant. A run fails instead of silently shrinking to current
   availability. Physical Plans allocate and reuse only the regions they need
   and report requested, granted, and peak-used bytes separately.
-- **PC-027 — Complete profiling closure.** Every experiment closure must retain
-  and present a complete profiling comparison as defined in
-  `docs/FULL_PROFILING_REPORT_CONTRACT.md`. The user-facing completion response
-  must contain the tables rather than only linking to raw evidence. It must show
-  absolute control and candidate values plus deltas for repeat one and repeat
-  ten; every defined additive Block Timing Ledger interval; relevant overlapping
-  HMX, HVX, DMA, wait, byte, command, VTCM, and residency counters; correctness
-  and physical gates; and evidence provenance. Unchanged, zero, or unavailable
-  fields remain visible and unavailable fields require a reason. An experiment
-  may not be recorded as completed without this report, except when execution
-  ended before profiling was possible, in which case the report records the
-  failure boundary and marks the unavailable sections explicitly.
-- **PC-028 — Three-variant completion overview.** When the measured Execution
-  Unit owns a real token boundary, every user-facing experiment closure begins
-  with a direct full-stack throughput table containing the measured token
-  counts, complete Host wall and tokens/s for prefill and continuous decode.
-  Non-equivalent variants remain `N/A` with a reason; they are never filled by
-  extrapolation. The response then presents one stable module table comparing
-  the latest valid
-  `F16F16`, Selected-Baseline `W4F16`, and latest eligible `W4U8` results at
-  repeat ten. Each module cell contains absolute wall time in microseconds and
-  its share of complete Host wall; the final column reports W4U8 speed relative
-  to W4F16 as `W4F16_time / W4U8_time - 1`. An experiment that changes only one
-  variant reuses the latest valid formal evidence for the other columns and
-  states that provenance. This overview supplements rather than replaces the
-  repeat-one/repeat-ten direct-control tables required by PC-027.
+- **PC-027 — Complete profiling closure.** Every experiment closure retains a complete profiling comparison in `docs/FULL_PROFILING_REPORT_CONTRACT.md` format, including repeat-one/repeat-ten control and candidate values, additive ledgers, overlapping counters, correctness, physical gates and provenance. The user-facing response presents only the stable three-recipe module overview and ends with directly measured E2E throughput. Detailed diagnostics remain in the retained report. Missing evidence is never silently replaced by zero. A pre-profiling failure records the failure boundary and unavailable sections.
+- **PC-028 — Three-variant completion overview.** User-facing profiling results show one stable repeat-ten module table for latest valid `F16F16`, Selected-Baseline `W4F16`, and latest eligible `W4U8`. Each module cell contains microseconds and percent of complete Host wall; the last column is `W4F16_time / W4U8_time - 1`. Historical columns state non-paired provenance. The response ends with directly measured complete prefill and continuous-decode tokens/s, token counts and Host-wall denominators. Incomplete scopes are N/A and never extrapolated. This presentation amendment was explicitly requested by the user on 2026-09-05; the complete archived evidence requirements remain.
 - **PC-029 — Recipe-fastest baseline ranking.** Mathematical correctness,
   physical-contract compliance, equivalent execution scope, valid evidence and
   measurement reproducibility are eligibility requirements rather than
@@ -189,3 +165,5 @@ Changing any item requires explicit user approval and a committed amendment.
   reproduced token sequence and stable readable text. Top-p/top-k sampling,
   batching, arbitrary prompt lengths, and a general graph compiler remain out
   of scope until separately approved.
+
+- **PC-036 — F16F16 token boundary and lightweight evaluation preparation.** User approval on 2026-09-05 pauses further W4U8 specialization and authorizes EXP-0217 to extend the proven W4F16 Host tokenizer/text decoding, embedding, final RMSNorm, streaming LM head and greedy feedback boundary to F16F16 with FP16 stored weights. Preserve transformer arithmetic and the physical contract. Establish stable readable text and independent implementation validation, then propose one lightweight repeatable speed and quality evaluation for all three recipes. W4F16 readability is not a quality benchmark; W4U8 semantic degradation is diagnostic and is not to be repaired in this integration experiment. No baseline promotion is implied.

@@ -1,8 +1,6 @@
 # Complete profiling report contract
 
-Every experiment closure must retain one compact report and reproduce its
-tables in the user-facing completion response. A raw JSON link or a list of
-only the experiment's target stages is not a complete report.
+Every experiment closure retains a complete report. Per the explicit user amendment of 2026-09-05, the user-facing profiling response contains only the stable three-recipe module table and ends with E2E token/s. Detailed control/candidate, ledger, counter and correctness tables remain mandatory in the archived report.
 
 ## Required identity and comparison
 
@@ -16,7 +14,7 @@ control.
 ## Required tables
 
 When the Execution Unit owns a real token boundary, the user-facing response
-starts with a direct full-stack end-to-end throughput table. For both prefill
+ends with a direct full-stack end-to-end throughput table. For both prefill
 and continuous decode it shows the measured token count, complete Host wall,
 tokens/s, direct control, candidate, and paired delta. Prefill throughput is
 `prompt_tokens / complete_prefill_seconds`; decode throughput is
@@ -28,13 +26,13 @@ tokens/s. The exact Host-wall denominator remains visible beside every
 throughput number. If no token boundary exists, this table is `N/A` with the
 reason and Host wall remains the primary result.
 
-The response then shows a stable repeat-ten overview table for
+The response first shows a stable repeat-ten overview table for
 the latest valid F16F16 result, the Selected-Baseline W4F16 result, and the
 latest eligible W4U8 result. Its fixed rows are I/O and metadata, Input
 RMSNorm, QKV plus Q/K Norm-RoPE preparation, QK-Softmax-AV, O projection,
 Post-Attention residual plus RMSNorm, Gate/Up plus SwiGLU, Down projection,
 Final residual, KV-cache carrier conversion, KV-cache append DMA, block
-internal orchestration, layer bookkeeping, DSP unattributed residual, DSP
+internal orchestration, layer bookkeeping, stage-boundary bookkeeping, embedding, final model RMSNorm, LM head plus greedy excluding final norm, DSP unattributed residual, DSP
 runtime setup/teardown, the true Host-DSP boundary, and complete Host wall.
 The report must never combine Host/RPC time with DSP profiling residual. Every
 module cell contains microseconds and percent of Host wall. The last column
@@ -43,7 +41,7 @@ reused from older formal evidence are identified in the text. This overview is
 mandatory even when the new experiment changes only one module or one Project
 Variant.
 
-For repeat one and repeat ten, every numeric row shows the control median,
+In the archived report, for repeat one and repeat ten, every numeric row shows the control median,
 candidate median, and candidate-versus-control percentage. The report contains:
 
 1. Primary end-to-end performance: direct full-stack prefill/decode tokens/s
