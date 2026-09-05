@@ -1,6 +1,6 @@
 # EXP-0221 running — resume authority
 
-Bootstrap/read four authority files and preflight EXP-0221. Branch codex/exp-0221-w4f16-gptq-offline-rotation HEAD 4482cbe98b3780f99bcccebdb2eab774f47eaf98, synchronized. Read docs/experiments/EXP-0221.md for fixed parameters and gates. Other recipes frozen, original checkpoint only, no group quantization.
+Bootstrap/read four authority files and preflight EXP-0221. Branch codex/exp-0221-w4f16-gptq-offline-rotation HEAD bd4944cf2401f9ca732a79bca982d2088aa0d8b2, synchronized. Read docs/experiments/EXP-0221.md for fixed parameters and gates. Other recipes frozen, original checkpoint only, no group quantization.
 
 Calibration frozen:64x128 tokens,32 English WikiText training rows and32 Chinese Wikipedia training rows. IDs SHA256 a20ed2093b0e7fb075fe47a9532843402e9f69784c8ad0b0467194bee2fa8efd; calibration.json SHA256 e65edb14cb774956df92b27b5dc728b976f7ba00e9435145004180c6538a1669. No32-token overlap; holdout not evaluated. Raw responses and pinned GPTQ source/license retained under results exp0221. Filename recovery tokenizer.json->qwen3-tokenizer.json and LICENSE.txt->LICENSE preserved IDs and metadata; see two recovery JSONs. Windows curl uses existing Clash127.0.0.1:7897, no global proxy change.
 

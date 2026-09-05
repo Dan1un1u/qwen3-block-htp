@@ -36,7 +36,7 @@ current_scope:
   active_experiment_stage: EXP0221_A_B_quality_complete_C_generation
   active_experiment_evidence: D:/llm_exp/results/qwen3-block-htp/exp0221
   active_experiment_gate: pending
-  active_experiment_source_head: 4482cbe98b3780f99bcccebdb2eab774f47eaf98
+  active_experiment_source_head: bd4944cf2401f9ca732a79bca982d2088aa0d8b2
   current_handoff: SESSION_HANDOFF_EXP0221.md
   active_recipe_specialization: W4F16_GPTQ_with_offline_rotation
   last_completed_experiment_contract:
