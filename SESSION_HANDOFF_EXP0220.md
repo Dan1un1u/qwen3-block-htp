@@ -1,0 +1,11 @@
+# EXP-0220 completed — resume from authority
+
+Bootstrap and read the four authority files. No active experiment; next EXP-0221. Source branch codex/exp-0220-gamma-fold-attribution-r2-only, HEAD e3a2c869b7a02061af3a976db536296c50f29850. Source and memory are committed and synchronized. Other two recipes remain frozen; no automatic promotion or new experiment.
+
+Read docs/experiments/EXP-0220-RESULTS.md and EXP-0220-PROFILE.md; source docs/EXP0220_GAMMA_ATTRIBUTION.md. Do not repeat completed controls or profiling. Host FP16 original/folded full quality is NLL 3.634390/3.634209, both22/24; small finite rounding drift is report-only. W4 QKV-only 5.064923/0 tasks, Gate-Up-only4.517365/0, final-head-only4.417913/3. R2-only (all gamma retained, no R1)5.6464/0 versus frozen original4.231668/8. All four FP32 transforms equivalent and all quick/full/repeat score fields deterministic. No LPBQ assets, folded upstream weights or group scales used.
+
+R2 independent software NLL5.649252/0 supports actual DSP regression. R2 first speed token is EOS; fixed16-step timing continues after EOS and is diagnostic execution throughput, not usable text speed. Original/R2 warmup,5short,10formal complete, all independent tokens match,320formal invocation/8960layer ledgers close and physical gates pass. Other recipe profiling columns are nonpaired frozen EXP0218 references.
+
+Evidence D:/llm_exp/results/qwen3-block-htp/exp0220,182-file ledger SHA256 0bf9fc284fb9f624c3f9a0f78a224c0f6e66e2c5f1b5f2cbd8ec6680cce49a97. Models/source/runtime archives D:/llm_exp/models/qwen3-block-htp/exp0220/artifacts/e3a2c869b7a02061af3a976db536296c50f29850. Runtime unchanged EXP0218 d9810725 ABI108, embeddedlabel218 intentional. All1276files in each successful package verified. Original shards match frozen EXP0218. Android tar long-symlink failure preserved under attempt01 names, fixed by short relative links; no old hash changed. No background work remains.
+
+Primary finding: exact W Dgamma algebra does not imply Q(W)Dgamma equals Q(WDgamma); FP16 control and location ablations support requantization as main gamma-fold loss. R2 has a separate negative quantization result. Any next clipping/GPTQ/full-R1 work needs a newly declared hypothesis/calibration protocol; no tuning or holdout use in EXP0220. Eight holdout windows remain unused. Do not expand frozen recipes.

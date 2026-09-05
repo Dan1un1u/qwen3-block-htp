@@ -11,10 +11,10 @@ experiments:
     title: Gamma-fold precision/location attribution and W4F16 R2-only validation
     parent: EXP-0219
     record: docs/experiments/EXP-0220.md
-    execution_state: running
-    evidence_validity: pending
-    local_gate: pending
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     approval_ref: 'User 2026-09-05: 同意方向，开始实验; approved preceding ordered FP16 folding
       control, folding-location attribution, and gamma-preserving R2-only; quantizer
       changes conditional on a subsequent full-R1 direction.'
@@ -22,11 +22,18 @@ experiments:
     - codex/exp-0220-gamma-fold-attribution-r2-only
     source_commits:
     - 10a5a19e125c9d7894d3102aa3e289a68c39f914
+    - 8ddb0b980216ca548e07adee006ada162cb1c87a
+    - 2cf51a4480684de0e6ffda802b9456e3190e3fb9
+    - af5a283b2ab3f0654c9478354870542515b1bc21
+    - 33d27db789f27d0b0cf57460ce35e32d5094dd58
+    - 1bebf5dcc47e5304dfe93b69cd9f4187fae3dfca
+    - e3a2c869b7a02061af3a976db536296c50f29850
     runtime:
       source_branch: codex/exp-0220-gamma-fold-attribution-r2-only
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       started_on: '2026-09-05'
       approved_on: '2026-09-05'
+      completed_on: '2026-09-05'
     variants:
     - host_FP16_original
     - host_FP16_gamma_fold
@@ -38,9 +45,114 @@ experiments:
     evidence_profile: qbh_lite_v1_precision_and_location_ablation_with_R2_only
     evidence:
       source_parent_commit: 10a5a19e125c9d7894d3102aa3e289a68c39f914
+      source_head: e3a2c869b7a02061af3a976db536296c50f29850
+      measurement_source_head: 1bebf5dcc47e5304dfe93b69cd9f4187fae3dfca
+      formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0220
+      retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0220/artifacts/e3a2c869b7a02061af3a976db536296c50f29850
       original_checkpoint_only: true
-      lpbq: false
+      lpbq_assets_used: false
       selected_baseline_changed: false
+      quality:
+        host_FP16_original:
+          nll: 3.6343902312219143
+          ppl: 37.87874857547674
+          tasks_correct: 22
+          teacher_top1_agreement: 0.974609375
+          language_nll:
+            zh: 3.858935132622719
+            en: 3.4098453298211098
+        host_FP16_fold:
+          nll: 3.634209081530571
+          ppl: 37.871887473325856
+          tasks_correct: 22
+          teacher_top1_agreement: 0.97265625
+          language_nll:
+            zh: 3.8588689789175987
+            en: 3.4095491841435432
+        DSP_original:
+          nll: 4.231668471946213
+          ppl: 68.83198064863572
+          tasks_correct: 8
+          teacher_top1_agreement: 0.55078125
+          language_nll:
+            zh: 4.433060064219769
+            en: 4.030276879672656
+        DSP_full_fold:
+          nll: 5.601669164010636
+          ppl: 270.87817038129873
+          tasks_correct: 0
+          teacher_top1_agreement: 0.326171875
+          language_nll:
+            zh: 5.942284460381679
+            en: 5.2610538676395935
+        DSP_qkv_fold:
+          nll: 5.064923412892308
+          ppl: 158.36831263819334
+          tasks_correct: 0
+          teacher_top1_agreement: 0.353515625
+          language_nll:
+            zh: 5.113463930426563
+            en: 5.0163828953580545
+        DSP_mlp_fold:
+          nll: 4.517365053696304
+          ppl: 91.5939346335061
+          tasks_correct: 0
+          teacher_top1_agreement: 0.53125
+          language_nll:
+            zh: 4.848159354479492
+            en: 4.1865707529131155
+        DSP_head_fold:
+          nll: 4.417912513348717
+          ppl: 82.92300389618087
+          tasks_correct: 3
+          teacher_top1_agreement: 0.51953125
+          language_nll:
+            zh: 4.594608582592524
+            en: 4.24121644410491
+        DSP_r2_only:
+          nll: 5.646431990550801
+          ppl: 283.2789186506773
+          tasks_correct: 0
+          teacher_top1_agreement: 0.32421875
+          language_nll:
+            zh: 5.839125946833281
+            en: 5.45373803426832
+      speed:
+        original:
+          prefill_tokens: 64
+          prefill_host_us: 62953.151
+          prefill_tokens_per_second: 1016.6290167111731
+          decode_tokens: 15
+          decode_total_host_us: 1391449.112
+          decode_tokens_per_second: 10.780128335731764
+        r2_only:
+          prefill_tokens: 64
+          prefill_host_us: 62947.057
+          prefill_tokens_per_second: 1016.7274381072335
+          decode_tokens: 15
+          decode_total_host_us: 1387858.9324999999
+          decode_tokens_per_second: 10.808014884466655
+      paired_speed_percent:
+        prefill: -0.011636250434343687
+        decode: 0.29325381936629036
+      quality_gate_result: fail_R2_NLL_5.646432_vs_original_4.231668_tasks_0_vs_8
+      correctness_gate_result: pass_four_FP32_equivalence_checks_and_independent_speed_tokens
+      fp16_control_result: finite_report_only_NLL_3.634390_to_3.634209_tasks_22_to_22
+      determinism_gate_result: pass_all_four_quick_repeat_full_score_fields
+      physical_gate_result: pass_exact_8MiB_zero_timed_intermediate_DDR_spill_one_FastRPC_no_QNN
+      speed_gate_result: completed_warmup_5_short_10_formal_report_only
+      formal_invocation_ledgers: 320
+      formal_layer_ledgers: 8960
+      full_profiling_report: docs/experiments/EXP-0220-PROFILE.md
+      full_profiling_report_sha256: 1716af6503f0a58d8bb2425a2ef4923034aea1e0436292e028ca86b370c3d955
+      quality_summary_sha256: 97fb36afdbac600a76906d9e60c85d4a34d297e6e05c343c85301a469db270a0
+      speed_summary_sha256: 8abbdb773bf85fc1b2bd541af4326a7a567e57667899b557c2bb0237fb238476
+      evidence_sha256_ledger_sha256: 0bf9fc284fb9f624c3f9a0f78a224c0f6e66e2c5f1b5f2cbd8ec6680cce49a97
+      evidence_files: 182
+      conclusion: FP16 folding preserves observed quality; W4 requantization after gamma
+        fold regresses, QKV largest isolated NLL loss; gamma-preserving fixed R2 also
+        regresses; no promotion
+      reopen_condition: new_approved_quantization_or_rotation_hypothesis_no_repeat_fixed_Hadamard_no_evaluation_tuning
   - id: EXP-0219
     slug: w4f16-r1r2-offline-rotation
     title: W4F16 full-model offline Hadamard R1/R2 quality validation
