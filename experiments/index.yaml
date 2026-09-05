@@ -11,21 +11,29 @@ experiments:
     title: Per-channel GPTQ original/folded/R1R2 quality validation
     parent: EXP-0220
     record: docs/experiments/EXP-0221.md
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
     adoption_status: pending
-    approval_ref: 'User 2026-09-05: 那就往这个方向做一做试试，同意你的方向; approved original/gamma-fold/R1R2
-      GPTQ with separate calibration.'
+    approval_ref: 'User 2026-09-05: 那就往这个方向做一做试试，同意你的方向; approved original/gamma-fold/R1R2 GPTQ with separate
+      calibration.'
     source_branches:
     - codex/exp-0221-w4f16-gptq-offline-rotation
     source_commits:
     - e3a2c869b7a02061af3a976db536296c50f29850
+    - d66dad71ed49228cf31dab0bee1597cdc9956973
+    - d24d89ef865352d41b62f94bd2ab11221ea96f39
+    - 65c90cff24c2dd8cab92d6d295e62d4c8362b26c
+    - 0ba765c63d7b83fe7bfda2fdd5a2b112ec836d03
+    - 4482cbe98b3780f99bcccebdb2eab774f47eaf98
+    - bd4944cf2401f9ca732a79bca982d2088aa0d8b2
+    - 08a67eee666fe5ca7335a8150f7207635019b588
     runtime:
       source_branch: codex/exp-0221-w4f16-gptq-offline-rotation
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       started_on: '2026-09-05'
       approved_on: '2026-09-05'
+      completed_on: '2026-09-05'
     variants:
     - A_original_GPTQ
     - B_gamma_fold_GPTQ
@@ -37,6 +45,159 @@ experiments:
       original_checkpoint_only: true
       lpbq: false
       selected_baseline_changed: false
+      source_head: 08a67eee666fe5ca7335a8150f7207635019b588
+      source_branch: codex/exp-0221-w4f16-gptq-offline-rotation
+      measurement_source_head: bd4944cf2401f9ca732a79bca982d2088aa0d8b2
+      formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0221
+      retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0221/artifacts/08a67eee666fe5ca7335a8150f7207635019b588
+      lpbq_assets_used: false
+      quality:
+        RTN_original:
+          nll: 4.231668471946213
+          ppl: 68.83198064863572
+          tasks_correct: 8
+          tasks_total: 24
+          teacher_top1_agreement: 0.55078125
+          language_nll:
+            zh: 4.433060064219769
+            en: 4.030276879672656
+        RTN_fold:
+          nll: 5.601669164010636
+          ppl: 270.87817038129873
+          tasks_correct: 0
+          tasks_total: 24
+          teacher_top1_agreement: 0.326171875
+          language_nll:
+            zh: 5.942284460381679
+            en: 5.2610538676395935
+        RTN_R1R2:
+          nll: 8.562491219728587
+          ppl: 5231.6982614282315
+          tasks_correct: 0
+          tasks_total: 24
+          teacher_top1_agreement: 0.28515625
+          language_nll:
+            zh: 9.118449128333323
+            en: 8.006533311123853
+        GPTQ_A:
+          nll: 3.8730384038316523
+          ppl: 48.088275934293996
+          tasks_correct: 8
+          tasks_total: 24
+          teacher_top1_agreement: 0.625
+          language_nll:
+            zh: 4.299019061204985
+            en: 3.4470577464583205
+        GPTQ_B:
+          nll: 4.601480963100742
+          ppl: 99.63175739345074
+          tasks_correct: 0
+          tasks_total: 24
+          teacher_top1_agreement: 0.4609375
+          language_nll:
+            zh: 5.095543813877031
+            en: 4.107418112324453
+        GPTQ_C:
+          nll: 4.320987664439608
+          ppl: 75.26292611106724
+          tasks_correct: 2
+          tasks_total: 24
+          teacher_top1_agreement: 0.578125
+          language_nll:
+            zh: 4.536909654665039
+            en: 4.105065674214176
+      software_diagnostic:
+        A:
+          nll: 3.8741880133748055
+          ppl: 48.14359046418558
+          tasks_correct: 9
+          tasks_total: 24
+          teacher_top1_agreement: 0.630859375
+          language_nll:
+            zh: 4.30016877502203
+            en: 3.448207251727581
+        B:
+          nll: 4.600959472358227
+          ppl: 99.57981389951235
+          tasks_correct: 0
+          tasks_total: 24
+          teacher_top1_agreement: 0.46875
+          language_nll:
+            zh: 5.093510314822197
+            en: 4.108408629894257
+        C:
+          nll: 4.323169119656086
+          ppl: 75.42728802273471
+          tasks_correct: 2
+          tasks_total: 24
+          teacher_top1_agreement: 0.572265625
+          language_nll:
+            zh: 4.538219437003136
+            en: 4.108118802309036
+      speed:
+        original:
+          prefill_tokens: 64
+          prefill_host_us: 62982.682
+          prefill_tokens_per_second: 1016.1523448620368
+          decode_tokens: 15
+          decode_total_host_us: 1389468.3575000002
+          decode_tokens_per_second: 10.79549593125585
+        A:
+          prefill_tokens: 64
+          prefill_host_us: 62850.834
+          prefill_tokens_per_second: 1018.2840214976304
+          decode_tokens: 15
+          decode_total_host_us: 1391317.4985
+          decode_tokens_per_second: 10.78114809608283
+        B:
+          prefill_tokens: 64
+          prefill_host_us: 62818.255000000005
+          prefill_tokens_per_second: 1018.8121271436145
+          decode_tokens: 15
+          decode_total_host_us: 1387194.112
+          decode_tokens_per_second: 10.81319468576291
+        C:
+          prefill_tokens: 64
+          prefill_host_us: 63085.10400000001
+          prefill_tokens_per_second: 1014.5025678328119
+          decode_tokens: 15
+          decode_total_host_us: 1391000.937
+          decode_tokens_per_second: 10.78360165044231
+      paired_speed_percent:
+        A:
+          prefill: 0.13881673030360364
+          decode: -0.14955646429521963
+        B:
+          prefill: 0.20515272293613052
+          decode: 0.04212258862772433
+        C:
+          prefill: -0.18861969605361573
+          decode: -0.18218790759139125
+      profile_candidate: A
+      A_effectiveness: false
+      C_incremental_rotation: false
+      quality_gate_result: fail_A_tasks_8_to_8_and_C_worse_than_A_on_NLL_and_tasks
+      correctness_gate_result: pass_dense_oracle_591_packing_168_HF_forward_FP32_equivalence_independent_speed_tokens
+      determinism_gate_result: pass_all_three_quick_full_repeat
+      physical_gate_result: pass_exact_8MiB_zero_timed_intermediate_DDR_spill_one_FastRPC_no_QNN
+      speed_gate_result: complete_warmup_5_short_10_formal_rotating_four_way_report_only
+      formal_invocation_ledgers: 640
+      formal_layer_ledgers: 17920
+      full_profiling_report: docs/experiments/EXP-0221-PROFILE.md
+      full_profiling_report_sha256: d5be04537e023652fe6477d028a9800ddd85552697e0f951bb687223ea68b0d0
+      quality_summary_sha256: 9f4396e9724098745f841f740b6c872008136ef6fa74452e9acfad0acd3c6990
+      speed_summary_sha256: 02755b391fa5e91ec064edb39c124ef11d9260a0017f846c7c57261824371f31
+      closure_sha256: 0b0b183eeca9b96c38a2e78454e2c68a7e1442579c8ff8d6f420918dc2ca489a
+      evidence_sha256_ledger_sha256: 8242201af9041c25352689c3e93a5112800a1b8186620477e3fc31072d18ab8d
+      evidence_files: 361
+      calibration_tokens: 8192
+      calibration_ids_sha256: a20ed2093b0e7fb075fe47a9532843402e9f69784c8ad0b0467194bee2fa8efd
+      calibration_sha256: e65edb14cb774956df92b27b5dc728b976f7ba00e9435145004180c6538a1669
+      holdout_scored: false
+      other_recipes: F16F16_and_W4U8_frozen
+      conclusion: Unrotated GPTQ reduces NLL but tasks stay8/24; GPTQ mitigates folded/rotated RTN loss
+        without incremental fixed R1R2 benefit; no promotion
+      reopen_condition: new_approved_hypothesis_no_repeat_fixed_trial_no_evaluation_tuning
   - id: EXP-0220
     slug: gamma-fold-attribution-r2-only
     title: Gamma-fold precision/location attribution and W4F16 R2-only validation
