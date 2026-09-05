@@ -67,11 +67,14 @@ def calibration():
         selection='first128 tokens of first32 eligible distinct rows per language; no padding or chat template',
         tokens=8192,sequence_length=128,ids_sha256=sha(ids.tobytes()),tokenizer_sha256=ev.digest(ev.MODEL/'qwen3-tokenizer.json'),
         overlap_32gram_rejections=rejected,evaluation_or_holdout_scoring=False))
+    references()
+    print('CALIBRATION_FROZEN',len(samples),sha(ids.tobytes()),flush=True)
+
+def references():
     refs={}
-    for n in ['gptq.py','quant.py','LICENSE.txt']:
+    for n in ['gptq.py','quant.py','LICENSE']:
         raw=fetch(f'https://raw.githubusercontent.com/IST-DASLab/gptq/{REFERENCE}/{n}',RESULT/'references'/n);refs[n]=sha(raw)
     write_json(RESULT/'references/provenance.json',dict(repository='https://github.com/IST-DASLab/gptq',commit=REFERENCE,files=refs))
-    print('CALIBRATION_FROZEN',len(samples),sha(ids.tobytes()),flush=True)
 
 def factor(x):
     x=x.reshape(-1,x.shape[-1]).float();h=(x.T@x)*(2.0/x.shape[0])
@@ -129,6 +132,7 @@ def oracle_test():
 
 if __name__=='__main__':
     torch.set_num_threads(16);torch.set_grad_enabled(False)
-    p=argparse.ArgumentParser();p.add_argument('phase',choices=['calibration','oracle']);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('phase',choices=['calibration','references','oracle']);a=p.parse_args()
     if a.phase=='calibration':calibration()
+    elif a.phase=='references':references()
     else:write_json(RESULT/'gptq_oracle.json',oracle_test());print('GPTQ_ORACLE_PASS')
