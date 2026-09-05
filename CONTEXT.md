@@ -1594,3 +1594,7 @@ Only first proposed direction authorized: original A and fixed R1R2 C, frozen819
 A: DSP NLL 3.873038 -> 3.660316, tasks 8 -> 19; C: DSP NLL 3.956556 -> 3.892162, tasks 9 -> 17. Fixed3candidate final-GPTQ output range selection plus same calibration, with frozen per-variant head/embedding/norms. All correctness/determinism/physical checks and4way5short/10formal complete. Per-variant effectiveness {"A": true, "C": true}; selected C versus selected A False. No promotion; see SESSION_HANDOFF_EXP0224.md before future work.
 
 Interpretation: new A is better than new C in both DSP NLL and strict tasks; no incremental rotation benefit established. A selects absmax/midpoint candidate identities on6492/573440rows (~1.13%), accounting for91.53% of clipping-candidate summed local SSE on current inputs; C1681rows/~0.293%. Candidate identity counts include ties and do not assert every such row has a strictly wider numerical scale. Largest local improvement is zero-based layer2/down; no isolated-layer ablation proves sole whole-model causation. See retained selection_diagnostics.json and report. Paired speed changes remain near zero; marginal prefill medians differ in sign from paired ratios, so no speed win claimed.
+
+## EXP-0225 learned R1/R2 (approved 2026-09-06)
+
+User approved implementing SpinQuant Cayley SGD learned offline R1/R2 for W4F16. See PC045 and docs/experiments/EXP-0225.md. Only rotation matrices train; calibration8192 and other recipes frozen. Independent bilingual training/validation, final qbh-lite never selects checkpoints. No promotion.

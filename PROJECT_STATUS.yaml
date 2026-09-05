@@ -7,7 +7,7 @@ project:
   source_root: /home/daniuniu/work/qwen3-block-htp
   memory_branch: codex/qwen3-block-project-memory
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
-  updated_on: '2026-09-05'
+  updated_on: '2026-09-06'
 toolchain:
   qnn_runtime: none
   qairt_runtime: none
@@ -19,8 +19,8 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 225
+  active_experiment: EXP-0225
+  next_experiment_number: 226
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -33,11 +33,11 @@ current_scope:
   device_execution_state: ready
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  active_experiment_stage: EXP0224_completed_post_GPTQ_output_scale
-  active_experiment_evidence: D:/llm_exp/results/qwen3-block-htp/exp0224
-  active_experiment_gate: pass
+  active_experiment_stage: EXP0225_implementation_and_training_preparation
+  active_experiment_evidence: D:/llm_exp/results/qwen3-block-htp/exp0225
+  active_experiment_gate: not_run
   active_experiment_source_head: cf8a239a636bb33dd9bf49c7aa03760df9af6c81
-  current_handoff: SESSION_HANDOFF_EXP0224.md
+  current_handoff: SESSION_HANDOFF_EXP0225.md
   active_recipe_specialization: null
   last_completed_experiment_contract:
     id: EXP-0224
@@ -211,8 +211,8 @@ current_scope:
     intermediate_files: 448
     calibration_sha256: e65edb14cb774956df92b27b5dc728b976f7ba00e9435145004180c6538a1669
     calibration_ids_sha256: a20ed2093b0e7fb075fe47a9532843402e9f69784c8ad0b0467194bee2fa8efd
-    conclusion: 'A: DSP NLL 3.873038 -> 3.660316, tasks 8 -> 19; C: DSP NLL 3.956556 -> 3.892162, tasks
-      9 -> 17'
+    conclusion: 'A: DSP NLL 3.873038 -> 3.660316, tasks 8 -> 19; C: DSP NLL 3.956556
+      -> 3.892162, tasks 9 -> 17'
     next_action: discuss_results_no_automatic_next_direction
   latest_w4f16_channel_clipping_result:
     id: EXP-0223
@@ -653,8 +653,8 @@ current_scope:
     intermediate_files: 672
     calibration_sha256: e65edb14cb774956df92b27b5dc728b976f7ba00e9435145004180c6538a1669
     calibration_ids_sha256: a20ed2093b0e7fb075fe47a9532843402e9f69784c8ad0b0467194bee2fa8efd
-    conclusion: 'A: DSP NLL 3.873038 -> 3.969016, tasks 8 -> 4; B: DSP NLL 4.601481 -> 3.911864, tasks
-      0 -> 2; C: DSP NLL 4.320988 -> 3.956556, tasks 2 -> 9'
+    conclusion: 'A: DSP NLL 3.873038 -> 3.969016, tasks 8 -> 4; B: DSP NLL 4.601481
+      -> 3.911864, tasks 0 -> 2; C: DSP NLL 4.320988 -> 3.956556, tasks 2 -> 9'
     next_action: discuss_results_no_automatic_next_direction
   latest_w4f16_head_ablation_result:
     id: EXP-0222
@@ -766,8 +766,8 @@ current_scope:
     closure_sha256: 196080cc53fd21bb8f1b1c606fe7a9da463ccbe84465bb92d9621d3a1049c6b5
     evidence_ledger_sha256: 54dbdc87eb1b8df4fc5e7baf2c0f0e385d41e583c0caec5975b3d5c5c5556c78
     evidence_files: 27
-    conclusion: 'A: NLL 3.874188 -> 3.853870, tasks 9 -> 8; B: NLL 4.600959 -> 4.413664, tasks 0 -> 0;
-      C: NLL 4.323169 -> 4.293221, tasks 2 -> 2'
+    conclusion: 'A: NLL 3.874188 -> 3.853870, tasks 9 -> 8; B: NLL 4.600959 -> 4.413664,
+      tasks 0 -> 0; C: NLL 4.323169 -> 4.293221, tasks 2 -> 2'
     next_action: discuss_with_user_before_any_next_direction
   latest_w4f16_gamma_attribution_result:
     id: EXP-0220
@@ -878,8 +878,9 @@ current_scope:
     speed_summary_sha256: 8abbdb773bf85fc1b2bd541af4326a7a567e57667899b557c2bb0237fb238476
     evidence_sha256_ledger_sha256: 0bf9fc284fb9f624c3f9a0f78a224c0f6e66e2c5f1b5f2cbd8ec6680cce49a97
     evidence_files: 182
-    conclusion: FP16 folding preserves observed quality; W4 requantization after gamma fold regresses,
-      QKV largest isolated NLL loss; gamma-preserving fixed R2 also regresses; no promotion
+    conclusion: FP16 folding preserves observed quality; W4 requantization after gamma
+      fold regresses, QKV largest isolated NLL loss; gamma-preserving fixed R2 also
+      regresses; no promotion
     reopen_condition: new_approved_quantization_or_rotation_hypothesis_no_repeat_fixed_Hadamard_no_evaluation_tuning
   latest_w4f16_gptq_result:
     id: EXP-0221
@@ -1039,8 +1040,8 @@ current_scope:
     calibration_sha256: e65edb14cb774956df92b27b5dc728b976f7ba00e9435145004180c6538a1669
     holdout_scored: false
     other_recipes: F16F16_and_W4U8_frozen
-    conclusion: Unrotated GPTQ reduces NLL but tasks stay8/24; GPTQ mitigates folded/rotated RTN loss
-      without incremental fixed R1R2 benefit; no promotion
+    conclusion: Unrotated GPTQ reduces NLL but tasks stay8/24; GPTQ mitigates folded/rotated
+      RTN loss without incremental fixed R1R2 benefit; no promotion
     reopen_condition: new_approved_hypothesis_no_repeat_fixed_trial_no_evaluation_tuning
   promoted_w4u8_fastest_decode_baseline:
     id: EXP-0211
