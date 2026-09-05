@@ -19,42 +19,71 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0210
-  next_experiment_number: 211
+  active_experiment: EXP-0211
+  next_experiment_number: 212
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0209
-  last_completed_source_commit: 84f48b224fe3c1a01e64686e61705825c8038b81
-  provisional_source_parent: evidence_valid_EXP0209_Q32_KV16_enabling_candidate
+  last_completed_experiment: EXP-0210
+  last_completed_source_commit: 9b32f804879f1b041bd9def07c2ae80e7317dc9a
+  provisional_source_parent: evidence_valid_EXP0210_O16_single_DMA_enabling_candidate
   device_execution_state: ready
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
   active_experiment_stage: approved_pending_source_branch_and_preflight
   active_experiment_evidence: null
   active_experiment_gate: not_run
-  active_recipe_specialization: W4U8_direct_n_decode_O_batch16_single_DMA
+  active_recipe_specialization: W4U8_direct_n_decode_Down_batch8_single_DMA
   active_experiment_contract:
-    id: EXP-0210
-    source_branch: codex/exp-0210-w4u8-direct-n-o-batch16-single-dma
-    source_parent: evidence_valid_EXP0209_Q32_KV16_enabling_candidate
-    source_parent_commit: 84f48b224fe3c1a01e64686e61705825c8038b81
+    id: EXP-0211
+    source_branch: codex/exp-0211-w4u8-direct-n-down-batch8
+    source_parent: evidence_valid_EXP0210_O16_single_DMA_enabling_candidate
+    source_parent_commit: 9b32f804879f1b041bd9def07c2ae80e7317dc9a
     execution_scope: real_token_ID_M64_prefill_then_192_continuous_W4U8_decode_steps_to_valid_length256
-    direct_control: evidence_valid_EXP0209_Q32_KV16_with_O_batch8
-    candidate: EXP0209_with_O_projection_batch16_and_one_weight_plus_one_bias_DMA
-    allowed_changes: decode_only_O_projection_batch16_single_DMA_selector_validation_telemetry_and_experiment_tools
-    forbidden_changes: weights_values_scales_qparams_arithmetic_QKV_QK_preparation_Attention_O_tile_work_Gate_Up_SwiGLU_Down_residual_norm_cache_LM_head_M64_prefill_F16F16_W4F16_QNN
-    correctness_gate: byte_exact_O_hidden_cache_selected_codes_and_tokens_to_EXP0209_control
-    physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_per_pass_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_and_tile_pairs_O_commands_224_to_112_and_224_fewer_DMA_descriptors
+    direct_control: evidence_valid_EXP0210_with_Down_batch4
+    candidate: EXP0210_with_Down_projection_batch8_single_DMA
+    allowed_changes: decode_only_Down_projection_batch8_selector_validation_telemetry_and_experiment_tools
+    forbidden_changes: weights_values_scales_qparams_arithmetic_QKV_QK_preparation_Attention_O_Gate_Up_SwiGLU_Down_tile_work_residual_norm_cache_LM_head_M64_prefill_F16F16_W4F16_QNN
+    correctness_gate: byte_exact_Down_hidden_cache_selected_codes_and_tokens_to_EXP0210_control
+    physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_per_pass_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_and_tile_pairs_Down_commands_448_to_224_224_fewer_direct_HMX_commands_and_448_fewer_DMA_descriptors
     performance_gate: five_pair_short_gate_then_ten_rotated_193_step_pairs_if_strictly_faster
     preservation_gate: M64_prefill_and_all_decode_math_remain_EXP0209_byte_exact
     stop_conditions: reject_without_formal_if_O_or_full_decode_does_not_improve_and_apply_user_defined_consecutive_local_optimum_E2E_regression_gate
   final_profiling_summary_standard: direct_full_stack_prefill_and_decode_tokens_per_second_plus_exact_Host_wall
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0209/20260905_formal_84f48b2'
+  last_completed_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0210/20260905_formal_9b32f80'
+  latest_w4u8_direct_n_o_batch16_single_dma_result:
+    id: EXP-0210
+    source_branch: codex/exp-0210-w4u8-direct-n-o-batch16-single-dma
+    source_head: 9b32f804879f1b041bd9def07c2ae80e7317dc9a
+    short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0210/20260905_short_gate_9b32f80'
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0210/20260905_formal_9b32f80'
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending
+    retained_as_enabling_parent: true
+    selected_baseline_changed: false
+    short_control_decode_tokens_per_second: 45.458430
+    short_candidate_decode_tokens_per_second: 45.587525
+    short_candidate_decode_speed_percent: 0.283986
+    formal_control_decode_tokens_per_second: 45.259235
+    formal_candidate_decode_tokens_per_second: 45.457583
+    formal_candidate_decode_speed_percent: 0.438248
+    formal_control_o_us_per_token: 1357.286
+    formal_candidate_o_us_per_token: 1248.462
+    short_pair_wins: 5
+    formal_pair_wins: 10
+    local_optimum_e2e_regression_streak: 0
+    short_summary_sha256: 1fa9ec9856759cfb62dd7559aae933ee09378eb58cafb7c0c38061408f3ea95e
+    short_report_sha256: 7f896671401bcf36ba3532cdfb857d96f63aceabb317886a416aa795bf0ccc61
+    formal_summary_sha256: 235f19db3dc52c0a9c14a86fbff6428fccdb97d16a8d09d69a739154fa4f31f5
+    formal_report_sha256: c8fa30b1b8a46ad7add1063abda9c6bb5b30d77b558ffe883a517e41b2679468
+    conclusion: O_batch16_single_DMA_reduces_O_wall_and_improves_all_ten_formal_E2E_pairs
+    next_decision: retain_as_fastest_structural_parent_and_test_Down_batch8_single_DMA
   latest_w4u8_direct_n_q32_kv16_result:
     id: EXP-0209
     source_branch: codex/exp-0209-w4u8-direct-n-q32-kv16

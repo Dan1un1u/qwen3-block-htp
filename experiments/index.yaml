@@ -6,6 +6,41 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0211
+    slug: w4u8-direct-n-down-batch8
+    title: Direct-W4 Down batch8 single-descriptor DMA
+    parent: EXP-0210
+    variants:
+      - evidence_valid_EXP0210_Down_batch4_control
+      - direct_W4_Down_batch8_weight1_bias1_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0211-w4u8-direct-n-down-batch8
+    source_commits: []
+    record: docs/experiments/EXP-0211.md
+    approval_ref: 'User message 2026-09-05: 开始decode优化loop'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0211-w4u8-direct-n-down-batch8
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    evidence:
+      source_parent_experiment: EXP-0210
+      source_parent_commit: 9b32f804879f1b041bd9def07c2ae80e7317dc9a
+      direct_control: same_binary_EXP0210_Q32_KV16_O16_Down_batch4
+      candidate: Down_batch8_one_weight_descriptor_plus_one_bias_descriptor
+      hypothesis: halve_Down_command_granularity_while_the_786432_byte_group_fits_the_existing_1MiB_ping_pong_slot
+      optimization_scope: decode_only_Down_batch8_selector_validation_telemetry_and_experiment_tools
+      forbidden_changes: weights_values_scales_qparams_arithmetic_QKV_QK_preparation_Attention_O_Gate_Up_SwiGLU_Down_tile_work_residual_norm_cache_LM_head_M64_prefill_F16F16_W4F16_QNN
+      correctness_gate: byte_exact_Down_hidden_cache_selected_codes_and_tokens
+      physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_and_HMX_tile_pairs_Down_commands_448_to_224_direct_commands_minus224_DMA_descriptors_minus448
+      short_gate: five_rotated_pairs_with_strict_Down_wall_and_decode_speed_pass
+      formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      selected_baseline_changed: false
   - id: EXP-0210
     slug: w4u8-direct-n-o-batch16-single-dma
     title: Direct-W4 O batch16 single-descriptor DMA
@@ -13,14 +48,17 @@ experiments:
     variants:
       - evidence_valid_EXP0209_O_batch8_control
       - direct_W4_O_batch16_weight1_bias1_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0210-w4u8-direct-n-o-batch16-single-dma
-    source_commits: []
+    source_commits:
+      - f19a1b494f2eae3b475603a176de4135157271a0
+      - d139109d8be416e4eb4fa6dccc256d62c699cd54
+      - 9b32f804879f1b041bd9def07c2ae80e7317dc9a
     record: docs/experiments/EXP-0210.md
     approval_ref: 'User message 2026-09-05: 开始decode优化loop'
     runtime:
@@ -28,6 +66,7 @@ experiments:
       source_branch: codex/exp-0210-w4u8-direct-n-o-batch16-single-dma
       approved_on: '2026-09-05'
       started_on: '2026-09-05'
+      completed_on: '2026-09-05'
     evidence:
       source_parent_experiment: EXP-0209
       source_parent_commit: 84f48b224fe3c1a01e64686e61705825c8038b81
@@ -40,6 +79,33 @@ experiments:
       physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_and_HMX_tile_pairs_O_commands_224_to_112_and_224_fewer_DMA_descriptors
       short_gate: five_rotated_pairs_with_strict_O_wall_and_decode_speed_pass
       formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0210/20260905_short_gate_9b32f80'
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0210/20260905_formal_9b32f80'
+      source_commit: 9b32f804879f1b041bd9def07c2ae80e7317dc9a
+      correctness_gate_result: pass_byte_exact_O_hidden_cache_codes_tokens_and_output_hashes
+      physical_gate_result: pass_8mib_zero_intermediate_ddr_zero_spill_one_fastrpc_one_hmx_no_qnn_zero_expansion_preserved_bytes_and_tiles_exact_command_and_descriptor_deltas
+      performance_gate_result: pass_all_five_short_and_all_ten_formal_pairs_faster
+      short_control_decode_tokens_per_second: 45.458430
+      short_candidate_decode_tokens_per_second: 45.587525
+      formal_control_decode_tokens_per_second: 45.259235
+      formal_candidate_decode_tokens_per_second: 45.457583
+      formal_decode_speed_percent: 0.438248
+      control_o_us_per_token: 1357.286
+      candidate_o_us_per_token: 1248.462
+      control_o_commands_per_token: 224
+      candidate_o_commands_per_token: 112
+      control_direct_n_commands_per_token: 1325
+      candidate_direct_n_commands_per_token: 1213
+      control_dma_descriptors_per_token: 2502
+      candidate_dma_descriptors_per_token: 2278
+      formal_pair_wins: 10
+      retained_as_enabling_parent: true
+      local_optimum_e2e_regression_streak: 0
+      short_summary_sha256: 1fa9ec9856759cfb62dd7559aae933ee09378eb58cafb7c0c38061408f3ea95e
+      short_report_sha256: 7f896671401bcf36ba3532cdfb857d96f63aceabb317886a416aa795bf0ccc61
+      formal_summary_sha256: 235f19db3dc52c0a9c14a86fbff6428fccdb97d16a8d09d69a739154fa4f31f5
+      formal_report_sha256: c8fa30b1b8a46ad7add1063abda9c6bb5b30d77b558ffe883a517e41b2679468
+      conclusion: O_batch16_single_DMA_reduces_local_O_and_improves_all_formal_E2E_pairs
       selected_baseline_changed: false
   - id: EXP-0209
     slug: w4u8-direct-n-q32-kv16
