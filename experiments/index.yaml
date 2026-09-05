@@ -6,6 +6,42 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0212
+    slug: w4u8-direct-n-down8-next-q-prefetch
+    title: Down8-tail prefetch of next-layer Q32 carrier
+    parent: EXP-0211
+    variants:
+      - evidence_valid_EXP0211_no_cross_layer_prefetch_control
+      - Down8_tail_next_Q32_prefetch_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
+    source_branches:
+      - codex/exp-0212-w4u8-direct-n-down8-next-q-prefetch
+    source_commits: []
+    record: docs/experiments/EXP-0212.md
+    approval_ref: 'User message 2026-09-05: 开始decode优化loop'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0212-w4u8-direct-n-down8-next-q-prefetch
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    evidence:
+      source_parent_experiment: EXP-0211
+      source_parent_commit: b111cf7e49ee5a230ed93b54cd5b5b33e8d1ebfa
+      prior_negative_control: EXP0203_Down2_tail_was_shorter_than_Q16_transfer_and_only_moved_wait
+      direct_control: same_binary_EXP0211_Down8_without_cross_layer_prefetch
+      candidate: next_layer_first_Q32_weight_prefetched_under_current_final_Down8_HMX
+      hypothesis: Down8_tail_grows_fourfold_while_Q32_transfer_grows_twofold_so_relative_overlap_window_doubles
+      optimization_scope: decode_only_cross_layer_first_Q32_weight_prefetch_lifetime_consumption_selector_telemetry_and_experiment_tools
+      forbidden_changes: weights_values_scales_qparams_arithmetic_QKV_order_or_batch_QK_preparation_Attention_O_Gate_Up_SwiGLU_Down_commands_or_tile_work_residual_norm_cache_LM_head_M64_prefill_F16F16_W4F16_QNN
+      correctness_gate: byte_exact_hidden_cache_selected_codes_and_tokens
+      physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_DMA_descriptors_HMX_commands_and_tile_pairs_exactly_27_started_and_consumed_prefetches
+      short_gate: five_rotated_pairs_with_strict_QKV_wall_and_decode_speed_pass
+      formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      selected_baseline_changed: false
   - id: EXP-0211
     slug: w4u8-direct-n-down-batch8
     title: Direct-W4 Down batch8 single-descriptor DMA
@@ -13,14 +49,16 @@ experiments:
     variants:
       - evidence_valid_EXP0210_Down_batch4_control
       - direct_W4_Down_batch8_weight1_bias1_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     evidence_profile: five-pair-short-gate-then-ten-pair-full-stack-W4U8-long-decode
     source_branches:
       - codex/exp-0211-w4u8-direct-n-down-batch8
-    source_commits: []
+    source_commits:
+      - 148ef9ec99ebdefa1359d357248fb0b964d1ae0f
+      - b111cf7e49ee5a230ed93b54cd5b5b33e8d1ebfa
     record: docs/experiments/EXP-0211.md
     approval_ref: 'User message 2026-09-05: 开始decode优化loop'
     runtime:
@@ -28,6 +66,7 @@ experiments:
       source_branch: codex/exp-0211-w4u8-direct-n-down-batch8
       approved_on: '2026-09-05'
       started_on: '2026-09-05'
+      completed_on: '2026-09-05'
     evidence:
       source_parent_experiment: EXP-0210
       source_parent_commit: 9b32f804879f1b041bd9def07c2ae80e7317dc9a
@@ -40,6 +79,33 @@ experiments:
       physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_decode_expansion_identical_weight_bytes_and_HMX_tile_pairs_Down_commands_448_to_224_direct_commands_minus224_DMA_descriptors_minus448
       short_gate: five_rotated_pairs_with_strict_Down_wall_and_decode_speed_pass
       formal_gate: ten_rotated_193_step_pairs_if_short_passes
+      short_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0211/20260905_short_gate_b111cf7'
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0211/20260905_formal_b111cf7'
+      source_commit: b111cf7e49ee5a230ed93b54cd5b5b33e8d1ebfa
+      correctness_gate_result: pass_byte_exact_Down_hidden_cache_codes_tokens_and_output_hashes
+      physical_gate_result: pass_8mib_zero_intermediate_ddr_zero_spill_one_fastrpc_one_hmx_no_qnn_zero_expansion_preserved_bytes_and_tiles_exact_command_and_descriptor_deltas
+      performance_gate_result: fail_one_of_ten_formal_pairs_despite_0p958843_percent_positive_median
+      short_control_decode_tokens_per_second: 45.621114
+      short_candidate_decode_tokens_per_second: 46.129865
+      formal_control_decode_tokens_per_second: 45.483204
+      formal_candidate_decode_tokens_per_second: 45.919316
+      formal_decode_speed_percent: 0.958843
+      control_down_us_per_token: 3590.998
+      candidate_down_us_per_token: 3363.821
+      control_down_commands_per_token: 448
+      candidate_down_commands_per_token: 224
+      control_direct_n_commands_per_token: 1213
+      candidate_direct_n_commands_per_token: 989
+      control_dma_descriptors_per_token: 2278
+      candidate_dma_descriptors_per_token: 1830
+      formal_pair_wins: 9
+      retained_as_enabling_parent: true
+      local_optimum_e2e_regression_streak: 0
+      short_summary_sha256: 48044f4b8e42e5396e52afe1379248eac23074f441cab5ff1c017eb79f5596ed
+      short_report_sha256: 5980e15fd9a60a63de0281a605f0d88776e5e845e0e92e9412f544c56e3fcbbc
+      formal_summary_sha256: 08aa2c207197d10513ad45733bb2f4af5760d6e23ae9805053c317a6be032e2d
+      formal_report_sha256: 9e47aa4b471b06c3165640b697cc00e237a386b3d1411a082a0c49b1230858d0
+      conclusion: Down_batch8_reduces_local_Down_and_improves_median_E2E_but_fails_strict_all_pairs_gate
       selected_baseline_changed: false
   - id: EXP-0210
     slug: w4u8-direct-n-o-batch16-single-dma
