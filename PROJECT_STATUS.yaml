@@ -36,7 +36,7 @@ current_scope:
   active_experiment_stage: EXP0223_channel_clipping_generation
   active_experiment_evidence: D:/llm_exp/results/qwen3-block-htp/exp0223
   active_experiment_gate: pending
-  active_experiment_source_head: d6ab67420cc0c823c0705cd6820e323ef5c2f4c6
+  active_experiment_source_head: b396ac62de2d58b29de555432df016878b8982cb
   current_handoff: SESSION_HANDOFF_EXP0223.md
   active_recipe_specialization: W4F16_transformer_GPTQ_channel_clipping
   last_completed_experiment_contract:
