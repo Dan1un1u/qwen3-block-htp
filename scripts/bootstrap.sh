@@ -7,7 +7,7 @@ EXPECTED_ORIGIN=https://github.com/Dan1un1u/qwen3-block-htp.git
 SOURCE_WORKTREE=${1:-}
 
 hard_stop() {
-    printf 'PROJECT_MEMORY_HARD_STOP=%s\n' "$*" >&2
+    printf 'PROJECT_MEMORY_GATE_BLOCKED=%s\n' "$*" >&2
     exit 2
 }
 

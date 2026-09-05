@@ -6,37 +6,37 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
-- id: EXP-0217
-  slug: f16f16-greedy-generation
-  title: F16F16 complete deterministic token-generation boundary
-  parent: EXP-0216
-  record: docs/experiments/EXP-0217.md
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
-  adoption_status: pending
-  approval_ref: 'User message 2026-09-05: pause W4A8 specialization, complete F16A16
-    tokenizer and LM head based on W4A16 for usable text, then propose lightweight
-    common speed and quality evaluation'
-  source_branches:
-  - codex/exp-0217-f16f16-greedy-generation
-  source_commits: []
-  runtime:
-    source_branch: codex/exp-0217-f16f16-greedy-generation
-    source_worktree: /home/daniuniu/work/qwen3-block-htp
-    approved_on: '2026-09-05'
-    started_on: '2026-09-05'
-  variants:
-  - independent_F16F16_reference
-  - standalone_DSP_F16F16_greedy_generation
-  - W4F16_generation_regression
-  evidence_profile: full-token-boundary-F16F16-integration
-  evidence:
-    source_parent_commit: 25b2fdfead7546a981ccb457d9106e081bb6cb34
-    speed_gate: report_only_no_same_scope_prior_F16F16_control
-    physical_gate: exact_8MiB_VTCM_zero_timed_intermediate_DDR_one_FastRPC_one_HMX_owner_no_QNN
-    correctness_gate: independent_FP16_reference_diagnostics_existing_conditional_transformer_tolerance_stable_selected_tokens_readable_text
-    selected_baseline_changed: false
+  - id: EXP-0217
+    slug: f16f16-greedy-generation
+    title: F16F16 complete deterministic token-generation boundary
+    parent: EXP-0216
+    record: docs/experiments/EXP-0217.md
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    approval_ref: 'User message 2026-09-05: pause W4A8 specialization, complete F16A16
+      tokenizer and LM head based on W4A16 for usable text, then propose lightweight
+      common speed and quality evaluation'
+    source_branches:
+    - codex/exp-0217-f16f16-greedy-generation
+    source_commits: []
+    runtime:
+      source_branch: codex/exp-0217-f16f16-greedy-generation
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    variants:
+    - independent_F16F16_reference
+    - standalone_DSP_F16F16_greedy_generation
+    - W4F16_generation_regression
+    evidence_profile: full-token-boundary-F16F16-integration
+    evidence:
+      source_parent_commit: 25b2fdfead7546a981ccb457d9106e081bb6cb34
+      speed_gate: report_only_no_same_scope_prior_F16F16_control
+      physical_gate: exact_8MiB_VTCM_zero_timed_intermediate_DDR_one_FastRPC_one_HMX_owner_no_QNN
+      correctness_gate: independent_FP16_reference_diagnostics_existing_conditional_transformer_tolerance_stable_selected_tokens_readable_text
+      selected_baseline_changed: false
   - id: EXP-0216
     slug: w4u8-prefill-direct-w4-qkvo
     title: Full-stack M64 prefill direct-W4 QKV/O integration

@@ -1546,3 +1546,6 @@ final model norm twice inside LM head, or automatic baseline promotion.
 
 **F16F16 Token-Boundary Integration and Evaluation Preparation**:
 The user paused further W4U8 specialization on 2026-09-05 and approved EXP-0217 to complete F16F16 text generation using the W4F16 boundary structure with FP16 stored LM-head weights. W4F16 readable text has not established general accuracy. W4U8 semantic quality may fail and is not a repair target here. A common lightweight repeated speed/quality protocol is to be proposed after the F16F16 boundary is usable. User-facing profiling now contains the stable three-recipe module table followed by E2E token/s; full diagnostic evidence stays archived.
+
+**Autonomous Gate Recovery**:
+The user authorized repair of the EXP-0217 index indentation defect and changed the interruption policy on 2026-09-05. Attributable formatting, tooling and implementation defects are repaired and revalidated autonomously. A failed preflight blocks dependent execution, not its own repair. Evidence integrity, numerical and physical criteria, experiment ownership and user-only promotion remain intact. Do not request approval of routine repairs merely because a gate reported an error.
