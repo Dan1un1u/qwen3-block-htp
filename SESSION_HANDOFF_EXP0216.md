@@ -47,7 +47,7 @@ artifact hash.
 
 - Active experiment: `EXP-0216`
 - Source branch: `codex/exp-0216-w4u8-prefill-direct-w4-qkvo`
-- Source commit: `f724a22acdfd78b20c6e1ba123015a8fa213a7b2`
+- Source commit: `d1349951b08e60c56ddd690a421379d45041caeb`
 - Source and memory branches were clean, pushed, and remote-synchronized at
   handoff time.
 - Device: PJZ110 was connected and authorized through Windows ADB.
@@ -76,17 +76,17 @@ After bootstrap and preflight, run the five-pair short gate:
 ```bash
 cd /home/daniuniu/work/qwen3-block-htp
 scripts/run_exp0216_short_gate.sh \
-  /mnt/d/llm_exp/results/qwen3-block-htp/exp0216/20260905_short_gate_f724a22 \
-  f724a22acdfd78b20c6e1ba123015a8fa213a7b2
+  /mnt/d/llm_exp/results/qwen3-block-htp/exp0216/20260905_short_gate_d134995 \
+  d1349951b08e60c56ddd690a421379d45041caeb
 ```
 
 If the short gate passes, run the ten-pair formal comparison:
 
 ```bash
 scripts/run_exp0216_formal.sh \
-  /mnt/d/llm_exp/results/qwen3-block-htp/exp0216/20260905_formal_f724a22 \
-  f724a22acdfd78b20c6e1ba123015a8fa213a7b2 \
-  /mnt/d/llm_exp/results/qwen3-block-htp/exp0216/20260905_short_gate_f724a22
+  /mnt/d/llm_exp/results/qwen3-block-htp/exp0216/20260905_formal_d134995 \
+  d1349951b08e60c56ddd690a421379d45041caeb \
+  /mnt/d/llm_exp/results/qwen3-block-htp/exp0216/20260905_short_gate_d134995
 ```
 
 Do not bypass the scripts' clean-tree and exact-commit checks. Poll long-running
@@ -165,3 +165,7 @@ state conflict or violate the destructive-action restrictions. Report only
 meaningful milestones, final gates, failures that change direction, or required
 user decisions. The user wants the prefill loop to continue until manually
 stopped.
+
+## Telemetry repair update
+
+Initial f724a22 five-pair collection stopped at summary because generation_profile omitted required QKV ring fields. Raw evidence remains in 20260905_short_gate_f724a22; it is not a passed gate. The user authorized repair. The commands above now target the pushed Host telemetry and strict-summary repair d134995; fresh collection is required.
