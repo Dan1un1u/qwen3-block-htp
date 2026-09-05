@@ -11,3 +11,5 @@ Implementation commands (run project-memory preflight before each stage):
 - CPU venv: export_exp0225.py quality after selection; measure_exp0225.py deploy/quick/full/repeat/warmup/short/formal. Candidate versus EXP0224 A,5short/10formal.
 
 All evidence is immutable under D:/llm_exp/results/qwen3-block-htp/exp0225; packages and rotations under D:/llm_exp/models/qwen3-block-htp/exp0225. Failed attempts retain their outputs. No automatic baseline promotion. Complete profiling and final quality are pending until execution passes the required gates.
+
+Numerical recovery: the official five-iteration Cayley approximation accumulated correlated orthogonality drift and failed step050 unquantized equivalence. Original run retained under training; valid recovery uses exact FP64 Cayley linear solves with unchanged tangent/step/data/seed/objective, under training_exact. Independent NumPy solve and stronger Frobenius Gram<1e-4 gates are required. Only the unchanged step000 control may reuse the initial export after exact matrix identity verification. Later checkpoints use training_exact.
