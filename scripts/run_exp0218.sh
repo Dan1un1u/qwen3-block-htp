@@ -3,7 +3,7 @@ set -euo pipefail
 recipe="${1:?recipe required}"
 suite="${2:-}"
 adb_exe="${ADB_EXE:-/mnt/c/adb/adb.exe}"
-remote_root="/data/local/tmp/qwen3-block-htp/exp0218-${recipe}"
+remote_root="${EXP0218_REMOTE_ROOT:-/data/local/tmp/qwen3-block-htp/exp0218-${recipe}}"
 evaluation_env=""
 if [[ -n "$suite" ]]; then
     [[ "$suite" =~ ^[a-z0-9_-]+$ ]] || exit 2

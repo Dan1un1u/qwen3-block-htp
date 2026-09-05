@@ -82,16 +82,22 @@ def speed():
     data={};timings={}
     for recipe in RECIPES:
         paths=sorted((ROOT/"formal").glob("round_*_"+recipe+".jsonl"));assert len(paths)==10
-        runs=[];loops=[]
+        runs=[];loops=[];cold=[];frontends=[]
         for path in paths:
             profiles,final=speed_validate(path,recipe)
             runs.append(profiles);loops.append(final["generation_loop_wall_ns"])
+            records=[json.loads(l) for l in path.read_text().splitlines() if l.startswith("{")]
+            cold.append(next(r for r in records if r.get("record")=="generation_startup"))
+            frontends.append(json.loads(path.with_suffix(".execution.json").read_text())["frontend"])
         data[recipe]={m:[normalized([p for p in r if p["mode"]==m]) for r in runs] for m in ["prefill","decode"]}
         pwall=median(d["host_us"] for d in data[recipe]["prefill"])
         dwall=median(d["host_us"]*15 for d in data[recipe]["decode"])
         timings[recipe]=dict(prefill_tokens=64,prefill_host_us=pwall,prefill_tokens_per_second=64e6/pwall,
             decode_tokens=15,decode_host_us=dwall,decode_tokens_per_second=15e6/dwall,
-            generation_loop_median_us=median(loops)/1000)
+            generation_loop_median_us=median(loops)/1000,
+            cold_startup_median_ns={k:median(r[k] for r in cold) for k in cold[0] if k!="record"},
+            frontend_median={k:median(r[k] for r in frontends) for k in
+                ["tokenize_template_ns","incremental_detokenize_ns","launch_to_first_text_s"]})
     labels=['I/O、metadata','Input RMSNorm','QKV＋Q/K Norm-RoPE','QK–Softmax–AV','O projection',
         'Post-attention residual＋RMSNorm','Gate/Up＋SwiGLU','Down','Final residual',
         'KV carrier conversion','KV append DMA','Block orchestration','Layer bookkeeping',
