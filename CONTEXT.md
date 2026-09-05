@@ -1412,6 +1412,20 @@ _Avoid_: treating the projection speedup as full-stack throughput, silently
 regenerating the old reference, changing qparams, applying M1 batch settings to
 M64, or calling EXP-0214 a Selected Baseline without user promotion
 
+**Full-Stack M64 Direct-W4 MLP Result**:
+EXP-0215 removes explicit HVX W4-to-S8 expansion from all 28-layer M64
+Gate/Up/Down projections.  Formal complete prefill improves from 1,276.612 to
+1,459.897 token/s (+14.357%) with ten of ten rotated wins; complete MLP is
+36.160% faster and Down is 97.617% faster.  Decode is preserved at 46.026
+token/s.  The candidate executes 84 direct projections and 560 direct HMX
+commands, has zero MLP expansion, preserves HMX tile-pair work and is byte exact
+through the full audit.  EXP-0216 retains this path and targets the remaining
+M64 Q/K/V/O expansion.
+_Avoid_: reverting to Expanded-S8 MLP, treating the separate SwiGLU interval as
+new arithmetic, changing qparams or Attention math, applying the prefill bit to
+decode, or calling evidence-valid EXP-0215 an accepted baseline without user
+promotion
+
 **Continuous Direct-N Gate-to-Up Projection Ring**:
 EXP-0198 flattened the two independent three-group batch-thirty-two Gate and
 Up calls into one six-group ring.  It preserved all arithmetic, commands,

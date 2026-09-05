@@ -19,38 +19,38 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0215
-  next_experiment_number: 216
+  active_experiment: EXP-0216
+  next_experiment_number: 217
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0214
-  last_completed_source_commit: 70dd554e507ab4705fb64d39f2708d8082e867ab
-  provisional_source_parent: evidence_valid_EXP0214_M64_direct_W4_projection_gate
+  last_completed_experiment: EXP-0215
+  last_completed_source_commit: 0483c290f2a9fe0de34db104b3c9ad177cbb7065
+  provisional_source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
   device_execution_state: ready
   full_model: EXP0152_completed_layers0_27_transformer_stack_before_final_norm_or_lm_head
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
   active_experiment_stage: approved_pending_source_branch_and_preflight
   active_experiment_evidence: null
   active_experiment_gate: not_run
-  active_recipe_specialization: W4U8_M64_prefill_direct_packed_W4_HMX
+  active_recipe_specialization: W4U8_M64_prefill_direct_packed_W4_QKVO_HMX
   active_experiment_contract:
-    id: EXP-0215
-    source_branch: codex/exp-0215-w4u8-prefill-direct-w4-mlp
-    source_parent: evidence_valid_EXP0214_M64_direct_W4_projection_gate
-    source_parent_commit: 70dd554e507ab4705fb64d39f2708d8082e867ab
-    execution_scope: full_token_boundary_W4U8_M64_prefill_with_direct_W4_Gate_Up_Down
-    direct_control: EXP0211_full_stack_M64_prefill_with_explicit_HVX_W4_to_S8_MLP
-    candidate: full_stack_M64_prefill_Gate_Up_Down_HMX_direct_read_of_reordered_packed_W4
-    allowed_changes: M64_W4U8_MLP_direct_W4_selectors_phase_safe_VTCM_carriers_telemetry_and_experiment_tools
+    id: EXP-0216
+    source_branch: codex/exp-0216-w4u8-prefill-direct-w4-qkvo
+    source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
+    source_parent_commit: 0483c290f2a9fe0de34db104b3c9ad177cbb7065
+    execution_scope: full_token_boundary_W4U8_M64_prefill_with_direct_W4_Q_K_V_O_Gate_Up_Down
+    direct_control: EXP0215_full_stack_M64_prefill_with_direct_W4_MLP_and_explicit_HVX_W4_to_S8_QKVO
+    candidate: full_stack_M64_prefill_all_transformer_projections_HMX_direct_read_of_reordered_packed_W4
+    allowed_changes: M64_W4U8_QKVO_direct_W4_selectors_phase_safe_VTCM_carriers_batch_granularity_telemetry_and_experiment_tools
     forbidden_changes: weight_values_scales_qparams_output_encoding_attention_math_KV_cache_decode_path_LM_head_F16F16_W4F16_QNN
     correctness_gate: byte_exact_full_prefill_hidden_cache_selected_codes_and_tokens_to_control
-    physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN_direct_packed_W4_HMX_zero_MLP_prefill_expansion
+    physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_fill_one_FastRPC_one_HMX_owner_no_QNN_direct_packed_W4_HMX_zero_QKVO_and_MLP_prefill_expansion
     performance_gate: rotated_direct_full_stack_prefill_tokens_per_second_candidate_strictly_higher
-    preservation_gate: decode_and_all_non_MLP_prefill_math_and_physical_contracts_unchanged
+    preservation_gate: decode_attention_math_cache_LM_head_and_all_non_projection_contracts_unchanged
     stop_conditions: no_autonomous_stop_after_EXP0214_gate_continue_prefill_loop_until_user_interrupts
   final_profiling_summary_standard: direct_full_stack_prefill_and_decode_tokens_per_second_plus_exact_Host_wall
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
@@ -65,10 +65,34 @@ current_scope:
     promotion_authority: user_only
     selected_baseline_changed: false
   latest_w4u8_prefill_direct_w4_experiment:
-    id: EXP-0215
+    id: EXP-0216
     execution_state: running
+    source_branch: codex/exp-0216-w4u8-prefill-direct-w4-qkvo
+    source_parent_commit: 0483c290f2a9fe0de34db104b3c9ad177cbb7065
+    selected_baseline_changed: false
+  latest_w4u8_prefill_direct_w4_MLP_result:
+    id: EXP-0215
+    execution_state: completed
     source_branch: codex/exp-0215-w4u8-prefill-direct-w4-mlp
-    source_parent_commit: 70dd554e507ab4705fb64d39f2708d8082e867ab
+    source_head: 0483c290f2a9fe0de34db104b3c9ad177cbb7065
+    formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0215/20260905_formal_0483c29'
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending
+    control_prefill_tokens_per_second: 1276.611656573856
+    candidate_prefill_tokens_per_second: 1459.8971247378863
+    candidate_prefill_speed_percent: 14.357182720384065
+    control_decode_tokens_per_second: 45.929152177508385
+    candidate_decode_tokens_per_second: 46.02597158581955
+    complete_MLP_speed_percent: 36.15969469698086
+    direct_MLP_projection_count: 84
+    direct_MLP_HMX_command_count: 560
+    explicit_MLP_expansion_ticks: 0
+    exact_vtcm_bytes: 8388608
+    intermediate_DDR_bytes: 0
+    summary_sha256: e595430df9af0f4fc850a3bc52a917bb157e01b8324096a96b3d25701ecb53ba
+    full_profiling_report_sha256: 4ddbf1e6e334ec8db028af123fb2fb4946aff0cdd23c1965c55d20bbfb83c7c7
+    static_gate_sha256: 44ed7b8644393eb9cc23156b4847322a2fbe7cdab9c02ea6cf34e07f5a270063
     selected_baseline_changed: false
   latest_w4u8_prefill_direct_w4_projection_gate:
     id: EXP-0214

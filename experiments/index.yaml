@@ -6,6 +6,39 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0216
+    slug: w4u8-prefill-direct-w4-qkvo
+    title: Full-stack M64 prefill direct-W4 QKV/O integration
+    parent: EXP-0215
+    variants:
+      - EXP0215_M64_direct_W4_MLP_control
+      - M64_direct_packed_W4_QKVO_plus_MLP_candidate
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: paired-full-token-boundary-W4U8-prefill-direct-W4-QKVO
+    source_branches:
+      - codex/exp-0216-w4u8-prefill-direct-w4-qkvo
+    source_commits: []
+    record: docs/experiments/EXP-0216.md
+    approval_ref: 'User message 2026-09-05: continue prefill loop indefinitely after direct-W4 acceleration until manually stopped'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0216-w4u8-prefill-direct-w4-qkvo
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    evidence:
+      source_parent_experiment: EXP-0215
+      source_parent_commit: 0483c290f2a9fe0de34db104b3c9ad177cbb7065
+      direct_control: EXP0215_complete_M64_prefill_with_direct_W4_Gate_Up_Down_and_explicit_QKVO_expansion
+      candidate: same_complete_prefill_with_HMX_direct_W4_for_Q_K_V_O_Gate_Up_Down
+      optimization_scope: W4U8_M64_QKVO_direct_W4_selectors_phase_safe_VTCM_carriers_batch_granularity_and_telemetry
+      forbidden_changes: weight_values_scales_qparams_output_encoding_attention_math_KV_cache_decode_LM_head_F16F16_W4F16_QNN
+      correctness_gate: byte_exact_complete_prefill_hidden_cache_selected_codes_and_tokens
+      physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_QKVO_and_MLP_prefill_expansion
+      performance_gate: paired_direct_complete_prefill_tokens_per_second_strictly_higher
+      selected_baseline_changed: false
   - id: EXP-0215
     slug: w4u8-prefill-direct-w4-mlp
     title: Full-stack M64 prefill direct-W4 MLP integration
@@ -13,14 +46,15 @@ experiments:
     variants:
       - EXP0211_full_stack_M64_expanded_S8_MLP_control
       - M64_direct_packed_W4_Gate_Up_Down_candidate
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: pending
     evidence_profile: paired-full-token-boundary-W4U8-prefill-direct-W4-MLP
     source_branches:
       - codex/exp-0215-w4u8-prefill-direct-w4-mlp
-    source_commits: []
+    source_commits:
+      - 0483c290f2a9fe0de34db104b3c9ad177cbb7065
     record: docs/experiments/EXP-0215.md
     approval_ref: 'User message 2026-09-05: if the direct-W4 gate accelerates, continue the prefill optimization loop until manually stopped'
     runtime:
@@ -39,6 +73,25 @@ experiments:
       correctness_gate: byte_exact_complete_prefill_hidden_cache_selected_codes_and_tokens
       physical_gate: exact_8mib_VTCM_zero_timed_intermediate_DDR_zero_spill_one_FastRPC_one_HMX_owner_no_QNN_zero_MLP_prefill_expansion
       performance_gate: paired_direct_complete_prefill_tokens_per_second_strictly_higher
+      formal_evidence: 'D:/llm_exp/results/qwen3-block-htp/exp0215/20260905_formal_0483c29'
+      control_prefill_host_us: 50132.7085
+      candidate_prefill_host_us: 43838.7235
+      control_prefill_tokens_per_second: 1276.611656573856
+      candidate_prefill_tokens_per_second: 1459.8971247378863
+      candidate_prefill_speed_percent: 14.357182720384065
+      control_decode_tokens_per_second: 45.929152177508385
+      candidate_decode_tokens_per_second: 46.02597158581955
+      complete_MLP_control_us: 24064.453125
+      complete_MLP_candidate_us: 17673.697916666668
+      complete_MLP_speed_percent: 36.15969469698086
+      direct_MLP_projection_count: 84
+      direct_MLP_HMX_command_count: 560
+      explicit_MLP_expansion_ticks: 0
+      exact_vtcm_bytes: 8388608
+      intermediate_DDR_bytes: 0
+      summary_sha256: e595430df9af0f4fc850a3bc52a917bb157e01b8324096a96b3d25701ecb53ba
+      full_profiling_report_sha256: 4ddbf1e6e334ec8db028af123fb2fb4946aff0cdd23c1965c55d20bbfb83c7c7
+      static_gate_sha256: 44ed7b8644393eb9cc23156b4847322a2fbe7cdab9c02ea6cf34e07f5a270063
       selected_baseline_changed: false
   - id: EXP-0214
     slug: w4u8-prefill-direct-w4-hmx-gate
