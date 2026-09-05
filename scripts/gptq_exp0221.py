@@ -59,10 +59,13 @@ def calibration():
         assert len(selected)==32,(lang,len(selected))
         samples.extend(selected);sources.append(dict(language=lang,dataset=dataset,config=config,split='train',metadata_revision=revision,pages=pages))
     ids=np.asarray([s['token_ids'] for s in samples],dtype='<u4');OUTPUT.mkdir(parents=True,exist_ok=True)
-    with (OUTPUT/'calibration_ids_u32.bin').open('xb') as f:f.write(ids.tobytes())
+    binary=OUTPUT/'calibration_ids_u32.bin'
+    if binary.exists():assert binary.read_bytes()==ids.tobytes(),'Partial calibration recovery must preserve exact IDs'
+    else:
+        with binary.open('xb') as f:f.write(ids.tobytes())
     write_json(RESULT/'calibration.json',dict(experiment='EXP-0221',samples=samples,sources=sources,
         selection='first128 tokens of first32 eligible distinct rows per language; no padding or chat template',
-        tokens=8192,sequence_length=128,ids_sha256=sha(ids.tobytes()),tokenizer_sha256=ev.digest(ev.MODEL/'tokenizer.json'),
+        tokens=8192,sequence_length=128,ids_sha256=sha(ids.tobytes()),tokenizer_sha256=ev.digest(ev.MODEL/'qwen3-tokenizer.json'),
         overlap_32gram_rejections=rejected,evaluation_or_holdout_scoring=False))
     refs={}
     for n in ['gptq.py','quant.py','LICENSE.txt']:
