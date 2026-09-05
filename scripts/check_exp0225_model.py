@@ -16,7 +16,7 @@ def main():
         original=load_model(MODEL,torch.float32)
         ref=original(ids,use_cache=False).logits[:, -2:].clone()
         # Build training model separately, retaining exact original BF16 values in FP16.
-        learned=LearnedModel(copy.deepcopy(original).half(),device='cpu');learned.recompute=False;learned.set_quantized(False)
+        learned=LearnedModel(copy.deepcopy(original),device='cpu');learned.recompute=False;learned.set_quantized(False)
         rotations=learned.rotations();fold(original,rotations)
         fp32=original(ids,use_cache=False).logits[:,-2:];invariance=metrics(fp32,ref)
         assert invariance['finite'] and invariance['nrmse']<=.003 and invariance['cosine']>=.99999,invariance

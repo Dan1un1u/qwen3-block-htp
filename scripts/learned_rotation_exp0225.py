@@ -54,7 +54,7 @@ def rotated_weight(w,r1,r2=None,kind='q',gamma=None):
 
 class RotationLinear(nn.Module):
     def __init__(self,linear,r1,r2,kind,gamma):
-        super().__init__();self.register_buffer('weight',linear.weight.detach())
+        super().__init__();self.register_buffer('weight',linear.weight.detach().to(torch.bfloat16))
         self.register_buffer('gamma',gamma.detach().clone() if gamma is not None else None)
         object.__setattr__(self,'r1',r1);object.__setattr__(self,'r2',r2)
         self.kind=kind;self.quantized=True
@@ -65,6 +65,9 @@ class RotationLinear(nn.Module):
 class LearnedModel(nn.Module):
     def __init__(self,model,device='cuda'):
         super().__init__();self.body=model.model;self.head=model.lm_head
+        # Preserve all original BF16 values, including values subnormal in FP16.
+        # Only execution norms/activations and final reconstructed weights use FP16.
+        self.body.embed_tokens.to(dtype=torch.bfloat16);self.head.to(dtype=torch.bfloat16)
         for p in model.parameters():p.requires_grad_(False)
         d=model.config.hidden_size;hd=model.config.head_dim
         gen=torch.Generator().manual_seed(SEED)
@@ -79,7 +82,9 @@ class LearnedModel(nn.Module):
                 setattr(layer.get_submodule(parent),attr,RotationLinear(linear,self.r1,self.r2[i],short,gamma))
             with torch.no_grad():
                 layer.input_layernorm.weight.fill_(1);layer.post_attention_layernorm.weight.fill_(1)
-        with torch.no_grad():self.body.norm.weight.fill_(1)
+                layer.input_layernorm.half();layer.post_attention_layernorm.half()
+                layer.self_attn.q_norm.half();layer.self_attn.k_norm.half()
+        with torch.no_grad():self.body.norm.weight.fill_(1);self.body.norm.half()
         self.quantized=True;self.recompute=True;self.to(device)
         # .to moves Parameters in place; non-registered references still address them.
         for i,layer in enumerate(self.body.layers):
@@ -162,7 +167,7 @@ def train(smoke=False):
     torch.set_num_threads(8);random.seed(SEED);torch.manual_seed(SEED)
     data=json.loads((RESULT/'learning_data.json').read_text());data_hash=sha256_file(RESULT/'learning_data.json')
     assert data['plan']==PLAN
-    origin=verify_origin();base=load_model(MODEL,torch.float16);model=LearnedModel(base);del base;gc.collect()
+    origin=verify_origin();base=load_model(MODEL,torch.bfloat16);model=LearnedModel(base);del base;gc.collect()
     opt=optimizer([model.r1,*model.r2],PLAN['learning_rate'])
     mode='smoke' if smoke else 'training';out=OUTPUT/mode;assert not out.exists()
     out.mkdir(parents=True);rows=data['train'];gen=np.random.default_rng(SEED)
