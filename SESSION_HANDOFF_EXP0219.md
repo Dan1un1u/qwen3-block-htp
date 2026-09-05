@@ -1,0 +1,9 @@
+# EXP-0219 completed — resume from authority
+
+Bootstrap and read the four authority files. No active experiment; next EXP-0220. Source branch codex/exp-0219-w4f16-r1r2-offline-rotation, HEAD 10a5a19e125c9d7894d3102aa3e289a68c39f914. Both other recipes remain frozen. No automatic new experiment or baseline promotion.
+
+Read docs/experiments/EXP-0219-RESULTS.md and source docs/EXP0219_OFFLINE_ROTATION.md. All A/B/C frozen quality suites and A/C warmup, five short, ten formal sessions are complete. Do not repeat them to recover state. Local effectiveness gate failed: original W4A16 NLL 4.231668 / 8 of 24; gamma-only 5.601669 / 0; fixed R1/R2 8.562491 / 0. All three quality score sequences deterministic. Unquantized FP32 equivalence and independent 16-token speed sequences pass. Formal 320 invocation and 8960 layer ledgers close, physical contracts pass.
+
+User clarified that mllm uses LPBQ groups atop per-channel and forbids importing folded weights. EXP0219 already reloaded Qwen3-origin and folded anew, then used only existing per-channel W4. Original shard hashes match EXP0218; all 197 projections have one FP32 scale per output channel. No LPBQ weights, scale1/scale2 or QNN runtime imported. Method reference is mllm 2782f7ad9d1ee5e61f65d418cb89ae7217b5fb06 only. The observed negative result remains valid after this audit.
+
+Evidence D:/llm_exp/results/qwen3-block-htp/exp0219, 127-file ledger SHA256 f6578c3570e51f739a2cfc11a5ad713a807c083800bdb701c6095e4ff4436b4b. Models/source/binaries D:/llm_exp/models/qwen3-block-htp/exp0219. Runtime is unchanged EXP0218 d9810725 ABI108; embedded label218 is intentional, outer experiment219. No background jobs remain. Network provider interruptions recovered by verified bootstrap retry; proxy configuration unchanged. Next work requires a new approved hypothesis; do not repeat fixed Sylvester A/B/C or silently tune on qbh-lite-v1. Eight holdout windows remain unused.

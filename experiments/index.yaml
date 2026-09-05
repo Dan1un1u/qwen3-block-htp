@@ -11,10 +11,10 @@ experiments:
     title: W4F16 full-model offline Hadamard R1/R2 quality validation
     parent: EXP-0218
     record: docs/experiments/EXP-0219.md
-    execution_state: running
-    evidence_validity: pending
-    local_gate: pending
-    adoption_status: pending
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
     approval_ref: 'User 2026-09-05: introduce offline Hadamard R1/R2 for W4A16 using
       mllm qwen3-layer5-r1r2-offline-poc; verify rotation effectiveness; freeze both
       other recipes.'
@@ -22,11 +22,18 @@ experiments:
     - codex/exp-0219-w4f16-r1r2-offline-rotation
     source_commits:
     - b2904bbc60b25e6b80f53351655b1c585fd97db2
+    - e512097e6258dd5f73c32361fbe29260e73aadc1
+    - 8c0ef3e66f1d47a03d2fb0096291f59f889a61eb
+    - dcee4255e3a4a4be068d2514a81d03a30a029f91
+    - e366ed6133e991a6930c909a3dc2b0e2c9ec0ed9
+    - a8b930ff574bfc420a270abec4a8243f65fa22a5
+    - 10a5a19e125c9d7894d3102aa3e289a68c39f914
     runtime:
       source_branch: codex/exp-0219-w4f16-r1r2-offline-rotation
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       approved_on: '2026-09-05'
       started_on: '2026-09-05'
+      completed_on: '2026-09-05'
     variants:
     - A_original_W4F16
     - B_identity_gamma_fold_W4F16
@@ -37,6 +44,58 @@ experiments:
       reference_commit: 2782f7ad9d1ee5e61f65d418cb89ae7217b5fb06
       recipe_scope: W4F16_only_F16F16_and_W4U8_frozen
       selected_baseline_changed: false
+      source_head: 10a5a19e125c9d7894d3102aa3e289a68c39f914
+      formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0219
+      retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0219/artifacts/10a5a19e125c9d7894d3102aa3e289a68c39f914
+      original_checkpoint_only: true
+      lpbq_assets_used: false
+      quality:
+        A:
+          nll: 4.231668471946213
+          ppl: 68.83198064863572
+          tasks_correct: 8
+          tasks_total: 24
+          teacher_top1_agreement: 0.55078125
+        B:
+          nll: 5.601669164010636
+          ppl: 270.87817038129873
+          tasks_correct: 0
+          tasks_total: 24
+          teacher_top1_agreement: 0.326171875
+        C:
+          nll: 8.562491219728587
+          ppl: 5231.6982614282315
+          tasks_correct: 0
+          tasks_total: 24
+          teacher_top1_agreement: 0.28515625
+      speed:
+        A:
+          prefill_host_us: 62873.072499999995
+          decode_host_us_per_token: 92414.22736666666
+          prefill_tokens_per_second: 1017.9238496734831
+          decode_tokens_per_second: 10.820844673973815
+        C:
+          prefill_host_us: 63020.182
+          decode_host_us_per_token: 92587.28816666667
+          prefill_tokens_per_second: 1015.5476859778031
+          decode_tokens_per_second: 10.800618743686465
+      paired_speed_percent:
+        prefill: -0.23433536231609597
+        decode: -0.18626428847727805
+      quality_gate_result: fail_R1R2_NLL_8.562491_vs_original_4.231668_tasks_0_vs_8
+      correctness_gate_result: pass_unquantized_FP32_equivalence_and_software_greedy_tokens
+      determinism_gate_result: pass_A_B_C_quick_repeat_full_consistent_original_A_identical_to_EXP0218
+      physical_gate_result: pass_8MiB_zero_timed_intermediate_DDR_spill_1_FastRPC_no_QNN_unchanged_binary
+      speed_gate_result: completed_warmup_5_short_10_formal_report_only
+      formal_invocation_ledgers: 320
+      formal_layer_ledgers: 8960
+      full_profiling_report: docs/experiments/EXP-0219-PROFILE.md
+      full_profiling_report_sha256: 22f116aa1536524a3365982ee5678556dd543c25246baa8aa4e94a5e504fee1a
+      quality_summary_sha256: c076a0736d49ae6a4a5c5272914bf314303930ba0339475a05b911ec235c0146
+      speed_summary_sha256: e993dbf379f2620b62d591859e8a0466d5f292410cf5c186be2d9bef74bdce8c
+      evidence_sha256_ledger_sha256: f6578c3570e51f739a2cfc11a5ad713a807c083800bdb701c6095e4ff4436b4b
+      conclusion: fixed_Hadamard_R1R2_does_not_recover_per_channel_W4_quality_no_promotion
+      reopen_condition: new_user_approved_rotation_or_quantization_hypothesis_do_not_repeat_same_fixed_A_B_C
   - id: EXP-0218
     slug: three-recipe-lightweight-evaluation
     title: Unified lightweight device quality and speed evaluation
