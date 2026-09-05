@@ -193,3 +193,7 @@ EXP-0222 is a host-only software ablation of EXP-0221 A/B/C: freeze transformer 
 ## PC-043 — Per-channel clipping with GPTQ (user approved 2026-09-05)
 
 EXP-0223 tests fixed weight-local row scale/clipping selection before GPTQ on original/folded/fixed R1R2 W4F16 transformers, with frozen EXP0221 heads, embeddings and norms. Fixed independent calibration and frozen qbh-lite-v1, original tensors only, no grouping/LPBQ/learned rotation/evaluation tuning. Fresh model packages, software/device quality and six-way5short/10formal profiling use unchanged runtime and physical rules. Other recipes and baselines remain frozen. No automatic promotion or further direction.
+
+## PC-044 — Post-GPTQ output-aware row scales (user approved 2026-09-05)
+
+EXP-0224 implements the approved first direction only: original-coordinate A and fresh fixed R1/R2 C transformer quantization, selecting per-output-row scale from predeclared candidates by final GPTQ projection output error on frozen EXP0221 calibration. Preserve single FP32 scale/row, signed[-7,7], FP16 execution, per-variant head/embedding/norms, unchanged runtime and both other recipes. No new calibration data, learned rotation, block reconstruction, LPBQ/group quantization, holdout/evaluation tuning or automatic promotion. Compare A to EXP0221 A and C to EXP0223 C; complete software/device quality and four-way5short/10formal profiling.

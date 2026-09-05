@@ -6,6 +6,35 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0224
+    slug: w4f16-post-gptq-output-scale
+    title: Post-GPTQ output-aware row scale selection
+    parent: EXP-0223
+    record: docs/experiments/EXP-0224.md
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    approval_ref: 'User approved first direction: 同意方向，先做第一项'
+    source_branches:
+    - codex/exp-0224-w4f16-post-gptq-output-scale
+    source_commits:
+    - c9c2491ff70875068f9a043a4305d07892cf5271
+    runtime:
+      source_branch: codex/exp-0224-w4f16-post-gptq-output-scale
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      approved_on: '2026-09-05'
+      started_on: '2026-09-05'
+    variants:
+    - A_original_output_GPTQ
+    - C_R1R2_output_GPTQ
+    - A0_EXP0221_A
+    - C0_EXP0223_C
+    evidence_profile: post_GPTQ_output_scale_transformer_only
+    evidence:
+      source_parent_commit: c9c2491ff70875068f9a043a4305d07892cf5271
+      calibration: frozen_EXP0221_8192tokens
+      selected_baseline_changed: false
   - id: EXP-0223
     slug: w4f16-gptq-channel-clipping
     title: Transformer per-channel clipping before GPTQ

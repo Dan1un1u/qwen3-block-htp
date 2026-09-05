@@ -1584,3 +1584,7 @@ Host-only frozen GPTQ transformer pairs: A: NLL 3.874188 -> 3.853870, tasks 9 ->
 ## EXP-0223 transformer channel clipping (completed 2026-09-05)
 
 A: DSP NLL 3.873038 -> 3.969016, tasks 8 -> 4; B: DSP NLL 4.601481 -> 3.911864, tasks 0 -> 2; C: DSP NLL 4.320988 -> 3.956556, tasks 2 -> 9. Fixed80ratio L2.4 weight range search plus same GPTQ/calibration, with frozen per-variant head/embedding/norms. All correctness/determinism/physical checks and6way5short/10formal complete. Per-variant effectiveness {"A": false, "B": true, "C": true}; clipped C versus clipped A True. No promotion; see SESSION_HANDOFF_EXP0223.md before future work.
+
+## EXP-0224 post-GPTQ output-aware scales (approved 2026-09-05)
+
+Only first proposed direction authorized: original A and fixed R1R2 C, frozen8192calibration, per-row3candidate final-GPTQ output reconstruction using FP16 exported weights, unchanged per-channel format/runtime/head/embedding/norms. Controls EXP0221 A and EXP0223 C. Follow docs/experiments/EXP-0224.md; no additional direction or promotion.
