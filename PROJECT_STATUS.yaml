@@ -36,8 +36,8 @@ current_scope:
   active_experiment_stage: EXP0221_calibration_and_three_GPTQ_variants
   active_experiment_evidence: D:/llm_exp/results/qwen3-block-htp/exp0221
   active_experiment_gate: pending
-  active_experiment_source_head: e3a2c869b7a02061af3a976db536296c50f29850
-  current_handoff: docs/experiments/EXP-0221.md
+  active_experiment_source_head: 0ba765c63d7b83fe7bfda2fdd5a2b112ec836d03
+  current_handoff: SESSION_HANDOFF_EXP0221.md
   active_recipe_specialization: W4F16_GPTQ_with_offline_rotation
   last_completed_experiment_contract:
     id: EXP-0220
