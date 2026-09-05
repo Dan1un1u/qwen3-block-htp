@@ -9238,13 +9238,9 @@ static int qbh_run_w4u8_direct_n_projection(
                 header, desc, current_first, 82U, result);
             return -1;
         }
-        if (next_q_started != 0U &&
-            qbh_finish_w4u8_next_q_weight_prefetch(
-                header, next_q_prefetch) != 0) {
-            qbh_record_projection_failure(
-                header, desc, current_first, 91U, -1);
-            return -1;
-        }
+        /* EXP-0213 deliberately leaves the cross-layer DMA active here.
+         * Final residual, next-layer metadata, and Input RMSNorm can execute
+         * before the next QKV producer completes and consumes the carrier. */
 
         current_first = next_first;
         current_tiles = next_tiles;
@@ -10174,8 +10170,13 @@ static int qbh_run_w4u8_qkv_ring(
             HAP_perf_get_qtimer_count() - wait_start;
         dma_start = HAP_perf_get_qtimer_count();
         if (batch_index == 0U && state.direct_n_weights != 0U &&
-            next_q_prefetch != NULL && next_q_prefetch->ready != 0U) {
-            if (qbh_consume_w4u8_next_q_weight_prefetch(
+            next_q_prefetch != NULL &&
+            (next_q_prefetch->active != 0U ||
+             next_q_prefetch->ready != 0U)) {
+            if ((next_q_prefetch->active != 0U &&
+                 qbh_finish_w4u8_next_q_weight_prefetch(
+                     header, next_q_prefetch) != 0) ||
+                qbh_consume_w4u8_next_q_weight_prefetch(
                     header, next_q_prefetch, batch->desc,
                     state.compressed_slots[slot], batch->n_tiles,
                     weight_bytes) != 0 ||
