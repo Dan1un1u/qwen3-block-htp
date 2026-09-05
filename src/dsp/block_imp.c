@@ -95,7 +95,7 @@ _Static_assert(
 #define QBH_BLOCK_W4U8_GATE_UP_PAIR_SLOTS UINT32_C(8)
 #define QBH_BLOCK_W4U8_GATE_UP_HMX_BATCH_N_TILES UINT32_C(8)
 #define QBH_BLOCK_W4U8_QKV_BATCH_N_TILES UINT32_C(4)
-#define QBH_BLOCK_W4U8_O_MAX_BATCH_N_TILES UINT32_C(16)
+#define QBH_BLOCK_W4U8_O_MAX_BATCH_N_TILES UINT32_C(8)
 #define QBH_BLOCK_W4U8_DIRECT_N_SAFE_BATCH_N_TILES UINT32_C(4)
 #define QBH_BLOCK_W4U8_DIRECT_N_MAX_BATCH_N_TILES UINT32_C(32)
 #define QBH_BLOCK_W4U8_DIRECT_N_DOWN_BATCH_N_TILES UINT32_C(2)
@@ -8941,16 +8941,20 @@ static int qbh_run_w4u8_direct_n_projection(
         batch_tiles > QBH_BLOCK_W4U8_DIRECT_N_SAFE_BATCH_N_TILES ||
         (desc == &header->projections[QBH_BLOCK_PROJ_DOWN] &&
          batch_tiles == 4U);
+    const uint32_t use_decode_bias_overlay =
+        batch_tiles == 32U ||
+        (desc == &header->projections[QBH_BLOCK_PROJ_O] &&
+         batch_tiles == 16U);
     uint8_t *weight_slots[2] = {
         use_decode_phase_overlay != 0U
             ? buffers->expanded_weight : buffers->compressed_weight,
         use_decode_phase_overlay != 0U
             ? buffers->expanded_weight_alt : buffers->compressed_weight_alt};
     uint8_t *bias_slots[2] = {
-        batch_tiles == 32U
+        use_decode_bias_overlay != 0U
             ? buffers->rope_cos
             : buffers->scale_or_bias,
-        batch_tiles == 32U
+        use_decode_bias_overlay != 0U
             ? buffers->rope_cos +
                   batch_tiles * QBH_HMX_BIAS_BYTES
             : (batch_tiles > QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES
@@ -8987,7 +8991,9 @@ static int qbh_run_w4u8_direct_n_projection(
         batch_tiles > QBH_BLOCK_W4U8_DIRECT_N_MAX_BATCH_N_TILES ||
         (batch_tiles > QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES &&
          desc != &header->projections[QBH_BLOCK_PROJ_GATE] &&
-         desc != &header->projections[QBH_BLOCK_PROJ_UP]) ||
+         desc != &header->projections[QBH_BLOCK_PROJ_UP] &&
+         !(desc == &header->projections[QBH_BLOCK_PROJ_O] &&
+           batch_tiles == 16U)) ||
         n_tiles == 0U) {
         if (header != NULL && desc != NULL) {
             qbh_record_projection_failure(

@@ -4,7 +4,9 @@ project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${project_root}"
 grep -q '#define QBH_BLOCK_ABI_VERSION UINT32_C(104)' include/block_protocol.h
 grep -q '#define QBH_BLOCK_EXPERIMENT UINT32_C(210)' include/block_protocol.h
-grep -q '#define QBH_BLOCK_W4U8_O_MAX_BATCH_N_TILES UINT32_C(16)' \
+grep -q '#define QBH_BLOCK_W4U8_O_MAX_BATCH_N_TILES UINT32_C(8)' \
+    src/dsp/block_imp.c
+grep -q 'desc == &header->projections\[QBH_BLOCK_PROJ_O\].*' \
     src/dsp/block_imp.c
 grep -q 'QBH_BLOCK_HVX_POOL_U8_SWIGLU_STREAM' src/dsp/block_imp.c
 grep -q 'qbh_w4u8_swiglu_stream_worker_run' src/dsp/block_imp.c
