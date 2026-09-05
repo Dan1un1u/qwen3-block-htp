@@ -36,7 +36,7 @@ current_scope:
   active_experiment_stage: EXP0222_host_head_ablation_running
   active_experiment_evidence: D:/llm_exp/results/qwen3-block-htp/exp0222
   active_experiment_gate: pending
-  active_experiment_source_head: 61cf9a74a4bf0b2e8bc2da82325dc4a6fa0c7cf6
+  active_experiment_source_head: 412a5b761ca18e064edacef78d5bb5bcf4bd761c
   current_handoff: SESSION_HANDOFF_EXP0222.md
   active_recipe_specialization: W4F16_host_only_LM_head_ablation
   last_completed_experiment_contract:
