@@ -4969,8 +4969,8 @@ int main(int argc, char **argv) {
               QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
           (w4u8_decode_direct_n_mask &
            QBH_BLOCK_W4U8_DIRECT_N_MLP) == 0U ||
-          w4u8_decode_direct_n_down_batch_n_tiles != 4U &&
-          w4u8_decode_direct_n_down_batch_n_tiles != 8U)) ||
+          (w4u8_decode_direct_n_down_batch_n_tiles != 4U &&
+           w4u8_decode_direct_n_down_batch_n_tiles != 8U))) ||
         w4u8_decode_direct_n_o_single_dma > 1U ||
         (w4u8_decode_direct_n_o_single_dma != 0U &&
          (variant != QBH_BLOCK_W4U8 ||
