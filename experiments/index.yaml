@@ -11,20 +11,24 @@ experiments:
     title: Host LM head FP16 ablation on frozen GPTQ A B C
     parent: EXP-0221
     record: docs/experiments/EXP-0222.md
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: not_applicable
     approval_ref: 'User: first LM head ablation then discuss before next direction'
     source_branches:
     - codex/exp-0222-w4f16-lm-head-ablation
     source_commits:
     - 08a67eee666fe5ca7335a8150f7207635019b588
+    - 61cf9a74a4bf0b2e8bc2da82325dc4a6fa0c7cf6
+    - 412a5b761ca18e064edacef78d5bb5bcf4bd761c
+    - 6c65970b523a80b9a9343f0b246451690332ded5
     runtime:
       source_branch: codex/exp-0222-w4f16-lm-head-ablation
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       approved_on: '2026-09-05'
       started_on: '2026-09-05'
+      completed_on: '2026-09-05'
     variants:
     - A_W4_head
     - A_FP16_head
@@ -36,8 +40,112 @@ experiments:
     evidence:
       source_parent_commit: 08a67eee666fe5ca7335a8150f7207635019b588
       device_work: false
-      profiling: N/A_host_only
+      profiling: N/A_host_only_PC042
       selected_baseline_changed: false
+      source_head: 6c65970b523a80b9a9343f0b246451690332ded5
+      formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0222
+      retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0222/artifacts/6c65970b523a80b9a9343f0b246451690332ded5
+      quality_role: host_FP16_software_ablation_not_DSP
+      results:
+        A:
+          W4:
+            nll: 3.8741880133748055
+            ppl: 48.14359046418558
+            tasks_correct: 9
+            tasks_total: 24
+            teacher_top1_agreement: 0.630859375
+            language_nll:
+              zh: 4.30016877502203
+              en: 3.448207251727581
+          FP16:
+            nll: 3.8538702987134457
+            ppl: 47.175292837779274
+            tasks_correct: 8
+            tasks_total: 24
+            teacher_top1_agreement: 0.63671875
+            language_nll:
+              zh: 4.2531428784132
+              en: 3.454597719013691
+          delta:
+            nll: -0.020317714661359787
+            tasks: -1
+            teacher_top1_agreement: 0.005859375
+            language_nll:
+              zh: -0.0470258966088295
+              en: 0.006390467286109924
+        B:
+          W4:
+            nll: 4.600959472358227
+            ppl: 99.57981389951235
+            tasks_correct: 0
+            tasks_total: 24
+            teacher_top1_agreement: 0.46875
+            language_nll:
+              zh: 5.093510314822197
+              en: 4.108408629894257
+          FP16:
+            nll: 4.41366358846426
+            ppl: 82.57141774195489
+            tasks_correct: 0
+            tasks_total: 24
+            teacher_top1_agreement: 0.4921875
+            language_nll:
+              zh: 4.8652955666184425
+              en: 3.9620316103100777
+          delta:
+            nll: -0.18729588389396667
+            tasks: 0
+            teacher_top1_agreement: 0.0234375
+            language_nll:
+              zh: -0.22821474820375443
+              en: -0.14637701958417892
+        C:
+          W4:
+            nll: 4.323169119656086
+            ppl: 75.42728802273471
+            tasks_correct: 2
+            tasks_total: 24
+            teacher_top1_agreement: 0.572265625
+            language_nll:
+              zh: 4.538219437003136
+              en: 4.108118802309036
+          FP16:
+            nll: 4.293221443891525
+            ppl: 73.20190490284125
+            tasks_correct: 2
+            tasks_total: 24
+            teacher_top1_agreement: 0.5625
+            language_nll:
+              zh: 4.500323474407196
+              en: 4.0861194133758545
+          delta:
+            nll: -0.0299476757645607
+            tasks: 0
+            teacher_top1_agreement: -0.009765625
+            language_nll:
+              zh: -0.037895962595939636
+              en: -0.021999388933181763
+      nll_gap_to_A:
+        W4:
+          B: 0.7267714589834213
+          C: 0.4489811062812805
+        FP16:
+          B: 0.5597932897508144
+          C: 0.4393511451780796
+      correctness_gate_result: pass_frozen_package_hashes_W4_control_reproduction_head_construction_non_head_unchanged
+      repeat_gate_result: pass_four_bilingual_cases_both_heads_all_three_variants
+      E2E_tokens_per_second: N/A_not_measured
+      other_recipes: frozen
+      holdout_scored: false
+      report: docs/experiments/EXP-0222-RESULTS.md
+      report_sha256: 70ad2b2f643a24c3f9fff9fccd21ba338ac6c143029f16bd383505d6306033d1
+      summary_sha256: 58e8c670ec7178181dad39183d14819e133e2649f2ed56efa60bc44050a3557f
+      closure_sha256: 196080cc53fd21bb8f1b1c606fe7a9da463ccbe84465bb92d9621d3a1049c6b5
+      evidence_ledger_sha256: 54dbdc87eb1b8df4fc5e7baf2c0f0e385d41e583c0caec5975b3d5c5c5556c78
+      evidence_files: 27
+      conclusion: 'A: NLL 3.874188 -> 3.853870, tasks 9 -> 8; B: NLL 4.600959 -> 4.413664, tasks 0 -> 0;
+        C: NLL 4.323169 -> 4.293221, tasks 2 -> 2'
+      next_action: discuss_with_user_before_any_next_direction
   - id: EXP-0221
     slug: w4f16-gptq-offline-rotation
     title: Per-channel GPTQ original/folded/R1R2 quality validation

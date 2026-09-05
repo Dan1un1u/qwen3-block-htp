@@ -1,9 +1,9 @@
-# EXP-0222 running
+# EXP-0222 completed — authoritative handoff
 
-Read authority then preflight. Source codex/exp-0222-w4f16-lm-head-ablation parent 08a67eee666fe5ca7335a8150f7207635019b588. Follow docs/experiments/EXP-0222.md. Host-only six-way head comparison; no device work or profiling; discuss result before next direction. No jobs launched yet.
+Bootstrap/read authority before future project work. No active experiment or running jobs. Next223. Source codex/exp-0222-w4f16-lm-head-ablation HEAD 6c65970b523a80b9a9343f0b246451690332ded5. Complete host-only ablation; do not rerun/overwrite outputs.
 
-Implementation 61cf9a74a4bf0b2e8bc2da82325dc4a6fa0c7cf6 committed and synced. Host A/B/C sequential process started (tool session63558). It preserves execution logs under results/exp0222/{A,B,C}_execution.log and refuses overwrite. Per-variant summary.json signals complete W4-control reproduction, FP16-head full quality, four-case repeat for both heads, head artifact and provenance. Inspect existing files/process before resuming; do not duplicate. No device jobs. Close after all three summaries; report paired software values, not historical DSP as control.
+A: NLL 3.874188 -> 3.853870, tasks 9 -> 8; B: NLL 4.600959 -> 4.413664, tasks 0 -> 0; C: NLL 4.323169 -> 4.293221, tasks 2 -> 2. Values are software-versus-software, never pair these FP16-head results with DSP W4 values. Frozen EXP0221 A/B/C transformers, norms and embedding unchanged; only head replaced with fresh W, W*gamma, or (W*gamma)*H2048 respectively. W4 controls and bilingual repeats pass. No calibration, clipping, learned rotation, DSP changes or other-recipe changes.
 
-Checkpoint: A complete, W4 software control exact (NLL difference0); W4 NLL3.874188/9tasks versus FP16-head3.853870/8. Four bilingual repeats exact, non-head hashes unchanged. B running in same63558 sequential process, C follows. Source report/archive helper committed at 412a5b761ca18e064edacef78d5bb5bcf4bd761c; measurement implementation unchanged. Do not duplicate or rerun A.
+Evidence D:/llm_exp/results/qwen3-block-htp/exp0222; report docs/experiments/EXP-0222-RESULTS.md; 27 evidence files and ledger SHA256 54dbdc87eb1b8df4fc5e7baf2c0f0e385d41e583c0caec5975b3d5c5c5556c78. Source archive D:/llm_exp/models/qwen3-block-htp/exp0222/artifacts/6c65970b523a80b9a9343f0b246451690332ded5. Fresh FP16 head artifacts and original package identities retained in closure/provenance. Profiling/E2E N/A under PC042; do not invent hybrid-head DSP speeds from historical results.
 
-Checkpoint B complete: exact W4 control NLL4.600959/0tasks; FP16 head4.413664/0. Both repeat checks and all non-head hashes pass. C W4 evaluation running in original63558 process; C FP16 evaluation follows. No other jobs, no parameter changes.
+User explicitly requests discussion before deciding next direction. No further experiment authorized by completion. No baseline promoted.

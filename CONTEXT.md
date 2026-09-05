@@ -1576,3 +1576,7 @@ qbh-lite-v1 is a frozen diagnostic set: 512 conditional target tokens and 24 sho
 ## EXP-0221 finding (completed 2026-09-05)
 
 Per-output-channel GPTQ using8192 frozen independent training tokens improves actual DSP original-weight NLL4.231668 to3.873038, but short tasks remain8/24. Fresh gamma-fold GPTQ reaches4.601481/0; fixed Hadamard R1R2 GPTQ4.3210/2. It mitigates RTN fold/rotation damage without incremental rotation benefit over unrotated GPTQ. All mathematical, implementation, deterministic quality and physical checks pass; four-way5short/10formal speed essentially unchanged. Effectiveness conjunctions fail, evidence valid, no promotion. Keep software diagnostic A9/24 separate from DSP8/24. Source and evidence in SESSION_HANDOFF_EXP0221.md; no running jobs, next222.
+
+## EXP-0222 LM head ablation (completed 2026-09-05)
+
+Host-only frozen GPTQ transformer pairs: A: NLL 3.874188 -> 3.853870, tasks 9 -> 8; B: NLL 4.600959 -> 4.413664, tasks 0 -> 0; C: NLL 4.323169 -> 4.293221, tasks 2 -> 2. Head is the only intervention; all other tensors hash-identical across paired runs. W4 software controls/repeats pass. No DSP/performance measurements, no baseline promotion. Discuss results before another direction; see SESSION_HANDOFF_EXP0222.md.
