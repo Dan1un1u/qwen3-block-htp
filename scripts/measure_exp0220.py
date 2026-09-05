@@ -26,13 +26,20 @@ def deploy(variant):
     assert all(sha256_file(package/n)==files[n]['sha256'] for n in changed)
     OUTPUT.mkdir(parents=True,exist_ok=True);archive=OUTPUT/(variant+'_deploy.tar')
     with tarfile.open(archive,'x') as tar:
+        # Android tar truncates PAX long link targets to the 100-byte ustar
+        # linkname field. One short directory alias bounds every file target.
+        info=tarfile.TarInfo('b');info.type=tarfile.SYMTYPE
+        info.linkname=FROZEN_REMOTE+'/block_package_layer14_m64';info.mode=0o777;tar.addfile(info)
         for directory in ['block_package_layer14_m64']+[f'block_package_layer14_m64/layer{i}' for i in range(28)]:
             info=tarfile.TarInfo(directory);info.type=tarfile.DIRTYPE;info.mode=0o755;tar.addfile(info)
         for n in files:
             target='block_package_layer14_m64/'+n
             if n in changed:tar.add(package/n,arcname=target)
             else:
-                info=tarfile.TarInfo(target);info.type=tarfile.SYMTYPE;info.linkname=FROZEN_REMOTE+'/'+target;info.mode=0o777;tar.addfile(info)
+                info=tarfile.TarInfo(target);info.type=tarfile.SYMTYPE
+                info.linkname='../'*(1+n.count('/'))+'b/'+n
+                assert len(info.linkname.encode())<100
+                info.mode=0o777;tar.addfile(info)
         tar.add(package/'manifest.json',arcname='block_package_layer14_m64/manifest.json')
         for n in ['qwen3_block_cli','libqwen3_probe.so','libqwen3_probe_skel.so','quick.bin','full.bin','repeat.bin']:
             info=tarfile.TarInfo(n);info.type=tarfile.SYMTYPE;info.linkname=FROZEN_REMOTE+'/'+n;info.mode=0o777;tar.addfile(info)
