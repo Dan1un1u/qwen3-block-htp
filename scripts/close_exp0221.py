@@ -55,6 +55,12 @@ Evidence D:/llm_exp/results/qwen3-block-htp/exp0221; models D:/llm_exp/models/qw
 Reproduction requires a newly registered experiment and fresh output paths. gptq_exp0221.py freezes calibration and checks the independent oracle; experiment_exp0221.py generates each candidate; measure_exp0221.py deploys/runs suites; summarize_exp0221.py reports. Do not overwrite retained outputs or tune against this evaluation/holdout.
 
 '''+(RESULT/'module_table.md').read_text()+'\n\n## Direct E2E\n\n```json\n'+json.dumps(dict(times=speed['times'],paired_speed_percent=speed['paired_speed_percent']),indent=2)+'\n```\n'
+    identity=dict(source_branch=subprocess.check_output(['git','branch','--show-current'],cwd=SOURCE,text=True).strip(),
+        reporting_input_source_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=SOURCE,text=True).strip(),
+        implementation_files={n:ev.digest(SOURCE/'scripts'/n) for n in ['gptq_exp0221.py','experiment_exp0221.py','measure_exp0221.py','summarize_exp0221.py']},
+        calibration_sha256=ev.digest(RESULT/'calibration.json'),calibration_ids_sha256=cal['ids_sha256'],
+        final_archive_source_head='Recorded after report commit in closure.json')
+    text+='\n\n## Source identity\n\n```json\n'+json.dumps(identity,indent=2)+'\n```\n'
     (RESULT/'REPORT.md').write_text(text);(SOURCE/'docs/EXP0221_GPTQ_ROTATION.md').write_text(text)
     with (RESULT/'full_profiling_report.md').open('a') as f:f.write('\n\n## Experiment context and checks\n\n'+text)
 
