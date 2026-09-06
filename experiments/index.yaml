@@ -24,6 +24,13 @@ experiments:
     - codex/exp-0229-w4f16-independent-ppl-acceptance
     source_commits:
     - 365d1e2f136125462fa4f7ecbe1abc93b4309ca1
+    - edffafd85ca88cb60ae4c053dcfe6c65f03ee1ff
+    - 8efddffd54bbf7742a0a239a790ce16551247536
+    - 6a1eac2e2600704d7fac4ec571be1d542f9a0e1d
+    - 6cb46f662b7fdaffd160f7e2fc0d5bcc40f5ac54
+    - 8cc49b469b238ca92bca64db6ad5f89e319d3e9a
+    - b03844194589d557e315d1fd2dbf18bd61549afa
+    - fd41e9c7aa0b2bbfc4c21e1159f7476f2cd7632b
     record: docs/experiments/EXP-0229.md
     approval_ref: User 2026-09-06 agrees to finish W4A16 independent PPL acceptance
       before discussing W4A8
@@ -40,6 +47,15 @@ experiments:
       reserve_targets: 8192
       profiling: N/A_quality_only_unchanged_runtime
       selected_baseline_changed: false
+      dataset_sha256: 7adf7f501d3f614ca07bbfe8a3628de538edf23c4c88e4f5cb60f09ad4c21447
+      dataset_freeze_sha256: 70195c3b22df83b978f678c37cd018a7d55a370be30c53675a0b97397b9736f3
+      data_version: qbh-ppl-accept-v2
+      independent_data_audit: pass1024source_windows
+      device_packages: F1079_A01276_A1276_files_verified
+      recovery_records:
+      - recovery_data_and_deploy.json
+      - recovery_control_fixture.json
+      current_stage: device_before_gate_then_primary
   - id: EXP-0228
     slug: content-aware-short-task-scoring
     title: Content-aware frozen short-task grading audit
