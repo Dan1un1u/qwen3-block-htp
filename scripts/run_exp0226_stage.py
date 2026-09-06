@@ -7,6 +7,8 @@ RESULT=Path('/mnt/d/llm_exp/results/qwen3-block-htp/exp0226')
 CPU='/home/daniuniu/.cache/qwen3-block-htp-py/bin/python'
 GPU='/home/daniuniu/.cache/qwen3-block-htp-spinquant-py/bin/python'
 COMMANDS={
+ **{s:[CPU,str(ROOT/'scripts/diagnose_exp0226.py'),s] for s in ['inherit','identity','controls']},
+ 'surrogate':[GPU,str(ROOT/'scripts/diagnose_exp0226.py'),'surrogate'],
  'data':[CPU,str(ROOT/'scripts/data_exp0226.py')],
  'smoke':[GPU,str(ROOT/'scripts/learned_rotation_exp0226.py'),'smoke'],
  'train':[GPU,str(ROOT/'scripts/learned_rotation_exp0226.py'),'train'],
