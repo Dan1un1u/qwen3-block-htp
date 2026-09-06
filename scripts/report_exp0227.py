@@ -25,6 +25,7 @@ def report():
     speed=json.loads((RESULT/'speed_summary.json').read_text());records={}
     lines=['# EXP0227 fixed-rotation final-format block reconstruction',
         'A0=EXP0224 A; R0=EXP0225 step100. A/R learn only transformer row scales; GPTQ codes, rotations, norms, embedding and head stay fixed. Frozen8192 calibration and independent64-window Wiki/news validation; qbh/holdout never selects parameters. This is an OmniQuant-inspired scale-only block reconstruction adaptation, not full OmniQuant.',
+        'Both coordinates reduce qbh conditional PPL but each loses one strict short task; independent validation NLL does not improve. The rotated candidate remains worse in PPL than the reconstructed original-coordinate candidate, with one more correct task. This bounded scale-only intervention does not establish consistent quality recovery or incremental rotation benefit. No baseline is promoted. Training/export GPU/CPU weights are exactly equal, so this result is not explained by a second quantization pass changing trained weights.',
         '## Independent actual-package validation',
         '| Variant | NLL | PPL | English NLL | Chinese NLL |','|---|---:|---:|---:|---:|']
     for v,s in {**sel['controls'],**sel['scores']}.items():
@@ -53,6 +54,9 @@ def close():
     assert len(list((RESULT/'short').glob('round_*.jsonl')))==20
     assert len(list((RESULT/'formal').glob('round_*.jsonl')))==40
     assert json.loads((RESULT/'unit_oracle.json').read_text())['passed']
+    assert json.loads((RESULT/'quality_determinism_gate.json').read_text())['passed']
+    folds=list((RESULT/'training/R').glob('attempt_*/fresh_fold_invariance.json'));assert len(folds)==1
+    assert all(r['passed'] and r['nrmse']<=.003 and r['cosine']>=.99999 for r in json.loads(folds[0].read_text())['checks'])
     audit=json.loads((RESULT/'training_audit.json').read_text())
     assert audit['passed'] and audit['successful_updates']==5600
     for v in ['A','R']:
