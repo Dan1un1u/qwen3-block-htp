@@ -7,7 +7,7 @@ project:
   source_root: /home/daniuniu/work/qwen3-block-htp
   memory_branch: codex/qwen3-block-project-memory
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
-  updated_on: '2026-09-06'
+  updated_on: '2026-09-07'
 toolchain:
   qnn_runtime: none
   qairt_runtime: none
@@ -19,13 +19,52 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0232
+  active_experiment: null
   next_experiment_number: 233
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
+  latest_w4f16_awq_result:
+    id: EXP-0232
+    source_head: 86c359237c8cf54cfb6491857b3868ca5b8ce074
+    evidence_ledger_sha256: a79fed2b3e18bae9054310a6f10fee73fae92a34bb2b251a04f7caf795e5df52
+    final_ppl:
+      F: 25.132354691074653
+      C8: 28.33302614294996
+      C64: 27.000521931341797
+      E64: 28.058847725237158
+    E64_vs_C64:
+      ppl_ratio: 1.0391964939265441
+      ratio_ci95:
+      - 1.026148646783009
+      - 1.0528653151645242
+    E64_F_ratio:
+      delta_nll: 0.11014796158997342
+      ppl_ratio: 1.1164432489567642
+      ratio_ci95:
+      - 1.1001053526841786
+      - 1.1331794074215253
+      limit: 1.05
+      point_pass: false
+      confident_pass: false
+      straddles_gate: false
+    C64_F_ratio:
+      delta_nll: 0.07170014904113486
+      ppl_ratio: 1.0743331559350702
+      ratio_ci95:
+      - 1.0594710629060136
+      - 1.089670066892004
+      limit: 1.05
+      point_pass: false
+      confident_pass: false
+      straddles_gate: false
+    quality_gate: fail
+    software_only_boundary: true
+    PC051_sequence_complete: true
+    next_direction: discussion_only
+    baseline_promoted: false
   latest_w4f16_group128_result:
     id: EXP-0231
     source_head: b5fd32c8123fae11abb7b472ebcd20c1e9f8a500

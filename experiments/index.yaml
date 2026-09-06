@@ -11,9 +11,9 @@ experiments:
     title: W4F16 AWQ-style input-channel equalization against C64
     parent: EXP-0231
     record: docs/experiments/EXP-0232.md
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
     adoption_status: pending
     approval_ref: 'PC051 user: 同意，按此顺序推进吧; EXP230/231 insufficient activates third phase'
     source_branches:
@@ -37,8 +37,8 @@ experiments:
       calibration_tokens: 65536
       AWQ_search_tokens: 8192
       other_recipes: frozen
-      device_execution: conditional_on_software_acceptance_existing_per_channel_runtime
-      current_stage: export_development_complete_primary_pending
+      device_execution: not_run_software_acceptance_failed
+      current_stage: completed
       manifest_sha256: 0aa7d0a9bd4afc73de19309e1928d3002795df74ca95201b741ab9e5efeeeb15
       export_actual_source: 7063119e68fe3aefb6842573d1ab79c92d686b63
       control_development_regression: F_C8_C64_exact
@@ -60,11 +60,65 @@ experiments:
           cosine: 0.9999976135620914
           max_abs: 0.0625
           finite: true
+      formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0232
+      evidence_ledger_sha256: a79fed2b3e18bae9054310a6f10fee73fae92a34bb2b251a04f7caf795e5df52
+      evidence_files: 173
+      artifact_files: 1535
+      artifact_ledger_sha256: 2a3539b866d9982c64d5dfe53403168f2a18f7c73c6758c095297187413839b2
+      closure_sha256: ed693acc19532db65603aaf618689fc56eb0067209e00bca652eebb5b5a46201
+      report: docs/experiments/EXP-0232-RESULTS.md
+      report_sha256: 4a0c1a26fe402e7b4b5092ac96df8e2c76cdaf40e2aef435d5ac57a27bd00e7f
+      full_profiling_report: docs/experiments/EXP-0232-PROFILE.md
+      full_profiling_report_sha256: c7ab2d1fc0116e9af6c5e07db35ce8793d22c3a2268dbf610271744745fdd5af
+      final_ppl:
+        F: 25.132354691074653
+        C8: 28.33302614294996
+        C64: 27.000521931341797
+        E64: 28.058847725237158
+      final_documents: 1024
+      final_targets: 16384
+      reserve_used: true
+      E64_F_ratio:
+        delta_nll: 0.11014796158997342
+        ppl_ratio: 1.1164432489567642
+        ratio_ci95:
+        - 1.1001053526841786
+        - 1.1331794074215253
+        limit: 1.05
+        point_pass: false
+        confident_pass: false
+        straddles_gate: false
+      C64_F_ratio:
+        delta_nll: 0.07170014904113486
+        ppl_ratio: 1.0743331559350702
+        ratio_ci95:
+        - 1.0594710629060136
+        - 1.089670066892004
+        limit: 1.05
+        point_pass: false
+        confident_pass: false
+        straddles_gate: false
+      E64_vs_C64:
+        ppl_ratio: 1.0391964939265441
+        ratio_ci95:
+        - 1.026148646783009
+        - 1.0528653151645242
+      E64_vs_C8:
+        ppl_ratio: 0.9903230097509006
+        ratio_ci95:
+        - 0.9752641423267877
+        - 1.005411535300361
+      all196pack_checks: pass
+      all112forward_checks: pass
+      all28calibration_checkpoints: finite_FP16_512x128x2048
+      next_direction: discuss_PC051_sequence_complete
+      baseline_promoted: false
     runtime:
       source_branch: codex/exp-0232-w4f16-awq-input-equalization
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       approved_on: '2026-09-06'
       started_on: '2026-09-06'
+      completed_on: '2026-09-07'
   - id: EXP-0231
     slug: w4f16-group128-software
     title: W4F16 static group128 software accuracy diagnostic
