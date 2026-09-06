@@ -24,6 +24,35 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0234
+  slug: w4f16-group128-64k
+  title: W4F16 static group128 with65536 calibration positions
+  parent: EXP-0233
+  record: docs/experiments/EXP-0234.md
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: pending
+  approval_ref: User2026-09-07 PC052 approves all three diagnostics
+  source_branches:
+  - codex/exp-0234-w4f16-group128-64k
+  source_commits:
+  - 24a976887f9da144e49de2774104a3e72ddf6ddd
+  variants:
+  - F
+  - C64
+  - G8
+  - G64
+  evidence_profile: host_only_group128_64K
+  evidence:
+    protocol: PC052
+    current_stage: registered
+    other_recipes: frozen
+  runtime:
+    source_branch: codex/exp-0234-w4f16-group128-64k
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    approved_on: '2026-09-07'
+    started_on: '2026-09-07'
 - id: EXP-0233
   slug: w4f16-independent-autoround
   title: W4F16 independent official AutoRound reference

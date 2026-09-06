@@ -1680,3 +1680,7 @@ User approves independent mature-tool INT4 reference, group12864K and C64 sensit
 ## EXP0233 independent official AutoRound completed
 
 PC052 firstphasecomplete. Same1024documents/16384targets FP16software: F25.060797,C6427.154144,AR-P27.480036,AR-G26.613251. Nativegroup128AutoRound improves1.991938%vsC64 (ratioCI.967225..993202) butremains6.194748%aboveF (CI5.188510..7.196236), fails5%gate. Adapted[-7,7]perchannelAR-P doesnotimproveC64. Nativegrid/group/solver/FP16initialweight differences preventisolatedalgorithm attribution. Frozenhead/nontransformer, originalweightsreloaded; all392packroundtrips and84complete-forwardcachechecks exact.180evidencefiles/910artifacts independentlyverified,36PPLreductionsindependent. Otherrecipes/runtimefrozen,nopromotion. Genericlast-completedpointers correctedfromstaleEXP231toEXP233; detailedEXP232historyunchanged. NextalreadyapprovedEXP234group12864K thenEXP235C64sensitivity; protocols frozenbefore233finalscores. SeeEXP-0233-RESULTS.md.
+
+## EXP0234 active
+
+PC052 secondphase nowregistered: unchangedgroup128CPUquantizer expandedtoC64calibration64K. SamePC052pairedpanel,F/C64/G8/G64,noPPLselection. NextEXP235C64sensitivity remainsapproved.

@@ -1,0 +1,3 @@
+# EXP0234 active
+
+PC052 secondphaseapproved. Sourceparent24a976887f9da144e49de2774104a3e72ddf6ddd; branchcodex/exp-0234-w4f16-group128-64k. Noexport/scoringyet. Frozenprotocolalreadywrittenbefore233finalscores. UnchangedCPUgroup128quantizer with64KC64calibration. Next235C64sensitivityalreadyapproved; otherrecipes/runtimefrozen. Bootstrap/readauthorities/preflightbeforework.
