@@ -35,9 +35,11 @@ def controls():
     for variant,relative,expected in [('step000','exp0225/step000','de788d23a754e1de635268fff1e0caebd21e61344b838cd242b2a3b74139c77b'),('old100','exp0225/step100','44ac941297f1aab82ec4daff2ca8191379def73f6796a1c9c5d7d700820c5673'),('control_A','exp0224/A',None)]:
         root=OUTPUT.parent/relative
         if expected:assert sha(root/'manifest.json')==expected
-        dest=RESULT/variant;dest.mkdir(parents=True,exist_ok=False)
+        dest=RESULT/variant;dest.mkdir(parents=True,exist_ok=True)
+        assert not (dest/'validation.json').exists()
         if variant=='step000':
-            (OUTPUT/variant).symlink_to(root,target_is_directory=True)
+            if not (OUTPUT/variant).exists():(OUTPUT/variant).symlink_to(root,target_is_directory=True)
+            assert (OUTPUT/variant).resolve()==root.resolve()
             for name in ['software_generation.json','invariance.json','calibration_forward_checks.json','weight_stats.json']:shutil.copyfile(OLD/variant/name,dest/name)
         write_json(dest/'reused_package.json',dict(path=str(root),manifest_sha256=sha(root/'manifest.json'),immutable_control=True,initial_rotation_identity_sha256=sha(RESULT/'initial_rotation_identity.json')))
         model=load_package(root);validate_model(model,variant);del model;gc.collect();print('CONTROL_VALIDATED',variant,flush=True)

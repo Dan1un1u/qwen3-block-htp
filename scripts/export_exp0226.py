@@ -158,7 +158,7 @@ def load_package(root):
     load_packed(model.lm_head.weight,root,'generation_lm_head')
     for name,param in [('generation_embedding_weight_f16.bin',model.model.embed_tokens.weight),('generation_final_norm_weight_f16.bin',model.model.norm.weight)]:
         value=np.fromfile(root/name,dtype='<f2').reshape(param.shape);param.copy_(torch.from_numpy(value))
-    return model
+    return model.half()  # Match final-export FP16 RoPE buffers as well as weights.
 
 def select():
     rows={}
