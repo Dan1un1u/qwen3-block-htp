@@ -23,6 +23,8 @@ experiments:
     - 17bcb2355cec1fa2c7cdabbbb8bcd025128aeb06
     - e0048ba663be0e8df58bba71a6e7766c339bcb15
     - 7063119e68fe3aefb6842573d1ab79c92d686b63
+    - 963b9ba3714e0688e63d7f2daa794cf9431bbd8b
+    - 86c359237c8cf54cfb6491857b3868ca5b8ce074
     variants:
     - F
     - C8
