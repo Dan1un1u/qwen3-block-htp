@@ -132,7 +132,7 @@ def prepare(v):
 @torch.no_grad()
 def validate_model(model,v):
     data=json.loads((RESULT/'learning_data.json').read_text());scores=[]
-    for s in data['validation']:
+    for sample_index,s in enumerate(data['validation']):
         ids=torch.tensor([s['token_ids']]);h=model.model(ids[:,:-1],use_cache=False).last_hidden_state[0]
         # Chunk positions to bound vocabulary logits, unchanged CE definition.
         losses=[]
@@ -140,6 +140,7 @@ def validate_model(model,v):
             logits=model.lm_head(h[start:start+16]).float();target=ids[0,1+start:1+start+len(logits)]
             losses.extend(F.cross_entropy(logits,target,reduction='none').tolist())
         scores.append(dict(language=s['language'],row_index=s['row_index'],domain=s['domain'],nll=float(np.mean(losses)),tokens=len(losses)))
+        if (sample_index+1)%16==0:print('VALIDATION_PROGRESS',v,sample_index+1,len(data['validation']),flush=True)
     bylang={lang:float(np.mean([r['nll'] for r in scores if r['language']==lang])) for lang in ['en','zh']}
     rot.write_json(RESULT/v/'validation.json',dict(samples=scores,nll=float(np.mean([r['nll'] for r in scores])),language_nll=bylang,domain_language_nll={domain+'_'+lang:float(np.mean([r['nll'] for r in scores if r['language']==lang and r['domain']==domain])) for domain in ['wiki','news'] for lang in ['en','zh']},dataset_sha256=ev.digest(RESULT/'learning_data.json'),role='actual packed GPTQ software checkpoint selection; no qbh evaluation'))
 

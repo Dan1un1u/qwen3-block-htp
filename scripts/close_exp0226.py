@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Archive completed learned-rotation evidence; no automatic baseline promotion."""
 import hashlib,json,subprocess,math
+import torch
 from pathlib import Path
 from learned_rotation_exp0226 import RESULT,OUTPUT,PLAN
 from rotation_exp0219 import write_json
@@ -13,6 +14,14 @@ def close():
     assert selected==min(selection['scores'],key=lambda k:(selection['scores'][k]['nll'],int(k[4:])))
     identity=json.loads((RESULT/'initial_rotation_identity.json').read_text())
     assert identity['R1_exact'] and identity['R2_exact']
+    old_ledger_path=RESULT.parent/'exp0225/evidence_sha256.json'
+    assert sha256_file(old_ledger_path)=='1d73989c7a6f4d5d8b91db553db32ee22fa023011f125c4ebe29718234ed95d8'
+    old_ledger=json.loads(old_ledger_path.read_text())
+    for name in ['invariance.json','calibration_forward_checks.json','weight_stats.json','software_generation.json']:
+        assert sha256_file(RESULT/'step000'/name)==old_ledger['step000/'+name]
+    actual_initial=torch.load(OUTPUT/'training_exact/step000.pt',map_location='cpu',weights_only=False)
+    smoke_initial=torch.load(OUTPUT/'smoke_exact/step000.pt',map_location='cpu',weights_only=False)
+    assert all(torch.equal(actual_initial['rotations'][k],smoke_initial['rotations'][k]) for k in ['R1','R2'])
     data_sha=sha256_file(RESULT/'learning_data.json')
     assert identity['data_sha256']==data_sha
     train_rows=[json.loads(line) for line in (RESULT/'training_exact.jsonl').read_text().splitlines()]
