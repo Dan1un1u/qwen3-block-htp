@@ -33,6 +33,7 @@ experiments:
     - 5c36692c05b5c3f4e5f2dbd2bba83d4449110cbb
     - e6c6c75bffc121cb74133424314a43a2141819b0
     - 00e4172b705044199762a1bd9922cb7433f370b4
+    - 5cabcaafcc453ce6b2296a2d9a436fa8e5cc9269
     record: docs/experiments/EXP-0230.md
     approval_ref: 'User2026-09-06: 同意，按此顺序推进吧'
     runtime:
