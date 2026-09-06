@@ -24,6 +24,9 @@ experiments:
     - codex/exp-0230-w4f16-gptq-calibration-coverage
     source_commits:
     - fd41e9c7aa0b2bbfc4c21e1159f7476f2cd7632b
+    - 4bdcc623466ff42a1545eafe1845af02348b3026
+    - 760a8f3f6af33d9c77042b43bad91919ca1c0a2f
+    - c35f6c58f53b99c89a3761a2c1d531f73d067605
     record: docs/experiments/EXP-0230.md
     approval_ref: 'User2026-09-06: 同意，按此顺序推进吧'
     runtime:
@@ -40,6 +43,10 @@ experiments:
       control: EXP0224_A
       other_recipes: frozen
       protocol: PC051
+      dataset_sha256: 1d908de405d4bcf4c46f0acdf4de0ab57cb45b6da298a6dbe28fd4cdb0dff8b0
+      data_freeze_sha256: fb99996e90f3b041ff3ab792b6ab41a187b20ef3ac9060f392b297fc00575831
+      independent_data_audit: pass1664windows
+      current_stage: C8_then_C64_CPU_export
   - id: EXP-0229
     slug: w4f16-independent-ppl-acceptance
     title: Frozen W4F16 independent bilingual PPL acceptance
