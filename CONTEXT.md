@@ -1656,3 +1656,7 @@ C64 selected solely by development PPL27.150224 vsC8 28.030617, then independent
 ## EXP0231 approved conditional phase activated
 
 EXP230 independent PPL fail activates PC051 group128 software diagnostic. Single candidate, matched C8 calibration control and stronger C64 reference, new frozen independent primary/reserve, unchanged numerical gates. See EXP-0231.md. Hardware/W4A8 frozen; no promotion.
+
+## EXP0231 completed group128 software diagnostic
+
+1024newdocuments/16384targets: F23.961270,C827.644064,C6426.085709,G12826.541898. G128/F+10.770% (95%CI+9.141..12.506%) fails fixed acceptance. Matched8K calibration G128/C8 improves3.987% (ratioCI.944690..974583), but G128 is1.749% worse than stronger64K C64 (CI1.002730..1.032126). Grouping helps at matched calibration but does not beat the best current per-channel result; this does not test group128 at64K. All129result files/624artifacts verified,196packing/112forwardchecks pass,28hidden checkpoints finite, allF/C8/C64 development outputs exact. Runtime/other recipes unchanged, groupDSPspeed N/A, no promotion. Allnewprimary/reserve data exposed and excluded from future training/independent tests. Active none,next232. PC051 now activates separately registered AWQ-style input-channel equalization; prospective draft uses strongerC64 control.

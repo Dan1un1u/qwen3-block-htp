@@ -19,13 +19,39 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0231
+  active_experiment: null
   next_experiment_number: 232
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
+  latest_w4f16_group128_result:
+    id: EXP-0231
+    source_head: b5fd32c8123fae11abb7b472ebcd20c1e9f8a500
+    evidence_ledger_sha256: 9dd60d4a855f56499da2d284898e88c5de376d4b680403613b0f1d800ff2333d
+    final_ppl:
+      F: 23.961269862921682
+      C8: 27.64406423947948
+      G128: 26.541897900399615
+      C64: 26.0857087807605
+    G128_F_ratio: 1.1076999696694398
+    G128_F_CI:
+    - 1.0914135484638452
+    - 1.1250607591544715
+    G128_vs_C8:
+      ppl_ratio: 0.960130090513036
+      ratio_ci95:
+      - 0.9446904991335532
+      - 0.9745828103643495
+    G128_vs_C64:
+      ppl_ratio: 1.0174880860425606
+      ratio_ci95:
+      - 1.0027303142790938
+      - 1.0321260209862633
+    quality_gate: fail
+    device_speed: N/A
+    baseline_promoted: false
   latest_w4f16_calibration_result:
     selected: C64
     source_head: 5cabcaafcc453ce6b2296a2d9a436fa8e5cc9269
@@ -760,8 +786,8 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0230
-  last_completed_source_commit: 5cabcaafcc453ce6b2296a2d9a436fa8e5cc9269
+  last_completed_experiment: EXP-0231
+  last_completed_source_commit: b5fd32c8123fae11abb7b472ebcd20c1e9f8a500
   provisional_source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
   device_execution_state: ready
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
@@ -769,15 +795,15 @@ current_scope:
   current_handoff: SESSION_HANDOFF_EXP0231.md
   active_recipe_specialization: null
   last_completed_experiment_contract:
-    id: EXP-0230
-    execution_scope: calibration_coverage_budget_actual_DSP_independent_PPL
+    id: EXP-0231
+    execution_scope: host_only_static_group128_independent_PPL
     correctness_gate: pass
-    quality_gate: fail_C64_overall_and_en_wiki
-    speed_gate: complete_no_meaningful_change
+    quality_gate: fail
+    speed_gate: N/A_no_group_device_runtime
     other_recipes: frozen
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0230
+  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0231
   latest_w4f16_output_scale_result:
     id: EXP-0224
     execution_state: completed

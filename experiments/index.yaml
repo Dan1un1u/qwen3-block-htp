@@ -11,9 +11,9 @@ experiments:
     title: W4F16 static group128 software accuracy diagnostic
     parent: EXP-0230
     record: docs/experiments/EXP-0231.md
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
     adoption_status: pending
     approval_ref: 'PC051 user: 同意，按此顺序推进吧; EXP0230 acceptance fail activates next phase'
     source_branches:
@@ -35,7 +35,7 @@ experiments:
       protocol: PC051
       device_execution: not_authorized
       other_recipes: frozen
-      current_stage: export_complete_G128_development_running
+      current_stage: completed
       dataset_freeze_sha256: 6b987f5e8f7ce0e5704f3a59529f7814b859ccbc29b8906f64e7b2288c7666e0
       independent_data_audit: pass1024newdocuments
       group_oracles: pass_dense_all3_NumPy_clip_output_choices_dead_zero_permutation
@@ -44,11 +44,47 @@ experiments:
       all112forwardchecks: pass
       control_regression: F_C8_C64_exact
       export_actual_source: 682a51d6161f2da9df2e351783c8bfcc42368112
+      formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0231
+      evidence_ledger_sha256: 9dd60d4a855f56499da2d284898e88c5de376d4b680403613b0f1d800ff2333d
+      evidence_files: 129
+      artifact_files: 624
+      artifact_ledger_sha256: b7cb94f903f802721257bce2a4cd4f6b58b60ede2d60c5d6f9750d58d2477f00
+      closure_sha256: d8252ef386ba16db94bb3a8e36808f4dc7b0c667e7c2d202f94b6ab0cd73667d
+      full_profiling_report: docs/experiments/EXP-0231-PROFILE.md
+      full_profiling_report_sha256: 931c7ccafc6825e80ac73b1e93c45482e0953acd0ea34c17cdcb11a6e23844b2
+      final_ppl:
+        F: 23.961269862921682
+        C8: 27.64406423947948
+        G128: 26.541897900399615
+        C64: 26.0857087807605
+      G128_F_ratio:
+        delta_nll: 0.10228576615918428
+        ppl_ratio: 1.1076999696694398
+        ratio_ci95:
+        - 1.0914135484638452
+        - 1.1250607591544715
+        limit: 1.05
+        point_pass: false
+        confident_pass: false
+        straddles_gate: false
+      G128_vs_C8:
+        ppl_ratio: 0.960130090513036
+        ratio_ci95:
+        - 0.9446904991335532
+        - 0.9745828103643495
+      G128_vs_C64:
+        ppl_ratio: 1.0174880860425606
+        ratio_ci95:
+        - 1.0027303142790938
+        - 1.0321260209862633
+      next_direction: approved_AWQ_phase_under_PC051
+      baseline_promoted: false
     runtime:
       source_branch: codex/exp-0231-w4f16-group128-software
       source_worktree: /home/daniuniu/work/qwen3-block-htp
       approved_on: '2026-09-06'
       started_on: '2026-09-06'
+      completed_on: '2026-09-06'
   - id: EXP-0230
     slug: w4f16-gptq-calibration-coverage
     title: W4F16 GPTQ calibration coverage and budget
