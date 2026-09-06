@@ -24,7 +24,7 @@ def setup():
  assert subprocess.check_output(['git','status','--porcelain'],cwd=UP,text=True)==''
  if not V.exists():subprocess.run(['python3','-m','venv',str(V)],check=True)
  site=next((V/'lib').glob('python*/site-packages'))
- (site/'frozen_gpu_parent.pth').write_text('/home/daniuniu/.cache/qwen3-block-htp-spinquant-py/lib/python3.10/site-packages\n')
+ (site/'frozen_gpu_parent.pth').write_text('/home/daniuniu/.cache/qwen3-block-htp-spinquant-py/lib/python3.10/site-packages\n/home/daniuniu/.cache/qwen3-block-htp-py/lib/python3.10/site-packages\n')
  subprocess.run([str(V/'bin/python'),'-m','pip','install','--no-deps',str(UP),'numpy==1.26.4'],check=True)
  subprocess.run([str(V/'bin/python'),'-c','import auto_round,torch,transformers;print(auto_round.__version__,torch.__version__,transformers.__version__)'],check=True)
  archive=O/'upstream';archive.mkdir(parents=True,exist_ok=True)
