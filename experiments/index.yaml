@@ -38,7 +38,11 @@ experiments:
       AWQ_search_tokens: 8192
       other_recipes: frozen
       device_execution: conditional_on_software_acceptance_existing_per_channel_runtime
-      current_stage: AWQ_search_and_invariance_complete_E64_CPU_export_running
+      current_stage: export_development_complete_primary_pending
+      manifest_sha256: 0aa7d0a9bd4afc73de19309e1928d3002795df74ca95201b741ab9e5efeeeb15
+      export_actual_source: 7063119e68fe3aefb6842573d1ab79c92d686b63
+      control_development_regression: F_C8_C64_exact
+      E64_development_PPL: 28.46770547770664
       dataset_freeze_sha256: 2baf928b58551c9aaef5f0d6847ac6497e7db6273a99d8cc5826f1d7f84df68a
       independent_data_audit: pass1024newdocuments
       AWQ_oracles: pass_FP64_algebra_NumPy_RTN_scale_choice
