@@ -21,3 +21,7 @@ Current source a37a64d1b928184665a66c3ed1b5e0a6155615e5, clean/pushed. G64 expor
 ## Three-quarter checkpoint
 
 G64 exporter session18937 completed layers0..20 (21/28), elapsed5284.7s, checks pass. Current source c8e57fd0d308df10f0efa82cbbe0f96c49ed2839 is clean/pushed; added archived audit_exp0234_equivalence.py stage successfully reproduced implementation_equivalence.json without modifying original evidence. Stage session40481 completed. The only active jobs remain export18937 and scoring continuation48693; the latter will launch G64 development/primary and conditional reserve scores after export closes. Do not duplicate them. EXP235 remains pending and authorized after EXP234 closure.
+
+## Export complete, automated scoring active
+
+Export session18937 completed successfully:6983.851180413039s,28layers,196projection checks pass,112forward checks exact NRMSE0. G64 manifest SHA256 fc1a0f9655b71a1e21c15f5272440058b95b3ea59b63dc0b04343dafcfab9ae0. Actual export start source remains6ab684555a47bd8612fc50c038f92ca7e019c9c2; completion labelc8e57fd0d308df10f0efa82cbbe0f96c49ed2839. Quantizer files unchanged and independently verified. Session48693 now runs G64 development, primary and fixed conditional reserve sequence; do not duplicate. After it finishes, run report_exp0234.py with CPUvenv, then verify_exp0234_closure.py; close memory and proceed to EXP235.
