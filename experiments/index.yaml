@@ -29,9 +29,9 @@ experiments:
   title: W4F16 independent official AutoRound reference
   parent: EXP-0232
   record: docs/experiments/EXP-0233.md
-  execution_state: running
-  evidence_validity: pending
-  local_gate: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
   adoption_status: pending
   approval_ref: User2026-09-07 approves all three under PC052
   source_branches:
@@ -39,6 +39,15 @@ experiments:
   source_commits:
   - 86c359237c8cf54cfb6491857b3868ca5b8ce074
   - 7610cbba256a42ca14adb74665dd12a372632b7b
+  - c4f7b3954e4ddf3fcc4cc1d471bd6243b14bea04
+  - 87fae5a7c3a08b957f17e82b3e0cf82f4ab96354
+  - 5959b19c494d23f5005f6595e5b928b95f2b07a2
+  - 1c6ec82c22b8622367497dcb97c5f772dde0e4f9
+  - 1c5c70ed9a3b5edddc928b70b1c8d83158703455
+  - 35acd2083b3d34fa266fe8056f987dfd263a5536
+  - ee6d072ebc6196538616342e5cc99ef6cd9c2c59
+  - e89d239c74ad38980b4d9a132f8c5bb4e1cf7387
+  - 24a976887f9da144e49de2774104a3e72ddf6ddd
   variants:
   - F
   - C64
@@ -47,18 +56,56 @@ experiments:
   evidence_profile: host_only_independent_INT4_reference
   evidence:
     protocol: PC052
-    current_stage: AR-P_attempt2_training
+    current_stage: completed
     other_recipes: frozen
     dataset_freeze_sha256: d86c6511728de21dcf2732c6dd7f890c06c6bc95ef2b8c377182169b51ea395b
     independent_data_audit: pass1024
     upstream_commit: 73669aa50871bca9f244ad99faa9979790f7c729
     quantization_oracle: pass
     recovery: isolated_dependencies_and_argument_dtype_serialization_before_training
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0233
+    evidence_files: 180
+    evidence_ledger_sha256: 4de3626c557ec07be3a53d6a7f94ba806124f72996dcb555339ea70ca99458ce
+    artifact_files: 910
+    artifact_ledger_sha256: 26b4e56afa00fe45014e4d77c6ea524934a71c8df3347ae64781210985a558ba
+    closure_sha256: 0c01488a7b53289aa168d22d1555ca1dedb70aa0afb8779f32ff67b1f4281ac8
+    report: docs/experiments/EXP-0233-RESULTS.md
+    report_sha256: ec3a4506bc686b7cae6313faa15db0ba76a88162b27fbdf8aad870c934ab34b6
+    full_profiling_report: docs/experiments/EXP-0233-PROFILE.md
+    full_profiling_report_sha256: 57028ecf9c669d798638eebd73f1a7a6c4dc2b905819adf987ca763d5cabd0d6
+    final_ppl:
+      F: 25.06079733545104
+      C64: 27.154144262957573
+      AR-P: 27.480035548726537
+      AR-G: 26.61325064985295
+    status:
+      AR-P: fail
+      AR-G: fail
+    AR_G_vs_C64:
+      ppl_ratio: 0.9800806238684353
+      ratio_ci95:
+      - 0.9672250606656897
+      - 0.993201535075956
+    AR_G_F_ratio:
+      delta_nll: 0.060104470467194915
+      ppl_ratio: 1.0619474829001474
+      ratio_ci95:
+      - 1.0518851037235766
+      - 1.0719623625052006
+      limit: 1.05
+      point_pass: false
+      confident_pass: false
+      straddles_gate: false
+    full_model_cache_audit: 84states_exact_NRMSE0
+    all392_projection_roundtrips: pass
+    baseline_promoted: false
+    next_direction: approved_EXP234_then_EXP235
   runtime:
     source_branch: codex/exp-0233-w4f16-independent-autoround
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     approved_on: '2026-09-07'
     started_on: '2026-09-07'
+    completed_on: '2026-09-07'
 - id: EXP-0232
   slug: w4f16-awq-input-equalization
   title: W4F16 AWQ-style input-channel equalization against C64
