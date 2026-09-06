@@ -42,7 +42,9 @@ def controls():
             if not (OUTPUT/variant).exists():(OUTPUT/variant).symlink_to(root,target_is_directory=True)
             assert (OUTPUT/variant).resolve()==root.resolve()
             for name in ['software_generation.json','invariance.json','calibration_forward_checks.json','weight_stats.json']:shutil.copyfile(OLD/variant/name,dest/name)
-        write_json(dest/'reused_package.json',dict(path=str(root),manifest_sha256=sha(root/'manifest.json'),immutable_control=True,initial_rotation_identity_sha256=sha(RESULT/'initial_rotation_identity.json')))
+        record=dict(path=str(root),manifest_sha256=sha(root/'manifest.json'),immutable_control=True,initial_rotation_identity_sha256=sha(RESULT/'initial_rotation_identity.json'))
+        if (dest/'reused_package.json').exists():assert json.loads((dest/'reused_package.json').read_text())==record
+        else:write_json(dest/'reused_package.json',record)
         model=load_package(root);validate_model(model,variant);del model;gc.collect();print('CONTROL_VALIDATED',variant,flush=True)
 
 @torch.no_grad()
