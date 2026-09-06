@@ -36,11 +36,24 @@ experiments:
       AWQ_search_tokens: 8192
       other_recipes: frozen
       device_execution: conditional_on_software_acceptance_existing_per_channel_runtime
-      current_stage: AWQ_scale_search_running
+      current_stage: AWQ_search_and_invariance_complete_E64_CPU_export_running
       dataset_freeze_sha256: 2baf928b58551c9aaef5f0d6847ac6497e7db6273a99d8cc5826f1d7f84df68a
       independent_data_audit: pass1024newdocuments
       AWQ_oracles: pass_FP64_algebra_NumPy_RTN_scale_choice
       reference_commit: d6e797a42b9ef7778de8ee2352116e0f48a78d61
+      search_sha256: f3b56101a03aaee2b190fa073c117ae7f6068d3f9b95319495645140104464b4
+      invariance_sha256: 5687d0ac1767b1ae77e8313e20def27117bd1289cc2ba83155fd90f71d06c583
+      full_FP16_invariance:
+        hidden:
+          nrmse: 0.0025616956436854813
+          cosine: 0.9999967199828292
+          max_abs: 0.490234375
+          finite: true
+        logits:
+          nrmse: 0.0022148597666136124
+          cosine: 0.9999976135620914
+          max_abs: 0.0625
+          finite: true
     runtime:
       source_branch: codex/exp-0232-w4f16-awq-input-equalization
       source_worktree: /home/daniuniu/work/qwen3-block-htp
