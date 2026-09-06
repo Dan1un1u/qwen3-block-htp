@@ -1644,3 +1644,7 @@ The old512-target qbh gap of about2% does not generalize to this independent tes
 ## User steering after EXP0229 closure
 
 User defers W4A8 and prioritizes W4A16 accuracy recovery discussion. Previous W4A8-next suggestion is superseded. No experiment authorized; active none,next230. GPTQ act-order and staged quantized-input calibration already exist. Proposed first lever is GPTQ calibration document coverage/budget, distinct from completed rotation-training sampling ablation; group128/AWQ-style equalization are later conditional alternatives. See docs/W4A16_ACCURACY_RECOVERY_DISCUSSION.md. Historical evidence and gates unchanged.
+
+## EXP0230 approved calibration coverage/budget
+
+User approves ordered W4A16 recovery plan. PC051: activeEXP230 C8/C64 versusfrozenA0, new development/finaldata, unchangedquantizer/head/runtime. If insufficient, proceed to separately registered group128software thenAWQ phases. Other recipesfrozen; no promotion. See EXP-0230.md and SESSION_HANDOFF_EXP0230.md.

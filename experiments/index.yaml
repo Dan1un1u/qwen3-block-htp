@@ -6,6 +6,40 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0230
+    slug: w4f16-gptq-calibration-coverage
+    title: W4F16 GPTQ calibration coverage and budget
+    parent: EXP-0229
+    variants:
+    - F16F16
+    - A0
+    - C8
+    - C64
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: w4f16_calibration_coverage_budget
+    source_branches:
+    - codex/exp-0230-w4f16-gptq-calibration-coverage
+    source_commits:
+    - fd41e9c7aa0b2bbfc4c21e1159f7476f2cd7632b
+    record: docs/experiments/EXP-0230.md
+    approval_ref: 'User2026-09-06: 同意，按此顺序推进吧'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0230-w4f16-gptq-calibration-coverage
+      approved_on: '2026-09-06'
+      started_on: '2026-09-06'
+    evidence:
+      quantizer: frozen_EXP0224
+      calibration_tokens:
+      - 8192
+      - 65536
+      context: 128
+      control: EXP0224_A
+      other_recipes: frozen
+      protocol: PC051
   - id: EXP-0229
     slug: w4f16-independent-ppl-acceptance
     title: Frozen W4F16 independent bilingual PPL acceptance
