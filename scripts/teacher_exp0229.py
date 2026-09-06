@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Additional original BF16 teacher on exactly the frozen M64+16 windows."""
-import json,subprocess,time
+import json,subprocess,time,os
+os.environ.setdefault('CUBLAS_WORKSPACE_CONFIG', ':4096:8')
 import numpy as np
 import torch
 from transformers import AutoModelForCausalLM
