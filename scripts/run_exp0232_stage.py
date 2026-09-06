@@ -13,7 +13,8 @@ def main():
              'references':('awq_exp0232.py',['references']),'oracle':('awq_exp0232.py',['oracle']),
              'search':('awq_exp0232.py',['search']),'invariance':('awq_exp0232.py',['invariance']),
              'export':('export_exp0232.py',[]),'evaluate':('evaluate_exp0232.py',[]),
-             'summary':('summarize_exp0232.py',[])}
+             'summary':('summarize_exp0232.py',[]),'device':('device_exp0232.py',[]),
+             'device-summary':('summarize_device_exp0232.py',[]),'speed':('speed_exp0232.py',[])}
     script,args=modules[a.stage]
     python='/home/daniuniu/.cache/qwen3-block-htp-'+('spinquant-' if a.stage in ['evaluate','search','invariance'] else '')+'py/bin/python'
     command=[python,str(S/'scripts'/script),*args,*a.args]
