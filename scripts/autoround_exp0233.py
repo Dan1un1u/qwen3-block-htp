@@ -14,7 +14,7 @@ def sha(p):
  return h.hexdigest()
 def write(n,x):
  p=R/n;p.parent.mkdir(parents=True,exist_ok=True)
- with p.open('x') as f:json.dump(x,f,indent=2);f.write('\n')
+ with p.open('x') as f:json.dump(x,f,indent=2,default=str);f.write('\n')
 def preflight():
  subprocess.run(['python3','/home/daniuniu/work/qwen3-block-htp-project-memory/scripts/project_memory.py','preflight','--source-worktree',str(S)],check=True)
 def setup():
@@ -98,6 +98,7 @@ def read_weight(root,name,shape):
  return result
 
 def export(v,attempt):
+ actual_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=S,text=True).strip()
  preflight();frozen()
  os.environ.setdefault('CUBLAS_WORKSPACE_CONFIG',':4096:8')
  import numpy as np,torch,auto_round,inspect
@@ -162,7 +163,7 @@ def export(v,attempt):
    print('AUTOROUND_LAYER_COMPLETE',v,i,round(time.monotonic()-started,1),flush=True)
    return outputs
  runner=RetainedAutoRound(model,None,dataset=batches,**kwargs)
- write(f'{v}/attempt{attempt}/arguments.json',dict(kwargs=kwargs,upstream_commit=up['commit'],calibration_sha256=sha(cal),source_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=S,text=True).strip(),
+ write(f'{v}/attempt{attempt}/arguments.json',dict(kwargs=kwargs,upstream_commit=up['commit'],calibration_sha256=sha(cal),source_head=actual_head,
   actual_model_dtype=str(runner.model.dtype),amp_dtype=str(runner.amp_dtype),tool_version=auto_round.__version__,input_weight_policy='original FP16 rounded by official AMP construction',unique_calibration_tokens=65536))
  model,config=runner.quantize()
  assert len(block_checks)==28 and len(records)==196
@@ -172,7 +173,7 @@ def export(v,attempt):
  manifest=dict(experiment='EXP-0233',variant=v,format='software_linear_nibbles_FP32_scales',grid=[-7,7] if v=='AR-P' else [-8,7],group_size=kwargs['group_size'],
   files=files,projections=records,frozen_nontransformer=others,base_C64_manifest_sha256=sha(head_root/'manifest.json'),upstream=up['commit'],calibration_sha256=sha(cal))
  with (root/'manifest.json').open('x') as f:json.dump(manifest,f,indent=2);f.write('\n')
- write(f'{v}/package.json',dict(root=str(root),manifest_sha256=sha(root/'manifest.json'),elapsed_s=time.monotonic()-started,blocks=block_checks,source_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=S,text=True).strip()))
+ write(f'{v}/package.json',dict(root=str(root),manifest_sha256=sha(root/'manifest.json'),elapsed_s=time.monotonic()-started,blocks=block_checks,source_head=actual_head))
  print('AUTOROUND_PACKAGE_COMPLETE',v,round(time.monotonic()-started,1),flush=True)
 
 if __name__=='__main__':
