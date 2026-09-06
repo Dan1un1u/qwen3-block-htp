@@ -1692,3 +1692,7 @@ EXP234 completed on the same1024documents/16384targets: F25.060797,C6427.154144,
 ## EXP0235 active
 
 Third PC052 phase registered after verified EXP234 closure. FreezeC64,61fixeddevelopment variants and fivefixedfamilies on shared1024document confirmation. FreshoriginalFP16 restorations only; no newquantizer,hybridselection or DSPdeployment.
+
+## EXP0235 completed; PC052 closed
+
+EXP235 fixed C64 sensitivity complete: full1024doc/16384target F25.060797,C6427.154144,ATT_ALL26.892944,MLP_ALL25.492364,HEAD26.457783. MLP restoration removes78.717%ofC64 excessNLL,head32.383%,attention12.048%; effects conditional/nonadditive. MLP-restored diagnostic is+1.722%vsF and passes allreference gates, but restores1.057Bweights and is not a deployable selectedrecipe. All61development variants andfivefixedfamily confirmations complete;65whole-state audits and594PPL reductions pass, finalC64sentinel exact.91evidencefiles/3sourcearchives independentlyverified. PC052 allthree complete, no newexperiment/promotion/W4A8 work authorized. G64 remainsquantized numericbest onsharedpanel+5.694%vsF, fails overall5%pointgate. See docs/PC052_RESULTS.md; C64 sensitivity cannot be assumed to transfer toG64.

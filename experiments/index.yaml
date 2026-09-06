@@ -29,16 +29,19 @@ experiments:
   title: W4F16 C64 attention MLP and LM-head FP16 sensitivity
   parent: EXP-0234
   record: docs/experiments/EXP-0235.md
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
-  adoption_status: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
+  adoption_status: not_applicable
   approval_ref: User2026-09-07 PC052 approves all three diagnostics
   source_branches:
   - codex/exp-0235-w4f16-c64-sensitivity
   source_commits:
   - c8e57fd0d308df10f0efa82cbbe0f96c49ed2839
   - a5e5b565e34cde9068cd7e6633e1fbb13647ec1b
+  - b879df8f40f0a54a7d31caa757c7a2da9c23e7c9
+  - 6a7694c82662ee2124dcd70591669424b12b92ca
+  - 6658f53550cafae5a85a2488f1f69673ea1e4fb1
   variants:
   - F
   - C64
@@ -107,8 +110,9 @@ experiments:
     source_branch: codex/exp-0235-w4f16-c64-sensitivity
     started_on: '2026-09-07'
     approved_on: '2026-09-07'
+    completed_on: '2026-09-07'
   evidence:
-    current_stage: fixed_restoration_evaluation_running
+    current_stage: completed
     protocol: PC052
     other_recipes: frozen
     variant_count: 61
@@ -121,6 +125,168 @@ experiments:
     no_model_selection: true
     dataset_freeze_sha256: 2decbae51004dccd6f06d66c103d1664fc3f8de6af079b2575a76e1b18002d58
     actual_evaluation_source: a5e5b565e34cde9068cd7e6633e1fbb13647ec1b
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0235
+    evidence_ledger_sha256: 9af829c7ab789e17f0520e66f59b4e9382a0c89662bf51cb28eba471498a2b9b
+    evidence_files: 91
+    artifact_ledger_sha256: 9d94accfc56a3555213f9893f58ffd57a7fac2f0a939627551f54d638b7d81c3
+    artifact_files: 3
+    closure_sha256: 709fde8eb1a260a520179e78660176fe40ae87f80ce4a217c1aefa20d2a88a61
+    final_ppl:
+      F: 25.06079733545104
+      C64: 27.154144262957573
+      ATT_ALL: 26.892944273481255
+      MLP_ALL: 25.492364041351042
+      HEAD: 26.457782922250296
+    restored_weights:
+      F: 1720451072
+      C64: 0
+      ATT_ALL: 352321536
+      MLP_ALL: 1056964608
+      HEAD: 311164928
+    family_overall:
+      F:
+        nll: 3.221304766018875
+        ppl: 25.06079733545104
+        vs_F16:
+          delta_nll: 0.0
+          ppl_ratio: 1.0
+          ratio_ci95:
+          - 1.0
+          - 1.0
+          limit: 1.05
+          point_pass: true
+          confident_pass: true
+          straddles_gate: false
+        vs_C64:
+          delta_nll: -0.08022491191513836
+          delta_nll_ci95:
+          - -0.09368127727357209
+          - -0.06746416566456906
+          ppl_ratio: 0.9229087498676148
+          ratio_ci95:
+          - 0.9105729362846434
+          - 0.9347612165628536
+        fraction_C64_excess_NLL_removed: 1.0
+      C64:
+        nll: 3.3015296779340133
+        ppl: 27.154144262957573
+        vs_F16:
+          delta_nll: 0.08022491191513836
+          ppl_ratio: 1.0835307392452866
+          ratio_ci95:
+          - 1.0697919236284015
+          - 1.0982096657520268
+          limit: 1.05
+          point_pass: false
+          confident_pass: false
+          straddles_gate: false
+        vs_C64:
+          delta_nll: 0.0
+          delta_nll_ci95:
+          - 0.0
+          - 0.0
+          ppl_ratio: 1.0
+          ratio_ci95:
+          - 1.0
+          - 1.0
+        fraction_C64_excess_NLL_removed: -0.0
+      ATT_ALL:
+        nll: 3.291863957536407
+        ppl: 26.892944273481255
+        vs_F16:
+          delta_nll: 0.07055919151753187
+          ppl_ratio: 1.0731080864469726
+          ratio_ci95:
+          - 1.0615060596474717
+          - 1.0853323774604287
+          limit: 1.05
+          point_pass: false
+          confident_pass: false
+          straddles_gate: false
+        vs_C64:
+          delta_nll: -0.009665720397606492
+          delta_nll_ci95:
+          - -0.017019908297515984
+          - -0.0023552433136501496
+          ppl_ratio: 0.9903808425356039
+          ratio_ci95:
+          - 0.9831241121127634
+          - 0.997647528095675
+        fraction_C64_excess_NLL_removed: 0.12048277981072585
+      MLP_ALL:
+        nll: 3.238378957961686
+        ppl: 25.492364041351042
+        vs_F16:
+          delta_nll: 0.017074191942811012
+          ppl_ratio: 1.0172207891123044
+          ratio_ci95:
+          - 1.0087932706679892
+          - 1.025907386037646
+          limit: 1.05
+          point_pass: true
+          confident_pass: true
+          straddles_gate: false
+        vs_C64:
+          delta_nll: -0.06315071997232735
+          delta_nll_ci95:
+          - -0.07373539655818598
+          - -0.052990841260179916
+          ppl_ratio: 0.9388019668189855
+          ratio_ci95:
+          - 0.9289174560811262
+          - 0.9483886984878594
+        fraction_C64_excess_NLL_removed: 0.7871709480856516
+      HEAD:
+        nll: 3.2755503653897904
+        ppl: 26.457782922250296
+        vs_F16:
+          delta_nll: 0.05424559937091544
+          ppl_ratio: 1.0557438603449012
+          ratio_ci95:
+          - 1.0427599675918742
+          - 1.0689245034339292
+          limit: 1.05
+          point_pass: false
+          confident_pass: false
+          straddles_gate: true
+        vs_C64:
+          delta_nll: -0.02597931254422292
+          delta_nll_ci95:
+          - -0.030056240312114776
+          - -0.02200199169601544
+          ppl_ratio: 0.9743552463313226
+          ratio_ci95:
+          - 0.9703909569235286
+          - 0.978238286695972
+        fraction_C64_excess_NLL_removed: 0.3238309887046526
+    diagnostic_threshold_status:
+      F: pass
+      C64: fail
+      ATT_ALL: fail
+      MLP_ALL: pass
+      HEAD: fail
+    development_top10:
+    - ATT_L00
+    - MLP_L27
+    - MLP_L04
+    - MLP_L05
+    - MLP_L24
+    - MLP_L22
+    - MLP_L20
+    - MLP_L10
+    - ATT_L05
+    - ATT_L04
+    all65_state_maps: pass
+    F_C64_control_and_final_sentinel: exact_per_token_NLL_and_top1
+    independent_PPL_reductions: 594
+    local_gate_scope: diagnostic_correctness_no_recipe_acceptance
+    report: docs/experiments/EXP-0235-RESULTS.md
+    report_sha256: bd088b850711f53a698ff878307c9c653513525620db4a60270896b8e2ee8795
+    full_profiling_report: docs/experiments/EXP-0235-PROFILE.md
+    full_profiling_report_sha256: df8fc6de82fc4006356abee1ba68d905bcebe2f7802126eea2cfc86d527af4c4
+    PC052_three_phases_complete: true
+    baseline_promoted: false
+    next_direction: discussion_only
 - id: EXP-0234
   slug: w4f16-group128-64k
   title: W4F16 static group128 with65536 calibration positions
