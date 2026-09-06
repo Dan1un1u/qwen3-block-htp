@@ -6,6 +6,36 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0227
+    slug: w4f16-block-scale-reconstruction
+    title: Fixed-rotation final-format transformer block scale reconstruction
+    parent: EXP-0226
+    variants:
+    - A0
+    - R0
+    - A
+    - R
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: fixed_rotation_block_scale_reconstruction
+    source_branches:
+    - codex/exp-0227-w4f16-block-scale-reconstruction
+    source_commits:
+    - b90d9a7309fe470fb7dc7b8de83b483621ad481c
+    record: docs/experiments/EXP-0227.md
+    approval_ref: 'User 2026-09-06: 好的，按你的思路实现; approves first recommended fixed-rotation
+      block reconstruction experiment'
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0227-w4f16-block-scale-reconstruction
+      approved_on: '2026-09-06'
+      started_on: '2026-09-06'
+    evidence:
+      protocol: docs/experiments/EXP-0227.md
+      other_recipes: frozen
+      selected_baseline_changed: false
   - id: EXP-0226
     slug: w4f16-rotation-data-sampling
     title: Learned W4F16 rotation document coverage and random body sampling ablation

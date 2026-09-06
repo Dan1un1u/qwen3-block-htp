@@ -1610,3 +1610,7 @@ PC046 runs100steps with unchanged exact-Cayley math and budget, broader English 
 ## EXP0226 completed sampling ablation
 
 Broader English rotation-training coverage30->200documents and random body spans at unchanged100step budget yields mixed results: qbh PPL50.22->40.44, English46.25->29.51, strict tasks20->9. Independent actual-export validation3.561694->3.573788 (descriptive interval crosses0), while training STE validation improves3.692371->3.660152. No consistent recovery; no promotion. Old/new rotation Wiki validation reproduced exactly after canonical FP16 RoPE reload repair, original failed scores retained.5short10three-way formal complete, selected prefill1012.2991tok/s and decode10.78924tok/s. Existing GPTQ English calibration32windows is concentrated in3documents(15/16/1); broader same-budget GPTQ calibration is a suggested next discussion only, not authorized execution. Current handoff SESSION_HANDOFF_EXP0226.md.
+
+## EXP0227 approved block reconstruction
+
+User approves fixed-rotation final-format block reconstruction. Freeze GPTQ codes, learn row scales against full-block teacher with equal A/R budget. A=EXP0224 A; R=EXP0225 step100 selected from independent validation. See PC047 and docs/experiments/EXP-0227.md. No new rotation learning or automatic promotion.
