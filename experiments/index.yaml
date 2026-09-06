@@ -41,6 +41,7 @@ experiments:
   - 6ab684555a47bd8612fc50c038f92ca7e019c9c2
   - bc6a426935aac221c5f56b7147b1f922abc8a553
   - 1c934d27dbe2cb142f89a7226e916eb8586c269e
+  - a37a64d1b928184665a66c3ed1b5e0a6155615e5
   variants:
   - F
   - C64
@@ -49,7 +50,7 @@ experiments:
   evidence_profile: host_only_group128_64K
   evidence:
     protocol: PC052
-    current_stage: CPU_G64_export_running_G8_primary_scoring
+    current_stage: G64_CPU_export_running_14_of_28_layers_G8_primary_complete
     other_recipes: frozen
     dataset_freeze_sha256: a69984650c65d3a1b5d0ffa632be4b9e1c4ae6c5651978281aa694f9be01de80
     group_oracle: pass
@@ -58,6 +59,9 @@ experiments:
     G8_development_ppl: 27.478140993518856
     frozen_controls: six_verified_EXP233_F_C64_files_reused
     next_direction: approved_EXP235_after_EXP234_closure
+    G8_primary_ppl: 26.77058071194769
+    implementation_equivalence: exact_CPU_layer_loop_AST_and_core_source_hashes
+    scoring_continuation: finish_exp0234_scoring.py_running_session48693
   runtime:
     source_branch: codex/exp-0234-w4f16-group128-64k
     source_worktree: /home/daniuniu/work/qwen3-block-htp
