@@ -1,3 +1,5 @@
+User steering after closure: W4A8 is deferred. Current discussion is W4A16 accuracy recovery in [W4A16_ACCURACY_RECOVERY_DISCUSSION.md](W4A16_ACCURACY_RECOVERY_DISCUSSION.md). Earlier W4A8-next suggestions below are historical and superseded. No new experiment authorized.
+
 # Current direction after EXP0229
 
 The proposal below was approved by PC050 and has now been executed. EXP0229 is completed with valid evidence but both W4A16 candidates failed independent PPL acceptance: F16 25.233552, A0 30.829344 (+22.18%), A 30.993039 (+22.82%). All group gates also fail. No reserve trigger and no baseline promotion. See experiments/EXP-0229-RESULTS.md and SESSION_HANDOFF_EXP0229.md.
