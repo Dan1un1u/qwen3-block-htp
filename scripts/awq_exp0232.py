@@ -3,6 +3,7 @@
 
 Method reference mit-han-lab/llm-awq d6e797a42b9ef7778de8ee2352116e0f48a78d61.
 Official activation-only twenty-ratio search, adapted to symmetric [-7,7].
+Copyright (c) 2023 MIT HAN Lab; MIT license retained in docs/licenses/llm-awq-MIT.txt.
 """
 import argparse,copy,gc,hashlib,json,os,subprocess,time
 os.environ.setdefault('CUBLAS_WORKSPACE_CONFIG',':4096:8')
