@@ -1672,3 +1672,7 @@ Fresh AWQ positive input diagonals plus unchanged per-channel GPTQ65536calibrati
 Fresh FP32 legal folding, FP64 algebra/NumPy RTN/scale-choice,28local and whole-model FP16 invariance pass;196packed roundtrips,112HF forward checks,28finite512x128x2048calibration checkpoints and exact F/C8/C64 development regression pass. Actual export source7063119e68fe3aefb6842573d1ab79c92d686b63 and allfive quantizer files match its archive; three core GPTQ files match C64. RTN proxy improvement did not translate to final GPTQ PPL in this configuration; this is not a universal rejection of AWQ.173result files and1535artifacts independently hash-verified.
 
 Software acceptance failed, so no EXP232 DSP deployment/profiling; complete profiling N/A sections retain verified EXP230 historical references. EXP230 calibration expansion helped; EXP231 group128 improved against matched8K C8 but was worse than64K C64; EXP232 AWQ worsened matched64K C64. The approved three-direction sequence is complete. Group128 at64K calibration was not tested and is discussion-only, not a registered follow-up. No baseline promotion; W4A8/F16 runtime/packages frozen; allfinal data exposed and excluded from future independent training/selection/test roles. Active none,next233; no running jobs. See SESSION_HANDOFF_EXP0232.md and EXP-0232-RESULTS.md.
+
+## PC052 approved three new diagnostics
+
+User approves independent mature-tool INT4 reference, group12864K and C64 sensitivity. ActiveEXP233; EXP234/235 next, all authorized. See EXP-0233.md. Other recipes/runtime frozen; no promotion.
