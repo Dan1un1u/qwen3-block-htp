@@ -26,6 +26,7 @@ def setup():
  site=next((V/'lib').glob('python*/site-packages'))
  (site/'frozen_gpu_parent.pth').write_text('/home/daniuniu/.cache/qwen3-block-htp-spinquant-py/lib/python3.10/site-packages\n/home/daniuniu/.cache/qwen3-block-htp-py/lib/python3.10/site-packages\n')
  subprocess.run([str(V/'bin/python'),'-m','pip','install','--no-deps',str(UP),'numpy==1.26.4','py-cpuinfo==9.0.0','pillow==11.3.0','threadpoolctl==3.6.0'],check=True)
+ subprocess.run([str(V/'bin/python'),'-m','pip','install','pandas==2.2.3','datasets==3.5.0','sentencepiece==0.2.0','numpy==1.26.4'],check=True)
  subprocess.run([str(V/'bin/python'),'-c','import auto_round,torch,transformers;print(auto_round.__version__,torch.__version__,transformers.__version__)'],check=True)
  archive=O/'upstream';archive.mkdir(parents=True,exist_ok=True)
  subprocess.run(['git','archive','--format=tar','-o',str(archive/'auto-round-v0.5.1.tar'),head],cwd=UP,check=True)
