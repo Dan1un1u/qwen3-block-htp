@@ -38,6 +38,9 @@ experiments:
   - codex/exp-0234-w4f16-group128-64k
   source_commits:
   - 24a976887f9da144e49de2774104a3e72ddf6ddd
+  - 6ab684555a47bd8612fc50c038f92ca7e019c9c2
+  - bc6a426935aac221c5f56b7147b1f922abc8a553
+  - 1c934d27dbe2cb142f89a7226e916eb8586c269e
   variants:
   - F
   - C64
@@ -46,8 +49,15 @@ experiments:
   evidence_profile: host_only_group128_64K
   evidence:
     protocol: PC052
-    current_stage: registered
+    current_stage: CPU_G64_export_running_G8_primary_scoring
     other_recipes: frozen
+    dataset_freeze_sha256: a69984650c65d3a1b5d0ffa632be4b9e1c4ae6c5651978281aa694f9be01de80
+    group_oracle: pass
+    export_actual_start_source: 6ab684555a47bd8612fc50c038f92ca7e019c9c2
+    G8_development_exact_regression: true
+    G8_development_ppl: 27.478140993518856
+    frozen_controls: six_verified_EXP233_F_C64_files_reused
+    next_direction: approved_EXP235_after_EXP234_closure
   runtime:
     source_branch: codex/exp-0234-w4f16-group128-64k
     source_worktree: /home/daniuniu/work/qwen3-block-htp
