@@ -19,13 +19,103 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0228
+  active_experiment: null
   next_experiment_number: 229
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
+  latest_short_task_scoring_audit:
+    experiment: EXP-0228
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_role: scorer_correctness_and_audit_not_model_improvement
+    adoption_status: not_applicable
+    source_head: 365d1e2f136125462fa4f7ecbe1abc93b4309ca1
+    scorer_version: qbh-content-v2
+    summary_sha256: 6300207806b8e0b13bb0687a702950a9da8385da8eb855ab5f638ec1e7cd9b2d
+    report_sha256: 9c0148d512105b7577e3ba4c983038052aec409338bb1289c3800fed27b30192
+    historical_evidence_unchanged: true
+    selected_baseline_changed: false
+    new_model_or_device_runs: false
+    profiling: not_applicable_host_only_scoring
+    next_action: Discuss model-quality direction; future reports use content-v2 with
+      strict-v1 diagnostic
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0228
+    results_report: docs/experiments/EXP-0228-RESULTS.md
+    full_profiling_report: docs/experiments/EXP-0228-PROFILE.md
+    evidence_ledger_sha256: c61fcbf4dbd1f9ee5269597c1f6d1276c7a3d45ac4f173176fb983236812339c
+    closure_sha256: 2f09f299891e28a321660a26ad8c3e206de678106789d556c2e0b0db1ea51e5b
+    decoded_task_rows: 264
+    strict_grades_reproduced: 264
+    manual_review_count: 33
+    test_groups: 6
+    results:
+      BF16 teacher:
+        strict: 22
+        content: 23
+        total: 24
+        format_only: 1
+        incorrect: 1
+        ppl: 38.16625510389282
+      F16A16:
+        strict: 22
+        content: 23
+        total: 24
+        format_only: 1
+        incorrect: 1
+        ppl: 37.84912901127567
+      W4A16 original RTN:
+        strict: 8
+        content: 14
+        total: 24
+        format_only: 6
+        incorrect: 10
+        ppl: 68.83198064863572
+      W4A16 A0 / EXP0224:
+        strict: 19
+        content: 22
+        total: 24
+        format_only: 3
+        incorrect: 2
+        ppl: 38.87362374795991
+      W4A16 A / EXP0227:
+        strict: 18
+        content: 22
+        total: 24
+        format_only: 4
+        incorrect: 2
+        ppl: 38.66094796047825
+      W4A16 R0 / EXP0225:
+        strict: 20
+        content: 22
+        total: 24
+        format_only: 2
+        incorrect: 2
+        ppl: 50.22449369429062
+      W4A16 R / EXP0227:
+        strict: 19
+        content: 22
+        total: 24
+        format_only: 3
+        incorrect: 2
+        ppl: 43.01760480301732
+      W4A16 broader-sampling rotation / EXP0226:
+        strict: 9
+        content: 16
+        total: 24
+        format_only: 7
+        incorrect: 8
+        ppl: 40.44461662608407
+      W4A8 frozen provisional snapshot:
+        strict: 0
+        content: 0
+        total: 24
+        format_only: 0
+        incorrect: 24
+        ppl: 94886933.99566276
   latest_w4f16_block_reconstruction_result:
     experiment: EXP-0227
     source_head: 462fe94dee1ba568ba23b073cec45e2c021558e8
@@ -626,8 +716,8 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0227
-  last_completed_source_commit: 462fe94dee1ba568ba23b073cec45e2c021558e8
+  last_completed_experiment: EXP-0228
+  last_completed_source_commit: 365d1e2f136125462fa4f7ecbe1abc93b4309ca1
   provisional_source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
   device_execution_state: ready
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness

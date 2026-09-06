@@ -1622,3 +1622,7 @@ Fixed GPTQ codes,573440 transformer row scales per coordinate,100steps/block wit
 ## EXP0228 approved scoring audit
 
 User authorizes counting correct content despite formatting. New versioned content-v2, strict-v1 retained, frozen outputs rescore only. See PC048/EXP0228. No model/prompt/PPL/runtime edits or promotion. Corrected stale scope summary pointers to the already completed EXP0227; its detailed authority/evidence remains unchanged.
+
+## EXP0228 completed content-aware short-task audit
+
+Current best-PPL unrotated A has4format-only failures and2actual wrong answers; content22/24 vs strict18. BF16/F16 content23/24 vs strict22, one genuine Chinese12-5->5 error. A0/A/R0/R all content22/24, so their prior strict one-task drop after reconstruction is not a content-accuracy regression. EXP226 selected content16/24 vs strict9; original RTN14vs8; W4U8 frozen provisional0. PPL/independent validation/runtime/old hashes unchanged; rotation still has no demonstrated incremental advantage. Same new qbh-content-v2 rule applied to all;264stored grades and token decodes reproduced, synthetic tests pass. Bounded parsing requires explicit review for unknown prose. Future short-task headline uses content-v2, strict-v1 remains a separate instruction/format diagnostic. No automatic promotion. Active none, next229; see SESSION_HANDOFF_EXP0228.md.

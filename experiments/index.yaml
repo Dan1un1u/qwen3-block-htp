@@ -20,15 +20,16 @@ experiments:
     - A
     - R
     - EXP0226_selected
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     adoption_status: not_applicable
     evidence_profile: host_only_frozen_output_rescoring
     source_branches:
     - codex/exp-0228-content-aware-short-task-scoring
     source_commits:
     - 462fe94dee1ba568ba23b073cec45e2c021558e8
+    - 365d1e2f136125462fa4f7ecbe1abc93b4309ca1
     record: docs/experiments/EXP-0228.md
     approval_ref: User 2026-09-06 explicitly requests content/format error audit and
       acceptance of correct answers with formatting differences
@@ -37,10 +38,97 @@ experiments:
       source_branch: codex/exp-0228-content-aware-short-task-scoring
       approved_on: '2026-09-06'
       started_on: '2026-09-06'
+      completed_on: '2026-09-06'
     evidence:
-      profiling: not_applicable_host_only_rescoring
-      models_and_old_evidence: immutable
+      experiment: EXP-0228
+      execution_state: completed
+      evidence_validity: valid
+      local_gate: pass
+      gate_role: scorer_correctness_and_audit_not_model_improvement
+      adoption_status: not_applicable
+      source_head: 365d1e2f136125462fa4f7ecbe1abc93b4309ca1
+      scorer_version: qbh-content-v2
+      summary_sha256: 6300207806b8e0b13bb0687a702950a9da8385da8eb855ab5f638ec1e7cd9b2d
+      report_sha256: 9c0148d512105b7577e3ba4c983038052aec409338bb1289c3800fed27b30192
+      historical_evidence_unchanged: true
       selected_baseline_changed: false
+      new_model_or_device_runs: false
+      profiling: not_applicable_host_only_scoring
+      next_action: Discuss model-quality direction; future reports use content-v2 with
+        strict-v1 diagnostic
+      formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0228
+      results_report: docs/experiments/EXP-0228-RESULTS.md
+      full_profiling_report: docs/experiments/EXP-0228-PROFILE.md
+      evidence_ledger_sha256: c61fcbf4dbd1f9ee5269597c1f6d1276c7a3d45ac4f173176fb983236812339c
+      closure_sha256: 2f09f299891e28a321660a26ad8c3e206de678106789d556c2e0b0db1ea51e5b
+      decoded_task_rows: 264
+      strict_grades_reproduced: 264
+      manual_review_count: 33
+      test_groups: 6
+      results:
+        BF16 teacher:
+          strict: 22
+          content: 23
+          total: 24
+          format_only: 1
+          incorrect: 1
+          ppl: 38.16625510389282
+        F16A16:
+          strict: 22
+          content: 23
+          total: 24
+          format_only: 1
+          incorrect: 1
+          ppl: 37.84912901127567
+        W4A16 original RTN:
+          strict: 8
+          content: 14
+          total: 24
+          format_only: 6
+          incorrect: 10
+          ppl: 68.83198064863572
+        W4A16 A0 / EXP0224:
+          strict: 19
+          content: 22
+          total: 24
+          format_only: 3
+          incorrect: 2
+          ppl: 38.87362374795991
+        W4A16 A / EXP0227:
+          strict: 18
+          content: 22
+          total: 24
+          format_only: 4
+          incorrect: 2
+          ppl: 38.66094796047825
+        W4A16 R0 / EXP0225:
+          strict: 20
+          content: 22
+          total: 24
+          format_only: 2
+          incorrect: 2
+          ppl: 50.22449369429062
+        W4A16 R / EXP0227:
+          strict: 19
+          content: 22
+          total: 24
+          format_only: 3
+          incorrect: 2
+          ppl: 43.01760480301732
+        W4A16 broader-sampling rotation / EXP0226:
+          strict: 9
+          content: 16
+          total: 24
+          format_only: 7
+          incorrect: 8
+          ppl: 40.44461662608407
+        W4A8 frozen provisional snapshot:
+          strict: 0
+          content: 0
+          total: 24
+          format_only: 0
+          incorrect: 24
+          ppl: 94886933.99566276
   - id: EXP-0227
     slug: w4f16-block-scale-reconstruction
     title: Fixed-rotation final-format transformer block scale reconstruction
