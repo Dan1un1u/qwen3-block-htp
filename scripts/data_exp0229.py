@@ -135,7 +135,9 @@ def prepare():
         rows=[s for s in samples if s['split']==split]
         for i in range(16):binary(inputdir/f'{split}_{i:02d}.bin',rows[i*32:(i+1)*32])
     sentinels=samples[:8];binary(inputdir/'sentinel.bin',sentinels+sentinels)
-    old=[s for s in roles['exp0218']['samples'] if s['id'] in [0,16]];binary(inputdir/'regression.bin',old)
+    old=[s for s in roles['exp0218']['samples'] if s['id'] in [0,20]]
+    assert all(s['split']=='full' for s in old) and {s['language'] for s in old}=={'en','zh'}
+    binary(inputdir/'regression.bin',old)
     write('dataset_freeze.json',dict(files={str(p.relative_to(RESULT)):sha(p) for p in [RESULT/'dataset.json',*sorted(inputdir.glob('*.bin'))]},frozen_before_inference=True,primary_ids=[s['id'] for s in samples[:512]],reserve_ids=[s['id'] for s in samples[512:]],quick_ids=[s['id'] for s in samples[:128]]))
     print('DATA_FROZEN',sha(RESULT/'dataset_freeze.json'),flush=True)
 

@@ -13,7 +13,7 @@ PACKAGES={
 REMOTE='/data/local/tmp/qwen3-block-htp/exp0229-v2-'
 MODEL_BASE=Path('/mnt/d/llm_exp/models/qwen3-block-htp')
 FIELDS=['token_id','target_token','target_code','nll','rank','target_ties','max_ties','saturated']
-FREEZE_SHA='cd59b4b5262a1bc0741007c6dc6a666237e9e71e0d2776573571c87d5c166cbf'
+FREEZE_SHA='70195c3b22df83b978f678c37cd018a7d55a370be30c53675a0b97397b9736f3'
 
 def frozen():
     assert sha(RESULT/'dataset_freeze.json')==FREEZE_SHA
