@@ -24,6 +24,100 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0235
+  slug: w4f16-c64-sensitivity
+  title: W4F16 C64 attention MLP and LM-head FP16 sensitivity
+  parent: EXP-0234
+  record: docs/experiments/EXP-0235.md
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  approval_ref: User2026-09-07 PC052 approves all three diagnostics
+  source_branches:
+  - codex/exp-0235-w4f16-c64-sensitivity
+  source_commits:
+  - c8e57fd0d308df10f0efa82cbbe0f96c49ed2839
+  variants:
+  - F
+  - C64
+  - ATT_ALL
+  - MLP_ALL
+  - HEAD
+  - ATT_L00
+  - ATT_L01
+  - ATT_L02
+  - ATT_L03
+  - ATT_L04
+  - ATT_L05
+  - ATT_L06
+  - ATT_L07
+  - ATT_L08
+  - ATT_L09
+  - ATT_L10
+  - ATT_L11
+  - ATT_L12
+  - ATT_L13
+  - ATT_L14
+  - ATT_L15
+  - ATT_L16
+  - ATT_L17
+  - ATT_L18
+  - ATT_L19
+  - ATT_L20
+  - ATT_L21
+  - ATT_L22
+  - ATT_L23
+  - ATT_L24
+  - ATT_L25
+  - ATT_L26
+  - ATT_L27
+  - MLP_L00
+  - MLP_L01
+  - MLP_L02
+  - MLP_L03
+  - MLP_L04
+  - MLP_L05
+  - MLP_L06
+  - MLP_L07
+  - MLP_L08
+  - MLP_L09
+  - MLP_L10
+  - MLP_L11
+  - MLP_L12
+  - MLP_L13
+  - MLP_L14
+  - MLP_L15
+  - MLP_L16
+  - MLP_L17
+  - MLP_L18
+  - MLP_L19
+  - MLP_L20
+  - MLP_L21
+  - MLP_L22
+  - MLP_L23
+  - MLP_L24
+  - MLP_L25
+  - MLP_L26
+  - MLP_L27
+  evidence_profile: host_only_C64_FP16_restoration_sensitivity
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0235-w4f16-c64-sensitivity
+    started_on: '2026-09-07'
+    approved_on: '2026-09-07'
+  evidence:
+    current_stage: registered
+    protocol: PC052
+    other_recipes: frozen
+    variant_count: 61
+    confirmation_families:
+    - F
+    - C64
+    - ATT_ALL
+    - MLP_ALL
+    - HEAD
+    no_model_selection: true
 - id: EXP-0234
   slug: w4f16-group128-64k
   title: W4F16 static group128 with65536 calibration positions

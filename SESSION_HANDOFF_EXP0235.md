@@ -1,0 +1,3 @@
+# EXP0235 active
+
+Third PC052 phase approved. Source parentc8e57fd0d308df10f0efa82cbbe0f96c49ed2839, branchcodex/exp-0235-w4f16-c64-sensitivity. Frozen protocol docs/experiments/EXP-0235.md predates EXP233 final scores. No implementation/scoring yet. Implement61fixeddevelopment restorations plus unconditional five-family full1024doc confirmation on sharedPC052 panel. Verify exactF/C64 regressions, all otherweights frozen and finalC64sentinel; retain source/config/commands/scores/ledgers and independentrawtoken PPL checks. Otherrecipes/runtimefrozen; no selection,promotion or automatic furtheroptimization. Bootstrap/readfourauthorities/preflightbeforework.

@@ -1688,3 +1688,7 @@ PC052 secondphase nowregistered: unchangedgroup128CPUquantizer expandedtoC64cali
 ## EXP0234 completed
 
 EXP234 completed on the same1024documents/16384targets: F25.060797,C6427.154144,G827.478381,G6426.487802. G64 improves2.453925%vsC64 (ratioCI.963390..987672),3.604942%vsG8 (CI.952362..975945), but remains5.694170%aboveF (CI4.589081..6.943321), failing overall5% gate; everylanguage/domain/cell upperCI is below10%. UnchangedCPUgroupquantizer and64K calibration,196packchecks and112forwardchecks exact,28finitehiddencheckpoints. All82evidencefiles/622artifacts independently verified,36PPL reductions checked independently. Actualexportsource6ab684555a47bd8612fc50c038f92ca7e019c9c2; completion-source labels separately documented. No promotion or DSP deployment. PC052 next approved phase isEXP235C64sensitivity.
+
+## EXP0235 active
+
+Third PC052 phase registered after verified EXP234 closure. FreezeC64,61fixeddevelopment variants and fivefixedfamilies on shared1024document confirmation. FreshoriginalFP16 restorations only; no newquantizer,hybridselection or DSPdeployment.
