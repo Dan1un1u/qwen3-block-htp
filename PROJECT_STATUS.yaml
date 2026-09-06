@@ -19,13 +19,242 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0226
+  active_experiment: null
   next_experiment_number: 227
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
+  latest_w4f16_rotation_sampling_result:
+    id: EXP-0226
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: pending
+    source_head: b90d9a7309fe470fb7dc7b8de83b483621ad481c
+    formal_evidence: D:/llm_exp/results/qwen3-block-htp/exp0226
+    retained_artifacts: D:/llm_exp/models/qwen3-block-htp/exp0226/artifacts/b90d9a7309fe470fb7dc7b8de83b483621ad481c
+    selected_checkpoint: step100
+    validation:
+      control_A:
+        nll: 3.541112452645912
+        ppl: 34.505283341501666
+        language_nll:
+          en: 3.3807274490295214
+          zh: 3.7014974562623024
+      old100:
+        nll: 3.561694003186048
+        ppl: 35.222814194581275
+        language_nll:
+          en: 3.3996719794079953
+          zh: 3.7237160269641016
+      step000:
+        nll: 3.6670784148148945
+        ppl: 39.13739543109447
+        language_nll:
+          en: 3.5571693563829934
+          zh: 3.7769874732467956
+      step050:
+        nll: 3.5816618938992115
+        ppl: 35.93320843260486
+        language_nll:
+          en: 3.4452534648433772
+          zh: 3.7180703229550454
+      step100:
+        nll: 3.5737880625555354
+        ppl: 35.651387371530056
+        language_nll:
+          en: 3.4311086848217798
+          zh: 3.716467440289291
+    quality:
+      control_A:
+        nll: 3.6603159678909947
+        ppl: 38.87362374795991
+        tasks_correct: 19
+        tasks_total: 24
+        teacher_top1_agreement: 0.66796875
+        language_nll:
+          zh: 3.993657737607181
+          en: 3.3269741981748084
+      control_old100:
+        nll: 3.916502829899378
+        ppl: 50.22449369429062
+        tasks_correct: 20
+        tasks_total: 24
+        teacher_top1_agreement: 0.66015625
+        language_nll:
+          zh: 3.999019690086328
+          en: 3.833985969712428
+      selected_step100:
+        nll: 3.6999335475298016
+        ppl: 40.44461662608407
+        tasks_correct: 9
+        tasks_total: 24
+        teacher_top1_agreement: 0.6875
+        language_nll:
+          zh: 4.014973915693798
+          en: 3.3848931793658057
+    software_diagnostic:
+      step100:
+        nll: 3.7003244683146477
+        ppl: 40.46043035811522
+        tasks_correct: 9
+        tasks_total: 24
+        teacher_top1_agreement: 0.685546875
+        language_nll:
+          zh: 4.014761596918106
+          en: 3.3858873397111893
+    sampling_fixed_step100:
+      all:
+        new_minus_old_nll: 0.012094059369487042
+        ppl_change_percent: 1.2167488224569436
+        samples: 64
+        improved_samples: 28
+        paired_sample_bootstrap_95pct:
+        - -0.019239434151066374
+        - 0.04299372120203896
+      en:
+        new_minus_old_nll: 0.031436705413784724
+        ppl_change_percent: 3.193605756276475
+        samples: 32
+        improved_samples: 12
+        paired_sample_bootstrap_95pct:
+        - -0.01675094835437538
+        - 0.0787911312571108
+      zh:
+        new_minus_old_nll: -0.007248586674810639
+        ppl_change_percent: -0.7222379031442584
+        samples: 32
+        improved_samples: 16
+        paired_sample_bootstrap_95pct:
+        - -0.04728467624371862
+        - 0.03271967989469968
+      wiki_en:
+        new_minus_old_nll: 0.02728439630165569
+        ppl_change_percent: 2.7660023918373717
+        samples: 16
+        improved_samples: 6
+        paired_sample_bootstrap_95pct:
+        - -0.04973204504559872
+        - 0.10633291945543084
+      wiki_zh:
+        new_minus_old_nll: -0.047719617954869814
+        ppl_change_percent: -4.65989338536168
+        samples: 16
+        improved_samples: 10
+        paired_sample_bootstrap_95pct:
+        - -0.10588084367904156
+        - 0.011836711985345631
+      news_en:
+        new_minus_old_nll: 0.03558901452591376
+        ppl_change_percent: 3.622988353467889
+        samples: 16
+        improved_samples: 6
+        paired_sample_bootstrap_95pct:
+        - -0.018920007527731885
+        - 0.08672110303906926
+      news_zh:
+        new_minus_old_nll: 0.033222444605248536
+        ppl_change_percent: 3.3780472555775978
+        samples: 16
+        improved_samples: 6
+        paired_sample_bootstrap_95pct:
+        - -0.010007902166210702
+        - 0.08014261427209712
+    quantizer_validation:
+      step000:
+        actual_nll: 3.6670784148148945
+        STE_nll: 5.6351959109306335
+        GPTQ_minus_STE: -1.968117496115739
+      old100:
+        actual_nll: 3.561694003186048
+        STE_nll: 3.6923705115914345
+        GPTQ_minus_STE: -0.13067650840538647
+      step050:
+        actual_nll: 3.5816618938992115
+        STE_nll: 3.8071376234292984
+        GPTQ_minus_STE: -0.22547572953008688
+      step100:
+        actual_nll: 3.5737880625555354
+        STE_nll: 3.6601522751152515
+        GPTQ_minus_STE: -0.08636421255971616
+    speed:
+      A0:
+        prefill_tokens: 64
+        prefill_host_us: 63220.6505
+        prefill_tokens_per_second: 1012.3274514551222
+        decode_tokens: 15
+        decode_total_host_us: 1390199.6875
+        decode_tokens_per_second: 10.789816840611252
+      old100:
+        prefill_tokens: 64
+        prefill_host_us: 63098.880000000005
+        prefill_tokens_per_second: 1014.2810775722168
+        decode_tokens: 15
+        decode_total_host_us: 1390063.6705
+        decode_tokens_per_second: 10.790872618521542
+      step100:
+        prefill_tokens: 64
+        prefill_host_us: 63222.422
+        prefill_tokens_per_second: 1012.2990859160694
+        decode_tokens: 15
+        decode_total_host_us: 1390274.374
+        decode_tokens_per_second: 10.789237204195206
+    paired_speed_percent:
+      step100:
+        prefill: -0.05068113923498707
+        decode: -0.005825470109266373
+    effectiveness: false
+    interpretation: qbh_PPL_50.22_to40.44_but_strict_tasks20_to9_and_no_independent_validation_improvement;
+      broader_rotation_training_sampling_alone_does_not_establish_quality_recovery
+    correctness_gate_result: pass_exact_Cayley_FP32_fold_invariance_independent_GPTQ_packing_forward_checks_canonical_reload
+    determinism_gate_result: pass_quick_full_repeat_zero_overlap_mismatch
+    physical_gate_result: pass_exact8MiB_zero_timed_intermediate_DDR_spill_one_FastRPC_no_QNN
+    speed_gate_result: complete_1warmup_5short_10three_way_formal
+    formal_invocation_ledgers: 480
+    formal_layer_ledgers: 13440
+    training_steps: 100
+    training_samples: 800
+    sequence_length: 128
+    validation_samples: 64
+    training_data_sha256: 7126e60d0dd74508982082fdab4cd2e2ecb8cb85375511b0f2fe04a5d0d573c6
+    training_final_orthogonality:
+      R1: 6.736153546071932e-08
+      R1_frobenius: 1.563695671854671e-05
+      R2: 1.822361141989859e-07
+      R2_frobenius: 3.97167281481161e-06
+    packages:
+      step000:
+        manifest_sha256: de788d23a754e1de635268fff1e0caebd21e61344b838cd242b2a3b74139c77b
+        rotation_checkpoint_sha256: 31b6295d6c904d93394e34aee69aab2a68e197632c61ca304fa6c2276c5e34b4
+      step050:
+        manifest_sha256: b1e38753406e4f7e483feb92c0f5ac972eefbdfc46610370b5d3b3b58c41ca4b
+        rotation_checkpoint_sha256: f3daeafc9bd7a2c217c394fd227242dd5dd7936ff07f73e6fd27431a32ad980b
+      step100:
+        manifest_sha256: ef5865a2c3e67db85361e3a9c0da716097983610bf1748d86a6aabee5ebc031b
+        rotation_checkpoint_sha256: 8d02b98426e406394731ad3d0a5cae23017c042db3f690eb498f0289d465a9e1
+    frozen_GPTQ_english_calibration_documents: 3
+    other_recipes: frozen
+    runtime_unchanged: true
+    selected_baseline_changed: false
+    holdout_scored: false
+    original_checkpoint_only: true
+    lpbq: false
+    full_profiling_report: docs/experiments/EXP-0226-PROFILE.md
+    results_report: docs/experiments/EXP-0226-RESULTS.md
+    evidence_files: 321
+    intermediate_files: 467
+    next_action: discuss_mixed_result; proposed_same_token_budget_GPTQ_calibration_coverage_ablation_requires_user_approval;
+      no_automatic_next_direction_or_promotion
+    full_profiling_report_sha256: ebb4f4c4619a5589b8b34e2e93bc85648be83eba7e09735a20139b484987a318
+    results_report_sha256: fa6ab2b3bcfda00023e11c116054ee7e9b8e40f6c9d92a36b868d704bf1c984f
+    quality_summary_sha256: c6a0eeae2337fcad0a6f37762c00645b001f562f59ebe54fb147bc3eebd53f5d
+    speed_summary_sha256: b02c307f4a3f7db96c265f941bfbc413daceff7c2cb9990be99fb3f33854352c
+    selection_sha256: 6118a213c2b639471b0cc0729dbe6357225a0cc59a626f97a7382afc2fff15aa
+    sampling_summary_sha256: e400ec0796b60adf26c5d4eb35cbd41820a8c0e2bb155203a0cb41420e750049
+    closure_sha256: 21db2339632d67b76778ed649f01499c165cecab085c7fa2574df8fb9786e724
+    evidence_ledger_sha256: fcc3c22ed7b437be85552ca40ce953a891ded9ebc4eb8e05387210724f88a797
   latest_w4f16_learned_rotation_result:
     id: EXP-0225
     execution_state: completed
@@ -158,8 +387,8 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0225
-  last_completed_source_commit: 0900322f71b8cbc6071a3a34e3f23679464bbfeb
+  last_completed_experiment: EXP-0226
+  last_completed_source_commit: b90d9a7309fe470fb7dc7b8de83b483621ad481c
   provisional_source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
   device_execution_state: ready
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
@@ -167,15 +396,15 @@ current_scope:
   current_handoff: SESSION_HANDOFF_EXP0226.md
   active_recipe_specialization: null
   last_completed_experiment_contract:
-    id: EXP-0225
-    execution_scope: learned_offline_R1R2_W4F16_only
+    id: EXP-0226
+    execution_scope: learned_W4F16_rotation_training_sampling_ablation
     correctness_gate: pass
-    quality_gate: fail_no_incremental_gain_over_unrotated_A
-    speed_gate: complete_2way_5short_10formal
+    quality_gate: fail_no_consistent_recovery_PPL_improves_but_tasks_regress
+    speed_gate: complete_3way_5short_10formal
     other_recipes: frozen
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: D:/llm_exp/results/qwen3-block-htp/exp0225
+  last_completed_evidence: D:/llm_exp/results/qwen3-block-htp/exp0226
   latest_w4f16_output_scale_result:
     id: EXP-0224
     execution_state: completed
