@@ -19,13 +19,49 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0230
+  active_experiment: null
   next_experiment_number: 231
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
+  latest_w4f16_calibration_result:
+    selected: C64
+    source_head: 5cabcaafcc453ce6b2296a2d9a436fa8e5cc9269
+    artifact_ledger_sha256: 46f9a023ec64e2ea945ab04b69286b9d08836345a7a216768e0ca4d4cc5b0646
+    package_manifest_sha256:
+      F: 0f8a359b559f252cb13329f57d4cabd56f17ca9bfb64bc5643f4d6014795070f
+      A0: a5de4e6c4e02ac913e69fbddb0d4b0b9e12b5cfe88ff606cf1ea18842dc0c179
+      C8: 60fd7a1798e4c5cdd805f54a8b6c9cf01b6b92a4dd9296083848de7c588a8186
+      C64: 7de4f0758d83f2ba3b58696c695bfbfed72a25dd3bf308475abee0a0f0575a89
+    speed:
+      A0:
+        prefill_tokens: 64
+        prefill_host_us: 63352.917
+        prefill_tokens_per_second: 1010.2139416879573
+        decode_tokens: 15
+        decode_total_host_us: 1387172.994
+        decode_tokens_per_second: 10.81335930333142
+      C64:
+        prefill_tokens: 64
+        prefill_host_us: 63262.994999999995
+        prefill_tokens_per_second: 1011.6498594478495
+        decode_tokens: 15
+        decode_total_host_us: 1389448.9595
+        decode_tokens_per_second: 10.795646646421487
+    id: EXP-0230
+    final_ppl:
+      F: 25.777659230474736
+      A0: 30.558053304874406
+      C64: 27.5456070714986
+    C64_F_ratio: 1.0685844988956086
+    ratio_95CI:
+    - 1.054278475936062
+    - 1.0834491836333113
+    evidence_ledger_sha256: bb90bd21fb0d9ba979fcad9f6224b8dd739d9939f493636f5d85b4d8b07160f2
+    quality_gate: fail
+    baseline_promoted: false
   quality_metric_policy:
     approval_ref: User 2026-09-06 makes PPL primary and short answers reference-only
     primary: paired_NLL_and_PPL_vs_named_floating_reference
@@ -724,8 +760,8 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0229
-  last_completed_source_commit: fd41e9c7aa0b2bbfc4c21e1159f7476f2cd7632b
+  last_completed_experiment: EXP-0230
+  last_completed_source_commit: 5cabcaafcc453ce6b2296a2d9a436fa8e5cc9269
   provisional_source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
   device_execution_state: ready
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
@@ -733,15 +769,15 @@ current_scope:
   current_handoff: SESSION_HANDOFF_EXP0230.md
   active_recipe_specialization: null
   last_completed_experiment_contract:
-    id: EXP-0229
-    execution_scope: frozen_W4F16_independent_short_context_PPL_acceptance
-    correctness_gate: pass_exact_regression_repeat_and_physical_constraints
-    quality_gate: fail_A0_and_A_overall_and_all_strata
-    speed_gate: not_applicable_frozen_runtime_and_packages
+    id: EXP-0230
+    execution_scope: calibration_coverage_budget_actual_DSP_independent_PPL
+    correctness_gate: pass
+    quality_gate: fail_C64_overall_and_en_wiki
+    speed_gate: complete_no_meaningful_change
     other_recipes: frozen
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0229
+  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0230
   latest_w4f16_output_scale_result:
     id: EXP-0224
     execution_state: completed

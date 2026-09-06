@@ -1648,3 +1648,7 @@ User defers W4A8 and prioritizes W4A16 accuracy recovery discussion. Previous W4
 ## EXP0230 approved calibration coverage/budget
 
 User approves ordered W4A16 recovery plan. PC051: activeEXP230 C8/C64 versusfrozenA0, new development/finaldata, unchangedquantizer/head/runtime. If insufficient, proceed to separately registered group128software thenAWQ phases. Other recipesfrozen; no promotion. See EXP-0230.md and SESSION_HANDOFF_EXP0230.md.
+
+## EXP0230 completed calibration coverage/budget
+
+C64 selected solely by development PPL27.150224 vsC8 28.030617, then independent actualDSP1024documents/16384targets: F25.777659,A030.558053,C6427.545607. C64 improves9.858% vsA0 but remains6.858% aboveF (95%CI5.428..8.345%); overall5% and EnglishWiki10% point gates fail. Frozen reserve exhausted; no tuning or extra evaluation budget. All626 result files and3014 model/intermediate files verified,56checkpoints finite,27PPL reductions independent, sentinel exact, physical checks pass. Five short and10formal speed pairs complete, no meaningful speed change. MLP FP16 restore removes82.304% of A0 excess development NLL (conditional diagnostic). No baseline promotion; W4A8 frozen. Next approved PC051 phase is separately registered group128 software diagnostic; allEXP230 final/reserve data now exposed and excluded from new independent test. See EXP-0230-RESULTS.md and SESSION_HANDOFF_EXP0230.md.

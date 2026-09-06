@@ -15,9 +15,9 @@ experiments:
     - A0
     - C8
     - C64
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
     adoption_status: pending
     evidence_profile: w4f16_calibration_coverage_budget
     source_branches:
@@ -41,6 +41,7 @@ experiments:
       source_branch: codex/exp-0230-w4f16-gptq-calibration-coverage
       approved_on: '2026-09-06'
       started_on: '2026-09-06'
+      completed_on: '2026-09-06'
     evidence:
       quantizer: frozen_EXP0224
       calibration_tokens:
@@ -53,8 +54,24 @@ experiments:
       dataset_sha256: 1d908de405d4bcf4c46f0acdf4de0ab57cb45b6da298a6dbe28fd4cdb0dff8b0
       data_freeze_sha256: fb99996e90f3b041ff3ab792b6ab41a187b20ef3ac9060f392b297fc00575831
       independent_data_audit: pass1664windows
-      current_stage: primary_complete_bounded_DSP_reserve_running
+      current_stage: completed
       recovery: CPU_FP32_cross_entropy_reduction_error_4.78e-5_fixed_FP64_independent_check_without_changing_logits_or_gate
+      formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0230
+      evidence_ledger_sha256: bb90bd21fb0d9ba979fcad9f6224b8dd739d9939f493636f5d85b4d8b07160f2
+      evidence_files: 626
+      closure_sha256: 9e08286a088ee77cc834bf17e9c713ce04482f3037667724190c16e7d330d3d1
+      report_sha256: d679e93515b5e257e62c44c62d88585f73568ea0b37e9d484c340dff17ac69af
+      full_profiling_report_sha256: bf8347a03109d9f816739de6e95d27c322c4740dbfd5f189b6157698c54184c7
+      artifact_ledger_sha256: 46f9a023ec64e2ea945ab04b69286b9d08836345a7a216768e0ca4d4cc5b0646
+      artifact_files: 3014
+      selected: C64
+      quality_gate: fail
+      baseline_promoted: false
+      final_ppl:
+        F: 25.777659230474736
+        A0: 30.558053304874406
+        C64: 27.5456070714986
+      next_direction: registered_group128_software_diagnostic_under_PC051
   - id: EXP-0229
     slug: w4f16-independent-ppl-acceptance
     title: Frozen W4F16 independent bilingual PPL acceptance
