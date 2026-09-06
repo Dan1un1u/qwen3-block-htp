@@ -2,7 +2,7 @@
 
 Source00e4172b705044199762a1bd9922cb7433f370b4 on codex/exp-0230-w4f16-gptq-calibration-coverage, clean/pushed. Active230,next231. Datafreeze fb99996e90f3b041ff3ab792b6ab41a187b20ef3ac9060f392b297fc00575831;1664windows independently audited. Results /mnt/d/llm_exp/results/qwen3-block-htp/exp0230.
 
-ONLY running process: C64 CPU export, tool session49061, at source5c36692c05b5c3f4e5f2dbd2bba83d4449110cbb. Five of28layers completed at elapsed1509.1seconds. Do NOT duplicate/restart. It saves layer stats, forward checks and hidden checkpoints. All quantizer/export math files used by this process remain unchanged; subsequent source changes only add development sensitivity, reporting and output routing. Preserve incomplete candidate if interrupted; exporter refuses an existing root.
+ONLY running process: C64 CPU export, tool session49061, at source5c36692c05b5c3f4e5f2dbd2bba83d4449110cbb. Fourteen of28layers completed at elapsed3530.5seconds. Do NOT duplicate/restart. It saves layer stats, forward checks and hidden checkpoints. All quantizer/export math files used by this process remain unchanged; subsequent source changes only add development sensitivity, reporting and output routing. Preserve incomplete candidate if interrupted; exporter refuses an existing root.
 
 C8 export completed2392.93seconds, manifest60fd7a1798e4c5cdd805f54a8b6c9cf01b6b92a4dd9296083848de7c588a8186. C8 command startedc35f6c5, exact source archive retained. GPU development F PPL25.337473379675465, A029.87703009712719, C828.030617167508034. CPU F/A0 eight-document reference and actualDSP development_device_check pass. DeviceF/A0 deployedverified, oldqbh controls exact and duplicateexact. No final scoring or selection yet.
 
