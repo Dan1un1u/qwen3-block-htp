@@ -17,6 +17,7 @@ BASE_PACKAGE=OUTPUT.parent/'exp0224/A'
 BASE_HASH='a5de4e6c4e02ac913e69fbddb0d4b0b9e12b5cfe88ff606cf1ea18842dc0c179'
 
 def frozen():
+    assert sha(RESULT/'dataset_freeze.json')=='fb99996e90f3b041ff3ab792b6ab41a187b20ef3ac9060f392b297fc00575831'
     f=json.loads((RESULT/'dataset_freeze.json').read_text())
     for n,h in f['files'].items():assert sha(RESULT/n)==h,n
     assert json.loads((RESULT/'independent_data_audit.json').read_text())['pass_all']
