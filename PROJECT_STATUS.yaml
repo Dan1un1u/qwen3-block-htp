@@ -19,13 +19,252 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0227
+  active_experiment: null
   next_experiment_number: 228
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
+  latest_w4f16_block_reconstruction_result:
+    experiment: EXP-0227
+    source_head: 462fe94dee1ba568ba23b073cec45e2c021558e8
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: pending
+    effectiveness:
+      A: false
+      R: false
+    incremental_rotation: false
+    quality:
+      control_A:
+        nll: 3.6603159678909947
+        ppl: 38.87362374795991
+        tasks_correct: 19
+        tasks_total: 24
+        teacher_top1_agreement: 0.66796875
+        language_nll:
+          zh: 3.993657737607181
+          en: 3.3269741981748084
+      control_R:
+        nll: 3.916502829899378
+        ppl: 50.22449369429062
+        tasks_correct: 20
+        tasks_total: 24
+        teacher_top1_agreement: 0.66015625
+        language_nll:
+          zh: 3.999019690086328
+          en: 3.833985969712428
+      selected_A:
+        nll: 3.654829993926492
+        ppl: 38.66094796047825
+        tasks_correct: 18
+        tasks_total: 24
+        teacher_top1_agreement: 0.69921875
+        language_nll:
+          zh: 3.950682968001587
+          en: 3.358977019851397
+      selected_R:
+        nll: 3.761609445930168
+        ppl: 43.01760480301732
+        tasks_correct: 19
+        tasks_total: 24
+        teacher_top1_agreement: 0.685546875
+        language_nll:
+          zh: 3.9483024553926174
+          en: 3.574916436467719
+    software_diagnostic:
+      A:
+        nll: 3.656871236860752
+        ppl: 38.739944945924016
+        tasks_correct: 18
+        tasks_total: 24
+        teacher_top1_agreement: 0.701171875
+        language_nll:
+          zh: 3.953243039548397
+          en: 3.360499434173107
+      R:
+        nll: 3.7635916396975517
+        ppl: 43.102958597078036
+        tasks_correct: 19
+        tasks_total: 24
+        teacher_top1_agreement: 0.689453125
+        language_nll:
+          zh: 3.949823848903179
+          en: 3.5773594304919243
+    speed:
+      A0:
+        prefill_tokens: 64
+        prefill_host_us: 62962.8645
+        prefill_tokens_per_second: 1016.4721778184028
+        decode_tokens: 15
+        decode_total_host_us: 1388082.8635
+        decode_tokens_per_second: 10.806271292895332
+      R0:
+        prefill_tokens: 64
+        prefill_host_us: 63048.4115
+        prefill_tokens_per_second: 1015.0929813671831
+        decode_tokens: 15
+        decode_total_host_us: 1387413.098
+        decode_tokens_per_second: 10.811487956703722
+      A:
+        prefill_tokens: 64
+        prefill_host_us: 63034.0885
+        prefill_tokens_per_second: 1015.3236371459548
+        decode_tokens: 15
+        decode_total_host_us: 1387262.447
+        decode_tokens_per_second: 10.812662039859859
+      R:
+        prefill_tokens: 64
+        prefill_host_us: 63159.4795
+        prefill_tokens_per_second: 1013.3079073268804
+        decode_tokens: 15
+        decode_total_host_us: 1388433.0724999998
+        decode_tokens_per_second: 10.803545591859994
+    validation:
+      selected: A
+      rule: presentation_only_minimum_actual_independent_validation_NLL_A_R_tie_A
+      scores:
+        A:
+          nll: 3.548497452285229
+          ppl: 34.76104809542914
+          language_nll:
+            en: 3.3819490478565655
+            zh: 3.7150458567138918
+        R:
+          nll: 3.5623565187824435
+          ppl: 35.24615759016211
+          language_nll:
+            en: 3.3873471425538924
+            zh: 3.737365895010995
+      controls:
+        A0:
+          nll: 3.541112452645912
+          ppl: 34.505283341501666
+          language_nll:
+            en: 3.3807274490295214
+            zh: 3.7014974562623024
+        R0:
+          nll: 3.561694003186048
+          ppl: 35.222814194581275
+          language_nll:
+            en: 3.3996719794079953
+            zh: 3.7237160269641016
+      evaluation_used: false
+      both_candidates_evaluated: true
+    reconstruction:
+      A:
+        variant: A
+        smoke: false
+        layers: 28
+        trainable_parameters: 573440
+        selected_steps:
+        - 50
+        - 0
+        - 100
+        - 100
+        - 100
+        - 100
+        - 100
+        - 100
+        - 100
+        - 100
+        - 100
+        - 100
+        - 100
+        - 50
+        - 100
+        - 100
+        - 100
+        - 100
+        - 100
+        - 50
+        - 100
+        - 100
+        - 50
+        - 50
+        - 50
+        - 50
+        - 50
+        - 100
+        protocol_sha256: 4a00ce5cf6c0279d0fecfe7d04ae63fa5ba37707846c22116b01813f6e73b34b
+        elapsed_s: 137.0691586569883
+        peak_GPU_bytes: 883270144
+        backward_loss_scaling: GradScaler_init65536_unscale_before_clip_100_successful_updates
+        final_train_relative_mse: 0.028418976813554764
+        final_validation_relative_mse: 0.10756134241819382
+      R:
+        variant: R
+        smoke: false
+        layers: 28
+        trainable_parameters: 573440
+        selected_steps:
+        - 100
+        - 50
+        - 100
+        - 100
+        - 100
+        - 100
+        - 100
+        - 100
+        - 100
+        - 100
+        - 100
+        - 100
+        - 100
+        - 100
+        - 100
+        - 100
+        - 100
+        - 100
+        - 50
+        - 50
+        - 50
+        - 50
+        - 50
+        - 50
+        - 100
+        - 100
+        - 100
+        - 50
+        protocol_sha256: 4a00ce5cf6c0279d0fecfe7d04ae63fa5ba37707846c22116b01813f6e73b34b
+        elapsed_s: 181.18810416315682
+        peak_GPU_bytes: 883270144
+        backward_loss_scaling: GradScaler_init65536_unscale_before_clip_100_successful_updates
+        final_train_relative_mse: 0.013659898191690445
+        final_validation_relative_mse: 0.0710100457072258
+    packages:
+      A:
+        path: /mnt/d/llm_exp/models/qwen3-block-htp/exp0227/A
+        manifest_sha256: 00cb9e3a02b4b4b851bdcfb01befa9f81007ff47ef7b687c3ad54d203c0cf5a4
+        files: 1276
+      R:
+        path: /mnt/d/llm_exp/models/qwen3-block-htp/exp0227/R
+        manifest_sha256: 44430633bc9b9db2d004c5961aa212d9741df751b11efd6ebc0b87e85d1ab2e9
+        files: 1276
+    evidence_files: 494
+    evidence_ledger_sha256: 82ea0e55c64554c51949cf772526ac48e529a30d14bd35384e870a66b9e8c5a2
+    intermediate_files: 370
+    protocol_sha256: 4a00ce5cf6c0279d0fecfe7d04ae63fa5ba37707846c22116b01813f6e73b34b
+    full_profiling_report_sha256: af24ab36cb7698b6c23509e8c40cf49d515d78485917ade309be4090f7a2735a
+    results_report_sha256: e3ddf2ddd892b9f1d054d00c17b758f7c39e144d3ea599bc13153736cb0431b8
+    implementation_gate: pass
+    physical_gate: pass
+    other_recipes: frozen
+    runtime_unchanged: true
+    selected_baseline_changed: false
+    holdout_scored: false
+    closure_sha256: 00e1cd0c48ff112c33e7bb66db016052456880b3429d9b6fbce6dd2f8f7baf43
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0227
+    retained_artifacts: /mnt/d/llm_exp/models/qwen3-block-htp/exp0227
+    full_profiling_report: docs/experiments/EXP-0227-PROFILE.md
+    results_report: docs/experiments/EXP-0227-RESULTS.md
+    formal_invocation_ledgers: 640
+    formal_layer_ledgers: 17920
+    quality_determinism: pass
+    next_action: discuss_negative_or_mixed_scale_only_result; no automatic next experiment
+      or promotion
   latest_w4f16_rotation_sampling_result:
     id: EXP-0226
     execution_state: completed

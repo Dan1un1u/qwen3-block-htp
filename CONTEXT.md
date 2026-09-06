@@ -1614,3 +1614,7 @@ Broader English rotation-training coverage30->200documents and random body spans
 ## EXP0227 approved block reconstruction
 
 User approves fixed-rotation final-format block reconstruction. Freeze GPTQ codes, learn row scales against full-block teacher with equal A/R budget. A=EXP0224 A; R=EXP0225 step100 selected from independent validation. See PC047 and docs/experiments/EXP-0227.md. No new rotation learning or automatic promotion.
+
+## EXP0227 completed fixed-coordinate scale reconstruction
+
+Fixed GPTQ codes,573440 transformer row scales per coordinate,100steps/block with independent validation checkpoint selection. Standard FP16 loss scaling repaired verified gradient underflow before final export; failed unscaled attempts preserved. A qbh PPL38.87->38.66/tasks19->18; R50.22->43.02/tasks20->19. Both independent validation NLLs slightly worse; no consistent recovery or incremental rotation benefit. GPU training and CPU packed FP16 weights exact across392projections; both other recipes/runtime frozen.5short10four-way profiling complete,640invocations/17920layer ledgers, no meaningful throughput gain. No baseline promotion. Active none; next228 needs a chosen user-approved direction. Current handoff SESSION_HANDOFF_EXP0227.md.
