@@ -50,7 +50,7 @@ experiments:
       dataset_sha256: 1d908de405d4bcf4c46f0acdf4de0ab57cb45b6da298a6dbe28fd4cdb0dff8b0
       data_freeze_sha256: fb99996e90f3b041ff3ab792b6ab41a187b20ef3ac9060f392b297fc00575831
       independent_data_audit: pass1664windows
-      current_stage: C8_CPU_export_running_development_control_checks
+      current_stage: C8_complete_C64_export_running_C8_development_scoring
       recovery: CPU_FP32_cross_entropy_reduction_error_4.78e-5_fixed_FP64_independent_check_without_changing_logits_or_gate
   - id: EXP-0229
     slug: w4f16-independent-ppl-acceptance
