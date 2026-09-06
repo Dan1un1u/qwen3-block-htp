@@ -64,6 +64,22 @@ def main():
             assert hashlib.sha256(archive.extractfile('scripts/'+n).read()).hexdigest()==h,n
     write('export_execution_provenance.json',dict(actual_start_source=actual['source_head'],completion_source_label=manifest['source_head'],all_quantizer_files_identical=True,source_of_execution='retained stage command and source archive'))
 
+    stage_provenance=[]
+    for c in commands:
+        script=next(Path(a) for a in c['command'] if str(a).endswith('.py'))
+        with tarfile.open(OUTPUT/'artifacts'/c['source_head']/'source.tar') as archive:
+            script_hash=hashlib.sha256(archive.extractfile('scripts/'+script.name).read()).hexdigest()
+        row=dict(command=c['command'],actual_start_source=c['source_head'],returncode=c['returncode'],entry_script_sha256=script_hash)
+        if script.name=='evaluate_exp0234.py' and c['returncode']==0:
+            args=c['command'][c['command'].index(str(script))+1:]
+            score=RESULT/f'software/{args[0]}_{args[1]}.json'
+            row.update(score=str(score),score_sha256=sha(score),completion_source_label=json.loads(score.read_text())['source_head'])
+        stage_provenance.append(row)
+    write('stage_execution_provenance.json',dict(commands=stage_provenance,execution_authority='actual_start_source and retained command source archive; legacy score source_head labels completion'))
+    equivalent=json.loads((RESULT/'implementation_equivalence.json').read_text())
+    assert equivalent['group_source_identical_except_result_import'] and equivalent['CPU_calibration_and_quantization_layer_loop_AST_exact']
+    for n,h in equivalent['source_files'].items():assert sha(SOURCE/'scripts'/n)==h,n
+
     artifacts={str(p.relative_to(OUTPUT)):dict(sha256=stream_sha(p),bytes=p.stat().st_size) for p in sorted(OUTPUT.rglob('*')) if p.is_file()}
     write('artifacts_sha256.json',dict(root=str(OUTPUT),files=artifacts,all28_hidden_finite=True,all196_projection_pack_checks=True))
     head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=SOURCE,text=True).strip()
@@ -88,7 +104,7 @@ def main():
     text+=['',f"G64/G8 matched-group calibration-budget ratio: {overall['G64_vs_G8']}. G64/C64 matched64K grouping ratio: {overall['G64_vs_C64']}.",
         '', 'G64 and C64 use identical65536 calibration tokens; G64/G8 compares64K versus8K atidenticalgroup128 format. G8 is frozenEXP231; no recalibration. Allthree use the same frozenhead/norms/embedding. Every final comparison shares original tokenizer, M64 prompt,16targets, masks and FP16 execution. Paired stratified document bootstrap5000seed234; overall5%, every language/domain/cell10%, fixed reserve rule. All36 aggregate PPL values independently reduced from raw token NLL with math.fsum. This is short-context conditional PPL, not published long-context benchmark acceptance.',
         '', '## Method and correctness', '',
-        'Fresh original transformer weights, unchanged original gamma/embedding/norms and inherited per-channel W4 head. Symmetric[-7,7], FP32 static scales per128 original input columns; no rotation, LPBQ or second-level scale quantization. Global act-order uses original-column group lookup. Three full GPTQ trials, per-group absmax/midpoint/weight-L2.4 ranges, row-wise final projection output-SSE choice. Original CPU Gram/damping0.01 and staged quantized inputs retained.',
+        'Fresh original transformer weights, unchanged original gamma/embedding/norms and inherited per-channel W4 head. Symmetric[-7,7], FP32 static scales per128 original input columns; no rotation, LPBQ or second-level scale quantization. Global act-order uses original-column group lookup. Three full GPTQ trials, per-group absmax/midpoint/weight-L2.4 ranges, row-wise final projection output-SSE choice. Original CPU Gram/damping0.01 and staged quantized inputs retained. The complete per-layer CPU calibration/quantization AST matches EXP231 exactly; core quantizer hashes match. The inherited exporter docstring mentions C8, but executed input assertions and manifest require the exact C64 65536 positions. stage_execution_provenance.json records actual start sources separately from legacy completion-HEAD labels.',
         '', 'Independent dense Schur-elimination codes match allthree trials; NumPy group clipping and output-SSE/choices match; dead/zero/multiple-group/permutation tests and one-group per-channel equivalence pass. All196 projections pass independent packed-file NumPy FP16 reconstruction;112 staged-vs-HF forwards pass;28retained hidden checkpoints are finiteFP16(512,128,2048). All model tensors, source archives, source-data windows and command logs retain verified SHA256. Repeat, causal-mask and independent CE checks pass for every reported run.',
         '', 'The shared PC052 panel is exactly EXP233 dataset.json, frozen and independently reconstructed before allthree phases, excluding prior roles throughEXP232 by document/text/32grams. This is disclosed paired reuse, not a newly independent dataset perphase. F/C64 controls are byte-identical verified EXP233 scoring evidence; G8/G64 are scored here. Unused inherited AWQ metadata is covered by the referenced EXP233 erratum; actualgroupcalibration is512x128. No scoring-based quantizer changes.',
         '', '## Profiling boundary and next action', '',
