@@ -6,6 +6,35 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0231
+    slug: w4f16-group128-software
+    title: W4F16 static group128 software accuracy diagnostic
+    parent: EXP-0230
+    record: docs/experiments/EXP-0231.md
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    approval_ref: 'PC051 user: 同意，按此顺序推进吧; EXP0230 acceptance fail activates next phase'
+    source_branches:
+    - codex/exp-0231-w4f16-group128-software
+    source_commits:
+    - 5cabcaafcc453ce6b2296a2d9a436fa8e5cc9269
+    variants:
+    - F
+    - C8
+    - C64
+    - G128
+    evidence_profile: host_only_group128_PPL
+    evidence:
+      protocol: PC051
+      device_execution: not_authorized
+      other_recipes: frozen
+    runtime:
+      source_branch: codex/exp-0231-w4f16-group128-software
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      approved_on: '2026-09-06'
+      started_on: '2026-09-06'
   - id: EXP-0230
     slug: w4f16-gptq-calibration-coverage
     title: W4F16 GPTQ calibration coverage and budget
