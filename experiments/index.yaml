@@ -15,9 +15,9 @@ experiments:
     - A0
     - A
     - BF16_teacher
-    execution_state: running
-    evidence_validity: not_checked
-    local_gate: not_run
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
     adoption_status: pending
     evidence_profile: independent_short_context_ppl_acceptance
     source_branches:
@@ -39,13 +39,14 @@ experiments:
       source_branch: codex/exp-0229-w4f16-independent-ppl-acceptance
       approved_on: '2026-09-06'
       started_on: '2026-09-06'
+      completed_on: '2026-09-06'
     evidence:
       models: frozen_F16_EXP0217_A0_EXP0224_A_EXP0227
       overall_ppl_ratio_limit: 1.05
       stratum_ppl_ratio_limit: 1.1
       primary_targets: 8192
       reserve_targets: 8192
-      profiling: N/A_quality_only_unchanged_runtime
+      profiling: N/A_quality_only
       selected_baseline_changed: false
       dataset_sha256: 7adf7f501d3f614ca07bbfe8a3628de538edf23c4c88e4f5cb60f09ad4c21447
       dataset_freeze_sha256: 70195c3b22df83b978f678c37cd018a7d55a370be30c53675a0b97397b9736f3
@@ -55,7 +56,381 @@ experiments:
       recovery_records:
       - recovery_data_and_deploy.json
       - recovery_control_fixture.json
-      current_stage: device_before_gate_then_primary
+      current_stage: completed
+      experiment: EXP-0229
+      execution_state: completed
+      evidence_validity: valid
+      local_gate: fail
+      adoption_status: pending
+      source_head: fd41e9c7aa0b2bbfc4c21e1159f7476f2cd7632b
+      summary_sha256: a55347d3ca1c96b401024907ad9a3b3ea925dd78ca55c4a3c5e7222b83cef1ae
+      report_sha256: 89104876cf68d70098d9a31222d17df660e21b77f83fb0300264c1364213fd59
+      status:
+        A0: fail
+        A: fail
+      recommended_candidate: null
+      targets: 8192
+      reserve_used: false
+      statistics:
+        overall:
+          nll:
+            F: 3.2281745473716947
+            A0: 3.428466955923277
+            A: 3.4337626264045817
+            BF16_GPU: 3.2297023539431393
+          ppl:
+            F: 25.233552248498803
+            A0: 30.829343760381853
+            A: 30.993038861191355
+            BF16_GPU: 25.27213370043814
+          vs_F16:
+            A0:
+              delta_nll: 0.20029240855158248
+              ppl_ratio: 1.2217599589933263
+              ratio_ci95:
+              - 1.1882677856300785
+              - 1.2580390291666046
+              limit: 1.05
+              point_pass: false
+              confident_pass: false
+              straddles_gate: false
+            A:
+              delta_nll: 0.205588079032887
+              ppl_ratio: 1.2282471590196025
+              ratio_ci95:
+              - 1.1954674053121763
+              - 1.2627769073871038
+              limit: 1.05
+              point_pass: false
+              confident_pass: false
+              straddles_gate: false
+          A_vs_A0:
+            ppl_ratio: 1.0053097173291072
+            ratio_ci95:
+            - 0.995409466342318
+            - 1.0152930041737163
+        en:
+          nll:
+            F: 3.021448584295439
+            A0: 3.253127940783708
+            A: 3.2543640342695745
+            BF16_GPU: 3.022859489545226
+          ppl:
+            F: 20.520996557331905
+            A0: 25.871136871413363
+            A: 25.903135787923873
+            BF16_GPU: 20.549970173812934
+          vs_F16:
+            A0:
+              delta_nll: 0.23167935648826887
+              ppl_ratio: 1.2607154237921219
+              ratio_ci95:
+              - 1.2076736328416213
+              - 1.3178506185660115
+              limit: 1.1
+              point_pass: false
+              confident_pass: false
+              straddles_gate: false
+            A:
+              delta_nll: 0.2329154499741355
+              ppl_ratio: 1.2622747494526039
+              ratio_ci95:
+              - 1.2107835399894806
+              - 1.3157778457161897
+              limit: 1.1
+              point_pass: false
+              confident_pass: false
+              straddles_gate: false
+          A_vs_A0:
+            ppl_ratio: 1.0012368577642936
+            ratio_ci95:
+            - 0.9871681721111752
+            - 1.0152521575376248
+        zh:
+          nll:
+            F: 3.434900510447951
+            A0: 3.603805971062847
+            A: 3.613161218539589
+            BF16_GPU: 3.4365452183410525
+          ppl:
+            F: 31.028325417764496
+            A0: 36.737791671845926
+            A: 37.08309548757945
+            BF16_GPU: 31.079399939309862
+          vs_F16:
+            A0:
+              delta_nll: 0.16890546061489609
+              ppl_ratio: 1.184008198225632
+              ratio_ci95:
+              - 1.1428621486696178
+              - 1.22788212310433
+              limit: 1.1
+              point_pass: false
+              confident_pass: false
+              straddles_gate: false
+            A:
+              delta_nll: 0.17826070809163808
+              ppl_ratio: 1.195136862473037
+              ratio_ci95:
+              - 1.1533562579657466
+              - 1.2395722962870064
+              limit: 1.1
+              point_pass: false
+              confident_pass: false
+              straddles_gate: false
+          A_vs_A0:
+            ppl_ratio: 1.0093991445870751
+            ratio_ci95:
+            - 0.996006022008021
+            - 1.0231109679573702
+        wiki:
+          nll:
+            F: 3.151749684927034
+            A0: 3.365063849225007
+            A: 3.3623160407036283
+            BF16_GPU: 3.1535917911678553
+          ppl:
+            F: 23.376931082721654
+            A0: 28.935344739407633
+            A: 28.855945090038823
+            BF16_GPU: 23.42003356084386
+          vs_F16:
+            A0:
+              delta_nll: 0.213314164297973
+              ppl_ratio: 1.2377734543947179
+              ratio_ci95:
+              - 1.1853693918602772
+              - 1.2952432291120244
+              limit: 1.1
+              point_pass: false
+              confident_pass: false
+              straddles_gate: false
+            A:
+              delta_nll: 0.21056635577659444
+              ppl_ratio: 1.2343769585464028
+              ratio_ci95:
+              - 1.1840422342166093
+              - 1.2898469891055067
+              limit: 1.1
+              point_pass: false
+              confident_pass: false
+              straddles_gate: false
+          A_vs_A0:
+            ppl_ratio: 0.9972559632489647
+            ratio_ci95:
+            - 0.9818980014314308
+            - 1.012233890525892
+        news:
+          nll:
+            F: 3.304599409816356
+            A0: 3.4918700626215475
+            A: 3.5052092121055347
+            BF16_GPU: 3.3058129167184234
+          ppl:
+            F: 27.237628276550826
+            A0: 32.8473168457316
+            A: 33.288407461757636
+            BF16_GPU: 27.27070138962724
+          vs_F16:
+            A0:
+              delta_nll: 0.1872706528051915
+              ppl_ratio: 1.2059536356184952
+              ratio_ci95:
+              - 1.166109337534392
+              - 1.2478746105065162
+              limit: 1.1
+              point_pass: false
+              confident_pass: false
+              straddles_gate: false
+            A:
+              delta_nll: 0.20060980228917868
+              ppl_ratio: 1.2221477994989745
+              ratio_ci95:
+              - 1.1818460938859796
+              - 1.2632201194838624
+              limit: 1.1
+              point_pass: false
+              confident_pass: false
+              straddles_gate: false
+          A_vs_A0:
+            ppl_ratio: 1.0134285128401093
+            ratio_ci95:
+            - 1.0005526483467997
+            - 1.0264479554638426
+        en_wiki:
+          nll:
+            F: 3.025800277474559
+            A0: 3.2861460482728684
+            A: 3.269344554291531
+            BF16_GPU: 3.0265853330492973
+          ppl:
+            F: 20.610492225690653
+            A0: 26.739611647079276
+            A: 26.29409933936977
+            BF16_GPU: 20.626678960422357
+          vs_F16:
+            A0:
+              delta_nll: 0.26034577079830923
+              ppl_ratio: 1.2973786047549498
+              ratio_ci95:
+              - 1.2147379126572386
+              - 1.3930949583651475
+              limit: 1.1
+              point_pass: false
+              confident_pass: false
+              straddles_gate: false
+            A:
+              delta_nll: 0.243544276816972
+              ppl_ratio: 1.2757628033062982
+              ratio_ci95:
+              - 1.1990660285578927
+              - 1.363068819656432
+              limit: 1.1
+              point_pass: false
+              confident_pass: false
+              straddles_gate: false
+          A_vs_A0:
+            ppl_ratio: 0.9833388639450129
+            ratio_ci95:
+            - 0.9630272551431333
+            - 1.0028244750324722
+        zh_wiki:
+          nll:
+            F: 3.2776990923795086
+            A0: 3.4439816501771454
+            A: 3.4552875271157255
+            BF16_GPU: 3.280598249286413
+          ppl:
+            F: 26.514694596431717
+            A0: 31.311381266070743
+            A: 31.667392607458424
+            BF16_GPU: 26.59167639363993
+          vs_F16:
+            A0:
+              delta_nll: 0.1662825577976368
+              ppl_ratio: 1.1809067289911215
+              ratio_ci95:
+              - 1.116678395761493
+              - 1.2523672264514816
+              limit: 1.1
+              point_pass: false
+              confident_pass: false
+              straddles_gate: false
+            A:
+              delta_nll: 0.17758843473621688
+              ppl_ratio: 1.1943336738157317
+              ratio_ci95:
+              - 1.1292295450245757
+              - 1.266315283473196
+              limit: 1.1
+              point_pass: false
+              confident_pass: false
+              straddles_gate: false
+          A_vs_A0:
+            ppl_ratio: 1.0113700299058175
+            ratio_ci95:
+            - 0.9893352872558142
+            - 1.0349151111547539
+        en_news:
+          nll:
+            F: 3.017096891116319
+            A0: 3.220109833294547
+            A: 3.2393835142476175
+            BF16_GPU: 3.019133646041155
+          ppl:
+            F: 20.4318895004904
+            A0: 25.03086925320069
+            A: 25.517985422797313
+            BF16_GPU: 20.473546660366218
+          vs_F16:
+            A0:
+              delta_nll: 0.20301294217822807
+              ppl_ratio: 1.225088323456326
+              ratio_ci95:
+              - 1.1647734915269352
+              - 1.2900932489357904
+              limit: 1.1
+              point_pass: false
+              confident_pass: false
+              straddles_gate: false
+            A:
+              delta_nll: 0.22228662313129854
+              ppl_ratio: 1.2489292985939864
+              ratio_ci95:
+              - 1.1875834461245427
+              - 1.31303809565392
+              limit: 1.1
+              point_pass: false
+              confident_pass: false
+              straddles_gate: false
+          A_vs_A0:
+            ppl_ratio: 1.0194606173948328
+            ratio_ci95:
+            - 0.9996801120017901
+            - 1.0395496346437032
+        zh_news:
+          nll:
+            F: 3.592101928516393
+            A0: 3.7636302919485485
+            A: 3.7710349099634524
+            BF16_GPU: 3.592492187395692
+          ppl:
+            F: 36.3103174629911
+            A0: 43.10462465565068
+            A: 43.42498253604413
+            BF16_GPU: 36.324490652217776
+          vs_F16:
+            A0:
+              delta_nll: 0.17152836343215538
+              ppl_ratio: 1.1871178129903328
+              ratio_ci95:
+              - 1.1361865277694603
+              - 1.2425281602952474
+              limit: 1.1
+              point_pass: false
+              confident_pass: false
+              straddles_gate: false
+            A:
+              delta_nll: 0.17893298144705927
+              ppl_ratio: 1.1959405912742178
+              ratio_ci95:
+              - 1.1442060033937582
+              - 1.2518599821198477
+              limit: 1.1
+              point_pass: false
+              confident_pass: false
+              straddles_gate: false
+          A_vs_A0:
+            ppl_ratio: 1.0074320999881727
+            ratio_ci95:
+            - 0.9907974322473332
+            - 1.0241074701135708
+      baseline_promoted: false
+      other_recipes: frozen
+      runtime_unchanged: true
+      prior_profiling:
+        exp0218:
+          path: /mnt/d/llm_exp/results/qwen3-block-htp/exp0218/full_profiling_report.md
+          sha256: 521be8903db7f87ed69a162628bbfeb578091f7177ae8cc8876d57b341c0450d
+        exp0224:
+          path: /mnt/d/llm_exp/results/qwen3-block-htp/exp0224/full_profiling_report.md
+          sha256: d142794f1f0a0e12a987e3bd22d347b80ae5f7696817ee69939cb4f3018e4aed
+        exp0227:
+          path: /mnt/d/llm_exp/results/qwen3-block-htp/exp0227/full_profiling_report.md
+          sha256: af24ab36cb7698b6c23509e8c40cf49d515d78485917ade309be4090f7a2735a
+      formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0229
+      results_report: docs/experiments/EXP-0229-RESULTS.md
+      full_profiling_report: docs/experiments/EXP-0229-PROFILE.md
+      evidence_ledger_sha256: 62ff0e47a85e45aed2a5f26903951345b9fdcc3ff19f079427a5e5f582357336
+      evidence_files: 296
+      closure_sha256: 0410663142a4f5759fee5aaa1c79726f7e4fdf9ae8c7eaeac78bf5dad34b0ebe
+      full_profiling_report_sha256: 63509a1b942315aac7c28651e4f0c5e7c186fca07da7cf2e508816f241dcd531
+      documents: 512
+      before_after_gate: pass_exact_before_full_after_and_within_session
+      independent_summary_check: pass_all_27_DSP_group_PPL_values_math_fsum
+      evidence_hash_check: pass_all296files_exact_ledger_coverage
+      next_action: Discuss W4A8 reproducibility and same-W4-weight activation attribution;
+        no new experiment authorized
   - id: EXP-0228
     slug: content-aware-short-task-scoring
     title: Content-aware frozen short-task grading audit

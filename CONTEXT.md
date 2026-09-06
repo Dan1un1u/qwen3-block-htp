@@ -1634,3 +1634,9 @@ PC049: PPL primary, content-v2 short answers auxiliary, strict-v1 formatting onl
 ## EXP0229 approved independent PPL acceptance
 
 User authorizes finishing W4A16 acceptance before W4A8 discussion. PC050 freezes models and thresholds, independent8192+bounded8192reserve actualDSP F/A0/A with originalBF16 diagnostic. See docs/experiments/EXP-0229.md. W4U8 stays frozen; no promotion.
+
+## EXP0229 completed independent PPL acceptance
+
+512 independent balanced English/Chinese Wikipedia/news documents,8192 targets at M64+16. DSP F16 PPL25.233552; originalBF16GPU25.272134; A0(EXP224)30.829344 (+22.175996%,95%CI +18.826779..25.803903%); A(EXP227)30.993039 (+22.824716%,95%CI +19.546741..26.277691%). Both fail fixed overall5% and every language/domain/cell10% gate. No primary interval straddles a gate, so reserve is not activated. A/A0 ratio1.005310 CI0.995409..1.015293: no demonstrated benefit from block reconstruction. Repeat/qbh controls and before/full/after sentinel match exactly;296 evidence files and all27DSP PPL aggregates independently verified. Runtime and packages unchanged; profiling N/A with retained prior formal references.
+
+The old512-target qbh gap of about2% does not generalize to this independent test. W4A16 is not quality-accepted; no baseline promotion. Test data is now exposed evaluation evidence and must not be used for calibration/training/checkpoint selection while claimed independent. A0 can be proposed as a simpler provisional same-weight diagnostic control for W4A8, not as an accepted quality baseline. W4A8 discussion only: old nondeterministic RTN snapshot cannot establish its intrinsic quality limit; first discuss reproducibility and same-W4-weight activation-path attribution. No W4A8 execution or next experiment is authorized. Active none,next230. See SESSION_HANDOFF_EXP0229.md and EXP-0229-RESULTS.md.

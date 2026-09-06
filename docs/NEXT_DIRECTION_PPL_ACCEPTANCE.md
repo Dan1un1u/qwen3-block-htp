@@ -1,3 +1,13 @@
+# Current direction after EXP0229
+
+The proposal below was approved by PC050 and has now been executed. EXP0229 is completed with valid evidence but both W4A16 candidates failed independent PPL acceptance: F16 25.233552, A0 30.829344 (+22.18%), A 30.993039 (+22.82%). All group gates also fail. No reserve trigger and no baseline promotion. See experiments/EXP-0229-RESULTS.md and SESSION_HANDOFF_EXP0229.md.
+
+Next is W4A8 discussion only. A0 may serve as a provisional same-W4-weight diagnostic control; do not call it quality-accepted. Reproducibility and activation-path attribution are proposed priorities. No EXP230, W4A8 run or optimization is authorized. The old2% qbh gap is a small-set result and does not support general acceptance.
+
+---
+
+## Historical proposal (superseded status; retained for rationale)
+
 # Proposed next direction after EXP0228
 
 Status: discussion proposal, not an approved experiment, numeric gate or baseline promotion. User has approved only PPL-primary reporting (PC049). Source remains clean on EXP0228; active none; next229.
