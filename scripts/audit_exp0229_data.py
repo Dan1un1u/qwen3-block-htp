@@ -24,10 +24,10 @@ def main():
         for i,row in enumerate(table):
             doc=str(row.get('url',row.get('id',row.get('gem_id',i))))
             texts[(lang+'_news',doc)]=row.get('text',row.get('inputs','')).strip()
-    for p in (RESULT/'raw').glob('zh_*.json'):
+    for p in (RESULT/'raw').glob('*.json'):
         for r in json.loads(p.read_text())['rows']:
             if 'text' not in r.get('truncated_cells',[]):
-                texts[('zh_wiki',str(r['row'].get('id',r['row_idx'])))]=r['row']['text'].strip()
+                texts[(p.name[:2]+'_wiki',str(r['row'].get('id',r['row_idx'])))]=r['row']['text'].strip()
     # Direct tuple equality is independent of the sampler's SHA-256 ngram sets.
     def grams(tokens):return {tuple(tokens[i:i+32]) for i in range(len(tokens)-31)}
     forbidden=set()

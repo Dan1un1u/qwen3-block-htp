@@ -95,27 +95,40 @@ def prepare():
             start,trial,g=window;chosen[cell].append(dict(language=cell[:2],domain=cell[3:],cell=cell,document=doc,row_index=row['row_index'],text_sha256=h,document_tokens=len(ids),token_offset=start,prompt_ids=trial[:64],target_ids=trial[64:],kind='nll',steps=16))
             used_docs.add((cell,doc));used_hashes.add(h);used_grams.update(g)
             if len(chosen[cell])==256:break
-    for cell in ['en_wiki','en_news','zh_news']:
+    for cell in ['en_news','zh_news']:
         select(cell,candidates[cell]);assert len(chosen[cell])==256,(cell,len(chosen[cell]))
         print('DATA_CELL_READY',cell,256,flush=True)
-    for offset in range(10000,14000,100):
-        url='https://datasets-server.huggingface.co/rows?'+urlencode(dict(dataset='wikimedia/wikipedia',config='20231101.zh',split='train',offset=offset,length=100))
-        path=RESULT/'raw'/f'zh_{offset}.json';raw=fetch(url,path);payload=json.loads(raw)
-        provenance.append(dict(path=str(path),sha256=sha(path),url=url,role='candidate_corpus',config='20231101.zh',license='Wikipedia source CC-BY-SA/GFDL; retain source attribution in rows'))
-        rows=[dict(document=str(r['row'].get('id',r['row_idx'])),text=r['row']['text'].strip(),row_index=r['row_idx']) for r in payload['rows'] if 'text' not in r.get('truncated_cells',[])]
-        select('zh_wiki',rows);print('DATA_CELL_PROGRESS','zh_wiki',len(chosen['zh_wiki']),flush=True)
-        if len(chosen['zh_wiki'])==256:break
-    assert len(chosen['zh_wiki'])==256
+    # WikiText lines can mimic headings (e.g. "= No result , Pts =").
+    # Use explicit Wikipedia document IDs for evaluation. Exclude every
+    # WikiText training-corpus title, a conservative superset of exposed docs.
+    def title_key(text):
+        return re.sub(r'\W+', '',text.replace('@-@','-').replace('@,@',',').replace('@.@','.')).casefold()
+    excluded_en_titles={title_key(k.strip('= ')) for k in docs}
+    for lang in ['en','zh']:
+        cell=lang+'_wiki'
+        for offset in range(10000,14000,100):
+            url='https://datasets-server.huggingface.co/rows?'+urlencode(dict(dataset='wikimedia/wikipedia',config='20231101.'+lang,split='train',offset=offset,length=100))
+            path=RESULT/'raw'/f'{lang}_{offset}.json';raw=fetch(url,path);payload=json.loads(raw)
+            provenance.append(dict(path=str(path),sha256=sha(path),url=url,role='candidate_corpus',config='20231101.'+lang,license='Wikipedia source CC-BY-SA/GFDL; retain source attribution in rows'))
+            rows=[]
+            for r in payload['rows']:
+                if 'text' in r.get('truncated_cells',[]):continue
+                if lang=='en' and title_key(r['row']['title']) in excluded_en_titles:continue
+                rows.append(dict(document=str(r['row'].get('id',r['row_idx'])),text=r['row']['text'].strip(),row_index=r['row_idx']))
+            select(cell,rows);print('DATA_CELL_PROGRESS',cell,len(chosen[cell]),flush=True)
+            if len(chosen[cell])==256:break
+        assert len(chosen[cell])==256
     samples=[]
     for split,start in [('primary',0),('reserve',128)]:
         for index in range(128):
             for cell in CELLS:
                 row=chosen[cell][start+index];row.update(id=len(samples),split=split);samples.append(row)
     assert len(samples)==len(used_docs)==1024 and not forbidden & used_grams
-    write('dataset.json',dict(version='qbh-ppl-accept-v1',seed=229,context_tokens=64,target_tokens_per_window=16,
+    write('dataset.json',dict(version='qbh-ppl-accept-v2',seed=229,context_tokens=64,target_tokens_per_window=16,
         primary_targets=8192,reserve_targets=8192,cells=CELLS,samples=samples,tokenizer_sha256=sha(MODEL/'qwen3-tokenizer.json'),
         provenance=provenance,exclusion_roles=['GPTQ calibration','rotation training','checkpoint validation','qbh full and holdout'],
         document_disjoint=True,text_hash_disjoint=True,all_roles_32gram_disjoint=True,rejections=rejects,
+        english_wikipedia_excludes_all_wikitext_train_titles=len(excluded_en_titles),
         limitations='Independent project short-context conditional PPL, not published full benchmark or long-context acceptance'))
     inputdir=RESULT/'inputs';inputdir.mkdir(exist_ok=True)
     for split in ['primary','reserve']:

@@ -10,7 +10,7 @@ PACKAGES={
  'F':('exp0217/f16f16_greedy16','exp0218-f16f16','0f8a359b559f252cb13329f57d4cabd56f17ca9bfb64bc5643f4d6014795070f'),
  'A0':('exp0224/A','exp0224-A','a5de4e6c4e02ac913e69fbddb0d4b0b9e12b5cfe88ff606cf1ea18842dc0c179'),
  'A':('exp0227/A','exp0227-A','00cb9e3a02b4b4b851bdcfb01befa9f81007ff47ef7b687c3ad54d203c0cf5a4')}
-REMOTE='/data/local/tmp/qwen3-block-htp/exp0229-'
+REMOTE='/data/local/tmp/qwen3-block-htp/exp0229-v2-'
 MODEL_BASE=Path('/mnt/d/llm_exp/models/qwen3-block-htp')
 FIELDS=['token_id','target_token','target_code','nll','rank','target_ties','max_ties','saturated']
 FREEZE_SHA='932b47a1c787b31dd6b510e037fe5c8633c52972fe56e369ce030cf6e45c4a89'
@@ -44,7 +44,7 @@ def deploy():
             for p in sorted((RESULT/'inputs').glob('*.bin')):tar.add(p,arcname=p.name)
         adb('push',windows(archive),root+'/inputs.tar')
         adb('shell',f'cd {root} && tar -xf inputs.tar')
-        check=adb('shell',f'cd {root}/block_package_layer14_m64 && sha256sum -c ../files.sha256')
+        check=adb('shell',f'cd {root}/block_package_layer14_m64 && sha256sum -c {root}/files.sha256')
         assert check.count(': OK')==len(files) and 'FAILED' not in check
         binary=adb('shell',f'cd {root} && sha256sum '+' '.join(expected))
         assert all(h in binary for h in expected.values())
