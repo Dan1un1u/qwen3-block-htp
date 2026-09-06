@@ -56,13 +56,27 @@ def evaluate(phase,v,cpu=False):
     def forward(batch):
         x=torch.tensor([r['prompt_ids']+r['target_ids'] for r in batch],device=device)
         logits=model(input_ids=x[:,:79],use_cache=False).logits[:,63:79,:].float()
-        labels=x[:,64:80];nll=torch.logsumexp(logits,-1)-logits.gather(-1,labels[:,:,None]).squeeze(-1)
+        labels=x[:,64:80]
+        scoring=logits.double() if cpu else logits
+        nll=torch.logsumexp(scoring,-1)-scoring.gather(-1,labels[:,:,None]).squeeze(-1)
         return x,logits,nll
     with torch.inference_mode():
         x,logits,nll=forward(rows[:4]);_,again,repeated=forward(rows[:4])
         assert torch.equal(logits,again) and torch.equal(nll,repeated)
-        independent=torch.nn.functional.cross_entropy(logits.reshape(-1,logits.shape[-1]),x[:,64:80].reshape(-1),reduction='none').reshape(4,16)
-        ce_error=float((independent-nll).abs().max());assert ce_error<5e-6
+        scoring=logits.double() if cpu else logits
+        independent=torch.nn.functional.cross_entropy(scoring.reshape(-1,logits.shape[-1]),x[:,64:80].reshape(-1),reduction='none').reshape(4,16)
+        ce_error=float((independent-nll).abs().max())
+        if cpu:
+            legacy_nll=torch.logsumexp(logits,-1)-logits.gather(-1,x[:,64:80,None]).squeeze(-1)
+            legacy_ce=torch.nn.functional.cross_entropy(logits.reshape(-1,logits.shape[-1]),x[:,64:80].reshape(-1),reduction='none').reshape(4,16)
+            write(f'recovery/cpu_reduction_{v}_{time.time_ns()}.json',dict(
+                original_fp32_method_difference=float((legacy_nll-legacy_ce).abs().max()),
+                fp32_logsumexp_error_vs_fp64=float((legacy_nll-nll).abs().max()),
+                fp32_cross_entropy_error_vs_fp64=float((legacy_ce-independent).abs().max()),
+                fp64_method_difference=ce_error,unchanged_model_logits=True,
+                repair='FP64 CPU reference scoring accumulation; GPU outputs and 5e-6 check unchanged'))
+            print('CPU_REDUCTION_DIAGNOSTIC',float((legacy_nll-legacy_ce).abs().max()),ce_error,flush=True)
+        assert ce_error<5e-6,ce_error
         changed=x[:,:79].clone();changed[:,70:]=123
         other=model(input_ids=changed,use_cache=False).logits[:,63:70,:].float()
         assert torch.equal(logits[:,:7],other)
@@ -79,7 +93,7 @@ def evaluate(phase,v,cpu=False):
         ppl=float(np.exp(np.mean(list(means.values())))),manifest_sha256=manifest_hash,
         dataset_sha256=sha(RESULT/'dataset.json'),repeat_exact=True,causal_mask_exact=True,independent_CE_max_abs=ce_error,
         torch_version=torch.__version__,source_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=SOURCE,text=True).strip(),
-        elapsed_s=time.monotonic()-started))
+        scoring_accumulation='float64' if cpu else 'float32',elapsed_s=time.monotonic()-started))
     print('SOFTWARE_COMPLETE',phase,v,'PPL',float(np.exp(np.mean(list(means.values())))),flush=True)
 
 def select():
