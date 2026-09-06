@@ -38,6 +38,7 @@ experiments:
   - codex/exp-0233-w4f16-independent-autoround
   source_commits:
   - 86c359237c8cf54cfb6491857b3868ca5b8ce074
+  - 7610cbba256a42ca14adb74665dd12a372632b7b
   variants:
   - F
   - C64
@@ -46,8 +47,13 @@ experiments:
   evidence_profile: host_only_independent_INT4_reference
   evidence:
     protocol: PC052
-    current_stage: registered
+    current_stage: AR-P_attempt2_training
     other_recipes: frozen
+    dataset_freeze_sha256: d86c6511728de21dcf2732c6dd7f890c06c6bc95ef2b8c377182169b51ea395b
+    independent_data_audit: pass1024
+    upstream_commit: 73669aa50871bca9f244ad99faa9979790f7c729
+    quantization_oracle: pass
+    recovery: isolated_dependencies_and_argument_dtype_serialization_before_training
   runtime:
     source_branch: codex/exp-0233-w4f16-independent-autoround
     source_worktree: /home/daniuniu/work/qwen3-block-htp
