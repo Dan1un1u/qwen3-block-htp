@@ -24,6 +24,7 @@ experiments:
     - 682a51d6161f2da9df2e351783c8bfcc42368112
     - 8cdaa6148b57fa560123a594f2945f670930a976
     - de3db92414f060ad7b2be50fd779cf09c2322f9c
+    - b5fd32c8123fae11abb7b472ebcd20c1e9f8a500
     variants:
     - F
     - C8
@@ -109,6 +110,7 @@ experiments:
         A0: 30.558053304874406
         C64: 27.5456070714986
       next_direction: registered_group128_software_diagnostic_under_PC051
+      full_profiling_report: docs/experiments/EXP-0230-PROFILE.md
   - id: EXP-0229
     slug: w4f16-independent-ppl-acceptance
     title: Frozen W4F16 independent bilingual PPL acceptance
