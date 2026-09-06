@@ -9,3 +9,7 @@ Retrospective unchanged qbh outputs: BF16/F16 22strict->23content; original RTN8
 Evidence /mnt/d/llm_exp/results/qwen3-block-htp/exp0228; all264stored grades and token decodes reproduced. Six synthetic behavioral test groups pass. Source input ledgers/tokenizer verified and rechecked unchanged. All per-item output and explicit review retained. Ledger SHA256 c61fcbf4dbd1f9ee5269597c1f6d1276c7a3d45ac4f173176fb983236812339c, closure SHA256 2f09f299891e28a321660a26ad8c3e206de678106789d556c2e0b0db1ea51e5b. Authority report docs/experiments/EXP-0228-RESULTS.md; profiling N/A is explicit in EXP-0228-PROFILE.md. Do not overwrite prior artifacts or silently reinterpret earlier strict scores.
 
 Resolved stale PROJECT_STATUS summary pointers from EXP226 to latest completion while preserving prior detailed evidence. No source/runtime/weight changes beyond new evaluation scripts/docs. No automatic next experiment or promotion.
+
+## Latest user preference and discussion, 2026-09-06
+
+PPL is now primary; short answers reference-only (PC049). No new experiment or baseline accepted. See docs/NEXT_DIRECTION_PPL_ACCEPTANCE.md for proposed independent W4A16 acceptance and subsequent W4U8 reproducibility/activation attribution. Next229 remains unallocated. Original EXP0228 evidence unchanged.

@@ -26,6 +26,14 @@ governance:
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
+  quality_metric_policy:
+    approval_ref: User 2026-09-06 makes PPL primary and short answers reference-only
+    primary: paired_NLL_and_PPL_vs_named_floating_reference
+    auxiliary: short_task_content_v2
+    diagnostic_only: short_task_strict_v1_format_adherence
+    numerical_acceptance_threshold: not_yet_approved
+    next_direction: docs/NEXT_DIRECTION_PPL_ACCEPTANCE.md
+    new_experiment_authorized: false
   latest_short_task_scoring_audit:
     experiment: EXP-0228
     execution_state: completed
