@@ -17,6 +17,7 @@ def main():
   if v in ['F','C64']:assert r['exact_prior_development_regression']
   assert abs(math.exp(math.fsum(x for s in r['samples'] for x in s['nll'])/2048)-r['ppl'])<1e-10
  assert json.loads((RESULT/'quantization_oracle.json').read_text())['pass_all']
+ assert json.loads((RESULT/'full_model_calibration_audit.json').read_text())['pass_all']
  packages={}
  for v in ['AR-P','AR-G']:
   rec=json.loads((RESULT/v/'package.json').read_text());root=Path(rec['root']);assert sha(root/'manifest.json')==rec['manifest_sha256'];m=json.loads((root/'manifest.json').read_text())

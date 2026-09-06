@@ -12,7 +12,7 @@ def main():
     modules={'setup':('autoround_exp0233.py',['setup']), 'data':('data_exp0233.py',['prepare']),
              'audit':('data_exp0233.py',['audit']), 'oracle':('autoround_exp0233.py',['oracle']),
              'export':('autoround_exp0233.py',['export']), 'evaluate':('evaluate_exp0233.py',[]),
-             'summary':('summarize_exp0233.py',[])}
+             'summary':('summarize_exp0233.py',[]),'model-audit':('audit_exp0233.py',[])}
     script,args=modules[a.stage]
     python=('/home/daniuniu/.cache/qwen3-block-htp-autoround-py/bin/python' if a.stage in ['oracle','export']
             else '/home/daniuniu/.cache/qwen3-block-htp-spinquant-py/bin/python')
