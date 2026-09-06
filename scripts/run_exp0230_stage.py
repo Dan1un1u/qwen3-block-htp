@@ -12,7 +12,7 @@ def main():
     modules={'data':('data_exp0230.py',['prepare']),'audit':('data_exp0230.py',['audit']),
              'export':('export_exp0230.py',[]),'evaluate':('evaluate_exp0230.py',[]),
              'device':('device_exp0230.py',[]),'summary':('summarize_exp0230.py',[]),
-             'speed':('speed_exp0230.py',[]),'report':('report_exp0230.py',[])}
+             'speed':('speed_exp0230.py',[])}
     script,args=modules[a.stage]
     python='/home/daniuniu/.cache/qwen3-block-htp-'+('spinquant-' if a.stage=='evaluate' else '')+'py/bin/python'
     command=[python,str(S/'scripts'/script),*args,*a.args]
