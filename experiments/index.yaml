@@ -29,9 +29,9 @@ experiments:
   title: W4F16 static group128 with65536 calibration positions
   parent: EXP-0233
   record: docs/experiments/EXP-0234.md
-  execution_state: running
-  evidence_validity: pending
-  local_gate: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
   adoption_status: pending
   approval_ref: User2026-09-07 PC052 approves all three diagnostics
   source_branches:
@@ -51,7 +51,7 @@ experiments:
   evidence_profile: host_only_group128_64K
   evidence:
     protocol: PC052
-    current_stage: G64_export_complete_automated_scoring_running
+    current_stage: completed
     other_recipes: frozen
     dataset_freeze_sha256: a69984650c65d3a1b5d0ffa632be4b9e1c4ae6c5651978281aa694f9be01de80
     group_oracle: pass
@@ -59,7 +59,7 @@ experiments:
     G8_development_exact_regression: true
     G8_development_ppl: 27.478140993518856
     frozen_controls: six_verified_EXP233_F_C64_files_reused
-    next_direction: approved_EXP235_after_EXP234_closure
+    next_direction: approved_EXP235_C64_sensitivity
     G8_primary_ppl: 26.77058071194769
     implementation_equivalence: exact_CPU_layer_loop_AST_and_core_source_hashes
     scoring_continuation: finish_exp0234_scoring.py_running_session48693
@@ -68,11 +68,49 @@ experiments:
     all196_projection_checks: pass
     all112_calibration_forward_checks: pass_exact_NRMSE0
     completion_source_label: c8e57fd0d308df10f0efa82cbbe0f96c49ed2839
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0234
+    evidence_ledger_sha256: 4deb0b0840e26c126e3b9364e2da671493456c6cb2bf60ead688d88c963c5f7c
+    evidence_files: 82
+    artifact_ledger_sha256: f93a4bd1fe26f8d6dabd610975c651ca2cab88bdea9d1bc81a46f45f1371d541
+    artifact_files: 622
+    closure_sha256: 6675dae2513f165e4ae44beceed9d6c1eef8045533bc85fd28206cf89e6b4ba9
+    final_ppl:
+      F: 25.06079733545104
+      C64: 27.154144262957573
+      G64: 26.48780180409271
+      G8: 27.478381406143463
+    G64_F_ratio:
+      delta_nll: 0.05537955171894282
+      ppl_ratio: 1.0569417025939167
+      ratio_ci95:
+      - 1.045890810513489
+      - 1.0694332072892165
+      limit: 1.05
+      point_pass: false
+      confident_pass: false
+      straddles_gate: true
+    G64_vs_C64:
+      ppl_ratio: 0.9754607454239
+      ratio_ci95:
+      - 0.9633895099148493
+      - 0.9876721006927083
+    G64_vs_G8:
+      ppl_ratio: 0.9639505840096796
+      ratio_ci95:
+      - 0.9523624634968427
+      - 0.9759454535959614
+    quality_status: fail
+    report: docs/experiments/EXP-0234-RESULTS.md
+    report_sha256: 8c929a6c3a555b0cebc05f0ce0247efdb58ae53785a5eda871cffdea634561bd
+    full_profiling_report: docs/experiments/EXP-0234-PROFILE.md
+    full_profiling_report_sha256: 22220ca2158ab419023e351b60fe5280a7469d742c976d748ac4a7ae827a4425
+    baseline_promoted: false
   runtime:
     source_branch: codex/exp-0234-w4f16-group128-64k
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     approved_on: '2026-09-07'
     started_on: '2026-09-07'
+    completed_on: '2026-09-07'
 - id: EXP-0233
   slug: w4f16-independent-autoround
   title: W4F16 independent official AutoRound reference
