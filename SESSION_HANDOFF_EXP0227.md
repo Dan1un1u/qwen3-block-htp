@@ -1,3 +1,11 @@
-# EXP0227 implementation starting
+# EXP0227 implementation and training in progress
 
-User approved first recommended fixed-rotation block scale reconstruction. Protocol docs/experiments/EXP-0227.md. No training yet. Establish source branch/preflight then implement.
+Source codex/exp-0227-w4f16-block-scale-reconstruction, HEAD fd9a98862a20c2edf1257c37a39bbf39272ee1fb, synchronized. Active EXP0227. Protocol docs/experiments/EXP-0227.md. Results /mnt/d/llm_exp/results/qwen3-block-htp/exp0227; models same models root.
+
+Implemented fixed GPTQ code row-scale block reconstruction, direct-scale export, four-way device evaluation/profiling, report/closure. Protocol frozen SHA256 4a00ce5cf6c0279d0fecfe7d04ae63fa5ba37707846c22116b01813f6e73b34b. Unit carrier/dequant/gradient oracle passes; A/R corrected smoke passes, fresh R FP32 folding invariant; both device controls1276files verified.
+
+Numerical recovery: original FP16 backward lacked loss scaling. Real block3 audit shows Q/K/Gate/Up gradients all zero without scaling; cosine to scale65536 gradient0.16666. Original full A and partial R training/smokes retained under training_unscaled/smoke_unscaled. Standard GradScaler initial65536 now unscales before unchanged gradient clip and Adam, retries same minibatch on overflow,100successful updates. Forward/target/data/budget/thresholds unchanged; recovery_loss_scaling.json and gradient_precision_audit.json authoritative. Do not treat unscaled results as valid candidates.
+
+Current manually dispatched sequence corrected smoke-A,smoke-R,train-A,train-R. Both smokes completed; corrected train-A starting, train-R follows only if A succeeds. Check actual processes before resuming. run_exp0227_stage.py retains command logs/source archives. Training auto-resumes completed layers by selection files; complete.json rejects duplicate completed runs. No deployment/export yet.
+
+Next: finish both training groups. run stages export-A,validate-A,quality-A and R equivalents (CPU). Use report_exp0227.py select only after both independent validations. Then deploy-A/deploy-R, quick/full/repeat, summarize_exp0227.py --quality-only; warmup/short/formal; summarize --speed-only; report_exp0227.py report/close. All source must be clean/pushed and preflight passes before each stateful stage. Review evidence checks before closure, update authority and release own active lock only on real completion. No automatic baseline promotion or further direction.
