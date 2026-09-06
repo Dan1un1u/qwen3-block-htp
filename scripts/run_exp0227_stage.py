@@ -16,8 +16,12 @@ def run(stage):
         phase,v=stage.split('-');command=[GPU,str(ROOT/'scripts/block_reconstruction_exp0227.py'),phase,'--variant',v]
     elif stage.startswith(('export-','validate-','quality-')):
         phase,v=stage.split('-');command=[CPU,str(ROOT/'scripts/export_exp0227.py'),phase,v]
+    elif stage=='verify-controls':
+        command=[CPU,str(ROOT/'scripts/verify_controls_exp0227.py')]
+    elif stage.startswith('deploy-'):
+        command=[CPU,str(ROOT/'scripts/measure_exp0227.py'),'deploy','--variant',stage.split('-')[1]]
     else:
-        command=[CPU,str(ROOT/'scripts/measure_exp0227.py'),*stage.split('-')]
+        command=[CPU,str(ROOT/'scripts/measure_exp0227.py'),stage]
     record=RESULT/'commands'/f'{stage}_{time.time_ns()}';record.parent.mkdir(parents=True,exist_ok=True)
     head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
     archive=OUTPUT/'artifacts'/head/'source.tar';archive.parent.mkdir(parents=True,exist_ok=True)
