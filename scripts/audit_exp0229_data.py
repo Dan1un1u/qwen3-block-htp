@@ -10,11 +10,12 @@ from measure_exp0229 import frozen
 def main():
     preflight();frozen()
     data=json.loads((RESULT/'dataset.json').read_text());tok=AutoTokenizer.from_pretrained(MODEL,local_files_only=True)
-    texts={};heading=None;parts=[]
+    texts={};heading=None;parts=[];english_titles=set();raw_titles={}
     table=pq.read_table(BASE/'exp0226/learning_raw/wiki_en.parquet').to_pylist()
     for row in table:
         text=row['text'].strip()
         if re.fullmatch(r'= [^=].*[^=] =',text):
+            english_titles.add(re.sub(r'\W+','',text.strip('= ').replace('@-@','-').replace('@,@',',').replace('@.@','.')).casefold())
             if heading is not None:texts[('en_wiki',heading)]='\n'.join(parts)
             heading=text;parts=[]
         elif heading is not None and text:parts.append(text)
@@ -28,16 +29,22 @@ def main():
         for r in json.loads(p.read_text())['rows']:
             if 'text' not in r.get('truncated_cells',[]):
                 texts[(p.name[:2]+'_wiki',str(r['row'].get('id',r['row_idx'])))]=r['row']['text'].strip()
+                raw_titles[(p.name[:2]+'_wiki',str(r['row'].get('id',r['row_idx'])))]=r['row']['title']
     # Direct tuple equality is independent of the sampler's SHA-256 ngram sets.
     def grams(tokens):return {tuple(tokens[i:i+32]) for i in range(len(tokens)-31)}
-    forbidden=set()
+    forbidden=set();banned_docs=set()
     for exp,name in [('exp0218','dataset_v1.json'),('exp0221','calibration.json'),('exp0225','learning_data.json'),('exp0226','learning_data.json')]:
         d=json.loads((BASE/exp/name).read_text())
         rows=d['samples'] if 'samples' in d else d['train']+d['validation']
-        for r in rows:forbidden.update(grams(r.get('token_ids',r.get('prompt_ids',[])+r.get('target_ids',[]))))
+        for r in rows:
+            forbidden.update(grams(r.get('token_ids',r.get('prompt_ids',[])+r.get('target_ids',[]))))
+            if 'document' in r:banned_docs.add((r['language']+'_'+r.get('domain','wiki'),r['document']))
     seen=set();seen_docs=set();counts=Counter()
     for row in data['samples']:
         key=(row['cell'],row['document']);assert key not in seen_docs;seen_docs.add(key)
+        assert key not in banned_docs
+        if row['cell']=='en_wiki':
+            assert re.sub(r'\W+','',raw_titles[key].replace('@-@','-').replace('@,@',',').replace('@.@','.')).casefold() not in english_titles
         text=texts[key];assert hashlib.sha256(text.encode()).hexdigest()==row['text_sha256']
         ids=tok.encode(text,add_special_tokens=False);offset=row['token_offset']
         assert ids[offset:offset+80]==row['prompt_ids']+row['target_ids']
