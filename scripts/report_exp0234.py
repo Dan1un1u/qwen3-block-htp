@@ -98,7 +98,7 @@ def main():
     table=verified('exp0230','module_table.md').read_text();prior_profile=verified('exp0230','full_profiling_report.md')
     profile=f'''# EXP0234 complete profiling record: host-only software diagnostic
 
-Source branch codex/exp-0231-w4f16-group128-64k; closure commit {head}.
+Source branch codex/exp-0234-w4f16-group128-64k; closure commit {head}.
 Evidence {RESULT}; artifacts {OUTPUT}. Controls C64 forgrouping andG8 forcalibrationbudget; candidateG64; floatingF reference. Quality execution unit is a packed-weight FP16 software M64+16 teacher-forcing forward. No target DSP runtime for this format exists in this experiment. Paired profiling rounds, repeat-one and repeat-ten: N/A.
 
 |Required section|Repeat1 control/candidate/delta|Repeat10 control/candidate/delta|Reason|

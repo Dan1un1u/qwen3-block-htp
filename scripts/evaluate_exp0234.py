@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Packed FP16 software development evaluation; final data stays sealed until selection."""
+"""Fixed packed-FP16 comparisons on the shared PC052 evaluation panel."""
 import argparse,json,os,subprocess,time
 os.environ.setdefault('CUBLAS_WORKSPACE_CONFIG',':4096:8')
 from pathlib import Path
@@ -44,7 +44,9 @@ def load(v,device):
 def evaluate(phase,v,cpu=False,output_prefix=''):
     preflight();data=frozen()
     if phase in ['primary','reserve']:
-        for control in ['F','C64','G8','G64']:
+        # Frozen G8 control is independent of the running G64 export.
+        controls = ['F','C64','G8'] if v=='G8' else ['F','C64','G8','G64']
+        for control in controls:
             dev=json.loads((RESULT/f'software/development_{control}.json').read_text())
             assert dev['repeat_exact'] and dev['causal_mask_exact']
             if control!='G64':assert dev['exact_prior_development_regression']
