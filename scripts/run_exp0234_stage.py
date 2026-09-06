@@ -9,7 +9,7 @@ def main():
     p=argparse.ArgumentParser();p.add_argument('stage');p.add_argument('args',nargs=argparse.REMAINDER);a=p.parse_args()
     subprocess.run(['python3','/home/daniuniu/work/qwen3-block-htp-project-memory/scripts/project_memory.py',
         'preflight','--source-worktree',str(S)],check=True)
-    modules={'data':('data_exp0234.py',[]),'oracle':('group_exp0234.py',[]),'export':('export_exp0234.py',[]),
+    modules={'equivalence':('audit_exp0234_equivalence.py',[]),'data':('data_exp0234.py',[]),'oracle':('group_exp0234.py',[]),'export':('export_exp0234.py',[]),
              'evaluate':('evaluate_exp0234.py',[]),'summary':('summarize_exp0234.py',[])}
     script,args=modules[a.stage]
     python='/home/daniuniu/.cache/qwen3-block-htp-'+('spinquant-' if a.stage=='evaluate' else '')+'py/bin/python'
