@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fixed AWQ software PPL acceptance, matched controls and bounded reserve."""
+"""Fixed group12864K software PPL acceptance, matched controls and bounded reserve."""
 import argparse,json,math
 import numpy as np
 from data_exp0234 import RESULT,CELLS,write,sha,preflight
