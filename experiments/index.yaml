@@ -35,10 +35,15 @@ experiments:
       protocol: PC051
       device_execution: not_authorized
       other_recipes: frozen
-      current_stage: group_export_running_controls_development
+      current_stage: export_complete_G128_development_running
       dataset_freeze_sha256: 6b987f5e8f7ce0e5704f3a59529f7814b859ccbc29b8906f64e7b2288c7666e0
       independent_data_audit: pass1024newdocuments
       group_oracles: pass_dense_all3_NumPy_clip_output_choices_dead_zero_permutation
+      manifest_sha256: da0912bb02a40ec3ba19f3dd772926d965307895aba14ffd3b30b9980876c096
+      all196projections: pass_independent_numpy_roundtrip
+      all112forwardchecks: pass
+      control_regression: F_C8_C64_exact
+      export_actual_source: 682a51d6161f2da9df2e351783c8bfcc42368112
     runtime:
       source_branch: codex/exp-0231-w4f16-group128-software
       source_worktree: /home/daniuniu/work/qwen3-block-htp
