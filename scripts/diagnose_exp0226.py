@@ -31,6 +31,7 @@ def identity():
 @torch.no_grad()
 def controls():
     from export_exp0226 import load_package,validate_model
+    torch.set_num_threads(8)
     assert json.loads((RESULT/'initial_rotation_identity.json').read_text())['R1_exact']
     for variant,relative,expected in [('step000','exp0225/step000','de788d23a754e1de635268fff1e0caebd21e61344b838cd242b2a3b74139c77b'),('old100','exp0225/step100','44ac941297f1aab82ec4daff2ca8191379def73f6796a1c9c5d7d700820c5673'),('control_A','exp0224/A',None)]:
         root=OUTPUT.parent/relative
