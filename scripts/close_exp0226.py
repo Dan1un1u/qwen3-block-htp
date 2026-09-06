@@ -12,6 +12,9 @@ def close():
     selection=json.loads((RESULT/'selection.json').read_text());selected=selection['selected']
     assert selection['evaluation_used'] is False and selection['rule']==PLAN['checkpoint_selection']
     assert selected==min(selection['scores'],key=lambda k:(selection['scores'][k]['nll'],int(k[4:])))
+    assert json.loads((RESULT/'reload_oracle.json').read_text())['passed']
+    device_controls=json.loads((RESULT/'device_controls_verified.json').read_text())
+    assert all(r['verified_files']==1276 for r in device_controls['controls'].values())
     identity=json.loads((RESULT/'initial_rotation_identity.json').read_text())
     assert identity['R1_exact'] and identity['R2_exact']
     old_ledger_path=RESULT.parent/'exp0225/evidence_sha256.json'
@@ -58,7 +61,12 @@ def close():
     source=Path(__file__).resolve().parents[1];head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=source,text=True).strip()
     runtime_changes=subprocess.check_output(['git','diff','--name-only','cf8a239a636bb33dd9bf49c7aa03760df9af6c81',head,'--','src','include','CMakeLists.txt'],cwd=source,text=True).strip();assert not runtime_changes
     control=json.loads((RESULT/'control_A/validation.json').read_text());assert control['dataset_sha256']==data_sha
-    validation_summary={k:dict(nll=v['nll'],ppl=math.exp(v['nll']),language_nll=v['language_nll']) for k,v in {'control_A':control,**validation}.items()}
+    old100=json.loads((RESULT/'old100/validation.json').read_text());assert old100['dataset_sha256']==data_sha
+    for variant in ['step000','old100']:
+        historical=json.loads((RESULT.parent/'exp0225'/('step100' if variant=='old100' else variant)/'validation.json').read_text())
+        current=json.loads((RESULT/variant/'validation.json').read_text())
+        assert all(a['nll']==b['nll'] for a,b in zip(current['samples'][:32],historical['samples']))
+    validation_summary={k:dict(nll=v['nll'],ppl=math.exp(v['nll']),language_nll=v['language_nll']) for k,v in {'control_A':control,'old100':old100,**validation}.items()}
     write_json(RESULT/'validation_summary.json',validation_summary)
     intermediates={str(p.relative_to(OUTPUT)):sha256_file(p) for folder in ['smoke_exact','training_exact','checkpoints','clip_stats','artifacts'] for p in sorted((OUTPUT/folder).rglob('*')) if p.is_file()}
     write_json(RESULT/'intermediate_sha256.json',intermediates)
