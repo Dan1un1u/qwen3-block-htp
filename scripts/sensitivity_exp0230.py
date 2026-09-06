@@ -13,7 +13,7 @@ def digest(t):
 
 def main(family):
     ev.preflight();ev.frozen();origin=verify_origin()
-    original_load=ev.load;records={}
+    original_load=ev.load;records={};prefix='diagnostics/'+family+'/'
     def hybrid_load(v,device):
         model,manifest=original_load(v,device)
         def selected(name):
@@ -39,13 +39,13 @@ def main(family):
         assert before_buffers=={n:digest(p) for n,p in model.named_buffers()}
         return model,manifest
     def diagnostic_write(name,value):
-        assert name=='software/development_A0.json'
+        assert name==prefix+'software/development_A0.json'
         value.update(variant='A0_FP16_'+family,role='development_only_software_hybrid_not_candidate',
             restored_tensors=records,original_shards=origin,all_other_parameters_and_buffers_exact=True,
             affects_selection=False,not_deployed=True,interactions_nonadditive=True)
-        write('diagnostics/'+family+'/'+name,value)
-    ev.load=hybrid_load;ev.write=diagnostic_write;ev.RESULT=RESULT/'diagnostics'/family
-    ev.evaluate('development','A0')
+        write(name,value)
+    ev.load=hybrid_load;ev.write=diagnostic_write
+    ev.evaluate('development','A0',output_prefix=prefix)
 
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('family',choices=['attention','mlp','head'])

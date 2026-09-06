@@ -38,7 +38,7 @@ def load(v,device):
     # Match the prior canonical CPU FP16 model construction, including RoPE buffers.
     return model.half().to(device).eval(),expected
 
-def evaluate(phase,v,cpu=False):
+def evaluate(phase,v,cpu=False,output_prefix=''):
     preflight();data=frozen()
     if phase in ['primary','reserve']:
         selection=json.loads((RESULT/'selection.json').read_text())
@@ -46,7 +46,7 @@ def evaluate(phase,v,cpu=False):
         assert sha(package(selection['selected'])/'manifest.json')==selection['selected_manifest_sha256']
     rows=[r for r in data['samples'] if r['split']==phase]
     if cpu:assert phase=='development';rows=rows[:8]
-    name=f'software/{phase}_{v}'+('_cpu_check' if cpu else '')+'.json'
+    name=output_prefix+f'software/{phase}_{v}'+('_cpu_check' if cpu else '')+'.json'
     assert not (RESULT/name).exists()
     torch.set_num_threads(8);torch.manual_seed(230);torch.set_grad_enabled(False)
     torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
