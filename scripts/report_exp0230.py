@@ -44,6 +44,15 @@ def main():
         '|Variant|Calibration tokens|PPL|','|---|---:|---:|']
     for v in ['F','A0','C8','C64']:
         text.append(f'|{v}|{dict(F="N/A",A0=8192,C8=8192,C64=65536)[v]}|{selection["development"][v]["ppl"]:.6f}|')
+    text+=['','### A0 module sensitivity (development software only)','',
+        '|FP16-restored family|PPL|Change vs A0|','|---|---:|---:|']
+    for family in ['attention','mlp','head']:
+        d=json.loads((RESULT/f'diagnostics/{family}/software/development_A0.json').read_text())
+        assert d['all_other_parameters_and_buffers_exact'] and not d['affects_selection']
+        text.append(f'|{family}|{d["ppl"]:.6f}|{100*(d["ppl"]/selection["development"]["A0"]["ppl"]-1):+.3f}%|')
+    text+=['','These hybrids are diagnostic only, not candidates or deployable mixed-precision claims. '
+        'Each restores one family from the original checkpoint while every other A0 tensor and buffer remains exact. '
+        'Effects interact and are not additive. No diagnostic uses final data or changes candidate selection.']
     text+=['','C8 and C64 use the unchanged original-coordinate CPU EXP224 GPTQ, act-order, staged quantized inputs '
         'and three output-aware row-scale candidates. C8 is a document-balanced subset of C64. '
         'Original norms/embedding/head are frozen; only transformer calibration differs. Selection uses development NLL, tie1e-6 favors C8.','',
