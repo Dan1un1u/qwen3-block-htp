@@ -19,7 +19,11 @@ experiments:
     source_branches:
     - codex/exp-0231-w4f16-group128-software
     source_commits:
-    - 5cabcaafcc453ce6b2296a2d9a436fa8e5cc9269
+    - d863c1f2927ad81018c0f84dec494cd826d8d033
+    - 36cf4a7ec9a8567efb13f3d8e43afa9280766913
+    - 682a51d6161f2da9df2e351783c8bfcc42368112
+    - 8cdaa6148b57fa560123a594f2945f670930a976
+    - de3db92414f060ad7b2be50fd779cf09c2322f9c
     variants:
     - F
     - C8
@@ -30,6 +34,10 @@ experiments:
       protocol: PC051
       device_execution: not_authorized
       other_recipes: frozen
+      current_stage: group_export_running_controls_development
+      dataset_freeze_sha256: 6b987f5e8f7ce0e5704f3a59529f7814b859ccbc29b8906f64e7b2288c7666e0
+      independent_data_audit: pass1024newdocuments
+      group_oracles: pass_dense_all3_NumPy_clip_output_choices_dead_zero_permutation
     runtime:
       source_branch: codex/exp-0231-w4f16-group128-software
       source_worktree: /home/daniuniu/work/qwen3-block-htp

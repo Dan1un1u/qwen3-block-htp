@@ -1,3 +1,7 @@
-# EXP0231 registered, implementation pending
+# EXP0231 group export running
 
-Read docs/experiments/EXP-0231.md. EXP230 closed and all jobs done; no reruns. Active231,next232. Source branch codex/exp-0231-w4f16-group128-software begins at 5cabcaafcc453ce6b2296a2d9a436fa8e5cc9269. Exactly one static group128 candidate using C8 calibration; new primary/reserve required. Hardware remains frozen. No grouped deployment or baseline promotion. Conditional AWQ phase remains approved only if this phase insufficient.
+Source de3db92414f060ad7b2be50fd779cf09c2322f9c on codex/exp-0231-w4f16-group128-software, clean/pushed. Active231,next232. Frozen protocol docs/experiments/EXP-0231.md must not change. Datafreeze6b987f5e8f7ce0e5704f3a59529f7814b859ccbc29b8906f64e7b2288c7666e0,1024newdocuments independently reconstructed and prior230 allroles excluded. Group oracle passes all3dense Schur code comparisons, NumPy scale/clipping/SSE choices, zero/dead cases and crossgroup permutation.
+
+RUNNING export tool session58063 startedsource682a51d; original CPU quantizer group implementation already imported; preserve process and never duplicate. Development F evaluator session45453 running. Other C8/C64 development controls pending. G128 development/primary/reserve pending until export. All stages via scripts/run_exp0231_stage.py. No report script yet. Source/data implementations committed. Close after summary and evidence. If fixed independent G128/F software PPL passes, stop escalation and discuss DSP deployment; otherwise separately register approved AWQ phase. No hardware or other-recipe changes, no promotion.
+
+EXP230 fully closed,626evidence files/3014model files verified, no jobs. See SESSION_HANDOFF_EXP0230.md; do not rerun.
