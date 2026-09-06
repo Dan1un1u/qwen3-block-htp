@@ -37,6 +37,9 @@ def main():
         for n in ['evaluate_exp0235.py','data_exp0235.py','evaluate_exp0230.py']:
             assert hashlib.sha256(archive.extractfile('scripts/'+n).read()).hexdigest()==sha(SOURCE/'scripts'/n),n
     write('execution_provenance.json',dict(actual_evaluation_source=actual['source_head'],commands=commands,entry_and_loading_code_identical_to_archive=True))
+    closure_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=SOURCE,text=True).strip()
+    closure_archive=OUTPUT/'artifacts'/closure_head/'source.tar';closure_archive.parent.mkdir(parents=True,exist_ok=True)
+    if not closure_archive.exists():subprocess.run(['git','archive','--format=tar','-o',str(closure_archive),closure_head],cwd=SOURCE,check=True)
     artifacts={str(p.relative_to(OUTPUT)):dict(bytes=p.stat().st_size,sha256=stream_sha(p)) for p in sorted(OUTPUT.rglob('*')) if p.is_file()}
     write('artifacts_sha256.json',dict(root=str(OUTPUT),files=artifacts,model_storage='Original verified checkpoint and frozen C64 referenced, immutable CPU snapshots audited in restoration_manifest; no hybrid package export'))
     head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=SOURCE,text=True).strip()
