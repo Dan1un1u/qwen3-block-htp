@@ -1,6 +1,6 @@
 # EXP0232 completed; ordered recovery sequence finished
 
-Source 86c359237c8cf54cfb6491857b3868ca5b8ce074 on codex/exp-0232-w4f16-awq-input-equalization, clean/pushed. Active none,next233. All jobs complete; do not rerun EXP230/231/232. Source lock remains EXP-0232 as closed branch identity. Bootstrap and read four authority files before further work. No next experiment, promotion or W4A8 execution authorized; discuss next direction with user.
+Source 86c359237c8cf54cfb6491857b3868ca5b8ce074 on codex/exp-0232-w4f16-awq-input-equalization, clean/pushed. Active none,next233. All jobs complete; do not rerun EXP230/231/232. Source branch identifies closed EXP-0232; bootstrap reports no active experiment lock. Bootstrap and read four authority files before further work. No next experiment, promotion or W4A8 execution authorized; discuss next direction with user.
 
 EXP232 final software1024documents/16384targets: F25.132354691074653,C8 28.33302614294996,C64 27.000521931341797,E64 28.058847725237158. E64/F+11.644325% (CI10.010535..13.317941%) fails; E64/C64+3.919649% (CI2.614865..5.286532%) is worse. C64/F+7.433316% (CI5.947106..8.967007%) still fails5% overall. Frozen reserve fullyused, all36aggregates independently reduced. E64 development28.46770547770664 vsC64 27.150223991918875; exactF/C8/C64 per-token historical development regression. No candidate selection on development/final scores.
 
@@ -11,3 +11,5 @@ Results /mnt/d/llm_exp/results/qwen3-block-htp/exp0232. Evidence173files ledger 
 EXP232 stopped at software acceptance boundary, no device use/speed. PC051 sequence allcomplete: EXP230 actualDSP C64 PPL27.545607 vsF25.777659(+6.858%), improves9.858%vsA0; EXP231 softwareG128 PPL26.541898 vsF23.961270(+10.770%), improves3.987%vsC8 but1.749%worseC64. Separate finaldatasets/backends. Group128 at64Kcal remains untested, discussion-only. Other recipes/baselines unchanged.
 
 User-facing profiling remains the stable three-recipe module table followed by directly measured E2E token/s/token counts/Hostwall denominators. EXP230 C64 reference:64prefill/63262.995us=1011.649859tok/s;15decode/1389448.9595us=10.795647tok/s. F16/W4A8 historical EXP218 nonpaired; differing W4bytes prevent activation-only attribution. E64 speedN/A.
+
+Post-closure remote verification had one transient gnutls TLS disconnect; retry of the same bootstrap succeeded, source clean/remote synchronized and active experiment/lock none. No proxy or experiment-data change.
