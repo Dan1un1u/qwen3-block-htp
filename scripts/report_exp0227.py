@@ -75,7 +75,7 @@ def close():
         blocks[v]=done
     head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
     assert not subprocess.check_output(['git','diff','--name-only','b90d9a7309fe470fb7dc7b8de83b483621ad481c',head,'--','src','include','CMakeLists.txt'],cwd=ROOT,text=True).strip()
-    archives={str(p.relative_to(OUTPUT)):digest(p) for folder in ['training','smoke','artifacts'] for p in sorted((OUTPUT/folder).rglob('*')) if p.is_file()}
+    archives={str(p.relative_to(OUTPUT)):digest(p) for folder in ['training','smoke','training_unscaled','smoke_unscaled','artifacts'] for p in sorted((OUTPUT/folder).rglob('*')) if p.is_file()}
     write_json(RESULT/'intermediate_sha256.json',archives)
     ledger={str(p.relative_to(RESULT)):digest(p) for p in sorted(RESULT.rglob('*')) if p.is_file() and p.name not in ['evidence_sha256.json','closure.json']}
     write_json(RESULT/'evidence_sha256.json',ledger)

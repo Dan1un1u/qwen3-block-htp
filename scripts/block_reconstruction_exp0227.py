@@ -285,6 +285,9 @@ def train(v, smoke=False):
             selected.append(previous)
         else:
             opt=torch.optim.Adam(params,lr=PLAN['lr'],weight_decay=0.)
+            # The normalized block loss can underflow at FP16 cast boundaries.
+            # Scale only backward arithmetic; unscale before clipping/Adam.
+            scaler=torch.amp.GradScaler('cuda',init_scale=65536.)
             log=(attempt/f'layer{i:02d}.jsonl').open('x')
             steps=2 if smoke else PLAN['steps']
             snapshots={0,2} if smoke else set(PLAN['checkpoints'])
@@ -303,15 +306,24 @@ def train(v, smoke=False):
                 indices=protocol['batch_schedule'][step]
                 lr=PLAN['lr']*.5*(1+math.cos(math.pi*step/steps))
                 for group in opt.param_groups:group['lr']=lr
-                opt.zero_grad(set_to_none=True)
-                pred=layer_forward(student,student_hidden[indices],rope,mask)
-                loss=rel_mse(pred,target[indices]);assert torch.isfinite(loss)
-                loss.backward()
-                norm=torch.nn.utils.clip_grad_norm_(params,PLAN['grad_norm_clip'],error_if_nonfinite=True)
-                opt.step()
+                for numeric_attempt in range(8):
+                    opt.zero_grad(set_to_none=True)
+                    pred=layer_forward(student,student_hidden[indices],rope,mask)
+                    loss=rel_mse(pred,target[indices]);assert torch.isfinite(loss)
+                    scaler.scale(loss).backward()
+                    scaler.unscale_(opt)
+                    finite=all(p.grad is not None and torch.isfinite(p.grad).all() for p in params)
+                    if finite:
+                        norm=torch.nn.utils.clip_grad_norm_(params,PLAN['grad_norm_clip'],error_if_nonfinite=True)
+                        scaler.step(opt);scaler.update();break
+                    # Standard loss-scale backoff skips the nonfinite update.
+                    # Retry the same minibatch, so100steps means100 Adam updates.
+                    log.write(json.dumps(dict(step=step+1,numeric_attempt=numeric_attempt,overflow=True,loss_scale=scaler.get_scale()))+'\n');log.flush()
+                    scaler.step(opt);scaler.update()
+                else:raise RuntimeError('bounded loss-scale recovery exhausted')
                 with torch.no_grad():
                     for p in params:p.clamp_(-PLAN['log_scale_bound'],PLAN['log_scale_bound'])
-                row=dict(step=step+1,loss=float(loss),grad_norm=float(norm),lr=lr)
+                row=dict(step=step+1,loss=float(loss.detach()),grad_norm=float(norm),lr=lr,loss_scale=scaler.get_scale(),numeric_attempt=numeric_attempt)
                 log.write(json.dumps(row)+'\n');log.flush()
                 if (step+1)%25==0:print(json.dumps(dict(variant=v,layer=i,**row)),flush=True)
             log.close()
@@ -342,7 +354,7 @@ def train(v, smoke=False):
     torch.save(dict(teacher=teacher_hidden.cpu(),student=student_hidden.cpu()),work/'final_hidden.pt')
     rot.write_json(result/'complete.json',dict(variant=v,smoke=smoke,layers=len(selected),trainable_parameters=total_params,
         selected_steps=[s['selected_step'] for s in selected],protocol_sha256=digest(RESULT/'protocol.json'),
-        elapsed_s=time.monotonic()-started,peak_GPU_bytes=torch.cuda.max_memory_allocated(),
+        elapsed_s=time.monotonic()-started,peak_GPU_bytes=torch.cuda.max_memory_allocated(),backward_loss_scaling='GradScaler_init65536_unscale_before_clip_100_successful_updates',
         final_train_relative_mse=float(rel_mse(student_hidden[:64],teacher_hidden[:64])),
         final_validation_relative_mse=float(rel_mse(student_hidden[64:],teacher_hidden[64:]))))
     print('TRAIN_COMPLETE',v,smoke,flush=True)
