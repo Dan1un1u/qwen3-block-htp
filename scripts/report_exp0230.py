@@ -1,11 +1,57 @@
 #!/usr/bin/env python3
 """Final evidence closure. Run directly after all stage wrappers have exited."""
-import hashlib,json,math,subprocess
+import hashlib,json,math,platform,subprocess,sys
 from pathlib import Path
+import numpy as np
+import torch
+import transformers
 from data_exp0230 import RESULT,OUTPUT,SOURCE,write,sha,preflight,verified
 from export_exp0230 import frozen
 from device_exp0230 import variants
 from evaluate_exp0230 import package
+
+def retain_artifact_ledger():
+    """Hash all retained model/intermediate files, reusing only identical inodes."""
+    cache={};files={}
+    for p in sorted(OUTPUT.rglob('*')):
+        if not p.is_file():continue
+        st=p.stat();key=(st.st_dev,st.st_ino,st.st_size,st.st_mtime_ns) if st.st_ino else str(p)
+        if key not in cache:
+            h=hashlib.sha256()
+            with p.open('rb') as f:
+                while chunk:=f.read(8*1024*1024):h.update(chunk)
+            now=p.stat()
+            assert (now.st_size,now.st_mtime_ns,now.st_ino)==(st.st_size,st.st_mtime_ns,st.st_ino)
+            cache[key]=h.hexdigest()
+        files[str(p.relative_to(OUTPUT))]=dict(sha256=cache[key],bytes=st.st_size)
+    for v,batch in [('C8',64),('C64',512)]:
+        paths=list((OUTPUT/'checkpoints'/v).glob('layer*_hidden.npy'));assert len(paths)==28
+        for p in paths:
+            x=np.load(p,mmap_mode='r')
+            assert x.shape==(batch,128,2048) and x.dtype==np.float16
+            assert all(np.isfinite(x[i:i+8]).all() for i in range(0,batch,8))
+        manifest=json.loads((package(v)/'manifest.json').read_text())
+        for n,d in manifest['files'].items():
+            assert files[v+'/'+n.replace(chr(92),'/')]['sha256']==d['sha256']
+        stats=json.loads((RESULT/v/'weight_stats.json').read_text())
+        for d in stats.values():
+            n=str(Path(d['clip_stats_path']).relative_to(OUTPUT))
+            assert files[n]['sha256']==d['clip_stats_sha256']
+    for p in (RESULT/'commands').glob('*.json'):
+        d=json.loads(p.read_text());n='artifacts/'+d['source_head']+'/source.tar'
+        assert files[n]['sha256']==d['source_archive_sha256']
+    write('artifacts_sha256.json',dict(root=str(OUTPUT),files=files,
+        all56_hidden_checkpoints_shape_dtype_finite=True,all_packages_clip_stats_source_archives_verified=True))
+    gpu=json.loads(subprocess.check_output([
+        '/home/daniuniu/.cache/qwen3-block-htp-spinquant-py/bin/python','-c',
+        'import json,sys,torch,numpy,transformers;print(json.dumps(dict(python=sys.version,torch=torch.__version__,numpy=numpy.__version__,transformers=transformers.__version__)))'],text=True))
+    for v in ['F','A0','C8','C64']:
+        assert json.loads((RESULT/f'software/development_{v}.json').read_text())['torch_version']==gpu['torch']
+    write('environment_at_closure.json',dict(captured_at_closure=True,platform=platform.platform(),
+        cpu=dict(python=sys.version,executable=sys.executable,torch=torch.__version__,numpy=np.__version__,
+                 transformers=transformers.__version__,torch_build=torch.__config__.show()),gpu=gpu,
+        export_threads=16,export_device='CPU',quantizer_source_unchanged=True))
+    return len(files)
 
 def main():
     preflight();frozen();vs=variants();selection=json.loads((RESULT/'selection.json').read_text())
@@ -18,6 +64,7 @@ def main():
         assert log.with_suffix('.json').exists(),('stage still open',log)
         meta=json.loads(log.with_suffix('.json').read_text());assert sha(log)==meta['log_sha256']
     speed=json.loads((RESULT/'speed_summary.json').read_text())
+    artifact_count=retain_artifact_ledger()
     for v in ['C8','C64']:
         d=json.loads((RESULT/v/'package.json').read_text())
         assert sha(package(v)/'manifest.json')==d['manifest_sha256']
@@ -74,7 +121,9 @@ def main():
         'sentinels match. Packed software/device development checks pass. All device targets finite,8MiB VTCM,no intermediateDDR/spill,'
         'valid self-computed cache progression. Original model and inherited tensor hashes verified. '
         'Export source commits may precede added evaluation/orchestration files; command source archives retain the precise executed '
-        'export implementation and unchanged quantizer source hashes. See commands and per-layer export records.','',
+        'export implementation and unchanged quantizer source hashes. See commands and per-layer export records. '
+        f'All{artifact_count} retained model/intermediate files have an artifact ledger; all56 hidden checkpoints '
+        'have verified FP16 shapes and finite values. Package tensors, clipping statistics and source archives match their recorded hashes.','',
         '## Profiling','',
         'One warmup,5short,10rotated selected/A0 pairs complete;320invocation and8960layer ledgers valid. '
         'See full_profiling_report.md and module_table.md for complete measurements and historical nonpaired other-recipe columns.',
@@ -91,6 +140,8 @@ def main():
         dataset_sha256=sha(RESULT/'dataset.json'),data_freeze_sha256=sha(RESULT/'dataset_freeze.json'),
         report_sha256=sha(RESULT/'REPORT.md'),summary_sha256=sha(RESULT/('combined_summary.json' if combined else 'primary_summary.json')),
         full_profiling_report_sha256=sha(RESULT/'full_profiling_report.md'),
+        artifact_files=artifact_count,artifact_ledger_sha256=sha(RESULT/'artifacts_sha256.json'),
+        environment_at_closure_sha256=sha(RESULT/'environment_at_closure.json'),
         package_manifest_sha256={v:sha(package(v)/'manifest.json') for v in ['F','A0','C8','C64']},
         next_direction='stop_acceptance_pass' if status=='pass' else 'PC051_group128_software_diagnostic'))
     write('evidence_sha256.json',{str(p.relative_to(RESULT)):sha(p) for p in sorted(RESULT.rglob('*')) if p.is_file()})
