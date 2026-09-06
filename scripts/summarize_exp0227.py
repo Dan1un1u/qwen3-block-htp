@@ -8,7 +8,8 @@ from transformers import AutoTokenizer
 import eval_exp0218 as ev
 import measure_exp0218 as measure
 from block_reconstruction_exp0227 import RESULT
-from measure_exp0227 import ALL,VARIANTS,SELECTED
+from measure_exp0227 import ALL,VARIANTS
+SELECTED=json.loads((RESULT/'selection.json').read_text())['selected']
 from rotation_exp0219 import write_json
 from summarize_exp0217 import normalized
 from summarize_exp0218 import table

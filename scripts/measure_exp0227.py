@@ -9,7 +9,6 @@ import numpy as np
 import eval_exp0218 as ev
 import measure_exp0218 as measure
 from block_reconstruction_exp0227 import RESULT,OUTPUT
-SELECTED=json.loads((RESULT/'selection.json').read_text())['selected']
 VARIANTS=['A','R']
 from rotation_exp0219 import write_json
 from prepare_exp0164_generation_package import sha256_file
