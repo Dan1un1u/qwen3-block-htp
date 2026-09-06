@@ -6,6 +6,34 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0226
+    slug: w4f16-rotation-data-sampling
+    title: Learned W4F16 rotation document coverage and random body sampling ablation
+    parent: EXP-0225
+    record: docs/experiments/EXP-0226.md
+    execution_state: running
+    evidence_validity: pending
+    local_gate: pending
+    adoption_status: pending
+    approval_ref: 'User 2026-09-06: 可以，试一下吧; approves preceding sampling ablation plan'
+    source_branches:
+    - codex/exp-0226-w4f16-rotation-data-sampling
+    source_commits:
+    - 0900322f71b8cbc6071a3a34e3f23679464bbfeb
+    runtime:
+      source_branch: codex/exp-0226-w4f16-rotation-data-sampling
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      approved_on: '2026-09-06'
+      started_on: '2026-09-06'
+    variants:
+    - EXP0224_A_control
+    - EXP0225_step100_control
+    - sampling_learned_R1R2
+    evidence_profile: learned_rotation_sampling_ablation
+    evidence:
+      source_parent_commit: 0900322f71b8cbc6071a3a34e3f23679464bbfeb
+      other_recipes: frozen
+      selected_baseline_changed: false
   - id: EXP-0225
     slug: w4f16-learned-r1r2
     title: SpinQuant Cayley learned offline R1/R2 for per-channel W4F16
