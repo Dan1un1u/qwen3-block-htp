@@ -1,0 +1,3 @@
+# EXP0232 registered, implementation pending
+
+Read docs/experiments/EXP-0232.md as exact executable protocol. Active232,next233. Source branch codex/exp-0232-w4f16-awq-input-equalization begins at b5fd32c8123fae11abb7b472ebcd20c1e9f8a500. EXP230 and231 fully closed, no running jobs; do not rerun them. Implement AWQ-style E64 against C64, fresh independent data before scale search. Official pin d6e797a42b9ef7778de8ee2352116e0f48a78d61. Quantization65536tokens unchanged CPU; scale search8192nestedsubset. FP16 invariance must pass before export. Software independent PPL gate first; only if pass use existing DSP path and standard profiling. Other recipes frozen, no baseline promotion. This is last phase of approvedPC051 sequence.

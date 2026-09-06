@@ -1660,3 +1660,7 @@ EXP230 independent PPL fail activates PC051 group128 software diagnostic. Single
 ## EXP0231 completed group128 software diagnostic
 
 1024newdocuments/16384targets: F23.961270,C827.644064,C6426.085709,G12826.541898. G128/F+10.770% (95%CI+9.141..12.506%) fails fixed acceptance. Matched8K calibration G128/C8 improves3.987% (ratioCI.944690..974583), but G128 is1.749% worse than stronger64K C64 (CI1.002730..1.032126). Grouping helps at matched calibration but does not beat the best current per-channel result; this does not test group128 at64K. All129result files/624artifacts verified,196packing/112forwardchecks pass,28hidden checkpoints finite, allF/C8/C64 development outputs exact. Runtime/other recipes unchanged, groupDSPspeed N/A, no promotion. Allnewprimary/reserve data exposed and excluded from future training/independent tests. Active none,next232. PC051 now activates separately registered AWQ-style input-channel equalization; prospective draft uses strongerC64 control.
+
+## EXP0232 approved third phase activated
+
+PC051 ordered sequence now runs AWQ-style positive input diagonals against strongerC64, unchanged per-channel actualGPTQ65536calibration. Fixed20ratio local RTN proxy on8192nestedcalibration tokens, three legal compensations, original FP32 fresh folds and FP16 invariance first. Fresh independent software gates; if qualified, existing compatible DSP verification/profiling. No groupDSP or other-recipe changes. See frozen EXP-0232.md and handoff.
