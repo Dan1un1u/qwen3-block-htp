@@ -6,6 +6,40 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0229
+    slug: w4f16-independent-ppl-acceptance
+    title: Frozen W4F16 independent bilingual PPL acceptance
+    parent: EXP-0228
+    variants:
+    - F16F16
+    - A0
+    - A
+    - BF16_teacher
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: pending
+    evidence_profile: independent_short_context_ppl_acceptance
+    source_branches:
+    - codex/exp-0229-w4f16-independent-ppl-acceptance
+    source_commits:
+    - 365d1e2f136125462fa4f7ecbe1abc93b4309ca1
+    record: docs/experiments/EXP-0229.md
+    approval_ref: User 2026-09-06 agrees to finish W4A16 independent PPL acceptance
+      before discussing W4A8
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0229-w4f16-independent-ppl-acceptance
+      approved_on: '2026-09-06'
+      started_on: '2026-09-06'
+    evidence:
+      models: frozen_F16_EXP0217_A0_EXP0224_A_EXP0227
+      overall_ppl_ratio_limit: 1.05
+      stratum_ppl_ratio_limit: 1.1
+      primary_targets: 8192
+      reserve_targets: 8192
+      profiling: N/A_quality_only_unchanged_runtime
+      selected_baseline_changed: false
   - id: EXP-0228
     slug: content-aware-short-task-scoring
     title: Content-aware frozen short-task grading audit

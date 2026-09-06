@@ -1630,3 +1630,7 @@ Current best-PPL unrotated A has4format-only failures and2actual wrong answers; 
 ## Quality priority update (user 2026-09-06, after EXP0228)
 
 PC049: PPL primary, content-v2 short answers auxiliary, strict-v1 formatting only. User asks whether W4A16 is acceptable and whether to move to another recipe; discussion does not promote/unfreeze/start an experiment. Current512-target diagnostic A PPL38.66095 versus F16 37.84913 (+2.145%); A0 38.87362. Recommend freezing W4A16 optimization, a bounded independent PPL acceptance check, then W4U8 same-W4-weight control and reproducibility/activation-error diagnosis. Thresholds and execution remain proposed in docs/NEXT_DIRECTION_PPL_ACCEPTANCE.md. Active none; next229 unchanged.
+
+## EXP0229 approved independent PPL acceptance
+
+User authorizes finishing W4A16 acceptance before W4A8 discussion. PC050 freezes models and thresholds, independent8192+bounded8192reserve actualDSP F/A0/A with originalBF16 diagnostic. See docs/experiments/EXP-0229.md. W4U8 stays frozen; no promotion.
