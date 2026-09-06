@@ -37,6 +37,7 @@ def report():
         counts=[r['selected_steps'].count(i) for i in [0,50,100]]
         lines.append(f"| {v} | {counts} | {r['final_train_relative_mse']:.8g} | {r['final_validation_relative_mse']:.8g} | {r['elapsed_s']:.2f} |")
     lines += ['Each local selection compares checkpoints on the same incoming student stream at that block. Improvements are not additive causal contributions. Full-model quality determines whether reconstruction transfers.',
+        'Numerical recovery: unscaled FP16 backward erased Q/K/Gate/Up scale gradients in a real block3 audit. Original attempts are preserved under training_unscaled/smoke_unscaled. Final runs use standard GradScaler65536, unscale before Adam/gradient clipping, with5600 finite successful updates and no overflow retries. The forward, objective, data, budget and thresholds are unchanged. See gradient_precision_audit.json, training_audit.json and recovery_loss_scaling.json.',
         '## Effectiveness', '```json',json.dumps(dict(per_coordinate=quality['effectiveness'],incremental_rotation=quality['incremental_rotation'],baseline_promoted=False),indent=2),'```',
         '## Complete profiling', (RESULT/'module_table.md').read_text(),
         'The F16A16 and W4A8 columns are frozen nonpaired EXP0218 references. Current A0/R0/A/R use1warmup5short10four-way rotating formal rounds with identical ABI108 runtime. Full additive and overlapping counters are retained in full_profiling_report.md.',
@@ -52,6 +53,14 @@ def close():
     assert len(list((RESULT/'short').glob('round_*.jsonl')))==20
     assert len(list((RESULT/'formal').glob('round_*.jsonl')))==40
     assert json.loads((RESULT/'unit_oracle.json').read_text())['passed']
+    audit=json.loads((RESULT/'training_audit.json').read_text())
+    assert audit['passed'] and audit['successful_updates']==5600
+    for v in ['A','R']:
+        logs=sorted((RESULT/'training'/v).glob('attempt_*/layer*.jsonl'));assert len(logs)==28
+        for f in logs:
+            rows=[json.loads(l) for l in f.read_text().splitlines()];updates=[r for r in rows if 'loss' in r]
+            assert [r['step'] for r in updates]==list(range(1,101))
+            assert all(math.isfinite(r['loss']) and math.isfinite(r['grad_norm']) for r in updates)
     controls=json.loads((RESULT/'device_controls_verified.json').read_text())
     assert all(r['verified_files']==1276 for r in controls['controls'].values())
     packages={};blocks={}
@@ -61,6 +70,8 @@ def close():
         assert len(manifest['changed_files'])==197
         checks=json.loads((RESULT/v/'export_oracle.json').read_text())
         assert checks['passed'] and len(checks['projections'])==196
+        gpu=json.loads((RESULT/v/'GPU_export_oracle.json').read_text())
+        assert gpu['passed'] and len(gpu['checks'])==196 and gpu['manifest_sha256']==digest(root/'manifest.json')
         assert all(r['train_export_weight_exact'] and r['codes_exact'] for r in checks['projections'])
         done=json.loads((RESULT/'training'/v/'complete.json').read_text())
         assert done['layers']==28 and done['trainable_parameters']==573440 and not done['smoke']
