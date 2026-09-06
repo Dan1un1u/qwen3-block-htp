@@ -17,3 +17,7 @@ Source78d76eaea19a778d9500afa59428625620bb88da adds finish_exp0234_scoring.py. U
 ## Halfway checkpoint
 
 Current source a37a64d1b928184665a66c3ed1b5e0a6155615e5, clean/pushed. G64 export session18937 completed layers0..13 (14/28), all checks pass, elapsed3610s; keep running. G8 primary session73233 completed: PPL26.77058071194769, independent math.fsum matches. Scoring continuation session48693 still waits on export and will run all remaining fixed/conditional scores automatically. Do not duplicate stages. report_exp0234.py now records all stage actual-start sources versus legacy completion-HEAD fields. verify_exp0234_closure.py is ready to independently check complete evidence/artifact coverage, hashes and36 raw-token PPL reductions after report closure. All three PC052 phases remain authorized; EXP235 implementation/execution follows successful EXP234 closure.
+
+## Three-quarter checkpoint
+
+G64 exporter session18937 completed layers0..20 (21/28), elapsed5284.7s, checks pass. Current source c8e57fd0d308df10f0efa82cbbe0f96c49ed2839 is clean/pushed; added archived audit_exp0234_equivalence.py stage successfully reproduced implementation_equivalence.json without modifying original evidence. Stage session40481 completed. The only active jobs remain export18937 and scoring continuation48693; the latter will launch G64 development/primary and conditional reserve scores after export closes. Do not duplicate them. EXP235 remains pending and authorized after EXP234 closure.
