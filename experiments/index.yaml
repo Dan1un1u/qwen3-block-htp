@@ -6,6 +6,41 @@ allowed_values:
   local_gate: [not_run, pass, fail, not_applicable]
   adoption_status: [pending, accepted, rejected, superseded, not_applicable]
 experiments:
+  - id: EXP-0228
+    slug: content-aware-short-task-scoring
+    title: Content-aware frozen short-task grading audit
+    parent: EXP-0227
+    variants:
+    - BF16
+    - F16F16
+    - W4F16_RTN
+    - W4U8
+    - A0
+    - R0
+    - A
+    - R
+    - EXP0226_selected
+    execution_state: running
+    evidence_validity: not_checked
+    local_gate: not_run
+    adoption_status: not_applicable
+    evidence_profile: host_only_frozen_output_rescoring
+    source_branches:
+    - codex/exp-0228-content-aware-short-task-scoring
+    source_commits:
+    - 462fe94dee1ba568ba23b073cec45e2c021558e8
+    record: docs/experiments/EXP-0228.md
+    approval_ref: User 2026-09-06 explicitly requests content/format error audit and
+      acceptance of correct answers with formatting differences
+    runtime:
+      source_worktree: /home/daniuniu/work/qwen3-block-htp
+      source_branch: codex/exp-0228-content-aware-short-task-scoring
+      approved_on: '2026-09-06'
+      started_on: '2026-09-06'
+    evidence:
+      profiling: not_applicable_host_only_rescoring
+      models_and_old_evidence: immutable
+      selected_baseline_changed: false
   - id: EXP-0227
     slug: w4f16-block-scale-reconstruction
     title: Fixed-rotation final-format transformer block scale reconstruction

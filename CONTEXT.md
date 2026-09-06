@@ -1618,3 +1618,7 @@ User approves fixed-rotation final-format block reconstruction. Freeze GPTQ code
 ## EXP0227 completed fixed-coordinate scale reconstruction
 
 Fixed GPTQ codes,573440 transformer row scales per coordinate,100steps/block with independent validation checkpoint selection. Standard FP16 loss scaling repaired verified gradient underflow before final export; failed unscaled attempts preserved. A qbh PPL38.87->38.66/tasks19->18; R50.22->43.02/tasks20->19. Both independent validation NLLs slightly worse; no consistent recovery or incremental rotation benefit. GPU training and CPU packed FP16 weights exact across392projections; both other recipes/runtime frozen.5short10four-way profiling complete,640invocations/17920layer ledgers, no meaningful throughput gain. No baseline promotion. Active none; next228 needs a chosen user-approved direction. Current handoff SESSION_HANDOFF_EXP0227.md.
+
+## EXP0228 approved scoring audit
+
+User authorizes counting correct content despite formatting. New versioned content-v2, strict-v1 retained, frozen outputs rescore only. See PC048/EXP0228. No model/prompt/PPL/runtime edits or promotion. Corrected stale scope summary pointers to the already completed EXP0227; its detailed authority/evidence remains unchanged.
