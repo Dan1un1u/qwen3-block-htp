@@ -38,6 +38,7 @@ experiments:
   - codex/exp-0235-w4f16-c64-sensitivity
   source_commits:
   - c8e57fd0d308df10f0efa82cbbe0f96c49ed2839
+  - a5e5b565e34cde9068cd7e6633e1fbb13647ec1b
   variants:
   - F
   - C64
@@ -107,7 +108,7 @@ experiments:
     started_on: '2026-09-07'
     approved_on: '2026-09-07'
   evidence:
-    current_stage: registered
+    current_stage: fixed_restoration_evaluation_running
     protocol: PC052
     other_recipes: frozen
     variant_count: 61
@@ -118,6 +119,8 @@ experiments:
     - MLP_ALL
     - HEAD
     no_model_selection: true
+    dataset_freeze_sha256: 2decbae51004dccd6f06d66c103d1664fc3f8de6af079b2575a76e1b18002d58
+    actual_evaluation_source: a5e5b565e34cde9068cd7e6633e1fbb13647ec1b
 - id: EXP-0234
   slug: w4f16-group128-64k
   title: W4F16 static group128 with65536 calibration positions
