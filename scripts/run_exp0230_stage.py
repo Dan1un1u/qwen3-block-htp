@@ -6,7 +6,7 @@ S=Path(__file__).resolve().parents[1]
 R=Path('/mnt/d/llm_exp/results/qwen3-block-htp/exp0230')
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('stage');p.add_argument('args',nargs='*');a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('stage');p.add_argument('args',nargs=argparse.REMAINDER);a=p.parse_args()
     subprocess.run(['python3','/home/daniuniu/work/qwen3-block-htp-project-memory/scripts/project_memory.py',
         'preflight','--source-worktree',str(S)],check=True)
     modules={'data':('data_exp0230.py',['prepare']),'audit':('data_exp0230.py',['audit']),
