@@ -1939,7 +1939,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          (header->variant != QBH_BLOCK_W4U8 ||
           header->slice_mode != QBH_BLOCK_SLICE_ACTIVE_RANGE ||
           header->replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS ||
-          !qbh_generation_w4u8_enabled(header->generation_mode))) ||
+          (QBH_VERTICAL_SLICE_LAYER_COUNT != 1U && !qbh_generation_w4u8_enabled(header->generation_mode)))) ||
         (header->w4u8_decode_o_batch_n_tiles != 4U &&
          header->w4u8_decode_o_batch_n_tiles != 8U &&
          header->w4u8_decode_o_batch_n_tiles != 16U) ||

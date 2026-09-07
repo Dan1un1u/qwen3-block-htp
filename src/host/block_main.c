@@ -5128,7 +5128,7 @@ int main(int argc, char **argv) {
              QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N &&
          (vertical_slice_mode != QBH_BLOCK_SLICE_ACTIVE_RANGE ||
           replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS ||
-          !qbh_generation_w4u8_enabled(generation_mode))) ||
+          (QBH_VERTICAL_SLICE_LAYER_COUNT != 1U && !qbh_generation_w4u8_enabled(generation_mode)))) ||
         (w4u8_decode_direct_n_gate_up_batch_n_tiles != 4U &&
          w4u8_decode_direct_n_gate_up_batch_n_tiles != 8U &&
          w4u8_decode_direct_n_gate_up_batch_n_tiles != 16U &&
