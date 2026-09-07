@@ -340,4 +340,6 @@ uint32_t qbh_hmx_accumulate_u8n4_projection(
     uint32_t k_tiles);
 void qbh_hmx_store_u8_output(uint8_t *output);
 
+uint32_t qbh_hmx_accumulate_lpbq32_w4_planes(const uint8_t *, const uint8_t *, uint32_t);
+
 #endif

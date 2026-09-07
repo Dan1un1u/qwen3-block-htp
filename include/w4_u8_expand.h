@@ -50,4 +50,6 @@ void qbh_copy_hmx_bias_hvx(const uint8_t *source, uint8_t *destination);
 void qbh_copy_hmx_bias_hvx_relaxed(const uint8_t *source,
                                    uint8_t *destination);
 
+void qbh_mask_lpbq32_w4_planes(const uint8_t *packed_w4, uint8_t *planes, uint32_t k_tiles);
+
 #endif

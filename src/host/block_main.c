@@ -6032,14 +6032,14 @@ int main(int argc, char **argv) {
         return 2;
     }
 
-    if (lpbq_mode != 0U && (lpbq_mode > 2U || variant != QBH_BLOCK_W4U8 ||
+    if (lpbq_mode != 0U && (lpbq_mode > 3U || variant != QBH_BLOCK_W4U8 ||
         (vertical_slice_mode != QBH_BLOCK_SLICE_DISABLED && QBH_VERTICAL_SLICE_LAYER_COUNT != 1U) ||
         w4u8_decode_projection_mode != QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
         w4u8_decode_direct_n_mask != 63U ||
         w4u8_decode_direct_n_gate_up_continuous != 0U ||
         w4u8_decode_direct_n_o_gate_prefetch != 0U ||
         w4u8_decode_direct_n_gate_up_swiglu_stream != 0U)) {
-        fprintf(stderr, "LPBQ32 requires single-layer direct-n mask63, non-streamed Gate/Up, mode1 SIMD or mode2 scalar audit\n");
+        fprintf(stderr, "LPBQ32 requires single-layer direct-n mask63, non-streamed Gate/Up, mode1 SIMD, mode2 scalar audit or mode3 exact masked W4\n");
         return 2;
     }
     for (uint32_t projection = 0;
@@ -6869,6 +6869,15 @@ int main(int argc, char **argv) {
                         shared + desc->direct_n_weight_offset,
                         shared + desc->weight_offset,
                         desc->weight_bytes);
+                    /* EXP0241: only reorder code nibbles; metadata unchanged.
+                     * No group products or masked planes are pre-expanded. */
+                    if (lpbq_mode == 3U) {
+                        uint32_t kt = desc->k / 32U;
+                        for (uint32_t nt = 0U; nt < desc->n / 32U; ++nt)
+                            memcpy(shared + desc->lpbq_weight_offset + (size_t)nt * kt * 528U,
+                                shared + desc->direct_n_weight_offset + (size_t)nt * kt * 512U,
+                                kt * 512U);
+                    }
                 }
                 if (variant != QBH_BLOCK_F16F16) {
                     desc->scale_offset = slots->scales[projection].offset;

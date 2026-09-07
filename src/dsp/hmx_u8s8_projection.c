@@ -166,3 +166,15 @@ __attribute__((noinline)) void qbh_hmx_store_u8_output(uint8_t *output) {
     Q6_mxmem_AR_after_cm_sat_ub(output, QBH_HMX_WRITE_RT);
     asm volatile("barrier" : : : "memory");
 }
+
+/* Each masked signed nibble is consumed 2^bit times into one accumulator.
+ * No intermediate conversion, saturation, or per-group rounding. */
+uint32_t qbh_hmx_accumulate_lpbq32_w4_planes(
+    const uint8_t *activation, const uint8_t *planes, uint32_t k_tiles) {
+    uint32_t streams = 0U;
+    for (uint32_t bit = 0U; bit < 5U; ++bit)
+        for (uint32_t repeat = 0U; repeat < (1U << bit); ++repeat)
+            streams += qbh_hmx_accumulate_u8n4_projection(activation,
+                planes + (size_t)bit * k_tiles * 512U, k_tiles);
+    return streams;
+}
