@@ -24,6 +24,30 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0241
+  slug: lpbq32-direct-w4
+  title: Exact LPBQ32 masked direct-W4 HMX layer gate
+  parent: EXP-0240
+  record: docs/experiments/EXP-0241.md
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  approval_ref: User2026-09-08 exact grouped semantics direct4bit algorithm; threshold
+    unchanged
+  source_branches:
+  - codex/exp-0241-lpbq32-direct-w4
+  source_commits:
+  - e02d01c0d40603bb80fcc9e292d106a7d72be0b9
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0241-lpbq32-direct-w4
+    approved_on: '2026-09-08'
+    started_on: '2026-09-08'
+  evidence:
+    protocol: PC056
+    current_stage: implementation
+    baseline_promoted: false
 - id: EXP-0240
   slug: w4a8-lpbq32-layer-gate
   title: W4A8 Qualcomm LPBQ32 single-layer speed gate
