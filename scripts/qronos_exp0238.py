@@ -105,6 +105,8 @@ def export():
  ids=np.fromfile(verified('exp0230','inputs/C64_calibration_u32.bin'),dtype='<u4').reshape(512,128)
  model,fh=old.load('F','cpu');original={n:sha(Path('/mnt/d/llm_exp/models/Qwen3-origin')/n) for n in json.loads(verified('exp0218','original_checkpoint_sha256.json').read_text())}
  assert original==json.loads(verified('exp0218','original_checkpoint_sha256.json').read_text())
+ from experiment_exp0220 import load_packed
+ load_packed(model.lm_head.weight,O.parent/'exp0230/C64','generation_lm_head')
  def digest(t):return __import__('hashlib').sha256(t.detach().cpu().contiguous().numpy().tobytes()).hexdigest()
  changed={f'model.layers.{i}.{long}.weight' for i in range(28) for long in rot.PROJECTIONS.values()}
  others={n:digest(t) for n,t in list(model.named_parameters())+list(model.named_buffers()) if n not in changed}
