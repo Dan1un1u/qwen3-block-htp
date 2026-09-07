@@ -9097,6 +9097,10 @@ static int qbh_run_w4u8_lpbq32_projection(
     uint8_t *bias[2] = {buffers->scale_or_bias, buffers->scale_or_bias + 8U * QBH_HMX_BIAS_BYTES};
     uint32_t previous_active = 0U;
     uint64_t hmx_start = 0U;
+    if (desc == &header->projections[QBH_BLOCK_PROJ_O]) {
+        header->w4u8_o_batch_n_tiles_observed = batch;
+        header->w4u8_o_batch_count += (nt + batch - 1U) / batch;
+    }
     for (uint32_t first = 0U, slot = 0U; first < nt; first += batch, slot ^= 1U) {
         uint32_t count = nt - first < batch ? nt - first : batch;
         uint64_t start = HAP_perf_get_qtimer_count();
@@ -14623,7 +14627,8 @@ static int qbh_run_w4u8_direct_n_mlp(
     header->gate_up_ticks += HAP_perf_get_qtimer_count() - start;
     header->w4u8_mlp_gate_up_hmx_command_count +=
         2U * (QBH_BLOCK_INTERMEDIATE / QBH_HMX_OUTPUT_CHANNELS /
-              header->w4u8_decode_direct_n_gate_up_batch_n_tiles);
+              (header->projections[QBH_BLOCK_PROJ_GATE].lpbq_mode != 0U ? 8U :
+               header->w4u8_decode_direct_n_gate_up_batch_n_tiles));
 
     if (prefill_direct == 0U &&
         header->w4u8_decode_direct_n_gate_up_swiglu_stream != 0U) {
@@ -14693,7 +14698,8 @@ static int qbh_run_w4u8_direct_n_mlp(
     header->down_ticks += HAP_perf_get_qtimer_count() - start;
     header->w4u8_mlp_down_hmx_command_count +=
         QBH_BLOCK_HIDDEN / QBH_HMX_OUTPUT_CHANNELS /
-            header->w4u8_decode_direct_n_down_batch_n_tiles;
+            (header->projections[QBH_BLOCK_PROJ_DOWN].lpbq_mode != 0U ? 2U :
+             header->w4u8_decode_direct_n_down_batch_n_tiles);
     if (qbh_copy_w4u8_tail_audit(
             header, shared, QBH_BLOCK_U8_TAIL_DOWN_OFFSET,
             down_native, QBH_BLOCK_M * QBH_BLOCK_HIDDEN) != 0) {
