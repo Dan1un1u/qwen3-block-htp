@@ -29,9 +29,9 @@ experiments:
   title: OmniQuant LWC matched per-output-channel W4A16 reference
   parent: EXP-0238
   record: docs/experiments/EXP-0239.md
-  execution_state: running
-  evidence_validity: pending
-  local_gate: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
   adoption_status: pending
   approval_ref: User2026-09-07 approved per-channel suite; PC054 protocol frozen before
     EXP238 final scores
@@ -53,9 +53,10 @@ experiments:
     source_branch: codex/exp-0239-omniquant-per-channel
     approved_on: '2026-09-07'
     started_on: '2026-09-07'
+    completed_on: '2026-09-07'
   evidence:
     protocol: PC054
-    current_stage: twenty_epoch_LWC_export
+    current_stage: completed
     device_speed: N/A_software_only
     baseline_promoted: false
     upstream_commit: feffe8ea87d80f7bb57b6e25e7cff9dc950fcc14
@@ -64,6 +65,83 @@ experiments:
     training_source_head: 0f48739bfc7ecf6fb6e3a74a19ad75d9c4f99d73
     reporting_source_head: ae18bbfbcaac3fceab1a7a3a642c63001ae66f2d
     final_report_command: scripts/report_exp0239.py after evaluator report with-omni
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0239
+    source_head: ae18bbfbcaac3fceab1a7a3a642c63001ae66f2d
+    evidence_ledger_sha256: 87f73c7714cbcec039c3ab21b76acd033a658cfc8a1c1970967963b9b37e8d62
+    artifact_ledger_sha256: 1f81e853f2a318c9c232a5f1e3e47236d3eaeec9d212a247a5f9d3b01c080e1e
+    report: docs/experiments/EXP-0239-RESULTS.md
+    report_sha256: 1f2de46caa2b2541955b61bcf5f52d61f914e39737a3c8d9994c2beeb135a09a
+    full_profiling_report: docs/experiments/EXP-0239-PROFILE.md
+    full_profiling_report_sha256: 5f07b69d87a44c2826a8d7d8ee07c5a30cbd894d294804803a42455e0560f17a
+    final_ppl: &id001
+      F: 25.64107487285652
+      C64: 27.310095706640933
+      AR-P: 28.380997576729776
+      Qronos: 29.389286840493657
+      OmniQuant: 32.49901981094289
+    final_quality_status:
+      C64: fail
+      AR-P: fail
+      Qronos: fail
+      OmniQuant: fail
+    final_overall:
+      ppl: *id001
+      vs_F16:
+        C64:
+          ppl_ratio: 1.065091687538857
+          ratio_ci95:
+          - 1.0512861457704874
+          - 1.0797726281427358
+          limit: 1.05
+          point_pass: false
+          confident_pass: false
+        AR-P:
+          ppl_ratio: 1.1068567802816145
+          ratio_ci95:
+          - 1.0915264190887108
+          - 1.1232288895024403
+          limit: 1.05
+          point_pass: false
+          confident_pass: false
+        Qronos:
+          ppl_ratio: 1.1461799860662227
+          ratio_ci95:
+          - 1.1280195591107232
+          - 1.1661328973296374
+          limit: 1.05
+          point_pass: false
+          confident_pass: false
+        OmniQuant:
+          ppl_ratio: 1.2674593390523636
+          ratio_ci95:
+          - 1.2419490219265508
+          - 1.2940239740743122
+          limit: 1.05
+          point_pass: false
+          confident_pass: false
+      vs_C64:
+        AR-P:
+          ppl_ratio: 1.0392126736424594
+          ratio_ci95:
+          - 1.023350243281365
+          - 1.0554381788783007
+        Qronos:
+          ppl_ratio: 1.0761326930592605
+          ratio_ci95:
+          - 1.0588420043762412
+          - 1.0947549038740556
+        OmniQuant:
+          ppl_ratio: 1.1900002167711254
+          ratio_ci95:
+          - 1.1676194256070724
+          - 1.2137955623411123
+    OmniQuant_manifest_sha256: 33cc1cf231c70986a47a5f24f9c3abe61f9680b375a13e514fe7645f7553bd1e
+    all196_pack_roundtrip: true
+    all28_native_adapter_and_packed_replay: true
+    whole_frozen_state_exact: true
+    optimizer_successful_steps: 35780
+    gradient_scaler_skipped_updates: 60
+    next_direction: discussion_only_suite_complete
 - id: EXP-0238
   slug: qronos-per-channel
   title: Official Qronos on matched per-output-channel W4A16
