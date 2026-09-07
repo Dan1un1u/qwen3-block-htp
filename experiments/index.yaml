@@ -39,6 +39,7 @@ experiments:
   - codex/exp-0239-omniquant-per-channel
   source_commits:
   - 8980930c4d38fddfe9b72866dba70b015726f620
+  - 0f48739bfc7ecf6fb6e3a74a19ad75d9c4f99d73
   variants:
   - F
   - C64
@@ -53,9 +54,12 @@ experiments:
     started_on: '2026-09-07'
   evidence:
     protocol: PC054
-    current_stage: setup
+    current_stage: twenty_epoch_LWC_export
     device_speed: N/A_software_only
     baseline_promoted: false
+    upstream_commit: feffe8ea87d80f7bb57b6e25e7cff9dc950fcc14
+    quantization_oracle: pass_independent_numpy_gradients_and_packing
+    shared_dataset_freeze_sha256: 4b18d25bd2cef4fe059fa7bc79c09007ed0e9129d51b9cd072f3c9ab4a60ff2d
 - id: EXP-0238
   slug: qronos-per-channel
   title: Official Qronos on matched per-output-channel W4A16
