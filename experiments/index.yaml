@@ -40,6 +40,7 @@ experiments:
   source_commits:
   - 8980930c4d38fddfe9b72866dba70b015726f620
   - 0f48739bfc7ecf6fb6e3a74a19ad75d9c4f99d73
+  - ae18bbfbcaac3fceab1a7a3a642c63001ae66f2d
   variants:
   - F
   - C64
@@ -60,6 +61,9 @@ experiments:
     upstream_commit: feffe8ea87d80f7bb57b6e25e7cff9dc950fcc14
     quantization_oracle: pass_independent_numpy_gradients_and_packing
     shared_dataset_freeze_sha256: 4b18d25bd2cef4fe059fa7bc79c09007ed0e9129d51b9cd072f3c9ab4a60ff2d
+    training_source_head: 0f48739bfc7ecf6fb6e3a74a19ad75d9c4f99d73
+    reporting_source_head: ae18bbfbcaac3fceab1a7a3a642c63001ae66f2d
+    final_report_command: scripts/report_exp0239.py after evaluator report with-omni
 - id: EXP-0238
   slug: qronos-per-channel
   title: Official Qronos on matched per-output-channel W4A16
