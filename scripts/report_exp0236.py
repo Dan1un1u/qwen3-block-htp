@@ -57,6 +57,8 @@ def main():
   commands.append(dict(command=c['command'],source_head=c['source_head'],entry_script_sha256=entry,returncode=c['returncode'],elapsed_s=c['elapsed_s']))
  assert len(commands)==len(list((RESULT/'commands').glob('*.log')))
  write('stage_execution_provenance.json',dict(commands=commands,all_source_archives_verified=True))
+ import platform,sys,torch,transformers
+ write('environment_at_closure.json',dict(cpu_python=sys.version,cpu_torch=torch.__version__,cpu_transformers=transformers.__version__,cpu_numpy=np.__version__,platform=platform.platform(),gpu= json.loads((RESULT/'environment.json').read_text()),CPU_export_threads=16,CPU_environment_role='same_unchanged_environment_path_as_retained_export_commands_at_closure'))
  head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=SOURCE,text=True).strip();archive=OUTPUT/'artifacts'/head/'source.tar';archive.parent.mkdir(parents=True,exist_ok=True)
  if not archive.exists():subprocess.run(['git','archive','--format=tar','-o',str(archive),head],cwd=SOURCE,check=True)
  final=summaries['final'];old=summaries['PC052'];dev=summaries['development']
