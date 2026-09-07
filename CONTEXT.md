@@ -1706,3 +1706,7 @@ User authorizes G64 LM-head repair and defers mixed precision. Freeze G64 transf
 EXP236 G64 W4-only head repair complete. Fresh1024documents/16384targets: F24.76313863,G6426.16295892,P6425.63928121,H6425.64032728. P64/F+3.538092% (95%CI2.389345..4.703420%),H64/F+3.542316% (CI2.389231..4.704068%); both pass overall5% and all language/domain/cell10% upper-CI gates. P64/G64 PPL reduction2.001600%,H64/G64 1.997601%, pairedCI supports both improvements. Same exposedPC052 panel F25.06079734,G6426.48780180,P6425.98211061,H6425.90275644; historicalpaired regression only. No consistent independent benefit from headgroup128 over repairedperchannel; no automatic modelselection/promotion. OnlyLMhead changed,allW4; no mixedprecision/DSP/W4A8 work.
 
 Both151936x2048head NumPy pack/dequant checks exact, fourwhole-state audits and108independent PPLreductions pass;52evidencefiles/15artifacts fullyverified. Alljobs complete;activeNone,next237unapproved. CurrenthandoffSESSION_HANDOFF_EXP0236.md.
+
+## PC054 approved: cleanup then per-channel baselines
+
+EXP237 inventories and retires user-authorized obsolete large payloads. Historical result/hash ledgers stay immutable; retired payload availability is recorded separately. Then approved Qronos EXP238 and OmniQuant EXP239, per-output-channel W4 without online transformations or grouping, host-only first. Other recipes remain frozen.

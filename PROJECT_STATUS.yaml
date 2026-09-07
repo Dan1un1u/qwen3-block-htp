@@ -19,8 +19,8 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 237
+  active_experiment: EXP-0237
+  next_experiment_number: 238
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -838,7 +838,7 @@ current_scope:
   device_execution_state: ready
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  current_handoff: SESSION_HANDOFF_EXP0236.md
+  current_handoff: SESSION_HANDOFF_EXP0237.md
   active_recipe_specialization: null
   last_completed_experiment_contract:
     id: EXP-0236
@@ -7106,12 +7106,14 @@ current_scope:
     next_action: Discuss W4A8 reproducibility and same-W4-weight activation attribution;
       no new experiment authorized
   next_research_direction:
-    status: discussion_only_EXP0236_complete
-    pending: []
+    status: approved_PC054
+    sequence:
+    - EXP-0237 artifact retirement
+    - EXP-0238 Qronos per-channel
+    - EXP-0239 OmniQuant per-channel
     W4A8: frozen
-    mixed_precision: deferred_by_user
-    discussion: docs/experiments/EXP-0236-RESULTS.md
-    new_experiment_authorized: false
+    mixed_precision: deferred
+    new_experiment_authorized: true
   latest_w4f16_independent_tool_result:
     id: EXP-0233
     source_head: 24a976887f9da144e49de2774104a3e72ddf6ddd
