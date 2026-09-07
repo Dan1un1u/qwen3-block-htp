@@ -49,6 +49,8 @@ def run(cell,repeat,tag,dump=False):
  if cell in ['lpbq32','scalar','unit_multiplier','unit_scalar']:
   package='unit_multiplier' if cell.startswith('unit') else 'lpbq32'
   env['QBH_LPBQ32']='2' if cell in ['scalar','unit_scalar'] else '1'
+ if cell=='matched':
+  env.update({'QBH_W4U8_DECODE_DIRECT_N_QKV_BATCH_N_TILES':'4','QBH_W4U8_DECODE_DIRECT_N_Q_BATCH_N_TILES':'0','QBH_W4U8_DECODE_DIRECT_N_GATE_UP_BATCH_N_TILES':'8','QBH_W4U8_DECODE_DIRECT_N_DOWN_BATCH_N_TILES':'2','QBH_W4U8_DECODE_O_BATCH_N_TILES':'8','QBH_W4U8_DECODE_DIRECT_N_DOWN_SINGLE_DMA':'0','QBH_W4U8_DECODE_DIRECT_N_O_SINGLE_DMA':'0'})
  if cell!='control':
   for key in ['QBH_W4U8_DECODE_DIRECT_N_GATE_UP_CONTINUOUS','QBH_W4U8_DECODE_DIRECT_N_O_GATE_PREFETCH','QBH_W4U8_DECODE_DIRECT_N_GATE_UP_SWIGLU_STREAM']:env[key]='0'
  path=RESULT/tag;path.mkdir(exist_ok=False)
