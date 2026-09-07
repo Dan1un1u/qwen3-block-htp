@@ -39,6 +39,11 @@ experiments:
   - codex/exp-0236-g64-w4-head-repair
   source_commits:
   - 6658f53550cafae5a85a2488f1f69673ea1e4fb1
+  - 89a19c69d51c0ce33687b5bfa40e1fdaad1795ba
+  - 48b59bf01218ae9e0f727589f5b06105f519799e
+  - dc0e7bdc3010b1fb89b672de3c66a017876af971
+  - 045b59c5288133c91a72a0cceb09dacf5b46d178
+  - 59f2cfb0ba1ce7f7ed58401bf4b7dc8fbab7ddd9
   variants:
   - F
   - G64
@@ -52,9 +57,13 @@ experiments:
     started_on: '2026-09-07'
   evidence:
     protocol: PC053
-    current_stage: registered
+    current_stage: P64_export_running_session14592_then_H64_evaluate_summarize
     other_recipes: frozen
     mixed_precision: false
+    dataset_freeze_sha256: dd0cc91f86b074efdf0205594bef58f2e78b56ccc39d683847b15d1e8c643920
+    independent_dataset_audit: pass_1024_documents
+    head_input_replay: pass_four_windows_NRMSE_0.00169_to_0.002372
+    quantizer_oracles: pass
 - id: EXP-0235
   slug: w4f16-c64-sensitivity
   title: W4F16 C64 attention MLP and LM-head FP16 sensitivity
