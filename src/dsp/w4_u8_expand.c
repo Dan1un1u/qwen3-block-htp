@@ -388,7 +388,6 @@ __attribute__((noinline)) void qbh_copy_hmx_bias_hvx_relaxed(
 __attribute__((noinline)) void qbh_expand_lpbq32_to_s8(
     const uint8_t *packed_w4, int8_t *expanded_s8,
     uint32_t k_tiles, uint32_t mode) {
-    uint8_t metadata_scratch[128] __attribute__((aligned(128))) = {0};
     static const uint8_t repeat_index[128] __attribute__((aligned(128))) = {0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,9,9,9,9,9,9,9,9,10,10,10,10,10,10,10,10,11,11,11,11,11,11,11,11,12,12,12,12,12,12,12,12,13,13,13,13,13,13,13,13,14,14,14,14,14,14,14,14,15,15,15,15,15,15,15,15};
     static const uint8_t high_select[128] __attribute__((aligned(128))) = {0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1};
     const HVX_Vector v_zero = Q6_V_vzero();
@@ -414,10 +413,13 @@ __attribute__((noinline)) void qbh_expand_lpbq32_to_s8(
         return;
     }
     for (uint32_t kt = 0; kt < k_tiles; ++kt) {
-        const uint8_t *multipliers = packed_w4 + k_tiles * 512U + kt * 16U;
-        memcpy(metadata_scratch, multipliers, 16U);
-        const HVX_Vector v_table = Q6_V_lo_W(Q6_W_vshuff_VVR(
-            v_zero, *(const HVX_Vector *)metadata_scratch, -1));
+        /* All supported K tile counts are multiples of eight. Read one
+         * aligned metadata vector wholly inside the payload and rotate its
+         * selected 16-byte group into lookup position; no scalar VTCM loads. */
+        const HVX_Vector v_metadata = *(const HVX_Vector *)(packed_w4 +
+            k_tiles * 512U + (kt & ~7U) * 16U);
+        const HVX_Vector v_group = Q6_V_vror_VR(v_metadata, (kt & 7U) * 16U);
+        const HVX_Vector v_table = Q6_V_lo_W(Q6_W_vshuff_VVR(v_zero, v_group, -1));
         const HVX_Vector v_m = Q6_Vb_vlut32_VbVbR_nomatch(v_repeat, v_table, 0);
         const HVX_Vector v_scales = Q6_Vb_vadd_VbVb(Q6_V_vmux_QVV(q_low,
             Q6_V_vand_VV(v_m, v_nibble_mask), Q6_Vub_vlsr_VubR(v_m, 4)), Q6_Vb_vsplat_R(1));
