@@ -25,6 +25,8 @@ def main():
   r=np.load(root/'selection.npz');assert r['choice'].shape==(151936,)
   assert np.array_equal(r['choice'],r['candidate_output_sse'].argmin(1));assert np.array_equal(r['selected_output_sse'],r['candidate_output_sse'][np.arange(151936),r['choice']])
   assert np.isfinite(r['scale']).all() and (r['scale']>0).all()
+ for key in ['factor','head_inputs_sha256','original_FP32_head_sha256','original_shard_sha256','quantizer_source']:
+  assert packages['P64'][key]==packages['H64'][key],('matched head inputs/solver provenance',key)
  for a in audit['audits']:
   expected=dict(baseline)
   if a['variant']!='G64':expected['lm_head.weight']=packages[a['variant']]['dequant_FP16_sha256']
