@@ -1,5 +1,3 @@
-# EXP0238 completed
-
 # EXP0238 Qronos per-channel results
 
 Official Brevitas v0.13.0 Qronos on the fixed signed[-7,7] per-output-channel grid;64K calibration tokens; identical frozen C64 W4 LM head. Host-only packed FP16 evaluation;1024 previously unexposed documents,16384 targets, M64+16. C64 is the project-enhanced GPTQ control, not unmodified upstream GPTQ.

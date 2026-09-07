@@ -1714,3 +1714,5 @@ EXP237 inventories and retires user-authorized obsolete large payloads. Historic
 EXP0237 closed: 6436 obsolete payloads retired, 162.195 GiB actual space reclaimed; all protected hashes passed. Read docs/experiments/EXP-0237-RESULTS.md and retirement availability ledgers before attempting old model replay. Qronos then OmniQuant are approved and predeclared.
 
 Active EXP0238 Qronos per-channel setup; current handoff SESSION_HANDOFF_EXP0238.md. PC054 authorizes EXP0239 OmniQuant afterward. Both protocols frozen before suite final scoring.
+
+EXP0238 closed: canonicalF PPL25.641075,C6427.310096,AR-P28.380998,Qronos29.389287 on PC054. Qronos fails quality but all implementation/packing gates pass. No retuning; proceed approved EXP0239 OmniQuant.

@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0238
+  active_experiment: null
   next_experiment_number: 239
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -832,18 +832,18 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0237
-  last_completed_source_commit: 2141e6f94fcdfb0679dc2f37c089e68814b82a07
+  last_completed_experiment: EXP-0238
+  last_completed_source_commit: 8980930c4d38fddfe9b72866dba70b015726f620
   provisional_source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
   device_execution_state: ready
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
   current_handoff: SESSION_HANDOFF_EXP0238.md
   active_recipe_specialization: null
-  last_completed_experiment_contract: docs/experiments/EXP-0237.md
+  last_completed_experiment_contract: docs/experiments/EXP-0238.md
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0237
+  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0238
   latest_w4f16_output_scale_result:
     id: EXP-0224
     execution_state: completed
@@ -7257,3 +7257,13 @@ current_scope:
     availability_ledger: /mnt/d/llm_exp/results/qwen3-block-htp/exp0237/inventory.json
     legacy_availability_ledger: /mnt/d/llm_exp/results/qwen3-block-htp/exp0237/legacy_inventory.json
     report: docs/experiments/EXP-0237-RESULTS.md
+  latest_per_channel_reference_result:
+    experiment: EXP-0238
+    ppl:
+      F: 25.64107487285652
+      C64: 27.310095706640933
+      AR-P: 28.380997576729776
+      Qronos: 29.389286840493657
+    report: docs/experiments/EXP-0238-RESULTS.md
+    conclusion: C64_better_than_Qronos_and_AR_P_on_fixed_PC054_panel
+    baseline_promoted: false

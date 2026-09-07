@@ -29,9 +29,9 @@ experiments:
   title: Official Qronos on matched per-output-channel W4A16
   parent: EXP-0237
   record: docs/experiments/EXP-0238.md
-  execution_state: running
-  evidence_validity: pending
-  local_gate: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
   adoption_status: pending
   approval_ref: User2026-09-07 starts approved per-channel baseline suite after cleanup;
     PC054
@@ -39,6 +39,12 @@ experiments:
   - codex/exp-0238-qronos-per-channel
   source_commits:
   - 2141e6f94fcdfb0679dc2f37c089e68814b82a07
+  - 9e8c11d709530bfd5a658a1494dc38227e4e532d
+  - 90a347932f0f5943394cdc026694af120b47055e
+  - 67caae780215e8b8dc69bbdb6001603076882d61
+  - 2d6bb133cb62e3e8aea1d1ccbb1c543fe9bc99f0
+  - 56f085713b4c4983ea9ed9a7a7676a49fefad6d4
+  - 8980930c4d38fddfe9b72866dba70b015726f620
   variants:
   - F
   - C64
@@ -50,9 +56,10 @@ experiments:
     source_branch: codex/exp-0238-qronos-per-channel
     approved_on: '2026-09-07'
     started_on: '2026-09-07'
+    completed_on: '2026-09-07'
   evidence:
     protocol: PC054
-    current_stage: Qronos_export
+    current_stage: completed
     device_speed: N/A_software_only
     other_recipes: frozen
     baseline_promoted: false
@@ -60,6 +67,27 @@ experiments:
     independent_data_audit: pass_1024_documents_16384_targets
     solver_oracle: pass_mismatched_and_matched_dense_reference
     upstream_commit: f6c8e2e60649249187c0fa94adec6262aeb029cb
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0238
+    source_head: 8980930c4d38fddfe9b72866dba70b015726f620
+    evidence_ledger_sha256: a111f2fe8c4f684da1d90d21e678d87cfe6c962b3d39db6d141075c37ce0057e
+    artifact_ledger_sha256: 30bcb00d7037c73c6b68009539f11e461d4e86249d6d3927492e68250821d821
+    report: docs/experiments/EXP-0238-RESULTS.md
+    report_sha256: c4beed7162e54f5dec505f021c107c5ed0e93e00489eecd45927996dc1db30dc
+    full_profiling_report: docs/experiments/EXP-0238-PROFILE.md
+    full_profiling_report_sha256: 43e9f3489661766763d34e4b98772505ad4cdd3e18c4522316cc2cc116e19146
+    final_ppl:
+      F: 25.64107487285652
+      C64: 27.310095706640933
+      AR-P: 28.380997576729776
+      Qronos: 29.389286840493657
+    final_quality_status:
+      C64: fail
+      AR-P: fail
+      Qronos: fail
+    Qronos_manifest_sha256: 40164c8b2aaddd63d9891e5a249987ff2a4e3b0109f0a1fc6696def381dfdbcb
+    all196_pack_roundtrip: true
+    all28_block_replay: true
+    whole_state_unchanged: true
 - id: EXP-0237
   slug: artifact-retirement
   title: User-authorized obsolete weight and quantization artifact retirement
