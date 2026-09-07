@@ -57,13 +57,18 @@ experiments:
     started_on: '2026-09-07'
   evidence:
     protocol: PC053
-    current_stage: P64_export_running_session14592_then_H64_evaluate_summarize
+    current_stage: all_exports_frozen_GPU_evaluation_running_session14592
     other_recipes: frozen
     mixed_precision: false
     dataset_freeze_sha256: dd0cc91f86b074efdf0205594bef58f2e78b56ccc39d683847b15d1e8c643920
     independent_dataset_audit: pass_1024_documents
     head_input_replay: pass_four_windows_NRMSE_0.00169_to_0.002372
     quantizer_oracles: pass
+    P64_manifest_sha256: 6386a4d00e5bcad538da1bb8ea52a436e2add479d4467cbbf202acadd52ab1b1
+    H64_manifest_sha256: 64e9bc23b8c9b0405117cd8b1aa1b32e9720a6810f7930fa126a33dd95729ad2
+    all_head_packing: both_all151936rows_exact
+    final_test_scoring_started: true
+    no_further_export_or_tuning: true
 - id: EXP-0235
   slug: w4f16-c64-sensitivity
   title: W4F16 C64 attention MLP and LM-head FP16 sensitivity
