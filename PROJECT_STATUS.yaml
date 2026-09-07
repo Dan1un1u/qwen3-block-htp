@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0236
+  active_experiment: null
   next_experiment_number: 237
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -140,8 +140,8 @@ current_scope:
     auxiliary: short_task_content_v2
     diagnostic_only: short_task_strict_v1_format_adherence
     numerical_acceptance_threshold: PC050_EXP0229_overall_5percent_per_language_domain_10percent
-    next_direction: docs/PC052_RESULTS.md
-    new_experiment_authorized: EXP-0236
+    next_direction: docs/experiments/EXP-0236-RESULTS.md
+    new_experiment_authorized: none_EXP0236_complete
   latest_short_task_scoring_audit:
     experiment: EXP-0228
     execution_state: completed
@@ -832,8 +832,8 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0235
-  last_completed_source_commit: 6658f53550cafae5a85a2488f1f69673ea1e4fb1
+  last_completed_experiment: EXP-0236
+  last_completed_source_commit: bf7b7770241c5d0e4a62a21bc9b1b19916286f0f
   provisional_source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
   device_execution_state: ready
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
@@ -841,15 +841,18 @@ current_scope:
   current_handoff: SESSION_HANDOFF_EXP0236.md
   active_recipe_specialization: null
   last_completed_experiment_contract:
-    id: EXP-0235
-    execution_scope: host_only_C64_FP16_sensitivity
+    id: EXP-0236
+    execution_scope: host_only_G64_W4_head_repair
     correctness_gate: pass
-    quality_gate: diagnostic_only_no_recipe_acceptance
+    quality_gate: &id001
+      G64: fail
+      P64: pass
+      H64: pass
     speed_gate: N/A_no_DSP
     other_recipes: frozen
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0235
+  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0236
   latest_w4f16_output_scale_result:
     id: EXP-0224
     execution_state: completed
@@ -7103,11 +7106,12 @@ current_scope:
     next_action: Discuss W4A8 reproducibility and same-W4-weight activation attribution;
       no new experiment authorized
   next_research_direction:
-    status: approved_EXP0236_W4_only_head
+    status: discussion_only_EXP0236_complete
     pending: []
     W4A8: frozen
     mixed_precision: deferred_by_user
-    new_experiment_authorized: true
+    discussion: docs/experiments/EXP-0236-RESULTS.md
+    new_experiment_authorized: false
   latest_w4f16_independent_tool_result:
     id: EXP-0233
     source_head: 24a976887f9da144e49de2774104a3e72ddf6ddd
@@ -7164,3 +7168,78 @@ current_scope:
     - ATT_L04
     conditional_nonadditive: true
     no_deployable_recipe_selected: true
+  latest_w4f16_head_repair_result:
+    id: EXP-0236
+    source_head: bf7b7770241c5d0e4a62a21bc9b1b19916286f0f
+    evidence_ledger_sha256: 471f91da41c94fffc1a454c095e73fb9e2cf7d3801b3c3c449cd105f5b2bb084
+    manifest_sha256:
+      P64: 6386a4d00e5bcad538da1bb8ea52a436e2add479d4467cbbf202acadd52ab1b1
+      H64: 64e9bc23b8c9b0405117cd8b1aa1b32e9720a6810f7930fa126a33dd95729ad2
+    final_ppl:
+      F: 24.763138630742063
+      G64: 26.162958920745023
+      P64: 25.639281209350067
+      H64: 25.640327276555595
+    final_overall:
+      nll:
+        F: 3.2093562019290403
+        G64: 3.264344628783874
+        P64: 3.244125597702805
+        H64: 3.2441663962672465
+      ppl:
+        F: 24.763138630742063
+        G64: 26.162958920745023
+        P64: 25.639281209350067
+        H64: 25.640327276555595
+      vs_F16:
+        G64:
+          delta_nll: 0.05498842685483396
+          ppl_ratio: 1.056528387248342
+          ratio_ci95:
+          - 1.0440676300698968
+          - 1.0692339441373473
+          limit: 1.05
+          point_pass: false
+          confident_pass: false
+          straddles_gate: true
+        P64:
+          delta_nll: 0.0347693957737647
+          ppl_ratio: 1.0353809180521374
+          ratio_ci95:
+          - 1.0238934509440325
+          - 1.0470341988066219
+          limit: 1.05
+          point_pass: true
+          confident_pass: true
+          straddles_gate: false
+        H64:
+          delta_nll: 0.0348101943382062
+          ppl_ratio: 1.0354231609689635
+          ratio_ci95:
+          - 1.0238923137184677
+          - 1.0470406786068276
+          limit: 1.05
+          point_pass: true
+          confident_pass: true
+          straddles_gate: false
+      vs_G64:
+        P64:
+          ppl_ratio: 0.9799840028422885
+          ratio_ci95:
+          - 0.9751757679382491
+          - 0.9848574775276872
+        H64:
+          ppl_ratio: 0.980023985598394
+          ratio_ci95:
+          - 0.9751369481041071
+          - 0.9848582652379727
+    quality_status: *id001
+    PC052_regression_ppl:
+      F: 25.06079733545104
+      G64: 26.48780180409271
+      P64: 25.98211061136225
+      H64: 25.902756435234917
+    test_scope: independent1024documents_M64plus16_GPU_FP16_software
+    only_head_changed: true
+    mixed_precision: false
+    baseline_promoted: false

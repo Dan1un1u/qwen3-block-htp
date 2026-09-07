@@ -1700,3 +1700,9 @@ EXP235 fixed C64 sensitivity complete: full1024doc/16384target F25.060797,C6427.
 ## EXP0236 approved W4-only G64 head repair
 
 User authorizes G64 LM-head repair and defers mixed precision. Freeze G64 transformer, compare fresh per-channel and group128 W4 heads using actual G64 64K calibration. New disjoint fixed finalpanel, no PPL tuning, otherrecipes/runtime frozen; seeEXP-0236.md andSESSION_HANDOFF_EXP0236.md. Corrected generic handoff pointer previously stale atEXP234; historical records unchanged.
+
+## EXP0236 completed: W4-only G64 head repair
+
+EXP236 G64 W4-only head repair complete. Fresh1024documents/16384targets: F24.76313863,G6426.16295892,P6425.63928121,H6425.64032728. P64/F+3.538092% (95%CI2.389345..4.703420%),H64/F+3.542316% (CI2.389231..4.704068%); both pass overall5% and all language/domain/cell10% upper-CI gates. P64/G64 PPL reduction2.001600%,H64/G64 1.997601%, pairedCI supports both improvements. Same exposedPC052 panel F25.06079734,G6426.48780180,P6425.98211061,H6425.90275644; historicalpaired regression only. No consistent independent benefit from headgroup128 over repairedperchannel; no automatic modelselection/promotion. OnlyLMhead changed,allW4; no mixedprecision/DSP/W4A8 work.
+
+Both151936x2048head NumPy pack/dequant checks exact, fourwhole-state audits and108independent PPLreductions pass;52evidencefiles/15artifacts fullyverified. Alljobs complete;activeNone,next237unapproved. CurrenthandoffSESSION_HANDOFF_EXP0236.md.
