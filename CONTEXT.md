@@ -1720,3 +1720,6 @@ EXP0238 closed: canonicalF PPL25.641075,C6427.310096,AR-P28.380998,Qronos29.3892
 Active EXP0239 OmniQuant-LWC under the previously frozen PC054 protocol; current handoff SESSION_HANDOFF_EXP0239.md.
 
 PC054 suite completed at EXP0239. F16/C64/AR-P/Qronos/OmniQuant PPL25.641075/27.310096/28.380998/29.389287/32.499020 on identical independent panel. C64 stillbest+6.509%vsF16,allquantizedvariantsfail5%gate. Technicaloracles/packing/nativeparity/repeats pass; no more experiment authorized and no promotion. Current handoff SESSION_HANDOFF_EXP0239.md. Cleanup availability in EXP0237 remains authoritative.
+
+## LPBQ32 W4A8 feasibility
+PC055/EXP0240 authorizes one-layer performance validation of Qualcomm LPBQ4/8 group32. Integer group multipliers reconstruct S8 on a shared per-output-channel scale; this is distinct from unrestricted FP32 per-group scales. Stop before full-model if either complete-layer M64/M1 latency regresses >10%. Other recipes frozen.

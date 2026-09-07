@@ -24,6 +24,30 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0240
+  slug: w4a8-lpbq32-layer-gate
+  title: W4A8 Qualcomm LPBQ32 single-layer speed gate
+  parent: EXP-0239
+  record: docs/experiments/EXP-0240.md
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: candidate
+  approval_ref: User2026-09-07 LPBQ32 single-layer then conditional full-model; confirmed10percent
+    threshold
+  source_branches:
+  - codex/exp-0240-w4a8-lpbq32-layer-gate
+  source_commits:
+  - ae18bbfbcaac3fceab1a7a3a642c63001ae66f2d
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0240-w4a8-lpbq32-layer-gate
+    approved_on: '2026-09-07'
+    started_on: '2026-09-07'
+  evidence:
+    protocol: PC055
+    current_stage: implementation
+    baseline_promoted: false
 - id: EXP-0239
   slug: omniquant-per-channel
   title: OmniQuant LWC matched per-output-channel W4A16 reference
