@@ -29,21 +29,42 @@ experiments:
   title: User-authorized obsolete weight and quantization artifact retirement
   parent: EXP-0236
   record: docs/experiments/EXP-0237.md
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
-  adoption_status: not_applicable
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
+  adoption_status: pending
   approval_ref: User2026-09-07 clean legacy mllm and obsolete grouped/unused HTP payloads
     before baseline suite
   source_branches:
   - codex/exp-0237-artifact-retirement
   source_commits:
   - bf7b7770241c5d0e4a62a21bc9b1b19916286f0f
+  - a600188b81b5734ba334cdce983eb7f2544b8f32
+  - 2141e6f94fcdfb0679dc2f37c089e68814b82a07
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0237-artifact-retirement
     approved_on: '2026-09-07'
     started_on: '2026-09-07'
+    completed_on: '2026-09-07'
+  evidence:
+    experiment: EXP-0237
+    files_deleted: 6436
+    actual_free_increase_bytes: 174155087872
+    free_before: 52629528576
+    free_after: 226784616448
+    all_protected_hashes_match: true
+    protected_packages: 12
+    protected_manifest_entries: 24012
+    source_head: 2141e6f94fcdfb0679dc2f37c089e68814b82a07
+    scope: payload_retirement_only_no_model_or_device_execution
+    historical_evidence_unchanged: true
+    next_approved:
+    - EXP-0238 Qronos
+    - EXP-0239 OmniQuant
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0237
+    evidence_ledger_sha256: 9ea8741d9295f8cd258aebc689148bd147fa78fe112c3dc1e0cbb501487c1ab2
+    report: docs/experiments/EXP-0237-RESULTS.md
 - id: EXP-0236
   slug: g64-w4-head-repair
   title: G64 W4-only LM head recalibration and group128 repair

@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0237
+  active_experiment: null
   next_experiment_number: 238
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -832,27 +832,18 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: qwen3_real_token_input_embedding_layers0_27_final_norm_streaming_lm_head_greedy_token_feedback
-  last_completed_experiment: EXP-0236
-  last_completed_source_commit: bf7b7770241c5d0e4a62a21bc9b1b19916286f0f
+  last_completed_experiment: EXP-0237
+  last_completed_source_commit: 2141e6f94fcdfb0679dc2f37c089e68814b82a07
   provisional_source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
   device_execution_state: ready
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
   current_handoff: SESSION_HANDOFF_EXP0237.md
   active_recipe_specialization: null
-  last_completed_experiment_contract:
-    id: EXP-0236
-    execution_scope: host_only_G64_W4_head_repair
-    correctness_gate: pass
-    quality_gate: &id001
-      G64: fail
-      P64: pass
-      H64: pass
-    speed_gate: N/A_no_DSP
-    other_recipes: frozen
+  last_completed_experiment_contract: docs/experiments/EXP-0237.md
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0236
+  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0237
   latest_w4f16_output_scale_result:
     id: EXP-0224
     execution_state: completed
@@ -7235,7 +7226,10 @@ current_scope:
           ratio_ci95:
           - 0.9751369481041071
           - 0.9848582652379727
-    quality_status: *id001
+    quality_status:
+      G64: fail
+      P64: pass
+      H64: pass
     PC052_regression_ppl:
       F: 25.06079733545104
       G64: 26.48780180409271
@@ -7245,3 +7239,21 @@ current_scope:
     only_head_changed: true
     mixed_precision: false
     baseline_promoted: false
+  artifact_retirement:
+    experiment: EXP-0237
+    files_deleted: 6436
+    actual_free_increase_bytes: 174155087872
+    free_before: 52629528576
+    free_after: 226784616448
+    all_protected_hashes_match: true
+    protected_packages: 12
+    protected_manifest_entries: 24012
+    source_head: 2141e6f94fcdfb0679dc2f37c089e68814b82a07
+    scope: payload_retirement_only_no_model_or_device_execution
+    historical_evidence_unchanged: true
+    next_approved:
+    - EXP-0238 Qronos
+    - EXP-0239 OmniQuant
+    availability_ledger: /mnt/d/llm_exp/results/qwen3-block-htp/exp0237/inventory.json
+    legacy_availability_ledger: /mnt/d/llm_exp/results/qwen3-block-htp/exp0237/legacy_inventory.json
+    report: docs/experiments/EXP-0237-RESULTS.md

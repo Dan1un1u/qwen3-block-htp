@@ -1,5 +1,3 @@
-# EXP0237 completed
-
 # EXP0237 artifact-retirement results
 
 Deleted 6436 explicitly inventoried regular payload files. Actual D-drive free-space increase 174155087872 bytes (162.195 GiB); available space 49.015 -> 211.210 GiB. Main models cleanup 152.591 GiB; legacy mllm-v2 quantized weights 9.604 GiB. Logical byte sums count hardlinks; free-space change is measured separately.
