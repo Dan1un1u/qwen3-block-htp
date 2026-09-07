@@ -52,10 +52,14 @@ experiments:
     started_on: '2026-09-07'
   evidence:
     protocol: PC054
-    current_stage: setup
+    current_stage: Qronos_export
     device_speed: N/A_software_only
     other_recipes: frozen
     baseline_promoted: false
+    dataset_freeze_sha256: 4b18d25bd2cef4fe059fa7bc79c09007ed0e9129d51b9cd072f3c9ab4a60ff2d
+    independent_data_audit: pass_1024_documents_16384_targets
+    solver_oracle: pass_mismatched_and_matched_dense_reference
+    upstream_commit: f6c8e2e60649249187c0fa94adec6262aeb029cb
 - id: EXP-0237
   slug: artifact-retirement
   title: User-authorized obsolete weight and quantization artifact retirement

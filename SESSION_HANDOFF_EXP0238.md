@@ -1,3 +1,3 @@
-# EXP0238 active
+# EXP0238 Qronos export
 
-EXP237 cleanup completed and protected hashes verified. Source codex/exp-0238-qronos-per-channel. Read frozen EXP0238 and EXP0239 protocols. Setup official Brevitas v0.13.0 and fixed-grid/model adapters, freeze independent final panel and run oracles before Qronos export. Preserve F16/C64/AR-P and identical W4 head. No candidate/export/scoring yet; next OmniQuant already approved after closure.
+EXP237 cleanup completed (6436 files;162.194 GiB actual increase;all24012 protected hashes match). Official Brevitas v0.13.0 setup complete. Small-matrix mismatch/matched/diagonal oracle and all independent packing tests pass. Shared PC054 dataset frozen and independently audited:1024 documents/16384 targets, disjoint from all prior corpora through EXP236. Qronos export now starts; log results/exp0238/qronos_export.log. After export verify package then run shared evaluator F,C64,AR-P,Qronos, report/close EXP238; EXP239 OmniQuant protocol already frozen and approved. No final scoring yet.
