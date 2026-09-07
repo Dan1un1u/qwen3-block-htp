@@ -1875,7 +1875,13 @@ static int qbh_build_bias_words(
                     uint32_t physical =
                         ((input / 4U) * 32U + output) * 4U +
                         input % 4U;
-                    sum += qbh_decode_w4(tile, physical);
+                    int32_t multiplier = 1;
+                    if (desc->lpbq_mode != 0U) {
+                        const uint8_t *metadata = shared + desc->lpbq_weight_offset +
+                            (size_t)n_tile * k_tiles * 528U + k_tiles * 512U + k_tile * 16U;
+                        multiplier = ((metadata[output / 2U] >> ((output % 2U) * 4U)) & 15U) + 1U;
+                    }
+                    sum += qbh_decode_w4(tile, physical) * multiplier;
                 }
             }
             bias[(size_t)n_tile * 64U + output] =
@@ -4247,6 +4253,8 @@ int main(int argc, char **argv) {
     struct qbh_file_slot kv_cache_slots[2];
     struct qbh_file_slot kv_reference_slots[2];
     struct qbh_file_slot w4u8_lut_slot;
+    const uint32_t lpbq_mode = getenv("QBH_LPBQ32") != NULL ? (uint32_t)atoi(getenv("QBH_LPBQ32")) : 0U;
+    struct qbh_file_slot lpbq_slots[QBH_BLOCK_PROJECTION_COUNT] = {0};
     struct qbh_file_slot weight_slots[QBH_BLOCK_PROJECTION_COUNT];
     struct qbh_file_slot scale_slots[QBH_BLOCK_PROJECTION_COUNT];
     struct qbh_file_slot generation_token_slot;
@@ -5930,9 +5938,24 @@ int main(int argc, char **argv) {
         return 2;
     }
 
+    if (lpbq_mode != 0U && (lpbq_mode > 2U || variant != QBH_BLOCK_W4U8 ||
+        vertical_slice_mode != QBH_BLOCK_SLICE_DISABLED ||
+        w4u8_decode_projection_mode != QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
+        w4u8_decode_direct_n_mask != 63U ||
+        w4u8_decode_direct_n_gate_up_continuous != 0U ||
+        w4u8_decode_direct_n_o_gate_prefetch != 0U ||
+        w4u8_decode_direct_n_gate_up_swiglu_stream != 0U)) {
+        fprintf(stderr, "LPBQ32 requires single-layer direct-n mask63, non-streamed Gate/Up, mode1 SIMD or mode2 scalar audit\n");
+        return 2;
+    }
     for (uint32_t projection = 0;
          vertical_slice_mode == QBH_BLOCK_SLICE_DISABLED &&
          projection < QBH_BLOCK_PROJECTION_COUNT; ++projection) {
+        if (lpbq_mode != 0U) {
+            snprintf(file_name, sizeof(file_name), "%s_lpbq32.bin", qbh_projection_names[projection]);
+            if (qbh_prepare_slot(&lpbq_slots[projection], argv[1], file_name,
+                qbh_projection_k[projection] * qbh_projection_n[projection] / 64U * 33U, &cursor) != 0) return 2;
+        }
         uint32_t weight_bytes = variant == QBH_BLOCK_F16F16
             ? qbh_projection_k[projection] *
                   qbh_projection_n[projection] * sizeof(uint16_t)
@@ -6267,7 +6290,8 @@ int main(int argc, char **argv) {
     for (uint32_t projection = 0;
          vertical_slice_mode == QBH_BLOCK_SLICE_DISABLED &&
          projection < QBH_BLOCK_PROJECTION_COUNT; ++projection) {
-        if (qbh_read_slot(shared, &weight_slots[projection]) != 0 ||
+        if ((lpbq_mode != 0U && qbh_read_slot(shared, &lpbq_slots[projection]) != 0) ||
+            qbh_read_slot(shared, &weight_slots[projection]) != 0 ||
             (variant != QBH_BLOCK_F16F16 &&
              qbh_read_slot(shared, &scale_slots[projection]) != 0)) {
             goto cleanup;
@@ -6830,6 +6854,9 @@ int main(int argc, char **argv) {
             desc->n = qbh_projection_n[projection];
             desc->weight_offset = weight_slots[projection].offset;
             desc->weight_bytes = weight_slots[projection].expected_bytes;
+            desc->lpbq_mode = lpbq_mode;
+            desc->lpbq_weight_offset = lpbq_slots[projection].offset;
+            desc->lpbq_weight_bytes = lpbq_slots[projection].expected_bytes;
             if (variant != QBH_BLOCK_F16F16) {
                 desc->scale_offset = scale_slots[projection].offset;
                 desc->scale_bytes = scale_slots[projection].expected_bytes;

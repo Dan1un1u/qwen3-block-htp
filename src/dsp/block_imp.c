@@ -1442,6 +1442,7 @@ static int qbh_slice_layer_desc_valid(
                    desc->direct_n_weight_bytes != 0U) {
             return 0;
         }
+        if (desc->lpbq_mode || desc->lpbq_weight_offset || desc->lpbq_weight_bytes) return 0;
     }
     for (uint32_t index = 0U; index < QBH_BLOCK_QPARAM_COUNT; ++index) {
         if (!(layer->qparams[index].scale > 0.0f) ||
@@ -2603,6 +2604,17 @@ static int qbh_header_valid(const struct qbh_block_header *header,
                    desc->direct_n_weight_bytes != 0U) {
             return 0;
         }
+        if (desc->lpbq_mode != 0U) {
+            if (desc->lpbq_mode > 2U || header->variant != QBH_BLOCK_W4U8 ||
+                desc->lpbq_weight_bytes != (uint64_t)expected_weight * 33U / 32U ||
+                !qbh_range_valid(desc->lpbq_weight_offset, desc->lpbq_weight_bytes, shared_bytes) ||
+                desc->lpbq_mode != header->projections[0].lpbq_mode ||
+                header->w4u8_decode_projection_mode != QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
+                header->w4u8_decode_direct_n_mask != 63U ||
+                header->w4u8_decode_direct_n_gate_up_continuous != 0U ||
+                header->w4u8_decode_direct_n_o_gate_prefetch != 0U ||
+                header->w4u8_decode_direct_n_gate_up_swiglu_stream != 0U) return 0;
+        } else if (desc->lpbq_weight_offset || desc->lpbq_weight_bytes || header->projections[0].lpbq_mode) return 0;
     }
     for (uint32_t index = 0; index < QBH_BLOCK_QPARAM_COUNT; ++index) {
         if (!(header->qparams[index].scale > 0.0f) ||
@@ -4203,9 +4215,14 @@ static void qbh_w4u8_qkv_ring_expand_worker_run(
             asm volatile("pause(#8)" : : : "memory");
         }
         asm volatile("barrier" ::: "memory");
-        slot = batch_index % QBH_BLOCK_W4U8_QKV_RING_SLOTS;
+        slot = batch_index % state->slot_count;
         start = HAP_perf_get_qtimer_count();
-        qbh_unpack_w4_to_s8_hvx_relaxed(
+        if (state->batches[batch_index].desc->lpbq_mode != 0U) {
+            qbh_expand_lpbq32_to_s8(state->compressed_slots[slot] +
+                (size_t)tile * state->k_tiles * 528U,
+                (int8_t *)(state->expanded_slots[slot] + (size_t)tile * state->k_tiles * 1024U),
+                state->k_tiles, state->batches[batch_index].desc->lpbq_mode);
+        } else qbh_unpack_w4_to_s8_hvx_relaxed(
             state->compressed_slots[slot] +
                 (size_t)tile * state->k_tiles *
                     QBH_W4_PACKED_TILE_BYTES,
@@ -9048,6 +9065,70 @@ static uint32_t qbh_w4u8_qkvo_batch_tiles(
  * in the lane order consumed by HMX weight.n.  Two phase-safe VTCM slots let
  * the next packed-W4 DMA overlap the current HMX command; there is no HVX
  * W4->S8 materialization anywhere in this routine. */
+/* EXP0240: compressed LPBQ stays in DDR; expansion is entirely VTCM.
+ * Double-buffer DMA+HVX overlaps the previous integer HMX command. */
+static int qbh_run_w4u8_lpbq32_projection(
+    struct qbh_block_header *header, const uint8_t *shared,
+    const struct qbh_block_projection_desc *desc,
+    struct qbh_block_buffers *buffers, struct qbh_block_hmx_worker *worker,
+    const uint8_t *activation_tiles, uint8_t *output_tiles) {
+    struct qbh_dma_aligned_desc_1d dma[2] __attribute__((aligned(64)));
+    const uint32_t kt = desc->k / 32U, nt = desc->n / 32U;
+    const uint32_t batch = kt <= 64U ? 8U : 2U;
+    const uint32_t stride = kt * 528U;
+    uint8_t *packed[2] = {buffers->compressed_weight, buffers->compressed_weight_alt};
+    uint8_t *expanded[2] = {buffers->expanded_weight, buffers->expanded_weight_alt};
+    uint8_t *bias[2] = {buffers->scale_or_bias, buffers->scale_or_bias + 8U * QBH_HMX_BIAS_BYTES};
+    uint32_t previous_active = 0U;
+    uint64_t hmx_start = 0U;
+    for (uint32_t first = 0U, slot = 0U; first < nt; first += batch, slot ^= 1U) {
+        uint32_t count = nt - first < batch ? nt - first : batch;
+        uint64_t start = HAP_perf_get_qtimer_count();
+        int rc = qbh_dma_start_w4u8_batch_prefetch(dma, packed[slot],
+            shared + desc->lpbq_weight_offset + (size_t)first * stride,
+            count * stride, bias[slot], shared + desc->bias_offset + (size_t)first * QBH_HMX_BIAS_BYTES,
+            count * QBH_HMX_BIAS_BYTES);
+        if (rc == 0) rc = qbh_dma_wait_w4u8_batch_prefetch(dma);
+        header->weight_dma_ticks += HAP_perf_get_qtimer_count() - start;
+        if (rc != 0) {
+            if (previous_active) (void)qbh_hmx_wait(worker);
+            qbh_record_projection_failure(header, desc, first, 90U, rc);
+            return -1;
+        }
+        header->weight_ddr_read_bytes += (uint64_t)count * (stride + QBH_HMX_BIAS_BYTES);
+        header->weight_dma_descriptor_count += 2U;
+        start = HAP_perf_get_qtimer_count();
+        for (uint32_t tile = 0U; tile < count; ++tile)
+            qbh_expand_lpbq32_to_s8(packed[slot] + (size_t)tile * stride,
+                (int8_t *)(expanded[slot] + (size_t)tile * kt * 1024U), kt, desc->lpbq_mode);
+        if (desc == &header->projections[QBH_BLOCK_PROJ_O])
+            header->w4u8_qkvo_weight_expand_ticks += HAP_perf_get_qtimer_count() - start;
+        else header->w4u8_mlp_weight_expand_ticks += HAP_perf_get_qtimer_count() - start;
+        if (previous_active) {
+            start = HAP_perf_get_qtimer_count();
+            rc = qbh_hmx_wait(worker);
+            header->projection_hmx_wait_ticks += HAP_perf_get_qtimer_count() - start;
+            header->w4u8_qkvo_hmx_lifetime_ticks += HAP_perf_get_qtimer_count() - hmx_start;
+            if (rc != 0) return -1;
+            ++header->w4u8_qkvo_overlap_schedule_count;
+        }
+        hmx_start = HAP_perf_get_qtimer_count();
+        qbh_hmx_start(worker, QBH_BLOCK_HMX_U8S8, activation_tiles, expanded[slot], bias[slot],
+            output_tiles + (size_t)first * QBH_HMX_OUTPUT_BYTES, 1U, kt, count);
+        previous_active = 1U;
+        ++header->hmx_command_count;
+        header->hmx_u8s8_tile_pair_count += (uint64_t)kt * count;
+    }
+    if (previous_active) {
+        uint64_t start = HAP_perf_get_qtimer_count();
+        int rc = qbh_hmx_wait(worker);
+        header->projection_hmx_wait_ticks += HAP_perf_get_qtimer_count() - start;
+        header->w4u8_qkvo_hmx_lifetime_ticks += HAP_perf_get_qtimer_count() - hmx_start;
+        if (rc != 0) return -1;
+    }
+    return 0;
+}
+
 static int qbh_run_w4u8_direct_n_projection(
     struct qbh_block_header *header, const uint8_t *shared,
     const struct qbh_block_projection_desc *desc,
@@ -9055,6 +9136,9 @@ static int qbh_run_w4u8_direct_n_projection(
     struct qbh_block_hmx_worker *worker,
     const uint8_t *activation_tiles, uint8_t *output_tiles,
     uint32_t batch_tiles) {
+    if (desc != NULL && desc->lpbq_mode != 0U)
+        return qbh_run_w4u8_lpbq32_projection(header, shared, desc, buffers,
+            worker, activation_tiles, output_tiles);
     struct qbh_dma_aligned_desc_1d descriptors[3]
         __attribute__((aligned(64)));
     const uint32_t use_decode_phase_overlay =
@@ -9953,6 +10037,7 @@ static int qbh_run_w4u8_qkv_ring(
     state.generation = 1U;
     state.k_tiles = QBH_BLOCK_HIDDEN / QBH_HMX_INPUT_CHANNELS;
     state.direct_n_weights =
+        descs[0]->lpbq_mode == 0U &&
         header->w4u8_decode_projection_mode ==
             QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N &&
         (header->w4u8_decode_direct_n_mask &
@@ -9978,7 +10063,7 @@ static int qbh_run_w4u8_qkv_ring(
         state.tiles_per_batch != 32U) {
         return -1;
     }
-    state.slot_count = state.direct_n_weights != 0U &&
+    state.slot_count = descs[0]->lpbq_mode != 0U ? 2U : state.direct_n_weights != 0U &&
             state.tiles_per_batch >= 16U
         ? 2U : QBH_BLOCK_W4U8_QKV_RING_SLOTS;
     state.expected_batch_count =
@@ -10152,7 +10237,7 @@ static int qbh_run_w4u8_qkv_ring(
             &state.batches[batch_index];
         const uint32_t slot = batch_index % state.slot_count;
         const uint32_t compressed_tile_bytes =
-            state.k_tiles * QBH_W4_PACKED_TILE_BYTES;
+            state.k_tiles * (batch->desc->lpbq_mode != 0U ? 528U : QBH_W4_PACKED_TILE_BYTES);
         const uint32_t weight_bytes =
             batch->n_tiles * compressed_tile_bytes;
         const uint32_t bias_bytes =
@@ -10170,7 +10255,7 @@ static int qbh_run_w4u8_qkv_ring(
         if (qbh_dma_start_w4u8_batch_prefetch(
                 descriptors, state.compressed_slots[slot],
                 shared +
-                    (state.direct_n_weights != 0U
+                    (batch->desc->lpbq_mode != 0U ? batch->desc->lpbq_weight_offset : state.direct_n_weights != 0U
                          ? batch->desc->direct_n_weight_offset
                          : batch->desc->weight_offset) +
                     (size_t)batch->first_n_tile *

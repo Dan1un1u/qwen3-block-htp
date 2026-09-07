@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 
+void qbh_expand_lpbq32_to_s8(const uint8_t *packed, int8_t *out,
+                              uint32_t k_tiles, uint32_t mode);
+
 void qbh_expand_w4_to_s8_hvx(const uint8_t *packed_w4,
                              const uint8_t *channel_scales,
                              int8_t *expanded_s8, uint32_t k_tiles);
