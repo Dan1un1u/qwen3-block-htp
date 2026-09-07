@@ -95,7 +95,7 @@ def capture(block,x,kwargs,long):
  return saved[0]
 
 def export():
- preflight();up=upstream_verified();settings();torch.set_grad_enabled(False)
+ preflight();actual_head=__import__('subprocess').check_output(['git','rev-parse','HEAD'],cwd=S,text=True).strip();up=upstream_verified();settings();torch.set_grad_enabled(False)
  from data_exp0238 import frozen
  from data_exp0229 import verified
  import evaluate_exp0230 as old
@@ -164,6 +164,6 @@ def export():
  files={str(p.relative_to(root)):dict(sha256=sha(p),bytes=p.stat().st_size) for p in sorted(root.rglob('*')) if p.is_file()}
  manifest=dict(experiment='EXP-0238',variant='Qronos',format='software_linear_nibbles_FP32_scales',grid=[-7,7],group_size=-1,files=files,projections=records,upstream_commit=up['commit'],frozen_nontransformer=others,base_C64_manifest_sha256=sha(O.parent/'exp0230/C64/manifest.json'),head_policy='identical_frozen_C64_W4_head',calibration_sha256=sha(verified('exp0230','inputs/C64_calibration_u32.bin')))
  with (root/'manifest.json').open('x') as f:json.dump(manifest,f,indent=2);f.write('\n')
- write('Qronos/package.json',dict(root=str(root),manifest_sha256=sha(root/'manifest.json'),blocks=blocks,elapsed_s=time.monotonic()-start,source_head=__import__('subprocess').check_output(['git','rev-parse','HEAD'],cwd=S,text=True).strip()))
+ write('Qronos/package.json',dict(root=str(root),manifest_sha256=sha(root/'manifest.json'),blocks=blocks,elapsed_s=time.monotonic()-start,source_head=actual_head))
  print('QRONOS_EXPORT_COMPLETE',sha(root/'manifest.json'),flush=True)
 if __name__=='__main__':oracle() if sys.argv[1]=='oracle' else export()
