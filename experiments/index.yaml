@@ -24,6 +24,37 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0236
+  slug: g64-w4-head-repair
+  title: G64 W4-only LM head recalibration and group128 repair
+  parent: EXP-0235
+  record: docs/experiments/EXP-0236.md
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  approval_ref: User2026-09-07 validates G64 LM head repair; mixed precision explicitly
+    deferred
+  source_branches:
+  - codex/exp-0236-g64-w4-head-repair
+  source_commits:
+  - 6658f53550cafae5a85a2488f1f69673ea1e4fb1
+  variants:
+  - F
+  - G64
+  - P64
+  - H64
+  evidence_profile: host_only_G64_W4_head_repair
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0236-g64-w4-head-repair
+    approved_on: '2026-09-07'
+    started_on: '2026-09-07'
+  evidence:
+    protocol: PC053
+    current_stage: registered
+    other_recipes: frozen
+    mixed_precision: false
 - id: EXP-0235
   slug: w4f16-c64-sensitivity
   title: W4F16 C64 attention MLP and LM-head FP16 sensitivity

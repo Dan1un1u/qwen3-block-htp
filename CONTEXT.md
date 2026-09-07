@@ -1696,3 +1696,7 @@ Third PC052 phase registered after verified EXP234 closure. FreezeC64,61fixeddev
 ## EXP0235 completed; PC052 closed
 
 EXP235 fixed C64 sensitivity complete: full1024doc/16384target F25.060797,C6427.154144,ATT_ALL26.892944,MLP_ALL25.492364,HEAD26.457783. MLP restoration removes78.717%ofC64 excessNLL,head32.383%,attention12.048%; effects conditional/nonadditive. MLP-restored diagnostic is+1.722%vsF and passes allreference gates, but restores1.057Bweights and is not a deployable selectedrecipe. All61development variants andfivefixedfamily confirmations complete;65whole-state audits and594PPL reductions pass, finalC64sentinel exact.91evidencefiles/3sourcearchives independentlyverified. PC052 allthree complete, no newexperiment/promotion/W4A8 work authorized. G64 remainsquantized numericbest onsharedpanel+5.694%vsF, fails overall5%pointgate. See docs/PC052_RESULTS.md; C64 sensitivity cannot be assumed to transfer toG64.
+
+## EXP0236 approved W4-only G64 head repair
+
+User authorizes G64 LM-head repair and defers mixed precision. Freeze G64 transformer, compare fresh per-channel and group128 W4 heads using actual G64 64K calibration. New disjoint fixed finalpanel, no PPL tuning, otherrecipes/runtime frozen; seeEXP-0236.md andSESSION_HANDOFF_EXP0236.md. Corrected generic handoff pointer previously stale atEXP234; historical records unchanged.
