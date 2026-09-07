@@ -19,8 +19,8 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 239
+  active_experiment: EXP-0239
+  next_experiment_number: 240
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -141,7 +141,7 @@ current_scope:
     diagnostic_only: short_task_strict_v1_format_adherence
     numerical_acceptance_threshold: PC050_EXP0229_overall_5percent_per_language_domain_10percent
     next_direction: docs/experiments/EXP-0236-RESULTS.md
-    new_experiment_authorized: EXP0238_Qronos_then_EXP0239_OmniQuant_PC054
+    new_experiment_authorized: EXP0239_OmniQuant_PC054
   latest_short_task_scoring_audit:
     experiment: EXP-0228
     execution_state: completed
@@ -838,7 +838,7 @@ current_scope:
   device_execution_state: ready
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  current_handoff: SESSION_HANDOFF_EXP0238.md
+  current_handoff: SESSION_HANDOFF_EXP0239.md
   active_recipe_specialization: null
   last_completed_experiment_contract: docs/experiments/EXP-0238.md
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
@@ -7097,7 +7097,7 @@ current_scope:
     next_action: Discuss W4A8 reproducibility and same-W4-weight activation attribution;
       no new experiment authorized
   next_research_direction:
-    status: EXP0238_running_EXP0239_approved
+    status: EXP0239_running
     sequence:
     - EXP-0237 artifact retirement
     - EXP-0238 Qronos per-channel

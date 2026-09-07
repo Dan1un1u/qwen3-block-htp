@@ -24,6 +24,38 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0239
+  slug: omniquant-per-channel
+  title: OmniQuant LWC matched per-output-channel W4A16 reference
+  parent: EXP-0238
+  record: docs/experiments/EXP-0239.md
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: pending
+  approval_ref: User2026-09-07 approved per-channel suite; PC054 protocol frozen before
+    EXP238 final scores
+  source_branches:
+  - codex/exp-0239-omniquant-per-channel
+  source_commits:
+  - 8980930c4d38fddfe9b72866dba70b015726f620
+  variants:
+  - F
+  - C64
+  - AR-P
+  - Qronos
+  - OmniQuant
+  evidence_profile: host_only_matched_per_channel_reference
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0239-omniquant-per-channel
+    approved_on: '2026-09-07'
+    started_on: '2026-09-07'
+  evidence:
+    protocol: PC054
+    current_stage: setup
+    device_speed: N/A_software_only
+    baseline_promoted: false
 - id: EXP-0238
   slug: qronos-per-channel
   title: Official Qronos on matched per-output-channel W4A16

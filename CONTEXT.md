@@ -1716,3 +1716,5 @@ EXP0237 closed: 6436 obsolete payloads retired, 162.195 GiB actual space reclaim
 Active EXP0238 Qronos per-channel setup; current handoff SESSION_HANDOFF_EXP0238.md. PC054 authorizes EXP0239 OmniQuant afterward. Both protocols frozen before suite final scoring.
 
 EXP0238 closed: canonicalF PPL25.641075,C6427.310096,AR-P28.380998,Qronos29.389287 on PC054. Qronos fails quality but all implementation/packing gates pass. No retuning; proceed approved EXP0239 OmniQuant.
+
+Active EXP0239 OmniQuant-LWC under the previously frozen PC054 protocol; current handoff SESSION_HANDOFF_EXP0239.md.
