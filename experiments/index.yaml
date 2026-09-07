@@ -29,9 +29,9 @@ experiments:
   title: Exact LPBQ32 masked direct-W4 HMX layer gate
   parent: EXP-0240
   record: docs/experiments/EXP-0241.md
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
   adoption_status: pending
   approval_ref: User2026-09-08 exact grouped semantics direct4bit algorithm; threshold
     unchanged
@@ -39,15 +39,206 @@ experiments:
   - codex/exp-0241-lpbq32-direct-w4
   source_commits:
   - e02d01c0d40603bb80fcc9e292d106a7d72be0b9
+  - 3bcb631caf1fe788928ea6b4be8ca6958b2794f7
+  - 3a0c879d22d56c580b4421d3f8ebc4e2e54973c0
+  - a4f7df85c4449f4ad18bd3b1129d55274437a0d6
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0241-lpbq32-direct-w4
     approved_on: '2026-09-08'
     started_on: '2026-09-08'
+    completed_on: '2026-09-08'
   evidence:
     protocol: PC056
-    current_stage: implementation
+    current_stage: completed
     baseline_promoted: false
+    source_head: a4f7df85c4449f4ad18bd3b1129d55274437a0d6
+    runtime_build_source_head: 3bcb631caf1fe788928ea6b4be8ca6958b2794f7
+    formal_source_head: a4f7df85c4449f4ad18bd3b1129d55274437a0d6
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0241
+    evidence_ledger_sha256: 06c90fa925d90adc6b496c19688eef3712f5e43887924eddaef3f6f7fcb498bb
+    evidence_file_count: 451
+    artifact_ledger_sha256: f04a668827736df7643e8de369a4e25c1f8a9083cad1c545afbdf5def638022d
+    report: docs/experiments/EXP-0241-RESULTS.md
+    report_sha256: 91b21dbef6a8cc77dbc46ebed7a518c5fec317c38c8074be52ba22014b00a3dd
+    full_profiling_report: docs/experiments/EXP-0241-PROFILE.md
+    full_profiling_report_sha256: e37cda18ec9a59567ab367acbc35c9e534a55a61075c0d6dcaa05a9fb5e581d8
+    performance:
+      repeat1_prefill:
+        median_us:
+          control: 1864.609
+          lpbq32: 4435.2345000000005
+          direct: 6320.9375
+        comparisons:
+          direct_vs_control:
+            paired_ratio: 3.403327315859051
+            regression_percent: 240.3327315859051
+            ratio_ci95:
+            - 3.3207601532113316
+            - 3.5864606988986347
+          direct_vs_lpbq32:
+            paired_ratio: 1.4243658936577834
+            regression_percent: 42.436589365778346
+            ratio_ci95:
+            - 1.421122789299458
+            - 1.4375623546511012
+          lpbq32_vs_control:
+            paired_ratio: 2.3774660010127455
+            regression_percent: 137.74660010127457
+            ratio_ci95:
+            - 2.343323415119001
+            - 2.5072833655558346
+      repeat1_decode:
+        median_us:
+          control: 1037.418625
+          lpbq32: 3740.5305625
+          direct: 5772.7215625
+        comparisons:
+          direct_vs_control:
+            paired_ratio: 5.596790755137573
+            regression_percent: 459.6790755137573
+            ratio_ci95:
+            - 5.325740451875142
+            - 5.718062490879376
+          direct_vs_lpbq32:
+            paired_ratio: 1.5476858540791898
+            regression_percent: 54.76858540791898
+            ratio_ci95:
+            - 1.5370961854550593
+            - 1.5575524868452537
+          lpbq32_vs_control:
+            paired_ratio: 3.5826833196696195
+            regression_percent: 258.26833196696197
+            ratio_ci95:
+            - 3.454510958785501
+            - 3.7104604433913337
+      repeat10_prefill:
+        median_us:
+          control: 1645.7291
+          lpbq32: 4227.5833
+          direct: 6230.749849999999
+        comparisons:
+          direct_vs_control:
+            paired_ratio: 3.765494874619205
+            regression_percent: 276.5494874619205
+            ratio_ci95:
+            - 3.666567878571326
+            - 3.8360769925467975
+          direct_vs_lpbq32:
+            paired_ratio: 1.4705795348644044
+            regression_percent: 47.05795348644044
+            ratio_ci95:
+            - 1.4376651979833825
+            - 1.4871730046567548
+          lpbq32_vs_control:
+            paired_ratio: 2.5810485149048743
+            regression_percent: 158.10485149048742
+            ratio_ci95:
+            - 2.5288325157857865
+            - 2.605167018650976
+      repeat10_decode:
+        median_us:
+          control: 1016.43358125
+          lpbq32: 3689.6279375000004
+          direct: 5786.28550625
+        comparisons:
+          direct_vs_control:
+            paired_ratio: 5.690024277658723
+            regression_percent: 469.0024277658723
+            ratio_ci95:
+            - 5.622724891530963
+            - 5.731104966868891
+          direct_vs_lpbq32:
+            paired_ratio: 1.568900771285262
+            regression_percent: 56.89007712852621
+            ratio_ci95:
+            - 1.561689990448659
+            - 1.572529112172339
+          lpbq32_vs_control:
+            paired_ratio: 3.6264059012439356
+            regression_percent: 262.64059012439355
+            ratio_ci95:
+            - 3.588763011066128
+            - 3.6775731435984578
+    correctness:
+      checks: 63
+      elements: 1474560
+      mismatches: 0
+    physical:
+      control:
+        vtcm_requested_bytes:
+        - 8388608
+        vtcm_acquired_bytes:
+        - 8388608
+        vtcm_peak_plan_bytes:
+        - 6682752
+        weight_ddr_read_bytes:
+        - 25329664
+        hmx_u8s8_tile_pair_count:
+        - 49408
+        - 49536
+        intermediate_ddr_read_bytes:
+        - 0
+        intermediate_ddr_write_bytes:
+        - 0
+        intermediate_spill_fill_count:
+        - 0
+        block_invocation_count:
+        - 1
+        ledger_unattributed_ticks:
+        - 0
+      lpbq32:
+        vtcm_requested_bytes:
+        - 8388608
+        vtcm_acquired_bytes:
+        - 8388608
+        vtcm_peak_plan_bytes:
+        - 6682752
+        weight_ddr_read_bytes:
+        - 26116096
+        hmx_u8s8_tile_pair_count:
+        - 49408
+        - 49536
+        intermediate_ddr_read_bytes:
+        - 0
+        intermediate_ddr_write_bytes:
+        - 0
+        intermediate_spill_fill_count:
+        - 0
+        block_invocation_count:
+        - 1
+        ledger_unattributed_ticks:
+        - 0
+      direct:
+        vtcm_requested_bytes:
+        - 8388608
+        vtcm_acquired_bytes:
+        - 8388608
+        vtcm_peak_plan_bytes:
+        - 6682752
+        weight_ddr_read_bytes:
+        - 26116096
+        hmx_u8s8_tile_pair_count:
+        - 1523968
+        - 1524096
+        intermediate_ddr_read_bytes:
+        - 0
+        intermediate_ddr_write_bytes:
+        - 0
+        intermediate_spill_fill_count:
+        - 0
+        block_invocation_count:
+        - 1
+        ledger_unattributed_ticks:
+        - 0
+    full_model_executed: false
+    quality_evaluated: false
+    next_direction: discussion_only_speed_gate_failed
+  evidence_profile: device_single_layer_three_way_paired_performance
+  variants:
+  - per-channel-direct-W4
+  - LPBQ32-S8
+  - LPBQ32-direct-W4-masked31
 - id: EXP-0240
   slug: w4a8-lpbq32-layer-gate
   title: W4A8 Qualcomm LPBQ32 single-layer speed gate

@@ -19,13 +19,24 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0241
+  active_experiment: null
   next_experiment_number: 242
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
+  latest_w4u8_lpbq32_direct_w4_result:
+    id: EXP-0241
+    source_head: a4f7df85c4449f4ad18bd3b1129d55274437a0d6
+    evidence_validity: valid
+    local_gate: fail
+    baseline_promoted: false
+    full_model_executed: false
+    prefill_regression_percent: 276.5494874619205
+    decode_regression_percent: 469.0024277658723
+    evidence_ledger_sha256: 06c90fa925d90adc6b496c19688eef3712f5e43887924eddaef3f6f7fcb498bb
+    report: docs/experiments/EXP-0241-RESULTS.md
   latest_w4u8_lpbq32_layer_result:
     id: EXP-0240
     source_head: e02d01c0d40603bb80fcc9e292d106a7d72be0b9
@@ -844,18 +855,18 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: qwen3_layer14_M64_then_eight_M1_persistent_KV_single_layer_speed_gate
-  last_completed_experiment: EXP-0240
-  last_completed_source_commit: e02d01c0d40603bb80fcc9e292d106a7d72be0b9
+  last_completed_experiment: EXP-0241
+  last_completed_source_commit: a4f7df85c4449f4ad18bd3b1129d55274437a0d6
   provisional_source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
-  device_execution_state: authorized_EXP0241_exact_direct_W4
+  device_execution_state: paused_after_exact_direct_W4_LPBQ_speed_gate_fail
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  current_handoff: docs/experiments/EXP-0241.md
+  current_handoff: docs/experiments/EXP-0241-RESULTS.md
   active_recipe_specialization: null
-  last_completed_experiment_contract: docs/experiments/EXP-0240.md
+  last_completed_experiment_contract: docs/experiments/EXP-0241.md
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0240
+  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0241
   latest_w4f16_output_scale_result:
     id: EXP-0224
     execution_state: completed
@@ -7109,9 +7120,9 @@ current_scope:
     next_action: Discuss W4A8 reproducibility and same-W4-weight activation attribution;
       no new experiment authorized
   next_research_direction:
-    status: authorized_PC056_direct_W4_layer_gate
-    W4A8: LPBQ32_current_implementation_exceeds10percent
-    full_model: conditional_both_modes_within10percent
+    status: discussion_only_PC056_layer_gate_failed
+    W4A8: exact_masked_direct_W4_LPBQ_exceeds10percent
+    full_model: stopped_before_start
     other_recipes: frozen
   latest_w4f16_independent_tool_result:
     id: EXP-0233
