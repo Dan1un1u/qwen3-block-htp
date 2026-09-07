@@ -1712,3 +1712,5 @@ Both151936x2048head NumPy pack/dequant checks exact, fourwhole-state audits and1
 EXP237 inventories and retires user-authorized obsolete large payloads. Historical result/hash ledgers stay immutable; retired payload availability is recorded separately. Then approved Qronos EXP238 and OmniQuant EXP239, per-output-channel W4 without online transformations or grouping, host-only first. Other recipes remain frozen.
 
 EXP0237 closed: 6436 obsolete payloads retired, 162.195 GiB actual space reclaimed; all protected hashes passed. Read docs/experiments/EXP-0237-RESULTS.md and retirement availability ledgers before attempting old model replay. Qronos then OmniQuant are approved and predeclared.
+
+Active EXP0238 Qronos per-channel setup; current handoff SESSION_HANDOFF_EXP0238.md. PC054 authorizes EXP0239 OmniQuant afterward. Both protocols frozen before suite final scoring.
