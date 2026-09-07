@@ -3216,6 +3216,78 @@ static void qbh_print_replay_profile(
 #undef QBH_REPLAY_PROFILE_U64
 }
 
+
+#ifdef QBH_EXP0240_SINGLE_LAYER
+/* Repeat is a complete replay with fresh session state; each step is one RPC.
+ * Captured outputs are checked externally against independent scalar LPBQ
+ * and unit-multiplier controls. Historical recipe references are not goldens
+ * for newly quantized weights. No reference-derived "pass" is fabricated. */
+static int qbh_run_exp0240_layer(
+    struct qbh_session *session, int fd, uint8_t *shared, uint32_t bytes,
+    const char *root, struct qbh_block_header *h,
+    const struct qbh_file_slot *input, const struct qbh_file_slot rope[2],
+    uint32_t repeats) {
+    struct qbh_decode_session_state *state = (void *)(shared + h->replay_session_offset);
+    struct qbh_decode_session_state initial = *state;
+    const char *dump = getenv("QBH_REPLAY_DUMP_DIR");
+    uint32_t steps = 8U;
+    if (getenv("QBH_REPLAY_DECODE_STEPS") != NULL)
+        steps = (uint32_t)atoi(getenv("QBH_REPLAY_DECODE_STEPS"));
+    if (steps == 0U || steps > 8U || repeats == 0U || repeats > 10U) return -1;
+    for (uint32_t rep = 0U; rep < repeats; ++rep) {
+        *state = initial;
+        if (qbh_read_slot(shared, input) || qbh_read_slot(shared, &rope[0]) || qbh_read_slot(shared, &rope[1])) return -1;
+        struct qbh_decode_layer_state *layer = &state->layers[14];
+        memset(shared + layer->k_offset, 0, layer->k_bytes);
+        memset(shared + layer->v_offset, 0, layer->v_bytes);
+        printf("{\"record\":\"exp0240_replay_start\",\"repeat\":%u,\"lpbq_mode\":%u,\"historical_reference_used\":false}\n", rep, h->slice_layers[0].projections[0].lpbq_mode);
+        for (uint32_t step = 0U; step <= steps; ++step) {
+            char name[128];
+            uint32_t before = step == 0U ? 0U : 63U + step;
+            if (step != 0U) {
+                snprintf(name, sizeof(name), "replay_decode_input_%02u_u8.bin", step - 1U);
+                if (qbh_read_named_tensor(root, name, shared + input->offset, input->expected_bytes)) return -1;
+                for (uint32_t r = 0U; r < 2U; ++r) {
+                    snprintf(name, sizeof(name), "replay_decode_rope_%s_%02u_f16.bin", r ? "sin" : "cos", step - 1U);
+                    if (qbh_read_named_tensor(root, name, shared + rope[r].offset, rope[r].expected_bytes)) return -1;
+                }
+            }
+            qbh_bind_host_slice_layer(h, 0U);
+            h->scan_mode = step == 0U ? QBH_BLOCK_SCAN_PREFILL : QBH_BLOCK_SCAN_DECODE;
+            h->logical_m = step == 0U ? 64U : 1U;
+            h->initial_kv_length = before;
+            h->replay_expected_step = step;
+            h->replay_first_position = before;
+            h->repeat_count = 1U;
+            h->dsp_status = QBH_BLOCK_STATUS_HOST_READY;
+            uint64_t start = qbh_monotonic_ns();
+            int rc = qwen3_probe_run_block(session->handle, fd, bytes);
+            uint64_t elapsed = qbh_monotonic_ns() - start;
+            if (rc || h->dsp_status != QBH_BLOCK_STATUS_OK ||
+                layer->valid_length != before + h->logical_m || state->completed_step_count != step + 1U ||
+                h->vtcm_acquired_bytes != QBH_EXPECTED_FULL_VTCM_BYTES ||
+                h->intermediate_ddr_read_bytes || h->intermediate_ddr_write_bytes || h->intermediate_spill_fill_count) {
+                fprintf(stderr, "EXP0240 step%u rc=%d dsp=%d valid=%u completed=%u projection=%u tile=%u failure_step=%u result=%d\n", step,rc,h->dsp_status,layer->valid_length,state->completed_step_count,h->projection_failure_index,h->projection_failure_n_tile,h->projection_failure_step,h->projection_failure_result);
+                return -1;
+            }
+            struct qbh_replay_step_result result = {0};
+            result.host_wall_ns=elapsed; result.first_position=before; result.valid_length=layer->valid_length;
+            qbh_print_replay_profile(240U,"exp0240_profile","replay_step",QBH_BLOCK_W4U8,step,h,&result,shared+h->output_offset,h->logical_m*QBH_BLOCK_HIDDEN);
+            if (dump != NULL && rep == 0U) {
+                snprintf(name,sizeof(name),"step%02u_output.bin",step);
+                if (qbh_write_named_tensor(dump,name,shared+h->output_offset,h->logical_m*QBH_BLOCK_HIDDEN)) return -1;
+                if (step == 0U) {
+                    if (qbh_write_named_tensor(dump,"prefill_k_cache.bin",shared+layer->k_offset,layer->k_bytes) ||
+                        qbh_write_named_tensor(dump,"prefill_v_cache.bin",shared+layer->v_offset,layer->v_bytes)) return -1;
+                }
+            }
+            fflush(stdout);
+        }
+    }
+    return 0;
+}
+#endif
+
 static int qbh_run_replay_sequence(
     struct qbh_session *session, int shared_fd, uint8_t *shared,
     uint32_t total_bytes, const char *package_root,
@@ -6989,6 +7061,13 @@ int main(int argc, char **argv) {
         goto cleanup;
     }
 
+#ifdef QBH_EXP0240_SINGLE_LAYER
+    if (replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS) {
+        exit_code = qbh_run_exp0240_layer(&session, shared_fd, shared, (uint32_t)total_bytes,
+            argv[1], header, &input_slot, rope_slots, repeats) == 0 ? 0 : 1;
+        goto cleanup;
+    }
+#endif
     if (replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS) {
         exit_code = qbh_run_replay_sequence(
             &session, shared_fd, shared, (uint32_t)total_bytes,
