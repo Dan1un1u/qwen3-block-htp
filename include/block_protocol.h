@@ -7,7 +7,7 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(109)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(110)
 #define QBH_BLOCK_EXPERIMENT UINT32_C(218)
 
 #define QBH_BLOCK_M UINT32_C(64)
@@ -621,6 +621,7 @@ struct qbh_block_projection_desc {
     uint32_t direct_n_weight_offset;
     uint32_t direct_n_weight_bytes;
     uint32_t lpbq_weight_offset, lpbq_weight_bytes, lpbq_mode;
+    uint32_t lpbq_audit_offset; /* Untimed public projection input/output audit. */
 };
 
 struct qbh_decode_layer_state {

@@ -46,6 +46,7 @@ struct qbh_vertical_layer_slots {
     struct qbh_file_slot weights[QBH_BLOCK_PROJECTION_COUNT];
     struct qbh_file_slot scales[QBH_BLOCK_PROJECTION_COUNT];
     struct qbh_file_slot lpbq[QBH_BLOCK_PROJECTION_COUNT];
+    uint32_t lpbq_audit_offsets[QBH_BLOCK_PROJECTION_COUNT];
     size_t direct_n_weight_offsets[QBH_BLOCK_PROJECTION_COUNT];
     size_t gate_up_bundle_offset;
     size_t down_bundle_offset;
@@ -1615,6 +1616,12 @@ static int qbh_prepare_vertical_layer_slots(
         if (variant == QBH_BLOCK_W4U8 && getenv("QBH_LPBQ32") != NULL && atoi(getenv("QBH_LPBQ32")) != 0) {
             snprintf(name, sizeof(name), "layer%" PRIu32 "/%s_lpbq32.bin", layer_index, qbh_projection_names[projection]);
             if (qbh_prepare_slot(&slots->lpbq[projection], root, name, weight_bytes / 32U * 33U, cursor) != 0) return -1;
+            if (getenv("QBH_LPBQ32_AUDIT") != NULL) {
+                *cursor = qbh_align_up_size(*cursor, QBH_HOST_ALIGNMENT);
+                slots->lpbq_audit_offsets[projection] = (uint32_t)*cursor;
+                *cursor += 64U * (qbh_projection_k[projection] + qbh_projection_n[projection]);
+                if (*cursor > UINT32_MAX) return -1;
+            }
         }
         if (variant != QBH_BLOCK_F16F16) {
             status = snprintf(
@@ -3276,6 +3283,15 @@ static int qbh_run_exp0240_layer(
             if (dump != NULL && rep == 0U) {
                 snprintf(name,sizeof(name),"step%02u_output.bin",step);
                 if (qbh_write_named_tensor(dump,name,shared+h->output_offset,h->logical_m*QBH_BLOCK_HIDDEN)) return -1;
+                for (uint32_t proj = 0U; proj < QBH_BLOCK_PROJECTION_COUNT; ++proj) {
+                    const struct qbh_block_projection_desc *desc = &h->projections[proj];
+                    if (desc->lpbq_audit_offset != 0U) {
+                        snprintf(name,sizeof(name),"step%02u_%s_projection.bin",step,qbh_projection_names[proj]);
+                        if (qbh_write_named_tensor(dump,name,shared+desc->lpbq_audit_offset,64U*(desc->k+desc->n))) return -1;
+                        snprintf(name,sizeof(name),"%s_bias.bin",qbh_projection_names[proj]);
+                        if (qbh_write_named_tensor(dump,name,shared+desc->bias_offset,desc->bias_bytes)) return -1;
+                    }
+                }
                 if (step == 0U) {
                     if (qbh_write_named_tensor(dump,"prefill_k_cache.bin",shared+layer->k_offset,layer->k_bytes) ||
                         qbh_write_named_tensor(dump,"prefill_v_cache.bin",shared+layer->v_offset,layer->v_bytes)) return -1;
@@ -6840,6 +6856,7 @@ int main(int argc, char **argv) {
                 desc->weight_bytes =
                     slots->weights[projection].expected_bytes;
                 desc->lpbq_mode = lpbq_mode;
+                desc->lpbq_audit_offset = slots->lpbq_audit_offsets[projection];
                 desc->lpbq_weight_offset = slots->lpbq[projection].offset;
                 desc->lpbq_weight_bytes = slots->lpbq[projection].expected_bytes;
                 if (w4u8_decode_projection_mode ==

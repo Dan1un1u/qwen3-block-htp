@@ -1442,6 +1442,8 @@ static int qbh_slice_layer_desc_valid(
                    desc->direct_n_weight_bytes != 0U) {
             return 0;
         }
+        if (desc->lpbq_audit_offset && (!desc->lpbq_mode ||
+            !qbh_range_valid(desc->lpbq_audit_offset,64U*(desc->k+desc->n),shared_bytes))) return 0;
         if (desc->lpbq_mode) {
             if (QBH_VERTICAL_SLICE_LAYER_COUNT != 1U || desc->lpbq_mode > 2U ||
                 header->variant != QBH_BLOCK_W4U8 ||
@@ -3090,6 +3092,15 @@ static int qbh_hmx_run_w4u8_qkv_ring(
                 batch->output +
                     (size_t)(batch->first_n_tile + tile) *
                         QBH_HMX_OUTPUT_BYTES);
+        }
+        if (batch->desc->lpbq_audit_offset != 0U) {
+            volatile uint32_t *dst = (volatile uint32_t *)(state->shared + batch->desc->lpbq_audit_offset);
+            const volatile uint32_t *src = (const volatile uint32_t *)state->activation;
+            if (batch->first_n_tile == 0U)
+                for (uint32_t word=0U; word<64U*batch->desc->k/4U; ++word) dst[word]=src[word];
+            dst += 64U*batch->desc->k/4U + batch->first_n_tile*QBH_HMX_OUTPUT_BYTES/4U;
+            src = (const volatile uint32_t *)(batch->output + batch->first_n_tile*QBH_HMX_OUTPUT_BYTES);
+            for (uint32_t word=0U; word<batch->n_tiles*QBH_HMX_OUTPUT_BYTES/4U; ++word) dst[word]=src[word];
         }
         state->hmx_compute_ticks +=
             HAP_perf_get_qtimer_count() - core_start;
@@ -9130,6 +9141,10 @@ static int qbh_run_w4u8_lpbq32_projection(
         header->projection_hmx_wait_ticks += HAP_perf_get_qtimer_count() - start;
         header->w4u8_qkvo_hmx_lifetime_ticks += HAP_perf_get_qtimer_count() - hmx_start;
         if (rc != 0) return -1;
+    }
+    if (desc->lpbq_audit_offset != 0U) {
+        memcpy((uint8_t *)shared + desc->lpbq_audit_offset, activation_tiles,64U*desc->k);
+        memcpy((uint8_t *)shared + desc->lpbq_audit_offset + 64U*desc->k, output_tiles,64U*desc->n);
     }
     return 0;
 }
