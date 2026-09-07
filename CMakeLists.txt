@@ -143,3 +143,8 @@ else()
     )
     copy_binaries(qwen3_probe_skel)
 endif()
+
+option(QBH_EXP0240_SINGLE_LAYER "Build EXP0240 layer14 replay gate" OFF)
+if(QBH_EXP0240_SINGLE_LAYER)
+    add_compile_definitions(QBH_EXP0240_SINGLE_LAYER=1)
+endif()

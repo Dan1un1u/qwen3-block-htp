@@ -1442,7 +1442,12 @@ static int qbh_slice_layer_desc_valid(
                    desc->direct_n_weight_bytes != 0U) {
             return 0;
         }
-        if (desc->lpbq_mode || desc->lpbq_weight_offset || desc->lpbq_weight_bytes) return 0;
+        if (desc->lpbq_mode) {
+            if (QBH_VERTICAL_SLICE_LAYER_COUNT != 1U || desc->lpbq_mode > 2U ||
+                header->variant != QBH_BLOCK_W4U8 ||
+                desc->lpbq_weight_bytes != (uint64_t)expected_weight * 33U / 32U ||
+                !qbh_range_valid(desc->lpbq_weight_offset, desc->lpbq_weight_bytes, shared_bytes)) return 0;
+        } else if (desc->lpbq_weight_offset || desc->lpbq_weight_bytes) return 0;
     }
     for (uint32_t index = 0U; index < QBH_BLOCK_QPARAM_COUNT; ++index) {
         if (!(layer->qparams[index].scale > 0.0f) ||

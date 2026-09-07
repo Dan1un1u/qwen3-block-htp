@@ -45,6 +45,7 @@ struct qbh_vertical_layer_slots {
     struct qbh_file_slot silu_lut;
     struct qbh_file_slot weights[QBH_BLOCK_PROJECTION_COUNT];
     struct qbh_file_slot scales[QBH_BLOCK_PROJECTION_COUNT];
+    struct qbh_file_slot lpbq[QBH_BLOCK_PROJECTION_COUNT];
     size_t direct_n_weight_offsets[QBH_BLOCK_PROJECTION_COUNT];
     size_t gate_up_bundle_offset;
     size_t down_bundle_offset;
@@ -1611,6 +1612,10 @@ static int qbh_prepare_vertical_layer_slots(
                              weight_bytes, cursor) != 0) {
             return -1;
         }
+        if (variant == QBH_BLOCK_W4U8 && getenv("QBH_LPBQ32") != NULL && atoi(getenv("QBH_LPBQ32")) != 0) {
+            snprintf(name, sizeof(name), "layer%" PRIu32 "/%s_lpbq32.bin", layer_index, qbh_projection_names[projection]);
+            if (qbh_prepare_slot(&slots->lpbq[projection], root, name, weight_bytes / 32U * 33U, cursor) != 0) return -1;
+        }
         if (variant != QBH_BLOCK_F16F16) {
             status = snprintf(
                 name, sizeof(name),
@@ -1656,7 +1661,8 @@ static int qbh_read_vertical_layer_slots(
     }
     for (uint32_t projection = 0U;
          projection < QBH_BLOCK_PROJECTION_COUNT; ++projection) {
-        if (qbh_read_slot(shared, &slots->weights[projection]) != 0 ||
+        if ((slots->lpbq[projection].expected_bytes != 0U && qbh_read_slot(shared, &slots->lpbq[projection]) != 0) ||
+            qbh_read_slot(shared, &slots->weights[projection]) != 0 ||
             (variant != QBH_BLOCK_F16F16 &&
              qbh_read_slot(shared, &slots->scales[projection]) != 0)) {
             return -1;
@@ -5939,7 +5945,7 @@ int main(int argc, char **argv) {
     }
 
     if (lpbq_mode != 0U && (lpbq_mode > 2U || variant != QBH_BLOCK_W4U8 ||
-        vertical_slice_mode != QBH_BLOCK_SLICE_DISABLED ||
+        (vertical_slice_mode != QBH_BLOCK_SLICE_DISABLED && QBH_VERTICAL_SLICE_LAYER_COUNT != 1U) ||
         w4u8_decode_projection_mode != QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
         w4u8_decode_direct_n_mask != 63U ||
         w4u8_decode_direct_n_gate_up_continuous != 0U ||
@@ -6761,6 +6767,9 @@ int main(int argc, char **argv) {
                 desc->weight_offset = slots->weights[projection].offset;
                 desc->weight_bytes =
                     slots->weights[projection].expected_bytes;
+                desc->lpbq_mode = lpbq_mode;
+                desc->lpbq_weight_offset = slots->lpbq[projection].offset;
+                desc->lpbq_weight_bytes = slots->lpbq[projection].expected_bytes;
                 if (w4u8_decode_projection_mode ==
                     QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N) {
                     desc->direct_n_weight_offset = (uint32_t)
