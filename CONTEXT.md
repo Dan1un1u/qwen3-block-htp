@@ -1723,3 +1723,7 @@ PC054 suite completed at EXP0239. F16/C64/AR-P/Qronos/OmniQuant PPL25.641075/27.
 
 ## LPBQ32 W4A8 feasibility
 PC055/EXP0240 authorizes one-layer performance validation of Qualcomm LPBQ4/8 group32. Integer group multipliers reconstruct S8 on a shared per-output-channel scale; this is distinct from unrestricted FP32 per-group scales. Stop before full-model if either complete-layer M64/M1 latency regresses >10%. Other recipes frozen.
+
+## EXP0240 completed: LPBQ32 single-layer speed gate failed
+
+Five short and ten formal paired rounds pass independent correctness. Repeat10 complete Host wall per-channel/LPBQ32: M64 1676.1277/4220.43755 us, M1 mean1020.72104375/3692.571275 us. Paired regression+151.7675%/+262.3722%,95% intervals wholly above10%. Stop before full model; E2E and PPL N/A. This bounds the current HVX W4-to-S8 implementation, not LPBQ theoretical performance. All63 independent integer/native projection checks exact across1,474,560 values. Physical8MiB VTCM,zero intermediate DDR/spill,one RPC/step,no QNN; additive ledgers close. No promotion; other recipes frozen. Active experiment none,next241 requires discussion/authorization. Current handoff docs/experiments/EXP-0240-RESULTS.md; full report EXP-0240-PROFILE.md. Source e02d01c0d40603bb80fcc9e292d106a7d72be0b9; formal DSP source633e9da1b77ee3336a334013e10329b6baf34c74. Single-layer build option remains ON in ignored build caches; explicitly disable or use separate build directory before future approved full-model work.

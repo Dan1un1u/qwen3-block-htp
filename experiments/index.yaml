@@ -29,25 +29,135 @@ experiments:
   title: W4A8 Qualcomm LPBQ32 single-layer speed gate
   parent: EXP-0239
   record: docs/experiments/EXP-0240.md
-  execution_state: running
-  evidence_validity: pending
-  local_gate: pending
-  adoption_status: candidate
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
+  adoption_status: pending
   approval_ref: User2026-09-07 LPBQ32 single-layer then conditional full-model; confirmed10percent
     threshold
   source_branches:
   - codex/exp-0240-w4a8-lpbq32-layer-gate
   source_commits:
   - ae18bbfbcaac3fceab1a7a3a642c63001ae66f2d
+  - 9e6e7d030339b5780d0aa02790f26e6fc76eb840
+  - ec7ab4ecfc94be54d9f1f756abd1d03d48cc9768
+  - 42466aae5d633230f3e7af0b5a1a2b7b5f4a3a5e
+  - 61b55022471f8d38db44c7a8c92942dd8b75d2a3
+  - ccd396c65a2521d81fa7981c5620eea6a97727b2
+  - db40d464b8ee8c61b59ed7709cafb1ea5c1bd12e
+  - a1c00e4bc0014556d4bd35f38ad0184cd5a093f0
+  - 0014700220a830b1c84191a75b08e280668c8797
+  - cea9107241a092b55e71767e37391388a127f2b5
+  - 526486f85f97bb7ed1211552e6f9de39fbcd1360
+  - b748f1ce1f40899549fa46008a62daf186d048ff
+  - 600320830ccdbf7da57395bcdedbbdedb53f7dfb
+  - bd52c1a85e636b60f2ae493ef67605998e5b8d7d
+  - 633e9da1b77ee3336a334013e10329b6baf34c74
+  - e02d01c0d40603bb80fcc9e292d106a7d72be0b9
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0240-w4a8-lpbq32-layer-gate
     approved_on: '2026-09-07'
     started_on: '2026-09-07'
+    completed_on: '2026-09-07'
   evidence:
     protocol: PC055
-    current_stage: implementation
+    current_stage: completed
     baseline_promoted: false
+    formal_runtime_source_head: 633e9da1b77ee3336a334013e10329b6baf34c74
+    reporting_source_head: e02d01c0d40603bb80fcc9e292d106a7d72be0b9
+    source_head: e02d01c0d40603bb80fcc9e292d106a7d72be0b9
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0240
+    evidence_ledger_sha256: 25a99c604a6d378d1162b3c8cefe607bbe2da81e587957467f8c6a2299eca69b
+    artifact_ledger_sha256: e9a78589c0760832939660e1e0de8616a557ee6286b975a20731181c422487ba
+    evidence_file_count: 709
+    report: docs/experiments/EXP-0240-RESULTS.md
+    report_sha256: 8e0058e1d5a65de47bbf04128313beccbb210c264419a4fd44852e3093a02029
+    full_profiling_report: docs/experiments/EXP-0240-PROFILE.md
+    full_profiling_report_sha256: 1052da6cc3acb5402bc6b565eeac82903325792cfd94dda8e531c777e9b3345e
+    short_rounds: 5
+    formal_pairs: 10
+    correctness:
+      integer_projection_checks: 63
+      elements: 1474560
+      max_lsb: 0
+      mismatches: 0
+      bias_exact: true
+      scalar_vs_hvx_layer_exact: true
+      unit_multiplier_vs_direct_w4_layer_exact: true
+    performance:
+      repeat1_prefill:
+        control_us: 1820.1039999999998
+        lpbq_us: 4416.8235
+        ratio_of_medians: 2.4266874310478967
+        paired_median_ratio: 2.4585342968251873
+        paired_regression_percent: 145.85342968251874
+        paired_ratio_ci95:
+        - 2.3369247279150605
+        - 2.6066217939214233
+        stable_over10percent: true
+      repeat1_decode:
+        control_us: 1040.143375
+        lpbq_us: 3727.5129374999997
+        ratio_of_medians: 3.5836530108168976
+        paired_median_ratio: 3.604751545831892
+        paired_regression_percent: 260.4751545831892
+        paired_ratio_ci95:
+        - 3.3645099577212054
+        - 3.716626644593144
+        stable_over10percent: true
+      repeat10_prefill:
+        control_us: 1676.1277
+        lpbq_us: 4220.43755
+        ratio_of_medians: 2.5179689769460882
+        paired_median_ratio: 2.5176746378910373
+        paired_regression_percent: 151.76746378910372
+        paired_ratio_ci95:
+        - 2.495058916842493
+        - 2.578750853847378
+        stable_over10percent: true
+      repeat10_decode:
+        control_us: 1020.72104375
+        lpbq_us: 3692.571275
+        ratio_of_medians: 3.617610607334948
+        paired_median_ratio: 3.623722243442421
+        paired_regression_percent: 262.3722243442421
+        paired_ratio_ci95:
+        - 3.5605086514642355
+        - 3.687581542819669
+        stable_over10percent: true
+    physical:
+      vtcm_requested_bytes:
+      - 8388608
+      vtcm_acquired_bytes:
+      - 8388608
+      vtcm_peak_plan_bytes:
+      - 6682752
+      weight_ddr_read_bytes:
+      - 25329664
+      - 26116096
+      hmx_u8s8_tile_pair_count:
+      - 49408
+      - 49536
+      intermediate_ddr_read_bytes:
+      - 0
+      intermediate_ddr_write_bytes:
+      - 0
+      intermediate_spill_fill_count:
+      - 0
+      block_invocation_count:
+      - 1
+      ledger_unattributed_ticks:
+      - 0
+    threshold_percent: 10
+    full_model_executed: false
+    e2e_tokens_per_second: null
+    quality_evaluated: false
+    next_direction: stop_before_full_model_discuss
+  variants:
+  - per-channel-direct-W4
+  - LPBQ32
+  evidence_profile: device_single_layer_paired_performance
 - id: EXP-0239
   slug: omniquant-per-channel
   title: OmniQuant LWC matched per-output-channel W4A16 reference
