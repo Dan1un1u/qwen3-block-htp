@@ -42,7 +42,7 @@ def load(v):
    mod.weight.copy_(torch.from_numpy(read_weight(root/f'layer{i}',n,tuple(mod.weight.shape))))
  after={n:digest(t) for n,t in list(model.named_parameters())+list(model.named_buffers()) if n not in changed}
  assert after==before
- if v=='Qronos':assert after==manifest['frozen_nontransformer']
+ if v in ['Qronos','OmniQuant']:assert after==manifest['frozen_nontransformer']
  return model.cuda().eval(),h
 
 def evaluate(v):
