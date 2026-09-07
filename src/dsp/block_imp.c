@@ -21770,6 +21770,13 @@ publish:
                 (qurt_size_t)header->replay_session_bytes,
                 QURT_MEM_CACHE_FLUSH, QURT_MEM_DCACHE);
         }
+        /* Public projection audit ranges are CPU-written on the DSP. */
+        for (uint32_t proj=0U; flush_status==0 && proj<QBH_BLOCK_PROJECTION_COUNT; ++proj) {
+            const struct qbh_block_projection_desc *desc=&header->projections[proj];
+            if (desc->lpbq_audit_offset && qbh_range_valid(desc->lpbq_audit_offset,64U*(desc->k+desc->n),shared_bytes))
+                flush_status=qurt_mem_cache_clean((qurt_addr_t)(shared+desc->lpbq_audit_offset),
+                    (qurt_size_t)(64U*(desc->k+desc->n)),QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE);
+        }
         if (flush_status != 0 && result == AEE_SUCCESS) {
             result = AEE_EFAILED;
         }
