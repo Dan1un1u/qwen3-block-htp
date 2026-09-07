@@ -388,7 +388,12 @@ __attribute__((noinline)) void qbh_copy_hmx_bias_hvx_relaxed(
 __attribute__((noinline)) void qbh_expand_lpbq32_to_s8(
     const uint8_t *packed_w4, int8_t *expanded_s8,
     uint32_t k_tiles, uint32_t mode) {
-    int8_t repeated_scales[128] __attribute__((aligned(128)));
+    uint8_t metadata_scratch[128] __attribute__((aligned(128))) = {0};
+    static const uint8_t repeat_index[128] __attribute__((aligned(128))) = {0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,9,9,9,9,9,9,9,9,10,10,10,10,10,10,10,10,11,11,11,11,11,11,11,11,12,12,12,12,12,12,12,12,13,13,13,13,13,13,13,13,14,14,14,14,14,14,14,14,15,15,15,15,15,15,15,15};
+    static const uint8_t high_select[128] __attribute__((aligned(128))) = {0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1};
+    const HVX_Vector v_zero = Q6_V_vzero();
+    const HVX_Vector v_repeat = *(const HVX_Vector *)repeat_index;
+    const HVX_VectorPred q_low = Q6_Q_vcmp_eq_VbVb(*(const HVX_Vector *)high_select, v_zero);
     const HVX_Vector v_lut = *(const HVX_Vector *)qbh_signed_w4_lut;
     const HVX_Vector v_nibble_mask = Q6_Vb_vsplat_R(0x0f);
 
@@ -410,11 +415,12 @@ __attribute__((noinline)) void qbh_expand_lpbq32_to_s8(
     }
     for (uint32_t kt = 0; kt < k_tiles; ++kt) {
         const uint8_t *multipliers = packed_w4 + k_tiles * 512U + kt * 16U;
-        for (uint32_t output = 0; output < 32U; ++output) {
-            uint32_t multiplier = ((multipliers[output / 2U] >> ((output % 2U) * 4U)) & 15U) + 1U;
-            ((uint32_t *)repeated_scales)[output] = multiplier * UINT32_C(0x01010101);
-        }
-        const HVX_Vector v_scales = *(const HVX_Vector *)repeated_scales;
+        memcpy(metadata_scratch, multipliers, 16U);
+        const HVX_Vector v_table = Q6_V_lo_W(Q6_W_vshuff_VVR(
+            v_zero, *(const HVX_Vector *)metadata_scratch, -1));
+        const HVX_Vector v_m = Q6_Vb_vlut32_VbVbR_nomatch(v_repeat, v_table, 0);
+        const HVX_Vector v_scales = Q6_Vb_vadd_VbVb(Q6_V_vmux_QVV(q_low,
+            Q6_V_vand_VV(v_m, v_nibble_mask), Q6_Vub_vlsr_VubR(v_m, 4)), Q6_Vb_vsplat_R(1));
         for (uint32_t vector = 0; vector < 4U; ++vector) {
             uint32_t packed_vector = kt * 4U + vector;
         const HVX_Vector v_packed = *(const HVX_Vector *)(
