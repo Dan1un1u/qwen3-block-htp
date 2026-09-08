@@ -38,6 +38,7 @@ experiments:
   - codex/exp-0246-dense-online-r3
   source_commits:
   - df75945f9a14a7c5ab4f32dd1db27161e865a476
+  - 7f01b960dbd4a30289ce073462203740b0954571
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0246-dense-online-r3
@@ -45,9 +46,20 @@ experiments:
     started_on: '2026-09-08'
   evidence:
     protocol: PC061
-    current_stage: implementation
+    current_stage: final_sequential_scoring
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0246
     baseline_promoted: false
+    source_head: 7f01b960dbd4a30289ce073462203740b0954571
+    development_complete: true
+    development_configurations: 9
+    final_configurations: 7
+    numerical_gate: pass_dense_GEMM_and_A16_controls
+    parameters_freeze_sha256: 5e20ca2a484fda9f96ae9509b43ee7cbeb29637e8cb34dd166c349d7a7f40d9f
+    resume: Inspect running process and final_attempt1.log. r3_exp0246.py final resumes
+      existing exact-param scores. Do not recreate data/parameter freezes. Finish
+      independent report/plots/seal/closure. If R3 passes the frozen improvement rule
+      versus both A8 and matched recalibration, separately register authorized dense-HMX
+      one-layer continuation with >10percent stop; otherwise discuss software result.
 - id: EXP-0245
   slug: early-qkv-attribution
   title: Early Q-RoPE K-cache V and QK joint attribution
