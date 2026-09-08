@@ -1779,3 +1779,7 @@ User authorizes online R3 as explicit dense matrix multiply, no butterfly. Fixed
 ## Current handoff after EXP0246
 
 EXP0246 completed with valid dense online R3 numerical/quality evidence. No active experiment; next number247. Read docs/experiments/EXP-0246-RESULTS.md and docs/W4A8_NEXT_DIRECTION_AFTER_EXP0246.md. Explicit dense H128 GEMM, no butterfly/FWHT, unchanged C64 per-channel W4 and EOS prefix; Q/K-only matched recalibration. Nine development and seven fixed final arms, fresh256 documents/4096targets. No device run or promotion; software quality and hardware speed are distinct. Device eligibility by scope {"L0": true, "ALL": true}. A qualifying scope authorizes a separately registered dense-HMX one-real-layer M64/M1 continuation under PC061; existing >10percent stable slowdown stop unchanged. Other recipes stay frozen. Source 662386e6acf53f63bbadb3d1e283fc2c1e893555; ledger de6b2a5bcd10369a9c0f188ae11af115e04f951fb3f970a1b0a0d5914f9e25dc.
+
+## EXP0247 active
+
+PC061 qualifying dense R3 continuation registered. Read docs/experiments/EXP-0247.md; source temporarily parent-bound for branch setup. One real C64 layer0 HMX dense R3 gate; no butterfly, no full-model run or promotion.
