@@ -24,6 +24,31 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0253
+  slug: float-attention
+  title: Complete floating attention core conditional PPL
+  parent: EXP-0252
+  record: docs/experiments/EXP-0253.md
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  approval_ref: PC067 user approves floating attention diagnostic
+  source_branches:
+  - codex/exp-0252-normalization-r3
+  - codex/exp-0253-float-attention
+  source_commits:
+  - 71f8a62449226127e6befb776abc5f572f1c4a88
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0252-normalization-r3
+    approved_on: '2026-09-09'
+    started_on: '2026-09-09'
+  evidence:
+    protocol: PC067
+    current_stage: registered_branch_setup
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0253
+    baseline_promoted: false
 - id: EXP-0252
   slug: normalization-r3
   title: Normalization precision and dense R3 amplification
