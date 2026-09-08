@@ -35,17 +35,17 @@ experiments:
   adoption_status: pending
   approval_ref: User2026-09-08 continue prefix-treated layer and boundary ablations
   source_branches:
-  - codex/exp-0243-prefix-a8-causality
+  - codex/exp-0244-prefix-a8-boundary-ablation
   source_commits:
   - 7d7c46022a4d83c6faa700d24588bc02977bd374
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0243-prefix-a8-causality
+    source_branch: codex/exp-0244-prefix-a8-boundary-ablation
     approved_on: '2026-09-08'
     started_on: '2026-09-08'
   evidence:
     protocol: PC059
-    current_stage: registration_branch_setup
+    current_stage: implementation
     baseline_promoted: false
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0244
 - id: EXP-0243
