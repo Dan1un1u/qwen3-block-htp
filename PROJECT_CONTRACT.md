@@ -261,3 +261,7 @@ User approves starting the updated roadmap. EXP0243 first executes frozen C64/F1
 ## PC059 — EXP0244 fixed-prefix A8 attribution
 
 User 2026-09-08 authorizes EXP-0244 per docs/experiments/EXP-0244.md. Restore individual activation boundaries only as software diagnostics, correct shared residual midpoint fanout with legacy control, preserve fixed W4 and EXP0243 MSE scales. No rotation, new weights, hardware or baseline promotion. PC037 routine recovery applies.
+
+## PC060 — EXP0245 early Q/K/V attribution
+
+User 2026-09-08 authorizes the next diagnostic step under docs/experiments/EXP-0245.md: separate early Q-RoPE, K-cache, tied V and Q/K joint effects, using frozen C64/EOS/static-U8 parameters. No rotation, weight changes, hardware or promotion. PC037 applies.

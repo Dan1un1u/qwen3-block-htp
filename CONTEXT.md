@@ -1763,3 +1763,7 @@ Latest user authorizes fixed-EOS layer/boundary A8 attribution under PC059; prot
 ## Current handoff after EXP0244
 
 EXP0244 completed with valid fixed-prefix software attribution evidence. No active experiment; next number245. Read docs/experiments/EXP-0244-RESULTS.md and docs/W4A8_NEXT_DIRECTION_AFTER_EXP0244.md. Diagnostic gate pass is implementation/evidence validity only, not deployable model-quality acceptance. Frozen C64 weights and EOS MSE parameters unchanged; midpoint shared-fanout corrected with archived legacy reproduction. Whole-layer and SwiGLU/Down/residual boundary sweeps use independent development, sequential rerank and fresh final PPL. Restoration effects are conditional and nonadditive, not mixed-precision deployment. No rotation, hardware or promotion. Next transform remains for user discussion. Source 0986a025f7a2fc847278a2f38b422f8755366f8b; ledger 7f37673a6acfa9355819a0faeae47c1b41988e3f48214015144186e4387ee74e.
+
+## Active EXP0245 / PC060
+
+User approves next early Q/K/V split. Frozen protocol docs/experiments/EXP-0245.md; same C64/EOS/static-MSE and shared residual semantics. All scoring sequential, exposed32 development and fresh256 final; no rotation or hardware. Parent EXP0244 evidence remains immutable.
