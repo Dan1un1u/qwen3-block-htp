@@ -25,6 +25,15 @@
 #include "w4_parallel_pipeline.h"
 #include "w4_u8_expand.h"
 
+/* EXP0248 diagnostic only; each disjoint slot preserves a boundary before reuse.
+ * Audit DDR is deliberately excluded from all numerical-off speed evidence. */
+static void qbh_r3_chain_audit(struct qbh_block_header *h, uint8_t *shared,
+    uint32_t slot, const void *src, uint32_t bytes) {
+    if (h->dense_r3_audit_offset && slot < 11U && bytes <= QBH_DENSE_R3_CARRIER_BYTES)
+        memcpy(shared+h->dense_r3_audit_offset+QBH_DENSE_R3_BASE_AUDIT_BYTES+
+               slot*QBH_DENSE_R3_CARRIER_BYTES,src,bytes);
+}
+
 #define QBH_BLOCK_ALIGNMENT UINT32_C(128)
 #define QBH_BLOCK_HMX_STACK_BYTES UINT32_C(16384)
 #define QBH_BLOCK_MAX_K QBH_BLOCK_INTERMEDIATE
@@ -14648,6 +14657,8 @@ static int qbh_run_w4u8_direct_n_mlp(
             return -1;
         }
     }
+    qbh_r3_chain_audit(header,shared,6,gate_native,393216U);
+    qbh_r3_chain_audit(header,shared,7,up_native,393216U);
     header->gate_up_ticks += HAP_perf_get_qtimer_count() - start;
     header->w4u8_mlp_gate_up_hmx_command_count +=
         2U * (QBH_BLOCK_INTERMEDIATE / QBH_HMX_OUTPUT_CHANNELS /
@@ -14705,6 +14716,7 @@ static int qbh_run_w4u8_direct_n_mlp(
                 QBH_BLOCK_INTERMEDIATE / QBH_HMX_OUTPUT_CHANNELS,
                 0U));
     }
+    qbh_r3_chain_audit(header,shared,8,middle_native,393216U);
     if (qbh_copy_w4u8_tail_audit(
             header, shared, QBH_BLOCK_U8_TAIL_MIDDLE_OFFSET,
             middle_native,
@@ -14720,6 +14732,7 @@ static int qbh_run_w4u8_direct_n_mlp(
             header->w4u8_decode_direct_n_down_batch_n_tiles) != 0) {
         return -1;
     }
+    qbh_r3_chain_audit(header,shared,9,down_native,131072U);
     header->down_ticks += HAP_perf_get_qtimer_count() - start;
     header->w4u8_mlp_down_hmx_command_count +=
         QBH_BLOCK_HIDDEN / QBH_HMX_OUTPUT_CHANNELS /
@@ -20099,6 +20112,14 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                           softmax_check))) != 0) {
         return QBH_BLOCK_STATUS_ATTENTION_FAILED;
     }
+    if (header->dense_r3_audit_offset) {
+        if (!scan_dynamic_attention) {
+            qbh_r3_chain_audit(header,shared,0,buffers->scores,65536U);
+            qbh_r3_chain_audit(header,shared,1,buffers->probability,65536U);
+        }
+        qbh_r3_chain_audit(header,shared,2,scan_dynamic_attention?buffers->q:buffers->hmx_activation,131072U);
+        qbh_r3_chain_audit(header,shared,10,buffers->v,65536U);
+    }
     if (scan_enabled != 0U &&
         header->variant != QBH_BLOCK_W4U8 &&
         header->numerical_audit_enabled != 0U &&
@@ -20321,6 +20342,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         qbh_attribution_accumulate(
             header, audit_start, &header->o_projection_audit_ticks);
     }
+    qbh_r3_chain_audit(header,shared,3,buffers->attention_projection,131072U);
     header->o_projection_ticks += HAP_perf_get_qtimer_count() - start;
 
     start = HAP_perf_get_qtimer_count();
@@ -20619,6 +20641,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             header, &gate_prefetch);
         return QBH_BLOCK_STATUS_RESIDUAL_POOL_FAILED;
     }
+    qbh_r3_chain_audit(header,shared,4,buffers->residual,131072U);
+    qbh_r3_chain_audit(header,shared,5,w4u8_mlp_native_activation,131072U);
     header->post_attention_norm_ticks +=
         HAP_perf_get_qtimer_count() - start;
 

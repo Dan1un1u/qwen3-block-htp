@@ -7,7 +7,7 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(112)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(113)
 #define QBH_BLOCK_EXPERIMENT UINT32_C(218)
 
 #define QBH_BLOCK_M UINT32_C(64)
@@ -736,7 +736,8 @@ struct qbh_block_slice_layer_profile {
 
 /* Two row-major FP16 captures plus native U8 Q/K. Audit runs only. */
 #define QBH_DENSE_R3_CARRIER_BYTES (64U * 24U * 128U * 2U)
-#define QBH_DENSE_R3_AUDIT_BYTES (2U * QBH_DENSE_R3_CARRIER_BYTES + 64U * 24U * 128U)
+#define QBH_DENSE_R3_BASE_AUDIT_BYTES (2U * QBH_DENSE_R3_CARRIER_BYTES + 64U * 24U * 128U)
+#define QBH_DENSE_R3_AUDIT_BYTES (QBH_DENSE_R3_BASE_AUDIT_BYTES + 11U * QBH_DENSE_R3_CARRIER_BYTES)
 struct qbh_block_header {
     uint32_t magic;
     uint32_t abi_version;
