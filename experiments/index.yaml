@@ -38,6 +38,8 @@ experiments:
   - codex/exp-0244-prefix-a8-boundary-ablation
   source_commits:
   - 7d7c46022a4d83c6faa700d24588bc02977bd374
+  - 58b7f1432f7eac5b1965cc70ae54a97db31d5cf5
+  - 0986a025f7a2fc847278a2f38b422f8755366f8b
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0244-prefix-a8-boundary-ablation
@@ -45,9 +47,17 @@ experiments:
     started_on: '2026-09-08'
   evidence:
     protocol: PC059
-    current_stage: implementation
+    current_stage: development_then_sequential_rerank_and_final
     baseline_promoted: false
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0244
+    implementation_oracles: pass
+    source_head: 0986a025f7a2fc847278a2f38b422f8755366f8b
+    dataset_freeze_sha256: 469e792f38a57a782904343435452c5a9814d5c11535858b3589d453ce73b0e2
+    masks_sha256: f29ff33b25ff759fda59d45c4de754dd8a7da6f3d4005ccad55731069c98e76a
+    model_oracles_sha256: a710bf3523af666d59db85b954c40d3e5c8aa7b44d913a3236fc970c2aa0fa39
+    resume: Inspect exp0244 logs and existing score files; preserve frozen masks and
+      selection. Reuse completed scores. Run missing develop, rerank, final, report
+      in order; see PC059.
 - id: EXP-0243
   slug: prefix-a8-causality
   title: First-position causality and fixed-prefix static A8 recovery
