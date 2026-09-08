@@ -1804,3 +1804,6 @@ EXP0249 live checkpoint: numerical and development gates pass; independent final
 ## Current handoff after EXP0249
 
 Completed actual integer-attention reference and conditional software PPL ladder. Independent actual EXP0042/248 QK/probability/AV byte comparisons and random causal/edge checks pass; four legacy controls reproduce EXP0246. Fresh256documents/4096targets twelve frozen arms completed. Dominant failure enters with fixed U8 QK score compression, before integer exponent/SOLE; see docs/experiments/EXP-0249-RESULTS.md for measured PPL and intervals and docs/W4A8_NEXT_DIRECTION_AFTER_EXP0249.md for proposed next step. No weight/range/recipe mutation, hardware, speed/PPL extrapolation or promotion. Actual probability scales slightly clipped in26layers although integer normalizer uses255; failure and protocol correction retained. Device caches remain EXP0248 experimental layer0 ABI114; not a full-model build. Active none,next250 pending discussion. Source 0b85aebb96e9a3ff06e667ec3365d41d69c7dd15; ledger 559391a5579a572e5ef2bca17017b4d2bd69e3a20036720160aab6696034e689.
+
+## EXP0250 active
+User approves raw-score maximum/wide integer difference direction. Read docs/experiments/EXP-0250.md. Fixed C64/EXP0246 A8,R3 parameters;16 software arms, fresh128-doc diagnostic PPL. No hardware or promotion. Temporary parent binding during setup.

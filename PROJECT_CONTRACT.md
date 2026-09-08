@@ -277,3 +277,7 @@ User2026-09-08: 尝试修复 the EXP0247 integer attention/O/residual amplificat
 ## PC063 — User-approved integer attention attribution
 
 User2026-09-08 approves EXP0249 under docs/experiments/EXP-0249.md: validated actual integer attention reference and frozen software PPL ladder, no hardware or weight changes. This supersedes the prior awaiting-discussion flag only for this bounded diagnostic. Preserve thresholds and evidence; PC037 applies.
+
+## PC064 — User-approved raw-score maximum repair
+
+User2026-09-08 approves EXP0250 under docs/experiments/EXP-0250.md: implement and evaluate wider score differences before exponent encoding, independently separate conversion errors on frozen W4/A8/R3. Software phase first; no hardware or recipe promotion. PC037 recovery applies; thresholds unchanged.
