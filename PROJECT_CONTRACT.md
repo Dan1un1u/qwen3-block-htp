@@ -265,3 +265,7 @@ User 2026-09-08 authorizes EXP-0244 per docs/experiments/EXP-0244.md. Restore in
 ## PC060 — EXP0245 early Q/K/V attribution
 
 User 2026-09-08 authorizes the next diagnostic step under docs/experiments/EXP-0245.md: separate early Q-RoPE, K-cache, tied V and Q/K joint effects, using frozen C64/EOS/static-U8 parameters. No rotation, weight changes, hardware or promotion. PC037 applies.
+
+## PC061 — Dense online R3 (user approved2026-09-08)
+
+EXP0246 implements fixed post-RoPE paired Q/K H128 with explicit dense matrix multiplication, never butterfly/FWHT, under docs/experiments/EXP-0246.md. Fixed C64 W4, EOS, static-U8 semantics; only Q/K recalibration on independent calibration, matched unrotated controls and fresh final PPL. Conditional successful-candidate dense-HMX single-layer integration is authorized as a separately registered continuation with unchanged >10percent slowdown stop; no full-device extrapolation or promotion. Other recipes frozen; PC037 applies.

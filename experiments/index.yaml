@@ -24,6 +24,30 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0246
+  slug: dense-online-r3
+  title: Dense matrix online R3 for static U8 Q and K
+  parent: EXP-0245
+  record: docs/experiments/EXP-0246.md
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  approval_ref: User2026-09-08 online R3 explicit dense GEMM no butterfly
+  source_branches:
+  - codex/exp-0245-early-qkv-attribution
+  source_commits:
+  - df75945f9a14a7c5ab4f32dd1db27161e865a476
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0245-early-qkv-attribution
+    approved_on: '2026-09-08'
+    started_on: '2026-09-08'
+  evidence:
+    protocol: PC061
+    current_stage: branch_setup
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0246
+    baseline_promoted: false
 - id: EXP-0245
   slug: early-qkv-attribution
   title: Early Q-RoPE K-cache V and QK joint attribution

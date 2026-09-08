@@ -1771,3 +1771,7 @@ User approves next early Q/K/V split. Frozen protocol docs/experiments/EXP-0245.
 ## Current handoff after EXP0245
 
 EXP0245 completed with valid fixed-prefix software attribution evidence. No active experiment; next number246. Read docs/experiments/EXP-0245-RESULTS.md and docs/W4A8_NEXT_DIRECTION_AFTER_EXP0245.md. Diagnostic gate pass is implementation/evidence validity only, not deployable model-quality acceptance. Frozen C64 weights, EOS MSE parameters and shared residual fanout unchanged. Split Q after RoPE, K before cache and tied V projection/cache with paired QK controls; fixed22 exposed development and13 fresh-final configurations, all sequential. Five parent controls reproduced exactly per token; new final256 documents/4096 targets. Prefix and body cache restorations remain combined. Restoration effects are conditional and nonadditive, not mixed-precision deployment. No rotation, hardware or promotion. Next transform remains for user discussion. Source df75945f9a14a7c5ab4f32dd1db27161e865a476; ledger 8a59e580907adbf35a440460f49d4753f73e2273a18704ab5022a10099fc5bff.
+
+## EXP0246 active / PC061
+
+User authorizes online R3 as explicit dense matrix multiply, no butterfly. Fixed C64/EOS with matched Q/K recalibration controls and independent final PPL; see EXP-0246.md. Hardware dense-HMX single-layer continuation is conditional on software improvement and separately registered, unchanged10percent stop. Parent EXP0245 evidence immutable.
