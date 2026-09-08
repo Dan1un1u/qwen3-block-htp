@@ -269,3 +269,7 @@ User 2026-09-08 authorizes the next diagnostic step under docs/experiments/EXP-0
 ## PC061 — Dense online R3 (user approved2026-09-08)
 
 EXP0246 implements fixed post-RoPE paired Q/K H128 with explicit dense matrix multiplication, never butterfly/FWHT, under docs/experiments/EXP-0246.md. Fixed C64 W4, EOS, static-U8 semantics; only Q/K recalibration on independent calibration, matched unrotated controls and fresh final PPL. Conditional successful-candidate dense-HMX single-layer integration is authorized as a separately registered continuation with unchanged >10percent slowdown stop; no full-device extrapolation or promotion. Other recipes frozen; PC037 applies.
+
+## PC062 — User-approved dense R3 numerical repair
+
+User2026-09-08: 尝试修复 the EXP0247 integer attention/O/residual amplification. EXP0248 follows docs/experiments/EXP-0248.md, keeps original numerical/physical/speed gates, native W4, dense-only R3 and frozen weights/recipes. Diagnostic exports and bounded attributable fixes authorized; preserve failed evidence. No baseline promotion.
