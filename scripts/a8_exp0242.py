@@ -142,9 +142,11 @@ class Stats:
         self.total += z.sum(dtype=torch.float64).item()
         # Full log histogram, split by sign, including an explicit exact-zero bin.
         logs = torch.log2(z.abs().clamp_min(2. ** LOG_MIN)).clamp(LOG_MIN, LOG_MAX - 1e-5)
-        neg = torch.histc(logs[z < 0], bins=NBINS, min=LOG_MIN, max=LOG_MAX).long().cpu().numpy()
-        pos = torch.histc(logs[z > 0], bins=NBINS, min=LOG_MIN, max=LOG_MAX).long().cpu().numpy()
-        self.hist += np.concatenate([neg, [(z == 0).sum().item()], pos])
+        bins = torch.floor((logs - LOG_MIN) * (NBINS / (LOG_MAX - LOG_MIN))).to(torch.int32).clamp(0, NBINS-1)
+        signed_bins = torch.where(z < 0, bins, torch.where(z > 0, bins + NBINS + 1, NBINS))
+        # CUDA floating histogram atomics are rejected under strict deterministic mode.
+        # CPU integer bincount is exact and order-independent; keep every input value.
+        self.hist += np.bincount(signed_bins.cpu().numpy().reshape(-1), minlength=2*NBINS+1)
         # Flatten heads into channels for Q/K/V and probabilities into key positions.
         if layout == 'heads':
             z = z.transpose(1, 2).reshape(z.shape[0], z.shape[2], -1)
