@@ -29,29 +29,152 @@ experiments:
   title: Complete floating attention core conditional PPL
   parent: EXP-0252
   record: docs/experiments/EXP-0253.md
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
-  adoption_status: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
+  adoption_status: not_applicable
   approval_ref: PC067 user approves floating attention diagnostic
   source_branches:
   - codex/exp-0252-normalization-r3
   - codex/exp-0253-float-attention
   source_commits:
   - 71f8a62449226127e6befb776abc5f572f1c4a88
+  - 335985531f3a58c7a1b174c502cb0d4d8c72f04d
+  - 19edebe628f1e5c1b580d430f07142658f7b398f
+  - 6d130035cf089ba099c8f161799952bf1d70a385
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0253-float-attention
     approved_on: '2026-09-09'
     started_on: '2026-09-09'
+    completed_on: '2026-09-09'
   evidence:
     protocol: PC067
-    current_stage: numerical_pass_development_scoring
+    current_stage: completed_float_attention_conditional_PPL
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0253
     baseline_promoted: false
     arithmetic_repair: FP32_TwoSum_QK_residual_before_max_subtraction_PC037_no_gate_change
-    numerical_gate: pass_280_cases_all56_configs
+    numerical_gate: pass
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0253.md
+    source_head: 6d130035cf089ba099c8f161799952bf1d70a385
+    inference_source_heads:
+    - 19edebe628f1e5c1b580d430f07142658f7b398f
+    report: docs/experiments/EXP-0253-RESULTS.md
+    report_sha256: 00996da67aaf1cc5b445b54fe2dca9542579dc849cadf76778a28a0b864f732a
+    full_profiling_report: docs/experiments/EXP-0253-PROFILE.md
+    full_profiling_report_sha256: 64eff2d2a74f6a8460c1662803fc66253f5ee6b33bf3ad18beb350a453ddfb80
+    evidence_ledger_sha256: f8dbb4d50965546f69c2ad853bcdd05d49d3fa8c36ce79f0c64d4f967d5bec1d
+    evidence_file_count: 58
+    gate_role: software_implementation_and_evidence_not_model_acceptance
+    final_ppl:
+      F: 26.407341791687603
+      C64: 27.331961008641233
+      OFF_legacy: 39.0245353053658
+      OFF_wide_nr64: 46.391479923426296
+      OFF_float_core: 37.56089942299241
+      R3_legacy: 31.897286114198955
+      R3_wide_nr64: 35.881764504686025
+      R3_float_core: 33.043535926419054
+    quality_gate:
+      C64:
+        point_pass: false
+        confident_pass: false
+      OFF_legacy:
+        point_pass: false
+        confident_pass: false
+      OFF_wide_nr64:
+        point_pass: false
+        confident_pass: false
+      OFF_float_core:
+        point_pass: false
+        confident_pass: false
+      R3_legacy:
+        point_pass: false
+        confident_pass: false
+      R3_wide_nr64:
+        point_pass: false
+        confident_pass: false
+      R3_float_core:
+        point_pass: false
+        confident_pass: false
+    R3_float_vs_NR64:
+      candidate: R3_float_core
+      reference: R3_wide_nr64
+      delta_nll: -0.08240325143560767
+      delta_nll_ci95:
+      - -0.13738899504533036
+      - -0.02840707708382981
+      ppl_ratio: 0.9209005293511608
+      ratio_ci95:
+      - 0.8716310999979376
+      - 0.971992610337698
+      cells:
+        en_wiki:
+          delta_nll: -0.07806024514138699
+          ppl_ratio: 0.9249087036094191
+          ratio_ci95:
+          - 0.8306742074692717
+          - 1.0274316507264976
+        zh_wiki:
+          delta_nll: -0.09607830829918385
+          ppl_ratio: 0.9083928785821023
+          ratio_ci95:
+          - 0.8122216113268519
+          - 1.0170412792510073
+        en_news:
+          delta_nll: -0.05539827235043049
+          ppl_ratio: 0.9461082641451428
+          ratio_ci95:
+          - 0.8622946673346269
+          - 1.0341607260977752
+        zh_news:
+          delta_nll: -0.10007617995142937
+          ppl_ratio: 0.9047684901908954
+          ratio_ci95:
+          - 0.7994400270775526
+          - 1.0269193890237565
+    R3_float_vs_F:
+      candidate: R3_float_core
+      reference: F
+      delta_nll: 0.22418389283120632
+      delta_nll_ci95:
+      - 0.16226618222426623
+      - 0.2885860510636121
+      ppl_ratio: 1.2513011035749293
+      ratio_ci95:
+      - 1.176173276075756
+      - 1.3345391830981905
+      cells:
+        en_wiki:
+          delta_nll: 0.181980287656188
+          ppl_ratio: 1.1995905469055061
+          ratio_ci95:
+          - 1.0853935431103907
+          - 1.3271970873483394
+        zh_wiki:
+          delta_nll: 0.32930077612400055
+          ppl_ratio: 1.389995870290281
+          ratio_ci95:
+          - 1.19488261404581
+          - 1.6253787682205558
+        en_news:
+          delta_nll: 0.2124671209603548
+          ppl_ratio: 1.236725450551689
+          ratio_ci95:
+          - 1.1095478586374765
+          - 1.3800076055616717
+        zh_news:
+          delta_nll: 0.17298738658428192
+          ppl_ratio: 1.1888511095161884
+          ratio_ci95:
+          - 1.0448833665563995
+          - 1.3812387853161228
+    new_device_runs: 0
+    short_rounds: 0
+    formal_rounds: 0
+    device_ppl: null
+    e2e_tokens_per_second: null
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0253.md
 - id: EXP-0252
   slug: normalization-r3
   title: Normalization precision and dense R3 amplification
