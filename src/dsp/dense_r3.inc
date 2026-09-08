@@ -82,7 +82,7 @@ static int qbh_run_dense_r3(struct qbh_block_header *h,uint8_t *shared,
             QBH_DENSE_R3_AUDIT_BYTES,h->shared_bytes))) return -1;
     _Static_assert(2U*QBH_DENSE_R3_CARRIER_BYTES<=64U*QBH_BLOCK_MAX_K*2U,
                    "R3 input/output must fit the dead HMX activation arena");
-    h->dense_r3_rows=rows; h->dense_r3_hmx_calls=0;
+    h->dense_r3_rows=rows; h->dense_r3_hmx_calls=0; h->dense_r3_refined_values=0;
     uint64_t start=HAP_perf_get_qtimer_count();
     memset(raw,0,padded*128U*2U);
     for (uint32_t head=0;head<24U;++head) {
