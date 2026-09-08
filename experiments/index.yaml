@@ -35,17 +35,17 @@ experiments:
   adoption_status: pending
   approval_ref: PC061 conditional continuation after EXP0246 software improvement
   source_branches:
-  - codex/exp-0246-dense-online-r3
+  - codex/exp-0247-hmx-dense-r3
   source_commits:
   - 662386e6acf53f63bbadb3d1e283fc2c1e893555
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0246-dense-online-r3
+    source_branch: codex/exp-0247-hmx-dense-r3
     approved_on: '2026-09-08'
     started_on: '2026-09-08'
   evidence:
     protocol: PC061
-    current_stage: registration_parent_binding
+    current_stage: device_readiness
     source_head: 662386e6acf53f63bbadb3d1e283fc2c1e893555
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0247
     baseline_promoted: false
