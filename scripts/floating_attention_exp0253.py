@@ -5,7 +5,19 @@ import torch
 
 def core(q,k,v,valid,scaling):
     assert q.dtype==k.dtype==v.dtype==torch.float16
-    scores=torch.matmul(q.float(),k.float().transpose(-1,-2))*scaling
+    # Half products are exactly representable in FP32. Preserve the small
+    # summation residual so subtraction of nearby large logits is accurate.
+    # This remains FP32 arithmetic; it is a diagnostic, not a speed kernel.
+    hi=q.float().unsqueeze(-2)*k.float().unsqueeze(-3)
+    lo=torch.zeros_like(hi)
+    while hi.shape[-1]>1:
+        a,b=hi[...,0::2],hi[...,1::2]
+        total=a+b;back=total-a
+        error=(a-(total-back))+(b-back)
+        lo=error+(lo[...,0::2]+lo[...,1::2]);hi=total
+    hi=hi.squeeze(-1);lo=lo.squeeze(-1)
+    index=hi.masked_fill(~valid,float('-inf')).argmax(-1,keepdim=True)
+    scores=((hi-hi.gather(-1,index))+(lo-lo.gather(-1,index)))*scaling
     probabilities=torch.softmax(scores.masked_fill(~valid,float('-inf')),dim=-1)
     return torch.matmul(probabilities,v.float()),probabilities
 
