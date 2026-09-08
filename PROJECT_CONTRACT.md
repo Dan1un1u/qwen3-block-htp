@@ -285,3 +285,7 @@ User2026-09-08 approves EXP0250 under docs/experiments/EXP-0250.md: implement an
 ## PC065 — User-approved wide-score hardware speed
 
 User2026-09-09 authorizes EXP0251 under docs/experiments/EXP-0251.md: implement frozen EXP0250 wide_sole on native-U8 DSP attention, independently validate and measure real-layer prefill/decode overhead. Preserve numerical/physical/>10percent speed gates and other recipes; no full-model or promotion. PC037 applies.
+
+## PC066 — User-approved normalization and R3 joint ablation
+
+User2026-09-09 approves EXP0252 under docs/experiments/EXP-0252.md: frozen wide-score SOLE/exact/one NR64 reciprocal candidate, same-input hardware error amplification and independent software PPL. Conditional eligible device timing and separately registered slice/full-model integration follow unchanged numerical/physical/10percent gates. Other recipes frozen, no automatic promotion; PC037 applies.

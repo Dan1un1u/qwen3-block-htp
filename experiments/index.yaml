@@ -24,6 +24,31 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0252
+  slug: normalization-r3
+  title: Normalization precision and dense R3 amplification
+  parent: EXP-0251
+  record: docs/experiments/EXP-0252.md
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: not_applicable
+  approval_ref: PC066 user approves ordered joint ablation
+  source_branches:
+  - codex/exp-0251-wide-score-device
+  - codex/exp-0252-normalization-r3
+  source_commits:
+  - 27972a15d770ada194f712805b1be01e1a44dd68
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0251-wide-score-device
+    approved_on: '2026-09-09'
+    started_on: '2026-09-09'
+  evidence:
+    protocol: PC066
+    current_stage: setup
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0252
+    baseline_promoted: false
 - id: EXP-0251
   slug: wide-score-device
   title: Native U8 wide-score hardware speed

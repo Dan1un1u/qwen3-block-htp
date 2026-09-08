@@ -1819,3 +1819,7 @@ User approves hardware speed of wide-score repair. See docs/experiments/EXP-0251
 ## Current handoff after EXP0251
 
 Completed no-R3 native-U8 wide-score repair on hardware: independent raw-QK/probability/AV including cached decode exact; full W0 outputs match scalar-wide reference. Five short and ten formal paired rounds,2970timedRPCs: repeat10 prefill1542.820->1525.797us paired-0.4106%, decode952.656->960.633us paired+0.6671%; both95%intervals contain zero and remain below+10%. Plain dense HMX R3 + wide repair fails original whole-layer gate (prefill11LSB/cos0.9927222), so no formal WR timing. No numerical threshold relaxation, expensive refinement, new weights, full-model PPL or promotion. Device cache now EXP0251 experimental layer0 ABI115 capacity72, NOT full-model runtime. Other recipes frozen. Active none,next252 pending discussion. Report docs/experiments/EXP-0251-RESULTS.md; next docs/W4A8_NEXT_DIRECTION_AFTER_EXP0251.md; source 27972a15d770ada194f712805b1be01e1a44dd68; ledger e3d088b0ece57e5c36baa3a0ac3098306e950af73d4d162f7495fccf4afc7334.
+
+## EXP0252 active / PC066
+
+User approves normalization/R3 joint ablation. Read docs/experiments/EXP-0252.md. Frozen SOLE/exact/NR64, software PPL and conditional hardware; existing gates unchanged. Parent binding temporary for branch setup. Later integration conditional and separately registered; no promotion.
