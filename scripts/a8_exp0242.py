@@ -84,18 +84,19 @@ def state_digest(model):
 
 def qparams(lo, hi):
     lo, hi = min(float(lo), 0.), max(float(hi), 0.)
-    scale = max((hi - lo) / 255., 1e-12)
+    scale = float(np.float32(max((hi - lo) / 255., 1e-12)))
     zero = int(np.clip(np.floor(-lo / scale + .5), 0, 255))
-    return dict(scale=scale, zero=zero, requested_lo=lo, requested_hi=hi,
+    return dict(scale=scale, inv_scale=float(np.float32(1. / scale)), zero=zero, requested_lo=lo, requested_hi=hi,
                 lo=-zero * scale, hi=(255 - zero) * scale)
 
 
 def qdq_np(x, p):
-    return (np.clip(np.floor(x / p['scale'] + p['zero'] + .5), 0, 255) - p['zero']) * p['scale']
+    x = np.asarray(x, np.float32)
+    return (np.clip(np.floor(x * np.float32(p['inv_scale']) + np.float32(p['zero']) + np.float32(.5)), 0, 255) - np.float32(p['zero'])) * np.float32(p['scale'])
 
 
 def qdq(x, p):
-    return ((torch.floor(x.float() / p['scale'] + p['zero'] + .5).clamp(0, 255)
+    return ((torch.floor(x.float() * p['inv_scale'] + p['zero'] + .5).clamp(0, 255)
              - p['zero']) * p['scale']).to(x.dtype)
 
 
@@ -107,7 +108,7 @@ def scalar_oracle():
         x = np.asarray(values, np.float32)
         out = []
         for v in x:
-            z = np.float32(np.float32(v / np.float32(p['scale'])) + np.float32(p['zero']))
+            z = np.float32(np.float32(v * np.float32(p['inv_scale'])) + np.float32(p['zero']))
             code = max(0, min(255, math.floor(float(np.float32(z + np.float32(.5))))))
             out.append(np.float32(np.float32(code - p['zero']) * np.float32(p['scale'])))
         got = qdq(torch.tensor(x, device='cuda'), p).cpu().numpy()
