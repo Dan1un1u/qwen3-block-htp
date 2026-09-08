@@ -35,12 +35,12 @@ experiments:
   adoption_status: pending
   approval_ref: PC062 user explicit attempt repair
   source_branches:
-  - codex/exp-0247-hmx-dense-r3
+  - codex/exp-0248-r3-numeric-repair
   source_commits:
   - 18fdaac2dfeb758e9443ff96728991fb9cba2a54
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0247-hmx-dense-r3
+    source_branch: codex/exp-0248-r3-numeric-repair
     approved_on: '2026-09-08'
     started_on: '2026-09-08'
   evidence:
