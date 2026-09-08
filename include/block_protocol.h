@@ -880,7 +880,7 @@ struct qbh_block_header {
     uint32_t scan_attention_audit_output_bytes;
     /* Diagnostic-only W4U8 boundary capture.  Enabling this explicit DDR
      * export invalidates physical and performance evidence. */
-    uint32_t dense_r3_mode; /* 0 original; 1 HMX; 2 scalar audit; 3 HMX identity audit. */
+    uint32_t dense_r3_mode; /* 0 original; 1 HMX; 2 scalar audit; 3 HMX identity; 4 scalar after HMX state audit. */
     uint32_t dense_r3_audit_offset;
     uint32_t dense_r3_rows;
     uint32_t dense_r3_hmx_calls;

@@ -34,7 +34,7 @@ static int qbh_run_dense_r3(struct qbh_block_header *h,uint8_t *shared,
     const __fp16 normalization=(__fp16)0.08838834764831844f;
     float scales[32] __attribute__((aligned(128)));
     if (h->dense_r3_mode==0U) return 0;
-    if (h->dense_r3_mode>3U || h->variant!=QBH_BLOCK_W4U8 ||
+    if (h->dense_r3_mode>4U || h->variant!=QBH_BLOCK_W4U8 ||
         (logical_rows!=1U && logical_rows!=64U) ||
         h->u8_norm_reduction_mode < QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE ||
         (h->dense_r3_audit_offset && !qbh_range_valid(h->dense_r3_audit_offset,
@@ -64,7 +64,15 @@ static int qbh_run_dense_r3(struct qbh_block_header *h,uint8_t *shared,
     qbh_hmx_fp16_init_channel_scales(b->channel_scale,scales);
     h->dense_r3_prepare_ticks=HAP_perf_get_qtimer_count()-start;
     start=HAP_perf_get_qtimer_count();
-    if (h->dense_r3_mode==2U) {
+    if (h->dense_r3_mode==4U) {
+        /* Audit only: reproduce the candidate's HMX state transition before
+         * replacing its output with the independent scalar dense result. */
+        if (qbh_hmx_submit(worker,QBH_BLOCK_HMX_FP16,act,weight,b->channel_scale,
+                           out,padded/32U,4U,4U)!=0) return -1;
+        ++h->hmx_command_count; ++h->dense_r3_hmx_calls;
+        h->hmx_fp16_tile_pair_count+=(padded/32U)*16U;
+    }
+    if (h->dense_r3_mode==2U || h->dense_r3_mode==4U) {
         /* Untimed independent scalar dense dot-product oracle, never fallback. */
         for (uint32_t r=0;r<rows;++r) for (uint32_t n=0;n<128U;++n) {
             double sum=0.0;

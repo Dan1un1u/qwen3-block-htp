@@ -23,11 +23,13 @@ def deploy():
     assert all(sha(p) in remote for p in binaries())
     x=dict(binaries={p.name:sha(p) for p in binaries()},source_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=S,text=True).strip(),
         remote_sha256=remote,boot=adb('shell','cat /proc/sys/kernel/random/boot_id'),device=adb('shell','getprop ro.product.model'),actual_layer=0)
-    with (R/'device_binary_manifest.json').open('x') as f:json.dump(x,f,indent=2)
+    manifest=R/'device_binary_manifest.json'
+    if manifest.exists():manifest=R/'device_binary_manifest_attempt2.json'
+    with manifest.open('x') as f:json.dump(x,f,indent=2)
     print('DEPLOYED',flush=True)
 def run(cell,repeat,tag,dump=False,steps=8):
-    assert cell in ['control','r3','scalar','identity'] and repeat in [1,10] and 1<=steps<=8
-    env=dict(ENV);env['QBH_DENSE_R3']=str(dict(control=0,r3=1,scalar=2,identity=3)[cell]);env['QBH_REPLAY_DECODE_STEPS']=str(steps)
+    assert cell in ['control','r3','scalar','identity','scalar_hmx_state'] and repeat in [1,10] and 1<=steps<=8
+    env=dict(ENV);env['QBH_DENSE_R3']=str(dict(control=0,r3=1,scalar=2,identity=3,scalar_hmx_state=4)[cell]);env['QBH_REPLAY_DECODE_STEPS']=str(steps)
     package='control' if cell=='control' else 'r3';path=R/tag;path.mkdir(exist_ok=False)
     if dump:
         env.update(QBH_REPLAY_DUMP_DIR=REMOTE+'/'+tag,QBH_DENSE_R3_AUDIT='1')
