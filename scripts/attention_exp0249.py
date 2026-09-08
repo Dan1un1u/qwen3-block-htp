@@ -106,8 +106,28 @@ def numerical():
         got,_=ia.requant(torch.from_numpy(x).cuda(),5,shift,121)
         expect=np.clip((np.clip((x+128*d+d//2)//d,0,255)-128)*5+121,0,255)
         assert np.array_equal(got.cpu().numpy(),expect)
+    for params in read('inputs.json')['configs'].values():
+        for c in params:
+            q=rng.integers(0,256,(2,3,128),dtype=np.uint8)
+            k,v=[rng.integers(0,256,(2,5,128),dtype=np.uint8) for _ in range(2)]
+            valid=np.arange(5)[None,:]<=np.arange(2,5)[:,None]
+            for mode in MODES[1:]:check_arrays(q,k,v,valid,c,mode)
+    # Explicit SOLE mantissa / power boundaries, not just random coverage.
+    from prepare_exp0042_attention import divide_probability
+    checked=0
+    for length in [1,2,3,4,7,8,15,16,31,32,63,64,65,80,127,128]:
+        for delta in [0,1,3,4,7,8,11,12,16,32,120,255]:
+            values=np.full((1,length),128,dtype=np.int64);values[0,0]=min(255,128+delta)
+            valid=torch.ones((1,length),device='cuda',dtype=torch.bool)
+            for division in ['exact','sole']:
+                prob,exp=ia.probability(torch.from_numpy(values).cuda(),valid,division)
+                es=exp.cpu().numpy()[0].tolist();total=sum(1<<(15-e) for e in es)
+                expected=[divide_probability(e,total,division,length) for e in es]
+                assert np.array_equal(prob.cpu().numpy()[0],expected);checked+=1
     # Old and current retained device captures, independently archived hashes.
     import audit_exp0248 as au
+    assert data.sha(au.P/'manifest.json')=='c196670085429fb749cd2c391fa3d4c79eee9c3644a222cce3def002475609f1'
+    assert data.sha(au.P/'attention_config_all_groups.bin')==json.loads((au.P/'manifest.json').read_text())['files']['attention_config_all_groups.bin']['sha256']
     p=ROOT.parent/'exp0248';ledger=p/'EVIDENCE_SHA256.json'
     assert data.sha(ledger)=='9df15e39189ee4f9904c765321370b5262abdf46cde70e1f12ae39cd6eb9fc1e'
     hashes=json.loads(ledger.read_text())['files'];captures={};references={str(ledger):data.sha(ledger)}
@@ -132,7 +152,7 @@ def numerical():
         check_arrays(arr['q'][2*g:2*g+2],np.repeat(arr['k'][g:g+1],2,0),np.repeat(arr['v'][g:g+1],2,0),np.tril(np.ones((64,64),bool)),ia.config(fields),'sole',expected)
     references.update({str(f):data.sha(f) for f in [manifest,cfg,report,au.P/'attention_config_all_groups.bin',au.P/'manifest.json']})
     write('checks/numerical.json',dict(pass_all=True,random_cases=proofs,captures=captures,EXP0042='scaled_QK_probability_AV_exact',negative_ties_and_saturation=True,
-        references=references,integer_dot_abs_sum_bound=128*255*128,TF32=False,scope='retained_device_prefill_exact_plus_independent_random_prefill_and_decode'))
+        references=references,all56_layer_configs_checked=True,division_boundary_checks=checked,integer_dot_abs_sum_bound=128*255*128,TF32=False,scope='retained_device_prefill_exact_plus_independent_random_prefill_and_decode'))
     print('NUMERICAL PASS',flush=True)
 
 def score(model,ins,name,samples,phase):
