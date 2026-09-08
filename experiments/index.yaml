@@ -39,6 +39,8 @@ experiments:
   - codex/exp-0252-normalization-r3
   source_commits:
   - 27972a15d770ada194f712805b1be01e1a44dd68
+  - a6a8326fb694bab2ec3659c02b77a3d459527394
+  - dd96c4aa6caed2c425237f1672d7dbec72ddcda0
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0252-normalization-r3
@@ -46,9 +48,12 @@ experiments:
     started_on: '2026-09-09'
   evidence:
     protocol: PC066
-    current_stage: setup
+    current_stage: independent_final_PPL_and_device_normalization_audit
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0252
     baseline_promoted: false
+    checkpoint_handoff: docs/SESSION_HANDOFF_EXP0252.md
+    NR64_denominator_gate: pass_37224464_entries_max1LSB
+    development_gate: pass_old_controls_exact_NR64_improves_both_groups
 - id: EXP-0251
   slug: wide-score-device
   title: Native U8 wide-score hardware speed

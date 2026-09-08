@@ -1823,3 +1823,5 @@ Completed no-R3 native-U8 wide-score repair on hardware: independent raw-QK/prob
 ## EXP0252 active / PC066
 
 User approves normalization/R3 joint ablation. Read docs/experiments/EXP-0252.md. Frozen SOLE/exact/NR64, software PPL and conditional hardware; existing gates unchanged. Parent binding temporary for branch setup. Later integration conditional and separately registered; no promotion.
+
+EXP0252 checkpoint: independent software numeric/development gates pass; final8-arm PPL and device normalization/R3 audits running. Read docs/SESSION_HANDOFF_EXP0252.md and inspect live processes/logs before resume. No formal speed result yet.
