@@ -41,7 +41,7 @@ experiments:
   - 7448a5d662af3dba67a458512bc9e49203bd07b2
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0250-raw-score-max
+    source_branch: codex/exp-0251-wide-score-device
     approved_on: '2026-09-09'
     started_on: '2026-09-09'
   evidence:
