@@ -1833,3 +1833,5 @@ Completed fixed NR64 reciprocal + one integer Newton normalization and R3 joint 
 ## EXP-0253 active — 2026-09-09
 
 User approves PC067 complete floating attention diagnostic. Eight frozen software arms; retain U8 QKV and output boundaries, remove only internal attention quantization. Register and preflight, implement independent numerical checks, reproduce development controls, score fresh128 documents, close and discuss. No device work or native FlashAttention implementation in this phase.
+
+EXP0253 running checkpoint: docs/SESSION_HANDOFF_EXP0253.md. Dataset frozen, independent numerical280cases pass after documented FP32 summation repair; development/final scoring underway.
