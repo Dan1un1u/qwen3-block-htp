@@ -1731,3 +1731,7 @@ Five short and ten formal paired rounds pass independent correctness. Repeat10 c
 EXP0241/PC056 now authorized: exact masked-W4 multi-pass LPBQ32, same frozen group semantics and10percent single-layer stop rule. Current handoff docs/experiments/EXP-0241.md. No S8 weight materialization or quantizer changes. Other recipes frozen.
 
 EXP0241 completed: exact five masked-W4 planes/31 HMX passes eliminate S8 weights while preserving every LPBQ group multiplier and one final conversion.63 independent projection checks/1,474,560 values exact; whole-layer/KV and all short/formal hashes pass. Five short/ten three-way formal rounds: repeat10 control/S8/direct M64 1645.7291/4227.5833/6230.74985 us, M1 1016.43358125/3689.6279375/5786.28550625 us. Direct primary paired+276.5495%/+469.0024%, also slower than S8. Speed gate fail; full model not started; other recipes frozen,no promotion. This rejects the current multi-pass candidate, not every direct-W4 grouped algorithm. All451 evidence hashes verified, runtime3bcb631/report a4f7df8. Active none,next242 requires discussion; current handoff docs/experiments/EXP-0241-RESULTS.md. Single-layer build caches remain ON.
+
+## Active EXP-0242 (2026-09-08)
+
+User selected fixed C64 per-channel W4 + static A8 error localization/clipping and distribution plots. EXP0242 is host-only, no new weights/device work. Read docs/experiments/EXP-0242.md for frozen roles, bounded variants and limits. Do not repeat LPBQ or proceed to another algorithm.
