@@ -10,6 +10,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
+from matplotlib.ticker import NullLocator
 
 ROOT=Path('D:/llm_exp/results/qwen3-block-htp/exp0242' if os.name=='nt' else '/mnt/d/llm_exp/results/qwen3-block-htp/exp0242')
 CELLS=['en_wiki','zh_wiki','en_news','zh_news']
@@ -22,6 +23,9 @@ def read(name):return json.loads((ROOT/name).read_text())
 
 
 def save(name,obj):
+    if (ROOT/name).exists():
+        assert read(name)==obj, 'Refuse replacing a different retained numerical summary'
+        return
     with (ROOT/name).open('x') as f:json.dump(obj,f,indent=2,allow_nan=False);f.write('\n')
 
 
@@ -62,6 +66,24 @@ def main():
         summary['primary'][n]=dict(ppl=r['ppl'],cell_ppl={c:math.exp(v) for c,v in r['cell_nll'].items()},
                                   vs_F=paired(r,primary['F']),vs_C64=paired(r,primary['C64']))
     summary['development']={n:dict(ppl=r['ppl'],delta_nll_vs_C64=r['mean_nll']-dev['C64']['mean_nll']) for n,r in dev.items()}
+    mechanism={}
+    for n in ['L02.swiglu','L02.down_out','L02.residual_out','L03.residual_mid','L27.residual_out']:
+        token=arrays[n+'/token_absmax'].reshape(128,128);energy=arrays[n+'/channel_energy'];p=cal['parameters'][n]['minmax'];h=arrays[n+'/hist']
+        # Conservative bound: both edges of a log bin lie inside the zero-code interval.
+        inside=np.abs(centers)*2**(40/8192/2)<p['scale']/2
+        mechanism[n]=dict(tokens_above_1000=int((token>1000).sum()),first_position_above_1000=int((token[:,0]>1000).sum()),
+          other_positions_above_1000=int((token[:,1:]>1000).sum()),top_energy_channel=int(energy.argmax()),
+          top_channel_energy_fraction=float(energy.max()/energy.sum()),
+          minimum_zero_code_fraction=float(h[inside].sum()/h.sum()),minmax_step=p['scale'],
+          absolute_median=cal['sites'][n]['abs_quantiles']['0.5'])
+    family_error={}
+    for family in FAMILIES:
+        ns=[n for n,s in cal['sites'].items() if s['family']==family]
+        family_error[family]={method:sum(local['sites'][n][method]['sse'] for n in ns)/sum(local['sites'][n][method]['energy'] for n in ns)
+                              for method in ['minmax','mse','percentile']}
+    save('outlier_mechanism.json',dict(sites=mechanism,independent_development_family_nmse=family_error,
+          scope='128 independent calibration body windows; first position is window-relative, not necessarily BOS or a deployed chat prefix',
+          interpretation='Concentrated first-token energy dominates tensor MSE; no causal prefix intervention performed'))
     for method in ['minmax','mse','percentile']:
         metrics=[]
         for n,v in local['sites'].items():
@@ -85,6 +107,10 @@ def main():
         xs=np.concatenate([-cx[::-1],cx]);ys=np.concatenate([neg[::-1],pos])/s['count']
         ax.plot(xs,np.maximum(ys,1e-12),color='#596b7d',lw=1.25)
         ax.set_xscale('symlog',linthresh=max(s['abs_quantiles']['0.5']/10,1e-5));ax.set_yscale('log')
+        limit=max(-s['minimum'],s['maximum'])*1.4
+        ax.set_xlim(-limit,limit)
+        ticks=[x for x in [-10000,-100,-1,0,1,100,10000] if abs(x)<limit]
+        ax.set_xticks(ticks,[str(x) for x in ticks]);ax.xaxis.set_minor_locator(NullLocator())
         ax.set_ylim(max(1/s['count'],1e-9),1)
         for method in ['minmax','mse']:
             p=cal['parameters'][n][method]
@@ -108,6 +134,28 @@ def main():
     fig.text(.01,-.01,'One fixed 128-token English-Wikipedia calibration window; color scales differ by panel. Each pixel is a channel-region maximum, not an individual channel.\nPlots show a representative window; full-corpus tail statistics are in activation_distributions and calibration.json.',fontsize=10)
     fig.tight_layout();figure(fig,'activation_heatmaps')
 
+    fig,axs=plt.subplots(1,3,figsize=(17,5))
+    token=arrays['L02.swiglu/token_absmax'].reshape(128,128)
+    axs[0].plot(range(128),np.median(token,axis=0),color='#287b98',label='Median over 128 windows')
+    axs[0].fill_between(range(128),np.min(token,axis=0),np.max(token,axis=0),color='#287b98',alpha=.18,label='Min to max')
+    axs[0].set_yscale('log');axs[0].set_xlabel('Token position within calibration window');axs[0].set_ylabel('Maximum |SwiGLU value| per token')
+    axs[0].set_title('L02: the spike occurs at position 0');axs[0].legend(fontsize=8)
+    energy=arrays['L02.swiglu/channel_energy'];idx=np.argsort(energy)[::-1][:8]
+    axs[1].bar(range(8),energy[idx]/energy.sum(),color='#596b7d');axs[1].set_yscale('log');axs[1].set_xticks(range(8),idx,rotation=45)
+    axs[1].set_xlabel('Eight channels with greatest energy');axs[1].set_ylabel('Fraction of total squared magnitude')
+    axs[1].set_title(f'One channel carries {energy.max()/energy.sum()*100:.3f}% of energy')
+    x=np.linspace(-10,10,4000,dtype=np.float32)
+    axs[2].plot(x,x,color='#596b7d',ls=':',label='Unquantized')
+    for method in ['minmax','percentile']:
+        p=cal['parameters']['L02.residual_out'][method]
+        y=(np.clip(np.floor(x*np.float32(p['inv_scale'])+p['zero']+.5),0,255)-p['zero'])*p['scale']
+        axs[2].plot(x,y,color=COLORS[method],label=method)
+    axs[2].set_xlabel('Original residual value (central range)');axs[2].set_ylabel('Value after U8 quantize / dequantize');axs[2].set_title('Minmax erases the ordinary residual values');axs[2].legend(fontsize=8)
+    for ax in axs:ax.grid(alpha=.15)
+    fig.suptitle('Early-layer mechanism: a rare large spike controls the static A8 range',fontsize=16,y=1.02)
+    fig.text(.01,-.025,'C64 weights fixed. 128 calibration windows x 128 tokens, balanced across English/Chinese and Wiki/news. L02 is the third transformer layer.\nL02 residual: minmax step 54.55, median |x| 0.281; at least 99.989% of calibration elements lie in the zero-code interval. A prefix intervention has not been tested.',fontsize=10)
+    fig.tight_layout();figure(fig,'early_outlier_mechanism')
+
     fig,axs=plt.subplots(1,3,figsize=(19,6))
     ax=axs[0];y=np.arange(len(FAMILIES))
     for offset,method in [(-.18,'minmax'),(.18,'mse')]:
@@ -120,7 +168,7 @@ def main():
     values=[dev['C64']['ppl']]+[dev[f'prefix{d}_minmax']['ppl'] for d in depth[1:-1]]+[dev['all_minmax']['ppl']]
     ax.plot(depth,values,'o-',color=COLORS['minmax']);ax.set_yscale('log');ax.set_xticks(depth)
     ax.set_xlabel('First N transformer layers quantized');ax.set_ylabel('Development PPL (log scale)');ax.set_title('Cumulative static-minmax damage')
-    ax.text(.02,.03,'Depth 28 also includes LM-head input',transform=ax.transAxes,fontsize=8)
+    ax.text(.98,.03,'Depth 28 also includes LM-head input',transform=ax.transAxes,fontsize=8,ha='right')
     ax=axs[2]
     for method in ['minmax','mse','percentile']:
         vals=[drift['policies'][method][f'L{i:02d}.residual_out']['relative_rmse'] for i in range(28)]
@@ -128,7 +176,7 @@ def main():
     ax.set_xlabel('Transformer layer');ax.set_ylabel('Residual relative RMSE vs C64 A16');ax.set_title('All-boundary error accumulation');ax.legend()
     for ax in axs[1:]:ax.grid(alpha=.2)
     fig.suptitle('A8 localization: sensitivity, earliest damage, and propagation',fontsize=17,y=1.02)
-    fig.text(.01,-.015,'Software QDQ diagnostic with unchanged per-output-channel W4 weights. Residual drift uses 16 disjoint development documents.\nMinmax and MSE thresholds come only from calibration. Isolated-family results are attribution controls, not proposed mixed-precision deployments.',fontsize=10)
+    fig.text(.01,-.035,'Software QDQ diagnostic with unchanged per-output-channel W4 weights. Residual drift uses 16 disjoint development documents.\nRelative RMSE is energy-weighted: preserving the huge first-token spike can hide loss of ordinary values. Lower PPL after deep collapse does not mean recovery.\nMinmax and MSE thresholds come only from calibration. Isolated-family results are attribution controls, not proposed mixed-precision deployments.',fontsize=10)
     fig.tight_layout();figure(fig,'a8_error_localization')
 
     names=['F','C64','all_minmax']
