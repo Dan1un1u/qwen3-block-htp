@@ -1935,7 +1935,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
     uint32_t element_bytes;
     if (header == NULL || header->magic != QBH_BLOCK_MAGIC ||
         header->abi_version != QBH_BLOCK_ABI_VERSION ||
-        header->wide_score_mode > 2U ||
+        header->wide_score_mode > 6U ||
         (header->wide_score_mode && (header->variant != QBH_BLOCK_W4U8 || header->kv_cache_capacity > 72U)) ||
         header->experiment != QBH_BLOCK_EXPERIMENT ||
         header->header_bytes != sizeof(*header) ||

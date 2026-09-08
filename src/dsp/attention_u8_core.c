@@ -769,6 +769,24 @@ static HVX_Vector qbh_attention_u8_log2_codes_paired_wide(
         Q6_Vb_vsplat_R(16));
 }
 
+/* EXP0252: one Q30 Newton update from a64-bin reciprocal midpoint LUT.
+ * sum<=72*32768; all intermediate products fit uint64. Per-row only. */
+static const uint32_t qbh_nr64_reciprocal_q30[64] = {1065418244U,1049152317U,1033375590U,1018066322U,1003204040U,988769449U,974744351U,961111563U,947854852U,934958867U,922409084U,910191745U,898293814U,886702926U,875407347U,864395934U,853658096U,843183764U,832963354U,822987745U,813248245U,803736570U,794444818U,785365448U,776491263U,767815383U,759331235U,751032533U,742913262U,734967666U,727190230U,719575673U,712118930U,704815146U,697659662U,690648007U,683775888U,677039180U,670433919U,663956297U,657602648U,651369448U,645253303U,639250946U,633359233U,627575130U,621895717U,616318177U,610839793U,605457945U,600170102U,594973825U,589866753U,584846611U,579911196U,575058383U,570286114U,565592401U,560975320U,556433010U,551963669U,547565552U,543236970U,538976288U};
+static void qbh_attention_u8_build_nr64_entries(
+    uint8_t *lut, uint32_t entry_base, uint32_t sum) {
+    const uint32_t leading=qbh_attention_u8_floor_log2(sum);
+    const uint64_t x=(uint64_t)sum << (30U-leading);
+    const uint32_t index=(uint32_t)((x-(UINT64_C(1)<<30U))>>24U);
+    uint64_t r=qbh_nr64_reciprocal_q30[index];
+    r=(r*((UINT64_C(2)<<30U)-((x*r)>>30U)))>>30U;
+    const uint32_t shift=leading+30U;
+    const uint64_t rounding=UINT64_C(1)<<(shift-1U);
+    for(uint32_t code=0U;code<16U;++code) {
+        const uint64_t numerator=(UINT64_C(255)<<(15U-code))*r;
+        lut[2U*(entry_base+code)]=(uint8_t)((numerator+rounding)>>shift);
+    }
+}
+
 static void qbh_attention_u8_build_probability_lut(
     uint8_t *lut, uint32_t sum, uint32_t mode,
     uint32_t valid_count) {
@@ -777,6 +795,10 @@ static void qbh_attention_u8_build_probability_lut(
         for (uint32_t code = 0U; code <= 15U; ++code) {
             lut[2U * code] = UINT8_MAX;
         }
+        return;
+    }
+    if (mode == QBH_ATTENTION_DIVISION_NR64) {
+        qbh_attention_u8_build_nr64_entries(lut,0U,sum);
         return;
     }
     if (mode == QBH_ATTENTION_DIVISION_EXACT) {
@@ -815,6 +837,10 @@ static void qbh_attention_u8_build_probability_lut_entries(
         for (uint32_t code = 0U; code <= 15U; ++code) {
             lut[2U * (entry_base + code)] = UINT8_MAX;
         }
+        return;
+    }
+    if (mode == QBH_ATTENTION_DIVISION_NR64) {
+        qbh_attention_u8_build_nr64_entries(lut,entry_base,sum);
         return;
     }
     if (mode == QBH_ATTENTION_DIVISION_EXACT) {
@@ -1328,6 +1354,15 @@ void qbh_attention_u8_requant_softmax_group_rows_prebuilt_templates_shuffle4(
     const struct qbh_attention_config *config,
     struct qbh_attention_u8_telemetry *telemetry,
     uint32_t first_row, uint32_t row_count, uint32_t wide_score_mode) {
+    struct qbh_attention_config normalization_config;
+    if(wide_score_mode>=3U && config!=NULL) {
+        normalization_config=*config;
+        normalization_config.division_mode=(wide_score_mode==3U || wide_score_mode==5U)
+            ? QBH_ATTENTION_DIVISION_EXACT : QBH_ATTENTION_DIVISION_NR64;
+        config=&normalization_config;
+        wide_score_mode=wide_score_mode>=5U ? 2U : 1U;
+    }
+
     uint8_t *lut = scratch + QBH_ATTN_U8_HVX_BYTES;
     const uint8_t *lut_templates =
         scratch + 2U * QBH_ATTN_U8_HVX_BYTES;
@@ -2667,6 +2702,15 @@ void qbh_attention_u8_requant_softmax_dynamic(
     const struct qbh_attention_config *config,
     struct qbh_attention_u8_telemetry *telemetry,
     uint32_t use_hvx_tile4, uint32_t verify_hvx_tile4, uint32_t wide_score_mode) {
+    struct qbh_attention_config normalization_config;
+    if(wide_score_mode>=3U && config!=NULL) {
+        normalization_config=*config;
+        normalization_config.division_mode=(wide_score_mode==3U || wide_score_mode==5U)
+            ? QBH_ATTENTION_DIVISION_EXACT : QBH_ATTENTION_DIVISION_NR64;
+        config=&normalization_config;
+        wide_score_mode=wide_score_mode>=5U ? 2U : 1U;
+    }
+
     if (wide_score_mode != 2U && use_hvx_tile4 != 0U && query_rows == 1U &&
         padded_tokens != 0U &&
         (padded_tokens % QBH_HMX_INPUT_CHANNELS) == 0U &&
