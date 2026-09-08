@@ -41,7 +41,7 @@ experiments:
   - 27972a15d770ada194f712805b1be01e1a44dd68
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0251-wide-score-device
+    source_branch: codex/exp-0252-normalization-r3
     approved_on: '2026-09-09'
     started_on: '2026-09-09'
   evidence:
