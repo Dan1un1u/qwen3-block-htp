@@ -1,0 +1,9 @@
+# Next direction after EXP0245 — discussion only
+
+EXP0245 is completed software conditional attribution, not a deployed mixed-precision recipe, rotation proof or quality promotion. Read EXP0245-RESULTS for the fresh final256 documents/4096 targets and nominal paired confidence intervals. No next experiment is registered by this document.
+
+Discuss a bounded paired post-RoPE Q/K normalized-Hadamard (R3) candidate targeting K-cache quantization, with layer0 and all-layer ranges. Keep existing C64 per-channel W4 weights and the remaining A8 boundaries fixed; postpone broad residual R1 and late local R4. No new folding or reuse of LPBQ/folded weights. The exact unquantized identity (QH)(KH)^T=QK^T requires the same orthogonal transform and consistent128-dimensional Q/K head and prefix/body cache treatment. This does not promise quantized PPL improvement or device speed.
+
+References: https://github.com/facebookresearch/SpinQuant/blob/main/train_utils/apply_r3_r4.py and https://arxiv.org/html/2405.16406v4 . The official dynamic token/head K quantizer is not the project's static-U8 semantics. A future frozen protocol should calibrate transformed Q/K on independent calibration data with a matched unrotated recalibration control, without retuning other boundaries; separately check unquantized equivalence, cache consistency and fresh final A8 PPL. Do not train or select on the EXP0245 final panel.
+
+Restoration effects are conditional and nonadditive, and include affected prefix and body together; neither causal shares nor bounds on attainable rotation gains. Keep native HMX W4, existing overall5%/cell10% quality thresholds, and >10% complete single-layer prefill/decode slowdown stop before full-device profiling. Other recipes stay frozen. EXP0245 E2E token/s is N/A. New experiment authorization is required from the next user direction, not inferred from this discussion document.

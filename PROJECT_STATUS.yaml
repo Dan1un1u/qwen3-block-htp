@@ -19,13 +19,404 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0245
+  active_experiment: null
   next_experiment_number: 246
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
+  latest_w4u8_early_qkv_attribution:
+    id: EXP-0245
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_role: diagnostic_implementation_and_evidence_not_deployable_accuracy_acceptance
+    adoption_status: not_applicable
+    source_head: df75945f9a14a7c5ab4f32dd1db27161e865a476
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0245
+    ledger_sha256: 8a59e580907adbf35a440460f49d4753f73e2273a18704ab5022a10099fc5bff
+    report: docs/experiments/EXP-0245-RESULTS.md
+    final_ppl:
+      F: 25.576109859176274
+      C64: 26.461854686577613
+      A8: 36.99078333687167
+      L0_Q: 36.77273918532679
+      L0_K: 31.849204881030516
+      L0_V: 37.367351702703104
+      L0_QK: 31.43548311508775
+      L0_QKV: 32.526286888065115
+      ALL_Q: 36.520448645816266
+      ALL_K: 29.917371139955506
+      ALL_V: 37.15769584129199
+      ALL_QK: 30.68624312125665
+      ALL_QKV: 29.950277476484604
+    conditional_effects:
+      F:
+        nll_reduction: 0.3690100754611194
+        ci95:
+        - 0.31432507298886775
+        - 0.42355735258897764
+        fraction_excess_A8_removed: 1.1016392476287713
+        fraction_ci95:
+        - 1.019093944370423
+        - 1.18586258194307
+      C64:
+        nll_reduction: 0.334964532405138
+        ci95:
+        - 0.287428545858711
+        - 0.3831012126931455
+        fraction_excess_A8_removed: 1.0
+        fraction_ci95:
+        - 1.0
+        - 1.0
+      A8:
+        nll_reduction: 0.0
+        ci95:
+        - 0.0
+        - 0.0
+        fraction_excess_A8_removed: 0.0
+        fraction_ci95:
+        - 0.0
+        - 0.0
+      L0_Q:
+        nll_reduction: 0.005911994958296418
+        ci95:
+        - -0.035435320937540385
+        - 0.047147949883947146
+        fraction_excess_A8_removed: 0.017649614769201558
+        fraction_ci95:
+        - -0.11281469710860074
+        - 0.13413496235036254
+      L0_K:
+        nll_reduction: 0.14965636539272964
+        ci95:
+        - 0.10411841837922112
+        - 0.19636811623349784
+        fraction_excess_A8_removed: 0.44678272149637915
+        fraction_ci95:
+        - 0.3417530324794256
+        - 0.5416473131129894
+      L0_V:
+        nll_reduction: -0.010128591442480683
+        ci95:
+        - -0.05276562810176983
+        - 0.03195214726147241
+        fraction_excess_A8_removed: -0.030237802700347392
+        fraction_ci95:
+        - -0.16939383520598342
+        - 0.0885973637573021
+      L0_QK:
+        nll_reduction: 0.16273149219341576
+        ci95:
+        - 0.11476573864347302
+        - 0.20965716909850016
+        fraction_excess_A8_removed: 0.48581708345345886
+        fraction_ci95:
+        - 0.37851170585505545
+        - 0.5783377029217308
+      L0_QKV:
+        nll_reduction: 0.128620192874223
+        ci95:
+        - 0.08276141534443013
+        - 0.17619401311385446
+        fraction_excess_A8_removed: 0.38398152768800453
+        fraction_ci95:
+        - 0.2688030582912219
+        - 0.49035870883789995
+      ALL_Q:
+        nll_reduction: 0.012796442024409771
+        ci95:
+        - -0.025870027078781277
+        - 0.051885406009387174
+        fraction_excess_A8_removed: 0.038202379017646365
+        fraction_ci95:
+        - -0.08101821114551452
+        - 0.14709589861472452
+      ALL_K:
+        nll_reduction: 0.2122294963337481
+        ci95:
+        - 0.1686522871023044
+        - 0.2569513767375611
+        fraction_excess_A8_removed: 0.6335879647014614
+        fraction_ci95:
+        - 0.5422241380730476
+        - 0.7229009831975352
+      ALL_V:
+        nll_reduction: -0.004502122988924384
+        ci95:
+        - -0.04167680782265961
+        - 0.03277665528585203
+        fraction_excess_A8_removed: -0.013440596103109471
+        fraction_ci95:
+        - -0.13469589934276788
+        - 0.09237902942429391
+      ALL_QK:
+        nll_reduction: 0.18685433524660766
+        ci95:
+        - 0.14157479957211763
+        - 0.2322661446756683
+        fraction_excess_A8_removed: 0.557833194771225
+        fraction_ci95:
+        - 0.467603865300544
+        - 0.6390451598155614
+      ALL_QKV:
+        nll_reduction: 0.21113019343465567
+        ci95:
+        - 0.16616312389960514
+        - 0.25733131119050084
+        fraction_excess_A8_removed: 0.6303061160496082
+        fraction_ci95:
+        - 0.544641849180815
+        - 0.7107120959642105
+    final_names:
+    - F
+    - C64
+    - A8
+    - L0_Q
+    - L0_K
+    - L0_V
+    - L0_QK
+    - L0_QKV
+    - ALL_Q
+    - ALL_K
+    - ALL_V
+    - ALL_QK
+    - ALL_QKV
+    interactions:
+      L0:
+        QK_minus_Q_minus_K:
+          value: 0.007163131842389703
+          ci95:
+          - -0.047716312063857916
+          - 0.06236296423012389
+        added_V_over_QK:
+          value: -0.03411129931919277
+          ci95:
+          - -0.07174194838153199
+          - 0.004687190655386062
+      ALL:
+        QK_minus_Q_minus_K:
+          value: -0.03817160311155021
+          ci95:
+          - -0.09188144829240627
+          - 0.01465312124928459
+        added_V_over_QK:
+          value: 0.024275858188048005
+          ci95:
+          - -0.006120222073514013
+          - 0.05450272507150656
+    layer0_vs_all:
+      Q:
+        delta_nll: 0.006884447066113353
+        ppl_ratio: 1.0069081993476394
+        delta_nll_ci95:
+        - -0.029727278894279154
+        - 0.04358574761427007
+        ratio_ci95:
+        - 0.9707102306200578
+        - 1.044549558104625
+        cells:
+          en_wiki:
+            delta_nll: 0.04500794969499111
+            ppl_ratio: 1.0460361755442087
+            ratio_ci95:
+            - 0.9722381833013531
+            - 1.125105947250078
+          zh_wiki:
+            delta_nll: -0.0014957170933485031
+            ppl_ratio: 0.9985054009339762
+            ratio_ci95:
+            - 0.9259035826557783
+            - 1.0762619457046751
+          en_news:
+            delta_nll: -0.02224177774041891
+            ppl_ratio: 0.9780037469275266
+            ratio_ci95:
+            - 0.9108545122887519
+            - 1.0473857700421765
+          zh_news:
+            delta_nll: 0.0062673334032297134
+            ppl_ratio: 1.0062870142311775
+            ratio_ci95:
+            - 0.9364105612911394
+            - 1.0816921823748717
+      K:
+        delta_nll: 0.06257313094101846
+        ppl_ratio: 1.0645723092459483
+        delta_nll_ci95:
+        - 0.029616712138522416
+        - 0.09511826945235953
+        ratio_ci95:
+        - 1.030059648921002
+        - 1.0997889188678132
+        cells:
+          en_wiki:
+            delta_nll: 0.05455364007502794
+            ppl_ratio: 1.0560691225214274
+            ratio_ci95:
+            - 0.9884504405682935
+            - 1.1268641404413826
+          zh_wiki:
+            delta_nll: 0.06936884485185146
+            ppl_ratio: 1.0718314757697258
+            ratio_ci95:
+            - 0.9984723278017474
+            - 1.150135844345559
+          en_news:
+            delta_nll: 0.042440857738256454
+            ppl_ratio: 1.0433543482129628
+            ratio_ci95:
+            - 0.9886337668321399
+            - 1.0988149597512435
+          zh_news:
+            delta_nll: 0.08392918109893799
+            ppl_ratio: 1.0875518718531407
+            ratio_ci95:
+            - 1.010662624097122
+            - 1.1667253129643829
+      V:
+        delta_nll: 0.005626468453556299
+        ppl_ratio: 1.0056423267553134
+        delta_nll_ci95:
+        - -0.03264407205278985
+        - 0.04526721531874499
+        ratio_ci95:
+        - 0.9678829948958328
+        - 1.0463074119253457
+        cells:
+          en_wiki:
+            delta_nll: 0.014887607656419277
+            ppl_ratio: 1.0149989800906212
+            ratio_ci95:
+            - 0.9305724240615173
+            - 1.1091016435573293
+          zh_wiki:
+            delta_nll: 0.04002996627241373
+            ppl_ratio: 1.0408419638788957
+            ratio_ci95:
+            - 0.9464292923344099
+            - 1.1444416778884434
+          en_news:
+            delta_nll: -0.006223852746188641
+            ppl_ratio: 0.9937954753062086
+            ratio_ci95:
+            - 0.9273729050078604
+            - 1.0614737920450317
+          zh_news:
+            delta_nll: -0.02618784736841917
+            ppl_ratio: 0.9741520805156343
+            ratio_ci95:
+            - 0.9154850141552295
+            - 1.0378213178486309
+      QK:
+        delta_nll: 0.0241228430531919
+        ppl_ratio: 1.024416152569426
+        delta_nll_ci95:
+        - -0.007862742961151525
+        - 0.05650973507435991
+        ratio_ci95:
+        - 0.9921680875452519
+        - 1.0581369157916438
+        cells:
+          en_wiki:
+            delta_nll: 0.022302497178316116
+            ppl_ratio: 1.022553057105483
+            ratio_ci95:
+            - 0.9558935987452511
+            - 1.0964549734355085
+          zh_wiki:
+            delta_nll: 0.04997690487653017
+            ppl_ratio: 1.0512468174206169
+            ratio_ci95:
+            - 0.9905822221087468
+            - 1.1139017242155043
+          en_news:
+            delta_nll: 0.004698132164776325
+            ppl_ratio: 1.0047091856912254
+            ratio_ci95:
+            - 0.9483670685727189
+            - 1.0660767196176106
+          zh_news:
+            delta_nll: 0.01951383799314499
+            ppl_ratio: 1.019705477440434
+            ratio_ci95:
+            - 0.9500069111449804
+            - 1.095851465124217
+      QKV:
+        delta_nll: 0.08251000056043267
+        ppl_ratio: 1.0860095340887264
+        delta_nll_ci95:
+        - 0.04622774230665527
+        - 0.1186664393520914
+        ratio_ci95:
+        - 1.0473129012546627
+        - 1.1259942682631399
+        cells:
+          en_wiki:
+            delta_nll: 0.09755068458616734
+            ppl_ratio: 1.1024673182470592
+            ratio_ci95:
+            - 1.0358383541017098
+            - 1.1753571461033212
+          zh_wiki:
+            delta_nll: 0.11646368261426687
+            ppl_ratio: 1.1235167065366536
+            ratio_ci95:
+            - 1.0391909485095072
+            - 1.216053291646608
+          en_news:
+            delta_nll: 0.10166704747825861
+            ppl_ratio: 1.1070148269824913
+            ratio_ci95:
+            - 1.039695958722809
+            - 1.184711655020332
+          zh_news:
+            delta_nll: 0.014358587563037872
+            ppl_ratio: 1.0144621672403031
+            ratio_ci95:
+            - 0.9400701426453106
+            - 1.099645267747375
+    quality_gate:
+      C64:
+        point_pass: true
+        confident_pass: false
+      A8:
+        point_pass: false
+        confident_pass: false
+      L0_Q:
+        point_pass: false
+        confident_pass: false
+      L0_K:
+        point_pass: false
+        confident_pass: false
+      L0_V:
+        point_pass: false
+        confident_pass: false
+      L0_QK:
+        point_pass: false
+        confident_pass: false
+      L0_QKV:
+        point_pass: false
+        confident_pass: false
+      ALL_Q:
+        point_pass: false
+        confident_pass: false
+      ALL_K:
+        point_pass: false
+        confident_pass: false
+      ALL_V:
+        point_pass: false
+        confident_pass: false
+      ALL_QK:
+        point_pass: false
+        confident_pass: false
+      ALL_QKV:
+        point_pass: false
+        confident_pass: false
+    new_device_runs: 0
+    baseline_promoted: false
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0245.md
   latest_w4u8_prefix_boundary_ablation:
     id: EXP-0244
     execution_state: completed
@@ -429,8 +820,8 @@ current_scope:
     auxiliary: short_task_content_v2
     diagnostic_only: short_task_strict_v1_format_adherence
     numerical_acceptance_threshold: PC050_EXP0229_overall_5percent_per_language_domain_10percent
-    next_direction: docs/experiments/EXP-0245.md
-    new_experiment_authorized: true
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0245.md
+    new_experiment_authorized: false
   latest_short_task_scoring_audit:
     experiment: EXP-0228
     execution_state: completed
@@ -1121,21 +1512,21 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: host_fixed_C64_prefix_causality_and_U8_cache
-  last_completed_experiment: EXP-0244
-  last_completed_source_commit: 0986a025f7a2fc847278a2f38b422f8755366f8b
+  last_completed_experiment: EXP-0245
+  last_completed_source_commit: df75945f9a14a7c5ab4f32dd1db27161e865a476
   provisional_source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
-  device_execution_state: no_device_run_EXP0244_diagnostic_only_discuss_next_transform
+  device_execution_state: no_device_run_EXP0245_diagnostic_only_discuss_next_transform
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  current_handoff: docs/experiments/EXP-0245.md
+  current_handoff: docs/experiments/EXP-0245-RESULTS.md
   active_recipe_specialization: null
   last_completed_experiment_contract:
-    id: EXP-0244
-    protocol: PC059
-    scope: fixed_EOS_layer_boundary_software_attribution
+    id: EXP-0245
+    protocol: PC060
+    scope: fixed_EOS_early_Q_K_V_QK_software_attribution
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0244
+  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0245
   latest_w4f16_output_scale_result:
     id: EXP-0224
     execution_state: completed
@@ -7389,11 +7780,11 @@ current_scope:
     next_action: Discuss W4A8 reproducibility and same-W4-weight activation attribution;
       no new experiment authorized
   next_research_direction:
-    status: running_PC060_EXP0245
-    document: docs/experiments/EXP-0245.md
-    current: early_Q_K_V_QK_conditional_attribution
+    status: discussion_after_completed_PC060_EXP0245
+    document: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0245.md
+    current: discuss_paired_QK_transform_from_early_boundary_attribution
     other_recipes: frozen
-    hardware: not_authorized
+    hardware: separate_registration_required
   latest_w4f16_independent_tool_result:
     id: EXP-0233
     source_head: 24a976887f9da144e49de2774104a3e72ddf6ddd
