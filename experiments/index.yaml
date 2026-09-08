@@ -24,6 +24,30 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0249
+  slug: integer-attention-attribution
+  title: Integer attention QK exponent and SOLE attribution
+  parent: EXP-0248
+  record: docs/experiments/EXP-0249.md
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: not_applicable
+  approval_ref: PC063 user approves recommended diagnosis
+  source_branches:
+  - codex/exp-0248-r3-numeric-repair
+  source_commits:
+  - 3587939fe7a727153a19f080a9d0d1c219f66083
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0248-r3-numeric-repair
+    approved_on: '2026-09-08'
+    started_on: '2026-09-08'
+  evidence:
+    protocol: PC063
+    current_stage: setup
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0249
+    baseline_promoted: false
 - id: EXP-0248
   slug: r3-numeric-repair
   title: Dense R3 integer-chain numerical repair

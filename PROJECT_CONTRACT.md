@@ -273,3 +273,7 @@ EXP0246 implements fixed post-RoPE paired Q/K H128 with explicit dense matrix mu
 ## PC062 — User-approved dense R3 numerical repair
 
 User2026-09-08: 尝试修复 the EXP0247 integer attention/O/residual amplification. EXP0248 follows docs/experiments/EXP-0248.md, keeps original numerical/physical/speed gates, native W4, dense-only R3 and frozen weights/recipes. Diagnostic exports and bounded attributable fixes authorized; preserve failed evidence. No baseline promotion.
+
+## PC063 — User-approved integer attention attribution
+
+User2026-09-08 approves EXP0249 under docs/experiments/EXP-0249.md: validated actual integer attention reference and frozen software PPL ladder, no hardware or weight changes. This supersedes the prior awaiting-discussion flag only for this bounded diagnostic. Preserve thresholds and evidence; PC037 applies.
