@@ -1759,3 +1759,7 @@ EXP0243 completed with valid software evidence and failed accuracy gate. No acti
 ## 2026-09-08 EXP0244 registered
 
 Latest user authorizes fixed-EOS layer/boundary A8 attribution under PC059; protocol docs/experiments/EXP-0244.md. EXP0243 sealed evidence remains immutable; its residual_mid proxy quantizes norm input only. EXP0244 corrects fanout before mask attribution and retains legacy control. Temporary parent-branch binding permits clean branch setup, then runtime moves to codex/exp-0244-prefix-a8-boundary-ablation. No rotation/device/weight changes.
+
+## Current handoff after EXP0244
+
+EXP0244 completed with valid fixed-prefix software attribution evidence. No active experiment; next number245. Read docs/experiments/EXP-0244-RESULTS.md and docs/W4A8_NEXT_DIRECTION_AFTER_EXP0244.md. Diagnostic gate pass is implementation/evidence validity only, not deployable model-quality acceptance. Frozen C64 weights and EOS MSE parameters unchanged; midpoint shared-fanout corrected with archived legacy reproduction. Whole-layer and SwiGLU/Down/residual boundary sweeps use independent development, sequential rerank and fresh final PPL. Restoration effects are conditional and nonadditive, not mixed-precision deployment. No rotation, hardware or promotion. Next transform remains for user discussion. Source 0986a025f7a2fc847278a2f38b422f8755366f8b; ledger 7f37673a6acfa9355819a0faeae47c1b41988e3f48214015144186e4387ee74e.

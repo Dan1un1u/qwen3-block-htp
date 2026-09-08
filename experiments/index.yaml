@@ -29,10 +29,10 @@ experiments:
   title: Fixed-prefix layer and boundary A8 ablation
   parent: EXP-0243
   record: docs/experiments/EXP-0244.md
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
-  adoption_status: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
+  adoption_status: not_applicable
   approval_ref: User2026-09-08 continue prefix-treated layer and boundary ablations
   source_branches:
   - codex/exp-0244-prefix-a8-boundary-ablation
@@ -45,9 +45,10 @@ experiments:
     source_branch: codex/exp-0244-prefix-a8-boundary-ablation
     approved_on: '2026-09-08'
     started_on: '2026-09-08'
+    completed_on: '2026-09-08'
   evidence:
     protocol: PC059
-    current_stage: development_then_sequential_rerank_and_final
+    current_stage: completed
     baseline_promoted: false
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0244
     implementation_oracles: pass
@@ -55,9 +56,152 @@ experiments:
     dataset_freeze_sha256: 469e792f38a57a782904343435452c5a9814d5c11535858b3589d453ce73b0e2
     masks_sha256: f29ff33b25ff759fda59d45c4de754dd8a7da6f3d4005ccad55731069c98e76a
     model_oracles_sha256: a710bf3523af666d59db85b954c40d3e5c8aa7b44d913a3236fc970c2aa0fa39
-    resume: Inspect exp0244 logs and existing score files; preserve frozen masks and
-      selection. Reuse completed scores. Run missing develop, rerank, final, report
-      in order; see PC059.
+    inference_source_heads:
+    - 0986a025f7a2fc847278a2f38b422f8755366f8b
+    - 58b7f1432f7eac5b1965cc70ae54a97db31d5cf5
+    gate_role: diagnostic_implementation_and_evidence_not_deployable_accuracy_acceptance
+    quality_gate:
+      C64:
+        point_pass: true
+        confident_pass: false
+      A8:
+        point_pass: false
+        confident_pass: false
+      global_swiglu:
+        point_pass: false
+        confident_pass: false
+      global_down:
+        point_pass: false
+        confident_pass: false
+      global_residual:
+        point_pass: false
+        confident_pass: false
+      union:
+        point_pass: false
+        confident_pass: false
+      down_L09:
+        point_pass: false
+        confident_pass: false
+      layer_L00:
+        point_pass: false
+        confident_pass: false
+      global_kv_and_qrope:
+        point_pass: false
+        confident_pass: false
+    evidence_ledger_sha256: 7f37673a6acfa9355819a0faeae47c1b41988e3f48214015144186e4387ee74e
+    evidence_file_count: 211
+    report: docs/experiments/EXP-0244-RESULTS.md
+    report_sha256: 2cf773f96bfc7dbe86f7e28d6c3aadee20d5cb09253dde4996589d2dd4c14a5b
+    full_profiling_report: docs/experiments/EXP-0244-PROFILE.md
+    full_profiling_report_sha256: 1a7c32830b41b90e4c7d53c6c3f4991a7829b575f10c1dc658cac0dc401459f7
+    final_ppl:
+      F: 27.785298832778608
+      C64: 28.980999072557086
+      A8: 40.742782703075456
+      global_swiglu: 38.16223054499569
+      global_down: 40.917454157774586
+      global_residual: 36.876010249041485
+      union: 34.471098007401885
+      down_L09: 40.53999337353951
+      layer_L00: 34.43290591562565
+      global_kv_and_qrope: 32.84576123219086
+    conditional_effects:
+      F:
+        nll_reduction: 0.38277165056206286
+        ci95:
+        - 0.32708670719875954
+        - 0.43858553369063885
+        fraction_excess_A8_removed: 1.123689405448533
+        fraction_ci95:
+        - 1.041694237399832
+        - 1.21136856347192
+      C64:
+        nll_reduction: 0.3406383015681058
+        ci95:
+        - 0.2919770327571314
+        - 0.39078546336386355
+        fraction_excess_A8_removed: 1.0
+        fraction_ci95:
+        - 1.0
+        - 1.0
+      A8:
+        nll_reduction: 0.0
+        ci95:
+        - 0.0
+        - 0.0
+        fraction_excess_A8_removed: 0.0
+        fraction_ci95:
+        - 0.0
+        - 0.0
+      global_swiglu:
+        nll_reduction: 0.0654324151109904
+        ci95:
+        - 0.025942400947678836
+        - 0.10507004837854764
+        fraction_excess_A8_removed: 0.19208766251409964
+        fraction_ci95:
+        - 0.08237527107906074
+        - 0.2916072580963386
+      global_down:
+        nll_reduction: -0.004278011620044708
+        ci95:
+        - -0.03930786947021261
+        - 0.03073277599178251
+        fraction_excess_A8_removed: -0.012558809741450582
+        fraction_ci95:
+        - -0.12316691706293353
+        - 0.08595567152671536
+      global_residual:
+        nll_reduction: 0.09971750155091286
+        ci95:
+        - 0.06378552428795956
+        - 0.1357372394064441
+        fraction_excess_A8_removed: 0.29273719687971067
+        fraction_ci95:
+        - 0.1977257181756029
+        - 0.38409958970001346
+      union:
+        nll_reduction: 0.1671574783977121
+        ci95:
+        - 0.13005064461030996
+        - 0.2051137256785296
+        fraction_excess_A8_removed: 0.4907183884730923
+        fraction_ci95:
+        - 0.40945536232998364
+        - 0.5671315594943688
+      down_L09:
+        nll_reduction: 0.004989734850823879
+        ci95:
+        - -0.023238752962788566
+        - 0.03306075275759212
+        fraction_excess_A8_removed: 0.014648190845991088
+        fraction_ci95:
+        - -0.07189071619028158
+        - 0.09434292475023019
+      layer_L00:
+        nll_reduction: 0.1682660379447043
+        ci95:
+        - 0.12178318787482567
+        - 0.21645169012481347
+        fraction_excess_A8_removed: 0.4939727481322645
+        fraction_ci95:
+        - 0.39519318485871324
+        - 0.5861617538063651
+      global_kv_and_qrope:
+        nll_reduction: 0.2154560098424554
+        ci95:
+        - 0.17128228995134123
+        - 0.2614005368144717
+        fraction_excess_A8_removed: 0.6325067053546767
+        fraction_ci95:
+        - 0.5471060339696661
+        - 0.7136776904518429
+    final_selection:
+      local: down_L09
+      layer: layer_L00
+      global_group: global_kv_and_qrope
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0244.md
+    new_device_runs: 0
 - id: EXP-0243
   slug: prefix-a8-causality
   title: First-position causality and fixed-prefix static A8 recovery
