@@ -35,17 +35,17 @@ experiments:
   adoption_status: pending
   approval_ref: User2026-09-08 continue next step
   source_branches:
-  - codex/exp-0244-prefix-a8-boundary-ablation
+  - codex/exp-0245-early-qkv-attribution
   source_commits:
   - 0986a025f7a2fc847278a2f38b422f8755366f8b
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0244-prefix-a8-boundary-ablation
+    source_branch: codex/exp-0245-early-qkv-attribution
     approved_on: '2026-09-08'
     started_on: '2026-09-08'
   evidence:
     protocol: PC060
-    current_stage: branch_registration
+    current_stage: implementation
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0245
     baseline_promoted: false
 - id: EXP-0244
