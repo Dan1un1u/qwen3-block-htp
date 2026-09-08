@@ -1,0 +1,9 @@
+# EXP-0250 running checkpoint
+
+Authority: protocol docs/experiments/EXP-0250.md (PC064), source codex/exp-0250-raw-score-max at4c6a1a72de64a3214db925616dafef63f7d95062, clean and pushed. Parent0b85aebb96e9a3ff06e667ec3365d41d69c7dd15. No device work authorized in this software phase.
+
+Completed: fresh128-document/2048-target dataset frozen, historical/calibration exclusion and independent reconstruction audit passed; all16 configurations frozen before inference; independent numerical gate passed, including explicit int16 bounds and original device capture controls. GPU process currently running scripts/attention_exp0250.py development; log /mnt/d/llm_exp/results/qwen3-block-htp/exp0250/development.log. Do not start another GPU model while it runs. Check process/log/files rather than trusting this checkpoint to imply completion.
+
+Resume: bootstrap and all four authorities; preflight. Use /home/daniuniu/.cache/qwen3-block-htp-spinquant-py/bin/python with cwd /home/daniuniu/work/qwen3-block-htp. Wait for development_complete.json and successful process exit, then run scripts/attention_exp0250.py final. Runner supports immutable-freeze score resumption; inspect any failure and preserve original logs. Eight controls must exactly reproduce EXP0249. All16 frozen final arms must complete, no final-based tuning. Results root /mnt/d/llm_exp/results/qwen3-block-htp/exp0250.
+
+Reporting helpers report_work.py, verify_integrity.py, plot_exp0250.py, seal_exp0250.py, close_memory_exp0250.py are prepared under results only; inspect before running and finish result-dependent interpretation/NEXT_DIRECTION and full profiling N/A historical table. Seal only after all results/helpers/logs/provenance are complete and integrity passes; never write into results after sealing. Close active experiment and normal commit/push, final bootstrap. No hardware speed or DSP PPL claim; E2E N/A. Other recipes, C64 weights/ranges and dense R3 semantics remain frozen.
