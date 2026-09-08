@@ -1783,3 +1783,7 @@ EXP0246 completed with valid dense online R3 numerical/quality evidence. No acti
 ## EXP0247 active
 
 PC061 qualifying dense R3 continuation registered. Read docs/experiments/EXP-0247.md; source temporarily parent-bound for branch setup. One real C64 layer0 HMX dense R3 gate; no butterfly, no full-model run or promotion.
+
+## Current handoff after EXP0247
+
+EXP0247 completed as valid negative device-gate evidence; active none, next248. Read docs/experiments/EXP-0247-RESULTS.md and docs/W4A8_NEXT_DIRECTION_AFTER_EXP0247.md. Dense HMX R3 implemented, no butterfly/FWHT. Component Float64 matrix/identity/U8/cache checks pass; whole-layer oracle fails frozen2LSB/cosine0.999 (prefill7LSB/0.989692). HMX state-transition isolation and cross-build replay exact. Tiny Q/K code changes amplify downstream; first amplifying boundary not localized. No short/formal speed or device PPL evidence. EXP0246 software improvement remains valid and separate. Other recipes/baselines frozen. Build caches currently EXP0247_DENSE_R3=ON, experimental single-layer0 binaries only. Any numeric-threshold change or next method remains for discussion. Source 18fdaac2dfeb758e9443ff96728991fb9cba2a54; ledger 8752c15d95d9bb5dced802cda7d7d64cb92897b1c6c16fc9a81f909f80ec0965.

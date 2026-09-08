@@ -29,26 +29,85 @@ experiments:
   title: Dense HMX online R3 real layer0 feasibility
   parent: EXP-0246
   record: docs/experiments/EXP-0247.md
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
-  adoption_status: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
+  adoption_status: rejected
   approval_ref: PC061 conditional continuation after EXP0246 software improvement
   source_branches:
   - codex/exp-0247-hmx-dense-r3
   source_commits:
   - 662386e6acf53f63bbadb3d1e283fc2c1e893555
+  - b48f42d972d8d4afe86e9e24cdc2b25b1740a168
+  - 85e0d0a5c9e42634bd26ad7558e0265d6c486c4d
+  - 6bff9e6868e4a7cc34d052357c57f190dbd2a6e4
+  - 05888572ada56c8d8d757e6c7ebc5628f3d2c6fa
+  - 18fdaac2dfeb758e9443ff96728991fb9cba2a54
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0247-hmx-dense-r3
     approved_on: '2026-09-08'
     started_on: '2026-09-08'
+    completed_on: '2026-09-08'
   evidence:
     protocol: PC061
-    current_stage: device_readiness
-    source_head: 662386e6acf53f63bbadb3d1e283fc2c1e893555
+    current_stage: completed_numerical_gate_failed
+    source_head: 18fdaac2dfeb758e9443ff96728991fb9cba2a54
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0247
     baseline_promoted: false
+    report: docs/experiments/EXP-0247-RESULTS.md
+    report_sha256: 82fa1c6331aaccb13b28c839bcd51bf1108712ad53666f9ac44b3383f0e256dc
+    full_profiling_report: docs/experiments/EXP-0247-PROFILE.md
+    full_profiling_report_sha256: c616bf57152dc9f413266d0ed6012f886e44d7308688c4a48e1bc047f360e8b8
+    evidence_ledger_sha256: 8752c15d95d9bb5dced802cda7d7d64cb92897b1c6c16fc9a81f909f80ec0965
+    evidence_file_count: 187
+    gate_role: device_whole_layer_numeric_prerequisite
+    component_arithmetic_and_layout_pass: true
+    whole_layer_gate_pass: false
+    whole_layer:
+    - step: 0
+      max_lsb: 7.0
+      dequantized_cosine: 0.9896923443820265
+      gate_pass: false
+    - step: 1
+      max_lsb: 3.0
+      dequantized_cosine: 0.9834517857887775
+      gate_pass: false
+    - step: 2
+      max_lsb: 0.0
+      dequantized_cosine: 1.0000000000000002
+      gate_pass: true
+    - step: 3
+      max_lsb: 5.0
+      dequantized_cosine: 0.9748739474496163
+      gate_pass: false
+    - step: 4
+      max_lsb: 0.0
+      dequantized_cosine: 1.0
+      gate_pass: true
+    - step: 5
+      max_lsb: 3.0
+      dequantized_cosine: 0.9840486165644953
+      gate_pass: false
+    - step: 6
+      max_lsb: 3.0
+      dequantized_cosine: 0.9816516552624398
+      gate_pass: false
+    - step: 7
+      max_lsb: 4.0
+      dequantized_cosine: 0.9791588602980955
+      gate_pass: false
+    - step: 8
+      max_lsb: 0.0
+      dequantized_cosine: 1.0
+      gate_pass: true
+    device_audit_runs: 7
+    device_audit_RPCs: 63
+    short_rounds: 0
+    formal_rounds: 0
+    reason: Frozen whole-layer numerical oracle tolerance failed; no short/formal
+      timing escalation
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0247.md
 - id: EXP-0246
   slug: dense-online-r3
   title: Dense matrix online R3 for static U8 Q and K
