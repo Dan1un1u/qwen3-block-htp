@@ -19,13 +19,156 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0251
+  active_experiment: null
   next_experiment_number: 252
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
+  latest_w4u8_wide_score_device_result:
+    id: EXP-0251
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_role: W0_single_layer_speed_only_WR_ineligible_not_quality_acceptance
+    adoption_status: not_applicable
+    source_head: 27972a15d770ada194f712805b1be01e1a44dd68
+    runtime_source_head: 910f6f95c8d144194b0711c974b60c7159d3931b
+    report: docs/experiments/EXP-0251-RESULTS.md
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0251
+    ledger_sha256: e3d088b0ece57e5c36baa3a0ac3098306e950af73d4d162f7495fccf4afc7334
+    W0_numerical_gate: pass
+    W0_speed_gate: pass
+    plain_dense_r3_wide_eligible: false
+    performance:
+      repeat1_prefill:
+        control_us: 1782.344
+        wide_us: 1556.6925
+        paired_regression_percent: -9.326454056475875
+        paired_ratio_ci95:
+        - 0.8504066564859294
+        - 1.0087950923992621
+        stable_over10percent: false
+        round_control_us:
+        - 1927.76
+        - 1508.282
+        - 1783.594
+        - 1731.771
+        - 1603.229
+        - 1873.125
+        - 1781.094
+        - 1812.76
+        - 2015.885
+        - 1545.521
+        round_wide_us:
+        - 1783.855
+        - 1807.657
+        - 1518.854
+        - 1538.02
+        - 1673.594
+        - 1476.146
+        - 1502.188
+        - 1554.271
+        - 1925.0
+        - 1559.114
+      repeat1_decode:
+        control_us: 962.802625
+        wide_us: 957.438125
+        paired_regression_percent: 0.4438953061341122
+        paired_ratio_ci95:
+        - 0.9297281285191749
+        - 1.029824342047507
+        stable_over10percent: false
+        round_control_us:
+        - 953.46375
+        - 1004.824125
+        - 1141.835875
+        - 939.7525
+        - 968.326625
+        - 957.278625
+        - 974.446625
+        - 943.209625
+        - 1072.031
+        - 928.652375
+        round_wide_us:
+        - 950.292875
+        - 964.739375
+        - 942.96875
+        - 967.78
+        - 1000.097625
+        - 925.208375
+        - 1000.944
+        - 954.720125
+        - 957.278375
+        - 957.597875
+      repeat10_prefill:
+        control_us: 1542.8202
+        wide_us: 1525.79695
+        paired_regression_percent: -0.41063714592768363
+        paired_ratio_ci95:
+        - 0.9655866468743339
+        - 1.0246680332308367
+        stable_over10percent: false
+        round_control_us:
+        - 1522.3073
+        - 1593.3905
+        - 1502.6563999999998
+        - 1523.8385
+        - 1565.6458
+        - 1568.4166
+        - 1545.8176
+        - 1539.8228000000001
+        - 1565.7135
+        - 1507.8958
+        round_wide_us:
+        - 1567.2292
+        - 1529.0782
+        - 1522.5157
+        - 1581.7086000000002
+        - 1490.0153
+        - 1514.7605
+        - 1531.9687
+        - 1577.8072
+        - 1521.1458
+        - 1509.021
+      repeat10_decode:
+        control_us: 952.6555875
+        wide_us: 960.6330874999999
+        paired_regression_percent: 0.6671287856549579
+        paired_ratio_ci95:
+        - 0.996190203268821
+        - 1.020223299959943
+        stable_over10percent: false
+        round_control_us:
+        - 941.3795375
+        - 951.6458375
+        - 980.9771374999999
+        - 938.1946750000001
+        - 953.6653375000001
+        - 944.52995
+        - 961.0546374999999
+        - 958.8776750000001
+        - 956.36645
+        - 937.1783625
+        round_wide_us:
+        - 940.5742875
+        - 960.7414749999999
+        - 991.1080375
+        - 966.38995
+        - 957.27475
+        - 963.6314625
+        - 950.0944125
+        - 960.5246999999999
+        - 942.379625
+        - 970.9622875
+    short_rounds: 5
+    formal_rounds: 10
+    timed_layer_RPCs: 2970
+    device_PPL: null
+    E2E_tokens_per_second: null
+    baseline_promoted: false
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0251.md
   latest_w4u8_raw_score_repair_result:
     id: EXP-0250
     execution_state: completed
@@ -1176,7 +1319,7 @@ current_scope:
     auxiliary: short_task_content_v2
     diagnostic_only: short_task_strict_v1_format_adherence
     numerical_acceptance_threshold: PC050_EXP0229_overall_5percent_per_language_domain_10percent
-    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0250.md
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0251.md
     new_experiment_authorized: false
   latest_short_task_scoring_audit:
     experiment: EXP-0228
@@ -1867,22 +2010,22 @@ current_scope:
         manifest_sha256: 44ac941297f1aab82ec4daff2ca8191379def73f6796a1c9c5d7d700820c5673
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
-  execution_unit: host_fixed_C64_prefix_causality_and_U8_cache
-  last_completed_experiment: EXP-0250
-  last_completed_source_commit: 7448a5d662af3dba67a458512bc9e49203bd07b2
+  execution_unit: single_layer0_native_W4U8_M64_plus_eight_real_M1_cached_steps
+  last_completed_experiment: EXP-0251
+  last_completed_source_commit: 27972a15d770ada194f712805b1be01e1a44dd68
   provisional_source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
-  device_execution_state: EXP0248_numeric_repaired_speed_gate_failed_no_full_model
+  device_execution_state: EXP0251_ABI115_layer0_capacity72_W0_numeric_and_speed_pass_WR_numeric_fail_not_full_model
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  current_handoff: docs/experiments/EXP-0251.md
+  current_handoff: docs/experiments/EXP-0251-RESULTS.md
   active_recipe_specialization: null
   last_completed_experiment_contract:
-    id: EXP-0250
-    protocol: PC064
-    scope: conditional_software_raw_score_difference_repair
+    id: EXP-0251
+    protocol: PC065
+    scope: single_layer_wide_score_hardware_speed
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0250
+  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0251
   latest_w4f16_output_scale_result:
     id: EXP-0224
     execution_state: completed
@@ -8136,9 +8279,9 @@ current_scope:
     next_action: Discuss W4A8 reproducibility and same-W4-weight activation attribution;
       no new experiment authorized
   next_research_direction:
-    status: discussion_after_EXP0250_raw_score_difference_repair
-    document: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0250.md
-    current: evaluate_remaining_exponent_reciprocal_precision_and_device_mapping
+    status: discussion_after_EXP0251_W0_speed_pass_WR_numeric_fail
+    document: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0251.md
+    current: discuss_full_model_scope_and_remaining_dense_HMX_rounding_softmax_precision
     other_recipes: frozen
     new_algorithm_authorized: false
   latest_w4f16_independent_tool_result:

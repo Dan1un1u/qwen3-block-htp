@@ -29,9 +29,9 @@ experiments:
   title: Native U8 wide-score hardware speed
   parent: EXP-0250
   record: docs/experiments/EXP-0251.md
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: not_applicable
   approval_ref: PC065 user requests hardware speed
   source_branches:
@@ -39,16 +39,318 @@ experiments:
   - codex/exp-0251-wide-score-device
   source_commits:
   - 7448a5d662af3dba67a458512bc9e49203bd07b2
+  - 193bb701878917c450220370654745a4098366e3
+  - 910f6f95c8d144194b0711c974b60c7159d3931b
+  - 3b9e210d372274149f76f86c8b3f9d2acc87ccad
+  - f9817c546d4eaee6e2d429ac58650a78a54ce626
+  - 8d3797f6bf5917ca614c2ce1c9b576af5a2d5d03
+  - 27972a15d770ada194f712805b1be01e1a44dd68
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0251-wide-score-device
     approved_on: '2026-09-09'
     started_on: '2026-09-09'
+    completed_on: '2026-09-09'
   evidence:
     protocol: PC065
-    current_stage: setup
+    current_stage: completed_W0_hardware_speed_WR_numerically_ineligible
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0251
     baseline_promoted: false
+    source_head: 27972a15d770ada194f712805b1be01e1a44dd68
+    runtime_source_head: 910f6f95c8d144194b0711c974b60c7159d3931b
+    report: docs/experiments/EXP-0251-RESULTS.md
+    report_sha256: afbffa61c23f348e24d47671fa9a8e78f7ffcc8e76916f2675b3145f6082d314
+    full_profiling_report: docs/experiments/EXP-0251-PROFILE.md
+    full_profiling_report_sha256: 83c20f234779af45e17d9bf2a9831f764b005c8ed4416dcd60aeb92039d38992
+    evidence_ledger_sha256: e3d088b0ece57e5c36baa3a0ac3098306e950af73d4d162f7495fccf4afc7334
+    evidence_file_count: 348
+    numerical_gate: pass_for_W0_WR_whole_layer_fail
+    gate_role: W0_implementation_and_single_layer_speed_only_not_model_quality
+    speed_gate: pass
+    performance:
+      repeat1_prefill:
+        control_us: 1782.344
+        wide_us: 1556.6925
+        paired_regression_percent: -9.326454056475875
+        paired_ratio_ci95:
+        - 0.8504066564859294
+        - 1.0087950923992621
+        stable_over10percent: false
+        round_control_us:
+        - 1927.76
+        - 1508.282
+        - 1783.594
+        - 1731.771
+        - 1603.229
+        - 1873.125
+        - 1781.094
+        - 1812.76
+        - 2015.885
+        - 1545.521
+        round_wide_us:
+        - 1783.855
+        - 1807.657
+        - 1518.854
+        - 1538.02
+        - 1673.594
+        - 1476.146
+        - 1502.188
+        - 1554.271
+        - 1925.0
+        - 1559.114
+      repeat1_decode:
+        control_us: 962.802625
+        wide_us: 957.438125
+        paired_regression_percent: 0.4438953061341122
+        paired_ratio_ci95:
+        - 0.9297281285191749
+        - 1.029824342047507
+        stable_over10percent: false
+        round_control_us:
+        - 953.46375
+        - 1004.824125
+        - 1141.835875
+        - 939.7525
+        - 968.326625
+        - 957.278625
+        - 974.446625
+        - 943.209625
+        - 1072.031
+        - 928.652375
+        round_wide_us:
+        - 950.292875
+        - 964.739375
+        - 942.96875
+        - 967.78
+        - 1000.097625
+        - 925.208375
+        - 1000.944
+        - 954.720125
+        - 957.278375
+        - 957.597875
+      repeat10_prefill:
+        control_us: 1542.8202
+        wide_us: 1525.79695
+        paired_regression_percent: -0.41063714592768363
+        paired_ratio_ci95:
+        - 0.9655866468743339
+        - 1.0246680332308367
+        stable_over10percent: false
+        round_control_us:
+        - 1522.3073
+        - 1593.3905
+        - 1502.6563999999998
+        - 1523.8385
+        - 1565.6458
+        - 1568.4166
+        - 1545.8176
+        - 1539.8228000000001
+        - 1565.7135
+        - 1507.8958
+        round_wide_us:
+        - 1567.2292
+        - 1529.0782
+        - 1522.5157
+        - 1581.7086000000002
+        - 1490.0153
+        - 1514.7605
+        - 1531.9687
+        - 1577.8072
+        - 1521.1458
+        - 1509.021
+      repeat10_decode:
+        control_us: 952.6555875
+        wide_us: 960.6330874999999
+        paired_regression_percent: 0.6671287856549579
+        paired_ratio_ci95:
+        - 0.996190203268821
+        - 1.020223299959943
+        stable_over10percent: false
+        round_control_us:
+        - 941.3795375
+        - 951.6458375
+        - 980.9771374999999
+        - 938.1946750000001
+        - 953.6653375000001
+        - 944.52995
+        - 961.0546374999999
+        - 958.8776750000001
+        - 956.36645
+        - 937.1783625
+        round_wide_us:
+        - 940.5742875
+        - 960.7414749999999
+        - 991.1080375
+        - 966.38995
+        - 957.27475
+        - 963.6314625
+        - 950.0944125
+        - 960.5246999999999
+        - 942.379625
+        - 970.9622875
+    physical:
+      vtcm_requested_bytes:
+      - 8388608
+      vtcm_acquired_bytes:
+      - 8388608
+      vtcm_peak_plan_bytes:
+      - 6682752
+      intermediate_ddr_read_bytes:
+      - 0
+      intermediate_ddr_write_bytes:
+      - 0
+      intermediate_spill_fill_count:
+      - 0
+      block_invocation_count:
+      - 1
+      w4u8_decode_direct_n_projection_count:
+      - 7
+      ledger_unattributed_ticks:
+      - 0
+    short_rounds: 5
+    formal_rounds: 10
+    timed_layer_RPCs: 2970
+    audit_layer_RPCs: 54
+    plain_dense_r3_wide_eligible: false
+    r3_wide_whole_gate:
+    - step: 0
+      dense_pass: true
+      dense_max_abs: 0.016828659048769623
+      qk:
+        max_lsb: 1
+        changed: 143
+        elements: 196608
+        mean_abs_lsb: 0.0007273356119791666
+      whole:
+        max_lsb: 11
+        changed: 47232
+        elements: 131072
+        mean_abs_lsb: 0.40093994140625
+      cosine: 0.9927221998267413
+      gate_pass: false
+    - step: 1
+      dense_pass: true
+      dense_max_abs: 0.01602412760257721
+      qk:
+        max_lsb: 1
+        changed: 7
+        elements: 3072
+        mean_abs_lsb: 0.0022786458333333335
+      whole:
+        max_lsb: 3
+        changed: 1104
+        elements: 2048
+        mean_abs_lsb: 0.6328125
+      cosine: 0.9888342055132645
+      gate_pass: false
+    - step: 2
+      dense_pass: true
+      dense_max_abs: 0.008921598899178207
+      qk:
+        max_lsb: 0
+        changed: 0
+        elements: 3072
+        mean_abs_lsb: 0.0
+      whole:
+        max_lsb: 0
+        changed: 0
+        elements: 2048
+        mean_abs_lsb: 0.0
+      cosine: 1.0
+      gate_pass: true
+    - step: 3
+      dense_pass: true
+      dense_max_abs: 0.01427252043504268
+      qk:
+        max_lsb: 1
+        changed: 2
+        elements: 3072
+        mean_abs_lsb: 0.0006510416666666666
+      whole:
+        max_lsb: 6
+        changed: 1145
+        elements: 2048
+        mean_abs_lsb: 0.6865234375
+      cosine: 0.986625258688304
+      gate_pass: false
+    - step: 4
+      dense_pass: true
+      dense_max_abs: 0.01641767763067037
+      qk:
+        max_lsb: 1
+        changed: 4
+        elements: 3072
+        mean_abs_lsb: 0.0013020833333333333
+      whole:
+        max_lsb: 7
+        changed: 1157
+        elements: 2048
+        mean_abs_lsb: 0.6708984375
+      cosine: 0.9867298955202695
+      gate_pass: false
+    - step: 5
+      dense_pass: true
+      dense_max_abs: 0.015677522867918015
+      qk:
+        max_lsb: 1
+        changed: 3
+        elements: 3072
+        mean_abs_lsb: 0.0009765625
+      whole:
+        max_lsb: 3
+        changed: 1029
+        elements: 2048
+        mean_abs_lsb: 0.5625
+      cosine: 0.9905629276745214
+      gate_pass: false
+    - step: 6
+      dense_pass: true
+      dense_max_abs: 0.016517288313480094
+      qk:
+        max_lsb: 1
+        changed: 3
+        elements: 3072
+        mean_abs_lsb: 0.0009765625
+      whole:
+        max_lsb: 6
+        changed: 1046
+        elements: 2048
+        mean_abs_lsb: 0.58203125
+      cosine: 0.9854713300864195
+      gate_pass: false
+    - step: 7
+      dense_pass: true
+      dense_max_abs: 0.01607669662917033
+      qk:
+        max_lsb: 1
+        changed: 4
+        elements: 3072
+        mean_abs_lsb: 0.0013020833333333333
+      whole:
+        max_lsb: 3
+        changed: 1108
+        elements: 2048
+        mean_abs_lsb: 0.65771484375
+      cosine: 0.9895540210124775
+      gate_pass: false
+    - step: 8
+      dense_pass: true
+      dense_max_abs: 0.01570405624806881
+      qk:
+        max_lsb: 1
+        changed: 3
+        elements: 3072
+        mean_abs_lsb: 0.0009765625
+      whole:
+        max_lsb: 0
+        changed: 0
+        elements: 2048
+        mean_abs_lsb: 0.0
+      cosine: 1.0
+      gate_pass: true
+    device_ppl: null
+    e2e_tokens_per_second: null
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0251.md
 - id: EXP-0250
   slug: raw-score-max
   title: Raw-score row maximum and widened difference precision
