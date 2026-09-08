@@ -1732,6 +1732,14 @@ EXP0241/PC056 now authorized: exact masked-W4 multi-pass LPBQ32, same frozen gro
 
 EXP0241 completed: exact five masked-W4 planes/31 HMX passes eliminate S8 weights while preserving every LPBQ group multiplier and one final conversion.63 independent projection checks/1,474,560 values exact; whole-layer/KV and all short/formal hashes pass. Five short/ten three-way formal rounds: repeat10 control/S8/direct M64 1645.7291/4227.5833/6230.74985 us, M1 1016.43358125/3689.6279375/5786.28550625 us. Direct primary paired+276.5495%/+469.0024%, also slower than S8. Speed gate fail; full model not started; other recipes frozen,no promotion. This rejects the current multi-pass candidate, not every direct-W4 grouped algorithm. All451 evidence hashes verified, runtime3bcb631/report a4f7df8. Active none,next242 requires discussion; current handoff docs/experiments/EXP-0241-RESULTS.md. Single-layer build caches remain ON.
 
-## Active EXP-0242 (2026-09-08)
+## EXP-0242 registration (now completed, 2026-09-08)
 
 User selected fixed C64 per-channel W4 + static A8 error localization/clipping and distribution plots. EXP0242 is host-only, no new weights/device work. Read docs/experiments/EXP-0242.md for frozen roles, bounded variants and limits. Do not repeat LPBQ or proceed to another algorithm.
+
+## Current handoff after EXP-0242 (2026-09-08)
+
+No active experiment. EXP0242 fixed C64 per-channel W4 static A8 software localization/clipping/plots completed, valid evidence, quality fail, no adoption or device runs. Final primary PPL F16 24.774821, C64 26.296039, all-minmax A8 151935.950477, development-selected p99.99 A8 32468.413936. All33 repeat/causal/CE checks pass; original controls reproduce retained per-token results; weights unchanged.
+
+Key observation: L02 (third layer) SwiGLU >1000 spikes appear only at first position in all128 calibration windows; channel1821 carries99.992% energy. L02 residual step54.55 versus median magnitude0.281 leaves at least99.989% elements in zero-code interval. Residual-only A8 collapses; SwiGLU and other boundaries also contribute. This is window-relative, not proof of a prefix cure or an intrinsic-F16 mechanism. Local tensor MSE can improve while PPL worsens. Preserve distinction from the different historical EXP0218 W4U8 weights and from exact DSP semantics.
+
+Read docs/experiments/EXP-0242-RESULTS.md and EXP-0242-PROFILE.md; evidence /mnt/d/llm_exp/results/qwen3-block-htp/exp0242, including five PNG/PDF visualizations. Discuss first-position outliers/residual boundaries before registering another method. No prefix, SmoothQuant/LET, rotation, grouping or hardware continuation was started. Other recipes remain frozen; future hardware retains >10% per-layer speed stop rule.

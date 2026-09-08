@@ -29,9 +29,9 @@ experiments:
   title: Fixed per-channel C64 A8 error localization and static clipping
   parent: EXP-0241
   record: docs/experiments/EXP-0242.md
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
   adoption_status: pending
   approval_ref: User2026-09-08 first A8 localization and static clipping plus distribution
     visualization
@@ -39,15 +39,72 @@ experiments:
   - codex/exp-0242-static-a8-localization
   source_commits:
   - a4f7df85c4449f4ad18bd3b1129d55274437a0d6
+  - 78671fd1561041d0a5cc119b531e8025da5eb859
+  - 97c5e38eacec7b17d4de726df5d0da75fa514fb9
+  - f0239e60bb72832c5ba3e3c9443646843bef07eb
+  - 37e6689983abfa7668abaf0be5175a4f9f1538e8
+  - 394253ea340e1bdd1ddca1923dc0e9cb0bd9c13b
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0242-static-a8-localization
     approved_on: '2026-09-08'
     started_on: '2026-09-08'
+    completed_on: '2026-09-08'
   evidence:
     protocol: PC057
-    current_stage: registered_before_inference
+    current_stage: completed
     baseline_promoted: false
+    source_head: 394253ea340e1bdd1ddca1923dc0e9cb0bd9c13b
+    calibration_source_head: f0239e60bb72832c5ba3e3c9443646843bef07eb
+    evaluation_source_head: 37e6689983abfa7668abaf0be5175a4f9f1538e8
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0242
+    evidence_ledger_sha256: 5c6e1f92088a9e7ff49aa27cf1ab6a59f13ace3b46ef34f997474ec022d92977
+    evidence_file_count: 77
+    report: docs/experiments/EXP-0242-RESULTS.md
+    report_sha256: be32e700238236bbbc970cb2f3c2a1725f857ab51ba33d35e2c1bf7f14b3021d
+    full_profiling_report: docs/experiments/EXP-0242-PROFILE.md
+    full_profiling_report_sha256: 630d28755472ab6ca9e22ab7b52756bfd41765f8053fad2acad16f454117cfe7
+    manifest_sha256: 7de4f0758d83f2ba3b58696c695bfbfed72a25dd3bf308475abee0a0f0575a89
+    calibration_sha256: cdb6bed1ec83cf34892d1d6ff4e36dc3086700492d0a399fe52e6a8276756d76
+    selection_sha256: 02285c87833c4b88bfc2866bf8bfda59add461ccc46e297e03040713bc34e011
+    selected_static_policy: percentile_99.99
+    primary_ppl:
+      all_minmax: 151935.95047666354
+      all_percentile: 32468.41393641894
+      C64: 26.296038981061685
+      F: 24.774820574744812
+    primary_selected_vs_C64:
+      ppl_ratio: 1234.7264148719348
+      ppl_ratio_ci95:
+      - 1030.7766049074153
+      - 1475.3842222740288
+      cells:
+        en_wiki:
+          ppl_ratio: 1765.4866328261287
+          nll_delta: 7.476181644015014
+        zh_wiki:
+          ppl_ratio: 541.9161408702706
+          nll_delta: 6.295111267827451
+        en_news:
+          ppl_ratio: 2271.044019757716
+          nll_delta: 7.7279949253425
+        zh_news:
+          ppl_ratio: 1069.697262545902
+          nll_delta: 6.975130955222994
+    all_33_repeat_causal_CE_checks: pass
+    canonical_controls_per_token_reproduction: exact
+    weights_unchanged: true
+    first_layer_with_massive_outlier_zero_based: 2
+    first_token_spike_windows: 128
+    total_calibration_windows: 128
+    L02_swiglu_max_abs: 16688.0
+    L02_swiglu_top_channel_energy_fraction: 0.9999215296544194
+    L02_residual_minmax_step: 54.547794342041016
+    L02_residual_zero_code_fraction_lower_bound: 0.9998956620693207
+    new_device_runs: 0
+    e2e_tokens_per_second: null
+    conclusion: static_clipping_insufficient_first_token_massive_activations_dominate_ranges_and_residual_A8_is_catastrophic
+    next_decision: discussion_before_any_prefix_rotation_smoothing_or_runtime_change
 - id: EXP-0241
   slug: lpbq32-direct-w4
   title: Exact LPBQ32 masked direct-W4 HMX layer gate

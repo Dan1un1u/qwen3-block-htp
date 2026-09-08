@@ -19,13 +19,38 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0242
+  active_experiment: null
   next_experiment_number: 243
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
+  latest_w4u8_static_a8_diagnostic:
+    id: EXP-0242
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: pending
+    source_branch: codex/exp-0242-static-a8-localization
+    source_head: 394253ea340e1bdd1ddca1923dc0e9cb0bd9c13b
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0242
+    report: docs/experiments/EXP-0242-RESULTS.md
+    ledger_sha256: 5c6e1f92088a9e7ff49aa27cf1ab6a59f13ace3b46ef34f997474ec022d92977
+    fixed_weights: EXP0230_C64_per_output_channel_W4
+    primary_ppl:
+      all_minmax: 151935.95047666354
+      all_percentile: 32468.41393641894
+      C64: 26.296038981061685
+      F: 24.774820574744812
+    development_residual_only_minmax_ppl: 151935.95047666354
+    development_without_residual_minmax_ppl: 160.43281458407952
+    development_swiglu_minmax_ppl: 58.59444015906768
+    development_swiglu_mse_ppl: 36.629061700831755
+    diagnosis: L02_first_window_token_SwiGLU_spike_then_Down_residual_range_destroys_ordinary_values
+    outlier_causal_prefix_intervention: not_run
+    new_device_runs: 0
+    baseline_promoted: false
   latest_w4u8_lpbq32_direct_w4_result:
     id: EXP-0241
     source_head: a4f7df85c4449f4ad18bd3b1129d55274437a0d6
@@ -854,19 +879,22 @@ current_scope:
         manifest_sha256: 44ac941297f1aab82ec4daff2ca8191379def73f6796a1c9c5d7d700820c5673
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
-  execution_unit: host_fixed_C64_static_A8_localization_and_clipping
-  last_completed_experiment: EXP-0241
-  last_completed_source_commit: a4f7df85c4449f4ad18bd3b1129d55274437a0d6
+  execution_unit: host_fixed_C64_static_A8_diagnostic_completed
+  last_completed_experiment: EXP-0242
+  last_completed_source_commit: 394253ea340e1bdd1ddca1923dc0e9cb0bd9c13b
   provisional_source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
-  device_execution_state: no_device_work_software_diagnostic
+  device_execution_state: paused_no_device_work_PC057_software_quality_failed
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  current_handoff: docs/experiments/EXP-0242.md
+  current_handoff: docs/experiments/EXP-0242-RESULTS.md
   active_recipe_specialization: null
-  last_completed_experiment_contract: docs/experiments/EXP-0241.md
+  last_completed_experiment_contract:
+    id: EXP-0242
+    protocol: PC057
+    scope: fixed_C64_static_A8_localization_clipping_visualization_software_only
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0241
+  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0242
   latest_w4f16_output_scale_result:
     id: EXP-0224
     execution_state: completed
@@ -7120,10 +7148,12 @@ current_scope:
     next_action: Discuss W4A8 reproducibility and same-W4-weight activation attribution;
       no new experiment authorized
   next_research_direction:
-    status: running_PC057
-    W4A8: fixed_C64_A8_localization_static_clipping_visualization
+    status: discussion_only_PC057_completed
+    W4A8: first_position_outliers_and_residual_quantization_need_discussion
+    static_clipping: insufficient_to_restore_quality
     other_recipes: frozen
-    hardware: separate_registration_after_discussion
+    hardware: not_started_no_speed_extrapolation
+    next_algorithm: not_authorized_by_this_bounded_experiment
   latest_w4f16_independent_tool_result:
     id: EXP-0233
     source_head: 24a976887f9da144e49de2774104a3e72ddf6ddd
