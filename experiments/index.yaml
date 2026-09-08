@@ -24,6 +24,30 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0244
+  slug: prefix-a8-boundary-ablation
+  title: Fixed-prefix layer and boundary A8 ablation
+  parent: EXP-0243
+  record: docs/experiments/EXP-0244.md
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  approval_ref: User2026-09-08 continue prefix-treated layer and boundary ablations
+  source_branches:
+  - codex/exp-0243-prefix-a8-causality
+  source_commits:
+  - 7d7c46022a4d83c6faa700d24588bc02977bd374
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0243-prefix-a8-causality
+    approved_on: '2026-09-08'
+    started_on: '2026-09-08'
+  evidence:
+    protocol: PC059
+    current_stage: registration_branch_setup
+    baseline_promoted: false
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0244
 - id: EXP-0243
   slug: prefix-a8-causality
   title: First-position causality and fixed-prefix static A8 recovery

@@ -1755,3 +1755,7 @@ User approved starting the updated direction. Frozen first-position F16/C64/temp
 ## Current handoff after EXP0243
 
 EXP0243 completed with valid software evidence and failed accuracy gate. No active experiment, next number244; no automatic promotion, new algorithm or hardware start. Read docs/experiments/EXP-0243-RESULTS.md and docs/W4A8_NEXT_DIRECTION_AFTER_EXP0243.md. The original EXP0243 protocol remains immutable for data-freeze replay. EOS+MSE static U8 with actual prefix/body uint8 KV recovers the catastrophic baseline but retains substantial paired A8 loss. F16/C64 both show first-position spikes; EOS removes L02 online giants while distributed late-layer tails remain. All weights and other recipes stay frozen. Further attribution/transforms require a registered protocol; native HMX W4 and >10percent single-layer stop rule remain. Source 7d7c46022a4d83c6faa700d24588bc02977bd374; evidence ledger f570b447e6f7bd45f39d5786e447bceb53a23cf4b43202d1dc37fc18d857ff6b.
+
+## 2026-09-08 EXP0244 registered
+
+Latest user authorizes fixed-EOS layer/boundary A8 attribution under PC059; protocol docs/experiments/EXP-0244.md. EXP0243 sealed evidence remains immutable; its residual_mid proxy quantizes norm input only. EXP0244 corrects fanout before mask attribution and retains legacy control. Temporary parent-branch binding permits clean branch setup, then runtime moves to codex/exp-0244-prefix-a8-boundary-ablation. No rotation/device/weight changes.

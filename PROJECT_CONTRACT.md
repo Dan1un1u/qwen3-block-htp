@@ -257,3 +257,7 @@ EXP0242 executes only the selected first direction: C64 fixed weights, software 
 ## PC-058 — First-position and fixed-prefix static A8 (user approved 2026-09-08)
 
 User approves starting the updated roadmap. EXP0243 first executes frozen C64/F16 positional/template/cache attribution and PrefixQuant-style fixed-prefix isolation under docs/experiments/EXP-0243.md. Fresh disjoint final panel, matched-prefix controls and actual static-U8 KV storage required. Freeze W4 codes/scales and all other recipes. No rotation/training/grouping/mixed-precision deployment or device run in this bounded phase; follow-up methods/device work require separately frozen registered protocols based on the results. Existing accuracy/physical/10percent speed rules unchanged, no promotion. PC037 autonomous recovery applies.
+
+## PC059 — EXP0244 fixed-prefix A8 attribution
+
+User 2026-09-08 authorizes EXP-0244 per docs/experiments/EXP-0244.md. Restore individual activation boundaries only as software diagnostics, correct shared residual midpoint fanout with legacy control, preserve fixed W4 and EXP0243 MSE scales. No rotation, new weights, hardware or baseline promotion. PC037 routine recovery applies.
