@@ -7,3 +7,7 @@ All37,224,464 denominator/exponent pairs have<=1LSB vs exact; NumPy/GPU/random/c
 DSP build/deploy attempt1 pass, runtime source dd96c4a. run_device_audits.py executes13 untimed runs then audit_exp0252.py: actual captured raw/prob/AV exact, same-QK normalized downstream O/residual and HMX-vs-Float64 rotation gates. Device audit job may still run: inspect device_audits_attempt1.log and device_numerical_attempt1.log. No timing eligibility assumed. Next: inspect numerical_audit.json, profile only eligible fixed candidates5short10formal, unchanged10percent gate. R3 failure blocks its own formal profiling only. Finish independent final PPL and complete reports/seal/closure. No promotion. Conditional later slice/full-model only if gates pass and new registration; remaining numerical or model-quality failure requires discussion, do not silently expand.
 
 Python: GPU/oracle /home/daniuniu/.cache/qwen3-block-htp-spinquant-py/bin/python; analysis/numpy /home/daniuniu/.cache/qwen3-block-htp-analysis-py/bin/python. Source software runtime modules loaded at a6a8326 in development; final loaded dd96c4a; four PPL source modules byte-identical across these commits. Device dd96c4a. Results not yet sealed. Scripts and preserved execution logs record all work.
+
+## Closed checkpoint
+
+All work above completed; running instructions are historical. Active none,next253. Current result docs/experiments/EXP-0252-RESULTS.md; follow-up docs/W4A8_NEXT_DIRECTION_AFTER_EXP0252.md. No GPU/device process remains.

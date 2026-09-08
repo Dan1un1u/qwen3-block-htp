@@ -29,9 +29,9 @@ experiments:
   title: Normalization precision and dense R3 amplification
   parent: EXP-0251
   record: docs/experiments/EXP-0252.md
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: not_applicable
   approval_ref: PC066 user approves ordered joint ablation
   source_branches:
@@ -41,19 +41,220 @@ experiments:
   - 27972a15d770ada194f712805b1be01e1a44dd68
   - a6a8326fb694bab2ec3659c02b77a3d459527394
   - dd96c4aa6caed2c425237f1672d7dbec72ddcda0
+  - 1ffc017105846604c46108a795c059f61c87d57f
+  - d43ddf378f858219adbae4d06c2e2f1976435029
+  - 71f8a62449226127e6befb776abc5f572f1c4a88
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0252-normalization-r3
     approved_on: '2026-09-09'
     started_on: '2026-09-09'
+    completed_on: '2026-09-09'
   evidence:
     protocol: PC066
-    current_stage: independent_final_PPL_and_device_normalization_audit
+    current_stage: completed_NR64_PPL_hardware_speed_R3_amplification
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0252
     baseline_promoted: false
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0252.md
     NR64_denominator_gate: pass_37224464_entries_max1LSB
     development_gate: pass_old_controls_exact_NR64_improves_both_groups
+    source_head: 71f8a62449226127e6befb776abc5f572f1c4a88
+    runtime_source_head: dd96c4aa6caed2c425237f1672d7dbec72ddcda0
+    inference_source_heads:
+    - 1ffc017105846604c46108a795c059f61c87d57f
+    - d43ddf378f858219adbae4d06c2e2f1976435029
+    - dd96c4aa6caed2c425237f1672d7dbec72ddcda0
+    report: docs/experiments/EXP-0252-RESULTS.md
+    report_sha256: 4bababf2343545090afa8e4972736e1ed1425b50376799c026ae0f73781ad5ac
+    full_profiling_report: docs/experiments/EXP-0252-PROFILE.md
+    full_profiling_report_sha256: 2ec3b17d09520e33f44e532d150f786bd58810d4be5332ea2ac59509be86ab8e
+    evidence_ledger_sha256: c2491088eefd8f96f943be73c63898815697f906a8eab6e898d48639169ccd9c
+    evidence_file_count: 561
+    numerical_gate: NR64_integer_exact_R3_whole_gate_fail
+    gate_role: diagnostic_implementation_and_no_R3_speed_only
+    speed_gate: pass
+    performance:
+      repeat1_prefill:
+        control_us: 1689.0884999999998
+        nr64_us: 1784.1925
+        paired_regression_percent: 5.668288780635411
+        paired_ratio_ci95:
+        - 1.0087536476886059
+        - 1.1457275028482432
+        stable_over10percent: false
+        round_control_us:
+        - 1671.406
+        - 1727.657
+        - 1816.511
+        - 1706.771
+        - 1739.01
+        - 1724.636
+        - 1542.709
+        - 1540.468
+        - 1579.635
+        - 1511.458
+        round_nr64_us:
+        - 1496.875
+        - 1832.083
+        - 1758.072
+        - 1727.813
+        - 1831.042
+        - 1810.313
+        - 1852.969
+        - 1716.927
+        - 1856.615
+        - 1731.719
+      repeat1_decode:
+        control_us: 1026.3605625
+        nr64_us: 982.3013125
+        paired_regression_percent: 0.6335585917403241
+        paired_ratio_ci95:
+        - 0.9199372887066766
+        - 1.023728823744185
+        stable_over10percent: false
+        round_control_us:
+        - 1035.9375
+        - 1077.532625
+        - 970.345125
+        - 959.5835
+        - 973.163875
+        - 958.372375
+        - 1061.146
+        - 1099.0235
+        - 1059.02325
+        - 1016.783625
+        round_nr64_us:
+        - 987.07025
+        - 947.844875
+        - 989.316375
+        - 977.532375
+        - 975.214875
+        - 968.49625
+        - 1216.836125
+        - 973.991
+        - 1009.9285
+        - 1054.296875
+      repeat10_prefill:
+        control_us: 1548.81515
+        nr64_us: 1532.35675
+        paired_regression_percent: -1.3999641820328534
+        paired_ratio_ci95:
+        - 0.9636816535913649
+        - 1.0232566887468437
+        stable_over10percent: false
+        round_control_us:
+        - 1525.7811000000002
+        - 1574.245
+        - 1520.6248999999998
+        - 1575.5938
+        - 1556.7656000000002
+        - 1540.8646999999999
+        - 1495.052
+        - 1576.0677
+        - 1587.7238
+        - 1534.2084
+        round_nr64_us:
+        - 1508.7916
+        - 1529.2032
+        - 1555.9896
+        - 1502.9636
+        - 1614.297
+        - 1530.4741000000001
+        - 1555.8748
+        - 1534.2394
+        - 1560.9479
+        - 1463.2031000000002
+      repeat10_decode:
+        control_us: 954.34573125
+        nr64_us: 960.53871875
+        paired_regression_percent: 0.6891802207718456
+        paired_ratio_ci95:
+        - 0.9929232788322736
+        - 1.0210908932539067
+        stable_over10percent: false
+        round_control_us:
+        - 951.6003125
+        - 964.871725
+        - 932.2396125
+        - 957.09115
+        - 962.2642625
+        - 947.88725
+        - 967.533175
+        - 948.871025
+        - 942.0951
+        - 958.0130625
+        round_nr64_us:
+        - 966.569075
+        - 943.2109250000001
+        - 949.9061999999999
+        - 978.5872125000001
+        - 960.391225
+        - 943.143225
+        - 960.6862125
+        - 968.8835625
+        - 990.17445
+        - 950.8703875
+    physical:
+      vtcm_requested_bytes:
+      - 8388608
+      vtcm_acquired_bytes:
+      - 8388608
+      vtcm_peak_plan_bytes:
+      - 6682752
+      intermediate_ddr_read_bytes:
+      - 0
+      intermediate_ddr_write_bytes:
+      - 0
+      intermediate_spill_fill_count:
+      - 0
+      block_invocation_count:
+      - 1
+      w4u8_decode_direct_n_projection_count:
+      - 7
+      ledger_unattributed_ticks:
+      - 0
+    final_ppl:
+      F: 32.210139338951315
+      C64: 32.94876092830991
+      OFF_wide_sole: 61.64335467418651
+      OFF_wide_exact: 53.34454270350036
+      OFF_wide_nr64: 53.74792160980847
+      R3_wide_sole: 43.53934073385623
+      R3_wide_exact: 42.74187304909285
+      R3_wide_nr64: 41.725860426711506
+    quality_gate:
+      C64:
+        point_pass: true
+        confident_pass: false
+      OFF_wide_sole:
+        point_pass: false
+        confident_pass: false
+      OFF_wide_exact:
+        point_pass: false
+        confident_pass: false
+      OFF_wide_nr64:
+        point_pass: false
+        confident_pass: false
+      R3_wide_sole:
+        point_pass: false
+        confident_pass: false
+      R3_wide_exact:
+        point_pass: false
+        confident_pass: false
+      R3_wide_nr64:
+        point_pass: false
+        confident_pass: false
+    R3_prefill_final_max_LSB:
+      control: 11
+      exact: 7
+      nr64: 7
+    short_rounds: 5
+    formal_rounds: 10
+    timed_layer_RPCs: 2970
+    audit_layer_RPCs: 117
+    device_ppl: null
+    e2e_tokens_per_second: null
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0252.md
 - id: EXP-0251
   slug: wide-score-device
   title: Native U8 wide-score hardware speed

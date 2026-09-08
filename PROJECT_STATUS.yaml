@@ -19,13 +19,191 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0252
+  active_experiment: null
   next_experiment_number: 253
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
+  latest_w4u8_nr64_normalization_result:
+    id: EXP-0252
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_role: NR64_implementation_and_no_R3_speed_only_not_quality_acceptance
+    adoption_status: not_applicable
+    source_head: 71f8a62449226127e6befb776abc5f572f1c4a88
+    runtime_source_head: dd96c4aa6caed2c425237f1672d7dbec72ddcda0
+    report: docs/experiments/EXP-0252-RESULTS.md
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0252
+    ledger_sha256: c2491088eefd8f96f943be73c63898815697f906a8eab6e898d48639169ccd9c
+    NR64_numerical_gate: pass
+    NR64_no_R3_speed_gate: pass
+    R3_numerical_gate: fail
+    R3_prefill_final_max_LSB:
+      control: 11
+      exact: 7
+      nr64: 7
+    performance:
+      repeat1_prefill:
+        control_us: 1689.0884999999998
+        nr64_us: 1784.1925
+        paired_regression_percent: 5.668288780635411
+        paired_ratio_ci95:
+        - 1.0087536476886059
+        - 1.1457275028482432
+        stable_over10percent: false
+        round_control_us:
+        - 1671.406
+        - 1727.657
+        - 1816.511
+        - 1706.771
+        - 1739.01
+        - 1724.636
+        - 1542.709
+        - 1540.468
+        - 1579.635
+        - 1511.458
+        round_nr64_us:
+        - 1496.875
+        - 1832.083
+        - 1758.072
+        - 1727.813
+        - 1831.042
+        - 1810.313
+        - 1852.969
+        - 1716.927
+        - 1856.615
+        - 1731.719
+      repeat1_decode:
+        control_us: 1026.3605625
+        nr64_us: 982.3013125
+        paired_regression_percent: 0.6335585917403241
+        paired_ratio_ci95:
+        - 0.9199372887066766
+        - 1.023728823744185
+        stable_over10percent: false
+        round_control_us:
+        - 1035.9375
+        - 1077.532625
+        - 970.345125
+        - 959.5835
+        - 973.163875
+        - 958.372375
+        - 1061.146
+        - 1099.0235
+        - 1059.02325
+        - 1016.783625
+        round_nr64_us:
+        - 987.07025
+        - 947.844875
+        - 989.316375
+        - 977.532375
+        - 975.214875
+        - 968.49625
+        - 1216.836125
+        - 973.991
+        - 1009.9285
+        - 1054.296875
+      repeat10_prefill:
+        control_us: 1548.81515
+        nr64_us: 1532.35675
+        paired_regression_percent: -1.3999641820328534
+        paired_ratio_ci95:
+        - 0.9636816535913649
+        - 1.0232566887468437
+        stable_over10percent: false
+        round_control_us:
+        - 1525.7811000000002
+        - 1574.245
+        - 1520.6248999999998
+        - 1575.5938
+        - 1556.7656000000002
+        - 1540.8646999999999
+        - 1495.052
+        - 1576.0677
+        - 1587.7238
+        - 1534.2084
+        round_nr64_us:
+        - 1508.7916
+        - 1529.2032
+        - 1555.9896
+        - 1502.9636
+        - 1614.297
+        - 1530.4741000000001
+        - 1555.8748
+        - 1534.2394
+        - 1560.9479
+        - 1463.2031000000002
+      repeat10_decode:
+        control_us: 954.34573125
+        nr64_us: 960.53871875
+        paired_regression_percent: 0.6891802207718456
+        paired_ratio_ci95:
+        - 0.9929232788322736
+        - 1.0210908932539067
+        stable_over10percent: false
+        round_control_us:
+        - 951.6003125
+        - 964.871725
+        - 932.2396125
+        - 957.09115
+        - 962.2642625
+        - 947.88725
+        - 967.533175
+        - 948.871025
+        - 942.0951
+        - 958.0130625
+        round_nr64_us:
+        - 966.569075
+        - 943.2109250000001
+        - 949.9061999999999
+        - 978.5872125000001
+        - 960.391225
+        - 943.143225
+        - 960.6862125
+        - 968.8835625
+        - 990.17445
+        - 950.8703875
+    final_ppl:
+      F: 32.210139338951315
+      C64: 32.94876092830991
+      OFF_wide_sole: 61.64335467418651
+      OFF_wide_exact: 53.34454270350036
+      OFF_wide_nr64: 53.74792160980847
+      R3_wide_sole: 43.53934073385623
+      R3_wide_exact: 42.74187304909285
+      R3_wide_nr64: 41.725860426711506
+    quality_gate:
+      C64:
+        point_pass: true
+        confident_pass: false
+      OFF_wide_sole:
+        point_pass: false
+        confident_pass: false
+      OFF_wide_exact:
+        point_pass: false
+        confident_pass: false
+      OFF_wide_nr64:
+        point_pass: false
+        confident_pass: false
+      R3_wide_sole:
+        point_pass: false
+        confident_pass: false
+      R3_wide_exact:
+        point_pass: false
+        confident_pass: false
+      R3_wide_nr64:
+        point_pass: false
+        confident_pass: false
+    short_rounds: 5
+    formal_rounds: 10
+    timed_layer_RPCs: 2970
+    device_PPL: null
+    E2E_tokens_per_second: null
+    baseline_promoted: false
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0252.md
   latest_w4u8_wide_score_device_result:
     id: EXP-0251
     execution_state: completed
@@ -1319,7 +1497,7 @@ current_scope:
     auxiliary: short_task_content_v2
     diagnostic_only: short_task_strict_v1_format_adherence
     numerical_acceptance_threshold: PC050_EXP0229_overall_5percent_per_language_domain_10percent
-    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0251.md
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0252.md
     new_experiment_authorized: false
   latest_short_task_scoring_audit:
     experiment: EXP-0228
@@ -2010,22 +2188,22 @@ current_scope:
         manifest_sha256: 44ac941297f1aab82ec4daff2ca8191379def73f6796a1c9c5d7d700820c5673
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
-  execution_unit: single_layer0_native_W4U8_M64_plus_eight_real_M1_cached_steps
-  last_completed_experiment: EXP-0251
-  last_completed_source_commit: 27972a15d770ada194f712805b1be01e1a44dd68
+  execution_unit: single_layer0_native_W4U8_NR64_M64_plus_eight_M1_and_conditional_software_PPL
+  last_completed_experiment: EXP-0252
+  last_completed_source_commit: 71f8a62449226127e6befb776abc5f572f1c4a88
   provisional_source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
-  device_execution_state: EXP0251_ABI115_layer0_capacity72_W0_numeric_and_speed_pass_WR_numeric_fail_not_full_model
+  device_execution_state: EXP0252_ABI116_layer0_capacity72_NR64_integer_speed_pass_R3_whole_gate_fail_not_full_model
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  current_handoff: docs/experiments/EXP-0252.md
+  current_handoff: docs/experiments/EXP-0252-RESULTS.md
   active_recipe_specialization: null
   last_completed_experiment_contract:
-    id: EXP-0251
-    protocol: PC065
-    scope: single_layer_wide_score_hardware_speed
+    id: EXP-0252
+    protocol: PC066
+    scope: normalization_and_R3_joint_ablation
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0251
+  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0252
   latest_w4f16_output_scale_result:
     id: EXP-0224
     execution_state: completed
@@ -8279,11 +8457,12 @@ current_scope:
     next_action: Discuss W4A8 reproducibility and same-W4-weight activation attribution;
       no new experiment authorized
   next_research_direction:
-    status: discussion_after_EXP0251_W0_speed_pass_WR_numeric_fail
-    document: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0251.md
-    current: discuss_full_model_scope_and_remaining_dense_HMX_rounding_softmax_precision
+    status: discussion_after_EXP0252_NR64_success_remaining_R3_and_A8_quality
+    document: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0252.md
+    current: remaining_score_rounding_and_exponent_threshold_sensitivity
     other_recipes: frozen
     new_algorithm_authorized: false
+    conditional_integration: prior_user_approval_retained_but_prerequisites_unmet_requires_separate_registration
   latest_w4f16_independent_tool_result:
     id: EXP-0233
     source_head: 24a976887f9da144e49de2774104a3e72ddf6ddd
