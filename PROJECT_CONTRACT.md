@@ -253,3 +253,7 @@ EXP0241 may implement and measure an exact integer reformulation of frozen EXP02
 ## PC-057 — Fixed per-channel W4 static A8 diagnostics (user approved 2026-09-08)
 
 EXP0242 executes only the selected first direction: C64 fixed weights, software activation error localization, static clipping, representative distribution visualization and matched PPL. Freeze calibration/selection/regression roles and bounded policies before inference per docs/experiments/EXP-0242.md. Preserve all weights and other recipes; no grouping, SmoothQuant/LET/rotation/training, DSP changes, device performance extrapolation or promotion. Routine recovery PC037 applies. Final device acceptance and any next algorithm remain separate.
+
+## PC-058 — First-position and fixed-prefix static A8 (user approved 2026-09-08)
+
+User approves starting the updated roadmap. EXP0243 first executes frozen C64/F16 positional/template/cache attribution and PrefixQuant-style fixed-prefix isolation under docs/experiments/EXP-0243.md. Fresh disjoint final panel, matched-prefix controls and actual static-U8 KV storage required. Freeze W4 codes/scales and all other recipes. No rotation/training/grouping/mixed-precision deployment or device run in this bounded phase; follow-up methods/device work require separately frozen registered protocols based on the results. Existing accuracy/physical/10percent speed rules unchanged, no promotion. PC037 autonomous recovery applies.

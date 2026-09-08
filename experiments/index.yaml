@@ -24,6 +24,29 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0243
+  slug: prefix-a8-causality
+  title: First-position causality and fixed-prefix static A8 recovery
+  parent: EXP-0242
+  record: docs/experiments/EXP-0243.md
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  approval_ref: User2026-09-08 start updated direction
+  source_branches:
+  - codex/exp-0243-prefix-a8-causality
+  source_commits:
+  - 394253ea340e1bdd1ddca1923dc0e9cb0bd9c13b
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0243-prefix-a8-causality
+    approved_on: '2026-09-08'
+    started_on: '2026-09-08'
+  evidence:
+    protocol: PC058
+    current_stage: registered_before_inference
+    baseline_promoted: false
 - id: EXP-0242
   slug: static-a8-localization
   title: Fixed per-channel C64 A8 error localization and static clipping
