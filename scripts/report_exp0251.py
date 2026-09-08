@@ -43,14 +43,15 @@ def main():
  for k,v in perf.items():text.append(f"|{k}|{v['control_us']:.3f}|{v['wide_us']:.3f}|{v['paired_regression_percent']:+.2f}%|{v['paired_ratio_ci95']}|")
  user=[]
  for mode in ['prefill','decode']:
-  centers=modules[mode];tab=[f'## {mode}: repeat10 additive modules','','Unit us; parentheses share complete Host wall. Frozen recipes N/A; same-scope historical measurements are unavailable.','','|Module|F16A16|W4A16|W4A8 control|W4A8 wide repair|','|---|---|---|---:|---:|']
+  centers=modules[mode];tab=[f'## {mode}: repeat10 additive modules','','Unit us; parentheses share complete Host wall. Frozen recipes N/A; same-scope historical measurements are unavailable.','','|Module|F16A16|W4A16|W4A8 control|W4A8 wide repair|W4A16 / W4A8 - 1|','|---|---|---|---:|---:|---|']
   for name in centers['control']['modules_us']:
    vals=[]
    for c in ['control','wide']:
     z=centers[c];v=z['modules_us'][name];vals.append(f"{v:.1f} ({100*v/z['host_us']:.2f}%)")
-   tab.append('|'+name+'|N/A|N/A|'+'|'.join(vals)+'|')
-  for name in ['Embedding','Final model RMSNorm','LM head + greedy']:tab.append('|'+name+'|N/A|N/A|N/A outside layer|N/A outside layer|')
+   tab.append('|'+name+'|N/A|N/A|'+'|'.join(vals)+'|N/A no matched W4A16|' )
+  for name in ['Embedding','Final model RMSNorm','LM head + greedy']:tab.append('|'+name+'|N/A|N/A|N/A outside layer|N/A outside layer|N/A|')
   text.extend(['']+tab);user.extend(['']+tab)
+ text.extend(['','Identity: source branch codex/exp-0251-wide-score-device; evidence '+str(R)+'; frozen artifacts /mnt/d/llm_exp/models/qwen3-block-htp/exp0247/{control,r3}. Project Variant W4U8/native per-channel weight.n. Full correctness, recovery and scope limits in REPORT.md; exact binary/package identity in ARTIFACT_PROVENANCE.json.'])
  text.extend(['','## Complete counter diagnostics','','Time counters below use19.2ticks/us. Counts/bytes retain native units. Independent per-field medians need not sum. Legacy unused golden fields are excluded.'])
  for key,runs in allruns.items():
   text.extend(['','### '+key,'','|Field|Control|Wide|Change|','|---|---:|---:|---:|'])

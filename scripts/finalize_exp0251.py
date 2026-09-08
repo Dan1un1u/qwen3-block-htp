@@ -63,6 +63,7 @@ assert device.adb('shell','cat /proc/sys/kernel/random/boot_id')==pr['boot']
 models={}
 for cell,pin in [('control','8f42f9e07f49d90504f8845e9f01ffc796c133c567794d8bf15af8778f93eaff'),('r3','c196670085429fb749cd2c391fa3d4c79eee9c3644a222cce3def002475609f1')]:
  root=Path('/mnt/d/llm_exp/models/qwen3-block-htp/exp0247')/cell;p=root/'manifest.json';assert sha(p)==pin;models[cell]=dict(manifest_sha256=pin,manifest=json.loads(p.read_text()))
+ for name,item in models[cell]['manifest']['files'].items():assert sha(root/name)==item['sha256'] and (root/name).stat().st_size==item['bytes'],name
 checks=dict(pass_all=True,all_timed_RPCs=calls,all_timed_processes=files,all_outputs_match_audited_reference=True,all_physical_and_additive_ledgers_exact=True,independent_pair_statistics_and_intervals_exact=True,all_parent_ledgers_and_files_unchanged=parents,native_source_unchanged_since_runtime_build=True,local_and_remote_binary_hashes_and_boot_verified=True,scope='M64 then eight M1 steps; layer0 only; no model-quality acceptance')
 (R/'independent_integrity_checks.json').write_text(json.dumps(checks,indent=2)+'\n')
 provenance=dict(experiment='EXP-0251',protocol_sha256=sha(M/'docs/experiments/EXP-0251.md'),source_head=git('rev-parse','HEAD'),runtime=pr,models=models,parent_evidence=parents,toolchain='SDK6.6 Tools19.0.07 HTPv79 NDKr26c',ABI=115,analysis_python='/home/daniuniu/.cache/qwen3-block-htp-analysis-py/bin/python',GPU_oracle_python='/home/daniuniu/.cache/qwen3-block-htp-spinquant-py/bin/python')
