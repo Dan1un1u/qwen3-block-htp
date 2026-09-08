@@ -251,6 +251,19 @@ def calibration_and_development():
             checks[policy or 'a16']=dict(max_logit_abs=(bulk-seq).abs().max().item(),max_nll_abs=(bn-sn).abs().max().item(),
                      prefix_length=len(prefix['ids']),final_length=cache.get_seq_length(),append_calls=len(cache.appended),
                      cache_dtypes=sorted(set(str(k.dtype) for k in cache.key_cache)),same_prefix_body_positions=True)
+            if policy is None:
+                ids=torch.tensor([prefix['ids']+r['token_ids'][:79] for r in rows('development')[:4]],device='cuda')
+                direct=model(input_ids=ids,use_cache=False).logits[:,len(prefix['ids'])+63:].float()
+                checks['a16']['direct_full_prefix_max_logit_abs']=(direct-bulk).abs().max().item()
+            else:
+                seed=ins.new_cache(1)
+                arrays={f'L{i:02d}.{kind}':value.cpu().numpy() for i,pair in enumerate(zip(seed.key_cache,seed.value_cache)) for kind,value in zip(['K','V'],pair)}
+                path=ROOT/f'calibration/{prefix["name"]}_{policy}_prefix_u8.npz'
+                with path.open('xb') as f:np.savez_compressed(f,**arrays)
+                with np.load(path) as retained:
+                    assert all(np.array_equal(value,retained[key]) for key,value in arrays.items())
+                checks[policy]['prefix_artifact_sha256']=a.sha(path)
+                checks[policy]['serialized_U8_seed_exact']=True
         write(f'checks/{prefix["name"]}_cache_paths.json',checks)
     assert before==a.state_digest(model);write('checks/C64_development_weights.json',dict(unchanged=True,digest=before))
     ins.close();del ins,model;torch.cuda.empty_cache()
