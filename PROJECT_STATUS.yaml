@@ -188,8 +188,8 @@ current_scope:
     auxiliary: short_task_content_v2
     diagnostic_only: short_task_strict_v1_format_adherence
     numerical_acceptance_threshold: PC050_EXP0229_overall_5percent_per_language_domain_10percent
-    next_direction: docs/experiments/EXP-0239-RESULTS.md
-    new_experiment_authorized: none_PC054_suite_complete
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0242.md
+    new_experiment_authorized: none_direction_update_only_after_EXP0242
   latest_short_task_scoring_audit:
     experiment: EXP-0228
     execution_state: completed
@@ -7148,12 +7148,15 @@ current_scope:
     next_action: Discuss W4A8 reproducibility and same-W4-weight activation attribution;
       no new experiment authorized
   next_research_direction:
-    status: discussion_only_PC057_completed
-    W4A8: first_position_outliers_and_residual_quantization_need_discussion
-    static_clipping: insufficient_to_restore_quality
+    status: proposed_updated_after_EXP0242_user_2026_09_08
+    document: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0242.md
+    first: matched_F16_C64_first_position_chat_template_and_cache_causality
+    second: PrefixQuant_style_fixed_prefix_KV_isolation_with_unchanged_C64_weights
+    third: conditional_residual_R1_and_targeted_R4_or_mild_channel_scaling
+    selection_metric: paired_PPL_not_global_tensor_MSE
+    hardware: native_HMX_W4_and_existing_10percent_single_layer_stop_rule
     other_recipes: frozen
-    hardware: not_started_no_speed_extrapolation
-    next_algorithm: not_authorized_by_this_bounded_experiment
+    execution: not_started_direction_update_only
   latest_w4f16_independent_tool_result:
     id: EXP-0233
     source_head: 24a976887f9da144e49de2774104a3e72ddf6ddd

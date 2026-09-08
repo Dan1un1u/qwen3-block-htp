@@ -1743,3 +1743,7 @@ No active experiment. EXP0242 fixed C64 per-channel W4 static A8 software locali
 Key observation: L02 (third layer) SwiGLU >1000 spikes appear only at first position in all128 calibration windows; channel1821 carries99.992% energy. L02 residual step54.55 versus median magnitude0.281 leaves at least99.989% elements in zero-code interval. Residual-only A8 collapses; SwiGLU and other boundaries also contribute. This is window-relative, not proof of a prefix cure or an intrinsic-F16 mechanism. Local tensor MSE can improve while PPL worsens. Preserve distinction from the different historical EXP0218 W4U8 weights and from exact DSP semantics.
 
 Read docs/experiments/EXP-0242-RESULTS.md and EXP-0242-PROFILE.md; evidence /mnt/d/llm_exp/results/qwen3-block-htp/exp0242, including five PNG/PDF visualizations. Discuss first-position outliers/residual boundaries before registering another method. No prefix, SmoothQuant/LET, rotation, grouping or hardware continuation was started. Other recipes remain frozen; future hardware retains >10% per-layer speed stop rule.
+
+## 下一步方向更新（用户要求，2026-09-08）
+
+当前仍无 active experiment；EXP0242 closure 与历史证据保持不变。方向见 docs/W4A8_NEXT_DIRECTION_AFTER_EXP0242.md：先做 F16/C64 与正文/真实聊天模板/持续 KV 的首位置因果对照，再优先验证 PrefixQuant 风格的固定前缀 KV 隔离，保持 C64 W4 和静态 U8 格式；后续依据残差主因是否仍在决定 R1 与局部 R4 或温和通道缩放。单独 R4 的等价变换不改变原坐标 Down 输出，因此不能默认修复残差主因。前缀本身改变条件分布，要用同前缀 F16/A16 对照、原正文评分和真实目标格式前缀 KV 验证。已有面板只作暴露回归，最终候选另冻结轻量数据。停止盲扫 clipping；硬件保持原生 HMX W4 与10%单层性能停止门槛，计入前缀完整成本。本轮仅更新提案，未启动新算法、训练、源代码或设备工作。
