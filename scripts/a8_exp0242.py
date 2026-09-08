@@ -193,6 +193,7 @@ class Instrument:
         self.collect = False
         self.stats = {}
         self.local_errors = None
+        self.runtime_errors = None
         self.capture = None
         self.handles = []
         self.original_attention = qwen.eager_attention_forward
@@ -217,7 +218,16 @@ class Instrument:
                 v['clipped'] += ((x < p['lo']) | (x > p['hi'])).sum().item()
         layer = int(name.split('.')[0][1:]) if name.startswith('L') else 28
         if self.policy and family in self.families and not skip_quant and (layer < self.depth or name == 'head_input' and self.depth == 28):
-            x = qdq(x, self.params[name][self.policy])
+            p = self.params[name][self.policy]
+            y = qdq(x, p)
+            if self.runtime_errors is not None:
+                v = self.runtime_errors.setdefault(name, dict(sse=0., energy=0., count=0, clipped=0, maximum_abs=0.))
+                v['sse'] += (y.float()-x.float()).square().sum(dtype=torch.float64).item()
+                v['energy'] += x.float().square().sum(dtype=torch.float64).item()
+                v['count'] += x.numel()
+                v['clipped'] += ((x < p['lo']) | (x > p['hi'])).sum().item()
+                v['maximum_abs'] = max(v['maximum_abs'], x.abs().max().item())
+            x = y
         return x
 
     def install(self):
@@ -422,9 +432,9 @@ def traces():
     write('local_tensor_error.json',dict(ids=[r['id'] for r in rows],sites=ins.local_errors,
           role='independent_development_on_unperturbed_C64_tensors'))
     ins.local_errors=None
-    drift={}
+    drift={};runtime_errors={}
     for policy in ['minmax','mse','percentile']:
-        ins.configure(policy,FAMILIES);metrics={}
+        ins.configure(policy,FAMILIES);metrics={};ins.runtime_errors={}
         for batch_index,start in enumerate(range(0,len(rows),4)):
             ins.capture={};forward(model,rows[start:start+4])
             for name,value in ins.capture.items():
@@ -436,7 +446,10 @@ def traces():
             v['relative_rmse']=math.sqrt(v['sse']/max(v['energy'],1e-30))
             v['cosine']=v['dot']/math.sqrt(max(v['energy']*v['candidate_energy'],1e-30))
         drift[policy]=metrics
+        runtime_errors[policy]=ins.runtime_errors
     write('residual_drift.json',dict(ids=[r['id'] for r in rows],policies=drift))
+    write('propagated_tensor_error.json',dict(ids=[r['id'] for r in rows],policies=runtime_errors,
+          role='local_QDQ_error_and_saturation_on_actual_all_boundary_A8_trajectories'))
     assert state_digest(model)==cal['state_digest']
     ins.close()
 

@@ -3,6 +3,7 @@
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import numpy as np
 import matplotlib
@@ -10,7 +11,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 
-ROOT=Path('/mnt/d/llm_exp/results/qwen3-block-htp/exp0242')
+ROOT=Path('D:/llm_exp/results/qwen3-block-htp/exp0242' if os.name=='nt' else '/mnt/d/llm_exp/results/qwen3-block-htp/exp0242')
 CELLS=['en_wiki','zh_wiki','en_news','zh_news']
 FAMILIES=['norm_input','qkv_output','projection_output','swiglu','qk_kv','attention','residual','head_input']
 LABELS=['Norm / linear input','QKV projection output','O / Gate / Up / Down output','SwiGLU / Down input','QK RoPE / KV carrier','Attention prob / context','Residual stream','LM-head input']
