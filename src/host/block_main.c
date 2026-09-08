@@ -3111,7 +3111,7 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U32(f16_cache_full_prefix_pack_count);
     QBH_REPLAY_PROFILE_U64(f16_cache_native_append_update_ticks);
     QBH_REPLAY_PROFILE_U64(u8_attention_qk_hmx_ticks);
-    QBH_REPLAY_PROFILE_U64(wide_score_mode);
+    QBH_REPLAY_PROFILE_U32(wide_score_mode);
     QBH_REPLAY_PROFILE_U64(u8_attention_qk_requant_ticks);
     QBH_REPLAY_PROFILE_U64(u8_attention_softmax_ticks);
     QBH_REPLAY_PROFILE_U64(u8_attention_av_hmx_ticks);
