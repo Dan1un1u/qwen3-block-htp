@@ -29,25 +29,108 @@ experiments:
   title: Raw-score row maximum and widened difference precision
   parent: EXP-0249
   record: docs/experiments/EXP-0250.md
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: not_applicable
   approval_ref: PC064 user approves proposed raw-score repair
   source_branches:
   - codex/exp-0250-raw-score-max
   source_commits:
   - 0b85aebb96e9a3ff06e667ec3365d41d69c7dd15
+  - 4c6a1a72de64a3214db925616dafef63f7d95062
+  - 7448a5d662af3dba67a458512bc9e49203bd07b2
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0250-raw-score-max
     approved_on: '2026-09-08'
     started_on: '2026-09-08'
+    completed_on: '2026-09-09'
   evidence:
     protocol: PC064
-    current_stage: setup
+    current_stage: completed_raw_score_difference_repair_PPL
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0250
     baseline_promoted: false
+    source_head: 7448a5d662af3dba67a458512bc9e49203bd07b2
+    inference_source_heads:
+    - 4c6a1a72de64a3214db925616dafef63f7d95062
+    report: docs/experiments/EXP-0250-RESULTS.md
+    report_sha256: c2acade09415f166217a66538db4b4bb7a3e5c57446360469cf58e79bdd18071
+    full_profiling_report: docs/experiments/EXP-0250-PROFILE.md
+    full_profiling_report_sha256: 62b4bddfd28cb465e62d1ad47add3a0083157d6dbadd1930aac889a697d15d9a
+    evidence_ledger_sha256: e82e72cec87543319561493abd975cf828bcdea1b2ee46b18c57fcb53e206b0a
+    evidence_file_count: 83
+    numerical_gate: pass
+    gate_role: diagnostic_implementation_and_evidence_not_deployment_acceptance
+    final_ppl:
+      F: 29.48685047467392
+      C64: 29.665686253733227
+      OFF_carrier: 49.9431430300986
+      OFF_unbounded: 51.267662972385274
+      OFF_wide_float: 50.98174560213134
+      OFF_score: 7658.5484388235445
+      OFF_wide_exact: 52.3883729685423
+      OFF_wide_sole: 61.55943464749742
+      OFF_sole: 11271.881494705096
+      R3_carrier: 39.089125959289866
+      R3_unbounded: 39.027082388015444
+      R3_wide_float: 39.027082388015444
+      R3_score: 6371.563253147737
+      R3_wide_exact: 38.96114843607058
+      R3_wide_sole: 41.87363262103216
+      R3_sole: 8272.14274430138
+    quality_gate:
+      C64:
+        point_pass: true
+        confident_pass: false
+      OFF_carrier:
+        point_pass: false
+        confident_pass: false
+      OFF_unbounded:
+        point_pass: false
+        confident_pass: false
+      OFF_wide_float:
+        point_pass: false
+        confident_pass: false
+      OFF_score:
+        point_pass: false
+        confident_pass: false
+      OFF_wide_exact:
+        point_pass: false
+        confident_pass: false
+      OFF_wide_sole:
+        point_pass: false
+        confident_pass: false
+      OFF_sole:
+        point_pass: false
+        confident_pass: false
+      R3_carrier:
+        point_pass: false
+        confident_pass: false
+      R3_unbounded:
+        point_pass: false
+        confident_pass: false
+      R3_wide_float:
+        point_pass: false
+        confident_pass: false
+      R3_score:
+        point_pass: false
+        confident_pass: false
+      R3_wide_exact:
+        point_pass: false
+        confident_pass: false
+      R3_wide_sole:
+        point_pass: false
+        confident_pass: false
+      R3_sole:
+        point_pass: false
+        confident_pass: false
+    new_device_runs: 0
+    short_rounds: 0
+    formal_rounds: 0
+    device_ppl: null
+    e2e_tokens_per_second: null
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0250.md
 - id: EXP-0249
   slug: integer-attention-attribution
   title: Integer attention QK exponent and SOLE attribution

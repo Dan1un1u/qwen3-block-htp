@@ -19,13 +19,91 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0250
+  active_experiment: null
   next_experiment_number: 251
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
+  latest_w4u8_raw_score_repair_result:
+    id: EXP-0250
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_role: diagnostic_only_not_deployment_acceptance
+    adoption_status: not_applicable
+    source_head: 7448a5d662af3dba67a458512bc9e49203bd07b2
+    report: docs/experiments/EXP-0250-RESULTS.md
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0250
+    ledger_sha256: e82e72cec87543319561493abd975cf828bcdea1b2ee46b18c57fcb53e206b0a
+    numerical_gate: pass
+    final_ppl:
+      F: 29.48685047467392
+      C64: 29.665686253733227
+      OFF_carrier: 49.9431430300986
+      OFF_unbounded: 51.267662972385274
+      OFF_wide_float: 50.98174560213134
+      OFF_score: 7658.5484388235445
+      OFF_wide_exact: 52.3883729685423
+      OFF_wide_sole: 61.55943464749742
+      OFF_sole: 11271.881494705096
+      R3_carrier: 39.089125959289866
+      R3_unbounded: 39.027082388015444
+      R3_wide_float: 39.027082388015444
+      R3_score: 6371.563253147737
+      R3_wide_exact: 38.96114843607058
+      R3_wide_sole: 41.87363262103216
+      R3_sole: 8272.14274430138
+    quality_gate:
+      C64:
+        point_pass: true
+        confident_pass: false
+      OFF_carrier:
+        point_pass: false
+        confident_pass: false
+      OFF_unbounded:
+        point_pass: false
+        confident_pass: false
+      OFF_wide_float:
+        point_pass: false
+        confident_pass: false
+      OFF_score:
+        point_pass: false
+        confident_pass: false
+      OFF_wide_exact:
+        point_pass: false
+        confident_pass: false
+      OFF_wide_sole:
+        point_pass: false
+        confident_pass: false
+      OFF_sole:
+        point_pass: false
+        confident_pass: false
+      R3_carrier:
+        point_pass: false
+        confident_pass: false
+      R3_unbounded:
+        point_pass: false
+        confident_pass: false
+      R3_wide_float:
+        point_pass: false
+        confident_pass: false
+      R3_score:
+        point_pass: false
+        confident_pass: false
+      R3_wide_exact:
+        point_pass: false
+        confident_pass: false
+      R3_wide_sole:
+        point_pass: false
+        confident_pass: false
+      R3_sole:
+        point_pass: false
+        confident_pass: false
+    new_device_runs: 0
+    baseline_promoted: false
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0250.md
   latest_w4u8_integer_attention_result:
     id: EXP-0249
     execution_state: completed
@@ -1098,7 +1176,7 @@ current_scope:
     auxiliary: short_task_content_v2
     diagnostic_only: short_task_strict_v1_format_adherence
     numerical_acceptance_threshold: PC050_EXP0229_overall_5percent_per_language_domain_10percent
-    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0249.md
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0250.md
     new_experiment_authorized: false
   latest_short_task_scoring_audit:
     experiment: EXP-0228
@@ -1790,21 +1868,21 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: host_fixed_C64_prefix_causality_and_U8_cache
-  last_completed_experiment: EXP-0249
-  last_completed_source_commit: 0b85aebb96e9a3ff06e667ec3365d41d69c7dd15
+  last_completed_experiment: EXP-0250
+  last_completed_source_commit: 7448a5d662af3dba67a458512bc9e49203bd07b2
   provisional_source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
   device_execution_state: EXP0248_numeric_repaired_speed_gate_failed_no_full_model
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  current_handoff: SESSION_HANDOFF_EXP0250.md
+  current_handoff: docs/experiments/EXP-0250-RESULTS.md
   active_recipe_specialization: null
   last_completed_experiment_contract:
-    id: EXP-0249
-    protocol: PC063
-    scope: conditional_software_integer_attention_attribution
+    id: EXP-0250
+    protocol: PC064
+    scope: conditional_software_raw_score_difference_repair
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0249
+  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0250
   latest_w4f16_output_scale_result:
     id: EXP-0224
     execution_state: completed
@@ -8058,11 +8136,11 @@ current_scope:
     next_action: Discuss W4A8 reproducibility and same-W4-weight activation attribution;
       no new experiment authorized
   next_research_direction:
-    status: running_EXP0250_raw_score_repair
-    document: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0249.md
-    current: repair_QK_score_dynamic_range_before_softmax_approximation
+    status: discussion_after_EXP0250_raw_score_difference_repair
+    document: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0250.md
+    current: evaluate_remaining_exponent_reciprocal_precision_and_device_mapping
     other_recipes: frozen
-    new_algorithm_authorized: true
+    new_algorithm_authorized: false
   latest_w4f16_independent_tool_result:
     id: EXP-0233
     source_head: 24a976887f9da144e49de2774104a3e72ddf6ddd
