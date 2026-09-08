@@ -1798,3 +1798,5 @@ EXP0248 completed. Frozen single-layer numerical repair passes: guarded HVX SF32
 
 ## EXP0249 active (2026-09-08)
 User approved integer attention QK/exponent/SOLE diagnosis. Read docs/experiments/EXP-0249.md. Fixed C64 and EXP0246 A8/R3 params; software conditional PPL only, no hardware/weight mutation/promotion. Parent3587939, setup branch binding temporary.
+
+EXP0249 live checkpoint: numerical and development gates pass; independent final twelve-arm PPL scoring ongoing. Read docs/SESSION_HANDOFF_EXP0249.md, check active process before resume. QK score compression already reproduces catastrophic PPL; no final-based tuning, no device run.

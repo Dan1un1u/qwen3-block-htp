@@ -45,9 +45,22 @@ experiments:
     started_on: '2026-09-08'
   evidence:
     protocol: PC063
-    current_stage: setup
+    current_stage: independent_final_PPL_scoring_running
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0249
     baseline_promoted: false
+    source_head: 0b85aebb96e9a3ff06e667ec3365d41d69c7dd15
+    numerical_gate: pass
+    development_exact_reproductions: 4
+    checkpoint_completed_final_scores:
+      final_C64: 31.288773041634308
+      final_OFF_carrier: 46.87527982439223
+      final_OFF_exponent: 7461.603531223536
+      final_OFF_legacy: 42.15276953523591
+      final_OFF_score: 7705.742457053464
+      final_OFF_sole: 11039.825161999797
+      final_R3_carrier: 38.290143466076955
+      final_R3_legacy: 35.21662438189657
+    checkpoint_handoff: docs/SESSION_HANDOFF_EXP0249.md
 - id: EXP-0248
   slug: r3-numeric-repair
   title: Dense R3 integer-chain numerical repair
