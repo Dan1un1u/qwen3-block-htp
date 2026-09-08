@@ -896,6 +896,84 @@ static void qbh_qk_norm_rope_one_head_u8_preconverted_coefficient(
     *(HVX_Vector *)values = qbh_pack_qf32_to_u8(&encoded);
 }
 
+static void qbh_r3_rope_fp16(
+    uint8_t *values,
+    int32_t input_zero_point,
+    __fp16 *output,
+    const struct qbh_qk_norm_rope_gamma_sf32 *gamma,
+    const struct qbh_qk_norm_rope_row_sf32 *rope,
+    float norm_coefficient) {
+    const HVX_VectorPair centered = qbh_centered_half_pair(
+        *(const HVX_Vector *)values, input_zero_point);
+    HVX_Vector first[2];
+    HVX_Vector second[2];
+    HVX_Vector result[4];
+
+    qbh_unary_gamma_preconverted_sf32(
+        Q6_V_lo_W(centered), gamma->lane[0], gamma->lane[1],
+        norm_coefficient, &first[0], &first[1]);
+    qbh_unary_gamma_preconverted_sf32(
+        Q6_V_hi_W(centered), gamma->lane[2], gamma->lane[3],
+        norm_coefficient, &second[0], &second[1]);
+
+    for (uint32_t part = 0U; part < 2U; ++part) {
+        const HVX_Vector first_sf = first[part];
+        const HVX_Vector second_sf = second[part];
+        const HVX_Vector first_rotated = Q6_Vsf_equals_Vqf32(
+            Q6_Vqf32_vsub_Vqf32Vqf32(
+            Q6_Vqf32_vmpy_VsfVsf(
+                first_sf, rope->cosine[part]),
+            Q6_Vqf32_vmpy_VsfVsf(
+                second_sf, rope->sine[part])));
+        const HVX_Vector second_rotated = Q6_Vsf_equals_Vqf32(
+            Q6_Vqf32_vadd_Vqf32Vqf32(
+            Q6_Vqf32_vmpy_VsfVsf(
+                second_sf, rope->cosine[part + 2U]),
+            Q6_Vqf32_vmpy_VsfVsf(
+                first_sf, rope->sine[part + 2U])));
+
+        result[part] = first_rotated;
+        result[part + 2U] = second_rotated;
+    }
+    *(HVX_Vector *)output = Q6_Vhf_vcvt_VsfVsf(result[0], result[1]);
+    *(HVX_Vector *)(output + 64) = Q6_Vhf_vcvt_VsfVsf(result[2], result[3]);
+}
+
+/* EXP0247: retain post-RoPE values before the coarse U8 rounding boundary. */
+void qbh_hvx_r3_prepare_head(const uint8_t *native, uint32_t rows,
+    const struct qbh_block_qparam *qp, const __fp16 *gamma,
+    const uint8_t *rope_sf32_cache, __fp16 *out) {
+    struct qbh_qk_norm_rope_gamma_sf32 g __attribute__((aligned(128)));
+    const struct qbh_qk_norm_rope_row_sf32 *rope = (const void *)rope_sf32_cache;
+    uint8_t values[128] __attribute__((aligned(128)));
+    qbh_qk_norm_rope_load_gamma_sf32(gamma, &g);
+    for (uint32_t row=0; row<rows; ++row) {
+        for (uint32_t tile=0; tile<4; ++tile)
+            memcpy(values+tile*32, native+tile*2048+row*32,32);
+        uint64_t sum=qbh_centered_square_sum(values,128,qp->zero_point);
+        float coefficient=qp->scale/sqrtf((float)sum*qp->scale*qp->scale/128.0f+1.0e-6f);
+        qbh_r3_rope_fp16(values,qp->zero_point,out+row*128,&g,rope+row,coefficient);
+    }
+    asm volatile("barrier" ::: "memory");
+}
+void qbh_hvx_r3_quantize_head(const __fp16 *source, uint8_t *native,
+    uint32_t rows, const struct qbh_block_qparam *qp) {
+    uint8_t values[128] __attribute__((aligned(128)));
+    for (uint32_t row=0; row<rows; ++row) {
+        HVX_VectorPair a=Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)(source+row*128));
+        HVX_VectorPair b=Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)(source+row*128+64));
+        struct qbh_qf32_quad q;
+        q.lane[0]=qbh_sf32_scale_and_offset(Q6_V_lo_W(a),1.0f/qp->scale,(float)qp->zero_point);
+        q.lane[1]=qbh_sf32_scale_and_offset(Q6_V_hi_W(a),1.0f/qp->scale,(float)qp->zero_point);
+        q.lane[2]=qbh_sf32_scale_and_offset(Q6_V_lo_W(b),1.0f/qp->scale,(float)qp->zero_point);
+        q.lane[3]=qbh_sf32_scale_and_offset(Q6_V_hi_W(b),1.0f/qp->scale,(float)qp->zero_point);
+        *(HVX_Vector *)values=qbh_pack_qf32_to_u8(&q);
+        for (uint32_t tile=0;tile<4;++tile)
+            memcpy(native+tile*2048+row*32,values+tile*32,32);
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
 static inline HVX_Vector qbh_qk_norm_quarter_sf32(
     HVX_Vector centered_half, HVX_Vector gamma,
     HVX_Vector coefficient, HVX_Vector zero,

@@ -144,6 +144,11 @@ else()
     copy_binaries(qwen3_probe_skel)
 endif()
 
+option(QBH_EXP0247_DENSE_R3 "Build EXP0247 real layer0 dense R3 gate" OFF)
+if(QBH_EXP0247_DENSE_R3)
+    add_compile_definitions(QBH_EXP0247_DENSE_R3=1 QBH_EXP0240_SINGLE_LAYER=1)
+endif()
+
 option(QBH_EXP0240_SINGLE_LAYER "Build EXP0240 layer14 replay gate" OFF)
 if(QBH_EXP0240_SINGLE_LAYER)
     add_compile_definitions(QBH_EXP0240_SINGLE_LAYER=1)

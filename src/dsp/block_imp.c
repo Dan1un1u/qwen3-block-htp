@@ -13177,6 +13177,16 @@ static void qbh_attention_u8_qk_prep_pool_run_head_pair_tasks(
 static void qbh_attention_u8_qk_prep_pool_run_tasks(
     struct qbh_block_w4f16_pool *pool,
     struct qbh_block_w4f16_job *job) {
+    if (pool->attention_header->dense_r3_mode != 0U) {
+        for (;;) {
+            uint32_t task=qbh_atomic_fetch_increment(&pool->next_attention_task);
+            if (task>=24U || pool->attention_qk_stream_abort) break;
+            if (qbh_attention_u8_qk_prep_wait_ready(pool,task)!=0) return;
+            ++job->attention_qk_norm_task_count;
+            if (task>=16U) ++job->u8_attention_prepared_group_count;
+        }
+        return;
+    }
     if (pool->attention_header->w4u8_qkvo_pipeline_mode ==
         QBH_BLOCK_W4U8_QKVO_BATCH4_QK_HEAD_PAIRS) {
         qbh_attention_u8_qk_prep_pool_run_head_pair_tasks(pool, job);
@@ -19393,6 +19403,8 @@ static int qbh_scan_u8_attention(
     return 0;
 }
 
+#include "dense_r3.inc"
+
 static int qbh_run_one_block(struct qbh_block_header *header,
                              uint8_t *shared,
                              struct qbh_block_buffers *buffers,
@@ -19831,6 +19843,11 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         w4u8_qkv_ring_enabled == 0U &&
         qbh_hvx_pool_u8_qk_prep_wait_async(
             header, w4f16_pool) != 0) {
+        return QBH_BLOCK_STATUS_QK_NORM_ROPE_FAILED;
+    }
+    if (header->dense_r3_mode != 0U &&
+        (w4u8_qkv_ring_enabled == 0U ||
+         qbh_run_dense_r3(header,shared,buffers,worker,logical_rows)!=0)) {
         return QBH_BLOCK_STATUS_QK_NORM_ROPE_FAILED;
     }
     if (qkv_overlap_enabled != 0U) {
@@ -21791,6 +21808,10 @@ publish:
                 (qurt_size_t)header->replay_session_bytes,
                 QURT_MEM_CACHE_FLUSH, QURT_MEM_DCACHE);
         }
+        if (flush_status==0 && header->dense_r3_audit_offset &&
+            qbh_range_valid(header->dense_r3_audit_offset,QBH_DENSE_R3_AUDIT_BYTES,shared_bytes))
+            flush_status=qurt_mem_cache_clean((qurt_addr_t)(shared+header->dense_r3_audit_offset),
+                QBH_DENSE_R3_AUDIT_BYTES,QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE);
         /* Public projection audit ranges are CPU-written on the DSP. */
         for (uint32_t proj=0U; flush_status==0 && proj<QBH_BLOCK_PROJECTION_COUNT; ++proj) {
             const struct qbh_block_projection_desc *desc=&header->projections[proj];

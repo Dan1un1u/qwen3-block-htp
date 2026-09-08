@@ -7,7 +7,7 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(111)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(112)
 #define QBH_BLOCK_EXPERIMENT UINT32_C(218)
 
 #define QBH_BLOCK_M UINT32_C(64)
@@ -29,7 +29,10 @@
 #define QBH_GENERATION_MAX_TOKENS UINT32_C(193)
 #define QBH_GENERATION_QPARAM_COUNT UINT32_C(2)
 #define QBH_REPLAY_LAYER_INDEX UINT32_C(14)
-#ifdef QBH_EXP0240_SINGLE_LAYER
+#ifdef QBH_EXP0247_DENSE_R3
+#define QBH_VERTICAL_SLICE_FIRST_LAYER UINT32_C(0)
+#define QBH_VERTICAL_SLICE_LAYER_COUNT UINT32_C(1)
+#elif defined(QBH_EXP0240_SINGLE_LAYER)
 #define QBH_VERTICAL_SLICE_FIRST_LAYER UINT32_C(14)
 #define QBH_VERTICAL_SLICE_LAYER_COUNT UINT32_C(1)
 #else
@@ -731,6 +734,9 @@ struct qbh_block_slice_layer_profile {
     uint64_t cache_ddr_write_bytes;
 };
 
+/* Two row-major FP16 captures plus native U8 Q/K. Audit runs only. */
+#define QBH_DENSE_R3_CARRIER_BYTES (64U * 24U * 128U * 2U)
+#define QBH_DENSE_R3_AUDIT_BYTES (2U * QBH_DENSE_R3_CARRIER_BYTES + 64U * 24U * 128U)
 struct qbh_block_header {
     uint32_t magic;
     uint32_t abi_version;
@@ -874,6 +880,11 @@ struct qbh_block_header {
     uint32_t scan_attention_audit_output_bytes;
     /* Diagnostic-only W4U8 boundary capture.  Enabling this explicit DDR
      * export invalidates physical and performance evidence. */
+    uint32_t dense_r3_mode; /* 0 original; 1 HMX; 2 scalar audit; 3 HMX identity audit. */
+    uint32_t dense_r3_audit_offset;
+    uint32_t dense_r3_rows;
+    uint32_t dense_r3_hmx_calls;
+    uint64_t dense_r3_prepare_ticks, dense_r3_matmul_ticks, dense_r3_finish_ticks;
     uint32_t w4u8_boundary_audit_enabled;
     uint32_t w4u8_boundary_audit_output_offset;
     uint32_t w4u8_boundary_audit_output_bytes;

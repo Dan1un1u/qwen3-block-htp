@@ -13,6 +13,12 @@
 #define QBH_QK_ROPE_SF32_CACHE_BYTES \
     (QBH_BLOCK_M * 8U * QBH_BLOCK_HEAD_DIM)
 
+void qbh_hvx_r3_prepare_head(const uint8_t *native, uint32_t rows,
+    const struct qbh_block_qparam *input_qparam, const __fp16 *gamma,
+    const uint8_t *rope_sf32_cache, __fp16 *row_major);
+void qbh_hvx_r3_quantize_head(const __fp16 *row_major, uint8_t *native,
+    uint32_t rows, const struct qbh_block_qparam *output_qparam);
+
 void qbh_hvx_u8_set_norm_reduction_mode(uint32_t mode);
 void qbh_hvx_u8_set_qk_pair_kernel_mode(uint32_t mode);
 

@@ -3244,7 +3244,7 @@ static int qbh_run_exp0240_layer(
     for (uint32_t rep = 0U; rep < repeats; ++rep) {
         *state = initial;
         if (qbh_read_slot(shared, input) || qbh_read_slot(shared, &rope[0]) || qbh_read_slot(shared, &rope[1])) return -1;
-        struct qbh_decode_layer_state *layer = &state->layers[14];
+        struct qbh_decode_layer_state *layer = &state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER];
         memset(shared + layer->k_offset, 0, layer->k_bytes);
         memset(shared + layer->v_offset, 0, layer->v_bytes);
         printf("{\"record\":\"exp0240_replay_start\",\"repeat\":%u,\"lpbq_mode\":%u,\"historical_reference_used\":false}\n", rep, h->slice_layers[0].projections[0].lpbq_mode);
@@ -3280,7 +3280,12 @@ static int qbh_run_exp0240_layer(
             struct qbh_replay_step_result result = {0};
             result.host_wall_ns=elapsed; result.first_position=before; result.valid_length=layer->valid_length;
             qbh_print_replay_profile(240U,"exp0240_profile","replay_step",QBH_BLOCK_W4U8,step,h,&result,shared+h->output_offset,h->logical_m*QBH_BLOCK_HIDDEN);
+            printf("{\"record\":\"dense_r3\",\"step\":%u,\"mode\":%u,\"rows\":%u,\"hmx_calls\":%u,\"prepare_ticks\":%llu,\"matmul_ticks\":%llu,\"finish_ticks\":%llu}\n",step,h->dense_r3_mode,h->dense_r3_rows,h->dense_r3_hmx_calls,(unsigned long long)h->dense_r3_prepare_ticks,(unsigned long long)h->dense_r3_matmul_ticks,(unsigned long long)h->dense_r3_finish_ticks);
             if (dump != NULL && rep == 0U) {
+                if (h->dense_r3_audit_offset) {
+                    snprintf(name,sizeof(name),"step%02u_r3.bin",step);
+                    if (qbh_write_named_tensor(dump,name,shared+h->dense_r3_audit_offset,QBH_DENSE_R3_AUDIT_BYTES)) return -1;
+                }
                 snprintf(name,sizeof(name),"step%02u_output.bin",step);
                 if (qbh_write_named_tensor(dump,name,shared+h->output_offset,h->logical_m*QBH_BLOCK_HIDDEN)) return -1;
                 for (uint32_t proj = 0U; proj < QBH_BLOCK_PROJECTION_COUNT; ++proj) {
@@ -4347,6 +4352,8 @@ int main(int argc, char **argv) {
     struct qbh_file_slot kv_cache_slots[2];
     struct qbh_file_slot kv_reference_slots[2];
     struct qbh_file_slot w4u8_lut_slot;
+    const uint32_t dense_r3_mode = getenv("QBH_DENSE_R3") ? (uint32_t)atoi(getenv("QBH_DENSE_R3")) : 0U;
+    size_t dense_r3_audit_offset = 0U;
     const uint32_t lpbq_mode = getenv("QBH_LPBQ32") != NULL ? (uint32_t)atoi(getenv("QBH_LPBQ32")) : 0U;
     struct qbh_file_slot lpbq_slots[QBH_BLOCK_PROJECTION_COUNT] = {0};
     struct qbh_file_slot weight_slots[QBH_BLOCK_PROJECTION_COUNT];
@@ -6238,6 +6245,12 @@ int main(int argc, char **argv) {
             }
             cursor += QBH_BLOCK_U8_ATTENTION_AUDIT_BYTES;
         }
+        if (dense_r3_mode != 0U && getenv("QBH_DENSE_R3_AUDIT")) {
+            cursor=qbh_align_up_size(cursor,QBH_HOST_ALIGNMENT);
+            dense_r3_audit_offset=cursor;
+            if (QBH_DENSE_R3_AUDIT_BYTES>UINT32_MAX-cursor) return 2;
+            cursor+=QBH_DENSE_R3_AUDIT_BYTES;
+        }
         if (w4u8_boundary_audit_enabled != 0U) {
             const size_t boundary_bytes =
                 (size_t)QBH_BLOCK_M * QBH_BLOCK_HIDDEN;
@@ -6752,6 +6765,8 @@ int main(int argc, char **argv) {
         header->scan_attention_audit_output_bytes =
             QBH_BLOCK_SCAN_F16_AUDIT_BYTES;
     }
+    header->dense_r3_mode=dense_r3_mode;
+    header->dense_r3_audit_offset=(uint32_t)dense_r3_audit_offset;
     header->w4u8_boundary_audit_enabled =
         w4u8_boundary_audit_enabled;
     if (w4u8_boundary_audit_enabled != 0U) {
