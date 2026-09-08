@@ -38,6 +38,8 @@ experiments:
   - codex/exp-0243-prefix-a8-causality
   source_commits:
   - 394253ea340e1bdd1ddca1923dc0e9cb0bd9c13b
+  - 33fbfd2d101097b86619e2c66a7e97d2d54898dc
+  - f438d1bc29ffb5110922fbce498f2b486f06d03c
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0243-prefix-a8-causality
@@ -45,8 +47,12 @@ experiments:
     started_on: '2026-09-08'
   evidence:
     protocol: PC058
-    current_stage: registered_before_inference
+    current_stage: diagnosis_complete_prefix_calibration_running
     baseline_promoted: false
+    source_head: f438d1bc29ffb5110922fbce498f2b486f06d03c
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0243
+    inputs_freeze_sha256: e52a2226c0e675170c3b86daf3a05d61aa9b8873600cde706c517e6ab291a49c
+    dataset_freeze_sha256: 8a1b9b37a6445fc8a3e55dd15914a115f705e13bee46411e1da0cbaedaff97c0
 - id: EXP-0242
   slug: static-a8-localization
   title: Fixed per-channel C64 A8 error localization and static clipping
