@@ -24,6 +24,31 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0251
+  slug: wide-score-device
+  title: Native U8 wide-score hardware speed
+  parent: EXP-0250
+  record: docs/experiments/EXP-0251.md
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: not_applicable
+  approval_ref: PC065 user requests hardware speed
+  source_branches:
+  - codex/exp-0250-raw-score-max
+  - codex/exp-0251-wide-score-device
+  source_commits:
+  - 7448a5d662af3dba67a458512bc9e49203bd07b2
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0250-raw-score-max
+    approved_on: '2026-09-09'
+    started_on: '2026-09-09'
+  evidence:
+    protocol: PC065
+    current_stage: setup
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0251
+    baseline_promoted: false
 - id: EXP-0250
   slug: raw-score-max
   title: Raw-score row maximum and widened difference precision

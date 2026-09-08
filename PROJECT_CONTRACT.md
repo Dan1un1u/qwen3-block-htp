@@ -281,3 +281,7 @@ User2026-09-08 approves EXP0249 under docs/experiments/EXP-0249.md: validated ac
 ## PC064 — User-approved raw-score maximum repair
 
 User2026-09-08 approves EXP0250 under docs/experiments/EXP-0250.md: implement and evaluate wider score differences before exponent encoding, independently separate conversion errors on frozen W4/A8/R3. Software phase first; no hardware or recipe promotion. PC037 recovery applies; thresholds unchanged.
+
+## PC065 — User-approved wide-score hardware speed
+
+User2026-09-09 authorizes EXP0251 under docs/experiments/EXP-0251.md: implement frozen EXP0250 wide_sole on native-U8 DSP attention, independently validate and measure real-layer prefill/decode overhead. Preserve numerical/physical/>10percent speed gates and other recipes; no full-model or promotion. PC037 applies.

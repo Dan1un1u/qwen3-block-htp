@@ -1811,3 +1811,7 @@ User approves raw-score maximum/wide integer difference direction. Read docs/exp
 ## Current handoff after EXP0250
 
 Completed masked raw-score maximum and signed16 difference repair in software. Native raw U8 layout retained; second U8 saturation removed before exponent encoding. Independent scalar/int64 oracle and retained device controls pass; eight EXP0249 development controls reproduce exactly. Fresh128documents/2048targets, sixteen frozen arms completed. See docs/experiments/EXP-0250-RESULTS.md for measured PPL/intervals and docs/W4A8_NEXT_DIRECTION_AFTER_EXP0250.md for interpretation and proposed follow-up. No range/weight/recipe change, hardware, speed extrapolation or promotion. Device caches remain EXP0248 experimental layer0 ABI114, not full model. Active none,next251 pending discussion. Source 7448a5d662af3dba67a458512bc9e49203bd07b2; ledger e82e72cec87543319561493abd975cf828bcdea1b2ee46b18c57fcb53e206b0a.
+
+## EXP0251 active
+
+User approves hardware speed of wide-score repair. See docs/experiments/EXP-0251.md. Freeze C0/W0/WR real-layer scope; independent numerical gate precedes5short/10formal. Primary W0/C0 repair cost, plain dense R3 eligibility checked separately, no old expensive refinement candidate. Other recipes and >10percent stop remain. No full model/PPL/promotion.
