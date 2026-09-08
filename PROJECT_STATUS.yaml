@@ -19,13 +19,106 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0243
+  active_experiment: null
   next_experiment_number: 244
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
+  latest_w4u8_prefix_a8_diagnostic:
+    id: EXP-0243
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: pending
+    source_head: 7d7c46022a4d83c6faa700d24588bc02977bd374
+    inference_source_head: f438d1bc29ffb5110922fbce498f2b486f06d03c
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0243
+    ledger_sha256: f570b447e6f7bd45f39d5786e447bceb53a23cf4b43202d1dc37fc18d857ff6b
+    report: docs/experiments/EXP-0243-RESULTS.md
+    selected_prefix: eos
+    selected_policy: mse
+    final_ppl:
+      final_C64_empty_a16_sequential: 27.31635121373843
+      final_C64_empty_minmax_sequential: 151935.95047666354
+      final_C64_empty_percentile_sequential: 34193.3632186163
+      final_C64_eos_a16_sequential: 29.104075444673747
+      final_C64_eos_mse_sequential: 39.27787845019829
+      final_F_empty_a16_sequential: 25.491204186018543
+      final_F_eos_a16_sequential: 27.541094101918105
+    selected_vs_same_prefix_C64:
+      delta_nll: 0.29978325706906617
+      ppl_ratio: 1.3495662669259065
+      delta_nll_ci95:
+      - 0.26837917999364436
+      - 0.33257617114286403
+      ppl_ratio_ci95:
+      - 1.3078429538905885
+      - 1.3945561200728385
+      cells:
+        en_news:
+          delta_nll: 0.3686594860628247
+          ppl_ratio: 1.4457952064273452
+          ppl_ratio_ci95:
+          - 1.366406080433489
+          - 1.5311275275505436
+        en_wiki:
+          delta_nll: 0.26086391462013125
+          ppl_ratio: 1.2980510076492269
+          ppl_ratio_ci95:
+          - 1.2276606485017223
+          - 1.375724127509534
+        zh_news:
+          delta_nll: 0.24175860825926065
+          ppl_ratio: 1.2734867465276376
+          ppl_ratio_ci95:
+          - 1.2040762848767794
+          - 1.3508344825119325
+        zh_wiki:
+          delta_nll: 0.32785101933404803
+          ppl_ratio: 1.3879821743766814
+          ppl_ratio_ci95:
+          - 1.2852145689388355
+          - 1.5114123831772899
+    selected_vs_same_prefix_F16:
+      delta_nll: 0.3549822508357465
+      ppl_ratio: 1.4261553409914376
+      delta_nll_ci95:
+      - 0.3175549501203932
+      - 0.3936768442566972
+      ppl_ratio_ci95:
+      - 1.3737647313287151
+      - 1.4824214182667432
+      cells:
+        en_news:
+          delta_nll: 0.39803455816581845
+          ppl_ratio: 1.4888954825151897
+          ppl_ratio_ci95:
+          - 1.4017138812962795
+          - 1.5872201597517672
+        en_wiki:
+          delta_nll: 0.31202579103410244
+          ppl_ratio: 1.3661899280261285
+          ppl_ratio_ci95:
+          - 1.2784416310886866
+          - 1.4648469467133427
+        zh_news:
+          delta_nll: 0.28210017271339893
+          ppl_ratio: 1.3259115334905731
+          ppl_ratio_ci95:
+          - 1.2348804335498687
+          - 1.4294466858487413
+        zh_wiki:
+          delta_nll: 0.4277684814296663
+          ppl_ratio: 1.533830929513153
+          ppl_ratio_ci95:
+          - 1.4001778982046114
+          - 1.692685833668119
+    diagnosis: F16_intrinsic_first_position_spikes_isolated_by_EOS_but_distributed_late_tails_and_A8_loss_remain
+    new_device_runs: 0
+    baseline_promoted: false
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0243.md
   latest_w4u8_static_a8_diagnostic:
     id: EXP-0242
     execution_state: completed
@@ -188,8 +281,8 @@ current_scope:
     auxiliary: short_task_content_v2
     diagnostic_only: short_task_strict_v1_format_adherence
     numerical_acceptance_threshold: PC050_EXP0229_overall_5percent_per_language_domain_10percent
-    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0242.md
-    new_experiment_authorized: EXP0243_PC058
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0243.md
+    new_experiment_authorized: false
   latest_short_task_scoring_audit:
     experiment: EXP-0228
     execution_state: completed
@@ -880,21 +973,21 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: host_fixed_C64_prefix_causality_and_U8_cache
-  last_completed_experiment: EXP-0242
-  last_completed_source_commit: 394253ea340e1bdd1ddca1923dc0e9cb0bd9c13b
+  last_completed_experiment: EXP-0243
+  last_completed_source_commit: 7d7c46022a4d83c6faa700d24588bc02977bd374
   provisional_source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
-  device_execution_state: no_device_work_prefix_software_phase
+  device_execution_state: no_device_run_EXP0243_quality_failed_discussion_only
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  current_handoff: docs/experiments/EXP-0243.md
+  current_handoff: docs/experiments/EXP-0243-RESULTS.md
   active_recipe_specialization: null
   last_completed_experiment_contract:
-    id: EXP-0242
-    protocol: PC057
-    scope: fixed_C64_static_A8_localization_clipping_visualization_software_only
+    id: EXP-0243
+    protocol: PC058
+    scope: first_position_and_fixed_prefix_static_U8_software_causality
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0242
+  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0243
   latest_w4f16_output_scale_result:
     id: EXP-0224
     execution_state: completed

@@ -1748,6 +1748,10 @@ Read docs/experiments/EXP-0242-RESULTS.md and EXP-0242-PROFILE.md; evidence /mnt
 
 当前仍无 active experiment；EXP0242 closure 与历史证据保持不变。方向见 docs/W4A8_NEXT_DIRECTION_AFTER_EXP0242.md：先做 F16/C64 与正文/真实聊天模板/持续 KV 的首位置因果对照，再优先验证 PrefixQuant 风格的固定前缀 KV 隔离，保持 C64 W4 和静态 U8 格式；后续依据残差主因是否仍在决定 R1 与局部 R4 或温和通道缩放。单独 R4 的等价变换不改变原坐标 Down 输出，因此不能默认修复残差主因。前缀本身改变条件分布，要用同前缀 F16/A16 对照、原正文评分和真实目标格式前缀 KV 验证。已有面板只作暴露回归，最终候选另冻结轻量数据。停止盲扫 clipping；硬件保持原生 HMX W4 与10%单层性能停止门槛，计入前缀完整成本。本轮仅更新提案，未启动新算法、训练、源代码或设备工作。
 
-## Active EXP0243 / PC058 (2026-09-08)
+## EXP0243 / PC058 registration (now completed)
 
 User approved starting the updated direction. Frozen first-position F16/C64/template/cache diagnostic and fixed-prefix static-U8 experiment registered before inference. Read docs/experiments/EXP-0243.md. Fresh final data, matching-prefix controls and actual U8 KV required. No training/rotation/weight modification or device work in this phase. Other recipes frozen.
+
+## Current handoff after EXP0243
+
+EXP0243 completed with valid software evidence and failed accuracy gate. No active experiment, next number244; no automatic promotion, new algorithm or hardware start. Read docs/experiments/EXP-0243-RESULTS.md and docs/W4A8_NEXT_DIRECTION_AFTER_EXP0243.md. The original EXP0243 protocol remains immutable for data-freeze replay. EOS+MSE static U8 with actual prefix/body uint8 KV recovers the catastrophic baseline but retains substantial paired A8 loss. F16/C64 both show first-position spikes; EOS removes L02 online giants while distributed late-layer tails remain. All weights and other recipes stay frozen. Further attribution/transforms require a registered protocol; native HMX W4 and >10percent single-layer stop rule remain. Source 7d7c46022a4d83c6faa700d24588bc02977bd374; evidence ledger f570b447e6f7bd45f39d5786e447bceb53a23cf4b43202d1dc37fc18d857ff6b.

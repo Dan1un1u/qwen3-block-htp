@@ -29,9 +29,9 @@ experiments:
   title: First-position causality and fixed-prefix static A8 recovery
   parent: EXP-0242
   record: docs/experiments/EXP-0243.md
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
   adoption_status: pending
   approval_ref: User2026-09-08 start updated direction
   source_branches:
@@ -40,19 +40,259 @@ experiments:
   - 394253ea340e1bdd1ddca1923dc0e9cb0bd9c13b
   - 33fbfd2d101097b86619e2c66a7e97d2d54898dc
   - f438d1bc29ffb5110922fbce498f2b486f06d03c
+  - 7d7c46022a4d83c6faa700d24588bc02977bd374
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0243-prefix-a8-causality
     approved_on: '2026-09-08'
     started_on: '2026-09-08'
+    completed_on: '2026-09-08'
   evidence:
     protocol: PC058
-    current_stage: diagnosis_complete_prefix_calibration_running
+    current_stage: completed
     baseline_promoted: false
-    source_head: f438d1bc29ffb5110922fbce498f2b486f06d03c
+    source_head: 7d7c46022a4d83c6faa700d24588bc02977bd374
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0243
     inputs_freeze_sha256: e52a2226c0e675170c3b86daf3a05d61aa9b8873600cde706c517e6ab291a49c
     dataset_freeze_sha256: 8a1b9b37a6445fc8a3e55dd15914a115f705e13bee46411e1da0cbaedaff97c0
+    inference_source_head: f438d1bc29ffb5110922fbce498f2b486f06d03c
+    evidence_ledger_sha256: f570b447e6f7bd45f39d5786e447bceb53a23cf4b43202d1dc37fc18d857ff6b
+    evidence_file_count: 116
+    report: docs/experiments/EXP-0243-RESULTS.md
+    report_sha256: fc976c7b219f59ed616c07e0be0bdde492677df30d24ff022c989027ffdfab71
+    full_profiling_report: docs/experiments/EXP-0243-PROFILE.md
+    full_profiling_report_sha256: de4d588fa98917c6a6bdce9f27a131416513caf481aab951b4252a882ded40af
+    selected:
+      prefix:
+        name: eos
+        ids:
+        - 151645
+        text: <|im_end|>
+        eligible: true
+      policy: mse
+      mean_nll: 3.6913602985441685
+      ppl: 40.09935697084471
+      score_sha256: 5ecf18df04572206bf8c3d1d152003c49421a079fcf2e9c872727bbd176fe573
+    final_ppl:
+      final_C64_empty_a16_sequential: 27.31635121373843
+      final_C64_empty_minmax_sequential: 151935.95047666354
+      final_C64_empty_percentile_sequential: 34193.3632186163
+      final_C64_eos_a16_sequential: 29.104075444673747
+      final_C64_eos_mse_sequential: 39.27787845019829
+      final_F_empty_a16_sequential: 25.491204186018543
+      final_F_eos_a16_sequential: 27.541094101918105
+    comparisons:
+      selected_vs_same_prefix_C64:
+        delta_nll: 0.29978325706906617
+        ppl_ratio: 1.3495662669259065
+        delta_nll_ci95:
+        - 0.26837917999364436
+        - 0.33257617114286403
+        ppl_ratio_ci95:
+        - 1.3078429538905885
+        - 1.3945561200728385
+        cells:
+          en_news:
+            delta_nll: 0.3686594860628247
+            ppl_ratio: 1.4457952064273452
+            ppl_ratio_ci95:
+            - 1.366406080433489
+            - 1.5311275275505436
+          en_wiki:
+            delta_nll: 0.26086391462013125
+            ppl_ratio: 1.2980510076492269
+            ppl_ratio_ci95:
+            - 1.2276606485017223
+            - 1.375724127509534
+          zh_news:
+            delta_nll: 0.24175860825926065
+            ppl_ratio: 1.2734867465276376
+            ppl_ratio_ci95:
+            - 1.2040762848767794
+            - 1.3508344825119325
+          zh_wiki:
+            delta_nll: 0.32785101933404803
+            ppl_ratio: 1.3879821743766814
+            ppl_ratio_ci95:
+            - 1.2852145689388355
+            - 1.5114123831772899
+      selected_vs_same_prefix_F16:
+        delta_nll: 0.3549822508357465
+        ppl_ratio: 1.4261553409914376
+        delta_nll_ci95:
+        - 0.3175549501203932
+        - 0.3936768442566972
+        ppl_ratio_ci95:
+        - 1.3737647313287151
+        - 1.4824214182667432
+        cells:
+          en_news:
+            delta_nll: 0.39803455816581845
+            ppl_ratio: 1.4888954825151897
+            ppl_ratio_ci95:
+            - 1.4017138812962795
+            - 1.5872201597517672
+          en_wiki:
+            delta_nll: 0.31202579103410244
+            ppl_ratio: 1.3661899280261285
+            ppl_ratio_ci95:
+            - 1.2784416310886866
+            - 1.4648469467133427
+          zh_news:
+            delta_nll: 0.28210017271339893
+            ppl_ratio: 1.3259115334905731
+            ppl_ratio_ci95:
+            - 1.2348804335498687
+            - 1.4294466858487413
+          zh_wiki:
+            delta_nll: 0.4277684814296663
+            ppl_ratio: 1.533830929513153
+            ppl_ratio_ci95:
+            - 1.4001778982046114
+            - 1.692685833668119
+      selected_vs_empty_F16:
+        delta_nll: 0.4323280123062432
+        ppl_ratio: 1.5408404469076233
+        delta_nll_ci95:
+        - 0.39493775091832506
+        - 0.47148125688545406
+        ppl_ratio_ci95:
+        - 1.4842917922440726
+        - 1.6023659517909483
+        cells:
+          en_news:
+            delta_nll: 0.5111185158602893
+            ppl_ratio: 1.6671548916522934
+            ppl_ratio_ci95:
+            - 1.566782956875849
+            - 1.7834534801870745
+          en_wiki:
+            delta_nll: 0.43338350392878056
+            ppl_ratio: 1.542467649689386
+            ppl_ratio_ci95:
+            - 1.439844825212118
+            - 1.6532081716900549
+          zh_news:
+            delta_nll: 0.31386563647538424
+            ppl_ratio: 1.3687058200536737
+            ppl_ratio_ci95:
+            - 1.2754195875568908
+            - 1.472529832226912
+          zh_wiki:
+            delta_nll: 0.4709443929605186
+            ppl_ratio: 1.601505930194828
+            ppl_ratio_ci95:
+            - 1.4614070398400882
+            - 1.7671636836520956
+      C64_prefix_conditioning:
+        delta_nll: 0.0633927455637604
+        ppl_ratio: 1.0654452059481576
+        delta_nll_ci95:
+        - 0.053875778563087805
+        - 0.07341328838374464
+        ppl_ratio_ci95:
+        - 1.0553534964843976
+        - 1.0761752157336153
+        cells:
+          en_news:
+            delta_nll: 0.0891119297593832
+            ppl_ratio: 1.09320301142864
+            ppl_ratio_ci95:
+            - 1.0695597605919622
+            - 1.1193019223920788
+          en_wiki:
+            delta_nll: 0.11630058009177446
+            ppl_ratio: 1.1233334730710816
+            ppl_ratio_ci95:
+            - 1.096142957484468
+            - 1.1537449997326923
+          zh_news:
+            delta_nll: 0.022395988926291466
+            ppl_ratio: 1.022648661847247
+            ppl_ratio_ci95:
+            - 1.011764253099431
+            - 1.0339792136077675
+          zh_wiki:
+            delta_nll: 0.025762483477592468
+            ppl_ratio: 1.026097204488314
+            ppl_ratio_ci95:
+            - 1.0111045386371387
+            - 1.0416332796458962
+      F16_prefix_conditioning:
+        delta_nll: 0.07734576147049665
+        ppl_ratio: 1.0804155778966256
+        delta_nll_ci95:
+        - 0.06699279540334828
+        - 0.08830039669410325
+        ppl_ratio_ci95:
+        - 1.06928777435973
+        - 1.0923162009244956
+        cells:
+          en_news:
+            delta_nll: 0.11308395769447088
+            ppl_ratio: 1.1197259386105265
+            ppl_ratio_ci95:
+            - 1.0940515380923643
+            - 1.1475475719480621
+          en_wiki:
+            delta_nll: 0.12135771289467812
+            ppl_ratio: 1.1290287082689474
+            ppl_ratio_ci95:
+            - 1.0994520284481653
+            - 1.1616785628040003
+          zh_news:
+            delta_nll: 0.0317654637619853
+            ppl_ratio: 1.0322753709294925
+            ppl_ratio_ci95:
+            - 1.019580148520274
+            - 1.0454392071372256
+          zh_wiki:
+            delta_nll: 0.04317591153085232
+            ppl_ratio: 1.044121551717017
+            ppl_ratio_ci95:
+            - 1.0260016077287104
+            - 1.0627409426917833
+      empty_C64_vs_F16:
+        delta_nll: 0.06915200967341661
+        ppl_ratio: 1.0715990901960193
+        delta_nll_ci95:
+        - 0.04848625929444097
+        - 0.09035813533701001
+        ppl_ratio_ci95:
+        - 1.0496809483643887
+        - 1.0945662163593302
+        cells:
+          en_news:
+            delta_nll: 0.05334710003808141
+            ppl_ratio: 1.0547957012146982
+            ppl_ratio_ci95:
+            - 1.0216195772130572
+            - 1.088390282348488
+          en_wiki:
+            delta_nll: 0.05621900921687484
+            ppl_ratio: 1.0578293327428028
+            ppl_ratio_ci95:
+            - 1.0143766530523275
+            - 1.1067658711966761
+          zh_news:
+            delta_nll: 0.049711039289832115
+            ppl_ratio: 1.0509673642188795
+            ppl_ratio_ci95:
+            - 1.010805303825453
+            - 1.0949321464606923
+          zh_wiki:
+            delta_nll: 0.1173308901488781
+            ppl_ratio: 1.1244914512817294
+            ppl_ratio_ci95:
+            - 1.0699546245482572
+            - 1.181244590742255
+    quality_gate:
+      overall_limit: 1.05
+      cell_limit: 1.1
+      point_pass: false
+      confident_pass: false
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0243.md
+    new_device_runs: 0
 - id: EXP-0242
   slug: static-a8-localization
   title: Fixed per-channel C64 A8 error localization and static clipping
