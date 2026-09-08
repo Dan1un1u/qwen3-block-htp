@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """PC059 fixed-prefix, immutable-W4 boundary restoration diagnostics."""
 import argparse, collections, hashlib, json, math, subprocess, time, types
+from functools import lru_cache
 from pathlib import Path
 import numpy as np
 import torch
@@ -21,10 +22,12 @@ def preflight():
     state=json.loads(subprocess.check_output(['python3','-c',
         'import yaml,json;print(json.dumps(yaml.safe_load(open("'+str(a.MEMORY/'PROJECT_STATUS.yaml')+'"))["governance"]))'],text=True))
     assert state['active_experiment']=='EXP-0244'
+@lru_cache(maxsize=1)
 def params(): return json.loads(data.verified('exp0243','calibration/eos.json').read_text())['parameters']
 def rows(split): return [r for r in read('dataset.json')['samples'] if r['split']==split]
 def logical(s): return len([x for x in s if not x.endswith('.v_cache')])
 
+@lru_cache(maxsize=1)
 def masks():
     sites=set(params());groups={
         'norm_inputs':['norm_qkv','norm_mlp'], 'qk_projection':['q_out','k_out'],
@@ -226,7 +229,7 @@ def develop():
     write('rerank_selection.json',dict(names=selected,local=local,layers=layer,final_used=False,rule='frozen_PC059_bulk_top2_per_focus_and_layer'))
 
 def rerank():
-    selection=read('rerank_selection.json');samples=[r for c in a.CELLS for r in rows('development') if r['cell']==c][:0]
+    selection=read('rerank_selection.json')
     samples=[r for i in range(8) for c in a.CELLS for r in [([v for v in rows('development') if v['cell']==c])[i]]]
     for variant in ['C64','F']:
         model,before,mh=model_session(variant);ins=Instrument(model);ins.build_prefix([151645])
@@ -255,6 +258,10 @@ def final():
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('phase',choices=['freeze','check','develop','rerank','final']);args=parser.parse_args()
     preflight();data.frozen();a.settings()
+    if args.phase!='freeze':
+        frozen=read('masks.json');assert frozen['masks']==masks()
+        assert frozen['parameters_sha256']==a.sha(data.verified('exp0243','calibration/eos.json'))
+        assert frozen['protocol_sha256']==a.sha(a.MEMORY/'docs/experiments/EXP-0244.md')
     with torch.inference_mode():
         if args.phase=='freeze':write('masks.json',dict(masks=masks(),parameters_sha256=a.sha(data.verified('exp0243','calibration/eos.json')),protocol_sha256=a.sha(a.MEMORY/'docs/experiments/EXP-0244.md'),source_head=head()))
         else:{'check':check_model,'develop':develop,'rerank':rerank,'final':final}[args.phase]()
