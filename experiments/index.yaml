@@ -35,12 +35,12 @@ experiments:
   adoption_status: not_applicable
   approval_ref: PC064 user approves proposed raw-score repair
   source_branches:
-  - codex/exp-0249-integer-attention-attribution
+  - codex/exp-0250-raw-score-max
   source_commits:
   - 0b85aebb96e9a3ff06e667ec3365d41d69c7dd15
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0249-integer-attention-attribution
+    source_branch: codex/exp-0250-raw-score-max
     approved_on: '2026-09-08'
     started_on: '2026-09-08'
   evidence:
