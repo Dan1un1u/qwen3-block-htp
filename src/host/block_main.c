@@ -3111,6 +3111,7 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U32(f16_cache_full_prefix_pack_count);
     QBH_REPLAY_PROFILE_U64(f16_cache_native_append_update_ticks);
     QBH_REPLAY_PROFILE_U64(u8_attention_qk_hmx_ticks);
+    QBH_REPLAY_PROFILE_U64(wide_score_mode);
     QBH_REPLAY_PROFILE_U64(u8_attention_qk_requant_ticks);
     QBH_REPLAY_PROFILE_U64(u8_attention_softmax_ticks);
     QBH_REPLAY_PROFILE_U64(u8_attention_av_hmx_ticks);
@@ -4353,6 +4354,7 @@ int main(int argc, char **argv) {
     struct qbh_file_slot kv_reference_slots[2];
     struct qbh_file_slot w4u8_lut_slot;
     const uint32_t dense_r3_mode = getenv("QBH_DENSE_R3") ? (uint32_t)atoi(getenv("QBH_DENSE_R3")) : 0U;
+    const uint32_t wide_score_mode = getenv("QBH_WIDE_SCORE") ? (uint32_t)atoi(getenv("QBH_WIDE_SCORE")) : 0U;
     size_t dense_r3_audit_offset = 0U;
     const uint32_t lpbq_mode = getenv("QBH_LPBQ32") != NULL ? (uint32_t)atoi(getenv("QBH_LPBQ32")) : 0U;
     struct qbh_file_slot lpbq_slots[QBH_BLOCK_PROJECTION_COUNT] = {0};
@@ -6245,7 +6247,7 @@ int main(int argc, char **argv) {
             }
             cursor += QBH_BLOCK_U8_ATTENTION_AUDIT_BYTES;
         }
-        if (dense_r3_mode != 0U && getenv("QBH_DENSE_R3_AUDIT")) {
+        if (getenv("QBH_DENSE_R3_AUDIT")) {
             cursor=qbh_align_up_size(cursor,QBH_HOST_ALIGNMENT);
             dense_r3_audit_offset=cursor;
             if (QBH_DENSE_R3_AUDIT_BYTES>UINT32_MAX-cursor) return 2;
@@ -6765,6 +6767,7 @@ int main(int argc, char **argv) {
         header->scan_attention_audit_output_bytes =
             QBH_BLOCK_SCAN_F16_AUDIT_BYTES;
     }
+    header->wide_score_mode=wide_score_mode;
     header->dense_r3_mode=dense_r3_mode;
     header->dense_r3_audit_offset=(uint32_t)dense_r3_audit_offset;
     header->w4u8_boundary_audit_enabled =
