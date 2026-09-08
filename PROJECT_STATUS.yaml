@@ -19,13 +19,187 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0246
+  active_experiment: null
   next_experiment_number: 247
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
+  latest_w4u8_dense_r3_result:
+    id: EXP-0246
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_role: diagnostic_implementation_and_evidence_not_deployable_accuracy_acceptance
+    adoption_status: not_applicable
+    source_head: 662386e6acf53f63bbadb3d1e283fc2c1e893555
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0246
+    ledger_sha256: de6b2a5bcd10369a9c0f188ae11af115e04f951fb3f970a1b0a0d5914f9e25dc
+    report: docs/experiments/EXP-0246-RESULTS.md
+    final_ppl:
+      F: 26.80735138374039
+      C64: 27.90465850891778
+      A8: 37.505080443731124
+      recal_L0: 37.505080443731124
+      recal_ALL: 37.776482481404706
+      R3_L0: 33.20764533540488
+      R3_ALL: 32.39145542621948
+    rotation_vs_matched_recalibration:
+      L0:
+        delta_nll: -0.12169627170078456
+        ppl_ratio: 0.8854172539431374
+        delta_nll_ci95:
+        - -0.16817489815875888
+        - -0.07645726267946885
+        ratio_ci95:
+        - 0.8452059967841378
+        - 0.9263925049762389
+        cells:
+          en_wiki:
+            ppl_ratio: 0.8911352484654113
+            ratio_ci95:
+            - 0.8151052882573064
+            - 0.973295824894118
+          zh_wiki:
+            ppl_ratio: 0.8945428579793266
+            ratio_ci95:
+            - 0.8055845058465719
+            - 0.9910743020041914
+          en_news:
+            ppl_ratio: 0.8590263367530843
+            ratio_ci95:
+            - 0.7808071360760482
+            - 0.9446822692372211
+          zh_news:
+            ppl_ratio: 0.8975128369660201
+            ratio_ci95:
+            - 0.8359599086013416
+            - 0.9629335319075657
+      ALL:
+        delta_nll: -0.1537920858245343
+        ppl_ratio: 0.857450278547348
+        delta_nll_ci95:
+        - -0.19776569280656986
+        - -0.10876302923425102
+        ratio_ci95:
+        - 0.8205620942165487
+        - 0.8969429415719421
+        cells:
+          en_wiki:
+            ppl_ratio: 0.8846382412806837
+            ratio_ci95:
+            - 0.8009450830651493
+            - 0.9741074585004277
+          zh_wiki:
+            ppl_ratio: 0.8657623035974028
+            ratio_ci95:
+            - 0.7871714601122869
+            - 0.9539081083321146
+          en_news:
+            ppl_ratio: 0.7896620375492244
+            ratio_ci95:
+            - 0.7212361979238237
+            - 0.8616108485098521
+          zh_news:
+            ppl_ratio: 0.8937789902055305
+            ratio_ci95:
+            - 0.8274747645459298
+            - 0.9639059747973563
+    final_names:
+    - F
+    - C64
+    - A8
+    - recal_L0
+    - recal_ALL
+    - R3_L0
+    - R3_ALL
+    recalibration_vs_original:
+      L0:
+        delta_nll: 0.0
+        ppl_ratio: 1.0
+        delta_nll_ci95:
+        - 0.0
+        - 0.0
+        ratio_ci95:
+        - 1.0
+        - 1.0
+        cells:
+          en_wiki:
+            ppl_ratio: 1.0
+            ratio_ci95:
+            - 1.0
+            - 1.0
+          zh_wiki:
+            ppl_ratio: 1.0
+            ratio_ci95:
+            - 1.0
+            - 1.0
+          en_news:
+            ppl_ratio: 1.0
+            ratio_ci95:
+            - 1.0
+            - 1.0
+          zh_news:
+            ppl_ratio: 1.0
+            ratio_ci95:
+            - 1.0
+            - 1.0
+      ALL:
+        delta_nll: 0.007210350129753351
+        ppl_ratio: 1.0072364072936937
+        delta_nll_ci95:
+        - -0.024837265501264482
+        - 0.03956307749031111
+        ratio_ci95:
+        - 0.9754686415130096
+        - 1.040356119868404
+        cells:
+          en_wiki:
+            ppl_ratio: 1.0023874307132326
+            ratio_ci95:
+            - 0.9413045451694785
+            - 1.0710093021050173
+          zh_wiki:
+            ppl_ratio: 0.9947541412356495
+            ratio_ci95:
+            - 0.9264508254759841
+            - 1.0662038387870012
+          en_news:
+            ppl_ratio: 1.0191033165105299
+            ratio_ci95:
+            - 0.9620817460168888
+            - 1.0838560973930422
+          zh_news:
+            ppl_ratio: 1.0128755274893622
+            ratio_ci95:
+            - 0.9496293906560874
+            - 1.0798163024672904
+    device_eligible:
+      L0: true
+      ALL: true
+    quality_gate:
+      C64:
+        point_pass: true
+        confident_pass: false
+      A8:
+        point_pass: false
+        confident_pass: false
+      recal_L0:
+        point_pass: false
+        confident_pass: false
+      recal_ALL:
+        point_pass: false
+        confident_pass: false
+      R3_L0:
+        point_pass: false
+        confident_pass: false
+      R3_ALL:
+        point_pass: false
+        confident_pass: false
+    new_device_runs: 0
+    baseline_promoted: false
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0246.md
   latest_w4u8_early_qkv_attribution:
     id: EXP-0245
     execution_state: completed
@@ -820,7 +994,7 @@ current_scope:
     auxiliary: short_task_content_v2
     diagnostic_only: short_task_strict_v1_format_adherence
     numerical_acceptance_threshold: PC050_EXP0229_overall_5percent_per_language_domain_10percent
-    next_direction: docs/experiments/EXP-0246.md
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0246.md
     new_experiment_authorized: true
   latest_short_task_scoring_audit:
     experiment: EXP-0228
@@ -1512,21 +1686,21 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: host_fixed_C64_prefix_causality_and_U8_cache
-  last_completed_experiment: EXP-0245
-  last_completed_source_commit: df75945f9a14a7c5ab4f32dd1db27161e865a476
+  last_completed_experiment: EXP-0246
+  last_completed_source_commit: 662386e6acf53f63bbadb3d1e283fc2c1e893555
   provisional_source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
-  device_execution_state: no_device_run_EXP0245_diagnostic_only_discuss_next_transform
+  device_execution_state: no_device_run_EXP0246_dense_R3_software_only
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  current_handoff: docs/experiments/EXP-0246.md
+  current_handoff: docs/experiments/EXP-0246-RESULTS.md
   active_recipe_specialization: null
   last_completed_experiment_contract:
-    id: EXP-0245
-    protocol: PC060
-    scope: fixed_EOS_early_Q_K_V_QK_software_attribution
+    id: EXP-0246
+    protocol: PC061
+    scope: fixed_EOS_dense_online_R3_software_quality
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0245
+  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0246
   latest_w4f16_output_scale_result:
     id: EXP-0224
     execution_state: completed
@@ -7780,11 +7954,14 @@ current_scope:
     next_action: Discuss W4A8 reproducibility and same-W4-weight activation attribution;
       no new experiment authorized
   next_research_direction:
-    status: running_PC061_EXP0246
-    document: docs/experiments/EXP-0246.md
-    current: dense_online_R3_QK
+    status: conditional_device_continuation_authorized
+    document: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0246.md
+    current: dense_HMX_single_layer_M64_M1_gate
     other_recipes: frozen
-    hardware: conditional_software_improvement_then_separate_registration
+    hardware: separate_registration_required
+    device_eligible:
+      L0: true
+      ALL: true
   latest_w4f16_independent_tool_result:
     id: EXP-0233
     source_head: 24a976887f9da144e49de2774104a3e72ddf6ddd
