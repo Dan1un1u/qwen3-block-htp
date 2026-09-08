@@ -38,6 +38,7 @@ experiments:
   - codex/exp-0245-early-qkv-attribution
   source_commits:
   - 0986a025f7a2fc847278a2f38b422f8755366f8b
+  - b76537f64bf1730c27b56b891531889b49921edb
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0245-early-qkv-attribution
@@ -45,9 +46,33 @@ experiments:
     started_on: '2026-09-08'
   evidence:
     protocol: PC060
-    current_stage: implementation
+    current_stage: final_sequential_scoring
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0245
     baseline_promoted: false
+    source_head: b76537f64bf1730c27b56b891531889b49921edb
+    development_complete: true
+    development_configurations: 22
+    parent_per_token_reproductions: 5
+    final_names:
+    - F
+    - C64
+    - A8
+    - L0_Q
+    - L0_K
+    - L0_V
+    - L0_QK
+    - L0_QKV
+    - ALL_Q
+    - ALL_K
+    - ALL_V
+    - ALL_QK
+    - ALL_QKV
+    dataset_sha256: b54e2c46e46d4e3e5640092082cd82ff390b995b3b38d999c35123e6e58370f7
+    masks_sha256: d075431de6cd0a34c02021198c753166fa9d2556f177ed42a81ee00239b01df5
+    resume: Inspect exp0245 final_attempt1.log and existing process first. Frozen
+      final13; ablate_exp0245.py final is resumable by verified score files. After
+      all35 scores, report, seal and close memory. Do not rerun data prepare/freeze
+      or change final list.
 - id: EXP-0244
   slug: prefix-a8-boundary-ablation
   title: Fixed-prefix layer and boundary A8 ablation
