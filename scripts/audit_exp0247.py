@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Independent dense arithmetic, native Q/K, cache and full-layer audit."""
 from pathlib import Path
-import json,struct,math,hashlib,subprocess
+import json,struct,math,hashlib,subprocess,re
 import numpy as np
 from prepare_exp0161_segmented_cache import pack_k_segment
 from prepare_exp0042_attention import CONFIG
@@ -22,7 +22,8 @@ def ulp(x):
     y=x.astype('<f2');hi=np.nextafter(y,np.float16(np.inf));lo=np.nextafter(y,np.float16(-np.inf))
     return np.maximum(np.abs(hi.astype(float)-y),np.abs(y.astype(float)-lo))
 def extract(text,name):
-    start=text.index('static int '+name+'(');a=text.index('{',start);depth=1;i=a+1
+    match=re.search(r'static int '+name+r'\([^;{}]*\)\s*\{',text);assert match,name
+    start=match.start();a=match.end()-1;depth=1;i=a+1
     while depth:
         depth+=(text[i]=='{')-(text[i]=='}');i+=1
     return text[start:i]
@@ -50,9 +51,9 @@ def main():
         # Cosine on dequantized output, not artificially offset unsigned codes.
         qp=params['block_output'];af=(a-qp['zero_point'])*qp['scale'];bf=(b-qp['zero_point'])*qp['scale']
         cosine=float(np.dot(af,bf)/(np.linalg.norm(af)*np.linalg.norm(bf)));difference=float(np.abs(a-b).max())
-        assert difference<=2 and cosine>=.999,(step,difference,cosine)
-        records.append(dict(step=step,live_rows=len(raw),dense_max_abs=float(err.max()),dense_rmse=float(np.sqrt(np.mean(err**2))),maximum_error_in_local_ulp=float((err/np.maximum(ulp(expected),2**-24)).max()),u8_max_code_error=qerr,identity_exact=True,raw_carriers_identical=True))
-        whole.append(dict(step=step,max_lsb=difference,dequantized_cosine=cosine))
+        point_pass=difference<=2 and cosine>=.999
+        records.append(dict(step=step,live_rows=len(raw),dense_max_abs=float(err.max()),dense_rmse=float(np.sqrt(np.mean(err**2))),maximum_error_in_local_ulp=float((err/np.maximum(ulp(expected),2**-24)).max()),u8_max_code_error=qerr,q_codes_different_from_scalar=int((codes[:16]!=scalar_codes[:16]).sum()),k_codes_different_from_scalar=int((codes[16:]!=scalar_codes[16:]).sum()),code_count=int(codes.size),identity_exact=True,raw_carriers_identical=True))
+        whole.append(dict(step=step,max_lsb=difference,dequantized_cosine=cosine,gate_pass=point_pass))
     configs=list(CONFIG.iter_unpack((MODELS/'r3/attention_config_all_groups.bin').read_bytes()));cache=(R/'audit_r3_01/prefill_k_cache.bin').read_bytes()
     _,_,codes=read_capture('audit_r3_01',0);expected_cache=b''.join(b''.join(pack_k_segment(codes[16+g,i:i+32],configs[g]) for i in [0,32])+bytes(4096) for g in range(8))
     assert len(cache)==len(expected_cache)==102400 and cache==expected_cache,'independent native K cache pack mismatch'
@@ -64,10 +65,11 @@ def main():
     parent=subprocess.check_output(['git','show','662386e6acf53f63bbadb3d1e283fc2c1e893555:src/dsp/block_imp.c'],cwd=S,text=True);current=(S/'src/dsp/block_imp.c').read_text();functions={}
     for name in ['qbh_run_projection','qbh_run_w4u8_qkv_ring']:
         assert extract(parent,name)==extract(current,name);functions[name]=sha(extract(current,name).encode())
-    result=dict(pass_all=True,rotation=records,whole_layer_vs_scalar=whole,prefill_K_cache_exact=True,EOS_key_in_same_rotated_basis=True,identity_dense_exact=True,
+    state=json.loads((R/'hmx_state_isolation.json').read_text());assert state['pass_all']
+    result=dict(pass_all=all(x['gate_pass'] for x in whole),component_arithmetic_and_layout_pass=True,whole_layer_gate_pass=all(x['gate_pass'] for x in whole),hmx_state_isolation=state,rotation=records,whole_layer_vs_scalar=whole,prefill_K_cache_exact=True,EOS_key_in_same_rotated_basis=True,identity_dense_exact=True,
         packed_W4_projections=packed_proof,unchanged_native_projection_functions=functions,normalization_half=normalization,
         checker_recovery='Preserved numerical_first_attempt.json. Corrected one-sided np.spacing at negative FP16 binade edges using both adjacent representable values; frozen one-ULP gate unchanged.',
         limitations='Layer0 device arithmetic and speed gate, not full-model DSP PPL; EOS is computed through the device A8 path, not an imported software warm-prefix tensor.')
     with (R/'numerical_audit.json').open('x') as f:json.dump(result,f,indent=2,allow_nan=False);f.write('\n')
-    print('NUMERICAL_PASS',whole,flush=True)
+    print('NUMERICAL_COMPLETE','pass_all',result['pass_all'],whole,flush=True)
 if __name__=='__main__':main()
