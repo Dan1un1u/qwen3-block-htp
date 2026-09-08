@@ -29,25 +29,171 @@ experiments:
   title: Dense R3 integer-chain numerical repair
   parent: EXP-0247
   record: docs/experiments/EXP-0248.md
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
-  adoption_status: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
+  adoption_status: rejected
   approval_ref: PC062 user explicit attempt repair
   source_branches:
   - codex/exp-0248-r3-numeric-repair
   source_commits:
   - 18fdaac2dfeb758e9443ff96728991fb9cba2a54
+  - ebc07dd1e7b8d7761a73d8880659d9d31a984b3c
+  - a8e8fa82aeee64383349a4ab23555926bbd919e8
+  - bf84233fe77202f0bd201d706d9af69c70d0fc8c
+  - 3587939fe7a727153a19f080a9d0d1c219f66083
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0248-r3-numeric-repair
     approved_on: '2026-09-08'
     started_on: '2026-09-08'
+    completed_on: '2026-09-08'
   evidence:
     protocol: PC062
-    current_stage: registration
+    current_stage: completed_numerical_repaired_speed_gate_failed
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0248
     baseline_promoted: false
+    source_head: 3587939fe7a727153a19f080a9d0d1c219f66083
+    runtime_source_head: bf84233fe77202f0bd201d706d9af69c70d0fc8c
+    report: docs/experiments/EXP-0248-RESULTS.md
+    report_sha256: 7bdc93309a3c2d5c74e64079f97482af6f88fd2eb08130fc7074f51069c8c8a8
+    full_profiling_report: docs/experiments/EXP-0248-PROFILE.md
+    full_profiling_report_sha256: a266d6862d6dbe2488414376006812621b26d0b622a920f4eb24e54f0cf09cc2
+    evidence_ledger_sha256: 9df15e39189ee4f9904c765321370b5262abdf46cde70e1f12ae39cd6eb9fc1e
+    evidence_file_count: 343
+    numerical_gate: pass
+    physical_gate: pass
+    speed_gate: fail
+    whole_layer_max_lsb: 0
+    whole_layer_cosine: 1.0
+    short_rounds: 5
+    formal_rounds: 10
+    device_audit_runs: 6
+    timed_layer_RPCs: 2970
+    performance:
+      repeat1_prefill:
+        control_us: 1721.9015
+        refined_us: 36840.391
+        paired_regression_percent: 2038.5041322762618
+        paired_ratio_ci95:
+        - 20.10262912965893
+        - 22.112527396461417
+        stable_over10percent: true
+        round_control_us:
+        - 1949.063
+        - 1611.146
+        - 1719.063
+        - 1724.74
+        - 1713.125
+        - 1631.302
+        - 1814.636
+        - 1673.75
+        - 1728.906
+        - 2371.927
+        round_refined_us:
+        - 36976.771
+        - 36342.292
+        - 36864.323
+        - 36622.604
+        - 37302.812
+        - 36623.281
+        - 37055.365
+        - 36816.459
+        - 36870.052
+        - 36210.156
+      repeat1_decode:
+        control_us: 974.9316249999999
+        refined_us: 1966.874875
+        paired_regression_percent: 102.701855401346
+        paired_ratio_ci95:
+        - 1.8697369820354233
+        - 2.1086476969104564
+        stable_over10percent: true
+        round_control_us:
+        - 907.258875
+        - 994.544375
+        - 975.299625
+        - 974.563625
+        - 956.875
+        - 825.865875
+        - 929.179625
+        - 1163.26175
+        - 995.21475
+        - 1055.50775
+        round_refined_us:
+        - 1960.227875
+        - 1996.0935
+        - 1994.362
+        - 1958.060125
+        - 1977.90375
+        - 2000.788
+        - 1911.035
+        - 1924.7005
+        - 1860.29275
+        - 1973.521875
+      repeat10_prefill:
+        control_us: 1537.2759500000002
+        refined_us: 36447.513100000004
+        paired_regression_percent: 2274.7514976723323
+        paired_ratio_ci95:
+        - 23.511461574487093
+        - 24.322570112324573
+        stable_over10percent: true
+        round_control_us:
+        - 1493.7448
+        - 1544.2032
+        - 1507.6563
+        - 1554.0052
+        - 1536.6353000000001
+        - 1543.0364
+        - 1492.6718999999998
+        - 1557.3229
+        - 1499.4582
+        - 1537.9166
+        round_refined_us:
+        - 36574.9114
+        - 36306.474200000004
+        - 36177.5887
+        - 36536.3436
+        - 36633.2447
+        - 36500.7137
+        - 36414.2814
+        - 36424.349
+        - 36470.677200000006
+        - 36338.479100000004
+      repeat10_decode:
+        control_us: 951.84505625
+        refined_us: 1908.0468624999999
+        paired_regression_percent: 100.12290807311261
+        paired_ratio_ci95:
+        - 1.985447419086651
+        - 2.0116379817901104
+        stable_over10percent: true
+        round_control_us:
+        - 956.9395
+        - 948.0124375
+        - 939.0137
+        - 956.0345625
+        - 970.580725
+        - 951.6738125
+        - 960.37045
+        - 952.0163
+        - 951.5124625
+        - 948.9017
+        round_refined_us:
+        - 1908.478525
+        - 1907.6152
+        - 1924.2544624999998
+        - 1904.4811625
+        - 1918.39
+        - 1914.4231875
+        - 1927.9205625
+        - 1881.6074125
+        - 1903.4883
+        - 1899.6738500000001
+    reason: Refinement removes whole-layer replay mismatch but stable slowdown exceeds10percent
+      in both scopes; full model not started
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0248.md
 - id: EXP-0247
   slug: hmx-dense-r3
   title: Dense HMX online R3 real layer0 feasibility

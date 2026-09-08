@@ -1791,3 +1791,7 @@ EXP0247 completed as valid negative device-gate evidence; active none, next248. 
 ## EXP0248 active / PC062
 
 Latest user authorizes repair of EXP0247 numerical divergence. Protocol docs/experiments/EXP-0248.md. Frozen inputs and original gates; audit integer attention/O/residual boundaries before bounded attributable repair. Temporary parent binding for branch setup. Previous closure and evidence immutable. Other recipes frozen.
+
+## Current handoff after EXP0248
+
+EXP0248 completed. Frozen single-layer numerical repair passes: guarded HVX SF32 dense dot refinement after HMX makes nine Q/K and final output tensors exact to Float64 oracle. Integer attention first amplification localized to coarse QK/exponent and SOLE normalization. Original arithmetic is independently reproduced; no matrix/cache defect established. Five short/ten formal paired rounds pass correctness/physical gates but repeat10 prefill+2274.75%,decode+100.12% latency fail10percent gate. No full model/PPL/E2E or promotion. Read docs/experiments/EXP-0248-RESULTS.md and docs/W4A8_NEXT_DIRECTION_AFTER_EXP0248.md. Original EXP0247 and EXP0246 evidence immutable. Guard validated only this replay,not universal HMX bound. Other recipes frozen. Active none,next249 pending discussion; build caches remain experimental single-layer0,ABI114,mode5 retained diagnostic only. Source 3587939fe7a727153a19f080a9d0d1c219f66083; ledger 9df15e39189ee4f9904c765321370b5262abdf46cde70e1f12ae39cd6eb9fc1e.

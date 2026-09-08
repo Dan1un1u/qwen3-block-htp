@@ -19,13 +19,34 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0248
+  active_experiment: null
   next_experiment_number: 249
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
+  latest_w4u8_dense_r3_repair_result:
+    id: EXP-0248
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: rejected
+    source_head: 3587939fe7a727153a19f080a9d0d1c219f66083
+    report: docs/experiments/EXP-0248-RESULTS.md
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0248
+    ledger_sha256: 9df15e39189ee4f9904c765321370b5262abdf46cde70e1f12ae39cd6eb9fc1e
+    numerical_gate: pass
+    physical_gate: pass
+    speed_gate: fail
+    whole_layer_max_lsb: 0
+    whole_layer_cosine: 1.0
+    short_rounds: 5
+    formal_rounds: 10
+    prefill_paired_regression_percent: 2274.7514976723323
+    decode_paired_regression_percent: 100.12290807311261
+    baseline_promoted: false
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0248.md
   latest_w4u8_dense_r3_device_result:
     id: EXP-0247
     execution_state: completed
@@ -1015,7 +1036,7 @@ current_scope:
     auxiliary: short_task_content_v2
     diagnostic_only: short_task_strict_v1_format_adherence
     numerical_acceptance_threshold: PC050_EXP0229_overall_5percent_per_language_domain_10percent
-    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0247.md
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0248.md
     new_experiment_authorized: false
   latest_short_task_scoring_audit:
     experiment: EXP-0228
@@ -1707,21 +1728,21 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: host_fixed_C64_prefix_causality_and_U8_cache
-  last_completed_experiment: EXP-0247
-  last_completed_source_commit: 18fdaac2dfeb758e9443ff96728991fb9cba2a54
+  last_completed_experiment: EXP-0248
+  last_completed_source_commit: 3587939fe7a727153a19f080a9d0d1c219f66083
   provisional_source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
-  device_execution_state: EXP0247_numeric_gate_failed_no_short_or_formal_timings
+  device_execution_state: EXP0248_numeric_repaired_speed_gate_failed_no_full_model
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  current_handoff: docs/experiments/EXP-0248.md
+  current_handoff: docs/experiments/EXP-0248-RESULTS.md
   active_recipe_specialization: null
   last_completed_experiment_contract:
-    id: EXP-0247
-    protocol: PC061
-    scope: dense_HMX_R3_real_layer0_numeric_gate
+    id: EXP-0248
+    protocol: PC062
+    scope: dense_R3_real_layer0_numerical_repair_and_speed_gate
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0247
+  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0248
   latest_w4f16_output_scale_result:
     id: EXP-0224
     execution_state: completed
@@ -7975,9 +7996,9 @@ current_scope:
     next_action: Discuss W4A8 reproducibility and same-W4-weight activation attribution;
       no new experiment authorized
   next_research_direction:
-    status: discussion_after_valid_negative_EXP0247
-    document: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0247.md
-    current: align_HMX_reference_and_localize_A8_amplification
+    status: discussion_after_EXP0248_precision_repair_latency_rejection
+    document: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0248.md
+    current: integer_attention_score_exponent_and_SOLE_precision
     other_recipes: frozen
     new_algorithm_authorized: false
   latest_w4f16_independent_tool_result:
