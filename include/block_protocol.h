@@ -7,7 +7,7 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(113)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(114)
 #define QBH_BLOCK_EXPERIMENT UINT32_C(218)
 
 #define QBH_BLOCK_M UINT32_C(64)
@@ -885,6 +885,7 @@ struct qbh_block_header {
     uint32_t dense_r3_audit_offset;
     uint32_t dense_r3_rows;
     uint32_t dense_r3_hmx_calls;
+    uint32_t dense_r3_refined_values;
     uint64_t dense_r3_prepare_ticks, dense_r3_matmul_ticks, dense_r3_finish_ticks;
     uint32_t w4u8_boundary_audit_enabled;
     uint32_t w4u8_boundary_audit_output_offset;

@@ -32,8 +32,8 @@ def deploy():
     with manifest.open('x') as f:json.dump(x,f,indent=2)
     print('DEPLOYED',flush=True)
 def run(cell,repeat,tag,dump=False,steps=8):
-    assert cell in ['control','r3','scalar','identity','scalar_hmx_state'] and repeat in [1,10] and 1<=steps<=8
-    env=dict(ENV);env['QBH_DENSE_R3']=str(dict(control=0,r3=1,scalar=2,identity=3,scalar_hmx_state=4)[cell]);env['QBH_REPLAY_DECODE_STEPS']=str(steps)
+    assert cell in ['control','r3','scalar','identity','scalar_hmx_state','refined'] and repeat in [1,10] and 1<=steps<=8
+    env=dict(ENV);env['QBH_DENSE_R3']=str(dict(control=0,r3=1,scalar=2,identity=3,scalar_hmx_state=4,refined=5)[cell]);env['QBH_REPLAY_DECODE_STEPS']=str(steps)
     package='control' if cell=='control' else 'r3';path=R/tag;path.mkdir(exist_ok=False)
     if dump:
         env.update(QBH_REPLAY_DUMP_DIR=REMOTE+'/'+tag,QBH_DENSE_R3_AUDIT='1')

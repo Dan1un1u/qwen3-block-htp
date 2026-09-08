@@ -23,6 +23,47 @@ static void qbh_r3_pack(const __fp16 *src, __fp16 *dst, uint32_t rows,
     asm volatile("barrier" ::: "memory");
 }
 
+/* Direct dot-product refinement. Each sign row is explicitly materialized;
+ * the reduction sums products within one dot and never performs an FWHT. */
+static uint32_t qbh_r3_refine(const __fp16 *raw, __fp16 *result,
+    uint32_t rows, uint32_t logical_rows, const struct qbh_block_header *h,
+    uint32_t *signs) {
+    for (uint32_t n=0;n<128U;++n) for (uint32_t part=0;part<4U;++part)
+        for (uint32_t lane=0;lane<32U;++lane) {
+            uint32_t k=(part/2U)*64U+2U*lane+part%2U;
+            signs[n*128U+part*32U+lane]=(__builtin_popcount(n&k)&1)?0x80000000U:0U;
+        }
+    uint32_t count=0;
+    for (uint32_t r=0;r<rows;++r) {
+        const struct qbh_block_qparam *qp=&h->qparams[
+            r/logical_rows<16U?QBH_BLOCK_QP_Q_ROPE:QBH_BLOCK_QP_K_ROPE];
+        const float inv=1.0f/qp->scale;
+        HVX_VectorPair x0=Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)(raw+r*128U));
+        HVX_VectorPair x1=Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)(raw+r*128U+64U));
+        HVX_Vector x[4]={Q6_V_lo_W(x0),Q6_V_hi_W(x0),Q6_V_lo_W(x1),Q6_V_hi_W(x1)};
+        for (uint32_t n=0;n<128U;++n) {
+            uint16_t bits;memcpy(&bits,result+r*128U+n,2U);
+            uint16_t mag=bits&0x7fffU,up=mag+1U;
+            __fp16 yy,zz;memcpy(&yy,&mag,2U);memcpy(&zz,&up,2U);
+            float err=2.0f*((float)zz-(float)yy)+0.00006103515625f;
+            float y=(float)result[r*128U+n];
+            int lo=(int)floorf((y-err)*inv+(float)qp->zero_point+0.5f);
+            int hi=(int)floorf((y+err)*inv+(float)qp->zero_point+0.5f);
+            lo=lo<0?0:lo>255?255:lo;hi=hi<0?0:hi>255?255:hi;
+            if (lo==hi) continue;
+            const HVX_Vector *sg=(const HVX_Vector *)(signs+n*128U);
+            HVX_Vector a=Q6_Vsf_vadd_VsfVsf(Q6_V_vxor_VV(x[0],sg[0]),Q6_V_vxor_VV(x[1],sg[1]));
+            HVX_Vector b=Q6_Vsf_vadd_VsfVsf(Q6_V_vxor_VV(x[2],sg[2]),Q6_V_vxor_VV(x[3],sg[3]));
+            a=Q6_Vsf_vadd_VsfVsf(a,b);
+            for (uint32_t shift=64U;shift>=4U;shift>>=1U)
+                a=Q6_Vsf_vadd_VsfVsf(a,Q6_V_vlalign_VVR(a,Q6_V_vzero(),shift));
+            uint32_t word=(uint32_t)Q6_R_vextract_VR(a,124);float sum;memcpy(&sum,&word,4U);
+            result[r*128U+n]=(__fp16)(sum*0.08837890625f);++count;
+        }
+    }
+    return count;
+}
+
 static int qbh_run_dense_r3(struct qbh_block_header *h,uint8_t *shared,
     struct qbh_block_buffers *b,struct qbh_block_hmx_worker *worker,
     uint32_t logical_rows) {
@@ -34,7 +75,7 @@ static int qbh_run_dense_r3(struct qbh_block_header *h,uint8_t *shared,
     const __fp16 normalization=(__fp16)0.08838834764831844f;
     float scales[32] __attribute__((aligned(128)));
     if (h->dense_r3_mode==0U) return 0;
-    if (h->dense_r3_mode>4U || h->variant!=QBH_BLOCK_W4U8 ||
+    if (h->dense_r3_mode>5U || h->variant!=QBH_BLOCK_W4U8 ||
         (logical_rows!=1U && logical_rows!=64U) ||
         h->u8_norm_reduction_mode < QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE ||
         (h->dense_r3_audit_offset && !qbh_range_valid(h->dense_r3_audit_offset,
@@ -87,6 +128,7 @@ static int qbh_run_dense_r3(struct qbh_block_header *h,uint8_t *shared,
         h->hmx_fp16_tile_pair_count+=(padded/32U)*16U;
         qbh_r3_pack(out,result,padded,1U);
     }
+    if (h->dense_r3_mode==5U) h->dense_r3_refined_values=qbh_r3_refine(raw,result,rows,logical_rows,h,(uint32_t *)b->expanded_weight);
     h->dense_r3_matmul_ticks=HAP_perf_get_qtimer_count()-start;
     start=HAP_perf_get_qtimer_count();
     for (uint32_t head=0;head<24U;++head) {
