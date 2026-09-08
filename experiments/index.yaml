@@ -35,12 +35,12 @@ experiments:
   adoption_status: not_applicable
   approval_ref: PC063 user approves recommended diagnosis
   source_branches:
-  - codex/exp-0248-r3-numeric-repair
+  - codex/exp-0249-integer-attention-attribution
   source_commits:
   - 3587939fe7a727153a19f080a9d0d1c219f66083
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0248-r3-numeric-repair
+    source_branch: codex/exp-0249-integer-attention-attribution
     approved_on: '2026-09-08'
     started_on: '2026-09-08'
   evidence:
