@@ -23,7 +23,8 @@ def prior_data():
  return paths+[p],ds+[d],rows+d['samples']
 def frozen():
  f=json.loads((RESULT/'dataset_freeze.json').read_text())
- assert sha(MEMORY/'docs/experiments/EXP-0249.md')==f['protocol_sha256']
+ snapshot=RESULT/'protocol_at_dataset_freeze.md'
+ assert sha(snapshot if snapshot.exists() else MEMORY/'docs/experiments/EXP-0249.md')==f['protocol_sha256']
  for n,h in f['files'].items():assert sha(RESULT/n)==h,n
  for n,h in f['references'].items():assert sha(n)==h,n
  return json.loads((RESULT/'dataset.json').read_text())

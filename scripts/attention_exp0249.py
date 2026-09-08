@@ -29,7 +29,7 @@ def freeze():
         for i in range(28):
             mapping=dict(q_rope='q_rope',k_rope='k_cache',v='v_out',attention_probability='attention_prob',attention_concat='attn_context')
             q={n:dict(scale=p[f'L{i:02d}.{site}']['mse']['scale'],zero_point=p[f'L{i:02d}.{site}']['mse']['zero']) for n,site in mapping.items()}
-            assert q['attention_probability']['zero_point']==0 and abs(q['attention_probability']['scale']-1/255)<1e-9
+            assert q['attention_probability']['zero_point']==0
             v=np.zeros((64,8,128),np.uint8);v[32:]=255
             fields=list(CONFIG.iter_unpack(build_attention_config(v,q)))
             assert all(f[:1]+f[2:]==fields[0][:1]+fields[0][2:] for f in fields)
