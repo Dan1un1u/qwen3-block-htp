@@ -41,12 +41,12 @@ experiments:
   - 71f8a62449226127e6befb776abc5f572f1c4a88
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0252-normalization-r3
+    source_branch: codex/exp-0253-float-attention
     approved_on: '2026-09-09'
     started_on: '2026-09-09'
   evidence:
     protocol: PC067
-    current_stage: registered_branch_setup
+    current_stage: implementation
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0253
     baseline_promoted: false
 - id: EXP-0252
