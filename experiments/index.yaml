@@ -29,23 +29,28 @@ experiments:
   title: Integer attention QK exponent and SOLE attribution
   parent: EXP-0248
   record: docs/experiments/EXP-0249.md
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: not_applicable
   approval_ref: PC063 user approves recommended diagnosis
   source_branches:
   - codex/exp-0249-integer-attention-attribution
   source_commits:
   - 3587939fe7a727153a19f080a9d0d1c219f66083
+  - ed34a2164f07af8242719f39fa6100e02ed4644b
+  - ff68562e330ab9e7d121dab020f2e523c0141bd3
+  - 4f9b9da4348818cbd44b65aaa06806695b4306ce
+  - 0b85aebb96e9a3ff06e667ec3365d41d69c7dd15
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0249-integer-attention-attribution
     approved_on: '2026-09-08'
     started_on: '2026-09-08'
+    completed_on: '2026-09-08'
   evidence:
     protocol: PC063
-    current_stage: independent_final_PPL_scoring_running
+    current_stage: completed_conditional_integer_attention_PPL_attribution
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0249
     baseline_promoted: false
     source_head: 0b85aebb96e9a3ff06e667ec3365d41d69c7dd15
@@ -61,6 +66,68 @@ experiments:
       final_R3_carrier: 38.290143466076955
       final_R3_legacy: 35.21662438189657
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0249.md
+    inference_source_heads:
+    - 0b85aebb96e9a3ff06e667ec3365d41d69c7dd15
+    report: docs/experiments/EXP-0249-RESULTS.md
+    report_sha256: a88941fb6f55de918b728ce12c71a9cb1afdd1102ba7ab0977d5b5e29c21744e
+    full_profiling_report: docs/experiments/EXP-0249-PROFILE.md
+    full_profiling_report_sha256: b39c3f2a33c36eae3b28bebc7f8ffb9d03dec06d098da8ba6a2f9c01fb7bfdf5
+    evidence_ledger_sha256: 559391a5579a572e5ef2bca17017b4d2bd69e3a20036720160aab6696034e689
+    evidence_file_count: 130
+    gate_role: diagnostic_implementation_and_evidence_not_deployment_acceptance
+    final_ppl:
+      F: 29.722076681397635
+      C64: 31.288773041634308
+      OFF_legacy: 42.15276953523591
+      OFF_carrier: 46.87527982439223
+      OFF_score: 7705.742457053464
+      OFF_exponent: 7461.603531223536
+      OFF_sole: 11039.825161999797
+      R3_legacy: 35.21662438189657
+      R3_carrier: 38.290143466076955
+      R3_score: 6517.019677075753
+      R3_exponent: 6136.562387034382
+      R3_sole: 9232.957783884774
+    quality_gate:
+      C64:
+        point_pass: false
+        confident_pass: false
+      OFF_legacy:
+        point_pass: false
+        confident_pass: false
+      OFF_carrier:
+        point_pass: false
+        confident_pass: false
+      OFF_score:
+        point_pass: false
+        confident_pass: false
+      OFF_exponent:
+        point_pass: false
+        confident_pass: false
+      OFF_sole:
+        point_pass: false
+        confident_pass: false
+      R3_legacy:
+        point_pass: false
+        confident_pass: false
+      R3_carrier:
+        point_pass: false
+        confident_pass: false
+      R3_score:
+        point_pass: false
+        confident_pass: false
+      R3_exponent:
+        point_pass: false
+        confident_pass: false
+      R3_sole:
+        point_pass: false
+        confident_pass: false
+    new_device_runs: 0
+    short_rounds: 0
+    formal_rounds: 0
+    device_ppl: null
+    e2e_tokens_per_second: null
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0249.md
 - id: EXP-0248
   slug: r3-numeric-repair
   title: Dense R3 integer-chain numerical repair
