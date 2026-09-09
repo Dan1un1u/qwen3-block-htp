@@ -37,7 +37,7 @@ def main():
   # Same original native per-channel W4 semantics, independent SDK conversion.
   expected_down=project_w4u8(codes,O/'r4','down',2048,6144,qp['middle'],qp['down'],conv)
   down=unpack_u8_hmx_activation(slots[9][:131072],2048)[:rows];dmax=int(np.abs(down.astype(int)-expected_down.astype(int)).max());downpass&=dmax==0
-  residual=unpack_u8_hmx_activation(slots[4][:131072],2048)[:rows]
+  residual=slots[4][:rows*2048].reshape(rows,2048)
   final=exact_residual_add_u8(residual,qp['post_attention_residual'],down,qp['down'],qp['block_output'])
   got=np.fromfile(R/'audit_a1'/f'step{step:02d}_output.bin','u1').reshape(rows,2048)
   fmax=int(np.abs(got.astype(int)-final.astype(int)).max());downpass&=fmax==0
@@ -48,7 +48,11 @@ def main():
   a=got.astype(float).ravel();b=np.fromfile(R/'audit_a2'/f'step{step:02d}_output.bin','u1').astype(float)
   af=(a-qp['block_output']['zero_point'])*qp['block_output']['scale'];bf=(b-qp['block_output']['zero_point'])*qp['block_output']['scale'];cos=float(np.dot(af,bf)/(np.linalg.norm(af)*np.linalg.norm(bf)));md=int(np.abs(a-b).max());whole.append(dict(step=step,max_lsb=md,cosine=cos,gate_pass=bool(md<=2 and cos>=.999)))
   _,_,_,_,cs=capture('audit_a0',step)
-  assert all(np.array_equal(slots[j],cs[j]) for j in range(8)),'pre-R4 changed'
+  assert all(np.array_equal(slots[j],cs[j]) for j in range(5)),'pre-R4 attention/residual changed'
+  for j,k in [(5,2048),(6,6144),(7,6144)]:
+   assert np.array_equal(unpack_u8_hmx_activation(slots[j][:64*k],k)[:rows],unpack_u8_hmx_activation(cs[j][:64*k],k)[:rows]),'pre-R4 live MLP changed'
+  # Decode computes only live rows; scratch padding retains prior values and
+  # is not a semantic output. Prefill still compares every physical row.
   result.append(dict(step=step,stage1_max_abs=float(err1.max()),stage2_max_abs=float(err2.max()),stage1_bad=int((err1>tol1).sum()),stage2_bad=int((err2>tol2).sum()),component_pass=pass_component,middle_quant_max_lsb=qerr,down_max_lsb=dmax,residual_max_lsb=fmax));print(result[-1],flush=True)
  caches={}
  for name in ['prefill_k_cache.bin','prefill_v_cache.bin','decode_k_cache.bin','decode_v_cache.bin']:
