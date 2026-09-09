@@ -7,7 +7,7 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(124)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(125)
 #define QBH_BLOCK_EXPERIMENT UINT32_C(218)
 
 #define QBH_BLOCK_M UINT32_C(64)
@@ -942,7 +942,8 @@ struct qbh_block_header {
     uint32_t generation_expected_token_count;
 
     int32_t dsp_status;
-    uint32_t dense_r4_calls, dense_r4_hmx_calls, dense_r4_rows;
+    uint32_t dense_r4_calls, dense_r4_hmx_calls, dense_r4_rows, dense_r4_pipeline_batches;
+    uint64_t dense_r4_pipeline_hvx_ticks;
     uint64_t dense_r4_prepare_ticks, dense_r4_matmul_ticks, dense_r4_layout_ticks, dense_r4_finish_ticks, dense_r4_audit_bytes;
 
     uint32_t generation_lm_head_direct_slot_join_count;

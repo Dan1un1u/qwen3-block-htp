@@ -42,10 +42,10 @@ def physical(ps,arm,dump):
   assert p['dense_r3_mode']==1 and p['dense_r3_optimization']==2 and p['wide_score_mode']==4
   assert p['dense_r3_total_calls']==p['dense_r3_total_hmx_calls']==1 and p['dense_r3_total_parallel_heads']==24
   assert p['dense_r4_mode']==arm and p['dense_r4_calls']==bool(arm) and p['dense_r4_rows']==bool(arm)*p['logical_m']
-  assert p['dense_r4_hmx_calls']==((5 if p['logical_m']==64 else 2) if arm else 0)
+  assert p['dense_r4_hmx_calls']==(((9 if p['dense_r4_optimization']==2 and arm==1 else 5) if p['logical_m']==64 else 2) if arm else 0)
   if not dump:assert p['dense_r4_audit_bytes']==p['u8_attention_audit_ddr_write_bytes']==0 and arm!=2
 
-def run(arm,rep,tag,dump=False,opt=1):
+def run(arm,rep,tag,dump=False,opt=2):
  preflight();root=base.runtime_root(1)
  e=dict(old.ENV,LD_LIBRARY_PATH=root,DSP_LIBRARY_PATH=root,ADSP_LIBRARY_PATH=root,QBH_DENSE_R3='1',QBH_R3_OPT='2',QBH_WIDE_SCORE='4',QBH_DENSE_R4=str(arm),QBH_R4_OPT=str(opt if arm else 0),QBH_REPLAY_DECODE_STEPS='8')
  if dump:
@@ -80,7 +80,7 @@ def profile(phase):
    ratios=pairs[:,1]/pairs[:,0];ci=np.quantile(np.median(ratios[rng.integers(0,n,(10000,n))],axis=1),[.025,.975]);perf[f'r{rep}_{mode}']=dict(control_ns=float(np.median(pairs[:,0])),candidate_ns=float(np.median(pairs[:,1])),paired_ratio=float(np.median(ratios)),ci95=ci.tolist(),stable_over10=bool(ci[0]>1.1))
  write(R/(phase+'_gate.json'),dict(integrity_pass=True,rows=rows,performance=perf));print(phase.upper()+'_COMPLETE',json.dumps(perf),flush=True)
 if __name__=='__main__':
- p=argparse.ArgumentParser();p.add_argument('action');p.add_argument('--arm',type=int,default=0);p.add_argument('--repeat',type=int,default=1);p.add_argument('--tag',default='smoke');p.add_argument('--dump',action='store_true');p.add_argument('--opt',type=int,default=1);a=p.parse_args()
+ p=argparse.ArgumentParser();p.add_argument('action');p.add_argument('--arm',type=int,default=0);p.add_argument('--repeat',type=int,default=1);p.add_argument('--tag',default='smoke');p.add_argument('--dump',action='store_true');p.add_argument('--opt',type=int,default=2);a=p.parse_args()
  if a.action=='stage':base.stage(1)
  elif a.action=='deploy':deploy()
  elif a.action in ['short','formal']:profile(a.action)

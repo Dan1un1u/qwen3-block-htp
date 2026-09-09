@@ -455,6 +455,7 @@ struct qbh_block_w4f16_pool {
     uint32_t fp16_post_residual_norm_task_count;
     uint32_t fp16_post_residual_norm_crouton;
     uint32_t fp16_norm_rows_per_task;
+    __fp16 *u8_r4_act;
     const uint8_t *u8_swiglu_gate;
     const uint8_t *u8_swiglu_up;
     uint8_t *u8_swiglu_middle;
@@ -4329,6 +4330,8 @@ static void qbh_w4u8_generation_expand_worker_run(
  * completed Gate/Up channel groups.  One persistent HVX worker is enough:
  * each 32-tile group is much shorter than the next direct-n HMX pair, while
  * using one worker preserves the single gather-scratch ownership contract. */
+static void qbh_r4_prepare_tile(const uint8_t *gate,const uint8_t *up,
+    __fp16 *act,uint32_t rows,uint32_t tile,const uint16_t *lut,uint8_t *scratch);
 static void qbh_w4u8_swiglu_stream_worker_run(
     struct qbh_block_w4f16_pool *pool,
     struct qbh_block_w4f16_job *job) {
@@ -4354,7 +4357,9 @@ static void qbh_w4u8_swiglu_stream_worker_run(
         for (uint32_t tile = 0U;
              tile < pool->u8_swiglu_group_tiles; ++tile) {
             const uint32_t output_tile = first_tile + tile;
-            qbh_mlp_gate_up_lut_hvx(
+            if(pool->u8_r4_act)qbh_r4_prepare_tile(pool->u8_swiglu_gate,pool->u8_swiglu_up,
+                pool->u8_r4_act,1U,output_tile,pool->u8_swiglu_lut,pool->u8_swiglu_gather_scratch);
+            else qbh_mlp_gate_up_lut_hvx(
                 pool->u8_swiglu_gate +
                     (size_t)output_tile * QBH_HMX_OUTPUT_BYTES,
                 pool->u8_swiglu_up +
@@ -4364,7 +4369,7 @@ static void qbh_w4u8_swiglu_stream_worker_run(
                 pool->u8_swiglu_rows * QBH_HMX_OUTPUT_CHANNELS,
                 pool->u8_swiglu_lut,
                 pool->u8_swiglu_gather_scratch);
-            if (pool->u8_swiglu_rows ==
+            if (!pool->u8_r4_act && pool->u8_swiglu_rows ==
                     QBH_BLOCK_W4U8_SWIGLU_DECODE_ROWS &&
                 pool->u8_swiglu_padding_poison != 0U) {
                 qbh_w4u8_poison_swiglu_padding(
@@ -9545,6 +9550,12 @@ static int qbh_start_w4u8_gate_up_swiglu_stream(
     ++pool->u8_swiglu_generation;
     if (pool->u8_swiglu_generation == 0U) {
         ++pool->u8_swiglu_generation;
+    }
+    pool->u8_r4_act = header->dense_r4_mode && header->dense_r4_optimization==2U
+        ? (__fp16 *)buffers->hmx_activation : NULL;
+    if(pool->u8_r4_act) {
+        for(uint32_t v=0;v<32768U/128U;++v)((HVX_Vector *)pool->u8_r4_act)[v]=Q6_V_vzero();
+        asm volatile("barrier" ::: "memory");
     }
     pool->u8_swiglu_gate = gate;
     pool->u8_swiglu_up = up;
