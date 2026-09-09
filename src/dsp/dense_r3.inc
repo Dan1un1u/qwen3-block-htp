@@ -141,11 +141,19 @@ static int qbh_run_dense_r3(struct qbh_block_header *h,uint8_t *shared,
     start=HAP_perf_get_qtimer_count();
     for (uint32_t head=0;head<24U;++head) {
         uint32_t k=head>=16U;
-        (h->dense_r3_optimization ? qbh_hvx_r3_quantize_head_vector : qbh_hvx_r3_quantize_head)(result+head*logical_rows*128U,
+        if(h->dense_r3_optimization) {
+            uint8_t *scratch=b->attention_concat+(k?head-16U:0U)*QBH_ATTN_U8_GROUP_SCRATCH_BYTES;
+            qbh_hvx_r3_quantize_head_vector(result+head*logical_rows*128U,
+                (k?b->k:b->q)+(head-(k?16U:0U))*8192U,logical_rows,
+                &h->qparams[k?QBH_BLOCK_QP_K_ROPE:QBH_BLOCK_QP_Q_ROPE],
+                k && logical_rows==64U?&b->attention_configs[head-16U]:NULL,
+                (int8_t *)(scratch+QBH_ATTN_U8_K_WEIGHT_OFFSET),
+                (uint32_t *)(scratch+QBH_ATTN_U8_QK_BIAS_OFFSET));
+        } else qbh_hvx_r3_quantize_head(result+head*logical_rows*128U,
             (k?b->k:b->q)+(head-(k?16U:0U))*8192U,logical_rows,
             &h->qparams[k?QBH_BLOCK_QP_K_ROPE:QBH_BLOCK_QP_Q_ROPE]);
     }
-    if (logical_rows==64U) for (uint32_t k=0;k<8U;++k) {
+    if (logical_rows==64U && !h->dense_r3_optimization) for (uint32_t k=0;k<8U;++k) {
         uint8_t *scratch=b->attention_concat+k*QBH_ATTN_U8_GROUP_SCRATCH_BYTES;
         qbh_attention_u8_pack_k_native(b->k+k*8192U,&b->attention_configs[k],
             (int8_t *)(scratch+QBH_ATTN_U8_K_WEIGHT_OFFSET),

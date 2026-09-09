@@ -1016,7 +1016,13 @@ void qbh_hvx_r3_prepare_head_vector(const uint8_t *native,uint32_t rows,
     asm volatile("barrier" ::: "memory");
 }
 void qbh_hvx_r3_quantize_head_vector(const __fp16 *source,uint8_t *native,
-    uint32_t rows,const struct qbh_block_qparam *qp) {
+    uint32_t rows,const struct qbh_block_qparam *qp,
+    const struct qbh_attention_config *config,int8_t *weight_tiles,uint32_t *bias_words) {
+    int32_t signed_sums[64];
+    const uint32_t divisor=config?1U<<config->score_shift:1U;
+    const int32_t rounding=config && config->score_shift?(int32_t)(divisor/2U):0;
+    const uint16_t conversion=config?qbh_half_bits(512.0f/(float)divisor):0;
+    const HVX_Vector offsets_base=*(const HVX_Vector *)qbh_u8_k_vscatter_offsets;
     uint8_t cache[512] __attribute__((aligned(128)));
     for(uint32_t row=0;row<rows;row+=4) {
         if(rows-row<4) qbh_r3_load4(native+row*32,cache);
@@ -1029,9 +1035,24 @@ void qbh_hvx_r3_quantize_head_vector(const __fp16 *source,uint8_t *native,
             q.lane[1]=qbh_sf32_scale_and_offset(Q6_V_hi_W(a),1.0f/qp->scale,(float)qp->zero_point);
             q.lane[2]=qbh_sf32_scale_and_offset(Q6_V_lo_W(b),1.0f/qp->scale,(float)qp->zero_point);
             q.lane[3]=qbh_sf32_scale_and_offset(Q6_V_hi_W(b),1.0f/qp->scale,(float)qp->zero_point);
-            ((HVX_Vector *)cache)[j]=qbh_pack_qf32_to_u8(&q);
+            HVX_Vector codes=qbh_pack_qf32_to_u8(&q);
+            ((HVX_Vector *)cache)[j]=codes;
+            if(config) {
+                uint32_t token=row+j,n_tile=token/32U,output=token%32U;
+                HVX_Vector centered=qbh_center_u8_to_s8(codes,config->k_zero_point);
+                signed_sums[token]=qbh_reduce_signed_byte_sum(centered);
+                HVX_Vector offsets=Q6_Vw_vadd_VwVw(offsets_base,Q6_V_vsplat_R(output*4U));
+                Q6_vscatter_RMVwV((uint32_t)(uintptr_t)(weight_tiles+n_tile*4U*QBH_HMX_WEIGHT_BYTES),
+                    4U*QBH_HMX_WEIGHT_BYTES-1U,offsets,centered);
+            }
         }
         qbh_r3_store4(cache,native+row*32);
+    }
+    if(config) for(uint32_t token=0;token<64U;++token) {
+        uint32_t *bias=bias_words+(token/32U)*(QBH_HMX_BIAS_BYTES/4U);
+        bias[token%32U]=conversion;
+        bias[32U+token%32U]=(uint32_t)(-config->q_zero_point*signed_sums[token]+
+            (int32_t)QBH_ATTENTION_HMX_CENTER*(int32_t)divisor+rounding);
     }
     asm volatile("barrier" ::: "memory");
 }
