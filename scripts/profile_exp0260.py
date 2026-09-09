@@ -14,6 +14,12 @@ def physical(ps,count,arm):
   assert q['w4f16_decode_opt_calls']==(count*8 if arm and q['mode']=='decode' else 0)
   for i in range(count):
    l=q[f'slice_layer_{i}'];assert l['status']==3 and l['layer_unattributed_ticks']==0
+   fields=['metadata_stage_ticks','input_stage_ticks','input_norm_ticks','qkv_projection_ticks','qk_norm_rope_ticks','attention_ticks','o_projection_ticks','post_attention_residual_ticks','post_attention_norm_ticks','gate_up_ticks','activation_ticks','down_ticks','final_residual_ticks','cache_append_pack_ticks','cache_append_dma_ticks','block_orchestration_ticks','layer_bookkeeping_ticks','layer_unattributed_ticks']
+   assert sum(l[k] for k in fields)==l['layer_ticks'] and l['layer_index']==i
+   step=q.get('generation_step',q.get('replay_step'));assert l['cache_valid_before']==(0 if step==0 else 63+step) and l['cache_valid_after']==64+step
+   assert l['hidden_ddr_read_bytes']==(262144 if count!=28 and i==0 else 0)
+   assert l['hidden_ddr_write_bytes']==(262144 if count!=28 and i==count-1 else 0)
+  assert q['boundary_ddr_write_bytes']==(0 if count==28 else 262144)
 
 def numerical():
  preflight();checks=[]
