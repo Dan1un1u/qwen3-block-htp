@@ -13249,7 +13249,7 @@ static void qbh_attention_u8_qk_prep_pool_run_tasks(
             if (pool->attention_header->dense_r3_optimization==2U) {
                 struct qbh_block_header *h=pool->attention_header;
                 struct qbh_block_buffers *b=pool->attention_buffers;
-                uint32_t rows=pool->qkv_ring_state->decode_qk_row_contract?1U:64U;
+                uint32_t rows=((const struct qbh_w4u8_qkv_ring_state *)pool->qkv_ring_state)->decode_qk_row_contract?1U:64U;
                 uint32_t k=task>=16U;
                 uint64_t t=HAP_perf_get_qtimer_count();
                 qbh_hvx_r3_prepare_head_vector((k?b->k:b->q)+(task-(k?16U:0U))*8192U,
