@@ -7,7 +7,7 @@ project:
   source_root: /home/daniuniu/work/qwen3-block-htp
   memory_branch: codex/qwen3-block-project-memory
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
-  updated_on: '2026-09-09'
+  updated_on: '2026-09-10'
 toolchain:
   qnn_runtime: none
   qairt_runtime: none
@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0261
+  active_experiment: null
   next_experiment_number: 262
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -9055,8 +9055,8 @@ current_scope:
       pass but do not clear gate
     next_direction: discuss_runtime_nondeterminism_then_same_token_device_software_head_and_transformer_alignment
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0257.md
-  last_concluded_experiment: EXP-0260
-  last_concluded_source_commit: 0210d840497a134f7256defd7c7c8244e271482a
+  last_concluded_experiment: EXP-0261
+  last_concluded_source_commit: fbc601d72377cc57fa54cd3fcd831f870ee59fe9
   latest_w4u8_dense_r3_e2e_diagnostic_result:
     id: EXP-0258
     execution_state: completed
@@ -9570,3 +9570,84 @@ current_scope:
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0260.md
     next_direction: discuss_W4F16_M1_projection_weight_expansion_and_HMX_pipeline;
       no automatic baseline promotion
+  latest_w4u8_dense_r4_cost_result:
+    id: EXP-0261
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    adoption_status: not_applicable
+    current_stage: completed_R4_single_layer_cost_speed_stop
+    protocol: PC075
+    source_head: fbc601d72377cc57fa54cd3fcd831f870ee59fe9
+    runtime_source_head: dabe2b6fc9a5511a919828d63dda3e6c8973d85f
+    ABI: 123
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0261
+    report: docs/experiments/EXP-0261-RESULTS.md
+    report_sha256: 074efe849de90d614418e8096af19b2d91636c64881eeb34f3fbed6d309d6879
+    full_profiling_report: docs/experiments/EXP-0261-PROFILE.md
+    full_profiling_report_sha256: 5ea3cef93df7cc7746016bef21739bf6d9a780890be69f0af80390b52743907c
+    evidence_ledger_sha256: db991e2b5c848afea5d53d55fded71b37d3d1573a37406cc70ad6e73756057a4
+    evidence_file_count: 371
+    numerical_gate: pass_R4_components_and_conditional_whole_block
+    known_R3_ideal_gate: unchanged historical failure
+    measurement_integrity: pass
+    physical_gate: pass
+    speed_eligible: false
+    stop_before_fullmodel: true
+    gate_role: single_layer_speed_regression_over10percent_not_model_quality
+    performance:
+      r1_prefill_ns:
+        control_ns: 1587760.0
+        candidate_ns: 32107317.5
+        paired_ratio: 20.205493994055995
+        ci95:
+        - 18.84459573701303
+        - 22.056942011964367
+        stable_over10: true
+      r1_decode_ns:
+        control_ns: 957747.25
+        candidate_ns: 1608561.25
+        paired_ratio: 1.6658720089334187
+        ci95:
+        - 1.5989900831976622
+        - 1.7423111718659616
+        stable_over10: true
+      r10_prefill_ns:
+        control_ns: 1518570.3
+        candidate_ns: 31899606.75
+        paired_ratio: 20.990140341837723
+        ci95:
+        - 20.55878758217664
+        - 21.473788441546105
+        stable_over10: true
+      r10_decode_ns:
+        control_ns: 946401.3375
+        candidate_ns: 1583942.0750000002
+        paired_ratio: 1.6688821488932835
+        ci95:
+        - 1.6490371313988113
+        - 1.695214229768247
+        stable_over10: true
+    R4_breakdown_us:
+      prefill:
+        dense_r4_prepare_ticks: 426.45572916666674
+        dense_r4_matmul_ticks: 45.8515625
+        dense_r4_layout_ticks: 11933.557291666666
+        dense_r4_finish_ticks: 17950.143229166668
+      decode:
+        dense_r4_prepare_ticks: 50.143880208333336
+        dense_r4_matmul_ticks: 4.617838541666667
+        dense_r4_layout_ticks: 186.47330729166669
+        dense_r4_finish_ticks: 333.75390625000006
+    short_rounds: 5
+    formal_rounds: 10
+    timed_layer_RPCs: 2970
+    model_quality: not_assessed
+    device_PPL: null
+    E2E_tokens_per_second: null
+    baseline_promoted: false
+    rotation: full6144 H12 tensor H512 via dense HMX factors; no butterfly
+    weight_policy: fresh original Down W R, per-output-channel RTN[-7,7]; otherC64frozen
+    checkpoint_handoff: docs/SESSION_HANDOFF_EXP0261.md
+    next_direction: discuss_HVX_layout_and_output_quantization_fusion_and_streaming_before_retesting_R4;
+      no further experiment authorized
