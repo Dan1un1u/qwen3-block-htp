@@ -41,7 +41,7 @@ experiments:
   - 8d56803ac77697be8748e65a9f933b720962af1e
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0257-a8-device-text-e2e
+    source_branch: codex/exp-0258-dense-r3-e2e-diagnostic
     approved_on: '2026-09-09'
     started_on: '2026-09-09'
   evidence:
