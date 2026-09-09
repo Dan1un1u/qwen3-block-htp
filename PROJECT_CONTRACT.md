@@ -329,3 +329,7 @@ User2026-09-09 approves EXP0256 under docs/experiments/EXP-0256.md: frozen EXP02
 ## PC071 — Independent A8 real-device text and E2E validation
 
 User2026-09-09 authorizes EXP0257 under docs/experiments/EXP-0257.md: integrate and independently evaluate fixed per-channel C64/native-W4 A8 with original OFF/EOS static parameters, wide differences and speed-eligible NR64. Single-block/slice prerequisites before complete-model text/profiling, unchanged numerical/physical/>10percent gates. No R3 gate bypass, mixed precision, fitting, residual candidate promotion or new algorithm. Quality diagnostic does not require prior PPL acceptance. Preserve other recipes, baseline and failed evidence; PC037 applies.
+
+## PC072 — User-approved R3 full-model performance-only exception
+
+User explicitly replies 允许，补做实验 to the EXP0258 proposal. Under docs/experiments/EXP-0258.md, plain dense HMX R3 + wideNR64 may enter fullmodel diagnostic E2E despite known whole-layer ideal-R3 numerical failure. This narrowly supersedes PC066/PC071 R3 escalation prohibition for this experiment; numerical thresholds and failed status remain unchanged. Freeze C64/non-QK parameters, use R3_ALL Q/K and rotated prefix, no butterfly/refinement/fitting. Original physical/provenance/determinism gates remain. Direct requested fullmodel cost profiling may complete even if speed eligibility fails>10percent, with failure reported, never promotion or accuracy acceptance. PC037 applies.

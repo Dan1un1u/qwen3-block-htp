@@ -24,6 +24,30 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0258
+  slug: dense-r3-e2e-diagnostic
+  title: Dense HMX R3 full-model diagnostic E2E
+  parent: EXP-0257
+  record: docs/experiments/EXP-0258.md
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: not_applicable
+  approval_ref: PC072 explicit user numerical escalation exception for performance diagnosis
+  source_branches:
+  - codex/exp-0258-dense-r3-e2e-diagnostic
+  - codex/exp-0257-a8-device-text-e2e
+  source_commits:
+  - 8d56803ac77697be8748e65a9f933b720962af1e
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0257-a8-device-text-e2e
+    approved_on: '2026-09-09'
+    started_on: '2026-09-09'
+  evidence:
+    current_stage: integration
+    numerical_eligibility: failed_known_R3_ideal_reference_exception
+    baseline_promoted: false
 - id: EXP-0257
   slug: a8-device-text-e2e
   title: Independent native A8 device text and E2E validation

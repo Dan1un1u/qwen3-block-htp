@@ -1891,3 +1891,7 @@ Five short rounds pass. Formal original-speed anchor C0 fails round07_r10_w0, se
 Diagnostic speed from first6complete formal rounds repeat10: prefill1717.0767token/s, decode50.3202token/s, full16output generationloop45.8953token/s; warm loadedmodel, excludesstartup/ADB/WSLfrontend. Not10roundformalacceptance. Actual28layers+embedding+norm+head+greedy, not per-layer extrapolation. Prefill64 includesEOS, decode15, text64budget/cachevalid64..127.
 
 EXP0257 closed aborted/evidencevalid/localfail; active none, next258. No baseline changes. Discuss unresolved originalanchor runtime nondeterminism first; next quality attribution same-token device/software transformer vs nativeU8logits boundary. Do not restart old rotation/calibration explorations or begin unrelatednewalgorithm automatically.
+
+## EXP0258 active
+
+Explicit user exception allows diagnostic fullmodel dense R3 E2E despite known ideal-reference whole-layer mismatch. Read PC072 and docs/experiments/EXP-0258.md. Other physical/hash/determinism gates retained; EXP0257 C0 transient not repaired. Compare wideNR64/noR3 to wideNR64/R3 with correct frozen R3_ALL parameters/rotatedprefix. No promotion or accuracy acceptance.
