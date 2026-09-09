@@ -7,7 +7,7 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(117)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(118)
 #define QBH_BLOCK_EXPERIMENT UINT32_C(218)
 
 #define QBH_BLOCK_M UINT32_C(64)
@@ -890,6 +890,9 @@ struct qbh_block_header {
     /* Diagnostic-only W4U8 boundary capture.  Enabling this explicit DDR
      * export invalidates physical and performance evidence. */
     /* 0 legacy,1 wide SOLE,2 scalar SOLE,3 wide exact,4 wide NR64,5 scalar exact,6 scalar NR64. */
+    uint32_t prefix_kv_mode, prefix_layer_index;
+    /* Immutable seed metadata, [layer][K/V][head][channel], all U8. */
+    uint8_t prefix_kv_u8[28][2048];
     uint32_t wide_score_mode; /* 0 legacy; 1 HVX wide; 2 untimed scalar wide oracle. */
     uint32_t dense_r3_mode; /* 0 original; 1 HMX; 2 scalar audit; 3 HMX identity; 4 scalar after HMX state audit. */
     uint32_t dense_r3_audit_offset;

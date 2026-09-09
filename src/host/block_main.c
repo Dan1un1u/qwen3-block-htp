@@ -3112,6 +3112,7 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U64(f16_cache_native_append_update_ticks);
     QBH_REPLAY_PROFILE_U64(u8_attention_qk_hmx_ticks);
     QBH_REPLAY_PROFILE_U32(wide_score_mode);
+    QBH_REPLAY_PROFILE_U32(prefix_kv_mode);
     QBH_REPLAY_PROFILE_U64(u8_attention_qk_requant_ticks);
     QBH_REPLAY_PROFILE_U64(u8_attention_softmax_ticks);
     QBH_REPLAY_PROFILE_U64(u8_attention_av_hmx_ticks);
@@ -7021,6 +7022,15 @@ int main(int argc, char **argv) {
             header, shared + generation_qparam_slot.offset) != 0) {
         fprintf(stderr, "generation qparam record audit failed\n");
         goto cleanup;
+    }
+    header->prefix_kv_mode = getenv("QBH_PREFIX_KV") ? (uint32_t)atoi(getenv("QBH_PREFIX_KV")) : 0U;
+    if (header->prefix_kv_mode != 0U) {
+        const char *path=getenv("QBH_PREFIX_FILE");
+        FILE *pf=path ? fopen(path,"rb") : NULL;
+        if(header->prefix_kv_mode>2U || variant!=QBH_BLOCK_W4U8 || !pf) goto cleanup;
+        const size_t got=fread(header->prefix_kv_u8,1,sizeof(header->prefix_kv_u8),pf);
+        const int tail=fgetc(pf);fclose(pf);
+        if(got!=sizeof(header->prefix_kv_u8) || tail!=EOF) goto cleanup;
     }
     header->dsp_status = QBH_BLOCK_STATUS_HOST_READY;
     shared_fd = rpcmem_to_fd(shared);

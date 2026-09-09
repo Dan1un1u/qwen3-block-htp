@@ -1290,6 +1290,7 @@ static void qbh_bind_slice_layer(struct qbh_block_header *header,
                                  uint32_t slice_index) {
     const struct qbh_block_layer_desc *layer =
         &header->slice_layers[slice_index];
+    header->prefix_layer_index = layer->layer_index;
     header->qparam_offset = layer->qparam_offset;
     header->qparam_bytes = layer->qparam_bytes;
     header->input_norm_weight_offset = layer->input_norm_weight_offset;
@@ -1935,7 +1936,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
     uint32_t element_bytes;
     if (header == NULL || header->magic != QBH_BLOCK_MAGIC ||
         header->abi_version != QBH_BLOCK_ABI_VERSION ||
-        header->wide_score_mode > 6U ||
+        header->wide_score_mode > 6U || header->prefix_kv_mode > 2U ||
+        (header->prefix_kv_mode && header->variant != QBH_BLOCK_W4U8) ||
         (header->wide_score_mode && (header->variant != QBH_BLOCK_W4U8 || header->kv_cache_capacity > 128U)) ||
         header->experiment != QBH_BLOCK_EXPERIMENT ||
         header->header_bytes != sizeof(*header) ||
@@ -13474,6 +13476,30 @@ static int qbh_attention_u8_group_view_init(
     return 0;
 }
 
+/* Fixed EOS seed is computed offline with frozen W4A16, then stored U8.
+ * Replace only token0 before QK/AV/cache publication. All body rows stay A8. */
+static void qbh_exp0257_prefix_group(struct qbh_block_header *header,
+    struct qbh_block_buffers *buffers,uint32_t group,
+    struct qbh_attention_u8_group_view *view) {
+    if (!header->prefix_kv_mode || header->initial_kv_length || header->logical_m!=64U) return;
+    const uint8_t *seed=header->prefix_kv_u8[header->prefix_layer_index];
+    uint8_t *k=buffers->k+(size_t)group*8192U;
+    int32_t sum=0;
+    for(uint32_t c=0;c<128U;++c) {
+        uint32_t tile=c/32U, lane=c%32U;
+        uint8_t kc=seed[group*128U+c],vc=seed[1024U+group*128U+c];
+        k[tile*2048U+lane]=kc;view->v_head[tile*2048U+lane]=vc;
+        int32_t centered=(int32_t)kc-view->config->k_zero_point;
+        centered=centered < -128 ? -128 : centered > 127 ? 127 : centered;
+        view->k_weight[tile*1024U+(lane/4U)*128U+(lane%4U)]=(int8_t)centered;
+        sum+=centered;
+    }
+    int32_t divisor=1U<<view->config->score_shift;
+    view->qk_bias[32U]=(uint32_t)(-view->config->q_zero_point*sum+128*divisor+(view->config->score_shift?divisor/2:0));
+    if(header->prefix_kv_mode==2U) qbh_attention_u8_pack_k_native(k,view->config,view->k_weight,view->qk_bias);
+    asm volatile("barrier" ::: "memory");
+}
+
 static void qbh_attention_u8_dependency_stream_run_tasks(
     struct qbh_block_w4f16_pool *pool,
     struct qbh_block_w4f16_job *job) {
@@ -13509,6 +13535,7 @@ static void qbh_attention_u8_dependency_stream_run_tasks(
         group_scratch = buffers->attention_concat +
             (size_t)group * QBH_ATTN_U8_GROUP_SCRATCH_BYTES;
         start = HAP_perf_get_qtimer_count();
+        qbh_exp0257_prefix_group(header,buffers,group,&view);
         qbh_attention_u8_pack_v_native_vgather_vdeal(
             view.v_head, view.config, view.v_weight, view.av_bias,
             group_scratch,
