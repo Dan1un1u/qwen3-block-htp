@@ -321,3 +321,7 @@ Close all scores, independent reconstruction, reports, provenance and evidence s
 ## PC069 — User-approved static A8 residual calibration
 
 User2026-09-09 authorizes continuation under docs/experiments/EXP-0255.md: bounded actual-A8 trajectory static residual range/zero fitting, independent selection and confirmation on floating/integer attention. Fixed native W4 semantics, weights, dense R3 and other recipes; SwiGLU-only secondary control. No hardware, mixed precision, threshold relaxation or promotion. PC037 applies.
+
+## PC070 — User-approved integer-path fixed R_MSE confirmation
+
+User2026-09-09 approves EXP0256 under docs/experiments/EXP-0256.md: frozen EXP0255 R_MSE, primary integer attention, new independent256documents/4096targets and four fixed arms. No fitting or hardware. Prospective research selection uses the deployment integer path; all original numerical, physical and model acceptance gates remain. Other recipes frozen; no promotion. PC037 applies.

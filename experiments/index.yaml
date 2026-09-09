@@ -24,6 +24,30 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0256
+  slug: integer-rmse-confirmation
+  title: Independent fixed R_MSE integer attention confirmation
+  parent: EXP-0255
+  record: docs/experiments/EXP-0256.md
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  approval_ref: PC070 user approves fixed integer-path confirmation
+  source_branches:
+  - codex/exp-0255-residual-calibration
+  source_commits:
+  - 9ca3bef324812d874b9895d32ae6b2b2907066d0
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0255-residual-calibration
+    approved_on: '2026-09-09'
+    started_on: '2026-09-09'
+  evidence:
+    protocol: PC070
+    current_stage: registered_before_new_data
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0256
+    baseline_promoted: false
 - id: EXP-0255
   slug: residual-calibration
   title: Static A8 residual trajectory calibration
