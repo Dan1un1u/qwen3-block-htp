@@ -30,22 +30,103 @@ experiments:
   parent: EXP-0263
   record: docs/experiments/EXP-0264.md
   approval_ref: 'User: 好的，按你的方向再做一轮。如果通过10%gate就扩展到全模并报告结果。 PC078'
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
-  adoption_status: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
+  adoption_status: not_applicable
   runtime:
     source_branch: codex/exp-0264-w4u8-r4-fused-quantization
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     started_on: '2026-09-10'
+    completed_on: '2026-09-10'
   source_branches:
   - codex/exp-0264-w4u8-r4-fused-quantization
   - codex/exp-0263-w4u8-r4-parallel-prefill
   source_commits:
   - 01b42be717fbed33fe413009f40f9427f4574106
+  - 021c313bbbc822a4620c6f0ace9b57d26d586422
+  - 59cdd72b6ee880d7b44898c20e35b4cbb9072a66
+  - 44aede359455b1a2a2a82038669e5d2be2c37fe6
+  - de5ab6cd84278e4035a033763097911cd09fcc39
   evidence:
-    current_stage: registered
+    current_stage: completed_fused_R4_repeat10_pass_repeat1_inconclusive
     protocol: PC078
+    source_head: de5ab6cd84278e4035a033763097911cd09fcc39
+    runtime_source_head: 59cdd72b6ee880d7b44898c20e35b4cbb9072a66
+    ABI: 127
+    selected_opt: 6
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0264
+    report: docs/experiments/EXP-0264-RESULTS.md
+    report_sha256: cadbdfca28efae80ba352d6834fbef1903ba88eca197f202e7f498772711f213
+    full_profiling_report: docs/experiments/EXP-0264-PROFILE.md
+    full_profiling_report_sha256: e3e8b18b616f78b823b03199783b91e7bab372395e5dac066af787b0174c5fcb
+    evidence_ledger_sha256: c0818d9f2f0d5fbf0a38a8d397833806c42a368015c9497af6a6279f140d7d2c
+    evidence_file_count: 417
+    numerical_gate: pass_R4_components_and_conditional_wholeblock
+    known_R3_ideal_gate: unchanged historical failure
+    measurement_integrity: pass
+    physical_gate: pass
+    speed_eligible: false
+    speed_gate_status: inconclusive
+    stable_over10_confirmed: false
+    stop_before_fullmodel: true
+    gate_role: repeat10_both_phases_confidence_pass_repeat1_both_cross10percent; not_numerical_failure
+    performance:
+      r1_prefill_ns:
+        control_ns: 1699531.0
+        candidate_ns: 1772240.0
+        paired_ratio: 1.0240319223871879
+        ci95:
+        - 0.954856129985229
+        - 1.114158617470105
+        stable_over10: false
+      r1_decode_ns:
+        control_ns: 976988.75
+        candidate_ns: 1027301.4375
+        paired_ratio: 1.0102087219744766
+        ci95:
+        - 0.9756259924482036
+        - 1.1304528813935382
+        stable_over10: false
+      r10_prefill_ns:
+        control_ns: 1516429.95
+        candidate_ns: 1599661.4
+        paired_ratio: 1.0516895395741201
+        ci95:
+        - 1.0393633230677535
+        - 1.0871509291270383
+        stable_over10: false
+      r10_decode_ns:
+        control_ns: 954348.6000000001
+        candidate_ns: 970134.79375
+        paired_ratio: 1.013511810669156
+        ci95:
+        - 1.0049839391887074
+        - 1.0430505805973926
+        stable_over10: false
+    R4_breakdown_us:
+      prefill:
+        dense_r4_prepare_ticks: 154.03645833333334
+        dense_r4_matmul_ticks: 25.536458333333332
+        dense_r4_layout_ticks: 63.098958333333336
+        dense_r4_finish_ticks: 117.24218750000001
+      decode:
+        dense_r4_prepare_ticks: 9.776692708333334
+        dense_r4_matmul_ticks: 4.343750000000001
+        dense_r4_layout_ticks: 0.9733072916666667
+        dense_r4_finish_ticks: 7.486979166666667
+    short_rounds: 5
+    formal_rounds: 10
+    timed_layer_RPCs: 2970
+    exact_native_file_comparisons: 87
+    exhaustive_finite_FP16_values: 63488
+    model_quality: not_assessed
+    device_PPL: null
+    E2E_tokens_per_second: null
+    baseline_promoted: false
+    checkpoint_handoff: docs/SESSION_HANDOFF_EXP0264.md
+    next_direction: discuss_remaining_FP16_LUT_preparation_layout_dispatch_and_repeat1_variability;
+      conditional_fullmodel_authorization_retained_but_prerequisite_unmet; no_optional_resampling
 - id: EXP-0263
   slug: w4u8-r4-parallel-prefill
   title: Parallel R4 prefill preparation and output conversion
