@@ -3114,6 +3114,9 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U32(wide_score_mode);
     QBH_REPLAY_PROFILE_U32(dense_r3_mode);
     QBH_REPLAY_PROFILE_U32(dense_r3_optimization);
+    QBH_REPLAY_PROFILE_U32(w4f16_decode_opt);
+    QBH_REPLAY_PROFILE_U32(w4f16_decode_opt_calls);
+    QBH_REPLAY_PROFILE_U32(w4f16_decode_conversion_audit_mismatches);
     QBH_REPLAY_PROFILE_U32(dense_r3_total_parallel_heads);
     QBH_REPLAY_PROFILE_U32(dense_r3_constant_read_bytes);
     QBH_REPLAY_PROFILE_U64(dense_r3_total_parallel_work_ticks);
@@ -3272,7 +3275,7 @@ static int qbh_run_exp0240_layer(
             char name[128];
             uint32_t before = step == 0U ? 0U : 63U + step;
             if (step != 0U) {
-                snprintf(name, sizeof(name), "replay_decode_input_%02u_u8.bin", step - 1U);
+                snprintf(name, sizeof(name), "replay_decode_input_%02u_%s.bin", step - 1U, h->variant==QBH_BLOCK_W4U8?"u8":"f16");
                 if (qbh_read_named_tensor(root, name, shared + input->offset, input->expected_bytes)) return -1;
                 for (uint32_t r = 0U; r < 2U; ++r) {
                     snprintf(name, sizeof(name), "replay_decode_rope_%s_%02u_f16.bin", r ? "sin" : "cos", step - 1U);
@@ -3304,7 +3307,7 @@ static int qbh_run_exp0240_layer(
             }
             struct qbh_replay_step_result result = {0};
             result.host_wall_ns=elapsed; result.first_position=before; result.valid_length=layer->valid_length;
-            qbh_print_replay_profile(240U,"exp0240_profile","replay_step",QBH_BLOCK_W4U8,step,h,&result,shared+h->output_offset,h->logical_m*QBH_BLOCK_HIDDEN);
+            qbh_print_replay_profile(240U,"exp0240_profile","replay_step",h->variant,step,h,&result,shared+h->output_offset,h->logical_m*QBH_BLOCK_HIDDEN*(h->variant==QBH_BLOCK_W4U8?1U:2U));
             printf("{\"record\":\"dense_r3\",\"step\":%u,\"mode\":%u,\"rows\":%u,\"hmx_calls\":%u,\"refined_values\":%u,\"prepare_ticks\":%llu,\"matmul_ticks\":%llu,\"finish_ticks\":%llu}\n",step,h->dense_r3_mode,h->dense_r3_rows,h->dense_r3_hmx_calls,h->dense_r3_refined_values,(unsigned long long)h->dense_r3_prepare_ticks,(unsigned long long)h->dense_r3_matmul_ticks,(unsigned long long)h->dense_r3_finish_ticks);
             if (dump != NULL && rep == 0U) {
                 if (h->dense_r3_audit_offset) {
@@ -3312,7 +3315,7 @@ static int qbh_run_exp0240_layer(
                     if (qbh_write_named_tensor(dump,name,shared+h->dense_r3_audit_offset,QBH_DENSE_R3_AUDIT_BYTES)) return -1;
                 }
                 snprintf(name,sizeof(name),"step%02u_output.bin",step);
-                if (qbh_write_named_tensor(dump,name,shared+h->output_offset,h->logical_m*QBH_BLOCK_HIDDEN)) return -1;
+                if (qbh_write_named_tensor(dump,name,shared+h->output_offset,h->logical_m*QBH_BLOCK_HIDDEN*(h->variant==QBH_BLOCK_W4U8?1U:2U))) return -1;
                 for (uint32_t proj = 0U; proj < QBH_BLOCK_PROJECTION_COUNT; ++proj) {
                     const struct qbh_block_projection_desc *desc = &h->projections[proj];
                     if (desc->lpbq_audit_offset != 0U) {
@@ -3321,6 +3324,13 @@ static int qbh_run_exp0240_layer(
                         snprintf(name,sizeof(name),"%s_bias.bin",qbh_projection_names[proj]);
                         if (qbh_write_named_tensor(dump,name,shared+desc->bias_offset,desc->bias_bytes)) return -1;
                     }
+                }
+                if(h->variant==QBH_BLOCK_W4F16) for(uint32_t li=0;li<QBH_VERTICAL_SLICE_LAYER_COUNT;++li) {
+                    struct qbh_decode_layer_state *cs=&state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER+li];
+                    snprintf(name,sizeof(name),"step%02u_layer%02u_k.bin",step,li);
+                    if(qbh_write_named_tensor(dump,name,shared+cs->k_offset,cs->k_bytes))return -1;
+                    snprintf(name,sizeof(name),"step%02u_layer%02u_v.bin",step,li);
+                    if(qbh_write_named_tensor(dump,name,shared+cs->v_offset,cs->v_bytes))return -1;
                 }
                 if (step == 0U) {
                     if (qbh_write_named_tensor(dump,"prefill_k_cache.bin",shared+layer->k_offset,layer->k_bytes) ||
@@ -6793,6 +6803,7 @@ int main(int argc, char **argv) {
     }
     header->wide_score_mode=wide_score_mode;
     header->dense_r3_mode=dense_r3_mode;
+    header->w4f16_decode_opt=getenv("QBH_W4F16_DECODE_OPT") ? (uint32_t)atoi(getenv("QBH_W4F16_DECODE_OPT")) : 0U;
     header->dense_r3_optimization=getenv("QBH_R3_OPT") ? (uint32_t)atoi(getenv("QBH_R3_OPT")) : 0U;
     header->dense_r3_audit_offset=(uint32_t)dense_r3_audit_offset;
     header->w4u8_boundary_audit_enabled =

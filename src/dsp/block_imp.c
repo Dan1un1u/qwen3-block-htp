@@ -1936,6 +1936,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
     uint32_t element_bytes;
     if (header == NULL || header->magic != QBH_BLOCK_MAGIC ||
         header->abi_version != QBH_BLOCK_ABI_VERSION ||
+        header->w4f16_decode_opt>2U ||
+        (header->w4f16_decode_opt && header->variant!=QBH_BLOCK_W4F16) ||
         header->wide_score_mode > 6U || header->prefix_kv_mode > 2U ||
         (header->prefix_kv_mode && header->variant != QBH_BLOCK_W4U8) ||
         (header->wide_score_mode && (header->variant != QBH_BLOCK_W4U8 || header->kv_cache_capacity > 128U)) ||
@@ -16553,6 +16555,59 @@ static void qbh_scan_softmax_f16(
     }
 }
 
+/* EXP0260: exact storage conversion in batches; scalar expf, FP32 sum
+ * order, division, and both FP16 roundings are identical to the control. */
+static void qbh_f16_to_f32_contiguous(const __fp16 *source,float *out) {
+    HVX_VectorPair x=Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)source);
+    HVX_VectorPair y=Q6_W_vshuff_VVR(Q6_V_hi_W(x),Q6_V_lo_W(x),-4);
+    ((HVX_Vector *)out)[0]=Q6_V_lo_W(y);
+    ((HVX_Vector *)out)[1]=Q6_V_hi_W(y);
+}
+static void qbh_f32_to_f16_contiguous(const float *source,__fp16 *out) {
+    HVX_VectorPair x=Q6_W_vdeal_VVR(((const HVX_Vector *)source)[1],((const HVX_Vector *)source)[0],-4);
+    *(HVX_Vector *)out=Q6_Vhf_vcvt_VsfVsf(Q6_V_lo_W(x),Q6_V_hi_W(x));
+}
+static int qbh_scan_softmax_f16_exact_batch(struct qbh_block_header *h,
+    const __fp16 *scores,__fp16 *probability,__fp16 *audit,
+    uint32_t past,uint32_t padded) {
+    float values[128] __attribute__((aligned(128)));
+    float work[128] __attribute__((aligned(128)));
+    __fp16 rounded[128] __attribute__((aligned(128)));
+    const uint32_t plane=QBH_BLOCK_M*padded,valid=past+1U;
+    const float scale=0.08838834764831845f;
+    if(valid>128U || padded>128U) return -1;
+    memset(probability,0,2U*plane*sizeof(__fp16));
+    for(uint32_t head=0;head<2U;++head) {
+        const __fp16 *src=scores+head*plane;
+        __fp16 *dst=probability+head*plane;
+        qbh_f16_to_f32_contiguous(src,values);
+        qbh_f16_to_f32_contiguous(src+64U,values+64U);
+        float maximum=-INFINITY,sum=0.0f;
+        for(uint32_t i=0;i<valid;++i) {
+            float v=values[i]*scale;if(v>maximum)maximum=v;
+        }
+        for(uint32_t i=0;i<128U;++i)work[i]=0.0f;
+        for(uint32_t i=0;i<valid;++i) {
+            float v=expf(values[i]*scale-maximum);work[i]=v;sum+=v;
+        }
+        qbh_f32_to_f16_contiguous(work,rounded);
+        qbh_f32_to_f16_contiguous(work+64U,rounded+64U);
+        qbh_f16_to_f32_contiguous(rounded,values);
+        qbh_f16_to_f32_contiguous(rounded+64U,values+64U);
+        for(uint32_t i=0;i<valid;++i)work[i]=values[i]/sum;
+        qbh_f32_to_f16_contiguous(work,dst);
+        qbh_f32_to_f16_contiguous(work+64U,dst+64U);
+    }
+    ++h->w4f16_decode_opt_calls;
+    if(h->numerical_audit_enabled) {
+        qbh_scan_softmax_f16(scores,audit,1U,past,padded);
+        const uint16_t *a=(const uint16_t *)audit,*b=(const uint16_t *)probability;
+        for(uint32_t i=0;i<2U*plane;++i)h->w4f16_decode_conversion_audit_mismatches+=a[i]!=b[i];
+        if(h->w4f16_decode_conversion_audit_mismatches)return -1;
+    }
+    return 0;
+}
+
 static int qbh_scan_f16_attention(
     struct qbh_block_header *header, uint8_t *shared,
     struct qbh_block_buffers *buffers,
@@ -16720,7 +16775,10 @@ static int qbh_scan_f16_attention(
             HAP_perf_get_qtimer_count() - start;
 
         start = HAP_perf_get_qtimer_count();
-        qbh_scan_softmax_f16(
+        if(header->variant==QBH_BLOCK_W4F16 && header->w4f16_decode_opt && logical_rows==1U && padded_tokens<=128U) {
+            if(qbh_scan_softmax_f16_exact_batch(header,plane_a,plane_c,
+                (__fp16 *)buffers->middle,past_tokens,padded_tokens)!=0)return -1;
+        } else qbh_scan_softmax_f16(
             plane_a, plane_c, logical_rows,
             past_tokens, padded_tokens);
         header->attention_softmax_ticks +=

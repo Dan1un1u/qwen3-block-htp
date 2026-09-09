@@ -7,7 +7,7 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(121)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(122)
 #define QBH_BLOCK_EXPERIMENT UINT32_C(218)
 
 #define QBH_BLOCK_M UINT32_C(64)
@@ -895,6 +895,7 @@ struct qbh_block_header {
     uint8_t prefix_kv_u8[28][2048];
     uint32_t wide_score_mode; /* 0 legacy; 1 HVX wide; 2 untimed scalar wide oracle. */
     uint32_t dense_r3_mode; /* 0 original; 1 HMX; 2 scalar audit; 3 HMX identity; 4 scalar after HMX state audit. */
+    uint32_t w4f16_decode_opt; /* 0 original; 1 exact conversion; 2 active-row layout. */
     uint32_t dense_r3_optimization; /* 0 original; 1 constant/vector; 2 streamed prepare. */
     uint32_t dense_r3_audit_offset;
     uint32_t dense_r3_rows;
@@ -942,6 +943,7 @@ struct qbh_block_header {
     uint32_t generation_lm_head_direct_slot_join_count;
     uint32_t dense_r3_total_parallel_heads;
     uint32_t dense_r3_constant_read_bytes;
+    uint32_t w4f16_decode_opt_calls, w4f16_decode_conversion_audit_mismatches;
     uint64_t dense_r3_total_parallel_work_ticks;
     /* EXP0258 full-invocation counters, reset with run telemetry. */
     uint32_t dense_r3_total_calls, dense_r3_total_rows, dense_r3_total_hmx_calls;
