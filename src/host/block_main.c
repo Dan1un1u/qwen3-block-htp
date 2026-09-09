@@ -5386,7 +5386,7 @@ int main(int argc, char **argv) {
           scan_mode != QBH_BLOCK_SCAN_PREFILL ||
           logical_m != QBH_BLOCK_M ||
           initial_kv_length != 0U ||
-          (kv_cache_capacity != 80U &&
+          (kv_cache_capacity != 80U && kv_cache_capacity != 128U &&
            kv_cache_capacity != 257U))) ||
         full_stack_stage_mode >
             QBH_BLOCK_FULL_STACK_HIDDEN_CAPTURE ||
