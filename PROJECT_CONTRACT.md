@@ -341,3 +341,7 @@ User approves optimizing the current standalone R3 implementation and pipeline, 
 ## PC074 — User-approved W4F16 decode optimization
 
 User authorizes W4A16 decode optimization using prior W4A8 implementation experience. EXP0260 follows docs/experiments/EXP-0260.md: frozen C64 per-channel W4 and FP16 arithmetic, exact data movement/active-row/conversion optimization, current samebinary control, single-layer then slice/fullmodel validation and5short10formal profiling. Other recipes frozen; numerical/physical gates unchanged, no automatic baseline promotion. PC037 recovery applies.
+
+## PC075 — User-approved W4A8 R4 exploratory overhead
+
+User requests exploratory W4A8 R4 cost. EXP0261 follows docs/experiments/EXP-0261.md: full6144 orthogonal Hadamard via explicit dense factors, fresh original Down folding and native per-channel W4, real single-layer paired measurement with unchanged physical/numerical/>10percent stop gates. Other recipes frozen; no quality acceptance, fullmodel extrapolation or promotion. PC037 applies.

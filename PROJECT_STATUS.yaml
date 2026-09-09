@@ -19,8 +19,8 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 261
+  active_experiment: EXP-0261
+  next_experiment_number: 262
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -1818,7 +1818,8 @@ current_scope:
     selected_baseline_changed: false
     new_model_or_device_runs: false
     profiling: not_applicable_host_only_scoring
-    next_action: Discuss model-quality direction; future reports use content-v2 with strict-v1 diagnostic
+    next_action: Discuss model-quality direction; future reports use content-v2 with
+      strict-v1 diagnostic
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0228
     results_report: docs/experiments/EXP-0228-RESULTS.md
     full_profiling_report: docs/experiments/EXP-0228-PROFILE.md
@@ -2129,7 +2130,8 @@ current_scope:
     formal_invocation_ledgers: 640
     formal_layer_ledgers: 17920
     quality_determinism: pass
-    next_action: discuss_negative_or_mixed_scale_only_result; no automatic next experiment or promotion
+    next_action: discuss_negative_or_mixed_scale_only_result; no automatic next experiment
+      or promotion
   latest_w4f16_rotation_sampling_result:
     id: EXP-0226
     execution_state: completed
@@ -2310,7 +2312,8 @@ current_scope:
         prefill: -0.05068113923498707
         decode: -0.005825470109266373
     effectiveness: false
-    interpretation: qbh_PPL_50.22_to40.44_but_strict_tasks20_to9_and_no_independent_validation_improvement; broader_rotation_training_sampling_alone_does_not_establish_quality_recovery
+    interpretation: qbh_PPL_50.22_to40.44_but_strict_tasks20_to9_and_no_independent_validation_improvement;
+      broader_rotation_training_sampling_alone_does_not_establish_quality_recovery
     correctness_gate_result: pass_exact_Cayley_FP32_fold_invariance_independent_GPTQ_packing_forward_checks_canonical_reload
     determinism_gate_result: pass_quick_full_repeat_zero_overlap_mismatch
     physical_gate_result: pass_exact8MiB_zero_timed_intermediate_DDR_spill_one_FastRPC_no_QNN
@@ -2668,7 +2671,8 @@ current_scope:
     intermediate_files: 448
     calibration_sha256: e65edb14cb774956df92b27b5dc728b976f7ba00e9435145004180c6538a1669
     calibration_ids_sha256: a20ed2093b0e7fb075fe47a9532843402e9f69784c8ad0b0467194bee2fa8efd
-    conclusion: 'A: DSP NLL 3.873038 -> 3.660316, tasks 8 -> 19; C: DSP NLL 3.956556 -> 3.892162, tasks 9 -> 17'
+    conclusion: 'A: DSP NLL 3.873038 -> 3.660316, tasks 8 -> 19; C: DSP NLL 3.956556
+      -> 3.892162, tasks 9 -> 17'
     next_action: discuss_results_no_automatic_next_direction
   latest_w4f16_channel_clipping_result:
     id: EXP-0223
@@ -3109,8 +3113,8 @@ current_scope:
     intermediate_files: 672
     calibration_sha256: e65edb14cb774956df92b27b5dc728b976f7ba00e9435145004180c6538a1669
     calibration_ids_sha256: a20ed2093b0e7fb075fe47a9532843402e9f69784c8ad0b0467194bee2fa8efd
-    conclusion: 'A: DSP NLL 3.873038 -> 3.969016, tasks 8 -> 4; B: DSP NLL 4.601481 -> 3.911864, tasks 0 -> 2; C: DSP NLL
-      4.320988 -> 3.956556, tasks 2 -> 9'
+    conclusion: 'A: DSP NLL 3.873038 -> 3.969016, tasks 8 -> 4; B: DSP NLL 4.601481
+      -> 3.911864, tasks 0 -> 2; C: DSP NLL 4.320988 -> 3.956556, tasks 2 -> 9'
     next_action: discuss_results_no_automatic_next_direction
   latest_w4f16_head_ablation_result:
     id: EXP-0222
@@ -3222,8 +3226,8 @@ current_scope:
     closure_sha256: 196080cc53fd21bb8f1b1c606fe7a9da463ccbe84465bb92d9621d3a1049c6b5
     evidence_ledger_sha256: 54dbdc87eb1b8df4fc5e7baf2c0f0e385d41e583c0caec5975b3d5c5c5556c78
     evidence_files: 27
-    conclusion: 'A: NLL 3.874188 -> 3.853870, tasks 9 -> 8; B: NLL 4.600959 -> 4.413664, tasks 0 -> 0; C: NLL 4.323169 ->
-      4.293221, tasks 2 -> 2'
+    conclusion: 'A: NLL 3.874188 -> 3.853870, tasks 9 -> 8; B: NLL 4.600959 -> 4.413664,
+      tasks 0 -> 0; C: NLL 4.323169 -> 4.293221, tasks 2 -> 2'
     next_action: discuss_with_user_before_any_next_direction
   latest_w4f16_gamma_attribution_result:
     id: EXP-0220
@@ -3334,8 +3338,9 @@ current_scope:
     speed_summary_sha256: 8abbdb773bf85fc1b2bd541af4326a7a567e57667899b557c2bb0237fb238476
     evidence_sha256_ledger_sha256: 0bf9fc284fb9f624c3f9a0f78a224c0f6e66e2c5f1b5f2cbd8ec6680cce49a97
     evidence_files: 182
-    conclusion: FP16 folding preserves observed quality; W4 requantization after gamma fold regresses, QKV largest isolated
-      NLL loss; gamma-preserving fixed R2 also regresses; no promotion
+    conclusion: FP16 folding preserves observed quality; W4 requantization after gamma
+      fold regresses, QKV largest isolated NLL loss; gamma-preserving fixed R2 also
+      regresses; no promotion
     reopen_condition: new_approved_quantization_or_rotation_hypothesis_no_repeat_fixed_Hadamard_no_evaluation_tuning
   latest_w4f16_gptq_result:
     id: EXP-0221
@@ -3495,8 +3500,8 @@ current_scope:
     calibration_sha256: e65edb14cb774956df92b27b5dc728b976f7ba00e9435145004180c6538a1669
     holdout_scored: false
     other_recipes: F16F16_and_W4U8_frozen
-    conclusion: Unrotated GPTQ reduces NLL but tasks stay8/24; GPTQ mitigates folded/rotated RTN loss without incremental
-      fixed R1R2 benefit; no promotion
+    conclusion: Unrotated GPTQ reduces NLL but tasks stay8/24; GPTQ mitigates folded/rotated
+      RTN loss without incremental fixed R1R2 benefit; no promotion
     reopen_condition: new_approved_hypothesis_no_repeat_fixed_trial_no_evaluation_tuning
   promoted_w4u8_fastest_decode_baseline:
     id: EXP-0211
@@ -8754,7 +8759,8 @@ current_scope:
     before_after_gate: pass_exact_before_full_after_and_within_session
     independent_summary_check: pass_all_27_DSP_group_PPL_values_math_fsum
     evidence_hash_check: pass_all296files_exact_ledger_coverage
-    next_action: Discuss W4A8 reproducibility and same-W4-weight activation attribution; no new experiment authorized
+    next_action: Discuss W4A8 reproducibility and same-W4-weight activation attribution;
+      no new experiment authorized
   next_research_direction:
     status: discussion_after_EXP0258
     current: R3_prepare_finish_pipeline_overhead_and_unresolved_numerical_quality
@@ -9045,7 +9051,8 @@ current_scope:
         - 0.9947887469921031
         - 1.0016728476698786
         diagnostic_only: true
-    root_cause: unresolved; raw output/token mismatch, postfailure bounded reruns pass but do not clear gate
+    root_cause: unresolved; raw output/token mismatch, postfailure bounded reruns
+      pass but do not clear gate
     next_direction: discuss_runtime_nondeterminism_then_same_token_device_software_head_and_transformer_alignment
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0257.md
   last_concluded_experiment: EXP-0260
@@ -9437,7 +9444,8 @@ current_scope:
         - 0.9956792075308298
         - 1.0317005217914899
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0259.md
-    next_direction: discuss_quality_alignment_or_longer_context_validation; no automatic baseline promotion
+    next_direction: discuss_quality_alignment_or_longer_context_validation; no automatic
+      baseline promotion
   latest_w4f16_decode_optimization_result:
     id: EXP-0260
     execution_state: completed
@@ -9560,4 +9568,5 @@ current_scope:
     repair: dedicated component audit and exact negativezero preservation
     package_manifest_sha256: 7de4f0758d83f2ba3b58696c695bfbfed72a25dd3bf308475abee0a0f0575a89
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0260.md
-    next_direction: discuss_W4F16_M1_projection_weight_expansion_and_HMX_pipeline; no automatic baseline promotion
+    next_direction: discuss_W4F16_M1_projection_weight_expansion_and_HMX_pipeline;
+      no automatic baseline promotion

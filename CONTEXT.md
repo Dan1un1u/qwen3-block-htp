@@ -1947,3 +1947,7 @@ QBH_W4F16_DECODE_OPT0 original,1 exact batched conversion around original scalar
 87single-layer wholeliveoutput/cache file comparisons,130three-layer comparisons, exhaustive63488finitehalfpatterns+46080probabilitymidpoint-neighbours, originalSoftmax fullprobabilitybuffers exact. Fullmodel control andcandidate reproduced sealedEXP0230 token sequences/selectedFP16codes.5short10formal rotated pairs repeats1/10,2970layerRPC and5280fullmodelRPC,147840fullmodel layerledgers. Allcodes/determinism/8MiB/zero timed intermediateDDR/spill/full-logit exports/oneRPC passed. No optionalsampling. Single-layer repeat10decode ratio.73296, prefill1.07516 CIupper1.08441; fullstats inreport takeprecedence.
 
 Warm optimized repeat10 prefill64 1040.240143tok/s withHost61524.255us;15decode 15.296303tok/s withHost980629.138us;16outputgenerationloop15.069794tok/s. Pairedcontrol 1041.044458,10.526730,10.624772tok/s. Fullmodel speed eligibilityTrue. No PPLreevaluation orqualityacceptance; Selected EXP0166 andallotherbaselines unchanged. CurrentW4F16 tableusesC64candidate, notautomaticpromotion. Next discuss decode-native projection/weight expansion/HMX scheduling; no unbounded next experiment authorized.
+
+## EXP0261 active
+
+User requests R4 overhead exploration. Read PC075 and EXP0261 protocol. Full6144 dense-factor R4 before middle A8, fresh Down folding, one real layer first. Other recipes frozen. Temporary parent branch binding for branch creation.
