@@ -1897,3 +1897,5 @@ EXP0257 closed aborted/evidencevalid/localfail; active none, next258. No baselin
 Explicit user exception allows diagnostic fullmodel dense R3 E2E despite known ideal-reference whole-layer mismatch. Read PC072 and docs/experiments/EXP-0258.md. Other physical/hash/determinism gates retained; EXP0257 C0 transient not repaired. Compare wideNR64/noR3 to wideNR64/R3 with correct frozen R3_ALL parameters/rotatedprefix. No promotion or accuracy acceptance.
 
 EXP0258 checkpoint: fullmodel smoke +5short complete, deterministic/physical gates pass but latency3.85x prefill/1.60xdecode fails speed eligibility. Ten formal diagnostic rounds next per explicituser exception; read docs/SESSION_HANDOFF_EXP0258.md.
+
+EXP0258 recovery: first formal round4 control token drift; concrete native-W4 LM-head compressed-slot DMA/HMX lifetime race fixed in source0f8555d, ABI120. Rebuild and rerun botharms full5short10formal under repaired1; old evidence retained. Read updated handoff.
