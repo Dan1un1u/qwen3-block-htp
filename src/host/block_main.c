@@ -3113,6 +3113,7 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U64(u8_attention_qk_hmx_ticks);
     QBH_REPLAY_PROFILE_U32(wide_score_mode);
     QBH_REPLAY_PROFILE_U32(dense_r3_mode);
+    QBH_REPLAY_PROFILE_U32(generation_lm_head_direct_slot_join_count);
     QBH_REPLAY_PROFILE_U32(dense_r3_total_calls);
     QBH_REPLAY_PROFILE_U32(dense_r3_total_rows);
     QBH_REPLAY_PROFILE_U32(dense_r3_total_hmx_calls);

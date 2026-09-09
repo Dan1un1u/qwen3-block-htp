@@ -7245,6 +7245,30 @@ static int qbh_run_generation_head_w4u8(
                 }
             }
 
+            /* Direct-W4 HMX still reads compressed_slots[(group-1)&1].
+             * The next DMA writes compressed_slots[(group+1)&1], the same
+             * slot. Join that consumer before recycling it. Expanded-S8
+             * consumes a distinct arena and retains its existing overlap. */
+            if (direct_n_decode != 0U && hmx_active != 0U &&
+                group != 0U && group + 1U < group_count) {
+                const uint64_t wait_start = HAP_perf_get_qtimer_count();
+                result = qbh_hmx_wait(worker);
+                header->generation_lm_head_hmx_tail_wait_ticks +=
+                    HAP_perf_get_qtimer_count() - wait_start;
+                header->generation_lm_head_hmx_ticks +=
+                    HAP_perf_get_qtimer_count() - hmx_start;
+                hmx_active = 0U;
+                if (result != 0) return -9;
+                ++header->generation_lm_head_direct_slot_join_count;
+                start = HAP_perf_get_qtimer_count();
+                qbh_generation_hvx_argmax_u8_group(header, (uint32_t *)buffers->down,
+                    hmx_output, previous_first_n_tile,
+                    previous_group_tiles, argmax_scratch,
+                    &best_code, &best_token);
+                header->generation_lm_head_argmax_ticks +=
+                    HAP_perf_get_qtimer_count() - start;
+            }
+
             if (group != 0U && group + 1U < group_count) {
                 const uint32_t next_group = group + 1U;
                 const uint32_t next_slot = next_group & 1U;

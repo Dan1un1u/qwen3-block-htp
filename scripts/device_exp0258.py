@@ -9,6 +9,7 @@ from summarize_exp0217 import normalized
 REMOTE='/data/local/tmp/qwen3-block-htp/exp0258'
 base.R=R;base.O=O;base.REMOTE=REMOTE
 adb=base.adb;win=base.win
+CAMPAIGN=R/'repaired1'
 PARENT_REMOTE='/data/local/tmp/qwen3-block-htp/exp0257-package-v2'
 CONTROL_SEED='/data/local/tmp/qwen3-block-htp/exp0257-prefix/prefix_kv_u8.bin'
 LAYER_FIELDS=['metadata_stage_ticks','input_stage_ticks','input_norm_ticks','qkv_projection_ticks','qk_norm_rope_ticks','attention_ticks','o_projection_ticks','post_attention_residual_ticks','post_attention_norm_ticks','gate_up_ticks','activation_ticks','down_ticks','final_residual_ticks','cache_append_pack_ticks','cache_append_dma_ticks','block_orchestration_ticks','layer_bookkeeping_ticks','layer_unattributed_ticks']
@@ -37,6 +38,7 @@ def physical(ps,count,arm):
   assert q['block_invocation_count']==count and q['vtcm_acquired_bytes']==q['vtcm_requested_bytes']==8388608
   assert q['boundary_ddr_write_bytes']==(0 if count==28 else 131072)
   assert q['intermediate_ddr_read_bytes']==q['intermediate_ddr_write_bytes']==q['intermediate_spill_fill_count']==q['ledger_unattributed_ticks']==0
+  if count==28:assert q['generation_lm_head_direct_slot_join_count']==(0 if q['mode']=='prefill' else q['generation_lm_head_command_count']-2)
   assert q['dense_r3_mode']==arm and q['wide_score_mode']==4 and q['prefix_kv_mode']==1
   assert q['dense_r3_total_calls']==q['dense_r3_total_hmx_calls']==arm*count
   assert q['dense_r3_total_rows']==arm*count*24*q['logical_m'] and q['dense_r3_total_refined_values']==0
@@ -77,17 +79,17 @@ def run(arm,repeat,tag,count=28,dump=False):
 def profile(phase):
  preflight();assert read(R/'slice_gate.json')['pass_all']
  for arm in [0,1]:assert read(R/f'smoke_a{arm}/validated.json')['pass_all']
- if phase=='formal':assert read(R/'short_gate.json')['integrity_pass']
+ if phase=='formal':assert read(CAMPAIGN/'short_gate.json')['integrity_pass']
  rows=[]
  for i in range(5 if phase=='short' else 10):
   for rep in [1,10]:
    for arm in ([0,1] if i%2==0 else [1,0]):
-    tag=f'{phase}/round{i+1:02d}_r{rep}_a{arm}';p=R/tag/'validated.json';z=read(p) if p.exists() else run(arm,rep,tag);rows.append(dict(round=i+1,**z))
+    tag=f'repaired1/{phase}/round{i+1:02d}_r{rep}_a{arm}';p=R/tag/'validated.json';z=read(p) if p.exists() else run(arm,rep,tag);rows.append(dict(round=i+1,**z))
  rng=np.random.default_rng(258);perf={}
  for rep in [1,10]:
   for mode in ['prefill_ns','decode_ns']:
    pairs=np.array([[next(r[mode] for r in rows if r['round']==i+1 and r['repeat']==rep and r['arm']==a) for a in [0,1]] for i in range(5 if phase=='short' else 10)]);ratios=pairs[:,1]/pairs[:,0];ci=np.quantile(np.median(ratios[rng.integers(0,len(pairs),(10000,len(pairs)))] ,axis=1),[.025,.975]);perf[f'r{rep}_{mode}']=dict(control_ns=float(np.median(pairs[:,0])),R3_ns=float(np.median(pairs[:,1])),paired_ratio=float(np.median(ratios)),ci95=ci.tolist(),stable_over10percent=bool(ci[0]>1.1))
- write(R/(phase+'_gate.json'),dict(integrity_pass=True,performance=perf,rounds=rows,numerical_eligible=False,speed_eligible=not any(p['stable_over10percent'] for p in perf.values()),scope='userapproved performance-only exception'))
+ write(CAMPAIGN/(phase+'_gate.json'),dict(integrity_pass=True,performance=perf,rounds=rows,numerical_eligible=False,speed_eligible=not any(p['stable_over10percent'] for p in perf.values()),scope='userapproved performance-only exception'))
  print(phase.upper()+'_COMPLETE',json.dumps(perf),flush=True)
 if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('action');p.add_argument('--arm',type=int,default=0);p.add_argument('--count',type=int,default=28);p.add_argument('--repeat',type=int,default=1);p.add_argument('--tag',default='smoke');p.add_argument('--dump',action='store_true');a=p.parse_args()

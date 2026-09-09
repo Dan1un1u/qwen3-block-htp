@@ -7,7 +7,7 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(119)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(120)
 #define QBH_BLOCK_EXPERIMENT UINT32_C(218)
 
 #define QBH_BLOCK_M UINT32_C(64)
@@ -938,6 +938,7 @@ struct qbh_block_header {
     uint32_t generation_expected_token_count;
 
     int32_t dsp_status;
+    uint32_t generation_lm_head_direct_slot_join_count;
     /* EXP0258 full-invocation counters, reset with run telemetry. */
     uint32_t dense_r3_total_calls, dense_r3_total_rows, dense_r3_total_hmx_calls;
     uint32_t dense_r3_total_refined_values;
