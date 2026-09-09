@@ -24,6 +24,30 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0255
+  slug: residual-calibration
+  title: Static A8 residual trajectory calibration
+  parent: EXP-0254
+  record: docs/experiments/EXP-0255.md
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  approval_ref: PC069 user continues residual repair
+  source_branches:
+  - codex/exp-0254-joint-attention
+  source_commits:
+  - e66af129a2f66930cdcfe0155f53fd93ccd628b4
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0254-joint-attention
+    approved_on: '2026-09-09'
+    started_on: '2026-09-09'
+  evidence:
+    protocol: PC069
+    current_stage: registered_before_calibration
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0255
+    baseline_promoted: false
 - id: EXP-0254
   slug: joint-attention
   title: Ordered joint attention restoration and conditional attribution

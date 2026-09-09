@@ -317,3 +317,7 @@ Checks: retained EXP0253 floating core hash and all280 numerical cases unchanged
 
 Close all scores, independent reconstruction, reports, provenance and evidence seal. PC027 stable three-recipe table records unmeasured hardware/E2E as N/A. No native FlashAttention, baseline promotion or hardware timing of diagnostic FP16 restorations. Future deployable A8 repair requires a concrete separately registered numerical protocol; successful software candidate then follows original component/whole-layer gates,5short10formal and stable>10percent Host-wall stop. Current approval covers the ordered diagnosis and conditional follow-up research; do not infer approval to relax numerical/physical/model thresholds.
 
+
+## PC069 — User-approved static A8 residual calibration
+
+User2026-09-09 authorizes continuation under docs/experiments/EXP-0255.md: bounded actual-A8 trajectory static residual range/zero fitting, independent selection and confirmation on floating/integer attention. Fixed native W4 semantics, weights, dense R3 and other recipes; SwiGLU-only secondary control. No hardware, mixed precision, threshold relaxation or promotion. PC037 applies.
