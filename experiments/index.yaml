@@ -35,10 +35,11 @@ experiments:
   local_gate: not_run
   adoption_status: pending
   runtime:
-    source_branch: codex/exp-0263-w4u8-r4-parallel-prefill
+    source_branch: codex/exp-0264-w4u8-r4-fused-quantization
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     started_on: '2026-09-10'
   source_branches:
+  - codex/exp-0264-w4u8-r4-fused-quantization
   - codex/exp-0263-w4u8-r4-parallel-prefill
   source_commits:
   - 01b42be717fbed33fe413009f40f9427f4574106
