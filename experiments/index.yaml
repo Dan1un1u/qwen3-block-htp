@@ -35,12 +35,13 @@ experiments:
   adoption_status: pending
   approval_ref: PC070 user approves fixed integer-path confirmation
   source_branches:
+  - codex/exp-0256-integer-rmse-confirmation
   - codex/exp-0255-residual-calibration
   source_commits:
   - 9ca3bef324812d874b9895d32ae6b2b2907066d0
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0255-residual-calibration
+    source_branch: codex/exp-0256-integer-rmse-confirmation
     approved_on: '2026-09-09'
     started_on: '2026-09-09'
   evidence:
