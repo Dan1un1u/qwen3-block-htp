@@ -35,12 +35,13 @@ experiments:
   adoption_status: pending
   approval_ref: PC069 user continues residual repair
   source_branches:
+  - codex/exp-0255-residual-calibration
   - codex/exp-0254-joint-attention
   source_commits:
   - e66af129a2f66930cdcfe0155f53fd93ccd628b4
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0254-joint-attention
+    source_branch: codex/exp-0255-residual-calibration
     approved_on: '2026-09-09'
     started_on: '2026-09-09'
   evidence:
