@@ -65,7 +65,7 @@ def run(arm,rep,tag,dump=False):
  write(p/'validated.json',z);print('PASS',tag,round(z['prefill_ns']/1000,2),round(z['decode_ns']/1000,2),flush=True);return z
 
 def profile(phase):
- preflight();assert read(R/'numerical_gate.json')['component_pass']
+ preflight();assert read(R/'numerical_gate.json')['component_pass'] and read(R/'numerical_gate.json')['full_layer_ideal_R4_gate_pass']
  if phase=='formal':assert read(R/'short_gate.json')['integrity_pass']
  rows=[];n=5 if phase=='short' else 10
  for i in range(n):
