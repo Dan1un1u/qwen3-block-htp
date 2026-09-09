@@ -9,12 +9,12 @@ def validate(path,wide,repeats):
  records=[json.loads(l) for l in (path/'stdout.jsonl').read_text().splitlines() if l.startswith('{')]
  profiles=[x for x in records if x.get('record')=='generation_profile'];final=[x for x in records if x.get('generation_sequence_complete')]
  assert len(profiles)==repeats*16 and len(final)==repeats
- ref=json.loads((R/('seed_full_nr64' if wide==4 else 'seed_full_sole')/'validated.json').read_text())['token_ids'][:16]
+ ref=json.loads((R/({0:'speed_anchor',1:'seed_full_sole',4:'seed_full_nr64'}[wide])/'validated.json').read_text())['token_ids'][:16]
  for f in final:assert f['all_steps_pass'] and f['token_ids']==ref
  fields=['metadata_stage_ticks','input_stage_ticks','input_norm_ticks','qkv_projection_ticks','qk_norm_rope_ticks','attention_ticks','o_projection_ticks','post_attention_residual_ticks','post_attention_norm_ticks','gate_up_ticks','activation_ticks','down_ticks','final_residual_ticks','cache_append_pack_ticks','cache_append_dma_ticks','block_orchestration_ticks','layer_bookkeeping_ticks','layer_unattributed_ticks']
  for i,p in enumerate(profiles):
   step=i%16;assert p['generation_step']==step and p['repeat_count']==1 and p['wide_score_mode']==wide
-  assert p['prefix_kv_mode']==1 and p['prefix_group_patch_count']==(224 if step==0 else 0)
+  assert p['prefix_kv_mode']==(0 if wide==0 else 1) and p['prefix_group_patch_count']==(224 if step==0 and wide!=0 else 0)
   assert p['variant']=='W4U8' and p['backend']=='standalone_fastrpc_dsp' and p['qnn']=='none'
   assert p['vtcm_acquired_bytes']==p['vtcm_requested_bytes']==8388608 and p['block_invocation_count']==28
   assert p['boundary_ddr_write_bytes']==p['intermediate_ddr_read_bytes']==p['intermediate_ddr_write_bytes']==p['intermediate_spill_fill_count']==0
@@ -28,6 +28,7 @@ def validate(path,wide,repeats):
 
 def suite(wide,repeat,tag):
  root,e=env(28,wide);e.update(QBH_GENERATION_SEQUENCE='9',QBH_GENERATION_STEPS='16')
+ if wide==0:e['QBH_PREFIX_KV']='0'
  ids=json.loads((R/'prompts.json').read_text())['samples'][0]['token_ids'];row=[0,2,16]+ids+[0]*16
  file=R/(tag.replace('/','_')+'.bin');file.write_bytes(struct.pack('<4I',0x51424556,1,repeat,83)+b''.join(struct.pack('<83I',i,*row[1:]) for i in range(repeat)))
  remote=root+'/'+file.name;adb('push',win(file),remote);e['QBH_EVAL_FILE']=remote
@@ -41,7 +42,7 @@ def main():
  rows=[]
  for i in range(5 if a.phase=='short' else 10):
   for repeat in [1,10]:
-   for wide in ([1,4] if i%2==0 else [4,1]):
+   for wide in ([0,1,4][i%3:]+[0,1,4][:i%3]):
     tag=f'{a.phase}/round{i+1:02d}_r{repeat}_w{wide}'
     p=R/tag/'validated.json'
     d=json.loads(p.read_text()) if p.exists() else suite(wide,repeat,tag)
@@ -49,11 +50,12 @@ def main():
  # Gate stable speed using stratified paired-round bootstrap, fixed10000seed257.
  import numpy as np
  perf={};ok=True;rng=np.random.default_rng(257)
- for repeat in [1,10]:
-  for mode in ['prefill_ns','decode_ns']:
-   pairs=np.array([[next(r[mode] for r in rows if r['round']==i+1 and r['repeat']==repeat and r['wide']==w) for w in [1,4]] for i in range(5 if a.phase=='short' else 10)])
-   ratios=pairs[:,1]/pairs[:,0];boot=np.median(ratios[rng.integers(0,len(ratios),(10000,len(ratios)))] ,axis=1);ci=np.quantile(boot,[.025,.975]);stable=bool(ci[0]>1.1);ok&=not stable
-   perf[f'r{repeat}_{mode}']=dict(control_ns=float(np.median(pairs[:,0])),candidate_ns=float(np.median(pairs[:,1])),paired_ratio=float(np.median(ratios)),ci95=ci.tolist(),stable_over10percent=stable)
+ for control in [0,1]:
+  for repeat in [1,10]:
+   for mode in ['prefill_ns','decode_ns']:
+    pairs=np.array([[next(r[mode] for r in rows if r['round']==i+1 and r['repeat']==repeat and r['wide']==w) for w in [control,4]] for i in range(5 if a.phase=='short' else 10)])
+    ratios=pairs[:,1]/pairs[:,0];boot=np.median(ratios[rng.integers(0,len(ratios),(10000,len(ratios)))] ,axis=1);ci=np.quantile(boot,[.025,.975]);stable=bool(ci[0]>1.1);ok&=not stable
+    perf[f'c{control}_r{repeat}_{mode}']=dict(control_ns=float(np.median(pairs[:,0])),candidate_ns=float(np.median(pairs[:,1])),paired_ratio=float(np.median(ratios)),ci95=ci.tolist(),stable_over10percent=stable)
  write(R/(a.phase+'_gate.json'),dict(pass_all=ok,physical_correctness_pass=True,rounds=rows,performance=perf))
  if not ok:raise SystemExit('Stable>10percent slowdown: stop dependent escalation')
  print(a.phase.upper()+'_GATE_PASS',flush=True)

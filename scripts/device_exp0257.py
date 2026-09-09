@@ -70,8 +70,9 @@ def replay(count,wide,tag,pkg=None,dump=True,prefix_mode=None):
  prof=[r for r in records if r.get('record')=='exp0240_profile'];assert len(prof)==9
  return p
 
-def generate(wide,tag,sample=0,steps=16,audit=False):
+def generate(wide,tag,sample=0,steps=16,audit=False,prefix_mode=None):
  root,e=env(28,wide);e.update(QBH_GENERATION_SEQUENCE='9',QBH_GENERATION_STEPS=str(steps))
+ if prefix_mode is not None:e['QBH_PREFIX_KV']=str(prefix_mode)
  prompts=json.loads((R/'prompts.json').read_text())['samples'];ids=prompts[sample]['token_ids']
  # Separate immutable prompt overlay per run; all model files are verified shared links.
  overlay=root+'/'+tag.replace('/','_');adb('shell',f'mkdir {overlay} && ln -s {REMOTE}-package-v2/* {overlay}/')
