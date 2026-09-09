@@ -1951,3 +1951,5 @@ Warm optimized repeat10 prefill64 1040.240143tok/s withHost61524.255us;15decode 
 ## EXP0261 active
 
 User requests R4 overhead exploration. Read PC075 and EXP0261 protocol. Full6144 dense-factor R4 before middle A8, fresh Down folding, one real layer first. Other recipes frozen. Temporary parent branch binding for branch creation.
+
+EXP0261 checkpoint: export/build/audit and5short complete; numericalpass but overheadlarge. Read docs/SESSION_HANDOFF_EXP0261.md. Tenformal next; nofullmodel.
