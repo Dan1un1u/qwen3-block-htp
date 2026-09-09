@@ -1934,3 +1934,5 @@ Exact implementation equivalence passed; idealFloat64 whole-layer R3 numerical g
 ## EXP0260 active
 
 User authorizes W4F16 decode optimization. Read PC074 and EXP0260 protocol. Freeze C64 weights/math; first exact active-row/layout/FP16 conversion candidate in dynamic attention, then layer/slice/fullmodel paired validation. Parentbranch temporary for controlled sourcebranch creation.
+
+EXP0260 checkpoint: exact batch conversions and HVX transfer candidate built; signedzero edge repaired, realhidden/KV exact. Read docs/SESSION_HANDOFF_EXP0260.md. Timing not yet started; helpers prepared.
