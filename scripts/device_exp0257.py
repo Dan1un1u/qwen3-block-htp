@@ -8,8 +8,13 @@ ADB=old.ADB;REMOTE='/data/local/tmp/qwen3-block-htp/exp0257'
 PARENT='/data/local/tmp/qwen3-block-htp/exp0230-C64/block_package_layer14_m64'
 def adb(*args,timeout=300):return subprocess.run([ADB,*args],check=True,capture_output=True,text=True,timeout=timeout).stdout
 def win(p):return subprocess.check_output(['wslpath','-w',str(p)],text=True).strip()
+def runtime_root(count):
+ p=R/f'runtime_l{count}.json'
+ return json.loads(p.read_text())['remote'] if p.exists() else REMOTE+f'-l{count}'
 def stage(count):
- preflight();root=REMOTE+f'-l{count}';d=R/'binaries'/f'l{count}';d.mkdir(parents=True,exist_ok=False)
+ preflight();attempt=1
+ while (R/'binaries'/f'l{count}_attempt{attempt}').exists():attempt+=1
+ root=REMOTE+f'-l{count}_attempt{attempt}';d=R/'binaries'/f'l{count}_attempt{attempt}';d.mkdir(parents=True,exist_ok=False)
  bins=[S/'android_ReleaseG_aarch64/ship/qwen3_block_cli',S/'android_ReleaseG_aarch64/ship/libqwen3_probe.so',S/'hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so']
  adb('shell',f'mkdir {root}')
  for p in bins:shutil.copy2(p,d/p.name);adb('push',win(p),root+'/'+p.name)
@@ -18,6 +23,7 @@ def stage(count):
  adb('shell',f'chmod 755 {root}/qwen3_block_cli')
  if count==1:adb('shell',f'ln -s /data/local/tmp/qwen3-block-htp/exp0252-layer0/control {root}/control')
  write(d/'manifest.json',dict(source_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=S,text=True).strip(),layer_count=count,binaries={p.name:sha(p) for p in bins},remote=root,boot=adb('shell','cat /proc/sys/kernel/random/boot_id').strip()))
+ (R/f'runtime_l{count}.json').write_text(json.dumps(dict(remote=root,manifest=str(d/'manifest.json'))))
  print('STAGED',count,flush=True)
 def deploy():
  preflight();pkg=O/'package';manifest=json.loads((pkg/'manifest.json').read_text());cm=json.loads((C/'manifest.json').read_text());files=manifest['files']
@@ -40,10 +46,10 @@ def deploy():
  write(R/'device_package.json',dict(remote=root,manifest_sha256=sha(pkg/'manifest.json'),verified_files=len(files),archive_sha256=sha(archive)))
  print('DEPLOYED',len(files),flush=True)
 def env(count,wide,capacity=128):
- root=REMOTE+f'-l{count}';e=dict(old.ENV);e.update(QBH_WIDE_SCORE=str(wide),QBH_DENSE_R3='0',QBH_KV_CACHE_CAPACITY=str(capacity),LD_LIBRARY_PATH=root,DSP_LIBRARY_PATH=root,ADSP_LIBRARY_PATH=root)
+ root=runtime_root(count);e=dict(old.ENV);e.update(QBH_WIDE_SCORE=str(wide),QBH_DENSE_R3='0',QBH_KV_CACHE_CAPACITY=str(capacity),LD_LIBRARY_PATH=root,DSP_LIBRARY_PATH=root,ADSP_LIBRARY_PATH=root)
  return root,e
 def execute(count,e,pkg,repeat,tag):
- preflight();root=REMOTE+f'-l{count}';p=R/tag;p.mkdir(parents=True,exist_ok=False)
+ preflight();root=runtime_root(count);p=R/tag;p.mkdir(parents=True,exist_ok=False)
  command=f'cd {root} && '+' '.join(k+'='+shlex.quote(v) for k,v in e.items())+f' ./qwen3_block_cli {pkg} W4U8 {repeat} {old.ARGS}'
  (p/'command.txt').write_text(command+'\n');r=subprocess.run([ADB,'shell',command],capture_output=True,text=True,timeout=600)
  (p/'stdout.jsonl').write_text(r.stdout);(p/'stderr.txt').write_text(r.stderr)

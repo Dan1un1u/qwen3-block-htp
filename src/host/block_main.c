@@ -3275,7 +3275,9 @@ static int qbh_run_exp0240_layer(
             int rc = qwen3_probe_run_block(session->handle, fd, bytes);
             uint64_t elapsed = qbh_monotonic_ns() - start;
             for(uint32_t i=0;i<QBH_VERTICAL_SLICE_LAYER_COUNT;++i) {
-                if(state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER+i].valid_length != before+h->logical_m) return -1;
+                if(state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER+i].valid_length != before+h->logical_m) {
+                    fprintf(stderr,"slice state failure layer=%u rc=%d dsp=%d valid=%u expected=%u\n",i,rc,h->dsp_status,state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER+i].valid_length,before+h->logical_m);return -1;
+                }
             }
             if (rc || h->dsp_status != QBH_BLOCK_STATUS_OK ||
                 layer->valid_length != before + h->logical_m || state->completed_step_count != step + 1U ||
@@ -5159,13 +5161,7 @@ int main(int argc, char **argv) {
              QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N &&
          (vertical_slice_mode != QBH_BLOCK_SLICE_ACTIVE_RANGE ||
           replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS ||
-          (QBH_VERTICAL_SLICE_LAYER_COUNT != 1U && !qbh_generation_w4u8_enabled(generation_mode)
-#ifndef QBH_EXP0257_LAYER_COUNT
-         )
-#else
-         && QBH_EXP0257_LAYER_COUNT != 3)
-#endif
-         )) ||
+          (QBH_VERTICAL_SLICE_LAYER_COUNT != 1U && !qbh_generation_w4u8_enabled(generation_mode) && !QBH_STAGED_A8_REPLAY))) ||
         (w4u8_decode_direct_n_gate_up_batch_n_tiles != 4U &&
          w4u8_decode_direct_n_gate_up_batch_n_tiles != 8U &&
          w4u8_decode_direct_n_gate_up_batch_n_tiles != 16U &&
