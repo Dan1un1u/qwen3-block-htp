@@ -29,27 +29,147 @@ experiments:
   title: Static A8 residual trajectory calibration
   parent: EXP-0254
   record: docs/experiments/EXP-0255.md
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
-  adoption_status: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
+  adoption_status: not_applicable
   approval_ref: PC069 user continues residual repair
   source_branches:
   - codex/exp-0255-residual-calibration
   - codex/exp-0254-joint-attention
   source_commits:
   - e66af129a2f66930cdcfe0155f53fd93ccd628b4
+  - b8330a37155b8693c014b81df453245078fc8154
+  - 6c53dc2743681a2dea05c6e93d32e513befd8d9a
+  - 9ca3bef324812d874b9895d32ae6b2b2907066d0
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0255-residual-calibration
     approved_on: '2026-09-09'
     started_on: '2026-09-09'
+    completed_on: '2026-09-09'
   evidence:
     protocol: PC069
-    current_stage: parameters_frozen_numerical_pass_PPL_running
+    current_stage: completed_static_residual_calibration_original_parameters_retained
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0255.md
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0255
     baseline_promoted: false
+    source_head: 9ca3bef324812d874b9895d32ae6b2b2907066d0
+    inference_source_heads:
+    - 6c53dc2743681a2dea05c6e93d32e513befd8d9a
+    - 9ca3bef324812d874b9895d32ae6b2b2907066d0
+    report: docs/experiments/EXP-0255-RESULTS.md
+    report_sha256: b027716e8e639a81209d1118e95a0604508a61c9c25b94b0cdc9a3e01ef485ef
+    full_profiling_report: docs/experiments/EXP-0255-PROFILE.md
+    full_profiling_report_sha256: 26ee6bc2c9af13b8bcc1913bf5a90270b7e38abc91487d28ec1fd6b4b71eee04
+    evidence_ledger_sha256: 0076296574d6c14bdfa8e711b0bb2b51bf8f0ed1934af14ba19b5f0e3d52e19d
+    evidence_file_count: 86
+    numerical_gate: pass
+    independent_score_audit: pass18scores
+    gate_role: no_new_residual_candidate_passes_predeclared_dual_path_selection_separate_from_model_quality
+    selected: B
+    original_parameters_retained: true
+    development_ppl:
+      B:
+        float_core: 28.481816005589064
+        wide_nr64: 31.371519055938816
+      R_MSE:
+        float_core: 29.575748409142346
+        wide_nr64: 29.523674059519532
+      R_FAN:
+        float_core: 27.924172210893268
+        wide_nr64: 32.22758347555903
+      S_MSE:
+        float_core: 28.89401396159418
+        wide_nr64: 31.494248449673368
+    final_ppl:
+      F: 27.79928967700617
+      C64: 28.1823554965175
+      B__float_core: 33.279681538424114
+      B__wide_nr64: 35.91646432362055
+      S_MSE__float_core: 33.68440820259066
+      S_MSE__wide_nr64: 35.64592456550092
+    quality_gate:
+      C64:
+        point_pass: true
+        confident_pass: false
+      B__float_core:
+        point_pass: false
+        confident_pass: false
+      B__wide_nr64:
+        point_pass: false
+        confident_pass: false
+      S_MSE__float_core:
+        point_pass: false
+        confident_pass: false
+      S_MSE__wide_nr64:
+        point_pass: false
+        confident_pass: false
+    S_MSE_vs_B:
+      float_core:
+        delta_nll: 0.01208801893517375
+        ppl_ratio: 1.012161374311808
+        ratio_ci95:
+        - 0.9811722724394405
+        - 1.0445590217230303
+        cells:
+          en_wiki:
+            ppl_ratio: 1.0221446095747173
+            ratio_ci95:
+            - 0.9727289197754513
+            - 1.0752651402955673
+          zh_wiki:
+            ppl_ratio: 0.9858535801760847
+            ratio_ci95:
+            - 0.913818767460853
+            - 1.0649548332397305
+          en_news:
+            ppl_ratio: 0.9971686749845518
+            ratio_ci95:
+            - 0.939909466677881
+            - 1.0585354789070234
+          zh_news:
+            ppl_ratio: 1.0444932842183365
+            ratio_ci95:
+            - 0.9844209481839346
+            - 1.1069325482364025
+      wide_nr64:
+        delta_nll: -0.00756098423153162
+        ppl_ratio: 0.992467528104048
+        ratio_ci95:
+        - 0.9592888224703037
+        - 1.02474593796874
+        cells:
+          en_wiki:
+            ppl_ratio: 0.993724865274127
+            ratio_ci95:
+            - 0.9289495841404006
+            - 1.0608434609916384
+          zh_wiki:
+            ppl_ratio: 0.9912926464540354
+            ratio_ci95:
+            - 0.9024669275003826
+            - 1.0782242330582155
+          en_news:
+            ppl_ratio: 0.9912703714157423
+            ratio_ci95:
+            - 0.9466391663327451
+            - 1.0385800405034158
+          zh_news:
+            ppl_ratio: 0.993585072340681
+            ratio_ci95:
+            - 0.9418502000171164
+            - 1.044718585860077
+    parameter_change_counts:
+      R_MSE: 55
+      R_FAN: 55
+      S_MSE: 2
+    new_device_runs: 0
+    short_rounds: 0
+    formal_rounds: 0
+    device_ppl: null
+    e2e_tokens_per_second: null
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0255.md
 - id: EXP-0254
   slug: joint-attention
   title: Ordered joint attention restoration and conditional attribution

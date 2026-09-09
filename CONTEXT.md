@@ -1857,3 +1857,7 @@ User continues residual repair; PC069 freezes actual-A8 trajectory static residu
 EXP0255 checkpoint: data/calibration frozen,184 independent numerical cases pass; reproduction/development/final runner active. Read docs/SESSION_HANDOFF_EXP0255.md and inspect live logs before resuming. No candidate PPL result or hardware work yet.
 
 EXP0255 development complete, frozen dual-path rule selects original B. Six-arm independent final running; read latest appendix of docs/SESSION_HANDOFF_EXP0255.md. No residual final improvement claim.
+
+## Current handoff after EXP0255
+
+Static A8 residual trajectory calibration complete. 128calibration docs,256new development/final docs;184independent numeric checks,4historical exact reproductions,18scores audited. R_MSE improves integer development PPL but worsens floating; R_FAN reverses this. Predeclared worst-mode rule retains originalB. No residual candidate independently confirmed this round. Final {"F": 27.79928967700617, "C64": 28.1823554965175, "B__float_core": 33.279681538424114, "B__wide_nr64": 35.91646432362055, "S_MSE__float_core": 33.68440820259066, "S_MSE__wide_nr64": 35.64592456550092}. All A8 model gates fail; SwiGLU-only confidence includes no effect. W4/other recipes/native binaries unchanged. No hardware or promotion. Active none,next256; discuss docs/W4A8_NEXT_DIRECTION_AFTER_EXP0255.md. Source 9ca3bef324812d874b9895d32ae6b2b2907066d0; ledger 0076296574d6c14bdfa8e711b0bb2b51bf8f0ed1934af14ba19b5f0e3d52e19d.

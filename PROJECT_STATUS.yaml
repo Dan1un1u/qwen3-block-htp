@@ -19,13 +19,68 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0255
+  active_experiment: null
   next_experiment_number: 256
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
+  latest_w4u8_static_residual_calibration_result:
+    id: EXP-0255
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    numerical_gate: pass
+    gate_role: dual_path_candidate_selection_no_eligible_residual_repair
+    adoption_status: not_applicable
+    source_head: 9ca3bef324812d874b9895d32ae6b2b2907066d0
+    report: docs/experiments/EXP-0255-RESULTS.md
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0255
+    ledger_sha256: 0076296574d6c14bdfa8e711b0bb2b51bf8f0ed1934af14ba19b5f0e3d52e19d
+    selected: B
+    original_parameters_retained: true
+    development_ppl:
+      B:
+        float_core: 28.481816005589064
+        wide_nr64: 31.371519055938816
+      R_MSE:
+        float_core: 29.575748409142346
+        wide_nr64: 29.523674059519532
+      R_FAN:
+        float_core: 27.924172210893268
+        wide_nr64: 32.22758347555903
+      S_MSE:
+        float_core: 28.89401396159418
+        wide_nr64: 31.494248449673368
+    final_ppl:
+      F: 27.79928967700617
+      C64: 28.1823554965175
+      B__float_core: 33.279681538424114
+      B__wide_nr64: 35.91646432362055
+      S_MSE__float_core: 33.68440820259066
+      S_MSE__wide_nr64: 35.64592456550092
+    quality_gate:
+      C64:
+        point_pass: true
+        confident_pass: false
+      B__float_core:
+        point_pass: false
+        confident_pass: false
+      B__wide_nr64:
+        point_pass: false
+        confident_pass: false
+      S_MSE__float_core:
+        point_pass: false
+        confident_pass: false
+      S_MSE__wide_nr64:
+        point_pass: false
+        confident_pass: false
+    device_runs: 0
+    device_PPL: null
+    E2E_tokens_per_second: null
+    baseline_promoted: false
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0255.md
   latest_w4u8_ordered_restoration_result:
     id: EXP-0254
     execution_state: completed
@@ -1678,7 +1733,7 @@ current_scope:
     auxiliary: short_task_content_v2
     diagnostic_only: short_task_strict_v1_format_adherence
     numerical_acceptance_threshold: PC050_EXP0229_overall_5percent_per_language_domain_10percent
-    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0254.md
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0255.md
     new_experiment_authorized: false
   latest_short_task_scoring_audit:
     experiment: EXP-0228
@@ -2369,22 +2424,22 @@ current_scope:
         manifest_sha256: 44ac941297f1aab82ec4daff2ca8191379def73f6796a1c9c5d7d700820c5673
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
-  execution_unit: conditional_software_ordered_attention_and_boundary_restoration_no_device
-  last_completed_experiment: EXP-0254
-  last_completed_source_commit: e66af129a2f66930cdcfe0155f53fd93ccd628b4
+  execution_unit: conditional_full_model_software_static_U8_residual_calibration_no_device
+  last_completed_experiment: EXP-0255
+  last_completed_source_commit: 9ca3bef324812d874b9895d32ae6b2b2907066d0
   provisional_source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
   device_execution_state: EXP0252_ABI116_layer0_capacity72_NR64_integer_speed_pass_R3_whole_gate_fail_not_full_model
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  current_handoff: docs/experiments/EXP-0254-RESULTS.md
+  current_handoff: docs/experiments/EXP-0255-RESULTS.md
   active_recipe_specialization: null
   last_completed_experiment_contract:
-    id: EXP-0254
-    protocol: PC068
-    scope: ordered_joint_restoration_and_independent_conditional_attribution
+    id: EXP-0255
+    protocol: PC069
+    scope: static_A8_trajectory_calibration_and_independent_dual_path_selection
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0254
+  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0255
   latest_w4f16_output_scale_result:
     id: EXP-0224
     execution_state: completed
@@ -8638,13 +8693,13 @@ current_scope:
     next_action: Discuss W4A8 reproducibility and same-W4-weight activation attribution;
       no new experiment authorized
   next_research_direction:
-    status: discussion_of_concrete_A8_repair_after_EXP0254_attribution
-    document: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0254.md
-    current: residual_mid_out_static_A8_calibration_then_integer_attention_revalidation
+    status: discussion_after_EXP0255_no_dual_path_residual_candidate_selected
+    document: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0255.md
+    current: independently_confirm_frozen_R_MSE_on_primary_integer_attention_path
     other_recipes: frozen
     new_algorithm_authorized: false
-    conditional_integration: ordered_user_research_approval_retained_requires_concrete_registered_A8_candidate_and_original_gates
-    diagnostic_FP16_restoration_is_deployable: false
+    conditional_integration: requires_separate_concrete_protocol_and_original_software_component_whole_layer_and_speed_gates
+    hardware_dense_R3_whole_layer_gate: unresolved
   latest_w4f16_independent_tool_result:
     id: EXP-0233
     source_head: 24a976887f9da144e49de2774104a3e72ddf6ddd
