@@ -16566,6 +16566,11 @@ static void qbh_f16_to_f32_contiguous(const __fp16 *source,float *out) {
 static void qbh_f32_to_f16_contiguous(const float *source,__fp16 *out) {
     HVX_VectorPair x=Q6_W_vdeal_VVR(((const HVX_Vector *)source)[1],((const HVX_Vector *)source)[0],-4);
     *(HVX_Vector *)out=Q6_Vhf_vcvt_VsfVsf(Q6_V_lo_W(x),Q6_V_hi_W(x));
+    /* V79 vcvt canonicalizes -0 to +0. Preserve the IEEE storage sign. */
+    for(uint32_t i=0;i<64U;++i) {
+        union{float f;uint32_t u;}v={.f=source[i]};
+        if(v.u==UINT32_C(0x80000000))((uint16_t *)out)[i]=UINT16_C(0x8000);
+    }
 }
 /* Independent IEEE-754 bit oracle, all finite binary16 patterns and
  * midpoint/tie neighbours. Untimed audit only; no native half casts. */
