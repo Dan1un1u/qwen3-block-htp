@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0258
+  active_experiment: null
   next_experiment_number: 259
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -2489,21 +2489,21 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: conditional_full_model_software_fixed_R_MSE_integer_attention_confirmation_no_device
-  last_completed_experiment: EXP-0256
-  last_completed_source_commit: 073a39de0f452c938cd5705c82ae722611fb9396
+  last_completed_experiment: EXP-0258
+  last_completed_source_commit: 000509dbce670b5ac4b0014db82c5c891474381b
   provisional_source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
-  device_execution_state: EXP0257_ABI118_actual28layers_nativeW4_noR3_wideNR64_correct_offline_EOS_U8seed_M64_capacity128; text_unusable; formal_original_anchor_nondeterminism
+  device_execution_state: EXP0258_ABI120_actual28layer_plain_denseR3_wideNR64_correctrotatedprefix_fullM64+15_diagnostic_speed_measured; numerical_unaccepted
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  current_handoff: docs/SESSION_HANDOFF_EXP0257.md
+  current_handoff: docs/SESSION_HANDOFF_EXP0258.md
   active_recipe_specialization: null
   last_completed_experiment_contract:
-    id: EXP-0256
-    protocol: PC070
-    scope: fixed_candidate_independent_256document_integer_path_PPL_confirmation
+    id: EXP-0258
+    protocol: PC072
+    scope: userapproved_performance_only_R3_fullmodel
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0256
+  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0258
   latest_w4f16_output_scale_result:
     id: EXP-0224
     execution_state: completed
@@ -8750,12 +8750,11 @@ current_scope:
     evidence_hash_check: pass_all296files_exact_ledger_coverage
     next_action: Discuss W4A8 reproducibility and same-W4-weight activation attribution; no new experiment authorized
   next_research_direction:
-    status: discussion_after_EXP0257_formal_stop
-    current: locate_original_anchor_transient_nondeterminism_then_device_software_same_token_boundary_and_U8_logit_grid_ablation
+    status: discussion_after_EXP0258
+    current: R3_prepare_finish_pipeline_overhead_and_unresolved_numerical_quality
     other_recipes: frozen
     new_algorithm_authorized: false
-    hardware_dense_R3_whole_layer_gate: unresolved
-    document: docs/SESSION_HANDOFF_EXP0257.md
+    document: docs/SESSION_HANDOFF_EXP0258.md
   latest_w4f16_independent_tool_result:
     id: EXP-0233
     source_head: 24a976887f9da144e49de2774104a3e72ddf6ddd
@@ -9043,5 +9042,170 @@ current_scope:
     root_cause: unresolved; raw output/token mismatch, postfailure bounded reruns pass but do not clear gate
     next_direction: discuss_runtime_nondeterminism_then_same_token_device_software_head_and_transformer_alignment
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0257.md
-  last_concluded_experiment: EXP-0257
-  last_concluded_source_commit: 8d56803ac77697be8748e65a9f933b720962af1e
+  last_concluded_experiment: EXP-0258
+  last_concluded_source_commit: 000509dbce670b5ac4b0014db82c5c891474381b
+  latest_w4u8_dense_r3_e2e_diagnostic_result:
+    id: EXP-0258
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_role: diagnostic_measurement_integrity_not_numerical_model_or_speed_acceptance
+    adoption_status: not_applicable
+    current_stage: completed_diagnostic_R3_fullmodel_cost
+    protocol: PC072
+    source_head: 000509dbce670b5ac4b0014db82c5c891474381b
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0258
+    report: docs/experiments/EXP-0258-RESULTS.md
+    report_sha256: 41c3639521fe5bf1a0129990bf5bf6c004754ffbec8e41a47855657239a4cf42
+    full_profiling_report: docs/experiments/EXP-0258-PROFILE.md
+    full_profiling_report_sha256: 46d51aeafaac04d66e4a6b08f8be8eb03c9440d9083d248af50d27d155cc07a3
+    evidence_ledger_sha256: 875397fc4185340c7ada2f35aa09c2e3d6f1799e4f0566187fe02d9ca1c3cd79
+    evidence_file_count: 630
+    numerical_eligible: false
+    numerical_gate: known_failed_ideal_R3_whole_layer_explicit_user_diagnostic_exception
+    speed_eligible: false
+    measurement_integrity: pass
+    physical_gate: pass
+    model_quality: not_assessed
+    baseline_promoted: false
+    short_rounds: 5
+    formal_rounds: 10
+    timed_full_model_RPCs: 5280
+    formal_RPCs: 3520
+    layer_ledgers_checked: 147840
+    actual_layer_count: 28
+    performance:
+      r1_prefill_ns:
+        control_ns: 39004922.5
+        R3_ns: 142430234.5
+        paired_ratio: 3.650737416423392
+        ci95:
+        - 3.644412786998875
+        - 3.663059933689109
+        stable_over10percent: true
+      r1_decode_ns:
+        control_ns: 325393490.0
+        R3_ns: 471051015.5
+        paired_ratio: 1.4475686015725422
+        ci95:
+        - 1.4333155718912405
+        - 1.484916232316808
+        stable_over10percent: true
+      r10_prefill_ns:
+        control_ns: 37363403.55
+        R3_ns: 143066502.55
+        paired_ratio: 3.8290124227674935
+        ci95:
+        - 3.816275985707366
+        - 3.842892263837037
+        stable_over10percent: true
+      r10_decode_ns:
+        control_ns: 306973453.5
+        R3_ns: 472792479.04999995
+        paired_ratio: 1.5398710713427983
+        ci95:
+        - 1.5354213101782088
+        - 1.5422585035197591
+        stable_over10percent: true
+    diagnostic_E2E:
+      a0_r1:
+        prefill_tokens: 64
+        prefill_host_us: 39004.9225
+        prefill_tokens_per_second: 1640.818540275269
+        decode_tokens: 15
+        decode_host_us: 325393.49
+        decode_host_us_per_token: 21692.899333333335
+        decode_tokens_per_second: 46.09803349169647
+        selected_output_tokens: 16
+        complete_model_host_us: 364371.8235
+        complete_model_effective_tokens_per_second: 43.91118897809067
+        generation_loop_us: 371686.302
+        generation_loop_tokens_per_second: 43.04705315720782
+        cold_startup_median_ns:
+          model_staging_ns: 5054696951.5
+          session_open_map_ns: 44081406.0
+          prepare_ns: 2035260.5
+          ready_ns: 5100860285.0
+      a1_r1:
+        prefill_tokens: 64
+        prefill_host_us: 142430.23450000002
+        prefill_tokens_per_second: 449.34279736792814
+        decode_tokens: 15
+        decode_host_us: 471051.01550000004
+        decode_host_us_per_token: 31403.401033333335
+        decode_tokens_per_second: 31.843684667738497
+        selected_output_tokens: 16
+        complete_model_host_us: 613457.837
+        complete_model_effective_tokens_per_second: 26.08166207191188
+        generation_loop_us: 619573.515
+        generation_loop_tokens_per_second: 25.824215549304103
+        cold_startup_median_ns:
+          model_staging_ns: 5061236795.0
+          session_open_map_ns: 43819974.0
+          prepare_ns: 2039844.0
+          ready_ns: 5107078722.0
+      a0_r10:
+        prefill_tokens: 64
+        prefill_host_us: 37363.40355
+        prefill_tokens_per_second: 1712.9060502840618
+        decode_tokens: 15
+        decode_host_us: 306973.4535
+        decode_host_us_per_token: 20464.8969
+        decode_tokens_per_second: 48.86416017077516
+        selected_output_tokens: 16
+        complete_model_host_us: 344287.2478
+        complete_model_effective_tokens_per_second: 46.472822046823424
+        generation_loop_us: 356440.82285
+        generation_loop_tokens_per_second: 44.88823662808464
+        cold_startup_median_ns:
+          model_staging_ns: 5054192811.0
+          session_open_map_ns: 44152110.0
+          prepare_ns: 2054375.0
+          ready_ns: 5100092862.5
+      a1_r10:
+        prefill_tokens: 64
+        prefill_host_us: 143066.50254999998
+        prefill_tokens_per_second: 447.3444087838297
+        decode_tokens: 15
+        decode_host_us: 472792.47905
+        decode_host_us_per_token: 31519.498603333333
+        decode_tokens_per_second: 31.726393004685846
+        selected_output_tokens: 16
+        complete_model_host_us: 616093.1535
+        complete_model_effective_tokens_per_second: 25.97009869222642
+        generation_loop_us: 628388.9035
+        generation_loop_tokens_per_second: 25.46193911267881
+        cold_startup_median_ns:
+          model_staging_ns: 5057868982.5
+          session_open_map_ns: 43674947.5
+          prepare_ns: 1969244.5
+          ready_ns: 5104092133.5
+    R3_breakdown_us:
+      a1_r1:
+        prefill:
+          prepare: 54661.71875
+          matmul: 524.1666666666667
+          finish: 54651.848958333336
+        decode:
+          prepare: 10774.762152777777
+          matmul: 85.85243055555557
+          finish: 276.78645833333337
+      a1_r10:
+        prefill:
+          prepare: 54657.96354166667
+          matmul: 525.0911458333334
+          finish: 54653.47135416667
+        decode:
+          prepare: 10775.10017361111
+          matmul: 85.5184027777778
+          finish: 276.8104166666667
+    device_PPL: null
+    head_race_repair:
+      source_commit: 0f8555d5b06ddb550944527b0e26ef1c23e59684
+      ABI: 120
+      guarded_joins_per_decode: 147
+      old_failure_retained: formal/round04_r10_a0
+      new_campaign: repaired1
+      selected_token_and_code_checks: 5280
+    checkpoint_handoff: docs/SESSION_HANDOFF_EXP0258.md
+    next_direction: discuss_R3_prepare_finish_and_pipeline_overhead; no_new_algorithm_authorized

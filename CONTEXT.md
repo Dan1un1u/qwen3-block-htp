@@ -1899,3 +1899,15 @@ Explicit user exception allows diagnostic fullmodel dense R3 E2E despite known i
 EXP0258 checkpoint: fullmodel smoke +5short complete, deterministic/physical gates pass but latency3.85x prefill/1.60xdecode fails speed eligibility. Ten formal diagnostic rounds next per explicituser exception; read docs/SESSION_HANDOFF_EXP0258.md.
 
 EXP0258 recovery: first formal round4 control token drift; concrete native-W4 LM-head compressed-slot DMA/HMX lifetime race fixed in source0f8555d, ABI120. Rebuild and rerun botharms full5short10formal under repaired1; old evidence retained. Read updated handoff.
+
+## Current handoff after EXP0258
+
+Source codex/exp-0258-dense-r3-e2e-diagnostic 000509dbce670b5ac4b0014db82c5c891474381b. Results /mnt/d/llm_exp/results/qwen3-block-htp/exp0258; evidence seal 875397fc4185340c7ada2f35aa09c2e3d6f1799e4f0566187fe02d9ca1c3cd79, 630 files. Source/runtime provenance ARTIFACT_PROVENANCE.json; current ABI120 full28layers, remote exp0258-l28_attempt2, both modes in samebinary. Read docs/experiments/EXP-0258-RESULTS.md and PROFILE.md.
+
+Explicit user PC072 exception allowed performance-only fullmodel despite known idealFloat64R3 whole-layer mismatch. That numerical gate is still failed, no PPL/text quality acceptance or promotion. Plain denseHMX mode1, no butterfly/highprecisionmode5/scalarfallback. C64 per-output-channelW4; frozen R3_ALL QK params, allotherparams identical to OFF. Correct offlineEOS seed: K dense-rotated thenU8, Vunchanged; independent storedU8exact. Prefill64 includesEOS,15continuousfeedbackdecode; perstep28R3calls,43008prefill or672decodeliverows;196transformerW4projections plusdecodeheadcounter1.
+
+Three-layer9steps component/layout/integerattention/cache/determinism gate passed. NoR3 reproduces EXP0257 seededNR64 output. Fullsmoke then5short+10formal pairedrounds repeat1/repeat10 complete:5280fullmodelRPCs,147840layerledgers, allselectedsequences deterministic,8MiBVTCM/zero timedhiddenDDR/spill/audit/oneRPC percompletepass. First EXP0258 formal attempt reproduced a token drift in noR3 control. A concrete shared native-W4 LM-head compressed-slot DMA/HMX race was fixed; ABI120 includes147 guarded slot joins per decode. The full new5short10formal campaign is isolated under repaired1, old failed evidence preserved and excluded from final timing. EXP0257 original failure remains historical evidence; current repaired path is independently recollected.
+
+Repeat10 R3 prefill 143066.503us / 447.344409token/s; decode 31519.499us pertoken / 31.726393token/s. Full16outputs generationloop 628388.904us / 25.461939token/s. Matched noR3 1712.906050prefill,48.864160decode,44.888237loop token/s. Loadedmodelwarm, noADB/startup/WSLfrontend. No layerextrapolation.
+
+Speed eligibility False; numerical eligibility false. Localpass means measurementintegrity only. R3cost andpairedCI in summary.json; preparation/finish dominate this implementation, not denseGEMM. Do not infer algorithmic lowerbound or startperformanceoptimization without nextuserdirection. Active none,next259. Otherrecipes andbaselines unchanged.
