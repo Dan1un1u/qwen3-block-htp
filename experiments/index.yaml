@@ -43,9 +43,18 @@ experiments:
   - codex/exp-0262-w4u8-r4-native-layout-pipeline
   source_commits:
   - 53dde49331bb1b7d256924a24aa335fff02a1428
+  - 29272d033c58ba3def8eab7e11b8278d519c63d0
+  - 05cbf364085d009c5c5acea6d7f45d3e7008612d
+  - 1f5f2eba6322f26f43770a8ed639964c25aa105b
+  - 672d742a302f480a56b4ecd3c76b638ee04d2cb0
   evidence:
     protocol: PC077
-    current_stage: parallel_implementation
+    current_stage: numerical_complete_frozen_OPT3_short_then_formal
+    source_head: 672d742a302f480a56b4ecd3c76b638ee04d2cb0
+    runtime_source_head: 05cbf364085d009c5c5acea6d7f45d3e7008612d
+    selected_opt: 3
+    ABI: 126
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0263
 - id: EXP-0262
   slug: w4u8-r4-native-layout-pipeline
   title: W4A8 dense R4 native layout and pipeline optimization
