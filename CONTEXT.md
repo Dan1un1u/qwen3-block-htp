@@ -1875,3 +1875,5 @@ Independent fixed-R_MSE integer confirmation complete:256newdocs/4096targets,112
 ## EXP0257 active
 
 User requests independent device text/E2E validation. PC071; read docs/experiments/EXP-0257.md. Best established speed-eligible no-R3 wide_NR64, original C64/OFF/EOS static parameters. Preserve original numerical/slice/physical gates and >10percent speed stop. Parent binding temporary for branch setup. No new fitting or promotion.
+
+EXP0257 integration checkpoint: original no-seed single/slice/head checks pass, but initial bad texts are incomplete-port diagnostics. Restoring the established offline W4A16 EOS-to-U8 KV seed semantics before formal profiling; see protocol recovery appendix. No formal profiling yet, no promotion.
