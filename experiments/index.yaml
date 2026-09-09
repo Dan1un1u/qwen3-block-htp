@@ -24,6 +24,27 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0264
+  slug: w4u8-r4-fused-quantization
+  title: R4 prepared quantization constants and fused native output
+  parent: EXP-0263
+  record: docs/experiments/EXP-0264.md
+  approval_ref: 'User: 好的，按你的方向再做一轮。如果通过10%gate就扩展到全模并报告结果。 PC078'
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  runtime:
+    source_branch: codex/exp-0263-w4u8-r4-parallel-prefill
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    started_on: '2026-09-10'
+  source_branches:
+  - codex/exp-0263-w4u8-r4-parallel-prefill
+  source_commits:
+  - 01b42be717fbed33fe413009f40f9427f4574106
+  evidence:
+    current_stage: registered
+    protocol: PC078
 - id: EXP-0263
   slug: w4u8-r4-parallel-prefill
   title: Parallel R4 prefill preparation and output conversion

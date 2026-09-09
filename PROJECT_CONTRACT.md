@@ -353,3 +353,7 @@ User approves EXP0262 under docs/experiments/EXP-0262.md: HVX native input/outpu
 ## PC077 — User-approved R4 prefill bottleneck optimization
 
 EXP0263 under docs/experiments/EXP-0263.md parallelizes frozen EXP0262 FP16 SwiGLU preparation and final native conversion, then overlaps preparation with prefill Up readiness. Existing pool and independently owned VTCM scratch only, frozen R4 math/weights/other recipes and original gates. Bounded two candidates, samebinary original control and noR4 cost reference,5short10formal repeats1/10. No butterfly, extra DDR, quality claim, fullmodel extrapolation or promotion. PC037 applies.
+
+## PC078 — R4 fused quantization and conditional full-model continuation
+
+User2026-09-10 approves one more round and conditional fullmodel if10percentgate passes. EXP0264 follows docs/experiments/EXP-0264.md: exact DSP FP32 reciprocal/constant preparation and fused output gather/quantization/native stores only, frozen dense R4 math and packages, unchanged numerical/physical/speed gates. Successful singlelayer eligibility authorizes separately registered slice and fullmodel fresh original-weight R4 folding, device text and E2E diagnostics without asking again. Known ideal-R3 failure remains explicitly failed under PC072/073 performance-only scope; this is no accuracy acceptance or baseline promotion. PC037 applies.
