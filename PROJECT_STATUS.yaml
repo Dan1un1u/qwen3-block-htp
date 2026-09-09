@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0260
+  active_experiment: null
   next_experiment_number: 261
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -9048,8 +9048,8 @@ current_scope:
     root_cause: unresolved; raw output/token mismatch, postfailure bounded reruns pass but do not clear gate
     next_direction: discuss_runtime_nondeterminism_then_same_token_device_software_head_and_transformer_alignment
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0257.md
-  last_concluded_experiment: EXP-0259
-  last_concluded_source_commit: 4fad27dc0a50a6d541f1d23ecf15018ec1099df6
+  last_concluded_experiment: EXP-0260
+  last_concluded_source_commit: 0210d840497a134f7256defd7c7c8244e271482a
   latest_w4u8_dense_r3_e2e_diagnostic_result:
     id: EXP-0258
     execution_state: completed
@@ -9438,3 +9438,126 @@ current_scope:
         - 1.0317005217914899
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0259.md
     next_direction: discuss_quality_alignment_or_longer_context_validation; no automatic baseline promotion
+  latest_w4f16_decode_optimization_result:
+    id: EXP-0260
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_role: exact_implementation_and_paired_decode_speed; no model-quality acceptance
+    adoption_status: not_applicable
+    current_stage: completed_W4F16_exact_decode_optimization
+    protocol: PC074
+    source_head: 0210d840497a134f7256defd7c7c8244e271482a
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0260
+    report: docs/experiments/EXP-0260-RESULTS.md
+    report_sha256: 92b752a52442f7d4fb5f2c55b02e00114853aa85befcc9a62338e8f2700bfa21
+    full_profiling_report: docs/experiments/EXP-0260-PROFILE.md
+    full_profiling_report_sha256: 42618a62ffa71552b9243f4ba24cd5cb5ec399363b8a05c5014efc7dfa03efee
+    evidence_ledger_sha256: dcbc1a39792a0886c5bdb7acb0c9bb69a82da581446c38ec3833f29694b9ae94
+    evidence_file_count: 988
+    implementation_eligible: true
+    speed_eligible: true
+    measurement_integrity: pass
+    physical_gate: pass
+    model_quality: unchanged_not_reassessed
+    baseline_promoted: false
+    ABI: 122
+    short_rounds: 5
+    formal_rounds: 10
+    layer_timed_RPCs: 2970
+    timed_full_model_RPCs: 5280
+    layer_ledgers_checked: 147840
+    actual_layer_count: 28
+    performance:
+      r1_prefill_ns:
+        control_ns: 63156119.5
+        candidate_ns: 63094870.0
+        paired_ratio: 1.0001491142396297
+        ci95:
+        - 0.9973888193044861
+        - 1.013590221195162
+      r1_decode_ns:
+        control_ns: 92451670.06666666
+        candidate_ns: 63677484.36666666
+        paired_ratio: 0.6892178372159296
+        ci95:
+        - 0.688141557782803
+        - 0.691509192372775
+      r10_prefill_ns:
+        control_ns: 61476721.3
+        candidate_ns: 61524255.150000006
+        paired_ratio: 1.0004822111418878
+        ci95:
+        - 0.9988243539579311
+        - 1.0040196211828807
+      r10_decode_ns:
+        control_ns: 94996260.71333334
+        candidate_ns: 65375275.843333334
+        paired_ratio: 0.6883440462782839
+        ci95:
+        - 0.6875342742974253
+        - 0.688920339570876
+    diagnostic_E2E:
+      a0_r1:
+        prefill_tokens: 64
+        prefill_host_us: 63156.1195
+        prefill_tokens_per_second: 1013.3618168228338
+        decode_tokens: 15
+        decode_host_us: 1386775.051
+        decode_host_us_per_token: 92451.67006666667
+        decode_tokens_per_second: 10.816462258376754
+        selected_output_tokens: 16
+        model_host_us: 1449744.2445
+        model_effective_tokens_per_second: 11.036429398288947
+        generation_loop_us: 1459650.754
+        generation_loop_tokens_per_second: 10.961526211769423
+      a2_r1:
+        prefill_tokens: 64
+        prefill_host_us: 63094.87
+        prefill_tokens_per_second: 1014.3455402951142
+        decode_tokens: 15
+        decode_host_us: 955162.2654999999
+        decode_host_us_per_token: 63677.48436666666
+        decode_tokens_per_second: 15.704137968796259
+        selected_output_tokens: 16
+        model_host_us: 1018256.5625
+        model_effective_tokens_per_second: 15.713132219562787
+        generation_loop_us: 1028521.1195
+        generation_loop_tokens_per_second: 15.556316439839522
+      a0_r10:
+        prefill_tokens: 64
+        prefill_host_us: 61476.721300000005
+        prefill_tokens_per_second: 1041.0444579125594
+        decode_tokens: 15
+        decode_host_us: 1424943.9107000001
+        decode_host_us_per_token: 94996.26071333334
+        decode_tokens_per_second: 10.526730131174979
+        selected_output_tokens: 16
+        model_host_us: 1486297.6422
+        model_effective_tokens_per_second: 10.765003957294175
+        generation_loop_us: 1505914.6085500002
+        generation_loop_tokens_per_second: 10.62477242013471
+      a2_r10:
+        prefill_tokens: 64
+        prefill_host_us: 61524.255150000005
+        prefill_tokens_per_second: 1040.24014340302
+        decode_tokens: 15
+        decode_host_us: 980629.13765
+        decode_host_us_per_token: 65375.27584333334
+        decode_tokens_per_second: 15.296302571577987
+        selected_output_tokens: 16
+        model_host_us: 1042152.1115499999
+        model_effective_tokens_per_second: 15.352845158278374
+        generation_loop_us: 1061726.5022
+        generation_loop_tokens_per_second: 15.069794308464989
+    device_PPL: null
+    exact_single_layer_file_comparisons: 87
+    exact_slice_file_comparisons: 130
+    selected_token_and_FP16_code_checks: 5280
+    retained_failures:
+    - 'layer_batch: unsupported global audit CLI'
+    - 'layer_vector_audit and layer_sentinel_diagnostic: V79 negativezero canonicalization'
+    repair: dedicated component audit and exact negativezero preservation
+    package_manifest_sha256: 7de4f0758d83f2ba3b58696c695bfbfed72a25dd3bf308475abee0a0f0575a89
+    checkpoint_handoff: docs/SESSION_HANDOFF_EXP0260.md
+    next_direction: discuss_W4F16_M1_projection_weight_expansion_and_HMX_pipeline; no automatic baseline promotion

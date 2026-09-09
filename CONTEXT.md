@@ -1936,3 +1936,14 @@ Exact implementation equivalence passed; idealFloat64 whole-layer R3 numerical g
 User authorizes W4F16 decode optimization. Read PC074 and EXP0260 protocol. Freeze C64 weights/math; first exact active-row/layout/FP16 conversion candidate in dynamic attention, then layer/slice/fullmodel paired validation. Parentbranch temporary for controlled sourcebranch creation.
 
 EXP0260 checkpoint: exact batch conversions and HVX transfer candidate built; signedzero edge repaired, realhidden/KV exact. Read docs/SESSION_HANDOFF_EXP0260.md. Timing not yet started; helpers prepared.
+
+## Current closure EXP0260
+
+
+Source codex/exp-0260-w4f16-decode-active-row-layout 0210d840497a134f7256defd7c7c8244e271482a; active none,next261. Results /mnt/d/llm_exp/results/qwen3-block-htp/exp0260, sealdcbc1a39792a0886c5bdb7acb0c9bb69a82da581446c38ec3833f29694b9ae94, 988files. Read EXP-0260-RESULTS.md and PROFILE.md. Current28layer staged ABI122, native exact conversion/transfer code; runtimes andallunchanged C64 package hashes in ARTIFACT_PROVENANCE.json. No mllm.
+
+QBH_W4F16_DECODE_OPT0 original,1 exact batched conversion around original scalar expf/orderedFP32sum/division/twohalfroundings,2 plus HVX whole probabilityzero/attention-to-O copy. W4F16M1 only. No nativeHMX M1/projection redesign yet. SameC64 per-output-channelW4 weights/scales/gamma/head, FP16HMX math/cache/tokenizer. F16/W4U8 paths frozen. Initial unsupportedglobal-audit CLI retained; dedicatedcomponentaudit added. Exhaustive finite-half and probability-midpoint checks found negativezero canonicalized by V79vcvt; repairedexact sign, failedcaptures retained. No numericalgate relaxation.
+
+87single-layer wholeliveoutput/cache file comparisons,130three-layer comparisons, exhaustive63488finitehalfpatterns+46080probabilitymidpoint-neighbours, originalSoftmax fullprobabilitybuffers exact. Fullmodel control andcandidate reproduced sealedEXP0230 token sequences/selectedFP16codes.5short10formal rotated pairs repeats1/10,2970layerRPC and5280fullmodelRPC,147840fullmodel layerledgers. Allcodes/determinism/8MiB/zero timed intermediateDDR/spill/full-logit exports/oneRPC passed. No optionalsampling. Single-layer repeat10decode ratio.73296, prefill1.07516 CIupper1.08441; fullstats inreport takeprecedence.
+
+Warm optimized repeat10 prefill64 1040.240143tok/s withHost61524.255us;15decode 15.296303tok/s withHost980629.138us;16outputgenerationloop15.069794tok/s. Pairedcontrol 1041.044458,10.526730,10.624772tok/s. Fullmodel speed eligibilityTrue. No PPLreevaluation orqualityacceptance; Selected EXP0166 andallotherbaselines unchanged. CurrentW4F16 tableusesC64candidate, notautomaticpromotion. Next discuss decode-native projection/weight expansion/HMX scheduling; no unbounded next experiment authorized.
