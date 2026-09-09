@@ -43,7 +43,7 @@ def run(count,arm,rep,tag,dump=False,audit=False):
  if count==28:e.update(QBH_GENERATION_SEQUENCE='7',QBH_GENERATION_STEPS='16')
  if dump:e['QBH_REPLAY_DUMP_DIR']=root+'/'+tag.replace('/','_');adb('shell','mkdir '+e['QBH_REPLAY_DUMP_DIR'])
  args=ARGS
- if audit:args=args.replace('hvx on off fused','hvx on on fused')
+ if audit:e['QBH_W4F16_DECODE_AUDIT']='1'
  cmd='cd '+root+' && '+' '.join(k+'='+shlex.quote(v) for k,v in e.items())+f' ./qwen3_block_cli {PKG} W4F16 {rep} {args}'
  p=R/tag;p.mkdir(parents=True,exist_ok=False);(p/'command.txt').write_text(cmd+'\n');z=subprocess.run([ADB,'shell',cmd],capture_output=True,text=True,timeout=600);(p/'stdout.jsonl').write_text(z.stdout);(p/'stderr.txt').write_text(z.stderr);assert z.returncode==0,(tag,z.stderr[-1800:])
  if dump:adb('pull',e['QBH_REPLAY_DUMP_DIR']+'/.',win(p))

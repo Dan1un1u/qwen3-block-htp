@@ -3115,6 +3115,7 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U32(dense_r3_mode);
     QBH_REPLAY_PROFILE_U32(dense_r3_optimization);
     QBH_REPLAY_PROFILE_U32(w4f16_decode_opt);
+    QBH_REPLAY_PROFILE_U32(w4f16_decode_audit);
     QBH_REPLAY_PROFILE_U32(w4f16_decode_opt_calls);
     QBH_REPLAY_PROFILE_U32(w4f16_decode_conversion_audit_mismatches);
     QBH_REPLAY_PROFILE_U32(dense_r3_total_parallel_heads);
@@ -6803,6 +6804,7 @@ int main(int argc, char **argv) {
     }
     header->wide_score_mode=wide_score_mode;
     header->dense_r3_mode=dense_r3_mode;
+    header->w4f16_decode_audit=getenv("QBH_W4F16_DECODE_AUDIT") ? (uint32_t)atoi(getenv("QBH_W4F16_DECODE_AUDIT")) : 0U;
     header->w4f16_decode_opt=getenv("QBH_W4F16_DECODE_OPT") ? (uint32_t)atoi(getenv("QBH_W4F16_DECODE_OPT")) : 0U;
     header->dense_r3_optimization=getenv("QBH_R3_OPT") ? (uint32_t)atoi(getenv("QBH_R3_OPT")) : 0U;
     header->dense_r3_audit_offset=(uint32_t)dense_r3_audit_offset;

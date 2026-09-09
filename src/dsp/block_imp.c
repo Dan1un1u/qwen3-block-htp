@@ -1936,7 +1936,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
     uint32_t element_bytes;
     if (header == NULL || header->magic != QBH_BLOCK_MAGIC ||
         header->abi_version != QBH_BLOCK_ABI_VERSION ||
-        header->w4f16_decode_opt>2U ||
+        header->w4f16_decode_opt>2U || header->w4f16_decode_audit>1U ||
         (header->w4f16_decode_opt && header->variant!=QBH_BLOCK_W4F16) ||
         header->wide_score_mode > 6U || header->prefix_kv_mode > 2U ||
         (header->prefix_kv_mode && header->variant != QBH_BLOCK_W4U8) ||
@@ -16599,7 +16599,7 @@ static int qbh_scan_softmax_f16_exact_batch(struct qbh_block_header *h,
         qbh_f32_to_f16_contiguous(work+64U,dst+64U);
     }
     ++h->w4f16_decode_opt_calls;
-    if(h->numerical_audit_enabled) {
+    if(h->w4f16_decode_audit) {
         qbh_scan_softmax_f16(scores,audit,1U,past,padded);
         const uint16_t *a=(const uint16_t *)audit,*b=(const uint16_t *)probability;
         for(uint32_t i=0;i<2U*plane;++i)h->w4f16_decode_conversion_audit_mismatches+=a[i]!=b[i];
