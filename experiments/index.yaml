@@ -30,14 +30,15 @@ experiments:
   parent: EXP-0262
   record: docs/experiments/EXP-0263.md
   approval_ref: 'User: 根据新瓶颈着重优化 PC077'
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
-  adoption_status: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
+  adoption_status: not_applicable
   runtime:
     source_branch: codex/exp-0263-w4u8-r4-parallel-prefill
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     started_on: '2026-09-10'
+    completed_on: '2026-09-10'
   source_branches:
   - codex/exp-0263-w4u8-r4-parallel-prefill
   - codex/exp-0262-w4u8-r4-native-layout-pipeline
@@ -47,14 +48,87 @@ experiments:
   - 05cbf364085d009c5c5acea6d7f45d3e7008612d
   - 1f5f2eba6322f26f43770a8ed639964c25aa105b
   - 672d742a302f480a56b4ecd3c76b638ee04d2cb0
+  - 7c80d9407649e48134dfd4fc8daac39dba3d410a
+  - 01b42be717fbed33fe413009f40f9427f4574106
   evidence:
+    current_stage: completed_parallel_R4_prefill_speed_eligibility_inconclusive
     protocol: PC077
-    current_stage: numerical_complete_frozen_OPT3_short_then_formal
-    source_head: 672d742a302f480a56b4ecd3c76b638ee04d2cb0
+    source_head: 01b42be717fbed33fe413009f40f9427f4574106
     runtime_source_head: 05cbf364085d009c5c5acea6d7f45d3e7008612d
-    selected_opt: 3
     ABI: 126
+    selected_opt: 3
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0263
+    report: docs/experiments/EXP-0263-RESULTS.md
+    report_sha256: bb93f205fbdce67c7d05a15da327e0348105112d5bfea78465d69449555d7ef9
+    full_profiling_report: docs/experiments/EXP-0263-PROFILE.md
+    full_profiling_report_sha256: a0e8a0ec078bc29b468ce5a6b6c680aa9be08b64da3629a28a217dcddc0132cb
+    evidence_ledger_sha256: 1404333eb0e87d0442d86c05be20df1e66d35c332373c58f6640c3ab10409b09
+    evidence_file_count: 483
+    numerical_gate: pass_R4_components_and_conditional_wholeblock
+    known_R3_ideal_gate: unchanged historical failure
+    measurement_integrity: pass
+    physical_gate: pass
+    speed_eligible: false
+    speed_gate_status: inconclusive
+    stable_over10_confirmed: false
+    stop_before_fullmodel: true
+    gate_role: prefill_confidence_interval_crosses10percent_eligibility_not_confirmed;
+      not_numerical_failure
+    performance:
+      r1_prefill_ns:
+        control_ns: 1704479.0
+        candidate_ns: 1909297.0
+        paired_ratio: 1.1210249385080528
+        ci95:
+        - 1.0994930028759575
+        - 1.2095491960306202
+        stable_over10: false
+      r1_decode_ns:
+        control_ns: 1006985.625
+        candidate_ns: 1036598.25
+        paired_ratio: 1.0528283742350213
+        ci95:
+        - 0.9630360420450652
+        - 1.082601803850771
+        stable_over10: false
+      r10_prefill_ns:
+        control_ns: 1528893.1
+        candidate_ns: 1703398.45
+        paired_ratio: 1.1187400725780063
+        ci95:
+        - 1.0764356572686877
+        - 1.1473175406675393
+        stable_over10: false
+      r10_decode_ns:
+        control_ns: 955976.2875000001
+        candidate_ns: 992867.2125
+        paired_ratio: 1.0346333188888293
+        ci95:
+        - 1.0134157809566962
+        - 1.0434346362337061
+        stable_over10: false
+    R4_breakdown_us:
+      prefill:
+        dense_r4_prepare_ticks: 153.79427083333337
+        dense_r4_matmul_ticks: 25.736979166666668
+        dense_r4_layout_ticks: 62.11979166666667
+        dense_r4_finish_ticks: 200.69010416666669
+      decode:
+        dense_r4_prepare_ticks: 9.723307291666668
+        dense_r4_matmul_ticks: 4.3203125
+        dense_r4_layout_ticks: 0.9723307291666669
+        dense_r4_finish_ticks: 16.318359375
+    short_rounds: 5
+    formal_rounds: 10
+    timed_layer_RPCs: 2970
+    exact_native_file_comparisons: 145
+    model_quality: not_assessed
+    device_PPL: null
+    E2E_tokens_per_second: null
+    baseline_promoted: false
+    checkpoint_handoff: docs/SESSION_HANDOFF_EXP0263.md
+    next_direction: discuss_remaining_output_conversion_parameter_setup_gather_and_worker_scheduling;
+      no further experiment authorized
 - id: EXP-0262
   slug: w4u8-r4-native-layout-pipeline
   title: W4A8 dense R4 native layout and pipeline optimization
