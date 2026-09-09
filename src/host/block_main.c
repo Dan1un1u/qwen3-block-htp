@@ -3296,7 +3296,7 @@ static int qbh_run_exp0240_layer(
             uint64_t elapsed = qbh_monotonic_ns() - start;
             for(uint32_t i=0;i<QBH_VERTICAL_SLICE_LAYER_COUNT;++i) {
                 if(state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER+i].valid_length != before+h->logical_m) {
-                    fprintf(stderr,"slice state failure layer=%u rc=%d dsp=%d valid=%u expected=%u\n",i,rc,h->dsp_status,state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER+i].valid_length,before+h->logical_m);return -1;
+                    fprintf(stderr,"slice state failure layer=%u rc=%d dsp=%d valid=%u expected=%u conversion_mismatches=%u sentinel_kind=%u input=%08x expected=%08x actual=%08x\n",i,rc,h->dsp_status,state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER+i].valid_length,before+h->logical_m,h->w4f16_decode_conversion_audit_mismatches,h->w4f16_decode_sentinel_kind,h->w4f16_decode_sentinel_input,h->w4f16_decode_sentinel_expected,h->w4f16_decode_sentinel_actual);return -1;
                 }
             }
             if (rc || h->dsp_status != QBH_BLOCK_STATUS_OK ||

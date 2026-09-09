@@ -945,6 +945,7 @@ struct qbh_block_header {
     uint32_t dense_r3_total_parallel_heads;
     uint32_t dense_r3_constant_read_bytes;
     uint32_t w4f16_decode_opt_calls, w4f16_decode_conversion_audit_mismatches;
+    uint32_t w4f16_decode_sentinel_kind, w4f16_decode_sentinel_input, w4f16_decode_sentinel_expected, w4f16_decode_sentinel_actual;
     uint64_t dense_r3_total_parallel_work_ticks;
     /* EXP0258 full-invocation counters, reset with run telemetry. */
     uint32_t dense_r3_total_calls, dense_r3_total_rows, dense_r3_total_hmx_calls;

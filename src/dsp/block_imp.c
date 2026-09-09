@@ -16578,7 +16578,7 @@ static uint32_t qbh_f16_ieee_bits(uint16_t h) {
     }
     return sign|((exp+112U)<<23)|(m<<13);
 }
-static uint32_t qbh_f16_conversion_sentinels(void) {
+static uint32_t qbh_f16_conversion_sentinels(struct qbh_block_header *h) {
     uint16_t half[64] __attribute__((aligned(128)));
     uint16_t back[64] __attribute__((aligned(128)));
     float values[64] __attribute__((aligned(128)));
@@ -16589,7 +16589,10 @@ static uint32_t qbh_f16_conversion_sentinels(void) {
         qbh_f32_to_f16_contiguous(values,(__fp16 *)back);
         for(uint32_t i=0;i<64U;++i)if((half[i]&0x7c00U)!=0x7c00U) {
             union{float f;uint32_t u;}x={.f=values[i]};
-            errors+=x.u!=qbh_f16_ieee_bits(half[i]);errors+=back[i]!=half[i];
+            if(x.u!=qbh_f16_ieee_bits(half[i]) || back[i]!=half[i]) {
+                if(!errors){h->w4f16_decode_sentinel_kind=x.u!=qbh_f16_ieee_bits(half[i])?1U:2U;h->w4f16_decode_sentinel_input=half[i];h->w4f16_decode_sentinel_expected=h->w4f16_decode_sentinel_kind==1U?qbh_f16_ieee_bits(half[i]):half[i];h->w4f16_decode_sentinel_actual=h->w4f16_decode_sentinel_kind==1U?x.u:back[i];}
+                ++errors;
+            }
         }
     }
     /* [0,1] includes subnormal/normal transition and probability range. */
@@ -16602,7 +16605,9 @@ static uint32_t qbh_f16_conversion_sentinels(void) {
         qbh_f32_to_f16_contiguous(values,(__fp16 *)back);
         for(uint32_t i=0;i<64U;++i) {
             uint32_t code=base+i;uint16_t expected=(uint16_t)(delta<0?code:delta>0?code+1U:code+(code&1U));
-            errors+=back[i]!=expected;
+            if(back[i]!=expected) {
+                if(!errors){union{float f;uint32_t u;}v={.f=values[i]};h->w4f16_decode_sentinel_kind=3U;h->w4f16_decode_sentinel_input=v.u;h->w4f16_decode_sentinel_expected=expected;h->w4f16_decode_sentinel_actual=back[i];}++errors;
+            }
         }
     }
     return errors;
@@ -16641,7 +16646,7 @@ static int qbh_scan_softmax_f16_exact_batch(struct qbh_block_header *h,
         qbh_f32_to_f16_contiguous(work+64U,dst+64U);
     }
     if(h->w4f16_decode_audit && !h->w4f16_decode_opt_calls)
-        h->w4f16_decode_conversion_audit_mismatches+=qbh_f16_conversion_sentinels();
+        h->w4f16_decode_conversion_audit_mismatches+=qbh_f16_conversion_sentinels(h);
     ++h->w4f16_decode_opt_calls;
     if(h->w4f16_decode_audit) {
         qbh_scan_softmax_f16(scores,audit,1U,past,padded);
