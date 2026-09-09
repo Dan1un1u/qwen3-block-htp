@@ -3113,6 +3113,7 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U64(u8_attention_qk_hmx_ticks);
     QBH_REPLAY_PROFILE_U32(wide_score_mode);
     QBH_REPLAY_PROFILE_U32(dense_r4_mode);
+    QBH_REPLAY_PROFILE_U32(dense_r4_optimization);
     QBH_REPLAY_PROFILE_U32(dense_r4_calls);
     QBH_REPLAY_PROFILE_U32(dense_r4_hmx_calls);
     QBH_REPLAY_PROFILE_U32(dense_r4_rows);
@@ -6824,6 +6825,8 @@ int main(int argc, char **argv) {
     header->wide_score_mode=wide_score_mode;
     header->dense_r4_mode=getenv("QBH_DENSE_R4") ? (uint32_t)atoi(getenv("QBH_DENSE_R4")) : 0U;
     header->dense_r4_audit_offset=(uint32_t)dense_r4_audit_offset;
+    header->dense_r4_optimization=getenv("QBH_R4_OPT") ? (uint32_t)atoi(getenv("QBH_R4_OPT")) : 0U;
+    if(header->dense_r4_optimization>2U) return 2;
     if(header->dense_r4_mode) {
         if(variant!=QBH_BLOCK_W4U8 || header->dense_r4_mode>2U) return 2;
         header->w4u8_decode_direct_n_gate_up_swiglu_stream=0U;
