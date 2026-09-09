@@ -9,3 +9,7 @@ Sequential runner currently in development_01.log, then triage -> route -> branc
 After triage, route.json seals the prespecified choice: J/C64<=1.05 overall and<=1.10 eachcell selects attention branch F,C64,B,J,K,QK,V,C; otherwise downstream factorial F,C64,B,J,R,S,RS,JR,JS,JRS. Routing is not acceptance. Confirmation untouched until route frozen, no final-based additional candidate. Missing branch development arms then independent confirmation follow automatically under user approval.
 
 Prepared report_exp0254_candidate.py in results; review and install source after inference, add independent integrity reconstruction, report/nextdirection/profile N/A, source/provenance/evidence seal and memory closure. No deployable A8 candidate yet; restoration quality cannot authorize hardware profiling of FP16 diagnostics. Discuss concrete A8 repair after attribution; native W4/>10percent slowdown/numerical/model gates unchanged.
+
+## Route checkpoint
+
+Triage complete: {"F": 21.34211023294927, "C64": 22.532612616101396, "B": 25.878157651192183, "J": 26.368808132806105}. Joint/C64=1.1702508085530852, all fourcells exceed1.10. Predeclared downstream branch selected, route.json SHA256 678f70521ff577e71e62fbbd7170f81528c32d1d1a435d164aadd764efa8cf06. Confirmation remains untouched at selection. Runner now executes branch_development R,S,RS,JR,JS,JRS then confirmation F,C64,B,J,R,S,RS,JR,JS,JRS. Preserve frozen route; no attention-branch additions from later scores.
