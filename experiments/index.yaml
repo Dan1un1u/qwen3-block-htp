@@ -35,16 +35,17 @@ experiments:
   local_gate: not_run
   adoption_status: pending
   runtime:
-    source_branch: codex/exp-0262-w4u8-r4-native-layout-pipeline
+    source_branch: codex/exp-0263-w4u8-r4-parallel-prefill
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     started_on: '2026-09-10'
   source_branches:
+  - codex/exp-0263-w4u8-r4-parallel-prefill
   - codex/exp-0262-w4u8-r4-native-layout-pipeline
   source_commits:
   - 53dde49331bb1b7d256924a24aa335fff02a1428
   evidence:
     protocol: PC077
-    current_stage: parent_binding
+    current_stage: parallel_implementation
 - id: EXP-0262
   slug: w4u8-r4-native-layout-pipeline
   title: W4A8 dense R4 native layout and pipeline optimization
