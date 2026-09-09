@@ -245,6 +245,8 @@ struct qbh_block_buffers {
     uint8_t *gate_up_scale_cache;
     uint8_t *w4u8_silu_lut;
     uint8_t *w4u8_gather_scratch;
+    volatile uint32_t *r4_prefill_ready;
+    uint32_t r4_prefill_prepared;
     uint8_t *persistent_v_tail;
     uint8_t *persistent_k_tail;
     struct qbh_attention_config *attention_configs;
@@ -9421,6 +9423,14 @@ static int qbh_run_w4u8_direct_n_projection(
             return -1;
         }
 
+        if(header->dense_r4_mode && header->dense_r4_optimization==4U &&
+           header->logical_m==64U && desc==&header->projections[QBH_BLOCK_PROJ_UP] &&
+           buffers->r4_prefill_ready) {
+            uint32_t group=current_first/32U;
+            buffers->r4_prefill_ready[group]=1U;
+            asm volatile("release(%0):at" :: "r"(&buffers->r4_prefill_ready[group]) : "memory");
+            ++header->dense_r4_prefill_publish_count;
+        }
         current_first = next_first;
         current_tiles = next_tiles;
         current_slot = next_slot;
@@ -14720,6 +14730,7 @@ static int qbh_run_w4u8_direct_n_mlp(
          (QBH_BLOCK_ALIGNMENT - 1U)) != 0U) {
         return -1;
     }
+    buffers->r4_prefill_ready=NULL;buffers->r4_prefill_prepared=0U;
     middle_native = mlp_arena;
     /* The legacy streaming path places Down output inside its private
      * q-based phase plan.  Direct-n uses the global packed-weight slots,
@@ -14766,15 +14777,17 @@ static int qbh_run_w4u8_direct_n_mlp(
                 &header->projections[QBH_BLOCK_PROJ_GATE], buffers, worker,
                 mlp_arena + gate_up_layout.vtcm_activation_offset,
                 gate_native,
-                header->w4u8_decode_direct_n_gate_up_batch_n_tiles) != 0 ||
-            qbh_run_w4u8_direct_n_projection(
-                header, shared,
-                &header->projections[QBH_BLOCK_PROJ_UP], buffers, worker,
-                mlp_arena + gate_up_layout.vtcm_activation_offset,
-                up_native,
-                header->w4u8_decode_direct_n_gate_up_batch_n_tiles) != 0) {
-            return -1;
-        }
+                header->w4u8_decode_direct_n_gate_up_batch_n_tiles) != 0)return -1;
+        struct qbh_r4_convert_task r4_task={.h=header,.b=buffers,.stream=1U};
+        const uint32_t stream_r4=prefill_direct && header->dense_r4_mode &&
+            header->dense_r4_optimization==4U;
+        if(stream_r4 && qbh_r4_prefill_start(pool,&r4_task))return -1;
+        int up_status=qbh_run_w4u8_direct_n_projection(
+            header,shared,&header->projections[QBH_BLOCK_PROJ_UP],buffers,worker,
+            mlp_arena+gate_up_layout.vtcm_activation_offset,up_native,
+            header->w4u8_decode_direct_n_gate_up_batch_n_tiles);
+        if(stream_r4 && qbh_r4_prefill_finish(pool,&r4_task,up_status))return -1;
+        if(up_status)return -1;
     }
     qbh_r3_chain_audit(header,shared,6,gate_native,393216U);
     qbh_r3_chain_audit(header,shared,7,up_native,393216U);

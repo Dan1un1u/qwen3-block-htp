@@ -105,13 +105,32 @@ struct qbh_r4_convert_task {
     const __fp16 *weight;
     uint8_t *middle;
     __fp16 *audit;
-    uint32_t finish,first,count;
+    uint32_t finish,first,count,stream;
+    volatile uint32_t ready[6],abort;
+    uint32_t consumed[2];
     uint64_t work_ticks[3];
 };
 static void qbh_r4_convert_worker(void *context,uint32_t id) {
     struct qbh_r4_convert_task *task=context;
     uint64_t t=HAP_perf_get_qtimer_count();
     uint8_t *scratch=task->b->w4u8_gather_scratch+id*256U;
+    if(task->stream) {
+        task->work_ticks[id]=0;
+        for(uint32_t g=0;g<6U;++g) {
+            while(!task->ready[g]) {
+                if(task->abort)return;
+                asm volatile("pause(#8)" ::: "memory");
+            }
+            asm volatile("barrier" ::: "memory");
+            uint64_t work=HAP_perf_get_qtimer_count();
+            for(uint32_t tile=g*32U+id*16U;tile<g*32U+(id+1U)*16U;++tile)
+                qbh_r4_prepare_tile(task->b->gate,task->b->up,(__fp16 *)task->b->hmx_activation,
+                    64U,tile,(const uint16_t *)task->b->w4u8_silu_lut,scratch);
+            task->work_ticks[id]+=HAP_perf_get_qtimer_count()-work;
+            ++task->consumed[id];
+        }
+        return;
+    }
     if(task->finish)qbh_r4_finish_range(task->h,task->weight,task->middle,
         task->first,task->count,(HVX_Vector *)scratch,task->audit,id*4U,4U);
     else for(uint32_t tile=id*64U;tile<(id+1U)*64U;++tile)
@@ -139,6 +158,43 @@ static int qbh_r4_convert_parallel(struct qbh_block_w4f16_pool *pool,
     ++task->h->dense_r4_parallel_dispatches;
     if(task->finish)task->h->dense_r4_parallel_finish_groups+=12U;
     else task->h->dense_r4_parallel_prepare_tiles+=192U;
+    return 0;
+}
+/* Up native outputs and raw H512 input occupy independent arenas. A
+ * ready publication follows the HMX completion barrier for that Up group.
+ * Only these two workers own LUT gather scratch until the final join. */
+static int qbh_r4_prefill_start(struct qbh_block_w4f16_pool *pool,
+    struct qbh_r4_convert_task *task) {
+    if(!pool || pool->worker_count<2U)return -1;
+    for(uint32_t i=0;i<pool->worker_count;++i)
+        if(pool->jobs[i].command_kind!=QBH_BLOCK_HVX_POOL_NONE)return -1;
+    pool->active_worker_count=2U;pool->extra_expand_worker_index=UINT32_MAX;
+    task->b->r4_prefill_ready=task->ready;
+    for(uint32_t i=0;i<2U;++i) {
+        pool->jobs[i].r4_convert_context=task;
+        pool->jobs[i].command_kind=QBH_BLOCK_HVX_POOL_R4_CONVERT;
+    }
+    asm volatile("barrier" ::: "memory");
+    for(uint32_t i=0;i<2U;++i)(void)qurt_sem_up(&pool->command_ready[i]);
+    return 0;
+}
+static int qbh_r4_prefill_finish(struct qbh_block_w4f16_pool *pool,
+    struct qbh_r4_convert_task *task,int abort) {
+    if(abort)task->abort=1U;
+    asm volatile("barrier" ::: "memory");
+    uint64_t t=HAP_perf_get_qtimer_count();
+    qbh_w4f16_pool_wait(pool);pool->active_worker_count=0U;
+    task->h->dense_r4_prefill_join_ticks+=HAP_perf_get_qtimer_count()-t;
+    task->b->r4_prefill_ready=NULL;
+    for(uint32_t i=0;i<2U;++i) {
+        task->h->dense_r4_prefill_consume_count+=task->consumed[i];
+        task->h->dense_r4_prefill_worker_ticks+=task->work_ticks[i];
+        task->h->dense_r4_parallel_work_ticks+=task->work_ticks[i];
+    }
+    ++task->h->dense_r4_parallel_dispatches;
+    if(abort || task->consumed[0]!=6U || task->consumed[1]!=6U)return -1;
+    task->h->dense_r4_parallel_prepare_tiles+=192U;
+    task->b->r4_prefill_prepared=1U;
     return 0;
 }
 static int qbh_r4_finish_vector(struct qbh_block_header *h,
@@ -178,7 +234,8 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
     uint64_t t=HAP_perf_get_qtimer_count();
     const uint32_t streamed=rows==1U && h->dense_r4_optimization>=2U &&
         h->w4u8_decode_direct_n_gate_up_swiglu_stream;
-    if(!streamed) {
+    const uint32_t prefill_streamed=rows==64U && h->dense_r4_optimization==4U && b->r4_prefill_prepared;
+    if(!streamed && !prefill_streamed) {
         if(!h->dense_r4_optimization || rows==1U)qbh_r4_zero(act,p1*512U*2U);
         if(h->dense_r4_optimization>=3U && rows==64U) {
             struct qbh_r4_convert_task task={.h=h,.b=b};
