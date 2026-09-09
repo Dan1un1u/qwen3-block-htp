@@ -41,12 +41,12 @@ experiments:
   - 6d130035cf089ba099c8f161799952bf1d70a385
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0253-float-attention
+    source_branch: codex/exp-0254-joint-attention
     approved_on: '2026-09-09'
     started_on: '2026-09-09'
   evidence:
     protocol: PC068
-    current_stage: registered_branch_setup
+    current_stage: implementation
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0254
     baseline_promoted: false
 - id: EXP-0253
