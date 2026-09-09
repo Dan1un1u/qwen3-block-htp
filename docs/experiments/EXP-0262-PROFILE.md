@@ -1,6 +1,6 @@
-# EXP0262 full-width R4 single-layer cost
+# EXP0262 R4 native layout and pipeline optimization
 
-Branch codex/exp-0262-w4u8-r4-native-layout-pipeline; reporting source 016cb33213457caf1fa61f1b44655c07bc136c9f; native runtime de5a612e8e044449c04bbaf63f7840321492a89d ABI125. Evidence /mnt/d/llm_exp/results/qwen3-block-htp/exp0262; candidate artifacts /mnt/d/llm_exp/models/qwen3-block-htp/exp0261/r4.
+Branch codex/exp-0262-w4u8-r4-native-layout-pipeline; reporting source 001afd46b7d63c206f9cb4fb31b8a0e905191d1f; native runtime de5a612e8e044449c04bbaf63f7840321492a89d ABI125. Evidence /mnt/d/llm_exp/results/qwen3-block-htp/exp0262; candidate artifacts /mnt/d/llm_exp/models/qwen3-block-htp/exp0261/r4.
 
 Two paired arms: current optimized R3 OPT2 + wideNR64/nativeW4, and the same path plus full6144 R4 before middle A8. Five short and ten alternating formal pairs, repeat1/repeat10; one prefillM64 and eight consecutive teacher-input M1 steps per repetition. KV starts empty and is computed/appended on device. No frozen-snapshot decode, discarded warmups, selection, extra rounds or fullmodel extrapolation.
 
@@ -35,6 +35,15 @@ Physical: requested/granted8MiB, existing peak plan6682752bytes; phase-dead HMXa
 Retained recovery: runner_parse_failure.txt records a Python declaration replacement error before staging. Native vector and pipeline audits exact against sealed EXP0261; samebinary original R4 also exact. No numerical relaxation or weight/hash replacement.
 
 Bounded native-layout and pipeline optimization completed. Remaining prefill overhead includes FP16 LUT preparation and gather/quantization traffic. No fullmodel or baseline promotion. Device PPL and R4 E2E token/s: N/A (single layer only).
+
+Historical EXP0261 comparison (separate campaigns, not paired inference):
+
+|Mode|Previous R4 us|Optimized R4 us|Observed speedup|
+|---|---:|---:|---:|
+|prefill|31899.607|2223.518|14.346x|
+|decode|1583.942|1006.825|1.573x|
+
+Exact native comparisons: 116 live tensor/cache files over original, vector and pipeline captures. Full parent371file seal independently reverified; all144files/package verified locally and remotely. Exhaustive live-address mapping and double-buffer range nonoverlap independently checked. No current model export or calibration.
 ## prefill repeat10 module overview
 
 Units us, share complete Host wall; F16/W4A16 N/A because no equivalent layer0 paired measurements. Historical fullmodel timings are not substituted. R4 is included in Gate/Up+SwiGLU activation attribution.
