@@ -153,3 +153,12 @@ option(QBH_EXP0240_SINGLE_LAYER "Build EXP0240 layer14 replay gate" OFF)
 if(QBH_EXP0240_SINGLE_LAYER)
     add_compile_definitions(QBH_EXP0240_SINGLE_LAYER=1)
 endif()
+
+# EXP0257 independent staged device validation; no arithmetic selection here.
+set(QBH_EXP0257_LAYER_COUNT "0" CACHE STRING "EXP0257 layer count: 0 disabled, 1, 3 or 28")
+if(NOT QBH_EXP0257_LAYER_COUNT STREQUAL "0")
+    if(NOT QBH_EXP0257_LAYER_COUNT MATCHES "^(1|3|28)$")
+        message(FATAL_ERROR "Invalid EXP0257 layer count")
+    endif()
+    add_compile_definitions(QBH_EXP0257_LAYER_COUNT=${QBH_EXP0257_LAYER_COUNT})
+endif()

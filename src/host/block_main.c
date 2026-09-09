@@ -3225,7 +3225,7 @@ static void qbh_print_replay_profile(
 }
 
 
-#ifdef QBH_EXP0240_SINGLE_LAYER
+#if defined(QBH_EXP0240_SINGLE_LAYER) || (defined(QBH_EXP0257_LAYER_COUNT) && QBH_EXP0257_LAYER_COUNT < 28)
 /* Repeat is a complete replay with fresh session state; each step is one RPC.
  * Captured outputs are checked externally against independent scalar LPBQ
  * and unit-multiplier controls. Historical recipe references are not goldens
@@ -3246,8 +3246,11 @@ static int qbh_run_exp0240_layer(
         *state = initial;
         if (qbh_read_slot(shared, input) || qbh_read_slot(shared, &rope[0]) || qbh_read_slot(shared, &rope[1])) return -1;
         struct qbh_decode_layer_state *layer = &state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER];
-        memset(shared + layer->k_offset, 0, layer->k_bytes);
-        memset(shared + layer->v_offset, 0, layer->v_bytes);
+        for (uint32_t i=0; i<QBH_VERTICAL_SLICE_LAYER_COUNT; ++i) {
+            struct qbh_decode_layer_state *q=&state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER+i];
+            memset(shared+q->k_offset,0,q->k_bytes);
+            memset(shared+q->v_offset,0,q->v_bytes);
+        }
         printf("{\"record\":\"exp0240_replay_start\",\"repeat\":%u,\"lpbq_mode\":%u,\"historical_reference_used\":false}\n", rep, h->slice_layers[0].projections[0].lpbq_mode);
         for (uint32_t step = 0U; step <= steps; ++step) {
             char name[128];
@@ -3271,6 +3274,9 @@ static int qbh_run_exp0240_layer(
             uint64_t start = qbh_monotonic_ns();
             int rc = qwen3_probe_run_block(session->handle, fd, bytes);
             uint64_t elapsed = qbh_monotonic_ns() - start;
+            for(uint32_t i=0;i<QBH_VERTICAL_SLICE_LAYER_COUNT;++i) {
+                if(state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER+i].valid_length != before+h->logical_m) return -1;
+            }
             if (rc || h->dsp_status != QBH_BLOCK_STATUS_OK ||
                 layer->valid_length != before + h->logical_m || state->completed_step_count != step + 1U ||
                 h->vtcm_acquired_bytes != QBH_EXPECTED_FULL_VTCM_BYTES ||
@@ -5153,7 +5159,13 @@ int main(int argc, char **argv) {
              QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N &&
          (vertical_slice_mode != QBH_BLOCK_SLICE_ACTIVE_RANGE ||
           replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS ||
-          (QBH_VERTICAL_SLICE_LAYER_COUNT != 1U && !qbh_generation_w4u8_enabled(generation_mode)))) ||
+          (QBH_VERTICAL_SLICE_LAYER_COUNT != 1U && !qbh_generation_w4u8_enabled(generation_mode)
+#ifndef QBH_EXP0257_LAYER_COUNT
+         )
+#else
+         && QBH_EXP0257_LAYER_COUNT != 3)
+#endif
+         )) ||
         (w4u8_decode_direct_n_gate_up_batch_n_tiles != 4U &&
          w4u8_decode_direct_n_gate_up_batch_n_tiles != 8U &&
          w4u8_decode_direct_n_gate_up_batch_n_tiles != 16U &&
@@ -7105,7 +7117,7 @@ int main(int argc, char **argv) {
         goto cleanup;
     }
 
-#ifdef QBH_EXP0240_SINGLE_LAYER
+#if defined(QBH_EXP0240_SINGLE_LAYER) || (defined(QBH_EXP0257_LAYER_COUNT) && QBH_EXP0257_LAYER_COUNT < 28)
     if (replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS) {
         exit_code = qbh_run_exp0240_layer(&session, shared_fd, shared, (uint32_t)total_bytes,
             argv[1], header, &input_slot, rope_slots, repeats) == 0 ? 0 : 1;
