@@ -1855,3 +1855,5 @@ Ordered research completed. Two disjoint128doc/2048target panels frozen before i
 User continues residual repair; PC069 freezes actual-A8 trajectory static residual calibration, MSE/fanout objectives and SwiGLU-only control. Read docs/experiments/EXP-0255.md. New development/final panels and parameter freeze before selection/testing. Other recipes and hardware frozen. Parent branch temporarily bound for setup.
 
 EXP0255 checkpoint: data/calibration frozen,184 independent numerical cases pass; reproduction/development/final runner active. Read docs/SESSION_HANDOFF_EXP0255.md and inspect live logs before resuming. No candidate PPL result or hardware work yet.
+
+EXP0255 development complete, frozen dual-path rule selects original B. Six-arm independent final running; read latest appendix of docs/SESSION_HANDOFF_EXP0255.md. No residual final improvement claim.
