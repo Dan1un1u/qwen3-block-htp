@@ -3113,6 +3113,8 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U64(u8_attention_qk_hmx_ticks);
     QBH_REPLAY_PROFILE_U32(wide_score_mode);
     QBH_REPLAY_PROFILE_U32(prefix_kv_mode);
+    QBH_REPLAY_PROFILE_U32(prefix_group_patch_count);
+    printf(",\"prefix_seed_metadata_read_bytes\":%u",header->prefix_group_patch_count*256U);
     QBH_REPLAY_PROFILE_U64(u8_attention_qk_requant_ticks);
     QBH_REPLAY_PROFILE_U64(u8_attention_softmax_ticks);
     QBH_REPLAY_PROFILE_U64(u8_attention_av_hmx_ticks);

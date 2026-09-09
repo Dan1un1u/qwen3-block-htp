@@ -1373,6 +1373,7 @@ struct qbh_block_header {
     uint32_t w4u8_decode_direct_n_hmx_command_count;
     uint64_t w4u8_decode_direct_n_weight_ddr_read_bytes;
     uint64_t w4u8_decode_direct_n_expand_bytes_avoided;
+    uint32_t prefix_group_patch_count;
     struct qbh_block_slice_layer_profile
         slice_profiles[QBH_VERTICAL_SLICE_LAYER_COUNT];
 };

@@ -47,6 +47,8 @@ def deploy():
  print('DEPLOYED',len(files),flush=True)
 def env(count,wide,capacity=128):
  root=runtime_root(count);e=dict(old.ENV);e.update(QBH_WIDE_SCORE=str(wide),QBH_DENSE_R3='0',QBH_KV_CACHE_CAPACITY=str(capacity),LD_LIBRARY_PATH=root,DSP_LIBRARY_PATH=root,ADSP_LIBRARY_PATH=root)
+ seed=R/'prefix_device.json'
+ if seed.exists():e.update(QBH_PREFIX_KV='1',QBH_PREFIX_FILE=json.loads(seed.read_text())['remote'])
  return root,e
 def execute(count,e,pkg,repeat,tag):
  preflight();root=runtime_root(count);p=R/tag;p.mkdir(parents=True,exist_ok=False)

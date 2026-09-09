@@ -9,11 +9,12 @@ def validate(path,wide,repeats):
  records=[json.loads(l) for l in (path/'stdout.jsonl').read_text().splitlines() if l.startswith('{')]
  profiles=[x for x in records if x.get('record')=='generation_profile'];final=[x for x in records if x.get('generation_sequence_complete')]
  assert len(profiles)==repeats*16 and len(final)==repeats
- ref=json.loads((R/('full_nr64_v2' if wide==4 else 'full_sole')/'validated.json').read_text())['token_ids'][:16]
+ ref=json.loads((R/('seed_full_nr64' if wide==4 else 'seed_full_sole')/'validated.json').read_text())['token_ids'][:16]
  for f in final:assert f['all_steps_pass'] and f['token_ids']==ref
  fields=['metadata_stage_ticks','input_stage_ticks','input_norm_ticks','qkv_projection_ticks','qk_norm_rope_ticks','attention_ticks','o_projection_ticks','post_attention_residual_ticks','post_attention_norm_ticks','gate_up_ticks','activation_ticks','down_ticks','final_residual_ticks','cache_append_pack_ticks','cache_append_dma_ticks','block_orchestration_ticks','layer_bookkeeping_ticks','layer_unattributed_ticks']
  for i,p in enumerate(profiles):
   step=i%16;assert p['generation_step']==step and p['repeat_count']==1 and p['wide_score_mode']==wide
+  assert p['prefix_kv_mode']==1 and p['prefix_group_patch_count']==(224 if step==0 else 0)
   assert p['variant']=='W4U8' and p['backend']=='standalone_fastrpc_dsp' and p['qnn']=='none'
   assert p['vtcm_acquired_bytes']==p['vtcm_requested_bytes']==8388608 and p['block_invocation_count']==28
   assert p['boundary_ddr_write_bytes']==p['intermediate_ddr_read_bytes']==p['intermediate_ddr_write_bytes']==p['intermediate_spill_fill_count']==0

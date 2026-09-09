@@ -13494,6 +13494,7 @@ static void qbh_exp0257_prefix_group(struct qbh_block_header *header,
         view->k_weight[tile*1024U+(lane/4U)*128U+(lane%4U)]=(int8_t)centered;
         sum+=centered;
     }
+    qbh_atomic_fetch_increment(&header->prefix_group_patch_count);
     int32_t divisor=1U<<view->config->score_shift;
     view->qk_bias[32U]=(uint32_t)(-view->config->q_zero_point*sum+128*divisor+(view->config->score_shift?divisor/2:0));
     if(header->prefix_kv_mode==2U) qbh_attention_u8_pack_k_native(k,view->config,view->k_weight,view->qk_bias);
