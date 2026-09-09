@@ -24,6 +24,28 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0260
+  slug: w4f16-decode-active-row-layout
+  title: W4F16 decode active-row and exact layout optimization
+  parent: EXP-0259
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: not_applicable
+  record: docs/experiments/EXP-0260.md
+  approval_ref: 'User: 下一项任务是优化一下W4A16的decode，目前我们主要针对W4A8优化decode，还要很多工作可能可以反哺。 PC074'
+  source_branches:
+  - codex/exp-0260-w4f16-decode-active-row-layout
+  - codex/exp-0259-dense-r3-pipeline-optimization
+  source_commits:
+  - 4fad27dc0a50a6d541f1d23ecf15018ec1099df6
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0259-dense-r3-pipeline-optimization
+    started_on: '2026-09-09'
+  evidence:
+    stage: registered_before_implementation
+    numerical_eligible: false
 - id: EXP-0259
   slug: dense-r3-pipeline-optimization
   title: Dense R3 data movement and pipeline optimization

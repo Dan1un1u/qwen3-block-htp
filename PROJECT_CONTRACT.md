@@ -337,3 +337,7 @@ User explicitly replies 允许，补做实验 to the EXP0258 proposal. Under doc
 ## PC073 — User-approved dense R3 implementation optimization
 
 User approves optimizing the current standalone R3 implementation and pipeline, without mllm. EXP0259 follows docs/experiments/EXP-0259.md: constant matrix/layout movement/worker overlap only, frozen arithmetic and models, current R3 exact-output control. Known ideal-reference failure remains diagnostic, no numerical threshold relaxation or promotion. Single layer first; original10percent noR3 speed threshold controls fullmodel escalation. PC037 applies.
+
+## PC074 — User-approved W4F16 decode optimization
+
+User authorizes W4A16 decode optimization using prior W4A8 implementation experience. EXP0260 follows docs/experiments/EXP-0260.md: frozen C64 per-channel W4 and FP16 arithmetic, exact data movement/active-row/conversion optimization, current samebinary control, single-layer then slice/fullmodel validation and5short10formal profiling. Other recipes frozen; numerical/physical gates unchanged, no automatic baseline promotion. PC037 recovery applies.

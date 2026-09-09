@@ -1930,3 +1930,7 @@ Layer0 same-input M64+8M1:108 full-file comparisons plus independent dense compo
 Warm R3 repeat10: prefill64 1703.358835 token/s; decode15 47.869072;16-output generation loop 43.994826. Paired noR3: 1705.317688, 48.357248, 44.342794. Fullmodel speed eligibility True. Historical EXP0258 oldR3 loop25.461939 token/s is nonpaired; use new paired control for gate.
 
 Exact implementation equivalence passed; idealFloat64 whole-layer R3 numerical gate remains failed. No new PPL or quality acceptance, no baseline promotion. All recipes/weights frozen. Next discuss quality alignment/longer context evidence; no independent new experiment authorized.
+
+## EXP0260 active
+
+User authorizes W4F16 decode optimization. Read PC074 and EXP0260 protocol. Freeze C64 weights/math; first exact active-row/layout/FP16 conversion candidate in dynamic attention, then layer/slice/fullmodel paired validation. Parentbranch temporary for controlled sourcebranch creation.
