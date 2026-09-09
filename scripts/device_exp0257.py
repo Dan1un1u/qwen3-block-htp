@@ -59,8 +59,9 @@ def execute(count,e,pkg,repeat,tag):
  if r.returncode:raise RuntimeError(tag)
  return p
 
-def replay(count,wide,tag,pkg=None,dump=True):
+def replay(count,wide,tag,pkg=None,dump=True,prefix_mode=None):
  root,e=env(count,wide,72 if pkg is None else 128)
+ if prefix_mode is not None:e['QBH_PREFIX_KV']=str(prefix_mode)
  if dump:
   e['QBH_REPLAY_DUMP_DIR']=root+'/'+tag;e['QBH_DENSE_R3_AUDIT']='1';adb('shell',f'mkdir -p {e["QBH_REPLAY_DUMP_DIR"]}')
  p=execute(count,e,pkg or root+'/control',1,tag)
