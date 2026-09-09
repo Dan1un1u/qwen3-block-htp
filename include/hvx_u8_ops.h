@@ -16,6 +16,10 @@
 void qbh_hvx_r3_prepare_head(const uint8_t *native, uint32_t rows,
     const struct qbh_block_qparam *input_qparam, const __fp16 *gamma,
     const uint8_t *rope_sf32_cache, __fp16 *row_major);
+void qbh_hvx_r3_prepare_head_vector(const uint8_t *, uint32_t,
+    const struct qbh_block_qparam *, const __fp16 *, const uint8_t *, __fp16 *);
+void qbh_hvx_r3_quantize_head_vector(const __fp16 *, uint8_t *, uint32_t,
+    const struct qbh_block_qparam *);
 void qbh_hvx_r3_quantize_head(const __fp16 *row_major, uint8_t *native,
     uint32_t rows, const struct qbh_block_qparam *output_qparam);
 

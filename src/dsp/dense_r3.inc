@@ -1,3 +1,4 @@
+#include "r3_sign_matrix.inc"
 /* EXP0247: explicit dense HMX GEMM. Included after shared block helpers.
  * Gate/up and projection scratch are dead after the QKV completion barrier.
  * Every head uses the same right transform; cached history is never touched. */
@@ -75,7 +76,8 @@ static int qbh_run_dense_r3(struct qbh_block_header *h,uint8_t *shared,
     const __fp16 normalization=(__fp16)0.08838834764831844f;
     float scales[32] __attribute__((aligned(128)));
     if (h->dense_r3_mode==0U) return 0;
-    if (h->dense_r3_mode>5U || h->variant!=QBH_BLOCK_W4U8 ||
+    if (h->dense_r3_optimization>2U ||
+        (h->dense_r3_optimization && h->dense_r3_mode!=1U) || h->dense_r3_mode>5U || h->variant!=QBH_BLOCK_W4U8 ||
         (logical_rows!=1U && logical_rows!=64U) ||
         h->u8_norm_reduction_mode < QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE ||
         (h->dense_r3_audit_offset && !qbh_range_valid(h->dense_r3_audit_offset,
@@ -84,18 +86,24 @@ static int qbh_run_dense_r3(struct qbh_block_header *h,uint8_t *shared,
                    "R3 input/output must fit the dead HMX activation arena");
     h->dense_r3_rows=rows; h->dense_r3_hmx_calls=0; h->dense_r3_refined_values=0;
     uint64_t start=HAP_perf_get_qtimer_count();
+    if (h->dense_r3_optimization<2U) {
     memset(raw,0,padded*128U*2U);
     for (uint32_t head=0;head<24U;++head) {
         const uint32_t k=head>=16U;
-        qbh_hvx_r3_prepare_head((k?b->k:b->q)+(head-(k?16U:0U))*8192U,
+        (h->dense_r3_optimization ? qbh_hvx_r3_prepare_head_vector : qbh_hvx_r3_prepare_head)((k?b->k:b->q)+(head-(k?16U:0U))*8192U,
             logical_rows,&h->qparams[k?QBH_BLOCK_QP_K_PROJECTION:QBH_BLOCK_QP_Q_PROJECTION],
             (const __fp16 *)(k?b->k_norm_weight:b->q_norm_weight),
             b->attention_projection+QBH_QK_ROPE_SF32_CACHE_OFFSET,
             raw+head*logical_rows*128U);
     }
+    } /* Streamed prepare already owns raw, joined by QKV ring. */
     qbh_r3_pack(raw,act,padded,0U);
     /* Materialize the full dense matrix, with no fast-transform recurrence. */
-    for (uint32_t n=0;n<128U;++n) for (uint32_t k=0;k<128U;++k) {
+    if (h->dense_r3_optimization) {
+        for (uint32_t i=0;i<sizeof(qbh_r3_sign_matrix)/128U;++i)
+            ((HVX_Vector *)weight)[i]=((const HVX_Vector *)qbh_r3_sign_matrix)[i];
+        h->dense_r3_constant_read_bytes+=sizeof(qbh_r3_sign_matrix);
+    } else for (uint32_t n=0;n<128U;++n) for (uint32_t k=0;k<128U;++k) {
         size_t pos=((n/32U)*4U+k/32U)*1024U+
             qbh_hmx_fp16_tile_offset(k%32U,n%32U);
         weight[pos]=h->dense_r3_mode==3U ? (__fp16)(n==k) :
@@ -133,7 +141,7 @@ static int qbh_run_dense_r3(struct qbh_block_header *h,uint8_t *shared,
     start=HAP_perf_get_qtimer_count();
     for (uint32_t head=0;head<24U;++head) {
         uint32_t k=head>=16U;
-        qbh_hvx_r3_quantize_head(result+head*logical_rows*128U,
+        (h->dense_r3_optimization ? qbh_hvx_r3_quantize_head_vector : qbh_hvx_r3_quantize_head)(result+head*logical_rows*128U,
             (k?b->k:b->q)+(head-(k?16U:0U))*8192U,logical_rows,
             &h->qparams[k?QBH_BLOCK_QP_K_ROPE:QBH_BLOCK_QP_Q_ROPE]);
     }

@@ -10210,9 +10210,14 @@ static int qbh_run_w4u8_qkv_ring(
     for (uint32_t slot = 0U; slot < state.slot_count; ++slot) {
         if (state.direct_n_weights != 0U &&
             state.tiles_per_batch == 32U) {
-            state.bias_slots[slot] = slot == 0U
-                ? buffers->gate
-                : buffers->up;
+            /* Streamed R3 owns gate for post-RoPE FP16 rows. The original
+             * K-operand scratch is dead until the ring joins; use it for
+             * the two bias slots, disjoint from worker outputs/RoPE cache. */
+            _Static_assert(2U*32U*QBH_HMX_BIAS_BYTES <=
+                8U*QBH_ATTN_U8_GROUP_SCRATCH_BYTES,"R3 ring bias scratch");
+            state.bias_slots[slot] = header->dense_r3_optimization==2U
+                ? buffers->attention_concat+slot*32U*QBH_HMX_BIAS_BYTES
+                : slot == 0U ? buffers->gate : buffers->up;
         } else if (state.direct_n_weights != 0U &&
             state.tiles_per_batch == 16U) {
             state.bias_slots[slot] = slot == 0U
@@ -10267,6 +10272,12 @@ static int qbh_run_w4u8_qkv_ring(
         goto cleanup;
     }
 
+    if (header->dense_r3_optimization==2U) {
+        if (header->dense_r3_mode!=1U || !state.direct_n_weights ||
+            state.slot_count!=2U || state.tiles_per_batch!=32U) goto cleanup;
+        /* Every live row is written exactly once by a head worker. */
+        if (logical_rows==1U) memset(buffers->gate+24U*128U*2U,0,8U*128U*2U);
+    }
     pool->qkv_ring_state = &state;
     pool->attention_header = header;
     pool->attention_buffers = buffers;
@@ -10410,11 +10421,15 @@ finish:
     }
     if (pool_started != 0) {
         uint64_t wait_before = header->attention_qk_norm_pool_wait_ticks;
+        uint32_t parallel_heads_before=header->dense_r3_total_parallel_heads;
         if (qbh_hvx_pool_u8_qk_prep_wait_async(header, pool) != 0) {
             qbh_w4u8_qkv_ring_abort(&state);
         }
         header->w4u8_qkv_ring_pool_wait_ticks +=
             header->attention_qk_norm_pool_wait_ticks - wait_before;
+        if (header->dense_r3_optimization==2U &&
+            header->dense_r3_total_parallel_heads-parallel_heads_before!=24U)
+            qbh_w4u8_qkv_ring_abort(&state);
     }
     header->w4u8_qkv_ring_slot_count = state.slot_count;
     header->w4u8_qkv_ring_expand_worker_count =
@@ -13231,6 +13246,19 @@ static void qbh_attention_u8_qk_prep_pool_run_tasks(
             uint32_t task=qbh_atomic_fetch_increment(&pool->next_attention_task);
             if (task>=24U || pool->attention_qk_stream_abort) break;
             if (qbh_attention_u8_qk_prep_wait_ready(pool,task)!=0) return;
+            if (pool->attention_header->dense_r3_optimization==2U) {
+                struct qbh_block_header *h=pool->attention_header;
+                struct qbh_block_buffers *b=pool->attention_buffers;
+                uint32_t rows=pool->qkv_ring_state->decode_qk_row_contract?1U:64U;
+                uint32_t k=task>=16U;
+                uint64_t t=HAP_perf_get_qtimer_count();
+                qbh_hvx_r3_prepare_head_vector((k?b->k:b->q)+(task-(k?16U:0U))*8192U,
+                    rows,&h->qparams[k?QBH_BLOCK_QP_K_PROJECTION:QBH_BLOCK_QP_Q_PROJECTION],
+                    (const __fp16 *)(k?b->k_norm_weight:b->q_norm_weight),
+                    b->attention_projection+QBH_QK_ROPE_SF32_CACHE_OFFSET,
+                    (__fp16 *)b->gate+task*rows*128U);
+                job->u8_attention_qk_norm_rope_ticks+=HAP_perf_get_qtimer_count()-t;
+            }
             ++job->attention_qk_norm_task_count;
             if (task>=16U) ++job->u8_attention_prepared_group_count;
         }
@@ -13387,6 +13415,10 @@ static int qbh_hvx_pool_u8_qk_prep_wait_async(
             job->u8_qk_quarter_pair_count;
         header->attention_qk_norm_task_count +=
             job->attention_qk_norm_task_count;
+        if (header->dense_r3_optimization==2U) {
+            header->dense_r3_total_parallel_heads+=job->attention_qk_norm_task_count;
+            header->dense_r3_total_parallel_work_ticks+=job->u8_attention_qk_norm_rope_ticks;
+        }
         job->attention_qk_norm_task_count = 0U;
         header->u8_attention_k_pack_ticks +=
             job->u8_attention_k_pack_ticks;

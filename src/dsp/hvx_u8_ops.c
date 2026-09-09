@@ -974,6 +974,68 @@ void qbh_hvx_r3_quantize_head(const __fp16 *source, uint8_t *native,
     asm volatile("barrier" ::: "memory");
 }
 
+/* Exact four-row byte transpose. Decode preserves the other three physical
+ * rows through read/modify/write; no padded value enters arithmetic. */
+static void qbh_r3_load4(const uint8_t *native, uint8_t *cache) {
+    const HVX_Vector a=*(const HVX_Vector *)(native+0*2048);
+    const HVX_Vector b=*(const HVX_Vector *)(native+1*2048);
+    const HVX_Vector c=*(const HVX_Vector *)(native+2*2048);
+    const HVX_Vector d=*(const HVX_Vector *)(native+3*2048);
+    HVX_VectorPair ab=Q6_W_vshuff_VVR(b,a,-32),cd=Q6_W_vshuff_VVR(d,c,-32);
+    HVX_VectorPair x=Q6_W_vshuff_VVR(Q6_V_lo_W(cd),Q6_V_lo_W(ab),-64);
+    HVX_VectorPair y=Q6_W_vshuff_VVR(Q6_V_hi_W(cd),Q6_V_hi_W(ab),-64);
+    HVX_Vector *out=(HVX_Vector *)cache;
+    out[0]=Q6_V_lo_W(x);out[1]=Q6_V_hi_W(x);out[2]=Q6_V_lo_W(y);out[3]=Q6_V_hi_W(y);
+}
+static void qbh_r3_store4(const uint8_t *cache,uint8_t *native) {
+    const HVX_Vector *v=(const HVX_Vector *)cache;
+    HVX_VectorPair ab=Q6_W_vshuff_VVR(v[1],v[0],-32),cd=Q6_W_vshuff_VVR(v[3],v[2],-32);
+    HVX_VectorPair x=Q6_W_vshuff_VVR(Q6_V_lo_W(cd),Q6_V_lo_W(ab),-64);
+    HVX_VectorPair y=Q6_W_vshuff_VVR(Q6_V_hi_W(cd),Q6_V_hi_W(ab),-64);
+    *(HVX_Vector *)(native+0*2048)=Q6_V_lo_W(x);
+    *(HVX_Vector *)(native+1*2048)=Q6_V_hi_W(x);
+    *(HVX_Vector *)(native+2*2048)=Q6_V_lo_W(y);
+    *(HVX_Vector *)(native+3*2048)=Q6_V_hi_W(y);
+}
+void qbh_hvx_r3_prepare_head_vector(const uint8_t *native,uint32_t rows,
+    const struct qbh_block_qparam *qp,const __fp16 *gamma,
+    const uint8_t *rope_sf32_cache,__fp16 *out) {
+    struct qbh_qk_norm_rope_gamma_sf32 g __attribute__((aligned(128)));
+    const struct qbh_qk_norm_rope_row_sf32 *rope=(const void *)rope_sf32_cache;
+    uint8_t cache[512] __attribute__((aligned(128)));
+    qbh_qk_norm_rope_load_gamma_sf32(gamma,&g);
+    for(uint32_t row=0;row<rows;row+=4) {
+        qbh_r3_load4(native+row*32,cache);
+        for(uint32_t j=0;j<4 && row+j<rows;++j) {
+            uint8_t *values=cache+j*128;
+            uint64_t sum=qbh_centered_square_sum(values,128,qp->zero_point);
+            float coefficient=qp->scale/sqrtf((float)sum*qp->scale*qp->scale/128.0f+1.0e-6f);
+            qbh_r3_rope_fp16(values,qp->zero_point,out+(row+j)*128,&g,rope+row+j,coefficient);
+        }
+    }
+    asm volatile("barrier" ::: "memory");
+}
+void qbh_hvx_r3_quantize_head_vector(const __fp16 *source,uint8_t *native,
+    uint32_t rows,const struct qbh_block_qparam *qp) {
+    uint8_t cache[512] __attribute__((aligned(128)));
+    for(uint32_t row=0;row<rows;row+=4) {
+        if(rows-row<4) qbh_r3_load4(native+row*32,cache);
+        for(uint32_t j=0;j<4 && row+j<rows;++j) {
+            const __fp16 *src=source+(row+j)*128;
+            HVX_VectorPair a=Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)src);
+            HVX_VectorPair b=Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)(src+64));
+            struct qbh_qf32_quad q;
+            q.lane[0]=qbh_sf32_scale_and_offset(Q6_V_lo_W(a),1.0f/qp->scale,(float)qp->zero_point);
+            q.lane[1]=qbh_sf32_scale_and_offset(Q6_V_hi_W(a),1.0f/qp->scale,(float)qp->zero_point);
+            q.lane[2]=qbh_sf32_scale_and_offset(Q6_V_lo_W(b),1.0f/qp->scale,(float)qp->zero_point);
+            q.lane[3]=qbh_sf32_scale_and_offset(Q6_V_hi_W(b),1.0f/qp->scale,(float)qp->zero_point);
+            ((HVX_Vector *)cache)[j]=qbh_pack_qf32_to_u8(&q);
+        }
+        qbh_r3_store4(cache,native+row*32);
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
 static inline HVX_Vector qbh_qk_norm_quarter_sf32(
     HVX_Vector centered_half, HVX_Vector gamma,
     HVX_Vector coefficient, HVX_Vector zero,

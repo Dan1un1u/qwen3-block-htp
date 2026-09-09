@@ -3113,6 +3113,10 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U64(u8_attention_qk_hmx_ticks);
     QBH_REPLAY_PROFILE_U32(wide_score_mode);
     QBH_REPLAY_PROFILE_U32(dense_r3_mode);
+    QBH_REPLAY_PROFILE_U32(dense_r3_optimization);
+    QBH_REPLAY_PROFILE_U32(dense_r3_total_parallel_heads);
+    QBH_REPLAY_PROFILE_U32(dense_r3_constant_read_bytes);
+    QBH_REPLAY_PROFILE_U64(dense_r3_total_parallel_work_ticks);
     QBH_REPLAY_PROFILE_U32(generation_lm_head_direct_slot_join_count);
     QBH_REPLAY_PROFILE_U32(dense_r3_total_calls);
     QBH_REPLAY_PROFILE_U32(dense_r3_total_rows);
@@ -6789,6 +6793,7 @@ int main(int argc, char **argv) {
     }
     header->wide_score_mode=wide_score_mode;
     header->dense_r3_mode=dense_r3_mode;
+    header->dense_r3_optimization=getenv("QBH_R3_OPT") ? (uint32_t)atoi(getenv("QBH_R3_OPT")) : 0U;
     header->dense_r3_audit_offset=(uint32_t)dense_r3_audit_offset;
     header->w4u8_boundary_audit_enabled =
         w4u8_boundary_audit_enabled;
