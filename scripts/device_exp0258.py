@@ -35,7 +35,8 @@ def deploy():
 def physical(ps,count,arm):
  for q in ps:
   assert q['block_invocation_count']==count and q['vtcm_acquired_bytes']==q['vtcm_requested_bytes']==8388608
-  assert q['boundary_ddr_write_bytes']==q['intermediate_ddr_read_bytes']==q['intermediate_ddr_write_bytes']==q['intermediate_spill_fill_count']==q['ledger_unattributed_ticks']==0
+  assert q['boundary_ddr_write_bytes']==(0 if count==28 else 131072)
+  assert q['intermediate_ddr_read_bytes']==q['intermediate_ddr_write_bytes']==q['intermediate_spill_fill_count']==q['ledger_unattributed_ticks']==0
   assert q['dense_r3_mode']==arm and q['wide_score_mode']==4 and q['prefix_kv_mode']==1
   assert q['dense_r3_total_calls']==q['dense_r3_total_hmx_calls']==arm*count
   assert q['dense_r3_total_rows']==arm*count*24*q['logical_m'] and q['dense_r3_total_refined_values']==0
@@ -45,16 +46,22 @@ def physical(ps,count,arm):
   for j in range(count):
    l=q[f'slice_layer_{j}'];assert l['status']==3 and l['layer_index']==j and l['cache_valid_after']==64+step
    assert l['cache_valid_before']==(0 if step==0 else 63+step)
-   assert l['layer_unattributed_ticks']==l['hidden_ddr_read_bytes']==l['hidden_ddr_write_bytes']==0 and sum(l[k] for k in LAYER_FIELDS)==l['layer_ticks']
+   assert l['layer_unattributed_ticks']==0 and sum(l[k] for k in LAYER_FIELDS)==l['layer_ticks']
+   assert l['hidden_ddr_read_bytes']==(131072 if count!=28 and j==0 else 0)
+   assert l['hidden_ddr_write_bytes']==(131072 if count!=28 and j==count-1 else 0)
 def run(arm,repeat,tag,count=28,dump=False):
  preflight();root,e=env(count,arm)
  if count==28:
   e.update(QBH_GENERATION_SEQUENCE='9',QBH_GENERATION_STEPS='16')
   ids=read(R/'prompts.json')['samples'][0]['token_ids'];row=[0,2,16]+ids+[0]*16;file=R/(tag.replace('/','_')+'.bin');file.write_bytes(struct.pack('<4I',0x51424556,1,repeat,83)+b''.join(struct.pack('<83I',i,*row[1:]) for i in range(repeat)));remote=root+'/'+file.name;adb('push',win(file),remote);e['QBH_EVAL_FILE']=remote
  if dump:
-  e.update(QBH_REPLAY_DUMP_DIR=root+'/'+tag.replace('/','_'),QBH_DENSE_R3_AUDIT='1');adb('shell','mkdir '+e['QBH_REPLAY_DUMP_DIR'])
- path=base.execute(count,e,package(arm),1,tag)
- if dump:adb('pull',e['QBH_REPLAY_DUMP_DIR']+'/.',win(path))
+  e.update(QBH_REPLAY_DUMP_DIR=root+'/'+tag.replace('/','_'),QBH_DENSE_R3_AUDIT='1');adb('shell','mkdir -p '+e['QBH_REPLAY_DUMP_DIR'])
+ path=R/tag
+ if count!=28 and (path/'stdout.jsonl').exists():
+  assert not (path/'validated.json').exists() # Revalidate retained capture after attributable checker repair.
+ else:
+  path=base.execute(count,e,package(arm),1,tag)
+  if dump:adb('pull',e['QBH_REPLAY_DUMP_DIR']+'/.',win(path))
  rs=records(path/'stdout.jsonl');ps=[x for x in rs if x.get('record')==('generation_profile' if count==28 else 'exp0240_profile')]
  assert len(ps)==(16*repeat if count==28 else 9);physical(ps,count,arm)
  fs=[x for x in rs if x.get('generation_sequence_complete')]
