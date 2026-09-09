@@ -8,6 +8,8 @@ def main():
  base=REMOTE+'-package-v2';manifest=json.loads((O/'package/manifest.json').read_text());proof={}
  previous=None
  for layer in range(3):
+  if (R/f'chain_layer{layer}/step08_output.bin').exists():
+   previous=R/f'chain_layer{layer}';continue
   if layer==0:pkg=base
   else:
    pkg=REMOTE+f'-chain-layer{layer}';adb('shell',f'mkdir {pkg} && ln -s {base}/* {pkg}/')
@@ -25,7 +27,7 @@ def main():
     arr.tofile(inputs/name);adb('shell',f'rm {pkg}/{name}');adb('push',win(inputs/name),pkg+'/'+name)
   previous=replay(1,4,f'chain_layer{layer}',pkg)
  # Separate normalizer formulation, identical three-layer state ownership.
- candidate=replay(3,4,'slice_nr64',base);scalar=replay(3,6,'slice_scalar_nr64',base)
+ candidate=replay(3,4,'slice_nr64_v2',base);scalar=replay(3,6,'slice_scalar_nr64_v2',base)
  for step in range(9):
   name=f'step{step:02d}_output.bin';x=(candidate/name).read_bytes();assert x==(previous/name).read_bytes(),('chain',step);assert x==(scalar/name).read_bytes(),('scalar',step)
   proof[str(step)]=dict(separate_layers_byte_exact=True,scalar_normalization_byte_exact=True,sha256=sha(candidate/name))
