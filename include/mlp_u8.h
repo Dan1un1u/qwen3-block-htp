@@ -76,4 +76,6 @@ void qbh_mlp_requant_u8_hvx(uint8_t *values, size_t elements,
                             const uint8_t *multipliers,
                             int32_t output_zero_point);
 
+void qbh_mlp_gate_up_lut_f16_hvx(const uint8_t *, const uint8_t *, uint16_t *, size_t, const uint16_t *, uint8_t *);
+
 #endif

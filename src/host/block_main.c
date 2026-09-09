@@ -3112,6 +3112,15 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U64(f16_cache_native_append_update_ticks);
     QBH_REPLAY_PROFILE_U64(u8_attention_qk_hmx_ticks);
     QBH_REPLAY_PROFILE_U32(wide_score_mode);
+    QBH_REPLAY_PROFILE_U32(dense_r4_mode);
+    QBH_REPLAY_PROFILE_U32(dense_r4_calls);
+    QBH_REPLAY_PROFILE_U32(dense_r4_hmx_calls);
+    QBH_REPLAY_PROFILE_U32(dense_r4_rows);
+    QBH_REPLAY_PROFILE_U64(dense_r4_prepare_ticks);
+    QBH_REPLAY_PROFILE_U64(dense_r4_matmul_ticks);
+    QBH_REPLAY_PROFILE_U64(dense_r4_layout_ticks);
+    QBH_REPLAY_PROFILE_U64(dense_r4_finish_ticks);
+    QBH_REPLAY_PROFILE_U64(dense_r4_audit_bytes);
     QBH_REPLAY_PROFILE_U32(dense_r3_mode);
     QBH_REPLAY_PROFILE_U32(dense_r3_optimization);
     QBH_REPLAY_PROFILE_U32(w4f16_decode_opt);
@@ -3311,6 +3320,10 @@ static int qbh_run_exp0240_layer(
             qbh_print_replay_profile(240U,"exp0240_profile","replay_step",h->variant,step,h,&result,shared+h->output_offset,h->logical_m*QBH_BLOCK_HIDDEN*(h->variant==QBH_BLOCK_W4U8?1U:2U));
             printf("{\"record\":\"dense_r3\",\"step\":%u,\"mode\":%u,\"rows\":%u,\"hmx_calls\":%u,\"refined_values\":%u,\"prepare_ticks\":%llu,\"matmul_ticks\":%llu,\"finish_ticks\":%llu}\n",step,h->dense_r3_mode,h->dense_r3_rows,h->dense_r3_hmx_calls,h->dense_r3_refined_values,(unsigned long long)h->dense_r3_prepare_ticks,(unsigned long long)h->dense_r3_matmul_ticks,(unsigned long long)h->dense_r3_finish_ticks);
             if (dump != NULL && rep == 0U) {
+                if(h->dense_r4_audit_offset) {
+                    snprintf(name,sizeof(name),"step%02u_r4.bin",step);
+                    if(qbh_write_named_tensor(dump,name,shared+h->dense_r4_audit_offset,3U*786432U)) return -1;
+                }
                 if (h->dense_r3_audit_offset) {
                     snprintf(name,sizeof(name),"step%02u_r3.bin",step);
                     if (qbh_write_named_tensor(dump,name,shared+h->dense_r3_audit_offset,QBH_DENSE_R3_AUDIT_BYTES)) return -1;
@@ -4390,7 +4403,7 @@ int main(int argc, char **argv) {
     struct qbh_file_slot w4u8_lut_slot;
     const uint32_t dense_r3_mode = getenv("QBH_DENSE_R3") ? (uint32_t)atoi(getenv("QBH_DENSE_R3")) : 0U;
     const uint32_t wide_score_mode = getenv("QBH_WIDE_SCORE") ? (uint32_t)atoi(getenv("QBH_WIDE_SCORE")) : 0U;
-    size_t dense_r3_audit_offset = 0U;
+    size_t dense_r3_audit_offset = 0U, dense_r4_audit_offset=0U;
     const uint32_t lpbq_mode = getenv("QBH_LPBQ32") != NULL ? (uint32_t)atoi(getenv("QBH_LPBQ32")) : 0U;
     struct qbh_file_slot lpbq_slots[QBH_BLOCK_PROJECTION_COUNT] = {0};
     struct qbh_file_slot weight_slots[QBH_BLOCK_PROJECTION_COUNT];
@@ -6282,6 +6295,12 @@ int main(int argc, char **argv) {
             }
             cursor += QBH_BLOCK_U8_ATTENTION_AUDIT_BYTES;
         }
+        if (getenv("QBH_DENSE_R4_AUDIT")) {
+            cursor=qbh_align_up_size(cursor,QBH_HOST_ALIGNMENT);
+            dense_r4_audit_offset=cursor;
+            if(3U*786432U>UINT32_MAX-cursor) return 2;
+            cursor+=3U*786432U;
+        }
         if (getenv("QBH_DENSE_R3_AUDIT")) {
             cursor=qbh_align_up_size(cursor,QBH_HOST_ALIGNMENT);
             dense_r3_audit_offset=cursor;
@@ -6803,6 +6822,12 @@ int main(int argc, char **argv) {
             QBH_BLOCK_SCAN_F16_AUDIT_BYTES;
     }
     header->wide_score_mode=wide_score_mode;
+    header->dense_r4_mode=getenv("QBH_DENSE_R4") ? (uint32_t)atoi(getenv("QBH_DENSE_R4")) : 0U;
+    header->dense_r4_audit_offset=(uint32_t)dense_r4_audit_offset;
+    if(header->dense_r4_mode) {
+        if(variant!=QBH_BLOCK_W4U8 || header->dense_r4_mode>1U) return 2;
+        header->w4u8_decode_direct_n_gate_up_swiglu_stream=0U;
+    }
     header->dense_r3_mode=dense_r3_mode;
     header->w4f16_decode_audit=getenv("QBH_W4F16_DECODE_AUDIT") ? (uint32_t)atoi(getenv("QBH_W4F16_DECODE_AUDIT")) : 0U;
     header->w4f16_decode_opt=getenv("QBH_W4F16_DECODE_OPT") ? (uint32_t)atoi(getenv("QBH_W4F16_DECODE_OPT")) : 0U;

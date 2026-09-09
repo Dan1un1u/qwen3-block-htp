@@ -181,3 +181,17 @@ __attribute__((noinline)) void qbh_mlp_requant_u8_hvx(
     }
     asm volatile("barrier" : : : "memory");
 }
+
+/* EXP0261: same LUT gather, retain the complete halfword rather than saturating
+ * it to U8. LUT stores unquantized FP16 SwiGLU for the R4 input boundary. */
+void qbh_mlp_gate_up_lut_f16_hvx(const uint8_t *gate,const uint8_t *up,
+    uint16_t *middle,size_t elements,const uint16_t *lut,uint8_t *scratch_bytes) {
+    HVX_Vector *scratch=(HVX_Vector *)scratch_bytes;
+    for(size_t o=0;o<elements;o+=128U) {
+        HVX_VectorPair g=Q6_Wuh_vunpack_Vub(*(const HVX_Vector *)(gate+o));
+        HVX_VectorPair u=Q6_Wuh_vunpack_Vub(*(const HVX_Vector *)(up+o));
+        ((HVX_Vector *)(middle+o))[0]=qbh_mlp_gather_half(Q6_V_lo_W(g),Q6_V_lo_W(u),lut,scratch);
+        ((HVX_Vector *)(middle+o))[1]=qbh_mlp_gather_half(Q6_V_hi_W(g),Q6_V_hi_W(u),lut,scratch+1);
+    }
+    asm volatile("barrier" ::: "memory");
+}

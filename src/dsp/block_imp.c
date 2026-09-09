@@ -14663,6 +14663,9 @@ static uint64_t qbh_fnv1a64_u8_native_tile_row(
     return hash;
 }
 
+#include "r3_sign_matrix.inc"
+#include "dense_r4.inc"
+
 static int qbh_run_w4u8_direct_n_mlp(
     struct qbh_block_header *header, uint8_t *shared,
     struct qbh_block_buffers *buffers,
@@ -14766,7 +14769,11 @@ static int qbh_run_w4u8_direct_n_mlp(
                header->projections[QBH_BLOCK_PROJ_GATE].lpbq_mode != 0U ? 8U :
                header->w4u8_decode_direct_n_gate_up_batch_n_tiles));
 
-    if (prefill_direct == 0U &&
+    if (header->dense_r4_mode != 0U) {
+        start=HAP_perf_get_qtimer_count();
+        if(qbh_run_dense_r4(header,shared,buffers,worker,middle_native)!=0) return -1;
+        header->activation_ticks+=HAP_perf_get_qtimer_count()-start;
+    } else if (prefill_direct == 0U &&
         header->w4u8_decode_direct_n_gate_up_swiglu_stream != 0U) {
         const uint32_t tile_count =
             QBH_BLOCK_INTERMEDIATE / QBH_HMX_OUTPUT_CHANNELS;
@@ -22061,7 +22068,10 @@ publish:
                 (qurt_size_t)header->replay_session_bytes,
                 QURT_MEM_CACHE_FLUSH, QURT_MEM_DCACHE);
         }
-        if (flush_status==0 && header->dense_r3_audit_offset &&
+        if(flush_status==0 && header->dense_r4_audit_offset &&
+        qbh_range_valid(header->dense_r4_audit_offset,3U*786432U,shared_bytes))
+        flush_status=qurt_mem_cache_clean((qurt_addr_t)(shared+header->dense_r4_audit_offset),3U*786432U,QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE);
+    if (flush_status==0 && header->dense_r3_audit_offset &&
             qbh_range_valid(header->dense_r3_audit_offset,QBH_DENSE_R3_AUDIT_BYTES,shared_bytes))
             flush_status=qurt_mem_cache_clean((qurt_addr_t)(shared+header->dense_r3_audit_offset),
                 QBH_DENSE_R3_AUDIT_BYTES,QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE);

@@ -1,4 +1,3 @@
-#include "r3_sign_matrix.inc"
 /* EXP0247: explicit dense HMX GEMM. Included after shared block helpers.
  * Gate/up and projection scratch are dead after the QKV completion barrier.
  * Every head uses the same right transform; cached history is never touched. */

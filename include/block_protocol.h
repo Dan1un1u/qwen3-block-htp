@@ -7,7 +7,7 @@
 #include "probe_protocol.h"
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(122)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(123)
 #define QBH_BLOCK_EXPERIMENT UINT32_C(218)
 
 #define QBH_BLOCK_M UINT32_C(64)
@@ -894,6 +894,7 @@ struct qbh_block_header {
     /* Immutable seed metadata, [layer][K/V][head][channel], all U8. */
     uint8_t prefix_kv_u8[28][2048];
     uint32_t wide_score_mode; /* 0 legacy; 1 HVX wide; 2 untimed scalar wide oracle. */
+    uint32_t dense_r4_mode, dense_r4_audit_offset;
     uint32_t dense_r3_mode; /* 0 original; 1 HMX; 2 scalar audit; 3 HMX identity; 4 scalar after HMX state audit. */
     uint32_t w4f16_decode_audit;
     uint32_t w4f16_decode_opt; /* 0 original; 1 exact conversion; 2 vector attention transfer/zero. */
@@ -941,6 +942,9 @@ struct qbh_block_header {
     uint32_t generation_expected_token_count;
 
     int32_t dsp_status;
+    uint32_t dense_r4_calls, dense_r4_hmx_calls, dense_r4_rows;
+    uint64_t dense_r4_prepare_ticks, dense_r4_matmul_ticks, dense_r4_layout_ticks, dense_r4_finish_ticks, dense_r4_audit_bytes;
+
     uint32_t generation_lm_head_direct_slot_join_count;
     uint32_t dense_r3_total_parallel_heads;
     uint32_t dense_r3_constant_read_bytes;
