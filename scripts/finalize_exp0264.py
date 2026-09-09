@@ -6,7 +6,7 @@ import hashlib
 
 def main():
  preflight();assert not (R/'EVIDENCE_SHA256.json').exists()
- z=read(R/'summary.json');assert z['timed_RPCs']==2970 and z['selected_opt']==3
+ z=read(R/'summary.json');assert z['timed_RPCs']==2970 and z['selected_opt']==6
  assert read(R/'independent_integrity.json')['pass_all']
  runtime=read(read(R/'runtime_l1.json')['manifest']);head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=S,text=True).strip()
  subprocess.run(['git','diff','--exit-code',runtime['source_head'],head,'--','src','include','CMakeLists.txt'],cwd=S,check=True)
@@ -26,7 +26,7 @@ def main():
   manifests[name]=dict(local=str(path),remote=remote,manifest_sha256=sha(path/'manifest.json'),files=m['files'])
  for file,report in [('EXP-0264-RESULTS.md','REPORT.md'),('EXP-0264-PROFILE.md','FULL_PROFILING_REPORT.md')]:assert (S/'docs/experiments'/file).read_bytes()==(R/report).read_bytes()
  native={str(p.relative_to(S)):sha(p) for d in ['src','include'] for p in sorted((S/d).rglob('*')) if p.is_file()}
- provenance=dict(experiment='EXP-0264',source_branch=subprocess.check_output(['git','branch','--show-current'],cwd=S,text=True).strip(),source_head=head,runtime=runtime,native_file_hashes=native,packages=manifests,boot=boot,ABI=126,parent_exp0262_head='53dde49331bb1b7d256924a24aa335fff02a1428',parent_exp0262_evidence='d526f6193fabb6b4cd7279c55907b06c2fcebcbcf9a875ec934c6e55fe2fe1de',source_and_remote_verified=True,device_PPL=None,E2E=None,baseline_promoted=False,closed_utc=datetime.now(timezone.utc).isoformat())
+ provenance=dict(experiment='EXP-0264',source_branch=subprocess.check_output(['git','branch','--show-current'],cwd=S,text=True).strip(),source_head=head,runtime=runtime,native_file_hashes=native,packages=manifests,boot=boot,ABI=127,parent_exp0263_head='01b42be717fbed33fe413009f40f9427f4574106',parent_exp0263_evidence='1404333eb0e87d0442d86c05be20df1e66d35c332373c58f6640c3ab10409b09',source_and_remote_verified=True,device_PPL=None,E2E=None,baseline_promoted=False,closed_utc=datetime.now(timezone.utc).isoformat())
  write(R/'ARTIFACT_PROVENANCE.json',provenance)
  files={str(p.relative_to(R)):dict(bytes=p.stat().st_size,sha256=sha(p)) for p in sorted(R.rglob('*')) if p.is_file()}
  write(R/'EVIDENCE_SHA256.json',dict(experiment='EXP-0264',files=files))
