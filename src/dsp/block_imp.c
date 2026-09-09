@@ -197,6 +197,7 @@ enum qbh_block_hvx_pool_job_kind {
     QBH_BLOCK_HVX_POOL_U8_SEGMENTED_ATTENTION = 15,
     QBH_BLOCK_HVX_POOL_W4U8_GENERATION_EXPAND = 16,
     QBH_BLOCK_HVX_POOL_U8_SWIGLU_STREAM = 17,
+    QBH_BLOCK_HVX_POOL_R4_CONVERT = 18,
 };
 
 enum qbh_block_u8_residual_kind {
@@ -339,6 +340,7 @@ struct qbh_block_w4f16_job {
     uint32_t u8_swiglu_stream_group_count;
     uint64_t u8_swiglu_stream_ticks;
     uint64_t u8_swiglu_stream_ready_wait_ticks;
+    void *r4_convert_context;
     void *w4u8_pipeline_worker_context;
     int32_t w4u8_pipeline_worker_status;
 };
@@ -4332,6 +4334,7 @@ static void qbh_w4u8_generation_expand_worker_run(
  * using one worker preserves the single gather-scratch ownership contract. */
 static void qbh_r4_prepare_tile(const uint8_t *gate,const uint8_t *up,
     __fp16 *act,uint32_t rows,uint32_t tile,const uint16_t *lut,uint8_t *scratch);
+static void qbh_r4_convert_worker(void *context,uint32_t worker_index);
 static void qbh_w4u8_swiglu_stream_worker_run(
     struct qbh_block_w4f16_pool *pool,
     struct qbh_block_w4f16_job *job) {
@@ -4519,6 +4522,8 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
         } else if (job->command_kind ==
                    QBH_BLOCK_HVX_POOL_W4U8_GENERATION_EXPAND) {
             qbh_w4u8_generation_expand_worker_run(pool, job);
+        } else if (job->command_kind == QBH_BLOCK_HVX_POOL_R4_CONVERT) {
+            qbh_r4_convert_worker(job->r4_convert_context,job->worker_index);
         } else if (job->command_kind ==
                    QBH_BLOCK_HVX_POOL_U8_SWIGLU_STREAM) {
             qbh_w4u8_swiglu_stream_worker_run(pool, job);
@@ -9551,7 +9556,7 @@ static int qbh_start_w4u8_gate_up_swiglu_stream(
     if (pool->u8_swiglu_generation == 0U) {
         ++pool->u8_swiglu_generation;
     }
-    pool->u8_r4_act = header->dense_r4_mode && header->dense_r4_optimization==2U
+    pool->u8_r4_act = header->dense_r4_mode && header->dense_r4_optimization>=2U
         ? (__fp16 *)buffers->hmx_activation : NULL;
     if(pool->u8_r4_act) {
         for(uint32_t v=0;v<32768U/128U;++v)((HVX_Vector *)pool->u8_r4_act)[v]=Q6_V_vzero();
@@ -14782,7 +14787,7 @@ static int qbh_run_w4u8_direct_n_mlp(
 
     if (header->dense_r4_mode != 0U) {
         start=HAP_perf_get_qtimer_count();
-        if(qbh_run_dense_r4(header,shared,buffers,worker,middle_native)!=0) return -1;
+        if(qbh_run_dense_r4(header,shared,buffers,worker,pool,middle_native)!=0) return -1;
         header->activation_ticks+=HAP_perf_get_qtimer_count()-start;
     } else if (prefill_direct == 0U &&
         header->w4u8_decode_direct_n_gate_up_swiglu_stream != 0U) {
