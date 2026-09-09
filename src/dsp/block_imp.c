@@ -16576,7 +16576,9 @@ static int qbh_scan_softmax_f16_exact_batch(struct qbh_block_header *h,
     const uint32_t plane=QBH_BLOCK_M*padded,valid=past+1U;
     const float scale=0.08838834764831845f;
     if(valid>128U || padded>128U) return -1;
-    memset(probability,0,2U*plane*sizeof(__fp16));
+    if(h->w4f16_decode_opt==2U)
+        qbh_hvx_zero_aligned_bytes(probability,2U*plane*sizeof(__fp16));
+    else memset(probability,0,2U*plane*sizeof(__fp16));
     for(uint32_t head=0;head<2U;++head) {
         const __fp16 *src=scores+head*plane;
         __fp16 *dst=probability+head*plane;
@@ -16893,7 +16895,10 @@ static int qbh_scan_f16_attention(
             HAP_perf_get_qtimer_count() - start;
     }
 
-    memcpy(
+    if(header->variant==QBH_BLOCK_W4F16 && header->w4f16_decode_opt==2U && logical_rows==1U)
+        qbh_hvx_copy_aligned_bytes(buffers->attention_concat,buffers->q,
+            QBH_BLOCK_M*QBH_BLOCK_HIDDEN*sizeof(__fp16));
+    else memcpy(
         buffers->attention_concat, buffers->q,
         QBH_BLOCK_M * QBH_BLOCK_HIDDEN * sizeof(__fp16));
     header->hmx_command_count += 2U * QBH_BLOCK_KV_HEADS;

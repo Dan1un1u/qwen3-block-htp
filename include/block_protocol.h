@@ -896,7 +896,7 @@ struct qbh_block_header {
     uint32_t wide_score_mode; /* 0 legacy; 1 HVX wide; 2 untimed scalar wide oracle. */
     uint32_t dense_r3_mode; /* 0 original; 1 HMX; 2 scalar audit; 3 HMX identity; 4 scalar after HMX state audit. */
     uint32_t w4f16_decode_audit;
-    uint32_t w4f16_decode_opt; /* 0 original; 1 exact conversion; 2 active-row layout. */
+    uint32_t w4f16_decode_opt; /* 0 original; 1 exact conversion; 2 vector attention transfer/zero. */
     uint32_t dense_r3_optimization; /* 0 original; 1 constant/vector; 2 streamed prepare. */
     uint32_t dense_r3_audit_offset;
     uint32_t dense_r3_rows;
