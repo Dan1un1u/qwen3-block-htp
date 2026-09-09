@@ -16567,6 +16567,46 @@ static void qbh_f32_to_f16_contiguous(const float *source,__fp16 *out) {
     HVX_VectorPair x=Q6_W_vdeal_VVR(((const HVX_Vector *)source)[1],((const HVX_Vector *)source)[0],-4);
     *(HVX_Vector *)out=Q6_Vhf_vcvt_VsfVsf(Q6_V_lo_W(x),Q6_V_hi_W(x));
 }
+/* Independent IEEE-754 bit oracle, all finite binary16 patterns and
+ * midpoint/tie neighbours. Untimed audit only; no native half casts. */
+static uint32_t qbh_f16_ieee_bits(uint16_t h) {
+    uint32_t sign=(uint32_t)(h&0x8000U)<<16,exp=(h>>10)&31U,m=h&1023U;
+    if(!exp) {
+        if(!m)return sign;
+        int e=-14;while(!(m&1024U)){m<<=1;--e;}
+        return sign|((uint32_t)(e+127)<<23)|((m&1023U)<<13);
+    }
+    return sign|((exp+112U)<<23)|(m<<13);
+}
+static uint32_t qbh_f16_conversion_sentinels(void) {
+    uint16_t half[64] __attribute__((aligned(128)));
+    uint16_t back[64] __attribute__((aligned(128)));
+    float values[64] __attribute__((aligned(128)));
+    uint32_t errors=0;
+    for(uint32_t base=0;base<65536U;base+=64U) {
+        for(uint32_t i=0;i<64U;++i)half[i]=(uint16_t)(base+i);
+        qbh_f16_to_f32_contiguous((const __fp16 *)half,values);
+        qbh_f32_to_f16_contiguous(values,(__fp16 *)back);
+        for(uint32_t i=0;i<64U;++i)if((half[i]&0x7c00U)!=0x7c00U) {
+            union{float f;uint32_t u;}x={.f=values[i]};
+            errors+=x.u!=qbh_f16_ieee_bits(half[i]);errors+=back[i]!=half[i];
+        }
+    }
+    /* [0,1] includes subnormal/normal transition and probability range. */
+    for(uint32_t base=0;base<0x3c00U;base+=64U)for(int delta=-1;delta<=1;++delta) {
+        for(uint32_t i=0;i<64U;++i) {
+            union{float f;uint32_t u;}a={.u=qbh_f16_ieee_bits((uint16_t)(base+i))};
+            union{float f;uint32_t u;}b={.u=qbh_f16_ieee_bits((uint16_t)(base+i+1U))};
+            union{float f;uint32_t u;}mid={.f=(a.f+b.f)*0.5f};mid.u+=delta;values[i]=mid.f;
+        }
+        qbh_f32_to_f16_contiguous(values,(__fp16 *)back);
+        for(uint32_t i=0;i<64U;++i) {
+            uint32_t code=base+i;uint16_t expected=(uint16_t)(delta<0?code:delta>0?code+1U:code+(code&1U));
+            errors+=back[i]!=expected;
+        }
+    }
+    return errors;
+}
 static int qbh_scan_softmax_f16_exact_batch(struct qbh_block_header *h,
     const __fp16 *scores,__fp16 *probability,__fp16 *audit,
     uint32_t past,uint32_t padded) {
@@ -16600,6 +16640,8 @@ static int qbh_scan_softmax_f16_exact_batch(struct qbh_block_header *h,
         qbh_f32_to_f16_contiguous(work,dst);
         qbh_f32_to_f16_contiguous(work+64U,dst+64U);
     }
+    if(h->w4f16_decode_audit && !h->w4f16_decode_opt_calls)
+        h->w4f16_decode_conversion_audit_mismatches+=qbh_f16_conversion_sentinels();
     ++h->w4f16_decode_opt_calls;
     if(h->w4f16_decode_audit) {
         qbh_scan_softmax_f16(scores,audit,1U,past,padded);
