@@ -69,9 +69,95 @@ static void qbh_r4_layout_vector(const __fp16 *stage1,__fp16 *act,
         }
     asm volatile("barrier" ::: "memory");
 }
+/* EXP0264: retain the generic SF32 multiply/add/round/pack instruction
+ * order, but prepare invariant constants outside all channel/row loops. */
+struct qbh_r4_quant_constants { HVX_Vector coefficient,offset,rounding; };
+static HVX_Vector qbh_r4_splat_sf(float f) {
+    return Q6_Vsf_vadd_VsfVsf(Q6_V_vsplat_R(*(const int32_t *)&f),Q6_V_vzero());
+}
+static struct qbh_r4_quant_constants qbh_r4_quant_prepare(
+    const struct qbh_block_qparam *qp) {
+    struct qbh_r4_quant_constants q={qbh_r4_splat_sf(1.0f/qp->scale),
+        qbh_r4_splat_sf((float)qp->zero_point),qbh_r4_splat_sf(0.5f)};
+    return q;
+}
+static inline __attribute__((always_inline)) HVX_Vector qbh_r4_quant_half(
+    HVX_Vector input,const struct qbh_r4_quant_constants *q) {
+    HVX_VectorPair f=Q6_Wsf_vcvt_Vhf(input);
+    HVX_Vector lo=Q6_Vsf_equals_Vqf32(Q6_Vqf32_vmpy_VsfVsf(Q6_V_lo_W(f),q->coefficient));
+    HVX_Vector hi=Q6_Vsf_equals_Vqf32(Q6_Vqf32_vmpy_VsfVsf(Q6_V_hi_W(f),q->coefficient));
+    lo=Q6_Vw_equals_Vsf(Q6_Vsf_vadd_VsfVsf(Q6_Vsf_vadd_VsfVsf(lo,q->offset),q->rounding));
+    hi=Q6_Vw_equals_Vsf(Q6_Vsf_vadd_VsfVsf(Q6_Vsf_vadd_VsfVsf(hi,q->offset),q->rounding));
+    HVX_VectorPair ordered=Q6_W_vshuff_VVR(hi,lo,-4);
+    return Q6_Vh_vpack_VwVw_sat(Q6_V_hi_W(ordered),Q6_V_lo_W(ordered));
+}
+static inline __attribute__((always_inline)) HVX_Vector qbh_r4_quant_pair(
+    HVX_Vector a,HVX_Vector b,const struct qbh_r4_quant_constants *q) {
+    HVX_Vector lo=qbh_r4_quant_half(a,q),hi=qbh_r4_quant_half(b,q);
+    return Q6_Vub_vpack_VhVh_sat(hi,lo);
+}
+/* Deliberate memory boundary for constant-only candidate OPT5. OPT6 feeds
+ * identical instructions directly from gather registers. */
+static __attribute__((noinline)) void qbh_r4_quant_prepared_array(
+    const __fp16 *input,uint8_t *out,const struct qbh_r4_quant_constants *q) {
+    ((HVX_Vector *)out)[0]=qbh_r4_quant_pair(((const HVX_Vector *)input)[0],((const HVX_Vector *)input)[1],q);
+    ((HVX_Vector *)out)[1]=qbh_r4_quant_pair(((const HVX_Vector *)input)[2],((const HVX_Vector *)input)[3],q);
+    asm volatile("barrier" ::: "memory");
+}
+/* Untimed actual-device exhaustive equivalence, including both signed
+ * zeros and every finite half. Nonfinite bit patterns are replaced by0. */
+static int qbh_r4_quant_selftest(const struct qbh_block_qparam *qp) {
+    uint16_t input[256] __attribute__((aligned(128)));
+    uint8_t old[256] __attribute__((aligned(128))),out[256] __attribute__((aligned(128)));
+    const struct qbh_r4_quant_constants q=qbh_r4_quant_prepare(qp);
+    for(uint32_t first=0;first<65536U;first+=256U) {
+        for(uint32_t i=0;i<256U;++i)input[i]=((first+i)&0x7c00U)==0x7c00U?0U:(uint16_t)(first+i);
+        qbh_hvx_quantize_f16_to_u8((const __fp16 *)input,old,256U,qp);
+        qbh_r4_quant_prepared_array((const __fp16 *)input,out,&q);
+        if(memcmp(old,out,256U))return -1;
+    }
+    return 0;
+}
+static void qbh_r4_finish_prepared(struct qbh_block_header *h,
+    const __fp16 *weight,uint8_t *middle,uint32_t first,uint32_t count,
+    HVX_Vector *scratch,__fp16 *audit,uint32_t a_first,uint32_t a_count) {
+    const struct qbh_r4_quant_constants q=qbh_r4_quant_prepare(&h->qparams[QBH_BLOCK_QP_MIDDLE]);
+    const HVX_Vector offsets=*(const HVX_Vector *)qbh_attention_vscatter_offsets;
+    const uint32_t fused=h->dense_r4_optimization==6U;
+    for(uint32_t a=a_first;a<a_first+a_count;++a)for(uint32_t c=0;c<512U;c+=64U)
+        for(uint32_t r=0;r<count;r+=4U) {
+            HVX_Vector v[4];
+            for(uint32_t rr=0;rr<4U;++rr) {
+                v[rr]=Q6_V_vzero();
+                if(r+rr<count) {
+                    const __fp16 *src=weight+(r+rr)*16384U+(c/32U)*1024U+a*2U;
+                    Q6_vgather_ARMVw(scratch,(int32_t)(uintptr_t)src,4095U,offsets);
+                    v[rr]=*(volatile HVX_Vector *)scratch;
+                    if(audit)*(HVX_Vector *)(audit+2U*393216U+
+                        (first+r+rr)*6144U+a*512U+c)=v[rr];
+                }
+            }
+            HVX_Vector lo,hi;
+            if(fused) {
+                lo=qbh_r4_quant_pair(v[0],v[1],&q);
+                hi=qbh_r4_quant_pair(v[2],v[3],&q);
+            } else {
+                uint8_t codes[256] __attribute__((aligned(128)));
+                qbh_r4_quant_prepared_array((const __fp16 *)v,codes,&q);
+                lo=((HVX_Vector *)codes)[0];hi=((HVX_Vector *)codes)[1];
+            }
+            HVX_VectorPair x=Q6_W_vdeal_VVR(hi,lo,-32);
+            *(HVX_Vector *)(middle+(a*16U+c/32U)*2048U+(first+r)*32U)=Q6_V_lo_W(x);
+            *(HVX_Vector *)(middle+(a*16U+c/32U+1U)*2048U+(first+r)*32U)=Q6_V_hi_W(x);
+        }
+    asm volatile("barrier" ::: "memory");
+}
 static void qbh_r4_finish_range(struct qbh_block_header *h,
     const __fp16 *weight,uint8_t *middle,uint32_t first,uint32_t count,
     HVX_Vector *scratch,__fp16 *audit,uint32_t a_first,uint32_t a_count) {
+    if(h->dense_r4_optimization>=5U) {
+        qbh_r4_finish_prepared(h,weight,middle,first,count,scratch,audit,a_first,a_count);return;
+    }
     const HVX_Vector offsets=*(const HVX_Vector *)qbh_attention_vscatter_offsets;
     __fp16 tmp[256] __attribute__((aligned(128)));
     uint8_t codes[256] __attribute__((aligned(128)));
@@ -222,11 +308,13 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
     float scales[32] __attribute__((aligned(128)));
     __fp16 *audit=h->dense_r4_audit_offset?(__fp16 *)(shared+h->dense_r4_audit_offset):NULL;
     if(h->variant!=QBH_BLOCK_W4U8 || h->dense_r4_mode>2U ||
-       h->dense_r4_optimization>4U ||
+       h->dense_r4_optimization>6U ||
        (rows!=1U && rows!=64U) ||
        (h->w4u8_decode_direct_n_gate_up_swiglu_stream && h->dense_r4_optimization<2U) ||
        (h->dense_r4_mode==2U && !audit) ||
        (audit && !qbh_range_valid(h->dense_r4_audit_offset,3U*786432U,h->shared_bytes)))return -1;
+    if(audit && h->dense_r4_optimization>=5U &&
+       qbh_r4_quant_selftest(&h->qparams[QBH_BLOCK_QP_MIDDLE]))return -1;
     /* These bounds are the existing owned allocations, no arena growth. */
     if((uintptr_t)b->expanded_weight_alt-(uintptr_t)b->expanded_weight<1048576U ||
        (uintptr_t)b->hmx_output-(uintptr_t)b->expanded_weight_alt<1048576U ||
