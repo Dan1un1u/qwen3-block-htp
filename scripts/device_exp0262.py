@@ -43,6 +43,12 @@ def physical(ps,arm,dump):
   assert p['dense_r3_total_calls']==p['dense_r3_total_hmx_calls']==1 and p['dense_r3_total_parallel_heads']==24
   assert p['dense_r4_mode']==arm and p['dense_r4_calls']==bool(arm) and p['dense_r4_rows']==bool(arm)*p['logical_m']
   assert p['dense_r4_hmx_calls']==(((9 if p['dense_r4_optimization']==2 and arm==1 else 5) if p['logical_m']==64 else 2) if arm else 0)
+  if arm==1 and p['dense_r4_optimization']==2:
+   assert p['dense_r4_pipeline_batches']==(8 if p['logical_m']==64 else 0)
+   if p['logical_m']==1:
+    assert p['w4u8_gate_up_swiglu_publish_count']==p['w4u8_gate_up_swiglu_consume_count']==6
+    assert p['w4u8_gate_up_swiglu_overlap_observed']==1
+   else:assert p['dense_r4_pipeline_hvx_ticks']>0
   if not dump:assert p['dense_r4_audit_bytes']==p['u8_attention_audit_ddr_write_bytes']==0 and arm!=2
 
 def run(arm,rep,tag,dump=False,opt=2):
