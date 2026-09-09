@@ -43,9 +43,18 @@ experiments:
   - codex/exp-0261-w4u8-dense-r4-cost
   source_commits:
   - fbc601d72377cc57fa54cd3fcd831f870ee59fe9
+  - a3b042b87a6757abbe95a778da5c11eca8d30071
+  - 754a7119ccb07a82909441c56d5ddd2c09204c5a
+  - de5a612e8e044449c04bbaf63f7840321492a89d
+  - 82022d6cc2a23b1472c59037cecc3b94050aabfb
+  - 016cb33213457caf1fa61f1b44655c07bc136c9f
   evidence:
     protocol: PC076
-    current_stage: native_vector_implementation
+    current_stage: numerical_and_short_complete_formal_next
+    runtime_source_head: de5a612e8e044449c04bbaf63f7840321492a89d
+    source_head: 016cb33213457caf1fa61f1b44655c07bc136c9f
+    ABI: 125
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0262
 - id: EXP-0261
   slug: w4u8-dense-r4-cost
   title: W4A8 full-width dense R4 exploratory cost
