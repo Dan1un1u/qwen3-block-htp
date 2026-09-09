@@ -1,0 +1,13 @@
+# EXP0257 authoritative closure / next discussion
+
+Source branch codex/exp-0257-a8-device-text-e2e, HEAD 8d56803ac77697be8748e65a9f933b720962af1e; clean/pushed at closure. ABI118 full28layers built/staged in results/binaries/l28_attempt3; do not infer ABI/build from old EXP218 serialized label. Result /mnt/d/llm_exp/results/qwen3-block-htp/exp0257; EVIDENCE_SHA256.json 80b1ac2415364ef7898e118b111215279f558748035f74d26d7979ee845a3f4f (879 retained files). Read EXP-0257-RESULTS.md and EXP-0257-PROFILE.md.
+
+Candidate C64 means per-output-channel W4, not group64. Original OFF staticA8 + noR3 + wideNR64 + corrected fixedEOS U8 prefix KV. Prefix computed once offline from original frozenC64 W4A16, exact against unhooked model; stored56KiBU8 metadata; no online mixed precision or mllm folded weights. Initial no-seed outputs are incomplete-port diagnostic, final outputs seed_full_nr64/seed_text_sample1..5. Nativehead remains U8logit scale0.5 zero128; softwarePPL floatedhead, so not same arithmetic.
+
+Single20files exact; 3layer/9steps separate versus integrated exact; seeded fastKpatch versus fullrepack exact; actualQK/probability/AV against independent integer reference exact; corrected28layer64token scalarNR64/HVX exact; independent head3steps exact. Text still0/6 usable versus frozenW4A16 software6/6 at same prompts; formatting-only differences ignored, firstEOS stop enforced. No new devicePPL.
+
+Five short rounds pass. Formal original-speed anchor C0 fails round07_r10_w0, sequence index7: step10/11/14 token differs; first divergence code159 versus203, output hash differs. Raw logs retained. Six complete rounds plus partial seventh only; do not resume by skipping/deleting/replacing failed cell or promote speed. No parser/hash cause found. Bounded10sequences each C0/A afterfailure reproduce but cannot clear originalgate. All6016 timingRPC ledger/physical checks pass; extra320diagnosticRPCs. Candidate remained stable in collected runs but sharedruntime risk not excluded.
+
+Diagnostic speed from first6complete formal rounds repeat10: prefill1717.0767token/s, decode50.3202token/s, full16output generationloop45.8953token/s; warm loadedmodel, excludesstartup/ADB/WSLfrontend. Not10roundformalacceptance. Actual28layers+embedding+norm+head+greedy, not per-layer extrapolation. Prefill64 includesEOS, decode15, text64budget/cachevalid64..127.
+
+EXP0257 closed aborted/evidencevalid/localfail; active none, next258. No baseline changes. Discuss unresolved originalanchor runtime nondeterminism first; next quality attribution same-token device/software transformer vs nativeU8logits boundary. Do not restart old rotation/calibration explorations or begin unrelatednewalgorithm automatically.
