@@ -5,7 +5,7 @@ import numpy as np
 
 def main():
  preflight();assert json.loads((R/'single_reproduction.json').read_text())['pass_all'];assert json.loads((R/'device_package.json').read_text())['verified_files']==906
- base=REMOTE+'-package';manifest=json.loads((O/'package/manifest.json').read_text());proof={}
+ base=REMOTE+'-package-v2';manifest=json.loads((O/'package/manifest.json').read_text());proof={}
  previous=None
  for layer in range(3):
   if layer==0:pkg=base

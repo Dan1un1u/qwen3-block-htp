@@ -22,16 +22,19 @@ def stage(count):
 def deploy():
  preflight();pkg=O/'package';manifest=json.loads((pkg/'manifest.json').read_text());cm=json.loads((C/'manifest.json').read_text());files=manifest['files']
  audit=json.loads((R/'export_audit.json').read_text());assert audit['pass_all'] and sha(pkg/'manifest.json')==audit['manifest_sha256']
- archive=O/'device_payload.tar';checks=R/'device_files.sha256';checks.write_text(''.join(v['sha256']+'  '+n+'\n' for n,v in files.items()))
- with tarfile.open(archive,'x') as tar:
+ archive=O/'device_payload_v2.tar';checks=R/'device_files.sha256';checks.write_text(''.join(v['sha256']+'  '+n+'\n' for n,v in files.items()))
+ links=[]
+ with tarfile.open(archive,'x',dereference=True) as tar:
   for n,v in files.items():
    assert sha(pkg/n)==v['sha256'],n
    if n in cm['files'] and cm['files'][n]['sha256']==v['sha256'] and 'weight' in n:
-    t=tarfile.TarInfo(n);t.type=tarfile.SYMTYPE;t.linkname=PARENT+'/'+n;t.mode=0o777;tar.addfile(t)
+    links.append('mkdir -p '+shlex.quote(str(Path(n).parent))+' && ln -s '+shlex.quote(PARENT+'/'+n)+' '+shlex.quote(n))
    else:tar.add(pkg/n,arcname=n)
   tar.add(pkg/'manifest.json',arcname='manifest.json');tar.add(checks,arcname='files.sha256')
- root=REMOTE+'-package';adb('shell',f'mkdir {root}');adb('push',win(archive),root+'/payload.tar',timeout=600)
+ linkscript=R/'device_links_v2.sh';linkscript.write_text('set -e\n'+'\n'.join(links)+'\n')
+ root=REMOTE+'-package-v2';adb('shell',f'mkdir {root}');adb('push',win(archive),root+'/payload.tar',timeout=600)
  adb('shell',f'cd {root} && tar -xf payload.tar',timeout=600)
+ adb('push',win(linkscript),root+'/links.sh');adb('shell',f'cd {root} && sh links.sh')
  result=adb('shell',f'cd {root} && sha256sum -c files.sha256',timeout=600)
  assert result.count(': OK')==len(files) and 'FAILED' not in result
  write(R/'device_package.json',dict(remote=root,manifest_sha256=sha(pkg/'manifest.json'),verified_files=len(files),archive_sha256=sha(archive)))
@@ -62,7 +65,7 @@ def generate(wide,tag,sample=0,steps=16,audit=False):
  root,e=env(28,wide);e.update(QBH_GENERATION_SEQUENCE='9',QBH_GENERATION_STEPS=str(steps))
  prompts=json.loads((R/'prompts.json').read_text())['samples'];ids=prompts[sample]['token_ids']
  # Separate immutable prompt overlay per run; all model files are verified shared links.
- overlay=root+'/'+tag.replace('/','_');adb('shell',f'mkdir {overlay} && ln -s {REMOTE}-package/* {overlay}/')
+ overlay=root+'/'+tag.replace('/','_');adb('shell',f'mkdir {overlay} && ln -s {REMOTE}-package-v2/* {overlay}/')
  local=R/(tag.replace('/','_')+'_tokens.bin');local.write_bytes(__import__('struct').pack('<64I',*ids))
  adb('shell',f'rm {overlay}/generation_prompt_token_ids_u32.bin');adb('push',win(local),overlay+'/generation_prompt_token_ids_u32.bin')
  if audit:
