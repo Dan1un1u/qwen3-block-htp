@@ -118,6 +118,35 @@ static int qbh_r4_quant_selftest(const struct qbh_block_qparam *qp) {
     }
     return 0;
 }
+static inline __attribute__((always_inline)) HVX_Vector qbh_r4_gather_finish(
+    const __fp16 *weight,HVX_Vector *scratch,HVX_Vector offsets,__fp16 *audit,
+    uint32_t first,uint32_t count,uint32_t r,uint32_t a,uint32_t c) {
+    if(r>=count)return Q6_V_vzero();
+    const __fp16 *src=weight+r*16384U+(c/32U)*1024U+a*2U;
+    Q6_vgather_ARMVw(scratch,(int32_t)(uintptr_t)src,4095U,offsets);
+    HVX_Vector v=*(volatile HVX_Vector *)scratch;
+    if(audit)*(HVX_Vector *)(audit+2U*393216U+(first+r)*6144U+a*512U+c)=v;
+    return v;
+}
+static __attribute__((noinline)) void qbh_r4_finish_fused(struct qbh_block_header *h,
+    const __fp16 *weight,uint8_t *middle,uint32_t first,uint32_t count,
+    HVX_Vector *scratch,__fp16 *audit,uint32_t a_first,uint32_t a_count) {
+    const struct qbh_r4_quant_constants q=qbh_r4_quant_prepare(&h->qparams[QBH_BLOCK_QP_MIDDLE]);
+    const HVX_Vector offsets=*(const HVX_Vector *)qbh_attention_vscatter_offsets;
+    for(uint32_t a=a_first;a<a_first+a_count;++a)for(uint32_t c=0;c<512U;c+=64U)
+        for(uint32_t r=0;r<count;r+=4U) {
+            HVX_Vector v0=qbh_r4_gather_finish(weight,scratch,offsets,audit,first,count,r,a,c);
+            HVX_Vector v1=qbh_r4_gather_finish(weight,scratch,offsets,audit,first,count,r+1U,a,c);
+            HVX_Vector lo=qbh_r4_quant_pair(v0,v1,&q);
+            HVX_Vector v2=qbh_r4_gather_finish(weight,scratch,offsets,audit,first,count,r+2U,a,c);
+            HVX_Vector v3=qbh_r4_gather_finish(weight,scratch,offsets,audit,first,count,r+3U,a,c);
+            HVX_Vector hi=qbh_r4_quant_pair(v2,v3,&q);
+            HVX_VectorPair x=Q6_W_vdeal_VVR(hi,lo,-32);
+            *(HVX_Vector *)(middle+(a*16U+c/32U)*2048U+(first+r)*32U)=Q6_V_lo_W(x);
+            *(HVX_Vector *)(middle+(a*16U+c/32U+1U)*2048U+(first+r)*32U)=Q6_V_hi_W(x);
+        }
+    asm volatile("barrier" ::: "memory");
+}
 static void qbh_r4_finish_prepared(struct qbh_block_header *h,
     const __fp16 *weight,uint8_t *middle,uint32_t first,uint32_t count,
     HVX_Vector *scratch,__fp16 *audit,uint32_t a_first,uint32_t a_count) {
@@ -155,6 +184,9 @@ static void qbh_r4_finish_prepared(struct qbh_block_header *h,
 static void qbh_r4_finish_range(struct qbh_block_header *h,
     const __fp16 *weight,uint8_t *middle,uint32_t first,uint32_t count,
     HVX_Vector *scratch,__fp16 *audit,uint32_t a_first,uint32_t a_count) {
+    if(h->dense_r4_optimization==6U) {
+        qbh_r4_finish_fused(h,weight,middle,first,count,scratch,audit,a_first,a_count);return;
+    }
     if(h->dense_r4_optimization>=5U) {
         qbh_r4_finish_prepared(h,weight,middle,first,count,scratch,audit,a_first,a_count);return;
     }
