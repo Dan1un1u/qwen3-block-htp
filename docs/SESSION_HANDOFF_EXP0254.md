@@ -13,3 +13,7 @@ Prepared report_exp0254_candidate.py in results; review and install source after
 ## Route checkpoint
 
 Triage complete: {"F": 21.34211023294927, "C64": 22.532612616101396, "B": 25.878157651192183, "J": 26.368808132806105}. Joint/C64=1.1702508085530852, all fourcells exceed1.10. Predeclared downstream branch selected, route.json SHA256 678f70521ff577e71e62fbbd7170f81528c32d1d1a435d164aadd764efa8cf06. Confirmation remains untouched at selection. Runner now executes branch_development R,S,RS,JR,JS,JRS then confirmation F,C64,B,J,R,S,RS,JR,JS,JRS. Preserve frozen route; no attention-branch additions from later scores.
+
+## Closed checkpoint
+
+All running instructions above historical. Ordered phases, independent audit and evidence/source/memory closure completed. No inference/device process remains. Active none,next255. Report docs/experiments/EXP-0254-RESULTS.md; direction docs/W4A8_NEXT_DIRECTION_AFTER_EXP0254.md.

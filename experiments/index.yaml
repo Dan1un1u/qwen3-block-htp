@@ -29,24 +29,27 @@ experiments:
   title: Ordered joint attention restoration and conditional attribution
   parent: EXP-0253
   record: docs/experiments/EXP-0254.md
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
-  adoption_status: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
+  adoption_status: not_applicable
   approval_ref: PC068 user approves ordered route research
   source_branches:
   - codex/exp-0253-float-attention
   - codex/exp-0254-joint-attention
   source_commits:
   - 6d130035cf089ba099c8f161799952bf1d70a385
+  - 7ad7c2dbebb7fc369d3570a5d31b862548cdc850
+  - e66af129a2f66930cdcfe0155f53fd93ccd628b4
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0254-joint-attention
     approved_on: '2026-09-09'
     started_on: '2026-09-09'
+    completed_on: '2026-09-09'
   evidence:
     protocol: PC068
-    current_stage: triage_closed_downstream_route_frozen
+    current_stage: completed_ordered_joint_and_conditional_attribution
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0254
     baseline_promoted: false
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0254.md
@@ -58,6 +61,219 @@ experiments:
       C64: 22.532612616101396
       B: 25.878157651192183
       J: 26.368808132806105
+    source_head: e66af129a2f66930cdcfe0155f53fd93ccd628b4
+    inference_source_heads:
+    - 7ad7c2dbebb7fc369d3570a5d31b862548cdc850
+    report: docs/experiments/EXP-0254-RESULTS.md
+    report_sha256: 8310350902dcabc5d1e21a35c2d98f008fabe9cb9789e8555af097385d977933
+    full_profiling_report: docs/experiments/EXP-0254-PROFILE.md
+    full_profiling_report_sha256: 69cc74700ee3f0464bc7c37d3aa797a0bbaaa3fb79edf21da8362beef12eb6a5
+    evidence_ledger_sha256: 0b1a0b0360cb93e0fd2f99fef83b3ba12b065b6a6d682bb0ee871405cfa92ed2
+    evidence_file_count: 70
+    numerical_gate: pass
+    gate_role: software_restoration_attribution_not_deployable_A8_acceptance
+    confirmation_ppl:
+      F: 27.704302692591753
+      C64: 29.257888338855555
+      B: 34.12065478677464
+      J: 32.62572984205891
+      R: 31.25043205734052
+      S: 32.94684762439127
+      RS: 30.57079886224828
+      JR: 31.094948102989655
+      JS: 32.587527947983524
+      JRS: 30.601240377678216
+    quality_gate:
+      C64:
+        point_pass: false
+        confident_pass: false
+      B:
+        point_pass: false
+        confident_pass: false
+      J:
+        point_pass: false
+        confident_pass: false
+      R:
+        point_pass: false
+        confident_pass: false
+      S:
+        point_pass: false
+        confident_pass: false
+      RS:
+        point_pass: false
+        confident_pass: false
+      JR:
+        point_pass: false
+        confident_pass: false
+      JS:
+        point_pass: false
+        confident_pass: false
+      JRS:
+        point_pass: false
+        confident_pass: false
+    interactions:
+      J_with_R:
+        weights:
+          J: 1
+          R: 1
+          JR: -1
+          B: -1
+        mean_nll: -0.03981384076178074
+        ci95:
+        - -0.09694314691005275
+        - 0.01891840086318552
+        cells:
+          en_wiki:
+            mean_nll: -0.02757026068866253
+            ci95:
+            - -0.1487136459443718
+            - 0.10065827732905745
+          zh_wiki:
+            mean_nll: -0.11913878098130226
+            ci95:
+            - -0.25632175486534836
+            - 0.013505526678636566
+          en_news:
+            mean_nll: -0.05850434489548206
+            ci95:
+            - -0.17406885246746243
+            - 0.05849814265966409
+          zh_news:
+            mean_nll: 0.0459580235183239
+            ci95:
+            - -0.034303934779018164
+            - 0.1327509562484919
+      J_with_S:
+        weights:
+          J: 1
+          S: 1
+          JS: -1
+          B: -1
+        mean_nll: -0.033835729118436575
+        ci95:
+        - -0.09482075528940186
+        - 0.027752483414951696
+        cells:
+          en_wiki:
+            mean_nll: -0.06257236562669277
+            ci95:
+            - -0.17673735977150498
+            - 0.0568588865920901
+          zh_wiki:
+            mean_nll: -0.09868025034666061
+            ci95:
+            - -0.258411600952968
+            - 0.061139885149896094
+          en_news:
+            mean_nll: -0.039240479469299316
+            ci95:
+            - -0.1518800923600793
+            - 0.06546847522258759
+          zh_news:
+            mean_nll: 0.0651501789689064
+            ci95:
+            - -0.026740720309317113
+            - 0.16235194392502308
+      R_with_S:
+        weights:
+          R: 1
+          S: 1
+          RS: -1
+          B: -1
+        mean_nll: -0.013019394129514694
+        ci95:
+        - -0.07023471409920604
+        - 0.04582269885577259
+        cells:
+          en_wiki:
+            mean_nll: -0.02247711271047592
+            ci95:
+            - -0.162050093524158
+            - 0.13326445771381254
+          zh_wiki:
+            mean_nll: -0.02653534524142742
+            ci95:
+            - -0.12615445735864342
+            - 0.07155914893373841
+          en_news:
+            mean_nll: -0.03221954219043255
+            ci95:
+            - -0.14070863174274564
+            - 0.0673443278763443
+          zh_news:
+            mean_nll: 0.029154423624277115
+            ci95:
+            - -0.0739988824352622
+            - 0.13410211130976676
+      R_with_S_given_J:
+        weights:
+          JR: 1
+          JS: 1
+          JRS: -1
+          J: -1
+        mean_nll: 0.014833223074674606
+        ci95:
+        - -0.03795823068358004
+        - 0.0696636264096014
+        cells:
+          en_wiki:
+            mean_nll: 0.05171722732484341
+            ci95:
+            - -0.036818691156804556
+            - 0.13967199195176364
+          zh_wiki:
+            mean_nll: 0.10049618221819401
+            ci95:
+            - -0.04099833369255064
+            - 0.25485600633546707
+          en_news:
+            mean_nll: 0.015676796436309814
+            ci95:
+            - -0.07942417226731777
+            - 0.1080388675443828
+          zh_news:
+            mean_nll: -0.1085573136806488
+            ci95:
+            - -0.20004271678626537
+            - -0.01991042410954835
+      total_joint:
+        weights:
+          J: 1
+          R: 1
+          S: 1
+          JRS: -1
+          B: -2
+        mean_nll: -0.05881634680554271
+        ci95:
+        - -0.1408409583964385
+        - 0.023013354756403606
+        cells:
+          en_wiki:
+            mean_nll: -0.038425398990511894
+            ci95:
+            - -0.2109605650883168
+            - 0.14478135202080006
+          zh_wiki:
+            mean_nll: -0.11732284910976887
+            ci95:
+            - -0.29672388788312676
+            - 0.05843741940334438
+          en_news:
+            mean_nll: -0.08206802792847157
+            ci95:
+            - -0.2617897026240826
+            - 0.07912011099979273
+          zh_news:
+            mean_nll: 0.002550888806581497
+            ci95:
+            - -0.12436303291469812
+            - 0.13108130851760508
+    new_device_runs: 0
+    short_rounds: 0
+    formal_rounds: 0
+    device_ppl: null
+    e2e_tokens_per_second: null
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0254.md
 - id: EXP-0253
   slug: float-attention
   title: Complete floating attention core conditional PPL
