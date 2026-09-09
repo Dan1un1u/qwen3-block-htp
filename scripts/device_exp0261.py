@@ -4,6 +4,7 @@ import device_exp0257 as base
 import exp0240_device as old
 from measure_exp0218 import LEDGER
 from summarize_exp0217 import normalized
+from pathlib import Path
 import numpy as np
 import subprocess,json,shlex,statistics,argparse,tarfile
 base.R=R;base.REMOTE='/data/local/tmp/qwen3-block-htp/exp0261'
@@ -47,9 +48,13 @@ def run(arm,rep,tag,dump=False):
  preflight();root=base.runtime_root(1)
  e=dict(old.ENV,LD_LIBRARY_PATH=root,DSP_LIBRARY_PATH=root,ADSP_LIBRARY_PATH=root,QBH_DENSE_R3='1',QBH_R3_OPT='2',QBH_WIDE_SCORE='4',QBH_DENSE_R4=str(arm),QBH_REPLAY_DECODE_STEPS='8')
  if dump:
-  e.update(QBH_REPLAY_DUMP_DIR=root+'/'+tag.replace('/','_'),QBH_DENSE_R3_AUDIT='1',QBH_DENSE_R4_AUDIT='1');base.adb('shell','mkdir '+e['QBH_REPLAY_DUMP_DIR'])
- p=base.execute(1,e,PARENT if arm==0 else REMOTE,rep,tag)
- if dump:base.adb('pull',e['QBH_REPLAY_DUMP_DIR']+'/.',base.win(p))
+  e.update(QBH_REPLAY_DUMP_DIR=root+'/'+tag.replace('/','_'),QBH_DENSE_R3_AUDIT='1',QBH_DENSE_R4_AUDIT='1');
+  if not (R/tag/'stdout.jsonl').exists():base.adb('shell','mkdir '+e['QBH_REPLAY_DUMP_DIR'])
+ p=R/tag
+ if not (p/'stdout.jsonl').exists():
+  p=base.execute(1,e,PARENT if arm==0 else REMOTE,rep,tag)
+  if dump:base.adb('pull',e['QBH_REPLAY_DUMP_DIR']+'/.',base.win(p))
+ else:assert not (p/'validated.json').exists() # retained successful RPC, failed parser only
  ps=[z for z in records(p/'stdout.jsonl') if z.get('record')=='exp0240_profile'];assert len(ps)==rep*9;physical(ps,arm,dump)
  hashes=[z['output_hash'] for z in ps]
  gold=R/f'audit_a{arm}/validated.json'
