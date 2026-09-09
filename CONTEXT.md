@@ -1911,3 +1911,7 @@ Three-layer9steps component/layout/integerattention/cache/determinism gate passe
 Repeat10 R3 prefill 143066.503us / 447.344409token/s; decode 31519.499us pertoken / 31.726393token/s. Full16outputs generationloop 628388.904us / 25.461939token/s. Matched noR3 1712.906050prefill,48.864160decode,44.888237loop token/s. Loadedmodelwarm, noADB/startup/WSLfrontend. No layerextrapolation.
 
 Speed eligibility False; numerical eligibility false. Localpass means measurementintegrity only. R3cost andpairedCI in summary.json; preparation/finish dominate this implementation, not denseGEMM. Do not infer algorithmic lowerbound or startperformanceoptimization without nextuserdirection. Active none,next259. Otherrecipes andbaselines unchanged.
+
+## EXP0259 active
+
+User approves currentR3 implementation optimization, no mllm. Read PC073 and EXP0259 protocol. First constant/vector movement then worker overlap, frozen math andexact oldR3outputs. Layer first, unchanged10percent fullmodel escalation gate. Parentbranch temporary for controlled branchcreation.

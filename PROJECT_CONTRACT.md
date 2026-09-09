@@ -333,3 +333,7 @@ User2026-09-09 authorizes EXP0257 under docs/experiments/EXP-0257.md: integrate 
 ## PC072 — User-approved R3 full-model performance-only exception
 
 User explicitly replies 允许，补做实验 to the EXP0258 proposal. Under docs/experiments/EXP-0258.md, plain dense HMX R3 + wideNR64 may enter fullmodel diagnostic E2E despite known whole-layer ideal-R3 numerical failure. This narrowly supersedes PC066/PC071 R3 escalation prohibition for this experiment; numerical thresholds and failed status remain unchanged. Freeze C64/non-QK parameters, use R3_ALL Q/K and rotated prefix, no butterfly/refinement/fitting. Original physical/provenance/determinism gates remain. Direct requested fullmodel cost profiling may complete even if speed eligibility fails>10percent, with failure reported, never promotion or accuracy acceptance. PC037 applies.
+
+## PC073 — User-approved dense R3 implementation optimization
+
+User approves optimizing the current standalone R3 implementation and pipeline, without mllm. EXP0259 follows docs/experiments/EXP-0259.md: constant matrix/layout movement/worker overlap only, frozen arithmetic and models, current R3 exact-output control. Known ideal-reference failure remains diagnostic, no numerical threshold relaxation or promotion. Single layer first; original10percent noR3 speed threshold controls fullmodel escalation. PC037 applies.

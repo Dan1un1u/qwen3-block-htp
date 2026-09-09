@@ -24,6 +24,27 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0259
+  slug: dense-r3-pipeline-optimization
+  title: Dense R3 data movement and pipeline optimization
+  parent: EXP-0258
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: not_applicable
+  record: docs/experiments/EXP-0259.md
+  approval_ref: 'User: 不用管mllm了，就基于目前加入R3后的实现优化流水提速。 PC073'
+  source_branches:
+  - codex/exp-0258-dense-r3-e2e-diagnostic
+  source_commits:
+  - 000509dbce670b5ac4b0014db82c5c891474381b
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0258-dense-r3-e2e-diagnostic
+    started_on: '2026-09-09'
+  evidence:
+    stage: approved_setup
+    numerical_eligible: false
 - id: EXP-0258
   slug: dense-r3-e2e-diagnostic
   title: Dense HMX R3 full-model diagnostic E2E
