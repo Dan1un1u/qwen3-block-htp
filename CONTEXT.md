@@ -1843,3 +1843,5 @@ Complete floating attention diagnostic finished on fresh128docs/2048targets; all
 ## EXP0254 active — ordered joint restoration
 
 User approves joint attention-boundary restoration followed by predeclared conditional attention or residual/SwiGLU attribution. PC068; freeze256newdocuments into separate128doc triage/confirmation panels before inference. Diagnostic FP16 restorations only; no new deployed recipe, weights or device work.
+
+EXP0254 checkpoint: docs/SESSION_HANDOFF_EXP0254.md; both independent panels frozen/audited, numerical pass, development and ordered route runner active.

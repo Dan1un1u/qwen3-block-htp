@@ -46,9 +46,11 @@ experiments:
     started_on: '2026-09-09'
   evidence:
     protocol: PC068
-    current_stage: implementation
+    current_stage: data_frozen_numerical_pass_development
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0254
     baseline_promoted: false
+    checkpoint_handoff: docs/SESSION_HANDOFF_EXP0254.md
+    dataset_freeze_sha256: 080415e6f0cf961fddb52c7ce48fe0917f525180a5a94fe6df1ae9e4311197e4
 - id: EXP-0253
   slug: float-attention
   title: Complete floating attention core conditional PPL
