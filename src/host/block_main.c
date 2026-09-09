@@ -6825,7 +6825,7 @@ int main(int argc, char **argv) {
     header->dense_r4_mode=getenv("QBH_DENSE_R4") ? (uint32_t)atoi(getenv("QBH_DENSE_R4")) : 0U;
     header->dense_r4_audit_offset=(uint32_t)dense_r4_audit_offset;
     if(header->dense_r4_mode) {
-        if(variant!=QBH_BLOCK_W4U8 || header->dense_r4_mode>1U) return 2;
+        if(variant!=QBH_BLOCK_W4U8 || header->dense_r4_mode>2U) return 2;
         header->w4u8_decode_direct_n_gate_up_swiglu_stream=0U;
     }
     header->dense_r3_mode=dense_r3_mode;

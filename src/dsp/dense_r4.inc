@@ -46,8 +46,9 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
     uint8_t codes[128] __attribute__((aligned(128)));
     float scales[32] __attribute__((aligned(128)));
     __fp16 *audit=h->dense_r4_audit_offset?(__fp16 *)(shared+h->dense_r4_audit_offset):NULL;
-    if(h->variant!=QBH_BLOCK_W4U8 || h->dense_r4_mode!=1U ||
+    if(h->variant!=QBH_BLOCK_W4U8 || h->dense_r4_mode>2U ||
        (rows!=1U && rows!=64U) || h->w4u8_decode_direct_n_gate_up_swiglu_stream ||
+       (h->dense_r4_mode==2U && !audit) ||
        (audit && !qbh_range_valid(h->dense_r4_audit_offset,3U*786432U,h->shared_bytes)))return -1;
     /* These bounds are the existing owned allocations, no arena growth. */
     if((uintptr_t)b->expanded_weight_alt-(uintptr_t)b->expanded_weight<1048576U ||
@@ -82,6 +83,14 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
     if(audit)for(uint32_t a=0;a<12U;++a)for(uint32_t r=0;r<rows;++r)for(uint32_t c=0;c<512U;++c)
         audit[(a*rows+r)*512U+c]=act[qbh_r4_pos(a*rows+r,c,16U)];
     if(qbh_r4_gemm(h,worker,act,weight,b->channel_scale,stage1,p1/32U,16U,16U))return -1;
+    if(h->dense_r4_mode==2U) {
+        /* Untimed oracle replaces the result only after the HMX state transition. */
+        for(uint32_t r=0;r<12U*rows;++r)for(uint32_t n=0;n<512U;++n) {
+            double sum=0;
+            for(uint32_t k=0;k<512U;++k)sum+=(double)audit[r*512U+k]*((__builtin_popcount(n&k)&1)?-1.0:1.0);
+            stage1[qbh_r4_pos(r,n,16U)]=(__fp16)(sum*(double)(__fp16)0.04419417382415922f);
+        }
+    }
     if(audit)for(uint32_t r=0;r<12U*rows;++r)for(uint32_t c=0;c<512U;++c)
         audit[393216U+r*512U+c]=stage1[qbh_r4_pos(r,c,16U)];
     t=HAP_perf_get_qtimer_count();
@@ -100,6 +109,11 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
             act[qbh_r4_pos(r*512U+c,a,1U)]=stage1[qbh_r4_pos(a*rows+first+r,c,16U)];
         h->dense_r4_layout_ticks+=HAP_perf_get_qtimer_count()-t;
         if(qbh_r4_gemm(h,worker,act,w12,b->channel_scale,weight,count*16U,1U,1U))return -1;
+        if(h->dense_r4_mode==2U)for(uint32_t r=0;r<count*512U;++r)for(uint32_t n=0;n<12U;++n) {
+            double sum=0;
+            for(uint32_t k=0;k<12U;++k)sum+=(double)act[qbh_r4_pos(r,k,1U)]*(double)qbh_r4_h12[k][n];
+            weight[qbh_r4_pos(r,n,1U)]=(__fp16)(sum*(double)(__fp16)0.2886751345948129f);
+        }
         t=HAP_perf_get_qtimer_count();
         for(uint32_t tile=0;tile<192U;++tile)for(uint32_t r=0;r<count;r+=4U) {
             uint32_t a=tile/16U,c0=tile%16U*32U,live=count-r<4U?count-r:4U;
