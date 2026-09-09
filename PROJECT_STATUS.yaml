@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0259
+  active_experiment: null
   next_experiment_number: 260
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -2348,7 +2348,8 @@ current_scope:
     results_report: docs/experiments/EXP-0226-RESULTS.md
     evidence_files: 321
     intermediate_files: 467
-    next_action: discuss_mixed_result; proposed_same_token_budget_GPTQ_calibration_coverage_ablation_requires_user_approval; no_automatic_next_direction_or_promotion
+    next_action: discuss_mixed_result; proposed_same_token_budget_GPTQ_calibration_coverage_ablation_requires_user_approval;
+      no_automatic_next_direction_or_promotion
     full_profiling_report_sha256: ebb4f4c4619a5589b8b34e2e93bc85648be83eba7e09735a20139b484987a318
     results_report_sha256: fa6ab2b3bcfda00023e11c116054ee7e9b8e40f6c9d92a36b868d704bf1c984f
     quality_summary_sha256: c6a0eeae2337fcad0a6f37762c00645b001f562f59ebe54fb147bc3eebd53f5d
@@ -2492,7 +2493,8 @@ current_scope:
   last_completed_experiment: EXP-0258
   last_completed_source_commit: 000509dbce670b5ac4b0014db82c5c891474381b
   provisional_source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
-  device_execution_state: EXP0258_ABI120_actual28layer_plain_denseR3_wideNR64_correctrotatedprefix_fullM64+15_diagnostic_speed_measured; numerical_unaccepted
+  device_execution_state: EXP0258_ABI120_actual28layer_plain_denseR3_wideNR64_correctrotatedprefix_fullM64+15_diagnostic_speed_measured;
+    numerical_unaccepted
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
   current_handoff: docs/SESSION_HANDOFF_EXP0258.md
@@ -3107,7 +3109,8 @@ current_scope:
     intermediate_files: 672
     calibration_sha256: e65edb14cb774956df92b27b5dc728b976f7ba00e9435145004180c6538a1669
     calibration_ids_sha256: a20ed2093b0e7fb075fe47a9532843402e9f69784c8ad0b0467194bee2fa8efd
-    conclusion: 'A: DSP NLL 3.873038 -> 3.969016, tasks 8 -> 4; B: DSP NLL 4.601481 -> 3.911864, tasks 0 -> 2; C: DSP NLL 4.320988 -> 3.956556, tasks 2 -> 9'
+    conclusion: 'A: DSP NLL 3.873038 -> 3.969016, tasks 8 -> 4; B: DSP NLL 4.601481 -> 3.911864, tasks 0 -> 2; C: DSP NLL
+      4.320988 -> 3.956556, tasks 2 -> 9'
     next_action: discuss_results_no_automatic_next_direction
   latest_w4f16_head_ablation_result:
     id: EXP-0222
@@ -3219,7 +3222,8 @@ current_scope:
     closure_sha256: 196080cc53fd21bb8f1b1c606fe7a9da463ccbe84465bb92d9621d3a1049c6b5
     evidence_ledger_sha256: 54dbdc87eb1b8df4fc5e7baf2c0f0e385d41e583c0caec5975b3d5c5c5556c78
     evidence_files: 27
-    conclusion: 'A: NLL 3.874188 -> 3.853870, tasks 9 -> 8; B: NLL 4.600959 -> 4.413664, tasks 0 -> 0; C: NLL 4.323169 -> 4.293221, tasks 2 -> 2'
+    conclusion: 'A: NLL 3.874188 -> 3.853870, tasks 9 -> 8; B: NLL 4.600959 -> 4.413664, tasks 0 -> 0; C: NLL 4.323169 ->
+      4.293221, tasks 2 -> 2'
     next_action: discuss_with_user_before_any_next_direction
   latest_w4f16_gamma_attribution_result:
     id: EXP-0220
@@ -3330,7 +3334,8 @@ current_scope:
     speed_summary_sha256: 8abbdb773bf85fc1b2bd541af4326a7a567e57667899b557c2bb0237fb238476
     evidence_sha256_ledger_sha256: 0bf9fc284fb9f624c3f9a0f78a224c0f6e66e2c5f1b5f2cbd8ec6680cce49a97
     evidence_files: 182
-    conclusion: FP16 folding preserves observed quality; W4 requantization after gamma fold regresses, QKV largest isolated NLL loss; gamma-preserving fixed R2 also regresses; no promotion
+    conclusion: FP16 folding preserves observed quality; W4 requantization after gamma fold regresses, QKV largest isolated
+      NLL loss; gamma-preserving fixed R2 also regresses; no promotion
     reopen_condition: new_approved_quantization_or_rotation_hypothesis_no_repeat_fixed_Hadamard_no_evaluation_tuning
   latest_w4f16_gptq_result:
     id: EXP-0221
@@ -3490,7 +3495,8 @@ current_scope:
     calibration_sha256: e65edb14cb774956df92b27b5dc728b976f7ba00e9435145004180c6538a1669
     holdout_scored: false
     other_recipes: F16F16_and_W4U8_frozen
-    conclusion: Unrotated GPTQ reduces NLL but tasks stay8/24; GPTQ mitigates folded/rotated RTN loss without incremental fixed R1R2 benefit; no promotion
+    conclusion: Unrotated GPTQ reduces NLL but tasks stay8/24; GPTQ mitigates folded/rotated RTN loss without incremental
+      fixed R1R2 benefit; no promotion
     reopen_condition: new_approved_hypothesis_no_repeat_fixed_trial_no_evaluation_tuning
   promoted_w4u8_fastest_decode_baseline:
     id: EXP-0211
@@ -9042,8 +9048,8 @@ current_scope:
     root_cause: unresolved; raw output/token mismatch, postfailure bounded reruns pass but do not clear gate
     next_direction: discuss_runtime_nondeterminism_then_same_token_device_software_head_and_transformer_alignment
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0257.md
-  last_concluded_experiment: EXP-0258
-  last_concluded_source_commit: 000509dbce670b5ac4b0014db82c5c891474381b
+  last_concluded_experiment: EXP-0259
+  last_concluded_source_commit: 4fad27dc0a50a6d541f1d23ecf15018ec1099df6
   latest_w4u8_dense_r3_e2e_diagnostic_result:
     id: EXP-0258
     execution_state: completed
@@ -9209,3 +9215,226 @@ current_scope:
       selected_token_and_code_checks: 5280
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0258.md
     next_direction: discuss_R3_prepare_finish_and_pipeline_overhead; no_new_algorithm_authorized
+  latest_w4u8_dense_r3_pipeline_optimization_result:
+    id: EXP-0259
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_role: diagnostic_measurement_integrity_only_not_numerical_or_model_acceptance
+    adoption_status: not_applicable
+    current_stage: completed_exact_dense_R3_pipeline_optimization
+    protocol: PC073
+    source_head: 4fad27dc0a50a6d541f1d23ecf15018ec1099df6
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0259
+    report: docs/experiments/EXP-0259-RESULTS.md
+    report_sha256: 4fdcbf7d32bd6bb00a2bb6501f8194cb65e32d665831833235dd3d66f8357e09
+    full_profiling_report: docs/experiments/EXP-0259-PROFILE.md
+    full_profiling_report_sha256: 5f552f4dfb2c91a69139fa1ad218bcc4f0877574afb0bca77212f5c1cb8ff8f9
+    evidence_ledger_sha256: 2f891f9aa35e7fa5bece5180e8e3a81fe4fd1253dc3749565dd226b462541a07
+    evidence_file_count: 1231
+    numerical_eligible: false
+    numerical_gate: known_ideal_dense_R3_whole_layer_fail_unchanged_exact_implementation_optimization_PC073
+    speed_eligible: true
+    measurement_integrity: pass
+    physical_gate: pass
+    model_quality: not_assessed
+    baseline_promoted: false
+    ABI: 121
+    short_rounds: 5
+    formal_rounds: 10
+    layer_timed_RPCs: 7920
+    timed_full_model_RPCs: 5280
+    formal_RPCs: 3520
+    layer_ledgers_checked: 147840
+    actual_layer_count: 28
+    performance:
+      r1_prefill_ns:
+        control_ns: 39180208.0
+        R3_ns: 39283021.0
+        paired_ratio: 1.0030526099511974
+        ci95:
+        - 0.9967505370992356
+        - 1.0049383717121447
+        stable_over10percent: false
+      r1_decode_ns:
+        control_ns: 327683099.0
+        R3_ns: 328553307.5
+        paired_ratio: 0.9982803356671636
+        ci95:
+        - 0.992860860537268
+        - 1.011973780909807
+        stable_over10percent: false
+      r10_prefill_ns:
+        control_ns: 37529664.099999994
+        R3_ns: 37572823.0
+        paired_ratio: 0.9999659858838136
+        ci95:
+        - 0.9954400876824954
+        - 1.0065277285481966
+        stable_over10percent: false
+      r10_decode_ns:
+        control_ns: 310191346.05
+        R3_ns: 313354728.9
+        paired_ratio: 1.0080977043518886
+        ci95:
+        - 1.0074348750074051
+        - 1.0114141946971968
+        stable_over10percent: false
+    diagnostic_E2E:
+      a0_r1:
+        prefill_tokens: 64
+        prefill_host_us: 39180.208
+        prefill_tokens_per_second: 1633.477800832502
+        decode_tokens: 15
+        decode_host_us: 327683.099
+        decode_host_us_per_token: 21845.539933333333
+        decode_tokens_per_second: 45.7759342662955
+        selected_output_tokens: 16
+        complete_model_host_us: 366800.156
+        complete_model_effective_tokens_per_second: 43.620483083982116
+        generation_loop_us: 373914.2705
+        generation_loop_tokens_per_second: 42.790557254219586
+        cold_startup_median_ns:
+          model_staging_ns: 5057853513.5
+          session_open_map_ns: 43695234.5
+          prepare_ns: 2055129.5
+          ready_ns: 5103703774.0
+      a1_r1:
+        prefill_tokens: 64
+        prefill_host_us: 39283.021
+        prefill_tokens_per_second: 1629.2026012968809
+        decode_tokens: 15
+        decode_host_us: 328553.30750000005
+        decode_host_us_per_token: 21903.553833333335
+        decode_tokens_per_second: 45.654691818921954
+        selected_output_tokens: 16
+        complete_model_host_us: 367892.943
+        complete_model_effective_tokens_per_second: 43.490913061629456
+        generation_loop_us: 374973.9585
+        generation_loop_tokens_per_second: 42.66962981643964
+        cold_startup_median_ns:
+          model_staging_ns: 5063543383.5
+          session_open_map_ns: 44191146.0
+          prepare_ns: 2019635.5
+          ready_ns: 5109143045.0
+      a0_r10:
+        prefill_tokens: 64
+        prefill_host_us: 37529.664099999995
+        prefill_tokens_per_second: 1705.3176876155417
+        decode_tokens: 15
+        decode_host_us: 310191.34605
+        decode_host_us_per_token: 20679.42307
+        decode_tokens_per_second: 48.357248488751
+        selected_output_tokens: 16
+        complete_model_host_us: 347666.7494
+        complete_model_effective_tokens_per_second: 46.02108204944145
+        generation_loop_us: 360825.25245
+        generation_loop_tokens_per_second: 44.34279444512309
+        cold_startup_median_ns:
+          model_staging_ns: 5046348253.0
+          session_open_map_ns: 43996927.5
+          prepare_ns: 2075885.0
+          ready_ns: 5092448149.0
+      a1_r10:
+        prefill_tokens: 64
+        prefill_host_us: 37572.823000000004
+        prefill_tokens_per_second: 1703.3588346555698
+        decode_tokens: 15
+        decode_host_us: 313354.7289
+        decode_host_us_per_token: 20890.31526
+        decode_tokens_per_second: 47.86907174707712
+        selected_output_tokens: 16
+        complete_model_host_us: 350930.32255000004
+        complete_model_effective_tokens_per_second: 45.593096326751144
+        generation_loop_us: 363679.13005000004
+        generation_loop_tokens_per_second: 43.99482587246691
+        cold_startup_median_ns:
+          model_staging_ns: 5055947472.5
+          session_open_map_ns: 43431510.5
+          prepare_ns: 2078073.0
+          ready_ns: 5101874164.5
+    R3_breakdown_us:
+      a1_r1:
+        prefill:
+          prepare: 475.91145833333337
+          matmul: 521.5104166666667
+          finish: 3303.0208333333335
+        decode:
+          prepare: 28.343750000000004
+          matmul: 71.66145833333334
+          finish: 74.17361111111111
+      a1_r10:
+        prefill:
+          prepare: 475.23177083333337
+          matmul: 521.8489583333334
+          finish: 3302.911458333334
+        decode:
+          prepare: 28.35763888888889
+          matmul: 71.07083333333334
+          finish: 74.54930555555555
+    device_PPL: null
+    exact_single_layer_files: 108
+    exact_slice_files: 54
+    exact_selected_tokens_and_codes: 5280
+    initial_layer_formal_uncertain: true
+    fixed_additional_layer_pairs: 10
+    combined_layer_pairs: 20
+    confirmation:
+      confirmation_only_r1_prefill_ns:
+        control_ns: 1732473.5
+        candidate_ns: 1725000.5
+        paired_ratio: 0.980022205274514
+        ci95:
+        - 0.9229616221910792
+        - 1.0630236454331397
+      confirmation_only_r1_decode_ns:
+        control_ns: 997861.25
+        candidate_ns: 976249.9375
+        paired_ratio: 1.0009261730629817
+        ci95:
+        - 0.9337030005556585
+        - 1.0467853237016431
+      confirmation_only_r10_prefill_ns:
+        control_ns: 1532023.35
+        candidate_ns: 1528570.35
+        paired_ratio: 0.9917285680686804
+        ci95:
+        - 0.963876405308138
+        - 1.0223015386321308
+      confirmation_only_r10_decode_ns:
+        control_ns: 935490.225
+        candidate_ns: 956391.90625
+        paired_ratio: 1.0063716060795889
+        ci95:
+        - 0.9818078286448039
+        - 1.042345719537021
+      all_twenty_pairs_r1_prefill_ns:
+        control_ns: 1712057.0
+        candidate_ns: 1724245.0
+        paired_ratio: 1.0009510534194883
+        ci95:
+        - 0.9734329420622033
+        - 1.022136676249187
+      all_twenty_pairs_r1_decode_ns:
+        control_ns: 981507.0
+        candidate_ns: 994720.0
+        paired_ratio: 1.0404352440814755
+        ci95:
+        - 0.9589184274791724
+        - 1.0552519820680477
+      all_twenty_pairs_r10_prefill_ns:
+        control_ns: 1532023.35
+        candidate_ns: 1529411.5
+        paired_ratio: 0.9916981020996278
+        ci95:
+        - 0.9768479280769504
+        - 1.019039657576984
+      all_twenty_pairs_r10_decode_ns:
+        control_ns: 937031.58125
+        candidate_ns: 952186.5125
+        paired_ratio: 1.0098892213454769
+        ci95:
+        - 0.9956792075308298
+        - 1.0317005217914899
+    checkpoint_handoff: docs/SESSION_HANDOFF_EXP0259.md
+    next_direction: discuss_quality_alignment_or_longer_context_validation; no automatic baseline promotion
