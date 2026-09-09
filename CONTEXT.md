@@ -1865,3 +1865,5 @@ Static A8 residual trajectory calibration complete. 128calibration docs,256new d
 ## EXP0256 active
 
 User approves PC070 fixed R_MSE independent integer-path confirmation, four arms/new256docs. No fitting/hardware or extra direction. Parent binding temporary for branch setup. Read docs/experiments/EXP-0256.md.
+
+EXP0256 checkpoint: frozen256doc panel independently audited,112numerical cases pass; four-control reproduction then four-arm final runner active. Read docs/SESSION_HANDOFF_EXP0256.md and inspect processes/logs before resume. No result conclusion yet.

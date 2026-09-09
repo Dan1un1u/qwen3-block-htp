@@ -46,7 +46,8 @@ experiments:
     started_on: '2026-09-09'
   evidence:
     protocol: PC070
-    current_stage: registered_before_new_data
+    current_stage: frozen_data_numerical_pass_PPL_running
+    checkpoint_handoff: docs/SESSION_HANDOFF_EXP0256.md
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0256
     baseline_promoted: false
 - id: EXP-0255
