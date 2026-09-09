@@ -24,6 +24,31 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0254
+  slug: joint-attention
+  title: Ordered joint attention restoration and conditional attribution
+  parent: EXP-0253
+  record: docs/experiments/EXP-0254.md
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  approval_ref: PC068 user approves ordered route research
+  source_branches:
+  - codex/exp-0253-float-attention
+  - codex/exp-0254-joint-attention
+  source_commits:
+  - 6d130035cf089ba099c8f161799952bf1d70a385
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0253-float-attention
+    approved_on: '2026-09-09'
+    started_on: '2026-09-09'
+  evidence:
+    protocol: PC068
+    current_stage: registered_branch_setup
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0254
+    baseline_promoted: false
 - id: EXP-0253
   slug: float-attention
   title: Complete floating attention core conditional PPL
