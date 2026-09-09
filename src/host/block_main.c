@@ -3112,6 +3112,14 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U64(f16_cache_native_append_update_ticks);
     QBH_REPLAY_PROFILE_U64(u8_attention_qk_hmx_ticks);
     QBH_REPLAY_PROFILE_U32(wide_score_mode);
+    QBH_REPLAY_PROFILE_U32(dense_r3_mode);
+    QBH_REPLAY_PROFILE_U32(dense_r3_total_calls);
+    QBH_REPLAY_PROFILE_U32(dense_r3_total_rows);
+    QBH_REPLAY_PROFILE_U32(dense_r3_total_hmx_calls);
+    QBH_REPLAY_PROFILE_U32(dense_r3_total_refined_values);
+    QBH_REPLAY_PROFILE_U64(dense_r3_total_prepare_ticks);
+    QBH_REPLAY_PROFILE_U64(dense_r3_total_matmul_ticks);
+    QBH_REPLAY_PROFILE_U64(dense_r3_total_finish_ticks);
     QBH_REPLAY_PROFILE_U32(prefix_kv_mode);
     QBH_REPLAY_PROFILE_U32(prefix_group_patch_count);
     printf(",\"prefix_seed_metadata_read_bytes\":%u",header->prefix_group_patch_count*256U);

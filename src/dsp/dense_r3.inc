@@ -144,6 +144,13 @@ static int qbh_run_dense_r3(struct qbh_block_header *h,uint8_t *shared,
             (uint32_t *)(scratch+QBH_ATTN_U8_QK_BIAS_OFFSET));
     }
     h->dense_r3_finish_ticks=HAP_perf_get_qtimer_count()-start;
+    ++h->dense_r3_total_calls;
+    h->dense_r3_total_rows+=rows;
+    h->dense_r3_total_hmx_calls+=h->dense_r3_hmx_calls;
+    h->dense_r3_total_refined_values+=h->dense_r3_refined_values;
+    h->dense_r3_total_prepare_ticks+=h->dense_r3_prepare_ticks;
+    h->dense_r3_total_matmul_ticks+=h->dense_r3_matmul_ticks;
+    h->dense_r3_total_finish_ticks+=h->dense_r3_finish_ticks;
     h->u8_attention_qk_norm_rope_ticks+=h->dense_r3_prepare_ticks+
         h->dense_r3_matmul_ticks+h->dense_r3_finish_ticks;
     if (h->dense_r3_audit_offset) {
