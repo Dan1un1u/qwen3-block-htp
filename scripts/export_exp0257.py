@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Frozen C64/static-OFF A8 native package. No quantizer fitting."""
 from pathlib import Path
-import hashlib,json,subprocess,shutil,os,struct
+import hashlib,json,subprocess,shutil,os,struct,sys
 import numpy as np
 import torch
 from transformers import AutoTokenizer
@@ -21,12 +21,14 @@ def write(p,d):
  with p.open('x') as f:json.dump(d,f,indent=2,ensure_ascii=False);f.write('\n')
 def link(a,b):
  b.parent.mkdir(parents=True,exist_ok=True)
- os.link(a,b)
+ if b.exists():
+  assert "--resume" in sys.argv and sha(a)==sha(b),(a,b)
+ else:os.link(a,b)
 def preflight():subprocess.run(['python3',str(M/'scripts/project_memory.py'),'preflight','--source-worktree',str(S)],check=True)
 def qp(x):return dict(scale=x['scale'],zero_point=x['zero'],minimum=x['lo'],maximum=x['hi'])
 def qdqcode(x,q):return np.clip(np.floor(x.astype(np.float32)*np.float32(1/q['scale'])+np.float32(q['zero_point'])+np.float32(.5)),0,255).astype('u1')
 def main():
- preflight();R.mkdir(exist_ok=True);O.mkdir(exist_ok=False)
+ preflight();R.mkdir(exist_ok=True);O.mkdir(exist_ok="--resume" in sys.argv)
  assert sha(C/'manifest.json')=='7de4f0758d83f2ba3b58696c695bfbfed72a25dd3bf308475abee0a0f0575a89'
  cm=json.loads((C/'manifest.json').read_text())
  for n,d in cm['files'].items():assert sha(C/n.replace('\\','/'))==d['sha256'],n
@@ -34,14 +36,14 @@ def main():
  seal=json.loads((P/'EVIDENCE_SHA256.json').read_text());n='parameters/A8.json';assert sha(P/n)==seal['files'][n]['sha256']
  params=json.loads((P/n).read_text())['parameters'];old=json.loads((OLD/'manifest.json').read_text())
  for n,d in old['files'].items():assert sha(OLD/n)==d['sha256'],n
- root=O/'package';root.mkdir()
+ root=O/'package';root.mkdir(exist_ok="--resume" in sys.argv)
  # Host allocation-only placeholders are explicitly not numerical references.
  for p in OLD.iterdir():
   if p.is_file() and p.name!='manifest.json':link(p,root/p.name)
  mapping=dict(input_norm='norm_qkv',q_projection='q_out',k_projection='k_out',v='v_out',q_rope='q_rope',k_rope='k_cache',attention_probability='attention_prob',attention_concat='attn_context',attention_projection='o_out',post_attention_residual='residual_mid',post_attention_norm='norm_mlp',gate='gate_out',up='up_out',middle='swiglu',down='down_out',block_output='residual_out')
  qs=[]
  for layer in range(28):
-  d=root/f'layer{layer}';d.mkdir();base=f'L{layer:02d}.'
+  d=root/f'layer{layer}';d.mkdir(exist_ok="--resume" in sys.argv);base=f'L{layer:02d}.'
   q={name:qp(params[base+site]['mse']) for name,site in mapping.items()}
   q['block_input']=qp(params['L00.embedding_out' if layer==0 else f'L{layer-1:02d}.residual_out']['mse'])
   assert params[base+'v_out']['mse']==params[base+'v_cache']['mse'];qs.append(q)
@@ -69,7 +71,7 @@ def main():
  head.export_generation_qparams(root/'generation_qparams_u8.bin')
  head.export_lm_head_bias(root/'generation_lm_head_weight_w4_hmx.bin',root/'generation_lm_head_weight_w4_scale_f32.bin',root/'generation_lm_head_bias_u32.bin',64)
  emb=np.memmap(C/'generation_embedding_weight_f16.bin',dtype='<f2',mode='r',shape=(151936,2048))
- with (root/'generation_embedding_weight_u8.bin').open('xb') as f:
+ with (root/'generation_embedding_weight_u8.bin').open('wb' if '--resume' in sys.argv else 'xb') as f:
   for i in range(0,151936,2048):f.write(qdqcode(emb[i:i+2048],qs[0]['block_input']).tobytes())
  tok=AutoTokenizer.from_pretrained('/mnt/d/llm_exp/models/Qwen3-origin',local_files_only=True)
  questions=[('en_fact','What is the capital of France? Answer briefly.'),('en_math','What is 12 plus 9? Answer with the number.'),('zh_fact','中国的首都是哪里？请简短回答。'),('zh_math','12加9等于多少？请只回答数字。'),('en_prose','Explain in two simple sentences why plants need sunlight.'),('zh_prose','请用两句话解释植物为什么需要阳光。')]
@@ -81,12 +83,14 @@ def main():
  for name,question in questions:
   found=None
   for prefix in prefixes:
-   for count in range(7):
-    for extra in itertools.product(padding,repeat=count):
-     prompt=prefix+''.join(extra)+question
-     text=tok.apply_chat_template([dict(role='user',content=prompt)],tokenize=False,add_generation_prompt=True,enable_thinking=False)
-     ids=tok.encode(text,add_special_tokens=False)
-     if len(ids)==63:found=(prompt,text,[151645]+ids);break
+   for pad in padding:
+    for count in range(19):
+     for tail in ['', 'Now ', 'Now, ', 'Please ', 'Well, ']:
+      prompt=prefix+pad*count+tail+question
+      text=tok.apply_chat_template([dict(role='user',content=prompt)],tokenize=False,add_generation_prompt=True,enable_thinking=False)
+      ids=tok.encode(text,add_special_tokens=False)
+      if len(ids)==63:found=(prompt,text,[151645]+ids);break
+     if found:break
     if found:break
    if found:break
   assert found,name
