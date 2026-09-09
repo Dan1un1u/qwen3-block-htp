@@ -1915,3 +1915,5 @@ Speed eligibility False; numerical eligibility false. Localpass means measuremen
 ## EXP0259 active
 
 User approves currentR3 implementation optimization, no mllm. Read PC073 and EXP0259 protocol. First constant/vector movement then worker overlap, frozen math andexact oldR3outputs. Layer first, unchanged10percent fullmodel escalation gate. Parentbranch temporary for controlled branchcreation.
+
+EXP0259 checkpoint: exact vector/fusedK/stream variants builtABI121;108capture comparisons and5short pass. Stream cost near noR3. Tenformal next, then conditional slice/fullmodel. Read docs/SESSION_HANDOFF_EXP0259.md; inspectlivework before restarting.

@@ -1,0 +1,9 @@
+# EXP0259 active checkpoint
+
+Current source codex/exp-0259-dense-r3-pipeline-optimization, HEAD2740f12 (report/check script after native0bac8ee), ABI121. Rebuilt layer0 via build_exp0257.sh1; staged binaries/l1_attempt2. Model packages are verified originalEXP0247control/r3 at deviceEXP0252-layer0, frozen same-input layer0 M64+8M1 fixtures. This layer gate has no injected offlineprefix; subsequent slice/fullmodel reuses frozen EXP0258 correctedprefix andfullpackages. No mllm work.
+
+QBH_R3_OPT0 original;1 prepackedconstant+vectorlayout+fusedKoperand;2 same plus streamed24head prepare over5workers. No math changes; exact sqrtf/rounding retained. Bias32 ring slots relocated to deadattention_concat before gate gets parallelFP16 data. Constant32KiB readonlymatrix counted separately. Source oldmodel/weights/HMX precision unchanged.
+
+R=/mnt/d/llm_exp/results/qwen3-block-htp/exp0259. First build failed missingcast of void qkv state, fixed; build1.log retained. Initial vector/streamaudit beforeKfusion retained; second staged runtime fusion audit_vector_fused/audit_stream_fused. numerical_gate.json pass108 completeaudit/outputbytecomparisons, reproduces EXP0252 controls, independentFloat64component/constantlayout. Known idealR3wholelayergate stillfailed.
+
+Five short rounds fourarms off/r3/vector/stream, repeat1/10 complete. Stream/off repeat10 ratio prefill0.99931 CI[0.92769,1.02848], decode0.99183 CI[0.95613,1.01747]. Next ten formal samefourarms scripts/device_exp0259.py formal. Check logs/process before resume; do not duplicate. No devicejob active at checkpoint. Otherrecipes unchanged. If stream upper95CI <=1.10 bothprefill/decode inrepeat1/10, proceed three-layer andfullmodel ownfresh5short10formal; otherwise stopdiscussion. Prepare reporting/seal/closure afteractual scope complete.
