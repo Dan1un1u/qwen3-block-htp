@@ -45,19 +45,37 @@ def main():
  invariant=float(np.max(np.abs(origout-rotout)));assert invariant<1e-10
  packed,scales=pack_w4_chunk(rotated.float());q=unpack(packed,2048,6144).numpy()
  assert np.array_equal(q,np.clip(np.rint(rotated.float().numpy()/scales[:,None]),-7,7))
- O.mkdir(exist_ok=False);d=O/'r4';d.mkdir()
+ O.mkdir(exist_ok=True);d=O/'r4';d.mkdir(exist_ok=True);assert not (d/'manifest.json').exists()
  changed=['down_weight_w4_hmx.bin','down_weight_w4_scale_f32.bin','silu_up_lut_u16.bin']
  for n in pm['files']:
   dst=d/n;dst.parent.mkdir(parents=True,exist_ok=True)
-  if dst.name not in changed:os.link(P/n,dst)
+  if dst.name not in changed:
+   if dst.exists():assert sha(dst)==pm['files'][n]['sha256']
+   else:os.link(P/n,dst)
  qp=pm['qparams'];g=(np.arange(256,dtype=float)-qp['gate']['zero_point'])*qp['gate']['scale'];u=(np.arange(256,dtype=float)-qp['up']['zero_point'])*qp['up']['scale']
- lut=(g[:,None]/(1+np.exp(-g[:,None]))*u[None,:]).astype('<f2')
- oracle=(torch.from_numpy(g).sigmoid()*torch.from_numpy(g))[:,None]*torch.from_numpy(u)[None,:]
- assert np.array_equal(lut.view('u2'),oracle.half().numpy().view('u2')) and np.isfinite(lut).all()
+ # Float64 exp implementations can straddle a half midpoint. Generate correctly
+ # rounded half values with Decimal80; independently certify rounding intervals
+ # with mpmath100 instead of accepting backend-dependent one-ULP mismatches.
+ from decimal import Decimal,localcontext
+ import mpmath as mp
+ mp.mp.dps=100;lut=np.empty((256,256),'<f2');tie_repairs=0
+ with localcontext() as ctx:
+  ctx.prec=80
+  for i,gv in enumerate(g):
+   dg=Decimal.from_float(float(gv));sg=dg/(1+(-dg).exp());mg=mp.mpf(float(gv));ms=mg/(1+mp.exp(-mg))
+   for j,uv in enumerate(u):
+    exact=sg*Decimal.from_float(float(uv));center=np.float16(float(exact))
+    choices=[center,np.nextafter(center,np.float16(-np.inf)),np.nextafter(center,np.float16(np.inf))]
+    chosen=min(choices,key=lambda z:(abs(Decimal.from_float(float(z))-exact),int(np.asarray(z).view('u2'))&1))
+    lut[i,j]=chosen;tie_repairs+=int(np.asarray(center).view('u2')!=np.asarray(chosen).view('u2'))
+    mex=ms*mp.mpf(float(uv));lo=np.nextafter(chosen,np.float16(-np.inf));hi=np.nextafter(chosen,np.float16(np.inf));midlo=(mp.mpf(float(lo))+mp.mpf(float(chosen)))/2;midhi=(mp.mpf(float(hi))+mp.mpf(float(chosen)))/2
+    assert midlo<=mex<=midhi,(i,j)
+ assert np.isfinite(lut).all()
+
  for base in [d,d/'layer0']:
   packed.tofile(base/'down_weight_w4_hmx.bin');scales.tofile(base/'down_weight_w4_scale_f32.bin');lut.tofile(base/'silu_up_lut_u16.bin')
  manifest=dict(experiment='EXP-0261',parent_manifest_sha256=sha(P/'manifest.json'),original_shards=pins,qparams=qp,rotation='full6144 H12 tensor H512',half_scale512=float(np.float16(1/math.sqrt(512))),half_scale12=float(np.float16(1/math.sqrt(12))),quantizer='Down only fresh original W R, per-output-channel RTN[-7,7], FP32scale',files={str(p.relative_to(d)):dict(bytes=p.stat().st_size,sha256=sha(p)) for p in sorted(d.rglob('*')) if p.is_file()})
  write(d/'manifest.json',manifest)
- write(R/'export_audit.json',dict(pass_all=True,original_shards=pins,parent_manifest_sha256=sha(P/'manifest.json'),manifest_sha256=sha(d/'manifest.json'),parent_files_verified=len(pm['files']),full_rotation_dimension=6144,factor_dimensions=[12,512],matrix_orthogonality=True,dense_factor_equivalence=True,invariance_max_abs=invariant,independent_W4_unpack=True,LUT_all65536_halfwords_exact=True,changed_files=[n for n in pm['files'] if manifest['files'][n]!=pm['files'][n]],weights_semantics='one FP32scale per output channel; no groups; actual W4 HMX carrier',quality='not assessed; middle static range unchanged; new Down RTN affects accuracy',source_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=S,text=True).strip()))
+ write(R/'export_audit.json',dict(pass_all=True,original_shards=pins,parent_manifest_sha256=sha(P/'manifest.json'),manifest_sha256=sha(d/'manifest.json'),parent_files_verified=len(pm['files']),full_rotation_dimension=6144,factor_dimensions=[12,512],matrix_orthogonality=True,dense_factor_equivalence=True,invariance_max_abs=invariant,independent_W4_unpack=True,LUT_all65536_halfwords_exact=True,LUT_correct_rounding_backend="Decimal80 independently verified by mpmath100",double_rounding_repairs=tie_repairs,changed_files=[n for n in pm['files'] if manifest['files'][n]!=pm['files'][n]],weights_semantics='one FP32scale per output channel; no groups; actual W4 HMX carrier',quality='not assessed; middle static range unchanged; new Down RTN affects accuracy',source_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=S,text=True).strip()))
  print('EXPORT_PASS',invariant,flush=True)
 if __name__=='__main__':main()
