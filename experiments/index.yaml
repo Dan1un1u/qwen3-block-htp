@@ -41,7 +41,7 @@ experiments:
   - 4fad27dc0a50a6d541f1d23ecf15018ec1099df6
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0259-dense-r3-pipeline-optimization
+    source_branch: codex/exp-0260-w4f16-decode-active-row-layout
     started_on: '2026-09-09'
   evidence:
     stage: registered_before_implementation
