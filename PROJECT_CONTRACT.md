@@ -325,3 +325,7 @@ User2026-09-09 authorizes continuation under docs/experiments/EXP-0255.md: bound
 ## PC070 — User-approved integer-path fixed R_MSE confirmation
 
 User2026-09-09 approves EXP0256 under docs/experiments/EXP-0256.md: frozen EXP0255 R_MSE, primary integer attention, new independent256documents/4096targets and four fixed arms. No fitting or hardware. Prospective research selection uses the deployment integer path; all original numerical, physical and model acceptance gates remain. Other recipes frozen; no promotion. PC037 applies.
+
+## PC071 — Independent A8 real-device text and E2E validation
+
+User2026-09-09 authorizes EXP0257 under docs/experiments/EXP-0257.md: integrate and independently evaluate fixed per-channel C64/native-W4 A8 with original OFF/EOS static parameters, wide differences and speed-eligible NR64. Single-block/slice prerequisites before complete-model text/profiling, unchanged numerical/physical/>10percent gates. No R3 gate bypass, mixed precision, fitting, residual candidate promotion or new algorithm. Quality diagnostic does not require prior PPL acceptance. Preserve other recipes, baseline and failed evidence; PC037 applies.

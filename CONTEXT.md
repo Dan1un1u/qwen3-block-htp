@@ -1871,3 +1871,7 @@ EXP0256 checkpoint: frozen256doc panel independently audited,112numerical cases 
 ## Current handoff after EXP0256
 
 Independent fixed-R_MSE integer confirmation complete:256newdocs/4096targets,112numeric cases and4historical first-batch regressions exact,8scores independently reconstructed. PPL {"F": 26.791716997182647, "C64": 28.15053545692697, "B__wide_nr64": 36.648882494442866, "R_MSE__wide_nr64": 36.45125303361894}. R_MSE/B0.99460749 CI[0.95010958,1.04138796],all4cell CIs cross1; effect inconclusive, original5.89percent development gain not independently confirmed. Retain originalB; no promotion/new calibration/hardware. Allmodel quality gates fail on this panel. Evidence valid and implementation checks pass; local fail means benefit not confirmed. Active none,next257. Discuss docs/W4A8_NEXT_DIRECTION_AFTER_EXP0256.md. Source 073a39de0f452c938cd5705c82ae722611fb9396; ledger 4bac015487ed866596fcd561a428b80a36baa4cc7d4b58090577160489ba8227.
+
+## EXP0257 active
+
+User requests independent device text/E2E validation. PC071; read docs/experiments/EXP-0257.md. Best established speed-eligible no-R3 wide_NR64, original C64/OFF/EOS static parameters. Preserve original numerical/slice/physical gates and >10percent speed stop. Parent binding temporary for branch setup. No new fitting or promotion.

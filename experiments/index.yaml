@@ -24,6 +24,30 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0257
+  slug: a8-device-text-e2e
+  title: Independent native A8 device text and E2E validation
+  parent: EXP-0256
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: pending
+  approval_ref: PC071 explicit user request independent real-device text/profiling/E2E
+  record: docs/experiments/EXP-0257.md
+  runtime:
+    source_branch: codex/exp-0256-integer-rmse-confirmation
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    approved_on: '2026-09-09'
+    started_on: '2026-09-09'
+  source_branches:
+  - codex/exp-0257-a8-device-text-e2e
+  - codex/exp-0256-integer-rmse-confirmation
+  source_commits:
+  - 073a39de0f452c938cd5705c82ae722611fb9396
+  evidence:
+    current_stage: registration_parent_branch_setup
+    protocol: PC071
+    baseline_promoted: false
 - id: EXP-0256
   slug: integer-rmse-confirmation
   title: Independent fixed R_MSE integer attention confirmation
