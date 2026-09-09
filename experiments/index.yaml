@@ -45,9 +45,45 @@ experiments:
     approved_on: '2026-09-09'
     started_on: '2026-09-09'
   evidence:
-    current_stage: integration
+    current_stage: short_complete_formal_diagnostic_next
     numerical_eligibility: failed_known_R3_ideal_reference_exception
     baseline_promoted: false
+    source_head: 7fc5213e436126b5f44086199217b232b2869feb
+    short_gate: integrity_pass_speed_eligibility_fail
+    short_performance:
+      r1_prefill_ns:
+        control_ns: 39013282.0
+        R3_ns: 142945989.0
+        paired_ratio: 3.664033930803361
+        ci95:
+        - 3.6397553718290725
+        - 3.693045103633547
+        stable_over10percent: true
+      r1_decode_ns:
+        control_ns: 314468229.0
+        R3_ns: 472776616.0
+        paired_ratio: 1.4993201236872804
+        ci95:
+        - 1.498329089267694
+        - 1.518273253330741
+        stable_over10percent: true
+      r10_prefill_ns:
+        control_ns: 37497114.5
+        R3_ns: 144223354.3
+        paired_ratio: 3.848254458518926
+        ci95:
+        - 3.8336545709403853
+        - 3.865754178182451
+        stable_over10percent: true
+      r10_decode_ns:
+        control_ns: 297941687.5
+        R3_ns: 474502145.7
+        paired_ratio: 1.595228155509457
+        ci95:
+        - 1.5755278177993637
+        - 1.5988467312180463
+        stable_over10percent: true
+    checkpoint_handoff: docs/SESSION_HANDOFF_EXP0258.md
 - id: EXP-0257
   slug: a8-device-text-e2e
   title: Independent native A8 device text and E2E validation
