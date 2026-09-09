@@ -1991,3 +1991,7 @@ QBH_R4_OPT0 original,1 HVX native deal/scatter/gather plus quantization/native s
 RemainingR4preparation/finish prefill413.891/408.195us,layout61.938,exposedHMXsubmit/wait25.435. Decode9.948/16.211us,layout.967,HMX4.217 plus overlappedFP16SwiGLUwork in Gate/Up. Pipeline_HVX_ticks is scheduledwork whilecommandinflight, not fullyhiddenlatency; HMXis too short tocoverallconversion. Next discuss parallelization of preparation/outputconversion and prefillUpreadiness integration, no automaticadditionalexperiment orbaselinepromotion.
 
 Retained routine tooling recovery: initial runnerdecl SyntaxError beforestaging corrected; preliminaryreport regeneration met exclusivewrite guard, preserved preliminary_reports and failedreport_final.log, corrected summary towriteonce. No native mismatch, thresholdrelaxation, discardedtiming or modifiedoldseal. Do not rerun completedgates/profiling/export.
+
+## EXP0263 active
+
+User approves prefill R4 bottleneck optimization. PC077/EXP0263: parallel preparation/finish, then Up readiness overlap; frozen math/weights/gates. Parent branch temporary binding.
