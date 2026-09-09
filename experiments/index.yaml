@@ -30,14 +30,15 @@ experiments:
   parent: EXP-0261
   record: docs/experiments/EXP-0262.md
   approval_ref: 'User: 做一下优化看看，输入输出原生对齐，流水尽量覆盖 PC076'
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
-  adoption_status: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
+  adoption_status: not_applicable
   runtime:
     source_branch: codex/exp-0262-w4u8-r4-native-layout-pipeline
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     started_on: '2026-09-10'
+    completed_on: '2026-09-10'
   source_branches:
   - codex/exp-0262-w4u8-r4-native-layout-pipeline
   - codex/exp-0261-w4u8-dense-r4-cost
@@ -48,13 +49,84 @@ experiments:
   - de5a612e8e044449c04bbaf63f7840321492a89d
   - 82022d6cc2a23b1472c59037cecc3b94050aabfb
   - 016cb33213457caf1fa61f1b44655c07bc136c9f
+  - d80aa35d23f94db8afaa30597a69c4b21c2fee46
+  - 001afd46b7d63c206f9cb4fb31b8a0e905191d1f
+  - 53dde49331bb1b7d256924a24aa335fff02a1428
   evidence:
+    current_stage: completed_native_R4_optimization_prefill_speed_stop
     protocol: PC076
-    current_stage: numerical_and_short_complete_formal_next
+    source_head: 53dde49331bb1b7d256924a24aa335fff02a1428
     runtime_source_head: de5a612e8e044449c04bbaf63f7840321492a89d
-    source_head: 016cb33213457caf1fa61f1b44655c07bc136c9f
     ABI: 125
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0262
+    report: docs/experiments/EXP-0262-RESULTS.md
+    report_sha256: a3716c86ed095eeab332101baf1ad97244b77944c49e652f2a8864f0057c70b0
+    full_profiling_report: docs/experiments/EXP-0262-PROFILE.md
+    full_profiling_report_sha256: 5474f87f0b5e2c729631223eea99dd042d1feab81c6986b1263279e9c51aa4d2
+    evidence_ledger_sha256: d526f6193fabb6b4cd7279c55907b06c2fcebcbcf9a875ec934c6e55fe2fe1de
+    evidence_file_count: 491
+    numerical_gate: pass_R4_components_and_conditional_wholeblock
+    known_R3_ideal_gate: unchanged historical failure
+    measurement_integrity: pass
+    physical_gate: pass
+    speed_eligible: false
+    stop_before_fullmodel: true
+    gate_role: prefill_over10percent_decode_pass_not_model_quality
+    performance:
+      r1_prefill_ns:
+        control_ns: 1723411.5
+        candidate_ns: 2384167.0
+        paired_ratio: 1.394194481250445
+        ci95:
+        - 1.3151968337841144
+        - 1.409484058467624
+        stable_over10: true
+      r1_decode_ns:
+        control_ns: 995048.875
+        candidate_ns: 1006959.5
+        paired_ratio: 1.024835727584882
+        ci95:
+        - 0.9672626022195556
+        - 1.0969171488089087
+        stable_over10: false
+      r10_prefill_ns:
+        control_ns: 1543770.85
+        candidate_ns: 2223518.2
+        paired_ratio: 1.4639884779157835
+        ci95:
+        - 1.4305921094759535
+        - 1.4881314091246451
+        stable_over10: true
+      r10_decode_ns:
+        control_ns: 954708.3875
+        candidate_ns: 1006824.5375
+        paired_ratio: 1.0597280599156749
+        ci95:
+        - 1.0490597215239457
+        - 1.0836003944062538
+        stable_over10: false
+    R4_breakdown_us:
+      prefill:
+        dense_r4_prepare_ticks: 413.89062500000006
+        dense_r4_matmul_ticks: 25.434895833333336
+        dense_r4_layout_ticks: 61.93749999999999
+        dense_r4_finish_ticks: 408.19531250000006
+      decode:
+        dense_r4_prepare_ticks: 9.947916666666668
+        dense_r4_matmul_ticks: 4.217122395833334
+        dense_r4_layout_ticks: 0.966796875
+        dense_r4_finish_ticks: 16.210611979166668
+    short_rounds: 5
+    formal_rounds: 10
+    timed_layer_RPCs: 2970
+    exact_native_file_comparisons: 116
+    model_quality: not_assessed
+    device_PPL: null
+    E2E_tokens_per_second: null
+    baseline_promoted: false
+    checkpoint_handoff: docs/SESSION_HANDOFF_EXP0262.md
+    next_direction: discuss_parallel_FP16_SwiGLU_preparation_and_output_quantization_for_prefill;
+      no further experiment authorized
 - id: EXP-0261
   slug: w4u8-dense-r4-cost
   title: W4A8 full-width dense R4 exploratory cost

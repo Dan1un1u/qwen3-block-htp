@@ -1975,3 +1975,19 @@ Retained failures/recoveries: double sigmoid backends differ at2halfmidpoints ->
 User approves R4 native-layout and pipeline optimization. Read PC076 and EXP0262 protocol. Frozen EXP0261 math/packages, exact oldR4 control, bounded vector and overlap stages. Temporary parent branch binding for new branch creation.
 
 EXP0262 vector/pipeline implementation and independent numerical gates plus5short complete. Read docs/SESSION_HANDOFF_EXP0262.md; tenformal next, nofullmodel or further tuning.
+
+## Current closure EXP0262
+
+Source codex/exp-0262-w4u8-r4-native-layout-pipeline 53dde49331bb1b7d256924a24aa335fff02a1428; active none,next263. Native singlelayer ABI125 runtime de5a612e8e044449c04bbaf63f7840321492a89d at exp0262-l1_attempt2. Bootstrap before future work. No mllm.
+
+Results /mnt/d/llm_exp/results/qwen3-block-htp/exp0262; seal d526f6193fabb6b4cd7279c55907b06c2fcebcbcf9a875ec934c6e55fe2fe1de,491files. Read source EXP-0262-RESULTS.md and PROFILE.md, MODULE_TABLES.md in results. All source/memory committed/pushed. Frozen EXP0261 parent/R4 packages unchanged, local/remote144files each and entire371file parentseal reverified. Scalar oracle audit_a2 is a readonly link to sealed EXP0261; inherited_evidence_check.json pins its files. No new weights/calibration/PPL.
+
+QBH_R4_OPT0 original,1 HVX native deal/scatter/gather plus quantization/native stores,2 additionally restores decode FP16 LUT preparation on Gate/Up readiness and prefill secondstage8batch doublebuffer. H12 tensor H512 remains explicit dense HMX, same normalization/rounding/W4 Down; no butterfly. Two256KiB input/output slots reuse existingarenas; independent complete live-address mapping and nonoverlap proof passed. Decode worker consumes6publishedgroups and observedoverlap each measuredstep; prefill8pipelinebatches,9R4HMXcommands versus original5 with unchangedtilepairs. OneHMXowner,8MiB,no allocationgrowth/intermediateDDR/spill.
+
+116exactcapturedfile comparisons across samebinaryold,vector,pipeline and oldfinal versus sealed EXP0261. All live R4FP16/middle/Down/hidden data and capturedKV exact. IndependentFloat64 R4 plus SDKDown/residual passes unchangedcomponent/wholelayergates. KnownidealR3 failure unchanged. Noqualityclaim.
+
+5short10formal repeat1/10 rotatedpairs; all2970timedRPCs,outputhashes,layerledgers,physical/pipeline counters independentlyverified. Repeat10 prefill1543.77085us->2223.51820us,pairedratio1.46398848 CI[1.43059211,1.48813141]; decode954.7083875us->1006.8245375us,pairedratio1.05972806 CI[1.04905972,1.08360039]. Prefillfails10percent,decodepasses; nofullmodel/E2E. Localgatefail is prefill speed, evidencevalid. HistoricalnonpairedoldR4 31899.60675us/1583.942075us, optimized2223.5182us/1006.8245375us.
+
+RemainingR4preparation/finish prefill413.891/408.195us,layout61.938,exposedHMXsubmit/wait25.435. Decode9.948/16.211us,layout.967,HMX4.217 plus overlappedFP16SwiGLUwork in Gate/Up. Pipeline_HVX_ticks is scheduledwork whilecommandinflight, not fullyhiddenlatency; HMXis too short tocoverallconversion. Next discuss parallelization of preparation/outputconversion and prefillUpreadiness integration, no automaticadditionalexperiment orbaselinepromotion.
+
+Retained routine tooling recovery: initial runnerdecl SyntaxError beforestaging corrected; preliminaryreport regeneration met exclusivewrite guard, preserved preliminary_reports and failedreport_final.log, corrected summary towriteonce. No native mismatch, thresholdrelaxation, discardedtiming or modifiedoldseal. Do not rerun completedgates/profiling/export.
