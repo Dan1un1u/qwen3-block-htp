@@ -11,3 +11,7 @@ User approved only this independent confirmation. Discuss future calibration/dev
 ## Final panel checkpoint
 
 All4historical first-batch regressions exact. Final256doc scoring running: C64 PPL28.15053545692697, B integer PPL36.648882494442866 complete. R_MSE candidate currently running, F16 final panel follows. Do not conclude effect before R_MSE/F16 and full integrity checks. Source073a39de0f452c938cd5705c82ae722611fb9396 unchanged. Main root session31197 still running; inspect process/logs before resume.
+
+## Closed checkpoint
+
+All running instructions above historical. Four final arms complete, independent8score audit/report/53file seal/source/memory closure complete. No job remains. Source 073a39de0f452c938cd5705c82ae722611fb9396. Active none,next257; originalB retained. Effect inconclusive, no independent confirmation of R_MSE benefit; no promotion. Report docs/experiments/EXP-0256-RESULTS.md; next discussion docs/W4A8_NEXT_DIRECTION_AFTER_EXP0256.md; ledger 4bac015487ed866596fcd561a428b80a36baa4cc7d4b58090577160489ba8227.

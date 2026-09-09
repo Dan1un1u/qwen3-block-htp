@@ -19,13 +19,81 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0256
+  active_experiment: null
   next_experiment_number: 257
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
 current_scope:
+  latest_w4u8_integer_rmse_confirmation_result:
+    id: EXP-0256
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    numerical_gate: pass
+    gate_role: independent_R_MSE_research_benefit_unconfirmed
+    adoption_status: not_applicable
+    source_head: 073a39de0f452c938cd5705c82ae722611fb9396
+    report: docs/experiments/EXP-0256-RESULTS.md
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0256
+    ledger_sha256: 4bac015487ed866596fcd561a428b80a36baa4cc7d4b58090577160489ba8227
+    effect_status: inconclusive
+    effect:
+      delta_nll: -0.0054071019403636456
+      delta_nll_ci95:
+      - -0.051177956763422114
+      - 0.04055439759977161
+      ppl_ratio: 0.9946074901232282
+      ratio_ci95:
+      - 0.9501095770619795
+      - 1.0413879571670615
+      cells:
+        en_wiki:
+          delta_nll: 0.01318461261689663
+          ppl_ratio: 1.0132719128732603
+          ratio_ci95:
+          - 0.938876543749703
+          - 1.0915953147386086
+        zh_wiki:
+          delta_nll: -0.0324847437441349
+          ppl_ratio: 0.9680372183421396
+          ratio_ci95:
+          - 0.866855509950956
+          - 1.0794081283252381
+        en_news:
+          delta_nll: -0.01171482726931572
+          ppl_ratio: 0.9883535241509368
+          ratio_ci95:
+          - 0.9032588357112157
+          - 1.0816503243755935
+        zh_news:
+          delta_nll: 0.009386550635099411
+          ppl_ratio: 1.0094307424628979
+          ratio_ci95:
+          - 0.9250052185530129
+          - 1.1037942627726989
+    retained_parameters: B
+    final_ppl:
+      F: 26.791716997182647
+      C64: 28.15053545692697
+      B__wide_nr64: 36.648882494442866
+      R_MSE__wide_nr64: 36.45125303361894
+    quality_gate:
+      C64:
+        point_pass: false
+        confident_pass: false
+      B__wide_nr64:
+        point_pass: false
+        confident_pass: false
+      R_MSE__wide_nr64:
+        point_pass: false
+        confident_pass: false
+    device_runs: 0
+    device_PPL: null
+    E2E_tokens_per_second: null
+    baseline_promoted: false
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0256.md
   latest_w4u8_static_residual_calibration_result:
     id: EXP-0255
     execution_state: completed
@@ -1733,7 +1801,7 @@ current_scope:
     auxiliary: short_task_content_v2
     diagnostic_only: short_task_strict_v1_format_adherence
     numerical_acceptance_threshold: PC050_EXP0229_overall_5percent_per_language_domain_10percent
-    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0255.md
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0256.md
     new_experiment_authorized: false
   latest_short_task_scoring_audit:
     experiment: EXP-0228
@@ -2424,22 +2492,22 @@ current_scope:
         manifest_sha256: 44ac941297f1aab82ec4daff2ca8191379def73f6796a1c9c5d7d700820c5673
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
-  execution_unit: conditional_full_model_software_static_U8_residual_calibration_no_device
-  last_completed_experiment: EXP-0255
-  last_completed_source_commit: 9ca3bef324812d874b9895d32ae6b2b2907066d0
+  execution_unit: conditional_full_model_software_fixed_R_MSE_integer_attention_confirmation_no_device
+  last_completed_experiment: EXP-0256
+  last_completed_source_commit: 073a39de0f452c938cd5705c82ae722611fb9396
   provisional_source_parent: evidence_valid_EXP0215_full_stack_M64_direct_W4_MLP
   device_execution_state: EXP0252_ABI116_layer0_capacity72_NR64_integer_speed_pass_R3_whole_gate_fail_not_full_model
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  current_handoff: docs/experiments/EXP-0255-RESULTS.md
+  current_handoff: docs/experiments/EXP-0256-RESULTS.md
   active_recipe_specialization: null
   last_completed_experiment_contract:
-    id: EXP-0255
-    protocol: PC069
-    scope: static_A8_trajectory_calibration_and_independent_dual_path_selection
+    id: EXP-0256
+    protocol: PC070
+    scope: fixed_candidate_independent_256document_integer_path_PPL_confirmation
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0255
+  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0256
   latest_w4f16_output_scale_result:
     id: EXP-0224
     execution_state: completed
@@ -8693,12 +8761,12 @@ current_scope:
     next_action: Discuss W4A8 reproducibility and same-W4-weight activation attribution;
       no new experiment authorized
   next_research_direction:
-    status: discussion_after_EXP0255_no_dual_path_residual_candidate_selected
-    document: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0255.md
-    current: independently_confirm_frozen_R_MSE_on_primary_integer_attention_path
+    status: discussion_after_EXP0256_R_MSE_benefit_not_confirmed
+    document: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0256.md
+    current: retain_B_discuss_actual_quantized_RMSNorm_and_downstream_block_output_calibration_objective
     other_recipes: frozen
     new_algorithm_authorized: false
-    conditional_integration: requires_separate_concrete_protocol_and_original_software_component_whole_layer_and_speed_gates
+    conditional_integration: requires_separate_protocol_and_original_numerical_physical_model_and_speed_gates
     hardware_dense_R3_whole_layer_gate: unresolved
   latest_w4f16_independent_tool_result:
     id: EXP-0233

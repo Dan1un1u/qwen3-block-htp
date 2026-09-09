@@ -29,27 +29,101 @@ experiments:
   title: Independent fixed R_MSE integer attention confirmation
   parent: EXP-0255
   record: docs/experiments/EXP-0256.md
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
-  adoption_status: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
+  adoption_status: not_applicable
   approval_ref: PC070 user approves fixed integer-path confirmation
   source_branches:
   - codex/exp-0256-integer-rmse-confirmation
   - codex/exp-0255-residual-calibration
   source_commits:
   - 9ca3bef324812d874b9895d32ae6b2b2907066d0
+  - d9b2df567106b4ede3114a84b4b242d7be1d0e69
+  - 073a39de0f452c938cd5705c82ae722611fb9396
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0256-integer-rmse-confirmation
     approved_on: '2026-09-09'
     started_on: '2026-09-09'
+    completed_on: '2026-09-09'
   evidence:
     protocol: PC070
-    current_stage: frozen_data_numerical_pass_PPL_running
+    current_stage: completed_fixed_R_MSE_independent_confirmation_inconclusive
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0256.md
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0256
     baseline_promoted: false
+    source_head: 073a39de0f452c938cd5705c82ae722611fb9396
+    inference_source_heads:
+    - 073a39de0f452c938cd5705c82ae722611fb9396
+    report: docs/experiments/EXP-0256-RESULTS.md
+    report_sha256: 729309d32f6c873e529ac959d308309b7a3c31222bfa861995c1c7254a80d340
+    full_profiling_report: docs/experiments/EXP-0256-PROFILE.md
+    full_profiling_report_sha256: d30f12ce84750716d89fb760e342ba2d776c0bb3bf4ba1209a5cd1a14105c5eb
+    evidence_ledger_sha256: 4bac015487ed866596fcd561a428b80a36baa4cc7d4b58090577160489ba8227
+    evidence_file_count: 53
+    numerical_gate: pass112cases
+    independent_score_audit: pass8scores
+    gate_role: independent_R_MSE_benefit_not_confirmed_separate_from_model_quality
+    effect_status: inconclusive
+    effect:
+      delta_nll: -0.0054071019403636456
+      delta_nll_ci95:
+      - -0.051177956763422114
+      - 0.04055439759977161
+      ppl_ratio: 0.9946074901232282
+      ratio_ci95:
+      - 0.9501095770619795
+      - 1.0413879571670615
+      cells:
+        en_wiki:
+          delta_nll: 0.01318461261689663
+          ppl_ratio: 1.0132719128732603
+          ratio_ci95:
+          - 0.938876543749703
+          - 1.0915953147386086
+        zh_wiki:
+          delta_nll: -0.0324847437441349
+          ppl_ratio: 0.9680372183421396
+          ratio_ci95:
+          - 0.866855509950956
+          - 1.0794081283252381
+        en_news:
+          delta_nll: -0.01171482726931572
+          ppl_ratio: 0.9883535241509368
+          ratio_ci95:
+          - 0.9032588357112157
+          - 1.0816503243755935
+        zh_news:
+          delta_nll: 0.009386550635099411
+          ppl_ratio: 1.0094307424628979
+          ratio_ci95:
+          - 0.9250052185530129
+          - 1.1037942627726989
+    retained_parameters: B
+    final_ppl:
+      F: 26.791716997182647
+      C64: 28.15053545692697
+      B__wide_nr64: 36.648882494442866
+      R_MSE__wide_nr64: 36.45125303361894
+    quality_gate:
+      C64:
+        point_pass: false
+        confident_pass: false
+      B__wide_nr64:
+        point_pass: false
+        confident_pass: false
+      R_MSE__wide_nr64:
+        point_pass: false
+        confident_pass: false
+    documents: 256
+    targets: 4096
+    new_device_runs: 0
+    short_rounds: 0
+    formal_rounds: 0
+    device_ppl: null
+    e2e_tokens_per_second: null
+    next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0256.md
 - id: EXP-0255
   slug: residual-calibration
   title: Static A8 residual trajectory calibration

@@ -1867,3 +1867,7 @@ Static A8 residual trajectory calibration complete. 128calibration docs,256new d
 User approves PC070 fixed R_MSE independent integer-path confirmation, four arms/new256docs. No fitting/hardware or extra direction. Parent binding temporary for branch setup. Read docs/experiments/EXP-0256.md.
 
 EXP0256 checkpoint: frozen256doc panel independently audited,112numerical cases pass; four-control reproduction then four-arm final runner active. Read docs/SESSION_HANDOFF_EXP0256.md and inspect processes/logs before resume. No result conclusion yet.
+
+## Current handoff after EXP0256
+
+Independent fixed-R_MSE integer confirmation complete:256newdocs/4096targets,112numeric cases and4historical first-batch regressions exact,8scores independently reconstructed. PPL {"F": 26.791716997182647, "C64": 28.15053545692697, "B__wide_nr64": 36.648882494442866, "R_MSE__wide_nr64": 36.45125303361894}. R_MSE/B0.99460749 CI[0.95010958,1.04138796],all4cell CIs cross1; effect inconclusive, original5.89percent development gain not independently confirmed. Retain originalB; no promotion/new calibration/hardware. Allmodel quality gates fail on this panel. Evidence valid and implementation checks pass; local fail means benefit not confirmed. Active none,next257. Discuss docs/W4A8_NEXT_DIRECTION_AFTER_EXP0256.md. Source 073a39de0f452c938cd5705c82ae722611fb9396; ledger 4bac015487ed866596fcd561a428b80a36baa4cc7d4b58090577160489ba8227.
