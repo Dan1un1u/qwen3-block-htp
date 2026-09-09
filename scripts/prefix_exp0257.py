@@ -5,7 +5,7 @@ import ablate_exp0244 as b
 from transformers.cache_utils import DynamicCache
 
 def main():
- preflight();model,before,mh=b.model_session('C64');ins=b.Instrument(model);raw=ins.build_prefix([151645]);again=ins.build_prefix([151645])
+ preflight();torch.set_grad_enabled(False);model,before,mh=b.model_session('C64');ins=b.Instrument(model);raw=ins.build_prefix([151645]);again=ins.build_prefix([151645])
  assert all(torch.equal(x,y) for p,q in zip(raw,again) for x,y in zip(p,q))
  raw=[(k.detach().clone(),v.detach().clone()) for k,v in raw];ins.close()
  # Independent original, unhooked model pass confirms all stored FP16 K/V.
