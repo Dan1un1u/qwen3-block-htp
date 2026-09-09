@@ -35,16 +35,17 @@ experiments:
   local_gate: not_run
   adoption_status: pending
   runtime:
-    source_branch: codex/exp-0261-w4u8-dense-r4-cost
+    source_branch: codex/exp-0262-w4u8-r4-native-layout-pipeline
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     started_on: '2026-09-10'
   source_branches:
+  - codex/exp-0262-w4u8-r4-native-layout-pipeline
   - codex/exp-0261-w4u8-dense-r4-cost
   source_commits:
   - fbc601d72377cc57fa54cd3fcd831f870ee59fe9
   evidence:
     protocol: PC076
-    current_stage: registered_parent_binding
+    current_stage: native_vector_implementation
 - id: EXP-0261
   slug: w4u8-dense-r4-cost
   title: W4A8 full-width dense R4 exploratory cost
