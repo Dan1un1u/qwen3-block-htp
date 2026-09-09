@@ -24,6 +24,27 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0262
+  slug: w4u8-r4-native-layout-pipeline
+  title: W4A8 dense R4 native layout and pipeline optimization
+  parent: EXP-0261
+  record: docs/experiments/EXP-0262.md
+  approval_ref: 'User: 做一下优化看看，输入输出原生对齐，流水尽量覆盖 PC076'
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  runtime:
+    source_branch: codex/exp-0261-w4u8-dense-r4-cost
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    started_on: '2026-09-10'
+  source_branches:
+  - codex/exp-0261-w4u8-dense-r4-cost
+  source_commits:
+  - fbc601d72377cc57fa54cd3fcd831f870ee59fe9
+  evidence:
+    protocol: PC076
+    current_stage: registered_parent_binding
 - id: EXP-0261
   slug: w4u8-dense-r4-cost
   title: W4A8 full-width dense R4 exploratory cost

@@ -1969,3 +1969,7 @@ Export/hash/orthogonality/densefactor/xW invariance/independentW4/LUT65536 check
 R4 timing us: prefill prepare426.456,GEMM45.852,layout11933.557,finish17950.143; decode50.144,4.618,186.473,333.754. Dominantcostlayout/finish, notdenseGEMM. Decode losesSwiGLUstream overlap; included. This is not an intrinsicR4lowerbound. Discuss vector/fusedlayout andstreaming next; no automaticnewexperiment or baselinepromotion.
 
 Retained failures/recoveries: double sigmoid backends differ at2halfmidpoints -> Decimal80 generation+mpmath100 intervalcertificate (export.log/repairedlog). MissingPathimport -> revalidateunchangedrawcapture. Checker incorrectlydecodedrowmajorresidual and comparednonlivepadding -> correctedactualsemanticlayout withsamecaptures; no native arithmetic fix, thresholdrelaxation or hashreplacement. Initialfailedlogs preserved. Do not rerun completedexport/build/audits/profiling.
+
+## EXP0262 active
+
+User approves R4 native-layout and pipeline optimization. Read PC076 and EXP0262 protocol. Frozen EXP0261 math/packages, exact oldR4 control, bounded vector and overlap stages. Temporary parent branch binding for new branch creation.

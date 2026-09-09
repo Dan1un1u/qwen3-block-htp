@@ -345,3 +345,7 @@ User authorizes W4A16 decode optimization using prior W4A8 implementation experi
 ## PC075 — User-approved W4A8 R4 exploratory overhead
 
 User requests exploratory W4A8 R4 cost. EXP0261 follows docs/experiments/EXP-0261.md: full6144 orthogonal Hadamard via explicit dense factors, fresh original Down folding and native per-channel W4, real single-layer paired measurement with unchanged physical/numerical/>10percent stop gates. Other recipes frozen; no quality acceptance, fullmodel extrapolation or promotion. PC037 applies.
+
+## PC076 — User-approved R4 native layout and pipeline optimization
+
+User approves EXP0262 under docs/experiments/EXP-0262.md: HVX native input/output movement and safe pipeline overlap only, frozen EXP0261 full6144 dense H12/H512 arithmetic, rounding and model packages. Preserve old R4 as exact samebinary control and noR4 as cost reference. Singlelayer gates and5short10formal repeat1/10, original10percent slowdown threshold, physical8MiB/no intermediateDDR/oneRPC. No butterfly, new weights/quantizer, other recipe changes, automatic promotion or quality claim. PC037 applies.
