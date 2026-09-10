@@ -1,0 +1,114 @@
+{
+  "experiment": "L32-0002",
+  "recipe": "W4A16",
+  "functional_chain_validated": true,
+  "quality_gate_pass": false,
+  "baseline_promoted": false,
+  "generation_text": "The capital of France is Paris.",
+  "generation_through_eos_tokens": 8,
+  "generation_through_eos_exact": true,
+  "extended16_replay_gate": "failed after EOS, step12; preserved, not promoted",
+  "ppl": {
+    "all": {
+      "tokens": 2048,
+      "device": 31.03910112647844,
+      "fp16_teacher": 26.69888372617633,
+      "ratio_to_fp16_teacher": 1.162561755196036,
+      "bf16_teacher": 26.697998599288322,
+      "ratio_to_bf16_teacher": 1.1626002979603811,
+      "pass": false,
+      "paired_document_bootstrap95_ratio": [
+        1.1219012377291224,
+        1.2128001785604907
+      ],
+      "software_w4": 31.027335052540806,
+      "ratio_to_software_w4": 1.000379216388314
+    },
+    "en": {
+      "tokens": 1024,
+      "device": 20.604135756277103,
+      "fp16_teacher": 17.769291405821924,
+      "ratio_to_fp16_teacher": 1.1595361506383068,
+      "bf16_teacher": 17.787441818418547,
+      "ratio_to_bf16_teacher": 1.1583529529773036,
+      "pass": false,
+      "paired_document_bootstrap95_ratio": [
+        1.0895609996692095,
+        1.250055914256864
+      ],
+      "software_w4": 20.588647596504018,
+      "ratio_to_software_w4": 1.0007522669811355
+    },
+    "zh": {
+      "tokens": 1024,
+      "device": 46.75885512190152,
+      "fp16_teacher": 40.11585920586185,
+      "ratio_to_fp16_teacher": 1.165595254533872,
+      "bf16_teacher": 40.07226764163064,
+      "ratio_to_bf16_teacher": 1.166863216728076,
+      "pass": false,
+      "paired_document_bootstrap95_ratio": [
+        1.1273526466059953,
+        1.2084832756718609
+      ],
+      "software_w4": 46.758560315836114,
+      "ratio_to_software_w4": 1.000006304857622
+    }
+  },
+  "independent_eval_audit": {
+    "target_pairs": 2048,
+    "unique_complete": true,
+    "vocab": 128256,
+    "nonfinite": 0,
+    "exact8MiB": true,
+    "intermediate_spill_bytes": 0
+  },
+  "functional_speed": {
+    "prefill_tokens": 64,
+    "prefill_host_wall_ns": 146334739,
+    "prefill_tokens_per_second": 437.3534297963247,
+    "decode_tokens": 7,
+    "decode_host_wall_ns": 1108974948,
+    "decode_tokens_per_second": 6.312135375667657
+  },
+  "formal_profiling": false,
+  "whole16_output_nrmse": {
+    "prefill": 0.00186959277,
+    "decode": 0.00254469054
+  },
+  "scope": "128 independent EN/ZH Wikipedia documents, M64 plus16 targets; no general broad-domain quality acceptance",
+  "quantization": "fresh C64 true-sequential act-order GPTQ, damping1%, three per-channel output-selected ranges; LM head absmax GPTQ; signed[-7,7], no groups",
+  "known_limits": [
+    "PPL +16.26% does not meet inherited overall5%/language10% criteria",
+    "R3/R4 and W4A8 not validated yet",
+    "M64 bounded decode only; speed optimization deferred"
+  ],
+  "post_eos_software_full_context": {
+    "top_ids": [
+      3947,
+      40,
+      791,
+      60704,
+      9642,
+      35897,
+      2822,
+      7009,
+      2675,
+      19701
+    ],
+    "logits": [
+      20.0,
+      19.9375,
+      17.21875,
+      16.078125,
+      15.5234375,
+      15.28125,
+      15.2265625,
+      14.8125,
+      14.4921875,
+      14.0390625
+    ],
+    "top2_margin": 0.0625,
+    "scope": "after first EOS at generation step7; the retained16-step greedy replay is still failed"
+  }
+}

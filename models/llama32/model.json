@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "llama32",
-  "state": "w16a16_functional_validated",
+  "state": "w16a16_w4a16_functional_validated_w4_quality_failed",
   "checkpoint": "LLM-Research/Llama-3.2-1B-Instruct",
   "checkpoint_revision": "f8e6bf8fec8194d75228ef38e85fda45c6046fbd",
   "runtime_dimensions": {
@@ -29,7 +29,7 @@
   "required_before_execution": [
     "approved active experiment and successful Llama preflight",
     "matching QBH_MODEL_LLAMA32 build and pinned package hashes",
-    "use only validated W16A16 entrypoints; W4/A8 remain pending"
+    "Use recipe-specific Llama exporters/runners; W4A16 functional only, A8 pending"
   ],
   "may_reuse_qwen_weights_or_qparams": false,
   "checkpoint_revision_kind": "ModelScope last commit of all six pinned model payload files",
@@ -51,11 +51,15 @@
     "runtime_float_dtype": "float16"
   },
   "validated_recipes": [
-    "w16a16"
+    "w16a16",
+    "w4a16"
   ],
   "unvalidated_recipes": [
-    "w4a16",
     "w4a8"
   ],
-  "validation_record": "models/llama32/validation.json"
+  "validation_record": "models/llama32/validation.json",
+  "recipe_quality": {
+    "w4a16": "PPL gate failed; functional chain only"
+  },
+  "w4a16_validation_record": "models/llama32/w4a16-validation.json"
 }
