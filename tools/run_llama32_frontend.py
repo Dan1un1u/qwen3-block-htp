@@ -39,17 +39,26 @@ def main():
         source=args.reuse_package_from
         if not re.fullmatch(r"/data/local/tmp/llama32-htp/l32-0001/[a-zA-Z0-9_-]+/package",source):
             raise ValueError("Unexpected reuse path")
-        names=list(m["files"])+["manifest.json"]
+        parent_text=adb("shell","cat "+shlex.quote(source+"/manifest.json")).stdout
+        parent=json.loads(parent_text)
+        parent_digest=adb("shell","sha256sum "+shlex.quote(source+"/manifest.json")).stdout.split()[0]
+        expected_parent=m.get("parent_package_manifest_sha256",sha256(args.package/"manifest.json"))
+        assert parent_digest==expected_parent,"Remote parent manifest mismatch"
+        names=[n for n,r in m["files"].items() if n in parent["files"] and parent["files"][n]["sha256"]==r["sha256"]]
         checked={}
         for first in range(0,len(names),32):
             selected=names[first:first+32]
             output=adb("shell","sha256sum "+" ".join(shlex.quote(source+"/"+n) for n in selected)).stdout
             for line in output.splitlines():
                 digest,name=line.split(maxsplit=1);checked[name.removeprefix(source+"/")]=digest
-        for name in names:
-            expected=sha256(args.package/"manifest.json") if name=="manifest.json" else m["files"][name]["sha256"]
-            assert checked.get(name)==expected,name
-        adb("shell","ln -s "+shlex.quote(source)+" "+shlex.quote(remote+"/package"))
+        for name in names:assert checked.get(name)==m["files"][name]["sha256"],name
+        parents={str(Path(n).parent) for n in m["files"]}
+        assert all(not Path(n).is_absolute() and ".." not in Path(n).parts for n in m["files"])
+        adb("shell","mkdir -p "+" ".join(shlex.quote(remote+"/package/"+n) for n in sorted(parents)))
+        for first in range(0,len(names),32):
+            adb("shell"," && ".join("ln -s "+shlex.quote(source+"/"+n)+" "+shlex.quote(remote+"/package/"+n) for n in names[first:first+32]))
+        for name in list(set(m["files"])-set(names))+["manifest.json"]:
+            adb("push",windows(args.package/name),remote+"/package/"+name)
     else:
         adb("push",windows(args.package),remote+"/package")
     adb("push",windows(args.reference/"heldout.bin"),remote+"/heldout.bin")
