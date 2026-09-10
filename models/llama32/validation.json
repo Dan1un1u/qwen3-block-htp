@@ -1,0 +1,59 @@
+{
+  "experiment": "L32-0001",
+  "scope": "W16A16 functional integration, 8 documents/128 tokens; not general quantization acceptance",
+  "generation_text": "Paris is the capital of France.",
+  "generated_token_matches": 16,
+  "layer_gate": "layer0/7/15 prefill and decode pass",
+  "continuous_layers": [
+    3,
+    16
+  ],
+  "full16_nrmse": {
+    "prefill": 0.00232789304,
+    "decode": 0.00166362825
+  },
+  "ppl": {
+    "all": {
+      "tokens": 128,
+      "device": 25.1047703210606,
+      "fp16_teacher": 25.10786892176744,
+      "ratio_to_fp16_teacher": 0.9998765884625056,
+      "bf16_teacher": 25.022061784332696,
+      "ratio_to_bf16_teacher": 1.0033054245265949,
+      "pass": true
+    },
+    "en": {
+      "tokens": 64,
+      "device": 12.105068392367881,
+      "fp16_teacher": 12.104030891804634,
+      "ratio_to_fp16_teacher": 1.0000857152937332,
+      "bf16_teacher": 12.066967016155932,
+      "ratio_to_bf16_teacher": 1.0031574940215662,
+      "pass": true
+    },
+    "zh": {
+      "tokens": 64,
+      "device": 52.06492623127788,
+      "fp16_teacher": 52.08224329793213,
+      "ratio_to_fp16_teacher": 0.9996675053615646,
+      "bf16_teacher": 51.88574520015678,
+      "ratio_to_bf16_teacher": 1.0034533768461817,
+      "pass": true
+    }
+  },
+  "validation_summary": {
+    "path": "/mnt/d/llm_exp/results/llama32-htp/l32-0001/validation_summary.json",
+    "sha256": "613815a876e408707f7ec08d42cc0343c843f8b2732f743a1830f342ad6f77a2"
+  },
+  "formal_profiling": false,
+  "functional_run_speed": {
+    "prefill_tokens": 64,
+    "prefill_host_wall_ns": 161853125,
+    "prefill_tokens_per_second": 395.4202305330836,
+    "decode_tokens": 15,
+    "decode_host_wall_ns": 2597760259,
+    "decode_tokens_per_second": 5.774204893631795
+  },
+  "baseline_quality_promoted": false,
+  "original_bf16_teacher": "direct load from original checkpoint; supersedes intermediate FP16-to-BF16 roundtrip diagnostic"
+}

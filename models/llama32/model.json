@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "llama32",
-  "state": "w16a16_port_in_progress",
+  "state": "w16a16_functional_validated",
   "checkpoint": "LLM-Research/Llama-3.2-1B-Instruct",
   "checkpoint_revision": "f8e6bf8fec8194d75228ef38e85fda45c6046fbd",
   "runtime_dimensions": {
@@ -27,10 +27,9 @@
   "result_root": "/mnt/d/llm_exp/results/llama32-htp",
   "memory_worktree": "/home/daniuniu/work/llama32-htp-project-memory",
   "required_before_execution": [
-    "select exact checkpoint and revision",
-    "implement and validate model dimensions, normalization and RoPE semantics from selected config",
-    "export original Llama weights; separately calibrate A8 and regenerate prefix/rotation artifacts",
-    "validate single layer then consecutive slice then complete token boundary"
+    "approved active experiment and successful Llama preflight",
+    "matching QBH_MODEL_LLAMA32 build and pinned package hashes",
+    "use only validated W16A16 entrypoints; W4/A8 remain pending"
   ],
   "may_reuse_qwen_weights_or_qparams": false,
   "checkpoint_revision_kind": "ModelScope last commit of all six pinned model payload files",
@@ -50,5 +49,13 @@
     "tie_word_embeddings": true,
     "original_dtype": "bfloat16",
     "runtime_float_dtype": "float16"
-  }
+  },
+  "validated_recipes": [
+    "w16a16"
+  ],
+  "unvalidated_recipes": [
+    "w4a16",
+    "w4a8"
+  ],
+  "validation_record": "models/llama32/validation.json"
 }

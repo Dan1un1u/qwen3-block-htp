@@ -1,10 +1,14 @@
 # Standalone HTP runtime — Llama 3.2 development
 
 Qwen3 research is frozen at `48eb1ea7f9db0eb197a7c7908ab954d5a6635fc5`
-(EXP-0265). This branch prepares Llama 3.2 support using the existing FastRPC,
-HVX, HMX and VTCM runtime. **Llama inference is not implemented yet**; the exact
-checkpoint, dimensions, tokenizer and fresh quantization artifacts remain to
-be selected and validated.
+(EXP-0265). L32-0001 now supports **Llama-3.2-1B-Instruct W16A16** on the
+standalone FastRPC/HVX/HMX runtime: single-layer and continuous16-layer checks,
+real text generation and a small heldout NLL integration test pass. W4A16/A8
+remain migration starting points and are not yet validated for Llama.
+
+See [W16A16 implementation and limits](docs/LLAMA32_W16A16.md) and
+[measured validation](models/llama32/validation.json). Generated weights come
+from the original Llama BF16 checkpoint; Qwen model artifacts are never inputs.
 
 ## Development branches
 
@@ -40,7 +44,7 @@ python3 tools/recipe.py verify --artifacts
 `show` emits a **plan**, including the frozen Qwen3 schedule provenance. It does
 not turn Qwen3 weights, prefix, calibration or hardcoded dimensions into Llama
 inputs. On the rotation branch, `--rotation r3-r4` selects the optional reference.
-No new launcher is enabled before a model-specific port is validated.
+The L32-0001 W16A16 entrypoints are documented separately; W4/A8 launch validation is pending.
 
 ## Layout
 
