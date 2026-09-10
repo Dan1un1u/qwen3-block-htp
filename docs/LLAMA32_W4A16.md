@@ -33,3 +33,5 @@ stack16-a01 and frontend-a01 are fresh packages. Source entrypoints:
 prepare_llama32_quant_data.py, audit_llama32_quant_data.py, quantize_llama32.py,
 then existing Llama exporters with --quantized; frontend accepts --dataset.
 A8 follows separately without a model-quality threshold per user authorization.
+
+Subsequent L32-0004 speed work is recorded in [LLAMA32_PIPELINE_SPEED.md](LLAMA32_PIPELINE_SPEED.md). Earlier functional timings above remain historical evidence.
