@@ -176,3 +176,14 @@ experiments:
   long_shape_pairs: 10
   ppl_rerun: false
   quality_baseline_promoted: false
+- id: L32-0007
+  title: Matched current hardware W16A16 and W4A16 PPL
+  execution_state: running
+  record: docs/experiments/L32-0007.md
+  approval_ref: User requests a real-device PPL run for W16A16 and W4A16
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  parent_source: b9932bd8ebdf6d7038cff882dfdfdf6aee7b8631
+  hardware_runs: 0
+  baseline_quality_promoted: false
