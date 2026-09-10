@@ -56,3 +56,8 @@ with a newly approved experiment/immutable destinations. Failed build1-a03 retai
 Original input /mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin with six pinned
 hashes; generated Llama models/results roots in status. Prior sealed experiments
 remain immutable. No active process; next experiment is L32-0005.
+
+Latest user authorization: L32-0005 active no-rotation investigating/fixing A8
+relative speed. Prior no-active statements describe L32-0004 closure; see status
+and current handoff/protocol. MatchedM64+7 three-arm timing will replace unequal
+continuation-length comparisons for this question.

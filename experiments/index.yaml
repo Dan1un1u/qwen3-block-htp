@@ -119,3 +119,15 @@ experiments:
   pairs_per_recipe: 10
   ppl_rerun: false
   quality_baseline_promoted: false
+- id: L32-0005
+  title: Recover native A8 speed advantage over W4A16
+  execution_state: running
+  record: docs/experiments/L32-0005.md
+  approval_ref: User requests investigation and fixes for missing W4A8 speed advantage
+    over W4A16
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  parent_source: ee8d122db5350a51ba6ba05bc58d10625b426896
+  hardware_runs: 0
+  baseline_quality_promoted: false
