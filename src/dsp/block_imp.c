@@ -6119,10 +6119,15 @@ static int qbh_run_generation_head_w4f16_overlap(
     const uint64_t head_start = HAP_perf_get_qtimer_count();
     uint8_t *compressed_slots[2] = {
         buffers->gate,
+#ifdef QBH_MODEL_LLAMA32
+        /* Gate aliases O in the K8192 arena; keep LM-head DMA slots distinct. */
+        buffers->attention_concat};
+#else
         header->generation_mode ==
                 QBH_BLOCK_GENERATION_GREEDY_W4F16_COARSE_PIPELINE
             ? buffers->attention_projection
             : buffers->attention_concat};
+#endif
     uint8_t *expanded_slots[2] = {
         buffers->expanded_weight, buffers->expanded_weight_alt};
     uint8_t *scale_blocks = buffers->middle;
@@ -6158,8 +6163,13 @@ static int qbh_run_generation_head_w4f16_overlap(
             QBH_BLOCK_HIDDEN * group_limit * QBH_HMX_FP16_COLS *
                 sizeof(uint16_t) ||
         (coarse_pipeline != 0U &&
-         (size_t)(buffers->attention_projection - scale_table) <
-             (size_t)n_tiles * QBH_HMX_FP16_SCALE_BYTES)) {
+         (size_t)(
+#ifdef QBH_MODEL_LLAMA32
+             buffers->attention_concat
+#else
+             buffers->attention_projection
+#endif
+             - scale_table) < (size_t)n_tiles * QBH_HMX_FP16_SCALE_BYTES)) {
         return -1;
     }
     {
