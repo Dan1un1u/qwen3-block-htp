@@ -942,29 +942,6 @@ void qbh_attention_u8_softmax_group(
     uint8_t *scratch,
     const struct qbh_attention_config *config,
     struct qbh_attention_u8_telemetry *telemetry) {
-#ifdef QBH_MODEL_LLAMA32
-    /* Input scores have already been requantized. Identity conversion lets
-     * paired HVX reuse exact SOLE templates for all four Llama query heads. */
-    struct qbh_attention_config identity=*config;
-    identity.score_multiplier=1U;
-    qbh_attention_u8_build_sole_lut_template_bank(
-        scratch+QBH_ATTN_U8_SOFTMAX_TEMPLATE_OFFSET);
-    uint32_t minimum=UINT_MAX,maximum=0U;
-    for(uint32_t head=0;head<QBH_ATTENTION_Q_HEADS_PER_GROUP;head+=2U) {
-        struct qbh_attention_u8_telemetry local={0};
-        qbh_attention_u8_requant_softmax_group_rows_prebuilt_templates(
-            (uint8_t *)score_tiles+(size_t)head*QBH_ATTENTION_SCORE_TILES*QBH_HMX_OUTPUT_BYTES,
-            probability_tiles+(size_t)head*QBH_ATTENTION_SCORE_TILES*QBH_HMX_ACTIVATION_BYTES,
-            scratch,&identity,telemetry?&local:NULL,0U,QBH_ATTENTION_M);
-        if(telemetry) {
-            telemetry->probability_mask_violation_count+=local.probability_mask_violation_count;
-            if(local.probability_row_sum_min<minimum)minimum=local.probability_row_sum_min;
-            if(local.probability_row_sum_max>maximum)maximum=local.probability_row_sum_max;
-        }
-    }
-    if(telemetry){telemetry->probability_row_sum_min=minimum;telemetry->probability_row_sum_max=maximum;}
-    return;
-#endif
     uint8_t *row_scratch = scratch;
     uint8_t *lut = scratch + QBH_ATTN_U8_HVX_BYTES;
     uint32_t row_sum_min = UINT_MAX;
