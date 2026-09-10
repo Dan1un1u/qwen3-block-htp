@@ -4557,6 +4557,9 @@ int main(int argc, char **argv) {
     uint32_t warmup_run_index = 0U;
     uint64_t output_hash = 0U;
     uint64_t kv_cache_mismatches = 0U;
+#ifdef QBH_MODEL_LLAMA32
+    int llama_scan_teacher_pass = 1;
+#endif
     uint64_t kv_cache_k_hash = 0U;
     uint64_t kv_cache_v_hash = 0U;
     int exit_code = 1;
@@ -7340,6 +7343,36 @@ int main(int argc, char **argv) {
         header->scan_cache_append_mismatch_count =
             kv_cache_mismatches > UINT32_MAX
                 ? UINT32_MAX : (uint32_t)kv_cache_mismatches;
+#ifdef QBH_MODEL_LLAMA32
+        /* Llama fixtures are independent floating references. Use the existing
+         * FP16 replay limits; raw bit mismatch counts remain reported above.
+         * Prefix and unwritten cache bytes still require exact equality. */
+        llama_scan_teacher_pass = measured_metrics.nonfinite_count == 0U &&
+            isfinite(measured_metrics.nrmse) &&
+            measured_metrics.nrmse <= QBH_REPLAY_FP16_MAX_COMPOSED_NRMSE &&
+            measured_metrics.cosine >= QBH_REPLAY_FP16_MIN_COSINE &&
+            kv_cache_k_format == QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1 &&
+            kv_cache_v_format == QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1;
+        for (uint32_t kind = 0U; kind < 2U; ++kind) {
+            const uint16_t *a = (const uint16_t *)(shared + kv_cache_slots[kind].offset);
+            const uint16_t *b = (const uint16_t *)(shared + kv_reference_slots[kind].offset);
+            const uint32_t valid = initial_kv_length + logical_m;
+            struct qbh_error_metrics cm = qbh_compare_cache_prefix_f16(a, b, kv_cache_capacity, valid);
+            llama_scan_teacher_pass = llama_scan_teacher_pass && cm.nonfinite_count == 0U &&
+                cm.cosine >= QBH_REPLAY_FP16_MIN_COSINE &&
+                cm.nrmse <= QBH_REPLAY_FP16_MAX_COMPOSED_NRMSE &&
+                (double)cm.mixed_tolerance_violations <=
+                    QBH_REPLAY_FP16_MAX_CACHE_VIOLATION_FRACTION * (double)cm.elements;
+            for (uint32_t head = 0U; head < QBH_BLOCK_KV_HEADS; ++head) {
+                size_t base = (size_t)head * kv_cache_capacity * QBH_BLOCK_HEAD_DIM;
+                llama_scan_teacher_pass = llama_scan_teacher_pass &&
+                    memcmp(a + base, b + base, initial_kv_length * QBH_BLOCK_HEAD_DIM * sizeof(uint16_t)) == 0 &&
+                    memcmp(a + base + valid * QBH_BLOCK_HEAD_DIM,
+                           b + base + valid * QBH_BLOCK_HEAD_DIM,
+                           (kv_cache_capacity - valid) * QBH_BLOCK_HEAD_DIM * sizeof(uint16_t)) == 0;
+            }
+        }
+#endif
     }
     if (scan_mode != QBH_BLOCK_SCAN_DISABLED) {
         const char *cache_dump_root = getenv("QBH_DUMP_CACHE_DIR");
@@ -8300,8 +8333,12 @@ int main(int argc, char **argv) {
                         header->intermediate_dma_descriptor_count == 0U &&
                         header->intermediate_spill_fill_count == 0U &&
                         (scan_mode == QBH_BLOCK_SCAN_DISABLED ||
+#ifdef QBH_MODEL_LLAMA32
+                         llama_scan_teacher_pass) &&
+#else
                          (kv_cache_mismatches == 0U &&
                           measured_metrics.mismatches == 0U)) &&
+#endif
                         (!qbh_block_mlp_is_w4u8_streaming(mlp_mode) ||
                          measured_metrics.mismatches == 0U) &&
                         isfinite(measured_metrics.cosine) &&
