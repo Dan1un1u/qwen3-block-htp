@@ -35,10 +35,11 @@ experiments:
   local_gate: not_run
   adoption_status: pending
   runtime:
-    source_branch: codex/exp-0264-w4u8-r4-fused-quantization
+    source_branch: codex/exp-0265-w4u8-r4-fullmodel-e2e
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     started_on: '2026-09-10'
   source_branches:
+  - codex/exp-0265-w4u8-r4-fullmodel-e2e
   - codex/exp-0264-w4u8-r4-fused-quantization
   source_commits:
   - de5ab6cd84278e4035a033763097911cd09fcc39
