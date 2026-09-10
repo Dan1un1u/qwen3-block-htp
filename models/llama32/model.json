@@ -74,5 +74,6 @@
   "formal_profiling_completed_recipes": [
     "w4a16",
     "w4a8_off"
-  ]
+  ],
+  "a8_relative_speed_validation_record": "models/llama32/a8-relative-speed-validation.json"
 }
