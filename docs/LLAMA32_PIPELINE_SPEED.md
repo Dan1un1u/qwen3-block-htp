@@ -100,3 +100,5 @@ report_llama32_pipeline_profile.py produces additive prefill/decode tables and
 paired-bootstrap95% intervals. Never overwrite existing attempt directories.
 Evidence root: /mnt/d/llm_exp/results/llama32-htp/l32-0004. Native candidate source
 2aa7831; later changes are reporting/metadata only. No quality baseline promotion.
+
+L32-0005 matched A8 relative-speed results and current launch paths:  [LLAMA32_A8_RELATIVE_SPEED.md](LLAMA32_A8_RELATIVE_SPEED.md). Prior timings remain historical evidence.

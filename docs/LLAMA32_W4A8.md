@@ -81,3 +81,5 @@ functional with PPL31.039101 (+16.26% over the same teacher), failing its retain
 5% overall /10% per-language quality thresholds.
 
 Subsequent L32-0004 speed work is recorded in [LLAMA32_PIPELINE_SPEED.md](LLAMA32_PIPELINE_SPEED.md). Earlier functional timings above remain historical evidence.
+
+L32-0005 matched A8 relative-speed results and current launch paths:  [LLAMA32_A8_RELATIVE_SPEED.md](LLAMA32_A8_RELATIVE_SPEED.md). Prior timings remain historical evidence.

@@ -9,3 +9,5 @@ No Qwen weights, quantization parameters, token IDs or prefix are model inputs.
 Rotated Llama recipes are unsupported pending a separate approved experiment.
 
 L32-0004 adds formal paired speed validation for W4A16 and W4A8 OFF, recorded in pipeline-speed-validation.json and docs/LLAMA32_PIPELINE_SPEED.md. Quality status is unchanged.
+
+L32-0005 matched A8 relative-speed results and current launch paths: docs/LLAMA32_A8_RELATIVE_SPEED.md. Prior timings remain historical evidence.
