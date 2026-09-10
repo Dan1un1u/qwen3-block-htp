@@ -1,8 +1,12 @@
-# L32-0004 started
+# L32-0004 pipeline speed candidate
 
-User authorized speed optimization using existing pipelines. No-rotation owns
-experiment. Baseline source0d344ac; active state in status/index. First preserve
-baseline16-layer binaries. Read L32-0004 protocol. W4A8 scalar head64 RoPE dominates
-prior timing and computes64 rows during decode. W4A16 launcher has decode_opt0,
-while inherited OPT2 is available. Optimize these without weight/qparam changes.
-No new hardware launched yet. Prior sealed evidence remains immutable.
+Active no-rotation source2aa7831 (full hash in status). Baseline16 binaries saved
+with hashes under results/llama32-htp/l32-0004/baseline-build16. Candidate HVX head64
+RoPE, A8 valid decode row, sparse exact rounding repair, existing head worker pool,
+K masked scatter and V LUT/native patch packing. W4 OPT2 generalized GQA2 to GQA4.
+W4 layer0 prefill/decode and3-layer exact replay passed; A8 single latesta03 exact
+output/KV passes. A8 three-layera02 running session93787 afterbuild3-a02.
+Then build16, run both recipe16-layer replays, deploy/gate/formal via
+ tools/run_llama32_pipeline_profile.py. Formal fixed10AB/BA pairs per recipe,
+M64+7 W4 /M64+15 A8. All original weights/calibration unchanged, quality unaccepted.
+No formal results yet. Failed build1-a03 retained; fixed local C identifier scope.
