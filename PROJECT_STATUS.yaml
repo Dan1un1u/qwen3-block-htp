@@ -26,7 +26,7 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: w4a16_integration_running
+  stage: w4a16_full_frontend_validation_running
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
   next_action: Fresh Llama per-channel W4A16 GPTQ export, device layer/stack/frontend

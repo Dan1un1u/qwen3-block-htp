@@ -40,3 +40,30 @@ from Qwen is a starting algorithm; no old tensors/calibration/prefix reused.
 Use the W16A16 device path and floating teacher as references, and a larger fixed
 independent PPL set before judging quantization acceptance. The128-token port set
 is too small to become that acceptance suite. W4A8/rotations wait for W4A16.
+
+## Current L32-0002 checkpoint
+
+L32-0002 running on no-rotation. Fresh C64 Llama GPTQ/3-range transformer and
+absmax GPTQ W4 head exported, signed per-channel [-7,7], no groups. Independent
+dense-elimination/packing oracle passed. Frozen fresh Llama EN/ZH Wikipedia
+calibration65536 and heldout2048 targets; source-document/window audit passed.
+No old Qwen token IDs/calibrations/weights used; public raw Wikipedia cache only.
+Data /mnt/d/llm_exp/results/llama32-htp/l32-0002/data, freeze SHA256
+8ae378134885758fb35ce266b24d5640eb32cd2b5669b71bffc97239bf3afa9c.
+Quant /mnt/d/llm_exp/models/llama32-htp/l32-0002/quant-a01; layers-a02,
+stack3-a01,stack16-a01,frontend-a01 ready. Frontend-reference-a01 contains
+128 heldout rows and direct-original BF16/FP16 teachers. Quantized software text
+The capital of France is Paris.
+
+Runtime ffc15cbba08b90b89e0e976d8b5b6942c55a1398 fixes K8192 W4 arena with
+DMA2 (GateUp8), phase-disjoint O/Gate and norm/Down reuse, full prefill scores;
+peak8330752B within exact8MiB. Down64 K-tile regions fix the retained Down96
+non-dividing-region failure (~13.4% ->0.052% layer0 NRMSE). All layer0/7/15
+prefill/decode and continuous3/16 pass. Full16 output NRMSE .00186959/.00254469,
+existing composition_v2 passes, cache structure/prefix exact, no intermediate
+DDR or spills. Source code since L32-0001 not yet propagated to rotation branch.
+
+Results /mnt/d/llm_exp/results/llama32-htp/l32-0002. device-frontend-a01 launched
+for full generation and2048-target PPL; inspect logs/result before any rerun.
+Performance auxiliary only, optimization deferred. W4A8 still pending; user
+explicitly removes its model-quality threshold, not arithmetic/physical checks.
