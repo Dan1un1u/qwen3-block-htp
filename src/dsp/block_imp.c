@@ -793,18 +793,10 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
                             struct qbh_block_buffers *buffers,
                             uint32_t *peak_bytes) {
     struct qbh_block_arena arena = {vtcm, vtcm_bytes, 0U, 0U};
+    /* M64 prefill uses the ordinary per-head path; keep full score arrays.
+     * W4's K8192 arena fits through DMA sizing and disjoint-stage reuse. */
     uint32_t score_elements = QBH_BLOCK_SCORE_ELEMENTS;
-#ifdef QBH_MODEL_LLAMA32
-    /* Scan attention uses a checked, phase-exclusive overlay from scores up to
-     * compressed_weight. It never retains all per-head score/probability arrays.
-     * Keep full arrays for the non-scan attention path. */
-    if (variant == QBH_BLOCK_W4F16 && scan_mode != QBH_BLOCK_SCAN_DISABLED)
-        /* All three scan planes (score, K/V weight, probability) must end
-         * before attention_concat starts. Reserve for padded KV128. */
-        score_elements = 3U * 128U * (QBH_ATTENTION_Q_HEADS_PER_GROUP * QBH_BLOCK_M) / 2U;
-#else
     (void)scan_mode;
-#endif
     uint32_t element_bytes = variant == QBH_BLOCK_W4U8 ? 1U : 2U;
     uint32_t hidden_bytes = QBH_BLOCK_M * QBH_BLOCK_HIDDEN * element_bytes;
     uint32_t intermediate_bytes =
