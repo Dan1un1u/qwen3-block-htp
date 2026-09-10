@@ -701,7 +701,7 @@ static void qbh_llama_rope_u8_hvx(uint8_t *v,
     const struct qbh_block_qparam *in, const struct qbh_block_qparam *out,
     const __fp16 *cosine, const __fp16 *sine) {
     uint8_t original[128] __attribute__((aligned(128))) = {0};
-    float encoded[64] __attribute__((aligned(128)));
+    uint32_t repair[64] __attribute__((aligned(128)));
     memcpy(original,v,64);
     HVX_Vector half=Q6_V_lo_W(qbh_centered_half_pair(*(HVX_Vector *)original,in->zero_point));
     HVX_VectorPair x=Q6_Wsf_vcvt_Vhf(half);
@@ -721,17 +721,30 @@ static void qbh_llama_rope_u8_hvx(uint8_t *v,
         HVX_Vector rotated=Q6_V_vmux_QVV(first,Q6_Vsf_vsub_VsfVsf(a,b),Q6_Vsf_vadd_VsfVsf(a,b));
         result[part]=Q6_Vsf_vadd_VsfVsf(Q6_Vsf_equals_Vqf32(Q6_Vqf32_vmpy_VsfVsf(rotated,inv)),offset);
     }
-    HVX_VectorPair ordered=Q6_W_vshuff_VVR(result[1],result[0],-4);
-    ((HVX_Vector *)encoded)[0]=Q6_V_lo_W(ordered);((HVX_Vector *)encoded)[1]=Q6_V_hi_W(ordered);
-    for(uint32_t i=0;i<64;++i) {
-        float z=encoded[i]+0.5f;
-        if(z>0.0f && z<256.0f && fabsf(z-(float)(int)(z+0.5f))<0.001f) {
-            uint32_t j=i%32;
-            float a=((int)original[j]-in->zero_point)*in->scale;
-            float b=((int)original[j+32]-in->zero_point)*in->scale;
-            float exact=i<32?a*(float)cosine[i]-b*(float)sine[i]:b*(float)cosine[i]+a*(float)sine[i];
-            z=exact/out->scale+(float)out->zero_point+0.5f;
-        }
+    HVX_Vector words[2], flags[2];
+    for(uint32_t part=0;part<2;++part) {
+        HVX_Vector z=Q6_Vsf_vadd_VsfVsf(result[part],qbh_splat_sf(0.5f));
+        words[part]=Q6_Vw_equals_Vsf(z);
+        HVX_Vector fraction=Q6_Vsf_vsub_VsfVsf(z,Q6_Vsf_equals_Vw(words[part]));
+        HVX_VectorPred edge=Q6_Q_or_QQ(
+            Q6_Q_vcmp_gt_VsfVsf(qbh_splat_sf(0.001f),fraction),
+            Q6_Q_vcmp_gt_VsfVsf(fraction,qbh_splat_sf(0.999f)));
+        edge=Q6_Q_and_QQ(edge,Q6_Q_vcmp_gt_VsfVsf(z,qbh_splat_sf(0.0f)));
+        edge=Q6_Q_and_QQ(edge,Q6_Q_vcmp_gt_VsfVsf(qbh_splat_sf(256.0f),z));
+        flags[part]=Q6_V_vmux_QVV(edge,Q6_V_vsplat_R(1),Q6_V_vzero());
+    }
+    HVX_VectorPair ordered=Q6_W_vshuff_VVR(words[1],words[0],-4);
+    HVX_Vector halves=Q6_Vh_vpack_VwVw_sat(Q6_V_hi_W(ordered),Q6_V_lo_W(ordered));
+    HVX_Vector packed=Q6_Vub_vpack_VhVh_sat(Q6_V_vzero(),halves);
+    memcpy(v,&packed,64);
+    ordered=Q6_W_vshuff_VVR(flags[1],flags[0],-4);
+    ((HVX_Vector *)repair)[0]=Q6_V_lo_W(ordered);((HVX_Vector *)repair)[1]=Q6_V_hi_W(ordered);
+    for(uint32_t i=0;i<64;++i) if(repair[i]) {
+        uint32_t j=i%32;
+        float a=((int)original[j]-in->zero_point)*in->scale;
+        float b=((int)original[j+32]-in->zero_point)*in->scale;
+        float exact=i<32?a*(float)cosine[i]-b*(float)sine[i]:b*(float)cosine[i]+a*(float)sine[i];
+        float z=exact/out->scale+(float)out->zero_point+0.5f;
         v[i]=(uint8_t)(z<0?0:z>255?255:(int)z);
     }
 }
