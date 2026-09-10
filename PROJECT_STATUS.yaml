@@ -14,7 +14,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: ee8d122db5350a51ba6ba05bc58d10625b426896
+    recorded_head: 4cf30fe110ec417033dc5946cee31aaae69b4bb9
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
