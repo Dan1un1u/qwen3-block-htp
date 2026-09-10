@@ -1,7 +1,8 @@
 from pathlib import Path
-import json,os
+import json,os,argparse
 from llama_reference import sha256
-base=Path('/mnt/d/llm_exp/models/llama32-htp/l32-0003/layers-a01');out=base.parent/'stack1-a02';out.mkdir(exist_ok=False)
+ap=argparse.ArgumentParser(description='Wrap exact Llama layer0 fixtures in the native W4 replay ABI');ap.add_argument('--output',type=Path,required=True);args=ap.parse_args()
+base=Path('/mnt/d/llm_exp/models/llama32-htp/l32-0003/layers-a01');out=args.output;out.mkdir(exist_ok=False)
 p=base/'layer0-prefill';d=base/'layer0-decode'
 for root in [p,d]:
  for n,v in json.loads((root/'manifest.json').read_text())['files'].items():assert sha256(root/n)==v['sha256']
