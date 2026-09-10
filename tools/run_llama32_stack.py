@@ -20,7 +20,8 @@ def main():
         assert "QBH_MODEL_LLAMA32:BOOL=ON" in cache
     if args.output.exists():raise FileExistsError(args.output)
     args.output.mkdir(parents=True)
-    remote="/data/local/tmp/llama32-htp/"+m["experiment"].lower()+"/"+args.output.name
+    active=re.search(r"^  active_experiment: (L32-[0-9]+)$",Path("/home/daniuniu/work/llama32-htp-project-memory/PROJECT_STATUS.yaml").read_text(),re.M).group(1)
+    remote="/data/local/tmp/llama32-htp/"+active.lower()+"/"+args.output.name
     assert adb("shell",f"test ! -e {shlex.quote(remote)}",check=False).returncode==0
     adb("shell",f"mkdir -p {shlex.quote(remote)}")
     builds={}
@@ -39,6 +40,7 @@ def main():
     if m['recipe']=='W4A8':
         argv=["./qwen3_block_cli",remote+"/package","W4U8","1","2","32","rms_rope_softmax","on","off","fused","serial","control","hvx","w4u8_streaming_persistent_mlp_hvx","3","64","u8_log2_gqa","4","w4u8_mlp_io_qkv_o","serial","scalar","control","4","3","1","0"]
         env.update(QBH_W4U8_DECODE_COMMON_OP_ROWS="4",QBH_W4U8_DECODE_SWIGLU_ROWS="4",QBH_W4U8_DECODE_SOFTMAX="hvx_tile4",QBH_W4U8_DECODE_PROJECTION_MODE="direct_n",QBH_W4U8_DECODE_DIRECT_N_MASK="63")
+    if m["recipe"]=="W4A8":argv[20]="hvx_tree"
     command="cd "+shlex.quote(remote)+" && "+" ".join(k+"="+shlex.quote(v) for k,v in env.items())+" "+shlex.join(argv)
     (args.output/"protocol.json").write_text(json.dumps({"experiment":m["experiment"],"layers":m["layers"],"source_head":subprocess.check_output(["git","-C",str(ROOT),"rev-parse","HEAD"],text=True).strip(),"builds":builds,"package_manifest_sha256":sha256(args.package/"manifest.json"),"command":command,"gate":("exact integer output and KV replay" if m["recipe"]=="W4A8" else "existing composition_v2 FP16 replay; no relaxation")},indent=2))
     r=adb("shell",command,check=False)
