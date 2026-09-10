@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+"""Run one continuous Llama FP16 slice with retained provenance and replay gates."""
+import argparse,json,re,shlex,subprocess
+from pathlib import Path
+from run_llama32_layer import ROOT,adb,windows
+from llama_reference import sha256
+
+def main():
+    ap=argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--package",type=Path,required=True)
+    ap.add_argument("--output",type=Path,required=True)
+    args=ap.parse_args()
+    subprocess.run(["python3","/home/daniuniu/work/llama32-htp-project-memory/scripts/project_memory.py","preflight","--source-worktree",str(ROOT)],check=True)
+    m=json.loads((args.package/"manifest.json").read_text())
+    assert m["experiment"]=="L32-0001" and m["recipe"]=="W16A16"
+    for f,r in m["files"].items():assert sha256(args.package/f)==r["sha256"],f
+    for build in ["android_ReleaseG_aarch64","hexagon_ReleaseG_toolv19_v79"]:
+        cache=(ROOT/build/"CMakeCache.txt").read_text()
+        assert re.search(r"QBH_LLAMA_LAYER_COUNT:[^=]+="+str(m["layers"])+r"\n",cache)
+        assert "QBH_MODEL_LLAMA32:BOOL=ON" in cache
+    if args.output.exists():raise FileExistsError(args.output)
+    args.output.mkdir(parents=True)
+    remote="/data/local/tmp/llama32-htp/l32-0001/"+args.output.name
+    assert adb("shell",f"test ! -e {shlex.quote(remote)}",check=False).returncode==0
+    adb("shell",f"mkdir -p {shlex.quote(remote)}")
+    builds={}
+    for name,build in [("qwen3_block_cli","android_ReleaseG_aarch64"),("libqwen3_probe.so","android_ReleaseG_aarch64"),("libqwen3_probe_skel.so","hexagon_ReleaseG_toolv19_v79")]:
+        src=ROOT/build/"ship"/name;builds[name]=sha256(src)
+        adb("push",windows(src),remote+"/"+name)
+    adb("push",windows(args.package),remote+"/package")
+    adb("shell",f"chmod 755 {remote}/qwen3_block_cli")
+    env={"LD_LIBRARY_PATH":remote,"DSP_LIBRARY_PATH":remote,"ADSP_LIBRARY_PATH":remote,
+         "QBH_VERTICAL_SLICE":"1","QBH_REPLAY_SEQUENCE":"1","QBH_REPLAY_DECODE_STEPS":"1",
+         "QBH_SCAN_MODE":"prefill","QBH_LOGICAL_M":"64","QBH_KV_CACHE_LENGTH":"0","QBH_KV_CACHE_CAPACITY":"80","QBH_REPLAY_DUMP_DIR":remote}
+    argv=["./qwen3_block_cli",remote+"/package","F16F16","1","2","32","hvx","on","off","fused","gate8_interleaved","control","hvx","crouton_native_batch8","4","64","parallel_qk_norm_rope","4","norms","serial","scalar","input_norm_pool_post_norm_pool","4","3","1","0"]
+    command="cd "+shlex.quote(remote)+" && "+" ".join(k+"="+shlex.quote(v) for k,v in env.items())+" "+shlex.join(argv)
+    (args.output/"protocol.json").write_text(json.dumps({"experiment":"L32-0001","layers":m["layers"],"source_head":subprocess.check_output(["git","-C",str(ROOT),"rev-parse","HEAD"],text=True).strip(),"builds":builds,"package_manifest_sha256":sha256(args.package/"manifest.json"),"command":command,"gate":"existing composition_v2 FP16 replay; no relaxation"},indent=2))
+    r=adb("shell",command,check=False)
+    (args.output/"stdout.txt").write_text(r.stdout);(args.output/"stderr.txt").write_text(r.stderr)
+    records=[]
+    for line in r.stdout.splitlines():
+        try:records.append(json.loads(re.sub(r":-?(?:nan|inf)([,}])",r":null\1",line)))
+        except json.JSONDecodeError:pass
+    steps=[x for x in records if isinstance(x,dict) and "output_nrmse" in x and "pass" in x]
+    passed=r.returncode==0 and len(steps)==2 and all(x["pass"] for x in steps)
+    for step in range(2):
+        name=f"actual_replay_output_{step:02d}_f16.bin"
+        adb("pull",remote+"/"+name,windows(args.output/name),check=False)
+    (args.output/"result.json").write_text(json.dumps({"process_exit_code":r.returncode,"pass":passed,"steps":steps,"records":records},indent=2)+"\n")
+    print(json.dumps({"process_exit_code":r.returncode,"pass":passed,"steps":steps}),flush=True)
+    if not passed:
+        print(r.stderr,flush=True);print(r.stdout[-1500:],flush=True);raise SystemExit(1)
+
+if __name__=="__main__":main()
