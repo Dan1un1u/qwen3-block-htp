@@ -19678,7 +19678,8 @@ static int qbh_scan_u8_attention(
             header->w4u8_decode_softmax_mode ==
                 QBH_BLOCK_W4U8_DECODE_SOFTMAX_HVX_TILE4,
             header->generation_boundary_audit_enabled != 0U ||
-                header->numerical_audit_enabled != 0U, header->wide_score_mode);
+                header->numerical_audit_enabled != 0U ||
+                header->w4u8_decode_common_padding_poison != 0U, header->wide_score_mode);
         qbh_wide_decode_audit(header,shared,1U,config->group_index,plane_a,padded_tokens);
         header->u8_attention_softmax_ticks +=
             HAP_perf_get_qtimer_count() - start;
