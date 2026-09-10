@@ -1939,6 +1939,14 @@ static int qbh_scan_request_valid(const struct qbh_block_header *header,
 static int qbh_header_valid(const struct qbh_block_header *header,
                             uint32_t shared_bytes) {
     uint32_t element_bytes;
+#ifdef QBH_MODEL_LLAMA32
+    /* Optimized Qwen head128 carriers and A8 are not Llama implementations. */
+    if (header == NULL || header->variant != QBH_BLOCK_F16F16 ||
+        header->attention_pipeline_mode >= QBH_BLOCK_ATTENTION_PIPELINE_GQA ||
+        (header->crouton_boundary_mode & QBH_BLOCK_CROUTON_BOUNDARY_QKV) != 0U) {
+        return 0;
+    }
+#endif
     if (header == NULL || header->magic != QBH_BLOCK_MAGIC ||
         header->abi_version != QBH_BLOCK_ABI_VERSION ||
         header->w4f16_decode_opt>2U || header->w4f16_decode_audit>1U ||
@@ -4127,7 +4135,7 @@ static void qbh_attention_softmax_pool_run_tasks(
             pool->attention_scores + (size_t)task * head_elements,
             pool->attention_probability + (size_t)task * head_elements,
             1U, QBH_BLOCK_M, QBH_BLOCK_M,
-            0.08838834764831845f, NULL);
+            QBH_MODEL_ATTENTION_SCALE, NULL);
         job->attention_softmax_ticks +=
             HAP_perf_get_qtimer_count() - start;
         ++job->attention_softmax_task_count;
@@ -11339,7 +11347,7 @@ static void qbh_rms_norm_f16(const __fp16 *input,
             float value = (float)input[(size_t)row * width + channel];
             sum += value * value;
         }
-        float inverse = 1.0f / sqrtf(sum / (float)width + 1.0e-6f);
+        float inverse = 1.0f / sqrtf(sum / (float)width + QBH_MODEL_RMS_EPS);
         for (uint32_t channel = 0; channel < width; ++channel) {
             output[(size_t)row * width + channel] = (__fp16)(
                 (float)input[(size_t)row * width + channel] * inverse *
@@ -11360,7 +11368,7 @@ static void qbh_rms_norm_u8(const uint8_t *input,
                 input[(size_t)row * width + channel], input_qparam);
             sum += value * value;
         }
-        float inverse = 1.0f / sqrtf(sum / (float)width + 1.0e-6f);
+        float inverse = 1.0f / sqrtf(sum / (float)width + QBH_MODEL_RMS_EPS);
         for (uint32_t channel = 0; channel < width; ++channel) {
             float value = qbh_dequantize(
                 input[(size_t)row * width + channel], input_qparam);
@@ -11374,6 +11382,12 @@ static void qbh_qk_norm_rope_f16(
     __fp16 *tensor, uint32_t heads, uint32_t row_stride,
     const __fp16 *gamma, const __fp16 *cosine,
     const __fp16 *sine) {
+#ifdef QBH_MODEL_LLAMA32
+    (void)gamma;
+    qbh_hvx_qk_norm_rope_f16(tensor, QBH_BLOCK_M, heads, row_stride,
+        QBH_BLOCK_HEAD_DIM, NULL, cosine, sine, NULL);
+    return;
+#endif
     for (uint32_t row = 0; row < QBH_BLOCK_M; ++row) {
         for (uint32_t head = 0; head < heads; ++head) {
             __fp16 *values = tensor + (size_t)row * row_stride +
@@ -11385,7 +11399,7 @@ static void qbh_qk_norm_rope_f16(
                 sum += value * value;
             }
             float inverse = 1.0f / sqrtf(
-                sum / (float)QBH_BLOCK_HEAD_DIM + 1.0e-6f);
+                sum / (float)QBH_BLOCK_HEAD_DIM + QBH_MODEL_RMS_EPS);
             for (uint32_t channel = 0;
                  channel < QBH_BLOCK_HEAD_DIM / 2U; ++channel) {
                 float first = (float)values[channel] * inverse *
@@ -11429,7 +11443,7 @@ static void qbh_qk_norm_rope_u8(
                 sum += value * value;
             }
             float inverse = 1.0f / sqrtf(
-                sum / (float)QBH_BLOCK_HEAD_DIM + 1.0e-6f);
+                sum / (float)QBH_BLOCK_HEAD_DIM + QBH_MODEL_RMS_EPS);
             for (uint32_t channel = 0;
                  channel < QBH_BLOCK_HEAD_DIM / 2U; ++channel) {
                 float first = qbh_dequantize(values[channel], input_qparam) *
@@ -11985,7 +11999,7 @@ static void qbh_attention_gqa_pool_run_tasks(
                      : (__fp16 *)buffers->probability) +
                     (size_t)head * head_elements,
                 1U, QBH_BLOCK_M, QBH_BLOCK_M,
-                0.08838834764831845f, NULL);
+                QBH_MODEL_ATTENTION_SCALE, NULL);
         }
         if (direct_qkv != 0U) {
             weight = qbh_attention_gqa_scratch(
@@ -12294,7 +12308,7 @@ static int qbh_attention_f16(struct qbh_block_header *header,
                            buffers->hmx_activation,
                            buffers->expanded_weight,
                            buffers->scale_or_bias,
-                           buffers->hmx_output, 2U, 4U, 2U) != 0) {
+                           buffers->hmx_output, 2U, QBH_ATTENTION_HEAD_DIM_TILES, 2U) != 0) {
             return -1;
         }
         if (header->attribution_enabled != 0U) {
@@ -12302,7 +12316,7 @@ static int qbh_attention_f16(struct qbh_block_header *header,
                 qbh_attribution_mark(&attribution_cursor);
         }
         ++header->hmx_command_count;
-        header->hmx_fp16_tile_pair_count += 16U;
+        header->hmx_fp16_tile_pair_count += 4U * QBH_ATTENTION_HEAD_DIM_TILES;
         qbh_unpack_fp16_output(
             (const __fp16 *)buffers->hmx_output, 2U,
             scores + (size_t)head * QBH_BLOCK_M * QBH_BLOCK_M,
@@ -12334,7 +12348,7 @@ static int qbh_attention_f16(struct qbh_block_header *header,
                 QBH_BLOCK_COMMON_OP_SOFTMAX) != 0U) {
         qbh_hvx_stable_causal_softmax_f16(
             scores, probability, QBH_BLOCK_HEADS, QBH_BLOCK_M,
-            QBH_BLOCK_M, 0.08838834764831845f, softmax_check);
+            QBH_BLOCK_M, QBH_MODEL_ATTENTION_SCALE, softmax_check);
     } else {
       for (uint32_t head = 0; head < QBH_BLOCK_HEADS; ++head) {
         for (uint32_t row = 0; row < QBH_BLOCK_M; ++row) {
@@ -12347,7 +12361,7 @@ static int qbh_attention_f16(struct qbh_block_header *header,
             for (uint32_t column = 0; column < QBH_BLOCK_M; ++column) {
                 float value = column <= row
                                   ? (float)score_row[column] *
-                                        0.08838834764831845f
+                                        QBH_MODEL_ATTENTION_SCALE
                                   : -INFINITY;
                 score_row[column] = column <= row
                                         ? (__fp16)value
@@ -12415,7 +12429,7 @@ static int qbh_attention_f16(struct qbh_block_header *header,
                            buffers->hmx_activation,
                            buffers->expanded_weight,
                            buffers->scale_or_bias,
-                           buffers->hmx_output, 2U, 2U, 4U) != 0) {
+                           buffers->hmx_output, 2U, 2U, QBH_ATTENTION_HEAD_DIM_TILES) != 0) {
             return -1;
         }
         if (header->attribution_enabled != 0U) {
@@ -12423,9 +12437,9 @@ static int qbh_attention_f16(struct qbh_block_header *header,
                 qbh_attribution_mark(&attribution_cursor);
         }
         ++header->hmx_command_count;
-        header->hmx_fp16_tile_pair_count += 16U;
+        header->hmx_fp16_tile_pair_count += 4U * QBH_ATTENTION_HEAD_DIM_TILES;
         qbh_unpack_fp16_output(
-            (const __fp16 *)buffers->hmx_output, 4U, attention,
+            (const __fp16 *)buffers->hmx_output, QBH_ATTENTION_HEAD_DIM_TILES, attention,
             QBH_BLOCK_HIDDEN, head * QBH_BLOCK_HEAD_DIM);
         if (header->attribution_enabled != 0U) {
             header->attention_av_unpack_ticks +=
@@ -16552,7 +16566,7 @@ static void qbh_scan_softmax_f16(
     uint32_t logical_rows, uint32_t past_tokens,
     uint32_t padded_tokens) {
     const uint32_t head_plane = QBH_BLOCK_M * padded_tokens;
-    const float scale = 0.08838834764831845f;
+    const float scale = QBH_MODEL_ATTENTION_SCALE;
 
     memset(
         probability, 0,
@@ -16660,7 +16674,7 @@ static int qbh_scan_softmax_f16_exact_batch(struct qbh_block_header *h,
     float work[128] __attribute__((aligned(128)));
     __fp16 rounded[128] __attribute__((aligned(128)));
     const uint32_t plane=QBH_BLOCK_M*padded,valid=past+1U;
-    const float scale=0.08838834764831845f;
+    const float scale=QBH_MODEL_ATTENTION_SCALE;
     if(valid>128U || padded>128U) return -1;
     if(h->w4f16_decode_opt==2U)
         qbh_hvx_zero_aligned_bytes(probability,2U*plane*sizeof(__fp16));
@@ -16708,8 +16722,10 @@ static int qbh_scan_f16_attention(
         valid_tokens, QBH_HMX_FP16_COLS);
     const uint32_t kv_tiles =
         padded_tokens / QBH_HMX_FP16_COLS;
-    const uint32_t plane_bytes =
-        padded_tokens * QBH_BLOCK_HEAD_DIM * sizeof(__fp16);
+    /* Scores hold every GQA query head; weights hold head_dim rows. */
+    const uint32_t plane_rows = QBH_ATTENTION_Q_HEADS_PER_GROUP * QBH_BLOCK_M > QBH_BLOCK_HEAD_DIM
+        ? QBH_ATTENTION_Q_HEADS_PER_GROUP * QBH_BLOCK_M : QBH_BLOCK_HEAD_DIM;
+    const uint32_t plane_bytes = padded_tokens * plane_rows * sizeof(__fp16);
     const uint32_t required_bytes = 3U * plane_bytes;
     const uint32_t overlay_capacity =
         (uint32_t)(buffers->compressed_weight - buffers->scores);
