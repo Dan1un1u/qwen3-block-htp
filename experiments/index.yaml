@@ -20,3 +20,16 @@ experiments:
   evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0266
   evidence_ledger_sha256: 052b816c686b11b0bc57908b9f86147047c1ecc427af7d8ee54a985dc5e2c093
   baseline_quality_promoted: false
+- id: L32-0001
+  title: Llama 3.2 1B Instruct W16A16 model port and independent validation
+  execution_state: running
+  record: docs/experiments/L32-0001.md
+  approval_ref: User selected original 1B-Instruct and approved W16A16 -> W4A16 ->
+    W4A8 adaptation order on 2026-09-10
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  parent_source: e0e3bc77704a9369693fe48a5cc5fed3005ac36c
+  hardware_runs: 0
+  local_gate: pending
+  baseline_quality_promoted: false

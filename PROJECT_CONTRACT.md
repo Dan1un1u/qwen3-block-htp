@@ -71,3 +71,17 @@ context or execution dependency.
 - Unknown ownership, remote divergence, unexplained provenance/hash changes,
   compromised evidence, destructive recovery or material scope/gate changes
   require discussion. New baselines are promoted only by the user.
+
+## L32-0001 authorization (2026-09-10)
+
+User selected Llama-3.2-1B-Instruct, downloaded the original Transformers BF16
+checkpoint from ModelScope to /mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin,
+and approved model adaptation in W16A16 -> W4A16 -> W4A8 order. The original
+user-supplied directory is a read-only input exception to the generated-model
+root. L32-0001 owns unrotated W16A16 only; later recipes follow separate bounded
+protocols. Fix model dimensions, omit Q/K norm entirely, implement llama3 RoPE,
+tied embedding/head, tokenizer/EOS and independent reference/export. Validate
+single-layer prefill/decode (nonzero positions and historical KV), consecutive
+layers, then complete text and heldout PPL. Preserve physical/numerical gates.
+No Qwen3 research or weight/calibration reuse. Common model changes may later
+be propagated to the rotation branch after the owning worktree is validated.

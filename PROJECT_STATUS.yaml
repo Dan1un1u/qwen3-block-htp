@@ -6,8 +6,8 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: null
-  next_experiment_number: 1
+  active_experiment: L32-0001
+  next_experiment_number: 2
   maximum_running_experiments: 1
   remote_sync_required: true
 source_worktrees:
@@ -26,15 +26,17 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: organization_complete_model_selection_pending
-  checkpoint: null
+  stage: w16a16_model_port
+  checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: false
-  next_action: select exact Llama checkpoint, register L32-0001 for model port
+  next_action: Implement unrotated W16A16 reference/export/runtime; layer then consecutive
+    layers then full text/PPL
   baseline_manifest: baselines/qwen3-frozen/manifest.json
   native_code_unchanged_from_qwen3_freeze: true
   handoff: docs/SESSION_HANDOFF.md
   organization_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0266
   organization_evidence_ledger_sha256: 052b816c686b11b0bc57908b9f86147047c1ecc427af7d8ee54a985dc5e2c093
+  original_model_path: /mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp

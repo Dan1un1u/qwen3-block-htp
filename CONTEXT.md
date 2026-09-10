@@ -37,3 +37,14 @@ chosen owning worktree. Freeze data before calibration/selection/evaluation.
 ## Organization completed
 
 Both branches/worktrees and independent authority passed closure checks. Read docs/SESSION_HANDOFF.md. Qwen3 source restored at freeze. No active experiment and no Llama model implementation yet. Do not repeat organization or Qwen3 profiling.
+
+## Active L32-0001
+
+Checkpoint is now selected: original BF16 Llama-3.2-1B-Instruct from ModelScope,
+user input /mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin. Six runtime files
+passed complete SHA256 comparison to live repository metadata and tokenizer
+roundtrip/template validation. Weights SHA256
+1ff795ff6a07e6a68085d206fb84417da2f083f68391c2843cd2b8ac6df8538f.
+The earlier pending-checkpoint statements describe organization-time state.
+W16A16 adaptation is authorized and in progress on the no-rotation worktree;
+no Llama hardware result or quality acceptance exists yet.
