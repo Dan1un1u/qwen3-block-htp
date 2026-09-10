@@ -1,45 +1,56 @@
-# L32-0005 closed: A8 relative speed restored
+# L32-0006 closed: three native A8 pipeline speed rounds
 
-Both Llama source branches are clean and synchronized; common trees differ only
-in config/branch.json. Qwen3 freeze unchanged. No active experiment or job. Next
-experiment L32-0006 requires user direction. Source heads and ledger are in status.
+No active experiment or background job. Both Llama source branches are clean and
+synchronized; common source differs only in config/branch.json. Qwen3 freeze
+unchanged. Next experiment L32-0007 requires user direction. Exact source heads
+and evidence ledger are in PROJECT_STATUS.yaml.
 
-Native W4 was already faster but repeated V LUT generation, scalar softmax,
-unused64-row common/SwiGLU/residual work and RoPE row copies hid the advantage.
-Reuse exact per-config LUT, HVX softmax, row4 common/SwiGLU, pooled residuals,
-integer RMS tree and aligned head64 RoPE gather with sparse scalar edge repair.
-Weights/qparams and all quality status remain unchanged.
+Round1 reuses exact SOLE templates through dead K carrier scratch and four-row
+shuffle, plus three-way prefill SwiGLU using existing workers/scratch. Round2
+vector-transposes aligned native head64 KV carriers with bounded scalar edges.
+Round3 adapts continuous GateUp/SwiGLU to eight Llama groups, O/Gate prefetch and
+native-W4 DMA batches (Gate32,QKV16,Down8,O16). Generic const-score API preserved.
+All are scheduling/layout changes; weights, quantization codes and qparams fixed.
 
-Independent A8 single/3/16 exact output and KV gates pass. Padding poisoning
-and8 softmax scalar comparisons pass. W4 full16 byte-identical to prior evidence;
-OPT2 audit passes. Full generated IDs and selected codes equal baseline, including
-A8 full15-decode. Exactly8MiB VTCM,peak7668960 A8/8330752 W4,zero timed
-intermediate DDR/spill,single HMX owner,native W4 weights without expansion.
+A8 independent single/3/16 output and KV checks pass; padding/scalar softmax
+audit passes. W4 full16 output remains byte-identical to sealed L32-0002, OPT2
+audit passes. Full generated token IDs and selected codes match old baseline.
+Exactly 8MiB VTCM, peak A8 7668960 / W4 8330752 bytes; zero timed intermediate
+DDR/spill, one HMX owner, native W4 with no expansion. All 220 formal candidate
+decode steps show 128 SwiGLU publish/consume, overlap,16 O/Gate prefetch pairs.
 
-Fixed10 rotated ABC/BCA/CAB cycles, shared original M64 prompt plus7 decode each:
-W4A16 prefill1260.21580/decode23.59130 tok/s;
-old A8 prefill1081.55838/decode16.70891;
-new A8 prefill1431.83506/decode39.55584.
-New A8 vs W4: throughput+13.62%/+67.67%, Host ratio.880140/.596405;
-95% CI[.871268,.887285]/[.593203,.598958].
-New A8 vs old: throughput+32.39%/+136.74%, Host ratio.755365/.422413;
-CI[.751633,.760720]/[.421104,.423666]. Both retained1.10 gates pass.
-All240 timed additive ledgers reconcile. Excludes load/session preparation and
-external tokenizer; includes embedding,16layers,finalnorm,head,greedy,FastRPC.
-No repeat1 gate, optional stopping, cross-length comparison or extrapolation.
+Fixed ten rotated ABC/BCA/CAB cycles, M64 plus7 continuous decode:
+W4A16 OPT2 1261.16115 / 23.60401 token/s;
+L32-0005 A8 baseline 1437.08911 / 39.52282;
+L32-0006 candidate 2015.91637 / 45.64662.
+New/old Host ratios .712871 [.707863,.719768] prefill and
+.865843 [.861942,.869598] decode. Throughput +40.28% / +15.49%.
+Both retained 10% slowdown gates pass.
 
-Primary remaining prefill costs: GateUp/SwiGLU32.0%,attention25.9%,KV conversion
-6.1%. Decode: GateUp/SwiGLU30.8%,attention22.8%,LMhead12.6%,Down11.7%,Host9.0%.
-Current A8 quality is still unusable (prior PPL1206603.740108); no quality gate.
-W4A16 prior PPL31.039101 vs BF16teacher26.697999 still fails quality criteria.
-No new PPL or quality-baseline promotion. Testedcapacity80,M64+7/15 only;
-Llama rotations and arbitrary-length serving remain unsupported.
+Additional fixed ten AB/BA A8 pairs, M64 plus15 continuous decode:
+old 1435.85739 / 40.21846; new 2046.81285 / 46.67570 token/s.
+Host ratios .701509 [.690540,.709048] / .861657 [.855672,.867739].
+Both gates pass. Frozen Qwen3 OFF historical M64+15 1705.31769 /48.35725:
+Llama prefill +20.03%, decode -3.48%. Different models/historical sessions,
+NOT a paired cross-model efficiency claim.
 
-Evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0005. Source report
-/docs/LLAMA32_A8_RELATIVE_SPEED.md; profiler/report tools are experiment-specific
-and require new immutable destinations for future use. Native last-changebe389d2,
-profiledsourcea6f5e61; final source changes after profiling only reporting.
-All failed predicate,CLI,compile attempts and SDK probes retained, see recovery_notes.
-44 DSP processes incl1 rejected candidate,43 successful;2 additional CLI rejects;
-306 executed token boundaries including2 in the failed candidate,304 successful.
-No model/Qwen artifact removed or changed. Original BF16 root remains read-only.
+560 timed token-boundary additive Host/DSP ledgers reconcile. 64 successful DSP
+processes,640 total boundaries; no failed native or build attempts this experiment.
+Includes embedding,16layers,final norm,head,greedy and FastRPC; excludes model
+load/session setup and external tokenizer. No repeat1 gate, optional stopping or
+layer extrapolation. Existing L32-0005 evidence 241 files unchanged.
+
+Remaining decode costs: attention26.35%,GateUp/SwiGLU22.76%,head14.80%,
+Down11.57%,Host boundary10.51%. These may guide a future authorized experiment.
+A8 text remains unusable (prior PPL1206603.740108); no quality gate. W4 prior
+PPL31.039101 vs BF16teacher26.697999 still fails retained PPL criteria.
+No PPL rerun or quality-baseline promotion. Tested capacity80,M64+7/15 only.
+Llama R3/R4 and arbitrary-length serving remain unsupported.
+
+Evidence /mnt/d/llm_exp/results/llama32-htp/l32-0006; 296 files hashed in
+docs/experiments/L32-0006-evidence-sha256.json. Source report
+docs/LLAMA32_PIPELINE_ITERATIONS.md and result PROFILE.md. Profiled native
+cfd9feeb1d9403185aeffeabfa47bbd174c7b70d; subsequent source changes only reports.
+Both branch propagation and binary hashes verified by closure_checks.json.
+Profiler/report tools are experiment-specific; future runs require fresh immutable
+destinations. No Qwen/model artifact changed; original BF16 remains read-only.

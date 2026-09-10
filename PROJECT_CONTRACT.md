@@ -113,3 +113,12 @@ and exact arithmetic/physical gates. Launchers now use validated row4 common/
 SwiGLU,HVX softmax,hvx_tree and pooled residual modes. Per-config V LUT and
 native tile RoPE gather are common source. No quality promotion or rotation support.
 Read current status/context and L32-0005 record for measured scope and evidence.
+
+## L32-0006 speed closure (2026-09-10)
+
+Three bounded A8 scheduling/layout iterations passed exact arithmetic and physical
+checks plus fixed ten M64+7 three-arm and ten M64+15 paired performance cycles.
+Measured OFF Llama speed is near frozen Qwen OFF historical decode throughput;
+cross-model reference remains non-paired. Common code propagated to both Llama
+branches, without adding rotation support or promoting quantization quality.
+Current status/context and L32-0006 evidence are authoritative for measured scope.

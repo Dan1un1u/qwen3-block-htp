@@ -149,7 +149,7 @@ experiments:
   ppl_rerun: false
 - id: L32-0006
   title: Iterate Llama A8 nonlinear and native pipeline speed
-  execution_state: running
+  execution_state: completed
   record: docs/experiments/L32-0006.md
   approval_ref: User authorizes several further speed iterations aiming near frozen
     Qwen3 speed
@@ -157,6 +157,22 @@ experiments:
     source_worktree: /home/daniuniu/work/llama32-htp-rotation
     source_branch: codex/llama32-rotation
   parent_source: 42a783a6a8ba1b1d7dc145abf1c0535af36480c5
-  hardware_runs: 0
+  hardware_runs: 64
   baseline_quality_promoted: false
   local_gate: exact_physical_and_both_formal_shape_gates_pass
+  completed_on: '2026-09-10'
+  hardware_runs_definition: '64 successful DSP processes: 8 functional/regression,
+    6 generation gates, 30 M64+7 rotated three-arm formal and 20 M64+15 paired formal'
+  token_boundary_executions: 640
+  timed_token_boundary_executions: 560
+  source_heads:
+    codex/llama32-no-rotation: b9932bd8ebdf6d7038cff882dfdfdf6aee7b8631
+    codex/llama32-rotation: 252aee5ecfbefd4a2df6cd5a5e4b9193d935f86b
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0006
+  evidence_ledger_sha256: b0c19252afff6f497ac2358bbe073de1992ef9eae1b23c692c5509eb75e5afa4
+  evidence_validity: valid
+  formal_profiling: true
+  rotated_three_arm_cycles: 10
+  long_shape_pairs: 10
+  ppl_rerun: false
+  quality_baseline_promoted: false
