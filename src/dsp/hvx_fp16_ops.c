@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #include "hvx_fp16_ops.h"
+#include "model_config.h"
 #include "hmx_fp16.h"
 #include "qhmath_hvx_vector.h"
 
@@ -218,7 +219,7 @@ void qbh_hvx_rms_norm_f16(const __fp16 *input, const __fp16 *gamma,
         HVX_Vector *output_vectors = (HVX_Vector *)output_row;
         float sum = qbh_hvx_sum_squares_f16(input_row, width);
         float inverse =
-            1.0f / sqrtf(sum / (float)width + 1.0e-6f);
+            1.0f / sqrtf(sum / (float)width + QBH_MODEL_RMS_EPS);
         for (uint32_t index = 0; index < vector_count; ++index) {
             output_vectors[index] =
                 qbh_hvx_scale_then_multiply_f16_f32(
@@ -231,7 +232,7 @@ void qbh_hvx_rms_norm_f16(const __fp16 *input, const __fp16 *gamma,
                 reference_sum += value * value;
             }
             float reference_inverse = 1.0f / sqrtf(
-                reference_sum / (float)width + 1.0e-6f);
+                reference_sum / (float)width + QBH_MODEL_RMS_EPS);
             for (uint32_t channel = 0; channel < width; ++channel) {
                 __fp16 reference = (__fp16)(
                     (float)input_row[channel] * reference_inverse *
@@ -258,7 +259,7 @@ void qbh_hvx_rms_norm_f16_rows(
         HVX_Vector *output_vectors = (HVX_Vector *)output_row;
         const float inverse = 1.0f / sqrtf(
             qbh_hvx_sum_squares_f16(input_row, width) /
-                (float)width + 1.0e-6f);
+                (float)width + QBH_MODEL_RMS_EPS);
         for (uint32_t index = 0U; index < vector_count; ++index) {
             output_vectors[index] =
                 qbh_hvx_scale_then_multiply_f16_f32(
@@ -302,10 +303,10 @@ void qbh_hvx_rms_norm_f16_crouton(
         const HVX_Vector *vectors1 = (const HVX_Vector *)input1;
         const float inverse0 = 1.0f / sqrtf(
             qbh_hvx_sum_squares_f16(input0, width) /
-                (float)width + 1.0e-6f);
+                (float)width + QBH_MODEL_RMS_EPS);
         const float inverse1 = 1.0f / sqrtf(
             qbh_hvx_sum_squares_f16(input1, width) /
-                (float)width + 1.0e-6f);
+                (float)width + QBH_MODEL_RMS_EPS);
 
         for (uint32_t index = 0U; index < vector_count; ++index) {
             qbh_hvx_store_f16_pair_crouton(
@@ -336,10 +337,10 @@ void qbh_hvx_rms_norm_f16_crouton_rows(
         const HVX_Vector *vectors1 = (const HVX_Vector *)input1;
         const float inverse0 = 1.0f / sqrtf(
             qbh_hvx_sum_squares_f16(input0, width) /
-                (float)width + 1.0e-6f);
+                (float)width + QBH_MODEL_RMS_EPS);
         const float inverse1 = 1.0f / sqrtf(
             qbh_hvx_sum_squares_f16(input1, width) /
-                (float)width + 1.0e-6f);
+                (float)width + QBH_MODEL_RMS_EPS);
 
         for (uint32_t index = 0U; index < vector_count; ++index) {
             qbh_hvx_store_f16_pair_crouton(
@@ -395,7 +396,7 @@ void qbh_hvx_residual_rms_norm_f16(
             sum += value * value;
         }
         const float inverse =
-            1.0f / sqrtf(sum / (float)width + 1.0e-6f);
+            1.0f / sqrtf(sum / (float)width + QBH_MODEL_RMS_EPS);
         for (uint32_t index = 0U; index < vector_count; ++index) {
             output_vectors[index] =
                 qbh_hvx_scale_then_multiply_f16_f32(
@@ -454,7 +455,7 @@ void qbh_hvx_residual_rms_norm_f16_rows(
             sum += value * value;
         }
         const float inverse =
-            1.0f / sqrtf(sum / (float)width + 1.0e-6f);
+            1.0f / sqrtf(sum / (float)width + QBH_MODEL_RMS_EPS);
         for (uint32_t index = 0U; index < vector_count; ++index) {
             output_vectors[index] =
                 qbh_hvx_scale_then_multiply_f16_f32(
@@ -515,11 +516,11 @@ void qbh_hvx_residual_rms_norm_f16_crouton(
         const float inverse0 = 1.0f / sqrtf(
             qbh_hvx_reduce_sum_sf32(
                 Q6_Vsf_vadd_VsfVsf(sum0_lo, sum0_hi)) /
-                (float)width + 1.0e-6f);
+                (float)width + QBH_MODEL_RMS_EPS);
         const float inverse1 = 1.0f / sqrtf(
             qbh_hvx_reduce_sum_sf32(
                 Q6_Vsf_vadd_VsfVsf(sum1_lo, sum1_hi)) /
-                (float)width + 1.0e-6f);
+                (float)width + QBH_MODEL_RMS_EPS);
         for (uint32_t index = 0U; index < vector_count; ++index) {
             qbh_hvx_store_f16_pair_crouton(
                 output_tiles, column_tiles, row,
@@ -579,11 +580,11 @@ void qbh_hvx_residual_rms_norm_f16_crouton_rows(
         const float inverse0 = 1.0f / sqrtf(
             qbh_hvx_reduce_sum_sf32(
                 Q6_Vsf_vadd_VsfVsf(sum0_lo, sum0_hi)) /
-                (float)width + 1.0e-6f);
+                (float)width + QBH_MODEL_RMS_EPS);
         const float inverse1 = 1.0f / sqrtf(
             qbh_hvx_reduce_sum_sf32(
                 Q6_Vsf_vadd_VsfVsf(sum1_lo, sum1_hi)) /
-                (float)width + 1.0e-6f);
+                (float)width + QBH_MODEL_RMS_EPS);
         for (uint32_t index = 0U; index < vector_count; ++index) {
             qbh_hvx_store_f16_pair_crouton(
                 output_tiles, column_tiles, row,
@@ -597,12 +598,36 @@ void qbh_hvx_residual_rms_norm_f16_crouton_rows(
     }
 }
 
+#ifdef QBH_MODEL_LLAMA32
+/* Initial head64 adapter. Executes on the DSP; no host fallback. */
+static void qbh_llama_rope_head(__fp16 *tensor, uint32_t rows,
+    uint32_t stride, uint32_t dim, uint32_t head,
+    const __fp16 *cosine, const __fp16 *sine) {
+    for (uint32_t row = 0; row < rows; ++row) {
+        __fp16 *v = tensor + (size_t)row * stride + head * dim;
+        const __fp16 *c = cosine + (size_t)row * dim;
+        const __fp16 *s = sine + (size_t)row * dim;
+        for (uint32_t j = 0; j < dim / 2U; ++j) {
+            float a = (float)v[j], b = (float)v[j + dim / 2U];
+            v[j] = (__fp16)(a * (float)c[j] - b * (float)s[j]);
+            v[j + dim / 2U] = (__fp16)(b * (float)c[j + dim / 2U] + a * (float)s[j + dim / 2U]);
+        }
+    }
+}
+#endif
+
 void qbh_hvx_qk_norm_rope_f16(__fp16 *tensor, uint32_t rows,
                                uint32_t heads, uint32_t row_stride,
                                uint32_t head_dim, const __fp16 *gamma,
                                const __fp16 *cosine,
                                const __fp16 *sine,
                                struct qbh_hvx_check_metrics *check) {
+#ifdef QBH_MODEL_LLAMA32
+    (void)gamma; (void)check;
+    for (uint32_t head = 0; head < heads; ++head)
+        qbh_llama_rope_head(tensor, rows, row_stride, head_dim, head, cosine, sine);
+    return;
+#endif
     const uint32_t half_dim = head_dim / 2U;
     for (uint32_t row = 0; row < rows; ++row) {
         const HVX_Vector cosine_first =
@@ -627,7 +652,7 @@ void qbh_hvx_qk_norm_rope_f16(__fp16 *tensor, uint32_t rows,
             }
             float sum = qbh_hvx_sum_squares_f16(values, head_dim);
             __fp16 inverse = (__fp16)(
-                1.0f / sqrtf(sum / (float)head_dim + 1.0e-6f));
+                1.0f / sqrtf(sum / (float)head_dim + QBH_MODEL_RMS_EPS));
             HVX_Vector inverse_vector =
                 Q6_Vh_vsplat_R(*(const uint16_t *)&inverse);
             HVX_Vector first = *(const HVX_Vector *)values;
@@ -661,7 +686,7 @@ void qbh_hvx_qk_norm_rope_f16(__fp16 *tensor, uint32_t rows,
                     reference_sum += value * value;
                 }
                 float reference_inverse = 1.0f / sqrtf(
-                    reference_sum / (float)head_dim + 1.0e-6f);
+                    reference_sum / (float)head_dim + QBH_MODEL_RMS_EPS);
                 for (uint32_t channel = 0; channel < half_dim; ++channel) {
                     float first = (float)original[channel] *
                         reference_inverse * (float)gamma[channel];
@@ -691,6 +716,11 @@ void qbh_hvx_qk_norm_rope_f16_head(
     __fp16 *tensor, uint32_t rows, uint32_t row_stride,
     uint32_t head_dim, uint32_t head, const __fp16 *gamma,
     const __fp16 *cosine, const __fp16 *sine) {
+#ifdef QBH_MODEL_LLAMA32
+    (void)gamma;
+    qbh_llama_rope_head(tensor, rows, row_stride, head_dim, head, cosine, sine);
+    return;
+#endif
     const uint32_t half_dim = head_dim / 2U;
     const HVX_Vector gamma_first = *(const HVX_Vector *)gamma;
     const HVX_Vector gamma_second =
@@ -709,7 +739,7 @@ void qbh_hvx_qk_norm_rope_f16_head(
                          (size_t)head * head_dim;
         float sum = qbh_hvx_sum_squares_f16(values, head_dim);
         __fp16 inverse = (__fp16)(
-            1.0f / sqrtf(sum / (float)head_dim + 1.0e-6f));
+            1.0f / sqrtf(sum / (float)head_dim + QBH_MODEL_RMS_EPS));
         HVX_Vector inverse_vector =
             Q6_Vh_vsplat_R(*(const uint16_t *)&inverse);
         HVX_Vector first = *(const HVX_Vector *)values;
@@ -765,7 +795,7 @@ static void qbh_hvx_qk_norm_rope_vectors(
     inverse = (__fp16)(1.0f / sqrtf(
         qbh_hvx_reduce_sum_sf32(
             Q6_Vsf_vadd_VsfVsf(sum_lo, sum_hi)) /
-            128.0f + 1.0e-6f));
+            128.0f + QBH_MODEL_RMS_EPS));
     inverse_vector = Q6_Vh_vsplat_R(*(const uint16_t *)&inverse);
     first_norm = Q6_Vqf16_vmpy_VhfVhf(first, gamma_first);
     second_norm = Q6_Vqf16_vmpy_VhfVhf(second, gamma_second);

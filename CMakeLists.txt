@@ -2,6 +2,15 @@ cmake_minimum_required(VERSION 3.14.3)
 
 project(qwen3_probe C CXX ASM)
 
+option(QBH_MODEL_LLAMA32 "Build original Llama 3.2 1B W16A16 adapter" ON)
+set(QBH_LLAMA_LAYER_COUNT "16" CACHE STRING "Llama staged layer count: 1, 3 or 16")
+if(QBH_MODEL_LLAMA32)
+    if(NOT QBH_LLAMA_LAYER_COUNT MATCHES "^(1|3|16)$")
+        message(FATAL_ERROR "Invalid Llama layer count")
+    endif()
+    add_compile_definitions(QBH_MODEL_LLAMA32=1 QBH_LLAMA_LAYER_COUNT=${QBH_LLAMA_LAYER_COUNT})
+endif()
+
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 cmake_policy(SET CMP0115 OLD)
