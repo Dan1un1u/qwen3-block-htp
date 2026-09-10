@@ -86,3 +86,11 @@ single-layer prefill/decode (nonzero positions and historical KV), consecutive
 layers, then complete text and heldout PPL. Preserve physical/numerical gates.
 No Qwen3 research or weight/calibration reuse. Common model changes may later
 be propagated to the rotation branch after the owning worktree is validated.
+
+## Sequential quantized-chain authorization (2026-09-10)
+
+User defers speed optimization and explicitly requests W4A16 then W4A8 functional
+integration. W4A16 is expected to have usable model quality; retain its PPL criteria.
+W4A8 model quality has no acceptance threshold in this integration phase; record
+actual quality without blocking for low PPL/text quality. This explicit exception
+does not relax arithmetic correctness, memory, provenance or execution checks.

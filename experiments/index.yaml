@@ -44,3 +44,15 @@ experiments:
   original_bf16_ppl: 25.022061784332696
   device_ppl: 25.1047703210606
   formal_profiling: false
+- id: L32-0002
+  title: Fresh per-channel Llama W4A16 integration and quality validation
+  execution_state: running
+  record: docs/experiments/L32-0002.md
+  approval_ref: 'User: defer optimization; sequentially connect W4A16 and W4A8; W4A16
+    quality usable, A8 no quality threshold (2026-09-10)'
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  parent_source: a5d2e8ca3f2f98787b36652db3d8f6f7e74d11f5
+  hardware_runs: 0
+  baseline_quality_promoted: false
