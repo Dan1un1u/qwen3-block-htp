@@ -471,8 +471,8 @@ struct qbh_block_w4f16_pool {
     uint8_t *u8_swiglu_middle;
     const uint16_t *u8_swiglu_lut;
     uint8_t *u8_swiglu_gather_scratch;
-    volatile uint32_t u8_swiglu_ready[6];
-    volatile uint32_t u8_swiglu_complete[6];
+    volatile uint32_t u8_swiglu_ready[QBH_BLOCK_INTERMEDIATE / (32U * QBH_HMX_OUTPUT_CHANNELS)];
+    volatile uint32_t u8_swiglu_complete[QBH_BLOCK_INTERMEDIATE / (32U * QBH_HMX_OUTPUT_CHANNELS)];
     volatile uint32_t u8_swiglu_abort;
     uint32_t u8_swiglu_generation;
     uint32_t u8_swiglu_group_count;
@@ -9665,7 +9665,8 @@ static int qbh_start_w4u8_gate_up_swiglu_stream(
         gate == NULL || up == NULL || middle == NULL ||
         header->w4u8_decode_direct_n_gate_up_swiglu_stream == 0U ||
         pool->worker_count == 0U || group_tiles != 32U ||
-        tile_count % group_tiles != 0U || group_count != 6U ||
+        tile_count % group_tiles != 0U ||
+        group_count != sizeof(pool->u8_swiglu_ready)/sizeof(pool->u8_swiglu_ready[0]) ||
         rows != QBH_BLOCK_W4U8_SWIGLU_DECODE_ROWS) {
         return -1;
     }
