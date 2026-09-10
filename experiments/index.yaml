@@ -147,3 +147,15 @@ experiments:
   formal_profiling: true
   rotated_three_arm_cycles: 10
   ppl_rerun: false
+- id: L32-0006
+  title: Iterate Llama A8 nonlinear and native pipeline speed
+  execution_state: running
+  record: docs/experiments/L32-0006.md
+  approval_ref: User authorizes several further speed iterations aiming near frozen
+    Qwen3 speed
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  parent_source: 42a783a6a8ba1b1d7dc145abf1c0535af36480c5
+  hardware_runs: 0
+  baseline_quality_promoted: false
