@@ -45,7 +45,6 @@ def main():
         argv[20]="hvx_tree";argv[9]="hvx_fused_post_norm_pool4"
     if args.a8_audit:
         assert m["recipe"]=="W4A8"
-        argv[8]="on"
         env.update(QBH_W4U8_DECODE_COMMON_PADDING_POISON="1",QBH_W4U8_DECODE_SWIGLU_PADDING_POISON="1")
     command="cd "+shlex.quote(remote)+" && "+" ".join(k+"="+shlex.quote(v) for k,v in env.items())+" "+shlex.join(argv)
     (args.output/"protocol.json").write_text(json.dumps({"experiment":m["experiment"],"layers":m["layers"],"source_head":subprocess.check_output(["git","-C",str(ROOT),"rev-parse","HEAD"],text=True).strip(),"builds":builds,"package_manifest_sha256":sha256(args.package/"manifest.json"),"command":command,"gate":("exact integer output and KV replay" if m["recipe"]=="W4A8" else "existing composition_v2 FP16 replay; no relaxation")},indent=2))
