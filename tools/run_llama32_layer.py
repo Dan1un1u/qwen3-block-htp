@@ -31,12 +31,12 @@ def main():
     args=ap.parse_args()
     subprocess.run(["python3","/home/daniuniu/work/llama32-htp-project-memory/scripts/project_memory.py","preflight","--source-worktree",str(ROOT)],check=True)
     manifest=json.loads((args.package/"manifest.json").read_text())
-    assert manifest["experiment"]=="L32-0001" and manifest["recipe"]=="W16A16"
+    assert (manifest["experiment"],manifest["recipe"]) in [("L32-0001","W16A16"),("L32-0002","W4A16")]
     for name,record in manifest["files"].items():
         assert sha256(args.package/name)==record["sha256"],name
     if args.output.exists():raise FileExistsError(args.output)
     args.output.mkdir(parents=True)
-    remote="/data/local/tmp/llama32-htp/l32-0001/"+args.output.name
+    remote="/data/local/tmp/llama32-htp/"+manifest["experiment"].lower()+"/"+args.output.name
     assert adb("shell",f"test ! -e {shlex.quote(remote)}",check=False).returncode==0,"Remote attempt exists"
     adb("shell",f"mkdir -p {shlex.quote(remote)}")
     artifacts={}
@@ -51,7 +51,7 @@ def main():
     if args.scan:
         env.update(QBH_SCAN_MODE=manifest["phase"],QBH_LOGICAL_M=str(manifest["logical_rows"]),QBH_KV_CACHE_LENGTH=str(manifest["past_tokens"]),QBH_KV_CACHE_CAPACITY="80",QBH_DUMP_CACHE_DIR=remote)
     elif manifest["phase"]!="prefill":raise ValueError("Decode requires --scan")
-    argv=["./qwen3_block_cli",remote+"/package","F16F16","1","2","32","hvx","on","on","fused","gate8_interleaved","control","hvx","crouton_native_batch8","4","64","parallel_qk_norm_rope","4","norms","serial","scalar","input_norm_pool_post_norm_pool","4","3","1","0"]
+    argv=["./qwen3_block_cli",remote+"/package",("W4F16" if manifest["recipe"]=="W4A16" else "F16F16"),"1","2","32","hvx","on","on","fused","gate8_interleaved","control","hvx","crouton_native_batch8","4","64","parallel_qk_norm_rope","4","norms","serial","scalar","input_norm_pool_post_norm_pool","4","3","1","0"]
     command="cd "+shlex.quote(remote)+" && "+" ".join(k+"="+shlex.quote(v) for k,v in env.items())+" "+shlex.join(argv)
     protocol={"source_head":subprocess.check_output(["git","-C",str(ROOT),"rev-parse","HEAD"],text=True).strip(),"builds":artifacts,"package_manifest_sha256":sha256(args.package/"manifest.json"),"command":command,"thresholds":{"cosine_min":0.99999,"nrmse_max":0.003,"nonfinite_max":0,"vtcm_bytes":8388608,"intermediate_ddr_bytes":0},"scope":"single layer correctness, no throughput claim"}
     (args.output/"protocol.json").write_text(json.dumps(protocol,indent=2)+"\n")
@@ -69,7 +69,7 @@ def main():
     if (args.output/"actual.bin").exists():
         n=manifest["logical_rows"]*2048
         actual=np.fromfile(args.output/"actual.bin",dtype="<f2")[:n].astype(np.float64)
-        reference=np.fromfile(args.package/"reference_f16f16_block_output_f16.bin",dtype="<f2")[:n].astype(np.float64)
+        reference=np.fromfile(args.package/("reference_w4f16_block_output_f16.bin" if manifest["recipe"]=="W4A16" else "reference_f16f16_block_output_f16.bin"),dtype="<f2")[:n].astype(np.float64)
         result["output"]={"finite":bool(np.isfinite(actual).all()),"max_abs":float(np.max(np.abs(actual-reference))),"nrmse":float(np.linalg.norm(actual-reference)/np.linalg.norm(reference)),"cosine":float(np.dot(actual,reference)/np.linalg.norm(actual)/np.linalg.norm(reference))}
         result["output_gate"]=result["output"]["finite"] and result["output"]["nrmse"]<=0.003 and result["output"]["cosine"]>=0.99999
     (args.output/"result.json").write_text(json.dumps(result,indent=2)+"\n")
