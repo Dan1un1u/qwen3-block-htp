@@ -1,0 +1,138 @@
+{
+  "experiment": "L32-0003",
+  "recipe": "W4A8",
+  "rotation": "OFF",
+  "functional_pass": true,
+  "quality_gate_applied": false,
+  "usable_text": false,
+  "baseline_promoted": false,
+  "scope": "M64+15 feedback decode; capacity80 row-major U8 KV; no arbitrary-length serving or rotated Llama acceptance",
+  "weights": "fresh Llama C64 enhanced GPTQ per-output-channel W4 from sealed L32-0002",
+  "activations": "fresh65536-token Llama static affine minmax",
+  "replay": [
+    {
+      "layers": 1,
+      "prefill_max_lsb": 0,
+      "decode_max_lsb": 0,
+      "kv_mismatches": 0,
+      "evidence": "device-stack1-a05"
+    },
+    {
+      "layers": 3,
+      "prefill_max_lsb": 0,
+      "decode_max_lsb": 0,
+      "kv_mismatches": 0,
+      "evidence": "device-stack3-a01"
+    },
+    {
+      "layers": 16,
+      "prefill_max_lsb": 0,
+      "decode_max_lsb": 0,
+      "kv_mismatches": 0,
+      "evidence": "device-stack16-a01"
+    }
+  ],
+  "generation": {
+    "ids": [
+      42845,
+      42845,
+      42845,
+      42845,
+      42845,
+      42845,
+      42845,
+      42845,
+      42845,
+      42845,
+      42845,
+      42845,
+      42845,
+      42845,
+      42845,
+      42845
+    ],
+    "text": "SleepSleepSleepSleepSleepSleepSleepSleepSleepSleepSleepSleepSleepSleepSleepSleep",
+    "steps": 16,
+    "independent_id_and_code_match": true
+  },
+  "ppl": {
+    "all": {
+      "tokens": 2048,
+      "device": 1206603.7401080923,
+      "fp16_teacher": 26.69888372617633,
+      "ratio_to_fp16_teacher": 45193.04074593592,
+      "bf16_teacher": 26.697998599288322,
+      "ratio_to_bf16_teacher": 45194.53904459551,
+      "pass": null,
+      "ratio_document_bootstrap_ci95": [
+        36498.66589875461,
+        55795.9905117465
+      ]
+    },
+    "en": {
+      "tokens": 1024,
+      "device": 1309236.4262251905,
+      "fp16_teacher": 17.769291405821924,
+      "ratio_to_fp16_teacher": 73679.72061036901,
+      "bf16_teacher": 17.787441818418547,
+      "ratio_to_bf16_teacher": 73604.53738038383,
+      "pass": null,
+      "ratio_document_bootstrap_ci95": [
+        56463.964177351845,
+        95670.16621326839
+      ]
+    },
+    "zh": {
+      "tokens": 1024,
+      "device": 1112016.559026389,
+      "fp16_teacher": 40.11585920586185,
+      "ratio_to_fp16_teacher": 27720.12318918244,
+      "bf16_teacher": 40.07226764163064,
+      "ratio_to_bf16_teacher": 27750.27779738442,
+      "pass": null,
+      "ratio_document_bootstrap_ci95": [
+        20768.77699033144,
+        37233.78593334134
+      ]
+    }
+  },
+  "nll_arithmetic_audit": [
+    {
+      "sample_id": 256,
+      "language": "en",
+      "nll_error": 9.054692107213214e-08,
+      "code_match": true
+    },
+    {
+      "sample_id": 576,
+      "language": "zh",
+      "nll_error": 1.7565056786850164e-07,
+      "code_match": true
+    }
+  ],
+  "physical": {
+    "vtcm_acquired": 8388608,
+    "vtcm_peak": 7668960,
+    "intermediate_ddr": 0,
+    "spill": 0,
+    "native_w4_projections_per_token": 113,
+    "native_w4_commands_per_token": 3701,
+    "native_w4_weight_bytes_per_token": 617873408,
+    "w4_to_s8_expand_ticks": 0
+  },
+  "functional_run_speed": {
+    "prefill_tokens": 64,
+    "prefill_host_wall_ns": 294453177,
+    "prefill_tokens_per_second": 217.35204439651878,
+    "decode_tokens": 15,
+    "decode_host_wall_ns": 5833199111,
+    "decode_tokens_per_second": 2.571487740185936
+  },
+  "formal_profiling": false,
+  "w4a16_regression_pass": true,
+  "w4a16_quality_gate_pass": false,
+  "package_manifest_sha256": "732f4458806bf8fabb79f3c191e2f7106298cdcac3c2b5e9bc2a3c25e3dff197",
+  "core_source_head": "55f52e840a9bc751127be8f2a441c46d3e249344",
+  "source_head": "c85fbbd25f4aa318c6cf9be4ceb3ccfb03deb92f",
+  "evidence_root": "/mnt/d/llm_exp/results/llama32-htp/l32-0003"
+}
