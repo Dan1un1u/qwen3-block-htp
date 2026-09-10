@@ -799,7 +799,9 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
      * compressed_weight. It never retains all per-head score/probability arrays.
      * Keep full arrays for the non-scan attention path. */
     if (variant == QBH_BLOCK_W4F16 && scan_mode != QBH_BLOCK_SCAN_DISABLED)
-        score_elements = QBH_BLOCK_M * QBH_BLOCK_M;
+        /* All three scan planes (score, K/V weight, probability) must end
+         * before attention_concat starts. Reserve for padded KV128. */
+        score_elements = 3U * 128U * (QBH_ATTENTION_Q_HEADS_PER_GROUP * QBH_BLOCK_M) / 2U;
 #else
     (void)scan_mode;
 #endif
