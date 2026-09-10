@@ -75,5 +75,6 @@
     "w4a16",
     "w4a8_off"
   ],
-  "a8_relative_speed_validation_record": "models/llama32/a8-relative-speed-validation.json"
+  "a8_relative_speed_validation_record": "models/llama32/a8-relative-speed-validation.json",
+  "pipeline_iterations_validation_record": "models/llama32/pipeline-iterations-validation.json"
 }
