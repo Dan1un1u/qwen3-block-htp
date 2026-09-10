@@ -1556,6 +1556,7 @@ void qbh_hvx_qk_norm_rope_u8_native_head_rows(
         __attribute__((aligned(QBH_HVX_BYTES)));
 
 #ifdef QBH_MODEL_LLAMA32
+    (void)gamma;
     struct qbh_llama_rope_u8_affine affine;
     qbh_llama_rope_u8_affine_init(&affine,input_qparam,output_qparam);
 #endif
