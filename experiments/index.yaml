@@ -30,19 +30,38 @@ experiments:
   parent: EXP-0265
   record: docs/experiments/EXP-0266.md
   approval_ref: 'User: 没问题，开始整理吧; PC080'
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: not_applicable
   runtime:
     source_branch: codex/exp-0265-w4u8-r4-fullmodel-e2e
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     started_on: '2026-09-10'
+    completed_on: '2026-09-10'
   source_branches:
   - codex/llama32-no-rotation
   - codex/llama32-rotation
   source_commits:
   - 48eb1ea7f9db0eb197a7c7908ab954d5a6635fc5
+  - e0e3bc77704a9369693fe48a5cc5fed3005ac36c
+  - cd2360f31c1b1a151db7ecf30acfbe73bded9979
+  evidence:
+    source_heads:
+      codex/exp-0265-w4u8-r4-fullmodel-e2e: 48eb1ea7f9db0eb197a7c7908ab954d5a6635fc5
+      codex/llama32-no-rotation: e0e3bc77704a9369693fe48a5cc5fed3005ac36c
+      codex/llama32-rotation: cd2360f31c1b1a151db7ecf30acfbe73bded9979
+    report: docs/experiments/EXP-0266-RESULTS.md
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0266
+    evidence_ledger_sha256: 052b816c686b11b0bc57908b9f86147047c1ecc427af7d8ee54a985dc5e2c093
+    evidence_file_count: 5
+    gate_role: repository_organization_only
+    native_build_files_unchanged: 50
+    branch_difference:
+    - config/branch.json
+    hardware_runs: 0
+    weights_created_or_deleted: 0
+    new_memory_commit: 4f23768
 - id: EXP-0265
   slug: w4u8-r4-fullmodel-e2e
   title: Optimized dense R4 full-model diagnostic E2E

@@ -2060,3 +2060,11 @@ TextbeforeEOS: noR4 answers The capital of France is Paris.; R4 emits 予以简�
 ## EXP0266 active — Qwen3 freeze / Llama 3.2 organization
 
 User approved PC080 plan. No more Qwen3 research including SP2. Preserve EXP0265 frozen source. Prepare two Llama branches, common fastest verified F16/W4F16 implementation and native-W4 A8 OFF vs R3 defaults, optional R4 on rotation branch. New model/checkpoint not chosen; organization only, no device or new weights.
+
+## Current closure EXP0266 — Qwen3 frozen, Llama organization complete
+
+This supersedes all earlier current/next-direction pointers. User froze Qwen3 research; source remains EXP0265 48eb1ea7f9db0eb197a7c7908ab954d5a6635fc5. No active experiment. Read docs/SESSION_HANDOFF_EXP0266.md. No SP2 or further Qwen3 experiments.
+
+New source worktrees: /home/daniuniu/work/llama32-htp on codex/llama32-no-rotation e0e3bc77704a9369693fe48a5cc5fed3005ac36c; /home/daniuniu/work/llama32-htp-rotation on codex/llama32-rotation cd2360f31c1b1a151db7ecf30acfbe73bded9979. Independent authority /home/daniuniu/work/llama32-htp-project-memory, branch codex/llama32-project-memory. Use its bootstrap and four authority files before any Llama work. Next experiment numbering there is L32-0001; select exact model checkpoint before porting.
+
+50 native/build files unchanged; two branches differ only config/branch.json; both retain F16 and C64 W4F16 OPT2, W4U8 OFF vs denseR3OPT2 defaults, R4OPT6 optional on rotation branch. All branches clean/synced and new bootstrap passes. Five baseline compact provenance/package manifests verified. No large weight deletion/copy, no new inference/model implementation, no hardware/PPL/profiling. Historical numerical/quality failures and Selected records unchanged. Evidence /mnt/d/llm_exp/results/qwen3-block-htp/exp0266, seal 052b816c686b11b0bc57908b9f86147047c1ecc427af7d8ee54a985dc5e2c093,5files.
