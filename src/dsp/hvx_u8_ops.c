@@ -1563,6 +1563,16 @@ void qbh_hvx_qk_norm_rope_u8_native_head_rows(
     qbh_llama_rope_u8_affine_init(&affine,input_qparam,output_qparam);
 #endif
     for (uint32_t row = 0U; row < rows; ++row) {
+#ifdef QBH_MODEL_LLAMA32
+        /* Each worker owns an entire head. Load aligned four-row tile groups,
+         * then merge only this row on store; padded rows remain untouched. */
+        const uint32_t shift=(row%4U)*32U;
+        HVX_Vector *lo=(HVX_Vector *)(head_tiles+(size_t)(row/4U)*128U);
+        HVX_Vector *hi=(HVX_Vector *)(head_tiles+2048U+(size_t)(row/4U)*128U);
+        HVX_Vector a=*lo,b=*hi;
+        *(HVX_Vector *)row_values=Q6_V_vmux_QVV(Q6_Q_vsetq_R(32),
+            Q6_V_vror_VR(a,shift),Q6_V_vror_VR(b,(shift+96U)%128U));
+#else
         for (uint32_t tile = 0U;
              tile < QBH_BLOCK_HEAD_DIM / 32U; ++tile) {
             memcpy(row_values + tile * 32U,
@@ -1570,6 +1580,7 @@ void qbh_hvx_qk_norm_rope_u8_native_head_rows(
                        (size_t)row * 32U,
                    32U);
         }
+#endif
 #ifdef QBH_MODEL_LLAMA32
         qbh_llama_rope_u8_hvx_prepared(row_values,input_qparam,output_qparam,
             cosine+(size_t)row*QBH_BLOCK_HEAD_DIM,
@@ -1580,12 +1591,20 @@ void qbh_hvx_qk_norm_rope_u8_native_head_rows(
             cosine + (size_t)row * QBH_BLOCK_HEAD_DIM,
             sine + (size_t)row * QBH_BLOCK_HEAD_DIM);
 #endif
+#ifdef QBH_MODEL_LLAMA32
+        HVX_Vector out=*(HVX_Vector *)row_values;
+        HVX_VectorPred mask=Q6_Q_and_QQ(Q6_Q_vsetq_R(shift+32U),
+            Q6_Q_not_Q(Q6_Q_vsetq_R(shift)));
+        *lo=Q6_V_vmux_QVV(mask,Q6_V_vror_VR(out,(128U-shift)%128U),a);
+        *hi=Q6_V_vmux_QVV(mask,Q6_V_vror_VR(out,(160U-shift)%128U),b);
+#else
         for (uint32_t tile = 0U;
              tile < QBH_BLOCK_HEAD_DIM / 32U; ++tile) {
             memcpy(head_tiles + (size_t)tile * 2048U +
                        (size_t)row * 32U,
                    row_values + tile * 32U, 32U);
         }
+#endif
     }
     asm volatile("barrier" ::: "memory");
 }
