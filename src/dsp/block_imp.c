@@ -203,6 +203,7 @@ enum qbh_block_hvx_pool_job_kind {
     QBH_BLOCK_HVX_POOL_W4U8_GENERATION_EXPAND = 16,
     QBH_BLOCK_HVX_POOL_U8_SWIGLU_STREAM = 17,
     QBH_BLOCK_HVX_POOL_R4_CONVERT = 18,
+    QBH_BLOCK_HVX_POOL_LLAMA_SWIGLU = 19,
 };
 
 enum qbh_block_u8_residual_kind {
@@ -4400,6 +4401,17 @@ static void qbh_w4u8_generation_expand_worker_run(
 static void qbh_r4_prepare_tile(const uint8_t *gate,const uint8_t *up,
     __fp16 *act,uint32_t rows,uint32_t tile,const uint16_t *lut,uint8_t *scratch);
 static void qbh_r4_convert_worker(void *context,uint32_t worker_index);
+#ifdef QBH_MODEL_LLAMA32
+static void qbh_llama_swiglu_worker(struct qbh_block_w4f16_pool *pool,uint32_t index) {
+    for(uint32_t tile=index;tile<QBH_BLOCK_INTERMEDIATE/32U;tile+=3U)
+        qbh_mlp_gate_up_lut_hvx(pool->u8_swiglu_gate+(size_t)tile*QBH_HMX_OUTPUT_BYTES,
+            pool->u8_swiglu_up+(size_t)tile*QBH_HMX_OUTPUT_BYTES,
+            pool->u8_swiglu_middle+(size_t)tile*QBH_HMX_OUTPUT_BYTES,
+            QBH_HMX_OUTPUT_BYTES,pool->u8_swiglu_lut,
+            pool->u8_swiglu_gather_scratch+(size_t)index*QBH_MLP_GATHER_SCRATCH_BYTES);
+}
+#endif
+
 static void qbh_w4u8_swiglu_stream_worker_run(
     struct qbh_block_w4f16_pool *pool,
     struct qbh_block_w4f16_job *job) {
@@ -4587,6 +4599,10 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
         } else if (job->command_kind ==
                    QBH_BLOCK_HVX_POOL_W4U8_GENERATION_EXPAND) {
             qbh_w4u8_generation_expand_worker_run(pool, job);
+#ifdef QBH_MODEL_LLAMA32
+        } else if (job->command_kind == QBH_BLOCK_HVX_POOL_LLAMA_SWIGLU) {
+            qbh_llama_swiglu_worker(pool,job->worker_index);
+#endif
         } else if (job->command_kind == QBH_BLOCK_HVX_POOL_R4_CONVERT) {
             qbh_r4_convert_worker(job->r4_convert_context,job->worker_index);
         } else if (job->command_kind ==
@@ -14177,9 +14193,15 @@ static void qbh_attention_u8_pool_run_tasks(
                     config, telemetry_ptr);
             }
         } else {
+#ifdef QBH_MODEL_LLAMA32
+            /* QK has completed: the group's K operand is dead until reuse. */
+            qbh_llama_u8_softmax_group_carrier(score_group,probability_group,
+                softmax_scratch,(uint8_t *)k_weight,config,telemetry_ptr);
+#else
             qbh_attention_u8_softmax_group(
                 score_group, probability_group, softmax_scratch,
                 config, telemetry_ptr);
+#endif
         }
         job->u8_attention_softmax_ticks +=
             HAP_perf_get_qtimer_count() - start;
@@ -14817,6 +14839,24 @@ static uint64_t qbh_fnv1a64_u8_native_tile_row(
 #include "r3_sign_matrix.inc"
 #include "dense_r4.inc"
 
+#ifdef QBH_MODEL_LLAMA32
+static int qbh_llama_swiglu_parallel(struct qbh_block_w4f16_pool *pool,
+    struct qbh_block_buffers *buffers,const uint8_t *gate,const uint8_t *up,uint8_t *middle) {
+    if(pool==NULL || pool->worker_count<2U)return -1;
+    for(uint32_t i=0;i<pool->worker_count;++i)
+        if(pool->jobs[i].command_kind!=QBH_BLOCK_HVX_POOL_NONE)return -1;
+    pool->u8_swiglu_gate=gate;pool->u8_swiglu_up=up;pool->u8_swiglu_middle=middle;
+    pool->u8_swiglu_lut=(const uint16_t *)buffers->w4u8_silu_lut;
+    pool->u8_swiglu_gather_scratch=buffers->w4u8_gather_scratch;
+    pool->active_worker_count=2U;pool->extra_expand_worker_index=UINT32_MAX;
+    for(uint32_t i=0;i<2U;++i)pool->jobs[i].command_kind=QBH_BLOCK_HVX_POOL_LLAMA_SWIGLU;
+    asm volatile("barrier" ::: "memory");
+    for(uint32_t i=0;i<2U;++i)(void)qurt_sem_up(&pool->command_ready[i]);
+    qbh_llama_swiglu_worker(pool,2U);
+    qbh_w4f16_pool_wait(pool);pool->active_worker_count=0U;return 0;
+}
+#endif
+
 static int qbh_run_w4u8_direct_n_mlp(
     struct qbh_block_header *header, uint8_t *shared,
     struct qbh_block_buffers *buffers,
@@ -14927,6 +14967,12 @@ static int qbh_run_w4u8_direct_n_mlp(
         start=HAP_perf_get_qtimer_count();
         if(qbh_run_dense_r4(header,shared,buffers,worker,pool,middle_native)!=0) return -1;
         header->activation_ticks+=HAP_perf_get_qtimer_count()-start;
+#ifdef QBH_MODEL_LLAMA32
+    } else if(prefill_direct!=0U) {
+        start=HAP_perf_get_qtimer_count();
+        if(qbh_llama_swiglu_parallel(pool,buffers,gate_native,up_native,middle_native)!=0)return -1;
+        header->activation_ticks+=HAP_perf_get_qtimer_count()-start;
+#endif
     } else if (prefill_direct == 0U &&
         header->w4u8_decode_direct_n_gate_up_swiglu_stream != 0U) {
         const uint32_t tile_count =

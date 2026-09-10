@@ -913,6 +913,30 @@ static const uint8_t *qbh_attention_u8_select_sole_lut_template(
         (size_t)slot * QBH_ATTN_U8_LUT_TEMPLATE_BYTES;
 }
 
+#ifdef QBH_MODEL_LLAMA32
+void qbh_llama_u8_softmax_group_carrier(uint8_t *scores,uint8_t *probability,
+    uint8_t *scratch,uint8_t *dead_k_weight,const struct qbh_attention_config *config,
+    struct qbh_attention_u8_telemetry *telemetry) {
+    struct qbh_attention_config identity=*config;
+    identity.score_multiplier=1U;
+    qbh_attention_u8_build_sole_lut_template_bank(scratch+QBH_ATTN_U8_SOFTMAX_TEMPLATE_OFFSET);
+    uint32_t minimum=UINT_MAX,maximum=0U;
+    for(uint32_t head=0;head<QBH_ATTENTION_Q_HEADS_PER_GROUP;head+=2U) {
+        struct qbh_attention_u8_telemetry local={0};
+        qbh_attention_u8_requant_softmax_group_rows_prebuilt_templates_shuffle4(
+            scores+(size_t)head*QBH_ATTENTION_SCORE_TILES*QBH_HMX_OUTPUT_BYTES,
+            probability+(size_t)head*QBH_ATTENTION_SCORE_TILES*QBH_HMX_ACTIVATION_BYTES,
+            scratch,dead_k_weight,&identity,telemetry?&local:NULL,0U,QBH_ATTENTION_M,0U);
+        if(telemetry) {
+            telemetry->probability_mask_violation_count+=local.probability_mask_violation_count;
+            if(local.probability_row_sum_min<minimum)minimum=local.probability_row_sum_min;
+            if(local.probability_row_sum_max>maximum)maximum=local.probability_row_sum_max;
+        }
+    }
+    if(telemetry){telemetry->probability_row_sum_min=minimum;telemetry->probability_row_sum_max=maximum;}
+}
+#endif
+
 void qbh_attention_u8_softmax_group(
     const uint8_t *score_tiles, uint8_t *probability_tiles,
     uint8_t *scratch,

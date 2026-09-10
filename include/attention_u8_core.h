@@ -64,6 +64,12 @@ void qbh_attention_u8_requant_qk(
     const struct qbh_attention_config *config,
     uint32_t *saturation_count);
 
+#ifdef QBH_MODEL_LLAMA32
+void qbh_llama_u8_softmax_group_carrier(uint8_t *scores,uint8_t *probability,
+    uint8_t *scratch,uint8_t *dead_k_weight,const struct qbh_attention_config *config,
+    struct qbh_attention_u8_telemetry *telemetry);
+#endif
+
 void qbh_attention_u8_softmax_group(
     const uint8_t *score_tiles, uint8_t *probability_tiles,
     uint8_t *scratch,
