@@ -45,3 +45,7 @@ validation_summary.json. All failed attempts preserved. See source
  docs/LLAMA32_W4A16.md and docs/LLAMA32_W4A8.md for reproduction and limitations.
 Next: report completed chains and W4A16 quality gap, then discuss with user;
 do not autonomously start optimization or claim rotated Llama is validated.
+
+Latest authorization: user now requests speed optimization using existing pipelines.
+L32-0004 active owns no-rotation; previous deferral and no-active statements above
+are historical closure context. See protocol and status for current work.

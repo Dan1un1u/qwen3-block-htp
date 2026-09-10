@@ -6,8 +6,8 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: null
-  next_experiment_number: 4
+  active_experiment: L32-0004
+  next_experiment_number: 5
   maximum_running_experiments: 1
   remote_sync_required: true
 source_worktrees:
@@ -26,11 +26,11 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: quantized_functional_chains_complete_quality_unaccepted
+  stage: native_pipeline_speed_optimization
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Discuss W4A16 quality gap with user before further optimization or
-    rotation work; no active experiment
+  next_action: Restore existing W4A16 decode OPT2 and optimize Llama head64 RoPE/native
+    A8 valid-row execution; exact gates then paired repeat10 E2E
   baseline_manifest: baselines/qwen3-frozen/manifest.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF.md

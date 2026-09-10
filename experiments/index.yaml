@@ -92,3 +92,14 @@ experiments:
   hardware_runs_definition: Native host invocation attempts including rejected CLI/bundle
     attempts and full generation/evaluation; seven launched DSP execution
   token_boundary_executions: 2074
+- id: L32-0004
+  title: Reuse native pipelines for Llama quantized inference speed
+  execution_state: running
+  record: docs/experiments/L32-0004.md
+  approval_ref: 'User: utilize original pipeline and conduct speed optimization (2026-09-10)'
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  parent_source: 0d344ac795f54114e241a00054fd4080a6359412
+  hardware_runs: 0
+  baseline_quality_promoted: false
