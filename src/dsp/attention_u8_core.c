@@ -1623,6 +1623,7 @@ void qbh_attention_u8_pack_k_row_major(
     const struct qbh_attention_config *config,
     int8_t *weight_tiles, uint32_t *bias_words) {
 #ifdef QBH_MODEL_LLAMA32
+    {
     const uint32_t nt=padded_tokens/32U;
     for(uint32_t i=0;i<nt*QBH_ATTENTION_HEAD_DIM_TILES*QBH_HMX_WEIGHT_BYTES/128U;++i)
         ((HVX_Vector *)weight_tiles)[i]=Q6_V_vzero();
@@ -1639,6 +1640,7 @@ void qbh_attention_u8_pack_k_row_major(
     }
     asm volatile("barrier" ::: "memory");
     return;
+    }
 #endif
     const uint32_t divisor = UINT32_C(1) << config->score_shift;
     const int32_t rounding = config->score_shift == 0U
