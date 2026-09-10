@@ -51,8 +51,8 @@ experiments:
   approval_ref: 'User: defer optimization; sequentially connect W4A16 and W4A8; W4A16
     quality usable, A8 no quality threshold (2026-09-10)'
   runtime:
-    source_worktree: /home/daniuniu/work/llama32-htp
-    source_branch: codex/llama32-no-rotation
+    source_worktree: /home/daniuniu/work/llama32-htp-rotation
+    source_branch: codex/llama32-rotation
   parent_source: a5d2e8ca3f2f98787b36652db3d8f6f7e74d11f5
   hardware_runs: 0
   baseline_quality_promoted: false
