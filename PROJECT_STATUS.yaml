@@ -19,12 +19,18 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 265
+  active_experiment: EXP-0265
+  next_experiment_number: 266
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
   remote_bootstrap_experiment: EXP-0001
+  performance_gate_policy:
+    amendment: PC079
+    primary: formal_paired_repeat10_Host_wall
+    repeat1: auxiliary_reference_only_no_performance_veto
+    slowdown_threshold: 1.1
+    prefill_and_decode: paired_bootstrap95_CI_upper_at_most_threshold
 current_scope:
   latest_w4u8_integer_rmse_confirmation_result:
     id: EXP-0256
@@ -9899,3 +9905,8 @@ current_scope:
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0264.md
     next_direction: discuss_remaining_FP16_LUT_preparation_layout_dispatch_and_repeat1_variability;
       conditional_fullmodel_authorization_retained_but_prerequisite_unmet; no_optional_resampling
+    current_policy_reassessment:
+      protocol: PC079
+      repeat10_speed_eligible: true
+      fullmodel_escalation_authorized: true
+      original_sealed_classification_unchanged: true

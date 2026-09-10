@@ -24,6 +24,27 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0265
+  slug: w4u8-r4-fullmodel-e2e
+  title: Optimized dense R4 full-model diagnostic E2E
+  parent: EXP-0264
+  record: docs/experiments/EXP-0265.md
+  approval_ref: 'User: 继续推进到全模，repeat1不再作为门槛标准，只作为辅助参考（也写进项目记忆）。 PC079'
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  runtime:
+    source_branch: codex/exp-0264-w4u8-r4-fused-quantization
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    started_on: '2026-09-10'
+  source_branches:
+  - codex/exp-0264-w4u8-r4-fused-quantization
+  source_commits:
+  - de5ab6cd84278e4035a033763097911cd09fcc39
+  evidence:
+    current_stage: registered
+    protocol: PC079
 - id: EXP-0264
   slug: w4u8-r4-fused-quantization
   title: R4 prepared quantization constants and fused native output
