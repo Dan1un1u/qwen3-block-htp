@@ -26,12 +26,15 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: branches_created_validation_pending
+  stage: organization_complete_model_selection_pending
   checkpoint: null
   llama_runtime_implemented: false
   next_action: select exact Llama checkpoint, register L32-0001 for model port
   baseline_manifest: baselines/qwen3-frozen/manifest.json
   native_code_unchanged_from_qwen3_freeze: true
+  handoff: docs/SESSION_HANDOFF.md
+  organization_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0266
+  organization_evidence_ledger_sha256: 052b816c686b11b0bc57908b9f86147047c1ecc427af7d8ee54a985dc5e2c093
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp

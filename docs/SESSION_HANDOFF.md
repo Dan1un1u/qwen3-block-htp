@@ -1,10 +1,10 @@
-# L32-0000 organization handoff
+# Llama 3.2 handoff
 
-Setup authorized and executed under Qwen3 EXP0266 / PC080. Two source worktrees
-and one independent memory branch share the existing repository. Runtime and
-build paths stay unchanged; only configuration, tools and documentation are
-added. Final source heads, validation and closure are recorded after setup.
-No model port, calibration, new weights, profiling or PPL is part of this task.
+Organization complete under Qwen3 EXP0266 and L32-0000. Bootstrap the intended source worktree and read the four authority files. No active experiment; next is L32-0001, which must be registered under a concrete user-approved model-port protocol before stateful work.
+
+No-rotation worktree /home/daniuniu/work/llama32-htp at e0e3bc77704a9369693fe48a5cc5fed3005ac36c; rotation worktree /home/daniuniu/work/llama32-htp-rotation at cd2360f31c1b1a151db7ecf30acfbe73bded9979. Both remote synchronized. Only branch.json differs. Use tools/recipe.py list/show/verify for read-only inspection.
+
+Next required model decision: exact Llama 3.2 checkpoint/revision. No 1B/3B or Base/Instruct choice has been assumed. Then derive model dimensions, tokenizer and arithmetic from the checkpoint and implement W16A16 layer -> consecutive slice -> full token boundary before W4A16/A8. Do not run old Qwen3 scripts as Llama launchers. No Llama weights or hardware results exist yet.
 
 # EXP0266 repository organization closure
 
