@@ -37,7 +37,7 @@ def main():
     print("DEPLOYING_FRONTEND",flush=True)
     if args.reuse_package_from:
         source=args.reuse_package_from
-        if not re.fullmatch(r"/data/local/tmp/llama32-htp/l32-0001/[a-zA-Z0-9_-]+/package",source):
+        if not re.fullmatch(r"/data/local/tmp/llama32-htp/"+re.escape(m["experiment"].lower())+r"/[a-zA-Z0-9_-]+/package",source):
             raise ValueError("Unexpected reuse path")
         parent_text=adb("shell","cat "+shlex.quote(source+"/manifest.json")).stdout
         parent=json.loads(parent_text)
