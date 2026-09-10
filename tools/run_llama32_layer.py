@@ -52,6 +52,9 @@ def main():
         env.update(QBH_SCAN_MODE=manifest["phase"],QBH_LOGICAL_M=str(manifest["logical_rows"]),QBH_KV_CACHE_LENGTH=str(manifest["past_tokens"]),QBH_KV_CACHE_CAPACITY="80",QBH_DUMP_CACHE_DIR=remote)
     elif manifest["phase"]!="prefill":raise ValueError("Decode requires --scan")
     argv=["./qwen3_block_cli",remote+"/package",("W4F16" if manifest["recipe"]=="W4A16" else "F16F16"),"1","2","32","hvx","on","on","fused","gate8_interleaved","control","hvx","crouton_native_batch8","4","64","parallel_qk_norm_rope","4","norms","serial","scalar","input_norm_pool_post_norm_pool","4","3","1","0"]
+    if manifest["recipe"]=="W4A16":
+        argv[4]="4";argv[10]="serial";argv[11]="adaptive_down96_gate4_dma8_cross"
+        env.update(QBH_W4F16_GROUP_FENCE="join_only_down",QBH_W4F16_EXPAND_CLAIM_REGIONS="1",QBH_W4F16_GATE_UP_EXTRA_EXPAND_WORKER="1",QBH_W4F16_GATE_UP_EXTRA_STREAM_WORKER="1",QBH_W4F16_GATE_UP_STREAM_GROUP_TILES="4")
     command="cd "+shlex.quote(remote)+" && "+" ".join(k+"="+shlex.quote(v) for k,v in env.items())+" "+shlex.join(argv)
     protocol={"source_head":subprocess.check_output(["git","-C",str(ROOT),"rev-parse","HEAD"],text=True).strip(),"builds":artifacts,"package_manifest_sha256":sha256(args.package/"manifest.json"),"command":command,"thresholds":{"cosine_min":0.99999,"nrmse_max":0.003,"nonfinite_max":0,"vtcm_bytes":8388608,"intermediate_ddr_bytes":0},"scope":"single layer correctness, no throughput claim"}
     (args.output/"protocol.json").write_text(json.dumps(protocol,indent=2)+"\n")
