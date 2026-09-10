@@ -766,6 +766,15 @@ static int qbh_attention_u8_qkv_overlap_enabled(uint32_t mode) {
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM;
 }
 
+static int qbh_u8_native_boundary_supported(uint32_t mode, uint32_t pipeline) {
+#ifdef QBH_MODEL_LLAMA32
+    if (mode == QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA) return 1;
+#endif
+    return qbh_attention_u8_qkv_overlap_enabled(mode) &&
+           pipeline >= QBH_BLOCK_W4U8_QKVO_BATCH4;
+}
+
+
 static const char *qbh_attention_pipeline_mode_name(uint32_t mode) {
     if (mode ==
         QBH_BLOCK_ATTENTION_PIPELINE_PARALLEL_QK_NORM_ROPE) {
@@ -5623,16 +5632,10 @@ int main(int argc, char **argv) {
              QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP) ||
         ((crouton_boundary_mode &
           QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT) != 0U &&
-         (!qbh_attention_u8_qkv_overlap_enabled(
-              attention_pipeline_mode) ||
-          w4u8_qkvo_pipeline_mode <
-              QBH_BLOCK_W4U8_QKVO_BATCH4)) ||
+         (!qbh_u8_native_boundary_supported(attention_pipeline_mode, w4u8_qkvo_pipeline_mode))) ||
         ((crouton_boundary_mode &
           QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT) != 0U &&
-         (!qbh_attention_u8_qkv_overlap_enabled(
-              attention_pipeline_mode) ||
-          w4u8_qkvo_pipeline_mode <
-              QBH_BLOCK_W4U8_QKVO_BATCH4 ||
+         (!qbh_u8_native_boundary_supported(attention_pipeline_mode, w4u8_qkvo_pipeline_mode) ||
           (residual_mode != QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM &&
            residual_mode !=
                QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM_POOL4 &&

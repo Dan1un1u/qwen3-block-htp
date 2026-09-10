@@ -583,6 +583,7 @@ static int qbh_attention_parallel_qk_norm_enabled(uint32_t mode);
 static int qbh_attention_parallel_softmax_enabled(uint32_t mode);
 static int qbh_attention_gqa_enabled(uint32_t mode);
 static int qbh_attention_u8_enabled(uint32_t mode);
+static int qbh_u8_native_boundary_supported(uint32_t mode, uint32_t pipeline);
 static int qbh_attention_u8_fused_k_enabled(uint32_t mode);
 static int qbh_attention_u8_qkv_overlap_enabled(uint32_t mode);
 static int qbh_attention_u8_vgather_enabled(uint32_t mode);
@@ -2402,16 +2403,10 @@ static int qbh_header_valid(const struct qbh_block_header *header,
              QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP) ||
         ((header->crouton_boundary_mode &
           QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT) != 0U &&
-         (!qbh_attention_u8_qkv_overlap_enabled(
-              header->attention_pipeline_mode) ||
-          header->w4u8_qkvo_pipeline_mode <
-              QBH_BLOCK_W4U8_QKVO_BATCH4)) ||
+         (!qbh_u8_native_boundary_supported(header->attention_pipeline_mode, header->w4u8_qkvo_pipeline_mode))) ||
         ((header->crouton_boundary_mode &
           QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT) != 0U &&
-         (!qbh_attention_u8_qkv_overlap_enabled(
-              header->attention_pipeline_mode) ||
-          header->w4u8_qkvo_pipeline_mode <
-              QBH_BLOCK_W4U8_QKVO_BATCH4 ||
+         (!qbh_u8_native_boundary_supported(header->attention_pipeline_mode, header->w4u8_qkvo_pipeline_mode) ||
           (header->residual_mode !=
                QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM &&
            header->residual_mode !=
@@ -3949,6 +3944,15 @@ static int qbh_attention_u8_qkv_overlap_enabled(uint32_t mode) {
            mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH_DEPENDENCY_STREAM;
 }
+
+static int qbh_u8_native_boundary_supported(uint32_t mode, uint32_t pipeline) {
+#ifdef QBH_MODEL_LLAMA32
+    if (mode == QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA) return 1;
+#endif
+    return qbh_attention_u8_qkv_overlap_enabled(mode) &&
+           pipeline >= QBH_BLOCK_W4U8_QKVO_BATCH4;
+}
+
 
 static int qbh_attention_u8_vgather_enabled(uint32_t mode) {
     mode = qbh_attention_u8_base_mode(mode);
@@ -11116,6 +11120,17 @@ static int qbh_run_projection(
         }
     }
     if (header->variant == QBH_BLOCK_W4U8) {
+#ifdef QBH_MODEL_LLAMA32
+        if (header->w4u8_decode_projection_mode == QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N &&
+            (header->w4u8_decode_direct_n_mask & QBH_BLOCK_W4U8_DIRECT_N_QKV) &&
+            (header->logical_m == 1U || (header->w4u8_decode_direct_n_mask & QBH_BLOCK_W4U8_DIRECT_N_PREFILL_QKVO)) &&
+            (desc == &header->projections[QBH_BLOCK_PROJ_Q] ||
+             desc == &header->projections[QBH_BLOCK_PROJ_K] ||
+             desc == &header->projections[QBH_BLOCK_PROJ_V])) {
+            return qbh_run_w4u8_direct_n_projection(header, shared, desc, buffers, worker,
+                projection_activation, (uint8_t *)output, 4U);
+        }
+#endif
         if ((header->logical_m == 1U ||
              (header->logical_m == QBH_BLOCK_M &&
               (header->w4u8_decode_direct_n_mask &
