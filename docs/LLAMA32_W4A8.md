@@ -64,3 +64,18 @@ W4A16 shared-runtime regression retains exactly its previous error metrics.
 Failed CLI/allocation attempts and the failed decode scratch attempt remain in
 the evidence directory. Later successful attempts do not replace them. Refer
 to validation_summary.json for final PPL, physical audit and auxiliary timing.
+## Completed result
+
+The frozen independent set has 2048 targets from128 documents (1024 tokens per
+language). Device PPL is1206603.7401 overall,1309236.4262 English and1112016.5590
+Chinese. Original BF16 teacher PPL on the same set is26.697999. This confirms
+unusable A8 quality and is recorded without applying a model-quality gate.
+All2048 target records passed the execution/physical audit. Independent first
+English/Chinese target codes match exactly; NLL errors are below1.8e-7.
+
+Functional-run Host-wall throughput is217.3520 prefill tok/s (64 tokens,
+294453177ns) and2.57149 decode tok/s (15 tokens,5833199111ns). These are auxiliary
+single-run timings, not formal paired profiling. Loading/frontend are excluded.
+No speed optimization or baseline promotion was performed. W4A16 remains
+functional with PPL31.039101 (+16.26% over the same teacher), failing its retained
+5% overall /10% per-language quality thresholds.
