@@ -19,7 +19,7 @@ toolchain:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0265
+  active_experiment: null
   next_experiment_number: 266
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -2509,9 +2509,9 @@ current_scope:
   current_handoff: docs/SESSION_HANDOFF_EXP0258.md
   active_recipe_specialization: null
   last_completed_experiment_contract:
-    id: EXP-0258
-    protocol: PC072
-    scope: userapproved_performance_only_R3_fullmodel
+    id: EXP-0265
+    protocol: PC079
+    scope: userapproved_repeat10_only_R4_fullmodel_diagnostic
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
   last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0258
@@ -9910,3 +9910,177 @@ current_scope:
       repeat10_speed_eligible: true
       fullmodel_escalation_authorized: true
       original_sealed_classification_unchanged: true
+  latest_w4u8_dense_r4_fullmodel_result:
+    id: EXP-0265
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: not_applicable
+    current_stage: completed_dense_R4_fullmodel_repeat10_policy
+    protocol: PC079
+    source_head: 48eb1ea7f9db0eb197a7c7908ab954d5a6635fc5
+    runtime_source_head: 0aa5d3ba9b725039b0a99a11e4879c5f5ead62f1
+    ABI: 127
+    selected_opt: 6
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0265
+    report: docs/experiments/EXP-0265-RESULTS.md
+    report_sha256: 022c8851a26bca7a66940ef5c679da6113f6c3704a8208cceb900bee99c7f25b
+    full_profiling_report: docs/experiments/EXP-0265-PROFILE.md
+    full_profiling_report_sha256: 458fb48ce4df5f01a64db8f9333b35d5690a2a1e21fe9160f96805c677d55013
+    evidence_ledger_sha256: eb81fda764aebfb08411069e4266784ac781be9b0c56a23633e9b19131fed2ee
+    evidence_file_count: 521
+    actual_layer_count: 28
+    numerical_gate: pass_frozen_R4_exact_OPT3_and_independent_slice_reference
+    known_ideal_R3_gate: failed_unchanged_diagnostic_scope
+    physical_gate: pass
+    measurement_integrity: pass
+    gate_role: diagnostic_integrity_and_repeat10_performance_not_quality_acceptance
+    repeat10_speed_eligible: true
+    repeat1_auxiliary_only: true
+    performance:
+      r1_prefill_ns:
+        control_ns: 39029218.5
+        candidate_ns: 41944557.5
+        paired_ratio: 1.0758047224983383
+        ci95:
+        - 1.0678695196511312
+        - 1.0818865016740276
+        auxiliary_only: true
+      r1_decode_ns:
+        control_ns: 21961052.03333333
+        candidate_ns: 22550965.233333334
+        paired_ratio: 1.0301285793344541
+        ci95:
+        - 1.007420096488719
+        - 1.0596886507091443
+        auxiliary_only: true
+      r10_prefill_ns:
+        control_ns: 37433520.7
+        candidate_ns: 40478950.5
+        paired_ratio: 1.0801563978511366
+        ci95:
+        - 1.0710327843754035
+        - 1.0861324020912513
+        auxiliary_only: false
+      r10_decode_ns:
+        control_ns: 20539982.453333333
+        candidate_ns: 21709915.453333333
+        paired_ratio: 1.0443340828629655
+        ci95:
+        - 1.0330432664064995
+        - 1.0592652244912402
+        auxiliary_only: false
+    diagnostic_E2E:
+      a0_r1:
+        prefill_tokens: 64
+        prefill_host_us: 39029.2185
+        prefill_tokens_per_second: 1639.7971176389299
+        decode_tokens: 15
+        decode_host_us: 329415.7805
+        decode_host_us_per_token: 21961.052033333333
+        decode_tokens_per_second: 45.53515917553318
+        selected_output_tokens: 16
+        complete_model_host_us: 368304.1395
+        complete_model_effective_tokens_per_second: 43.44235723693244
+        generation_loop_us: 374112.968
+        generation_loop_tokens_per_second: 42.76783049124349
+        cold_startup_median_ns:
+          model_staging_ns: 2643052134.5
+          session_open_map_ns: 39958073.0
+          prepare_ns: 1988464.0
+          ready_ns: 2685679217.5
+      a1_r1:
+        prefill_tokens: 64
+        prefill_host_us: 41944.557499999995
+        prefill_tokens_per_second: 1525.8237019188964
+        decode_tokens: 15
+        decode_host_us: 338264.47849999997
+        decode_host_us_per_token: 22550.965233333332
+        decode_tokens_per_second: 44.34399989770135
+        selected_output_tokens: 16
+        complete_model_host_us: 380179.765
+        complete_model_effective_tokens_per_second: 42.08535401667156
+        generation_loop_us: 386594.062
+        generation_loop_tokens_per_second: 41.38708162568726
+        cold_startup_median_ns:
+          model_staging_ns: 2639085051.5
+          session_open_map_ns: 40150781.0
+          prepare_ns: 2070156.0
+          ready_ns: 2681172994.0
+      a0_r10:
+        prefill_tokens: 64
+        prefill_host_us: 37433.5207
+        prefill_tokens_per_second: 1709.6975866338962
+        decode_tokens: 15
+        decode_host_us: 308099.7368
+        decode_host_us_per_token: 20539.982453333334
+        decode_tokens_per_second: 48.68553331396419
+        selected_output_tokens: 16
+        complete_model_host_us: 345519.6065
+        complete_model_effective_tokens_per_second: 46.3070682502644
+        generation_loop_us: 358244.71075
+        generation_loop_tokens_per_second: 44.66220859619489
+        cold_startup_median_ns:
+          model_staging_ns: 2640676457.0
+          session_open_map_ns: 40082526.5
+          prepare_ns: 2013464.0
+          ready_ns: 2683073020.0
+      a1_r10:
+        prefill_tokens: 64
+        prefill_host_us: 40478.9505
+        prefill_tokens_per_second: 1581.0686593764333
+        decode_tokens: 15
+        decode_host_us: 325648.7318
+        decode_host_us_per_token: 21709.915453333335
+        decode_tokens_per_second: 46.06190209029396
+        selected_output_tokens: 16
+        complete_model_host_us: 366222.64314999996
+        complete_model_effective_tokens_per_second: 43.68927017286206
+        generation_loop_us: 378363.22395
+        generation_loop_tokens_per_second: 42.28740793823654
+        cold_startup_median_ns:
+          model_staging_ns: 2644629165.5
+          session_open_map_ns: 39993672.5
+          prepare_ns: 1935859.5
+          ready_ns: 2686798723.0
+    R4_breakdown_us:
+      a1_r1:
+        prefill:
+          prepare: 4377.838541666667
+          matmul: 717.2135416666667
+          layout: 1768.828125
+          finish: 3328.828125
+          parallel_work: 20161.458333333336
+          parallel_join: 563.3854166666667
+        decode:
+          prepare: 270.6944444444445
+          matmul: 124.32638888888889
+          layout: 27.170138888888893
+          finish: 209.33680555555554
+          parallel_work: 0.0
+          parallel_join: 0.0
+      a1_r10:
+        prefill:
+          prepare: 4382.03125
+          matmul: 718.0729166666667
+          layout: 1768.9973958333335
+          finish: 3324.8593750000005
+          parallel_work: 20170.265625
+          parallel_join: 563.1145833333334
+        decode:
+          prepare: 270.8184027777778
+          matmul: 124.6513888888889
+          layout: 27.26736111111111
+          finish: 209.39305555555558
+          parallel_work: 0.0
+          parallel_join: 0.0
+    short_rounds: 5
+    formal_rounds: 10
+    timed_fullmodel_RPCs: 5280
+    layer_ledgers_checked: 147840
+    model_quality: R4 sample does not answer France capital; no PPL evaluation
+    device_PPL: null
+    baseline_promoted: false
+    checkpoint_handoff: docs/SESSION_HANDOFF_EXP0265.md
+    next_direction: discuss_R4_quality_before_new_tuning; staticmiddle_and_RTN_Down_speedfixture_not_qualityaccepted;
+      repeat1_cannot_veto_repeat10
