@@ -27,7 +27,7 @@ def main():
     assert sha256(args.reference/"teacher.json")==m["frontend_teacher_sha256"]
     if args.output.exists():raise FileExistsError(args.output)
     args.output.mkdir(parents=True)
-    remote="/data/local/tmp/llama32-htp/l32-0001/"+args.output.name
+    remote="/data/local/tmp/llama32-htp/"+m["experiment"].lower()+"/"+args.output.name
     assert adb("shell",f"test ! -e {shlex.quote(remote)}",check=False).returncode==0
     adb("shell",f"mkdir -p {shlex.quote(remote)}")
     builds={}
@@ -64,11 +64,11 @@ def main():
     adb("push",windows(args.reference/"heldout.bin"),remote+"/heldout.bin")
     adb("shell",f"chmod 755 {remote}/qwen3_block_cli")
     env={"LD_LIBRARY_PATH":remote,"DSP_LIBRARY_PATH":remote,"ADSP_LIBRARY_PATH":remote,
-         "QBH_VERTICAL_SLICE":"1","QBH_REPLAY_SEQUENCE":"1","QBH_GENERATION_SEQUENCE":"10","QBH_GENERATION_STEPS":"16",
+         "QBH_VERTICAL_SLICE":"1","QBH_REPLAY_SEQUENCE":"1","QBH_GENERATION_SEQUENCE":("7" if m["recipe"]=="W4A16" else "10"),"QBH_GENERATION_STEPS":"16",
          "QBH_SCAN_MODE":"prefill","QBH_LOGICAL_M":"64","QBH_KV_CACHE_LENGTH":"0","QBH_KV_CACHE_CAPACITY":"80","QBH_KV_CACHE_LAYOUT":"hmx_native_f16"}
-    argv=["./qwen3_block_cli",remote+"/package","F16F16","1","2","32","hvx","on","off","fused","gate8_interleaved","control","hvx","crouton_native_batch8","4","64","parallel_qk_norm_rope","4","norms","serial","scalar","input_norm_pool_post_norm_pool","4","3","1","0"]
+    argv=["./qwen3_block_cli",remote+"/package",("W4F16" if m["recipe"]=="W4A16" else "F16F16"),"1","2","32","hvx","on","off","fused","gate8_interleaved","control","hvx","crouton_native_batch8","4","64","parallel_qk_norm_rope","4","norms","serial","scalar","input_norm_pool_post_norm_pool","4","3","1","0"]
     command="cd "+shlex.quote(remote)+" && "+" ".join(k+"="+shlex.quote(v) for k,v in env.items())+" "+shlex.join(argv)
-    protocol={"experiment":"L32-0001","source_head":subprocess.check_output(["git","-C",str(ROOT),"rev-parse","HEAD"],text=True).strip(),"builds":builds,"package_manifest_sha256":sha256(args.package/"manifest.json"),"dataset_sha256":sha256(args.reference/"dataset.json"),"reused_package":args.reuse_package_from,"command":command,"timing_scope":"single functional run, not formal profiling; includes embedding/16 layers/norm/head/greedy/FastRPC, excludes loading and external tokenizer"}
+    protocol={"experiment":m["experiment"],"source_head":subprocess.check_output(["git","-C",str(ROOT),"rev-parse","HEAD"],text=True).strip(),"builds":builds,"package_manifest_sha256":sha256(args.package/"manifest.json"),"dataset_sha256":sha256(args.reference/"dataset.json"),"reused_package":args.reuse_package_from,"command":command,"timing_scope":"single functional run, not formal profiling; includes embedding/16 layers/norm/head/greedy/FastRPC, excludes loading and external tokenizer"}
     (args.output/"protocol.json").write_text(json.dumps(protocol,indent=2))
     run=adb("shell",command,check=False)
     (args.output/"generation.stdout.txt").write_text(run.stdout);(args.output/"generation.stderr.txt").write_text(run.stderr)
@@ -89,7 +89,7 @@ def main():
     run=adb("shell",evalcmd,check=False)
     (args.output/"evaluation.stdout.txt").write_text(run.stdout);(args.output/"evaluation.stderr.txt").write_text(run.stderr)
     er=records(run.stdout);evalsteps=[r for r in er if isinstance(r,dict) and r.get("record")=="eval_step"]
-    ds=json.loads((args.reference/"dataset.json").read_text());teacher=json.loads((args.reference/"teacher.json").read_text())
+    ds=json.loads((args.reference/"dataset.json").read_text());ds["samples"]=[s for s in ds["samples"] if s.get("split","heldout")=="heldout"];teacher=json.loads((args.reference/"teacher.json").read_text())
     result["eval_process_exit_code"]=run.returncode
     complete=run.returncode==0 and len(evalsteps)==len(ds["samples"])*16 and all(s["pass"] and s["nll"] is not None and math.isfinite(s["nll"]) for s in evalsteps)
     result["evaluation_complete"]=complete;result["ppl"]={}

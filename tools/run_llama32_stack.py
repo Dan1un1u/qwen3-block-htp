@@ -12,7 +12,7 @@ def main():
     args=ap.parse_args()
     subprocess.run(["python3","/home/daniuniu/work/llama32-htp-project-memory/scripts/project_memory.py","preflight","--source-worktree",str(ROOT)],check=True)
     m=json.loads((args.package/"manifest.json").read_text())
-    assert m["experiment"]=="L32-0001" and m["recipe"]=="W16A16"
+    assert (m["experiment"],m["recipe"]) in [("L32-0001","W16A16"),("L32-0002","W4A16")]
     for f,r in m["files"].items():assert sha256(args.package/f)==r["sha256"],f
     for build in ["android_ReleaseG_aarch64","hexagon_ReleaseG_toolv19_v79"]:
         cache=(ROOT/build/"CMakeCache.txt").read_text()
@@ -20,7 +20,7 @@ def main():
         assert "QBH_MODEL_LLAMA32:BOOL=ON" in cache
     if args.output.exists():raise FileExistsError(args.output)
     args.output.mkdir(parents=True)
-    remote="/data/local/tmp/llama32-htp/l32-0001/"+args.output.name
+    remote="/data/local/tmp/llama32-htp/"+m["experiment"].lower()+"/"+args.output.name
     assert adb("shell",f"test ! -e {shlex.quote(remote)}",check=False).returncode==0
     adb("shell",f"mkdir -p {shlex.quote(remote)}")
     builds={}
@@ -32,9 +32,9 @@ def main():
     env={"LD_LIBRARY_PATH":remote,"DSP_LIBRARY_PATH":remote,"ADSP_LIBRARY_PATH":remote,
          "QBH_VERTICAL_SLICE":"1","QBH_REPLAY_SEQUENCE":"1","QBH_REPLAY_DECODE_STEPS":"1",
          "QBH_SCAN_MODE":"prefill","QBH_LOGICAL_M":"64","QBH_KV_CACHE_LENGTH":"0","QBH_KV_CACHE_CAPACITY":"80","QBH_REPLAY_DUMP_DIR":remote}
-    argv=["./qwen3_block_cli",remote+"/package","F16F16","1","2","32","hvx","on","off","fused","gate8_interleaved","control","hvx","crouton_native_batch8","4","64","parallel_qk_norm_rope","4","norms","serial","scalar","input_norm_pool_post_norm_pool","4","3","1","0"]
+    argv=["./qwen3_block_cli",remote+"/package",("W4F16" if m["recipe"]=="W4A16" else "F16F16"),"1","2","32","hvx","on","off","fused","gate8_interleaved","control","hvx","crouton_native_batch8","4","64","parallel_qk_norm_rope","4","norms","serial","scalar","input_norm_pool_post_norm_pool","4","3","1","0"]
     command="cd "+shlex.quote(remote)+" && "+" ".join(k+"="+shlex.quote(v) for k,v in env.items())+" "+shlex.join(argv)
-    (args.output/"protocol.json").write_text(json.dumps({"experiment":"L32-0001","layers":m["layers"],"source_head":subprocess.check_output(["git","-C",str(ROOT),"rev-parse","HEAD"],text=True).strip(),"builds":builds,"package_manifest_sha256":sha256(args.package/"manifest.json"),"command":command,"gate":"existing composition_v2 FP16 replay; no relaxation"},indent=2))
+    (args.output/"protocol.json").write_text(json.dumps({"experiment":m["experiment"],"layers":m["layers"],"source_head":subprocess.check_output(["git","-C",str(ROOT),"rev-parse","HEAD"],text=True).strip(),"builds":builds,"package_manifest_sha256":sha256(args.package/"manifest.json"),"command":command,"gate":"existing composition_v2 FP16 replay; no relaxation"},indent=2))
     r=adb("shell",command,check=False)
     (args.output/"stdout.txt").write_text(r.stdout);(args.output/"stderr.txt").write_text(r.stderr)
     records=[]
