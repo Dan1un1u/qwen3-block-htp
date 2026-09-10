@@ -48,3 +48,7 @@ roundtrip/template validation. Weights SHA256
 The earlier pending-checkpoint statements describe organization-time state.
 W16A16 adaptation is authorized and in progress on the no-rotation worktree;
 no Llama hardware result or quality acceptance exists yet.
+
+L32-0001 progress: independent host math and six single-layer device gates plus
+continuous layers0-2 replay pass. Full16 replay is being prepared. See experiment
+record for retained failures and exact evidence. No device text/PPL yet.
