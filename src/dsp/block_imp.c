@@ -16436,6 +16436,31 @@ static int qbh_scan_append_f16_kv_hmx_native(
     __fp16 *v_rows = (__fp16 *)buffers->gate;
     const uint64_t update_start = HAP_perf_get_qtimer_count();
 
+#ifdef QBH_MODEL_LLAMA32
+    /* Head64 serial attention has no GQA carrier to reuse at prefill.
+     * Pack original post-RoPE K and V once into the persistent native cache. */
+    if (past_tokens == 0U && logical_rows == QBH_BLOCK_M && direct_qkv == 0U) {
+        for (uint32_t head = 0U; head < QBH_BLOCK_KV_HEADS; ++head) {
+            qbh_hvx_zero_aligned_bytes(row, head_stride);
+            qbh_pack_fp16_weight_rows_hvx((const __fp16 *)buffers->k,
+                QBH_BLOCK_KV_HIDDEN, head * QBH_BLOCK_HEAD_DIM,
+                QBH_BLOCK_HEAD_DIM, QBH_BLOCK_M, row);
+            if (qbh_scan_cache_dma(header,
+                    shared + header->kv_cache_k_offset + (size_t)head * head_stride,
+                    row, head_stride, 0U) != 0) return -1;
+            qbh_hvx_zero_aligned_bytes(row, head_stride);
+            qbh_pack_fp16_weight_transposed_hvx((const __fp16 *)buffers->v,
+                QBH_BLOCK_KV_HIDDEN, head * QBH_BLOCK_HEAD_DIM,
+                QBH_BLOCK_M, QBH_BLOCK_HEAD_DIM, row);
+            if (qbh_scan_cache_dma(header,
+                    shared + header->kv_cache_v_offset + (size_t)head * head_stride,
+                    row, head_stride, 0U) != 0) return -1;
+        }
+        header->f16_cache_full_prefix_pack_count += 2U * QBH_BLOCK_KV_HEADS;
+        header->f16_cache_native_append_update_ticks += HAP_perf_get_qtimer_count() - update_start;
+        return 0;
+    }
+#endif
     if (logical_rows != 1U ||
         past_tokens < QBH_BLOCK_M ||
         past_tokens >= header->kv_cache_capacity) {

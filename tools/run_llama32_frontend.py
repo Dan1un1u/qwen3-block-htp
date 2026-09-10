@@ -18,6 +18,7 @@ def main():
     ap.add_argument("--package",type=Path,required=True)
     ap.add_argument("--reference",type=Path,required=True)
     ap.add_argument("--output",type=Path,required=True)
+    ap.add_argument("--reuse-package-from")
     args=ap.parse_args()
     subprocess.run(["python3","/home/daniuniu/work/llama32-htp-project-memory/scripts/project_memory.py","preflight","--source-worktree",str(ROOT)],check=True)
     m=json.loads((args.package/"manifest.json").read_text());assert m["layers"]==16
@@ -34,7 +35,23 @@ def main():
         cache=(ROOT/build/"CMakeCache.txt").read_text();assert "QBH_LLAMA_LAYER_COUNT:STRING=16" in cache and "QBH_MODEL_LLAMA32:BOOL=ON" in cache
         src=ROOT/build/"ship"/name;builds[name]=sha256(src);adb("push",windows(src),remote+"/"+name)
     print("DEPLOYING_FRONTEND",flush=True)
-    adb("push",windows(args.package),remote+"/package")
+    if args.reuse_package_from:
+        source=args.reuse_package_from
+        if not re.fullmatch(r"/data/local/tmp/llama32-htp/l32-0001/[a-zA-Z0-9_-]+/package",source):
+            raise ValueError("Unexpected reuse path")
+        names=list(m["files"])+["manifest.json"]
+        checked={}
+        for first in range(0,len(names),32):
+            selected=names[first:first+32]
+            output=adb("shell","sha256sum "+" ".join(shlex.quote(source+"/"+n) for n in selected)).stdout
+            for line in output.splitlines():
+                digest,name=line.split(maxsplit=1);checked[name.removeprefix(source+"/")]=digest
+        for name in names:
+            expected=sha256(args.package/"manifest.json") if name=="manifest.json" else m["files"][name]["sha256"]
+            assert checked.get(name)==expected,name
+        adb("shell","ln -s "+shlex.quote(source)+" "+shlex.quote(remote+"/package"))
+    else:
+        adb("push",windows(args.package),remote+"/package")
     adb("push",windows(args.reference/"heldout.bin"),remote+"/heldout.bin")
     adb("shell",f"chmod 755 {remote}/qwen3_block_cli")
     env={"LD_LIBRARY_PATH":remote,"DSP_LIBRARY_PATH":remote,"ADSP_LIBRARY_PATH":remote,
@@ -42,7 +59,7 @@ def main():
          "QBH_SCAN_MODE":"prefill","QBH_LOGICAL_M":"64","QBH_KV_CACHE_LENGTH":"0","QBH_KV_CACHE_CAPACITY":"80","QBH_KV_CACHE_LAYOUT":"hmx_native_f16"}
     argv=["./qwen3_block_cli",remote+"/package","F16F16","1","2","32","hvx","on","off","fused","gate8_interleaved","control","hvx","crouton_native_batch8","4","64","parallel_qk_norm_rope","4","norms","serial","scalar","input_norm_pool_post_norm_pool","4","3","1","0"]
     command="cd "+shlex.quote(remote)+" && "+" ".join(k+"="+shlex.quote(v) for k,v in env.items())+" "+shlex.join(argv)
-    protocol={"experiment":"L32-0001","source_head":subprocess.check_output(["git","-C",str(ROOT),"rev-parse","HEAD"],text=True).strip(),"builds":builds,"package_manifest_sha256":sha256(args.package/"manifest.json"),"dataset_sha256":sha256(args.reference/"dataset.json"),"command":command,"timing_scope":"single functional run, not formal profiling; includes embedding/16 layers/norm/head/greedy/FastRPC, excludes loading and external tokenizer"}
+    protocol={"experiment":"L32-0001","source_head":subprocess.check_output(["git","-C",str(ROOT),"rev-parse","HEAD"],text=True).strip(),"builds":builds,"package_manifest_sha256":sha256(args.package/"manifest.json"),"dataset_sha256":sha256(args.reference/"dataset.json"),"reused_package":args.reuse_package_from,"command":command,"timing_scope":"single functional run, not formal profiling; includes embedding/16 layers/norm/head/greedy/FastRPC, excludes loading and external tokenizer"}
     (args.output/"protocol.json").write_text(json.dumps(protocol,indent=2))
     run=adb("shell",command,check=False)
     (args.output/"generation.stdout.txt").write_text(run.stdout);(args.output/"generation.stderr.txt").write_text(run.stderr)
