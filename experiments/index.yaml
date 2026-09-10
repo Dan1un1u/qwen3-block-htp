@@ -126,8 +126,9 @@ experiments:
   approval_ref: User requests investigation and fixes for missing W4A8 speed advantage
     over W4A16
   runtime:
-    source_worktree: /home/daniuniu/work/llama32-htp
-    source_branch: codex/llama32-no-rotation
+    source_worktree: /home/daniuniu/work/llama32-htp-rotation
+    source_branch: codex/llama32-rotation
   parent_source: ee8d122db5350a51ba6ba05bc58d10625b426896
   hardware_runs: 0
   baseline_quality_promoted: false
+  local_gate: exact_arithmetic_physical_and_matched_speed_pass

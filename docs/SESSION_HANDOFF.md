@@ -1,17 +1,12 @@
-# L32-0005: correctness passed through3 layers
+# L32-0005 verified, propagation pending
 
-Active owner no-rotation, source a6f5e61; native latest be389d2. All pushed/clean.
-Original model/weights/qparams unchanged. L32-0004 candidate16 archived as baseline.
-A8 stack1-a07 exactpass after native tile gather mask correction; a06 rejected
-incorrect vsetq endpoint mask, preserved. Explicit rotated byte mask fixes it.
-CPU SDK libnative layout probe passed original mask but device failed: use device
-arithmetic gate as authority. Do not infer device correctness from libnative alone.
-Single-layer a8-stack1-audit-a02 exactpass with common/SwiGLU padding poison;
-8 HVX softmax calls,0 mismatches to scalar;1 common and256 SwiGLU poison events.
-Audit a01 rejected by CLI because generic numerical audit incompatible with replay;
-fixed scoped padding-triggered comparison, no generic gate weakening.
-Stack3-a01 output/KV exactpass. Build16-a01 in progress.
-Next16-layer A8 exact and W4 regression, deploy/gate/long/formal using new
-run_llama32_a8_relative_profile.py. Fixed10 rotated3-arm M64+7, no optional stop.
-No new PPL, A8 still unusable text/no quality gate; W4 prior PPL gate remainsfailed.
-After report, propagate common code under owner transfer and seal both heads/ledger.
+No hardware/background jobs. Active owner transfers to rotation for common-code
+propagation only. No-rotation source 42a783a6a8ba1b1d7dc145abf1c0535af36480c5 clean/pushed; native profiled
+be389d2, profiling source a6f5e61. Single/3/16 A8 exact and W4 byte-identical,
+padding/softmax audit and generation8/full16 passed. Fixed10 rotated three arms,
+240 additive ledgers checked. A8 prefill1431.835/decode39.55584 vs matched W4
+1260.21580/23.59130tok/s. Both10% gates pass. Full details in source
+LLAMA32_A8_RELATIVE_SPEED.md and results l32-0005/PROFILE.md.
+Next preflight rotation, cherry-pick ee8d122..42a783a common commits, verify only
+config/branch.json differs; seal evidence and both heads. No weights/PPL/quality
+promotion, no Llama rotation support. Preserve all failed attempts.
