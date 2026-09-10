@@ -22,8 +22,9 @@ recorded handoff is complete; subsequent work uses only the Llama authority.
 
 Both branches retain common W16A16 and W4A16 OPT2. W4A8 rotation is controlled by
 config/branch.json. Never silently fall back from a selected rotation or reuse
-Qwen-specific weights, calibration, prefix or tokenizer for Llama. Current model
-JSON is a porting plan, not implemented inference support. No QNN execution.
+Qwen-specific weights, calibration, prefix or tokenizer for Llama. The model JSON and models/llama32/validation.json record validated W16A16 support;
+W4A16/A8 remain unvalidated. Use the Llama-specific tools documented in
+docs/LLAMA32_W16A16.md. No QNN execution.
 Builds stay in the owning WSL worktree; large Llama artifacts go to separate
 D:/llm_exp/models/llama32-htp and results/llama32-htp experiment directories.
 

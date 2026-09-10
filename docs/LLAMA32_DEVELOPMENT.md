@@ -1,3 +1,11 @@
+# Current Llama status (L32-0001)
+
+Llama-3.2-1B-Instruct W16A16 functional adaptation is validated. See
+LLAMA32_W16A16.md and models/llama32/validation.json for exact evidence and limits.
+The organization-time notes below describe the starting boundary, not current
+implementation status. Next: a separately registered per-channel W4A16 port,
+using fresh Llama calibration and a larger independent PPL acceptance set.
+
 # Llama 3.2 development boundary
 
 Organization EXP-0266 freezes Qwen3 and prepares two development branches. It

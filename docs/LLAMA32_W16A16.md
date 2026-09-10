@@ -58,3 +58,16 @@ not formal performance measurements or extrapolated layer throughput.
 
 Results and retained failures: /mnt/d/llm_exp/results/llama32-htp/l32-0001.
 Generated packages: /mnt/d/llm_exp/models/llama32-htp/l32-0001.
+
+## Completed functional checks
+
+Single layers0/7/15 and continuous3/16 layers pass. Device text is
+"Paris is the capital of France." All16 fixed replay tokens match FP16 teacher.
+Lightweight heldout PPL: original BF16 teacher25.0220618, FP16 teacher25.1078689,
+device25.1047703 (device/original1.0033054). English12.1050684 vs original12.0669670;
+Chinese52.0649262 vs original51.8857452. This is128 continuation tokens total.
+The original BF16 teacher is directly loaded from safetensors; an earlier
+FP16->BF16 roundtrip diagnostic is retained but superseded. Authoritative derived
+result is validation_summary.json, not the initial frontend result's BF16 field.
+One functional run measured395.4202 prefill tok/s and5.7742 decode tok/s; these are
+auxiliary M64+15 measurements, not formal profiling or a speed baseline.
