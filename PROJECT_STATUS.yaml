@@ -1,0 +1,37 @@
+schema_version: 1
+project:
+  id: llama32-htp
+  repository_url: https://github.com/Dan1un1u/qwen3-block-htp.git
+  git_common_dir: /home/daniuniu/work/qwen3-block-htp/.git
+  memory_branch: codex/llama32-project-memory
+  memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
+governance:
+  active_experiment: null
+  next_experiment_number: 1
+  maximum_running_experiments: 1
+  remote_sync_required: true
+source_worktrees:
+  /home/daniuniu/work/llama32-htp:
+    branch: codex/llama32-no-rotation
+    default_w4a8_rotation: none
+    recorded_head: e0e3bc77704a9369693fe48a5cc5fed3005ac36c
+  /home/daniuniu/work/llama32-htp-rotation:
+    branch: codex/llama32-rotation
+    default_w4a8_rotation: r3
+    recorded_head: cd2360f31c1b1a151db7ecf30acfbe73bded9979
+frozen_qwen3:
+  source_worktree: /home/daniuniu/work/qwen3-block-htp
+  branch: codex/exp-0265-w4u8-r4-fullmodel-e2e
+  head: 48eb1ea7f9db0eb197a7c7908ab954d5a6635fc5
+  memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
+  handoff_experiment: EXP-0266
+current_scope:
+  stage: branches_created_validation_pending
+  checkpoint: null
+  llama_runtime_implemented: false
+  next_action: select exact Llama checkpoint, register L32-0001 for model port
+  baseline_manifest: baselines/qwen3-frozen/manifest.json
+  native_code_unchanged_from_qwen3_freeze: true
+storage:
+  models: /mnt/d/llm_exp/models/llama32-htp
+  results: /mnt/d/llm_exp/results/llama32-htp

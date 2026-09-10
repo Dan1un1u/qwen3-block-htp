@@ -1,0 +1,11 @@
+schema_version: 1
+project: llama32-htp
+experiments:
+- id: L32-0000
+  title: Repository organization and Qwen3 freeze handoff
+  execution_state: approved
+  record: docs/experiments/L32-0000.md
+  approval_ref: User approved two-branch plan; setup executed under Qwen3 EXP0266
+    / PC080
+  parent_source: 48eb1ea7f9db0eb197a7c7908ab954d5a6635fc5
+  hardware_runs: 0
