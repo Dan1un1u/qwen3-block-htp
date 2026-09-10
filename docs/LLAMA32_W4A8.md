@@ -79,3 +79,5 @@ single-run timings, not formal paired profiling. Loading/frontend are excluded.
 No speed optimization or baseline promotion was performed. W4A16 remains
 functional with PPL31.039101 (+16.26% over the same teacher), failing its retained
 5% overall /10% per-language quality thresholds.
+
+Subsequent L32-0004 speed work is recorded in [LLAMA32_PIPELINE_SPEED.md](LLAMA32_PIPELINE_SPEED.md). Earlier functional timings above remain historical evidence.

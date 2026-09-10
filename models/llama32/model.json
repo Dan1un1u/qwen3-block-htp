@@ -69,5 +69,10 @@
     "r3",
     "r3_r4"
   ],
-  "w4a8_validation_record": "models/llama32/w4a8-validation.json"
+  "w4a8_validation_record": "models/llama32/w4a8-validation.json",
+  "pipeline_speed_validation_record": "models/llama32/pipeline-speed-validation.json",
+  "formal_profiling_completed_recipes": [
+    "w4a16",
+    "w4a8_off"
+  ]
 }
