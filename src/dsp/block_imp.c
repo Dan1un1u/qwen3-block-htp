@@ -6033,6 +6033,19 @@ static int qbh_stage_generation_embedding(
     return 0;
 }
 
+static uint32_t *qbh_generation_histogram(const struct qbh_block_header *h,
+                                         struct qbh_block_buffers *b) {
+#ifdef QBH_MODEL_LLAMA32
+    /* Norm/Down is reused and the coarse scale table covers that region.
+     * The unused tail after resident head scales in Up owns the histogram. */
+    if (h->variant == QBH_BLOCK_W4F16)
+        return (uint32_t *)(b->up + qbh_align_up(QBH_QWEN3_VOCAB_SIZE * sizeof(float),128U));
+#else
+    (void)h;
+#endif
+    return (uint32_t *)b->down;
+}
+
 static void qbh_generation_hvx_argmax_group(
     struct qbh_block_header *header, uint32_t *hist,
     const __fp16 *hmx_output, uint32_t n_tile, uint32_t group_tiles,
@@ -6154,6 +6167,9 @@ static int qbh_run_generation_head_w4f16_overlap(
     int result;
 
     if (pool == NULL || logical_rows == 0U ||
+#ifdef QBH_MODEL_LLAMA32
+        qbh_align_up(QBH_QWEN3_VOCAB_SIZE * sizeof(float),128U) + 262144U > intermediate_bytes ||
+#endif
         generation_step >= header->generation_expected_token_count ||
         (uint8_t *)buffers->attention_projection !=
             buffers->attention_concat + hidden_bytes ||
@@ -6401,7 +6417,7 @@ static int qbh_run_generation_head_w4f16_overlap(
 
             if (previous_output != NULL) {
                 stage_start = HAP_perf_get_qtimer_count();
-                qbh_generation_hvx_argmax_group(header, (uint32_t *)buffers->down,
+                qbh_generation_hvx_argmax_group(header, qbh_generation_histogram(header,buffers),
                     previous_output, previous_n_tile,
                     previous_group_tiles, &best_value,
                     &best_token, &best_bits);
@@ -6426,7 +6442,7 @@ static int qbh_run_generation_head_w4f16_overlap(
         if (previous_output != NULL) {
             const uint64_t argmax_start =
                 HAP_perf_get_qtimer_count();
-            qbh_generation_hvx_argmax_group(header, (uint32_t *)buffers->down,
+            qbh_generation_hvx_argmax_group(header, qbh_generation_histogram(header,buffers),
                 previous_output, previous_n_tile,
                 previous_group_tiles, &best_value,
                 &best_token, &best_bits);
@@ -6535,7 +6551,7 @@ static int qbh_run_generation_head_w4f16_overlap(
                 hmx_output, 1U, k_tiles, group_tiles);
             if (last_hmx_output != NULL) {
                 stage_start = HAP_perf_get_qtimer_count();
-                qbh_generation_hvx_argmax_group(header, (uint32_t *)buffers->down,
+                qbh_generation_hvx_argmax_group(header, qbh_generation_histogram(header,buffers),
                     last_hmx_output, last_n_tile, last_group_tiles,
                     &best_value, &best_token, &best_bits);
                 header->generation_lm_head_argmax_ticks +=
@@ -6562,7 +6578,7 @@ static int qbh_run_generation_head_w4f16_overlap(
 
         if (stream_hmx != 0U) {
             stage_start = HAP_perf_get_qtimer_count();
-            qbh_generation_hvx_argmax_group(header, (uint32_t *)buffers->down,
+            qbh_generation_hvx_argmax_group(header, qbh_generation_histogram(header,buffers),
                 (const __fp16 *)hmx_output, n_tile, group_tiles,
                 &best_value, &best_token, &best_bits);
             header->generation_lm_head_argmax_ticks +=
@@ -6575,7 +6591,7 @@ static int qbh_run_generation_head_w4f16_overlap(
     }
     if (stream_hmx == 0U && last_hmx_output != NULL) {
         const uint64_t argmax_start = HAP_perf_get_qtimer_count();
-        qbh_generation_hvx_argmax_group(header, (uint32_t *)buffers->down,
+        qbh_generation_hvx_argmax_group(header, qbh_generation_histogram(header,buffers),
             last_hmx_output, last_n_tile, last_group_tiles,
             &best_value, &best_token, &best_bits);
         header->generation_lm_head_argmax_ticks +=
@@ -6659,7 +6675,7 @@ static int qbh_run_generation_head_f16f16(
         ++header->hmx_command_count;
         header->hmx_fp16_tile_pair_count += k_tiles * count;
         stage = HAP_perf_get_qtimer_count();
-        qbh_generation_hvx_argmax_group(header, (uint32_t *)buffers->down, (const __fp16 *)buffers->hmx_output,
+        qbh_generation_hvx_argmax_group(header, qbh_generation_histogram(header,buffers), (const __fp16 *)buffers->hmx_output,
             n_tile, count, &best_value, &best_token, &best_bits);
         header->generation_lm_head_argmax_ticks += HAP_perf_get_qtimer_count() - stage;
     }
@@ -7329,7 +7345,7 @@ static int qbh_run_generation_head_w4u8(
                 if (result != 0) return -9;
                 ++header->generation_lm_head_direct_slot_join_count;
                 start = HAP_perf_get_qtimer_count();
-                qbh_generation_hvx_argmax_u8_group(header, (uint32_t *)buffers->down,
+                qbh_generation_hvx_argmax_u8_group(header, qbh_generation_histogram(header,buffers),
                     hmx_output, previous_first_n_tile,
                     previous_group_tiles, argmax_scratch,
                     &best_code, &best_token);
@@ -7410,7 +7426,7 @@ static int qbh_run_generation_head_w4u8(
                     return -9;
                 }
                 start = HAP_perf_get_qtimer_count();
-                qbh_generation_hvx_argmax_u8_group(header, (uint32_t *)buffers->down,
+                qbh_generation_hvx_argmax_u8_group(header, qbh_generation_histogram(header,buffers),
                     hmx_output, previous_first_n_tile,
                     previous_group_tiles, argmax_scratch,
                     &best_code, &best_token);
@@ -7452,7 +7468,7 @@ static int qbh_run_generation_head_w4u8(
                 return -10;
             }
             start = HAP_perf_get_qtimer_count();
-            qbh_generation_hvx_argmax_u8_group(header, (uint32_t *)buffers->down,
+            qbh_generation_hvx_argmax_u8_group(header, qbh_generation_histogram(header,buffers),
                 hmx_output, previous_first_n_tile,
                 previous_group_tiles, argmax_scratch,
                 &best_code, &best_token);
@@ -7534,7 +7550,7 @@ static int qbh_run_generation_head_w4u8(
 
         {
             const uint64_t argmax_start = HAP_perf_get_qtimer_count();
-            qbh_generation_hvx_argmax_u8_group(header, (uint32_t *)buffers->down,
+            qbh_generation_hvx_argmax_u8_group(header, qbh_generation_histogram(header,buffers),
                 buffers->hmx_output, first_n_tile, group_tiles,
                 argmax_scratch, &best_code, &best_token);
             header->generation_lm_head_argmax_ticks +=
@@ -21898,7 +21914,7 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
                 uint64_t start = HAP_perf_get_qtimer_count();
                 /* Down is dead after final residual. It is not a head DMA slot,
                  * scale table, output carrier, or persistent KV tail. */
-                memset(buffers.down, 0, header->variant == QBH_BLOCK_W4U8 ? 1024U : 262144U);
+                memset(qbh_generation_histogram(header,&buffers), 0, header->variant == QBH_BLOCK_W4U8 ? 1024U : 262144U);
                 header->evaluation_target_seen = 0U;
                 evaluation_setup_ticks = HAP_perf_get_qtimer_count() - start;
             }
@@ -21925,7 +21941,7 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
             }
             if (header->evaluation_mode == 1U) {
                 uint64_t start = HAP_perf_get_qtimer_count();
-                struct qbh_eval_score score = qbh_eval_reduce((const uint32_t *)buffers.down,
+                struct qbh_eval_score score = qbh_eval_reduce(qbh_generation_histogram(header,&buffers),
                     header->variant == QBH_BLOCK_W4U8,
                     header->generation_lm_head_output_qparam.scale,
                     header->generation_lm_head_output_qparam.zero_point,
