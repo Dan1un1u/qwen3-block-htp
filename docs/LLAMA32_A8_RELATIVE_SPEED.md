@@ -126,3 +126,5 @@ prefill, new A8 / w4a8_baseline Host ratio: 0.7554,95% paired bootstrap CI [0.75
 prefill, new A8 / w4a16_baseline Host ratio: 0.8801,95% paired bootstrap CI [0.8713,0.8873].
 decode, new A8 / w4a8_baseline Host ratio: 0.4224,95% paired bootstrap CI [0.4211,0.4237].
 decode, new A8 / w4a16_baseline Host ratio: 0.5964,95% paired bootstrap CI [0.5932,0.5990].
+
+Latest L32-0006 three-round speed results: [LLAMA32_PIPELINE_ITERATIONS.md](LLAMA32_PIPELINE_ITERATIONS.md). Earlier results remain historical.
