@@ -694,6 +694,49 @@ static HVX_Vector qbh_sf32_scale_and_offset(
         Q6_Vsf_equals_Vqf32(scaled), qbh_splat_sf(offset));
 }
 
+#ifdef QBH_MODEL_LLAMA32
+/* Head64 reuses SF32 HVX arithmetic. Scalar repair only at integer-code
+ * boundaries preserves the original divide/round result. */
+static void qbh_llama_rope_u8_hvx(uint8_t *v,
+    const struct qbh_block_qparam *in, const struct qbh_block_qparam *out,
+    const __fp16 *cosine, const __fp16 *sine) {
+    uint8_t original[128] __attribute__((aligned(128))) = {0};
+    float encoded[64] __attribute__((aligned(128)));
+    memcpy(original,v,64);
+    HVX_Vector half=Q6_V_lo_W(qbh_centered_half_pair(*(HVX_Vector *)original,in->zero_point));
+    HVX_VectorPair x=Q6_Wsf_vcvt_Vhf(half);
+    HVX_VectorPair y=Q6_Wsf_vcvt_Vhf(Q6_V_vror_VR(half,64));
+    HVX_VectorPair c=Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)cosine);
+    HVX_VectorPair s=Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)sine);
+    HVX_Vector result[2];
+    const HVX_Vector scale=qbh_splat_sf(in->scale),inv=qbh_splat_sf(1.0f/out->scale);
+    const HVX_Vector offset=qbh_splat_sf((float)out->zero_point);
+    /* Each widened vector holds even/odd channels: first16 subtract sine. */
+    const HVX_VectorPred first=Q6_Q_vsetq_R(64);
+    for(uint32_t part=0;part<2;++part) {
+        HVX_Vector a=Q6_Vsf_equals_Vqf32(Q6_Vqf32_vmpy_VsfVsf(part?Q6_V_hi_W(x):Q6_V_lo_W(x),scale));
+        HVX_Vector b=Q6_Vsf_equals_Vqf32(Q6_Vqf32_vmpy_VsfVsf(part?Q6_V_hi_W(y):Q6_V_lo_W(y),scale));
+        a=Q6_Vsf_equals_Vqf32(Q6_Vqf32_vmpy_VsfVsf(a,part?Q6_V_hi_W(c):Q6_V_lo_W(c)));
+        b=Q6_Vsf_equals_Vqf32(Q6_Vqf32_vmpy_VsfVsf(b,part?Q6_V_hi_W(s):Q6_V_lo_W(s)));
+        HVX_Vector rotated=Q6_V_vmux_QVV(first,Q6_Vsf_vsub_VsfVsf(a,b),Q6_Vsf_vadd_VsfVsf(a,b));
+        result[part]=Q6_Vsf_vadd_VsfVsf(Q6_Vsf_equals_Vqf32(Q6_Vqf32_vmpy_VsfVsf(rotated,inv)),offset);
+    }
+    HVX_VectorPair ordered=Q6_W_vshuff_VVR(result[1],result[0],-4);
+    ((HVX_Vector *)encoded)[0]=Q6_V_lo_W(ordered);((HVX_Vector *)encoded)[1]=Q6_V_hi_W(ordered);
+    for(uint32_t i=0;i<64;++i) {
+        float z=encoded[i]+0.5f;
+        if(z>0.0f && z<256.0f && fabsf(z-(float)(int)(z+0.5f))<0.001f) {
+            uint32_t j=i%32;
+            float a=((int)original[j]-in->zero_point)*in->scale;
+            float b=((int)original[j+32]-in->zero_point)*in->scale;
+            float exact=i<32?a*(float)cosine[i]-b*(float)sine[i]:b*(float)cosine[i]+a*(float)sine[i];
+            z=exact/out->scale+(float)out->zero_point+0.5f;
+        }
+        v[i]=(uint8_t)(z<0?0:z>255?255:(int)z);
+    }
+}
+#endif
+
 static void qbh_qk_norm_rope_one_head_u8(
     uint8_t *values, const struct qbh_block_qparam *input_qparam,
     const struct qbh_block_qparam *output_qparam,
@@ -701,16 +744,7 @@ static void qbh_qk_norm_rope_one_head_u8(
     const __fp16 *sine) {
 #ifdef QBH_MODEL_LLAMA32
     (void)gamma;
-    for (uint32_t c=0; c<QBH_BLOCK_HEAD_DIM/2U; ++c) {
-        float a=((int)values[c]-input_qparam->zero_point)*input_qparam->scale;
-        float b=((int)values[c+QBH_BLOCK_HEAD_DIM/2U]-input_qparam->zero_point)*input_qparam->scale;
-        float first=a*(float)cosine[c]-b*(float)sine[c];
-        float second=b*(float)cosine[c+QBH_BLOCK_HEAD_DIM/2U]+a*(float)sine[c+QBH_BLOCK_HEAD_DIM/2U];
-        float x=first/output_qparam->scale+(float)output_qparam->zero_point+0.5f;
-        float y=second/output_qparam->scale+(float)output_qparam->zero_point+0.5f;
-        values[c]=(uint8_t)(x<0?0:x>255?255:(int)x);
-        values[c+QBH_BLOCK_HEAD_DIM/2U]=(uint8_t)(y<0?0:y>255?255:(int)y);
-    }
+    qbh_llama_rope_u8_hvx(values,input_qparam,output_qparam,cosine,sine);
     return;
 #endif
     const HVX_VectorPair centered = qbh_centered_half_pair(
@@ -1479,16 +1513,16 @@ void qbh_hvx_qk_norm_rope_u8(
     asm volatile("barrier" ::: "memory");
 }
 
-void qbh_hvx_qk_norm_rope_u8_native_head(
+void qbh_hvx_qk_norm_rope_u8_native_head_rows(
     uint8_t *head_tiles,
     const struct qbh_block_qparam *input_qparam,
     const struct qbh_block_qparam *output_qparam,
     const __fp16 *gamma, const __fp16 *cosine,
-    const __fp16 *sine) {
+    const __fp16 *sine, uint32_t rows) {
     uint8_t row_values[QBH_HVX_BYTES]
         __attribute__((aligned(QBH_HVX_BYTES)));
 
-    for (uint32_t row = 0U; row < QBH_BLOCK_M; ++row) {
+    for (uint32_t row = 0U; row < rows; ++row) {
         for (uint32_t tile = 0U;
              tile < QBH_BLOCK_HEAD_DIM / 32U; ++tile) {
             memcpy(row_values + tile * 32U,
@@ -1508,6 +1542,14 @@ void qbh_hvx_qk_norm_rope_u8_native_head(
         }
     }
     asm volatile("barrier" ::: "memory");
+}
+
+void qbh_hvx_qk_norm_rope_u8_native_head(uint8_t *head_tiles,
+    const struct qbh_block_qparam *input_qparam,
+    const struct qbh_block_qparam *output_qparam,
+    const __fp16 *gamma,const __fp16 *cosine,const __fp16 *sine) {
+    qbh_hvx_qk_norm_rope_u8_native_head_rows(head_tiles,input_qparam,output_qparam,
+        gamma,cosine,sine,QBH_BLOCK_M);
 }
 
 static void qbh_hvx_qk_norm_rope_u8_native_head_pair_impl(

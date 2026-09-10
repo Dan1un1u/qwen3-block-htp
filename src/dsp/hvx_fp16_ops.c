@@ -599,19 +599,23 @@ void qbh_hvx_residual_rms_norm_f16_crouton_rows(
 }
 
 #ifdef QBH_MODEL_LLAMA32
-/* Initial head64 adapter. Executes on the DSP; no host fallback. */
+/* Head64 SF32 RoPE uses the existing even/odd HVX conversion convention. */
 static void qbh_llama_rope_head(__fp16 *tensor, uint32_t rows,
     uint32_t stride, uint32_t dim, uint32_t head,
     const __fp16 *cosine, const __fp16 *sine) {
-    for (uint32_t row = 0; row < rows; ++row) {
-        __fp16 *v = tensor + (size_t)row * stride + head * dim;
-        const __fp16 *c = cosine + (size_t)row * dim;
-        const __fp16 *s = sine + (size_t)row * dim;
-        for (uint32_t j = 0; j < dim / 2U; ++j) {
-            float a = (float)v[j], b = (float)v[j + dim / 2U];
-            v[j] = (__fp16)(a * (float)c[j] - b * (float)s[j]);
-            v[j + dim / 2U] = (__fp16)(b * (float)c[j + dim / 2U] + a * (float)s[j + dim / 2U]);
+    for(uint32_t row=0;row<rows;++row) {
+        __fp16 *v=tensor+(size_t)row*stride+head*dim;
+        HVX_Vector h=*(HVX_Vector *)v;
+        HVX_VectorPair x=Q6_Wsf_vcvt_Vhf(h),y=Q6_Wsf_vcvt_Vhf(Q6_V_vror_VR(h,64));
+        HVX_VectorPair c=Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)(cosine+(size_t)row*dim));
+        HVX_VectorPair s=Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)(sine+(size_t)row*dim));
+        HVX_Vector result[2];
+        for(uint32_t part=0;part<2;++part) {
+            HVX_Vector a=Q6_Vsf_equals_Vqf32(Q6_Vqf32_vmpy_VsfVsf(part?Q6_V_hi_W(x):Q6_V_lo_W(x),part?Q6_V_hi_W(c):Q6_V_lo_W(c)));
+            HVX_Vector b=Q6_Vsf_equals_Vqf32(Q6_Vqf32_vmpy_VsfVsf(part?Q6_V_hi_W(y):Q6_V_lo_W(y),part?Q6_V_hi_W(s):Q6_V_lo_W(s)));
+            result[part]=Q6_V_vmux_QVV(Q6_Q_vsetq_R(64),Q6_Vsf_vsub_VsfVsf(a,b),Q6_Vsf_vadd_VsfVsf(a,b));
         }
+        *(HVX_Vector *)v=Q6_Vhf_vcvt_VsfVsf(result[0],result[1]);
     }
 }
 #endif
