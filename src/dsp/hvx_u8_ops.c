@@ -737,6 +737,11 @@ static void qbh_llama_rope_u8_hvx(uint8_t *v,
     HVX_Vector halves=Q6_Vh_vpack_VwVw_sat(Q6_V_hi_W(ordered),Q6_V_lo_W(ordered));
     HVX_Vector packed=Q6_Vub_vpack_VhVh_sat(Q6_V_vzero(),halves);
     memcpy(v,&packed,64);
+    /* Most rows have no rounding-boundary repair. Avoid64 scalar lane tests. */
+    HVX_Vector any=Q6_V_vor_VV(flags[0],flags[1]);
+    for(uint32_t shift=64U;shift>=4U;shift>>=1U)
+        any=Q6_V_vor_VV(any,Q6_V_vror_VR(any,shift));
+    if(Q6_R_vextract_VR(any,0)==0)return;
     ordered=Q6_W_vshuff_VVR(flags[1],flags[0],-4);
     ((HVX_Vector *)repair)[0]=Q6_V_lo_W(ordered);((HVX_Vector *)repair)[1]=Q6_V_hi_W(ordered);
     for(uint32_t i=0;i<64;++i) if(repair[i]) {
