@@ -98,8 +98,8 @@ experiments:
   record: docs/experiments/L32-0004.md
   approval_ref: 'User: utilize original pipeline and conduct speed optimization (2026-09-10)'
   runtime:
-    source_worktree: /home/daniuniu/work/llama32-htp
-    source_branch: codex/llama32-no-rotation
+    source_worktree: /home/daniuniu/work/llama32-htp-rotation
+    source_branch: codex/llama32-rotation
   parent_source: 0d344ac795f54114e241a00054fd4080a6359412
   hardware_runs: 0
   baseline_quality_promoted: false
