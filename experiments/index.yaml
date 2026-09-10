@@ -35,7 +35,7 @@ experiments:
   local_gate: not_run
   adoption_status: not_applicable
   runtime:
-    source_branch: codex/exp-0265-w4u8-r4-fullmodel-e2e
+    source_branch: codex/llama32-no-rotation
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     started_on: '2026-09-10'
   source_branches:
