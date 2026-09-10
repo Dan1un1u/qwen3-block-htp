@@ -29,4 +29,3 @@ PPL is lightweight short-context EN/ZH Wikipedia, not broad/long-context accepta
 W4 baseline quality remains unaccepted; A8 remains unusable/unmodified.
 Latest formal SPEED evidence remains L32-0006, current values in status.
 Qwen frozen, Llama rotations unsupported; original BF16 inputs read-only.
-
