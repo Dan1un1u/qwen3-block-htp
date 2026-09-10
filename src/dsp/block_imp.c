@@ -4068,6 +4068,18 @@ static int qbh_attention_qk_norm_wait_head(
 static void qbh_attention_qk_norm_run_head(
     struct qbh_block_w4f16_pool *pool, uint32_t task) {
     const struct qbh_block_header *header = pool->attention_header;
+#ifdef QBH_MODEL_LLAMA32
+    if(header->variant==QBH_BLOCK_W4U8) {
+        const uint32_t isq=task<QBH_BLOCK_HEADS;
+        const uint32_t h=isq?task:task-QBH_BLOCK_HEADS;
+        uint8_t *base=(uint8_t *)(isq?pool->attention_q:pool->attention_k);
+        qbh_hvx_qk_norm_rope_u8_native_head_rows(base+(size_t)h*QBH_BLOCK_M*QBH_BLOCK_HEAD_DIM,
+            &header->qparams[isq?QBH_BLOCK_QP_Q_PROJECTION:QBH_BLOCK_QP_K_PROJECTION],
+            &header->qparams[isq?QBH_BLOCK_QP_Q_ROPE:QBH_BLOCK_QP_K_ROPE],NULL,
+            pool->attention_rope_cos,pool->attention_rope_sin,QBH_BLOCK_M);
+        return;
+    }
+#endif
     if (pool->attention_crouton_qkv != 0U &&
         task < QBH_BLOCK_HEADS) {
         qbh_hvx_qk_norm_rope_f16_crouton_head(
@@ -19778,10 +19790,17 @@ static int qbh_scan_u8_attention(
                 return -1;
             }
             start = HAP_perf_get_qtimer_count();
+#ifdef QBH_MODEL_LLAMA32
+            qbh_attention_u8_pack_v_row_major_hvx(
+                plane_c, valid_tokens, padded_tokens,
+                config, weight, av_bias, buffers->up,
+                &telemetry.v_recenter_saturation_count);
+#else
             qbh_attention_u8_pack_v_row_major(
                 plane_c, valid_tokens, padded_tokens,
                 config, weight, av_bias,
                 &telemetry.v_recenter_saturation_count);
+#endif
             header->u8_attention_v_pack_ticks +=
                 HAP_perf_get_qtimer_count() - start;
             ++header->u8_cache_full_prefix_pack_count;
@@ -20355,6 +20374,11 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     start = HAP_perf_get_qtimer_count();
     if (u8_integer_attention_enabled != 0U) {
 #ifdef QBH_MODEL_LLAMA32
+        if(!scan_dynamic_attention && w4f16_pool && w4f16_pool->worker_count>=3U) {
+            if(qbh_hvx_pool_qk_norm_rope(header,w4f16_pool,(__fp16 *)buffers->q,(__fp16 *)buffers->k,NULL,NULL,
+                (const __fp16 *)buffers->rope_cos,(const __fp16 *)buffers->rope_sin)!=0)
+                return QBH_BLOCK_STATUS_QK_NORM_ROPE_FAILED;
+        } else {
         for (uint32_t h=0;h<QBH_BLOCK_HEADS;++h)
             qbh_hvx_qk_norm_rope_u8_native_head_rows(buffers->q+h*QBH_BLOCK_M*QBH_BLOCK_HEAD_DIM,
                 &header->qparams[QBH_BLOCK_QP_Q_PROJECTION],&header->qparams[QBH_BLOCK_QP_Q_ROPE],
@@ -20363,6 +20387,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             qbh_hvx_qk_norm_rope_u8_native_head_rows(buffers->k+h*QBH_BLOCK_M*QBH_BLOCK_HEAD_DIM,
                 &header->qparams[QBH_BLOCK_QP_K_PROJECTION],&header->qparams[QBH_BLOCK_QP_K_ROPE],
                 NULL,(const __fp16 *)buffers->rope_cos,(const __fp16 *)buffers->rope_sin, scan_dynamic_attention ? 1U : QBH_BLOCK_M);
+        }
 #endif
         /* Native Q/K projection tiles are normalized and rotated inside
          * the per-GQA integer Attention pipeline. */
