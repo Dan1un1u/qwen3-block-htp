@@ -16801,9 +16801,9 @@ static int qbh_scan_softmax_f16_exact_batch(struct qbh_block_header *h,
     const float scale=QBH_MODEL_ATTENTION_SCALE;
     if(valid>128U || padded>128U) return -1;
     if(h->w4f16_decode_opt==2U)
-        qbh_hvx_zero_aligned_bytes(probability,2U*plane*sizeof(__fp16));
-    else memset(probability,0,2U*plane*sizeof(__fp16));
-    for(uint32_t head=0;head<2U;++head) {
+        qbh_hvx_zero_aligned_bytes(probability,QBH_ATTENTION_Q_HEADS_PER_GROUP*plane*sizeof(__fp16));
+    else memset(probability,0,QBH_ATTENTION_Q_HEADS_PER_GROUP*plane*sizeof(__fp16));
+    for(uint32_t head=0;head<QBH_ATTENTION_Q_HEADS_PER_GROUP;++head) {
         const __fp16 *src=scores+head*plane;
         __fp16 *dst=probability+head*plane;
         qbh_f16_to_f32_contiguous(src,values);
@@ -16830,7 +16830,7 @@ static int qbh_scan_softmax_f16_exact_batch(struct qbh_block_header *h,
     if(h->w4f16_decode_audit) {
         qbh_scan_softmax_f16(scores,audit,1U,past,padded);
         const uint16_t *a=(const uint16_t *)audit,*b=(const uint16_t *)probability;
-        for(uint32_t i=0;i<2U*plane;++i)h->w4f16_decode_conversion_audit_mismatches+=a[i]!=b[i];
+        for(uint32_t i=0;i<QBH_ATTENTION_Q_HEADS_PER_GROUP*plane;++i)h->w4f16_decode_conversion_audit_mismatches+=a[i]!=b[i];
         if(h->w4f16_decode_conversion_audit_mismatches)return -1;
     }
     return 0;
@@ -20356,13 +20356,13 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     if (u8_integer_attention_enabled != 0U) {
 #ifdef QBH_MODEL_LLAMA32
         for (uint32_t h=0;h<QBH_BLOCK_HEADS;++h)
-            qbh_hvx_qk_norm_rope_u8_native_head(buffers->q+h*QBH_BLOCK_M*QBH_BLOCK_HEAD_DIM,
+            qbh_hvx_qk_norm_rope_u8_native_head_rows(buffers->q+h*QBH_BLOCK_M*QBH_BLOCK_HEAD_DIM,
                 &header->qparams[QBH_BLOCK_QP_Q_PROJECTION],&header->qparams[QBH_BLOCK_QP_Q_ROPE],
-                NULL,(const __fp16 *)buffers->rope_cos,(const __fp16 *)buffers->rope_sin);
+                NULL,(const __fp16 *)buffers->rope_cos,(const __fp16 *)buffers->rope_sin, scan_dynamic_attention ? 1U : QBH_BLOCK_M);
         for (uint32_t h=0;h<QBH_BLOCK_KV_HEADS;++h)
-            qbh_hvx_qk_norm_rope_u8_native_head(buffers->k+h*QBH_BLOCK_M*QBH_BLOCK_HEAD_DIM,
+            qbh_hvx_qk_norm_rope_u8_native_head_rows(buffers->k+h*QBH_BLOCK_M*QBH_BLOCK_HEAD_DIM,
                 &header->qparams[QBH_BLOCK_QP_K_PROJECTION],&header->qparams[QBH_BLOCK_QP_K_ROPE],
-                NULL,(const __fp16 *)buffers->rope_cos,(const __fp16 *)buffers->rope_sin);
+                NULL,(const __fp16 *)buffers->rope_cos,(const __fp16 *)buffers->rope_sin, scan_dynamic_attention ? 1U : QBH_BLOCK_M);
 #endif
         /* Native Q/K projection tiles are normalized and rotated inside
          * the per-GQA integer Attention pipeline. */

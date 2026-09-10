@@ -70,7 +70,7 @@ def main():
     argv=["./qwen3_block_cli",remote+"/package",("W4F16" if m["recipe"]=="W4A16" else "F16F16"),"1","2","32","hvx","on","off","fused","gate8_interleaved","control","hvx","crouton_native_batch8","4","64","parallel_qk_norm_rope","4","norms","serial","scalar","input_norm_pool_post_norm_pool","4","3","1","0"]
     if m["recipe"]=="W4A16":
         argv[4]="4";argv[10]="serial";argv[11]="adaptive_down96_gate4_dma8_cross"
-        env.update(QBH_W4F16_GROUP_FENCE="join_only_down",QBH_W4F16_EXPAND_CLAIM_REGIONS="1",QBH_W4F16_GATE_UP_EXTRA_EXPAND_WORKER="1",QBH_W4F16_GATE_UP_EXTRA_STREAM_WORKER="1",QBH_W4F16_GATE_UP_STREAM_GROUP_TILES="4")
+        env.update(QBH_W4F16_DECODE_OPT="2",QBH_W4F16_GROUP_FENCE="join_only_down",QBH_W4F16_EXPAND_CLAIM_REGIONS="1",QBH_W4F16_GATE_UP_EXTRA_EXPAND_WORKER="1",QBH_W4F16_GATE_UP_EXTRA_STREAM_WORKER="1",QBH_W4F16_GATE_UP_STREAM_GROUP_TILES="4")
     if m['recipe']=='W4A8':
         env.pop('QBH_KV_CACHE_LAYOUT');env.update(QBH_GENERATION_SEQUENCE="9",QBH_W4U8_DECODE_PROJECTION_MODE="direct_n",QBH_W4U8_DECODE_DIRECT_N_MASK="63")
         argv=["./qwen3_block_cli",remote+"/package","W4U8","1","2","32","rms_rope_softmax","on","off","fused","serial","control","hvx","w4u8_streaming_persistent_mlp_hvx","3","64","u8_log2_gqa","4","w4u8_mlp_io_qkv_o","serial","scalar","control","4","3","1","0"]
