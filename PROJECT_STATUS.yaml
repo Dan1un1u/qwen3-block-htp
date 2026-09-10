@@ -6,19 +6,19 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0002
-  next_experiment_number: 3
+  active_experiment: L32-0003
+  next_experiment_number: 4
   maximum_running_experiments: 1
   remote_sync_required: true
 source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: a5d2e8ca3f2f98787b36652db3d8f6f7e74d11f5
+    recorded_head: 990bf617abb6c549e505c865d545be55449a0f3d
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
-    recorded_head: 3e0076d6d06178b67adaf514d3bf3b7d3fbe604b
+    recorded_head: e91ff0fe461bc8d84b3267ba148c22f6b8b5b828
 frozen_qwen3:
   source_worktree: /home/daniuniu/work/qwen3-block-htp
   branch: codex/exp-0265-w4u8-r4-fullmodel-e2e
@@ -26,28 +26,28 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: w4a16_full_frontend_validation_running
+  stage: w4a8_integration_running
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Fresh Llama per-channel W4A16 GPTQ export, device layer/stack/frontend
-    and independent PPL; then separate W4A8 functional experiment without model-quality
-    gate
+  next_action: Fresh Llama W4A8 OFF calibration/export and single/consecutive/full-model
+    functional validation; no model-quality acceptance threshold
   baseline_manifest: baselines/qwen3-frozen/manifest.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF.md
   organization_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0266
   organization_evidence_ledger_sha256: 052b816c686b11b0bc57908b9f86147047c1ecc427af7d8ee54a985dc5e2c093
   original_model_path: /mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin
-  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0001
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0002
   validated_recipes:
   - w16a16
-  unvalidated_recipes:
   - w4a16
+  unvalidated_recipes:
   - w4a8
-  last_completed_experiment: L32-0001
-  evidence_ledger_sha256: 6791ea14bf6453e5fd02da9827cdcab71976c00d6f8d39f63d90303fde7b3768
+  last_completed_experiment: L32-0002
+  evidence_ledger_sha256: f78fa232697759c77f763681e91d4af76befe57d3af6bb1a27e40edb5f5604a2
   formal_profiling_completed: false
   general_quantization_quality_accepted: false
+  w4a16_quality_gate_pass: false
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp

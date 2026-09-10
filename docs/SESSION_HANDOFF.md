@@ -1,11 +1,9 @@
-# L32-0002 ongoing: W4A16 then W4A8
+# L32-0003 next: W4A8 OFF functional chain
 
-Bootstrap Llama no-rotation worktree, read four authority files and latest section
-of CONTEXT.md. Lock L32-0002, source no-rotation ffc15cb, clean/pushed. Rotation
-still L32-0001, do not claim common-code synchronization yet.
-
-Fresh W4 export done; all single3/full16 block gates pass. device-frontend-a01
-was launched; inspect its result and run-frontend-a01.log under results l32-0002.
-Finish full-device PPL/text, record honest quality, close W4 integration, then
-register W4A8 no-model-quality-threshold integration. No speed optimization.
-All failed attempts retained. Details/paths in CONTEXT.md.
+Run bootstrap on /home/daniuniu/work/llama32-htp, read four authority files.
+L32-0002 sealed: W4A16 functional pass, model quality fail (+16.26% PPL),
+no baseline promotion; no need rerun its exports or whole-model checks.
+Active L32-0003, no-rotation990bf61 owns work. Rotatione91ff0f shares code.
+No A8 edits/calibration/hardware yet. Implement fresh Llama A8 OFF following
+registered protocol, no model-quality gate but retain arithmetic/physical gates.
+Paths and latest results in CONTEXT.md, source docs/LLAMA32_W4A16.md.

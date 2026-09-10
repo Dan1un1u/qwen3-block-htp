@@ -46,7 +46,7 @@ experiments:
   formal_profiling: false
 - id: L32-0002
   title: Fresh per-channel Llama W4A16 integration and quality validation
-  execution_state: running
+  execution_state: completed
   record: docs/experiments/L32-0002.md
   approval_ref: 'User: defer optimization; sequentially connect W4A16 and W4A8; W4A16
     quality usable, A8 no quality threshold (2026-09-10)'
@@ -54,5 +54,27 @@ experiments:
     source_worktree: /home/daniuniu/work/llama32-htp-rotation
     source_branch: codex/llama32-rotation
   parent_source: a5d2e8ca3f2f98787b36652db3d8f6f7e74d11f5
+  hardware_runs: 22
+  baseline_quality_promoted: false
+  completed_on: '2026-09-10'
+  source_heads:
+    codex/llama32-no-rotation: 990bf617abb6c549e505c865d545be55449a0f3d
+    codex/llama32-rotation: e91ff0fe461bc8d84b3267ba148c22f6b8b5b828
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0002
+  evidence_ledger_sha256: f78fa232697759c77f763681e91d4af76befe57d3af6bb1a27e40edb5f5604a2
+  evidence_validity: valid
+  local_gate: functional_pass_quality_fail
+  quality_gate_pass: false
+  formal_profiling: false
+- id: L32-0003
+  title: Llama per-channel native W4A8 OFF functional chain
+  execution_state: running
+  record: docs/experiments/L32-0003.md
+  approval_ref: User requested sequential W4A16 then W4A8 chains; defer optimization;
+    A8 has no quality gate (2026-09-10)
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  parent_source: 990bf617abb6c549e505c865d545be55449a0f3d
   hardware_runs: 0
   baseline_quality_promoted: false
