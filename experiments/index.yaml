@@ -68,7 +68,7 @@ experiments:
   formal_profiling: false
 - id: L32-0003
   title: Llama per-channel native W4A8 OFF functional chain
-  execution_state: running
+  execution_state: completed
   record: docs/experiments/L32-0003.md
   approval_ref: User requested sequential W4A16 then W4A8 chains; defer optimization;
     A8 has no quality gate (2026-09-10)
@@ -76,5 +76,19 @@ experiments:
     source_worktree: /home/daniuniu/work/llama32-htp-rotation
     source_branch: codex/llama32-rotation
   parent_source: 990bf617abb6c549e505c865d545be55449a0f3d
-  hardware_runs: 0
+  hardware_runs: 13
   baseline_quality_promoted: false
+  completed_on: '2026-09-10'
+  source_heads:
+    codex/llama32-no-rotation: 0d344ac795f54114e241a00054fd4080a6359412
+    codex/llama32-rotation: 0b07df2fadfec6af601802dd594f59b7b1e03b7a
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0003
+  evidence_ledger_sha256: d27675a13ab518772fde0d22b32fe0b74d89bbb109991cb4a720f41b340c0b09
+  evidence_validity: valid
+  local_gate: functional_pass_quality_unusable_no_quality_gate
+  quality_gate_applied: false
+  usable_text: false
+  formal_profiling: false
+  hardware_runs_definition: Native host invocation attempts including rejected CLI/bundle
+    attempts and full generation/evaluation; seven launched DSP execution
+  token_boundary_executions: 2074

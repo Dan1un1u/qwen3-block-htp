@@ -20,7 +20,9 @@ context or execution dependency.
   ideal-R3 whole-layer numerical failure and unaccepted R4 quality explicitly.
 - Selected checkpoint is original BF16 Llama-3.2-1B-Instruct from ModelScope,
   pinned by six file hashes in source tools/llama_reference.py. L32-0001 validates
-  W16A16 functional integration; W4A16/A8 remain pending. Model dimensions,
+  W16A16 functional integration; L32-0002/0003 connect W4A16/W4A8 OFF.
+  W4A16 quality fails its retained PPL gate; A8 text is unusable with no quality
+  threshold applied. Llama R3/R4 remain unsupported. Model dimensions,
   tokenizer/template, normalization, RoPE and tied-head behavior come from it.
 - Original Llama tensors must supply new weights and rotations. Qwen3 folded or
   quantized weights, static-A8 calibration, EOS prefix/cache and tokenizer are
