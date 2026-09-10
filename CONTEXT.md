@@ -1,51 +1,58 @@
 # Current Llama context
 
-Read contract/status/context/index after bootstrap. No active experiment or
-background device job. Qwen3 freeze is unchanged. L32-0001 W16A16, L32-0002
-W4A16 and L32-0003 W4A8 OFF functional integrations are complete. Both Llama
-branches contain identical common tracked files; only config/branch.json differs.
-Full source heads and evidence ledger hashes are in PROJECT_STATUS.yaml.
-No quantized quality acceptance, baseline promotion or formal profiling.
+No active experiment or background job. Bootstrap then read four authority files.
+L32-0004 speed optimization complete, common code synchronized across both Llama
+branches; only config/branch.json differs. Full source heads/ledger in status.
+Qwen3 frozen at48eb1ea7f9db0eb197a7c7908ab954d5a6635fc5, original model read-only.
 
-W4A16 uses fresh original-derived C64 enhanced GPTQ, signed[-7,7] W4 per-output
-channel and one FP32 scale, no groups. EOS8-token output is exact: The capital
-of France is Paris. Forced-after-EOS16-token attempt remains failed at step12;
-never promote it. Device PPL31.039101 vs original BF16 teacher26.697999 (+16.26%),
-EN+15.84%,ZH+16.69%; quantized software31.027335. Main loss is quantization;
-retained overall5% and language10% quality criteria FAILED. M64+7 auxiliary
-functional speed437.3534 prefill/6.3121 decode tok/s. Evidence sealed in L32-0002.
+L32-0001 W16A16, L32-0002 W4A16, L32-0003 W4A8 OFF functional chains are complete.
+Llama original-derived per-output-channel W4 enhanced C64 GPTQ (signed[-7,7],
+one FP32 scale, no groups); A8 fresh65536-token static affine minmax. No Qwen
+weights/qparams/prefix/tokenizer reuse. Independent2048-target128-document heldout
+is disjoint from calibration and balanced1024EN/1024ZH. No evaluation fitting.
 
-W4A8 OFF reuses those original-derived Llama W4 weights, with fresh static affine
-minmax A8 from65536 Llama calibration tokens. No Qwen tensor/qparam/prefix reuse,
-no heldout fitting. Single1/3/16-layer prefill+decode output and KV exactly match
-independent SDK19.0.07 actual-arithmetic references. Full16 feedback IDs all42845
-and selected U8 codes match exactly: unusable repeated Sleep text. Device PPL
-1206603.740108 overall,1309236.426225 EN,1112016.559026 ZH. Same independent128
-documents/2048 targets as L32-0002 (1024 tokens per language). NLL first-target
-code audit exact and error<1.8e-7; every target passed execution/physical audit.
-A8 model quality explicitly has NO threshold; this does not relax arithmetic.
+Quality remains UNACCEPTED: W4A16 PPL31.039101 vs original BF16 teacher26.697999
+(+16.26%;EN+15.84%,ZH+16.69%), software31.027335; main loss quantization. Retained
+5% overall/10% language gate failed. Tested EOS8-token text: The capital of France
+is Paris. Forced-after-EOS16-token L32-0002 replay failedstep12 and remains failed.
+W4A8 PPL1206603.740108, repeated Sleep; user explicitly sets no A8 model-quality
+gate. L32-0004 does not rerun PPL or change weights/qparams/quality acceptance.
 
-All7 projections per layer and LM head read native packed W4 with no S8 weight
-expansion; integer HMX QK/AV, log2 softmax widened differences/exact integer
-normalization. Head64 no Q/K norm, Llama SF32 RoPE once before KV publish; GQA4
-scratch and FFN8192 metadata fixed. Head-major row U8 KV capacity80 supports M64
-plus15 decode; arbitrary-length serving, native segmented KV and dense R3/R4
-are unsupported and explicitly rejected. Exact8MiB VTCM, peak7668960B, no timed
-intermediate DDR/spill, one HMX owner and one FastRPC per token boundary.
-W4A16 full16 shared-code regression retained identical previous error metrics.
-Auxiliary single-run M64+15 speed217.3520/2.57149 tok/s. Optimization deferred;
-these timings are not formal paired comparisons or acceptance of slowdown.
+L32-0004 removes scalar head64 RoPE bottlenecks using existing SF32 HVX arithmetic,
+A8 code packing with sparse exact scalar repair near rounding boundaries, idle
+prefill head workers, and valid decode row. K masked scatter respects64-byte
+heads; V reuses exact recenter LUT/native delta pack. W4A16 launcher enables
+OPT2, with its formerly two-head loops generalized to Llama GQA4. Head64 noQKnorm,
+Llama RoPE once before KV publication. No new rotation or HMX W4 weight expansion.
 
-Original BF16 source read-only: /mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin.
-Six hashes in tools/llama_reference.py. Models/results roots in status; L32-0002
-owns quant-a01 and frozen calibration/heldout data. L32-0003 owns layers-a01,
-stack1-a02,stack3-a01,stack16-a01,frontend-a01; results calibration-a01,
-device-stack1-a05,device-stack3-a01,device-stack16-a01,device-frontend-a02 and
-validation_summary.json. All failed attempts preserved. See source
- docs/LLAMA32_W4A16.md and docs/LLAMA32_W4A8.md for reproduction and limitations.
-Next: report completed chains and W4A16 quality gap, then discuss with user;
-do not autonomously start optimization or claim rotated Llama is validated.
+Validation: A8 exact single1/3/16 output/KV; W4 single0 prefill/decode and3/16 pass,
+3/16 full outputs and numerical metrics identical baseline. W16 shared-core full16
+prefill/decode byte-identical regression. W4 OPT2 conversion/sentinel audit passed.
+Full8-step W4 and16-step A8 greedy IDs AND selected FP16/U8 codes match baseline
+in every formal run. Exactly8MiB VTCM; W4 peak8330752B, A8 peak7668960B, zero timed
+intermediate DDR/spill, one HMX owner. Native W4 all112 transformer projections
+plus LM head per A8 token. All480 timed additive Host/DSP ledgers reconcile.
 
-Latest authorization: user now requests speed optimization using existing pipelines.
-L32-0004 active owns no-rotation; previous deferral and no-active statements above
-are historical closure context. See protocol and status for current work.
+Formal fixed10AB/BA pairs per recipe, same package, confidence95 bootstrap:
+W4A16 prefill436.6657 ->1261.0661 tok/s; decode6.35436 ->23.44369 tok/s.
+W4A8 OFF prefill215.8940 ->1079.7596 tok/s; decode2.57298 ->16.47835 tok/s.
+Candidate/baseline complete Host-wall ratios: W4 prefill.346267 [.344949,.347405],
+decode.271048 [.270094,.271933]; A8 prefill.199946 [.199314,.200660],
+decode.156143 [.155545,.156634]. All four upper bounds pass1.10 slowdown gate.
+M64 prefill; W4 decode7 tokens to EOS, A8 decode15. Includes embedding/16 layers/
+finalnorm/head/greedy/FastRPC, excludes loading/frontend tokenizer. Different
+continuation lengths are not paired cross-recipe throughput comparisons.
+
+Current scope remains capacity80 and testedM64+7/15; arbitrary-length serving,
+segmented native Llama KV and dense R3/R4 unsupported/rejected. No further work
+or baseline promotion authorized by closure. User can now choose next direction.
+
+Evidence /mnt/d/llm_exp/results/llama32-htp/l32-0004/PROFILE.md and
+profiling_summary.json;295-file evidence_sha256.json, source/memory copy/hash.
+Both baseline-build16 and candidate-build16 archived. Native measured2aa7831;
+subsequent common source commits reporting only. Sources docs/LLAMA32_PIPELINE_SPEED.md
+and tools/run_llama32_pipeline_profile.py (deploy/gate/formal) reproduce protocol
+with a newly approved experiment/immutable destinations. Failed build1-a03 retained.
+Original input /mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin with six pinned
+hashes; generated Llama models/results roots in status. Prior sealed experiments
+remain immutable. No active process; next experiment is L32-0005.

@@ -96,3 +96,12 @@ integration. W4A16 is expected to have usable model quality; retain its PPL crit
 W4A8 model quality has no acceptance threshold in this integration phase; record
 actual quality without blocking for low PPL/text quality. This explicit exception
 does not relax arithmetic correctness, memory, provenance or execution checks.
+
+## L32-0004 speed authorization and closure (2026-09-10)
+
+User explicitly authorized reuse of existing pipelines for speed, superseding
+prior optimization deferral. L32-0004 validated shared head64 HVX RoPE, A8 native
+KV packing/head workers/valid decode row, and dimension-correct W4A16 OPT2.
+Both recipes passed fixed ten paired AB/BA complete-model timing gates and retained
+arithmetic/physical checks. Weights/calibration unchanged; no new quality baseline
+acceptance or rotation support. Final heads and evidence are recorded in status.
