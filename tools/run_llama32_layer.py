@@ -31,7 +31,7 @@ def main():
     args=ap.parse_args()
     subprocess.run(["python3","/home/daniuniu/work/llama32-htp-project-memory/scripts/project_memory.py","preflight","--source-worktree",str(ROOT)],check=True)
     manifest=json.loads((args.package/"manifest.json").read_text())
-    assert (manifest["experiment"],manifest["recipe"]) in [("L32-0001","W16A16"),("L32-0002","W4A16")]
+    assert (manifest["experiment"],manifest["recipe"]) in [("L32-0001","W16A16"),("L32-0002","W4A16"),("L32-0003","W4A8")]
     for name,record in manifest["files"].items():
         assert sha256(args.package/name)==record["sha256"],name
     if args.output.exists():raise FileExistsError(args.output)
@@ -55,6 +55,9 @@ def main():
     if manifest["recipe"]=="W4A16":
         argv[4]="4";argv[10]="serial";argv[11]="adaptive_down96_gate4_dma8_cross"
         env.update(QBH_W4F16_GROUP_FENCE="join_only_down",QBH_W4F16_EXPAND_CLAIM_REGIONS="1",QBH_W4F16_GATE_UP_EXTRA_EXPAND_WORKER="1",QBH_W4F16_GATE_UP_EXTRA_STREAM_WORKER="1",QBH_W4F16_GATE_UP_STREAM_GROUP_TILES="4")
+    if manifest["recipe"]=="W4A8":
+        argv=["./qwen3_block_cli",remote+"/package","W4U8","1","2","32","rms_rope_softmax","on","on","fused","serial","control","hvx","w4u8_streaming_persistent_mlp_hvx","3","64","u8_log2_gqa","4","w4u8_mlp_io_qkv_o","serial","scalar","control","4","3","1","0"]
+        env.update(QBH_W4U8_DECODE_PROJECTION_MODE="direct_n",QBH_W4U8_DECODE_DIRECT_N_MASK="63")
     command="cd "+shlex.quote(remote)+" && "+" ".join(k+"="+shlex.quote(v) for k,v in env.items())+" "+shlex.join(argv)
     protocol={"source_head":subprocess.check_output(["git","-C",str(ROOT),"rev-parse","HEAD"],text=True).strip(),"builds":artifacts,"package_manifest_sha256":sha256(args.package/"manifest.json"),"command":command,"thresholds":{"cosine_min":0.99999,"nrmse_max":0.003,"nonfinite_max":0,"vtcm_bytes":8388608,"intermediate_ddr_bytes":0},"scope":"single layer correctness, no throughput claim"}
     (args.output/"protocol.json").write_text(json.dumps(protocol,indent=2)+"\n")
@@ -63,7 +66,7 @@ def main():
     adb("pull",remote+"/actual.bin",windows(args.output/"actual.bin"),check=False)
     if args.scan:
         for kind in ["k", "v"]:
-            name=f"actual_kv_cache_{kind}_f16.bin"
+            name=f"actual_kv_cache_{kind}_{'u8' if manifest['recipe']=='W4A8' else 'f16'}.bin"
             adb("pull",remote+"/"+name,windows(args.output/name),check=False)
     if args.scan:
         for name in ["actual_scan_q_f16.bin","actual_scan_attention_f16.bin","actual_scan_o_projection_f16.bin","actual_post_residual_f16.bin","actual_post_norm_carrier_f16.bin","actual_down_f16.bin"]+[f"actual_middle_carrier_{i}_f16.bin" for i in range(4)]:
@@ -74,10 +77,17 @@ def main():
         except json.JSONDecodeError:pass
     if (args.output/"actual.bin").exists():
         n=manifest["logical_rows"]*2048
-        actual=np.fromfile(args.output/"actual.bin",dtype="<f2")[:n].astype(np.float64)
-        reference=np.fromfile(args.package/("reference_w4f16_block_output_f16.bin" if manifest["recipe"]=="W4A16" else "reference_f16f16_block_output_f16.bin"),dtype="<f2")[:n].astype(np.float64)
-        result["output"]={"finite":bool(np.isfinite(actual).all()),"max_abs":float(np.max(np.abs(actual-reference))),"nrmse":float(np.linalg.norm(actual-reference)/np.linalg.norm(reference)),"cosine":float(np.dot(actual,reference)/np.linalg.norm(actual)/np.linalg.norm(reference))}
-        result["output_gate"]=result["output"]["finite"] and result["output"]["nrmse"]<=0.003 and result["output"]["cosine"]>=0.99999
+        if manifest["recipe"]=="W4A8":
+            actual=np.fromfile(args.output/"actual.bin",dtype="u1")[:n].astype(np.int16)
+            reference=np.fromfile(args.package/"reference_w4u8_integer_attention_block_output_u8.bin",dtype="u1")[:n].astype(np.int16)
+            delta=np.abs(actual-reference)
+            result["output"]={"max_lsb":int(delta.max()),"mismatches":int(np.count_nonzero(delta)),"mean_lsb":float(delta.mean())}
+            result["output_gate"]=result["output"]["max_lsb"]<=1
+        else:
+            actual=np.fromfile(args.output/"actual.bin",dtype="<f2")[:n].astype(np.float64)
+            reference=np.fromfile(args.package/("reference_w4f16_block_output_f16.bin" if manifest["recipe"]=="W4A16" else "reference_f16f16_block_output_f16.bin"),dtype="<f2")[:n].astype(np.float64)
+            result["output"]={"finite":bool(np.isfinite(actual).all()),"max_abs":float(np.max(np.abs(actual-reference))),"nrmse":float(np.linalg.norm(actual-reference)/np.linalg.norm(reference)),"cosine":float(np.dot(actual,reference)/np.linalg.norm(actual)/np.linalg.norm(reference))}
+            result["output_gate"]=result["output"]["finite"] and result["output"]["nrmse"]<=0.003 and result["output"]["cosine"]>=0.99999
     (args.output/"result.json").write_text(json.dumps(result,indent=2)+"\n")
     print(json.dumps({k:v for k,v in result.items() if k!="records"}),flush=True)
     print(run.stdout[-1200:],flush=True)
