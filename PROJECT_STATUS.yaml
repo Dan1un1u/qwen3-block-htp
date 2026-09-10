@@ -6,7 +6,7 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0005
+  active_experiment: null
   next_experiment_number: 6
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -18,7 +18,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
-    recorded_head: b81c7a18ecd3446e09fc712627b4fdbabc6e263e
+    recorded_head: 516dd34d04137cf471cadab62dba7d52beb772fc
 frozen_qwen3:
   source_worktree: /home/daniuniu/work/qwen3-block-htp
   branch: codex/exp-0265-w4u8-r4-fullmodel-e2e
@@ -26,25 +26,24 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: a8_relative_speed_bottleneck_investigation
+  stage: a8_relative_speed_complete
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Propagate verified L32-0005 common code to rotation branch, then seal
-    results
+  next_action: Await next user direction; no active experiment
   baseline_manifest: baselines/qwen3-frozen/manifest.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF.md
   organization_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0266
   organization_evidence_ledger_sha256: 052b816c686b11b0bc57908b9f86147047c1ecc427af7d8ee54a985dc5e2c093
   original_model_path: /mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin
-  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0004
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0005
   validated_recipes:
   - w16a16
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0004
-  evidence_ledger_sha256: aaa038652cbce098a41ec8383f1fd24224a9bef6f559a70df8e3a0af257e3939
+  last_completed_experiment: L32-0005
+  evidence_ledger_sha256: e941510b53ad959c86c03364bac368b94915863997a22c3fcff33f165c8e5993
   formal_profiling_completed: true
   general_quantization_quality_accepted: false
   w4a16_quality_gate_pass: false
@@ -58,15 +57,17 @@ current_scope:
   formal_profile_recipes:
   - w4a16
   - w4a8_off
-  speed_validation: docs/LLAMA32_PIPELINE_SPEED.md
-  native_profiled_head: 2aa7831b551f7b2868717d75a2de02f66d8920d6
+  speed_validation: docs/LLAMA32_A8_RELATIVE_SPEED.md
+  native_profiled_head: be389d2a14121056df4f537e848e3d6084c897bf
   latest_e2e_tokens_per_second:
     w4a16:
-      prefill: 1261.0661435832612
-      decode: 23.443690890055308
+      prefill: 1260.2157990777619
+      decode: 23.591298067555858
     w4a8:
-      prefill: 1079.7595939558648
-      decode: 16.478349944971892
+      prefill: 1431.8350632857785
+      decode: 39.55583965966029
+  latest_e2e_shape: M64 prefill and7 continuous decode tokens, matched ten rotated
+    cycles
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp

@@ -105,3 +105,11 @@ KV packing/head workers/valid decode row, and dimension-correct W4A16 OPT2.
 Both recipes passed fixed ten paired AB/BA complete-model timing gates and retained
 arithmetic/physical checks. Weights/calibration unchanged; no new quality baseline
 acceptance or rotation support. Final heads and evidence are recorded in status.
+
+## L32-0005 speed closure (2026-09-10)
+
+Matched M64+7 ten rotated three-arm experiment verified native A8 relative speed
+and exact arithmetic/physical gates. Launchers now use validated row4 common/
+SwiGLU,HVX softmax,hvx_tree and pooled residual modes. Per-config V LUT and
+native tile RoPE gather are common source. No quality promotion or rotation support.
+Read current status/context and L32-0005 record for measured scope and evidence.
