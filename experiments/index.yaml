@@ -24,6 +24,25 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0266
+  slug: freeze-qwen3-llama32-branches
+  title: Freeze Qwen3 and organize two Llama 3.2 development branches
+  parent: EXP-0265
+  record: docs/experiments/EXP-0266.md
+  approval_ref: 'User: 没问题，开始整理吧; PC080'
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: not_applicable
+  runtime:
+    source_branch: codex/exp-0265-w4u8-r4-fullmodel-e2e
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    started_on: '2026-09-10'
+  source_branches:
+  - codex/llama32-no-rotation
+  - codex/llama32-rotation
+  source_commits:
+  - 48eb1ea7f9db0eb197a7c7908ab954d5a6635fc5
 - id: EXP-0265
   slug: w4u8-r4-fullmodel-e2e
   title: Optimized dense R4 full-model diagnostic E2E

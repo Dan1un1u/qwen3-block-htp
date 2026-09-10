@@ -2056,3 +2056,7 @@ a0_r10: prefill1709.697587tok/s (37433.520700us); decode48.685533tok/s (308099.7
 a1_r10: prefill1581.068659tok/s (40478.950500us); decode46.061902tok/s (325648.731800us/15); totalHost43.689270tok/s; loop42.287408tok/s.
 
 TextbeforeEOS: noR4 answers The capital of France is Paris.; R4 emits 予以简明直接的答复如下： thenEOS. R4 samplefailssemanticanswer, notformat; afterEOSfragments come from fixed16output timing, do not score them as additionalfailure. Decodable text is notqualityacceptance. NoPPLrun orbaselinepromotion; otherrecipes frozen. DiscussR4quality next; no nextalgorithm/tuningauthorized. Existingraw/differential/provenance preserved.
+
+## EXP0266 active — Qwen3 freeze / Llama 3.2 organization
+
+User approved PC080 plan. No more Qwen3 research including SP2. Preserve EXP0265 frozen source. Prepare two Llama branches, common fastest verified F16/W4F16 implementation and native-W4 A8 OFF vs R3 defaults, optional R4 on rotation branch. New model/checkpoint not chosen; organization only, no device or new weights.
