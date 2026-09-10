@@ -6,7 +6,7 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0001
+  active_experiment: null
   next_experiment_number: 2
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -18,7 +18,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
-    recorded_head: cd2360f31c1b1a151db7ecf30acfbe73bded9979
+    recorded_head: 3e0076d6d06178b67adaf514d3bf3b7d3fbe604b
 frozen_qwen3:
   source_worktree: /home/daniuniu/work/qwen3-block-htp
   branch: codex/exp-0265-w4u8-r4-fullmodel-e2e
@@ -26,11 +26,11 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: w16a16_validated_common_branch_propagation
+  stage: w16a16_functional_validation_complete
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Mirror validated common W16A16 changes to rotation branch, verify and
-    close L32-0001
+  next_action: Register L32-0002 for fresh per-channel Llama W4A16 calibration/export
+    and validation, before W4A8
   baseline_manifest: baselines/qwen3-frozen/manifest.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF.md
@@ -38,6 +38,15 @@ current_scope:
   organization_evidence_ledger_sha256: 052b816c686b11b0bc57908b9f86147047c1ecc427af7d8ee54a985dc5e2c093
   original_model_path: /mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin
   evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0001
+  validated_recipes:
+  - w16a16
+  unvalidated_recipes:
+  - w4a16
+  - w4a8
+  last_completed_experiment: L32-0001
+  evidence_ledger_sha256: 6791ea14bf6453e5fd02da9827cdcab71976c00d6f8d39f63d90303fde7b3768
+  formal_profiling_completed: false
+  general_quantization_quality_accepted: false
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp

@@ -1,54 +1,42 @@
-# Llama 3.2 context
+# Llama 3.2 current context
 
-Read this authority after PROJECT_CONTRACT.md and PROJECT_STATUS.yaml, then
-experiments/index.yaml. Do not infer current state from chat or old source
-status files. This is standalone HTP, not mllm. No mllm legacy work is required.
+Read PROJECT_CONTRACT.md, PROJECT_STATUS.yaml, this file, experiments/index.yaml
+in that order after bootstrap. This is standalone HTP, not mllm. Qwen3 research
+remains frozen at48eb1ea7f9db0eb197a7c7908ab954d5a6635fc5. Its historical selected
+records, failed ideal-R3 whole-layer gate and unaccepted R4 quality remain intact.
+Never inspect or reuse excluded legacy mllm work or Qwen model payloads.
 
-The user froze Qwen3 and approved two Llama development branches. Both keep
-F16F16 EXP0218 and per-channel C64 W4F16 EXP0260 OPT2. W4U8 OFF and dense R3 OPT2
-are the defaults respectively; dense R4 OPT6 remains optional on the rotation
-branch. Explicit startup references are in recipes/, branch policy in config/.
-Code/runtime build/weight/report identities and Qwen3 historical speed are
-pinned together in baselines/qwen3-frozen/manifest.json.
+L32-0001 is completed. Original BF16 Llama-3.2-1B-Instruct input is at
+/mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin; six hashes verified. Both source
+branches have identical common adapter code; only config/branch.json differs.
+No-rotation keeps W4A8 OFF default, rotation keeps R3 with optional R3+R4. Those
+are future migration schedules, not validated Llama W4/A8 execution support.
 
-Current native code still implements Qwen3 semantics. The model descriptors are
-porting boundaries only, and tools/recipe.py prints plans without execution.
-No Llama checkpoint, weights, calibration, device result, PPL or throughput yet.
-Never pass a Qwen3 package/prefix through the Llama model selector. Research
-scripts keep their old paths for historical provenance; they are not Llama
-launchers. Model version/revision selection precedes a registered port experiment.
+W16A16 model adapter passes independent FP32/FP16 Transformers comparisons,
+single device layer0/7/15 prefill/decode, continuous3 and16 layers, full tied-head
+text, and small heldout PPL integration checks. Device text is Paris is the
+capital of France. All16 fixed replay tokens match FP16 reference. Whole16-layer
+output NRMSE0.00232789 prefill /0.00166363 decode; exact8MiB VTCM and no intermediate
+DDR/spill. Long RoPE positions checked on host only; device uses M64 plus bounded
+decode. Initial scalar DSP RoPE prioritizes correctness; no CPU fallback.
 
-Qwen3 W4A8 ideal-R3 whole-layer failure remains failed. R4 latest speed fixture
-uses freshly folded RTN Down without R4-specific calibration and did not answer
-the recorded France-capital prompt. No quality acceptance is implied by adopting
-these implementations as migration starting points. R3 is the speed-oriented
-default; R4 needs new Llama-specific math/weights/quality evidence if pursued.
+Authoritative result /mnt/d/llm_exp/results/llama32-htp/l32-0001/validation_summary.json.
+Tiny eight-document EN/ZH integration diagnostic,128 target tokens, fresh Llama
+token IDs. Device PPL25.1047703 vs original BF16 25.0220618 (+0.33054%), FP16 teacher
+25.1078689. Each language gap<0.35%. The original BF16 teacher is loaded directly;
+initial frontend result used BF16<-FP16 roundtrip and is superseded for that field.
+No general quantization acceptance or baseline quality promotion. Functional
+M64+15 speed395.4202/5.7742 tok/s is auxiliary, not formal profiling. Do not compare
+this conservative initial adapter to frozen optimized Qwen timings as paired data.
 
-Historical complete warm M64+15 speeds (prefill/decode tok/s): F16 EXP0218
-793.1375/9.1241; W4F16 OPT2 EXP0260 1040.2401/15.2963; W4U8 OFF EXP0259
-1705.3177/48.3572; paired R3 EXP0259 1703.3588/47.8691; R3+R4 EXP0265
-1581.0687/46.0619. F16 used ten independent RPC-repeat1 sessions; other entries
-formal repeat10. Cross-campaign figures are historical nonpaired references.
+Source entrypoints and limitations: docs/LLAMA32_W16A16.md. Original model hashes,
+independent math, exporters, layer/stack/frontend runners live under tools/.
+Old Qwen experiment launchers remain historical only. tools/recipe.py is read-only
+and verifies immutable Qwen provenance at its frozen commit, not current adapter.
 
-Initial organization is owned by Qwen3 authority EXP0266. After its closure,
-new Llama work registers L32-0001 and runs this authority's preflight on the
-chosen owning worktree. Freeze data before calibration/selection/evaluation.
-
-## Organization completed
-
-Both branches/worktrees and independent authority passed closure checks. Read docs/SESSION_HANDOFF.md. Qwen3 source restored at freeze. No active experiment and no Llama model implementation yet. Do not repeat organization or Qwen3 profiling.
-
-## Active L32-0001
-
-Checkpoint is now selected: original BF16 Llama-3.2-1B-Instruct from ModelScope,
-user input /mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin. Six runtime files
-passed complete SHA256 comparison to live repository metadata and tokenizer
-roundtrip/template validation. Weights SHA256
-1ff795ff6a07e6a68085d206fb84417da2f083f68391c2843cd2b8ac6df8538f.
-The earlier pending-checkpoint statements describe organization-time state.
-W16A16 adaptation is authorized and in progress on the no-rotation worktree;
-no Llama hardware result or quality acceptance exists yet.
-
-L32-0001 progress: independent host math and six single-layer device gates plus
-continuous layers0-2 replay pass. Full16 replay is being prepared. See experiment
-record for retained failures and exact evidence. No device text/PPL yet.
+Next authorized order remains W4A16 then W4A8. Register L32-0002 on no-rotation
+worktree for fresh per-output-channel W4 [-7,7] calibration/export. C64 GPTQ method
+from Qwen is a starting algorithm; no old tensors/calibration/prefix reused.
+Use the W16A16 device path and floating teacher as references, and a larger fixed
+independent PPL set before judging quantization acceptance. The128-token port set
+is too small to become that acceptance suite. W4A8/rotations wait for W4A16.

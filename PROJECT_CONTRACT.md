@@ -18,9 +18,10 @@ context or execution dependency.
 - These are user-approved migration starting implementations, not retrospective
   Qwen3 quality acceptance or promotion of historical Selected records. Preserve
   ideal-R3 whole-layer numerical failure and unaccepted R4 quality explicitly.
-- Initial organization does not implement Llama inference. Exact checkpoint and
-  revision are unselected. Model dimensions, tokenizer/template, normalization,
-  RoPE, embedding/head/tied-weight behavior must come from that checkpoint.
+- Selected checkpoint is original BF16 Llama-3.2-1B-Instruct from ModelScope,
+  pinned by six file hashes in source tools/llama_reference.py. L32-0001 validates
+  W16A16 functional integration; W4A16/A8 remain pending. Model dimensions,
+  tokenizer/template, normalization, RoPE and tied-head behavior come from it.
 - Original Llama tensors must supply new weights and rotations. Qwen3 folded or
   quantized weights, static-A8 calibration, EOS prefix/cache and tokenizer are
   never Llama inputs. W4 preserves signed [-7,7] per-output-channel with one FP32
