@@ -19830,6 +19830,12 @@ static int qbh_scan_u8_attention(
             telemetry.v_recenter_saturation_count;
         header->u8_attention_probability_mask_violation_count +=
             telemetry.probability_mask_violation_count;
+#ifdef QBH_MODEL_LLAMA32
+        header->w4u8_decode_softmax_hvx_tile4_call_count +=
+            telemetry.dynamic_hvx_tile4_call_count;
+        header->w4u8_decode_softmax_hvx_tile4_mismatch_count +=
+            telemetry.dynamic_hvx_tile4_mismatch_count;
+#endif
         if (header->u8_attention_probability_row_sum_min == 0U ||
             telemetry.probability_row_sum_min <
                 header->u8_attention_probability_row_sum_min) {
