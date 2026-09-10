@@ -1975,11 +1975,12 @@ static int qbh_header_valid(const struct qbh_block_header *header,
                             uint32_t shared_bytes) {
     uint32_t element_bytes;
 #ifdef QBH_MODEL_LLAMA32
-    /* Optimized Qwen head128 carriers and A8 are not Llama implementations. */
-    if (header == NULL || (header->variant != QBH_BLOCK_F16F16 &&
-        header->variant != QBH_BLOCK_W4F16) ||
-        header->attention_pipeline_mode >= QBH_BLOCK_ATTENTION_PIPELINE_GQA ||
-        (header->crouton_boundary_mode & QBH_BLOCK_CROUTON_BOUNDARY_QKV) != 0U) {
+    /* Llama A8 currently validates the unrotated head64 integer pipeline. */
+    if (header == NULL || header->dense_r3_mode || header->dense_r4_mode ||
+        (header->variant == QBH_BLOCK_W4U8
+            ? header->attention_pipeline_mode != QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA
+            : (header->attention_pipeline_mode >= QBH_BLOCK_ATTENTION_PIPELINE_GQA ||
+               (header->crouton_boundary_mode & QBH_BLOCK_CROUTON_BOUNDARY_QKV) != 0U))) {
         return 0;
     }
 #endif
