@@ -60,13 +60,14 @@ def resolve(recipe=None, rotation=None, model=None):
         "recipe": recipe, "rotation": rotation, "baseline_id": name,
         "execution_enabled": False,
         "reason": ("Use the registered Llama experiment entrypoints; this command only inspects configuration. "
-                   "W4A16/A8 port validation is pending") if model == "llama32" else "Qwen3 research is frozen; retained recipes are provenance references",
+                   "See model recipe_quality and per-recipe validation records; rotated Llama modes remain unsupported") if model == "llama32" else "Qwen3 research is frozen; retained recipes are provenance references",
         "intended_weight_format": spec["weight_format"],
         "intended_activation_format": spec["activation_format"],
         "qwen3_reference_schedule": spec["schedule"],
         "qwen3_reference_package": baseline["package"],
         "qwen3_historical_measurement": baseline["measurement"],
-        "quality_status": baseline["quality_status"],
+        "quality_status": (model_spec.get("recipe_quality", {}).get(name, model_spec.get("recipe_quality", {}).get(recipe, "See model validation record")) if model == "llama32" else baseline["quality_status"]),
+        "qwen3_historical_quality_status": baseline["quality_status"],
     }
 
 
