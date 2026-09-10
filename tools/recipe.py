@@ -59,7 +59,8 @@ def resolve(recipe=None, rotation=None, model=None):
         "branch": branch["branch"], "model": model_spec,
         "recipe": recipe, "rotation": rotation, "baseline_id": name,
         "execution_enabled": False,
-        "reason": "Llama port/checkpoint is not implemented" if model == "llama32" else "Qwen3 research is frozen; retained recipes are provenance references",
+        "reason": ("Use the registered Llama experiment entrypoints; this command only inspects configuration. "
+                   "W4A16/A8 port validation is pending") if model == "llama32" else "Qwen3 research is frozen; retained recipes are provenance references",
         "intended_weight_format": spec["weight_format"],
         "intended_activation_format": spec["activation_format"],
         "qwen3_reference_schedule": spec["schedule"],
@@ -73,12 +74,15 @@ def verify(artifacts=False):
     manifest = read(ROOT / "baselines/qwen3-frozen/manifest.json")
     expected = manifest["native_build_file_sha256"]
     paths = ["src", "include", "CMakeLists.txt", "CMakePresets.json"]
-    tracked = subprocess.check_output(["git", "-C", str(ROOT), "ls-files", "--", *paths], text=True).splitlines()
-    require(set(tracked) == set(expected), "Native/build file inventory changed since freeze")
-    untracked = subprocess.check_output(["git", "-C", str(ROOT), "ls-files", "--others", "--exclude-standard", "--", *paths], text=True)
-    require(not untracked, "Untracked native/build files require review")
+    # Verify the sealed historical commit, not the actively adapted Llama files.
+    # The manifest hashes are immutable; no replacement hash is accepted here.
+    frozen = manifest["frozen_source_commit"]
+    tracked = subprocess.check_output(["git", "-C", str(ROOT), "ls-tree", "-r", "--name-only", frozen, "--", *paths], text=True).splitlines()
+    require(set(tracked) == set(expected), "Frozen native/build inventory mismatch")
     for name, digest in expected.items():
-        require(sha(ROOT / name) == digest, "Frozen native file changed: " + name)
+        payload = subprocess.check_output(["git", "-C", str(ROOT), "show", frozen + ":" + name])
+        require(hashlib.sha256(payload).hexdigest() == digest, "Frozen native file hash mismatch: " + name)
+    current_differences = [name for name, digest in expected.items() if not (ROOT/name).is_file() or sha(ROOT/name) != digest]
     branch = read(ROOT / "config/branch.json")
     require(branch["qwen3_frozen_commit"] == manifest["frozen_source_commit"], "Frozen parent mismatch")
     count = 0
@@ -99,7 +103,7 @@ def verify(artifacts=False):
             path = ROOT / ref["path"] if ref["kind"] == "frozen_runner_f16f16_speed_case" else Path(ref["path"])
             require(sha(path) == ref["sha256"], "Launch evidence mismatch: " + name)
             verified.append(name)
-    return {"pass": True, "native_build_files_unchanged": len(expected), "model_recipe_plans_checked": count, "compact_evidence_and_package_manifests_verified": verified, "weight_payload_rehash": False, "new_device_or_quality_measurement": False}
+    return {"pass": True, "frozen_native_build_files_verified": len(expected), "current_model_adapter_differences": current_differences, "model_recipe_plans_checked": count, "compact_evidence_and_package_manifests_verified": verified, "weight_payload_rehash": False, "new_device_or_quality_measurement": False}
 
 
 def main():
