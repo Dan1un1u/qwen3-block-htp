@@ -3,6 +3,7 @@
 import argparse
 import json
 import os
+import re
 from pathlib import Path
 import shlex
 import subprocess
@@ -59,7 +60,7 @@ def main():
     adb("pull",remote+"/actual.bin",windows(args.output/"actual.bin"),check=False)
     result={"process_exit_code":run.returncode,"records":[]}
     for line in run.stdout.splitlines():
-        try:result["records"].append(json.loads(line))
+        try:result["records"].append(json.loads(re.sub(r":-?(?:nan|inf)([,}])", r":null\1", line)))
         except json.JSONDecodeError:pass
     if (args.output/"actual.bin").exists():
         n=manifest["logical_rows"]*2048
