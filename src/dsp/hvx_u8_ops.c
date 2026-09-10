@@ -711,7 +711,9 @@ static void qbh_llama_rope_u8_hvx_prepared(uint8_t *v,
     uint8_t original[128] __attribute__((aligned(128))) = {0};
     uint32_t repair[64] __attribute__((aligned(128)));
     memcpy(original,v,64);
-    HVX_Vector half=Q6_V_lo_W(qbh_centered_half_pair(*(HVX_Vector *)original,in->zero_point));
+    /* Integer centering is exact in [-255,255], avoiding scalar FP16 casts. */
+    HVX_VectorPair unpacked=Q6_Wuh_vunpack_Vub(*(HVX_Vector *)original);
+    HVX_Vector half=Q6_Vhf_vcvt_Vh(Q6_Vh_vsub_VhVh(Q6_V_lo_W(unpacked),Q6_Vh_vsplat_R(in->zero_point)));
     HVX_VectorPair x=Q6_Wsf_vcvt_Vhf(half);
     HVX_VectorPair y=Q6_Wsf_vcvt_Vhf(Q6_V_vror_VR(half,64));
     HVX_VectorPair c=Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)cosine);
