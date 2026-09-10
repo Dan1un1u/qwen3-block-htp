@@ -37,7 +37,8 @@ def main():
         assert sha256(args.package/name)==record["sha256"],name
     if args.output.exists():raise FileExistsError(args.output)
     args.output.mkdir(parents=True)
-    remote="/data/local/tmp/llama32-htp/"+manifest["experiment"].lower()+"/"+args.output.name
+    active=re.search(r"^  active_experiment: (L32-[0-9]+)$",Path("/home/daniuniu/work/llama32-htp-project-memory/PROJECT_STATUS.yaml").read_text(),re.M).group(1)
+    remote="/data/local/tmp/llama32-htp/"+active.lower()+"/"+args.output.name
     assert adb("shell",f"test ! -e {shlex.quote(remote)}",check=False).returncode==0,"Remote attempt exists"
     adb("shell",f"mkdir -p {shlex.quote(remote)}")
     artifacts={}

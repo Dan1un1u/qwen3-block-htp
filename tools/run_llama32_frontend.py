@@ -28,7 +28,8 @@ def main():
     assert sha256(args.reference/"teacher.json")==m["frontend_teacher_sha256"]
     if args.output.exists():raise FileExistsError(args.output)
     args.output.mkdir(parents=True)
-    remote="/data/local/tmp/llama32-htp/"+m["experiment"].lower()+"/"+args.output.name
+    active=re.search(r"^  active_experiment: (L32-[0-9]+)$",Path("/home/daniuniu/work/llama32-htp-project-memory/PROJECT_STATUS.yaml").read_text(),re.M).group(1)
+    remote="/data/local/tmp/llama32-htp/"+active.lower()+"/"+args.output.name
     assert adb("shell",f"test ! -e {shlex.quote(remote)}",check=False).returncode==0
     adb("shell",f"mkdir -p {shlex.quote(remote)}")
     builds={}
@@ -74,6 +75,7 @@ def main():
     if m['recipe']=='W4A8':
         env.pop('QBH_KV_CACHE_LAYOUT');env.update(QBH_W4U8_DECODE_COMMON_OP_ROWS="4",QBH_W4U8_DECODE_SWIGLU_ROWS="4",QBH_W4U8_DECODE_SOFTMAX="hvx_tile4",QBH_GENERATION_SEQUENCE="9",QBH_W4U8_DECODE_PROJECTION_MODE="direct_n",QBH_W4U8_DECODE_DIRECT_N_MASK="63")
         argv=["./qwen3_block_cli",remote+"/package","W4U8","1","2","32","rms_rope_softmax","on","off","fused","serial","control","hvx","w4u8_streaming_persistent_mlp_hvx","3","64","u8_log2_gqa","4","w4u8_mlp_io_qkv_o","serial","scalar","control","4","3","1","0"]
+    if m["recipe"]=="W4A8":argv[20]="hvx_tree"
     command="cd "+shlex.quote(remote)+" && "+" ".join(k+"="+shlex.quote(v) for k,v in env.items())+" "+shlex.join(argv)
     protocol={"experiment":m["experiment"],"source_head":subprocess.check_output(["git","-C",str(ROOT),"rev-parse","HEAD"],text=True).strip(),"builds":builds,"package_manifest_sha256":sha256(args.package/"manifest.json"),"dataset_sha256":sha256(args.reference/"dataset.json"),"reused_package":args.reuse_package_from,"requested_generation_steps":args.generation_steps,"command":command,"timing_scope":"single functional run, not formal profiling; includes embedding/16 layers/norm/head/greedy/FastRPC, excludes loading and external tokenizer"}
     (args.output/"protocol.json").write_text(json.dumps(protocol,indent=2))
