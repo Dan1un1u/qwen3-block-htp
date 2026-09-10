@@ -12580,6 +12580,17 @@ static int qbh_block_attention_config_valid(
            config->av_multiplier <= QBH_ATTENTION_MAX_MULTIPLIER;
 }
 
+/* Llama rotates once before publishing KV. Qwen keeps its fused per-group preparation. */
+static void qbh_attention_prepare_qk_native_head(uint8_t *head,
+    const struct qbh_block_qparam *input, const struct qbh_block_qparam *output,
+    const __fp16 *gamma, const __fp16 *cosine, const __fp16 *sine) {
+#ifndef QBH_MODEL_LLAMA32
+    qbh_hvx_qk_norm_rope_u8_native_head(head,input,output,gamma,cosine,sine);
+#else
+    (void)head;(void)input;(void)output;(void)gamma;(void)cosine;(void)sine;
+#endif
+}
+
 static int qbh_attention_u8_integer(
     struct qbh_block_header *header,
     struct qbh_block_buffers *buffers,
@@ -12654,7 +12665,7 @@ static int qbh_attention_u8_integer(
         for (uint32_t local_head = 0U;
              local_head < QBH_ATTENTION_Q_HEADS_PER_GROUP;
              ++local_head) {
-            qbh_hvx_qk_norm_rope_u8_native_head(
+            qbh_attention_prepare_qk_native_head(
                 q_group +
                     (size_t)local_head *
                         QBH_ATTENTION_HEAD_DIM_TILES *
@@ -12665,7 +12676,7 @@ static int qbh_attention_u8_integer(
                 (const __fp16 *)buffers->rope_cos,
                 (const __fp16 *)buffers->rope_sin);
         }
-        qbh_hvx_qk_norm_rope_u8_native_head(
+        qbh_attention_prepare_qk_native_head(
             k_head,
             &header->qparams[QBH_BLOCK_QP_K_PROJECTION],
             &header->qparams[QBH_BLOCK_QP_K_ROPE],
@@ -12960,7 +12971,7 @@ static void qbh_attention_u8_qk_prep_pool_run_group_tasks(
                 return;
             }
             start = HAP_perf_get_qtimer_count();
-            qbh_hvx_qk_norm_rope_u8_native_head(
+            qbh_attention_prepare_qk_native_head(
                 q_group +
                     (size_t)local_head *
                         QBH_ATTENTION_HEAD_DIM_TILES *
@@ -13043,7 +13054,7 @@ static void qbh_attention_u8_qk_prep_pool_run_head_tasks(
                 (size_t)task * QBH_ATTENTION_HEAD_DIM_TILES *
                     QBH_HMX_ACTIVATION_BYTES;
             start = HAP_perf_get_qtimer_count();
-            qbh_hvx_qk_norm_rope_u8_native_head(
+            qbh_attention_prepare_qk_native_head(
                 q_head,
                 &header->qparams[QBH_BLOCK_QP_Q_PROJECTION],
                 &header->qparams[QBH_BLOCK_QP_Q_ROPE],
@@ -13974,7 +13985,7 @@ static void qbh_attention_u8_pool_run_tasks(
             for (uint32_t local_head = 0U;
                  local_head < QBH_ATTENTION_Q_HEADS_PER_GROUP;
                  ++local_head) {
-                qbh_hvx_qk_norm_rope_u8_native_head(
+                qbh_attention_prepare_qk_native_head(
                     q_group +
                         (size_t)local_head *
                             QBH_ATTENTION_HEAD_DIM_TILES *
@@ -13996,7 +14007,7 @@ static void qbh_attention_u8_pool_run_tasks(
                     (const __fp16 *)buffers->rope_sin,
                     config, k_weight, qk_bias);
             } else {
-                qbh_hvx_qk_norm_rope_u8_native_head(
+                qbh_attention_prepare_qk_native_head(
                     k_head,
                     &header->qparams[QBH_BLOCK_QP_K_PROJECTION],
                     &header->qparams[QBH_BLOCK_QP_K_ROPE],
@@ -20333,6 +20344,16 @@ static int qbh_run_one_block(struct qbh_block_header *header,
 
     start = HAP_perf_get_qtimer_count();
     if (u8_integer_attention_enabled != 0U) {
+#ifdef QBH_MODEL_LLAMA32
+        for (uint32_t h=0;h<QBH_BLOCK_HEADS;++h)
+            qbh_hvx_qk_norm_rope_u8_native_head(buffers->q+h*QBH_BLOCK_M*QBH_BLOCK_HEAD_DIM,
+                &header->qparams[QBH_BLOCK_QP_Q_PROJECTION],&header->qparams[QBH_BLOCK_QP_Q_ROPE],
+                NULL,(const __fp16 *)buffers->rope_cos,(const __fp16 *)buffers->rope_sin);
+        for (uint32_t h=0;h<QBH_BLOCK_KV_HEADS;++h)
+            qbh_hvx_qk_norm_rope_u8_native_head(buffers->k+h*QBH_BLOCK_M*QBH_BLOCK_HEAD_DIM,
+                &header->qparams[QBH_BLOCK_QP_K_PROJECTION],&header->qparams[QBH_BLOCK_QP_K_ROPE],
+                NULL,(const __fp16 *)buffers->rope_cos,(const __fp16 *)buffers->rope_sin);
+#endif
         /* Native Q/K projection tiles are normalized and rotated inside
          * the per-GQA integer Attention pipeline. */
     } else if (header->variant != QBH_BLOCK_W4U8 &&
