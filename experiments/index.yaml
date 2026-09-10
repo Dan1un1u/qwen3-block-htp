@@ -154,8 +154,9 @@ experiments:
   approval_ref: User authorizes several further speed iterations aiming near frozen
     Qwen3 speed
   runtime:
-    source_worktree: /home/daniuniu/work/llama32-htp
-    source_branch: codex/llama32-no-rotation
+    source_worktree: /home/daniuniu/work/llama32-htp-rotation
+    source_branch: codex/llama32-rotation
   parent_source: 42a783a6a8ba1b1d7dc145abf1c0535af36480c5
   hardware_runs: 0
   baseline_quality_promoted: false
+  local_gate: exact_physical_and_both_formal_shape_gates_pass
