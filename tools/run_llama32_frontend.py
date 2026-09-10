@@ -84,6 +84,11 @@ def main():
     stop=next((i for i,t in enumerate(tokens) if t in [128001,128008,128009]),len(tokens))
     tok=AutoTokenizer.from_pretrained(m["original"]["original_root"],local_files_only=True)
     result={"generation_process_exit_code":run.returncode,"generation_pass":run.returncode==0 and len(steps)==args.generation_steps and all(s["pass"] for s in steps),"generated_ids":tokens,"text":tok.decode(tokens[:stop],skip_special_tokens=True),"generation_steps":steps}
+    if m['recipe']=='W4A8':
+        oracle=json.loads((args.reference/'teacher.json').read_text())
+        result['arithmetic_token_match']=tokens==oracle['u8_generated_ids'][:args.generation_steps]
+        result['arithmetic_code_match']=[s['selected_logit_half_bits'] for s in steps]==oracle['u8_selected_codes'][:args.generation_steps] and all(s['selected_logit_encoding']=='u8_code' for s in steps)
+        result['generation_pass']=result['generation_pass'] and result['arithmetic_token_match'] and result['arithmetic_code_match']
     (args.output/"result.json").write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n")
     print(json.dumps({k:v for k,v in result.items() if k!="generation_steps"},ensure_ascii=False),flush=True)
     if not result["generation_pass"]:
