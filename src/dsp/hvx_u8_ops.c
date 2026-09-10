@@ -1593,8 +1593,10 @@ void qbh_hvx_qk_norm_rope_u8_native_head_rows(
 #endif
 #ifdef QBH_MODEL_LLAMA32
         HVX_Vector out=*(HVX_Vector *)row_values;
-        HVX_VectorPred mask=Q6_Q_and_QQ(Q6_Q_vsetq_R(shift+32U),
-            Q6_Q_not_Q(Q6_Q_vsetq_R(shift)));
+        HVX_Vector mask_bytes=Q6_V_vmux_QVV(Q6_Q_vsetq_R(32),
+            Q6_V_vsplat_R(-1),Q6_V_vzero());
+        HVX_VectorPred mask=Q6_Q_vcmp_eq_VbVb(
+            Q6_V_vror_VR(mask_bytes,(128U-shift)%128U),Q6_V_vsplat_R(-1));
         *lo=Q6_V_vmux_QVV(mask,Q6_V_vror_VR(out,(128U-shift)%128U),a);
         *hi=Q6_V_vmux_QVV(mask,Q6_V_vror_VR(out,(160U-shift)%128U),b);
 #else
