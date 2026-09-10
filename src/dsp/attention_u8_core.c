@@ -2187,7 +2187,20 @@ void qbh_attention_u8_patch_v_delta_rows_hvx(
     asm volatile("barrier" ::: "memory");
 }
 
-void qbh_attention_u8_pack_v_row_major_hvx(const uint8_t *rows,
+void qbh_attention_u8_prepare_v_row_major_hvx(
+    const struct qbh_attention_config *config,uint8_t *scratch) {
+    int16_t *lut=(int16_t *)(scratch+QBH_ATTN_U8_VGATHER_LUT_OFFSET);
+    uint8_t *saturated=scratch+QBH_ATTN_U8_VGATHER_LUT_OFFSET+QBH_ATTN_U8_VGATHER_LUT_BYTES;
+    saturated[256]=0;
+    for(uint32_t i=0;i<256;++i) {
+        int32_t v=qbh_attention_u8_round_div_signed(((int32_t)i-config->v_zero_point)*(int32_t)config->v_recenter_numerator,(int32_t)config->v_recenter_denominator);
+        saturated[i]=v<INT8_MIN || v>INT8_MAX;saturated[256]|=saturated[i];
+        lut[i]=(int16_t)qbh_attention_u8_clip_s8(v,NULL);
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
+void qbh_attention_u8_pack_v_row_major_hvx_prepared(const uint8_t *rows,
     uint32_t valid_tokens,uint32_t padded_tokens,
     const struct qbh_attention_config *config,int8_t *weight,uint32_t *bias,
     uint8_t *scratch,uint32_t *saturation_count) {
@@ -2197,15 +2210,9 @@ void qbh_attention_u8_pack_v_row_major_hvx(const uint8_t *rows,
     const int32_t zp=config->av_multiplier==1U?config->output_zero_point:QBH_ATTENTION_HMX_CENTER;
     for(uint32_t i=0;i<QBH_ATTENTION_HEAD_DIM_TILES*kt*QBH_HMX_WEIGHT_BYTES/128U;++i)
         ((HVX_Vector *)weight)[i]=Q6_V_vzero();
-    qbh_attention_u8_prepare_v_delta_lut(config,scratch);
-    if(saturation_count) {
-        uint8_t saturated[256];
-        for(uint32_t i=0;i<256;++i) {
-            int32_t v=qbh_attention_u8_round_div_signed(((int32_t)i-config->v_zero_point)*(int32_t)config->v_recenter_numerator,(int32_t)config->v_recenter_denominator);
-            saturated[i]=v<INT8_MIN || v>INT8_MAX;
-        }
+    const uint8_t *saturated=scratch+QBH_ATTN_U8_VGATHER_LUT_OFFSET+QBH_ATTN_U8_VGATHER_LUT_BYTES;
+    if(saturation_count && saturated[256])
         for(uint32_t i=0;i<valid_tokens*QBH_ATTENTION_HEAD_DIM;++i)*saturation_count+=saturated[rows[i]];
-    }
     for(uint32_t first=0;first<valid_tokens;first+=32U) {
         uint32_t count=valid_tokens-first;if(count>32U)count=32U;
         qbh_attention_u8_patch_v_delta_rows_hvx(rows+(size_t)first*QBH_ATTENTION_HEAD_DIM,count,
@@ -2215,6 +2222,15 @@ void qbh_attention_u8_pack_v_row_major_hvx(const uint8_t *rows,
         uint32_t *b=bias+tile*(QBH_HMX_BIAS_BYTES/4U);b[i]=conversion;b[32+i]=(uint32_t)(zp*(int32_t)div)+rounding;
     }
     asm volatile("barrier" ::: "memory");
+}
+
+void qbh_attention_u8_pack_v_row_major_hvx(const uint8_t *rows,
+    uint32_t valid_tokens,uint32_t padded_tokens,
+    const struct qbh_attention_config *config,int8_t *weight,uint32_t *bias,
+    uint8_t *scratch,uint32_t *saturation_count) {
+    qbh_attention_u8_prepare_v_row_major_hvx(config,scratch);
+    qbh_attention_u8_pack_v_row_major_hvx_prepared(rows,valid_tokens,padded_tokens,
+        config,weight,bias,scratch,saturation_count);
 }
 
 void qbh_attention_u8_publish_v_row_group_hvx(

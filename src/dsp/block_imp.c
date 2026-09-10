@@ -19791,7 +19791,15 @@ static int qbh_scan_u8_attention(
             }
             start = HAP_perf_get_qtimer_count();
 #ifdef QBH_MODEL_LLAMA32
-            qbh_attention_u8_pack_v_row_major_hvx(
+            if(group==0U || config->v_zero_point!=delta_lut_v_zero_point ||
+                config->v_recenter_numerator!=delta_lut_numerator ||
+                config->v_recenter_denominator!=delta_lut_denominator) {
+                qbh_attention_u8_prepare_v_row_major_hvx(config,buffers->up);
+                delta_lut_v_zero_point=config->v_zero_point;
+                delta_lut_numerator=config->v_recenter_numerator;
+                delta_lut_denominator=config->v_recenter_denominator;
+            }
+            qbh_attention_u8_pack_v_row_major_hvx_prepared(
                 plane_c, valid_tokens, padded_tokens,
                 config, weight, av_bias, buffers->up,
                 &telemetry.v_recenter_saturation_count);

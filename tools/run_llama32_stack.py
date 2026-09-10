@@ -38,7 +38,7 @@ def main():
         env.update(QBH_W4F16_DECODE_OPT="2",QBH_W4F16_GROUP_FENCE="join_only_down",QBH_W4F16_EXPAND_CLAIM_REGIONS="1",QBH_W4F16_GATE_UP_EXTRA_EXPAND_WORKER="1",QBH_W4F16_GATE_UP_EXTRA_STREAM_WORKER="1",QBH_W4F16_GATE_UP_STREAM_GROUP_TILES="4")
     if m['recipe']=='W4A8':
         argv=["./qwen3_block_cli",remote+"/package","W4U8","1","2","32","rms_rope_softmax","on","off","fused","serial","control","hvx","w4u8_streaming_persistent_mlp_hvx","3","64","u8_log2_gqa","4","w4u8_mlp_io_qkv_o","serial","scalar","control","4","3","1","0"]
-        env.update(QBH_W4U8_DECODE_PROJECTION_MODE="direct_n",QBH_W4U8_DECODE_DIRECT_N_MASK="63")
+        env.update(QBH_W4U8_DECODE_COMMON_OP_ROWS="4",QBH_W4U8_DECODE_SWIGLU_ROWS="4",QBH_W4U8_DECODE_SOFTMAX="hvx_tile4",QBH_W4U8_DECODE_PROJECTION_MODE="direct_n",QBH_W4U8_DECODE_DIRECT_N_MASK="63")
     command="cd "+shlex.quote(remote)+" && "+" ".join(k+"="+shlex.quote(v) for k,v in env.items())+" "+shlex.join(argv)
     (args.output/"protocol.json").write_text(json.dumps({"experiment":m["experiment"],"layers":m["layers"],"source_head":subprocess.check_output(["git","-C",str(ROOT),"rev-parse","HEAD"],text=True).strip(),"builds":builds,"package_manifest_sha256":sha256(args.package/"manifest.json"),"command":command,"gate":("exact integer output and KV replay" if m["recipe"]=="W4A8" else "existing composition_v2 FP16 replay; no relaxation")},indent=2))
     r=adb("shell",command,check=False)

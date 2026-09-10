@@ -72,7 +72,7 @@ def main():
         argv[4]="4";argv[10]="serial";argv[11]="adaptive_down96_gate4_dma8_cross"
         env.update(QBH_W4F16_DECODE_OPT="2",QBH_W4F16_GROUP_FENCE="join_only_down",QBH_W4F16_EXPAND_CLAIM_REGIONS="1",QBH_W4F16_GATE_UP_EXTRA_EXPAND_WORKER="1",QBH_W4F16_GATE_UP_EXTRA_STREAM_WORKER="1",QBH_W4F16_GATE_UP_STREAM_GROUP_TILES="4")
     if m['recipe']=='W4A8':
-        env.pop('QBH_KV_CACHE_LAYOUT');env.update(QBH_GENERATION_SEQUENCE="9",QBH_W4U8_DECODE_PROJECTION_MODE="direct_n",QBH_W4U8_DECODE_DIRECT_N_MASK="63")
+        env.pop('QBH_KV_CACHE_LAYOUT');env.update(QBH_W4U8_DECODE_COMMON_OP_ROWS="4",QBH_W4U8_DECODE_SWIGLU_ROWS="4",QBH_W4U8_DECODE_SOFTMAX="hvx_tile4",QBH_GENERATION_SEQUENCE="9",QBH_W4U8_DECODE_PROJECTION_MODE="direct_n",QBH_W4U8_DECODE_DIRECT_N_MASK="63")
         argv=["./qwen3_block_cli",remote+"/package","W4U8","1","2","32","rms_rope_softmax","on","off","fused","serial","control","hvx","w4u8_streaming_persistent_mlp_hvx","3","64","u8_log2_gqa","4","w4u8_mlp_io_qkv_o","serial","scalar","control","4","3","1","0"]
     command="cd "+shlex.quote(remote)+" && "+" ".join(k+"="+shlex.quote(v) for k,v in env.items())+" "+shlex.join(argv)
     protocol={"experiment":m["experiment"],"source_head":subprocess.check_output(["git","-C",str(ROOT),"rev-parse","HEAD"],text=True).strip(),"builds":builds,"package_manifest_sha256":sha256(args.package/"manifest.json"),"dataset_sha256":sha256(args.reference/"dataset.json"),"reused_package":args.reuse_package_from,"requested_generation_steps":args.generation_steps,"command":command,"timing_scope":"single functional run, not formal profiling; includes embedding/16 layers/norm/head/greedy/FastRPC, excludes loading and external tokenizer"}
