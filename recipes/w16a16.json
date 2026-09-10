@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "id": "w16a16",
+  "baseline_id": "w16a16",
+  "recipe": "w16a16",
+  "runtime_variant": "F16F16",
+  "rotation": "none",
+  "weight_format": "fp16",
+  "activation_format": "fp16",
+  "schedule": {
+    "env": {
+      "QBH_KV_CACHE_LAYOUT": "hmx_native_f16",
+      "QBH_GENERATION_SEQUENCE": "10",
+      "QBH_GENERATION_STEPS": "16",
+      "QBH_VERTICAL_SLICE": "1",
+      "QBH_REPLAY_SEQUENCE": "1",
+      "QBH_SCAN_MODE": "prefill",
+      "QBH_LOGICAL_M": "64",
+      "QBH_KV_CACHE_LENGTH": "0",
+      "QBH_KV_CACHE_CAPACITY": "80",
+      "QBH_DENSE_R3": "0",
+      "QBH_R3_OPT": "0",
+      "QBH_DENSE_R4": "0",
+      "QBH_R4_OPT": "0",
+      "QBH_LPBQ32": "0",
+      "QBH_W4F16_DECODE_OPT": "0",
+      "QBH_PREFIX_KV": "0"
+    },
+    "argv_after_repeat": [
+      "2",
+      "32",
+      "hvx",
+      "on",
+      "off",
+      "fused",
+      "gate8_interleaved",
+      "control",
+      "hvx",
+      "crouton_native_batch8",
+      "4",
+      "64",
+      "gqa_qkv_overlap",
+      "4",
+      "norms",
+      "serial",
+      "scalar",
+      "input_norm_pool_post_norm_pool",
+      "4",
+      "3",
+      "1",
+      "0"
+    ],
+    "rpc_repeat": 1,
+    "source": {
+      "kind": "frozen_runner_f16f16_speed_case",
+      "git_commit": "48eb1ea7f9db0eb197a7c7908ab954d5a6635fc5",
+      "path": "scripts/run_exp0218.sh",
+      "sha256": "4639fef020d9c174cfb426e334c1ed97df9ced15f56a8823a3126747cd547ff5"
+    },
+    "note": "Frozen Qwen3 schedule reference, not a runnable Llama configuration. Explicit neutral overrides disable unrelated experiments."
+  },
+  "required_model_inputs": [
+    "matching original checkpoint",
+    "model-specific tokenizer and special tokens",
+    "newly exported model-matched weights",
+    "model-specific FP16 activations"
+  ],
+  "quality_status": "historical quality retained; no new acceptance"
+}

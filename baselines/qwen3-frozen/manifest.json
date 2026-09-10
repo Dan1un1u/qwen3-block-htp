@@ -1,0 +1,347 @@
+{
+  "schema_version": 1,
+  "frozen_source_commit": "48eb1ea7f9db0eb197a7c7908ab954d5a6635fc5",
+  "frozen_source_branch": "codex/exp-0265-w4u8-r4-fullmodel-e2e",
+  "user_freeze_date": "2026-09-10",
+  "native_build_file_sha256": {
+    "CMakeLists.txt": "fac665e4e462948eaa6b94ceb489fb73da6e5adb5d37b00555967c986afd9d8a",
+    "CMakePresets.json": "d841c575dc4f9c3a131193dc2c61765a18cdda0403516fad704257aee86076de",
+    "include/attention_imp.h": "240dacbf528b2f63f0c9676fb0ed6a39d2c3c71e23058b074318fc132c32c8b0",
+    "include/attention_protocol.h": "05a2f34bbefe59d37d1a1b025014be0b10999e9537154cf2d06d36033357ed48",
+    "include/attention_u8_core.h": "b7f4f1f5df27dbbaa435d42e72eedbd5d6cae1fcbe0cccab7f6e690b647d79a5",
+    "include/block_imp.h": "87321cb1e062e0359ceac0fbf1f2afcf1a9fc6e46715d429280c81ec4e41bcf5",
+    "include/block_protocol.h": "b05302bd351f7f0506bd11a47cb24b3859a79b9aca4069749a6d26f8bab0c301",
+    "include/eval_score.h": "0a92633de8bf2ba04c5201ad46008d4c82de600d16fe8133049e735a220e3b52",
+    "include/hmx_convert_protocol.h": "1266e3ea8920199bb8d87a6fc15724a58d4f72a58634511c0c1ed289260fc8c9",
+    "include/hmx_fp16.h": "d5881328c5dbbf7ddd9e6f6201f9ba952de1a5354db9c0f137ecedb5cef41b0d",
+    "include/hmx_int8_tile.h": "bbc41d199f70b0d68e240d1ba587e514e064ac23ef7392c3076cc948696ac745",
+    "include/hmx_u8s8_projection.h": "c75acb751f5cb662525a5ce89972e36a1504c6994c11f6ed043b25cd72fbbe9d",
+    "include/host/session.h": "8f005b69c8af4c8ae3427e5400bbf16294da65caed2062898146044352e64a15",
+    "include/hvx_fp16_ops.h": "1da159dba94dd9bbdc49c3c9af272b7cbe4cc8efd0bf57f605d739df763f8f1f",
+    "include/hvx_u8_ops.h": "2655addbc720bef68f71f9aabc8c52f94ce76563e5b7eadcfe0564b8dbd3e50e",
+    "include/mlp_imp.h": "1165f097e052ad08331f7d790b30e91c87a51bc264a7be4996d0c47a2438d980",
+    "include/mlp_protocol.h": "24376f39d6e92eab5e8e67e1ede7f3f6d778513a89d044099bc0c5547ee48202",
+    "include/mlp_u8.h": "91debd98ef91d5f38986373ae429da7c41071782a6e8e7e628169b7a22b08283",
+    "include/probe_protocol.h": "81a244e985bc7c9494ff2d21685b1d553949ea28a8610386b389522c5b4a19c8",
+    "include/qbh_user_dma.h": "16117acc52273f8df008cc319374aabec81b7b8e68d246911bea99f4d72cf426",
+    "include/qwen3_probe.idl": "503257ccb07f137bf90c2be797a8f00babc222b62bc3fb9a912e47eae69b6f11",
+    "include/resource_protocol.h": "4f40b9ac2a92553911c0e4347834218d4ced666727004ddff371661e76980b6e",
+    "include/rpcmem2_protocol.h": "71ec7321101c3b83a8752a9f500212a8ea01951c60f3c419c1f5f39707f5e228",
+    "include/w4_parallel_pipeline.h": "93190f3881c63180f236d8265e20ce72c38de1c337737da0824a0f69ea35be97",
+    "include/w4_u8_expand.h": "e7c34f4bab42ff340cc531d214b942e6a54ae76b718fbd3bd26551cddd421dbb",
+    "src/dsp/attention_imp.c": "c4c25a622d0eeee6e9b307c577da4edcaf833b042d8fa19dc978c099a843fe12",
+    "src/dsp/attention_u8_core.c": "8319cf98af393866226bae435b272404646db86b4f1a5ccf0fe7137534f18f55",
+    "src/dsp/block_imp.c": "f87fdeebdf7e3869199baf77cf5c30b933344e88b12039e7f8182760008dc05e",
+    "src/dsp/dense_r3.inc": "4bf287a071458d68119e9207f0a6654bba2ef7c48b361a31a3aad84f5b217825",
+    "src/dsp/dense_r4.inc": "6e791b89140f15cb6c84bb583d6ea7f70bf9ed19806f20673aa1512fe4d36653",
+    "src/dsp/hmx_fp16.c": "5fb95ac599556850403dd6a47862a2667715733e2d1def918a65cf7dba63c3fb",
+    "src/dsp/hmx_int8_tile.c": "beaf4b5a3000c2df555a9d9d4b9049cff35461c8d4e59760c7844c695879369a",
+    "src/dsp/hmx_u8s8_projection.c": "3f3982a21c1251b88bd93b095679311f1f82e30e3f5f61fca11db486146fb2a8",
+    "src/dsp/hvx_fp16_ops.c": "0c814335117d60f5da35328fe3e06815edf06b110de7f3813c12987db0772cb0",
+    "src/dsp/hvx_u8_ops.c": "4f8c2087ce564d58bcdc88c38512c0ee3b3ed3b7772d3c5a79c962ea56861839",
+    "src/dsp/mlp_imp.c": "425ad4a4230ba692cdd06ca9b96b86ebc19eca435e00cd18653124c842bc7dae",
+    "src/dsp/mlp_u8.c": "834984d61d62f3aa05c89921b799fbe3f31fac1378a465ffca500b0f1f84224b",
+    "src/dsp/probe_imp.c": "ce4e3e921d75692cd1ea734d502cae14a66a031831cf04ad68f6ad69537ebe77",
+    "src/dsp/r3_sign_matrix.inc": "35307dac0a949bece0b0158e63e827e2d23e3b3dec0c21cd42f94cf1b87eb8d4",
+    "src/dsp/rpcmem2_imp.c": "d53fe5d104515a76f809014f06150a5ff0a1e7487128eacafa05063a05db5ed8",
+    "src/dsp/w4_parallel_pipeline.c": "ce7351a7c221ae7533ac66c19821f7eec6f11ca28bcef023656a101cb3d451e4",
+    "src/dsp/w4_u8_expand.c": "01c2c7123ae54e1e219abf7f224033c2fcae67b840a6cc06c156b8c4a747b4eb",
+    "src/host/attention_main.c": "2dd3f871c7ae9f11c1b36d1bd8dcff91d9886e68f8862904b5c5c56298f4cf48",
+    "src/host/block_main.c": "1d48ac9ea4d3894315dd36a355271cdbc315c176d88107d69216ce79e9e3472f",
+    "src/host/hmx_convert_main.c": "a48ae0cfc71e5d91b04fc65663b31e21d0822d0e1a3302a188fb2e9fe6d67ecd",
+    "src/host/main.c": "38650fa5cad8c8a1ca8ae2e6051bfbc07fa203f5a3552ba03c7e34f8b088aa26",
+    "src/host/mlp_main.c": "6fb518b3b1e745986e3f32eaa2d25253be5552d60193287488a149943bee2e72",
+    "src/host/resource_main.c": "63624bfb671dff4d23a963dd5ee3981aadf56ab1f2b32770efccf78be7cd8d60",
+    "src/host/rpcmem2_main.c": "5bd70571a92e01c67d15a99c30ac74791a018d3cf50d6786cbfaaa7e9336ec98",
+    "src/host/session.c": "08bab68ba51eb6b6e1d85d8a7941569727e3be6d26cd797c28f8e242880979e5"
+  },
+  "baselines": {
+    "w16a16": {
+      "id": "w16a16",
+      "model": "qwen3-frozen",
+      "rotation": "none",
+      "experiment": "EXP-0218",
+      "source_commit": "b2904bbc60b25e6b80f53351655b1c585fd97db2",
+      "measured_runtime": {
+        "source_head": "d981072513d06ed61731c14743c76ac6bc81617f",
+        "binaries": {
+          "libqwen3_probe.so": "f173f1a7e9eee98b9c40f343e9f908ef093a3eaa3425b869a79690c6eaa8a665",
+          "libqwen3_probe_skel.so": "ea707d52a1b8e2ffb4b5b42f1451d9830066188d9059b0be76cb1b0569ff4df1",
+          "qwen3_block_cli": "da972124c58ebd940803ecbb22f7ab3adff61e96f6b8188dba13cf9a7046d88d"
+        },
+        "dsp_identical_to_quality_runtime": true,
+        "host_change": "only cold staging/open/map/prepare timing records"
+      },
+      "artifact_provenance": {
+        "path": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0218/speed_runtime_provenance.json",
+        "sha256": "d1e761a6be76911607325b40e65c06a403f5ebfb78dff699444e581bdeaf62e6"
+      },
+      "profile_report": {
+        "path": "/home/daniuniu/work/qwen3-block-htp-project-memory/docs/experiments/EXP-0218-PROFILE.md",
+        "sha256": "521be8903db7f87ed69a162628bbfeb578091f7177ae8cc8876d57b341c0450d"
+      },
+      "evidence_ledger_sha256": "1d8f8e5eeeac7ea40a747698d71f8b78f58a9aa501512a4721926d262d2259e7",
+      "package": {
+        "path": "/mnt/d/llm_exp/models/qwen3-block-htp/exp0217/f16f16_greedy16",
+        "manifest_sha256": "0f8a359b559f252cb13329f57d4cabd56f17ca9bfb64bc5643f4d6014795070f",
+        "use": "Qwen3 regression only; never a Llama model"
+      },
+      "launch_evidence": {
+        "kind": "frozen_runner_f16f16_speed_case",
+        "git_commit": "48eb1ea7f9db0eb197a7c7908ab954d5a6635fc5",
+        "path": "scripts/run_exp0218.sh",
+        "sha256": "4639fef020d9c174cfb426e334c1ed97df9ced15f56a8823a3126747cd547ff5"
+      },
+      "historical_bindings": {},
+      "measurement": {
+        "prefill_tokens": 64,
+        "prefill_host_us": 80692.1875,
+        "prefill_tokens_per_second": 793.1375016943244,
+        "decode_tokens": 15,
+        "decode_host_us": 1644005.3655,
+        "decode_tokens_per_second": 9.12405781317993,
+        "formal_rounds": 10,
+        "protocol": "ten_independent_sessions_RPC_repeat1",
+        "scope": "Qwen3 28-layer warm M64 + 15 continuous decode; embedding/head/greedy/FastRPC; excludes model loading/ADB/external tokenizer",
+        "llama32_measurement": false
+      },
+      "quality_status": "historical quality retained; no new acceptance",
+      "selection_role": "user-approved Llama migration starting implementation; historical Selected records unchanged"
+    },
+    "w4a16": {
+      "id": "w4a16",
+      "model": "qwen3-frozen",
+      "rotation": "none",
+      "experiment": "EXP-0260",
+      "source_commit": "0210d840497a134f7256defd7c7c8244e271482a",
+      "measured_runtime": {
+        "source_head": "4db1c6bb3e840f6ec10fc0a81259d30f5c49df95",
+        "layer_count": 28,
+        "binaries": {
+          "qwen3_block_cli": "a28a62290a3325106a09566e8ddb0b6aab4e805825ec2a9056420fa2ee245d5f",
+          "libqwen3_probe.so": "f173f1a7e9eee98b9c40f343e9f908ef093a3eaa3425b869a79690c6eaa8a665",
+          "libqwen3_probe_skel.so": "c728a838342461bb18ee5c14b4dd0d11fdf24ee36416363e05f68f8e51d0491c"
+        },
+        "remote": "/data/local/tmp/qwen3-block-htp/exp0260-l28_attempt1",
+        "boot": "77ccafe0-8817-4976-bdae-15af5608d4ff"
+      },
+      "artifact_provenance": {
+        "path": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0260/ARTIFACT_PROVENANCE.json",
+        "sha256": "9a9703fdb07a19ad6038a8709ed96511f0eeb37cf2be6576b68382b55a203494"
+      },
+      "profile_report": {
+        "path": "/home/daniuniu/work/qwen3-block-htp-project-memory/docs/experiments/EXP-0260-PROFILE.md",
+        "sha256": "42618a62ffa71552b9243f4ba24cd5cb5ec399363b8a05c5014efc7dfa03efee"
+      },
+      "evidence_ledger_sha256": "dcbc1a39792a0886c5bdb7acb0c9bb69a82da581446c38ec3833f29694b9ae94",
+      "package": {
+        "path": "/mnt/d/llm_exp/models/qwen3-block-htp/exp0230/C64",
+        "manifest_sha256": "7de4f0758d83f2ba3b58696c695bfbfed72a25dd3bf308475abee0a0f0575a89",
+        "use": "Qwen3 regression only; never a Llama model"
+      },
+      "launch_evidence": {
+        "kind": "formal_command",
+        "path": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0260/full_formal/round01_r10_a2/command.txt",
+        "sha256": "51d73fb723114bb34d1c0b0f2c54f7da426b5811e993b40c72e3c7446c03ad6f",
+        "device_package": "/data/local/tmp/qwen3-block-htp/exp0230-C64/block_package_layer14_m64"
+      },
+      "historical_bindings": {
+        "LD_LIBRARY_PATH": "/data/local/tmp/qwen3-block-htp/exp0260-l28_attempt1",
+        "DSP_LIBRARY_PATH": "/data/local/tmp/qwen3-block-htp/exp0260-l28_attempt1",
+        "ADSP_LIBRARY_PATH": "/data/local/tmp/qwen3-block-htp/exp0260-l28_attempt1",
+        "QBH_EVAL_FILE": "/data/local/tmp/qwen3-block-htp/exp0260-l28_attempt1/full_formal_round01_r10_a2_sequence.bin"
+      },
+      "measurement": {
+        "prefill_tokens": 64,
+        "prefill_host_us": 61524.255150000005,
+        "prefill_tokens_per_second": 1040.24014340302,
+        "decode_tokens": 15,
+        "decode_host_us": 980629.13765,
+        "decode_tokens_per_second": 15.296302571577987,
+        "formal_rounds": 10,
+        "protocol": "rotated_paired_formal_repeat10",
+        "scope": "Qwen3 28-layer warm M64 + 15 continuous decode; embedding/head/greedy/FastRPC; excludes model loading/ADB/external tokenizer",
+        "llama32_measurement": false
+      },
+      "quality_status": "historical quality retained; no new acceptance",
+      "selection_role": "user-approved Llama migration starting implementation; historical Selected records unchanged"
+    },
+    "w4a8-off": {
+      "id": "w4a8-off",
+      "model": "qwen3-frozen",
+      "rotation": "none",
+      "experiment": "EXP-0259",
+      "source_commit": "4fad27dc0a50a6d541f1d23ecf15018ec1099df6",
+      "measured_runtime": {
+        "source_head": "61cf905965a9abdae1d9ecb749d6e023ae3d324c",
+        "layer_count": 28,
+        "binaries": {
+          "qwen3_block_cli": "69c784d9b89c7ee93180a25786f5f735a7477dd71df66f78a83151212b483e98",
+          "libqwen3_probe.so": "f173f1a7e9eee98b9c40f343e9f908ef093a3eaa3425b869a79690c6eaa8a665",
+          "libqwen3_probe_skel.so": "8935c966dbb0a238f50c58ede0368fb1ece8dd65597c413895d84366717950c5"
+        },
+        "remote": "/data/local/tmp/qwen3-block-htp/exp0259-l28_attempt1",
+        "boot": "77ccafe0-8817-4976-bdae-15af5608d4ff"
+      },
+      "artifact_provenance": {
+        "path": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0259/ARTIFACT_PROVENANCE.json",
+        "sha256": "889346c0d4e007f3e5cb21d00ebced62197312035d353c0cd39c72066ba2327c"
+      },
+      "profile_report": {
+        "path": "/home/daniuniu/work/qwen3-block-htp-project-memory/docs/experiments/EXP-0259-PROFILE.md",
+        "sha256": "5f552f4dfb2c91a69139fa1ad218bcc4f0877574afb0bca77212f5c1cb8ff8f9"
+      },
+      "evidence_ledger_sha256": "2f891f9aa35e7fa5bece5180e8e3a81fe4fd1253dc3749565dd226b462541a07",
+      "package": {
+        "path": "/mnt/d/llm_exp/models/qwen3-block-htp/exp0257/package",
+        "manifest_sha256": "ab2442027f315797dc7ff8f9c49b0d6bf27a3de3c958e831eddf4e1953f915bb",
+        "use": "Qwen3 regression only; never a Llama model"
+      },
+      "launch_evidence": {
+        "kind": "formal_command",
+        "path": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0259/full_formal/round01_r10_a0/command.txt",
+        "sha256": "8ae3ea12a7abd523983d11707f5bc0c42294a900a353923a4fdd0af91ea14ea4",
+        "device_package": "/data/local/tmp/qwen3-block-htp/exp0257-package-v2"
+      },
+      "historical_bindings": {
+        "LD_LIBRARY_PATH": "/data/local/tmp/qwen3-block-htp/exp0259-l28_attempt1",
+        "DSP_LIBRARY_PATH": "/data/local/tmp/qwen3-block-htp/exp0259-l28_attempt1",
+        "ADSP_LIBRARY_PATH": "/data/local/tmp/qwen3-block-htp/exp0259-l28_attempt1",
+        "QBH_EVAL_FILE": "/data/local/tmp/qwen3-block-htp/exp0259-l28_attempt1/full_formal_round01_r10_a0.bin",
+        "QBH_PREFIX_FILE": "/data/local/tmp/qwen3-block-htp/exp0257-prefix/prefix_kv_u8.bin"
+      },
+      "measurement": {
+        "prefill_tokens": 64,
+        "prefill_host_us": 37529.664099999995,
+        "prefill_tokens_per_second": 1705.3176876155417,
+        "decode_tokens": 15,
+        "decode_host_us": 310191.34605,
+        "decode_tokens_per_second": 48.357248488751,
+        "formal_rounds": 10,
+        "protocol": "rotated_paired_formal_repeat10",
+        "scope": "Qwen3 28-layer warm M64 + 15 continuous decode; embedding/head/greedy/FastRPC; excludes model loading/ADB/external tokenizer",
+        "llama32_measurement": false
+      },
+      "quality_status": "A8 quality not accepted",
+      "selection_role": "user-approved Llama migration starting implementation; historical Selected records unchanged"
+    },
+    "w4a8-r3": {
+      "id": "w4a8-r3",
+      "model": "qwen3-frozen",
+      "rotation": "r3",
+      "experiment": "EXP-0259",
+      "source_commit": "4fad27dc0a50a6d541f1d23ecf15018ec1099df6",
+      "measured_runtime": {
+        "source_head": "61cf905965a9abdae1d9ecb749d6e023ae3d324c",
+        "layer_count": 28,
+        "binaries": {
+          "qwen3_block_cli": "69c784d9b89c7ee93180a25786f5f735a7477dd71df66f78a83151212b483e98",
+          "libqwen3_probe.so": "f173f1a7e9eee98b9c40f343e9f908ef093a3eaa3425b869a79690c6eaa8a665",
+          "libqwen3_probe_skel.so": "8935c966dbb0a238f50c58ede0368fb1ece8dd65597c413895d84366717950c5"
+        },
+        "remote": "/data/local/tmp/qwen3-block-htp/exp0259-l28_attempt1",
+        "boot": "77ccafe0-8817-4976-bdae-15af5608d4ff"
+      },
+      "artifact_provenance": {
+        "path": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0259/ARTIFACT_PROVENANCE.json",
+        "sha256": "889346c0d4e007f3e5cb21d00ebced62197312035d353c0cd39c72066ba2327c"
+      },
+      "profile_report": {
+        "path": "/home/daniuniu/work/qwen3-block-htp-project-memory/docs/experiments/EXP-0259-PROFILE.md",
+        "sha256": "5f552f4dfb2c91a69139fa1ad218bcc4f0877574afb0bca77212f5c1cb8ff8f9"
+      },
+      "evidence_ledger_sha256": "2f891f9aa35e7fa5bece5180e8e3a81fe4fd1253dc3749565dd226b462541a07",
+      "package": {
+        "path": "/mnt/d/llm_exp/models/qwen3-block-htp/exp0258/r3",
+        "manifest_sha256": "14b2c38e70348f9af125545c931e44193dc24915455f0b97d336afee6c99aa7d",
+        "use": "Qwen3 regression only; never a Llama model"
+      },
+      "launch_evidence": {
+        "kind": "formal_command",
+        "path": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0259/full_formal/round01_r10_a1/command.txt",
+        "sha256": "0bbdde1044341c8c7e91e8825551e1762d8f22bc9c32b16418efb0c0dcfaa6f0",
+        "device_package": "/data/local/tmp/qwen3-block-htp/exp0258-package"
+      },
+      "historical_bindings": {
+        "LD_LIBRARY_PATH": "/data/local/tmp/qwen3-block-htp/exp0259-l28_attempt1",
+        "DSP_LIBRARY_PATH": "/data/local/tmp/qwen3-block-htp/exp0259-l28_attempt1",
+        "ADSP_LIBRARY_PATH": "/data/local/tmp/qwen3-block-htp/exp0259-l28_attempt1",
+        "QBH_EVAL_FILE": "/data/local/tmp/qwen3-block-htp/exp0259-l28_attempt1/full_formal_round01_r10_a1.bin",
+        "QBH_PREFIX_FILE": "/data/local/tmp/qwen3-block-htp/exp0258-package/prefix_kv_u8.bin"
+      },
+      "measurement": {
+        "prefill_tokens": 64,
+        "prefill_host_us": 37572.823000000004,
+        "prefill_tokens_per_second": 1703.3588346555698,
+        "decode_tokens": 15,
+        "decode_host_us": 313354.7289,
+        "decode_tokens_per_second": 47.86907174707712,
+        "formal_rounds": 10,
+        "protocol": "rotated_paired_formal_repeat10",
+        "scope": "Qwen3 28-layer warm M64 + 15 continuous decode; embedding/head/greedy/FastRPC; excludes model loading/ADB/external tokenizer",
+        "llama32_measurement": false
+      },
+      "quality_status": "known_ideal_R3_whole_layer_failure; no accuracy acceptance",
+      "selection_role": "user-approved Llama migration starting implementation; historical Selected records unchanged"
+    },
+    "w4a8-r3-r4": {
+      "id": "w4a8-r3-r4",
+      "model": "qwen3-frozen",
+      "rotation": "r3-r4",
+      "experiment": "EXP-0265",
+      "source_commit": "48eb1ea7f9db0eb197a7c7908ab954d5a6635fc5",
+      "measured_runtime": {
+        "source_head": "0aa5d3ba9b725039b0a99a11e4879c5f5ead62f1",
+        "layer_count": 28,
+        "binaries": {
+          "qwen3_block_cli": "46d2048c8570a2fb74410c82dd079d30e6b8f8bafc76c66aef0a1dc87e1033e8",
+          "libqwen3_probe.so": "f173f1a7e9eee98b9c40f343e9f908ef093a3eaa3425b869a79690c6eaa8a665",
+          "libqwen3_probe_skel.so": "c2c8e5381462c6680feae78457478d21a7165631ab72482f04ca700c9598eb61"
+        },
+        "remote": "/data/local/tmp/qwen3-block-htp/exp0265-l28_attempt1",
+        "boot": "77ccafe0-8817-4976-bdae-15af5608d4ff"
+      },
+      "artifact_provenance": {
+        "path": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0265/ARTIFACT_PROVENANCE.json",
+        "sha256": "f68c6f2151d173741dc367caa41245ab3caae938eb53a23fa109fd5f7a441af2"
+      },
+      "profile_report": {
+        "path": "/home/daniuniu/work/qwen3-block-htp/docs/experiments/EXP-0265-PROFILE.md",
+        "sha256": "458fb48ce4df5f01a64db8f9333b35d5690a2a1e21fe9160f96805c677d55013"
+      },
+      "evidence_ledger_sha256": "eb81fda764aebfb08411069e4266784ac781be9b0c56a23633e9b19131fed2ee",
+      "package": {
+        "path": "/mnt/d/llm_exp/models/qwen3-block-htp/exp0265/r4",
+        "manifest_sha256": "18dde4007359683fe5bf0052c541d26a5184536a6b73725fc489034bc006e84e",
+        "use": "Qwen3 regression only; never a Llama model"
+      },
+      "launch_evidence": {
+        "kind": "formal_command",
+        "path": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0265/formal/round01_r10_a1/command.txt",
+        "sha256": "aa28291a1d0333c1f707045866d709c2e05bacfe22784de14fcc4e0f2ee1b9b0",
+        "device_package": "/data/local/tmp/qwen3-block-htp/exp0265-r4"
+      },
+      "historical_bindings": {
+        "LD_LIBRARY_PATH": "/data/local/tmp/qwen3-block-htp/exp0265-l28_attempt1",
+        "DSP_LIBRARY_PATH": "/data/local/tmp/qwen3-block-htp/exp0265-l28_attempt1",
+        "ADSP_LIBRARY_PATH": "/data/local/tmp/qwen3-block-htp/exp0265-l28_attempt1",
+        "QBH_EVAL_FILE": "/data/local/tmp/qwen3-block-htp/exp0265-l28_attempt1/formal_round01_r10_a1_eval.bin",
+        "QBH_PREFIX_FILE": "/data/local/tmp/qwen3-block-htp/exp0258-package/prefix_kv_u8.bin"
+      },
+      "measurement": {
+        "prefill_tokens": 64,
+        "prefill_host_us": 40478.9505,
+        "prefill_tokens_per_second": 1581.0686593764333,
+        "decode_tokens": 15,
+        "decode_host_us": 325648.7318,
+        "decode_tokens_per_second": 46.06190209029396,
+        "formal_rounds": 10,
+        "protocol": "rotated_paired_formal_repeat10",
+        "scope": "Qwen3 28-layer warm M64 + 15 continuous decode; embedding/head/greedy/FastRPC; excludes model loading/ADB/external tokenizer",
+        "llama32_measurement": false
+      },
+      "quality_status": "known_ideal_R3_whole_layer_failure; no accuracy acceptance",
+      "selection_role": "user-approved Llama migration starting implementation; historical Selected records unchanged"
+    }
+  }
+}

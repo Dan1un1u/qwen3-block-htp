@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "llama32",
+  "state": "port_not_implemented",
+  "checkpoint": null,
+  "checkpoint_revision": null,
+  "runtime_dimensions": null,
+  "tokenizer": null,
+  "weight_root": "/mnt/d/llm_exp/models/llama32-htp",
+  "result_root": "/mnt/d/llm_exp/results/llama32-htp",
+  "memory_worktree": "/home/daniuniu/work/llama32-htp-project-memory",
+  "required_before_execution": [
+    "select exact checkpoint and revision",
+    "implement and validate model dimensions, normalization and RoPE semantics from selected config",
+    "export original Llama weights; separately calibrate A8 and regenerate prefix/rotation artifacts",
+    "validate single layer then consecutive slice then complete token boundary"
+  ],
+  "may_reuse_qwen_weights_or_qparams": false
+}
