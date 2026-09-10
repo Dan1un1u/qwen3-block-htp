@@ -235,6 +235,15 @@ static int qbh_generation_w4f16_enabled(uint32_t mode) {
            mode <= QBH_BLOCK_GENERATION_GREEDY_W4F16_COARSE_PIPELINE;
 }
 
+static int qbh_generation_u8_cache_formats(uint32_t k, uint32_t v) {
+#ifdef QBH_MODEL_LLAMA32
+    return k == QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1 &&
+           v == QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1;
+#else
+    return qbh_hmx_native_u8_segmented_cache_formats(k,v);
+#endif
+}
+
 static int qbh_generation_w4u8_enabled(uint32_t mode) {
     return mode == QBH_BLOCK_GENERATION_GREEDY_W4U8_COARSE_PIPELINE ||
            mode ==
@@ -5443,8 +5452,7 @@ int main(int argc, char **argv) {
                   !qbh_hmx_native_f16_cache_formats(
                       kv_cache_k_format, kv_cache_v_format))
                : (variant != QBH_BLOCK_W4U8 ||
-                  !qbh_hmx_native_u8_segmented_cache_formats(
-                      kv_cache_k_format, kv_cache_v_format))) ||
+                  !qbh_generation_u8_cache_formats(kv_cache_k_format, kv_cache_v_format))) ||
           replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS ||
           vertical_slice_mode != QBH_BLOCK_SLICE_ACTIVE_RANGE ||
           full_stack_stage_mode != QBH_BLOCK_FULL_STACK_RUN ||
