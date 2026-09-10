@@ -14,7 +14,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: 55f52e840a9bc751127be8f2a441c46d3e249344
+    recorded_head: de795d193f3fa6e27eaf19031efe76ab5c911f0f
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -26,11 +26,11 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: w4a8_integration_running
+  stage: w4a8_full_generation_pass_ppl_running
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Fresh Llama W4A8 OFF calibration/export and single/consecutive/full-model
-    functional validation; no model-quality acceptance threshold
+  next_action: Finish running L32-0003 device-frontend-a02 independent PPL, audit,
+    propagate common source, seal evidence; no rerun of completed 1/3/16 integer gates
   baseline_manifest: baselines/qwen3-frozen/manifest.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF.md

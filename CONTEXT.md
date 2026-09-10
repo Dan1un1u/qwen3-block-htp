@@ -2,7 +2,9 @@
 
 Authority: read contract,status,context,index after bootstrap. Qwen3 frozen.
 L32-0001 W16A16 complete; L32-0002 W4A16 functional complete, quality failed.
-Source no-rotation990bf61 and rotatione91ff0f share all common code.
+W4A16 closure: no-rotation990bf61 and rotatione91ff0f shared all common code.
+Current L32-0003 source owner/head is in PROJECT_STATUS.yaml; A8 changes have
+not yet propagated to rotation.
 
 W4A16 original-derived C64 signed per-channel GPTQ weights, one FP32 output
 scale, no groups. Original tensors read-only. Layer0/7/15 prefill/decode,
@@ -26,7 +28,18 @@ source/window/32gram disjoint audit passed. Public raw corpus cache reuse only.
 
 Active L32-0003 owns no-rotation for W4A8 OFF chain, optimization deferred.
 A8 model-quality threshold explicitly absent; arithmetic/physical gates retained.
-W4A8 code/export not yet implemented/validated. Fresh A8 qparams/calibration
-required. R3/R4 remain unsupported Llama modes, never silently fallback.
+W4A8 OFF now passes exact1/3/16-layer prefill+decode output and KV checks.
+NativeW4 all7 projections/layer, GQA4/head64/noQKnorm/RoPE-before-KV, FFN8192
+bundle counts and GQA4 decode scratch fixed. Exact8MiB acquired, peak7668960B,
+zero timed intermediate DDR/spill, no W4->S8 weight expansion.
+Fresh65536-token Llama calibration-a01 static minmax; no heldout fitting.
+Results l32-0003/device-stack1-a05,device-stack3-a01,device-stack16-a01.
+A8 frontend-a01 independent oracle16 IDs all42845 (Sleep), selected U8 codes
+[157,158,156,158,156,156,156,157,156,156,158,156,156,158,155,156].
+Device-frontend-a02 matches all IDs AND codes; independent2048-target PPL is
+currently running in its runner. Auxiliary217.3520 prefill/2.57149 decode tok/s
+(M64+15); optimization deferred. R3/R4 and native segmented Llama KV remain
+unsupported and explicitly rejected. W4A16 full16 regression passes unchanged.
+NLL arithmetic spot oracle recorded for EN id256 and ZH id576 first target.
 Original /mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin, six hashes in
 tools/llama_reference.py. Toolchain/device unchanged, see contract and docs.
