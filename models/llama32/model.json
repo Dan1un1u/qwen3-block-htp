@@ -1,11 +1,28 @@
 {
   "schema_version": 1,
   "id": "llama32",
-  "state": "port_not_implemented",
-  "checkpoint": null,
-  "checkpoint_revision": null,
-  "runtime_dimensions": null,
-  "tokenizer": null,
+  "state": "w16a16_port_in_progress",
+  "checkpoint": "LLM-Research/Llama-3.2-1B-Instruct",
+  "checkpoint_revision": "f8e6bf8fec8194d75228ef38e85fda45c6046fbd",
+  "runtime_dimensions": {
+    "hidden_size": 2048,
+    "intermediate_size": 8192,
+    "attention_heads": 32,
+    "kv_heads": 8,
+    "head_dim": 64,
+    "full_model_layers": 16,
+    "vocab_size": 128256
+  },
+  "tokenizer": {
+    "source": "original_weight_root",
+    "file": "tokenizer.json",
+    "chat_template": "tokenizer_config.json",
+    "eos_token_ids": [
+      128001,
+      128008,
+      128009
+    ]
+  },
   "weight_root": "/mnt/d/llm_exp/models/llama32-htp",
   "result_root": "/mnt/d/llm_exp/results/llama32-htp",
   "memory_worktree": "/home/daniuniu/work/llama32-htp-project-memory",
@@ -15,5 +32,23 @@
     "export original Llama weights; separately calibrate A8 and regenerate prefix/rotation artifacts",
     "validate single layer then consecutive slice then complete token boundary"
   ],
-  "may_reuse_qwen_weights_or_qparams": false
+  "may_reuse_qwen_weights_or_qparams": false,
+  "checkpoint_revision_kind": "ModelScope last commit of all six pinned model payload files",
+  "original_weight_root": "/mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin",
+  "weights_sha256": "1ff795ff6a07e6a68085d206fb84417da2f083f68391c2843cd2b8ac6df8538f",
+  "semantics": {
+    "qk_norm": false,
+    "rms_norm_eps": 1e-05,
+    "rope_theta": 500000.0,
+    "rope_scaling": {
+      "factor": 32.0,
+      "high_freq_factor": 4.0,
+      "low_freq_factor": 1.0,
+      "original_max_position_embeddings": 8192,
+      "rope_type": "llama3"
+    },
+    "tie_word_embeddings": true,
+    "original_dtype": "bfloat16",
+    "runtime_float_dtype": "float16"
+  }
 }
