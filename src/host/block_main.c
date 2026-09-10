@@ -7542,14 +7542,20 @@ int main(int argc, char **argv) {
         numerical_audit_enabled != 0U) {
         const char *dump_root = getenv("QBH_DUMP_ATTENTION_DIR");
         if (dump_root != NULL && dump_root[0] != '\0') {
-            static const char *const names[3] = {
+            static const char *const names[] = {
                 "actual_scan_q_f16.bin",
                 "actual_scan_attention_f16.bin",
                 "actual_scan_o_projection_f16.bin",
+#ifdef QBH_MODEL_LLAMA32
+                "actual_post_residual_f16.bin", "actual_post_norm_carrier_f16.bin",
+                "actual_middle_carrier_0_f16.bin", "actual_middle_carrier_1_f16.bin",
+                "actual_middle_carrier_2_f16.bin", "actual_middle_carrier_3_f16.bin",
+                "actual_down_f16.bin",
+#endif
             };
             const uint32_t bytes =
                 QBH_BLOCK_M * QBH_BLOCK_HIDDEN * sizeof(uint16_t);
-            for (uint32_t index = 0U; index < 3U; ++index) {
+            for (uint32_t index = 0U; index < (variant == QBH_BLOCK_W4F16 ? sizeof(names)/sizeof(names[0]) : 3U); ++index) {
                 char dump_path[512];
                 FILE *dump;
                 size_t written;

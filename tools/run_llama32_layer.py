@@ -66,7 +66,7 @@ def main():
             name=f"actual_kv_cache_{kind}_f16.bin"
             adb("pull",remote+"/"+name,windows(args.output/name),check=False)
     if args.scan:
-        for name in ["actual_scan_q_f16.bin","actual_scan_attention_f16.bin","actual_scan_o_projection_f16.bin"]:
+        for name in ["actual_scan_q_f16.bin","actual_scan_attention_f16.bin","actual_scan_o_projection_f16.bin","actual_post_residual_f16.bin","actual_post_norm_carrier_f16.bin","actual_down_f16.bin"]+[f"actual_middle_carrier_{i}_f16.bin" for i in range(4)]:
             adb("pull",remote+"/"+name,windows(args.output/name),check=False)
     result={"process_exit_code":run.returncode,"records":[]}
     for line in run.stdout.splitlines():
