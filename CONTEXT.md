@@ -26,7 +26,7 @@ stack3-a01,stack16-a01,frontend-a01. Data/results l32-0002/data: fresh Llama
 calibration65536tokens, heldout2048targets128documents, EN/ZH Wikipedia,
 source/window/32gram disjoint audit passed. Public raw corpus cache reuse only.
 
-Active L32-0003 owns no-rotation for W4A8 OFF chain, optimization deferred.
+Active L32-0003 now owns rotation for common source propagation, optimization deferred.
 A8 model-quality threshold explicitly absent; arithmetic/physical gates retained.
 W4A8 OFF now passes exact1/3/16-layer prefill+decode output and KV checks.
 NativeW4 all7 projections/layer, GQA4/head64/noQKnorm/RoPE-before-KV, FFN8192
@@ -37,7 +37,7 @@ Results l32-0003/device-stack1-a05,device-stack3-a01,device-stack16-a01.
 A8 frontend-a01 independent oracle16 IDs all42845 (Sleep), selected U8 codes
 [157,158,156,158,156,156,156,157,156,156,158,156,156,158,155,156].
 Device-frontend-a02 matches all IDs AND codes; independent2048-target PPL is
-currently running in its runner. Auxiliary217.3520 prefill/2.57149 decode tok/s
+complete:1206603.740108 overall. Final arithmetic/physical auditor passed. Auxiliary217.3520 prefill/2.57149 decode tok/s
 (M64+15); optimization deferred. R3/R4 and native segmented Llama KV remain
 unsupported and explicitly rejected. W4A16 full16 regression passes unchanged.
 NLL arithmetic spot oracle recorded for EN id256 and ZH id576 first target.

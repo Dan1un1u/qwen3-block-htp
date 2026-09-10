@@ -73,8 +73,8 @@ experiments:
   approval_ref: User requested sequential W4A16 then W4A8 chains; defer optimization;
     A8 has no quality gate (2026-09-10)
   runtime:
-    source_worktree: /home/daniuniu/work/llama32-htp
-    source_branch: codex/llama32-no-rotation
+    source_worktree: /home/daniuniu/work/llama32-htp-rotation
+    source_branch: codex/llama32-rotation
   parent_source: 990bf617abb6c549e505c865d545be55449a0f3d
   hardware_runs: 0
   baseline_quality_promoted: false
