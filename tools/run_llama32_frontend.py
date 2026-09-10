@@ -19,6 +19,7 @@ def main():
     ap.add_argument("--reference",type=Path,required=True)
     ap.add_argument("--output",type=Path,required=True)
     ap.add_argument("--reuse-package-from")
+    ap.add_argument("--generation-steps",type=int,default=16,choices=range(1,17))
     args=ap.parse_args()
     subprocess.run(["python3","/home/daniuniu/work/llama32-htp-project-memory/scripts/project_memory.py","preflight","--source-worktree",str(ROOT)],check=True)
     m=json.loads((args.package/"manifest.json").read_text());assert m["layers"]==16
@@ -64,14 +65,14 @@ def main():
     adb("push",windows(args.reference/"heldout.bin"),remote+"/heldout.bin")
     adb("shell",f"chmod 755 {remote}/qwen3_block_cli")
     env={"LD_LIBRARY_PATH":remote,"DSP_LIBRARY_PATH":remote,"ADSP_LIBRARY_PATH":remote,
-         "QBH_VERTICAL_SLICE":"1","QBH_REPLAY_SEQUENCE":"1","QBH_GENERATION_SEQUENCE":("7" if m["recipe"]=="W4A16" else "10"),"QBH_GENERATION_STEPS":"16",
+         "QBH_VERTICAL_SLICE":"1","QBH_REPLAY_SEQUENCE":"1","QBH_GENERATION_SEQUENCE":("7" if m["recipe"]=="W4A16" else "10"),"QBH_GENERATION_STEPS":str(args.generation_steps),
          "QBH_SCAN_MODE":"prefill","QBH_LOGICAL_M":"64","QBH_KV_CACHE_LENGTH":"0","QBH_KV_CACHE_CAPACITY":"80","QBH_KV_CACHE_LAYOUT":"hmx_native_f16"}
     argv=["./qwen3_block_cli",remote+"/package",("W4F16" if m["recipe"]=="W4A16" else "F16F16"),"1","2","32","hvx","on","off","fused","gate8_interleaved","control","hvx","crouton_native_batch8","4","64","parallel_qk_norm_rope","4","norms","serial","scalar","input_norm_pool_post_norm_pool","4","3","1","0"]
     if m["recipe"]=="W4A16":
         argv[4]="4";argv[10]="serial";argv[11]="adaptive_down96_gate4_dma8_cross"
         env.update(QBH_W4F16_GROUP_FENCE="join_only_down",QBH_W4F16_EXPAND_CLAIM_REGIONS="1",QBH_W4F16_GATE_UP_EXTRA_EXPAND_WORKER="1",QBH_W4F16_GATE_UP_EXTRA_STREAM_WORKER="1",QBH_W4F16_GATE_UP_STREAM_GROUP_TILES="4")
     command="cd "+shlex.quote(remote)+" && "+" ".join(k+"="+shlex.quote(v) for k,v in env.items())+" "+shlex.join(argv)
-    protocol={"experiment":m["experiment"],"source_head":subprocess.check_output(["git","-C",str(ROOT),"rev-parse","HEAD"],text=True).strip(),"builds":builds,"package_manifest_sha256":sha256(args.package/"manifest.json"),"dataset_sha256":sha256(args.reference/"dataset.json"),"reused_package":args.reuse_package_from,"command":command,"timing_scope":"single functional run, not formal profiling; includes embedding/16 layers/norm/head/greedy/FastRPC, excludes loading and external tokenizer"}
+    protocol={"experiment":m["experiment"],"source_head":subprocess.check_output(["git","-C",str(ROOT),"rev-parse","HEAD"],text=True).strip(),"builds":builds,"package_manifest_sha256":sha256(args.package/"manifest.json"),"dataset_sha256":sha256(args.reference/"dataset.json"),"reused_package":args.reuse_package_from,"requested_generation_steps":args.generation_steps,"command":command,"timing_scope":"single functional run, not formal profiling; includes embedding/16 layers/norm/head/greedy/FastRPC, excludes loading and external tokenizer"}
     (args.output/"protocol.json").write_text(json.dumps(protocol,indent=2))
     run=adb("shell",command,check=False)
     (args.output/"generation.stdout.txt").write_text(run.stdout);(args.output/"generation.stderr.txt").write_text(run.stderr)
@@ -79,13 +80,13 @@ def main():
     tokens=[r["selected_token_id"] for r in steps]
     stop=next((i for i,t in enumerate(tokens) if t in [128001,128008,128009]),len(tokens))
     tok=AutoTokenizer.from_pretrained(m["original"]["original_root"],local_files_only=True)
-    result={"generation_process_exit_code":run.returncode,"generation_pass":run.returncode==0 and len(steps)==16 and all(s["pass"] for s in steps),"generated_ids":tokens,"text":tok.decode(tokens[:stop],skip_special_tokens=True),"generation_steps":steps}
+    result={"generation_process_exit_code":run.returncode,"generation_pass":run.returncode==0 and len(steps)==args.generation_steps and all(s["pass"] for s in steps),"generated_ids":tokens,"text":tok.decode(tokens[:stop],skip_special_tokens=True),"generation_steps":steps}
     (args.output/"result.json").write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n")
     print(json.dumps({k:v for k,v in result.items() if k!="generation_steps"},ensure_ascii=False),flush=True)
     if not result["generation_pass"]:
         print(run.stderr,flush=True);print(run.stdout[-2000:],flush=True);raise SystemExit(1)
     pre=steps[0]["host_wall_ns"];dec=sum(s["host_wall_ns"] for s in steps[1:])
-    result["functional_run_speed"]={"prefill_tokens":64,"prefill_host_wall_ns":pre,"prefill_tokens_per_second":64e9/pre,"decode_tokens":15,"decode_host_wall_ns":dec,"decode_tokens_per_second":15e9/dec}
+    result["functional_run_speed"]={"prefill_tokens":64,"prefill_host_wall_ns":pre,"prefill_tokens_per_second":64e9/pre,"decode_tokens":len(steps)-1,"decode_host_wall_ns":dec,"decode_tokens_per_second":((len(steps)-1)*1e9/dec if dec else None)}
     evalcmd=command.replace(" && "," && QBH_EVAL_QUIET=1 QBH_EVAL_FILE="+shlex.quote(remote+"/heldout.bin")+" ",1)
     protocol["evaluation_command"]=evalcmd;(args.output/"protocol.json").write_text(json.dumps(protocol,indent=2))
     print("EVALUATING_HELDOUT",flush=True)
