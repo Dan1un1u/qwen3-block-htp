@@ -118,6 +118,13 @@ void qbh_attention_u8_pack_k_native(
     const uint8_t *k_head_tiles,
     const struct qbh_attention_config *config,
     int8_t *weight_tiles, uint32_t *bias_words) {
+#ifdef QBH_MODEL_LLAMA32
+    /* A 64-byte head must not feed the head128 HVX scatter/sum. */
+    uint8_t logical[QBH_ATTENTION_M * QBH_ATTENTION_HEAD_DIM] __attribute__((aligned(128)));
+    qbh_attention_u8_native_head_to_row_major(k_head_tiles, logical, QBH_ATTENTION_M);
+    qbh_attention_u8_pack_k_row_major(logical, QBH_ATTENTION_M, QBH_ATTENTION_M, config, weight_tiles, bias_words);
+    return;
+#endif
     const uint32_t divisor = UINT32_C(1) << config->score_shift;
     const int32_t rounding = config->score_shift == 0U
                                  ? 0

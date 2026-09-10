@@ -273,7 +273,7 @@ static void qbh_hvx_rms_norm_u8_impl(
         const float real_square_sum =
             (float)centered_square_sum * input_scale * input_scale;
         const float inverse = 1.0f / sqrtf(
-            real_square_sum / (float)width + 1.0e-6f);
+            real_square_sum / (float)width + QBH_MODEL_RMS_EPS);
         const float coefficient =
             input_scale * inverse / output_qparam->scale;
 
@@ -699,6 +699,20 @@ static void qbh_qk_norm_rope_one_head_u8(
     const struct qbh_block_qparam *output_qparam,
     const __fp16 *gamma, const __fp16 *cosine,
     const __fp16 *sine) {
+#ifdef QBH_MODEL_LLAMA32
+    (void)gamma;
+    for (uint32_t c=0; c<QBH_BLOCK_HEAD_DIM/2U; ++c) {
+        float a=((int)values[c]-input_qparam->zero_point)*input_qparam->scale;
+        float b=((int)values[c+QBH_BLOCK_HEAD_DIM/2U]-input_qparam->zero_point)*input_qparam->scale;
+        float first=a*(float)cosine[c]-b*(float)sine[c];
+        float second=b*(float)cosine[c+QBH_BLOCK_HEAD_DIM/2U]+a*(float)sine[c+QBH_BLOCK_HEAD_DIM/2U];
+        float x=first/output_qparam->scale+(float)output_qparam->zero_point+0.5f;
+        float y=second/output_qparam->scale+(float)output_qparam->zero_point+0.5f;
+        values[c]=(uint8_t)(x<0?0:x>255?255:(int)x);
+        values[c+QBH_BLOCK_HEAD_DIM/2U]=(uint8_t)(y<0?0:y>255?255:(int)y);
+    }
+    return;
+#endif
     const HVX_VectorPair centered = qbh_centered_half_pair(
         *(const HVX_Vector *)values, input_qparam->zero_point);
     const uint64_t centered_square_sum = qbh_centered_square_sum(
@@ -706,7 +720,7 @@ static void qbh_qk_norm_rope_one_head_u8(
     const float input_scale = input_qparam->scale;
     const float inverse = 1.0f / sqrtf(
         (float)centered_square_sum * input_scale * input_scale /
-            (float)QBH_HVX_BYTES + 1.0e-6f);
+            (float)QBH_HVX_BYTES + QBH_MODEL_RMS_EPS);
     const float norm_coefficient = input_scale * inverse;
     HVX_Vector first[2];
     HVX_Vector second[2];
@@ -951,7 +965,7 @@ void qbh_hvx_r3_prepare_head(const uint8_t *native, uint32_t rows,
         for (uint32_t tile=0; tile<4; ++tile)
             memcpy(values+tile*32, native+tile*2048+row*32,32);
         uint64_t sum=qbh_centered_square_sum(values,128,qp->zero_point);
-        float coefficient=qp->scale/sqrtf((float)sum*qp->scale*qp->scale/128.0f+1.0e-6f);
+        float coefficient=qp->scale/sqrtf((float)sum*qp->scale*qp->scale/128.0f+QBH_MODEL_RMS_EPS);
         qbh_r3_rope_fp16(values,qp->zero_point,out+row*128,&g,rope+row,coefficient);
     }
     asm volatile("barrier" ::: "memory");
@@ -1009,7 +1023,7 @@ void qbh_hvx_r3_prepare_head_vector(const uint8_t *native,uint32_t rows,
         for(uint32_t j=0;j<4 && row+j<rows;++j) {
             uint8_t *values=cache+j*128;
             uint64_t sum=qbh_centered_square_sum(values,128,qp->zero_point);
-            float coefficient=qp->scale/sqrtf((float)sum*qp->scale*qp->scale/128.0f+1.0e-6f);
+            float coefficient=qp->scale/sqrtf((float)sum*qp->scale*qp->scale/128.0f+QBH_MODEL_RMS_EPS);
             qbh_r3_rope_fp16(values,qp->zero_point,out+(row+j)*128,&g,rope+row+j,coefficient);
         }
     }
@@ -1284,7 +1298,7 @@ static void qbh_qk_norm_rope_one_head_u8_preconverted(
     const float input_scale = input_qparam->scale;
     const float inverse = 1.0f / sqrtf(
         (float)centered_square_sum * input_scale * input_scale /
-            (float)QBH_HVX_BYTES + 1.0e-6f);
+            (float)QBH_HVX_BYTES + QBH_MODEL_RMS_EPS);
     const float norm_coefficient = input_scale * inverse;
     qbh_qk_norm_rope_one_head_u8_preconverted_coefficient(
         values, input_qparam->zero_point, output_qparam,
@@ -1435,7 +1449,7 @@ static void qbh_qk_norm_rope_pair_batched_rsqrt(
             inverse_sqrt[pair][local_row] =
                 (float)sum * input_scale * input_scale /
                     (float)QBH_HVX_BYTES +
-                1.0e-6f;
+                QBH_MODEL_RMS_EPS;
         }
     }
     *(HVX_Vector *)inverse_sqrt =
@@ -1449,7 +1463,7 @@ void qbh_hvx_qk_norm_rope_u8(
     const struct qbh_block_qparam *output_qparam,
     const __fp16 *gamma, const __fp16 *cosine,
     const __fp16 *sine) {
-    if (head_dim != QBH_HVX_BYTES) {
+    if (head_dim != QBH_BLOCK_HEAD_DIM) {
         return;
     }
     for (uint32_t row = 0U; row < rows; ++row) {
