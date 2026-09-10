@@ -8048,6 +8048,10 @@ static uint32_t qbh_w4f16_projection_region_tiles(
     const struct qbh_block_header *header,
     const struct qbh_block_projection_desc *desc) {
     if (desc->k == QBH_BLOCK_INTERMEDIATE) {
+#ifdef QBH_MODEL_LLAMA32
+        /* K8192 has 256 K tiles; use an exactly dividing streaming region. */
+        return 64U;
+#endif
         if (header->w4f16_pipeline_mode ==
             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN48_CROSS_PREFETCH) {
             return 48U;
