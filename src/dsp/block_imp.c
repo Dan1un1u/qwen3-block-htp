@@ -883,9 +883,27 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
     buffers->attention_concat = qbh_arena_alloc_aligned(
         &arena, QBH_BLOCK_M * QBH_BLOCK_HIDDEN * sizeof(uint16_t),
         512U);
+#ifdef QBH_MODEL_LLAMA32
+    if (variant == QBH_BLOCK_W4F16 && scan_mode != QBH_BLOCK_SCAN_DISABLED) {
+        /* Down's packed input reuses Q through attention_concat. Preserve that
+         * complete K8192 range even with smaller scan score reservations. */
+        uint32_t end = (uint32_t)(buffers->q - arena.base) + intermediate_bytes;
+        if (arena.cursor < end) arena.cursor = end;
+    }
+    /* O output dies after residual/post-norm, before Gate produces any rows. */
+    buffers->attention_projection = qbh_arena_alloc_aligned(&arena,
+        variant == QBH_BLOCK_W4F16 && mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8
+            ? intermediate_bytes : hidden_bytes, QBH_HMX_FP16_TILE_BYTES);
+#else
     buffers->attention_projection = qbh_arena_alloc(&arena, hidden_bytes);
+#endif
     if (mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE ||
         mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8) {
+#ifdef QBH_MODEL_LLAMA32
+        if (variant == QBH_BLOCK_W4F16 && mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8)
+            buffers->gate = buffers->attention_projection;
+        else
+#endif
         buffers->gate = qbh_arena_alloc_aligned(
             &arena, intermediate_bytes, QBH_HMX_FP16_TILE_BYTES);
         buffers->up = qbh_arena_alloc_aligned(
@@ -903,6 +921,13 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
     } else {
         buffers->middle = qbh_arena_alloc(&arena, intermediate_bytes);
     }
+#ifdef QBH_MODEL_LLAMA32
+    /* Input/post-norm consumers finish before Down; next-layer norm starts only
+     * after the final residual has consumed Down. No concurrent owner. */
+    if (variant == QBH_BLOCK_W4F16 && mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8)
+        buffers->down = buffers->normalized;
+    else
+#endif
     buffers->down = qbh_arena_alloc(&arena, hidden_bytes);
     buffers->hmx_activation = qbh_arena_alloc_aligned(
         &arena, QBH_BLOCK_M * QBH_BLOCK_MAX_K * sizeof(uint16_t),
