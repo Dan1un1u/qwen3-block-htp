@@ -83,7 +83,12 @@ enum qbh_block_hmx_command_kind {
 #define QBH_BLOCK_MAX_POOL_HVX_WORKERS \
     (QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS - 1U)
 #define QBH_BLOCK_W4F16_HVX_STACK_BYTES UINT32_C(8192)
+#ifdef QBH_MODEL_LLAMA32
+/* K8192 Down uses two DMA tiles; K2048 Gate/Up retains its explicit eight. */
+#define QBH_BLOCK_W4F16_DMA_BATCH_N_TILES UINT32_C(2)
+#else
 #define QBH_BLOCK_W4F16_DMA_BATCH_N_TILES UINT32_C(4)
+#endif
 #define QBH_BLOCK_F16F16_BATCH_N_TILES UINT32_C(2)
 
 _Static_assert(
@@ -784,9 +789,20 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
                             uint32_t generation_mode,
                             uint32_t kv_cache_k_format,
                             uint32_t kv_cache_v_format,
+                            uint32_t scan_mode,
                             struct qbh_block_buffers *buffers,
                             uint32_t *peak_bytes) {
     struct qbh_block_arena arena = {vtcm, vtcm_bytes, 0U, 0U};
+    uint32_t score_elements = QBH_BLOCK_SCORE_ELEMENTS;
+#ifdef QBH_MODEL_LLAMA32
+    /* Scan attention uses a checked, phase-exclusive overlay from scores up to
+     * compressed_weight. It never retains all per-head score/probability arrays.
+     * Keep full arrays for the non-scan attention path. */
+    if (variant == QBH_BLOCK_W4F16 && scan_mode != QBH_BLOCK_SCAN_DISABLED)
+        score_elements = QBH_BLOCK_M * QBH_BLOCK_M;
+#else
+    (void)scan_mode;
+#endif
     uint32_t element_bytes = variant == QBH_BLOCK_W4U8 ? 1U : 2U;
     uint32_t hidden_bytes = QBH_BLOCK_M * QBH_BLOCK_HIDDEN * element_bytes;
     uint32_t intermediate_bytes =
@@ -847,10 +863,10 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
             QBH_BLOCK_M * QBH_BLOCK_KV_HIDDEN * sizeof(uint16_t),
             QBH_HMX_FP16_TILE_BYTES);
         buffers->scores = qbh_arena_alloc_aligned(
-            &arena, QBH_BLOCK_SCORE_ELEMENTS * sizeof(uint16_t),
+            &arena, score_elements * sizeof(uint16_t),
             QBH_HMX_FP16_TILE_BYTES);
         buffers->probability = qbh_arena_alloc_aligned(
-            &arena, QBH_BLOCK_SCORE_ELEMENTS * sizeof(uint16_t),
+            &arena, score_elements * sizeof(uint16_t),
             QBH_HMX_FP16_TILE_BYTES);
     } else {
         buffers->k = qbh_arena_alloc(
@@ -860,9 +876,9 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
             &arena,
             QBH_BLOCK_M * QBH_BLOCK_KV_HIDDEN * sizeof(uint16_t));
         buffers->scores = qbh_arena_alloc(
-            &arena, QBH_BLOCK_SCORE_ELEMENTS * sizeof(uint16_t));
+            &arena, score_elements * sizeof(uint16_t));
         buffers->probability = qbh_arena_alloc(
-            &arena, QBH_BLOCK_SCORE_ELEMENTS * sizeof(uint16_t));
+            &arena, score_elements * sizeof(uint16_t));
     }
     buffers->attention_concat = qbh_arena_alloc_aligned(
         &arena, QBH_BLOCK_M * QBH_BLOCK_HIDDEN * sizeof(uint16_t),
@@ -21433,6 +21449,7 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
                          header->mlp_mode, header->generation_mode,
                          header->kv_cache_k_format,
                          header->kv_cache_v_format,
+                         header->scan_mode,
                          &buffers,
                          &header->vtcm_peak_plan_bytes) != 0) {
         header->dsp_status = QBH_BLOCK_STATUS_ARENA_FAILED;
