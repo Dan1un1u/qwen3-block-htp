@@ -1622,6 +1622,24 @@ void qbh_attention_u8_pack_k_row_major(
     uint32_t padded_tokens,
     const struct qbh_attention_config *config,
     int8_t *weight_tiles, uint32_t *bias_words) {
+#ifdef QBH_MODEL_LLAMA32
+    const uint32_t nt=padded_tokens/32U;
+    for(uint32_t i=0;i<nt*QBH_ATTENTION_HEAD_DIM_TILES*QBH_HMX_WEIGHT_BYTES/128U;++i)
+        ((HVX_Vector *)weight_tiles)[i]=Q6_V_vzero();
+    const uint32_t div=1U<<config->score_shift;
+    const uint32_t rounding=config->score_shift?div/2U:0U;
+    const uint16_t conversion=qbh_attention_u8_float_to_half_bits(512.0f/(float)div);
+    for(uint32_t tile=0;tile<nt;++tile) {
+        uint32_t *bias=bias_words+tile*(QBH_HMX_BIAS_BYTES/4U);
+        for(uint32_t i=0;i<32;++i){bias[i]=conversion;bias[32+i]=QBH_ATTN_U8_SCORE_ZP*div+rounding;}
+        uint32_t first=tile*32U,count=valid_tokens>first?valid_tokens-first:0U;
+        if(count>32U)count=32U;
+        if(count)qbh_attention_u8_patch_k_delta_rows_hvx(rows+(size_t)first*QBH_ATTENTION_HEAD_DIM,count,config,
+            weight_tiles+(size_t)tile*QBH_ATTENTION_HEAD_DIM_TILES*QBH_HMX_WEIGHT_BYTES,bias);
+    }
+    asm volatile("barrier" ::: "memory");
+    return;
+#endif
     const uint32_t divisor = UINT32_C(1) << config->score_shift;
     const int32_t rounding = config->score_shift == 0U
                                  ? 0
@@ -2020,14 +2038,25 @@ void qbh_attention_u8_patch_k_delta_rows_hvx(
         return;
     }
     for (uint32_t output = 0U; output < row_count; ++output) {
+#ifdef QBH_MODEL_LLAMA32
+        uint8_t row[128] __attribute__((aligned(128)));
+        memset(row,(uint8_t)config->k_zero_point,128);
+        memcpy(row,rows+(size_t)output*QBH_ATTENTION_HEAD_DIM,QBH_ATTENTION_HEAD_DIM);
+        const HVX_Vector centered=qbh_attention_u8_center_u8_to_s8(*(HVX_Vector *)row,config->k_zero_point);
+#else
         const HVX_Vector centered = qbh_attention_u8_center_u8_to_s8(
             *(const HVX_Vector *)(rows +
                 (size_t)output * QBH_ATTENTION_HEAD_DIM),
             config->k_zero_point);
+#endif
         const HVX_Vector offsets = Q6_Vw_vadd_VwVw(
             offsets_base, Q6_V_vsplat_R(output * sizeof(uint32_t)));
         const int32_t sum = qbh_attention_u8_sum_signed_bytes(centered);
+#ifdef QBH_MODEL_LLAMA32
+        Q6_vscatter_QRMVwV(Q6_Q_vsetq_R(QBH_ATTENTION_HEAD_DIM),
+#else
         Q6_vscatter_RMVwV(
+#endif
             (uint32_t)(uintptr_t)n_tile_weight,
             QBH_ATTENTION_HEAD_DIM_TILES * QBH_HMX_WEIGHT_BYTES - 1U,
             offsets, centered);
@@ -2152,6 +2181,36 @@ void qbh_attention_u8_patch_v_delta_rows_hvx(
                     recentered;
             }
         }
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
+void qbh_attention_u8_pack_v_row_major_hvx(const uint8_t *rows,
+    uint32_t valid_tokens,uint32_t padded_tokens,
+    const struct qbh_attention_config *config,int8_t *weight,uint32_t *bias,
+    uint8_t *scratch,uint32_t *saturation_count) {
+    const uint32_t kt=padded_tokens/32U,div=1U<<config->av_shift;
+    const uint32_t rounding=config->av_shift?div/2U:0U;
+    const uint16_t conversion=qbh_attention_u8_float_to_half_bits(512.0f/(float)div);
+    const int32_t zp=config->av_multiplier==1U?config->output_zero_point:QBH_ATTENTION_HMX_CENTER;
+    for(uint32_t i=0;i<QBH_ATTENTION_HEAD_DIM_TILES*kt*QBH_HMX_WEIGHT_BYTES/128U;++i)
+        ((HVX_Vector *)weight)[i]=Q6_V_vzero();
+    qbh_attention_u8_prepare_v_delta_lut(config,scratch);
+    if(saturation_count) {
+        uint8_t saturated[256];
+        for(uint32_t i=0;i<256;++i) {
+            int32_t v=qbh_attention_u8_round_div_signed(((int32_t)i-config->v_zero_point)*(int32_t)config->v_recenter_numerator,(int32_t)config->v_recenter_denominator);
+            saturated[i]=v<INT8_MIN || v>INT8_MAX;
+        }
+        for(uint32_t i=0;i<valid_tokens*QBH_ATTENTION_HEAD_DIM;++i)*saturation_count+=saturated[rows[i]];
+    }
+    for(uint32_t first=0;first<valid_tokens;first+=32U) {
+        uint32_t count=valid_tokens-first;if(count>32U)count=32U;
+        qbh_attention_u8_patch_v_delta_rows_hvx(rows+(size_t)first*QBH_ATTENTION_HEAD_DIM,count,
+            config,weight+(first/32U)*QBH_HMX_WEIGHT_BYTES,kt*QBH_HMX_WEIGHT_BYTES,scratch,NULL);
+    }
+    for(uint32_t tile=0;tile<QBH_ATTENTION_HEAD_DIM_TILES;++tile)for(uint32_t i=0;i<32;++i) {
+        uint32_t *b=bias+tile*(QBH_HMX_BIAS_BYTES/4U);b[i]=conversion;b[32+i]=(uint32_t)(zp*(int32_t)div)+rounding;
     }
     asm volatile("barrier" ::: "memory");
 }

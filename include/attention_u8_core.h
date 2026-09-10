@@ -123,6 +123,11 @@ void qbh_attention_u8_pack_k_row_major(
     const struct qbh_attention_config *config,
     int8_t *weight_tiles, uint32_t *bias_words);
 
+void qbh_attention_u8_pack_v_row_major_hvx(const uint8_t *rows,
+    uint32_t valid_tokens,uint32_t padded_tokens,
+    const struct qbh_attention_config *config,int8_t *weight,uint32_t *bias,
+    uint8_t *scratch,uint32_t *saturation_count);
+
 void qbh_attention_u8_pack_v_row_major(
     const uint8_t *rows, uint32_t valid_tokens,
     uint32_t padded_tokens,
