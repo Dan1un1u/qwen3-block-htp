@@ -178,12 +178,28 @@ experiments:
   quality_baseline_promoted: false
 - id: L32-0007
   title: Matched current hardware W16A16 and W4A16 PPL
-  execution_state: running
+  execution_state: completed
   record: docs/experiments/L32-0007.md
   approval_ref: User requests a real-device PPL run for W16A16 and W4A16
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
   parent_source: b9932bd8ebdf6d7038cff882dfdfdf6aee7b8631
-  hardware_runs: 0
+  hardware_runs: 4
   baseline_quality_promoted: false
+  completed_on: '2026-09-10'
+  hardware_runs_definition: Two eight-step generation smoke processes and two full2048-target
+    teacher-forced PPL processes; all successful, each recipe evaluated once
+  token_boundary_executions: 4112
+  scored_target_pairs: 4096
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0007
+  evidence_ledger_sha256: 951a79221277c4299eb180845703aee134a519367bf3276c446294afbe3154bf
+  evidence_validity: valid
+  local_gate: physical_and_functional_pass_w16_ppl_pass_w4_ppl_fail
+  ppl_rerun: true
+  formal_profiling: false
+  source_unchanged: true
+  source_heads:
+    codex/llama32-no-rotation: b9932bd8ebdf6d7038cff882dfdfdf6aee7b8631
+    codex/llama32-rotation: 252aee5ecfbefd4a2df6cd5a5e4b9193d935f86b
+  quality_baseline_promoted: false
