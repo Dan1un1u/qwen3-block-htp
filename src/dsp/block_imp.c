@@ -17147,6 +17147,19 @@ static int qbh_scan_audit_f16_o_projection(
     return 0;
 }
 
+#ifdef QBH_MODEL_LLAMA32
+static int qbh_llama_w4_tail_audit(struct qbh_block_header *h, uint8_t *shared,
+                                 uint32_t slot, const void *data, uint32_t bytes) {
+    if (h->variant != QBH_BLOCK_W4F16 || !h->numerical_audit_enabled ||
+        h->scan_mode == QBH_BLOCK_SCAN_DISABLED) return 0;
+    if (qbh_dma_copy(h, shared + h->scan_attention_audit_output_offset +
+        slot * QBH_BLOCK_M * QBH_BLOCK_HIDDEN * sizeof(uint16_t),
+        data, bytes, 0U) != 0) return -1;
+    h->u8_attention_audit_ddr_write_bytes += bytes;
+    return 0;
+}
+#endif
+
 struct qbh_scan_u8_delta_attention_slot {
     uint8_t *probability;
     int8_t *weight;
@@ -21008,6 +21021,11 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         goto w4u8_mlp_complete;
     }
 
+#ifdef QBH_MODEL_LLAMA32
+    if (qbh_llama_w4_tail_audit(header,shared,3U,buffers->residual,hidden_elements*2U) ||
+        qbh_llama_w4_tail_audit(header,shared,4U,crouton_post_norm_enabled ? buffers->hmx_activation : buffers->normalized,hidden_elements*2U))
+        return QBH_BLOCK_STATUS_ACTIVATION_FAILED;
+#endif
     if (header->variant == QBH_BLOCK_W4F16) {
         gate_up_weight_dma_before = header->weight_dma_ticks;
         gate_up_expand_before = header->w4f16_expand_ticks;
@@ -21212,6 +21230,10 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     }
     header->activation_ticks += HAP_perf_get_qtimer_count() - start;
 
+#ifdef QBH_MODEL_LLAMA32
+    if (qbh_llama_w4_tail_audit(header,shared,5U,buffers->q,intermediate_elements*2U))
+        return QBH_BLOCK_STATUS_ACTIVATION_FAILED;
+#endif
     start = HAP_perf_get_qtimer_count();
     if (qbh_run_projection(
             header, shared,
@@ -21229,6 +21251,10 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             header, audit_start, &header->down_audit_ticks);
     }
     header->down_ticks += HAP_perf_get_qtimer_count() - start;
+#ifdef QBH_MODEL_LLAMA32
+    if (qbh_llama_w4_tail_audit(header,shared,9U,buffers->down,hidden_elements*2U))
+        return QBH_BLOCK_STATUS_ACTIVATION_FAILED;
+#endif
 
 w4u8_mlp_complete:
     start = HAP_perf_get_qtimer_count();
