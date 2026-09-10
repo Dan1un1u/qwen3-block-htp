@@ -1652,7 +1652,19 @@ void qbh_attention_u8_native_head_to_row_major(
         valid_rows > QBH_ATTENTION_M) {
         return;
     }
-    for (uint32_t row = 0U; row < valid_rows; ++row) {
+    uint32_t first_scalar=0U;
+#ifdef QBH_MODEL_LLAMA32
+    if((((uintptr_t)head_tiles|(uintptr_t)rows)&127U)==0U) {
+        for(;first_scalar+4U<=valid_rows;first_scalar+=4U) {
+            HVX_Vector a=*(const HVX_Vector *)(head_tiles+(size_t)first_scalar*32U);
+            HVX_Vector b=*(const HVX_Vector *)(head_tiles+QBH_HMX_ACTIVATION_BYTES+(size_t)first_scalar*32U);
+            HVX_VectorPair pair=Q6_W_vshuff_VVR(b,a,-32);
+            ((HVX_Vector *)(rows+(size_t)first_scalar*64U))[0]=Q6_V_lo_W(pair);
+            ((HVX_Vector *)(rows+(size_t)first_scalar*64U))[1]=Q6_V_hi_W(pair);
+        }
+    }
+#endif
+    for (uint32_t row = first_scalar; row < valid_rows; ++row) {
         for (uint32_t tile = 0U;
              tile < QBH_ATTENTION_HEAD_DIM_TILES; ++tile) {
             memcpy(rows + (size_t)row * QBH_ATTENTION_HEAD_DIM +
