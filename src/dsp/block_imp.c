@@ -7077,8 +7077,12 @@ static int qbh_run_generation_head_w4u8(
         header->generation_mode ==
             QBH_BLOCK_GENERATION_GREEDY_W4U8_BATCH8_RESIDENT_BIAS;
     const uint32_t direct_n_decode =
+#ifdef QBH_MODEL_LLAMA32
+        (logical_rows == 1U || logical_rows == QBH_BLOCK_M) &&
+#else
         header->scan_mode == QBH_BLOCK_SCAN_DECODE &&
         logical_rows == 1U &&
+#endif
         header->w4u8_decode_projection_mode ==
             QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N &&
         (header->w4u8_decode_direct_n_mask &
