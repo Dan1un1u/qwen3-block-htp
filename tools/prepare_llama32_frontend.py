@@ -91,7 +91,12 @@ def main():
     shown=generated[:next((i for i,t in enumerate(generated) if t in cfg["eos_token_id"]),len(generated))]
     teacher={"prompt_messages":messages,"prompt_ids":ids,"fp16_generated_ids":generated,"fp16_text":tok.decode(shown,skip_special_tokens=True),"nll":{}}
     for dtype in [torch.float16,torch.bfloat16]:
-        model.to(dtype=dtype);rows=[]
+        # Reload original BF16 tensors; do not call a BF16<-FP16 roundtrip the original teacher.
+        if dtype == torch.bfloat16:
+            model=AutoModelForCausalLM.from_pretrained(args.model,torch_dtype=torch.bfloat16,attn_implementation="eager",local_files_only=True).cuda().eval()
+        else:
+            model.to(dtype=dtype)
+        rows=[]
         for s in samples:
             inp=torch.tensor([s["prompt_ids"]+s["target_ids"][:-1]],device="cuda")
             logits=model(inp,use_cache=False).logits[0,63:79].float()
