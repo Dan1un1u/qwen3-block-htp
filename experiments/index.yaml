@@ -27,10 +27,10 @@ experiments:
   approval_ref: User selected original 1B-Instruct and approved W16A16 -> W4A16 ->
     W4A8 adaptation order on 2026-09-10
   runtime:
-    source_worktree: /home/daniuniu/work/llama32-htp
-    source_branch: codex/llama32-no-rotation
+    source_worktree: /home/daniuniu/work/llama32-htp-rotation
+    source_branch: codex/llama32-rotation
   parent_source: e0e3bc77704a9369693fe48a5cc5fed3005ac36c
-  hardware_runs: 10
-  local_gate: single_and_three_layer_pass_full_model_pending
+  hardware_runs: 15
+  local_gate: w16a16_functional_pass_closure_pending
   baseline_quality_promoted: false
   evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0001
