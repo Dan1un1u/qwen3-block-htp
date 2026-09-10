@@ -49,7 +49,7 @@ def main():
     env={"LD_LIBRARY_PATH":remote,"DSP_LIBRARY_PATH":remote,"ADSP_LIBRARY_PATH":remote,
          "QBH_DUMP_OUTPUT_PATH":remote+"/actual.bin"}
     if args.scan:
-        env.update(QBH_SCAN_MODE=manifest["phase"],QBH_LOGICAL_M=str(manifest["logical_rows"]),QBH_KV_CACHE_LENGTH=str(manifest["past_tokens"]),QBH_KV_CACHE_CAPACITY="80",QBH_DUMP_CACHE_DIR=remote)
+        env.update(QBH_SCAN_MODE=manifest["phase"],QBH_LOGICAL_M=str(manifest["logical_rows"]),QBH_KV_CACHE_LENGTH=str(manifest["past_tokens"]),QBH_KV_CACHE_CAPACITY="80",QBH_DUMP_CACHE_DIR=remote,QBH_DUMP_ATTENTION_DIR=remote)
     elif manifest["phase"]!="prefill":raise ValueError("Decode requires --scan")
     argv=["./qwen3_block_cli",remote+"/package",("W4F16" if manifest["recipe"]=="W4A16" else "F16F16"),"1","2","32","hvx","on","on","fused","gate8_interleaved","control","hvx","crouton_native_batch8","4","64","parallel_qk_norm_rope","4","norms","serial","scalar","input_norm_pool_post_norm_pool","4","3","1","0"]
     if manifest["recipe"]=="W4A16":
@@ -64,6 +64,9 @@ def main():
     if args.scan:
         for kind in ["k", "v"]:
             name=f"actual_kv_cache_{kind}_f16.bin"
+            adb("pull",remote+"/"+name,windows(args.output/name),check=False)
+    if args.scan:
+        for name in ["actual_scan_q_f16.bin","actual_scan_attention_f16.bin","actual_scan_o_projection_f16.bin"]:
             adb("pull",remote+"/"+name,windows(args.output/name),check=False)
     result={"process_exit_code":run.returncode,"records":[]}
     for line in run.stdout.splitlines():
