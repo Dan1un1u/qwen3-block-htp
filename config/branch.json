@@ -1,13 +1,15 @@
 {
   "schema_version": 1,
-  "branch": "codex/llama32-no-rotation",
+  "branch": "codex/llama32-rotation",
   "model": "llama32",
   "default_recipe": "w4a8",
-  "w4a8_rotation": "none",
+  "w4a8_rotation": "r3",
   "allowed_baselines": [
     "w16a16",
     "w4a16",
-    "w4a8-off"
+    "w4a8-off",
+    "w4a8-r3",
+    "w4a8-r3-r4"
   ],
   "qwen3_frozen_commit": "48eb1ea7f9db0eb197a7c7908ab954d5a6635fc5"
 }
