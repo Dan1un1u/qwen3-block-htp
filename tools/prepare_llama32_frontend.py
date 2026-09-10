@@ -75,7 +75,7 @@ def main():
         pos=0 if start==0 else 63+start
         cos,sin=rope(cfg,torch.arange(pos,pos+64,device="cuda")[None],torch.float16)
         for name,value in [("cos",cos),("sin",sin)]:
-            file=f"rope_{name}_f16.bin" if start==0 else f"replay_decode_rope_{name}_{start-1:02d}_f16.bin"
+            file=f"rope_{name}_f16.bin" if start==0 else f"generation_decode_rope_{name}_{start-1:02d}_f16.bin"
             write(args.output/file,value)
     write(args.output/"generation_embedding_weight_f16.bin",w["model.embed_tokens.weight"])
     write(args.output/"generation_lm_head_weight_f16_hmx.bin",pack_weight(w["model.embed_tokens.weight"]))
