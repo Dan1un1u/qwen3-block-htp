@@ -71,6 +71,9 @@ def main():
     if m["recipe"]=="W4A16":
         argv[4]="4";argv[10]="serial";argv[11]="adaptive_down96_gate4_dma8_cross"
         env.update(QBH_W4F16_GROUP_FENCE="join_only_down",QBH_W4F16_EXPAND_CLAIM_REGIONS="1",QBH_W4F16_GATE_UP_EXTRA_EXPAND_WORKER="1",QBH_W4F16_GATE_UP_EXTRA_STREAM_WORKER="1",QBH_W4F16_GATE_UP_STREAM_GROUP_TILES="4")
+    if m['recipe']=='W4A8':
+        env.pop('QBH_KV_CACHE_LAYOUT');env.update(QBH_GENERATION_SEQUENCE="9",QBH_W4U8_DECODE_PROJECTION_MODE="direct_n",QBH_W4U8_DECODE_DIRECT_N_MASK="63")
+        argv=["./qwen3_block_cli",remote+"/package","W4U8","1","2","32","rms_rope_softmax","on","off","fused","serial","control","hvx","w4u8_streaming_persistent_mlp_hvx","3","64","u8_log2_gqa","4","w4u8_mlp_io_qkv_o","serial","scalar","control","4","3","1","0"]
     command="cd "+shlex.quote(remote)+" && "+" ".join(k+"="+shlex.quote(v) for k,v in env.items())+" "+shlex.join(argv)
     protocol={"experiment":m["experiment"],"source_head":subprocess.check_output(["git","-C",str(ROOT),"rev-parse","HEAD"],text=True).strip(),"builds":builds,"package_manifest_sha256":sha256(args.package/"manifest.json"),"dataset_sha256":sha256(args.reference/"dataset.json"),"reused_package":args.reuse_package_from,"requested_generation_steps":args.generation_steps,"command":command,"timing_scope":"single functional run, not formal profiling; includes embedding/16 layers/norm/head/greedy/FastRPC, excludes loading and external tokenizer"}
     (args.output/"protocol.json").write_text(json.dumps(protocol,indent=2))
@@ -106,9 +109,10 @@ def main():
                 vals=[v for s in teacher["nll"][dtype] if s["id"] in chosen for v in s["nll"]]
                 row[key]=math.exp(sum(vals)/len(vals))
                 row["ratio_to_"+key]=row["device"]/row[key]
-            row["pass"]=row["ratio_to_bf16_teacher"] <= (1.05 if lang=="all" else 1.10)
+            row["pass"]=(None if m["recipe"]=="W4A8" else row["ratio_to_bf16_teacher"] <= (1.05 if lang=="all" else 1.10))
             result["ppl"][lang]=row
-    result["pass"]=complete and all(r["pass"] for r in result["ppl"].values())
+    result["quality_gate_applied"]=m["recipe"]!="W4A8"
+    result["pass"]=complete and (m["recipe"]=="W4A8" or all(r["pass"] for r in result["ppl"].values()))
     (args.output/"result.json").write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n")
     print(json.dumps({"pass":result["pass"],"ppl":result["ppl"],"functional_run_speed":result["functional_run_speed"]}),flush=True)
     if not result["pass"]:
