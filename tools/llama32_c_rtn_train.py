@@ -73,6 +73,11 @@ def run(stage):
     for name, item in snapshot["files"].items():
         path=REFERENCE.parents[1]/name
         assert hashlib.sha256(path.read_bytes()).hexdigest()==item["sha256"], path
+    parents={}
+    for parent in ([] if stage=="initial" else ["initial"] if stage=="b_init" else ["initial","b_init"]):
+        record=json.loads((MODELS/parent/"complete.json").read_text())
+        for name,digest in record["artifacts"].items():assert hashlib.sha256((MODELS/parent/name).read_bytes()).hexdigest()==digest
+        parents[parent]=hashlib.sha256((MODELS/parent/"complete.json").read_bytes()).hexdigest()
     out=MODELS/stage
     out.mkdir(parents=True, exist_ok=False)
     args=["--input_model", "/mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin",
@@ -96,7 +101,7 @@ def run(stage):
     env=os.environ.copy()
     env.update(PYTHONPATH=str(REFERENCE), PYTHONDONTWRITEBYTECODE="1",TOKENIZERS_PARALLELISM="false",OMP_NUM_THREADS="4", OPENBLAS_NUM_THREADS="8",CUDA_VISIBLE_DEVICES="0",HF_HOME="/home/daniuniu/work/rotation-quant/cache/huggingface",HF_HUB_OFFLINE="1",HF_DATASETS_OFFLINE="1")
     command=[PYTHON,"-B","-m","torch.distributed.run","--standalone","--nnodes=1","--nproc_per_node=1",str(Path(__file__).resolve()),"--worker",stage,*args]
-    record=dict(stage=stage,command=command,seed=42,updates=0 if stage=="b_init" else 100,effective_batch_sequences=8,sequence_length=2048,adaptations=["single GPU accumulation8 replaces two GPU accumulation4", "native symmetric W4 [-7,7]", "48 learned SA shared by QKV and Gate/Up; 96 input sites", "B initial SW only, no unused B or A training/GPTQ", "audited FP32 R1 folds except FP64 O; all R2 FP64; final export FP64"])
+    record=dict(stage=stage,command=command,parents=parents,source_head=subprocess.check_output(["git","-C",str(ROOT),"rev-parse","HEAD"],text=True).strip(),reference_snapshot_sha256=hashlib.sha256((RESULTS/"reference-snapshot.json").read_bytes()).hexdigest(),seed=42,updates=0 if stage=="b_init" else 100,effective_batch_sequences=8,sequence_length=2048,adaptations=["single GPU accumulation8 replaces two GPU accumulation4", "native symmetric W4 [-7,7]", "48 learned SA shared by QKV and Gate/Up; 96 input sites", "B initial SW only, no unused B or A training/GPTQ", "audited FP32 R1 folds except FP64 O; all R2 FP64; final export FP64"])
     (out/"launch.json").write_text(json.dumps(record,indent=2)+"\n")
     with (out/"run.log").open("x") as log:
         result=subprocess.run(command,cwd=ROOT,env=env,stdout=log,stderr=subprocess.STDOUT)
