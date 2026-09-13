@@ -27,6 +27,6 @@ def main():
                 row=dict(layer=layer,projection=name,nrmse=nrmse,max_abs=float(delta.abs().max()),different_fraction=float((delta!=0).float().mean()),fp64_seconds=slow,fp32_seconds=fast,pass_gate=nrmse<=1e-4)
                 rows.append(row);print(json.dumps(row),flush=True)
     report=dict(rows=rows,pass_gate=all(r["pass_gate"] for r in rows),gate="NRMSE <=1e-4 after BF16 cast; training implementation only, not checkpoint equivalence",tf32=False)
-    p=Path("/mnt/d/llm_exp/results/llama32-htp/l32-0013/rotation-fp32-audit.json");p.open("x").write(json.dumps(report,indent=2)+"\n")
+    p=Path("/mnt/d/llm_exp/results/llama32-htp/l32-0013/rotation-fp32-selective-fp64-audit.json");p.open("x").write(json.dumps(report,indent=2)+"\n")
     assert report["pass_gate"]
 if __name__=="__main__":main()
