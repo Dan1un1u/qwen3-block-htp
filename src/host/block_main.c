@@ -235,6 +235,8 @@ static int qbh_generation_w4f16_enabled(uint32_t mode) {
            mode <= QBH_BLOCK_GENERATION_GREEDY_W4F16_COARSE_PIPELINE;
 }
 
+static int qbh_hmx_native_u8_segmented_cache_formats(uint32_t k_format, uint32_t v_format);
+
 static int qbh_generation_u8_cache_formats(uint32_t k, uint32_t v) {
 #ifdef QBH_MODEL_LLAMA32
     return k == QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1 &&
