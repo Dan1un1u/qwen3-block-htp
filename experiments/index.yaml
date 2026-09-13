@@ -35,7 +35,7 @@ experiments:
   local_gate: not_run
   adoption_status: pending
   runtime:
-    source_branch: codex/exp-0265-w4u8-r4-fullmodel-e2e
+    source_branch: codex/exp-0267-sp2-native-w4-pipeline
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     started_on: '2026-09-13'
   source_branches:
