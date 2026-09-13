@@ -11,6 +11,7 @@
 #include "hmx_u8s8_projection.h"
 #include "qbh_user_dma.h"
 #define RT 0x700U
+static struct qbh_dma_aligned_desc_1d probe_dma; /* DMA descriptors reside in DDR, payload intermediates in VTCM. */
 static uint32_t aligned(uint32_t x){return (x+2047U)&~2047U;}
 static int valid(uint32_t off,uint32_t size,uint32_t total){return off>=128U && off<=total && size<=total-off;}
 /* Non-saturating retain conversion exposes four radix256 digits without
@@ -44,7 +45,7 @@ int lsp2_run(int fd,uint32_t bytes,uint8_t *vtcm,uint32_t vbytes,uint32_t ctx){
  uint32_t *bias=(uint32_t*)(vtcm+cursor);cursor+=2048;
  int32_t *sums=(int32_t*)(vtcm+cursor);cursor+=aligned(c.n*4);
  int32_t *output=(int32_t*)(vtcm+cursor);cursor+=aligned(c.rows*c.n*4);
- struct qbh_dma_aligned_desc_1d *dma=(void*)(vtcm+cursor);cursor+=2048;
+ struct qbh_dma_aligned_desc_1d *dma=&probe_dma;
  c.peak_bytes=cursor;if(cursor>vbytes){HAP_mmap_put(fd);return AEE_ENOMEMORY;}
  ret=HAP_compute_res_hmx_lock2(ctx,HAP_COMPUTE_RES_HMX_SHARED);if(ret){HAP_mmap_put(fd);return ret;}
  uint64_t start=HAP_perf_get_qtimer_count(),t=start;
@@ -59,7 +60,7 @@ int lsp2_run(int fd,uint32_t bytes,uint8_t *vtcm,uint32_t vbytes,uint32_t ctx){
  }
  c.pack_ticks=HAP_perf_get_qtimer_count()-t;
  for(uint32_t nt=0;nt<c.n/32;nt++){
-  t=HAP_perf_get_qtimer_count();memset(dma,0,sizeof(*dma));dma->descriptor.length=c.k*16;dma->descriptor.src=(uint32_t)(uintptr_t)(shared+c.weight_offset+nt*c.k*16);dma->descriptor.dst=(uint32_t)(uintptr_t)weight;
+  t=HAP_perf_get_qtimer_count();memset(dma,0,sizeof(*dma));dma->descriptor.length=c.k*16;dma->descriptor.src_bypass=1;dma->descriptor.ordered=1;dma->descriptor.src=(uint32_t)(uintptr_t)(shared+c.weight_offset+nt*c.k*16);dma->descriptor.dst=(uint32_t)(uintptr_t)weight;
   if(qbh_dma_start(dma)||qbh_dma_wait_idle()){ret=AEE_EFAILED;goto done;}
   c.dma_ticks+=HAP_perf_get_qtimer_count()-t;
   uint32_t passes=c.mode==2?2:1;
