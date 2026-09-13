@@ -26,9 +26,11 @@ static inline struct qbh_sp2_words qbh_sp2_chunk24(const uint8_t *raw,uint32_t b
     return out;
 }
 static inline HVX_Vector qbh_sp2_requant(HVX_Vector low,HVX_Vector high,
-    HVX_Vector sum,HVX_Vector multiplier,HVX_Vector zp) {
+    HVX_Vector sum,HVX_Vector multiplier,HVX_Vector zp,uint32_t mode) {
     HVX_Vector acc=Q6_Vw_vsub_VwVw(Q6_Vw_vadd_VwVw(low,
         Q6_Vw_vasl_VwR(high,8)),Q6_Vw_vasl_VwR(sum,15));
+    /* v=lo+257*hi-32770 exactly represents all187 signed SP2 levels. */
+    if(mode==9U) acc=Q6_Vw_vadd_VwVw(acc,Q6_Vw_vsub_VwVw(high,Q6_Vw_vasl_VwR(sum,1)));
     HVX_Vector value=Q6_Vw_vmpyoacc_VwVwVh_s1_rnd_sat_shift(
         Q6_Vw_vmpye_VwVuh(acc,multiplier),acc,multiplier);
     return Q6_Vw_vmin_VwVw(Q6_V_vsplat_R(255),Q6_Vw_vmax_VwVw(Q6_V_vzero(),Q6_Vw_vadd_VwVw(value,zp)));
@@ -53,10 +55,10 @@ __attribute__((noinline)) static int qbh_llama_sp2_down(struct qbh_block_hmx_wor
                 struct qbh_sp2_words l=qbh_sp2_chunk24(raw0,base);
                 struct qbh_sp2_words h=qbh_sp2_chunk24(worker->sp2_rows==64U?raw1:raw0,
                     base+(worker->sp2_rows==64U?0U:128U));
-                HVX_Vector y0=qbh_sp2_requant(l.v0,h.v0,sum,multiplier,zp);
-                HVX_Vector y1=qbh_sp2_requant(l.v1,h.v1,sum,multiplier,zp);
-                HVX_Vector y2=qbh_sp2_requant(l.v2,h.v2,sum,multiplier,zp);
-                HVX_Vector y3=qbh_sp2_requant(l.v3,h.v3,sum,multiplier,zp);
+                HVX_Vector y0=qbh_sp2_requant(l.v0,h.v0,sum,multiplier,zp,worker->sp2_mode);
+                HVX_Vector y1=qbh_sp2_requant(l.v1,h.v1,sum,multiplier,zp,worker->sp2_mode);
+                HVX_Vector y2=qbh_sp2_requant(l.v2,h.v2,sum,multiplier,zp,worker->sp2_mode);
+                HVX_Vector y3=qbh_sp2_requant(l.v3,h.v3,sum,multiplier,zp,worker->sp2_mode);
                 *(HVX_Vector *)((uint8_t *)worker->output+(size_t)nt*2048U+base)=
                     Q6_Vb_vpacke_VhVh(Q6_Vh_vpacke_VwVw(y3,y2),Q6_Vh_vpacke_VwVw(y1,y0));
             }
@@ -113,10 +115,10 @@ __attribute__((noinline)) static void qbh_sp2_epilogue_run(struct qbh_sp2_epilog
         HVX_Vector zp=Q6_V_vsplat_R(e->zero_point);
         for(uint32_t base=0;base<2048U;base+=128U) {
             struct qbh_sp2_words l=qbh_sp2_chunk24(raw,base),h=qbh_sp2_chunk24(raw+8192U,base);
-            HVX_Vector y0=qbh_sp2_requant(l.v0,h.v0,sum,multiplier,zp);
-            HVX_Vector y1=qbh_sp2_requant(l.v1,h.v1,sum,multiplier,zp);
-            HVX_Vector y2=qbh_sp2_requant(l.v2,h.v2,sum,multiplier,zp);
-            HVX_Vector y3=qbh_sp2_requant(l.v3,h.v3,sum,multiplier,zp);
+            HVX_Vector y0=qbh_sp2_requant(l.v0,h.v0,sum,multiplier,zp,e->mode);
+            HVX_Vector y1=qbh_sp2_requant(l.v1,h.v1,sum,multiplier,zp,e->mode);
+            HVX_Vector y2=qbh_sp2_requant(l.v2,h.v2,sum,multiplier,zp,e->mode);
+            HVX_Vector y3=qbh_sp2_requant(l.v3,h.v3,sum,multiplier,zp,e->mode);
             *(HVX_Vector *)(out+base)=Q6_Vb_vpacke_VhVh(Q6_Vh_vpacke_VwVw(y3,y2),Q6_Vh_vpacke_VwVw(y1,y0));
         }
         asm volatile("barrier":::"memory");

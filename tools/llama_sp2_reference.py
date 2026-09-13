@@ -1,12 +1,20 @@
 """Independent SP2 integer oracle; never consumes hardware-generated tensors."""
 from functools import lru_cache
 import numpy as np
+import json
+from pathlib import Path
 from llama_u8_reference import _cached_w4_projection
 from prototype_llama32_sp2 import oracle
 
 @lru_cache(None)
 def table(path):
- return np.fromfile(path,dtype='<u2').reshape(256,256).astype('i4')-32768
+ code=np.fromfile(path,dtype='<u2').reshape(256,256)
+ marker=Path(path).with_name('sp2_encoding.json')
+ if marker.exists():
+  from llama32_sp2_contract import decode,contract
+  assert json.loads(marker.read_text())==contract()
+  return decode(code)
+ return code.astype('i4')-32768
 
 def project_down(g,u,package,q):
  v=table(str(package/'silu_up_lut_u16.bin'))[g,u]
