@@ -28,7 +28,7 @@ def lut(q):
 def write_qparams(path,q):path.write_bytes(b''.join(struct.pack('<32sfi2f',n.encode(),v['scale'],v['zero_point'],v['minimum'],v['maximum']) for n,v in sorted(q.items())))
 def divide(e,total,mode,count):return 255 if count==1 else min(255,((1<<(15-e))*255+total//2)//total)
 
-def layer(x,package,q,cos,sin,past=None,converter=None):
+def layer(x,package,q,cos,sin,past=None,converter=None,sp2=False):
  if converter is None:converter=HmxU8Converter(ROOT/'build/l32-0003/qbh_hmx_u8_reference.so')
  def project(x,n,inq,outq):
   k=x.shape[1];out={'q':2048,'k':512,'v':512,'o':2048,'gate':8192,'up':8192,'down':2048}[n]
@@ -42,7 +42,13 @@ def layer(x,package,q,cos,sin,past=None,converter=None):
  av,score,prob=exact_attention_dynamic(qr,k,v,count,configs(q),converter,divide);av=av.reshape(len(x),2048)
  o=project(av,'o','attention_concat','attention_projection');res=exact_residual_add_u8(x,q['block_input'],o,q['attention_projection'],q['post_attention_residual'])
  post=exact_rms_norm_u8(res,q['post_attention_residual'],np.fromfile(package/'post_norm_weight_f16.bin',dtype='<f2'),q['post_attention_norm'])
- g=project(post,'gate','post_attention_norm','gate');u=project(post,'up','post_attention_norm','up');mid=lut(q)[g,u].astype('u1');down=project(mid,'down','middle','down');out=exact_residual_add_u8(res,q['post_attention_residual'],down,q['down'],q['block_output'])
+ g=project(post,'gate','post_attention_norm','gate');u=project(post,'up','post_attention_norm','up')
+ if sp2:
+  from llama_sp2_reference import project_down
+  mid,down=project_down(g,u,package,q)
+ else:
+  mid=lut(q)[g,u].astype('u1');down=project(mid,'down','middle','down')
+ out=exact_residual_add_u8(res,q['post_attention_residual'],down,q['down'],q['block_output'])
  return out,(k,v),dict(q=qr,k=kr,attention=av,o=o,residual=res,post=post,gate=g,up=u,middle=mid,down=down,score=score,probability=prob)
 
 def main():
