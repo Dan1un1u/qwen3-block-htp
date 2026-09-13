@@ -60,7 +60,7 @@ def resolve(recipe=None, rotation=None, model=None):
         "recipe": recipe, "rotation": rotation, "baseline_id": name,
         "execution_enabled": False,
         "reason": ("Use the registered Llama experiment entrypoints; this command only inspects configuration. "
-                   "See model recipe_quality and per-recipe validation records; rotated Llama modes remain unsupported") if model == "llama32" else "Qwen3 research is frozen; retained recipes are provenance references",
+                   "See model recipe_quality and per-recipe validation records; rotated Llama modes remain unsupported") if model == "llama32" else "Retained recipes are historical Qwen3 provenance references; the completed EXP-0267 SP2 runtime uses scripts/build_qwen3_sp2.sh and docs/NATIVE_W4_SP2_METHOD.md, with no quality/default promotion",
         "intended_weight_format": spec["weight_format"],
         "intended_activation_format": spec["activation_format"],
         "qwen3_reference_schedule": spec["schedule"],

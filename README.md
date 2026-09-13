@@ -1,69 +1,21 @@
-# Standalone HTP runtime — Llama 3.2 development
+# Qwen3 HTP — native-W4 SP2 流水迁移
 
-Qwen3 research is frozen at `48eb1ea7f9db0eb197a7c7908ab954d5a6635fc5`
-(EXP-0265). L32-0001 now supports **Llama-3.2-1B-Instruct W16A16** on the
-standalone FastRPC/HVX/HMX runtime: single-layer and continuous16-layer checks,
-real text generation and a small heldout NLL integration test pass. W4A16/A8
-remain migration starting points and are not yet validated for Llama.
+当前分支 `codex/exp-0267-sp2-native-w4-pipeline` 保存 EXP-0267 的 Qwen3 实现与结果。方法来自已封存的 Llama L32-0012；历史 Qwen3 分支及两条 Llama 分支均保持原提交。
 
-See [W16A16 implementation and limits](docs/LLAMA32_W16A16.md) and
-[measured validation](models/llama32/validation.json). Generated weights come
-from the original Llama BF16 checkpoint; Qwen model artifacts are never inputs.
+[方法结论](docs/NATIVE_W4_SP2_METHOD.md) · [实验结果](docs/experiments/EXP-0267-RESULTS.md) · [完整 profiling](docs/experiments/EXP-0267-PROFILE.md)
 
-## Development branches
+Qwen3-1.7B 全28层、M64+15连续decode、KV容量128，五轮short及十轮正式配对测试。repeat10为主，repeat1仅参考。优化SP2相对U8：prefill墙钟−15.59%，decode+1.23%，均通过10%门槛；相对上一版SP2重叠流水，prefill−5.24%。实测prefill2020.27token/s、decode47.88token/s。原U8为1705.31及48.47token/s。
 
-| Branch | Shared recipes | W4A8 default | Optional |
-|---|---|---|---|
-| `codex/llama32-no-rotation` | W16A16, C64 W4A16 OPT2 | No rotation | — |
-| `codex/llama32-rotation` | Same | Dense R3 OPT2 | Dense R3 + R4 OPT6 |
+SP2通过低位/高位整数分解复用原生packed W4乘法。decode使用空闲物理行承载两个分量；prefill通过Gate/Up与SwiGLU、Down HMX与HVX的并行覆盖额外工作。Qwen版本复用MLP阶段已空闲的HMX激活缓冲，四种实现峰值均为8,365,824B，无层间张量DDR搬运。本轮验证量化合同实现与性能，没有评估PPL或提升默认精度状态。
 
-Both descend from frozen EXP-0265 and share the runtime. Their only intended
-file difference at setup is `config/branch.json`. R3/R4 remain research
-implementations with explicitly retained quality/numerical limitations.
+源码实测版本及四个二进制哈希见结果报告与 `D:/llm_exp/results/qwen3-block-htp/exp0267`。原始权重不变，新SP2元数据位于 `D:/llm_exp/models/qwen3-block-htp/exp0267`。
 
-## Start here
+任何后续工作先运行权威project-memory bootstrap，并按输出顺序读取四个authority文件：
 
-Run the Llama authority bootstrap before project work:
-
-```sh
-/home/daniuniu/work/llama32-htp-project-memory/scripts/bootstrap.sh "$PWD"
+```bash
+/home/daniuniu/work/qwen3-block-htp-project-memory/scripts/bootstrap.sh /home/daniuniu/work/qwen3-block-htp
 ```
 
-Read the four authority files in its printed order. The old Qwen3 authority
-remains frozen historical evidence and must not authorize new Llama work.
+实验已结束。新修改或真机运行需先登记新的已批准实验并通过preflight。Qwen专用构建入口为 `scripts/build_qwen3_sp2.sh 28`；EXP-0267脚本和结果目录是不可覆盖的复现证据。`tools/recipe.py`仍只检查历史配方，不是SP2启动器。
 
-Inspect configurations and source/evidence identity without executing hardware:
-
-```sh
-python3 tools/recipe.py list
-python3 tools/recipe.py show --recipe w4a16
-python3 tools/recipe.py show --recipe w4a8
-python3 tools/recipe.py verify --artifacts
-```
-
-`show` emits a **plan**, including the frozen Qwen3 schedule provenance. It does
-not turn Qwen3 weights, prefix, calibration or hardcoded dimensions into Llama
-inputs. On the rotation branch, `--rotation r3-r4` selects the optional reference.
-The L32-0001 W16A16 entrypoints are documented separately; W4/A8 launch validation is pending.
-
-## Layout
-
-| Path | Responsibility |
-|---|---|
-| `src/host`, `src/dsp`, `include` | Existing runtime and ABI; paths and native code preserved during organization |
-| `models/qwen3-frozen` | Frozen model dimensions and artifact ownership |
-| `models/llama32` | New model/checkpoint contract and port prerequisites |
-| `recipes` | Complete frozen schedule references, numerical format and explicit optimization flags |
-| `config/branch.json` | Branch default and allowed W4A8 variants |
-| `baselines/qwen3-frozen` | Pinned commits, builds, model manifests, report hashes and historical speed |
-| `tools/recipe.py` | Read-only configuration resolver and identity verification |
-| `experiments/qwen3-frozen` | Inventory of historical experiment entrypoints |
-| `docs/LLAMA32_DEVELOPMENT.md` | Worktrees, storage, architecture boundary and next port steps |
-
-The existing CMake entrypoints, `scripts/` and old tools remain at their original
-paths so historical imports and evidence references continue to resolve. They
-are cataloged as Qwen3 research, not Llama launchers. Historical tutorial/build
-notes are retained verbatim in [the archived README](docs/archive/QWEN3_RESEARCH_README.md).
-
-See [frozen baselines](baselines/qwen3-frozen/README.md) for measured speed and
-scope. No QNN execution path is introduced.
+[Llama父分支概览](docs/LLAMA32_PARENT_OVERVIEW.md)仅保留历史上下文；后续Llama工作使用其独立worktree与project-memory。

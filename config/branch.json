@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "branch": "codex/llama32-no-rotation",
-  "model": "llama32",
+  "branch": "codex/exp-0267-sp2-native-w4-pipeline",
+  "model": "qwen3-frozen",
   "default_recipe": "w4a8",
   "w4a8_rotation": "none",
   "allowed_baselines": [
@@ -9,5 +9,17 @@
     "w4a16",
     "w4a8-off"
   ],
-  "qwen3_frozen_commit": "48eb1ea7f9db0eb197a7c7908ab954d5a6635fc5"
+  "qwen3_frozen_commit": "48eb1ea7f9db0eb197a7c7908ab954d5a6635fc5",
+  "active_experiment": null,
+  "completed_experiment": "EXP-0267",
+  "experimental_runtime": {
+    "model": "Qwen3-1.7B",
+    "layers": 28,
+    "build": "scripts/build_qwen3_sp2.sh",
+    "method": "docs/NATIVE_W4_SP2_METHOD.md",
+    "report": "docs/experiments/EXP-0267-RESULTS.md",
+    "SP2_env": "QBH_SP2=8",
+    "default_promoted": false,
+    "quality_evaluated": false
+  }
 }
