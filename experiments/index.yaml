@@ -30,19 +30,220 @@ experiments:
   parent: EXP-0267
   record: docs/experiments/EXP-0268.md
   approval_ref: 'User: 好的，尝试做一下吧; PC082'
-  execution_state: running
-  evidence_validity: pending
-  local_gate: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: not_applicable
   runtime:
     source_branch: codex/exp-0268-u8-prefill-pipeline
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     started_on: '2026-09-13'
+    completed_on: '2026-09-14'
   source_branches:
   - codex/exp-0268-u8-prefill-pipeline
-  source_commits: []
+  source_commits:
+  - bcb870819779e532b9d4a5d2f7f28177827ba073
+  - 18af8cbc405018e06c07316f46c4b312d63ea7bb
+  - dc32985fec67af1254b2d645594843c40db3a390
+  - 6378066a15d867cbf184c1cc92288018d42c2925
   evidence:
+    id: EXP-0268
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    source_branch: codex/exp-0268-u8-prefill-pipeline
+    source_closure_commit: 6378066a15d867cbf184c1cc92288018d42c2925
+    tested_source_head: dc32985fec67af1254b2d645594843c40db3a390
+    report: docs/experiments/EXP-0268-RESULTS.md
+    report_sha256: 85b4fec76a2fb648ef66126ad50ef9edea56d54013adb567c2fa758095c236e4
+    full_profiling_report: docs/experiments/EXP-0268-PROFILE.md
+    full_profiling_report_sha256: 6b39499c3a4dc0d6831b01149bb4ea705d1c8d31bfd188406d429c7205cf255f
+    method: docs/U8_PREFILL_PIPELINE.md
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0268
+    evidence_ledger_sha256: 61f9fa2b7525d01a334aa4596a40c134814bee292204685a54eef622590100af
+    evidence_file_count: 1511
+    evidence_total_bytes: 1308439140
+    fullmodel_RPCs: 13200
+    layer_ledgers: 369600
+    peak_vtcm_bytes: 8365824
+    physical_gate: true
+    numerical_gate: exact_U8_live_carriers_output_KV_selectedlayers_and3slice_fullfeedbacktokens_selectedlogitcodes
+    performance:
+      r10_m1_over_m0_prefill_ns:
+        control_mean_ns: 37553752.6
+        candidate_mean_ns: 32952016.15
+        ratio: 0.8774626733308137
+        ci95:
+        - 0.8748843108900187
+        - 0.8799382889482184
+        gate: true
+        auxiliary_only: false
+      r10_m2_over_m0_prefill_ns:
+        control_mean_ns: 37553752.6
+        candidate_mean_ns: 31223682.839999996
+        ratio: 0.8314397544388146
+        ci95:
+        - 0.829439406752945
+        - 0.8334490376681298
+        gate: true
+        auxiliary_only: false
+      r10_m3_over_m0_prefill_ns:
+        control_mean_ns: 37553752.6
+        candidate_mean_ns: 30691671.339999996
+        ratio: 0.8172730876434435
+        ci95:
+        - 0.8147512298522063
+        - 0.8195767809657258
+        gate: true
+        auxiliary_only: false
+      r10_m2_over_m1_prefill_ns:
+        control_mean_ns: 32952016.15
+        candidate_mean_ns: 31223682.839999996
+        ratio: 0.9475499980901775
+        ci95:
+        - 0.9449185613646566
+        - 0.9498313086800737
+        gate: true
+        auxiliary_only: false
+      r10_m3_over_m2_prefill_ns:
+        control_mean_ns: 31223682.839999996
+        candidate_mean_ns: 30691671.339999996
+        ratio: 0.982961282859354
+        ci95:
+        - 0.9796810148500067
+        - 0.9864598427275478
+        gate: true
+        auxiliary_only: false
+      r10_m8_over_m0_prefill_ns:
+        control_mean_ns: 37553752.6
+        candidate_mean_ns: 31523392.18
+        ratio: 0.8394205637920722
+        ci95:
+        - 0.8364319324458929
+        - 0.8423442672363926
+        gate: true
+        auxiliary_only: false
+      r10_m8_over_m3_prefill_ns:
+        control_mean_ns: 30691671.339999996
+        candidate_mean_ns: 31523392.18
+        ratio: 1.027099235841094
+        ci95:
+        - 1.0232985506816699
+        - 1.0307157033154137
+        gate: true
+        auxiliary_only: false
+      r10_m1_over_m0_decode_ns:
+        control_mean_ns: 20590791.642666668
+        candidate_mean_ns: 20606111.946000002
+        ratio: 1.0007440366353662
+        ci95:
+        - 0.99983763956603
+        - 1.0017677646979128
+        gate: true
+        auxiliary_only: false
+      r10_m2_over_m0_decode_ns:
+        control_mean_ns: 20590791.642666668
+        candidate_mean_ns: 20598948.52933333
+        ratio: 1.0003961424508692
+        ci95:
+        - 0.9977249663394879
+        - 1.0028065968645925
+        gate: true
+        auxiliary_only: false
+      r10_m3_over_m0_decode_ns:
+        control_mean_ns: 20590791.642666668
+        candidate_mean_ns: 20589842.116
+        ratio: 0.9999538858591187
+        ci95:
+        - 0.9972017401106344
+        - 1.0024103929761985
+        gate: true
+        auxiliary_only: false
+      r10_m2_over_m1_decode_ns:
+        control_mean_ns: 20606111.946000002
+        candidate_mean_ns: 20598948.52933333
+        ratio: 0.9996523644690738
+        ci95:
+        - 0.996895642640542
+        - 1.0023838778889615
+        gate: true
+        auxiliary_only: false
+      r10_m3_over_m2_decode_ns:
+        control_mean_ns: 20598948.52933333
+        candidate_mean_ns: 20589842.116
+        ratio: 0.9995579185354844
+        ci95:
+        - 0.9954002763758104
+        - 1.0032914716271475
+        gate: true
+        auxiliary_only: false
+      r10_m8_over_m0_decode_ns:
+        control_mean_ns: 20590791.642666668
+        candidate_mean_ns: 20758364.69533333
+        ratio: 1.0081382520679503
+        ci95:
+        - 1.0051500090919083
+        - 1.0108192041851831
+        gate: true
+        auxiliary_only: false
+      r10_m8_over_m3_decode_ns:
+        control_mean_ns: 20589842.116
+        candidate_mean_ns: 20758364.69533333
+        ratio: 1.0081847436412528
+        ci95:
+        - 1.006322964173929
+        - 1.0100888061319215
+        gate: true
+        auxiliary_only: false
+    throughput:
+      m0_r10:
+        prefill_host_us: 37553.7526
+        decode_host_us_per_token: 20590.791642666667
+        prefill_tokens_per_second: 1704.2238276874625
+        decode_tokens_per_second: 48.56539842440425
+        model_16_output_tokens_per_second: 46.18729278317184
+        generation_loop_16_output_tokens_per_second: 44.08641701940778
+        model_host_us: 346415.62724
+        generation_loop_us: 362923.57333
+      m1_r10:
+        prefill_host_us: 32952.01615
+        decode_host_us_per_token: 20606.111946
+        prefill_tokens_per_second: 1942.218033296272
+        decode_tokens_per_second: 48.52929085412045
+        model_16_output_tokens_per_second: 46.77764922430627
+        generation_loop_16_output_tokens_per_second: 44.62268542305018
+        model_host_us: 342043.69534
+        generation_loop_us: 358562.015
+      m2_r10:
+        prefill_host_us: 31223.68284
+        decode_host_us_per_token: 20598.948529333335
+        prefill_tokens_per_second: 2049.726175094597
+        decode_tokens_per_second: 48.54616722673874
+        model_16_output_tokens_per_second: 47.030064537054855
+        generation_loop_16_output_tokens_per_second: 44.238323245882526
+        model_host_us: 340207.91078
+        generation_loop_us: 361677.36085
+      m3_r10:
+        prefill_host_us: 30691.67134
+        decode_host_us_per_token: 20589.842116
+        prefill_tokens_per_second: 2085.2562667901943
+        decode_tokens_per_second: 48.567638079308914
+        model_16_output_tokens_per_second: 47.12267432624784
+        generation_loop_16_output_tokens_per_second: 44.895674636690124
+        model_host_us: 339539.30308
+        generation_loop_us: 356381.77017000003
+      m8_r10:
+        prefill_host_us: 31523.392180000003
+        decode_host_us_per_token: 20758.364695333334
+        prefill_tokens_per_second: 2030.238358694302
+        decode_tokens_per_second: 48.17335154656036
+        model_16_output_tokens_per_second: 46.66098883564331
+        generation_loop_16_output_tokens_per_second: 44.60878568794558
+        model_host_us: 342898.86261
+        generation_loop_us: 358673.74001
+    speed_pass: true
+    quality_evaluated: false
+    selected_baseline_changed: false
 - id: EXP-0267
   slug: sp2-native-w4-pipeline
   title: Llama native-W4 SP2 pipeline migration to Qwen3
