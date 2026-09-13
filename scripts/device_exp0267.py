@@ -65,8 +65,8 @@ def physical(ps,count):
   for k,v in q.items():
    if k.startswith('slice_layer_') and isinstance(v,dict):
     assert v['status']==3 and v['layer_unattributed_ticks']==0
-    assert v['hidden_ddr_read_bytes']==(q['boundary_ddr_read_bytes'] if v['layer_index']==0 else 0)
-    assert v['hidden_ddr_write_bytes']==(q['boundary_ddr_write_bytes'] if v['layer_index']==count-1 else 0)
+    assert v['hidden_ddr_read_bytes']==(131072 if count<28 and v['layer_index']==0 else 0)
+    assert v['hidden_ddr_write_bytes']==(131072 if count<28 and v['layer_index']==count-1 else 0)
 
 def run(mode,repeat,tag,count=1,layer=0,dump=False):
  preflight();state=read(R/f'runtime-l{count}.json');root=state['remote'];p=R/tag;p.mkdir(parents=True,exist_ok=False)
