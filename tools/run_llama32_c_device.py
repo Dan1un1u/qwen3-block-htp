@@ -13,10 +13,12 @@ def save(p,obj):
 def deploy():
     m=json.loads((FRONT/'manifest.json').read_text());assert m['layers']==16 and m['sp2_encoding']==contract()
     for n,h in m['files'].items():assert sha256(FRONT/n)==h['sha256']
-    for name in ['device-c-layer0-a01','device-c-layer7-a01','device-c-layer15-a01','device-c-stack3-a01']:
+    for name,fixture in [('device-c-layer0-a01','layer0-count1'),('device-c-layer7-a01','layer7-count1'),('device-c-layer15-a01','layer15-count1'),('device-c-stack3-a01','layer0-count3')]:
         r=json.loads((RESULTS/name/'result.json').read_text());assert r['pass'],name
         p=json.loads((RESULTS/name/'protocol.json').read_text())
         assert p['experiment']=='L32-0013'
+        expected=MODELS/'gates-a01'/fixture/'manifest.json';assert sha256(expected)==p['package_manifest_sha256']
+        assert json.loads(expected.read_text())['parent_package_manifest_sha256']==sha256(FRONT/'manifest.json')
     seal=json.loads((ROOT/'build/llama-build-seal.json').read_text());head=subprocess.check_output(['git','-C',str(ROOT),'rev-parse','HEAD'],text=True).strip();assert head==seal['source_head']
     for n,h in seal['files'].items():assert sha256(Path(n))==h
     for build in ['android_ReleaseG_aarch64','hexagon_ReleaseG_toolv19_v79']:
@@ -56,7 +58,7 @@ def ppl():
     p=json.loads((OUT/'protocol.json').read_text());r=adb('shell',p['evaluation_command'],check=False)
     (OUT/'evaluation.stdout.txt').open('x').write(r.stdout);(OUT/'evaluation.stderr.txt').open('x').write(r.stderr)
     rr=records(r.stdout);rows=[v for v in rr if v.get('record')=='eval_step']
-    complete=r.returncode==0 and len(rows)==2048 and all(v['pass'] and v['nll'] is not None and math.isfinite(v['nll']) for v in rows)
+    complete=r.returncode==0 and len(rows)==2048 and all(v['pass'] and v['nll'] is not None and math.isfinite(v['nll']) and v['vtcm_bytes']==8388608 and v['vocab_count']==128256 and v['cache_valid']==64+v['step'] and all(v[k]==0 for k in ['intermediate_read','intermediate_write','spill','nonfinite']) for v in rows)
     save(OUT/'ppl-device.json',dict(complete=complete,process_exit=r.returncode,rows=rows,targets=len(rows),nll=sum(v['nll'] for v in rows)/len(rows) if complete else None,ppl=math.exp(sum(v['nll'] for v in rows)/len(rows)) if complete else None))
     assert complete,(r.stdout[-1500:],r.stderr[-1500:]);print('C_DEVICE_PPL_COMPLETE',flush=True)
 def compare():
@@ -65,6 +67,7 @@ def compare():
     ref={(v['sample_id'],v['step']):v for v in software['rows']};pairs=[]
     for row in hardware['rows']:
         key=(row['sample_id'],row['step']);assert key in ref;expected=ref.pop(key)
+        assert row['target_token']==expected['target_token'] and row['target_code']==expected['target_code'],key
         pairs.append(dict(sample_id=key[0],step=key[1],nll_abs=abs(row['nll']-expected['nll'])))
     assert not ref
     worst=max(v['nll_abs'] for v in pairs);passed=worst<=p['nll_atol']

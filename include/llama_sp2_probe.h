@@ -3,7 +3,9 @@
 #include <stdint.h>
 #define LSP2_MAGIC 0x3250534cU
 /* 0: U8 exact i32; 1: SP2 paired spatial rows; 2: SP2 two passes;
- * 3: production-style single saturating U8 conversion, timing control only. */
+ * 3: production-style single saturating U8 conversion, timing control only.
+ * 4: exhaustive LUT gather audit.
+ * 5/6: radix257 encoded U16 input, paired rows / two passes; signed32 output. */
 struct lsp2_header {
  uint32_t magic,abi,bytes,mode,rows,k,n,input_offset,weight_offset,sum_offset,output_offset;
  int32_t status;
