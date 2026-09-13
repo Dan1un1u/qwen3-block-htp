@@ -12,7 +12,7 @@ from llama_u8_reference import _cached_w4_projection,projection_bias_words
 from llama32_sp2_contract import encode
 class NativeOracle:
     def __init__(self):
-        self.weights={};self.biases={};self.audited=set();self.audited_down=set()
+        self.weights={};self.biases={};self.audited=set();self.audited_down=set();self.attention_audited=set()
         torch.backends.cuda.matmul.allow_tf32=False
     def weights_for(self,package,name,n,k):
         key=(str(package.resolve()),name,n,k)
@@ -52,7 +52,23 @@ class NativeOracle:
         assert ((multiplier>0)&(multiplier<2**31)).all() and np.abs(acc).max()<2**31
         y=np.clip(((acc*multiplier+2**30)>>31)+q['down']['zero_point'],0,255).astype('u1')
         return v,y
+    def attention(self,*args):
+        from llama32_c_attention_oracle import attention
+        from llama_u8_reference import exact_attention_dynamic
+        result=attention(*args)
+        key=(tuple(args[0].shape),args[3],tuple(map(tuple,args[4])))
+        if key not in self.attention_audited:
+            expected=exact_attention_dynamic(*args)
+            assert all(np.array_equal(x,y) for x,y in zip(result,expected))
+            self.attention_audited.add(key)
+        return result
     def install(self):
+        import json
+        from pathlib import Path
+        from llama_reference import sha256
+        proof=json.loads(Path('/mnt/d/llm_exp/results/llama32-htp/l32-0013/attention-oracle-proof.json').read_text())
+        assert proof['pass_gate'] and proof['candidate_sha256']==sha256(Path(__file__).with_name('llama32_c_attention_oracle.py'))
         import export_llama32_u8,llama_sp2_reference
         export_llama32_u8.project_w4u8=self.project
+        export_llama32_u8.exact_attention_dynamic=self.attention
         llama_sp2_reference.project_down=self.down
