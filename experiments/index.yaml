@@ -364,5 +364,11 @@ experiments:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
   parent_source: e03a0f8028b3f123dbc0263394c772483953dc22
-  hardware_runs: 0
+  hardware_runs: 5
   baseline_quality_promoted: false
+  token_boundary_executions: 6
+  probe_rpc_calls: 4
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0013
+  local_gate: native_radix257_transport_pass_new_model_training_running
+  ppl_rerun: false
+  formal_profiling: false

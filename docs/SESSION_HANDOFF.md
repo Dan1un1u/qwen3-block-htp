@@ -1,105 +1,67 @@
-# L32-0013 active: hardware-priority C-RTN/SP2 adaptation
+# L32-0013 active: fresh C-RTN/SP2 native-contract adaptation
 
-Owner no-rotation source at e03a0f8, clean/pushed on activation.
-User explicitly supersedes missing historical-artifact dependency: construct new
-training/folding/export from original Llama. rotation-quant remains read-only.
-Keep current integer residual/nonlinear/KV and other existing hardware contracts;
-only add missing support. 17.6424 is historical BF16 fakequant, not matched target.
-Read docs/experiments/L32-0013.md. No model/build/device jobs at activation.
-Prior L32-0012 method and all frozen results remain unchanged.
+Owner /home/daniuniu/work/llama32-htp, branch codex/llama32-no-rotation.
+Latest committed source 075d216fb97407d5925627bb6079b9107bb24407, clean/pushed.
+Read docs/experiments/L32-0013.md and source tools/llama32_c_rtn_train.py.
 
-# L32-0012 completed: all three SP2 pipeline directions resolved
+## Live job and continuation
 
-No active experiment or jobs. Source e03a0f8028b3f123dbc0263394c772483953dc22, clean/pushed.
-Tested source/build16 seal ddbc07f422693534f7d29e554f1c92c1b87cea18; closure adds report only.
-Read docs/SESSION_HANDOFF.md and docs/experiments/L32-0012.md.
-Best opt-in mode8: same-build prefill2004.83 vsU82042.63token/s,
-latency+1.8851%,95%CIupper3.4451%; decode46.08670 vs46.07593,
-latency-0.0234%,CIupper0.3852%. Both10%gatespass.
-Gather alone neutral; earlyGate/Up andDownHVX overlap improveprefill.
-NoPPL/quality/defaultpromotion. FrozenQwen androtation unchanged.
-Evidence /mnt/d/llm_exp/results/llama32-htp/l32-0012; ledger 5277594741ac28c3f013ca33191456e9a1952160b30c2e6d616e2ad6f83e8552 (428files).
+Initial R1/R2+SA100-update training is RUNNING, unified exec session11933.
+Stage source3809e2611323dc5a03f316be0e113c5fa997f79b; log
+/mnt/d/llm_exp/models/llama32-htp/l32-0013/initial/run.log.
+At this checkpoint it had completed42/100 updates, about33.6s/update.
+Do not relaunch or overwrite it. Inspect process/log and initial/complete.json.
+No automatic B/C launcher exists yet. When initial completes, run sequentially:
+python3 tools/llama32_c_rtn_train.py b_init
+python3 tools/llama32_c_rtn_train.py c
+B stage only initializes112 weight scales; no unused B training/GPTQ. C trains100
+updates. Single GPU accumulation8 preserves effective batch8. QKV andGate/Up
+share48 learned SA parameters for96sites. W4 training/export usesnative[-7,7].
+Training-only FP32 denseR1 exceptO retainsFP64; allR2 FP64. FinalfoldFP64.
+12-matrix selectiveFP64 precisionaudit passedNRMSE<=1e-4. EarlierallFP32O
+failed and is retained. OriginalrepeatedFP64training was deliberatelystopped
+beforecompletion and preserved in initial-fp64-a01; no shortenedtraining.
 
-# L32-0012: SP2 prefill pipeline directions completed
+## Already validated
 
-The best tested candidate is opt-in mode8. Full-model prefill Host wall is
-31.9228333ms versus originalU8 31.3321980ms (+1.8851%, paired95%CI
-[+0.1907%,+3.4451%]); decode46.08670 versus46.07593token/s
-(-0.0234%latency,CI[-0.4303%,+0.3852%]). Both10%gates pass.
-Compared with same-build previousmode5, prefill saves2.1797345ms
-(-6.3917%latency,CI[-7.9617%,-4.6879%]). No model-quality/default promotion.
+Reference snapshot is pinned GitHub d9a636ba273fa812b1d6098e9f9df0f8a33eb154
+under source build/l32-0013/reference, manifest in results/reference-snapshot.json.
+Original rotation-quant source and local experiments are read-only inputs.
+Fresh training uses original BF16 model; no old rotated/quantized weight reuse.
 
-## Three directions and measured attribution
+Native opt-inmode9 exactly implements187-levelSP2 via
+v=low+257*high-32770, scalealpha/32768. This includes bothsigned endpoints
+that oldradix256 cannot jointly represent. Existingmodes retain241-levelcontract.
+CPU all187levels,376tie/endpointcases and2048dotoutputs passed.
+Transport-only sealedhistoricalstimuli layers0/7/15 eachM64+1 passzerooutputcode
+mismatches, nointermediateDDR/spill. These arekernelproofs,NOTnewCquality.
+RawS32probe modes5/6 passall187levels and+/-1879048192 worstintegeroutputs,
+4352elements,2processes4RPCs. Production retains its strictersigned24partialgate.
+Totaldeviceprocesses5,modelboundaries6,probeRPCs4. NoPPL orformalprofilingyet.
 
-- Mode6 issues four predicated half-table gathers into two private scratch
-  vectors before either read. All16 immutableLUTs exhaust65536Gate/Up pairs
-  each on device,old/newlow/high match independent scalar table values exactly.
-  Gather alone versusmode5 gives+0.6551%prefill latency,CI[-0.5404%,+2.3586%]:
-  no stable E2E benefit. CombinedGate/Up+SwiGLU falls only19.97us;
-  this does not establish a useful isolated gather speedup or a bank-conflict cause.
-- Mode7 reuses the pairedGate/Up DMA scheduler forM64. It alternates
-  Gate0,Up0,Gate1,Up1 rather than completing allGate before streamingUp.
-  Each completedUp32-tile group is immediately available to three existingHVX
-  SP2 workers. Disjoint low/high output tiles and dedicatedmiddle allocation
-  preserve input lifetimes. Compared withmode6, Gate/Up+SwiGLU drops
-  9761.52→7930.08us and completeprefill saves5.0315%
-  (CI[-5.6396%,-4.3093%]). Publication/consumption128groups per fullprefill.
-- Mode8 adds two16KiBraw VTCM slots forDown. The soleHMX owner produces
-  six signed24 retain stores perNtile (low/high,3digits each),publishesready,
-  and starts the next tile while one persistentHVX worker reconstructsQ31
-  output. Done is published after the final outputstore; slotreuse waitsdone.
-  Each8-tile HMX command drains its epilogues before its DMA metadata slot is
-  reused. Main keeps itsHVX slot inprefill; HMXproducer haszeroHVXinstructions.
-  Compared withmode7,Down drops3572.30→3048.03us and completeprefill saves
-  2.0738%(CI[-3.3390%,-1.1475%]). Decode retains prior packedrows/onepass path.
+## Implemented but waiting for C artifacts / not yet validated end to end
 
-The measured mode8 combination includesmode6; its best result does not imply
-that gather rescheduling was necessary. No extra unregistered ablation or
-unchanged formal repeats. Relative toU8, remainingmode8 prefDown excess is
-541.74us and Gate/Up+SwiGLU excess74.46us. HMXtilepairs remain1473024
-forSP2prefill versus1210880U8; decodeboth1212928. Commands unchanged:
-pref3381/decode1589. WeightDDR621918208B perfulltokenboundary for everyarm.
-These counters support critical-path overlap, not elimination of extra SP2MACs.
-Prefilljoin subcounter falls4489.32→2672.98us frommode6→7; it is included
-inside the modulewall and must never be added again. No hardware stall counters
-were collected,so avoid claiming a proven gather-bank or specificinstructionstall cause.
+1. export_llama32_c_rtn.py: original->FP64gamma/R1/R2fold, learnedSWRTN,
+   packednativeW4; referenceBF16rounding/embeddingcentering recorded; freshnative
+   quantizedhead andembedding (hardwarewins conflicts, noFP16controlchange).
+2. calibrate_llama32_c_rtn.py freeze completed. data/calibration.bin=train32x2048
+   disjointwindows; validation.bin252852tokens; bridge128deterministicM64+16
+   windows2048targets. Completehistorical2048protocolhas252728targetsincludingtail.
+   Calibrate stage pending: newweights, learnedsharedSA; freshnative-onlyboundary
+   minmax andSP2responseMSE33+17logalphafit ontrainonly.
+3. prepare_llama32_c_package.py prepare/oracle/fixtures; usesindependentinteger
+   referenceandSDKlibnativeconversion, optionalinteger-exactFP32dotacceleration.
+   All three stages pending. Never label skeletoncode as completedmodelvalidation.
+4. New C singlelayer0/7/15, consecutive3thenfull16device gates remainpending.
+   run_llama32_stack.py acceptsL32-0013mode9 withmarker/manifestguard.
+   Buildbeforeeachdeclaredshape;newHEADrequiresfreshbuildseal; archiveoldbinaries.
+5. evaluate_llama32_c.py teacher/integer andrun_llama32_c_device.py
+   deploy/generate/ppl/compare pending. BF16fullvalidation separately; initial
+   hardware/softwarebridge isM64+16,notcomparabletohistorical17.6424.
+   Per-tokenNLLatol5e-5,exacttargetcodes;noA8modelqualitythreshold.
 
-## Scope, correctness and evidence
-
-Fixed10 rotated five-arm same-build cycles,M64+15,capacity80;everyarm occupies
-eachposition twice. All50formalruns retained,no optionalstopping. Previousmode5
-control hasprefillCIupper10.9408% inthiscohort (mean8.8419%),so doesnot pass
-thiscohort's strictCIgate. Its historicalL32-0011 pass remains valid separately.
-Mode6 also failscurrentprefCIgate; mode7 andmode8 passbothmodes.
-
-Exactsinglelayers0/7/15 (399360outputcodes percandidate),consecutive3layers,
-thenfull16-stepgreedy/logitcodes versus independentfrozenintegeroracle allpass.
-83successfulDSPprocesses:16LUTprobeprocesses(32probeRPCs),12replayprocesses,
-5fullmodelgates,50formalprocesses. All904modelboundaryledgers reconcile,
-including800formalboundaries. MaxVTCM8229344B within8388608;no timed
-intermediatetensorDDR/spill orW4→S8expansion. Newproducer/epilogue kernels
-havezero vectorstackspills. Existingdecode consumer retains only256Bconstant
-zero/255vectors onstack;no tensor-derivedspill. All1/3/16binaries andseals archived.
-
-Weights,qparams,alpha,241-levelSP2LUT,Q31,attention unchanged. NoPPLrun;
-SP2text stillrepetitive. Timingsincludeembedding,16layers,finalnorm,LMhead,
-greedy andFastRPC;excludeexternal tokenizer,loading andsessionpreparation.
-Results apply tothisfrozenprompt/context,not allshapes. OriginalU8 staysdefault.
-Qwen3 andLlamarotationbranch remainfrozen.
-
-Implementation/tested source: ddbc07f422693534f7d29e554f1c92c1b87cea18.
-Runner: tools/run_llama32_sp2_pipeline_directions.py, modes0/5/6/7/8.
-Evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0012
-(PROFILE.md,profiling_summary.json,contract-audit.json,run_inventory.json,
-provenance.json,gather-a01,build-layer1/3/16,e2e-a01).
-The closure commit adds only this report. Futurebuild/deployment must pass
-newexperimentpreflight and rebuild/reseal;never relabel old binaries.
-
-
-All tested1/3/16binaries/seals archived under build-layer1/3/16.
-Ledger docs/experiments/L32-0012-evidence-sha256.json covers 428 files.
-Nextwork needs an approvednewexperiment andfreshpreflight/buildseal;
-do not relabel these old binaries after the documentationclosureHEAD change.
-Mode8 invocation QBH_LLAMA_SP2=8 with the archived protocol's otherflags,
-using immutable L32-0010/frontend-a01. No newweights. DefaultoriginalU8.
-Do not repeat completed exploration or unchangedformaltests.
+Do not call this the originalCcheckpointorclaim17.6424reproduction. The user
+explicitly superseded that dependency: new training, existingintegerresidual,
+nonlinear,KV,head/embedding takeprecedence. Full2048hardwareevaluation isnotyet
+implemented; do not silentlytruncateandclaimfullWT2coverage. Noqualitypromotion.
+Qwen3 andfloatingcontrolsunchanged. Preserveallfailedandstoppedattempts.
