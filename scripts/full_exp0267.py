@@ -9,12 +9,12 @@ from audit_exp0267 import oracle
 def slice_gate():
  preflight();assert read(R/'layer-formal.json')['speed_pass'];zs={}
  for m in [0,4,5,8]:
-  tag=f'slice-m{m}';zs[m]=run(m,1,tag,count=3,dump=True)
+  tag=f'slice-a02-m{m}';zs[m]=run(m,1,tag,count=3,dump=True)
   if m:oracle(tag,2,O/'sp2/layer2')
  assert zs[4]['output_hashes']==zs[5]['output_hashes']==zs[8]['output_hashes']
  for m in [5,8]:
-  for f in (R/'slice-m4').glob('*.bin'):assert sha(f)==sha(R/f'slice-m{m}'/f.name),f.name
- z=run(8,10,'slice-repeat-m8',count=3);assert z['output_hashes']==zs[8]['output_hashes']*10
+  for f in (R/'slice-a02-m4').glob('*.bin'):assert sha(f)==sha(R/f'slice-a02-m{m}'/f.name),f.name
+ z=run(8,10,'slice-a02-repeat-m8',count=3);assert z['output_hashes']==zs[8]['output_hashes']*10
  write(R/'slice_gate.json',dict(pass_all=True,layers=3,steps=9,serial_optimized_exact=True,repeat10_exact=True,last_layer_integer_oracle=True))
 
 def full_gate():

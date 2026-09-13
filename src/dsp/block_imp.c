@@ -994,9 +994,24 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
             QBH_BLOCK_ALIGNMENT);
     }
     if (sp2_mode) {
+#if defined(QBH_NATIVE_SP2) && !defined(QBH_MODEL_LLAMA32)
+        /* EXP-0267: Qwen's 28-layer KV atlas leaves no separate SP2 plane.
+         * In the required direct-n MLP, Gate/Up input is in the q arena;
+         * hmx_activation's attention/O consumer has joined before post-norm.
+         * This allocation is dead throughout Gate/Up, SP2 and Down, and is
+         * overwritten by the next layer's input norm or the final LM head.
+         * KV carriers/atlas, residual, Gate/Up input/output remain disjoint. */
+        const uint32_t high_bytes = QBH_BLOCK_M * QBH_BLOCK_INTERMEDIATE;
+        const uint32_t scratch_bytes = sp2_mode==8U ? 34816U : 18432U;
+        if (high_bytes + scratch_bytes >
+            QBH_BLOCK_M * QBH_BLOCK_MAX_K * sizeof(uint16_t)) return -1;
+        buffers->sp2_high = buffers->hmx_activation;
+        buffers->sp2_scratch = buffers->hmx_activation + high_bytes;
+#else
         buffers->sp2_high = qbh_arena_alloc_aligned(&arena,
             QBH_BLOCK_M * QBH_BLOCK_INTERMEDIATE, 2048U);
         buffers->sp2_scratch = qbh_arena_alloc_aligned(&arena, sp2_mode==8U ? 34816U : 18432U, 2048U);
+#endif
         if (!buffers->sp2_high || !buffers->sp2_scratch) return -1;
     }
     if (qbh_attention_u8_enabled(attention_pipeline_mode)) {
@@ -2021,6 +2036,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (QBH_SP2(header)>=5U &&
           (header->w4u8_decode_direct_n_gate_up_batch_n_tiles!=32U || header->attention_hvx_contexts<4U)) ||
         (QBH_SP2(header) && (header->variant!=QBH_BLOCK_W4U8 ||
+          header->dense_r3_mode || header->dense_r4_mode ||
           header->w4u8_decode_projection_mode!=QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
           header->w4u8_decode_direct_n_mask!=63U ||
           header->w4u8_decode_swiglu_rows!=4U ||
