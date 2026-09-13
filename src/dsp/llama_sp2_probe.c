@@ -26,10 +26,10 @@ static void read_i32(uint8_t *bytes,uint32_t *bias){
   asm volatile("barrier":::"memory");
  }
 }
-static void unpack_digits(const uint8_t *bytes,int32_t *wide){
+static void unpack_digits(const uint8_t *bytes,int32_t *wide,uint32_t digits){
  for(uint32_t base=0;base<2048;base+=128){
   HVX_Vector value[4]={Q6_V_vzero(),Q6_V_vzero(),Q6_V_vzero(),Q6_V_vzero()};
-  for(uint32_t digit=0;digit<4;digit++){
+  for(uint32_t digit=0;digit<digits;digit++){
    HVX_Vector x=*(const HVX_Vector*)(bytes+2048*digit+base);
    HVX_VectorPair h=Q6_Wuh_vunpack_Vub(x);
    HVX_VectorPair wl=Q6_Wuw_vunpack_Vuh(Q6_V_lo_W(h)),wh=Q6_Wuw_vunpack_Vuh(Q6_V_hi_W(h));
@@ -55,6 +55,7 @@ int lsp2_run(int fd,uint32_t bytes,uint8_t *vtcm,uint32_t vbytes,uint32_t ctx){
  uint8_t *raw1=vtcm+cursor;cursor+=8192;
  int32_t *wide0=(int32_t*)(vtcm+cursor);cursor+=8192;
  int32_t *wide1=(int32_t*)(vtcm+cursor);cursor+=8192;
+ uint8_t *pack_scratch=vtcm+cursor;cursor+=2048;
  uint32_t *bias=(uint32_t*)(vtcm+cursor);cursor+=2048;
  int32_t *sums=(int32_t*)(vtcm+cursor);cursor+=aligned(c.n*4);
  int32_t *output=(int32_t*)(vtcm+cursor);cursor+=aligned(c.rows*c.n*4);
@@ -65,11 +66,18 @@ int lsp2_run(int fd,uint32_t bytes,uint8_t *vtcm,uint32_t vbytes,uint32_t ctx){
  memcpy(input,shared+c.input_offset,c.rows*c.k*2);memcpy(sums,shared+c.sum_offset,c.n*4);
  c.load_ticks=HAP_perf_get_qtimer_count()-t;t=HAP_perf_get_qtimer_count();
  memset(a0,0,c.k*64);memset(a1,128,c.k*64);
- for(uint32_t row=0;row<c.rows;row++)for(uint32_t k=0;k<c.k;k++){
-  int32_t v=input[row*c.k+k];uint32_t off=(k/32)*2048+row*32+k%32;
-  if(c.mode==0 || c.mode==3){if(v<0 || v>255){ret=AEE_EBADPARM;goto done;}a0[off]=(uint8_t)v;}
-  else {a0[off]=(uint8_t)((uint32_t)v&255U);uint8_t hi=(uint8_t)((v>>8)+128);
-   if(c.mode==1)a0[off+c.rows*32]=hi;else a1[off]=hi;}
+ /* Fixture input is logical signed16; producer fusion is deliberately a
+  * later experiment. Vector packing writes only the live native row spans. */
+ for(uint32_t row=0;row<c.rows;row++)for(uint32_t k=0;k<c.k;k+=64){
+  HVX_Vector v=*(const HVX_UVector*)(input+row*c.k+k);
+  *(HVX_Vector*)pack_scratch=Q6_Vb_vpacke_VhVh(v,v);
+  *(HVX_Vector*)(pack_scratch+128)=Q6_V_vxor_VV(Q6_Vb_vpacko_VhVh(v,v),Q6_V_vsplat_R(0x80808080));
+  for(uint32_t j=0;j<2 && k+32*j<c.k;j++){
+   uint32_t off=((k/32)+j)*2048+row*32;
+   memcpy(a0+off,pack_scratch+j*32,32);
+   if(c.mode==1)memcpy(a0+off+c.rows*32,pack_scratch+128+j*32,32);
+   if(c.mode==2)memcpy(a1+off,pack_scratch+128+j*32,32);
+  }
  }
  c.pack_ticks=HAP_perf_get_qtimer_count()-t;
  for(uint32_t nt=0;nt<c.n/32;nt++){
@@ -86,10 +94,9 @@ int lsp2_run(int fd,uint32_t bytes,uint8_t *vtcm,uint32_t vbytes,uint32_t ctx){
    c.convert_ticks+=HAP_perf_get_qtimer_count()-t;
   }
   t=HAP_perf_get_qtimer_count();
-  if(c.mode!=3){unpack_digits(raw0,wide0);if(c.mode==2)unpack_digits(raw1,wide1);}
+  unpack_digits(raw0,wide0,c.mode==3?1:4);if(c.mode==2)unpack_digits(raw1,wide1,4);
   for(uint32_t row=0;row<c.rows;row++){
-   if(c.mode==3){for(uint32_t n=0;n<32;n++)output[row*c.n+nt*32+n]=raw0[row*32+n];}
-   else{
+   {
     HVX_Vector v=*(const HVX_Vector*)(wide0+row*32);
     if(c.mode==1 || c.mode==2){
      const int32_t *hp=c.mode==1?wide0+(row+c.rows)*32:wide1+row*32;

@@ -15,6 +15,9 @@ int main(int argc,char **argv){
  if(size<128 || size>16777216){fclose(f);return 2;}
  uint8_t *shared=rpcmem_alloc(RPCMEM_HEAP_ID_SYSTEM,RPCMEM_FLAG_UNCACHED,(int)size);if(!shared){fclose(f);return 2;}
  if(fread(shared,1,size,f)!=(size_t)size){fclose(f);rpcmem_free(shared);return 2;}fclose(f);
+ struct lsp2_header *request=(void*)shared;
+ if(request->bytes!=(uint32_t)size || request->input_offset>(uint32_t)size || (uint64_t)request->rows*request->k*2>(uint64_t)size-request->input_offset){rpcmem_free(shared);return 2;}
+ if(request->mode==0 || request->mode==3){const int16_t *v=(const void*)(shared+request->input_offset);for(uint32_t i=0;i<request->rows*request->k;i++)if(v[i]<0 || v[i]>255){rpcmem_free(shared);return 2;}}
  struct qbh_session session={(remote_handle64)-1,0};int fd=rpcmem_to_fd(shared),mapped=0,ret=1;uint64_t elapsed=0;
  if(fd<0 || qbh_session_open(&session) || qbh_session_prepare(&session))goto done;
  if(fastrpc_mmap(CDSP_DOMAIN_ID,fd,shared,0,size,FASTRPC_MAP_FD))goto done;mapped=1;
