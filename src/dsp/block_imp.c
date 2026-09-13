@@ -252,6 +252,7 @@ struct qbh_block_buffers {
     uint8_t *projection_scales;
     uint8_t *gate_up_scale_cache;
     uint8_t *sp2_high, *sp2_scratch;
+    volatile uint32_t *sp2_prefill_ready;
     uint8_t *w4u8_silu_lut;
     uint8_t *w4u8_gather_scratch;
     volatile uint32_t *r4_prefill_ready;
@@ -477,6 +478,7 @@ struct qbh_block_w4f16_pool {
     const uint8_t *u8_swiglu_up;
     uint8_t *u8_swiglu_middle;
     uint8_t *u8_sp2_high;
+    uint32_t sp2_prefill_stream;
     const uint16_t *u8_swiglu_lut;
     uint8_t *u8_swiglu_gather_scratch;
     volatile uint32_t u8_swiglu_ready[QBH_BLOCK_INTERMEDIATE / (32U * QBH_HMX_OUTPUT_CHANNELS)];
@@ -2004,7 +2006,9 @@ static int qbh_header_valid(const struct qbh_block_header *header,
 #endif
     if (header == NULL || header->magic != QBH_BLOCK_MAGIC ||
         header->abi_version != QBH_BLOCK_ABI_VERSION ||
-        (QBH_LLAMA_SP2(header)!=0U && QBH_LLAMA_SP2(header)!=3U && QBH_LLAMA_SP2(header)!=4U) ||
+        (QBH_LLAMA_SP2(header)!=0U && QBH_LLAMA_SP2(header)!=3U && QBH_LLAMA_SP2(header)!=4U && QBH_LLAMA_SP2(header)!=5U) ||
+        (QBH_LLAMA_SP2(header)==5U &&
+          (header->w4u8_decode_direct_n_gate_up_batch_n_tiles!=32U || header->attention_hvx_contexts!=4U)) ||
         (QBH_LLAMA_SP2(header) && (header->variant!=QBH_BLOCK_W4U8 ||
           header->w4u8_decode_projection_mode!=QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
           header->w4u8_decode_direct_n_mask!=63U ||
@@ -4442,6 +4446,13 @@ static void qbh_r4_convert_worker(void *context,uint32_t worker_index);
 #ifdef QBH_MODEL_LLAMA32
 static void qbh_llama_swiglu_worker(struct qbh_block_w4f16_pool *pool,uint32_t index) {
     for(uint32_t tile=index;tile<QBH_BLOCK_INTERMEDIATE/32U;tile+=3U) {
+        if(pool->sp2_prefill_stream) {
+            while(!pool->u8_swiglu_ready[tile/32U]) {
+                if(pool->u8_swiglu_abort)return;
+                asm volatile("pause(#8)" ::: "memory");
+            }
+            asm volatile("barrier" ::: "memory");
+        }
         if (pool->u8_sp2_high)
             qbh_mlp_gate_up_sp2_lut_hvx(pool->u8_swiglu_gate+(size_t)tile*2048U,
                 pool->u8_swiglu_up+(size_t)tile*2048U,
@@ -9600,6 +9611,12 @@ static int qbh_run_w4u8_direct_n_projection(
             buffers->r4_prefill_ready[group]=1U;
             asm volatile("release(%0):at" :: "r"(&buffers->r4_prefill_ready[group]) : "memory");
             ++header->dense_r4_prefill_publish_count;
+        }
+        if(buffers->sp2_prefill_ready && desc==&header->projections[QBH_BLOCK_PROJ_UP]) {
+            uint32_t group=current_first/32U;
+            buffers->sp2_prefill_ready[group]=1U;
+            asm volatile("release(%0):at" :: "r"(&buffers->sp2_prefill_ready[group]) : "memory");
+            ++header->w4u8_gate_up_swiglu_publish_count;
         }
         current_first = next_first;
         current_tiles = next_tiles;
@@ -14899,6 +14916,36 @@ static uint64_t qbh_fnv1a64_u8_native_tile_row(
 #include "dense_r4.inc"
 
 #ifdef QBH_MODEL_LLAMA32
+/* L32-0011: all three persistent HVX workers consume completed Up groups.
+ * Low plane uses the dedicated middle allocation, never the still-live Up
+ * input in q. Each worker owns disjoint tiles and private gather scratch. */
+static int qbh_llama_sp2_prefill_start(struct qbh_block_w4f16_pool *pool,
+    struct qbh_block_buffers *buffers,const uint8_t *gate,const uint8_t *up,uint8_t *middle) {
+    if(!pool || pool->worker_count<3U)return -1;
+    for(uint32_t i=0;i<pool->worker_count;i++)
+        if(pool->jobs[i].command_kind!=QBH_BLOCK_HVX_POOL_NONE)return -1;
+    pool->u8_swiglu_gate=gate;pool->u8_swiglu_up=up;pool->u8_swiglu_middle=middle;
+    pool->u8_sp2_high=buffers->sp2_high;
+    pool->u8_swiglu_lut=(const uint16_t *)buffers->w4u8_silu_lut;
+    pool->u8_swiglu_gather_scratch=buffers->w4u8_gather_scratch;
+    pool->u8_swiglu_abort=0U;pool->sp2_prefill_stream=1U;
+    for(uint32_t i=0;i<QBH_BLOCK_INTERMEDIATE/(32U*32U);i++)pool->u8_swiglu_ready[i]=0U;
+    buffers->sp2_prefill_ready=pool->u8_swiglu_ready;
+    pool->active_worker_count=3U;pool->extra_expand_worker_index=UINT32_MAX;
+    for(uint32_t i=0;i<3U;i++)pool->jobs[i].command_kind=QBH_BLOCK_HVX_POOL_LLAMA_SWIGLU;
+    asm volatile("barrier" ::: "memory");
+    for(uint32_t i=0;i<3U;i++)(void)qurt_sem_up(&pool->command_ready[i]);
+    return 0;
+}
+static void qbh_llama_sp2_prefill_finish(struct qbh_block_header *h,
+    struct qbh_block_w4f16_pool *pool,struct qbh_block_buffers *buffers,int status) {
+    uint64_t t=HAP_perf_get_qtimer_count();
+    if(status) {pool->u8_swiglu_abort=1U;asm volatile("barrier" ::: "memory");}
+    qbh_w4f16_pool_wait(pool);pool->active_worker_count=0U;
+    h->w4u8_gate_up_swiglu_join_wait_ticks+=HAP_perf_get_qtimer_count()-t;
+    if(!status)h->w4u8_gate_up_swiglu_consume_count+=QBH_BLOCK_INTERMEDIATE/(32U*32U);
+    pool->sp2_prefill_stream=0U;buffers->sp2_prefill_ready=NULL;
+}
 static int qbh_llama_swiglu_parallel(struct qbh_block_w4f16_pool *pool,
     struct qbh_block_buffers *buffers,const uint8_t *gate,const uint8_t *up,uint8_t *middle) {
     if(pool==NULL || pool->worker_count<2U)return -1;
@@ -14956,7 +15003,9 @@ static int qbh_run_w4u8_direct_n_mlp(
         return -1;
     }
     buffers->r4_prefill_ready=NULL;buffers->r4_prefill_prepared=0U;
-    middle_native = mlp_arena;
+    const uint32_t stream_sp2 = prefill_direct && QBH_LLAMA_SP2(header)==5U;
+    buffers->sp2_prefill_ready=NULL;
+    middle_native = stream_sp2 ? buffers->middle : mlp_arena;
     /* The legacy streaming path places Down output inside its private
      * q-based phase plan.  Direct-n uses the global packed-weight slots,
      * whose lifetime can overlap that address.  Keep the native HMX output
@@ -15007,10 +15056,16 @@ static int qbh_run_w4u8_direct_n_mlp(
         const uint32_t stream_r4=prefill_direct && header->dense_r4_mode &&
             header->dense_r4_optimization==4U;
         if(stream_r4 && qbh_r4_prefill_start(pool,&r4_task))return -1;
+#ifdef QBH_MODEL_LLAMA32
+        if(stream_sp2 && qbh_llama_sp2_prefill_start(pool,buffers,gate_native,up_native,middle_native))return -1;
+#endif
         int up_status=qbh_run_w4u8_direct_n_projection(
             header,shared,&header->projections[QBH_BLOCK_PROJ_UP],buffers,worker,
             mlp_arena+gate_up_layout.vtcm_activation_offset,up_native,
             header->w4u8_decode_direct_n_gate_up_batch_n_tiles);
+#ifdef QBH_MODEL_LLAMA32
+        if(stream_sp2)qbh_llama_sp2_prefill_finish(header,pool,buffers,up_status);
+#endif
         if(stream_r4 && qbh_r4_prefill_finish(pool,&r4_task,up_status))return -1;
         if(up_status)return -1;
     }
@@ -15028,13 +15083,13 @@ static int qbh_run_w4u8_direct_n_mlp(
         if(qbh_run_dense_r4(header,shared,buffers,worker,pool,middle_native)!=0) return -1;
         header->activation_ticks+=HAP_perf_get_qtimer_count()-start;
 #ifdef QBH_MODEL_LLAMA32
-    } else if(prefill_direct!=0U) {
+    } else if(prefill_direct!=0U && !stream_sp2) {
         start=HAP_perf_get_qtimer_count();
         if(qbh_llama_swiglu_parallel(pool,buffers,gate_native,up_native,middle_native)!=0)return -1;
         header->activation_ticks+=HAP_perf_get_qtimer_count()-start;
 #endif
-    } else if (prefill_direct == 0U &&
-        header->w4u8_decode_direct_n_gate_up_swiglu_stream != 0U) {
+    } else if (stream_sp2 || (prefill_direct == 0U &&
+        header->w4u8_decode_direct_n_gate_up_swiglu_stream != 0U)) {
         const uint32_t tile_count =
             QBH_BLOCK_INTERMEDIATE / QBH_HMX_OUTPUT_CHANNELS;
         if (swiglu_rows == QBH_BLOCK_W4U8_SWIGLU_DECODE_ROWS) {
