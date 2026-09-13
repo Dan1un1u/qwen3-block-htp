@@ -6,8 +6,8 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: null
-  next_experiment_number: 8
+  active_experiment: L32-0008
+  next_experiment_number: 9
   maximum_running_experiments: 1
   remote_sync_required: true
 source_worktrees:
@@ -29,7 +29,8 @@ current_scope:
   stage: matched_device_ppl_completed
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Await user direction; L32-0008 available, no jobs
+  next_action: 'L32-0008 native W4 SP2 Down prototype: exact limb arithmetic, Llama
+    fixtures, bounded component timing; no baseline promotion'
   baseline_manifest: baselines/qwen3-frozen/manifest.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF.md

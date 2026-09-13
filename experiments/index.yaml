@@ -203,3 +203,15 @@ experiments:
     codex/llama32-no-rotation: b9932bd8ebdf6d7038cff882dfdfdf6aee7b8631
     codex/llama32-rotation: 252aee5ecfbefd4a2df6cd5a5e4b9193d935f86b
   quality_baseline_promoted: false
+- id: L32-0008
+  title: Llama SP2 Down activation exact radix256 native W4 prototype
+  execution_state: running
+  record: docs/experiments/L32-0008.md
+  approval_ref: User approved Llama prototype of the annotated signed16 SP2 high/low
+    native-W4 decomposition on 2026-09-13
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  parent_source: b9932bd8ebdf6d7038cff882dfdfdf6aee7b8631
+  hardware_runs: 0
+  baseline_quality_promoted: false
