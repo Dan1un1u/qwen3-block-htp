@@ -1,31 +1,52 @@
-# L32-0007 closed: matched W16A16 and W4A16 device PPL
+# L32-0008 closed: exact native W4 SP2 Down component
 
-No active experiment or background job. Both source branches remain unchanged,
-clean and synchronized. Next experiment L32-0008 awaits user direction.
-Current sealed native cfd9fee, source b9932bd, W4 OPT2 and original W16 carriers.
-No native code, weights, qparams or rotation changes.
+No active experiment or jobs. Next L32-0009 awaits user direction. Owner was
+no-rotation; source final 0a00e0a28d7961846648922c47e4be264e6b78df; tested native4ed16cf. Rotation252aee5 and
+frozen Qwen48eb1ea unchanged. Original weights, qparams, model runtime kernels,
+existing recipe defaults unchanged. Prototype is a separate RPC/CLI only.
 
-Fresh complete16-layer hardware evaluation, one run per recipe on the SAME frozen
-128 Wikipedia documents (64EN/64ZH),M64 context plus16 targets,2048 targets each.
-Original BF16 teacher26.6979986; FP16 software26.6988837.
-W16 device26.6917492 (-0.0234% vs BF16); EN17.7645866,ZH40.1050412.
-W4 device31.0391011 (+16.2600%); EN20.6041358 (+15.8353%),ZH46.7588551 (+16.6863%).
-W16 overall/language gates pass including paired-document bootstrap95% upper;
-W4 fails. Overall ratio CI W16[.998013,1.001480],W4[1.123305,1.212812].
-W4 all2048 target codes and NLL exactly equal sealed prior hardware evidence.
-No additional quality degradation from L32-0004/0005/0006 speed work.
-W16 old25.104770 figure used a DIFFERENT eight-document diagnostic, do not compare.
+241-level signed SP2 codebook (zero,one/two distinct powers0..14),8-bit index,
+shared scale from frozen Llama middle calibration maxabs/24576. Prototype
+input is pre-reconstructed signed16; NOT a fused SwiGLU producer. Preserve
+signed[-7,7] per-output W4. Device packs radix256 low/high U8, four retained
+non-saturating conversions exponent24/16/8/0 read exact accumulator bytes,
+HVX reconstructs L+256H-32768*sum(W). Decode uses spare64-row spatial positions;
+prefill two passes. Exact int32 result only; final scale/requant/residual not
+integrated. Do not label this full-layer or full-model SP2 acceptance.
 
-4096 unique scored pairs verify frozen sample/step/target,finite NLL,vocab128256,
-exact8MiB and zero timed intermediate DDR/spill. Two8-step generation smokes pass.
-Four successful DSP processes,4112 total boundaries. No native failures/repeats.
-Tooling syntax/legacy ledger shape and report token_id-vs-target_token confusion
-were repaired with original attempts retained; final postprocessing reused valid
-raw hardware results, no weakened gate. See recovery_notes.txt.
+Final20 functional probes934912 exact outputs,including399360 actual Llama
+SP2 outputs on layer0/7/15 prefill64 anddecode1,K8192,N2048. Signed extrema,
+carry,cancellation,longK,and both row packing/two passes pass. Emulator22049
+samples passes. Local Down NRMSE U8->SP2: layer0 prefill19.406->6.688%,decode
+70.434->5.287%;layer7 prefill40.951->3.426%,decode100->5.852%;layer15 prefill
+14.386->2.946%,decode100->4.093%. Reference is same W4 and A8 Gate/Up trajectory
+before middle quantization, NOT FP16 teacher or independent model PPL.
 
-Evidence /mnt/d/llm_exp/results/llama32-htp/l32-0007, SUMMARY.md,summary.json,
-26-file ledger docs/experiments/L32-0007-evidence-sha256.json.
-PPL is lightweight short-context EN/ZH Wikipedia, not broad/long-context acceptance.
-W4 baseline quality remains unaccepted; A8 remains unusable/unmodified.
-Latest formal SPEED evidence remains L32-0006, current values in status.
-Qwen frozen, Llama rotations unsupported; original BF16 inputs read-only.
+Fixed10 ABC/CBA component cycles perphase,1warmup+1measuredRPC perprocess:
+Host us prefill U8single5212.57/U8exact5284.60/SP26779.78;
+decode962.26/963.55/987.42. SP2/single ratio1.30066 CI[1.29327,1.30813] prefill,
+1.02615 [.99155,1.05209] decode. SP2/exact1.28293/1.02477. U8single is identity
+sat conversion timing control with sharedi32 return buffers, NOT optimized
+full-block baseline. Isolated explicit packing dominates prefill increment.
+No full-block10% gate decision,E2E orPPL. No model baseline promotion.
+
+Acquire8MiB VTCM,peak2797568B,oneHMX owner,no weight expansion,no intermediate
+TENSOR DDR or tensor spill;64B DDR DMA descriptor and128B compiler constant
+signmask stack recorded separately.60 additive ledgers reconcile;HMX issue
+counters asynchronous,conversion timing includes completionwait.
+
+101 valid processes/182 valid probeRPC calls;2 DMA failures and1 known stale
+DSP deployment excluded/preserved. Fixed descriptor placement in DDR,alignment,
+RT,HVX type include. Build-a05 failed but orchestration incorrectly deployed
+oldDSP with newhost; invalidattempt signed-small-rows-a02. Build seal and
+deployment HEAD/hash guard now prevent this. See recovery_notes for details.
+
+Recommended next: fuse SP2 quantizer/carrier generation into SwiGLU,connect
+Down scale/residual,then singleblock actual-arithmetic validation and fixed10
+completeHost10%gate. Keep PPL primary but do not infer model recovery from local
+error gains. Existing full-model speed baseline remains L32-0006 and W16/W4
+PPL remains L32-0007 (26.691749/31.039101 vsBF16teacher26.697999). A8 prior text
+unusable/PPL1206603.74 unchanged; no new quality threshold or rotation support.
+
+Evidence /mnt/d/llm_exp/results/llama32-htp/l32-0008, SUMMARY.md/summary.json/timing-ledger.json and 606-file
+ledger docs/experiments/L32-0008-evidence-sha256.json sha256 087f79a79669b658a1eccedde28b73e4cf71444405a755a64443bdcca850a50c.

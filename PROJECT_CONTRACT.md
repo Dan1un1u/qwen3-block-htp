@@ -122,3 +122,14 @@ Measured OFF Llama speed is near frozen Qwen OFF historical decode throughput;
 cross-model reference remains non-paired. Common code propagated to both Llama
 branches, without adding rotation support or promoting quantization quality.
 Current status/context and L32-0006 evidence are authoritative for measured scope.
+
+## L32-0008 SP2 prototype authorization and closure (2026-09-13)
+
+User approved Llama SP2 high/low native-W4 feasibility prototype. Isolated
+Down integer component passes exact arithmetic; no production recipe change,
+SwiGLU producer fusion,final output requant/residual,full-block10%gate,PPL or
+E2E measured. Fixed ten component cycles are not a full-block performance
+gate. L32-0008 record preserves two DMA failures and an invalid known stale-DSP
+attempt after build failure; final builds are sealed and deployment validates
+source HEAD plus all binary hashes. Native W4 SP2 feasibility does not promote
+any model-quality or performance baseline. Qwen research remains frozen.

@@ -205,7 +205,7 @@ experiments:
   quality_baseline_promoted: false
 - id: L32-0008
   title: Llama SP2 Down activation exact radix256 native W4 prototype
-  execution_state: running
+  execution_state: completed
   record: docs/experiments/L32-0008.md
   approval_ref: User approved Llama prototype of the annotated signed16 SP2 high/low
     native-W4 decomposition on 2026-09-13
@@ -213,5 +213,22 @@ experiments:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
   parent_source: b9932bd8ebdf6d7038cff882dfdfdf6aee7b8631
-  hardware_runs: 0
+  hardware_runs: 104
   baseline_quality_promoted: false
+  completed_on: '2026-09-13'
+  hardware_runs_definition: 104 DSP process attempts:101 valid,2 DMA failures,1 known
+    stale-DSP mixed-build invalid attempt; invalid excluded.60 fixed paired component
+    timing processes included.
+  valid_probe_rpc_calls: 182
+  source_heads:
+    codex/llama32-no-rotation: 0a00e0a28d7961846648922c47e4be264e6b78df
+    codex/llama32-rotation: 252aee5ecfbefd4a2df6cd5a5e4b9193d935f86b
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0008
+  evidence_ledger_sha256: 087f79a79669b658a1eccedde28b73e4cf71444405a755a64443bdcca850a50c
+  evidence_validity: valid_final_with_failed_and_invalid_attempts_preserved
+  local_gate: exact_component_arithmetic_pass_full_block_gate_not_applied
+  formal_profiling: false
+  formal_component_cycles: 10
+  full_block_gate_applied: false
+  ppl_rerun: false
+  e2e_run: false
