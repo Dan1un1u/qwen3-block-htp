@@ -64,6 +64,8 @@ def ppl():
 def compare():
     software=json.loads((RESULTS/'integer-ppl-a01/result.json').read_text());hardware=json.loads((OUT/'ppl-device.json').read_text());teacher=json.loads((RESULTS/'teacher-a01/bridge.json').read_text());p=json.loads((OUT/'protocol.json').read_text())
     assert hardware['complete'] and software['package_manifest_sha256']==p['package_manifest_sha256'] and software['dataset_sha256']==teacher['dataset_sha256']==p['dataset_sha256']
+    control=json.loads((RESULTS/'software-control-a01/bridge.json').read_text())
+    assert control['dataset_sha256']==p['dataset_sha256']
     ref={(v['sample_id'],v['step']):v for v in software['rows']};pairs=[]
     for row in hardware['rows']:
         key=(row['sample_id'],row['step']);assert key in ref;expected=ref.pop(key)
@@ -71,7 +73,7 @@ def compare():
         pairs.append(dict(sample_id=key[0],step=key[1],nll_abs=abs(row['nll']-expected['nll'])))
     assert not ref
     worst=max(v['nll_abs'] for v in pairs);passed=worst<=p['nll_atol']
-    save(OUT/'alignment.json',dict(pass_gate=passed,max_token_nll_abs=worst,nll_atol=p['nll_atol'],targets=2048,bf16_teacher_ppl=teacher['ppl'],integer_software_ppl=software['ppl'],device_ppl=hardware['ppl'],quality_ratio_to_teacher=hardware['ppl']/teacher['ppl'],quality_gate_applied=False,historical_17_6424_comparable=False,scope=p['scope'],per_token=pairs))
+    save(OUT/'alignment.json',dict(pass_gate=passed,max_token_nll_abs=worst,nll_atol=p['nll_atol'],targets=2048,bf16_teacher_ppl=teacher['ppl'],input_only_software_ppl=control['ppl'],integer_software_ppl=software['ppl'],device_ppl=hardware['ppl'],quality_ratio_to_teacher=hardware['ppl']/teacher['ppl'],native_extra_quantization_ppl_ratio=hardware['ppl']/control['ppl'],quality_gate_applied=False,historical_17_6424_comparable=False,scope=p['scope'],per_token=pairs))
     assert passed;print('C_DEVICE_SOFTWARE_PPL_ALIGNED',hardware['ppl'],flush=True)
 if __name__=='__main__':
     subprocess.run(['python3','/home/daniuniu/work/llama32-htp-project-memory/scripts/project_memory.py','preflight','--source-worktree',str(ROOT)],check=True)
