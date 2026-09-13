@@ -1,9 +1,9 @@
 # L32-0013: fresh C-RTN/SP2 adapted to the native HMX contract
 
-Status: initial100-update and C100-update training, fresh export/calibration and
-independent generation oracle complete. Integer bridge PPL is running; native
-device gates/PPL remain pending.
-This document must not be read as an accuracy acceptance or baseline promotion.
+Status: COMPLETE. Fresh original-weight construction, new C native gates, full16
+text and matched device PPL all ran. Native arithmetic alignment PASSED, but
+model quality with the existing integer boundaries remains UNUSABLE.
+No quality acceptance, default or baseline promotion is made.
 
 ## Scope and provenance
 
@@ -101,23 +101,74 @@ Before full16 deployment, new C weights must pass layer0/7/15 and consecutive
 three-layer gates. All stages retain immutable manifests, source/build seals,
 logs and failed attempts. No quality or default baseline is promoted.
 
-## Completed software quality results (device still pending)
+## Final model results
 
-| Model | Full WT2 validation2048+tail,252728 targets | Matched M64+16 bridge,2048 targets |
-|---|---:|---:|
-| Original BF16 teacher | 13.640870538532468 | 23.85653710580871 |
-| Fresh C input-only BF16 software control | 17.29825809973266 | 31.456631990730184 |
+| Evaluation scope | Original BF16 | C input-only BF16 control | Native integer reference | Real device |
+|---|---:|---:|---:|---:|
+| Full WT2 validation2048+tail,252728 targets | 13.64087054 | 17.29825810 | Not run | Not run |
+| Matched M64+16 bridge,2048 targets | 23.85653711 | 31.45663199 | 138395.59496349 | 138395.59980512 |
 
-The control retains BF16 residual/nonlinear/KV/head/embedding and the candidate's
-new C weights/shared SA/SP2 alpha. It is not the original17.6424 checkpoint.
-Native integer bridge scoring is pending; partial scores are not final results.
-The independent native greedy oracle already produces unusable text. Its chat
-prefill layer1 output has98.50235% zero entries and30 entirely zero rows out of64,
-with output scale0.3745098. This is a localization clue, not a controlled teacher
-error ablation or a device result. SP2 protects Down's input but does not remove
-the following native U8 output/residual boundary.
+The control preserves BF16 residual/nonlinear/KV/head/embedding, using the fresh
+candidate's C weights, shared SA and fitted SP2 alpha. It is not the historical
+17.6424 checkpoint. Its full-validation PPL is26.812% above its matched teacher.
+The hardware contract additionally quantizes the previously implemented
+boundaries. Its quality does not match this high-precision-boundary control.
+
+All3 single layers(0/7/15), consecutive3 layers and full16 generation passed.
+Single/three-layer output maximum code difference is0. All2048 target tokens
+have exact matching target codes; maximum per-token NLL difference is
+1.4944266819583163e-6, below the unchanged5e-5 threshold. Native arithmetic
+alignment is therefore established, independently of the very poor quality.
+
+Tested native source: e2b3b91c78b3bd9667d14d16484a129223ce6174.
+Peak observed VTCM plan8229344/8388608bytes; no intermediate DDR traffic/spill,
+FP16 HMX fallback or W4 expansion. Eleven successful device CLI executions
+include the earlier transport/raw probes and six new C validations. There are
+2078 recorded model-step boundaries and4 raw-probe RPCs. All20 sequential C
+pipeline stages completed successfully; failed earlier precision experiments
+and the deliberately stopped slow FP64 training attempt remain preserved.
+
+The device and independent integer oracle produce the same unusable text:
+
+    ,,,,,,,,,tees behindilinicheluthor elim,
+
+Auxiliary speed from the one functional M64+15 run: prefill2075.9773token/s,
+decode46.0603token/s. This is not formal profiling, a paired speed comparison,
+or a10% speed-gate result. Previous formal performance baselines are unchanged.
+
+## Localized quality problem
+
+Native oracle chat-prefill layer1(secondlayer) output has98.50235% zero entries
+and30 entirely zero rows out of64, with U8step0.3745098. The independent BF16
+control diagnostic applies each native quantizer in isolation to the normal
+floating trajectory, without changing weights or running a cumulative ablation:
+
+| Layer1 boundary | Position0 RMS | Positions1..63 RMS | Ordinary-position zero fraction after U8 | Ordinary-position NRMSE |
+|---|---:|---:|---:|---:|
+| Down output | 15.16736 | 0.034631 | 99.99845% | 0.999913 |
+| Block output/residual | 15.15917 | 0.054952 | 99.89382% | 0.997441 |
+
+The large first-position signal determines the shared minmax scale and removes
+almost all ordinary-position information. SP2 protects Down's input, while its
+output and the residual still use uniform U8. This loss exists before any HMX
+implementation is involved. Global energy-weighted NRMSE conceals it: Down's
+aggregate NRMSE is only0.01948, dominated by the accurately represented first
+position, despite near-total ordinary-position loss.
+
+The next focused direction is to separate the first-position and ordinary-token
+scales at Down output and residual boundaries, then test a controlled PPL
+ablation under the native W4 constraint. R1 preserves each token's L2 norm and
+cannot by itself eliminate this cross-token amplitude difference. No such
+contract change or new optimization has been applied in L32-0013.
 
 C training completed100 updates, mean training loss2.8492821, runtime3651.062s.
-All376832 learned output-channel scales are positive; no scale is at the floor.
-Maximum rotation orthogonality error6.5090e-7. The full fresh package,3 single
-layer fixtures and consecutive3 fixture are sealed; native gates must still run.
+All376832 learned output-channel scales are positive, none at the floor;
+maximum rotation orthogonality error6.5090e-7. Initial training also completed
+100 updates. Original reference source, Qwen3 and floating controls are unchanged.
+
+Artifacts: fresh deployment package
+`/mnt/d/llm_exp/models/llama32-htp/l32-0013/frontend-a01`;
+complete result/evidence root `/mnt/d/llm_exp/results/llama32-htp/l32-0013`.
+See summary.json, device-e2e-a01/alignment.json, the individual gate records,
+float-carrier-diagnostic-a01/result.json and evidence-ledger.json. Project memory
+records the final report-only source closure and evidence-ledger checksum.
