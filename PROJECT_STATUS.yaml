@@ -6,7 +6,7 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0013
+  active_experiment: null
   next_experiment_number: 14
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -14,7 +14,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: e03a0f8028b3f123dbc0263394c772483953dc22
+    recorded_head: bc5fdc1a8b044d4442ace7e2122ebc47cf0937d2
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -26,25 +26,25 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: hardware_contract_c_rtn_sp2_alignment
+  stage: native_c_rtn_sp2_alignment_completed
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Fresh original-weight R1/R2 and learned-scale C-RTN/SP2 export; native arithmetic gates
-    then device PPL
+  next_action: Discuss first-position vs ordinary-token scale separation at native Down output and residual
+    boundaries; no new experiment started
   baseline_manifest: baselines/qwen3-frozen/manifest.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF.md
   organization_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0266
   organization_evidence_ledger_sha256: 052b816c686b11b0bc57908b9f86147047c1ecc427af7d8ee54a985dc5e2c093
   original_model_path: /mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin
-  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0012
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0013
   validated_recipes:
   - w16a16
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0012
-  evidence_ledger_sha256: 5277594741ac28c3f013ca33191456e9a1952160b30c2e6d616e2ad6f83e8552
+  last_completed_experiment: L32-0013
+  evidence_ledger_sha256: b7f08359a7f76d374fafaa10b2e311758ef50bd48ecf7a15b7eb6ab6d8b599d2
   formal_profiling_completed: true
   general_quantization_quality_accepted: false
   w4a16_quality_gate_pass: false
@@ -424,6 +424,53 @@ current_scope:
     quality_promoted: false
     default_promoted: false
     evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0012
+  c_rtn_sp2_alignment:
+    report: docs/LLAMA32_C_RTN_SP2_ALIGNMENT.md
+    source_closure_head: bc5fdc1a8b044d4442ace7e2122ebc47cf0937d2
+    native_tested_source_head: e2b3b91c78b3bd9667d14d16484a129223ce6174
+    fresh_original_weight_construction: true
+    offline_rotations:
+    - R1
+    - R2
+    shared_activation_scales: 48
+    activation_sites: 96
+    learned_backbone_weight_scales: 376832
+    sp2_mode: 9
+    sp2_codebook_levels: 187
+    native_arithmetic_alignment_pass: true
+    physical_gate_pass: true
+    quality_accepted: false
+    usable_text: false
+    default_promoted: false
+    full_validation:
+      scope: WT2 validation disjoint2048 windows plus948-token tail; no BOS/EOS
+      input_tokens: 252852
+      scored_targets: 252728
+      bf16_teacher_ppl: 13.640870538532468
+      input_only_c_software_ppl: 17.29825809973266
+      native_integer_ppl: null
+      device_ppl: null
+    matched_bridge:
+      pass_gate: true
+      max_token_nll_abs: 1.4944266819583163e-06
+      nll_atol: 5.0e-05
+      targets: 2048
+      bf16_teacher_ppl: 23.85653710580871
+      input_only_software_ppl: 31.456631990730184
+      integer_software_ppl: 138395.59496349443
+      device_ppl: 138395.59980512303
+      quality_ratio_to_teacher: 5801.160461441228
+      native_extra_quantization_ppl_ratio: 4399.568264202799
+      quality_gate_applied: false
+      historical_17_6424_comparable: false
+      scope: M64+16 bridge exact integer alignment; not full WT2-2048 historical PPL
+    functional_single_run_speed:
+      prefill_tokens_per_second: 2075.9772646754886
+      decode_tokens_per_second: 46.06025667262272
+      scope: one functional run; no formal profiling/speed gate
+    formal_profiling: false
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0013
+    evidence_ledger_sha256: b7f08359a7f76d374fafaa10b2e311758ef50bd48ecf7a15b7eb6ab6d8b599d2
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp

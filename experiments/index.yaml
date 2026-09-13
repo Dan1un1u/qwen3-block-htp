@@ -355,7 +355,7 @@ experiments:
   e2e_run: true
 - id: L32-0013
   title: Fresh Llama C-RTN SP2 adaptation to existing native integer contract
-  execution_state: running
+  execution_state: completed
   record: docs/experiments/L32-0013.md
   approval_ref: 2026-09-14 user authorizes fresh original-weight construction; existing hardware wins
     conflicts in residual/nonlinear/KV and other implemented boundaries; add missing implementation; real-device
@@ -364,11 +364,47 @@ experiments:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
   parent_source: e03a0f8028b3f123dbc0263394c772483953dc22
-  hardware_runs: 5
+  hardware_runs: 11
   baseline_quality_promoted: false
-  token_boundary_executions: 6
+  token_boundary_executions: 2078
   probe_rpc_calls: 4
   evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0013
-  local_gate: native_radix257_transport_pass_new_model_training_running
-  ppl_rerun: false
+  local_gate: new_c_native_arithmetic_physical_and_ppl_alignment_pass_quality_unusable
+  ppl_rerun: true
   formal_profiling: false
+  completed_on: '2026-09-14'
+  hardware_runs_definition: 11 successful device CLI executions:3 transport replay,2 raw probe,3 new C
+    singlelayer,1 new C consecutive3,1 full16 generation,1 full16 teacher-forced PPL; no failed native
+    executions
+  source_heads:
+    codex/llama32-no-rotation: bc5fdc1a8b044d4442ace7e2122ebc47cf0937d2
+    codex/llama32-rotation: 252aee5ecfbefd4a2df6cd5a5e4b9193d935f86b
+  native_tested_source_head: e2b3b91c78b3bd9667d14d16484a129223ce6174
+  evidence_ledger_sha256: b7f08359a7f76d374fafaa10b2e311758ef50bd48ecf7a15b7eb6ab6d8b599d2
+  evidence_validity: all_attempts_retained_final_native_arithmetic_physical_and_ppl_alignment_pass
+  e2e_run: true
+  pipeline_stages_completed: 20
+  default_promoted: false
+  full_validation:
+    scope: WT2 validation disjoint2048 windows plus948-token tail; no BOS/EOS
+    input_tokens: 252852
+    scored_targets: 252728
+    bf16_teacher_ppl: 13.640870538532468
+    input_only_c_software_ppl: 17.29825809973266
+    native_integer_ppl: null
+    device_ppl: null
+  matched_bridge:
+    pass_gate: true
+    max_token_nll_abs: 1.4944266819583163e-06
+    nll_atol: 5.0e-05
+    targets: 2048
+    bf16_teacher_ppl: 23.85653710580871
+    input_only_software_ppl: 31.456631990730184
+    integer_software_ppl: 138395.59496349443
+    device_ppl: 138395.59980512303
+    quality_ratio_to_teacher: 5801.160461441228
+    native_extra_quantization_ppl_ratio: 4399.568264202799
+    quality_gate_applied: false
+    historical_17_6424_comparable: false
+    scope: M64+16 bridge exact integer alignment; not full WT2-2048 historical PPL
+  report: docs/LLAMA32_C_RTN_SP2_ALIGNMENT.md
