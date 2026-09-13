@@ -146,3 +146,13 @@ source, binaries, weights and sealed evidence. Qwen3 memory owns EXP-0267, on a
 new experiment branch. This user instruction supersedes the earlier blanket
 Qwen research freeze only for this migration; the historical EXP0265 branch
 and its pinned hash remain frozen and independently checked.
+
+## L32-0013 hardware-priority C-RTN/SP2 authorization (2026-09-14)
+
+User authorizes fresh original-weight training/folding/export, using rotation-quant
+read-only as method reference. Existing hardware quantization wins conflicts,
+including residual/nonlinear/KV and frontend/head boundaries. Add missing pieces
+without converting the runtime into the BF16 fakequant reference. Historical
+17.6423999759 PPL is not an exact-reproduction gate. Preserve numerical/physical
+implementation checks and label all contract differences. Floating controls and
+Qwen3 unchanged. See docs/experiments/L32-0013.md.

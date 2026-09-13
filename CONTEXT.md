@@ -1,15 +1,9 @@
-# L32-0012 completed: all three SP2 pipeline directions resolved
+# L32-0013 active: hardware-priority C-RTN/SP2 adaptation
 
-No active experiment or jobs. Source e03a0f8028b3f123dbc0263394c772483953dc22, clean/pushed.
-Tested source/build16 seal ddbc07f422693534f7d29e554f1c92c1b87cea18; closure adds report only.
-Read docs/SESSION_HANDOFF.md and docs/experiments/L32-0012.md.
-Best opt-in mode8: same-build prefill2004.83 vsU82042.63token/s,
-latency+1.8851%,95%CIupper3.4451%; decode46.08670 vs46.07593,
-latency-0.0234%,CIupper0.3852%. Both10%gatespass.
-Gather alone neutral; earlyGate/Up andDownHVX overlap improveprefill.
-NoPPL/quality/defaultpromotion. FrozenQwen androtation unchanged.
-Evidence /mnt/d/llm_exp/results/llama32-htp/l32-0012; ledger 5277594741ac28c3f013ca33191456e9a1952160b30c2e6d616e2ad6f83e8552 (428files).
-
-User confirmed the method conclusion and authorized Qwen3 migration on2026-09-13.
-Llama remains idle/pinned; active work moves to Qwen3 EXP-0267 under its own
-authority. Preserve the EXP0265 historical branch. No Llama remeasurement.
+Owner no-rotation source at e03a0f8, clean/pushed on activation.
+User explicitly supersedes missing historical-artifact dependency: construct new
+training/folding/export from original Llama. rotation-quant remains read-only.
+Keep current integer residual/nonlinear/KV and other existing hardware contracts;
+only add missing support. 17.6424 is historical BF16 fakequant, not matched target.
+Read docs/experiments/L32-0013.md. No model/build/device jobs at activation.
+Prior L32-0012 method and all frozen results remain unchanged.
