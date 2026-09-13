@@ -10,11 +10,11 @@ def main():
     ap.add_argument("--package",type=Path,required=True)
     ap.add_argument("--output",type=Path,required=True)
     ap.add_argument("--a8-audit",action="store_true",help="Audit scalar softmax equivalence and poison unused decode rows")
-    ap.add_argument("--sp2-mode",type=int,choices=[3,4,5,6,7,8],default=4)
+    ap.add_argument("--sp2-mode",type=int,choices=[3,4,5,6,7,8,9],default=4)
     args=ap.parse_args()
     subprocess.run(["python3","/home/daniuniu/work/llama32-htp-project-memory/scripts/project_memory.py","preflight","--source-worktree",str(ROOT)],check=True)
     m=json.loads((args.package/"manifest.json").read_text())
-    assert (m["experiment"],m["recipe"]) in [("L32-0001","W16A16"),("L32-0002","W4A16"),("L32-0003","W4A8"),("L32-0009","W4A8"),("L32-0010","W4A8")]
+    assert (m["experiment"],m["recipe"]) in [("L32-0001","W16A16"),("L32-0002","W4A16"),("L32-0003","W4A8"),("L32-0009","W4A8"),("L32-0010","W4A8"),("L32-0013","W4A8")]
     for f,r in m["files"].items():assert sha256(args.package/f)==r["sha256"],f
     for build in ["android_ReleaseG_aarch64","hexagon_ReleaseG_toolv19_v79"]:
         cache=(ROOT/build/"CMakeCache.txt").read_text()
@@ -51,7 +51,12 @@ def main():
         argv[20]="hvx_tree";argv[9]="hvx_fused_post_norm_pool4"
         env.update(QBH_W4U8_DECODE_DIRECT_N_GATE_UP_BATCH_N_TILES="32",QBH_W4U8_DECODE_DIRECT_N_GATE_UP_CONTINUOUS="1",QBH_W4U8_DECODE_DIRECT_N_O_GATE_PREFETCH="1",QBH_W4U8_DECODE_DIRECT_N_GATE_UP_SWIGLU_STREAM="1",QBH_W4U8_DECODE_DIRECT_N_QKV_BATCH_N_TILES="16",QBH_W4U8_DECODE_DIRECT_N_DOWN_BATCH_N_TILES="8",QBH_W4U8_DECODE_DIRECT_N_DOWN_SINGLE_DMA="1",QBH_W4U8_DECODE_O_BATCH_N_TILES="16",QBH_W4U8_DECODE_DIRECT_N_O_SINGLE_DMA="1")
     if m.get("sp2"):
-        assert m["experiment"] in ["L32-0009","L32-0010"] and m["recipe"]=="W4A8" and not args.a8_audit
+        assert m["experiment"] in ["L32-0009","L32-0010","L32-0013"] and m["recipe"]=="W4A8" and not args.a8_audit
+        if args.sp2_mode==9:
+            from llama32_sp2_contract import contract
+            assert m["sp2_encoding"]==contract()
+            for i in range(m["layers"]):assert json.loads((args.package/f"layer{i}/sp2_encoding.json").read_text())==contract()
+        else:assert "sp2_encoding" not in m
         env["QBH_LLAMA_SP2"]=str(args.sp2_mode)
     if args.a8_audit:
         assert m["recipe"]=="W4A8"
