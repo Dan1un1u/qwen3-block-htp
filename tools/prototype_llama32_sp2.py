@@ -85,14 +85,14 @@ def llama():
  put(OUT/'local_quality.json',metrics)
 
 def deploy():
- preflight();remote='/data/local/tmp/llama32-htp/l32-0008/prototype'
+ preflight();head=subprocess.check_output(['git','-C',str(ROOT),'rev-parse','HEAD'],text=True).strip();remote='/data/local/tmp/llama32-htp/l32-0008/prototype-'+head[:8]
  assert adb('shell',f'test ! -e {remote}',check=False).returncode==0
  adb('shell',f'mkdir -p {remote}')
  artifacts={}
  for name,build in [('llama_sp2_cli','android_ReleaseG_aarch64'),('libqwen3_probe.so','android_ReleaseG_aarch64'),('libqwen3_probe_skel.so','hexagon_ReleaseG_toolv19_v79')]:
   p=ROOT/build/'ship'/name;artifacts[name]=dict(path=str(p),sha256=sha(p));adb('push',windows(p),remote+'/'+name)
  adb('shell',f'chmod 755 {remote}/llama_sp2_cli')
- put(OUT/'deployment.json',dict(remote=remote,artifacts=artifacts,source_head=subprocess.check_output(['git','-C',str(ROOT),'rev-parse','HEAD'],text=True).strip()))
+ record=dict(remote=remote,artifacts=artifacts,source_head=head);put(OUT/('deployment-'+head[:8]+'.json'),record);put(OUT/'deployment.json',record)
 
 def run(name,attempt):
  preflight();d=OUT/'fixtures'/name;m=json.loads((d/'manifest.json').read_text());assert sha(d/'input.bin')==m['input_sha256'];assert sha(d/'reference.bin')==m['reference_sha256']

@@ -10,7 +10,7 @@
 #include "llama_sp2_probe.h"
 #include "hmx_u8s8_projection.h"
 #include "qbh_user_dma.h"
-#define RT 0x718U
+#define RT 0x700U
 static uint32_t aligned(uint32_t x){return (x+2047U)&~2047U;}
 static int valid(uint32_t off,uint32_t size,uint32_t total){return off>=128U && off<=total && size<=total-off;}
 /* Non-saturating retain conversion exposes four radix256 digits without
@@ -38,7 +38,7 @@ int lsp2_run(int fd,uint32_t bytes,uint8_t *vtcm,uint32_t vbytes,uint32_t ctx){
  uint32_t cursor=aligned(c.rows*c.k*2);int16_t *input=(int16_t*)vtcm;
  uint8_t *a0=vtcm+cursor;cursor+=c.k*64;
  uint8_t *a1=vtcm+cursor;cursor+=c.k*64;
- uint8_t *weight=vtcm+cursor;cursor+=c.k*16;
+ uint8_t *weight=vtcm+cursor;cursor+=aligned(c.k*16);
  uint8_t *raw0=vtcm+cursor;cursor+=8192;
  uint8_t *raw1=vtcm+cursor;cursor+=8192;
  uint32_t *bias=(uint32_t*)(vtcm+cursor);cursor+=2048;
