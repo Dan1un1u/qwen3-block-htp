@@ -28,7 +28,9 @@ def oracle(tag,layer,package=None):
   if step:
    native=unpack_u8_hmx_activation(s[8][:64*6144],6144);assert np.array_equal(native[4:5],((v+32768)>>8).astype('u1')),(tag,step,'high')
   audit.append(dict(step=step,rows=rows,max_abs_acc=int(np.max(np.abs(acc))),down_exact=True,residual_exact=True,low_exact=True))
- write(p/'integer_oracle.json',dict(pass_all=True,layer=layer,steps=audit,scope='changed SP2 path on actual hardware Gate/Up/residual; not floating-model quality'))
+ z=dict(pass_all=True,layer=layer,steps=audit,scope='changed SP2 path on actual hardware Gate/Up/residual; not floating-model quality')
+ if (p/'integer_oracle.json').exists():assert read(p/'integer_oracle.json')==z
+ else:write(p/'integer_oracle.json',z)
  return audit
 
 def single():
