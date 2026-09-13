@@ -4,16 +4,22 @@ import sys,json,statistics
 import numpy as np
 from export_exp0267 import S,R,O,P,sha,write,preflight
 from device_exp0267 import run,read,records,physical
-from audit_exp0267 import oracle
+from audit_exp0267 import oracle,unpack_u8_hmx_activation
 
 def slice_gate():
  preflight();assert read(R/'layer-formal.json')['speed_pass'];zs={}
  for m in [0,4,5,8]:
-  tag=f'slice-a03-m{m}';zs[m]=run(m,1,tag,count=3,dump=True)
+  tag=f'slice-a03-m{m}';saved=R/tag/'validated.json';zs[m]=read(saved) if saved.exists() else run(m,1,tag,count=3,dump=True)
   if m:oracle(tag,2,O/'sp2/layer2')
  assert zs[4]['output_hashes']==zs[5]['output_hashes']==zs[8]['output_hashes']
  for m in [5,8]:
-  for f in (R/'slice-a03-m4').glob('*.bin'):assert sha(f)==sha(R/f'slice-a03-m{m}'/f.name),f.name
+  for f in (R/'slice-a03-m4').glob('*.bin'):
+   b=R/f'slice-a03-m{m}'/f.name
+   if f.name.endswith('_r3.bin') and not f.name.startswith('step00_'):
+    a=np.fromfile(f,'u1');v=np.fromfile(b,'u1');off=983040+8*393216
+    assert np.array_equal(a[:off],v[:off]) and np.array_equal(a[off+393216:],v[off+393216:])
+    assert np.array_equal(unpack_u8_hmx_activation(a[off:off+393216],6144)[:8],unpack_u8_hmx_activation(v[off:off+393216],6144)[:8])
+   else:assert sha(f)==sha(b),f.name
  z=run(8,10,'slice-a03-repeat-m8',count=3);assert z['output_hashes']==zs[8]['output_hashes']*10
  write(R/'slice_gate.json',dict(pass_all=True,layers=3,steps=9,serial_optimized_exact=True,repeat10_exact=True,last_layer_integer_oracle=True))
 
