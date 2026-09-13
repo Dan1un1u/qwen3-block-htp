@@ -10,10 +10,13 @@
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
 #ifdef QBH_MODEL_LLAMA32
 #define QBH_BLOCK_ABI_VERSION UINT32_C(129)
-#define QBH_LLAMA_SP2(h) ((h)->llama_sp2_mode)
+#define QBH_SP2(h) ((h)->sp2_mode)
+#elif defined(QBH_NATIVE_SP2)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(130)
+#define QBH_SP2(h) ((h)->sp2_mode)
 #else
 #define QBH_BLOCK_ABI_VERSION UINT32_C(127)
-#define QBH_LLAMA_SP2(h) 0U
+#define QBH_SP2(h) 0U
 #endif
 #define QBH_BLOCK_EXPERIMENT UINT32_C(218)
 
@@ -63,7 +66,7 @@
 #define QBH_VERTICAL_SLICE_FIRST_LAYER UINT32_C(0)
 #define QBH_VERTICAL_SLICE_LAYER_COUNT QBH_QWEN3_TRANSFORMER_LAYERS
 #endif
-#if defined(QBH_MODEL_LLAMA32) || (defined(QBH_EXP0257_LAYER_COUNT) && QBH_EXP0257_LAYER_COUNT == 3)
+#if defined(QBH_MODEL_LLAMA32) || defined(QBH_NATIVE_SP2) || (defined(QBH_EXP0257_LAYER_COUNT) && QBH_EXP0257_LAYER_COUNT == 3)
 #define QBH_STAGED_A8_REPLAY 1
 #else
 #define QBH_STAGED_A8_REPLAY 0
@@ -920,8 +923,8 @@ struct qbh_block_header {
     /* Immutable seed metadata, [layer][K/V][head][channel], all U8. */
     uint8_t prefix_kv_u8[28][2048];
     uint32_t wide_score_mode; /* 0 legacy; 1 HVX wide; 2 untimed scalar wide oracle. */
-#ifdef QBH_MODEL_LLAMA32
-    uint32_t llama_sp2_mode; /* Explicit frozen SP2 LUT + native W4 radix256 Down. */
+#if defined(QBH_MODEL_LLAMA32) || defined(QBH_NATIVE_SP2)
+    uint32_t sp2_mode; /* Explicit frozen SP2 LUT + native W4 radix256 Down. */
 #endif
     uint32_t dense_r4_mode, dense_r4_audit_offset, dense_r4_optimization;
     uint32_t dense_r3_mode; /* 0 original; 1 HMX; 2 scalar audit; 3 HMX identity; 4 scalar after HMX state audit. */

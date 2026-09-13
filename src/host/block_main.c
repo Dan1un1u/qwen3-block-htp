@@ -1918,10 +1918,10 @@ static int qbh_build_bias_words(
                     negative_sum += weight<0 ? weight:0;
                 }
             }
-            if (QBH_LLAMA_SP2(header) && projection_index==QBH_BLOCK_PROJ_DOWN) {
+            if (QBH_SP2(header) && projection_index==QBH_BLOCK_PROJ_DOWN) {
                 /* Three radix digits are exact only with this per-channel proof
                  * for every possible U8 input, not merely the sampled activation. */
-                if(QBH_LLAMA_SP2(header)>=3U &&
+                if(QBH_SP2(header)>=3U &&
                    ((int64_t)positive_sum*255>8388607 || (int64_t)negative_sum*255< -8388608)) return -1;
                 double sp2_ratio=(double)input_qparam->scale*scales[global_output]/output_qparam->scale;
                 int64_t multiplier=llround(sp2_ratio*2147483648.0);
@@ -6871,9 +6871,9 @@ int main(int argc, char **argv) {
         header->scan_attention_audit_output_bytes =
             QBH_BLOCK_SCAN_F16_AUDIT_BYTES;
     }
-#ifdef QBH_MODEL_LLAMA32
-    header->llama_sp2_mode=getenv("QBH_LLAMA_SP2") ? (uint32_t)atoi(getenv("QBH_LLAMA_SP2")) : 0U;
-    if((header->llama_sp2_mode!=0U && header->llama_sp2_mode!=3U && header->llama_sp2_mode!=4U && header->llama_sp2_mode!=5U && header->llama_sp2_mode!=6U && header->llama_sp2_mode!=7U && header->llama_sp2_mode!=8U) || (header->llama_sp2_mode &&
+#if defined(QBH_MODEL_LLAMA32) || defined(QBH_NATIVE_SP2)
+    header->sp2_mode=getenv("QBH_SP2") ? (uint32_t)atoi(getenv("QBH_SP2")) : 0U;
+    if((header->sp2_mode!=0U && header->sp2_mode!=3U && header->sp2_mode!=4U && header->sp2_mode!=5U && header->sp2_mode!=6U && header->sp2_mode!=7U && header->sp2_mode!=8U) || (header->sp2_mode &&
        (variant!=QBH_BLOCK_W4U8 || dense_r3_mode))) return 2;
 #endif
     header->wide_score_mode=wide_score_mode;
@@ -7257,7 +7257,7 @@ int main(int argc, char **argv) {
             if(qbh_read_slot(shared,&input_slot) || qbh_read_slot(shared,&reference_slot) ||
                qbh_read_slot(shared,&rope_slots[0]) || qbh_read_slot(shared,&rope_slots[1])) goto cleanup;
             printf("{\"record\":\"llama_replay_repeat\",\"repeat\":%u,\"sp2_mode\":%u,\"warmup\":%s}\n",
-                rep,header->llama_sp2_mode,rep==0U?"true":"false");
+                rep,header->sp2_mode,rep==0U?"true":"false");
             if(qbh_run_replay_sequence(&session,shared_fd,shared,(uint32_t)total_bytes,
                 argv[1],header,&input_slot,&reference_slot,rope_slots,vertical_slots,variant)!=0) goto cleanup;
         }

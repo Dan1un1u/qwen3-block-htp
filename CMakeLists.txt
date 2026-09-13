@@ -2,13 +2,18 @@ cmake_minimum_required(VERSION 3.14.3)
 
 project(qwen3_probe C CXX ASM)
 
-option(QBH_MODEL_LLAMA32 "Build original Llama 3.2 1B W16A16 adapter" ON)
+option(QBH_MODEL_LLAMA32 "Build original Llama 3.2 1B W16A16 adapter" OFF)
 set(QBH_LLAMA_LAYER_COUNT "16" CACHE STRING "Llama staged layer count: 1, 3 or 16")
 if(QBH_MODEL_LLAMA32)
     if(NOT QBH_LLAMA_LAYER_COUNT MATCHES "^(1|3|16)$")
         message(FATAL_ERROR "Invalid Llama layer count")
     endif()
     add_compile_definitions(QBH_MODEL_LLAMA32=1 QBH_LLAMA_LAYER_COUNT=${QBH_LLAMA_LAYER_COUNT})
+endif()
+
+option(QBH_NATIVE_SP2 "Enable model-independent native W4 SP2 pipeline" ON)
+if(QBH_NATIVE_SP2)
+    add_compile_definitions(QBH_NATIVE_SP2=1)
 endif()
 
 set(CMAKE_C_STANDARD 11)
