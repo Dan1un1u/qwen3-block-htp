@@ -19,6 +19,12 @@ def worker(stage):
     from utils import quant_utils
     from train_utils import rotation_calibration as rc
     set_seed(42)
+    torch.backends.cuda.matmul.allow_tf32=False
+    audit=json.loads((RESULTS/"rotation-fp32-selective-fp64-audit.json").read_text())
+    assert audit["pass_gate"]
+    from llama32_rotation_math import rotated_weight_fp32
+    from train_utils.quant_linear import QuantizeLinear
+    QuantizeLinear.rotated_weight=rotated_weight_fp32
     # Native W4 uses [-7,7]. Keep ordinary A8 [-128,127].
     def ste(ctx, x, scale, maxq):
         hi = int(maxq)
@@ -90,7 +96,7 @@ def run(stage):
     env=os.environ.copy()
     env.update(PYTHONPATH=str(REFERENCE), PYTHONDONTWRITEBYTECODE="1",TOKENIZERS_PARALLELISM="false",OMP_NUM_THREADS="4", OPENBLAS_NUM_THREADS="8",CUDA_VISIBLE_DEVICES="0",HF_HOME="/home/daniuniu/work/rotation-quant/cache/huggingface",HF_HUB_OFFLINE="1",HF_DATASETS_OFFLINE="1")
     command=[PYTHON,"-B","-m","torch.distributed.run","--standalone","--nnodes=1","--nproc_per_node=1",str(Path(__file__).resolve()),"--worker",stage,*args]
-    record=dict(stage=stage,command=command,seed=42,updates=0 if stage=="b_init" else 100,effective_batch_sequences=8,sequence_length=2048,adaptations=["single GPU accumulation8 replaces two GPU accumulation4", "native symmetric W4 [-7,7]", "48 learned SA shared by QKV and Gate/Up; 96 input sites", "B initial SW only, no unused B or A training/GPTQ"])
+    record=dict(stage=stage,command=command,seed=42,updates=0 if stage=="b_init" else 100,effective_batch_sequences=8,sequence_length=2048,adaptations=["single GPU accumulation8 replaces two GPU accumulation4", "native symmetric W4 [-7,7]", "48 learned SA shared by QKV and Gate/Up; 96 input sites", "B initial SW only, no unused B or A training/GPTQ", "audited FP32 R1 folds except FP64 O; all R2 FP64; final export FP64"])
     (out/"launch.json").write_text(json.dumps(record,indent=2)+"\n")
     with (out/"run.log").open("x") as log:
         result=subprocess.run(command,cwd=ROOT,env=env,stdout=log,stderr=subprocess.STDOUT)
