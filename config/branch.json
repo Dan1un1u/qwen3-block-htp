@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "branch": "codex/exp-0267-sp2-native-w4-pipeline",
+  "branch": "codex/exp-0268-u8-prefill-pipeline",
   "model": "qwen3-frozen",
   "default_recipe": "w4a8",
   "w4a8_rotation": "none",
@@ -11,15 +11,17 @@
   ],
   "qwen3_frozen_commit": "48eb1ea7f9db0eb197a7c7908ab954d5a6635fc5",
   "active_experiment": null,
-  "completed_experiment": "EXP-0267",
+  "completed_experiment": "EXP-0268",
   "experimental_runtime": {
     "model": "Qwen3-1.7B",
     "layers": 28,
     "build": "scripts/build_qwen3_sp2.sh",
     "method": "docs/NATIVE_W4_SP2_METHOD.md",
-    "report": "docs/experiments/EXP-0267-RESULTS.md",
+    "report": "docs/experiments/EXP-0268-RESULTS.md",
     "SP2_env": "QBH_SP2=8",
     "default_promoted": false,
-    "quality_evaluated": false
+    "quality_evaluated": false,
+    "U8_env": "QBH_SP2=0 QBH_U8_PREFILL_OPT=3",
+    "U8_method": "docs/U8_PREFILL_PIPELINE.md"
   }
 }
