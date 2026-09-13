@@ -48,6 +48,13 @@ if(${OS_TYPE} MATCHES "HLOS")
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host/session
     )
 
+    add_executable(llama_sp2_cli src/host/llama_sp2_main.c src/host/session.c)
+    set_common_compile_and_link_options(llama_sp2_cli)
+    target_compile_options(llama_sp2_cli PRIVATE -Wall -Wextra -Werror)
+    target_link_libraries(llama_sp2_cli qwen3_probe)
+    target_link_options(llama_sp2_cli PRIVATE -llog -ldl)
+    copy_binaries(llama_sp2_cli)
+
     add_executable(qwen3_hmx_convert_cli
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host/hmx_convert_main
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host/session
@@ -126,6 +133,7 @@ if(${OS_TYPE} MATCHES "HLOS")
 else()
     add_library(qwen3_probe_skel SHARED
         ${CMAKE_CURRENT_BINARY_DIR}/qwen3_probe_skel
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/llama_sp2_probe.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/probe_imp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/hmx_int8_tile
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/hmx_u8s8_projection

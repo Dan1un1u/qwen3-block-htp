@@ -1665,3 +1665,10 @@ AEEResult qwen3_probe_run_block(remote_handle64 handle, int32 shared_fd,
                              session->vtcm_granted_bytes,
                              session->hmx_context_id, run_index);
 }
+
+#include "llama_sp2_probe.h"
+AEEResult qwen3_probe_run_llama_sp2(remote_handle64 handle,int32 fd,uint32 bytes){
+ struct qbh_probe_session *s=qbh_session_from_handle(handle);
+ if(!s || !s->prepared || !s->vtcm || !s->hmx_context_id)return AEE_EBADSTATE;
+ return lsp2_run(fd,bytes,s->vtcm,s->vtcm_granted_bytes,s->hmx_context_id);
+}
