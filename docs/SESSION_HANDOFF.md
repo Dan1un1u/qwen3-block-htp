@@ -1,64 +1,41 @@
-# L32-0009 closed: fused SP2 Down full-block and single-layer speed passed
+# L32-0010 closed: full-model SP2 prefill speed gate failed,decode passed
 
-No active experiment or jobs. Final no-rotation source 625073a5b680c9a115b694eb73d4c07286052212, clean and pushed.
-Formal measured source a4a5882596d4e75be0e47bebe3c17e568caf077c; optional host-only audit export457e2a6
-uses identical DSP SHA. Current build is layer1, seal457e2a6; source625073a adds
-only report documentation. Future deployment must rebuild/reseal after the next
-approved experiment, not relabel an old build. Rotation252aee5 and Qwen48eb1ea
-remain frozen/clean/synchronized. Defaults and existing W16/W4A16 recipes unchanged.
+No active experiment or running jobs. Source `327c7a22b895e83d2b624489c50f1bc45162fcf4`,clean and pushed.
+Tested3/16-layer build source05383b783dfba81c2985931b8e12782d249226c9.
+Current local build16 seal05383b7;closure commit adds report only. Future device
+work must rebuild/reseal under a new approved experiment,not relabel the old seal.
+Qwen48eb1ea and rotation252aee5 remain frozen. Defaults remain originalU8.
 
-Fixed L32-0008 241-level signed SP2 codebook and calibration scale. FP32 carrier
-scale has zero code differences from all six prior SP2 activation fixtures.
-Gate/Up65536-entry LUT stores v+32768; HVX gathers and directly packs low=l and
-high=h+128 into native64x32 tiles. Decode lowrows0..3/highrows4..7 share one HMX
-stream; prefill uses two streams. Per-output W4 scales and weights unchanged.
-Exact L+256H-32768sumW, then declared Q31 positive multiplier and signed rounded
-requantization to original DownU8, followed by original Q14 residual.
-Host proves for every channel and every possible U8 input each raw partial dot
-fits signed24; otherwise reject. Three non-saturating retain conversions suffice.
-Final mode4 register-only signed24 unpack/merge/Q31/pack and one HVX ownership
-transfer for entireDown; main retains scalar DMA submission with original
-double buffering and a singleHMX owner. Error paths explicitly release ownership.
-Mode3 retains perbatch lock control; old1/2 rejected. SP2 explicit opt-in,
-requires dedicated LUT/qparams package; default remains U8.
+# L32-0010 completed
 
-Correctness: final SP2 layer0/7/15 prefill64/decode1 outputs/KV exact,399360 unique
-block outputs. Separate actual Down carrier audits399360 codes exact before
-residual. LUT65536 pairs/layer exact byte decomposition; original L32-0008 signed
-carry stress remains valid evidence. Producer carrier side audit limited to
-first6144/8192 channels by old capture size, not an all-channel producer dump.
-Down and final outputs cover all2048 output channels. Independent Q31 vs exact
-scale gave zero output-code differences on six fixtures.
+Full-model prefill fails the retained10% gate: +13.3437% latency,95% CI +11.6943% to +14.5942%. Decode passes:+0.8440%,CI -0.0613% to +1.8670%. Thus small single-layer overhead does not establish small full-model prefill overhead. Main additive prefill increase: Gate/Up+SwiGLU +3546.3us and Down +1082.8us; complete Host +4215.1us. These module timings localize the cost but do not alone establish a DMA/HVX stall mechanism. No further optimization or unchanged formal rerun in this experiment.
 
-Final ten AB/BA process pairs,each1warmup+10measured identical-cache M64+1
-replays. Repeat1 auxiliary excluded. Singlelayer0 Host us:
-prefill U8 2015.28022 / SP2 2135.93487,ratio1.059869912,CI[1.026326658,1.088838579];
-decode U8 1426.11088 / SP2 1441.63639,ratio1.010886608,CI[.964618192,1.056183229].
-Both95% upper<=1.10 PASS. 400timedRPC+40warmup;440 additive ledgers reconcile.
-VTCM8MiB acquired,SP2peak8212960B,U8peak7668960B. No weight expansion or timed
-intermediate tensorDDR/spill. Final producer no stackspill; Down256B constant
-0/255 mask stack access only, no tensor spills. Generic HMX owner no added HVX
-instructions outside its lock. No fullmodel inference/PPL/E2E, no baseline promotion.
+Correctness: consecutive3-layer M64+1 outputs/KV exact; both16-step generation arms match their independent integer token/code goldens. Twenty formal processes /320 full-model token boundaries all exact and all ledgers additive. Total23 device processes /354 boundaries including functional checks. SP2 all16 partial-dot/Q31 bounds pass.8MiB acquired,max8212960B VTCM;no intermediate tensorDDR/spill or W4 expansion. Native source unchanged from L32-0009; this experiment adds package/oracle/profiling integration only. Weights,tokenizer,head and non-Down qparams unchanged. Original U8 baseline remains default. PPL not run; SP2 text is repetitive and no quality acceptance is implied.
 
-Previous scalar/mode2 and inlinedmode3 retain exact-output diagnostic evidence
-but fail physical acceptance: mode2 local array stackstores; inlined mode3
-HVX constants hoisted before lock. Fixed final function isolation and ownership;
-mode3 formal prefill upper1.10190 failed before final iteration, not rerun to
-pick a favorable number. Final third bounded optimization passed its new tenpairs.
-One standalone audit CLI rejected beforeDSP; one localPython numpy import failed
-beforedevice. Host-only replay diagnostic export fixed access; three diagnostic
-DDR capture processes excluded from allspeed. Historical audit naming R3 does
-not enable rotation (mode0). 73successfulDSPprocesses/1186RPC,plusoneCLI rejection.
-Finalnative454RPC across correctness,formal,anddiagnostic.
+Tested source05383b783dfba81c2985931b8e12782d249226c9. Three/16-layer binaries,seals,commands,oracle,rawstdout/results and packages are archived under L32-0010. One initial local log-redirection failure occurred before build/device; directory creation repaired it. Rebuilding the3-layer configuration for binary archival matched every tested hash exactly;16-layer final resealed before deployment. No failed native runs or numerical retries.
 
-Next discuss/register fullmodel SP2 validation separately: generate all16layers
-from original-derived frozen Llama weights/calibration,actualhardware PPL/text,
-then E2E. Do not infer quality recovery from local Down or layer-speed gate.
-Wholemodel speed baseline stays L32-0006; W16/W4 PPL L32-0007
-26.691749/31.039101 vsBF16teacher26.697999. PriorA8 unusable; unchanged evidence.
 
-Source docs/LLAMA32_SP2_DOWN_FUSED.md. Evidence /mnt/d/llm_exp/results/llama32-htp/l32-0009,
-SUMMARY.md/summary.json/contract-audit.json/run_inventory.json. Build binaries
-for allfive tested heads archived and hashesverified. package_manifests.json
-records all frozen packages. Ledger docs/experiments/L32-0009-evidence-sha256.json,
-415files,SHA256 9a1beb6e33de90527a753bb9272833f9a187bde7e091a631a28be4ee0dd956ac.
+
+E2E M64+15,tenfixed AB/BA pairs on same binary. OriginalU8 vsSP2:
+prefill2026.0344 vs1787.5134 token/s,latency+13.34373%,CI[1.11694295,1.14594209],FAIL.
+decode46.270279 vs45.883036 token/s,latency+0.843978%,CI[.999387032,1.018669812],PASS.
+Throughputloss11.7728%/0.8369%. Thus do not claim negligible fullmodelSP2overhead.
+Mainprefill additive increases Gate/Up+SwiGLU3546.3us,Down1082.8us;no causal
+stall/ownership mechanism established by these module totals alone.
+
+New source tools: prepare_llama32_sp2_e2e.py,run_llama32_sp2_e2e.py,
+llama_sp2_reference.py;export_llama32_u8.layer adds default-off SP2 reference.
+Existing stackrunner accepts L32-0010. No native C/DSP source changes this experiment.
+Models: /mnt/d/llm_exp/models/llama32-htp/l32-0010/{stack3-a01,frontend-a01}.
+Results: /mnt/d/llm_exp/results/llama32-htp/l32-0010;PROFILE.md,profiling_summary.json,contract-audit.json,
+run_inventory.json,package_manifests.json,independent sp2-oracle.json,
+e2e-a01 contains20formal+2functionalruns and tested16binaries/seal;
+device-stack3-a01 has3layerresult and binaries/seal. No remaining sessions.
+Ledger docs/experiments/L32-0010-evidence-sha256.json,137files,SHA256 eb124f2f2a06ff11d461cb289d3ae0c6a654bf15c8913102dbe4078f3895d9b9.
+
+User requested only E2E slowdown measurement this turn. No PPL run orquality
+promotion. SP2 greedy text remains repetitive (token39 repeated16times),even
+though exactintegeroracleagrees. Next discuss focusedprefill producer/native
+plane staging andDownoptimization;newexperiment requires userdirection.
+No repeat unchangedformal to obtainpass. Historical U8 speedbaseline L32-0006
+and W16/W4 PPL L32-0007 remain valid independently.

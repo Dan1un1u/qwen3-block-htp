@@ -6,7 +6,7 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0010
+  active_experiment: null
   next_experiment_number: 11
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -14,7 +14,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: 625073a5b680c9a115b694eb73d4c07286052212
+    recorded_head: 327c7a22b895e83d2b624489c50f1bc45162fcf4
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -26,25 +26,25 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: sp2_fused_down_single_block_gate_completed
+  stage: sp2_fullmodel_e2e_completed_prefill_gate_failed
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: 'L32-0010: validate consecutive SP2 layers and full-model integer generation,
-    fixed ten paired M64+15 E2E speed comparison'
+  next_action: Discuss full-model prefill SP2 producer/Down overhead; no automatic optimization
+    or quality promotion
   baseline_manifest: baselines/qwen3-frozen/manifest.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF.md
   organization_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0266
   organization_evidence_ledger_sha256: 052b816c686b11b0bc57908b9f86147047c1ecc427af7d8ee54a985dc5e2c093
   original_model_path: /mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin
-  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0009
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0010
   validated_recipes:
   - w16a16
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0009
-  evidence_ledger_sha256: 9a1beb6e33de90527a753bb9272833f9a187bde7e091a631a28be4ee0dd956ac
+  last_completed_experiment: L32-0010
+  evidence_ledger_sha256: eb124f2f2a06ff11d461cb289d3ae0c6a654bf15c8913102dbe4078f3895d9b9
   formal_profiling_completed: true
   general_quantization_quality_accepted: false
   w4a16_quality_gate_pass: false
@@ -67,14 +67,14 @@ current_scope:
     w4a8:
       prefill: 2015.9163652745706
       decode: 45.646624553664694
-  latest_e2e_shape: M64 prefill and 7 continuous decode tokens, matched ten rotated
-    three-arm cycles
+  latest_e2e_shape: M64 prefill and 7 continuous decode tokens, matched ten rotated three-arm
+    cycles
   additional_m64_plus15_e2e_tokens_per_second:
     prefill: 2046.8128485478423
     decode: 46.675701580572316
   quality_validation: /mnt/d/llm_exp/results/llama32-htp/l32-0007/SUMMARY.md
   w16a16_matched_ppl_gate_pass: true
-  last_formal_speed_experiment: L32-0006
+  last_formal_speed_experiment: L32-0010
   latest_matched_device_ppl:
     dataset: llama32-wiki-quant-v1 heldout 128 documents, M64+16,2048 targets
     bf16_teacher: 26.697998599288322
@@ -87,8 +87,7 @@ current_scope:
     code_bits: 8
     hmx_weight_path: native signed4, no S8 expansion
     exact_llama_sp2_elements: 399360
-    quality_scope: local Down against pre-middle-quantization A8 Gate/Up trajectory
-      only
+    quality_scope: local Down against pre-middle-quantization A8 Gate/Up trajectory only
     full_block_gate_applied: false
     ppl_run: false
     e2e_run: false
@@ -136,6 +135,47 @@ current_scope:
     ppl_run: false
     e2e_run: false
     baseline_promoted: false
+  sp2_down_e2e:
+    report: docs/LLAMA32_SP2_DOWN_E2E.md
+    source_head: 327c7a22b895e83d2b624489c50f1bc45162fcf4
+    profiled_source_head: 05383b783dfba81c2985931b8e12782d249226c9
+    sp2_mode: 4
+    layers: 16
+    shape: M64 prefill +15 continuous decode,capacity80
+    formal_pairs: 10
+    speed:
+      prefill:
+        u8_mean_ns: 31588802.1
+        sp2_mean_ns: 35803926.8
+        u8_tokens_per_second: 2026.034409199708
+        sp2_tokens_per_second: 1787.513429951488
+        latency_ratio: 1.133437307519806
+        latency_increase_pct: 13.343730751980608
+        throughput_decrease_pct: 11.772800015890983
+        ci95:
+        - 1.116942950870806
+        - 1.1459420892273215
+        gate_pass: false
+      decode:
+        u8_mean_ns: 324182181.7
+        sp2_mean_ns: 326918208.5
+        u8_tokens_per_second: 46.2702790182376
+        sp2_tokens_per_second: 45.88303621515777
+        latency_ratio: 1.0084397815624917
+        latency_increase_pct: 0.8439781562491699
+        throughput_decrease_pct: 0.8369147783336084
+        ci95:
+        - 0.9993870318057896
+        - 1.018669811781056
+        gate_pass: true
+    correctness_pass: true
+    physical_pass: true
+    prefill_speed_gate_pass: false
+    decode_speed_gate_pass: true
+    ppl_run: false
+    usable_text: false
+    baseline_promoted: false
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0010
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp

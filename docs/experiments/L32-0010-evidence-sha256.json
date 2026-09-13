@@ -1,0 +1,550 @@
+{
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/PROFILE.md": {
+    "bytes": 3696,
+    "sha256": "f4efedcbd1a4ca823877b6b9067fcaecc481e73c4252b941bbb4037381e9fd73"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/SUMMARY.md": {
+    "bytes": 1650,
+    "sha256": "40008551b7c961932293e057c086ffdf8fff51c757bd507bcfd096c5f4f60950"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/build16-a01.log": {
+    "bytes": 9921,
+    "sha256": "6ce145b03291b2d75977c36c303ae0fd5d75f54e82f4b87da7df852febabdbc1"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/build16-final.log": {
+    "bytes": 9921,
+    "sha256": "b481602792cff79fb86c219bb3d81e3433b0e9f35a321be989d4e545e905b036"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/build3-a01.log": {
+    "bytes": 9919,
+    "sha256": "8567bd257a940090ad6e2778dd7dfb1ea6f0fd9a83a9965d4258d49f9afc266c"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/build3-archive.log": {
+    "bytes": 9919,
+    "sha256": "87cf2af353ff608cd2e20c0220b6ad658324ee5dbd8e961a77a1d1e8d3351bdd"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/contract-audit.json": {
+    "bytes": 5325,
+    "sha256": "e6ed6c61e93311f2de7f829d9a1f37889f8ee92d18bb02a8c7379331146c64c5"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/deploy-a01.log": {
+    "bytes": 290,
+    "sha256": "cb3dbf6253164b252267a88ed73ba0ec5e32acafe5229c61bd8942022f48ba7e"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/device-stack3-a01/actual_replay_output_00_u8.bin": {
+    "bytes": 131072,
+    "sha256": "24e5ebb3a210af5da50519b8b5966a706161d251cd57fd04451a44df2bab543c"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/device-stack3-a01/actual_replay_output_01_u8.bin": {
+    "bytes": 131072,
+    "sha256": "a2553ba8e9ef2fc8f9f798ca198129ced05c8724c2d86dc60c122db07f71d132"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/device-stack3-a01/binaries/build-seal.json": {
+    "bytes": 704,
+    "sha256": "ff44612a978a63abe9eabdce352d41388ec485c3d386d86b105198cee12bf013"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/device-stack3-a01/binaries/libqwen3_probe.so": {
+    "bytes": 25424,
+    "sha256": "4b2376a0bae862da3256e8017aa370b9cb1275ef6ae77c46be06d895989ec08a"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/device-stack3-a01/binaries/libqwen3_probe_skel.so": {
+    "bytes": 1519112,
+    "sha256": "d30d669af2284bc62db16796c014484167007e7e0ac0e5b7d44931097faec24a"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/device-stack3-a01/binaries/qwen3_block_cli": {
+    "bytes": 546456,
+    "sha256": "6a0e868dde9e30a7a6e7739bbd108e8fc3f893609333585b7b80cea29b46a5e5"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/device-stack3-a01/protocol.json": {
+    "bytes": 1924,
+    "sha256": "c9c751a615086daec3415a2e1fa6135f4a8071c13052fe08b18bb8e65e8aa2fe"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/device-stack3-a01/result.json": {
+    "bytes": 42779,
+    "sha256": "5ed33f04090b39813707b145ebd995e90f92ef4a13414b9b1741c2120177a0bb"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/device-stack3-a01/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/device-stack3-a01/stdout.txt": {
+    "bytes": 31019,
+    "sha256": "685758e0ae8f5818f632b9168320a34e25743b3ad5c6a7ea043e3e740d46441d"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/device-stack3-a01.log": {
+    "bytes": 3087,
+    "sha256": "d52b37d2a35f26c2aa8f53e074c8274d4cdb1f8974dad8796ba172c93b18dfcf"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/binaries/build-seal.json": {
+    "bytes": 704,
+    "sha256": "e1ba4a0d9869006f546a1074993133219ddb19682138e8140e1b3e6dcd3d3874"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/binaries/libqwen3_probe.so": {
+    "bytes": 25424,
+    "sha256": "4b2376a0bae862da3256e8017aa370b9cb1275ef6ae77c46be06d895989ec08a"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/binaries/libqwen3_probe_skel.so": {
+    "bytes": 1520136,
+    "sha256": "f80e1b0935694ef2b366a1166c2072516fc911c52f76c08f1652f425bc1f3ebd"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/binaries/qwen3_block_cli": {
+    "bytes": 548880,
+    "sha256": "7f494413cc61a9e496750a8103d4b4de6dad3b6460075b867d1a7924e66ce8d8"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-00-sp2/command.json": {
+    "bytes": 1271,
+    "sha256": "a9bdacec71d3f8f7776d936af577e698d044743a484e7b6bb569ecfde7e707e2"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-00-sp2/result.json": {
+    "bytes": 529002,
+    "sha256": "8ef24380b0296baaa9ccc374d40ba26466649be8d697cf5d74d5f02082c0b6e1"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-00-sp2/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-00-sp2/stdout.txt": {
+    "bytes": 401169,
+    "sha256": "3978732ed330ec210c5795caec39d6b89d764ec58e13e308cece8747e7e0bdee"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-00-u8/command.json": {
+    "bytes": 1270,
+    "sha256": "f93f67a74932cb8b30aba5b7549433e1b75febe847a4ae30d417838716c5ea1e"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-00-u8/result.json": {
+    "bytes": 529093,
+    "sha256": "469bb8b564b87b4b0a837631ff87a35a46fe3563db1106fc1ed20a3cfd3822f4"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-00-u8/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-00-u8/stdout.txt": {
+    "bytes": 401308,
+    "sha256": "6e82ffac9d0e4b5c5dbd09f6eebb7eed8bb13e76fd0a4641e91d42b30eb7308e"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-01-sp2/command.json": {
+    "bytes": 1271,
+    "sha256": "a9bdacec71d3f8f7776d936af577e698d044743a484e7b6bb569ecfde7e707e2"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-01-sp2/result.json": {
+    "bytes": 529012,
+    "sha256": "719e2374d1dc15e247afd57552c94f4611b2c5e0317fc6b8d0d31a06bc06a4c2"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-01-sp2/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-01-sp2/stdout.txt": {
+    "bytes": 401179,
+    "sha256": "3e1a02a8153553213989fd89ae8bcd4ae8a6f475c49fc5fff7e8e38f39368dfa"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-01-u8/command.json": {
+    "bytes": 1270,
+    "sha256": "f93f67a74932cb8b30aba5b7549433e1b75febe847a4ae30d417838716c5ea1e"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-01-u8/result.json": {
+    "bytes": 529075,
+    "sha256": "6aaefc295e2fd0a065bed2c56f3fd354becc75d15f36a6defbcf19b5c30a20c3"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-01-u8/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-01-u8/stdout.txt": {
+    "bytes": 401290,
+    "sha256": "df5d76d48af5b4e68b8f6c6156dd8171180dc1d997fe62ad306f72c2faf0501d"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-02-sp2/command.json": {
+    "bytes": 1271,
+    "sha256": "a9bdacec71d3f8f7776d936af577e698d044743a484e7b6bb569ecfde7e707e2"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-02-sp2/result.json": {
+    "bytes": 528997,
+    "sha256": "9ba655e25cb3d2b9e5b88741af0856f7d8b48333814c7839d47f44d78c126183"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-02-sp2/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-02-sp2/stdout.txt": {
+    "bytes": 401164,
+    "sha256": "a1a0b67b9b10df6377c39284788f0d0e0ae335cfb3200a7fa562595824ac87dc"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-02-u8/command.json": {
+    "bytes": 1270,
+    "sha256": "f93f67a74932cb8b30aba5b7549433e1b75febe847a4ae30d417838716c5ea1e"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-02-u8/result.json": {
+    "bytes": 529078,
+    "sha256": "927853b710547ad08b65b3593dae79d741720dceebab333b5fed96cf0ef0ff5a"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-02-u8/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-02-u8/stdout.txt": {
+    "bytes": 401293,
+    "sha256": "12406e1b2c9de3dc00450f7eadf2ef67d4772f5265c012a3fa9e2d83d994d622"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-03-sp2/command.json": {
+    "bytes": 1271,
+    "sha256": "a9bdacec71d3f8f7776d936af577e698d044743a484e7b6bb569ecfde7e707e2"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-03-sp2/result.json": {
+    "bytes": 528988,
+    "sha256": "1532438dcf38367dea5b2511872cd51acfa69c4c27069011e0426dd5b694604f"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-03-sp2/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-03-sp2/stdout.txt": {
+    "bytes": 401155,
+    "sha256": "e460310f8915007bc272f809a3fd78cdedc700ca60b4921153ba1ca6964a5648"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-03-u8/command.json": {
+    "bytes": 1270,
+    "sha256": "f93f67a74932cb8b30aba5b7549433e1b75febe847a4ae30d417838716c5ea1e"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-03-u8/result.json": {
+    "bytes": 529078,
+    "sha256": "bd727f676b7e2e5a255031e9a638eb3dab483298c8a984f486891fefb6486d6b"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-03-u8/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-03-u8/stdout.txt": {
+    "bytes": 401293,
+    "sha256": "683dd041e68391b46613212d5198647327998676cf1decf599b67fed718afbc0"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-04-sp2/command.json": {
+    "bytes": 1271,
+    "sha256": "a9bdacec71d3f8f7776d936af577e698d044743a484e7b6bb569ecfde7e707e2"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-04-sp2/result.json": {
+    "bytes": 528994,
+    "sha256": "f19cfa19bedd7efac5304fb231e03242768832bb8f2a9a71cbe08abe995395a2"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-04-sp2/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-04-sp2/stdout.txt": {
+    "bytes": 401161,
+    "sha256": "509849d7f072549bddd9fffadce644a47fa2a14c8e25c050f918c5b4d073a703"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-04-u8/command.json": {
+    "bytes": 1270,
+    "sha256": "f93f67a74932cb8b30aba5b7549433e1b75febe847a4ae30d417838716c5ea1e"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-04-u8/result.json": {
+    "bytes": 529081,
+    "sha256": "8aec6472e6eac1b8c7a9d99c9c4901d067a9b8b951d6f2dd951c3b6367e8895c"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-04-u8/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-04-u8/stdout.txt": {
+    "bytes": 401296,
+    "sha256": "67eaa56ab6d643b20f9daad2d3bf1d929662dd1a2326324efe7a7818e7a2adad"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-05-sp2/command.json": {
+    "bytes": 1271,
+    "sha256": "a9bdacec71d3f8f7776d936af577e698d044743a484e7b6bb569ecfde7e707e2"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-05-sp2/result.json": {
+    "bytes": 528991,
+    "sha256": "d9ca25129ae2dc5b3de98ecfdbcaabff17d6ea2bff46c205fb76f0cc73cb91f6"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-05-sp2/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-05-sp2/stdout.txt": {
+    "bytes": 401158,
+    "sha256": "5130e0dd3c7c4cdc763644f2a523dfe1821f6610ebb627c77c021b7d2699773e"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-05-u8/command.json": {
+    "bytes": 1270,
+    "sha256": "f93f67a74932cb8b30aba5b7549433e1b75febe847a4ae30d417838716c5ea1e"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-05-u8/result.json": {
+    "bytes": 529076,
+    "sha256": "142b9b256ce2e757d1cd2fa720bf4858f9bd8fb06337a13efb3f78eb5cff9fd9"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-05-u8/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-05-u8/stdout.txt": {
+    "bytes": 401291,
+    "sha256": "f167ecf2af54d09ff673c018268d0780634d9756bd367a80c6cf0348c0c018e1"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-06-sp2/command.json": {
+    "bytes": 1271,
+    "sha256": "a9bdacec71d3f8f7776d936af577e698d044743a484e7b6bb569ecfde7e707e2"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-06-sp2/result.json": {
+    "bytes": 528990,
+    "sha256": "dec7245441fffe3f48c591384624c87bf626fd24b2efa287f389ee707741d926"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-06-sp2/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-06-sp2/stdout.txt": {
+    "bytes": 401157,
+    "sha256": "8b925228b01ad2c572bf46c25e52dde1b04020bee68fe8b2b589a1bd90b004a8"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-06-u8/command.json": {
+    "bytes": 1270,
+    "sha256": "f93f67a74932cb8b30aba5b7549433e1b75febe847a4ae30d417838716c5ea1e"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-06-u8/result.json": {
+    "bytes": 529083,
+    "sha256": "04e5f21538a37cdbb6fad8a8759f85511a6c217215b3db4970459a8b8ae26993"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-06-u8/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-06-u8/stdout.txt": {
+    "bytes": 401298,
+    "sha256": "d3d12f5caabce28206ceec12648819763f19a6154e6a4562f9b2f3152bf3fed9"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-07-sp2/command.json": {
+    "bytes": 1271,
+    "sha256": "a9bdacec71d3f8f7776d936af577e698d044743a484e7b6bb569ecfde7e707e2"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-07-sp2/result.json": {
+    "bytes": 528990,
+    "sha256": "f8a225defac2cc6f18e37c76edbaf80c16789b85b3bc515e063fcb8114364ddb"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-07-sp2/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-07-sp2/stdout.txt": {
+    "bytes": 401157,
+    "sha256": "4c47e666526af2cce78f149db54acde92f32f803aeb099bcb80a030694d60287"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-07-u8/command.json": {
+    "bytes": 1270,
+    "sha256": "f93f67a74932cb8b30aba5b7549433e1b75febe847a4ae30d417838716c5ea1e"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-07-u8/result.json": {
+    "bytes": 529075,
+    "sha256": "f0f1f635184a4f4bd378dd36098403c0e931fab68d3f58a03cd648277d830b33"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-07-u8/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-07-u8/stdout.txt": {
+    "bytes": 401290,
+    "sha256": "ac61c789e116eeb0df522ddcaad19374ed400f140cd4be07dc0412f181dc4afd"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-08-sp2/command.json": {
+    "bytes": 1271,
+    "sha256": "a9bdacec71d3f8f7776d936af577e698d044743a484e7b6bb569ecfde7e707e2"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-08-sp2/result.json": {
+    "bytes": 528999,
+    "sha256": "367075f1107dbffd6fb28732fb018673f66bfa3e36044eb1a60922541c5ab64b"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-08-sp2/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-08-sp2/stdout.txt": {
+    "bytes": 401166,
+    "sha256": "7cb4943cf206ef79252efdc7d95d8c2769d6b2d98ed1795c97218e4f7038747c"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-08-u8/command.json": {
+    "bytes": 1270,
+    "sha256": "f93f67a74932cb8b30aba5b7549433e1b75febe847a4ae30d417838716c5ea1e"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-08-u8/result.json": {
+    "bytes": 529073,
+    "sha256": "033655b7054632e027c365589668947a2bcb91b1773f13875cf15b72a6279b5f"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-08-u8/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-08-u8/stdout.txt": {
+    "bytes": 401288,
+    "sha256": "3140915c07610c4342b7a857e128fd6574eeb3c9d491d65da2969b2acb8db1de"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-09-sp2/command.json": {
+    "bytes": 1271,
+    "sha256": "a9bdacec71d3f8f7776d936af577e698d044743a484e7b6bb569ecfde7e707e2"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-09-sp2/result.json": {
+    "bytes": 528991,
+    "sha256": "ab344531d446d1322ff814d0ed496b90a98c74b3b68975179511504ca4026a0c"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-09-sp2/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-09-sp2/stdout.txt": {
+    "bytes": 401158,
+    "sha256": "dd9ae3457a775d66cf2ce6d0218811a8ab7ee5eacdb61f6e220b7e3995dfcd15"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-09-u8/command.json": {
+    "bytes": 1270,
+    "sha256": "f93f67a74932cb8b30aba5b7549433e1b75febe847a4ae30d417838716c5ea1e"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-09-u8/result.json": {
+    "bytes": 529091,
+    "sha256": "5eab8710c299681de10d280790e719f4b3c34db3902ed1eb581b91c2bbcb7abf"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-09-u8/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/formal-09-u8/stdout.txt": {
+    "bytes": 401306,
+    "sha256": "469f5efd514d993108863e287d3486951b90ae187dded5939e61c4acea26772e"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/gate-sp2/command.json": {
+    "bytes": 1271,
+    "sha256": "a9bdacec71d3f8f7776d936af577e698d044743a484e7b6bb569ecfde7e707e2"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/gate-sp2/result.json": {
+    "bytes": 528983,
+    "sha256": "631b2f48253e76c299d0e5f5167f1ab0596bcf37e696e7ee30b92fe0749e2ba9"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/gate-sp2/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/gate-sp2/stdout.txt": {
+    "bytes": 401150,
+    "sha256": "80ec4a208e2fd45d3fd7f1c6625a59f039cb85ab39fcbff52c098a3d951eaac8"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/gate-u8/command.json": {
+    "bytes": 1270,
+    "sha256": "f93f67a74932cb8b30aba5b7549433e1b75febe847a4ae30d417838716c5ea1e"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/gate-u8/result.json": {
+    "bytes": 529173,
+    "sha256": "d4ddeaa4b320e535370db1f4d7fc277809850ada68e97651389e3afed0d0f03f"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/gate-u8/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/gate-u8/stdout.txt": {
+    "bytes": 401388,
+    "sha256": "4c85d53380129d5656c0d83f6443f7e9e8749a4f539c80bed8f57c3e67432e47"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/protocol.json": {
+    "bytes": 4306,
+    "sha256": "d3d0d03c0ee6462308f25d7f29889a2b867ed66ef3eabcea28de316a056769b2"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/e2e-a01/summary.json": {
+    "bytes": 821,
+    "sha256": "08f670133e0e3918c2fe7b2dcf1af3a05914e91b0de5204cea2a34cef362dbde"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/formal-e2e-a01.log": {
+    "bytes": 1508,
+    "sha256": "383e6cdff5ba779e9f52aabd6f4d9e63cf6d55e2dcda778d2a4329e31b2d1764"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/gate-e2e-a01.log": {
+    "bytes": 305,
+    "sha256": "903e832ad97ec8e44e40d6c8d32597157ac3fdc9f18cf9bfc54f2c790979d87c"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/oracle-a01.log": {
+    "bytes": 5317,
+    "sha256": "088b501dab384951b2b590ae9379ff2114154dc4b2842cfc930683db81d86475"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/oracle-step-00.json": {
+    "bytes": 46,
+    "sha256": "990e95a831ba5fa3d0d9c36ce0930b34c6cdbcf9cd8ce38210d070cdd092f224"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/oracle-step-01.json": {
+    "bytes": 46,
+    "sha256": "0054c81f605e744127ffd0f00db0d2b8fd15c3dcaa48c278075c4c51ed08c974"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/oracle-step-02.json": {
+    "bytes": 46,
+    "sha256": "67d63703e267c3fc2c19287735db1628dece00f57642e473ed753faa8388d355"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/oracle-step-03.json": {
+    "bytes": 46,
+    "sha256": "7c71a07a171cec72101282cab99eac8b84a44a0141de77ac680ffd62d66d2e45"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/oracle-step-04.json": {
+    "bytes": 46,
+    "sha256": "ec0231739d79cf9223991d9134dc0b26d564ffb0cefcf198e231b89a85416784"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/oracle-step-05.json": {
+    "bytes": 46,
+    "sha256": "cbb944da8a60c2870f8c87c469df372aa6567192250fe9c19cf6cfce033a6a5a"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/oracle-step-06.json": {
+    "bytes": 46,
+    "sha256": "a24c9b1c4cfc37ec61a65672e112b20803e8066ee8e749980399ad6027ebbc83"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/oracle-step-07.json": {
+    "bytes": 46,
+    "sha256": "15f3b221a50333daf1d8d3439238f4589ed604c1a6dae35d40a45f6b8dfbc2a9"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/oracle-step-08.json": {
+    "bytes": 46,
+    "sha256": "b4df1474cd343a3fc8528208dd2889ff504df8fb0ebfb1625524679257194452"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/oracle-step-09.json": {
+    "bytes": 46,
+    "sha256": "e3658b0fdf26b330176309db46f7b1248ba978cf11a86c1fbc52a9397b7e118b"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/oracle-step-10.json": {
+    "bytes": 47,
+    "sha256": "21f604efdf06f80b8b10fb0e6f1cb54c4429503a6e24b720755f2e2a1ea2addb"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/oracle-step-11.json": {
+    "bytes": 47,
+    "sha256": "eb092fe5cee0d0f7a9e8ea1539d411494bd45158d56afa0f4e2e74a10b9b163c"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/oracle-step-12.json": {
+    "bytes": 47,
+    "sha256": "c076741bed7a0d31ae509f4a313054841083e17776bc322fd83d8e7e60a20eb7"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/oracle-step-13.json": {
+    "bytes": 47,
+    "sha256": "192bddbf5cb42abb6097e2e3e43b238444a91de75ef6240e1d0d870343a92c87"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/oracle-step-14.json": {
+    "bytes": 47,
+    "sha256": "d1382a69b8da9c1df31a2cbe89a3fe65cba279feadd89c33900e153817f8bb59"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/oracle-step-15.json": {
+    "bytes": 47,
+    "sha256": "799e1ab63e2419cb661ddedc2f0bc71d474320cae21f3fe636bfd032148c5954"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/package_manifests.json": {
+    "bytes": 85633,
+    "sha256": "f5c58b3c0c8e44603316c1578b76648fb1f9e724d1100b2dd8130c4c5c6e6e1b"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/profiling_summary.json": {
+    "bytes": 13411,
+    "sha256": "c8d69133ef1bf909671f666921f0ec2faacf6377af205ba9dfb2625f61b81ef2"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/report.py": {
+    "bytes": 3509,
+    "sha256": "ace05b7dfdf5950b3d798ef79982769400dd959e113a0107847034c84a83965b"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/run_inventory.json": {
+    "bytes": 3433,
+    "sha256": "397c8b862ef2d7bc7c2bba4c6522830f231caa3fbc8da62ebccb1ea57fc5ebb2"
+  },
+  "/mnt/d/llm_exp/results/llama32-htp/l32-0010/sp2-oracle.json": {
+    "bytes": 1065,
+    "sha256": "47983066a68435f2450153600e4824b4f9b821412262a502ee8df34060000c7c"
+  }
+}
