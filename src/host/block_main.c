@@ -6878,6 +6878,11 @@ int main(int argc, char **argv) {
     if((header->sp2_mode!=0U && header->sp2_mode!=3U && header->sp2_mode!=4U && header->sp2_mode!=5U && header->sp2_mode!=6U && header->sp2_mode!=7U && header->sp2_mode!=8U) || (header->sp2_mode &&
        (variant!=QBH_BLOCK_W4U8 || dense_r3_mode))) return 2;
 #endif
+#if defined(QBH_NATIVE_SP2) && !defined(QBH_MODEL_LLAMA32)
+    header->u8_prefill_opt=getenv("QBH_U8_PREFILL_OPT") ? (uint32_t)atoi(getenv("QBH_U8_PREFILL_OPT")) : 0U;
+    if(header->u8_prefill_opt>3U || (header->u8_prefill_opt &&
+       (variant!=QBH_BLOCK_W4U8 || header->sp2_mode || dense_r3_mode))) return 2;
+#endif
     header->wide_score_mode=wide_score_mode;
     header->dense_r4_mode=getenv("QBH_DENSE_R4") ? (uint32_t)atoi(getenv("QBH_DENSE_R4")) : 0U;
     header->dense_r4_audit_offset=(uint32_t)dense_r4_audit_offset;

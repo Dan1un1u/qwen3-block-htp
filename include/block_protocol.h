@@ -12,11 +12,16 @@
 #define QBH_BLOCK_ABI_VERSION UINT32_C(129)
 #define QBH_SP2(h) ((h)->sp2_mode)
 #elif defined(QBH_NATIVE_SP2)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(130)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(131)
 #define QBH_SP2(h) ((h)->sp2_mode)
 #else
 #define QBH_BLOCK_ABI_VERSION UINT32_C(127)
 #define QBH_SP2(h) 0U
+#endif
+#if defined(QBH_NATIVE_SP2) && !defined(QBH_MODEL_LLAMA32)
+#define QBH_U8_PREFILL_OPT(h) ((h)->u8_prefill_opt)
+#else
+#define QBH_U8_PREFILL_OPT(h) 0U
 #endif
 #define QBH_BLOCK_EXPERIMENT UINT32_C(218)
 
@@ -925,6 +930,9 @@ struct qbh_block_header {
     uint32_t wide_score_mode; /* 0 legacy; 1 HVX wide; 2 untimed scalar wide oracle. */
 #if defined(QBH_MODEL_LLAMA32) || defined(QBH_NATIVE_SP2)
     uint32_t sp2_mode; /* Explicit frozen SP2 LUT + native W4 radix256 Down. */
+#endif
+#if defined(QBH_NATIVE_SP2) && !defined(QBH_MODEL_LLAMA32)
+    uint32_t u8_prefill_opt; /* 0 serial;1 three HVX;2 Up-ready;3 early Gate/Up. */
 #endif
     uint32_t dense_r4_mode, dense_r4_audit_offset, dense_r4_optimization;
     uint32_t dense_r3_mode; /* 0 original; 1 HMX; 2 scalar audit; 3 HMX identity; 4 scalar after HMX state audit. */
