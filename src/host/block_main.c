@@ -3560,6 +3560,14 @@ static int qbh_run_replay_sequence(
             return -1;
         }
 
+        /* Optional existing carrier audit: diagnostic DDR only, outside all
+         * numerical-off performance evidence. No rotation is enabled by it. */
+        if (dump_root && dump_root[0] && header->dense_r3_audit_offset) {
+            char name[80];
+            snprintf(name,sizeof(name),"actual_replay_chain_%02u.bin",step);
+            if(qbh_write_named_tensor(dump_root,name,shared+header->dense_r3_audit_offset,
+                QBH_DENSE_R3_AUDIT_BYTES)!=0){free(cache_snapshots);return -1;}
+        }
         step_result->host_wall_ns = end - start;
         step_result->step_index = step;
         step_result->first_position = header->replay_first_position;
