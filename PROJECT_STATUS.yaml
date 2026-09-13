@@ -18,8 +18,8 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 268
+  active_experiment: EXP-0268
+  next_experiment_number: 269
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -8763,10 +8763,9 @@ current_scope:
     next_action: Discuss W4A8 reproducibility and same-W4-weight activation attribution; no new experiment
       authorized
   next_research_direction:
-    status: await_user_direction
-    current: retain_SP2_method_and_evidence_no_additional_experiment_started
-    document: docs/SESSION_HANDOFF_EXP0267.md
-    new_experiment_required: true
+    status: running
+    current: EXP0268_U8_prefill_scheduling_backport
+    document: docs/experiments/EXP-0268.md
   latest_w4f16_independent_tool_result:
     id: EXP-0233
     source_head: 24a976887f9da144e49de2774104a3e72ddf6ddd

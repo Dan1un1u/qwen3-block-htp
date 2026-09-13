@@ -388,3 +388,7 @@ precede fullmodel; independent arithmetic,8MiB,oneHMXowner,zero timed tensorDDR/
 spill,oneRPC/token and additive ledgers mandatory. Fixed5short/10rotatedformal,
 repeat1 auxiliary only; both pairedbootstrap95 upper<=1.10 vsU8 controls escalation.
 PC037 routine repair authorization applies; retain failed attempts.
+
+## PC082 — User-approved U8 prefill scheduling backport
+
+User approves EXP0268 per docs/experiments/EXP-0268.md. Reopen Qwen only for bit-exact ordinary U8 scheduling improvements and paired comparison with unchanged SP2 mode8. Frozen models/arithmetic, other recipes/branches and all numerical/physical gates remain. Fixed5short10formal repeat10 primary perPC079; PC037 repairs apply. No PPL, quality/default promotion or additional tuning inferred.

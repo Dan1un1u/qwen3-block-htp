@@ -24,6 +24,25 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0268
+  slug: u8-prefill-pipeline
+  title: Bit-exact U8 prefill scheduling and fair SP2 cost
+  parent: EXP-0267
+  record: docs/experiments/EXP-0268.md
+  approval_ref: 'User: 好的，尝试做一下吧; PC082'
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: not_applicable
+  runtime:
+    source_branch: codex/exp-0267-sp2-native-w4-pipeline
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    started_on: '2026-09-13'
+  source_branches:
+  - codex/exp-0268-u8-prefill-pipeline
+  source_commits: []
+  evidence:
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0268
 - id: EXP-0267
   slug: sp2-native-w4-pipeline
   title: Llama native-W4 SP2 pipeline migration to Qwen3

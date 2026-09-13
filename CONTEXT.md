@@ -2098,3 +2098,7 @@ or discardedtiming. Evidence /mnt/d/llm_exp/results/qwen3-block-htp/exp0267,1556
 HistoricalQwen48eb1ea and Llamano-rotatione03a0f8/rotation252aee5 unchanged.
 
 This current closure supersedes earlier active/next pointers. No further tuning or quality experiment has started.
+
+## Current EXP0268 — user-approved U8 scheduling backport
+
+PC082 and docs/experiments/EXP-0268.md supersede previous no-active pointers. Freeze EXP0267 evidence and models. Newbranch after successfulpreflight; compare old/optimizedU8 bit-exact and unchangedSP2 to separate shared scheduling gains from SP2 cost.
