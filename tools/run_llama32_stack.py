@@ -13,12 +13,17 @@ def main():
     args=ap.parse_args()
     subprocess.run(["python3","/home/daniuniu/work/llama32-htp-project-memory/scripts/project_memory.py","preflight","--source-worktree",str(ROOT)],check=True)
     m=json.loads((args.package/"manifest.json").read_text())
-    assert (m["experiment"],m["recipe"]) in [("L32-0001","W16A16"),("L32-0002","W4A16"),("L32-0003","W4A8")]
+    assert (m["experiment"],m["recipe"]) in [("L32-0001","W16A16"),("L32-0002","W4A16"),("L32-0003","W4A8"),("L32-0009","W4A8")]
     for f,r in m["files"].items():assert sha256(args.package/f)==r["sha256"],f
     for build in ["android_ReleaseG_aarch64","hexagon_ReleaseG_toolv19_v79"]:
         cache=(ROOT/build/"CMakeCache.txt").read_text()
         assert re.search(r"QBH_LLAMA_LAYER_COUNT:[^=]+="+str(m["layers"])+r"\n",cache)
         assert "QBH_MODEL_LLAMA32:BOOL=ON" in cache
+    seal=json.loads((ROOT/"build/llama-build-seal.json").read_text())
+    assert seal["source_head"]==subprocess.check_output(["git","-C",str(ROOT),"rev-parse","HEAD"],text=True).strip()
+    for name,build in [("qwen3_block_cli","android_ReleaseG_aarch64"),("libqwen3_probe.so","android_ReleaseG_aarch64"),("libqwen3_probe_skel.so","hexagon_ReleaseG_toolv19_v79")]:
+        p=ROOT/build/"ship"/name
+        assert seal["files"][str(p)]==sha256(p),p
     if args.output.exists():raise FileExistsError(args.output)
     args.output.mkdir(parents=True)
     active=re.search(r"^  active_experiment: (L32-[0-9]+)$",Path("/home/daniuniu/work/llama32-htp-project-memory/PROJECT_STATUS.yaml").read_text(),re.M).group(1)
@@ -44,6 +49,9 @@ def main():
     if m["recipe"]=="W4A8":
         argv[20]="hvx_tree";argv[9]="hvx_fused_post_norm_pool4"
         env.update(QBH_W4U8_DECODE_DIRECT_N_GATE_UP_BATCH_N_TILES="32",QBH_W4U8_DECODE_DIRECT_N_GATE_UP_CONTINUOUS="1",QBH_W4U8_DECODE_DIRECT_N_O_GATE_PREFETCH="1",QBH_W4U8_DECODE_DIRECT_N_GATE_UP_SWIGLU_STREAM="1",QBH_W4U8_DECODE_DIRECT_N_QKV_BATCH_N_TILES="16",QBH_W4U8_DECODE_DIRECT_N_DOWN_BATCH_N_TILES="8",QBH_W4U8_DECODE_DIRECT_N_DOWN_SINGLE_DMA="1",QBH_W4U8_DECODE_O_BATCH_N_TILES="16",QBH_W4U8_DECODE_DIRECT_N_O_SINGLE_DMA="1")
+    if m.get("sp2"):
+        assert m["experiment"]=="L32-0009" and m["recipe"]=="W4A8" and not args.a8_audit
+        env["QBH_LLAMA_SP2"]="1"
     if args.a8_audit:
         assert m["recipe"]=="W4A8"
         env.update(QBH_W4U8_DECODE_COMMON_PADDING_POISON="1",QBH_W4U8_DECODE_SWIGLU_PADDING_POISON="1")

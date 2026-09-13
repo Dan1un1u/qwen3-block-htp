@@ -1915,6 +1915,14 @@ static int qbh_build_bias_words(
                     sum += qbh_decode_w4(tile, physical) * multiplier;
                 }
             }
+            if (QBH_LLAMA_SP2(header) && projection_index==QBH_BLOCK_PROJ_DOWN) {
+                double sp2_ratio=(double)input_qparam->scale*scales[global_output]/output_qparam->scale;
+                int64_t multiplier=llround(sp2_ratio*2147483648.0);
+                if (desc->lpbq_mode || multiplier<=0 || multiplier>INT32_MAX) return -1;
+                bias[(size_t)n_tile*64U+output]=(uint32_t)multiplier;
+                bias[(size_t)n_tile*64U+32U+output]=(uint32_t)sum;
+                continue;
+            }
             bias[(size_t)n_tile * 64U + output] =
                 qbh_float_to_half_bits(512.0f * ratio);
             offset = llround(
@@ -6848,6 +6856,11 @@ int main(int argc, char **argv) {
         header->scan_attention_audit_output_bytes =
             QBH_BLOCK_SCAN_F16_AUDIT_BYTES;
     }
+#ifdef QBH_MODEL_LLAMA32
+    header->llama_sp2_mode=getenv("QBH_LLAMA_SP2") ? (uint32_t)atoi(getenv("QBH_LLAMA_SP2")) : 0U;
+    if(header->llama_sp2_mode>1U || (header->llama_sp2_mode &&
+       (variant!=QBH_BLOCK_W4U8 || dense_r3_mode))) return 2;
+#endif
     header->wide_score_mode=wide_score_mode;
     header->dense_r4_mode=getenv("QBH_DENSE_R4") ? (uint32_t)atoi(getenv("QBH_DENSE_R4")) : 0U;
     header->dense_r4_audit_offset=(uint32_t)dense_r4_audit_offset;
