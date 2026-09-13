@@ -158,6 +158,50 @@ __attribute__((noinline)) void qbh_mlp_gate_up_sp2_lut_hvx(
     asm volatile("barrier" : : : "memory");
 }
 
+/* L32-0012: issue both independent half-vector gathers before consuming either. */
+static inline void qbh_mlp_gather_half_issue(
+    HVX_Vector gate, HVX_Vector up, const uint16_t *lut,
+    HVX_Vector *scratch) {
+    const HVX_Vector index_mask = Q6_Vh_vsplat_R(127);
+    const HVX_Vector split = Q6_Vh_vsplat_R(127);
+    HVX_Vector gate_low = Q6_V_vand_VV(gate, index_mask);
+    HVX_Vector offsets = Q6_Vh_vadd_VhVh(
+        Q6_Vh_vasl_VhR(gate_low, 9), Q6_Vh_vasl_VhR(up, 1));
+    HVX_VectorPred high = Q6_Q_vcmp_gt_VuhVuh(gate, split);
+
+    Q6_vgather_AQRMVh(
+        scratch, Q6_Q_not_Q(high), (int32_t)(uintptr_t)lut,
+        QBH_MLP_GATHER_REGION_MASK, offsets);
+    Q6_vgather_AQRMVh(
+        scratch, high,
+        (int32_t)(uintptr_t)((const uint8_t *)lut +
+                            QBH_MLP_GATHER_HALF_BYTES),
+        QBH_MLP_GATHER_REGION_MASK, offsets);
+
+}
+
+__attribute__((noinline)) void qbh_mlp_gate_up_sp2_lut_pipelined_hvx(
+    const uint8_t *gate, const uint8_t *up, uint8_t *low, uint8_t *high,
+    size_t elements, const uint16_t *lut, uint8_t *gather_scratch) {
+    HVX_Vector *scratch = (HVX_Vector *)gather_scratch;
+
+    for (size_t offset = 0; offset < elements;
+         offset += sizeof(HVX_Vector)) {
+        HVX_Vector gate_u8 = *(const HVX_Vector *)(gate + offset);
+        HVX_Vector up_u8 = *(const HVX_Vector *)(up + offset);
+        HVX_VectorPair gate_h = Q6_Wuh_vunpack_Vub(gate_u8);
+        HVX_VectorPair up_h = Q6_Wuh_vunpack_Vub(up_u8);
+        qbh_mlp_gather_half_issue(Q6_V_lo_W(gate_h),Q6_V_lo_W(up_h),lut,scratch);
+        qbh_mlp_gather_half_issue(Q6_V_hi_W(gate_h),Q6_V_hi_W(up_h),lut,scratch+1);
+        HVX_Vector middle_lo=*(volatile HVX_Vector *)scratch;
+        HVX_Vector middle_hi=*(volatile HVX_Vector *)(scratch+1);
+        /* LUT contains v+32768: low byte l, high byte h+128. */
+        *(HVX_Vector *)(low + offset) = Q6_Vb_vpacke_VhVh(middle_hi, middle_lo);
+        *(HVX_Vector *)(high + offset) = Q6_Vb_vpacko_VhVh(middle_hi, middle_lo);
+    }
+    asm volatile("barrier" : : : "memory");
+}
+
 __attribute__((noinline)) void qbh_mlp_gate_up_requant_lut_hvx(
     const uint8_t *gate, const uint8_t *up, uint8_t *middle,
     size_t elements, const uint16_t *lut, uint8_t *gather_scratch,

@@ -10,7 +10,7 @@ def main():
     ap.add_argument("--package",type=Path,required=True)
     ap.add_argument("--output",type=Path,required=True)
     ap.add_argument("--a8-audit",action="store_true",help="Audit scalar softmax equivalence and poison unused decode rows")
-    ap.add_argument("--sp2-mode",type=int,choices=[3,4,5],default=4)
+    ap.add_argument("--sp2-mode",type=int,choices=[3,4,5,6,7,8],default=4)
     args=ap.parse_args()
     subprocess.run(["python3","/home/daniuniu/work/llama32-htp-project-memory/scripts/project_memory.py","preflight","--source-worktree",str(ROOT)],check=True)
     m=json.loads((args.package/"manifest.json").read_text())

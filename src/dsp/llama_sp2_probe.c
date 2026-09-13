@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "llama_sp2_probe.h"
+#include "mlp_u8.h"
 #include "hmx_u8s8_projection.h"
 #include "qbh_user_dma.h"
 #define RT 0x700U
@@ -39,11 +40,41 @@ static void unpack_digits(const uint8_t *bytes,int32_t *wide,uint32_t digits){
   for(uint32_t j=0;j<4;j++)*(HVX_Vector*)(wide+base+32*j)=value[j];
  }
 }
+/* Exhaustive gather scheduling audit, separate from the model runtime.
+ * Input is one immutable LUT; outputs are old low/high and new low/high. */
+static int lsp2_gather_audit(uint8_t *shared,uint32_t bytes,uint8_t *vtcm,uint32_t vbytes) {
+ struct lsp2_header *h=(struct lsp2_header *)shared;
+ if(h->magic!=LSP2_MAGIC || h->abi!=1U || h->bytes!=bytes || vbytes!=8388608U ||
+    !valid(h->input_offset,131072U,bytes) || !valid(h->output_offset,262144U,bytes))return AEE_EBADPARM;
+ uint8_t *base=(uint8_t *)(((uintptr_t)vtcm+65535U)&~(uintptr_t)65535U);
+ uint16_t *lut=(uint16_t *)base;
+ uint8_t *g=base+131072U,*u=g+65536U,*out=u+65536U,*scratch=out+262144U;
+ if(scratch+256U>vtcm+vbytes)return AEE_ENOMEMORY;
+ memcpy(lut,shared+h->input_offset,131072U);
+ for(uint32_t i=0;i<65536U;i++){g[i]=(uint8_t)(i>>8);u[i]=(uint8_t)i;}
+ qbh_mlp_gate_up_sp2_lut_hvx(g,u,out,out+65536U,65536U,lut,scratch);
+ qbh_mlp_gate_up_sp2_lut_pipelined_hvx(g,u,out+131072U,out+196608U,65536U,lut,scratch);
+ uint32_t mismatch=0;
+ for(uint32_t i=0;i<65536U;i++) {
+   uint16_t expected=lut[i];
+   if(out[i]!=(uint8_t)expected || out[i+65536U]!=(uint8_t)(expected>>8) ||
+      out[i+131072U]!=(uint8_t)expected || out[i+196608U]!=(uint8_t)(expected>>8))mismatch++;
+ }
+ memcpy(shared+h->output_offset,out,262144U);
+ h->streams=65536U;h->conversions=mismatch;h->vtcm_bytes=vbytes;
+ h->peak_bytes=(uint32_t)(scratch+256U-vtcm);h->status=mismatch?AEE_EFAILED:AEE_SUCCESS;
+ return h->status;
+}
 int lsp2_run(int fd,uint32_t bytes,uint8_t *vtcm,uint32_t vbytes,uint32_t ctx){
  uint8_t *shared=0;int ret=HAP_mmap_get(fd,(void**)&shared,0);if(ret||!shared)return AEE_EFAILED;
  ret=qurt_mem_cache_clean((qurt_addr_t)shared,bytes,QURT_MEM_CACHE_INVALIDATE,QURT_MEM_DCACHE);
  if(ret){HAP_mmap_put(fd);return AEE_EFAILED;}
  struct lsp2_header *h=(struct lsp2_header*)shared;
+ if(bytes>=128U && h->mode==4U) {
+   ret=lsp2_gather_audit(shared,bytes,vtcm,vbytes);
+   int e=qurt_mem_cache_clean((qurt_addr_t)shared,bytes,QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE);
+   HAP_mmap_put(fd);return ret?ret:(e?AEE_EFAILED:AEE_SUCCESS);
+ }
  if(bytes<128 || h->magic!=LSP2_MAGIC || h->abi!=1 || h->bytes!=bytes || h->mode>3 || !h->rows || h->rows>64 || (h->mode==1 && h->rows>32) || !h->k || h->k>8192 || h->k%32 || !h->n || h->n>2048 || h->n%32 || vbytes!=8388608U || !valid(h->input_offset,h->rows*h->k*2,bytes) || !valid(h->weight_offset,h->n*h->k/2,bytes) || !valid(h->sum_offset,h->n*4,bytes) || !valid(h->output_offset,h->rows*h->n*4,bytes)) {HAP_mmap_put(fd);return AEE_EBADPARM;}
  struct lsp2_header c=*h;c.status=-1;c.vtcm_bytes=vbytes;c.streams=0;c.conversions=0;
  c.load_ticks=c.pack_ticks=c.dma_ticks=c.mac_ticks=c.convert_ticks=c.merge_ticks=c.publish_ticks=0;

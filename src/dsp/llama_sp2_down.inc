@@ -64,3 +64,63 @@ __attribute__((noinline)) static int qbh_llama_sp2_down(struct qbh_block_hmx_wor
     asm volatile("barrier":::"memory");
     return AEE_SUCCESS;
 }
+
+/* L32-0012: two raw VTCM slots. HMX publishes a tile only after all six
+ * retain stores; HVX acknowledges only after the final output store. Each
+ * HMX command drains its epilogues before the DMA bias slot can be reused. */
+__attribute__((noinline)) static int qbh_llama_sp2_down_stream(struct qbh_block_hmx_worker *worker) {
+    struct qbh_sp2_epilogue *e=worker->sp2_epilogue;
+    if(!e || !e->scratch || !worker->sp2_high || worker->m_tiles!=1U || worker->sp2_rows!=64U)
+        return AEE_EBADPARM;
+    uint32_t *bias=(uint32_t *)(e->scratch+32768U);
+    for(uint32_t nt=0;nt<worker->n_tiles;nt++) {
+        uint32_t seq=e->produced,slot=seq&1U;
+        if(seq>=e->tiles)return AEE_EBADPARM;
+        if(seq>=2U)while(e->done[slot]!=seq-1U) {if(e->abort)return AEE_EFAILED;}
+        asm volatile("barrier":::"memory");
+        uint8_t *raw=e->scratch+slot*16384U;
+        const uint8_t *w=(const uint8_t *)worker->weight+(size_t)nt*worker->k_tiles*512U;
+        for(uint32_t pass=0;pass<2U;pass++) {
+            for(uint32_t n=0;n<32;n++){bias[n]=24U<<10;bias[32+n]=0;}
+            qbh_hmx_begin_u8s8_output(bias);
+            qbh_hmx_accumulate_u8n4_projection(pass?worker->sp2_high:worker->activation,w,worker->k_tiles);
+            read_i32(raw+pass*8192U,bias,3U);
+        }
+        e->meta[slot]=(const int32_t *)worker->scale_or_bias+nt*64U;
+        e->output[slot]=(uint8_t *)worker->output+(size_t)nt*2048U;
+        asm volatile("barrier":::"memory");
+        e->ready[slot]=seq+1U;
+        asm volatile("release(%0):at"::"r"(&e->ready[slot]):"memory");
+        e->produced=seq+1U;
+    }
+    /* At most two outstanding slots; the consumer processes them in order. */
+    if(e->produced) {
+        uint32_t seq=e->produced-1U;
+        while(e->done[seq&1U]!=seq+1U) {if(e->abort)return AEE_EFAILED;}
+        asm volatile("barrier":::"memory");
+    }
+    return AEE_SUCCESS;
+}
+__attribute__((noinline)) static void qbh_sp2_epilogue_run(struct qbh_sp2_epilogue *e) {
+    for(uint32_t seq=0;seq<e->tiles;seq++) {
+        uint32_t slot=seq&1U;
+        while(e->ready[slot]!=seq+1U) {if(e->abort)return;}
+        asm volatile("barrier":::"memory");
+        const uint8_t *raw=e->scratch+slot*16384U;
+        const int32_t *meta=e->meta[slot];
+        uint8_t *out=e->output[slot];
+        HVX_Vector sum=*(const HVX_Vector *)(meta+32U),multiplier=*(const HVX_Vector *)meta;
+        HVX_Vector zp=Q6_V_vsplat_R(e->zero_point);
+        for(uint32_t base=0;base<2048U;base+=128U) {
+            struct qbh_sp2_words l=qbh_sp2_chunk24(raw,base),h=qbh_sp2_chunk24(raw+8192U,base);
+            HVX_Vector y0=qbh_sp2_requant(l.v0,h.v0,sum,multiplier,zp);
+            HVX_Vector y1=qbh_sp2_requant(l.v1,h.v1,sum,multiplier,zp);
+            HVX_Vector y2=qbh_sp2_requant(l.v2,h.v2,sum,multiplier,zp);
+            HVX_Vector y3=qbh_sp2_requant(l.v3,h.v3,sum,multiplier,zp);
+            *(HVX_Vector *)(out+base)=Q6_Vb_vpacke_VhVh(Q6_Vh_vpacke_VwVw(y3,y2),Q6_Vh_vpacke_VwVw(y1,y0));
+        }
+        asm volatile("barrier":::"memory");
+        e->done[slot]=seq+1U;
+        asm volatile("release(%0):at"::"r"(&e->done[slot]):"memory");
+    }
+}
