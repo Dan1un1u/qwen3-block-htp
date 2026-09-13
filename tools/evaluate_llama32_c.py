@@ -19,17 +19,15 @@ def dataset():
     for n,h in m['files'].items():assert sha256(DATA/n)==h
     return json.loads((DATA/'dataset.json').read_text())
 @torch.inference_mode()
-def teacher():
-    from transformers import AutoModelForCausalLM
-    ds=dataset();out=RESULTS/'teacher-a01';out.mkdir(exist_ok=False)
-    model=AutoModelForCausalLM.from_pretrained('/mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin',torch_dtype=torch.bfloat16,attn_implementation='eager',local_files_only=True).cuda().eval();rows=[]
+def evaluate_float_model(model,label,out):
+    ds=dataset();out.mkdir(exist_ok=False);rows=[]
     for sample in ds['samples']:
         ids=torch.tensor([sample['prompt_ids']+sample['target_ids']],device='cuda')
         logits=model(ids,use_cache=False).logits[0,63:79].float()
         nll=F.cross_entropy(logits,ids[0,64:80],reduction='none').cpu().tolist()
         rows.append(dict(id=sample['id'],nll=nll))
         if len(rows)%16==0:print('BF16_BRIDGE_SAMPLES',len(rows),flush=True)
-    vals=[v for r in rows for v in r['nll']];save(out/'bridge.json',dict(scope=ds['name'],dataset_sha256=sha256(DATA/'dataset.json'),rows=rows,nll=sum(vals)/len(vals),ppl=math.exp(sum(vals)/len(vals)),targets=len(vals)))
+    vals=[v for r in rows for v in r['nll']];save(out/'bridge.json',dict(model_label=label,scope=ds['name'],dataset_sha256=sha256(DATA/'dataset.json'),rows=rows,nll=sum(vals)/len(vals),ppl=math.exp(sum(vals)/len(vals)),targets=len(vals)))
     ids=np.fromfile(DATA/'validation.bin',dtype='<u4');segments=[]
     for start in range(0,len(ids),2048):
         chunk=ids[start:start+2048]
@@ -38,7 +36,64 @@ def teacher():
         loss=F.cross_entropy(logits,x[0,1:],reduction='sum');segments.append(dict(start=start,length=len(chunk),targets=len(chunk)-1,nll_sum=float(loss)))
         if len(segments)%16==0:print('BF16_FULL_VALIDATION_WINDOWS',len(segments),flush=True)
     count=sum(v['targets'] for v in segments);nll=sum(v['nll_sum'] for v in segments)/count;assert count==252728
-    save(out/'full-validation.json',dict(scope='full WT2 validation, disjoint2048 windows including948-token tail; no BOS/EOS; BF16 teacher',segments=segments,nll=nll,ppl=math.exp(nll),targets=count,validation_sha256=sha256(DATA/'validation.bin'),historical_teacher_ppl=13.6346577256))
+    save(out/'full-validation.json',dict(model_label=label,scope='full WT2 validation, disjoint2048 windows including948-token tail; no BOS/EOS; BF16 arithmetic',segments=segments,nll=nll,ppl=math.exp(nll),targets=count,validation_sha256=sha256(DATA/'validation.bin'),historical_teacher_ppl=13.6346577256))
+class InputOnlyQuant(torch.nn.Module):
+    def __init__(self,module,scale,sp2=False):
+        super().__init__();self.module=module;self.register_buffer('scale',torch.tensor(scale,dtype=torch.float32));self.sp2=sp2
+        if sp2:
+            from llama32_sp2_contract import integer_levels
+            levels=torch.tensor(integer_levels(),dtype=torch.float32);levels=levels[levels>=0]/32768
+            self.register_buffer('levels',levels);self.register_buffer('midpoints',(levels[:-1]+levels[1:])*.5)
+    @property
+    def weight(self):return self.module.weight
+    def forward(self,x):
+        if self.sp2:
+            scaled=(x.float().abs()/self.scale).clamp(max=1)
+            q=self.levels[torch.bucketize(scaled.contiguous(),self.midpoints,right=False)]*x.sign()*self.scale
+        else:q=(x.float()/self.scale).round().clamp(-128,127)*self.scale
+        return self.module(q.to(x.dtype))
+
+def input_only_model():
+    from transformers import AutoModelForCausalLM
+    from llama_reference import PROJECTIONS
+    from llama_u8_reference import unpack_w4_codes
+    quant=MODELS/'quant-a01';manifest=json.loads((quant/'manifest.json').read_text())
+    for n,h in manifest['files'].items():assert sha256(quant/n)==h['sha256']
+    cal=json.loads((MODELS/'calibration-a01/calibration.json').read_text());assert cal['weight_manifest_sha256']==sha256(quant/'manifest.json')
+    model=AutoModelForCausalLM.from_pretrained('/mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin',torch_dtype=torch.bfloat16,attn_implementation='eager',local_files_only=True).eval()
+    model.lm_head=torch.nn.Linear(2048,128256,bias=False,dtype=torch.bfloat16);model.config.tie_word_embeddings=False
+    rot=MODELS/'c/rotation/R.bin';assert sha256(rot)==manifest['rotation_sha256']
+    r=torch.load(rot,map_location='cpu',weights_only=True)['R1'].cuda().double();gamma=model.model.norm.weight.cuda().double()
+    for start in range(0,128256,1024):
+        w=model.model.embed_tokens.weight[start:start+1024].cuda()
+        centered=(w.double()-w.double().mean(-1,keepdim=True)).bfloat16()
+        model.model.embed_tokens.weight[start:start+1024].copy_((centered.double()@r).bfloat16().cpu())
+        fused=(w.double()*gamma).bfloat16()
+        model.lm_head.weight[start:start+1024].copy_((fused.double()@r).bfloat16().cpu())
+    model.model.norm.weight.fill_(1)
+    sa=json.loads((quant/'activation_scales.json').read_text())
+    for i,block in enumerate(model.model.layers):
+        block.input_layernorm.weight.fill_(1);block.post_attention_layernorm.weight.fill_(1)
+        for short,name in PROJECTIONS.items():
+            parent,attribute=name.split('.');linear=getattr(getattr(block,parent),attribute);n,k=linear.weight.shape
+            q=unpack_w4_codes(quant/f'layer{i}',short,n,k)
+            sw=np.fromfile(quant/f'layer{i}/{short}_weight_w4_scale_f32.bin',dtype='<f4')
+            # Direct FP32 reconstruction -> BF16, avoid FP16 double rounding.
+            linear.weight.copy_((torch.from_numpy(q).float()*torch.from_numpy(sw)[:,None]).bfloat16())
+            scale=cal['sp2'][i]['alpha'] if short=='down' else sa[f'model.layers.{i}.{name}.quantizer']
+            setattr(getattr(block,parent),attribute,InputOnlyQuant(linear,scale,short=='down'))
+    return model.cuda().eval()
+
+@torch.inference_mode()
+def teacher():
+    import gc
+    from transformers import AutoModelForCausalLM
+    model=AutoModelForCausalLM.from_pretrained('/mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin',torch_dtype=torch.bfloat16,attn_implementation='eager',local_files_only=True).cuda().eval()
+    evaluate_float_model(model,'original BF16 teacher',RESULTS/'teacher-a01')
+    del model;gc.collect();torch.cuda.empty_cache()
+    model=input_only_model()
+    evaluate_float_model(model,'fresh C input-only software control; BF16 residual/nonlinear/KV/head/embedding, shared SA48/native W4[-7,7]/same fitted SP2 alpha; not hardware deployment',RESULTS/'software-control-a01')
+
 @torch.inference_mode()
 def integer():
     ds=dataset();m=json.loads((FRONT/'manifest.json').read_text())
