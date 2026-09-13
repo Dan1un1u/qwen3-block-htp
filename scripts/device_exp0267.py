@@ -89,7 +89,7 @@ def run(mode,repeat,tag,count=1,layer=0,dump=False):
  else:
   fs=[q for q in rs if q.get('generation_sequence_complete')];assert len(fs)==repeat and all(f['all_steps_pass'] for f in fs)
   for i,f in enumerate(fs):assert f['total_host_wall_ns']==sum(q['host_wall_ns'] for q in ps[i*16:i*16+16])
-  zz=[(q['selected_token_id'],q['selected_logit_half_bits']) for q in rs if 'selected_logit_half_bits' in q];assert len(zz)==16*repeat and all(v==zz[i%16] for i,v in enumerate(zz));z['selected_codes']=zz[:16]
+  zz=[(q['selected_token_id'],q['selected_logit_half_bits']) for q in rs if 'selected_logit_half_bits' in q];assert len(zz)==16*repeat and all(v==zz[i%16] for i,v in enumerate(zz));z['selected_codes']=[list(v) for v in zz[:16]]
  write(p/'validated.json',z);print('RUN_PASS',tag,round(z['prefill_ns']/1000,2),round(z['decode_ns']/1000,2),flush=True);return z
 
 def layer_profile(phase):

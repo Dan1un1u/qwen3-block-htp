@@ -37,7 +37,7 @@ def full_profile(phase):
   for repeat in [1,10]:
    order=arms[i%4:]+arms[:i%4]
    for m in order:
-    z=run(m,repeat,f'full-{phase}/round{i:02d}-r{repeat}-m{m}',count=28);assert z['selected_codes']==read(R/f'full-m{m}/validated.json')['selected_codes'];rows.append(dict(round=i,**z))
+    tag=f'full-{phase}/round{i:02d}-r{repeat}-m{m}';saved=R/tag/'validated.json';z=read(saved) if saved.exists() else run(m,repeat,tag,count=28);assert z['selected_codes']==read(R/f'full-m{m}/validated.json')['selected_codes'];rows.append(dict(round=i,**z))
  rng=np.random.default_rng(267);idx=rng.integers(0,n,(20000,n));perf={}
  for rep in [1,10]:
   for key in ['prefill_ns','decode_ns']:
