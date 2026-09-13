@@ -4,6 +4,7 @@
 #include <HAP_mem.h>
 #include <HAP_perf.h>
 #include <hmx_hexagon_protos.h>
+#include <hexagon_types.h>
 #include <hvx_hexagon_protos.h>
 #include <qurt.h>
 #include <stdint.h>

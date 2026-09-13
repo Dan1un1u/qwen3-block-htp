@@ -86,6 +86,8 @@ def llama():
 
 def deploy():
  preflight();head=subprocess.check_output(['git','-C',str(ROOT),'rev-parse','HEAD'],text=True).strip();remote='/data/local/tmp/llama32-htp/l32-0008/prototype-'+head[:8]
+ seal=json.loads((ROOT/'build/llama-build-seal.json').read_text());assert seal['source_head']==head
+ for p,h in seal['files'].items():assert sha(Path(p))==h
  assert adb('shell',f'test ! -e {remote}',check=False).returncode==0
  adb('shell',f'mkdir -p {remote}')
  artifacts={}
