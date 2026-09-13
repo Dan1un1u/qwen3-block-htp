@@ -232,3 +232,15 @@ experiments:
   full_block_gate_applied: false
   ppl_rerun: false
   e2e_run: false
+- id: L32-0009
+  title: Llama fused SP2 SwiGLU native W4 Down full-block integration and speed
+  execution_state: running
+  record: docs/experiments/L32-0009.md
+  approval_ref: User agrees to proceed and directs performance optimization after
+    hardware correctness confirmation (2026-09-13)
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  parent_source: 0a00e0a28d7961846648922c47e4be264e6b78df
+  hardware_runs: 0
+  baseline_quality_promoted: false
