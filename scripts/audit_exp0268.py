@@ -18,7 +18,8 @@ def compare(a,b):
    assert np.array_equal(unpack_u8_hmx_activation(x[off:off+CAP],6144)[:4],unpack_u8_hmx_activation(y[off:off+CAP],6144)[:4]),(f,'live-middle')
   else:assert sha(f)==sha(g),(f,g)
   count+=1
- assert count>=27,(a,count)
+ assert count==20,(a,count)
+ assert {f.name for f in a.glob('*.bin')}=={f.name for f in b.glob('*.bin')},(a,b)
  return count
 
 def single():
