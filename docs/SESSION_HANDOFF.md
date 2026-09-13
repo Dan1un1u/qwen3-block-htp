@@ -1,83 +1,75 @@
-# L32-0013 active: fresh C-RTN/SP2 native-contract adaptation
+# L32-0013 active: fresh C native-contract alignment
 
-Owner /home/daniuniu/work/llama32-htp, branch codex/llama32-no-rotation.
-Latest committed source fbae5c537ed4e31d608406c41315936d89e4a70a, clean/pushed.
-Read docs/experiments/L32-0013.md and source tools/llama32_c_rtn_train.py.
-Source docs/LLAMA32_C_RTN_SP2_ALIGNMENT.md documents contract/evaluation limits.
+Owner /home/daniuniu/work/llama32-htp, codex/llama32-no-rotation.
+Latest source 403848e3cd219a3e1c9942bdc521cef72f347f9c, clean/pushed. Latest change is report-only.
+Authority protocol: docs/experiments/L32-0013.md. Source report:
+docs/LLAMA32_C_RTN_SP2_ALIGNMENT.md. Do not use its historical checkpoint as live status.
 
-## Live job and continuation
+## Live job: do not duplicate
 
-Initial R1/R2+SA100-update training is COMPLETE; session11933 finished normally.
-Stage source3809e2611323dc5a03f316be0e113c5fa997f79b; log
-/mnt/d/llm_exp/models/llama32-htp/l32-0013/initial/run.log.
-Actual100 callback updates verified. Complete manifestSHA256
-b7f5f1d682bde5d75cb263a51a7765c74ee67b2269ba6ba1036f2307f471d66d.
-initial-training-audit.json verifies96 SA sites/48sharedparameters and17rotation
-matrices maxorthogonalityerror6.9098e-7. Do not relaunch or overwrite it.
-Automatic continuation is RUNNING in unified exec session20420, PID48793.
-Source tools/run_llama32_c_pipeline.py, controller launch source6e8ae6a.
-B initialization is COMPLETE (zero optimizer updates), and C100 training is
-RUNNING at about36.5s/update, launch source6309a8a42c6aee13cecddace6e6631ecf15b4686.
-C log: models/llama32-htp/l32-0013/c/run.log. After C completion it runs
-export, calibration, package/oracle/fixtures, software evaluation, native layer
-gates and full16 deployment/generation/device PPL. Do not duplicate its stages.
-Inspect results/l32-0013/pipeline-a01 per-stage logs and completion records.
-The controller stops at first failure; preserve that attempt before repairs.
-B stage only initializes112 weight scales; no unused B training/GPTQ. C trains100
-updates. Single GPU accumulation8 preserves effective batch8. QKV andGate/Up
-share48 learned SA parameters for96sites. W4 training/export usesnative[-7,7].
-Training-only FP32 denseR1 exceptO retainsFP64; allR2 FP64. FinalfoldFP64.
-12-matrix selectiveFP64 precisionaudit passedNRMSE<=1e-4. EarlierallFP32O
-failed and is retained. OriginalrepeatedFP64training was deliberatelystopped
-beforecompletion and preserved in initial-fp64-a01; no shortenedtraining.
+Durable pipeline RUNNING in unified exec session20420, controllerPID48793.
+Entry tools/run_llama32_c_pipeline.py; results/l32-0013/pipeline-a01 contains
+owner, plan, per-stage logs/status. Stage08 integer_ppl is RUNNING, about12s
+per sample,128 samples total. Read integer-ppl-a01/sample-*.json for progress.
+Do not relaunch stages or overwrite artifacts. Process continues without a chat
+connection. Controller stops at first failure; preserve attempt before repairs.
 
-## Already validated
+Initial/session11933 and C100 training are COMPLETE. B only initialized SW, no
+optimizer updates. Initial source3809e2611323dc5a03f316be0e113c5fa997f79b,
+B/C source6309a8a42c6aee13cecddace6e6631ecf15b4686. Export/calibration/oracle and
+software evaluation sourcefbae5c537ed4e31d608406c41315936d89e4a70a.
 
-Reference snapshot is pinned GitHub d9a636ba273fa812b1d6098e9f9df0f8a33eb154
-under source build/l32-0013/reference, manifest in results/reference-snapshot.json.
-Original rotation-quant source and local experiments are read-only inputs.
-Fresh training uses original BF16 model; no old rotated/quantized weight reuse.
+Completed pipeline stages:00 Binit,01 Ctrain,02 export,03 calibration,04 package,
+05 independent oracle,06 fixtures,07 teacher+input-only control PPL.
+After08 integer PPL: build1 and C layer0/7/15; build3/consecutive3; build16;
+deploy, exact generation/physical gate, device PPL, compare. All C device gates
+remain PENDING. Baseline transport gates are not substitutes for new C gates.
 
-Native opt-inmode9 exactly implements187-levelSP2 via
-v=low+257*high-32770, scalealpha/32768. This includes bothsigned endpoints
-that oldradix256 cannot jointly represent. Existingmodes retain241-levelcontract.
-CPU all187levels,376tie/endpointcases and2048dotoutputs passed.
-Transport-only sealedhistoricalstimuli layers0/7/15 eachM64+1 passzerooutputcode
-mismatches, nointermediateDDR/spill. These arekernelproofs,NOTnewCquality.
-RawS32probe modes5/6 passall187levels and+/-1879048192 worstintegeroutputs,
-4352elements,2processes4RPCs. Production retains its strictersigned24partialgate.
-Totaldeviceprocesses5,modelboundaries6,probeRPCs4. NoPPL orformalprofilingyet.
+## Fresh artifacts and contract
 
-## Implemented but waiting for C artifacts / not yet validated end to end
+Models root /mnt/d/llm_exp/models/llama32-htp/l32-0013.
+Results root /mnt/d/llm_exp/results/llama32-htp/l32-0013.
+Fresh C quant-a01, calibration-a01, frontend-a01 and gates-a01 are completed.
+Original source/model weights read-only. rotation-quant committed reference
+snapshot d9a636ba273fa812b1d6098e9f9df0f8a33eb154; no old trained weights reused.
+Initial100 and C100 actual histories verified. C112SW/376832channels allpositive,
+none at floor.96 SA sites share48 parameters.17 rotation matrices maxerror6.509e-7.
+Training-only R1 FP32 exceptO FP64, allR2 FP64; finalgamma/R1/R2fold FP64 with
+reference BF16 casts and embeddingcentering. Centering not claimed RMSNorm exact.
+C weight codesnative[-7,7], one scale peroutput; no groups/GPTQ/R3/R4.
 
-1. export_llama32_c_rtn.py: original->FP64gamma/R1/R2fold, learnedSWRTN,
-   packednativeW4; referenceBF16rounding/embeddingcentering recorded; freshnative
-   quantizedhead andembedding (hardwarewins conflicts, noFP16controlchange).
-2. calibrate_llama32_c_rtn.py freeze completed. data/calibration.bin=train32x2048
-   disjointwindows; validation.bin252852tokens; bridge128deterministicM64+16
-   windows2048targets. Completehistorical2048protocolhas252728targetsincludingtail.
-   Calibrate stage pending: newweights, learnedsharedSA; freshnative-onlyboundary
-   minmax andSP2responseMSE33+17logalphafit ontrainonly.
-3. prepare_llama32_c_package.py prepare/oracle/fixtures; usesindependentinteger
-   referenceandSDKlibnativeconversion, optionalinteger-exactFP32dotacceleration.
-   All three stages pending. Never label skeletoncode as completedmodelvalidation.
-Software-control SP2 matches pinnedreference for790932 FP32/BF16/FP16 elements.
-   Batched offlineattention matches originalintegerreference on random/endpoint/constant
-   stimuli; see attention-oracle-proof.json for exact count; actualC stimuli also cross-checked per
-   config/shape. Deviceattentionunchanged.
-4. New C singlelayer0/7/15, consecutive3thenfull16device gates remainpending.
-   run_llama32_stack.py acceptsL32-0013mode9 withmarker/manifestguard.
-   Buildbeforeeachdeclaredshape;newHEADrequiresfreshbuildseal; archiveoldbinaries.
-5. evaluate_llama32_c.py teacher/integer andrun_llama32_c_device.py
-   deploy/generate/ppl/compare pending. Teacher stage also evaluates a fresh C
-   input-only software control with BF16 residual/nonlinear/KV/head/embedding
-   against the same native C backbone112, sharedSA48 and fittedSP2 alpha.
-   Both floating models get full2048 validation and matchedbridge; initial
-   hardware/softwarebridge isM64+16,notcomparabletohistorical17.6424.
-   Per-tokenNLLatol5e-5,exacttargetcodes;noA8modelqualitythreshold.
+SP2 mode9 exactly implements187signedvalues by v=low+257*high-32770, scalealpha/32768.
+Includes +/-32768. Native packedW4 twoU8planes; fusedproducer andmode8pipeline.
+Oldmodes retain241levels. Hardwarepriority retainsU8residual,nonlinear,KV,embedding,
+head/projectionoutput contracts. Shared SA replacesindependent96scale semantics.
+No floatingcontrol/Qwen changes orquality/defaultbaselinepromotion.
 
-Do not call this the originalCcheckpointorclaim17.6424reproduction. The user
-explicitly superseded that dependency: new training, existingintegerresidual,
-nonlinear,KV,head/embedding takeprecedence. Full2048hardwareevaluation isnotyet
-implemented; do not silentlytruncateandclaimfullWT2coverage. Noqualitypromotion.
-Qwen3 andfloatingcontrolsunchanged. Preserveallfailedandstoppedattempts.
+## Completed quality and important limitation
+
+Full WT2 validation2048 including948tail,252728targets:
+original BF16 teacher13.640870538532468;
+fresh C input-only BF16 control17.29825809973266.
+Same M64+16 bridge128windows/2048targets:
+teacher23.85653710580871; input-only control31.456631990730184.
+Integer/native scoring NOT COMPLETE. Never use partial PPL as final.
+Historical17.6423999759 is not a required checkpoint reproduction and is not
+comparable with the device bridge's context. Full2048 device evaluation is not
+implemented; report scope explicitly. The software control keeps BF16 residual,
+nonlinear,KV,head,embedding, and is not the hardware deployment.
+
+Independent native greedy text is unusable (repeated commas/word fragments).
+Read-only carrier statistics showlayer1 (secondlayer) output98.50235%zero,
+30of64rows entirelyzero, U8step0.3745098. Evidence native-prefill-carrier-statistics.json
+and oracle-a01 arrays. This is a localization clue, not yet a causal ablation or
+device finding. SP2Down input does not protect its U8output/residual boundary.
+
+## Hardware evidence already established (old sealed stimuli only)
+
+Transport layers0/7/15 eachM64+1 exact; peak8229344/8388608VTCM, nospill/intermediateDDR.
+Raw S32 probes5/6:4352outputs exact, all187levels and +/-1879048192 endpoints.
+Total successfulDSPprocesses5,modelboundaries6,probeRPCs4. No C hardware execution yet.
+CPU SP2 roundtrip/ties/dots passed. Input-only SP2 matches pinnedreference on790932
+FP32/BF16/FP16elements. Batched offlineattention matches existingintegeroracle;
+actualC config/shape cross-checks enabled. Existing SDKconversion library retained.
+Per-targetcode equality and NLLatol5e-5; noA8 model-quality threshold. Physical
+and integergates unchanged. Preserve failedFP32Oaudit and stoppedFP64initialattempt.
