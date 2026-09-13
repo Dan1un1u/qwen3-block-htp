@@ -18,6 +18,7 @@ int main(int argc,char **argv){
  struct qbh_session session={(remote_handle64)-1,0};int fd=rpcmem_to_fd(shared),mapped=0,ret=1;uint64_t elapsed=0;
  if(fd<0 || qbh_session_open(&session) || qbh_session_prepare(&session))goto done;
  if(fastrpc_mmap(CDSP_DOMAIN_ID,fd,shared,0,size,FASTRPC_MAP_FD))goto done;mapped=1;
+ ret=qwen3_probe_run_llama_sp2(session.handle,fd,(uint32_t)size);if(ret)goto done;
  elapsed=now();ret=qwen3_probe_run_llama_sp2(session.handle,fd,(uint32_t)size);elapsed=now()-elapsed;
  f=fopen(argv[2],"wb");if(!f){ret=1;goto done;}if(fwrite(shared,1,size,f)!=(size_t)size)ret=1;fclose(f);
  {struct lsp2_header *h=(void*)shared;printf("{\"rpc_status\":%d,\"dsp_status\":%d,\"host_ns\":%llu,\"mode\":%u,\"rows\":%u,\"k\":%u,\"n\":%u,\"vtcm_bytes\":%u,\"peak_bytes\":%u,\"streams\":%u,\"conversions\":%u,\"total_ticks\":%llu,\"load_ticks\":%llu,\"pack_ticks\":%llu,\"dma_ticks\":%llu,\"mac_ticks\":%llu,\"convert_ticks\":%llu,\"merge_ticks\":%llu,\"publish_ticks\":%llu}\n",ret,h->status,(unsigned long long)elapsed,h->mode,h->rows,h->k,h->n,h->vtcm_bytes,h->peak_bytes,h->streams,h->conversions,(unsigned long long)h->total_ticks,(unsigned long long)h->load_ticks,(unsigned long long)h->pack_ticks,(unsigned long long)h->dma_ticks,(unsigned long long)h->mac_ticks,(unsigned long long)h->convert_ticks,(unsigned long long)h->merge_ticks,(unsigned long long)h->publish_ticks);}

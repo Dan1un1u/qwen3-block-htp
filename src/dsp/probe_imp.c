@@ -1670,5 +1670,7 @@ AEEResult qwen3_probe_run_block(remote_handle64 handle, int32 shared_fd,
 AEEResult qwen3_probe_run_llama_sp2(remote_handle64 handle,int32 fd,uint32 bytes){
  struct qbh_probe_session *s=qbh_session_from_handle(handle);
  if(!s || !s->prepared || !s->vtcm || !s->hmx_context_id)return AEE_EBADSTATE;
- return lsp2_run(fd,bytes,s->vtcm,s->vtcm_granted_bytes,s->hmx_context_id);
+ int lock=qurt_hvx_lock(QURT_HVX_MODE_128B);if(lock)return AEE_EFAILED;
+ int ret=lsp2_run(fd,bytes,s->vtcm,s->vtcm_granted_bytes,s->hmx_context_id);
+ qurt_hvx_unlock();return ret;
 }

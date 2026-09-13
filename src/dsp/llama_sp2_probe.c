@@ -4,6 +4,7 @@
 #include <HAP_mem.h>
 #include <HAP_perf.h>
 #include <hmx_hexagon_protos.h>
+#include <hvx_hexagon_protos.h>
 #include <qurt.h>
 #include <stdint.h>
 #include <string.h>
@@ -24,9 +25,18 @@ static void read_i32(uint8_t *bytes,uint32_t *bias){
   asm volatile("barrier":::"memory");
  }
 }
-static int32_t get_i32(const uint8_t *p,uint32_t i){
- uint32_t u=(uint32_t)p[i]|((uint32_t)p[2048+i]<<8)|((uint32_t)p[4096+i]<<16)|((uint32_t)p[6144+i]<<24);
- int32_t v;memcpy(&v,&u,4);return v;
+static void unpack_digits(const uint8_t *bytes,int32_t *wide){
+ for(uint32_t base=0;base<2048;base+=128){
+  HVX_Vector value[4]={Q6_V_vzero(),Q6_V_vzero(),Q6_V_vzero(),Q6_V_vzero()};
+  for(uint32_t digit=0;digit<4;digit++){
+   HVX_Vector x=*(const HVX_Vector*)(bytes+2048*digit+base);
+   HVX_VectorPair h=Q6_Wuh_vunpack_Vub(x);
+   HVX_VectorPair wl=Q6_Wuw_vunpack_Vuh(Q6_V_lo_W(h)),wh=Q6_Wuw_vunpack_Vuh(Q6_V_hi_W(h));
+   HVX_Vector w[4]={Q6_V_lo_W(wl),Q6_V_hi_W(wl),Q6_V_lo_W(wh),Q6_V_hi_W(wh)};
+   for(uint32_t j=0;j<4;j++)value[j]=Q6_V_vor_VV(value[j],Q6_Vw_vasl_VwR(w[j],8*digit));
+  }
+  for(uint32_t j=0;j<4;j++)*(HVX_Vector*)(wide+base+32*j)=value[j];
+ }
 }
 int lsp2_run(int fd,uint32_t bytes,uint8_t *vtcm,uint32_t vbytes,uint32_t ctx){
  uint8_t *shared=0;int ret=HAP_mmap_get(fd,(void**)&shared,0);if(ret||!shared)return AEE_EFAILED;
@@ -42,6 +52,8 @@ int lsp2_run(int fd,uint32_t bytes,uint8_t *vtcm,uint32_t vbytes,uint32_t ctx){
  uint8_t *weight=vtcm+cursor;cursor+=aligned(c.k*16);
  uint8_t *raw0=vtcm+cursor;cursor+=8192;
  uint8_t *raw1=vtcm+cursor;cursor+=8192;
+ int32_t *wide0=(int32_t*)(vtcm+cursor);cursor+=8192;
+ int32_t *wide1=(int32_t*)(vtcm+cursor);cursor+=8192;
  uint32_t *bias=(uint32_t*)(vtcm+cursor);cursor+=2048;
  int32_t *sums=(int32_t*)(vtcm+cursor);cursor+=aligned(c.n*4);
  int32_t *output=(int32_t*)(vtcm+cursor);cursor+=aligned(c.rows*c.n*4);
@@ -73,12 +85,20 @@ int lsp2_run(int fd,uint32_t bytes,uint8_t *vtcm,uint32_t vbytes,uint32_t ctx){
    c.convert_ticks+=HAP_perf_get_qtimer_count()-t;
   }
   t=HAP_perf_get_qtimer_count();
-  for(uint32_t row=0;row<c.rows;row++)for(uint32_t n=0;n<32;n++){
-   uint32_t ix=row*32+n;int64_t v;
-   if(c.mode==3)v=raw0[ix];else v=get_i32(raw0,ix);
-   if(c.mode==1 || c.mode==2){int32_t hi=c.mode==1?get_i32(raw0,ix+c.rows*32):get_i32(raw1,ix);v+=(int64_t)256*hi-(int64_t)32768*sums[nt*32+n];}
-   if(v<INT32_MIN || v>INT32_MAX){ret=AEE_EFAILED;goto done;}
-   output[row*c.n+nt*32+n]=(int32_t)v;
+  if(c.mode!=3){unpack_digits(raw0,wide0);if(c.mode==2)unpack_digits(raw1,wide1);}
+  for(uint32_t row=0;row<c.rows;row++){
+   if(c.mode==3){for(uint32_t n=0;n<32;n++)output[row*c.n+nt*32+n]=raw0[row*32+n];}
+   else{
+    HVX_Vector v=*(const HVX_Vector*)(wide0+row*32);
+    if(c.mode==1 || c.mode==2){
+     const int32_t *hp=c.mode==1?wide0+(row+c.rows)*32:wide1+row*32;
+     HVX_Vector high=*(const HVX_Vector*)hp,sum=*(const HVX_Vector*)(sums+nt*32);
+     /* Wrapping intermediates are exact modulo2^32. Final signed result is
+      * bounded by8192*32768*7 <2^31, including signed16 stress fixtures. */
+     v=Q6_Vw_vsub_VwVw(Q6_Vw_vadd_VwVw(v,Q6_Vw_vasl_VwR(high,8)),Q6_Vw_vasl_VwR(sum,15));
+    }
+    *(HVX_Vector*)(output+row*c.n+nt*32)=v;
+   }
   }
   c.merge_ticks+=HAP_perf_get_qtimer_count()-t;
  }
