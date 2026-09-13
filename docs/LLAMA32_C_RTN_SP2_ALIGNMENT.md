@@ -1,7 +1,8 @@
 # L32-0013: fresh C-RTN/SP2 adapted to the native HMX contract
 
-Status: initial100-update R1/R2+SA training and B scale initialization complete;
-C100-update joint training running. Fresh candidate model/device PPL is pending.
+Status: initial100-update and C100-update training, fresh export/calibration and
+independent generation oracle complete. Integer bridge PPL is running; native
+device gates/PPL remain pending.
 This document must not be read as an accuracy acceptance or baseline promotion.
 
 ## Scope and provenance
@@ -99,3 +100,24 @@ implemented in this experiment's initial bridge.
 Before full16 deployment, new C weights must pass layer0/7/15 and consecutive
 three-layer gates. All stages retain immutable manifests, source/build seals,
 logs and failed attempts. No quality or default baseline is promoted.
+
+## Completed software quality results (device still pending)
+
+| Model | Full WT2 validation2048+tail,252728 targets | Matched M64+16 bridge,2048 targets |
+|---|---:|---:|
+| Original BF16 teacher | 13.640870538532468 | 23.85653710580871 |
+| Fresh C input-only BF16 software control | 17.29825809973266 | 31.456631990730184 |
+
+The control retains BF16 residual/nonlinear/KV/head/embedding and the candidate's
+new C weights/shared SA/SP2 alpha. It is not the original17.6424 checkpoint.
+Native integer bridge scoring is pending; partial scores are not final results.
+The independent native greedy oracle already produces unusable text. Its chat
+prefill layer1 output has98.50235% zero entries and30 entirely zero rows out of64,
+with output scale0.3745098. This is a localization clue, not a controlled teacher
+error ablation or a device result. SP2 protects Down's input but does not remove
+the following native U8 output/residual boundary.
+
+C training completed100 updates, mean training loss2.8492821, runtime3651.062s.
+All376832 learned output-channel scales are positive; no scale is at the floor.
+Maximum rotation orthogonality error6.5090e-7. The full fresh package,3 single
+layer fixtures and consecutive3 fixture are sealed; native gates must still run.
