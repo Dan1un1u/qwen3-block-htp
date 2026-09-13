@@ -1,7 +1,7 @@
 # L32-0013 active: fresh C-RTN/SP2 native-contract adaptation
 
 Owner /home/daniuniu/work/llama32-htp, branch codex/llama32-no-rotation.
-Latest committed source 075d216fb97407d5925627bb6079b9107bb24407, clean/pushed.
+Latest committed source 10ea3eabe77c30a0118c40f5ed4a3259987bd616, clean/pushed.
 Read docs/experiments/L32-0013.md and source tools/llama32_c_rtn_train.py.
 
 ## Live job and continuation
@@ -9,11 +9,15 @@ Read docs/experiments/L32-0013.md and source tools/llama32_c_rtn_train.py.
 Initial R1/R2+SA100-update training is RUNNING, unified exec session11933.
 Stage source3809e2611323dc5a03f316be0e113c5fa997f79b; log
 /mnt/d/llm_exp/models/llama32-htp/l32-0013/initial/run.log.
-At this checkpoint it had completed42/100 updates, about33.6s/update.
+Training continues at about33.6s/update; read the live log for current progress.
 Do not relaunch or overwrite it. Inspect process/log and initial/complete.json.
-No automatic B/C launcher exists yet. When initial completes, run sequentially:
-python3 tools/llama32_c_rtn_train.py b_init
-python3 tools/llama32_c_rtn_train.py c
+Automatic continuation is RUNNING in unified exec session20420, PID48793.
+Source tools/run_llama32_c_pipeline.py, controller launch source6e8ae6a.
+It waits for initial/complete.json, then runs B initialization, C100 training,
+export, calibration, package/oracle/fixtures, software evaluation, native layer
+gates and full16 deployment/generation/device PPL. Do not duplicate its stages.
+Inspect results/l32-0013/pipeline-a01 per-stage logs and completion records.
+The controller stops at first failure; preserve that attempt before repairs.
 B stage only initializes112 weight scales; no unused B training/GPTQ. C trains100
 updates. Single GPU accumulation8 preserves effective batch8. QKV andGate/Up
 share48 learned SA parameters for96sites. W4 training/export usesnative[-7,7].
@@ -56,7 +60,10 @@ Totaldeviceprocesses5,modelboundaries6,probeRPCs4. NoPPL orformalprofilingyet.
    run_llama32_stack.py acceptsL32-0013mode9 withmarker/manifestguard.
    Buildbeforeeachdeclaredshape;newHEADrequiresfreshbuildseal; archiveoldbinaries.
 5. evaluate_llama32_c.py teacher/integer andrun_llama32_c_device.py
-   deploy/generate/ppl/compare pending. BF16fullvalidation separately; initial
+   deploy/generate/ppl/compare pending. Teacher stage also evaluates a fresh C
+   input-only software control with BF16 residual/nonlinear/KV/head/embedding
+   against the same native C backbone112, sharedSA48 and fittedSP2 alpha.
+   Both floating models get full2048 validation and matchedbridge; initial
    hardware/softwarebridge isM64+16,notcomparabletohistorical17.6424.
    Per-tokenNLLatol5e-5,exacttargetcodes;noA8modelqualitythreshold.
 
