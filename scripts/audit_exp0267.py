@@ -52,7 +52,7 @@ def single():
 def gather():
  preflight();state=read(R/'runtime-l1.json');root=state['remote'];d=R/'gather';d.mkdir(exist_ok=False);rows=[]
  for layer in range(28):
-  lut=np.fromfile(O/f'sp2/layer{layer}/silu_up_lut_u16.bin','<u2');total=395264;b=bytearray(total);struct.pack_into('<16I8Q',b,0,0x3250534c,1,4,64,1024,1024,2048,133120,total,0,0,0,0,0,0,0,*([0]*8));b[2048:133120]=lut.tobytes();inp=d/f'layer{layer}-input.bin';out=d/f'layer{layer}-output.bin';inp.write_bytes(b)
+  lut=np.fromfile(O/f'sp2/layer{layer}/silu_up_lut_u16.bin','<u2');total=395264;b=bytearray(total);struct.pack_into('<16I8Q',b,0,0x3250534c,1,total,4,64,1024,1024,2048,0,0,133120,0,0,0,0,0,*([0]*8));b[2048:133120]=lut.tobytes();inp=d/f'layer{layer}-input.bin';out=d/f'layer{layer}-output.bin';inp.write_bytes(b)
   adb('push',win(inp),root+'/gather-input.bin');r=adb('shell',f'cd {root} && LD_LIBRARY_PATH={root} DSP_LIBRARY_PATH={root} ADSP_LIBRARY_PATH={root} ./llama_sp2_cli gather-input.bin gather-output.bin',check=False);(d/f'layer{layer}.stdout').write_text(r.stdout);(d/f'layer{layer}.stderr').write_text(r.stderr);assert r.returncode==0,(layer,r.stdout,r.stderr)
   adb('pull',root+'/gather-output.bin',win(out));raw=out.read_bytes();got=np.frombuffer(raw,'u1',offset=133120,count=262144).reshape(4,65536);low=(lut&255).astype('u1');high=(lut>>8).astype('u1');assert all(np.array_equal(got[i],v) for i,v in enumerate([low,high,low,high])),layer
   rows.append(dict(layer=layer,pairs=65536,exact=True,input_sha256=sha(inp),output_sha256=sha(out)));print('GATHER_PASS',layer,flush=True)
