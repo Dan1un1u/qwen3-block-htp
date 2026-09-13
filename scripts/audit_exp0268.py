@@ -12,10 +12,14 @@ def compare(a,b):
   if f.name=='eval.bin':continue
   g=b/f.name;assert g.exists(),g
   if f.name.endswith('_r3.bin') and not f.name.startswith('step00_'):
-   x=np.fromfile(f,'u1');y=np.fromfile(g,'u1');off=BASE+8*CAP
-   assert np.array_equal(x[:off],y[:off]) and np.array_equal(x[off+CAP:],y[off+CAP:]),(f,'non-middle')
-   # Decode only four physical U8 rows are defined; prefill middle layout can differ.
-   assert np.array_equal(unpack_u8_hmx_activation(x[off:off+CAP],6144)[:4],unpack_u8_hmx_activation(y[off:off+CAP],6144)[:4]),(f,'live-middle')
+   x=np.fromfile(f,'u1');y=np.fromfile(g,'u1');xx=x.copy();yy=y.copy()
+   # Middle and Down each have four live decode rows. Down's unused rows
+   # legitimately reflect the relocated middle padding; residual reads row0.
+   for slot,k in [(8,6144),(9,2048)]:
+    off=BASE+slot*CAP;length=64*k
+    assert np.array_equal(unpack_u8_hmx_activation(x[off:off+length],k)[:4],unpack_u8_hmx_activation(y[off:off+length],k)[:4]),(f,slot,'live-rows')
+    xx[off:off+length]=0;yy[off:off+length]=0
+   assert np.array_equal(xx,yy),(f,'outside-middle-down')
   else:assert sha(f)==sha(g),(f,g)
   count+=1
  assert count==20,(a,count)
