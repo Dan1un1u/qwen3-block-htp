@@ -369,3 +369,22 @@ EXP0265 per docs/experiments/EXP-0265.md applies this new policy to sealedEXP026
 User approves the branch/structure plan on 2026-09-10. EXP0266 is repository organization only: freeze Qwen3 at EXP0265 48eb1ea7f9db0eb197a7c7908ab954d5a6635fc5, preserve every historical branch, evidence seal and artifact; create codex/llama32-no-rotation and codex/llama32-rotation from that source. Both retain complete F16F16 EXP0218 and C64 W4F16 EXP0260 OPT2; W4U8 defaults to OFF or EXP0259 dense R3 OPT2 respectively, with EXP0265 dense R4 OPT6 optional only on the rotation branch. These are user-approved migration starting configurations, not retroactive quality acceptance or changes to historical Selected records.
 
 Authorize additive model/recipe/baseline organization, executable configuration validation, documentation, separate Llama project-memory and source worktrees in the same repository, commits and normal remote pushes. During setup EXP0266 may temporarily bind its source branch for branch creation/checkout; successful preflight precedes source changes. Final Qwen3 worktree returns to the frozen original branch; new worktrees/authority explicitly own Llama work thereafter. Llama model/results use separate llama32-htp directories under D:/llm_exp; no weight deletion or reuse of Qwen-specific calibration/rotated weights for Llama. Preserve native runtime source/build entry paths and all arithmetic in this organization task; no device profiling, new weights, or claim of implemented Llama support. Exact Llama checkpoint remains unspecified. Existing numerical/physical/provenance gates and repeat10-only performance policy remain. PC037 applies to routine recovery.
+
+## PC081 — User-confirmed native-W4 SP2 pipeline backport to Qwen3
+
+User2026-09-13 confirms Llama L32-0012 method and requests Qwen3 implementation
+and real-device performance comparison. This supersedes PC080 research freeze
+only for EXP0267, preserving historical EXP0265 branch/hash and both Llama branches.
+An experiment branch may start from the common-runtime descendant Llama L32-0012
+closure e03a0f8028b3f123dbc0263394c772483953dc22 to reuse its verified SP2 pipeline;
+compile and validate Qwen3 dimensions, Q/K norms, RoPE,28 layers and tokenizer.
+Qwen3 weights/calibration alone generate the new SP2 LUT/Q31 metadata and references;
+no Llama model data, rotations, grouping, training or PPL/quality/default promotion.
+Preserve one FP32 weight scale peroutputchannel/native signedW4,241-level SP2
+codebook and exact radix256 high/low arithmetic. Compare original U8 and serial/
+prior-overlap SP2 to the optimized earlyGateUp/Down-overlap SP2 under the frozen
+protocol docs/experiments/EXP-0267.md. Singlelayer and consecutive3 correctness
+precede fullmodel; independent arithmetic,8MiB,oneHMXowner,zero timed tensorDDR/
+spill,oneRPC/token and additive ledgers mandatory. Fixed5short/10rotatedformal,
+repeat1 auxiliary only; both pairedbootstrap95 upper<=1.10 vsU8 controls escalation.
+PC037 routine repair authorization applies; retain failed attempts.
