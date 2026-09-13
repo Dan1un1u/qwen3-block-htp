@@ -6,7 +6,7 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0012
+  active_experiment: null
   next_experiment_number: 13
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -14,7 +14,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: 3575edfdf2cb5d433be79b88aaaa3295844e69dc
+    recorded_head: e03a0f8028b3f123dbc0263394c772483953dc22
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -26,25 +26,24 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: sp2_fullmodel_pipeline_speed_gate_passed
+  stage: sp2_three_pipeline_directions_completed
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Evaluate SP2 gather pipelining,early Gate/Up groups,and Down epilogue
-    overlap
+  next_action: Discuss completed SP2 pipeline results; no active device work
   baseline_manifest: baselines/qwen3-frozen/manifest.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF.md
   organization_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0266
   organization_evidence_ledger_sha256: 052b816c686b11b0bc57908b9f86147047c1ecc427af7d8ee54a985dc5e2c093
   original_model_path: /mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin
-  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0011
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0012
   validated_recipes:
   - w16a16
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0011
-  evidence_ledger_sha256: 73ef239a76c6a07b7ebb5ed78504961fd025758cfffb26919635160c19114c8b
+  last_completed_experiment: L32-0012
+  evidence_ledger_sha256: 5277594741ac28c3f013ca33191456e9a1952160b30c2e6d616e2ad6f83e8552
   formal_profiling_completed: true
   general_quantization_quality_accepted: false
   w4a16_quality_gate_pass: false
@@ -67,14 +66,14 @@ current_scope:
     w4a8:
       prefill: 2015.9163652745706
       decode: 45.646624553664694
-  latest_e2e_shape: M64 prefill and 7 continuous decode tokens, matched ten rotated
-    three-arm cycles
+  latest_e2e_shape: M64 prefill and 7 continuous decode tokens, matched ten rotated three-arm
+    cycles
   additional_m64_plus15_e2e_tokens_per_second:
     prefill: 2046.8128485478423
     decode: 46.675701580572316
   quality_validation: /mnt/d/llm_exp/results/llama32-htp/l32-0007/SUMMARY.md
   w16a16_matched_ppl_gate_pass: true
-  last_formal_speed_experiment: L32-0011
+  last_formal_speed_experiment: L32-0012
   latest_matched_device_ppl:
     dataset: llama32-wiki-quant-v1 heldout 128 documents, M64+16,2048 targets
     bf16_teacher: 26.697998599288322
@@ -87,8 +86,7 @@ current_scope:
     code_bits: 8
     hmx_weight_path: native signed4, no S8 expansion
     exact_llama_sp2_elements: 399360
-    quality_scope: local Down against pre-middle-quantization A8 Gate/Up trajectory
-      only
+    quality_scope: local Down against pre-middle-quantization A8 Gate/Up trajectory only
     full_block_gate_applied: false
     ppl_run: false
     e2e_run: false
@@ -218,6 +216,214 @@ current_scope:
     ppl_run: false
     quality_promoted: false
     default_promoted: false
+  sp2_down_pipeline_directions:
+    report: docs/LLAMA32_SP2_PIPELINE_DIRECTIONS.md
+    source_head: e03a0f8028b3f123dbc0263394c772483953dc22
+    profiled_source_head: ddbc07f422693534f7d29e554f1c92c1b87cea18
+    best_tested_mode: 8
+    native_candidates:
+    - 6
+    - 7
+    - 8
+    controls:
+    - 0
+    - 5
+    layers: 16
+    shape: M64+15 capacity80
+    fixed_rotated_five_arm_cycles: 10
+    speed:
+      prefill:
+        arms:
+          u8:
+            mean_ns: 31332198.0
+            tokens_per_second: 2042.6272041303964
+          m5:
+            mean_ns: 34102567.8
+            tokens_per_second: 1876.6915258504378
+          m6:
+            mean_ns: 34325973.9
+            tokens_per_second: 1864.4773251429874
+          m7:
+            mean_ns: 32598854.0
+            tokens_per_second: 1963.2591992344271
+          m8:
+            mean_ns: 31922833.3
+            tokens_per_second: 2004.8345771363595
+        comparisons:
+          m5_vs_u8:
+            latency_ratio: 1.0884192612340824
+            latency_increase_pct: 8.84192612340824
+            throughput_decrease_pct: 8.123639886143685
+            ci95:
+            - 1.0675766233298796
+            - 1.1094082571059147
+            gate_pass: false
+          m6_vs_u8:
+            latency_ratio: 1.0955495015064056
+            latency_increase_pct: 9.554950150640561
+            throughput_decrease_pct: 8.72160512829615
+            ci95:
+            - 1.0833141708646836
+            - 1.1129225246025503
+            gate_pass: false
+          m7_vs_u8:
+            latency_ratio: 1.0404266563105466
+            latency_increase_pct: 4.042665631054665
+            throughput_decrease_pct: 3.8855844441648024
+            ci95:
+            - 1.03089164674774
+            - 1.054179061217621
+            gate_pass: true
+          m8_vs_u8:
+            latency_ratio: 1.0188507458046832
+            latency_increase_pct: 1.8850745804683156
+            throughput_decrease_pct: 1.8501969873708002
+            ci95:
+            - 1.0019072367852024
+            - 1.0344511380652288
+            gate_pass: true
+          m6_vs_m5:
+            latency_ratio: 1.0065510052295827
+            latency_increase_pct: 0.655100522958274
+            throughput_decrease_pct: 0.6508368871072312
+            ci95:
+            - 0.9945963342652678
+            - 1.0235859834516723
+            gate_pass: true
+          m7_vs_m6:
+            latency_ratio: 0.9496847516976059
+            latency_increase_pct: -5.031524830239409
+            throughput_decrease_pct: -5.298100049774757
+            ci95:
+            - 0.9436043848844106
+            - 0.9569071253621381
+            gate_pass: true
+          m8_vs_m7:
+            latency_ratio: 0.9792624397164391
+            latency_increase_pct: -2.0737560283560885
+            throughput_decrease_pct: -2.117671365968632
+            ci95:
+            - 0.9666100482670306
+            - 0.988524737183031
+            gate_pass: true
+          m7_vs_m5:
+            latency_ratio: 0.9559061414724319
+            latency_increase_pct: -4.409385852756809
+            throughput_decrease_pct: -4.612781173227742
+            ci95:
+            - 0.9470397585748735
+            - 0.9689223828620878
+            gate_pass: true
+          m8_vs_m5:
+            latency_ratio: 0.9360829802382213
+            latency_increase_pct: -6.391701976177866
+            throughput_decrease_pct: -6.828136085276615
+            ci95:
+            - 0.9203827713771351
+            - 0.9531212449204601
+            gate_pass: true
+      decode:
+        arms:
+          u8:
+            mean_ns: 325549604.5
+            tokens_per_second: 46.07592757803519
+          m5:
+            mean_ns: 326264433.3
+            tokens_per_second: 45.97497756124556
+          m6:
+            mean_ns: 327401062.3
+            tokens_per_second: 45.81536753309429
+          m7:
+            mean_ns: 326022927.5
+            tokens_per_second: 46.009034134570186
+          m8:
+            mean_ns: 325473531.5
+            tokens_per_second: 46.08669691470749
+        comparisons:
+          m5_vs_u8:
+            latency_ratio: 1.0021957600012996
+            latency_increase_pct: 0.2195760001299618
+            throughput_decrease_pct: 0.2190949202675485
+            ci95:
+            - 0.9933845089001905
+            - 1.010036746829643
+            gate_pass: true
+          m6_vs_u8:
+            latency_ratio: 1.0056871757004393
+            latency_increase_pct: 0.5687175700439306
+            throughput_decrease_pct: 0.5655014638601075
+            ci95:
+            - 0.9989012384071839
+            - 1.013643331742811
+            gate_pass: true
+          m7_vs_u8:
+            latency_ratio: 1.001453919751268
+            latency_increase_pct: 0.14539197512679625
+            throughput_decrease_pct: 0.14518089375785692
+            ci95:
+            - 0.9923793001906904
+            - 1.0102488656276714
+            gate_pass: true
+          m8_vs_u8:
+            latency_ratio: 0.9997663243974237
+            latency_increase_pct: -0.02336756025762554
+            throughput_decrease_pct: -0.023373021962624918
+            ci95:
+            - 0.9956973922034523
+            - 1.003852419305019
+            gate_pass: true
+          m6_vs_m5:
+            latency_ratio: 1.0034837661846974
+            latency_increase_pct: 0.3483766184697368
+            throughput_decrease_pct: 0.3471671692251488
+            ci95:
+            - 0.9969071105690231
+            - 1.011688578968028
+            gate_pass: true
+          m7_vs_m6:
+            latency_ratio: 0.9957906831751901
+            latency_increase_pct: -0.420931682480985
+            throughput_decrease_pct: -0.42271100703492603
+            ci95:
+            - 0.9891439462492905
+            - 1.0024241327397927
+            gate_pass: true
+          m8_vs_m7:
+            latency_ratio: 0.9983148547121736
+            latency_increase_pct: -0.16851452878263729
+            throughput_decrease_pct: -0.16879897958768098
+            ci95:
+            - 0.9919163159412052
+            - 1.0046791693179036
+            gate_pass: true
+          m7_vs_m5:
+            latency_ratio: 0.9992597850842726
+            latency_increase_pct: -0.07402149157273996
+            throughput_decrease_pct: -0.0740763239726494
+            ci95:
+            - 0.9925028767045327
+            - 1.0060421605259964
+            gate_pass: true
+          m8_vs_m5:
+            latency_ratio: 0.9975758871661233
+            latency_increase_pct: -0.24241128338766682
+            throughput_decrease_pct: -0.24300034363931022
+            ci95:
+            - 0.9901034033457794
+            - 1.0056473532252312
+            gate_pass: true
+    arithmetic_pass: true
+    physical_pass: true
+    best_both_speed_gates_pass: true
+    vtcm_peak_bytes: 8229344
+    successful_dsp_processes: 83
+    verified_model_boundaries: 904
+    formal_model_boundaries: 800
+    exhaustive_lut_pairs: 1048576
+    ppl_run: false
+    quality_promoted: false
+    default_promoted: false
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0012
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp
