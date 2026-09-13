@@ -1,8 +1,9 @@
 # L32-0013 active: fresh C-RTN/SP2 native-contract adaptation
 
 Owner /home/daniuniu/work/llama32-htp, branch codex/llama32-no-rotation.
-Latest committed source 6309a8a, clean/pushed.
+Latest committed source fbae5c537ed4e31d608406c41315936d89e4a70a, clean/pushed.
 Read docs/experiments/L32-0013.md and source tools/llama32_c_rtn_train.py.
+Source docs/LLAMA32_C_RTN_SP2_ALIGNMENT.md documents contract/evaluation limits.
 
 ## Live job and continuation
 
@@ -15,7 +16,9 @@ initial-training-audit.json verifies96 SA sites/48sharedparameters and17rotation
 matrices maxorthogonalityerror6.9098e-7. Do not relaunch or overwrite it.
 Automatic continuation is RUNNING in unified exec session20420, PID48793.
 Source tools/run_llama32_c_pipeline.py, controller launch source6e8ae6a.
-It has consumed initial/complete.json and started B initialization, then C100 training,
+B initialization is COMPLETE (zero optimizer updates), and C100 training is
+RUNNING at about36.5s/update, launch source6309a8a42c6aee13cecddace6e6631ecf15b4686.
+C log: models/llama32-htp/l32-0013/c/run.log. After C completion it runs
 export, calibration, package/oracle/fixtures, software evaluation, native layer
 gates and full16 deployment/generation/device PPL. Do not duplicate its stages.
 Inspect results/l32-0013/pipeline-a01 per-stage logs and completion records.
