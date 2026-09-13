@@ -6,7 +6,7 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0009
+  active_experiment: null
   next_experiment_number: 10
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -14,7 +14,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: 0a00e0a28d7961846648922c47e4be264e6b78df
+    recorded_head: 625073a5b680c9a115b694eb73d4c07286052212
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -26,25 +26,25 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: sp2_down_component_prototype_completed
+  stage: sp2_fused_down_single_block_gate_completed
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: L32-0009 fuse SP2 SwiGLU producer, exact Down epilogue/full-block validation,
-    then bounded performance optimization
+  next_action: Discuss separately registered full-model SP2 PPL/text and E2E validation; no experiment
+    or jobs active
   baseline_manifest: baselines/qwen3-frozen/manifest.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF.md
   organization_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0266
   organization_evidence_ledger_sha256: 052b816c686b11b0bc57908b9f86147047c1ecc427af7d8ee54a985dc5e2c093
   original_model_path: /mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin
-  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0008
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0009
   validated_recipes:
   - w16a16
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0008
-  evidence_ledger_sha256: 087f79a79669b658a1eccedde28b73e4cf71444405a755a64443bdcca850a50c
+  last_completed_experiment: L32-0009
+  evidence_ledger_sha256: 9a1beb6e33de90527a753bb9272833f9a187bde7e091a631a28be4ee0dd956ac
   formal_profiling_completed: true
   general_quantization_quality_accepted: false
   w4a16_quality_gate_pass: false
@@ -67,8 +67,7 @@ current_scope:
     w4a8:
       prefill: 2015.9163652745706
       decode: 45.646624553664694
-  latest_e2e_shape: M64 prefill and 7 continuous decode tokens, matched ten rotated
-    three-arm cycles
+  latest_e2e_shape: M64 prefill and 7 continuous decode tokens, matched ten rotated three-arm cycles
   additional_m64_plus15_e2e_tokens_per_second:
     prefill: 2046.8128485478423
     decode: 46.675701580572316
@@ -87,12 +86,53 @@ current_scope:
     code_bits: 8
     hmx_weight_path: native signed4, no S8 expansion
     exact_llama_sp2_elements: 399360
-    quality_scope: local Down against pre-middle-quantization A8 Gate/Up trajectory
-      only
+    quality_scope: local Down against pre-middle-quantization A8 Gate/Up trajectory only
     full_block_gate_applied: false
     ppl_run: false
     e2e_run: false
     producer_fused: false
+    baseline_promoted: false
+  sp2_down_fused:
+    report: docs/LLAMA32_SP2_DOWN_FUSED.md
+    source_head: 625073a5b680c9a115b694eb73d4c07286052212
+    profiled_source_head: a4a5882596d4e75be0e47bebe3c17e568caf077c
+    audit_host_source_head: 457e2a649a29a3aded35fc67b6e08d3864e295fe
+    same_dsp_for_profile_and_audit: true
+    codebook_levels: 241
+    producer_fused: true
+    full_block_correctness_pass: true
+    unique_down_exact_elements: 399360
+    unique_block_exact_elements: 399360
+    layer_indices:
+    - 0
+    - 7
+    - 15
+    sp2_mode: 4
+    gate_shape: single layer0 prefill64 + decode1 past64/capacity80
+    formal_process_pairs: 10
+    per_process_warmup_replays: 1
+    per_process_measured_replays: 10
+    speed:
+      prefill:
+        u8_mean_us: 2015.2802199999999
+        sp2_mean_us: 2135.93487
+        ratio: 1.0598699122844564
+        ci95:
+        - 1.026326657713548
+        - 1.0888385792209687
+        gate_pass: true
+      decode:
+        u8_mean_us: 1426.11088
+        sp2_mean_us: 1441.6363900000001
+        ratio: 1.0108866079192946
+        ci95:
+        - 0.9646181915072505
+        - 1.0561832287431363
+        gate_pass: true
+    vtcm_peak_bytes: 8212960
+    full_block_speed_gate_pass: true
+    ppl_run: false
+    e2e_run: false
     baseline_promoted: false
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp

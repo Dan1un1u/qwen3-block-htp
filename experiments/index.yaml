@@ -5,8 +5,7 @@ experiments:
   title: Repository organization and Qwen3 freeze handoff
   execution_state: completed
   record: docs/experiments/L32-0000.md
-  approval_ref: User approved two-branch plan; setup executed under Qwen3 EXP0266
-    / PC080
+  approval_ref: User approved two-branch plan; setup executed under Qwen3 EXP0266 / PC080
   parent_source: 48eb1ea7f9db0eb197a7c7908ab954d5a6635fc5
   hardware_runs: 0
   evidence_validity: valid
@@ -24,8 +23,8 @@ experiments:
   title: Llama 3.2 1B Instruct W16A16 model port and independent validation
   execution_state: completed
   record: docs/experiments/L32-0001.md
-  approval_ref: User selected original 1B-Instruct and approved W16A16 -> W4A16 ->
-    W4A8 adaptation order on 2026-09-10
+  approval_ref: User selected original 1B-Instruct and approved W16A16 -> W4A16 -> W4A8 adaptation order
+    on 2026-09-10
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp-rotation
     source_branch: codex/llama32-rotation
@@ -48,8 +47,8 @@ experiments:
   title: Fresh per-channel Llama W4A16 integration and quality validation
   execution_state: completed
   record: docs/experiments/L32-0002.md
-  approval_ref: 'User: defer optimization; sequentially connect W4A16 and W4A8; W4A16
-    quality usable, A8 no quality threshold (2026-09-10)'
+  approval_ref: 'User: defer optimization; sequentially connect W4A16 and W4A8; W4A16 quality usable,
+    A8 no quality threshold (2026-09-10)'
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp-rotation
     source_branch: codex/llama32-rotation
@@ -70,8 +69,8 @@ experiments:
   title: Llama per-channel native W4A8 OFF functional chain
   execution_state: completed
   record: docs/experiments/L32-0003.md
-  approval_ref: User requested sequential W4A16 then W4A8 chains; defer optimization;
-    A8 has no quality gate (2026-09-10)
+  approval_ref: User requested sequential W4A16 then W4A8 chains; defer optimization; A8 has no quality
+    gate (2026-09-10)
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp-rotation
     source_branch: codex/llama32-rotation
@@ -89,8 +88,8 @@ experiments:
   quality_gate_applied: false
   usable_text: false
   formal_profiling: false
-  hardware_runs_definition: Native host invocation attempts including rejected CLI/bundle
-    attempts and full generation/evaluation; seven launched DSP execution
+  hardware_runs_definition: Native host invocation attempts including rejected CLI/bundle attempts and
+    full generation/evaluation; seven launched DSP execution
   token_boundary_executions: 2074
 - id: L32-0004
   title: Reuse native pipelines for Llama quantized inference speed
@@ -104,8 +103,8 @@ experiments:
   hardware_runs: 55
   baseline_quality_promoted: false
   completed_on: '2026-09-10'
-  hardware_runs_definition: Successful native process invocations:11 layer/regression,4
-    generation gates,40 formal paired runs; one failed compile before hardware
+  hardware_runs_definition: Successful native process invocations:11 layer/regression,4 generation gates,40
+    formal paired runs; one failed compile before hardware
   token_boundary_executions: 548
   timed_token_boundary_executions: 480
   local_gate: arithmetic_and_physical_pass_paired_speed_pass
@@ -123,8 +122,7 @@ experiments:
   title: Recover native A8 speed advantage over W4A16
   execution_state: completed
   record: docs/experiments/L32-0005.md
-  approval_ref: User requests investigation and fixes for missing W4A8 speed advantage
-    over W4A16
+  approval_ref: User requests investigation and fixes for missing W4A8 speed advantage over W4A16
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp-rotation
     source_branch: codex/llama32-rotation
@@ -132,8 +130,8 @@ experiments:
   hardware_runs: 44
   baseline_quality_promoted: false
   local_gate: exact_arithmetic_physical_and_matched_speed_pass
-  hardware_runs_definition: 44 DSP process invocations including one failed predicate
-    candidate; two additional CLI-rejected attempts;43 successful DSP processes
+  hardware_runs_definition: 44 DSP process invocations including one failed predicate candidate; two additional
+    CLI-rejected attempts;43 successful DSP processes
   token_boundary_executions: 306
   successful_token_boundary_executions: 304
   timed_token_boundary_executions: 240
@@ -151,8 +149,7 @@ experiments:
   title: Iterate Llama A8 nonlinear and native pipeline speed
   execution_state: completed
   record: docs/experiments/L32-0006.md
-  approval_ref: User authorizes several further speed iterations aiming near frozen
-    Qwen3 speed
+  approval_ref: User authorizes several further speed iterations aiming near frozen Qwen3 speed
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp-rotation
     source_branch: codex/llama32-rotation
@@ -161,8 +158,8 @@ experiments:
   baseline_quality_promoted: false
   local_gate: exact_physical_and_both_formal_shape_gates_pass
   completed_on: '2026-09-10'
-  hardware_runs_definition: '64 successful DSP processes: 8 functional/regression,
-    6 generation gates, 30 M64+7 rotated three-arm formal and 20 M64+15 paired formal'
+  hardware_runs_definition: '64 successful DSP processes: 8 functional/regression, 6 generation gates,
+    30 M64+7 rotated three-arm formal and 20 M64+15 paired formal'
   token_boundary_executions: 640
   timed_token_boundary_executions: 560
   source_heads:
@@ -188,8 +185,8 @@ experiments:
   hardware_runs: 4
   baseline_quality_promoted: false
   completed_on: '2026-09-10'
-  hardware_runs_definition: Two eight-step generation smoke processes and two full2048-target
-    teacher-forced PPL processes; all successful, each recipe evaluated once
+  hardware_runs_definition: Two eight-step generation smoke processes and two full2048-target teacher-forced
+    PPL processes; all successful, each recipe evaluated once
   token_boundary_executions: 4112
   scored_target_pairs: 4096
   evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0007
@@ -207,8 +204,8 @@ experiments:
   title: Llama SP2 Down activation exact radix256 native W4 prototype
   execution_state: completed
   record: docs/experiments/L32-0008.md
-  approval_ref: User approved Llama prototype of the annotated signed16 SP2 high/low
-    native-W4 decomposition on 2026-09-13
+  approval_ref: User approved Llama prototype of the annotated signed16 SP2 high/low native-W4 decomposition
+    on 2026-09-13
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
@@ -216,9 +213,8 @@ experiments:
   hardware_runs: 104
   baseline_quality_promoted: false
   completed_on: '2026-09-13'
-  hardware_runs_definition: 104 DSP process attempts:101 valid,2 DMA failures,1 known
-    stale-DSP mixed-build invalid attempt; invalid excluded.60 fixed paired component
-    timing processes included.
+  hardware_runs_definition: 104 DSP process attempts:101 valid,2 DMA failures,1 known stale-DSP mixed-build
+    invalid attempt; invalid excluded.60 fixed paired component timing processes included.
   valid_probe_rpc_calls: 182
   source_heads:
     codex/llama32-no-rotation: 0a00e0a28d7961846648922c47e4be264e6b78df
@@ -234,13 +230,35 @@ experiments:
   e2e_run: false
 - id: L32-0009
   title: Llama fused SP2 SwiGLU native W4 Down full-block integration and speed
-  execution_state: running
+  execution_state: completed
   record: docs/experiments/L32-0009.md
-  approval_ref: User agrees to proceed and directs performance optimization after
-    hardware correctness confirmation (2026-09-13)
+  approval_ref: User agrees to proceed and directs performance optimization after hardware correctness
+    confirmation (2026-09-13)
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
   parent_source: 0a00e0a28d7961846648922c47e4be264e6b78df
-  hardware_runs: 0
+  hardware_runs: 74
   baseline_quality_promoted: false
+  completed_on: '2026-09-13'
+  hardware_runs_definition: 73 successful DSP processes/1186 block RPCs plus one CLI-rejected standalone
+    audit; one additional local Python import error never invoked device. Earlier arithmetic diagnostics
+    include subsequently rejected physical implementations.
+  successful_dsp_processes: 73
+  successful_block_rpcs: 1186
+  final_native_block_rpcs: 454
+  formal_profiling: true
+  formal_process_pairs: 10
+  final_timed_block_rpcs: 400
+  final_warmup_block_rpcs: 40
+  source_heads:
+    codex/llama32-no-rotation: 625073a5b680c9a115b694eb73d4c07286052212
+    codex/llama32-rotation: 252aee5ecfbefd4a2df6cd5a5e4b9193d935f86b
+  profiled_source_head: a4a5882596d4e75be0e47bebe3c17e568caf077c
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0009
+  evidence_ledger_sha256: 9a1beb6e33de90527a753bb9272833f9a187bde7e091a631a28be4ee0dd956ac
+  evidence_validity: valid_final_with_superseded_physical_diagnostics_and_rejected_cli_preserved
+  local_gate: exact_down_block_and_physical_pass_both_single_layer_speed_gates_pass
+  full_block_gate_applied: true
+  ppl_rerun: false
+  e2e_run: false
