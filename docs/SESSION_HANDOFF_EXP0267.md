@@ -1,0 +1,15 @@
+# EXP-0267 handoff — completed
+
+User requested fixing the confirmed Llama native-W4 SP2 method and migrating it to Qwen3. Work is complete; no device/background job remains. No new experiment is authorized by this handoff.
+
+Authority: /home/daniuniu/work/qwen3-block-htp-project-memory, branch codex/qwen3-block-project-memory. Bootstrap first, read its four authorityfiles in order. Source /home/daniuniu/work/qwen3-block-htp, branch codex/exp-0267-sp2-native-w4-pipeline, closure a088d087d847e7c19c0ef1e0874f141d285828d0. Fullmodel tested 497c30a2005699b524734ae56f66e510bfa1945b; binaryidentity from17c259f proved afterPython-only harnessfix. Activeexperimentnull,next268. Newstatefulwork needs a newlyregistered approvedexperiment andpreflight; do not restart closed267 or overwrite itsmodels/results.
+
+Method:241-level SP2 LUT directly emits low/high nativeU8, exact radix256recombination andQ31 Down usingoriginalpackedW4/singleoutputscale. Decodepairedphysicalrows0..3/4..7 useoneHMXpass;prefilltwo passes with3HVXproducer workers,earlyGateUp interleaving anddouble-slotHMX/HVXDown overlap. Qwen-onlydead hmx_activation reuse avoids extraVTCM. NoR3/R4/groupweights. See docs/NATIVE_W4_SP2_METHOD.md. Allarithmetic/physical gatespass; noPPLorquality/defaultpromotion.
+
+Actualfull28 M64+15,KVcapacity128,5short+10formalrotatedfourarms,repeat10primary/repeat1auxiliary. U8 prefill1705.305tok/s/decode48.4689;SP2m4 1821.905/47.9423;SP2m5 1914.502/47.9269;SP2m8 2020.269/47.8808. m8/U8 wall−15.590%/+1.228%,bothupperCI<1.10. m8/m5prefwall−5.235%,similarLlama−6.392%;m8/m4−9.819%. 10560fullmodelRPCs,295680layerledgers,peak8365824B. OnefullmodelRPC/token,oneHMX,zero intermediateDDR/spill. HotE2Eexcludes tokenizer/ADB/coldload; generationloop rate separatelyreported. Neither these selectedlogitcode checks nor sampletext are PPL evaluation.
+
+Evidence /mnt/d/llm_exp/results/qwen3-block-htp/exp0267; ledgerSHA256 a33cb7b09b798ee88e9edc46e2666dd3479eb81ac25b65b3d356b11ac7528755,1556files/1,350,204,734B. Fullrawattempts,models/exportgates,teacherinputs,allLUTprobes,auditcaptures,binaries/buildseals,alltimingrounds,moduleledgers,recomputedbootstrap andreports retained. Newmetadataonly at/mnt/d/llm_exp/models/qwen3-block-htp/exp0267; originalQwenweightsandnonmiddleqparams unchanged. FrozenOFFprefix fromEXP0257 sharedacrossarms. Reports/source docs/experiments/EXP-0267-RESULTS.md andEXP-0267-PROFILE.md.
+
+Retainedfailedattempts were hostdeclaration compileorder, endpointI/O and aggregatemetadata misclassification, unuseddecodepadding comparison, exclusive-create oracle revalidation andPython tuple/list comparison. Actual changedpath arithmetic neverfailed. Validcapturedrecords revalidatedwithoutoverwrite; firstvalidshortU8timing retained. Nooptionalresampling or gate relaxation.
+
+Preserve historical codex/exp-0265-w4u8-r4-fullmodel-e2e at48eb1ea7f9db0eb197a7c7908ab954d5a6635fc5, Llama no-rotatione03a0f8028b3f123dbc0263394c772483953dc22 and rotation252aee5ecfbefd4a2df6cd5a5e4b9193d935f86b. Llamaauthority remains separate; its methodconfirmation amendmentd70e585 isalready committed/pushed. Do not infer itscurrentstate fromQwenmemory.

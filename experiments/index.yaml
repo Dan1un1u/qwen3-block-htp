@@ -30,20 +30,133 @@ experiments:
   parent: EXP-0266
   record: docs/experiments/EXP-0267.md
   approval_ref: 'User2026-09-13: 固定此方法结论，迁移实现到qwen3上; PC081'
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
-  adoption_status: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
+  adoption_status: not_applicable
   runtime:
     source_branch: codex/exp-0267-sp2-native-w4-pipeline
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     started_on: '2026-09-13'
+    completed_on: '2026-09-13'
   source_branches:
   - codex/exp-0267-sp2-native-w4-pipeline
-  source_commits: []
+  source_commits:
+  - 90a80ce35b68243c8bfe1ef0879862f4f54f4305
+  - c602dd20894fc7aaedb1f59534a1d601dfb584c8
+  - 2682daf697f9964871aeec3705436bbfe5ce6273
+  - 2996737295e1791348570304f5c7fc7468eda165
+  - d0bcdfcd63f5d6a12ba0fc101eb5889f4396fd12
+  - 9e3918b10e9a6fcc205999cd6b8a1e1caaa632ae
+  - a71e5906f16eddb7d684fd09078bc6a7ffad2588
+  - d5413cb63d71d282275a2f2c633046db3c44f323
+  - 17c259ffafde5e992b9a3a04ddd0eff9914ec99d
+  - 497c30a2005699b524734ae56f66e510bfa1945b
+  - a088d087d847e7c19c0ef1e0874f141d285828d0
   evidence:
     execution_unit: Qwen3 native SP2 singlelayer then conditional28layer M64+15
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0267
+    report: docs/experiments/EXP-0267-RESULTS.md
+    method: docs/NATIVE_W4_SP2_METHOD.md
+    evidence_ledger_sha256: a33cb7b09b798ee88e9edc46e2666dd3479eb81ac25b65b3d356b11ac7528755
+    evidence_file_count: 1556
+    gate_role: SP2_arithmetic_physical_and_repeat10_performance_no_quality_promotion
+    hardware_fullmodel_RPCs: 10560
+    layer_ledgers: 295680
+    source_closure_commit: a088d087d847e7c19c0ef1e0874f141d285828d0
+    tested_source_head: 497c30a2005699b524734ae56f66e510bfa1945b
+    performance:
+      r10_m8_over_m0_prefill_ns:
+        control_mean_ns: 37529938.00000001
+        candidate_mean_ns: 31678942.79
+        ratio: 0.8440979249685943
+        ci95:
+        - 0.8415005913041735
+        - 0.8467439677035815
+        gate: true
+        auxiliary_only: false
+      r10_m8_over_m5_prefill_ns:
+        control_mean_ns: 33429054.629999995
+        candidate_mean_ns: 31678942.79
+        ratio: 0.9476469837579731
+        ci95:
+        - 0.9455287973263076
+        - 0.9497794219841399
+        gate: true
+        auxiliary_only: false
+      r10_m8_over_m4_prefill_ns:
+        control_mean_ns: 35128074.45
+        candidate_mean_ns: 31678942.79
+        ratio: 0.9018126750753341
+        ci95:
+        - 0.8996371532805288
+        - 0.904058291040243
+        gate: true
+        auxiliary_only: false
+      r10_m8_over_m0_decode_ns:
+        control_mean_ns: 20631796.935333334
+        candidate_mean_ns: 20885177.173333332
+        ratio: 1.012281055246626
+        ci95:
+        - 1.0097858697985231
+        - 1.0147032754020997
+        gate: true
+        auxiliary_only: false
+      r10_m8_over_m5_decode_ns:
+        control_mean_ns: 20865127.045999996
+        candidate_mean_ns: 20885177.173333332
+        ratio: 1.0009609396237622
+        ci95:
+        - 0.9994195921562532
+        - 1.0026488589017903
+        gate: true
+        auxiliary_only: false
+      r10_m8_over_m4_decode_ns:
+        control_mean_ns: 20858414.635333337
+        candidate_mean_ns: 20885177.173333332
+        ratio: 1.0012830571482965
+        ci95:
+        - 0.999495567747037
+        - 1.0033775162429863
+        gate: true
+        auxiliary_only: false
+    throughput:
+      m0_r10:
+        prefill_host_us: 37529.938
+        decode_host_us_per_token: 20631.796935333332
+        prefill_tokens_per_second: 1705.3052419111377
+        decode_tokens_per_second: 48.468875645408914
+        model_16_output_tokens_per_second: 46.108594288717306
+        generation_loop_16_output_tokens_per_second: 43.336947452193954
+        model_host_us: 347006.89203
+        generation_loop_us: 369199.97694
+      m4_r10:
+        prefill_host_us: 35128.07445
+        decode_host_us_per_token: 20858.414635333334
+        prefill_tokens_per_second: 1821.9045877705375
+        decode_tokens_per_second: 47.942282166835405
+        model_16_output_tokens_per_second: 45.97644418985108
+        generation_loop_16_output_tokens_per_second: 43.535245864711804
+        model_host_us: 348004.29398
+        generation_loop_us: 367518.31033
+      m5_r10:
+        prefill_host_us: 33429.05463
+        decode_host_us_per_token: 20865.127046
+        prefill_tokens_per_second: 1914.5022408909206
+        decode_tokens_per_second: 47.926858906507704
+        model_16_output_tokens_per_second: 46.18858170113371
+        generation_loop_16_output_tokens_per_second: 43.52618694132792
+        model_host_us: 346405.96032
+        generation_loop_us: 367594.80038
+      m8_r10:
+        prefill_host_us: 31678.94279
+        decode_host_us_per_token: 20885.177173333333
+        prefill_tokens_per_second: 2020.2694396797451
+        decode_tokens_per_second: 47.880848302154824
+        model_16_output_tokens_per_second: 46.382646344238
+        generation_loop_16_output_tokens_per_second: 43.43447435761266
+        model_host_us: 344956.60039
+        generation_loop_us: 368370.98264999996
 - id: EXP-0266
   slug: freeze-qwen3-llama32-branches
   title: Freeze Qwen3 and organize two Llama 3.2 development branches
