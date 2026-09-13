@@ -6865,7 +6865,7 @@ int main(int argc, char **argv) {
     }
 #ifdef QBH_MODEL_LLAMA32
     header->llama_sp2_mode=getenv("QBH_LLAMA_SP2") ? (uint32_t)atoi(getenv("QBH_LLAMA_SP2")) : 0U;
-    if(header->llama_sp2_mode>3U || (header->llama_sp2_mode &&
+    if((header->llama_sp2_mode!=0U && header->llama_sp2_mode!=3U && header->llama_sp2_mode!=4U) || (header->llama_sp2_mode &&
        (variant!=QBH_BLOCK_W4U8 || dense_r3_mode))) return 2;
 #endif
     header->wide_score_mode=wide_score_mode;

@@ -71,6 +71,7 @@ enum qbh_block_hmx_command_kind {
     QBH_BLOCK_HMX_U8N4 = 8,
     QBH_BLOCK_HMX_LPBQ_W4_PLANES = 9,
     QBH_BLOCK_HMX_SP2_W4 = 10,
+    QBH_BLOCK_HMX_SP2_RELEASE = 11,
 };
 
 #define QBH_BLOCK_W4F16_MIN_REGION_TILES UINT32_C(8)
@@ -263,7 +264,7 @@ struct qbh_block_buffers {
 struct qbh_block_hmx_worker {
     const uint8_t *sp2_high;
     uint8_t *sp2_scratch;
-    uint32_t sp2_rows, sp2_mode;
+    uint32_t sp2_rows, sp2_mode, sp2_last, sp2_hvx_locked;
     int32_t sp2_zero_point;
     uint32_t hmx_context_id;
     qurt_sem_t command_ready;
@@ -982,7 +983,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
     if (sp2_mode) {
         buffers->sp2_high = qbh_arena_alloc_aligned(&arena,
             QBH_BLOCK_M * QBH_BLOCK_INTERMEDIATE, 2048U);
-        buffers->sp2_scratch = qbh_arena_alloc_aligned(&arena, 34816U, 2048U);
+        buffers->sp2_scratch = qbh_arena_alloc_aligned(&arena, 18432U, 2048U);
         if (!buffers->sp2_high || !buffers->sp2_scratch) return -1;
     }
     if (qbh_attention_u8_enabled(attention_pipeline_mode)) {
@@ -2003,7 +2004,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
 #endif
     if (header == NULL || header->magic != QBH_BLOCK_MAGIC ||
         header->abi_version != QBH_BLOCK_ABI_VERSION ||
-        QBH_LLAMA_SP2(header)>3U ||
+        (QBH_LLAMA_SP2(header)!=0U && QBH_LLAMA_SP2(header)!=3U && QBH_LLAMA_SP2(header)!=4U) ||
         (QBH_LLAMA_SP2(header) && (header->variant!=QBH_BLOCK_W4U8 ||
           header->w4u8_decode_projection_mode!=QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
           header->w4u8_decode_direct_n_mask!=63U ||
@@ -3321,7 +3322,20 @@ static void qbh_hmx_worker_main(void *opaque) {
                 }
             }
         } else if (worker->kind == QBH_BLOCK_HMX_SP2_W4) {
-            worker->command_status = qbh_llama_sp2_down(worker);
+            if(!worker->sp2_hvx_locked) {
+                worker->command_status=qurt_hvx_lock(QURT_HVX_MODE_128B);
+                if(worker->command_status==AEE_SUCCESS)worker->sp2_hvx_locked=1U;
+            }
+            if(worker->command_status==AEE_SUCCESS)worker->command_status=qbh_llama_sp2_down(worker);
+            if(worker->sp2_hvx_locked && (worker->sp2_mode==3U || worker->sp2_last ||
+               worker->command_status!=AEE_SUCCESS)) {
+                int unlock_status=qurt_hvx_unlock();worker->sp2_hvx_locked=0U;
+                if(worker->command_status==AEE_SUCCESS)worker->command_status=unlock_status;
+            }
+        } else if (worker->kind == QBH_BLOCK_HMX_SP2_RELEASE) {
+            if(worker->sp2_hvx_locked) {
+                worker->command_status=qurt_hvx_unlock();worker->sp2_hvx_locked=0U;
+            }
         } else if ((worker->kind == QBH_BLOCK_HMX_U8N4 || worker->kind == QBH_BLOCK_HMX_LPBQ_W4_PLANES) &&
                    worker->m_tiles >= 1U &&
                    worker->m_tiles <= QBH_ATTENTION_Q_HEADS_PER_GROUP &&
@@ -9518,6 +9532,7 @@ static int qbh_run_w4u8_direct_n_projection(
         uint32_t next_slot = current_slot ^ 1U;
         uint64_t wait_start;
 
+        worker->sp2_last = next_first >= n_tiles;
         qbh_hmx_start(
             worker, (QBH_LLAMA_SP2(header) && desc==&header->projections[QBH_BLOCK_PROJ_DOWN]) ? QBH_BLOCK_HMX_SP2_W4 : QBH_BLOCK_HMX_U8N4, activation_tiles,
             weight_slots[current_slot], bias_slots[current_slot],
@@ -15085,6 +15100,10 @@ static int qbh_run_w4u8_direct_n_mlp(
             &header->projections[QBH_BLOCK_PROJ_DOWN], buffers, worker,
             middle_native, down_native,
             header->w4u8_decode_direct_n_down_batch_n_tiles);
+    if(QBH_LLAMA_SP2(header) && down_result!=0) {
+        qbh_hmx_start(worker,QBH_BLOCK_HMX_SP2_RELEASE,NULL,NULL,NULL,NULL,0U,0U,0U);
+        (void)qbh_hmx_wait(worker);
+    }
     if (QBH_LLAMA_SP2(header) && qurt_hvx_lock(QURT_HVX_MODE_128B)!=AEE_SUCCESS) return -1;
     if (down_result != 0) return -1;
     qbh_r3_chain_audit(header,shared,9,down_native,131072U);
