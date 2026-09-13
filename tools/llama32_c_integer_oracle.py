@@ -12,7 +12,7 @@ from llama_u8_reference import _cached_w4_projection,projection_bias_words
 from llama32_sp2_contract import encode
 class NativeOracle:
     def __init__(self):
-        self.weights={};self.biases={};self.audited=set()
+        self.weights={};self.biases={};self.audited=set();self.audited_down=set()
         torch.backends.cuda.matmul.allow_tf32=False
     def weights_for(self,package,name,n,k):
         key=(str(package.resolve()),name,n,k)
@@ -43,6 +43,11 @@ class NativeOracle:
         codes,scales=_cached_w4_projection(*key)
         lo=self.dot((c&255).astype('u1'),key,w);hi=self.dot((c>>8).astype('u1'),key,w)
         acc=lo+257*hi-32770*codes.astype('i4').sum(1,dtype='i4')
+        if key not in self.audited_down:
+            columns=np.linspace(0,len(codes)-1,16,dtype=int)
+            expected=v[:3].astype('i8')@codes[columns].astype('i8').T
+            assert np.array_equal(acc[:3,columns],expected)
+            self.audited_down.add(key)
         multiplier=np.floor(float(q['middle']['scale'])*scales.astype('f8')/float(q['down']['scale'])*2**31+.5).astype('i8')
         assert ((multiplier>0)&(multiplier<2**31)).all() and np.abs(acc).max()<2**31
         y=np.clip(((acc*multiplier+2**30)>>31)+q['down']['zero_point'],0,255).astype('u1')

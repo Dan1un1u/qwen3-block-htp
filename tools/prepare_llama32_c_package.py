@@ -24,6 +24,7 @@ def seal(root,**extra):
 def prepare():
     m=verify(QUANT);cal=json.loads(CAL.read_text());assert sha256(QUANT/'manifest.json')==cal['weight_manifest_sha256']
     FRONT.mkdir(exist_ok=False)
+    bounds=[]
     for index in range(16):
         out=FRONT/f'layer{index}';out.mkdir();q=cal['qparams'][index]
         for f in (QUANT/f'layer{index}').iterdir():
@@ -31,6 +32,12 @@ def prepare():
         for n in ['q_norm_weight_f16.bin','k_norm_weight_f16.bin']:np.ones(64,dtype='<f2').tofile(out/n)
         write_qparams(out/'qparams_u8.bin',q)
         (out/'attention_config_all_groups.bin').write_bytes(b''.join(struct.pack('<IIIIiiiiiIIIIII',*v) for v in configs(q)))
+        w,ws=_cached_w4_projection(str(out.resolve()),'down',2048,8192)
+        positive=np.maximum(w,0).astype('i4').sum(1);negative=np.minimum(w,0).astype('i4').sum(1)
+        assert (positive*255<=8388607).all() and (negative*255>=-8388608).all(),('signed24 partial bound',index)
+        mult=np.floor(float(q['middle']['scale'])*ws.astype('f8')/q['down']['scale']*2**31+.5).astype('i8')
+        assert ((mult>0)&(mult<2**31)).all(),('Q31 multiplier bound',index)
+        bounds.append(dict(layer=index,partial_min=int(negative.min()*255),partial_max=int(positive.max()*255),multiplier_min=int(mult.min()),multiplier_max=int(mult.max())))
         g=(np.arange(256,dtype='f4')-q['gate']['zero_point'])*q['gate']['scale'];u=(np.arange(256,dtype='f4')-q['up']['zero_point'])*q['up']['scale']
         x=(g/(1+np.exp(-np.clip(g,-80,80))))[:,None]*u[None,:]
         v=quantize_integer(x,cal['sp2'][index]['alpha']);encode(v).tofile(out/'silu_up_lut_u16.bin');save(out/'sp2_encoding.json',contract())
@@ -52,7 +59,7 @@ def prepare():
     w,scales=_cached_w4_projection(str(FRONT.resolve()),'generation_lm_head',128256,2048)
     lo,hi=projection_bias_words(w,scales,q['generation_final_norm_output'],q['generation_lm_head_output'])
     np.concatenate([lo.reshape(-1,32),hi.view('<u4').reshape(-1,32)],1).astype('<u4').tofile(FRONT/'generation_lm_head_bias_u32.bin')
-    save(FRONT/'preparation.json',dict(weight_manifest_sha256=sha256(QUANT/'manifest.json'),calibration_sha256=sha256(CAL),original=m['original']))
+    save(FRONT/'preparation.json',dict(weight_manifest_sha256=sha256(QUANT/'manifest.json'),calibration_sha256=sha256(CAL),original=m['original'],down_bounds=bounds))
     print('C_PACKAGE_PREPARED',flush=True)
 
 def oracle():
