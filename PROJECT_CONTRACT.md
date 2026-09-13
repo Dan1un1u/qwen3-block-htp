@@ -133,3 +133,16 @@ gate. L32-0008 record preserves two DMA failures and an invalid known stale-DSP
 attempt after build failure; final builds are sealed and deployment validates
 source HEAD plus all binary hashes. Native W4 SP2 feasibility does not promote
 any model-quality or performance baseline. Qwen research remains frozen.
+
+## User-confirmed SP2 method and Qwen3 backport (2026-09-13)
+
+User explicitly confirms the L32-0012 method conclusion and requests migration
+to Qwen3. Pin the measured mode8 implementation ddbc07f422693534f7d29e554f1c92c1b87cea18
+and report closure e03a0f8028b3f123dbc0263394c772483953dc22, evidence ledger
+5277594741ac28c3f013ca33191456e9a1952160b30c2e6d616e2ad6f83e8552.
+Confirmation covers exact native-W4 SP2 arithmetic and the measured scheduling
+result; it does not establish usable A8 text or PPL acceptance. Preserve Llama
+source, binaries, weights and sealed evidence. Qwen3 memory owns EXP-0267, on a
+new experiment branch. This user instruction supersedes the earlier blanket
+Qwen research freeze only for this migration; the historical EXP0265 branch
+and its pinned hash remain frozen and independently checked.

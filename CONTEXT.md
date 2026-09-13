@@ -9,3 +9,7 @@ latency-0.0234%,CIupper0.3852%. Both10%gatespass.
 Gather alone neutral; earlyGate/Up andDownHVX overlap improveprefill.
 NoPPL/quality/defaultpromotion. FrozenQwen androtation unchanged.
 Evidence /mnt/d/llm_exp/results/llama32-htp/l32-0012; ledger 5277594741ac28c3f013ca33191456e9a1952160b30c2e6d616e2ad6f83e8552 (428files).
+
+User confirmed the method conclusion and authorized Qwen3 migration on2026-09-13.
+Llama remains idle/pinned; active work moves to Qwen3 EXP-0267 under its own
+authority. Preserve the EXP0265 historical branch. No Llama remeasurement.
