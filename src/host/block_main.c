@@ -1891,7 +1891,7 @@ static int qbh_build_bias_words(
 
     for (uint32_t n_tile = 0; n_tile < n_tiles; ++n_tile) {
         for (uint32_t output = 0; output < 32U; ++output) {
-            int32_t sum = 0;
+            int32_t sum = 0, positive_sum = 0, negative_sum = 0;
             uint32_t global_output = n_tile * 32U + output;
             float ratio = input_qparam->scale * scales[global_output] /
                           output_qparam->scale;
@@ -1912,10 +1912,17 @@ static int qbh_build_bias_words(
                             (size_t)n_tile * k_tiles * 528U + k_tiles * 512U + k_tile * 16U;
                         multiplier = ((metadata[output / 2U] >> ((output % 2U) * 4U)) & 15U) + 1U;
                     }
-                    sum += qbh_decode_w4(tile, physical) * multiplier;
+                    int32_t weight=qbh_decode_w4(tile, physical) * multiplier;
+                    sum += weight;
+                    positive_sum += weight>0 ? weight:0;
+                    negative_sum += weight<0 ? weight:0;
                 }
             }
             if (QBH_LLAMA_SP2(header) && projection_index==QBH_BLOCK_PROJ_DOWN) {
+                /* Three radix digits are exact only with this per-channel proof
+                 * for every possible U8 input, not merely the sampled activation. */
+                if(QBH_LLAMA_SP2(header)>=3U &&
+                   ((int64_t)positive_sum*255>8388607 || (int64_t)negative_sum*255< -8388608)) return -1;
                 double sp2_ratio=(double)input_qparam->scale*scales[global_output]/output_qparam->scale;
                 int64_t multiplier=llround(sp2_ratio*2147483648.0);
                 if (desc->lpbq_mode || multiplier<=0 || multiplier>INT32_MAX) return -1;
@@ -6858,7 +6865,7 @@ int main(int argc, char **argv) {
     }
 #ifdef QBH_MODEL_LLAMA32
     header->llama_sp2_mode=getenv("QBH_LLAMA_SP2") ? (uint32_t)atoi(getenv("QBH_LLAMA_SP2")) : 0U;
-    if(header->llama_sp2_mode>2U || (header->llama_sp2_mode &&
+    if(header->llama_sp2_mode>3U || (header->llama_sp2_mode &&
        (variant!=QBH_BLOCK_W4U8 || dense_r3_mode))) return 2;
 #endif
     header->wide_score_mode=wide_score_mode;

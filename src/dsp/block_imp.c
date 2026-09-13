@@ -2003,7 +2003,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
 #endif
     if (header == NULL || header->magic != QBH_BLOCK_MAGIC ||
         header->abi_version != QBH_BLOCK_ABI_VERSION ||
-        QBH_LLAMA_SP2(header)>2U ||
+        QBH_LLAMA_SP2(header)>3U ||
         (QBH_LLAMA_SP2(header) && (header->variant!=QBH_BLOCK_W4U8 ||
           header->w4u8_decode_projection_mode!=QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
           header->w4u8_decode_direct_n_mask!=63U ||
