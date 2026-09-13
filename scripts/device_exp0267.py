@@ -5,6 +5,8 @@ from pathlib import Path
 import numpy as np
 from export_exp0267 import S,R,O,P,sha,write,preflight
 import exp0240_device as old
+from measure_exp0218 import LEDGER
+from summarize_exp0217 import normalized
 REMOTE='/data/local/tmp/qwen3-block-htp/exp0267'
 BASE='/data/local/tmp/qwen3-block-htp/exp0257-package-v2'
 SEED='/data/local/tmp/qwen3-block-htp/exp0257-prefix/prefix_kv_u8.bin'
@@ -58,6 +60,11 @@ def physical(ps,count):
   assert q['vtcm_acquired_bytes']==8388608 and q['vtcm_peak_plan_bytes']<=8388608
   for k in ['intermediate_ddr_read_bytes','intermediate_ddr_write_bytes','intermediate_spill_fill_count','ledger_unattributed_ticks']:assert q[k]==0,(k,q[k])
   assert q['block_invocation_count']==count and q['dense_r3_mode']==q['dense_r4_mode']==0 and q['wide_score_mode']==4
+  z=normalized([q]);assert sum(z[k] for _,k in LEDGER)==q['invocation_ticks']
+  assert q['backend']=='standalone_fastrpc_dsp' and q['qnn']=='none'
+  for k,v in q.items():
+   if k.startswith('slice_layer_') and isinstance(v,dict):
+    assert v['status']==3 and v['hidden_ddr_read_bytes']==v['hidden_ddr_write_bytes']==v['layer_unattributed_ticks']==0
 
 def run(mode,repeat,tag,count=1,layer=0,dump=False):
  preflight();state=read(R/f'runtime-l{count}.json');root=state['remote'];p=R/tag;p.mkdir(parents=True,exist_ok=False)
@@ -78,6 +85,8 @@ def run(mode,repeat,tag,count=1,layer=0,dump=False):
  z=dict(pass_all=True,mode=mode,repeat=repeat,count=count,layer=layer,profiles=len(ps),prefill_ns=statistics.mean(q['host_wall_ns'] for q in ps if q['mode']=='prefill'),decode_ns=statistics.mean(q['host_wall_ns'] for q in ps if q['mode']=='decode'),output_hashes=[q['output_hash'] for q in ps] if count<28 else None)
  if count<28:assert all(h==z['output_hashes'][i%9] for i,h in enumerate(z['output_hashes']))
  else:
+  fs=[q for q in rs if q.get('generation_sequence_complete')];assert len(fs)==repeat and all(f['all_steps_pass'] for f in fs)
+  for i,f in enumerate(fs):assert f['total_host_wall_ns']==sum(q['host_wall_ns'] for q in ps[i*16:i*16+16])
   zz=[(q['selected_token_id'],q['selected_logit_half_bits']) for q in rs if 'selected_logit_half_bits' in q];assert len(zz)==16*repeat and all(v==zz[i%16] for i,v in enumerate(zz));z['selected_codes']=zz[:16]
  write(p/'validated.json',z);print('RUN_PASS',tag,round(z['prefill_ns']/1000,2),round(z['decode_ns']/1000,2),flush=True);return z
 
