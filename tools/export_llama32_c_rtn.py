@@ -15,6 +15,8 @@ ORIGINAL=Path('/mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin')
 def verify_stage(stage):
     root=MODELS/stage;m=json.loads((root/'complete.json').read_text())
     assert m['updates']==100
+    from llama32_c_rtn_train import verify_training_history
+    verify_training_history(root,100)
     for n,h in m['artifacts'].items():assert sha256(root/n)==h
     return root/'rotation'
 

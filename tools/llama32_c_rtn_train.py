@@ -12,6 +12,18 @@ RESULTS = Path("/mnt/d/llm_exp/results/llama32-htp/l32-0013")
 MODELS = Path("/mnt/d/llm_exp/models/llama32-htp/l32-0013")
 PYTHON = "/home/daniuniu/work/rotation-quant/.venv/bin/python"
 
+def verify_training_history(root, expected_updates):
+    """Check actual callback records, not only the requested max_steps flag."""
+    history=json.loads((root/"rotation/training_history.json").read_text())
+    updates=json.loads((root/"rotation/sa_update_history.json").read_text())
+    assert [r["update_step"] for r in updates]==list(range(1,expected_updates+1)), root
+    if expected_updates:
+        assert max(r.get("step",0) for r in history)==expected_updates, root
+    if root.name=="c":
+        weights=json.loads((root/"rotation/sw_update_history.json").read_text())
+        assert [r["update_step"] for r in weights]==list(range(1,expected_updates+1))
+        assert all(len(r["modules"])==112 for r in weights)
+
 def worker(stage):
     sys.path.insert(0, str(REFERENCE))
     import torch
@@ -77,6 +89,7 @@ def run(stage):
     for parent in ([] if stage=="initial" else ["initial"] if stage=="b_init" else ["initial","b_init"]):
         record=json.loads((MODELS/parent/"complete.json").read_text())
         for name,digest in record["artifacts"].items():assert hashlib.sha256((MODELS/parent/name).read_bytes()).hexdigest()==digest
+        verify_training_history(MODELS/parent,record["updates"])
         parents[parent]=hashlib.sha256((MODELS/parent/"complete.json").read_bytes()).hexdigest()
     out=MODELS/stage
     out.mkdir(parents=True, exist_ok=False)
@@ -106,6 +119,7 @@ def run(stage):
     with (out/"run.log").open("x") as log:
         result=subprocess.run(command,cwd=ROOT,env=env,stdout=log,stderr=subprocess.STDOUT)
     if result.returncode: raise RuntimeError(f"{stage} failed: {out / 'run.log'}")
+    verify_training_history(out,record["updates"])
     artifacts={str(p.relative_to(out)):hashlib.sha256(p.read_bytes()).hexdigest() for p in (out/"rotation").iterdir() if p.is_file()}
     (out/"complete.json").write_text(json.dumps(dict(**record,artifacts=artifacts),indent=2)+"\n")
     print("TRAINING_STAGE_COMPLETE", stage, flush=True)
