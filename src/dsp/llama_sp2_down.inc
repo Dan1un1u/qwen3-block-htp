@@ -9,8 +9,8 @@ static void read_i32(uint8_t *bytes,uint32_t *bias){
   asm volatile("barrier":::"memory");
  }
 }
-static void unpack_digits(const uint8_t *bytes,int32_t *wide,uint32_t digits){
- for(uint32_t base=0;base<2048;base+=128){
+static void unpack_digits(const uint8_t *bytes,int32_t *wide,uint32_t digits,uint32_t elements){
+ for(uint32_t base=0;base<elements;base+=128){
   HVX_Vector value[4]={Q6_V_vzero(),Q6_V_vzero(),Q6_V_vzero(),Q6_V_vzero()};
   for(uint32_t digit=0;digit<digits;digit++){
    HVX_Vector x=*(const HVX_Vector*)(bytes+2048*digit+base);
@@ -40,8 +40,29 @@ static int qbh_llama_sp2_down(struct qbh_block_hmx_worker *worker) {
             qbh_hmx_accumulate_u8n4_projection(pass?worker->sp2_high:worker->activation,w,worker->k_tiles);
             read_i32(pass?raw1:raw0,bias);
         }
-        unpack_digits(raw0,wide0,4U);
-        if(worker->sp2_rows==64U)unpack_digits(raw1,wide1,4U);
+        unpack_digits(raw0,wide0,4U,worker->sp2_mode>=2U && worker->sp2_rows==4U ? 256U:2048U);
+        if(worker->sp2_rows==64U)unpack_digits(raw1,wide1,4U,2048U);
+        if (worker->sp2_mode>=2U) {
+            HVX_Vector sum=*(const HVX_Vector *)(meta+32U);
+            HVX_Vector multiplier=*(const HVX_Vector *)meta;
+            HVX_Vector zero=Q6_V_vzero(),limit=Q6_V_vsplat_R(255);
+            HVX_Vector zp=Q6_V_vsplat_R(worker->sp2_zero_point);
+            for(uint32_t row=0;row<worker->sp2_rows;row+=4U) {
+                HVX_Vector y[4];
+                for(uint32_t j=0;j<4;j++) {
+                    HVX_Vector low=*(const HVX_Vector *)(wide0+(row+j)*32U);
+                    HVX_Vector high=*(const HVX_Vector *)(worker->sp2_rows==64U ?
+                        wide1+(row+j)*32U : wide0+(row+j+4U)*32U);
+                    HVX_Vector acc=Q6_Vw_vsub_VwVw(Q6_Vw_vadd_VwVw(low,
+                        Q6_Vw_vasl_VwR(high,8)),Q6_Vw_vasl_VwR(sum,15));
+                    HVX_Vector value=Q6_Vw_vmpyoacc_VwVwVh_s1_rnd_sat_shift(
+                        Q6_Vw_vmpye_VwVuh(acc,multiplier),acc,multiplier);
+                    y[j]=Q6_Vw_vmin_VwVw(limit,Q6_Vw_vmax_VwVw(zero,Q6_Vw_vadd_VwVw(value,zp)));
+                }
+                *(HVX_Vector *)((uint8_t *)worker->output+(size_t)nt*2048U+row*32U)=
+                    Q6_Vb_vpacke_VhVh(Q6_Vh_vpacke_VwVw(y[3],y[2]),Q6_Vh_vpacke_VwVw(y[1],y[0]));
+            }
+        } else
         for(uint32_t row=0;row<worker->sp2_rows;row++) {
             HVX_Vector low=*(const HVX_Vector *)(wide0+row*32U);
             HVX_Vector high=*(const HVX_Vector *)(worker->sp2_rows==64U ?

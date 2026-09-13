@@ -6858,7 +6858,7 @@ int main(int argc, char **argv) {
     }
 #ifdef QBH_MODEL_LLAMA32
     header->llama_sp2_mode=getenv("QBH_LLAMA_SP2") ? (uint32_t)atoi(getenv("QBH_LLAMA_SP2")) : 0U;
-    if(header->llama_sp2_mode>1U || (header->llama_sp2_mode &&
+    if(header->llama_sp2_mode>2U || (header->llama_sp2_mode &&
        (variant!=QBH_BLOCK_W4U8 || dense_r3_mode))) return 2;
 #endif
     header->wide_score_mode=wide_score_mode;
@@ -7224,6 +7224,29 @@ int main(int argc, char **argv) {
         exit_code = qbh_run_exp0240_layer(&session, shared_fd, shared, (uint32_t)total_bytes,
             argv[1], header, &input_slot, rope_slots, repeats) == 0 ? 0 : 1;
         goto cleanup;
+    }
+#endif
+#ifdef QBH_MODEL_LLAMA32
+    if (replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS && getenv("QBH_LLAMA_REPLAY_REPEATS")) {
+        uint32_t repetitions=0;
+        if(qbh_parse_u32(getenv("QBH_LLAMA_REPLAY_REPEATS"),&repetitions)!=0 ||
+           repetitions<2U || repetitions>11U || QBH_VERTICAL_SLICE_LAYER_COUNT!=1U) goto cleanup;
+        struct qbh_decode_session_state *replay_state=(void *)(shared+header->replay_session_offset);
+        struct qbh_decode_session_state initial=*replay_state;
+        if(initial.layers[QBH_VERTICAL_SLICE_FIRST_LAYER].valid_length!=0U) goto cleanup;
+        for(uint32_t rep=0;rep<repetitions;rep++) {
+            *replay_state=initial;
+            struct qbh_decode_layer_state *layer=&replay_state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER];
+            memset(shared+layer->k_offset,0,layer->k_bytes);
+            memset(shared+layer->v_offset,0,layer->v_bytes);
+            if(qbh_read_slot(shared,&input_slot) || qbh_read_slot(shared,&reference_slot) ||
+               qbh_read_slot(shared,&rope_slots[0]) || qbh_read_slot(shared,&rope_slots[1])) goto cleanup;
+            printf("{\"record\":\"llama_replay_repeat\",\"repeat\":%u,\"sp2_mode\":%u,\"warmup\":%s}\n",
+                rep,header->llama_sp2_mode,rep==0U?"true":"false");
+            if(qbh_run_replay_sequence(&session,shared_fd,shared,(uint32_t)total_bytes,
+                argv[1],header,&input_slot,&reference_slot,rope_slots,vertical_slots,variant)!=0) goto cleanup;
+        }
+        exit_code=0;goto cleanup;
     }
 #endif
     if (replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS) {

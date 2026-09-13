@@ -263,7 +263,7 @@ struct qbh_block_buffers {
 struct qbh_block_hmx_worker {
     const uint8_t *sp2_high;
     uint8_t *sp2_scratch;
-    uint32_t sp2_rows;
+    uint32_t sp2_rows, sp2_mode;
     int32_t sp2_zero_point;
     uint32_t hmx_context_id;
     qurt_sem_t command_ready;
@@ -2003,7 +2003,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
 #endif
     if (header == NULL || header->magic != QBH_BLOCK_MAGIC ||
         header->abi_version != QBH_BLOCK_ABI_VERSION ||
-        QBH_LLAMA_SP2(header)>1U ||
+        QBH_LLAMA_SP2(header)>2U ||
         (QBH_LLAMA_SP2(header) && (header->variant!=QBH_BLOCK_W4U8 ||
           header->w4u8_decode_projection_mode!=QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
           header->w4u8_decode_direct_n_mask!=63U ||
@@ -9508,6 +9508,7 @@ static int qbh_run_w4u8_direct_n_projection(
 
     worker->sp2_high = buffers->sp2_high;
     worker->sp2_scratch = buffers->sp2_scratch;
+    worker->sp2_mode = QBH_LLAMA_SP2(header);
     worker->sp2_rows = header->logical_m == 1U ? 4U : 64U;
     worker->sp2_zero_point = header->qparams[QBH_BLOCK_QP_DOWN].zero_point;
     while (current_first < n_tiles) {

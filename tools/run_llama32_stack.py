@@ -10,6 +10,7 @@ def main():
     ap.add_argument("--package",type=Path,required=True)
     ap.add_argument("--output",type=Path,required=True)
     ap.add_argument("--a8-audit",action="store_true",help="Audit scalar softmax equivalence and poison unused decode rows")
+    ap.add_argument("--sp2-mode",type=int,choices=[1,2],default=2)
     args=ap.parse_args()
     subprocess.run(["python3","/home/daniuniu/work/llama32-htp-project-memory/scripts/project_memory.py","preflight","--source-worktree",str(ROOT)],check=True)
     m=json.loads((args.package/"manifest.json").read_text())
@@ -51,7 +52,7 @@ def main():
         env.update(QBH_W4U8_DECODE_DIRECT_N_GATE_UP_BATCH_N_TILES="32",QBH_W4U8_DECODE_DIRECT_N_GATE_UP_CONTINUOUS="1",QBH_W4U8_DECODE_DIRECT_N_O_GATE_PREFETCH="1",QBH_W4U8_DECODE_DIRECT_N_GATE_UP_SWIGLU_STREAM="1",QBH_W4U8_DECODE_DIRECT_N_QKV_BATCH_N_TILES="16",QBH_W4U8_DECODE_DIRECT_N_DOWN_BATCH_N_TILES="8",QBH_W4U8_DECODE_DIRECT_N_DOWN_SINGLE_DMA="1",QBH_W4U8_DECODE_O_BATCH_N_TILES="16",QBH_W4U8_DECODE_DIRECT_N_O_SINGLE_DMA="1")
     if m.get("sp2"):
         assert m["experiment"]=="L32-0009" and m["recipe"]=="W4A8" and not args.a8_audit
-        env["QBH_LLAMA_SP2"]="1"
+        env["QBH_LLAMA_SP2"]=str(args.sp2_mode)
     if args.a8_audit:
         assert m["recipe"]=="W4A8"
         env.update(QBH_W4U8_DECODE_COMMON_PADDING_POISON="1",QBH_W4U8_DECODE_SWIGLU_PADDING_POISON="1")
