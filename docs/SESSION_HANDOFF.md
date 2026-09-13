@@ -1,19 +1,21 @@
 # L32-0013 active: fresh C-RTN/SP2 native-contract adaptation
 
 Owner /home/daniuniu/work/llama32-htp, branch codex/llama32-no-rotation.
-Latest committed source 10ea3eabe77c30a0118c40f5ed4a3259987bd616, clean/pushed.
+Latest committed source 6309a8a, clean/pushed.
 Read docs/experiments/L32-0013.md and source tools/llama32_c_rtn_train.py.
 
 ## Live job and continuation
 
-Initial R1/R2+SA100-update training is RUNNING, unified exec session11933.
+Initial R1/R2+SA100-update training is COMPLETE; session11933 finished normally.
 Stage source3809e2611323dc5a03f316be0e113c5fa997f79b; log
 /mnt/d/llm_exp/models/llama32-htp/l32-0013/initial/run.log.
-Training continues at about33.6s/update; read the live log for current progress.
-Do not relaunch or overwrite it. Inspect process/log and initial/complete.json.
+Actual100 callback updates verified. Complete manifestSHA256
+b7f5f1d682bde5d75cb263a51a7765c74ee67b2269ba6ba1036f2307f471d66d.
+initial-training-audit.json verifies96 SA sites/48sharedparameters and17rotation
+matrices maxorthogonalityerror6.9098e-7. Do not relaunch or overwrite it.
 Automatic continuation is RUNNING in unified exec session20420, PID48793.
 Source tools/run_llama32_c_pipeline.py, controller launch source6e8ae6a.
-It waits for initial/complete.json, then runs B initialization, C100 training,
+It has consumed initial/complete.json and started B initialization, then C100 training,
 export, calibration, package/oracle/fixtures, software evaluation, native layer
 gates and full16 deployment/generation/device PPL. Do not duplicate its stages.
 Inspect results/l32-0013/pipeline-a01 per-stage logs and completion records.
@@ -56,6 +58,10 @@ Totaldeviceprocesses5,modelboundaries6,probeRPCs4. NoPPL orformalprofilingyet.
 3. prepare_llama32_c_package.py prepare/oracle/fixtures; usesindependentinteger
    referenceandSDKlibnativeconversion, optionalinteger-exactFP32dotacceleration.
    All three stages pending. Never label skeletoncode as completedmodelvalidation.
+Software-control SP2 matches pinnedreference for790932 FP32/BF16/FP16 elements.
+   Batched offlineattention matches originalintegerreference on random/endpoint/constant
+   stimuli; see attention-oracle-proof.json for exact count; actualC stimuli also cross-checked per
+   config/shape. Deviceattentionunchanged.
 4. New C singlelayer0/7/15, consecutive3thenfull16device gates remainpending.
    run_llama32_stack.py acceptsL32-0013mode9 withmarker/manifestguard.
    Buildbeforeeachdeclaredshape;newHEADrequiresfreshbuildseal; archiveoldbinaries.
