@@ -833,12 +833,128 @@ experiments:
         gate_pass: true
 - id: L32-0021
   title: Overlap dense R4 layout and SP2 consumption
-  execution_state: running
+  execution_state: completed
   record: docs/experiments/L32-0021.md
   approval_ref: User requests continuing optimization after L32-0020
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
   parent_source: d3ba5e680e1f6bfebee5d981fa53357c19eac489
-  hardware_runs: 0
+  hardware_runs: 111
   baseline_quality_promoted: false
+  checkpoint_state: combined_singlelayer_speed_pass_chain3_numerical_gate_pause
+  hardware_runs_definition: 54 singlelayer diagnostic/validation CLI,5 short and50
+    formal CLI,2 chain3 CLI;47exit0,64exit1;20 superseded R4/both runs excluded from
+    physical acceptance for compiler stack staging
+  token_boundary_executions: 1242
+  formal_token_boundaries: 1100
+  formal_measured_token_boundaries: 1000
+  formal_profiling: true
+  formal_cycles: 10
+  superseded_physical_failures: 20
+  failed_chain3_numeric: 1
+  failed_native_crashes: 0
+  failed_builds: 0
+  source_heads:
+    codex/llama32-no-rotation: 4ff8ec9ea24a9511b602cb1d9f8c364da76508b4
+  profiled_source_head: 5adc46b774a23df9138f1070560fb68a28c165a1
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0021
+  evidence_ledger_sha256: fd22398af6ddf91ce6fcf79a70601364b1f1bc59e173a9f49bec948a8ea2b1b9
+  report: docs/LLAMA32_ROTATION_PIPELINE_FOLLOWUP.md
+  local_gate: singlelayer_arithmetic_physical_and_combined_speed_pass_chain3_independent_numeric_fail
+  e2e_run: false
+  ppl_rerun: false
+  speed:
+    prefill:
+      'off':
+        mean_us: 1959.7791599999996
+        latency_ratio: 1.0
+        increase_percent: 0.0
+        ci95:
+        - 1.0
+        - 1.0
+        gate_pass: true
+      r3:
+        mean_us: 1899.4854400000002
+        latency_ratio: 0.9692344314958429
+        increase_percent: -3.0765568504157126
+        ci95:
+        - 0.9505676909708077
+        - 0.9872989966724045
+        gate_pass: true
+      r4:
+        mean_us: 2159.80046
+        latency_ratio: 1.1020631834864498
+        increase_percent: 10.206318348644983
+        ci95:
+        - 1.0817531243409877
+        - 1.1228931295409617
+        gate_pass: false
+      both:
+        mean_us: 2090.70051
+        latency_ratio: 1.0668041341964267
+        increase_percent: 6.680413419642672
+        ci95:
+        - 1.0480230268755613
+        - 1.0869006869069253
+        gate_pass: true
+      oldboth:
+        mean_us: 2159.66721
+        latency_ratio: 1.1019951911316377
+        increase_percent: 10.199519113163769
+        ci95:
+        - 1.0813318487888641
+        - 1.1260769865344644
+        gate_pass: false
+    decode:
+      'off':
+        mean_us: 1464.1941600000002
+        latency_ratio: 1.0
+        increase_percent: 0.0
+        ci95:
+        - 1.0
+        - 1.0
+        gate_pass: true
+      r3:
+        mean_us: 1400.93901
+        latency_ratio: 0.9567986598170832
+        increase_percent: -4.320134018291677
+        ci95:
+        - 0.9255170707574104
+        - 0.9882696256596886
+        gate_pass: true
+      r4:
+        mean_us: 1507.40476
+        latency_ratio: 1.0295115232531729
+        increase_percent: 2.9511523253172856
+        ci95:
+        - 1.001204496572959
+        - 1.0618743249381333
+        gate_pass: true
+      both:
+        mean_us: 1497.7848700000002
+        latency_ratio: 1.0229414314833765
+        increase_percent: 2.294143148337646
+        ci95:
+        - 0.990725824590975
+        - 1.0566595915274208
+        gate_pass: true
+      oldboth:
+        mean_us: 1469.59842
+        latency_ratio: 1.0036909449222224
+        increase_percent: 0.3690944922222439
+        ci95:
+        - 0.9784770346052171
+        - 1.0331502245866608
+        gate_pass: true
+  improvement_vs_sealed0020:
+    prefill:
+      latency_ratio: 0.9680660521766223
+      ci95:
+      - 0.9500819036651558
+      - 0.9870103053597148
+    decode:
+      latency_ratio: 1.019179695361948
+      ci95:
+      - 0.9841721707233934
+      - 1.0613962696618775

@@ -6,7 +6,7 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0021
+  active_experiment: null
   next_experiment_number: 22
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -14,7 +14,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: d3ba5e680e1f6bfebee5d981fa53357c19eac489
+    recorded_head: 4ff8ec9ea24a9511b602cb1d9f8c364da76508b4
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -26,25 +26,25 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: rotation_pipeline_optimized_prefill_R4_gate_pause
+  stage: combined_rotation_singlelayer_speed_pass_chain3_numerical_gate_pause
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: L32-0021 overlap R4 layout and SP2 finish under fixed arithmetic/speed
-    gates
+  next_action: Discuss chain3 rounding amplification; retain faster R3/R4/SP2 pipeline,
+    no fullmodel extension before numerical gate.
   baseline_manifest: baselines/qwen3-frozen/manifest.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF.md
   organization_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0266
   organization_evidence_ledger_sha256: 052b816c686b11b0bc57908b9f86147047c1ecc427af7d8ee54a985dc5e2c093
   original_model_path: /mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin
-  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0020
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0021
   validated_recipes:
   - w16a16
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0020
-  evidence_ledger_sha256: 06e74b1fd182511052387ba0f2d36fb653a2168081a92a517f3ac4495d233d91
+  last_completed_experiment: L32-0021
+  evidence_ledger_sha256: fd22398af6ddf91ce6fcf79a70601364b1f1bc59e173a9f49bec948a8ea2b1b9
   formal_profiling_completed: true
   general_quantization_quality_accepted: false
   w4a16_quality_gate_pass: false
@@ -58,8 +58,8 @@ current_scope:
   formal_profile_recipes:
   - w4a16
   - w4a8_off
-  speed_validation: docs/LLAMA32_ROTATION_PIPELINE.md
-  native_profiled_head: 0eb7615c43bb6e36c402f3a5d12d7162c32722dd
+  speed_validation: docs/LLAMA32_ROTATION_PIPELINE_FOLLOWUP.md
+  native_profiled_head: 5adc46b774a23df9138f1070560fb68a28c165a1
   latest_e2e_tokens_per_second:
     w4a16:
       prefill: 1261.1611455885748
@@ -74,7 +74,7 @@ current_scope:
     decode: 46.675701580572316
   quality_validation: /mnt/d/llm_exp/results/llama32-htp/l32-0007/SUMMARY.md
   w16a16_matched_ppl_gate_pass: true
-  last_formal_speed_experiment: L32-0020
+  last_formal_speed_experiment: L32-0021
   latest_matched_device_ppl:
     dataset: llama32-wiki-quant-v1 heldout 128 documents, M64+16,2048 targets
     bf16_teacher: 26.697998599288322
@@ -582,7 +582,7 @@ current_scope:
     physical_pass: true
     overall_speed_gate_pass: false
     baseline_promoted: false
-  latest_formal_measurement_experiment: L32-0018
+  latest_formal_measurement_experiment: L32-0021
   fp32_pipeline_followup_speed:
     experiment: L32-0018
     source_head: e3d065a515221aa1e97c63fa4d58d23e434c45df
@@ -786,6 +786,137 @@ current_scope:
       measured replays each
     all_speed_gates_pass: false
     fullmodel_rotation_validated: false
+    e2e_run: false
+    ppl_run: false
+    default_promoted: false
+    quality_promoted: false
+  fp32_rotation_pipeline_followup:
+    experiment: L32-0021
+    source_head: 4ff8ec9ea24a9511b602cb1d9f8c364da76508b4
+    profiled_source_head: 5adc46b774a23df9138f1070560fb68a28c165a1
+    chain3_source_head: d77364464d9c73910b3d074b0da6ac4308fbe1ba
+    report: docs/LLAMA32_ROTATION_PIPELINE_FOLLOWUP.md
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0021
+    evidence_ledger_sha256: fd22398af6ddf91ce6fcf79a70601364b1f1bc59e173a9f49bec948a8ea2b1b9
+    native_candidates: 3
+    selected_candidate: 3
+    singlelayer_arithmetic_physical_pass: true
+    layers:
+    - 0
+    - 7
+    - 15
+    speed:
+      prefill:
+        'off':
+          mean_us: 1959.7791599999996
+          latency_ratio: 1.0
+          increase_percent: 0.0
+          ci95:
+          - 1.0
+          - 1.0
+          gate_pass: true
+        r3:
+          mean_us: 1899.4854400000002
+          latency_ratio: 0.9692344314958429
+          increase_percent: -3.0765568504157126
+          ci95:
+          - 0.9505676909708077
+          - 0.9872989966724045
+          gate_pass: true
+        r4:
+          mean_us: 2159.80046
+          latency_ratio: 1.1020631834864498
+          increase_percent: 10.206318348644983
+          ci95:
+          - 1.0817531243409877
+          - 1.1228931295409617
+          gate_pass: false
+        both:
+          mean_us: 2090.70051
+          latency_ratio: 1.0668041341964267
+          increase_percent: 6.680413419642672
+          ci95:
+          - 1.0480230268755613
+          - 1.0869006869069253
+          gate_pass: true
+        oldboth:
+          mean_us: 2159.66721
+          latency_ratio: 1.1019951911316377
+          increase_percent: 10.199519113163769
+          ci95:
+          - 1.0813318487888641
+          - 1.1260769865344644
+          gate_pass: false
+      decode:
+        'off':
+          mean_us: 1464.1941600000002
+          latency_ratio: 1.0
+          increase_percent: 0.0
+          ci95:
+          - 1.0
+          - 1.0
+          gate_pass: true
+        r3:
+          mean_us: 1400.93901
+          latency_ratio: 0.9567986598170832
+          increase_percent: -4.320134018291677
+          ci95:
+          - 0.9255170707574104
+          - 0.9882696256596886
+          gate_pass: true
+        r4:
+          mean_us: 1507.40476
+          latency_ratio: 1.0295115232531729
+          increase_percent: 2.9511523253172856
+          ci95:
+          - 1.001204496572959
+          - 1.0618743249381333
+          gate_pass: true
+        both:
+          mean_us: 1497.7848700000002
+          latency_ratio: 1.0229414314833765
+          increase_percent: 2.294143148337646
+          ci95:
+          - 0.990725824590975
+          - 1.0566595915274208
+          gate_pass: true
+        oldboth:
+          mean_us: 1469.59842
+          latency_ratio: 1.0036909449222224
+          increase_percent: 0.3690944922222439
+          ci95:
+          - 0.9784770346052171
+          - 1.0331502245866608
+          gate_pass: true
+    improvement_vs_sealed0020:
+      prefill:
+        latency_ratio: 0.9680660521766223
+        ci95:
+        - 0.9500819036651558
+        - 0.9870103053597148
+      decode:
+        latency_ratio: 1.019179695361948
+        ci95:
+        - 0.9841721707233934
+        - 1.0613962696618775
+    combined_both_speed_gates_pass: true
+    r4_only_prefill_speed_gate_pass: false
+    chain3_off_exact: true
+    chain3_both_numeric_gate_pass: false
+    chain3_both:
+    - step: 0
+      finite: true
+      ideal_min_row_cosine: 0.7915050929926184
+      ideal_nrmse: 0.026000797748565674
+      ideal_mismatches: 131072
+      pass_ideal_cosine: false
+    - step: 1
+      finite: true
+      ideal_min_row_cosine: 0.9119345147764298
+      ideal_nrmse: 0.41852498054504395
+      ideal_mismatches: 2048
+      pass_ideal_cosine: false
+    fullmodel: false
     e2e_run: false
     ppl_run: false
     default_promoted: false
