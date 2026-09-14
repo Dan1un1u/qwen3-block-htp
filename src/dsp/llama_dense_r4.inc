@@ -16,6 +16,7 @@ static int qbh_r4_gemm(struct qbh_block_header *h,
     struct qbh_block_hmx_worker *worker,const __fp16 *a,const __fp16 *w,
     void *sc,__fp16 *out,uint32_t mt,uint32_t kt,uint32_t nt) {
     uint64_t t=HAP_perf_get_qtimer_count();
+    if(h->dense_r4_audit_offset) FARF(ALWAYS,"L32_R4 a=%p w=%p out=%p sc=%p mt=%u kt=%u nt=%u",(void*)a,(void*)w,(void*)out,sc,mt,kt,nt);
     int rc=qbh_hmx_submit(worker,QBH_BLOCK_HMX_FP16,a,w,sc,out,mt,kt,nt);
     h->dense_r4_matmul_ticks+=HAP_perf_get_qtimer_count()-t;
     ++h->hmx_command_count;++h->dense_r4_hmx_calls;

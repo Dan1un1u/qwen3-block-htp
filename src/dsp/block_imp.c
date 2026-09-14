@@ -3,6 +3,7 @@
 #include <HAP_compute_res.h>
 #include <HAP_mem.h>
 #include <HAP_perf.h>
+#include <HAP_farf.h>
 #include <hexagon_types.h>
 #include <hvx_hexagon_protos.h>
 #include <math.h>
