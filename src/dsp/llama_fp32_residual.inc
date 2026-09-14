@@ -64,7 +64,6 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
 #pragma clang fp contract(off)
     HVX_Vector *tile=(HVX_Vector *)scratch;
     float *gf=(float *)(scratch+4096U),*sums=(float *)(scratch+12288U);
-    float *values=(float *)(scratch+12416U);
     int32_t *flags=(int32_t *)(scratch+12544U);
     for(uint32_t c=0;c<width;c+=64U) {
         HVX_VectorPair g=Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)(gamma+c));
@@ -171,8 +170,12 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
         uint32_t count=rows-first<32U?rows-first:32U;
         for(uint32_t r=0;r<count;r++) {
             uint32_t row=first+r;
-            float inv=1.0f/sqrtf(sums[r]/(float)width+QBH_MODEL_RMS_EPS);
+                float inv=1.0f/sqrtf(sums[r]/(float)width+QBH_MODEL_RMS_EPS);
             HVX_Vector vi=qbh_fp32_splat(inv),vq=qbh_fp32_splat(1.0f/q->scale);
+            /* L32-0018: collect rare division-boundary repairs per row.
+             * The transpose tile is idle here: reuse its first 2048 bytes for flags.
+             * HVX writes native 32-byte segments without a scalar stack roundtrip. */
+            HVX_Vector row_mask=Q6_V_vzero();
             for(uint32_t c=0;c<width;c+=32U) {
                 HVX_Vector v=qbh_fp32_mul(*(const HVX_Vector *)(x+row*width+c),vi);
                 v=qbh_fp32_mul(v,*(const HVX_Vector *)(gf+c));
@@ -190,16 +193,30 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
                 HVX_Vector packed=Q6_Vub_vpack_VhVh_sat(Q6_V_vzero(),
                     Q6_Vh_vpack_VwVw_sat(Q6_V_vzero(),w));
                 size_t off=native?(size_t)(c/32U)*2048U+row*32U:(size_t)row*width+c;
-                memcpy(out+off,&packed,32U);
-                HVX_Vector any=mask;
-                for(uint32_t sh=64;sh>=4;sh>>=1)any=Q6_V_vor_VV(any,Q6_V_vror_VR(any,sh));
-                if(Q6_R_vextract_VR(any,0)) {
-                    *(HVX_Vector *)values=v;*(HVX_Vector *)flags=mask;
-                    for(uint32_t k=0;k<32U;k++)if(flags[k]) {
-                        float exact=roundf(values[k]/q->scale+(float)q->zero_point);
-                        out[off+k]=(uint8_t)fminf(255.0f,fmaxf(0.0f,exact));
+                uint32_t shift=(uintptr_t)(out+off)&127U;
+                HVX_VectorPred pred=Q6_Q_and_QQn(Q6_Q_vsetq2_R(shift+32U),Q6_Q_vsetq_R(shift));
+                Q6_vmem_QRIV(pred,(HVX_Vector *)(out+off),Q6_V_vlalign_VVR(packed,packed,shift));
+                row_mask=Q6_V_vor_VV(row_mask,mask);
+                HVX_Vector fm=Q6_Vub_vpack_VhVh_sat(Q6_V_vzero(),
+                    Q6_Vh_vpack_VwVw_sat(Q6_V_vzero(),mask));
+                uint8_t *fp=scratch+c;
+                uint32_t fs=(uintptr_t)fp&127U;
+                HVX_VectorPred fq=Q6_Q_and_QQn(Q6_Q_vsetq2_R(fs+32U),Q6_Q_vsetq_R(fs));
+                Q6_vmem_QRIV(fq,(HVX_Vector *)fp,Q6_V_vlalign_VVR(fm,fm,fs));
+            }
+            HVX_Vector any=row_mask;
+            for(uint32_t sh=64;sh>=4;sh>>=1)any=Q6_V_vor_VV(any,Q6_V_vror_VR(any,sh));
+            if(Q6_R_vextract_VR(any,0)) {
+                *(HVX_Vector *)flags=row_mask;
+                asm volatile("barrier":::"memory");
+                for(uint32_t k=0;k<32U;k++)if(flags[k])
+                    for(uint32_t c=k;c<width;c+=32U)if(scratch[c]) {
+                        float val=x[row*width+c]*inv;
+                        val=val*gf[c];
+                        float exact=roundf(val/q->scale+(float)q->zero_point);
+                        size_t off=native?(size_t)(c/32U)*2048U+row*32U+c%32U:(size_t)row*width+c;
+                        out[off]=(uint8_t)fminf(255.0f,fmaxf(0.0f,exact));
                     }
-                }
             }
         }
     }

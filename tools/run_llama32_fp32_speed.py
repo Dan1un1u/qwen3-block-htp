@@ -8,13 +8,15 @@ from prototype_llama32_sp2 import preflight
 from llama_reference import sha256
 from run_llama32_layer import ROOT,adb
 from report_llama32_pipeline_profile import MODULES
-R=Path("/mnt/d/llm_exp/results/llama32-htp/l32-0017")
+RESULTS=Path("/mnt/d/llm_exp/results/llama32-htp")
 def save(p,v):
  assert not p.exists(),p
  p.write_text(json.dumps(v,ensure_ascii=False,indent=2)+"\n")
 def main():
  preflight()
- ap=argparse.ArgumentParser();ap.add_argument("--base",required=True);ap.add_argument("--fp32",required=True);ap.add_argument("--attempt",required=True);a=ap.parse_args()
+ ap=argparse.ArgumentParser();ap.add_argument("--base",required=True);ap.add_argument("--fp32",required=True);ap.add_argument("--attempt",required=True);ap.add_argument("--result-experiment",default="l32-0017");a=ap.parse_args()
+ assert a.result_experiment.startswith("l32-") and a.result_experiment[4:].isdigit()
+ R=RESULTS/a.result_experiment
  out=R/a.attempt;out.mkdir(exist_ok=False);common.OUT=out
  seal=json.loads((ROOT/"build/llama-build-seal.json").read_text());head=subprocess.check_output(["git","-C",str(ROOT),"rev-parse","HEAD"],text=True).strip();assert seal["source_head"]==head
  cfg={}
@@ -29,7 +31,7 @@ def main():
   teacher=R.parent/"l32-0016"/("frontend-base-a01-reference" if arm=="base" else "frontend-a02-reference")/"teacher.json"
   cfg[arm]=dict(command=p["command"],oracle=str(teacher),oracle_sha256=sha256(teacher),manifest_sha256=p["package_manifest_sha256"],builds=p["builds"])
  assert cfg["base"]["builds"]==cfg["fp32"]["builds"]
- save(out/"protocol.json",dict(experiment="L32-0017",source_head=head,build_seal=seal,arms=cfg,pairs=10,order="AB/BA",prompt_tokens=64,decode_tokens=15,bootstrap_seed=17017,bootstrap_samples=20000,timing_scope="complete warm Host wall, embedding/16layers/norm/head/greedy/FastRPC; excludes loading/tokenizer; functional runs excluded"))
+ save(out/"protocol.json",dict(experiment=a.result_experiment.upper(),source_head=head,build_seal=seal,arms=cfg,pairs=10,order="AB/BA",prompt_tokens=64,decode_tokens=15,bootstrap_seed=17017,bootstrap_samples=20000,timing_scope="complete warm Host wall, embedding/16layers/norm/head/greedy/FastRPC; excludes loading/tokenizer; functional runs excluded"))
  pairs=[]
  for i in range(10):
   pair={}
