@@ -1031,3 +1031,15 @@ experiments:
         - 1.0435544704527164
         gate_pass: true
   chain3_gate_pass: true
+- id: L32-0023
+  title: Extend repaired dense R3 R4 FP32 residual SP2 to full16 and E2E
+  execution_state: running
+  record: docs/experiments/L32-0023.md
+  approval_ref: User says continue after L32-0022 report proposing full16 numerical validation then frontend/E2E;
+    hardware numerical correctness non-negotiable
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  parent_source: 9209ac60265e8d6daf966e02a18fe82e7b59f024
+  hardware_runs: 0
+  baseline_quality_promoted: false
