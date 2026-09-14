@@ -338,8 +338,10 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
     for(uint32_t n=0;n<16U;++n)for(uint32_t k=0;k<16U;++k) {
         const HVX_Vector *src=(const HVX_Vector *)(qbh_r3_sign_matrix+((n%4U)*4U+k%4U)*1024U);
         HVX_Vector *dst=(HVX_Vector *)(weight+(n*16U+k)*1024U);
-        HVX_Vector sign=Q6_Vh_vsplat_R((__builtin_popcount((n/4U)&(k/4U))&1)?0x8000:0);
-        for(uint32_t v=0;v<16U;++v)dst[v]=Q6_V_vor_VV(Q6_V_vand_VV(Q6_V_vxor_VV(src[v],sign),Q6_Vh_vsplat_R(0x8000)),Q6_Vh_vsplat_R(0x29a8));
+        /* 0x3c00 (+1) xor 0x15a8 = 0x29a8 (FP16 1/sqrt512).
+         * Preserve sign and generate normalized weights at original XOR cost. */
+        HVX_Vector sign=Q6_Vh_vsplat_R(0x15a8 ^ ((__builtin_popcount((n/4U)&(k/4U))&1)?0x8000:0));
+        for(uint32_t v=0;v<16U;++v)dst[v]=Q6_V_vxor_VV(src[v],sign);
     }
     /* Same exact dyadic product, normalize the dense matrix before accumulation. */
     for(uint32_t c=0;c<32U;++c)scales[c]=1.0f;
