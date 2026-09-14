@@ -3562,8 +3562,9 @@ static int qbh_run_replay_sequence(
             session->handle, shared_fd, total_bytes);
         end = qbh_monotonic_ns();
         if (rpc_result != AEE_SUCCESS) {
-            fprintf(stderr, "replay step %" PRIu32 " RPC failed: 0x%08x\n",
-                    step, (unsigned int)rpc_result);
+            fprintf(stderr, "replay step %" PRIu32 " RPC failed: 0x%08x dsp_status=%u vtcm_peak=%u r4_calls=%u\n",
+                    step, (unsigned int)rpc_result, header->dsp_status,
+                    header->vtcm_peak_plan_bytes, header->dense_r4_calls);
             free(cache_snapshots);
             return -1;
         }

@@ -22555,8 +22555,8 @@ publish:
                 QURT_MEM_CACHE_FLUSH, QURT_MEM_DCACHE);
         }
         if(flush_status==0 && header->dense_r4_audit_offset &&
-        qbh_range_valid(header->dense_r4_audit_offset,3U*786432U,shared_bytes))
-        flush_status=qurt_mem_cache_clean((qurt_addr_t)(shared+header->dense_r4_audit_offset),3U*786432U,QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE);
+        qbh_range_valid(header->dense_r4_audit_offset,3U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U,shared_bytes))
+        flush_status=qurt_mem_cache_clean((qurt_addr_t)(shared+header->dense_r4_audit_offset),3U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U,QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE);
     if (flush_status==0 && header->dense_r3_audit_offset &&
             qbh_range_valid(header->dense_r3_audit_offset,QBH_DENSE_R3_AUDIT_BYTES,shared_bytes))
             flush_status=qurt_mem_cache_clean((qurt_addr_t)(shared+header->dense_r3_audit_offset),
