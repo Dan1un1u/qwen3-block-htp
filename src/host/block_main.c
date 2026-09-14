@@ -3510,6 +3510,8 @@ static int qbh_run_replay_sequence(
     const uint32_t last_layer =
         first_layer + QBH_VERTICAL_SLICE_LAYER_COUNT - 1U;
     int all_pass = 1;
+    int rotation_profile_safe = QBH_FP32_RESIDUAL(header) &&
+        (header->dense_r3_mode || header->dense_r4_mode);
 
     if (decode_steps_env != NULL && decode_steps_env[0] != '\0' &&
         (qbh_parse_u32(decode_steps_env, &decode_steps) != 0 ||
@@ -3872,6 +3874,23 @@ static int qbh_run_replay_sequence(
             }
         }
         all_pass &= qbh_replay_step_pass(variant, step_result);
+        if (rotation_profile_safe) {
+            const struct qbh_replay_step_result *v=step_result;
+            rotation_profile_safe = v->output.nonfinite_count==0U &&
+                v->cache_mismatches==0U && v->cache_prefix_mismatches==0U &&
+                v->cache_structure_mismatches==0U && v->dsp_status==QBH_BLOCK_STATUS_OK &&
+                v->numerical_status==QBH_BLOCK_NUMERICAL_OK &&
+                v->vtcm_requested_bytes==QBH_EXPECTED_FULL_VTCM_BYTES &&
+                v->vtcm_acquired_bytes==QBH_EXPECTED_FULL_VTCM_BYTES &&
+                v->intermediate_ddr_read_bytes==0U && v->intermediate_ddr_write_bytes==0U &&
+                v->intermediate_spill_fill_count==0U;
+            for(uint32_t row=0;row<header->logical_m && rotation_profile_safe;row++) {
+                struct qbh_error_metrics e=qbh_compare_f32(
+                    (const float *)(shared+header->output_offset)+row*QBH_BLOCK_HIDDEN,
+                    (const float *)(shared+header->reference_offset)+row*QBH_BLOCK_HIDDEN,QBH_BLOCK_HIDDEN);
+                rotation_profile_safe=e.nonfinite_count==0U && isfinite(e.cosine) && e.cosine>=0.999;
+            }
+        }
         printf(
             "{\"experiment\":163,\"variant\":\"%s\","
             "\"replay_step\":%" PRIu32 ",\"mode\":\"%s\","
@@ -4010,8 +4029,10 @@ static int qbh_run_replay_sequence(
         last_layer, state->layers[last_layer].valid_length,
         all_pass ? "true" : "false");
     free(cache_snapshots);
-    return all_pass && state->completed_step_count == total_steps
-               ? 0 : -1;
+    if(state->completed_step_count != total_steps)return -1;
+    /* -2 is diagnostic-only: original ideal-bitexact failure is retained.
+     * Repeated profiling may continue only this explicit bounded rotation case. */
+    return all_pass ? 0 : rotation_profile_safe ? -2 : -1;
 }
 
 static int qbh_run_generation_sequence(
@@ -7343,6 +7364,7 @@ int main(int argc, char **argv) {
         struct qbh_decode_session_state *replay_state=(void *)(shared+header->replay_session_offset);
         struct qbh_decode_session_state initial=*replay_state;
         if(initial.layers[QBH_VERTICAL_SLICE_FIRST_LAYER].valid_length!=0U) goto cleanup;
+        int retained_ideal_failure=0;
         for(uint32_t rep=0;rep<repetitions;rep++) {
             *replay_state=initial;
             struct qbh_decode_layer_state *layer=&replay_state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER];
@@ -7352,10 +7374,14 @@ int main(int argc, char **argv) {
                qbh_read_slot(shared,&rope_slots[0]) || qbh_read_slot(shared,&rope_slots[1])) goto cleanup;
             printf("{\"record\":\"llama_replay_repeat\",\"repeat\":%u,\"sp2_mode\":%u,\"warmup\":%s}\n",
                 rep,header->llama_sp2_mode,rep==0U?"true":"false");
-            if(qbh_run_replay_sequence(&session,shared_fd,shared,(uint32_t)total_bytes,
-                argv[1],header,&input_slot,&reference_slot,rope_slots,vertical_slots,variant)!=0) goto cleanup;
+            int rc=qbh_run_replay_sequence(&session,shared_fd,shared,(uint32_t)total_bytes,
+                argv[1],header,&input_slot,&reference_slot,rope_slots,vertical_slots,variant);
+            if(rc!=0) {
+                if(rc!=-2 || !getenv("QBH_LLAMA_ROTATION_REPLAY_PROFILE"))goto cleanup;
+                retained_ideal_failure=1;
+            }
         }
-        exit_code=0;goto cleanup;
+        exit_code=retained_ideal_failure?1:0;goto cleanup;
     }
 #endif
     if (replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS) {
