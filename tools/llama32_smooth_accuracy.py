@@ -52,7 +52,7 @@ class Model(torch.nn.Module):
         name=f'{i}.{short}';module=self.m.model.layers[i].get_submodule(PROJECTIONS[short])
         if short=='down' and self.r4:x=dense(x,8192)
         self.event(name+'.input',x)
-        if self.mode!='float':x=aq(x,self.steps[name])
+        if self.mode!='float' and not (self.mode=='down_a16' and short=='down'):x=aq(x,self.steps[name])
         y=module(x);self.event(name+'.linear',y)
         return self.boundary(name,y)
     def hidden(self,ids,cache=None):
