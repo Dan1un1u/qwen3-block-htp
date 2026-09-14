@@ -254,7 +254,7 @@ static int qbh_r4_convert_parallel(struct qbh_block_w4f16_pool *pool,
     for(uint32_t i=0;i<3U;++i)task->h->dense_r4_parallel_work_ticks+=task->work_ticks[i];
     ++task->h->dense_r4_parallel_dispatches;
     if(task->finish)task->h->dense_r4_parallel_finish_groups+=16U;
-    else task->h->dense_r4_parallel_prepare_tiles+=256U;
+    else if(!task->exact_stage1)task->h->dense_r4_parallel_prepare_tiles+=256U;
     return 0;
 }
 /* L32-0021: two finish workers consume the previous output while the
