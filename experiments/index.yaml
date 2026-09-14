@@ -23,8 +23,8 @@ experiments:
   title: Llama 3.2 1B Instruct W16A16 model port and independent validation
   execution_state: completed
   record: docs/experiments/L32-0001.md
-  approval_ref: User selected original 1B-Instruct and approved W16A16 -> W4A16 -> W4A8 adaptation order
-    on 2026-09-10
+  approval_ref: User selected original 1B-Instruct and approved W16A16 -> W4A16 -> W4A8 adaptation order on
+    2026-09-10
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp-rotation
     source_branch: codex/llama32-rotation
@@ -47,8 +47,8 @@ experiments:
   title: Fresh per-channel Llama W4A16 integration and quality validation
   execution_state: completed
   record: docs/experiments/L32-0002.md
-  approval_ref: 'User: defer optimization; sequentially connect W4A16 and W4A8; W4A16 quality usable,
-    A8 no quality threshold (2026-09-10)'
+  approval_ref: 'User: defer optimization; sequentially connect W4A16 and W4A8; W4A16 quality usable, A8 no
+    quality threshold (2026-09-10)'
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp-rotation
     source_branch: codex/llama32-rotation
@@ -69,8 +69,8 @@ experiments:
   title: Llama per-channel native W4A8 OFF functional chain
   execution_state: completed
   record: docs/experiments/L32-0003.md
-  approval_ref: User requested sequential W4A16 then W4A8 chains; defer optimization; A8 has no quality
-    gate (2026-09-10)
+  approval_ref: User requested sequential W4A16 then W4A8 chains; defer optimization; A8 has no quality gate
+    (2026-09-10)
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp-rotation
     source_branch: codex/llama32-rotation
@@ -88,8 +88,8 @@ experiments:
   quality_gate_applied: false
   usable_text: false
   formal_profiling: false
-  hardware_runs_definition: Native host invocation attempts including rejected CLI/bundle attempts and
-    full generation/evaluation; seven launched DSP execution
+  hardware_runs_definition: Native host invocation attempts including rejected CLI/bundle attempts and full
+    generation/evaluation; seven launched DSP execution
   token_boundary_executions: 2074
 - id: L32-0004
   title: Reuse native pipelines for Llama quantized inference speed
@@ -158,8 +158,8 @@ experiments:
   baseline_quality_promoted: false
   local_gate: exact_physical_and_both_formal_shape_gates_pass
   completed_on: '2026-09-10'
-  hardware_runs_definition: '64 successful DSP processes: 8 functional/regression, 6 generation gates,
-    30 M64+7 rotated three-arm formal and 20 M64+15 paired formal'
+  hardware_runs_definition: '64 successful DSP processes: 8 functional/regression, 6 generation gates, 30 M64+7
+    rotated three-arm formal and 20 M64+15 paired formal'
   token_boundary_executions: 640
   timed_token_boundary_executions: 560
   source_heads:
@@ -232,8 +232,8 @@ experiments:
   title: Llama fused SP2 SwiGLU native W4 Down full-block integration and speed
   execution_state: completed
   record: docs/experiments/L32-0009.md
-  approval_ref: User agrees to proceed and directs performance optimization after hardware correctness
-    confirmation (2026-09-13)
+  approval_ref: User agrees to proceed and directs performance optimization after hardware correctness confirmation
+    (2026-09-13)
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
@@ -241,9 +241,9 @@ experiments:
   hardware_runs: 74
   baseline_quality_promoted: false
   completed_on: '2026-09-13'
-  hardware_runs_definition: 73 successful DSP processes/1186 block RPCs plus one CLI-rejected standalone
-    audit; one additional local Python import error never invoked device. Earlier arithmetic diagnostics
-    include subsequently rejected physical implementations.
+  hardware_runs_definition: 73 successful DSP processes/1186 block RPCs plus one CLI-rejected standalone audit;
+    one additional local Python import error never invoked device. Earlier arithmetic diagnostics include subsequently
+    rejected physical implementations.
   successful_dsp_processes: 73
   successful_block_rpcs: 1186
   final_native_block_rpcs: 454
@@ -266,8 +266,8 @@ experiments:
   title: Llama full-model SP2 Down E2E speed versus original U8 integer runtime
   execution_state: completed
   record: docs/experiments/L32-0010.md
-  approval_ref: User requests real E2E speed validation after stacking and quantitative slowdown versus
-    original integer implementation (2026-09-13)
+  approval_ref: User requests real E2E speed validation after stacking and quantitative slowdown versus original
+    integer implementation (2026-09-13)
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
@@ -295,8 +295,8 @@ experiments:
   title: SP2 full-model prefill pipeline optimization
   execution_state: completed
   record: docs/experiments/L32-0011.md
-  approval_ref: User requests further pipeline optimization to bring all-layer overhead within existing
-    gate (2026-09-13)
+  approval_ref: User requests further pipeline optimization to bring all-layer overhead within existing gate
+    (2026-09-13)
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
@@ -304,8 +304,8 @@ experiments:
   hardware_runs: 26
   baseline_quality_promoted: false
   completed_on: '2026-09-13'
-  hardware_runs_definition: 26 successful DSP processes:3 singlelayer,1 consecutive3layer,2 fullmodel
-    gates,20 formal; one local offline audit import failure before device/writes
+  hardware_runs_definition: 26 successful DSP processes:3 singlelayer,1 consecutive3layer,2 fullmodel gates,20
+    formal; one local offline audit import failure before device/writes
   token_boundary_executions: 360
   timed_token_boundary_executions: 320
   formal_profiling: true
@@ -325,8 +325,8 @@ experiments:
   title: Three SP2 prefill pipeline directions
   execution_state: completed
   record: docs/experiments/L32-0012.md
-  approval_ref: User approves trying gather latency hiding,earlier Gate/Up interleaving,and Down epilogue
-    overlap (2026-09-13)
+  approval_ref: User approves trying gather latency hiding,earlier Gate/Up interleaving,and Down epilogue overlap
+    (2026-09-13)
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
@@ -357,9 +357,8 @@ experiments:
   title: Fresh Llama C-RTN SP2 adaptation to existing native integer contract
   execution_state: completed
   record: docs/experiments/L32-0013.md
-  approval_ref: 2026-09-14 user authorizes fresh original-weight construction; existing hardware wins
-    conflicts in residual/nonlinear/KV and other implemented boundaries; add missing implementation; real-device
-    accuracy
+  approval_ref: 2026-09-14 user authorizes fresh original-weight construction; existing hardware wins conflicts
+    in residual/nonlinear/KV and other implemented boundaries; add missing implementation; real-device accuracy
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
@@ -373,9 +372,8 @@ experiments:
   ppl_rerun: true
   formal_profiling: false
   completed_on: '2026-09-14'
-  hardware_runs_definition: 11 successful device CLI executions:3 transport replay,2 raw probe,3 new C
-    singlelayer,1 new C consecutive3,1 full16 generation,1 full16 teacher-forced PPL; no failed native
-    executions
+  hardware_runs_definition: 11 successful device CLI executions:3 transport replay,2 raw probe,3 new C singlelayer,1
+    new C consecutive3,1 full16 generation,1 full16 teacher-forced PPL; no failed native executions
   source_heads:
     codex/llama32-no-rotation: bc5fdc1a8b044d4442ace7e2122ebc47cf0937d2
     codex/llama32-rotation: 252aee5ecfbefd4a2df6cd5a5e4b9193d935f86b
@@ -408,3 +406,15 @@ experiments:
     historical_17_6424_comparable: false
     scope: M64+16 bridge exact integer alignment; not full WT2-2048 historical PPL
   report: docs/LLAMA32_C_RTN_SP2_ALIGNMENT.md
+- id: L32-0014
+  title: Temporary smooth full dense R4 guided W4 all-A8 accuracy feasibility
+  execution_state: running
+  record: docs/experiments/L32-0014.md
+  approval_ref: 2026-09-14 user authorizes temporary no-SP2 accuracy experiment using absorbed up smoothing,
+    full8192 dense R4, guided static A8 and W4 reconstruction; R3/R4 dense matmul; ignore performance
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  parent_source: bc5fdc1a8b044d4442ace7e2122ebc47cf0937d2
+  hardware_runs: 0
+  baseline_quality_promoted: false
