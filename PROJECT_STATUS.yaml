@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0270
+  active_experiment: null
   next_experiment_number: 271
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -2498,13 +2498,13 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: Qwen3_28layer_native_W4_SP2_M64_plus15_verified
-  last_completed_experiment: EXP-0269
-  last_completed_source_commit: a41a7258ed596d810bd4a62d83390fd6944b8967
+  last_completed_experiment: EXP-0270
+  last_completed_source_commit: 8268f8f7f5234902f7dd1dffc7c1a6194bae4b7a
   provisional_source_parent: EXP0268_diagnostic_U8_pipeline_closure_no_default_promotion
   device_execution_state: EXP0269_singlelayer_exact_short_speed_gate_fail_no_fullmodel
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  current_handoff: docs/SESSION_HANDOFF_EXP0269.md
+  current_handoff: docs/SESSION_HANDOFF_EXP0270.md
   active_recipe_specialization: native_W4_SP2_FP32_residual_no_rotation
   last_completed_experiment_contract:
     id: EXP-0269
@@ -2513,75 +2513,76 @@ current_scope:
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
   last_completed_evidence: &id001
-    id: EXP-0269
+    id: EXP-0270
     execution_state: completed
-    evidence_validity: valid_final_repaired_runs_failed_candidates_retained
+    evidence_validity: valid
     local_gate: fail
-    gate_role: singlelayer_FP32_implementation_pass_short_speed_fail_pause_before_fullmodel
-    adoption_status: not_adopted
-    source_branch: codex/exp-0269-sp2-fp32-residual
-    source_closure_commit: a41a7258ed596d810bd4a62d83390fd6944b8967
-    tested_source_head: aa55a3ece5a04f40c1cfe135b699433b8f6e4ff2
-    report: docs/experiments/EXP-0269-RESULTS.md
-    report_sha256: 923613c2459552de134ea66998daeb50b574c72e5aff681502d55e9a2f6afa25
-    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0269
-    evidence_ledger_sha256: 20d3ddb9e1152e35e714f45b159f26312e5a79177cae907c31b7952a8af26ff5
-    evidence_file_count: 546
-    hardware_cli: 67
-    hardware_profiles: 710
-    single_layer_indices:
+    gate_role: independent_singlelayer_exact_pass_decode_speed_pass_prefill_speed_fail
+    source_branch: codex/exp-0270-fp32-norm-pipeline
+    source_closure_commit: 8268f8f7f5234902f7dd1dffc7c1a6194bae4b7a
+    tested_source_head: 645b0cdc4d6787dcde7bade9af59c3de3d6d8451
+    report: docs/experiments/EXP-0270-RESULTS.md
+    report_sha256: 8fac69287ff6140df48f01eec39bfe61a978bd52951c501933655aa7527a4bc7
+    full_profiling_report: docs/experiments/EXP-0270-PROFILE.md
+    full_profiling_report_sha256: 8fac69287ff6140df48f01eec39bfe61a978bd52951c501933655aa7527a4bc7
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0270
+    evidence_ledger_sha256: 1ec0df4c36fc44ad0cfc79a7e3503644fe8acd3135ab75f968074c0732960717
+    evidence_file_count: 271
+    hardware_cli: 33
+    hardware_profiles: 372
+    single_layers:
     - 0
     - 14
     - 27
-    independent_FP32_outputs_exact: true
-    actual_boundaries_and_KV_exact: true
+    independent_numerical_exact: true
     repeat10_exact: true
+    physical_gate: true
     peak_vtcm_bytes: 6682752
-    final_short_performance:
+    performance:
       r1_prefill_ns:
-        control_mean_ns: 1569280.8
-        candidate_mean_ns: 1758218.8
-        ratio: 1.1203978281006177
+        control_mean_ns: 1555771.0
+        candidate_mean_ns: 1742854.4
+        ratio: 1.1202512452025395
         ci95:
-        - 1.0754992048441505
-        - 1.190995202899883
+        - 1.0501478268121174
+        - 1.2229276286029065
         gate: false
         auxiliary_only: true
       r1_decode_ns:
-        control_mean_ns: 943093.4
-        candidate_mean_ns: 1052385.2
-        ratio: 1.1158865071052346
+        control_mean_ns: 1032489.8
+        candidate_mean_ns: 1114520.8
+        ratio: 1.079449695289968
         ci95:
-        - 1.0572639898708922
-        - 1.1887818537019494
+        - 0.8826189590000771
+        - 1.2665320172221786
         gate: false
         auxiliary_only: true
       r10_prefill_ns:
-        control_mean_ns: 1348527.1600000001
-        candidate_mean_ns: 1554163.58
-        ratio: 1.1524896391408237
+        control_mean_ns: 1357263.6
+        candidate_mean_ns: 1552975.0
+        ratio: 1.144195571147712
         ci95:
-        - 1.1003933547477656
-        - 1.2092634606729649
+        - 1.1014435544693815
+        - 1.1866591710085206
         gate: false
         auxiliary_only: false
       r10_decode_ns:
-        control_mean_ns: 1053722.96
-        candidate_mean_ns: 1102919.8399999999
-        ratio: 1.0466886286695318
+        control_mean_ns: 1017179.2
+        candidate_mean_ns: 1059212.44
+        ratio: 1.0413233381099416
         ci95:
-        - 0.9576249754233674
-        - 1.1485275820984566
-        gate: false
+        - 1.0156070060399227
+        - 1.0822411260104283
+        gate: true
         auxiliary_only: false
-    formal_profiling: false
+    formal_run: false
     chain3_run: false
     fullmodel_run: false
     e2e_run: false
-    ppl_run: false
     baseline_promoted: false
-    next_action: Discuss remaining FP32 prefill Norm and O cost before any full-model
-      extension; original selected paper speed baselines retained
+    next_direction: Discuss FP32 residual layout shared by O/Down producers and RMSNorm
+      consumers; current row-major residual requires costly transposition. No extra
+      experiment started.
   latest_w4f16_output_scale_result:
     id: EXP-0224
     execution_state: completed
@@ -9127,8 +9128,8 @@ current_scope:
       pass but do not clear gate
     next_direction: discuss_runtime_nondeterminism_then_same_token_device_software_head_and_transformer_alignment
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0257.md
-  last_concluded_experiment: EXP-0269
-  last_concluded_source_commit: a41a7258ed596d810bd4a62d83390fd6944b8967
+  last_concluded_experiment: EXP-0270
+  last_concluded_source_commit: 8268f8f7f5234902f7dd1dffc7c1a6194bae4b7a
   latest_w4u8_dense_r3_e2e_diagnostic_result:
     id: EXP-0258
     execution_state: completed
@@ -10150,7 +10151,7 @@ current_scope:
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0265.md
     next_direction: discuss_R4_quality_before_new_tuning; staticmiddle_and_RTN_Down_speedfixture_not_qualityaccepted;
       repeat1_cannot_veto_repeat10
-  qwen3_research_state: EXP0270_user_authorized_exact_FP32_speed_optimization
+  qwen3_research_state: FP32_speed_optimization_bounded_complete_prefill_gate_failed_discuss_layout
   latest_llama32_migration:
     id: EXP-0266
     execution_state: completed
@@ -10481,7 +10482,76 @@ current_scope:
     speed_pass: true
     quality_evaluated: false
     selected_baseline_changed: false
-  latest_sp2_fp32_residual_result: *id001
+  latest_sp2_fp32_residual_result:
+    id: EXP-0269
+    execution_state: completed
+    evidence_validity: valid_final_repaired_runs_failed_candidates_retained
+    local_gate: fail
+    gate_role: singlelayer_FP32_implementation_pass_short_speed_fail_pause_before_fullmodel
+    adoption_status: not_adopted
+    source_branch: codex/exp-0269-sp2-fp32-residual
+    source_closure_commit: a41a7258ed596d810bd4a62d83390fd6944b8967
+    tested_source_head: aa55a3ece5a04f40c1cfe135b699433b8f6e4ff2
+    report: docs/experiments/EXP-0269-RESULTS.md
+    report_sha256: 923613c2459552de134ea66998daeb50b574c72e5aff681502d55e9a2f6afa25
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0269
+    evidence_ledger_sha256: 20d3ddb9e1152e35e714f45b159f26312e5a79177cae907c31b7952a8af26ff5
+    evidence_file_count: 546
+    hardware_cli: 67
+    hardware_profiles: 710
+    single_layer_indices:
+    - 0
+    - 14
+    - 27
+    independent_FP32_outputs_exact: true
+    actual_boundaries_and_KV_exact: true
+    repeat10_exact: true
+    peak_vtcm_bytes: 6682752
+    final_short_performance:
+      r1_prefill_ns:
+        control_mean_ns: 1569280.8
+        candidate_mean_ns: 1758218.8
+        ratio: 1.1203978281006177
+        ci95:
+        - 1.0754992048441505
+        - 1.190995202899883
+        gate: false
+        auxiliary_only: true
+      r1_decode_ns:
+        control_mean_ns: 943093.4
+        candidate_mean_ns: 1052385.2
+        ratio: 1.1158865071052346
+        ci95:
+        - 1.0572639898708922
+        - 1.1887818537019494
+        gate: false
+        auxiliary_only: true
+      r10_prefill_ns:
+        control_mean_ns: 1348527.1600000001
+        candidate_mean_ns: 1554163.58
+        ratio: 1.1524896391408237
+        ci95:
+        - 1.1003933547477656
+        - 1.2092634606729649
+        gate: false
+        auxiliary_only: false
+      r10_decode_ns:
+        control_mean_ns: 1053722.96
+        candidate_mean_ns: 1102919.8399999999
+        ratio: 1.0466886286695318
+        ci95:
+        - 0.9576249754233674
+        - 1.1485275820984566
+        gate: false
+        auxiliary_only: false
+    formal_profiling: false
+    chain3_run: false
+    fullmodel_run: false
+    e2e_run: false
+    ppl_run: false
+    baseline_promoted: false
+    next_action: Discuss remaining FP32 prefill Norm and O cost before any full-model
+      extension; original selected paper speed baselines retained
   paper_no_rotation_speed_baselines:
     schema_version: 1
     selection_date: '2026-09-14'
@@ -10621,11 +10691,16 @@ current_scope:
         (branch default config only)
       rotation_branch_equivalent_patches: 79
     new_qwen_candidate:
-      experiment: EXP-0269
-      source_branch: codex/exp-0269-sp2-fp32-residual
-      measured_source: aa55a3ece5a04f40c1cfe135b699433b8f6e4ff2
+      experiment: EXP-0270
+      source_branch: codex/exp-0270-fp32-norm-pipeline
+      measured_source: 645b0cdc4d6787dcde7bade9af59c3de3d6d8451
       independent_single_layer_gate: true
       short_gate: false
+      prefill_ratio: 1.144195571147712
+      decode_ratio: 1.0413233381099416
       formal_profile: false
       full_model_e2e: false
       paper_baseline_replaced: false
+      report: docs/EXP0270_FP32_RESIDUAL_RESULTS.md
+      new_methods_unmeasured_on_llama: true
+  latest_sp2_fp32_residual_optimization_result: *id001

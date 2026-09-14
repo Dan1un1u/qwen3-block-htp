@@ -31,19 +31,98 @@ experiments:
   variants:
   - SP2_integer_control
   - SP2_FP32_optimized
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
-  adoption_status: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
+  adoption_status: not_applicable
   record: docs/experiments/EXP-0270.md
   approval_ref: 'User continuation: 继续优化 after EXP0269 safe path and cost report'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0270-fp32-norm-pipeline
     started_on: '2026-09-14'
+    completed_on: '2026-09-14'
   source_branches:
   - codex/exp-0270-fp32-norm-pipeline
-  source_commits: []
+  source_commits:
+  - 57b576263c3089fa8951da346c006b3e378572b4
+  - e00f235926b4f095f4023148af5b45c8e71d6f12
+  - bc01e1a2e5423131a9bda1f34bfe091e592d4aa1
+  - 7d874abd6d257663cf58a3e6223febd14c8ddcb5
+  - 8d8de8751646d8b3726c784b6e7bada96286e670
+  - 645b0cdc4d6787dcde7bade9af59c3de3d6d8451
+  - 8268f8f7f5234902f7dd1dffc7c1a6194bae4b7a
+  evidence:
+    id: EXP-0270
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    gate_role: independent_singlelayer_exact_pass_decode_speed_pass_prefill_speed_fail
+    source_branch: codex/exp-0270-fp32-norm-pipeline
+    source_closure_commit: 8268f8f7f5234902f7dd1dffc7c1a6194bae4b7a
+    tested_source_head: 645b0cdc4d6787dcde7bade9af59c3de3d6d8451
+    report: docs/experiments/EXP-0270-RESULTS.md
+    report_sha256: 8fac69287ff6140df48f01eec39bfe61a978bd52951c501933655aa7527a4bc7
+    full_profiling_report: docs/experiments/EXP-0270-PROFILE.md
+    full_profiling_report_sha256: 8fac69287ff6140df48f01eec39bfe61a978bd52951c501933655aa7527a4bc7
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0270
+    evidence_ledger_sha256: 1ec0df4c36fc44ad0cfc79a7e3503644fe8acd3135ab75f968074c0732960717
+    evidence_file_count: 271
+    hardware_cli: 33
+    hardware_profiles: 372
+    single_layers:
+    - 0
+    - 14
+    - 27
+    independent_numerical_exact: true
+    repeat10_exact: true
+    physical_gate: true
+    peak_vtcm_bytes: 6682752
+    performance:
+      r1_prefill_ns:
+        control_mean_ns: 1555771.0
+        candidate_mean_ns: 1742854.4
+        ratio: 1.1202512452025395
+        ci95:
+        - 1.0501478268121174
+        - 1.2229276286029065
+        gate: false
+        auxiliary_only: true
+      r1_decode_ns:
+        control_mean_ns: 1032489.8
+        candidate_mean_ns: 1114520.8
+        ratio: 1.079449695289968
+        ci95:
+        - 0.8826189590000771
+        - 1.2665320172221786
+        gate: false
+        auxiliary_only: true
+      r10_prefill_ns:
+        control_mean_ns: 1357263.6
+        candidate_mean_ns: 1552975.0
+        ratio: 1.144195571147712
+        ci95:
+        - 1.1014435544693815
+        - 1.1866591710085206
+        gate: false
+        auxiliary_only: false
+      r10_decode_ns:
+        control_mean_ns: 1017179.2
+        candidate_mean_ns: 1059212.44
+        ratio: 1.0413233381099416
+        ci95:
+        - 1.0156070060399227
+        - 1.0822411260104283
+        gate: true
+        auxiliary_only: false
+    formal_run: false
+    chain3_run: false
+    fullmodel_run: false
+    e2e_run: false
+    baseline_promoted: false
+    next_direction: Discuss FP32 residual layout shared by O/Down producers and RMSNorm
+      consumers; current row-major residual requires costly transposition. No extra
+      experiment started.
 - id: EXP-0269
   slug: sp2-fp32-residual-paper-baseline
   title: Qwen native SP2 FP32 residual port and latest baseline audit
