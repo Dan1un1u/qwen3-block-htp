@@ -4,10 +4,6 @@
  * Scalar FP32 epilogue deliberately prioritizes an auditable numerical contract;
  * its add time belongs to the O/Down projection ledger (no second residual add).
  */
-static int32_t qbh_llama_raw24(const uint8_t *raw,uint32_t i) {
-    return (int32_t)raw[i]+256*(int32_t)raw[2048U+i]+
-        65536*(int32_t)(int8_t)raw[4096U+i];
-}
 static inline HVX_Vector qbh_fp32_splat(float x) {
     union {float f;int32_t i;} u={.f=x};return Q6_V_vsplat_R(u.i);
 }
@@ -19,7 +15,7 @@ static inline HVX_Vector qbh_fp32_dot(HVX_Vector low,HVX_Vector high,
     /* Modular operations exactly recover the separately proven S32 result. */
     return sp2 ? Q6_Vw_vsub_VwVw(Q6_Vw_vadd_VwVw(low,Q6_Vw_vasl_VwR(high,8)),
             Q6_Vw_vasl_VwR(sum,15))
-        : Q6_Vw_vsub_VwVw(low,Q6_Vw_vmpy_VwVw(sum,Q6_V_vsplat_R(zero)));
+        : Q6_Vw_vsub_VwVw(low,Q6_Vw_vmpyi_VwRh(sum,zero));
 }
 static void qbh_llama_fp32_epilogue(const uint8_t *lo,const uint8_t *hi,
     const float *scale,float *dst,uint32_t rows,uint32_t sp2,int32_t zero) {
@@ -45,7 +41,6 @@ static int qbh_llama_w4_fp32_residual(struct qbh_block_hmx_worker *w) {
     for(uint32_t nt=0;nt<w->n_tiles;nt++) {
         const uint8_t *weight=(const uint8_t *)w->weight+(size_t)nt*w->k_tiles*512U;
         const float *scale=(const float *)w->scale_or_bias+nt*64U;
-        const int32_t *sum=(const int32_t *)(scale+32U);
         uint32_t passes=w->fp32_sp2 && w->fp32_rows==64U ? 2U:1U;
         for(uint32_t pass=0;pass<passes;pass++) {
             for(uint32_t n=0;n<32;n++){bias[n]=24U<<10;bias[n+32U]=0U;}
