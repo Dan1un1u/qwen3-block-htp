@@ -491,7 +491,7 @@ experiments:
   e2e_run: false
   ppl_rerun: false
   local_gate: component_and_conditional_tail_pass_layer0_decode_ideal_cosine_fail
-  checkpoint_state: paused_for_user_discussion_keep_lock
+  checkpoint_state: diagnostic_continuation_authorized
   checkpoint_evidence_ledger_sha256: 830ef833be269ae2f4bb35f945cd9b16a73b29813f37b1d39af2b54c03f0f1f2
   checkpoint_evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0015/evidence-ledger-checkpoint-a01.json
   source_heads:
