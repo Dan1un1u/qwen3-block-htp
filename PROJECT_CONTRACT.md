@@ -164,3 +164,9 @@ Retain arithmetic/physical correctness; defer new calibration/PPL/rotation work.
 Fixed ten paired profile passes decode10%gate but fails prefill; no overall
 performance acceptance or baseline promotion. See L32-0017 report and current
 status. Further work should address remaining FP32 Norm and O overhead.
+
+## L32-0019 rotation resumption (2026-09-14)
+User temporarily accepts L32-0018 speed and authorizes R3/R4 integration using
+Qwen implemented dense paths as reference. Supersedes0017 rotation deferral for
+this bounded integration only. Preserve current FP32 residual/SP2 and frozen
+no-rotation measurements. See0019protocol; no deep speed optimization or quality promotion.

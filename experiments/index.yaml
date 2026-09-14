@@ -635,3 +635,15 @@ experiments:
       - 1.0927623942210913
       gate_pass: true
   default_promoted: false
+- id: L32-0019
+  title: Dense R3/R4 integration with FP32 residual and SP2
+  execution_state: running
+  record: docs/experiments/L32-0019.md
+  approval_ref: User accepts L32-0018 speed gate for now, defers deep optimization,
+    authorizes Llama R3/R4 using Qwen implementation as reference
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  parent_source: e3d065a515221aa1e97c63fa4d58d23e434c45df
+  hardware_runs: 0
+  baseline_quality_promoted: false
