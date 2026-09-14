@@ -106,6 +106,28 @@ def analyze(layer,step):
             adjacent=abs(aidx-iidx)==1,
             straddles=all(min(float(y[t,k]),float(ideal[t,k]))<=b<=max(float(y[t,k]),float(ideal[t,k])) for b in boundaries)))
     assert all(v['straddles'] for v in crossings)
+    # Diagnostic counterfactuals on the same already-quantized left residual
+    # and W4/SP2 dot; no runtime modification or teacher/PPL claim.
+    outscale=q['block_output']['scale'];outzero=q['block_output']['zero_point']
+    def final_store(x):
+        return np.clip(np.floor(x/outscale+outzero+.5),0,255)-outzero
+    down_float=left_real+(di.astype('f8')-q['down']['zero_point'])*q['down']['scale']
+    alternate=dict(
+        current_u8_down_q14_residual=metrics(ui*outscale,continuous),
+        u8_down_float_add_u8_output=metrics(final_store(down_float)*outscale,continuous),
+        float_down_float_add_u8_output=metrics(final_store(continuous)*outscale,continuous),
+        float_down_float_add_fp16_storage=metrics(continuous.astype('f2'),continuous))
+    base=M/f'l32-0009/packages-a01/layer{layer}-sp2'
+    basem=json.loads((base/'manifest.json').read_text())
+    bn='reference_w4u8_integer_attention_block_output_u8.bin' if step==0 else 'replay_decode_reference_00_u8.bin'
+    assert sha256(base/bn)==basem['files'][bn]['sha256']
+    bq=load_qparams_bin(base/'layer0/qparams_u8.bin')
+    assert bq['block_output']==q['block_output']
+    baseline=np.fromfile(base/bn,dtype='u1').reshape(-1,2048)[:rows].astype('i4')-outzero
+    baseline_stats=dict(scope='old baseline has different unrotated Down W4; zero-pattern context only',
+        zero_rows=int(np.count_nonzero(~np.any(baseline,axis=1))),
+        total_rows=rows,reference_energy_lsb2=int(np.sum(baseline.astype('i8')**2)),
+        baseline_file_sha256=sha256(base/bn))
     changed_outputs=[]
     for t,n in zip(*np.where(oa!=oi)):
         contributions=[]
@@ -135,6 +157,7 @@ def analyze(layer,step):
         output_scale_over_continuous_rms=float(q['block_output']['scale']/max(np.sqrt(np.mean(continuous**2)),1e-30)),
         residual_fixed=dict(fraction_bits=fb,left=lc,right=rc),
         summary=summary_rows(per),per_token=per,sp2_crossings=crossings,
+        baseline_output_context=baseline_stats,local_tail_counterfactuals=alternate,
         changed_outputs=changed_outputs,down_changed_elements=int(np.count_nonzero(di!=da)),
         down_saturation_actual=int(np.count_nonzero((da==0)|(da==255))),
         output_saturation_actual=int(np.count_nonzero((oa==0)|(oa==255))),
