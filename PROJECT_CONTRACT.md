@@ -22,7 +22,8 @@ context or execution dependency.
   pinned by six file hashes in source tools/llama_reference.py. L32-0001 validates
   W16A16 functional integration; L32-0002/0003 connect W4A16/W4A8 OFF.
   W4A16 quality fails its retained PPL gate; A8 text is unusable with no quality
-  threshold applied. Llama R3/R4 remain unsupported. Model dimensions,
+  threshold applied. Llama R3/R4 full-model use remains unvalidated; L32-0019 adds experimental
+  single-layer support with FP32 residual/SP2. Model dimensions,
   tokenizer/template, normalization, RoPE and tied-head behavior come from it.
 - Original Llama tensors must supply new weights and rotations. Qwen3 folded or
   quantized weights, static-A8 calibration, EOS prefix/cache and tokenizer are

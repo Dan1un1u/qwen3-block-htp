@@ -637,7 +637,7 @@ experiments:
   default_promoted: false
 - id: L32-0019
   title: Dense R3/R4 integration with FP32 residual and SP2
-  execution_state: running
+  execution_state: deferred
   record: docs/experiments/L32-0019.md
   approval_ref: User accepts L32-0018 speed gate for now, defers deep optimization,
     authorizes Llama R3/R4 using Qwen implementation as reference
@@ -645,5 +645,92 @@ experiments:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
   parent_source: e3d065a515221aa1e97c63fa4d58d23e434c45df
-  hardware_runs: 0
+  hardware_runs: 60
   baseline_quality_promoted: false
+  checkpoint_state: singlelayer_rotation_correctness_pass_speed_gate_pause
+  hardware_runs_definition: 20 functional/diagnostic CLI and40 formal CLI;26exit0,32exit1,1argument
+    reject exit2,1verified owned hung process terminated exit137; ideal-exact exit1
+    retained on R4
+  token_boundary_executions: 110
+  failed_native_attempts: 4
+  formal_token_boundaries: 80
+  formal_profiling: true
+  formal_cycles: 10
+  formal_shape: singlelayer0 M64+decode1, one invocation per phase per independent
+    process, cyclic four arms
+  source_heads:
+    codex/llama32-no-rotation: b319b63f1eb8823b5bbfbc94ad19cd567d1b73b3
+  profiled_source_head: 8d24121ce0dd776d83de33c619fd671954287d14
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0019
+  evidence_ledger_sha256: 48e1658f7a9cd80c8e5d66c8d3733ae272c24f92a247946f51f583e9636d0304
+  report: docs/LLAMA32_FP32_R3_R4.md
+  local_gate: component_conditional_tail_ideal_cosine_physical_pass_prefill_R4_both_fail_R3_inconclusive
+  e2e_run: false
+  ppl_rerun: false
+  speed:
+    prefill:
+      'off':
+        mean_us: 2294.854
+        latency_ratio: 1.0
+        increase_percent: 0.0
+        ci95:
+        - 1.0
+        - 1.0
+        gate_pass: true
+      r3:
+        mean_us: 2354.2709
+        latency_ratio: 1.025891363895045
+        increase_percent: 2.5891363895045094
+        ci95:
+        - 0.919739631884898
+        - 1.1932701855760097
+        gate_pass: false
+      r4:
+        mean_us: 3100.2603
+        latency_ratio: 1.35096189125757
+        increase_percent: 35.09618912575701
+        ci95:
+        - 1.1441431361976386
+        - 1.5952102287462901
+        gate_pass: false
+      both:
+        mean_us: 3336.4896
+        latency_ratio: 1.453900596726415
+        increase_percent: 45.39005967264149
+        ci95:
+        - 1.246512132501307
+        - 1.6768082808561309
+        gate_pass: false
+    decode:
+      'off':
+        mean_us: 1661.276
+        latency_ratio: 1.0
+        increase_percent: 0.0
+        ci95:
+        - 1.0
+        - 1.0
+        gate_pass: true
+      r3:
+        mean_us: 1828.2446
+        latency_ratio: 1.100506237374163
+        increase_percent: 10.050623737416299
+        ci95:
+        - 0.9350541868251676
+        - 1.3748588016688814
+        gate_pass: false
+      r4:
+        mean_us: 1676.1718999999998
+        latency_ratio: 1.0089665413814441
+        increase_percent: 0.8966541381444149
+        ci95:
+        - 0.9697679266360604
+        - 1.0437208994935983
+        gate_pass: true
+      both:
+        mean_us: 1706.005
+        latency_ratio: 1.0269244845528378
+        increase_percent: 2.69244845528378
+        ci95:
+        - 0.9924988774320255
+        - 1.0585540897961938
+        gate_pass: true

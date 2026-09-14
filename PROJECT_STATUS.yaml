@@ -6,7 +6,7 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0019
+  active_experiment: null
   next_experiment_number: 20
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -14,7 +14,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: e3d065a515221aa1e97c63fa4d58d23e434c45df
+    recorded_head: b319b63f1eb8823b5bbfbc94ad19cd567d1b73b3
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -26,11 +26,11 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: fp32_norm_o_pipeline_completed_both_speed_gates_passed
+  stage: fp32_r3_r4_singlelayer_validated_speed_gate_pause
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Integrate optional dense R3/R4 with L32-0018 FP32 residual and SP2;
-    preserve accepted no-rotation speed checkpoint
+  next_action: Discuss L32-0019 R4/both prefill speed failures and R3 uncertainty;
+    no fullmodel rotation or deep optimization until next scope agreed
   baseline_manifest: baselines/qwen3-frozen/manifest.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF.md
@@ -615,6 +615,92 @@ current_scope:
     overall_speed_gate_pass: true
     baseline_promoted: false
     user_speed_accepted: true
+  fp32_online_rotations:
+    experiment: L32-0019
+    state: deferred_after_singlelayer_speed_gate
+    report: docs/LLAMA32_FP32_R3_R4.md
+    source_head: b319b63f1eb8823b5bbfbc94ad19cd567d1b73b3
+    profiled_head: 8d24121ce0dd776d83de33c619fd671954287d14
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0019
+    ledger_sha256: 48e1658f7a9cd80c8e5d66c8d3733ae272c24f92a247946f51f583e9636d0304
+    singlelayer_indices:
+    - 0
+    - 7
+    - 15
+    singlelayer_actual_arithmetic_pass: true
+    singlelayer_ideal_cosine_pass: true
+    ideal_min_row_cosine: 0.9999834747355912
+    fullmodel_validated: false
+    e2e_run: false
+    ppl_run: false
+    default_promoted: false
+    speed:
+      prefill:
+        'off':
+          mean_us: 2294.854
+          latency_ratio: 1.0
+          increase_percent: 0.0
+          ci95:
+          - 1.0
+          - 1.0
+          gate_pass: true
+        r3:
+          mean_us: 2354.2709
+          latency_ratio: 1.025891363895045
+          increase_percent: 2.5891363895045094
+          ci95:
+          - 0.919739631884898
+          - 1.1932701855760097
+          gate_pass: false
+        r4:
+          mean_us: 3100.2603
+          latency_ratio: 1.35096189125757
+          increase_percent: 35.09618912575701
+          ci95:
+          - 1.1441431361976386
+          - 1.5952102287462901
+          gate_pass: false
+        both:
+          mean_us: 3336.4896
+          latency_ratio: 1.453900596726415
+          increase_percent: 45.39005967264149
+          ci95:
+          - 1.246512132501307
+          - 1.6768082808561309
+          gate_pass: false
+      decode:
+        'off':
+          mean_us: 1661.276
+          latency_ratio: 1.0
+          increase_percent: 0.0
+          ci95:
+          - 1.0
+          - 1.0
+          gate_pass: true
+        r3:
+          mean_us: 1828.2446
+          latency_ratio: 1.100506237374163
+          increase_percent: 10.050623737416299
+          ci95:
+          - 0.9350541868251676
+          - 1.3748588016688814
+          gate_pass: false
+        r4:
+          mean_us: 1676.1718999999998
+          latency_ratio: 1.0089665413814441
+          increase_percent: 0.8966541381444149
+          ci95:
+          - 0.9697679266360604
+          - 1.0437208994935983
+          gate_pass: true
+        both:
+          mean_us: 1706.005
+          latency_ratio: 1.0269244845528378
+          increase_percent: 2.69244845528378
+          ci95:
+          - 0.9924988774320255
+          - 1.0585540897961938
+          gate_pass: true
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp
