@@ -66,6 +66,7 @@ def prepare(a):
 def run(a):
  preflight();p=M/('l32-0016/'+a.package if a.arm=='fp32' else f'l32-0009/packages-a01/layer{a.layer}-sp2');m=verify(p)
  head=subprocess.check_output(['git','-C',str(ROOT),'rev-parse','HEAD'],text=True).strip();seal=json.loads((ROOT/'build/llama-build-seal.json').read_text());assert seal['source_head']==head
+ assert f'QBH_LLAMA_LAYER_COUNT:STRING={a.layers}' in (ROOT/'android_ReleaseG_aarch64/CMakeCache.txt').read_text()
  d=R/a.attempt;d.mkdir(parents=True,exist_ok=False);remote='/data/local/tmp/llama32-htp/l32-0016/'+a.attempt
  assert adb('shell','test ! -e '+remote,check=False).returncode==0;adb('shell','mkdir -p '+remote)
  for n,b in [('qwen3_block_cli','android_ReleaseG_aarch64'),('libqwen3_probe.so','android_ReleaseG_aarch64'),('libqwen3_probe_skel.so','hexagon_ReleaseG_toolv19_v79')]:
@@ -93,5 +94,31 @@ def run(a):
  save(d/'result.json',dict(process_exit=run.returncode,steps=steps,records=records,scope='functional, repeat1 auxiliary; no performance acceptance'))
  print(json.dumps(dict(process_exit=run.returncode,steps=steps)),flush=True)
  if len(steps)!=2:print(run.stdout[-3500:]);print(run.stderr[-1500:]);raise SystemExit(1)
+def chain(a):
+ preflight();old=M/'l32-0010/frontend-a01';om=verify(old)
+ out=M/'l32-0016'/a.attempt;out.mkdir(parents=True,exist_ok=False)
+ for name in om['files']:
+  rel=Path(name)
+  if rel.parts[0].startswith('layer'):
+   if int(rel.parts[0][5:])>=a.layers:continue
+  elif name not in ['rope_cos_f16.bin','rope_sin_f16.bin']:continue
+  dst=out/name;dst.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(old/name,dst)
+ past=[None]*a.layers
+ for step,phase in enumerate(['prefill','decode']):
+  rows=64 if step==0 else 1;src=M/f'l32-0002/layers-a02/layer0-{phase}';verify(src)
+  x=np.fromfile(src/'block_input_f16.bin',dtype='<f2').reshape(64,2048)[:rows].astype('f4')
+  padded=np.zeros((64,2048),dtype='<f4');padded[:rows]=x;padded.tofile(out/('reference_w4u8_block_input_f32.bin' if not step else 'replay_decode_input_00_f32.bin'))
+  cos=np.fromfile(src/'rope_cos_f16.bin',dtype='<f2').reshape(64,64);sin=np.fromfile(src/'rope_sin_f16.bin',dtype='<f2').reshape(64,64)
+  if step:
+   shutil.copy2(src/'rope_cos_f16.bin',out/'replay_decode_rope_cos_00_f16.bin');shutil.copy2(src/'rope_sin_f16.bin',out/'replay_decode_rope_sin_00_f16.bin')
+  for index in range(a.layers):
+   root=out/f'layer{index}';q=load_qparams_bin(root/'qparams_u8.bin');x,cache,diag=layer(x,root,q,cos,sin,past[index])
+   if not step:past[index]=cache
+   np.save(out/f'fp32_{phase}_hidden{index}.npy',x)
+   for j,n in enumerate(['k','v']):
+    ref=np.full((8,80,64),q['k_rope' if n=='k' else 'v']['zero_point'],dtype='u1');ref[:,:cache[j].shape[1]]=cache[j];ref.tofile(root/f'reference_kv_cache_{n}_u8.bin')
+   print(phase,index,flush=True)
+  padded=np.zeros((64,2048),dtype='<f4');padded[:rows]=x;padded.tofile(out/('reference_w4u8_block_output_f32.bin' if not step else 'replay_decode_reference_00_f32.bin'))
+ save(out/'manifest.json',dict(experiment='L32-0016',layers=a.layers,baseline=str(old),baseline_sha256=sha256(old/'manifest.json'),files={str(f.relative_to(out)):dict(bytes=f.stat().st_size,sha256=sha256(f)) for f in out.rglob('*') if f.is_file()}));print(out,flush=True)
 if __name__=='__main__':
- ap=argparse.ArgumentParser();ap.add_argument('action',choices=['prepare','run']);ap.add_argument('--layer',type=int,default=0);ap.add_argument('--attempt',required=True);ap.add_argument('--arm',choices=['base','fp32'],default='fp32');ap.add_argument('--package');a=ap.parse_args();globals()[a.action](a)
+ ap=argparse.ArgumentParser();ap.add_argument('action',choices=['prepare','chain','run']);ap.add_argument('--layer',type=int,default=0);ap.add_argument('--layers',type=int,default=1);ap.add_argument('--attempt',required=True);ap.add_argument('--arm',choices=['base','fp32'],default='fp32');ap.add_argument('--package');a=ap.parse_args();globals()[a.action](a)
