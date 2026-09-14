@@ -2025,7 +2025,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
              (QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT | QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
               QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT | QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT) ||
          header->numerical_audit_enabled ||
-         header->generation_boundary_audit_enabled || header->w4u8_boundary_audit_enabled ||
+         header->w4u8_boundary_audit_enabled ||
          header->w4u8_decode_common_padding_poison)) return 0;
     /* Llama A8 currently validates the unrotated head64 integer pipeline. */
     if (header == NULL || header->dense_r3_mode ||
@@ -7348,11 +7348,11 @@ static int qbh_run_generation_head_w4u8(
         if (qbh_dma_copy(
                 header, shared + header->output_offset,
                 buffers->residual +
-                    (size_t)(logical_rows - 1U) * QBH_BLOCK_HIDDEN,
-                QBH_BLOCK_HIDDEN, 0U) != 0) {
+                    (size_t)(logical_rows - 1U) * QBH_BLOCK_HIDDEN * (QBH_FP32_RESIDUAL(header)?4U:1U),
+                QBH_BLOCK_HIDDEN * (QBH_FP32_RESIDUAL(header)?4U:1U), 0U) != 0) {
             return -2;
         }
-        header->boundary_ddr_write_bytes += QBH_BLOCK_HIDDEN;
+        header->boundary_ddr_write_bytes += QBH_BLOCK_HIDDEN * (QBH_FP32_RESIDUAL(header)?4U:1U);
         ++header->boundary_dma_descriptor_count;
     }
 
@@ -7383,6 +7383,12 @@ static int qbh_run_generation_head_w4u8(
             HAP_perf_get_qtimer_count() - norm_start;
     }
 
+    if (QBH_FP32_RESIDUAL(header) && header->generation_boundary_audit_enabled) {
+        const uint32_t bytes=QBH_BLOCK_M*QBH_BLOCK_HIDDEN;
+        if(qbh_dma_copy(header,shared+header->output_offset+QBH_BLOCK_HIDDEN*4U,
+            buffers->hmx_activation,bytes,0U))return -2;
+        header->boundary_ddr_write_bytes+=bytes;++header->boundary_dma_descriptor_count;
+    }
     if (resident_bias != 0U) {
         const uint64_t bias_start = HAP_perf_get_qtimer_count();
         if (qbh_dma_copy(
@@ -22177,7 +22183,7 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
                 profile->output_hash = qbh_fnv1a64_bytes(
                     buffers.residual,
                     (size_t)header->logical_m * QBH_BLOCK_HIDDEN *
-                        (header->variant == QBH_BLOCK_W4U8 ? 1U : 2U));
+                        (QBH_FP32_RESIDUAL(header)?4U:header->variant == QBH_BLOCK_W4U8 ? 1U : 2U));
             }
             if (header->full_stack_stage_mode ==
                 QBH_BLOCK_FULL_STACK_HIDDEN_CAPTURE) {

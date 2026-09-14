@@ -4142,7 +4142,7 @@ static int qbh_run_generation_sequence(
             header->intermediate_spill_fill_count == 0U &&
             header->boundary_ddr_write_bytes ==
                 (header->generation_boundary_audit_enabled != 0U
-                     ? QBH_BLOCK_HIDDEN : 0U) &&
+                     ? QBH_BLOCK_HIDDEN*(QBH_FP32_RESIDUAL(header)?68U:1U) : 0U) &&
             state->completed_step_count == step + 1U;
         for (uint32_t slice_index = 0U;
              slice_index < QBH_VERTICAL_SLICE_LAYER_COUNT;
@@ -4167,13 +4167,19 @@ static int qbh_run_generation_sequence(
             char audit_name[96];
             if (snprintf(
                     audit_name, sizeof(audit_name),
-                    "generation_hidden_step%02" PRIu32 "_u8.bin",
-                    step) < 0 ||
+                    "generation_hidden_step%02" PRIu32 "_%s.bin",
+                    step,QBH_FP32_RESIDUAL(header)?"f32":"u8") < 0 ||
                 qbh_write_named_tensor(
                     audit_root, audit_name,
                     shared + header->output_offset,
-                    QBH_BLOCK_HIDDEN) != 0) {
+                    QBH_BLOCK_HIDDEN*(QBH_FP32_RESIDUAL(header)?4U:1U)) != 0) {
                 step_pass = 0;
+            }
+            if(QBH_FP32_RESIDUAL(header)) {
+                snprintf(audit_name,sizeof(audit_name),"generation_norm_step%02u_u8_native.bin",step);
+                if(qbh_write_named_tensor(audit_root,audit_name,
+                    shared+header->output_offset+QBH_BLOCK_HIDDEN*4U,
+                    QBH_BLOCK_M*QBH_BLOCK_HIDDEN))step_pass=0;
             }
             /* Prefill owns the complete persistent K/V boundary.  Export it
              * only in audit mode, after the timed RPC; decode has VTCM-only
