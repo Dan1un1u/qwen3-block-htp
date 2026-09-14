@@ -20744,6 +20744,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     start = HAP_perf_get_qtimer_count();
     if (u8_integer_attention_enabled != 0U) {
 #ifdef QBH_MODEL_LLAMA32
+        if (header->dense_r3_mode == 0U) {
         if(!scan_dynamic_attention && w4f16_pool && w4f16_pool->worker_count>=3U) {
             if(qbh_hvx_pool_qk_norm_rope(header,w4f16_pool,(__fp16 *)buffers->q,(__fp16 *)buffers->k,NULL,NULL,
                 (const __fp16 *)buffers->rope_cos,(const __fp16 *)buffers->rope_sin)!=0)
@@ -20757,6 +20758,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             qbh_hvx_qk_norm_rope_u8_native_head_rows(buffers->k+h*QBH_BLOCK_M*QBH_BLOCK_HEAD_DIM,
                 &header->qparams[QBH_BLOCK_QP_K_PROJECTION],&header->qparams[QBH_BLOCK_QP_K_ROPE],
                 NULL,(const __fp16 *)buffers->rope_cos,(const __fp16 *)buffers->rope_sin, scan_dynamic_attention ? 1U : QBH_BLOCK_M);
+        }
         }
 #endif
         /* Native Q/K projection tiles are normalized and rotated inside
