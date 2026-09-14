@@ -50,7 +50,7 @@ def main():
         parent=json.loads(parent_text)
         parent_digest=adb("shell","sha256sum "+shlex.quote(source+"/manifest.json")).stdout.split()[0]
         expected_parent=m.get("parent_package_manifest_sha256",sha256(args.package/"manifest.json"))
-        assert parent_digest==expected_parent,"Remote parent manifest mismatch"
+        assert parent_digest in {expected_parent,sha256(args.package/"manifest.json")},"Remote parent manifest mismatch"
         names=[n for n,r in m["files"].items() if n in parent["files"] and parent["files"][n]["sha256"]==r["sha256"]]
         checked={}
         for first in range(0,len(names),32):

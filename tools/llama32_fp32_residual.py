@@ -94,7 +94,8 @@ def run(a):
   steps.append(dict(step=step,finite=bool(np.isfinite(x).all()),max_abs=float(np.abs(delta).max()),nrmse=float(np.linalg.norm(delta)/max(np.linalg.norm(y),1e-30)),cosine=float(np.sum(x*y)/den) if den else None,mismatches=int(np.count_nonzero(delta))))
  save(d/'result.json',dict(process_exit=run.returncode,steps=steps,records=records,scope='functional, repeat1 auxiliary; no performance acceptance'))
  print(json.dumps(dict(process_exit=run.returncode,steps=steps)),flush=True)
- if len(steps)!=2:print(run.stdout[-3500:]);print(run.stderr[-1500:]);raise SystemExit(1)
+ if len(steps)!=2 or run.returncode or any(not s['finite'] or s['mismatches'] for s in steps):
+  print(run.stdout[-3500:]);print(run.stderr[-1500:]);raise SystemExit(1)
 def chain(a):
  preflight();old=M/'l32-0010/frontend-a01';om=verify(old)
  out=M/'l32-0016'/a.attempt;out.mkdir(parents=True,exist_ok=False)
