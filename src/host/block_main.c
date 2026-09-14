@@ -5391,7 +5391,8 @@ int main(int argc, char **argv) {
           w4u8_decode_direct_n_o_gate_prefetch == 0U)) ||
         (w4u8_decode_direct_n_qkv_batch_n_tiles != 4U &&
          w4u8_decode_direct_n_qkv_batch_n_tiles != 8U &&
-         w4u8_decode_direct_n_qkv_batch_n_tiles != 16U) ||
+         w4u8_decode_direct_n_qkv_batch_n_tiles != 16U &&
+         !(dense_r3_mode == 1U && w4u8_decode_direct_n_qkv_batch_n_tiles == 32U)) ||
         (w4u8_decode_direct_n_qkv_batch_n_tiles != 4U &&
          (variant != QBH_BLOCK_W4U8 ||
           w4u8_decode_projection_mode !=
