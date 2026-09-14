@@ -36,7 +36,7 @@ experiments:
     prefill failure'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0270-fp32-norm-pipeline
+    source_branch: codex/exp-0271-fp32-fullmodel-speed
     started_on: '2026-09-14'
   source_branches:
   - codex/exp-0271-fp32-fullmodel-speed
