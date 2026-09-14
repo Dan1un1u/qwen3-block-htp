@@ -736,12 +736,98 @@ experiments:
         gate_pass: true
 - id: L32-0020
   title: Optimize FP32 residual R3 R4 SP2 pipeline
-  execution_state: running
+  execution_state: completed
   record: docs/experiments/L32-0020.md
   approval_ref: User explicitly requests optimization after L32-0019 speed failure
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
   parent_source: b319b63f1eb8823b5bbfbc94ad19cd567d1b73b3
-  hardware_runs: 0
+  hardware_runs: 64
   baseline_quality_promoted: false
+  checkpoint_state: bounded_optimization_complete_R3_pass_R4_prefill_gate_pause
+  hardware_runs_definition: 20 functional/diagnostic CLI,4 auxiliary warmed CLI,40
+    fixed formal CLI;30exit0,34 retained ideal-exact exit1
+  token_boundary_executions: 944
+  formal_token_boundaries: 880
+  formal_measured_token_boundaries: 800
+  formal_profiling: true
+  formal_cycles: 10
+  failed_native_attempts: 0
+  failed_builds: 1
+  source_heads:
+    codex/llama32-no-rotation: d3ba5e680e1f6bfebee5d981fa53357c19eac489
+  profiled_source_head: 0eb7615c43bb6e36c402f3a5d12d7162c32722dd
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0020
+  evidence_ledger_sha256: 06e74b1fd182511052387ba0f2d36fb653a2168081a92a517f3ac4495d233d91
+  report: docs/LLAMA32_ROTATION_PIPELINE.md
+  local_gate: arithmetic_physical_pass_R3_bothphases_pass_R4_and_combination_prefill_fail_decode_pass
+  e2e_run: false
+  ppl_rerun: false
+  speed:
+    prefill:
+      'off':
+        mean_us: 1942.87342
+        latency_ratio: 1.0
+        increase_percent: 0.0
+        ci95:
+        - 1.0
+        - 1.0
+        gate_pass: true
+      r3:
+        mean_us: 1868.0391399999999
+        latency_ratio: 0.961482678578206
+        increase_percent: -3.851732142179398
+        ci95:
+        - 0.941130516570808
+        - 0.9846466210221427
+        gate_pass: true
+      r4:
+        mean_us: 2207.36974
+        latency_ratio: 1.1361366712196825
+        increase_percent: 13.613667121968254
+        ci95:
+        - 1.110225344303277
+        - 1.1649898646051373
+        gate_pass: false
+      both:
+        mean_us: 2186.06668
+        latency_ratio: 1.1251719527873307
+        increase_percent: 12.517195278733073
+        ci95:
+        - 1.100348842512832
+        - 1.149359495092977
+        gate_pass: false
+    decode:
+      'off':
+        mean_us: 1455.2281300000002
+        latency_ratio: 1.0
+        increase_percent: 0.0
+        ci95:
+        - 1.0
+        - 1.0
+        gate_pass: true
+      r3:
+        mean_us: 1402.3156800000002
+        latency_ratio: 0.9636397559192318
+        increase_percent: -3.636024408076821
+        ci95:
+        - 0.9348827434392882
+        - 0.9952260421729632
+        gate_pass: true
+      r4:
+        mean_us: 1499.09069
+        latency_ratio: 1.0301413634713066
+        increase_percent: 3.014136347130658
+        ci95:
+        - 1.0004373582147954
+        - 1.061290065423704
+        gate_pass: true
+      both:
+        mean_us: 1524.37969
+        latency_ratio: 1.0475193947769548
+        increase_percent: 4.751939477695477
+        ci95:
+        - 1.021524858110149
+        - 1.074523205713089
+        gate_pass: true
