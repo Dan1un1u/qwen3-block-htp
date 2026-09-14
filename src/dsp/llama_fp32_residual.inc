@@ -391,10 +391,9 @@ __attribute__((noinline)) static void qbh_llama_fp32_norm_base(const float *x,co
     asm volatile("barrier":::"memory");
 }
 __attribute__((noinline)) static void qbh_llama_fp32_norm_opt(const float *x,const __fp16 *gamma,
-    uint8_t *out,const struct qbh_block_qparam *q,uint32_t rows,
-    uint32_t width,uint32_t native,uint8_t *scratch) {
+    uint8_t *out,const struct qbh_block_qparam *q,uint8_t *scratch) {
 #pragma clang fp contract(off)
-    const uint32_t opt=1U;
+    const uint32_t opt=1U,rows=16U,width=QBH_BLOCK_HIDDEN,native=1U;
     HVX_Vector *tile=(HVX_Vector *)scratch;
     float *gf=(float *)(scratch+4096U),*sums=(float *)(scratch+12288U);
     int32_t *flags=(int32_t *)(scratch+12544U);
@@ -515,7 +514,7 @@ __attribute__((noinline)) static void qbh_llama_fp32_norm_opt(const float *x,con
 static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
     uint8_t *out,const struct qbh_block_qparam *q,uint32_t rows,
     uint32_t width,uint32_t native,uint8_t *scratch,uint32_t opt) {
-    if(opt && rows==16U)qbh_llama_fp32_norm_opt(x,gamma,out,q,rows,width,native,scratch);
+    if(opt && rows==16U && width==QBH_BLOCK_HIDDEN && native)qbh_llama_fp32_norm_opt(x,gamma,out,q,scratch);
     else qbh_llama_fp32_norm_base(x,gamma,out,q,rows,width,native,scratch);
 }
 static void qbh_llama_fp32_norm_worker(struct qbh_block_w4f16_pool *p,uint32_t worker) {
