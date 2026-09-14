@@ -182,3 +182,14 @@ Speed and correct implementation are the current priorities; usable model
 quality is secondary and new PPL/text evaluation is deferred. Exact dense
 mode3 remains diagnostic only. This does not relax numerical/physical gates,
 independent goldens or the10% performance gate. See L32-0025 protocol.
+
+## Paper working implementation and alignment pause (2026-09-14, L32-0027)
+User now explicitly accepts the original fast HMX implementation with its known
+rounding/full16 divergence for paper preparation. This supersedes the previous
+requirement to repair numerical alignment before proceeding with this paper task.
+Pause further H512 repair, integer-plane prototypes, calibration/PPL and hardware
+work. Preserve original0022 performance and0023 numerical failure at their actual
+scopes; rejected0026 candidates remain rejected, exactmode3 remains diagnostic.
+Acceptance is a paper/performance working choice, not a numerical gate pass or
+model-quality acceptance. Do not rewrite historical evidence or infer fullmodel
+E2E for the combined rotated FP32-residual configuration from layer timings.

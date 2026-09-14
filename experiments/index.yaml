@@ -1216,3 +1216,16 @@ experiments:
   failed_builds: 0
   failed_native_crashes: 0
   evidence_validity: all_attempts_retained_original_source_restored
+- id: L32-0027
+  title: Paper story revision and explicit fast-path scope freeze
+  execution_state: running
+  record: docs/experiments/L32-0027.md
+  approval_ref: User accepts existing fast implementation with known rounding issue and requests revision
+    of attached paper discussion; no time for continued software/hardware alignment (2026-09-14)
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+    expected_source_head: cb8be962f3f31a1b89c8f8cd2bebb9cceef049a7
+  parent_source: cb8be962f3f31a1b89c8f8cd2bebb9cceef049a7
+  hardware_runs: 0
+  baseline_quality_promoted: false
