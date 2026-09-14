@@ -1,3 +1,7 @@
+# Current EXP0271
+
+User explicitly authorizes full28 speed diagnosis despite prior singlelayer cost. PC084 and EXP0271 protocol supersede previous speed-stop only for this requested measurement. Numerical/physical gates unchanged.
+
 # EXP0270 closure — exact FP32 path; prefill gate still fails
 
 Source codex/exp-0270-fp32-norm-pipeline at 8268f8f7f5234902f7dd1dffc7c1a6194bae4b7a, tested native 645b0cdc4d6787dcde7bade9af59c3de3d6d8451. Source clean/pushed; final commit only report/script/docs, native unchanged after device. Active none,next271. User's continue optimization was implemented as three bounded candidates under EXP0270, preserving PC083 numeric/physical/10percent gates. Llama frozen and original two paper rows unchanged.

@@ -18,8 +18,8 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 271
+  active_experiment: EXP-0271
+  next_experiment_number: 272
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -10151,7 +10151,7 @@ current_scope:
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0265.md
     next_direction: discuss_R4_quality_before_new_tuning; staticmiddle_and_RTN_Down_speedfixture_not_qualityaccepted;
       repeat1_cannot_veto_repeat10
-  qwen3_research_state: FP32_speed_optimization_bounded_complete_prefill_gate_failed_discuss_layout
+  qwen3_research_state: EXP0271_user_authorized_fullmodel_speed_diagnostic
   latest_llama32_migration:
     id: EXP-0266
     execution_state: completed

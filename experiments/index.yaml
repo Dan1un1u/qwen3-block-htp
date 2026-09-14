@@ -24,6 +24,23 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0271
+  title: Qwen FP32 residual fullmodel speed confirmation
+  parent: EXP-0270
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/EXP-0271.md
+  approval_ref: 'User: 先跑一次全模确认速度; explicit fullmodel speed diagnostic despite short
+    prefill failure'
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0270-fp32-norm-pipeline
+    started_on: '2026-09-14'
+  source_branches:
+  - codex/exp-0271-fp32-fullmodel-speed
+  source_commits: []
 - id: EXP-0270
   slug: fp32-norm-pipeline
   title: Qwen exact FP32 residual Norm and O pipeline optimization

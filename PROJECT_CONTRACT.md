@@ -396,3 +396,7 @@ User approves EXP0268 per docs/experiments/EXP-0268.md. Reopen Qwen only for bit
 ## PC083 — User-selected paper baselines and Qwen FP32 residual port
 
 User selects EXP0268 no-rotation SP2 and Llama L32-0018 no-rotation SP2+FP32 residual for paper speed baselines, authorizing Qwen high-precision residual integration/optimization and a latest-applicable-optimization audit. EXP0269 protocol governs implementation, singlelayer/slice/fullmodel correctness and paired performance. This explicitly overrides the earlier Qwen freeze for this scope. Preserve historical quality failures, no rotations/PPL or weight re-quantization. PC037 repairs apply; no quality acceptance inferred.
+
+## PC084 — User-requested Qwen FP32 full-model diagnostic speed
+
+User explicitly requests one fullmodel speed confirmation after EXP0270 short prefill failure. EXP0271 may proceed through correctness prerequisites to full28 timing without the singlelayer speed prerequisite. Existing numerical/physical contracts and historical failed speed status remain. This is diagnostic, not baseline promotion or formal10percent acceptance. Freeze C1+C3 arithmetic and models; PC037 repairs apply.
