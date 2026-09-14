@@ -18,19 +18,25 @@ static inline HVX_Vector qbh_fp32_dot(HVX_Vector low,HVX_Vector high,
             Q6_Vw_vasl_VwR(sum,15))
         : Q6_Vw_vsub_VwVw(low,Q6_Vw_vmpyi_VwRh(sum,(uint32_t)zero*0x00010001U));
 }
+/* EXP0269 candidate2: explicit register operands avoid indexed vector arrays
+ * being materialized as a 1024-byte payload on the DDR thread stack. */
+static inline void qbh_fp32_add_row(HVX_Vector l,HVX_Vector h,HVX_Vector sum,
+    HVX_Vector scales,float *dst,uint32_t sp2,int32_t zero) {
+    HVX_Vector acc=qbh_fp32_dot(l,h,sum,sp2,zero);
+    HVX_Vector add=qbh_fp32_mul(Q6_Vsf_equals_Vw(acc),scales);
+    HVX_Vector *out=(HVX_Vector *)dst;
+    *out=Q6_Vsf_vadd_VsfVsf(*out,add);
+}
 static void qbh_llama_fp32_epilogue(const uint8_t *lo,const uint8_t *hi,
     const float *scale,float *dst,uint32_t rows,uint32_t sp2,int32_t zero) {
     HVX_Vector scales=*(const HVX_Vector *)scale,sum=*(const HVX_Vector *)(scale+32U);
     for(uint32_t row=0;row<rows;row+=4U) {
         struct qbh_sp2_words l=qbh_sp2_chunk24(lo,row*32U);
         struct qbh_sp2_words h=sp2?qbh_sp2_chunk24(hi,row*32U):l;
-        HVX_Vector lv[4]={l.v0,l.v1,l.v2,l.v3},hv[4]={h.v0,h.v1,h.v2,h.v3};
-        for(uint32_t k=0;k<4U && row+k<rows;k++) {
-            HVX_Vector acc=qbh_fp32_dot(lv[k],hv[k],sum,sp2,zero);
-            HVX_Vector add=qbh_fp32_mul(Q6_Vsf_equals_Vw(acc),scales);
-            HVX_Vector *out=(HVX_Vector *)(dst+(row+k)*QBH_BLOCK_HIDDEN);
-            *out=Q6_Vsf_vadd_VsfVsf(*out,add);
-        }
+        qbh_fp32_add_row(l.v0,h.v0,sum,scales,dst+row*QBH_BLOCK_HIDDEN,sp2,zero);
+        if(row+1U<rows)qbh_fp32_add_row(l.v1,h.v1,sum,scales,dst+(row+1U)*QBH_BLOCK_HIDDEN,sp2,zero);
+        if(row+2U<rows)qbh_fp32_add_row(l.v2,h.v2,sum,scales,dst+(row+2U)*QBH_BLOCK_HIDDEN,sp2,zero);
+        if(row+3U<rows)qbh_fp32_add_row(l.v3,h.v3,sum,scales,dst+(row+3U)*QBH_BLOCK_HIDDEN,sp2,zero);
     }
 }
 static int qbh_llama_w4_fp32_residual(struct qbh_block_hmx_worker *w) {
@@ -75,14 +81,13 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
     for(uint32_t first=0;first<rows;first+=32U) {
         HVX_Vector sum=Q6_V_vzero();
         if(rows==1U) {
-            /* EXP0269 candidate1: a single live row needs no HVX broadcast.
-             * Scalar FP32 maintains the same ascending-channel rounding order. */
-            float ordered=0.0f;
-            for(uint32_t c=0;c<width;c++) {
-                float square=x[c]*x[c];
-                ordered=ordered+square;
+            for(uint32_t c=0;c<width;c+=32U) {
+                HVX_Vector v=*(const HVX_Vector *)(x+c),sq=qbh_fp32_mul(v,v);
+                for(uint32_t k=0;k<32U;k++) {
+                    sum=Q6_Vsf_vadd_VsfVsf(sum,Q6_V_vdelta_VV(sq,*(const HVX_Vector *)qbh_fp32_broadcast0));
+                    sq=Q6_V_vror_VR(sq,4);
+                }
             }
-            sums[0]=ordered;
         } else {
             for(uint32_t c=0;c<width;c+=32U) {
                 if(rows==16U) {
@@ -167,7 +172,7 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
                 }
             }
         }
-        if(rows!=1U)*(HVX_Vector *)sums=sum;
+        *(HVX_Vector *)sums=sum;
         uint32_t count=rows-first<32U?rows-first:32U;
         for(uint32_t r=0;r<count;r++) {
             uint32_t row=first+r;
