@@ -36,7 +36,7 @@ experiments:
     adds FP vector softmax
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0272-fp32-fullmodel-norm
+    source_branch: codex/exp-0273-paper-ablation-baseline
     started_on: '2026-09-15'
 - id: EXP-0272
   title: Qwen exact FP32 Norm optimization for full-model gate
