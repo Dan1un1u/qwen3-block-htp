@@ -55,11 +55,14 @@ static void qbh_r4_layout_vector(const __fp16 *stage1,__fp16 *act,
             const __fp16 *src=stage1+qbh_r4_pos(sr&~1U,c,16U);
             HVX_VectorPair v=Q6_W_vdeal_VVR(
                 *(const HVX_Vector *)(src+1024U),*(const HVX_Vector *)src,-2);
-            __fp16 *dst=act+r*16384U+(c/32U)*1024U+a*2U;
-            Q6_vscatter_RMVwV((uint32_t)(uintptr_t)dst,4095U,offsets,
+            /* Keep the declared 4KiB scatter window page aligned. Put the
+             * group displacement in lane offsets, not the base address. */
+            __fp16 *dst=act+r*16384U+(c/32U)*1024U;
+            HVX_Vector group_offsets=Q6_Vw_vadd_VwVw(offsets,Q6_V_vsplat_R(a*4U));
+            Q6_vscatter_RMVwV((uint32_t)(uintptr_t)dst,4095U,group_offsets,
                 (sr&1U)?Q6_V_hi_W(v):Q6_V_lo_W(v));
             if(r+1U<count)Q6_vscatter_RMVwV((uint32_t)(uintptr_t)(dst+16384U),
-                4095U,offsets,Q6_V_hi_W(v));
+                4095U,group_offsets,Q6_V_hi_W(v));
         }
     asm volatile("barrier" ::: "memory");
 }
@@ -84,8 +87,9 @@ static void qbh_r4_finish_range(struct qbh_block_header *h,
    for(uint32_t rr=0;rr<4U;rr++) {
     HVX_Vector v=Q6_V_vzero();
     if(r+rr<count) {
-     const __fp16 *src=weight+(r+rr)*16384U+(c/32U)*1024U+a*2U;
-     Q6_vgather_ARMVw(scratch,(int32_t)(uintptr_t)src,4095U,offsets);v=*(volatile HVX_Vector*)scratch;
+     const __fp16 *src=weight+(r+rr)*16384U+(c/32U)*1024U;
+     HVX_Vector group_offsets=Q6_Vw_vadd_VwVw(offsets,Q6_V_vsplat_R(a*4U));
+     Q6_vgather_ARMVw(scratch,(int32_t)(uintptr_t)src,4095U,group_offsets);v=*(volatile HVX_Vector*)scratch;
      if(audit)*(HVX_Vector*)(audit+2U*524288U+(first+r+rr)*8192U+a*512U+c)=v;
     }
     encoded[rr]=qbh_r4_sp2_half(v,lut,scratch);
