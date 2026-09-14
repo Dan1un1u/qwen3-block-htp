@@ -1887,10 +1887,11 @@ static void qbh_bind_host_slice_layer(
 static uint32_t qbh_host_fp32_residual(void) {
 #if defined(QBH_MODEL_LLAMA32) || defined(QBH_NATIVE_SP2)
     const char *v=getenv("QBH_FP32_RESIDUAL");
-    if(v && strcmp(v,"0")!=0 && strcmp(v,"1")!=0) {
-        fprintf(stderr,"QBH_FP32_RESIDUAL must be 0 or 1\n");exit(2);
+    if(v && strcmp(v,"0")!=0 && strcmp(v,"1")!=0 &&
+        !(QBH_FP32_RESIDUAL_MAX==2U && strcmp(v,"2")==0)) {
+        fprintf(stderr,"QBH_FP32_RESIDUAL invalid for this model\n");exit(2);
     }
-    return v && strcmp(v,"1")==0;
+    return v ? (uint32_t)(v[0]-'0') : 0U;
 #else
     return 0U;
 #endif

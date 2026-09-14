@@ -503,6 +503,7 @@ struct qbh_block_w4f16_pool {
     const __fp16 *fp32_norm_gamma;
     const struct qbh_block_qparam *fp32_norm_qparam;
     uint8_t *fp32_norm_output,*fp32_norm_scratch;
+    uint32_t fp32_norm_opt;
     const uint16_t *u8_swiglu_lut;
     uint8_t *u8_swiglu_gather_scratch;
     volatile uint32_t u8_swiglu_ready[QBH_BLOCK_INTERMEDIATE / (32U * QBH_HMX_OUTPUT_CHANNELS)];
@@ -2045,7 +2046,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
     uint32_t element_bytes;
 #if defined(QBH_MODEL_LLAMA32) || defined(QBH_NATIVE_SP2)
     if (header && QBH_FP32_RESIDUAL(header) &&
-        (QBH_FP32_RESIDUAL(header)!=1U || header->variant!=QBH_BLOCK_W4U8 ||
+        (QBH_FP32_RESIDUAL(header)>QBH_FP32_RESIDUAL_MAX || header->variant!=QBH_BLOCK_W4U8 ||
          QBH_SP2(header)!=8U || header->dense_r3_mode || header->dense_r4_mode ||
          header->w4u8_decode_projection_mode!=QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
          header->w4u8_decode_direct_n_mask!=63U ||
@@ -5199,11 +5200,12 @@ static int qbh_hvx_pool_u8_input_norm(
 
 static void qbh_llama_fp32_norm_parallel(struct qbh_block_w4f16_pool *pool,
     struct qbh_block_buffers *buffers,const __fp16 *gamma,uint8_t *out,
-    const struct qbh_block_qparam *q,uint32_t rows,uint32_t native) {
+    const struct qbh_block_qparam *q,uint32_t rows,uint32_t native,uint32_t opt) {
     if(rows!=64U || !native || !pool || pool->worker_count<3U) {
-        qbh_llama_fp32_norm((const float *)buffers->residual,gamma,out,q,rows,QBH_BLOCK_HIDDEN,native,buffers->sp2_scratch);
+        qbh_llama_fp32_norm((const float *)buffers->residual,gamma,out,q,rows,QBH_BLOCK_HIDDEN,native,buffers->sp2_scratch,opt);
         return;
     }
+    pool->fp32_norm_opt=opt;
     pool->fp32_norm_input=(const float *)buffers->residual;
     pool->fp32_norm_gamma=gamma;pool->fp32_norm_output=out;
     pool->fp32_norm_qparam=q;pool->fp32_norm_scratch=buffers->normalized;
@@ -7449,7 +7451,7 @@ static int qbh_run_generation_head_w4u8(
             qbh_llama_fp32_norm((const float *)buffers->residual+
                 (size_t)(logical_rows-1U)*QBH_BLOCK_HIDDEN,
                 (const __fp16 *)buffers->input_norm_weight,buffers->hmx_activation,
-                &header->generation_final_norm_output_qparam,1U,QBH_BLOCK_HIDDEN,1U,buffers->sp2_scratch);
+                &header->generation_final_norm_output_qparam,1U,QBH_BLOCK_HIDDEN,1U,buffers->sp2_scratch,0U);
         else qbh_hvx_rms_norm_u8_native_activation(
             buffers->residual +
                 (size_t)(logical_rows - 1U) * QBH_BLOCK_HIDDEN,
@@ -20435,7 +20437,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             (const __fp16 *)buffers->input_norm_weight,
             w4u8_qkv_native_input_enabled ? buffers->hmx_activation : buffers->normalized,
             &header->qparams[QBH_BLOCK_QP_INPUT_NORM], logical_rows,
-            w4u8_qkv_native_input_enabled);
+            w4u8_qkv_native_input_enabled,QBH_FP32_RESIDUAL(header)==2U);
     } else if (header->variant == QBH_BLOCK_W4U8) {
         if ((header->common_ops_mask &
              QBH_BLOCK_COMMON_OP_RMS_NORM) != 0U) {
@@ -21238,7 +21240,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             (const __fp16 *)buffers->post_norm_weight,
             w4u8_mlp_native_input_enabled ? w4u8_mlp_native_activation : buffers->normalized,
             &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_NORM], logical_rows,
-            w4u8_mlp_native_input_enabled);
+            w4u8_mlp_native_input_enabled,QBH_FP32_RESIDUAL(header)==2U);
         post_attention_norm_fused=1;
     } else if (header->variant == QBH_BLOCK_W4U8) {
         if (header->residual_mode ==

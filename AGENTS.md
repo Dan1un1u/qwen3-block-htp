@@ -1,2 +1,2 @@
-# EXP0271 closure
-Bootstrap/read authoritative Qwen project-memory before work; preflight required for any new stateful experiment. EXP0271 bounded full28 speed diagnostic completed, no native tuning. Same C1+C3 original SP2/no rotation; FP32 residual1791.454/44.633 token/s vs paired integer1983.457/45.546 (M64+15, repeat10 two AB/BA pairs). Host overhead10.718%/2.047%; not formal gate or baseline promotion. See docs/EXP0271_FP32_FULLMODEL_SPEED.md and project-memory handoff0271. Correctness chain3 and full frontend/physical checks pass; no PPL acceptance. Llama frozen. Preserve all prior model/evidence artifacts; do not reuse old build seal for future native changes.
+# EXP0272 active
+Bootstrap Qwen authority; preflight before stateful work. Exact FP32 no-rotation SP2 Norm optimization for fullmodel10percent gate, protocol EXP0272. Mode0 integer,1 sealed FP32,2 candidate. All numerical/physical gates remain. Preserve evidence and weights, Llama frozen.
