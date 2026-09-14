@@ -110,7 +110,6 @@ static void qbh_r4_finish_range(struct qbh_block_header *h,
  const uint32_t batch_rows=count>=8U?8U:4U;
  for(uint32_t a=a_first;a<a_first+a_count;a++)for(uint32_t c=0;c<512U;c+=64U)
   for(uint32_t r=0;r<count;r+=batch_rows) {
-   HVX_Vector encoded[8];
    /* Up to eight independent gather destinations hide producer/lookup latency.
     * Down output is phase-dead here; each context owns2048B within it. */
    for(uint32_t rr=0;rr<batch_rows;rr++) {
@@ -134,13 +133,18 @@ static void qbh_r4_finish_range(struct qbh_block_header *h,
     Q6_vgather_AQRMVh(scratch+8U+rr,Q6_Q_not_Q(upper),(int32_t)(uintptr_t)lut,65535U,off);
     Q6_vgather_AQRMVh(scratch+8U+rr,upper,(int32_t)(uintptr_t)(lut+32768U),65535U,off);
    }
-   for(uint32_t rr=0;rr<batch_rows;rr++)encoded[rr]=*(volatile HVX_Vector *)(scratch+8U+rr);
    for(uint32_t rr=0;rr<batch_rows;rr+=4U) {
-   HVX_Vector lo=Q6_Vb_vpacke_VhVh(encoded[rr+1U],encoded[rr]),hi=Q6_Vb_vpacke_VhVh(encoded[rr+3U],encoded[rr+2U]);
+   /* Consume VTCM results directly. A variable-index vector array here
+    * lowers to a 1KiB stack copy; never stage activations on the stack. */
+   HVX_Vector e0=*(volatile HVX_Vector *)(scratch+8U+rr);
+   HVX_Vector e1=*(volatile HVX_Vector *)(scratch+9U+rr);
+   HVX_Vector e2=*(volatile HVX_Vector *)(scratch+10U+rr);
+   HVX_Vector e3=*(volatile HVX_Vector *)(scratch+11U+rr);
+   HVX_Vector lo=Q6_Vb_vpacke_VhVh(e1,e0),hi=Q6_Vb_vpacke_VhVh(e3,e2);
    HVX_VectorPair x=Q6_W_vdeal_VVR(hi,lo,-32);
    size_t pos=(a*16U+c/32U)*2048U+(first+r+rr)*32U;
    *(HVX_Vector*)(middle+pos)=Q6_V_lo_W(x);*(HVX_Vector*)(middle+pos+2048U)=Q6_V_hi_W(x);
-   lo=Q6_Vb_vpacko_VhVh(encoded[rr+1U],encoded[rr]);hi=Q6_Vb_vpacko_VhVh(encoded[rr+3U],encoded[rr+2U]);x=Q6_W_vdeal_VVR(hi,lo,-32);
+   lo=Q6_Vb_vpacko_VhVh(e1,e0);hi=Q6_Vb_vpacko_VhVh(e3,e2);x=Q6_W_vdeal_VVR(hi,lo,-32);
    *(HVX_Vector*)(high+pos)=Q6_V_lo_W(x);*(HVX_Vector*)(high+pos+2048U)=Q6_V_hi_W(x);
    }
   }
