@@ -6,7 +6,7 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0023
+  active_experiment: null
   next_experiment_number: 24
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -14,7 +14,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: 9209ac60265e8d6daf966e02a18fe82e7b59f024
+    recorded_head: 11807d80b16b6c5efe376226befeac56e7b0cfc8
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -26,26 +26,26 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: full16_repaired_rotations_validation
+  stage: full16_rotation_independent_numerical_gate_pause
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Generate missing original-Llama Down folds, independently validate full16, then frontend
-    and matched E2E if numeric gates pass.
+  next_action: Discuss general R4-to-SP2 threshold refinement before frontend/E2E; preserve full16 failure
+    and unchanged gates. No native repair attempted in0023.
   baseline_manifest: baselines/qwen3-frozen/manifest.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF.md
   organization_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0266
   organization_evidence_ledger_sha256: 052b816c686b11b0bc57908b9f86147047c1ecc427af7d8ee54a985dc5e2c093
   original_model_path: /mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin
-  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0022
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0023
   validated_recipes:
   - w16a16
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0022
-  evidence_ledger_sha256: 1ce076bf6ff75fbc54f4a9c6de1516b414311cf6895d20640d26011681dbbcf3
-  formal_profiling_completed: true
+  last_completed_experiment: L32-0023
+  evidence_ledger_sha256: 88535e31adafd7cc192e5d283a564da5ddfeabdecc190bc87c8cb8de28939975
+  formal_profiling_completed: false
   general_quantization_quality_accepted: false
   w4a16_quality_gate_pass: false
   validated_w4a8_rotations:
@@ -1010,6 +1010,43 @@ current_scope:
         - 0.9968358144766278
     all_speed_gates_pass: true
     fullmodel_validated: false
+    e2e_run: false
+    ppl_run: false
+    default_promoted: false
+    quality_promoted: false
+  fp32_rotation_full16_validation:
+    experiment: L32-0023
+    source_head: 11807d80b16b6c5efe376226befeac56e7b0cfc8
+    native_tested_head: 022ded9aeeeeb13189831a259e43c0bebfa97a6e
+    native_unchanged_from: 3fb9a4f694e36552c1d7f75fc40de59007cfc8cf
+    report: docs/LLAMA32_ROTATION_FULLMODEL_VALIDATION.md
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0023
+    evidence_ledger_sha256: 88535e31adafd7cc192e5d283a564da5ddfeabdecc190bc87c8cb8de28939975
+    off_full16_exact: true
+    both_full16_numeric_gate_pass: false
+    both_steps:
+    - step: 0
+      finite: true
+      ideal_min_row_cosine: 0.5051155953769021
+      ideal_nrmse: 0.38839879631996155
+      ideal_mismatches: 129024
+      pass_ideal_cosine: false
+    - step: 1
+      finite: true
+      ideal_min_row_cosine: 0.7882501258847614
+      ideal_nrmse: 0.6913102269172668
+      ideal_mismatches: 2048
+      pass_ideal_cosine: false
+    first_global_failure_layer_index: 3
+    first_failing_layer_same_input_exact: true
+    worst_local_prefill_min_cosine: 0.999999971004819
+    first_layer_sp2_changed_codes: 1
+    first_failing_layer_norm_changed_codes: 5
+    ordinary_intermediate_ddr_bytes: 0
+    ordinary_vtcm_peak_bytes: 8229344
+    diagnostic_capture_ddr_bytes: 8388608
+    full16_conditional_component_audit: false
+    formal_profiling: false
     e2e_run: false
     ppl_run: false
     default_promoted: false
