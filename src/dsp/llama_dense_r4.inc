@@ -24,7 +24,10 @@ static int qbh_r4_gemm(struct qbh_block_header *h,
         diag[3]=(uint32_t)(uintptr_t)sc;diag[4]=mt;diag[5]=kt;diag[6]=nt;
         qurt_mem_cache_clean((qurt_addr_t)diag,128U,QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE);
     }
-    int rc=qbh_hmx_submit(worker,QBH_BLOCK_HMX_FP16,a,w,sc,out,mt,kt,nt);
+    /* L32-0026: only mode1 first factor changes K-tile issue order. */
+    uint32_t kind=(h->dense_r4_mode==1U && kt==16U && nt==16U)
+        ?QBH_BLOCK_HMX_FP16_REVERSE_K:QBH_BLOCK_HMX_FP16;
+    int rc=qbh_hmx_submit(worker,kind,a,w,sc,out,mt,kt,nt);
     h->dense_r4_matmul_ticks+=HAP_perf_get_qtimer_count()-t;
     ++h->hmx_command_count;++h->dense_r4_hmx_calls;
     h->hmx_fp16_tile_pair_count+=mt*kt*nt;
@@ -381,13 +384,13 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
     for(uint32_t n=0;n<16U;++n)for(uint32_t k=0;k<16U;++k) {
         const HVX_Vector *src=(const HVX_Vector *)(qbh_r3_sign_matrix+((n%4U)*4U+k%4U)*1024U);
         HVX_Vector *dst=(HVX_Vector *)(weight+(n*16U+k)*1024U);
-        /* L32-0026: 16*(181/4096)=181/256, FP16 bits0x39a8.
-         * Exact inverse power-of-two converter preserves the frozen boundary. */
-        HVX_Vector sign=Q6_Vh_vsplat_R(0x05a8 ^ ((__builtin_popcount((n/4U)&(k/4U))&1)?0x8000:0));
+        /* 0x3c00 (+1) xor 0x15a8 = 0x29a8 (FP16 1/sqrt512).
+         * Preserve sign and generate normalized weights at original XOR cost. */
+        HVX_Vector sign=Q6_Vh_vsplat_R(0x15a8 ^ ((__builtin_popcount((n/4U)&(k/4U))&1)?0x8000:0));
         for(uint32_t v=0;v<16U;++v)dst[v]=Q6_V_vxor_VV(src[v],sign);
     }
-    /* Same real dot product; shift intermediate exponent range by four. */
-    for(uint32_t c=0;c<32U;++c)scales[c]=0.0625f;
+    /* Same exact dyadic product, normalize the dense matrix before accumulation. */
+    for(uint32_t c=0;c<32U;++c)scales[c]=1.0f;
     qbh_hmx_fp16_init_channel_scales(b->channel_scale,scales);
     h->dense_r4_prepare_ticks+=HAP_perf_get_qtimer_count()-t;
     if(audit)for(uint32_t a=0;a<16U;++a)for(uint32_t r=0;r<rows;++r)for(uint32_t c=0;c<512U;++c)

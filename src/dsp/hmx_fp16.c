@@ -140,6 +140,24 @@ void qbh_hmx_fp16_matmul_tiles(const __fp16 *activation_tiles,
     asm volatile("barrier" ::: "memory");
 }
 
+/* L32-0026 diagnostic fast candidate: retain accumulator across all K tiles,
+ * one output conversion, and no intermediate memory. Same tile layouts. */
+void qbh_hmx_fp16_matmul_reverse_k(
+    const __fp16 *activation_tiles, const __fp16 *weight_tiles,
+    const void *scale_block, __fp16 *output_tiles,
+    uint32_t m_tiles, uint32_t k_tiles, uint32_t n_tiles) {
+    asm volatile("mxclracc.hf" ::: "memory");
+    Q6_bias_mxmem2_A((void *)scale_block);
+    for(uint32_t m=0;m<m_tiles;++m)for(uint32_t n=0;n<n_tiles;++n) {
+        for(uint32_t k=k_tiles;k!=0U;--k)
+            qbh_hmx_fp16_load_tiles(
+                activation_tiles+((size_t)m*k_tiles+k-1U)*QBH_HMX_FP16_TILE_ELEMENTS,
+                weight_tiles+((size_t)n*k_tiles+k-1U)*QBH_HMX_FP16_TILE_ELEMENTS,1U);
+        qbh_hmx_fp16_store_tile(output_tiles+qbh_hmx_fp16_matrix_tile_offset(m,n,n_tiles));
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
 void qbh_hmx_fp16_matmul_tile_scales(
     const __fp16 *activation_tiles, const __fp16 *weight_tiles,
     const void *scale_blocks, __fp16 *output_tiles,
