@@ -1063,3 +1063,15 @@ experiments:
   local_gate: off_full16_exact_both_full16_independent_numeric_fail_local_diagnosis_retained
   evidence_validity: valid_failure_and_untimed_diagnostics_preserved
   completed_on: '2026-09-14'
+- id: L32-0024
+  title: Accurate dense R4 refinement at SP2 thresholds
+  execution_state: running
+  record: docs/experiments/L32-0024.md
+  approval_ref: User says continue after0023 recommendation of accurate R4-to-SP2 threshold refinement;
+    preserve non-negotiable numerical gate
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  parent_source: 11807d80b16b6c5efe376226befeac56e7b0cfc8
+  hardware_runs: 0
+  baseline_quality_promoted: false
