@@ -1,3 +1,7 @@
+# Current EXP0270 continuation
+
+User authorizes further exact FP32 residual speed optimization. Read docs/experiments/EXP-0270.md; active270 supersedes prior pause. Parent and failed evidence preserved; gates unchanged.
+
 # EXP0269 closure: single-layer FP32 passes, speed gate fails
 
 User selected original Qwen EXP0268 no-rotation SP2 and Llama L32-0018
