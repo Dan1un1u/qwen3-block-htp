@@ -151,7 +151,13 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
         *(HVX_Vector *)(gf+c)=Q6_V_lo_W(ordered);
         *(HVX_Vector *)(gf+c+32U)=Q6_V_hi_W(ordered);
     }
-    if(rows==1U)memset(out,q->zero_point,(size_t)QBH_BLOCK_M*width);
+    if(rows==1U) {
+        /* Candidate3 native initialization: identical padding, vector stores
+         * instead of a scalar libc traversal of 128KiB VTCM each decode Norm. */
+        HVX_Vector fill=Q6_V_vsplat_R((uint32_t)q->zero_point*0x01010101U);
+        for(uint32_t off=0;off<QBH_BLOCK_M*width;off+=128U)
+            *(HVX_Vector *)(out+off)=fill;
+    }
     for(uint32_t first=0;first<rows;first+=32U) {
         HVX_Vector sum=Q6_V_vzero();
         if(rows==1U) {
