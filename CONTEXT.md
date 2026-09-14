@@ -1,3 +1,18 @@
+# EXP0273 A0 closure — remaining ablations already authorized
+
+User approved all remaining table items, excluded W4/S8 and integer residual comparisons, added log2/FP vector softmax. All main arms fixed FP32 residual; no rotation. No repeated permission needed for remaining registered phases. Read PC086 and docs/PAPER_NO_ROTATION_ABLATION_PLAN.md.
+
+Qwen A0 completed: src/include/CMake native identical to accepted EXP0272; all922 sealed evidence files rehashed, reused model files local/device hashes verified, fresh build/runtime seal. One repeat1 auxiliary plus five repeat10 full28/cache128/M64+15 runs; sixCLI816profiles, all generated token/logit codes identical to old frozen mode2.8MiB VTCM peak8365824,zero intermediate tensorDDR/spill. Prefill1849.655741 / decode47.278718tok/s from complete Host denominators. Reproduction only, no paired speedup/10roundformal or quality claim. Accepted baseline remains EXP0272, not replaced by a reproduction.
+
+Source codex/exp-0273-paper-ablation-baseline, closure dd1e3a56a5db61877cb160fb60718c4b00c33e98. Measured runner543f74f (full hash in index/runtime seal); native5f859339a62461b3c6fb7dc99c9dc243c1385c45. Evidence /mnt/d/llm_exp/results/qwen3-block-htp/exp0273,50files,ledger ec85649758ee70c63306a2ccd6fab1a8b5e70409e67879b2a77db202f95d8929. Active none,next274.
+
+NOT DONE: Llama A0; A1 layout/overlap 2x2; A2 prefill individual overlap; A3 decode co-packed vs separate streams; A5 ordinaryA8/SP2 with FP32 residual; A6 layer scaling; A8 supported shape; new A9 log2/FP vector softmax. Do not report whole campaign complete. Old ordinaryA8/SP2 matched speed mostly integer-residual evidence, cannot substitute current FP32 comparison.
+
+Read-only softmax finding: existing floating attention calls scalar expf in block_imp.c around17110/17207; it is not the requested FP vector comparator. Implement HVX exp/max/sum/normalize, same actual HMXscore/scaling/mask/native probabilityU8 output and unchanged integerAV; separate kernel,attention,fullmodel latency. Keep FP reference/error gate as approved plan. Existing wide_score modes3/4/5/6 have exact/NR and diagnostic meanings; do not reuse mode5 blindly. FP32 Down currently marks every Down as fp32_sp2, so ordinaryA8/FP32 needs an explicit validated routing addition; cannot merely flip QBH_SP2.
+
+---
+Historical context follows.
+
 # Current EXP0273: approved ablation campaign A0
 
 User approved remaining no-rotation ablations, excluded W4/S8 and all integer-residual comparisons, added log2/FP vector softmax. All main arms fixed FP32 residual. Read PC086 and updated docs/PAPER_NO_ROTATION_ABLATION_PLAN.md; EXP0273 owns Qwen baseline reproduction first. Later phases remain authorized but unexecuted.

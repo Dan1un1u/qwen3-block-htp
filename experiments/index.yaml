@@ -27,9 +27,9 @@ experiments:
 - id: EXP-0273
   title: 'No-rotation paper ablations: Qwen baseline reproduction'
   parent: EXP-0272
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: not_applicable
   record: docs/experiments/EXP-0273.md
   approval_ref: User approves ablation table excluding W4/S8 and residual comparisons;
@@ -38,6 +38,26 @@ experiments:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0273-paper-ablation-baseline
     started_on: '2026-09-15'
+    completed_on: '2026-09-15'
+  source_commits:
+  - 543f74f5c854b5f9be9b59a21d064d1fab789a86
+  - dd1e3a56a5db61877cb160fb60718c4b00c33e98
+  evidence:
+    scope: Qwen A0 baseline reproduction only; complete ablation campaign remains
+      unfinished
+    report: docs/experiments/EXP-0273-RESULTS.md
+    report_sha256: 88972527e1a070197007ed370f5905e499fe5f2823472d6951ca9b358a22a9bd
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0273
+    evidence_ledger_sha256: ec85649758ee70c63306a2ccd6fab1a8b5e70409e67879b2a77db202f95d8929
+    evidence_files: 50
+    hardware_cli: 6
+    profiles: 816
+    prefill_tps: 1849.6557410330474
+    decode_tps: 47.278717674454576
+    native_unchanged: true
+    integer_residual_tested: false
+    softmax_comparison_run: false
+    baseline_promoted: false
 - id: EXP-0272
   title: Qwen exact FP32 Norm optimization for full-model gate
   parent: EXP-0271

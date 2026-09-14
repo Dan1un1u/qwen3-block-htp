@@ -98,3 +98,7 @@ A5 改变数值合同，不能要求跨格输出相同；每格对自身参考�
 - 单独记录 FP 概率相对 Float64 的误差、row sum/mask、U8 输出及 AV 误差。目标 FP softmax 概率 max_abs<=2e-6、row-sum error<=2e-6，所有值有限，masked 精确零；若逼近达不到则修复 FP 实现，不放宽门槛。输出量化临界值单独记录/验证。
 - 独立组件固定输入测 softmax 核心、边界转换与 native pack；完整集成报告 attention 和全模型 Host wall/tps。固定 token replay 用于路径归因，实际 greedy E2E 单独报告。
 - 第一阶段执行 A0；A1/A2/A3/A5/A6/A8/A9 是已批准后续任务，不能以 A0 完成宣称整批实验完成。
+
+## A0 Qwen 执行记录
+
+EXP0273 已完成 Qwen 基线复现：1849.6557/47.2787 token/s，输出与封存一致，物理审计通过。无新对比结果；Llama A0 和其余已批准消融待执行，后续无需重复申请批准。完整记录 docs/experiments/EXP-0273-RESULTS.md。
