@@ -10459,12 +10459,12 @@ static int qbh_run_w4u8_qkv_ring(
         worker == NULL || pool == NULL ||
         projection_activation == NULL ||
         header->variant != QBH_BLOCK_W4U8 ||
-        header->w4u8_qkv_ring_expand_workers == 0U ||
-        header->w4u8_qkv_ring_expand_workers > 3U ||
-        pool->worker_count !=
-            QBH_BLOCK_MAX_POOL_HVX_WORKERS ||
-        header->attention_hvx_contexts !=
-            QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS) {
+        (header->dense_r3_optimization == 2U
+            ? (header->attention_hvx_contexts != 4U || pool->worker_count != 3U)
+            : (header->w4u8_qkv_ring_expand_workers == 0U ||
+               header->w4u8_qkv_ring_expand_workers > 3U ||
+               pool->worker_count != QBH_BLOCK_MAX_POOL_HVX_WORKERS ||
+               header->attention_hvx_contexts != QBH_BLOCK_MAX_ATTENTION_HVX_CONTEXTS))) {
         return -1;
     }
 
@@ -20336,7 +20336,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
          QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT) != 0U;
     uint32_t w4u8_qkv_ring_enabled =
         w4u8_qkv_native_input_enabled != 0U &&
-        header->w4u8_qkv_ring_expand_workers != 0U;
+        (header->w4u8_qkv_ring_expand_workers != 0U ||
+         header->dense_r3_optimization == 2U);
     uint32_t w4u8_o_native_output_enabled =
         header->variant == QBH_BLOCK_W4U8 &&
         (header->crouton_boundary_mode &
