@@ -143,6 +143,74 @@ __attribute__((noinline)) static void qbh_fp32_norm_reduce8(const float *x,
     HVX_VectorPred pred=Q6_Q_and_QQn(Q6_Q_vsetq2_R(shift+32U),Q6_Q_vsetq_R(shift));
     Q6_vmem_QRIV(pred,(HVX_Vector *)dst,Q6_V_vlalign_VVR(sum,sum,shift));
 }
+/* EXP0270 C2: four complete native rows form one aligned 128-byte
+ * output vector. Detect the same rounding band; repair only flagged columns
+ * (all four rows) with the original scalar division contract. */
+__attribute__((noinline)) static void qbh_fp32_norm_emit4(const float *x,
+    const float *gamma,uint8_t *out,const struct qbh_block_qparam *q,
+    const float *inverse,uint8_t *scratch) {
+#pragma clang fp contract(off)
+    const uint32_t width=QBH_BLOCK_HIDDEN;
+    for(uint32_t c=0;c<width;c+=32U) {
+        HVX_Vector g=*(const HVX_Vector *)(gamma+c);
+        HVX_VectorPred edges=Q6_Q_vsetq_R(0);
+        HVX_Vector v0=qbh_fp32_mul(*(const HVX_Vector *)(x+0U*width+c),qbh_fp32_splat(inverse[0]));
+        v0=qbh_fp32_mul(v0,g);
+        HVX_Vector code0=Q6_Vsf_vadd_VsfVsf(qbh_fp32_mul(v0,qbh_fp32_splat(1.0f/q->scale)),qbh_fp32_splat((float)q->zero_point));
+        HVX_Vector z0=Q6_Vsf_vadd_VsfVsf(code0,qbh_fp32_splat(.5f));
+        HVX_Vector w0=Q6_Vw_equals_Vsf(z0);
+        HVX_Vector frac0=Q6_Vsf_vsub_VsfVsf(z0,Q6_Vsf_equals_Vw(w0));
+        HVX_VectorPred e0=Q6_Q_or_QQ(Q6_Q_vcmp_gt_VsfVsf(qbh_fp32_splat(.0001f),frac0),Q6_Q_vcmp_gt_VsfVsf(frac0,qbh_fp32_splat(.9999f)));
+        e0=Q6_Q_and_QQ(e0,Q6_Q_vcmp_gt_VsfVsf(z0,qbh_fp32_splat(0.f)));
+        e0=Q6_Q_and_QQ(e0,Q6_Q_vcmp_gt_VsfVsf(qbh_fp32_splat(256.f),z0));
+        edges=Q6_Q_or_QQ(edges,e0);
+        HVX_Vector v1=qbh_fp32_mul(*(const HVX_Vector *)(x+1U*width+c),qbh_fp32_splat(inverse[1]));
+        v1=qbh_fp32_mul(v1,g);
+        HVX_Vector code1=Q6_Vsf_vadd_VsfVsf(qbh_fp32_mul(v1,qbh_fp32_splat(1.0f/q->scale)),qbh_fp32_splat((float)q->zero_point));
+        HVX_Vector z1=Q6_Vsf_vadd_VsfVsf(code1,qbh_fp32_splat(.5f));
+        HVX_Vector w1=Q6_Vw_equals_Vsf(z1);
+        HVX_Vector frac1=Q6_Vsf_vsub_VsfVsf(z1,Q6_Vsf_equals_Vw(w1));
+        HVX_VectorPred e1=Q6_Q_or_QQ(Q6_Q_vcmp_gt_VsfVsf(qbh_fp32_splat(.0001f),frac1),Q6_Q_vcmp_gt_VsfVsf(frac1,qbh_fp32_splat(.9999f)));
+        e1=Q6_Q_and_QQ(e1,Q6_Q_vcmp_gt_VsfVsf(z1,qbh_fp32_splat(0.f)));
+        e1=Q6_Q_and_QQ(e1,Q6_Q_vcmp_gt_VsfVsf(qbh_fp32_splat(256.f),z1));
+        edges=Q6_Q_or_QQ(edges,e1);
+        HVX_Vector v2=qbh_fp32_mul(*(const HVX_Vector *)(x+2U*width+c),qbh_fp32_splat(inverse[2]));
+        v2=qbh_fp32_mul(v2,g);
+        HVX_Vector code2=Q6_Vsf_vadd_VsfVsf(qbh_fp32_mul(v2,qbh_fp32_splat(1.0f/q->scale)),qbh_fp32_splat((float)q->zero_point));
+        HVX_Vector z2=Q6_Vsf_vadd_VsfVsf(code2,qbh_fp32_splat(.5f));
+        HVX_Vector w2=Q6_Vw_equals_Vsf(z2);
+        HVX_Vector frac2=Q6_Vsf_vsub_VsfVsf(z2,Q6_Vsf_equals_Vw(w2));
+        HVX_VectorPred e2=Q6_Q_or_QQ(Q6_Q_vcmp_gt_VsfVsf(qbh_fp32_splat(.0001f),frac2),Q6_Q_vcmp_gt_VsfVsf(frac2,qbh_fp32_splat(.9999f)));
+        e2=Q6_Q_and_QQ(e2,Q6_Q_vcmp_gt_VsfVsf(z2,qbh_fp32_splat(0.f)));
+        e2=Q6_Q_and_QQ(e2,Q6_Q_vcmp_gt_VsfVsf(qbh_fp32_splat(256.f),z2));
+        edges=Q6_Q_or_QQ(edges,e2);
+        HVX_Vector v3=qbh_fp32_mul(*(const HVX_Vector *)(x+3U*width+c),qbh_fp32_splat(inverse[3]));
+        v3=qbh_fp32_mul(v3,g);
+        HVX_Vector code3=Q6_Vsf_vadd_VsfVsf(qbh_fp32_mul(v3,qbh_fp32_splat(1.0f/q->scale)),qbh_fp32_splat((float)q->zero_point));
+        HVX_Vector z3=Q6_Vsf_vadd_VsfVsf(code3,qbh_fp32_splat(.5f));
+        HVX_Vector w3=Q6_Vw_equals_Vsf(z3);
+        HVX_Vector frac3=Q6_Vsf_vsub_VsfVsf(z3,Q6_Vsf_equals_Vw(w3));
+        HVX_VectorPred e3=Q6_Q_or_QQ(Q6_Q_vcmp_gt_VsfVsf(qbh_fp32_splat(.0001f),frac3),Q6_Q_vcmp_gt_VsfVsf(frac3,qbh_fp32_splat(.9999f)));
+        e3=Q6_Q_and_QQ(e3,Q6_Q_vcmp_gt_VsfVsf(z3,qbh_fp32_splat(0.f)));
+        e3=Q6_Q_and_QQ(e3,Q6_Q_vcmp_gt_VsfVsf(qbh_fp32_splat(256.f),z3));
+        edges=Q6_Q_or_QQ(edges,e3);
+        HVX_Vector packed=Q6_Vub_vpack_VhVh_sat(Q6_Vh_vpack_VwVw_sat(w3,w2),Q6_Vh_vpack_VwVw_sat(w1,w0));
+        *(HVX_Vector *)(out+(size_t)c*64U)=packed;
+        HVX_Vector mask=Q6_V_vmux_QVV(edges,Q6_V_vsplat_R(1),Q6_V_vzero()),any=mask;
+        for(uint32_t sh=64;sh>=4;sh>>=1)any=Q6_V_vor_VV(any,Q6_V_vror_VR(any,sh));
+        if(Q6_R_vextract_VR(any,0)) {
+            *(HVX_Vector *)scratch=mask;
+            asm volatile("barrier":::"memory");
+            const int32_t *flags=(const int32_t *)scratch;
+            for(uint32_t k=0;k<32U;k++)if(flags[k])
+                for(uint32_t r=0;r<4U;r++) {
+                    float v=x[r*width+c+k]*inverse[r];v=v*gamma[c+k];
+                    float exact=roundf(v/q->scale+(float)q->zero_point);
+                    out[(size_t)c*64U+r*32U+k]=(uint8_t)fminf(255.f,fmaxf(0.f,exact));
+                }
+        }
+    }
+}
 /* Sequential FP32 reduction across channels, vectorized across 32 rows.
  * Scratch reuses the idle SP2 VTCM raw slots; no tensor on the thread stack. */
 static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
@@ -161,6 +229,13 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
         HVX_VectorPair ordered=Q6_W_vshuff_VVR(Q6_V_hi_W(g),Q6_V_lo_W(g),-4);
         *(HVX_Vector *)(gf+c)=Q6_V_lo_W(ordered);
         *(HVX_Vector *)(gf+c+32U)=Q6_V_hi_W(ordered);
+    }
+    if(rows==16U && native) {
+        for(uint32_t r=0;r<16U;r++)sums[r]=1.0f/sqrtf(sums[r]/(float)width+QBH_MODEL_RMS_EPS);
+        for(uint32_t r=0;r<16U;r+=4U)
+            qbh_fp32_norm_emit4(x+r*width,gf,out+r*32U,q,sums+r,scratch);
+        asm volatile("barrier":::"memory");
+        return;
     }
     if(rows==1U) {
         /* Candidate3 native initialization: identical padding, vector stores
