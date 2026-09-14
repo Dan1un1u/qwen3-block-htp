@@ -2018,8 +2018,13 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (QBH_FP32_RESIDUAL(header)!=1U || header->variant!=QBH_BLOCK_W4U8 ||
          QBH_LLAMA_SP2(header)!=8U || header->dense_r3_mode || header->dense_r4_mode ||
          header->w4u8_decode_projection_mode!=QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
-         (header->w4u8_decode_direct_n_mask & (QBH_BLOCK_W4U8_DIRECT_N_MLP | QBH_BLOCK_W4U8_DIRECT_N_PREFILL_MLP | QBH_BLOCK_W4U8_DIRECT_N_PREFILL_QKVO)) !=
-           (QBH_BLOCK_W4U8_DIRECT_N_MLP | QBH_BLOCK_W4U8_DIRECT_N_PREFILL_MLP | QBH_BLOCK_W4U8_DIRECT_N_PREFILL_QKVO) ||
+         header->w4u8_decode_direct_n_mask!=63U ||
+         (header->crouton_boundary_mode & (QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
+             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT | QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT |
+             QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT)) !=
+             (QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT | QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_OUTPUT |
+              QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT | QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT) ||
+         header->numerical_audit_enabled ||
          header->generation_boundary_audit_enabled || header->w4u8_boundary_audit_enabled ||
          header->w4u8_decode_common_padding_poison)) return 0;
     /* Llama A8 currently validates the unrotated head64 integer pipeline. */
@@ -7321,7 +7326,7 @@ static int qbh_run_generation_head_w4u8(
         } else {
             if (activation_bytes + compressed_group_bytes >
                     (size_t)QBH_BLOCK_M * QBH_BLOCK_MAX_K *
-                        sizeof(uint16_t) ||
+                        (QBH_FP32_RESIDUAL(header)?1U:(uint32_t)sizeof(uint16_t)) ||
                 (uintptr_t)buffers->attention_projection <
                     (uintptr_t)resident_bias_table + head->bias_bytes ||
                 (uintptr_t)buffers->up <

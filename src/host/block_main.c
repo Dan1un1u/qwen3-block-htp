@@ -1885,6 +1885,9 @@ static void qbh_bind_host_slice_layer(
 static uint32_t qbh_host_fp32_residual(void) {
 #ifdef QBH_MODEL_LLAMA32
     const char *v=getenv("QBH_LLAMA_FP32_RESIDUAL");
+    if(v && strcmp(v,"0")!=0 && strcmp(v,"1")!=0) {
+        fprintf(stderr,"QBH_LLAMA_FP32_RESIDUAL must be 0 or 1\n");exit(2);
+    }
     return v && strcmp(v,"1")==0;
 #else
     return 0U;
