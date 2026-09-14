@@ -831,3 +831,14 @@ experiments:
         - 1.021524858110149
         - 1.074523205713089
         gate_pass: true
+- id: L32-0021
+  title: Overlap dense R4 layout and SP2 consumption
+  execution_state: running
+  record: docs/experiments/L32-0021.md
+  approval_ref: User requests continuing optimization after L32-0020
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  parent_source: d3ba5e680e1f6bfebee5d981fa53357c19eac489
+  hardware_runs: 0
+  baseline_quality_promoted: false
