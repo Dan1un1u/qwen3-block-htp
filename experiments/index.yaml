@@ -408,7 +408,7 @@ experiments:
   report: docs/LLAMA32_C_RTN_SP2_ALIGNMENT.md
 - id: L32-0014
   title: Temporary smooth full dense R4 guided W4 all-A8 accuracy feasibility
-  execution_state: running
+  execution_state: completed
   record: docs/experiments/L32-0014.md
   approval_ref: 2026-09-14 user authorizes temporary no-SP2 accuracy experiment using absorbed up smoothing,
     full8192 dense R4, guided static A8 and W4 reconstruction; R3/R4 dense matmul; ignore performance
@@ -418,3 +418,50 @@ experiments:
   parent_source: bc5fdc1a8b044d4442ace7e2122ebc47cf0937d2
   hardware_runs: 0
   baseline_quality_promoted: false
+  completed_on: '2026-09-14'
+  local_gate: transform_export_cache_arithmetic_pass_down_input_repaired_fullA8_quality_unusable
+  evidence_validity: final_results_valid_all_failed_attempts_retained
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0014
+  evidence_ledger_sha256: f19061c6a0e314f6520437b9f52d36dff22b93322789ec890387fcf3a8af62bd
+  formal_profiling: false
+  ppl_rerun: true
+  device_ppl_run: false
+  default_promoted: false
+  source_heads:
+    codex/llama32-no-rotation: b3799364d8be23676b7d12dfe5a394e2d2eec00f
+    codex/llama32-rotation: 252aee5ecfbefd4a2df6cd5a5e4b9193d935f86b
+  result:
+    report: docs/LLAMA32_SMOOTH_R4_ALL_A8_ACCURACY.md
+    source_closure_head: b3799364d8be23676b7d12dfe5a394e2d2eec00f
+    native_oracle_source_head: e3ec72d248caa79133cc6b66f8e624ffa4f7c7f1
+    scope: all16-layer software and SDK integer simulation only; no DSP R3/R4 port
+    hardware_runs: 0
+    formal_profiling: false
+    sp2: false
+    affine_updates: 0
+    calibration_backward_passes: 8
+    weight_granularity: per-output-channel signed[-7,7]
+    input_scales: 112 independent frozen per-tensor scales; prefix0
+    rotations: fresh fixed R1/R2 offline; dense64 R3 and full8192 dense R4
+    smoothing: sqrt(a/w), median normalized, clamp[1/32,32], absorbed into up/down
+    full_validation:
+      original_bf16_reused: 13.640870538532468
+      transformed_bf16: 13.644406433525429
+      w4_down_a16: 15.141643496141699
+      w4_all112_inputs_a8: 15.152551262097825
+      targets: 252728
+      native_integer: null
+      device: null
+    bridge:
+      gptq-input-bridge: 26.749154120360714
+      gptq-down_only-bridge: 52.07014431162211
+      gptq-residual_only-bridge: 18518.31142225184
+      gptq-except_residual-bridge: 27.871550444579842
+      gptq-all-bridge: 28297.091651535753
+      native-bridge: 51465.459287090765
+    down_input_extra_ppl_pct: 0.07203819029886205
+    native_usable_text: false
+    arithmetic_and_export_audits_pass: true
+    quality_promoted: false
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0014
+    evidence_ledger_sha256: f19061c6a0e314f6520437b9f52d36dff22b93322789ec890387fcf3a8af62bd

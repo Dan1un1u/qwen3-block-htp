@@ -6,7 +6,7 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0014
+  active_experiment: null
   next_experiment_number: 15
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -14,7 +14,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: bc5fdc1a8b044d4442ace7e2122ebc47cf0937d2
+    recorded_head: b3799364d8be23676b7d12dfe5a394e2d2eec00f
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -26,25 +26,25 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: temporary_smooth_r4_all_a8_accuracy
+  stage: smooth_dense_r4_all_a8_accuracy_completed
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Fresh smoothing/full dense R4/guided static A8/W4 reconstruction; compare input-only and native
-    A8 boundary PPL; no speed gate
+  next_action: Discuss precision of native U8 residual carriers with smooth/R4 weights fixed; no new experiment
+    started
   baseline_manifest: baselines/qwen3-frozen/manifest.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF.md
   organization_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0266
   organization_evidence_ledger_sha256: 052b816c686b11b0bc57908b9f86147047c1ecc427af7d8ee54a985dc5e2c093
   original_model_path: /mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin
-  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0013
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0014
   validated_recipes:
   - w16a16
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0013
-  evidence_ledger_sha256: b7f08359a7f76d374fafaa10b2e311758ef50bd48ecf7a15b7eb6ab6d8b599d2
+  last_completed_experiment: L32-0014
+  evidence_ledger_sha256: f19061c6a0e314f6520437b9f52d36dff22b93322789ec890387fcf3a8af62bd
   formal_profiling_completed: true
   general_quantization_quality_accepted: false
   w4a16_quality_gate_pass: false
@@ -471,6 +471,41 @@ current_scope:
     formal_profiling: false
     evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0013
     evidence_ledger_sha256: b7f08359a7f76d374fafaa10b2e311758ef50bd48ecf7a15b7eb6ab6d8b599d2
+  smooth_r4_all_a8_accuracy:
+    report: docs/LLAMA32_SMOOTH_R4_ALL_A8_ACCURACY.md
+    source_closure_head: b3799364d8be23676b7d12dfe5a394e2d2eec00f
+    native_oracle_source_head: e3ec72d248caa79133cc6b66f8e624ffa4f7c7f1
+    scope: all16-layer software and SDK integer simulation only; no DSP R3/R4 port
+    hardware_runs: 0
+    formal_profiling: false
+    sp2: false
+    affine_updates: 0
+    calibration_backward_passes: 8
+    weight_granularity: per-output-channel signed[-7,7]
+    input_scales: 112 independent frozen per-tensor scales; prefix0
+    rotations: fresh fixed R1/R2 offline; dense64 R3 and full8192 dense R4
+    smoothing: sqrt(a/w), median normalized, clamp[1/32,32], absorbed into up/down
+    full_validation:
+      original_bf16_reused: 13.640870538532468
+      transformed_bf16: 13.644406433525429
+      w4_down_a16: 15.141643496141699
+      w4_all112_inputs_a8: 15.152551262097825
+      targets: 252728
+      native_integer: null
+      device: null
+    bridge:
+      gptq-input-bridge: 26.749154120360714
+      gptq-down_only-bridge: 52.07014431162211
+      gptq-residual_only-bridge: 18518.31142225184
+      gptq-except_residual-bridge: 27.871550444579842
+      gptq-all-bridge: 28297.091651535753
+      native-bridge: 51465.459287090765
+    down_input_extra_ppl_pct: 0.07203819029886205
+    native_usable_text: false
+    arithmetic_and_export_audits_pass: true
+    quality_promoted: false
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0014
+    evidence_ledger_sha256: f19061c6a0e314f6520437b9f52d36dff22b93322789ec890387fcf3a8af62bd
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp

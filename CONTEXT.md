@@ -1,26 +1,33 @@
-# L32-0014 running: smooth dense R4 all-A8 precision
+# L32-0014 completed: Down input A8 repaired; native U8 residual still fails
 
-Source /home/daniuniu/work/llama32-htp, branch codex/llama32-no-rotation. Approved source implementation is tools/llama32_smooth_accuracy.py, tools/llama32_smooth_native.py and tools/run_llama32_smooth_pipeline.py. Latest source392b7ca.
+No active experiment or running job. Next experiment15, no new run approved.
+Source /home/daniuniu/work/llama32-htp, codex/llama32-no-rotation.
+Closure HEAD b3799364d8be23676b7d12dfe5a394e2d2eec00f; final SDK oracle source e3ec72d248caa79133cc6b66f8e624ffa4f7c7f1.
+Frozen rotation branch252aee5ecfbefd4a2df6cd5a5e4b9193d935f86b; Qwen/floating controls and production SP2 defaults untouched.
 
-Preparation completed: original6hashes verified; fresh seed42 signed Hadamard R1/R2 fold; no embedding mean centering; full8192 dense R4 and up-absorbed smooth exponent0.5 clip[1/32,32]. Transform audits max8.6675e-7; custom float model exactly matches HF after fixing its RoPE call. Folded BF16 logits differ from original by relativeL2 .019998; this is recorded, not exact BF16 equivalence. Preserve failed prepare-a01/a02 (custom RoPE rounding divergence), successful prepare-a03. A premature controller attempt pipeline-a01.log failed before launching any child because prepare manifest was still sealing; preserve.
+Read docs/LLAMA32_SMOOTH_R4_ALL_A8_ACCURACY.md and docs/experiments/L32-0014.md.
 
-Active durable controller session76735, log results/l32-0014/pipeline-a02.log; individual stages in pipeline-a01/. collect completed8 CE backwards, fit running. Do not rerun/overwrite stages. Models /mnt/d/llm_exp/models/llama32-htp/l32-0014; results /mnt/d/llm_exp/results/llama32-htp/l32-0014. Original rotation-quant is read-only; exact local method snapshot build/l32-0014/reference with manifest in results.
+## Result and interpretation
 
-Controller continues fit -> carrier calibration -> train-only RTN/GPTQ selection diagnostics -> input-only bridge/full -> residual-only/down-only/all-carrier BF16 bridge -> native package -> exact SDK integer oracle bridge/generation. All rotations explicit dense matmul. Native oracle is HOST/GPU simulation, not device; default SP2, Qwen and floating branches untouched. Extra transformed-float full/bridge reference and independent arithmetic/contract review remain to do. At most10 affine updates only if needed within approved precision question; no claim all gains come from down. No formal performance task.
+Fresh original BF16 -> fixed seeded R1/R2 offline -> up-absorbed sqrt(a/w) smooth clip[1/32,32] -> full8192 R4 -> guided static A8 grids -> per-output W4 clipping and token/channel-shrinkage GPTQ. Dense64 R3 after RoPE on both Q/K. All rotations explicit dense matrix multiplication, no butterfly.112 independent frozen A8 input scales,prefix0; differs from old optimized48-shared-scale native input production. No embedding centering or affine/gain optimization updates.8 CE calibration backwards on8x512 train windows, prefix32+64 sampled later positions with frequency balancing.
 
-Important: BF16 all-carrier diagnostic still uses float attention and BF16 head and is explicitly an intermediate ablation; authoritative full-A8 path is SDK integer oracle with native W4 head/logits, U8 KV, integer softmax/RMS/RoPE/residual plus dense temporary R3/R4. Do not claim device validation or global infeasibility from this one candidate.
+FullWT2validation2048+948tail/252728targets:
+originalBF16 reused13.64087054; transformedBF16 13.64440643; sameW4 DownA16 15.14164350; all112inputA8 15.15255126. Down A8 extra PPL0.072038%. Input-only text: The capital of France is Paris. This is not an overall quantization-quality acceptance.
 
-## 2026-09-14 later checkpoint
+Matched128 M64+16 windows/2048targets:
+input-only26.74915412; extraDownoutputU8 52.07014431; extraresidualU8 18518.31142225; keepDownoutput/residualfloat with other BF16carrier quantizers27.87155044; allBF16carrier diagnostic28297.09165154; SDKinteger51465.45928709. Intermediate BF16 diagnostics retain floatattention/BF16head. SDKinteger includes nativeU8embedding/headW4/logitsU8,RMS/RoPE/residual/log2softmax,KV8 and HMX conversion. Native text unusable.
 
-All calibration/GPTQ stages complete. Source e3ec72d248caa79133cc6b66f8e624ffa4f7c7f1. Main controller76735 ended with failure only in initial native cache-equivalence check; all prior stage results valid. Original unrestricted FP32 dense GEMM dispatch produced batch-shape rounding differences. Preserve pipeline-a01/native-bridge.log and native-sample-000.json from that failed attempt; do not use its PPL.
+This is SOFTWARE/SDK simulation of all16layers, hardware runs0. No new DSP R3/R4 implementation, no real-device PPL or speed/profile. Full2048 SDKinteger PPL not run. Do not call it hardware validation. No claim this one failed static U8 residual recipe proves allA8 impossible.
 
-Repair fixes R3/R4 to explicit64-row dense FP32 GEMM tiles with zero padding for small rows, no butterfly. Native-a02 fixed arithmetic passed all128256 vocabulary codes at all16 targets: full80 vs actualM64+15 are exactly equal. Native evaluation currently session18408, log native-a02.log, per-sample results native-a02/, cache-equivalence.json inside it. No real device invocation.
+## Validation and failure recovery
 
-Completed same-weight PPL:
-- train-only selection RTN17.87967305,GPTQ17.33661188 (not heldout report).
-- input-only A8 bridge26.74915412, fullWT2validation15.15255126.
-- extra residual-U8 only bridge18518.31142225.
-- extra Down-outputU8 only bridge52.07014431.
-- BF16 all-carrier diagnostic bridge28297.09165154; retains floating attention/BF16 head, NOT full native contract.
+Transform vector maxrelativeL2 8.6675e-7; custom floatforward exactly matches HF after RoPE call repair. BF16fold logits relativeL2 .019998 vsoriginal recorded separately; not exact BF16 equivalence. Export audit all112matrices/973078528codes plus scales exact. SDKdot audit113matrices inclhead.
+Initial variable-shaped dense FP32 GEMM failed cache equivalence. Final fixed64-row denseGEMM padding passes full80 vs actualM64+15 for all16 positions/all128256 vocabulary codes with zero error. Failed original native sample/log preserved and excluded. Also retain two failed customRoPE attempts and premature controller start before prepare sealing. Main controller stopped at original cachefail; replacement native-a02 completed successfully.
 
-Pending after native-a02 finishes: run tools/llama32_smooth_diagnostics.py for transformed-float bridge/full, same-weight Down-A16 full, except-residual BF16 ablation, boundary diagnostics and input-control text. Then review exact integer export/provenance, report source/authority and evidence closure. No affine/gain updates yet, no speed/profile or quality promotion.
+Models /mnt/d/llm_exp/models/llama32-htp/l32-0014. Results /mnt/d/llm_exp/results/llama32-htp/l32-0014.
+LedgerSHA256 f19061c6a0e314f6520437b9f52d36dff22b93322789ec890387fcf3a8af62bd;187 result files and256 model files sealed; source files and unchanged read-only reference snapshot verified.
+Sessions26511,76735,18408,36209,87076,26141 finished; do not rerun or overwrite.
+
+## Next discussion
+
+Prioritize native residual representation/calibration while holding repaired smooth/R4 weights fixed. Second-layer isolated diagnostic on first heldoutM64: R4 lowers smoothedmiddle peak22.875 to.318359; Downoutput首positionRMS11.0478 vsordinary.07016; residual11.0513 vsordinary.05351. U8 makes96.227% ordinary Downoutput and87.643% residual entrieszero. Equivalent input transforms cannot remove the true large signal afterDown or its propagation alongresidual. No new prefix/dynamic/mixedprecision contract approved or implemented.
