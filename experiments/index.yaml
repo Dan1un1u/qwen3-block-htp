@@ -1154,7 +1154,7 @@ experiments:
   completed_on: '2026-09-14'
 - id: L32-0025
   title: Incremental R4 normalization repair on original fast HMX pipeline
-  execution_state: running
+  execution_state: completed
   record: docs/experiments/L32-0025.md
   approval_ref: User directs repairs on original fast implementation; speed and implementation correctness
     first, usable model quality secondary
@@ -1162,5 +1162,24 @@ experiments:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
   parent_source: 5bd8f641735291603cd2b595ae713146b4bd0c6e
-  hardware_runs: 0
+  hardware_runs: 4
   baseline_quality_promoted: false
+  completed_on: '2026-09-14'
+  hardware_runs_definition: Three candidate singlelayer audits and one restored control; all four original
+    ideal-exact CLI exit1 retained
+  token_boundary_executions: 8
+  source_heads:
+    codex/llama32-no-rotation: 7478516462bf82878838fb3d23a41e220b0f3351
+  native_candidate: 6cdd7b4a7e5d02f159d14ae79f4019ed93d0ac1f
+  native_restored: bcce0f4c3d6a0b66f19cafe7baecaf774ce79c84
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0025
+  evidence_ledger_sha256: 29eec5c0f7e4f6ed879d1506336665bab4fe3b3ad1b73a0f1e667dceff295818
+  report: docs/LLAMA32_FAST_HMX_NORMALIZATION.md
+  local_gate: singlelayer_component_conditional_and_cosine_pass_no_numerical_benefit_original_restored
+  formal_profiling: false
+  e2e_run: false
+  ppl_rerun: false
+  failed_native_crashes: 0
+  failed_builds: 0
+  native_arithmetic_candidates: 1
+  evidence_validity: all_attempts_retained_sealed_prior_comparisons_verified
