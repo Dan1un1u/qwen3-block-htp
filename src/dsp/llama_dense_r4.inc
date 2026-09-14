@@ -119,7 +119,7 @@ struct qbh_r4_convert_task {
     const __fp16 *weight;
     uint8_t *middle;
     __fp16 *audit;
-    uint32_t finish,first,count,stream;
+    uint32_t finish,first,count,stream,finish_workers;
     volatile uint32_t ready[8],abort;
     uint32_t consumed[2];
     uint64_t work_ticks[3];
@@ -145,8 +145,9 @@ static void qbh_r4_convert_worker(void *context,uint32_t id) {
         }
         return;
     }
+    const uint32_t parts=task->finish_workers?task->finish_workers:3U;
     if(task->finish)qbh_r4_finish_range(task->h,task->b,task->weight,task->middle,
-        task->first,task->count,(HVX_Vector *)(task->b->down+id*1024U),task->audit,id*16U/3U,(id+1U)*16U/3U-id*16U/3U);
+        task->first,task->count,(HVX_Vector *)(task->b->down+id*1024U),task->audit,id*16U/parts,(id+1U)*16U/parts-id*16U/parts);
     else for(uint32_t tile=id*256U/3U;tile<(id+1U)*256U/3U;++tile)
         qbh_r4_prepare_tile(task->b->gate,task->b->up,(__fp16 *)task->b->hmx_activation,
             64U,tile,(const uint16_t *)task->b->w4u8_silu_lut,scratch);
@@ -172,6 +173,42 @@ static int qbh_r4_convert_parallel(struct qbh_block_w4f16_pool *pool,
     ++task->h->dense_r4_parallel_dispatches;
     if(task->finish)task->h->dense_r4_parallel_finish_groups+=16U;
     else task->h->dense_r4_parallel_prepare_tiles+=256U;
+    return 0;
+}
+/* L32-0021: two finish workers consume the previous output while the
+ * caller lays out the next input. Both use the inactive slot in distinct
+ * arenas; current HMX input/output, Stage1 and LUT remain immutable.
+ * Join all converters before advancing either slot or publishing Down. */
+static int qbh_r4_finish_layout(struct qbh_block_w4f16_pool *pool,
+    struct qbh_r4_convert_task *task,const __fp16 *stage1,__fp16 *next_act,
+    uint32_t next_first) {
+    if(!pool || pool->worker_count<2U)return -1;
+    for(uint32_t i=0;i<pool->worker_count;++i)
+        if(pool->jobs[i].command_kind!=QBH_BLOCK_HVX_POOL_NONE)return -1;
+    uint64_t start=HAP_perf_get_qtimer_count();
+    task->finish_workers=2U;
+    pool->active_worker_count=2U;pool->extra_expand_worker_index=UINT32_MAX;
+    for(uint32_t i=0;i<2U;++i) {
+        pool->jobs[i].r4_convert_context=task;
+        pool->jobs[i].command_kind=QBH_BLOCK_HVX_POOL_R4_CONVERT;
+    }
+    asm volatile("barrier" ::: "memory");
+    for(uint32_t i=0;i<2U;++i)(void)qurt_sem_up(&pool->command_ready[i]);
+    uint64_t t=HAP_perf_get_qtimer_count();
+    qbh_r4_layout_vector(stage1,next_act,64U,next_first,8U);
+    uint64_t layout=HAP_perf_get_qtimer_count()-t;
+    t=HAP_perf_get_qtimer_count();
+    qbh_w4f16_pool_wait(pool);pool->active_worker_count=0U;
+    task->h->dense_r4_parallel_join_ticks+=HAP_perf_get_qtimer_count()-t;
+    uint64_t elapsed=HAP_perf_get_qtimer_count()-start;
+    /* Nonoverlapping caller attribution; worker work is a separate
+     * diagnostic sum, never added to the complete Host/DSP ledger. */
+    task->h->dense_r4_layout_ticks+=layout;
+    task->h->dense_r4_finish_ticks+=elapsed-layout;
+    task->h->dense_r4_pipeline_hvx_ticks+=elapsed;
+    for(uint32_t i=0;i<2U;++i)task->h->dense_r4_parallel_work_ticks+=task->work_ticks[i];
+    ++task->h->dense_r4_parallel_dispatches;
+    task->h->dense_r4_parallel_finish_groups+=16U;
     return 0;
 }
 /* Up native outputs and raw H512 input occupy independent arenas. A
@@ -303,6 +340,14 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
             ++h->hmx_command_count;++h->dense_r4_hmx_calls;
             h->hmx_fp16_tile_pair_count+=128U;
             ++h->dense_r4_pipeline_batches;
+            if(batch && batch+1U<8U) {
+                struct qbh_r4_convert_task task={.h=h,.b=b,
+                    .weight=weight+other*131072U,.middle=middle,.audit=audit,
+                    .finish=1U,.first=(batch-1U)*8U,.count=8U};
+                if(qbh_r4_finish_layout(pool,&task,stage1,act+other*131072U,(batch+1U)*8U)) {
+                    (void)qbh_hmx_wait(worker);return -1;
+                }
+            } else {
             if(batch) {
                 t=HAP_perf_get_qtimer_count();
                 if(qbh_r4_finish_vector(h,b,pool,weight+other*131072U,middle,(batch-1U)*8U,8U,
@@ -317,6 +362,7 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
                 qbh_r4_layout_vector(stage1,act+other*131072U,rows,(batch+1U)*8U,8U);
                 uint64_t dt=HAP_perf_get_qtimer_count()-t;
                 h->dense_r4_layout_ticks+=dt;h->dense_r4_pipeline_hvx_ticks+=dt;
+            }
             }
             t=HAP_perf_get_qtimer_count();
             int rc=qbh_hmx_wait(worker);
