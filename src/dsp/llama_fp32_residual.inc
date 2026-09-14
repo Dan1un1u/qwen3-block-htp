@@ -282,8 +282,8 @@ __attribute__((noinline)) static void qbh_fp32_norm_reduce16(const float *x,
 __attribute__((noinline)) static void qbh_llama_fp32_norm_base(const float *x,const __fp16 *gamma,
     uint8_t *out,const struct qbh_block_qparam *q,uint32_t rows,
     uint32_t width,uint32_t native,uint8_t *scratch) {
-    const uint32_t opt=0U;
 #pragma clang fp contract(off)
+    const uint32_t opt=0U;
     HVX_Vector *tile=(HVX_Vector *)scratch;
     float *gf=(float *)(scratch+4096U),*sums=(float *)(scratch+12288U);
     int32_t *flags=(int32_t *)(scratch+12544U);
@@ -393,8 +393,8 @@ __attribute__((noinline)) static void qbh_llama_fp32_norm_base(const float *x,co
 __attribute__((noinline)) static void qbh_llama_fp32_norm_opt(const float *x,const __fp16 *gamma,
     uint8_t *out,const struct qbh_block_qparam *q,uint32_t rows,
     uint32_t width,uint32_t native,uint8_t *scratch) {
-    const uint32_t opt=1U;
 #pragma clang fp contract(off)
+    const uint32_t opt=1U;
     HVX_Vector *tile=(HVX_Vector *)scratch;
     float *gf=(float *)(scratch+4096U),*sums=(float *)(scratch+12288U);
     int32_t *flags=(int32_t *)(scratch+12544U);
