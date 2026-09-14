@@ -950,7 +950,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
     buffers->down = qbh_arena_alloc(&arena, hidden_bytes);
     buffers->hmx_activation = qbh_arena_alloc_aligned(
         &arena, QBH_BLOCK_M * QBH_BLOCK_MAX_K * sizeof(uint16_t),
-        QBH_HMX_FP16_TILE_BYTES);
+        r4_mode ? 32768U : QBH_HMX_FP16_TILE_BYTES);
     buffers->compressed_weight = qbh_arena_alloc(
         &arena, QBH_BLOCK_MAX_K * QBH_HMX_OUTPUT_CHANNELS / 2U *
                     compressed_batch_factor);
@@ -971,10 +971,10 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
     }
     buffers->expanded_weight = qbh_arena_alloc_aligned(
         &arena, expanded_buffer_bytes,
-        QBH_HMX_FP16_TILE_BYTES);
+        r4_mode ? 32768U : QBH_HMX_FP16_TILE_BYTES);
     buffers->expanded_weight_alt = qbh_arena_alloc_aligned(
         &arena, expanded_buffer_bytes,
-        QBH_HMX_FP16_TILE_BYTES);
+        r4_mode ? 32768U : QBH_HMX_FP16_TILE_BYTES);
     buffers->hmx_output = qbh_arena_alloc_aligned(
         &arena, QBH_BLOCK_HMX_OUTPUT_MAX_BYTES,
         QBH_HMX_FP16_TILE_BYTES);
