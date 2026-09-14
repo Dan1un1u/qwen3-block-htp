@@ -10459,7 +10459,7 @@ static int qbh_run_w4u8_qkv_ring(
         worker == NULL || pool == NULL ||
         projection_activation == NULL ||
         header->variant != QBH_BLOCK_W4U8 ||
-        (header->dense_r3_optimization == 2U
+        (QBH_FP32_RESIDUAL(header) && header->dense_r3_optimization == 2U
             ? (header->attention_hvx_contexts != 4U || pool->worker_count != 3U)
             : (header->w4u8_qkv_ring_expand_workers == 0U ||
                header->w4u8_qkv_ring_expand_workers > 3U ||
@@ -13744,8 +13744,8 @@ static void qbh_hvx_pool_u8_qk_prep_publish(
     uint32_t end_tile;
 
     if (header == NULL ||
-        !qbh_attention_u8_qkv_overlap_enabled(
-            header->attention_pipeline_mode) ||
+        (!qbh_attention_u8_qkv_overlap_enabled(
+            header->attention_pipeline_mode) && header->dense_r3_mode == 0U) ||
         pool == NULL ||
         (desc != &header->projections[QBH_BLOCK_PROJ_Q] &&
          desc != &header->projections[QBH_BLOCK_PROJ_K])) {
