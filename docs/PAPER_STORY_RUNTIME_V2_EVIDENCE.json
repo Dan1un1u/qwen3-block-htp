@@ -1,0 +1,162 @@
+{
+  "task": "L32-0027",
+  "date": "2026-09-14",
+  "source_parent": "cb8be962f3f31a1b89c8f8cd2bebb9cceef049a7",
+  "scope": "Documentation synthesis only; no new hardware or PPL. SHA256 snapshots of cited text and ledger files, not a new audit of every model payload.",
+  "paper_report": {
+    "path": "/home/daniuniu/work/llama32-htp/docs/PAPER_STORY_RUNTIME_V2.md",
+    "sha256": "02f0b458fd2d79e73c711bfa16b741c40fb151217548da0baa6a8baad91b6904"
+  },
+  "consumed_files": [
+    {
+      "path": "/home/daniuniu/work/qwen3-block-htp-project-memory/docs/experiments/EXP-0268.md",
+      "bytes": 5597,
+      "sha256": "f95c7b456cbf7c6eda3ad9a42c9fd04481d8966f6644e82b60cc783fcee74da1"
+    },
+    {
+      "path": "/home/daniuniu/work/llama32-htp/docs/LLAMA32_SP2_PIPELINE_DIRECTIONS.md",
+      "bytes": 11688,
+      "sha256": "4063c818013d0a8095c36b6db46b66fa6ee607d5e482477485825323f54f4ea1"
+    },
+    {
+      "path": "/home/daniuniu/work/llama32-htp-project-memory/docs/LLAMA32_FP32_PIPELINE_FOLLOWUP.md",
+      "bytes": 4051,
+      "sha256": "e047fa3782ff1ec58cebb25d56899e4ba99c0acbd3bf84438d605ddaf67f6d5b"
+    },
+    {
+      "path": "/home/daniuniu/work/llama32-htp/docs/LLAMA32_ROTATION_NUMERICAL_REPAIR.md",
+      "bytes": 8835,
+      "sha256": "e1c7e6919509a9fa6594b28715458232f57dba36a529e9aef13a60fc93a9bb3c"
+    },
+    {
+      "path": "/home/daniuniu/work/llama32-htp/docs/LLAMA32_ROTATION_FULLMODEL_VALIDATION.md",
+      "bytes": 9370,
+      "sha256": "75e9ff465c7925ce49a61e36e05e9cb4e41ad6c06898aec4dfa3c235278965c3"
+    },
+    {
+      "path": "/home/daniuniu/work/llama32-htp/baselines/qwen3-frozen/manifest.json",
+      "bytes": 20393,
+      "sha256": "8d91c9db9e9c1b6ecc2a5d6f54179471162dbbd98061aa797c7145ce021a0ce5"
+    },
+    {
+      "path": "/home/daniuniu/work/qwen3-block-htp-project-memory/docs/experiments/EXP-0267.md",
+      "bytes": 5586,
+      "sha256": "6fcea89ed7a1ccc44f8b2916937fad678b940c9d2f65333145fd7abf3ed71aa5"
+    },
+    {
+      "path": "/home/daniuniu/work/llama32-htp/docs/LLAMA32_SP2_DOWN_FUSED.md",
+      "bytes": 5150,
+      "sha256": "43e339d1ad2a956ba25e541e1e0d64da48e686091b9a7f2892b2d21fbb50ad81"
+    },
+    {
+      "path": "/home/daniuniu/work/llama32-htp/docs/LLAMA32_H512_FAST_ROUNDING.md",
+      "bytes": 6093,
+      "sha256": "795cc8ff13049d9638aeda5f723f600b0fdbb15c760763cb2c062567da3b7b7e"
+    },
+    {
+      "path": "/mnt/c/Users/35961/.codex/attachments/ced89dba-abfc-4dc4-ba75-5ac1b4417999/pasted-text.txt",
+      "bytes": 12404,
+      "sha256": "f60a835c1d1a4f87467f9e497e61895fa3a76e4117181d7c4d7a9e40e35a7cd5"
+    },
+    {
+      "path": "/home/daniuniu/work/llama32-htp-project-memory/PROJECT_STATUS.yaml",
+      "bytes": 40612,
+      "sha256": "8a19a504aa78f9940d892dc4e8f2feb16d040ad180591bb298db3e5919f365ec"
+    },
+    {
+      "path": "/home/daniuniu/work/llama32-htp-project-memory/experiments/index.yaml",
+      "bytes": 49107,
+      "sha256": "3a12ee0b16b203209496c1ec2f0dd4884f2010a3d6bdc42b7733870a3b01d641"
+    },
+    {
+      "path": "/mnt/d/llm_exp/results/llama32-htp/l32-0007/SUMMARY.md",
+      "bytes": 2184,
+      "sha256": "32b5e480a5b0f19bfa472e4af3cecbdf53e733035890fe2067092e515af7548d"
+    },
+    {
+      "path": "/home/daniuniu/work/qwen3-block-htp-project-memory/docs/experiments/EXP-0218-PROFILE.md",
+      "bytes": 108531,
+      "sha256": "521be8903db7f87ed69a162628bbfeb578091f7177ae8cc8876d57b341c0450d"
+    },
+    {
+      "path": "/home/daniuniu/work/qwen3-block-htp-project-memory/docs/experiments/EXP-0260-PROFILE.md",
+      "bytes": 95559,
+      "sha256": "42618a62ffa71552b9243f4ba24cd5cb5ec399363b8a05c5014efc7dfa03efee"
+    },
+    {
+      "path": "/home/daniuniu/work/qwen3-block-htp-project-memory/docs/experiments/EXP-0259-PROFILE.md",
+      "bytes": 96227,
+      "sha256": "5f552f4dfb2c91a69139fa1ad218bcc4f0877574afb0bca77212f5c1cb8ff8f9"
+    },
+    {
+      "path": "/home/daniuniu/work/qwen3-block-htp/docs/experiments/EXP-0265-PROFILE.md",
+      "bytes": 341929,
+      "sha256": "458fb48ce4df5f01a64db8f9333b35d5690a2a1e21fe9160f96805c677d55013"
+    },
+    {
+      "path": "/mnt/d/llm_exp/results/llama32-htp/l32-0018/evidence-ledger-a01.json",
+      "bytes": 28848,
+      "sha256": "5572319f6bb94f623089199ef729a13c3c5d20b82134be14e75028ac707bd734"
+    },
+    {
+      "path": "/mnt/d/llm_exp/results/llama32-htp/l32-0026/evidence-ledger-checkpoint-a01.json",
+      "bytes": 22708,
+      "sha256": "599d86cf654b2b41526690c76ad1c0a251b5f206815a57ce4ae12b0024f94ac9"
+    }
+  ],
+  "frozen_report_checks": [
+    {
+      "recipe": "w16a16",
+      "path": "/home/daniuniu/work/qwen3-block-htp-project-memory/docs/experiments/EXP-0218-PROFILE.md",
+      "sha256": "521be8903db7f87ed69a162628bbfeb578091f7177ae8cc8876d57b341c0450d",
+      "matched_frozen_manifest": true
+    },
+    {
+      "recipe": "w4a16",
+      "path": "/home/daniuniu/work/qwen3-block-htp-project-memory/docs/experiments/EXP-0260-PROFILE.md",
+      "sha256": "42618a62ffa71552b9243f4ba24cd5cb5ec399363b8a05c5014efc7dfa03efee",
+      "matched_frozen_manifest": true
+    },
+    {
+      "recipe": "w4a8-off",
+      "path": "/home/daniuniu/work/qwen3-block-htp-project-memory/docs/experiments/EXP-0259-PROFILE.md",
+      "sha256": "5f552f4dfb2c91a69139fa1ad218bcc4f0877574afb0bca77212f5c1cb8ff8f9",
+      "matched_frozen_manifest": true
+    },
+    {
+      "recipe": "w4a8-r3",
+      "path": "/home/daniuniu/work/qwen3-block-htp-project-memory/docs/experiments/EXP-0259-PROFILE.md",
+      "sha256": "5f552f4dfb2c91a69139fa1ad218bcc4f0877574afb0bca77212f5c1cb8ff8f9",
+      "matched_frozen_manifest": true
+    },
+    {
+      "recipe": "w4a8-r3-r4",
+      "path": "/home/daniuniu/work/qwen3-block-htp/docs/experiments/EXP-0265-PROFILE.md",
+      "sha256": "458fb48ce4df5f01a64db8f9333b35d5690a2a1e21fe9160f96805c677d55013",
+      "matched_frozen_manifest": true
+    }
+  ],
+  "verification": [
+    "All local Markdown links resolve",
+    "Five historical Qwen report hashes match frozen manifest",
+    "L32-0018 and L32-0026 ledger hashes match historical authority",
+    "L32-0018 throughput and paired ratios recomputed",
+    "Fullmodel versus singlelayer explicitly separated"
+  ],
+  "known_limitations": [
+    "Original fast rotation full16 independent numerical gate failed",
+    "Combined Llama rotated FP32-residual/SP2 frontend E2E and PPL unmeasured",
+    "Historical rows are not all paired or quality-matched"
+  ],
+  "external_sources": [
+    "https://arxiv.org/abs/2407.08608",
+    "https://github.com/IST-DASLab/marlin",
+    "https://arxiv.org/abs/1909.13144",
+    "https://github.com/ggml-org/llama.cpp/blob/master/docs/backend/snapdragon/README.md"
+  ],
+  "documentation_attempt_notes": [
+    "Initial registration script wrote intended memory changes then reported NameError from an extra delimiter; inspected diff and committed intended files only.",
+    "L32-0018 report is in project memory docs, not source docs; corrected citation. No historical evidence altered."
+  ],
+  "authority_snapshot_commit": "47c5df3"
+}
