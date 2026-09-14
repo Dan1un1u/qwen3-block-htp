@@ -47,29 +47,23 @@ static void qbh_r4_prepare_tile(const uint8_t *gate,const uint8_t *up,
  * of channels directly to two HMX row tiles, without touching arithmetic. */
 static void qbh_r4_layout_vector(const __fp16 *stage1,__fp16 *act,
     uint32_t rows,uint32_t first,uint32_t count) {
-    /* Transpose16 groups x32 channel pairs entirely in HVX registers.
-     * These are bit-preserving shuffles, not Hadamard arithmetic. Each
-     * output vector includes16 real group words and16 zero padding words. */
-    for(uint32_t r=0;r<count;r++)for(uint32_t c=0;c<512U;c+=64U) {
-        HVX_Vector v[16];
-        for(uint32_t a=0;a<16U;a++) {
+    const HVX_Vector offsets=*(const HVX_Vector *)qbh_attention_vscatter_offsets;
+    qbh_r4_zero(act,count*32768U);
+    for(uint32_t a=0;a<16U;++a)for(uint32_t r=0;r<count;r+=2U)
+        for(uint32_t c=0;c<512U;c+=64U) {
             uint32_t sr=a*rows+first+r;
             const __fp16 *src=stage1+qbh_r4_pos(sr&~1U,c,16U);
-            HVX_VectorPair pair=Q6_W_vdeal_VVR(*(const HVX_Vector *)(src+1024U),*(const HVX_Vector *)src,-2);
-            v[a]=(sr&1U)?Q6_V_hi_W(pair):Q6_V_lo_W(pair);
+            HVX_VectorPair v=Q6_W_vdeal_VVR(
+                *(const HVX_Vector *)(src+1024U),*(const HVX_Vector *)src,-2);
+            /* Keep the declared 4KiB scatter window page aligned. Put the
+             * group displacement in lane offsets, not the base address. */
+            __fp16 *dst=act+r*16384U+(c/32U)*1024U;
+            HVX_Vector group_offsets=Q6_Vw_vadd_VwVw(offsets,Q6_V_vsplat_R(a*4U));
+            Q6_vscatter_RMVwV((uint32_t)(uintptr_t)dst,4095U,group_offsets,
+                (sr&1U)?Q6_V_hi_W(v):Q6_V_lo_W(v));
+            if(r+1U<count)Q6_vscatter_RMVwV((uint32_t)(uintptr_t)(dst+16384U),
+                4095U,group_offsets,Q6_V_hi_W(v));
         }
-        for(uint32_t stride=1U;stride<16U;stride*=2U)
-            for(uint32_t base=0;base<16U;base+=2U*stride)for(uint32_t j=0;j<stride;j++) {
-                HVX_VectorPair pair=Q6_W_vshuff_VVR(v[base+j+stride],v[base+j],-(int)(4U*stride));
-                v[base+j]=Q6_V_lo_W(pair);v[base+j+stride]=Q6_V_hi_W(pair);
-            }
-        for(uint32_t i=0;i<16U;i++) {
-            uint32_t rev=((i&1U)<<3U)|((i&2U)<<1U)|((i&4U)>>1U)|((i&8U)>>3U);
-            HVX_VectorPair pair=Q6_W_vshuff_VVR(Q6_V_vzero(),v[i],-64);
-            HVX_Vector *dst=(HVX_Vector *)(act+r*16384U+(c/32U)*1024U+rev*128U);
-            dst[0]=Q6_V_lo_W(pair);dst[1]=Q6_V_hi_W(pair);
-        }
-    }
     asm volatile("barrier" ::: "memory");
 }
 /* Post-R4 table is indexed by the exact FP16 bit pattern. Native planes
@@ -117,7 +111,7 @@ static void qbh_r4_finish_range(struct qbh_block_header *h,
   }
  asm volatile("barrier":::"memory");
 }
-/* Three contexts share only immutable inputs; each owns a 256B VTCM gather
+/* Three contexts share only immutable inputs; each owns a 1024B phase-dead Down gather
  * destination and disjoint whole channel tiles/groups. No atomic hot loop. */
 struct qbh_r4_convert_task {
     struct qbh_block_header *h;
