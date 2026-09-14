@@ -18,7 +18,8 @@ def verify(p):
 
 def norm(x,gamma,q):
  x=np.asarray(x,dtype='f4');s=np.cumsum(x*x,axis=1,dtype='f4')[:,-1:]
- v=(x/np.sqrt(s/np.float32(x.shape[1])+np.float32(1e-5)))*gamma.astype('f4')
+ inv=np.float32(1)/np.sqrt(s/np.float32(x.shape[1])+np.float32(1e-5))
+ v=(x*inv)*gamma.astype('f4')
  code=v/np.float32(q['scale'])+np.float32(q['zero_point'])
  return np.clip(np.copysign(np.floor(np.abs(code)+np.float32(.5)),code),0,255).astype('u1')
 def layer(x,p,q,cos,sin,past=None):

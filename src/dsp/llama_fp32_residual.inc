@@ -9,6 +9,7 @@ static int32_t qbh_llama_raw24(const uint8_t *raw,uint32_t i) {
         65536*(int32_t)(int8_t)raw[4096U+i];
 }
 static int qbh_llama_w4_fp32_residual(struct qbh_block_hmx_worker *w) {
+#pragma clang fp contract(off)
     uint8_t *lo=w->sp2_scratch,*hi=lo+8192U;
     uint32_t *bias=(uint32_t *)(lo+16384U);
     if(!lo || !w->fp32_residual || w->m_tiles!=1U ||
@@ -47,6 +48,7 @@ static int qbh_llama_w4_fp32_residual(struct qbh_block_hmx_worker *w) {
 static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
     uint8_t *out,const struct qbh_block_qparam *q,uint32_t rows,
     uint32_t width,uint32_t native) {
+#pragma clang fp contract(off)
     memset(out,q->zero_point,(size_t)QBH_BLOCK_M*width);
     for(uint32_t row=0;row<rows;row++) {
         float sum=0.0f;
