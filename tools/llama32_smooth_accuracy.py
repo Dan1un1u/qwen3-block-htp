@@ -108,7 +108,12 @@ def prepare():
     # train2048 blocks frozen in L32-0013; no validation sample used for fitting.
     a=np.fromfile(OLD/'calibration.bin',dtype='<u4').reshape(32,2048)
     data=dict(calibration=torch.tensor(a[:8,:512].astype('i8')),selection=torch.tensor(a[8:16,:512].astype('i8')),train=torch.tensor(a[16:26,:512].astype('i8')))
-    torch.save(data,MOD/'data.pt');save(OUT/'data-freeze.json',dict(parent_freeze=sha256(OLD/'freeze.json'),train_blocks=old['train_windows'],calibration_blocks=list(range(8)),selection_blocks=list(range(8,16)),train_blocks_for_affine=list(range(16,26)),length=512,sha256=sha256(MOD/'data.pt'),validation_sha256=sha256(OLD/'validation.bin'),bridge_sha256=sha256(OLD/'dataset.json')))
+    
+    if not (MOD/'data.pt').exists():torch.save(data,MOD/'data.pt')
+    else:
+        old_data=torch.load(MOD/'data.pt',weights_only=True)
+        assert all(torch.equal(data[k],old_data[k]) for k in data)
+    if not (OUT/'data-freeze.json').exists():save(OUT/'data-freeze.json',dict(parent_freeze=sha256(OLD/'freeze.json'),train_blocks=old['train_windows'],calibration_blocks=list(range(8)),selection_blocks=list(range(8,16)),train_blocks_for_affine=list(range(16,26)),length=512,sha256=sha256(MOD/'data.pt'),validation_sha256=sha256(OLD/'validation.bin'),bridge_sha256=sha256(OLD/'dataset.json')))
     torch.manual_seed(42);m=AutoModelForCausalLM.from_pretrained(ORIG,torch_dtype=torch.bfloat16,attn_implementation='sdpa',local_files_only=True).eval().cuda()
     m.requires_grad_(False)
     ids=data['selection'][0:1,:80].cuda();before=m(ids).logits.float().cpu()
@@ -133,8 +138,15 @@ def prepare():
             mod.weight.copy_(w.bfloat16())
         l.input_layernorm.weight.fill_(1);l.post_attention_layernorm.weight.fill_(1)
     model=Model(m).eval().requires_grad_(False);model.r3=False
-    custom,_=model(ids);hf=m(ids).logits
-    custom_error=float((custom.float()-hf.float()).norm()/hf.float().norm());assert custom_error<.003
+    debug={}
+    def trace(n,x):
+        if n.endswith('block_output'):debug[n]=x.detach().float().cpu()
+    model.observer=trace
+    custom,_=model(ids);hf_output=m(ids,output_hidden_states=True);hf=hf_output.logits
+    model.observer=None
+    for i in range(15):
+        actual=debug[f'{i}.block_output'];expected=hf_output.hidden_states[i+1].float().cpu();log('CUSTOM_LAYER_ERROR',i,float((actual-expected).norm()/expected.norm()))
+    custom_error=float((custom.float()-hf.float()).norm()/hf.float().norm());log('CUSTOM_LOGITS_ERROR',custom_error);assert custom_error<.003
     fold_error=float((custom.float().cpu()-before).norm()/before.norm());assert fold_error<.03
     torch.save({n:v.cpu() for n,v in m.state_dict().items()},MOD/'folded.pt');torch.save(matrices,MOD/'rotations.pt')
     del before,custom,hf
