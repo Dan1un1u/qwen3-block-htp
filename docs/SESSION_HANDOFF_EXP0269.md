@@ -51,3 +51,20 @@ Audit later Llama0019-27 and Qwen branches by file/function diff and run-path
 conditions, not commit age. Record applied, rotation-only, rejected, unmeasured,
 and missing-applicable changes with hashes. Do not claim global optimality.
 Close source/memory synchronized with evidence/provenance and baseline manifest.
+
+## Checkpoint 2026-09-14: initial port hardware diagnosis
+
+Source branch codex/exp-0269-sp2-fp32-residual; clean pushed HEAD
+3c0e1a2 (full source hash in git/build seals). Native port plus independent
+reference and sealed device runner are committed. Build l1-a05 succeeded.
+Models/results: /mnt/d/llm_exp/{models,results}/qwen3-block-htp/exp0269.
+layer0-fp32-a01 package sealed; layer0-a01 native exit0 and physical ledger pass,
+but independent FP32 prefill output fails exactly rows48..63 (32768 values),
+rows0..47 and decode exact. Attention AV all rows agrees, postnorm tail does not.
+Do not register numerical/performance pass. Diagnostic a02 captures residual
+tail before O in slot3 and after postnorm in slot4, replacing stale U8 slots
+only when FP32 is enabled. All failed evidence retained; fix local implementation
+under PC037. No formal timing yet. No rotated rounding exception applied.
+Llama source unchanged0f7d083; donor FP32/SP2 includes match L32-0018 exactly.
+Later Llama0019..26 native diffs seen so far are rotation guarded;0027 docs only.
+Need finish audit artifact and separate Llama baseline selection registration.
