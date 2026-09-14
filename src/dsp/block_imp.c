@@ -963,7 +963,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
     buffers->down = qbh_arena_alloc(&arena, hidden_bytes);
     buffers->hmx_activation = qbh_arena_alloc_aligned(
         &arena, QBH_BLOCK_M * QBH_BLOCK_MAX_K *
-            (fp32_residual ? 1U : (uint32_t)sizeof(uint16_t)),
+            (fp32_residual && !r4_mode ? 1U : (uint32_t)sizeof(uint16_t)),
         r4_mode ? 32768U : QBH_HMX_FP16_TILE_BYTES);
     buffers->compressed_weight = qbh_arena_alloc(
         &arena, QBH_BLOCK_MAX_K * QBH_HMX_OUTPUT_CHANNELS / 2U *
@@ -1010,7 +1010,8 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
             QBH_BLOCK_ALIGNMENT);
     }
     if (sp2_mode) {
-        buffers->sp2_high = qbh_arena_alloc_aligned(&arena,
+        /* R4 consumes Gate completely before producing any SP2 plane. */
+        buffers->sp2_high = fp32_residual && r4_mode ? buffers->gate : qbh_arena_alloc_aligned(&arena,
             QBH_BLOCK_M * QBH_BLOCK_INTERMEDIATE, 2048U);
         buffers->sp2_scratch = qbh_arena_alloc_aligned(&arena, sp2_mode>=8U ? 34816U : 18432U, 2048U);
         if (!buffers->sp2_high || !buffers->sp2_scratch) return -1;
@@ -2023,7 +2024,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
 #ifdef QBH_MODEL_LLAMA32
     if (header && QBH_FP32_RESIDUAL(header) &&
         (QBH_FP32_RESIDUAL(header)!=1U || header->variant!=QBH_BLOCK_W4U8 ||
-         QBH_LLAMA_SP2(header)!=8U || header->dense_r3_mode || header->dense_r4_mode ||
+         QBH_LLAMA_SP2(header)!=8U ||
          header->w4u8_decode_projection_mode!=QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
          header->w4u8_decode_direct_n_mask!=63U ||
          (header->crouton_boundary_mode & (QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
@@ -2035,7 +2036,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          header->w4u8_boundary_audit_enabled ||
          header->w4u8_decode_common_padding_poison)) return 0;
     /* Llama A8 currently validates the unrotated head64 integer pipeline. */
-    if (header == NULL || header->dense_r3_mode ||
+    if (header == NULL || (header->dense_r3_mode &&
+        (header->dense_r3_mode!=1U || header->dense_r3_optimization!=2U || !QBH_FP32_RESIDUAL(header))) ||
         (header->dense_r4_mode && (header->dense_r4_mode>2U || header->dense_r4_optimization!=6U || QBH_LLAMA_SP2(header)!=8U)) ||
         (header->variant == QBH_BLOCK_W4U8
             ? (header->attention_pipeline_mode != QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA ||
@@ -3281,6 +3283,9 @@ static int qbh_hmx_run_w4u8_qkv_ring(
 static void qbh_llama_fp32_epilogue(const uint8_t *,const uint8_t *,const float *,float *,uint32_t,uint32_t,int32_t);
 #include "llama_sp2_down.inc"
 #include "llama_fp32_residual.inc"
+#ifdef QBH_MODEL_LLAMA32
+#include "llama_r3_prepare.inc"
+#endif
 
 static void qbh_hmx_worker_main(void *opaque) {
     struct qbh_block_hmx_worker *worker =
@@ -10623,7 +10628,8 @@ static int qbh_run_w4u8_qkv_ring(
         if (header->dense_r3_mode!=1U || !state.direct_n_weights ||
             state.slot_count!=2U || state.tiles_per_batch!=32U) goto cleanup;
         /* Every live row is written exactly once by a head worker. */
-        if (logical_rows==1U) memset(buffers->gate+24U*128U*2U,0,8U*128U*2U);
+        if (logical_rows==1U) memset(buffers->gate+(QBH_BLOCK_HEADS+QBH_BLOCK_KV_HEADS)*QBH_BLOCK_HEAD_DIM*2U,0,
+            (((QBH_BLOCK_HEADS+QBH_BLOCK_KV_HEADS+31U)&~31U)-(QBH_BLOCK_HEADS+QBH_BLOCK_KV_HEADS))*QBH_BLOCK_HEAD_DIM*2U);
     }
     pool->qkv_ring_state = &state;
     pool->attention_header = header;
@@ -10775,7 +10781,7 @@ finish:
         header->w4u8_qkv_ring_pool_wait_ticks +=
             header->attention_qk_norm_pool_wait_ticks - wait_before;
         if (header->dense_r3_optimization==2U &&
-            header->dense_r3_total_parallel_heads-parallel_heads_before!=24U)
+            header->dense_r3_total_parallel_heads-parallel_heads_before!=QBH_BLOCK_HEADS+QBH_BLOCK_KV_HEADS)
             qbh_w4u8_qkv_ring_abort(&state);
     }
     header->w4u8_qkv_ring_slot_count = state.slot_count;
@@ -13619,23 +13625,30 @@ static void qbh_attention_u8_qk_prep_pool_run_tasks(
     if (pool->attention_header->dense_r3_mode != 0U) {
         for (;;) {
             uint32_t task=qbh_atomic_fetch_increment(&pool->next_attention_task);
-            if (task>=24U || pool->attention_qk_stream_abort) break;
+            if (task>=QBH_BLOCK_HEADS+QBH_BLOCK_KV_HEADS || pool->attention_qk_stream_abort) break;
             if (qbh_attention_u8_qk_prep_wait_ready(pool,task)!=0) return;
             if (pool->attention_header->dense_r3_optimization==2U) {
                 struct qbh_block_header *h=pool->attention_header;
                 struct qbh_block_buffers *b=pool->attention_buffers;
                 uint32_t rows=((const struct qbh_w4u8_qkv_ring_state *)pool->qkv_ring_state)->decode_qk_row_contract?1U:64U;
-                uint32_t k=task>=16U;
+                uint32_t k=task>=QBH_BLOCK_HEADS;
                 uint64_t t=HAP_perf_get_qtimer_count();
+#ifdef QBH_MODEL_LLAMA32
+                qbh_llama_r3_prepare((k?b->k:b->q)+(task-(k?QBH_BLOCK_HEADS:0U))*4096U,
+                    rows,&h->qparams[k?QBH_BLOCK_QP_K_PROJECTION:QBH_BLOCK_QP_Q_PROJECTION],
+                    (const __fp16 *)b->rope_cos,(const __fp16 *)b->rope_sin,
+                    (__fp16 *)b->gate+task*rows*64U);
+#else
                 qbh_hvx_r3_prepare_head_vector((k?b->k:b->q)+(task-(k?16U:0U))*8192U,
                     rows,&h->qparams[k?QBH_BLOCK_QP_K_PROJECTION:QBH_BLOCK_QP_Q_PROJECTION],
                     (const __fp16 *)(k?b->k_norm_weight:b->q_norm_weight),
                     b->attention_projection+QBH_QK_ROPE_SF32_CACHE_OFFSET,
                     (__fp16 *)b->gate+task*rows*128U);
+#endif
                 job->u8_attention_qk_norm_rope_ticks+=HAP_perf_get_qtimer_count()-t;
             }
             ++job->attention_qk_norm_task_count;
-            if (task>=16U) ++job->u8_attention_prepared_group_count;
+            if (task>=QBH_BLOCK_HEADS) ++job->u8_attention_prepared_group_count;
         }
         return;
     }
@@ -20197,7 +20210,11 @@ static int qbh_scan_u8_attention(
     return 0;
 }
 
+#ifdef QBH_MODEL_LLAMA32
+#include "llama_dense_r3.inc"
+#else
 #include "dense_r3.inc"
+#endif
 
 static int qbh_run_one_block(struct qbh_block_header *header,
                              uint8_t *shared,
