@@ -6,7 +6,7 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0017
+  active_experiment: null
   next_experiment_number: 18
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -14,7 +14,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: e3cf74916aebbc9254615d68b1c4c135b43fee03
+    recorded_head: 59348e01bb10fc38c7974550345377b5449ac9c1
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -26,26 +26,26 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: fp32_residual_fixed_scale_completed_quality_unusable
+  stage: fp32_vector_pipeline_completed_prefill_speed_gate_failed_decode_passed
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Vectorize FP32 Norm and projection epilogues; restore SP2 Down overlap;
-    prioritize speed with arithmetic regression, no recalibration or rotations
+  next_action: Discuss remaining FP32 Norm layout/sequential reduction and O epilogue
+    optimization; speed first, no automatic recalibration or rotations
   baseline_manifest: baselines/qwen3-frozen/manifest.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF.md
   organization_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0266
   organization_evidence_ledger_sha256: 052b816c686b11b0bc57908b9f86147047c1ecc427af7d8ee54a985dc5e2c093
   original_model_path: /mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin
-  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0016
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0017
   validated_recipes:
   - w16a16
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0016
-  evidence_ledger_sha256: 69b591d67d1ce3f45a0e2cc5e467f7b2d90ccddff854a581d79637769ec77de8
-  formal_profiling_completed: false
+  last_completed_experiment: L32-0017
+  evidence_ledger_sha256: ae1572aca736152bbf59a9a5e445b979a1549d3ce25d880a78bfcef051c19dcf
+  formal_profiling_completed: true
   general_quantization_quality_accepted: false
   w4a16_quality_gate_pass: false
   validated_w4a8_rotations:
@@ -551,6 +551,38 @@ current_scope:
     baseline_sp2_ppl: 130712.28672175553
     heldout_target_tokens: 2048
     performance_accepted: false
+  fp32_pipeline_speed:
+    experiment: L32-0017
+    source_head: 59348e01bb10fc38c7974550345377b5449ac9c1
+    report: docs/LLAMA32_FP32_PIPELINE.md
+    speed:
+      prefill:
+        base_mean_ns: 32057078.4
+        fp32_mean_ns: 39030645.8
+        base_tokens_per_second: 1996.4389518416003
+        fp32_tokens_per_second: 1639.7371523891106
+        latency_ratio: 1.2175359623539492
+        latency_increase_pct: 21.753596235394923
+        ci95:
+        - 1.2042874137658794
+        - 1.2279440942199662
+        gate_pass: false
+      decode:
+        base_mean_ns: 327997432.0
+        fp32_mean_ns: 354923525.7
+        base_tokens_per_second: 45.732065365682494
+        fp32_tokens_per_second: 42.26262536532669
+        latency_ratio: 1.0820923918087262
+        latency_increase_pct: 8.209239180872618
+        ci95:
+        - 1.0756071208422007
+        - 1.088402299287748
+        gate_pass: true
+    arithmetic_exact: true
+    physical_pass: true
+    overall_speed_gate_pass: false
+    baseline_promoted: false
+  latest_formal_measurement_experiment: L32-0017
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp

@@ -540,7 +540,7 @@ experiments:
   - R3/R4 and performance after precision control
 - id: L32-0017
   title: FP32 residual HVX vectorization and native W4 pipeline recovery
-  execution_state: running
+  execution_state: completed
   record: docs/experiments/L32-0017.md
   approval_ref: 'User: first repair pipeline and vector implementation; speed prioritized
     (2026-09-14)'
@@ -548,5 +548,41 @@ experiments:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
   parent_source: e3cf74916aebbc9254615d68b1c4c135b43fee03
-  hardware_runs: 0
+  hardware_runs: 36
   baseline_quality_promoted: false
+  hardware_runs_definition: 16 functional/diagnostic CLI (one retained numeric failure),20
+    formal paired CLI;35successful
+  token_boundary_executions: 436
+  formal_token_boundaries: 320
+  formal_profiling: true
+  formal_pairs: 10
+  ppl_rerun: false
+  local_gate: arithmetic_physical_pass_prefill_speed_fail_decode_speed_pass
+  source_heads:
+    codex/llama32-no-rotation: 59348e01bb10fc38c7974550345377b5449ac9c1
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0017
+  evidence_ledger_sha256: ae1572aca736152bbf59a9a5e445b979a1549d3ce25d880a78bfcef051c19dcf
+  report: docs/LLAMA32_FP32_PIPELINE.md
+  speed:
+    prefill:
+      base_mean_ns: 32057078.4
+      fp32_mean_ns: 39030645.8
+      base_tokens_per_second: 1996.4389518416003
+      fp32_tokens_per_second: 1639.7371523891106
+      latency_ratio: 1.2175359623539492
+      latency_increase_pct: 21.753596235394923
+      ci95:
+      - 1.2042874137658794
+      - 1.2279440942199662
+      gate_pass: false
+    decode:
+      base_mean_ns: 327997432.0
+      fp32_mean_ns: 354923525.7
+      base_tokens_per_second: 45.732065365682494
+      fp32_tokens_per_second: 42.26262536532669
+      latency_ratio: 1.0820923918087262
+      latency_increase_pct: 8.209239180872618
+      ci95:
+      - 1.0756071208422007
+      - 1.088402299287748
+      gate_pass: true

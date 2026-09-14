@@ -156,3 +156,11 @@ without converting the runtime into the BF16 fakequant reference. Historical
 17.6423999759 PPL is not an exact-reproduction gate. Preserve numerical/physical
 implementation checks and label all contract differences. Floating controls and
 Qwen3 unchanged. See docs/experiments/L32-0013.md.
+
+## L32-0017 speed-first steering and closure (2026-09-14)
+User prioritizes speed and authorizes FP32 vectorization/pipeline repair.
+This supersedes the L32-0016 suggested next-step priority of PPL recalibration.
+Retain arithmetic/physical correctness; defer new calibration/PPL/rotation work.
+Fixed ten paired profile passes decode10%gate but fails prefill; no overall
+performance acceptance or baseline promotion. See L32-0017 report and current
+status. Further work should address remaining FP32 Norm and O overhead.
