@@ -1,3 +1,8 @@
+# L32-0026 active: H512 fast accumulation and rounding
+
+Read docs/experiments/L32-0026.md. User continues original fast path repair;
+PPL/text deferred, numerical/physical/speed gates intact.
+
 # L32-0025 closure: original fast HMX is the main line
 
 User explicitly prioritizes speed and correct implementation, improving the

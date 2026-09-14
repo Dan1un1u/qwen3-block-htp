@@ -1183,3 +1183,15 @@ experiments:
   failed_builds: 0
   native_arithmetic_candidates: 1
   evidence_validity: all_attempts_retained_sealed_prior_comparisons_verified
+- id: L32-0026
+  title: H512 fast accumulation and rounding repair
+  execution_state: running
+  record: docs/experiments/L32-0026.md
+  approval_ref: User says continue after L32-0025; original fast path, speed and hardware correctness
+    first
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  parent_source: 7478516462bf82878838fb3d23a41e220b0f3351
+  hardware_runs: 0
+  baseline_quality_promoted: false

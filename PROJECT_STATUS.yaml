@@ -6,8 +6,8 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: null
-  next_experiment_number: 26
+  active_experiment: L32-0026
+  next_experiment_number: 27
   maximum_running_experiments: 1
   remote_sync_required: true
 source_worktrees:
@@ -26,11 +26,11 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: original_fast_hmx_restored_after_h16_no_benefit
+  stage: h512_fast_rounding_investigation
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Continue incremental H512 fast arithmetic/rounding repairs with speed and implementation
-    correctness first. Mode3 diagnostic only; defer PPL/text work. Preserve full16 failure and all gates.
+  next_action: L32-0026 inspect H512 accumulated rounding on frozen captures and test up to two justified
+    fast HMX candidates; mode3 diagnostic only, PPL deferred.
   baseline_manifest: baselines/qwen3-frozen/manifest.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF.md
