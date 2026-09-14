@@ -1234,7 +1234,7 @@ experiments:
   evidence_validity: historical_results_preserved_no_new_measurements
 - id: L32-0028
   title: User-selected no-rotation paper speed baseline and optimization completeness audit
-  execution_state: running
+  execution_state: completed
   record: docs/experiments/L32-0028.md
   approval_ref: User explicitly selects L32-0018 no-rotation SP2 FP32 residual and Qwen EXP0268 no-rotation SP2
     as paper speed baselines; audit missing later optimizations
@@ -1244,3 +1244,18 @@ experiments:
   parent_source: 0f7d083dc99af7e2983ecd426fca03e9d57a0a07
   hardware_runs: 0
   baseline_quality_promoted: false
+  completed_on: '2026-09-14'
+  source_heads:
+    codex/llama32-no-rotation: 0ae07a92e4d99fd3fd23c89adc3ce4a2b44f7b4f
+  report: docs/PAPER_NO_ROTATION_BASELINES.md
+  report_sha256: 4d8d9928ce9d72e0499a5ac36de3364e439c85ac78ce11e88a1db2073a401f41
+  manifest: docs/PAPER_NO_ROTATION_BASELINES.json
+  manifest_sha256: 26cc784578665f56261cff4aa270295d0bcb97e2c0a6dd8d8eff18854113ecad
+  native_source_unchanged: true
+  formal_profiling: false
+  e2e_run: false
+  ppl_rerun: false
+  local_gate: documentation_provenance_and_native_patch_equivalence_pass
+  paper_speed_baseline_selected: L32-0018 no rotation SP2+FP32 residual
+  evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0269/baseline_audit.json
+  evidence_ledger_sha256: 20d3ddb9e1152e35e714f45b159f26312e5a79177cae907c31b7952a8af26ff5

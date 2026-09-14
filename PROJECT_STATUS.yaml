@@ -6,7 +6,7 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0028
+  active_experiment: null
   next_experiment_number: 29
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -14,7 +14,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: 0f7d083dc99af7e2983ecd426fca03e9d57a0a07
+    recorded_head: 0ae07a92e4d99fd3fd23c89adc3ce4a2b44f7b4f
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -26,13 +26,12 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: paper_fast_working_implementation_frozen_known_rounding
+  stage: paper_no_rotation_speed_baselines_selected
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Paper preparation using docs/PAPER_STORY_RUNTIME_V2.md. Original fast HMX path accepted with known
-    rounding/full16 divergence; numerical alignment, integer-plane prototypes, new PPL and device experiments paused
-    until further user direction.
-  baseline_manifest: baselines/qwen3-frozen/manifest.json
+  next_action: Use L32-0018 no-rotation SP2 FP32 residual as selected paper speed baseline. Qwen EXP0269 port is
+    singlelayer-correct but failed short speed; discuss before fullmodel. Llama native/hardware/PPL unchanged.
+  baseline_manifest: docs/PAPER_NO_ROTATION_BASELINES.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF.md
   organization_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0266
@@ -44,7 +43,7 @@ current_scope:
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0027
+  last_completed_experiment: L32-0028
   evidence_ledger_sha256: 599d86cf654b2b41526690c76ad1c0a251b5f206815a57ce4ae12b0024f94ac9
   formal_profiling_completed: false
   general_quantization_quality_accepted: false
@@ -1234,6 +1233,38 @@ current_scope:
     evidence_index: docs/PAPER_STORY_RUNTIME_V2_EVIDENCE.json
     evidence_index_sha256: b2444718b14fffcbf57475a5bced441ca3ae2624b8df19030bfcba3069093379
     numerical_alignment_paused: true
+    superseded_as_primary_speed_baseline_by: L32-0028; retained as historical supplemental rotation acceptance only
+  paper_no_rotation_speed_baseline:
+    model: Llama-3.2-1B-Instruct
+    experiment: L32-0018
+    recipe: W4A8-SP2-FP32-residual
+    rotation: none
+    sp2_mode: 8
+    fp32_residual: true
+    source_branch: codex/llama32-no-rotation
+    measured_source: e3d065a515221aa1e97c63fa4d58d23e434c45df
+    audited_descendant: 0f7d083dc99af7e2983ecd426fca03e9d57a0a07
+    shape: 16 layers M64+15; cache80
+    prefill_tps: 2069.7025566101083
+    decode_tps: 42.51010980249135
+    evidence_ledger_sha256: 5572319f6bb94f623089199ef729a13c3c5d20b82134be14e75028ac707bd734
+    command_evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0018/formal-a01/formal-00-fp32/command.json
+    required_environment:
+      QBH_LLAMA_SP2: '8'
+      QBH_LLAMA_FP32_RESIDUAL: '1'
+      QBH_DENSE_R3: '0'
+      QBH_DENSE_R4: '0'
+      QBH_R3_OPT: '0'
+      QBH_R4_OPT: '0'
+    quality: Full-model implementation validated; fixed-scale text unusable, quality unaccepted
+  paper_baseline_audit:
+    experiment: L32-0028
+    source_documentation_head: 0ae07a92e4d99fd3fd23c89adc3ce4a2b44f7b4f
+    report: docs/PAPER_NO_ROTATION_BASELINES.md
+    manifest_sha256: 26cc784578665f56261cff4aa270295d0bcb97e2c0a6dd8d8eff18854113ecad
+    native_unchanged: true
+    no_omitted_validated_no_rotation_optimization_found: true
+    qwen_evidence_ledger_sha256: 20d3ddb9e1152e35e714f45b159f26312e5a79177cae907c31b7952a8af26ff5
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp
