@@ -73,19 +73,22 @@ static void qbh_r4_layout_vector(const __fp16 *stage1,__fp16 *act,
 static void qbh_r4_layout_weight(const __fp16 *stage1,__fp16 *dst,
     uint32_t rows,uint32_t first,uint32_t count) {
     qbh_r4_zero(dst,count*32768U);
-    for(uint32_t r=0;r<count;++r)for(uint32_t g=0;g<16U;g+=2U)
+    /* Pipeline batches start on even tokens and contain8 rows. Reuse
+     * both token lanes in every native load. */
+    for(uint32_t r=0;r<count;r+=2U)for(uint32_t g=0;g<16U;g+=2U)
         for(uint32_t c=0;c<512U;c+=64U) {
             uint32_t sr=g*rows+first+r,sr1=(g+1U)*rows+first+r;
             const __fp16 *a=stage1+qbh_r4_pos(sr&~1U,c,16U);
             const __fp16 *b=stage1+qbh_r4_pos(sr1&~1U,c,16U);
             HVX_VectorPair aa=Q6_W_vdeal_VVR(*(const HVX_Vector *)(a+1024U),*(const HVX_Vector *)a,-2);
             HVX_VectorPair bb=Q6_W_vdeal_VVR(*(const HVX_Vector *)(b+1024U),*(const HVX_Vector *)b,-2);
-            HVX_Vector va=(sr&1U)?Q6_V_hi_W(aa):Q6_V_lo_W(aa);
-            HVX_Vector vb=(sr1&1U)?Q6_V_hi_W(bb):Q6_V_lo_W(bb);
-            HVX_VectorPair packed=Q6_W_vshuff_VVR(vb,va,-2);
+            HVX_VectorPair packed=Q6_W_vshuff_VVR(Q6_V_lo_W(bb),Q6_V_lo_W(aa),-2);
+            HVX_VectorPair packed_next=Q6_W_vshuff_VVR(Q6_V_hi_W(bb),Q6_V_hi_W(aa),-2);
             __fp16 *out=dst+(r*16U+c/32U)*1024U+g*32U;
             *(HVX_Vector *)out=Q6_V_lo_W(packed);
             *(HVX_Vector *)(out+1024U)=Q6_V_hi_W(packed);
+            *(HVX_Vector *)(out+16384U)=Q6_V_lo_W(packed_next);
+            *(HVX_Vector *)(out+16384U+1024U)=Q6_V_hi_W(packed_next);
         }
     asm volatile("barrier" ::: "memory");
 }
@@ -351,10 +354,11 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
     if(audit)for(uint32_t r=0;r<16U*rows;++r)for(uint32_t c=0;c<512U;++c)
         audit[524288U+r*512U+c]=stage1[qbh_r4_pos(r,c,16U)];
     t=HAP_perf_get_qtimer_count();
-    qbh_r4_zero(w12,2048U);
-    /* Input row is [group], output column is [new group]. */
-    for(uint32_t n=0;n<16U;++n)for(uint32_t k=0;k<16U;++k)
-        w12[qbh_hmx_fp16_tile_offset(k,n)]=(__fp16)qbh_r4_h16(k,n);
+    /* Exact H16 top-left of the immutable native H128 sign tile.
+     * Clear both padded dimensions; scale remains the same FP16 .25. */
+    for(uint32_t v=0;v<16U;++v)
+        ((HVX_Vector *)w12)[v]=v<8U?Q6_V_vmux_QVV(Q6_Q_vsetq_R(64),
+            ((const HVX_Vector *)qbh_r3_sign_matrix)[v],Q6_V_vzero()):Q6_V_vzero();
     for(uint32_t c=0;c<32U;++c)scales[c]=(float)(__fp16)0.25f;
     qbh_hmx_fp16_init_channel_scales(b->channel_scale,scales);
     h->dense_r4_prepare_ticks+=HAP_perf_get_qtimer_count()-t;

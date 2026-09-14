@@ -24,9 +24,10 @@ def main():
  for arm in ['off','r3','r4','both','oldboth']:
   base='both' if arm=='oldboth' else arm;origin=CONTROL if arm=='oldboth' else R
   expected_head='0eb7615c43bb6e36c402f3a5d12d7162c32722dd' if arm=='oldboth' else head
-  d=origin/('timing-'+base+'-a01');p=json.loads((d/'protocol.json').read_text());res=json.loads((d/'result.json').read_text());assert p['source_head']==expected_head and len(res['steps'])==2 and all(x['pass_ideal_cosine'] and x['finite'] for x in res['steps'])
+  suffix='a01' if arm=='oldboth' else 'a02'
+  d=origin/('timing-'+base+'-'+suffix);p=json.loads((d/'protocol.json').read_text());res=json.loads((d/'result.json').read_text());assert p['source_head']==expected_head and len(res['steps'])==2 and all(x['pass_ideal_cosine'] and x['finite'] for x in res['steps'])
   # Separate audited validation, no captured hardware values become model goldens.
-  audit=origin/('validate-layer0-'+base+'-a01')
+  audit=origin/('validate-layer0-'+base+'-'+suffix)
   assert json.loads((audit/'protocol.json').read_text())['source_head']==expected_head
   ar=json.loads((audit/'result.json').read_text());assert all(x['pass_actual_arithmetic'] and x['pass_ideal_cosine'] for x in ar['steps'])
   if arm=='oldboth':
