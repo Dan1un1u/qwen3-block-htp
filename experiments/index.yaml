@@ -538,3 +538,15 @@ experiments:
   - train-only A8 recalibration separately
   - FP16 residual storage separately
   - R3/R4 and performance after precision control
+- id: L32-0017
+  title: FP32 residual HVX vectorization and native W4 pipeline recovery
+  execution_state: running
+  record: docs/experiments/L32-0017.md
+  approval_ref: 'User: first repair pipeline and vector implementation; speed prioritized
+    (2026-09-14)'
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  parent_source: e3cf74916aebbc9254615d68b1c4c135b43fee03
+  hardware_runs: 0
+  baseline_quality_promoted: false
