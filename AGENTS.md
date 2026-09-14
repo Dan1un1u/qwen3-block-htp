@@ -27,7 +27,7 @@ model-quality acceptance. W4A16 is functional but failed its independent PPL
 criteria; W4A8 OFF is tracked in L32-0003 with no model-quality threshold.
 Use only Llama-specific tools in docs/LLAMA32_W16A16.md,
 docs/LLAMA32_W4A16.md and docs/LLAMA32_W4A8.md. L32-0019 adds opt-in dense R3/R4 for FP32 residual+SP2 single-layer validation.
-See docs/LLAMA32_FP32_R3_R4.md; full-model rotation remains unvalidated and
+See docs/LLAMA32_FP32_R3_R4.md and docs/LLAMA32_ROTATION_PIPELINE.md (L32-0020); full-model rotation remains unvalidated and
 paused at the speed gate. Default OFF and other recipes are unchanged. No QNN execution.
 Builds stay in the owning WSL worktree; large Llama artifacts go to separate
 D:/llm_exp/models/llama32-htp and results/llama32-htp experiment directories.
