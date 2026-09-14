@@ -1,0 +1,20 @@
+# EXP0272 closure: full-model10percent gate achieved
+
+Source codex/exp-0272-fp32-fullmodel-norm at 149b7f72eb9853874c44025153d32d22229b61d6, clean/pushed; tested native/full28 5f859339a62461b3c6fb7dc99c9dc243c1385c45. Completed2026-09-15. Active none,next273. User authorized fullmodel-focused optimization; PC085 makes singlelayer numerical/physical prerequisite and speed diagnostic, actual fullmodel formal repeat10 is gate. Historical singlelayer failures unchanged; Llama and original two paper baselines not promoted/replaced.
+
+Selected C1 interleaved16-row ordered FP32 Norm, QBH_FP32_RESIDUAL=2;mode1 priorFP32,mode0 integer. Qwen ABI133. Two independent8-row sums update alternately; channel order, FP32 rounding, original repair band/scalar division and quantization unchanged. Same physical tensors and VTCM. C2 coalesced repair-flag writes was exact but slower86-88us Norm; generic branch also slowed oldpath until isolated. Three bounded implementation refinements, including one pragma placement compile repair; all failed-source/build/audit evidence retained. C2 entirely removed, selected source file matches firstC1. No numerical hardware failure. No vector stack in reduce16/epilogue/Down; retained genericNorm stack uniform constants/inverseRMS splats only.
+
+Final independent layers0/14/27 exact399360 FP32 outputs and Q/K/AV/postnorm/GateUp/SP2/physicalKV. Consecutive3 exact133120values; repeat10 deterministic. Full28 physical ledgers/cache lengths pass;88 residual/nativeNorm/KV captures byte-exact vs sealed0271, fullhead16steps and32768Normcodes independently exact. All mode1/2 token/logit codes identical to0271,integer0 identical to0268.122CLI/8832profiles,8416fullmodel;8MiB VTCM requested/acquired,peak8365824B,zero timed boundary/intermediate tensorDDR/spill/unattributed. Not whole28 independent CPU transformer/PPL/quality acceptance.
+
+Fixed5short then10formal rotated triplets0/1/2,repeat1 auxiliary andrepeat10 primary,pairedbootstrap20000seed272. Both gatesPASS. Full28 M64+15/cache128/offlineEOSprefix,loaded weights; embedding/allblocks/finalNorm/head/greedy and Host-DSP included,not coldload/ADB/CPUtokenizer. Formal repeat10:
+Integer:pre31749.18115us=2015.800020tok/s;decode20961.33458us/token=47.706886tok/s.
+PriorFP32:pre34859.90782us=1835.919944tok/s;decode21241.079779us/token=47.078586tok/s.
+OptimizedFP32:pre34605.52027us=1849.415917tok/s;decode21244.902569us/token=47.070115tok/s.
+Candidate/integer pre1.089965757,95CI[1.087257958,1.092578145];decode1.013528146,CI[1.010156594,1.016269108]. Bothupper<=1.10.
+Candidate/priorFP32 pre0.992702575,CI[0.989440347,0.995995624],0.729742percent less wall. Decode1.000179972,CI[0.996317721,1.003110182],tied. Prior/integer prepoint1.097978170 butCIupper1.101093893 narrowlyfails. This distinguishes realincremental gain from historical sessiondifferences.
+
+Attribution: singlelayer FP32Norm75.2->71.6us; fullinputNorm2121.636->2019.039us,postNorm/residual2218.121->2115.012us,total~205.7us reduction across56Norms. Fullwall254.4us reduction; not all differences assigned causally toNorm. Singlelayer/fullmodel relative cost differs through amortizedRPC/boundaries and head/otherwork denominator,not elimination of per-layerNorm. EXP0271historical1791.454/44.633 andinteger1983.457/45.546 are separate-sessiondiagnostics; use pairedcurrent numbers forclaimedimprovement.
+
+Evidence /mnt/d/llm_exp/results/qwen3-block-htp/exp0272,922files416663690bytes,ledger7fa56656cbc385a2733146df45d1c5b399a302a0a16898e9fc135ae496016d61. Read SUMMARY.json,REPORT.md,PROFILE.json,full-short.json,full-formal.json,prior_fp32_gate_diagnostic.json,candidate_selection.json. All original model payload hashes reverified local/device; no newweights/models. Reuse exp0271/sp2-fp32 fullpackage andexp0269 selectedlayerpackages. Source report docs/EXP0272_FP32_FULLMODEL_NORM_RESULTS.md; independent report script scripts/report_exp0272.py.
+
+Fullmodel gate achieved, user adoption remains separate. NewQwen methods unmeasured onLlama. No next experimentstarted. Build/runtime seals refer to testedhead,notclosure docshead; futurehardware requires approvedexperiment/preflight/freshbuild.

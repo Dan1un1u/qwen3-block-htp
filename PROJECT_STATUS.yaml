@@ -7,7 +7,7 @@ project:
   source_root: /home/daniuniu/work/qwen3-block-htp
   memory_branch: codex/qwen3-block-project-memory
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
-  updated_on: '2026-09-13'
+  updated_on: '2026-09-15'
   qnn_runtime: none
   qairt_runtime: none
   hexagon_sdk_candidate: 6.6.0.0
@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0272
+  active_experiment: null
   next_experiment_number: 273
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -2494,13 +2494,13 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: Qwen3_28layer_native_W4_SP2_M64_plus15_verified
-  last_completed_experiment: EXP-0270
-  last_completed_source_commit: 8268f8f7f5234902f7dd1dffc7c1a6194bae4b7a
+  last_completed_experiment: EXP-0272
+  last_completed_source_commit: 149b7f72eb9853874c44025153d32d22229b61d6
   provisional_source_parent: EXP0268_diagnostic_U8_pipeline_closure_no_default_promotion
   device_execution_state: EXP0269_singlelayer_exact_short_speed_gate_fail_no_fullmodel
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  current_handoff: docs/SESSION_HANDOFF_EXP0270.md
+  current_handoff: docs/SESSION_HANDOFF_EXP0272.md
   active_recipe_specialization: native_W4_SP2_FP32_residual_no_rotation
   last_completed_experiment_contract:
     id: EXP-0269
@@ -2508,7 +2508,7 @@ current_scope:
     scope: no_rotation_SP2_FP32_residual_port_and_baseline_audit
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: &id001
+  last_completed_evidence:
     id: EXP-0270
     execution_state: completed
     evidence_validity: valid
@@ -9114,8 +9114,8 @@ current_scope:
     root_cause: unresolved; raw output/token mismatch, postfailure bounded reruns pass but do not clear gate
     next_direction: discuss_runtime_nondeterminism_then_same_token_device_software_head_and_transformer_alignment
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0257.md
-  last_concluded_experiment: EXP-0270
-  last_concluded_source_commit: 8268f8f7f5234902f7dd1dffc7c1a6194bae4b7a
+  last_concluded_experiment: EXP-0272
+  last_concluded_source_commit: 149b7f72eb9853874c44025153d32d22229b61d6
   latest_w4u8_dense_r3_e2e_diagnostic_result:
     id: EXP-0258
     execution_state: completed
@@ -10129,7 +10129,7 @@ current_scope:
     baseline_promoted: false
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0265.md
     next_direction: discuss_R4_quality_before_new_tuning; staticmiddle_and_RTN_Down_speedfixture_not_qualityaccepted; repeat1_cannot_veto_repeat10
-  qwen3_research_state: EXP0271_user_authorized_fullmodel_speed_diagnostic
+  qwen3_research_state: EXP0272_completed_exact_FP32_fullmodel_gate_pass_awaiting_user_adoption
   latest_llama32_migration:
     id: EXP-0266
     execution_state: completed
@@ -10658,82 +10658,166 @@ current_scope:
       rotation_branch_unique_non_equivalent_commit: cd2360f31c1b1a151db7ecf30acfbe73bded9979 (branch default config only)
       rotation_branch_equivalent_patches: 79
     new_qwen_candidate:
-      experiment: EXP-0270
-      source_branch: codex/exp-0270-fp32-norm-pipeline
-      measured_source: 645b0cdc4d6787dcde7bade9af59c3de3d6d8451
+      experiment: EXP-0272
+      source_branch: codex/exp-0272-fp32-fullmodel-norm
+      measured_source: 5f859339a62461b3c6fb7dc99c9dc243c1385c45
       independent_single_layer_gate: true
-      short_gate: false
-      prefill_ratio: 1.144195571147712
-      decode_ratio: 1.0413233381099416
-      formal_profile: false
-      full_model_e2e: false
+      short_gate: true
+      formal_profile: true
+      full_model_e2e: true
+      prefill_tps: 1849.4159169016302
+      decode_tps: 47.07011466717026
+      prefill_ratio: 1.0899657571168573
+      decode_ratio: 1.0135281457191772
       paper_baseline_replaced: false
-      report: docs/EXP0270_FP32_RESIDUAL_RESULTS.md
+      report: docs/EXP0272_FP32_FULLMODEL_NORM_RESULTS.md
       new_methods_unmeasured_on_llama: true
-  latest_sp2_fp32_residual_optimization_result: *id001
-  latest_sp2_fp32_fullmodel_speed_result:
-    id: EXP-0271
+  latest_sp2_fp32_residual_optimization_result: &id001
+    id: EXP-0272
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    gate_role: diagnostic_implementation_and_physical_pass_not_formal_speed_gate
-    source_branch: codex/exp-0271-fp32-fullmodel-speed
-    source_closure_commit: 59591175ede2dda847607cb2c980138efe279d46
-    tested_source_head: cb4929b5c42eba39f2ccc507a97ace975de6e480
-    report: docs/experiments/EXP-0271-RESULTS.md
-    report_sha256: cbdc55efc761fc16755f8da1cdece8f5b07ddd0e04c2a055bae25ad1781a12f8
-    full_profiling_report: docs/experiments/EXP-0271-PROFILE.md
-    full_profiling_report_sha256: cbdc55efc761fc16755f8da1cdece8f5b07ddd0e04c2a055bae25ad1781a12f8
-    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0271
-    evidence_ledger_sha256: 5a0f73b1355c88bf763e75a309fe98bd3ff3eed986cb3d543413c2a8ba497c5f
-    evidence_file_count: 178
-    hardware_cli: 9
-    hardware_profiles: 710
+    gate_role: exact_numerical_physical_and_formal_fullmodel10percent_gate_pass
+    source_branch: codex/exp-0272-fp32-fullmodel-norm
+    source_closure_commit: 149b7f72eb9853874c44025153d32d22229b61d6
+    tested_source_head: 5f859339a62461b3c6fb7dc99c9dc243c1385c45
+    report: docs/experiments/EXP-0272-RESULTS.md
+    report_sha256: f8e71d7bf0d8863e541f56bdcc8fc89c91bb55289339ed1a542c8301eec43718
+    full_profiling_report: docs/experiments/EXP-0272-PROFILE.md
+    full_profiling_report_sha256: f8e71d7bf0d8863e541f56bdcc8fc89c91bb55289339ed1a542c8301eec43718
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0272
+    evidence_ledger_sha256: 7fa56656cbc385a2733146df45d1c5b399a302a0a16898e9fc135ae496016d61
+    evidence_file_count: 922
+    hardware_cli: 122
+    hardware_profiles: 8832
+    independent_selected_layers_exact: true
     independent_chain3_exact: true
+    full_boundary_exact_files: 88
     full_frontend_gate: true
-    full28_cpu_transformer_equivalence: false
     physical_gate: true
     peak_vtcm_bytes: 8365824
     performance:
       r1_prefill:
-        control_host_us: 32361.354
-        candidate_host_us: 35787.76
-        control_tps: 1977.6675598925806
-        candidate_tps: 1788.3209231312603
-        host_increase_percent: 10.587956239408292
-        tps_change_percent: -9.574239907722648
-        diagnostic_only: true
-        formal_gate: null
+      - mode: 0
+        host_us: 33298.8437
+        tps: 1921.9886605251702
+      - mode: 1
+        host_us: 36448.5418
+        tps: 1755.9001496186056
+      - mode: 2
+        host_us: 36250.448
+        tps: 1765.4954222910571
       r1_decode:
-        control_host_us: 23542.416866666666
-        candidate_host_us: 23453.451666666668
-        control_tps: 42.47652251098672
-        candidate_tps: 42.63764729441743
-        host_increase_percent: -0.37789323204944214
-        tps_change_percent: 0.37932668190772123
-        diagnostic_only: true
-        formal_gate: null
+      - mode: 0
+        host_us: 22093.652093333334
+        tps: 45.2618695983606
+      - mode: 1
+        host_us: 22472.79552
+        tps: 44.49824674059954
+      - mode: 2
+        host_us: 22465.196566666666
+        tps: 44.513298471813805
       r10_prefill:
-        control_host_us: 32266.8933
-        candidate_host_us: 35725.17965
-        control_tps: 1983.4571430525666
-        candidate_tps: 1791.4535525645706
-        host_increase_percent: 10.717754318169813
-        tps_change_percent: -9.68024901170791
-        diagnostic_only: true
-        formal_gate: null
+      - mode: 0
+        host_us: 31749.181149999997
+        tps: 2015.8000200896522
+      - mode: 1
+        host_us: 34859.90782
+        tps: 1835.9199436345498
+      - mode: 2
+        host_us: 34605.52027
+        tps: 1849.4159169016302
       r10_decode:
-        control_host_us: 21955.650876666667
-        candidate_host_us: 22405.111940000003
-        control_tps: 45.546360962714544
-        candidate_tps: 44.632671449174644
-        host_increase_percent: 2.0471315829265535
-        tps_change_percent: -2.006064796895346
-        diagnostic_only: true
-        formal_gate: null
-    formal_run: false
+      - mode: 0
+        host_us: 20961.33458
+        tps: 47.70688603740612
+      - mode: 1
+        host_us: 21241.079779333333
+        tps: 47.078585947074004
+      - mode: 2
+        host_us: 21244.90256866667
+        tps: 47.07011466717026
+    ratios:
+      r1_prefill_ns_vs0:
+        control_mean_ns: 33298843.7
+        candidate_mean_ns: 36250448.0
+        ratio: 1.0886398436712084
+        ci95:
+        - 1.0837761309198846
+        - 1.0932037110728643
+        gate: true
+        auxiliary_only: true
+      r1_prefill_ns_vs1:
+        control_mean_ns: 36448541.8
+        candidate_mean_ns: 36250448.0
+        ratio: 0.9945651104209607
+        ci95:
+        - 0.9909787336983458
+        - 0.9982195047516683
+        gate: null
+        auxiliary_only: true
+      r1_decode_ns_vs0:
+        control_mean_ns: 22093652.093333334
+        candidate_mean_ns: 22465196.56666667
+        ratio: 1.016816797502005
+        ci95:
+        - 1.0078959953713196
+        - 1.0260959340243392
+        gate: true
+        auxiliary_only: true
+      r1_decode_ns_vs1:
+        control_mean_ns: 22472795.52
+        candidate_mean_ns: 22465196.56666667
+        ratio: 0.9996618598996032
+        ci95:
+        - 0.992817920400473
+        - 1.006776712785116
+        gate: null
+        auxiliary_only: true
+      r10_prefill_ns_vs0:
+        control_mean_ns: 31749181.15
+        candidate_mean_ns: 34605520.27
+        ratio: 1.0899657571168573
+        ci95:
+        - 1.0872579579293324
+        - 1.0925781447612364
+        gate: true
+        auxiliary_only: false
+      r10_prefill_ns_vs1:
+        control_mean_ns: 34859907.81999999
+        candidate_mean_ns: 34605520.27
+        ratio: 0.9927025753678544
+        ci95:
+        - 0.9894403466878361
+        - 0.9959956238432883
+        gate: null
+        auxiliary_only: false
+      r10_decode_ns_vs0:
+        control_mean_ns: 20961334.58
+        candidate_mean_ns: 21244902.568666667
+        ratio: 1.0135281457191772
+        ci95:
+        - 1.0101565942381268
+        - 1.0162691078383812
+        gate: true
+        auxiliary_only: false
+      r10_decode_ns_vs1:
+        control_mean_ns: 21241079.77933333
+        candidate_mean_ns: 21244902.568666667
+        ratio: 1.000179971516187
+        ci95:
+        - 0.9963177214432706
+        - 1.0031101817325319
+        gate: null
+        auxiliary_only: false
+    short_gate_pass: true
+    formal_gate_pass: true
+    formal_run: true
     fullmodel_run: true
     e2e_run: true
     baseline_promoted: false
     PPL: null
-    next_direction: Discuss whether diagnostic prefill10.718percent overhead is acceptable; if further optimization is authorized, focus ordered FP32 Norm layout. Llama unchanged, no automatic new experiment.
+    selected_mode: 2
+    selected_method: C1 interleaved independent16-row ordered FP32 Norm; C2 flag-store variants discarded
+    next_direction: Fullmodel gate achieved. Discuss adoption before replacing user-selected paper baseline. Further structural Norm residual layout work would be a separate experiment; Llama unchanged.
+  latest_sp2_fp32_fullmodel_speed_result: *id001

@@ -27,20 +27,171 @@ experiments:
 - id: EXP-0272
   title: Qwen exact FP32 Norm optimization for full-model gate
   parent: EXP-0271
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
-  adoption_status: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
+  adoption_status: not_applicable
   record: docs/experiments/EXP-0272.md
   approval_ref: 'User: 再优化一下看看，争取达到全模gate。希望全模和单层的退化不同能给你一些启发'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0272-fp32-fullmodel-norm
     started_on: '2026-09-14'
+    completed_on: '2026-09-15'
   source_branches:
   - codex/exp-0271-fp32-fullmodel-speed
   - codex/exp-0272-fp32-fullmodel-norm
-  source_commits: []
+  source_commits:
+  - 5f859339a62461b3c6fb7dc99c9dc243c1385c45
+  - 149b7f72eb9853874c44025153d32d22229b61d6
+  evidence:
+    id: EXP-0272
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_role: exact_numerical_physical_and_formal_fullmodel10percent_gate_pass
+    source_branch: codex/exp-0272-fp32-fullmodel-norm
+    source_closure_commit: 149b7f72eb9853874c44025153d32d22229b61d6
+    tested_source_head: 5f859339a62461b3c6fb7dc99c9dc243c1385c45
+    report: docs/experiments/EXP-0272-RESULTS.md
+    report_sha256: f8e71d7bf0d8863e541f56bdcc8fc89c91bb55289339ed1a542c8301eec43718
+    full_profiling_report: docs/experiments/EXP-0272-PROFILE.md
+    full_profiling_report_sha256: f8e71d7bf0d8863e541f56bdcc8fc89c91bb55289339ed1a542c8301eec43718
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0272
+    evidence_ledger_sha256: 7fa56656cbc385a2733146df45d1c5b399a302a0a16898e9fc135ae496016d61
+    evidence_file_count: 922
+    hardware_cli: 122
+    hardware_profiles: 8832
+    independent_selected_layers_exact: true
+    independent_chain3_exact: true
+    full_boundary_exact_files: 88
+    full_frontend_gate: true
+    physical_gate: true
+    peak_vtcm_bytes: 8365824
+    performance:
+      r1_prefill:
+      - mode: 0
+        host_us: 33298.8437
+        tps: 1921.9886605251702
+      - mode: 1
+        host_us: 36448.5418
+        tps: 1755.9001496186056
+      - mode: 2
+        host_us: 36250.448
+        tps: 1765.4954222910571
+      r1_decode:
+      - mode: 0
+        host_us: 22093.652093333334
+        tps: 45.2618695983606
+      - mode: 1
+        host_us: 22472.79552
+        tps: 44.49824674059954
+      - mode: 2
+        host_us: 22465.196566666666
+        tps: 44.513298471813805
+      r10_prefill:
+      - mode: 0
+        host_us: 31749.181149999997
+        tps: 2015.8000200896522
+      - mode: 1
+        host_us: 34859.90782
+        tps: 1835.9199436345498
+      - mode: 2
+        host_us: 34605.52027
+        tps: 1849.4159169016302
+      r10_decode:
+      - mode: 0
+        host_us: 20961.33458
+        tps: 47.70688603740612
+      - mode: 1
+        host_us: 21241.079779333333
+        tps: 47.078585947074004
+      - mode: 2
+        host_us: 21244.90256866667
+        tps: 47.07011466717026
+    ratios:
+      r1_prefill_ns_vs0:
+        control_mean_ns: 33298843.7
+        candidate_mean_ns: 36250448.0
+        ratio: 1.0886398436712084
+        ci95:
+        - 1.0837761309198846
+        - 1.0932037110728643
+        gate: true
+        auxiliary_only: true
+      r1_prefill_ns_vs1:
+        control_mean_ns: 36448541.8
+        candidate_mean_ns: 36250448.0
+        ratio: 0.9945651104209607
+        ci95:
+        - 0.9909787336983458
+        - 0.9982195047516683
+        gate: null
+        auxiliary_only: true
+      r1_decode_ns_vs0:
+        control_mean_ns: 22093652.093333334
+        candidate_mean_ns: 22465196.56666667
+        ratio: 1.016816797502005
+        ci95:
+        - 1.0078959953713196
+        - 1.0260959340243392
+        gate: true
+        auxiliary_only: true
+      r1_decode_ns_vs1:
+        control_mean_ns: 22472795.52
+        candidate_mean_ns: 22465196.56666667
+        ratio: 0.9996618598996032
+        ci95:
+        - 0.992817920400473
+        - 1.006776712785116
+        gate: null
+        auxiliary_only: true
+      r10_prefill_ns_vs0:
+        control_mean_ns: 31749181.15
+        candidate_mean_ns: 34605520.27
+        ratio: 1.0899657571168573
+        ci95:
+        - 1.0872579579293324
+        - 1.0925781447612364
+        gate: true
+        auxiliary_only: false
+      r10_prefill_ns_vs1:
+        control_mean_ns: 34859907.81999999
+        candidate_mean_ns: 34605520.27
+        ratio: 0.9927025753678544
+        ci95:
+        - 0.9894403466878361
+        - 0.9959956238432883
+        gate: null
+        auxiliary_only: false
+      r10_decode_ns_vs0:
+        control_mean_ns: 20961334.58
+        candidate_mean_ns: 21244902.568666667
+        ratio: 1.0135281457191772
+        ci95:
+        - 1.0101565942381268
+        - 1.0162691078383812
+        gate: true
+        auxiliary_only: false
+      r10_decode_ns_vs1:
+        control_mean_ns: 21241079.77933333
+        candidate_mean_ns: 21244902.568666667
+        ratio: 1.000179971516187
+        ci95:
+        - 0.9963177214432706
+        - 1.0031101817325319
+        gate: null
+        auxiliary_only: false
+    short_gate_pass: true
+    formal_gate_pass: true
+    formal_run: true
+    fullmodel_run: true
+    e2e_run: true
+    baseline_promoted: false
+    PPL: null
+    selected_mode: 2
+    selected_method: C1 interleaved independent16-row ordered FP32 Norm; C2 flag-store variants discarded
+    next_direction: Fullmodel gate achieved. Discuss adoption before replacing user-selected paper baseline. Further structural Norm residual layout work would be a separate experiment; Llama unchanged.
 - id: EXP-0271
   title: Qwen FP32 residual fullmodel speed confirmation
   parent: EXP-0270
