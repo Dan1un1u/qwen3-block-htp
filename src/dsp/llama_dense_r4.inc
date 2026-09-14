@@ -66,32 +66,6 @@ static void qbh_r4_layout_vector(const __fp16 *stage1,__fp16 *act,
         }
     asm volatile("barrier" ::: "memory");
 }
-/* L32-0021: compute stage2 as H16 * stage1_token instead of
- * transpose(stage1_token) * H16. Same reduction order and FP16 scale;
- * token/channel columns are now native contiguous output tiles.
- * This is a storage/operand orientation change, not a fast Hadamard. */
-static void qbh_r4_layout_weight(const __fp16 *stage1,__fp16 *dst,
-    uint32_t rows,uint32_t first,uint32_t count) {
-    qbh_r4_zero(dst,count*32768U);
-    /* Pipeline batches start on even tokens and contain8 rows. Reuse
-     * both token lanes in every native load. */
-    for(uint32_t r=0;r<count;r+=2U)for(uint32_t g=0;g<16U;g+=2U)
-        for(uint32_t c=0;c<512U;c+=64U) {
-            uint32_t sr=g*rows+first+r,sr1=(g+1U)*rows+first+r;
-            const __fp16 *a=stage1+qbh_r4_pos(sr&~1U,c,16U);
-            const __fp16 *b=stage1+qbh_r4_pos(sr1&~1U,c,16U);
-            HVX_VectorPair aa=Q6_W_vdeal_VVR(*(const HVX_Vector *)(a+1024U),*(const HVX_Vector *)a,-2);
-            HVX_VectorPair bb=Q6_W_vdeal_VVR(*(const HVX_Vector *)(b+1024U),*(const HVX_Vector *)b,-2);
-            HVX_VectorPair packed=Q6_W_vshuff_VVR(Q6_V_lo_W(bb),Q6_V_lo_W(aa),-2);
-            HVX_VectorPair packed_next=Q6_W_vshuff_VVR(Q6_V_hi_W(bb),Q6_V_hi_W(aa),-2);
-            __fp16 *out=dst+(r*16U+c/32U)*1024U+g*32U;
-            *(HVX_Vector *)out=Q6_V_lo_W(packed);
-            *(HVX_Vector *)(out+1024U)=Q6_V_hi_W(packed);
-            *(HVX_Vector *)(out+16384U)=Q6_V_lo_W(packed_next);
-            *(HVX_Vector *)(out+16384U+1024U)=Q6_V_hi_W(packed_next);
-        }
-    asm volatile("barrier" ::: "memory");
-}
 /* Post-R4 table is indexed by the exact FP16 bit pattern. Native planes
  * are produced directly; no intervening uniform U8 quantizer. */
 static inline HVX_Vector qbh_r4_sp2_half(HVX_Vector bits,const uint16_t *lut,HVX_Vector *scratch) {
@@ -107,50 +81,37 @@ static void qbh_r4_finish_range(struct qbh_block_header *h,
  const HVX_Vector offsets=*(const HVX_Vector*)qbh_attention_vscatter_offsets;
  const uint16_t *lut=(const uint16_t*)(b->w4u8_silu_lut+QBH_MLP_LUT_BYTES);
  uint8_t *high=h->logical_m==64U?b->sp2_high:middle+128U;
- const uint32_t batch_rows=count>=8U?8U:4U;
  for(uint32_t a=a_first;a<a_first+a_count;a++)for(uint32_t c=0;c<512U;c+=64U)
-  for(uint32_t r=0;r<count;r+=batch_rows) {
-   /* Up to eight independent gather destinations hide producer/lookup latency.
-    * Down output is phase-dead here; each context owns2048B within it. */
-   for(uint32_t rr=0;rr<batch_rows;rr++) {
+  for(uint32_t r=0;r<count;r+=4U) {
+   HVX_Vector encoded[4];
+   /* Four independent gather destinations hide producer/lookup latency.
+    * Down output is phase-dead here; each context owns1024B within it. */
+   for(uint32_t rr=0;rr<4U;rr++) {
     if(r+rr<count) {
      const __fp16 *src=weight+(r+rr)*16384U+(c/32U)*1024U;
-     if(h->logical_m==64U && h->dense_r4_mode==1U) {
-      src+=(a/2U)*64U;
-      HVX_VectorPair pair=Q6_W_vdeal_VVR(*(const HVX_Vector *)(src+1024U),*(const HVX_Vector *)src,-2);
-      scratch[rr]=(a&1U)?Q6_V_hi_W(pair):Q6_V_lo_W(pair);
-     } else {
-      HVX_Vector group_offsets=Q6_Vw_vadd_VwVw(offsets,Q6_V_vsplat_R(a*4U));
-      Q6_vgather_ARMVw(scratch+rr,(int32_t)(uintptr_t)src,4095U,group_offsets);
-     }
+     HVX_Vector group_offsets=Q6_Vw_vadd_VwVw(offsets,Q6_V_vsplat_R(a*4U));
+     Q6_vgather_ARMVw(scratch+rr,(int32_t)(uintptr_t)src,4095U,group_offsets);
     } else scratch[rr]=Q6_V_vzero();
    }
-   for(uint32_t rr=0;rr<batch_rows;rr++) {
+   for(uint32_t rr=0;rr<4U;rr++) {
     HVX_Vector bits=*(volatile HVX_Vector *)(scratch+rr);
     if(audit && r+rr<count)*(HVX_Vector*)(audit+2U*524288U+(first+r+rr)*8192U+a*512U+c)=bits;
     HVX_Vector off=Q6_Vh_vasl_VhR(Q6_V_vand_VV(bits,Q6_Vh_vsplat_R(32767)),1);
     HVX_VectorPred upper=Q6_Q_vcmp_gt_VuhVuh(bits,Q6_Vh_vsplat_R(32767));
-    Q6_vgather_AQRMVh(scratch+8U+rr,Q6_Q_not_Q(upper),(int32_t)(uintptr_t)lut,65535U,off);
-    Q6_vgather_AQRMVh(scratch+8U+rr,upper,(int32_t)(uintptr_t)(lut+32768U),65535U,off);
+    Q6_vgather_AQRMVh(scratch+4U+rr,Q6_Q_not_Q(upper),(int32_t)(uintptr_t)lut,65535U,off);
+    Q6_vgather_AQRMVh(scratch+4U+rr,upper,(int32_t)(uintptr_t)(lut+32768U),65535U,off);
    }
-   for(uint32_t rr=0;rr<batch_rows;rr+=4U) {
-   /* Consume VTCM results directly. A variable-index vector array here
-    * lowers to a 1KiB stack copy; never stage activations on the stack. */
-   HVX_Vector e0=*(volatile HVX_Vector *)(scratch+8U+rr);
-   HVX_Vector e1=*(volatile HVX_Vector *)(scratch+9U+rr);
-   HVX_Vector e2=*(volatile HVX_Vector *)(scratch+10U+rr);
-   HVX_Vector e3=*(volatile HVX_Vector *)(scratch+11U+rr);
-   HVX_Vector lo=Q6_Vb_vpacke_VhVh(e1,e0),hi=Q6_Vb_vpacke_VhVh(e3,e2);
+   for(uint32_t rr=0;rr<4U;rr++)encoded[rr]=*(volatile HVX_Vector *)(scratch+4U+rr);
+   HVX_Vector lo=Q6_Vb_vpacke_VhVh(encoded[1],encoded[0]),hi=Q6_Vb_vpacke_VhVh(encoded[3],encoded[2]);
    HVX_VectorPair x=Q6_W_vdeal_VVR(hi,lo,-32);
-   size_t pos=(a*16U+c/32U)*2048U+(first+r+rr)*32U;
+   size_t pos=(a*16U+c/32U)*2048U+(first+r)*32U;
    *(HVX_Vector*)(middle+pos)=Q6_V_lo_W(x);*(HVX_Vector*)(middle+pos+2048U)=Q6_V_hi_W(x);
-   lo=Q6_Vb_vpacko_VhVh(e1,e0);hi=Q6_Vb_vpacko_VhVh(e3,e2);x=Q6_W_vdeal_VVR(hi,lo,-32);
+   lo=Q6_Vb_vpacko_VhVh(encoded[1],encoded[0]);hi=Q6_Vb_vpacko_VhVh(encoded[3],encoded[2]);x=Q6_W_vdeal_VVR(hi,lo,-32);
    *(HVX_Vector*)(high+pos)=Q6_V_lo_W(x);*(HVX_Vector*)(high+pos+2048U)=Q6_V_hi_W(x);
-   }
   }
  asm volatile("barrier":::"memory");
 }
-/* Three contexts share only immutable inputs; each owns a 2048B phase-dead Down gather
+/* Three contexts share only immutable inputs; each owns a 1024B phase-dead Down gather
  * destination and disjoint whole channel tiles/groups. No atomic hot loop. */
 struct qbh_r4_convert_task {
     struct qbh_block_header *h;
@@ -158,7 +119,7 @@ struct qbh_r4_convert_task {
     const __fp16 *weight;
     uint8_t *middle;
     __fp16 *audit;
-    uint32_t finish,first,count,stream,finish_workers;
+    uint32_t finish,first,count,stream;
     volatile uint32_t ready[8],abort;
     uint32_t consumed[2];
     uint64_t work_ticks[3];
@@ -184,9 +145,8 @@ static void qbh_r4_convert_worker(void *context,uint32_t id) {
         }
         return;
     }
-    const uint32_t parts=task->finish_workers?task->finish_workers:3U;
     if(task->finish)qbh_r4_finish_range(task->h,task->b,task->weight,task->middle,
-        task->first,task->count,(HVX_Vector *)(task->b->down+id*2048U),task->audit,id*16U/parts,(id+1U)*16U/parts-id*16U/parts);
+        task->first,task->count,(HVX_Vector *)(task->b->down+id*1024U),task->audit,id*16U/3U,(id+1U)*16U/3U-id*16U/3U);
     else for(uint32_t tile=id*256U/3U;tile<(id+1U)*256U/3U;++tile)
         qbh_r4_prepare_tile(task->b->gate,task->b->up,(__fp16 *)task->b->hmx_activation,
             64U,tile,(const uint16_t *)task->b->w4u8_silu_lut,scratch);
@@ -212,42 +172,6 @@ static int qbh_r4_convert_parallel(struct qbh_block_w4f16_pool *pool,
     ++task->h->dense_r4_parallel_dispatches;
     if(task->finish)task->h->dense_r4_parallel_finish_groups+=16U;
     else task->h->dense_r4_parallel_prepare_tiles+=256U;
-    return 0;
-}
-/* L32-0021: two finish workers consume the previous output while the
- * caller lays out the next input. Both use the inactive slot in distinct
- * arenas; current HMX input/output, Stage1 and LUT remain immutable.
- * Join all converters before advancing either slot or publishing Down. */
-static int qbh_r4_finish_layout(struct qbh_block_w4f16_pool *pool,
-    struct qbh_r4_convert_task *task,const __fp16 *stage1,__fp16 *next_act,
-    uint32_t next_first) {
-    if(!pool || pool->worker_count<2U)return -1;
-    for(uint32_t i=0;i<pool->worker_count;++i)
-        if(pool->jobs[i].command_kind!=QBH_BLOCK_HVX_POOL_NONE)return -1;
-    uint64_t start=HAP_perf_get_qtimer_count();
-    task->finish_workers=2U;
-    pool->active_worker_count=2U;pool->extra_expand_worker_index=UINT32_MAX;
-    for(uint32_t i=0;i<2U;++i) {
-        pool->jobs[i].r4_convert_context=task;
-        pool->jobs[i].command_kind=QBH_BLOCK_HVX_POOL_R4_CONVERT;
-    }
-    asm volatile("barrier" ::: "memory");
-    for(uint32_t i=0;i<2U;++i)(void)qurt_sem_up(&pool->command_ready[i]);
-    uint64_t t=HAP_perf_get_qtimer_count();
-    qbh_r4_layout_weight(stage1,next_act,64U,next_first,8U);
-    uint64_t layout=HAP_perf_get_qtimer_count()-t;
-    t=HAP_perf_get_qtimer_count();
-    qbh_w4f16_pool_wait(pool);pool->active_worker_count=0U;
-    task->h->dense_r4_parallel_join_ticks+=HAP_perf_get_qtimer_count()-t;
-    uint64_t elapsed=HAP_perf_get_qtimer_count()-start;
-    /* Nonoverlapping caller attribution; worker work is a separate
-     * diagnostic sum, never added to the complete Host/DSP ledger. */
-    task->h->dense_r4_layout_ticks+=layout;
-    task->h->dense_r4_finish_ticks+=elapsed-layout;
-    task->h->dense_r4_pipeline_hvx_ticks+=elapsed;
-    for(uint32_t i=0;i<2U;++i)task->h->dense_r4_parallel_work_ticks+=task->work_ticks[i];
-    ++task->h->dense_r4_parallel_dispatches;
-    task->h->dense_r4_parallel_finish_groups+=16U;
     return 0;
 }
 /* Up native outputs and raw H512 input occupy independent arenas. A
@@ -358,11 +282,10 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
     if(audit)for(uint32_t r=0;r<16U*rows;++r)for(uint32_t c=0;c<512U;++c)
         audit[524288U+r*512U+c]=stage1[qbh_r4_pos(r,c,16U)];
     t=HAP_perf_get_qtimer_count();
-    /* Exact H16 top-left of the immutable native H128 sign tile.
-     * Clear both padded dimensions; scale remains the same FP16 .25. */
-    for(uint32_t v=0;v<16U;++v)
-        ((HVX_Vector *)w12)[v]=v<8U?Q6_V_vmux_QVV(Q6_Q_vsetq_R(64),
-            ((const HVX_Vector *)qbh_r3_sign_matrix)[v],Q6_V_vzero()):Q6_V_vzero();
+    qbh_r4_zero(w12,2048U);
+    /* Input row is [group], output column is [new group]. */
+    for(uint32_t n=0;n<16U;++n)for(uint32_t k=0;k<16U;++k)
+        w12[qbh_hmx_fp16_tile_offset(k,n)]=(__fp16)qbh_r4_h16(k,n);
     for(uint32_t c=0;c<32U;++c)scales[c]=(float)(__fp16)0.25f;
     qbh_hmx_fp16_init_channel_scales(b->channel_scale,scales);
     h->dense_r4_prepare_ticks+=HAP_perf_get_qtimer_count()-t;
@@ -371,23 +294,15 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
          * The previous output and next input use the opposite slot from the
          * active HMX command. Stage1, H12 and scales remain immutable. */
         t=HAP_perf_get_qtimer_count();
-        qbh_r4_layout_weight(stage1,act,rows,0U,8U);
+        qbh_r4_layout_vector(stage1,act,rows,0U,8U);
         h->dense_r4_layout_ticks+=HAP_perf_get_qtimer_count()-t;
         for(uint32_t batch=0;batch<8U;++batch) {
             uint32_t slot=batch&1U,other=slot^1U;
             __fp16 *ai=act+slot*131072U,*oi=weight+slot*131072U;
-            qbh_hmx_start(worker,QBH_BLOCK_HMX_FP16,w12,ai,b->channel_scale,oi,1U,1U,128U);
+            qbh_hmx_start(worker,QBH_BLOCK_HMX_FP16,ai,w12,b->channel_scale,oi,128U,1U,1U);
             ++h->hmx_command_count;++h->dense_r4_hmx_calls;
             h->hmx_fp16_tile_pair_count+=128U;
             ++h->dense_r4_pipeline_batches;
-            if(batch && batch+1U<8U) {
-                struct qbh_r4_convert_task task={.h=h,.b=b,
-                    .weight=weight+other*131072U,.middle=middle,.audit=audit,
-                    .finish=1U,.first=(batch-1U)*8U,.count=8U};
-                if(qbh_r4_finish_layout(pool,&task,stage1,act+other*131072U,(batch+1U)*8U)) {
-                    (void)qbh_hmx_wait(worker);return -1;
-                }
-            } else {
             if(batch) {
                 t=HAP_perf_get_qtimer_count();
                 if(qbh_r4_finish_vector(h,b,pool,weight+other*131072U,middle,(batch-1U)*8U,8U,
@@ -399,10 +314,9 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
             }
             if(batch+1U<8U) {
                 t=HAP_perf_get_qtimer_count();
-                qbh_r4_layout_weight(stage1,act+other*131072U,rows,(batch+1U)*8U,8U);
+                qbh_r4_layout_vector(stage1,act+other*131072U,rows,(batch+1U)*8U,8U);
                 uint64_t dt=HAP_perf_get_qtimer_count()-t;
                 h->dense_r4_layout_ticks+=dt;h->dense_r4_pipeline_hvx_ticks+=dt;
-            }
             }
             t=HAP_perf_get_qtimer_count();
             int rc=qbh_hmx_wait(worker);
