@@ -19,6 +19,7 @@ def main():
     ap.add_argument("--reference",type=Path,required=True)
     ap.add_argument("--output",type=Path,required=True)
     ap.add_argument("--reuse-package-from")
+    ap.add_argument("--fp32-residual",action="store_true")
     ap.add_argument("--generation-steps",type=int,default=16,choices=range(1,17))
     args=ap.parse_args()
     subprocess.run(["python3","/home/daniuniu/work/llama32-htp-project-memory/scripts/project_memory.py","preflight","--source-worktree",str(ROOT)],check=True)
@@ -32,6 +33,9 @@ def main():
     remote="/data/local/tmp/llama32-htp/"+active.lower()+"/"+args.output.name
     assert adb("shell",f"test ! -e {shlex.quote(remote)}",check=False).returncode==0
     adb("shell",f"mkdir -p {shlex.quote(remote)}")
+    seal=json.loads((ROOT/'build/llama-build-seal.json').read_text())
+    assert seal['source_head']==subprocess.check_output(['git','-C',str(ROOT),'rev-parse','HEAD'],text=True).strip()
+    for f,h in seal['files'].items():assert sha256(Path(f))==h
     builds={}
     for name,build in [("qwen3_block_cli","android_ReleaseG_aarch64"),("libqwen3_probe.so","android_ReleaseG_aarch64"),("libqwen3_probe_skel.so","hexagon_ReleaseG_toolv19_v79")]:
         cache=(ROOT/build/"CMakeCache.txt").read_text();assert "QBH_LLAMA_LAYER_COUNT:STRING=16" in cache and "QBH_MODEL_LLAMA32:BOOL=ON" in cache
@@ -78,6 +82,10 @@ def main():
     if m["recipe"]=="W4A8":
         argv[20]="hvx_tree";argv[9]="hvx_fused_post_norm_pool4"
         env.update(QBH_W4U8_DECODE_DIRECT_N_GATE_UP_BATCH_N_TILES="32",QBH_W4U8_DECODE_DIRECT_N_GATE_UP_CONTINUOUS="1",QBH_W4U8_DECODE_DIRECT_N_O_GATE_PREFETCH="1",QBH_W4U8_DECODE_DIRECT_N_GATE_UP_SWIGLU_STREAM="1",QBH_W4U8_DECODE_DIRECT_N_QKV_BATCH_N_TILES="16",QBH_W4U8_DECODE_DIRECT_N_DOWN_BATCH_N_TILES="8",QBH_W4U8_DECODE_DIRECT_N_DOWN_SINGLE_DMA="1",QBH_W4U8_DECODE_O_BATCH_N_TILES="16",QBH_W4U8_DECODE_DIRECT_N_O_SINGLE_DMA="1")
+    if args.fp32_residual:
+        assert m.get('fp32_residual') is True and m['recipe']=='W4A8'
+        env.update(QBH_LLAMA_FP32_RESIDUAL="1",QBH_LLAMA_SP2="8")
+    elif m.get('fp32_residual'):raise ValueError('FP32 package requires explicit FP32 runtime contract')
     command="cd "+shlex.quote(remote)+" && "+" ".join(k+"="+shlex.quote(v) for k,v in env.items())+" "+shlex.join(argv)
     protocol={"experiment":m["experiment"],"source_head":subprocess.check_output(["git","-C",str(ROOT),"rev-parse","HEAD"],text=True).strip(),"builds":builds,"package_manifest_sha256":sha256(args.package/"manifest.json"),"dataset_sha256":sha256(args.reference/"dataset.json"),"reused_package":args.reuse_package_from,"requested_generation_steps":args.generation_steps,"command":command,"timing_scope":"single functional run, not formal profiling; includes embedding/16 layers/norm/head/greedy/FastRPC, excludes loading and external tokenizer"}
     (args.output/"protocol.json").write_text(json.dumps(protocol,indent=2))
