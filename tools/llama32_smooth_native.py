@@ -34,6 +34,13 @@ def prepare():
     save(FRONT/'qparams.json',dict(layers=qs,final_norm=carriers['final_norm'],logits=carriers['logits']))
     save(FRONT/'manifest.json',dict(experiment='L32-0014',original_model=str(ORIG),source_weights_sha256=sha256(MOD/'quantized.pt'),source_steps_sha256=sha256(MOD/'steps.json'),source_carriers_sha256=sha256(MOD/'carriers.json'),files={str(p.relative_to(FRONT)):sha256(p) for p in FRONT.rglob('*') if p.is_file()}))
     log('NATIVE_PACKAGE_PREPARED')
+def dense_fixed(x,n):
+    rows=x.reshape(-1,n);out=torch.empty_like(rows)
+    for start in range(0,len(rows),64):
+        tile=rows[start:start+64].contiguous();count=len(tile)
+        if count<64:tile=F.pad(tile,(0,0,0,64-count))
+        out[start:start+count]=(tile@had(n))[:count]
+    return out.reshape(x.shape)
 class Runner:
     def __init__(self):
         m=json.loads((FRONT/'manifest.json').read_text())
@@ -43,7 +50,7 @@ class Runner:
         self.gamma=np.ones(2048,dtype='f2');self.audit=[]
     def dense_codes(self,c,inq,outq,n):
         x=torch.from_numpy((c.astype('f4')-inq['zero_point'])*np.float32(inq['scale'])).cuda()
-        y=(x.reshape(-1,n)@had(n)).reshape(x.shape).cpu().numpy()
+        y=dense_fixed(x,n).cpu().numpy()
         return quantize(y,outq)
     def layer(self,x,i,cos,sin,past):
         q=self.q['layers'][i];p=FRONT/f'layer{i}'
@@ -67,7 +74,7 @@ class Runner:
         gf=torch.from_numpy((g.astype('f4')-q['gate']['zero_point'])*np.float32(q['gate']['scale'])).cuda()
         uf=torch.from_numpy((u.astype('f4')-q['up']['zero_point'])*np.float32(q['up']['scale'])).cuda()
         # Fused high precision SwiGLU-to-dense-R4 temporary, then ONE A8 output.
-        z=F.silu(gf)*uf;zr=z@had(8192);zin=quantize(zr.cpu().numpy(),q['down_input'])
+        z=F.silu(gf)*uf;zr=dense_fixed(z,8192);zin=quantize(zr.cpu().numpy(),q['down_input'])
         down=proj(zin,'down');out=exact_residual_add_u8(res,q['post_attention_residual'],down,q['down'],q['block_output'])
         return out,(k,v)
     def forward(self,ids,past=None,only_last=True):
@@ -80,6 +87,7 @@ class Runner:
         return y,cache
 @torch.no_grad()
 def evaluate():
+    attempt=OUT/'native-a02';attempt.mkdir(exist_ok=False)
     runner=Runner();ds=json.loads((OLD/'dataset.json').read_text());rows=[];started=time.monotonic()
     for sample in ds['samples']:
         # One80-token causal prefill is equivalent to teacher-forced prefix/decode
@@ -88,11 +96,13 @@ def evaluate():
         logits=(torch.from_numpy(codes.astype('f4'))-runner.q['logits']['zero_point'])*runner.q['logits']['scale']
         loss=F.cross_entropy(logits,torch.tensor(sample['target_ids']),reduction='none').tolist()
         rows.append(dict(id=sample['id'],nll=loss,target_codes=[int(codes[j,t]) for j,t in enumerate(sample['target_ids'])]))
-        save(OUT/f'native-sample-{sample["id"]:03d}.json',rows[-1])
+        save(attempt/f'native-sample-{sample["id"]:03d}.json',rows[-1])
         if sample['id']==0:
-            pc,cache=runner.forward(ids[:64]);dc,cache=runner.forward(ids[64:65],cache)
-            assert np.array_equal(pc[0],codes[0]) and np.array_equal(dc[0],codes[1])
-            save(OUT/'native-cache-equivalence.json',dict(prefill_last_exact=True,decode_exact=True,scope='first heldout window, all vocabulary logits codes; full80 vs M64+1'))
+            pc,cache=runner.forward(ids[:64]);errors=[int(np.max(np.abs(pc[0].astype('i4')-codes[0].astype('i4'))))]
+            for j in range(15):
+                dc,cache=runner.forward(ids[64+j:65+j],cache);errors.append(int(np.max(np.abs(dc[0].astype('i4')-codes[1+j].astype('i4')))))
+            save(attempt/'cache-equivalence.json',dict(max_code_errors=errors,scope='first heldout window, all128256 vocabulary logits codes; full80 vs actual M64+15',dense='FP32 fixed64-row dense GEMM; no shape-dependent GEMV',pass_gate=max(errors)==0))
+            log('CACHE_EQUIVALENCE',errors);assert max(errors)==0
         if len(rows)%8==0:log('NATIVE_BRIDGE',len(rows),sum(loss)/16)
     vals=[v for row in rows for v in row['nll']];mean=sum(vals)/len(vals)
     save(OUT/'native-bridge.json',dict(ppl=math.exp(mean),nll=mean,targets=len(vals),rows=rows,elapsed_seconds=time.monotonic()-started,scope='native HMX SDK conversion and existing integer softmax/RMS/RoPE/residual oracle; dense FP32 R3/R4 host simulation, NOT device',integer_dot_matrices_audited=len(runner.helper.audited),sp2=False))
