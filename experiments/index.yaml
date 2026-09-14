@@ -1185,7 +1185,7 @@ experiments:
   evidence_validity: all_attempts_retained_sealed_prior_comparisons_verified
 - id: L32-0026
   title: H512 fast accumulation and rounding repair
-  execution_state: running
+  execution_state: completed
   record: docs/experiments/L32-0026.md
   approval_ref: User says continue after L32-0025; original fast path, speed and hardware correctness
     first
@@ -1193,5 +1193,26 @@ experiments:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
   parent_source: 7478516462bf82878838fb3d23a41e220b0f3351
-  hardware_runs: 0
+  hardware_runs: 9
   baseline_quality_promoted: false
+  completed_on: '2026-09-14'
+  hardware_runs_definition: Six candidate singlelayer audits, reverse chain3 and full16, one restored
+    layer0 audit;1exit0 and8original ideal-exact exit1 retained
+  token_boundary_executions: 18
+  source_heads:
+    codex/llama32-no-rotation: cb8be962f3f31a1b89c8f8cd2bebb9cceef049a7
+  source_shift: 18afc89afc29d280a606a59227f6fd8ca4c4cc68
+  source_reverse: cb5eed10206ea256a3ac1496892f1947ed1ca7ee
+  source_restored: f1162649cdbff56b134dbc8eab9a2517a0c35fec
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0026
+  evidence_ledger_sha256: 599d86cf654b2b41526690c76ad1c0a251b5f206815a57ce4ae12b0024f94ac9
+  report: docs/LLAMA32_H512_FAST_ROUNDING.md
+  local_gate: singlelayer_pass_shift_no_change_reverse_chain3_pass_full16_fail_original_restored
+  formal_profiling: false
+  e2e_run: false
+  ppl_rerun: false
+  native_arithmetic_candidates: 2
+  successful_builds: 5
+  failed_builds: 0
+  failed_native_crashes: 0
+  evidence_validity: all_attempts_retained_original_source_restored
