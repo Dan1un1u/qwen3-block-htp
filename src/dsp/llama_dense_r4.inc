@@ -24,10 +24,7 @@ static int qbh_r4_gemm(struct qbh_block_header *h,
         diag[3]=(uint32_t)(uintptr_t)sc;diag[4]=mt;diag[5]=kt;diag[6]=nt;
         qurt_mem_cache_clean((qurt_addr_t)diag,128U,QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE);
     }
-    /* L32-0026: only mode1 first factor changes K-tile issue order. */
-    uint32_t kind=(h->dense_r4_mode==1U && kt==16U && nt==16U)
-        ?QBH_BLOCK_HMX_FP16_REVERSE_K:QBH_BLOCK_HMX_FP16;
-    int rc=qbh_hmx_submit(worker,kind,a,w,sc,out,mt,kt,nt);
+    int rc=qbh_hmx_submit(worker,QBH_BLOCK_HMX_FP16,a,w,sc,out,mt,kt,nt);
     h->dense_r4_matmul_ticks+=HAP_perf_get_qtimer_count()-t;
     ++h->hmx_command_count;++h->dense_r4_hmx_calls;
     h->hmx_fp16_tile_pair_count+=mt*kt*nt;

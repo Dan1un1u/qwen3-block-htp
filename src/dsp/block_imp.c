@@ -73,7 +73,6 @@ enum qbh_block_hmx_command_kind {
     QBH_BLOCK_HMX_LPBQ_W4_PLANES = 9,
     QBH_BLOCK_HMX_SP2_W4 = 10,
     QBH_BLOCK_HMX_W4_FP32_RESIDUAL = 14,
-    QBH_BLOCK_HMX_FP16_REVERSE_K = 15,
     QBH_BLOCK_HMX_SP2_RELEASE = 11,
 };
 
@@ -3307,12 +3306,6 @@ static void qbh_hmx_worker_main(void *opaque) {
         worker->command_status = AEE_SUCCESS;
         if (worker->kind == QBH_BLOCK_HMX_FP16) {
             qbh_hmx_fp16_matmul_tiles(
-                (const __fp16 *)worker->activation,
-                (const __fp16 *)worker->weight,
-                worker->scale_or_bias, (__fp16 *)worker->output,
-                worker->m_tiles, worker->k_tiles, worker->n_tiles);
-        } else if (worker->kind == QBH_BLOCK_HMX_FP16_REVERSE_K) {
-            qbh_hmx_fp16_matmul_reverse_k(
                 (const __fp16 *)worker->activation,
                 (const __fp16 *)worker->weight,
                 worker->scale_or_bias, (__fp16 *)worker->output,
