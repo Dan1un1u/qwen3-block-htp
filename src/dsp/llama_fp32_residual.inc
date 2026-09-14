@@ -15,7 +15,7 @@ static inline HVX_Vector qbh_fp32_dot(HVX_Vector low,HVX_Vector high,
     /* Modular operations exactly recover the separately proven S32 result. */
     return sp2 ? Q6_Vw_vsub_VwVw(Q6_Vw_vadd_VwVw(low,Q6_Vw_vasl_VwR(high,8)),
             Q6_Vw_vasl_VwR(sum,15))
-        : Q6_Vw_vsub_VwVw(low,Q6_Vw_vmpyi_VwRh(sum,zero));
+        : Q6_Vw_vsub_VwVw(low,Q6_Vw_vmpyi_VwRh(sum,(uint32_t)zero*0x00010001U));
 }
 static void qbh_llama_fp32_epilogue(const uint8_t *lo,const uint8_t *hi,
     const float *scale,float *dst,uint32_t rows,uint32_t sp2,int32_t zero) {
