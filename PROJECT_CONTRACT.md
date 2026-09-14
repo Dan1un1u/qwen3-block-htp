@@ -193,3 +193,10 @@ scopes; rejected0026 candidates remain rejected, exactmode3 remains diagnostic.
 Acceptance is a paper/performance working choice, not a numerical gate pass or
 model-quality acceptance. Do not rewrite historical evidence or infer fullmodel
 E2E for the combined rotated FP32-residual configuration from layer timings.
+
+## No-rotation paper baseline selection (L32-0028)
+User selects L32-0018 no-rotation SP2 plus FP32 residual as the primary Llama
+paper speed baseline, and EXP0268 no-rotation SP2 for Qwen with FP32 port under
+its own EXP0269. This supersedes the0027 rotated primary working selection;
+rotation evidence remains supplementary with original numerical caveats.
+Only documentation/audit work on Llama in0028; no new native/hardware/PPL.
