@@ -106,6 +106,14 @@ struct qbh_replay_step_result {
     uint64_t scan_dynamic_attention_ticks;
 };
 
+static uint32_t qbh_l32_rotation_lut_bytes(void) {
+#ifdef QBH_MODEL_LLAMA32
+    const char *r=getenv("QBH_DENSE_R4"),*sp=getenv("QBH_LLAMA_SP2");
+    if(r && atoi(r) && sp && atoi(sp)==8)return 2U*QBH_MLP_LUT_BYTES;
+#endif
+    return QBH_MLP_LUT_BYTES;
+}
+
 static int qbh_write_named_tensor(
     const char *root, const char *name,
     const void *data, uint32_t bytes) {
@@ -1609,7 +1617,7 @@ static int qbh_prepare_vertical_layer_slots(
                           layer_index);
         if (status < 0 || (size_t)status >= sizeof(name) ||
             qbh_prepare_slot(&slots->silu_lut, root, name,
-                             QBH_MLP_LUT_BYTES, cursor) != 0) {
+                             qbh_l32_rotation_lut_bytes(), cursor) != 0) {
             return -1;
         }
     }
@@ -6133,7 +6141,7 @@ int main(int argc, char **argv) {
     if (vertical_slice_mode == QBH_BLOCK_SLICE_DISABLED &&
         qbh_block_mlp_is_w4u8_streaming(mlp_mode) &&
         qbh_prepare_slot(&w4u8_lut_slot, argv[1],
-                         "silu_up_lut_u16.bin", QBH_MLP_LUT_BYTES,
+                         "silu_up_lut_u16.bin", qbh_l32_rotation_lut_bytes(),
                          &cursor) != 0) {
         fprintf(stderr, "W4U8 streaming LUT audit failed\n");
         return 2;

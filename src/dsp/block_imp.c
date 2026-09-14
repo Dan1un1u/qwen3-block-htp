@@ -813,7 +813,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
                             uint32_t generation_mode,
                             uint32_t kv_cache_k_format,
                             uint32_t kv_cache_v_format,
-                            uint32_t scan_mode, uint32_t sp2_mode,
+                            uint32_t scan_mode, uint32_t sp2_mode, uint32_t r4_mode,
                             struct qbh_block_buffers *buffers,
                             uint32_t *peak_bytes) {
     struct qbh_block_arena arena = {vtcm, vtcm_bytes, 0U, 0U};
@@ -988,7 +988,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         QBH_HMX_FP16_SCALE_BYTES);
     if (qbh_block_mlp_is_w4u8_streaming(mlp_mode)) {
         buffers->w4u8_silu_lut = qbh_arena_alloc_aligned(
-            &arena, QBH_MLP_LUT_BYTES,
+            &arena, QBH_MLP_LUT_BYTES * (sp2_mode && r4_mode ? 2U : 1U),
             QBH_MLP_GATHER_HALF_BYTES);
         buffers->w4u8_gather_scratch = qbh_arena_alloc_aligned(
             &arena, QBH_BLOCK_W4U8_GATHER_SCRATCH_BYTES,
@@ -1473,7 +1473,7 @@ static int qbh_slice_layer_desc_valid(
         return 0;
     }
     if (qbh_block_mlp_is_w4u8_streaming(header->mlp_mode)) {
-        if (layer->w4u8_silu_lut_bytes != QBH_MLP_LUT_BYTES ||
+        if (layer->w4u8_silu_lut_bytes != QBH_MLP_LUT_BYTES * (QBH_LLAMA_SP2(header) && header->dense_r4_mode ? 2U : 1U) ||
             layer->w4u8_gate_up_bundle_bytes == 0U ||
             layer->w4u8_down_bundle_bytes == 0U ||
             !qbh_range_valid(layer->w4u8_silu_lut_offset,
@@ -2006,7 +2006,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
     uint32_t element_bytes;
 #ifdef QBH_MODEL_LLAMA32
     /* Llama A8 currently validates the unrotated head64 integer pipeline. */
-    if (header == NULL || header->dense_r3_mode || header->dense_r4_mode ||
+    if (header == NULL || header->dense_r3_mode ||
+        (header->dense_r4_mode && (header->dense_r4_mode>2U || header->dense_r4_optimization!=6U || QBH_LLAMA_SP2(header)!=8U)) ||
         (header->variant == QBH_BLOCK_W4U8
             ? (header->attention_pipeline_mode != QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA ||
                (header->scan_mode && (header->kv_cache_k_format != QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1 ||
@@ -2657,7 +2658,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         return 0;
     }
     if (qbh_block_mlp_is_w4u8_streaming(header->mlp_mode) &&
-        (header->w4u8_silu_lut_bytes != QBH_MLP_LUT_BYTES ||
+        (header->w4u8_silu_lut_bytes != QBH_MLP_LUT_BYTES * (QBH_LLAMA_SP2(header) && header->dense_r4_mode ? 2U : 1U) ||
          header->w4u8_gate_up_bundle_bytes == 0U ||
          header->w4u8_down_bundle_bytes == 0U ||
          !qbh_range_valid(header->w4u8_silu_lut_offset,
@@ -4457,6 +4458,7 @@ static void qbh_w4u8_generation_expand_worker_run(
 static void qbh_r4_prepare_tile(const uint8_t *gate,const uint8_t *up,
     __fp16 *act,uint32_t rows,uint32_t tile,const uint16_t *lut,uint8_t *scratch);
 static void qbh_r4_convert_worker(void *context,uint32_t worker_index);
+static void qbh_r4_prepare_tile(const uint8_t*,const uint8_t*,__fp16*,uint32_t,uint32_t,const uint16_t*,uint8_t*);
 #ifdef QBH_MODEL_LLAMA32
 static void qbh_llama_swiglu_worker(struct qbh_block_w4f16_pool *pool,uint32_t index) {
     for(uint32_t tile=index;tile<QBH_BLOCK_INTERMEDIATE/32U;tile+=3U) {
@@ -4467,7 +4469,10 @@ static void qbh_llama_swiglu_worker(struct qbh_block_w4f16_pool *pool,uint32_t i
             }
             asm volatile("barrier" ::: "memory");
         }
-        if (pool->u8_sp2_high && pool->sp2_pipelined_gather)
+        if(pool->u8_r4_act) {
+            qbh_r4_prepare_tile(pool->u8_swiglu_gate,pool->u8_swiglu_up,pool->u8_r4_act,
+                64U,tile,pool->u8_swiglu_lut,pool->u8_swiglu_gather_scratch+(size_t)index*256U);
+        } else if (pool->u8_sp2_high && pool->sp2_pipelined_gather)
             qbh_mlp_gate_up_sp2_lut_pipelined_hvx(pool->u8_swiglu_gate+(size_t)tile*2048U,
                 pool->u8_swiglu_up+(size_t)tile*2048U,
                 pool->u8_swiglu_middle+(size_t)tile*2048U,
@@ -14942,7 +14947,11 @@ static uint64_t qbh_fnv1a64_u8_native_tile_row(
 }
 
 #include "r3_sign_matrix.inc"
+#ifdef QBH_MODEL_LLAMA32
+#include "llama_dense_r4.inc"
+#else
 #include "dense_r4.inc"
+#endif
 
 #ifdef QBH_MODEL_LLAMA32
 /* L32-0011: all three persistent HVX workers consume completed Up groups.
@@ -14955,6 +14964,7 @@ static int qbh_llama_sp2_prefill_start(struct qbh_block_w4f16_pool *pool,
         if(pool->jobs[i].command_kind!=QBH_BLOCK_HVX_POOL_NONE)return -1;
     pool->u8_swiglu_gate=gate;pool->u8_swiglu_up=up;pool->u8_swiglu_middle=middle;
     pool->u8_sp2_high=buffers->sp2_high;
+    pool->u8_r4_act=pool->attention_header->dense_r4_mode?(__fp16*)buffers->hmx_activation:NULL;
     pool->u8_swiglu_lut=(const uint16_t *)buffers->w4u8_silu_lut;
     pool->u8_swiglu_gather_scratch=buffers->w4u8_gather_scratch;
     pool->u8_swiglu_abort=0U;pool->sp2_prefill_stream=1U;pool->sp2_pipelined_gather=pipelined;
@@ -14973,6 +14983,8 @@ static void qbh_llama_sp2_prefill_finish(struct qbh_block_header *h,
     qbh_w4f16_pool_wait(pool);pool->active_worker_count=0U;
     h->w4u8_gate_up_swiglu_join_wait_ticks+=HAP_perf_get_qtimer_count()-t;
     if(!status)h->w4u8_gate_up_swiglu_consume_count+=QBH_BLOCK_INTERMEDIATE/(32U*32U);
+    if(!status && h->dense_r4_mode)buffers->r4_prefill_prepared=1U;
+    pool->u8_r4_act=NULL;
     pool->sp2_prefill_stream=0U;pool->sp2_pipelined_gather=0U;buffers->sp2_prefill_ready=NULL;
 }
 static int qbh_llama_swiglu_parallel(struct qbh_block_w4f16_pool *pool,
@@ -14982,6 +14994,7 @@ static int qbh_llama_swiglu_parallel(struct qbh_block_w4f16_pool *pool,
         if(pool->jobs[i].command_kind!=QBH_BLOCK_HVX_POOL_NONE)return -1;
     pool->u8_swiglu_gate=gate;pool->u8_swiglu_up=up;pool->u8_swiglu_middle=middle;
     pool->u8_sp2_high=buffers->sp2_high;
+    pool->u8_r4_act=pool->attention_header->dense_r4_mode?(__fp16*)buffers->hmx_activation:NULL;
     pool->u8_swiglu_lut=(const uint16_t *)buffers->w4u8_silu_lut;
     pool->u8_swiglu_gather_scratch=buffers->w4u8_gather_scratch;
     pool->active_worker_count=2U;pool->extra_expand_worker_index=UINT32_MAX;
@@ -21832,6 +21845,7 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
                          header->kv_cache_k_format,
                          header->kv_cache_v_format,
                          header->scan_mode, QBH_LLAMA_SP2(header),
+                         header->dense_r4_mode,
                          &buffers,
                          &header->vtcm_peak_plan_bytes) != 0) {
         header->dsp_status = QBH_BLOCK_STATUS_ARENA_FAILED;
