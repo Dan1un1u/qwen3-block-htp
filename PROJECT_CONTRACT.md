@@ -175,3 +175,10 @@ no-rotation measurements. See0019protocol; no deep speed optimization or quality
 ## L32-0020 optimization authorization
 User explicitly requests rotation pipeline optimization after0019 checkpoint.
 This supersedes prior speed-optimization deferral for the bounded0020protocol.
+
+## Fast-path priority (2026-09-14)
+User directs incremental precision repairs on the original fast HMX pipeline.
+Speed and correct implementation are the current priorities; usable model
+quality is secondary and new PPL/text evaluation is deferred. Exact dense
+mode3 remains diagnostic only. This does not relax numerical/physical gates,
+independent goldens or the10% performance gate. See L32-0025 protocol.

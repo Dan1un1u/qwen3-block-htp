@@ -1,3 +1,9 @@
+# L32-0025 active: original fast HMX path first
+
+User directs incremental repair of the fast path; speed and implementation
+correctness first, defer PPL/text quality. Test H16 normalized matrix entries
+and unity converter with unchanged scheduling. See docs/experiments/L32-0025.md.
+
 # L32-0024 closure: exact R4 fixes full16, cost fails
 
 Source `/home/daniuniu/work/llama32-htp`, branch `codex/llama32-no-rotation`,
