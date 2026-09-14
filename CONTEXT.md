@@ -1,3 +1,7 @@
+# Current EXP0272
+
+User authorizes fullmodel-oriented exact FP32 Norm optimization. Read docs/experiments/EXP-0272.md; active272,next273 supersedes prior closure.
+
 # EXP0271 closure: full-model speed confirmed
 
 Source codex/exp-0271-fp32-fullmodel-speed at 59591175ede2dda847607cb2c980138efe279d46, clean/pushed; measured full28 cb4929b5c42eba39f2ccc507a97ace975de6e480. Native unchanged from EXP0270 C1+C3. Active none, next272. User explicitly authorized this fullmodel diagnostic despite failed singlelayer prefill gate under PC084. No speed tuning or Llama change.

@@ -24,6 +24,23 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0272
+  title: Qwen exact FP32 Norm optimization for full-model gate
+  parent: EXP-0271
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/EXP-0272.md
+  approval_ref: 'User: 再优化一下看看，争取达到全模gate。希望全模和单层的退化不同能给你一些启发'
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0271-fp32-fullmodel-speed
+    started_on: '2026-09-14'
+  source_branches:
+  - codex/exp-0271-fp32-fullmodel-speed
+  - codex/exp-0272-fp32-fullmodel-norm
+  source_commits: []
 - id: EXP-0271
   title: Qwen FP32 residual fullmodel speed confirmation
   parent: EXP-0270

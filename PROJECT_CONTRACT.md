@@ -400,3 +400,7 @@ User selects EXP0268 no-rotation SP2 and Llama L32-0018 no-rotation SP2+FP32 res
 ## PC084 — User-requested Qwen FP32 full-model diagnostic speed
 
 User explicitly requests one fullmodel speed confirmation after EXP0270 short prefill failure. EXP0271 may proceed through correctness prerequisites to full28 timing without the singlelayer speed prerequisite. Existing numerical/physical contracts and historical failed speed status remain. This is diagnostic, not baseline promotion or formal10percent acceptance. Freeze C1+C3 arithmetic and models; PC037 repairs apply.
+
+## PC085 — User-approved full-model FP32 residual speed optimization
+
+User requests further optimization toward the fullmodel10percentgate after EXP0271. EXP0272 may optimize exact Norm/pipeline under its bounded protocol. Singlelayer remains numerical/physical prerequisite and performance diagnostic; actual fullmodel repeat10 paired95percentCI gates the requested fullmodel acceptance. Prior failed singlelayer/fullmodel diagnostics remain unchanged, no numerical/physical threshold relaxation or baseline promotion. All other recipes and Llama frozen; PC037 applies.
