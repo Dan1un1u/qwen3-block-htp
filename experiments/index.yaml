@@ -1218,7 +1218,7 @@ experiments:
   evidence_validity: all_attempts_retained_original_source_restored
 - id: L32-0027
   title: Paper story revision and explicit fast-path scope freeze
-  execution_state: running
+  execution_state: completed
   record: docs/experiments/L32-0027.md
   approval_ref: User accepts existing fast implementation with known rounding issue and requests revision
     of attached paper discussion; no time for continued software/hardware alignment (2026-09-14)
@@ -1229,3 +1229,16 @@ experiments:
   parent_source: cb8be962f3f31a1b89c8f8cd2bebb9cceef049a7
   hardware_runs: 0
   baseline_quality_promoted: false
+  completed_on: '2026-09-14'
+  source_heads:
+    codex/llama32-no-rotation: 0f7d083dc99af7e2983ecd426fca03e9d57a0a07
+  report: docs/PAPER_STORY_RUNTIME_V2.md
+  report_sha256: 02f0b458fd2d79e73c711bfa16b741c40fb151217548da0baa6a8baad91b6904
+  evidence_index: docs/PAPER_STORY_RUNTIME_V2_EVIDENCE.json
+  evidence_index_sha256: b2444718b14fffcbf57475a5bced441ca3ae2624b8df19030bfcba3069093379
+  native_source_unchanged: true
+  formal_profiling: false
+  e2e_run: false
+  ppl_rerun: false
+  local_gate: documentation_links_frozen_report_hashes_and_arithmetic_verified_no_new_numeric_gate
+  evidence_validity: historical_results_preserved_no_new_measurements
