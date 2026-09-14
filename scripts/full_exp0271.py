@@ -19,6 +19,10 @@ def full(fp,repeat,tag,audit=False):
  write(d/'protocol.json',dict(source_head=state['seal']['source_head'],runtime=state,command=cmd,repeat=repeat,fp32=fp,audit=audit));z=adb('shell',cmd,check=False);(d/'stdout.jsonl').write_text(z.stdout);(d/'stderr.txt').write_text(z.stderr);write(d/'exit.json',dict(returncode=z.returncode))
  if audit:adb('pull',e['QBH_GENERATION_AUDIT_DIR']+'/.',win(d),check=False)
  if z.returncode:raise RuntimeError((tag,z.returncode,z.stderr[-1000:],z.stdout[-2000:]))
+ return validate(d,fp,repeat,audit)
+
+def validate(d,fp,repeat,audit=False):
+ tag=str(d.relative_to(R))
  rs=records(d/'stdout.jsonl');ps=[v for v in rs if v.get('record')=='generation_profile'];assert len(ps)==16*repeat,(tag,len(ps))
  fields=['metadata_stage_ticks','input_stage_ticks','input_norm_ticks','qkv_projection_ticks','qk_norm_rope_ticks','attention_ticks','o_projection_ticks','post_attention_residual_ticks','post_attention_norm_ticks','gate_up_ticks','activation_ticks','down_ticks','final_residual_ticks','cache_append_pack_ticks','cache_append_dma_ticks','block_orchestration_ticks','layer_bookkeeping_ticks','layer_unattributed_ticks']
  for step,v in enumerate(ps):
@@ -31,7 +35,7 @@ def full(fp,repeat,tag,audit=False):
   for l in range(28):
    a=v[f'slice_layer_{l}'];assert a['status']==3 and a['layer_index']==l and sum(a[k] for k in fields)==a['layer_ticks']
    assert a['hidden_ddr_read_bytes']==a['hidden_ddr_write_bytes']==a['layer_unattributed_ticks']==0
-   assert a['cache_valid_before']==(1 if step%16==0 else 64+step%16) and a['cache_valid_after']==65+step%16
+   assert a['cache_valid_before']==(0 if step%16==0 else 63+step%16) and a['cache_valid_after']==64+step%16
  fs=[x for x in rs if x.get('generation_sequence_complete')];assert len(fs)==repeat and all(x['all_steps_pass'] for x in fs)
  codes=[(x['selected_token_id'],x['selected_logit_half_bits']) for x in rs if 'selected_logit_half_bits' in x];assert len(codes)==16*repeat and all(v==codes[i%16] for i,v in enumerate(codes))
  for i,x in enumerate(fs):assert x['total_host_wall_ns']==sum(v['host_wall_ns'] for v in ps[i*16:i*16+16])
