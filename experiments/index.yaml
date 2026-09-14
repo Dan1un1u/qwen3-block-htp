@@ -473,7 +473,7 @@ experiments:
     evidence_ledger_sha256: f19061c6a0e314f6520437b9f52d36dff22b93322789ec890387fcf3a8af62bd
 - id: L32-0015
   title: Llama dense R3 and R4 with native SP2 mode8
-  execution_state: running
+  execution_state: deferred
   record: docs/experiments/L32-0015.md
   approval_ref: User accepts R4-after-SwiGLU before-SP2 fusion and fresh Down weights/range;
     start validation experiment
@@ -491,7 +491,7 @@ experiments:
   e2e_run: false
   ppl_rerun: false
   local_gate: component_and_conditional_tail_pass_layer0_decode_ideal_cosine_fail
-  checkpoint_state: diagnosis_complete_pending_gate_discussion
+  checkpoint_state: user_defers_rotations_until_high_precision_residual
   checkpoint_evidence_ledger_sha256: 830ef833be269ae2f4bb35f945cd9b16a73b29813f37b1d39af2b54c03f0f1f2
   checkpoint_evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0015/evidence-ledger-checkpoint-a01.json
   source_heads:
@@ -501,3 +501,16 @@ experiments:
   diagnosis_report: docs/LLAMA32_R4_SP2_DIAGNOSIS.md
   diagnosis_evidence_ledger_sha256: 3a86365af9397de199c43b4233e125e6683405393c23a8a4f08c4469424dcf0c
   diagnosis_evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0015/evidence-ledger-diagnosis-a02.json
+  deferred_to: after L32-0016
+- id: L32-0016
+  title: L32-0012 SP2 baseline with FP32 residual and post-norm A8
+  execution_state: running
+  record: docs/experiments/L32-0016.md
+  approval_ref: User approves implement no-rotation high-precision residual contract; FP32 first,
+    baseline weights/scales frozen, head unchanged (2026-09-14)
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  parent_source: 43da04312097a56bc1fd872b22314fd62ac9043a
+  hardware_runs: 0
+  baseline_quality_promoted: false
