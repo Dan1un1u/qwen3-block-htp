@@ -40,7 +40,7 @@ def main():
   if not (d/name).exists():continue
   rows=64 if step==0 else 1;actual=np.fromfile(d/name,dtype='u1').reshape(-1,2048)[:rows];refname='reference_w4u8_integer_attention_block_output_u8.bin' if not step else 'replay_decode_reference_00_u8.bin';ideal=np.fromfile(package/refname,dtype='u1').reshape(-1,2048)[:rows]
   delta=actual.astype('i4')-ideal;row=dict(step=step,ideal_max_lsb=int(np.abs(delta).max()),ideal_mismatches=int(np.count_nonzero(delta)))
-  q=load_qparams_bin(package/'layer0/qparams_u8.bin');aa=actual.astype('f8').reshape(-1)-q['block_output']['zero_point'];bb=ideal.astype('f8').reshape(-1)-q['block_output']['zero_point'];row['ideal_cosine']=float(aa@bb/max(np.linalg.norm(aa)*np.linalg.norm(bb),1e-30))
+  q=load_qparams_bin(package/'layer0/qparams_u8.bin');aa=actual.astype('f8').reshape(-1)-q['block_output']['zero_point'];bb=ideal.astype('f8').reshape(-1)-q['block_output']['zero_point'];den=float(np.linalg.norm(aa)*np.linalg.norm(bb));row['ideal_cosine']=float(aa@bb/den) if den else None;row['ideal_cosine_defined']=bool(den)
   if a.audit and a.arm=='r4':
    name=f'actual_replay_r4_{step:02d}.bin';adb('pull',remote+'/'+name,windows(d/name));raw=np.fromfile(d/name,dtype='<f2');count=rows*8192
    z=raw[:count].reshape(16,rows,512).transpose(1,0,2).copy();s=raw[524288:524288+count].reshape(16,rows,512).transpose(1,0,2).copy();y=raw[1048576:1048576+count].reshape(rows,8192).copy()
@@ -50,7 +50,8 @@ def main():
    row['stage1']=err(s,es);row['stage2']=err(y,ey)
    conditional,down=tail(y,package/'layer0',q,np.load(ref/'reference_residual.npy'));row['conditional_tail_mismatches']=int(np.count_nonzero(actual!=conditional));row['conditional_tail_max_lsb']=int(np.abs(actual.astype('i4')-conditional).max());np.save(d/f'conditional_down_{step:02d}.npy',down)
    row['pass_arithmetic']=row['swiglu_bits_equal'] and row['conditional_tail_mismatches']==0 and all(row[k]['finite'] and row[k]['outside_1ulp_plus_minnormal']==0 for k in ['stage1','stage2'])
-   row['pass_ideal_gate']=row['ideal_max_lsb']<=2 and row['ideal_cosine']>=.999
+   row['pass_ideal_gate']=(row['ideal_max_lsb']<=2 and row['ideal_cosine']>=.999) if row['ideal_cosine_defined'] else None
+   row['ideal_gate_status']='undefined_cosine_exact_output' if row['ideal_mismatches']==0 and not row['ideal_cosine_defined'] else ('undefined_cosine' if not row['ideal_cosine_defined'] else ('pass' if row['pass_ideal_gate'] else 'fail'))
   else:row['pass_exact']=row['ideal_mismatches']==0
   steps.append(row)
  result=dict(process_exit=run.returncode,records=records,steps=steps,profiles=profiles,scope='diagnostic' if a.audit else 'functional; repeat1 auxiliary',fullmodel=False)
