@@ -6,7 +6,7 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0016
+  active_experiment: null
   next_experiment_number: 17
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -26,26 +26,26 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: fp32_residual_frontend_validation
+  stage: fp32_residual_fixed_scale_completed_quality_unusable
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Finish explicit-rounding FP32 frontend oracle/device replay and matched
-    baseline PPL; no rotations or calibration changes
+  next_action: Discuss train-only A8 boundary recalibration on FP32 control before
+    separate FP16 storage/rotation/performance work
   baseline_manifest: baselines/qwen3-frozen/manifest.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF.md
   organization_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0266
   organization_evidence_ledger_sha256: 052b816c686b11b0bc57908b9f86147047c1ecc427af7d8ee54a985dc5e2c093
   original_model_path: /mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin
-  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0014
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0016
   validated_recipes:
   - w16a16
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0014
-  evidence_ledger_sha256: f19061c6a0e314f6520437b9f52d36dff22b93322789ec890387fcf3a8af62bd
-  formal_profiling_completed: true
+  last_completed_experiment: L32-0016
+  evidence_ledger_sha256: 69b591d67d1ce3f45a0e2cc5e467f7b2d90ccddff854a581d79637769ec77de8
+  formal_profiling_completed: false
   general_quantization_quality_accepted: false
   w4a16_quality_gate_pass: false
   validated_w4a8_rotations:
@@ -539,11 +539,18 @@ current_scope:
     full16_prefill_decode_exact: true
     vtcm_peak_bytes: 8098272
     intermediate_spill: false
-    frontend_exact: false
+    frontend_exact: true
     quality_accepted: false
-    rounding_fix: Explicit FP32 noncontracted square/add; frontend prefill final hidden
-      and head code now exact, remaining generation pending
-    report: docs/experiments/L32-0016.md
+    rounding_fix: Explicit noncontracted FP32 arithmetic validated through full16
+      generation; no gate weakening
+    report: docs/LLAMA32_FP32_RESIDUAL.md
+    fixed_scale_ppl:
+      all: 1766.764883021644
+      en: 645.9578071302504
+      zh: 4832.294179934031
+    baseline_sp2_ppl: 130712.28672175553
+    heldout_target_tokens: 2048
+    performance_accepted: false
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp

@@ -506,7 +506,7 @@ experiments:
   deferred_to: after L32-0016
 - id: L32-0016
   title: L32-0012 SP2 baseline with FP32 residual and post-norm A8
-  execution_state: running
+  execution_state: completed
   record: docs/experiments/L32-0016.md
   approval_ref: User approves implement no-rotation high-precision residual contract;
     FP32 first, baseline weights/scales frozen, head unchanged (2026-09-14)
@@ -514,10 +514,27 @@ experiments:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
   parent_source: 43da04312097a56bc1fd872b22314fd62ac9043a
-  hardware_runs: 11
+  hardware_runs: 15
   baseline_quality_promoted: false
-  hardware_runs_definition: '11 CLI attempts: 8 functional replays, 1 completed but
-    mismatching frontend, 2 frontend diagnostic runs; retained all attempts'
+  hardware_runs_definition: '15 CLI attempts: 8 block replays, 1 completed but mismatching
+    frontend, 2 diagnostic frontends, 2 final generation runs, 2 complete heldout
+    evaluation runs'
   source_heads:
     codex/llama32-no-rotation: e3cf74916aebbc9254615d68b1c4c135b43fee03
-  checkpoint_state: blocks_exact_frontend_rounding_fix_in_validation
+  checkpoint_state: fixed_scale_fp32_implementation_complete_arithmetic_exact_quality_unusable
+  fullmodel: true
+  frontend_exact: true
+  ppl_run: true
+  formal_profiling: false
+  quality_accepted: false
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0016
+  evidence_ledger_sha256: 69b591d67d1ce3f45a0e2cc5e467f7b2d90ccddff854a581d79637769ec77de8
+  report: docs/LLAMA32_FP32_RESIDUAL.md
+  fixed_scale_ppl:
+    all: 1766.764883021644
+    en: 645.9578071302504
+    zh: 4832.294179934031
+  followups:
+  - train-only A8 recalibration separately
+  - FP16 residual storage separately
+  - R3/R4 and performance after precision control
