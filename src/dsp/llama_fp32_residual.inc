@@ -342,7 +342,7 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
             /* L32-0018: collect rare division-boundary repairs per row.
              * The transpose tile is idle here: reuse its first 2048 bytes for flags.
              * HVX writes native 32-byte segments without a scalar stack roundtrip. */
-            HVX_Vector row_mask=Q6_V_vzero();
+            HVX_Vector row_mask=Q6_V_vzero(),flag_line=Q6_V_vzero();
             for(uint32_t c=0;c<width;c+=32U) {
                 HVX_Vector v=qbh_fp32_mul(*(const HVX_Vector *)(x+row*width+c),vi);
                 v=qbh_fp32_mul(v,*(const HVX_Vector *)(gf+c));
@@ -366,10 +366,21 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
                 row_mask=Q6_V_vor_VV(row_mask,mask);
                 HVX_Vector fm=Q6_Vub_vpack_VhVh_sat(Q6_V_vzero(),
                     Q6_Vh_vpack_VwVw_sat(Q6_V_vzero(),mask));
+                if(opt) {
+                    /* C2: pack four adjacent repair-mask fragments into one
+                     * aligned VTCM store. No per-fragment masked write or
+                     * extra tensor region; exact scalar repair policy retained. */
+                    flag_line=Q6_V_vor_VV(flag_line,Q6_V_vror_VR(fm,-(int)(c&96U)));
+                    if((c&96U)==96U) {
+                        *(HVX_Vector *)(scratch+c-96U)=flag_line;
+                        flag_line=Q6_V_vzero();
+                    }
+                } else {
                 uint8_t *fp=scratch+c;
                 uint32_t fs=(uintptr_t)fp&127U;
                 HVX_VectorPred fq=Q6_Q_and_QQn(Q6_Q_vsetq2_R(fs+32U),Q6_Q_vsetq_R(fs));
                 Q6_vmem_QRIV(fq,(HVX_Vector *)fp,Q6_V_vlalign_VVR(fm,fm,fs));
+                }
             }
             HVX_Vector any=row_mask;
             for(uint32_t sh=64;sh>=4;sh>>=1)any=Q6_V_vor_VV(any,Q6_V_vror_VR(any,sh));
