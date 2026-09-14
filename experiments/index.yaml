@@ -588,12 +588,50 @@ experiments:
       gate_pass: true
 - id: L32-0018
   title: Reduce remaining FP32 normalization and O projection overhead
-  execution_state: running
+  execution_state: completed
   record: docs/experiments/L32-0018.md
   approval_ref: User authorizes continuing speed optimization after L32-0017 (2026-09-14)
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
   parent_source: 59348e01bb10fc38c7974550345377b5449ac9c1
-  hardware_runs: 0
+  hardware_runs: 29
   baseline_quality_promoted: false
+  completed_on: '2026-09-14'
+  hardware_runs_definition: 9 functional CLI including1 retained O guard failure,20
+    formal CLI;28successful;separate1 pre-CLI ADB deployment failure
+  token_boundary_executions: 364
+  formal_token_boundaries: 320
+  formal_profiling: true
+  formal_pairs: 10
+  ppl_rerun: false
+  local_gate: arithmetic_physical_and_both_speed_gates_pass
+  source_heads:
+    codex/llama32-no-rotation: e3d065a515221aa1e97c63fa4d58d23e434c45df
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0018
+  evidence_ledger_sha256: 5572319f6bb94f623089199ef729a13c3c5d20b82134be14e75028ac707bd734
+  report: docs/LLAMA32_FP32_PIPELINE_FOLLOWUP.md
+  speed:
+    prefill:
+      base_mean_ns: 31954734.5
+      fp32_mean_ns: 30922317.7
+      base_tokens_per_second: 2002.833101304597
+      fp32_tokens_per_second: 2069.7025566101083
+      latency_ratio: 0.9676912727908911
+      latency_increase_pct: -3.2308727209108934
+      ci95:
+      - 0.9539109728759521
+      - 0.9772370489664352
+      gate_pass: true
+    decode:
+      base_mean_ns: 326332328.2
+      fp32_mean_ns: 352857239.6
+      base_tokens_per_second: 45.965412261597685
+      fp32_tokens_per_second: 42.51010980249135
+      latency_ratio: 1.0812818991802235
+      latency_increase_pct: 8.128189918022354
+      ci95:
+      - 1.0718330246775818
+      - 1.0927623942210913
+      gate_pass: true
+  default_promoted: false
