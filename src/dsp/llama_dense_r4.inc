@@ -215,6 +215,7 @@ static int qbh_r4_finish_vector(struct qbh_block_header *h,
     struct qbh_block_buffers *b,struct qbh_block_w4f16_pool *pool,
     const __fp16 *weight,uint8_t *middle,uint32_t first,uint32_t count,
     HVX_Vector *scratch,__fp16 *audit) {
+    (void)scratch; /* finish owns phase-dead Down scratch */
     if(h->dense_r4_optimization>=3U && h->logical_m==64U) {
         struct qbh_r4_convert_task task={.h=h,.b=b,.weight=weight,.middle=middle,
             .audit=audit,.finish=1U,.first=first,.count=count};
