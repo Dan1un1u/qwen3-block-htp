@@ -12,7 +12,7 @@
 #define QBH_BLOCK_ABI_VERSION UINT32_C(129)
 #define QBH_SP2(h) ((h)->sp2_mode)
 #elif defined(QBH_NATIVE_SP2)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(131)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(132)
 #define QBH_SP2(h) ((h)->sp2_mode)
 #else
 #define QBH_BLOCK_ABI_VERSION UINT32_C(127)
@@ -22,6 +22,11 @@
 #define QBH_U8_PREFILL_OPT(h) ((h)->u8_prefill_opt)
 #else
 #define QBH_U8_PREFILL_OPT(h) 0U
+#endif
+#if defined(QBH_MODEL_LLAMA32) || defined(QBH_NATIVE_SP2)
+#define QBH_FP32_RESIDUAL(h) ((h)->fp32_residual)
+#else
+#define QBH_FP32_RESIDUAL(h) 0U
 #endif
 #define QBH_BLOCK_EXPERIMENT UINT32_C(218)
 
@@ -929,6 +934,7 @@ struct qbh_block_header {
     uint8_t prefix_kv_u8[28][2048];
     uint32_t wide_score_mode; /* 0 legacy; 1 HVX wide; 2 untimed scalar wide oracle. */
 #if defined(QBH_MODEL_LLAMA32) || defined(QBH_NATIVE_SP2)
+    uint32_t fp32_residual; /* EXP0269 native O/Down -> FP32 residual. */
     uint32_t sp2_mode; /* Explicit frozen SP2 LUT + native W4 radix256 Down. */
 #endif
 #if defined(QBH_NATIVE_SP2) && !defined(QBH_MODEL_LLAMA32)

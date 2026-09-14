@@ -106,6 +106,14 @@ struct qbh_replay_step_result {
     uint64_t scan_dynamic_attention_ticks;
 };
 
+static uint32_t qbh_l32_rotation_lut_bytes(void) {
+#ifdef QBH_MODEL_LLAMA32
+    const char *r=getenv("QBH_DENSE_R4"),*sp=getenv("QBH_LLAMA_SP2");
+    if(r && atoi(r) && sp && atoi(sp)==8)return 2U*QBH_MLP_LUT_BYTES;
+#endif
+    return QBH_MLP_LUT_BYTES;
+}
+
 static int qbh_write_named_tensor(
     const char *root, const char *name,
     const void *data, uint32_t bytes) {
@@ -1611,7 +1619,7 @@ static int qbh_prepare_vertical_layer_slots(
                           layer_index);
         if (status < 0 || (size_t)status >= sizeof(name) ||
             qbh_prepare_slot(&slots->silu_lut, root, name,
-                             QBH_MLP_LUT_BYTES, cursor) != 0) {
+                             qbh_l32_rotation_lut_bytes(), cursor) != 0) {
             return -1;
         }
     }
@@ -1876,6 +1884,17 @@ static void qbh_bind_host_slice_layer(
     memcpy(header->qparams, layer->qparams, sizeof(header->qparams));
 }
 
+static uint32_t qbh_host_fp32_residual(void) {
+#if defined(QBH_MODEL_LLAMA32) || defined(QBH_NATIVE_SP2)
+    const char *v=getenv("QBH_FP32_RESIDUAL");
+    if(v && strcmp(v,"0")!=0 && strcmp(v,"1")!=0) {
+        fprintf(stderr,"QBH_FP32_RESIDUAL must be 0 or 1\n");exit(2);
+    }
+    return v && strcmp(v,"1")==0;
+#else
+    return 0U;
+#endif
+}
 static int qbh_build_bias_words(
     struct qbh_block_header *header, uint8_t *shared,
     uint32_t projection_index) {
@@ -1919,6 +1938,18 @@ static int qbh_build_bias_words(
                     positive_sum += weight>0 ? weight:0;
                     negative_sum += weight<0 ? weight:0;
                 }
+            }
+            if (QBH_FP32_RESIDUAL(header) &&
+                (projection_index==QBH_BLOCK_PROJ_O || projection_index==QBH_BLOCK_PROJ_DOWN)) {
+                if(desc->lpbq_mode || (int64_t)positive_sum*255>8388607 ||
+                   (int64_t)negative_sum*255< -8388608 ||
+                   (projection_index==QBH_BLOCK_PROJ_DOWN &&
+                    (int64_t)(positive_sum-negative_sum)*24576>INT32_MAX)) return -1;
+                float real_scale=input_qparam->scale*scales[global_output];
+                if(!(real_scale>0.0f) || !isfinite(real_scale))return -1;
+                memcpy(&bias[(size_t)n_tile*64U+output],&real_scale,sizeof(real_scale));
+                bias[(size_t)n_tile*64U+32U+output]=(uint32_t)sum;
+                continue;
             }
             if (QBH_SP2(header) && projection_index==QBH_BLOCK_PROJ_DOWN) {
                 /* Three radix digits are exact only with this per-channel proof
@@ -2030,6 +2061,46 @@ static struct qbh_error_metrics qbh_compare_f16(
     for (uint32_t index = 0; index < elements; ++index) {
         double a = qbh_half_bits_to_float(actual[index]);
         double b = qbh_half_bits_to_float(reference[index]);
+        double difference = fabs(a - b);
+        if (difference > metrics.max_abs) {
+            metrics.max_abs = difference;
+        }
+        absolute_sum += difference;
+        squared_sum += difference * difference;
+        dot += a * b;
+        actual_norm += a * a;
+        reference_norm += b * b;
+    }
+    metrics.mean_abs = absolute_sum / elements;
+    metrics.rmse = sqrt(squared_sum / elements);
+    metrics.nrmse = reference_norm > 0.0
+                        ? sqrt(squared_sum / reference_norm)
+                        : (squared_sum == 0.0 ? 0.0 : DBL_MAX);
+    metrics.cosine = actual_norm > 0.0 && reference_norm > 0.0
+                         ? dot / sqrt(actual_norm * reference_norm)
+                         : 0.0;
+    metrics.elements = elements;
+    return metrics;
+}
+
+static struct qbh_error_metrics qbh_compare_f32(
+    const float *actual, const float *reference,
+    uint32_t elements) {
+    struct qbh_error_metrics metrics;
+    double absolute_sum = 0.0;
+    double squared_sum = 0.0;
+    double dot = 0.0;
+    double actual_norm = 0.0;
+    double reference_norm = 0.0;
+    memset(&metrics, 0, sizeof(metrics));
+    for (uint32_t index = 0; index < elements; ++index) {
+        double a = actual[index];
+        double b = reference[index];
+        if(!isfinite(a) || !isfinite(b)) {
+            metrics.max_abs=metrics.mean_abs=metrics.rmse=metrics.nrmse=DBL_MAX;
+            metrics.cosine=-1.0;metrics.elements=elements;metrics.nonfinite_count=1U;metrics.mismatches=1U;return metrics;
+        }
+        metrics.mismatches += a!=b;
         double difference = fabs(a - b);
         if (difference > metrics.max_abs) {
             metrics.max_abs = difference;
@@ -3147,6 +3218,9 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U64(f16_cache_native_append_update_ticks);
     QBH_REPLAY_PROFILE_U64(u8_attention_qk_hmx_ticks);
     QBH_REPLAY_PROFILE_U32(wide_score_mode);
+#if defined(QBH_MODEL_LLAMA32) || defined(QBH_NATIVE_SP2)
+    QBH_REPLAY_PROFILE_U32(fp32_residual);
+#endif
     QBH_REPLAY_PROFILE_U32(dense_r4_mode);
     QBH_REPLAY_PROFILE_U32(dense_r4_optimization);
     QBH_REPLAY_PROFILE_U32(dense_r4_calls);
@@ -3370,7 +3444,7 @@ static int qbh_run_exp0240_layer(
             if (dump != NULL && rep == 0U) {
                 if(h->dense_r4_audit_offset) {
                     snprintf(name,sizeof(name),"step%02u_r4.bin",step);
-                    if(qbh_write_named_tensor(dump,name,shared+h->dense_r4_audit_offset,3U*786432U)) return -1;
+                    if(qbh_write_named_tensor(dump,name,shared+h->dense_r4_audit_offset,3U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U)) return -1;
                 }
                 if (h->dense_r3_audit_offset) {
                     snprintf(name,sizeof(name),"step%02u_r3.bin",step);
@@ -3427,7 +3501,7 @@ static int qbh_run_replay_sequence(
     const uint32_t element_bytes =
         variant == QBH_BLOCK_W4U8 ? 1U : 2U;
     const char *tensor_suffix =
-        variant == QBH_BLOCK_W4U8 ? "u8" : "f16";
+        QBH_FP32_RESIDUAL(header) ? "f32" : variant == QBH_BLOCK_W4U8 ? "u8" : "f16";
     const char *dump_root = getenv("QBH_REPLAY_DUMP_DIR");
     size_t snapshot_offsets[QBH_VERTICAL_SLICE_LAYER_COUNT][2];
     size_t snapshot_bytes = 0U;
@@ -3556,8 +3630,13 @@ static int qbh_run_replay_sequence(
             session->handle, shared_fd, total_bytes);
         end = qbh_monotonic_ns();
         if (rpc_result != AEE_SUCCESS) {
-            fprintf(stderr, "replay step %" PRIu32 " RPC failed: 0x%08x\n",
-                    step, (unsigned int)rpc_result);
+            fprintf(stderr, "replay step %" PRIu32 " RPC failed: 0x%08x dsp_status=%u vtcm_peak=%u r4_calls=%u\n",
+                    step, (unsigned int)rpc_result, header->dsp_status,
+                    header->vtcm_peak_plan_bytes, header->dense_r4_calls);
+            if(header->dense_r4_audit_offset) {
+                uint32_t *diag=(uint32_t *)(shared+header->dense_r4_audit_offset+3U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U-128U);
+                fprintf(stderr,"r4 diag a=%08x w=%08x out=%08x sc=%08x mt=%u kt=%u nt=%u\n",diag[0],diag[1],diag[2],diag[3],diag[4],diag[5],diag[6]);
+            }
             free(cache_snapshots);
             return -1;
         }
@@ -3592,7 +3671,10 @@ static int qbh_run_replay_sequence(
             header->scan_cache_ddr_write_bytes;
         step_result->scan_dynamic_attention_ticks =
             header->scan_dynamic_attention_ticks;
-        step_result->output = variant == QBH_BLOCK_W4U8
+        step_result->output = QBH_FP32_RESIDUAL(header)
+        ? qbh_compare_f32((const float *)(shared+header->output_offset),
+            (const float *)(shared+header->reference_offset),header->logical_m*QBH_BLOCK_HIDDEN)
+        : variant == QBH_BLOCK_W4U8
             ? qbh_compare_scan_u8(
                   shared + header->output_offset,
                   shared + header->reference_offset,
@@ -3763,6 +3845,11 @@ static int qbh_run_replay_sequence(
         }
         if (dump_root != NULL && dump_root[0] != '\0') {
             char name[128];
+            if(header->dense_r4_audit_offset) {
+                snprintf(name,sizeof(name),"actual_replay_r4_%02u.bin",step);
+                if(qbh_write_named_tensor(dump_root,name,shared+header->dense_r4_audit_offset,
+                    3U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U)) {free(cache_snapshots);return -1;}
+            }
             if (snprintf(
                     name, sizeof(name),
                     "actual_replay_output_%02" PRIu32 "_%s.bin",
@@ -4057,7 +4144,7 @@ static int qbh_run_generation_sequence(
             header->intermediate_spill_fill_count == 0U &&
             header->boundary_ddr_write_bytes ==
                 (header->generation_boundary_audit_enabled != 0U
-                     ? QBH_BLOCK_HIDDEN : 0U) &&
+                     ? QBH_BLOCK_HIDDEN*(QBH_FP32_RESIDUAL(header)?68U:1U) : 0U) &&
             state->completed_step_count == step + 1U;
         for (uint32_t slice_index = 0U;
              slice_index < QBH_VERTICAL_SLICE_LAYER_COUNT;
@@ -4082,13 +4169,19 @@ static int qbh_run_generation_sequence(
             char audit_name[96];
             if (snprintf(
                     audit_name, sizeof(audit_name),
-                    "generation_hidden_step%02" PRIu32 "_u8.bin",
-                    step) < 0 ||
+                    "generation_hidden_step%02" PRIu32 "_%s.bin",
+                    step,QBH_FP32_RESIDUAL(header)?"f32":"u8") < 0 ||
                 qbh_write_named_tensor(
                     audit_root, audit_name,
                     shared + header->output_offset,
-                    QBH_BLOCK_HIDDEN) != 0) {
+                    QBH_BLOCK_HIDDEN*(QBH_FP32_RESIDUAL(header)?4U:1U)) != 0) {
                 step_pass = 0;
+            }
+            if(QBH_FP32_RESIDUAL(header)) {
+                snprintf(audit_name,sizeof(audit_name),"generation_norm_step%02u_u8_native.bin",step);
+                if(qbh_write_named_tensor(audit_root,audit_name,
+                    shared+header->output_offset+QBH_BLOCK_HIDDEN*4U,
+                    QBH_BLOCK_M*QBH_BLOCK_HIDDEN))step_pass=0;
             }
             /* Prefill owns the complete persistent K/V boundary.  Export it
              * only in audit mode, after the timed RPC; decode has VTCM-only
@@ -5874,7 +5967,7 @@ int main(int argc, char **argv) {
     }
     element_bytes = variant == QBH_BLOCK_W4U8 ? 1U : 2U;
     output_bytes = physical_chunks * QBH_BLOCK_M *
-                   QBH_BLOCK_HIDDEN * element_bytes;
+                   QBH_BLOCK_HIDDEN * (qbh_host_fp32_residual()?4U:element_bytes);
     if (replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS) {
         cursor = qbh_align_up_size(cursor, QBH_HOST_ALIGNMENT);
         replay_session_offset = (uint32_t)cursor;
@@ -5904,13 +5997,13 @@ int main(int argc, char **argv) {
 
     if (qbh_prepare_slot(
             &input_slot, argv[1],
-            variant == QBH_BLOCK_W4U8
+            qbh_host_fp32_residual() ? "reference_w4u8_block_input_f32.bin" : variant == QBH_BLOCK_W4U8
                 ? "reference_w4u8_block_input_u8.bin"
                 : "block_input_f16.bin",
             output_bytes, &cursor) != 0 ||
         qbh_prepare_slot(
             &reference_slot, argv[1],
-            variant == QBH_BLOCK_F16F16
+            qbh_host_fp32_residual() ? "reference_w4u8_block_output_f32.bin" : variant == QBH_BLOCK_F16F16
                 ? "reference_f16f16_block_output_f16.bin"
                 : (variant == QBH_BLOCK_W4F16
                        ? "reference_w4f16_block_output_f16.bin"
@@ -5939,11 +6032,11 @@ int main(int argc, char **argv) {
              QBH_BLOCK_M * (uint32_t)sizeof(uint32_t), &cursor) != 0 ||
          qbh_prepare_slot(
              &generation_embedding_slot, argv[1],
-             qbh_generation_w4u8_enabled(generation_mode)
+             qbh_generation_w4u8_enabled(generation_mode) && !qbh_host_fp32_residual()
                  ? "generation_embedding_weight_u8.bin"
                  : "generation_embedding_weight_f16.bin",
              QBH_QWEN3_VOCAB_SIZE * QBH_BLOCK_HIDDEN *
-                 (qbh_generation_w4u8_enabled(generation_mode)
+                 (qbh_generation_w4u8_enabled(generation_mode) && !qbh_host_fp32_residual()
                       ? (uint32_t)sizeof(uint8_t)
                       : (uint32_t)sizeof(uint16_t)),
              &cursor) != 0 ||
@@ -6135,7 +6228,7 @@ int main(int argc, char **argv) {
     if (vertical_slice_mode == QBH_BLOCK_SLICE_DISABLED &&
         qbh_block_mlp_is_w4u8_streaming(mlp_mode) &&
         qbh_prepare_slot(&w4u8_lut_slot, argv[1],
-                         "silu_up_lut_u16.bin", QBH_MLP_LUT_BYTES,
+                         "silu_up_lut_u16.bin", qbh_l32_rotation_lut_bytes(),
                          &cursor) != 0) {
         fprintf(stderr, "W4U8 streaming LUT audit failed\n");
         return 2;
@@ -6350,8 +6443,8 @@ int main(int argc, char **argv) {
         if (getenv("QBH_DENSE_R4_AUDIT")) {
             cursor=qbh_align_up_size(cursor,QBH_HOST_ALIGNMENT);
             dense_r4_audit_offset=cursor;
-            if(3U*786432U>UINT32_MAX-cursor) return 2;
-            cursor+=3U*786432U;
+            if(3U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U>UINT32_MAX-cursor) return 2;
+            cursor+=3U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U;
         }
         if (getenv("QBH_DENSE_R3_AUDIT")) {
             cursor=qbh_align_up_size(cursor,QBH_HOST_ALIGNMENT);
@@ -6874,6 +6967,7 @@ int main(int argc, char **argv) {
             QBH_BLOCK_SCAN_F16_AUDIT_BYTES;
     }
 #if defined(QBH_MODEL_LLAMA32) || defined(QBH_NATIVE_SP2)
+    header->fp32_residual=qbh_host_fp32_residual();
     header->sp2_mode=getenv("QBH_SP2") ? (uint32_t)atoi(getenv("QBH_SP2")) : 0U;
     if((header->sp2_mode!=0U && header->sp2_mode!=3U && header->sp2_mode!=4U && header->sp2_mode!=5U && header->sp2_mode!=6U && header->sp2_mode!=7U && header->sp2_mode!=8U) || (header->sp2_mode &&
        (variant!=QBH_BLOCK_W4U8 || dense_r3_mode))) return 2;
@@ -7311,7 +7405,10 @@ int main(int argc, char **argv) {
                 header->w4f16_expand_actual_half_bits);
         goto cleanup;
     }
-    warmup_metrics = variant == QBH_BLOCK_W4U8
+    warmup_metrics = QBH_FP32_RESIDUAL(header)
+        ? qbh_compare_f32((const float *)(shared+header->output_offset),
+            (const float *)(shared+header->reference_offset),header->logical_m*QBH_BLOCK_HIDDEN)
+        : variant == QBH_BLOCK_W4U8
         ? (scan_mode != QBH_BLOCK_SCAN_DISABLED
                ? qbh_compare_scan_u8(
                      shared + header->output_offset,
@@ -7367,7 +7464,10 @@ int main(int argc, char **argv) {
                 header->w4f16_expand_actual_half_bits);
         goto cleanup;
     }
-    measured_metrics = variant == QBH_BLOCK_W4U8
+    measured_metrics = QBH_FP32_RESIDUAL(header)
+        ? qbh_compare_f32((const float *)(shared+header->output_offset),
+            (const float *)(shared+header->reference_offset),header->logical_m*QBH_BLOCK_HIDDEN)
+        : variant == QBH_BLOCK_W4U8
         ? (scan_mode != QBH_BLOCK_SCAN_DISABLED
                ? qbh_compare_scan_u8(
                      shared + header->output_offset,
