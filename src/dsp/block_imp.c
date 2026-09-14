@@ -881,7 +881,10 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         &arena, QBH_BLOCK_M * QBH_BLOCK_HEAD_DIM * sizeof(uint16_t));
     buffers->residual = qbh_arena_alloc(&arena,
         fp32_residual ? hidden_bytes * 4U : hidden_bytes);
-    buffers->normalized = qbh_arena_alloc(&arena, hidden_bytes);
+    /* FP32 reuses normalized for HMX retain stores, which require 2KiB alignment.
+     * Q follows with the same alignment, so this moves existing padding only. */
+    buffers->normalized = qbh_arena_alloc_aligned(&arena, hidden_bytes,
+        fp32_residual ? QBH_HMX_FP16_TILE_BYTES : QBH_BLOCK_ALIGNMENT);
     buffers->q = qbh_arena_alloc_aligned(
         &arena, QBH_BLOCK_M * QBH_BLOCK_HIDDEN * sizeof(uint16_t),
         QBH_HMX_FP16_TILE_BYTES);
