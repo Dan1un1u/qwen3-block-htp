@@ -68,7 +68,7 @@ def prepare(a):
 def run(a):
  preflight();p=M/'l32-0019'/a.package;m=f.verify(p);assert m['arm']==a.arm
  head=subprocess.check_output(['git','-C',str(ROOT),'rev-parse','HEAD'],text=True).strip();seal=json.loads((ROOT/'build/llama-build-seal.json').read_text());assert seal['source_head']==head
- d=R/a.attempt;d.mkdir(parents=True,exist_ok=False);remote='/data/local/tmp/llama32-htp/l32-0019/'+a.attempt
+ d=R/a.attempt;d.mkdir(parents=True,exist_ok=False);remote='/data/local/tmp/llama32-htp/'+R.name+'/'+a.attempt
  assert adb('shell','test ! -e '+remote,check=False).returncode==0;adb('shell','mkdir -p '+remote)
  for n,b in [('qwen3_block_cli','android_ReleaseG_aarch64'),('libqwen3_probe.so','android_ReleaseG_aarch64'),('libqwen3_probe_skel.so','hexagon_ReleaseG_toolv19_v79')]:
   src=ROOT/b/'ship'/n;assert sha256(src)==seal['files'][str(src)];shutil.copy2(src,d/n);adb('push',windows(src),remote+'/'+n);assert adb('shell','sha256sum '+remote+'/'+n).stdout.split()[0]==sha256(src)
@@ -84,7 +84,7 @@ def run(a):
   if r3:env['QBH_DENSE_R3_AUDIT']='1'
   if r4on:env['QBH_DENSE_R4_AUDIT']='1'
  command=wd+' && '+' '.join(k+'='+shlex.quote(v) for k,v in env.items())+' ./qwen3_block_cli '+argv
- save(d/'protocol.json',dict(experiment='L32-0019',source_head=head,build_seal=seal,package=str(p),package_manifest_sha256=sha256(p/'manifest.json'),command=command,arm=a.arm,audit=a.audit))
+ save(d/'protocol.json',dict(experiment=R.name.upper(),source_head=head,build_seal=seal,package=str(p),package_manifest_sha256=sha256(p/'manifest.json'),command=command,arm=a.arm,audit=a.audit))
  z=adb('shell',command,check=False);(d/'stdout.txt').write_text(z.stdout);(d/'stderr.txt').write_text(z.stderr)
  records=[]
  for line in z.stdout.splitlines():
@@ -120,4 +120,4 @@ def run(a):
  print(json.dumps(dict(process_exit=z.returncode,steps=steps)),flush=True)
  if len(steps)!=2:print(z.stdout[-3000:]);print(z.stderr[-1500:]);raise SystemExit(1)
 if __name__=='__main__':
- ap=argparse.ArgumentParser();ap.add_argument('action',choices=['prepare','run']);ap.add_argument('--layer',type=int,default=0);ap.add_argument('--arm',choices=['off','r3','r4','both'],required=True);ap.add_argument('--attempt',required=True);ap.add_argument('--package');ap.add_argument('--audit',action='store_true');a=ap.parse_args();globals()[a.action](a)
+ ap=argparse.ArgumentParser();ap.add_argument('action',choices=['prepare','run']);ap.add_argument('--layer',type=int,default=0);ap.add_argument('--arm',choices=['off','r3','r4','both'],required=True);ap.add_argument('--attempt',required=True);ap.add_argument('--package');ap.add_argument('--audit',action='store_true');ap.add_argument('--result-experiment',default='l32-0019');a=ap.parse_args();assert a.result_experiment in ['l32-0019','l32-0020'];R=R.parent/a.result_experiment;globals()[a.action](a)

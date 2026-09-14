@@ -14,19 +14,26 @@ static void qbh_llama_r3_pack(const __fp16 *src,__fp16 *dst,uint32_t rows,uint32
  }
  asm volatile("barrier":::"memory");
 }
+static inline HVX_Vector qbh_llama_r3_quant_half(HVX_Vector x,HVX_Vector inv,HVX_Vector offset) {
+ HVX_VectorPair v=Q6_Wsf_vcvt_Vhf(x);
+ HVX_Vector a=Q6_Vw_equals_Vsf(Q6_Vsf_vadd_VsfVsf(qbh_fp32_mul(Q6_V_lo_W(v),inv),offset));
+ HVX_Vector b=Q6_Vw_equals_Vsf(Q6_Vsf_vadd_VsfVsf(qbh_fp32_mul(Q6_V_hi_W(v),inv),offset));
+ HVX_VectorPair order=Q6_W_vshuff_VVR(b,a,-4);
+ return Q6_Vh_vpack_VwVw_sat(Q6_V_hi_W(order),Q6_V_lo_W(order));
+}
 static void qbh_llama_r3_quantize(const __fp16 *x,uint8_t *out,uint32_t rows,const struct qbh_block_qparam *q) {
  HVX_Vector inv=qbh_fp32_splat(1.0f/q->scale),offset=qbh_fp32_splat((float)q->zero_point+.5f);
- for(uint32_t r=0;r<rows;r++) {
-  HVX_VectorPair v=Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)(x+r*64U));
-  HVX_Vector a=Q6_Vw_equals_Vsf(Q6_Vsf_vadd_VsfVsf(qbh_fp32_mul(Q6_V_lo_W(v),inv),offset));
-  HVX_Vector b=Q6_Vw_equals_Vsf(Q6_Vsf_vadd_VsfVsf(qbh_fp32_mul(Q6_V_hi_W(v),inv),offset));
-  HVX_VectorPair order=Q6_W_vshuff_VVR(b,a,-4);
-  HVX_Vector packed=Q6_Vub_vpack_VhVh_sat(Q6_V_vzero(),Q6_Vh_vpack_VwVw_sat(Q6_V_hi_W(order),Q6_V_lo_W(order)));
-  for(uint32_t c=0;c<2;c++) {
-   uint8_t *p=out+c*2048U+r*32U;uint32_t sh=(uintptr_t)p&127U;
-   HVX_VectorPred pred=Q6_Q_and_QQn(Q6_Q_vsetq2_R(sh+32U),Q6_Q_vsetq_R(sh));
-   Q6_vmem_QRIV(pred,(HVX_Vector *)p,Q6_V_vror_VR(packed,(c*32U+128U-sh)%128U));
-  }
+ if(rows==64U)for(uint32_t r=0;r<64U;r+=4U) {
+  HVX_Vector h0=qbh_llama_r3_quant_half(*(const HVX_Vector *)(x+r*64U),inv,offset);
+  HVX_Vector h1=qbh_llama_r3_quant_half(*(const HVX_Vector *)(x+(r+1U)*64U),inv,offset);
+  HVX_Vector h2=qbh_llama_r3_quant_half(*(const HVX_Vector *)(x+(r+2U)*64U),inv,offset);
+  HVX_Vector h3=qbh_llama_r3_quant_half(*(const HVX_Vector *)(x+(r+3U)*64U),inv,offset);
+  HVX_VectorPair native=Q6_W_vdeal_VVR(Q6_Vub_vpack_VhVh_sat(h3,h2),Q6_Vub_vpack_VhVh_sat(h1,h0),-32);
+  *(HVX_Vector *)(out+r*32U)=Q6_V_lo_W(native);
+  *(HVX_Vector *)(out+2048U+r*32U)=Q6_V_hi_W(native);
+ } else {
+  HVX_Vector packed=Q6_Vub_vpack_VhVh_sat(Q6_V_vzero(),qbh_llama_r3_quant_half(*(const HVX_Vector *)x,inv,offset));
+  for(uint32_t c=0;c<2;c++)Q6_vmem_QRIV(Q6_Q_vsetq_R(32U),(HVX_Vector *)(out+c*2048U),Q6_V_vror_VR(packed,c*32U));
  }
  asm volatile("barrier":::"memory");
 }
@@ -38,8 +45,13 @@ static int qbh_run_dense_r3(struct qbh_block_header *h,uint8_t *shared,
  if(h->dense_r3_mode!=1U || h->dense_r3_optimization!=2U || (logical_rows!=1U && logical_rows!=64U))return -1;
  uint64_t start=HAP_perf_get_qtimer_count();
  qbh_llama_r3_pack(raw,act,padded,0U);
- for(uint32_t n=0;n<64;n++)for(uint32_t k=0;k<64;k++)
-  weight[qbh_hmx_fp16_matrix_tile_offset(n/32U,k/32U,2U)+qbh_hmx_fp16_tile_offset(k%32U,n%32U)]=(__fp16)((__builtin_popcount(n&k)&1)?-1.0f:1.0f);
+ /* H64 is the top-left dense submatrix of the immutable H128 table.
+  * Copy four native tiles; never regenerate4096 scalar matrix entries. */
+ for(uint32_t n=0;n<2U;n++)for(uint32_t k=0;k<2U;k++) {
+  const HVX_Vector *src=(const HVX_Vector *)(qbh_r3_sign_matrix+(n*4U+k)*1024U);
+  HVX_Vector *dst=(HVX_Vector *)(weight+(n*2U+k)*1024U);
+  for(uint32_t v=0;v<16U;v++)dst[v]=src[v];
+ }
  float scales[32] __attribute__((aligned(128)));for(uint32_t i=0;i<32;i++)scales[i]=.125f;
  qbh_hmx_fp16_init_channel_scales(b->channel_scale,scales);
  h->dense_r3_prepare_ticks=HAP_perf_get_qtimer_count()-start;start=HAP_perf_get_qtimer_count();

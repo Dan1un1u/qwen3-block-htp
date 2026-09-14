@@ -84,16 +84,24 @@ static void qbh_r4_finish_range(struct qbh_block_header *h,
  for(uint32_t a=a_first;a<a_first+a_count;a++)for(uint32_t c=0;c<512U;c+=64U)
   for(uint32_t r=0;r<count;r+=4U) {
    HVX_Vector encoded[4];
+   /* Four independent gather destinations hide producer/lookup latency.
+    * Down output is phase-dead here; each context owns1024B within it. */
    for(uint32_t rr=0;rr<4U;rr++) {
-    HVX_Vector v=Q6_V_vzero();
     if(r+rr<count) {
      const __fp16 *src=weight+(r+rr)*16384U+(c/32U)*1024U;
      HVX_Vector group_offsets=Q6_Vw_vadd_VwVw(offsets,Q6_V_vsplat_R(a*4U));
-     Q6_vgather_ARMVw(scratch,(int32_t)(uintptr_t)src,4095U,group_offsets);v=*(volatile HVX_Vector*)scratch;
-     if(audit)*(HVX_Vector*)(audit+2U*524288U+(first+r+rr)*8192U+a*512U+c)=v;
-    }
-    encoded[rr]=qbh_r4_sp2_half(v,lut,scratch);
+     Q6_vgather_ARMVw(scratch+rr,(int32_t)(uintptr_t)src,4095U,group_offsets);
+    } else scratch[rr]=Q6_V_vzero();
    }
+   for(uint32_t rr=0;rr<4U;rr++) {
+    HVX_Vector bits=*(volatile HVX_Vector *)(scratch+rr);
+    if(audit && r+rr<count)*(HVX_Vector*)(audit+2U*524288U+(first+r+rr)*8192U+a*512U+c)=bits;
+    HVX_Vector off=Q6_Vh_vasl_VhR(Q6_V_vand_VV(bits,Q6_Vh_vsplat_R(32767)),1);
+    HVX_VectorPred upper=Q6_Q_vcmp_gt_VuhVuh(bits,Q6_Vh_vsplat_R(32767));
+    Q6_vgather_AQRMVh(scratch+4U+rr,Q6_Q_not_Q(upper),(int32_t)(uintptr_t)lut,65535U,off);
+    Q6_vgather_AQRMVh(scratch+4U+rr,upper,(int32_t)(uintptr_t)(lut+32768U),65535U,off);
+   }
+   for(uint32_t rr=0;rr<4U;rr++)encoded[rr]=*(volatile HVX_Vector *)(scratch+4U+rr);
    HVX_Vector lo=Q6_Vb_vpacke_VhVh(encoded[1],encoded[0]),hi=Q6_Vb_vpacke_VhVh(encoded[3],encoded[2]);
    HVX_VectorPair x=Q6_W_vdeal_VVR(hi,lo,-32);
    size_t pos=(a*16U+c/32U)*2048U+(first+r)*32U;
@@ -138,7 +146,7 @@ static void qbh_r4_convert_worker(void *context,uint32_t id) {
         return;
     }
     if(task->finish)qbh_r4_finish_range(task->h,task->b,task->weight,task->middle,
-        task->first,task->count,(HVX_Vector *)scratch,task->audit,id*16U/3U,(id+1U)*16U/3U-id*16U/3U);
+        task->first,task->count,(HVX_Vector *)(task->b->down+id*1024U),task->audit,id*16U/3U,(id+1U)*16U/3U-id*16U/3U);
     else for(uint32_t tile=id*256U/3U;tile<(id+1U)*256U/3U;++tile)
         qbh_r4_prepare_tile(task->b->gate,task->b->up,(__fp16 *)task->b->hmx_activation,
             64U,tile,(const uint16_t *)task->b->w4u8_silu_lut,scratch);
@@ -212,7 +220,7 @@ static int qbh_r4_finish_vector(struct qbh_block_header *h,
             .audit=audit,.finish=1U,.first=first,.count=count};
         return qbh_r4_convert_parallel(pool,&task);
     }
-    qbh_r4_finish_range(h,b,weight,middle,first,count,scratch,audit,0U,16U);
+    qbh_r4_finish_range(h,b,weight,middle,first,count,(HVX_Vector *)b->down,audit,0U,16U);
     return 0;
 }
 static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
