@@ -124,8 +124,8 @@ __attribute__((noinline)) static void qbh_sp2_epilogue_run(struct qbh_sp2_epilog
             HVX_Vector y3=qbh_sp2_requant(l.v3,h.v3,sum,multiplier,zp,e->mode);
             *(HVX_Vector *)(out+base)=Q6_Vb_vpacke_VhVh(Q6_Vh_vpacke_VwVw(y3,y2),Q6_Vh_vpacke_VwVw(y1,y0));
         }
-        asm volatile("barrier":::"memory");
         }
+        asm volatile("barrier":::"memory");
         e->done[slot]=seq+1U;
         asm volatile("release(%0):at"::"r"(&e->done[slot]):"memory");
     }

@@ -9700,7 +9700,7 @@ static int qbh_run_w4u8_direct_n_projection(
                 qbh_record_projection_failure(
                     header, desc, next_first, 81U, result);
                 if(transfer_o)(void)qurt_hvx_lock(QURT_HVX_MODE_128B);
-            return -1;
+                return -1;
             }
             header->weight_ddr_read_bytes +=
                 (uint64_t)next_tiles *
