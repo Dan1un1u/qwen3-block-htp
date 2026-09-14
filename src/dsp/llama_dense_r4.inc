@@ -17,6 +17,12 @@ static int qbh_r4_gemm(struct qbh_block_header *h,
     void *sc,__fp16 *out,uint32_t mt,uint32_t kt,uint32_t nt) {
     uint64_t t=HAP_perf_get_qtimer_count();
     if(h->dense_r4_audit_offset) FARF(ALWAYS,"L32_R4 a=%p w=%p out=%p sc=%p mt=%u kt=%u nt=%u",(void*)a,(void*)w,(void*)out,sc,mt,kt,nt);
+    if(h->dense_r4_audit_offset) {
+        uint32_t *diag=(uint32_t *)((uint8_t *)h+h->dense_r4_audit_offset+3U*1048576U-128U);
+        diag[0]=(uint32_t)(uintptr_t)a;diag[1]=(uint32_t)(uintptr_t)w;diag[2]=(uint32_t)(uintptr_t)out;
+        diag[3]=(uint32_t)(uintptr_t)sc;diag[4]=mt;diag[5]=kt;diag[6]=nt;
+        qurt_mem_cache_clean((qurt_addr_t)diag,128U,QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE);
+    }
     int rc=qbh_hmx_submit(worker,QBH_BLOCK_HMX_FP16,a,w,sc,out,mt,kt,nt);
     h->dense_r4_matmul_ticks+=HAP_perf_get_qtimer_count()-t;
     ++h->hmx_command_count;++h->dense_r4_hmx_calls;
