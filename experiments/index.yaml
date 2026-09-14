@@ -586,3 +586,14 @@ experiments:
       - 1.0756071208422007
       - 1.088402299287748
       gate_pass: true
+- id: L32-0018
+  title: Reduce remaining FP32 normalization and O projection overhead
+  execution_state: running
+  record: docs/experiments/L32-0018.md
+  approval_ref: User authorizes continuing speed optimization after L32-0017 (2026-09-14)
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  parent_source: 59348e01bb10fc38c7974550345377b5449ac9c1
+  hardware_runs: 0
+  baseline_quality_promoted: false
