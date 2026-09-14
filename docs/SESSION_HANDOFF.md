@@ -1,32 +1,31 @@
-# L32-0021 completed optimization / chain3 numerical stop
-No active experiment. Source closure `4ff8ec9ea24a9511b602cb1d9f8c364da76508b4`; single-layer profile/native
-`5adc46b774a23df9138f1070560fb68a28c165a1`. Three-layer source d77364464d9c73910b3d074b0da6ac4308fbe1ba.
-Read docs/LLAMA32_ROTATION_PIPELINE_FOLLOWUP.md and docs/experiments/L32-0021.md.
-Retain candidate3: dense H16 operand orientation produces contiguous SP2
-consumer tiles; two-worker finish/caller next-layout overlap,8-row LUT pipeline,
-paired token-load reuse, vector H16 constants. FP16/SP2/FP32 math unchanged.
-Final code consumes VTCM directly; intermediate vector array stack staging found
-in superseded candidates was removed.20 affected R4/both runs retained but not
-physical/performance acceptance. Final assembly has scalar stack slots only.
-All12 isolated layer0/7/15 OFF/R3/R4/both numeric and physical checks pass;
-exact0020 output hashes preserved. Fixed10 cyclic five-arm warmed comparison:
-OFF1959.78/1464.19us, R31899.49/1400.94, R42159.80/1507.40,
-both2090.70/1497.78, sealed0020 both2159.67/1469.60 (prefill/decode).
-Combined vsOFF +6.68%/+2.29%, CI upper8.69%/5.67% PASS.
-Paired vs oldboth prefill -3.19% (CIratio.950082-.987010); decode inconclusive.
-R4-alone prefill+10.21%,CIupper12.29% FAIL. No gate weakening/repeated formal run.
-Extended combination to3 layers with fresh original-BF16 Down folds for1/2,
-same frozen8train-window method, existing verified layer0 fold. OFFchain3 exact.
-Combinedchain3 independent min-rowcos .791505/.911935 FAIL despite finite
-execution,8MiB, correctcache structure/prefix. Cache value mismatches retained.
-Independent software with only actual audited layer0 substituted already
-reproduces large deviation (layer2mincos .803272/.908457). This supports rounding
-amplification; it is not a complete conditional native oracle or proof that every
-remaining difference is explained. Do not mislabel this as introduced speed
-optimization error: isolated outputs match old code, and software reproduces much
-of the problem without cross-layer hardware scheduling.
-Next discuss locating sensitivity at next-layer Norm/A8,QKV/attention/FFN boundaries.
-Keep optimized pipeline fixed. No full16/frontend/E2E/PPL; no default/quality promotion.
-Ledger `/mnt/d/llm_exp/results/llama32-htp/l32-0021/evidence-ledger-checkpoint-a01.json`
-SHA256 `fd22398af6ddf91ce6fcf79a70601364b1f1bc59e173a9f49bec948a8ea2b1b9`;822files,17model manifests,111CLI,1242boundaries.
-Prior0020 evidence reverified unchanged. Qwen and other Llama branch frozen.
+# L32-0022 complete: existing R4 numerical error repaired
+No active experiment. Source closure 9209ac60265e8d6daf966e02a18fe82e7b59f024; native/profiled 3fb9a4f694e36552c1d7f75fc40de59007cfc8cf.
+Read docs/LLAMA32_ROTATION_NUMERICAL_REPAIR.md and docs/experiments/L32-0022.md.
+User requires numerical correctness, rollback if latest optimization introduced error.
+Restored exact0020 native R4 at2459593, rebuiltN3, reused sealed0021 chain3
+weights/inputs/reference unchanged. Outputs byte-identical to0021 in both phases:
+minrowcos .791505/.911935 fail.0020 had never tested chain3. Thus rollback alone
+cannot fix this fixture;0021 scheduling change did not introduce its failure.
+Retained fast0021 pipeline and moved FP16 H512 normalization into dense weight
+entries with unity output converter scale. Same mathematical reference, unchanged
+W4/SP2/calibration/FP32 residual and dense GEMM calls/layout. Generate normalized
+bits with singleXOR at original constant generation cost. No butterfly.
+Final singlelayer0/7/15 actual conditional-tail exact, component<=1ULP+minnormal,
+idealcos>.9999999997. Continuous3 prefill mincos .999999998751,relativeL2
+4.64915e-7; decode bitexact, all KV values/prefix/structure exact. Original exact
+CLI failures retained for tiny prefill FP32 differences. No numerical gate relaxed.
+8,229,344B VTCM, no timed activation DDR/spill. finish/layout frames88/24B scalar;
+run_dense_r4 vector stack save is a traced zero constant, not activation.
+Fixed10 cyclic three-arm OFF/repairedboth/sealed0021both,1warmup+10measured
+pairs/process. OFF1945.139/1464.737us; repaired2065.881/1451.117us; old2118.069/
+1494.236us. Both vsOFF +6.207%/-.930%,95%CIupper+8.768%/+2.164% PASS.
+Matched old Host wall improves2.464%/2.886%; mostly Host-DSP boundary, not evidence
+of faster R4 matrix compute (GateUp/SwiGLU ~unchanged). Preserve full ledger.
+43CLI,686RPC,660formal/600measured;13exit0,30retainedexit1. No crashes/buildfails.
+No full16 rotation/frontend/E2E/PPL; no default/quality promotion. Next full16
+independent numerical validation then actualfrontend/E2E if it passes.
+Evidence /mnt/d/llm_exp/results/llama32-htp/l32-0022/evidence-ledger-checkpoint-a01.json
+SHA256 1ce076bf6ff75fbc54f4a9c6de1516b414311cf6895d20640d26011681dbbcf3;249files,6reusedmodelmanifests.
+All prior0020(371files)/0021(822files) ledger entries and model manifests reverified.
+Qwen and other Llama branch remain frozen. BuildN3 seal is native/profiled HEAD;
+closure adds docs only: rebuild from current sourceHEAD before next device use.

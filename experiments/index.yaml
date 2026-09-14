@@ -951,7 +951,7 @@ experiments:
       - 1.0613962696618775
 - id: L32-0022
   title: Reproduce prior rotation arithmetic and repair before optimization
-  execution_state: running
+  execution_state: completed
   record: docs/experiments/L32-0022.md
   approval_ref: User asks whether previous iteration had numerical error, requests revert if absent, and
     continued optimization with non-negotiable hardware numerical correctness
@@ -959,5 +959,75 @@ experiments:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
   parent_source: 4ff8ec9ea24a9511b602cb1d9f8c364da76508b4
-  hardware_runs: 0
+  hardware_runs: 43
   baseline_quality_promoted: false
+  hardware_runs_definition: 13functional/diagnostic CLI plus30fixed formal;13exit0,30retained exact-reference
+    exit1; old0020 three-layer numerical failure deliberately reproduced
+  token_boundary_executions: 686
+  formal_token_boundaries: 660
+  formal_measured_token_boundaries: 600
+  formal_cycles: 10
+  formal_profiling: true
+  failed_native_crashes: 0
+  failed_builds: 0
+  local_gate: old_native_failure_reproduced_repair_singlelayer_chain3_and_speed_gates_pass
+  source_heads:
+    codex/llama32-no-rotation: 9209ac60265e8d6daf966e02a18fe82e7b59f024
+  profiled_source_head: 3fb9a4f694e36552c1d7f75fc40de59007cfc8cf
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0022
+  evidence_ledger_sha256: 1ce076bf6ff75fbc54f4a9c6de1516b414311cf6895d20640d26011681dbbcf3
+  report: docs/LLAMA32_ROTATION_NUMERICAL_REPAIR.md
+  e2e_run: false
+  ppl_rerun: false
+  speed:
+    prefill:
+      'off':
+        mean_us: 1945.1389899999997
+        latency_ratio: 1.0
+        increase_percent: 0.0
+        ci95:
+        - 1.0
+        - 1.0
+        gate_pass: true
+      both:
+        mean_us: 2065.88127
+        latency_ratio: 1.0620738572517125
+        increase_percent: 6.207385725171255
+        ci95:
+        - 1.0389083697415118
+        - 1.0876764427633434
+        gate_pass: true
+      oldboth:
+        mean_us: 2118.06933
+        latency_ratio: 1.0889038474314887
+        increase_percent: 8.890384743148871
+        ci95:
+        - 1.072568364702678
+        - 1.1086915326114763
+        gate_pass: false
+    decode:
+      'off':
+        mean_us: 1464.73705
+        latency_ratio: 1.0
+        increase_percent: 0.0
+        ci95:
+        - 1.0
+        - 1.0
+        gate_pass: true
+      both:
+        mean_us: 1451.1172399999998
+        latency_ratio: 0.9907015324013274
+        increase_percent: -0.9298467598672588
+        ci95:
+        - 0.9611158741965807
+        - 1.021636628811632
+        gate_pass: true
+      oldboth:
+        mean_us: 1494.23641
+        latency_ratio: 1.0201396967462522
+        increase_percent: 2.0139696746252156
+        ci95:
+        - 0.9983456693204859
+        - 1.0435544704527164
+        gate_pass: true
+  chain3_gate_pass: true
