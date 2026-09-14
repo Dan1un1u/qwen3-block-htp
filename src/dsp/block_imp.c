@@ -21158,6 +21158,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     }
     /* L32-0018: O uses the same two-slot raw-store/HVX residual pipeline as
      * Down, with one native W4 pass and its existing U8 zero compensation. */
+    /* EXP0269 diagnostic: previously unused FP32 audit slots hold residual tail. */
+    if(QBH_FP32_RESIDUAL(header))qbh_r3_chain_audit(header,shared,3,buffers->residual+393216U,131072U);
     const uint32_t fp32_o_stream=QBH_FP32_RESIDUAL(header) && logical_rows==64U;
     if(fp32_o_stream) {
         if(!w4f16_pool || !w4f16_pool->worker_count)
@@ -21217,7 +21219,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         qbh_attribution_accumulate(
             header, audit_start, &header->o_projection_audit_ticks);
     }
-    qbh_r3_chain_audit(header,shared,3,buffers->attention_projection,131072U);
+    if(!QBH_FP32_RESIDUAL(header))qbh_r3_chain_audit(header,shared,3,buffers->attention_projection,131072U);
     header->o_projection_ticks += HAP_perf_get_qtimer_count() - start;
 
     start = HAP_perf_get_qtimer_count();
@@ -21524,7 +21526,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             header, &gate_prefetch);
         return QBH_BLOCK_STATUS_RESIDUAL_POOL_FAILED;
     }
-    qbh_r3_chain_audit(header,shared,4,buffers->residual,131072U);
+    qbh_r3_chain_audit(header,shared,4,buffers->residual+(QBH_FP32_RESIDUAL(header)?393216U:0U),131072U);
     qbh_r3_chain_audit(header,shared,5,w4u8_mlp_native_activation,131072U);
     header->post_attention_norm_ticks +=
         HAP_perf_get_qtimer_count() - start;
