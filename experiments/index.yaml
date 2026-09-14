@@ -35,7 +35,7 @@ experiments:
   approval_ref: 'User: 再优化一下看看，争取达到全模gate。希望全模和单层的退化不同能给你一些启发'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0271-fp32-fullmodel-speed
+    source_branch: codex/exp-0272-fp32-fullmodel-norm
     started_on: '2026-09-14'
   source_branches:
   - codex/exp-0271-fp32-fullmodel-speed
