@@ -3376,7 +3376,7 @@ static int qbh_run_exp0240_layer(
             if (dump != NULL && rep == 0U) {
                 if(h->dense_r4_audit_offset) {
                     snprintf(name,sizeof(name),"step%02u_r4.bin",step);
-                    if(qbh_write_named_tensor(dump,name,shared+h->dense_r4_audit_offset,3U*786432U)) return -1;
+                    if(qbh_write_named_tensor(dump,name,shared+h->dense_r4_audit_offset,3U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U)) return -1;
                 }
                 if (h->dense_r3_audit_offset) {
                     snprintf(name,sizeof(name),"step%02u_r3.bin",step);
@@ -3769,6 +3769,11 @@ static int qbh_run_replay_sequence(
         }
         if (dump_root != NULL && dump_root[0] != '\0') {
             char name[128];
+            if(header->dense_r4_audit_offset) {
+                snprintf(name,sizeof(name),"actual_replay_r4_%02u.bin",step);
+                if(qbh_write_named_tensor(dump_root,name,shared+header->dense_r4_audit_offset,
+                    3U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U)) {free(cache_snapshots);return -1;}
+            }
             if (snprintf(
                     name, sizeof(name),
                     "actual_replay_output_%02" PRIu32 "_%s.bin",
@@ -6356,8 +6361,8 @@ int main(int argc, char **argv) {
         if (getenv("QBH_DENSE_R4_AUDIT")) {
             cursor=qbh_align_up_size(cursor,QBH_HOST_ALIGNMENT);
             dense_r4_audit_offset=cursor;
-            if(3U*786432U>UINT32_MAX-cursor) return 2;
-            cursor+=3U*786432U;
+            if(3U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U>UINT32_MAX-cursor) return 2;
+            cursor+=3U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U;
         }
         if (getenv("QBH_DENSE_R3_AUDIT")) {
             cursor=qbh_align_up_size(cursor,QBH_HOST_ALIGNMENT);

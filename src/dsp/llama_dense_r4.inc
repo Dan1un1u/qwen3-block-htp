@@ -228,7 +228,7 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
     uint64_t t=HAP_perf_get_qtimer_count();
     const uint32_t streamed=rows==1U && h->dense_r4_optimization>=2U &&
         h->w4u8_decode_direct_n_gate_up_swiglu_stream;
-    const uint32_t prefill_streamed=rows==64U && h->dense_r4_optimization==4U && b->r4_prefill_prepared;
+    const uint32_t prefill_streamed=rows==64U && b->r4_prefill_prepared;
     if(!streamed && !prefill_streamed) {
         if(!h->dense_r4_optimization || rows==1U)qbh_r4_zero(act,p1*512U*2U);
         if(h->dense_r4_optimization>=3U && rows==64U) {
