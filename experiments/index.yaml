@@ -734,3 +734,14 @@ experiments:
         - 0.9924988774320255
         - 1.0585540897961938
         gate_pass: true
+- id: L32-0020
+  title: Optimize FP32 residual R3 R4 SP2 pipeline
+  execution_state: running
+  record: docs/experiments/L32-0020.md
+  approval_ref: User explicitly requests optimization after L32-0019 speed failure
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  parent_source: b319b63f1eb8823b5bbfbc94ad19cd567d1b73b3
+  hardware_runs: 0
+  baseline_quality_promoted: false

@@ -171,3 +171,7 @@ User temporarily accepts L32-0018 speed and authorizes R3/R4 integration using
 Qwen implemented dense paths as reference. Supersedes0017 rotation deferral for
 this bounded integration only. Preserve current FP32 residual/SP2 and frozen
 no-rotation measurements. See0019protocol; no deep speed optimization or quality promotion.
+
+## L32-0020 optimization authorization
+User explicitly requests rotation pipeline optimization after0019 checkpoint.
+This supersedes prior speed-optimization deferral for the bounded0020protocol.
