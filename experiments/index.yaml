@@ -39,7 +39,7 @@ experiments:
   approval_ref: 'User continuation: 继续优化 after EXP0269 safe path and cost report'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0269-sp2-fp32-residual
+    source_branch: codex/exp-0270-fp32-norm-pipeline
     started_on: '2026-09-14'
   source_branches:
   - codex/exp-0270-fp32-norm-pipeline
