@@ -42,3 +42,7 @@ historical throughput; they are possible future backport candidates only.
 Supersedes L32-0027's rotated primary paper working selection for these speed
 rows. Rotation evidence and its known numerical failures remain supplementary;
 original reports and measured artifacts are preserved unchanged.
+
+## EXP0270 continuation (not a baseline replacement)
+
+Qwen C1 eight-row exact FP32 Norm and C3 reusable raw-output bias tables are retained. Independent selectedlayers exact; short prefill gate fails+14.42%, decode passes+4.13%. No fullmodel speed measured, no Llama backport. User-selected historical paper speeds remain unchanged. See EXP0270_FP32_RESIDUAL_RESULTS.md.

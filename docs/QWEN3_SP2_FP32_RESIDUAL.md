@@ -1,3 +1,7 @@
+# Latest continuation: EXP0270
+
+See [EXP0270 results](EXP0270_FP32_RESIDUAL_RESULTS.md). Final tested source645b0cdc4d6787dcde7bade9af59c3de3d6d8451 retains exact eight-row register Norm reduction and invariant VTCM retained-output bias tables. Two-row native Norm emission was exact but slower and reverted; four-row compiler-spilling attempts never reached hardware. All three selected layers remain exact, peak6682752B. Five-short repeat10 prefill+14.4196% fails (CI+10.1444..18.6659%); decode+4.1323% passes (CI+1.5607..8.2241%). No formal10/slice/fullmodel/E2E. Original selected paper baselines unchanged. New methods have not been measured on Llama. Earlier EXP0269 report below is historical.
+
 # EXP0269: Qwen no-rotation SP2 with FP32 residual
 
 Final tested source `aa55a3ece5a04f40c1cfe135b699433b8f6e4ff2`. The independent single-layer implementation gate passes; the fixed five-pair short speed gate fails. No formal-ten, chain3, full28, E2E or PPL was run. Original paper baselines remain selected.

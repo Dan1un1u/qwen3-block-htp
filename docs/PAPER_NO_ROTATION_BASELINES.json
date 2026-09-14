@@ -161,13 +161,17 @@
     "rotation_branch_equivalent_patches": 79
   },
   "new_qwen_candidate": {
-    "experiment": "EXP-0269",
-    "source_branch": "codex/exp-0269-sp2-fp32-residual",
-    "measured_source": "aa55a3ece5a04f40c1cfe135b699433b8f6e4ff2",
+    "experiment": "EXP-0270",
+    "source_branch": "codex/exp-0270-fp32-norm-pipeline",
+    "measured_source": "645b0cdc4d6787dcde7bade9af59c3de3d6d8451",
     "independent_single_layer_gate": true,
     "short_gate": false,
+    "prefill_ratio": 1.144195571147712,
+    "decode_ratio": 1.0413233381099416,
     "formal_profile": false,
     "full_model_e2e": false,
-    "paper_baseline_replaced": false
+    "paper_baseline_replaced": false,
+    "report": "docs/EXP0270_FP32_RESIDUAL_RESULTS.md",
+    "new_methods_unmeasured_on_llama": true
   }
 }
