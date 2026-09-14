@@ -28,7 +28,7 @@ criteria; W4A8 OFF is tracked in L32-0003 with no model-quality threshold.
 Use only Llama-specific tools in docs/LLAMA32_W16A16.md,
 docs/LLAMA32_W4A16.md and docs/LLAMA32_W4A8.md. L32-0019 adds opt-in dense R3/R4 for FP32 residual+SP2 single-layer validation.
 See docs/LLAMA32_FP32_R3_R4.md and docs/LLAMA32_ROTATION_PIPELINE.md (L32-0020); full-model rotation remains unvalidated and
-paused at the consecutive-layer numerical gate after L32-0021 combined single-layer speed passed (docs/LLAMA32_ROTATION_PIPELINE_FOLLOWUP.md). Default OFF and other recipes are unchanged. No QNN execution.
+L32-0022 repairs the pre-existing three-layer rotation numerical failure and passes unchanged chain3 plus single-layer speed gates (docs/LLAMA32_ROTATION_NUMERICAL_REPAIR.md). Full16 rotation remains unvalidated. Default OFF and other recipes are unchanged. No QNN execution.
 Builds stay in the owning WSL worktree; large Llama artifacts go to separate
 D:/llm_exp/models/llama32-htp and results/llama32-htp experiment directories.
 
