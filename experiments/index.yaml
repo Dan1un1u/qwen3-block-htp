@@ -24,6 +24,20 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0273
+  title: 'No-rotation paper ablations: Qwen baseline reproduction'
+  parent: EXP-0272
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: not_applicable
+  record: docs/experiments/EXP-0273.md
+  approval_ref: User approves ablation table excluding W4/S8 and residual comparisons;
+    adds FP vector softmax
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0272-fp32-fullmodel-norm
+    started_on: '2026-09-15'
 - id: EXP-0272
   title: Qwen exact FP32 Norm optimization for full-model gate
   parent: EXP-0271

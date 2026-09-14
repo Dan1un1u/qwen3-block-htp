@@ -404,3 +404,8 @@ User explicitly requests one fullmodel speed confirmation after EXP0270 short pr
 ## PC085 — User-approved full-model FP32 residual speed optimization
 
 User requests further optimization toward the fullmodel10percentgate after EXP0271. EXP0272 may optimize exact Norm/pipeline under its bounded protocol. Singlelayer remains numerical/physical prerequisite and performance diagnostic; actual fullmodel repeat10 paired95percentCI gates the requested fullmodel acceptance. Prior failed singlelayer/fullmodel diagnostics remain unchanged, no numerical/physical threshold relaxation or baseline promotion. All other recipes and Llama frozen; PC037 applies.
+
+
+## PC086 — User-approved no-rotation paper ablations (2026-09-15)
+
+User approves docs/PAPER_NO_ROTATION_ABLATION_PLAN.md except W4-to-S8 comparison and integer-residual comparisons, and explicitly adds low-bit log2 softmax versus FP vector softmax. Freeze FP32 residual throughout, no rotation, no new calibration/PPL or quality claims. Compare ordinary A8/SP2 with equivalent shared optimizations. HMX internal W4 expansion is unknown and outside claims. Register bounded phases under this authorization; EXP0273 begins Qwen all-on baseline reproduction and evidence interfaces. Future phase registration within this agreed table needs no repeated user permission. Diagnostic deliberately slower arms may finish measurement above10percent; no numerical/physical relaxation or candidate promotion. Exact implementation ablations retain outputs; softmax numerical contracts differ and each needs an independent valid reference. FP softmax must use vector arithmetic and preserve input/output/AV boundaries for attribution. PC037 recovery and evidence preservation apply.

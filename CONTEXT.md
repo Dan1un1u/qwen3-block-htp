@@ -1,3 +1,7 @@
+# Current EXP0273: approved ablation campaign A0
+
+User approved remaining no-rotation ablations, excluded W4/S8 and all integer-residual comparisons, added log2/FP vector softmax. All main arms fixed FP32 residual. Read PC086 and updated docs/PAPER_NO_ROTATION_ABLATION_PLAN.md; EXP0273 owns Qwen baseline reproduction first. Later phases remain authorized but unexecuted.
+
 # 最新决策：2026-09-15 EXP0272 已由用户验收
 
 当前论文无旋转工作基线：Qwen EXP0272 SP2mode8+FP32 residual mode2（1849.4159/47.0701 token/s）；Llama L32-0018 不变（2069.7026/42.5101 token/s）。Qwen EXP0268 整数残差历史基线保留。接受仅指实现/速度工作版本，非模型质量、非默认开关改写。新消融尚未执行，计划待讨论：docs/PAPER_NO_ROTATION_ABLATION_PLAN.md。下文旧的“等待用户验收”是历史状态。
