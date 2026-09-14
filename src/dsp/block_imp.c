@@ -20378,7 +20378,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
 
     start = HAP_perf_get_qtimer_count();
     if (QBH_FP32_RESIDUAL(header)) {
-        qbh_llama_fp32_norm_parallel(pool,buffers,
+        qbh_llama_fp32_norm_parallel(w4f16_pool,buffers,
             (const __fp16 *)buffers->input_norm_weight,
             w4u8_qkv_native_input_enabled ? buffers->hmx_activation : buffers->normalized,
             &header->qparams[QBH_BLOCK_QP_INPUT_NORM], logical_rows,
@@ -21157,7 +21157,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     }
     if (QBH_FP32_RESIDUAL(header)) {
         /* O's raw-accumulator epilogue has already added to FP32 residual. */
-        qbh_llama_fp32_norm_parallel(pool,buffers,
+        qbh_llama_fp32_norm_parallel(w4f16_pool,buffers,
             (const __fp16 *)buffers->post_norm_weight,
             w4u8_mlp_native_input_enabled ? w4u8_mlp_native_activation : buffers->normalized,
             &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_NORM], logical_rows,
