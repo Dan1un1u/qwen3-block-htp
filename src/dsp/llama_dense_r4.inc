@@ -410,15 +410,12 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
     if(audit)for(uint32_t r=0;r<16U*rows;++r)for(uint32_t c=0;c<512U;++c)
         audit[524288U+r*512U+c]=stage1[qbh_r4_pos(r,c,16U)];
     t=HAP_perf_get_qtimer_count();
-    /* L32-0025: H16 entries carry the exact dyadic normalization.
-     * +/-1 xor0x0800 is +/-0.25; mask AFTER xor so padded zeros stay zero.
-     * Prefill consumes H16 as the left operand, decode as the right operand.
-     * Same dot product, layouts and calls; unity output conversion. */
+    /* Exact H16 top-left of the immutable native H128 sign tile.
+     * Clear both padded dimensions; scale remains the same FP16 .25. */
     for(uint32_t v=0;v<16U;++v)
         ((HVX_Vector *)w12)[v]=v<8U?Q6_V_vmux_QVV(Q6_Q_vsetq_R(64),
-            Q6_V_vxor_VV(((const HVX_Vector *)qbh_r3_sign_matrix)[v],
-                Q6_Vh_vsplat_R(0x0800)),Q6_V_vzero()):Q6_V_vzero();
-    for(uint32_t c=0;c<32U;++c)scales[c]=1.0f;
+            ((const HVX_Vector *)qbh_r3_sign_matrix)[v],Q6_V_vzero()):Q6_V_vzero();
+    for(uint32_t c=0;c<32U;++c)scales[c]=(float)(__fp16)0.25f;
     qbh_hmx_fp16_init_channel_scales(b->channel_scale,scales);
     h->dense_r4_prepare_ticks+=HAP_perf_get_qtimer_count()-t;
     if(h->dense_r4_optimization>=2U && rows==64U && h->dense_r4_mode!=2U) {
