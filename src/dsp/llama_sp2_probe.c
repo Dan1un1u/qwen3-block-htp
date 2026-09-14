@@ -65,11 +65,17 @@ static int lsp2_gather_audit(uint8_t *shared,uint32_t bytes,uint8_t *vtcm,uint32
  h->peak_bytes=(uint32_t)(scratch+256U-vtcm);h->status=mismatch?AEE_EFAILED:AEE_SUCCESS;
  return h->status;
 }
+#include "llama_rotation_probe.inc"
 int lsp2_run(int fd,uint32_t bytes,uint8_t *vtcm,uint32_t vbytes,uint32_t ctx){
  uint8_t *shared=0;int ret=HAP_mmap_get(fd,(void**)&shared,0);if(ret||!shared)return AEE_EFAILED;
  ret=qurt_mem_cache_clean((qurt_addr_t)shared,bytes,QURT_MEM_CACHE_INVALIDATE,QURT_MEM_DCACHE);
  if(ret){HAP_mmap_put(fd);return AEE_EFAILED;}
  struct lsp2_header *h=(struct lsp2_header*)shared;
+ if(bytes>=128U && (h->mode==7U || h->mode==8U)) {
+  ret=lrprobe(shared,bytes,vtcm,vbytes,ctx);
+  int e=qurt_mem_cache_clean((qurt_addr_t)shared,bytes,QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE);
+  HAP_mmap_put(fd);return ret?ret:(e?AEE_EFAILED:AEE_SUCCESS);
+ }
  if(bytes>=128U && h->mode==4U) {
    ret=lsp2_gather_audit(shared,bytes,vtcm,vbytes);
    int e=qurt_mem_cache_clean((qurt_addr_t)shared,bytes,QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE);
