@@ -1,3 +1,4 @@
+#include "llama_r4_exact.h"
 /* L32-0015 Llama full8192 H16 tensor H512; reused dense Qwen scheduling. */
 static int qbh_r4_h16(uint32_t k,uint32_t n){return (__builtin_popcount(k&n)&1)?-1:1;}
 /* EXP0261 full R4 = H12 x H512. Dense matrix factors, never FWHT.
@@ -115,7 +116,7 @@ static void qbh_r4_finish_range(struct qbh_block_header *h,
    for(uint32_t rr=0;rr<batch_rows;rr++) {
     if(r+rr<count) {
      const __fp16 *src=weight+(r+rr)*16384U+(c/32U)*1024U;
-     if(h->logical_m==64U && h->dense_r4_mode==1U) {
+     if(h->logical_m==64U && h->dense_r4_mode!=2U) {
       src+=(a/2U)*64U;
       HVX_VectorPair pair=Q6_W_vdeal_VVR(*(const HVX_Vector *)(src+1024U),*(const HVX_Vector *)src,-2);
       scratch[rr]=(a&1U)?Q6_V_hi_W(pair):Q6_V_lo_W(pair);
@@ -158,14 +159,56 @@ struct qbh_r4_convert_task {
     const __fp16 *weight;
     uint8_t *middle;
     __fp16 *audit;
-    uint32_t finish,first,count,stream,finish_workers;
+    uint32_t finish,first,count,stream,finish_workers,exact_stage1;
     volatile uint32_t ready[8],abort;
     uint32_t consumed[2];
     uint64_t work_ticks[3];
 };
+/* The H512 matrix is dead after the first HMX join. Three contexts use
+ * disjoint 4KiB integer rows there; source activation and output alt stay VTCM.
+ * Exact dense sums deliberately establish a correctness control before cost
+ * reduction. 0x29a8 is exactly181/4096, hence the final lattice is2^-36. */
+static void qbh_r4_exact_stage1(struct qbh_r4_convert_task *task,uint32_t id) {
+    const uint16_t *src=(const uint16_t *)task->b->hmx_activation;
+    uint16_t *out=(uint16_t *)task->b->expanded_weight_alt;
+    int64_t *row=(int64_t *)(task->b->expanded_weight+id*4096U);
+    uint32_t nr=16U*task->h->logical_m;
+    for(uint32_t r=id*nr/3U;r<(id+1U)*nr/3U;++r) {
+        for(uint32_t k=0;k<512U;++k) {
+            uint16_t v=src[qbh_r4_pos(r,k,16U)];
+            if((v&31744U)==31744U){task->abort=1U;return;}
+            row[k]=qbh_r4_half_units(v);
+        }
+        for(uint32_t n=0;n<512U;++n) {
+            int64_t sum=0;
+            for(uint32_t k=0;k<512U;++k)
+                sum+=(__builtin_popcount(n&k)&1)?-row[k]:row[k];
+            uint16_t result=qbh_r4_round_units(sum*181,-36);
+            if((result&31744U)==31744U){task->abort=1U;return;}
+            out[qbh_r4_pos(r,n,16U)]=result;
+        }
+    }
+}
+/* Correct the second dense factor using the retained, now exact first factor.
+ * Input/output orientation follows the existing prefill transposed pipeline. */
+static void qbh_r4_exact_stage2(const __fp16 *stage1,__fp16 *out,
+    uint32_t rows,uint32_t first,uint32_t count,int transposed) {
+    for(uint32_t r=0;r<count;++r)for(uint32_t c=0;c<512U;++c)
+        for(uint32_t a=0;a<16U;++a) {
+            int64_t sum=0;
+            for(uint32_t g=0;g<16U;++g) {
+                uint16_t h=((const uint16_t *)stage1)[qbh_r4_pos(g*rows+first+r,c,16U)];
+                int64_t v=qbh_r4_half_units(h);
+                sum+=(__builtin_popcount(a&g)&1)?-v:v;
+            }
+            size_t pos=transposed?qbh_r4_pos(a,r*512U+c,count*16U):qbh_r4_pos(r*512U+c,a,1U);
+            ((uint16_t *)out)[pos]=qbh_r4_round_units(sum,-26);
+        }
+}
 static void qbh_r4_convert_worker(void *context,uint32_t id) {
     struct qbh_r4_convert_task *task=context;
     uint64_t t=HAP_perf_get_qtimer_count();
+    if(task->exact_stage1) {qbh_r4_exact_stage1(task,id);task->work_ticks[id]=HAP_perf_get_qtimer_count()-t;return;}
     uint8_t *scratch=task->b->w4u8_gather_scratch+id*256U;
     if(task->stream) {
         task->work_ticks[id]=0;
@@ -310,7 +353,7 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
     __fp16 *w12=(__fp16 *)b->hmx_output;
     float scales[32] __attribute__((aligned(128)));
     __fp16 *audit=h->dense_r4_audit_offset?(__fp16 *)(shared+h->dense_r4_audit_offset):NULL;
-    if(h->variant!=QBH_BLOCK_W4U8 || QBH_LLAMA_SP2(h)!=8U || h->dense_r4_optimization!=6U || h->dense_r4_mode>2U ||
+    if(h->variant!=QBH_BLOCK_W4U8 || QBH_LLAMA_SP2(h)!=8U || h->dense_r4_optimization!=6U || h->dense_r4_mode>3U ||
        h->dense_r4_optimization>6U ||
        (rows!=1U && rows!=64U) ||
        (h->w4u8_decode_direct_n_gate_up_swiglu_stream && h->dense_r4_optimization<2U) ||
@@ -350,6 +393,12 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
     if(audit)for(uint32_t a=0;a<16U;++a)for(uint32_t r=0;r<rows;++r)for(uint32_t c=0;c<512U;++c)
         audit[(a*rows+r)*512U+c]=act[qbh_r4_pos(a*rows+r,c,16U)];
     if(qbh_r4_gemm(h,worker,act,weight,b->channel_scale,stage1,p1/32U,16U,16U))return -1;
+    if(h->dense_r4_mode==3U) {
+        uint64_t refine=HAP_perf_get_qtimer_count();
+        struct qbh_r4_convert_task task={.h=h,.b=b,.exact_stage1=1U};
+        if(qbh_r4_convert_parallel(pool,&task) || task.abort)return -1;
+        h->dense_r4_finish_ticks+=HAP_perf_get_qtimer_count()-refine;
+    }
     if(h->dense_r4_mode==2U) {
         /* Untimed oracle replaces the result only after the HMX state transition. */
         for(uint32_t r=0;r<16U*rows;++r)for(uint32_t n=0;n<512U;++n) {
@@ -369,7 +418,7 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
     for(uint32_t c=0;c<32U;++c)scales[c]=(float)(__fp16)0.25f;
     qbh_hmx_fp16_init_channel_scales(b->channel_scale,scales);
     h->dense_r4_prepare_ticks+=HAP_perf_get_qtimer_count()-t;
-    if(h->dense_r4_optimization>=2U && rows==64U && h->dense_r4_mode==1U) {
+    if(h->dense_r4_optimization>=2U && rows==64U && h->dense_r4_mode!=2U) {
         /* Two 256KiB input/output slots live inside the original arenas.
          * The previous output and next input use the opposite slot from the
          * active HMX command. Stage1, H12 and scales remain immutable. */
@@ -411,6 +460,11 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
             int rc=qbh_hmx_wait(worker);
             h->dense_r4_matmul_ticks+=HAP_perf_get_qtimer_count()-t;
             if(rc)return -1;
+            if(h->dense_r4_mode==3U) {
+                uint64_t refine=HAP_perf_get_qtimer_count();
+                qbh_r4_exact_stage2(stage1,oi,rows,batch*8U,8U,1);
+                h->dense_r4_finish_ticks+=HAP_perf_get_qtimer_count()-refine;
+            }
         }
         t=HAP_perf_get_qtimer_count();
         if(qbh_r4_finish_vector(h,b,pool,weight+131072U,middle,56U,8U,
@@ -428,6 +482,11 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
         }
         h->dense_r4_layout_ticks+=HAP_perf_get_qtimer_count()-t;
         if(qbh_r4_gemm(h,worker,act,w12,b->channel_scale,weight,count*16U,1U,1U))return -1;
+        if(h->dense_r4_mode==3U) {
+            uint64_t refine=HAP_perf_get_qtimer_count();
+            qbh_r4_exact_stage2(stage1,weight,rows,first,count,0);
+            h->dense_r4_finish_ticks+=HAP_perf_get_qtimer_count()-refine;
+        }
         if(h->dense_r4_mode==2U)for(uint32_t r=0;r<count*512U;++r)for(uint32_t n=0;n<16U;++n) {
             double sum=0;
             for(uint32_t k=0;k<16U;++k)sum+=(double)act[qbh_r4_pos(r,k,1U)]*(double)qbh_r4_h16(k,n);

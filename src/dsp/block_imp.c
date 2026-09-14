@@ -2038,7 +2038,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
     /* Llama A8 currently validates the unrotated head64 integer pipeline. */
     if (header == NULL || (header->dense_r3_mode &&
         (header->dense_r3_mode!=1U || header->dense_r3_optimization!=2U || !QBH_FP32_RESIDUAL(header))) ||
-        (header->dense_r4_mode && (header->dense_r4_mode>2U || header->dense_r4_optimization!=6U || QBH_LLAMA_SP2(header)!=8U)) ||
+        (header->dense_r4_mode && (header->dense_r4_mode>3U || header->dense_r4_optimization!=6U || QBH_LLAMA_SP2(header)!=8U)) ||
         (header->variant == QBH_BLOCK_W4U8
             ? (header->attention_pipeline_mode != QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA ||
                (header->scan_mode && (header->kv_cache_k_format != QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1 ||

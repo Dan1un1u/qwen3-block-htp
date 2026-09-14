@@ -78,7 +78,7 @@ def run(a):
   for line in adb('shell','sha256sum '+' '.join(shlex.quote(remote+'/package/'+n) for n in names[i:i+32])).stdout.splitlines():
    h,n=line.split(maxsplit=1);assert h==m['files'][n.removeprefix(remote+'/package/')]['sha256']
  old=json.loads((R.parent/f'l32-0018/layer0-a03/protocol.json').read_text())['command'];oldremote=old.split(' && ')[0].removeprefix('cd ');command=old.replace(oldremote,remote);prefix,argv=command.split(' ./qwen3_block_cli ',1);wd,e=prefix.split(' && ',1);env=dict(t.split('=',1) for t in shlex.split(e));r3=a.arm in ['r3','both'];r4on=a.arm in ['r4','both']
- env.update(QBH_DENSE_R3=str(int(r3)),QBH_R3_OPT='2' if r3 else'0',QBH_DENSE_R4=str(int(r4on)),QBH_R4_OPT='6' if r4on else'0')
+ env.update(QBH_DENSE_R3=str(int(r3)),QBH_R3_OPT='2' if r3 else'0',QBH_DENSE_R4=str(a.r4_mode if r4on else 0),QBH_R4_OPT='6' if r4on else'0')
  if r3:env['QBH_W4U8_DECODE_DIRECT_N_Q_BATCH_N_TILES']='32'
  if a.audit:
   if r3:env['QBH_DENSE_R3_AUDIT']='1'
@@ -120,4 +120,4 @@ def run(a):
  print(json.dumps(dict(process_exit=z.returncode,steps=steps)),flush=True)
  if len(steps)!=2:print(z.stdout[-3000:]);print(z.stderr[-1500:]);raise SystemExit(1)
 if __name__=='__main__':
- ap=argparse.ArgumentParser();ap.add_argument('action',choices=['prepare','run']);ap.add_argument('--layer',type=int,default=0);ap.add_argument('--arm',choices=['off','r3','r4','both'],required=True);ap.add_argument('--attempt',required=True);ap.add_argument('--package');ap.add_argument('--audit',action='store_true');ap.add_argument('--result-experiment',default='l32-0019');a=ap.parse_args();assert a.result_experiment in ['l32-0019','l32-0020','l32-0021','l32-0022','l32-0023'];R=R.parent/a.result_experiment;globals()[a.action](a)
+ ap=argparse.ArgumentParser();ap.add_argument('action',choices=['prepare','run']);ap.add_argument('--layer',type=int,default=0);ap.add_argument('--arm',choices=['off','r3','r4','both'],required=True);ap.add_argument('--attempt',required=True);ap.add_argument('--package');ap.add_argument('--audit',action='store_true');ap.add_argument('--r4-mode',type=int,choices=[1,3],default=1);ap.add_argument('--result-experiment',default='l32-0019');a=ap.parse_args();assert a.result_experiment in ['l32-0019','l32-0020','l32-0021','l32-0022','l32-0023','l32-0024'];R=R.parent/a.result_experiment;globals()[a.action](a)
