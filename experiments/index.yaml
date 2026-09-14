@@ -481,20 +481,23 @@ experiments:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
   parent_source: b3799364d8be23676b7d12dfe5a394e2d2eec00f
-  hardware_runs: 20
+  hardware_runs: 23
   baseline_quality_promoted: false
-  hardware_runs_definition: 20 CLI attempts:14 component pass,1 baseline pass,4 DSP crash,1
-    completed R4 audit with failed ideal cosine
+  hardware_runs_definition: 23 CLI attempts:16 exit0,3 completed native arithmetic with ideal-reference
+    CLI exit1,4 earlier DSP crashes
   probe_rpc_calls: 28
-  token_boundary_executions: 4
+  token_boundary_executions: 10
   formal_profiling: false
   e2e_run: false
   ppl_rerun: false
   local_gate: component_and_conditional_tail_pass_layer0_decode_ideal_cosine_fail
-  checkpoint_state: diagnostic_continuation_authorized
+  checkpoint_state: diagnosis_complete_pending_gate_discussion
   checkpoint_evidence_ledger_sha256: 830ef833be269ae2f4bb35f945cd9b16a73b29813f37b1d39af2b54c03f0f1f2
   checkpoint_evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0015/evidence-ledger-checkpoint-a01.json
   source_heads:
-    codex/llama32-no-rotation: 64dbdffb64eee132be5067ba1596b6f3cbc25930
+    codex/llama32-no-rotation: 43da04312097a56bc1fd872b22314fd62ac9043a
   report: docs/LLAMA32_R3_R4_SP2_CHECKPOINT.md
   failed_token_boundary_rpc_attempts: 4
+  diagnosis_report: docs/LLAMA32_R4_SP2_DIAGNOSIS.md
+  diagnosis_evidence_ledger_sha256: 3a86365af9397de199c43b4233e125e6683405393c23a8a4f08c4469424dcf0c
+  diagnosis_evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0015/evidence-ledger-diagnosis-a02.json

@@ -14,7 +14,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: 64dbdffb64eee132be5067ba1596b6f3cbc25930
+    recorded_head: 43da04312097a56bc1fd872b22314fd62ac9043a
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -26,11 +26,11 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: dense_r4_sp2_low_energy_diagnostics
+  stage: dense_r4_sp2_diagnosis_complete
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Trace frozen layer0/7/15 diagnostic rows through R4 SP2 Q31 and Q14; no gate
-    changes
+  next_action: Discuss quantization-floor-aware numerical acceptance or high-precision residual
+    accuracy direction; no gate change yet
   baseline_manifest: baselines/qwen3-frozen/manifest.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF.md
@@ -514,6 +514,19 @@ current_scope:
     sha256: 830ef833be269ae2f4bb35f945cd9b16a73b29813f37b1d39af2b54c03f0f1f2
     formal_profiling: false
     ideal_decode_gate_pass: false
+  rotation_sp2_diagnosis:
+    report: docs/LLAMA32_R4_SP2_DIAGNOSIS.md
+    source_head: 43da04312097a56bc1fd872b22314fd62ac9043a
+    native_head: 64dbdffb64eee132be5067ba1596b6f3cbc25930
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0015/evidence-ledger-diagnosis-a02.json
+    sha256: 3a86365af9397de199c43b4233e125e6683405393c23a8a4f08c4469424dcf0c
+    native_rows: 195
+    actual_integer_outputs_exact: 399360
+    ideal_changed_outputs: 37
+    defined_cosine_failing_rows: 6
+    zero_rows: 57
+    formal_profiling: false
+    gate_changed: false
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp
