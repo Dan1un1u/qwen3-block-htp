@@ -212,8 +212,6 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
     __fp16 *weight=(__fp16 *)b->expanded_weight;
     __fp16 *stage1=(__fp16 *)b->expanded_weight_alt;
     __fp16 *w12=(__fp16 *)b->hmx_output;
-    __fp16 tmp[128] __attribute__((aligned(128)));
-    uint8_t codes[128] __attribute__((aligned(128)));
     float scales[32] __attribute__((aligned(128)));
     __fp16 *audit=h->dense_r4_audit_offset?(__fp16 *)(shared+h->dense_r4_audit_offset):NULL;
     if(h->variant!=QBH_BLOCK_W4U8 || QBH_LLAMA_SP2(h)!=8U || h->dense_r4_optimization!=6U || h->dense_r4_mode>2U ||
