@@ -68,7 +68,7 @@ def run(a):
  preflight();p=M/('l32-0016/'+a.package if a.arm=='fp32' else f'l32-0009/packages-a01/layer{a.layer}-sp2');m=verify(p)
  head=subprocess.check_output(['git','-C',str(ROOT),'rev-parse','HEAD'],text=True).strip();seal=json.loads((ROOT/'build/llama-build-seal.json').read_text());assert seal['source_head']==head
  assert f'QBH_LLAMA_LAYER_COUNT:STRING={a.layers}' in (ROOT/'android_ReleaseG_aarch64/CMakeCache.txt').read_text()
- d=R/a.attempt;d.mkdir(parents=True,exist_ok=False);remote='/data/local/tmp/llama32-htp/l32-0016/'+a.attempt
+ d=R/a.attempt;d.mkdir(parents=True,exist_ok=False);remote='/data/local/tmp/llama32-htp/'+R.name+'/'+a.attempt
  assert adb('shell','test ! -e '+remote,check=False).returncode==0;adb('shell','mkdir -p '+remote)
  for n,b in [('qwen3_block_cli','android_ReleaseG_aarch64'),('libqwen3_probe.so','android_ReleaseG_aarch64'),('libqwen3_probe_skel.so','hexagon_ReleaseG_toolv19_v79')]:
   f=ROOT/b/'ship'/n;assert sha256(f)==seal['files'][str(f)];shutil.copy2(f,d/n);adb('push',windows(f),remote+'/'+n);assert adb('shell','sha256sum '+remote+'/'+n).stdout.split()[0]==sha256(f)
@@ -78,7 +78,7 @@ def run(a):
   for line in checks.splitlines():h,n=line.split(maxsplit=1);assert h==m['files'][n.removeprefix(remote+'/package/')]['sha256']
  old=json.loads((R.parent/f'l32-0012/layer{a.layer}-m8-a01/protocol.json').read_text())['command'];oldremote=old.split(' && ')[0].removeprefix('cd ');command=old.replace(oldremote,remote)
  command=command.replace(' ./qwen3_block_cli ',f' QBH_LLAMA_FP32_RESIDUAL={int(a.arm=="fp32")} ./qwen3_block_cli ')
- save(d/'protocol.json',dict(experiment='L32-0016',source_head=head,seal=seal,package=str(p),package_manifest_sha256=sha256(p/'manifest.json'),command=command,arm=a.arm))
+ save(d/'protocol.json',dict(experiment=R.name.upper(),source_head=head,seal=seal,package=str(p),package_manifest_sha256=sha256(p/'manifest.json'),command=command,arm=a.arm))
  run=adb('shell',command,check=False);(d/'stdout.txt').write_text(run.stdout);(d/'stderr.txt').write_text(run.stderr)
  records=[]
  for line in run.stdout.splitlines():
@@ -164,4 +164,4 @@ def basefront(a):
  om.update(experiment='L32-0016',baseline_manifest_sha256=sha256(old/'manifest.json'),frontend_teacher_sha256=sha256(reference/'teacher.json'))
  save(out/'manifest.json',om);print(out,reference,flush=True)
 if __name__=='__main__':
- ap=argparse.ArgumentParser();ap.add_argument('action',choices=['prepare','chain','frontend','basefront','run']);ap.add_argument('--layer',type=int,default=0);ap.add_argument('--layers',type=int,default=1);ap.add_argument('--attempt',required=True);ap.add_argument('--arm',choices=['base','fp32'],default='fp32');ap.add_argument('--package');a=ap.parse_args();globals()[a.action](a)
+ ap=argparse.ArgumentParser();ap.add_argument('action',choices=['prepare','chain','frontend','basefront','run']);ap.add_argument('--layer',type=int,default=0);ap.add_argument('--layers',type=int,default=1);ap.add_argument('--attempt',required=True);ap.add_argument('--arm',choices=['base','fp32'],default='fp32');ap.add_argument('--package');ap.add_argument('--result-experiment',default='l32-0016');a=ap.parse_args();R=R.parent/a.result_experiment;globals()[a.action](a)

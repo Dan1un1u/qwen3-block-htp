@@ -21,6 +21,7 @@ def main():
     ap.add_argument("--reuse-package-from")
     ap.add_argument("--fp32-residual",action="store_true")
     ap.add_argument("--generation-steps",type=int,default=16,choices=range(1,17))
+    ap.add_argument("--generation-only",action="store_true",help="Run functional generation/timing without heldout evaluation")
     args=ap.parse_args()
     subprocess.run(["python3","/home/daniuniu/work/llama32-htp-project-memory/scripts/project_memory.py","preflight","--source-worktree",str(ROOT)],check=True)
     m=json.loads((args.package/"manifest.json").read_text());assert m["layers"]==16
@@ -108,6 +109,11 @@ def main():
         print(run.stderr,flush=True);print(run.stdout[-2000:],flush=True);raise SystemExit(1)
     pre=steps[0]["host_wall_ns"];dec=sum(s["host_wall_ns"] for s in steps[1:])
     result["functional_run_speed"]={"prefill_tokens":64,"prefill_host_wall_ns":pre,"prefill_tokens_per_second":64e9/pre,"decode_tokens":len(steps)-1,"decode_host_wall_ns":dec,"decode_tokens_per_second":((len(steps)-1)*1e9/dec if dec else None)}
+    if args.generation_only:
+        result.update(evaluation_complete=False,quality_gate_applied=False,scope="generation only; no PPL or formal profiling")
+        (args.output/"result.json").write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n")
+        print(json.dumps(result["functional_run_speed"]),flush=True)
+        return
     evalcmd=command.replace(" && "," && QBH_EVAL_QUIET=1 QBH_EVAL_FILE="+shlex.quote(remote+"/heldout.bin")+" ",1)
     protocol["evaluation_command"]=evalcmd;(args.output/"protocol.json").write_text(json.dumps(protocol,indent=2))
     print("EVALUATING_HELDOUT",flush=True)
