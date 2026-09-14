@@ -1,8 +1,8 @@
 static const uint32_t qbh_fp32_broadcast0[32] __attribute__((aligned(128)))={0x0,0x4040404,0x8080808,0xc0c0c0c,0x10101010,0x14141414,0x18181818,0x1c1c1c1c,0x20202020,0x24242424,0x28282828,0x2c2c2c2c,0x30303030,0x34343434,0x38383838,0x3c3c3c3c,0x40404040,0x44444444,0x48484848,0x4c4c4c4c,0x50505050,0x54545454,0x58585858,0x5c5c5c5c,0x60606060,0x64646464,0x68686868,0x6c6c6c6c,0x70707070,0x74747474,0x78787878,0x7c7c7c7c};
-/* L32-0016 accuracy prototype. Native packed W4 products, never U8 output.
+/* L32-0017 vectorized FP32 boundaries. Native packed W4 products, never U8 output.
  * Raw stores are signed24, proven at host preparation for EVERY possible U8
  * input. SP2's reconstructed signed32 bound is proved separately. No DDR spill.
- * Scalar FP32 epilogue deliberately prioritizes an auditable numerical contract;
+ * HVX FP32 epilogues retain the independent scalar numerical contract;
  * its add time belongs to the O/Down projection ledger (no second residual add).
  */
 static inline HVX_Vector qbh_fp32_splat(float x) {

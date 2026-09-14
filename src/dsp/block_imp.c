@@ -6211,7 +6211,13 @@ static int qbh_stage_generation_embedding(
         if (QBH_FP32_RESIDUAL(header)) {
             float *dst=(float *)buffers->residual+(size_t)row*QBH_BLOCK_HIDDEN;
             const __fp16 *src=(const __fp16 *)dst;
-            for(uint32_t c=QBH_BLOCK_HIDDEN;c>0U;--c) dst[c-1U]=(float)src[c-1U];
+            /* Backwards expansion preserves unread FP16 input in the same row. */
+            for(uint32_t c=QBH_BLOCK_HIDDEN;c>0U;c-=64U) {
+                HVX_VectorPair sf=Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)(src+c-64U));
+                HVX_VectorPair ordered=Q6_W_vshuff_VVR(Q6_V_hi_W(sf),Q6_V_lo_W(sf),-4);
+                *(HVX_Vector *)(dst+c-64U)=Q6_V_lo_W(ordered);
+                *(HVX_Vector *)(dst+c-32U)=Q6_V_hi_W(ordered);
+            }
         }
         header->generation_embedding_ddr_read_bytes +=
             embedding_row_bytes;
