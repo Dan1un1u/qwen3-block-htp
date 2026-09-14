@@ -21118,8 +21118,13 @@ static int qbh_run_one_block(struct qbh_block_header *header,
      * Down, with one native W4 pass and its existing U8 zero compensation. */
     const uint32_t fp32_o_stream=QBH_FP32_RESIDUAL(header) && logical_rows==64U;
     if(fp32_o_stream) {
-        if(!w4f16_pool || !w4f16_pool->worker_count || w4f16_pool->active_worker_count)
+        if(!w4f16_pool || !w4f16_pool->worker_count)
             return QBH_BLOCK_STATUS_O_PROJECTION_FAILED;
+        /* Attention has joined its jobs; active_worker_count retains the old
+         * dispatch size, so inspect idle jobs rather than treating it as a lock. */
+        for(uint32_t i=0;i<w4f16_pool->worker_count;i++)
+            if(w4f16_pool->jobs[i].command_kind!=QBH_BLOCK_HVX_POOL_NONE)
+                return QBH_BLOCK_STATUS_O_PROJECTION_FAILED;
         struct qbh_sp2_epilogue *e=&w4f16_pool->sp2_epilogue;
         memset(e,0,sizeof(*e));e->scratch=buffers->sp2_scratch;
         e->fp32_residual=(float *)buffers->residual;e->tiles=QBH_BLOCK_HIDDEN/32U;

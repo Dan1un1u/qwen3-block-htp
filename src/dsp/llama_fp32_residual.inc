@@ -170,7 +170,7 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
         uint32_t count=rows-first<32U?rows-first:32U;
         for(uint32_t r=0;r<count;r++) {
             uint32_t row=first+r;
-                float inv=1.0f/sqrtf(sums[r]/(float)width+QBH_MODEL_RMS_EPS);
+            float inv=1.0f/sqrtf(sums[r]/(float)width+QBH_MODEL_RMS_EPS);
             HVX_Vector vi=qbh_fp32_splat(inv),vq=qbh_fp32_splat(1.0f/q->scale);
             /* L32-0018: collect rare division-boundary repairs per row.
              * The transpose tile is idle here: reuse its first 2048 bytes for flags.
