@@ -2093,8 +2093,9 @@ static struct qbh_error_metrics qbh_compare_f32(
         double b = reference[index];
         if(!isfinite(a) || !isfinite(b)) {
             metrics.max_abs=metrics.mean_abs=metrics.rmse=metrics.nrmse=DBL_MAX;
-            metrics.cosine=-1.0;metrics.elements=elements;return metrics;
+            metrics.cosine=-1.0;metrics.elements=elements;metrics.nonfinite_count=1U;metrics.mismatches=1U;return metrics;
         }
+        metrics.mismatches += a!=b;
         double difference = fabs(a - b);
         if (difference > metrics.max_abs) {
             metrics.max_abs = difference;
@@ -3212,6 +3213,9 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U64(f16_cache_native_append_update_ticks);
     QBH_REPLAY_PROFILE_U64(u8_attention_qk_hmx_ticks);
     QBH_REPLAY_PROFILE_U32(wide_score_mode);
+#ifdef QBH_MODEL_LLAMA32
+    QBH_REPLAY_PROFILE_U32(llama_fp32_residual);
+#endif
     QBH_REPLAY_PROFILE_U32(dense_r4_mode);
     QBH_REPLAY_PROFILE_U32(dense_r4_optimization);
     QBH_REPLAY_PROFILE_U32(dense_r4_calls);

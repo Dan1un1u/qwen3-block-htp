@@ -58,10 +58,9 @@ def prepare(a):
   for name,v in [('reference_w4u8_block_input_f32.bin' if not step else 'replay_decode_input_00_f32.bin',x),('reference_w4u8_block_output_f32.bin' if not step else 'replay_decode_reference_00_f32.bin',y)]:
    padded=np.zeros((64,2048),dtype='<f4');padded[:rows]=v;padded.tofile(out/name)
   for name,v in diag.items():np.save(out/f'fp32_{phase}_{name}.npy',v)
-  if step==0:
-   past=cache
-   for j,n in enumerate(['k','v']):
-    ref=np.full((8,80,64),q['k_rope' if n=='k' else 'v']['zero_point'],dtype='u1');ref[:,:64]=cache[j];ref.tofile(out/f'layer0/reference_kv_cache_{n}_u8.bin')
+  if step==0:past=cache
+  for j,n in enumerate(['k','v']):
+   ref=np.full((8,80,64),q['k_rope' if n=='k' else 'v']['zero_point'],dtype='u1');ref[:,:cache[j].shape[1]]=cache[j];ref.tofile(out/f'layer0/reference_kv_cache_{n}_u8.bin')
  save(out/'manifest.json',dict(experiment='L32-0016',source_layer=a.layer,baseline=str(old),baseline_sha256=sha256(old/'manifest.json'),contract='fixed W4/SP2/scales; FP32 O,Down,hidden,norm; native integer attention and unchanged A8 head',files={str(f.relative_to(out)):dict(bytes=f.stat().st_size,sha256=sha256(f)) for f in out.rglob('*') if f.is_file()}));print(out,flush=True)
 
 def run(a):
