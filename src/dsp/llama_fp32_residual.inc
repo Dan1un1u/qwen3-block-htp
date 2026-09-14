@@ -153,7 +153,7 @@ __attribute__((noinline)) static void qbh_fp32_norm_emit4(const float *x,
     const uint32_t width=QBH_BLOCK_HIDDEN;
     for(uint32_t c=0;c<width;c+=32U) {
         HVX_Vector g=*(const HVX_Vector *)(gamma+c);
-        HVX_VectorPred edges=Q6_Q_vsetq_R(0);
+        HVX_Vector mask=Q6_V_vzero();
         HVX_Vector v0=qbh_fp32_mul(*(const HVX_Vector *)(x+0U*width+c),qbh_fp32_splat(inverse[0]));
         v0=qbh_fp32_mul(v0,g);
         HVX_Vector code0=Q6_Vsf_vadd_VsfVsf(qbh_fp32_mul(v0,qbh_fp32_splat(1.0f/q->scale)),qbh_fp32_splat((float)q->zero_point));
@@ -163,7 +163,8 @@ __attribute__((noinline)) static void qbh_fp32_norm_emit4(const float *x,
         HVX_VectorPred e0=Q6_Q_or_QQ(Q6_Q_vcmp_gt_VsfVsf(qbh_fp32_splat(.0001f),frac0),Q6_Q_vcmp_gt_VsfVsf(frac0,qbh_fp32_splat(.9999f)));
         e0=Q6_Q_and_QQ(e0,Q6_Q_vcmp_gt_VsfVsf(z0,qbh_fp32_splat(0.f)));
         e0=Q6_Q_and_QQ(e0,Q6_Q_vcmp_gt_VsfVsf(qbh_fp32_splat(256.f),z0));
-        edges=Q6_Q_or_QQ(edges,e0);
+        mask=Q6_V_vor_VV(mask,Q6_V_vmux_QVV(e0,Q6_V_vsplat_R(1),Q6_V_vzero()));
+        asm volatile("" : "+v"(w0), "+v"(mask));
         HVX_Vector v1=qbh_fp32_mul(*(const HVX_Vector *)(x+1U*width+c),qbh_fp32_splat(inverse[1]));
         v1=qbh_fp32_mul(v1,g);
         HVX_Vector code1=Q6_Vsf_vadd_VsfVsf(qbh_fp32_mul(v1,qbh_fp32_splat(1.0f/q->scale)),qbh_fp32_splat((float)q->zero_point));
@@ -173,7 +174,8 @@ __attribute__((noinline)) static void qbh_fp32_norm_emit4(const float *x,
         HVX_VectorPred e1=Q6_Q_or_QQ(Q6_Q_vcmp_gt_VsfVsf(qbh_fp32_splat(.0001f),frac1),Q6_Q_vcmp_gt_VsfVsf(frac1,qbh_fp32_splat(.9999f)));
         e1=Q6_Q_and_QQ(e1,Q6_Q_vcmp_gt_VsfVsf(z1,qbh_fp32_splat(0.f)));
         e1=Q6_Q_and_QQ(e1,Q6_Q_vcmp_gt_VsfVsf(qbh_fp32_splat(256.f),z1));
-        edges=Q6_Q_or_QQ(edges,e1);
+        mask=Q6_V_vor_VV(mask,Q6_V_vmux_QVV(e1,Q6_V_vsplat_R(1),Q6_V_vzero()));
+        asm volatile("" : "+v"(w1), "+v"(mask));
         HVX_Vector v2=qbh_fp32_mul(*(const HVX_Vector *)(x+2U*width+c),qbh_fp32_splat(inverse[2]));
         v2=qbh_fp32_mul(v2,g);
         HVX_Vector code2=Q6_Vsf_vadd_VsfVsf(qbh_fp32_mul(v2,qbh_fp32_splat(1.0f/q->scale)),qbh_fp32_splat((float)q->zero_point));
@@ -183,7 +185,8 @@ __attribute__((noinline)) static void qbh_fp32_norm_emit4(const float *x,
         HVX_VectorPred e2=Q6_Q_or_QQ(Q6_Q_vcmp_gt_VsfVsf(qbh_fp32_splat(.0001f),frac2),Q6_Q_vcmp_gt_VsfVsf(frac2,qbh_fp32_splat(.9999f)));
         e2=Q6_Q_and_QQ(e2,Q6_Q_vcmp_gt_VsfVsf(z2,qbh_fp32_splat(0.f)));
         e2=Q6_Q_and_QQ(e2,Q6_Q_vcmp_gt_VsfVsf(qbh_fp32_splat(256.f),z2));
-        edges=Q6_Q_or_QQ(edges,e2);
+        mask=Q6_V_vor_VV(mask,Q6_V_vmux_QVV(e2,Q6_V_vsplat_R(1),Q6_V_vzero()));
+        asm volatile("" : "+v"(w2), "+v"(mask));
         HVX_Vector v3=qbh_fp32_mul(*(const HVX_Vector *)(x+3U*width+c),qbh_fp32_splat(inverse[3]));
         v3=qbh_fp32_mul(v3,g);
         HVX_Vector code3=Q6_Vsf_vadd_VsfVsf(qbh_fp32_mul(v3,qbh_fp32_splat(1.0f/q->scale)),qbh_fp32_splat((float)q->zero_point));
@@ -193,10 +196,11 @@ __attribute__((noinline)) static void qbh_fp32_norm_emit4(const float *x,
         HVX_VectorPred e3=Q6_Q_or_QQ(Q6_Q_vcmp_gt_VsfVsf(qbh_fp32_splat(.0001f),frac3),Q6_Q_vcmp_gt_VsfVsf(frac3,qbh_fp32_splat(.9999f)));
         e3=Q6_Q_and_QQ(e3,Q6_Q_vcmp_gt_VsfVsf(z3,qbh_fp32_splat(0.f)));
         e3=Q6_Q_and_QQ(e3,Q6_Q_vcmp_gt_VsfVsf(qbh_fp32_splat(256.f),z3));
-        edges=Q6_Q_or_QQ(edges,e3);
+        mask=Q6_V_vor_VV(mask,Q6_V_vmux_QVV(e3,Q6_V_vsplat_R(1),Q6_V_vzero()));
+        asm volatile("" : "+v"(w3), "+v"(mask));
         HVX_Vector packed=Q6_Vub_vpack_VhVh_sat(Q6_Vh_vpack_VwVw_sat(w3,w2),Q6_Vh_vpack_VwVw_sat(w1,w0));
         *(HVX_Vector *)(out+(size_t)c*64U)=packed;
-        HVX_Vector mask=Q6_V_vmux_QVV(edges,Q6_V_vsplat_R(1),Q6_V_vzero()),any=mask;
+        HVX_Vector any=mask;
         for(uint32_t sh=64;sh>=4;sh>>=1)any=Q6_V_vor_VV(any,Q6_V_vror_VR(any,sh));
         if(Q6_R_vextract_VR(any,0)) {
             *(HVX_Vector *)scratch=mask;
