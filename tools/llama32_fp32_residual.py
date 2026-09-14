@@ -150,5 +150,17 @@ def frontend(a):
  teacher=json.loads((prior/'teacher.json').read_text());teacher.update(u8_generated_ids=tokens,u8_selected_codes=codes,fp32_residual=True,weights='frozen L32-0012 SP2 mode8')
  save(reference/'teacher.json',teacher);save(reference/'freeze.json',{f.name:sha256(f) for f in reference.iterdir() if f.is_file()})
  save(out/'manifest.json',dict(experiment='L32-0016',recipe='W4A8',layers=16,original=om['original'],fp32_residual=True,rotation='OFF',baseline_manifest_sha256=sha256(old/'manifest.json'),original_f16_embedding_manifest_sha256=sha256(original/'manifest.json'),frontend_teacher_sha256=sha256(reference/'teacher.json'),files={str(f.relative_to(out)):dict(bytes=f.stat().st_size,sha256=sha256(f)) for f in out.rglob('*') if f.is_file()}));print(out,reference,flush=True)
+def basefront(a):
+ preflight();old=M/'l32-0010/frontend-a01';om=verify(old)
+ out=M/'l32-0016'/a.attempt;out.mkdir(parents=True,exist_ok=False)
+ for name in om['files']:
+  dst=out/name;dst.parent.mkdir(parents=True,exist_ok=True);os.link(old/name,dst)
+ reference=R/(a.attempt+'-reference');reference.mkdir(parents=True,exist_ok=False);prior=R.parent/'l32-0003/frontend-reference-a01'
+ for name,h in json.loads((prior/'freeze.json').read_text()).items():assert sha256(prior/name)==h
+ for name in ['dataset.json','heldout.bin']:os.link(prior/name,reference/name)
+ oracle=R.parent/'l32-0010/sp2-oracle.json';assert sha256(oracle)==om['frontend_teacher_sha256']
+ teacher=json.loads((prior/'teacher.json').read_text());teacher.update(json.loads(oracle.read_text()));save(reference/'teacher.json',teacher);save(reference/'freeze.json',{f.name:sha256(f) for f in reference.iterdir() if f.is_file()})
+ om.update(experiment='L32-0016',baseline_manifest_sha256=sha256(old/'manifest.json'),frontend_teacher_sha256=sha256(reference/'teacher.json'))
+ save(out/'manifest.json',om);print(out,reference,flush=True)
 if __name__=='__main__':
- ap=argparse.ArgumentParser();ap.add_argument('action',choices=['prepare','chain','frontend','run']);ap.add_argument('--layer',type=int,default=0);ap.add_argument('--layers',type=int,default=1);ap.add_argument('--attempt',required=True);ap.add_argument('--arm',choices=['base','fp32'],default='fp32');ap.add_argument('--package');a=ap.parse_args();globals()[a.action](a)
+ ap=argparse.ArgumentParser();ap.add_argument('action',choices=['prepare','chain','frontend','basefront','run']);ap.add_argument('--layer',type=int,default=0);ap.add_argument('--layers',type=int,default=1);ap.add_argument('--attempt',required=True);ap.add_argument('--arm',choices=['base','fp32'],default='fp32');ap.add_argument('--package');a=ap.parse_args();globals()[a.action](a)

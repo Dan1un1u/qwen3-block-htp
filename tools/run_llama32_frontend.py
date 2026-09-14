@@ -82,6 +82,7 @@ def main():
     if m["recipe"]=="W4A8":
         argv[20]="hvx_tree";argv[9]="hvx_fused_post_norm_pool4"
         env.update(QBH_W4U8_DECODE_DIRECT_N_GATE_UP_BATCH_N_TILES="32",QBH_W4U8_DECODE_DIRECT_N_GATE_UP_CONTINUOUS="1",QBH_W4U8_DECODE_DIRECT_N_O_GATE_PREFETCH="1",QBH_W4U8_DECODE_DIRECT_N_GATE_UP_SWIGLU_STREAM="1",QBH_W4U8_DECODE_DIRECT_N_QKV_BATCH_N_TILES="16",QBH_W4U8_DECODE_DIRECT_N_DOWN_BATCH_N_TILES="8",QBH_W4U8_DECODE_DIRECT_N_DOWN_SINGLE_DMA="1",QBH_W4U8_DECODE_O_BATCH_N_TILES="16",QBH_W4U8_DECODE_DIRECT_N_O_SINGLE_DMA="1")
+    if m.get("sp2"):env["QBH_LLAMA_SP2"]="8"
     if args.fp32_residual:
         assert m.get('fp32_residual') is True and m['recipe']=='W4A8'
         env.update(QBH_LLAMA_FP32_RESIDUAL="1",QBH_LLAMA_SP2="8")
