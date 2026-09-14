@@ -59,7 +59,7 @@ class Model(torch.nn.Module):
         x=self.m.model.embed_tokens(ids);x=self.boundary('0.block_input',x)
         past=0 if cache is None else cache[0][0].shape[2]
         pos=torch.arange(past,past+ids.shape[1],device=ids.device)[None,:]
-        c,s=rope(self.config,pos,x.dtype);c=c[:,None];s=s[:,None]
+        c,s=self.m.model.rotary_emb(x,pos);c=c[:,None];s=s[:,None]
         def rot(v):return v*c+torch.cat((-v[...,32:],v[...,:32]),-1)*s
         new=[]
         for i in range(16):
