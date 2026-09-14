@@ -45,15 +45,15 @@ static int qbh_llama_w4_fp32_residual(struct qbh_block_hmx_worker *w) {
     uint32_t *bias=(uint32_t *)(lo+16384U);
     if(!lo || !w->fp32_residual || w->m_tiles!=1U ||
        (w->fp32_rows!=1U && w->fp32_rows!=64U)) return AEE_EBADPARM;
+    qbh_fp32_raw_bias_init(bias);
     for(uint32_t nt=0;nt<w->n_tiles;nt++) {
         const uint8_t *weight=(const uint8_t *)w->weight+(size_t)nt*w->k_tiles*512U;
         const float *scale=(const float *)w->scale_or_bias+nt*64U;
         uint32_t passes=w->fp32_sp2 && w->fp32_rows==64U ? 2U:1U;
         for(uint32_t pass=0;pass<passes;pass++) {
-            for(uint32_t n=0;n<32;n++){bias[n]=24U<<10;bias[n+32U]=0U;}
             qbh_hmx_begin_u8s8_output(bias);
             qbh_hmx_accumulate_u8n4_projection(pass?w->sp2_high:w->activation,weight,w->k_tiles);
-            read_i32(pass?hi:lo,bias,3U);
+            qbh_fp32_raw_store(pass?hi:lo,bias);
         }
         qbh_llama_fp32_epilogue(lo,w->fp32_sp2 ? (w->fp32_rows==64U?hi:lo+128U):NULL,
             scale,w->fp32_residual+w->fp32_first_channel+nt*32U,
@@ -143,60 +143,6 @@ __attribute__((noinline)) static void qbh_fp32_norm_reduce8(const float *x,
     HVX_VectorPred pred=Q6_Q_and_QQn(Q6_Q_vsetq2_R(shift+32U),Q6_Q_vsetq_R(shift));
     Q6_vmem_QRIV(pred,(HVX_Vector *)dst,Q6_V_vlalign_VVR(sum,sum,shift));
 }
-/* EXP0270 C2: two complete native rows form one 64-byte
- * output vector. Detect the same rounding band; repair only flagged columns
- * (both rows) with the original scalar division contract. */
-__attribute__((noinline)) static void qbh_fp32_norm_emit2(const float * restrict x,
-    const float * restrict gamma,uint8_t * restrict out,const struct qbh_block_qparam *q,
-    const float *inverse,uint8_t *scratch) {
-#pragma clang fp contract(off)
-    const uint32_t width=QBH_BLOCK_HIDDEN;
-    const float qs=q->scale,qz=(float)q->zero_point,qi=1.0f/qs;
-    for(uint32_t c=0;c<width;c+=32U) {
-        HVX_Vector g=*(const HVX_Vector *)(gamma+c);
-        HVX_Vector mask=Q6_V_vzero();
-        HVX_Vector v0=qbh_fp32_mul(*(const HVX_Vector *)(x+0U*width+c),qbh_fp32_splat(inverse[0]));
-        v0=qbh_fp32_mul(v0,g);
-        HVX_Vector code0=Q6_Vsf_vadd_VsfVsf(qbh_fp32_mul(v0,qbh_fp32_splat(qi)),qbh_fp32_splat(qz));
-        HVX_Vector z0=Q6_Vsf_vadd_VsfVsf(code0,qbh_fp32_splat(.5f));
-        HVX_Vector w0=Q6_Vw_equals_Vsf(z0);
-        HVX_Vector frac0=Q6_Vsf_vsub_VsfVsf(z0,Q6_Vsf_equals_Vw(w0));
-        HVX_VectorPred e0=Q6_Q_or_QQ(Q6_Q_vcmp_gt_VsfVsf(qbh_fp32_splat(.0001f),frac0),Q6_Q_vcmp_gt_VsfVsf(frac0,qbh_fp32_splat(.9999f)));
-        e0=Q6_Q_and_QQ(e0,Q6_Q_vcmp_gt_VsfVsf(z0,qbh_fp32_splat(0.f)));
-        e0=Q6_Q_and_QQ(e0,Q6_Q_vcmp_gt_VsfVsf(qbh_fp32_splat(256.f),z0));
-        mask=Q6_V_vor_VV(mask,Q6_V_vmux_QVV(e0,Q6_V_vsplat_R(1),Q6_V_vzero()));
-        asm volatile("" : "+v"(w0), "+v"(mask));
-        HVX_Vector v1=qbh_fp32_mul(*(const HVX_Vector *)(x+1U*width+c),qbh_fp32_splat(inverse[1]));
-        v1=qbh_fp32_mul(v1,g);
-        HVX_Vector code1=Q6_Vsf_vadd_VsfVsf(qbh_fp32_mul(v1,qbh_fp32_splat(qi)),qbh_fp32_splat(qz));
-        HVX_Vector z1=Q6_Vsf_vadd_VsfVsf(code1,qbh_fp32_splat(.5f));
-        HVX_Vector w1=Q6_Vw_equals_Vsf(z1);
-        HVX_Vector frac1=Q6_Vsf_vsub_VsfVsf(z1,Q6_Vsf_equals_Vw(w1));
-        HVX_VectorPred e1=Q6_Q_or_QQ(Q6_Q_vcmp_gt_VsfVsf(qbh_fp32_splat(.0001f),frac1),Q6_Q_vcmp_gt_VsfVsf(frac1,qbh_fp32_splat(.9999f)));
-        e1=Q6_Q_and_QQ(e1,Q6_Q_vcmp_gt_VsfVsf(z1,qbh_fp32_splat(0.f)));
-        e1=Q6_Q_and_QQ(e1,Q6_Q_vcmp_gt_VsfVsf(qbh_fp32_splat(256.f),z1));
-        mask=Q6_V_vor_VV(mask,Q6_V_vmux_QVV(e1,Q6_V_vsplat_R(1),Q6_V_vzero()));
-        asm volatile("" : "+v"(w1), "+v"(mask));
-        HVX_Vector packed=Q6_Vub_vpack_VhVh_sat(Q6_V_vzero(),Q6_Vh_vpack_VwVw_sat(w1,w0));
-        uint8_t *dst=out+(size_t)c*64U;
-        uint32_t shift=(uintptr_t)dst&127U;
-        HVX_VectorPred pred=Q6_Q_and_QQn(Q6_Q_vsetq2_R(shift+64U),Q6_Q_vsetq_R(shift));
-        Q6_vmem_QRIV(pred,(HVX_Vector *)dst,Q6_V_vlalign_VVR(packed,packed,shift));
-        HVX_Vector any=mask;
-        for(uint32_t sh=64;sh>=4;sh>>=1)any=Q6_V_vor_VV(any,Q6_V_vror_VR(any,sh));
-        if(Q6_R_vextract_VR(any,0)) {
-            *(HVX_Vector *)scratch=mask;
-            asm volatile("barrier":::"memory");
-            const int32_t *flags=(const int32_t *)scratch;
-            for(uint32_t k=0;k<32U;k++)if(flags[k])
-                for(uint32_t r=0;r<2U;r++) {
-                    float v=x[r*width+c+k]*inverse[r];v=v*gamma[c+k];
-                    float exact=roundf(v/qs+qz);
-                    out[(size_t)c*64U+r*32U+k]=(uint8_t)fminf(255.f,fmaxf(0.f,exact));
-                }
-        }
-    }
-}
 /* Sequential FP32 reduction across channels, vectorized across 32 rows.
  * Scratch reuses the idle SP2 VTCM raw slots; no tensor on the thread stack. */
 static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
@@ -215,13 +161,6 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
         HVX_VectorPair ordered=Q6_W_vshuff_VVR(Q6_V_hi_W(g),Q6_V_lo_W(g),-4);
         *(HVX_Vector *)(gf+c)=Q6_V_lo_W(ordered);
         *(HVX_Vector *)(gf+c+32U)=Q6_V_hi_W(ordered);
-    }
-    if(rows==16U && native) {
-        for(uint32_t r=0;r<16U;r++)sums[r]=1.0f/sqrtf(sums[r]/(float)width+QBH_MODEL_RMS_EPS);
-        for(uint32_t r=0;r<16U;r+=2U)
-            qbh_fp32_norm_emit2(x+r*width,gf,out+r*32U,q,sums+r,scratch);
-        asm volatile("barrier":::"memory");
-        return;
     }
     if(rows==1U) {
         /* Candidate3 native initialization: identical padding, vector stores

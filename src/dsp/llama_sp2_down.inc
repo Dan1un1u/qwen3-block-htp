@@ -9,6 +9,23 @@ static void read_i32(uint8_t *bytes,uint32_t *bias,uint32_t digits){
   asm volatile("barrier":::"memory");
  }
 }
+/* EXP0270 C3: retain-output bias tables are invariant. Keep all three
+ * tables in the existing 2KiB VTCM bias reserve and initialize once per HMX
+ * command, rather than rebuilding 64 scalar words for every retained digit. */
+static void qbh_fp32_raw_bias_init(uint32_t *bias) {
+    for(uint32_t j=0;j<3U;j++)for(uint32_t n=0;n<32U;n++) {
+        bias[j*64U+n]=(24U-8U*j)<<10;
+        bias[j*64U+32U+n]=0U;
+    }
+    asm volatile("barrier":::"memory");
+}
+static inline void qbh_fp32_raw_store(uint8_t *bytes,const uint32_t *bias) {
+    for(uint32_t j=0;j<3U;j++) {
+        Q6_bias_mxmem2_A(bias+j*64U);
+        Q6_mxmem_AR_after_retain_cm_ub(bytes+2048U*j,0x700U);
+        asm volatile("barrier":::"memory");
+    }
+}
 struct qbh_sp2_words { HVX_Vector v0,v1,v2,v3; };
 static inline struct qbh_sp2_words qbh_sp2_chunk24(const uint8_t *raw,uint32_t base) {
     HVX_VectorPair a=Q6_Wuh_vunpack_Vub(*(const HVX_Vector *)(raw+base));
@@ -75,6 +92,7 @@ __attribute__((noinline)) static int qbh_llama_sp2_down_stream(struct qbh_block_
     if(!e || !e->scratch || !worker->sp2_high || worker->m_tiles!=1U || worker->sp2_rows!=64U)
         return AEE_EBADPARM;
     uint32_t *bias=(uint32_t *)(e->scratch+32768U);
+    if(e->fp32_residual)qbh_fp32_raw_bias_init(bias);
     for(uint32_t nt=0;nt<worker->n_tiles;nt++) {
         uint32_t seq=e->produced,slot=seq&1U;
         if(seq>=e->tiles)return AEE_EBADPARM;
@@ -83,10 +101,11 @@ __attribute__((noinline)) static int qbh_llama_sp2_down_stream(struct qbh_block_
         uint8_t *raw=e->scratch+slot*16384U;
         const uint8_t *w=(const uint8_t *)worker->weight+(size_t)nt*worker->k_tiles*512U;
         for(uint32_t pass=0;pass<(e->fp32_residual && !e->fp32_sp2 ? 1U:2U);pass++) {
-            for(uint32_t n=0;n<32;n++){bias[n]=24U<<10;bias[32+n]=0;}
+            if(!e->fp32_residual)for(uint32_t n=0;n<32;n++){bias[n]=24U<<10;bias[32+n]=0;}
             qbh_hmx_begin_u8s8_output(bias);
             qbh_hmx_accumulate_u8n4_projection(pass?worker->sp2_high:worker->activation,w,worker->k_tiles);
-            read_i32(raw+pass*8192U,bias,3U);
+            if(e->fp32_residual)qbh_fp32_raw_store(raw+pass*8192U,bias);
+            else read_i32(raw+pass*8192U,bias,3U);
         }
         e->meta[slot]=(const int32_t *)worker->scale_or_bias+nt*64U;
         e->output[slot]=e->fp32_residual ? (uint8_t *)(e->fp32_residual+worker->fp32_first_channel+nt*32U) : (uint8_t *)worker->output+(size_t)nt*2048U;
