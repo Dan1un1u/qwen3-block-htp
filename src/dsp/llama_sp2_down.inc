@@ -19,7 +19,7 @@ static void qbh_fp32_raw_bias_init(uint32_t *bias) {
     }
     asm volatile("barrier":::"memory");
 }
-static inline void qbh_fp32_raw_store(uint8_t *bytes,const uint32_t *bias) {
+static inline void qbh_fp32_raw_store(uint8_t *bytes,uint32_t *bias) {
     for(uint32_t j=0;j<3U;j++) {
         Q6_bias_mxmem2_A(bias+j*64U);
         Q6_mxmem_AR_after_retain_cm_ub(bytes+2048U*j,0x700U);
