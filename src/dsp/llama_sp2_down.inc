@@ -82,7 +82,7 @@ __attribute__((noinline)) static int qbh_llama_sp2_down_stream(struct qbh_block_
         asm volatile("barrier":::"memory");
         uint8_t *raw=e->scratch+slot*16384U;
         const uint8_t *w=(const uint8_t *)worker->weight+(size_t)nt*worker->k_tiles*512U;
-        for(uint32_t pass=0;pass<2U;pass++) {
+        for(uint32_t pass=0;pass<(e->fp32_residual && !e->fp32_sp2 ? 1U:2U);pass++) {
             for(uint32_t n=0;n<32;n++){bias[n]=24U<<10;bias[32+n]=0;}
             qbh_hmx_begin_u8s8_output(bias);
             qbh_hmx_accumulate_u8n4_projection(pass?worker->sp2_high:worker->activation,w,worker->k_tiles);
@@ -112,7 +112,7 @@ __attribute__((noinline)) static void qbh_sp2_epilogue_run(struct qbh_sp2_epilog
         const int32_t *meta=e->meta[slot];
         uint8_t *out=e->output[slot];
         if(e->fp32_residual) {
-            qbh_llama_fp32_epilogue(raw,raw+8192U,(const float *)meta,(float *)out,64U,1U,0);
+            qbh_llama_fp32_epilogue(raw,e->fp32_sp2?raw+8192U:NULL,(const float *)meta,(float *)out,64U,e->fp32_sp2,e->zero_point);
         } else {
         HVX_Vector sum=*(const HVX_Vector *)(meta+32U),multiplier=*(const HVX_Vector *)meta;
         HVX_Vector zp=Q6_V_vsplat_R(e->zero_point);

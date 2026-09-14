@@ -268,6 +268,7 @@ struct qbh_block_buffers {
 
 struct qbh_sp2_epilogue {
     float *fp32_residual;
+    uint32_t fp32_sp2;
     uint32_t mode; /* 9: exact 187-level SP2 radix257, offset32770. */
     uint8_t *scratch;
     const int32_t *meta[2];
@@ -9652,7 +9653,7 @@ static int qbh_run_w4u8_direct_n_projection(
     worker->sp2_mode = QBH_LLAMA_SP2(header);
     worker->sp2_rows = header->logical_m == 1U ? 4U : 64U;
     worker->sp2_zero_point = header->qparams[QBH_BLOCK_QP_DOWN].zero_point;
-    const uint32_t transfer_o=fp32_projection && !worker->fp32_sp2;
+    const uint32_t transfer_o=fp32_projection && !worker->fp32_sp2 && !worker->sp2_epilogue;
     if(transfer_o && qurt_hvx_unlock()!=AEE_SUCCESS)return -1;
     while (current_first < n_tiles) {
         const uint64_t hmx_start = HAP_perf_get_qtimer_count();
@@ -15301,6 +15302,7 @@ static int qbh_run_w4u8_direct_n_mlp(
         struct qbh_sp2_epilogue *e=&pool->sp2_epilogue;
         memset(e,0,sizeof(*e));e->scratch=buffers->sp2_scratch;e->mode=QBH_LLAMA_SP2(header);
         e->fp32_residual=QBH_FP32_RESIDUAL(header)?(float *)buffers->residual:NULL;
+        e->fp32_sp2=1U;
         e->tiles=QBH_BLOCK_HIDDEN/32U;e->zero_point=header->qparams[QBH_BLOCK_QP_DOWN].zero_point;
         worker->sp2_epilogue=e;pool->active_worker_count=1U;
         pool->jobs[0].command_kind=QBH_BLOCK_HVX_POOL_SP2_EPILOGUE;
@@ -21112,7 +21114,21 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             (__fp16 *)buffers->hmx_activation);
         qbh_hmx_fp16_init_unity_scale(buffers->scale_or_bias);
     }
-    if (qbh_run_projection(
+    /* L32-0018: O uses the same two-slot raw-store/HVX residual pipeline as
+     * Down, with one native W4 pass and its existing U8 zero compensation. */
+    const uint32_t fp32_o_stream=QBH_FP32_RESIDUAL(header) && logical_rows==64U;
+    if(fp32_o_stream) {
+        if(!w4f16_pool || !w4f16_pool->worker_count || w4f16_pool->active_worker_count)
+            return QBH_BLOCK_STATUS_O_PROJECTION_FAILED;
+        struct qbh_sp2_epilogue *e=&w4f16_pool->sp2_epilogue;
+        memset(e,0,sizeof(*e));e->scratch=buffers->sp2_scratch;
+        e->fp32_residual=(float *)buffers->residual;e->tiles=QBH_BLOCK_HIDDEN/32U;
+        e->zero_point=header->qparams[QBH_BLOCK_QP_ATTENTION_CONCAT].zero_point;
+        worker->sp2_epilogue=e;w4f16_pool->active_worker_count=1U;
+        w4f16_pool->jobs[0].command_kind=QBH_BLOCK_HVX_POOL_SP2_EPILOGUE;
+        asm volatile("barrier":::"memory");(void)qurt_sem_up(&w4f16_pool->command_ready[0]);
+    }
+    int fp32_o_result=qbh_run_projection(
             header, shared, &header->projections[QBH_BLOCK_PROJ_O],
             buffers, worker, w4f16_pool,
             scan_dynamic_attention != 0U
@@ -21126,9 +21142,12 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             scan_dynamic_attention != 0U
                 ? 1U : crouton_av_o_enabled,
             &header->projections[QBH_BLOCK_PROJ_GATE],
-            &cross_prefetch) != 0) {
-        return QBH_BLOCK_STATUS_O_PROJECTION_FAILED;
+            &cross_prefetch);
+    if(fp32_o_stream) {
+        if(fp32_o_result) {w4f16_pool->sp2_epilogue.abort=1U;asm volatile("barrier":::"memory");}
+        qbh_w4f16_pool_wait(w4f16_pool);w4f16_pool->active_worker_count=0U;worker->sp2_epilogue=NULL;
     }
+    if(fp32_o_result) return QBH_BLOCK_STATUS_O_PROJECTION_FAILED;
     if (header->variant == QBH_BLOCK_W4U8 &&
         qbh_copy_w4u8_tail_audit(
             header, shared, QBH_BLOCK_U8_TAIL_O_OFFSET,
