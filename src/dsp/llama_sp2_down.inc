@@ -89,7 +89,7 @@ __attribute__((noinline)) static int qbh_llama_sp2_down_stream(struct qbh_block_
             read_i32(raw+pass*8192U,bias,3U);
         }
         e->meta[slot]=(const int32_t *)worker->scale_or_bias+nt*64U;
-        e->output[slot]=(uint8_t *)worker->output+(size_t)nt*2048U;
+        e->output[slot]=e->fp32_residual ? (uint8_t *)(e->fp32_residual+worker->fp32_first_channel+nt*32U) : (uint8_t *)worker->output+(size_t)nt*2048U;
         asm volatile("barrier":::"memory");
         e->ready[slot]=seq+1U;
         asm volatile("release(%0):at"::"r"(&e->ready[slot]):"memory");
@@ -111,6 +111,9 @@ __attribute__((noinline)) static void qbh_sp2_epilogue_run(struct qbh_sp2_epilog
         const uint8_t *raw=e->scratch+slot*16384U;
         const int32_t *meta=e->meta[slot];
         uint8_t *out=e->output[slot];
+        if(e->fp32_residual) {
+            qbh_llama_fp32_epilogue(raw,raw+8192U,(const float *)meta,(float *)out,64U,1U,0);
+        } else {
         HVX_Vector sum=*(const HVX_Vector *)(meta+32U),multiplier=*(const HVX_Vector *)meta;
         HVX_Vector zp=Q6_V_vsplat_R(e->zero_point);
         for(uint32_t base=0;base<2048U;base+=128U) {
@@ -122,6 +125,7 @@ __attribute__((noinline)) static void qbh_sp2_epilogue_run(struct qbh_sp2_epilog
             *(HVX_Vector *)(out+base)=Q6_Vb_vpacke_VhVh(Q6_Vh_vpacke_VwVw(y3,y2),Q6_Vh_vpacke_VwVw(y1,y0));
         }
         asm volatile("barrier":::"memory");
+        }
         e->done[slot]=seq+1U;
         asm volatile("release(%0):at"::"r"(&e->done[slot]):"memory");
     }
