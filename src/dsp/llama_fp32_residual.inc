@@ -71,7 +71,7 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
         *(HVX_Vector *)(gf+c)=Q6_V_lo_W(ordered);
         *(HVX_Vector *)(gf+c+32U)=Q6_V_hi_W(ordered);
     }
-    memset(out,q->zero_point,(size_t)QBH_BLOCK_M*width);
+    if(rows==1U)memset(out,q->zero_point,(size_t)QBH_BLOCK_M*width);
     for(uint32_t first=0;first<rows;first+=32U) {
         HVX_Vector sum=Q6_V_vzero();
         if(rows==1U) {
@@ -84,7 +84,7 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
             }
         } else {
             for(uint32_t c=0;c<width;c+=32U) {
-                for(uint32_t r=0;r<32U;r++)tile[r]=*(const HVX_Vector *)(x+(first+r)*width+c);
+                for(uint32_t r=0;r<32U;r++)tile[r]=first+r<rows ? *(const HVX_Vector *)(x+(first+r)*width+c):Q6_V_vzero();
                 /* Interleave rows at 4,8,...64 bytes; columns emerge bit-reversed. */
                 for(uint32_t gap=1U;gap<32U;gap*=2U)
                     for(uint32_t r=0;r<32U;r++)if(!(r&gap)) {
@@ -99,7 +99,7 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
             }
         }
         *(HVX_Vector *)sums=sum;
-        uint32_t count=rows==1U?1U:32U;
+        uint32_t count=rows-first<32U?rows-first:32U;
         for(uint32_t r=0;r<count;r++) {
             uint32_t row=first+r;
             float inv=1.0f/sqrtf(sums[r]/(float)width+QBH_MODEL_RMS_EPS);
@@ -111,8 +111,10 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
                 HVX_Vector z=Q6_Vsf_vadd_VsfVsf(code,qbh_fp32_splat(0.5f));
                 HVX_Vector w=Q6_Vw_equals_Vsf(z);
                 HVX_Vector frac=Q6_Vsf_vsub_VsfVsf(z,Q6_Vsf_equals_Vw(w));
-                HVX_VectorPred edge=Q6_Q_or_QQ(Q6_Q_vcmp_gt_VsfVsf(qbh_fp32_splat(.001f),frac),
-                    Q6_Q_vcmp_gt_VsfVsf(frac,qbh_fp32_splat(.999f)));
+                /* Reciprocal/multiply differs from division by <0.0001 in [0,256].
+                 * Repair that entire rounding-boundary band using scalar division. */
+                HVX_VectorPred edge=Q6_Q_or_QQ(Q6_Q_vcmp_gt_VsfVsf(qbh_fp32_splat(.0001f),frac),
+                    Q6_Q_vcmp_gt_VsfVsf(frac,qbh_fp32_splat(.9999f)));
                 edge=Q6_Q_and_QQ(edge,Q6_Q_vcmp_gt_VsfVsf(z,qbh_fp32_splat(0.0f)));
                 edge=Q6_Q_and_QQ(edge,Q6_Q_vcmp_gt_VsfVsf(qbh_fp32_splat(256.0f),z));
                 HVX_Vector mask=Q6_V_vmux_QVV(edge,Q6_V_vsplat_R(1),Q6_V_vzero());
@@ -133,4 +135,10 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
         }
     }
     asm volatile("barrier":::"memory");
+}
+static void qbh_llama_fp32_norm_worker(struct qbh_block_w4f16_pool *p,uint32_t worker) {
+    uint32_t first=worker*16U;
+    qbh_llama_fp32_norm(p->fp32_norm_input+first*QBH_BLOCK_HIDDEN,p->fp32_norm_gamma,
+        p->fp32_norm_output+first*32U,p->fp32_norm_qparam,16U,QBH_BLOCK_HIDDEN,1U,
+        p->fp32_norm_scratch+worker*16384U);
 }

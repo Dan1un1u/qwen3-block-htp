@@ -209,6 +209,7 @@ enum qbh_block_hvx_pool_job_kind {
     QBH_BLOCK_HVX_POOL_R4_CONVERT = 18,
     QBH_BLOCK_HVX_POOL_LLAMA_SWIGLU = 19,
     QBH_BLOCK_HVX_POOL_SP2_EPILOGUE = 20,
+    QBH_BLOCK_HVX_POOL_FP32_NORM = 21,
 };
 
 enum qbh_block_u8_residual_kind {
@@ -497,6 +498,10 @@ struct qbh_block_w4f16_pool {
     uint8_t *u8_sp2_high;
     uint32_t sp2_prefill_stream,sp2_pipelined_gather;
     struct qbh_sp2_epilogue sp2_epilogue;
+    const float *fp32_norm_input;
+    const __fp16 *fp32_norm_gamma;
+    const struct qbh_block_qparam *fp32_norm_qparam;
+    uint8_t *fp32_norm_output,*fp32_norm_scratch;
     const uint16_t *u8_swiglu_lut;
     uint8_t *u8_swiglu_gather_scratch;
     volatile uint32_t u8_swiglu_ready[QBH_BLOCK_INTERMEDIATE / (32U * QBH_HMX_OUTPUT_CHANNELS)];
@@ -4726,6 +4731,8 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
             qbh_llama_swiglu_worker(pool,job->worker_index);
         } else if (job->command_kind == QBH_BLOCK_HVX_POOL_SP2_EPILOGUE) {
             qbh_sp2_epilogue_run(&pool->sp2_epilogue);
+        } else if(job->command_kind==QBH_BLOCK_HVX_POOL_FP32_NORM) {
+            qbh_llama_fp32_norm_worker(pool,job->worker_index);
 #endif
         } else if (job->command_kind == QBH_BLOCK_HVX_POOL_R4_CONVERT) {
             qbh_r4_convert_worker(job->r4_convert_context,job->worker_index);
@@ -5150,6 +5157,24 @@ static int qbh_hvx_pool_u8_input_norm(
             worker_ticks_after - worker_ticks_before;
         return task_count == pool->u8_input_norm_task_count ? 0 : -1;
     }
+}
+
+static void qbh_llama_fp32_norm_parallel(struct qbh_block_w4f16_pool *pool,
+    struct qbh_block_buffers *buffers,const __fp16 *gamma,uint8_t *out,
+    const struct qbh_block_qparam *q,uint32_t rows,uint32_t native) {
+    if(rows!=64U || !native || !pool || pool->worker_count<3U) {
+        qbh_llama_fp32_norm((const float *)buffers->residual,gamma,out,q,rows,QBH_BLOCK_HIDDEN,native,buffers->sp2_scratch);
+        return;
+    }
+    pool->fp32_norm_input=(const float *)buffers->residual;
+    pool->fp32_norm_gamma=gamma;pool->fp32_norm_output=out;
+    pool->fp32_norm_qparam=q;pool->fp32_norm_scratch=buffers->normalized;
+    pool->active_worker_count=3U;
+    for(uint32_t i=0;i<3U;i++)pool->jobs[i].command_kind=QBH_BLOCK_HVX_POOL_FP32_NORM;
+    asm volatile("barrier":::"memory");
+    for(uint32_t i=0;i<3U;i++)(void)qurt_sem_up(&pool->command_ready[i]);
+    qbh_llama_fp32_norm_worker(pool,3U);
+    qbh_w4f16_pool_wait(pool);pool->active_worker_count=0U;
 }
 
 static int qbh_hvx_pool_fp16_input_norm(
@@ -20353,11 +20378,11 @@ static int qbh_run_one_block(struct qbh_block_header *header,
 
     start = HAP_perf_get_qtimer_count();
     if (QBH_FP32_RESIDUAL(header)) {
-        qbh_llama_fp32_norm((const float *)buffers->residual,
+        qbh_llama_fp32_norm_parallel(pool,buffers,
             (const __fp16 *)buffers->input_norm_weight,
             w4u8_qkv_native_input_enabled ? buffers->hmx_activation : buffers->normalized,
             &header->qparams[QBH_BLOCK_QP_INPUT_NORM], logical_rows,
-            QBH_BLOCK_HIDDEN, w4u8_qkv_native_input_enabled,buffers->sp2_scratch);
+            w4u8_qkv_native_input_enabled);
     } else if (header->variant == QBH_BLOCK_W4U8) {
         if ((header->common_ops_mask &
              QBH_BLOCK_COMMON_OP_RMS_NORM) != 0U) {
@@ -21132,11 +21157,11 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     }
     if (QBH_FP32_RESIDUAL(header)) {
         /* O's raw-accumulator epilogue has already added to FP32 residual. */
-        qbh_llama_fp32_norm((const float *)buffers->residual,
+        qbh_llama_fp32_norm_parallel(pool,buffers,
             (const __fp16 *)buffers->post_norm_weight,
             w4u8_mlp_native_input_enabled ? w4u8_mlp_native_activation : buffers->normalized,
             &header->qparams[QBH_BLOCK_QP_POST_ATTENTION_NORM], logical_rows,
-            QBH_BLOCK_HIDDEN, w4u8_mlp_native_input_enabled,buffers->sp2_scratch);
+            w4u8_mlp_native_input_enabled);
         post_attention_norm_fused=1;
     } else if (header->variant == QBH_BLOCK_W4U8) {
         if (header->residual_mode ==
