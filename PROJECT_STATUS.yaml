@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0269
+  active_experiment: null
   next_experiment_number: 270
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -2315,8 +2315,7 @@ current_scope:
         prefill: -0.05068113923498707
         decode: -0.005825470109266373
     effectiveness: false
-    interpretation: qbh_PPL_50.22_to40.44_but_strict_tasks20_to9_and_no_independent_validation_improvement;
-      broader_rotation_training_sampling_alone_does_not_establish_quality_recovery
+    interpretation: qbh_PPL_50.22_to40.44_but_strict_tasks20_to9_and_no_independent_validation_improvement; broader_rotation_training_sampling_alone_does_not_establish_quality_recovery
     correctness_gate_result: pass_exact_Cayley_FP32_fold_invariance_independent_GPTQ_packing_forward_checks_canonical_reload
     determinism_gate_result: pass_quick_full_repeat_zero_overlap_mismatch
     physical_gate_result: pass_exact8MiB_zero_timed_intermediate_DDR_spill_one_FastRPC_no_QNN
@@ -2496,21 +2495,90 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: Qwen3_28layer_native_W4_SP2_M64_plus15_verified
-  last_completed_experiment: EXP-0268
-  last_completed_source_commit: 6378066a15d867cbf184c1cc92288018d42c2925
+  last_completed_experiment: EXP-0269
+  last_completed_source_commit: a41a7258ed596d810bd4a62d83390fd6944b8967
   provisional_source_parent: EXP0268_diagnostic_U8_pipeline_closure_no_default_promotion
-  device_execution_state: EXP0267_complete_28layer_SP2_correctness_physical_and_repeat10_speed_pass_no_PPL
+  device_execution_state: EXP0269_singlelayer_exact_short_speed_gate_fail_no_fullmodel
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
   current_handoff: docs/SESSION_HANDOFF_EXP0269.md
   active_recipe_specialization: native_W4_SP2_FP32_residual_no_rotation
   last_completed_experiment_contract:
-    id: EXP-0268
-    protocol: PC082
-    scope: bit_exact_U8_prefill_schedule_and_fair_SP2_cost
+    id: EXP-0269
+    protocol: PC083
+    scope: no_rotation_SP2_FP32_residual_port_and_baseline_audit
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0268
+  last_completed_evidence: &id001
+    id: EXP-0269
+    execution_state: completed
+    evidence_validity: valid_final_repaired_runs_failed_candidates_retained
+    local_gate: fail
+    gate_role: singlelayer_FP32_implementation_pass_short_speed_fail_pause_before_fullmodel
+    adoption_status: not_adopted
+    source_branch: codex/exp-0269-sp2-fp32-residual
+    source_closure_commit: a41a7258ed596d810bd4a62d83390fd6944b8967
+    tested_source_head: aa55a3ece5a04f40c1cfe135b699433b8f6e4ff2
+    report: docs/experiments/EXP-0269-RESULTS.md
+    report_sha256: 923613c2459552de134ea66998daeb50b574c72e5aff681502d55e9a2f6afa25
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0269
+    evidence_ledger_sha256: 20d3ddb9e1152e35e714f45b159f26312e5a79177cae907c31b7952a8af26ff5
+    evidence_file_count: 546
+    hardware_cli: 67
+    hardware_profiles: 710
+    single_layer_indices:
+    - 0
+    - 14
+    - 27
+    independent_FP32_outputs_exact: true
+    actual_boundaries_and_KV_exact: true
+    repeat10_exact: true
+    peak_vtcm_bytes: 6682752
+    final_short_performance:
+      r1_prefill_ns:
+        control_mean_ns: 1569280.8
+        candidate_mean_ns: 1758218.8
+        ratio: 1.1203978281006177
+        ci95:
+        - 1.0754992048441505
+        - 1.190995202899883
+        gate: false
+        auxiliary_only: true
+      r1_decode_ns:
+        control_mean_ns: 943093.4
+        candidate_mean_ns: 1052385.2
+        ratio: 1.1158865071052346
+        ci95:
+        - 1.0572639898708922
+        - 1.1887818537019494
+        gate: false
+        auxiliary_only: true
+      r10_prefill_ns:
+        control_mean_ns: 1348527.1600000001
+        candidate_mean_ns: 1554163.58
+        ratio: 1.1524896391408237
+        ci95:
+        - 1.1003933547477656
+        - 1.2092634606729649
+        gate: false
+        auxiliary_only: false
+      r10_decode_ns:
+        control_mean_ns: 1053722.96
+        candidate_mean_ns: 1102919.8399999999
+        ratio: 1.0466886286695318
+        ci95:
+        - 0.9576249754233674
+        - 1.1485275820984566
+        gate: false
+        auxiliary_only: false
+    formal_profiling: false
+    chain3_run: false
+    fullmodel_run: false
+    e2e_run: false
+    ppl_run: false
+    baseline_promoted: false
+    next_action: Discuss remaining FP32 prefill Norm and O cost before any full-model extension; original selected
+      paper speed baselines retained
   latest_w4f16_output_scale_result:
     id: EXP-0224
     execution_state: completed
@@ -2673,8 +2741,7 @@ current_scope:
     intermediate_files: 448
     calibration_sha256: e65edb14cb774956df92b27b5dc728b976f7ba00e9435145004180c6538a1669
     calibration_ids_sha256: a20ed2093b0e7fb075fe47a9532843402e9f69784c8ad0b0467194bee2fa8efd
-    conclusion: 'A: DSP NLL 3.873038 -> 3.660316, tasks 8 -> 19; C: DSP NLL 3.956556 -> 3.892162, tasks
-      9 -> 17'
+    conclusion: 'A: DSP NLL 3.873038 -> 3.660316, tasks 8 -> 19; C: DSP NLL 3.956556 -> 3.892162, tasks 9 -> 17'
     next_action: discuss_results_no_automatic_next_direction
   latest_w4f16_channel_clipping_result:
     id: EXP-0223
@@ -3115,8 +3182,8 @@ current_scope:
     intermediate_files: 672
     calibration_sha256: e65edb14cb774956df92b27b5dc728b976f7ba00e9435145004180c6538a1669
     calibration_ids_sha256: a20ed2093b0e7fb075fe47a9532843402e9f69784c8ad0b0467194bee2fa8efd
-    conclusion: 'A: DSP NLL 3.873038 -> 3.969016, tasks 8 -> 4; B: DSP NLL 4.601481 -> 3.911864, tasks
-      0 -> 2; C: DSP NLL 4.320988 -> 3.956556, tasks 2 -> 9'
+    conclusion: 'A: DSP NLL 3.873038 -> 3.969016, tasks 8 -> 4; B: DSP NLL 4.601481 -> 3.911864, tasks 0 -> 2; C:
+      DSP NLL 4.320988 -> 3.956556, tasks 2 -> 9'
     next_action: discuss_results_no_automatic_next_direction
   latest_w4f16_head_ablation_result:
     id: EXP-0222
@@ -3228,8 +3295,8 @@ current_scope:
     closure_sha256: 196080cc53fd21bb8f1b1c606fe7a9da463ccbe84465bb92d9621d3a1049c6b5
     evidence_ledger_sha256: 54dbdc87eb1b8df4fc5e7baf2c0f0e385d41e583c0caec5975b3d5c5c5556c78
     evidence_files: 27
-    conclusion: 'A: NLL 3.874188 -> 3.853870, tasks 9 -> 8; B: NLL 4.600959 -> 4.413664, tasks 0 -> 0;
-      C: NLL 4.323169 -> 4.293221, tasks 2 -> 2'
+    conclusion: 'A: NLL 3.874188 -> 3.853870, tasks 9 -> 8; B: NLL 4.600959 -> 4.413664, tasks 0 -> 0; C: NLL 4.323169
+      -> 4.293221, tasks 2 -> 2'
     next_action: discuss_with_user_before_any_next_direction
   latest_w4f16_gamma_attribution_result:
     id: EXP-0220
@@ -3340,8 +3407,8 @@ current_scope:
     speed_summary_sha256: 8abbdb773bf85fc1b2bd541af4326a7a567e57667899b557c2bb0237fb238476
     evidence_sha256_ledger_sha256: 0bf9fc284fb9f624c3f9a0f78a224c0f6e66e2c5f1b5f2cbd8ec6680cce49a97
     evidence_files: 182
-    conclusion: FP16 folding preserves observed quality; W4 requantization after gamma fold regresses,
-      QKV largest isolated NLL loss; gamma-preserving fixed R2 also regresses; no promotion
+    conclusion: FP16 folding preserves observed quality; W4 requantization after gamma fold regresses, QKV largest
+      isolated NLL loss; gamma-preserving fixed R2 also regresses; no promotion
     reopen_condition: new_approved_quantization_or_rotation_hypothesis_no_repeat_fixed_Hadamard_no_evaluation_tuning
   latest_w4f16_gptq_result:
     id: EXP-0221
@@ -3501,8 +3568,8 @@ current_scope:
     calibration_sha256: e65edb14cb774956df92b27b5dc728b976f7ba00e9435145004180c6538a1669
     holdout_scored: false
     other_recipes: F16F16_and_W4U8_frozen
-    conclusion: Unrotated GPTQ reduces NLL but tasks stay8/24; GPTQ mitigates folded/rotated RTN loss
-      without incremental fixed R1R2 benefit; no promotion
+    conclusion: Unrotated GPTQ reduces NLL but tasks stay8/24; GPTQ mitigates folded/rotated RTN loss without incremental
+      fixed R1R2 benefit; no promotion
     reopen_condition: new_approved_hypothesis_no_repeat_fixed_trial_no_evaluation_tuning
   promoted_w4u8_fastest_decode_baseline:
     id: EXP-0211
@@ -8760,12 +8827,11 @@ current_scope:
     before_after_gate: pass_exact_before_full_after_and_within_session
     independent_summary_check: pass_all_27_DSP_group_PPL_values_math_fsum
     evidence_hash_check: pass_all296files_exact_ledger_coverage
-    next_action: Discuss W4A8 reproducibility and same-W4-weight activation attribution; no new experiment
-      authorized
+    next_action: Discuss W4A8 reproducibility and same-W4-weight activation attribution; no new experiment authorized
   next_research_direction:
     status: await_user_direction
-    current: retain_optimized_U8_and_SP2_as_explicit_options_no_further_tuning_started
-    document: docs/SESSION_HANDOFF_EXP0268.md
+    current: FP32 prefill RMSNorm and O remain over cost gate; no chain3/full28/formal/PPL
+    document: docs/SESSION_HANDOFF_EXP0269.md
     new_experiment_required: true
   latest_w4f16_independent_tool_result:
     id: EXP-0233
@@ -9051,12 +9117,11 @@ current_scope:
         - 0.9947887469921031
         - 1.0016728476698786
         diagnostic_only: true
-    root_cause: unresolved; raw output/token mismatch, postfailure bounded reruns pass but do not clear
-      gate
+    root_cause: unresolved; raw output/token mismatch, postfailure bounded reruns pass but do not clear gate
     next_direction: discuss_runtime_nondeterminism_then_same_token_device_software_head_and_transformer_alignment
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0257.md
-  last_concluded_experiment: EXP-0268
-  last_concluded_source_commit: 6378066a15d867cbf184c1cc92288018d42c2925
+  last_concluded_experiment: EXP-0269
+  last_concluded_source_commit: a41a7258ed596d810bd4a62d83390fd6944b8967
   latest_w4u8_dense_r3_e2e_diagnostic_result:
     id: EXP-0258
     execution_state: completed
@@ -9567,8 +9632,7 @@ current_scope:
     repair: dedicated component audit and exact negativezero preservation
     package_manifest_sha256: 7de4f0758d83f2ba3b58696c695bfbfed72a25dd3bf308475abee0a0f0575a89
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0260.md
-    next_direction: discuss_W4F16_M1_projection_weight_expansion_and_HMX_pipeline; no automatic baseline
-      promotion
+    next_direction: discuss_W4F16_M1_projection_weight_expansion_and_HMX_pipeline; no automatic baseline promotion
   latest_w4u8_dense_r4_cost_result:
     id: EXP-0261
     execution_state: completed
@@ -9648,8 +9712,8 @@ current_scope:
     rotation: full6144 H12 tensor H512 via dense HMX factors; no butterfly
     weight_policy: fresh original Down W R, per-output-channel RTN[-7,7]; otherC64frozen
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0261.md
-    next_direction: discuss_HVX_layout_and_output_quantization_fusion_and_streaming_before_retesting_R4;
-      no further experiment authorized
+    next_direction: discuss_HVX_layout_and_output_quantization_fusion_and_streaming_before_retesting_R4; no further
+      experiment authorized
   latest_w4u8_dense_r4_optimization_result:
     id: EXP-0262
     execution_state: completed
@@ -9728,8 +9792,8 @@ current_scope:
     E2E_tokens_per_second: null
     baseline_promoted: false
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0262.md
-    next_direction: discuss_parallel_FP16_SwiGLU_preparation_and_output_quantization_for_prefill; no further
-      experiment authorized
+    next_direction: discuss_parallel_FP16_SwiGLU_preparation_and_output_quantization_for_prefill; no further experiment
+      authorized
   latest_w4u8_dense_r4_parallel_prefill_result:
     id: EXP-0263
     execution_state: completed
@@ -9811,8 +9875,8 @@ current_scope:
     E2E_tokens_per_second: null
     baseline_promoted: false
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0263.md
-    next_direction: discuss_remaining_output_conversion_parameter_setup_gather_and_worker_scheduling;
-      no further experiment authorized
+    next_direction: discuss_remaining_output_conversion_parameter_setup_gather_and_worker_scheduling; no further
+      experiment authorized
   latest_w4u8_dense_r4_fused_quantization_result:
     id: EXP-0264
     execution_state: completed
@@ -10076,7 +10140,7 @@ current_scope:
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0265.md
     next_direction: discuss_R4_quality_before_new_tuning; staticmiddle_and_RTN_Down_speedfixture_not_qualityaccepted;
       repeat1_cannot_veto_repeat10
-  qwen3_research_state: user_approved_no_rotation_SP2_FP32_residual_paper_baseline
+  qwen3_research_state: paused_for_cost_discussion_original_paper_speed_baseline_retained
   latest_llama32_migration:
     id: EXP-0266
     execution_state: completed
@@ -10407,3 +10471,146 @@ current_scope:
     speed_pass: true
     quality_evaluated: false
     selected_baseline_changed: false
+  latest_sp2_fp32_residual_result: *id001
+  paper_no_rotation_speed_baselines:
+    schema_version: 1
+    selection_date: '2026-09-14'
+    selection_scope: User-selected no-rotation paper SPEED baselines; quality not accepted
+    hardware: PJZ110 / SM8750 / Hexagon v79; standalone FastRPC, 8MiB VTCM
+    baselines:
+    - model: Qwen3-0.6B
+      experiment: EXP-0268
+      recipe: W4A8-SP2
+      rotation: none
+      sp2_mode: 8
+      fp32_residual: false
+      source_branch: codex/exp-0268-u8-prefill-pipeline
+      measured_source: dc32985fec67af1254b2d645594843c40db3a390
+      closure_source: 6378066a15d867cbf184c1cc92288018d42c2925
+      shape: 28 layers M64+15; cache128; fixed offline EOS prefix
+      prefill_tps: 2030.238358694302
+      decode_tps: 48.17335154656036
+      evidence_ledger_sha256: 61f9fa2b7525d01a334aa4596a40c134814bee292204685a54eef622590100af
+      command_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0268/full-formal/round00-r10-m8/command.txt
+      required_environment:
+        QBH_SP2: '8'
+        QBH_U8_PREFILL_OPT: '0'
+        QBH_DENSE_R3: '0'
+        QBH_DENSE_R4: '0'
+        QBH_WIDE_SCORE: '4'
+      quality: SP2 arithmetic validated; model quality unaccepted
+    - model: Llama-3.2-1B-Instruct
+      experiment: L32-0018
+      recipe: W4A8-SP2-FP32-residual
+      rotation: none
+      sp2_mode: 8
+      fp32_residual: true
+      source_branch: codex/llama32-no-rotation
+      measured_source: e3d065a515221aa1e97c63fa4d58d23e434c45df
+      audited_descendant: 0f7d083dc99af7e2983ecd426fca03e9d57a0a07
+      shape: 16 layers M64+15; cache80
+      prefill_tps: 2069.7025566101083
+      decode_tps: 42.51010980249135
+      evidence_ledger_sha256: 5572319f6bb94f623089199ef729a13c3c5d20b82134be14e75028ac707bd734
+      command_evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0018/formal-a01/formal-00-fp32/command.json
+      required_environment:
+        QBH_LLAMA_SP2: '8'
+        QBH_LLAMA_FP32_RESIDUAL: '1'
+        QBH_DENSE_R3: '0'
+        QBH_DENSE_R4: '0'
+        QBH_R3_OPT: '0'
+        QBH_R4_OPT: '0'
+      quality: Full-model implementation validated; fixed-scale text unusable, quality unaccepted
+    audit:
+      audited_before_current_port:
+        llama_donor: e3d065a515221aa1e97c63fa4d58d23e434c45df
+        llama_current: 0f7d083dc99af7e2983ecd426fca03e9d57a0a07
+        llama_rotation: 252aee5ecfbefd4a2df6cd5a5e4b9193d935f86b
+        qwen_original: 6378066a15d867cbf184c1cc92288018d42c2925
+      refs:
+      - codex/exp-0265-w4u8-r4-fullmodel-e2e 48eb1ea7f9db0eb197a7c7908ab954d5a6635fc5
+      - codex/exp-0267-sp2-native-w4-pipeline a088d087d847e7c19c0ef1e0874f141d285828d0
+      - codex/exp-0268-u8-prefill-pipeline 6378066a15d867cbf184c1cc92288018d42c2925
+      - codex/exp-0269-sp2-fp32-residual aa55a3ece5a04f40c1cfe135b699433b8f6e4ff2
+      - codex/llama32-no-rotation 0f7d083dc99af7e2983ecd426fca03e9d57a0a07
+      - codex/llama32-project-memory 282defda926b8e815950e8add5d160c2f3e99cd9
+      - codex/llama32-rotation 252aee5ecfbefd4a2df6cd5a5e4b9193d935f86b
+      - origin/codex/exp-0265-w4u8-r4-fullmodel-e2e 48eb1ea7f9db0eb197a7c7908ab954d5a6635fc5
+      - origin/codex/exp-0267-sp2-native-w4-pipeline a088d087d847e7c19c0ef1e0874f141d285828d0
+      - origin/codex/exp-0268-u8-prefill-pipeline 6378066a15d867cbf184c1cc92288018d42c2925
+      - origin/codex/exp-0269-sp2-fp32-residual aa55a3ece5a04f40c1cfe135b699433b8f6e4ff2
+      - origin/codex/llama32-no-rotation 0f7d083dc99af7e2983ecd426fca03e9d57a0a07
+      - origin/codex/llama32-project-memory 282defda926b8e815950e8add5d160c2f3e99cd9
+      - origin/codex/llama32-rotation 252aee5ecfbefd4a2df6cd5a5e4b9193d935f86b
+      unchanged_no_rotation_hot_files:
+      - path: src/dsp/llama_fp32_residual.inc
+        sha256: 663805788009d61f9009757918a3f1049272c74526520187e53e1dcfb27576d0
+        identical: true
+      - path: src/dsp/llama_sp2_down.inc
+        sha256: 76c8441cebe966e7abe07aaa2f9bedb4549a8b7d58df0e3f10f7f968d449323c
+        identical: true
+      - path: src/dsp/mlp_u8.c
+        sha256: 020e46bf24bded4e69785de03e25408e22456d64de59641ad45fe434f39ec6ae
+        identical: true
+      - path: src/dsp/hvx_u8_ops.c
+        sha256: 740391e2f6107c45f8f2b34756bb33f9b41bee9f3b901a815c8b529ca15420fb
+        identical: true
+      - path: src/dsp/hmx_u8s8_projection.c
+        sha256: 3f3982a21c1251b88bd93b095679311f1f82e30e3f5f61fca11db486146fb2a8
+        identical: true
+      later_native_changed_files:
+      - include/block_protocol.h
+      - src/dsp/block_imp.c
+      - src/dsp/llama_dense_r3.inc
+      - src/dsp/llama_dense_r4.inc
+      - src/dsp/llama_r3_prepare.inc
+      - src/dsp/llama_r4_exact.h
+      - src/host/block_main.c
+      rotation_branch_to_no_rotation_native_files:
+      - include/block_protocol.h
+      - include/llama_sp2_probe.h
+      - include/mlp_u8.h
+      - include/qwen3_probe.idl
+      - src/dsp/block_imp.c
+      - src/dsp/llama_dense_r3.inc
+      - src/dsp/llama_dense_r4.inc
+      - src/dsp/llama_fp32_residual.inc
+      - src/dsp/llama_r3_prepare.inc
+      - src/dsp/llama_r4_exact.h
+      - src/dsp/llama_rotation_probe.inc
+      - src/dsp/llama_sp2_down.inc
+      - src/dsp/llama_sp2_probe.c
+      - src/dsp/mlp_u8.c
+      - src/dsp/probe_imp.c
+      - src/host/block_main.c
+      - src/host/llama_sp2_main.c
+      diff_sha256: 45c5e75d491c93c23ea442d67f14e18c8c27ce4ed5eb2ece91a39d1ab8934668
+      findings:
+      - scope: Llama0019-0024
+        result: New R3/R4 includes and routing guarded by rotation mode; no change in selected OFF computational
+          dataflow; independent OFF full16 rechecked in0023
+      - scope: Llama0025-0026
+        result: Rejected normalized/range/order candidates restored; no new no-rotation kernel
+      - scope: Llama0027
+        result: Documentation only
+      - scope: Qwen0268 vs0267
+        result: Additional U8 prefill scheduling already in parent, SP2mode8 remains the same selected schedule.
+          No later completed Qwen native experiment before0269
+      - scope: This EXP0269
+        result: New FP32 residual/epilogue/native-padding edits are Qwen candidates only; not an accepted faster
+          full-model baseline and not tested on Llama. Do not attach historical2069.70/42.51 to these new kernels
+      no_omitted_later_validated_no_rotation_optimization_found: true
+      claim_scope: Audited registered branches and completed experiments, not global optimality or performance equivalence
+        of unmeasured builds
+      rotation_branch_unique_non_equivalent_commit: cd2360f31c1b1a151db7ecf30acfbe73bded9979 (branch default config
+        only)
+      rotation_branch_equivalent_patches: 79
+    new_qwen_candidate:
+      experiment: EXP-0269
+      source_branch: codex/exp-0269-sp2-fp32-residual
+      measured_source: aa55a3ece5a04f40c1cfe135b699433b8f6e4ff2
+      independent_single_layer_gate: true
+      short_gate: false
+      formal_profile: false
+      full_model_e2e: false
+      paper_baseline_replaced: false

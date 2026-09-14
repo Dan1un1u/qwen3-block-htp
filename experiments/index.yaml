@@ -31,24 +31,103 @@ experiments:
   variants:
   - sealed_SP2_integer_residual
   - SP2_FP32_residual_optimized
-  execution_state: running
-  evidence_validity: pending
-  local_gate: pending
-  adoption_status: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
+  adoption_status: not_adopted
   record: docs/experiments/EXP-0269.md
-  approval_ref: User selects Qwen EXP0268 SP2 and Llama L32-0018 unrotated FP32-residual SP2 as paper
-    speed baselines; implement/optimize Qwen high precision residual and audit both for missed later improvements
+  approval_ref: User selects Qwen EXP0268 SP2 and Llama L32-0018 unrotated FP32-residual SP2 as paper speed baselines;
+    implement/optimize Qwen high precision residual and audit both for missed later improvements
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0269-sp2-fp32-residual
     started_on: '2026-09-14'
+    completed_on: '2026-09-14'
   source_branches:
   - codex/exp-0269-sp2-fp32-residual
-  source_commits: []
+  source_commits:
+  - 073f9db4e23980b0ba850646cacb566cb805bfea
+  - f131041ab0884ae9326dc1144d5dc7f754e97e3b
+  - 7d403c9c433cb8d72d1a1607d4811d580e2e03db
+  - 3c0e1a2e0c2b5612a58354ad0519b850c1e8bc05
+  - de3f065e97cf9122ce23c3be738d5c7b18c89ace
+  - dc543b6a6598969896b3f30f055c36b2c4606e28
+  - 669dcef83d693a9fc4430ec72f4fd8f705c3b940
+  - f575025ee0d953cd5f8790dbe1e654ce8ad48f79
+  - 7d1bfb291490b687887f74d0d6bb5c797365df00
+  - 304d1139c0b845c712356563be1a2bf470ad628f
+  - aa55a3ece5a04f40c1cfe135b699433b8f6e4ff2
+  - a41a7258ed596d810bd4a62d83390fd6944b8967
   evidence:
-    parent_source: 6378066a15d867cbf184c1cc92288018d42c2925
-    llama_reference: e3d065a515221aa1e97c63fa4d58d23e434c45df
+    id: EXP-0269
+    execution_state: completed
+    evidence_validity: valid_final_repaired_runs_failed_candidates_retained
+    local_gate: fail
+    gate_role: singlelayer_FP32_implementation_pass_short_speed_fail_pause_before_fullmodel
+    adoption_status: not_adopted
+    source_branch: codex/exp-0269-sp2-fp32-residual
+    source_closure_commit: a41a7258ed596d810bd4a62d83390fd6944b8967
+    tested_source_head: aa55a3ece5a04f40c1cfe135b699433b8f6e4ff2
+    report: docs/experiments/EXP-0269-RESULTS.md
+    report_sha256: 923613c2459552de134ea66998daeb50b574c72e5aff681502d55e9a2f6afa25
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0269
+    evidence_ledger_sha256: 20d3ddb9e1152e35e714f45b159f26312e5a79177cae907c31b7952a8af26ff5
+    evidence_file_count: 546
+    hardware_cli: 67
+    hardware_profiles: 710
+    single_layer_indices:
+    - 0
+    - 14
+    - 27
+    independent_FP32_outputs_exact: true
+    actual_boundaries_and_KV_exact: true
+    repeat10_exact: true
+    peak_vtcm_bytes: 6682752
+    final_short_performance:
+      r1_prefill_ns:
+        control_mean_ns: 1569280.8
+        candidate_mean_ns: 1758218.8
+        ratio: 1.1203978281006177
+        ci95:
+        - 1.0754992048441505
+        - 1.190995202899883
+        gate: false
+        auxiliary_only: true
+      r1_decode_ns:
+        control_mean_ns: 943093.4
+        candidate_mean_ns: 1052385.2
+        ratio: 1.1158865071052346
+        ci95:
+        - 1.0572639898708922
+        - 1.1887818537019494
+        gate: false
+        auxiliary_only: true
+      r10_prefill_ns:
+        control_mean_ns: 1348527.1600000001
+        candidate_mean_ns: 1554163.58
+        ratio: 1.1524896391408237
+        ci95:
+        - 1.1003933547477656
+        - 1.2092634606729649
+        gate: false
+        auxiliary_only: false
+      r10_decode_ns:
+        control_mean_ns: 1053722.96
+        candidate_mean_ns: 1102919.8399999999
+        ratio: 1.0466886286695318
+        ci95:
+        - 0.9576249754233674
+        - 1.1485275820984566
+        gate: false
+        auxiliary_only: false
+    formal_profiling: false
+    chain3_run: false
+    fullmodel_run: false
+    e2e_run: false
+    ppl_run: false
+    baseline_promoted: false
+    next_action: Discuss remaining FP32 prefill Norm and O cost before any full-model extension; original selected
+      paper speed baselines retained
 - id: EXP-0268
   slug: u8-prefill-pipeline
   title: Bit-exact U8 prefill scheduling and fair SP2 cost
@@ -838,8 +917,8 @@ experiments:
     E2E_tokens_per_second: null
     baseline_promoted: false
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0263.md
-    next_direction: discuss_remaining_output_conversion_parameter_setup_gather_and_worker_scheduling;
-      no further experiment authorized
+    next_direction: discuss_remaining_output_conversion_parameter_setup_gather_and_worker_scheduling; no further
+      experiment authorized
 - id: EXP-0262
   slug: w4u8-r4-native-layout-pipeline
   title: W4A8 dense R4 native layout and pipeline optimization
@@ -941,8 +1020,8 @@ experiments:
     E2E_tokens_per_second: null
     baseline_promoted: false
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0262.md
-    next_direction: discuss_parallel_FP16_SwiGLU_preparation_and_output_quantization_for_prefill; no further
-      experiment authorized
+    next_direction: discuss_parallel_FP16_SwiGLU_preparation_and_output_quantization_for_prefill; no further experiment
+      authorized
 - id: EXP-0261
   slug: w4u8-dense-r4-cost
   title: W4A8 full-width dense R4 exploratory cost
@@ -1045,8 +1124,8 @@ experiments:
     rotation: full6144 H12 tensor H512 via dense HMX factors; no butterfly
     weight_policy: fresh original Down W R, per-output-channel RTN[-7,7]; otherC64frozen
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0261.md
-    next_direction: discuss_HVX_layout_and_output_quantization_fusion_and_streaming_before_retesting_R4;
-      no further experiment authorized
+    next_direction: discuss_HVX_layout_and_output_quantization_fusion_and_streaming_before_retesting_R4; no further
+      experiment authorized
 - id: EXP-0260
   slug: w4f16-decode-active-row-layout
   title: W4F16 decode active-row and exact layout optimization
@@ -1193,8 +1272,7 @@ experiments:
     repair: dedicated component audit and exact negativezero preservation
     package_manifest_sha256: 7de4f0758d83f2ba3b58696c695bfbfed72a25dd3bf308475abee0a0f0575a89
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0260.md
-    next_direction: discuss_W4F16_M1_projection_weight_expansion_and_HMX_pipeline; no automatic baseline
-      promotion
+    next_direction: discuss_W4F16_M1_projection_weight_expansion_and_HMX_pipeline; no automatic baseline promotion
 - id: EXP-0259
   slug: dense-r3-pipeline-optimization
   title: Dense R3 data movement and pipeline optimization
@@ -1778,8 +1856,7 @@ experiments:
         - 0.9947887469921031
         - 1.0016728476698786
         diagnostic_only: true
-    root_cause: unresolved; raw output/token mismatch, postfailure bounded reruns pass but do not clear
-      gate
+    root_cause: unresolved; raw output/token mismatch, postfailure bounded reruns pass but do not clear gate
     next_direction: discuss_runtime_nondeterminism_then_same_token_device_software_head_and_transformer_alignment
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0257.md
 - id: EXP-0256
@@ -3365,8 +3442,8 @@ experiments:
         - 1881.6074125
         - 1903.4883
         - 1899.6738500000001
-    reason: Refinement removes whole-layer replay mismatch but stable slowdown exceeds10percent in both
-      scopes; full model not started
+    reason: Refinement removes whole-layer replay mismatch but stable slowdown exceeds10percent in both scopes;
+      full model not started
     next_direction: docs/W4A8_NEXT_DIRECTION_AFTER_EXP0248.md
 - id: EXP-0247
   slug: hmx-dense-r3
@@ -5139,8 +5216,7 @@ experiments:
   evidence_validity: valid
   local_gate: pass
   adoption_status: pending
-  approval_ref: User2026-09-07 clean legacy mllm and obsolete grouped/unused HTP payloads before baseline
-    suite
+  approval_ref: User2026-09-07 clean legacy mllm and obsolete grouped/unused HTP payloads before baseline suite
   source_branches:
   - codex/exp-0237-artifact-retirement
   source_commits:
@@ -6475,8 +6551,7 @@ experiments:
     before_after_gate: pass_exact_before_full_after_and_within_session
     independent_summary_check: pass_all_27_DSP_group_PPL_values_math_fsum
     evidence_hash_check: pass_all296files_exact_ledger_coverage
-    next_action: Discuss W4A8 reproducibility and same-W4-weight activation attribution; no new experiment
-      authorized
+    next_action: Discuss W4A8 reproducibility and same-W4-weight activation attribution; no new experiment authorized
 - id: EXP-0228
   slug: content-aware-short-task-scoring
   title: Content-aware frozen short-task grading audit
@@ -6502,8 +6577,8 @@ experiments:
   - 462fe94dee1ba568ba23b073cec45e2c021558e8
   - 365d1e2f136125462fa4f7ecbe1abc93b4309ca1
   record: docs/experiments/EXP-0228.md
-  approval_ref: User 2026-09-06 explicitly requests content/format error audit and acceptance of correct
-    answers with formatting differences
+  approval_ref: User 2026-09-06 explicitly requests content/format error audit and acceptance of correct answers
+    with formatting differences
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0228-content-aware-short-task-scoring
@@ -6626,8 +6701,7 @@ experiments:
   - 9db82c1d5aa41706cddf15497c04beab1215dadf
   - 462fe94dee1ba568ba23b073cec45e2c021558e8
   record: docs/experiments/EXP-0227.md
-  approval_ref: 'User 2026-09-06: 好的，按你的思路实现; approves first recommended fixed-rotation block reconstruction
-    experiment'
+  approval_ref: 'User 2026-09-06: 好的，按你的思路实现; approves first recommended fixed-rotation block reconstruction experiment'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0227-w4f16-block-scale-reconstruction
@@ -7090,8 +7164,7 @@ experiments:
         prefill: -0.05068113923498707
         decode: -0.005825470109266373
     effectiveness: false
-    interpretation: qbh_PPL_50.22_to40.44_but_strict_tasks20_to9_and_no_independent_validation_improvement;
-      broader_rotation_training_sampling_alone_does_not_establish_quality_recovery
+    interpretation: qbh_PPL_50.22_to40.44_but_strict_tasks20_to9_and_no_independent_validation_improvement; broader_rotation_training_sampling_alone_does_not_establish_quality_recovery
     correctness_gate_result: pass_exact_Cayley_FP32_fold_invariance_independent_GPTQ_packing_forward_checks_canonical_reload
     determinism_gate_result: pass_quick_full_repeat_zero_overlap_mismatch
     physical_gate_result: pass_exact8MiB_zero_timed_intermediate_DDR_spill_one_FastRPC_no_QNN
@@ -7502,8 +7575,7 @@ experiments:
     intermediate_files: 448
     calibration_sha256: e65edb14cb774956df92b27b5dc728b976f7ba00e9435145004180c6538a1669
     calibration_ids_sha256: a20ed2093b0e7fb075fe47a9532843402e9f69784c8ad0b0467194bee2fa8efd
-    conclusion: 'A: DSP NLL 3.873038 -> 3.660316, tasks 8 -> 19; C: DSP NLL 3.956556 -> 3.892162, tasks
-      9 -> 17'
+    conclusion: 'A: DSP NLL 3.873038 -> 3.660316, tasks 8 -> 19; C: DSP NLL 3.956556 -> 3.892162, tasks 9 -> 17'
     next_action: discuss_results_no_automatic_next_direction
 - id: EXP-0223
   slug: w4f16-gptq-channel-clipping
@@ -7972,8 +8044,8 @@ experiments:
     intermediate_files: 672
     calibration_sha256: e65edb14cb774956df92b27b5dc728b976f7ba00e9435145004180c6538a1669
     calibration_ids_sha256: a20ed2093b0e7fb075fe47a9532843402e9f69784c8ad0b0467194bee2fa8efd
-    conclusion: 'A: DSP NLL 3.873038 -> 3.969016, tasks 8 -> 4; B: DSP NLL 4.601481 -> 3.911864, tasks
-      0 -> 2; C: DSP NLL 4.320988 -> 3.956556, tasks 2 -> 9'
+    conclusion: 'A: DSP NLL 3.873038 -> 3.969016, tasks 8 -> 4; B: DSP NLL 4.601481 -> 3.911864, tasks 0 -> 2; C:
+      DSP NLL 4.320988 -> 3.956556, tasks 2 -> 9'
     next_action: discuss_results_no_automatic_next_direction
 - id: EXP-0222
   slug: w4f16-lm-head-ablation
@@ -8112,8 +8184,8 @@ experiments:
     closure_sha256: 196080cc53fd21bb8f1b1c606fe7a9da463ccbe84465bb92d9621d3a1049c6b5
     evidence_ledger_sha256: 54dbdc87eb1b8df4fc5e7baf2c0f0e385d41e583c0caec5975b3d5c5c5556c78
     evidence_files: 27
-    conclusion: 'A: NLL 3.874188 -> 3.853870, tasks 9 -> 8; B: NLL 4.600959 -> 4.413664, tasks 0 -> 0;
-      C: NLL 4.323169 -> 4.293221, tasks 2 -> 2'
+    conclusion: 'A: NLL 3.874188 -> 3.853870, tasks 9 -> 8; B: NLL 4.600959 -> 4.413664, tasks 0 -> 0; C: NLL 4.323169
+      -> 4.293221, tasks 2 -> 2'
     next_action: discuss_with_user_before_any_next_direction
 - id: EXP-0221
   slug: w4f16-gptq-offline-rotation
@@ -8124,8 +8196,7 @@ experiments:
   evidence_validity: valid
   local_gate: fail
   adoption_status: pending
-  approval_ref: 'User 2026-09-05: 那就往这个方向做一做试试，同意你的方向; approved original/gamma-fold/R1R2 GPTQ with separate
-    calibration.'
+  approval_ref: 'User 2026-09-05: 那就往这个方向做一做试试，同意你的方向; approved original/gamma-fold/R1R2 GPTQ with separate calibration.'
   source_branches:
   - codex/exp-0221-w4f16-gptq-offline-rotation
   source_commits:
@@ -8304,8 +8375,8 @@ experiments:
     calibration_sha256: e65edb14cb774956df92b27b5dc728b976f7ba00e9435145004180c6538a1669
     holdout_scored: false
     other_recipes: F16F16_and_W4U8_frozen
-    conclusion: Unrotated GPTQ reduces NLL but tasks stay8/24; GPTQ mitigates folded/rotated RTN loss
-      without incremental fixed R1R2 benefit; no promotion
+    conclusion: Unrotated GPTQ reduces NLL but tasks stay8/24; GPTQ mitigates folded/rotated RTN loss without incremental
+      fixed R1R2 benefit; no promotion
     reopen_condition: new_approved_hypothesis_no_repeat_fixed_trial_no_evaluation_tuning
 - id: EXP-0220
   slug: gamma-fold-attribution-r2-only
@@ -8316,8 +8387,8 @@ experiments:
   evidence_validity: valid
   local_gate: fail
   adoption_status: rejected
-  approval_ref: 'User 2026-09-05: 同意方向，开始实验; approved preceding ordered FP16 folding control, folding-location
-    attribution, and gamma-preserving R2-only; quantizer changes conditional on a subsequent full-R1 direction.'
+  approval_ref: 'User 2026-09-05: 同意方向，开始实验; approved preceding ordered FP16 folding control, folding-location attribution,
+    and gamma-preserving R2-only; quantizer changes conditional on a subsequent full-R1 direction.'
   source_branches:
   - codex/exp-0220-gamma-fold-attribution-r2-only
   source_commits:
@@ -8449,8 +8520,8 @@ experiments:
     speed_summary_sha256: 8abbdb773bf85fc1b2bd541af4326a7a567e57667899b557c2bb0237fb238476
     evidence_sha256_ledger_sha256: 0bf9fc284fb9f624c3f9a0f78a224c0f6e66e2c5f1b5f2cbd8ec6680cce49a97
     evidence_files: 182
-    conclusion: FP16 folding preserves observed quality; W4 requantization after gamma fold regresses,
-      QKV largest isolated NLL loss; gamma-preserving fixed R2 also regresses; no promotion
+    conclusion: FP16 folding preserves observed quality; W4 requantization after gamma fold regresses, QKV largest
+      isolated NLL loss; gamma-preserving fixed R2 also regresses; no promotion
     reopen_condition: new_approved_quantization_or_rotation_hypothesis_no_repeat_fixed_Hadamard_no_evaluation_tuning
 - id: EXP-0219
   slug: w4f16-r1r2-offline-rotation
@@ -8686,8 +8757,8 @@ experiments:
     quality_runtime_source_commit: 87830bd7e952e184c5160fd76fbf1a1c86d4ddca
     speed_runtime_source_commit: d981072513d06ed61731c14743c76ac6bc81617f
     dsp_identical_between_quality_and_speed: true
-    local_gate_failure_scope: W4U8_quality_determinism_only; evaluation execution complete and failure
-      evidence retained; A16 and all speed/physical/ledger gates pass
+    local_gate_failure_scope: W4U8_quality_determinism_only; evaluation execution complete and failure evidence
+      retained; A16 and all speed/physical/ledger gates pass
 - id: EXP-0217
   slug: f16f16-greedy-generation
   title: F16F16 complete deterministic token-generation boundary
@@ -8697,8 +8768,8 @@ experiments:
   evidence_validity: valid
   local_gate: pass
   adoption_status: pending
-  approval_ref: 'User message 2026-09-05: pause W4A8 specialization, complete F16A16 tokenizer and LM
-    head based on W4A16 for usable text, then propose lightweight common speed and quality evaluation'
+  approval_ref: 'User message 2026-09-05: pause W4A8 specialization, complete F16A16 tokenizer and LM head based
+    on W4A16 for usable text, then propose lightweight common speed and quality evaluation'
   source_branches:
   - codex/exp-0217-f16f16-greedy-generation
   source_commits:
@@ -8767,8 +8838,8 @@ experiments:
   - d1349951b08e60c56ddd690a421379d45041caeb
   - 25b2fdfead7546a981ccb457d9106e081bb6cb34
   record: docs/experiments/EXP-0216.md
-  approval_ref: 'User message 2026-09-05: continue prefill loop indefinitely after direct-W4 acceleration
-    until manually stopped'
+  approval_ref: 'User message 2026-09-05: continue prefill loop indefinitely after direct-W4 acceleration until
+    manually stopped'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0216-w4u8-prefill-direct-w4-qkvo
@@ -8857,8 +8928,8 @@ experiments:
   source_commits:
   - 0483c290f2a9fe0de34db104b3c9ad177cbb7065
   record: docs/experiments/EXP-0215.md
-  approval_ref: 'User message 2026-09-05: if the direct-W4 gate accelerates, continue the prefill optimization
-    loop until manually stopped'
+  approval_ref: 'User message 2026-09-05: if the direct-W4 gate accelerates, continue the prefill optimization loop
+    until manually stopped'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0215-w4u8-prefill-direct-w4-mlp
@@ -8913,8 +8984,8 @@ experiments:
   - 50db25ef0609bcd91e880fe1adde6c404d1865cd
   - 70dd554e507ab4705fb64d39f2708d8082e867ab
   record: docs/experiments/EXP-0214.md
-  approval_ref: 'User message 2026-09-05: after decode stop gate switch to endless prefill loop and eliminate
-    explicit W4-to-S8 expansion with HMX direct W4'
+  approval_ref: 'User message 2026-09-05: after decode stop gate switch to endless prefill loop and eliminate explicit
+    W4-to-S8 expansion with HMX direct W4'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0214-w4u8-prefill-direct-w4-hmx-gate
@@ -10543,8 +10614,8 @@ experiments:
   source_commits:
   - 5a3f81dba0b5730f6002a05186862b73f6dd0f6f
   record: docs/experiments/EXP-0186.md
-  approval_ref: 'User message 2026-09-04: 同意，继续吧; continuation of the authorized uninterrupted decode
-    optimization loop'
+  approval_ref: 'User message 2026-09-04: 同意，继续吧; continuation of the authorized uninterrupted decode optimization
+    loop'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0186-w4u8-decode-vtcm-v-tail-no-journal
@@ -10614,8 +10685,8 @@ experiments:
   source_commits:
   - 537650293920eb62c3cc49833df613246e8fb0b9
   record: docs/experiments/EXP-0185.md
-  approval_ref: 'User message 2026-09-04: 同意，继续吧; continuation of the authorized uninterrupted decode
-    optimization loop'
+  approval_ref: 'User message 2026-09-04: 同意，继续吧; continuation of the authorized uninterrupted decode optimization
+    loop'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0185-w4u8-decode-vtcm-k-tail-no-journal
@@ -10688,8 +10759,8 @@ experiments:
   source_commits:
   - 67a066ec528f2ff061632c45cf98128653448973
   record: docs/experiments/EXP-0184.md
-  approval_ref: 'User message 2026-09-04: 同意，继续吧; continuation of the authorized uninterrupted decode
-    optimization loop'
+  approval_ref: 'User message 2026-09-04: 同意，继续吧; continuation of the authorized uninterrupted decode optimization
+    loop'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0184-w4u8-decode-hvx-k-tail-update
@@ -10745,8 +10816,8 @@ experiments:
   source_commits:
   - 6db6a59a2f15385163a189b0bd952814a90fa895
   record: docs/experiments/EXP-0183.md
-  approval_ref: 'User message 2026-09-04: 同意，继续吧; continuation of the authorized uninterrupted decode
-    optimization loop'
+  approval_ref: 'User message 2026-09-04: 同意，继续吧; continuation of the authorized uninterrupted decode optimization
+    loop'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0183-w4u8-decode-vtcm-native-k-tail
@@ -10804,8 +10875,8 @@ experiments:
   source_commits:
   - 803c4a104b2b16bfd8b0cf5d456a76ea8738b4cb
   record: docs/experiments/EXP-0182.md
-  approval_ref: 'User message 2026-09-04: 同意，继续吧; continuation of the authorized uninterrupted decode
-    optimization loop'
+  approval_ref: 'User message 2026-09-04: 同意，继续吧; continuation of the authorized uninterrupted decode optimization
+    loop'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0182-w4u8-decode-vtcm-resident-v-tail
@@ -10861,8 +10932,7 @@ experiments:
   source_commits:
   - d2114dafc285b6b3189b0a5ee404c518e942f758
   record: docs/experiments/EXP-0181.md
-  approval_ref: 'User message 2026-09-04: 允许; continuation of the authorized uninterrupted decode optimization
-    loop'
+  approval_ref: 'User message 2026-09-04: 允许; continuation of the authorized uninterrupted decode optimization loop'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0181-w4u8-decode-attention-publish-v-tail
@@ -10924,8 +10994,7 @@ experiments:
   source_commits:
   - 073cbd6da8a9f70f75a193298def5484787a6f83
   record: docs/experiments/EXP-0180.md
-  approval_ref: 'User message 2026-09-04: 允许; continuation of the authorized uninterrupted decode optimization
-    loop'
+  approval_ref: 'User message 2026-09-04: 允许; continuation of the authorized uninterrupted decode optimization loop'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0180-w4u8-decode-quartet-native-v-tail
@@ -10986,8 +11055,7 @@ experiments:
   source_commits:
   - 828e4d7f5caf8001f135e225704ed6f83b52dc53
   record: docs/experiments/EXP-0179.md
-  approval_ref: 'User message 2026-09-04: 允许; continuation of the authorized uninterrupted decode optimization
-    loop'
+  approval_ref: 'User message 2026-09-04: 允许; continuation of the authorized uninterrupted decode optimization loop'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0179-w4u8-decode-row4-qk-norm-rope
@@ -11060,8 +11128,7 @@ experiments:
   - d97c3a345e97ab7d2c5c17e33f8657ca16c30b1b
   - cea103935829404274ae069248795fc1c83ae587
   record: docs/experiments/EXP-0178.md
-  approval_ref: 'User message 2026-09-04: 允许; continuation of the authorized uninterrupted decode optimization
-    loop'
+  approval_ref: 'User message 2026-09-04: 允许; continuation of the authorized uninterrupted decode optimization loop'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0178-w4u8-decode-row4-common-ops
@@ -13541,8 +13608,8 @@ experiments:
   source_commits:
   - 895febfa3543844ffc376be1d86f19c9e16d114a
   record: docs/experiments/EXP-0145.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently without interruption'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently without interruption'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0145-w4u8-down-hmx-batch8
@@ -13626,8 +13693,8 @@ experiments:
   source_commits:
   - 919aaa74870661d78b92e64976e695a4fa87f955
   record: docs/experiments/EXP-0144.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently without interruption'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently without interruption'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0144-w4u8-qk-output-simd-transpose
@@ -13713,8 +13780,8 @@ experiments:
   source_commits:
   - cd82ee4d0e6f9fc9eddb435f5b133997d411d2b3
   record: docs/experiments/EXP-0143.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently without interruption'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently without interruption'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0143-w4u8-qk-row-cache-simd-transpose
@@ -13792,8 +13859,8 @@ experiments:
   source_commits:
   - 77823c5168f499d4cf5727eb31521cae2ba73232
   record: docs/experiments/EXP-0142.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently without interruption'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently without interruption'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0142-w4f16-o-join-only-subgroup4
@@ -13867,8 +13934,8 @@ experiments:
   - 1904a6581642a115df3b84f79a27890c89958dcc
   - 0b472a9946570a473307ff6d4f06d6f39a0f5769
   record: docs/experiments/EXP-0141.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently without interruption'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently without interruption'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0141-w4u8-o-batch8-ring3
@@ -13941,8 +14008,8 @@ experiments:
   source_commits:
   - e75563457293de9430f8c9d20a04ced6147e4737
   record: docs/experiments/EXP-0140.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently without interruption'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently without interruption'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0140-w4f16-down-join-only-subgroup4
@@ -14020,8 +14087,8 @@ experiments:
   - 20ba5b2fc8b2e544b1f8ad4f694b440b4034e73c
   - addb7c08f80d242a305ffb493a1899ae1d9f0dc5
   record: docs/experiments/EXP-0139.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently without interruption'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently without interruption'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0139-w4u8-qkv-main-prep-assist
@@ -14906,8 +14973,8 @@ experiments:
   record: docs/experiments/EXP-0019.md
   decided_by: user
   decided_on: '2026-08-27'
-  approval_ref: 'User message 2026-08-27: HVX should hand partial work directly to HMX; continue optimizing
-    the pipeline'
+  approval_ref: 'User message 2026-08-27: HVX should hand partial work directly to HMX; continue optimizing the
+    pipeline'
   accepted_by: user
   accepted_on: '2026-08-27'
   acceptance_ref: 'User message 2026-08-27: 同意'
@@ -15038,8 +15105,8 @@ experiments:
   record: docs/experiments/EXP-0021.md
   decided_by: user
   decided_on: '2026-08-27'
-  approval_ref: 'User message 2026-08-27: 同意; no intermediate DDR is a hard gate and intermediates must
-    remain in VTCM through pipeline scheduling'
+  approval_ref: 'User message 2026-08-27: 同意; no intermediate DDR is a hard gate and intermediates must remain in
+    VTCM through pipeline scheduling'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0021-vtcm-resident-w4u8-mlp
@@ -15112,8 +15179,8 @@ experiments:
   record: docs/experiments/EXP-0022.md
   decided_by: user
   decided_on: '2026-08-27'
-  approval_ref: 'User message 2026-08-27: modify the VTCM allocation policy and execute the proposed real
-    Qwen3 W16A16/W4A16/W4A8 single-block comparison'
+  approval_ref: 'User message 2026-08-27: modify the VTCM allocation policy and execute the proposed real Qwen3
+    W16A16/W4A16/W4A8 single-block comparison'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0022-real-block-three-variant
@@ -15185,12 +15252,11 @@ experiments:
   record: docs/experiments/EXP-0023.md
   decided_by: user
   decided_on: '2026-08-27'
-  approval_ref: 'User message 2026-08-27: repair W4A16; substantial acceleration relative to W16A16 is
-    expected'
+  approval_ref: 'User message 2026-08-27: repair W4A16; substantial acceleration relative to W16A16 is expected'
   accepted_by: user
   accepted_on: '2026-08-28'
-  acceptance_ref: 'User message 2026-08-28: 可以临时接受; use EXP-0023 as the provisional parent while optimizing
-    the four FP16 common operators'
+  acceptance_ref: 'User message 2026-08-28: 可以临时接受; use EXP-0023 as the provisional parent while optimizing the
+    four FP16 common operators'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0023-w4f16-pipeline
@@ -15266,8 +15332,8 @@ experiments:
   record: docs/experiments/EXP-0024.md
   decided_by: user
   decided_on: '2026-08-28'
-  approval_ref: 'User message 2026-08-28: implement RMSNorm, RoPE, standard Softmax, and SiLU in one long
-    loop; begin with FP16 and exploit HVX SIMD'
+  approval_ref: 'User message 2026-08-28: implement RMSNorm, RoPE, standard Softmax, and SiLU in one long loop;
+    begin with FP16 and exploit HVX SIMD'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0024-fp16-hvx-common-ops
@@ -15419,8 +15485,7 @@ experiments:
   record: docs/experiments/EXP-0026.md
   decided_by: user
   decided_on: '2026-08-28'
-  approval_ref: 'User message 2026-08-28: agree with the priority; residual is clearly regressed, optimize
-    it first'
+  approval_ref: 'User message 2026-08-28: agree with the priority; residual is clearly regressed, optimize it first'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0026-hvx-residual
@@ -15501,8 +15566,8 @@ experiments:
   record: docs/experiments/EXP-0027.md
   decided_by: user
   decided_on: '2026-08-28'
-  approval_ref: 'User message 2026-08-28: continue optimization; verify whether W16A16 is substantially
-    memory-bound and remove other under-optimized work before judging W4A16'
+  approval_ref: 'User message 2026-08-28: continue optimization; verify whether W16A16 is substantially memory-bound
+    and remove other under-optimized work before judging W4A16'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0027-f16-weight-pipeline
@@ -16421,8 +16486,7 @@ experiments:
   record: docs/experiments/EXP-0038.md
   decided_by: user
   decided_on: '2026-08-29'
-  approval_ref: 'User message 2026-08-29: start a serial long-running loop and validate all three proposed
-    directions'
+  approval_ref: 'User message 2026-08-29: start a serial long-running loop and validate all three proposed directions'
   accepted_by: user
   accepted_on: '2026-08-29'
   acceptance_ref: 'User message 2026-08-29: 将目前的最快方案晋升为baseline'
@@ -16609,8 +16673,8 @@ experiments:
   source_commits:
   - 201c1c51529daf5561a3e0002f5d814f1cacebb3
   record: docs/experiments/EXP-0135.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently without interruption'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently without interruption'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0135-w4f16-gate-up-worker3-stream-drain
@@ -16683,8 +16747,8 @@ experiments:
   source_commits:
   - 3797e1b560523ea3f5d1e473855a80e01fb3c88a
   record: docs/experiments/EXP-0137.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently without interruption'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently without interruption'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0137-w4u8-gate-up-adaptive-hvx-lead-credit
@@ -16760,8 +16824,8 @@ experiments:
   source_commits:
   - 30fdf531939b8b96dce428c0d890adbf17714a10
   record: docs/experiments/EXP-0136.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently without interruption'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently without interruption'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0136-w4f16-gate-up-stream-subgroup4
@@ -16835,8 +16899,8 @@ experiments:
   record: docs/experiments/EXP-0099.md
   decided_by: user
   decided_on: '2026-08-31'
-  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary
-    recoverable issues independently'
+  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary recoverable
+    issues independently'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0099-w4u8-down-generation-safe-batch4
@@ -16917,12 +16981,11 @@ experiments:
   record: docs/experiments/EXP-0040.md
   decided_by: user
   decided_on: '2026-08-29'
-  approval_ref: 'User messages 2026-08-29: begin W4A8 from the proven integer-HMX path; approve the Stage-A
-    variant-specific HVX worker amendment'
+  approval_ref: 'User messages 2026-08-29: begin W4A8 from the proven integer-HMX path; approve the Stage-A variant-specific
+    HVX worker amendment'
   accepted_by: user
   accepted_on: '2026-08-29'
-  acceptance_ref: 'User message 2026-08-29: continue implementing the A8 nonlinear operators from this
-    W4U8 result'
+  acceptance_ref: 'User message 2026-08-29: continue implementing the A8 nonlinear operators from this W4U8 result'
   accepted_variant: complete_block_streaming_w4u8_candidate
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
@@ -18567,8 +18630,8 @@ experiments:
   record: docs/experiments/EXP-0056.md
   decided_by: user
   decided_on: '2026-08-30'
-  approval_ref: 'User message 2026-08-30: run a continuous profiling-guided optimization loop and treat
-    compatible next experiments as approved'
+  approval_ref: 'User message 2026-08-30: run a continuous profiling-guided optimization loop and treat compatible
+    next experiments as approved'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0056-w4u8-paired-softmax-rows
@@ -18672,8 +18735,8 @@ experiments:
   record: docs/experiments/EXP-0057.md
   decided_by: user
   decided_on: '2026-08-30'
-  approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible
-    experiments pre-approved'
+  approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible experiments
+    pre-approved'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0057-w4u8-v-pack-vgather
@@ -18780,8 +18843,8 @@ experiments:
   record: docs/experiments/EXP-0058.md
   decided_by: user
   decided_on: '2026-08-30'
-  approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible
-    experiments pre-approved'
+  approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible experiments
+    pre-approved'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0058-w4u8-v-pack-vdeal-transpose
@@ -18889,8 +18952,8 @@ experiments:
   record: docs/experiments/EXP-0059.md
   decided_by: user
   decided_on: '2026-08-30'
-  approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible
-    experiments pre-approved'
+  approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible experiments
+    pre-approved'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0059-w4u8-paired-softmax-after-vdeal
@@ -18995,8 +19058,8 @@ experiments:
   record: docs/experiments/EXP-0060.md
   decided_by: user
   decided_on: '2026-08-30'
-  approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible
-    experiments pre-approved'
+  approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible experiments
+    pre-approved'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0060-w4u8-rmsnorm-hvx-tree-reduction
@@ -19103,8 +19166,8 @@ experiments:
   record: docs/experiments/EXP-0061.md
   decided_by: user
   decided_on: '2026-08-30'
-  approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible
-    experiments pre-approved'
+  approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible experiments
+    pre-approved'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0061-w4u8-qk-paired-batched-rsqrt
@@ -19207,8 +19270,8 @@ experiments:
   record: docs/experiments/EXP-0062.md
   decided_by: user
   decided_on: '2026-08-30'
-  approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible
-    experiments pre-approved'
+  approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible experiments
+    pre-approved'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0062-w4u8-shared-rope-preconversion
@@ -19312,8 +19375,8 @@ experiments:
   record: docs/experiments/EXP-0063.md
   decided_by: user
   decided_on: '2026-08-30'
-  approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible
-    experiments pre-approved'
+  approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible experiments
+    pre-approved'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0063-w4u8-fused-qk-requant-softmax
@@ -19421,8 +19484,8 @@ experiments:
   record: docs/experiments/EXP-0064.md
   decided_by: user
   decided_on: '2026-08-30'
-  approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible
-    experiments pre-approved'
+  approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible experiments
+    pre-approved'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0064-w4u8-attention-hmx-batching
@@ -19530,8 +19593,8 @@ experiments:
   record: docs/experiments/EXP-0065.md
   decided_by: user
   decided_on: '2026-08-30'
-  approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible
-    experiments pre-approved'
+  approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible experiments
+    pre-approved'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0065-w4u8-softmax-lut-templates
@@ -19637,8 +19700,8 @@ experiments:
   record: docs/experiments/EXP-0066.md
   decided_by: user
   decided_on: '2026-08-30'
-  approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible
-    experiments pre-approved'
+  approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible experiments
+    pre-approved'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0066-w4u8-softmax-audit-reduction-elision
@@ -19746,8 +19809,8 @@ experiments:
   record: docs/experiments/EXP-0067.md
   decided_by: user
   decided_on: '2026-08-30'
-  approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible
-    experiments pre-approved'
+  approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible experiments
+    pre-approved'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0067-w4u8-input-rmsnorm-batched-rsqrt
@@ -19861,8 +19924,8 @@ experiments:
   record: docs/experiments/EXP-0068.md
   decided_by: user
   decided_on: '2026-08-30'
-  approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible
-    experiments pre-approved'
+  approval_ref: 'User message 2026-08-30: continuous profiling-guided optimization loop with compatible experiments
+    pre-approved'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0068-w4u8-attention-hvx-context-scaling
@@ -20501,8 +20564,7 @@ experiments:
   record: docs/experiments/EXP-0074.md
   decided_by: user
   decided_on: '2026-08-30'
-  approval_ref: 'User message 2026-08-30: 允许，以后遇到此类问题尝试自行修复; continuous profiling-guided loop remains
-    approved'
+  approval_ref: 'User message 2026-08-30: 允许，以后遇到此类问题尝试自行修复; continuous profiling-guided loop remains approved'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0074-w4u8-staged-row-sliced-softmax
@@ -20684,8 +20746,7 @@ experiments:
   record: docs/experiments/EXP-0076.md
   decided_by: user
   decided_on: '2026-08-30'
-  approval_ref: 'User message 2026-08-30: 允许，以后遇到此类问题尝试自行修复; continuous profiling-guided loop remains
-    approved'
+  approval_ref: 'User message 2026-08-30: 允许，以后遇到此类问题尝试自行修复; continuous profiling-guided loop remains approved'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0076-w4u8-av-output-requant-fusion
@@ -20753,8 +20814,7 @@ experiments:
   record: docs/experiments/EXP-0077.md
   decided_by: user
   decided_on: '2026-08-30'
-  approval_ref: 'User message 2026-08-30: 允许，以后遇到此类问题尝试自行修复; continuous profiling-guided loop remains
-    approved'
+  approval_ref: 'User message 2026-08-30: 允许，以后遇到此类问题尝试自行修复; continuous profiling-guided loop remains approved'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0077-w4u8-gate-up-cross-phase-prefetch
@@ -21467,8 +21527,8 @@ experiments:
   record: docs/experiments/EXP-0085.md
   decided_by: user
   decided_on: '2026-08-31'
-  approval_ref: 'User message 2026-08-31: 同意，开始工作; accept EXP-0084 as parent and fair baselines, then
-    begin EXP-0085 group-major QKV'
+  approval_ref: 'User message 2026-08-31: 同意，开始工作; accept EXP-0084 as parent and fair baselines, then begin EXP-0085
+    group-major QKV'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0085-gqa-group-major-qkv
@@ -21636,8 +21696,8 @@ experiments:
   record: docs/experiments/EXP-0087.md
   decided_by: user
   decided_on: '2026-08-31'
-  approval_ref: 'User message 2026-08-31: 继续下一步; proceed with the next profiling-guided W4U8 optimization
-    after EXP-0086'
+  approval_ref: 'User message 2026-08-31: 继续下一步; proceed with the next profiling-guided W4U8 optimization after
+    EXP-0086'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0087-w4u8-attention-slice-granularity
@@ -21744,8 +21804,8 @@ experiments:
   record: docs/experiments/EXP-0088.md
   decided_by: user
   decided_on: '2026-08-31'
-  approval_ref: 'User message 2026-08-31: continue the profiling-guided loop and autonomously handle ordinary
-    recoverable issues'
+  approval_ref: 'User message 2026-08-31: continue the profiling-guided loop and autonomously handle ordinary recoverable
+    issues'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0088-w4u8-private-persistent-softmax-lut
@@ -21838,8 +21898,7 @@ experiments:
   record: docs/experiments/EXP-0089.md
   decided_by: user
   decided_on: '2026-08-31'
-  approval_ref: 'User message 2026-08-31: resume the autonomous profiling-guided loop and continue to
-    the next experiment'
+  approval_ref: 'User message 2026-08-31: resume the autonomous profiling-guided loop and continue to the next experiment'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0089-w4u8-gate-up-down-dependency-stream
@@ -21945,8 +22004,8 @@ experiments:
   record: docs/experiments/EXP-0090.md
   decided_by: user
   decided_on: '2026-08-31'
-  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary
-    recoverable git issues without stopping'
+  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary recoverable
+    git issues without stopping'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0090-w4u8-gate-up-activation-priority
@@ -22024,8 +22083,8 @@ experiments:
   record: docs/experiments/EXP-0091.md
   decided_by: user
   decided_on: '2026-08-31'
-  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary
-    recoverable git issues without stopping'
+  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary recoverable
+    git issues without stopping'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0091-w4u8-interleaved-nibble-decode
@@ -22113,8 +22172,8 @@ experiments:
   record: docs/experiments/EXP-0092.md
   decided_by: user
   decided_on: '2026-08-31'
-  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary
-    recoverable git issues without stopping'
+  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary recoverable
+    git issues without stopping'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0092-w4u8-gate-up-interference-factorial
@@ -22209,8 +22268,8 @@ experiments:
   record: docs/experiments/EXP-0093.md
   decided_by: user
   decided_on: '2026-08-31'
-  approval_ref: 'User message 2026-08-31: resume the autonomous profiling-guided loop and resolve ordinary
-    recoverable git issues without stopping'
+  approval_ref: 'User message 2026-08-31: resume the autonomous profiling-guided loop and resolve ordinary recoverable
+    git issues without stopping'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0093-w4u8-four-row-native-residual-shuffle
@@ -22283,8 +22342,8 @@ experiments:
   record: docs/experiments/EXP-0094.md
   decided_by: user
   decided_on: '2026-08-31'
-  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary
-    recoverable issues independently'
+  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary recoverable
+    issues independently'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0094-w4u8-persistent-v-recenter-cache
@@ -22359,8 +22418,8 @@ experiments:
   record: docs/experiments/EXP-0095.md
   decided_by: user
   decided_on: '2026-08-31'
-  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary
-    recoverable issues independently'
+  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary recoverable
+    issues independently'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0095-w4u8-four-row-native-softmax-carrier-shuffle
@@ -22434,8 +22493,8 @@ experiments:
   record: docs/experiments/EXP-0096.md
   decided_by: user
   decided_on: '2026-08-31'
-  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary
-    recoverable issues independently'
+  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary recoverable
+    issues independently'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0096-w4u8-arithmetic-gate-up-activation
@@ -22504,8 +22563,8 @@ experiments:
   record: docs/experiments/EXP-0097.md
   decided_by: user
   decided_on: '2026-08-31'
-  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary
-    recoverable issues independently'
+  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary recoverable
+    issues independently'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0097-w4u8-exact-affine-gate-up-activation
@@ -22586,8 +22645,8 @@ experiments:
   record: docs/experiments/EXP-0098.md
   decided_by: user
   decided_on: '2026-08-31'
-  approval_ref: 'User message 2026-08-31: resume the autonomous profiling-guided loop and resolve ordinary
-    recoverable issues independently'
+  approval_ref: 'User message 2026-08-31: resume the autonomous profiling-guided loop and resolve ordinary recoverable
+    issues independently'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0098-w4u8-down-generation-safe-output-batch
@@ -22659,8 +22718,8 @@ experiments:
   record: docs/experiments/EXP-0100.md
   decided_by: user
   decided_on: '2026-08-31'
-  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary
-    recoverable issues independently'
+  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary recoverable
+    issues independently'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0100-w4u8-o-projection-batch8
@@ -22731,8 +22790,8 @@ experiments:
   record: docs/experiments/EXP-0101.md
   decided_by: user
   decided_on: '2026-08-31'
-  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary
-    recoverable issues independently'
+  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary recoverable
+    issues independently'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0101-w4u8-readiness-aware-attention-scheduler
@@ -22801,8 +22860,8 @@ experiments:
   record: docs/experiments/EXP-0102.md
   decided_by: user
   decided_on: '2026-08-31'
-  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary
-    recoverable issues independently'
+  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary recoverable
+    issues independently'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0102-w4u8-qkv-head-pair-batch8
@@ -22875,8 +22934,8 @@ experiments:
   record: docs/experiments/EXP-0103.md
   decided_by: user
   decided_on: '2026-08-31'
-  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary
-    recoverable issues independently'
+  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary recoverable
+    issues independently'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0103-w4u8-interleaved-qk-pair-kernel
@@ -22950,8 +23009,8 @@ experiments:
   record: docs/experiments/EXP-0104.md
   decided_by: user
   decided_on: '2026-08-31'
-  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary
-    recoverable issues independently'
+  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary recoverable
+    issues independently'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0104-w4u8-quarter-tiled-interleaved-qk-pair
@@ -23024,8 +23083,8 @@ experiments:
   record: docs/experiments/EXP-0105.md
   decided_by: user
   decided_on: '2026-08-31'
-  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary
-    recoverable issues independently'
+  approval_ref: 'User message 2026-08-31: continue the autonomous profiling-guided loop and resolve ordinary recoverable
+    issues independently'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0105-w4u8-dual-head-softmax-reductions
@@ -23810,8 +23869,8 @@ experiments:
   source_commits:
   - 24819076de910d9c8457b8fc2da49d473cb0fdf2
   record: docs/experiments/EXP-0116.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0116-w4f16-down-publication-fence
@@ -23882,8 +23941,8 @@ experiments:
   source_commits:
   - 65377d4132ec5a7bb15e1521a773c2734443f06e
   record: docs/experiments/EXP-0117.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0117-w4u8-packed-pair-swiglu-lut
@@ -23959,8 +24018,8 @@ experiments:
   - e806cce87c60e188c37c0e08acf5caaa72d74b67
   - cc091ab2bd095d8d9d4a7de084104d3b0fccde09
   record: docs/experiments/EXP-0118.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0118-w4u8-qkv-preemptible-worker-expand
@@ -24037,8 +24096,8 @@ experiments:
   source_commits:
   - f7d404b684269b303ff278ef443d0e6ae64e2074
   record: docs/experiments/EXP-0119.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0119-w4u8-qkv-assist-granularity
@@ -24120,8 +24179,8 @@ experiments:
   source_commits:
   - fa410c4c237903931c95112dc7f26235738a6905
   record: docs/experiments/EXP-0120.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0120-w4u8-gate-up-double-buffered-ring
@@ -24200,8 +24259,8 @@ experiments:
   - 1a724b42c77b174fd772f44139b175ff1c964aed
   - 2ebfbb7a2388e576003d161e6803173f1d3d1143
   record: docs/experiments/EXP-0121.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0121-w4u8-gate-up-ring16-worker-count
@@ -24278,8 +24337,8 @@ experiments:
   source_commits:
   - 521841bd0140047e5ca73067b1a3443238cecc11
   record: docs/experiments/EXP-0122.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0122-w4u8-gate-up-ring16-dma-chain8
@@ -24359,8 +24418,8 @@ experiments:
   - 4882846c3c0f9e10eb85b8a0723dfa85959d2b01
   - e95989e440d4fc658375a00ecac044871b14ca60
   record: docs/experiments/EXP-0123.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0123-w4f16-gate-up-persistent-expand
@@ -24440,8 +24499,8 @@ experiments:
   source_commits:
   - 95fadff5930d9081678ad99bb62ef84849ee1897
   record: docs/experiments/EXP-0124.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0124-w4u8-qkv-producer-consumer-ring
@@ -24513,8 +24572,8 @@ experiments:
   source_commits:
   - 9b4ee13ca709281d57d76bc303d46de95c66fb82
   record: docs/experiments/EXP-0125.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0125-w4u8-qkv-phase-handoff
@@ -24591,8 +24650,8 @@ experiments:
   source_commits:
   - 500122e068fd85c4a69734b095ba2913aad8c2ca
   record: docs/experiments/EXP-0126.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0126-w4f16-qkv-head-aligned-batch4
@@ -24669,8 +24728,8 @@ experiments:
   source_commits:
   - b3afdc39a5b58fb6cdd45d103b8325eb973a5465
   record: docs/experiments/EXP-0127.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0127-w4f16-qkv-selective-batch4
@@ -24755,8 +24814,8 @@ experiments:
   source_commits:
   - 7f9641c6a389767993e0f9a3a587b05f6c409f02
   record: docs/experiments/EXP-0128.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0128-w4u8-gate-up-stream-region16
@@ -24895,8 +24954,8 @@ experiments:
   source_commits:
   - e5541891db5d6ac6083987674df6da2c752cc095
   record: docs/experiments/EXP-0130.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently without interruption'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently without interruption'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0130-w4u8-qkv-dma-flight-main-prep
@@ -24959,8 +25018,8 @@ experiments:
   source_commits:
   - 9b74c81651b908495ded09bd991b3e11374a326e
   record: docs/experiments/EXP-0131.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently without interruption'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently without interruption'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0131-w4u8-qkv-hmx-tail-main-prep
@@ -25031,8 +25090,8 @@ experiments:
   source_commits:
   - 9936277a2793406498a8b5101e0db201ea97e8ba
   record: docs/experiments/EXP-0132.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently without interruption'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently without interruption'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0132-w4f16-gate-up-chunk2-claim
@@ -25104,8 +25163,8 @@ experiments:
   source_commits:
   - 646ded5a54bf4c541f8c63534a15bd58a611964d
   record: docs/experiments/EXP-0133.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently without interruption'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently without interruption'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0133-w4f16-gate-up-balanced-partition
@@ -25176,8 +25235,8 @@ experiments:
   source_commits:
   - d43e4d7e35bb0512c8a4753b129cc786f941afb3
   record: docs/experiments/EXP-0134.md
-  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and
-    resolve routine issues independently without interruption'
+  approval_ref: 'User message 2026-09-01: continue the W4F16 and W4U8 autonomous optimization loop and resolve routine
+    issues independently without interruption'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0134-w4f16-gate-up-worker3-dispatch

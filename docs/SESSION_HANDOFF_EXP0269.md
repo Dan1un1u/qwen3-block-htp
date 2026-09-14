@@ -1,70 +1,46 @@
-# EXP-0269: Qwen SP2 high-precision residual and paper baseline audit
+# EXP0269 closure: single-layer FP32 passes, speed gate fails
 
-User selects Qwen EXP0268 no-rotation SP2 (2030.2384/48.17335 tokens/s) and
-Llama L32-0018 no-rotation SP2+FP32 residual (2069.7026/42.51011) as paper speed
-baselines. Port and optimize the latter residual contract on Qwen; audit all
-later source/evidence for missed applicable optimizations in both recipes.
-This explicit instruction reopens Qwen for this scope and supersedes prior
-paper-only pause only for no-rotation integration/performance work.
+User selected original Qwen EXP0268 no-rotation SP2 and Llama L32-0018
+no-rotation SP2+FP32 residual as paper speed baselines. Keep2030.24/48.17 and
+2069.70/42.51tok/s as historical full-model numbers, respectively. No quality
+acceptance. Selection/audit manifest is docs/PAPER_NO_ROTATION_BASELINES.json
+in both source worktrees. Llama documentation selection is L32-0028.
 
-Start codex/exp-0269-sp2-fp32-residual from EXP0268 closure after preflight;
-initial parent branch binding is temporary for creation. Preserve historical
-Qwen/Llama branches, evidence, binaries and models; no rotations, PPL, training,
-new quantization or unrelated W16/W4A16 work. Llama read-only implementation
-audit here; its authority owns baseline registration separately.
+Qwen source codex/exp-0269-sp2-fp32-residual ata41a7258ed596d810bd4a62d83390fd6944b8967, clean/pushed.
+Actual hardware/build headaa55a3ece5a04f40c1cfe135b699433b8f6e4ff2; closure adds documents only.
+Future device use requires new approved experiment/preflight/fresh build seal.
+Memory active none,next270. All older frozen branches and original evidence
+preserved. Llama native unchanged; source documents closure0ae07a92e4d99fd3fd23c89adc3ce4a2b44f7b4f.
 
-Contract: preserve original Qwen C64 packed W4, SP2mode8 codebook and scales,
-integer attention/KV, Q/K norms and RoPE, norm output A8 and existing A8 LMhead.
-Port Llama FP32 input embedding/residual, raw native integer O/Down outputs
-with exact zero/SP2 merge, FP32 scale/add, ordered FP32 RMSNorm then A8. Use
-original Qwen FP16 embedding as existing high precision carrier, convert to
-FP32; no early embedding U8 requantization. Final FP32 norm quantizes once to
-existing A8 head input. No silent FP16 matrix fallback or changed W4 weights.
-Qwen RMS epsilon and dimensions stay model-specific. References independently
-compute Qwen contract; no Llama weights, norms, qparams, tokenizer or caches.
+Final safe path: native-W4 O/Down raw integer output->FP32 scale/add residual,
+ordered FP32 Norm then A8; original SP2 LUT/W4/attention/KV/Qwen QK norm/RoPE.
+Host embedding/finalnorm/head glue ported, but Qwen full frontend NOT validated.
+Independent exact singlelayers0/14/27 M64+decode1 and physical KV/actual boundary
+checks pass; repeat10 deterministic. VTCM8MiB,peak6682752B, tensor DDR/spill0.
 
-Reuse validated L32-0018 HVX/native norm stores, ordered reduction, threshold
-repair, O/Down two-slot HMX/HVX output overlap, SP2 low/high decode row packing.
-Retain EXP0268 scheduling and Qwen-specific phase-dead operand reuse. Fixed8MiB
-VTCM, one HMX owner, zero timed intermediate tensor DDR/spill, oneRPC/fullstep.
-Prove live-buffer lifetimes and signed accumulator bounds before device.
+Initial rows48..63 corruption fixed by 2048B HMX raw-slot alignment. Scalar
+Norm candidate rejected as slower. Named epilogue vectors remove1024B indexed
+activation stack staging. Register prefill transpose rejected after assembly
+found256B activation spills; original VTCM transpose restored. Keep decode HVX
+padding stores and live-lane ordered reduction. No rounding gate relaxation.
 
-Singlelayers0/14/27 M64+decode1: independent exact FP32 output and KV, finite,
-repeat determinism and actual-boundary audit before timing. Consecutive3 then
-full28 must pass independent implementation checks; model-quality PPL not a gate
-and not requested. Pure source-format fixes within scope use PC037; retain all
-failed attempts. Do not apply rotation's known-rounding exception here.
+Final safe source fixed five-short AB/BA repeat10:
+prefill1348.52716->1554.16358us,ratio1.152489639,CI[1.100393355,1.209263461];
+decode1053.72296->1102.91984us,ratio1.046688629,CI[.957624975,1.148527582].
+Both upper-CI gates fail. Earlier short11.28%/1.94% belongs to rejected spilling
+prefill candidate and is NOT a promoted result. Do not resample formal as if
+short passed. No formal10/chain3/full28/E2E/PPL. Main extra prefill costs are
+inputNorm+57.24us,postNorm+57.94us,O+30.30us. Pause and discuss cost before
+fullmodel; the first requested port is not accepted as a paper speed baseline.
 
-Port the existing optimized contract first; up to three bounded, explained
-Qwen-specific scheduling/vector/layout candidates may follow observed bottlenecks.
-Freeze each candidate before its measurements. Short diagnostics may select
-before a fixed five-short/ten-formal paired campaign; do not optionally resample
-formal sets. Repeat10 primary, repeat1 auxiliary; paired bootstrap20000 seed269,
-both Host-wall95%CIupper<=1.10 versus originalSP2 required for normal escalation.
-Fix attributable issues autonomously; if bounded candidates leave stable>10%
-cost, retain work and discuss before fullmodel. After singlelayer eligibility,
-full28 M64+15 same-prompt paired5short10formal, fixedcache128. Report module
-ledgers and direct E2E, no extrapolation. User selection of old paper baselines
-is explicit; new FP32 Qwen speed remains measured candidate until final report.
+67 device CLI,710 token-boundary profiles;2 initial independent numerical
+failures preserved. Evidence/mnt/d/llm_exp/results/qwen3-block-htp/exp0269,546 files/213645003B;
+ledgerSHA25620d3ddb9e1152e35e714f45b159f26312e5a79177cae907c31b7952a8af26ff5. Read SUMMARY.json,REPORT.md,c3repair/single_gate.json,
+c3repair/layer-short.json,assembly_final_gate.json and source_closure.json.
 
-Audit later Llama0019-27 and Qwen branches by file/function diff and run-path
-conditions, not commit age. Record applied, rotation-only, rejected, unmeasured,
-and missing-applicable changes with hashes. Do not claim global optimality.
-Close source/memory synchronized with evidence/provenance and baseline manifest.
-
-## Checkpoint 2026-09-14: initial port hardware diagnosis
-
-Source branch codex/exp-0269-sp2-fp32-residual; clean pushed HEAD
-3c0e1a2 (full source hash in git/build seals). Native port plus independent
-reference and sealed device runner are committed. Build l1-a05 succeeded.
-Models/results: /mnt/d/llm_exp/{models,results}/qwen3-block-htp/exp0269.
-layer0-fp32-a01 package sealed; layer0-a01 native exit0 and physical ledger pass,
-but independent FP32 prefill output fails exactly rows48..63 (32768 values),
-rows0..47 and decode exact. Attention AV all rows agrees, postnorm tail does not.
-Do not register numerical/performance pass. Diagnostic a02 captures residual
-tail before O in slot3 and after postnorm in slot4, replacing stale U8 slots
-only when FP32 is enabled. All failed evidence retained; fix local implementation
-under PC037. No formal timing yet. No rotated rounding exception applied.
-Llama source unchanged0f7d083; donor FP32/SP2 includes match L32-0018 exactly.
-Later Llama0019..26 native diffs seen so far are rotation guarded;0027 docs only.
-Need finish audit artifact and separate Llama baseline selection registration.
+Audited all181 Llama0018 and1511 Qwen0268 sealed files. Llama five common hot
+files identical0018->0f7d083; later seven native-file changes only rotation/
+audit routes.0025/26 rejected trials restored;0027 docs. Rotation branch
+common patches all equivalent except branch-default config (exact count in
+baseline_audit.json). No omitted later validated OFF optimization. New Qwen
+edits have not been tested on Llama; don't reuse historical speed for them.
