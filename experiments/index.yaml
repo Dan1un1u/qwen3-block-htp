@@ -1065,7 +1065,7 @@ experiments:
   completed_on: '2026-09-14'
 - id: L32-0024
   title: Accurate dense R4 refinement at SP2 thresholds
-  execution_state: running
+  execution_state: completed
   record: docs/experiments/L32-0024.md
   approval_ref: User says continue after0023 recommendation of accurate R4-to-SP2 threshold refinement;
     preserve non-negotiable numerical gate
@@ -1073,5 +1073,82 @@ experiments:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
   parent_source: 11807d80b16b6c5efe376226befeac56e7b0cfc8
-  hardware_runs: 0
+  hardware_runs: 42
   baseline_quality_promoted: false
+  checkpoint_state: exact_dense_r4_full16_pass_singlelayer_speed_gate_fail
+  hardware_runs_definition: 12 functional/audit CLI plus30 fixed formal CLI;30exit0 and12 retained original-HMX
+    ideal-exact exit1
+  token_boundary_executions: 144
+  formal_token_boundaries: 120
+  formal_measured_token_boundaries: 60
+  formal_profiling: true
+  formal_cycles: 10
+  formal_inner_replays: 2
+  failed_native_crashes: 0
+  failed_builds: 0
+  native_arithmetic_candidates: 1
+  post_formal_counter_fix: true
+  source_heads:
+    codex/llama32-no-rotation: 5bd8f641735291603cd2b595ae713146b4bd0c6e
+  native_full16_source_head: 66a82019dabdcee29a9a099319e946942bcecb8c
+  profiled_source_head: 9d3ad57167d1ce981e7bf3f1084d87502ce266e2
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0024
+  evidence_ledger_sha256: fc13eb282b1b7b26253d4a64986988154e4604d32c0d9b7a405fcbe6865fd2c6
+  report: docs/LLAMA32_R4_EXACT_REFINEMENT.md
+  local_gate: exact_R4_singlelayer_chain3_full16_and_physical_pass_cost_gate_fail
+  full16_exact: true
+  e2e_run: false
+  ppl_rerun: false
+  evidence_validity: all_runs_retained_formal_prepare_counter_overcount_documented_and_fixed
+  speed:
+    prefill:
+      'off':
+        mean_us: 2091.5676000000003
+        latency_ratio: 1.0
+        increase_percent: 0.0
+        ci95:
+        - 1.0
+        - 1.0
+        gate_pass: true
+      hmxboth:
+        mean_us: 2143.5209
+        latency_ratio: 1.0248394075333735
+        increase_percent: 2.4839407533373548
+        ci95:
+        - 0.9302810718431997
+        - 1.1070644848167162
+        gate_pass: false
+      exactboth:
+        mean_us: 3100063.6136
+        latency_ratio: 1482.1723254844833
+        increase_percent: 148117.23254844832
+        ci95:
+        - 1366.4638561305082
+        - 1571.9292543880179
+        gate_pass: false
+    decode:
+      'off':
+        mean_us: 1490.5626000000002
+        latency_ratio: 1.0
+        increase_percent: 0.0
+        ci95:
+        - 1.0
+        - 1.0
+        gate_pass: true
+      hmxboth:
+        mean_us: 1748.2498
+        latency_ratio: 1.1728791531466038
+        increase_percent: 17.287915314660385
+        ci95:
+        - 0.987852645814372
+        - 1.4862337978680231
+        gate_pass: false
+      exactboth:
+        mean_us: 55266.0104
+        latency_ratio: 37.07728236304869
+        increase_percent: 3607.728236304869
+        ci95:
+        - 35.567560269237575
+        - 38.460593130224716
+        gate_pass: false
+  completed_on: '2026-09-14'

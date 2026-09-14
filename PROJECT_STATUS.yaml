@@ -6,7 +6,7 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0024
+  active_experiment: null
   next_experiment_number: 25
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -14,7 +14,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: 11807d80b16b6c5efe376226befeac56e7b0cfc8
+    recorded_head: 5bd8f641735291603cd2b595ae713146b4bd0c6e
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -26,26 +26,27 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: r4_sp2_boundary_refinement
+  stage: exact_r4_full16_pass_cost_gate_pause
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Implement general two-stage dense R4 accurate boundary refinement; unchanged full16 numerical
-    gate before frontend/performance.
+  next_action: Use exact mode3 as diagnostic control; discuss tighter independently justified refinement
+    or HMX-friendly reproducible accumulation. Full recomputation is not deployable; mode1 full16 failure
+    remains.
   baseline_manifest: baselines/qwen3-frozen/manifest.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF.md
   organization_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0266
   organization_evidence_ledger_sha256: 052b816c686b11b0bc57908b9f86147047c1ecc427af7d8ee54a985dc5e2c093
   original_model_path: /mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin
-  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0023
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0024
   validated_recipes:
   - w16a16
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0023
-  evidence_ledger_sha256: 88535e31adafd7cc192e5d283a564da5ddfeabdecc190bc87c8cb8de28939975
-  formal_profiling_completed: false
+  last_completed_experiment: L32-0024
+  evidence_ledger_sha256: fc13eb282b1b7b26253d4a64986988154e4604d32c0d9b7a405fcbe6865fd2c6
+  formal_profiling_completed: true
   general_quantization_quality_accepted: false
   w4a16_quality_gate_pass: false
   validated_w4a8_rotations:
@@ -58,8 +59,8 @@ current_scope:
   formal_profile_recipes:
   - w4a16
   - w4a8_off
-  speed_validation: docs/LLAMA32_ROTATION_NUMERICAL_REPAIR.md
-  native_profiled_head: 3fb9a4f694e36552c1d7f75fc40de59007cfc8cf
+  speed_validation: docs/LLAMA32_R4_EXACT_REFINEMENT.md
+  native_profiled_head: 9d3ad57167d1ce981e7bf3f1084d87502ce266e2
   latest_e2e_tokens_per_second:
     w4a16:
       prefill: 1261.1611455885748
@@ -73,7 +74,7 @@ current_scope:
     decode: 46.675701580572316
   quality_validation: /mnt/d/llm_exp/results/llama32-htp/l32-0007/SUMMARY.md
   w16a16_matched_ppl_gate_pass: true
-  last_formal_speed_experiment: L32-0022
+  last_formal_speed_experiment: L32-0024
   latest_matched_device_ppl:
     dataset: llama32-wiki-quant-v1 heldout 128 documents, M64+16,2048 targets
     bf16_teacher: 26.697998599288322
@@ -580,7 +581,7 @@ current_scope:
     physical_pass: true
     overall_speed_gate_pass: false
     baseline_promoted: false
-  latest_formal_measurement_experiment: L32-0022
+  latest_formal_measurement_experiment: L32-0024
   fp32_pipeline_followup_speed:
     experiment: L32-0018
     source_head: e3d065a515221aa1e97c63fa4d58d23e434c45df
@@ -1047,6 +1048,98 @@ current_scope:
     diagnostic_capture_ddr_bytes: 8388608
     full16_conditional_component_audit: false
     formal_profiling: false
+    e2e_run: false
+    ppl_run: false
+    default_promoted: false
+    quality_promoted: false
+  fp32_r4_exact_refinement:
+    experiment: L32-0024
+    source_head: 5bd8f641735291603cd2b595ae713146b4bd0c6e
+    source_full16: 66a82019dabdcee29a9a099319e946942bcecb8c
+    source_profiled: 9d3ad57167d1ce981e7bf3f1084d87502ce266e2
+    source_counter_fix: 20091a85a7b5751d81a873b23ce66a6703403a68
+    report: docs/LLAMA32_R4_EXACT_REFINEMENT.md
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0024
+    evidence_ledger_sha256: fc13eb282b1b7b26253d4a64986988154e4604d32c0d9b7a405fcbe6865fd2c6
+    mode: 3
+    method: Complete dense DSP int64 sums of exact binary16 units, explicit RNE after181/4096 and1/4;
+      no butterfly; sparse refinement not implemented
+    singlelayer_indices:
+    - 0
+    - 7
+    - 15
+    singlelayer_actual_arithmetic_pass: true
+    chain3_exact: true
+    full16_prefill_decode_exact: true
+    full16_cache_values_exact: true
+    original_hmx_mode1_full16_numeric_gate_pass: false
+    physical_pass: true
+    vtcm_peak_bytes: 8229344
+    speed:
+      prefill:
+        'off':
+          mean_us: 2091.5676000000003
+          latency_ratio: 1.0
+          increase_percent: 0.0
+          ci95:
+          - 1.0
+          - 1.0
+          gate_pass: true
+        hmxboth:
+          mean_us: 2143.5209
+          latency_ratio: 1.0248394075333735
+          increase_percent: 2.4839407533373548
+          ci95:
+          - 0.9302810718431997
+          - 1.1070644848167162
+          gate_pass: false
+        exactboth:
+          mean_us: 3100063.6136
+          latency_ratio: 1482.1723254844833
+          increase_percent: 148117.23254844832
+          ci95:
+          - 1366.4638561305082
+          - 1571.9292543880179
+          gate_pass: false
+      decode:
+        'off':
+          mean_us: 1490.5626000000002
+          latency_ratio: 1.0
+          increase_percent: 0.0
+          ci95:
+          - 1.0
+          - 1.0
+          gate_pass: true
+        hmxboth:
+          mean_us: 1748.2498
+          latency_ratio: 1.1728791531466038
+          increase_percent: 17.287915314660385
+          ci95:
+          - 0.987852645814372
+          - 1.4862337978680231
+          gate_pass: false
+        exactboth:
+          mean_us: 55266.0104
+          latency_ratio: 37.07728236304869
+          increase_percent: 3607.728236304869
+          ci95:
+          - 35.567560269237575
+          - 38.460593130224716
+          gate_pass: false
+    exact_vs_current_hmx:
+      prefill:
+        latency_ratio: 1446.2483727590434
+        ci95:
+        - 1398.3964747072328
+        - 1493.5671117852319
+      decode:
+        latency_ratio: 31.612193177428075
+        ci95:
+        - 25.452806677624686
+        - 36.68713746859512
+    speed_gate_pass: false
+    formal_cycles: 10
+    formal_inner_replays: 2
     e2e_run: false
     ppl_run: false
     default_promoted: false
