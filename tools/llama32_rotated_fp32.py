@@ -79,7 +79,7 @@ def run(a):
    h,n=line.split(maxsplit=1);assert h==m['files'][n.removeprefix(remote+'/package/')]['sha256']
  old=json.loads((R.parent/f'l32-0018/layer0-a03/protocol.json').read_text())['command'];oldremote=old.split(' && ')[0].removeprefix('cd ');command=old.replace(oldremote,remote);prefix,argv=command.split(' ./qwen3_block_cli ',1);wd,e=prefix.split(' && ',1);env=dict(t.split('=',1) for t in shlex.split(e));r3=a.arm in ['r3','both'];r4on=a.arm in ['r4','both']
  env.update(QBH_DENSE_R3=str(int(r3)),QBH_R3_OPT='2' if r3 else'0',QBH_DENSE_R4=str(int(r4on)),QBH_R4_OPT='6' if r4on else'0')
- if r3:env['QBH_W4U8_DECODE_DIRECT_N_QKV_BATCH_N_TILES']='32'
+ if r3:env['QBH_W4U8_DECODE_DIRECT_N_Q_BATCH_N_TILES']='32'
  if a.audit:
   if r3:env['QBH_DENSE_R3_AUDIT']='1'
   if r4on:env['QBH_DENSE_R4_AUDIT']='1'
