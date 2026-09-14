@@ -10,10 +10,10 @@ from llama_reference import sha256
 from prototype_llama32_sp2 import preflight
 
 def main():
- ap=argparse.ArgumentParser();ap.add_argument('--layers',type=int,required=True);ap.add_argument('--attempt',required=True);ap.add_argument('--extension',required=True);a=ap.parse_args();preflight()
- old=M/'l32-0016'/f'chain{a.layers}-a01';om=verify(old);out=M/'l32-0021'/a.attempt;out.mkdir(parents=True,exist_ok=False);shutil.copytree(old,out,dirs_exist_ok=True);(out/'manifest.json').unlink();folds=[]
+ ap=argparse.ArgumentParser();ap.add_argument('--result-experiment',choices=['l32-0021','l32-0023'],default='l32-0021');ap.add_argument('--layers',type=int,required=True);ap.add_argument('--attempt',required=True);ap.add_argument('--extension',required=True);a=ap.parse_args();preflight()
+ old=M/'l32-0016'/f'chain{a.layers}-a01';om=verify(old);out=M/a.result_experiment/a.attempt;out.mkdir(parents=True,exist_ok=False);shutil.copytree(old,out,dirs_exist_ok=True);(out/'manifest.json').unlink();folds=[]
  for i in range(a.layers):
-  fresh=M/'l32-0015/rotated-down-a01'/f'layer{i}' if i in [0,7,15] else M/'l32-0021'/a.extension/f'layer{i}'
+  fresh=M/'l32-0015/rotated-down-a01'/f'layer{i}' if i in [0,7,15] else (M/'l32-0021/rotated-down-chain3-a01'/f'layer{i}' if i in [1,2] and a.result_experiment=='l32-0023' else M/a.result_experiment/a.extension/f'layer{i}')
   fm=json.loads((fresh/'manifest.json').read_text())
   for n,h in fm['files'].items():assert sha256(fresh/n)==h
   for n in ['down_weight_w4_hmx.bin','down_weight_w4_scale_f32.bin','silu_up_lut_u16.bin','qparams_u8.bin']:shutil.copyfile(fresh/n,out/f'layer{i}'/n)
@@ -30,5 +30,5 @@ def main():
     ref=np.full((8,80,64),q['k_rope' if n=='k' else 'v']['zero_point'],dtype='u1');ref[:,:cache[j].shape[1]]=cache[j];ref.tofile(p/f'reference_kv_cache_{n}_u8.bin')
    print('IDEAL_CHAIN',step,i,flush=True)
   pad=np.zeros((64,2048),dtype='<f4');pad[:rows]=x;pad.tofile(out/('reference_w4u8_block_output_f32.bin' if not step else'replay_decode_reference_00_f32.bin'))
- save(out/'manifest.json',dict(experiment='L32-0021',layers=a.layers,arm='both',reference='independent FP64 dense factors roundedFP16, integer/FP32 tail; no hardware captures',baseline_manifest_sha256=sha256(old/'manifest.json'),folds=folds,files={str(p.relative_to(out)):dict(bytes=p.stat().st_size,sha256=sha256(p)) for p in out.rglob('*') if p.is_file()}));print(out,flush=True)
+ save(out/'manifest.json',dict(experiment=a.result_experiment.upper(),layers=a.layers,arm='both',reference='independent FP64 dense factors roundedFP16, integer/FP32 tail; no hardware captures',baseline_manifest_sha256=sha256(old/'manifest.json'),folds=folds,files={str(p.relative_to(out)):dict(bytes=p.stat().st_size,sha256=sha256(p)) for p in out.rglob('*') if p.is_file()}));print(out,flush=True)
 if __name__=='__main__':main()
