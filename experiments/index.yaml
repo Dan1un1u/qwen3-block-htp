@@ -30,7 +30,7 @@ experiments:
   execution_state: completed
   evidence_validity: valid
   local_gate: pass
-  adoption_status: not_applicable
+  adoption_status: accepted
   record: docs/experiments/EXP-0272.md
   approval_ref: 'User: 再优化一下看看，争取达到全模gate。希望全模和单层的退化不同能给你一些启发'
   runtime:
@@ -190,8 +190,18 @@ experiments:
     baseline_promoted: false
     PPL: null
     selected_mode: 2
-    selected_method: C1 interleaved independent16-row ordered FP32 Norm; C2 flag-store variants discarded
-    next_direction: Fullmodel gate achieved. Discuss adoption before replacing user-selected paper baseline. Further structural Norm residual layout work would be a separate experiment; Llama unchanged.
+    selected_method: C1 interleaved independent16-row ordered FP32 Norm; C2 flag-store
+      variants discarded
+    next_direction: Fullmodel gate achieved. Discuss adoption before replacing user-selected
+      paper baseline. Further structural Norm residual layout work would be a separate
+      experiment; Llama unchanged.
+  acceptance:
+    accepted_on: '2026-09-15'
+    user_approval: 'User: 验收本次优化，基于这两个qwen和llama的latest无旋转baseline，补做消融实验...首先...列一份计划实验清单'
+    scope: EXP0272 mode2 no-rotation SP2 FP32 residual paper working baseline; quality
+      not accepted; no native default change
+    planning_document: docs/PAPER_NO_ROTATION_ABLATION_PLAN.md
+    new_ablation_execution: not_started_pending_plan_discussion
 - id: EXP-0271
   title: Qwen FP32 residual fullmodel speed confirmation
   parent: EXP-0270

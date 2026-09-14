@@ -18,3 +18,10 @@ Attribution: singlelayer FP32Norm75.2->71.6us; fullinputNorm2121.636->2019.039us
 Evidence /mnt/d/llm_exp/results/qwen3-block-htp/exp0272,922files416663690bytes,ledger7fa56656cbc385a2733146df45d1c5b399a302a0a16898e9fc135ae496016d61. Read SUMMARY.json,REPORT.md,PROFILE.json,full-short.json,full-formal.json,prior_fp32_gate_diagnostic.json,candidate_selection.json. All original model payload hashes reverified local/device; no newweights/models. Reuse exp0271/sp2-fp32 fullpackage andexp0269 selectedlayerpackages. Source report docs/EXP0272_FP32_FULLMODEL_NORM_RESULTS.md; independent report script scripts/report_exp0272.py.
 
 Fullmodel gate achieved, user adoption remains separate. NewQwen methods unmeasured onLlama. No next experimentstarted. Build/runtime seals refer to testedhead,notclosure docshead; futurehardware requires approvedexperiment/preflight/freshbuild.
+
+
+## 2026-09-15 用户验收与论文消融计划
+
+用户明确要求“验收本次优化”，据此接受 EXP-0272 mode2 作为 Qwen 当前无旋转 SP2+FP32 残差论文工作基线。正式 prefill/decode 为1849.4159/47.0701 token/s；两个 full-model 10% gate 均通过。Llama 保留 L32-0018 的2069.7026/42.5101 token/s。模型质量均不因此通过验收，源码默认开关未修改。
+
+封存结果中 baseline_promoted:false 是当时闭合状态，保留不改；本节和当前 PROJECT_STATUS/index acceptance 是后来用户接受的状态。消融计划见 docs/PAPER_NO_ROTATION_ABLATION_PLAN.md，待讨论后注册执行；没有新实验锁、源码改动、构建或硬件运行。
