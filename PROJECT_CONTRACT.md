@@ -392,3 +392,7 @@ PC037 routine repair authorization applies; retain failed attempts.
 ## PC082 — User-approved U8 prefill scheduling backport
 
 User approves EXP0268 per docs/experiments/EXP-0268.md. Reopen Qwen only for bit-exact ordinary U8 scheduling improvements and paired comparison with unchanged SP2 mode8. Frozen models/arithmetic, other recipes/branches and all numerical/physical gates remain. Fixed5short10formal repeat10 primary perPC079; PC037 repairs apply. No PPL, quality/default promotion or additional tuning inferred.
+
+## PC083 — User-selected paper baselines and Qwen FP32 residual port
+
+User selects EXP0268 no-rotation SP2 and Llama L32-0018 no-rotation SP2+FP32 residual for paper speed baselines, authorizing Qwen high-precision residual integration/optimization and a latest-applicable-optimization audit. EXP0269 protocol governs implementation, singlelayer/slice/fullmodel correctness and paired performance. This explicitly overrides the earlier Qwen freeze for this scope. Preserve historical quality failures, no rotations/PPL or weight re-quantization. PC037 repairs apply; no quality acceptance inferred.

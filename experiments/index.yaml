@@ -24,6 +24,31 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0269
+  slug: sp2-fp32-residual-paper-baseline
+  title: Qwen native SP2 FP32 residual port and latest baseline audit
+  parent: EXP-0268
+  variants:
+  - sealed_SP2_integer_residual
+  - SP2_FP32_residual_optimized
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: pending
+  record: docs/experiments/EXP-0269.md
+  approval_ref: User selects Qwen EXP0268 SP2 and Llama L32-0018 unrotated FP32-residual SP2 as paper
+    speed baselines; implement/optimize Qwen high precision residual and audit both for missed later improvements
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0268-u8-prefill-pipeline
+    started_on: '2026-09-14'
+  source_branches:
+  - codex/exp-0269-sp2-fp32-residual
+  source_commits: []
+  evidence:
+    parent_source: 6378066a15d867cbf184c1cc92288018d42c2925
+    llama_reference: e3d065a515221aa1e97c63fa4d58d23e434c45df
+    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0269
 - id: EXP-0268
   slug: u8-prefill-pipeline
   title: Bit-exact U8 prefill scheduling and fair SP2 cost

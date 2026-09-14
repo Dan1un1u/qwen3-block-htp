@@ -2124,3 +2124,6 @@ FullprefillU8old/m1/m2/m3/SP2m8 Hostus37553.753/32952.016/31223.683/30691.671/31
 ActualhotE2E prefill/decode tok/s: U8old1704.224/48.5654; U8m32085.256/48.5676;SP2m82030.238/48.1734. Completeembedding/28layers/finalnorm/head/greedy/FastRPC; excludes tokenizer/ADB/coldload.16outputgenerationloop44.0864/44.8957/44.6088tok/s respectively. SP2Down extra1.0235ms remains; earlieradvantageagainstoldU8 waslargelysharedscheduling,notintrinsicallycheaperSP2arithmetic. U8m3 isexplicit QBH_SP2=0 QBH_U8_PREFILL_OPT=3; defaultnotpromoted.
 
 Evidence /mnt/d/llm_exp/results/qwen3-block-htp/exp0268;1511files,1308439140B,ledger61f9fa2b7525d01a334aa4596a40c134814bee292204685a54eef622590100af. This closure supersedes earlieractive/next pointers. No furtherexperiment or tuningstarted; awaituserdirection.
+
+## Current EXP0269 — paper no-rotation SP2 FP32 residual
+User-authorized protocol docs/experiments/EXP-0269.md supersedes prior next-action. ParentEXP0268 preserved; port Llama0018 FP32 boundaries with Qwen-specific parameters and audit later applicable optimizations. No rotations/PPL.
