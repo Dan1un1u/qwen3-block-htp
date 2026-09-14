@@ -62,6 +62,80 @@ static int qbh_llama_w4_fp32_residual(struct qbh_block_hmx_worker *w) {
     asm volatile("barrier":::"memory");
     return AEE_SUCCESS;
 }
+/* EXP0269 candidate3: keep the 16-row transpose in HVX registers. Each
+ * vector contains two consecutive channels over 16 rows after transposition.
+ * Add its lower half then upper half, retaining ascending-channel FP32 order.
+ * Only lanes0..15 are live; no padded transpose plane or payload DDR stack. */
+__attribute__((noinline)) static HVX_Vector qbh_fp32_norm_reduce16(const float *x,uint32_t width) {
+    HVX_Vector sum=Q6_V_vzero();
+    for(uint32_t c=0;c<width;c+=32U) {
+        HVX_Vector v0=*(const HVX_Vector *)(x+0U*width+c);
+        HVX_Vector v1=*(const HVX_Vector *)(x+1U*width+c);
+        HVX_Vector v2=*(const HVX_Vector *)(x+2U*width+c);
+        HVX_Vector v3=*(const HVX_Vector *)(x+3U*width+c);
+        HVX_Vector v4=*(const HVX_Vector *)(x+4U*width+c);
+        HVX_Vector v5=*(const HVX_Vector *)(x+5U*width+c);
+        HVX_Vector v6=*(const HVX_Vector *)(x+6U*width+c);
+        HVX_Vector v7=*(const HVX_Vector *)(x+7U*width+c);
+        HVX_Vector v8=*(const HVX_Vector *)(x+8U*width+c);
+        HVX_Vector v9=*(const HVX_Vector *)(x+9U*width+c);
+        HVX_Vector v10=*(const HVX_Vector *)(x+10U*width+c);
+        HVX_Vector v11=*(const HVX_Vector *)(x+11U*width+c);
+        HVX_Vector v12=*(const HVX_Vector *)(x+12U*width+c);
+        HVX_Vector v13=*(const HVX_Vector *)(x+13U*width+c);
+        HVX_Vector v14=*(const HVX_Vector *)(x+14U*width+c);
+        HVX_Vector v15=*(const HVX_Vector *)(x+15U*width+c);
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v1,v0,-4);v0=Q6_V_lo_W(t);v1=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v3,v2,-4);v2=Q6_V_lo_W(t);v3=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v5,v4,-4);v4=Q6_V_lo_W(t);v5=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v7,v6,-4);v6=Q6_V_lo_W(t);v7=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v9,v8,-4);v8=Q6_V_lo_W(t);v9=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v11,v10,-4);v10=Q6_V_lo_W(t);v11=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v13,v12,-4);v12=Q6_V_lo_W(t);v13=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v15,v14,-4);v14=Q6_V_lo_W(t);v15=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v2,v0,-8);v0=Q6_V_lo_W(t);v2=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v3,v1,-8);v1=Q6_V_lo_W(t);v3=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v6,v4,-8);v4=Q6_V_lo_W(t);v6=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v7,v5,-8);v5=Q6_V_lo_W(t);v7=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v10,v8,-8);v8=Q6_V_lo_W(t);v10=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v11,v9,-8);v9=Q6_V_lo_W(t);v11=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v14,v12,-8);v12=Q6_V_lo_W(t);v14=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v15,v13,-8);v13=Q6_V_lo_W(t);v15=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v4,v0,-16);v0=Q6_V_lo_W(t);v4=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v5,v1,-16);v1=Q6_V_lo_W(t);v5=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v6,v2,-16);v2=Q6_V_lo_W(t);v6=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v7,v3,-16);v3=Q6_V_lo_W(t);v7=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v12,v8,-16);v8=Q6_V_lo_W(t);v12=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v13,v9,-16);v9=Q6_V_lo_W(t);v13=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v14,v10,-16);v10=Q6_V_lo_W(t);v14=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v15,v11,-16);v11=Q6_V_lo_W(t);v15=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v8,v0,-32);v0=Q6_V_lo_W(t);v8=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v9,v1,-32);v1=Q6_V_lo_W(t);v9=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v10,v2,-32);v2=Q6_V_lo_W(t);v10=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v11,v3,-32);v3=Q6_V_lo_W(t);v11=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v12,v4,-32);v4=Q6_V_lo_W(t);v12=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v13,v5,-32);v5=Q6_V_lo_W(t);v13=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v14,v6,-32);v6=Q6_V_lo_W(t);v14=Q6_V_hi_W(t);}
+        {HVX_VectorPair t=Q6_W_vshuff_VVR(v15,v7,-32);v7=Q6_V_lo_W(t);v15=Q6_V_hi_W(t);}
+        {HVX_Vector sq=qbh_fp32_mul(v0,v0);sum=Q6_Vsf_vadd_VsfVsf(sum,sq);sum=Q6_Vsf_vadd_VsfVsf(sum,Q6_V_vror_VR(sq,64));}
+        {HVX_Vector sq=qbh_fp32_mul(v8,v8);sum=Q6_Vsf_vadd_VsfVsf(sum,sq);sum=Q6_Vsf_vadd_VsfVsf(sum,Q6_V_vror_VR(sq,64));}
+        {HVX_Vector sq=qbh_fp32_mul(v4,v4);sum=Q6_Vsf_vadd_VsfVsf(sum,sq);sum=Q6_Vsf_vadd_VsfVsf(sum,Q6_V_vror_VR(sq,64));}
+        {HVX_Vector sq=qbh_fp32_mul(v12,v12);sum=Q6_Vsf_vadd_VsfVsf(sum,sq);sum=Q6_Vsf_vadd_VsfVsf(sum,Q6_V_vror_VR(sq,64));}
+        {HVX_Vector sq=qbh_fp32_mul(v2,v2);sum=Q6_Vsf_vadd_VsfVsf(sum,sq);sum=Q6_Vsf_vadd_VsfVsf(sum,Q6_V_vror_VR(sq,64));}
+        {HVX_Vector sq=qbh_fp32_mul(v10,v10);sum=Q6_Vsf_vadd_VsfVsf(sum,sq);sum=Q6_Vsf_vadd_VsfVsf(sum,Q6_V_vror_VR(sq,64));}
+        {HVX_Vector sq=qbh_fp32_mul(v6,v6);sum=Q6_Vsf_vadd_VsfVsf(sum,sq);sum=Q6_Vsf_vadd_VsfVsf(sum,Q6_V_vror_VR(sq,64));}
+        {HVX_Vector sq=qbh_fp32_mul(v14,v14);sum=Q6_Vsf_vadd_VsfVsf(sum,sq);sum=Q6_Vsf_vadd_VsfVsf(sum,Q6_V_vror_VR(sq,64));}
+        {HVX_Vector sq=qbh_fp32_mul(v1,v1);sum=Q6_Vsf_vadd_VsfVsf(sum,sq);sum=Q6_Vsf_vadd_VsfVsf(sum,Q6_V_vror_VR(sq,64));}
+        {HVX_Vector sq=qbh_fp32_mul(v9,v9);sum=Q6_Vsf_vadd_VsfVsf(sum,sq);sum=Q6_Vsf_vadd_VsfVsf(sum,Q6_V_vror_VR(sq,64));}
+        {HVX_Vector sq=qbh_fp32_mul(v5,v5);sum=Q6_Vsf_vadd_VsfVsf(sum,sq);sum=Q6_Vsf_vadd_VsfVsf(sum,Q6_V_vror_VR(sq,64));}
+        {HVX_Vector sq=qbh_fp32_mul(v13,v13);sum=Q6_Vsf_vadd_VsfVsf(sum,sq);sum=Q6_Vsf_vadd_VsfVsf(sum,Q6_V_vror_VR(sq,64));}
+        {HVX_Vector sq=qbh_fp32_mul(v3,v3);sum=Q6_Vsf_vadd_VsfVsf(sum,sq);sum=Q6_Vsf_vadd_VsfVsf(sum,Q6_V_vror_VR(sq,64));}
+        {HVX_Vector sq=qbh_fp32_mul(v11,v11);sum=Q6_Vsf_vadd_VsfVsf(sum,sq);sum=Q6_Vsf_vadd_VsfVsf(sum,Q6_V_vror_VR(sq,64));}
+        {HVX_Vector sq=qbh_fp32_mul(v7,v7);sum=Q6_Vsf_vadd_VsfVsf(sum,sq);sum=Q6_Vsf_vadd_VsfVsf(sum,Q6_V_vror_VR(sq,64));}
+        {HVX_Vector sq=qbh_fp32_mul(v15,v15);sum=Q6_Vsf_vadd_VsfVsf(sum,sq);sum=Q6_Vsf_vadd_VsfVsf(sum,Q6_V_vror_VR(sq,64));}
+    }
+    return sum;
+}
 /* Sequential FP32 reduction across channels, vectorized across 32 rows.
  * Scratch reuses the idle SP2 VTCM raw slots; no tensor on the thread stack. */
 static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
@@ -84,78 +158,15 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
             for(uint32_t c=0;c<width;c+=32U) {
                 HVX_Vector v=*(const HVX_Vector *)(x+c),sq=qbh_fp32_mul(v,v);
                 for(uint32_t k=0;k<32U;k++) {
-                    sum=Q6_Vsf_vadd_VsfVsf(sum,Q6_V_vdelta_VV(sq,*(const HVX_Vector *)qbh_fp32_broadcast0));
+                    /* Lane0 visits channels in order; other lanes are not consumed. */
+                    sum=Q6_Vsf_vadd_VsfVsf(sum,sq);
                     sq=Q6_V_vror_VR(sq,4);
                 }
             }
+        } else if(rows==16U) {
+            sum=qbh_fp32_norm_reduce16(x,width);
         } else {
             for(uint32_t c=0;c<width;c+=32U) {
-                if(rows==16U) {
-                    tile[0]=*(const HVX_Vector *)(x+0U*width+c);
-                    tile[1]=*(const HVX_Vector *)(x+1U*width+c);
-                    tile[2]=*(const HVX_Vector *)(x+2U*width+c);
-                    tile[3]=*(const HVX_Vector *)(x+3U*width+c);
-                    tile[4]=*(const HVX_Vector *)(x+4U*width+c);
-                    tile[5]=*(const HVX_Vector *)(x+5U*width+c);
-                    tile[6]=*(const HVX_Vector *)(x+6U*width+c);
-                    tile[7]=*(const HVX_Vector *)(x+7U*width+c);
-                    tile[8]=*(const HVX_Vector *)(x+8U*width+c);
-                    tile[9]=*(const HVX_Vector *)(x+9U*width+c);
-                    tile[10]=*(const HVX_Vector *)(x+10U*width+c);
-                    tile[11]=*(const HVX_Vector *)(x+11U*width+c);
-                    tile[12]=*(const HVX_Vector *)(x+12U*width+c);
-                    tile[13]=*(const HVX_Vector *)(x+13U*width+c);
-                    tile[14]=*(const HVX_Vector *)(x+14U*width+c);
-                    tile[15]=*(const HVX_Vector *)(x+15U*width+c);
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[1],tile[0],-4);tile[0]=Q6_V_lo_W(t);tile[1]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[3],tile[2],-4);tile[2]=Q6_V_lo_W(t);tile[3]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[5],tile[4],-4);tile[4]=Q6_V_lo_W(t);tile[5]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[7],tile[6],-4);tile[6]=Q6_V_lo_W(t);tile[7]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[9],tile[8],-4);tile[8]=Q6_V_lo_W(t);tile[9]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[11],tile[10],-4);tile[10]=Q6_V_lo_W(t);tile[11]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[13],tile[12],-4);tile[12]=Q6_V_lo_W(t);tile[13]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[15],tile[14],-4);tile[14]=Q6_V_lo_W(t);tile[15]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[2],tile[0],-8);tile[0]=Q6_V_lo_W(t);tile[2]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[3],tile[1],-8);tile[1]=Q6_V_lo_W(t);tile[3]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[6],tile[4],-8);tile[4]=Q6_V_lo_W(t);tile[6]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[7],tile[5],-8);tile[5]=Q6_V_lo_W(t);tile[7]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[10],tile[8],-8);tile[8]=Q6_V_lo_W(t);tile[10]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[11],tile[9],-8);tile[9]=Q6_V_lo_W(t);tile[11]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[14],tile[12],-8);tile[12]=Q6_V_lo_W(t);tile[14]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[15],tile[13],-8);tile[13]=Q6_V_lo_W(t);tile[15]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[4],tile[0],-16);tile[0]=Q6_V_lo_W(t);tile[4]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[5],tile[1],-16);tile[1]=Q6_V_lo_W(t);tile[5]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[6],tile[2],-16);tile[2]=Q6_V_lo_W(t);tile[6]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[7],tile[3],-16);tile[3]=Q6_V_lo_W(t);tile[7]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[12],tile[8],-16);tile[8]=Q6_V_lo_W(t);tile[12]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[13],tile[9],-16);tile[9]=Q6_V_lo_W(t);tile[13]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[14],tile[10],-16);tile[10]=Q6_V_lo_W(t);tile[14]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[15],tile[11],-16);tile[11]=Q6_V_lo_W(t);tile[15]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[8],tile[0],-32);tile[0]=Q6_V_lo_W(t);tile[8]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[9],tile[1],-32);tile[1]=Q6_V_lo_W(t);tile[9]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[10],tile[2],-32);tile[2]=Q6_V_lo_W(t);tile[10]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[11],tile[3],-32);tile[3]=Q6_V_lo_W(t);tile[11]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[12],tile[4],-32);tile[4]=Q6_V_lo_W(t);tile[12]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[13],tile[5],-32);tile[5]=Q6_V_lo_W(t);tile[13]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[14],tile[6],-32);tile[6]=Q6_V_lo_W(t);tile[14]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(tile[15],tile[7],-32);tile[7]=Q6_V_lo_W(t);tile[15]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(Q6_V_vzero(),tile[0],-64);tile[0]=Q6_V_lo_W(t);tile[16]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(Q6_V_vzero(),tile[1],-64);tile[1]=Q6_V_lo_W(t);tile[17]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(Q6_V_vzero(),tile[2],-64);tile[2]=Q6_V_lo_W(t);tile[18]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(Q6_V_vzero(),tile[3],-64);tile[3]=Q6_V_lo_W(t);tile[19]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(Q6_V_vzero(),tile[4],-64);tile[4]=Q6_V_lo_W(t);tile[20]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(Q6_V_vzero(),tile[5],-64);tile[5]=Q6_V_lo_W(t);tile[21]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(Q6_V_vzero(),tile[6],-64);tile[6]=Q6_V_lo_W(t);tile[22]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(Q6_V_vzero(),tile[7],-64);tile[7]=Q6_V_lo_W(t);tile[23]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(Q6_V_vzero(),tile[8],-64);tile[8]=Q6_V_lo_W(t);tile[24]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(Q6_V_vzero(),tile[9],-64);tile[9]=Q6_V_lo_W(t);tile[25]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(Q6_V_vzero(),tile[10],-64);tile[10]=Q6_V_lo_W(t);tile[26]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(Q6_V_vzero(),tile[11],-64);tile[11]=Q6_V_lo_W(t);tile[27]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(Q6_V_vzero(),tile[12],-64);tile[12]=Q6_V_lo_W(t);tile[28]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(Q6_V_vzero(),tile[13],-64);tile[13]=Q6_V_lo_W(t);tile[29]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(Q6_V_vzero(),tile[14],-64);tile[14]=Q6_V_lo_W(t);tile[30]=Q6_V_hi_W(t);}
-                    {HVX_VectorPair t=Q6_W_vshuff_VVR(Q6_V_vzero(),tile[15],-64);tile[15]=Q6_V_lo_W(t);tile[31]=Q6_V_hi_W(t);}
-                } else {
                 for(uint32_t r=0;r<32U;r++)tile[r]=first+r<rows ? *(const HVX_Vector *)(x+(first+r)*width+c):Q6_V_vzero();
                 /* Interleave rows at 4,8,...64 bytes; columns emerge bit-reversed. */
                 for(uint32_t gap=1U;gap<32U;gap*=2U)
@@ -164,7 +175,6 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
                         tile[r]=Q6_V_lo_W(t);tile[r+gap]=Q6_V_hi_W(t);
                     }
 
-                }
                 for(uint32_t k=0;k<32U;k++) {
                     uint32_t rev=((k&1U)<<4)|((k&2U)<<2)|(k&4U)|((k&8U)>>2)|((k&16U)>>4);
                     HVX_Vector v=tile[rev];
