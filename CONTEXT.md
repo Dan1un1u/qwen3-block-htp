@@ -1,3 +1,9 @@
+## L32-0029 continuation checkpoint (2026-09-15)
+
+Current source6471702 on codex/llama32-no-rotation. Initial A1 method port preserved0018 arithmetic but first layer0B11 prefill exact followed bydecode RPC0x8000040d. IMPORTANT: dsp_status=2 means DSP_RUNNING, NOT BAD_HEADER. Prior narration of header rejection was incorrect; debug rejection lines never triggered. Device crashlog resolves fault to qbh_w4u8_swiglu_stream_worker_run format predicate, BadVA0xe798, null attention_header. Llama decode bypasses attention pool initialization; new predicate mistakenly depended on it. Fix binds current header/buffers in SwiGLU start after worker-idle checks and before release. No arithmetic/validation change. First attributable scheduling-context fix; diagnostic-only commits and all failures retained. Rebuilding layer1, then re-run selected gates under new attempt tags. Results /mnt/d/llm_exp/results/llama32-htp/l32-0029, decode_crash_diagnosis.json and diag-logcat-a02.txt record cause.
+
+No new Llama timing accepted. Reused0018 ledger181files and six model packages verified. Source ABI131. Current runner execute_factorial.py in resultroot. Avoid existing l0-B11-audit tag; preserve failures and use corrected attempt tags. Next selected0/7/15 allarms,chain3,full16/frontend then fixed5short10formal. Qwen owns separate EXP0274; device execution strictly serialized. No quality/PPL/rotation/promotion or other recipe work.
+
 # Active L32-0029: full-model no-rotation factorial
 
 User approved actual full-model paper ablations. Read docs/experiments/L32-0029.md. Fixed selected L32-0018 SP2mode8+FP32residual1, original Llama weights, no rotation. Qwen EXP0274 owns its separate active phase; device execution serialized. Other approved items remain pending, not complete. All-on must reproduce sealed0018 outputs before timing.
