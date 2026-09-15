@@ -3,9 +3,9 @@ project: llama32-htp
 experiments:
 - id: L32-0039
   title: W16A16 fair baseline implementation refresh and matched full-model E2E
-  execution_state: running
-  evidence_validity: pending
-  local_gate: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: pending
   approval_ref: 'User 2026-09-16: 补做浮点基线 per annotated audit, then discuss SP2 A16
     Down comparison; no automatic implementation of A16 Down.'
@@ -15,9 +15,47 @@ experiments:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
   evidence:
-    device_owner: Qwen first, Llama after explicit local release
-    recipe: F16F16 only; other recipes frozen
+    id: L32-0039
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
     baseline_promoted: false
+    source_closure: a7fdb9b625a41d2c486925905380ad2641b7622a
+    measured_source: 6dd974ff2b1920c84e1bd86aa9663a098e849cf9
+    recipe: F16F16
+    opt: 3
+    manifest_sha256: c5df4b14a06af3274063a228f1fe9fb5480064b0386d0af5c90e24476ce0d5d9
+    full_model_audit_exact_files: 528
+    full_model_audit_layer_hashes: 256
+    formal_rounds: 10
+    short_rounds: 5
+    primary_repeat: 10
+    repeat1: auxiliary only
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0039
+    evidence_ledger_sha256: 196add92570ae117f30f3f342e88c9d9d25e454dd94dd415cb46b2f8b271cc12
+    evidence_files: 2001
+    report: docs/experiments/L32-0039-RESULTS.md
+    performance:
+      prefill_ns:
+        control_ns: 66357109.35
+        candidate_ns: 65696619.8
+        wall_ratio: 0.9915914640327737
+        ci95:
+        - 0.9899611969433127
+        - 0.992177764140824
+        control_tokens_per_second: 964.4784202764553
+        candidate_tokens_per_second: 974.174930077605
+      decode_ns:
+        control_ns: 77182372.4
+        candidate_ns: 57233461.77666666
+        wall_ratio: 0.7416522983001769
+        ci95:
+        - 0.7408542488603129
+        - 0.742329158231732
+        control_tokens_per_second: 12.956326281569442
+        candidate_tokens_per_second: 17.472296257426226
+    quality: No new PPL; frozen original token IDs and exact output contracts preserved
+    device_owner: released
 - id: L32-0038
   title: Latest optimized runtime paper ablation rerun; generalization excluded
   execution_state: completed
