@@ -1,17 +1,74 @@
 schema_version: 1
 project: llama32-htp
 experiments:
+- id: L32-0036
+  title: Exact log2 normalization optimization against original and FP
+  execution_state: running
+  local_gate: not_run
+  evidence_validity: not_checked
+  record: docs/experiments/L32-0036.md
+  approval_ref: User2026-09-15 sequential native decode then Llama log2 softmax optimization
+    then bounded generalization; no repeated permission
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  parent_source: ed716bab8af844743fcfd93a83e731d4a2759825
 - id: L32-0035
   title: Decode native layout diagnosis and exact gather optimization
-  execution_state: running
+  execution_state: completed
   record: docs/experiments/L32-0035.md
   approval_ref: User2026-09-15 requests sequential decode optimization, Llama log2
     optimization, then bounded generalization; no factorial rerun
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
-  local_gate: not_run
-  evidence_validity: not_checked
+  local_gate: pass
+  evidence_validity: valid
+  evidence:
+    id: L32-0035
+    execution_state: completed
+    local_gate: pass
+    evidence_validity: valid
+    measured_source: 4a61e5fb50f863fc41a450b40818a572674d2275
+    source_closure: ed716bab8af844743fcfd93a83e731d4a2759825
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0035
+    evidence_ledger_sha256: ef1d34637f0dc66a387367f68f289c1bbf7de1ac2ae6e1b7586458ed378e31f8
+    latest_candidate: native_row1
+    performance:
+      OPT:
+        prefill: 2175.6440239966437
+        decode: 45.566443217699394
+      ORIGINAL:
+        prefill: 2173.308168407887
+        decode: 45.4035938785822
+      NORM_COMPACT:
+        prefill: 2162.3760752154026
+        decode: 45.50465538375661
+    effects:
+      prefill:
+        OPT_over_ORIGINAL:
+          ratio: 0.9989263613150895
+          ci95:
+          - 0.9957411374815226
+          - 1.001596636900956
+        NORM_COMPACT_over_OPT:
+          ratio: 1.0061358192653511
+          ci95:
+          - 1.003495507845639
+          - 1.0085242211301657
+      decode:
+        OPT_over_ORIGINAL:
+          ratio: 0.9964261125596491
+          ci95:
+          - 0.9948638901985706
+          - 0.9981332361325884
+        NORM_COMPACT_over_OPT:
+          ratio: 1.001357835443906
+          ci95:
+          - 0.9999921298853339
+          - 1.0026929901594308
+    quality_claim: false
+    baseline_promoted: false
 - id: L32-0034
   title: Supported longer KV full-model pipeline ablation
   execution_state: completed

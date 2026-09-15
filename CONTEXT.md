@@ -1,3 +1,7 @@
+# Current checkpoint
+
+L32-0035 completed and sealed: optimized native row1 retained. L32-0036 registered for exact log2 optimization; owns device next. Q EXP0281 only CPU preparation until release. No full factorial or PPL.
+
 # Active L32-0035: decode optimization
 
 Read docs/experiments/L32-0035.md. QwenEXP0280 owns device; Llama local preparation only. New user-approved sequence decode,log2,generalization. Old campaign sealed; no full factorial rerun.

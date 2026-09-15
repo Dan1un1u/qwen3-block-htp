@@ -6,15 +6,15 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0035
-  next_experiment_number: 36
+  active_experiment: L32-0036
+  next_experiment_number: 37
   maximum_running_experiments: 1
   remote_sync_required: true
 source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: 573c721b26fb3b370a4f8e6dea8b086613023776
+    recorded_head: ed716bab8af844743fcfd93a83e731d4a2759825
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -1672,6 +1672,51 @@ current_scope:
     baseline_promoted: false
     qwen_final_experiment: EXP-0279
     llama_final_experiment: L32-0034
+  latest_decode_native_optimization:
+    id: L32-0035
+    execution_state: completed
+    local_gate: pass
+    evidence_validity: valid
+    measured_source: 4a61e5fb50f863fc41a450b40818a572674d2275
+    source_closure: ed716bab8af844743fcfd93a83e731d4a2759825
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0035
+    evidence_ledger_sha256: ef1d34637f0dc66a387367f68f289c1bbf7de1ac2ae6e1b7586458ed378e31f8
+    latest_candidate: native_row1
+    performance:
+      OPT:
+        prefill: 2175.6440239966437
+        decode: 45.566443217699394
+      ORIGINAL:
+        prefill: 2173.308168407887
+        decode: 45.4035938785822
+      NORM_COMPACT:
+        prefill: 2162.3760752154026
+        decode: 45.50465538375661
+    effects:
+      prefill:
+        OPT_over_ORIGINAL:
+          ratio: 0.9989263613150895
+          ci95:
+          - 0.9957411374815226
+          - 1.001596636900956
+        NORM_COMPACT_over_OPT:
+          ratio: 1.0061358192653511
+          ci95:
+          - 1.003495507845639
+          - 1.0085242211301657
+      decode:
+        OPT_over_ORIGINAL:
+          ratio: 0.9964261125596491
+          ci95:
+          - 0.9948638901985706
+          - 0.9981332361325884
+        NORM_COMPACT_over_OPT:
+          ratio: 1.001357835443906
+          ci95:
+          - 0.9999921298853339
+          - 1.0026929901594308
+    quality_claim: false
+    baseline_promoted: false
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp
