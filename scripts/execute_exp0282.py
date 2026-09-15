@@ -11,8 +11,9 @@ def configure(phase):
  num,old=PHASES[phase];e=importlib.import_module('execute_exp'+num);mods=[]
  for stem in ['common','device','selected_audit','audit','full']:
   mods.append(importlib.import_module(stem+'_exp'+num))
- for m in mods+[e]:m.R=ROOT/phase;m.preflight=preflight
- c,d,a,aa,f=mods;d.REMOTE='/data/local/tmp/qwen3-block-htp/exp0282-'+phase
+ actual='A5-fair-a02' if phase=='A5' and (ROOT/'A5-fair-a02').exists() else phase
+ for m in mods+[e]:m.R=ROOT/actual;m.preflight=preflight
+ c,d,a,aa,f=mods;d.REMOTE='/data/local/tmp/qwen3-block-htp/exp0282-'+actual
  # Preserve immutable prior proof paths rather than deriving them from new result nesting.
  e.PRIOR=Path('/mnt/d/llm_exp/results/qwen3-block-htp')/({'A2':'exp0274/consumer-row1-a02','A3':'exp0275','A5':'exp0276','A9':'exp0277'}.get(phase,old))
  os.environ.update(QBH_SP2='8',QBH_WIDE_SCORE='4',QBH_U8_PREFILL_OPT='0',QBH_PAPER_FIXED_TOKENS='0',QBH_PAPER_FORMAT_DISABLE='0',QBH_PAPER_PIPELINE_DISABLE='0')
@@ -60,6 +61,7 @@ def action(phase,what,count=0):
    c.write(e.R/'full_gate.json',dict(pass_all=True,runs=out))
   else:e.fullgates()
  elif what=='timing':
+  if phase=='A5' and e.R.name=='A5-fair-a02':subprocess.run([sys.executable,str(S/'scripts/verify_exp0282_fair_full.py')],check=True)
   if phase in ['A2','A3']:
    if count!=28:
     out=[]

@@ -64,6 +64,9 @@ static int lsp2_gather_audit(uint8_t *shared,uint32_t bytes,uint8_t *vtcm,uint32
    qbh_mlp_gate_up_sp2_decode_row1_compact_hvx(scratch+256U,scratch+384U,scratch+512U,scratch+640U,lut,scratch,scratch+768U);
    for(uint32_t j=32U;j<128U;j++)if(scratch[512U+j]!=0U || scratch[640U+j]!=128U)return AEE_EFAILED;
    memcpy(out+131072U+i,scratch+512U,32U);memcpy(out+196608U+i,scratch+640U,32U);
+   qbh_mlp_gate_up_decode_row1_hvx(scratch+256U,scratch+384U,scratch+512U,lut,scratch);
+   for(uint32_t j=0;j<32U;j++){int v=(int16_t)lut[i+j];uint8_t expected=(uint8_t)(v<0?0:v>255?255:v);if(scratch[512U+j]!=expected)return AEE_EFAILED;}
+   for(uint32_t j=32U;j<128U;j++)if(scratch[512U+j]!=0U)return AEE_EFAILED;
  }
 
  uint32_t mismatch=0;
