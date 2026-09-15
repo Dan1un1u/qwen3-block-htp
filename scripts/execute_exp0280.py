@@ -24,8 +24,19 @@ def prepare():
     h,n=line.split(None,1);assert h==man['files'][n.removeprefix(cfg['remote']+'/')]['sha256'],n
   write(R/('deployment-'+pkg+'.json'),cfg);print('VERIFIED',pkg,flush=True)
  write(R/'device_owner.json',dict(experiment='EXP-0280',exclusive=True))
+def component():
+ import numpy as np,struct
+ preflight();root=read(R/'runtime-l1.json')['remote'];out=[];dest=R/'component';dest.mkdir(exist_ok=False)
+ for layer in [0,14,27]:
+  pkg=package_path(f'layer{layer}-fp32-a01');lut=np.fromfile(pkg/'layer0/silu_up_lut_u16.bin','<u2');assert len(lut)==65536
+  total=395264;b=bytearray(total);struct.pack_into('<16I8Q',b,0,0x3250534c,1,total,7,64,1024,1024,2048,0,0,133120,0,0,0,0,0,*([0]*8));b[2048:133120]=lut.tobytes();inp=dest/f'l{layer}-in.bin';reply=dest/f'l{layer}-out.bin';inp.write_bytes(b)
+  d.adb('push',d.win(inp),root+'/row1-gather-input.bin');z=d.adb('shell',f'cd {root} && LD_LIBRARY_PATH={root} DSP_LIBRARY_PATH={root} ADSP_LIBRARY_PATH={root} ./llama_sp2_cli row1-gather-input.bin row1-gather-output.bin',check=False)
+  (dest/f'l{layer}-stdout.txt').write_text(z.stdout);(dest/f'l{layer}-stderr.txt').write_text(z.stderr);write(dest/f'l{layer}-exit.json',dict(returncode=z.returncode));assert z.returncode==0,(z.stdout,z.stderr)
+  d.adb('pull',root+'/row1-gather-output.bin',d.win(reply));raw=reply.read_bytes();got=np.frombuffer(raw,'u1',offset=133120,count=262144).reshape(4,65536);lo=(lut&255).astype('u1');hi=(lut>>8).astype('u1');assert all(np.array_equal(got[i],v) for i,v in enumerate([lo,hi,lo,hi]))
+  out.append(dict(layer=layer,lookup_pairs=65536,exact=True,deterministic_padding_checked_on_device=True,input_sha256=sha(inp),output_sha256=sha(reply)));print('COMPONENT_PASS',layer,flush=True)
+ write(R/'component_gate.json',dict(pass_all=True,runs=out))
 def selected():
- out=[]
+ assert read(R/'component_gate.json')['pass_all'];out=[]
  for l in [0,14,27]:
   for x in ARMS:
    arm(x);tag=f'diagnosis/l{l}-{x}';pkg=f'layer{l}-fp32-a01';d.run(pkg,tag,fp32=2,dump=True);out.append(a.audit(pkg,tag))
@@ -66,4 +77,4 @@ def timing():
   write(R/(phase+'.json'),dict(pass_all=True,runs=out))
 if __name__=='__main__':
  if sys.argv[1]=='stage':d.stage(int(sys.argv[2]))
- else:dict(prepare=prepare,reuse=reuse,selected=selected,diagnose=diagnose,slices=slices,fullgates=fullgates,timing=timing)[sys.argv[1]]()
+ else:dict(prepare=prepare,reuse=reuse,component=component,selected=selected,diagnose=diagnose,slices=slices,fullgates=fullgates,timing=timing)[sys.argv[1]]()
