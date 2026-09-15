@@ -9940,6 +9940,10 @@ static int qbh_start_w4u8_gate_up_swiglu_stream(
         for(uint32_t v=0;v<32768U/128U;++v)((HVX_Vector *)pool->u8_r4_act)[v]=Q6_V_vzero();
         asm volatile("barrier" ::: "memory");
     }
+    /* Decode can bypass attention pool setup. Bind the context consumed
+     * by the format ablation before publishing this independent worker. */
+    pool->attention_header = header;
+    pool->attention_buffers = buffers;
     pool->u8_swiglu_gate = gate;
     pool->u8_swiglu_up = up;
     pool->u8_swiglu_middle = middle;
