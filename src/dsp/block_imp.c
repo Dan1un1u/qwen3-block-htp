@@ -1876,7 +1876,7 @@ static int qbh_generation_request_valid(
                header->generation_expected_token_ids_bytes == 0U &&
                header->generation_expected_token_count == 0U;
     }
-    if (header->evaluation_mode > 2U ||
+    if (header->evaluation_mode > 3U ||
         (header->evaluation_mode == 1U &&
          (header->evaluation_target_token >= QBH_QWEN3_VOCAB_SIZE ||
           (header->generation_mode != QBH_BLOCK_GENERATION_GREEDY_F16F16 &&
