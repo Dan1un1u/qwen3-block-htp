@@ -24,6 +24,20 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0282
+  title: Latest optimized runtime paper ablation rerun; generalization excluded
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  record: docs/experiments/EXP-0282.md
+  approval_ref: 'User2026-09-15: optimize then rerun ablations and update conclusions;
+    generalization is supplementary and not rerun'
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0282-latest-paper-ablations
+  parent_source: b57c5254fe3857615c64568fd4d2077fea6414a0
+  parent: EXP-0281
+  adoption_status: pending
 - id: EXP-0281
   title: Latest exact native runtime bounded prompt and decode generalization
   parent: EXP-0280

@@ -413,3 +413,7 @@ User approves docs/PAPER_NO_ROTATION_ABLATION_PLAN.md except W4-to-S8 comparison
 ## PC087 — Optimize before further paper ablations (user 2026-09-15)
 
 User authorizes sequential decode native-layout diagnosis/optimization (compact decode fallback if objectively faster), Llama log2 optimization against FP, then controlled latest-version generalization. Reopen Qwen only for registered phases in this roadmap. Preserve nativeW4/SP2/FP32residual/no-rotation baseline, other recipes, original model data and numerical/physical/evidence gates. Local attribution and matched validation allowed; do not rerun full factorial. Necessary exact shape support is allowed for bounded generalization. No PPL/quality claim or automatic promotion. PC037 autonomous repairs apply.
+
+## Latest optimized ablation rerun authorization (2026-09-15; EXP-0282)
+
+User now explicitly requests rerunning optimized paper ablations and updating conclusions. This supersedes the prior no-factorial-rerun restriction only for registered A0/A1/A2/A3/A5/A6/A9 under docs/experiments/EXP-0282.md. Generalization and shape sweeps are supplementary, excluded from this rerun. Preserve vector/conventional baseline fairness, frozen weights, FP32 residual, no rotation and all numerical/physical/evidence gates. A7 cites existing same-FP32 evidence; no W4-to-S8 or integer-residual comparisons. Routine repairs and sequential phase registration need no repeated permission.
