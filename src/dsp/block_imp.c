@@ -26,6 +26,37 @@
 #include "w4_parallel_pipeline.h"
 #include "w4_u8_expand.h"
 
+#ifdef QBH_PAPER_TRACE
+/* Fixed metadata ring in diagnostic DDR, not tensor traffic or VTCM storage.
+ * Reset precedes worker dispatch; flush follows all worker joins. */
+#define QBH_PAPER_EVENT_CAPACITY 8192U
+struct qbh_paper_event {uint64_t ticks;uint32_t tid,kind,object;const char *name;};
+static struct qbh_paper_event qbh_paper_events[QBH_PAPER_EVENT_CAPACITY];
+static volatile uint32_t qbh_paper_event_count;
+void qbh_paper_trace_reset(void) {qbh_paper_event_count=0U;}
+void qbh_paper_trace_event(const char *name,uint32_t kind,uintptr_t object) {
+    uint64_t ticks=HAP_perf_get_qtimer_count();
+    uint32_t i=__sync_fetch_and_add(&qbh_paper_event_count,1U);
+    if(i<QBH_PAPER_EVENT_CAPACITY) {
+        struct qbh_paper_event *e=&qbh_paper_events[i];
+        e->ticks=ticks;e->tid=(uint32_t)qurt_thread_get_id();
+        e->kind=kind;e->object=(uint32_t)object;e->name=name;
+    }
+}
+void qbh_paper_trace_flush(void) {
+    uint32_t total=qbh_paper_event_count;
+    uint32_t n=total<QBH_PAPER_EVENT_CAPACITY?total:QBH_PAPER_EVENT_CAPACITY;
+    asm volatile("barrier" ::: "memory");
+    FARF(ALWAYS,"QBH_PAPER_TRACE_COUNT %u %u %u",total,n,total-n);
+    for(uint32_t i=0;i<n;++i) {
+        const struct qbh_paper_event *e=&qbh_paper_events[i];
+        FARF(ALWAYS,"QBH_PAPER_TRACE %llu %u %s %u %x",
+            (unsigned long long)e->ticks,(unsigned)e->tid,e->name,
+            (unsigned)e->kind,(unsigned)e->object);
+    }
+}
+#endif
+
 /* EXP0248 diagnostic only; each disjoint slot preserves a boundary before reuse.
  * Audit DDR is deliberately excluded from all numerical-off speed evidence. */
 static void qbh_r3_chain_audit(struct qbh_block_header *h, uint8_t *shared,
@@ -22024,6 +22055,7 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
            0, sizeof(*header) -
                   offsetof(struct qbh_block_header, dsp_status));
     header->dsp_status = QBH_BLOCK_STATUS_DSP_RUNNING;
+    QBH_PAPER_RESET();
     QBH_PAPER_EVENT("RPC_BEGIN",header->logical_m,header);
     header->cache_status = cache_status;
     header->prepared_session_run_index = prepared_session_run_index;
@@ -22770,6 +22802,7 @@ destroy_semaphores:
 publish:
     if (header != NULL) {
         QBH_PAPER_EVENT("RPC_END",header->logical_m,header);
+        QBH_PAPER_FLUSH();
         int flush_status = qurt_mem_cache_clean(
             (qurt_addr_t)header, (qurt_size_t)sizeof(*header),
             QURT_MEM_CACHE_FLUSH, QURT_MEM_DCACHE);
