@@ -83,14 +83,15 @@ static int paper_softmax_probe(uint8_t *shared,uint32_t bytes,uint8_t *vtcm,uint
     uint8_t *raw=vtcm,*prob=vtcm+sz;float *dump=(void *)(vtcm+2*sz);
     if(6*sz+2048U>vbytes)return AEE_ENOMEMORY;
     memcpy(raw,shared+h->input_offset,sz);memset(prob,0,sz);memset(dump,0,4*sz);
+    struct qbh_attention_u8_telemetry telemetry={0};
     uint64_t start=HAP_perf_get_qtimer_count();
     for(uint32_t i=0;i<repeat;i++) {
-        if(h->mode==5)qbh_attention_fp32_softmax_native(raw,prob,h->n,0,h->rows,past,h->k,config,(float *)(vtcm+6*sz),NULL,NULL);
+        if(h->mode==5)qbh_attention_fp32_softmax_native(raw,prob,h->n,0,h->rows,past,h->k,config,(float *)(vtcm+6*sz),NULL,&telemetry);
         else {if(h->n!=QBH_ATTENTION_Q_HEADS_PER_GROUP)return AEE_EBADPARM;
             if(h->rows==64U && past==0U && h->k==64U) {
                 qbh_attention_u8_requant_softmax_group_rows_prebuilt_templates_shuffle4(
-                    raw,prob,vtcm+6*sz,vtcm+6*sz+1024U,config,NULL,0U,64U,4U);
-            } else qbh_attention_u8_requant_softmax_dynamic(raw,prob,h->rows,past,past+h->rows,h->k,config,NULL,1,0,4,NULL);}
+                    raw,prob,vtcm+6*sz,vtcm+6*sz+1024U,config,&telemetry,0U,64U,4U);
+            } else qbh_attention_u8_requant_softmax_dynamic(raw,prob,h->rows,past,past+h->rows,h->k,config,&telemetry,1,0,4,NULL);}
     }
     h->total_ticks=HAP_perf_get_qtimer_count()-start;
     if(h->mode==5)qbh_attention_fp32_softmax_native(raw,prob,h->n,0,h->rows,past,h->k,config,(float *)(vtcm+6*sz),dump,NULL);
