@@ -2134,6 +2134,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->w4f16_decode_opt>2U || header->w4f16_decode_audit>1U ||
         (header->w4f16_decode_opt && header->variant!=QBH_BLOCK_W4F16) ||
         header->paper_format_disable > 7U ||
+        ((header->paper_format_disable&4U) && (!QBH_FP32_RESIDUAL(header) || QBH_SP2(header)!=8U || header->dense_r3_mode || header->dense_r4_mode)) ||
         ((header->paper_format_disable & 4U) && (header->paper_format_disable & 3U)) || header->paper_pipeline_disable > 31U ||
         header->wide_score_mode > 6U || header->prefix_kv_mode > 2U ||
         (header->prefix_kv_mode && header->variant != QBH_BLOCK_W4U8) ||
@@ -15477,7 +15478,11 @@ static int qbh_run_w4u8_direct_n_mlp(
     }
     if (QBH_SP2(header) && !stream_down && qurt_hvx_lock(QURT_HVX_MODE_128B)!=AEE_SUCCESS) return -1;
     if (down_result != 0) return -1;
-    qbh_r3_chain_audit(header,shared,9,down_native,131072U);
+    /* Mask4 audit slot9 contains the independent high plane. FP32 Down
+     * is verified through the residual output, not stale U8 down_native. */
+    qbh_r3_chain_audit(header,shared,9,
+        (header->paper_format_disable&4U)?buffers->sp2_high:down_native,
+        (header->paper_format_disable&4U)?393216U:131072U);
     header->down_ticks += HAP_perf_get_qtimer_count() - start;
     header->w4u8_mlp_down_hmx_command_count +=
         QBH_BLOCK_HIDDEN / QBH_HMX_OUTPUT_CHANNELS /
