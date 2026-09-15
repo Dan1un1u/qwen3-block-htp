@@ -1,3 +1,7 @@
+# Active L32-0035: decode optimization
+
+Read docs/experiments/L32-0035.md. QwenEXP0280 owns device; Llama local preparation only. New user-approved sequence decode,log2,generalization. Old campaign sealed; no full factorial rerun.
+
 # Both-model paper ablation campaign complete
 
 All hardware work finished throughQwenEXP0279/LlamaL32-0034. No deviceowner. Consolidatedreport /mnt/d/llm_exp/results/paper-no-rotation-ablation-20260915/REPORT.md; campaignledger 5c050ce12226744cbe198c280bf6ff97a090e8581f969ad8176593e983b15447. Complete module-tablecompendium andPNG/SVG/PDFfigure. No remaining approved campaign experiment; noquality/baselinepromotion. Llamasourceunchangedat573c721 closure.

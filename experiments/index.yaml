@@ -1,6 +1,17 @@
 schema_version: 1
 project: llama32-htp
 experiments:
+- id: L32-0035
+  title: Decode native layout diagnosis and exact gather optimization
+  execution_state: running
+  record: docs/experiments/L32-0035.md
+  approval_ref: User2026-09-15 requests sequential decode optimization, Llama log2
+    optimization, then bounded generalization; no factorial rerun
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  local_gate: not_run
+  evidence_validity: not_checked
 - id: L32-0034
   title: Supported longer KV full-model pipeline ablation
   execution_state: completed
