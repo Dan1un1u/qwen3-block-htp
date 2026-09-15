@@ -10078,7 +10078,7 @@ static int qbh_run_w4u8_direct_n_gate_up_pair(
     uint32_t current_tiles =
         n_tiles < batch_tiles ? n_tiles : batch_tiles;
     uint32_t current_slot = 0U;
-    const uint32_t swiglu_stream = header != NULL
+    const uint32_t swiglu_stream = header != NULL && !(header->paper_pipeline_disable&2U)
         ? header->w4u8_decode_direct_n_gate_up_swiglu_stream : 0U;
     uint32_t stream_started = 0U;
     uint64_t dma_start;
@@ -10104,7 +10104,7 @@ static int qbh_run_w4u8_direct_n_gate_up_pair(
         return -1;
     }
 
-    if (!prefill_pair && header->w4u8_decode_direct_n_o_gate_prefetch != 0U) {
+    if (!prefill_pair && header->w4u8_decode_direct_n_o_gate_prefetch != 0U && !(header->paper_pipeline_disable&16U)) {
         if (qbh_consume_w4u8_direct_n_gate_prefetch(
                 header, gate_prefetch, descs[0], weight_slots[0],
                 bias_slots[0], current_tiles) != 0) {
