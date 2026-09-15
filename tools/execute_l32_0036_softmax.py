@@ -7,7 +7,7 @@ from run_llama32_layer import adb,windows
 from run_llama32_frontend import records
 from llama_reference import sha256 as sha
 from report_llama32_pipeline_profile import MODULES
-R=Path('/mnt/d/llm_exp/results/llama32-htp/l32-0036');OLD=R.parent/'l32-0018';M=Path('/mnt/d/llm_exp/models/llama32-htp/l32-0016')
+R=Path('/mnt/d/llm_exp/results/llama32-htp/l32-0036/opt-a2');OLD=R.parents[1]/'l32-0018';M=Path('/mnt/d/llm_exp/models/llama32-htp/l32-0016')
 ARMS={'LOG2':(0,0),'FAST':(0,0),'FP':(0,0)}
 PACKAGES={'l0':('layer0-a03','layer0-a02',1),'l7':('layer7-a04','layer7-a02',1),'l15':('layer15-a03','layer15-a02',1),'chain3':('chain3-a03','chain3-a01',3),'chain16':('chain16-a03','chain16-a01',16),'full':('gate-fp32-final','frontend-a02',16)}
 def read(p):return json.loads(Path(p).read_text())
@@ -20,7 +20,7 @@ def preflight():
 
 def prepare():
  preflight();R.mkdir(exist_ok=False)
- prior=R.parent/'l32-0033'
+ prior=R.parents[1]/'l32-0033'
  for key in PACKAGES:
   cfg=read(prior/f'package-{key}.json');assert sha(Path(cfg['package'])/'manifest.json')==cfg['manifest_sha256'];write(R/f'package-{key}.json',cfg)
  for key in ['l7','chain3','chain16','full']:
@@ -42,7 +42,7 @@ def stage(count,trace=False):
   t=(S/b/'CMakeCache.txt').read_text();assert ('QBH_PAPER_TRACE:BOOL='+('ON' if trace else 'OFF')) in t;assert 'QBH_MODEL_LLAMA32:BOOL=ON' in t and f'QBH_LLAMA_LAYER_COUNT:STRING={count}\n' in t
  attempt=1
  while (R/f'binaries-l{count}-a{attempt}').exists():attempt+=1
- d=R/f'binaries-l{count}-a{attempt}';d.mkdir();remote=f'/data/local/tmp/llama32-htp/l32-0036-l{count}-a{attempt}'
+ d=R/f'binaries-l{count}-a{attempt}';d.mkdir();remote=f'/data/local/tmp/llama32-htp/l32-0036-opt-a2-l{count}-a{attempt}'
  assert adb('shell','test ! -e '+remote,check=False).returncode==0;adb('shell','mkdir -p '+remote)
  for n,h in seal['files'].items():
   p=Path(n);assert sha(p)==h;shutil.copy2(p,d/p.name);adb('push',windows(p),remote+'/'+p.name);assert adb('shell','sha256sum '+remote+'/'+p.name).stdout.split()[0]==h
@@ -56,7 +56,7 @@ def execute(key,arm,tag,repeat=1,audit=False):
  if key!='full' and repeat>1:env['QBH_LLAMA_REPLAY_REPEATS']=str(repeat)
  if key=='full':
   ids=np.fromfile(M/'frontend-a02/generation_prompt_token_ids_u32.bin','<u4').tolist();assert len(ids)==64
-  forced=os.environ.get('QBH_PAPER_FIXED_TOKENS')=='1';fixed=read(R.parent/'l32-0016/frontend-a02-reference/teacher.json')['u8_generated_ids'];row=[0,3 if forced else 2,16]+ids+fixed;f=d/'eval.bin';f.write_bytes(struct.pack('<4I',0x51424556,1,repeat,83)+b''.join(struct.pack('<83I',i,*row[1:]) for i in range(repeat)))
+  forced=os.environ.get('QBH_PAPER_FIXED_TOKENS')=='1';fixed=read(R.parents[1]/'l32-0016/frontend-a02-reference/teacher.json')['u8_generated_ids'];row=[0,3 if forced else 2,16]+ids+fixed;f=d/'eval.bin';f.write_bytes(struct.pack('<4I',0x51424556,1,repeat,83)+b''.join(struct.pack('<83I',i,*row[1:]) for i in range(repeat)))
   env['QBH_EVAL_FILE']=root+'/'+tag.replace('/','_')+'.bin';adb('push',windows(f),env['QBH_EVAL_FILE'])
  if audit:
   env['QBH_REPLAY_DUMP_DIR']=root+'/'+tag.replace('/','_');adb('shell','mkdir '+env['QBH_REPLAY_DUMP_DIR'])
@@ -72,7 +72,7 @@ def execute(key,arm,tag,repeat=1,audit=False):
   assert all(v[k]==0 for k in ['intermediate_ddr_read_bytes','intermediate_ddr_write_bytes','intermediate_spill_fill_count','ledger_unattributed_ticks','dense_r3_mode','dense_r4_mode'])
   ticks=sum(sum(v[k] for k in fields) for _,fields in MODULES)-v['generation_final_norm_ticks'];assert ticks==v['invocation_ticks'],(tag,ticks,v['invocation_ticks'])
  if key=='full':
-  oracle=(read(R.parent/'l32-0016/frontend-a02-reference/teacher.json') if arm!='FP' else dict(zip(['u8_generated_ids','u8_selected_codes'],(lambda z:(z['ids'],z['codes']))(read(R/(('fixed' if os.environ.get('QBH_PAPER_FIXED_TOKENS')=='1' else 'greedy')+'-fp-teacher-a02.json'))))));steps=[v for v in rs if isinstance(v,dict) and 'selected_logit_half_bits' in v]
+  oracle=(read(R.parents[1]/'l32-0016/frontend-a02-reference/teacher.json') if arm!='FP' else dict(zip(['u8_generated_ids','u8_selected_codes'],(lambda z:(z['ids'],z['codes']))(read(R/(('fixed' if os.environ.get('QBH_PAPER_FIXED_TOKENS')=='1' else 'greedy')+'-fp-teacher-a02.json'))))));steps=[v for v in rs if isinstance(v,dict) and 'selected_logit_half_bits' in v]
   assert [v['selected_token_id'] for v in steps]==oracle['u8_generated_ids']*repeat
   assert [v['selected_logit_half_bits'] for v in steps]==oracle['u8_selected_codes']*repeat
  else:

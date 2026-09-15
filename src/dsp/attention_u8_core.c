@@ -802,7 +802,20 @@ static void qbh_attention_u8_build_nr64_entries(
 static void qbh_attention_u8_build_exact_fast_entries(
     uint8_t *lut, uint32_t base, uint32_t sum) {
     const uint32_t numerator=UINT32_C(255)<<15U;
-    const uint32_t quotient=numerator/sum;
+    uint32_t quotient;
+    if(sum<32768U)quotient=numerator/sum;
+    else {
+        /* NR64 estimates floor(N/sum) within one for sum>=2^15.
+         * Correct the integer quotient before deriving ANY probability.
+         * This is exact normalization, not approximate NR64 probabilities. */
+        const uint32_t leading=31U-(uint32_t)Q6_R_cl0_R(sum);
+        const uint32_t x=sum<<(30U-leading);
+        uint32_t reciprocal=qbh_nr64_reciprocal_q30[(x-(1U<<30U))>>24U];
+        reciprocal=(uint32_t)(((uint64_t)reciprocal*((UINT64_C(2)<<30U)-(((uint64_t)x*reciprocal)>>30U)))>>30U);
+        quotient=(uint32_t)(((uint64_t)numerator*reciprocal)>>(leading+30U));
+        if((quotient+1U)*sum<=numerator)++quotient;
+        if(quotient*sum>numerator)--quotient;
+    }
     const uint32_t remainder=numerator-quotient*sum;
     lut[2U*base]=(uint8_t)(quotient+(2U*remainder>=sum));
     for(uint32_t code=1U;code<16U;++code)
@@ -1325,7 +1338,8 @@ qbh_attention_u8_softmax_requantized_pair(
         *(const HVX_Vector *)qbh_attention_u8_lane_index;
     const HVX_VectorPred lower_half = Q6_Q_vcmp_gt_VubVub(
         Q6_Vb_vsplat_R(64), lane);
-    if (telemetry != NULL && wide_score_mode == 0U) {
+    if (telemetry != NULL && wide_score_mode == 0U &&
+        !(config->division_mode==QBH_ATTENTION_DIVISION_EXACT_FAST && config->score_multiplier==1U)) {
         qbh_attention_u8_record_score_saturation(
             score, config, telemetry);
     }
@@ -1380,7 +1394,7 @@ qbh_attention_u8_softmax_requantized_pair(
                 banked_codes, *(const HVX_Vector *)lut, 0),
             Q6_V_vzero());
     }
-    {
+    if(telemetry!=NULL || config->division_mode!=QBH_ATTENTION_DIVISION_EXACT_FAST) {
         const HVX_VectorPair probability_h =
             Q6_Wuh_vunpack_Vub(probabilities);
         *probability_sum0 =
@@ -1390,7 +1404,15 @@ qbh_attention_u8_softmax_requantized_pair(
             qbh_attention_u8_sum_probability_half(
                 Q6_V_hi_W(probability_h));
     }
-    if (telemetry != NULL) {
+    else {*probability_sum0=0U;*probability_sum1=0U;}
+    if(telemetry!=NULL && config->division_mode==QBH_ATTENTION_DIVISION_EXACT_FAST) {
+        const HVX_Vector repeated=Q6_V_vand_VV(lane,Q6_Vb_vsplat_R(63));
+        const HVX_VectorPred invalid=Q6_Q_vcmp_gt_VubVub(repeated,Q6_Vb_vsplat_R(row));
+        const HVX_VectorPred nonzero=Q6_Q_vcmp_gt_VubVub(probabilities,Q6_V_vzero());
+        const HVX_Vector bits=Q6_V_vmux_QVV(Q6_Q_and_QQ(invalid,nonzero),Q6_Vb_vsplat_R(1),Q6_V_vzero());
+        const HVX_VectorPair halves=Q6_Wuh_vunpack_Vub(bits);
+        telemetry->probability_mask_violation_count+=qbh_attention_u8_sum_probability_half(Q6_V_lo_W(halves))+qbh_attention_u8_sum_probability_half(Q6_V_hi_W(halves));
+    } else if (telemetry != NULL) {
         const uint8_t *bytes = (const uint8_t *)&probabilities;
         for (uint32_t column = valid_count;
              column < QBH_ATTENTION_M; ++column) {
@@ -2682,7 +2704,10 @@ static void qbh_attention_u8_requant_softmax_dynamic_hvx_tile4(
     uint8_t lut[QBH_ATTN_U8_HVX_BYTES]
         __attribute__((aligned(QBH_ATTN_U8_HVX_BYTES)));
 
-    memset(probability_tiles, 0,
+    /* Decode consumes only row0. Every live tile lane is written below;
+     * do not clear64 rows merely to publish one row. Scratch is cleared. */
+    if(config->division_mode!=QBH_ATTENTION_DIVISION_EXACT_FAST)
+        memset(probability_tiles, 0,
            (size_t)QBH_ATTENTION_Q_HEADS_PER_GROUP * tiles *
                QBH_HMX_ACTIVATION_BYTES);
     for (uint32_t pair = 0U;
@@ -2773,6 +2798,7 @@ static void qbh_attention_u8_requant_softmax_dynamic_hvx_tile4(
                 Q6_Vb_vlut32_VbVbR_nomatch(
                     banked_codes, *(const HVX_Vector *)lut, 0),
                 Q6_V_vzero());
+            if(telemetry!=NULL || config->division_mode!=QBH_ATTENTION_DIVISION_EXACT_FAST) {
             const HVX_VectorPair probability_h =
                 Q6_Wuh_vunpack_Vub(probabilities);
 
@@ -2780,6 +2806,7 @@ static void qbh_attention_u8_requant_softmax_dynamic_hvx_tile4(
                 Q6_V_lo_W(probability_h));
             probability_sum1 += qbh_attention_u8_sum_probability_half(
                 Q6_V_hi_W(probability_h));
+            }
             *(HVX_Vector *)code_scratch = Q6_V_vzero();
             qbh_attention_u8_dynamic_store_head_pair(
                 probability_tiles, tiles, first_head,

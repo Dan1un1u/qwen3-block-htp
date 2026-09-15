@@ -3,7 +3,7 @@ import os,sys,struct,json,math
 import numpy as np
 from pathlib import Path
 import hashlib,subprocess,shutil
-S=Path('/home/daniuniu/work/llama32-htp');R=Path('/mnt/d/llm_exp/results/llama32-htp/l32-0036');F=R.parent/'l32-0033/component-fixtures'
+S=Path('/home/daniuniu/work/llama32-htp');R=Path('/mnt/d/llm_exp/results/llama32-htp/l32-0036/opt-a2');F=R.parents[1]/'l32-0033/component-fixtures'
 from run_llama32_layer import adb,windows as win
 from llama_reference import sha256 as sha
 from export_llama32_u8 import divide
@@ -20,7 +20,7 @@ def stage(count):
  assert 'QBH_LLAMA_LAYER_COUNT:STRING=1\n' in (S/'hexagon_ReleaseG_toolv19_v79/CMakeCache.txt').read_text()
  attempt=1
  while (R/f'binaries-l1-a{attempt}').exists():attempt+=1
- archive=R/f'binaries-l1-a{attempt}';archive.mkdir();remote=f'/data/local/tmp/llama32-htp/l32-0036-l1-a{attempt}';assert adb('shell','test ! -e '+remote,check=False).returncode==0;adb('shell','mkdir -p '+remote)
+ archive=R/f'binaries-l1-a{attempt}';archive.mkdir();remote=f'/data/local/tmp/llama32-htp/l32-0036-opt-a2-l1-a{attempt}';assert adb('shell','test ! -e '+remote,check=False).returncode==0;adb('shell','mkdir -p '+remote)
  for f,h in seal['files'].items():
   p=Path(f);assert sha(p)==h;shutil.copy2(p,archive/p.name);adb('push',win(p),remote+'/'+p.name);assert adb('shell','sha256sum '+remote+'/'+p.name).stdout.split()[0]==h
  adb('shell','chmod 755 '+remote+'/llama_sp2_cli '+remote+'/qwen3_block_cli');write(archive/'seal.json',seal);(R/'runtime-l1.json').write_text(json.dumps(dict(remote=remote,archive=str(archive),seal=seal),indent=2));print('STAGED',flush=True)
