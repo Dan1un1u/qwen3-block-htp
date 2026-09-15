@@ -1,3 +1,7 @@
+# Active EXP0280 C2 pending hardware
+
+Read docs/experiments/EXP-0280.md latest checkpoint. C1formal complete, tiny dual-gather gain; inactive-row contents confound residual format comparison. C2 native live-row masked gather compiled at e633e4e, not yet deployed. L32-0035 owns device. All tasks remain active: finish both-modeldecode, optimizeLlama log2, boundedgeneralization. Do not rerun oldcampaign.
+
 # Active EXP0280: decode layout optimization
 
 Read docs/experiments/EXP-0280.md. New user-approved sequence: both-model decode layout, Llama log2, then bounded generalization. Completed old campaign remains sealed. Current Qwen parent f8b0a750, Llama573c721; no device process at registration. Preflight before source/build/model/device.
