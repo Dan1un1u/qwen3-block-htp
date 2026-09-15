@@ -66,7 +66,7 @@ def one(arm,tag,repeat,audit=False):
   from llama_u8_reference import load_qparams_bin
   q=load_qparams_bin(p/'generation_qparams_u8.bin')['generation_final_norm_output'];gamma=np.fromfile(p/'generation_final_norm_weight_f16.bin','<f2')
   for step in range(STEPS):
-   x=np.fromfile(d/f'generation_hidden_step{step:02d}_f32.bin','<f4');expected=np.load(R/'oracle'/CASES[CASE][0]/f'hidden-{step:02d}.npy')[-1];assert np.isfinite(x).all() and np.array_equal(x,expected),(tag,step,'independent full16 hidden')
+   x=np.fromfile(d/f'generation_hidden_step{step:02d}_f32.bin','<f4');expected=np.load(Path(cfg.get('oracle_directory',str(R/'oracle')))/CASES[CASE][0]/f'hidden-{step:02d}.npy')[-1];assert np.isfinite(x).all() and np.array_equal(x,expected),(tag,step,'independent full16 hidden')
    n=np.fromfile(d/f'generation_norm_step{step:02d}_u8_native.bin','u1').reshape(64,64,32).transpose(1,0,2).reshape(64,2048)[:1];assert np.array_equal(n,norm(x[None],gamma,q)),(tag,step,'norm')
  out=dict(pass_all=True,case=CASE,steps=STEPS,audit=audit,arm=arm,repeat=repeat,profiles=len(ps),prefill_ns=statistics.mean(v['host_wall_ns'] for v in ps if v['mode']=='prefill'),decode_ns=statistics.mean(v['host_wall_ns'] for v in ps if v['mode']=='decode'),peak=max(v['vtcm_peak_plan_bytes'] for v in ps))
  write(d/'validated.json',out);print('PASS',tag,64e9/out['prefill_ns'],1e9/out['decode_ns'],flush=True);return out
