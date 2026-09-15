@@ -353,3 +353,21 @@ __attribute__((noinline)) void qbh_mlp_gate_up_sp2_decode_row1_compact_hvx(
     *(HVX_Vector *)high=Q6_V_vmux_QVV(live_b,Q6_Vb_vpacko_VhVh(Q6_V_vzero(),value),Q6_Vb_vsplat_R(128));
     asm volatile("barrier":::"memory");
 }
+
+/* Equal valid-row optimization for ordinary-A8 SwiGLU. Padding is dead. */
+__attribute__((noinline)) void qbh_mlp_gate_up_decode_row1_hvx(
+    const uint8_t *gate,const uint8_t *up,uint8_t *middle,
+    const uint16_t *lut,uint8_t *gather_scratch) {
+    HVX_Vector g=Q6_V_lo_W(Q6_Wuh_vunpack_Vub(*(const HVX_Vector *)gate));
+    HVX_Vector u=Q6_V_lo_W(Q6_Wuh_vunpack_Vub(*(const HVX_Vector *)up));
+    HVX_Vector mask=Q6_Vh_vsplat_R(127);
+    HVX_Vector offsets=Q6_Vh_vadd_VhVh(Q6_Vh_vasl_VhR(Q6_V_vand_VV(g,mask),9),Q6_Vh_vasl_VhR(u,1));
+    HVX_VectorPred upper=Q6_Q_vcmp_gt_VuhVuh(g,mask);
+    HVX_VectorPred live_h=Q6_Q_vsetq_R(64U);
+    Q6_vgather_AQRMVh((HVX_Vector *)gather_scratch,Q6_Q_and_QQn(live_h,upper),(int32_t)(uintptr_t)lut,QBH_MLP_GATHER_REGION_MASK,offsets);
+    Q6_vgather_AQRMVh((HVX_Vector *)gather_scratch,Q6_Q_and_QQ(live_h,upper),(int32_t)(uintptr_t)((const uint8_t *)lut+QBH_MLP_GATHER_HALF_BYTES),QBH_MLP_GATHER_REGION_MASK,offsets);
+    HVX_Vector value=*(volatile HVX_Vector *)gather_scratch;
+    HVX_VectorPred live_b=Q6_Q_vsetq_R(32U);
+    *(HVX_Vector *)middle=Q6_V_vmux_QVV(live_b,Q6_Vub_vpack_VhVh_sat(Q6_V_vzero(),value),Q6_V_vzero());
+    asm volatile("barrier":::"memory");
+}

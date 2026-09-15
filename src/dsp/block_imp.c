@@ -4638,14 +4638,13 @@ static void qbh_w4u8_swiglu_stream_worker_run(
                 pool->u8_swiglu_middle+(size_t)output_tile*2048U,
                 pool->u8_sp2_high+(size_t)output_tile*2048U,128U,
                 pool->u8_swiglu_lut,pool->u8_swiglu_gather_scratch);
-            else qbh_mlp_gate_up_lut_hvx(
+            else qbh_mlp_gate_up_decode_row1_hvx(
                 pool->u8_swiglu_gate +
                     (size_t)output_tile * QBH_HMX_OUTPUT_BYTES,
                 pool->u8_swiglu_up +
                     (size_t)output_tile * QBH_HMX_OUTPUT_BYTES,
                 pool->u8_swiglu_middle +
                     (size_t)output_tile * QBH_HMX_OUTPUT_BYTES,
-                pool->u8_swiglu_rows * QBH_HMX_OUTPUT_CHANNELS,
                 pool->u8_swiglu_lut,
                 pool->u8_swiglu_gather_scratch);
             if (!pool->u8_r4_act && pool->u8_swiglu_rows ==
@@ -15401,11 +15400,10 @@ static int qbh_run_w4u8_direct_n_mlp(
                 else qbh_mlp_gate_up_sp2_decode_row1_hvx(gate_native+(size_t)tile*2048U,up_native+(size_t)tile*2048U,
                     middle_native+(size_t)tile*2048U,((header->paper_format_disable&4U)?buffers->sp2_high:middle_native+128U)+(size_t)tile*2048U,
                     (const uint16_t *)buffers->w4u8_silu_lut,buffers->w4u8_gather_scratch);
-            } else qbh_mlp_gate_up_lut_hvx(
+            } else qbh_mlp_gate_up_decode_row1_hvx(
                 gate_native + (size_t)tile * QBH_HMX_OUTPUT_BYTES,
                 up_native + (size_t)tile * QBH_HMX_OUTPUT_BYTES,
                 middle_native + (size_t)tile * QBH_HMX_OUTPUT_BYTES,
-                swiglu_bytes,
                 (const uint16_t *)buffers->w4u8_silu_lut,
                 buffers->w4u8_gather_scratch);
             if (swiglu_rows == QBH_BLOCK_W4U8_SWIGLU_DECODE_ROWS) {
