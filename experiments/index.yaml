@@ -24,6 +24,20 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0274
+  title: Qwen full-model format and pipeline factorial
+  parent: EXP-0273
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: not_applicable
+  record: docs/experiments/EXP-0274.md
+  approval_ref: 'User confirms full-model factorial and per-mechanism pipeline ablations:
+    好的，我们对齐了。按此实验清单开始实验吧。'
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0273-paper-ablation-baseline
+    started_on: '2026-09-15'
 - id: EXP-0273
   title: 'No-rotation paper ablations: Qwen baseline reproduction'
   parent: EXP-0272

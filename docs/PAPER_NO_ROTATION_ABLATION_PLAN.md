@@ -52,7 +52,7 @@ A1 的主对照不关闭 GEMM 内部 DMA/HMX 重叠、HVX 向量化或已有正�
 
 如果 A1 关闭格式融合需要超出片上存储，应先复用已死亡的缓冲区或限于 FFN 组件，不为了凑齐全模型四格违反物理合同。完整 2×2 未完成前不能把已有顺序消融重命名为因子实验。
 
-A4 不要求同时开辟 FP16/分组量化等新路径。若原生 W4 与 S8 对照的合法累加读出合同不同，应先证明可还原相同整数点积再计时。更快的权重展开不能改变归约尺度或偷偷离线展开成另一种容量配置。
+A4 已取消，不运行 W4/S8 对照。
 
 A5 改变数值合同，不能要求跨格输出相同；每格对自身参考验证。固定权重 codes/scales、输入和非目标边界，明确记账必要的 qparams/LUT 差异。增加固定 token replay 的 kernel 归因，以免自由生成后的 token/KV 差异被当成单个改动的计算收益；保留真实 greedy E2E 作为产品执行成本。
 
@@ -112,3 +112,6 @@ EXP0273 已完成 Qwen 基线复现：1849.6557/47.2787 token/s，输出与封�
 只读核查 Qwen dd1e3a56a5db61877cb160fb60718c4b00c33e98 与 Llama0ae07a92e4d99fd3fd23c89adc3ce4a2b44f7b4f：src/dsp/mlp_u8.c 文件完全相同。qbh_mlp_gate_up_sp2_lut_pipelined_hvx（line183）从已量化 Gate/Up 码查 LUT，表项为 v+32768，packe/packo 直接写 low l / high h+128（line198-200）。prefill 调用处按 HMX tile 地址输出（Qwen block_imp.c4555）；decode high=middle+128（9928），按有效物理行共装两分量。Down 原生指令直接消费 low/high；prefill 两流，decode 共装一流。Qwen llama_fp32_residual.inc14-28 完成 low+256high-32768sum(w)、缩放和 FP32残差累加；Down 输出不是SP2。
 
 这已实现冻结输入码/查表合同下的 SwiGLU+SP2+消费格式生产融合，不是硬件原生SiLU/SP2指令，也不代表零转换指令或零开销。两张U8操作数合计2bytes/元素，不得写成1byte的SP2索引被HMX直接消费。该接口已经是两模型当前方法的一部分，无需再实现一次。此轮仅澄清文档，无新源码/设备测量。
+
+## Full-model clarification and execution
+User confirms B00/B10/B01/B11 are complete-model configurations, not an FFN-only experiment. EXP0274 owns the first Qwen factorial; its enumerated interface and schedule sites apply throughout all28layers, frontend/head remain included. Per-module counters only explain complete Host effects. Preserve intrinsic optimized vector/GEMM/DMA kernels in modular baseline.

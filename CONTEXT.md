@@ -1,3 +1,7 @@
+# Active EXP0274: full-model format × pipeline factorial
+
+User confirmed complete-model experiment list. Read docs/experiments/EXP-0274.md. Native math frozen,FP32 residual,no rotation. Four arms apply Norm/SwiGLU interface and QKV/GateUp/O/Down scheduling interventions throughout28layers; frontend/head included. Gates before timing. Other approved tasks remain queued, not complete.
+
 # EXP0273 A0 closure — remaining ablations already authorized
 
 User approved all remaining table items, excluded W4/S8 and integer residual comparisons, added log2/FP vector softmax. All main arms fixed FP32 residual; no rotation. No repeated permission needed for remaining registered phases. Read PC086 and docs/PAPER_NO_ROTATION_ABLATION_PLAN.md.
