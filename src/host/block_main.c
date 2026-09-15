@@ -3635,6 +3635,7 @@ static int qbh_run_replay_sequence(
             fprintf(stderr, "replay step %" PRIu32 " RPC failed: 0x%08x dsp_status=%u vtcm_peak=%u r4_calls=%u header_failure_site=%u\n",
                     step, (unsigned int)rpc_result, header->dsp_status,
                     header->vtcm_peak_plan_bytes, header->dense_r4_calls, header->projection_failure_step);
+            fprintf(stderr,"header diag repeat=%u logical_m=%u scan=%u chunks=%u bytes=%u abi=%u paper=%u/%u\n",header->repeat_count,header->logical_m,header->scan_mode,header->scan_physical_chunk_count,header->header_bytes,header->abi_version,header->paper_format_disable,header->paper_pipeline_disable);
             if(header->dense_r4_audit_offset) {
                 uint32_t *diag=(uint32_t *)(shared+header->dense_r4_audit_offset+3U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U-128U);
                 fprintf(stderr,"r4 diag a=%08x w=%08x out=%08x sc=%08x mt=%u kt=%u nt=%u\n",diag[0],diag[1],diag[2],diag[3],diag[4],diag[5],diag[6]);

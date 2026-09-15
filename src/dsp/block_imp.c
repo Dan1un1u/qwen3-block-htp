@@ -22203,6 +22203,7 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
         if (header->repeat_count != 1U ||
             header->scan_physical_chunk_count != 1U) {
             header->dsp_status = QBH_BLOCK_STATUS_BAD_HEADER;
+            header->projection_failure_step=__LINE__;
             result = AEE_EBADPARM;
             goto stop_worker;
         }
