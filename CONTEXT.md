@@ -1,3 +1,7 @@
+# Both W16A16 baseline refreshes complete
+
+EXP-0283 and L32-0039 completed and sealed; device released, no active hardware work. Combined report /mnt/d/llm_exp/results/paper-f16-baselines-20260916/REPORT.md. Next: discuss uniform INT16 Down vs SP2, no implementation yet. QwenOPT3 797.801813/12.499573; LlamaOPT3 974.174930/17.472296 token/s. Prior checkpoints below are historical.
+
 # Current checkpoint EXP-0283 complete
 
 W16A16 fair baseline refresh completed and sealed: OPT3 797.801813 prefill /12.499573 decode token/s, M64+15; paired original795.234959/9.067347. Exact912 fullmodel files and448 layer hashes, no PPL/Selected promotion. Read latest_f16f16_fair_baseline_refresh and EXP-0283 results. Qwen device released; L32-0039 owns remaining baseline refresh. Do not rerun completed Qwen work.

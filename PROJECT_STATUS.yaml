@@ -71,7 +71,7 @@ current_scope:
         control_tokens_per_second: 9.067346771514421
         candidate_tokens_per_second: 12.499572879178409
     quality: No new PPL; frozen original token IDs and exact output contracts preserved
-    device_owner: released_to_L32-0039
+    device_owner: released; L32-0039 also completed
   latest_w4u8_integer_rmse_confirmation_result:
     id: EXP-0256
     execution_state: completed
@@ -11936,3 +11936,13 @@ current_scope:
     generalization: supplementary only; not rerun or included
     quality_claim: false
     baseline_promoted: false
+  next_action: Both W16A16 fair baseline refreshes completed. Discuss uniform INT16
+    Down control; no implementation authorized.
+  latest_f16_baseline_synthesis:
+    report: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/REPORT.md
+    a16_discussion: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/A16_DOWN_DISCUSSION.md
+    experiments:
+    - EXP-0283
+    - L32-0039
+    device_owner: null
+    a16_implemented: false
