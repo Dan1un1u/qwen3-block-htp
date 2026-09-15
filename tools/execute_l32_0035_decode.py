@@ -24,7 +24,7 @@ def prepare():
   cfg=read(R.parent/f'package-{key}.json');assert sha(Path(cfg['package'])/'manifest.json')==cfg['manifest_sha256'];write(R/f'package-{key}.json',cfg)
  write(R/'device_owner.json',dict(experiment='L32-0035-C2',exclusive=True,prior_models_verified=str(R.parent)))
 def component():
- preflight();root=read(R/'runtime-l1.json')['remote'];out=[];dest=R/'component';dest.mkdir(exist_ok=False)
+ preflight();root=read(R/'runtime-l1.json')['remote'];out=[];dest=R/'component-a2';dest.mkdir(exist_ok=False)
  for layer in [0,7,15]:
   cfg=read(R/f'package-l{layer}.json');lut=np.fromfile(Path(cfg['package'])/'layer0/silu_up_lut_u16.bin','<u2');assert len(lut)==65536
   total=395264;b=bytearray(total);struct.pack_into('<16I8Q',b,0,0x3250534c,1,total,9,64,1024,1024,2048,0,0,133120,0,0,0,0,0,*([0]*8));b[2048:133120]=lut.tobytes();inp=dest/f'l{layer}-in.bin';reply=dest/f'l{layer}-out.bin';inp.write_bytes(b)
@@ -43,7 +43,7 @@ def stage(count):
  assert adb('shell','test ! -e '+remote,check=False).returncode==0;adb('shell','mkdir -p '+remote)
  for n,h in seal['files'].items():
   p=Path(n);assert sha(p)==h;shutil.copy2(p,d/p.name);adb('push',windows(p),remote+'/'+p.name);assert adb('shell','sha256sum '+remote+'/'+p.name).stdout.split()[0]==h
- adb('shell','chmod 755 '+remote+'/qwen3_block_cli');write(d/'seal.json',seal)
+ adb('shell','chmod 755 '+remote+'/qwen3_block_cli '+remote+'/llama_sp2_cli');write(d/'seal.json',seal)
  (R/f'runtime-l{count}.json').write_text(json.dumps(dict(remote=remote,seal=seal,archive=str(d)),indent=2))
  print('STAGED',count,flush=True)
 def execute(key,arm,tag,repeat=1,audit=False):
