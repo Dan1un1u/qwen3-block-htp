@@ -53,7 +53,11 @@ void qbh_paper_trace_flush(void) {
         FARF(ALWAYS,"QBH_PAPER_TRACE %llu %u %s %u %x",
             (unsigned long long)e->ticks,(unsigned)e->tid,e->name,
             (unsigned)e->kind,(unsigned)e->object);
+        /* Drain the small FARF transport only after all timestamped work.
+         * Diagnostic builds alone pay this delay; timed builds omit it. */
+        if ((i & 15U) == 15U) qurt_timer_sleep(5000U);
     }
+    qurt_timer_sleep(20000U);
 }
 #endif
 
