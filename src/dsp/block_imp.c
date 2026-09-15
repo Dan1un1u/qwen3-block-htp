@@ -2091,8 +2091,10 @@ static int qbh_header_valid(const struct qbh_block_header *header,
           header->w4u8_decode_swiglu_rows!=4U ||
           header->w4u8_decode_swiglu_padding_poison ||
           header->projections[QBH_BLOCK_PROJ_DOWN].lpbq_mode)) ||
-        header->w4f16_decode_opt>2U || header->w4f16_decode_audit>1U ||
-        (header->w4f16_decode_opt && header->variant!=QBH_BLOCK_W4F16) ||
+        /* EXP0283/L32-0039: reuse exact A16 conversion for FP16 weights.
+         * Modes 0/1/2 retain W4F16 meaning; F16F16 mode 3 adds head prefetch. */
+        header->w4f16_decode_opt>(header->variant==QBH_BLOCK_F16F16 ? 3U : 2U) || header->w4f16_decode_audit>1U ||
+        (header->w4f16_decode_opt && header->variant==QBH_BLOCK_W4U8) ||
         header->paper_format_disable > 31U ||
         ((header->paper_format_disable&4U) && ((header->paper_format_disable&3U) || !QBH_FP32_RESIDUAL(header) || QBH_LLAMA_SP2(header)!=8U || header->dense_r3_mode || header->dense_r4_mode)) || header->paper_pipeline_disable > 31U ||
         header->wide_score_mode > 8U || header->prefix_kv_mode > 2U ||
@@ -6944,6 +6946,9 @@ static int qbh_run_generation_head_f16f16(
     const uint32_t group_limit = 8U;
     const uint32_t tile_bytes = k_tiles * QBH_HMX_FP16_TILE_BYTES;
     const uint64_t start = HAP_perf_get_qtimer_count();
+    const uint32_t prefetch = header->w4f16_decode_opt >= 3U;
+    uint8_t *weight_slots[2] = {buffers->expanded_weight, buffers->expanded_weight_alt};
+    struct qbh_dma_aligned_desc_1d descriptor __attribute__((aligned(64)));
     float best_value = -INFINITY;
     uint32_t best_token = 0U;
     uint16_t best_bits = 0U;
@@ -6968,17 +6973,43 @@ static int qbh_run_generation_head_f16f16(
         uint64_t stage;
         if (count > group_limit) count = group_limit;
         stage = HAP_perf_get_qtimer_count();
-        if (qbh_dma_copy(header, buffers->expanded_weight,
-            shared + head->weight_offset + (size_t)n_tile * tile_bytes,
-            count * tile_bytes, 1U) != 0) return -3;
+        const uint32_t slot = prefetch ? (n_tile / group_limit) & 1U : 0U;
+        int dma_result = 0;
+        int dma_active = 0;
+        int hmx_result;
+        if (!prefetch || n_tile == 0U) {
+            if (qbh_dma_copy(header, weight_slots[slot],
+                shared + head->weight_offset + (size_t)n_tile * tile_bytes,
+                count * tile_bytes, 1U) != 0) return -3;
+            header->generation_lm_head_ddr_read_bytes += count * tile_bytes;
+            header->weight_ddr_read_bytes += count * tile_bytes;
+            ++header->weight_dma_descriptor_count;
+        }
         header->generation_lm_head_weight_dma_ticks += HAP_perf_get_qtimer_count() - stage;
-        header->generation_lm_head_ddr_read_bytes += count * tile_bytes;
-        header->weight_ddr_read_bytes += count * tile_bytes;
-        ++header->weight_dma_descriptor_count;
         stage = HAP_perf_get_qtimer_count();
-        if (qbh_hmx_submit(worker, QBH_BLOCK_HMX_FP16,
-            buffers->hmx_activation, buffers->expanded_weight, buffers->scale_or_bias,
-            buffers->hmx_output, 1U, k_tiles, count) != 0) return -5;
+        qbh_hmx_start(worker, QBH_BLOCK_HMX_FP16,
+            buffers->hmx_activation, weight_slots[slot], buffers->scale_or_bias,
+            buffers->hmx_output, 1U, k_tiles, count);
+        if (prefetch && n_tile + count < n_tiles) {
+            uint32_t next_count = n_tiles - n_tile - count;
+            if (next_count > group_limit) next_count = group_limit;
+            dma_result = qbh_dma_start_weight_prefetch(&descriptor,
+                weight_slots[slot ^ 1U],
+                shared + head->weight_offset + (size_t)(n_tile + count) * tile_bytes,
+                next_count * tile_bytes);
+            if (dma_result == 0) {
+                dma_active = 1;
+                ++header->generation_lm_head_prefetch_count;
+                header->generation_lm_head_ddr_read_bytes += next_count * tile_bytes;
+                header->weight_ddr_read_bytes += next_count * tile_bytes;
+                ++header->weight_dma_descriptor_count;
+            }
+        }
+        hmx_result = qbh_hmx_wait(worker);
+        if (hmx_result != 0 || dma_result != 0) {
+            if (dma_active) (void)qbh_dma_wait_weight_prefetch(&descriptor);
+            return -5;
+        }
         header->generation_lm_head_hmx_ticks += HAP_perf_get_qtimer_count() - stage;
         ++header->generation_lm_head_command_count;
         ++header->hmx_command_count;
@@ -6987,6 +7018,12 @@ static int qbh_run_generation_head_f16f16(
         qbh_generation_hvx_argmax_group(header, qbh_generation_histogram(header,buffers), (const __fp16 *)buffers->hmx_output,
             n_tile, count, &best_value, &best_token, &best_bits);
         header->generation_lm_head_argmax_ticks += HAP_perf_get_qtimer_count() - stage;
+        if (dma_active) {
+            stage = HAP_perf_get_qtimer_count();
+            dma_result = qbh_dma_wait_weight_prefetch(&descriptor);
+            header->generation_lm_head_weight_dma_ticks += HAP_perf_get_qtimer_count() - stage;
+            if (dma_result != 0) return -3;
+        }
     }
     if (!isfinite(best_value)) return -6;
     header->generation_selected_token_id = best_token;
@@ -17289,7 +17326,7 @@ static int qbh_scan_softmax_f16_exact_batch(struct qbh_block_header *h,
     const uint32_t plane=QBH_BLOCK_M*padded,valid=past+1U;
     const float scale=QBH_MODEL_ATTENTION_SCALE;
     if(valid>128U || padded>128U) return -1;
-    if(h->w4f16_decode_opt==2U)
+    if(h->w4f16_decode_opt>=2U)
         qbh_hvx_zero_aligned_bytes(probability,QBH_ATTENTION_Q_HEADS_PER_GROUP*plane*sizeof(__fp16));
     else memset(probability,0,QBH_ATTENTION_Q_HEADS_PER_GROUP*plane*sizeof(__fp16));
     for(uint32_t head=0;head<QBH_ATTENTION_Q_HEADS_PER_GROUP;++head) {
@@ -17494,7 +17531,7 @@ static int qbh_scan_f16_attention(
             HAP_perf_get_qtimer_count() - start;
 
         start = HAP_perf_get_qtimer_count();
-        if(header->variant==QBH_BLOCK_W4F16 && header->w4f16_decode_opt && logical_rows==1U && padded_tokens<=128U) {
+        if(header->variant!=QBH_BLOCK_W4U8 && header->w4f16_decode_opt && logical_rows==1U && padded_tokens<=128U) {
             if(qbh_scan_softmax_f16_exact_batch(header,plane_a,plane_c,
                 (__fp16 *)buffers->middle,past_tokens,padded_tokens)!=0)return -1;
         } else qbh_scan_softmax_f16(
@@ -17612,7 +17649,7 @@ static int qbh_scan_f16_attention(
             HAP_perf_get_qtimer_count() - start;
     }
 
-    if(header->variant==QBH_BLOCK_W4F16 && header->w4f16_decode_opt==2U && logical_rows==1U)
+    if(header->variant!=QBH_BLOCK_W4U8 && header->w4f16_decode_opt>=2U && logical_rows==1U)
         qbh_hvx_copy_aligned_bytes(buffers->attention_concat,buffers->q,
             QBH_BLOCK_M*QBH_BLOCK_HIDDEN*sizeof(__fp16));
     else memcpy(
