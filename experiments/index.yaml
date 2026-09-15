@@ -1,6 +1,14 @@
 schema_version: 1
 project: llama32-htp
 experiments:
+- id: L32-0033
+  title: FP32 HVX softmax versus retained Llama log2
+  execution_state: running
+  record: docs/experiments/L32-0033.md
+  approval_ref: Standing user-approved A9 paper campaign
+  runtime:
+    source_branch: codex/llama32-no-rotation
+    source_worktree: /home/daniuniu/work/llama32-htp
 - id: L32-0032
   title: Ordinary A8 versus SP2 with fixed FP32 residual and shared pipeline
   execution_state: completed

@@ -6,8 +6,8 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: null
-  next_experiment_number: 33
+  active_experiment: L32-0033
+  next_experiment_number: 34
   maximum_running_experiments: 1
   remote_sync_required: true
 source_worktrees:
@@ -1365,8 +1365,7 @@ current_scope:
           - 0.9870875472223184
           - 0.9941624837523004
   current_handoff: docs/SESSION_HANDOFF_L32_0032.md
-  next_direction: A9 FP32 HVX softmax then A8 extra supported shape; Qwen EXP0278
-    owns device
+  next_direction: L32-0033 A9 FP32vector softmax, QwenEXP0278 ownsdevice
   latest_paper_pipeline_result:
     id: L32-0030
     execution_state: completed
