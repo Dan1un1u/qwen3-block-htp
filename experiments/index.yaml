@@ -35,7 +35,7 @@ experiments:
   approval_ref: Standing user-approved A5 paper campaign
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0276-sp2-decode-stream-ablation
+    source_branch: codex/exp-0277-a8-sp2-fp32-cost
     started_on: '2026-09-15'
 - id: EXP-0276
   title: SP2 decode independent streams versus physical-row copacking
