@@ -9,7 +9,7 @@
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
 #ifdef QBH_MODEL_LLAMA32
-#define QBH_BLOCK_ABI_VERSION UINT32_C(130)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(131)
 #define QBH_LLAMA_SP2(h) ((h)->llama_sp2_mode)
 #define QBH_FP32_RESIDUAL(h) ((h)->llama_fp32_residual)
 #else
@@ -921,6 +921,8 @@ struct qbh_block_header {
     uint32_t prefix_kv_mode, prefix_layer_index;
     /* Immutable seed metadata, [layer][K/V][head][channel], all U8. */
     uint8_t prefix_kv_u8[28][2048];
+    uint32_t paper_format_disable;
+    uint32_t paper_pipeline_disable;
     uint32_t wide_score_mode; /* 0 legacy; 1 HVX wide; 2 untimed scalar wide oracle. */
 #ifdef QBH_MODEL_LLAMA32
     uint32_t llama_sp2_mode;

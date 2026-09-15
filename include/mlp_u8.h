@@ -85,4 +85,9 @@ void qbh_mlp_requant_u8_hvx(uint8_t *values, size_t elements,
 
 void qbh_mlp_gate_up_lut_f16_hvx(const uint8_t *, const uint8_t *, uint16_t *, size_t, const uint16_t *, uint8_t *);
 
+
+/* EXP0274: optimized modular SP2 interface. Scratch is4096B VTCM. */
+void qbh_mlp_gate_up_sp2_compact_hvx(const uint8_t *gate,const uint8_t *up,
+    uint8_t *low,uint8_t *high,size_t elements,const uint16_t *lut,
+    uint8_t *gather_scratch,uint8_t *compact_scratch);
 #endif
