@@ -1,3 +1,7 @@
+# Current checkpoint 2026-09-15
+
+EXP0280 completed: optimized native row1 retained. See authoritative latest_decode_native_optimization and docs/experiments/EXP-0280.md for exact paired values. L32-0035 C2 owns device. Follow-on authorized softmax then bounded generalization remain.
+
 # Active EXP0280 C2 pending hardware
 
 Read docs/experiments/EXP-0280.md latest checkpoint. C1formal complete, tiny dual-gather gain; inactive-row contents confound residual format comparison. C2 native live-row masked gather compiled at e633e4e, not yet deployed. L32-0035 owns device. All tasks remain active: finish both-modeldecode, optimizeLlama log2, boundedgeneralization. Do not rerun oldcampaign.

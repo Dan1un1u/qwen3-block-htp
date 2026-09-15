@@ -27,9 +27,9 @@ experiments:
 - id: EXP-0280
   title: Decode native producer diagnosis and exact layout optimization
   parent: EXP-0279
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: pending
   record: docs/experiments/EXP-0280.md
   approval_ref: User 2026-09-15 explicitly requests decode format optimization, Llama
@@ -39,6 +39,52 @@ experiments:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0280-decode-native-layout
     started_on: '2026-09-15'
+    completed_on: '2026-09-15'
+  evidence:
+    id: EXP-0280
+    execution_state: completed
+    local_gate: pass
+    evidence_validity: valid
+    measured_source: e633e4e33f4e0a24e0c800a6db0c7f66ecf85173
+    source_closure: 6bd7fed3712366125c2e9699c4b960f8d648aa80
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0280
+    evidence_ledger_sha256: 23dce97ff0d19c3d04aa69dd826a7992633f8ce64d7362e74732983042803456
+    latest_candidate: native_row1
+    performance:
+      OPT:
+        prefill: 1851.0890965564752
+        decode: 47.376479978389625
+      ORIGINAL:
+        prefill: 1850.6149513675623
+        decode: 47.17479123709914
+      NORM_COMPACT:
+        prefill: 1837.715788923796
+        decode: 47.29700807332328
+    effects:
+      prefill:
+        OPT_over_ORIGINAL:
+          ratio: 0.9997438560954228
+          ci95:
+          - 0.9956377384338706
+          - 1.00388479217203
+        NORM_COMPACT_over_OPT:
+          ratio: 1.0072771359495751
+          ci95:
+          - 1.0054173743947366
+          - 1.009295338122103
+      decode:
+        OPT_over_ORIGINAL:
+          ratio: 0.9957428508537889
+          ci95:
+          - 0.9919708703431102
+          - 0.9998703158663232
+        NORM_COMPACT_over_OPT:
+          ratio: 1.0016802734105958
+          ci95:
+          - 1.0005329479978924
+          - 1.0029516089451553
+    quality_claim: false
+    baseline_promoted: false
 - id: EXP-0279
   title: Supported longer KV complete-model pipeline ablation
   parent: EXP-0278
