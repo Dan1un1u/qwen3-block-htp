@@ -6,15 +6,15 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0036
-  next_experiment_number: 37
+  active_experiment: L32-0037
+  next_experiment_number: 38
   maximum_running_experiments: 1
   remote_sync_required: true
 source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: ed716bab8af844743fcfd93a83e731d4a2759825
+    recorded_head: f7d61c62dbd4fb13354a96a8576b8f180e3b5ddc
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -1715,6 +1715,76 @@ current_scope:
           ci95:
           - 0.9999921298853339
           - 1.0026929901594308
+    quality_claim: false
+    baseline_promoted: false
+  latest_exact_log2_optimization:
+    id: L32-0036
+    execution_state: completed
+    local_gate: pass
+    evidence_validity: valid
+    source_closure: f7d61c62dbd4fb13354a96a8576b8f180e3b5ddc
+    measured_source: 0f7d7e9943a1e007e8457014f31c1a8c7aa4dc35
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0036
+    evidence_ledger_sha256: 5a672b19106371c10530c3e5a448a4ed2bf7763f9330947b074b9546d6f65123
+    working_config:
+      wide_score: 8
+      format_mask: 0
+      pipeline_mask: 0
+      sp2: 8
+      fp32_residual: 1
+      rotation: false
+    performance:
+      LOG2:
+        prefill: 2163.689561060673
+        decode: 45.28426664256948
+      FAST:
+        prefill: 2337.878068207524
+        decode: 45.825512599619714
+      FP:
+        prefill: 2279.655729355305
+        decode: 45.73560306598168
+    effects:
+      prefill:
+        FAST_over_LOG2:
+          ratio: 0.9254929033658271
+          ci95:
+          - 0.9203774225335516
+          - 0.9297203235717207
+        FAST_over_FP:
+          ratio: 0.9750960755207997
+          ci95:
+          - 0.9702816395354887
+          - 0.978593428318567
+        FP_over_LOG2:
+          ratio: 0.9491299643181524
+          ci95:
+          - 0.9468118198773631
+          - 0.9515427542332164
+      decode:
+        FAST_over_LOG2:
+          ratio: 0.9881889819372204
+          ci95:
+          - 0.9841430582434486
+          - 0.9912787372635457
+        FAST_over_FP:
+          ratio: 0.998038002664071
+          ci95:
+          - 0.9948777304857016
+          - 1.0009434126636474
+        FP_over_LOG2:
+          ratio: 0.9901316175330394
+          ci95:
+          - 0.9877373702183398
+          - 0.9924653256287171
+    component:
+      m64-p0-random:
+        LOG2: 173.09187500000002
+        FAST: 76.79406250000001
+        FP: 105.450625
+      m1-p64-random:
+        LOG2: 3.528541666666667
+        FAST: 2.029479166666667
+        FP: 2.1659375
     quality_claim: false
     baseline_promoted: false
 storage:

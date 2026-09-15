@@ -1,5 +1,9 @@
 # Current checkpoint
 
+L32-0036 completed and sealed. Latest working runtime native-row1 plus exact corrected-NR log2 mode8, no rotations. L32-0037 registered CPU preparation; Q EXP0281 owns device until release.
+
+# Current checkpoint
+
 L32-0035 completed and sealed: optimized native row1 retained. L32-0036 registered for exact log2 optimization; owns device next. Q EXP0281 only CPU preparation until release. No full factorial or PPL.
 
 # Active L32-0035: decode optimization
