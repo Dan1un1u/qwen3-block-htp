@@ -2825,7 +2825,7 @@ void qbh_attention_u8_requant_softmax_dynamic(
     uint32_t valid_tokens, uint32_t padded_tokens,
     const struct qbh_attention_config *config,
     struct qbh_attention_u8_telemetry *telemetry,
-    uint32_t use_hvx_tile4, uint32_t verify_hvx_tile4, uint32_t wide_score_mode, uint8_t *fp_scratch) {
+    uint32_t use_hvx_tile4, uint32_t verify_hvx_tile4, uint32_t wide_score_mode, void *fp_scratch) {
     if(wide_score_mode==7U) {
         qbh_attention_fp32_softmax_native(score_tiles,probability_tiles,
             QBH_ATTENTION_Q_HEADS_PER_GROUP,0U,query_rows,past_tokens,

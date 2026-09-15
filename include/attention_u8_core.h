@@ -220,7 +220,7 @@ void qbh_attention_u8_requant_softmax_dynamic(
     uint32_t valid_tokens, uint32_t padded_tokens,
     const struct qbh_attention_config *config,
     struct qbh_attention_u8_telemetry *telemetry,
-    uint32_t use_hvx_tile4, uint32_t verify_hvx_tile4, uint32_t wide_score_mode, uint8_t *fp_scratch);
+    uint32_t use_hvx_tile4, uint32_t verify_hvx_tile4, uint32_t wide_score_mode, void *fp_scratch);
 
 /* EXP-0161 segmented decode helper.  It converts a histogram of raw HMX QK
  * bytes into the exact per-raw-byte probability map used by the existing
