@@ -68,6 +68,7 @@ def run(count,opt,repeat,tag,audit=False,package=None):
  runtime=read(R/f'runtime-l{count}.json');remote=runtime['remote'];d=R/tag;d.mkdir(parents=True,exist_ok=False)
  e=dict(LD_LIBRARY_PATH=remote,DSP_LIBRARY_PATH=remote,ADSP_LIBRARY_PATH=remote,QBH_VERTICAL_SLICE='1',QBH_REPLAY_SEQUENCE='1',QBH_SCAN_MODE='prefill',QBH_LOGICAL_M='64',QBH_KV_CACHE_LENGTH='0',QBH_KV_CACHE_CAPACITY='80',QBH_KV_CACHE_LAYOUT='hmx_native_f16',QBH_F16F16_OPT=str(opt))
  if audit and opt:e['QBH_W4F16_DECODE_AUDIT']='1'
+ if audit and count==COUNT:e['QBH_GENERATION_BOUNDARY_AUDIT']='1'
  if audit:
   target=remote+'/'+tag.replace('/','_');adb('shell','mkdir -p '+target)
   e['QBH_GENERATION_AUDIT_DIR' if count==COUNT else 'QBH_REPLAY_DUMP_DIR']=target
@@ -90,7 +91,7 @@ def run(count,opt,repeat,tag,audit=False,package=None):
   assert q['vtcm_requested_bytes']==q['vtcm_acquired_bytes']==8388608 and q['vtcm_peak_plan_bytes']<=8388608
   assert all(q[k]==0 for k in ['intermediate_ddr_read_bytes','intermediate_ddr_write_bytes','intermediate_spill_fill_count','w4f16_decode_conversion_audit_mismatches'])
   assert q['w4f16_decode_opt']==opt
- out=dict(tag=tag,opt=opt,repeat=repeat,count=count,profiles=len(ps),prefill_ns=statistics.mean(q['host_wall_ns'] for q in ps if q['mode']=='prefill'),decode_ns=statistics.mean(q['host_wall_ns'] for q in ps if q['mode']=='decode'),output_hashes=[q.get('output_hash') for q in ps],selected_codes=[q['selected_logit_half_bits'] for q in rs if 'selected_logit_half_bits' in q],token_sequences=[q['token_ids'] for q in rs if q.get('generation_sequence_complete')],dump_hashes={p.name:sha(p) for p in d.glob('*.bin') if p.name!='eval.bin'},physical_pass=True)
+ out=dict(tag=tag,opt=opt,repeat=repeat,count=count,profiles=len(ps),prefill_ns=statistics.mean(q['host_wall_ns'] for q in ps if q['mode']=='prefill'),decode_ns=statistics.mean(q['host_wall_ns'] for q in ps if q['mode']=='decode'),output_hashes=[q.get('output_hash') for q in ps],selected_codes=[q['selected_logit_half_bits'] for q in rs if 'selected_logit_half_bits' in q],token_sequences=[q['token_ids'] for q in rs if q.get('generation_sequence_complete')],layer_output_hashes=[[q[f'slice_layer_{i}']['output_hash'] for i in range(count)] for q in ps],dump_hashes={p.name:sha(p) for p in d.glob('*.bin') if p.name!='eval.bin'},physical_pass=True)
  if count==COUNT:assert len(ps)==repeat*16 and len(out['selected_codes'])==repeat*16 and len(out['token_sequences'])==repeat
  write(d/'validated.json',out);print('PASS',tag,'pre_us',out['prefill_ns']/1000,'dec_us',out['decode_ns']/1000,flush=True)
  return out
@@ -98,7 +99,7 @@ def run(count,opt,repeat,tag,audit=False,package=None):
 def compare(tags):
  zs=[read(R/t/'validated.json') for t in tags];a=zs[0]
  for b in zs[1:]:
-  for k in ['output_hashes','selected_codes','token_sequences','dump_hashes']:assert a[k]==b[k],(tags,k)
+  for k in ['output_hashes','selected_codes','token_sequences','dump_hashes','layer_output_hashes']:assert a[k]==b[k],(tags,k)
  write(R/(tags[0].replace('/','_')+'-paired-gate.json'),dict(pass_all=True,tags=tags,bytes_exact=len(a['dump_hashes']),profiles=a['profiles']))
  print('EXACT_PAIRED_PASS',tags,flush=True)
 if __name__=='__main__':

@@ -4147,7 +4147,7 @@ static int qbh_run_generation_sequence(
             header->intermediate_spill_fill_count == 0U &&
             header->boundary_ddr_write_bytes ==
                 (header->generation_boundary_audit_enabled != 0U
-                     ? QBH_BLOCK_HIDDEN*(QBH_FP32_RESIDUAL(header)?68U:1U) : 0U) &&
+                     ? QBH_BLOCK_HIDDEN*(QBH_FP32_RESIDUAL(header)?68U:qbh_generation_f16f16_enabled(header->generation_mode)?4U:1U) : 0U) &&
             state->completed_step_count == step + 1U;
         for (uint32_t slice_index = 0U;
              slice_index < QBH_VERTICAL_SLICE_LAYER_COUNT;
@@ -4164,6 +4164,20 @@ static int qbh_run_generation_sequence(
                 header->slice_profiles[slice_index]
                         .hidden_ddr_write_bytes != 0U) {
                 step_pass = 0;
+            }
+        }
+        if (qbh_generation_f16f16_enabled(header->generation_mode) &&
+            header->generation_boundary_audit_enabled && audit_root && audit_root[0]) {
+            char name[96];
+            snprintf(name,sizeof(name),"generation_hidden_norm_step%02u_f16.bin",step);
+            if(qbh_write_named_tensor(audit_root,name,shared+header->output_offset,
+                2U*QBH_BLOCK_HIDDEN*sizeof(uint16_t))) step_pass=0;
+            for(uint32_t li=0;li<QBH_VERTICAL_SLICE_LAYER_COUNT;++li) {
+                const struct qbh_decode_layer_state *cs=&state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER+li];
+                snprintf(name,sizeof(name),"generation_step%02u_layer%02u_k_f16.bin",step,li);
+                if(qbh_write_named_tensor(audit_root,name,shared+cs->k_offset,cs->k_bytes))step_pass=0;
+                snprintf(name,sizeof(name),"generation_step%02u_layer%02u_v_f16.bin",step,li);
+                if(qbh_write_named_tensor(audit_root,name,shared+cs->v_offset,cs->v_bytes))step_pass=0;
             }
         }
         if (w4u8 != 0U &&
@@ -5563,7 +5577,8 @@ int main(int argc, char **argv) {
             QBH_BLOCK_GENERATION_GREEDY_F16F16 ||
         generation_boundary_audit_enabled > 1U ||
         (generation_boundary_audit_enabled != 0U &&
-         !qbh_generation_w4u8_enabled(generation_mode)) ||
+         !qbh_generation_w4u8_enabled(generation_mode) &&
+         !qbh_generation_f16f16_enabled(generation_mode)) ||
         (generation_mode != QBH_BLOCK_GENERATION_DISABLED &&
          ((!qbh_generation_f16f16_enabled(generation_mode) &&
             !qbh_generation_w4f16_enabled(generation_mode) &&
