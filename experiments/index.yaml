@@ -35,7 +35,7 @@ experiments:
   approval_ref: Standing user-approved A3 paper campaign
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0275-pipeline-mechanism-ablation
+    source_branch: codex/exp-0276-sp2-decode-stream-ablation
     started_on: '2026-09-15'
 - id: EXP-0275
   title: Individual pipeline knockouts and layer scaling
