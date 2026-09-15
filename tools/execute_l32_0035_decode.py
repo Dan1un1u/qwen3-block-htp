@@ -27,7 +27,7 @@ def component():
  preflight();root=read(R/'runtime-l1.json')['remote'];out=[];dest=R/'component';dest.mkdir(exist_ok=False)
  for layer in [0,7,15]:
   cfg=read(R/f'package-l{layer}.json');lut=np.fromfile(Path(cfg['package'])/'layer0/silu_up_lut_u16.bin','<u2');assert len(lut)==65536
-  total=395264;b=bytearray(total);struct.pack_into('<16I8Q',b,0,0x3250534c,1,total,7,64,1024,1024,2048,0,0,133120,0,0,0,0,0,*([0]*8));b[2048:133120]=lut.tobytes();inp=dest/f'l{layer}-in.bin';reply=dest/f'l{layer}-out.bin';inp.write_bytes(b)
+  total=395264;b=bytearray(total);struct.pack_into('<16I8Q',b,0,0x3250534c,1,total,9,64,1024,1024,2048,0,0,133120,0,0,0,0,0,*([0]*8));b[2048:133120]=lut.tobytes();inp=dest/f'l{layer}-in.bin';reply=dest/f'l{layer}-out.bin';inp.write_bytes(b)
   adb('push',windows(inp),root+'/row1-gather-input.bin');z=adb('shell',f'cd {root} && LD_LIBRARY_PATH={root} DSP_LIBRARY_PATH={root} ADSP_LIBRARY_PATH={root} ./llama_sp2_cli row1-gather-input.bin row1-gather-output.bin',check=False)
   (dest/f'l{layer}-stdout.txt').write_text(z.stdout);(dest/f'l{layer}-stderr.txt').write_text(z.stderr);write(dest/f'l{layer}-exit.json',dict(returncode=z.returncode));assert z.returncode==0,(z.stdout,z.stderr)
   adb('pull',root+'/row1-gather-output.bin',windows(reply));raw=reply.read_bytes();got=np.frombuffer(raw,'u1',offset=133120,count=262144).reshape(4,65536);lo=(lut&255).astype('u1');hi=(lut>>8).astype('u1');assert all(np.array_equal(got[i],v) for i,v in enumerate([lo,hi,lo,hi]))
