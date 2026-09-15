@@ -3219,6 +3219,8 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U64(f16_cache_native_append_update_ticks);
     QBH_REPLAY_PROFILE_U64(u8_attention_qk_hmx_ticks);
     QBH_REPLAY_PROFILE_U32(wide_score_mode);
+    QBH_REPLAY_PROFILE_U32(paper_format_disable);
+    QBH_REPLAY_PROFILE_U32(paper_pipeline_disable);
 #if defined(QBH_MODEL_LLAMA32) || defined(QBH_NATIVE_SP2)
     QBH_REPLAY_PROFILE_U32(fp32_residual);
 #endif
@@ -6978,6 +6980,11 @@ int main(int argc, char **argv) {
     if(header->u8_prefill_opt>3U || (header->u8_prefill_opt &&
        (variant!=QBH_BLOCK_W4U8 || header->sp2_mode || dense_r3_mode))) return 2;
 #endif
+    header->paper_format_disable=getenv("QBH_PAPER_FORMAT_DISABLE")?(uint32_t)atoi(getenv("QBH_PAPER_FORMAT_DISABLE")):0U;
+    header->paper_pipeline_disable=getenv("QBH_PAPER_PIPELINE_DISABLE")?(uint32_t)atoi(getenv("QBH_PAPER_PIPELINE_DISABLE")):0U;
+    if(header->paper_format_disable>3U || header->paper_pipeline_disable>31U ||
+       ((header->paper_format_disable || header->paper_pipeline_disable) &&
+        (!qbh_host_fp32_residual() || header->sp2_mode!=8U || dense_r3_mode))) return 2;
     header->wide_score_mode=wide_score_mode;
     header->dense_r4_mode=getenv("QBH_DENSE_R4") ? (uint32_t)atoi(getenv("QBH_DENSE_R4")) : 0U;
     header->dense_r4_audit_offset=(uint32_t)dense_r4_audit_offset;

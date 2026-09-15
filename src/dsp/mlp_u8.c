@@ -261,3 +261,28 @@ void qbh_mlp_gate_up_lut_f16_hvx(const uint8_t *gate,const uint8_t *up,
     }
     asm volatile("barrier" ::: "memory");
 }
+
+/* EXP0274: producer publishes compact reconstruction values. The consumer
+ * separately packs native operands. Same LUT/gathers, no scalar fallback,
+ * no native-to-generic roundtrip,4096B already-idle VTCM scratch per worker. */
+__attribute__((noinline)) void qbh_mlp_gate_up_sp2_compact_hvx(
+    const uint8_t *gate,const uint8_t *up,uint8_t *low,uint8_t *high,
+    size_t elements,const uint16_t *lut,uint8_t *gather_scratch,uint8_t *compact) {
+    HVX_Vector *scratch=(HVX_Vector *)gather_scratch;
+    for(size_t off=0;off<elements;off+=128U) {
+        HVX_VectorPair g=Q6_Wuh_vunpack_Vub(*(const HVX_Vector *)(gate+off));
+        HVX_VectorPair u=Q6_Wuh_vunpack_Vub(*(const HVX_Vector *)(up+off));
+        qbh_mlp_gather_half_issue(Q6_V_lo_W(g),Q6_V_lo_W(u),lut,scratch);
+        qbh_mlp_gather_half_issue(Q6_V_hi_W(g),Q6_V_hi_W(u),lut,scratch+1);
+        *(HVX_Vector *)(compact+2U*off)=*(volatile HVX_Vector *)scratch;
+        *(HVX_Vector *)(compact+2U*off+128U)=*(volatile HVX_Vector *)(scratch+1);
+    }
+    asm volatile("barrier":::"memory");
+    for(size_t off=0;off<elements;off+=128U) {
+        HVX_Vector a=*(const HVX_Vector *)(compact+2U*off);
+        HVX_Vector b=*(const HVX_Vector *)(compact+2U*off+128U);
+        *(HVX_Vector *)(low+off)=Q6_Vb_vpacke_VhVh(b,a);
+        *(HVX_Vector *)(high+off)=Q6_Vb_vpacko_VhVh(b,a);
+    }
+    asm volatile("barrier":::"memory");
+}
