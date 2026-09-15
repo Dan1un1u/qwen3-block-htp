@@ -40,6 +40,11 @@ for model in ['Qwen','Llama']:
   for a,v in z['trajectories']['greedy']['arms'].items():lines.append(f'| {model} | {z["experiment"]} {a} | M64+15 | {v["prefill"]["e2e_tps"]:.2f} | {v["decode"]["e2e_tps"]:.2f} |')
  z=data[model]['A8']
  for a,v in z['arms'].items():lines.append(f'| {model} | {z["experiment"]} {a} | M64+33 | {v["prefill"]["e2e_tps"]:.2f} | {v["decode"]["e2e_tps"]:.2f} |')
+lines += ['', '[全部实验完整模块表合订本](MODULE_TABLES.md)']
+with (R/'MODULE_TABLES.md').open('x') as f:
+ f.write('# Complete module tables, original paired scopes retained\n\n')
+ for model in ['Qwen','Llama']:
+  for phase,p in paths[model].items():f.write('\n\n---\n\n# '+model+' '+phase+'\n\n'+(p/'REPORT.md').read_text())
 with (R/'REPORT.md').open('x') as f:f.write('\n'.join(lines)+'\n')
 with (R/'EVIDENCE_INDEX.json').open('x') as f:json.dump(dict(campaign_complete=True,stage_bindings=bindings,canceled=['W4-to-S8 comparison','integer-residual comparison'],unavailable=['complete FARF timeline/utilization'],quality_claim=False,baseline_promoted=False),f,indent=2)
 print('CONSOLIDATED',R,flush=True)
