@@ -5,7 +5,7 @@ import numpy as np,torch
 import llama32_fp32_residual as ref
 import llama_u8_reference as u8
 from llama_reference import sha256 as sha
-S=Path('/home/daniuniu/work/llama32-htp');R=Path('/mnt/d/llm_exp/results/llama32-htp/l32-0037');P=Path('/mnt/d/llm_exp/models/llama32-htp/l32-0037/full-a01');O=P.parent.parent/'l32-0034/full-a01';D=R/'accelerated-oracle'
+S=Path('/home/daniuniu/work/llama32-htp');R=Path('/mnt/d/llm_exp/results/llama32-htp/l32-0037');P=Path('/mnt/d/llm_exp/models/llama32-htp/l32-0037/full-a01');O=P.parent.parent/'l32-0034/full-a01';D=R/'accelerated-oracle-a2'
 def read(p):return json.loads(p.read_text())
 def write(p,z):
  p.parent.mkdir(parents=True,exist_ok=True)
@@ -18,7 +18,7 @@ def projection(a,p,name,n,k,iq,oq,cv):
  key=(str(p),name,n,k,tuple(sorted(iq.items())),tuple(sorted(oq.items())))
  if key not in cache:
   w,ws=u8._cached_w4_projection(str(p.resolve()),name,n,k);lo,hi=u8.projection_bias_words(w,ws,iq,oq);sums=w.astype('i4').sum(1,dtype='i8');cache[key]=(torch.from_numpy(w.T.copy()).cuda(),sums,lo,hi)
- w,sums,lo,hi=cache[key];a=np.ascontiguousarray(a,dtype='u1');rows=len(a);m=(rows+15)//16*16;x=np.zeros((m,k),'i1');x[:rows]=(a.astype('i2')-128).astype('i1');v=torch._int_mm(torch.from_numpy(x).cuda(),w).cpu().numpy()[:rows].astype('i8')+128*sums[None];assert np.max(np.abs(v))<2**31
+ w,sums,lo,hi=cache[key];a=np.ascontiguousarray(a,dtype='u1');rows=len(a);m=max(32,(rows+15)//16*16);x=np.zeros((m,k),'i1');x[:rows]=(a.astype('i2')-128).astype('i1');v=torch._int_mm(torch.from_numpy(x).cuda(),w).cpu().numpy()[:rows].astype('i8')+128*sums[None];assert np.max(np.abs(v))<2**31
  return cv.convert(v,lo,hi)
 def rawdot(a,w):
  key=id(w)
