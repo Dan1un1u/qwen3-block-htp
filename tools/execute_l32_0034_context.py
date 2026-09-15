@@ -51,6 +51,8 @@ def one(arm,tag,repeat):
  rs=records(z.stdout);ps=[v for v in rs if v.get('record')=='generation_profile'];assert len(ps)==repeat*STEPS,(tag,len(ps));ts=[v for v in rs if 'selected_logit_half_bits' in v];assert [v['selected_token_id'] for v in ts]==teacher['ids']*repeat;assert [v['selected_logit_half_bits'] for v in ts]==teacher['codes']*repeat
  for i,v in enumerate(ps):
   step=i%STEPS;assert v['block_invocation_count']==16 and v['llama_fp32_residual']==1
+  assert v['generation_step']==step and v['valid_length']==64+step and v['logical_m']==(64 if step==0 else 1)
+  assert v['wide_score_mode']==0 and v['scan_cache_append_mismatch_count']==0
   assert v['paper_format_disable']==0 and v['paper_pipeline_disable']==ARMS[arm]
   assert v['vtcm_requested_bytes']==v['vtcm_acquired_bytes']==8388608 and v['vtcm_peak_plan_bytes']<=8388608
   assert all(v[k]==0 for k in ['intermediate_ddr_read_bytes','intermediate_ddr_write_bytes','intermediate_spill_fill_count','ledger_unattributed_ticks','dense_r3_mode','dense_r4_mode'])
