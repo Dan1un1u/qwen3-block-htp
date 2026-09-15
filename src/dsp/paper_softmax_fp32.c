@@ -31,7 +31,7 @@ static inline __attribute__((always_inline)) HVX_Vector exptile(HVX_Vector raw,H
     HVX_VectorPred live=Q6_Q_vcmp_gt_VwVw(Q6_V_vsplat_R((int32_t)valid),*(const HVX_Vector *)lanes);
     return Q6_V_vmux_QVV(live,e,Q6_V_vzero());
 }
-static inline __attribute__((always_inline)) void publish(HVX_Vector e,HVX_Vector inv,uint8_t *dst,float *dump){
+static inline __attribute__((always_inline)) HVX_Vector publish(HVX_Vector e,HVX_Vector inv,uint8_t *dst,float *dump){
     HVX_Vector p=mul(e,inv);
     if(dump)*(HVX_Vector *)dump=p;
     /* Nonnegative round-half-up, exactly the retained probability U8 boundary. */
@@ -40,6 +40,7 @@ static inline __attribute__((always_inline)) void publish(HVX_Vector e,HVX_Vecto
     uint32_t shift=(uintptr_t)dst&127U;
     HVX_VectorPred pred=Q6_Q_and_QQn(Q6_Q_vsetq2_R(shift+32U),Q6_Q_vsetq_R(shift));
     Q6_vmem_QRIV(pred,(HVX_Vector *)dst,Q6_V_vlalign_VVR(b,b,shift));
+    return w;
 }
 /* Separate phases keep tensor values in explicit caller-owned VTCM scratch.
  * This also bounds register pressure of the inlined vendor exponent polynomial. */
@@ -63,14 +64,23 @@ __attribute__((noinline)) static float rowsum(const float *tmp,uint32_t tiles){
     for(uint32_t t=0;t<tiles;t++)v=Q6_Vsf_vadd_VsfVsf(v,*(const HVX_Vector *)(tmp+t*32));
     union{float f;int32_t i;}u={.i=Q6_R_vextract_VR(sum32(v),0)};return u.f;
 }
-__attribute__((noinline)) static void rowpublish(const float *tmp,uint8_t *dst,float *dump,uint32_t tiles,float inverse){
-    for(uint32_t t=0;t<tiles;t++)publish(*(const HVX_Vector *)(tmp+t*32),splat(inverse),dst+t*2048,dump?dump+t*32:NULL);
+__attribute__((noinline)) static uint32_t rowpublish(const float *tmp,uint8_t *dst,float *dump,uint32_t tiles,float inverse,uint32_t check_sum){
+    HVX_Vector sum=Q6_V_vzero();
+    for(uint32_t t=0;t<tiles;t++){
+        HVX_Vector codes=publish(*(const HVX_Vector *)(tmp+t*32),splat(inverse),dst+t*2048,dump?dump+t*32:NULL);
+        if(check_sum)sum=Q6_Vw_vadd_VwVw(sum,codes);
+    }
+    if(!check_sum)return 0U;
+    sum=Q6_Vw_vadd_VwVw(sum,Q6_V_vror_VR(sum,64));sum=Q6_Vw_vadd_VwVw(sum,Q6_V_vror_VR(sum,32));
+    sum=Q6_Vw_vadd_VwVw(sum,Q6_V_vror_VR(sum,16));sum=Q6_Vw_vadd_VwVw(sum,Q6_V_vror_VR(sum,8));
+    sum=Q6_Vw_vadd_VwVw(sum,Q6_V_vror_VR(sum,4));return Q6_R_vextract_VR(sum,0);
 }
 void qbh_attention_fp32_softmax_native(const uint8_t *scores,uint8_t *probability,
     uint32_t heads,uint32_t first_row,uint32_t rows,uint32_t past,
     uint32_t padded,const struct qbh_attention_config *config,float *scratch,float *dump,
     struct qbh_attention_u8_telemetry *telemetry){
     const uint32_t tiles=padded/32U;
+    uint32_t minimum=UINT32_MAX,maximum_sum=0U;
     const float scale=(float)config->score_multiplier*(0.69314718055994530942f/(float)(1U<<config->fraction_bits));
     for(uint32_t head=0;head<heads;head++)for(uint32_t row=first_row;row<first_row+rows;row++){
         const uint8_t *base=scores+(size_t)head*tiles*2048U+row*32U;
@@ -79,10 +89,10 @@ void qbh_attention_fp32_softmax_native(const uint8_t *scores,uint8_t *probabilit
         int32_t mx=rowmax(base,tiles,valid);
         rowexp(base,scratch,tiles,valid,mx,scale);
         float inverse=1.0f/rowsum(scratch,tiles);
-        rowpublish(scratch,dst,dump?dump+((size_t)head*64U+row)*padded:NULL,tiles,inverse);
-        if(telemetry){uint32_t sum=0;for(uint32_t k=0;k<valid;k++)sum+=dst[(k/32)*2048+k%32];
-            if(sum<telemetry->probability_row_sum_min)telemetry->probability_row_sum_min=sum;
-            if(sum>telemetry->probability_row_sum_max)telemetry->probability_row_sum_max=sum;}
+        uint32_t sum=rowpublish(scratch,dst,dump?dump+((size_t)head*64U+row)*padded:NULL,tiles,inverse,telemetry!=NULL);
+        if(sum<minimum)minimum=sum;if(sum>maximum_sum)maximum_sum=sum;
     }
+    if(telemetry){telemetry->probability_row_sum_min=minimum;telemetry->probability_row_sum_max=maximum_sum;}
+
     asm volatile("barrier":::"memory");
 }

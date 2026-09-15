@@ -85,18 +85,18 @@ static int paper_softmax_probe(uint8_t *shared,uint32_t bytes,uint8_t *vtcm,uint
     uint8_t *original=vtcm+6*sz,*scratch=original+sz;
     if(7*sz+2048U>vbytes)return AEE_ENOMEMORY;
     memcpy(original,shared+h->input_offset,sz);memset(prob,0,sz);memset(dump,0,4*sz);
-    h->total_ticks=0;
+    h->total_ticks=0;struct qbh_attention_u8_telemetry telemetry={0};
     for(uint32_t i=0;i<repeat;i++) {
         /* The retained Llama prefill requantizer consumes raw scores in-place.
          * Restore immutable input before each timed kernel for BOTH arms. */
         memcpy(raw,original,sz);
         uint64_t start=HAP_perf_get_qtimer_count();
-        if(h->mode==5)qbh_attention_fp32_softmax_native(raw,prob,h->n,0,h->rows,past,h->k,config,(float *)scratch,NULL,NULL);
+        if(h->mode==5)qbh_attention_fp32_softmax_native(raw,prob,h->n,0,h->rows,past,h->k,config,(float *)scratch,NULL,&telemetry);
         else {if(h->n!=QBH_ATTENTION_Q_HEADS_PER_GROUP)return AEE_EBADPARM;
             if(h->rows==64U && past==0U && h->k==64U) {
                 qbh_attention_u8_requant_qk(raw,config,NULL);
-                qbh_llama_u8_softmax_group_carrier(raw,prob,scratch,scratch+1024U,config,NULL);
-            } else qbh_attention_u8_requant_softmax_dynamic(raw,prob,h->rows,past,past+h->rows,h->k,config,NULL,1,0,0,NULL);}
+                qbh_llama_u8_softmax_group_carrier(raw,prob,scratch,scratch+1024U,config,&telemetry);
+            } else qbh_attention_u8_requant_softmax_dynamic(raw,prob,h->rows,past,past+h->rows,h->k,config,&telemetry,1,0,0,NULL);}
         h->total_ticks+=HAP_perf_get_qtimer_count()-start;
     }
     if(h->mode==5)qbh_attention_fp32_softmax_native(raw,prob,h->n,0,h->rows,past,h->k,config,(float *)scratch,dump,NULL);
