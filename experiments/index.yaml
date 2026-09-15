@@ -3,12 +3,71 @@ project: llama32-htp
 experiments:
 - id: L32-0033
   title: FP32 HVX softmax versus retained Llama log2
-  execution_state: running
+  execution_state: completed
   record: docs/experiments/L32-0033.md
   approval_ref: Standing user-approved A9 paper campaign
   runtime:
     source_branch: codex/llama32-no-rotation
     source_worktree: /home/daniuniu/work/llama32-htp
+  evidence_validity: valid
+  local_gate: pass
+  evidence:
+    id: L32-0033
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    measured_source: 78560f4c12c63d2d1ac07405baca84c4ed275b8d
+    source_closure: 0dfebbd6f72b145574c66d22d7dd13dfb3175883
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0033
+    evidence_ledger_sha256: c647b984f5cc875a366f6829589c66a6b5428961b867ff1159cc4f9813866904
+    evidence_files: 1497
+    evidence_bytes: 300912966
+    timed_profiles: 9600
+    physical_gate: true
+    numerical_gate_scope: Llama independent selected layer7, chain3, chain16 two-step
+      exact; full16 all-layer greedy/fixed CPU teacher selected token/logit codes
+      exact
+    quality_claim: false
+    baseline_promoted: false
+    trajectories:
+      greedy:
+        effects:
+          prefill:
+            fp_over_log2_wall: 0.9482431147825292
+            ci95:
+            - 0.9462983049580592
+            - 0.9501915565880371
+          decode:
+            fp_over_log2_wall: 0.9890237700528771
+            ci95:
+            - 0.9874231629025251
+            - 0.9909409516496835
+        tps:
+          LOG2:
+            prefill: 2165.603572549653
+            decode: 45.14853151399325
+          FP:
+            prefill: 2283.8062716082195
+            decode: 45.649591932031555
+      fixed:
+        effects:
+          prefill:
+            fp_over_log2_wall: 0.9496486730629179
+            ci95:
+            - 0.947912434596591
+            - 0.951642664782124
+          decode:
+            fp_over_log2_wall: 0.9885331339254163
+            ci95:
+            - 0.9871226200364103
+            - 0.9899537698433332
+        tps:
+          LOG2:
+            prefill: 2166.2094720802484
+            decode: 45.121399642830276
+          FP:
+            prefill: 2281.0640750895127
+            decode: 45.64480247986775
 - id: L32-0032
   title: Ordinary A8 versus SP2 with fixed FP32 residual and shared pipeline
   execution_state: completed
