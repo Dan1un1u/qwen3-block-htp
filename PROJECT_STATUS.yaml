@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0279
+  active_experiment: null
   next_experiment_number: 280
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -2498,13 +2498,13 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: Qwen3_28layer_native_W4_SP2_M64_plus15_verified
-  last_completed_experiment: EXP-0278
-  last_completed_source_commit: d667e7e674a9a8acdc1f7ca6cfcf92adaa1c7eb9
+  last_completed_experiment: EXP-0279
+  last_completed_source_commit: f8b0a7508876ac26f8191eea55c9adc86ae7954e
   provisional_source_parent: EXP0268_diagnostic_U8_pipeline_closure_no_default_promotion
-  device_execution_state: EXP0274_complete_fullmodel_factorial_exact_formal10
+  device_execution_state: idle_no_active_device_process
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  current_handoff: docs/SESSION_HANDOFF_EXP0278.md
+  current_handoff: docs/SESSION_HANDOFF_EXP0279.md
   active_recipe_specialization: native_W4_SP2_FP32_residual_no_rotation
   last_completed_experiment_contract:
     id: EXP-0269
@@ -9128,8 +9128,8 @@ current_scope:
       pass but do not clear gate
     next_direction: discuss_runtime_nondeterminism_then_same_token_device_software_head_and_transformer_alignment
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0257.md
-  last_concluded_experiment: EXP-0274
-  last_concluded_source_commit: 338b32137cb962fdec303d0752e5431839361d37
+  last_concluded_experiment: EXP-0279
+  last_concluded_source_commit: f8b0a7508876ac26f8191eea55c9adc86ae7954e
   latest_w4u8_dense_r3_e2e_diagnostic_result:
     id: EXP-0258
     execution_state: completed
@@ -10998,8 +10998,8 @@ current_scope:
           ci95:
           - 0.9861854313212546
           - 0.9897205140429328
-  next_direction: Finish approved EXP0279 supported longer KV; Llama0034 ownsdevice
-    until release. Then consolidate paper campaign.
+  next_direction: Approved paper ablation campaign completed; discuss paper framing/results,
+    no pending hardware work authorized by this campaign.
   latest_paper_pipeline_result:
     id: EXP-0275
     execution_state: completed
@@ -11234,8 +11234,8 @@ current_scope:
             decode: 47.10263908552258
   latest_paper_long_kv_result:
     id: EXP-0279
-    execution_state: running
-    checkpoint: all_timing_complete_and_sealed_campaign_report_pending
+    execution_state: completed
+    checkpoint: completed_and_sealed
     evidence_validity: valid
     local_gate: pass
     measured_source: 0e683fa5f1dd708b077f81530d516d036d8c1d0e
@@ -11279,3 +11279,30 @@ current_scope:
     physical_gate: true
     quality_claim: false
     baseline_promoted: false
+    source_closure: f8b0a7508876ac26f8191eea55c9adc86ae7954e
+  latest_paper_ablation_campaign:
+    execution_state: completed
+    report: /mnt/d/llm_exp/results/paper-no-rotation-ablation-20260915/REPORT.md
+    module_tables: /mnt/d/llm_exp/results/paper-no-rotation-ablation-20260915/MODULE_TABLES.md
+    source_report: docs/paper_no_rotation_ablations/REPORT.md
+    evidence_ledger_sha256: 5c050ce12226744cbe198c280bf6ff97a090e8581f969ad8176593e983b15447
+    completed:
+    - A0
+    - A1
+    - A2
+    - A3
+    - A5
+    - A6
+    - A8
+    - A9
+    cited_existing:
+    - A7 EXP0272
+    canceled:
+    - W4-to-S8 comparison
+    - integer residual comparison
+    unavailable:
+    - complete FARF timeline/utilization
+    quality_claim: false
+    baseline_promoted: false
+    qwen_final_experiment: EXP-0279
+    llama_final_experiment: L32-0034
