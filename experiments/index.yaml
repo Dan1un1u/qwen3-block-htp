@@ -36,7 +36,7 @@ experiments:
   record: docs/experiments/EXP-0283.md
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0282-latest-paper-ablations
+    source_branch: codex/exp-0283-w16a16-fair-baseline
   evidence:
     device_owner: Qwen first, Llama after explicit local release
     recipe: F16F16 only; other recipes frozen
