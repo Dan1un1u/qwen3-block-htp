@@ -26,9 +26,9 @@ allowed_values:
 experiments:
 - id: EXP-0282
   title: Latest optimized runtime paper ablation rerun; generalization excluded
-  execution_state: running
-  evidence_validity: pending
-  local_gate: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   record: docs/experiments/EXP-0282.md
   approval_ref: 'User2026-09-15: optimize then rerun ablations and update conclusions;
     generalization is supplementary and not rerun'
@@ -38,6 +38,39 @@ experiments:
   parent_source: b57c5254fe3857615c64568fd4d2077fea6414a0
   parent: EXP-0281
   adoption_status: pending
+  evidence:
+    id: EXP-0282
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    report: /mnt/d/llm_exp/results/qwen3-block-htp/exp0282/REPORT.md
+    module_tables: /mnt/d/llm_exp/results/qwen3-block-htp/exp0282/MODULE_TABLES.md
+    summary: /mnt/d/llm_exp/results/qwen3-block-htp/exp0282/SUMMARY.json
+    source_closure: c0d55359290a4820b0063ec886e4c393c99e5931
+    measured_sources:
+      A1: 4b0fd7c5cf3bb58a15dfb8669bf02a2a5d8563fe
+      A2: 4b0fd7c5cf3bb58a15dfb8669bf02a2a5d8563fe
+      A3: 4b0fd7c5cf3bb58a15dfb8669bf02a2a5d8563fe
+      A5: 7b6412f3d35f7b94a5e7715c6e2edbf81c176e1d
+      A9: 4b0fd7c5cf3bb58a15dfb8669bf02a2a5d8563fe
+    evidence_ledger_sha256: 0a7d69354e253d5f755255b4e44c09d723c3d2210752845139642531d94d24a2
+    completed:
+    - A0
+    - A1
+    - A2
+    - A3
+    - A5
+    - A6
+    - A9
+    cited_existing:
+    - A7 EXP0272
+    excluded:
+    - W4-to-S8
+    - integer residual
+    - 'A8/generalization: supplemental, not rerun'
+    generalization_run: false
+    quality_claim: false
+    baseline_promoted: false
 - id: EXP-0281
   title: Latest exact native runtime bounded prompt and decode generalization
   parent: EXP-0280

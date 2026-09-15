@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0282
+  active_experiment: null
   next_experiment_number: 283
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -2498,8 +2498,8 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: Qwen3_28layer_native_W4_SP2_M64_plus15_verified
-  last_completed_experiment: EXP-0281
-  last_completed_source_commit: b57c5254fe3857615c64568fd4d2077fea6414a0
+  last_completed_experiment: EXP-0282
+  last_completed_source_commit: c0d55359290a4820b0063ec886e4c393c99e5931
   provisional_source_parent: EXP0268_diagnostic_U8_pipeline_closure_no_default_promotion
   device_execution_state: idle_no_active_device_process
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
@@ -10897,299 +10897,393 @@ current_scope:
   latest_sp2_fp32_fullmodel_speed_result: *id001
   paper_no_rotation_ablation_plan:
     document: docs/PAPER_NO_ROTATION_ABLATION_PLAN.md
-    status: A0_A1_A2_A6_Qwen_complete_Llama_A2_A6_running
-    completed_phase: EXP-0275
+    status: latest_optimized_rerun_complete
+    completed_phase: EXP-0282
     fixed_residual: FP32
     excluded:
     - W4_vs_S8_expansion
     - integer_residual_arms
     added: log2_softmax_vs_FP_HVX_softmax
-    next: A3 then A5/A9/A8 under standing approval
+    next: Discuss updated paired conclusions; generalization is supplementary and
+      excluded
   latest_paper_factorial_result:
-    id: EXP-0274
+    id: EXP-0282
+    phase: A1
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    tested_source_head: c77f70af1f7c33591c7f2a8fab0ba10c78f52cad
-    source_closure_commit: 338b32137cb962fdec303d0752e5431839361d37
-    formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0274/consumer-row1-a02
-    evidence_ledger_sha256: ce6873fee5fb0c66d0fdb63043341b7353aaf664875580b6b8fa00e25978f5d6
-    evidence_file_count: 2043
-    evidence_bytes: 1139347397
-    prior_attempt_timing_ineligible: true
-    independent_numerical_exact: true
+    measured_source: 4b0fd7c5cf3bb58a15dfb8669bf02a2a5d8563fe
+    source_closure: c0d55359290a4820b0063ec886e4c393c99e5931
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0282/A1
+    report: /mnt/d/llm_exp/results/qwen3-block-htp/exp0282/REPORT.md
+    evidence_ledger_sha256: 0a7d69354e253d5f755255b4e44c09d723c3d2210752845139642531d94d24a2
     physical_gate: true
-    baseline_promoted: false
     quality_claim: false
-    report: docs/experiments/EXP-0274-RESULTS.md
+    baseline_promoted: false
     performance:
-      B00:
-        prefill: 1603.4449847134845
-        decode: 45.03391077168945
-      B10:
-        prefill: 1589.0733003791593
-        decode: 44.38716696668864
-      B01:
-        prefill: 1837.8553068698438
-        decode: 47.25963459325145
       B11:
-        prefill: 1846.8222638721236
-        decode: 47.14355925781179
-    paired_effects:
+        prefill: 1850.0968112588762
+        decode: 47.20265081054253
+      B01:
+        prefill: 1834.7120362454034
+        decode: 47.08739934090032
+      B10:
+        prefill: 1587.8417669750888
+        decode: 45.17640244903952
+      B00:
+        prefill: 1602.6869447300135
+        decode: 45.00054874569152
+    effects: &id002
       prefill:
         B11_vs_B00_latency:
-          ratio: 0.8682183532656985
+          ratio: 0.8662719350559197
           ci95:
-          - 0.866438793202562
-          - 0.8704086310865847
+          - 0.8641198407361632
+          - 0.8683880473001439
         format_given_conventional:
-          ratio: 1.0090440663315505
+          ratio: 1.0093492803021584
           ci95:
-          - 1.0074651954486207
-          - 1.0106212706256958
+          - 1.0078760083424871
+          - 1.010953464122221
         format_given_pipeline:
-          ratio: 0.9951446562142479
+          ratio: 0.9916843405599924
           ci95:
-          - 0.992817297199577
-          - 0.9973731308423074
+          - 0.9889051088616443
+          - 0.9948828354174684
         pipeline_given_modular:
-          ratio: 0.8724544194093296
+          ratio: 0.8735359626297479
           ci95:
-          - 0.8703302301670283
-          - 0.8746663546349924
+          - 0.8713975998703849
+          - 0.8757068734329195
         pipeline_given_native:
-          ratio: 0.8604365084095548
+          ratio: 0.8582479345470905
           ci95:
-          - 0.8584999450951141
-          - 0.8625022220318437
+          - 0.855391788375076
+          - 0.8609822514009596
         interaction:
-          ratio: 0.986225170355706
+          ratio: 0.9824986849578198
           ci95:
-          - 0.9835005152253548
-          - 0.989018607563622
+          - 0.979292301463319
+          - 0.9863476044694917
       decode:
         B11_vs_B00_latency:
-          ratio: 0.955250547066559
+          ratio: 0.9533479152751485
           ci95:
-          - 0.9539468883410906
-          - 0.9566294259012789
+          - 0.9502544243581452
+          - 0.9554147661061732
         format_given_conventional:
-          ratio: 1.0145705132631282
+          ratio: 0.9961073991328466
           ci95:
-          - 1.0133996072194489
-          - 1.0157064285876147
+          - 0.9951660462437678
+          - 0.9971025254977092
         format_given_pipeline:
-          ratio: 1.0024621674151688
+          ratio: 0.997558368700419
           ci95:
-          - 1.0002027050018116
-          - 1.0042711141468226
+          - 0.9941688342974385
+          - 0.9996425054533932
         pipeline_given_modular:
-          ratio: 0.9529043370580814
+          ratio: 0.9556813367393567
           ci95:
-          - 0.9513499505535676
-          - 0.9547375629099017
+          - 0.9544692077613237
+          - 0.9570105149538976
         pipeline_given_native:
-          ratio: 0.941531943397625
+          ratio: 0.9570734201001598
           ci95:
-          - 0.9406408718687655
-          - 0.9423599961156588
+          - 0.9538013528413923
+          - 0.9591176581199641
         interaction:
-          ratio: 0.988065545282786
+          ratio: 1.0014566396844713
           ci95:
-          - 0.9861854313212546
-          - 0.9897205140429328
-  next_direction: Active latest runtime ablation rerun A0/A1/A2/A3/A5/A6/A9. A8/generalization
-    supplemental and excluded from execution; A7 cites sealed evidence. No new quantization/quality/promotion.
+          - 0.9975734106829254
+          - 1.0042720750135432
+    paired_effects: *id002
+  next_direction: Latest optimized ablations complete; discuss updated paired conclusions.
+    Generalization remains supplementary and was not rerun.
   latest_paper_pipeline_result:
-    id: EXP-0275
+    id: EXP-0282
+    phase: A2
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    measured_source: 19c9f728dbf2d06a2f6d0ec6488f4d1547627226
-    source_closure: 142053f38ec3893b4d4e1c115f18f2de1a6a7cb0
-    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0275
-    evidence_ledger_sha256: 75b66ce1ef9f3e3c7491b63b22106199aaa51d0ac81a2d62a366f9e201336d3b
-    evidence_files: 1539
-    evidence_bytes: 762981119
-    timed_profiles: 14000
+    measured_source: 4b0fd7c5cf3bb58a15dfb8669bf02a2a5d8563fe
+    source_closure: c0d55359290a4820b0063ec886e4c393c99e5931
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0282/A2
+    report: /mnt/d/llm_exp/results/qwen3-block-htp/exp0282/REPORT.md
+    evidence_ledger_sha256: 0a7d69354e253d5f755255b4e44c09d723c3d2210752845139642531d94d24a2
     physical_gate: true
-    independent_numerical_exact: true
-    trace_complete: false
-    trace_status: 'N/A: FARF stream truncated; 15 numerical-pass diagnostic attempts
-      retained'
-    baseline_promoted: false
     quality_claim: false
+    baseline_promoted: false
     performance:
       ALL:
-        prefill: 1844.6916986378326
-        decode: 47.0616536378736
+        prefill: 1852.3010016148062
+        decode: 47.43564204604955
       QKV:
-        prefill: 1771.4525535114062
-        decode: 46.06096232701933
+        prefill: 1775.3349243191435
+        decode: 46.409559114659174
       FFN:
-        prefill: 1720.010797099027
-        decode: 45.99084518806517
+        prefill: 1734.7240730067897
+        decode: 47.32982216475439
       EPILOGUE:
-        prefill: 1756.437064516507
-        decode: 47.079912410109166
+        prefill: 1765.7348622341149
+        decode: 47.54363596239896
       LOOKAHEAD:
-        prefill: 1848.1797059471119
-        decode: 46.21821534030158
+        prefill: 1853.8862479353957
+        decode: 46.57670978908568
     effects:
       prefill:
         QKV:
-          ratio: 1.0413441189724502
+          ratio: 1.0433529900422478
           ci95:
-          - 1.038972809547103
-          - 1.0437284572559984
+          - 1.040167634453375
+          - 1.0463440691729524
         FFN:
-          ratio: 1.0724884412057718
+          ratio: 1.0677784613919727
           ci95:
-          - 1.0667287961411556
-          - 1.0817120030097587
+          - 1.0643666288518832
+          - 1.0707786081790827
         EPILOGUE:
-          ratio: 1.0502463970410574
+          ratio: 1.0490255594042939
           ci95:
-          - 1.0477048260829356
-          - 1.0526644266267433
+          - 1.0467932587354247
+          - 1.0512099789554958
         LOOKAHEAD:
-          ratio: 0.9981127336816568
+          ratio: 0.9991449063704124
           ci95:
-          - 0.9945380855157578
-          - 1.001239124233867
+          - 0.9967222003785281
+          - 1.0016214455842798
       decode:
         QKV:
-          ratio: 1.0217253669984063
+          ratio: 1.022109301423341
           ci95:
-          - 1.020181534885413
-          - 1.0232016505781871
+          - 1.0203058756848686
+          - 1.0243329308922988
         FFN:
-          ratio: 1.0232830783045992
+          ratio: 1.002235797145546
           ci95:
-          - 1.021930573208061
-          - 1.024666475966056
+          - 0.9987006587411644
+          - 1.00491371064084
         EPILOGUE:
-          ratio: 0.9996121748894409
+          ratio: 0.9977285305559125
           ci95:
-          - 0.9974999589559406
-          - 1.0015833829101344
+          - 0.9960576119898715
+          - 0.9993304664965665
         LOOKAHEAD:
-          ratio: 1.018249045129974
+          ratio: 1.0184412394274605
           ci95:
-          - 1.0163659668956417
-          - 1.0201489985930106
+          - 1.0173296436827088
+          - 1.0196266953115138
+    local_scopes:
+      l1-greedy:
+        prefill:
+          QKV_vs_ALL:
+            ratio: 1.0673791738252678
+            ci95:
+            - 1.0368438237340263
+            - 1.1003439766398941
+          FFN_vs_ALL:
+            ratio: 1.0741968759104967
+            ci95:
+            - 1.052185566411933
+            - 1.0970073798684297
+          EPILOGUE_vs_ALL:
+            ratio: 1.0803082195593716
+            ci95:
+            - 1.0499418957240725
+            - 1.1111382954387816
+          LOOKAHEAD_vs_ALL:
+            ratio: 1.034930478091869
+            ci95:
+            - 1.0014843153623159
+            - 1.0682014466118523
+        decode:
+          QKV_vs_ALL:
+            ratio: 1.0248559508338029
+            ci95:
+            - 0.9748904152717679
+            - 1.076094051556373
+          FFN_vs_ALL:
+            ratio: 1.0119113092091132
+            ci95:
+            - 0.9627837460178031
+            - 1.0644262620264255
+          EPILOGUE_vs_ALL:
+            ratio: 1.0424865252145463
+            ci95:
+            - 0.995916254148279
+            - 1.0907798819289853
+          LOOKAHEAD_vs_ALL:
+            ratio: 1.0286600635603382
+            ci95:
+            - 1.001250825100785
+            - 1.0564353894072072
+      l3-greedy:
+        prefill:
+          QKV_vs_ALL:
+            ratio: 1.042253030911374
+            ci95:
+            - 1.0335104685622991
+            - 1.0508576460488575
+          FFN_vs_ALL:
+            ratio: 1.0755058119037977
+            ci95:
+            - 1.0704712342834735
+            - 1.0811504201203237
+          EPILOGUE_vs_ALL:
+            ratio: 1.0554572144686691
+            ci95:
+            - 1.049891787023973
+            - 1.0617567220687623
+          LOOKAHEAD_vs_ALL:
+            ratio: 0.9983087911016758
+            ci95:
+            - 0.9919112272479874
+            - 1.0061260181914966
+        decode:
+          QKV_vs_ALL:
+            ratio: 1.0025030789751364
+            ci95:
+            - 0.9884992624994917
+            - 1.0142915347130077
+          FFN_vs_ALL:
+            ratio: 0.9919992423678405
+            ci95:
+            - 0.9761831367329045
+            - 1.0033178659062876
+          EPILOGUE_vs_ALL:
+            ratio: 0.9878869473811528
+            ci95:
+            - 0.9686890162097839
+            - 1.000774029913525
+          LOOKAHEAD_vs_ALL:
+            ratio: 1.0133465808733229
+            ci95:
+            - 1.0046979100539273
+            - 1.0238504926131036
   latest_paper_sp2_stream_result:
-    id: EXP-0276
+    id: EXP-0282
+    phase: A3
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    measured_source: 2aeb9e462a8a42b0bf9be7443eaa282cb2cd5d9d
-    source_closure: 1bc4204edbdbf69e2bde0876a4cbbecb17c5716e
-    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0276
-    evidence_ledger_sha256: 07fa8eb7877a063519f0b450fcd087e33506ae5931591644cae68bcc93077814
-    evidence_files: 387
-    timed_profiles: 4800
-    independent_numerical_exact: true
+    measured_source: 4b0fd7c5cf3bb58a15dfb8669bf02a2a5d8563fe
+    source_closure: c0d55359290a4820b0063ec886e4c393c99e5931
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0282/A3
+    report: /mnt/d/llm_exp/results/qwen3-block-htp/exp0282/REPORT.md
+    evidence_ledger_sha256: 0a7d69354e253d5f755255b4e44c09d723c3d2210752845139642531d94d24a2
     physical_gate: true
-    weight_bytes_identical: true
-    extra_decode_tile_pairs_per_layer: 12288
-    baseline_promoted: false
     quality_claim: false
-    effects:
-      prefill:
-        SPLIT:
-          ratio: 1.0008716342384452
-          ci95:
-          - 0.9991798441968693
-          - 1.0027711552353962
-      decode:
-        SPLIT:
-          ratio: 1.0093053619849592
-          ci95:
-          - 1.0076747264703934
-          - 1.010685797105449
+    baseline_promoted: false
     performance:
       ALL:
-        prefill: 1846.0245489969134
-        decode: 47.07701325877952
+        prefill: 1850.6962248640143
+        decode: 47.416810084511965
       SPLIT:
-        prefill: 1844.416892083806
-        decode: 46.6429834140533
+        prefill: 1850.265542001221
+        decode: 46.995139294904504
+    effects:
+      prefill:
+        SPLIT:
+          ratio: 1.0002327681367982
+          ci95:
+          - 0.9971977776039634
+          - 1.0032295777169475
+      decode:
+        SPLIT:
+          ratio: 1.0089726468722942
+          ci95:
+          - 1.0072630762019288
+          - 1.010813991186247
+    local_scopes:
+      l1-greedy:
+        prefill:
+          SPLIT_vs_ALL:
+            ratio: 1.010394165381931
+            ci95:
+            - 0.9899679972638796
+            - 1.0299889819857788
+        decode:
+          SPLIT_vs_ALL:
+            ratio: 1.0488929183835292
+            ci95:
+            - 1.0173924602698052
+            - 1.0855095248383575
+      l3-greedy:
+        prefill:
+          SPLIT_vs_ALL:
+            ratio: 0.9924054008563753
+            ci95:
+            - 0.9777085699788177
+            - 1.0077620520340236
+        decode:
+          SPLIT_vs_ALL:
+            ratio: 1.0139770842286713
+            ci95:
+            - 1.0085221664606505
+            - 1.0193819948050216
   latest_paper_a8_sp2_cost_result:
-    id: EXP-0277
+    id: EXP-0282
+    phase: A5
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    measured_source: 88da979665609c4be014002fe82dd862930a9b3f
-    source_closure: 7ea0c7cab5768dd1d6bdc440493ceecb5e8cce72
-    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0277
-    evidence_ledger_sha256: 160ef619a2017a11913246d7459ca031c14f3fa00f7a9dedf9da5fb11e6a8eef
-    evidence_files: 864
-    evidence_bytes: 431573812
-    timed_profiles: 9600
-    numerical_gate_scope: Qwen selected layer14 and chain3 independent exact; full28
-      physical/front-end finalNorm and full-vocabulary head oracle; no full28 CPU
-      transformer equivalence claim
+    measured_source: 7b6412f3d35f7b94a5e7715c6e2edbf81c176e1d
+    source_closure: c0d55359290a4820b0063ec886e4c393c99e5931
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0282/A5-fair-a02
+    report: /mnt/d/llm_exp/results/qwen3-block-htp/exp0282/REPORT.md
+    evidence_ledger_sha256: 0a7d69354e253d5f755255b4e44c09d723c3d2210752845139642531d94d24a2
     physical_gate: true
-    weight_bytes_identical: true
     quality_claim: false
     baseline_promoted: false
     trajectories:
       greedy:
         effects:
           prefill:
-            sp2_over_a8_wall: 1.008621185755655
+            sp2_over_a8_wall: 1.008014403980603
             ci95:
-            - 1.0057344494272944
-            - 1.0116684295870593
+            - 1.006594133937574
+            - 1.00976176682003
           decode:
-            sp2_over_a8_wall: 1.0044714800586112
+            sp2_over_a8_wall: 1.002721371801995
             ci95:
-            - 1.0016027470290982
-            - 1.008051014468341
+            - 1.001544629820495
+            - 1.0038791313094448
         tps:
-          A8:
-            prefill: 1865.9313730849603
-            decode: 47.33815322481906
           SP2:
-            prefill: 1849.9823317581936
-            decode: 47.12742388868707
+            prefill: 1855.355250024131
+            decode: 47.44766613082445
+          A8:
+            prefill: 1870.2248165253568
+            decode: 47.57678887150335
       fixed:
         effects:
           prefill:
-            sp2_over_a8_wall: 1.0089481756257994
+            sp2_over_a8_wall: 1.0086314088008463
             ci95:
-            - 1.0065432596200246
-            - 1.0113938599071108
+            - 1.0058403251627763
+            - 1.0111680528259008
           decode:
-            sp2_over_a8_wall: 1.003022078686384
+            sp2_over_a8_wall: 1.0030360992917553
             ci95:
-            - 1.0014471140540488
-            - 1.0047096102329829
+            - 1.000739687402142
+            - 1.0051920745252603
         tps:
-          A8:
-            prefill: 1863.08225236862
-            decode: 47.15096764856505
           SP2:
-            prefill: 1846.5589188592803
-            decode: 47.00890304460367
+            prefill: 1851.5409526243586
+            decode: 47.389392389191755
+          A8:
+            prefill: 1867.522359497968
+            decode: 47.5332712898613
   latest_paper_softmax_result:
-    id: EXP-0278
+    id: EXP-0282
+    phase: A9
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    measured_source: 140454fd24b4fa2f8ca0d3c4dced41aefcb02529
-    source_closure: d667e7e674a9a8acdc1f7ca6cfcf92adaa1c7eb9
-    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0278
-    evidence_ledger_sha256: dc52fb7ad240babd04f54d0b06363e148ff0e41365213b6738410a03ee9f13c2
-    evidence_files: 3985
-    evidence_bytes: 912421145
-    primary_root: /mnt/d/llm_exp/results/qwen3-block-htp/exp0278/vsum
-    timed_profiles: 9600
-    prototype_timed_profiles: 9600
-    numerical_gate_scope: Qwen selected layer14 and chain3 independent exact; full28
-      physical/front-end finalNorm and full-vocabulary head oracle; no full28 CPU
-      transformer equivalence claim
+    measured_source: 4b0fd7c5cf3bb58a15dfb8669bf02a2a5d8563fe
+    source_closure: c0d55359290a4820b0063ec886e4c393c99e5931
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0282/A9
+    report: /mnt/d/llm_exp/results/qwen3-block-htp/exp0282/REPORT.md
+    evidence_ledger_sha256: 0a7d69354e253d5f755255b4e44c09d723c3d2210752845139642531d94d24a2
     physical_gate: true
     quality_claim: false
     baseline_promoted: false
@@ -11197,41 +11291,41 @@ current_scope:
       greedy:
         effects:
           prefill:
-            fp_over_log2_wall: 1.0154842557329737
+            fp_over_log2_wall: 1.010131071616385
             ci95:
-            - 1.0134265262809585
-            - 1.017682125201596
+            - 1.0074742892210415
+            - 1.0132646973378923
           decode:
-            fp_over_log2_wall: 0.9979796764788961
+            fp_over_log2_wall: 0.9967024675603605
             ci95:
-            - 0.9965538978825368
-            - 0.9992703414479449
+            - 0.9946545581517565
+            - 0.9986952050959257
         tps:
           LOG2:
-            prefill: 1850.8303081275774
-            decode: 47.138502188493455
+            prefill: 1847.9216982933767
+            decode: 47.33518302105866
           FP:
-            prefill: 1822.6085709144281
-            decode: 47.23393000828337
+            prefill: 1829.3880370756058
+            decode: 47.49178873502892
       fixed:
         effects:
           prefill:
-            fp_over_log2_wall: 1.0148098959621188
+            fp_over_log2_wall: 1.016481292781222
             ci95:
-            - 1.011718021064137
-            - 1.017754857401735
+            - 1.0128562255069014
+            - 1.0225296088871878
           decode:
-            fp_over_log2_wall: 0.9979927266450705
+            fp_over_log2_wall: 0.9985038240336613
             ci95:
-            - 0.9957243422507294
-            - 1.0004015093279517
+            - 0.9970607217585846
+            - 0.9999028388253561
         tps:
           LOG2:
-            prefill: 1845.6776483653305
-            decode: 47.00809121313934
+            prefill: 1850.5380019978295
+            decode: 47.378851641476146
           FP:
-            prefill: 1818.7422646440443
-            decode: 47.10263908552258
+            prefill: 1820.5332603165991
+            decode: 47.44984495911046
   latest_paper_long_kv_result:
     id: EXP-0279
     execution_state: completed
@@ -11281,11 +11375,21 @@ current_scope:
     baseline_promoted: false
     source_closure: f8b0a7508876ac26f8191eea55c9adc86ae7954e
   latest_paper_ablation_campaign:
+    id: EXP-0282
     execution_state: completed
-    report: /mnt/d/llm_exp/results/paper-no-rotation-ablation-20260915/REPORT.md
-    module_tables: /mnt/d/llm_exp/results/paper-no-rotation-ablation-20260915/MODULE_TABLES.md
-    source_report: docs/paper_no_rotation_ablations/REPORT.md
-    evidence_ledger_sha256: 5c050ce12226744cbe198c280bf6ff97a090e8581f969ad8176593e983b15447
+    evidence_validity: valid
+    local_gate: pass
+    report: /mnt/d/llm_exp/results/qwen3-block-htp/exp0282/REPORT.md
+    module_tables: /mnt/d/llm_exp/results/qwen3-block-htp/exp0282/MODULE_TABLES.md
+    summary: /mnt/d/llm_exp/results/qwen3-block-htp/exp0282/SUMMARY.json
+    source_closure: c0d55359290a4820b0063ec886e4c393c99e5931
+    measured_sources:
+      A1: 4b0fd7c5cf3bb58a15dfb8669bf02a2a5d8563fe
+      A2: 4b0fd7c5cf3bb58a15dfb8669bf02a2a5d8563fe
+      A3: 4b0fd7c5cf3bb58a15dfb8669bf02a2a5d8563fe
+      A5: 7b6412f3d35f7b94a5e7715c6e2edbf81c176e1d
+      A9: 4b0fd7c5cf3bb58a15dfb8669bf02a2a5d8563fe
+    evidence_ledger_sha256: 0a7d69354e253d5f755255b4e44c09d723c3d2210752845139642531d94d24a2
     completed:
     - A0
     - A1
@@ -11293,19 +11397,16 @@ current_scope:
     - A3
     - A5
     - A6
-    - A8
     - A9
     cited_existing:
     - A7 EXP0272
-    canceled:
-    - W4-to-S8 comparison
-    - integer residual comparison
-    unavailable:
-    - complete FARF timeline/utilization
+    excluded:
+    - W4-to-S8
+    - integer residual
+    - 'A8/generalization: supplemental, not rerun'
+    generalization_run: false
     quality_claim: false
     baseline_promoted: false
-    qwen_final_experiment: EXP-0279
-    llama_final_experiment: L32-0034
   latest_decode_native_optimization:
     id: EXP-0280
     execution_state: completed
@@ -11351,7 +11452,7 @@ current_scope:
           - 1.0029516089451553
     quality_claim: false
     baseline_promoted: false
-  latest_bounded_generalization:
+  latest_bounded_generalization: &id003
     id: EXP-0281
     execution_state: completed
     local_gate: pass
@@ -11425,3 +11526,359 @@ current_scope:
     physical_gate: true
     quality_claim: false
     baseline_promoted: false
+  prior_paper_ablation_campaign:
+    execution_state: completed
+    report: /mnt/d/llm_exp/results/paper-no-rotation-ablation-20260915/REPORT.md
+    module_tables: /mnt/d/llm_exp/results/paper-no-rotation-ablation-20260915/MODULE_TABLES.md
+    source_report: docs/paper_no_rotation_ablations/REPORT.md
+    evidence_ledger_sha256: 5c050ce12226744cbe198c280bf6ff97a090e8581f969ad8176593e983b15447
+    completed:
+    - A0
+    - A1
+    - A2
+    - A3
+    - A5
+    - A6
+    - A8
+    - A9
+    cited_existing:
+    - A7 EXP0272
+    canceled:
+    - W4-to-S8 comparison
+    - integer residual comparison
+    unavailable:
+    - complete FARF timeline/utilization
+    quality_claim: false
+    baseline_promoted: false
+    qwen_final_experiment: EXP-0279
+    llama_final_experiment: L32-0034
+  supplementary_generalization:
+    source: *id003
+    classification: supplementary experiment; excluded from main ablations by explicit
+      user instruction; not rerun
+  pre_optimization_paper_ablation_results:
+    latest_paper_factorial_result:
+      id: EXP-0274
+      execution_state: completed
+      evidence_validity: valid
+      local_gate: pass
+      tested_source_head: c77f70af1f7c33591c7f2a8fab0ba10c78f52cad
+      source_closure_commit: 338b32137cb962fdec303d0752e5431839361d37
+      formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0274/consumer-row1-a02
+      evidence_ledger_sha256: ce6873fee5fb0c66d0fdb63043341b7353aaf664875580b6b8fa00e25978f5d6
+      evidence_file_count: 2043
+      evidence_bytes: 1139347397
+      prior_attempt_timing_ineligible: true
+      independent_numerical_exact: true
+      physical_gate: true
+      baseline_promoted: false
+      quality_claim: false
+      report: docs/experiments/EXP-0274-RESULTS.md
+      performance:
+        B00:
+          prefill: 1603.4449847134845
+          decode: 45.03391077168945
+        B10:
+          prefill: 1589.0733003791593
+          decode: 44.38716696668864
+        B01:
+          prefill: 1837.8553068698438
+          decode: 47.25963459325145
+        B11:
+          prefill: 1846.8222638721236
+          decode: 47.14355925781179
+      paired_effects:
+        prefill:
+          B11_vs_B00_latency:
+            ratio: 0.8682183532656985
+            ci95:
+            - 0.866438793202562
+            - 0.8704086310865847
+          format_given_conventional:
+            ratio: 1.0090440663315505
+            ci95:
+            - 1.0074651954486207
+            - 1.0106212706256958
+          format_given_pipeline:
+            ratio: 0.9951446562142479
+            ci95:
+            - 0.992817297199577
+            - 0.9973731308423074
+          pipeline_given_modular:
+            ratio: 0.8724544194093296
+            ci95:
+            - 0.8703302301670283
+            - 0.8746663546349924
+          pipeline_given_native:
+            ratio: 0.8604365084095548
+            ci95:
+            - 0.8584999450951141
+            - 0.8625022220318437
+          interaction:
+            ratio: 0.986225170355706
+            ci95:
+            - 0.9835005152253548
+            - 0.989018607563622
+        decode:
+          B11_vs_B00_latency:
+            ratio: 0.955250547066559
+            ci95:
+            - 0.9539468883410906
+            - 0.9566294259012789
+          format_given_conventional:
+            ratio: 1.0145705132631282
+            ci95:
+            - 1.0133996072194489
+            - 1.0157064285876147
+          format_given_pipeline:
+            ratio: 1.0024621674151688
+            ci95:
+            - 1.0002027050018116
+            - 1.0042711141468226
+          pipeline_given_modular:
+            ratio: 0.9529043370580814
+            ci95:
+            - 0.9513499505535676
+            - 0.9547375629099017
+          pipeline_given_native:
+            ratio: 0.941531943397625
+            ci95:
+            - 0.9406408718687655
+            - 0.9423599961156588
+          interaction:
+            ratio: 0.988065545282786
+            ci95:
+            - 0.9861854313212546
+            - 0.9897205140429328
+    latest_paper_pipeline_result:
+      id: EXP-0275
+      execution_state: completed
+      evidence_validity: valid
+      local_gate: pass
+      measured_source: 19c9f728dbf2d06a2f6d0ec6488f4d1547627226
+      source_closure: 142053f38ec3893b4d4e1c115f18f2de1a6a7cb0
+      evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0275
+      evidence_ledger_sha256: 75b66ce1ef9f3e3c7491b63b22106199aaa51d0ac81a2d62a366f9e201336d3b
+      evidence_files: 1539
+      evidence_bytes: 762981119
+      timed_profiles: 14000
+      physical_gate: true
+      independent_numerical_exact: true
+      trace_complete: false
+      trace_status: 'N/A: FARF stream truncated; 15 numerical-pass diagnostic attempts
+        retained'
+      baseline_promoted: false
+      quality_claim: false
+      performance:
+        ALL:
+          prefill: 1844.6916986378326
+          decode: 47.0616536378736
+        QKV:
+          prefill: 1771.4525535114062
+          decode: 46.06096232701933
+        FFN:
+          prefill: 1720.010797099027
+          decode: 45.99084518806517
+        EPILOGUE:
+          prefill: 1756.437064516507
+          decode: 47.079912410109166
+        LOOKAHEAD:
+          prefill: 1848.1797059471119
+          decode: 46.21821534030158
+      effects:
+        prefill:
+          QKV:
+            ratio: 1.0413441189724502
+            ci95:
+            - 1.038972809547103
+            - 1.0437284572559984
+          FFN:
+            ratio: 1.0724884412057718
+            ci95:
+            - 1.0667287961411556
+            - 1.0817120030097587
+          EPILOGUE:
+            ratio: 1.0502463970410574
+            ci95:
+            - 1.0477048260829356
+            - 1.0526644266267433
+          LOOKAHEAD:
+            ratio: 0.9981127336816568
+            ci95:
+            - 0.9945380855157578
+            - 1.001239124233867
+        decode:
+          QKV:
+            ratio: 1.0217253669984063
+            ci95:
+            - 1.020181534885413
+            - 1.0232016505781871
+          FFN:
+            ratio: 1.0232830783045992
+            ci95:
+            - 1.021930573208061
+            - 1.024666475966056
+          EPILOGUE:
+            ratio: 0.9996121748894409
+            ci95:
+            - 0.9974999589559406
+            - 1.0015833829101344
+          LOOKAHEAD:
+            ratio: 1.018249045129974
+            ci95:
+            - 1.0163659668956417
+            - 1.0201489985930106
+    latest_paper_sp2_stream_result:
+      id: EXP-0276
+      execution_state: completed
+      evidence_validity: valid
+      local_gate: pass
+      measured_source: 2aeb9e462a8a42b0bf9be7443eaa282cb2cd5d9d
+      source_closure: 1bc4204edbdbf69e2bde0876a4cbbecb17c5716e
+      evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0276
+      evidence_ledger_sha256: 07fa8eb7877a063519f0b450fcd087e33506ae5931591644cae68bcc93077814
+      evidence_files: 387
+      timed_profiles: 4800
+      independent_numerical_exact: true
+      physical_gate: true
+      weight_bytes_identical: true
+      extra_decode_tile_pairs_per_layer: 12288
+      baseline_promoted: false
+      quality_claim: false
+      effects:
+        prefill:
+          SPLIT:
+            ratio: 1.0008716342384452
+            ci95:
+            - 0.9991798441968693
+            - 1.0027711552353962
+        decode:
+          SPLIT:
+            ratio: 1.0093053619849592
+            ci95:
+            - 1.0076747264703934
+            - 1.010685797105449
+      performance:
+        ALL:
+          prefill: 1846.0245489969134
+          decode: 47.07701325877952
+        SPLIT:
+          prefill: 1844.416892083806
+          decode: 46.6429834140533
+    latest_paper_a8_sp2_cost_result:
+      id: EXP-0277
+      execution_state: completed
+      evidence_validity: valid
+      local_gate: pass
+      measured_source: 88da979665609c4be014002fe82dd862930a9b3f
+      source_closure: 7ea0c7cab5768dd1d6bdc440493ceecb5e8cce72
+      evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0277
+      evidence_ledger_sha256: 160ef619a2017a11913246d7459ca031c14f3fa00f7a9dedf9da5fb11e6a8eef
+      evidence_files: 864
+      evidence_bytes: 431573812
+      timed_profiles: 9600
+      numerical_gate_scope: Qwen selected layer14 and chain3 independent exact; full28
+        physical/front-end finalNorm and full-vocabulary head oracle; no full28 CPU
+        transformer equivalence claim
+      physical_gate: true
+      weight_bytes_identical: true
+      quality_claim: false
+      baseline_promoted: false
+      trajectories:
+        greedy:
+          effects:
+            prefill:
+              sp2_over_a8_wall: 1.008621185755655
+              ci95:
+              - 1.0057344494272944
+              - 1.0116684295870593
+            decode:
+              sp2_over_a8_wall: 1.0044714800586112
+              ci95:
+              - 1.0016027470290982
+              - 1.008051014468341
+          tps:
+            A8:
+              prefill: 1865.9313730849603
+              decode: 47.33815322481906
+            SP2:
+              prefill: 1849.9823317581936
+              decode: 47.12742388868707
+        fixed:
+          effects:
+            prefill:
+              sp2_over_a8_wall: 1.0089481756257994
+              ci95:
+              - 1.0065432596200246
+              - 1.0113938599071108
+            decode:
+              sp2_over_a8_wall: 1.003022078686384
+              ci95:
+              - 1.0014471140540488
+              - 1.0047096102329829
+          tps:
+            A8:
+              prefill: 1863.08225236862
+              decode: 47.15096764856505
+            SP2:
+              prefill: 1846.5589188592803
+              decode: 47.00890304460367
+    latest_paper_softmax_result:
+      id: EXP-0278
+      execution_state: completed
+      evidence_validity: valid
+      local_gate: pass
+      measured_source: 140454fd24b4fa2f8ca0d3c4dced41aefcb02529
+      source_closure: d667e7e674a9a8acdc1f7ca6cfcf92adaa1c7eb9
+      evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0278
+      evidence_ledger_sha256: dc52fb7ad240babd04f54d0b06363e148ff0e41365213b6738410a03ee9f13c2
+      evidence_files: 3985
+      evidence_bytes: 912421145
+      primary_root: /mnt/d/llm_exp/results/qwen3-block-htp/exp0278/vsum
+      timed_profiles: 9600
+      prototype_timed_profiles: 9600
+      numerical_gate_scope: Qwen selected layer14 and chain3 independent exact; full28
+        physical/front-end finalNorm and full-vocabulary head oracle; no full28 CPU
+        transformer equivalence claim
+      physical_gate: true
+      quality_claim: false
+      baseline_promoted: false
+      trajectories:
+        greedy:
+          effects:
+            prefill:
+              fp_over_log2_wall: 1.0154842557329737
+              ci95:
+              - 1.0134265262809585
+              - 1.017682125201596
+            decode:
+              fp_over_log2_wall: 0.9979796764788961
+              ci95:
+              - 0.9965538978825368
+              - 0.9992703414479449
+          tps:
+            LOG2:
+              prefill: 1850.8303081275774
+              decode: 47.138502188493455
+            FP:
+              prefill: 1822.6085709144281
+              decode: 47.23393000828337
+        fixed:
+          effects:
+            prefill:
+              fp_over_log2_wall: 1.0148098959621188
+              ci95:
+              - 1.011718021064137
+              - 1.017754857401735
+            decode:
+              fp_over_log2_wall: 0.9979927266450705
+              ci95:
+              - 0.9957243422507294
+              - 1.0004015093279517
+          tps:
+            LOG2:
+              prefill: 1845.6776483653305
+              decode: 47.00809121313934
+            FP:
+              prefill: 1818.7422646440443
+              decode: 47.10263908552258

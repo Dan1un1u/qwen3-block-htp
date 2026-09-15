@@ -1,5 +1,9 @@
 # Current checkpoint
 
+EXP-0282 completed and sealed. Latest optimized A0/A1/A2/A3/A5/A6/A9 rerun complete. All controls received applicable valid-row optimization. Read current latest_paper_ablation_campaign; historical pre-optimization findings below are superseded only by new paired measurements. Generalization is supplementary, excluded and NOT rerun. No active experiment; no quality/baseline promotion.
+
+# Current checkpoint
+
 EXP-0282 registered for latest optimized paper ablation rerun. Read docs/experiments/EXP-0282.md. Generalization excluded, not rerun. Qwen owns device first; Llama local preparation only until explicit release.
 
 # Current checkpoint
