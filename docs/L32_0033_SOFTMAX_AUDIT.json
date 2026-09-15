@@ -1,0 +1,78 @@
+{
+  "component_fp_cases": 32,
+  "component_total_cases": 64,
+  "max_probability_abs": 2.1935909622072813e-07,
+  "max_row_sum_error": 2.2362949958498746e-07,
+  "float64_u8_threshold_differences": 0,
+  "component_formal_us": {
+    "m64-p0-random": {
+      "LOG2": 175.77067708333334,
+      "FP": 105.44765625000001
+    },
+    "m1-p64-random": {
+      "LOG2": 3.5428645833333334,
+      "FP": 2.1653125
+    }
+  },
+  "component_scope": "4 heads; core includes native score conversion/packing and matched rowmass telemetry; immutable score restore excluded from both timers; separate pack timer N/A",
+  "actual_input_approximation": [
+    {
+      "mode": "prefill",
+      "same_QKV": true,
+      "probability_u8": {
+        "elements": 131072,
+        "differing": 21484,
+        "max_abs": 21.0,
+        "mean_abs": 0.35101318359375,
+        "rmse": 1.2395990621813722
+      },
+      "probability_dequantized": {
+        "elements": 131072,
+        "differing": 21484,
+        "max_abs": 0.08235294117647057,
+        "mean_abs": 0.0013765222886029413,
+        "rmse": 0.004861172792868127
+      },
+      "AV_u8": {
+        "elements": 131072,
+        "differing": 52195,
+        "max_abs": 7.0,
+        "mean_abs": 0.4544219970703125,
+        "rmse": 0.7694915916176813
+      },
+      "scope": "independent selected-layer matched QKV references; both full selected outputs separately exact on device; AV changes are approximation differences, not hardware implementation errors"
+    },
+    {
+      "mode": "decode",
+      "same_QKV": true,
+      "probability_u8": {
+        "elements": 2080,
+        "differing": 466,
+        "max_abs": 22.0,
+        "mean_abs": 0.4043269230769231,
+        "rmse": 1.2794605233336551
+      },
+      "probability_dequantized": {
+        "elements": 2080,
+        "differing": 466,
+        "max_abs": 0.0862745098039216,
+        "mean_abs": 0.0015855957767722472,
+        "rmse": 0.005017492248367276
+      },
+      "AV_u8": {
+        "elements": 2048,
+        "differing": 860,
+        "max_abs": 6.0,
+        "mean_abs": 0.48876953125,
+        "rmse": 0.821167708966932
+      },
+      "scope": "independent selected-layer matched QKV references; both full selected outputs separately exact on device; AV changes are approximation differences, not hardware implementation errors"
+    }
+  ],
+  "quality_claim": false,
+  "softmax_claim": "Llama retained per-layer log2 division configs include exact mode. Result does not establish every log2 design slower than FP32; it does not test Qwen NR64 port.",
+  "source_manifest_sha256": {
+    "FP": "574df7226a0e4a1159a3bf070462f91f5eed9af2763d1caef72f5f724abfb960",
+    "LOG2": "2d00cf0206351d87c674a78cef65e92c040857624b2d68e93c9ef5af540f39ea"
+  }
+}
