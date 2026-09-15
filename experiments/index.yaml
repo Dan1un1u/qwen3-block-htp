@@ -3,9 +3,9 @@ project: llama32-htp
 experiments:
 - id: L32-0038
   title: Latest optimized runtime paper ablation rerun; generalization excluded
-  execution_state: running
-  evidence_validity: pending
-  local_gate: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   record: docs/experiments/L32-0038.md
   approval_ref: 'User2026-09-15: optimize then rerun ablations and update conclusions;
     generalization is supplementary and not rerun'
@@ -13,6 +13,39 @@ experiments:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
   parent_source: 26d5729741a1cb4bc9a15166dfaa3f56b9bcb055
+  evidence:
+    id: L32-0038
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    report: /mnt/d/llm_exp/results/llama32-htp/l32-0038/REPORT.md
+    module_tables: /mnt/d/llm_exp/results/llama32-htp/l32-0038/MODULE_TABLES.md
+    summary: /mnt/d/llm_exp/results/llama32-htp/l32-0038/SUMMARY.json
+    source_closure: 5b01822b529fc2968c1b15124cdfd430709fef71
+    measured_sources:
+      A1: cfae1f236817c380a6649d1429a9fa70454ed7f0
+      A2: cfae1f236817c380a6649d1429a9fa70454ed7f0
+      A3: cfae1f236817c380a6649d1429a9fa70454ed7f0
+      A5: cfae1f236817c380a6649d1429a9fa70454ed7f0
+      A9: cfae1f236817c380a6649d1429a9fa70454ed7f0
+    evidence_ledger_sha256: a7ba00b82f2b76983f33320c658eaab86754ed366f0c103e06aba7db5e93f93f
+    completed:
+    - A0
+    - A1
+    - A2
+    - A3
+    - A5
+    - A6
+    - A9
+    cited_existing:
+    - A7 EXP0272
+    excluded:
+    - W4-to-S8
+    - integer residual
+    - 'A8/generalization: supplemental, not rerun'
+    generalization_run: false
+    quality_claim: false
+    baseline_promoted: false
 - id: L32-0037
   title: Bounded latest runtime prompt and decode generalization
   execution_state: completed

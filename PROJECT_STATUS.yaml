@@ -6,7 +6,7 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0038
+  active_experiment: null
   next_experiment_number: 39
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -14,7 +14,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: 26d5729741a1cb4bc9a15166dfaa3f56b9bcb055
+    recorded_head: 5b01822b529fc2968c1b15124cdfd430709fef71
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -43,7 +43,7 @@ current_scope:
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0037
+  last_completed_experiment: L32-0038
   evidence_ledger_sha256: 599d86cf654b2b41526690c76ad1c0a251b5f206815a57ce4ae12b0024f94ac9
   formal_profiling_completed: false
   general_quantization_quality_accepted: false
@@ -1273,334 +1273,425 @@ current_scope:
     no_omitted_validated_no_rotation_optimization_found: true
     qwen_evidence_ledger_sha256: 20d3ddb9e1152e35e714f45b159f26312e5a79177cae907c31b7952a8af26ff5
   latest_paper_factorial_result:
-    id: L32-0029
+    id: L32-0038
+    phase: A1
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    measured_native_head: 64717025e8c86031764b53a41c8ab55313ea3bf9
-    source_closure_head: f839f81d8a8d8641673992b4038c69b3f2c7edbd
-    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0029
-    evidence_ledger_sha256: bfef7a0973d7d41eb00061eba218e2a94b75c083bced81be1e29fe755e34c0ee
-    evidence_files: 816
-    evidence_bytes: 294387837
-    exact_independent_outputs: true
+    measured_source: cfae1f236817c380a6649d1429a9fa70454ed7f0
+    source_closure: 5b01822b529fc2968c1b15124cdfd430709fef71
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0038/A1
+    report: /mnt/d/llm_exp/results/llama32-htp/l32-0038/REPORT.md
+    evidence_ledger_sha256: a7ba00b82f2b76983f33320c658eaab86754ed366f0c103e06aba7db5e93f93f
     physical_gate: true
-    baseline_promoted: false
     quality_claim: false
+    baseline_promoted: false
     performance:
-      B00:
-        prefill: 1910.3534005708816
-        decode: 44.28007695360892
-      B10:
-        prefill: 1924.9341768457455
-        decode: 43.75235019905568
-      B01:
-        prefill: 2153.7188066275457
-        decode: 45.31161968538076
       B11:
-        prefill: 2161.7444707719023
-        decode: 45.188904827340984
+        prefill: 2347.4171291936073
+        decode: 46.06462280213343
+      B01:
+        prefill: 2337.7939083998926
+        decode: 46.0213247853534
+      B10:
+        prefill: 2067.4186447585585
+        decode: 45.179316722075505
+      B00:
+        prefill: 2052.95658941013
+        decode: 44.9594097340145
     effects:
       prefill:
         B11_vs_B00_latency:
-          ratio: 0.8837091647047185
+          ratio: 0.8745597720484254
           ci95:
-          - 0.877010145929359
-          - 0.8891175177470394
+          - 0.8720458360483299
+          - 0.8773956039527658
         format_given_conventional:
-          ratio: 0.9924253117585786
+          ratio: 0.9930047765675843
           ci95:
-          - 0.9835640064334601
-          - 0.9988024497639912
+          - 0.9904995177086309
+          - 0.9954665780727673
         format_given_pipeline:
-          ratio: 0.9962874131272829
+          ratio: 0.9959005066998806
           ci95:
-          - 0.99368170145155
-          - 0.9990996141637437
+          - 0.9927578711443593
+          - 0.9988374152140383
         pipeline_given_modular:
-          ratio: 0.8870022375679842
+          ratio: 0.8781597821919556
           ci95:
-          - 0.8797423834660542
-          - 0.8920526081200432
+          - 0.8759144395138887
+          - 0.8801651861119109
         pipeline_given_native:
-          ratio: 0.8904540767292453
+          ratio: 0.8807206094933648
           ci95:
-          - 0.8878340646423779
-          - 0.8930149496595395
+          - 0.8782841870347131
+          - 0.8832091372374404
         interaction:
-          ratio: 1.0038915788653764
+          ratio: 1.0029161291069573
           ci95:
-          - 0.996557425746487
-          - 1.014129297923949
+          - 0.9987329223846327
+          - 1.0070057246531192
       decode:
         B11_vs_B00_latency:
-          ratio: 0.9798882518351674
+          ratio: 0.976007334894149
           ci95:
-          - 0.9767884226202911
-          - 0.98364483001477
+          - 0.9743248743833002
+          - 0.9777733157567777
         format_given_conventional:
-          ratio: 1.0120616778790692
+          ratio: 0.9951325738409507
           ci95:
-          - 1.0093867940008532
-          - 1.014970317071626
+          - 0.9939604816658266
+          - 0.9963073217550337
         format_given_pipeline:
-          ratio: 1.002715597080935
+          ratio: 0.9990600592353485
           ci95:
-          - 1.0001113775983703
-          - 1.0053771522964092
+          - 0.9974466814208376
+          - 1.0006748671334638
         pipeline_given_modular:
-          ratio: 0.9772344767427359
+          ratio: 0.9769255870774743
           ci95:
-          - 0.9739079839157573
-          - 0.9807790096397286
+          - 0.9756854051607843
+          - 0.9779256930411422
         pipeline_given_native:
-          ratio: 0.9682100145207295
+          ratio: 0.980781215036522
           ci95:
-          - 0.9662254709068724
-          - 0.9702331686570372
+          - 0.9791796045173145
+          - 0.9825656022108874
         interaction:
-          ratio: 0.9907653051168577
+          ratio: 1.0039466956440173
           ci95:
-          - 0.9870875472223184
-          - 0.9941624837523004
+          - 1.0020069734319716
+          - 1.005944185256383
   current_handoff: docs/SESSION_HANDOFF_L32_0032.md
-  next_direction: Active latest runtime ablation rerun A0/A1/A2/A3/A5/A6/A9. A8/generalization
-    supplemental and excluded from execution; A7 cites sealed evidence. No new quantization/quality/promotion.
+  next_direction: Latest optimized ablations complete; discuss updated paired conclusions.
+    Generalization remains supplementary and was not rerun.
   latest_paper_pipeline_result:
-    id: L32-0030
+    id: L32-0038
+    phase: A2
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    measured_source: 4421949fcdeaff146cf093a4ce529190b13e2ded
-    source_closure: 6059e2c3aa11c3124543f658ea0203f6bb4adefc
-    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0030
-    evidence_ledger_sha256: 7d6bc80d63ecdfa9d1c7e3040483a30dc68cf1dd0a14264d7aee862f1bee6ed2
-    evidence_files: 1450
-    evidence_bytes: 386377955
-    timed_profiles: 14000
+    measured_source: cfae1f236817c380a6649d1429a9fa70454ed7f0
+    source_closure: 5b01822b529fc2968c1b15124cdfd430709fef71
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0038/A2
+    report: /mnt/d/llm_exp/results/llama32-htp/l32-0038/REPORT.md
+    evidence_ledger_sha256: a7ba00b82f2b76983f33320c658eaab86754ed366f0c103e06aba7db5e93f93f
     physical_gate: true
-    independent_numerical_exact: true
-    trace_complete: false
-    trace_status: 'N/A: truncated FARF; five exact diagnostic runs retained'
-    mechanism_coverage:
-      QKV: 'N/A: Qwen ring scheduling site is inactive in the measured Llama no-rotation
-        path; QKV arm is a no-op control, not evidence against QKV overlap'
-      FFN: active
-      EPILOGUE: prefill active; decode current implementation inline
-      LOOKAHEAD: decode active; no prefill cross-operator lookahead path
-    baseline_promoted: false
     quality_claim: false
+    baseline_promoted: false
     performance:
       ALL:
-        prefill: 2161.5492818826506
-        decode: 45.22987401582965
+        prefill: 2341.1689389789003
+        decode: 45.8713594753845
       QKV:
-        prefill: 2161.188921840409
-        decode: 45.25146933995448
+        prefill: 2345.1833169556967
+        decode: 45.92510385908276
       FFN:
-        prefill: 2008.6065690698251
-        decode: 44.257200383437585
+        prefill: 2165.428290821353
+        decode: 45.673948970002165
       EPILOGUE:
-        prefill: 2063.2935104854705
-        decode: 45.26347147190389
+        prefill: 2225.132891516069
+        decode: 45.89283884982407
       LOOKAHEAD:
-        prefill: 2164.7195113314824
-        decode: 44.70926258639452
+        prefill: 2342.8248192796373
+        decode: 45.323083058584004
     effects:
       prefill:
         QKV:
-          ratio: 1.0001667415738624
+          ratio: 0.9982882455508819
           ci95:
-          - 0.9952633454868799
-          - 1.005481304947648
+          - 0.9945903477283327
+          - 1.0010874085473502
         FFN:
-          ratio: 1.0761436884494768
+          ratio: 1.0811574545795226
           ci95:
-          - 1.0727642503720805
-          - 1.0795621208897044
+          - 1.0774570855485521
+          - 1.0847037817523095
         EPILOGUE:
-          ratio: 1.0476208406113108
+          ratio: 1.0521479179536877
           ci95:
-          - 1.044459327028086
-          - 1.0504485422689716
+          - 1.04922567000936
+          - 1.0552112098411917
         LOOKAHEAD:
-          ratio: 0.9985355010511816
+          ratio: 0.9992932120715514
           ci95:
-          - 0.995665412294924
-          - 1.0016520589821603
+          - 0.9962929556311934
+          - 1.002845645542713
       decode:
         QKV:
-          ratio: 0.999522770764357
+          ratio: 0.9988297384397178
           ci95:
-          - 0.9964503162843332
-          - 1.0027728353369119
+          - 0.9971304588333234
+          - 1.0006011291904806
         FFN:
-          ratio: 1.0219777487948847
+          ratio: 1.0043221685410209
           ci95:
-          - 1.02020859531325
-          - 1.0237669077190787
+          - 1.002704501438147
+          - 1.0060251944725842
         EPILOGUE:
-          ratio: 0.999257735763924
+          ratio: 0.9995319667517225
           ci95:
-          - 0.9972904506167213
-          - 1.0009788704687534
+          - 0.9979595314788816
+          - 1.001061862072895
         LOOKAHEAD:
-          ratio: 1.0116443752215576
+          ratio: 1.0120970679795063
           ci95:
-          - 1.009275908390115
-          - 1.0140494700486085
+          - 1.0106126041462478
+          - 1.013539509721622
+    local_scopes:
+      l1-greedy:
+        prefill:
+          QKV_vs_ALL:
+            ratio: 0.9990377669285654
+            ci95:
+            - 0.9877327678232226
+            - 1.0089134596312441
+          FFN_vs_ALL:
+            ratio: 1.072846493806988
+            ci95:
+            - 1.059224787470774
+            - 1.088790029274331
+          EPILOGUE_vs_ALL:
+            ratio: 1.062976447514569
+            ci95:
+            - 1.0521636755343686
+            - 1.0769567791928836
+          LOOKAHEAD_vs_ALL:
+            ratio: 1.0120691983948387
+            ci95:
+            - 0.9959742314239629
+            - 1.029820984957948
+        decode:
+          QKV_vs_ALL:
+            ratio: 1.0068260637086721
+            ci95:
+            - 0.9803008927811577
+            - 1.0321388674166536
+          FFN_vs_ALL:
+            ratio: 1.0201575168512464
+            ci95:
+            - 0.9977106713232384
+            - 1.0461979057579849
+          EPILOGUE_vs_ALL:
+            ratio: 1.001730590961677
+            ci95:
+            - 0.9835950784697793
+            - 1.0272484366750607
+          LOOKAHEAD_vs_ALL:
+            ratio: 1.0325268522349709
+            ci95:
+            - 1.0082451534872456
+            - 1.0595983178125077
+      l3-greedy:
+        prefill:
+          QKV_vs_ALL:
+            ratio: 0.9863199733432902
+            ci95:
+            - 0.9652665921666491
+            - 1.0075761201205569
+          FFN_vs_ALL:
+            ratio: 1.206932244386567
+            ci95:
+            - 1.13828212550856
+            - 1.2751082317554772
+          EPILOGUE_vs_ALL:
+            ratio: 1.02884902938124
+            ci95:
+            - 0.9970027594888686
+            - 1.0624865465234015
+          LOOKAHEAD_vs_ALL:
+            ratio: 1.000760940541226
+            ci95:
+            - 0.9715722666607299
+            - 1.0311878044283824
+        decode:
+          QKV_vs_ALL:
+            ratio: 1.0013898427749557
+            ci95:
+            - 0.9758869201476839
+            - 1.0303021963581238
+          FFN_vs_ALL:
+            ratio: 0.9953678619994091
+            ci95:
+            - 0.9241624237895097
+            - 1.0832202556138106
+          EPILOGUE_vs_ALL:
+            ratio: 1.0491375598466475
+            ci95:
+            - 0.9930822996238252
+            - 1.1071773131936562
+          LOOKAHEAD_vs_ALL:
+            ratio: 0.9912407787855757
+            ci95:
+            - 0.9599816353308253
+            - 1.0187699453377952
   latest_paper_sp2_stream_result:
-    id: L32-0031
+    id: L32-0038
+    phase: A3
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    measured_source: 8fdc6e42893be7e13a887e29db989fe8ba783a5d
-    source_closure: 445899b97a27d3cfa568ab165b4e3a6ef1f0c70c
-    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0031
-    evidence_ledger_sha256: 660a885cbb7ea74b3533a40d9ad9c6a5dda71ed5724399b7c4e79c1a23696474
-    evidence_files: 368
-    timed_profiles: 4800
-    independent_numerical_exact: true
+    measured_source: cfae1f236817c380a6649d1429a9fa70454ed7f0
+    source_closure: 5b01822b529fc2968c1b15124cdfd430709fef71
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0038/A3
+    report: /mnt/d/llm_exp/results/llama32-htp/l32-0038/REPORT.md
+    evidence_ledger_sha256: a7ba00b82f2b76983f33320c658eaab86754ed366f0c103e06aba7db5e93f93f
     physical_gate: true
-    weight_bytes_identical: true
-    extra_decode_tile_pairs_per_layer: 16384
-    baseline_promoted: false
     quality_claim: false
-    effects:
-      prefill:
-        SPLIT:
-          ratio: 1.001063299350713
-          ci95:
-          - 0.998008987613505
-          - 1.003802286238664
-      decode:
-        SPLIT:
-          ratio: 1.011656635105734
-          ci95:
-          - 1.0075799741956273
-          - 1.0162463661212997
+    baseline_promoted: false
     performance:
       ALL:
-        prefill: 2164.618190614108
-        decode: 45.21629354322561
+        prefill: 2348.2668589112513
+        decode: 45.84404032203251
       SPLIT:
-        prefill: 2162.318998227259
-        decode: 44.695296777744964
+        prefill: 2340.422354527005
+        decode: 45.38929522317966
+    effects:
+      prefill:
+        SPLIT:
+          ratio: 1.0033517473327294
+          ci95:
+          - 1.0023398442090024
+          - 1.0043850522840905
+      decode:
+        SPLIT:
+          ratio: 1.0100187741760887
+          ci95:
+          - 1.0085525206100843
+          - 1.01152432012815
+    local_scopes:
+      l1-greedy:
+        prefill:
+          SPLIT_vs_ALL:
+            ratio: 0.9941495621013535
+            ci95:
+            - 0.9840380538556229
+            - 1.0049599763669064
+        decode:
+          SPLIT_vs_ALL:
+            ratio: 1.0147931892204167
+            ci95:
+            - 0.9960953606435287
+            - 1.0328455614938172
+      l3-greedy:
+        prefill:
+          SPLIT_vs_ALL:
+            ratio: 1.0038611394467836
+            ci95:
+            - 0.9873924569745046
+            - 1.0199916885061866
+        decode:
+          SPLIT_vs_ALL:
+            ratio: 0.9828561162850421
+            ci95:
+            - 0.9399129560396657
+            - 1.0206271184835012
   latest_paper_a8_sp2_cost_result:
-    id: L32-0032
+    id: L32-0038
+    phase: A5
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    measured_source: 0e406c088b3b188d40e213ed1e4ecffcb935292d
-    source_closure: f91f3a881c6eff7988218bfcf5b055a2297d2708
-    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0032
-    evidence_ledger_sha256: a11ee12fd162617993b247e4b60074a815493205050517fa0643d8af0343f557
-    evidence_files: 583
-    evidence_bytes: 266094775
-    timed_profiles: 9600
-    numerical_gate_scope: Llama independent selected layer7, chain3, chain16 two-step
-      exact; full16 all-layer greedy/fixed CPU teacher selected token/logit codes
-      exact
+    measured_source: cfae1f236817c380a6649d1429a9fa70454ed7f0
+    source_closure: 5b01822b529fc2968c1b15124cdfd430709fef71
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0038/A5
+    report: /mnt/d/llm_exp/results/llama32-htp/l32-0038/REPORT.md
+    evidence_ledger_sha256: a7ba00b82f2b76983f33320c658eaab86754ed366f0c103e06aba7db5e93f93f
     physical_gate: true
-    weight_bytes_identical: true
     quality_claim: false
     baseline_promoted: false
     trajectories:
       greedy:
         effects:
           prefill:
-            sp2_over_a8_wall: 1.014754883643624
+            sp2_over_a8_wall: 1.0147694834874679
             ci95:
-            - 1.012139706222046
-            - 1.0172583931670374
+            - 1.0124893129375268
+            - 1.0171843025968317
           decode:
-            sp2_over_a8_wall: 0.9992387929054514
+            sp2_over_a8_wall: 0.9997648241032541
             ci95:
-            - 0.9976419800894792
-            - 1.0009743025917388
+            - 0.9977692433620073
+            - 1.0017405586969752
         tps:
-          A8:
-            prefill: 2190.2103218555853
-            decode: 45.19056053358174
           SP2:
-            prefill: 2158.363913452004
-            decode: 45.224986113862485
+            prefill: 2341.1266061709234
+            decode: 45.85901474527816
+          A8:
+            prefill: 2375.703836922836
+            decode: 45.84822981036155
       fixed:
         effects:
           prefill:
-            sp2_over_a8_wall: 1.01336439891226
+            sp2_over_a8_wall: 1.0153249199520065
             ci95:
-            - 1.010152605893282
-            - 1.0163887468010981
+            - 1.013674247471371
+            - 1.0175205110834746
           decode:
-            sp2_over_a8_wall: 1.0003500537936414
+            sp2_over_a8_wall: 1.0016192131118267
             ci95:
-            - 0.9977826760282112
-            - 1.00294924273737
+            - 1.0002361592255715
+            - 1.003253177126954
         tps:
-          A8:
-            prefill: 2193.0798326723125
-            decode: 45.3513142053777
           SP2:
-            prefill: 2164.157172904784
-            decode: 45.33544436109269
+            prefill: 2341.5959786648295
+            decode: 45.829689768606876
+          A8:
+            prefill: 2377.480749597808
+            decode: 45.90389780319114
   latest_paper_softmax_result:
-    id: L32-0033
+    id: L32-0038
+    phase: A9
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    measured_source: 78560f4c12c63d2d1ac07405baca84c4ed275b8d
-    source_closure: 0dfebbd6f72b145574c66d22d7dd13dfb3175883
-    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0033
-    evidence_ledger_sha256: c647b984f5cc875a366f6829589c66a6b5428961b867ff1159cc4f9813866904
-    evidence_files: 1497
-    evidence_bytes: 300912966
-    timed_profiles: 9600
+    measured_source: cfae1f236817c380a6649d1429a9fa70454ed7f0
+    source_closure: 5b01822b529fc2968c1b15124cdfd430709fef71
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0038/A9
+    report: /mnt/d/llm_exp/results/llama32-htp/l32-0038/REPORT.md
+    evidence_ledger_sha256: a7ba00b82f2b76983f33320c658eaab86754ed366f0c103e06aba7db5e93f93f
     physical_gate: true
-    numerical_gate_scope: Llama independent selected layer7, chain3, chain16 two-step
-      exact; full16 all-layer greedy/fixed CPU teacher selected token/logit codes
-      exact
     quality_claim: false
     baseline_promoted: false
     trajectories:
       greedy:
         effects:
           prefill:
-            fp_over_log2_wall: 0.9482431147825292
+            fp_over_log2_wall: 1.0246101426756902
             ci95:
-            - 0.9462983049580592
-            - 0.9501915565880371
+            - 1.0209160280004566
+            - 1.028410072758925
           decode:
-            fp_over_log2_wall: 0.9890237700528771
+            fp_over_log2_wall: 0.9999202693423176
             ci95:
-            - 0.9874231629025251
-            - 0.9909409516496835
+            - 0.9988204498720391
+            - 1.0009457000765272
         tps:
           LOG2:
-            prefill: 2165.603572549653
-            decode: 45.14853151399325
+            prefill: 2340.965601161969
+            decode: 45.86226307320196
           FP:
-            prefill: 2283.8062716082195
-            decode: 45.649591932031555
+            prefill: 2284.7378760556853
+            decode: 45.86591999316822
       fixed:
         effects:
           prefill:
-            fp_over_log2_wall: 0.9496486730629179
+            fp_over_log2_wall: 1.025600099191101
             ci95:
-            - 0.947912434596591
-            - 0.951642664782124
+            - 1.0230625698434794
+            - 1.0291023442515723
           decode:
-            fp_over_log2_wall: 0.9885331339254163
+            fp_over_log2_wall: 1.0002269185742352
             ci95:
-            - 0.9871226200364103
-            - 0.9899537698433332
+            - 0.9975229095341879
+            - 1.0027274002767477
         tps:
           LOG2:
-            prefill: 2166.2094720802484
-            decode: 45.121399642830276
+            prefill: 2342.9077747049037
+            decode: 45.81174929117729
           FP:
-            prefill: 2281.0640750895127
-            decode: 45.64480247986775
+            prefill: 2284.426236456855
+            decode: 45.801356112750156
   latest_paper_long_kv_result:
     id: L32-0034
     execution_state: completed
@@ -1648,11 +1739,21 @@ current_scope:
     quality_claim: false
     baseline_promoted: false
   latest_paper_ablation_campaign:
+    id: L32-0038
     execution_state: completed
-    report: /mnt/d/llm_exp/results/paper-no-rotation-ablation-20260915/REPORT.md
-    module_tables: /mnt/d/llm_exp/results/paper-no-rotation-ablation-20260915/MODULE_TABLES.md
-    source_report: docs/paper_no_rotation_ablations/REPORT.md
-    evidence_ledger_sha256: 5c050ce12226744cbe198c280bf6ff97a090e8581f969ad8176593e983b15447
+    evidence_validity: valid
+    local_gate: pass
+    report: /mnt/d/llm_exp/results/llama32-htp/l32-0038/REPORT.md
+    module_tables: /mnt/d/llm_exp/results/llama32-htp/l32-0038/MODULE_TABLES.md
+    summary: /mnt/d/llm_exp/results/llama32-htp/l32-0038/SUMMARY.json
+    source_closure: 5b01822b529fc2968c1b15124cdfd430709fef71
+    measured_sources:
+      A1: cfae1f236817c380a6649d1429a9fa70454ed7f0
+      A2: cfae1f236817c380a6649d1429a9fa70454ed7f0
+      A3: cfae1f236817c380a6649d1429a9fa70454ed7f0
+      A5: cfae1f236817c380a6649d1429a9fa70454ed7f0
+      A9: cfae1f236817c380a6649d1429a9fa70454ed7f0
+    evidence_ledger_sha256: a7ba00b82f2b76983f33320c658eaab86754ed366f0c103e06aba7db5e93f93f
     completed:
     - A0
     - A1
@@ -1660,19 +1761,16 @@ current_scope:
     - A3
     - A5
     - A6
-    - A8
     - A9
     cited_existing:
     - A7 EXP0272
-    canceled:
-    - W4-to-S8 comparison
-    - integer residual comparison
-    unavailable:
-    - complete FARF timeline/utilization
+    excluded:
+    - W4-to-S8
+    - integer residual
+    - 'A8/generalization: supplemental, not rerun'
+    generalization_run: false
     quality_claim: false
     baseline_promoted: false
-    qwen_final_experiment: EXP-0279
-    llama_final_experiment: L32-0034
   latest_decode_native_optimization:
     id: L32-0035
     execution_state: completed
@@ -1788,7 +1886,7 @@ current_scope:
         FP: 2.1659375
     quality_claim: false
     baseline_promoted: false
-  latest_bounded_generalization:
+  latest_bounded_generalization: &id001
     id: L32-0037
     execution_state: completed
     local_gate: pass
@@ -1863,7 +1961,364 @@ current_scope:
     physical_gate: true
     quality_claim: false
     baseline_promoted: false
-  last_completed_source_commit: 26d5729741a1cb4bc9a15166dfaa3f56b9bcb055
+  last_completed_source_commit: 5b01822b529fc2968c1b15124cdfd430709fef71
+  prior_paper_ablation_campaign:
+    execution_state: completed
+    report: /mnt/d/llm_exp/results/paper-no-rotation-ablation-20260915/REPORT.md
+    module_tables: /mnt/d/llm_exp/results/paper-no-rotation-ablation-20260915/MODULE_TABLES.md
+    source_report: docs/paper_no_rotation_ablations/REPORT.md
+    evidence_ledger_sha256: 5c050ce12226744cbe198c280bf6ff97a090e8581f969ad8176593e983b15447
+    completed:
+    - A0
+    - A1
+    - A2
+    - A3
+    - A5
+    - A6
+    - A8
+    - A9
+    cited_existing:
+    - A7 EXP0272
+    canceled:
+    - W4-to-S8 comparison
+    - integer residual comparison
+    unavailable:
+    - complete FARF timeline/utilization
+    quality_claim: false
+    baseline_promoted: false
+    qwen_final_experiment: EXP-0279
+    llama_final_experiment: L32-0034
+  supplementary_generalization:
+    source: *id001
+    classification: supplementary experiment; excluded from main ablations by explicit
+      user instruction; not rerun
+  pre_optimization_paper_ablation_results:
+    latest_paper_factorial_result:
+      id: L32-0029
+      execution_state: completed
+      evidence_validity: valid
+      local_gate: pass
+      measured_native_head: 64717025e8c86031764b53a41c8ab55313ea3bf9
+      source_closure_head: f839f81d8a8d8641673992b4038c69b3f2c7edbd
+      evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0029
+      evidence_ledger_sha256: bfef7a0973d7d41eb00061eba218e2a94b75c083bced81be1e29fe755e34c0ee
+      evidence_files: 816
+      evidence_bytes: 294387837
+      exact_independent_outputs: true
+      physical_gate: true
+      baseline_promoted: false
+      quality_claim: false
+      performance:
+        B00:
+          prefill: 1910.3534005708816
+          decode: 44.28007695360892
+        B10:
+          prefill: 1924.9341768457455
+          decode: 43.75235019905568
+        B01:
+          prefill: 2153.7188066275457
+          decode: 45.31161968538076
+        B11:
+          prefill: 2161.7444707719023
+          decode: 45.188904827340984
+      effects:
+        prefill:
+          B11_vs_B00_latency:
+            ratio: 0.8837091647047185
+            ci95:
+            - 0.877010145929359
+            - 0.8891175177470394
+          format_given_conventional:
+            ratio: 0.9924253117585786
+            ci95:
+            - 0.9835640064334601
+            - 0.9988024497639912
+          format_given_pipeline:
+            ratio: 0.9962874131272829
+            ci95:
+            - 0.99368170145155
+            - 0.9990996141637437
+          pipeline_given_modular:
+            ratio: 0.8870022375679842
+            ci95:
+            - 0.8797423834660542
+            - 0.8920526081200432
+          pipeline_given_native:
+            ratio: 0.8904540767292453
+            ci95:
+            - 0.8878340646423779
+            - 0.8930149496595395
+          interaction:
+            ratio: 1.0038915788653764
+            ci95:
+            - 0.996557425746487
+            - 1.014129297923949
+        decode:
+          B11_vs_B00_latency:
+            ratio: 0.9798882518351674
+            ci95:
+            - 0.9767884226202911
+            - 0.98364483001477
+          format_given_conventional:
+            ratio: 1.0120616778790692
+            ci95:
+            - 1.0093867940008532
+            - 1.014970317071626
+          format_given_pipeline:
+            ratio: 1.002715597080935
+            ci95:
+            - 1.0001113775983703
+            - 1.0053771522964092
+          pipeline_given_modular:
+            ratio: 0.9772344767427359
+            ci95:
+            - 0.9739079839157573
+            - 0.9807790096397286
+          pipeline_given_native:
+            ratio: 0.9682100145207295
+            ci95:
+            - 0.9662254709068724
+            - 0.9702331686570372
+          interaction:
+            ratio: 0.9907653051168577
+            ci95:
+            - 0.9870875472223184
+            - 0.9941624837523004
+    latest_paper_pipeline_result:
+      id: L32-0030
+      execution_state: completed
+      evidence_validity: valid
+      local_gate: pass
+      measured_source: 4421949fcdeaff146cf093a4ce529190b13e2ded
+      source_closure: 6059e2c3aa11c3124543f658ea0203f6bb4adefc
+      evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0030
+      evidence_ledger_sha256: 7d6bc80d63ecdfa9d1c7e3040483a30dc68cf1dd0a14264d7aee862f1bee6ed2
+      evidence_files: 1450
+      evidence_bytes: 386377955
+      timed_profiles: 14000
+      physical_gate: true
+      independent_numerical_exact: true
+      trace_complete: false
+      trace_status: 'N/A: truncated FARF; five exact diagnostic runs retained'
+      mechanism_coverage:
+        QKV: 'N/A: Qwen ring scheduling site is inactive in the measured Llama no-rotation
+          path; QKV arm is a no-op control, not evidence against QKV overlap'
+        FFN: active
+        EPILOGUE: prefill active; decode current implementation inline
+        LOOKAHEAD: decode active; no prefill cross-operator lookahead path
+      baseline_promoted: false
+      quality_claim: false
+      performance:
+        ALL:
+          prefill: 2161.5492818826506
+          decode: 45.22987401582965
+        QKV:
+          prefill: 2161.188921840409
+          decode: 45.25146933995448
+        FFN:
+          prefill: 2008.6065690698251
+          decode: 44.257200383437585
+        EPILOGUE:
+          prefill: 2063.2935104854705
+          decode: 45.26347147190389
+        LOOKAHEAD:
+          prefill: 2164.7195113314824
+          decode: 44.70926258639452
+      effects:
+        prefill:
+          QKV:
+            ratio: 1.0001667415738624
+            ci95:
+            - 0.9952633454868799
+            - 1.005481304947648
+          FFN:
+            ratio: 1.0761436884494768
+            ci95:
+            - 1.0727642503720805
+            - 1.0795621208897044
+          EPILOGUE:
+            ratio: 1.0476208406113108
+            ci95:
+            - 1.044459327028086
+            - 1.0504485422689716
+          LOOKAHEAD:
+            ratio: 0.9985355010511816
+            ci95:
+            - 0.995665412294924
+            - 1.0016520589821603
+        decode:
+          QKV:
+            ratio: 0.999522770764357
+            ci95:
+            - 0.9964503162843332
+            - 1.0027728353369119
+          FFN:
+            ratio: 1.0219777487948847
+            ci95:
+            - 1.02020859531325
+            - 1.0237669077190787
+          EPILOGUE:
+            ratio: 0.999257735763924
+            ci95:
+            - 0.9972904506167213
+            - 1.0009788704687534
+          LOOKAHEAD:
+            ratio: 1.0116443752215576
+            ci95:
+            - 1.009275908390115
+            - 1.0140494700486085
+    latest_paper_sp2_stream_result:
+      id: L32-0031
+      execution_state: completed
+      evidence_validity: valid
+      local_gate: pass
+      measured_source: 8fdc6e42893be7e13a887e29db989fe8ba783a5d
+      source_closure: 445899b97a27d3cfa568ab165b4e3a6ef1f0c70c
+      evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0031
+      evidence_ledger_sha256: 660a885cbb7ea74b3533a40d9ad9c6a5dda71ed5724399b7c4e79c1a23696474
+      evidence_files: 368
+      timed_profiles: 4800
+      independent_numerical_exact: true
+      physical_gate: true
+      weight_bytes_identical: true
+      extra_decode_tile_pairs_per_layer: 16384
+      baseline_promoted: false
+      quality_claim: false
+      effects:
+        prefill:
+          SPLIT:
+            ratio: 1.001063299350713
+            ci95:
+            - 0.998008987613505
+            - 1.003802286238664
+        decode:
+          SPLIT:
+            ratio: 1.011656635105734
+            ci95:
+            - 1.0075799741956273
+            - 1.0162463661212997
+      performance:
+        ALL:
+          prefill: 2164.618190614108
+          decode: 45.21629354322561
+        SPLIT:
+          prefill: 2162.318998227259
+          decode: 44.695296777744964
+    latest_paper_a8_sp2_cost_result:
+      id: L32-0032
+      execution_state: completed
+      evidence_validity: valid
+      local_gate: pass
+      measured_source: 0e406c088b3b188d40e213ed1e4ecffcb935292d
+      source_closure: f91f3a881c6eff7988218bfcf5b055a2297d2708
+      evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0032
+      evidence_ledger_sha256: a11ee12fd162617993b247e4b60074a815493205050517fa0643d8af0343f557
+      evidence_files: 583
+      evidence_bytes: 266094775
+      timed_profiles: 9600
+      numerical_gate_scope: Llama independent selected layer7, chain3, chain16 two-step
+        exact; full16 all-layer greedy/fixed CPU teacher selected token/logit codes
+        exact
+      physical_gate: true
+      weight_bytes_identical: true
+      quality_claim: false
+      baseline_promoted: false
+      trajectories:
+        greedy:
+          effects:
+            prefill:
+              sp2_over_a8_wall: 1.014754883643624
+              ci95:
+              - 1.012139706222046
+              - 1.0172583931670374
+            decode:
+              sp2_over_a8_wall: 0.9992387929054514
+              ci95:
+              - 0.9976419800894792
+              - 1.0009743025917388
+          tps:
+            A8:
+              prefill: 2190.2103218555853
+              decode: 45.19056053358174
+            SP2:
+              prefill: 2158.363913452004
+              decode: 45.224986113862485
+        fixed:
+          effects:
+            prefill:
+              sp2_over_a8_wall: 1.01336439891226
+              ci95:
+              - 1.010152605893282
+              - 1.0163887468010981
+            decode:
+              sp2_over_a8_wall: 1.0003500537936414
+              ci95:
+              - 0.9977826760282112
+              - 1.00294924273737
+          tps:
+            A8:
+              prefill: 2193.0798326723125
+              decode: 45.3513142053777
+            SP2:
+              prefill: 2164.157172904784
+              decode: 45.33544436109269
+    latest_paper_softmax_result:
+      id: L32-0033
+      execution_state: completed
+      evidence_validity: valid
+      local_gate: pass
+      measured_source: 78560f4c12c63d2d1ac07405baca84c4ed275b8d
+      source_closure: 0dfebbd6f72b145574c66d22d7dd13dfb3175883
+      evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0033
+      evidence_ledger_sha256: c647b984f5cc875a366f6829589c66a6b5428961b867ff1159cc4f9813866904
+      evidence_files: 1497
+      evidence_bytes: 300912966
+      timed_profiles: 9600
+      physical_gate: true
+      numerical_gate_scope: Llama independent selected layer7, chain3, chain16 two-step
+        exact; full16 all-layer greedy/fixed CPU teacher selected token/logit codes
+        exact
+      quality_claim: false
+      baseline_promoted: false
+      trajectories:
+        greedy:
+          effects:
+            prefill:
+              fp_over_log2_wall: 0.9482431147825292
+              ci95:
+              - 0.9462983049580592
+              - 0.9501915565880371
+            decode:
+              fp_over_log2_wall: 0.9890237700528771
+              ci95:
+              - 0.9874231629025251
+              - 0.9909409516496835
+          tps:
+            LOG2:
+              prefill: 2165.603572549653
+              decode: 45.14853151399325
+            FP:
+              prefill: 2283.8062716082195
+              decode: 45.649591932031555
+        fixed:
+          effects:
+            prefill:
+              fp_over_log2_wall: 0.9496486730629179
+              ci95:
+              - 0.947912434596591
+              - 0.951642664782124
+            decode:
+              fp_over_log2_wall: 0.9885331339254163
+              ci95:
+              - 0.9871226200364103
+              - 0.9899537698433332
+          tps:
+            LOG2:
+              prefill: 2166.2094720802484
+              decode: 45.121399642830276
+            FP:
+              prefill: 2281.0640750895127
+              decode: 45.64480247986775
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp
