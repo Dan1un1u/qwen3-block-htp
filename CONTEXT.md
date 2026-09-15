@@ -1,3 +1,7 @@
+# Active L32-0030: pipeline mechanisms and layer scaling
+
+Read docs/experiments/L32-0030.md. QwenEXP0275 owns device now; local preparation only until it releases device. L32-0029 closed with exact fullmodel factorial, failures preserved. No rotation/PPL/other recipe change.
+
 # L32-0029 completed: full-model factorial
 
 Source f839f81d8a8d8641673992b4038c69b3f2c7edbd,codex/llama32-no-rotation; measurednative64717025e8c86031764b53a41c8ab55313ea3bf9 ABI131. Active none,next30. No promotion or quality acceptance. Fixedoriginal0018 SP2mode8+FP32residual1,no rotation,M64+15,cache80,16layers.

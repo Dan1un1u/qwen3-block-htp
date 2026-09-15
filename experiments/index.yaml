@@ -1,6 +1,14 @@
 schema_version: 1
 project: llama32-htp
 experiments:
+- id: L32-0030
+  title: Individual pipeline knockouts and layer scaling
+  execution_state: running
+  record: docs/experiments/L32-0030.md
+  approval_ref: Standing approved A2/A6 paper campaign
+  runtime:
+    source_branch: codex/llama32-no-rotation
+    source_worktree: /home/daniuniu/work/llama32-htp
 - id: L32-0000
   title: Repository organization and Qwen3 freeze handoff
   execution_state: completed
