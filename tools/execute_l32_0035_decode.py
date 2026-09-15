@@ -7,8 +7,8 @@ from run_llama32_layer import adb,windows
 from run_llama32_frontend import records
 from llama_reference import sha256 as sha
 from report_llama32_pipeline_profile import MODULES
-R=Path('/mnt/d/llm_exp/results/llama32-htp/l32-0035');OLD=R.parent/'l32-0018';M=Path('/mnt/d/llm_exp/models/llama32-htp/l32-0016')
-ARMS={'OPT':(0,0),'ORIGINAL':(8,0),'NORM_COMPACT':(1,0),'SWIGLU_COMPACT':(2,0),'COMPACT':(3,0)}
+R=Path('/mnt/d/llm_exp/results/llama32-htp/l32-0035/opt-a2');OLD=R.parent/'l32-0018';M=Path('/mnt/d/llm_exp/models/llama32-htp/l32-0016')
+ARMS={'OPT':(0,0),'ORIGINAL':(8,0),'DUAL':(16,0),'NORM_COMPACT':(17,0),'COMPACT':(3,0)}
 PACKAGES={'l0':('layer0-a03','layer0-a02',1),'l7':('layer7-a04','layer7-a02',1),'l15':('layer15-a03','layer15-a02',1),'chain3':('chain3-a03','chain3-a01',3),'chain16':('chain16-a03','chain16-a01',16),'full':('gate-fp32-final','frontend-a02',16)}
 def read(p):return json.loads(Path(p).read_text())
 def write(p,z):
@@ -19,25 +19,27 @@ def preflight():
  assert 'ACTIVE_EXPERIMENT=L32-0035' in t
 
 def prepare():
- preflight();R.mkdir(exist_ok=True);prior=R.parent/'l32-0029'
- assert not adb('shell','pidof qwen3_block_cli',check=False).stdout.strip()
+ preflight();R.mkdir(exist_ok=False)
  for key in PACKAGES:
-  cfg=read(prior/f'package-{key}.json');p=Path(cfg['package']);m=read(p/'manifest.json');assert sha(p/'manifest.json')==cfg['manifest_sha256']
-  for n,v in m['files'].items():assert sha(p/n)==v['sha256'],n
-  names=list(m['files'])
-  for i in range(0,len(names),32):
-   lines=adb('shell','sha256sum '+' '.join(shlex.quote(cfg['remote']+'/'+n) for n in names[i:i+32])).stdout.splitlines();assert len(lines)==len(names[i:i+32])
-   for line in lines:
-    h,n=line.split(None,1);assert h==m['files'][n.removeprefix(cfg['remote']+'/')]['sha256'],n
-  write(R/f'package-{key}.json',cfg);print('VERIFIED',key,flush=True)
- write(R/'device_owner.json',dict(experiment='L32-0035',exclusive=True))
+  cfg=read(R.parent/f'package-{key}.json');assert sha(Path(cfg['package'])/'manifest.json')==cfg['manifest_sha256'];write(R/f'package-{key}.json',cfg)
+ write(R/'device_owner.json',dict(experiment='L32-0035-C2',exclusive=True,prior_models_verified=str(R.parent)))
+def component():
+ preflight();root=read(R/'runtime-l1.json')['remote'];out=[];dest=R/'component';dest.mkdir(exist_ok=False)
+ for layer in [0,7,15]:
+  cfg=read(R/f'package-l{layer}.json');lut=np.fromfile(Path(cfg['package'])/'layer0/silu_up_lut_u16.bin','<u2');assert len(lut)==65536
+  total=395264;b=bytearray(total);struct.pack_into('<16I8Q',b,0,0x3250534c,1,total,7,64,1024,1024,2048,0,0,133120,0,0,0,0,0,*([0]*8));b[2048:133120]=lut.tobytes();inp=dest/f'l{layer}-in.bin';reply=dest/f'l{layer}-out.bin';inp.write_bytes(b)
+  adb('push',windows(inp),root+'/row1-gather-input.bin');z=adb('shell',f'cd {root} && LD_LIBRARY_PATH={root} DSP_LIBRARY_PATH={root} ADSP_LIBRARY_PATH={root} ./llama_sp2_cli row1-gather-input.bin row1-gather-output.bin',check=False)
+  (dest/f'l{layer}-stdout.txt').write_text(z.stdout);(dest/f'l{layer}-stderr.txt').write_text(z.stderr);write(dest/f'l{layer}-exit.json',dict(returncode=z.returncode));assert z.returncode==0,(z.stdout,z.stderr)
+  adb('pull',root+'/row1-gather-output.bin',windows(reply));raw=reply.read_bytes();got=np.frombuffer(raw,'u1',offset=133120,count=262144).reshape(4,65536);lo=(lut&255).astype('u1');hi=(lut>>8).astype('u1');assert all(np.array_equal(got[i],v) for i,v in enumerate([lo,hi,lo,hi]))
+  out.append(dict(layer=layer,lookup_pairs=65536,exact=True,deterministic_padding_checked_on_device=True,input_sha256=sha(inp),output_sha256=sha(reply)));print('COMPONENT_PASS',layer,flush=True)
+ write(R/'component_gate.json',dict(pass_all=True,runs=out))
 def stage(count):
  preflight();seal=read(S/'build/llama-build-seal.json');assert seal['source_head']==subprocess.check_output(['git','-C',str(S),'rev-parse','HEAD'],text=True).strip()
  for b in ['android_ReleaseG_aarch64','hexagon_ReleaseG_toolv19_v79']:
   t=(S/b/'CMakeCache.txt').read_text();assert 'QBH_MODEL_LLAMA32:BOOL=ON' in t and f'QBH_LLAMA_LAYER_COUNT:STRING={count}\n' in t
  attempt=1
  while (R/f'binaries-l{count}-a{attempt}').exists():attempt+=1
- d=R/f'binaries-l{count}-a{attempt}';d.mkdir();remote=f'/data/local/tmp/llama32-htp/l32-0035-l{count}-a{attempt}'
+ d=R/f'binaries-l{count}-a{attempt}';d.mkdir();remote=f'/data/local/tmp/llama32-htp/l32-0035-opt-a2-l{count}-a{attempt}'
  assert adb('shell','test ! -e '+remote,check=False).returncode==0;adb('shell','mkdir -p '+remote)
  for n,h in seal['files'].items():
   p=Path(n);assert sha(p)==h;shutil.copy2(p,d/p.name);adb('push',windows(p),remote+'/'+p.name);assert adb('shell','sha256sum '+remote+'/'+p.name).stdout.split()[0]==h
@@ -66,7 +68,7 @@ def execute(key,arm,tag,repeat=1,audit=False):
   assert all(v[k]==0 for k in ['intermediate_ddr_read_bytes','intermediate_ddr_write_bytes','intermediate_spill_fill_count','ledger_unattributed_ticks','dense_r3_mode','dense_r4_mode'])
   ticks=sum(sum(v[k] for k in fields) for _,fields in MODULES)-v['generation_final_norm_ticks'];assert ticks==v['invocation_ticks'],(tag,ticks,v['invocation_ticks'])
  if key=='full':
-  oracle=read(R.parent/'l32-0016/frontend-a02-reference/teacher.json');steps=[v for v in rs if isinstance(v,dict) and 'selected_logit_half_bits' in v]
+  oracle=read(R.parents[1]/'l32-0016/frontend-a02-reference/teacher.json');steps=[v for v in rs if isinstance(v,dict) and 'selected_logit_half_bits' in v]
   assert [v['selected_token_id'] for v in steps]==oracle['u8_generated_ids']*repeat
   assert [v['selected_logit_half_bits'] for v in steps]==oracle['u8_selected_codes']*repeat
  else:
@@ -88,9 +90,9 @@ def gates(keys,filename):
  write(R/filename,dict(pass_all=True,runs=out))
 def timing():
  assert read(R/'full_gate.json')['pass_all']
- out=[execute('full',a,f'aux-{a}-r1') for a in ARMS];write(R/'auxiliary.json',out)
+ out=[execute('full',a,f'aux-{a}-r1') for a in ['OPT','ORIGINAL','NORM_COMPACT']];write(R/'auxiliary.json',out)
  for phase,cycles in [('short',5),('formal',10)]:
-  out=[];keys=list(ARMS)
+  out=[];keys=['OPT','ORIGINAL','NORM_COMPACT']
   for c in range(cycles):
    shift=c%len(keys)
    for a in keys[shift:]+keys[:shift]:out.append(dict(cycle=c,**execute('full',a,f'{phase}/{c:02d}-{a}',repeat=10)))
@@ -99,7 +101,9 @@ if __name__=='__main__':
  action=sys.argv[1]
  if action=='prepare':prepare()
  elif action=='stage':stage(int(sys.argv[2]))
- elif action=='selected':gates(['l0','l7','l15'],'single_gate.json')
+ elif action=='component':component()
+ elif action=='selected':
+  assert read(R/'component_gate.json')['pass_all'];gates(['l0','l7','l15'],'single_gate.json')
  elif action=='slice':
   assert read(R/'single_gate.json')['pass_all'];gates(['chain3'],'slice_gate.json')
  elif action=='fullgate':

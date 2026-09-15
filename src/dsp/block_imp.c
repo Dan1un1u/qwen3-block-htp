@@ -2093,7 +2093,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
           header->projections[QBH_BLOCK_PROJ_DOWN].lpbq_mode)) ||
         header->w4f16_decode_opt>2U || header->w4f16_decode_audit>1U ||
         (header->w4f16_decode_opt && header->variant!=QBH_BLOCK_W4F16) ||
-        header->paper_format_disable > 15U ||
+        header->paper_format_disable > 31U ||
         ((header->paper_format_disable&4U) && ((header->paper_format_disable&3U) || !QBH_FP32_RESIDUAL(header) || QBH_LLAMA_SP2(header)!=8U || header->dense_r3_mode || header->dense_r4_mode)) || header->paper_pipeline_disable > 31U ||
         header->wide_score_mode > 7U || header->prefix_kv_mode > 2U ||
         (header->prefix_kv_mode && header->variant != QBH_BLOCK_W4U8) ||
@@ -4618,6 +4618,13 @@ static void qbh_w4u8_swiglu_stream_worker_run(
                     pool->u8_swiglu_gather_scratch,pool->attention_buffers->normalized);
             /* L32-0035: match compact's dual-gather scheduling while directly
              * publishing native SP2 planes. Bit8 retains original decode control. */
+            else if(pool->u8_sp2_high && !(pool->attention_header->paper_format_disable&24U))
+                qbh_mlp_gate_up_sp2_decode_row1_hvx(
+                    pool->u8_swiglu_gate+(size_t)output_tile*2048U,
+                    pool->u8_swiglu_up+(size_t)output_tile*2048U,
+                    pool->u8_swiglu_middle+(size_t)output_tile*2048U,
+                    pool->u8_sp2_high+(size_t)output_tile*2048U,
+                    pool->u8_swiglu_lut,pool->u8_swiglu_gather_scratch);
             else if(pool->u8_sp2_high && !(pool->attention_header->paper_format_disable&8U))
                 qbh_mlp_gate_up_sp2_lut_pipelined_hvx(
                     pool->u8_swiglu_gate+(size_t)output_tile*2048U,
