@@ -52,6 +52,7 @@ def execute(key,arm,tag,repeat=1,audit=False):
  preflight();cfg=read(R/f'package-{key}.json');state=read(R/f"runtime-l{cfg['layers']}.json");root=state['remote'];assert audit or state['seal']['paper_trace'] is False;d=R/tag;d.mkdir(parents=True,exist_ok=False)
  prefix,args=cfg['command'].split(' ./qwen3_block_cli ',1);oldroot=prefix.split(' && ')[0].removeprefix('cd ');env=dict(v.split('=',1) for v in shlex.split(prefix.split(' && ')[1]));argv=shlex.split(args);argv[0]=cfg['remote'];argv[2]=str(repeat if key!='full' else 1)
  env.update(LD_LIBRARY_PATH=root,DSP_LIBRARY_PATH=root,ADSP_LIBRARY_PATH=root,QBH_PAPER_FORMAT_DISABLE=str(ARMS[arm][0]),QBH_PAPER_PIPELINE_DISABLE=str(ARMS[arm][1]),QBH_DENSE_R3='0',QBH_DENSE_R4='0');env.pop('QBH_REPLAY_DUMP_DIR',None)
+ if key!='full' and repeat>1:env['QBH_LLAMA_REPLAY_REPEATS']=str(repeat)
  if key=='full':
   ids=np.fromfile(M/'frontend-a02/generation_prompt_token_ids_u32.bin','<u4').tolist();assert len(ids)==64
   row=[0,2,16]+ids+[0]*16;f=d/'eval.bin';f.write_bytes(struct.pack('<4I',0x51424556,1,repeat,83)+b''.join(struct.pack('<83I',i,*row[1:]) for i in range(repeat)))
@@ -99,7 +100,7 @@ def timing(scope):
   out=[];keys=list(ARMS)
   for c in range(cycles):
    j=c%len(keys)
-   for a in keys[j:]+keys[:j]:out.append(dict(cycle=c,**execute(key,a,f'l{scope}-{phase}/{c:02d}-{a}',repeat=10)))
+   for a in keys[j:]+keys[:j]:out.append(dict(cycle=c,**execute(key,a,f'l{scope}-{phase}-a02/{c:02d}-{a}',repeat=10)))
   write(R/f'l{scope}_{phase}.json',dict(pass_all=True,runs=out))
 if __name__=='__main__':
  action=sys.argv[1]

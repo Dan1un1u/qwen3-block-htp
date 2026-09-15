@@ -7368,16 +7368,20 @@ int main(int argc, char **argv) {
     if (replay_mode == QBH_BLOCK_REPLAY_CONTINUOUS && getenv("QBH_LLAMA_REPLAY_REPEATS")) {
         uint32_t repetitions=0;
         if(qbh_parse_u32(getenv("QBH_LLAMA_REPLAY_REPEATS"),&repetitions)!=0 ||
-           repetitions<2U || repetitions>11U || QBH_VERTICAL_SLICE_LAYER_COUNT!=1U) goto cleanup;
+           repetitions<2U || repetitions>11U ||
+           (QBH_VERTICAL_SLICE_LAYER_COUNT!=1U && QBH_VERTICAL_SLICE_LAYER_COUNT!=3U)) goto cleanup;
         struct qbh_decode_session_state *replay_state=(void *)(shared+header->replay_session_offset);
         struct qbh_decode_session_state initial=*replay_state;
         if(initial.layers[QBH_VERTICAL_SLICE_FIRST_LAYER].valid_length!=0U) goto cleanup;
         int retained_ideal_failure=0;
         for(uint32_t rep=0;rep<repetitions;rep++) {
             *replay_state=initial;
-            struct qbh_decode_layer_state *layer=&replay_state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER];
-            memset(shared+layer->k_offset,0,layer->k_bytes);
-            memset(shared+layer->v_offset,0,layer->v_bytes);
+            for(uint32_t li=0;li<QBH_VERTICAL_SLICE_LAYER_COUNT;++li) {
+                struct qbh_decode_layer_state *layer=&replay_state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER+li];
+                if(layer->valid_length!=0U)goto cleanup;
+                memset(shared+layer->k_offset,0,layer->k_bytes);
+                memset(shared+layer->v_offset,0,layer->v_bytes);
+            }
             if(qbh_read_slot(shared,&input_slot) || qbh_read_slot(shared,&reference_slot) ||
                qbh_read_slot(shared,&rope_slots[0]) || qbh_read_slot(shared,&rope_slots[1])) goto cleanup;
             printf("{\"record\":\"llama_replay_repeat\",\"repeat\":%u,\"sp2_mode\":%u,\"warmup\":%s}\n",
