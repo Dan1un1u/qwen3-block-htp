@@ -18,8 +18,8 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 278
+  active_experiment: EXP-0278
+  next_experiment_number: 279
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -10998,8 +10998,7 @@ current_scope:
           ci95:
           - 0.9861854313212546
           - 0.9897205140429328
-  next_direction: A9 FP32 HVX vector softmax versus log2, then A8 supported shape;
-    L32-0032 owns device
+  next_direction: EXP0278 A9 FP32 vector softmax; L32-0032 owns device
   latest_paper_pipeline_result:
     id: EXP-0275
     execution_state: completed

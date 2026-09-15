@@ -24,6 +24,19 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0278
+  title: FP32 HVX softmax versus low-bit log2 full-model ablation
+  parent: EXP-0277
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: not_applicable
+  approval_ref: Standing PC086 user-approved A9 paper campaign
+  record: docs/experiments/EXP-0278.md
+  runtime:
+    source_branch: codex/exp-0278-fp-vector-softmax-ablation
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    started_on: '2026-09-15'
 - id: EXP-0277
   title: Ordinary A8 versus SP2 at fixed FP32 residual contract
   parent: EXP-0276
