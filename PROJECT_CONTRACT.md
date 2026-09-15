@@ -417,3 +417,7 @@ User authorizes sequential decode native-layout diagnosis/optimization (compact 
 ## Latest optimized ablation rerun authorization (2026-09-15; EXP-0282)
 
 User now explicitly requests rerunning optimized paper ablations and updating conclusions. This supersedes the prior no-factorial-rerun restriction only for registered A0/A1/A2/A3/A5/A6/A9 under docs/experiments/EXP-0282.md. Generalization and shape sweeps are supplementary, excluded from this rerun. Preserve vector/conventional baseline fairness, frozen weights, FP32 residual, no rotation and all numerical/physical/evidence gates. A7 cites existing same-FP32 evidence; no W4-to-S8 or integer-residual comparisons. Routine repairs and sequential phase registration need no repeated permission.
+
+## User-approved floating baseline fairness refresh (2026-09-16; EXP-0283)
+
+User explicitly requests the annotated W16A16 baseline repairs and formal E2E before discussing SP2 A16 Down. This supersedes earlier F16 freeze only under docs/experiments/EXP-0283.md: exact decode conversion/movement reuse, basic FP16 LM-head prefetch, bounded valid-row cleanup. Preserve FP16 math/weights and other recipes, all numerical/physical/evidence gates; no deep tuning, quality claim or automatic promotion. Routine fixes proceed autonomously.

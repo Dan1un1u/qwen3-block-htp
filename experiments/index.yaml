@@ -24,6 +24,23 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0283
+  title: W16A16 fair baseline implementation refresh and matched full-model E2E
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: pending
+  approval_ref: 'User 2026-09-16: 补做浮点基线 per annotated audit, then discuss SP2 A16
+    Down comparison; no automatic implementation of A16 Down.'
+  parent_source: c0d55359290a4820b0063ec886e4c393c99e5931
+  record: docs/experiments/EXP-0283.md
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0282-latest-paper-ablations
+  evidence:
+    device_owner: Qwen first, Llama after explicit local release
+    recipe: F16F16 only; other recipes frozen
+    baseline_promoted: false
 - id: EXP-0282
   title: Latest optimized runtime paper ablation rerun; generalization excluded
   execution_state: completed
