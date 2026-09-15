@@ -1,3 +1,14 @@
+# Active EXP0279 longer KV appendix
+
+Read docs/experiments/EXP-0279.md. Llama0034 ownsdevice; Qwenlocalonlyuntilrelease.
+
+# EXP-0278 complete; A8 follows
+
+Measuredprimary140454fd24b4fa2f8ca0d3c4dced41aefcb02529, closured667e7e674a9a8acdc1f7ca6cfcf92adaa1c7eb9, branchcodex/exp-0278-fp-vector-softmax-ablation. R /mnt/d/llm_exp/results/qwen3-block-htp/exp0278; ledgerdc52fb7ad240babd04f54d0b06363e148ff0e41365213b6738410a03ee9f13c2,3985files912421145bytes. Primaryvsum andprototype rootseparate9600profileseach, allretained. FixedFP/LOG2prefill1.01480990CI[1.01171802,1.01775486],decode.99799273[.99572434,1.00040151]. QwenoptimizedNR64benefitprefillonly; no universalsoftmaxspeedclaim. Ownnumericalphysical/frontendpass, nofull28CPUtransformerequivalence/PPL orpromotion.
+
+LlamaL32-0034 currentlyownsdevice forM64+33cache128; noQwendeploy/hash/timinguntilrelease. RemainingapprovedQwenA8usesexactexistingSP2-fp32fullpackage (alreadyhasextendedRoPE), originalwide4, all-onvsFFNmask2, M64+33cache128. RegisterEXP0279, extendonlyhostgreedyrepeatlimit tomaxexisting193; modes1/3remain16targets. NoDSP/weightchanges. Full34actualtailandpairedhiddenbytesgates before5short10formalrepeat10. A1/A2/A3/A5/A6completed,A7cite272,traceN/A.
+
+---
 # EXP0277 closed; A9 next approved phase
 
 Source 7ea0c7cab5768dd1d6bdc440493ceecb5e8cce72, codex/exp-0277-a8-sp2-fp32-cost, clean/pushed. Measured 88da979665609c4be014002fe82dd862930a9b3f. Active none,next278. All A5 Qwen runs complete, 9600 profiles; no running Qwen process. Llama L32-0032 owns device for A5 selected/chain/full/timing. Never deploy/run/hash device simultaneously. No rotation/PPL/quality acceptance or promotion.

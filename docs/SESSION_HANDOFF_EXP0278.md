@@ -1,0 +1,5 @@
+# EXP-0278 complete; A8 follows
+
+Measuredprimary140454fd24b4fa2f8ca0d3c4dced41aefcb02529, closured667e7e674a9a8acdc1f7ca6cfcf92adaa1c7eb9, branchcodex/exp-0278-fp-vector-softmax-ablation. R /mnt/d/llm_exp/results/qwen3-block-htp/exp0278; ledgerdc52fb7ad240babd04f54d0b06363e148ff0e41365213b6738410a03ee9f13c2,3985files912421145bytes. Primaryvsum andprototype rootseparate9600profileseach, allretained. FixedFP/LOG2prefill1.01480990CI[1.01171802,1.01775486],decode.99799273[.99572434,1.00040151]. QwenoptimizedNR64benefitprefillonly; no universalsoftmaxspeedclaim. Ownnumericalphysical/frontendpass, nofull28CPUtransformerequivalence/PPL orpromotion.
+
+LlamaL32-0034 currentlyownsdevice forM64+33cache128; noQwendeploy/hash/timinguntilrelease. RemainingapprovedQwenA8usesexactexistingSP2-fp32fullpackage (alreadyhasextendedRoPE), originalwide4, all-onvsFFNmask2, M64+33cache128. RegisterEXP0279, extendonlyhostgreedyrepeatlimit tomaxexisting193; modes1/3remain16targets. NoDSP/weightchanges. Full34actualtailandpairedhiddenbytesgates before5short10formalrepeat10. A1/A2/A3/A5/A6completed,A7cite272,traceN/A.

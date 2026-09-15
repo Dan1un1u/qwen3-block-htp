@@ -24,12 +24,25 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
-- id: EXP-0278
-  title: FP32 HVX softmax versus low-bit log2 full-model ablation
-  parent: EXP-0277
+- id: EXP-0279
+  title: Supported longer KV complete-model pipeline ablation
+  parent: EXP-0278
   execution_state: running
   evidence_validity: not_checked
   local_gate: not_run
+  adoption_status: not_applicable
+  record: docs/experiments/EXP-0279.md
+  approval_ref: Standing PC086 user-approved A8 paper appendix
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0279-long-kv-pipeline-ablation
+    started_on: '2026-09-15'
+- id: EXP-0278
+  title: FP32 HVX softmax versus low-bit log2 full-model ablation
+  parent: EXP-0277
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: not_applicable
   approval_ref: Standing PC086 user-approved A9 paper campaign
   record: docs/experiments/EXP-0278.md
@@ -37,6 +50,65 @@ experiments:
     source_branch: codex/exp-0278-fp-vector-softmax-ablation
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     started_on: '2026-09-15'
+  evidence:
+    id: EXP-0278
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    measured_source: 140454fd24b4fa2f8ca0d3c4dced41aefcb02529
+    source_closure: d667e7e674a9a8acdc1f7ca6cfcf92adaa1c7eb9
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0278
+    evidence_ledger_sha256: dc52fb7ad240babd04f54d0b06363e148ff0e41365213b6738410a03ee9f13c2
+    evidence_files: 3985
+    evidence_bytes: 912421145
+    primary_root: /mnt/d/llm_exp/results/qwen3-block-htp/exp0278/vsum
+    timed_profiles: 9600
+    prototype_timed_profiles: 9600
+    numerical_gate_scope: Qwen selected layer14 and chain3 independent exact; full28
+      physical/front-end finalNorm and full-vocabulary head oracle; no full28 CPU
+      transformer equivalence claim
+    physical_gate: true
+    quality_claim: false
+    baseline_promoted: false
+    trajectories:
+      greedy:
+        effects:
+          prefill:
+            fp_over_log2_wall: 1.0154842557329737
+            ci95:
+            - 1.0134265262809585
+            - 1.017682125201596
+          decode:
+            fp_over_log2_wall: 0.9979796764788961
+            ci95:
+            - 0.9965538978825368
+            - 0.9992703414479449
+        tps:
+          LOG2:
+            prefill: 1850.8303081275774
+            decode: 47.138502188493455
+          FP:
+            prefill: 1822.6085709144281
+            decode: 47.23393000828337
+      fixed:
+        effects:
+          prefill:
+            fp_over_log2_wall: 1.0148098959621188
+            ci95:
+            - 1.011718021064137
+            - 1.017754857401735
+          decode:
+            fp_over_log2_wall: 0.9979927266450705
+            ci95:
+            - 0.9957243422507294
+            - 1.0004015093279517
+        tps:
+          LOG2:
+            prefill: 1845.6776483653305
+            decode: 47.00809121313934
+          FP:
+            prefill: 1818.7422646440443
+            decode: 47.10263908552258
 - id: EXP-0277
   title: Ordinary A8 versus SP2 at fixed FP32 residual contract
   parent: EXP-0276

@@ -18,8 +18,8 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0278
-  next_experiment_number: 279
+  active_experiment: EXP-0279
+  next_experiment_number: 280
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -2498,13 +2498,13 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: Qwen3_28layer_native_W4_SP2_M64_plus15_verified
-  last_completed_experiment: EXP-0277
-  last_completed_source_commit: 7ea0c7cab5768dd1d6bdc440493ceecb5e8cce72
+  last_completed_experiment: EXP-0278
+  last_completed_source_commit: d667e7e674a9a8acdc1f7ca6cfcf92adaa1c7eb9
   provisional_source_parent: EXP0268_diagnostic_U8_pipeline_closure_no_default_promotion
   device_execution_state: EXP0274_complete_fullmodel_factorial_exact_formal10
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  current_handoff: docs/SESSION_HANDOFF_EXP0277.md
+  current_handoff: docs/SESSION_HANDOFF_EXP0278.md
   active_recipe_specialization: native_W4_SP2_FP32_residual_no_rotation
   last_completed_experiment_contract:
     id: EXP-0269
@@ -10998,7 +10998,8 @@ current_scope:
           ci95:
           - 0.9861854313212546
           - 0.9897205140429328
-  next_direction: EXP0278 A9 FP32 vector softmax; L32-0032 owns device
+  next_direction: Finish approved EXP0279 supported longer KV; Llama0034 ownsdevice
+    until release. Then consolidate paper campaign.
   latest_paper_pipeline_result:
     id: EXP-0275
     execution_state: completed
@@ -11172,3 +11173,62 @@ current_scope:
           SP2:
             prefill: 1846.5589188592803
             decode: 47.00890304460367
+  latest_paper_softmax_result:
+    id: EXP-0278
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    measured_source: 140454fd24b4fa2f8ca0d3c4dced41aefcb02529
+    source_closure: d667e7e674a9a8acdc1f7ca6cfcf92adaa1c7eb9
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0278
+    evidence_ledger_sha256: dc52fb7ad240babd04f54d0b06363e148ff0e41365213b6738410a03ee9f13c2
+    evidence_files: 3985
+    evidence_bytes: 912421145
+    primary_root: /mnt/d/llm_exp/results/qwen3-block-htp/exp0278/vsum
+    timed_profiles: 9600
+    prototype_timed_profiles: 9600
+    numerical_gate_scope: Qwen selected layer14 and chain3 independent exact; full28
+      physical/front-end finalNorm and full-vocabulary head oracle; no full28 CPU
+      transformer equivalence claim
+    physical_gate: true
+    quality_claim: false
+    baseline_promoted: false
+    trajectories:
+      greedy:
+        effects:
+          prefill:
+            fp_over_log2_wall: 1.0154842557329737
+            ci95:
+            - 1.0134265262809585
+            - 1.017682125201596
+          decode:
+            fp_over_log2_wall: 0.9979796764788961
+            ci95:
+            - 0.9965538978825368
+            - 0.9992703414479449
+        tps:
+          LOG2:
+            prefill: 1850.8303081275774
+            decode: 47.138502188493455
+          FP:
+            prefill: 1822.6085709144281
+            decode: 47.23393000828337
+      fixed:
+        effects:
+          prefill:
+            fp_over_log2_wall: 1.0148098959621188
+            ci95:
+            - 1.011718021064137
+            - 1.017754857401735
+          decode:
+            fp_over_log2_wall: 0.9979927266450705
+            ci95:
+            - 0.9957243422507294
+            - 1.0004015093279517
+        tps:
+          LOG2:
+            prefill: 1845.6776483653305
+            decode: 47.00809121313934
+          FP:
+            prefill: 1818.7422646440443
+            decode: 47.10263908552258
