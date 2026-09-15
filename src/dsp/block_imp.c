@@ -5195,6 +5195,19 @@ static __attribute__((noinline)) void qbh_paper_pack_norm(
     }
     asm volatile("barrier":::"memory");
 }
+/* Modular decode consumer visits only the live token. Do not manufacture
+ * work by packing the unused physical rows of a prefill-sized allocation. */
+static __attribute__((noinline)) void qbh_paper_pack_norm_decode(
+    const uint8_t *src,uint8_t *dst) {
+    const HVX_VectorPred live=Q6_Q_vsetq_R(32U);
+    for(uint32_t c=0;c<QBH_BLOCK_HIDDEN;c+=128U) {
+        HVX_Vector a=*(const HVX_Vector *)(src+c);
+        for(uint32_t part=0;part<4U;part++)
+            Q6_vmem_QRIV(live,(HVX_Vector *)(dst+(c/32U+part)*2048U),
+                Q6_V_vror_VR(a,part*32U));
+    }
+    asm volatile("barrier":::"memory");
+}
 static void qbh_llama_fp32_norm_parallel(struct qbh_block_header *header,
     struct qbh_block_w4f16_pool *pool,
     struct qbh_block_buffers *buffers,const __fp16 *gamma,uint8_t *out,
@@ -5216,7 +5229,10 @@ static void qbh_llama_fp32_norm_parallel(struct qbh_block_header *header,
         qbh_llama_fp32_norm_worker(pool,3U);
         qbh_w4f16_pool_wait(pool);pool->active_worker_count=0U;
     }
-    if(compact)qbh_paper_pack_norm(production,out);
+    if(compact) {
+        if(rows==1U)qbh_paper_pack_norm_decode(production,out);
+        else qbh_paper_pack_norm(production,out);
+    }
 }
 
 static int qbh_hvx_pool_fp16_input_norm(
