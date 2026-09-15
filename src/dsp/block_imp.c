@@ -6958,12 +6958,27 @@ static int qbh_run_generation_head_f16f16(
                      shared + header->generation_final_norm_offset,
                      header->generation_final_norm_bytes, 1U) != 0) return -2;
     header->weight_ddr_read_bytes += header->generation_final_norm_bytes;
-    qbh_hvx_rms_norm_f16((const __fp16 *)buffers->residual,
+    /* Only the final prompt row feeds the head; row reductions are independent. */
+    const uint32_t norm_rows = prefetch ? 1U : logical_rows;
+    const uint32_t source_row = prefetch ? logical_rows - 1U : 0U;
+    qbh_hvx_rms_norm_f16((const __fp16 *)buffers->residual +
+        (size_t)source_row * QBH_BLOCK_HIDDEN,
         (const __fp16 *)buffers->input_norm_weight,
-        (__fp16 *)buffers->normalized, logical_rows, QBH_BLOCK_HIDDEN, NULL);
+        (__fp16 *)buffers->normalized, norm_rows, QBH_BLOCK_HIDDEN, NULL);
+    if (header->generation_boundary_audit_enabled) {
+        const uint32_t row_bytes = QBH_BLOCK_HIDDEN * sizeof(__fp16);
+        if (qbh_dma_copy(header, shared + header->output_offset,
+            buffers->residual + (size_t)(logical_rows - 1U) * row_bytes,
+            row_bytes, 0U) != 0 ||
+            qbh_dma_copy(header, shared + header->output_offset + row_bytes,
+            buffers->normalized + (size_t)(norm_rows - 1U) * row_bytes,
+            row_bytes, 0U) != 0) return -2;
+        header->boundary_ddr_write_bytes += 2U * row_bytes;
+        header->boundary_dma_descriptor_count += 2U;
+    }
     header->generation_final_norm_ticks += HAP_perf_get_qtimer_count() - start;
     qbh_pack_fp16_activation_row0((const __fp16 *)buffers->normalized +
-        (size_t)(logical_rows - 1U) * QBH_BLOCK_HIDDEN,
+        (size_t)(norm_rows - 1U) * QBH_BLOCK_HIDDEN,
         QBH_BLOCK_HIDDEN, (__fp16 *)buffers->hmx_activation);
     qbh_hmx_fp16_init_unity_scale(buffers->scale_or_bias);
     header->generation_lm_head_batch_n_tiles = group_limit;
