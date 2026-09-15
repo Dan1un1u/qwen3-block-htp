@@ -3461,7 +3461,7 @@ static int qbh_run_exp0240_layer(
                         if (qbh_write_named_tensor(dump,name,shared+desc->bias_offset,desc->bias_bytes)) return -1;
                     }
                 }
-                if(h->variant==QBH_BLOCK_W4F16) for(uint32_t li=0;li<QBH_VERTICAL_SLICE_LAYER_COUNT;++li) {
+                if(h->variant!=QBH_BLOCK_W4U8) for(uint32_t li=0;li<QBH_VERTICAL_SLICE_LAYER_COUNT;++li) {
                     struct qbh_decode_layer_state *cs=&state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER+li];
                     snprintf(name,sizeof(name),"step%02u_layer%02u_k.bin",step,li);
                     if(qbh_write_named_tensor(dump,name,shared+cs->k_offset,cs->k_bytes))return -1;
