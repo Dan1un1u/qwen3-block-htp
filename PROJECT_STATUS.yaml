@@ -18,8 +18,8 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0275
-  next_experiment_number: 276
+  active_experiment: EXP-0276
+  next_experiment_number: 277
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -10885,14 +10885,14 @@ current_scope:
   latest_sp2_fp32_fullmodel_speed_result: *id001
   paper_no_rotation_ablation_plan:
     document: docs/PAPER_NO_ROTATION_ABLATION_PLAN.md
-    status: approved_Qwen_A0_complete_remaining_unexecuted
-    completed_phase: EXP-0273
+    status: A0_A1_A2_A6_Qwen_complete_Llama_A2_A6_running
+    completed_phase: EXP-0275
     fixed_residual: FP32
     excluded:
     - W4_vs_S8_expansion
     - integer_residual_arms
     added: log2_softmax_vs_FP_HVX_softmax
-    next: Register Llama A0 and comparative phases under existing approval; no new user permission needed
+    next: A3 then A5/A9/A8 under standing approval
   latest_paper_factorial_result:
     id: EXP-0274
     execution_state: completed
@@ -10986,5 +10986,81 @@ current_scope:
           ci95:
           - 0.9861854313212546
           - 0.9897205140429328
-  next_direction: EXP0275 approved individual pipeline and layer scaling; Llama L32-0029 owns active device
-    until timing completes
+  next_direction: EXP0276 approved A3 SP2 decode copack vs separate streams; L32-0030 currently owns device
+  latest_paper_pipeline_result:
+    id: EXP-0275
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    measured_source: 19c9f728dbf2d06a2f6d0ec6488f4d1547627226
+    source_closure: 142053f38ec3893b4d4e1c115f18f2de1a6a7cb0
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0275
+    evidence_ledger_sha256: 75b66ce1ef9f3e3c7491b63b22106199aaa51d0ac81a2d62a366f9e201336d3b
+    evidence_files: 1539
+    evidence_bytes: 762981119
+    timed_profiles: 14000
+    physical_gate: true
+    independent_numerical_exact: true
+    trace_complete: false
+    trace_status: 'N/A: FARF stream truncated; 15 numerical-pass diagnostic attempts retained'
+    baseline_promoted: false
+    quality_claim: false
+    performance:
+      ALL:
+        prefill: 1844.6916986378326
+        decode: 47.0616536378736
+      QKV:
+        prefill: 1771.4525535114062
+        decode: 46.06096232701933
+      FFN:
+        prefill: 1720.010797099027
+        decode: 45.99084518806517
+      EPILOGUE:
+        prefill: 1756.437064516507
+        decode: 47.079912410109166
+      LOOKAHEAD:
+        prefill: 1848.1797059471119
+        decode: 46.21821534030158
+    effects:
+      prefill:
+        QKV:
+          ratio: 1.0413441189724502
+          ci95:
+          - 1.038972809547103
+          - 1.0437284572559984
+        FFN:
+          ratio: 1.0724884412057718
+          ci95:
+          - 1.0667287961411556
+          - 1.0817120030097587
+        EPILOGUE:
+          ratio: 1.0502463970410574
+          ci95:
+          - 1.0477048260829356
+          - 1.0526644266267433
+        LOOKAHEAD:
+          ratio: 0.9981127336816568
+          ci95:
+          - 0.9945380855157578
+          - 1.001239124233867
+      decode:
+        QKV:
+          ratio: 1.0217253669984063
+          ci95:
+          - 1.020181534885413
+          - 1.0232016505781871
+        FFN:
+          ratio: 1.0232830783045992
+          ci95:
+          - 1.021930573208061
+          - 1.024666475966056
+        EPILOGUE:
+          ratio: 0.9996121748894409
+          ci95:
+          - 0.9974999589559406
+          - 1.0015833829101344
+        LOOKAHEAD:
+          ratio: 1.018249045129974
+          ci95:
+          - 1.0163659668956417
+          - 1.0201489985930106
