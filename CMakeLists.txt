@@ -11,6 +11,11 @@ if(QBH_MODEL_LLAMA32)
     add_compile_definitions(QBH_MODEL_LLAMA32=1 QBH_LLAMA_LAYER_COUNT=${QBH_LLAMA_LAYER_COUNT})
 endif()
 
+option(QBH_PAPER_TRACE "Untimed software pipeline event tracing" OFF)
+if(QBH_PAPER_TRACE)
+    add_compile_definitions(QBH_PAPER_TRACE=1)
+endif()
+
 option(QBH_NATIVE_SP2 "Enable model-independent native W4 SP2 pipeline" ON)
 if(QBH_NATIVE_SP2)
     add_compile_definitions(QBH_NATIVE_SP2=1)
