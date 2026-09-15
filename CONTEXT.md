@@ -1,3 +1,12 @@
+# EXP0277 closed; A9 next approved phase
+
+Source 7ea0c7cab5768dd1d6bdc440493ceecb5e8cce72, codex/exp-0277-a8-sp2-fp32-cost, clean/pushed. Measured 88da979665609c4be014002fe82dd862930a9b3f. Active none,next278. All A5 Qwen runs complete, 9600 profiles; no running Qwen process. Llama L32-0032 owns device for A5 selected/chain/full/timing. Never deploy/run/hash device simultaneously. No rotation/PPL/quality acceptance or promotion.
+
+Evidence /mnt/d/llm_exp/results/qwen3-block-htp/exp0277, ledger 160ef619a2017a11913246d7459ca031c14f3fa00f7a9dedf9da5fb11e6a8eef, 864 files/431573812 bytes. See EXP-0277-RESULTS and source docs/EXP0277_A8_SP2_COST_RESULTS. Fixed tokens SP2/A8 wall prefill1.00894818 CI[1.00654326,1.01139386], decode1.00302208[1.00144711,1.00470961]; actualgreedy1.00862119/1.00447148. Shared native vector/LUT/raw FP32 pipelines. SP2 prefill adds344064tilepairs,decodecopack adds0; weight bytes/worker submissions identical. Own layer14/chain3 exact; full28 frontend finalNorm/head oracle, NOT full28 CPU transformer oracle. New mode3 forcedreplay has no scoring NLL, sameheadwork. Greedy/fixed each5short10formal repeat10,all retained, repeat1aux.
+
+Remaining approved A9 vectorFP32softmax (realrawHMXscore, sameU8prob/AV; independentFloat64 <=2e-6, allfinite/maskzero), then A8 one supported extra M/KV. Read PAPER_NO_ROTATION_ABLATION_PLAN. Registernextboundedprotocol before edits/build/hardware, no repeat user permission. A0/A1/A2/A3/A5Qwen/A6 completed; A7 citeEXP272. No more partialFARF repairs planned; timelines/utilization N/A. Currentbuild28atmeasuredsource, closurechangesdocs only; freshbuildsealnextsourcebeforedevice. Preserve sealed evidence and originals; no resampling or stale fallback.
+
+---
 # Active EXP0275: pipeline mechanism knockouts and layer scaling
 
 Read docs/experiments/EXP-0275.md. Parent EXP0274 completed; keep its corrected timing and original rejected attempt. New phase authorized by PC086, no repeated permission. Llama L32-0029 currently owns device timing; do only local preparation until it completes.
