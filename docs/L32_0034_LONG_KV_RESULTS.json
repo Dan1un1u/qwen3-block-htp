@@ -1,0 +1,1348 @@
+{
+  "experiment": "L32-0034",
+  "model": "llama",
+  "measured_source": "5b54cccb9de4c415bbe4943228bd89a7298abdc7",
+  "shape": "M64+33 cache128, 34 outputs",
+  "layers": 16,
+  "timed_profiles": 10200,
+  "arms": {
+    "ALL": {
+      "prefill": {
+        "host_us": 29451.90363,
+        "e2e_tps": 2173.034409049504,
+        "profiles": 100,
+        "modules": [
+          {
+            "module": "I/O、metadata",
+            "us": 120.54114583333333,
+            "host_share_pct": 0.4092813400032619
+          },
+          {
+            "module": "Input RMSNorm",
+            "us": 1268.4932291666667,
+            "host_share_pct": 4.30699911660232
+          },
+          {
+            "module": "QKV＋RoPE",
+            "us": 3868.477604166667,
+            "host_share_pct": 13.134898350768054
+          },
+          {
+            "module": "QK–Softmax–AV",
+            "us": 8397.127604166668,
+            "host_share_pct": 28.51132378286499
+          },
+          {
+            "module": "O projection",
+            "us": 1580.6453125,
+            "host_share_pct": 5.366869769633292
+          },
+          {
+            "module": "Post-attention residual＋RMSNorm",
+            "us": 1276.4567708333334,
+            "host_share_pct": 4.334038257320392
+          },
+          {
+            "module": "Gate/Up＋SwiGLU",
+            "us": 5516.252083333334,
+            "host_share_pct": 18.729696228241167
+          },
+          {
+            "module": "Down",
+            "us": 3128.924479166667,
+            "host_share_pct": 10.623844619603853
+          },
+          {
+            "module": "Final residual",
+            "us": 1.4151041666666668,
+            "host_share_pct": 0.004804796947743737
+          },
+          {
+            "module": "KV carrier conversion",
+            "us": 27.551041666666666,
+            "host_share_pct": 0.09354587741691135
+          },
+          {
+            "module": "KV append DMA",
+            "us": 115.55677083333333,
+            "host_share_pct": 0.39235756128043986
+          },
+          {
+            "module": "Block orchestration",
+            "us": 22.845312500000002,
+            "host_share_pct": 0.07756820335623242
+          },
+          {
+            "module": "Layer bookkeeping",
+            "us": 14.395312500000001,
+            "host_share_pct": 0.04887735842425069
+          },
+          {
+            "module": "Stage-boundary bookkeeping",
+            "us": 6.476041666666667,
+            "host_share_pct": 0.021988533400164014
+          },
+          {
+            "module": "DSP unattributed",
+            "us": 0.0,
+            "host_share_pct": 0.0
+          },
+          {
+            "module": "Runtime setup/teardown",
+            "us": 90.45364583333334,
+            "host_share_pct": 0.30712325753095415
+          },
+          {
+            "module": "Embedding",
+            "us": 56.50625,
+            "host_share_pct": 0.19185941496305242
+          },
+          {
+            "module": "Final model RMSNorm",
+            "us": 60.181250000000006,
+            "host_share_pct": 0.2043373859837664
+          },
+          {
+            "module": "LM head＋greedy（不含 final norm）",
+            "us": 3216.4812500000003,
+            "host_share_pct": 10.921131925488377
+          },
+          {
+            "module": "Host–DSP 边界",
+            "us": 683.1234216666635,
+            "host_share_pct": 2.319454220170771
+          },
+          {
+            "module": "完整 Host wall",
+            "us": 29451.90363,
+            "host_share_pct": 100.0
+          }
+        ]
+      },
+      "decode": {
+        "host_us": 22327.385693030305,
+        "e2e_tps": 44.788047008663405,
+        "profiles": 3300,
+        "modules": [
+          {
+            "module": "I/O、metadata",
+            "us": 116.89644886363637,
+            "host_share_pct": 0.5235563646850363
+          },
+          {
+            "module": "Input RMSNorm",
+            "us": 871.0083491161616,
+            "host_share_pct": 3.9010762885152954
+          },
+          {
+            "module": "QKV＋RoPE",
+            "us": 1669.5143623737374,
+            "host_share_pct": 7.477428774363366
+          },
+          {
+            "module": "QK–Softmax–AV",
+            "us": 6359.890956439394,
+            "host_share_pct": 28.484709512698085
+          },
+          {
+            "module": "O projection",
+            "us": 880.6434501262627,
+            "host_share_pct": 3.9442300242126573
+          },
+          {
+            "module": "Post-attention residual＋RMSNorm",
+            "us": 875.0362215909091,
+            "host_share_pct": 3.9191163426896845
+          },
+          {
+            "module": "Gate/Up＋SwiGLU",
+            "us": 4900.563446969697,
+            "host_share_pct": 21.948666603181636
+          },
+          {
+            "module": "Down",
+            "us": 2633.697095959596,
+            "host_share_pct": 11.795814934041866
+          },
+          {
+            "module": "Final residual",
+            "us": 1.0376736111111111,
+            "host_share_pct": 0.004647537447409395
+          },
+          {
+            "module": "KV carrier conversion",
+            "us": 48.435795454545456,
+            "host_share_pct": 0.2169344683720187
+          },
+          {
+            "module": "KV append DMA",
+            "us": 90.8228851010101,
+            "host_share_pct": 0.40677796473664757
+          },
+          {
+            "module": "Block orchestration",
+            "us": 16.245738636363637,
+            "host_share_pct": 0.0727614905735914
+          },
+          {
+            "module": "Layer bookkeeping",
+            "us": 9.280555555555557,
+            "host_share_pct": 0.04156579584887346
+          },
+          {
+            "module": "Stage-boundary bookkeeping",
+            "us": 1.1825915404040406,
+            "host_share_pct": 0.005296596550366383
+          },
+          {
+            "module": "DSP unattributed",
+            "us": 0.0,
+            "host_share_pct": 0.0
+          },
+          {
+            "module": "Runtime setup/teardown",
+            "us": 50.83429608585859,
+            "host_share_pct": 0.22767688427457483
+          },
+          {
+            "module": "Embedding",
+            "us": 1.8013415404040405,
+            "host_share_pct": 0.00806785695902743
+          },
+          {
+            "module": "Final model RMSNorm",
+            "us": 55.73560606060606,
+            "host_share_pct": 0.2496288944298769
+          },
+          {
+            "module": "LM head＋greedy（不含 final norm）",
+            "us": 3209.209532828283,
+            "host_share_pct": 14.373422741696388
+          },
+          {
+            "module": "Host–DSP 边界",
+            "us": 535.5493451767652,
+            "host_share_pct": 2.3986209247235863
+          },
+          {
+            "module": "完整 Host wall",
+            "us": 22327.385693030305,
+            "host_share_pct": 100.00000000000001
+          }
+        ]
+      },
+      "decode_KV65_96": {
+        "host_us": 22303.8472421875,
+        "e2e_tps": 44.83531424607814,
+        "profiles": 3200,
+        "modules": [
+          {
+            "module": "I/O、metadata",
+            "us": 116.88893229166668,
+            "host_share_pct": 0.5240752011185427
+          },
+          {
+            "module": "Input RMSNorm",
+            "us": 871.0086100260417,
+            "host_share_pct": 3.905194474155731
+          },
+          {
+            "module": "QKV＋RoPE",
+            "us": 1669.6122721354168,
+            "host_share_pct": 7.485759089029996
+          },
+          {
+            "module": "QK–Softmax–AV",
+            "us": 6335.506266276042,
+            "host_share_pct": 28.40544143564836
+          },
+          {
+            "module": "O projection",
+            "us": 880.5203125,
+            "host_share_pct": 3.947840491099243
+          },
+          {
+            "module": "Post-attention residual＋RMSNorm",
+            "us": 875.1225097656251,
+            "host_share_pct": 3.9236392729158385
+          },
+          {
+            "module": "Gate/Up＋SwiGLU",
+            "us": 4900.3771484375,
+            "host_share_pct": 21.970994937449564
+          },
+          {
+            "module": "Down",
+            "us": 2633.5891276041666,
+            "host_share_pct": 11.807779613118761
+          },
+          {
+            "module": "Final residual",
+            "us": 1.0375325520833334,
+            "host_share_pct": 0.00465180980131917
+          },
+          {
+            "module": "KV carrier conversion",
+            "us": 48.433658854166666,
+            "host_share_pct": 0.21715383148139078
+          },
+          {
+            "module": "KV append DMA",
+            "us": 90.83955078125001,
+            "host_share_pct": 0.4072819805249918
+          },
+          {
+            "module": "Block orchestration",
+            "us": 16.245817057291667,
+            "host_share_pct": 0.07283863129479684
+          },
+          {
+            "module": "Layer bookkeeping",
+            "us": 9.279768880208334,
+            "host_share_pct": 0.04160613538751173
+          },
+          {
+            "module": "Stage-boundary bookkeeping",
+            "us": 1.1828776041666667,
+            "host_share_pct": 0.005303468909746053
+          },
+          {
+            "module": "DSP unattributed",
+            "us": 0.0,
+            "host_share_pct": 0.0
+          },
+          {
+            "module": "Runtime setup/teardown",
+            "us": 50.834619140625,
+            "host_share_pct": 0.22791861237496208
+          },
+          {
+            "module": "Embedding",
+            "us": 1.7935221354166668,
+            "host_share_pct": 0.008041312854870338
+          },
+          {
+            "module": "Final model RMSNorm",
+            "us": 55.67916666666667,
+            "host_share_pct": 0.24963929344597593
+          },
+          {
+            "module": "LM head＋greedy（不含 final norm）",
+            "us": 3209.255338541667,
+            "host_share_pct": 14.388797159941953
+          },
+          {
+            "module": "Host–DSP 边界",
+            "us": 536.6402109375085,
+            "host_share_pct": 2.4060432494464856
+          },
+          {
+            "module": "完整 Host wall",
+            "us": 22303.8472421875,
+            "host_share_pct": 99.99999999999999
+          }
+        ]
+      },
+      "decode_KV97": {
+        "host_us": 23080.61612,
+        "e2e_tps": 43.32639972870881,
+        "profiles": 100,
+        "modules": [
+          {
+            "module": "I/O、metadata",
+            "us": 117.13697916666668,
+            "host_share_pct": 0.5075123582388436
+          },
+          {
+            "module": "Input RMSNorm",
+            "us": 871.0,
+            "host_share_pct": 3.773729416370537
+          },
+          {
+            "module": "QKV＋RoPE",
+            "us": 1666.3812500000001,
+            "host_share_pct": 7.219830013792544
+          },
+          {
+            "module": "QK–Softmax–AV",
+            "us": 7140.201041666667,
+            "host_share_pct": 30.935920447459303
+          },
+          {
+            "module": "O projection",
+            "us": 884.5838541666667,
+            "host_share_pct": 3.8325833659186856
+          },
+          {
+            "module": "Post-attention residual＋RMSNorm",
+            "us": 872.2750000000001,
+            "host_share_pct": 3.779253532335948
+          },
+          {
+            "module": "Gate/Up＋SwiGLU",
+            "us": 4906.525000000001,
+            "host_share_pct": 21.2582063428903
+          },
+          {
+            "module": "Down",
+            "us": 2637.1520833333334,
+            "host_share_pct": 11.425830530789717
+          },
+          {
+            "module": "Final residual",
+            "us": 1.0421875,
+            "host_share_pct": 0.004515423221726371
+          },
+          {
+            "module": "KV carrier conversion",
+            "us": 48.50416666666667,
+            "host_share_pct": 0.21015109135079135
+          },
+          {
+            "module": "KV append DMA",
+            "us": 90.28958333333334,
+            "host_share_pct": 0.3911922578838565
+          },
+          {
+            "module": "Block orchestration",
+            "us": 16.24322916666667,
+            "host_share_pct": 0.07037606397600217
+          },
+          {
+            "module": "Layer bookkeeping",
+            "us": 9.305729166666667,
+            "host_share_pct": 0.040318374164210434
+          },
+          {
+            "module": "Stage-boundary bookkeeping",
+            "us": 1.1734375000000001,
+            "host_share_pct": 0.005084082218165674
+          },
+          {
+            "module": "DSP unattributed",
+            "us": 0.0,
+            "host_share_pct": 0.0
+          },
+          {
+            "module": "Runtime setup/teardown",
+            "us": 50.82395833333334,
+            "host_share_pct": 0.2202019134545241
+          },
+          {
+            "module": "Embedding",
+            "us": 2.0515625,
+            "host_share_pct": 0.008888681694342917
+          },
+          {
+            "module": "Final model RMSNorm",
+            "us": 57.54166666666667,
+            "host_share_pct": 0.24930732510561193
+          },
+          {
+            "module": "LM head＋greedy（不含 final norm）",
+            "us": 3207.74375,
+            "host_share_pct": 13.897998793976736
+          },
+          {
+            "module": "Host–DSP 边界",
+            "us": 500.64164083332435,
+            "host_share_pct": 2.1690999851581276
+          },
+          {
+            "module": "完整 Host wall",
+            "us": 23080.61612,
+            "host_share_pct": 100.0
+          }
+        ]
+      }
+    },
+    "FFN": {
+      "prefill": {
+        "host_us": 31643.75524,
+        "e2e_tps": 2022.5159597714044,
+        "profiles": 100,
+        "modules": [
+          {
+            "module": "I/O、metadata",
+            "us": 119.61145833333335,
+            "host_share_pct": 0.3779938803917172
+          },
+          {
+            "module": "Input RMSNorm",
+            "us": 1267.4489583333334,
+            "host_share_pct": 4.005368353788763
+          },
+          {
+            "module": "QKV＋RoPE",
+            "us": 3865.1505208333333,
+            "host_share_pct": 12.214575961412768
+          },
+          {
+            "module": "QK–Softmax–AV",
+            "us": 8383.898958333333,
+            "host_share_pct": 26.49463976303128
+          },
+          {
+            "module": "O projection",
+            "us": 1579.3734375000001,
+            "host_share_pct": 4.9911062246605855
+          },
+          {
+            "module": "Post-attention residual＋RMSNorm",
+            "us": 1275.6536458333335,
+            "host_share_pct": 4.031296652872649
+          },
+          {
+            "module": "Gate/Up＋SwiGLU",
+            "us": 7729.9359375,
+            "host_share_pct": 24.42799812750669
+          },
+          {
+            "module": "Down",
+            "us": 3127.2828125,
+            "host_share_pct": 9.882780310937584
+          },
+          {
+            "module": "Final residual",
+            "us": 1.3932291666666667,
+            "host_share_pct": 0.004402856601878668
+          },
+          {
+            "module": "KV carrier conversion",
+            "us": 27.41197916666667,
+            "host_share_pct": 0.0866268208648509
+          },
+          {
+            "module": "KV append DMA",
+            "us": 114.78072916666667,
+            "host_share_pct": 0.3627279009590351
+          },
+          {
+            "module": "Block orchestration",
+            "us": 22.907812500000002,
+            "host_share_pct": 0.0723928381010951
+          },
+          {
+            "module": "Layer bookkeeping",
+            "us": 14.060416666666667,
+            "host_share_pct": 0.04443346423338935
+          },
+          {
+            "module": "Stage-boundary bookkeeping",
+            "us": 6.320833333333334,
+            "host_share_pct": 0.019974978587065238
+          },
+          {
+            "module": "DSP unattributed",
+            "us": 0.0,
+            "host_share_pct": 0.0
+          },
+          {
+            "module": "Runtime setup/teardown",
+            "us": 90.28020833333333,
+            "host_share_pct": 0.2853018159463344
+          },
+          {
+            "module": "Embedding",
+            "us": 55.478125000000006,
+            "host_share_pct": 0.17532092692295775
+          },
+          {
+            "module": "Final model RMSNorm",
+            "us": 60.161458333333336,
+            "host_share_pct": 0.1901211088160766
+          },
+          {
+            "module": "LM head＋greedy（不含 final norm）",
+            "us": 3209.7083333333335,
+            "host_share_pct": 10.143259891215534
+          },
+          {
+            "module": "Host–DSP 边界",
+            "us": 692.89638583333,
+            "host_share_pct": 2.1896781231497418
+          },
+          {
+            "module": "完整 Host wall",
+            "us": 31643.75524,
+            "host_share_pct": 100.0
+          }
+        ]
+      },
+      "decode": {
+        "host_us": 22810.78947,
+        "e2e_tps": 43.83890357302921,
+        "profiles": 3300,
+        "modules": [
+          {
+            "module": "I/O、metadata",
+            "us": 116.40039457070708,
+            "host_share_pct": 0.5102865673447781
+          },
+          {
+            "module": "Input RMSNorm",
+            "us": 870.6949968434344,
+            "host_share_pct": 3.817031400813829
+          },
+          {
+            "module": "QKV＋RoPE",
+            "us": 1668.3237373737375,
+            "host_share_pct": 7.313748345132297
+          },
+          {
+            "module": "QK–Softmax–AV",
+            "us": 6358.003551136364,
+            "host_share_pct": 27.87279045952443
+          },
+          {
+            "module": "O projection",
+            "us": 886.6630366161617,
+            "host_share_pct": 3.887033536398518
+          },
+          {
+            "module": "Post-attention residual＋RMSNorm",
+            "us": 875.0175820707071,
+            "host_share_pct": 3.83598114051029
+          },
+          {
+            "module": "Gate/Up＋SwiGLU",
+            "us": 5376.187957702021,
+            "host_share_pct": 23.56861854681797
+          },
+          {
+            "module": "Down",
+            "us": 2639.912263257576,
+            "host_share_pct": 11.573085915020615
+          },
+          {
+            "module": "Final residual",
+            "us": 1.0310448232323233,
+            "host_share_pct": 0.004519987458515277
+          },
+          {
+            "module": "KV carrier conversion",
+            "us": 48.47451073232323,
+            "host_share_pct": 0.21250694017440877
+          },
+          {
+            "module": "KV append DMA",
+            "us": 90.2769412878788,
+            "host_share_pct": 0.3957642123987338
+          },
+          {
+            "module": "Block orchestration",
+            "us": 16.19692234848485,
+            "host_share_pct": 0.0710055317015069
+          },
+          {
+            "module": "Layer bookkeeping",
+            "us": 9.312026515151516,
+            "host_share_pct": 0.040822903246721845
+          },
+          {
+            "module": "Stage-boundary bookkeeping",
+            "us": 1.1810606060606061,
+            "host_share_pct": 0.005177640202299435
+          },
+          {
+            "module": "DSP unattributed",
+            "us": 0.0,
+            "host_share_pct": 0.0
+          },
+          {
+            "module": "Runtime setup/teardown",
+            "us": 50.8955018939394,
+            "host_share_pct": 0.22312029998293348
+          },
+          {
+            "module": "Embedding",
+            "us": 1.7908933080808083,
+            "host_share_pct": 0.007851079904253785
+          },
+          {
+            "module": "Final model RMSNorm",
+            "us": 55.71043244949495,
+            "host_share_pct": 0.24422842761651667
+          },
+          {
+            "module": "LM head＋greedy（不含 final norm）",
+            "us": 3200.764788510101,
+            "host_share_pct": 14.031801892344154
+          },
+          {
+            "module": "Host–DSP 边界",
+            "us": 543.9518279545482,
+            "host_share_pct": 2.3846251734072412
+          },
+          {
+            "module": "完整 Host wall",
+            "us": 22810.78947,
+            "host_share_pct": 100.00000000000001
+          }
+        ]
+      },
+      "decode_KV65_96": {
+        "host_us": 22789.1821265625,
+        "e2e_tps": 43.88046900702176,
+        "profiles": 3200,
+        "modules": [
+          {
+            "module": "I/O、metadata",
+            "us": 116.38997395833334,
+            "host_share_pct": 0.5107246645006716
+          },
+          {
+            "module": "Input RMSNorm",
+            "us": 870.7007649739584,
+            "host_share_pct": 3.8206757931829918
+          },
+          {
+            "module": "QKV＋RoPE",
+            "us": 1668.4368326822917,
+            "host_share_pct": 7.321179072668884
+          },
+          {
+            "module": "QK–Softmax–AV",
+            "us": 6333.688850911459,
+            "host_share_pct": 27.79252373225395
+          },
+          {
+            "module": "O projection",
+            "us": 886.6308105468751,
+            "host_share_pct": 3.890577580287273
+          },
+          {
+            "module": "Post-attention residual＋RMSNorm",
+            "us": 875.1087239583334,
+            "host_share_pct": 3.840018123942801
+          },
+          {
+            "module": "Gate/Up＋SwiGLU",
+            "us": 5376.14208984375,
+            "host_share_pct": 23.590763635073387
+          },
+          {
+            "module": "Down",
+            "us": 2639.890592447917,
+            "host_share_pct": 11.583963732383912
+          },
+          {
+            "module": "Final residual",
+            "us": 1.0310872395833335,
+            "host_share_pct": 0.004524459166007208
+          },
+          {
+            "module": "KV carrier conversion",
+            "us": 48.472477213541666,
+            "host_share_pct": 0.21269950340623836
+          },
+          {
+            "module": "KV append DMA",
+            "us": 90.2896484375,
+            "host_share_pct": 0.3961952119916609
+          },
+          {
+            "module": "Block orchestration",
+            "us": 16.196223958333334,
+            "host_share_pct": 0.07106979034344292
+          },
+          {
+            "module": "Layer bookkeeping",
+            "us": 9.311865234375,
+            "host_share_pct": 0.04086090138145556
+          },
+          {
+            "module": "Stage-boundary bookkeeping",
+            "us": 1.180859375,
+            "host_share_pct": 0.005181666320633859
+          },
+          {
+            "module": "DSP unattributed",
+            "us": 0.0,
+            "host_share_pct": 0.0
+          },
+          {
+            "module": "Runtime setup/teardown",
+            "us": 50.899723307291666,
+            "host_share_pct": 0.2233503731051595
+          },
+          {
+            "module": "Embedding",
+            "us": 1.7812988281250002,
+            "host_share_pct": 0.007816422801978326
+          },
+          {
+            "module": "Final model RMSNorm",
+            "us": 55.655371093750006,
+            "host_share_pct": 0.2442183786353592
+          },
+          {
+            "module": "LM head＋greedy（不含 final norm）",
+            "us": 3200.9129557291667,
+            "host_share_pct": 14.045756174804811
+          },
+          {
+            "module": "Host–DSP 边界",
+            "us": 546.4619768229131,
+            "host_share_pct": 2.397900783749368
+          },
+          {
+            "module": "完整 Host wall",
+            "us": 22789.1821265625,
+            "host_share_pct": 100.00000000000001
+          }
+        ]
+      },
+      "decode_KV97": {
+        "host_us": 23502.22446,
+        "e2e_tps": 42.54916387603933,
+        "profiles": 100,
+        "modules": [
+          {
+            "module": "I/O、metadata",
+            "us": 116.73385416666667,
+            "host_share_pct": 0.4966927890819177
+          },
+          {
+            "module": "Input RMSNorm",
+            "us": 870.5104166666667,
+            "host_share_pct": 3.703949037454928
+          },
+          {
+            "module": "QKV＋RoPE",
+            "us": 1664.7046875,
+            "host_share_pct": 7.0831792553648345
+          },
+          {
+            "module": "QK–Softmax–AV",
+            "us": 7136.073958333333,
+            "host_share_pct": 30.363398028466168
+          },
+          {
+            "module": "O projection",
+            "us": 887.6942708333333,
+            "host_share_pct": 3.7770649001508736
+          },
+          {
+            "module": "Post-attention residual＋RMSNorm",
+            "us": 872.1010416666667,
+            "host_share_pct": 3.7107170138339605
+          },
+          {
+            "module": "Gate/Up＋SwiGLU",
+            "us": 5377.655729166667,
+            "host_share_pct": 22.881475488923424
+          },
+          {
+            "module": "Down",
+            "us": 2640.6057291666666,
+            "host_share_pct": 11.235556590232084
+          },
+          {
+            "module": "Final residual",
+            "us": 1.0296875,
+            "host_share_pct": 0.004381234217860925
+          },
+          {
+            "module": "KV carrier conversion",
+            "us": 48.53958333333333,
+            "host_share_pct": 0.20653186857246672
+          },
+          {
+            "module": "KV append DMA",
+            "us": 89.87031250000001,
+            "host_share_pct": 0.3823906654153367
+          },
+          {
+            "module": "Block orchestration",
+            "us": 16.219270833333333,
+            "host_share_pct": 0.06901164126373649
+          },
+          {
+            "module": "Layer bookkeeping",
+            "us": 9.317187500000001,
+            "host_share_pct": 0.039643853780128524
+          },
+          {
+            "module": "Stage-boundary bookkeeping",
+            "us": 1.1875,
+            "host_share_pct": 0.005052713210279671
+          },
+          {
+            "module": "DSP unattributed",
+            "us": 0.0,
+            "host_share_pct": 0.0
+          },
+          {
+            "module": "Runtime setup/teardown",
+            "us": 50.76041666666667,
+            "host_share_pct": 0.21598132871660383
+          },
+          {
+            "module": "Embedding",
+            "us": 2.097916666666667,
+            "host_share_pct": 0.008926460004827419
+          },
+          {
+            "module": "Final model RMSNorm",
+            "us": 57.47239583333334,
+            "host_share_pct": 0.24454023886611
+          },
+          {
+            "module": "LM head＋greedy（不含 final norm）",
+            "us": 3196.0234375,
+            "host_share_pct": 13.598812499385005
+          },
+          {
+            "module": "Host–DSP 边界",
+            "us": 463.62706416666333,
+            "host_share_pct": 1.972694393059436
+          },
+          {
+            "module": "完整 Host wall",
+            "us": 23502.22446,
+            "host_share_pct": 100.0
+          }
+        ]
+      }
+    }
+  },
+  "effects": {
+    "prefill": {
+      "ffn_disabled_over_all_wall": 1.0744213901259463,
+      "ci95": [
+        1.0723031512662908,
+        1.0764817474017196
+      ]
+    },
+    "decode": {
+      "ffn_disabled_over_all_wall": 1.0216507110870845,
+      "ci95": [
+        1.0204679543483264,
+        1.022825205752122
+      ]
+    },
+    "decode_KV65_96": {
+      "ffn_disabled_over_all_wall": 1.0217601420555371,
+      "ci95": [
+        1.0205502589629378,
+        1.022968331087259
+      ]
+    },
+    "decode_KV97": {
+      "ffn_disabled_over_all_wall": 1.0182667714677973,
+      "ci95": [
+        1.0164580354536652,
+        1.0200279792440647
+      ]
+    }
+  },
+  "physical_gate": true,
+  "weight_and_hmx_work_identical": true,
+  "physical_examples": [
+    {
+      "generation_step": 0,
+      "valid_length": 64,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 3381,
+      "hmx_u8s8_tile_pair_count": 1473024,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 1,
+      "valid_length": 65,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 31,
+      "valid_length": 95,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 32,
+      "valid_length": 96,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 33,
+      "valid_length": 97,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1214976,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 0,
+      "valid_length": 64,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 3381,
+      "hmx_u8s8_tile_pair_count": 1473024,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 1,
+      "valid_length": 65,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 31,
+      "valid_length": 95,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 32,
+      "valid_length": 96,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 33,
+      "valid_length": 97,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1214976,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 0,
+      "valid_length": 64,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 3381,
+      "hmx_u8s8_tile_pair_count": 1473024,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 1,
+      "valid_length": 65,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 31,
+      "valid_length": 95,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 32,
+      "valid_length": 96,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 33,
+      "valid_length": 97,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1214976,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 0,
+      "valid_length": 64,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 3381,
+      "hmx_u8s8_tile_pair_count": 1473024,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 1,
+      "valid_length": 65,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 31,
+      "valid_length": 95,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 32,
+      "valid_length": 96,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 33,
+      "valid_length": 97,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1214976,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 0,
+      "valid_length": 64,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 3381,
+      "hmx_u8s8_tile_pair_count": 1473024,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 1,
+      "valid_length": 65,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 31,
+      "valid_length": 95,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 32,
+      "valid_length": 96,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 33,
+      "valid_length": 97,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1214976,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 0,
+      "valid_length": 64,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 3381,
+      "hmx_u8s8_tile_pair_count": 1473024,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 1,
+      "valid_length": 65,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 31,
+      "valid_length": 95,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 32,
+      "valid_length": 96,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 33,
+      "valid_length": 97,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1214976,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 0,
+      "valid_length": 64,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 3381,
+      "hmx_u8s8_tile_pair_count": 1473024,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 1,
+      "valid_length": 65,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 31,
+      "valid_length": 95,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 32,
+      "valid_length": 96,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 33,
+      "valid_length": 97,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1214976,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 0,
+      "valid_length": 64,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 3381,
+      "hmx_u8s8_tile_pair_count": 1473024,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 1,
+      "valid_length": 65,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 31,
+      "valid_length": 95,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 32,
+      "valid_length": 96,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 33,
+      "valid_length": 97,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1214976,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 0,
+      "valid_length": 64,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 3381,
+      "hmx_u8s8_tile_pair_count": 1473024,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 1,
+      "valid_length": 65,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 31,
+      "valid_length": 95,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 32,
+      "valid_length": 96,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 33,
+      "valid_length": 97,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1214976,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 0,
+      "valid_length": 64,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 3381,
+      "hmx_u8s8_tile_pair_count": 1473024,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 1,
+      "valid_length": 65,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 31,
+      "valid_length": 95,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 32,
+      "valid_length": 96,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1212928,
+      "vtcm_peak_plan_bytes": 8098272
+    },
+    {
+      "generation_step": 33,
+      "valid_length": 97,
+      "weight_ddr_read_bytes": 621918208,
+      "hmx_command_count": 1589,
+      "hmx_u8s8_tile_pair_count": 1214976,
+      "vtcm_peak_plan_bytes": 8098272
+    }
+  ],
+  "peak": 8098272,
+  "quality_claim": false,
+  "baseline_promoted": false,
+  "numerical_scope": "independent full16 CPU greedy selected token/logit code exact, first16 matches old frozen model"
+}
