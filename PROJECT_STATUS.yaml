@@ -11232,3 +11232,50 @@ current_scope:
           FP:
             prefill: 1818.7422646440443
             decode: 47.10263908552258
+  latest_paper_long_kv_result:
+    id: EXP-0279
+    execution_state: running
+    checkpoint: all_timing_complete_and_sealed_campaign_report_pending
+    evidence_validity: valid
+    local_gate: pass
+    measured_source: 0e683fa5f1dd708b077f81530d516d036d8c1d0e
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0279
+    evidence_ledger_sha256: 8d9a848f7133bb7f8dda0dbeedcf378333a1f56ddb4b1918852cc479f0b89590
+    evidence_files: 472
+    evidence_bytes: 386951723
+    timed_profiles: 10200
+    effects:
+      prefill:
+        ffn_disabled_over_all_wall: 1.0718218692435
+        ci95:
+        - 1.0699141592862276
+        - 1.0743944747083698
+      decode:
+        ffn_disabled_over_all_wall: 1.0295060012412878
+        ci95:
+        - 1.0272190886225039
+        - 1.032286619099762
+      decode_KV65_96:
+        ffn_disabled_over_all_wall: 1.0295347838576907
+        ci95:
+        - 1.0271863173424383
+        - 1.032348234115354
+      decode_KV97:
+        ffn_disabled_over_all_wall: 1.0285813189881963
+        ci95:
+        - 1.0256988265226148
+        - 1.0315150439968994
+    tps:
+      ALL:
+        prefill: 1850.7348043386696
+        decode: 47.13598738917966
+      FFN:
+        prefill: 1726.7186436911688
+        decode: 45.78505354252158
+    shape: M64+33 cache128, 34 outputs
+    numerical_scope: same frozen LOG2 DSP arithmetic; own selected/chain3 gates inherited
+      from EXP0278; full28 paired outputs/hidden bytes exact and all34 actual finalNorm/full-vocabulary
+      head audited; no full28 CPU transformer equivalence claim
+    physical_gate: true
+    quality_claim: false
+    baseline_promoted: false
