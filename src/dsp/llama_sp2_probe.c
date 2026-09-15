@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "llama_sp2_probe.h"
+#include "attention_u8_core.h"
 #include "mlp_u8.h"
 #include "hmx_u8s8_projection.h"
 #include "qbh_user_dma.h"
@@ -65,11 +66,44 @@ static int lsp2_gather_audit(uint8_t *shared,uint32_t bytes,uint8_t *vtcm,uint32
  h->peak_bytes=(uint32_t)(scratch+256U-vtcm);h->status=mismatch?AEE_EFAILED:AEE_SUCCESS;
  return h->status;
 }
+/* A9 isolated diagnostic using existing shared RPC envelope, modes5FP/6log2.
+ * input raw native score tiles; weight_offset holds attention config followed
+ * by past_tokens and repeat_count. sum_offset U8, output_offset FP32 dump. */
+static int paper_softmax_probe(uint8_t *shared,uint32_t bytes,uint8_t *vtcm,uint32_t vbytes){
+    struct lsp2_header *h=(void *)shared;
+    uint32_t tiles=h->k/32U,sz=h->n*tiles*2048U;
+    if(h->magic!=LSP2_MAGIC || h->abi!=1 || h->bytes!=bytes ||
+       h->rows<1 || h->rows>64 || !h->n || h->n>16 || !h->k || h->k>128 || h->k%32 ||
+       !valid(h->input_offset,sz,bytes) || !valid(h->sum_offset,sz,bytes) ||
+       !valid(h->output_offset,sz*4,bytes) ||
+       !valid(h->weight_offset,sizeof(struct qbh_attention_config)+8U,bytes))return AEE_EBADPARM;
+    const struct qbh_attention_config *config=(void *)(shared+h->weight_offset);
+    const uint32_t *extra=(void *)(shared+h->weight_offset+sizeof(*config));
+    uint32_t past=extra[0],repeat=extra[1];if(past+h->rows>h->k || !repeat || repeat>1000 || config->fraction_bits==0 || config->fraction_bits>24)return AEE_EBADPARM;
+    uint8_t *raw=vtcm,*prob=vtcm+sz;float *dump=(void *)(vtcm+2*sz);
+    if(6*sz>vbytes)return AEE_ENOMEMORY;
+    memcpy(raw,shared+h->input_offset,sz);memset(prob,0,sz);memset(dump,0,4*sz);
+    uint64_t start=HAP_perf_get_qtimer_count();
+    for(uint32_t i=0;i<repeat;i++) {
+        if(h->mode==5)qbh_attention_fp32_softmax_native(raw,prob,h->n,0,h->rows,past,h->k,config,NULL,NULL);
+        else {if(h->n!=QBH_ATTENTION_Q_HEADS_PER_GROUP)return AEE_EBADPARM;
+            qbh_attention_u8_requant_softmax_dynamic(raw,prob,h->rows,past,past+h->rows,h->k,config,NULL,1,0,4);}
+    }
+    h->total_ticks=HAP_perf_get_qtimer_count()-start;
+    if(h->mode==5)qbh_attention_fp32_softmax_native(raw,prob,h->n,0,h->rows,past,h->k,config,dump,NULL);
+    memcpy(shared+h->sum_offset,prob,sz);memcpy(shared+h->output_offset,dump,4*sz);
+    h->vtcm_bytes=vbytes;h->peak_bytes=6*sz;h->status=0;return AEE_SUCCESS;
+}
 int lsp2_run(int fd,uint32_t bytes,uint8_t *vtcm,uint32_t vbytes,uint32_t ctx){
  uint8_t *shared=0;int ret=HAP_mmap_get(fd,(void**)&shared,0);if(ret||!shared)return AEE_EFAILED;
  ret=qurt_mem_cache_clean((qurt_addr_t)shared,bytes,QURT_MEM_CACHE_INVALIDATE,QURT_MEM_DCACHE);
  if(ret){HAP_mmap_put(fd);return AEE_EFAILED;}
  struct lsp2_header *h=(struct lsp2_header*)shared;
+ if(bytes>=128U && (h->mode==5U || h->mode==6U)) {
+   ret=paper_softmax_probe(shared,bytes,vtcm,vbytes);
+   int e=qurt_mem_cache_clean((qurt_addr_t)shared,bytes,QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE);
+   HAP_mmap_put(fd);return ret?ret:(e?AEE_EFAILED:AEE_SUCCESS);
+ }
  if(bytes>=128U && h->mode==4U) {
    ret=lsp2_gather_audit(shared,bytes,vtcm,vbytes);
    int e=qurt_mem_cache_clean((qurt_addr_t)shared,bytes,QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE);
