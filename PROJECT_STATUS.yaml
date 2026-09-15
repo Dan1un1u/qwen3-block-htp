@@ -6,8 +6,8 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0030
-  next_experiment_number: 31
+  active_experiment: L32-0031
+  next_experiment_number: 32
   maximum_running_experiments: 1
   remote_sync_required: true
 source_worktrees:
@@ -1359,8 +1359,91 @@ current_scope:
           ci95:
           - 0.9870875472223184
           - 0.9941624837523004
-  current_handoff: docs/SESSION_HANDOFF_L32_0029.md
-  next_direction: Approved remaining A2/A3/A5/A6/A8/A9 campaign; QwenEXP0275 owns current device
+  current_handoff: docs/SESSION_HANDOFF_L32_0030.md
+  next_direction: L32-0031 approved A3; QwenEXP0276 ownsdevice until complete
+  latest_paper_pipeline_result:
+    id: L32-0030
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    measured_source: 4421949fcdeaff146cf093a4ce529190b13e2ded
+    source_closure: 6059e2c3aa11c3124543f658ea0203f6bb4adefc
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0030
+    evidence_ledger_sha256: 7d6bc80d63ecdfa9d1c7e3040483a30dc68cf1dd0a14264d7aee862f1bee6ed2
+    evidence_files: 1450
+    evidence_bytes: 386377955
+    timed_profiles: 14000
+    physical_gate: true
+    independent_numerical_exact: true
+    trace_complete: false
+    trace_status: 'N/A: truncated FARF; five exact diagnostic runs retained'
+    mechanism_coverage:
+      QKV: 'N/A: Qwen ring scheduling site is inactive in the measured Llama no-rotation path; QKV arm
+        is a no-op control, not evidence against QKV overlap'
+      FFN: active
+      EPILOGUE: prefill active; decode current implementation inline
+      LOOKAHEAD: decode active; no prefill cross-operator lookahead path
+    baseline_promoted: false
+    quality_claim: false
+    performance:
+      ALL:
+        prefill: 2161.5492818826506
+        decode: 45.22987401582965
+      QKV:
+        prefill: 2161.188921840409
+        decode: 45.25146933995448
+      FFN:
+        prefill: 2008.6065690698251
+        decode: 44.257200383437585
+      EPILOGUE:
+        prefill: 2063.2935104854705
+        decode: 45.26347147190389
+      LOOKAHEAD:
+        prefill: 2164.7195113314824
+        decode: 44.70926258639452
+    effects:
+      prefill:
+        QKV:
+          ratio: 1.0001667415738624
+          ci95:
+          - 0.9952633454868799
+          - 1.005481304947648
+        FFN:
+          ratio: 1.0761436884494768
+          ci95:
+          - 1.0727642503720805
+          - 1.0795621208897044
+        EPILOGUE:
+          ratio: 1.0476208406113108
+          ci95:
+          - 1.044459327028086
+          - 1.0504485422689716
+        LOOKAHEAD:
+          ratio: 0.9985355010511816
+          ci95:
+          - 0.995665412294924
+          - 1.0016520589821603
+      decode:
+        QKV:
+          ratio: 0.999522770764357
+          ci95:
+          - 0.9964503162843332
+          - 1.0027728353369119
+        FFN:
+          ratio: 1.0219777487948847
+          ci95:
+          - 1.02020859531325
+          - 1.0237669077190787
+        EPILOGUE:
+          ratio: 0.999257735763924
+          ci95:
+          - 0.9972904506167213
+          - 1.0009788704687534
+        LOOKAHEAD:
+          ratio: 1.0116443752215576
+          ci95:
+          - 1.009275908390115
+          - 1.0140494700486085
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp
