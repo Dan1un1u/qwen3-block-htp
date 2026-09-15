@@ -1,3 +1,7 @@
+# Active EXP0275: pipeline mechanism knockouts and layer scaling
+
+Read docs/experiments/EXP-0275.md. Parent EXP0274 completed; keep its corrected timing and original rejected attempt. New phase authorized by PC086, no repeated permission. Llama L32-0029 currently owns device timing; do only local preparation until it completes.
+
 # EXP0274 completed: corrected full-model factorial
 
 Source 338b32137cb962fdec303d0752e5431839361d37, branch codex/exp-0274-fullmodel-format-pipeline, measured native c77f70af1f7c33591c7f2a8fab0ba10c78f52cad, ABI134. Active none,next275. See EXP-0274-RESULTS.md. No baseline promotion/quality acceptance.

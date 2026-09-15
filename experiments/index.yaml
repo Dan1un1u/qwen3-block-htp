@@ -24,6 +24,19 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0275
+  title: Individual pipeline knockouts and layer scaling
+  parent: EXP-0274
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: not_applicable
+  record: docs/experiments/EXP-0275.md
+  approval_ref: Standing user-approved paper A2/A6 campaign; continue from checkpoint
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0274-fullmodel-format-pipeline
+    started_on: '2026-09-15'
 - id: EXP-0274
   title: Qwen full-model format and pipeline factorial
   parent: EXP-0273
