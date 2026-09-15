@@ -1,0 +1,122 @@
+{
+  "campaign_complete": true,
+  "stage_bindings": [
+    {
+      "model": "Qwen",
+      "phase": "A1",
+      "root": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0274",
+      "primary": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0274/consumer-row1-a02",
+      "ledger_sha256": "ce6873fee5fb0c66d0fdb63043341b7353aaf664875580b6b8fa00e25978f5d6",
+      "summary_sha256": "602b4a21a31f659bf4af69a74fa78ca721938ffb6303544e59e0b9d30b58ea3b",
+      "report_sha256": "a38306192ba321d6f2bbeccb8540deed8ba93146b48213c340ece72d8b0cac56"
+    },
+    {
+      "model": "Qwen",
+      "phase": "A2/A6",
+      "root": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0275",
+      "primary": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0275",
+      "ledger_sha256": "75b66ce1ef9f3e3c7491b63b22106199aaa51d0ac81a2d62a366f9e201336d3b",
+      "summary_sha256": "5cb7f6c8248fa43026b24443296521b9f452ce0d8100b27724113587176b5ee4",
+      "report_sha256": "215a4d1537c148e0aacbd9ead226ea77d3a55f9a81aaa4f8e73ef2230f955450"
+    },
+    {
+      "model": "Qwen",
+      "phase": "A3",
+      "root": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0276",
+      "primary": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0276",
+      "ledger_sha256": "07fa8eb7877a063519f0b450fcd087e33506ae5931591644cae68bcc93077814",
+      "summary_sha256": "324e4b937a7774d9df61db706ad55976dc0bb9cd7db77dd3494dbd458c124aef",
+      "report_sha256": "d7ed69a994ad98dc2b77f691b0fb63a70d7928805f431bb234685f8b62b8b0cd"
+    },
+    {
+      "model": "Qwen",
+      "phase": "A5",
+      "root": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0277",
+      "primary": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0277",
+      "ledger_sha256": "160ef619a2017a11913246d7459ca031c14f3fa00f7a9dedf9da5fb11e6a8eef",
+      "summary_sha256": "7ad67b1bbb3b21511bfb9de2478c666791217018a9b40ba143de57be293ff7a3",
+      "report_sha256": "7eb04886a45819ebc66fadf39f6dfc8e78edb72a1e029e92691466b0238a7226"
+    },
+    {
+      "model": "Qwen",
+      "phase": "A9",
+      "root": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0278",
+      "primary": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0278/vsum",
+      "ledger_sha256": "dc52fb7ad240babd04f54d0b06363e148ff0e41365213b6738410a03ee9f13c2",
+      "summary_sha256": "3374bbb892b8cd7950001c9d1cb7a5e230d93d09e90030126e7fde74bc1e3f69",
+      "report_sha256": "797e20f09f3041ef385652eff65482460c945f24e3981ac6ecb83b6f88b1fd0e"
+    },
+    {
+      "model": "Qwen",
+      "phase": "A8",
+      "root": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0279",
+      "primary": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0279",
+      "ledger_sha256": "8d9a848f7133bb7f8dda0dbeedcf378333a1f56ddb4b1918852cc479f0b89590",
+      "summary_sha256": "7c627168a77bc4e864a9490d897ef3f71925d16d2e78c454c5e2fefaf0f1ee6c",
+      "report_sha256": "27ef0f97821326ca7f6907746b9a36891d0e4257a62d0d57d5b25f36f1588bb3"
+    },
+    {
+      "model": "Llama",
+      "phase": "A1",
+      "root": "/mnt/d/llm_exp/results/llama32-htp/l32-0029",
+      "primary": "/mnt/d/llm_exp/results/llama32-htp/l32-0029",
+      "ledger_sha256": "bfef7a0973d7d41eb00061eba218e2a94b75c083bced81be1e29fe755e34c0ee",
+      "summary_sha256": "9ed3bf6e9b6b0fc3bae59da4bcbcfcea9cd9fb88405036229a5b9377c075b322",
+      "report_sha256": "b9d7d67873e8c73c83d7db318f3107a1bf216e1fb1255633654ed6ad55cdedb1"
+    },
+    {
+      "model": "Llama",
+      "phase": "A2/A6",
+      "root": "/mnt/d/llm_exp/results/llama32-htp/l32-0030",
+      "primary": "/mnt/d/llm_exp/results/llama32-htp/l32-0030",
+      "ledger_sha256": "7d6bc80d63ecdfa9d1c7e3040483a30dc68cf1dd0a14264d7aee862f1bee6ed2",
+      "summary_sha256": "df7406109524a2bf982897dc250c969a22bd92fb2ee2480735301719e87736c3",
+      "report_sha256": "d45ebde404064aa45e150552d0055471bcaf5700f1a65fce94c4397eb78366a4"
+    },
+    {
+      "model": "Llama",
+      "phase": "A3",
+      "root": "/mnt/d/llm_exp/results/llama32-htp/l32-0031",
+      "primary": "/mnt/d/llm_exp/results/llama32-htp/l32-0031",
+      "ledger_sha256": "660a885cbb7ea74b3533a40d9ad9c6a5dda71ed5724399b7c4e79c1a23696474",
+      "summary_sha256": "fd75fb1b5d6100d1c59ff63516af5d3f3a858338c17cd93232725f6664296b5b",
+      "report_sha256": "e9a1346957a8c0871d0129044da1dd62da5ffe62e9669a2a98f9b4b6aaa76702"
+    },
+    {
+      "model": "Llama",
+      "phase": "A5",
+      "root": "/mnt/d/llm_exp/results/llama32-htp/l32-0032",
+      "primary": "/mnt/d/llm_exp/results/llama32-htp/l32-0032",
+      "ledger_sha256": "a11ee12fd162617993b247e4b60074a815493205050517fa0643d8af0343f557",
+      "summary_sha256": "361d8afa7830e1c3daaba7379f2933307cc64dab3b38b7e213523b6e2cfb1b99",
+      "report_sha256": "9877b187a9b2af930b5194753153265059253a58412bd7b5bf0b52001c9bb1c6"
+    },
+    {
+      "model": "Llama",
+      "phase": "A9",
+      "root": "/mnt/d/llm_exp/results/llama32-htp/l32-0033",
+      "primary": "/mnt/d/llm_exp/results/llama32-htp/l32-0033",
+      "ledger_sha256": "c647b984f5cc875a366f6829589c66a6b5428961b867ff1159cc4f9813866904",
+      "summary_sha256": "ac5f0f17c06b8e63fbb2cf05e7df1d29933a47ff600ca455572ce795c57959d9",
+      "report_sha256": "b726e2380db46e5a98fb124a6ddd56c6f74ba5e7022f6a544db07d84fcc0ee85"
+    },
+    {
+      "model": "Llama",
+      "phase": "A8",
+      "root": "/mnt/d/llm_exp/results/llama32-htp/l32-0034",
+      "primary": "/mnt/d/llm_exp/results/llama32-htp/l32-0034",
+      "ledger_sha256": "6bbd9ddfa2d750b9f55877fb2277bdb0ef90c3a2e0c5fa1acb9b1aaab1711da6",
+      "summary_sha256": "e777acc829dd9085420a6b30b9d3cf575e218686740267aeb1ad3538a1bd2bca",
+      "report_sha256": "b74da871506e765f3af6e41421f5c64b66f76580da071f0c9cda2352536b32b6"
+    }
+  ],
+  "canceled": [
+    "W4-to-S8 comparison",
+    "integer-residual comparison"
+  ],
+  "unavailable": [
+    "complete FARF timeline/utilization"
+  ],
+  "quality_claim": false,
+  "baseline_promoted": false
+}

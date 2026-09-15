@@ -1,0 +1,132 @@
+{
+  "input_sha256": {
+    "/mnt/d/llm_exp/results/qwen3-block-htp/exp0276/SUMMARY.json": "324e4b937a7774d9df61db706ad55976dc0bb9cd7db77dd3494dbd458c124aef",
+    "/mnt/d/llm_exp/results/qwen3-block-htp/exp0277/SUMMARY.json": "7ad67b1bbb3b21511bfb9de2478c666791217018a9b40ba143de57be293ff7a3",
+    "/mnt/d/llm_exp/results/qwen3-block-htp/exp0278/vsum/SUMMARY.json": "3374bbb892b8cd7950001c9d1cb7a5e230d93d09e90030126e7fde74bc1e3f69",
+    "/mnt/d/llm_exp/results/llama32-htp/l32-0031/SUMMARY.json": "fd75fb1b5d6100d1c59ff63516af5d3f3a858338c17cd93232725f6664296b5b",
+    "/mnt/d/llm_exp/results/llama32-htp/l32-0032/SUMMARY.json": "361d8afa7830e1c3daaba7379f2933307cc64dab3b38b7e213523b6e2cfb1b99",
+    "/mnt/d/llm_exp/results/llama32-htp/l32-0033/SUMMARY.json": "ac5f0f17c06b8e63fbb2cf05e7df1d29933a47ff600ca455572ce795c57959d9"
+  },
+  "values": [
+    {
+      "model": "Qwen",
+      "kind": "stream",
+      "mode": "prefill",
+      "ratio": 1.0008716342384452,
+      "ci95": [
+        0.9991798441968693,
+        1.0027711552353962
+      ]
+    },
+    {
+      "model": "Qwen",
+      "kind": "stream",
+      "mode": "decode",
+      "ratio": 1.0093053619849592,
+      "ci95": [
+        1.0076747264703934,
+        1.010685797105449
+      ]
+    },
+    {
+      "model": "Qwen",
+      "kind": "cost",
+      "mode": "prefill",
+      "ratio": 1.0089481756257994,
+      "ci95": [
+        1.0065432596200246,
+        1.0113938599071108
+      ]
+    },
+    {
+      "model": "Qwen",
+      "kind": "cost",
+      "mode": "decode",
+      "ratio": 1.003022078686384,
+      "ci95": [
+        1.0014471140540488,
+        1.0047096102329829
+      ]
+    },
+    {
+      "model": "Qwen",
+      "kind": "softmax",
+      "mode": "prefill",
+      "ratio": 1.0148098959621188,
+      "ci95": [
+        1.011718021064137,
+        1.017754857401735
+      ]
+    },
+    {
+      "model": "Qwen",
+      "kind": "softmax",
+      "mode": "decode",
+      "ratio": 0.9979927266450705,
+      "ci95": [
+        0.9957243422507294,
+        1.0004015093279517
+      ]
+    },
+    {
+      "model": "Llama",
+      "kind": "stream",
+      "mode": "prefill",
+      "ratio": 1.001063299350713,
+      "ci95": [
+        0.998008987613505,
+        1.003802286238664
+      ]
+    },
+    {
+      "model": "Llama",
+      "kind": "stream",
+      "mode": "decode",
+      "ratio": 1.011656635105734,
+      "ci95": [
+        1.0075799741956273,
+        1.0162463661212997
+      ]
+    },
+    {
+      "model": "Llama",
+      "kind": "cost",
+      "mode": "prefill",
+      "ratio": 1.01336439891226,
+      "ci95": [
+        1.010152605893282,
+        1.0163887468010981
+      ]
+    },
+    {
+      "model": "Llama",
+      "kind": "cost",
+      "mode": "decode",
+      "ratio": 1.0003500537936414,
+      "ci95": [
+        0.9977826760282112,
+        1.00294924273737
+      ]
+    },
+    {
+      "model": "Llama",
+      "kind": "softmax",
+      "mode": "prefill",
+      "ratio": 0.9496486730629179,
+      "ci95": [
+        0.947912434596591,
+        0.951642664782124
+      ]
+    },
+    {
+      "model": "Llama",
+      "kind": "softmax",
+      "mode": "decode",
+      "ratio": 0.9885331339254163,
+      "ci95": [
+        0.9871226200364103,
+        0.9899537698433332
+      ]
+    }
+  ]
+}

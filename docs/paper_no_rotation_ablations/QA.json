@@ -1,0 +1,27 @@
+{
+  "plots_visually_reviewed": true,
+  "plot_file": "paired_representation_costs.png",
+  "review": "all four model/stage rows and CI labels legible; no clipping or overlap",
+  "source_config_identity": {
+    "/mnt/d/llm_exp/models/Qwen3-origin/config.json": {
+      "sha256": "71a3d8a66f9dc6087d1478ecd41f81d464dd67611a94fda6da0a86b9ce6321ed",
+      "model_type": "qwen3",
+      "hidden_size": 2048,
+      "intermediate_size": 6144,
+      "num_hidden_layers": 28,
+      "vocab_size": 151936
+    },
+    "/mnt/d/llm_exp/models/llama3.2-1B-Instruct-origin/config.json": {
+      "sha256": "2febf68cea25bf4611be02b7536f2488a5ba523bb1134986e3610152abe74fdb",
+      "model_type": "llama",
+      "hidden_size": 2048,
+      "intermediate_size": 8192,
+      "num_hidden_layers": 16,
+      "vocab_size": 128256
+    }
+  },
+  "sealed_stage_summary_report_hashes_checked": true,
+  "device_work_complete": true,
+  "whole_campaign_complete": true,
+  "quality_claim": false
+}

@@ -1,10 +1,11 @@
-import json,hashlib
+import json,hashlib,os
 from pathlib import Path
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-R=Path('/mnt/d/llm_exp/results/paper-no-rotation-ablation-20260915');R.mkdir(exist_ok=True)
+R=Path(os.environ.get('QBH_PAPER_REPORT_ROOT','/mnt/d/llm_exp/results/paper-no-rotation-ablation-20260915'));R.mkdir(parents=True,exist_ok=True)
+assert not (R/'paired_representation_costs.json').exists(), 'Refuse to replace frozen plot evidence'
 def read(p):return json.loads(p.read_text())
 base=Path('/mnt/d/llm_exp/results');paths={'Qwen':{'stream':base/'qwen3-block-htp/exp0276/SUMMARY.json','cost':base/'qwen3-block-htp/exp0277/SUMMARY.json','softmax':base/'qwen3-block-htp/exp0278/vsum/SUMMARY.json'},'Llama':{'stream':base/'llama32-htp/l32-0031/SUMMARY.json','cost':base/'llama32-htp/l32-0032/SUMMARY.json','softmax':base/'llama32-htp/l32-0033/SUMMARY.json'}}
 data=[];bind={}
