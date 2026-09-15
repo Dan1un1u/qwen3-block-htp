@@ -74,6 +74,7 @@ static int lsp2_gather_audit(uint8_t *shared,uint32_t bytes,uint8_t *vtcm,uint32
  h->peak_bytes=(uint32_t)(scratch+768U-vtcm);h->status=mismatch?AEE_EFAILED:AEE_SUCCESS;
  return h->status;
 }
+#include "llama_rotation_probe.inc"
 /* A9 isolated diagnostic using existing shared RPC envelope, modes5FP/6log2.
  * input raw native score tiles; weight_offset holds attention config followed
  * by past_tokens and repeat_count. sum_offset U8, output_offset FP32 dump. */
