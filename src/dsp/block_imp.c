@@ -2095,7 +2095,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (header->w4f16_decode_opt && header->variant!=QBH_BLOCK_W4F16) ||
         header->paper_format_disable > 31U ||
         ((header->paper_format_disable&4U) && ((header->paper_format_disable&3U) || !QBH_FP32_RESIDUAL(header) || QBH_LLAMA_SP2(header)!=8U || header->dense_r3_mode || header->dense_r4_mode)) || header->paper_pipeline_disable > 31U ||
-        header->wide_score_mode > 7U || header->prefix_kv_mode > 2U ||
+        header->wide_score_mode > 8U || header->prefix_kv_mode > 2U ||
         (header->prefix_kv_mode && header->variant != QBH_BLOCK_W4U8) ||
         (header->wide_score_mode && (header->variant != QBH_BLOCK_W4U8 || header->kv_cache_capacity > 128U)) ||
         header->experiment != QBH_BLOCK_EXPERIMENT ||
@@ -14537,8 +14537,11 @@ static void qbh_attention_u8_pool_run_tasks(
         } else {
 #ifdef QBH_MODEL_LLAMA32
             /* QK has completed: the group's K operand is dead until reuse. */
+            struct qbh_attention_config fast_config=*config;
+            if(header->wide_score_mode==8U && config->division_mode==QBH_ATTENTION_DIVISION_EXACT)
+                fast_config.division_mode=QBH_ATTENTION_DIVISION_EXACT_FAST;
             qbh_llama_u8_softmax_group_carrier(score_group,probability_group,
-                softmax_scratch,(uint8_t *)k_weight,config,telemetry_ptr);
+                softmax_scratch,(uint8_t *)k_weight,&fast_config,telemetry_ptr);
 #else
             qbh_attention_u8_softmax_group(
                 score_group, probability_group, softmax_scratch,

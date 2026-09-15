@@ -41,6 +41,7 @@ enum qbh_attention_division_mode {
     QBH_ATTENTION_DIVISION_SOLE = 2,
     QBH_ATTENTION_DIVISION_ENDPOINT = 3,
     QBH_ATTENTION_DIVISION_NR64 = 4,
+    QBH_ATTENTION_DIVISION_EXACT_FAST = 5,
 };
 
 enum qbh_attention_status {

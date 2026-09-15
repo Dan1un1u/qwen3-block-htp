@@ -86,9 +86,11 @@ static int paper_softmax_probe(uint8_t *shared,uint32_t bytes,uint8_t *vtcm,uint
        !valid(h->input_offset,sz,bytes) || !valid(h->sum_offset,sz,bytes) ||
        !valid(h->output_offset,sz*4,bytes) ||
        !valid(h->weight_offset,sizeof(struct qbh_attention_config)+8U,bytes))return AEE_EBADPARM;
-    const struct qbh_attention_config *config=(void *)(shared+h->weight_offset);
+    struct qbh_attention_config probe_config=*(const struct qbh_attention_config *)(shared+h->weight_offset);
+    const struct qbh_attention_config *config=&probe_config;
     const uint32_t *extra=(void *)(shared+h->weight_offset+sizeof(*config));
     uint32_t past=extra[0],repeat=extra[1];if(past+h->rows>h->k || !repeat || repeat>1000 || config->fraction_bits==0 || config->fraction_bits>24)return AEE_EBADPARM;
+    if(h->mode==10U && probe_config.division_mode==QBH_ATTENTION_DIVISION_EXACT)probe_config.division_mode=QBH_ATTENTION_DIVISION_EXACT_FAST;
     uint8_t *raw=vtcm,*prob=vtcm+sz;float *dump=(void *)(vtcm+2*sz);
     uint8_t *original=vtcm+6*sz,*scratch=original+sz;
     if(7*sz+2048U>vbytes)return AEE_ENOMEMORY;
@@ -121,7 +123,7 @@ int lsp2_run(int fd,uint32_t bytes,uint8_t *vtcm,uint32_t vbytes,uint32_t ctx){
   int e=qurt_mem_cache_clean((qurt_addr_t)shared,bytes,QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE);
   HAP_mmap_put(fd);return ret?ret:(e?AEE_EFAILED:AEE_SUCCESS);
  }
- if(bytes>=128U && (h->mode==5U || h->mode==6U)) {
+ if(bytes>=128U && (h->mode==5U || h->mode==6U || h->mode==10U)) {
    ret=paper_softmax_probe(shared,bytes,vtcm,vbytes);
    int e=qurt_mem_cache_clean((qurt_addr_t)shared,bytes,QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE);
    HAP_mmap_put(fd);return ret?ret:(e?AEE_EFAILED:AEE_SUCCESS);

@@ -794,6 +794,21 @@ static void qbh_attention_u8_build_nr64_entries(
     }
 }
 
+/* L32-0036: exact log2 probabilities with one unsigned division.
+ * N=255*2^15, q=floor(N/sum), r=N-q*sum (do NOT round q first).
+ * For c>=1, (q+2^(c-1))>>c equals round-half-up((N>>c)/sum).
+ * N is divisible by every 2^c, c<=15. q*sum<=N; 2*r<=2*N.
+ * Keep byte-cast and singleton conventions identical to the original LUT. */
+static void qbh_attention_u8_build_exact_fast_entries(
+    uint8_t *lut, uint32_t base, uint32_t sum) {
+    const uint32_t numerator=UINT32_C(255)<<15U;
+    const uint32_t quotient=numerator/sum;
+    const uint32_t remainder=numerator-quotient*sum;
+    lut[2U*base]=(uint8_t)(quotient+(2U*remainder>=sum));
+    for(uint32_t code=1U;code<16U;++code)
+        lut[2U*(base+code)]=(uint8_t)((quotient+(1U<<(code-1U)))>>code);
+}
+
 static void qbh_attention_u8_build_probability_lut(
     uint8_t *lut, uint32_t sum, uint32_t mode,
     uint32_t valid_count) {
@@ -806,6 +821,10 @@ static void qbh_attention_u8_build_probability_lut(
     }
     if (mode == QBH_ATTENTION_DIVISION_NR64) {
         qbh_attention_u8_build_nr64_entries(lut,0U,sum);
+        return;
+    }
+    if (mode == QBH_ATTENTION_DIVISION_EXACT_FAST) {
+        qbh_attention_u8_build_exact_fast_entries(lut,0U,sum);
         return;
     }
     if (mode == QBH_ATTENTION_DIVISION_EXACT) {
@@ -848,6 +867,10 @@ static void qbh_attention_u8_build_probability_lut_entries(
     }
     if (mode == QBH_ATTENTION_DIVISION_NR64) {
         qbh_attention_u8_build_nr64_entries(lut,entry_base,sum);
+        return;
+    }
+    if (mode == QBH_ATTENTION_DIVISION_EXACT_FAST) {
+        qbh_attention_u8_build_exact_fast_entries(lut,entry_base,sum);
         return;
     }
     if (mode == QBH_ATTENTION_DIVISION_EXACT) {
@@ -919,7 +942,8 @@ void qbh_llama_u8_softmax_group_carrier(uint8_t *scores,uint8_t *probability,
     struct qbh_attention_u8_telemetry *telemetry) {
     struct qbh_attention_config identity=*config;
     identity.score_multiplier=1U;
-    qbh_attention_u8_build_sole_lut_template_bank(scratch+QBH_ATTN_U8_SOFTMAX_TEMPLATE_OFFSET);
+    if(config->division_mode!=QBH_ATTENTION_DIVISION_EXACT_FAST)
+        qbh_attention_u8_build_sole_lut_template_bank(scratch+QBH_ATTN_U8_SOFTMAX_TEMPLATE_OFFSET);
     uint32_t minimum=UINT_MAX,maximum=0U;
     for(uint32_t head=0;head<QBH_ATTENTION_Q_HEADS_PER_GROUP;head+=2U) {
         struct qbh_attention_u8_telemetry local={0};
@@ -1390,7 +1414,12 @@ void qbh_attention_u8_requant_softmax_group_rows_prebuilt_templates_shuffle4(
             first_row,row_count,0U,64U,config,(float *)scratch,NULL,telemetry);return;
     }
     struct qbh_attention_config normalization_config;
-    if(wide_score_mode>=3U && config!=NULL) {
+    if(wide_score_mode==8U && config!=NULL) {
+        normalization_config=*config;
+        if(config->division_mode==QBH_ATTENTION_DIVISION_EXACT)
+            normalization_config.division_mode=QBH_ATTENTION_DIVISION_EXACT_FAST;
+        config=&normalization_config;wide_score_mode=0U;
+    } else if(wide_score_mode>=3U && config!=NULL) {
         normalization_config=*config;
         normalization_config.division_mode=(wide_score_mode==3U || wide_score_mode==5U)
             ? QBH_ATTENTION_DIVISION_EXACT : QBH_ATTENTION_DIVISION_NR64;
@@ -2832,7 +2861,12 @@ void qbh_attention_u8_requant_softmax_dynamic(
             padded_tokens,config,(float *)fp_scratch,NULL,telemetry);return;
     }
     struct qbh_attention_config normalization_config;
-    if(wide_score_mode>=3U && config!=NULL) {
+    if(wide_score_mode==8U && config!=NULL) {
+        normalization_config=*config;
+        if(config->division_mode==QBH_ATTENTION_DIVISION_EXACT)
+            normalization_config.division_mode=QBH_ATTENTION_DIVISION_EXACT_FAST;
+        config=&normalization_config;wide_score_mode=0U;
+    } else if(wide_score_mode>=3U && config!=NULL) {
         normalization_config=*config;
         normalization_config.division_mode=(wide_score_mode==3U || wide_score_mode==5U)
             ? QBH_ATTENTION_DIVISION_EXACT : QBH_ATTENTION_DIVISION_NR64;
