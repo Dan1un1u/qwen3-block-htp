@@ -1,3 +1,9 @@
+## EXP0274 continuation checkpoint (2026-09-15)
+
+Current source c77f70af1f7c33591c7f2a8fab0ba10c78f52cad on registered branch, clean and synced. Original factorial completed numerical checks and fixed timing rounds, but fairness review found modular Norm decode consumer packed all64 physical rows instead of its1 live row. Preserve original results under exp0274; they are NOT paper-eligible timing conclusions. ATTEMPT_DISPOSITION.json records this, no old results overwritten.
+
+Corrected consumer processes only1 live decode row. Replacement evidence root /mnt/d/llm_exp/results/qwen3-block-htp/exp0274/consumer-row1-a02. Selected0/14/27 four arms and chain3 four arms includingrepeat10 all pass exact independent checks. Aggregate single_gate.json and slice_gate.json pass. Fresh layer28 built and staged; full four-arm captures/head checks currently in progress. Next finish fullgates then fixed5short10formal; do not repeat completed checks. execute_factorial.py and report scripts in replacement root pin this namespace. Root initial failure was remote namespace collision before device; tooling_recovery.json retained. No relaxed numerical/physical gates or promotion. Remaining Llama and A2/A3/A5/A6/A8/A9 approved campaign still incomplete.
+
 # Active EXP0274: full-model format × pipeline factorial
 
 User confirmed complete-model experiment list. Read docs/experiments/EXP-0274.md. Native math frozen,FP32 residual,no rotation. Four arms apply Norm/SwiGLU interface and QKV/GateUp/O/Down scheduling interventions throughout28layers; frontend/head included. Gates before timing. Other approved tasks remain queued, not complete.
