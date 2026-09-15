@@ -1,3 +1,7 @@
+# Active L32-0029: full-model no-rotation factorial
+
+User approved actual full-model paper ablations. Read docs/experiments/L32-0029.md. Fixed selected L32-0018 SP2mode8+FP32residual1, original Llama weights, no rotation. Qwen EXP0274 owns its separate active phase; device execution serialized. Other approved items remain pending, not complete. All-on must reproduce sealed0018 outputs before timing.
+
 # L32-0028 closure: no-rotation paper speed baseline selected
 
 User selects L32-0018 W4A8 SP2mode8+FP32 residual,R3/R4 OFF, historical

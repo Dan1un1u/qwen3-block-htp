@@ -200,3 +200,6 @@ paper speed baseline, and EXP0268 no-rotation SP2 for Qwen with FP32 port under
 its own EXP0269. This supersedes the0027 rotated primary working selection;
 rotation evidence remains supplementary with original numerical caveats.
 Only documentation/audit work on Llama in0028; no new native/hardware/PPL.
+
+## User-approved full-model paper ablations (2026-09-15)
+User confirms full-model format/pipeline factorial and remaining agreed paper table, explicitly excludes W4-to-S8 and integer-residual arms, and adds log2 versus FP vector softmax. This supersedes0027 hardware pause and0028 documentation-only scope for separately registered bounded phases. Fix FP32 residual,no rotation; original weights/quantization. All numerical/physical/evidence gates remain. Deliberately slower diagnostic controls may complete above10percent, without baseline promotion. No repeat permission needed for within-table registration. Preserve vector kernels and intra-GEMM DMA/HMX double buffering in conventional schedules; no deliberately redundant native/generic roundtrip or scalar controls. Hardware ownership serialized across projects.

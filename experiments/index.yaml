@@ -1259,3 +1259,13 @@ experiments:
   paper_speed_baseline_selected: L32-0018 no rotation SP2+FP32 residual
   evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0269/baseline_audit.json
   evidence_ledger_sha256: 20d3ddb9e1152e35e714f45b159f26312e5a79177cae907c31b7952a8af26ff5
+
+- id: L32-0029
+  title: Full-model no-rotation format and pipeline factorial
+  execution_state: running
+  record: docs/experiments/L32-0029.md
+  approval_ref: User approves full-model paper ablation list and requests execution on 2026-09-15
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  parent_source: 0ae07a92e4d99fd3fd23c89adc3ce4a2b44f7b4f
