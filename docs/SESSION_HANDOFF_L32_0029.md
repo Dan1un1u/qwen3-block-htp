@@ -1,0 +1,9 @@
+# L32-0029 completed: full-model factorial
+
+Source f839f81d8a8d8641673992b4038c69b3f2c7edbd,codex/llama32-no-rotation; measurednative64717025e8c86031764b53a41c8ab55313ea3bf9 ABI131. Active none,next30. No promotion or quality acceptance. Fixedoriginal0018 SP2mode8+FP32residual1,no rotation,M64+15,cache80,16layers.
+
+Independent0/7/15,chain3,chain16 outputs byteexact tosealed0016/0018; frontend generatedids+selectedlogitbits exact. Full5short10formal balanced4arms repeat10primary,one repeat1aux each. B00 1910.353/44.2801;B10 1924.934/43.7524;B01 2153.719/45.3116;B11 2161.744/45.1889token/s. B11/B00walls .88370916/.97988825;pipeline mainbenefit. Nativeformat notuniformly faster,decode slightlyworse;prefillinteractionCI crosses1. Historical0018 speednonpaired,not newkernel optimizationdenominator. Module tables/CI in docs/experiments/L32-0029-RESULTS.md.
+
+All9600mainprofilesHMXcommands identicalbytoken,8MiB peak8098272,no tensorDDR/spill. Evidence/mnt/d/llm_exp/results/llama32-htp/l32-0029,816files294387837bytes,ledgerbfef7a0973d7d41eb00061eba218e2a94b75c083bced81be1e29fe755e34c0ee. Three initialB11decode crashes retained. Cause nullattention_header innewSwiGLU predicate,notBAD_HEADER(status2=RUNNING). Boundcurrentcontextbeforeworkerdispatch in6471702; no arithmetic/gate change. Initialfairnessrepair restricts modularNormdecodeconsumer to1live row; no Llamaformal beforethisfix.
+
+All A1 complete; remaining Llama individualpipeline,decodeSP2copack,ordinaryA8/SP2FP32,layer/shape,FPvectorsoftmax incomplete,alreadyapproved. QwenEXP0275 currentlyownsdevice forindependentpipeline/layerscaling; serializeddeviceownership. Source tools execute_llama32_factorial/report_llama32_factorial/plot_llama32_factorial archived; exclusive pathscompleted,do notrerun. Freshbuildsealneededfornewphase; otherrecipes/rotation/PPLfrozen.

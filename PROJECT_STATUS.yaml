@@ -6,7 +6,7 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0029
+  active_experiment: null
   next_experiment_number: 30
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -14,7 +14,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: 0ae07a92e4d99fd3fd23c89adc3ce4a2b44f7b4f
+    recorded_head: f839f81d8a8d8641673992b4038c69b3f2c7edbd
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -29,8 +29,9 @@ current_scope:
   stage: paper_no_rotation_speed_baselines_selected
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Use L32-0018 no-rotation SP2 FP32 residual as selected paper speed baseline. Qwen EXP0269 port is
-    singlelayer-correct but failed short speed; discuss before fullmodel. Llama native/hardware/PPL unchanged.
+  next_action: Use L32-0018 no-rotation SP2 FP32 residual as selected paper speed baseline. Qwen EXP0269
+    port is singlelayer-correct but failed short speed; discuss before fullmodel. Llama native/hardware/PPL
+    unchanged.
   baseline_manifest: docs/PAPER_NO_ROTATION_BASELINES.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF.md
@@ -43,7 +44,7 @@ current_scope:
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0028
+  last_completed_experiment: L32-0029
   evidence_ledger_sha256: 599d86cf654b2b41526690c76ad1c0a251b5f206815a57ce4ae12b0024f94ac9
   formal_profiling_completed: false
   general_quantization_quality_accepted: false
@@ -539,7 +540,8 @@ current_scope:
     intermediate_spill: false
     frontend_exact: true
     quality_accepted: false
-    rounding_fix: Explicit noncontracted FP32 arithmetic validated through full16 generation; no gate weakening
+    rounding_fix: Explicit noncontracted FP32 arithmetic validated through full16 generation; no gate
+      weakening
     report: docs/LLAMA32_FP32_RESIDUAL.md
     fixed_scale_ppl:
       all: 1766.764883021644
@@ -779,8 +781,8 @@ current_scope:
           - 1.021524858110149
           - 1.074523205713089
           gate_pass: true
-    formal_shape: singlelayer0 M64+decode1 past64;10 cyclic four-arm cycles,40 processes;1warmup+10 measured replays
-      each
+    formal_shape: singlelayer0 M64+decode1 past64;10 cyclic four-arm cycles,40 processes;1warmup+10 measured
+      replays each
     all_speed_gates_pass: false
     fullmodel_rotation_validated: false
     e2e_run: false
@@ -927,8 +929,8 @@ current_scope:
     evidence_ledger_sha256: 1ce076bf6ff75fbc54f4a9c6de1516b414311cf6895d20640d26011681dbbcf3
     old_native_chain3_reproduced_identical: true
     previous_chain3_was_unmeasured: true
-    method: Same FP16 normalized H512 coefficients move from output converter to dense weights; unity conversion,
-      original XOR generation cost; fast0021 pipeline retained
+    method: Same FP16 normalized H512 coefficients move from output converter to dense weights; unity
+      conversion, original XOR generation cost; fast0021 pipeline retained
     singlelayer_actual_arithmetic_pass: true
     chain3_independent_gate_pass: true
     chain3_cache_values_exact: true
@@ -1060,8 +1062,8 @@ current_scope:
     evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0024
     evidence_ledger_sha256: fc13eb282b1b7b26253d4a64986988154e4604d32c0d9b7a405fcbe6865fd2c6
     mode: 3
-    method: Complete dense DSP int64 sums of exact binary16 units, explicit RNE after181/4096 and1/4; no butterfly;
-      sparse refinement not implemented
+    method: Complete dense DSP int64 sums of exact binary16 units, explicit RNE after181/4096 and1/4;
+      no butterfly; sparse refinement not implemented
     singlelayer_indices:
     - 0
     - 7
@@ -1226,14 +1228,15 @@ current_scope:
     independent_full16_gate_pass: false
     model_quality_accepted: false
     combined_frontend_e2e_measured: false
-    speed_evidence: L32-0022 singlelayer paired; fullmodel SP2 L32-0012 and unrotated FP32-residual SP2 L32-0018
-      remain separate
+    speed_evidence: L32-0022 singlelayer paired; fullmodel SP2 L32-0012 and unrotated FP32-residual SP2
+      L32-0018 remain separate
     paper_report: docs/PAPER_STORY_RUNTIME_V2.md
     paper_report_sha256: 02f0b458fd2d79e73c711bfa16b741c40fb151217548da0baa6a8baad91b6904
     evidence_index: docs/PAPER_STORY_RUNTIME_V2_EVIDENCE.json
     evidence_index_sha256: b2444718b14fffcbf57475a5bced441ca3ae2624b8df19030bfcba3069093379
     numerical_alignment_paused: true
-    superseded_as_primary_speed_baseline_by: L32-0028; retained as historical supplemental rotation acceptance only
+    superseded_as_primary_speed_baseline_by: L32-0028; retained as historical supplemental rotation acceptance
+      only
   paper_no_rotation_speed_baseline:
     model: Llama-3.2-1B-Instruct
     experiment: L32-0018
@@ -1265,6 +1268,99 @@ current_scope:
     native_unchanged: true
     no_omitted_validated_no_rotation_optimization_found: true
     qwen_evidence_ledger_sha256: 20d3ddb9e1152e35e714f45b159f26312e5a79177cae907c31b7952a8af26ff5
+  latest_paper_factorial_result:
+    id: L32-0029
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    measured_native_head: 64717025e8c86031764b53a41c8ab55313ea3bf9
+    source_closure_head: f839f81d8a8d8641673992b4038c69b3f2c7edbd
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0029
+    evidence_ledger_sha256: bfef7a0973d7d41eb00061eba218e2a94b75c083bced81be1e29fe755e34c0ee
+    evidence_files: 816
+    evidence_bytes: 294387837
+    exact_independent_outputs: true
+    physical_gate: true
+    baseline_promoted: false
+    quality_claim: false
+    performance:
+      B00:
+        prefill: 1910.3534005708816
+        decode: 44.28007695360892
+      B10:
+        prefill: 1924.9341768457455
+        decode: 43.75235019905568
+      B01:
+        prefill: 2153.7188066275457
+        decode: 45.31161968538076
+      B11:
+        prefill: 2161.7444707719023
+        decode: 45.188904827340984
+    effects:
+      prefill:
+        B11_vs_B00_latency:
+          ratio: 0.8837091647047185
+          ci95:
+          - 0.877010145929359
+          - 0.8891175177470394
+        format_given_conventional:
+          ratio: 0.9924253117585786
+          ci95:
+          - 0.9835640064334601
+          - 0.9988024497639912
+        format_given_pipeline:
+          ratio: 0.9962874131272829
+          ci95:
+          - 0.99368170145155
+          - 0.9990996141637437
+        pipeline_given_modular:
+          ratio: 0.8870022375679842
+          ci95:
+          - 0.8797423834660542
+          - 0.8920526081200432
+        pipeline_given_native:
+          ratio: 0.8904540767292453
+          ci95:
+          - 0.8878340646423779
+          - 0.8930149496595395
+        interaction:
+          ratio: 1.0038915788653764
+          ci95:
+          - 0.996557425746487
+          - 1.014129297923949
+      decode:
+        B11_vs_B00_latency:
+          ratio: 0.9798882518351674
+          ci95:
+          - 0.9767884226202911
+          - 0.98364483001477
+        format_given_conventional:
+          ratio: 1.0120616778790692
+          ci95:
+          - 1.0093867940008532
+          - 1.014970317071626
+        format_given_pipeline:
+          ratio: 1.002715597080935
+          ci95:
+          - 1.0001113775983703
+          - 1.0053771522964092
+        pipeline_given_modular:
+          ratio: 0.9772344767427359
+          ci95:
+          - 0.9739079839157573
+          - 0.9807790096397286
+        pipeline_given_native:
+          ratio: 0.9682100145207295
+          ci95:
+          - 0.9662254709068724
+          - 0.9702331686570372
+        interaction:
+          ratio: 0.9907653051168577
+          ci95:
+          - 0.9870875472223184
+          - 0.9941624837523004
+  current_handoff: docs/SESSION_HANDOFF_L32_0029.md
+  next_direction: Approved remaining A2/A3/A5/A6/A8/A9 campaign; QwenEXP0275 owns current device
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp
