@@ -71,7 +71,16 @@ def timing():
    for c in range(n):
     for a in (['FP','LOG2'] if c%2==0 else ['LOG2','FP']):z.append(dict(cycle=c,**one(case,a,f'component-{phase}/{case["name"]}/{c:02d}-{a}')))
    write(R/f'component-{case["name"]}-{phase}.json',dict(pass_all=True,runs=z))
+def native_timing():
+ assert read(R/'component_gate.json')['pass_all'];m=read(F/'manifest.json');case=next(c for c in m['cases'] if c['name']=='m64-p0-random')
+ gates=[one(case,a,'component-native-audit/'+a) for a in ['FP','LOG2']]
+ write(R/'component_native_gate.json',dict(pass_all=True,runs=gates))
+ for phase,n in [('short',5),('formal',10)]:
+  z=[]
+  for c in range(n):
+   for a in (['FP','LOG2'] if c%2==0 else ['LOG2','FP']):z.append(dict(cycle=c,**one(case,a,f'component-native-{phase}/{c:02d}-{a}')))
+  write(R/f'component-native-{phase}.json',dict(pass_all=True,runs=z))
 if __name__=='__main__':
  a=sys.argv[1]
  if a=='stage':stage(1)
- else:{'prepare':prepare,'gate':gates,'timing':timing}[a]()
+ else:{'prepare':prepare,'gate':gates,'timing':timing,'native':native_timing}[a]()

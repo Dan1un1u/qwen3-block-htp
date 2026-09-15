@@ -42,7 +42,7 @@ def deploy(package):
 def run(package,tag,count=1,repeat=1,fp32=1,dump=False):
  preflight();runtime=read(R/f'runtime-l{count}.json');root=runtime['remote'];d=R/tag;d.mkdir(parents=True,exist_ok=False)
  remote=read(R/('deployment-'+package+'.json'))['remote']
- env=dict(old.ENV,LD_LIBRARY_PATH=root,DSP_LIBRARY_PATH=root,ADSP_LIBRARY_PATH=root,QBH_SP2=os.environ.get('QBH_SP2','8'),QBH_U8_PREFILL_OPT=os.environ.get('QBH_U8_PREFILL_OPT','0'),QBH_FP32_RESIDUAL=str(fp32),QBH_PAPER_FORMAT_DISABLE=os.environ.get('QBH_PAPER_FORMAT_DISABLE','0'),QBH_PAPER_PIPELINE_DISABLE=os.environ.get('QBH_PAPER_PIPELINE_DISABLE','0'),QBH_WIDE_SCORE='4',QBH_DENSE_R3='0',QBH_DENSE_R4='0',QBH_KV_CACHE_CAPACITY='128',QBH_REPLAY_DECODE_STEPS='1')
+ env=dict(old.ENV,LD_LIBRARY_PATH=root,DSP_LIBRARY_PATH=root,ADSP_LIBRARY_PATH=root,QBH_SP2=os.environ.get('QBH_SP2','8'),QBH_U8_PREFILL_OPT=os.environ.get('QBH_U8_PREFILL_OPT','0'),QBH_FP32_RESIDUAL=str(fp32),QBH_PAPER_FORMAT_DISABLE=os.environ.get('QBH_PAPER_FORMAT_DISABLE','0'),QBH_PAPER_PIPELINE_DISABLE=os.environ.get('QBH_PAPER_PIPELINE_DISABLE','0'),QBH_WIDE_SCORE=os.environ.get('QBH_WIDE_SCORE','4'),QBH_DENSE_R3='0',QBH_DENSE_R4='0',QBH_KV_CACHE_CAPACITY='128',QBH_REPLAY_DECODE_STEPS='1')
  if dump:
   env['QBH_REPLAY_DUMP_DIR']=root+'/'+tag.replace('/','_');env['QBH_DENSE_R3_AUDIT']='1';adb('shell','mkdir '+env['QBH_REPLAY_DUMP_DIR'])
  command='cd '+root+' && '+' '.join(k+'='+shlex.quote(v) for k,v in env.items())+f' ./qwen3_block_cli {remote} W4U8 {repeat} {old.ARGS}'
@@ -55,7 +55,7 @@ def run(package,tag,count=1,repeat=1,fp32=1,dump=False):
   assert v['paper_format_disable']==int(os.environ.get('QBH_PAPER_FORMAT_DISABLE','0')) and v['paper_pipeline_disable']==int(os.environ.get('QBH_PAPER_PIPELINE_DISABLE','0'))
   assert v['vtcm_requested_bytes']==v['vtcm_acquired_bytes']==8388608 and v['vtcm_peak_plan_bytes']<=8388608
   for k in ['intermediate_ddr_read_bytes','intermediate_ddr_write_bytes','intermediate_spill_fill_count','ledger_unattributed_ticks']:assert v[k]==0,(k,v[k])
-  assert v['block_invocation_count']==count and v['dense_r3_mode']==v['dense_r4_mode']==0 and v['wide_score_mode']==4
+  assert v['block_invocation_count']==count and v['dense_r3_mode']==v['dense_r4_mode']==0 and v['wide_score_mode']==int(os.environ.get('QBH_WIDE_SCORE','4'))
   z=normalized([v]);assert sum(z[k] for _,k in LEDGER)==v['invocation_ticks']
  z=dict(physical_pass=True,profiles=len(ps),prefill_ns=statistics.mean(v['host_wall_ns'] for v in ps if v['mode']=='prefill'),decode_ns=statistics.mean(v['host_wall_ns'] for v in ps if v['mode']=='decode'),output_hashes=[v['output_hash'] for v in ps],peak=max(v['vtcm_peak_plan_bytes'] for v in ps))
  assert all(v==z['output_hashes'][i%2] for i,v in enumerate(z['output_hashes']))

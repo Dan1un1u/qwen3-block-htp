@@ -16,5 +16,5 @@ def preflight():
  assert 'EXPERIMENT=EXP-0278\n' in z.stdout
 
 def package_path(name):
- if name in ['layer14-a8','full-a8']:return Path('/mnt/d/llm_exp/models/qwen3-block-htp/exp0278')/name
+ if name in ['layer14-fp','full-fp']:return Path('/mnt/d/llm_exp/models/qwen3-block-htp/exp0278')/name
  return O/name if name=='sp2-fp32' else O.parent/'exp0269'/name
