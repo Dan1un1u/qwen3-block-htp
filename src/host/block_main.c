@@ -4416,7 +4416,8 @@ static int qbh_run_evaluation_suite(struct qbh_session *session, int shared_fd,
     for (uint32_t sample = 0U; sample < prefix[2]; ++sample) {
         char steps[16];
         if (fread(row, sizeof(uint32_t), 83U, file) != 83U ||
-            (row[1] != 1U && row[1] != 2U && row[1] != 3U) || row[2] == 0U || row[2] > 16U) { fclose(file); return -1; }
+            (row[1] != 1U && row[1] != 2U && row[1] != 3U) || row[2] == 0U ||
+            row[2] > (row[1] == 2U ? QBH_GENERATION_MAX_TOKENS : 16U)) { fclose(file); return -1; }
         for (uint32_t i = 3U; i < 83U; ++i) {
             if (row[i] >= QBH_QWEN3_VOCAB_SIZE) { fclose(file); return -1; }
         }
