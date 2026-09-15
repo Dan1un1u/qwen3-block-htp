@@ -3,12 +3,60 @@ project: llama32-htp
 experiments:
 - id: L32-0034
   title: Supported longer KV full-model pipeline ablation
-  execution_state: running
+  execution_state: completed
   record: docs/experiments/L32-0034.md
   approval_ref: Standing user-approved paper A8 supported shape appendix
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
+  local_gate: pass
+  evidence_validity: valid
+  evidence:
+    id: L32-0034
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    measured_source: 5b54cccb9de4c415bbe4943228bd89a7298abdc7
+    source_closure: 573c721b26fb3b370a4f8e6dea8b086613023776
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0034
+    evidence_ledger_sha256: 6bbd9ddfa2d750b9f55877fb2277bdb0ef90c3a2e0c5fa1acb9b1aaab1711da6
+    evidence_files: 222
+    evidence_bytes: 267230894
+    timed_profiles: 10200
+    effects:
+      prefill:
+        ffn_disabled_over_all_wall: 1.0744213901259463
+        ci95:
+        - 1.0723031512662908
+        - 1.0764817474017196
+      decode:
+        ffn_disabled_over_all_wall: 1.0216507110870845
+        ci95:
+        - 1.0204679543483264
+        - 1.022825205752122
+      decode_KV65_96:
+        ffn_disabled_over_all_wall: 1.0217601420555371
+        ci95:
+        - 1.0205502589629378
+        - 1.022968331087259
+      decode_KV97:
+        ffn_disabled_over_all_wall: 1.0182667714677973
+        ci95:
+        - 1.0164580354536652
+        - 1.0200279792440647
+    tps:
+      ALL:
+        prefill: 2173.034409049504
+        decode: 44.788047008663405
+      FFN:
+        prefill: 2022.5159597714044
+        decode: 43.83890357302921
+    shape: M64+33 cache128, 34 outputs
+    numerical_scope: independent full16 CPU greedy selected token/logit code exact,
+      first16 matches old frozen model
+    physical_gate: true
+    quality_claim: false
+    baseline_promoted: false
 - id: L32-0033
   title: FP32 HVX softmax versus retained Llama log2
   execution_state: completed
