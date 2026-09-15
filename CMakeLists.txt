@@ -11,6 +11,11 @@ if(QBH_MODEL_LLAMA32)
     add_compile_definitions(QBH_MODEL_LLAMA32=1 QBH_LLAMA_LAYER_COUNT=${QBH_LLAMA_LAYER_COUNT})
 endif()
 
+option(QBH_PAPER_TRACE "Untimed software pipeline event tracing" OFF)
+if(QBH_PAPER_TRACE)
+    add_compile_definitions(QBH_PAPER_TRACE=1)
+endif()
+
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 cmake_policy(SET CMP0115 OLD)

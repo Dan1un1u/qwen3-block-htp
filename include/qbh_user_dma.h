@@ -3,6 +3,7 @@
 
 #include <hexagon_protos.h>
 #include <stdint.h>
+#include "paper_trace.h"
 
 #define QBH_DMA_STATUS_MASK UINT32_C(3)
 #define QBH_DMA_STATUS_IDLE UINT32_C(0)
@@ -75,9 +76,9 @@ _Static_assert(sizeof(struct qbh_dma_aligned_desc_2d) == 64,
                "linked 2-D DMA descriptor stride changed");
 
 static inline int qbh_dma_wait_idle(void) {
-    return (Q6_R_dmwait() & QBH_DMA_STATUS_MASK) == QBH_DMA_STATUS_IDLE
-               ? 0
-               : -1;
+    int result=(Q6_R_dmwait() & QBH_DMA_STATUS_MASK) == QBH_DMA_STATUS_IDLE ? 0 : -1;
+    QBH_PAPER_EVENT("DMA_IDLE_OBSERVED",result,0);
+    return result;
 }
 
 static inline int qbh_dma_start(void *descriptor) {
@@ -85,6 +86,7 @@ static inline int qbh_dma_start(void *descriptor) {
         return -1;
     }
     asm volatile("release(%0):at" : : "r"(descriptor) : "memory");
+    QBH_PAPER_EVENT("DMA_SUBMIT",0,descriptor);
     Q6_dmstart_A(descriptor);
     (void)Q6_R_dmpoll();
     return 0;

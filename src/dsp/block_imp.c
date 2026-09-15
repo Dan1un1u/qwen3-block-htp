@@ -3306,6 +3306,7 @@ static void qbh_hmx_worker_main(void *opaque) {
         }
         start = HAP_perf_get_qtimer_count();
         worker->command_status = AEE_SUCCESS;
+        QBH_PAPER_EVENT("HMX_WORK_BEGIN",worker->kind,worker);
         if (worker->kind == QBH_BLOCK_HMX_FP16) {
             qbh_hmx_fp16_matmul_tiles(
                 (const __fp16 *)worker->activation,
@@ -3708,6 +3709,7 @@ static void qbh_hmx_worker_main(void *opaque) {
         } else {
             worker->command_status = AEE_EBADPARM;
         }
+        QBH_PAPER_EVENT("HMX_WORK_END",worker->kind,worker);
         worker->compute_ticks += HAP_perf_get_qtimer_count() - start;
         (void)qurt_sem_up(&worker->command_done);
     }
@@ -4629,6 +4631,7 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
         if (pool->stop != 0U) {
             break;
         }
+        QBH_PAPER_EVENT("HVX_WORK_BEGIN",job->command_kind,job);
         if (job->command_kind == QBH_BLOCK_HVX_POOL_W4_EXPAND) {
             if (pool->claim_regions == 3U) {
                 const uint32_t worker = job->worker_index;
@@ -4763,6 +4766,7 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
                 qbh_run_chunked_w4_external_hvx_worker(
                     job->w4u8_pipeline_worker_context);
         }
+        QBH_PAPER_EVENT("HVX_WORK_END",job->command_kind,job);
         job->command_kind = QBH_BLOCK_HVX_POOL_NONE;
         (void)qurt_sem_up(&pool->command_done[job->worker_index]);
     }
@@ -22020,6 +22024,7 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
            0, sizeof(*header) -
                   offsetof(struct qbh_block_header, dsp_status));
     header->dsp_status = QBH_BLOCK_STATUS_DSP_RUNNING;
+    QBH_PAPER_EVENT("RPC_BEGIN",header->logical_m,header);
     header->cache_status = cache_status;
     header->prepared_session_run_index = prepared_session_run_index;
     header->resource_vtcm_address = (uint32_t)(uintptr_t)vtcm;
@@ -22764,6 +22769,7 @@ destroy_semaphores:
 
 publish:
     if (header != NULL) {
+        QBH_PAPER_EVENT("RPC_END",header->logical_m,header);
         int flush_status = qurt_mem_cache_clean(
             (qurt_addr_t)header, (qurt_size_t)sizeof(*header),
             QURT_MEM_CACHE_FLUSH, QURT_MEM_DCACHE);
