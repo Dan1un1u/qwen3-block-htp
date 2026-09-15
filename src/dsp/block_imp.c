@@ -21184,7 +21184,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     }
     /* L32-0018: O uses the same two-slot raw-store/HVX residual pipeline as
      * Down, with one native W4 pass and its existing U8 zero compensation. */
-    const uint32_t fp32_o_stream=QBH_FP32_RESIDUAL(header) && logical_rows==64U;
+    const uint32_t fp32_o_stream=QBH_FP32_RESIDUAL(header) && logical_rows==64U && !(header->paper_pipeline_disable&4U);
     if(fp32_o_stream) {
         if(!w4f16_pool || !w4f16_pool->worker_count)
             return QBH_BLOCK_STATUS_O_PROJECTION_FAILED;
