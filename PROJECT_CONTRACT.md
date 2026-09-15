@@ -206,3 +206,7 @@ User confirms full-model format/pipeline factorial and remaining agreed paper ta
 
 ## User-approved post-ablation optimization (2026-09-15)
 User requests sequential both-model decode native-format diagnosis/optimization (compact decode if objectively faster), Llama log2 optimization versus FP, then bounded latest-version generalization. Later phases may register under this approval; no full factorial rerun. Preserve no-rotation/nativeW4/SP2/FP32residual baseline and numerical/physical/evidence gates; other recipes frozen. Necessary exact shape support allowed for final bounded workloads; no PPL/quality acceptance or automatic baseline promotion. Device ownership serialized with Qwen. Routine repairs autonomous.
+
+## Latest optimized ablation rerun authorization (2026-09-15; L32-0038)
+
+User now explicitly requests rerunning optimized paper ablations and updating conclusions. This supersedes the prior no-factorial-rerun restriction only for registered A0/A1/A2/A3/A5/A6/A9 under docs/experiments/L32-0038.md. Generalization and shape sweeps are supplementary, excluded from this rerun. Preserve vector/conventional baseline fairness, frozen weights, FP32 residual, no rotation and all numerical/physical/evidence gates. A7 cites existing same-FP32 evidence; no W4-to-S8 or integer-residual comparisons. Routine repairs and sequential phase registration need no repeated permission.

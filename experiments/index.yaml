@@ -1,6 +1,18 @@
 schema_version: 1
 project: llama32-htp
 experiments:
+- id: L32-0038
+  title: Latest optimized runtime paper ablation rerun; generalization excluded
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  record: docs/experiments/L32-0038.md
+  approval_ref: 'User2026-09-15: optimize then rerun ablations and update conclusions;
+    generalization is supplementary and not rerun'
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  parent_source: 26d5729741a1cb4bc9a15166dfaa3f56b9bcb055
 - id: L32-0037
   title: Bounded latest runtime prompt and decode generalization
   execution_state: completed

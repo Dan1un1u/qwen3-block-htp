@@ -6,8 +6,8 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: null
-  next_experiment_number: 38
+  active_experiment: L32-0038
+  next_experiment_number: 39
   maximum_running_experiments: 1
   remote_sync_required: true
 source_worktrees:
@@ -1364,9 +1364,8 @@ current_scope:
           - 0.9870875472223184
           - 0.9941624837523004
   current_handoff: docs/SESSION_HANDOFF_L32_0032.md
-  next_direction: 'User sequential task completed: both native decode optimized, Llama
-    exact log2 optimized, bounded latest runtime generalization complete; no factorial
-    rerun or baseline promotion.'
+  next_direction: Active latest runtime ablation rerun A0/A1/A2/A3/A5/A6/A9. A8/generalization
+    supplemental and excluded from execution; A7 cites sealed evidence. No new quantization/quality/promotion.
   latest_paper_pipeline_result:
     id: L32-0030
     execution_state: completed

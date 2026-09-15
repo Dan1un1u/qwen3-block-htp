@@ -1,5 +1,9 @@
 # Current checkpoint
 
+L32-0038 registered for latest optimized paper ablation rerun. Read docs/experiments/L32-0038.md. Generalization excluded, not rerun. Qwen owns device first; Llama local preparation only until explicit release.
+
+# Current checkpoint
+
 L32-0037 completed and sealed; native decode optimization, Llama exact log2 optimization and bounded generalization finished. No active experiment. Latest working flags and results are in PROJECT_STATUS latest_decode_native_optimization, latest_exact_log2_optimization (Llama) and latest_bounded_generalization. No selected-baseline/quality promotion; no factorial rerun.
 
 # Current checkpoint
