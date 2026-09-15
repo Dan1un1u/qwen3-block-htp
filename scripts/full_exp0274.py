@@ -26,6 +26,7 @@ def validate(d,fp,repeat,audit=False):
  rs=records(d/'stdout.jsonl');ps=[v for v in rs if v.get('record')=='generation_profile'];assert len(ps)==16*repeat,(tag,len(ps))
  fields=['metadata_stage_ticks','input_stage_ticks','input_norm_ticks','qkv_projection_ticks','qk_norm_rope_ticks','attention_ticks','o_projection_ticks','post_attention_residual_ticks','post_attention_norm_ticks','gate_up_ticks','activation_ticks','down_ticks','final_residual_ticks','cache_append_pack_ticks','cache_append_dma_ticks','block_orchestration_ticks','layer_bookkeeping_ticks','layer_unattributed_ticks']
  for step,v in enumerate(ps):
+  assert v['paper_format_disable']==int(os.environ.get('QBH_PAPER_FORMAT_DISABLE','0')) and v['paper_pipeline_disable']==int(os.environ.get('QBH_PAPER_PIPELINE_DISABLE','0'))
   assert v['vtcm_requested_bytes']==v['vtcm_acquired_bytes']==8388608 and v['vtcm_peak_plan_bytes']<=8388608
   assert v['block_invocation_count']==28 and v['dense_r3_mode']==v['dense_r4_mode']==0 and v['wide_score_mode']==4
   assert v['backend']=='standalone_fastrpc_dsp' and v['qnn']=='none'

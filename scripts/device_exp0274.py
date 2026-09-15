@@ -52,6 +52,7 @@ def run(package,tag,count=1,repeat=1,fp32=1,dump=False):
  if result.returncode:raise RuntimeError((tag,result.returncode,result.stderr[-1800:],result.stdout[-2000:]))
  ps=[v for v in records(d/'stdout.jsonl') if v.get('record')=='exp0240_profile'];assert len(ps)==repeat*2,(len(ps),repeat)
  for v in ps:
+  assert v['paper_format_disable']==int(os.environ.get('QBH_PAPER_FORMAT_DISABLE','0')) and v['paper_pipeline_disable']==int(os.environ.get('QBH_PAPER_PIPELINE_DISABLE','0'))
   assert v['vtcm_requested_bytes']==v['vtcm_acquired_bytes']==8388608 and v['vtcm_peak_plan_bytes']<=8388608
   for k in ['intermediate_ddr_read_bytes','intermediate_ddr_write_bytes','intermediate_spill_fill_count','ledger_unattributed_ticks']:assert v[k]==0,(k,v[k])
   assert v['block_invocation_count']==count and v['dense_r3_mode']==v['dense_r4_mode']==0 and v['wide_score_mode']==4

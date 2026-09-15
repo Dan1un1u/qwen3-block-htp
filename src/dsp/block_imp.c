@@ -2191,7 +2191,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
            QBH_BLOCK_W4U8_DIRECT_N_MLP) == 0U ||
           header->w4u8_decode_direct_n_gate_up_batch_n_tiles != 32U)) ||
         header->w4u8_decode_direct_n_o_gate_prefetch > 1U ||
-        (header->w4u8_decode_direct_n_o_gate_prefetch != 0U && !(header->paper_pipeline_disable&16U) &&
+        (header->w4u8_decode_direct_n_o_gate_prefetch != 0U &&
          (header->variant != QBH_BLOCK_W4U8 ||
           header->w4u8_decode_projection_mode !=
               QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
@@ -2200,7 +2200,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
           header->w4u8_decode_direct_n_gate_up_batch_n_tiles != 32U ||
           header->w4u8_decode_direct_n_gate_up_continuous == 0U)) ||
         header->w4u8_decode_direct_n_gate_up_swiglu_stream > 1U ||
-        (header->w4u8_decode_direct_n_gate_up_swiglu_stream != 0U && !(header->paper_pipeline_disable&2U) &&
+        (header->w4u8_decode_direct_n_gate_up_swiglu_stream != 0U &&
          (header->variant != QBH_BLOCK_W4U8 ||
           header->w4u8_decode_projection_mode !=
               QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
@@ -2803,7 +2803,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
                 header->w4u8_decode_direct_n_mask != 63U ||
                 header->w4u8_decode_direct_n_gate_up_continuous != 0U ||
                 header->w4u8_decode_direct_n_o_gate_prefetch != 0U ||
-                header->w4u8_decode_direct_n_gate_up_swiglu_stream != 0U && !(header->paper_pipeline_disable&2U)) return 0;
+                header->w4u8_decode_direct_n_gate_up_swiglu_stream != 0U) return 0;
         } else if (desc->lpbq_weight_offset || desc->lpbq_weight_bytes || header->projections[0].lpbq_mode) return 0;
     }
     for (uint32_t index = 0; index < QBH_BLOCK_QPARAM_COUNT; ++index) {
