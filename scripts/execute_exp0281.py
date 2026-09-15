@@ -21,7 +21,7 @@ def prepare():
  for n,v in m['files'].items():assert sha(O/'sp2-fp32'/n)==v['sha256'],n
  for i in range(63):
   for k in ['cos','sin']:assert f'generation_decode_rope_{k}_{i:02d}_f16.bin' in m['files']
- write(R/'deployment-sp2-fp32.json',cfg);write(R/'fixed_tokens.json',read(prior/'fixed_tokens.json'));write(R/'inherited_gates.json',dict(pass_all=True,source='EXP0280',scope='same native DSP and models; independent selected0/14/27 andchain3, full28 pairedhidden, actualfinalnormhead'))
+ write(R/'deployment-sp2-fp32.json',cfg);write(R/'fixed_tokens.json',read(R.parent/'exp0279/fixed_tokens.json'));write(R/'inherited_gates.json',dict(pass_all=True,source='EXP0280',scope='same native DSP and models; independent selected0/14/27 andchain3, full28 pairedhidden, actualfinalnormhead'))
  write(R/'protocol_freeze.json',dict(cases=CASES,arms=ARMS,repeat=5,short=5,formal=10,capacity=128,max_kv=127,quality_claim=False))
  print('PREPARED_CPU_ONLY',flush=True)
 def verify_device():
