@@ -956,7 +956,7 @@ struct qbh_block_header {
     struct qbh_block_qparam generation_final_norm_output_qparam;
     struct qbh_block_qparam generation_lm_head_output_qparam;
     uint32_t generation_boundary_audit_enabled;
-    uint32_t evaluation_mode; /* 0 normal; 1 teacher forcing/scoring; 2 free generation */
+    uint32_t evaluation_mode; /* mode3: fixed-token replay, no NLL work */ /* 0 normal; 1 teacher forcing/scoring; 2 free generation */
     uint32_t evaluation_sample_id;
     uint32_t evaluation_target_token;
     uint32_t evaluation_target_code;

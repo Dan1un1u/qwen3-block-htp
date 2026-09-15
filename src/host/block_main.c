@@ -4105,7 +4105,7 @@ static int qbh_run_generation_sequence(
             char name[128];
             uint32_t *token_ids =
                 (uint32_t *)(shared + token_slot->offset);
-            token_ids[0] = header->evaluation_mode == 1U
+            token_ids[0] = (header->evaluation_mode == 1U || header->evaluation_mode == 3U)
                 ? ((uint32_t *)(shared + header->generation_expected_token_ids_offset))[step - 1U]
                 : generated[step - 1U];
             memset(token_ids + 1, 0,
@@ -4243,16 +4243,16 @@ static int qbh_run_generation_sequence(
             snprintf(nll, sizeof(nll), "%.9g", header->evaluation_nll);
             snprintf(target_logit, sizeof(target_logit), "%.9g", header->evaluation_target_logit);
             snprintf(logsumexp, sizeof(logsumexp), "%.9g", header->evaluation_logsumexp);
-            if (!isfinite(header->evaluation_nll)) strcpy(nll, "null");
-            if (!isfinite(header->evaluation_target_logit)) strcpy(target_logit, "null");
-            if (!isfinite(header->evaluation_logsumexp)) strcpy(logsumexp, "null");
+            if (header->evaluation_mode != 1U || !isfinite(header->evaluation_nll)) strcpy(nll, "null");
+            if (header->evaluation_mode != 1U || !isfinite(header->evaluation_target_logit)) strcpy(target_logit, "null");
+            if (header->evaluation_mode != 1U || !isfinite(header->evaluation_logsumexp)) strcpy(logsumexp, "null");
             printf("{\"record\":\"eval_step\",\"sample_id\":%u,\"step\":%u,\"teacher_forcing\":%s,"
                    "\"token_id\":%u,\"target_token\":%u,\"target_code\":%u,\"nll\":%s,\"target_logit\":%s,"
                    "\"logsumexp\":%s,\"rank\":%u,\"target_ties\":%u,\"max_ties\":%u,\"saturated\":%u,"
                    "\"nonfinite\":%u,\"vocab_count\":%u,\"host_wall_ns\":%" PRIu64 ","
                    "\"sequence_elapsed_ns\":%" PRIu64 ",\"pass\":%s,\"vtcm_bytes\":%u,"
                    "\"intermediate_read\":%u,\"intermediate_write\":%u,\"spill\":%u,\"cache_valid\":%u}\n",
-                   header->evaluation_sample_id, step, header->evaluation_mode == 1U ? "true" : "false",
+                   header->evaluation_sample_id, step, (header->evaluation_mode == 1U || header->evaluation_mode == 3U) ? "true" : "false",
                    generated[step], header->evaluation_target_token, header->evaluation_target_code,
                    nll, target_logit, logsumexp,
                    header->evaluation_rank, header->evaluation_target_ties, header->evaluation_max_ties,
@@ -4416,7 +4416,7 @@ static int qbh_run_evaluation_suite(struct qbh_session *session, int shared_fd,
     for (uint32_t sample = 0U; sample < prefix[2]; ++sample) {
         char steps[16];
         if (fread(row, sizeof(uint32_t), 83U, file) != 83U ||
-            (row[1] != 1U && row[1] != 2U) || row[2] == 0U || row[2] > 16U) { fclose(file); return -1; }
+            (row[1] != 1U && row[1] != 2U && row[1] != 3U) || row[2] == 0U || row[2] > 16U) { fclose(file); return -1; }
         for (uint32_t i = 3U; i < 83U; ++i) {
             if (row[i] >= QBH_QWEN3_VOCAB_SIZE) { fclose(file); return -1; }
         }

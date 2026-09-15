@@ -1041,11 +1041,11 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
             &arena, QBH_BLOCK_W4U8_GATHER_SCRATCH_BYTES,
             QBH_BLOCK_ALIGNMENT);
     }
-    if (sp2_mode) {
+    if (sp2_mode || fp32_residual) {
         /* R4 consumes Gate completely before producing any SP2 plane. */
         buffers->sp2_high = fp32_residual && r4_mode ? buffers->gate : qbh_arena_alloc_aligned(&arena,
             QBH_BLOCK_M * QBH_BLOCK_INTERMEDIATE, 2048U);
-        buffers->sp2_scratch = qbh_arena_alloc_aligned(&arena, sp2_mode>=8U ? 34816U : 18432U, 2048U);
+        buffers->sp2_scratch = qbh_arena_alloc_aligned(&arena, (sp2_mode>=8U || fp32_residual) ? 34816U : 18432U, 2048U);
         if (!buffers->sp2_high || !buffers->sp2_scratch) return -1;
     }
     if (qbh_attention_u8_enabled(attention_pipeline_mode)) {
@@ -1850,7 +1850,7 @@ static int qbh_generation_request_valid(
                header->generation_expected_token_ids_bytes == 0U &&
                header->generation_expected_token_count == 0U;
     }
-    if (header->evaluation_mode > 2U ||
+    if (header->evaluation_mode > 3U ||
         (header->evaluation_mode == 1U &&
          (header->evaluation_target_token >= QBH_QWEN3_VOCAB_SIZE ||
           (header->generation_mode != QBH_BLOCK_GENERATION_GREEDY_F16F16 &&
@@ -2056,7 +2056,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
 #ifdef QBH_MODEL_LLAMA32
     if (header && QBH_FP32_RESIDUAL(header) &&
         (QBH_FP32_RESIDUAL(header)!=1U || header->variant!=QBH_BLOCK_W4U8 ||
-         QBH_LLAMA_SP2(header)!=8U ||
+         (QBH_LLAMA_SP2(header)!=8U && QBH_LLAMA_SP2(header)!=0U) ||
          header->w4u8_decode_projection_mode!=QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
          header->w4u8_decode_direct_n_mask!=63U ||
          (header->crouton_boundary_mode & (QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
@@ -4571,6 +4571,10 @@ static void qbh_llama_swiglu_worker(struct qbh_block_w4f16_pool *pool,uint32_t i
                 pool->u8_swiglu_middle+(size_t)tile*2048U,
                 pool->u8_sp2_high+(size_t)tile*2048U,2048U,
                 pool->u8_swiglu_lut,pool->u8_swiglu_gather_scratch+(size_t)index*256U);
+        else if (QBH_FP32_RESIDUAL(pool->attention_header))
+            qbh_mlp_gate_up_lut_pipelined_hvx(pool->u8_swiglu_gate+(size_t)tile*2048U,
+                pool->u8_swiglu_up+(size_t)tile*2048U,pool->u8_swiglu_middle+(size_t)tile*2048U,
+                2048U,pool->u8_swiglu_lut,pool->u8_swiglu_gather_scratch+(size_t)index*256U);
         else qbh_mlp_gate_up_lut_hvx(pool->u8_swiglu_gate+(size_t)tile*QBH_HMX_OUTPUT_BYTES,
             pool->u8_swiglu_up+(size_t)tile*QBH_HMX_OUTPUT_BYTES,
             pool->u8_swiglu_middle+(size_t)tile*QBH_HMX_OUTPUT_BYTES,
@@ -9739,9 +9743,9 @@ static int qbh_run_w4u8_direct_n_projection(
         (desc==&header->projections[QBH_BLOCK_PROJ_O] || desc==&header->projections[QBH_BLOCK_PROJ_DOWN]);
     worker->fp32_residual=(float *)buffers->residual;
     worker->fp32_rows=header->logical_m;
-    worker->fp32_sp2=desc==&header->projections[QBH_BLOCK_PROJ_DOWN];
+    worker->fp32_sp2=QBH_LLAMA_SP2(header) && desc==&header->projections[QBH_BLOCK_PROJ_DOWN];
     worker->fp32_split=worker->fp32_sp2 && header->logical_m==1U && (header->paper_format_disable&4U);
-    worker->fp32_input_zero=header->qparams[QBH_BLOCK_QP_ATTENTION_CONCAT].zero_point;
+    worker->fp32_input_zero=header->qparams[desc==&header->projections[QBH_BLOCK_PROJ_DOWN]?QBH_BLOCK_QP_MIDDLE:QBH_BLOCK_QP_ATTENTION_CONCAT].zero_point;
     worker->sp2_high = buffers->sp2_high;
     worker->sp2_scratch = buffers->sp2_scratch;
     worker->sp2_mode = QBH_LLAMA_SP2(header);
@@ -10099,7 +10103,7 @@ static int qbh_run_w4u8_direct_n_gate_up_pair(
         descs[0]->n / QBH_HMX_OUTPUT_CHANNELS;
     const uint32_t tile_bytes =
         k_tiles * QBH_W4_PACKED_TILE_BYTES;
-    const uint32_t prefill_pair=header && header->logical_m==64U && QBH_LLAMA_SP2(header)>=7U;
+    const uint32_t prefill_pair=header && header->logical_m==64U && (QBH_LLAMA_SP2(header)>=7U || QBH_FP32_RESIDUAL(header));
     uint32_t projection = 0U;
     uint32_t current_first = 0U;
     uint32_t current_tiles =
@@ -15171,7 +15175,7 @@ static int qbh_llama_sp2_prefill_start(struct qbh_block_w4f16_pool *pool,
     for(uint32_t i=0;i<pool->worker_count;i++)
         if(pool->jobs[i].command_kind!=QBH_BLOCK_HVX_POOL_NONE)return -1;
     pool->u8_swiglu_gate=gate;pool->u8_swiglu_up=up;pool->u8_swiglu_middle=middle;
-    pool->u8_sp2_high=buffers->sp2_high;
+    pool->u8_sp2_high=QBH_LLAMA_SP2(pool->attention_header)?buffers->sp2_high:NULL;
     pool->u8_r4_act=pool->attention_header->dense_r4_mode?(__fp16*)buffers->hmx_activation:NULL;
     pool->u8_swiglu_lut=(const uint16_t *)buffers->w4u8_silu_lut;
     pool->u8_swiglu_gather_scratch=buffers->w4u8_gather_scratch;
@@ -15201,7 +15205,7 @@ static int qbh_llama_swiglu_parallel(struct qbh_block_w4f16_pool *pool,
     for(uint32_t i=0;i<pool->worker_count;++i)
         if(pool->jobs[i].command_kind!=QBH_BLOCK_HVX_POOL_NONE)return -1;
     pool->u8_swiglu_gate=gate;pool->u8_swiglu_up=up;pool->u8_swiglu_middle=middle;
-    pool->u8_sp2_high=buffers->sp2_high;
+    pool->u8_sp2_high=QBH_LLAMA_SP2(pool->attention_header)?buffers->sp2_high:NULL;
     pool->sp2_pipelined_gather=QBH_LLAMA_SP2(pool->attention_header)>=6U;
     pool->u8_r4_act=pool->attention_header->dense_r4_mode?(__fp16*)buffers->hmx_activation:NULL;
     pool->u8_swiglu_lut=(const uint16_t *)buffers->w4u8_silu_lut;
@@ -15254,7 +15258,7 @@ static int qbh_run_w4u8_direct_n_mlp(
         return -1;
     }
     buffers->r4_prefill_ready=NULL;buffers->r4_prefill_prepared=0U;
-    const uint32_t stream_sp2 = prefill_direct && QBH_LLAMA_SP2(header)>=5U && !(header->paper_pipeline_disable&2U);
+    const uint32_t stream_sp2 = prefill_direct && (QBH_LLAMA_SP2(header)>=5U || QBH_FP32_RESIDUAL(header)) && !(header->paper_pipeline_disable&2U);
     buffers->sp2_prefill_ready=NULL;
     middle_native = (stream_sp2 || (QBH_LLAMA_SP2(header) && prefill_direct)) ? buffers->middle : mlp_arena;
     /* The legacy streaming path places Down output inside its private
@@ -15288,7 +15292,7 @@ static int qbh_run_w4u8_direct_n_mlp(
 
     start = HAP_perf_get_qtimer_count();
 #ifdef QBH_MODEL_LLAMA32
-    if(stream_sp2 && QBH_LLAMA_SP2(header)>=7U) {
+    if(stream_sp2 && (QBH_LLAMA_SP2(header)>=7U || QBH_FP32_RESIDUAL(header))) {
         if(qbh_llama_sp2_prefill_start(pool,buffers,gate_native,up_native,middle_native,1U))return -1;
         int status=qbh_run_w4u8_direct_n_gate_up_pair(header,shared,buffers,worker,pool,gate_prefetch,
             mlp_arena+gate_up_layout.vtcm_activation_offset,gate_native,up_native,middle_native,swiglu_rows);
@@ -15417,14 +15421,14 @@ static int qbh_run_w4u8_direct_n_mlp(
     start = HAP_perf_get_qtimer_count();
     /* Transfer main's HVX slot to the HMX epilogue owner. Main only submits
      * scalar DMA descriptors and waits until the projection has joined. */
-    const uint32_t stream_down=QBH_LLAMA_SP2(header)>=8U && prefill_direct && !(header->paper_pipeline_disable&8U);
+    const uint32_t stream_down=(QBH_LLAMA_SP2(header)>=8U || QBH_FP32_RESIDUAL(header)) && prefill_direct && !(header->paper_pipeline_disable&8U);
     if(stream_down) {
         if(!pool || !pool->worker_count || pool->active_worker_count)return -1;
         struct qbh_sp2_epilogue *e=&pool->sp2_epilogue;
         memset(e,0,sizeof(*e));e->scratch=buffers->sp2_scratch;e->mode=QBH_LLAMA_SP2(header);
         e->fp32_residual=QBH_FP32_RESIDUAL(header)?(float *)buffers->residual:NULL;
-        e->fp32_sp2=1U;
-        e->tiles=QBH_BLOCK_HIDDEN/32U;e->zero_point=header->qparams[QBH_BLOCK_QP_DOWN].zero_point;
+        e->fp32_sp2=QBH_LLAMA_SP2(header)!=0U;
+        e->tiles=QBH_BLOCK_HIDDEN/32U;e->zero_point=header->qparams[QBH_FP32_RESIDUAL(header)?QBH_BLOCK_QP_MIDDLE:QBH_BLOCK_QP_DOWN].zero_point;
         worker->sp2_epilogue=e;pool->active_worker_count=1U;
         pool->jobs[0].command_kind=QBH_BLOCK_HVX_POOL_SP2_EPILOGUE;
         asm volatile("barrier" ::: "memory");(void)qurt_sem_up(&pool->command_ready[0]);
