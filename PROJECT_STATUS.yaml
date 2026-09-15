@@ -6,8 +6,8 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0031
-  next_experiment_number: 32
+  active_experiment: L32-0032
+  next_experiment_number: 33
   maximum_running_experiments: 1
   remote_sync_required: true
 source_worktrees:
@@ -1359,8 +1359,8 @@ current_scope:
           ci95:
           - 0.9870875472223184
           - 0.9941624837523004
-  current_handoff: docs/SESSION_HANDOFF_L32_0030.md
-  next_direction: L32-0031 approved A3; QwenEXP0276 ownsdevice until complete
+  current_handoff: docs/SESSION_HANDOFF_L32_0031.md
+  next_direction: L32-0032 approved A5 ordinary A8/SP2 fixedFP32; QwenEXP0277ownsnextdevice
   latest_paper_pipeline_result:
     id: L32-0030
     execution_state: completed
@@ -1444,6 +1444,43 @@ current_scope:
           ci95:
           - 1.009275908390115
           - 1.0140494700486085
+  latest_paper_sp2_stream_result:
+    id: L32-0031
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    measured_source: 8fdc6e42893be7e13a887e29db989fe8ba783a5d
+    source_closure: 445899b97a27d3cfa568ab165b4e3a6ef1f0c70c
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0031
+    evidence_ledger_sha256: 660a885cbb7ea74b3533a40d9ad9c6a5dda71ed5724399b7c4e79c1a23696474
+    evidence_files: 368
+    timed_profiles: 4800
+    independent_numerical_exact: true
+    physical_gate: true
+    weight_bytes_identical: true
+    extra_decode_tile_pairs_per_layer: 16384
+    baseline_promoted: false
+    quality_claim: false
+    effects:
+      prefill:
+        SPLIT:
+          ratio: 1.001063299350713
+          ci95:
+          - 0.998008987613505
+          - 1.003802286238664
+      decode:
+        SPLIT:
+          ratio: 1.011656635105734
+          ci95:
+          - 1.0075799741956273
+          - 1.0162463661212997
+    performance:
+      ALL:
+        prefill: 2164.618190614108
+        decode: 45.21629354322561
+      SPLIT:
+        prefill: 2162.318998227259
+        decode: 44.695296777744964
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp

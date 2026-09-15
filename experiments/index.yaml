@@ -1,14 +1,61 @@
 schema_version: 1
 project: llama32-htp
 experiments:
+- id: L32-0032
+  title: Ordinary A8 versus SP2 with fixed FP32 residual and shared pipeline
+  execution_state: running
+  record: docs/experiments/L32-0032.md
+  approval_ref: Standing user-approved A5 paper campaign
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
 - id: L32-0031
   title: SP2 decode physical-row copacking versus two independent streams
-  execution_state: running
+  execution_state: completed
   record: docs/experiments/L32-0031.md
   approval_ref: Standing user-approved A3 paper campaign
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
+  evidence_validity: valid
+  local_gate: pass
+  evidence:
+    id: L32-0031
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    measured_source: 8fdc6e42893be7e13a887e29db989fe8ba783a5d
+    source_closure: 445899b97a27d3cfa568ab165b4e3a6ef1f0c70c
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0031
+    evidence_ledger_sha256: 660a885cbb7ea74b3533a40d9ad9c6a5dda71ed5724399b7c4e79c1a23696474
+    evidence_files: 368
+    timed_profiles: 4800
+    independent_numerical_exact: true
+    physical_gate: true
+    weight_bytes_identical: true
+    extra_decode_tile_pairs_per_layer: 16384
+    baseline_promoted: false
+    quality_claim: false
+    effects:
+      prefill:
+        SPLIT:
+          ratio: 1.001063299350713
+          ci95:
+          - 0.998008987613505
+          - 1.003802286238664
+      decode:
+        SPLIT:
+          ratio: 1.011656635105734
+          ci95:
+          - 1.0075799741956273
+          - 1.0162463661212997
+    performance:
+      ALL:
+        prefill: 2164.618190614108
+        decode: 45.21629354322561
+      SPLIT:
+        prefill: 2162.318998227259
+        decode: 44.695296777744964
 - id: L32-0030
   title: Individual pipeline knockouts and layer scaling
   execution_state: completed
