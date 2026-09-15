@@ -37,7 +37,7 @@ experiments:
     rerun
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0279-long-kv-pipeline-ablation
+    source_branch: codex/exp-0280-decode-native-layout
     started_on: '2026-09-15'
 - id: EXP-0279
   title: Supported longer KV complete-model pipeline ablation
