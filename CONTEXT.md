@@ -1,3 +1,7 @@
+# Both-model paper ablation campaign complete
+
+All hardware work finished throughQwenEXP0279/LlamaL32-0034. No deviceowner. Consolidatedreport /mnt/d/llm_exp/results/paper-no-rotation-ablation-20260915/REPORT.md; campaignledger 5c050ce12226744cbe198c280bf6ff97a090e8581f969ad8176593e983b15447. Complete module-tablecompendium andPNG/SVG/PDFfigure. No remaining approved campaign experiment; noquality/baselinepromotion. Llamasourceunchangedat573c721 closure.
+
 # Llama paper ablations complete through L32-0034
 
 Source573c721b26fb3b370a4f8e6dea8b086613023776, measured5b54cccb9de4c415bbe4943228bd89a7298abdc7. Branchcodex/llama32-no-rotation clean/pushed; no Llama process active, QwenEXP0279 ownsdevice. ActiveNone,next35. L32-0034 ledger6bbd9ddfa2d750b9f55877fb2277bdb0ef90c3a2e0c5fa1acb9b1aaab1711da6,222files267230894bytes,10200timedprofiles; /mnt/d/llm_exp/results/llama32-htp/l32-0034. Nevermodifysealedresults.
