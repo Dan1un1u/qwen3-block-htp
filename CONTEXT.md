@@ -1,3 +1,14 @@
+# L32-0032 closed; A9 remaining
+
+Sourcef91f3a881c6eff7988218bfcf5b055a2297d2708,codex/llama32-no-rotation clean/pushed; measured0e406c088b3b188d40e213ed1e4ecffcb935292d. Active none,next33. No Llama processesactive. QwenEXP0278 ownsdeviceforA9component/fullintegration. Do notdeploy/profile/hashdeviceconcurrently.
+
+A5allcomplete: ordinaryA8/SP2 fixedFP32residual1, originalweight/scales. Selected7/chain3/chain16independenttwo-step exact; ownfull16alllayergreedy/fixed CPUteachersbeforetiming,alltoken/logitcodesexact. 9600timedprofiles,5short10formalrepeat10eachtrajectory,repeat1aux. Fixed SP2/A8wallprefill1.01336440 CI[1.01015261,1.01638875],decode1.00035005[.99778268,1.00294924]; greedy1.01475488/.99923879. Decode no measurableextraSP2cost,extra tilepairs0;prefill+262144,weightbytesidentical. Samevector/readiness/FP32epiloguesprovidedboth. NoPPL/qualityacceptance orpromotion.
+
+Evidence/mnt/d/llm_exp/results/llama32-htp/l32-0032, ledgera11ee12fd162617993b247e4b60074a815493205050517fa0643d8af0343f557, 583files/266094775bytes. Reports docs/experiments/L32-0032-RESULTS.md andsource docs/L32_0032_A8_SP2_COST_RESULTS. NevermodifysealedR. Build16atmeasuredsource,reportclosurelater; freshbuildsealafternewnativechanges. OwnA8packages /models/llama32-htp/l32-0032,reference tools/llama32_a8_fp32_reference.py andprepare_llama32_a8_fp32_cost.py. Fullreferences R/greedy-a8-teacher.json andfixed-a8-teacher.json. Mode3forcedtokens has noNLL, samefullheadwork asgreedy2.
+
+RemainingapprovedA9log2versusFP32HVXvectorsoftmaxsameU8prob/AV, thenA8extraM/KV. RegisterL32-0033understandingapprovalbeforestatefulwork; no repeated userpermission. A1/A2/A3/A5/A6finished,A7citeQwen272. LlamaQKVringmaskinactive(no-op control),FARFfulltimelineN/A,no moretransportrepairs inthiscampaign. Preservefailedrotations/qualityscope.
+
+---
 # Active L32-0030: pipeline mechanisms and layer scaling
 
 Read docs/experiments/L32-0030.md. QwenEXP0275 owns device now; local preparation only until it releases device. L32-0029 closed with exact fullmodel factorial, failures preserved. No rotation/PPL/other recipe change.
