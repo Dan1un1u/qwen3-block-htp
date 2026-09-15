@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0283
+  active_experiment: null
   next_experiment_number: 284
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -31,6 +31,47 @@ governance:
     slowdown_threshold: 1.1
     prefill_and_decode: paired_bootstrap95_CI_upper_at_most_threshold
 current_scope:
+  latest_f16f16_fair_baseline_refresh:
+    id: EXP-0283
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    baseline_promoted: false
+    source_closure: 76754e3709e918dbcc15dde493e9c84956a73451
+    measured_source: 81e16c4ca4d9f2929c982dc4378f00dd436d8846
+    recipe: F16F16
+    opt: 3
+    manifest_sha256: 0f8a359b559f252cb13329f57d4cabd56f17ca9bfb64bc5643f4d6014795070f
+    full_model_audit_exact_files: 912
+    full_model_audit_layer_hashes: 448
+    formal_rounds: 10
+    short_rounds: 5
+    primary_repeat: 10
+    repeat1: auxiliary only
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0283
+    evidence_ledger_sha256: ddb28513aa598d6c6e7e9fc1ea94ba9a99c221f1e6ae9804e1d67d4051273d73
+    report: docs/experiments/EXP-0283-RESULTS.md
+    performance:
+      prefill_ns:
+        control_ns: 80479359.3
+        candidate_ns: 80220424.4
+        wall_ratio: 0.995682956317249
+        ci95:
+        - 0.994535565969829
+        - 0.9968526043067385
+        control_tokens_per_second: 795.2349590834777
+        candidate_tokens_per_second: 797.8018126765232
+      decode_ns:
+        control_ns: 110285844.93333334
+        candidate_ns: 80002733.66666666
+        wall_ratio: 0.7238965764540466
+        ci95:
+        - 0.7229581586150178
+        - 0.7249402462698407
+        control_tokens_per_second: 9.067346771514421
+        candidate_tokens_per_second: 12.499572879178409
+    quality: No new PPL; frozen original token IDs and exact output contracts preserved
+    device_owner: released_to_L32-0039
   latest_w4u8_integer_rmse_confirmation_result:
     id: EXP-0256
     execution_state: completed
@@ -2498,8 +2539,8 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: Qwen3_28layer_native_W4_SP2_M64_plus15_verified
-  last_completed_experiment: EXP-0282
-  last_completed_source_commit: c0d55359290a4820b0063ec886e4c393c99e5931
+  last_completed_experiment: EXP-0283
+  last_completed_source_commit: 76754e3709e918dbcc15dde493e9c84956a73451
   provisional_source_parent: EXP0268_diagnostic_U8_pipeline_closure_no_default_promotion
   device_execution_state: idle_no_active_device_process
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness

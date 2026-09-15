@@ -1,3 +1,7 @@
+# Current checkpoint EXP-0283 complete
+
+W16A16 fair baseline refresh completed and sealed: OPT3 797.801813 prefill /12.499573 decode token/s, M64+15; paired original795.234959/9.067347. Exact912 fullmodel files and448 layer hashes, no PPL/Selected promotion. Read latest_f16f16_fair_baseline_refresh and EXP-0283 results. Qwen device released; L32-0039 owns remaining baseline refresh. Do not rerun completed Qwen work.
+
 # Current checkpoint EXP-0283
 
 Registered W16A16 fairness refresh under latest user approval. Read docs/experiments/EXP-0283.md. Qwen owns device first, Llama local preparation only until release. Previous paper ablations sealed. New formal same-binary M64+15 control/candidate required.
