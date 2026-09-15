@@ -42,14 +42,14 @@ static int qbh_llama_w4_fp32_residual(struct qbh_block_hmx_worker *w) {
     for(uint32_t nt=0;nt<w->n_tiles;nt++) {
         const uint8_t *weight=(const uint8_t *)w->weight+(size_t)nt*w->k_tiles*512U;
         const float *scale=(const float *)w->scale_or_bias+nt*64U;
-        uint32_t passes=w->fp32_sp2 && w->fp32_rows==64U ? 2U:1U;
+        uint32_t passes=w->fp32_sp2 && (w->fp32_rows==64U || w->fp32_split) ? 2U:1U;
         for(uint32_t pass=0;pass<passes;pass++) {
             for(uint32_t n=0;n<32;n++){bias[n]=24U<<10;bias[n+32U]=0U;}
             qbh_hmx_begin_u8s8_output(bias);
             qbh_hmx_accumulate_u8n4_projection(pass?w->sp2_high:w->activation,weight,w->k_tiles);
             read_i32(pass?hi:lo,bias,3U);
         }
-        qbh_llama_fp32_epilogue(lo,w->fp32_sp2 ? (w->fp32_rows==64U?hi:lo+128U):NULL,
+        qbh_llama_fp32_epilogue(lo,w->fp32_sp2 ? ((w->fp32_rows==64U || w->fp32_split)?hi:lo+128U):NULL,
             scale,w->fp32_residual+w->fp32_first_channel+nt*32U,
             w->fp32_rows,w->fp32_sp2,w->fp32_input_zero);
     }

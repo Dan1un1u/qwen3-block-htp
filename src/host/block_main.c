@@ -6996,7 +6996,8 @@ int main(int argc, char **argv) {
 #endif
     header->paper_format_disable=getenv("QBH_PAPER_FORMAT_DISABLE")?(uint32_t)atoi(getenv("QBH_PAPER_FORMAT_DISABLE")):0U;
     header->paper_pipeline_disable=getenv("QBH_PAPER_PIPELINE_DISABLE")?(uint32_t)atoi(getenv("QBH_PAPER_PIPELINE_DISABLE")):0U;
-    if(header->paper_format_disable>3U || header->paper_pipeline_disable>31U ||
+    if(header->paper_format_disable>7U ||
+       ((header->paper_format_disable&4U) && (header->paper_format_disable&3U)) || header->paper_pipeline_disable>31U ||
        ((header->paper_format_disable || header->paper_pipeline_disable) &&
         (!QBH_FP32_RESIDUAL(header) || QBH_LLAMA_SP2(header)!=8U || dense_r3_mode)))return 2;
     header->wide_score_mode=wide_score_mode;
@@ -7004,6 +7005,7 @@ int main(int argc, char **argv) {
     header->dense_r4_audit_offset=(uint32_t)dense_r4_audit_offset;
     header->dense_r4_optimization=getenv("QBH_R4_OPT") ? (uint32_t)atoi(getenv("QBH_R4_OPT")) : 0U;
     if(header->dense_r4_optimization>6U) return 2;
+    if((header->paper_format_disable&4U) && header->dense_r4_mode) return 2;
     if(header->dense_r4_mode) {
         if(variant!=QBH_BLOCK_W4U8 || header->dense_r4_mode>3U) return 2;
         if(header->dense_r4_optimization<2U)header->w4u8_decode_direct_n_gate_up_swiglu_stream=0U;
