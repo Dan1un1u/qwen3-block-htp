@@ -1,0 +1,3195 @@
+{
+  "experiment": "EXP-0278",
+  "trajectories": {
+    "greedy": {
+      "arms": {
+        "LOG2": {
+          "prefill": {
+            "host_us": 34585.69534,
+            "modules": [
+              {
+                "module": "I/O、metadata",
+                "us": 252.71979166666668,
+                "host_share_pct": 0.7307061176080628
+              },
+              {
+                "module": "Input RMSNorm",
+                "us": 2020.5536458333333,
+                "host_share_pct": 5.842165745028313
+              },
+              {
+                "module": "QKV＋Q/K Norm-RoPE",
+                "us": 7064.072395833334,
+                "host_share_pct": 20.42483843794055
+              },
+              {
+                "module": "QK–Softmax–AV",
+                "us": 3493.3765625,
+                "host_share_pct": 10.100639955790463
+              },
+              {
+                "module": "O projection",
+                "us": 2080.1640625,
+                "host_share_pct": 6.0145214431880785
+              },
+              {
+                "module": "Post-attention residual＋RMSNorm",
+                "us": 2115.1833333333334,
+                "host_share_pct": 6.115775069836527
+              },
+              {
+                "module": "Gate/Up＋SwiGLU",
+                "us": 7026.731250000001,
+                "host_share_pct": 20.316871414388633
+              },
+              {
+                "module": "Down",
+                "us": 3785.7708333333335,
+                "host_share_pct": 10.946059624121277
+              },
+              {
+                "module": "Final residual",
+                "us": 2.6796875,
+                "host_share_pct": 0.007747964797749242
+              },
+              {
+                "module": "KV carrier conversion",
+                "us": 137.44114583333334,
+                "host_share_pct": 0.39739303918049645
+              },
+              {
+                "module": "KV append DMA",
+                "us": 294.60312500000003,
+                "host_share_pct": 0.8518062803244483
+              },
+              {
+                "module": "Block orchestration",
+                "us": 35.434895833333336,
+                "host_share_pct": 0.10245535180075213
+              },
+              {
+                "module": "Layer bookkeeping",
+                "us": 27.559375000000003,
+                "host_share_pct": 0.07968431667795986
+              },
+              {
+                "module": "Stage-boundary bookkeeping",
+                "us": 20.666145833333335,
+                "host_share_pct": 0.05975344902038721
+              },
+              {
+                "module": "DSP unattributed",
+                "us": 0.0,
+                "host_share_pct": 0.0
+              },
+              {
+                "module": "Runtime setup/teardown",
+                "us": 118.45208333333333,
+                "host_share_pct": 0.3424886565641428
+              },
+              {
+                "module": "Embedding",
+                "us": 55.23385416666667,
+                "host_share_pct": 0.1597014419507307
+              },
+              {
+                "module": "Final model RMSNorm",
+                "us": 14.215104166666666,
+                "host_share_pct": 0.04110110849853646
+              },
+              {
+                "module": "LM head＋greedy，不含 final norm",
+                "us": 5168.263020833334,
+                "host_share_pct": 14.943354384018969
+              },
+              {
+                "module": "Host–DSP 边界",
+                "us": 872.5750275000028,
+                "host_share_pct": 2.5229361992639436
+              },
+              {
+                "module": "完整 Host wall",
+                "us": 34585.69534,
+                "host_share_pct": 100.0
+              }
+            ],
+            "e2e_tps": 1850.4760239988861
+          },
+          "decode": {
+            "host_us": 21200.476323333332,
+            "modules": [
+              {
+                "module": "I/O、metadata",
+                "us": 250.53163194444446,
+                "host_share_pct": 1.1817264297439785
+              },
+              {
+                "module": "Input RMSNorm",
+                "us": 369.2424652777778,
+                "host_share_pct": 1.741670609878647
+              },
+              {
+                "module": "QKV＋Q/K Norm-RoPE",
+                "us": 2495.4465625000003,
+                "host_share_pct": 11.770709886142988
+              },
+              {
+                "module": "QK–Softmax–AV",
+                "us": 1927.3148611111112,
+                "host_share_pct": 9.090903580264847
+              },
+              {
+                "module": "O projection",
+                "us": 1344.3982291666669,
+                "host_share_pct": 6.3413586028112805
+              },
+              {
+                "module": "Post-attention residual＋RMSNorm",
+                "us": 368.94381944444444,
+                "host_share_pct": 1.740261934767868
+              },
+              {
+                "module": "Gate/Up＋SwiGLU",
+                "us": 6394.291284722222,
+                "host_share_pct": 30.161073681559877
+              },
+              {
+                "module": "Down",
+                "us": 3486.5179861111114,
+                "host_share_pct": 16.445470058962
+              },
+              {
+                "module": "Final residual",
+                "us": 1.682013888888889,
+                "host_share_pct": 0.007933849519398097
+              },
+              {
+                "module": "KV carrier conversion",
+                "us": 291.6894791666667,
+                "host_share_pct": 1.375862856654933
+              },
+              {
+                "module": "KV append DMA",
+                "us": 122.34871527777779,
+                "host_share_pct": 0.5771036150877435
+              },
+              {
+                "module": "Block orchestration",
+                "us": 27.98402777777778,
+                "host_share_pct": 0.1319971653041514
+              },
+              {
+                "module": "Layer bookkeeping",
+                "us": 16.617222222222225,
+                "host_share_pct": 0.0783813626108638
+              },
+              {
+                "module": "Stage-boundary bookkeeping",
+                "us": 1.7097569444444445,
+                "host_share_pct": 0.0080647100488147
+              },
+              {
+                "module": "DSP unattributed",
+                "us": 0.0,
+                "host_share_pct": 0.0
+              },
+              {
+                "module": "Runtime setup/teardown",
+                "us": 73.66708333333334,
+                "host_share_pct": 0.34747843496447783
+              },
+              {
+                "module": "Embedding",
+                "us": 1.7864930555555556,
+                "host_share_pct": 0.008426664704647858
+              },
+              {
+                "module": "Final model RMSNorm",
+                "us": 14.75375,
+                "host_share_pct": 0.06959159678767199
+              },
+              {
+                "module": "LM head＋greedy，不含 final norm",
+                "us": 3223.8625,
+                "host_share_pct": 15.206556922741418
+              },
+              {
+                "module": "Host–DSP 边界",
+                "us": 787.6884413888838,
+                "host_share_pct": 3.715428037444379
+              },
+              {
+                "module": "完整 Host wall",
+                "us": 21200.476323333332,
+                "host_share_pct": 100.0
+              }
+            ],
+            "e2e_tps": 47.16875152938879
+          }
+        },
+        "FP": {
+          "prefill": {
+            "host_us": 35083.53849,
+            "modules": [
+              {
+                "module": "I/O、metadata",
+                "us": 252.55052083333334,
+                "host_share_pct": 0.719854757254086
+              },
+              {
+                "module": "Input RMSNorm",
+                "us": 2088.3692708333333,
+                "host_share_pct": 5.952561687666111
+              },
+              {
+                "module": "QKV＋Q/K Norm-RoPE",
+                "us": 7064.1703125,
+                "host_share_pct": 20.13528457089221
+              },
+              {
+                "module": "QK–Softmax–AV",
+                "us": 3864.3286458333337,
+                "host_share_pct": 11.01464906949109
+              },
+              {
+                "module": "O projection",
+                "us": 2079.9875,
+                "host_share_pct": 5.928670794118636
+              },
+              {
+                "module": "Post-attention residual＋RMSNorm",
+                "us": 2129.2229166666666,
+                "host_share_pct": 6.069008453276648
+              },
+              {
+                "module": "Gate/Up＋SwiGLU",
+                "us": 7021.753125,
+                "host_share_pct": 20.014381180511304
+              },
+              {
+                "module": "Down",
+                "us": 3781.671354166667,
+                "host_share_pct": 10.779047715624728
+              },
+              {
+                "module": "Final residual",
+                "us": 2.709375,
+                "host_share_pct": 0.007722638925866226
+              },
+              {
+                "module": "KV carrier conversion",
+                "us": 136.63385416666668,
+                "host_share_pct": 0.3894528888686983
+              },
+              {
+                "module": "KV append DMA",
+                "us": 294.71875,
+                "host_share_pct": 0.8400485318321151
+              },
+              {
+                "module": "Block orchestration",
+                "us": 35.518750000000004,
+                "host_share_pct": 0.10124050061291297
+              },
+              {
+                "module": "Layer bookkeeping",
+                "us": 27.459895833333334,
+                "host_share_pct": 0.07827002923653308
+              },
+              {
+                "module": "Stage-boundary bookkeeping",
+                "us": 20.863541666666666,
+                "host_share_pct": 0.05946817956408098
+              },
+              {
+                "module": "DSP unattributed",
+                "us": 0.0,
+                "host_share_pct": 0.0
+              },
+              {
+                "module": "Runtime setup/teardown",
+                "us": 118.95937500000001,
+                "host_share_pct": 0.33907462052012644
+              },
+              {
+                "module": "Embedding",
+                "us": 54.8640625,
+                "host_share_pct": 0.1563812114209578
+              },
+              {
+                "module": "Final model RMSNorm",
+                "us": 14.254687500000001,
+                "host_share_pct": 0.04063070064629618
+              },
+              {
+                "module": "LM head＋greedy，不含 final norm",
+                "us": 5167.652083333333,
+                "host_share_pct": 14.729563509696405
+              },
+              {
+                "module": "Host–DSP 边界",
+                "us": 927.8504691666749,
+                "host_share_pct": 2.6446889598412198
+              },
+              {
+                "module": "完整 Host wall",
+                "us": 35083.53849,
+                "host_share_pct": 100.0
+              }
+            ],
+            "e2e_tps": 1824.2173610350671
+          },
+          "decode": {
+            "host_us": 21985.230710666667,
+            "modules": [
+              {
+                "module": "I/O、metadata",
+                "us": 250.15972222222223,
+                "host_share_pct": 1.137853523187506
+              },
+              {
+                "module": "Input RMSNorm",
+                "us": 365.6797569444445,
+                "host_share_pct": 1.6632973370028183
+              },
+              {
+                "module": "QKV＋Q/K Norm-RoPE",
+                "us": 2495.658298611111,
+                "host_share_pct": 11.351521989715952
+              },
+              {
+                "module": "QK–Softmax–AV",
+                "us": 2715.3660416666667,
+                "host_share_pct": 12.350864438958293
+              },
+              {
+                "module": "O projection",
+                "us": 1342.089826388889,
+                "host_share_pct": 6.104506448220904
+              },
+              {
+                "module": "Post-attention residual＋RMSNorm",
+                "us": 371.3183680555556,
+                "host_share_pct": 1.6889446053227066
+              },
+              {
+                "module": "Gate/Up＋SwiGLU",
+                "us": 6390.936284722223,
+                "host_share_pct": 29.069225466992734
+              },
+              {
+                "module": "Down",
+                "us": 3488.4186805555555,
+                "host_share_pct": 15.867100629801737
+              },
+              {
+                "module": "Final residual",
+                "us": 1.6764583333333334,
+                "host_share_pct": 0.007625384310931789
+              },
+              {
+                "module": "KV carrier conversion",
+                "us": 291.6180555555556,
+                "host_share_pct": 1.3264270882273255
+              },
+              {
+                "module": "KV append DMA",
+                "us": 122.16111111111111,
+                "host_share_pct": 0.5556508035726079
+              },
+              {
+                "module": "Block orchestration",
+                "us": 27.97423611111111,
+                "host_share_pct": 0.1272410395836271
+              },
+              {
+                "module": "Layer bookkeeping",
+                "us": 16.716770833333335,
+                "host_share_pct": 0.07603636756571669
+              },
+              {
+                "module": "Stage-boundary bookkeeping",
+                "us": 1.7012152777777778,
+                "host_share_pct": 0.0077379914733048125
+              },
+              {
+                "module": "DSP unattributed",
+                "us": 0.0,
+                "host_share_pct": 0.0
+              },
+              {
+                "module": "Runtime setup/teardown",
+                "us": 73.61625000000001,
+                "host_share_pct": 0.334844109524324
+              },
+              {
+                "module": "Embedding",
+                "us": 1.9424305555555557,
+                "host_share_pct": 0.008835161118473678
+              },
+              {
+                "module": "Final model RMSNorm",
+                "us": 15.011458333333334,
+                "host_share_pct": 0.0682797398439406
+              },
+              {
+                "module": "LM head＋greedy，不含 final norm",
+                "us": 3222.961111111111,
+                "host_share_pct": 14.65966472458901
+              },
+              {
+                "module": "Host–DSP 边界",
+                "us": 790.2246342777798,
+                "host_share_pct": 3.5943431509881005
+              },
+              {
+                "module": "完整 Host wall",
+                "us": 21985.230710666667,
+                "host_share_pct": 100.00000000000001
+              }
+            ],
+            "e2e_tps": 45.48508101462978
+          }
+        }
+      },
+      "effects": {
+        "prefill": {
+          "fp_over_log2_wall": 1.0143944814497985,
+          "ci95": [
+            1.0122455445442091,
+            1.016286302020515
+          ]
+        },
+        "decode": {
+          "fp_over_log2_wall": 1.0370158847077235,
+          "ci95": [
+            1.0358023452949012,
+            1.038675989344712
+          ]
+        }
+      }
+    },
+    "fixed": {
+      "arms": {
+        "LOG2": {
+          "prefill": {
+            "host_us": 34566.42552,
+            "modules": [
+              {
+                "module": "I/O、metadata",
+                "us": 253.08802083333333,
+                "host_share_pct": 0.7321787457800564
+              },
+              {
+                "module": "Input RMSNorm",
+                "us": 2020.4536458333334,
+                "host_share_pct": 5.845133291737981
+              },
+              {
+                "module": "QKV＋Q/K Norm-RoPE",
+                "us": 7048.71875,
+                "host_share_pct": 20.391806916574694
+              },
+              {
+                "module": "QK–Softmax–AV",
+                "us": 3489.7328125000004,
+                "host_share_pct": 10.095729483168155
+              },
+              {
+                "module": "O projection",
+                "us": 2085.0984375000003,
+                "host_share_pct": 6.032149422836824
+              },
+              {
+                "module": "Post-attention residual＋RMSNorm",
+                "us": 2115.55625,
+                "host_share_pct": 6.120263284891715
+              },
+              {
+                "module": "Gate/Up＋SwiGLU",
+                "us": 7028.936458333334,
+                "host_share_pct": 20.334577129667107
+              },
+              {
+                "module": "Down",
+                "us": 3782.5526041666667,
+                "host_share_pct": 10.942851472964993
+              },
+              {
+                "module": "Final residual",
+                "us": 2.7354166666666666,
+                "host_share_pct": 0.007913507472978268
+              },
+              {
+                "module": "KV carrier conversion",
+                "us": 136.8671875,
+                "host_share_pct": 0.39595412438815575
+              },
+              {
+                "module": "KV append DMA",
+                "us": 294.3625,
+                "host_share_pct": 0.8515850151462234
+              },
+              {
+                "module": "Block orchestration",
+                "us": 35.29895833333334,
+                "host_share_pct": 0.10211920325088142
+              },
+              {
+                "module": "Layer bookkeeping",
+                "us": 27.66510416666667,
+                "host_share_pct": 0.0800346108991216
+              },
+              {
+                "module": "Stage-boundary bookkeeping",
+                "us": 20.540625000000002,
+                "host_share_pct": 0.05942363056346476
+              },
+              {
+                "module": "DSP unattributed",
+                "us": 0.0,
+                "host_share_pct": 0.0
+              },
+              {
+                "module": "Runtime setup/teardown",
+                "us": 116.86562500000001,
+                "host_share_pct": 0.33808999120369565
+              },
+              {
+                "module": "Embedding",
+                "us": 55.18177083333334,
+                "host_share_pct": 0.15963979498373468
+              },
+              {
+                "module": "Final model RMSNorm",
+                "us": 14.1828125,
+                "host_share_pct": 0.041030602055725666
+              },
+              {
+                "module": "LM head＋greedy，不含 final norm",
+                "us": 5152.709375,
+                "host_share_pct": 14.906688491752389
+              },
+              {
+                "module": "Host–DSP 边界",
+                "us": 885.8791658333284,
+                "host_share_pct": 2.5628312806621043
+              },
+              {
+                "module": "完整 Host wall",
+                "us": 34566.42552,
+                "host_share_pct": 100.0
+              }
+            ],
+            "e2e_tps": 1851.5076128704675
+          },
+          "decode": {
+            "host_us": 21197.211652666665,
+            "modules": [
+              {
+                "module": "I/O、metadata",
+                "us": 249.1413888888889,
+                "host_share_pct": 1.1753498194539482
+              },
+              {
+                "module": "Input RMSNorm",
+                "us": 369.1958680555556,
+                "host_share_pct": 1.741719024677049
+              },
+              {
+                "module": "QKV＋Q/K Norm-RoPE",
+                "us": 2498.29125,
+                "host_share_pct": 11.785942844448169
+              },
+              {
+                "module": "QK–Softmax–AV",
+                "us": 1922.6811805555556,
+                "host_share_pct": 9.070443849220505
+              },
+              {
+                "module": "O projection",
+                "us": 1344.8896180555557,
+                "host_share_pct": 6.344653438823237
+              },
+              {
+                "module": "Post-attention residual＋RMSNorm",
+                "us": 368.92069444444445,
+                "host_share_pct": 1.7404208652039064
+              },
+              {
+                "module": "Gate/Up＋SwiGLU",
+                "us": 6401.043506944445,
+                "host_share_pct": 30.197573208357227
+              },
+              {
+                "module": "Down",
+                "us": 3492.3039930555556,
+                "host_share_pct": 16.47529896988227
+              },
+              {
+                "module": "Final residual",
+                "us": 1.6783333333333335,
+                "host_share_pct": 0.007917708049691502
+              },
+              {
+                "module": "KV carrier conversion",
+                "us": 291.6315277777778,
+                "host_share_pct": 1.3758013674458442
+              },
+              {
+                "module": "KV append DMA",
+                "us": 121.64454861111112,
+                "host_share_pct": 0.573870519407716
+              },
+              {
+                "module": "Block orchestration",
+                "us": 27.9965625,
+                "host_share_pct": 0.1320766285620305
+              },
+              {
+                "module": "Layer bookkeeping",
+                "us": 16.620104166666668,
+                "host_share_pct": 0.0784070303160643
+              },
+              {
+                "module": "Stage-boundary bookkeeping",
+                "us": 1.7046180555555557,
+                "host_share_pct": 0.0080417088977885
+              },
+              {
+                "module": "DSP unattributed",
+                "us": 0.0,
+                "host_share_pct": 0.0
+              },
+              {
+                "module": "Runtime setup/teardown",
+                "us": 73.5625,
+                "host_share_pct": 0.3470385690598397
+              },
+              {
+                "module": "Embedding",
+                "us": 1.7705208333333333,
+                "host_share_pct": 0.008352611948895633
+              },
+              {
+                "module": "Final model RMSNorm",
+                "us": 14.701527777777779,
+                "host_share_pct": 0.06935595123865401
+              },
+              {
+                "module": "LM head＋greedy，不含 final norm",
+                "us": 3225.414618055556,
+                "host_share_pct": 15.216221222425686
+              },
+              {
+                "module": "Host–DSP 边界",
+                "us": 774.019291555549,
+                "host_share_pct": 3.6515146625814596
+              },
+              {
+                "module": "完整 Host wall",
+                "us": 21197.211652666665,
+                "host_share_pct": 100.0
+              }
+            ],
+            "e2e_tps": 47.17601618485502
+          }
+        },
+        "FP": {
+          "prefill": {
+            "host_us": 35081.38485,
+            "modules": [
+              {
+                "module": "I/O、metadata",
+                "us": 253.0666666666667,
+                "host_share_pct": 0.7213702302480989
+              },
+              {
+                "module": "Input RMSNorm",
+                "us": 2088.393229166667,
+                "host_share_pct": 5.952995407952565
+              },
+              {
+                "module": "QKV＋Q/K Norm-RoPE",
+                "us": 7052.066666666667,
+                "host_share_pct": 20.10201905318075
+              },
+              {
+                "module": "QK–Softmax–AV",
+                "us": 3864.4031250000003,
+                "host_share_pct": 11.01553756079843
+              },
+              {
+                "module": "O projection",
+                "us": 2090.675,
+                "host_share_pct": 5.959499629046144
+              },
+              {
+                "module": "Post-attention residual＋RMSNorm",
+                "us": 2129.275,
+                "host_share_pct": 6.069529492932774
+              },
+              {
+                "module": "Gate/Up＋SwiGLU",
+                "us": 7045.002604166667,
+                "host_share_pct": 20.08188283982942
+              },
+              {
+                "module": "Down",
+                "us": 3793.313541666667,
+                "host_share_pct": 10.812895664997292
+              },
+              {
+                "module": "Final residual",
+                "us": 2.6348958333333337,
+                "host_share_pct": 0.0075108090646921356
+              },
+              {
+                "module": "KV carrier conversion",
+                "us": 136.2671875,
+                "host_share_pct": 0.38843160862277076
+              },
+              {
+                "module": "KV append DMA",
+                "us": 294.24895833333335,
+                "host_share_pct": 0.8387609542538722
+              },
+              {
+                "module": "Block orchestration",
+                "us": 35.214062500000004,
+                "host_share_pct": 0.1003781995795414
+              },
+              {
+                "module": "Layer bookkeeping",
+                "us": 27.219270833333333,
+                "host_share_pct": 0.07758892914209838
+              },
+              {
+                "module": "Stage-boundary bookkeeping",
+                "us": 20.45104166666667,
+                "host_share_pct": 0.05829599302909694
+              },
+              {
+                "module": "DSP unattributed",
+                "us": 0.0,
+                "host_share_pct": 0.0
+              },
+              {
+                "module": "Runtime setup/teardown",
+                "us": 117.5671875,
+                "host_share_pct": 0.3351269854445327
+              },
+              {
+                "module": "Embedding",
+                "us": 55.17916666666667,
+                "host_share_pct": 0.15728902066608885
+              },
+              {
+                "module": "Final model RMSNorm",
+                "us": 14.270833333333334,
+                "host_share_pct": 0.040679218891592116
+              },
+              {
+                "module": "LM head＋greedy，不含 final norm",
+                "us": 5156.834375,
+                "host_share_pct": 14.699631719356143
+              },
+              {
+                "module": "Host–DSP 边界",
+                "us": 905.3020374999978,
+                "host_share_pct": 2.5805766829640926
+              },
+              {
+                "module": "完整 Host wall",
+                "us": 35081.38485,
+                "host_share_pct": 100.0
+              }
+            ],
+            "e2e_tps": 1824.3293494156344
+          },
+          "decode": {
+            "host_us": 22032.550208666667,
+            "modules": [
+              {
+                "module": "I/O、metadata",
+                "us": 250.20767361111112,
+                "host_share_pct": 1.1356273842176021
+              },
+              {
+                "module": "Input RMSNorm",
+                "us": 368.35003472222223,
+                "host_share_pct": 1.6718447534835483
+              },
+              {
+                "module": "QKV＋Q/K Norm-RoPE",
+                "us": 2502.5378819444445,
+                "host_share_pct": 11.358366862861171
+              },
+              {
+                "module": "QK–Softmax–AV",
+                "us": 2717.007291666667,
+                "host_share_pct": 12.33178758670393
+              },
+              {
+                "module": "O projection",
+                "us": 1348.4662847222223,
+                "host_share_pct": 6.120336828697174
+              },
+              {
+                "module": "Post-attention residual＋RMSNorm",
+                "us": 369.6816666666667,
+                "host_share_pct": 1.6778886836315916
+              },
+              {
+                "module": "Gate/Up＋SwiGLU",
+                "us": 6419.296006944444,
+                "host_share_pct": 29.135510624727253
+              },
+              {
+                "module": "Down",
+                "us": 3496.681527777778,
+                "host_share_pct": 15.870525629858008
+              },
+              {
+                "module": "Final residual",
+                "us": 1.6856250000000002,
+                "host_share_pct": 0.007650612316938904
+              },
+              {
+                "module": "KV carrier conversion",
+                "us": 291.7347569444445,
+                "host_share_pct": 1.3241079865084726
+              },
+              {
+                "module": "KV append DMA",
+                "us": 121.94368055555556,
+                "host_share_pct": 0.5534705669595529
+              },
+              {
+                "module": "Block orchestration",
+                "us": 27.961145833333333,
+                "host_share_pct": 0.12690834954881713
+              },
+              {
+                "module": "Layer bookkeeping",
+                "us": 16.699375,
+                "host_share_pct": 0.07579410845246219
+              },
+              {
+                "module": "Stage-boundary bookkeeping",
+                "us": 1.7041666666666668,
+                "host_share_pct": 0.0077347681068545586
+              },
+              {
+                "module": "DSP unattributed",
+                "us": 0.0,
+                "host_share_pct": 0.0
+              },
+              {
+                "module": "Runtime setup/teardown",
+                "us": 73.53024305555556,
+                "host_share_pct": 0.33373459885107576
+              },
+              {
+                "module": "Embedding",
+                "us": 1.7882638888888889,
+                "host_share_pct": 0.008116463468606835
+              },
+              {
+                "module": "Final model RMSNorm",
+                "us": 15.209687500000001,
+                "host_share_pct": 0.06903280535367692
+              },
+              {
+                "module": "LM head＋greedy，不含 final norm",
+                "us": 3233.2875000000004,
+                "host_share_pct": 14.675048822664944
+              },
+              {
+                "module": "Host–DSP 边界",
+                "us": 774.777396166668,
+                "host_share_pct": 3.51651256358832
+              },
+              {
+                "module": "完整 Host wall",
+                "us": 22032.550208666667,
+                "host_share_pct": 100.00000000000001
+              }
+            ],
+            "e2e_tps": 45.387392314060975
+          }
+        }
+      },
+      "effects": {
+        "prefill": {
+          "fp_over_log2_wall": 1.0148976737470887,
+          "ci95": [
+            1.012145929016143,
+            1.0177200331525618
+          ]
+        },
+        "decode": {
+          "fp_over_log2_wall": 1.0394079452376894,
+          "ci95": [
+            1.0370117217334958,
+            1.0421065320363394
+          ]
+        }
+      }
+    }
+  },
+  "quality_claim": false,
+  "measured_source": "f599446425016ccd53bec0d93c0ed586ec9adda4",
+  "timed_profiles": 9600,
+  "paired_profiles": 4800,
+  "physical_gate": true,
+  "numerical_gate_scope": "Qwen selected layer14 and chain3 independent exact; full28 physical/front-end finalNorm and full-vocabulary head oracle; no full28 CPU transformer equivalence claim",
+  "precision": "FP32 residual2; frozen nativeW4/SP2; retained log2 versus FP32 vector softmax; no rotation",
+  "weight_bytes_identical": true,
+  "worker_dispatches_identical": true,
+  "prefill_extra_pairs": 0,
+  "decode_extra_pairs": 0,
+  "first_formal_steps": [
+    {
+      "trajectory": "greedy",
+      "mode": "prefill",
+      "log2_pairs": 2031360,
+      "fp_pairs": 2031360,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "prefill",
+      "log2_pairs": 2031360,
+      "fp_pairs": 2031360,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "prefill",
+      "log2_pairs": 2031360,
+      "fp_pairs": 2031360,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "prefill",
+      "log2_pairs": 2031360,
+      "fp_pairs": 2031360,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "prefill",
+      "log2_pairs": 2031360,
+      "fp_pairs": 2031360,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "prefill",
+      "log2_pairs": 2031360,
+      "fp_pairs": 2031360,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "prefill",
+      "log2_pairs": 2031360,
+      "fp_pairs": 2031360,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "prefill",
+      "log2_pairs": 2031360,
+      "fp_pairs": 2031360,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "prefill",
+      "log2_pairs": 2031360,
+      "fp_pairs": 2031360,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "prefill",
+      "log2_pairs": 2031360,
+      "fp_pairs": 2031360,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "greedy",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "prefill",
+      "log2_pairs": 2031360,
+      "fp_pairs": 2031360,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "prefill",
+      "log2_pairs": 2031360,
+      "fp_pairs": 2031360,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "prefill",
+      "log2_pairs": 2031360,
+      "fp_pairs": 2031360,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "prefill",
+      "log2_pairs": 2031360,
+      "fp_pairs": 2031360,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "prefill",
+      "log2_pairs": 2031360,
+      "fp_pairs": 2031360,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "prefill",
+      "log2_pairs": 2031360,
+      "fp_pairs": 2031360,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "prefill",
+      "log2_pairs": 2031360,
+      "fp_pairs": 2031360,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "prefill",
+      "log2_pairs": 2031360,
+      "fp_pairs": 2031360,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "prefill",
+      "log2_pairs": 2031360,
+      "fp_pairs": 2031360,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "prefill",
+      "log2_pairs": 2031360,
+      "fp_pairs": 2031360,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    },
+    {
+      "trajectory": "fixed",
+      "mode": "decode",
+      "log2_pairs": 1690880,
+      "fp_pairs": 1690880,
+      "weight_bytes": 866032640
+    }
+  ],
+  "implementation": "FP vector probability with scalar rowmass telemetry (prototype; supplementary only)"
+}

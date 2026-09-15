@@ -1,0 +1,11 @@
+# EXP-0278 interpretation
+
+Primary control is the vector probability-code rowmass implementation at140454fd24b4fa2f8ca0d3c4dced41aefcb02529, under vsum. All9600 fullmodel profiles pass. Fixed-token FP/LOG2 Host wall prefill1.01480990 CI[1.01171802,1.01775486], decode.99799273[.99572434,1.00040151]. Optimized log2 offers about1.48% prefill throughput advantage over this FP comparator; no stable fixed-input decode advantage. Greedy ratios1.01548426/.99797968, reported separately.
+
+40 FP and40 retained integer component cases pass; max FP probability error1.09563e-7,rowmass1.65294e-7 versusFloat64, finite/maskedexactzero, ownFP32 U8half-up exact, noFloat64 threshold differences. Matched nativeM64 (2heads) LOG2 37.8552us,FP52.7542us; capturedactualdecodegroup0 LOG21.2375us,FP1.0973us. Both include native publication/rowmass telemetry. SeparatepacktimerN/A. Generic M64+past64 dispatches scalarfallback and is supplementary, never the primary currentM64 denominator.
+
+On actual selected-layer matchedQKV, probability approximation changes AVmax6codesprefill/3decode,RMSE.7077/.6662. Each AVcode exact to ownhardware boundary and independent reference; crossarm equality not intended. Selectedlayer14 andchain3 outputs/physicalKV/SP2 exact; all28 frontend actualfinalNorm/full-vocabularyhead checked. No full28 CPUtransformer or PPL/quality claim.
+
+Prototype f599446425016ccd53bec0d93c0ed586ec9adda4 used scalar probability-code rowmass telemetry in actual FP runtime, absent from initial componenttimer. Completed all9600prototypeprofiles BEFORE choosing finalvector bookkeeping; preservedroot SUMMARY/REPORT and PROTOTYPE_A01. Prototypefixed FP/LOG2 decode1.03940795, primary.99799273, but these are separate build/timing blocks, not a paired performance claim betweenFP variants. Final primary completed fresh fixed5short10formal regardless speed; no pooling/cherry-picking. Initial vendor-exp register spills and build pointer type fixes are retained, no faulty build run as a final control.
+
+8MiB VTCM,no tensorDDR/spill, sameHMXtile/commands,weightbytes andallreporteddispatchcounts verified across4800paired primaryprofiles. VendorheaderSHA and disassembly retained. No baselinepromotion. RemainingapprovedA8 supportedlongerKV; LlamaL32-0034 currentlyownsdevice.

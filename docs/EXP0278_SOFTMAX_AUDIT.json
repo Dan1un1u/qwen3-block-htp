@@ -1,0 +1,78 @@
+{
+  "component_fp_cases": 40,
+  "component_total_cases": 80,
+  "max_probability_abs": 1.0956272744611084e-07,
+  "max_row_sum_error": 1.6529404067711084e-07,
+  "float64_u8_threshold_differences": 0,
+  "component_formal_us": {
+    "m64-p0-random": {
+      "LOG2": 37.85520833333334,
+      "FP": 52.75421875
+    },
+    "actual-g0": {
+      "LOG2": 1.2375,
+      "FP": 1.09734375
+    }
+  },
+  "component_scope": "2 heads; primary M64/past0 optimized native shuffle4 versus FP vector; actual-g0 decode; core includes native pack and matched rowmass telemetry; separate pack timer N/A; generic M64/past64 scalar fallback supplementary only",
+  "actual_input_approximation": [
+    {
+      "mode": "prefill",
+      "same_QKV": true,
+      "probability_u8": {
+        "elements": 65536,
+        "differing": 12537,
+        "max_abs": 17.0,
+        "mean_abs": 0.437255859375,
+        "rmse": 1.3937377381747615
+      },
+      "probability_dequantized": {
+        "elements": 65536,
+        "differing": 12537,
+        "max_abs": 0.06666666666666665,
+        "mean_abs": 0.0017147288602941174,
+        "rmse": 0.005465638188920634
+      },
+      "AV_u8": {
+        "elements": 131072,
+        "differing": 7259,
+        "max_abs": 6.0,
+        "mean_abs": 0.16640472412109375,
+        "rmse": 0.7077053502644789
+      },
+      "scope": "independent matched actual selected-layer QKV, each AV output exact to own archived physical hardware boundary; cross-arm differences are approximation change"
+    },
+    {
+      "mode": "decode",
+      "same_QKV": true,
+      "probability_u8": {
+        "elements": 1040,
+        "differing": 252,
+        "max_abs": 13.0,
+        "mean_abs": 0.47307692307692306,
+        "rmse": 1.3286777695832106
+      },
+      "probability_dequantized": {
+        "elements": 1040,
+        "differing": 252,
+        "max_abs": 0.05098039215686276,
+        "mean_abs": 0.0018552036199095026,
+        "rmse": 0.005210501057189062
+      },
+      "AV_u8": {
+        "elements": 2048,
+        "differing": 101,
+        "max_abs": 3.0,
+        "mean_abs": 0.14794921875,
+        "rmse": 0.6662189251664951
+      },
+      "scope": "independent matched actual selected-layer QKV, each AV output exact to own archived physical hardware boundary; cross-arm differences are approximation change"
+    }
+  ],
+  "quality_claim": false,
+  "softmax_claim": "Retained Qwen wide NR64 versus final FP vector rowmass. Prototype scalar rowmass full timings retained separately, not pooled or denominator for final control.",
+  "source_manifest_sha256": {
+    "FP": "e41f1deecf3ed5040a915b52162b888c3fa75884cf17e67f52320381bfa97f17",
+    "LOG2": "93a7ec9c384a80fdcc6caf59cdea2f1e3ca20167745f2109658c381009b2d899"
+  }
+}
