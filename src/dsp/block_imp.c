@@ -2094,7 +2094,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         header->w4f16_decode_opt>2U || header->w4f16_decode_audit>1U ||
         (header->w4f16_decode_opt && header->variant!=QBH_BLOCK_W4F16) ||
         header->paper_format_disable > 7U ||
-        ((header->paper_format_disable&4U) && ((header->paper_format_disable&3U) || !QBH_LLAMA_FP32_RESIDUAL(header) || QBH_LLAMA_SP2(header)!=8U || header->dense_r3_mode || header->dense_r4_mode)) || header->paper_pipeline_disable > 31U ||
+        ((header->paper_format_disable&4U) && ((header->paper_format_disable&3U) || !QBH_FP32_RESIDUAL(header) || QBH_LLAMA_SP2(header)!=8U || header->dense_r3_mode || header->dense_r4_mode)) || header->paper_pipeline_disable > 31U ||
         header->wide_score_mode > 6U || header->prefix_kv_mode > 2U ||
         (header->prefix_kv_mode && header->variant != QBH_BLOCK_W4U8) ||
         (header->wide_score_mode && (header->variant != QBH_BLOCK_W4U8 || header->kv_cache_capacity > 128U)) ||
