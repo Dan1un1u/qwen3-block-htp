@@ -93,4 +93,5 @@ void qbh_mlp_gate_up_lut_f16_hvx(const uint8_t *, const uint8_t *, uint16_t *, s
 void qbh_mlp_gate_up_sp2_compact_hvx(const uint8_t *gate,const uint8_t *up,
     uint8_t *low,uint8_t *high,size_t elements,const uint16_t *lut,
     uint8_t *gather_scratch,uint8_t *compact_scratch);
+void qbh_mlp_gate_up_sp2_decode_row1_hvx(const uint8_t *,const uint8_t *,uint8_t *,uint8_t *,const uint16_t *,uint8_t *);
 #endif

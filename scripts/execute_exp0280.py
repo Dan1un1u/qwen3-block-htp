@@ -2,13 +2,13 @@
 import os,sys,subprocess,shlex
 from pathlib import Path
 import common_exp0274 as c, device_exp0274 as d, full_exp0274 as f, selected_audit_exp0274 as a, audit_exp0274 as aa
-R=Path('/mnt/d/llm_exp/results/qwen3-block-htp/exp0280/opt-a1')
+R=Path('/mnt/d/llm_exp/results/qwen3-block-htp/exp0280/opt-a2')
 def preflight():
  z=subprocess.check_output(['python3','/home/daniuniu/work/qwen3-block-htp-project-memory/scripts/project_memory.py','preflight','--source-worktree',str(c.S)],text=True);assert 'EXPERIMENT=EXP-0280' in z
 for mod in [c,d,f,a,aa]:mod.R=R;mod.preflight=preflight
-d.REMOTE='/data/local/tmp/qwen3-block-htp/exp0280-opt-a1'
+d.REMOTE='/data/local/tmp/qwen3-block-htp/exp0280-opt-a2'
 from common_exp0274 import read,write,sha,package_path
-ARMS={'OPT':0,'ORIGINAL':8,'NORM_COMPACT':1,'SWIGLU_COMPACT':2,'COMPACT':3}
+ARMS={'OPT':0,'ORIGINAL':8,'DUAL':16,'NORM_COMPACT':17,'COMPACT':3}
 def arm(x):os.environ.update(QBH_PAPER_FORMAT_DISABLE=str(ARMS[x]),QBH_PAPER_PIPELINE_DISABLE='0')
 def prepare():
  preflight();R.mkdir(exist_ok=True)
@@ -54,7 +54,7 @@ def fullgates():
   aa.head(tag);out.append(dict(arm=x,pass_all=True,exact_files=len(names)))
  write(R/'full_gate.json',dict(pass_all=True,runs=out))
 def timing():
- assert read(R/'full_gate.json')['pass_all'];ref=read(R/'full-OPT-audit/validated.json')['selected_codes'];keys=list(ARMS)
+ assert read(R/'full_gate.json')['pass_all'];ref=read(R/'full-OPT-audit/validated.json')['selected_codes'];keys=['OPT','ORIGINAL','NORM_COMPACT']
  for x in keys:
   arm(x);z=f.full(2,1,'aux-'+x+'-r1');assert z['selected_codes']==ref
  for phase,count in [('short',5),('formal',10)]:
