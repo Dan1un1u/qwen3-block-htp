@@ -1,0 +1,3 @@
+# L32-0030 diagnostic trace
+
+Five trace-only selectedlayer7 runs at4421949 each pass original independentFP32 output and physical gates. SDK process-name .farf enables logcat. Collector reports626–630prefill events, but logcat retains only250–252 and no complete decode stream. Trace coverage and engine utilization N/A; no timeline reconstructed from missing events. QwenEXP275 already retained two logging recovery attempts, including post-join pacing, without fixing transport; do not repeat speculative changes. No arithmetic or timing data changes. Timed1/3/16layer seals are TRACE=OFF, all14000profiles valid. Standalone trace metadata array is diagnostic DDR, excluded from all timed tensor-traffic counters.
