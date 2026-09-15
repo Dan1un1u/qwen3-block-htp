@@ -1,3 +1,5 @@
+Latest cross-model paper ablation synthesis: /mnt/d/llm_exp/results/paper-latest-ablations-20260915-a02/UPDATED_CONCLUSIONS.md; ledger a8b755b64da9691a1346af509d780f6bdca5961a533ebbc445a28bacab43033f. Generalization remains supplementary and was not rerun.
+
 # Current checkpoint
 
 EXP-0282 completed and sealed. Latest optimized A0/A1/A2/A3/A5/A6/A9 rerun complete. All controls received applicable valid-row optimization. Read current latest_paper_ablation_campaign; historical pre-optimization findings below are superseded only by new paired measurements. Generalization is supplementary, excluded and NOT rerun. No active experiment; no quality/baseline promotion.

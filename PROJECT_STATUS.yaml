@@ -10997,8 +10997,10 @@ current_scope:
           - 0.9975734106829254
           - 1.0042720750135432
     paired_effects: *id002
-  next_direction: Latest optimized ablations complete; discuss updated paired conclusions.
-    Generalization remains supplementary and was not rerun.
+  next_direction: Discuss sealed EXP-0282/L32-0038 updated paper conclusions; native
+    decode regression resolved (Llama pipeline tie), shared optimization fair controls,
+    SP2 low but nonzero cost, log2 benefit phase-dependent. No new experiment authorized
+    by this closure.
   latest_paper_pipeline_result:
     id: EXP-0282
     phase: A2
@@ -11882,3 +11884,14 @@ current_scope:
             FP:
               prefill: 1818.7422646440443
               decode: 47.10263908552258
+  latest_paper_ablation_synthesis:
+    experiments:
+    - EXP-0282
+    - L32-0038
+    report: /mnt/d/llm_exp/results/paper-latest-ablations-20260915-a02/REPORT.md
+    updated_conclusions: /mnt/d/llm_exp/results/paper-latest-ablations-20260915-a02/UPDATED_CONCLUSIONS.md
+    module_tables: /mnt/d/llm_exp/results/paper-latest-ablations-20260915-a02/MODULE_TABLES.md
+    ledger_sha256: a8b755b64da9691a1346af509d780f6bdca5961a533ebbc445a28bacab43033f
+    generalization: supplementary only; not rerun or included
+    quality_claim: false
+    baseline_promoted: false
