@@ -36,6 +36,13 @@ struct qbh_attention_u8_telemetry {
     uint32_t dynamic_hvx_tile4_mismatch_count;
 };
 
+/* A9: continuous FP32 softmax of the actual raw HMX U8 scores. Optional
+ * dense probability dump is diagnostic-only; production passes NULL. */
+void qbh_attention_fp32_softmax_native(const uint8_t *scores,uint8_t *probability,
+    uint32_t heads,uint32_t first_row,uint32_t rows,uint32_t past,
+    uint32_t padded,const struct qbh_attention_config *config,float *scratch,float *dump,
+    struct qbh_attention_u8_telemetry *telemetry);
+
 void qbh_attention_u8_pack_k_native(
     const uint8_t *k_head_tiles,
     const struct qbh_attention_config *config,
@@ -213,7 +220,7 @@ void qbh_attention_u8_requant_softmax_dynamic(
     uint32_t valid_tokens, uint32_t padded_tokens,
     const struct qbh_attention_config *config,
     struct qbh_attention_u8_telemetry *telemetry,
-    uint32_t use_hvx_tile4, uint32_t verify_hvx_tile4, uint32_t wide_score_mode);
+    uint32_t use_hvx_tile4, uint32_t verify_hvx_tile4, uint32_t wide_score_mode, void *fp_scratch);
 
 /* EXP-0161 segmented decode helper.  It converts a histogram of raw HMX QK
  * bytes into the exact per-raw-byte probability map used by the existing

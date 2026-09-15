@@ -2095,7 +2095,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (header->w4f16_decode_opt && header->variant!=QBH_BLOCK_W4F16) ||
         header->paper_format_disable > 7U ||
         ((header->paper_format_disable&4U) && ((header->paper_format_disable&3U) || !QBH_FP32_RESIDUAL(header) || QBH_LLAMA_SP2(header)!=8U || header->dense_r3_mode || header->dense_r4_mode)) || header->paper_pipeline_disable > 31U ||
-        header->wide_score_mode > 6U || header->prefix_kv_mode > 2U ||
+        header->wide_score_mode > 7U || header->prefix_kv_mode > 2U ||
         (header->prefix_kv_mode && header->variant != QBH_BLOCK_W4U8) ||
         (header->wide_score_mode && (header->variant != QBH_BLOCK_W4U8 || header->kv_cache_capacity > 128U)) ||
         header->experiment != QBH_BLOCK_EXPERIMENT ||
@@ -14490,7 +14490,7 @@ static void qbh_attention_u8_pool_run_tasks(
             break;
         }
 
-        if (!qbh_attention_u8_fused_qk_requant_enabled(
+        if (header->wide_score_mode!=7U && !qbh_attention_u8_fused_qk_requant_enabled(
                 header->attention_pipeline_mode)) {
             start = HAP_perf_get_qtimer_count();
             qbh_attention_u8_requant_qk(
@@ -14502,7 +14502,11 @@ static void qbh_attention_u8_pool_run_tasks(
         }
 
         start = HAP_perf_get_qtimer_count();
-        if (qbh_attention_u8_fused_qk_requant_enabled(
+        if(header->wide_score_mode==7U) {
+            qbh_attention_fp32_softmax_native(score_group,probability_group,
+                QBH_ATTENTION_Q_HEADS_PER_GROUP,0U,64U,0U,64U,config,
+                (float *)softmax_scratch,NULL,telemetry_ptr);
+        } else if (qbh_attention_u8_fused_qk_requant_enabled(
                 header->attention_pipeline_mode)) {
             if (qbh_attention_u8_lut_templates_enabled(
                     header->attention_pipeline_mode)) {
@@ -18035,7 +18039,7 @@ static int qbh_scan_u8_attention_delta_pipeline(
             header->w4u8_decode_softmax_mode ==
                 QBH_BLOCK_W4U8_DECODE_SOFTMAX_HVX_TILE4,
             header->generation_boundary_audit_enabled != 0U ||
-                header->numerical_audit_enabled != 0U, header->wide_score_mode);
+                header->numerical_audit_enabled != 0U, header->wide_score_mode, first_slot->weight);
         qbh_wide_decode_audit(header,shared,1U,first_config->group_index,first_slot->probability,padded_tokens);
         header->u8_attention_softmax_ticks +=
             HAP_perf_get_qtimer_count() - start;
@@ -18073,7 +18077,7 @@ static int qbh_scan_u8_attention_delta_pipeline(
             header->w4u8_decode_softmax_mode ==
                 QBH_BLOCK_W4U8_DECODE_SOFTMAX_HVX_TILE4,
             header->generation_boundary_audit_enabled != 0U ||
-                header->numerical_audit_enabled != 0U, header->wide_score_mode);
+                header->numerical_audit_enabled != 0U, header->wide_score_mode, second_slot->weight);
         qbh_wide_decode_audit(header,shared,1U,second_config->group_index,second_slot->probability,padded_tokens);
         header->u8_attention_softmax_ticks +=
             HAP_perf_get_qtimer_count() - start;
@@ -18589,7 +18593,7 @@ static int qbh_scan_u8_attention_segmented_short_pipeline(
             header->w4u8_decode_softmax_mode ==
                 QBH_BLOCK_W4U8_DECODE_SOFTMAX_HVX_TILE4,
             header->generation_boundary_audit_enabled != 0U ||
-                header->numerical_audit_enabled != 0U, header->wide_score_mode);
+                header->numerical_audit_enabled != 0U, header->wide_score_mode, first_slot->weight);
         qbh_wide_decode_audit(header,shared,1U,first_config->group_index,first_slot->probability,padded_tokens);
         header->u8_attention_softmax_ticks +=
             HAP_perf_get_qtimer_count() - start;
@@ -18641,7 +18645,7 @@ static int qbh_scan_u8_attention_segmented_short_pipeline(
             header->w4u8_decode_softmax_mode ==
                 QBH_BLOCK_W4U8_DECODE_SOFTMAX_HVX_TILE4,
             header->generation_boundary_audit_enabled != 0U ||
-                header->numerical_audit_enabled != 0U, header->wide_score_mode);
+                header->numerical_audit_enabled != 0U, header->wide_score_mode, second_slot->weight);
         qbh_wide_decode_audit(header,shared,1U,second_config->group_index,second_slot->probability,padded_tokens);
         header->u8_attention_softmax_ticks +=
             HAP_perf_get_qtimer_count() - start;
@@ -20135,7 +20139,7 @@ static int qbh_scan_u8_attention(
                 QBH_BLOCK_W4U8_DECODE_SOFTMAX_HVX_TILE4,
             header->generation_boundary_audit_enabled != 0U ||
                 header->numerical_audit_enabled != 0U ||
-                header->w4u8_decode_common_padding_poison != 0U, header->wide_score_mode);
+                header->w4u8_decode_common_padding_poison != 0U, header->wide_score_mode, weight);
         qbh_wide_decode_audit(header,shared,1U,config->group_index,plane_a,padded_tokens);
         header->u8_attention_softmax_ticks +=
             HAP_perf_get_qtimer_count() - start;

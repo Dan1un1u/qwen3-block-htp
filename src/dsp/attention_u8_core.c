@@ -1385,6 +1385,10 @@ void qbh_attention_u8_requant_softmax_group_rows_prebuilt_templates_shuffle4(
     const struct qbh_attention_config *config,
     struct qbh_attention_u8_telemetry *telemetry,
     uint32_t first_row, uint32_t row_count, uint32_t wide_score_mode) {
+    if(wide_score_mode==7U) {
+        qbh_attention_fp32_softmax_native(score_tiles,probability_tiles,2U,
+            first_row,row_count,0U,64U,config,(float *)scratch,NULL,telemetry);return;
+    }
     struct qbh_attention_config normalization_config;
     if(wide_score_mode>=3U && config!=NULL) {
         normalization_config=*config;
@@ -2821,7 +2825,12 @@ void qbh_attention_u8_requant_softmax_dynamic(
     uint32_t valid_tokens, uint32_t padded_tokens,
     const struct qbh_attention_config *config,
     struct qbh_attention_u8_telemetry *telemetry,
-    uint32_t use_hvx_tile4, uint32_t verify_hvx_tile4, uint32_t wide_score_mode) {
+    uint32_t use_hvx_tile4, uint32_t verify_hvx_tile4, uint32_t wide_score_mode, void *fp_scratch) {
+    if(wide_score_mode==7U) {
+        qbh_attention_fp32_softmax_native(score_tiles,probability_tiles,
+            QBH_ATTENTION_Q_HEADS_PER_GROUP,0U,query_rows,past_tokens,
+            padded_tokens,config,(float *)fp_scratch,NULL,telemetry);return;
+    }
     struct qbh_attention_config normalization_config;
     if(wide_score_mode>=3U && config!=NULL) {
         normalization_config=*config;
