@@ -46,7 +46,7 @@ def replay(key,basekey,layers,origlayer,base):
  manifest(dst,parent,pm,changes,base)
 
 def frontend(base):
- dst,parent,pm,changes=clone('full-fp','full',None,base)
+ dst,parent,pm,changes=clone('full-fp-a02','full',None,base)
  embed=np.memmap(dst/'generation_embedding_weight_f16.bin',dtype='<f2',mode='r',shape=(128256,2048));prompt=np.fromfile(dst/'generation_prompt_token_ids_u32.bin','<u4').tolist();fixed=read(R.parent/'l32-0016/frontend-a02-reference/teacher.json')['u8_generated_ids'];qs=[load_qparams_bin(dst/f'layer{i}/qparams_u8.bin') for i in range(16)];gq=load_qparams_bin(dst/'generation_qparams_u8.bin');gamma=np.fromfile(dst/'generation_final_norm_weight_f16.bin','<f2');cv=HmxU8Converter(S/'build/l32-0003/qbh_hmx_u8_reference.so')
  for mode in ['greedy','fixed']:
   caches=[None]*16;tokens=[];codes=[]
@@ -61,13 +61,13 @@ def frontend(base):
       ref=np.full((8,80,64),qs[i]['k_rope' if n=='k' else 'v']['zero_point'],dtype='u1');ref[:,:64]=caches[i][j];ref.tofile(dst/f'layer{i}/reference_kv_cache_{n}_u8.bin')
    if step==0 and mode=='greedy':x.tofile(dst/'reference_w4u8_block_output_f32.bin')
    act=norm(x[-1:],gamma,gq['generation_final_norm_output']);logits=project_w4u8(act,dst,'generation_lm_head',128256,2048,gq['generation_final_norm_output'],gq['generation_lm_head_output'],cv)[0];token=int(logits.argmax());tokens.append(token);codes.append(int(logits[token]));print('FRONTEND_REFERENCE',mode,step,token,codes[-1],flush=True)
-  write(R/(mode+'-fp-teacher.json'),dict(ids=tokens,codes=codes,fixed_inputs=fixed if mode=='fixed' else None,reference='independent FP32 ordered residual, exact HMX converter and Float64 continuous softmax, rawQK/integerAV, all16 layers'))
+  write(R/(mode+'-fp-teacher-a02.json'),dict(ids=tokens,codes=codes,fixed_inputs=fixed if mode=='fixed' else None,reference='independent FP32 ordered residual, exact HMX converter and Float64 continuous softmax, rawQK/integerAV, all16 layers'))
   if mode=='greedy':np.array(tokens,'<u4').tofile(dst/'generation_expected_token_ids_u32.bin')
  manifest(dst,parent,pm,changes,base)
 
 def main():
  z=subprocess.check_output(['python3','/home/daniuniu/work/llama32-htp-project-memory/scripts/project_memory.py','preflight','--source-worktree',str(S)],text=True);assert 'ACTIVE_EXPERIMENT=L32-0033' in z
- base=M/'l32-0003/frontend-a01';verify(base,'732f4458806bf8fabb79f3c191e2f7106298cdcac3c2b5e9bc2a3c25e3dff197');single=M/'l32-0003/layers-a01/layer7-prefill';verify(single,'4e94073d03891e1c4e1bfcf3d061dd916217a0fcb8962721f388d4fbf1e64a45');O.mkdir(exist_ok=False)
- replay('layer7-fp','l7',1,7,single);replay('chain3-fp','chain3',3,None,base);replay('chain16-fp','chain16',16,None,base)
+ base=M/'l32-0003/frontend-a01';verify(base,'732f4458806bf8fabb79f3c191e2f7106298cdcac3c2b5e9bc2a3c25e3dff197');single=M/'l32-0003/layers-a01/layer7-prefill';verify(single,'4e94073d03891e1c4e1bfcf3d061dd916217a0fcb8962721f388d4fbf1e64a45');O.mkdir(exist_ok=True)
+ replay('layer7-fp-a02','l7',1,7,single);replay('chain3-fp-a02','chain3',3,None,base);replay('chain16-fp-a02','chain16',16,None,base)
  if '--full' in sys.argv:frontend(base)
 if __name__=='__main__':main()

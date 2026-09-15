@@ -33,7 +33,7 @@ def floating_attention(q,k,v,past,cfg):
    for row in range(rows):
     n=past+row+1;xs=raw[h,row,:n].astype('f8');xs=(xs-xs.max())*int(c[12])/2**int(c[2]);ex=np.exp2(xs);pp[h,row,:n]=np.clip(np.floor(255*ex/ex.sum()+.5),0,255)
   vc=vv-int(c[6]);vc=np.clip(np.sign(vc)*((np.abs(vc)*int(c[9])+int(c[10])//2)//int(c[10])),-128,127)
-  accum=pp@vc;div=2**int(c[13]);temp=np.clip((accum+div//2)//div+128,0,255);value=np.clip((temp-128)*int(c[14])+int(c[8]),0,255)
+  accum=pp@vc;div=2**int(c[13]);zero=int(c[8]) if int(c[14])==1 else 128;temp=np.clip((accum+div//2)//div+zero,0,255);value=temp if int(c[14])==1 else np.clip((temp-128)*int(c[14])+int(c[8]),0,255)
   av[:,4*g:4*g+4]=value.transpose(1,0,2);score[4*g:4*g+4]=raw;prob[4*g:4*g+4]=pp
  return av,score,prob
 
