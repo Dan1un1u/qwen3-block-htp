@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0281
+  active_experiment: null
   next_experiment_number: 282
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -2498,8 +2498,8 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: Qwen3_28layer_native_W4_SP2_M64_plus15_verified
-  last_completed_experiment: EXP-0279
-  last_completed_source_commit: f8b0a7508876ac26f8191eea55c9adc86ae7954e
+  last_completed_experiment: EXP-0281
+  last_completed_source_commit: b57c5254fe3857615c64568fd4d2077fea6414a0
   provisional_source_parent: EXP0268_diagnostic_U8_pipeline_closure_no_default_promotion
   device_execution_state: idle_no_active_device_process
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
@@ -10998,8 +10998,9 @@ current_scope:
           ci95:
           - 0.9861854313212546
           - 0.9897205140429328
-  next_direction: Llama decode then Llama exact log2 softmax, then both-model bounded
-    latest-version generalization. No factorial rerun.
+  next_direction: 'User sequential task completed: both native decode optimized, Llama
+    exact log2 optimized, bounded latest runtime generalization complete; no factorial
+    rerun or baseline promotion.'
   latest_paper_pipeline_result:
     id: EXP-0275
     execution_state: completed
@@ -11349,5 +11350,79 @@ current_scope:
           ci95:
           - 1.0005329479978924
           - 1.0029516089451553
+    quality_claim: false
+    baseline_promoted: false
+  latest_bounded_generalization:
+    id: EXP-0281
+    execution_state: completed
+    local_gate: pass
+    evidence_validity: valid
+    source_closure: b57c5254fe3857615c64568fd4d2077fea6414a0
+    measured_source: f525731c7494207128b78135f37c4c787b11aa54
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0281
+    evidence_ledger_sha256: fe0c053a60bd83e6b32853a3581b0a31c7005277ec532ca517af2a46eb88678d
+    cases:
+      A16:
+        tps:
+          LATEST:
+            prefill: 1841.5430155415354
+            decode: 47.403877287624894
+          ORIGINAL:
+            prefill: 1844.5429762667695
+            decode: 47.203261962813556
+        effects:
+          prefill:
+            latest_over_original_wall: 1.0016290473260283
+            ci95:
+            - 0.9969073290833667
+            - 1.0059066069162215
+          decode:
+            latest_over_original_wall: 0.9957679553595565
+            ci95:
+            - 0.9920139841365726
+            - 0.9994876394766098
+      A64:
+        tps:
+          LATEST:
+            prefill: 1841.625760149161
+            decode: 47.44602669199802
+          ORIGINAL:
+            prefill: 1839.825411423426
+            decode: 47.15308635897752
+        effects:
+          prefill:
+            latest_over_original_wall: 0.9990224133672039
+            ci95:
+            - 0.9964483260780189
+            - 1.0012615986703868
+          decode:
+            latest_over_original_wall: 0.9938258194954414
+            ci95:
+            - 0.9925858886993709
+            - 0.9950001698917762
+      B64:
+        tps:
+          LATEST:
+            prefill: 1836.3791038926772
+            decode: 47.175008758468316
+          ORIGINAL:
+            prefill: 1833.9944327333776
+            decode: 46.97331295402185
+        effects:
+          prefill:
+            latest_over_original_wall: 0.9987014276331914
+            ci95:
+            - 0.99711699361534
+            - 1.0000306975290798
+          decode:
+            latest_over_original_wall: 0.9957245200423994
+            ci95:
+            - 0.9942819595649987
+            - 0.9971622543621514
+    scope: M64, two fixed tokenized English/Chinese texts,15/63decode,cache128,maxKV127
+    numerical_scope: Qwen selected0/14/27 andchain3 independent exact inherited, all288
+      full28 actual last-hidden/norm paired bytes exact and actual finalNorm/full-vocabulary
+      head independently checked; not full28 CPU transformer equivalence
+    physical_gate: true
     quality_claim: false
     baseline_promoted: false

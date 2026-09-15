@@ -1,5 +1,9 @@
 # Current checkpoint
 
+EXP-0281 completed and sealed; native decode optimization, Llama exact log2 optimization and bounded generalization finished. No active experiment. Latest working flags and results are in PROJECT_STATUS latest_decode_native_optimization, latest_exact_log2_optimization (Llama) and latest_bounded_generalization. No selected-baseline/quality promotion; no factorial rerun.
+
+# Current checkpoint
+
 EXP0281 registered, CPU preparation only while Llama owns device. Execute hardware after Llama softmax stage. Protocol docs/experiments/EXP-0281.md is authoritative.
 
 # Current checkpoint 2026-09-15
