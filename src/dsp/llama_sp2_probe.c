@@ -50,7 +50,7 @@ static int lsp2_gather_audit(uint8_t *shared,uint32_t bytes,uint8_t *vtcm,uint32
  uint8_t *base=(uint8_t *)(((uintptr_t)vtcm+65535U)&~(uintptr_t)65535U);
  uint16_t *lut=(uint16_t *)base;
  uint8_t *g=base+131072U,*u=g+65536U,*out=u+65536U,*scratch=out+262144U;
- if(scratch+768U>vtcm+vbytes)return AEE_ENOMEMORY;
+ if(scratch+896U>vtcm+vbytes)return AEE_ENOMEMORY;
  memcpy(lut,shared+h->input_offset,131072U);
  for(uint32_t i=0;i<65536U;i++){g[i]=(uint8_t)(i>>8);u[i]=(uint8_t)i;}
  qbh_mlp_gate_up_sp2_lut_hvx(g,u,out,out+65536U,65536U,lut,scratch);
@@ -59,6 +59,9 @@ static int lsp2_gather_audit(uint8_t *shared,uint32_t bytes,uint8_t *vtcm,uint32
    *(HVX_Vector *)(scratch+256U)=Q6_V_vror_VR(*(const HVX_Vector *)(g+(i&~127U)),i&127U);
    *(HVX_Vector *)(scratch+384U)=Q6_V_vror_VR(*(const HVX_Vector *)(u+(i&~127U)),i&127U);
    qbh_mlp_gate_up_sp2_decode_row1_hvx(scratch+256U,scratch+384U,scratch+512U,scratch+640U,lut,scratch);
+   for(uint32_t j=32U;j<128U;j++)if(scratch[512U+j]!=0U || scratch[640U+j]!=128U)return AEE_EFAILED;
+   for(uint32_t j=0;j<32U;j++)if(scratch[512U+j]!=(uint8_t)lut[i+j] || scratch[640U+j]!=(uint8_t)(lut[i+j]>>8))return AEE_EFAILED;
+   qbh_mlp_gate_up_sp2_decode_row1_compact_hvx(scratch+256U,scratch+384U,scratch+512U,scratch+640U,lut,scratch,scratch+768U);
    for(uint32_t j=32U;j<128U;j++)if(scratch[512U+j]!=0U || scratch[640U+j]!=128U)return AEE_EFAILED;
    memcpy(out+131072U+i,scratch+512U,32U);memcpy(out+196608U+i,scratch+640U,32U);
  }
@@ -71,7 +74,7 @@ static int lsp2_gather_audit(uint8_t *shared,uint32_t bytes,uint8_t *vtcm,uint32
  }
  memcpy(shared+h->output_offset,out,262144U);
  h->streams=65536U;h->conversions=mismatch;h->vtcm_bytes=vbytes;
- h->peak_bytes=(uint32_t)(scratch+768U-vtcm);h->status=mismatch?AEE_EFAILED:AEE_SUCCESS;
+ h->peak_bytes=(uint32_t)(scratch+896U-vtcm);h->status=mismatch?AEE_EFAILED:AEE_SUCCESS;
  return h->status;
 }
 #include "llama_rotation_probe.inc"

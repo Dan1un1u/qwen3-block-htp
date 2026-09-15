@@ -4612,9 +4612,9 @@ static void qbh_w4u8_swiglu_stream_worker_run(
             if(pool->u8_r4_act)qbh_r4_prepare_tile(pool->u8_swiglu_gate,pool->u8_swiglu_up,
                 pool->u8_r4_act,1U,output_tile,pool->u8_swiglu_lut,pool->u8_swiglu_gather_scratch);
             else if(pool->u8_sp2_high && (pool->attention_header->paper_format_disable&2U))
-                qbh_mlp_gate_up_sp2_compact_hvx(pool->u8_swiglu_gate+(size_t)output_tile*2048U,
+                qbh_mlp_gate_up_sp2_decode_row1_compact_hvx(pool->u8_swiglu_gate+(size_t)output_tile*2048U,
                     pool->u8_swiglu_up+(size_t)output_tile*2048U,pool->u8_swiglu_middle+(size_t)output_tile*2048U,
-                    pool->u8_sp2_high+(size_t)output_tile*2048U,128U,pool->u8_swiglu_lut,
+                    pool->u8_sp2_high+(size_t)output_tile*2048U,pool->u8_swiglu_lut,
                     pool->u8_swiglu_gather_scratch,pool->attention_buffers->normalized);
             /* L32-0035: match compact's dual-gather scheduling while directly
              * publishing native SP2 planes. Bit8 retains original decode control. */
@@ -15394,13 +15394,13 @@ static int qbh_run_w4u8_direct_n_mlp(
              tile < QBH_BLOCK_INTERMEDIATE / QBH_HMX_OUTPUT_CHANNELS;
              ++tile) {
             if(QBH_LLAMA_SP2(header)) {
-                if(header->paper_format_disable&2U)qbh_mlp_gate_up_sp2_compact_hvx(
+                if(header->paper_format_disable&2U)qbh_mlp_gate_up_sp2_decode_row1_compact_hvx(
                     gate_native+(size_t)tile*2048U,up_native+(size_t)tile*2048U,
                     middle_native+(size_t)tile*2048U,((header->paper_format_disable&4U)?buffers->sp2_high:middle_native+128U)+(size_t)tile*2048U,
-                    128U,(const uint16_t *)buffers->w4u8_silu_lut,buffers->w4u8_gather_scratch,buffers->normalized);
-                else qbh_mlp_gate_up_sp2_lut_hvx(gate_native+(size_t)tile*2048U,up_native+(size_t)tile*2048U,
+                    (const uint16_t *)buffers->w4u8_silu_lut,buffers->w4u8_gather_scratch,buffers->normalized);
+                else qbh_mlp_gate_up_sp2_decode_row1_hvx(gate_native+(size_t)tile*2048U,up_native+(size_t)tile*2048U,
                     middle_native+(size_t)tile*2048U,((header->paper_format_disable&4U)?buffers->sp2_high:middle_native+128U)+(size_t)tile*2048U,
-                    128U,(const uint16_t *)buffers->w4u8_silu_lut,buffers->w4u8_gather_scratch);
+                    (const uint16_t *)buffers->w4u8_silu_lut,buffers->w4u8_gather_scratch);
             } else qbh_mlp_gate_up_lut_hvx(
                 gate_native + (size_t)tile * QBH_HMX_OUTPUT_BYTES,
                 up_native + (size_t)tile * QBH_HMX_OUTPUT_BYTES,
