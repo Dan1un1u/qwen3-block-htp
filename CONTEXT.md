@@ -1,3 +1,7 @@
+# Current checkpoint
+
+EXP0281 registered, CPU preparation only while Llama owns device. Execute hardware after Llama softmax stage. Protocol docs/experiments/EXP-0281.md is authoritative.
+
 # Current checkpoint 2026-09-15
 
 EXP0280 completed: optimized native row1 retained. See authoritative latest_decode_native_optimization and docs/experiments/EXP-0280.md for exact paired values. L32-0035 C2 owns device. Follow-on authorized softmax then bounded generalization remain.

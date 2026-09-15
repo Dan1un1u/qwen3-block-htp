@@ -24,6 +24,20 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0281
+  title: Latest exact native runtime bounded prompt and decode generalization
+  parent: EXP-0280
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/EXP-0281.md
+  approval_ref: User2026-09-15 sequential decode then Llama log2 optimization then
+    latest bounded generalization, PC087; no repeated permission
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0281-bounded-generalization
+    started_on: '2026-09-15'
 - id: EXP-0280
   title: Decode native producer diagnosis and exact layout optimization
   parent: EXP-0279
