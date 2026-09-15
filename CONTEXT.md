@@ -1,3 +1,7 @@
+# Current checkpoint L32-0039
+
+Registered W16A16 fairness refresh under latest user approval. Read docs/experiments/L32-0039.md. Qwen owns device first, Llama local preparation only until release. Previous paper ablations sealed. New formal same-binary M64+15 control/candidate required.
+
 Latest cross-model paper ablation synthesis: /mnt/d/llm_exp/results/paper-latest-ablations-20260915-a02/UPDATED_CONCLUSIONS.md; ledger a8b755b64da9691a1346af509d780f6bdca5961a533ebbc445a28bacab43033f. Generalization remains supplementary and was not rerun.
 
 # Current checkpoint

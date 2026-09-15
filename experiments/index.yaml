@@ -1,6 +1,23 @@
 schema_version: 1
 project: llama32-htp
 experiments:
+- id: L32-0039
+  title: W16A16 fair baseline implementation refresh and matched full-model E2E
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: pending
+  approval_ref: 'User 2026-09-16: 补做浮点基线 per annotated audit, then discuss SP2 A16
+    Down comparison; no automatic implementation of A16 Down.'
+  parent_source: 5b01822b529fc2968c1b15124cdfd430709fef71
+  record: docs/experiments/L32-0039.md
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  evidence:
+    device_owner: Qwen first, Llama after explicit local release
+    recipe: F16F16 only; other recipes frozen
+    baseline_promoted: false
 - id: L32-0038
   title: Latest optimized runtime paper ablation rerun; generalization excluded
   execution_state: completed
