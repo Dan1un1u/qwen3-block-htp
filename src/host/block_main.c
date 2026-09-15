@@ -7000,6 +7000,9 @@ int main(int argc, char **argv) {
     header->dense_r3_mode=dense_r3_mode;
     header->w4f16_decode_audit=getenv("QBH_W4F16_DECODE_AUDIT") ? (uint32_t)atoi(getenv("QBH_W4F16_DECODE_AUDIT")) : 0U;
     header->w4f16_decode_opt=getenv("QBH_W4F16_DECODE_OPT") ? (uint32_t)atoi(getenv("QBH_W4F16_DECODE_OPT")) : 0U;
+    /* FP16 fairness experiments share the existing telemetry/ABI field. */
+    if (variant==QBH_BLOCK_F16F16 && getenv("QBH_F16F16_OPT"))
+        header->w4f16_decode_opt=(uint32_t)atoi(getenv("QBH_F16F16_OPT"));
     header->dense_r3_optimization=getenv("QBH_R3_OPT") ? (uint32_t)atoi(getenv("QBH_R3_OPT")) : 0U;
     header->dense_r3_audit_offset=(uint32_t)dense_r3_audit_offset;
     header->w4u8_boundary_audit_enabled =
