@@ -24,12 +24,25 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
-- id: EXP-0276
-  title: SP2 decode independent streams versus physical-row copacking
-  parent: EXP-0275
+- id: EXP-0277
+  title: Ordinary A8 versus SP2 at fixed FP32 residual contract
+  parent: EXP-0276
   execution_state: running
   evidence_validity: not_checked
   local_gate: not_run
+  adoption_status: not_applicable
+  record: docs/experiments/EXP-0277.md
+  approval_ref: Standing user-approved A5 paper campaign
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0276-sp2-decode-stream-ablation
+    started_on: '2026-09-15'
+- id: EXP-0276
+  title: SP2 decode independent streams versus physical-row copacking
+  parent: EXP-0275
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: not_applicable
   record: docs/experiments/EXP-0276.md
   approval_ref: Standing user-approved A3 paper campaign
@@ -37,6 +50,44 @@ experiments:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0276-sp2-decode-stream-ablation
     started_on: '2026-09-15'
+    completed_on: '2026-09-15'
+  evidence:
+    id: EXP-0276
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    measured_source: 2aeb9e462a8a42b0bf9be7443eaa282cb2cd5d9d
+    source_closure: 1bc4204edbdbf69e2bde0876a4cbbecb17c5716e
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0276
+    evidence_ledger_sha256: 07fa8eb7877a063519f0b450fcd087e33506ae5931591644cae68bcc93077814
+    evidence_files: 387
+    timed_profiles: 4800
+    independent_numerical_exact: true
+    physical_gate: true
+    weight_bytes_identical: true
+    extra_decode_tile_pairs_per_layer: 12288
+    baseline_promoted: false
+    quality_claim: false
+    effects:
+      prefill:
+        SPLIT:
+          ratio: 1.0008716342384452
+          ci95:
+          - 0.9991798441968693
+          - 1.0027711552353962
+      decode:
+        SPLIT:
+          ratio: 1.0093053619849592
+          ci95:
+          - 1.0076747264703934
+          - 1.010685797105449
+    performance:
+      ALL:
+        prefill: 1846.0245489969134
+        decode: 47.07701325877952
+      SPLIT:
+        prefill: 1844.416892083806
+        decode: 46.6429834140533
 - id: EXP-0275
   title: Individual pipeline knockouts and layer scaling
   parent: EXP-0274
