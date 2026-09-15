@@ -1,3 +1,7 @@
+# Active L32-0034: approved longer-KV appendix
+
+Read docs/experiments/L32-0034.md. Qwen EXP0278/vsum owns device; Llama local preparation only until release. L32-0033 complete and sealed. No promotion or PPL.
+
 # L32-0033 complete; A8 remains
 
 Source 0dfebbd6f72b145574c66d22d7dd13dfb3175883, measured 78560f4c12c63d2d1ac07405baca84c4ed275b8d; branch codex/llama32-no-rotation clean/pushed. All Llama A9 device work finished. Qwen EXP0278/vsum owns device: do not deploy/hash/profile Llama until release. Ledger c647b984f5cc875a366f6829589c66a6b5428961b867ff1159cc4f9813866904, 1497 files / 300912966 bytes under /mnt/d/llm_exp/results/llama32-htp/l32-0033; immutable.

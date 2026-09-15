@@ -1,6 +1,14 @@
 schema_version: 1
 project: llama32-htp
 experiments:
+- id: L32-0034
+  title: Supported longer KV full-model pipeline ablation
+  execution_state: running
+  record: docs/experiments/L32-0034.md
+  approval_ref: Standing user-approved paper A8 supported shape appendix
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
 - id: L32-0033
   title: FP32 HVX softmax versus retained Llama log2
   execution_state: completed
