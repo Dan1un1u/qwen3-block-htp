@@ -1,0 +1,43 @@
+{
+  "campaign": "approved no-rotation paper ablations 2026-09-15",
+  "files": {
+    "EVIDENCE_INDEX.json": {
+      "bytes": 5791,
+      "sha256": "9e8b178189bdf4bc913e8a22689608d62dcb6a3d2f5cd0055c4a0f6608e4afa4"
+    },
+    "MODULE_TABLES.md": {
+      "bytes": 74550,
+      "sha256": "d557de01e97c7cd862c40db1568cffe62b1cb88839f9de4eda932cc1a379b2cd"
+    },
+    "QA.json": {
+      "bytes": 958,
+      "sha256": "e34cd0412d5a12517be4bb62c2d5c4ad6b849fad327d2b6493daeddf64d40cc8"
+    },
+    "REPORT.md": {
+      "bytes": 9742,
+      "sha256": "ed2b6a63f1fb6799144c938dab0c23a05749f49ffd5ed3c21d02b35f7bd7a1f9"
+    },
+    "REPRODUCE.md": {
+      "bytes": 786,
+      "sha256": "4f6aad3f1a1f91c06e1fc294744892bc3758c7236324c4ba90f1f0ccaf8fda42"
+    },
+    "paired_representation_costs.json": {
+      "bytes": 3219,
+      "sha256": "1e657fa06724ce8804271ebe29c77832fe281cfacd5a4d9265f2f3e37ef8af0b"
+    },
+    "paired_representation_costs.pdf": {
+      "bytes": 21445,
+      "sha256": "57a1bad7e2cab09a6fab50942494cb069f92130ac0a45ec61f155aff67dafce9"
+    },
+    "paired_representation_costs.png": {
+      "bytes": 118412,
+      "sha256": "c0262a230d0a76c34e88f086f19b4f480c5aebc2d3bd41017f4702202be001ea"
+    },
+    "paired_representation_costs.svg": {
+      "bytes": 83458,
+      "sha256": "1add506b60b2d605ef894a98b1776ba746e792cb545138c34a6211665a129f22"
+    }
+  },
+  "total_files": 9,
+  "total_bytes": 318361
+}
