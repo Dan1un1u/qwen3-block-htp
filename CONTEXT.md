@@ -1,3 +1,7 @@
+# Active EXP0280: decode layout optimization
+
+Read docs/experiments/EXP-0280.md. New user-approved sequence: both-model decode layout, Llama log2, then bounded generalization. Completed old campaign remains sealed. Current Qwen parent f8b0a750, Llama573c721; no device process at registration. Preflight before source/build/model/device.
+
 # Approved paper ablation campaign complete
 
 Qwen sourcef8b0a7508876ac26f8191eea55c9adc86ae7954e, branchcodex/exp-0279-long-kv-pipeline-ablation clean/pushed, measured0e683fa5f1dd708b077f81530d516d036d8c1d0e. ActiveNone,next280. Llama finishedL32-0034, source573c721 (fullHEADinLlamaauthority), ActiveNone,next35. No deviceowner/processremaining. No experimentresumption/timingnecessary.

@@ -24,6 +24,21 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0280
+  title: Decode native producer diagnosis and exact layout optimization
+  parent: EXP-0279
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/EXP-0280.md
+  approval_ref: User 2026-09-15 explicitly requests decode format optimization, Llama
+    log2 optimization, then bounded latest-version generalization; no full factorial
+    rerun
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0279-long-kv-pipeline-ablation
+    started_on: '2026-09-15'
 - id: EXP-0279
   title: Supported longer KV complete-model pipeline ablation
   parent: EXP-0278
