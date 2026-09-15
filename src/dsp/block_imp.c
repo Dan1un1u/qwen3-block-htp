@@ -314,7 +314,7 @@ struct qbh_sp2_epilogue {
 };
 struct qbh_block_hmx_worker {
     float *fp32_residual;
-    uint32_t fp32_first_channel, fp32_rows, fp32_sp2;
+    uint32_t fp32_first_channel, fp32_rows, fp32_sp2, fp32_split;
     int32_t fp32_input_zero;
     struct qbh_sp2_epilogue *sp2_epilogue;
     const uint8_t *sp2_high;
@@ -2133,7 +2133,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
           header->projections[QBH_BLOCK_PROJ_DOWN].lpbq_mode)) ||
         header->w4f16_decode_opt>2U || header->w4f16_decode_audit>1U ||
         (header->w4f16_decode_opt && header->variant!=QBH_BLOCK_W4F16) ||
-        header->paper_format_disable > 3U || header->paper_pipeline_disable > 31U ||
+        header->paper_format_disable > 7U ||
+        ((header->paper_format_disable & 4U) && (header->paper_format_disable & 3U)) || header->paper_pipeline_disable > 31U ||
         header->wide_score_mode > 6U || header->prefix_kv_mode > 2U ||
         (header->prefix_kv_mode && header->variant != QBH_BLOCK_W4U8) ||
         (header->wide_score_mode && (header->variant != QBH_BLOCK_W4U8 || header->kv_cache_capacity > 128U)) ||
@@ -9775,6 +9776,7 @@ static int qbh_run_w4u8_direct_n_projection(
     worker->fp32_residual=(float *)buffers->residual;
     worker->fp32_rows=header->logical_m;
     worker->fp32_sp2=desc==&header->projections[QBH_BLOCK_PROJ_DOWN];
+    worker->fp32_split=worker->fp32_sp2 && header->logical_m==1U && (header->paper_format_disable&4U);
     worker->fp32_input_zero=header->qparams[QBH_BLOCK_QP_ATTENTION_CONCAT].zero_point;
     worker->sp2_high = buffers->sp2_high;
     worker->sp2_scratch = buffers->sp2_scratch;
@@ -9800,7 +9802,7 @@ static int qbh_run_w4u8_direct_n_projection(
         ++header->hmx_command_count;
         ++header->w4u8_decode_direct_n_hmx_command_count;
         header->hmx_u8s8_tile_pair_count +=
-            (uint64_t)k_tiles * current_tiles * ((QBH_SP2(header) && desc==&header->projections[QBH_BLOCK_PROJ_DOWN] && header->logical_m==64U) ? 2U : 1U);
+            (uint64_t)k_tiles * current_tiles * ((QBH_SP2(header) && desc==&header->projections[QBH_BLOCK_PROJ_DOWN] && (header->logical_m==64U || worker->fp32_split)) ? 2U : 1U);
 
         if (next_first < n_tiles) {
             next_tiles = n_tiles - next_first;
@@ -10014,7 +10016,10 @@ static int qbh_start_w4u8_gate_up_swiglu_stream(
     pool->u8_swiglu_gate = gate;
     pool->u8_swiglu_up = up;
     pool->u8_swiglu_middle = middle;
-    pool->u8_sp2_high = QBH_SP2(header) ? middle + 128U : NULL;
+    /* EXP0276: independent streams are produced directly in the existing
+     * dead high plane; no post-SwiGLU native-to-native conversion. */
+    pool->u8_sp2_high = QBH_SP2(header) ?
+        ((header->paper_format_disable&4U) ? buffers->sp2_high : middle+128U) : NULL;
     pool->u8_swiglu_lut =
         (const uint16_t *)buffers->w4u8_silu_lut;
     pool->u8_swiglu_gather_scratch = buffers->w4u8_gather_scratch;
@@ -15396,10 +15401,10 @@ static int qbh_run_w4u8_direct_n_mlp(
             if(QBH_SP2(header)) {
                 if(header->paper_format_disable&2U)qbh_mlp_gate_up_sp2_compact_hvx(
                     gate_native+(size_t)tile*2048U,up_native+(size_t)tile*2048U,
-                    middle_native+(size_t)tile*2048U,middle_native+(size_t)tile*2048U+128U,
+                    middle_native+(size_t)tile*2048U,((header->paper_format_disable&4U)?buffers->sp2_high:middle_native+128U)+(size_t)tile*2048U,
                     128U,(const uint16_t *)buffers->w4u8_silu_lut,buffers->w4u8_gather_scratch,buffers->normalized);
                 else qbh_mlp_gate_up_sp2_lut_hvx(gate_native+(size_t)tile*2048U,up_native+(size_t)tile*2048U,
-                    middle_native+(size_t)tile*2048U,middle_native+(size_t)tile*2048U+128U,
+                    middle_native+(size_t)tile*2048U,((header->paper_format_disable&4U)?buffers->sp2_high:middle_native+128U)+(size_t)tile*2048U,
                     128U,(const uint16_t *)buffers->w4u8_silu_lut,buffers->w4u8_gather_scratch);
             } else qbh_mlp_gate_up_lut_hvx(
                 gate_native + (size_t)tile * QBH_HMX_OUTPUT_BYTES,

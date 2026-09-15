@@ -937,7 +937,7 @@ struct qbh_block_header {
     uint32_t prefix_kv_mode, prefix_layer_index;
     /* Immutable seed metadata, [layer][K/V][head][channel], all U8. */
     uint8_t prefix_kv_u8[28][2048];
-    uint32_t paper_format_disable; /* EXP0274: bit1 Norm interface,bit2 SP2 interface. */
+    uint32_t paper_format_disable; /* bits1/2: modular Norm/SP2; bit4: EXP0276 separate decode SP2 streams (exclusive). */
     uint32_t paper_pipeline_disable; /* bit1 QKV prep,2 GateUp,4 O,8 Down,16 cross prefetch. */
     uint32_t wide_score_mode; /* 0 legacy; 1 HVX wide; 2 untimed scalar wide oracle. */
 #if defined(QBH_MODEL_LLAMA32) || defined(QBH_NATIVE_SP2)

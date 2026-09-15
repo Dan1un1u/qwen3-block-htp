@@ -6982,7 +6982,8 @@ int main(int argc, char **argv) {
 #endif
     header->paper_format_disable=getenv("QBH_PAPER_FORMAT_DISABLE")?(uint32_t)atoi(getenv("QBH_PAPER_FORMAT_DISABLE")):0U;
     header->paper_pipeline_disable=getenv("QBH_PAPER_PIPELINE_DISABLE")?(uint32_t)atoi(getenv("QBH_PAPER_PIPELINE_DISABLE")):0U;
-    if(header->paper_format_disable>3U || header->paper_pipeline_disable>31U ||
+    if(header->paper_format_disable>7U ||
+       ((header->paper_format_disable&4U) && (header->paper_format_disable&3U)) || header->paper_pipeline_disable>31U ||
        ((header->paper_format_disable || header->paper_pipeline_disable) &&
         (!qbh_host_fp32_residual() || header->sp2_mode!=8U || dense_r3_mode))) return 2;
     header->wide_score_mode=wide_score_mode;
