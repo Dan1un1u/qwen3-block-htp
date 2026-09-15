@@ -1,5 +1,9 @@
 # Current checkpoint
 
+L32-0037 completed and sealed; native decode optimization, Llama exact log2 optimization and bounded generalization finished. No active experiment. Latest working flags and results are in PROJECT_STATUS latest_decode_native_optimization, latest_exact_log2_optimization (Llama) and latest_bounded_generalization. No selected-baseline/quality promotion; no factorial rerun.
+
+# Current checkpoint
+
 L32-0036 completed and sealed. Latest working runtime native-row1 plus exact corrected-NR log2 mode8, no rotations. L32-0037 registered CPU preparation; Q EXP0281 owns device until release.
 
 # Current checkpoint

@@ -6,7 +6,7 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0037
+  active_experiment: null
   next_experiment_number: 38
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -14,7 +14,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: f7d61c62dbd4fb13354a96a8576b8f180e3b5ddc
+    recorded_head: 26d5729741a1cb4bc9a15166dfaa3f56b9bcb055
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -43,7 +43,7 @@ current_scope:
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0034
+  last_completed_experiment: L32-0037
   evidence_ledger_sha256: 599d86cf654b2b41526690c76ad1c0a251b5f206815a57ce4ae12b0024f94ac9
   formal_profiling_completed: false
   general_quantization_quality_accepted: false
@@ -1364,7 +1364,9 @@ current_scope:
           - 0.9870875472223184
           - 0.9941624837523004
   current_handoff: docs/SESSION_HANDOFF_L32_0032.md
-  next_direction: L32-0033 A9 FP32vector softmax, QwenEXP0278 ownsdevice
+  next_direction: 'User sequential task completed: both native decode optimized, Llama
+    exact log2 optimized, bounded latest runtime generalization complete; no factorial
+    rerun or baseline promotion.'
   latest_paper_pipeline_result:
     id: L32-0030
     execution_state: completed
@@ -1787,6 +1789,82 @@ current_scope:
         FP: 2.1659375
     quality_claim: false
     baseline_promoted: false
+  latest_bounded_generalization:
+    id: L32-0037
+    execution_state: completed
+    local_gate: pass
+    evidence_validity: valid
+    source_closure: 26d5729741a1cb4bc9a15166dfaa3f56b9bcb055
+    measured_source: 1858dab231ff436068f2162a9622d8562569283b
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0037
+    evidence_ledger_sha256: 240f259b760d9d38f95e0641d52e1316f716da35c7ab8630e777d4e726822f4d
+    cases:
+      A16:
+        tps:
+          LATEST:
+            prefill: 2325.101660637886
+            decode: 45.65998079660654
+          ORIGINAL:
+            prefill: 2157.6728555350014
+            decode: 45.16040090431526
+        effects:
+          prefill:
+            latest_over_original_wall: 0.9279907593128849
+            ci95:
+            - 0.923253727783922
+            - 0.9315861549310996
+          decode:
+            latest_over_original_wall: 0.9890586924572597
+            ci95:
+            - 0.9863946832381134
+            - 0.9916342706446126
+      A64:
+        tps:
+          LATEST:
+            prefill: 2320.229603656958
+            decode: 43.9026739217463
+          ORIGINAL:
+            prefill: 2155.4321268154044
+            decode: 43.32721279040673
+        effects:
+          prefill:
+            latest_over_original_wall: 0.9289736340826731
+            ci95:
+            - 0.9264751743907181
+            - 0.9323648357257669
+          decode:
+            latest_over_original_wall: 0.986892344362321
+            ci95:
+            - 0.9856656977247646
+            - 0.9880695287111502
+      B64:
+        tps:
+          LATEST:
+            prefill: 2317.4725420819955
+            decode: 43.775119278491566
+          ORIGINAL:
+            prefill: 2148.1849027464837
+            decode: 43.23112313099407
+        effects:
+          prefill:
+            latest_over_original_wall: 0.9269516094531911
+            ci95:
+            - 0.9242353819035102
+            - 0.9290954743979337
+          decode:
+            latest_over_original_wall: 0.9875729374022566
+            ci95:
+            - 0.9859995097176806
+            - 0.9890632456263714
+    scope: M64, two fixed tokenized English/Chinese texts,15/63decode,cache128,maxKV127
+    numerical_scope: all288 full16 hardware last-hidden vectors,native finalNorm liveU8
+      and full-vocabulary head selected token/logit match independent exact host teacher,
+      paired carrier bytes exact;128 host teacher steps,48 original CPU hidden and47
+      token/logit crosschecks
+    physical_gate: true
+    quality_claim: false
+    baseline_promoted: false
+  last_completed_source_commit: 26d5729741a1cb4bc9a15166dfaa3f56b9bcb055
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp
