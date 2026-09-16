@@ -24,6 +24,21 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0284
+  title: Uniform INT16 Down vs A8 and SP2, shared native W4 pipeline
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: pending
+  approval_ref: User 2026-09-16 explicitly approves annotated uniform INT16 Down experiment
+  parent_source: 76754e3709e918dbcc15dde493e9c84956a73451
+  record: docs/experiments/EXP-0284.md
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0284-uniform-int16-down
+  evidence:
+    device_owner: Llama first; Qwen after release
+    baseline_promoted: false
 - id: EXP-0283
   title: W16A16 fair baseline implementation refresh and matched full-model E2E
   execution_state: completed

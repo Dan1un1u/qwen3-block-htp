@@ -1,3 +1,7 @@
+# Active EXP-0284
+
+Uniform INT16 Down experiment approved and registered. Read docs/experiments/EXP-0284.md. Llama owns device first; Qwen local preparation. Float refresh complete, frozen. Latest A8/SP2 controls must retain shared optimizations. No quality claim.
+
 # Both W16A16 baseline refreshes complete
 
 EXP-0283 and L32-0039 completed and sealed; device released, no active hardware work. Combined report /mnt/d/llm_exp/results/paper-f16-baselines-20260916/REPORT.md. Next: discuss uniform INT16 Down vs SP2, no implementation yet. QwenOPT3 797.801813/12.499573; LlamaOPT3 974.174930/17.472296 token/s. Prior checkpoints below are historical.
