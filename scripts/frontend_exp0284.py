@@ -10,7 +10,7 @@ def main():
  import subprocess
  z=subprocess.check_output(['python3',str(S)+'-project-memory/scripts/project_memory.py','preflight','--source-worktree',str(S)],text=True);assert 'EXPERIMENT=EXP-0284' in z
  seedpath=P.parents[1]/'exp0257/prefix/prefix_kv_u8.bin';assert sha(seedpath)=='7683237318d42ac5cc80052fb53619205a3d82a0d1377bcbbaed78d7c7683b91';seeds=np.fromfile(seedpath,'u1').reshape(28,2,8,128)
- out=R/'frontend-reference-a02';out.mkdir(exist_ok=False);prompt=np.fromfile(P/'generation_prompt_token_ids_u32.bin','<u4').tolist();fixed=read(R.parent/'exp0282/A5-fair-a02/fixed_tokens.json')['ids'];embed=np.memmap(P/'generation_embedding_weight_f16.bin','<f2',mode='r',shape=(151936,2048));gamma=np.fromfile(P/'generation_final_norm_weight_f16.bin','<f2');gq=load_generation_qparams(P/'generation_qparams_u8.bin');iq=gq['generation_final_norm_output'];oq=gq['generation_lm_head_output'];cv=HmxU8Converter(S/'build/reference/qbh_hmx_u8_reference.so');w=unpack_w4_codes(P,'generation_lm_head',151936,2048);ws=np.fromfile(P/'generation_lm_head_weight_w4_scale_f32.bin','<f4')
+ out=R/'frontend-reference-a03';out.mkdir(exist_ok=False);prompt=np.fromfile(P/'generation_prompt_token_ids_u32.bin','<u4').tolist();fixed=read(R.parent/'exp0282/A5-fair-a02/fixed_tokens.json')['ids'];embed=np.memmap(P/'generation_embedding_weight_f16.bin','<f2',mode='r',shape=(151936,2048));gamma=np.fromfile(P/'generation_final_norm_weight_f16.bin','<f2');gq=load_generation_qparams(P/'generation_qparams_u8.bin');iq=gq['generation_final_norm_output'];oq=gq['generation_lm_head_output'];cv=HmxU8Converter(S/'build/reference/qbh_hmx_u8_reference.so');w=unpack_w4_codes(P,'generation_lm_head',151936,2048);ws=np.fromfile(P/'generation_lm_head_weight_w4_scale_f32.bin','<f4')
  for mode in ['fixed','greedy']:
   caches=[None]*28;codes=[]
   for step in range(16):
@@ -21,5 +21,5 @@ def main():
    for start in range(0,len(w),1024):
     ww=w[start:start+1024];lo,hi=projection_bias_words(ww,ws[start:start+1024],iq,oq);acc=act.astype('f8')@ww.astype('f8').T;logits.append(cv.convert(acc.astype('i8'),lo,hi))
    logits=np.concatenate(logits,1)[0];idx=int(logits.argmax());codes.append([idx,int(logits[idx])]);print('Q_REFERENCE',mode,step,codes[-1],flush=True)
-  write(R/(mode+'-int16-teacher-a02.json'),dict(selected_codes=codes,reference='independent full28 FP32 residual, uniform INT16 Down, original prefixKV/attention/head; no device inputs',seed_sha256=sha(seedpath)))
+  write(R/(mode+'-int16-teacher-a03.json'),dict(selected_codes=codes,reference='independent full28 FP32 residual, uniform INT16 Down, original prefixKV/attention/head; no device inputs',seed_sha256=sha(seedpath)))
 if __name__=='__main__':main()

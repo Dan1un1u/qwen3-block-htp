@@ -26,7 +26,7 @@ def norm(x,g,q):
  inv=np.float32(1)/np.sqrt(s/np.float32(2048)+np.float32(1e-6))
  val=(x*inv)*g.astype('f4');z=val/np.float32(q['scale'])+np.float32(q['zero_point'])
  return np.clip(np.copysign(np.floor(np.abs(z)+np.float32(.5)),z),0,255).astype('u1')
-@functools.lru_cache(maxsize=16)
+@functools.lru_cache(maxsize=256)
 def weight(p,name,n,k):
  p=Path(p);w=unpack_w4_codes(p,name,n,k).astype('f8');ws=np.fromfile(p/(name+'_weight_w4_scale_f32.bin'),'<f4');return w,ws
 

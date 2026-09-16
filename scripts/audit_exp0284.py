@@ -34,9 +34,9 @@ def head(tag):
   ww=w[start:start+1024];lo,hi=projection_bias_words(ww,ws[start:start+1024],iq,oq);acc=x@ww.astype('f8').T;logits.append(cv.convert(acc.astype('i8'),lo,hi))
  logits=np.concatenate(logits,1);ids=logits.argmax(1);codes=[[int(i),int(logits[j,i])] for j,i in enumerate(ids)];assert codes==v['selected_codes'],(codes,v['selected_codes'])
  if 'INT16' in tag:
-  mode='fixed' if '-fixed-' in tag else 'greedy';teacher=read(R/(mode+'-int16-teacher-a02.json'));assert codes==teacher['selected_codes'],(codes,teacher['selected_codes'])
+  mode='fixed' if '-fixed-' in tag else 'greedy';teacher=read(R/(mode+'-int16-teacher-a03.json'));assert codes==teacher['selected_codes'],(codes,teacher['selected_codes'])
   for step in range(16):
-   actual=np.fromfile(d/f'generation_hidden_step{step:02d}_f32.bin','<f4');ref=np.fromfile(R/'frontend-reference-a02'/f'{mode}_step{step:02d}_hidden_f32.bin','<f4');assert np.array_equal(actual,ref),(tag,step,int(np.count_nonzero(actual!=ref)))
+   actual=np.fromfile(d/f'generation_hidden_step{step:02d}_f32.bin','<f4');ref=np.fromfile(R/'frontend-reference-a03'/f'{mode}_step{step:02d}_hidden_f32.bin','<f4');assert np.array_equal(actual,ref),(tag,step,int(np.count_nonzero(actual!=ref)))
   write(d/'full28_cpu_reference_gate.json',dict(pass_all=True,steps=16,hidden_values=16*2048,selected_codes_exact=True,reference='independent complete28-layer transformer including frozen prefixKV'))
  write(d/'independent_gate.json',dict(pass_all=True,finalnorm_exact_values=16*2048,head_full_vocab_steps=16,head_bias_exact=True,selected_token_and_code_exact=True,embedding='original manifest-verified C64 FP16 embedding, expanded exactly to FP32 by unchanged scalar cast',scope='chain3 exact plus full physical/deterministic/frontend boundary checks, not full28 CPU transformer equivalence or quality/PPL'))
  print('HEAD_PASS',tag,flush=True)
