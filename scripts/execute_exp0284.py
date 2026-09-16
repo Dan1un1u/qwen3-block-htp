@@ -52,8 +52,8 @@ def fullgates():
  for forced in [False,True]:
   os.environ['QBH_PAPER_FIXED_TOKENS']='1' if forced else '0'
   for a in ARMS:
-   setarm(a);tag=f'full-{a}-'+('fixed' if forced else 'greedy')+'-audit';z=full(2,1,tag,audit=True);head(tag)
-   if a!='INT16':assert z['selected_codes']==read(PRIOR/tag/'validated.json')['selected_codes']
+   setarm(a);tag=f'full-{a}-'+('fixed' if forced else 'greedy')+'-audit-a02';z=full(2,1,tag,audit=True);head(tag)
+   if a!='INT16':assert z['selected_codes']==read(PRIOR/tag.removesuffix('-a02')/'validated.json')['selected_codes']
    out.append(dict(arm=a,forced=forced,tag=tag,**z))
  write(R/'full_gate.json',dict(pass_all=True,runs=out))
 def timing():
@@ -61,7 +61,7 @@ def timing():
  for mode in ['fixed','greedy']:
   os.environ['QBH_PAPER_FIXED_TOKENS']='1' if mode=='fixed' else '0'
   def one(a,tag,rep):
-   setarm(a);z=full(2,rep,tag);assert z['selected_codes']==read(R/f'full-{a}-{mode}-audit/validated.json')['selected_codes'];return dict(arm=a,**z)
+   setarm(a);z=full(2,rep,tag);assert z['selected_codes']==read(R/f'full-{a}-{mode}-audit-a02/validated.json')['selected_codes'];return dict(arm=a,**z)
   for a in ARMS:one(a,f'{mode}-warmup-{a}',1)
   write(R/f'{mode}_auxiliary.json',[one(a,f'{mode}-aux-{a}-r1',1) for a in ARMS])
   for phase,n in [('short',5),('formal',10)]:
