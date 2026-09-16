@@ -219,3 +219,7 @@ Do not repeat H16 placement, exponent-shift or arbitrary order tuning.
 Historical fast0022 passes chain3 and singlelayer speed; full160023 fails.
 Exact0024full16 passes but enormous cost, retained diagnostic only. No new
 quality conclusions or Qwen/otherrecipe work.
+
+## Paired INT16 Down campaign closed
+
+Companion Qwen EXP0284 completed with full896 layer-output hashes exact and formal speed gates passed; device released. L32-0040 sealed evidence unchanged. Combined report /mnt/d/llm_exp/results/paper-int16-down-20260916/REPORT.md. No active experiment, quality claim or baseline promotion.
