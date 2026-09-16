@@ -6,7 +6,7 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0040
+  active_experiment: null
   next_experiment_number: 41
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -14,7 +14,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: a7fdb9b625a41d2c486925905380ad2641b7622a
+    recorded_head: fd0fbc740fb61a681c92484d16f75785160e142c
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -29,8 +29,8 @@ current_scope:
   stage: w16a16_fair_baseline_refresh_complete
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Approved uniform INT16 Down comparison. Llama owns device first; Qwen
-    local preparation until release.
+  next_action: Llama INT16 Down comparison complete; Qwen EXP0284 owns remaining device
+    work. Then discuss joint conclusions, no PPL or extra optimization authorized.
   baseline_manifest: docs/PAPER_NO_ROTATION_BASELINES.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF_L32_0034.md
@@ -43,7 +43,7 @@ current_scope:
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0039
+  last_completed_experiment: L32-0040
   evidence_ledger_sha256: 599d86cf654b2b41526690c76ad1c0a251b5f206815a57ce4ae12b0024f94ac9
   formal_profiling_completed: false
   general_quantization_quality_accepted: false
@@ -1963,7 +1963,7 @@ current_scope:
     physical_gate: true
     quality_claim: false
     baseline_promoted: false
-  last_completed_source_commit: a7fdb9b625a41d2c486925905380ad2641b7622a
+  last_completed_source_commit: fd0fbc740fb61a681c92484d16f75785160e142c
   prior_paper_ablation_campaign:
     execution_state: completed
     report: /mnt/d/llm_exp/results/paper-no-rotation-ablation-20260915/REPORT.md
@@ -2382,6 +2382,135 @@ current_scope:
     - L32-0039
     device_owner: null
     a16_implemented: false
+  latest_uniform_int16_down_result:
+    id: L32-0040
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    measured_source: fecaa7c354b7cab5d5825004be8e5c3cd29a6465
+    source_closure: fd0fbc740fb61a681c92484d16f75785160e142c
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0040
+    evidence_ledger_sha256: 6beb0bca4649a938575a7223e2ff419be77a2bf6ee54ab1cb89163e498dd016a
+    evidence_files: 1065
+    report: docs/experiments/L32-0040-RESULTS.md
+    modules: docs/experiments/L32-0040-MODULES.md
+    native_DSP_unchanged: true
+    independent_full16_hidden_exact_values: 65536
+    performance:
+      fixed:
+        A8:
+          prefill: 2373.1054851869712
+          decode: 45.7048769713416
+        SP2:
+          prefill: 2335.2361483308678
+          decode: 45.74036857520875
+        INT16:
+          prefill: 2318.207046481615
+          decode: 45.630970705588254
+      greedy:
+        A8:
+          prefill: 2359.3881995212473
+          decode: 45.61137423398821
+        SP2:
+          prefill: 2330.5597453476607
+          decode: 45.63251530779635
+        INT16:
+          prefill: 2316.722428932706
+          decode: 45.61355388873291
+    effects:
+      fixed:
+        prefill:
+          SP2_over_A8:
+            wall_ratio: 1.0162164913741893
+            overhead_pct: 1.6216491374189346
+            ci95:
+            - 1.0135243490104018
+            - 1.0191963637194152
+            ten_percent_gate: true
+          INT16_over_A8:
+            wall_ratio: 1.0236814217214447
+            overhead_pct: 2.3681421721444718
+            ci95:
+            - 1.019475310947105
+            - 1.0282078607370004
+            ten_percent_gate: true
+          INT16_over_SP2:
+            wall_ratio: 1.0073458071293064
+            overhead_pct: 0.7345807129306436
+            ci95:
+            - 1.0031092530722763
+            - 1.0120044376627813
+            ten_percent_gate: true
+        decode:
+          SP2_over_A8:
+            wall_ratio: 0.9992240638855191
+            overhead_pct: -0.07759361144809018
+            ci95:
+            - 0.9975067221946801
+            - 1.0009544008886828
+            ten_percent_gate: true
+          INT16_over_A8:
+            wall_ratio: 1.0016196514036524
+            overhead_pct: 0.1619651403652389
+            ci95:
+            - 0.9989929902959771
+            - 1.0046286055708558
+            ten_percent_gate: true
+          INT16_over_SP2:
+            wall_ratio: 1.002397447784452
+            overhead_pct: 0.23974477844519448
+            ci95:
+            - 0.9990631808012197
+            - 1.0061374670588612
+            ten_percent_gate: true
+      greedy:
+        prefill:
+          SP2_over_A8:
+            wall_ratio: 1.0123697554766122
+            overhead_pct: 1.2369755476612232
+            ci95:
+            - 1.0079616051034928
+            - 1.0166070827036497
+            ten_percent_gate: true
+          INT16_over_A8:
+            wall_ratio: 1.01841643610633
+            overhead_pct: 1.8416436106329925
+            ci95:
+            - 1.015602361703612
+            - 1.0219327679456804
+            ten_percent_gate: true
+          INT16_over_SP2:
+            wall_ratio: 1.0059727985718725
+            overhead_pct: 0.5972798571872495
+            ci95:
+            - 1.0011005763712573
+            - 1.0108990195293295
+            ten_percent_gate: true
+        decode:
+          SP2_over_A8:
+            wall_ratio: 0.9995367103113747
+            overhead_pct: -0.04632896886253013
+            ci95:
+            - 0.9954221940969816
+            - 1.0035412622155209
+            ten_percent_gate: true
+          INT16_over_A8:
+            wall_ratio: 0.9999522147572624
+            overhead_pct: -0.0047785242737630185
+            ci95:
+            - 0.9969770771292376
+            - 1.0021048334863132
+            ten_percent_gate: true
+          INT16_over_SP2:
+            wall_ratio: 1.0004156970340372
+            overhead_pct: 0.041569703403721014
+            ci95:
+            - 0.9964319820083524
+            - 1.0039430160193612
+            ten_percent_gate: true
+    quality_claim: false
+    baseline_promoted: false
+    device_owner: released_to_EXP-0284
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp

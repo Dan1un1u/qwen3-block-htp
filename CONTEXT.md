@@ -1,3 +1,7 @@
+# L32-0040 completed
+
+Uniform INT16 Down vs A8/SP2 complete and sealed. Read latest_uniform_int16_down_result. Shared mode8 native kernel unchanged; full16 hidden/IDs/logit exact own reference. Fixed primary and greedy supplementary5short/10formal complete, all10percent gates pass, no quality claim. Qwen EXP0284 owns remaining device work; no Llama experiment active.
+
 # Active L32-0040
 
 Uniform INT16 Down experiment approved and registered. Read docs/experiments/L32-0040.md. Llama owns device first; Qwen local preparation. Float refresh complete, frozen. Latest A8/SP2 controls must retain shared optimizations. No quality claim.
