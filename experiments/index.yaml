@@ -1,6 +1,21 @@
 schema_version: 1
 project: llama32-htp
 experiments:
+- id: L32-0040
+  title: Uniform INT16 Down vs A8 and SP2, shared native W4 pipeline
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: pending
+  approval_ref: User 2026-09-16 explicitly approves annotated uniform INT16 Down experiment
+  parent_source: a7fdb9b625a41d2c486925905380ad2641b7622a
+  record: docs/experiments/L32-0040.md
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  evidence:
+    device_owner: Llama first; Qwen after release
+    baseline_promoted: false
 - id: L32-0039
   title: W16A16 fair baseline implementation refresh and matched full-model E2E
   execution_state: completed

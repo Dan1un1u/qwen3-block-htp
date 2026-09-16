@@ -214,3 +214,7 @@ User now explicitly requests rerunning optimized paper ablations and updating co
 ## User-approved floating baseline fairness refresh (2026-09-16; L32-0039)
 
 User explicitly requests the annotated W16A16 baseline repairs and formal E2E before discussing SP2 A16 Down. This supersedes earlier F16 freeze only under docs/experiments/L32-0039.md: exact decode conversion/movement reuse, basic FP16 LM-head prefetch, bounded valid-row cleanup. Preserve FP16 math/weights and other recipes, all numerical/physical/evidence gates; no deep tuning, quality claim or automatic promotion. Routine fixes proceed autonomously.
+
+## User-approved uniform INT16 Down control (2026-09-16; L32-0040)
+
+User approves the prior annotated proposal. Implement uniform INT16 Down input on the existing SP2 two-byte native-W4 pipeline, comparing A8/SP2/INT16 with FP32 residual and frozen non-Down boundaries. This supersedes earlier A16 discussion-only and recipe freezes solely within docs/experiments/L32-0040.md. Preserve all numerical/physical/evidence gates; no PPL or automatic promotion. Both-model device work serialized, Llama first.

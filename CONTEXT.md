@@ -1,3 +1,7 @@
+# Active L32-0040
+
+Uniform INT16 Down experiment approved and registered. Read docs/experiments/L32-0040.md. Llama owns device first; Qwen local preparation. Float refresh complete, frozen. Latest A8/SP2 controls must retain shared optimizations. No quality claim.
+
 # Current checkpoint L32-0039 complete
 
 Both W16A16 fairness refreshes completed and sealed. Llama OPT3 974.174930 prefill /17.472296 decode token/s, M64+15, original964.478420/12.956326. Exact528 full-model files and256 layer hashes. Read latest_f16f16_fair_baseline_refresh and L32-0039 results. No active experiment/device owner; no PPL or Selected promotion. Next: discuss uniform INT16 Down control, no implementation yet. Prior checkpoints below are history.
