@@ -226,5 +226,5 @@ static void qbh_llama_fp32_norm_worker(struct qbh_block_w4f16_pool *p,uint32_t w
     uint32_t first=worker*16U;
     qbh_llama_fp32_norm(p->fp32_norm_input+first*QBH_BLOCK_HIDDEN,p->fp32_norm_gamma,
         p->fp32_norm_output+first*(p->fp32_norm_native?32U:QBH_BLOCK_HIDDEN),p->fp32_norm_qparam,16U,QBH_BLOCK_HIDDEN,p->fp32_norm_native,
-        p->fp32_norm_scratch+worker*((QBH_BLOCK_HIDDEN*4U+8191U)&~4095U));
+        p->fp32_norm_scratch+worker*((4096U+QBH_BLOCK_HIDDEN*4U+512U+4095U)&~4095U));
 }
