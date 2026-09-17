@@ -45,7 +45,7 @@ def deploy(package):
  write(R/('deployment-'+package+'.json'),dict(package=str(p),remote=remote,manifest_sha256=sha(p/'manifest.json'),files=len(names),verified=True));print('DEPLOY_PASS',package,flush=True)
 
 ARGS='2 32 hvx on off fused gate8_interleaved control hvx crouton_native_batch8 4 64 gqa_qkv_overlap 4 norms serial scalar input_norm_pool_post_norm_pool 4 3 1 0'
-def run(package,tag,count=1,repeat=1,audit=True,full=False,greedy=False,opt=2,f16opt=4,fp32=1):
+def run(package,tag,count=1,repeat=1,audit=True,full=False,greedy=False,opt=2,f16opt=4,fp32=1,component=False):
  preflight();state=read(R/f'runtime-l{count}.json');root=state['remote'];d=R/tag;d.mkdir(parents=True,exist_ok=False)
  recipe='W4F16' if 'w4f16' in package else 'F16F16'
  remote=read(R/('deployment-'+package+'.json'))['remote']
@@ -56,6 +56,7 @@ def run(package,tag,count=1,repeat=1,audit=True,full=False,greedy=False,opt=2,f1
   args=WARGS
   for k,value in WENV.items():
    if k not in e:e[k]=value
+ if component:e['QBH_DENSE_R3_AUDIT']='1'
  if audit:
   target=root+'/'+tag.replace('/','_');adb('shell','mkdir -p '+target)
   e['QBH_GENERATION_AUDIT_DIR' if full else 'QBH_REPLAY_DUMP_DIR']=target

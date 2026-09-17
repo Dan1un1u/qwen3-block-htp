@@ -65,7 +65,7 @@ void qbh_paper_trace_flush(void) {
  * Audit DDR is deliberately excluded from all numerical-off speed evidence. */
 static void qbh_r3_chain_audit(struct qbh_block_header *h, uint8_t *shared,
     uint32_t slot, const void *src, uint32_t bytes) {
-    if (h->dense_r3_audit_offset && slot < 11U && bytes <= QBH_DENSE_R3_CARRIER_BYTES)
+    if (src && h->dense_r3_audit_offset && slot < 11U && bytes <= QBH_DENSE_R3_CARRIER_BYTES)
         memcpy(shared+h->dense_r3_audit_offset+QBH_DENSE_R3_BASE_AUDIT_BYTES+
                slot*QBH_DENSE_R3_CARRIER_BYTES,src,bytes);
 }
@@ -20759,6 +20759,10 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         ++header->w4u8_common_padding_poison_count;
     }
     header->input_stage_ticks += HAP_perf_get_qtimer_count() - start;
+    if (QBH_F16_FP32_RESIDUAL(header) && header->dense_r3_audit_offset) {
+        memset(shared+header->dense_r3_audit_offset,0,QBH_DENSE_R3_AUDIT_BYTES);
+        qbh_r3_chain_audit(header,shared,5,buffers->residual,logical_rows*QBH_BLOCK_HIDDEN*4U);
+    }
 
     start = HAP_perf_get_qtimer_count();
     if (QBH_FP32_RESIDUAL(header) && !QBH_F16_FP32_RESIDUAL(header)) {
@@ -20903,6 +20907,9 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         header->w4u8_boundary_audit_ddr_write_bytes += boundary_bytes;
     }
     header->input_norm_ticks += HAP_perf_get_qtimer_count() - start;
+    if(QBH_F16_FP32_RESIDUAL(header))
+        qbh_r3_chain_audit(header,shared,6,crouton_input_norm_enabled?buffers->hmx_activation:buffers->normalized,
+            QBH_BLOCK_M*QBH_BLOCK_HIDDEN*2U);
 
     start = HAP_perf_get_qtimer_count();
     if (header->variant == QBH_BLOCK_W4U8 &&
@@ -21077,7 +21084,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         qbh_attribution_accumulate(
             header, audit_start, &header->qkv_audit_ticks);
     }
-    if (header->dense_r3_audit_offset && header->dense_r3_mode == 0U) {
+    if (header->dense_r3_audit_offset && header->dense_r3_mode == 0U && !QBH_F16_FP32_RESIDUAL(header)) {
         uint8_t *audit=shared+header->dense_r3_audit_offset;
         memset(audit,0,QBH_DENSE_R3_AUDIT_BYTES);
         memcpy(audit+2U*QBH_DENSE_R3_CARRIER_BYTES,buffers->q,16U*8192U);
@@ -21555,6 +21562,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     }
     if(!QBH_FP32_RESIDUAL(header))qbh_r3_chain_audit(header,shared,3,buffers->attention_projection,131072U);
     header->o_projection_ticks += HAP_perf_get_qtimer_count() - start;
+    if(QBH_F16_FP32_RESIDUAL(header))
+        qbh_r3_chain_audit(header,shared,7,buffers->attention_projection,logical_rows*QBH_BLOCK_HIDDEN*2U);
 
     start = HAP_perf_get_qtimer_count();
     if (header->logical_m == 1U &&
@@ -21864,6 +21873,11 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     qbh_r3_chain_audit(header,shared,5,w4u8_mlp_native_activation,QBH_BLOCK_M*QBH_BLOCK_HIDDEN);
     header->post_attention_norm_ticks +=
         HAP_perf_get_qtimer_count() - start;
+    if(QBH_F16_FP32_RESIDUAL(header)) {
+        qbh_r3_chain_audit(header,shared,8,buffers->residual,logical_rows*QBH_BLOCK_HIDDEN*4U);
+        qbh_r3_chain_audit(header,shared,9,crouton_post_norm_enabled?buffers->hmx_activation:buffers->normalized,
+            QBH_BLOCK_M*QBH_BLOCK_HIDDEN*2U);
+    }
 
     if (qbh_block_mlp_is_w4u8_streaming(header->mlp_mode)) {
         const int mlp_result =
@@ -22249,6 +22263,12 @@ w4u8_mlp_complete:
     header->common_op_softmax_mask_violation_count =
         softmax_check_metrics.mask_violation_count;
     header->final_residual_ticks += HAP_perf_get_qtimer_count() - start;
+    if(QBH_F16_FP32_RESIDUAL(header)) {
+        qbh_r3_chain_audit(header,shared,0,buffers->input_norm_weight,QBH_BLOCK_HIDDEN*2U);
+        qbh_r3_chain_audit(header,shared,1,buffers->post_norm_weight,QBH_BLOCK_HIDDEN*2U);
+        qbh_r3_chain_audit(header,shared,10,buffers->down,logical_rows*QBH_BLOCK_HIDDEN*2U);
+        qbh_r3_chain_audit(header,shared,4,buffers->residual,logical_rows*QBH_BLOCK_HIDDEN*4U);
+    }
     return QBH_BLOCK_STATUS_OK;
 }
 
