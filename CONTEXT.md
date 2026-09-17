@@ -1,3 +1,16 @@
+# Current EXP0286 closure — inference DRAM
+User-requested measurement complete. No active experiment/device owner.
+Qwen3-1.7B original EXP0284 no-rotation SP2 mode8 + FP32 residual mode2, M64+15/cache128.
+Three launches x10 fixed trajectories,480 generation profiles, exact sealed token/logit outputs.
+Peak **2,915,594,240 bytes / 2780.527344 MiB / 2.715359 GiB**.
+Includes deduplicated DMA-BUF2,907,541,504 bytes and ordinary smaps RSS.
+Main DMA mapping's RSS/PSS is zero: VmRSS alone (~7.6MiB) is invalid as total.
+External sampler requested20ms, actualmedian47.9ms. VTCM excluded.
+This is sampled process-attributable DRAM, NOT exact whole-device/DSP-private peak.
+Kernel-only/firmware allocations unavailable; never interpret dmabuf_dump kernel_rss0 as measured zero.
+Report /mnt/d/llm_exp/results/qwen3-block-htp/exp0286/REPORT.md; ledger 73190654a1ef34c5356c8e16c6cf2ab3930e289681a79e169946212763e89ea3. Source unchanged4c96e036; measured sealedeaea89c.
+Retain original FP32 baseline; no numerical, quality, speed, or promotion changes.
+
 # Active EXP0286 — inference DRAM peak
 
 User-authorized measurement only. Retain original sealed EXP0284 SP2 FP32 runtime; no FP16 promotion. See docs/experiments/EXP-0286.md. Current source branch unchanged for external diagnostic. Qwen device ownership pending idle check.

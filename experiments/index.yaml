@@ -26,9 +26,9 @@ allowed_values:
 experiments:
 - id: EXP-0286
   title: Inference DRAM peak measurement of retained no-rotation W4A8-SP2 FP32 baseline
-  execution_state: running
-  evidence_validity: pending
-  local_gate: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: not_applicable
   approval_ref: 'User 2026-09-17: measure inference DRAM peak only, excluding VTCM,
     using existing W4A8-SP2'
@@ -38,6 +38,28 @@ experiments:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0285-fp16-residual
     started_on: '2026-09-17'
+    completed_on: '2026-09-17'
+  evidence:
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0286
+    report: /mnt/d/llm_exp/results/qwen3-block-htp/exp0286/REPORT.md
+    ledger_sha256: 73190654a1ef34c5356c8e16c6cf2ab3930e289681a79e169946212763e89ea3
+    files: 64
+    measured_source: eaea89c81dd0e5f3424dfdea9d1e2b47347f8d72
+    recipe: no-rotation W4A8-SP2 mode8 FP32 residual mode2
+    shape: M64+15 fixed trajectory cache128
+    independent_launches: 3
+    trajectories_per_launch: 10
+    profiles: 480
+    output_tokens_and_logits_exact: true
+    peak_observed_process_attributable_dram_bytes: 2915594240
+    unique_dma_buf_bytes: 2907541504
+    vtcm_excluded: true
+    whole_device_peak_claim: false
+    hidden_DSP_kernel_allocations: unavailable
+    sample_interval_ms_median: 47.9
+    quality_claim: false
+    baseline_promoted: false
+    device_owner: null
 - id: EXP-0285
   title: 'Latest no-rotation SP2 baseline: FP16 residual storage speed'
   execution_state: completed
