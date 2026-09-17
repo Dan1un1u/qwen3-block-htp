@@ -2156,7 +2156,13 @@ static int qbh_header_valid(const struct qbh_block_header *header,
           header->projections[QBH_BLOCK_PROJ_DOWN].lpbq_mode)) ||
         /* EXP0283/L32-0039: reuse exact A16 conversion for FP16 weights.
          * Modes 0/1/2 retain W4F16 meaning; F16F16 mode 3 adds head prefetch. */
-        header->w4f16_decode_opt>(header->variant==QBH_BLOCK_F16F16 ? 3U : 2U) || header->w4f16_decode_audit>1U ||
+        header->w4f16_decode_opt>(header->variant==QBH_BLOCK_F16F16 ? 3U :
+#ifdef QBH_QWEN_06B
+            (header->variant==QBH_BLOCK_W4F16 ? 5U : 2U)
+#else
+            2U
+#endif
+            ) || header->w4f16_decode_audit>1U ||
         (header->w4f16_decode_opt && header->variant==QBH_BLOCK_W4U8) ||
         header->paper_format_disable > 31U ||
         ((header->paper_format_disable&4U) && (!QBH_FP32_RESIDUAL(header) || QBH_SP2(header)!=8U || header->dense_r3_mode || header->dense_r4_mode)) ||
@@ -6194,6 +6200,21 @@ static void qbh_w4f16_expand_with_main(
     uint32_t pool_regions;
     uint64_t main_start;
 
+#ifdef QBH_QWEN_06B
+    /* EXP0291 opt5: these small, unpublished Q/K/V/O groups need no pool
+     * hand-off. The conversion's barrier publishes the whole group to HMX.
+     * Streaming and relaxed Down paths retain their original ownership. */
+    if (header->variant == QBH_BLOCK_W4F16 &&
+        header->w4f16_decode_opt >= 5U && publish_ready == 0U &&
+        relaxed_group_fence == 0U && k_tiles <= 128U) {
+        const uint64_t start = HAP_perf_get_qtimer_count();
+        qbh_unpack_w4_to_f16_hvx(compressed_weight, expanded_weight, k_tiles);
+        header->w4f16_expand_work_ticks += HAP_perf_get_qtimer_count() - start;
+        header->w4f16_expand_region_count += total_regions;
+        return;
+    }
+#endif
+
     if (header->w4f16_pipeline_mode ==
             QBH_BLOCK_W4F16_PIPELINE_MAIN_HALF) {
         main_regions = (total_regions + 1U) / 2U;
@@ -8094,6 +8115,22 @@ static void qbh_unpack_fp16_output(const __fp16 *source,
     }
     asm volatile("barrier" ::: "memory");
 }
+
+#ifdef QBH_QWEN_06B
+/* EXP0291: exact row-zero extraction from an even-width HMX FP16 carrier.
+ * Only dead padding rows are omitted; vdeal preserves all half-bit patterns. */
+static void qbh_unpack_fp16_output_row0(
+    const __fp16 *source, uint32_t n_tiles, __fp16 *destination) {
+    for (uint32_t tile=0U; tile<n_tiles; tile+=2U) {
+        const HVX_Vector *a=(const HVX_Vector *)(source +
+            (size_t)tile * QBH_HMX_FP16_TILE_ELEMENTS);
+        const HVX_Vector *b=a + QBH_HMX_FP16_TILE_BYTES / sizeof(HVX_Vector);
+        const HVX_VectorPair rows=Q6_W_vdeal_VVR(*b, *a, -2);
+        *(HVX_Vector *)(destination + tile*QBH_HMX_FP16_COLS)=Q6_V_lo_W(rows);
+    }
+    asm volatile("barrier" ::: "memory");
+}
+#endif
 
 static void qbh_unpack_u8_output(const uint8_t *source,
                                  uint8_t *destination,
@@ -17176,6 +17213,17 @@ static int qbh_scan_append_f16_kv_hmx_native(
         return -1;
     }
     if (direct_qkv != 0U) {
+#ifdef QBH_QWEN_06B
+        if (header->w4f16_decode_opt >= 4U) {
+            const uint32_t group=qbh_w4f16_projection_group_tiles(
+                header, &header->projections[QBH_BLOCK_PROJ_V]);
+            const uint32_t elements=2U*group*QBH_HMX_FP16_TILE_ELEMENTS;
+            for (uint32_t tile=0U; tile<QBH_BLOCK_KV_HIDDEN/32U; tile+=group)
+                qbh_unpack_fp16_output_row0(
+                    (const __fp16 *)buffers->v + (size_t)(tile/group)*elements,
+                    group, v_rows+tile*32U);
+        } else
+#endif
         qbh_unpack_fp16_grouped_projection(
             (const __fp16 *)buffers->v,
             QBH_BLOCK_KV_HIDDEN / QBH_HMX_FP16_COLS,
@@ -17512,6 +17560,15 @@ static int qbh_scan_f16_attention(
      */
     if (direct_qkv != 0U) {
         for (uint32_t head = 0U; head < QBH_BLOCK_HEADS; ++head) {
+#ifdef QBH_QWEN_06B
+            if (header->w4f16_decode_opt >= 4U && logical_rows == 1U) {
+                qbh_unpack_fp16_output_row0(
+                    (const __fp16 *)buffers->attention_projection +
+                        (size_t)head * head_elements,
+                    QBH_BLOCK_HEAD_DIM / QBH_HMX_FP16_COLS,
+                    (__fp16 *)buffers->q + head * QBH_BLOCK_HEAD_DIM);
+            } else
+#endif
             qbh_unpack_fp16_output(
                 (const __fp16 *)buffers->attention_projection +
                     (size_t)head * head_elements,
