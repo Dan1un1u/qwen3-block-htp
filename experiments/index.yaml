@@ -2356,7 +2356,7 @@ experiments:
     validated_token_boundaries: 5528
 - id: L32-0044
   title: Exact 3B decode optimization and longer continuous decoding
-  execution_state: running
+  execution_state: completed
   approval_ref: User 2026-09-17 requests further decode optimization versus Quant.npu
     and extending15 measured decode tokens to40-64.
   parent_source: b6a0d8d2cb4cb205b7c773922950ea8e4893209c
@@ -2364,3 +2364,68 @@ experiments:
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
+  evidence_validity: valid
+  local_gate: pass
+  adoption_status: pending
+  evidence:
+    experiment: L32-0044
+    execution_state: completed
+    source_closure: 6f488b36293d85b2b7f22f70bc78e461e81f816c
+    measured_source: 4686765b98939a34fec218af950eeba573087c71
+    control_source: 488e5f7c56f71effe5b73de92c35d90236c192c4
+    formal_gate: true
+    external_target_pass: false
+    numerical_physical_pass: true
+    device_owner: null
+    quality_claim: false
+    baseline_promoted: false
+    validated_runs: 67
+    validated_token_boundaries: 20222
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0044
+    evidence_ledger_sha256: 735c9aa7a68a4c9121e583c50f32446c64d41fc91bc804334dc4850589369582
+    evidence_files: 2137
+    evidence_bytes: 4135058140
+    report: docs/experiments/L32-0044-RESULTS.md
+    modules: docs/experiments/L32-0044-MODULES.md
+    shape: M64+42/cache128/full28 primary; M64+63 supplementary
+    short_rounds: 5
+    formal_rounds: 10
+    supplementary_rounds: 5
+    repeat: 10
+    performance:
+      CONTROL:
+        prefill: 1130.6550811191764
+        decode: 21.633356655930303
+      OPT:
+        prefill: 1138.295038672616
+        decode: 22.5381833048875
+    effects:
+      prefill:
+        wall_ratio: 0.9932882448803881
+        ci95:
+        - 0.9917865497924319
+        - 0.9947077859290695
+        throughput_gain_percent: 0.6757107168242182
+        ten_percent_gate: true
+      decode:
+        wall_ratio: 0.9598536121249411
+        ci95:
+        - 0.9588332331620764
+        - 0.9609113117067898
+        throughput_gain_percent: 4.18255319018721
+        ten_percent_gate: true
+    supplementary63:
+      CONTROL:
+        prefill: 1124.985320303857
+        decode: 21.21017568925989
+      OPT:
+        prefill: 1132.0261190971426
+        decode: 22.126466652763057
+    bounded_1b_pass: true
+    true_greedy_exact: true
+    vtcm_peak_bytes: 8360416
+    recipe: 3B W4A8-SP2mode8, FP32residual, no rotation, WIDE_SCORE8, AV_REQUANT_ROWS4;
+      candidateLM_HEAD_GROUP_TILES32; exactVregisterLUT/reciprocal
+    all_numerical_physical_gates_pass: true
+    external_target_decode_tps: 28.04
+    parent_experiment: L32-0043

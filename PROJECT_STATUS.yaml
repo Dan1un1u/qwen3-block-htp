@@ -6,7 +6,7 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0044
+  active_experiment: null
   next_experiment_number: 45
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -14,7 +14,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: b6a0d8d2cb4cb205b7c773922950ea8e4893209c
+    recorded_head: 6f488b36293d85b2b7f22f70bc78e461e81f816c
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -26,11 +26,12 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: llama32_3b_pipeline_layout_optimization_complete
+  stage: llama32_3b_long_decode_optimization_complete
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Discuss L32-0042 optimized3B full-model results or next size/configuration.
-    Latest3B1038.74/21.15tps;1B fields remain1B; no active experiment.
+  next_action: Discuss remaining3B decode gap versus Quant.npu; primary64+42 1138.30/22.54tps;
+    supplementary64+63 1132.03/22.13tps. NativeKV persistence andweight-preparation
+    overlap areunmeasured followups. Noactiveexperiment;1Bfields remain1B.
   baseline_manifest: docs/PAPER_NO_ROTATION_BASELINES.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF_L32_0034.md
@@ -43,7 +44,7 @@ current_scope:
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0042
+  last_completed_experiment: L32-0044
   evidence_ledger_sha256: 599d86cf654b2b41526690c76ad1c0a251b5f206815a57ce4ae12b0024f94ac9
   formal_profiling_completed: false
   general_quantization_quality_accepted: false
@@ -2557,62 +2558,64 @@ latest_llama3b_w4a8_sp2_port:
   quality_claim: false
   baseline_promoted: false
 latest_llama3b_w4a8_sp2_optimization:
-  experiment: L32-0043
-  source_closure: b6a0d8d2cb4cb205b7c773922950ea8e4893209c
-  measured_native: d69d8f9ca9103c1888b1426ab482e58f2ed60dda
-  control_source: 76418bbbb504dc30608441b17f49a774c10b72a2
+  experiment: L32-0044
   execution_state: completed
-  target_pass: true
-  all_numerical_physical_gates_pass: true
-  bounded_1b_pass: true
-  true_greedy_exact: true
+  source_closure: 6f488b36293d85b2b7f22f70bc78e461e81f816c
+  measured_source: 4686765b98939a34fec218af950eeba573087c71
+  control_source: 488e5f7c56f71effe5b73de92c35d90236c192c4
+  formal_gate: true
+  external_target_pass: false
+  numerical_physical_pass: true
   device_owner: null
   quality_claim: false
   baseline_promoted: false
-  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0043
-  evidence_ledger_sha256: 505c583c195a05fa5e4cffbf865088b5a1365e42dd51fe834191c8c0ef722127
-  evidence_files: 751
-  evidence_bytes: 505900258
-  report: docs/experiments/L32-0043-RESULTS.md
-  modules: docs/experiments/L32-0043-MODULES.md
-  performance:
-    CONTROL:
-      prefill: 1040.6906140512883
-      decode: 21.20074255935503
-    OPT3:
-      prefill: 1139.9824093161858
-      decode: 22.2343091227173
-  effects:
-    prefill:
-      wall_ratio: 0.912900589997299
-      latency_reduction_percent: 8.709941000270105
-      throughput_gain_percent: 9.540952318034845
-      ci95:
-      - 0.9108389434088594
-      - 0.9147267253369943
-      ten_percent_gate: true
-    decode:
-      wall_ratio: 0.9535147884443935
-      latency_reduction_percent: 4.648521155560648
-      throughput_gain_percent: 4.875143219482148
-      ci95:
-      - 0.9522453565588638
-      - 0.9546675228993019
-      ten_percent_gate: true
-  absolute_target:
-    prefill:
-      target: 1100
-      observed: 1139.9824093161858
-      passed: true
-    decode:
-      target: 22
-      observed: 22.2343091227173
-      passed: true
+  validated_runs: 67
+  validated_token_boundaries: 20222
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0044
+  evidence_ledger_sha256: 735c9aa7a68a4c9121e583c50f32446c64d41fc91bc804334dc4850589369582
+  evidence_files: 2137
+  evidence_bytes: 4135058140
+  report: docs/experiments/L32-0044-RESULTS.md
+  modules: docs/experiments/L32-0044-MODULES.md
+  shape: M64+42/cache128/full28 primary; M64+63 supplementary
   short_rounds: 5
   formal_rounds: 10
+  supplementary_rounds: 5
   repeat: 10
+  performance:
+    CONTROL:
+      prefill: 1130.6550811191764
+      decode: 21.633356655930303
+    OPT:
+      prefill: 1138.295038672616
+      decode: 22.5381833048875
+  effects:
+    prefill:
+      wall_ratio: 0.9932882448803881
+      ci95:
+      - 0.9917865497924319
+      - 0.9947077859290695
+      throughput_gain_percent: 0.6757107168242182
+      ten_percent_gate: true
+    decode:
+      wall_ratio: 0.9598536121249411
+      ci95:
+      - 0.9588332331620764
+      - 0.9609113117067898
+      throughput_gain_percent: 4.18255319018721
+      ten_percent_gate: true
+  supplementary63:
+    CONTROL:
+      prefill: 1124.985320303857
+      decode: 21.21017568925989
+    OPT:
+      prefill: 1132.0261190971426
+      decode: 22.126466652763057
+  bounded_1b_pass: true
+  true_greedy_exact: true
   vtcm_peak_bytes: 8360416
-  recipe: 3B W4A8-SP2mode8 FP32residual,no rotation,WIDE_SCORE8,AV_REQUANT_ROWS4;GQA
-    batched prefill/live decode rows
-  validated_runs: 57
-  validated_token_boundaries: 5528
+  recipe: 3B W4A8-SP2mode8, FP32residual, no rotation, WIDE_SCORE8, AV_REQUANT_ROWS4;
+    candidateLM_HEAD_GROUP_TILES32; exactVregisterLUT/reciprocal
+  all_numerical_physical_gates_pass: true
+  external_target_decode_tps: 28.04
+  parent_experiment: L32-0043

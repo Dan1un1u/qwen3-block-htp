@@ -1,3 +1,15 @@
+# L32-0044 completed: longer3B decode optimization
+Latest3B W4A8-SP2 FP32 residual,no rotation:
+- PrimaryM64+42/cache128/full28:1138.295039prefill/22.538183decode tps. Paired0043arithmeticcontrol1130.655081/21.633357;decode+4.182553%,prefill+.675711%.5short+10formalrepeat10,95%CI gatespass.
+- SupplementM64+63:1132.026119/22.126467 vs1124.985320/21.210176;5pairsrepeat10,separatefromformal.
+- ExternalQuant.npu Table12 64+42 decode28.04 remainsunmet(~19.6% lowerthroughput); matchlength only,notsame dataset/completequantization.
+Read latest_llama3b_w4a8_sp2_optimization, docs/experiments/L32-0044-RESULTS.md / MODULES / IMPLEMENTATION.
+IMPORTANT candidatefastflags: QBH_W4U8_DECODE_AV_REQUANT_ROWS=4 plus QBH_W4U8_DECODE_LM_HEAD_GROUP_TILES=32. Newexecutor maps QBH_3B_HEAD_TILES=32. Expectedtokenbuffer64/cache128; QBH_3B_DECODE_COUNT=42or63. Do not use oldhardcoded16record launcher forlongfixture.
+Finalnative784e754,measuredfullbuild4686765,closure6f488b36293d85b2b7f22f70bc78e461e81f816c. Control488e5f7 isparent0043 arithmetic rebuiltonlyforboundedlong-eval support; old16stepexactconfirmed. VregisterLUT/exactdivision andhead32retained; Norm/Ktransposeattemptsrejected/restored. Same594weight/scale/bias/LUT/qparamfiles.
+Selected0/13/27,chain3/full28exact;64-stepindependentFP32hidden/IDs/logitcodes andprefillKV exactforcontrolfixed/candidatefreegreedy. 1Bboundedlayer7exact.67validatedruns20222boundaries,8600primaryformal+6400supplement. Peak8360416/8388608,zerotimedintermediateDDR/spill;physicalHMXtilepairs/weightbytesunchanged,375fewerheadcommands/token.
+Evidence/mnt/d/llm_exp/results/llama32-htp/l32-0044;ledger735c9aa7a68a4c9121e583c50f32446c64d41fc91bc804334dc4850589369582,2137files/4135058140bytesrehashed. Bothsource/memorysynced. Noactiveexperiment/deviceowner;noqualityclaim orautomaticpromotion. Currentbuilddirectory contains1Bregressionbinary: usefrozenopt2c-l28runtime or rebuild3B28 explicitly.
+Further directionsneednewprotocol: persistentnativeKV toavoidremainingfull-prefixpreparation, overlap nextstage/layer weightpreparation. Do notrepeat completedRMS/scattertransposeprobes. Prior entries below retained ashistory.
+
 # L32-0044 active
 Further3B decode optimization, M64+42 primary andM64+63 supplementary/cache128. Read docs/experiments/L32-0044.md. Frozen0043control/0041weights; exact/physical gates unchanged. No quality claim.
 
