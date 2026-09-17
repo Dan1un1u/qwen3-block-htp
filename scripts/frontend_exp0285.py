@@ -5,11 +5,11 @@ from reference_w4u8_hmx import unpack_w4_codes,HmxU8Converter,projection_bias_wo
 from verify_exp0167_generation import load_generation_qparams
 import numpy as np
 def fnv(b):
- v=14695981039346656037
+ v=1469598103934665603
  for a in b:v=((v^a)*1099511628211)&0xffffffffffffffff
  return v
 def main():
- preflight();p=O/'sp2-fp32';out=R/'frontend-reference-a01';out.mkdir(exist_ok=False)
+ preflight();p=O/'sp2-fp32';out=R/'frontend-reference-a02';out.mkdir(exist_ok=False)
  seeds=np.fromfile(p.parents[1]/'exp0257/prefix/prefix_kv_u8.bin','u1').reshape(28,2,8,128)
  ids=np.fromfile(p/'generation_prompt_token_ids_u32.bin','<u4').tolist();fixed=read(R/'fixed_tokens.json')['ids']
  embed=np.memmap(p/'generation_embedding_weight_f16.bin','<f2',mode='r',shape=(151936,2048))
