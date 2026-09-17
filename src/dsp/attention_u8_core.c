@@ -2376,8 +2376,33 @@ void qbh_attention_u8_pack_v_row_major_hvx_prepared(const uint8_t *rows,
     for(uint32_t i=0;i<QBH_ATTENTION_HEAD_DIM_TILES*kt*QBH_HMX_WEIGHT_BYTES/128U;++i)
         ((HVX_Vector *)weight)[i]=Q6_V_vzero();
     const uint8_t *saturated=scratch+QBH_ATTN_U8_VGATHER_LUT_OFFSET+QBH_ATTN_U8_VGATHER_LUT_BYTES;
-    if(saturation_count && saturated[256])
+    if(saturation_count && saturated[256]) {
+#ifdef QBH_LLAMA_3B
+        /* Positive recenter slope makes the non-saturating codes one interval.
+         * Count on the same head128 vectors used by the packer, retaining exact
+         * telemetry without a byte-at-a-time pass over the KV prefix. */
+        uint32_t low=0U, high=255U;
+        while(low<256U && saturated[low]) ++low;
+        while(high>low && saturated[high]) --high;
+        if(low==256U) {
+            *saturation_count+=valid_tokens*QBH_ATTENTION_HEAD_DIM;
+        } else {
+            HVX_Vector count=Q6_V_vzero();
+            const HVX_Vector vlo=Q6_Vb_vsplat_R(low),vhi=Q6_Vb_vsplat_R(high);
+            for(uint32_t i=0;i<valid_tokens;++i) {
+                HVX_Vector v=*(const HVX_Vector *)(rows+i*128U);
+                HVX_VectorPred clipped=Q6_Q_or_QQ(Q6_Q_vcmp_gt_VubVub(vlo,v),
+                                                Q6_Q_vcmp_gt_VubVub(v,vhi));
+                HVX_VectorPair ones=Q6_Wuh_vunpack_Vub(
+                    Q6_V_vmux_QVV(clipped,Q6_Vb_vsplat_R(1),Q6_V_vzero()));
+                count=Q6_Vh_vadd_VhVh(count,Q6_Vh_vadd_VhVh(Q6_V_lo_W(ones),Q6_V_hi_W(ones)));
+            }
+            *saturation_count+=qbh_attention_u8_sum_probability_half(count);
+        }
+#else
         for(uint32_t i=0;i<valid_tokens*QBH_ATTENTION_HEAD_DIM;++i)*saturation_count+=saturated[rows[i]];
+#endif
+    }
     for(uint32_t first=0;first<valid_tokens;first+=32U) {
         uint32_t count=valid_tokens-first;if(count>32U)count=32U;
         qbh_attention_u8_patch_v_delta_rows_hvx(rows+(size_t)first*QBH_ATTENTION_HEAD_DIM,count,
