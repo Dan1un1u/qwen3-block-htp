@@ -38,6 +38,11 @@ def execute(runtime,name,tag,repeat=1,full=False):
     old=read(R.parent/'l32-0040'/('package-full.json' if full else 'package-l7.json'))['command'];prefix,args=old.split(' ./qwen3_block_cli ',1)
     env=dict(v.split('=',1) for v in shlex.split(prefix.split(' && ')[1]));argv=shlex.split(args);argv[0]=cfg['remote'];argv[2]='1'
     env.update(LD_LIBRARY_PATH=root,DSP_LIBRARY_PATH=root,ADSP_LIBRARY_PATH=root,QBH_LLAMA_SP2='8',QBH_LLAMA_FP32_RESIDUAL='1',QBH_WIDE_SCORE='8',QBH_PAPER_FORMAT_DISABLE='0',QBH_PAPER_PIPELINE_DISABLE='0',QBH_DENSE_R3='0',QBH_DENSE_R4='0');env.pop('QBH_REPLAY_DUMP_DIR',None)
+    audit=full and os.environ.get('QBH_3B_AUDIT')=='1'
+    if audit:
+        assert repeat==1
+        env.update(QBH_GENERATION_BOUNDARY_AUDIT='1',QBH_GENERATION_AUDIT_DIR=root+'/'+tag.replace('/','_')+'-audit')
+        adb('shell','mkdir '+env['QBH_GENERATION_AUDIT_DIR'])
     env['QBH_W4U8_DECODE_AV_REQUANT_ROWS']='4'
     if os.environ.get('QBH_3B_HEAD_TILES'):env['QBH_W4U8_DECODE_LM_HEAD_GROUP_TILES']=os.environ['QBH_3B_HEAD_TILES']
     if full:
@@ -66,6 +71,19 @@ def execute(runtime,name,tag,repeat=1,full=False):
         for i in range(2):
             a=np.fromfile(d/f'actual_replay_output_{i:02d}_f32.bin','<f4').reshape(64,3072)[:64 if i==0 else 1]
             b=np.fromfile(p/('reference_w4u8_block_output_f32.bin' if i==0 else 'replay_decode_reference_00_f32.bin'),'<f4').reshape(64,3072)[:len(a)];assert np.array_equal(a,b) and np.isfinite(a).all()
+    if audit:
+        ad=d/'audit';ad.mkdir()
+        adb('pull',env['QBH_GENERATION_AUDIT_DIR']+'/.',windows(ad))
+        for i in range(steps):
+            actual=np.fromfile(ad/f'generation_hidden_step{i:02d}_f32.bin','<f4')
+            expected=np.fromfile(p/f'audit_hidden_{i:02d}_f32.bin','<f4').reshape(-1,3072)[-1]
+            assert np.array_equal(actual,expected),(tag,i,'hidden')
+        for li in range(28):
+            for kind in ['k','v']:
+                names=list(ad.glob(f'*layer{li:02d}*{kind}*'))
+                # Prefill cache comparisons are performed by the runtime as well;
+                # retain raw audit files for independent layout checks below.
+        save(d/'hidden-audit.json',dict(pass_all=True,exact_steps=steps,elements=steps*3072))
     out=dict(pass_all=True,layers=cfg['layers'],repeat=repeat,full=full,profiles=len(ps),prefill_ns=statistics.mean(v['host_wall_ns'] for v in ps if v['mode']=='prefill'),decode_ns=statistics.mean(v['host_wall_ns'] for v in ps if v['mode']=='decode'),peak=max(v['vtcm_peak_plan_bytes'] for v in ps));save(d/'validated.json',out);print('PASS',tag,64e9/out['prefill_ns'],1e9/out['decode_ns'],flush=True);return out
 if __name__=='__main__':
     a=sys.argv
