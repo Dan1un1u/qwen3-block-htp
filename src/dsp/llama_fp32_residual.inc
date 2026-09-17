@@ -65,9 +65,6 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
     HVX_Vector *tile=(HVX_Vector *)scratch;
     float *gf=(float *)(scratch+4096U),*sums=(float *)(scratch+4096U+width*4U);
     int32_t *flags=(int32_t *)(scratch+4352U+width*4U);
-#ifdef QBH_LLAMA_3B
-    if(rows!=1U)
-#endif
     for(uint32_t c=0;c<width;c+=64U) {
         HVX_VectorPair g=Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)(gamma+c));
         HVX_VectorPair ordered=Q6_W_vshuff_VVR(Q6_V_hi_W(g),Q6_V_lo_W(g),-4);
@@ -79,25 +76,16 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
         HVX_Vector sum=Q6_V_vzero();
         if(rows==1U) {
 #ifdef QBH_LLAMA_3B
-            /* Ordered reduction is serial by contract. Compute the squares
-             * on HVX, then use scalar IEEE FP32 addition instead of emulated
-             * vector-float addition with 31 unconsumed lanes. Idle gamma
-             * scratch holds all squares until the single ownership barrier. */
-            for(uint32_t c=0;c<width;c+=32U) {
-                HVX_Vector v=*(const HVX_Vector *)(x+c);
-                *(HVX_Vector *)(gf+c)=qbh_fp32_mul(v,v);
-            }
-            asm volatile("barrier":::"memory");
             float ordered_sum=0.0f;
-            for(uint32_t c=0;c<width;c++)
-                ordered_sum=Q6_R_sfadd_RR(ordered_sum,((volatile float *)gf)[c]);
+            for(uint32_t c=0;c<width;c+=32U) {
+                HVX_Vector v=*(const HVX_Vector *)(x+c),sq=qbh_fp32_mul(v,v);
+                for(uint32_t k=0;k<32U;k++) {
+                    union {int32_t i;float f;} lane;
+                    lane.i=Q6_R_vextract_VR(sq,k*4U);
+                    ordered_sum=Q6_R_sfadd_RR(ordered_sum,lane.f);
+                }
+            }
             sum=qbh_fp32_splat(ordered_sum);
-    for(uint32_t c=0;c<width;c+=64U) {
-        HVX_VectorPair g=Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)(gamma+c));
-        HVX_VectorPair ordered=Q6_W_vshuff_VVR(Q6_V_hi_W(g),Q6_V_lo_W(g),-4);
-        *(HVX_Vector *)(gf+c)=Q6_V_lo_W(ordered);
-        *(HVX_Vector *)(gf+c+32U)=Q6_V_hi_W(ordered);
-    }
 #else
             for(uint32_t c=0;c<width;c+=32U) {
                 HVX_Vector v=*(const HVX_Vector *)(x+c),sq=qbh_fp32_mul(v,v);
