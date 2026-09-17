@@ -6488,6 +6488,7 @@ static int qbh_run_generation_head_w4f16_overlap(
         QBH_BLOCK_M * QBH_BLOCK_HIDDEN * sizeof(uint16_t);
     const uint32_t intermediate_bytes =
         QBH_BLOCK_M * QBH_BLOCK_INTERMEDIATE * sizeof(uint16_t);
+    (void)hidden_bytes;
     const uint64_t head_start = HAP_perf_get_qtimer_count();
     uint8_t *compressed_slots[2] = {
         buffers->gate,
