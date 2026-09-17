@@ -1,3 +1,7 @@
+# L32-0042 active: 3B pipeline/layout optimization
+
+Read docs/experiments/L32-0042.md. Frozen0041 weights/oracles and control binaries; exact arithmetic/physical gates, paired full-model profiling. L32-0042 owns device after checking no concurrent work. No new PPL, calibration or memory campaign.
+
 # L32-0041 completed: Llama 3.2 3B W4A8-SP2
 
 Original-derived3B port completed. Read latest_llama3b_w4a8_sp2_port and docs/experiments/L32-0041-RESULTS.md / L32-0041-MODULES.md. Source closure c990326d949d56778cf5990d5b4b246f1a247710; measured binary source 6f911883fa98a426a5d8482bbaeceebc6a2d7d40. E2E M64+15,5short/10formal,repeat10: prefill 512.141778 / decode 18.638267 token/s. Selected0/13/27,chain3/full28 exact hidden+KV; full16 generated IDs/logit codes exact;1B bounded regression exact. FP32 residual,SP2mode8,no rotations,no spills,peak8360416/8388608VTCM. NoPPL/general quality claim or baseline promotion. Original1B fields/artifacts remain1B;3B does not yet support W16A16/W4A16. Memory optimization deferred. Device released; no active experiment.
