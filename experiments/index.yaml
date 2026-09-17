@@ -24,6 +24,19 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0291
+  title: Qwen0.6 bounded W4A16 exact dataflow optimization
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/EXP-0291.md
+  approval_ref: User asks modest W4A16 optimization to exceed floating throughput
+    by 10-20 percent.
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0290-qwen3-06b-w4f16-speed
+    started_on: '2026-09-18'
 - id: EXP-0290
   title: Qwen0.6 W4F16 QKV granularity and staircase-speed diagnosis
   execution_state: completed

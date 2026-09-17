@@ -443,3 +443,6 @@ See docs/experiments/EXP-0289.md for the retained hardware validation and timing
 
 ## Qwen0.6 W4A16 performance diagnosis (2026-09-18; EXP-0290)
 User requests checking unexpectedly slower W4A16 and staircase speed. Bounded same-math/config diagnosis and attributable routine fixes under docs/experiments/EXP-0290.md; prior provisional precision scope retained, physical/exact regression gates remain. No baseline promotion.
+
+## User-approved modest Qwen0.6 W4A16 speed repair (2026-09-18; EXP-0291)
+User requests bounded optimization targeting10-20percent greater E2E throughput than float; docs/experiments/EXP-0291.md governs. Preserve mathematics, exact output/physical gates, frozen model data and prior failed full-floating status; no baseline promotion. Routine repairs PC037.
