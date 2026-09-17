@@ -2159,7 +2159,7 @@ void qbh_attention_u8_patch_k_delta_rows_hvx(
         const HVX_Vector offsets = Q6_Vw_vadd_VwVw(
             offsets_base, Q6_V_vsplat_R(output * sizeof(uint32_t)));
         const int32_t sum = qbh_attention_u8_sum_signed_bytes(centered);
-#ifdef QBH_MODEL_LLAMA32
+#if defined(QBH_MODEL_LLAMA32) && !defined(QBH_LLAMA_3B)
         Q6_vscatter_QRMVwV(Q6_Q_vsetq_R(QBH_ATTENTION_HEAD_DIM),
 #else
         Q6_vscatter_RMVwV(
