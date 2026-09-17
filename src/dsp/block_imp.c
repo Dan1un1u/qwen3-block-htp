@@ -4198,6 +4198,10 @@ static int qbh_attention_u8_lut_templates_enabled(uint32_t mode) {
 
 static int qbh_attention_u8_gqa_hmx_batch_enabled(uint32_t mode) {
     mode = qbh_attention_u8_base_mode(mode);
+#ifdef QBH_LLAMA_3B
+    /* L32-0043: all three GQA queries reuse one K/V operand, one owner command. */
+    if (mode == QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA) return 1;
+#endif
     return mode ==
                QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA_QKV_OVERLAP_VGATHER_VDEAL_FUSED_QK_REQUANT_HMX_BATCH_LUT_TEMPLATES_GQA_BATCH ||
            mode ==
@@ -20389,6 +20393,13 @@ static int qbh_scan_u8_attention(
                 kv_tiles, QBH_ATTENTION_HEAD_DIM_TILES) != 0) {
             return -1;
         }
+#ifdef QBH_LLAMA_3B
+        /* Only the live decode row is consumed by direct-native O. HVX granule=4 rows. */
+        if (logical_rows == 1U &&
+            header->w4u8_decode_av_requant_rows == QBH_BLOCK_W4U8_AV_REQUANT_DECODE_ROWS)
+            qbh_attention_u8_requant_av_rows(q_group, config, 4U);
+        else
+#endif
         qbh_attention_u8_requant_av(q_group, config);
         header->u8_attention_av_hmx_ticks +=
             HAP_perf_get_qtimer_count() - start;
