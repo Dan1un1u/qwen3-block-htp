@@ -59,7 +59,7 @@ def execute(runtime,name,tag,repeat=1,full=False):
         assert all(v[k]==0 for k in ['intermediate_ddr_read_bytes','intermediate_ddr_write_bytes','intermediate_spill_fill_count','ledger_unattributed_ticks','dense_r3_mode','dense_r4_mode','paper_format_disable','paper_pipeline_disable'])
         ticks=sum(sum(v[k] for k in fs) for _,fs in MODULES)-v['generation_final_norm_ticks'];assert ticks==v['invocation_ticks'],(ticks,v['invocation_ticks'])
     if full:
-        steps=[v for v in rs if isinstance(v,dict) and 'selected_logit_half_bits' in v];assert [v['selected_token_id'] for v in steps]==tokens*repeat;assert [v['selected_logit_half_bits'] for v in steps]==teacher['u8_selected_codes'][:steps]*repeat
+        selected=[v for v in rs if isinstance(v,dict) and 'selected_logit_half_bits' in v];assert [v['selected_token_id'] for v in selected]==tokens*repeat;assert [v['selected_logit_half_bits'] for v in selected]==teacher['u8_selected_codes'][:steps]*repeat
     else:
         for v in ps:assert all(v[k]==0 for k in ['output_mismatches','output_nonfinite_count','cache_mismatches','cache_structure_mismatches','cache_nonfinite_count','scan_cache_append_mismatch_count'])
         for i in range(2):
