@@ -1,3 +1,7 @@
+# Active EXP0287 — W16A16 DRAM comparison
+
+External measurement only; sealed EXP0283 OPT3, same Qwen3 model. See docs/experiments/EXP-0287.md. Prior SP2 result unchanged.
+
 # Current EXP0286 closure — inference DRAM
 User-requested measurement complete. No active experiment/device owner.
 Qwen3-1.7B original EXP0284 no-rotation SP2 mode8 + FP32 residual mode2, M64+15/cache128.

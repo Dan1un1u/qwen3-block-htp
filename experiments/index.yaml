@@ -24,6 +24,19 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0287
+  title: Matched Qwen3 W16A16 DRAM measurement and byte-accounted comparison to W4A8-SP2
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: not_applicable
+  approval_ref: 'User 2026-09-17: measure same-model W16A16 DRAM peak and compare
+    against theoretical expectation'
+  record: docs/experiments/EXP-0287.md
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0285-fp16-residual
+    started_on: '2026-09-17'
 - id: EXP-0286
   title: Inference DRAM peak measurement of retained no-rotation W4A8-SP2 FP32 baseline
   execution_state: completed
