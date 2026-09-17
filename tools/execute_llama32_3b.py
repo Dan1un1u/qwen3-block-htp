@@ -32,12 +32,12 @@ def deploy(name):
             h,n=line.split(None,1);assert h==mf['files'][n.removeprefix(remote+'/')]['sha256'],n
     save(R/('package-'+name+'.json'),dict(package=str(p),remote=remote,manifest_sha256=sha(p/'manifest.json'),layers=mf['layers']));print('DEPLOYED',name,flush=True)
 def execute(runtime,name,tag,repeat=1,full=False):
-    preflight();rt=read(R/runtime/'runtime.json');cfg=read(R/('package-'+name+'.json'));assert rt['seal']['layer_count']==cfg['layers'];assert rt['seal']['model_size']=='3B';root=rt['remote'];p=Path(cfg['package']);d=R/tag;d.mkdir(exist_ok=False,parents=True)
+    preflight();rt=read(R/runtime/'runtime.json');cfg=read(R/('package-'+name+'.json'));assert int(rt['seal']['layer_count'])==cfg['layers'];assert rt['seal']['model_size']=='3B';root=rt['remote'];p=Path(cfg['package']);d=R/tag;d.mkdir(exist_ok=False,parents=True)
     old=read(R.parent/'l32-0040'/('package-full.json' if full else 'package-l7.json'))['command'];prefix,args=old.split(' ./qwen3_block_cli ',1)
     env=dict(v.split('=',1) for v in shlex.split(prefix.split(' && ')[1]));argv=shlex.split(args);argv[0]=cfg['remote'];argv[2]='1'
     env.update(LD_LIBRARY_PATH=root,DSP_LIBRARY_PATH=root,ADSP_LIBRARY_PATH=root,QBH_LLAMA_SP2='8',QBH_LLAMA_FP32_RESIDUAL='1',QBH_WIDE_SCORE='8',QBH_PAPER_FORMAT_DISABLE='0',QBH_PAPER_PIPELINE_DISABLE='0',QBH_DENSE_R3='0',QBH_DENSE_R4='0');env.pop('QBH_REPLAY_DUMP_DIR',None)
     if full:
-        teacher=read(R/(name+'-teacher.json'));ids=teacher['prompt_ids'];tokens=teacher['u8_generated_ids'];row=[0,3,16]+ids+tokens
+        teacher=read(R/(name+'-teacher.json'));ids=teacher['prompt_ids'];tokens=teacher['u8_generated_ids'];row=[0,2 if os.environ.get('QBH_3B_GREEDY')=='1' else 3,16]+ids+tokens
         f=d/'eval.bin';f.write_bytes(struct.pack('<4I',0x51424556,1,repeat,83)+b''.join(struct.pack('<83I',i,*row[1:]) for i in range(repeat)))
         env['QBH_EVAL_FILE']=root+'/'+tag.replace('/','_')+'.bin';adb('push',windows(f),env['QBH_EVAL_FILE'])
     else:
