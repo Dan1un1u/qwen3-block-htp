@@ -36,7 +36,7 @@ experiments:
   record: docs/experiments/EXP-0285.md
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0284-uniform-int16-down
+    source_branch: codex/exp-0285-fp16-residual
     started_on: '2026-09-17'
 - id: EXP-0284
   title: Uniform INT16 Down vs A8 and SP2, shared native W4 pipeline
