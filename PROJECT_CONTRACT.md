@@ -429,3 +429,7 @@ User approves the prior annotated proposal. Implement uniform INT16 Down input o
 ## User-approved FP16 residual speed experiment (2026-09-17; EXP-0285)
 
 User explicitly authorizes latest no-rotation W4A8-SP2 baseline with FP16 residual storage, preserving FP32 add/Norm and other boundaries. Supersedes FP32 residual freeze only for this bounded experiment. No PPL/model-quality evaluation. Hardware implementation correctness remains required against its own newly declared rounding contract. Same-binary FP32 control, fixed tokens M64+15; no automatic promotion. Routine repairs under PC037. Qwen first, Llama unchanged.
+
+## User-approved Qwen3-0.6B port (2026-09-17; EXP-0288)
+
+User requests same workflow as Llama3B. Reopen only original-derived0.6B no-rotation nativeW4/SP2/FP32 port and bounded pipeline/layout optimization per docs/experiments/EXP-0288.md. Preserve other models/recipes and numerical/physical/evidence gates; no PPL, automatic promotion or FP16 residual adoption.

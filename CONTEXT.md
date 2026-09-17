@@ -1,3 +1,6 @@
+# Current EXP0288 — Qwen3-0.6B port
+User-approved original-derived0.6B nativeW4/SP2/FP32 no rotation. Read docs/experiments/EXP-0288.md. Parent0284 fastFP32; do not inherit0285 codegen regression. ModelScope original files needed. Other models frozen, no device owner yet.
+
 # Current EXP0287 closure — W16A16 versus SP2 DRAM
 Completed, no active experiment/device owner; runtime/model/source unchanged.
 Same Qwen3-1.7B M64+15, three launches x10 trajectories, all480 profiles and own

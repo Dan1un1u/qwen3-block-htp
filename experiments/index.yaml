@@ -24,6 +24,20 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0288
+  title: Qwen3-0.6B original-derived native W4A8-SP2 FP32 runtime port
+  record: docs/experiments/EXP-0288.md
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: pending
+  approval_ref: User 2026-09-17 requests Qwen3-0.6B same workflow as Llama3B; check
+    models and use ModelScope if absent.
+  parent_source: 8cfc71a113b3e59f271730ca88c5d63829a759dc
+  runtime:
+    source_branch: codex/exp-0285-fp16-residual
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    started_on: '2026-09-17'
 - id: EXP-0287
   title: Matched Qwen3 W16A16 DRAM measurement and byte-accounted comparison to W4A8-SP2
   execution_state: completed
