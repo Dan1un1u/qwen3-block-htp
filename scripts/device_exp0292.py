@@ -85,8 +85,8 @@ def run(package,tag,count=1,repeat=1,audit=True,full=False,greedy=False,opt=2,f1
    f=d/((f'generation_hidden_norm_step{step:02d}_f32_f16.bin' if fp32 else f'generation_hidden_norm_step{step:02d}_f16.bin') if full else f'step{step:02d}_output.bin')
    rows=1 if full or step else 64
    a=np.fromfile(f,'<f4' if fp32 else '<f2').astype('f8')[:rows*1024]
-   ref=O/package/(f'audit_hidden_{step:02d}_f32.bin' if full else f'reference_{recipe.lower()}_block_output_f32.bin' if not step else 'replay_decode_reference_00_f32.bin')
-   b=np.fromfile(ref,'<f4').astype('f8')[:rows*1024]
+   ref=O/package/(f'audit_hidden_{step:02d}_'+('f32' if fp32 else 'f16')+'.bin' if full else f'reference_{recipe.lower()}_block_output_'+('f32' if fp32 else 'f16')+'.bin' if not step else 'replay_decode_reference_00_'+('f32' if fp32 else 'f16')+'.bin')
+   b=np.fromfile(ref,'<f4' if fp32 else '<f2').astype('f8')[:rows*1024]
    delta=a-b;cos=float(a@b/max(np.linalg.norm(a)*np.linalg.norm(b),1e-30));err=float(np.linalg.norm(delta)/max(np.linalg.norm(b),1e-30))
    errs.append(dict(step=step,nrmse=err,cosine=cos,max_abs=float(abs(delta).max()),finite=bool(np.isfinite(a).all()),pass_all=bool(np.isfinite(a).all() and err<=.003 and cos>=.99999)))
  out=dict(physical_pass=True,profiles=len(ps),prefill_ns=statistics.mean(v['host_wall_ns'] for v in ps if v['mode']=='prefill'),decode_ns=statistics.mean(v['host_wall_ns'] for v in ps if v['mode']=='decode'),independent_output=errs,numerical_pass=all(z['pass_all'] for z in errs) if errs else None,token_sequences=[v['token_ids'] for v in rs if v.get('generation_sequence_complete')])
