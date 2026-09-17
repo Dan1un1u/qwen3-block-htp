@@ -620,6 +620,39 @@ static void qbh_llama_rope_head(__fp16 *tensor, uint32_t rows,
 }
 #endif
 
+#ifdef QBH_QWEN_06B
+/* Float intermediates with half tensor boundaries, SIMD throughout. */
+static HVX_Vector qbh_a16_mul_sf(HVX_Vector a,HVX_Vector b) {
+    return Q6_Vsf_equals_Vqf32(Q6_Vqf32_vmpy_VsfVsf(a,b));
+}
+static HVX_Vector qbh_a16_splat(float x) {
+    union {float f;int32_t i;} b={.f=x};
+    return Q6_V_vsplat_R(b.i);
+}
+static HVX_Vector qbh_a16_rope(HVX_Vector a,HVX_Vector b,
+    HVX_Vector c,HVX_Vector s,int subtract) {
+    HVX_VectorPair av=Q6_Wsf_vcvt_Vhf(a),bv=Q6_Wsf_vcvt_Vhf(b);
+    HVX_VectorPair cv=Q6_Wsf_vcvt_Vhf(c),sv=Q6_Wsf_vcvt_Vhf(s);
+    HVX_Vector lo=qbh_a16_mul_sf(Q6_V_lo_W(av),Q6_V_lo_W(cv));
+    HVX_Vector hi=qbh_a16_mul_sf(Q6_V_hi_W(av),Q6_V_hi_W(cv));
+    HVX_Vector sl=qbh_a16_mul_sf(Q6_V_lo_W(bv),Q6_V_lo_W(sv));
+    HVX_Vector sh=qbh_a16_mul_sf(Q6_V_hi_W(bv),Q6_V_hi_W(sv));
+    return Q6_Vhf_vcvt_VsfVsf(subtract?Q6_Vsf_vsub_VsfVsf(lo,sl):Q6_Vsf_vadd_VsfVsf(lo,sl),
+        subtract?Q6_Vsf_vsub_VsfVsf(hi,sh):Q6_Vsf_vadd_VsfVsf(hi,sh));
+}
+static void qbh_a16_qknorm(HVX_Vector first,HVX_Vector second,
+    HVX_Vector gf,HVX_Vector gs,HVX_Vector cf,HVX_Vector cs,
+    HVX_Vector sf,HVX_Vector ss,HVX_Vector *outf,HVX_Vector *outs) {
+    __fp16 input[128] __attribute__((aligned(128)));
+    ((HVX_Vector *)input)[0]=first;((HVX_Vector *)input)[1]=second;
+    float inv=1.0f/sqrtf(qbh_hvx_sum_squares_f16(input,128)/128.0f+QBH_MODEL_RMS_EPS);
+    first=qbh_hvx_scale_then_multiply_f16_f32(first,inv,gf);
+    second=qbh_hvx_scale_then_multiply_f16_f32(second,inv,gs);
+    *outf=qbh_a16_rope(first,second,cf,sf,1);
+    *outs=qbh_a16_rope(second,first,cs,ss,0);
+}
+#endif
+
 void qbh_hvx_qk_norm_rope_f16(__fp16 *tensor, uint32_t rows,
                                uint32_t heads, uint32_t row_stride,
                                uint32_t head_dim, const __fp16 *gamma,
@@ -654,6 +687,12 @@ void qbh_hvx_qk_norm_rope_f16(__fp16 *tensor, uint32_t rows,
                     original[channel] = values[channel];
                 }
             }
+#ifdef QBH_QWEN_06B
+            qbh_a16_qknorm(((HVX_Vector *)values)[0],((HVX_Vector *)values)[1],
+                gamma_first,gamma_second,cosine_first,cosine_second,sine_first,sine_second,
+                &((HVX_Vector *)values)[0],&((HVX_Vector *)values)[1]);
+            continue;
+#endif
             float sum = qbh_hvx_sum_squares_f16(values, head_dim);
             __fp16 inverse = (__fp16)(
                 1.0f / sqrtf(sum / (float)head_dim + QBH_MODEL_RMS_EPS));
@@ -741,6 +780,12 @@ void qbh_hvx_qk_norm_rope_f16_head(
             sine + (size_t)row * head_dim + half_dim);
         __fp16 *values = tensor + (size_t)row * row_stride +
                          (size_t)head * head_dim;
+#ifdef QBH_QWEN_06B
+        qbh_a16_qknorm(((HVX_Vector *)values)[0],((HVX_Vector *)values)[1],
+            gamma_first,gamma_second,cosine_first,cosine_second,sine_first,sine_second,
+            &((HVX_Vector *)values)[0],&((HVX_Vector *)values)[1]);
+        continue;
+#endif
         float sum = qbh_hvx_sum_squares_f16(values, head_dim);
         __fp16 inverse = (__fp16)(
             1.0f / sqrtf(sum / (float)head_dim + QBH_MODEL_RMS_EPS));
@@ -779,6 +824,11 @@ static void qbh_hvx_qk_norm_rope_vectors(
     HVX_Vector cosine_first, HVX_Vector cosine_second,
     HVX_Vector sine_first, HVX_Vector sine_second,
     HVX_Vector *first_output, HVX_Vector *second_output) {
+#ifdef QBH_QWEN_06B
+    qbh_a16_qknorm(first,second,gamma_first,gamma_second,
+        cosine_first,cosine_second,sine_first,sine_second,first_output,second_output);
+    return;
+#endif
     HVX_Vector sum_lo = Q6_V_vzero();
     HVX_Vector sum_hi = Q6_V_vzero();
     HVX_VectorPair square = Q6_Wqf32_vmpy_VhfVhf(first, first);
@@ -935,6 +985,25 @@ void qbh_hvx_qk_norm_rope_f16_crouton_head(
 
 static HVX_Vector qbh_hvx_silu_multiply_vector(
     HVX_Vector gate_value, HVX_Vector up_value) {
+#ifdef QBH_QWEN_06B
+    HVX_VectorPair gg=Q6_Wsf_vcvt_Vhf(gate_value),uu=Q6_Wsf_vcvt_Vhf(up_value);
+    HVX_Vector result[2],one=qbh_a16_splat(1.0f),two=qbh_a16_splat(2.0f);
+    for(uint32_t part=0;part<2;++part) {
+        HVX_Vector g=part?Q6_V_hi_W(gg):Q6_V_lo_W(gg);
+        HVX_Vector u=part?Q6_V_hi_W(uu):Q6_V_lo_W(uu);
+        HVX_Vector negative_abs=Q6_V_vor_VV(g,Q6_V_vsplat_R((int32_t)0x80000000));
+        HVX_Vector e=qhmath_hvx_exp_vf(negative_abs);
+        HVX_Vector den=Q6_Vsf_vadd_VsfVsf(one,e);
+        HVX_Vector dh=Q6_Vhf_vcvt_VsfVsf(den,den);
+        HVX_VectorPair seed=Q6_Wsf_vcvt_Vhf(qhmath_hvx_inv_vhf(dh));
+        HVX_Vector inv=Q6_V_lo_W(seed);
+        for(uint32_t n=0;n<2;++n)
+            inv=qbh_a16_mul_sf(inv,Q6_Vsf_vsub_VsfVsf(two,qbh_a16_mul_sf(den,inv)));
+        HVX_Vector sigmoid=Q6_V_vmux_QVV(Q6_Q_vcmp_gt_VsfVsf(Q6_V_vzero(),g),qbh_a16_mul_sf(e,inv),inv);
+        result[part]=qbh_a16_mul_sf(qbh_a16_mul_sf(g,sigmoid),u);
+    }
+    return Q6_Vhf_vcvt_VsfVsf(result[0],result[1]);
+#endif
     const HVX_Vector sign_mask = Q6_Vh_vsplat_R(0x8000);
     const HVX_Vector magnitude_mask = Q6_Vh_vsplat_R(0x7fff);
     const HVX_Vector one = Q6_Vh_vsplat_R(0x3c00);
@@ -1095,7 +1164,13 @@ void qbh_hvx_stable_causal_softmax_f16(__fp16 *scores,
                 Q6_Vh_vsplat_R(*(const uint16_t *)&maximum_half);
             HVX_Vector shifted = Q6_Vhf_equals_Vqf16(
                 Q6_Vqf16_vsub_VhfVhf(score, maximum));
+#ifdef QBH_QWEN_06B
+            HVX_VectorPair sf=Q6_Wsf_vcvt_Vhf(shifted);
+            HVX_Vector exponential=Q6_Vhf_vcvt_VsfVsf(
+                qhmath_hvx_exp_vf(Q6_V_lo_W(sf)),qhmath_hvx_exp_vf(Q6_V_hi_W(sf)));
+#else
             HVX_Vector exponential = qhmath_hvx_exp_vhf(shifted);
+#endif
             exponential = Q6_V_vmux_QVV(masked, zero, exponential);
             float sum = qbh_hvx_reduce_sum_f16(exponential);
             *(HVX_Vector *)(probability + offset) =
