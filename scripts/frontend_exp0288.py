@@ -48,7 +48,7 @@ def main(attempt):
         act=norm(x[-1:],gamma,gq['generation_final_norm_output'])
         logits=project_w4u8(act,dst,'generation_lm_head',151936,H,gq['generation_final_norm_output'],gq['generation_lm_head_output'],cv)[0]
         tok=int(logits.argmax());tokens.append(tok);codes.append(int(logits[tok]));print('FRONTEND_STEP',step,tok,codes[-1],flush=True)
-    np.asarray(tokens[:16],'<u4').tofile(dst/'generation_expected_token_ids_u32.bin')
+    np.asarray(tokens,'<u4').tofile(dst/'generation_expected_token_ids_u32.bin')
     for n in ['reference_w4u8_block_input_u8.bin','reference_w4u8_integer_attention_block_output_u8.bin']:np.zeros((64,H),'u1').tofile(dst/n)
     tokenizer=AutoTokenizer.from_pretrained(MODEL,local_files_only=True)
     save(RES/(attempt+'-teacher.json'),dict(prompt_ids=ids.tolist(),u8_generated_ids=tokens,u8_selected_codes=codes,text=tokenizer.decode(tokens,skip_special_tokens=True),quality_accepted=False,recipe='fresh Qwen0.6B GPTQ per-channel W4, minmax static A8, SP2 mode8, FP32 residual, no rotations',arithmetic='independent complete HMX conversion/integer attention/FP32 residual oracle',calibration_sha256=sha256(OUT/'calibration.json')))
