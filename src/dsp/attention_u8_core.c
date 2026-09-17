@@ -2251,9 +2251,11 @@ void qbh_attention_u8_patch_v_delta_rows_hvx(
     uint8_t *scratch, uint32_t *saturation_count) {
     int16_t *recenter_lut = (int16_t *)(
         scratch + QBH_ATTN_U8_VGATHER_LUT_OFFSET);
+#ifndef QBH_LLAMA_3B
     int16_t *gathered_low = (int16_t *)(
         scratch + QBH_ATTN_U8_VGATHER_SCRATCH_OFFSET);
     int16_t *gathered_high = gathered_low + 64;
+#endif
     uint8_t row_group[QBH_ATTN_U8_HVX_BYTES]
         __attribute__((aligned(QBH_ATTN_U8_HVX_BYTES)));
 
