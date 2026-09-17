@@ -12,7 +12,7 @@
 #define QBH_BLOCK_ABI_VERSION UINT32_C(129)
 #define QBH_SP2(h) ((h)->sp2_mode)
 #elif defined(QBH_NATIVE_SP2)
-#define QBH_BLOCK_ABI_VERSION UINT32_C(134)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(135)
 #define QBH_SP2(h) ((h)->sp2_mode)
 #else
 #define QBH_BLOCK_ABI_VERSION UINT32_C(127)
@@ -29,10 +29,12 @@
 #define QBH_FP32_RESIDUAL(h) 0U
 #endif
 #if defined(QBH_NATIVE_SP2) && !defined(QBH_MODEL_LLAMA32)
-#define QBH_FP32_RESIDUAL_MAX 2U
+#define QBH_FP32_RESIDUAL_MAX 3U
 #else
 #define QBH_FP32_RESIDUAL_MAX 1U
 #endif
+#define QBH_RESIDUAL_HALF(h) (QBH_FP32_RESIDUAL(h)==3U)
+#define QBH_RESIDUAL_BYTES(h) (QBH_RESIDUAL_HALF(h)?2U:4U)
 #define QBH_BLOCK_EXPERIMENT UINT32_C(218)
 
 #define QBH_BLOCK_M UINT32_C(64)

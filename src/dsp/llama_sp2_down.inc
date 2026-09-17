@@ -108,7 +108,7 @@ __attribute__((noinline)) static int qbh_llama_sp2_down_stream(struct qbh_block_
             else read_i32(raw+pass*8192U,bias,3U);
         }
         e->meta[slot]=(const int32_t *)worker->scale_or_bias+nt*64U;
-        e->output[slot]=e->fp32_residual ? (uint8_t *)(e->fp32_residual+worker->fp32_first_channel+nt*32U) : (uint8_t *)worker->output+(size_t)nt*2048U;
+        e->output[slot]=e->fp32_residual ? (uint8_t *)(qbh_residual_at(e->fp32_residual,worker->fp32_first_channel+nt*32U,e->residual_half)) : (uint8_t *)worker->output+(size_t)nt*2048U;
         asm volatile("barrier":::"memory");
         e->ready[slot]=seq+1U;
         asm volatile("release(%0):at"::"r"(&e->ready[slot]):"memory");
@@ -131,7 +131,7 @@ __attribute__((noinline)) static void qbh_sp2_epilogue_run(struct qbh_sp2_epilog
         const int32_t *meta=e->meta[slot];
         uint8_t *out=e->output[slot];
         if(e->fp32_residual) {
-            qbh_llama_fp32_epilogue(raw,e->fp32_sp2?raw+8192U:NULL,(const float *)meta,(float *)out,64U,e->fp32_sp2,e->zero_point);
+            qbh_llama_fp32_epilogue(raw,e->fp32_sp2?raw+8192U:NULL,(const float *)meta,(float *)out,64U,e->fp32_sp2,e->zero_point,e->residual_half);
         } else {
         HVX_Vector sum=*(const HVX_Vector *)(meta+32U),multiplier=*(const HVX_Vector *)meta;
         HVX_Vector zp=Q6_V_vsplat_R(e->zero_point);
