@@ -102,7 +102,9 @@ def main(recipe):
    if not step:
     pref.append((ins[-1].clone(),x.clone()))
     for j,n in enumerate(['k','v']):put(dst/f'layer{i}/reference_kv_cache_{n}_hmx_f16_step00.bin',cache_carrier(caches[i][j],n))
-   if step==1:dec.append((ins[-1].clone(),x.clone()))
+   if step==1:
+    dec.append((ins[-1].clone(),x.clone()))
+    for j,n in enumerate(['k','v']):put(dst/f'layer{i}/reference_kv_cache_{n}_hmx_f16_step01.bin',cache_carrier(caches[i][j],n))
   put(dst/f'audit_hidden_{step:02d}_f16.bin',x[-1])
   norm=rms(x[-1:],gamma);tok=int(linear(norm,head)[0].argmax());tokens.append(tok)
   if not step:put(dst/f'reference_{recipe}_block_output_f16.bin',x)

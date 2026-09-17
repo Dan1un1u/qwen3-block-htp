@@ -32,7 +32,7 @@ def deploy(package):
  preflight();p=O/package;m=read(p/'manifest.json');remote=REMOTE+'-models/'+package
  for n,v in m['files'].items():assert sha(p/n)==v['sha256'],n
  assert adb('shell','test ! -e '+shlex.quote(remote),check=False).returncode==0
- adb('shell','mkdir -p '+REMOTE+'-models');adb('push',win(p),remote)
+ adb('shell','mkdir -p '+shlex.quote(str(Path(remote).parent)));adb('push',win(p),remote)
  names=list(m['files'])
  for k in range(0,len(names),32):
   got=adb('shell','sha256sum '+' '.join(shlex.quote(remote+'/'+n) for n in names[k:k+32])).stdout
@@ -42,7 +42,7 @@ def deploy(package):
 ARGS='2 32 hvx on off fused gate8_interleaved control hvx crouton_native_batch8 4 64 gqa_qkv_overlap 4 norms serial scalar input_norm_pool_post_norm_pool 4 3 1 0'
 def run(package,tag,count=1,repeat=1,audit=True,full=False,greedy=False):
  preflight();state=read(R/f'runtime-l{count}.json');root=state['remote'];d=R/tag;d.mkdir(parents=True,exist_ok=False)
- recipe='W4F16' if package.startswith('w4f16') else 'F16F16'
+ recipe='W4F16' if 'w4f16' in package else 'F16F16'
  remote=read(R/('deployment-'+package+'.json'))['remote']
  e=dict(LD_LIBRARY_PATH=root,DSP_LIBRARY_PATH=root,ADSP_LIBRARY_PATH=root,QBH_VERTICAL_SLICE='1',QBH_REPLAY_SEQUENCE='1',QBH_SCAN_MODE='prefill',QBH_LOGICAL_M='64',QBH_KV_CACHE_LENGTH='0',QBH_KV_CACHE_CAPACITY='128',QBH_KV_CACHE_LAYOUT='hmx_native_f16',QBH_F16F16_OPT='3',QBH_W4F16_DECODE_OPT='2',QBH_REPLAY_DECODE_STEPS='1')
  args=ARGS
