@@ -9749,6 +9749,21 @@ static int qbh_run_w4u8_direct_n_projection(
                    : buffers->scale_or_bias +
                          QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES *
                              QBH_HMX_BIAS_BYTES)};
+    /* L32-0045: Gate is dead throughout unrotated QKV. Keep live RoPE
+     * coefficients intact while widening the 3B native-W4 submission. */
+#ifdef QBH_LLAMA_3B
+    const uint32_t qkv_wide = batch_tiles == 32U &&
+        header->dense_r3_mode == 0U && header->dense_r4_mode == 0U &&
+        (desc == &header->projections[QBH_BLOCK_PROJ_Q] ||
+         desc == &header->projections[QBH_BLOCK_PROJ_K] ||
+         desc == &header->projections[QBH_BLOCK_PROJ_V]);
+#else
+    const uint32_t qkv_wide = 0U;
+#endif
+    if (qkv_wide) {
+        bias_slots[0] = buffers->gate;
+        bias_slots[1] = buffers->gate + 32U * QBH_HMX_BIAS_BYTES;
+    }
     const uint32_t k_tiles = desc->k / QBH_HMX_INPUT_CHANNELS;
     const uint32_t n_tiles = desc->n / QBH_HMX_OUTPUT_CHANNELS;
     const uint32_t tile_bytes =
@@ -9781,7 +9796,7 @@ static int qbh_run_w4u8_direct_n_projection(
          desc == &header->projections[QBH_BLOCK_PROJ_O]);
     const uint32_t prefill_direct = prefill_mlp | prefill_qkvo;
     const uint32_t single_weight_descriptor =
-        prefill_direct != 0U
+        prefill_direct != 0U || qkv_wide
             ? 1U
             : desc == &header->projections[QBH_BLOCK_PROJ_DOWN]
             ? header->w4u8_decode_direct_n_down_single_dma
@@ -9802,6 +9817,7 @@ static int qbh_run_w4u8_direct_n_projection(
         batch_tiles == 0U ||
         batch_tiles > QBH_BLOCK_W4U8_DIRECT_N_MAX_BATCH_N_TILES ||
         (batch_tiles > QBH_BLOCK_W4U8_QKVO_MAX_BATCH_N_TILES &&
+         !qkv_wide &&
          desc != &header->projections[QBH_BLOCK_PROJ_GATE] &&
          desc != &header->projections[QBH_BLOCK_PROJ_UP] &&
          !(desc == &header->projections[QBH_BLOCK_PROJ_O] &&
@@ -11578,7 +11594,7 @@ static int qbh_run_projection(
             return qbh_run_w4u8_direct_n_projection(header, shared, desc, buffers, worker,
                 projection_activation, (uint8_t *)output,
 #ifdef QBH_LLAMA_3B
-                8U
+                32U
 #else
                 4U
 #endif
