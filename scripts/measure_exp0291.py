@@ -9,6 +9,7 @@ CASES={'original':('reference-a03/w4f16',2,'control',True),
  'f16rows':('f16f16',4,'control',False),
  'control':('reference-a03/w4f16',2,'control',False),
  'rows':('reference-a03/w4f16',4,'control',False),
+ 'candidate':('reference-a03/w4f16',4,'control',False),
  'main':('reference-a03/w4f16',5,'control',False),
  'mainhead4':('reference-a03/w4f16',5,'head_aligned_batch4',False)}
 reader=d.read
@@ -61,11 +62,14 @@ if __name__=='__main__':
  elif sys.argv[1]=='campaign':
   winner=sys.argv[2]
   assert read(R/('audit/'+winner+'-checks.json'))['bytewise_audit_files']==2451
-  write(R/'repeat1.json',[one(c,'repeat1/'+c,1) for c in ['original','f16',winner]])
+  assert read(R/('audit/'+winner+'-checks.json'))['runtime']==read(R/'runtime-l28.json')
+  assert read(R/'audit/f16rows-checks.json')['bytewise_audit_files']==2451
+  assert read(R/'audit/f16rows-checks.json')['runtime']==read(R/'runtime-l28.json')
+  write(R/'repeat1.json',[one(c,'repeat1/'+c,1) for c in ['original','f16','f16rows',winner]])
   for phase,n in [('short',5),('formal',10)]:
    rows=[]
    for i in range(n):
-    seq=['original','f16',winner];order=seq[i%3:]+seq[:i%3]
+    seq=['original','f16','f16rows',winner];order=seq[i%4:]+seq[:i%4]
     if i%2:order=order[::-1]
     block=[one(c,f'{phase}/{i:02d}-{c}',10) for c in order]
     rows+=block;write(R/f'{phase}-round-{i:02d}.json',block)
