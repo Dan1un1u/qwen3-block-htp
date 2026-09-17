@@ -984,7 +984,14 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
                 QBH_BLOCK_HMX_OUTPUT_MAX_BYTES,
             QBH_HMX_FP16_TILE_BYTES);
     } else {
+#ifdef QBH_LLAMA_3B
+        /* The 3B low SP2 plane previously straddled the 4MiB VTCM boundary
+         * inside one 64KiB HMX stream. Align its fixed 512KiB carrier so stream
+         * boundaries also align with the physical VTCM segment boundary. */
+        buffers->middle = qbh_arena_alloc_aligned(&arena, intermediate_bytes, 65536U);
+#else
         buffers->middle = qbh_arena_alloc(&arena, intermediate_bytes);
+#endif
     }
 #ifdef QBH_MODEL_LLAMA32
     /* Input/post-norm consumers finish before Down; next-layer norm starts only
