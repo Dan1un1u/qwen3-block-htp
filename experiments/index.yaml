@@ -35,7 +35,7 @@ experiments:
     by 10-20 percent.
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0290-qwen3-06b-w4f16-speed
+    source_branch: codex/exp-0291-qwen3-06b-w4f16-opt
     started_on: '2026-09-18'
 - id: EXP-0290
   title: Qwen0.6 W4F16 QKV granularity and staircase-speed diagnosis
