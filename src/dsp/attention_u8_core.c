@@ -1769,6 +1769,41 @@ void qbh_attention_u8_native_head_to_row_major(
     }
 }
 
+#ifdef QBH_LLAMA_3B
+void qbh_attention_u8_pack_k_row_major_transpose(
+    const uint8_t *rows,uint32_t valid,uint32_t padded,
+    const struct qbh_attention_config *cfg,int8_t *weight,uint32_t *bias,
+    uint8_t *scratch) {
+    /* Idle Up scratch, disjoint from retained V LUT at offset18432.
+     * Transpose32x32 words to the native four-K-byte/32-output layout.
+     * Only final contiguous stores publish HMX operands; no scatter. */
+    HVX_Vector *tile=(HVX_Vector *)scratch;
+    const uint32_t div=1U<<cfg->score_shift;
+    const uint32_t rounding=cfg->score_shift?div/2U:0U;
+    const uint16_t conversion=qbh_attention_u8_float_to_half_bits(512.0f/(float)div);
+    for(uint32_t first=0;first<padded;first+=32U) {
+        uint32_t *b=bias+(first/32U)*64U;
+        for(uint32_t r=0;r<32U;r++) {
+            HVX_Vector v=first+r<valid
+                ?qbh_attention_u8_center_u8_to_s8(*(const HVX_Vector *)(rows+(first+r)*128U),cfg->k_zero_point)
+                :Q6_V_vzero();
+            tile[r]=v;b[r]=conversion;
+            b[32U+r]=(uint32_t)(-cfg->q_zero_point*qbh_attention_u8_sum_signed_bytes(v)+128*(int32_t)div+rounding);
+        }
+        for(uint32_t gap=1U;gap<32U;gap*=2U)
+            for(uint32_t r=0;r<32U;r++)if(!(r&gap)) {
+                HVX_VectorPair z=Q6_W_vshuff_VVR(tile[r+gap],tile[r],-(int)(4U*gap));
+                tile[r]=Q6_V_lo_W(z);tile[r+gap]=Q6_V_hi_W(z);
+            }
+        for(uint32_t c=0;c<32U;c++) {
+            uint32_t rev=((c&1U)<<4)|((c&2U)<<2)|(c&4U)|((c&8U)>>2)|((c&16U)>>4);
+            *(HVX_Vector *)(weight+(first/32U)*4096U+c*128U)=tile[rev];
+        }
+    }
+    asm volatile("barrier":::"memory");
+}
+#endif
+
 void qbh_attention_u8_pack_k_row_major(
     const uint8_t *rows, uint32_t valid_tokens,
     uint32_t padded_tokens,

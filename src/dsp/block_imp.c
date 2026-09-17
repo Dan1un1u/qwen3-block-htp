@@ -20257,9 +20257,14 @@ static int qbh_scan_u8_attention(
                 return -1;
             }
             start = HAP_perf_get_qtimer_count();
+#ifdef QBH_LLAMA_3B
+            qbh_attention_u8_pack_k_row_major_transpose(
+                plane_a,valid_tokens,padded_tokens,config,weight,qk_bias,buffers->up+8192U);
+#else
             qbh_attention_u8_pack_k_row_major(
                 plane_a, valid_tokens, padded_tokens,
                 config, weight, qk_bias);
+#endif
             header->u8_attention_k_pack_ticks +=
                 HAP_perf_get_qtimer_count() - start;
             ++header->u8_cache_full_prefix_pack_count;
