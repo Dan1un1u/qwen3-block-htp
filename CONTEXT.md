@@ -1,5 +1,7 @@
-# Active EXP-0291
-User-approved modest exact W4A16 optimization. See docs/experiments/EXP-0291.md. Temporary parent binding then isolated branch. Other work frozen.
+# EXP-0291 stopped and archived — 2026-09-18
+User stopped optimization; no active experiment/device owner, next292. Source codex/exp-0291-qwen3-06b-w4f16-opt @ 6ad2c3bf7875b0bc10540345cba9f2d99ce43ad9. Do not resume tuning without a new request.
+Two observed repeat3 candidates archived separately, M64+42/cache128/full28: prefill-best1747.22/27.10 tok/s(native da3c0e0, binaries/l28-a2); decode-best/latest1737.47/27.67(native cd12773, binaries/l28-a3). Each2451 boundaries byte-exact original W4. No5short/10formal; not a unique formal winner and no baseline promotion. 10-20percent-over-F16 target not achieved. Prior independent full-floating numerical failures remain failed.
+Original formal F16 remains1710.94/27.68; no deliberate slowdown and no replacement by a slower diagnostic. No M32 change was applied. Evidence7476files, ledger3e4908ff75baf7d17f928fbe1ca3700a998cb1a799bfe104ed12e5cfa9e38128; see docs/experiments/EXP-0291-RESULTS.md and MODULES.md. Binaries, commands, source hashes and raw checks preserved.
 
 # EXP-0290 completed — 2026-09-18
 
