@@ -4420,20 +4420,26 @@ static int qbh_run_evaluation_suite(struct qbh_session *session, int shared_fd,
     struct qbh_block_header *header, const struct qbh_file_slot *token_slot,
     const struct qbh_file_slot rope_slots[2], const char *path) {
     FILE *file = fopen(path, "rb");
-    uint32_t prefix[4], row[83];
+    uint32_t prefix[4], row[67U + QBH_GENERATION_MAX_TOKENS];
+    uint32_t record_words, target_count;
     struct qbh_decode_session_state *state = (struct qbh_decode_session_state *)(shared + header->replay_session_offset);
     const struct qbh_decode_session_state initial = *state;
     uint64_t suite_start = qbh_monotonic_ns();
     if (!file) return -1;
     if (fread(prefix, sizeof(uint32_t), 4U, file) != 4U ||
-        prefix[0] != UINT32_C(0x51424556) || prefix[1] != 1U ||
-        prefix[2] == 0U || prefix[2] > 128U || prefix[3] != 83U) { fclose(file); return -1; }
+        prefix[0] != UINT32_C(0x51424556) ||
+        (prefix[1] != 1U && prefix[1] != 2U) ||
+        prefix[2] == 0U || prefix[2] > 128U ||
+        (prefix[1] == 1U && prefix[3] != 83U) ||
+        prefix[3] < 68U || prefix[3] > 67U + QBH_GENERATION_MAX_TOKENS) { fclose(file); return -1; }
+    record_words = prefix[3]; target_count = record_words - 67U;
+    if (target_count > header->generation_expected_token_count) { fclose(file); return -1; }
     for (uint32_t sample = 0U; sample < prefix[2]; ++sample) {
         char steps[16];
-        if (fread(row, sizeof(uint32_t), 83U, file) != 83U ||
+        if (fread(row, sizeof(uint32_t), record_words, file) != record_words ||
             (row[1] != 1U && row[1] != 2U && row[1] != 3U) || row[2] == 0U ||
-            row[2] > (row[1] == 2U ? QBH_GENERATION_MAX_TOKENS : 16U)) { fclose(file); return -1; }
-        for (uint32_t i = 3U; i < 83U; ++i) {
+            row[2] > (row[1] == 2U ? QBH_GENERATION_MAX_TOKENS : target_count)) { fclose(file); return -1; }
+        for (uint32_t i = 3U; i < record_words; ++i) {
             if (row[i] >= QBH_QWEN3_VOCAB_SIZE) { fclose(file); return -1; }
         }
         if (sample != 0U && (qbh_session_release(session) != AEE_SUCCESS ||
@@ -4444,7 +4450,7 @@ static int qbh_run_evaluation_suite(struct qbh_session *session, int shared_fd,
             memset(shared + state->layers[i].v_offset, 0, state->layers[i].v_bytes);
         }
         memcpy(shared + token_slot->offset, row + 3U, 64U * sizeof(uint32_t));
-        memcpy(shared + header->generation_expected_token_ids_offset, row + 67U, 16U * sizeof(uint32_t));
+        memcpy(shared + header->generation_expected_token_ids_offset, row + 67U, target_count * sizeof(uint32_t));
         if (qbh_read_named_tensor(package_root, "rope_cos_f16.bin", shared + rope_slots[0].offset,
                                  rope_slots[0].expected_bytes) != 0 ||
             qbh_read_named_tensor(package_root, "rope_sin_f16.bin", shared + rope_slots[1].offset,
@@ -4603,6 +4609,7 @@ int main(int argc, char **argv) {
     struct qbh_file_slot generation_lm_head_bias_slot;
     struct qbh_file_slot generation_qparam_slot;
     struct qbh_file_slot generation_expected_token_slot;
+    uint32_t generation_expected_count = QBH_GENERATION_DEFAULT_TOKENS;
     struct qbh_vertical_layer_slots
         vertical_slots[QBH_VERTICAL_SLICE_LAYER_COUNT];
     struct qbh_projection_layout w4u8_gate_up_layout;
@@ -4761,6 +4768,11 @@ int main(int argc, char **argv) {
            sizeof(generation_qparam_slot));
     memset(&generation_expected_token_slot, 0,
            sizeof(generation_expected_token_slot));
+    /* L32-0044: bound long fixed trajectories before shared-buffer allocation. */
+    if (getenv("QBH_GENERATION_EXPECTED_TOKENS") != NULL &&
+        (qbh_parse_u32(getenv("QBH_GENERATION_EXPECTED_TOKENS"), &generation_expected_count) != 0 ||
+         generation_expected_count == 0U || generation_expected_count > QBH_GENERATION_MAX_TOKENS)) return 2;
+
     memset(vertical_slots, 0, sizeof(vertical_slots));
     memset(vertical_bias_offsets, 0, sizeof(vertical_bias_offsets));
     memset(&w4u8_gate_up_layout, 0, sizeof(w4u8_gate_up_layout));
@@ -6114,7 +6126,7 @@ int main(int argc, char **argv) {
          qbh_prepare_slot(
              &generation_expected_token_slot, argv[1],
              "generation_expected_token_ids_u32.bin",
-             QBH_GENERATION_DEFAULT_TOKENS *
+             generation_expected_count *
                  (uint32_t)sizeof(uint32_t),
              &cursor) != 0)) {
         fprintf(stderr, "generation boundary package audit failed\n");
@@ -6839,7 +6851,7 @@ int main(int argc, char **argv) {
         header->generation_expected_token_ids_bytes =
             generation_expected_token_slot.expected_bytes;
         header->generation_expected_token_count =
-            QBH_GENERATION_DEFAULT_TOKENS;
+            generation_expected_count;
     }
     if (vertical_slice_mode == QBH_BLOCK_SLICE_DISABLED) {
         header->qparam_offset = qparam_slot.offset;

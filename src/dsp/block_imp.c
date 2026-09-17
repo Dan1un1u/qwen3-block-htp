@@ -1899,10 +1899,10 @@ static int qbh_generation_request_valid(
                      ? sizeof(uint8_t) : sizeof(uint16_t)) ||
         header->generation_final_norm_bytes !=
             QBH_BLOCK_HIDDEN * sizeof(uint16_t) ||
+        header->generation_expected_token_count == 0U ||
+        header->generation_expected_token_count > QBH_GENERATION_MAX_TOKENS ||
         header->generation_expected_token_ids_bytes !=
-            QBH_GENERATION_DEFAULT_TOKENS * sizeof(uint32_t) ||
-        header->generation_expected_token_count !=
-            QBH_GENERATION_DEFAULT_TOKENS ||
+            header->generation_expected_token_count * sizeof(uint32_t) ||
         header->generation_boundary_audit_enabled > 1U ||
         !qbh_range_valid(header->generation_token_ids_offset,
                          header->generation_token_ids_bytes,
