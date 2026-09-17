@@ -45,6 +45,18 @@ def export_layer(i,dst):
         assert int(pos.max())*255<=8388607 and int(neg.min())*255>=-8388608
         assert n!='down' or int((pos-neg).max())*24576<2**31
     return q
+
+def native_cache(dst,cache,q):
+    from prepare_exp0161_segmented_cache import pack_k_segment,pack_v_segment
+    cfg=configs(q);ks=[];vs=[]
+    for g in range(KH):
+        ks.append(b''.join(pack_k_segment(cache[0][g,i:i+32],cfg[g]) for i in (0,32))+bytes(4352+4096))
+        seg=[pack_v_segment(cache[1][g,i:i+32],cfg[g]) for i in (0,32)]
+        vs.append(b''.join(seg[0][0][n*1024:(n+1)*1024]+seg[1][0][n*1024:(n+1)*1024]+bytes(1024) for n in range(4))+seg[0][1]+bytes(4096))
+    for n,data in [('k',b''.join(ks)),('v',b''.join(vs))]:
+        (dst/f'kv_cache_{n}_hmx_u8_segmented.bin').write_bytes(bytes(len(data)))
+        (dst/f'reference_kv_cache_{n}_hmx_u8_segmented_step00.bin').write_bytes(data)
+
 def padwrite(p,x,dtype='<f4'):
     v=np.zeros((64,H),dtype);v[:len(x)]=x;v.tofile(p)
 def ropes(dst,start,prefix='rope'):
@@ -68,7 +80,7 @@ def package(first,count,attempt):
     # U8 slots are unused reserved references under the explicit FP32 contract.
     for n in ['reference_w4u8_block_input_u8.bin','reference_w4u8_integer_attention_block_output_u8.bin','replay_decode_input_00_u8.bin','replay_decode_reference_00_u8.bin']:np.zeros((64,H),'u1').tofile(dst/n)
     for i,q in enumerate(qs):
-        p=dst/f'layer{i}';x,cache,diag=layer(x,p,q,c,s);dx,dcache,ddiag=layer(dx,p,q,dc,ds,cache)
+        p=dst/f'layer{i}';x,cache,diag=layer(x,p,q,c,s);native_cache(p,cache,q);dx,dcache,ddiag=layer(dx,p,q,dc,ds,cache)
         for phase,di in [('prefill',diag),('decode',ddiag)]:
             for n,v in di.items():np.save(dst/f'l{i}-{phase}-{n}.npy',v)
         for j,n in enumerate(['k','v']):
