@@ -2354,3 +2354,13 @@ experiments:
       batched prefill/live decode rows
     validated_runs: 57
     validated_token_boundaries: 5528
+- id: L32-0044
+  title: Exact 3B decode optimization and longer continuous decoding
+  execution_state: running
+  approval_ref: User 2026-09-17 requests further decode optimization versus Quant.npu
+    and extending15 measured decode tokens to40-64.
+  parent_source: b6a0d8d2cb4cb205b7c773922950ea8e4893209c
+  record: docs/experiments/L32-0044.md
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
