@@ -2563,11 +2563,11 @@ qbh_attention_u8_dynamic_load_head_pair(
               tile_offset + QBH_HMX_OUTPUT_BYTES)
         : zero;
     const HVX_Vector tile2 = *(const HVX_Vector *)(
-        score_tiles + (size_t)(first_head + 1U) * head_stride +
+        score_tiles + (size_t)(first_head + 1U < QBH_ATTENTION_Q_HEADS_PER_GROUP ? first_head + 1U : first_head) * head_stride +
         tile_offset);
     const HVX_Vector tile3 = first_tile + 1U < tiles
         ? *(const HVX_Vector *)(
-              score_tiles + (size_t)(first_head + 1U) * head_stride +
+              score_tiles + (size_t)(first_head + 1U < QBH_ATTENTION_Q_HEADS_PER_GROUP ? first_head + 1U : first_head) * head_stride +
               tile_offset + QBH_HMX_OUTPUT_BYTES)
         : zero;
     HVX_Vector row0;
@@ -2602,14 +2602,14 @@ qbh_attention_u8_dynamic_store_head_pair(
     *(HVX_Vector *)(probability_tiles +
                     (size_t)first_head * head_stride + tile_offset) = tile0;
     *(HVX_Vector *)(probability_tiles +
-                    (size_t)(first_head + 1U) * head_stride +
+                    (size_t)(first_head + 1U < QBH_ATTENTION_Q_HEADS_PER_GROUP ? first_head + 1U : first_head) * head_stride +
                     tile_offset) = tile2;
     if (first_tile + 1U < tiles) {
         *(HVX_Vector *)(probability_tiles +
                         (size_t)first_head * head_stride + tile_offset +
                         QBH_HMX_ACTIVATION_BYTES) = tile1;
         *(HVX_Vector *)(probability_tiles +
-                        (size_t)(first_head + 1U) * head_stride +
+                        (size_t)(first_head + 1U < QBH_ATTENTION_Q_HEADS_PER_GROUP ? first_head + 1U : first_head) * head_stride +
                         tile_offset + QBH_HMX_ACTIVATION_BYTES) = tile3;
     }
 }
@@ -2725,7 +2725,7 @@ static void qbh_attention_u8_requant_softmax_dynamic_hvx_tile4(
            (size_t)QBH_ATTENTION_Q_HEADS_PER_GROUP * tiles *
                QBH_HMX_ACTIVATION_BYTES);
     for (uint32_t pair = 0U;
-         pair < QBH_ATTENTION_Q_HEADS_PER_GROUP / 2U; ++pair) {
+         pair < (QBH_ATTENTION_Q_HEADS_PER_GROUP + 1U) / 2U; ++pair) {
         const uint32_t first_head = pair * 2U;
         uint8_t maximum0 = 0U;
         uint8_t maximum1 = 0U;
