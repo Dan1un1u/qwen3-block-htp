@@ -68,6 +68,7 @@ static HVX_VectorPair qbh_scale_w4_f16_group(
     return Q6_W_vcombine_VV(v_scaled23, v_scaled01);
 }
 
+#ifndef QBH_QWEN_06B
 static HVX_VectorPair qbh_unpack_w4_f16_group(
     HVX_Vector v_nibble_group, HVX_Vector v_f16_lut) {
     const HVX_Vector v_two_row_groups =
@@ -78,6 +79,8 @@ static HVX_VectorPair qbh_unpack_w4_f16_group(
     return Q6_W_vshuff_VVR(
         Q6_V_hi_W(v_lookup), Q6_V_lo_W(v_lookup), -2);
 }
+
+#endif
 
 __attribute__((noinline)) void qbh_expand_w4_to_f16_hvx(
     const uint8_t *packed_w4, const float *channel_scales,
