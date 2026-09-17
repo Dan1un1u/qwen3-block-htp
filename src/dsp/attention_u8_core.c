@@ -107,11 +107,20 @@ static int32_t qbh_attention_u8_sum_signed_bytes(HVX_Vector value) {
             Q6_V_lo_W(words1), Q6_V_hi_W(words1)));
     int32_t result = 0;
 
+#ifdef QBH_LLAMA_3B
+    /* Exact signed integer reduction; maximum absolute sum is only 16384. */
+    (void)lanes;(void)result;
+    HVX_Vector reduced=sum;
+    for(uint32_t sh=64U;sh>=4U;sh>>=1U)
+        reduced=Q6_Vw_vadd_VwVw(reduced,Q6_V_vror_VR(reduced,sh));
+    return Q6_R_vextract_VR(reduced,0);
+#else
     *(HVX_Vector *)lanes = sum;
     for (uint32_t lane = 0U; lane < 32U; ++lane) {
         result += lanes[lane];
     }
     return result;
+#endif
 }
 
 #ifdef QBH_LLAMA_3B

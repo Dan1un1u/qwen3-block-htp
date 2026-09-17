@@ -13137,7 +13137,12 @@ static int qbh_attention_u8_integer(
             HAP_perf_get_qtimer_count() - start;
 
         start = HAP_perf_get_qtimer_count();
-        if (qbh_attention_u8_vdeal_enabled(
+        if (
+#ifdef QBH_LLAMA_3B
+            /* Head128: use the existing exact vector LUT/transpose consumer. */
+            1U ||
+#endif
+            qbh_attention_u8_vdeal_enabled(
                 header->attention_pipeline_mode)) {
             qbh_attention_u8_pack_v_native_vgather_vdeal(
                 v_head, config, v_weight, av_bias, scratch,
@@ -14501,7 +14506,12 @@ static void qbh_attention_u8_pool_run_tasks(
         }
 
         start = HAP_perf_get_qtimer_count();
-        if (qbh_attention_u8_vdeal_enabled(
+        if (
+#ifdef QBH_LLAMA_3B
+            /* Head128: use the existing exact vector LUT/transpose consumer. */
+            1U ||
+#endif
+            qbh_attention_u8_vdeal_enabled(
                 header->attention_pipeline_mode)) {
             qbh_attention_u8_pack_v_native_vgather_vdeal(
                 v_head, config, v_weight, av_bias, scratch,
