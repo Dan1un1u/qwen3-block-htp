@@ -44,11 +44,11 @@ def deploy(package):
  write(R/('deployment-'+package+'.json'),dict(package=str(p),remote=remote,manifest_sha256=sha(p/'manifest.json'),files=len(names),verified=True));print('DEPLOY_PASS',package,flush=True)
 
 ARGS='2 32 hvx on off fused gate8_interleaved control hvx crouton_native_batch8 4 64 gqa_qkv_overlap 4 norms serial scalar input_norm_pool_post_norm_pool 4 3 1 0'
-def run(package,tag,count=1,repeat=1,audit=True,full=False,greedy=False,opt=2):
+def run(package,tag,count=1,repeat=1,audit=True,full=False,greedy=False,opt=2,f16opt=3):
  preflight();state=read(R/f'runtime-l{count}.json');root=state['remote'];d=R/tag;d.mkdir(parents=True,exist_ok=False)
  recipe='W4F16' if 'w4f16' in package else 'F16F16'
  remote=read(R/('deployment-'+package+'.json'))['remote']
- e=dict(LD_LIBRARY_PATH=root,DSP_LIBRARY_PATH=root,ADSP_LIBRARY_PATH=root,QBH_VERTICAL_SLICE='1',QBH_REPLAY_SEQUENCE='1',QBH_SCAN_MODE='prefill',QBH_LOGICAL_M='64',QBH_KV_CACHE_LENGTH='0',QBH_KV_CACHE_CAPACITY='128',QBH_KV_CACHE_LAYOUT='hmx_native_f16',QBH_F16F16_OPT='3',QBH_W4F16_DECODE_OPT=str(opt),QBH_REPLAY_DECODE_STEPS='1')
+ e=dict(LD_LIBRARY_PATH=root,DSP_LIBRARY_PATH=root,ADSP_LIBRARY_PATH=root,QBH_VERTICAL_SLICE='1',QBH_REPLAY_SEQUENCE='1',QBH_SCAN_MODE='prefill',QBH_LOGICAL_M='64',QBH_KV_CACHE_LENGTH='0',QBH_KV_CACHE_CAPACITY='128',QBH_KV_CACHE_LAYOUT='hmx_native_f16',QBH_F16F16_OPT=str(f16opt),QBH_W4F16_DECODE_OPT=str(opt),QBH_REPLAY_DECODE_STEPS='1')
  args=ARGS
  if recipe=='W4F16':
   from device_exp0260 import ARGS as WARGS,ENV as WENV

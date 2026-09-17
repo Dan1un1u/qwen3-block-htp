@@ -2156,7 +2156,13 @@ static int qbh_header_valid(const struct qbh_block_header *header,
           header->projections[QBH_BLOCK_PROJ_DOWN].lpbq_mode)) ||
         /* EXP0283/L32-0039: reuse exact A16 conversion for FP16 weights.
          * Modes 0/1/2 retain W4F16 meaning; F16F16 mode 3 adds head prefetch. */
-        header->w4f16_decode_opt>(header->variant==QBH_BLOCK_F16F16 ? 3U :
+        header->w4f16_decode_opt>(header->variant==QBH_BLOCK_F16F16 ?
+#ifdef QBH_QWEN_06B
+            4U
+#else
+            3U
+#endif
+            :
 #ifdef QBH_QWEN_06B
             (header->variant==QBH_BLOCK_W4F16 ? 5U : 2U)
 #else
@@ -4277,6 +4283,12 @@ static int qbh_attention_qk_norm_wait_head(
 static void qbh_attention_qk_norm_run_head(
     struct qbh_block_w4f16_pool *pool, uint32_t task) {
     const struct qbh_block_header *header = pool->attention_header;
+    uint32_t active_rows=QBH_BLOCK_M;
+#ifdef QBH_QWEN_06B
+    if (header->variant != QBH_BLOCK_W4U8 &&
+        header->w4f16_decode_opt >= 4U && header->logical_m == 1U)
+        active_rows=1U;
+#endif
 #ifdef QBH_MODEL_LLAMA32
     if(header->variant==QBH_BLOCK_W4U8) {
         const uint32_t isq=task<QBH_BLOCK_HEADS;
@@ -4291,32 +4303,32 @@ static void qbh_attention_qk_norm_run_head(
 #endif
     if (pool->attention_crouton_qkv != 0U &&
         task < QBH_BLOCK_HEADS) {
-        qbh_hvx_qk_norm_rope_f16_crouton_head(
+        qbh_hvx_qk_norm_rope_f16_crouton_head_rows(
             pool->attention_q, pool->attention_q_destination,
             task, qbh_w4f16_projection_group_tiles(
                       header, &header->projections[QBH_BLOCK_PROJ_Q]),
             0U,
             pool->attention_q_gamma,
-            pool->attention_rope_cos, pool->attention_rope_sin);
+            pool->attention_rope_cos, pool->attention_rope_sin, active_rows);
     } else if (pool->attention_crouton_qkv != 0U) {
         const uint32_t head = task - QBH_BLOCK_HEADS;
-        qbh_hvx_qk_norm_rope_f16_crouton_head(
+        qbh_hvx_qk_norm_rope_f16_crouton_head_rows(
             pool->attention_k, pool->attention_k_weight,
             head, qbh_w4f16_projection_group_tiles(
                       header, &header->projections[QBH_BLOCK_PROJ_K]),
             1U,
             pool->attention_k_gamma,
-            pool->attention_rope_cos, pool->attention_rope_sin);
+            pool->attention_rope_cos, pool->attention_rope_sin, active_rows);
     } else if (task < QBH_BLOCK_HEADS) {
         qbh_hvx_qk_norm_rope_f16_head(
-            pool->attention_q, QBH_BLOCK_M, QBH_BLOCK_ATTN_WIDTH,
+            pool->attention_q, active_rows, QBH_BLOCK_ATTN_WIDTH,
             QBH_BLOCK_HEAD_DIM, task,
             pool->attention_q_gamma, pool->attention_rope_cos,
             pool->attention_rope_sin);
     } else {
         const uint32_t head = task - QBH_BLOCK_HEADS;
         qbh_hvx_qk_norm_rope_f16_head(
-            pool->attention_k, QBH_BLOCK_M,
+            pool->attention_k, active_rows,
             QBH_BLOCK_KV_HIDDEN, QBH_BLOCK_HEAD_DIM, head,
             pool->attention_k_gamma, pool->attention_rope_cos,
             pool->attention_rope_sin);

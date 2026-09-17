@@ -620,6 +620,22 @@ static void qbh_llama_rope_head(__fp16 *tensor, uint32_t rows,
 }
 #endif
 
+#ifdef QBH_QWEN_06B
+/* Exact positive finite SF->HF conversion without the scalar truncation
+ * library call. Arithmetic/reduction order and sqrtf/division are unchanged. */
+#define QBH_QK_INV_T float
+static inline HVX_Vector qbh_qk_inverse_splat(float inverse) {
+    union { float f; uint32_t u; } x={.f=inverse};
+    const HVX_Vector packed=Q6_Vhf_vcvt_VsfVsf(
+        Q6_V_vsplat_R(x.u), Q6_V_vzero());
+    return Q6_Vh_vsplat_R(Q6_R_vextract_VR(packed,0)&0xffffU);
+}
+#define QBH_QK_INV_SPLAT(x) qbh_qk_inverse_splat(x)
+#else
+#define QBH_QK_INV_T __fp16
+#define QBH_QK_INV_SPLAT(x) Q6_Vh_vsplat_R(*(const uint16_t *)&(x))
+#endif
+
 void qbh_hvx_qk_norm_rope_f16(__fp16 *tensor, uint32_t rows,
                                uint32_t heads, uint32_t row_stride,
                                uint32_t head_dim, const __fp16 *gamma,
@@ -655,10 +671,10 @@ void qbh_hvx_qk_norm_rope_f16(__fp16 *tensor, uint32_t rows,
                 }
             }
             float sum = qbh_hvx_sum_squares_f16(values, head_dim);
-            __fp16 inverse = (__fp16)(
+            QBH_QK_INV_T inverse = (QBH_QK_INV_T)(
                 1.0f / sqrtf(sum / (float)head_dim + QBH_MODEL_RMS_EPS));
             HVX_Vector inverse_vector =
-                Q6_Vh_vsplat_R(*(const uint16_t *)&inverse);
+                QBH_QK_INV_SPLAT(inverse);
             HVX_Vector first = *(const HVX_Vector *)values;
             HVX_Vector second =
                 *(const HVX_Vector *)(values + half_dim);
@@ -742,10 +758,10 @@ void qbh_hvx_qk_norm_rope_f16_head(
         __fp16 *values = tensor + (size_t)row * row_stride +
                          (size_t)head * head_dim;
         float sum = qbh_hvx_sum_squares_f16(values, head_dim);
-        __fp16 inverse = (__fp16)(
+        QBH_QK_INV_T inverse = (QBH_QK_INV_T)(
             1.0f / sqrtf(sum / (float)head_dim + QBH_MODEL_RMS_EPS));
         HVX_Vector inverse_vector =
-            Q6_Vh_vsplat_R(*(const uint16_t *)&inverse);
+            QBH_QK_INV_SPLAT(inverse);
         HVX_Vector first = *(const HVX_Vector *)values;
         HVX_Vector second =
             *(const HVX_Vector *)(values + half_dim);
@@ -782,7 +798,7 @@ static void qbh_hvx_qk_norm_rope_vectors(
     HVX_Vector sum_lo = Q6_V_vzero();
     HVX_Vector sum_hi = Q6_V_vzero();
     HVX_VectorPair square = Q6_Wqf32_vmpy_VhfVhf(first, first);
-    __fp16 inverse;
+    QBH_QK_INV_T inverse;
     HVX_Vector inverse_vector;
     HVX_Vector first_norm;
     HVX_Vector second_norm;
@@ -796,11 +812,11 @@ static void qbh_hvx_qk_norm_rope_vectors(
         sum_lo, Q6_Vsf_equals_Vqf32(Q6_V_lo_W(square)));
     sum_hi = Q6_Vsf_vadd_VsfVsf(
         sum_hi, Q6_Vsf_equals_Vqf32(Q6_V_hi_W(square)));
-    inverse = (__fp16)(1.0f / sqrtf(
+    inverse = (QBH_QK_INV_T)(1.0f / sqrtf(
         qbh_hvx_reduce_sum_sf32(
             Q6_Vsf_vadd_VsfVsf(sum_lo, sum_hi)) /
             128.0f + QBH_MODEL_RMS_EPS));
-    inverse_vector = Q6_Vh_vsplat_R(*(const uint16_t *)&inverse);
+    inverse_vector = QBH_QK_INV_SPLAT(inverse);
     first_norm = Q6_Vqf16_vmpy_VhfVhf(first, gamma_first);
     second_norm = Q6_Vqf16_vmpy_VhfVhf(second, gamma_second);
     first = Q6_Vhf_equals_Vqf16(
@@ -817,12 +833,12 @@ static void qbh_hvx_qk_norm_rope_vectors(
             Q6_Vqf16_vmpy_VhfVhf(first, sine_second)));
 }
 
-void qbh_hvx_qk_norm_rope_f16_crouton_head(
+void qbh_hvx_qk_norm_rope_f16_crouton_head_rows(
     const __fp16 *source_group_tiles, __fp16 *destination_tiles,
     uint32_t head, uint32_t source_group_tiles_per_command,
     uint32_t destination_is_weight,
     const __fp16 *gamma, const __fp16 *cosine,
-    const __fp16 *sine) {
+    const __fp16 *sine, uint32_t rows) {
     const uint32_t head_tiles = 8U;
     const __fp16 *source = source_group_tiles +
         (size_t)head * head_tiles * QBH_HMX_FP16_TILE_ELEMENTS;
@@ -834,7 +850,7 @@ void qbh_hvx_qk_norm_rope_f16_crouton_head(
     const HVX_Vector offset_base =
         *(const HVX_Vector *)qbh_hvx_crouton_vscatter_offsets;
 
-    for (uint32_t row = 0U; row < 64U; row += 2U) {
+    for (uint32_t row = 0U; row < rows; row += 2U) {
         const uint32_t row_tile = row / QBH_HMX_FP16_ROWS;
         const uint32_t row_pair =
             (row % QBH_HMX_FP16_ROWS) / 2U;
@@ -932,6 +948,20 @@ void qbh_hvx_qk_norm_rope_f16_crouton_head(
     }
     asm volatile("barrier" ::: "memory");
 }
+
+void qbh_hvx_qk_norm_rope_f16_crouton_head(
+    const __fp16 *source_group_tiles, __fp16 *destination_tiles,
+    uint32_t head, uint32_t source_group_tiles_per_command,
+    uint32_t destination_is_weight,
+    const __fp16 *gamma, const __fp16 *cosine,
+    const __fp16 *sine) {
+    qbh_hvx_qk_norm_rope_f16_crouton_head_rows(source_group_tiles,
+        destination_tiles, head, source_group_tiles_per_command,
+        destination_is_weight, gamma, cosine, sine, 64U);
+}
+
+#undef QBH_QK_INV_T
+#undef QBH_QK_INV_SPLAT
 
 static HVX_Vector qbh_hvx_silu_multiply_vector(
     HVX_Vector gate_value, HVX_Vector up_value) {

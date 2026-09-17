@@ -6,6 +6,7 @@ from common_exp0289 import Path,read,write,sha,subprocess
 R=d.R;OLD=R.parent/'exp0289'
 CASES={'original':('reference-a03/w4f16',2,'control',True),
  'f16':('f16f16',3,'control',True),
+ 'f16rows':('f16f16',4,'control',False),
  'control':('reference-a03/w4f16',2,'control',False),
  'rows':('reference-a03/w4f16',4,'control',False),
  'main':('reference-a03/w4f16',5,'control',False),
@@ -19,7 +20,7 @@ def one(case,tag,repeat=3,audit=False):
  state=read(R/('runtime-original.json' if original else 'runtime-l28.json'))
  d.read=lambda p:state if Path(p)==R/'runtime-l28.json' else reader(p)
  w.ENV['QBH_QKV_SCHEDULE']=schedule
- try:out=d.run(pkg,tag,count=28,repeat=repeat,audit=audit,full=True,opt=opt)
+ try:out=d.run(pkg,tag,count=28,repeat=repeat,audit=audit,full=True,opt=opt,f16opt=opt if pkg=="f16f16" else 3)
  except AssertionError:
   if not audit:raise
   out=read(R/tag/'validated.json')
