@@ -1,3 +1,13 @@
+# Current closure EXP0285 — FP16 residual speed
+
+Completed; no active experiment or device owner. Source codex/exp-0285-fp16-residual closure4c96e036c80404b3f22da4bf7170b5e58898edb1, native candidate measured2de1898314c31185312f920aff55c1b542d24c92. Read docs/experiments/EXP-0285-RESULTS.md and /mnt/d/llm_exp/results/qwen3-block-htp/exp0285/FINAL_REPORT.md. Ledger aa559d1075ab04d7b09722f21224eae51390d7097d8f5729f7a36d65042c72d9,822files.
+
+Final paired originalFP32 baseline1847.468951/47.151639 versus FP16residual1636.518853/46.840157 token/s, M64+15. Wall+12.890172percent prefill (95CI12.6562..13.1365),+0.664987percent decode (0.5196..0.8051). Prefill10percentgate fails; hardware independent selectedlayer/chain3/full28 correctness passes (448layerhashes,16finalhidden/norm/head). No quality/PPL evaluation. Llama and other recipes unchanged.
+
+Original sealed EXP0284/eaea89c FP32 binary remains speed baseline. New same-binary FP32 dispatch incurs codegen overhead, so its completed supplementary9.52percent comparison is NOT acceptance vs original. Both full5short/10formal campaigns retained separately,4800profiles each. Do not silently promote current experimental FP32 codegen or FP16mode3 to latest speed baseline.
+
+Actual FP16 residual occupies262144bytes vs524288; reserved262144byte hole keeps downstream HMX addresses unchanged, totalVTCM plan8365824. Initial compact arena causes precise HMX access fault; paddedlayout fixes, no unproven hardware-bank claim. ExplicitDDR counters zero but compiler stack spills exist in original and candidate; do not overclaim no stack traffic. Norm/add remainFP32; selector legacy QBH_FP32_RESIDUAL=3. No furtheroptimization or promotion; discuss next.
+
 # Current EXP0285 — FP16 residual storage speed
 
 User-authorized no-rotation SP2 comparison. Qwen first, latest source8cfc71a; original weights and scales frozen. FP16 storage at embedding and each residual add; FP32 projection scale/add/Norm, Norm then A8. Read docs/experiments/EXP-0285.md. No model quality evaluation or baseline promotion.

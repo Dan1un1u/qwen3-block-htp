@@ -26,9 +26,9 @@ allowed_values:
 experiments:
 - id: EXP-0285
   title: 'Latest no-rotation SP2 baseline: FP16 residual storage speed'
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
   adoption_status: pending
   approval_ref: 'User 2026-09-17: select latest baseline, change residual to FP16
     and measure speed; no model quality evaluation'
@@ -38,6 +38,68 @@ experiments:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0285-fp16-residual
     started_on: '2026-09-17'
+    completed_on: '2026-09-17'
+  evidence:
+    id: EXP-0285
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    failure_reason: FP16 residual prefill overhead12.890172percent exceeds10percent
+      versus original latest baseline; hardware correctness passes
+    baseline_promoted: false
+    quality_claim: false
+    source_closure: 4c96e036c80404b3f22da4bf7170b5e58898edb1
+    candidate_measured_source: 2de1898314c31185312f920aff55c1b542d24c92
+    original_baseline_measured_source: eaea89c81dd0e5f3424dfdea9d1e2b47347f8d72
+    source_branch: codex/exp-0285-fp16-residual
+    report: docs/experiments/EXP-0285-RESULTS.md
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0285
+    evidence_ledger_sha256: aa559d1075ab04d7b09722f21224eae51390d7097d8f5729f7a36d65042c72d9
+    evidence_files: 822
+    device_owner: null
+    short_rounds: 5
+    formal_rounds: 10
+    primary_repeat: 10
+    primary_timed_profiles: 4800
+    supplementary_timed_profiles: 4800
+    numerical_gate: pass independent selectedlayer/chain3/full28 448 layer hashes,
+      finalnorm and full head
+    physical_gate: pass declared allocation/explicitDDR/ownership counters; no claim
+      that compiler stack traffic is absent
+    shape: fixed M64+15 cache128
+    performance:
+      FP32:
+        prefill: 1847.4689509388597
+        decode: 47.15163857511085
+      FP16:
+        prefill: 1636.5188527380967
+        decode: 46.840157458516586
+    effects:
+      prefill:
+        wall_ratio: 1.1289017219983855
+        wall_change_pct: 12.890172199838545
+        tps_change_pct: -11.41832982327312
+        wall_ratio_ci95:
+        - 1.1265617270643526
+        - 1.1313654912841309
+        ten_percent_gate: false
+      decode:
+        wall_ratio: 1.0066498733884515
+        wall_change_pct: 0.6649873388451466
+        tps_change_pct: -0.6605944692634313
+        wall_ratio_ci95:
+        - 1.0051962386427065
+        - 1.0080509260217596
+        ten_percent_gate: true
+    live_residual_bytes:
+      FP32: 524288
+      FP16: 262144
+    reserved_hole_bytes: 262144
+    vtcm_peak_plan_bytes: 8365824
+    scope: Qwen3-1.7B no-rotation SP2 only; Llama and other recipes unchanged
+    fairness: Primary is unchanged sealed EXP0284 binary. New same-binary FP32 helper
+      dispatch was slower, supplemental9.52percent prefill ratio is not actual latest-baseline
+      acceptance.
 - id: EXP-0284
   title: Uniform INT16 Down vs A8 and SP2, shared native W4 pipeline
   execution_state: completed
