@@ -9947,8 +9947,8 @@ static int qbh_run_w4u8_direct_n_projection(
         /* The final current HMX batch owns current_slot. Prepare the first
          * batch of the next projection in the other slot, then transfer its
          * ownership explicitly; no duplicate DDR read at the boundary. */
-        if (qkv_wide && next_first >= n_tiles &&
-            desc != &header->projections[QBH_BLOCK_PROJ_V]) {
+        if (qkv_wide && !(header->paper_pipeline_disable & 16U) &&
+            next_first >= n_tiles && desc != &header->projections[QBH_BLOCK_PROJ_V]) {
             const struct qbh_block_projection_desc *next_desc =
                 &header->projections[desc == &header->projections[QBH_BLOCK_PROJ_Q]
                     ? QBH_BLOCK_PROJ_K : QBH_BLOCK_PROJ_V];
@@ -10426,8 +10426,8 @@ static int qbh_run_w4u8_direct_n_gate_up_pair(
         }
 
 #ifdef QBH_LLAMA_3B
-        if (next_projection >= 2U && QBH_FP32_RESIDUAL(header) &&
-            QBH_LLAMA_SP2(header) == 8U &&
+        if (next_projection >= 2U && !(header->paper_pipeline_disable & 16U) &&
+            QBH_FP32_RESIDUAL(header) && QBH_LLAMA_SP2(header) == 8U &&
             !header->dense_r3_mode && !header->dense_r4_mode &&
             header->w4u8_decode_direct_n_down_batch_n_tiles == 8U) {
             const struct qbh_block_projection_desc *down =
@@ -20806,6 +20806,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     buffers->qkv_prefetched_target = NULL;
     buffers->down_prefetched = 0U;
     if (header->variant == QBH_BLOCK_W4U8 && QBH_FP32_RESIDUAL(header) &&
+        !(header->paper_pipeline_disable & 16U) &&
         !header->dense_r3_mode && !header->dense_r4_mode &&
         !w4u8_qkv_ring_enabled &&
         header->qkv_schedule_mode != QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL &&
