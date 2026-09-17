@@ -1,3 +1,6 @@
+# Active EXP0289 — 0.6B fair A16 baselines
+Read docs/experiments/EXP-0289.md. User authorized W16A16/W4A16, vector operations/basic DMA overlap only. Temporary parent branch for first preflight; then new experiment branch. Prior EXP0288 sealed and unchanged.
+
 # Completed EXP0288 — Qwen3-0.6B native W4A8-SP2 FP32
 No active experiment or device owner; next289. Source codex/exp-0288-qwen3-06b-sp2 closure 5b64c3156f6522fa7de289b995265a93a147b50c; measuredOPT1 85f7e2d9742d9c33523e3e0c6125402f75543156. Read docs/experiments/EXP-0288-RESULTS.md and MODULES.md.
 Original Qwen official ModelScope11files verified; /mnt/d/llm_exp/models/Qwen3-0.6B-origin. Fresh C64 enhancedGPTQ/staticA8/SP2 export, final /mnt/d/llm_exp/models/qwen3-block-htp/exp0288/frontend64-a03. No1.7B weight/scale reuse. Hidden1024 differs from attention2048; FFN3072,28layers. Parent0284fastFP32; no0285regression.

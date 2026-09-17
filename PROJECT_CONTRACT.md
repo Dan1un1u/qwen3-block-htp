@@ -433,3 +433,6 @@ User explicitly authorizes latest no-rotation W4A8-SP2 baseline with FP16 residu
 ## User-approved Qwen3-0.6B port (2026-09-17; EXP-0288)
 
 User requests same workflow as Llama3B. Reopen only original-derived0.6B no-rotation nativeW4/SP2/FP32 port and bounded pipeline/layout optimization per docs/experiments/EXP-0288.md. Preserve other models/recipes and numerical/physical/evidence gates; no PPL, automatic promotion or FP16 residual adoption.
+
+## User-approved Qwen3-0.6B A16 baselines (2026-09-17; EXP-0289)
+User requests W16A16 and W4A16 support with vector arithmetic and basic DMA/compute overlap, without deep tuning. Supersede other-recipe freeze only for0.6B under docs/experiments/EXP-0289.md. Preserve prior SP2 and other models, original floating semantics and numerical/physical/evidence gates. PC037 routine repairs apply; no PPL or automatic promotion.

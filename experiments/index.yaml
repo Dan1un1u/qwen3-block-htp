@@ -24,6 +24,20 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0289
+  title: Qwen3-0.6B W16A16 and W4A16 fair vectorized E2E baselines
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/EXP-0289.md
+  approval_ref: User requests Qwen3-0.6B W16A16/W4A16 baselines, vector implementation
+    and basic DMA/compute overlap, no deep optimization.
+  parent_source: 5b64c3156f6522fa7de289b995265a93a147b50c
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0288-qwen3-06b-sp2
+    started_on: '2026-09-17'
 - id: EXP-0288
   title: Qwen3-0.6B original-derived native W4A8-SP2 FP32 runtime port
   record: docs/experiments/EXP-0288.md
