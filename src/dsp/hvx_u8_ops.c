@@ -767,16 +767,64 @@ static void qbh_llama_rope_u8_hvx_prepared(uint8_t *v,
     const __fp16 *cosine, const __fp16 *sine,
     const struct qbh_llama_rope_u8_affine *affine) {
 #ifdef QBH_LLAMA_3B
-    uint8_t pair[128] __attribute__((aligned(128)));
-    __fp16 c[64] __attribute__((aligned(128)));
-    __fp16 s[64] __attribute__((aligned(128)));
-    for(uint32_t part=0;part<2U;part++) {
-        uint32_t a=part*32U,b=a+64U;
-        memcpy(pair,v+a,32U);memcpy(pair+32U,v+b,32U);
-        memcpy(c,cosine+a,64U);memcpy(c+32U,cosine+b,64U);
-        memcpy(s,sine+a,64U);memcpy(s+32U,sine+b,64U);
-        qbh_llama_rope_u8_hvx_prepared64(pair,in,out,c,s,affine);
-        memcpy(v+a,pair,32U);memcpy(v+b,pair+32U,32U);
+    /* L32-0042: head128 maps directly to one byte vector. Preserve each
+     * SF32 multiply/add and the same division-boundary repair as head64. */
+    const HVX_Vector original=*(const HVX_Vector *)v;
+    const HVX_VectorPair bytes=Q6_Wuh_vunpack_Vub(original);
+    HVX_Vector packed[2], masks[4];
+    for(uint32_t h=0;h<2U;h++) {
+        HVX_Vector own=h?Q6_V_hi_W(bytes):Q6_V_lo_W(bytes);
+        HVX_Vector other=h?Q6_V_lo_W(bytes):Q6_V_hi_W(bytes);
+        HVX_VectorPair xx=Q6_Wsf_vcvt_Vhf(Q6_Vhf_vcvt_Vh(
+            Q6_Vh_vsub_VhVh(own,Q6_Vh_vsplat_R(in->zero_point))));
+        HVX_VectorPair yy=Q6_Wsf_vcvt_Vhf(Q6_Vhf_vcvt_Vh(
+            Q6_Vh_vsub_VhVh(other,Q6_Vh_vsplat_R(in->zero_point))));
+        HVX_VectorPair cc=Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)(cosine+h*64U));
+        HVX_VectorPair ss=Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)(sine+h*64U));
+        HVX_Vector words[2];
+        for(uint32_t t=0;t<2U;t++) {
+            HVX_Vector a=Q6_Vsf_equals_Vqf32(Q6_Vqf32_vmpy_VsfVsf(
+                t?Q6_V_hi_W(xx):Q6_V_lo_W(xx),affine->scale));
+            HVX_Vector b=Q6_Vsf_equals_Vqf32(Q6_Vqf32_vmpy_VsfVsf(
+                t?Q6_V_hi_W(yy):Q6_V_lo_W(yy),affine->scale));
+            a=Q6_Vsf_equals_Vqf32(Q6_Vqf32_vmpy_VsfVsf(a,t?Q6_V_hi_W(cc):Q6_V_lo_W(cc)));
+            b=Q6_Vsf_equals_Vqf32(Q6_Vqf32_vmpy_VsfVsf(b,t?Q6_V_hi_W(ss):Q6_V_lo_W(ss)));
+            HVX_Vector rot=h?Q6_Vsf_vadd_VsfVsf(a,b):Q6_Vsf_vsub_VsfVsf(a,b);
+            HVX_Vector code=Q6_Vsf_vadd_VsfVsf(
+                Q6_Vsf_equals_Vqf32(Q6_Vqf32_vmpy_VsfVsf(rot,affine->inverse)),affine->offset);
+            HVX_Vector z=Q6_Vsf_vadd_VsfVsf(code,qbh_splat_sf(.5f));
+            words[t]=Q6_Vw_equals_Vsf(z);
+            HVX_Vector frac=Q6_Vsf_vsub_VsfVsf(z,Q6_Vsf_equals_Vw(words[t]));
+            HVX_VectorPred edge=Q6_Q_or_QQ(
+                Q6_Q_vcmp_gt_VsfVsf(qbh_splat_sf(.001f),frac),
+                Q6_Q_vcmp_gt_VsfVsf(frac,qbh_splat_sf(.999f)));
+            edge=Q6_Q_and_QQ(edge,Q6_Q_vcmp_gt_VsfVsf(z,qbh_splat_sf(0.f)));
+            edge=Q6_Q_and_QQ(edge,Q6_Q_vcmp_gt_VsfVsf(qbh_splat_sf(256.f),z));
+            masks[h*2U+t]=Q6_V_vmux_QVV(edge,Q6_V_vsplat_R(1),Q6_V_vzero());
+        }
+        HVX_VectorPair order=Q6_W_vshuff_VVR(words[1],words[0],-4);
+        packed[h]=Q6_Vh_vpack_VwVw_sat(Q6_V_hi_W(order),Q6_V_lo_W(order));
+    }
+    *(HVX_Vector *)v=Q6_Vub_vpack_VhVh_sat(packed[1],packed[0]);
+    HVX_Vector any=Q6_V_vor_VV(Q6_V_vor_VV(masks[0],masks[1]),Q6_V_vor_VV(masks[2],masks[3]));
+    for(uint32_t shift=64U;shift>=4U;shift>>=1U)any=Q6_V_vor_VV(any,Q6_V_vror_VR(any,shift));
+    if(Q6_R_vextract_VR(any,0)) {
+        uint8_t saved[128] __attribute__((aligned(128)));
+        uint32_t repair[128] __attribute__((aligned(128)));
+        *(HVX_Vector *)saved=original;
+        for(uint32_t h=0;h<2U;h++) {
+            HVX_VectorPair order=Q6_W_vshuff_VVR(masks[h*2U+1U],masks[h*2U],-4);
+            ((HVX_Vector *)repair)[h*2U]=Q6_V_lo_W(order);
+            ((HVX_Vector *)repair)[h*2U+1U]=Q6_V_hi_W(order);
+        }
+        for(uint32_t i=0;i<128U;i++)if(repair[i]) {
+            uint32_t j=i%64U;
+            float a=((int)saved[j]-in->zero_point)*in->scale;
+            float b=((int)saved[j+64U]-in->zero_point)*in->scale;
+            float exact=i<64U?a*(float)cosine[i]-b*(float)sine[i]:b*(float)cosine[i]+a*(float)sine[i];
+            float z=exact/out->scale+(float)out->zero_point+.5f;
+            v[i]=(uint8_t)(z<0?0:z>255?255:(int)z);
+        }
     }
 #else
     qbh_llama_rope_u8_hvx_prepared64(v,in,out,cosine,sine,affine);
@@ -1592,6 +1640,16 @@ void qbh_hvx_qk_norm_rope_u8_native_head_rows(
         HVX_Vector a=*lo,b=*hi;
         *(HVX_Vector *)row_values=Q6_V_vmux_QVV(Q6_Q_vsetq_R(32),
             Q6_V_vror_VR(a,shift),Q6_V_vror_VR(b,(shift+96U)%128U));
+#elif defined(QBH_LLAMA_3B)
+        const uint32_t shift=(row%4U)*32U;
+        const uint32_t group=(row/4U)*128U;
+        HVX_Vector a=Q6_V_vror_VR(*(const HVX_Vector *)(head_tiles+group),shift);
+        HVX_Vector b=Q6_V_vror_VR(*(const HVX_Vector *)(head_tiles+2048U+group),shift);
+        HVX_Vector c=Q6_V_vror_VR(*(const HVX_Vector *)(head_tiles+4096U+group),shift);
+        HVX_Vector d=Q6_V_vror_VR(*(const HVX_Vector *)(head_tiles+6144U+group),shift);
+        HVX_Vector ab=Q6_V_lo_W(Q6_W_vshuff_VVR(b,a,-32));
+        HVX_Vector cd=Q6_V_lo_W(Q6_W_vshuff_VVR(d,c,-32));
+        *(HVX_Vector *)row_values=Q6_V_lo_W(Q6_W_vshuff_VVR(cd,ab,-64));
 #else
         for (uint32_t tile = 0U;
              tile < QBH_BLOCK_HEAD_DIM / 32U; ++tile) {
@@ -1619,6 +1677,13 @@ void qbh_hvx_qk_norm_rope_u8_native_head_rows(
             Q6_V_vror_VR(mask_bytes,(128U-shift)%128U),Q6_V_vsplat_R(-1));
         *lo=Q6_V_vmux_QVV(mask,Q6_V_vror_VR(out,(128U-shift)%128U),a);
         *hi=Q6_V_vmux_QVV(mask,Q6_V_vror_VR(out,(160U-shift)%128U),b);
+#elif defined(QBH_LLAMA_3B)
+        HVX_Vector result=*(const HVX_Vector *)row_values;
+        HVX_VectorPred mask=Q6_Q_and_QQn(Q6_Q_vsetq2_R(shift+32U),Q6_Q_vsetq_R(shift));
+        for(uint32_t t=0;t<4U;t++) {
+            HVX_Vector *dst=(HVX_Vector *)(head_tiles+t*2048U+group);
+            *dst=Q6_V_vmux_QVV(mask,Q6_V_vror_VR(result,(t*32U+128U-shift)%128U),*dst);
+        }
 #else
         for (uint32_t tile = 0U;
              tile < QBH_BLOCK_HEAD_DIM / 32U; ++tile) {

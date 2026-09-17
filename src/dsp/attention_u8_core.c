@@ -114,6 +114,20 @@ static int32_t qbh_attention_u8_sum_signed_bytes(HVX_Vector value) {
     return result;
 }
 
+#ifdef QBH_LLAMA_3B
+/* Four native channel tiles -> one head128 row, entirely in HVX registers. */
+static inline HVX_Vector qbh_head128_native_row(const uint8_t *tiles,uint32_t row) {
+    uint32_t off=(row/4U)*128U,sh=(row%4U)*32U;
+    HVX_Vector a=Q6_V_vror_VR(*(const HVX_Vector *)(tiles+off),sh);
+    HVX_Vector b=Q6_V_vror_VR(*(const HVX_Vector *)(tiles+2048U+off),sh);
+    HVX_Vector c=Q6_V_vror_VR(*(const HVX_Vector *)(tiles+4096U+off),sh);
+    HVX_Vector d=Q6_V_vror_VR(*(const HVX_Vector *)(tiles+6144U+off),sh);
+    HVX_Vector ab=Q6_V_lo_W(Q6_W_vshuff_VVR(b,a,-32));
+    HVX_Vector cd=Q6_V_lo_W(Q6_W_vshuff_VVR(d,c,-32));
+    return Q6_V_lo_W(Q6_W_vshuff_VVR(cd,ab,-64));
+}
+#endif
+
 void qbh_attention_u8_pack_k_native(
     const uint8_t *k_head_tiles,
     const struct qbh_attention_config *config,
@@ -150,6 +164,9 @@ void qbh_attention_u8_pack_k_native(
                 n_tile * QBH_HMX_OUTPUT_CHANNELS + output;
             const HVX_Vector offsets = Q6_Vw_vadd_VwVw(
                 offsets_base, Q6_V_vsplat_R(output * 4U));
+#ifdef QBH_LLAMA_3B
+            *(HVX_Vector *)row=qbh_head128_native_row(k_head_tiles,token);
+#else
             for (uint32_t k_tile = 0U;
                  k_tile < QBH_ATTENTION_HEAD_DIM_TILES; ++k_tile) {
                 memcpy(
@@ -159,6 +176,7 @@ void qbh_attention_u8_pack_k_native(
                         (size_t)token * QBH_HMX_INPUT_CHANNELS,
                     QBH_HMX_INPUT_CHANNELS);
             }
+#endif
             {
                 const HVX_Vector centered =
                     qbh_attention_u8_center_u8_to_s8(
@@ -1699,6 +1717,26 @@ void qbh_attention_u8_native_head_to_row_major(
         return;
     }
     uint32_t first_scalar=0U;
+#ifdef QBH_LLAMA_3B
+    if((((uintptr_t)head_tiles|(uintptr_t)rows)&127U)==0U) {
+        for(;first_scalar+4U<=valid_rows;first_scalar+=4U) {
+            uint32_t off=first_scalar*32U;
+            HVX_Vector a=*(const HVX_Vector *)(head_tiles+off);
+            HVX_Vector b=*(const HVX_Vector *)(head_tiles+2048U+off);
+            HVX_Vector c=*(const HVX_Vector *)(head_tiles+4096U+off);
+            HVX_Vector d=*(const HVX_Vector *)(head_tiles+6144U+off);
+            HVX_VectorPair ab=Q6_W_vshuff_VVR(b,a,-32),cd=Q6_W_vshuff_VVR(d,c,-32);
+            HVX_VectorPair r01=Q6_W_vshuff_VVR(Q6_V_lo_W(cd),Q6_V_lo_W(ab),-64);
+            HVX_VectorPair r23=Q6_W_vshuff_VVR(Q6_V_hi_W(cd),Q6_V_hi_W(ab),-64);
+            HVX_Vector *dst=(HVX_Vector *)(rows+first_scalar*128U);
+            dst[0]=Q6_V_lo_W(r01);dst[1]=Q6_V_hi_W(r01);
+            dst[2]=Q6_V_lo_W(r23);dst[3]=Q6_V_hi_W(r23);
+        }
+        for(;first_scalar<valid_rows;first_scalar++)
+            *(HVX_Vector *)(rows+first_scalar*128U)=qbh_head128_native_row(head_tiles,first_scalar);
+        return;
+    }
+#endif
 #if defined(QBH_MODEL_LLAMA32) && !defined(QBH_LLAMA_3B)
     if((((uintptr_t)head_tiles|(uintptr_t)rows)&127U)==0U) {
         for(;first_scalar+4U<=valid_rows;first_scalar+=4U) {
@@ -2145,7 +2183,7 @@ void qbh_attention_u8_patch_k_delta_rows_hvx(
         return;
     }
     for (uint32_t output = 0U; output < row_count; ++output) {
-#ifdef QBH_MODEL_LLAMA32
+#if defined(QBH_MODEL_LLAMA32) && !defined(QBH_LLAMA_3B)
         uint8_t row[128] __attribute__((aligned(128)));
         memset(row,(uint8_t)config->k_zero_point,128);
         memcpy(row,rows+(size_t)output*QBH_ATTENTION_HEAD_DIM,QBH_ATTENTION_HEAD_DIM);
@@ -2236,6 +2274,18 @@ void qbh_attention_u8_patch_v_delta_rows_hvx(
             (size_t)n_tile * k_tile_stride_bytes;
         for (uint32_t input_group = 0U;
              input_group * 4U < row_count; ++input_group) {
+#ifdef QBH_LLAMA_3B
+            HVX_Vector lanes[4];
+            for(uint32_t lane=0;lane<4U;lane++) {
+                uint32_t row=input_group*4U+lane;
+                lanes[lane]=row<row_count
+                    ?Q6_V_vror_VR(*(const HVX_Vector *)(rows+row*128U),n_tile*32U)
+                    :Q6_Vb_vsplat_R(config->v_zero_point);
+            }
+            HVX_Vector ab=Q6_V_lo_W(Q6_W_vshuff_VVR(lanes[1],lanes[0],-32));
+            HVX_Vector cd=Q6_V_lo_W(Q6_W_vshuff_VVR(lanes[3],lanes[2],-32));
+            *(HVX_Vector *)row_group=Q6_V_lo_W(Q6_W_vshuff_VVR(cd,ab,-64));
+#else
             for (uint32_t lane = 0U; lane < 4U; ++lane) {
                 const uint32_t row = input_group * 4U + lane;
                 uint8_t *lane_destination = row_group +
@@ -2253,6 +2303,7 @@ void qbh_attention_u8_patch_v_delta_rows_hvx(
                         QBH_HMX_OUTPUT_CHANNELS);
                 }
             }
+#endif
             {
                 const HVX_Vector values = *(const HVX_Vector *)row_group;
                 const HVX_VectorPair value_h =
