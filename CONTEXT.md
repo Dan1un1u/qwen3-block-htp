@@ -1,3 +1,7 @@
+# Active EXP0286 — inference DRAM peak
+
+User-authorized measurement only. Retain original sealed EXP0284 SP2 FP32 runtime; no FP16 promotion. See docs/experiments/EXP-0286.md. Current source branch unchanged for external diagnostic. Qwen device ownership pending idle check.
+
 # Current closure EXP0285 — FP16 residual speed
 
 Completed; no active experiment or device owner. Source codex/exp-0285-fp16-residual closure4c96e036c80404b3f22da4bf7170b5e58898edb1, native candidate measured2de1898314c31185312f920aff55c1b542d24c92. Read docs/experiments/EXP-0285-RESULTS.md and /mnt/d/llm_exp/results/qwen3-block-htp/exp0285/FINAL_REPORT.md. Ledger aa559d1075ab04d7b09722f21224eae51390d7097d8f5729f7a36d65042c72d9,822files.

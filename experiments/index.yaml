@@ -24,6 +24,20 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0286
+  title: Inference DRAM peak measurement of retained no-rotation W4A8-SP2 FP32 baseline
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: not_applicable
+  approval_ref: 'User 2026-09-17: measure inference DRAM peak only, excluding VTCM,
+    using existing W4A8-SP2'
+  parent_source: 4c96e036c80404b3f22da4bf7170b5e58898edb1
+  record: docs/experiments/EXP-0286.md
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0285-fp16-residual
+    started_on: '2026-09-17'
 - id: EXP-0285
   title: 'Latest no-rotation SP2 baseline: FP16 residual storage speed'
   execution_state: completed
