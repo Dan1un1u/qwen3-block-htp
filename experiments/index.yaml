@@ -2281,3 +2281,13 @@ experiments:
           ci95:
           - 0.9870875472223184
           - 0.9941624837523004
+- id: L32-0043
+  title: Research-grounded 3B pipeline optimization loop
+  execution_state: running
+  approval_ref: User 2026-09-17 requests primary-source 1B/3B speed ratios, setting
+    a gate, and iterative overlap/native-layout optimization.
+  parent_source: 9624a5cdd05d11eff3c1275d099efdc9e4940a68
+  record: docs/experiments/L32-0043.md
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation

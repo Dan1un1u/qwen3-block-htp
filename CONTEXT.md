@@ -1,3 +1,6 @@
+# L32-0043 active
+Research-grounded3B optimization loop; read docs/experiments/L32-0043.md. Target1100prefill/22decode tps, exact numerical/physical gates unchanged. Frozen0042control/0041payloads. Device serialized. Prior entries below historical.
+
 # L32-0042 completed: optimized3B pipeline/layout
 Latest3B W4A8-SP2 FP32 residual,no rotations: **1038.737970 prefill /21.152098 decode token/s**, M64+15/28layers/cache80. Five short and ten paired formal cycles,repeat10. Paired original512.024356/18.679376; wall ratios .49292928/.88309800,both95%CI upper<=1.10.
 Read latest_llama3b_w4a8_sp2_optimization and docs/experiments/L32-0042-RESULTS.md / L32-0042-MODULES.md.
