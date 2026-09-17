@@ -1,3 +1,14 @@
+# L32-0043 completed: research-grounded3B target achieved
+Latest3B1139.982409prefill/22.234309decode token/s,M64+15/cache80/full28. Paired0042control1040.690614/21.200743; +9.540952/+4.875143percent.5short/10formalrepeat10,95%CI speedgatespass;target1100/22pass.
+Read latest_llama3b_w4a8_sp2_optimization and docs/experiments/L32-0043-RESULTS.md / MODULES / RESEARCH.
+Same0041weights/scales/goldens,SP2mode8,FP32residual,no rotation. IMPORTANT fastestrecipe adds QBH_W4U8_DECODE_AV_REQUANT_ROWS=4; originallauncherdefault64 misses thisgain.
+NativeGQA3batchedprefill reduces3584submissions;co-packedlive3decodequeryrows removes10752paddingtilepairs/token;boundedAVrow4. Vectorclippingcountnoindependentspeedclaim. Source3Bguardsleave1Bmath/instructionsunchanged;1Bboundedlayer7exact.
+Allselected0/13/27,chain3/full28FP32hidden+KVexact,fullfixedtrajectory andtruegreedyIDs/logitcodesexact. Peak8360416/8388608VTCM,zerointermediateDDR/spill,sameweightbytes.57validatedruns5528boundaries,3200formal.
+Sourceclosureb6a0d8d2cb4cb205b7c773922950ea8e4893209c,measuredd69d8f9ca9103c1888b1426ab482e58f2ed60dda. Evidence/mnt/d/llm_exp/results/llama32-htp/l32-0043;ledger505c583c195a05fa5e4cffbf865088b5a1365e42dd51fe834191c8c0ef722127,751filesrehashed. Bothbranchesclean/synced. Noactiveexperiment/deviceowner; noPPL/generalqualityclaim orautomaticpromotion.
+Newcompactionrestricted3Bdecode1,rowmajorKV,paddedKV<=128. Followupsneednewprotocol; no repeatofcompletedbatch/rowlayoutwork.
+
+Prior checkpoints below retained as history.
+
 # L32-0043 active
 Research-grounded3B optimization loop; read docs/experiments/L32-0043.md. Target1100prefill/22decode tps, exact numerical/physical gates unchanged. Frozen0042control/0041payloads. Device serialized. Prior entries below historical.
 

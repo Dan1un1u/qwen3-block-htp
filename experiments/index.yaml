@@ -2283,7 +2283,7 @@ experiments:
           - 0.9941624837523004
 - id: L32-0043
   title: Research-grounded 3B pipeline optimization loop
-  execution_state: running
+  execution_state: completed
   approval_ref: User 2026-09-17 requests primary-source 1B/3B speed ratios, setting
     a gate, and iterative overlap/native-layout optimization.
   parent_source: 9624a5cdd05d11eff3c1275d099efdc9e4940a68
@@ -2291,3 +2291,66 @@ experiments:
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
+  evidence_validity: valid
+  local_gate: pass
+  adoption_status: pending
+  evidence:
+    experiment: L32-0043
+    source_closure: b6a0d8d2cb4cb205b7c773922950ea8e4893209c
+    measured_native: d69d8f9ca9103c1888b1426ab482e58f2ed60dda
+    control_source: 76418bbbb504dc30608441b17f49a774c10b72a2
+    execution_state: completed
+    target_pass: true
+    all_numerical_physical_gates_pass: true
+    bounded_1b_pass: true
+    true_greedy_exact: true
+    device_owner: null
+    quality_claim: false
+    baseline_promoted: false
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0043
+    evidence_ledger_sha256: 505c583c195a05fa5e4cffbf865088b5a1365e42dd51fe834191c8c0ef722127
+    evidence_files: 751
+    evidence_bytes: 505900258
+    report: docs/experiments/L32-0043-RESULTS.md
+    modules: docs/experiments/L32-0043-MODULES.md
+    performance:
+      CONTROL:
+        prefill: 1040.6906140512883
+        decode: 21.20074255935503
+      OPT3:
+        prefill: 1139.9824093161858
+        decode: 22.2343091227173
+    effects:
+      prefill:
+        wall_ratio: 0.912900589997299
+        latency_reduction_percent: 8.709941000270105
+        throughput_gain_percent: 9.540952318034845
+        ci95:
+        - 0.9108389434088594
+        - 0.9147267253369943
+        ten_percent_gate: true
+      decode:
+        wall_ratio: 0.9535147884443935
+        latency_reduction_percent: 4.648521155560648
+        throughput_gain_percent: 4.875143219482148
+        ci95:
+        - 0.9522453565588638
+        - 0.9546675228993019
+        ten_percent_gate: true
+    absolute_target:
+      prefill:
+        target: 1100
+        observed: 1139.9824093161858
+        passed: true
+      decode:
+        target: 22
+        observed: 22.2343091227173
+        passed: true
+    short_rounds: 5
+    formal_rounds: 10
+    repeat: 10
+    vtcm_peak_bytes: 8360416
+    recipe: 3B W4A8-SP2mode8 FP32residual,no rotation,WIDE_SCORE8,AV_REQUANT_ROWS4;GQA
+      batched prefill/live decode rows
+    validated_runs: 57
+    validated_token_boundaries: 5528

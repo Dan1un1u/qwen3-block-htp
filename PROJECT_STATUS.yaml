@@ -6,7 +6,7 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0043
+  active_experiment: null
   next_experiment_number: 44
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -14,7 +14,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: 9624a5cdd05d11eff3c1275d099efdc9e4940a68
+    recorded_head: b6a0d8d2cb4cb205b7c773922950ea8e4893209c
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -2557,53 +2557,62 @@ latest_llama3b_w4a8_sp2_port:
   quality_claim: false
   baseline_promoted: false
 latest_llama3b_w4a8_sp2_optimization:
-  id: L32-0042
+  experiment: L32-0043
+  source_closure: b6a0d8d2cb4cb205b7c773922950ea8e4893209c
+  measured_native: d69d8f9ca9103c1888b1426ab482e58f2ed60dda
+  control_source: 76418bbbb504dc30608441b17f49a774c10b72a2
   execution_state: completed
-  evidence_validity: valid
-  local_gate: pass
-  measured_source: 76418bbbb504dc30608441b17f49a774c10b72a2
-  control_source: 6f911883fa98a426a5d8482bbaeceebc6a2d7d40
-  source_closure: 9624a5cdd05d11eff3c1275d099efdc9e4940a68
-  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0042
-  evidence_ledger_sha256: 918471ea1aa5fd70f4a9e9f139578837a8115739606d1dd2b4d89158955575d0
-  evidence_files: 531
-  report: docs/experiments/L32-0042-RESULTS.md
-  modules: docs/experiments/L32-0042-MODULES.md
-  model: Llama-3.2-3B-Instruct
-  recipe: W4A8-SP2 no rotation FP32 residual; head128 native vector paths
-  performance:
-    CONTROL:
-      prefill: 512.0243555239622
-      decode: 18.679375664334977
-    OPT2:
-      prefill: 1038.7379701505754
-      decode: 21.15209820958773
-  effects:
-    prefill:
-      wall_ratio: 0.49292927594602043
-      latency_reduction_percent: 50.70707240539796
-      throughput_gain_percent: 102.86885944861343
-      ci95:
-      - 0.49240170066314065
-      - 0.49349670227505377
-      ten_percent_gate: true
-    decode:
-      wall_ratio: 0.883098001874257
-      latency_reduction_percent: 11.690199812574297
-      throughput_gain_percent: 13.237715166112274
-      ci95:
-      - 0.8822698085549525
-      - 0.883800038667266
-      ten_percent_gate: true
-  short_rounds: 5
-  formal_pairs: 10
-  repeat: 10
-  independent_selected_chain_full_exact: true
-  greedy_ids_and_codes_exact: true
-  bounded_1b_regression_pass: true
-  physical_gate: true
-  vtcm_peak_bytes: 8360416
-  matrix_work_and_weight_bytes_identical: true
+  target_pass: true
+  all_numerical_physical_gates_pass: true
+  bounded_1b_pass: true
+  true_greedy_exact: true
+  device_owner: null
   quality_claim: false
   baseline_promoted: false
-  device_owner: null
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0043
+  evidence_ledger_sha256: 505c583c195a05fa5e4cffbf865088b5a1365e42dd51fe834191c8c0ef722127
+  evidence_files: 751
+  evidence_bytes: 505900258
+  report: docs/experiments/L32-0043-RESULTS.md
+  modules: docs/experiments/L32-0043-MODULES.md
+  performance:
+    CONTROL:
+      prefill: 1040.6906140512883
+      decode: 21.20074255935503
+    OPT3:
+      prefill: 1139.9824093161858
+      decode: 22.2343091227173
+  effects:
+    prefill:
+      wall_ratio: 0.912900589997299
+      latency_reduction_percent: 8.709941000270105
+      throughput_gain_percent: 9.540952318034845
+      ci95:
+      - 0.9108389434088594
+      - 0.9147267253369943
+      ten_percent_gate: true
+    decode:
+      wall_ratio: 0.9535147884443935
+      latency_reduction_percent: 4.648521155560648
+      throughput_gain_percent: 4.875143219482148
+      ci95:
+      - 0.9522453565588638
+      - 0.9546675228993019
+      ten_percent_gate: true
+  absolute_target:
+    prefill:
+      target: 1100
+      observed: 1139.9824093161858
+      passed: true
+    decode:
+      target: 22
+      observed: 22.2343091227173
+      passed: true
+  short_rounds: 5
+  formal_rounds: 10
+  repeat: 10
+  vtcm_peak_bytes: 8360416
+  recipe: 3B W4A8-SP2mode8 FP32residual,no rotation,WIDE_SCORE8,AV_REQUANT_ROWS4;GQA
+    batched prefill/live decode rows
+  validated_runs: 57
+  validated_token_boundaries: 5528
