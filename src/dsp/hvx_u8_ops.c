@@ -704,6 +704,7 @@ static void qbh_llama_rope_u8_affine_init(struct qbh_llama_rope_u8_affine *a,
     a->inverse=qbh_splat_sf(1.0f/out->scale);
     a->offset=qbh_splat_sf((float)out->zero_point);
 }
+#ifndef QBH_LLAMA_3B
 static void qbh_llama_rope_u8_hvx_prepared64(uint8_t *v,
     const struct qbh_block_qparam *in, const struct qbh_block_qparam *out,
     const __fp16 *cosine, const __fp16 *sine,
@@ -762,6 +763,7 @@ static void qbh_llama_rope_u8_hvx_prepared64(uint8_t *v,
         v[i]=(uint8_t)(z<0?0:z>255?255:(int)z);
     }
 }
+#endif
 static void qbh_llama_rope_u8_hvx_prepared(uint8_t *v,
     const struct qbh_block_qparam *in, const struct qbh_block_qparam *out,
     const __fp16 *cosine, const __fp16 *sine,
