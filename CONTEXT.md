@@ -1,3 +1,7 @@
+# EXP-0290 completed — 2026-09-18
+
+Qwen3-0.6B W4A16 speed inversion investigated; no native/model change or selected new baseline. Four existing configurations repeat3, all516 profiles physical/token-logit checks pass. Head4 only +0.36% prefill/+1.38% decode diagnostic, row-major hurts prefill; no staircase restoration, no formal campaign. EXP0289 provisional1710.94/27.68 F16 versus1678.35/25.65 W4 remain. QKV adds~4ms, decode KV unpack expands64rows for1row; both A16 recipes retainM64 compute atdecode. Next bounded fixes: live-row carrier conversion, K1024 QKV dispatch/overlap, then shared A16 M1 preparation. Known independent full floating-reference failures remain. No active experiment; device released. Source 3975c8117fa61d8f4adff1d1dd4f7ed184523423. See docs/experiments/EXP-0290-RESULTS.md.
+
 # Active EXP0290 — W4A16 speed diagnosis
 See docs/experiments/EXP-0290.md. Frozen0289 native binary and model, existing config candidates only initially. Full-model floating alignment failures retained under user provisional-speed authorization. No recipe slowdown or presumed staircase result. Temporary parent branch binding for preflight, then exp0290 branch.
 

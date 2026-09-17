@@ -26,10 +26,10 @@ allowed_values:
 experiments:
 - id: EXP-0290
   title: Qwen0.6 W4F16 QKV granularity and staircase-speed diagnosis
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
-  adoption_status: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
+  adoption_status: not_applicable
   record: docs/experiments/EXP-0290.md
   approval_ref: User asks to investigate W4A16 slower than F16; expects staircase
     speed.
@@ -37,6 +37,30 @@ experiments:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0290-qwen3-06b-w4f16-speed
     started_on: '2026-09-18'
+    completed_on: '2026-09-18'
+  evidence:
+    id: EXP-0290
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    gate_role: staircase_not_restored_diagnostic_only
+    source_closure: 3975c8117fa61d8f4adff1d1dd4f7ed184523423
+    measured_source: b28fde2500e2422dca77e65d85ca48df0eded57c
+    source_native_changed: false
+    diagnostic_configurations: 4
+    repeat: 3
+    profiles: 516
+    all_token_logits_exact: true
+    full_boundary_audit: false
+    formal_rounds: 0
+    full_floating_alignment_pass: false
+    quality_claim: false
+    baseline_promoted: false
+    report: docs/experiments/EXP-0290-RESULTS.md
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0290
+    ledger_sha256: 26fc83fd0954d31f0944e9df3ca2b95d320346d9bd23d6562e44ba3e3749c5f9
+    evidence_files: 45
+    device_owner: null
 - id: EXP-0289
   title: Qwen3-0.6B W16A16 and W4A16 fair vectorized E2E baselines
   execution_state: completed

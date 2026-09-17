@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0290
+  active_experiment: null
   next_experiment_number: 291
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -31,6 +31,29 @@ governance:
     slowdown_threshold: 1.1
     prefill_and_decode: paired_bootstrap95_CI_upper_at_most_threshold
 current_scope:
+  latest_qwen3_06b_w4f16_speed_diagnosis:
+    id: EXP-0290
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    gate_role: staircase_not_restored_diagnostic_only
+    source_closure: 3975c8117fa61d8f4adff1d1dd4f7ed184523423
+    measured_source: b28fde2500e2422dca77e65d85ca48df0eded57c
+    source_native_changed: false
+    diagnostic_configurations: 4
+    repeat: 3
+    profiles: 516
+    all_token_logits_exact: true
+    full_boundary_audit: false
+    formal_rounds: 0
+    full_floating_alignment_pass: false
+    quality_claim: false
+    baseline_promoted: false
+    report: docs/experiments/EXP-0290-RESULTS.md
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0290
+    ledger_sha256: 26fc83fd0954d31f0944e9df3ca2b95d320346d9bd23d6562e44ba3e3749c5f9
+    evidence_files: 45
+    device_owner: null
   latest_qwen3_06b_a16_baselines:
     id: EXP-0289
     execution_state: completed
