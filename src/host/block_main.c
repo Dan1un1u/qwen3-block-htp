@@ -1980,6 +1980,7 @@ static int qbh_build_w4u8_streaming_bundles(
     struct qbh_block_header *header, uint8_t *shared,
     const struct qbh_projection_layout *gate_up_layout,
     const struct qbh_projection_layout *down_layout) {
+    if (QBH_LLAMA_DIRECT_ONLY) return header->w4u8_gate_up_bundle_bytes==0U && header->w4u8_down_bundle_bytes==0U ? 0 : -1;
     const struct qbh_block_projection_desc *gate;
     const struct qbh_block_projection_desc *up;
     const struct qbh_block_projection_desc *down;
@@ -6362,7 +6363,7 @@ int main(int argc, char **argv) {
             }
         }
         if (vertical_slice_mode == QBH_BLOCK_SLICE_DISABLED &&
-            qbh_block_mlp_is_w4u8_streaming(mlp_mode)) {
+            !QBH_LLAMA_DIRECT_ONLY && qbh_block_mlp_is_w4u8_streaming(mlp_mode)) {
             cursor = qbh_align_up_size(cursor, QBH_HOST_ALIGNMENT);
             w4u8_gate_up_bundle_offset = cursor;
             if (w4u8_gate_up_layout.stored_weight_bytes >
@@ -6412,7 +6413,7 @@ int main(int argc, char **argv) {
                         cursor += bias_bytes;
                     }
                 }
-                if (qbh_block_mlp_is_w4u8_streaming(mlp_mode)) {
+                if (!QBH_LLAMA_DIRECT_ONLY && qbh_block_mlp_is_w4u8_streaming(mlp_mode)) {
                     cursor = qbh_align_up_size(
                         cursor, QBH_HOST_ALIGNMENT);
                     vertical_slots[slice_index].gate_up_bundle_offset =
@@ -7047,11 +7048,11 @@ int main(int argc, char **argv) {
         header->w4u8_gate_up_bundle_offset =
             (uint32_t)w4u8_gate_up_bundle_offset;
         header->w4u8_gate_up_bundle_bytes =
-            w4u8_gate_up_layout.stored_weight_bytes;
+            QBH_LLAMA_DIRECT_ONLY ? 0U : w4u8_gate_up_layout.stored_weight_bytes;
         header->w4u8_down_bundle_offset =
             (uint32_t)w4u8_down_bundle_offset;
         header->w4u8_down_bundle_bytes =
-            w4u8_down_layout.stored_weight_bytes;
+            QBH_LLAMA_DIRECT_ONLY ? 0U : w4u8_down_layout.stored_weight_bytes;
         header->w4u8_silu_lut_offset = w4u8_lut_slot.offset;
         header->w4u8_silu_lut_bytes = w4u8_lut_slot.expected_bytes;
     }
@@ -7103,11 +7104,11 @@ int main(int argc, char **argv) {
                 layer->w4u8_gate_up_bundle_offset =
                     (uint32_t)slots->gate_up_bundle_offset;
                 layer->w4u8_gate_up_bundle_bytes =
-                    w4u8_gate_up_layout.stored_weight_bytes;
+                    QBH_LLAMA_DIRECT_ONLY ? 0U : w4u8_gate_up_layout.stored_weight_bytes;
                 layer->w4u8_down_bundle_offset =
                     (uint32_t)slots->down_bundle_offset;
                 layer->w4u8_down_bundle_bytes =
-                    w4u8_down_layout.stored_weight_bytes;
+                    QBH_LLAMA_DIRECT_ONLY ? 0U : w4u8_down_layout.stored_weight_bytes;
             }
             if (w4f16_pipeline_mode ==
                 QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH) {

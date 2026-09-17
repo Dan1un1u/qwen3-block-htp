@@ -997,12 +997,14 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         &arena, QBH_BLOCK_M * QBH_BLOCK_MAX_K *
             (fp32_residual && !r4_mode ? 1U : (uint32_t)sizeof(uint16_t)),
         r4_mode ? 32768U : QBH_HMX_FP16_TILE_BYTES);
+#ifndef QBH_LLAMA_3B
     buffers->compressed_weight = qbh_arena_alloc(
         &arena, QBH_BLOCK_MAX_K * QBH_HMX_OUTPUT_CHANNELS / 2U *
                     compressed_batch_factor);
     buffers->compressed_weight_alt = qbh_arena_alloc(
         &arena, QBH_BLOCK_MAX_K * QBH_HMX_OUTPUT_CHANNELS / 2U *
                     compressed_batch_factor);
+#endif
     if (variant == QBH_BLOCK_W4U8 ||
         mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 ||
         generation_mode ==
@@ -1021,6 +1023,12 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
     buffers->expanded_weight_alt = qbh_arena_alloc_aligned(
         &arena, expanded_buffer_bytes,
         r4_mode ? 32768U : QBH_HMX_FP16_TILE_BYTES);
+#ifdef QBH_LLAMA_3B
+    /* 3B accepts only direct-W4: all projection/head DMA uses these slots.
+     * Keep compressed pointers at the same arena boundary for attention scratch. */
+    buffers->compressed_weight = buffers->expanded_weight;
+    buffers->compressed_weight_alt = buffers->expanded_weight_alt;
+#endif
     buffers->hmx_output = qbh_arena_alloc_aligned(
         &arena, QBH_BLOCK_HMX_OUTPUT_MAX_BYTES,
         QBH_HMX_FP16_TILE_BYTES);
@@ -1043,8 +1051,14 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
     }
     if (sp2_mode || fp32_residual) {
         /* R4 consumes Gate completely before producing any SP2 plane. */
+#ifdef QBH_LLAMA_3B
+        /* Input Norm/QKV has joined before post-Norm writes its separate
+         * q-arena carrier; hmx_activation is dead throughout SwiGLU/Down. */
+        buffers->sp2_high = buffers->hmx_activation;
+#else
         buffers->sp2_high = fp32_residual && r4_mode ? buffers->gate : qbh_arena_alloc_aligned(&arena,
             QBH_BLOCK_M * QBH_BLOCK_INTERMEDIATE, 2048U);
+#endif
         buffers->sp2_scratch = qbh_arena_alloc_aligned(&arena, (sp2_mode>=8U || fp32_residual) ? 34816U : 18432U, 2048U);
         if (!buffers->sp2_high || !buffers->sp2_scratch) return -1;
     }
@@ -1523,16 +1537,16 @@ static int qbh_slice_layer_desc_valid(
     }
     if (qbh_block_mlp_is_w4u8_streaming(header->mlp_mode)) {
         if (layer->w4u8_silu_lut_bytes != QBH_MLP_LUT_BYTES * (QBH_LLAMA_SP2(header) && header->dense_r4_mode ? 2U : 1U) ||
-            layer->w4u8_gate_up_bundle_bytes == 0U ||
-            layer->w4u8_down_bundle_bytes == 0U ||
+            (!QBH_LLAMA_DIRECT_ONLY && layer->w4u8_gate_up_bundle_bytes == 0U) ||
+            (!QBH_LLAMA_DIRECT_ONLY && layer->w4u8_down_bundle_bytes == 0U) ||
             !qbh_range_valid(layer->w4u8_silu_lut_offset,
                              layer->w4u8_silu_lut_bytes, shared_bytes) ||
-            !qbh_range_valid(layer->w4u8_gate_up_bundle_offset,
+            (!QBH_LLAMA_DIRECT_ONLY && !qbh_range_valid(layer->w4u8_gate_up_bundle_offset,
                              layer->w4u8_gate_up_bundle_bytes,
-                             shared_bytes) ||
-            !qbh_range_valid(layer->w4u8_down_bundle_offset,
+                             shared_bytes)) ||
+            (!QBH_LLAMA_DIRECT_ONLY && !qbh_range_valid(layer->w4u8_down_bundle_offset,
                              layer->w4u8_down_bundle_bytes,
-                             shared_bytes)) {
+                             shared_bytes))) {
             return 0;
         }
     }
@@ -2053,6 +2067,12 @@ static int qbh_scan_request_valid(const struct qbh_block_header *header,
 static int qbh_header_valid(const struct qbh_block_header *header,
                             uint32_t shared_bytes) {
     uint32_t element_bytes;
+#ifdef QBH_LLAMA_3B
+    if(!header || header->variant!=QBH_BLOCK_W4U8 || QBH_FP32_RESIDUAL(header)!=1U ||
+       QBH_LLAMA_SP2(header)!=8U || header->dense_r3_mode || header->dense_r4_mode ||
+       header->w4u8_decode_projection_mode!=QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
+       header->w4u8_decode_direct_n_mask!=63U || header->paper_format_disable || header->paper_pipeline_disable) return 0;
+#endif
 #ifdef QBH_MODEL_LLAMA32
     if (header && QBH_FP32_RESIDUAL(header) &&
         (QBH_FP32_RESIDUAL(header)!=1U || header->variant!=QBH_BLOCK_W4U8 ||
@@ -2726,16 +2746,16 @@ static int qbh_header_valid(const struct qbh_block_header *header,
     }
     if (qbh_block_mlp_is_w4u8_streaming(header->mlp_mode) &&
         (header->w4u8_silu_lut_bytes != QBH_MLP_LUT_BYTES * (QBH_LLAMA_SP2(header) && header->dense_r4_mode ? 2U : 1U) ||
-         header->w4u8_gate_up_bundle_bytes == 0U ||
-         header->w4u8_down_bundle_bytes == 0U ||
+         (!QBH_LLAMA_DIRECT_ONLY && header->w4u8_gate_up_bundle_bytes == 0U) ||
+         (!QBH_LLAMA_DIRECT_ONLY && header->w4u8_down_bundle_bytes == 0U) ||
          !qbh_range_valid(header->w4u8_silu_lut_offset,
                           header->w4u8_silu_lut_bytes, shared_bytes) ||
-         !qbh_range_valid(header->w4u8_gate_up_bundle_offset,
+         (!QBH_LLAMA_DIRECT_ONLY && !qbh_range_valid(header->w4u8_gate_up_bundle_offset,
                           header->w4u8_gate_up_bundle_bytes,
-                          shared_bytes) ||
-         !qbh_range_valid(header->w4u8_down_bundle_offset,
+                          shared_bytes)) ||
+         (!QBH_LLAMA_DIRECT_ONLY && !qbh_range_valid(header->w4u8_down_bundle_offset,
                           header->w4u8_down_bundle_bytes,
-                          shared_bytes))) {
+                          shared_bytes)))) {
         do { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; } while(0);
     }
     if (!qbh_range_valid(header->input_norm_weight_offset,
