@@ -90,7 +90,7 @@ static void qbh_wide_decode_audit(struct qbh_block_header *h,uint8_t *shared,
 #define QBH_BLOCK_HMX_OUTPUT_MAX_BYTES \
     (2U * 4U * QBH_HMX_FP16_TILE_BYTES)
 #define QBH_BLOCK_PROJECTION_SCALE_CHANNELS \
-    (3U * QBH_BLOCK_HIDDEN + 2U * QBH_BLOCK_KV_HIDDEN + \
+    (2U * QBH_BLOCK_HIDDEN + QBH_BLOCK_ATTN_WIDTH + 2U * QBH_BLOCK_KV_HIDDEN + \
      2U * QBH_BLOCK_INTERMEDIATE)
 #define QBH_BLOCK_PROJECTION_SCALE_BYTES \
     (QBH_BLOCK_PROJECTION_SCALE_CHANNELS * sizeof(float))
@@ -143,7 +143,7 @@ _Static_assert(
     "Q/K rsqrt scratch must not overlap shared RoPE cache");
 _Static_assert(
     QBH_QK_ROPE_SF32_CACHE_OFFSET + QBH_QK_ROPE_SF32_CACHE_BYTES <=
-        QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
+        QBH_BLOCK_M * QBH_BLOCK_ATTN_WIDTH,
     "shared RoPE cache must fit the W4U8 Attention projection overlay");
 #define QBH_BLOCK_DMA_DESCRIPTOR_TIMEOUT_TICKS UINT64_C(1920000)
 #define QBH_BLOCK_HVX_F16_LANES UINT32_C(64)
@@ -922,7 +922,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
     buffers->normalized = qbh_arena_alloc_aligned(&arena, hidden_bytes,
         fp32_residual ? QBH_HMX_FP16_TILE_BYTES : QBH_BLOCK_ALIGNMENT);
     buffers->q = qbh_arena_alloc_aligned(
-        &arena, QBH_BLOCK_M * QBH_BLOCK_HIDDEN * sizeof(uint16_t),
+        &arena, QBH_BLOCK_M * QBH_BLOCK_ATTN_WIDTH * sizeof(uint16_t),
         QBH_HMX_FP16_TILE_BYTES);
     if (qbh_attention_u8_enabled(attention_pipeline_mode)) {
         buffers->k = qbh_arena_alloc_aligned(
@@ -952,7 +952,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
             &arena, score_elements * sizeof(uint16_t));
     }
     buffers->attention_concat = qbh_arena_alloc_aligned(
-        &arena, QBH_BLOCK_M * QBH_BLOCK_HIDDEN * sizeof(uint16_t),
+        &arena, QBH_BLOCK_M * QBH_BLOCK_ATTN_WIDTH * sizeof(uint16_t),
         512U);
 #ifdef QBH_MODEL_LLAMA32
     if (variant == QBH_BLOCK_W4F16 && scan_mode != QBH_BLOCK_SCAN_DISABLED) {
@@ -966,7 +966,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         variant == QBH_BLOCK_W4F16 && mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8
             ? intermediate_bytes : hidden_bytes, QBH_HMX_FP16_TILE_BYTES);
 #else
-    buffers->attention_projection = qbh_arena_alloc(&arena, hidden_bytes);
+    buffers->attention_projection = qbh_arena_alloc(&arena, QBH_BLOCK_M * QBH_BLOCK_ATTN_WIDTH * element_bytes);
 #endif
     if (mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE ||
         mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8) {
@@ -1804,11 +1804,11 @@ static int qbh_projection_shape_valid(uint32_t index,
                                       const struct qbh_block_projection_desc *desc) {
     static const uint32_t expected_k[QBH_BLOCK_PROJECTION_COUNT] = {
         QBH_BLOCK_HIDDEN, QBH_BLOCK_HIDDEN, QBH_BLOCK_HIDDEN,
-        QBH_BLOCK_HIDDEN, QBH_BLOCK_HIDDEN, QBH_BLOCK_HIDDEN,
+        QBH_BLOCK_ATTN_WIDTH, QBH_BLOCK_HIDDEN, QBH_BLOCK_HIDDEN,
         QBH_BLOCK_INTERMEDIATE,
     };
     static const uint32_t expected_n[QBH_BLOCK_PROJECTION_COUNT] = {
-        QBH_BLOCK_HIDDEN, QBH_BLOCK_KV_HIDDEN, QBH_BLOCK_KV_HIDDEN,
+        QBH_BLOCK_ATTN_WIDTH, QBH_BLOCK_KV_HIDDEN, QBH_BLOCK_KV_HIDDEN,
         QBH_BLOCK_HIDDEN, QBH_BLOCK_INTERMEDIATE,
         QBH_BLOCK_INTERMEDIATE, QBH_BLOCK_HIDDEN,
     };
@@ -4280,7 +4280,7 @@ static void qbh_attention_qk_norm_run_head(
             pool->attention_rope_cos, pool->attention_rope_sin);
     } else if (task < QBH_BLOCK_HEADS) {
         qbh_hvx_qk_norm_rope_f16_head(
-            pool->attention_q, QBH_BLOCK_M, QBH_BLOCK_HIDDEN,
+            pool->attention_q, QBH_BLOCK_M, QBH_BLOCK_ATTN_WIDTH,
             QBH_BLOCK_HEAD_DIM, task,
             pool->attention_q_gamma, pool->attention_rope_cos,
             pool->attention_rope_sin);
@@ -10707,7 +10707,7 @@ static int qbh_run_w4u8_qkv_ring(
             state.tiles_per_batch >= 16U
         ? 2U : QBH_BLOCK_W4U8_QKV_RING_SLOTS;
     state.expected_batch_count =
-        (QBH_BLOCK_HIDDEN / QBH_HMX_OUTPUT_CHANNELS) /
+        (QBH_BLOCK_ATTN_WIDTH / QBH_HMX_OUTPUT_CHANNELS) /
             state.q_tiles_per_batch +
         2U * (QBH_BLOCK_KV_HIDDEN / QBH_HMX_OUTPUT_CHANNELS) /
             state.kv_tiles_per_batch;
@@ -12263,8 +12263,8 @@ static void qbh_audit_crouton_qkv_operands(
 
     qbh_unpack_fp16_grouped_projection(
         (const __fp16 *)buffers->q,
-        QBH_BLOCK_HIDDEN / QBH_HMX_FP16_COLS,
-        q_reference, QBH_BLOCK_HIDDEN,
+        QBH_BLOCK_ATTN_WIDTH / QBH_HMX_FP16_COLS,
+        q_reference, QBH_BLOCK_ATTN_WIDTH,
         q_group_tiles);
     qbh_unpack_fp16_grouped_projection(
         (const __fp16 *)buffers->k,
@@ -12278,7 +12278,7 @@ static void qbh_audit_crouton_qkv_operands(
         v_group_tiles);
     qbh_hvx_qk_norm_rope_f16(
         q_reference, QBH_BLOCK_M, QBH_BLOCK_HEADS,
-        QBH_BLOCK_HIDDEN, QBH_BLOCK_HEAD_DIM,
+        QBH_BLOCK_ATTN_WIDTH, QBH_BLOCK_HEAD_DIM,
         (const __fp16 *)buffers->q_norm_weight,
         (const __fp16 *)buffers->rope_cos,
         (const __fp16 *)buffers->rope_sin, NULL);
@@ -12340,7 +12340,7 @@ static void qbh_audit_row_major_qkv_operands(
 
     qbh_hvx_qk_norm_rope_f16(
         q_reference, QBH_BLOCK_M, QBH_BLOCK_HEADS,
-        QBH_BLOCK_HIDDEN, QBH_BLOCK_HEAD_DIM,
+        QBH_BLOCK_ATTN_WIDTH, QBH_BLOCK_HEAD_DIM,
         (const __fp16 *)buffers->q_norm_weight,
         (const __fp16 *)buffers->rope_cos,
         (const __fp16 *)buffers->rope_sin, NULL);
@@ -12354,7 +12354,7 @@ static void qbh_audit_row_major_qkv_operands(
         qbh_count_u16_mismatches(
             (const uint16_t *)q_reference,
             (const uint16_t *)buffers->q,
-            QBH_BLOCK_M * QBH_BLOCK_HIDDEN);
+            QBH_BLOCK_M * QBH_BLOCK_ATTN_WIDTH);
     header->crouton_k_operand_mismatch_count +=
         qbh_count_u16_mismatches(
             (const uint16_t *)k_reference,
@@ -12436,12 +12436,12 @@ static void qbh_attention_gqa_pool_run_tasks(
         if (pool->attention_header->attention_pipeline_mode !=
             QBH_BLOCK_ATTENTION_PIPELINE_GQA_QKV_OVERLAP) {
             qbh_hvx_qk_norm_rope_f16_head(
-                pool->attention_q, QBH_BLOCK_M, QBH_BLOCK_HIDDEN,
+                pool->attention_q, QBH_BLOCK_M, QBH_BLOCK_ATTN_WIDTH,
                 QBH_BLOCK_HEAD_DIM, first_q_head,
                 pool->attention_q_gamma, pool->attention_rope_cos,
                 pool->attention_rope_sin);
             qbh_hvx_qk_norm_rope_f16_head(
-                pool->attention_q, QBH_BLOCK_M, QBH_BLOCK_HIDDEN,
+                pool->attention_q, QBH_BLOCK_M, QBH_BLOCK_ATTN_WIDTH,
                 QBH_BLOCK_HEAD_DIM, first_q_head + 1U,
                 pool->attention_q_gamma, pool->attention_rope_cos,
                 pool->attention_rope_sin);
@@ -12470,7 +12470,7 @@ static void qbh_attention_gqa_pool_run_tasks(
                 qbh_pack_fp16_activation(
                     (const __fp16 *)buffers->q +
                         head * QBH_BLOCK_HEAD_DIM,
-                    QBH_BLOCK_HIDDEN, QBH_BLOCK_HEAD_DIM, activation);
+                    QBH_BLOCK_ATTN_WIDTH, QBH_BLOCK_HEAD_DIM, activation);
             }
             if (qbh_attention_gqa_submit(
                     pool, job, activation, weight, output, 4U, 2U) != 0) {
@@ -12570,7 +12570,7 @@ static void qbh_attention_gqa_pool_run_tasks(
             } else {
                 qbh_unpack_fp16_output(
                     output, 4U, (__fp16 *)buffers->attention_concat,
-                    QBH_BLOCK_HIDDEN, head * QBH_BLOCK_HEAD_DIM);
+                    QBH_BLOCK_ATTN_WIDTH, head * QBH_BLOCK_HEAD_DIM);
             }
         }
         if (pool->attention_gqa_abort != 0U) {
@@ -12800,10 +12800,10 @@ static int qbh_attention_f16(struct qbh_block_header *header,
             attention = (__fp16 *)buffers->hmx_activation;
         }
         qbh_record_f16_nonfinite(
-            header, attention, QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
+            header, attention, QBH_BLOCK_M * QBH_BLOCK_ATTN_WIDTH,
             QBH_BLOCK_NUMERICAL_ATTENTION_AV);
         header->attention_av_max_abs = qbh_f16_max_abs(
-            header, attention, QBH_BLOCK_M * QBH_BLOCK_HIDDEN);
+            header, attention, QBH_BLOCK_M * QBH_BLOCK_ATTN_WIDTH);
         header->attention_gqa_pipeline_ticks +=
             HAP_perf_get_qtimer_count() - pipeline_start;
         return 0;
@@ -12812,7 +12812,7 @@ static int qbh_attention_f16(struct qbh_block_header *header,
     for (uint32_t head = 0; head < QBH_BLOCK_HEADS; ++head) {
         uint32_t kv_head = head / (QBH_BLOCK_HEADS / QBH_BLOCK_KV_HEADS);
         qbh_pack_fp16_activation(
-            q + head * QBH_BLOCK_HEAD_DIM, QBH_BLOCK_HIDDEN,
+            q + head * QBH_BLOCK_HEAD_DIM, QBH_BLOCK_ATTN_WIDTH,
             QBH_BLOCK_HEAD_DIM, (__fp16 *)buffers->hmx_activation);
         if ((header->attention_pack_mode &
              QBH_BLOCK_ATTENTION_PACK_QK_HVX) != 0U) {
@@ -12971,17 +12971,17 @@ static int qbh_attention_f16(struct qbh_block_header *header,
         header->hmx_fp16_tile_pair_count += 4U * QBH_ATTENTION_HEAD_DIM_TILES;
         qbh_unpack_fp16_output(
             (const __fp16 *)buffers->hmx_output, QBH_ATTENTION_HEAD_DIM_TILES, attention,
-            QBH_BLOCK_HIDDEN, head * QBH_BLOCK_HEAD_DIM);
+            QBH_BLOCK_ATTN_WIDTH, head * QBH_BLOCK_HEAD_DIM);
         if (header->attribution_enabled != 0U) {
             header->attention_av_unpack_ticks +=
                 qbh_attribution_mark(&attribution_cursor);
         }
     }
     qbh_record_f16_nonfinite(
-        header, attention, QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
+        header, attention, QBH_BLOCK_M * QBH_BLOCK_ATTN_WIDTH,
         QBH_BLOCK_NUMERICAL_ATTENTION_AV);
     header->attention_av_max_abs = qbh_f16_max_abs(
-        header, attention, QBH_BLOCK_M * QBH_BLOCK_HIDDEN);
+        header, attention, QBH_BLOCK_M * QBH_BLOCK_ATTN_WIDTH);
     if (header->attribution_enabled != 0U &&
         header->numerical_audit_enabled != 0U) {
         header->attention_av_audit_ticks +=
@@ -15429,8 +15429,8 @@ static int qbh_run_w4u8_direct_n_mlp(
         if(stream_r4 && qbh_r4_prefill_finish(pool,&r4_task,up_status))return -1;
         if(up_status)return -1;
     }
-    qbh_r3_chain_audit(header,shared,6,gate_native,393216U);
-    qbh_r3_chain_audit(header,shared,7,up_native,393216U);
+    qbh_r3_chain_audit(header,shared,6,gate_native,QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE);
+    qbh_r3_chain_audit(header,shared,7,up_native,QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE);
     header->gate_up_ticks += HAP_perf_get_qtimer_count() - start;
     header->w4u8_mlp_gate_up_hmx_command_count +=
         2U * (QBH_BLOCK_INTERMEDIATE / QBH_HMX_OUTPUT_CHANNELS /
@@ -15509,7 +15509,7 @@ static int qbh_run_w4u8_direct_n_mlp(
                 QBH_BLOCK_INTERMEDIATE / QBH_HMX_OUTPUT_CHANNELS,
                 0U));
     }
-    qbh_r3_chain_audit(header,shared,8,middle_native,393216U);
+    qbh_r3_chain_audit(header,shared,8,middle_native,QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE);
     if (qbh_copy_w4u8_tail_audit(
             header, shared, QBH_BLOCK_U8_TAIL_MIDDLE_OFFSET,
             middle_native,
@@ -15552,7 +15552,7 @@ static int qbh_run_w4u8_direct_n_mlp(
      * is verified through the residual output, not stale U8 down_native. */
     qbh_r3_chain_audit(header,shared,9,
         (header->paper_format_disable&4U)?buffers->sp2_high:down_native,
-        (header->paper_format_disable&4U)?393216U:131072U);
+        (header->paper_format_disable&4U)?QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE:QBH_BLOCK_M*QBH_BLOCK_HIDDEN);
     header->down_ticks += HAP_perf_get_qtimer_count() - start;
     header->w4u8_mlp_down_hmx_command_count +=
         QBH_BLOCK_HIDDEN / QBH_HMX_OUTPUT_CHANNELS /
@@ -17475,7 +17475,7 @@ static int qbh_scan_f16_attention(
                 (const __fp16 *)buffers->attention_projection +
                     (size_t)head * head_elements,
                 QBH_BLOCK_HEAD_DIM / QBH_HMX_FP16_COLS,
-                (__fp16 *)buffers->q, QBH_BLOCK_HIDDEN,
+                (__fp16 *)buffers->q, QBH_BLOCK_ATTN_WIDTH,
                 head * QBH_BLOCK_HEAD_DIM);
         }
     }
@@ -17687,7 +17687,7 @@ static int qbh_scan_f16_attention(
                     2U * (QBH_BLOCK_HEAD_DIM / QBH_HMX_FP16_COLS) *
                         QBH_HMX_FP16_TILE_ELEMENTS,
                 QBH_BLOCK_HEAD_DIM / QBH_HMX_FP16_COLS,
-                (__fp16 *)buffers->q, QBH_BLOCK_HIDDEN,
+                (__fp16 *)buffers->q, QBH_BLOCK_ATTN_WIDTH,
                 (first_q_head + local_head) * QBH_BLOCK_HEAD_DIM);
         }
         header->attention_av_unpack_ticks +=
@@ -17696,10 +17696,10 @@ static int qbh_scan_f16_attention(
 
     if(header->variant!=QBH_BLOCK_W4U8 && header->w4f16_decode_opt>=2U && logical_rows==1U)
         qbh_hvx_copy_aligned_bytes(buffers->attention_concat,buffers->q,
-            QBH_BLOCK_M*QBH_BLOCK_HIDDEN*sizeof(__fp16));
+            QBH_BLOCK_M*QBH_BLOCK_ATTN_WIDTH*sizeof(__fp16));
     else memcpy(
         buffers->attention_concat, buffers->q,
-        QBH_BLOCK_M * QBH_BLOCK_HIDDEN * sizeof(__fp16));
+        QBH_BLOCK_M * QBH_BLOCK_ATTN_WIDTH * sizeof(__fp16));
     header->hmx_command_count += 2U * QBH_BLOCK_KV_HEADS;
     header->hmx_fp16_tile_pair_count +=
         32U * QBH_BLOCK_KV_HEADS * kv_tiles;
@@ -20898,7 +20898,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             header,
             crouton_qkv_enabled != 0U
                 ? buffers->attention_projection : buffers->q,
-            QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
+            QBH_BLOCK_M * QBH_BLOCK_ATTN_WIDTH,
             QBH_BLOCK_NUMERICAL_Q_ROPE);
         qbh_record_f16_nonfinite(
             header,
@@ -20918,7 +20918,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     } else if (header->variant != QBH_BLOCK_W4U8) {
         audit_start = qbh_attribution_begin(header);
         qbh_record_f16_nonfinite(
-            header, buffers->q, QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
+            header, buffers->q, QBH_BLOCK_M * QBH_BLOCK_ATTN_WIDTH,
             QBH_BLOCK_NUMERICAL_Q);
         qbh_record_f16_nonfinite(
             header, buffers->k, QBH_BLOCK_M * QBH_BLOCK_KV_HIDDEN,
@@ -20981,7 +20981,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         if ((header->common_ops_mask & QBH_BLOCK_COMMON_OP_ROPE) != 0U) {
             qbh_hvx_qk_norm_rope_u8(
                 buffers->q, QBH_BLOCK_M, QBH_BLOCK_HEADS,
-                QBH_BLOCK_HIDDEN, QBH_BLOCK_HEAD_DIM,
+                QBH_BLOCK_ATTN_WIDTH, QBH_BLOCK_HEAD_DIM,
                 &header->qparams[QBH_BLOCK_QP_Q_PROJECTION],
                 &header->qparams[QBH_BLOCK_QP_Q_ROPE],
                 (const __fp16 *)buffers->q_norm_weight,
@@ -20996,7 +20996,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                 (const __fp16 *)buffers->rope_cos,
                 (const __fp16 *)buffers->rope_sin);
             qbh_hvx_expand_u8_to_f16_in_place(
-                buffers->q, QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
+                buffers->q, QBH_BLOCK_M * QBH_BLOCK_ATTN_WIDTH,
                 &header->qparams[QBH_BLOCK_QP_Q_ROPE]);
             qbh_hvx_expand_u8_to_f16_in_place(
                 buffers->k, QBH_BLOCK_M * QBH_BLOCK_KV_HIDDEN,
@@ -21006,7 +21006,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                 &header->qparams[QBH_BLOCK_QP_V]);
         } else {
             qbh_qk_norm_rope_u8(
-                buffers->q, QBH_BLOCK_HEADS, QBH_BLOCK_HIDDEN,
+                buffers->q, QBH_BLOCK_HEADS, QBH_BLOCK_ATTN_WIDTH,
                 &header->qparams[QBH_BLOCK_QP_Q_PROJECTION],
                 &header->qparams[QBH_BLOCK_QP_Q_ROPE],
                 (const __fp16 *)buffers->q_norm_weight,
@@ -21020,7 +21020,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                 (const __fp16 *)buffers->rope_cos,
                 (const __fp16 *)buffers->rope_sin);
             qbh_expand_u8_to_f16_in_place(
-                buffers->q, QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
+                buffers->q, QBH_BLOCK_M * QBH_BLOCK_ATTN_WIDTH,
                 &header->qparams[QBH_BLOCK_QP_Q_ROPE]);
             qbh_expand_u8_to_f16_in_place(
                 buffers->k, QBH_BLOCK_M * QBH_BLOCK_KV_HIDDEN,
@@ -21046,7 +21046,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                     QBH_BLOCK_COMMON_OP_ROPE) != 0U) {
             qbh_hvx_qk_norm_rope_f16(
                 (__fp16 *)buffers->q, QBH_BLOCK_M, QBH_BLOCK_HEADS,
-                QBH_BLOCK_HIDDEN, QBH_BLOCK_HEAD_DIM,
+                QBH_BLOCK_ATTN_WIDTH, QBH_BLOCK_HEAD_DIM,
                 (const __fp16 *)buffers->q_norm_weight,
                 (const __fp16 *)buffers->rope_cos,
                 (const __fp16 *)buffers->rope_sin, rope_check);
@@ -21060,7 +21060,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         } else {
             qbh_qk_norm_rope_f16(
                 (__fp16 *)buffers->q, QBH_BLOCK_HEADS,
-                QBH_BLOCK_HIDDEN,
+                QBH_BLOCK_ATTN_WIDTH,
                 (const __fp16 *)buffers->q_norm_weight,
                 (const __fp16 *)buffers->rope_cos,
                 (const __fp16 *)buffers->rope_sin);
@@ -21077,7 +21077,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         u8_integer_attention_enabled == 0U) {
         audit_start = qbh_attribution_begin(header);
         qbh_record_f16_nonfinite(
-            header, buffers->q, QBH_BLOCK_M * QBH_BLOCK_HIDDEN,
+            header, buffers->q, QBH_BLOCK_M * QBH_BLOCK_ATTN_WIDTH,
             QBH_BLOCK_NUMERICAL_Q_ROPE);
         qbh_record_f16_nonfinite(
             header, buffers->k, QBH_BLOCK_M * QBH_BLOCK_KV_HIDDEN,
@@ -21181,7 +21181,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             buffers->probability, QBH_BLOCK_SCORE_ELEMENTS);
         header->u8_attention_actual_av_hash = qbh_fnv1a64_bytes(
             buffers->hmx_activation,
-            QBH_BLOCK_M * QBH_BLOCK_HIDDEN);
+            QBH_BLOCK_M * QBH_BLOCK_ATTN_WIDTH);
         if (header->numerical_status ==
                 QBH_BLOCK_NUMERICAL_UNCHECKED &&
             header->u8_attention_expected_score_hash != 0U &&
@@ -21338,14 +21338,14 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         header->variant != QBH_BLOCK_W4U8) {
         qbh_pack_fp16_activation(
             (const __fp16 *)buffers->q,
-            QBH_BLOCK_HIDDEN, QBH_BLOCK_HIDDEN,
+            QBH_BLOCK_ATTN_WIDTH, QBH_BLOCK_ATTN_WIDTH,
             (__fp16 *)buffers->hmx_activation);
         qbh_hmx_fp16_init_unity_scale(buffers->scale_or_bias);
     }
     /* L32-0018: O uses the same two-slot raw-store/HVX residual pipeline as
      * Down, with one native W4 pass and its existing U8 zero compensation. */
     /* EXP0269 diagnostic: previously unused FP32 audit slots hold residual tail. */
-    if(QBH_FP32_RESIDUAL(header))qbh_r3_chain_audit(header,shared,3,buffers->residual+393216U,131072U);
+    if(QBH_FP32_RESIDUAL(header))qbh_r3_chain_audit(header,shared,3,buffers->residual+QBH_BLOCK_M*QBH_BLOCK_HIDDEN*3U,QBH_BLOCK_M*QBH_BLOCK_HIDDEN);
     const uint32_t fp32_o_stream=QBH_FP32_RESIDUAL(header) && logical_rows==64U && !(header->paper_pipeline_disable&4U);
     if(fp32_o_stream) {
         if(!w4f16_pool || !w4f16_pool->worker_count)
@@ -21712,8 +21712,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             header, &gate_prefetch);
         return QBH_BLOCK_STATUS_RESIDUAL_POOL_FAILED;
     }
-    qbh_r3_chain_audit(header,shared,4,buffers->residual+(QBH_FP32_RESIDUAL(header)?393216U:0U),131072U);
-    qbh_r3_chain_audit(header,shared,5,w4u8_mlp_native_activation,131072U);
+    qbh_r3_chain_audit(header,shared,4,buffers->residual+(QBH_FP32_RESIDUAL(header)?QBH_BLOCK_M*QBH_BLOCK_HIDDEN*3U:0U),QBH_BLOCK_M*QBH_BLOCK_HIDDEN);
+    qbh_r3_chain_audit(header,shared,5,w4u8_mlp_native_activation,QBH_BLOCK_M*QBH_BLOCK_HIDDEN);
     header->post_attention_norm_ticks +=
         HAP_perf_get_qtimer_count() - start;
 

@@ -142,12 +142,12 @@ static const char *qbh_projection_names[QBH_BLOCK_PROJECTION_COUNT] = {
 
 static const uint32_t qbh_projection_k[QBH_BLOCK_PROJECTION_COUNT] = {
     QBH_BLOCK_HIDDEN, QBH_BLOCK_HIDDEN, QBH_BLOCK_HIDDEN,
-    QBH_BLOCK_HIDDEN, QBH_BLOCK_HIDDEN, QBH_BLOCK_HIDDEN,
+    QBH_BLOCK_ATTN_WIDTH, QBH_BLOCK_HIDDEN, QBH_BLOCK_HIDDEN,
     QBH_BLOCK_INTERMEDIATE,
 };
 
 static const uint32_t qbh_projection_n[QBH_BLOCK_PROJECTION_COUNT] = {
-    QBH_BLOCK_HIDDEN, QBH_BLOCK_KV_HIDDEN, QBH_BLOCK_KV_HIDDEN,
+    QBH_BLOCK_ATTN_WIDTH, QBH_BLOCK_KV_HIDDEN, QBH_BLOCK_KV_HIDDEN,
     QBH_BLOCK_HIDDEN, QBH_BLOCK_INTERMEDIATE,
     QBH_BLOCK_INTERMEDIATE, QBH_BLOCK_HIDDEN,
 };
@@ -6165,7 +6165,7 @@ int main(int argc, char **argv) {
          qbh_prepare_slot(
              &attention_audit_slots[2], argv[1],
              "reference_w4u8_integer_attention_av_tiles_u8.bin",
-             QBH_BLOCK_M * QBH_BLOCK_HIDDEN, &cursor) != 0)) {
+             QBH_BLOCK_M * QBH_BLOCK_ATTN_WIDTH, &cursor) != 0)) {
         fprintf(stderr, "integer Attention stage-reference audit failed\n");
         return 2;
     }
