@@ -24,6 +24,19 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0290
+  title: Qwen0.6 W4F16 QKV granularity and staircase-speed diagnosis
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/EXP-0290.md
+  approval_ref: User asks to investigate W4A16 slower than F16; expects staircase
+    speed.
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0289-qwen3-06b-a16
+    started_on: '2026-09-18'
 - id: EXP-0289
   title: Qwen3-0.6B W16A16 and W4A16 fair vectorized E2E baselines
   execution_state: completed

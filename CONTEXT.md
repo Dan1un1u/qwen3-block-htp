@@ -1,3 +1,6 @@
+# Active EXP0290 — W4A16 speed diagnosis
+See docs/experiments/EXP-0290.md. Frozen0289 native binary and model, existing config candidates only initially. Full-model floating alignment failures retained under user provisional-speed authorization. No recipe slowdown or presumed staircase result. Temporary parent branch binding for preflight, then exp0290 branch.
+
 # Completed EXP-0289 — provisional Qwen0.6 A16 speed baselines
 No active experiment/device owner; next290. Closure 7e36dcabbec07270934e443e2d4ae3664ba4f210; measured b28fde2500e2422dca77e65d85ca48df0eded57c, restored native source428faef, four rebuilt binary hashes EXACT. Read docs/experiments/EXP-0289-RESULTS.md and MODULES.md.
 M64+42/cache128,5short10formalrepeat10,8600formal profiles: W16A161710.935856/27.675677;W4A161678.352049/25.645407tok/s. SP2 historical EXP0288 remains3020.427339/92.402097,notpaired.

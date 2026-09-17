@@ -440,3 +440,6 @@ User requests W16A16 and W4A16 support with vector arithmetic and basic DMA/comp
 ## User authorization: measure speed before full floating alignment (2026-09-17)
 User confirms: measure speed now, precision is secondary given time pressure, ensure hardware implementation correctness. Retain all failed full-model floating-reference gates; no threshold is changed or failure relabeled.
 See docs/experiments/EXP-0289.md for the retained hardware validation and timing protocol.
+
+## Qwen0.6 W4A16 performance diagnosis (2026-09-18; EXP-0290)
+User requests checking unexpectedly slower W4A16 and staircase speed. Bounded same-math/config diagnosis and attributable routine fixes under docs/experiments/EXP-0290.md; prior provisional precision scope retained, physical/exact regression gates remain. No baseline promotion.
