@@ -1,3 +1,6 @@
+# L32-0045 active: no-performance-gate 3B optimization
+Read docs/experiments/L32-0045.md. Latest user removes performance stopping thresholds; correctness/physical/evidence unchanged. Frozen0044 control, original0041 payloads. Primary M64+42/cache128. Prior entries retained as history.
+
 # L32-0044 completed: longer3B decode optimization
 Latest3B W4A8-SP2 FP32 residual,no rotation:
 - PrimaryM64+42/cache128/full28:1138.295039prefill/22.538183decode tps. Paired0043arithmeticcontrol1130.655081/21.633357;decode+4.182553%,prefill+.675711%.5short+10formalrepeat10,95%CI gatespass.

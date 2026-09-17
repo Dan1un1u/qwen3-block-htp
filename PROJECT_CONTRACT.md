@@ -221,3 +221,6 @@ User approves the prior annotated proposal. Implement uniform INT16 Down input o
 
 ## L32-0041 3B adaptation authorization (2026-09-17)
 User supplies original Llama-3.2-3B-Instruct and authorizes migration of latest no-rotation W4A8 SP2 FP32-residual runtime. This extends model support beyond the original1B scope solely under L32-0041. Preserve1B artifacts, native math/physical gates; defer memory optimization and PPL. Fresh3B weights/calibration only.
+
+## L32-0045 no-performance-gate loop authorization (2026-09-18)
+User explicitly requests iterative Llama3.2-3B W4A8-SP2 E2E optimization without gates. For this experiment, supersede prior10% slowdown/external-speed stopping thresholds; numerical correctness, physical constraints, provenance, fair matched measurements and uncertainty reporting remain. Routine iterative candidates under the registered protocol require no repeated permission.

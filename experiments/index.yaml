@@ -2429,3 +2429,15 @@ experiments:
     all_numerical_physical_gates_pass: true
     external_target_decode_tps: 28.04
     parent_experiment: L32-0043
+- id: L32-0045
+  title: 3B E2E iterative optimization without performance stopping gates
+  execution_state: running
+  approval_ref: 'User 2026-09-18: 为llama 3.2-3B W4A8-SP2启动无gate的loop优化，尽量提高e2e速度。
+    Performance thresholds removed; hardware correctness and physical constraints
+    retained.'
+  parent_source: 6f488b36293d85b2b7f22f70bc78e461e81f816c
+  record: docs/experiments/L32-0045.md
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  adoption_status: pending
