@@ -297,6 +297,7 @@ struct qbh_block_buffers {
 #ifdef QBH_LLAMA_3B
     const struct qbh_block_projection_desc *qkv_prefetched_target;
     uint32_t qkv_prefetched_slot;
+    uint32_t down_prefetched, down_prefetched_slot;
 #endif
     struct qbh_attention_config *attention_configs;
 };
@@ -9834,7 +9835,11 @@ static int qbh_run_w4u8_direct_n_projection(
         return -1;
     }
 #ifdef QBH_LLAMA_3B
-    if (qkv_wide && buffers->qkv_prefetched_target == desc) {
+    if (desc == &header->projections[QBH_BLOCK_PROJ_DOWN] &&
+        buffers->down_prefetched && batch_tiles == 8U) {
+        current_slot = buffers->down_prefetched_slot;
+        buffers->down_prefetched = 0U;
+    } else if (qkv_wide && buffers->qkv_prefetched_target == desc) {
         current_slot = buffers->qkv_prefetched_slot;
         buffers->qkv_prefetched_target = NULL;
     } else
@@ -10420,6 +10425,38 @@ static int qbh_run_w4u8_direct_n_gate_up_pair(
             ++header->w4u8_qkvo_overlap_schedule_count;
         }
 
+#ifdef QBH_LLAMA_3B
+        if (next_projection >= 2U && QBH_FP32_RESIDUAL(header) &&
+            QBH_LLAMA_SP2(header) == 8U &&
+            !header->dense_r3_mode && !header->dense_r4_mode &&
+            header->w4u8_decode_direct_n_down_batch_n_tiles == 8U) {
+            const struct qbh_block_projection_desc *down =
+                &header->projections[QBH_BLOCK_PROJ_DOWN];
+            const uint32_t wb = 8U * (down->k / QBH_HMX_INPUT_CHANNELS) * QBH_W4_PACKED_TILE_BYTES;
+            dma_start = HAP_perf_get_qtimer_count();
+            result = qbh_dma_start_w4u8_batch_prefetch(
+                descriptors, weight_slots[next_slot],
+                shared + down->direct_n_weight_offset, wb,
+                buffers->scale_or_bias + next_slot * 8U * QBH_HMX_BIAS_BYTES,
+                shared + down->bias_offset, 8U * QBH_HMX_BIAS_BYTES);
+            if (!result) result = qbh_dma_wait_w4u8_batch_prefetch(descriptors);
+            header->weight_dma_ticks += HAP_perf_get_qtimer_count() - dma_start;
+            if (result) {
+                (void)qbh_hmx_wait(worker);
+                if (stream_started)
+                    (void)qbh_finish_w4u8_gate_up_swiglu_stream(header, pool, 1U);
+                qbh_record_projection_failure(header, down, 0U, 89U, result);
+                return -1;
+            }
+            buffers->down_prefetched = 1U;
+            buffers->down_prefetched_slot = next_slot;
+            header->weight_ddr_read_bytes += wb + 8U * QBH_HMX_BIAS_BYTES;
+            header->w4u8_decode_direct_n_weight_ddr_read_bytes += wb;
+            header->weight_dma_descriptor_count += 2U;
+            ++header->w4u8_qkvo_prefetch_count;
+            ++header->w4u8_qkvo_overlap_schedule_count;
+        }
+#endif
         wait_start = HAP_perf_get_qtimer_count();
         result = qbh_hmx_wait(worker);
         header->projection_hmx_wait_ticks +=
@@ -20767,6 +20804,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     start = HAP_perf_get_qtimer_count();
 #ifdef QBH_LLAMA_3B
     buffers->qkv_prefetched_target = NULL;
+    buffers->down_prefetched = 0U;
     if (header->variant == QBH_BLOCK_W4U8 && QBH_FP32_RESIDUAL(header) &&
         !header->dense_r3_mode && !header->dense_r4_mode &&
         !w4u8_qkv_ring_enabled &&
