@@ -35,7 +35,7 @@ experiments:
     models and use ModelScope if absent.
   parent_source: 8cfc71a113b3e59f271730ca88c5d63829a759dc
   runtime:
-    source_branch: codex/exp-0285-fp16-residual
+    source_branch: codex/exp-0288-qwen3-06b-sp2
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     started_on: '2026-09-17'
 - id: EXP-0287
