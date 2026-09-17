@@ -986,6 +986,7 @@ void qbh_hvx_qk_norm_rope_f16_crouton_head(
 static HVX_Vector qbh_hvx_silu_multiply_vector(
     HVX_Vector gate_value, HVX_Vector up_value) {
 #ifdef QBH_QWEN_06B
+    {
     HVX_VectorPair gg=Q6_Wsf_vcvt_Vhf(gate_value),uu=Q6_Wsf_vcvt_Vhf(up_value);
     HVX_Vector result[2],one=qbh_a16_splat(1.0f),two=qbh_a16_splat(2.0f);
     for(uint32_t part=0;part<2;++part) {
@@ -1003,6 +1004,7 @@ static HVX_Vector qbh_hvx_silu_multiply_vector(
         result[part]=qbh_a16_mul_sf(qbh_a16_mul_sf(g,sigmoid),u);
     }
     return Q6_Vhf_vcvt_VsfVsf(result[0],result[1]);
+    }
 #endif
     const HVX_Vector sign_mask = Q6_Vh_vsplat_R(0x8000);
     const HVX_Vector magnitude_mask = Q6_Vh_vsplat_R(0x7fff);
