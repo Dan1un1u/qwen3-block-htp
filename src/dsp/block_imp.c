@@ -978,7 +978,12 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         buffers->gate = qbh_arena_alloc_aligned(
             &arena, intermediate_bytes, QBH_HMX_FP16_TILE_BYTES);
         buffers->up = qbh_arena_alloc_aligned(
-            &arena, intermediate_bytes, QBH_HMX_FP16_TILE_BYTES);
+            &arena,
+#ifdef QBH_QWEN_06B
+            variant == QBH_BLOCK_W4F16 && intermediate_bytes < QBH_QWEN3_VOCAB_SIZE*sizeof(float)
+                ? QBH_QWEN3_VOCAB_SIZE*sizeof(float) :
+#endif
+            intermediate_bytes, QBH_HMX_FP16_TILE_BYTES);
     } else {
         buffers->gate = qbh_arena_alloc(&arena, intermediate_bytes);
         buffers->up = qbh_arena_alloc(&arena, intermediate_bytes);
@@ -6526,8 +6531,13 @@ static int qbh_run_generation_head_w4f16_overlap(
 #endif
         generation_step >= header->generation_expected_token_count ||
         (uint8_t *)buffers->attention_projection !=
-            buffers->attention_concat + hidden_bytes ||
-        head->scale_bytes > intermediate_bytes ||
+            buffers->attention_concat + QBH_BLOCK_M * QBH_BLOCK_ATTN_WIDTH * sizeof(uint16_t) ||
+        head->scale_bytes >
+#ifdef QBH_QWEN_06B
+            QBH_QWEN3_VOCAB_SIZE*sizeof(float) ||
+#else
+            intermediate_bytes ||
+#endif
         compressed_batch_bytes > intermediate_bytes ||
         expanded_group_bytes >
             QBH_BLOCK_HIDDEN * group_limit * QBH_HMX_FP16_COLS *
@@ -6565,6 +6575,14 @@ static int qbh_run_generation_head_w4f16_overlap(
             (size_t)(logical_rows - 1U) * QBH_BLOCK_HIDDEN,
         QBH_BLOCK_HIDDEN, (__fp16 *)buffers->hmx_activation);
 
+    if (header->generation_boundary_audit_enabled) {
+        const uint32_t bytes=QBH_BLOCK_HIDDEN*sizeof(__fp16);
+        if(qbh_dma_copy(header,shared+header->output_offset,
+            buffers->residual+(size_t)(logical_rows-1U)*bytes,bytes,0U) ||
+           qbh_dma_copy(header,shared+header->output_offset+bytes,
+            buffers->normalized+(size_t)(logical_rows-1U)*bytes,bytes,0U)) return -2;
+        header->boundary_ddr_write_bytes+=2U*bytes;
+    }
     header->generation_lm_head_batch_n_tiles = group_limit;
     header->generation_lm_head_n_tiles = n_tiles;
     memset((void *)ready, 0, sizeof(ready));
