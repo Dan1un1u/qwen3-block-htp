@@ -36,7 +36,7 @@ experiments:
   parent_source: 5b64c3156f6522fa7de289b995265a93a147b50c
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0288-qwen3-06b-sp2
+    source_branch: codex/exp-0289-qwen3-06b-a16
     started_on: '2026-09-17'
 - id: EXP-0288
   title: Qwen3-0.6B original-derived native W4A8-SP2 FP32 runtime port
