@@ -1029,10 +1029,10 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
     }
     buffers->expanded_weight = qbh_arena_alloc_aligned(
         &arena, expanded_buffer_bytes,
-        r4_mode ? 32768U : QBH_HMX_FP16_TILE_BYTES);
+        r4_mode ? 32768U : (variant == QBH_BLOCK_W4U8 ? QBH_HMX_FP16_TILE_BYTES : 65536U));
     buffers->expanded_weight_alt = qbh_arena_alloc_aligned(
         &arena, expanded_buffer_bytes,
-        r4_mode ? 32768U : QBH_HMX_FP16_TILE_BYTES);
+        r4_mode ? 32768U : (variant == QBH_BLOCK_W4U8 ? QBH_HMX_FP16_TILE_BYTES : 65536U));
     buffers->hmx_output = qbh_arena_alloc_aligned(
         &arena, QBH_BLOCK_HMX_OUTPUT_MAX_BYTES,
         QBH_HMX_FP16_TILE_BYTES);
