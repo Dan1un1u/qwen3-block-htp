@@ -3,7 +3,7 @@ project: llama32-htp
 experiments:
 - id: L32-0042
   title: 3B shape-specific pipeline and layout optimization
-  execution_state: running
+  execution_state: completed
   approval_ref: User 2026-09-17 explicitly requests optimizing 3B pipeline/layout
     for changed model dimensions and full-model speed.
   parent_source: c990326d949d56778cf5990d5b4b246f1a247710
@@ -11,6 +11,60 @@ experiments:
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
+  evidence_validity: valid
+  local_gate: pass
+  adoption_status: pending
+  evidence:
+    id: L32-0042
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    measured_source: 76418bbbb504dc30608441b17f49a774c10b72a2
+    control_source: 6f911883fa98a426a5d8482bbaeceebc6a2d7d40
+    source_closure: 9624a5cdd05d11eff3c1275d099efdc9e4940a68
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0042
+    evidence_ledger_sha256: 918471ea1aa5fd70f4a9e9f139578837a8115739606d1dd2b4d89158955575d0
+    evidence_files: 531
+    report: docs/experiments/L32-0042-RESULTS.md
+    modules: docs/experiments/L32-0042-MODULES.md
+    model: Llama-3.2-3B-Instruct
+    recipe: W4A8-SP2 no rotation FP32 residual; head128 native vector paths
+    performance:
+      CONTROL:
+        prefill: 512.0243555239622
+        decode: 18.679375664334977
+      OPT2:
+        prefill: 1038.7379701505754
+        decode: 21.15209820958773
+    effects:
+      prefill:
+        wall_ratio: 0.49292927594602043
+        latency_reduction_percent: 50.70707240539796
+        throughput_gain_percent: 102.86885944861343
+        ci95:
+        - 0.49240170066314065
+        - 0.49349670227505377
+        ten_percent_gate: true
+      decode:
+        wall_ratio: 0.883098001874257
+        latency_reduction_percent: 11.690199812574297
+        throughput_gain_percent: 13.237715166112274
+        ci95:
+        - 0.8822698085549525
+        - 0.883800038667266
+        ten_percent_gate: true
+    short_rounds: 5
+    formal_pairs: 10
+    repeat: 10
+    independent_selected_chain_full_exact: true
+    greedy_ids_and_codes_exact: true
+    bounded_1b_regression_pass: true
+    physical_gate: true
+    vtcm_peak_bytes: 8360416
+    matrix_work_and_weight_bytes_identical: true
+    quality_claim: false
+    baseline_promoted: false
+    device_owner: null
 - id: L32-0041
   title: Fresh Llama 3.2 3B W4A8 SP2 port from latest 1B runtime
   execution_state: completed

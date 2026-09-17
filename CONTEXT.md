@@ -1,3 +1,10 @@
+# L32-0042 completed: optimized3B pipeline/layout
+Latest3B W4A8-SP2 FP32 residual,no rotations: **1038.737970 prefill /21.152098 decode token/s**, M64+15/28layers/cache80. Five short and ten paired formal cycles,repeat10. Paired original512.024356/18.679376; wall ratios .49292928/.88309800,both95%CI upper<=1.10.
+Read latest_llama3b_w4a8_sp2_optimization and docs/experiments/L32-0042-RESULTS.md / L32-0042-MODULES.md.
+Direct head128 vector RoPE/native gather/store; native-KV whole-vector transpose; K exact integer sum; V gather/vdeal. Frozen0041 weights/scales/model oracles. All selected0/13/27,chain3/full28 hidden/KV exact; full16 generated IDs/logit codes exact.1B frozenlayer7 regression exact; compiled1B DSP differs only in diagnostic source-line immediate.8MiB peak8360416,zero intermediate DDR/spill,identical matrixwork/weightbytes.
+Source closure 9624a5cdd05d11eff3c1275d099efdc9e4940a68,measured 76418bbbb504dc30608441b17f49a774c10b72a2; clean/pushed. Evidence /mnt/d/llm_exp/results/llama32-htp/l32-0042; ledger 918471ea1aa5fd70f4a9e9f139578837a8115739606d1dd2b4d89158955575d0,531files rehashed. NoPPL/general quality claim or automatic promotion. Default1B unchanged;3B supports W4A8-SP2 only. Device released,no active experiment.
+Further3B optimization/configuration needs a new approved protocol; do not repeat diagnosed small-memcpy/head64-splitting work. Prior checkpoints below retained as history.
+
 # L32-0042 active: 3B pipeline/layout optimization
 
 Read docs/experiments/L32-0042.md. Frozen0041 weights/oracles and control binaries; exact arithmetic/physical gates, paired full-model profiling. L32-0042 owns device after checking no concurrent work. No new PPL, calibration or memory campaign.
