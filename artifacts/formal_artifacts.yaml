@@ -451,3 +451,15 @@ artifacts:
     path: 'D:\llm_exp\models\qwen3-block-htp\exp0109\artifacts\42e2a3301292\20260831T155519Z_formal'
     source_commit: 42e2a33012929ccbb05e8c2741124b6fd539552c
     manifest: 'D:\llm_exp\results\qwen3-block-htp\exp0109\20260831T155519Z_42e2a3301292_formal\artifact_sha256.txt'
+  - id: EXP-0288-results
+    experiment: EXP-0288
+    kind: formal-result-set
+    path: /mnt/d/llm_exp/results/qwen3-block-htp/exp0288
+    source_commit: 85f7e2d9742d9c33523e3e0c6125402f75543156
+    manifest: /mnt/d/llm_exp/results/qwen3-block-htp/exp0288/EVIDENCE_SHA256.json
+  - id: EXP-0288-generation-package
+    experiment: EXP-0288
+    kind: retained-model-package
+    path: /mnt/d/llm_exp/models/qwen3-block-htp/exp0288/frontend64-a03
+    source_commit: 85f7e2d9742d9c33523e3e0c6125402f75543156
+    manifest: /mnt/d/llm_exp/models/qwen3-block-htp/exp0288/frontend64-a03/manifest.json

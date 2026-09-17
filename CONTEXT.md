@@ -1,5 +1,9 @@
-# Current EXP0288 — Qwen3-0.6B port
-User-approved original-derived0.6B nativeW4/SP2/FP32 no rotation. Read docs/experiments/EXP-0288.md. Parent0284 fastFP32; do not inherit0285 codegen regression. ModelScope original files needed. Other models frozen, no device owner yet.
+# Completed EXP0288 — Qwen3-0.6B native W4A8-SP2 FP32
+No active experiment or device owner; next289. Source codex/exp-0288-qwen3-06b-sp2 closure 5b64c3156f6522fa7de289b995265a93a147b50c; measuredOPT1 85f7e2d9742d9c33523e3e0c6125402f75543156. Read docs/experiments/EXP-0288-RESULTS.md and MODULES.md.
+Original Qwen official ModelScope11files verified; /mnt/d/llm_exp/models/Qwen3-0.6B-origin. Fresh C64 enhancedGPTQ/staticA8/SP2 export, final /mnt/d/llm_exp/models/qwen3-block-htp/exp0288/frontend64-a03. No1.7B weight/scale reuse. Hidden1024 differs from attention2048; FFN3072,28layers. Parent0284fastFP32; no0285regression.
+Selected0/14/27,chain3 and full64 independent exact; all28prefillKV exact. Old oracle double-rounded reciprocal sqrt at layer13; SDK directrsqrt semantics independently corrected, all64 regenerated, native math/gates unchanged; failures retained.
+Five short/ten formal ABBArepeat10 M64+42: CONTROL2754.1715/92.4637,OPT13020.4273/92.4021 tok/s. Prefillthroughput+9.6673percent,decodeunchanged; both95CI10percentgatepass. SupplementM64+63 OPT13021.5299/92.1258. Nativeprefillhead ported fromLlama,commands594to149,weightbytes/VTCMunchanged; peak5744384B,grant8MiB,zero timedintermediateDDR/spill. Clear inheritedoptimizations audited; stopboundedloop. NoPPL/textquality/defaultpromotion.
+Evidence1572files ledger c99e499a107c4d041d8a9f5449c250797218c5b226afa5194df1fdace2790c46. Other model historical baselines remain retained.
 
 # Current EXP0287 closure — W16A16 versus SP2 DRAM
 Completed, no active experiment/device owner; runtime/model/source unchanged.
