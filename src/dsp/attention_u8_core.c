@@ -118,7 +118,7 @@ void qbh_attention_u8_pack_k_native(
     const uint8_t *k_head_tiles,
     const struct qbh_attention_config *config,
     int8_t *weight_tiles, uint32_t *bias_words) {
-#ifdef QBH_MODEL_LLAMA32
+#if defined(QBH_MODEL_LLAMA32) && !defined(QBH_LLAMA_3B)
     /* A 64-byte head must not feed the head128 HVX scatter/sum. */
     uint8_t logical[QBH_ATTENTION_M * QBH_ATTENTION_HEAD_DIM] __attribute__((aligned(128)));
     qbh_attention_u8_native_head_to_row_major(k_head_tiles, logical, QBH_ATTENTION_M);
@@ -949,6 +949,10 @@ static const uint8_t *qbh_attention_u8_select_sole_lut_template(
         (size_t)slot * QBH_ATTN_U8_LUT_TEMPLATE_BYTES;
 }
 
+static void qbh_attention_u8_shuffle_heads(uint8_t *, uint8_t *, uint8_t *, uint8_t *,
+    const struct qbh_attention_config *, struct qbh_attention_u8_telemetry *,
+    uint32_t, uint32_t, uint32_t, uint32_t);
+
 #ifdef QBH_MODEL_LLAMA32
 void qbh_llama_u8_softmax_group_carrier(uint8_t *scores,uint8_t *probability,
     uint8_t *scratch,uint8_t *dead_k_weight,const struct qbh_attention_config *config,
@@ -960,10 +964,11 @@ void qbh_llama_u8_softmax_group_carrier(uint8_t *scores,uint8_t *probability,
     uint32_t minimum=UINT_MAX,maximum=0U;
     for(uint32_t head=0;head<QBH_ATTENTION_Q_HEADS_PER_GROUP;head+=2U) {
         struct qbh_attention_u8_telemetry local={0};
-        qbh_attention_u8_requant_softmax_group_rows_prebuilt_templates_shuffle4(
+        qbh_attention_u8_shuffle_heads(
             scores+(size_t)head*QBH_ATTENTION_SCORE_TILES*QBH_HMX_OUTPUT_BYTES,
             probability+(size_t)head*QBH_ATTENTION_SCORE_TILES*QBH_HMX_ACTIVATION_BYTES,
-            scratch,dead_k_weight,&identity,telemetry?&local:NULL,0U,QBH_ATTENTION_M,0U);
+            scratch,dead_k_weight,&identity,telemetry?&local:NULL,0U,QBH_ATTENTION_M,0U,
+            head+1U<QBH_ATTENTION_Q_HEADS_PER_GROUP ? 2U : 1U);
         if(telemetry) {
             telemetry->probability_mask_violation_count+=local.probability_mask_violation_count;
             if(local.probability_row_sum_min<minimum)minimum=local.probability_row_sum_min;
@@ -1425,12 +1430,12 @@ qbh_attention_u8_softmax_requantized_pair(
     return probabilities;
 }
 
-void qbh_attention_u8_requant_softmax_group_rows_prebuilt_templates_shuffle4(
+static void qbh_attention_u8_shuffle_heads(
     uint8_t *score_tiles, uint8_t *probability_tiles,
     uint8_t *scratch, uint8_t *carrier_scratch,
     const struct qbh_attention_config *config,
     struct qbh_attention_u8_telemetry *telemetry,
-    uint32_t first_row, uint32_t row_count, uint32_t wide_score_mode) {
+    uint32_t first_row, uint32_t row_count, uint32_t wide_score_mode, uint32_t heads) {
     if(wide_score_mode==7U) {
         qbh_attention_fp32_softmax_native(score_tiles,probability_tiles,2U,
             first_row,row_count,0U,64U,config,(float *)scratch,NULL,telemetry);return;
@@ -1453,11 +1458,11 @@ void qbh_attention_u8_requant_softmax_group_rows_prebuilt_templates_shuffle4(
     const uint8_t *lut_templates =
         scratch + 2U * QBH_ATTN_U8_HVX_BYTES;
     uint8_t *score0 = score_tiles;
-    uint8_t *score1 = score_tiles +
-        QBH_ATTENTION_SCORE_TILES * QBH_HMX_OUTPUT_BYTES;
+    uint8_t *score1 = score_tiles + (heads == 1U ? 0U :
+        QBH_ATTENTION_SCORE_TILES * QBH_HMX_OUTPUT_BYTES);
     uint8_t *probability0 = probability_tiles;
-    uint8_t *probability1 = probability_tiles +
-        QBH_ATTENTION_SCORE_TILES * QBH_HMX_ACTIVATION_BYTES;
+    uint8_t *probability1 = probability_tiles + (heads == 1U ? 0U :
+        QBH_ATTENTION_SCORE_TILES * QBH_HMX_ACTIVATION_BYTES);
     const uint32_t use_sole_templates =
         config->division_mode == QBH_ATTENTION_DIVISION_SOLE;
     uint32_t row_sum_min = UINT_MAX;
@@ -1574,6 +1579,15 @@ void qbh_attention_u8_requant_softmax_group_rows_prebuilt_templates_shuffle4(
     asm volatile("barrier" ::: "memory");
 }
 
+void qbh_attention_u8_requant_softmax_group_rows_prebuilt_templates_shuffle4(
+    uint8_t *scores, uint8_t *probability, uint8_t *scratch, uint8_t *carrier,
+    const struct qbh_attention_config *config,
+    struct qbh_attention_u8_telemetry *telemetry,
+    uint32_t first, uint32_t count, uint32_t wide) {
+    qbh_attention_u8_shuffle_heads(scores, probability, scratch, carrier,
+        config, telemetry, first, count, wide, 2U);
+}
+
 void qbh_attention_u8_requant_softmax_group(
     uint8_t *score_tiles, uint8_t *probability_tiles,
     uint8_t *scratch,
@@ -1685,7 +1699,7 @@ void qbh_attention_u8_native_head_to_row_major(
         return;
     }
     uint32_t first_scalar=0U;
-#ifdef QBH_MODEL_LLAMA32
+#if defined(QBH_MODEL_LLAMA32) && !defined(QBH_LLAMA_3B)
     if((((uintptr_t)head_tiles|(uintptr_t)rows)&127U)==0U) {
         for(;first_scalar+4U<=valid_rows;first_scalar+=4U) {
             HVX_Vector a=*(const HVX_Vector *)(head_tiles+(size_t)first_scalar*32U);
