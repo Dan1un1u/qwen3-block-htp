@@ -17,6 +17,99 @@ def numpy_oracle(q,k,v,valid,c,mode):
   res['av']=np.clip((acc+c['oz']*div+(div//2 if c['avs'] else 0))//div,0,255)
  return res
 
+def exact_qk_norm_rope_u8(
+    projected_u8: np.ndarray,
+    heads: int,
+    input_qparam: dict[str, object],
+    output_qparam: dict[str, object],
+    gamma_f16: np.ndarray,
+    cosine_f16: np.ndarray,
+    sine_f16: np.ndarray,
+) -> np.ndarray:
+    """Q/K oracle using direct reciprocal-sqrt rounding.
+
+    QHL HVX computes rsqrt directly, not float32 sqrt followed by float32
+    division. The latter double rounding crossed an A8 half-step on layer13.
+    Float64 evaluates the reciprocal root before the single float32 rounding.
+    This is mathematical reference evaluation, with no device-output injection.
+    """
+    projected = np.ascontiguousarray(projected_u8, dtype=np.uint8)
+    if projected.ndim != 2 or projected.shape[1] != heads * 128:
+        raise ValueError(
+            "Q/K projection shape "
+            f"{projected.shape}, expected [rows,{heads * 128}]"
+        )
+    rows = projected.shape[0]
+    gamma = np.ascontiguousarray(gamma_f16, dtype=np.float16)
+    cosine_all = np.ascontiguousarray(
+        cosine_f16, dtype=np.float16
+    ).reshape(-1, 128)
+    sine_all = np.ascontiguousarray(
+        sine_f16, dtype=np.float16
+    ).reshape(-1, 128)
+    if cosine_all.shape[0] < rows or sine_all.shape[0] < rows:
+        raise ValueError(
+            "RoPE row count is smaller than projection row count: "
+            f"cos={cosine_all.shape} sin={sine_all.shape} rows={rows}"
+        )
+    cosine = cosine_all[:rows]
+    sine = sine_all[:rows]
+    if gamma.shape != (128,):
+        raise ValueError(f"Q/K gamma shape {gamma.shape}, expected {(128,)}")
+
+    source = projected.reshape(rows, heads, 128)
+    output = np.empty_like(source)
+    input_scale = np.float32(input_qparam["scale"])
+    inverse_output_scale = np.float32(
+        np.float32(1.0) / np.float32(output_qparam["scale"])
+    )
+    gamma_f32 = gamma.astype(np.float32)
+    cosine_f32 = cosine.astype(np.float32)
+    sine_f32 = sine.astype(np.float32)
+    for row in range(rows):
+        for head in range(heads):
+            centered = (
+                source[row, head].astype(np.int32) -
+                int(input_qparam["zero_point"])
+            )
+            square_sum = np.sum(
+                centered.astype(np.int64) * centered.astype(np.int64),
+                dtype=np.int64,
+            )
+            real_square_sum = np.float32(np.float32(square_sum) * input_scale)
+            real_square_sum = np.float32(real_square_sum * input_scale)
+            mean_square = np.float32(real_square_sum / np.float32(128.0))
+            denominator = np.float32(mean_square + np.float32(1.0e-6))
+            inverse = np.float32(
+                1.0 / np.sqrt(np.float64(denominator))
+            )
+            coefficient = np.float32(input_scale * inverse)
+            normalized = np.float32(
+                centered.astype(np.float32) * gamma_f32
+            )
+            normalized = np.float32(normalized * coefficient)
+            first = normalized[:64]
+            second = normalized[64:]
+            first_rotated = np.float32(
+                np.float32(first * cosine_f32[row, :64]) -
+                np.float32(second * sine_f32[row, :64])
+            )
+            second_rotated = np.float32(
+                np.float32(second * cosine_f32[row, 64:]) +
+                np.float32(first * sine_f32[row, 64:])
+            )
+            rotated = np.concatenate((first_rotated, second_rotated))
+            encoded = np.float32(rotated * inverse_output_scale)
+            encoded = np.float32(
+                encoded + np.float32(output_qparam["zero_point"])
+            )
+            encoded = np.float32(encoded + np.float32(0.5))
+            output[row, head] = np.clip(
+                np.trunc(encoded), 0, 255
+            ).astype(np.uint8)
+    return output.reshape(rows, heads * 128)
+
+
 CV=HmxU8Converter(S/'build/reference/qbh_hmx_u8_reference.so')
 def verify(p):
  m=read(p/'manifest.json')
