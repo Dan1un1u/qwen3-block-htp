@@ -24,6 +24,18 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0292
+  title: Qwen0.6 temporary F16F16 FP32 residual precision contract
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/EXP-0292.md
+  approval_ref: User requests temporary Qwen0.6 W16A16 FP32 residual to align with A8 for precision.
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0291-qwen3-06b-w4f16-opt
+    started_on: '2026-09-18'
 - id: EXP-0291
   title: Qwen0.6 bounded W4A16 exact dataflow optimization
   execution_state: aborted

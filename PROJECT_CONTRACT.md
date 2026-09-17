@@ -446,3 +446,6 @@ User requests checking unexpectedly slower W4A16 and staircase speed. Bounded sa
 
 ## User-approved modest Qwen0.6 W4A16 speed repair (2026-09-18; EXP-0291)
 User requests bounded optimization targeting10-20percent greater E2E throughput than float; docs/experiments/EXP-0291.md governs. Preserve mathematics, exact output/physical gates, frozen model data and prior failed full-floating status; no baseline promotion. Routine repairs PC037.
+
+## User-approved temporary F16 FP32 residual (2026-09-18; EXP-0292)
+User requests Qwen3-0.6B W16A16 FP32 residual to align storage/add precision with A8. Supersede FP16-residual arithmetic freeze only under docs/experiments/EXP-0292.md. Preserve original control, fair vector implementation, other recipes and all numerical/physical/evidence gates. Report independently validated changed arithmetic and measured speed; no automatic promotion or quality claim. PC037 applies.

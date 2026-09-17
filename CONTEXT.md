@@ -1,3 +1,6 @@
+# Active EXP-0292
+Temporary Qwen0.6 F16 FP32 residual under docs/experiments/EXP-0292.md. Preserve real fastest original baseline and all other recipes. No deliberate slowdown; vector implementation and independent boundary checks. Temporary parent binding then new branch.
+
 # EXP-0291 stopped and archived — 2026-09-18
 User stopped optimization; no active experiment/device owner, next292. Source codex/exp-0291-qwen3-06b-w4f16-opt @ 6ad2c3bf7875b0bc10540345cba9f2d99ce43ad9. Do not resume tuning without a new request.
 Two observed repeat3 candidates archived separately, M64+42/cache128/full28: prefill-best1747.22/27.10 tok/s(native da3c0e0, binaries/l28-a2); decode-best/latest1737.47/27.67(native cd12773, binaries/l28-a3). Each2451 boundaries byte-exact original W4. No5short/10formal; not a unique formal winner and no baseline promotion. 10-20percent-over-F16 target not achieved. Prior independent full-floating numerical failures remain failed.
