@@ -9,7 +9,7 @@ OLD=Path('/mnt/d/llm_exp/results/qwen3-block-htp/exp0289')
 R=OLD.parent/'exp0290'
 PKG='reference-a03/w4f16'
 CASES={'control':('control',32),'head4':('head_aligned_batch4',32),
-       'region8':('control',8),'head4r8':('head_aligned_batch4',8)}
+       'row':('control',32),'head4row':('head_aligned_batch4',32)}
 BASE_ARGS=w.ARGS
 def preflight():
  z=subprocess.run(['python3','/home/daniuniu/work/qwen3-block-htp-project-memory/scripts/project_memory.py','preflight','--source-worktree',str(S)],check=True,capture_output=True,text=True)
@@ -42,6 +42,7 @@ def one(case,tag,repeat=3,audit=False):
  preflight();schedule,region=CASES[case]
  w.ENV['QBH_QKV_SCHEDULE']=schedule
  args=BASE_ARGS.split();args[1]=str(region);w.ARGS=' '.join(args)
+ if case in ('row','head4row'):w.ARGS=w.ARGS.replace('qkv_norms','norms')
  try:
   out=d.run(PKG,tag,count=28,repeat=repeat,audit=audit,full=True)
  except AssertionError:
@@ -80,6 +81,7 @@ if __name__=='__main__':
   rows=[]
   for name in CASES:rows.append(one(name,'diagnostic/'+name))
   write(R/'diagnostic.json',rows)
+ elif sys.argv[1]=='one':one(sys.argv[2],sys.argv[3],3)
  elif sys.argv[1]=='audit':one(sys.argv[2],'audit/'+sys.argv[2],1,True)
  elif sys.argv[1]=='campaign':
   winner=sys.argv[2];assert read(R/('audit/'+winner+'-checks.json'))['bytewise_audit_files']==2451
