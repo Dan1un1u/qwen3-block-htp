@@ -1,5 +1,6 @@
 #include <hexagon_types.h>
 #include <HAP_perf.h>
+#include <HAP_farf.h>
 #include <hvx_hexagon_protos.h>
 #include <stdint.h>
 #include <string.h>
@@ -109,6 +110,10 @@ void qbh_hmx_fp16_matmul_tiles(const __fp16 *activation_tiles,
                                __fp16 *output_tiles,
                                uint32_t m_tiles, uint32_t k_tiles,
                                uint32_t n_tiles) {
+#ifdef QBH_QWEN_06B
+    static uint32_t diagnostic_count;
+    if(diagnostic_count++ < 64U) FARF(ALWAYS,"EXP0289 HMX a=%p w=%p o=%p m=%u k=%u n=%u",activation_tiles,weight_tiles,output_tiles,m_tiles,k_tiles,n_tiles);
+#endif
     asm volatile("mxclracc.hf" ::: "memory");
     Q6_bias_mxmem2_A((void *)scale_block);
 
