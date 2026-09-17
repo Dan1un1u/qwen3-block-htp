@@ -1,3 +1,13 @@
+# L32-0045 completed: 3B no-performance-gate pipeline loop
+Latest 3B no-rotation W4A8-SP2mode8, FP32 residual: 1184.718073 prefill / 23.640810 decode token/s, M64+42/cache128/full28.
+Paired frozen0044 control 1136.492048/22.446407; gains +4.243411%/+5.321132%. Five short + ten formal AB/BA pairs repeat10; all retained, performance gates disabled by user. CI in SUMMARY/results, not an acceptance threshold.
+Four iterations: QKV8, QKV32 with phase-dead Gate bias storage, Norm/QKV DMA lookahead, final Up/Down DMA lookahead. Retained combined D, same arithmetic/payloads,980 fewer HMX submissions and1960 fewer weight DMA descriptors pertoken. Tile pairs/weight/cache bytes unchanged; peak8360416/8388608; no intermediate DDR/spill.
+Measured ff213089c6f5cfc07c620c9509b22a5e00486e80; source closure 9ddf524f70f057069c8c4d03cd5cbe1b2277f028; frozen control 4686765b98939a34fec218af950eeba573087c71. Read docs/experiments/L32-0045-RESULTS.md, MODULES.md, IMPLEMENTATION.md and latest_llama3b_w4a8_sp2_optimization.
+Launch AV_REQUANT_ROWS=4/head32/SP2mode8/FP32residual/WIDE_SCORE8/no rotation/masks0 via execute_llama32_3b_nogate.py. Frozen measured runtime /mnt/d/llm_exp/results/llama32-htp/l32-0045/final-l28/runtime.json. Current workspace build restored to3B28; do not accidentally use1B regression binaries.
+87 runs/23678 token boundaries; all candidate selected0/13/27, chain3/28, full64-step true-greedy exact; bounded1B layer7 exact. Additional 6108160 captured FP32 words bitwise equal. No quality/PPL claim or automatic paper-baseline promotion. M64+63 is untimed correctness only in0045.
+Evidence /mnt/d/llm_exp/results/llama32-htp/l32-0045; ledger ad93526362d76ecac38d0a379ce2033020d8dc2f6262d4ee33cf935b7e581bc5, 2026 files/2077215106 bytes verified. Prior0044 ledger all2137 files rehashed. No active experiment/device owner.
+Further opportunities: persistent native KV storage/full-prefix preparation; not implemented. Do not repeat0044 rejected RMS/K-transpose probes. Prior entries below are history, including obsolete active/build-state notices.
+
 # L32-0045 active: no-performance-gate 3B optimization
 Read docs/experiments/L32-0045.md. Latest user removes performance stopping thresholds; correctness/physical/evidence unchanged. Frozen0044 control, original0041 payloads. Primary M64+42/cache128. Prior entries retained as history.
 

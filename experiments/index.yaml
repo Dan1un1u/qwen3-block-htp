@@ -2431,7 +2431,7 @@ experiments:
     parent_experiment: L32-0043
 - id: L32-0045
   title: 3B E2E iterative optimization without performance stopping gates
-  execution_state: running
+  execution_state: completed
   approval_ref: 'User 2026-09-18: 为llama 3.2-3B W4A8-SP2启动无gate的loop优化，尽量提高e2e速度。
     Performance thresholds removed; hardware correctness and physical constraints
     retained.'
@@ -2441,3 +2441,62 @@ experiments:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
   adoption_status: pending
+  evidence_validity: valid
+  local_gate: pass
+  local_gate_scope: Numerical/physical/evidence only; performance stopping gates disabled
+    by user
+  performance_gate_applied: false
+  evidence:
+    experiment: L32-0045
+    execution_state: completed
+    evidence_validity: valid
+    source_closure: 9ddf524f70f057069c8c4d03cd5cbe1b2277f028
+    measured_source: ff213089c6f5cfc07c620c9509b22a5e00486e80
+    control_source: 4686765b98939a34fec218af950eeba573087c71
+    performance_gate_applied: false
+    numerical_physical_pass: true
+    device_owner: null
+    quality_claim: false
+    baseline_promoted: false
+    validated_runs: 87
+    validated_token_boundaries: 23678
+    captured_exact_fp32_words: 6108160
+    captured_exact_checks: 372
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0045
+    evidence_ledger_sha256: ad93526362d76ecac38d0a379ce2033020d8dc2f6262d4ee33cf935b7e581bc5
+    evidence_files: 2026
+    evidence_bytes: 2077215106
+    report: docs/experiments/L32-0045-RESULTS.md
+    modules: docs/experiments/L32-0045-MODULES.md
+    shape: M64+42/cache128/full28 formal; M64+63 untimed correctness only
+    short_rounds: 5
+    formal_rounds: 10
+    repeat: 10
+    performance:
+      CONTROL:
+        prefill: 1136.4920484629738
+        decode: 22.44640703720057
+      OPT:
+        prefill: 1184.7180732269198
+        decode: 23.640809923537308
+    effects:
+      prefill:
+        wall_ratio: 0.9592932480277028
+        ci95:
+        - 0.9581623360966447
+        - 0.9605968260146621
+        throughput_gain_percent: 4.2434106625883095
+      decode:
+        wall_ratio: 0.9494770741696303
+        ci95:
+        - 0.9483457013794003
+        - 0.9502792652162725
+        throughput_gain_percent: 5.321131726593253
+    bounded_1b_pass: true
+    true_greedy_exact: true
+    vtcm_peak_bytes: 8360416
+    recipe: W4A8-SP2mode8 FP32 residual, no rotation; AVrows4; both head32; candidate
+      QKV32 plus Norm/QKV/Down boundary DMA overlap
+    per_token_hmx_commands_saved: 980
+    per_token_weight_dma_descriptors_saved: 1960
+    parent_experiment: L32-0044
