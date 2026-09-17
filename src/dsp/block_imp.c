@@ -21494,7 +21494,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
      * Down, with one native W4 pass and its existing U8 zero compensation. */
     /* EXP0269 diagnostic: previously unused FP32 audit slots hold residual tail. */
     if(QBH_FP32_RESIDUAL(header))qbh_r3_chain_audit(header,shared,3,buffers->residual+QBH_BLOCK_M*QBH_BLOCK_HIDDEN*3U,QBH_BLOCK_M*QBH_BLOCK_HIDDEN);
-    const uint32_t fp32_o_stream=QBH_FP32_RESIDUAL(header) && logical_rows==64U && !(header->paper_pipeline_disable&4U);
+    const uint32_t fp32_o_stream=QBH_FP32_RESIDUAL(header) && header->variant==QBH_BLOCK_W4U8 && logical_rows==64U && !(header->paper_pipeline_disable&4U);
     if(fp32_o_stream) {
         if(!w4f16_pool || !w4f16_pool->worker_count)
             return QBH_BLOCK_STATUS_O_PROJECTION_FAILED;
