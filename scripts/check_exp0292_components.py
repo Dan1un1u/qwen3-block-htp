@@ -12,11 +12,11 @@ def norm(x,g):
  return ((x*inv[:,None]).astype(np.float32)*g).astype(np.float16)
 def unpack(a,rows):
  # HMX FP16 native [column_tile,row_pair,column,row_in_pair].
- return a.reshape(H//32,32,32,2).transpose(1,3,0,2).reshape(64,H)[:rows]
+ return a.reshape(2,H//32,16,32,2).transpose(0,2,4,1,3).reshape(64,H)[:rows]
 def check(root):
  root=Path(root);out=[]
  for step in [0,1]:
-  f=root/f'actual_replay_chain_{step:02d}.bin';raw=f.read_bytes();rows=64 if step==0 else 1
+  f=root/f'step{step:02d}_r3.bin';raw=f.read_bytes();rows=64 if step==0 else 1
   def slot(i,dtype,n):return np.frombuffer(raw,dtype=dtype,count=n,offset=BASE+i*C).copy()
   x=slot(5,'<f4',rows*H).reshape(rows,H)
   o=slot(7,'<f2',rows*H).astype(np.float32).reshape(rows,H)
