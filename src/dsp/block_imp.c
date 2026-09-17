@@ -875,6 +875,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
             ? QBH_BLOCK_W4F16_DMA_BATCH_N_TILES
             : (variant == QBH_BLOCK_W4U8
                    ? QBH_BLOCK_W4U8_QKV_BATCH_N_TILES : 1U);
+    (void)compressed_batch_factor;
     uint32_t expanded_batch_factor =
         variant == QBH_BLOCK_W4F16
             ? QBH_BLOCK_W4F16_HMX_BATCH_N_TILES
