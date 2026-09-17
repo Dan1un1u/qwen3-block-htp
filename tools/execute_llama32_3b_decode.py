@@ -80,9 +80,9 @@ def execute(runtime,name,tag,repeat=1,full=False):
             assert np.array_equal(actual,expected),(tag,i,'hidden')
         for li in range(28):
             for kind in ['k','v']:
-                names=list(ad.glob(f'*layer{li:02d}*{kind}*'))
-                # Prefill cache comparisons are performed by the runtime as well;
-                # retain raw audit files for independent layout checks below.
+                actual=np.fromfile(ad/f'generation_prefill_layer{li:02d}_{kind}_cache_u8.bin','u1').reshape(8,128,128)[:,:64]
+                expected=np.fromfile(p/f'layer{li}/reference_kv_cache_{kind}_u8.bin','u1').reshape(8,128,128)[:,:64]
+                assert np.array_equal(actual,expected),(tag,li,kind)
         save(d/'hidden-audit.json',dict(pass_all=True,exact_steps=steps,elements=steps*3072))
     out=dict(pass_all=True,layers=cfg['layers'],repeat=repeat,full=full,profiles=len(ps),prefill_ns=statistics.mean(v['host_wall_ns'] for v in ps if v['mode']=='prefill'),decode_ns=statistics.mean(v['host_wall_ns'] for v in ps if v['mode']=='decode'),peak=max(v['vtcm_peak_plan_bytes'] for v in ps));save(d/'validated.json',out);print('PASS',tag,64e9/out['prefill_ns'],1e9/out['decode_ns'],flush=True);return out
 if __name__=='__main__':
