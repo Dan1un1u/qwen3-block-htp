@@ -45,6 +45,12 @@ def run(package,tag,count=1,repeat=1,audit=True,full=False,greedy=False):
  recipe='W4F16' if package.startswith('w4f16') else 'F16F16'
  remote=read(R/('deployment-'+package+'.json'))['remote']
  e=dict(LD_LIBRARY_PATH=root,DSP_LIBRARY_PATH=root,ADSP_LIBRARY_PATH=root,QBH_VERTICAL_SLICE='1',QBH_REPLAY_SEQUENCE='1',QBH_SCAN_MODE='prefill',QBH_LOGICAL_M='64',QBH_KV_CACHE_LENGTH='0',QBH_KV_CACHE_CAPACITY='128',QBH_KV_CACHE_LAYOUT='hmx_native_f16',QBH_F16F16_OPT='3',QBH_W4F16_DECODE_OPT='2',QBH_REPLAY_DECODE_STEPS='1')
+ args=ARGS
+ if recipe=='W4F16':
+  from device_exp0260 import ARGS as WARGS,ENV as WENV
+  args=WARGS
+  for k,value in WENV.items():
+   if k not in e:e[k]=value
  if audit:
   target=root+'/'+tag.replace('/','_');adb('shell','mkdir -p '+target)
   e['QBH_GENERATION_AUDIT_DIR' if full else 'QBH_REPLAY_DUMP_DIR']=target
@@ -55,7 +61,7 @@ def run(package,tag,count=1,repeat=1,audit=True,full=False,greedy=False):
   row=[0,2 if greedy else 3,43]+ids+fixed
   f=d/'eval.bin';f.write_bytes(struct.pack('<4I',0x51424556,2,repeat,len(row))+b''.join(struct.pack('<'+str(len(row))+'I',i,*row[1:]) for i in range(repeat)))
   rf=root+'/'+tag.replace('/','_')+'.bin';adb('push',win(f),rf);e['QBH_EVAL_FILE']=rf
- cmd='cd '+root+' && '+' '.join(k+'='+shlex.quote(v) for k,v in e.items())+f' ./qwen3_block_cli {remote} {recipe} {1 if full else repeat} {ARGS}'
+ cmd='cd '+root+' && '+' '.join(k+'='+shlex.quote(v) for k,v in e.items())+f' ./qwen3_block_cli {remote} {recipe} {1 if full else repeat} {args}'
  write(d/'protocol.json',dict(runtime=state,command=cmd,package=package,repeat=repeat,full=full,greedy=greedy,audit=audit))
  z=adb('shell',cmd,check=False);(d/'stdout.jsonl').write_text(z.stdout);(d/'stderr.txt').write_text(z.stderr);write(d/'exit.json',dict(returncode=z.returncode))
  if audit:adb('pull',target+'/.',win(d),check=False)
