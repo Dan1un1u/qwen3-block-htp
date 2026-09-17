@@ -704,7 +704,7 @@ static void qbh_llama_rope_u8_affine_init(struct qbh_llama_rope_u8_affine *a,
     a->inverse=qbh_splat_sf(1.0f/out->scale);
     a->offset=qbh_splat_sf((float)out->zero_point);
 }
-static void qbh_llama_rope_u8_hvx_prepared(uint8_t *v,
+static void qbh_llama_rope_u8_hvx_prepared64(uint8_t *v,
     const struct qbh_block_qparam *in, const struct qbh_block_qparam *out,
     const __fp16 *cosine, const __fp16 *sine,
     const struct qbh_llama_rope_u8_affine *affine) {
@@ -761,6 +761,26 @@ static void qbh_llama_rope_u8_hvx_prepared(uint8_t *v,
         float z=exact/out->scale+(float)out->zero_point+0.5f;
         v[i]=(uint8_t)(z<0?0:z>255?255:(int)z);
     }
+}
+static void qbh_llama_rope_u8_hvx_prepared(uint8_t *v,
+    const struct qbh_block_qparam *in, const struct qbh_block_qparam *out,
+    const __fp16 *cosine, const __fp16 *sine,
+    const struct qbh_llama_rope_u8_affine *affine) {
+#ifdef QBH_LLAMA_3B
+    uint8_t pair[128] __attribute__((aligned(128)));
+    __fp16 c[64] __attribute__((aligned(128)));
+    __fp16 s[64] __attribute__((aligned(128)));
+    for(uint32_t part=0;part<2U;part++) {
+        uint32_t a=part*32U,b=a+64U;
+        memcpy(pair,v+a,32U);memcpy(pair+32U,v+b,32U);
+        memcpy(c,cosine+a,64U);memcpy(c+32U,cosine+b,64U);
+        memcpy(s,sine+a,64U);memcpy(s+32U,sine+b,64U);
+        qbh_llama_rope_u8_hvx_prepared64(pair,in,out,c,s,affine);
+        memcpy(v+a,pair,32U);memcpy(v+b,pair+32U,32U);
+    }
+#else
+    qbh_llama_rope_u8_hvx_prepared64(v,in,out,cosine,sine,affine);
+#endif
 }
 static void qbh_llama_rope_u8_hvx(uint8_t *v,
     const struct qbh_block_qparam *in,const struct qbh_block_qparam *out,
@@ -1563,7 +1583,7 @@ void qbh_hvx_qk_norm_rope_u8_native_head_rows(
     qbh_llama_rope_u8_affine_init(&affine,input_qparam,output_qparam);
 #endif
     for (uint32_t row = 0U; row < rows; ++row) {
-#ifdef QBH_MODEL_LLAMA32
+#if defined(QBH_MODEL_LLAMA32) && !defined(QBH_LLAMA_3B)
         /* Each worker owns an entire head. Load aligned four-row tile groups,
          * then merge only this row on store; padded rows remain untouched. */
         const uint32_t shift=(row%4U)*32U;
@@ -1591,7 +1611,7 @@ void qbh_hvx_qk_norm_rope_u8_native_head_rows(
             cosine + (size_t)row * QBH_BLOCK_HEAD_DIM,
             sine + (size_t)row * QBH_BLOCK_HEAD_DIM);
 #endif
-#ifdef QBH_MODEL_LLAMA32
+#if defined(QBH_MODEL_LLAMA32) && !defined(QBH_LLAMA_3B)
         HVX_Vector out=*(HVX_Vector *)row_values;
         HVX_Vector mask_bytes=Q6_V_vmux_QVV(Q6_Q_vsetq_R(32),
             Q6_V_vsplat_R(-1),Q6_V_vzero());

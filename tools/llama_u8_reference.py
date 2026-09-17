@@ -218,11 +218,11 @@ def exact_rms_norm_u8(
 
 def exact_qk_norm_rope_u8(projected_u8, heads, input_qparam, output_qparam, gamma_f16, cosine_f16, sine_f16):
     """Llama RoPE-only SF32 math. Reserved gamma is deliberately ignored."""
-    a=np.asarray(projected_u8,dtype=np.uint8).reshape(-1,heads,64)
+    a=np.asarray(projected_u8,dtype=np.uint8).reshape(-1,heads,np.asarray(projected_u8).shape[-1]//heads)
     x=(a.astype(np.float32)-np.float32(input_qparam['zero_point']))*np.float32(input_qparam['scale'])
-    c=np.asarray(cosine_f16,dtype=np.float32).reshape(-1,64)[:len(a),None,:]
-    t=np.asarray(sine_f16,dtype=np.float32).reshape(-1,64)[:len(a),None,:]
-    rotated=np.concatenate((-x[:,:,32:],x[:,:,:32]),axis=-1)
+    c=np.asarray(cosine_f16,dtype=np.float32).reshape(-1,a.shape[-1])[:len(a),None,:]
+    t=np.asarray(sine_f16,dtype=np.float32).reshape(-1,a.shape[-1])[:len(a),None,:]
+    rotated=np.concatenate((-x[:,:,a.shape[-1]//2:],x[:,:,:a.shape[-1]//2]),axis=-1)
     y=np.float32(np.float32(x*c)+np.float32(rotated*t))
     z=np.float32(np.float32(y/np.float32(output_qparam['scale']))+np.float32(output_qparam['zero_point']))
     return np.clip(np.trunc(np.float32(z+np.float32(.5))),0,255).astype(np.uint8).reshape(len(a),-1)
@@ -447,7 +447,7 @@ def exact_attention_prefill(
         ) = fields
         if config_group != group:
             raise ValueError(f"Attention config group {config_group} != {group}")
-        first_head = 4 * group
+        first_head = (heads // kv_heads) * group
         k_signed = np.clip(
             k_u8[:, group, :].astype(np.int16) - int(k_zero_point),
             -128, 127,
@@ -462,7 +462,7 @@ def exact_attention_prefill(
             -int(q_zero_point) * k_sums + 128 * score_divisor +
             score_rounding
         ).astype("<i4")
-        for local_head in range(4):
+        for local_head in range(heads // kv_heads):
             head = first_head + local_head
             accumulator = raw_u8s8_accumulator(
                 q_u8[:, head, :], k_signed
@@ -499,7 +499,7 @@ def exact_attention_prefill(
         av_lower, av_upper = power_of_two_bias_words(
             head_dim, int(av_shift), av_hmx_zero_point
         )
-        for local_head in range(4):
+        for local_head in range(heads // kv_heads):
             head = first_head + local_head
             accumulator = raw_u8s8_accumulator(
                 probability_all[head], signed_v.T
@@ -535,7 +535,7 @@ def exact_attention_dynamic(
     q = np.ascontiguousarray(q_u8, dtype=np.uint8)
     k_cache = np.ascontiguousarray(k_cache_u8, dtype=np.uint8)
     v_cache = np.ascontiguousarray(v_cache_u8, dtype=np.uint8)
-    if q.ndim != 3 or q.shape[2] != 64:
+    if q.ndim != 3 or q.shape[2] not in (64,128):
         raise ValueError(f"invalid dynamic Q shape {q.shape}")
     query_rows, heads, head_dim = q.shape
     if k_cache.ndim != 3 or v_cache.shape != k_cache.shape or (
@@ -545,7 +545,7 @@ def exact_attention_dynamic(
             f"invalid dynamic cache shapes k={k_cache.shape} v={v_cache.shape}"
         )
     kv_heads, valid_tokens, _ = k_cache.shape
-    if heads != 4 * kv_heads or valid_tokens != past_tokens + query_rows:
+    if heads % kv_heads or valid_tokens != past_tokens + query_rows:
         raise ValueError(
             "dynamic Attention contract mismatch: "
             f"q={q.shape} cache={k_cache.shape} past={past_tokens}"
@@ -566,7 +566,7 @@ def exact_attention_dynamic(
         ) = fields
         if config_group != group:
             raise ValueError(f"Attention config group {config_group} != {group}")
-        first_head = 4 * group
+        first_head = (heads // kv_heads) * group
         k_signed = np.clip(
             k_cache[group].astype(np.int16) - int(k_zero_point),
             -128, 127,
@@ -581,7 +581,7 @@ def exact_attention_dynamic(
             -int(q_zero_point) * k_sums + 128 * score_divisor +
             score_rounding
         ).astype("<i4")
-        for local_head in range(4):
+        for local_head in range(heads // kv_heads):
             head = first_head + local_head
             accumulator = raw_u8s8_accumulator(q[:, head, :], k_signed)
             intermediate = converter.convert(
@@ -597,7 +597,7 @@ def exact_attention_dynamic(
         if division_name is None:
             raise ValueError(f"invalid Softmax division mode {division_mode}")
         rounding = 1 << (int(fraction_bits) - 1)
-        for local_head in range(4):
+        for local_head in range(heads // kv_heads):
             head = first_head + local_head
             for row in range(query_rows):
                 valid_count = past_tokens + row + 1
@@ -633,7 +633,7 @@ def exact_attention_dynamic(
         av_lower, av_upper = power_of_two_bias_words(
             head_dim, int(av_shift), av_hmx_zero_point
         )
-        for local_head in range(4):
+        for local_head in range(heads // kv_heads):
             head = first_head + local_head
             accumulator = raw_u8s8_accumulator(
                 probability_all[head], signed_v.T

@@ -63,8 +63,8 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
     uint32_t width,uint32_t native,uint8_t *scratch) {
 #pragma clang fp contract(off)
     HVX_Vector *tile=(HVX_Vector *)scratch;
-    float *gf=(float *)(scratch+4096U),*sums=(float *)(scratch+12288U);
-    int32_t *flags=(int32_t *)(scratch+12544U);
+    float *gf=(float *)(scratch+4096U),*sums=(float *)(scratch+4096U+width*4U);
+    int32_t *flags=(int32_t *)(scratch+4352U+width*4U);
     for(uint32_t c=0;c<width;c+=64U) {
         HVX_VectorPair g=Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)(gamma+c));
         HVX_VectorPair ordered=Q6_W_vshuff_VVR(Q6_V_hi_W(g),Q6_V_lo_W(g),-4);
@@ -226,5 +226,5 @@ static void qbh_llama_fp32_norm_worker(struct qbh_block_w4f16_pool *p,uint32_t w
     uint32_t first=worker*16U;
     qbh_llama_fp32_norm(p->fp32_norm_input+first*QBH_BLOCK_HIDDEN,p->fp32_norm_gamma,
         p->fp32_norm_output+first*(p->fp32_norm_native?32U:QBH_BLOCK_HIDDEN),p->fp32_norm_qparam,16U,QBH_BLOCK_HIDDEN,p->fp32_norm_native,
-        p->fp32_norm_scratch+worker*16384U);
+        p->fp32_norm_scratch+worker*((QBH_BLOCK_HIDDEN*4U+8191U)&~4095U));
 }
