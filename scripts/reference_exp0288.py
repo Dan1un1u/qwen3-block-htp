@@ -64,7 +64,7 @@ def ropes(dst,start,prefix='rope'):
     c=c.numpy()[0];s=s.numpy()[0]
     for n,v in [('cos',c),('sin',s)]:v.astype('<f2').tofile(dst/f'{prefix}_{n}_f16.bin')
     return c,s
-def package(first,count,attempt):
+def package(first,count,attempt,input_file=None):
     preflight();torch.set_num_threads(8);dst=OUT/attempt;dst.mkdir(exist_ok=False)
     qs=[]
     for i in range(count):
@@ -75,7 +75,7 @@ def package(first,count,attempt):
     ids=np.fromfile('/mnt/d/llm_exp/results/qwen3-block-htp/exp0230/inputs/C64_calibration_u32.bin','<u4').reshape(512,128)[0]
     if first==0:inputs=tensor('model.embed_tokens.weight')[torch.from_numpy(ids.astype('i8'))].half().float().numpy()
     else:inputs=np.load(OUT/f'layer{first-1}/hidden.npy',mmap_mode='r')[0].astype('f4')
-    x=inputs[:64];dx=inputs[64:65]
+    x=inputs[:64] if input_file is None else np.load(input_file);dx=inputs[64:65]
     padwrite(dst/'reference_w4u8_block_input_f32.bin',x);padwrite(dst/'replay_decode_input_00_f32.bin',dx)
     # U8 slots are unused reserved references under the explicit FP32 contract.
     for n in ['reference_w4u8_block_input_u8.bin','reference_w4u8_integer_attention_block_output_u8.bin','replay_decode_input_00_u8.bin','replay_decode_reference_00_u8.bin']:np.zeros((64,H),'u1').tofile(dst/n)
@@ -90,4 +90,4 @@ def package(first,count,attempt):
     save(dst/'manifest.json',dict(experiment='EXP-0288',model='Qwen3-0.6B',source_layer=first,layers=count,recipe='W4A8-SP2',fp32_residual=True,rotation='OFF',files={str(p.relative_to(dst)):dict(bytes=p.stat().st_size,sha256=sha256(p)) for p in dst.rglob('*') if p.is_file()}))
     print('PACKAGE',dst,flush=True)
 if __name__=='__main__':
-    a=argparse.ArgumentParser();a.add_argument('--first',type=int,default=0);a.add_argument('--layers',type=int,default=1);a.add_argument('--attempt',required=True);v=a.parse_args();package(v.first,v.layers,v.attempt)
+    a=argparse.ArgumentParser();a.add_argument('--first',type=int,default=0);a.add_argument('--layers',type=int,default=1);a.add_argument('--attempt',required=True);a.add_argument('--input-file');v=a.parse_args();package(v.first,v.layers,v.attempt,v.input_file)
