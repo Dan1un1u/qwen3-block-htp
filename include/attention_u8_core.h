@@ -130,10 +130,6 @@ void qbh_attention_u8_native_head_to_row_major(
     const uint8_t *head_tiles, uint8_t *rows,
     uint32_t valid_rows);
 
-#ifdef QBH_LLAMA_3B
-void qbh_attention_u8_pack_k_row_major_transpose(const uint8_t *,uint32_t,uint32_t,
-    const struct qbh_attention_config *,int8_t *,uint32_t *,uint8_t *);
-#endif
 void qbh_attention_u8_pack_k_row_major(
     const uint8_t *rows, uint32_t valid_tokens,
     uint32_t padded_tokens,
