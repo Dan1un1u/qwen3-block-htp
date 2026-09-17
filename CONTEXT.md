@@ -1,3 +1,6 @@
+# EXP-0289 resumed — speed measurement authorized
+User approves provisional speed measurement while full floating-reference failures remain explicit. Original fast archived A16 arms are primary; FP32-nonlinear diagnostic remains auxiliary, not a speed improvement. Read updated docs/experiments/EXP-0289.md. Hardware safety/determinism/cache/head checks still mandatory. No quality or default promotion.
+
 # EXP-0289 implementation checkpoint — user decision pending
 Source branch codex/exp-0289-qwen3-06b-a16 @ 4a887db94381a7687021c5178134a8c15f75406c. Qwen0.6 A16 ports implemented; selected/chain3 pass; full28 numerical comparison fails unchanged0.003 threshold (max0.00633/0.00403), physical checks pass. No formal speed baseline yet. See docs/experiments/EXP-0289.md and source docs/EXP0289_A16_PORT_CHECKPOINT.md. Two greedy short answers usable before EOS; no PPL. Device idle; retain EXP-0289 active. Await whether user allows explicitly provisional speed measurements or wants further strict numerical diagnosis. No implicit approval.
 

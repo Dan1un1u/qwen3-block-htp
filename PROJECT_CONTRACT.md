@@ -436,3 +436,7 @@ User requests same workflow as Llama3B. Reopen only original-derived0.6B no-rota
 
 ## User-approved Qwen3-0.6B A16 baselines (2026-09-17; EXP-0289)
 User requests W16A16 and W4A16 support with vector arithmetic and basic DMA/compute overlap, without deep tuning. Supersede other-recipe freeze only for0.6B under docs/experiments/EXP-0289.md. Preserve prior SP2 and other models, original floating semantics and numerical/physical/evidence gates. PC037 routine repairs apply; no PPL or automatic promotion.
+
+## User authorization: measure speed before full floating alignment (2026-09-17)
+User confirms: measure speed now, precision is secondary given time pressure, ensure hardware implementation correctness. Retain all failed full-model floating-reference gates; no threshold is changed or failure relabeled.
+See docs/experiments/EXP-0289.md for the retained hardware validation and timing protocol.
