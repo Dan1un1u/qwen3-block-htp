@@ -75,18 +75,6 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
     for(uint32_t first=0;first<rows;first+=32U) {
         HVX_Vector sum=Q6_V_vzero();
         if(rows==1U) {
-#ifdef QBH_LLAMA_3B
-            float ordered_sum=0.0f;
-            for(uint32_t c=0;c<width;c+=32U) {
-                HVX_Vector v=*(const HVX_Vector *)(x+c),sq=qbh_fp32_mul(v,v);
-                for(uint32_t k=0;k<32U;k++) {
-                    union {int32_t i;float f;} lane;
-                    lane.i=Q6_R_vextract_VR(sq,k*4U);
-                    ordered_sum=Q6_R_sfadd_RR(ordered_sum,lane.f);
-                }
-            }
-            sum=qbh_fp32_splat(ordered_sum);
-#else
             for(uint32_t c=0;c<width;c+=32U) {
                 HVX_Vector v=*(const HVX_Vector *)(x+c),sq=qbh_fp32_mul(v,v);
                 for(uint32_t k=0;k<32U;k++) {
@@ -94,7 +82,6 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
                     sq=Q6_V_vror_VR(sq,4);
                 }
             }
-#endif
         } else {
             for(uint32_t c=0;c<width;c+=32U) {
                 if(rows==16U) {

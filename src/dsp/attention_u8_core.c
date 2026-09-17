@@ -2277,6 +2277,17 @@ void qbh_attention_u8_patch_v_delta_rows_hvx(
         }
     }
 
+#ifdef QBH_LLAMA_3B
+    /* Exact256-entry byte LUT in registers: avoid two dependent VTCM
+     * gathers per32-channel/four-token output vector. Each32-entry bank
+     * occupies low bytes of halfwords, as required by vlut32. */
+    HVX_Vector vluts[8];
+    for(uint32_t bank=0;bank<8U;bank++) {
+        HVX_Vector t=((const HVX_Vector *)recenter_lut)[bank/2U];
+        if(bank&1U)t=Q6_V_vror_VR(t,64U);
+        vluts[bank]=Q6_V_lo_W(Q6_W_vshuff_VVR(t,t,-64));
+    }
+#endif
     for (uint32_t n_tile = 0U;
          n_tile < QBH_ATTENTION_HEAD_DIM_TILES; ++n_tile) {
         int8_t *destination = k_tile_weights +
@@ -2315,6 +2326,14 @@ void qbh_attention_u8_patch_v_delta_rows_hvx(
 #endif
             {
                 const HVX_Vector values = *(const HVX_Vector *)row_group;
+#ifdef QBH_LLAMA_3B
+                HVX_Vector index=Q6_V_vand_VV(values,Q6_Vb_vsplat_R(31));
+                HVX_Vector bank=Q6_Vub_vlsr_VubR(values,5);
+                HVX_Vector recentered=Q6_Vb_vlut32_VbVbR_nomatch(index,vluts[0],0);
+                for(uint32_t j=1;j<8U;j++)
+                    recentered=Q6_V_vmux_QVV(Q6_Q_vcmp_eq_VbVb(bank,Q6_Vb_vsplat_R(j)),
+                        Q6_Vb_vlut32_VbVbR_nomatch(index,vluts[j],0),recentered);
+#else
                 const HVX_VectorPair value_h =
                     Q6_Wuh_vunpack_Vub(values);
                 const HVX_Vector offsets_low = Q6_Vh_vasl_VhR(
@@ -2338,6 +2357,7 @@ void qbh_attention_u8_patch_v_delta_rows_hvx(
                 recentered = Q6_Vb_vpack_VhVh_sat(
                     *(volatile HVX_Vector *)gathered_high,
                     *(volatile HVX_Vector *)gathered_low);
+#endif
                 recentered = Q6_Vb_vdeal_Vb(recentered);
                 recentered = Q6_Vb_vdeal_Vb(recentered);
                 recentered = Q6_Vb_vdeal_Vb(recentered);
