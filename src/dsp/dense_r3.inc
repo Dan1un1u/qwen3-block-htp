@@ -81,8 +81,13 @@ static int qbh_run_dense_r3(struct qbh_block_header *h,uint8_t *shared,
         h->u8_norm_reduction_mode < QBH_BLOCK_U8_NORM_REDUCTION_HVX_TREE_QK_BATCHED_RSQRT_SHARED_ROPE ||
         (h->dense_r3_audit_offset && !qbh_range_valid(h->dense_r3_audit_offset,
             QBH_DENSE_R3_AUDIT_BYTES,h->shared_bytes))) return -1;
+#ifdef QBH_QWEN_06B
+    /* This model build is explicitly no-rotation; never enter this arena. */
+    return -1;
+#else
     _Static_assert(2U*QBH_DENSE_R3_CARRIER_BYTES<=64U*QBH_BLOCK_MAX_K*2U,
                    "R3 input/output must fit the dead HMX activation arena");
+#endif
     h->dense_r3_rows=rows; h->dense_r3_hmx_calls=0; h->dense_r3_refined_values=0;
     uint64_t start=HAP_perf_get_qtimer_count();
     if (h->dense_r3_optimization<2U) {

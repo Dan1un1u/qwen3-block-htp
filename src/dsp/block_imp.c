@@ -2079,6 +2079,12 @@ static int qbh_scan_request_valid(const struct qbh_block_header *header,
 static int qbh_header_valid(const struct qbh_block_header *header,
                             uint32_t shared_bytes) {
     uint32_t element_bytes;
+#ifdef QBH_QWEN_06B
+    if (!header || header->variant!=QBH_BLOCK_W4U8 ||
+        QBH_FP32_RESIDUAL(header)!=2U || QBH_SP2(header)!=8U ||
+        header->dense_r3_mode || header->dense_r4_mode) return 0;
+#endif
+
 #if defined(QBH_MODEL_LLAMA32) || defined(QBH_NATIVE_SP2)
     if (header && QBH_FP32_RESIDUAL(header) &&
         (QBH_FP32_RESIDUAL(header)>QBH_FP32_RESIDUAL_MAX || header->variant!=QBH_BLOCK_W4U8 ||

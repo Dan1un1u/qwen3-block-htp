@@ -12,7 +12,11 @@
 #define QBH_BLOCK_ABI_VERSION UINT32_C(129)
 #define QBH_SP2(h) ((h)->sp2_mode)
 #elif defined(QBH_NATIVE_SP2)
+#ifdef QBH_QWEN_06B
+#define QBH_BLOCK_ABI_VERSION UINT32_C(135)
+#else
 #define QBH_BLOCK_ABI_VERSION UINT32_C(134)
+#endif
 #define QBH_SP2(h) ((h)->sp2_mode)
 #else
 #define QBH_BLOCK_ABI_VERSION UINT32_C(127)
