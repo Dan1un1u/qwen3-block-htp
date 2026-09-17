@@ -39,6 +39,7 @@ def execute(runtime,name,tag,repeat=1,full=False):
     env=dict(v.split('=',1) for v in shlex.split(prefix.split(' && ')[1]));argv=shlex.split(args);argv[0]=cfg['remote'];argv[2]='1'
     env.update(LD_LIBRARY_PATH=root,DSP_LIBRARY_PATH=root,ADSP_LIBRARY_PATH=root,QBH_LLAMA_SP2='8',QBH_LLAMA_FP32_RESIDUAL='1',QBH_WIDE_SCORE='8',QBH_PAPER_FORMAT_DISABLE='0',QBH_PAPER_PIPELINE_DISABLE='0',QBH_DENSE_R3='0',QBH_DENSE_R4='0');env.pop('QBH_REPLAY_DUMP_DIR',None)
     env['QBH_W4U8_DECODE_AV_REQUANT_ROWS']='4'
+    if os.environ.get('QBH_3B_HEAD_TILES'):env['QBH_W4U8_DECODE_LM_HEAD_GROUP_TILES']=os.environ['QBH_3B_HEAD_TILES']
     if full:
         teacher=read((R if name.startswith('frontend64') else BASE)/(name+'-teacher.json'));ids=teacher['prompt_ids'];steps=int(os.environ.get('QBH_3B_DECODE_COUNT','15'))+1;tokens=teacher['u8_generated_ids'][:steps];assert len(tokens)==steps
         if name.startswith('frontend64'):env.update(QBH_KV_CACHE_CAPACITY='128',QBH_GENERATION_EXPECTED_TOKENS='64')
