@@ -3,6 +3,7 @@ import argparse,os,struct,functools
 import numpy as np
 from pathlib import Path
 from prepare_exp0288 import ROOT as S
+from common_exp0288 import read,sha
 from reference_w4u8_hmx import load_qparams_bin,unpack_w4_codes,HmxU8Converter,projection_bias_words,exact_qk_norm_rope_u8
 from integer_attention_exp0252 import numpy_oracle as legacy_numpy_oracle,config
 def numpy_oracle(q,k,v,valid,c,mode):
