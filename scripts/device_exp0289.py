@@ -1,4 +1,4 @@
-"""EXP0271 provenance-sealed no-rotation FP32 residual device checks."""
+"""EXP0289 provenance-sealed Qwen3-0.6B A16 device checks."""
 import argparse,subprocess,shutil,shlex,statistics,json,struct,os
 import numpy as np
 from common_exp0289 import *
@@ -84,7 +84,7 @@ def run(package,tag,count=1,repeat=1,audit=True,full=False,greedy=False):
    delta=a-b;cos=float(a@b/max(np.linalg.norm(a)*np.linalg.norm(b),1e-30));err=float(np.linalg.norm(delta)/max(np.linalg.norm(b),1e-30))
    errs.append(dict(step=step,nrmse=err,cosine=cos,max_abs=float(abs(delta).max()),finite=bool(np.isfinite(a).all()),pass_all=bool(np.isfinite(a).all() and err<=.003 and cos>=.99999)))
  out=dict(physical_pass=True,profiles=len(ps),prefill_ns=statistics.mean(v['host_wall_ns'] for v in ps if v['mode']=='prefill'),decode_ns=statistics.mean(v['host_wall_ns'] for v in ps if v['mode']=='decode'),independent_output=errs,numerical_pass=all(z['pass_all'] for z in errs) if errs else None,token_sequences=[v['token_ids'] for v in rs if v.get('generation_sequence_complete')])
- write(d/'validated.json',out);print('PASS',tag,out['prefill_ns']/1000,out['decode_ns']/1000,'numerical',out['numerical_pass'],flush=True)
+ write(d/'validated.json',out);print('PHYSICAL_PASS',tag,out['prefill_ns']/1000,out['decode_ns']/1000,'numerical',out['numerical_pass'],flush=True)
  if audit and not greedy:assert out['numerical_pass'],errs
  return out
 if __name__=='__main__':
