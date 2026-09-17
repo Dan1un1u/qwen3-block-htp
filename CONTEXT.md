@@ -1,3 +1,9 @@
+# Completed EXP-0289 — provisional Qwen0.6 A16 speed baselines
+No active experiment/device owner; next290. Closure 7e36dcabbec07270934e443e2d4ae3664ba4f210; measured b28fde2500e2422dca77e65d85ca48df0eded57c, restored native source428faef, four rebuilt binary hashes EXACT. Read docs/experiments/EXP-0289-RESULTS.md and MODULES.md.
+M64+42/cache128,5short10formalrepeat10,8600formal profiles: W16A161710.935856/27.675677;W4A161678.352049/25.645407tok/s. SP2 historical EXP0288 remains3020.427339/92.402097,notpaired.
+User explicitly authorized provisional speed despite unresolved full floating alignment. Numerical gate remains FAIL(maxNRMSE0.00653235/0.00545362 vs0.003); do not claim quality/PPL/Selected acceptance. Hardware finite/cache/physical/independent head checks pass; all timed own-token/logits exact. Both fast recipes normal short answer beforeEOS. Original fast kernels restored; unsuccessful FP32 nonlinear trial archived only. No deep tuning.
+Evidence13019files ledger639035334c0afe83b0b606af279ff108e37e3eba775064e1df0692087bbc081b; full report /mnt/d/llm_exp/results/qwen3-block-htp/exp0289/FULL_PROFILING_REPORT.md. Source and memory synced; do not rerun old tasks or present audit-enabled wall as E2E.
+
 # EXP-0289 resumed — speed measurement authorized
 User approves provisional speed measurement while full floating-reference failures remain explicit. Original fast archived A16 arms are primary; FP32-nonlinear diagnostic remains auxiliary, not a speed improvement. Read updated docs/experiments/EXP-0289.md. Hardware safety/determinism/cache/head checks still mandatory. No quality or default promotion.
 

@@ -26,9 +26,9 @@ allowed_values:
 experiments:
 - id: EXP-0289
   title: Qwen3-0.6B W16A16 and W4A16 fair vectorized E2E baselines
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
   adoption_status: pending
   record: docs/experiments/EXP-0289.md
   approval_ref: User requests Qwen3-0.6B W16A16/W4A16 baselines, vector implementation
@@ -38,6 +38,70 @@ experiments:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0289-qwen3-06b-a16
     started_on: '2026-09-17'
+    completed_on: '2026-09-17'
+  full_profiling_report: /mnt/d/llm_exp/results/qwen3-block-htp/exp0289/FULL_PROFILING_REPORT.md
+  evidence:
+    id: EXP-0289
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    gate_role: full_floating_alignment_remains_failed_user_authorized_provisional_speed
+    hardware_invariants_pass: true
+    full_floating_alignment_pass: false
+    provisional_timing_authorized: true
+    source_closure: 7e36dcabbec07270934e443e2d4ae3664ba4f210
+    measured_source: b28fde2500e2422dca77e65d85ca48df0eded57c
+    restored_native_source: 428faef
+    restored_binary_sha256_exact: true
+    source_branch: codex/exp-0289-qwen3-06b-a16
+    model: Qwen3-0.6B
+    recipes:
+    - W16A16
+    - W4A16
+    performance:
+      f16f16:
+        prefill_tps: 1710.93585632155
+        decode_tps: 27.675677298745512
+        prefill_host_ms: 37.40642863
+        decode_42_host_ms: 1517.578036
+        prefill_round_tps_range:
+        - 1706.0958297499767
+        - 1717.9399351184552
+        decode_round_tps_range:
+        - 27.612184612127596
+        - 27.746769784433337
+      w4f16:
+        prefill_tps: 1678.3520494517365
+        decode_tps: 25.645406856615942
+        prefill_host_ms: 38.13264328
+        decode_42_host_ms: 1637.720167
+        prefill_round_tps_range:
+        - 1668.5701923992833
+        - 1682.0061156585984
+        decode_round_tps_range:
+        - 25.585836362498927
+        - 25.691189779812845
+    shape: M64+42, cache128, batch1, full28
+    short_rounds: 5
+    formal_rounds: 10
+    primary_repeat: 10
+    formal_profiles: 8600
+    short_profiles: 4300
+    all_timed_token_logits_exact: true
+    cache_snapshot_checks: 4816
+    independent_head_argmax_matches: 86
+    full_hidden_nrmse_max:
+      f16f16: 0.00653234609135029
+      w4f16: 0.005453620292161332
+    report: docs/experiments/EXP-0289-RESULTS.md
+    modules: docs/experiments/EXP-0289-MODULES.md
+    full_profiling_report: /mnt/d/llm_exp/results/qwen3-block-htp/exp0289/FULL_PROFILING_REPORT.md
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0289
+    ledger_sha256: 639035334c0afe83b0b606af279ff108e37e3eba775064e1df0692087bbc081b
+    evidence_files: 13019
+    baseline_promoted: false
+    quality_claim: false
+    device_owner: null
 - id: EXP-0288
   title: Qwen3-0.6B original-derived native W4A8-SP2 FP32 runtime port
   record: docs/experiments/EXP-0288.md
