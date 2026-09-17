@@ -34,7 +34,7 @@ experiments:
   approval_ref: User requests temporary Qwen0.6 W16A16 FP32 residual to align with A8 for precision.
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0291-qwen3-06b-w4f16-opt
+    source_branch: codex/exp-0292-qwen3-06b-f16-fp32-residual
     started_on: '2026-09-18'
 - id: EXP-0291
   title: Qwen0.6 bounded W4A16 exact dataflow optimization
