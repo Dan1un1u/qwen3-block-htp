@@ -19980,6 +19980,32 @@ static int qbh_scan_u8_attention_segmented(
     return 0;
 }
 
+#ifdef QBH_LLAMA_3B
+/* L32-0043: co-pack GQA3 live decode rows. Gate is dead throughout attention.
+ * Two aligned 16KiB slots inside its existing allocation; no extra memory.
+ * Padding initialized once, all three live rows overwritten at each use. */
+static void qbh_3b_pack_gqa_rows(const uint8_t *heads,uint8_t *packed,uint32_t tiles) {
+    for(uint32_t t=0;t<tiles;t++) {
+        HVX_Vector a=*(const HVX_Vector *)(heads+t*2048U);
+        HVX_Vector b=*(const HVX_Vector *)(heads+(tiles+t)*2048U);
+        HVX_Vector c=*(const HVX_Vector *)(heads+(2U*tiles+t)*2048U);
+        HVX_Vector ab=Q6_V_lo_W(Q6_W_vshuff_VVR(b,a,-32));
+        HVX_Vector cd=Q6_V_lo_W(Q6_W_vshuff_VVR(Q6_V_vzero(),c,-32));
+        *(HVX_Vector *)(packed+t*2048U)=Q6_V_lo_W(Q6_W_vshuff_VVR(cd,ab,-64));
+    }
+    asm volatile("barrier" ::: "memory");
+}
+static void qbh_3b_unpack_gqa_rows(const uint8_t *packed,uint8_t *heads,uint32_t tiles) {
+    const HVX_VectorPred first=Q6_Q_vsetq_R(32);
+    for(uint32_t t=0;t<tiles;t++) {
+        HVX_Vector v=*(const HVX_Vector *)(packed+t*2048U);
+        for(uint32_t h=0;h<3U;h++)
+            Q6_vmem_QRIV(first,(HVX_Vector *)(heads+(h*tiles+t)*2048U),Q6_V_vror_VR(v,h*32U));
+    }
+    asm volatile("barrier" ::: "memory");
+}
+#endif
+
 static int qbh_scan_u8_attention(
     struct qbh_block_header *header, uint8_t *shared,
     struct qbh_block_buffers *buffers,
@@ -20055,6 +20081,13 @@ static int qbh_scan_u8_attention(
     uint32_t delta_lut_numerator = 0U;
     uint32_t delta_lut_denominator = 0U;
     const uint64_t dynamic_start = HAP_perf_get_qtimer_count();
+#ifdef QBH_LLAMA_3B
+    const uint32_t compact_gqa = logical_rows==1U && !hmx_native_cache &&
+        !hmx_segmented_cache && padded_tokens<=128U;
+    uint8_t *compact_in=(uint8_t *)(((uintptr_t)buffers->gate+16383U)&~(uintptr_t)16383U);
+    uint8_t *compact_out=compact_in+16384U;
+    if(compact_gqa) qbh_hvx_zero_aligned_bytes(compact_in,32768U);
+#endif
 
     if (hmx_segmented_cache) {
         return qbh_scan_u8_attention_segmented(
@@ -20232,6 +20265,14 @@ static int qbh_scan_u8_attention(
             ++header->u8_cache_full_prefix_pack_count;
         }
         start = HAP_perf_get_qtimer_count();
+#ifdef QBH_LLAMA_3B
+        if(compact_gqa) {
+            qbh_3b_pack_gqa_rows(q_group,compact_in,QBH_ATTENTION_HEAD_DIM_TILES);
+            if(qbh_hmx_submit(worker,QBH_BLOCK_HMX_U8S8,compact_in,weight,qk_bias,
+                              compact_out,1U,QBH_ATTENTION_HEAD_DIM_TILES,kv_tiles)!=0) return -1;
+            qbh_3b_unpack_gqa_rows(compact_out,plane_c,kv_tiles);
+        } else
+#endif
         if (qbh_hmx_submit(
                 worker, QBH_BLOCK_HMX_U8S8,
                 q_group, weight, qk_bias, plane_c,
@@ -20386,6 +20427,14 @@ static int qbh_scan_u8_attention(
             ++header->u8_cache_full_prefix_pack_count;
         }
         start = HAP_perf_get_qtimer_count();
+#ifdef QBH_LLAMA_3B
+        if(compact_gqa) {
+            qbh_3b_pack_gqa_rows(plane_a,compact_in,kv_tiles);
+            if(qbh_hmx_submit(worker,QBH_BLOCK_HMX_U8S8,compact_in,weight,av_bias,
+                              compact_out,1U,kv_tiles,QBH_ATTENTION_HEAD_DIM_TILES)!=0) return -1;
+            qbh_3b_unpack_gqa_rows(compact_out,q_group,QBH_ATTENTION_HEAD_DIM_TILES);
+        } else
+#endif
         if (qbh_hmx_submit(
                 worker, QBH_BLOCK_HMX_U8S8,
                 plane_a, weight, av_bias, q_group,
@@ -20435,7 +20484,12 @@ static int qbh_scan_u8_attention(
         QBH_ATTENTION_HEAD_DIM_TILES;
     header->hmx_command_count += 2U * QBH_BLOCK_KV_HEADS;
     header->hmx_u8s8_tile_pair_count +=
-        2U * QBH_BLOCK_KV_HEADS * QBH_ATTENTION_Q_HEADS_PER_GROUP *
+        2U * QBH_BLOCK_KV_HEADS *
+#ifdef QBH_LLAMA_3B
+        (compact_gqa ? 1U : QBH_ATTENTION_Q_HEADS_PER_GROUP) *
+#else
+        QBH_ATTENTION_Q_HEADS_PER_GROUP *
+#endif
         QBH_ATTENTION_HEAD_DIM_TILES * kv_tiles;
     header->u8_attention_direct_o_tile_count +=
         QBH_BLOCK_HEADS * QBH_ATTENTION_HEAD_DIM_TILES;
