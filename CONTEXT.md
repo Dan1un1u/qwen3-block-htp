@@ -1,3 +1,18 @@
+# Current EXP0287 closure — W16A16 versus SP2 DRAM
+Completed, no active experiment/device owner; runtime/model/source unchanged.
+Same Qwen3-1.7B M64+15, three launches x10 trajectories, all480 profiles and own
+baseline token/logit outputs exact. W16A16 OPT3 peak4,090,937,344bytes=3.809982GiB;
+prior SP2 peak2,915,594,240bytes=2.715359GiB. SP2 saves28.730411%, ratio1.403123.
+F16 cache80 versus SP2 cache128 (unchanged packages); attemptedF16cap128 rejected
+at package audit before inference. Matchingcapacity would add10.5MiB to F16 arena
+by byte accounting only; not a measured result.
+Actual descriptors explain every observable allocation byte: backbone2688->672MiB,
+embedding593.5MiB unchanged; W4 extra direct/bundle/head layouts1330.5MiB.
+No4x whole-runtime memory claim; duplication is not intrinsic SP2 overhead.
+Sampled process-attributable DRAM only, no VTCM/hidden firmware/kernel claim.
+Report /mnt/d/llm_exp/results/qwen3-block-htp/exp0287/REPORT.md, ledger0c0e4aaf230668ea7181215257b077cfe312efb14b201ea391eda2fa0c0718ca. Probe runs excluded from memory measurements;
+both probe outputs exactly match their own baseline. No memory optimization yet.
+
 # Active EXP0287 — W16A16 DRAM comparison
 
 External measurement only; sealed EXP0283 OPT3, same Qwen3 model. See docs/experiments/EXP-0287.md. Prior SP2 result unchanged.

@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0287
+  active_experiment: null
   next_experiment_number: 288
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -31,6 +31,31 @@ governance:
     slowdown_threshold: 1.1
     prefill_and_decode: paired_bootstrap95_CI_upper_at_most_threshold
 current_scope:
+  latest_f16_vs_sp2_dram_measurement:
+    id: EXP-0287
+    report: /mnt/d/llm_exp/results/qwen3-block-htp/exp0287/REPORT.md
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0287
+    ledger_sha256: 0c0e4aaf230668ea7181215257b077cfe312efb14b201ea391eda2fa0c0718ca
+    files: 68
+    measured_source: 81e16c4ca4d9f2929c982dc4378f00dd436d8846
+    f16_peak_observed_dram_bytes: 4090937344
+    sp2_reference_peak_bytes: 2915594240
+    sp2_memory_reduction_percent: 28.73041078773364
+    ratio_f16_over_sp2: 1.4031230024655283
+    f16_capacity: 80
+    sp2_capacity: 128
+    shape: M64+15 batch1 full28
+    launches: 3
+    trajectories_per_launch: 10
+    profiles: 480
+    own_baseline_outputs_exact: true
+    layout_byte_closure_exact: true
+    w4_extra_persistent_layout_bytes: 1395130368
+    vtcm_excluded: true
+    whole_device_peak_claim: false
+    baseline_promoted: false
+    quality_claim: false
+    device_owner: null
   latest_inference_dram_measurement:
     id: EXP-0286
     evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0286
@@ -11956,7 +11981,7 @@ current_scope:
     generalization: supplementary only; not rerun or included
     quality_claim: false
     baseline_promoted: false
-  next_action: 'EXP0286 complete: observed attributable inference DRAM peak2.715359GiB on Qwen M64+15; discuss metric coverage and future workloads. Retain original FP32 SP2 baseline; no active experiment or device owner.'
+  next_action: 'EXP0287 complete: W16A16 observed DRAM3.809982GiB versus SP2 2.715359GiB; exact allocation accounting explains28.73percent reduction. Discuss memory-layout retention before optimization. No active experiment/device owner; baseline unchanged.'
   latest_f16_baseline_synthesis:
     report: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/REPORT.md
     a16_discussion: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/A16_DOWN_DISCUSSION.md

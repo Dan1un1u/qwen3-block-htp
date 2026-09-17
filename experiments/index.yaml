@@ -26,9 +26,9 @@ allowed_values:
 experiments:
 - id: EXP-0287
   title: Matched Qwen3 W16A16 DRAM measurement and byte-accounted comparison to W4A8-SP2
-  execution_state: running
-  evidence_validity: pending
-  local_gate: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: not_applicable
   approval_ref: 'User 2026-09-17: measure same-model W16A16 DRAM peak and compare
     against theoretical expectation'
@@ -37,6 +37,31 @@ experiments:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0285-fp16-residual
     started_on: '2026-09-17'
+    completed_on: '2026-09-17'
+  evidence:
+    report: /mnt/d/llm_exp/results/qwen3-block-htp/exp0287/REPORT.md
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0287
+    ledger_sha256: 0c0e4aaf230668ea7181215257b077cfe312efb14b201ea391eda2fa0c0718ca
+    files: 68
+    measured_source: 81e16c4ca4d9f2929c982dc4378f00dd436d8846
+    f16_peak_observed_dram_bytes: 4090937344
+    sp2_reference_peak_bytes: 2915594240
+    sp2_memory_reduction_percent: 28.73041078773364
+    ratio_f16_over_sp2: 1.4031230024655283
+    f16_capacity: 80
+    sp2_capacity: 128
+    shape: M64+15 batch1 full28
+    launches: 3
+    trajectories_per_launch: 10
+    profiles: 480
+    own_baseline_outputs_exact: true
+    layout_byte_closure_exact: true
+    w4_extra_persistent_layout_bytes: 1395130368
+    vtcm_excluded: true
+    whole_device_peak_claim: false
+    baseline_promoted: false
+    quality_claim: false
+    device_owner: null
 - id: EXP-0286
   title: Inference DRAM peak measurement of retained no-rotation W4A8-SP2 FP32 baseline
   execution_state: completed
