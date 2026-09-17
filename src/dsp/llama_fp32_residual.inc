@@ -78,7 +78,14 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
             for(uint32_t c=0;c<width;c+=32U) {
                 HVX_Vector v=*(const HVX_Vector *)(x+c),sq=qbh_fp32_mul(v,v);
                 for(uint32_t k=0;k<32U;k++) {
+                    #ifdef QBH_LLAMA_3B
+                    /* Only sums[0] is consumed for decode. Lane0 visits the
+                     * same channels in the same FP32 order; other lanes need
+                     * not duplicate it. Remove one cross-lane broadcast/add. */
+                    sum=Q6_Vsf_vadd_VsfVsf(sum,sq);
+#else
                     sum=Q6_Vsf_vadd_VsfVsf(sum,Q6_V_vdelta_VV(sq,*(const HVX_Vector *)qbh_fp32_broadcast0));
+#endif
                     sq=Q6_V_vror_VR(sq,4);
                 }
             }
