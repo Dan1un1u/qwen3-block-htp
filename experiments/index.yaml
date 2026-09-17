@@ -26,9 +26,9 @@ allowed_values:
 experiments:
 - id: EXP-0292
   title: Qwen0.6 temporary F16F16 FP32 residual precision contract
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
   adoption_status: pending
   record: docs/experiments/EXP-0292.md
   approval_ref: User requests temporary Qwen0.6 W16A16 FP32 residual to align with A8 for precision.
@@ -36,6 +36,71 @@ experiments:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0292-qwen3-06b-f16-fp32-residual
     started_on: '2026-09-18'
+    completed_on: '2026-09-18'
+  evidence:
+    id: EXP-0292
+    execution_state: completed
+    shape: Qwen3-0.6B full28 batch1 M64+42 cache128
+    measured_source: e2d63b9b9a52e653adde35773adaa511267dfa1d
+    short_rounds: 5
+    formal_rounds: 10
+    repeat: 10
+    formal_profiles: 8600
+    performance:
+      fp16:
+        prefill_tps: 1709.1232683878738
+        decode_tps: 27.686751493537916
+        prefill_host_ms: 37.446099520000004
+        decode_42_host_ms: 1516.9710325100002
+      fp32:
+        prefill_tps: 1690.5933740565436
+        decode_tps: 28.135033744079756
+        prefill_host_ms: 37.85653072
+        decode_42_host_ms: 1492.80076868
+    comparison:
+      prefill:
+        wall_ratio: 1.0109605861561304
+        wall_overhead_percent: 1.096058615613038
+        paired_bootstrap95_ratio:
+        - 1.0091633075439272
+        - 1.0124544807456175
+        throughput_change_percent: -1.0841754175407226
+      decode:
+        wall_ratio: 0.9840667598048936
+        wall_overhead_percent: -1.5933240195106446
+        paired_bootstrap95_ratio:
+        - 0.9830748133846683
+        - 0.9850743061043769
+        throughput_change_percent: 1.619121877286589
+    local_gate: fail
+    gate_role: full_floating_alignment_remains_failed; new_residual_boundaries_pass
+    residual_adds_bit_exact: true
+    changed_norm_max_half_ulp: 1
+    original_control_byte_exact_files: 2451
+    repeat_candidate_byte_exact_files: 2451
+    cache_files: 4816
+    full_floating_alignment_pass: false
+    full_floating_nrmse_max:
+      fp16: 0.00653234609135029
+      fp32: 0.012067306152894927
+    head_boundary_pass: true
+    quality_claim: false
+    baseline_promoted: false
+    evidence_validity: valid
+    source_closure: d7dbaa1c724e09b4c074706f58c78408ab49602b
+    source_branch: codex/exp-0292-qwen3-06b-f16-fp32-residual
+    recipe: temporary F16F16 FP32 residual; FP16 matrix outputs, normalized inputs, KV, and head
+    report: docs/experiments/EXP-0292-RESULTS.md
+    modules: docs/experiments/EXP-0292-MODULES.md
+    full_profiling_report: /mnt/d/llm_exp/results/qwen3-block-htp/exp0292/FULL_PROFILING_REPORT.md
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0292
+    artifact_directory: /mnt/d/llm_exp/models/qwen3-block-htp/exp0292
+    ledger_sha256: 4e5745d6e160c39583e70b1569d681cdac6c289cd60cb07d0f6fdb317f5abdcd
+    evidence_files: 7772
+    device_owner: null
+    original_fp16_baseline_retained: true
+    default_changed: false
+  full_profiling_report: /mnt/d/llm_exp/results/qwen3-block-htp/exp0292/FULL_PROFILING_REPORT.md
 - id: EXP-0291
   title: Qwen0.6 bounded W4A16 exact dataflow optimization
   execution_state: aborted

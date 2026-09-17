@@ -1,5 +1,9 @@
-# Active EXP-0292
-Temporary Qwen0.6 F16 FP32 residual under docs/experiments/EXP-0292.md. Preserve real fastest original baseline and all other recipes. No deliberate slowdown; vector implementation and independent boundary checks. Temporary parent binding then new branch.
+# EXP-0292 completed — temporary Qwen0.6 F16 FP32 residual
+No active experiment/device owner; next293. Source codex/exp-0292-qwen3-06b-f16-fp32-residual @ d7dbaa1c724e09b4c074706f58c78408ab49602b; native measured e2d63b9b9a52e653adde35773adaa511267dfa1d. Read docs/experiments/EXP-0292-RESULTS.md and MODULES.md.
+QBH_FP32_RESIDUAL=1 F16F16 OPT4 ABI137: FP16embedding widens toFP32; O/Down remainFP16outputs, widen/add intoFP32residual; input/post/final RMSNorm readFP32, outputFP16. KV/head/HMX and311weightfiles unchanged. Aligns residual storage/add only, not A8rawprojectionoutput. New vector norm/residual handles logicaldecode rows; originalcontrol retainsM64 work, no claimFP32intrinsicallyfaster.
+Selected0/14/27 andchain3 pass; actual-operand residualadds exact, norm<=1halfULP, head43/43; original2451boundaryfiles exact, candidate2451 repeatedexact,4816KV snapshots pass. Wholefloatingreference gate remains FAIL: originalmaxNRMSE0.00653235,candidate0.01206731 vs0.003. NoPPL/modelquality/Selected acceptance.
+5short10formalrepeat10 M64+42/cache128: control1709.1233/27.68675 versusFP32 1690.5934/28.13503tok/s; Host37.446100/37.856531ms prefill,1516.971033/1492.800769ms42decode; overhead+1.09606%/-1.59332%. Original historical baseline1710.94/27.68 preserved. Flag0 remainsdefault; temporaryflag1explicit. Otherrecipes untouched.
+Evidence7772files ledger4e5745d6e160c39583e70b1569d681cdac6c289cd60cb07d0f6fdb317f5abdcd. Reports/archive include original failures and fixed scheduler/audit collection defects. No further optimization implied.
 
 # EXP-0291 stopped and archived — 2026-09-18
 User stopped optimization; no active experiment/device owner, next292. Source codex/exp-0291-qwen3-06b-w4f16-opt @ 6ad2c3bf7875b0bc10540345cba9f2d99ce43ad9. Do not resume tuning without a new request.
