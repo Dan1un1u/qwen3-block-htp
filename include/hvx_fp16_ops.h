@@ -110,4 +110,7 @@ void qbh_hvx_stable_causal_softmax_f16(__fp16 *scores,
                                         uint32_t width, float score_scale,
                                         struct qbh_hvx_check_metrics *check);
 
+void qbh_hvx_decode_softmax_f16(const __fp16 *scores, __fp16 *probability,
+    uint32_t heads, uint32_t padded, uint32_t valid, float scale);
+
 #endif

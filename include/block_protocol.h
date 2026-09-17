@@ -13,7 +13,7 @@
 #define QBH_SP2(h) ((h)->sp2_mode)
 #elif defined(QBH_NATIVE_SP2)
 #ifdef QBH_QWEN_06B
-#define QBH_BLOCK_ABI_VERSION UINT32_C(135)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(136)
 #else
 #define QBH_BLOCK_ABI_VERSION UINT32_C(134)
 #endif
@@ -143,7 +143,7 @@
     (10U * QBH_BLOCK_M * QBH_BLOCK_HIDDEN * sizeof(uint16_t))
 #else
 #define QBH_BLOCK_SCAN_F16_AUDIT_BYTES \
-    (3U * QBH_BLOCK_M * QBH_BLOCK_HIDDEN * sizeof(uint16_t))
+    ((2U * QBH_BLOCK_ATTN_WIDTH + QBH_BLOCK_HIDDEN) * QBH_BLOCK_M * sizeof(uint16_t))
 #endif
 
 enum qbh_block_variant {
