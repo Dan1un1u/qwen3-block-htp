@@ -33,7 +33,7 @@ Overlapping expansion/work/DMA counters are not additive exclusive timings.
 - Both A16 recipes retain M64 backbone HMX projections and substantial M64 packing/common work for logical M1 decode. This is shared inefficiency, not by itself an explanation of the inversion.
 - Existing decode optimization is active: 224 calls (28 layers x8 KV groups), head prefetch593. No missing OPT flag or scalar fallback was identified as the primary cause.
 
-Source anchors: src/dsp/block_imp.c qbh_w4f16_expand_with_main, qbh_w4f16_projection_worker_count, qbh_w4f16_projection_group_tiles, qbh_run_w4f16_projection, qbh_scan_append_f16_kv_hmx_native, qbh_scan_attention_f16_dynamic; src/dsp/w4_u8_expand.c; src/dsp/hmx_fp16.c.
+Source anchors: src/dsp/block_imp.c qbh_w4f16_expand_with_main, qbh_w4f16_projection_worker_count, qbh_w4f16_projection_group_tiles, qbh_run_w4f16_projection, qbh_scan_append_f16_kv_hmx_native, qbh_scan_f16_attention; src/dsp/w4_u8_expand.c; src/dsp/hmx_fp16.c.
 
 ## Same-binary bounded diagnostics
 
@@ -58,3 +58,5 @@ The region8 attempt was rejected before computation: selected adaptive pipeline 
 4. Validate complete paired E2E after exact boundary checks. Do not infer speed ordering solely from bitwidth.
 
 No native kernel/model changes, no numerical threshold changes, no promoted configuration. EXP-0289 remains the measured provisional baseline.
+
+Documentation correction: the exact dynamic attention symbol is qbh_scan_f16_attention. The sealed external/source report used qbh_scan_attention_f16_dynamic as an incorrect source anchor; measurements, hashes and conclusions are unchanged. Original sealed evidence is preserved.
