@@ -139,6 +139,24 @@ qbh_unpack_w4_to_f16_hvx_impl(
             Q6_V_vand_VV(v_packed, v_nibble_mask);
         const HVX_Vector v_high_indices =
             Q6_Vub_vlsr_VubR(v_packed, 4);
+#ifdef QBH_QWEN_06B
+        /* EXP0291: vlut16 separates even and odd input bytes. Packed W4
+         * pairs K0/K1 in one byte and K2/K3 in the next. Lookup low/high
+         * nibbles first, then interleave halfwords directly into K-pair
+         * Croutons. This removes a byte shuffle and two halfword deals. */
+        const HVX_VectorPair lo=Q6_Wh_vlut16_VbVhR_nomatch(
+            v_low_indices, v_f16_lut, 0);
+        const HVX_VectorPair hi=Q6_Wh_vlut16_VbVhR_nomatch(
+            v_high_indices, v_f16_lut, 0);
+        const HVX_VectorPair even=Q6_W_vshuff_VVR(
+            Q6_V_lo_W(hi), Q6_V_lo_W(lo), -2);
+        const HVX_VectorPair odd=Q6_W_vshuff_VVR(
+            Q6_V_hi_W(hi), Q6_V_hi_W(lo), -2);
+        destination[packed_vector*4U]=Q6_V_lo_W(even);
+        destination[packed_vector*4U+1U]=Q6_V_lo_W(odd);
+        destination[packed_vector*4U+2U]=Q6_V_hi_W(even);
+        destination[packed_vector*4U+3U]=Q6_V_hi_W(odd);
+#else
         const HVX_VectorPair v_unpacked =
             Q6_W_vshuff_VVR(v_high_indices, v_low_indices, -1);
         const HVX_VectorPair v_groups0 = qbh_unpack_w4_f16_group(
@@ -149,6 +167,7 @@ qbh_unpack_w4_to_f16_hvx_impl(
         destination[packed_vector * 4U + 1U] = Q6_V_hi_W(v_groups0);
         destination[packed_vector * 4U + 2U] = Q6_V_lo_W(v_groups1);
         destination[packed_vector * 4U + 3U] = Q6_V_hi_W(v_groups1);
+#endif
     }
     if (publish_fence != 0U) {
         asm volatile("barrier" : : : "memory");
