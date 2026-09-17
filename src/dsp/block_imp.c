@@ -11576,7 +11576,13 @@ static int qbh_run_projection(
              desc == &header->projections[QBH_BLOCK_PROJ_K] ||
              desc == &header->projections[QBH_BLOCK_PROJ_V])) {
             return qbh_run_w4u8_direct_n_projection(header, shared, desc, buffers, worker,
-                projection_activation, (uint8_t *)output, 4U);
+                projection_activation, (uint8_t *)output,
+#ifdef QBH_LLAMA_3B
+                8U
+#else
+                4U
+#endif
+                );
         }
 #endif
         if ((header->logical_m == 1U ||
