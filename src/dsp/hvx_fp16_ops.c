@@ -289,6 +289,63 @@ static void qbh_hvx_store_f16_pair_crouton(
     *output1 = Q6_V_hi_W(packed);
 }
 
+
+/* EXP0292: FP32 residual storage/add, FP16 matrix boundary. All payload
+ * operations are vectorized; only the 32-lane norm reduction is scalar,
+ * matching the existing A16 baseline's reduction convention. */
+void qbh_hvx_residual_add_f32_f16(float *residual,
+    const __fp16 *addition, uint32_t elements) {
+    for (uint32_t c=0; c<elements; c+=64U) {
+        HVX_VectorPair sf=Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)(addition+c));
+        HVX_VectorPair ordered=Q6_W_vshuff_VVR(Q6_V_hi_W(sf),Q6_V_lo_W(sf),-4);
+        HVX_Vector *dst=(HVX_Vector *)(residual+c);
+        dst[0]=Q6_Vsf_vadd_VsfVsf(dst[0],Q6_V_lo_W(ordered));
+        dst[1]=Q6_Vsf_vadd_VsfVsf(dst[1],Q6_V_hi_W(ordered));
+    }
+}
+static float qbh_hvx_f32_inverse(const float *x,uint32_t width) {
+    HVX_Vector sum=Q6_V_vzero();
+    for(uint32_t c=0;c<width;c+=32U) {
+        HVX_Vector v=*(const HVX_Vector *)(x+c);
+        sum=Q6_Vsf_vadd_VsfVsf(sum,
+            Q6_Vsf_equals_Vqf32(Q6_Vqf32_vmpy_VsfVsf(v,v)));
+    }
+    return 1.0f/sqrtf(qbh_hvx_reduce_sum_sf32(sum)/(float)width+QBH_MODEL_RMS_EPS);
+}
+static HVX_Vector qbh_hvx_f32_norm_vector(const float *x,
+    HVX_Vector gamma,float inverse) {
+    union {float f;int32_t i;} scale={.f=inverse};
+    HVX_Vector inv=Q6_V_vsplat_R(scale.i);
+    HVX_VectorPair vals=Q6_W_vdeal_VVR(
+        *(const HVX_Vector *)(x+32U),*(const HVX_Vector *)x,-4);
+    HVX_VectorPair g=Q6_Wsf_vcvt_Vhf(gamma);
+    HVX_DV y;
+    y.V.lo=Q6_Vqf32_vmpy_VsfVsf(Q6_Vsf_equals_Vqf32(
+        Q6_Vqf32_vmpy_VsfVsf(Q6_V_lo_W(vals),inv)),Q6_V_lo_W(g));
+    y.V.hi=Q6_Vqf32_vmpy_VsfVsf(Q6_Vsf_equals_Vqf32(
+        Q6_Vqf32_vmpy_VsfVsf(Q6_V_hi_W(vals),inv)),Q6_V_hi_W(g));
+    return Q6_Vhf_equals_Wqf32(y.VV);
+}
+void qbh_hvx_rms_norm_f32_f16_rows(const float *input,const __fp16 *gamma,
+    __fp16 *output,uint32_t first_row,uint32_t rows,uint32_t width,
+    uint32_t crouton) {
+    const uint32_t end=first_row+rows;
+    for(uint32_t row=first_row;row<end;row+=crouton?2U:1U) {
+        const float *x0=input+(size_t)row*width;
+        float inv0=qbh_hvx_f32_inverse(x0,width);
+        const float *x1=x0+width;
+        float inv1=crouton && row+1U<end?qbh_hvx_f32_inverse(x1,width):0.0f;
+        for(uint32_t c=0;c<width;c+=64U) {
+            HVX_Vector g=*(const HVX_Vector *)(gamma+c);
+            HVX_Vector y0=qbh_hvx_f32_norm_vector(x0+c,g,inv0);
+            if(crouton) {
+                HVX_Vector y1=row+1U<end?qbh_hvx_f32_norm_vector(x1+c,g,inv1):Q6_V_vzero();
+                qbh_hvx_store_f16_pair_crouton(output,width/32U,row,c,y0,y1);
+            } else *(HVX_Vector *)(output+(size_t)row*width+c)=y0;
+        }
+    }
+}
+
 void qbh_hvx_rms_norm_f16_crouton(
     const __fp16 *input, const __fp16 *gamma,
     __fp16 *output_tiles, uint32_t rows, uint32_t width) {

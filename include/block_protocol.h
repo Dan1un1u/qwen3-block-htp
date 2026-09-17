@@ -13,7 +13,7 @@
 #define QBH_SP2(h) ((h)->sp2_mode)
 #elif defined(QBH_NATIVE_SP2)
 #ifdef QBH_QWEN_06B
-#define QBH_BLOCK_ABI_VERSION UINT32_C(136)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(137)
 #else
 #define QBH_BLOCK_ABI_VERSION UINT32_C(134)
 #endif
@@ -36,6 +36,11 @@
 #define QBH_FP32_RESIDUAL_MAX 2U
 #else
 #define QBH_FP32_RESIDUAL_MAX 1U
+#endif
+#ifdef QBH_QWEN_06B
+#define QBH_F16_FP32_RESIDUAL(h) ((h)->variant == QBH_BLOCK_F16F16 && QBH_FP32_RESIDUAL(h) == 1U)
+#else
+#define QBH_F16_FP32_RESIDUAL(h) 0U
 #endif
 #define QBH_BLOCK_EXPERIMENT UINT32_C(218)
 

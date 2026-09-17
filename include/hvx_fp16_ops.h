@@ -87,6 +87,13 @@ void qbh_hvx_silu_multiply_f16_audit(
     const __fp16 *gate, const __fp16 *up, const __fp16 *middle,
     uint32_t elements, struct qbh_hvx_check_metrics *check);
 
+
+void qbh_hvx_residual_add_f32_f16(float *residual, const __fp16 *addition,
+    uint32_t elements);
+void qbh_hvx_rms_norm_f32_f16_rows(const float *input, const __fp16 *gamma,
+    __fp16 *output, uint32_t first_row, uint32_t rows, uint32_t width,
+    uint32_t crouton);
+
 void qbh_hvx_residual_add_f16(__fp16 *residual,
                                const __fp16 *addition,
                                uint32_t elements);

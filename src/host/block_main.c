@@ -4147,7 +4147,7 @@ static int qbh_run_generation_sequence(
             header->intermediate_spill_fill_count == 0U &&
             header->boundary_ddr_write_bytes ==
                 (header->generation_boundary_audit_enabled != 0U
-                     ? QBH_BLOCK_HIDDEN*(QBH_FP32_RESIDUAL(header)?68U:header->variant!=QBH_BLOCK_W4U8?4U:1U) : 0U) &&
+                     ? QBH_BLOCK_HIDDEN*(QBH_F16_FP32_RESIDUAL(header)?6U:QBH_FP32_RESIDUAL(header)?68U:header->variant!=QBH_BLOCK_W4U8?4U:1U) : 0U) &&
             state->completed_step_count == step + 1U;
         for (uint32_t slice_index = 0U;
              slice_index < QBH_VERTICAL_SLICE_LAYER_COUNT;
@@ -4169,9 +4169,10 @@ static int qbh_run_generation_sequence(
         if (header->variant != QBH_BLOCK_W4U8 &&
             header->generation_boundary_audit_enabled && audit_root && audit_root[0]) {
             char name[96];
-            snprintf(name,sizeof(name),"generation_hidden_norm_step%02u_f16.bin",step);
+            snprintf(name,sizeof(name),QBH_F16_FP32_RESIDUAL(header)?
+                "generation_hidden_norm_step%02u_f32_f16.bin":"generation_hidden_norm_step%02u_f16.bin",step);
             if(qbh_write_named_tensor(audit_root,name,shared+header->output_offset,
-                2U*QBH_BLOCK_HIDDEN*sizeof(uint16_t))) step_pass=0;
+                QBH_BLOCK_HIDDEN*(QBH_F16_FP32_RESIDUAL(header)?6U:4U))) step_pass=0;
             for(uint32_t li=0;li<QBH_VERTICAL_SLICE_LAYER_COUNT;++li) {
                 const struct qbh_decode_layer_state *cs=&state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER+li];
                 snprintf(name,sizeof(name),"generation_step%02u_layer%02u_k_f16.bin",step,li);
@@ -6028,13 +6029,13 @@ int main(int argc, char **argv) {
 
     if (qbh_prepare_slot(
             &input_slot, argv[1],
-            qbh_host_fp32_residual() ? "reference_w4u8_block_input_f32.bin" : variant == QBH_BLOCK_W4U8
+            qbh_host_fp32_residual() ? (variant==QBH_BLOCK_F16F16 ? "block_input_f32.bin" : "reference_w4u8_block_input_f32.bin") : variant == QBH_BLOCK_W4U8
                 ? "reference_w4u8_block_input_u8.bin"
                 : "block_input_f16.bin",
             output_bytes, &cursor) != 0 ||
         qbh_prepare_slot(
             &reference_slot, argv[1],
-            qbh_host_fp32_residual() ? "reference_w4u8_block_output_f32.bin" : variant == QBH_BLOCK_F16F16
+            qbh_host_fp32_residual() ? (variant==QBH_BLOCK_F16F16 ? "reference_f16f16_block_output_f32.bin" : "reference_w4u8_block_output_f32.bin") : variant == QBH_BLOCK_F16F16
                 ? "reference_f16f16_block_output_f16.bin"
                 : (variant == QBH_BLOCK_W4F16
                        ? "reference_w4f16_block_output_f16.bin"

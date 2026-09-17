@@ -513,6 +513,8 @@ struct qbh_block_w4f16_pool {
     const struct qbh_block_qparam *u8_input_norm_output_qparam;
     volatile uint32_t next_u8_input_norm_task;
     uint32_t u8_input_norm_task_count;
+    uint32_t fp16_residual_is_f32;
+    uint32_t fp16_residual_rows;
     const __fp16 *fp16_input_norm_input;
     const __fp16 *fp16_input_norm_gamma;
     __fp16 *fp16_input_norm_output;
@@ -862,7 +864,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
                             uint32_t kv_cache_k_format,
                             uint32_t kv_cache_v_format,
                             uint32_t scan_mode, uint32_t sp2_mode, uint32_t r4_mode,
-                            uint32_t fp32_residual,
+                            uint32_t fp32_residual, uint32_t f16_fp32_residual,
                             struct qbh_block_buffers *buffers,
                             uint32_t *peak_bytes) {
     struct qbh_block_arena arena = {vtcm, vtcm_bytes, 0U, 0U};
@@ -916,7 +918,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
     buffers->rope_sin = qbh_arena_alloc(
         &arena, QBH_BLOCK_M * QBH_BLOCK_HEAD_DIM * sizeof(uint16_t));
     buffers->residual = qbh_arena_alloc(&arena,
-        fp32_residual ? hidden_bytes * 4U : hidden_bytes);
+        fp32_residual ? hidden_bytes * 4U : f16_fp32_residual ? hidden_bytes * 2U : hidden_bytes);
     /* FP32 reuses normalized for HMX retain stores, which require 2KiB alignment.
      * Q follows with the same alignment, so this moves existing padding only. */
     buffers->normalized = qbh_arena_alloc_aligned(&arena, hidden_bytes,
@@ -2100,10 +2102,16 @@ static int qbh_header_valid(const struct qbh_block_header *header,
     if (!header || header->dense_r3_mode || header->dense_r4_mode) return 0;
     if (header->variant == QBH_BLOCK_W4U8 &&
         (QBH_FP32_RESIDUAL(header)!=2U || QBH_SP2(header)!=8U)) return 0;
+    if (QBH_F16_FP32_RESIDUAL(header) &&
+        (header->fp16_common_schedule_mode !=
+          (QBH_BLOCK_FP16_COMMON_SCHEDULE_INPUT_NORM_POOL |
+           QBH_BLOCK_FP16_COMMON_SCHEDULE_POST_RESIDUAL_NORM_POOL) ||
+         header->residual_mode != QBH_BLOCK_RESIDUAL_HVX_FUSED_POST_NORM ||
+         header->numerical_audit_enabled)) return 0;
 #endif
 
 #if defined(QBH_MODEL_LLAMA32) || defined(QBH_NATIVE_SP2)
-    if (header && QBH_FP32_RESIDUAL(header) &&
+    if (header && QBH_FP32_RESIDUAL(header) && !QBH_F16_FP32_RESIDUAL(header) &&
         (QBH_FP32_RESIDUAL(header)>QBH_FP32_RESIDUAL_MAX || header->variant!=QBH_BLOCK_W4U8 ||
          (QBH_SP2(header)!=8U && QBH_SP2(header)!=0U) || header->dense_r3_mode || header->dense_r4_mode ||
          header->w4u8_decode_projection_mode!=QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
@@ -2983,15 +2991,19 @@ static void qbh_fp16_input_norm_pool_run_tasks(
         uint64_t start;
 
         if (task >= pool->fp16_input_norm_task_count ||
-            first_row >= QBH_BLOCK_M) {
+            first_row >= pool->fp16_residual_rows) {
             break;
         }
-        row_count = QBH_BLOCK_M - first_row;
+        row_count = pool->fp16_residual_rows - first_row;
         if (row_count > pool->fp16_norm_rows_per_task) {
             row_count = pool->fp16_norm_rows_per_task;
         }
         start = HAP_perf_get_qtimer_count();
-        if (pool->fp16_input_norm_crouton != 0U) {
+        if (pool->fp16_residual_is_f32) {
+            qbh_hvx_rms_norm_f32_f16_rows((const float *)pool->fp16_input_norm_input,
+                pool->fp16_input_norm_gamma,pool->fp16_input_norm_output,
+                first_row,row_count,QBH_BLOCK_HIDDEN,pool->fp16_input_norm_crouton);
+        } else if (pool->fp16_input_norm_crouton != 0U) {
             qbh_hvx_rms_norm_f16_crouton_rows(
                 pool->fp16_input_norm_input,
                 pool->fp16_input_norm_gamma,
@@ -3022,15 +3034,23 @@ static void qbh_fp16_post_residual_norm_pool_run_tasks(
         uint64_t start;
 
         if (task >= pool->fp16_post_residual_norm_task_count ||
-            first_row >= QBH_BLOCK_M) {
+            first_row >= pool->fp16_residual_rows) {
             break;
         }
-        row_count = QBH_BLOCK_M - first_row;
+        row_count = pool->fp16_residual_rows - first_row;
         if (row_count > pool->fp16_norm_rows_per_task) {
             row_count = pool->fp16_norm_rows_per_task;
         }
         start = HAP_perf_get_qtimer_count();
-        if (pool->fp16_post_residual_norm_crouton != 0U) {
+        if (pool->fp16_residual_is_f32) {
+            qbh_hvx_residual_add_f32_f16((float *)pool->fp16_post_residual+
+                (size_t)first_row*QBH_BLOCK_HIDDEN,
+                pool->fp16_post_addition+(size_t)first_row*QBH_BLOCK_HIDDEN,
+                row_count*QBH_BLOCK_HIDDEN);
+            qbh_hvx_rms_norm_f32_f16_rows((const float *)pool->fp16_post_residual,
+                pool->fp16_post_gamma,pool->fp16_post_output,
+                first_row,row_count,QBH_BLOCK_HIDDEN,pool->fp16_post_residual_norm_crouton);
+        } else if (pool->fp16_post_residual_norm_crouton != 0U) {
             qbh_hvx_residual_rms_norm_f16_crouton_rows(
                 pool->fp16_post_residual,
                 pool->fp16_post_addition,
@@ -5390,6 +5410,8 @@ static int qbh_hvx_pool_fp16_input_norm(
     if (pool->worker_count < worker_count) {
         return -1;
     }
+    pool->fp16_residual_is_f32=QBH_F16_FP32_RESIDUAL(header);
+    pool->fp16_residual_rows=QBH_F16_FP32_RESIDUAL(header)?header->logical_m:QBH_BLOCK_M;
     memset(&main_job, 0, sizeof(main_job));
     pool->fp16_input_norm_input = input;
     pool->fp16_input_norm_gamma = gamma;
@@ -5399,7 +5421,7 @@ static int qbh_hvx_pool_fp16_input_norm(
         header->fp16_norm_rows_per_task;
     pool->next_fp16_input_norm_task = 0U;
     pool->fp16_input_norm_task_count =
-        (QBH_BLOCK_M + pool->fp16_norm_rows_per_task - 1U) /
+        (pool->fp16_residual_rows + pool->fp16_norm_rows_per_task - 1U) /
         pool->fp16_norm_rows_per_task;
     pool->active_worker_count = worker_count;
     header->fp16_input_norm_active_contexts = worker_count + 1U;
@@ -5464,6 +5486,8 @@ static int qbh_hvx_pool_fp16_post_residual_norm(
     if (pool->worker_count < worker_count) {
         return -1;
     }
+    pool->fp16_residual_is_f32=QBH_F16_FP32_RESIDUAL(header);
+    pool->fp16_residual_rows=QBH_F16_FP32_RESIDUAL(header)?header->logical_m:QBH_BLOCK_M;
     memset(&main_job, 0, sizeof(main_job));
     pool->fp16_post_residual = residual;
     pool->fp16_post_addition = addition;
@@ -5474,7 +5498,7 @@ static int qbh_hvx_pool_fp16_post_residual_norm(
         header->fp16_norm_rows_per_task;
     pool->next_fp16_post_residual_norm_task = 0U;
     pool->fp16_post_residual_norm_task_count =
-        (QBH_BLOCK_M + pool->fp16_norm_rows_per_task - 1U) /
+        (pool->fp16_residual_rows + pool->fp16_norm_rows_per_task - 1U) /
         pool->fp16_norm_rows_per_task;
     pool->active_worker_count = worker_count;
     header->fp16_post_residual_norm_active_contexts =
@@ -7068,19 +7092,25 @@ static int qbh_run_generation_head_f16f16(
     /* Only the final prompt row feeds the head; row reductions are independent. */
     const uint32_t norm_rows = prefetch ? 1U : logical_rows;
     const uint32_t source_row = prefetch ? logical_rows - 1U : 0U;
-    qbh_hvx_rms_norm_f16((const __fp16 *)buffers->residual +
+    if (QBH_F16_FP32_RESIDUAL(header))
+        qbh_hvx_rms_norm_f32_f16_rows((const float *)buffers->residual +
+            (size_t)source_row*QBH_BLOCK_HIDDEN,
+            (const __fp16 *)buffers->input_norm_weight,(__fp16 *)buffers->normalized,
+            0U,norm_rows,QBH_BLOCK_HIDDEN,0U);
+    else qbh_hvx_rms_norm_f16((const __fp16 *)buffers->residual +
         (size_t)source_row * QBH_BLOCK_HIDDEN,
         (const __fp16 *)buffers->input_norm_weight,
         (__fp16 *)buffers->normalized, norm_rows, QBH_BLOCK_HIDDEN, NULL);
     if (header->generation_boundary_audit_enabled) {
         const uint32_t row_bytes = QBH_BLOCK_HIDDEN * sizeof(__fp16);
+        const uint32_t residual_bytes=QBH_F16_FP32_RESIDUAL(header)?row_bytes*2U:row_bytes;
         if (qbh_dma_copy(header, shared + header->output_offset,
-            buffers->residual + (size_t)(logical_rows - 1U) * row_bytes,
-            row_bytes, 0U) != 0 ||
-            qbh_dma_copy(header, shared + header->output_offset + row_bytes,
+            buffers->residual + (size_t)(logical_rows - 1U) * residual_bytes,
+            residual_bytes, 0U) != 0 ||
+            qbh_dma_copy(header, shared + header->output_offset + residual_bytes,
             buffers->normalized + (size_t)(norm_rows - 1U) * row_bytes,
             row_bytes, 0U) != 0) return -2;
-        header->boundary_ddr_write_bytes += 2U * row_bytes;
+        header->boundary_ddr_write_bytes += residual_bytes + row_bytes;
         header->boundary_dma_descriptor_count += 2U;
     }
     header->generation_final_norm_ticks += HAP_perf_get_qtimer_count() - start;
@@ -20731,7 +20761,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     header->input_stage_ticks += HAP_perf_get_qtimer_count() - start;
 
     start = HAP_perf_get_qtimer_count();
-    if (QBH_FP32_RESIDUAL(header)) {
+    if (QBH_FP32_RESIDUAL(header) && !QBH_F16_FP32_RESIDUAL(header)) {
         qbh_llama_fp32_norm_parallel(header,w4f16_pool,buffers,
             (const __fp16 *)buffers->input_norm_weight,
             w4u8_qkv_native_input_enabled ? buffers->hmx_activation : buffers->normalized,
@@ -21533,7 +21563,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             header, shared, buffers, &gate_prefetch) != 0) {
         return QBH_BLOCK_STATUS_RESIDUAL_POOL_FAILED;
     }
-    if (QBH_FP32_RESIDUAL(header)) {
+    if (QBH_FP32_RESIDUAL(header) && !QBH_F16_FP32_RESIDUAL(header)) {
         /* O's raw-accumulator epilogue has already added to FP32 residual. */
         qbh_llama_fp32_norm_parallel(header,w4f16_pool,buffers,
             (const __fp16 *)buffers->post_norm_weight,
@@ -21731,7 +21761,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         }
         audit_start = qbh_attribution_begin(header);
         qbh_record_f16_nonfinite(
-            header, buffers->residual, hidden_elements,
+            header, buffers->residual, QBH_F16_FP32_RESIDUAL(header)?0U:hidden_elements,
             QBH_BLOCK_NUMERICAL_POST_RESIDUAL);
         qbh_attribution_accumulate(
             header, audit_start,
@@ -22090,7 +22120,10 @@ static int qbh_run_one_block(struct qbh_block_header *header,
 
 w4u8_mlp_complete:
     start = HAP_perf_get_qtimer_count();
-    if (QBH_FP32_RESIDUAL(header)) {
+    if (QBH_F16_FP32_RESIDUAL(header)) {
+        qbh_hvx_residual_add_f32_f16((float *)buffers->residual,
+            (const __fp16 *)buffers->down,logical_rows*QBH_BLOCK_HIDDEN);
+    } else if (QBH_FP32_RESIDUAL(header)) {
         /* Down epilogue adds once, before any output quantization. */
     } else if (header->variant == QBH_BLOCK_W4U8) {
         if (w4u8_mlp_native_output_enabled != 0U) {
@@ -22331,7 +22364,8 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
                          header->kv_cache_k_format,
                          header->kv_cache_v_format,
                          header->scan_mode, QBH_SP2(header),
-                         header->dense_r4_mode, QBH_FP32_RESIDUAL(header),
+                         header->dense_r4_mode, QBH_F16_FP32_RESIDUAL(header) ? 0U : QBH_FP32_RESIDUAL(header),
+                          QBH_F16_FP32_RESIDUAL(header),
                          &buffers,
                          &header->vtcm_peak_plan_bytes) != 0) {
         header->dsp_status = QBH_BLOCK_STATUS_ARENA_FAILED;
