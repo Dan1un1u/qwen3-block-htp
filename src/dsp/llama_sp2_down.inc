@@ -46,6 +46,9 @@ __attribute__((noinline)) static int qbh_llama_sp2_down(struct qbh_block_hmx_wor
         for(uint32_t pass=0;pass<(worker->sp2_rows==64U?2U:1U);pass++) {
             for(uint32_t n=0;n<32;n++){bias[n]=24U<<10;bias[32+n]=0;}
             qbh_hmx_begin_u8s8_output(bias);
+#ifdef QBH_LLAMA_3B
+            if(nt==0U)FARF(ALWAYS,"L32_3B_RAW a=%x w=%x k=%u pass=%u",(unsigned)(uintptr_t)(pass?worker->sp2_high:worker->activation),(unsigned)(uintptr_t)w,worker->k_tiles,pass);
+#endif
             qbh_hmx_accumulate_u8n4_projection(pass?worker->sp2_high:worker->activation,w,worker->k_tiles);
             read_i32(pass?raw1:raw0,bias,3U);
         }
@@ -85,6 +88,9 @@ __attribute__((noinline)) static int qbh_llama_sp2_down_stream(struct qbh_block_
         for(uint32_t pass=0;pass<(e->fp32_residual && !e->fp32_sp2 ? 1U:2U);pass++) {
             for(uint32_t n=0;n<32;n++){bias[n]=24U<<10;bias[32+n]=0;}
             qbh_hmx_begin_u8s8_output(bias);
+#ifdef QBH_LLAMA_3B
+            if(nt==0U)FARF(ALWAYS,"L32_3B_RAW a=%x w=%x k=%u pass=%u",(unsigned)(uintptr_t)(pass?worker->sp2_high:worker->activation),(unsigned)(uintptr_t)w,worker->k_tiles,pass);
+#endif
             qbh_hmx_accumulate_u8n4_projection(pass?worker->sp2_high:worker->activation,w,worker->k_tiles);
             read_i32(raw+pass*8192U,bias,3U);
         }
