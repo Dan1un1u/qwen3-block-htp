@@ -1,6 +1,10 @@
-# Active L32-0041
+# L32-0041 completed: Llama 3.2 3B W4A8-SP2
 
-Port latest 1B W4A8-SP2 no-rotation FP32-residual implementation to supplied original3B checkpoint. Read docs/experiments/L32-0041.md. Memory optimization deferred. No quality claim.
+Original-derived3B port completed. Read latest_llama3b_w4a8_sp2_port and docs/experiments/L32-0041-RESULTS.md / L32-0041-MODULES.md. Source closure c990326d949d56778cf5990d5b4b246f1a247710; measured binary source 6f911883fa98a426a5d8482bbaeceebc6a2d7d40. E2E M64+15,5short/10formal,repeat10: prefill 512.141778 / decode 18.638267 token/s. Selected0/13/27,chain3/full28 exact hidden+KV; full16 generated IDs/logit codes exact;1B bounded regression exact. FP32 residual,SP2mode8,no rotations,no spills,peak8360416/8388608VTCM. NoPPL/general quality claim or baseline promotion. Original1B fields/artifacts remain1B;3B does not yet support W16A16/W4A16. Memory optimization deferred. Device released; no active experiment.
+
+Evidence /mnt/d/llm_exp/results/llama32-htp/l32-0041; ledger afe4cce6a0f52c3a11ffa674fb198e156c6ab3720da8bef23dc35f157eea8cf0, 370 files. Fresh weights/package under /mnt/d/llm_exp/models/llama32-htp/l32-0041. Build with QBH_LLAMA_MODEL_SIZE=3B and layer count28; default remains1B. Preserve failed shape/arena attempts; do not repeat diagnosed faults. The short greedy prompt answers Paris correctly, but fixed16-token benchmark continues after EOS and is not quality acceptance.
+
+Prior checkpoints below are history.
 
 # L32-0040 completed
 

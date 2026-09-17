@@ -3,7 +3,7 @@ project: llama32-htp
 experiments:
 - id: L32-0041
   title: Fresh Llama 3.2 3B W4A8 SP2 port from latest 1B runtime
-  execution_state: running
+  execution_state: completed
   approval_ref: User 2026-09-17 requests adaptation of latest Llama 1B W4A8 SP2 to supplied original 3B checkpoint;
     defer memory optimization.
   parent_source: fd0fbc740fb61a681c92484d16f75785160e142c
@@ -11,6 +11,32 @@ experiments:
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
+  evidence_validity: valid
+  local_gate: pass
+  adoption_status: pending
+  evidence:
+    id: L32-0041
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    measured_source: 6f911883fa98a426a5d8482bbaeceebc6a2d7d40
+    source_closure: c990326d949d56778cf5990d5b4b246f1a247710
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0041
+    evidence_ledger_sha256: afe4cce6a0f52c3a11ffa674fb198e156c6ab3720da8bef23dc35f157eea8cf0
+    evidence_files: 370
+    report: docs/experiments/L32-0041-RESULTS.md
+    modules: docs/experiments/L32-0041-MODULES.md
+    model: Llama-3.2-3B-Instruct
+    recipe: W4A8-SP2 no rotation, FP32 residual
+    performance:
+      prefill: 512.1417780931113
+      decode: 18.63826692371234
+    independent_full28_exact: true
+    full_greedy_ids_and_codes_exact: true
+    bounded_1b_regression_pass: true
+    physical_gate: true
+    quality_claim: false
+    baseline_promoted: false
 - id: L32-0040
   title: Uniform INT16 Down vs A8 and SP2, shared native W4 pipeline
   execution_state: completed
@@ -158,8 +184,8 @@ experiments:
   evidence_validity: valid
   local_gate: pass
   adoption_status: pending
-  approval_ref: "User 2026-09-16: \u8865\u505A\u6D6E\u70B9\u57FA\u7EBF per annotated audit, then discuss SP2 A16\
-    \ Down comparison; no automatic implementation of A16 Down."
+  approval_ref: 'User 2026-09-16: 补做浮点基线 per annotated audit, then discuss SP2 A16 Down comparison; no automatic
+    implementation of A16 Down.'
   parent_source: 5b01822b529fc2968c1b15124cdfd430709fef71
   record: docs/experiments/L32-0039.md
   runtime:
