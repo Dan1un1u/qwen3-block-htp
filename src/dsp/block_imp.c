@@ -919,6 +919,9 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         &arena, QBH_BLOCK_M * QBH_BLOCK_HEAD_DIM * sizeof(uint16_t));
     buffers->residual = qbh_arena_alloc(&arena,
         fp32_residual ? hidden_bytes * (fp32_residual==3U?2U:4U) : hidden_bytes);
+    /* EXP0285: preserve all downstream HMX/DMA arena addresses for the storage
+     * comparison. This reserved hole is never read or used as an FP32 copy. */
+    if(fp32_residual==3U && !qbh_arena_alloc(&arena,hidden_bytes*2U))return -1;
     /* FP32 reuses normalized for HMX retain stores, which require 2KiB alignment.
      * Q follows with the same alignment, so this moves existing padding only. */
     buffers->normalized = qbh_arena_alloc_aligned(&arena, hidden_bytes,
@@ -2094,7 +2097,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
               QBH_BLOCK_CROUTON_BOUNDARY_W4U8_QKV_INPUT | QBH_BLOCK_CROUTON_BOUNDARY_W4U8_O_OUTPUT) ||
          header->numerical_audit_enabled ||
          header->w4u8_boundary_audit_enabled ||
-         header->w4u8_decode_common_padding_poison)) { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
+         header->w4u8_decode_common_padding_poison)) return 0;
 #endif
 #ifdef QBH_MODEL_LLAMA32
     /* Llama A8 currently validates the unrotated head64 integer pipeline. */
@@ -2106,7 +2109,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
                                       header->kv_cache_v_format != QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1)))
             : (header->attention_pipeline_mode >= QBH_BLOCK_ATTENTION_PIPELINE_GQA ||
                (header->crouton_boundary_mode & QBH_BLOCK_CROUTON_BOUNDARY_QKV) != 0U))) {
-        { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
+        return 0;
     }
 #endif
     if (header == NULL || header->magic != QBH_BLOCK_MAGIC ||
@@ -2315,22 +2318,22 @@ static int qbh_header_valid(const struct qbh_block_header *header,
           !qbh_hmx_native_u8_cache_formats(
               header->kv_cache_k_format,
               header->kv_cache_v_format)))) {
-        { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
+        return 0;
     }
     element_bytes = header->variant == QBH_BLOCK_W4U8 ? 1U : 2U;
     if (!qbh_replay_session_valid(
             header, shared_bytes, element_bytes)) {
-        { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
+        return 0;
     }
     if (!qbh_full_stack_hidden_capture_valid(
             header, shared_bytes, element_bytes)) {
-        { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
+        return 0;
     }
     if (!qbh_w4u8_boundary_audit_valid(header, shared_bytes)) {
-        { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
+        return 0;
     }
     if (!qbh_generation_request_valid(header, shared_bytes)) {
-        { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
+        return 0;
     }
     if (qbh_slice_enabled(header)) {
         for (uint32_t slice_index = 0U;
@@ -2340,11 +2343,11 @@ static int qbh_header_valid(const struct qbh_block_header *header,
                     header, &header->slice_layers[slice_index],
                     QBH_VERTICAL_SLICE_FIRST_LAYER + slice_index,
                     shared_bytes, element_bytes)) {
-                { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
+                return 0;
             }
         }
     } else if (header->slice_mode != QBH_BLOCK_SLICE_DISABLED) {
-        { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
+        return 0;
     }
     if ((header->common_ops_mask &
          ~((uint32_t)QBH_BLOCK_COMMON_OPS_HVX_FP16)) != 0U ||
@@ -2694,7 +2697,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
           (header->mlp_mode != QBH_BLOCK_MLP_CONTROL &&
            !qbh_block_mlp_is_w4u8_streaming(
                header->mlp_mode))))) {
-        { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
+        return 0;
     }
     if (header->w4f16_requested_hvx_workers == 0U ||
         header->w4f16_requested_hvx_workers >
@@ -2706,7 +2709,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (header->w4f16_pipeline_mode ==
              QBH_BLOCK_W4F16_PIPELINE_EARLY_REGION &&
          header->w4f16_region_tiles > 32U)) {
-        { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
+        return 0;
     }
     element_bytes = header->variant == QBH_BLOCK_W4U8 ? 1U : 2U;
     if (!qbh_scan_request_valid(header, shared_bytes, element_bytes) ||
@@ -2732,7 +2735,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
             qbh_scan_physical_chunks(header) * QBH_BLOCK_M *
                 QBH_BLOCK_HEAD_DIM * sizeof(uint16_t) ||
         header->rope_sin_bytes != header->rope_cos_bytes) {
-        { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
+        return 0;
     }
     if (qbh_attention_u8_enabled(
             header->attention_pipeline_mode) &&
@@ -2741,7 +2744,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          !qbh_range_valid(header->attention_config_offset,
                           header->attention_config_bytes,
                           shared_bytes))) {
-        { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
+        return 0;
     }
     if (qbh_attention_u8_enabled(
             header->attention_pipeline_mode) &&
@@ -2752,20 +2755,20 @@ static int qbh_header_valid(const struct qbh_block_header *header,
              header->u8_attention_audit_output_offset,
              header->u8_attention_audit_output_bytes,
              shared_bytes))) {
-        { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
+        return 0;
     }
     if ((!qbh_attention_u8_enabled(
              header->attention_pipeline_mode) ||
          header->numerical_audit_enabled == 0U) &&
         (header->u8_attention_audit_output_offset != 0U ||
          header->u8_attention_audit_output_bytes != 0U)) {
-        { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
+        return 0;
     }
     if (!qbh_attention_u8_enabled(
             header->attention_pipeline_mode) &&
         (header->attention_config_offset != 0U ||
          header->attention_config_bytes != 0U)) {
-        { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
+        return 0;
     }
     if (qbh_block_mlp_is_w4u8_streaming(header->mlp_mode) &&
         (header->w4u8_silu_lut_bytes != QBH_MLP_LUT_BYTES * (QBH_SP2(header) && header->dense_r4_mode ? 2U : 1U) ||
@@ -2779,7 +2782,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          !qbh_range_valid(header->w4u8_down_bundle_offset,
                           header->w4u8_down_bundle_bytes,
                           shared_bytes))) {
-        { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
+        return 0;
     }
     if (!qbh_range_valid(header->input_norm_weight_offset,
                          header->input_norm_weight_bytes, shared_bytes) ||
@@ -2793,7 +2796,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
                          shared_bytes) ||
         !qbh_range_valid(header->rope_sin_offset, header->rope_sin_bytes,
                          shared_bytes)) {
-        { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
+        return 0;
     }
     for (uint32_t index = 0; index < QBH_BLOCK_PROJECTION_COUNT;
          ++index) {
@@ -2807,20 +2810,20 @@ static int qbh_header_valid(const struct qbh_block_header *header,
             desc->weight_bytes != expected_weight ||
             !qbh_range_valid(desc->weight_offset, desc->weight_bytes,
                              shared_bytes)) {
-            { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
+            return 0;
         }
         if (header->variant != QBH_BLOCK_F16F16 &&
             (desc->scale_bytes != desc->n * sizeof(float) ||
              !qbh_range_valid(desc->scale_offset, desc->scale_bytes,
                               shared_bytes))) {
-            { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
+            return 0;
         }
         if (header->variant == QBH_BLOCK_W4U8 &&
             (desc->bias_bytes !=
                  desc->n / QBH_HMX_OUTPUT_CHANNELS * QBH_HMX_BIAS_BYTES ||
              !qbh_range_valid(desc->bias_offset, desc->bias_bytes,
                               shared_bytes))) {
-            { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
+            return 0;
         }
         if (header->w4u8_decode_projection_mode ==
                 QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N) {
@@ -2829,11 +2832,11 @@ static int qbh_header_valid(const struct qbh_block_header *header,
                 !qbh_range_valid(desc->direct_n_weight_offset,
                                  desc->direct_n_weight_bytes,
                                  shared_bytes)) {
-                { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
+                return 0;
             }
         } else if (desc->direct_n_weight_offset != 0U ||
                    desc->direct_n_weight_bytes != 0U) {
-            { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
+            return 0;
         }
         if (desc->lpbq_mode != 0U) {
             if (desc->lpbq_mode > 3U || header->variant != QBH_BLOCK_W4U8 ||
@@ -2844,13 +2847,13 @@ static int qbh_header_valid(const struct qbh_block_header *header,
                 header->w4u8_decode_direct_n_mask != 63U ||
                 header->w4u8_decode_direct_n_gate_up_continuous != 0U ||
                 header->w4u8_decode_direct_n_o_gate_prefetch != 0U ||
-                header->w4u8_decode_direct_n_gate_up_swiglu_stream != 0U) { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
-        } else if (desc->lpbq_weight_offset || desc->lpbq_weight_bytes || header->projections[0].lpbq_mode) { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
+                header->w4u8_decode_direct_n_gate_up_swiglu_stream != 0U) return 0;
+        } else if (desc->lpbq_weight_offset || desc->lpbq_weight_bytes || header->projections[0].lpbq_mode) return 0;
     }
     for (uint32_t index = 0; index < QBH_BLOCK_QPARAM_COUNT; ++index) {
         if (!(header->qparams[index].scale > 0.0f) ||
             !isfinite(header->qparams[index].scale)) {
-            { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; }
+            return 0;
         }
     }
     return 1;
