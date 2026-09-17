@@ -425,3 +425,7 @@ User explicitly requests the annotated W16A16 baseline repairs and formal E2E be
 ## User-approved uniform INT16 Down control (2026-09-16; EXP-0284)
 
 User approves the prior annotated proposal. Implement uniform INT16 Down input on the existing SP2 two-byte native-W4 pipeline, comparing A8/SP2/INT16 with FP32 residual and frozen non-Down boundaries. This supersedes earlier A16 discussion-only and recipe freezes solely within docs/experiments/EXP-0284.md. Preserve all numerical/physical/evidence gates; no PPL or automatic promotion. Both-model device work serialized, Llama first.
+
+## User-approved FP16 residual speed experiment (2026-09-17; EXP-0285)
+
+User explicitly authorizes latest no-rotation W4A8-SP2 baseline with FP16 residual storage, preserving FP32 add/Norm and other boundaries. Supersedes FP32 residual freeze only for this bounded experiment. No PPL/model-quality evaluation. Hardware implementation correctness remains required against its own newly declared rounding contract. Same-binary FP32 control, fixed tokens M64+15; no automatic promotion. Routine repairs under PC037. Qwen first, Llama unchanged.

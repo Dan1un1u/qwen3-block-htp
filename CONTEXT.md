@@ -1,3 +1,7 @@
+# Current EXP0285 — FP16 residual storage speed
+
+User-authorized no-rotation SP2 comparison. Qwen first, latest source8cfc71a; original weights and scales frozen. FP16 storage at embedding and each residual add; FP32 projection scale/add/Norm, Norm then A8. Read docs/experiments/EXP-0285.md. No model quality evaluation or baseline promotion.
+
 # Active EXP-0284
 
 Uniform INT16 Down experiment approved and registered. Read docs/experiments/EXP-0284.md. Llama owns device first; Qwen local preparation. Float refresh complete, frozen. Latest A8/SP2 controls must retain shared optimizations. No quality claim.
