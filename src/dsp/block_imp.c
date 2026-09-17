@@ -3359,7 +3359,8 @@ static int qbh_hmx_run_w4u8_qkv_ring(
     return 0;
 }
 
-static void qbh_llama_fp32_epilogue(const uint8_t *,const uint8_t *,const float *,float *,uint32_t,uint32_t,int32_t);
+static inline float *qbh_residual_at(const float *,size_t,uint32_t);
+static void qbh_llama_fp32_epilogue(const uint8_t *,const uint8_t *,const float *,float *,uint32_t,uint32_t,int32_t,uint32_t);
 #include "llama_sp2_down.inc"
 #include "llama_fp32_residual.inc"
 
