@@ -7474,7 +7474,9 @@ static int qbh_run_generation_head_w4u8(
         header->generation_mode ==
             QBH_BLOCK_GENERATION_GREEDY_W4U8_BATCH8_RESIDENT_BIAS;
     const uint32_t direct_n_decode =
-#ifdef QBH_MODEL_LLAMA32
+#if defined(QBH_MODEL_LLAMA32) || defined(QBH_QWEN_06B)
+        /* The head consumes only the final normalized token in either phase.
+         * Reuse the Llama native-W4 double-buffered head for Qwen0.6B. */
         (logical_rows == 1U || logical_rows == QBH_BLOCK_M) &&
 #else
         header->scan_mode == QBH_BLOCK_SCAN_DECODE &&
