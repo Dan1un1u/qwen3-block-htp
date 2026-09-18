@@ -6625,6 +6625,18 @@ static int qbh_run_generation_head_w4f16_overlap(
         header->generation_final_norm_ticks +=
             HAP_perf_get_qtimer_count() - norm_start;
     }
+    /* Untimed campaign audits use the same final hidden/norm export as F16F16. */
+    if (header->generation_boundary_audit_enabled) {
+        const uint32_t row_bytes = QBH_BLOCK_HIDDEN * sizeof(__fp16);
+        if (qbh_dma_copy(header, shared + header->output_offset,
+                buffers->residual + (size_t)(logical_rows-1U)*row_bytes,
+                row_bytes, 0U) != 0 ||
+            qbh_dma_copy(header, shared + header->output_offset + row_bytes,
+                buffers->normalized + (size_t)(logical_rows-1U)*row_bytes,
+                row_bytes, 0U) != 0) return -2;
+        header->boundary_ddr_write_bytes += 2U*row_bytes;
+        header->boundary_dma_descriptor_count += 2U;
+    }
     qbh_pack_fp16_activation_row0(
         (const __fp16 *)buffers->normalized +
             (size_t)(logical_rows - 1U) * QBH_BLOCK_HIDDEN,
