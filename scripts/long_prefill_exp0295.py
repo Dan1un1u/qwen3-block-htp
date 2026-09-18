@@ -41,7 +41,7 @@ def prepare():
  cos=cos.cpu().numpy().reshape(832,128);sin=sin.cpu().numpy().reshape(832,128)
  assert np.array_equal(cos[:64],np.fromfile(src/'rope_cos_f16.bin','<f2').reshape(64,128))
  assert np.array_equal(sin[:64],np.fromfile(src/'rope_sin_f16.bin','<f2').reshape(64,128))
- put(R/'fixture.json',dict(prompt_ids=ids,fixed=fixed,text=text,original_config_sha256=sha(original/'config.json'),tokenizer_sha256=sha(original/'tokenizer.json'),purpose='project-owned correctness and timing fixture, not named dataset'))
+ put(R/'fixture.json',dict(prompt_ids=ids,fixed=fixed,text=text,original_config_sha256=sha(original/'config.json'),tokenizer_files={f.name:sha(f) for f in original.iterdir() if f.is_file() and ('token' in f.name or f.name in ['vocab.json','merges.txt'])},purpose='project-owned correctness and timing fixture, not named dataset'))
  for length in [64,65,128,129,536,741]:
   dst=M/str(length);dst.mkdir();changed=[]
   for n,v in mf['files'].items():

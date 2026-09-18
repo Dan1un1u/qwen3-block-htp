@@ -5615,7 +5615,8 @@ int main(int argc, char **argv) {
                   !qbh_hmx_native_f16_cache_formats(
                       kv_cache_k_format, kv_cache_v_format))
                : (variant != QBH_BLOCK_W4U8 ||
-                  !qbh_generation_u8_cache_formats(kv_cache_k_format, kv_cache_v_format))) ||
+                  !(qbh_generation_u8_cache_formats(kv_cache_k_format, kv_cache_v_format) ||
+                    (long_prompt_tokens && kv_cache_k_format==QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1 && kv_cache_v_format==QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1)))) ||
           replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS ||
           vertical_slice_mode != QBH_BLOCK_SLICE_ACTIVE_RANGE ||
           full_stack_stage_mode != QBH_BLOCK_FULL_STACK_RUN ||
