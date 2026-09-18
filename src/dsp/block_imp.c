@@ -897,18 +897,23 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
     uint32_t intermediate_bytes =
         QBH_BLOCK_M * QBH_BLOCK_INTERMEDIATE * element_bytes;
     uint32_t compact_w4 = 0U;
+    uint32_t compact_f16 = 0U;
 #ifdef QBH_LLAMA_3B
     compact_w4 = variant == QBH_BLOCK_W4F16 &&
                  mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE;
+    compact_f16 = variant == QBH_BLOCK_F16F16 &&
+                  mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8;
 #endif
+    /* Existing FP16 batch8 producer releases the same 16 ring slots, each
+     * containing eight output tiles. Reserve its live ring, not all K8192. */
     const uint32_t ring_bytes = QBH_BLOCK_MLP_CROUTON_RING_SLOTS *
-        (QBH_BLOCK_M / QBH_HMX_FP16_ROWS) * 4U * QBH_HMX_FP16_TILE_BYTES;
-    const uint32_t gate_bytes = compact_w4
+        (QBH_BLOCK_M / QBH_HMX_FP16_ROWS) * (compact_f16 ? 8U : 4U) * QBH_HMX_FP16_TILE_BYTES;
+    const uint32_t gate_bytes = (compact_w4 || compact_f16)
         ? (hidden_bytes > ring_bytes ? hidden_bytes : ring_bytes)
         : intermediate_bytes;
     const uint32_t head_scratch_bytes =
         qbh_align_up(QBH_QWEN3_VOCAB_SIZE * sizeof(float),128U) + 262144U;
-    const uint32_t up_bytes = compact_w4
+    const uint32_t up_bytes = (compact_w4 || compact_f16)
         ? (head_scratch_bytes > ring_bytes ? head_scratch_bytes : ring_bytes)
         : intermediate_bytes;
     uint32_t compressed_batch_factor =
@@ -998,7 +1003,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
     }
     /* O output dies after residual/post-norm, before Gate produces any rows. */
     buffers->attention_projection = qbh_arena_alloc_aligned(&arena,
-        variant == QBH_BLOCK_W4F16 && (mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 || compact_w4)
+        (variant == QBH_BLOCK_W4F16 || compact_f16) && (mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 || compact_w4)
             ? gate_bytes : hidden_bytes, QBH_HMX_FP16_TILE_BYTES);
 #else
     buffers->attention_projection = qbh_arena_alloc(&arena, hidden_bytes);
@@ -1006,7 +1011,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
     if (mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE ||
         mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8) {
 #ifdef QBH_MODEL_LLAMA32
-        if (variant == QBH_BLOCK_W4F16 && (mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 || compact_w4))
+        if ((variant == QBH_BLOCK_W4F16 || compact_f16) && (mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 || compact_w4))
             buffers->gate = buffers->attention_projection;
         else
 #endif
@@ -1037,7 +1042,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
 #ifdef QBH_MODEL_LLAMA32
     /* Input/post-norm consumers finish before Down; next-layer norm starts only
      * after the final residual has consumed Down. No concurrent owner. */
-    if (variant == QBH_BLOCK_W4F16 && (mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 || compact_w4))
+    if ((variant == QBH_BLOCK_W4F16 || compact_f16) && (mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 || compact_w4))
         buffers->down = buffers->normalized;
     else
 #endif
@@ -1047,7 +1052,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
             (fp32_residual && !r4_mode ? 1U : (uint32_t)sizeof(uint16_t)),
         r4_mode ? 32768U : QBH_HMX_FP16_TILE_BYTES);
 #ifdef QBH_LLAMA_3B
-    if (variant != QBH_BLOCK_W4U8) {
+    if (variant == QBH_BLOCK_W4F16) {
         buffers->compressed_weight = qbh_arena_alloc(
             &arena, qbh_w4f16_compressed_capacity(mlp_mode));
         buffers->compressed_weight_alt = qbh_arena_alloc(
@@ -1087,9 +1092,9 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         &arena, expanded_buffer_bytes,
         r4_mode ? 32768U : QBH_HMX_FP16_TILE_BYTES);
 #ifdef QBH_LLAMA_3B
-    /* A8 direct-W4 uses these DMA slots. A16 has separate compressed slots;
-     * both retain the start of compressed storage as the attention boundary. */
-    if (variant == QBH_BLOCK_W4U8) {
+    /* Only W4A16 needs separate packed/compressed storage. FP16 and direct
+     * W4 alias this unused name to DMA slots; attention ends before it. */
+    if (variant != QBH_BLOCK_W4F16) {
         buffers->compressed_weight = buffers->expanded_weight;
         buffers->compressed_weight_alt = buffers->expanded_weight_alt;
     }
