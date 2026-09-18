@@ -1,3 +1,6 @@
+# EXP-0295 migration checkpoint (active)
+Source3a72cd5 on codex/exp-0295-qwen-long-prefill. Evidence /mnt/d/llm_exp/results/qwen3-block-htp/exp0295; read IMPLEMENTATION.md and docs/experiments/EXP-0295.md. Both sizes' local fixtures and independent SDK-rsqrt-aware CPU references complete.0.6B fixtures deployed; 1.7B deployment awaits device.0.6B native-V candidate passed six-shape arithmetic checks; subsequent head128 vector cache-append build awaits final recheck. Missing DSP include, scalar fallback and tooling failures preserved. Fair formal long control opt11, candidate31; native segmented-cache short control retained. campaign.py waits for L32-0052 profiling_summary.json, then serializes0.6B and1.7B correctness, five-short/ten-formal-repeat10. No duplicate hardware jobs; Llama currently owns device. No final speed/quality/baseline claim yet.
+
 # EXP0295 active: long-prefill migration for both Qwen sizes
 Read docs/experiments/EXP-0295.md. Local preparation while L32-0052 owns hardware.
 
