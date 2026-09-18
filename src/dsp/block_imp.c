@@ -20576,11 +20576,11 @@ static int qbh_scan_u8_attention(
                 qbh_attention_u8_pack_k_row_major(plane_a,valid_tokens,padded_tokens,config,ref,rb);
                 uint32_t nw=0,nb=0;
                 for(uint32_t i=0;i<padded_tokens*QBH_BLOCK_HEAD_DIM;++i)
-                    if(weight[i]!=ref[i]) {if(nw<4U) FARF(ALWAYS,"LONG K weight %u actual %d ref %d",i,weight[i],ref[i]);++nw;}
+                    if(weight[i]!=ref[i]) {if(nw==0U)header->u8_attention_k_pack_ticks=((uint64_t)i<<32)|((uint8_t)weight[i]<<8)|(uint8_t)ref[i];if(nw<4U) FARF(ALWAYS,"LONG K weight %u actual %d ref %d",i,weight[i],ref[i]);++nw;}
                 for(uint32_t i=0;i<qk_bias_bytes/4U;++i)
-                    if(qk_bias[i]!=rb[i]) {if(nb<4U) FARF(ALWAYS,"LONG K bias %u actual %d ref %d",i,(int)qk_bias[i],(int)rb[i]);++nb;}
+                    if(qk_bias[i]!=rb[i]) {if(nb==0U)header->u8_attention_v_pack_ticks=((uint64_t)qk_bias[i]<<32)|rb[i];if(nb<4U) FARF(ALWAYS,"LONG K bias %u actual %d ref %d",i,(int)qk_bias[i],(int)rb[i]);++nb;}
                 FARF(ALWAYS,"LONG K diagnostic weight=%u bias=%u",nw,nb);
-                if(nw||nb)return -1;
+                if(nw||nb){header->scan_total_kv_length=nw;header->scan_padded_kv_length=nb;return -1;}
             }
             header->u8_attention_k_pack_ticks +=
                 HAP_perf_get_qtimer_count() - start;
