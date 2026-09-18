@@ -1247,6 +1247,58 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
 static int qbh_projection_shape_valid(
     uint32_t index, const struct qbh_block_projection_desc *desc);
 
+/* L32-0049: resident FP16 shards, one mapped window per token RPC.
+ * A window is changed only between complete blocks, with HMX jobs joined
+ * by qbh_run_one_block and DMA explicitly drained before HAP_munmap2. */
+static const uint8_t *qbh_weight_pointer(const uint8_t *shared,
+        const struct qbh_block_projection_desc *desc) {
+    const struct qbh_block_header *h=(const struct qbh_block_header *)shared;
+    if(desc->weight_segment)
+        return (const uint8_t *)(uintptr_t)
+            h->weight_segment_address[desc->weight_segment-1U]+desc->weight_offset;
+    return shared+desc->weight_offset;
+}
+static int qbh_weight_range_valid(const struct qbh_block_header *h,
+        const struct qbh_block_projection_desc *d,uint32_t shared_bytes) {
+    if(!d->weight_segment)
+        return d->weight_offset>=sizeof(*h) && d->weight_offset<=shared_bytes &&
+            d->weight_bytes<=shared_bytes-d->weight_offset;
+    if(h->variant!=QBH_BLOCK_F16F16 || d->weight_segment>h->weight_segment_count ||
+       h->weight_segment_count>QBH_WEIGHT_SEGMENT_MAX)return 0;
+    uint32_t n=h->weight_segments[d->weight_segment-1U].bytes;
+    return d->weight_offset<=n && d->weight_bytes<=n-d->weight_offset;
+}
+static int qbh_release_weight_window(struct qbh_block_header *h) {
+    if(qbh_dma_wait_idle()!=0)return -1;
+    asm volatile("syncht" ::: "memory");
+    for(uint32_t i=0;i<h->weight_segment_count;i++)if(h->weight_segment_address[i]){
+        uint64_t start=HAP_perf_get_qtimer_count();
+        int r=HAP_munmap2((void *)(uintptr_t)h->weight_segment_address[i],h->weight_segments[i].bytes);
+        h->weight_segment_unmap_ticks+=HAP_perf_get_qtimer_count()-start;
+        if(r){h->weight_segment_error=r;return -1;}
+        h->weight_segment_address[i]=0U;h->weight_segment_unmap_count++;
+    }
+    return 0;
+}
+static int qbh_select_weight_window(struct qbh_block_header *h,uint32_t segment) {
+    if(!segment)return 0;
+    if(segment>h->weight_segment_count)return -1;
+    uint32_t i=segment-1U;
+    if(h->weight_segment_address[i])return 0;
+    if(qbh_release_weight_window(h))return -1;
+    uint64_t start=HAP_perf_get_qtimer_count();
+    void *p=HAP_mmap2(NULL,h->weight_segments[i].bytes,HAP_PROT_READ|HAP_PROT_WRITE,0,
+                     h->weight_segments[i].fd,0);
+    h->weight_segment_map_ticks+=HAP_perf_get_qtimer_count()-start;
+    if(!p || p==(void *)-1){h->weight_segment_error=-1;return -1;}
+    h->weight_segment_address[i]=(uint32_t)(uintptr_t)p;
+    h->weight_segment_map_count++;
+    if((uint64_t)(uintptr_t)p+h->weight_segments[i].bytes>UINT64_C(0x100000000)){
+        h->weight_segment_error=-2;return -1;
+    }
+    return 0;
+}
+
 static int qbh_range_valid(uint32_t offset, uint32_t bytes,
                            uint32_t shared_bytes) {
     return offset >= sizeof(struct qbh_block_header) &&
@@ -1633,8 +1685,7 @@ static int qbh_slice_layer_desc_valid(
                 : desc->k * desc->n / 2U;
         if (!qbh_projection_shape_valid(index, desc) ||
             desc->weight_bytes != expected_weight ||
-            !qbh_range_valid(desc->weight_offset, desc->weight_bytes,
-                             shared_bytes)) {
+            !qbh_weight_range_valid(header, desc, shared_bytes)) {
             return 0;
         }
         if (header->variant != QBH_BLOCK_F16F16 &&
@@ -2132,6 +2183,26 @@ static int qbh_scan_request_valid(const struct qbh_block_header *header,
 static int qbh_header_valid(const struct qbh_block_header *header,
                             uint32_t shared_bytes) {
     uint32_t element_bytes;
+    if(!header || header->weight_segment_count>QBH_WEIGHT_SEGMENT_MAX)return 0;
+    if(header->weight_segment_count){
+        if(header->variant!=QBH_BLOCK_F16F16 ||
+           header->replay_mode!=QBH_BLOCK_REPLAY_CONTINUOUS ||
+           header->slice_mode==QBH_BLOCK_SLICE_DISABLED ||
+           header->full_stack_stage_mode==QBH_BLOCK_FULL_STACK_MAP_GATE ||
+           header->generation_lm_head.weight_segment)return 0;
+        for(uint32_t i=0;i<header->weight_segment_count;i++){
+            if(header->weight_segments[i].fd<0 || !header->weight_segments[i].bytes ||
+               header->weight_segments[i].bytes>1073741824U ||
+               header->weight_segments[i].bytes%4096U)return 0;
+            for(uint32_t j=0;j<i;j++)if(header->weight_segments[i].fd==header->weight_segments[j].fd)return 0;
+        }
+        for(uint32_t j=0;j<QBH_VERTICAL_SLICE_LAYER_COUNT;j++){
+            uint32_t seg=header->slice_layers[j].projections[0].weight_segment;
+            if(!seg || seg>header->weight_segment_count)return 0;
+            for(uint32_t k=1;k<QBH_BLOCK_PROJECTION_COUNT;k++)
+                if(header->slice_layers[j].projections[k].weight_segment!=seg)return 0;
+        }
+    }
 #ifdef QBH_LLAMA_3B
     if (!header || header->dense_r3_mode || header->dense_r4_mode ||
         header->paper_format_disable || header->paper_pipeline_disable) return 0;
@@ -2145,7 +2216,9 @@ static int qbh_header_valid(const struct qbh_block_header *header,
             header->mlp_mode!=QBH_BLOCK_MLP_CROUTON_NATIVE ||
             header->w4f16_pipeline_mode!=QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH)
             return 0;
-    } else return 0; /* Full3B FP16 weights exceed the current uint32 ABI. */
+    } else if(header->variant==QBH_BLOCK_F16F16) {
+        if(QBH_FP32_RESIDUAL(header) || QBH_LLAMA_SP2(header))return 0;
+    } else return 0;
 #endif
 #ifdef QBH_MODEL_LLAMA32
     if (header && QBH_FP32_RESIDUAL(header) &&
@@ -2861,8 +2934,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
                 : desc->k * desc->n / 2U;
         if (!qbh_projection_shape_valid(index, desc) ||
             desc->weight_bytes != expected_weight ||
-            !qbh_range_valid(desc->weight_offset, desc->weight_bytes,
-                             shared_bytes)) {
+            !qbh_weight_range_valid(header, desc, shared_bytes)) {
             do { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; } while(0);
         }
         if (header->variant != QBH_BLOCK_F16F16 &&
@@ -3260,7 +3332,7 @@ static int qbh_w4f16_start_cross_prefetch(
     state->start_ticks = HAP_perf_get_qtimer_count();
     result = qbh_dma_start_weight_prefetch(
         &state->descriptor, buffers->compressed_weight,
-        shared + next_desc->weight_offset, first_batch_bytes);
+        qbh_weight_pointer(shared, next_desc), first_batch_bytes);
     if (result != 0) {
         state->start_ticks = 0U;
         return result;
@@ -6677,7 +6749,7 @@ static int qbh_run_generation_head_w4f16_overlap(
         dma_start = HAP_perf_get_qtimer_count();
         if (qbh_dma_copy(
                 header, compressed_slots[0],
-                shared + head->weight_offset,
+                qbh_weight_pointer(shared, head),
                 first_tiles * compressed_tile_bytes, 1U) != 0) {
             return -4;
         }
@@ -6699,7 +6771,7 @@ static int qbh_run_generation_head_w4f16_overlap(
         prefetch_start = HAP_perf_get_qtimer_count();
         result = qbh_dma_start_weight_prefetch(
             &prefetch_descriptor, compressed_slots[1],
-            shared + head->weight_offset +
+            qbh_weight_pointer(shared, head) +
                 (size_t)dma_batch_tiles * compressed_tile_bytes,
             next_tiles * compressed_tile_bytes);
         if (result != 0) {
@@ -6768,7 +6840,7 @@ static int qbh_run_generation_head_w4f16_overlap(
                 result = qbh_dma_start_weight_prefetch(
                     &prefetch_descriptor,
                     compressed_slots[(group_index + 1U) & 1U],
-                    shared + head->weight_offset +
+                    qbh_weight_pointer(shared, head) +
                         (size_t)(n_tile + group_limit) *
                             compressed_tile_bytes,
                     next_tiles * compressed_tile_bytes);
@@ -6927,7 +6999,7 @@ static int qbh_run_generation_head_w4f16_overlap(
                 result = qbh_dma_start_weight_prefetch(
                     &prefetch_descriptor,
                     compressed_slots[(batch_index + 1U) & 1U],
-                    shared + head->weight_offset +
+                    qbh_weight_pointer(shared, head) +
                         (size_t)following_first * compressed_tile_bytes,
                     following_tiles * compressed_tile_bytes);
                 if (result != 0) {
@@ -7114,7 +7186,7 @@ static int qbh_run_generation_head_f16f16(
         int hmx_result;
         if (!prefetch || n_tile == 0U) {
             if (qbh_dma_copy(header, weight_slots[slot],
-                shared + head->weight_offset + (size_t)n_tile * tile_bytes,
+                qbh_weight_pointer(shared, head) + (size_t)n_tile * tile_bytes,
                 count * tile_bytes, 1U) != 0) return -3;
             header->generation_lm_head_ddr_read_bytes += count * tile_bytes;
             header->weight_ddr_read_bytes += count * tile_bytes;
@@ -7130,7 +7202,7 @@ static int qbh_run_generation_head_f16f16(
             if (next_count > group_limit) next_count = group_limit;
             dma_result = qbh_dma_start_weight_prefetch(&descriptor,
                 weight_slots[slot ^ 1U],
-                shared + head->weight_offset + (size_t)(n_tile + count) * tile_bytes,
+                qbh_weight_pointer(shared, head) + (size_t)(n_tile + count) * tile_bytes,
                 next_count * tile_bytes);
             if (dma_result == 0) {
                 dma_active = 1;
@@ -7261,7 +7333,7 @@ static int qbh_run_generation_head_w4f16(
         stage_start = HAP_perf_get_qtimer_count();
         if (qbh_dma_copy(
                 header, head_compressed_weight,
-                shared + head->weight_offset +
+                qbh_weight_pointer(shared, head) +
                     (size_t)n_tile * compressed_tile_bytes,
                 group_tiles * compressed_tile_bytes, 1U) != 0) {
             return -3;
@@ -7477,7 +7549,7 @@ static int qbh_stage_generation_w4u8_group(
 
     if (qbh_dma_copy(
             header, compressed,
-            shared + head->weight_offset +
+            qbh_weight_pointer(shared, head) +
                 (size_t)first_n_tile * compressed_tile_bytes,
             compressed_bytes, 1U) != 0) {
         return -1;
@@ -8288,7 +8360,7 @@ static __attribute__((noinline)) int qbh_run_f16f16_pipelined_projection(
         uint32_t first_group_bytes =
             first_group_tiles * weight_bytes_per_tile;
         if (qbh_dma_copy(header, weight_slots[0],
-                         shared + desc->weight_offset,
+                         qbh_weight_pointer(shared, desc),
                          first_group_bytes, 1U) != 0) {
             qbh_record_projection_failure(header, desc, 0U, 21U, -1);
             return -1;
@@ -8339,7 +8411,7 @@ static __attribute__((noinline)) int qbh_run_f16f16_pipelined_projection(
             prefetch_result = qbh_dma_start_weight_prefetch(
                 &prefetch_descriptor,
                 weight_slots[next_group_index & 1U],
-                shared + desc->weight_offset +
+                qbh_weight_pointer(shared, desc) +
                     (size_t)next_tile * weight_bytes_per_tile,
                 next_group_bytes);
             if (prefetch_result == 0) {
@@ -8451,7 +8523,7 @@ qbh_run_f16f16_interleaved_gate_up(
     header->f16f16_weight_batch_n_tiles = group_tiles;
     if (qbh_dma_copy(
             header, weight_slots[0],
-            shared + descs[0]->weight_offset,
+            qbh_weight_pointer(shared, descs[0]),
             weight_bytes, 1U) != 0) {
         qbh_record_projection_failure(
             header, descs[0], 0U, 60U, -1);
@@ -8494,7 +8566,7 @@ qbh_run_f16f16_interleaved_gate_up(
             prefetch_start = HAP_perf_get_qtimer_count();
             prefetch_result = qbh_dma_start_weight_prefetch(
                 &prefetch_descriptor, weight_slots[next_slot],
-                shared + descs[next_projection]->weight_offset +
+                qbh_weight_pointer(shared, descs[next_projection]) +
                     (size_t)next_group * weight_bytes,
                 weight_bytes);
             if (prefetch_result == 0) {
@@ -8703,7 +8775,7 @@ static int qbh_run_w4f16_projection_early_region(
                 ? n_tiles : QBH_BLOCK_W4F16_DMA_BATCH_N_TILES;
         uint32_t first_batch_bytes = first_batch_tiles * compressed_bytes;
         if (qbh_dma_copy(header, compressed_slots[0],
-                         shared + desc->weight_offset,
+                         qbh_weight_pointer(shared, desc),
                          first_batch_bytes, 1U) != 0) {
             qbh_record_projection_failure(header, desc, 0U, 31U, -1);
             return -1;
@@ -8722,7 +8794,7 @@ static int qbh_run_w4f16_projection_early_region(
         prefetch_start = HAP_perf_get_qtimer_count();
         result = qbh_dma_start_weight_prefetch(
             &prefetch_descriptor, compressed_slots[1],
-            shared + desc->weight_offset +
+            qbh_weight_pointer(shared, desc) +
                 (size_t)QBH_BLOCK_W4F16_DMA_BATCH_N_TILES *
                     compressed_bytes,
             second_batch_bytes);
@@ -8781,7 +8853,7 @@ static int qbh_run_w4f16_projection_early_region(
                 prefetch_start = HAP_perf_get_qtimer_count();
                 result = qbh_dma_start_weight_prefetch(
                     &prefetch_descriptor, compressed_slots[following_slot],
-                    shared + desc->weight_offset +
+                    qbh_weight_pointer(shared, desc) +
                         (size_t)following_first_tile * compressed_bytes,
                     following_bytes);
                 if (result != 0) {
@@ -8958,7 +9030,7 @@ static int qbh_run_w4f16_projection(
                 ? n_tiles : QBH_BLOCK_W4F16_DMA_BATCH_N_TILES;
         uint32_t first_batch_bytes = first_batch_tiles * compressed_bytes;
         if (qbh_dma_copy(header, compressed_slots[0],
-                         shared + desc->weight_offset,
+                         qbh_weight_pointer(shared, desc),
                          first_batch_bytes, 1U) != 0) {
             qbh_record_projection_failure(header, desc, 0U, 11U, -1);
             return -1;
@@ -8978,7 +9050,7 @@ static int qbh_run_w4f16_projection(
         prefetch_start = HAP_perf_get_qtimer_count();
         result = qbh_dma_start_weight_prefetch(
             &prefetch_descriptor, compressed_slots[1],
-            shared + desc->weight_offset +
+            qbh_weight_pointer(shared, desc) +
                 (size_t)QBH_BLOCK_W4F16_DMA_BATCH_N_TILES *
                     compressed_bytes,
             second_batch_bytes);
@@ -9115,7 +9187,7 @@ static int qbh_run_w4f16_projection(
                     result = qbh_dma_start_weight_prefetch(
                         &prefetch_descriptor,
                         compressed_slots[following_slot],
-                        shared + desc->weight_offset +
+                        qbh_weight_pointer(shared, desc) +
                             (size_t)following_first_tile *
                                 compressed_bytes,
                         following_batch_bytes);
@@ -9263,7 +9335,7 @@ static int qbh_w4f16_mlp_start_prefetch(
     state->prefetch_start = HAP_perf_get_qtimer_count();
     result = qbh_dma_start_weight_prefetch(
         &state->prefetch_descriptor, state->compressed_slots[slot],
-        shared + state->desc->weight_offset +
+        qbh_weight_pointer(shared, state->desc) +
             (size_t)first_tile * state->compressed_bytes_per_tile,
         bytes);
     if (result != 0) {
@@ -9600,7 +9672,7 @@ static int qbh_run_w4f16_interleaved_gate_up(
     if (result == 0) {
         if (qbh_dma_copy(
                 header, gate.compressed_slots[0],
-                shared + gate.desc->weight_offset,
+                qbh_weight_pointer(shared, gate.desc),
                 compressed_batch_bytes, 1U) != 0) {
             qbh_record_projection_failure(
                 header, gate.desc, 0U, 51U, -1);
@@ -9611,7 +9683,7 @@ static int qbh_run_w4f16_interleaved_gate_up(
     }
     if (qbh_dma_copy(
             header, up.compressed_slots[0],
-            shared + up.desc->weight_offset,
+            qbh_weight_pointer(shared, up.desc),
             compressed_batch_bytes, 1U) != 0) {
         qbh_record_projection_failure(
             header, up.desc, 0U, 52U, -1);
@@ -10650,7 +10722,7 @@ static int qbh_run_w4u8_qkvo_pipelined_projection(
         dma_start = HAP_perf_get_qtimer_count();
         result = qbh_dma_start_w4u8_batch_prefetch(
             prefetch_descriptors, compressed_slots[slot],
-            shared + desc->weight_offset +
+            qbh_weight_pointer(shared, desc) +
                 (size_t)batch_base * compressed_tile_bytes,
             weight_bytes, bias_slots[slot],
             shared + desc->bias_offset +
@@ -11378,7 +11450,7 @@ static int qbh_run_w4f16_qkv_prefix4(
 
     if (qbh_dma_copy(
             header, compressed_slots[0],
-            shared + first_dma.desc->weight_offset +
+            qbh_weight_pointer(shared, first_dma.desc) +
                 (size_t)first_dma.first_n_tile *
                     compressed_bytes_per_tile,
             dma_batch_tiles * compressed_bytes_per_tile, 1U) != 0) {
@@ -11399,7 +11471,7 @@ static int qbh_run_w4f16_qkv_prefix4(
         prefetch_start = HAP_perf_get_qtimer_count();
         result = qbh_dma_start_weight_prefetch(
             &prefetch_descriptor, compressed_slots[1],
-            shared + next_dma.desc->weight_offset +
+            qbh_weight_pointer(shared, next_dma.desc) +
                 (size_t)next_dma.first_n_tile *
                     compressed_bytes_per_tile,
             dma_batch_tiles * compressed_bytes_per_tile);
@@ -11536,7 +11608,7 @@ static int qbh_run_w4f16_qkv_prefix4(
                     result = qbh_dma_start_weight_prefetch(
                         &prefetch_descriptor,
                         compressed_slots[(next_batch + 1U) & 1U],
-                        shared + following.desc->weight_offset +
+                        qbh_weight_pointer(shared, following.desc) +
                             (size_t)following.first_n_tile *
                                 compressed_bytes_per_tile,
                         dma_batch_tiles *
@@ -11801,7 +11873,7 @@ static int qbh_run_projection(
         failure_step = 1U;
         if (qbh_dma_copy(
                 header, w4f16_compressed_slots[0],
-                shared + desc->weight_offset,
+                qbh_weight_pointer(shared, desc),
                 compressed_bytes, 1U) != 0) {
             qbh_record_projection_failure(
                 header, desc, 0U, failure_step, -1);
@@ -11829,7 +11901,7 @@ static int qbh_run_projection(
         if (header->variant == QBH_BLOCK_W4F16) {
             result = 0;
         } else if (header->variant == QBH_BLOCK_F16F16) {
-            const uint8_t *source = shared + desc->weight_offset +
+            const uint8_t *source = qbh_weight_pointer(shared, desc) +
                 (size_t)n_tile * fp16_weight_bytes;
             failure_step = 1U;
             result = qbh_dma_copy(header, buffers->expanded_weight,
@@ -11837,7 +11909,7 @@ static int qbh_run_projection(
             header->weight_ddr_read_bytes += fp16_weight_bytes;
             ++header->weight_dma_descriptor_count;
         } else {
-            const uint8_t *source = shared + desc->weight_offset +
+            const uint8_t *source = qbh_weight_pointer(shared, desc) +
                 (size_t)n_tile * compressed_bytes;
             failure_step = 1U;
             result = qbh_dma_copy(header, buffers->compressed_weight,
@@ -11874,7 +11946,7 @@ static int qbh_run_projection(
             result = qbh_dma_start_weight_prefetch(
                 &w4f16_prefetch_descriptor,
                 w4f16_compressed_slots[next_slot],
-                shared + desc->weight_offset +
+                qbh_weight_pointer(shared, desc) +
                     (size_t)next_tile * compressed_bytes,
                 compressed_bytes);
             if (result != 0) {
@@ -22730,6 +22802,10 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
             profile->layer_index = layer_index;
             profile->cache_valid_before = layer->valid_length;
             qbh_bind_slice_layer(header, slice_index);
+            if(qbh_select_weight_window(header,header->projections[0].weight_segment)!=0){
+                header->dsp_status=QBH_BLOCK_STATUS_METADATA_DMA_FAILED;
+                header->projection_failure_step=__LINE__;result=AEE_EFAILED;goto stop_worker;
+            }
             if (persistent_v_tail_atlas != NULL) {
                 buffers.persistent_v_tail = persistent_v_tail_atlas +
                     (size_t)slice_index *
@@ -23169,6 +23245,9 @@ stop_worker:
     header->hmx_worker_status = thread_exit_status;
     header->hmx_compute_ticks = worker.compute_ticks;
     header->hmx_ready_wait_ticks = worker.ready_wait_ticks;
+    if(header->weight_segment_count && qbh_release_weight_window(header)!=0){
+        header->dsp_status=QBH_BLOCK_STATUS_METADATA_DMA_FAILED;result=AEE_EFAILED;
+    }
     header->qtimer_end = HAP_perf_get_qtimer_count();
     header->total_ticks = header->qtimer_end - header->qtimer_start;
     if (header->attribution_enabled != 0U && invocation_start != 0U &&

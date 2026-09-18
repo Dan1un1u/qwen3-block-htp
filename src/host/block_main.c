@@ -34,7 +34,17 @@ struct qbh_file_slot {
     char path[QBH_HOST_PATH_BYTES];
     uint32_t expected_bytes;
     uint32_t offset;
+    uint32_t weight_segment;
 };
+
+/* One bounded resident shard per four layers; no timed host copying. */
+static size_t qbh_weight_segment_sizes[QBH_WEIGHT_SEGMENT_MAX];
+static uint8_t *qbh_weight_segment_data[QBH_WEIGHT_SEGMENT_MAX];
+static int qbh_weight_segment_registered[QBH_WEIGHT_SEGMENT_MAX];
+static int qbh_host_segmented(void) {
+    const char *v=getenv("QBH_F16_SEGMENTED");
+    return v && strcmp(v,"1")==0;
+}
 
 struct qbh_vertical_layer_slots {
     struct qbh_file_slot qparam;
@@ -1300,6 +1310,15 @@ static int qbh_prepare_slot(struct qbh_file_slot *slot,
         qbh_file_size(slot->path, expected_bytes) != 0) {
         return -1;
     }
+    slot->weight_segment=0U;
+    if (qbh_host_segmented() && strncmp(file,"layer",5)==0 &&
+        strstr(file,"_weight_f16_hmx.bin") != NULL) {
+        unsigned layer_index;
+        if(sscanf(file,"layer%u/",&layer_index)!=1 ||
+           layer_index/4U>=QBH_WEIGHT_SEGMENT_MAX)return -1;
+        slot->weight_segment=layer_index/4U+1U;
+        cursor=&qbh_weight_segment_sizes[slot->weight_segment-1U];
+    }
     *cursor = qbh_align_up_size(*cursor, QBH_HOST_ALIGNMENT);
     if (*cursor > UINT32_MAX || expected_bytes > UINT32_MAX - *cursor) {
         return -1;
@@ -1317,6 +1336,7 @@ static int qbh_read_slot(uint8_t *shared,
     if (stream == NULL) {
         return -1;
     }
+    if(slot->weight_segment) shared=qbh_weight_segment_data[slot->weight_segment-1U];
     read_bytes = fread(shared + slot->offset, 1, slot->expected_bytes,
                        stream);
     if (fclose(stream) != 0 || read_bytes != slot->expected_bytes) {
@@ -3369,6 +3389,12 @@ static void qbh_print_replay_profile(
             profile->cache_ddr_read_bytes,
             profile->cache_ddr_write_bytes);
     }
+    QBH_REPLAY_PROFILE_U32(weight_segment_count);
+    QBH_REPLAY_PROFILE_U32(weight_segment_map_count);
+    QBH_REPLAY_PROFILE_U32(weight_segment_unmap_count);
+    QBH_REPLAY_PROFILE_I32(weight_segment_error);
+    QBH_REPLAY_PROFILE_U64(weight_segment_map_ticks);
+    QBH_REPLAY_PROFILE_U64(weight_segment_unmap_ticks);
     printf("}\n");
 
 #undef QBH_REPLAY_PROFILE_U32
@@ -6583,6 +6609,19 @@ int main(int argc, char **argv) {
         }
         memset(shared, 0, total_bytes);
         header = (struct qbh_block_header *)shared;
+        if(qbh_host_segmented() && (variant!=QBH_BLOCK_F16F16 ||
+           vertical_slice_mode==QBH_BLOCK_SLICE_DISABLED))goto cleanup;
+        for(uint32_t sg=0;sg<QBH_WEIGHT_SEGMENT_MAX;sg++) {
+            size_t n=qbh_weight_segment_sizes[sg];
+            if(!n)break;
+            if(n>1073741824U)goto cleanup;
+            qbh_weight_segment_data[sg]=rpcmem_alloc2(RPCMEM_HEAP_ID_SYSTEM,RPCMEM_FLAG_UNCACHED,n);
+            if(!qbh_weight_segment_data[sg])goto cleanup;
+            header->weight_segments[sg].fd=rpcmem_to_fd(qbh_weight_segment_data[sg]);
+            if(header->weight_segments[sg].fd<0)goto cleanup;
+            header->weight_segments[sg].bytes=(uint32_t)n;
+            header->weight_segment_count=sg+1U;
+        }
         header->output_offset = (uint32_t)output_offset;
     }
 
@@ -7158,6 +7197,7 @@ int main(int argc, char **argv) {
                 desc->k = qbh_projection_k[projection];
                 desc->n = qbh_projection_n[projection];
                 desc->weight_offset = slots->weights[projection].offset;
+                desc->weight_segment = slots->weights[projection].weight_segment;
                 desc->weight_bytes =
                     slots->weights[projection].expected_bytes;
                 desc->lpbq_mode = lpbq_mode;
@@ -7327,6 +7367,12 @@ int main(int argc, char **argv) {
         goto cleanup;
     }
     mapped = 1;
+    for(uint32_t sg=0;sg<header->weight_segment_count;sg++) {
+        if(fastrpc_mmap(CDSP_DOMAIN_ID,header->weight_segments[sg].fd,
+             qbh_weight_segment_data[sg],0,header->weight_segments[sg].bytes,
+             FASTRPC_MAP_FD_DELAYED)!=AEE_SUCCESS)goto cleanup;
+        qbh_weight_segment_registered[sg]=1;
+    }
     open_map_ns = qbh_monotonic_ns() - open_map_start;
     prepare_start = qbh_monotonic_ns();
     prepare_result = qbh_session_prepare(&session);
@@ -8597,6 +8643,13 @@ int main(int argc, char **argv) {
                     : 1;
 
 cleanup:
+    for(uint32_t sg=0;sg<QBH_WEIGHT_SEGMENT_MAX;sg++) {
+        if(qbh_weight_segment_registered[sg] &&
+           fastrpc_munmap(CDSP_DOMAIN_ID,header->weight_segments[sg].fd,
+             qbh_weight_segment_data[sg],header->weight_segments[sg].bytes)!=AEE_SUCCESS)
+            exit_code=1;
+        if(qbh_weight_segment_data[sg])rpcmem_free(qbh_weight_segment_data[sg]);
+    }
     if (session.handle != (remote_handle64)-1) {
         (void)qbh_session_close(&session);
     }

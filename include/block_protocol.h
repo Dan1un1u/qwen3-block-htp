@@ -9,11 +9,11 @@
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
 #ifdef QBH_MODEL_LLAMA32
-#define QBH_BLOCK_ABI_VERSION UINT32_C(131)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(132)
 #define QBH_LLAMA_SP2(h) ((h)->llama_sp2_mode)
 #define QBH_FP32_RESIDUAL(h) ((h)->llama_fp32_residual)
 #else
-#define QBH_BLOCK_ABI_VERSION UINT32_C(127)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(128)
 #define QBH_LLAMA_SP2(h) 0U
 #define QBH_FP32_RESIDUAL(h) 0U
 #endif
@@ -658,11 +658,15 @@ struct qbh_block_qparam {
     float maximum;
 };
 
+#define QBH_WEIGHT_SEGMENT_MAX 16U
+struct qbh_weight_segment_desc { int32_t fd; uint32_t bytes; };
+
 struct qbh_block_projection_desc {
     uint32_t k;
     uint32_t n;
     uint32_t weight_offset;
     uint32_t weight_bytes;
+    uint32_t weight_segment; /* 0: shared arena; otherwise 1-based resident shard. */
     uint32_t scale_offset;
     uint32_t scale_bytes;
     uint32_t bias_offset;
@@ -985,7 +989,13 @@ struct qbh_block_header {
     uint32_t generation_expected_token_ids_bytes;
     uint32_t generation_expected_token_count;
 
+    uint32_t weight_segment_count;
+    struct qbh_weight_segment_desc weight_segments[QBH_WEIGHT_SEGMENT_MAX];
     int32_t dsp_status;
+    uint32_t weight_segment_address[QBH_WEIGHT_SEGMENT_MAX];
+    uint32_t weight_segment_map_count, weight_segment_unmap_count;
+    int32_t weight_segment_error;
+    uint64_t weight_segment_map_ticks, weight_segment_unmap_ticks;
     uint32_t dense_r4_calls, dense_r4_hmx_calls, dense_r4_rows, dense_r4_pipeline_batches;
     uint64_t dense_r4_pipeline_hvx_ticks;
     uint64_t dense_r4_parallel_work_ticks,dense_r4_parallel_join_ticks;
