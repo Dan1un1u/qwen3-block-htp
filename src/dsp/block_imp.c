@@ -17611,6 +17611,39 @@ static int qbh_scan_softmax_f16_exact_batch(struct qbh_block_header *h,
     return 0;
 }
 
+static int qbh_scan_audit_vector_softmax_f16(const __fp16 *plane_a, const __fp16 *plane_c,
+    uint32_t logical_rows, uint32_t padded_tokens, uint32_t past_tokens) {
+    /* Independent scalar expf/division reference, untimed audit only.
+     * Keep the existing composed FP16 NRMSE limit, plus exact mask. */
+    __fp16 reference[832] __attribute__((aligned(128)));
+    for(uint32_t h=0;h<QBH_ATTENTION_Q_HEADS_PER_GROUP;++h)
+        for(uint32_t r=0;r<logical_rows;++r) {
+            double error=0.0,energy=0.0;
+            const uint32_t valid=past_tokens+r+1U;
+            const size_t off=((size_t)h*QBH_BLOCK_M+r)*padded_tokens;
+            float maximum=-INFINITY,sum=0.0f;
+            for(uint32_t k=0;k<valid;++k) {
+                const float x=(float)plane_a[off+k]*QBH_MODEL_ATTENTION_SCALE;
+                if(x>maximum)maximum=x;
+            }
+            for(uint32_t k=0;k<valid;++k) {
+                const float x=expf((float)plane_a[off+k]*QBH_MODEL_ATTENTION_SCALE-maximum);
+                reference[k]=(__fp16)x;sum+=x;
+            }
+            for(uint32_t k=0;k<padded_tokens;++k) {
+                const double a=(float)plane_c[off+k];
+                const double b=k<valid?(float)(__fp16)((float)reference[k]/sum):0.0;
+                if(!isfinite(a) || (k>=valid && a!=0.0)) return -1;
+                error+=(a-b)*(a-b);energy+=b*b;
+            }
+            if(error>0.003*0.003*energy) {
+                FARF(ALWAYS,"A16 vector softmax audit failed head%u row%u error%g energy%g",h,r,error,energy);
+                return -1;
+            }
+        }
+    return 0;
+}
+
 static int qbh_scan_f16_attention(
     struct qbh_block_header *header, uint8_t *shared,
     struct qbh_block_buffers *buffers,
@@ -17795,45 +17828,17 @@ static int qbh_scan_f16_attention(
             qbh_hvx_long_softmax_f16(plane_a, plane_c,
                 QBH_ATTENTION_Q_HEADS_PER_GROUP, logical_rows,
                 padded_tokens, past_tokens, QBH_MODEL_ATTENTION_SCALE);
-            if (header->generation_boundary_audit_enabled) {
-                /* Independent scalar expf/division reference, untimed audit only.
-                 * Keep the existing composed FP16 NRMSE limit, plus exact mask. */
-                __fp16 reference[832] __attribute__((aligned(128)));
-                for(uint32_t h=0;h<QBH_ATTENTION_Q_HEADS_PER_GROUP;++h)
-                    for(uint32_t r=0;r<logical_rows;++r) {
-                        double error=0.0,energy=0.0;
-                        const uint32_t valid=past_tokens+r+1U;
-                        const size_t off=((size_t)h*QBH_BLOCK_M+r)*padded_tokens;
-                        float maximum=-INFINITY,sum=0.0f;
-                        for(uint32_t k=0;k<valid;++k) {
-                            const float x=(float)plane_a[off+k]*QBH_MODEL_ATTENTION_SCALE;
-                            if(x>maximum)maximum=x;
-                        }
-                        for(uint32_t k=0;k<valid;++k) {
-                            const float x=expf((float)plane_a[off+k]*QBH_MODEL_ATTENTION_SCALE-maximum);
-                            reference[k]=(__fp16)x;sum+=x;
-                        }
-                        for(uint32_t k=0;k<padded_tokens;++k) {
-                            const double a=(float)plane_c[off+k];
-                            const double b=k<valid?(float)(__fp16)((float)reference[k]/sum):0.0;
-                            if(!isfinite(a) || (k>=valid && a!=0.0)) return -1;
-                            error+=(a-b)*(a-b);energy+=b*b;
-                        }
-                        if(error>0.003*0.003*energy) {
-                            FARF(ALWAYS,"A16 vector softmax audit failed head%u row%u error%g energy%g",h,r,error,energy);
-                            return -1;
-                        }
-                    }
-            }
+            if (header->generation_boundary_audit_enabled &&
+                qbh_scan_audit_vector_softmax_f16(plane_a,plane_c,logical_rows,padded_tokens,past_tokens)) return -1;
         } else
-#ifdef QBH_QWEN_06B
         if (logical_rows==1U && padded_tokens<=128U) {
             qbh_hvx_decode_softmax_f16(plane_a, plane_c,
                 QBH_ATTENTION_Q_HEADS_PER_GROUP, padded_tokens, past_tokens+1U,
                 QBH_MODEL_ATTENTION_SCALE);
             ++header->w4f16_decode_opt_calls;
+            if (header->generation_boundary_audit_enabled &&
+                qbh_scan_audit_vector_softmax_f16(plane_a,plane_c,logical_rows,padded_tokens,past_tokens)) return -1;
         } else
-#endif
         if(header->variant!=QBH_BLOCK_W4U8 && header->w4f16_decode_opt && logical_rows==1U && padded_tokens<=128U) {
             if(qbh_scan_softmax_f16_exact_batch(header,plane_a,plane_c,
                 (__fp16 *)buffers->middle,past_tokens,padded_tokens)!=0)return -1;
