@@ -26,7 +26,7 @@ static void qbh_long_attention_tasks(struct qbh_block_w4f16_pool *pool,
         uint8_t *q=pool->attention_buffers->q+(size_t)g*QBH_ATTENTION_Q_HEADS_PER_GROUP*QBH_ATTENTION_HEAD_DIM_TILES*2048;
         const uint8_t *ck=pool->long_shared+h->kv_cache_k_offset+(size_t)g*h->kv_cache_capacity*QBH_BLOCK_HEAD_DIM;
         const uint8_t *cv=pool->long_shared+h->kv_cache_v_offset+(size_t)g*h->kv_cache_capacity*QBH_BLOCK_HEAD_DIM;
-        memset(a,0,qbh_align_up(valid*QBH_BLOCK_HEAD_DIM,128U));
+        if(!(h->long_optimization&4096U)) memset(a,0,qbh_align_up(valid*QBH_BLOCK_HEAD_DIM,128U));
         qurt_mutex_lock(&pool->attention_hmx_mutex);
         int rc=qbh_scan_cache_dma(h,a,ck,valid*QBH_BLOCK_HEAD_DIM,1);
         qurt_mutex_unlock(&pool->attention_hmx_mutex);
@@ -41,7 +41,7 @@ static void qbh_long_attention_tasks(struct qbh_block_w4f16_pool *pool,
         if(h->long_optimization&512U) qbh_attention_u8_softmax_long_native4_fast(c,a,rows,past,padded,cfg);
         else qbh_attention_u8_softmax_long_native4(c,a,rows,past,padded,cfg);
         job->u8_attention_softmax_ticks+=HAP_perf_get_qtimer_count()-t;
-        memset(c,0,qbh_align_up(valid*QBH_BLOCK_HEAD_DIM,128U));
+        if(!(h->long_optimization&4096U)) memset(c,0,qbh_align_up(valid*QBH_BLOCK_HEAD_DIM,128U));
         qurt_mutex_lock(&pool->attention_hmx_mutex);
         rc=qbh_scan_cache_dma(h,c,cv,valid*QBH_BLOCK_HEAD_DIM,1);
         qurt_mutex_unlock(&pool->attention_hmx_mutex);
@@ -53,7 +53,11 @@ static void qbh_long_attention_tasks(struct qbh_block_w4f16_pool *pool,
         if(qbh_attention_u8_pool_submit(pool,job,a,w,vb,q,QBH_ATTENTION_Q_HEADS_PER_GROUP,
             tiles,QBH_ATTENTION_HEAD_DIM_TILES,&job->u8_attention_av_hmx_ticks))break;
         t=HAP_perf_get_qtimer_count();
-        qbh_attention_u8_requant_av(q,cfg);
+        /* Decode consumes only the first four physical rows, as in the
+         * historical short-cache path. Keep all live outputs bit-identical. */
+        if((h->long_optimization&8192U) && rows==1U)
+            qbh_attention_u8_requant_av_rows(q,cfg,4U);
+        else qbh_attention_u8_requant_av(q,cfg);
         job->u8_attention_av_hmx_ticks+=HAP_perf_get_qtimer_count()-t;
         ++job->u8_attention_group_count;
     }
