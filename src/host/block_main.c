@@ -5620,8 +5620,11 @@ int main(int argc, char **argv) {
           (!qbh_generation_w4u8_enabled(generation_mode)
                ? (variant != (qbh_generation_f16f16_enabled(generation_mode)
                                   ? QBH_BLOCK_F16F16 : QBH_BLOCK_W4F16) ||
-                  !qbh_hmx_native_f16_cache_formats(
-                      kv_cache_k_format, kv_cache_v_format))
+                  (!qbh_hmx_native_f16_cache_formats(
+                      kv_cache_k_format, kv_cache_v_format) &&
+                   !(generation_boundary_audit_enabled != 0U &&
+                     kv_cache_k_format == QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1 &&
+                     kv_cache_v_format == QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1)))
                : (variant != QBH_BLOCK_W4U8 ||
                   !qbh_generation_u8_cache_formats(kv_cache_k_format, kv_cache_v_format))) ||
           replay_mode != QBH_BLOCK_REPLAY_CONTINUOUS ||
