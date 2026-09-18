@@ -36,7 +36,7 @@ experiments:
     deep tuning.
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0292-qwen3-06b-f16-fp32-residual
+    source_branch: codex/exp-0293-qwen3-06b-f16-row-parity
     started_on: '2026-09-18'
 - id: EXP-0292
   title: Qwen0.6 temporary F16F16 FP32 residual precision contract
