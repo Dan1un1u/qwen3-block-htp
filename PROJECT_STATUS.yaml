@@ -18,8 +18,8 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 293
+  active_experiment: EXP-0293
+  next_experiment_number: 294
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -83,7 +83,8 @@ current_scope:
     evidence_validity: valid
     source_closure: d7dbaa1c724e09b4c074706f58c78408ab49602b
     source_branch: codex/exp-0292-qwen3-06b-f16-fp32-residual
-    recipe: temporary F16F16 FP32 residual; FP16 matrix outputs, normalized inputs, KV, and head
+    recipe: temporary F16F16 FP32 residual; FP16 matrix outputs, normalized inputs,
+      KV, and head
     report: docs/experiments/EXP-0292-RESULTS.md
     modules: docs/experiments/EXP-0292-MODULES.md
     full_profiling_report: /mnt/d/llm_exp/results/qwen3-block-htp/exp0292/FULL_PROFILING_REPORT.md
@@ -2102,7 +2103,8 @@ current_scope:
     selected_baseline_changed: false
     new_model_or_device_runs: false
     profiling: not_applicable_host_only_scoring
-    next_action: Discuss model-quality direction; future reports use content-v2 with strict-v1 diagnostic
+    next_action: Discuss model-quality direction; future reports use content-v2 with
+      strict-v1 diagnostic
     formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0228
     results_report: docs/experiments/EXP-0228-RESULTS.md
     full_profiling_report: docs/experiments/EXP-0228-PROFILE.md
@@ -2413,7 +2415,8 @@ current_scope:
     formal_invocation_ledgers: 640
     formal_layer_ledgers: 17920
     quality_determinism: pass
-    next_action: discuss_negative_or_mixed_scale_only_result; no automatic next experiment or promotion
+    next_action: discuss_negative_or_mixed_scale_only_result; no automatic next experiment
+      or promotion
   latest_w4f16_rotation_sampling_result:
     id: EXP-0226
     execution_state: completed
@@ -2857,8 +2860,9 @@ current_scope:
     fullmodel_run: false
     e2e_run: false
     baseline_promoted: false
-    next_direction: Discuss FP32 residual layout shared by O/Down producers and RMSNorm consumers; current
-      row-major residual requires costly transposition. No extra experiment started.
+    next_direction: Discuss FP32 residual layout shared by O/Down producers and RMSNorm
+      consumers; current row-major residual requires costly transposition. No extra
+      experiment started.
   latest_w4f16_output_scale_result:
     id: EXP-0224
     execution_state: completed
@@ -3021,8 +3025,8 @@ current_scope:
     intermediate_files: 448
     calibration_sha256: e65edb14cb774956df92b27b5dc728b976f7ba00e9435145004180c6538a1669
     calibration_ids_sha256: a20ed2093b0e7fb075fe47a9532843402e9f69784c8ad0b0467194bee2fa8efd
-    conclusion: 'A: DSP NLL 3.873038 -> 3.660316, tasks 8 -> 19; C: DSP NLL 3.956556 -> 3.892162, tasks
-      9 -> 17'
+    conclusion: 'A: DSP NLL 3.873038 -> 3.660316, tasks 8 -> 19; C: DSP NLL 3.956556
+      -> 3.892162, tasks 9 -> 17'
     next_action: discuss_results_no_automatic_next_direction
   latest_w4f16_channel_clipping_result:
     id: EXP-0223
@@ -3463,8 +3467,8 @@ current_scope:
     intermediate_files: 672
     calibration_sha256: e65edb14cb774956df92b27b5dc728b976f7ba00e9435145004180c6538a1669
     calibration_ids_sha256: a20ed2093b0e7fb075fe47a9532843402e9f69784c8ad0b0467194bee2fa8efd
-    conclusion: 'A: DSP NLL 3.873038 -> 3.969016, tasks 8 -> 4; B: DSP NLL 4.601481 -> 3.911864, tasks
-      0 -> 2; C: DSP NLL 4.320988 -> 3.956556, tasks 2 -> 9'
+    conclusion: 'A: DSP NLL 3.873038 -> 3.969016, tasks 8 -> 4; B: DSP NLL 4.601481
+      -> 3.911864, tasks 0 -> 2; C: DSP NLL 4.320988 -> 3.956556, tasks 2 -> 9'
     next_action: discuss_results_no_automatic_next_direction
   latest_w4f16_head_ablation_result:
     id: EXP-0222
@@ -3576,8 +3580,8 @@ current_scope:
     closure_sha256: 196080cc53fd21bb8f1b1c606fe7a9da463ccbe84465bb92d9621d3a1049c6b5
     evidence_ledger_sha256: 54dbdc87eb1b8df4fc5e7baf2c0f0e385d41e583c0caec5975b3d5c5c5556c78
     evidence_files: 27
-    conclusion: 'A: NLL 3.874188 -> 3.853870, tasks 9 -> 8; B: NLL 4.600959 -> 4.413664, tasks 0 -> 0;
-      C: NLL 4.323169 -> 4.293221, tasks 2 -> 2'
+    conclusion: 'A: NLL 3.874188 -> 3.853870, tasks 9 -> 8; B: NLL 4.600959 -> 4.413664,
+      tasks 0 -> 0; C: NLL 4.323169 -> 4.293221, tasks 2 -> 2'
     next_action: discuss_with_user_before_any_next_direction
   latest_w4f16_gamma_attribution_result:
     id: EXP-0220
@@ -3688,8 +3692,9 @@ current_scope:
     speed_summary_sha256: 8abbdb773bf85fc1b2bd541af4326a7a567e57667899b557c2bb0237fb238476
     evidence_sha256_ledger_sha256: 0bf9fc284fb9f624c3f9a0f78a224c0f6e66e2c5f1b5f2cbd8ec6680cce49a97
     evidence_files: 182
-    conclusion: FP16 folding preserves observed quality; W4 requantization after gamma fold regresses,
-      QKV largest isolated NLL loss; gamma-preserving fixed R2 also regresses; no promotion
+    conclusion: FP16 folding preserves observed quality; W4 requantization after gamma
+      fold regresses, QKV largest isolated NLL loss; gamma-preserving fixed R2 also
+      regresses; no promotion
     reopen_condition: new_approved_quantization_or_rotation_hypothesis_no_repeat_fixed_Hadamard_no_evaluation_tuning
   latest_w4f16_gptq_result:
     id: EXP-0221
@@ -3849,8 +3854,8 @@ current_scope:
     calibration_sha256: e65edb14cb774956df92b27b5dc728b976f7ba00e9435145004180c6538a1669
     holdout_scored: false
     other_recipes: F16F16_and_W4U8_frozen
-    conclusion: Unrotated GPTQ reduces NLL but tasks stay8/24; GPTQ mitigates folded/rotated RTN loss
-      without incremental fixed R1R2 benefit; no promotion
+    conclusion: Unrotated GPTQ reduces NLL but tasks stay8/24; GPTQ mitigates folded/rotated
+      RTN loss without incremental fixed R1R2 benefit; no promotion
     reopen_condition: new_approved_hypothesis_no_repeat_fixed_trial_no_evaluation_tuning
   promoted_w4u8_fastest_decode_baseline:
     id: EXP-0211
@@ -9108,8 +9113,8 @@ current_scope:
     before_after_gate: pass_exact_before_full_after_and_within_session
     independent_summary_check: pass_all_27_DSP_group_PPL_values_math_fsum
     evidence_hash_check: pass_all296files_exact_ledger_coverage
-    next_action: Discuss W4A8 reproducibility and same-W4-weight activation attribution; no new experiment
-      authorized
+    next_action: Discuss W4A8 reproducibility and same-W4-weight activation attribution;
+      no new experiment authorized
   next_research_direction:
     status: await_user_direction
     current: FP32 prefill RMSNorm and O remain over cost gate; no chain3/full28/formal/PPL
@@ -9399,8 +9404,8 @@ current_scope:
         - 0.9947887469921031
         - 1.0016728476698786
         diagnostic_only: true
-    root_cause: unresolved; raw output/token mismatch, postfailure bounded reruns pass but do not clear
-      gate
+    root_cause: unresolved; raw output/token mismatch, postfailure bounded reruns
+      pass but do not clear gate
     next_direction: discuss_runtime_nondeterminism_then_same_token_device_software_head_and_transformer_alignment
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0257.md
   last_concluded_experiment: EXP-0284
@@ -9792,7 +9797,8 @@ current_scope:
         - 0.9956792075308298
         - 1.0317005217914899
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0259.md
-    next_direction: discuss_quality_alignment_or_longer_context_validation; no automatic baseline promotion
+    next_direction: discuss_quality_alignment_or_longer_context_validation; no automatic
+      baseline promotion
   latest_w4f16_decode_optimization_result:
     id: EXP-0260
     execution_state: completed
@@ -9915,8 +9921,8 @@ current_scope:
     repair: dedicated component audit and exact negativezero preservation
     package_manifest_sha256: 7de4f0758d83f2ba3b58696c695bfbfed72a25dd3bf308475abee0a0f0575a89
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0260.md
-    next_direction: discuss_W4F16_M1_projection_weight_expansion_and_HMX_pipeline; no automatic baseline
-      promotion
+    next_direction: discuss_W4F16_M1_projection_weight_expansion_and_HMX_pipeline;
+      no automatic baseline promotion
   latest_w4u8_dense_r4_cost_result:
     id: EXP-0261
     execution_state: completed
@@ -10076,8 +10082,8 @@ current_scope:
     E2E_tokens_per_second: null
     baseline_promoted: false
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0262.md
-    next_direction: discuss_parallel_FP16_SwiGLU_preparation_and_output_quantization_for_prefill; no further
-      experiment authorized
+    next_direction: discuss_parallel_FP16_SwiGLU_preparation_and_output_quantization_for_prefill;
+      no further experiment authorized
   latest_w4u8_dense_r4_parallel_prefill_result:
     id: EXP-0263
     execution_state: completed
@@ -10105,7 +10111,8 @@ current_scope:
     speed_gate_status: inconclusive
     stable_over10_confirmed: false
     stop_before_fullmodel: true
-    gate_role: prefill_confidence_interval_crosses10percent_eligibility_not_confirmed; not_numerical_failure
+    gate_role: prefill_confidence_interval_crosses10percent_eligibility_not_confirmed;
+      not_numerical_failure
     performance:
       r1_prefill_ns:
         control_ns: 1704479.0
@@ -10243,8 +10250,8 @@ current_scope:
     E2E_tokens_per_second: null
     baseline_promoted: false
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0264.md
-    next_direction: discuss_remaining_FP16_LUT_preparation_layout_dispatch_and_repeat1_variability; conditional_fullmodel_authorization_retained_but_prerequisite_unmet;
-      no_optional_resampling
+    next_direction: discuss_remaining_FP16_LUT_preparation_layout_dispatch_and_repeat1_variability;
+      conditional_fullmodel_authorization_retained_but_prerequisite_unmet; no_optional_resampling
     current_policy_reassessment:
       protocol: PC079
       repeat10_speed_eligible: true
@@ -10823,12 +10830,13 @@ current_scope:
     e2e_run: false
     ppl_run: false
     baseline_promoted: false
-    next_action: Discuss remaining FP32 prefill Norm and O cost before any full-model extension; original
-      selected paper speed baselines retained
+    next_action: Discuss remaining FP32 prefill Norm and O cost before any full-model
+      extension; original selected paper speed baselines retained
   paper_no_rotation_speed_baselines:
     schema_version: 1
     selection_date: '2026-09-15'
-    selection_scope: User-selected no-rotation paper SPEED baselines; quality not accepted
+    selection_scope: User-selected no-rotation paper SPEED baselines; quality not
+      accepted
     hardware: PJZ110 / SM8750 / Hexagon v79; standalone FastRPC, 8MiB VTCM
     baselines:
     - model: Qwen3 (28 layers, hidden2048, FFN6144)
@@ -10851,8 +10859,8 @@ current_scope:
         QBH_DENSE_R4: '0'
         QBH_WIDE_SCORE: '4'
         QBH_FP32_RESIDUAL: '2'
-      quality: Selected-layer and chain3 independent arithmetic exact; full frozen boundaries/frontend
-        exact; model quality unaccepted
+      quality: Selected-layer and chain3 independent arithmetic exact; full frozen
+        boundaries/frontend exact; model quality unaccepted
       fp32_residual_mode: 2
       formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0272/full-formal.json
     - model: Llama-3.2-1B-Instruct
@@ -10876,7 +10884,8 @@ current_scope:
         QBH_DENSE_R4: '0'
         QBH_R3_OPT: '0'
         QBH_R4_OPT: '0'
-      quality: Full-model implementation validated; fixed-scale text unusable, quality unaccepted
+      quality: Full-model implementation validated; fixed-scale text unusable, quality
+        unaccepted
     audit:
       audited_before_current_port:
         llama_donor: e3d065a515221aa1e97c63fa4d58d23e434c45df
@@ -10943,24 +10952,26 @@ current_scope:
       diff_sha256: 45c5e75d491c93c23ea442d67f14e18c8c27ce4ed5eb2ece91a39d1ab8934668
       findings:
       - scope: Llama0019-0024
-        result: New R3/R4 includes and routing guarded by rotation mode; no change in selected OFF computational
-          dataflow; independent OFF full16 rechecked in0023
+        result: New R3/R4 includes and routing guarded by rotation mode; no change
+          in selected OFF computational dataflow; independent OFF full16 rechecked
+          in0023
       - scope: Llama0025-0026
-        result: Rejected normalized/range/order candidates restored; no new no-rotation kernel
+        result: Rejected normalized/range/order candidates restored; no new no-rotation
+          kernel
       - scope: Llama0027
         result: Documentation only
       - scope: Qwen0268 vs0267
-        result: Additional U8 prefill scheduling already in parent, SP2mode8 remains the same selected
-          schedule. No later completed Qwen native experiment before0269
+        result: Additional U8 prefill scheduling already in parent, SP2mode8 remains
+          the same selected schedule. No later completed Qwen native experiment before0269
       - scope: This EXP0269
-        result: New FP32 residual/epilogue/native-padding edits are Qwen candidates only; not an accepted
-          faster full-model baseline and not tested on Llama. Do not attach historical2069.70/42.51 to
-          these new kernels
+        result: New FP32 residual/epilogue/native-padding edits are Qwen candidates
+          only; not an accepted faster full-model baseline and not tested on Llama.
+          Do not attach historical2069.70/42.51 to these new kernels
       no_omitted_later_validated_no_rotation_optimization_found: true
-      claim_scope: Audited registered branches and completed experiments, not global optimality or performance
-        equivalence of unmeasured builds
-      rotation_branch_unique_non_equivalent_commit: cd2360f31c1b1a151db7ecf30acfbe73bded9979 (branch default
-        config only)
+      claim_scope: Audited registered branches and completed experiments, not global
+        optimality or performance equivalence of unmeasured builds
+      rotation_branch_unique_non_equivalent_commit: cd2360f31c1b1a151db7ecf30acfbe73bded9979
+        (branch default config only)
       rotation_branch_equivalent_patches: 79
     new_qwen_candidate:
       experiment: EXP-0272
@@ -10980,8 +10991,8 @@ current_scope:
       accepted_on: '2026-09-15'
     historical_selected_baselines:
     - replaced_on: '2026-09-15'
-      reason: User accepted EXP0272 as current FP32 residual paper baseline; prior integer baseline retained
-        as historical control
+      reason: User accepted EXP0272 as current FP32 residual paper baseline; prior
+        integer baseline retained as historical control
       baseline:
         model: Qwen3-0.6B
         experiment: EXP-0268
@@ -11151,14 +11162,16 @@ current_scope:
     baseline_promoted: true
     PPL: null
     selected_mode: 2
-    selected_method: C1 interleaved independent16-row ordered FP32 Norm; C2 flag-store variants discarded
-    next_direction: User accepted EXP0272. Discuss docs/PAPER_NO_ROTATION_ABLATION_PLAN.md before registering
-      new hardware ablations; Llama current validated baseline remains L32-0018.
+    selected_method: C1 interleaved independent16-row ordered FP32 Norm; C2 flag-store
+      variants discarded
+    next_direction: User accepted EXP0272. Discuss docs/PAPER_NO_ROTATION_ABLATION_PLAN.md
+      before registering new hardware ablations; Llama current validated baseline
+      remains L32-0018.
     acceptance:
       accepted_on: '2026-09-15'
       user_approval: 'User: 验收本次优化，基于这两个qwen和llama的latest无旋转baseline，补做消融实验...首先...列一份计划实验清单'
-      scope: EXP0272 mode2 no-rotation SP2 FP32 residual paper working baseline; quality not accepted;
-        no native default change
+      scope: EXP0272 mode2 no-rotation SP2 FP32 residual paper working baseline; quality
+        not accepted; no native default change
       planning_document: docs/PAPER_NO_ROTATION_ABLATION_PLAN.md
       new_ablation_execution: not_started_pending_plan_discussion
   latest_sp2_fp32_fullmodel_speed_result: *id001
@@ -11171,7 +11184,8 @@ current_scope:
     - W4_vs_S8_expansion
     - integer_residual_arms
     added: log2_softmax_vs_FP_HVX_softmax
-    next: Discuss updated paired conclusions; generalization is supplementary and excluded
+    next: Discuss updated paired conclusions; generalization is supplementary and
+      excluded
   latest_paper_factorial_result:
     id: EXP-0282
     phase: A1
@@ -11263,8 +11277,8 @@ current_scope:
           - 0.9975734106829254
           - 1.0042720750135432
     paired_effects: *id002
-  next_direction: Qwen0.6B original-derived native W4A8-SP2 FP32 runtime and one inherited head optimization
-    validated; bounded optimization complete.
+  next_direction: Qwen0.6B original-derived native W4A8-SP2 FP32 runtime and one inherited
+    head optimization validated; bounded optimization complete.
   latest_paper_pipeline_result:
     id: EXP-0282
     phase: A2
@@ -11633,9 +11647,9 @@ current_scope:
         prefill: 1726.7186436911688
         decode: 45.78505354252158
     shape: M64+33 cache128, 34 outputs
-    numerical_scope: same frozen LOG2 DSP arithmetic; own selected/chain3 gates inherited from EXP0278;
-      full28 paired outputs/hidden bytes exact and all34 actual finalNorm/full-vocabulary head audited;
-      no full28 CPU transformer equivalence claim
+    numerical_scope: same frozen LOG2 DSP arithmetic; own selected/chain3 gates inherited
+      from EXP0278; full28 paired outputs/hidden bytes exact and all34 actual finalNorm/full-vocabulary
+      head audited; no full28 CPU transformer equivalence claim
     physical_gate: true
     quality_claim: false
     baseline_promoted: false
@@ -11786,9 +11800,9 @@ current_scope:
             - 0.9942819595649987
             - 0.9971622543621514
     scope: M64, two fixed tokenized English/Chinese texts,15/63decode,cache128,maxKV127
-    numerical_scope: Qwen selected0/14/27 andchain3 independent exact inherited, all288 full28 actual
-      last-hidden/norm paired bytes exact and actual finalNorm/full-vocabulary head independently checked;
-      not full28 CPU transformer equivalence
+    numerical_scope: Qwen selected0/14/27 andchain3 independent exact inherited, all288
+      full28 actual last-hidden/norm paired bytes exact and actual finalNorm/full-vocabulary
+      head independently checked; not full28 CPU transformer equivalence
     physical_gate: true
     quality_claim: false
     baseline_promoted: false
@@ -11820,8 +11834,8 @@ current_scope:
     llama_final_experiment: L32-0034
   supplementary_generalization:
     source: *id003
-    classification: supplementary experiment; excluded from main ablations by explicit user instruction;
-      not rerun
+    classification: supplementary experiment; excluded from main ablations by explicit
+      user instruction; not rerun
   pre_optimization_paper_ablation_results:
     latest_paper_factorial_result:
       id: EXP-0274
@@ -11931,7 +11945,8 @@ current_scope:
       physical_gate: true
       independent_numerical_exact: true
       trace_complete: false
-      trace_status: 'N/A: FARF stream truncated; 15 numerical-pass diagnostic attempts retained'
+      trace_status: 'N/A: FARF stream truncated; 15 numerical-pass diagnostic attempts
+        retained'
       baseline_promoted: false
       quality_claim: false
       performance:
@@ -12042,8 +12057,9 @@ current_scope:
       evidence_files: 864
       evidence_bytes: 431573812
       timed_profiles: 9600
-      numerical_gate_scope: Qwen selected layer14 and chain3 independent exact; full28 physical/front-end
-        finalNorm and full-vocabulary head oracle; no full28 CPU transformer equivalence claim
+      numerical_gate_scope: Qwen selected layer14 and chain3 independent exact; full28
+        physical/front-end finalNorm and full-vocabulary head oracle; no full28 CPU
+        transformer equivalence claim
       physical_gate: true
       weight_bytes_identical: true
       quality_claim: false
@@ -12101,8 +12117,9 @@ current_scope:
       primary_root: /mnt/d/llm_exp/results/qwen3-block-htp/exp0278/vsum
       timed_profiles: 9600
       prototype_timed_profiles: 9600
-      numerical_gate_scope: Qwen selected layer14 and chain3 independent exact; full28 physical/front-end
-        finalNorm and full-vocabulary head oracle; no full28 CPU transformer equivalence claim
+      numerical_gate_scope: Qwen selected layer14 and chain3 independent exact; full28
+        physical/front-end finalNorm and full-vocabulary head oracle; no full28 CPU
+        transformer equivalence claim
       physical_gate: true
       quality_claim: false
       baseline_promoted: false
@@ -12156,8 +12173,8 @@ current_scope:
     generalization: supplementary only; not rerun or included
     quality_claim: false
     baseline_promoted: false
-  next_action: 'EXP0289: Qwen3-0.6B W16A16 and W4A16 fair vectorized baseline port, independent gates,
-    matched M64+42 E2E; preserve SP2.'
+  next_action: 'EXP0289: Qwen3-0.6B W16A16 and W4A16 fair vectorized baseline port,
+    independent gates, matched M64+42 E2E; preserve SP2.'
   latest_f16_baseline_synthesis:
     report: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/REPORT.md
     a16_discussion: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/A16_DOWN_DISCUSSION.md
@@ -12301,8 +12318,8 @@ current_scope:
             - 0.9982468412758284
             - 1.0086964359257433
             ten_percent_gate: true
-    reference_repair: experiment-local AV multiplier1 direct zero-point saturation; no native change;
-      initial failures retained
+    reference_repair: experiment-local AV multiplier1 direct zero-point saturation;
+      no native change; initial failures retained
   latest_uniform_int16_down_synthesis:
     experiments:
     - EXP-0284
@@ -12318,8 +12335,8 @@ current_scope:
     execution_state: completed
     evidence_validity: valid
     local_gate: fail
-    failure_reason: FP16 residual prefill overhead12.890172percent exceeds10percent versus original latest
-      baseline; hardware correctness passes
+    failure_reason: FP16 residual prefill overhead12.890172percent exceeds10percent
+      versus original latest baseline; hardware correctness passes
     baseline_promoted: false
     quality_claim: false
     source_closure: 4c96e036c80404b3f22da4bf7170b5e58898edb1
@@ -12336,10 +12353,10 @@ current_scope:
     primary_repeat: 10
     primary_timed_profiles: 4800
     supplementary_timed_profiles: 4800
-    numerical_gate: pass independent selectedlayer/chain3/full28 448 layer hashes, finalnorm and full
-      head
-    physical_gate: pass declared allocation/explicitDDR/ownership counters; no claim that compiler stack
-      traffic is absent
+    numerical_gate: pass independent selectedlayer/chain3/full28 448 layer hashes,
+      finalnorm and full head
+    physical_gate: pass declared allocation/explicitDDR/ownership counters; no claim
+      that compiler stack traffic is absent
     shape: fixed M64+15 cache128
     performance:
       FP32:
@@ -12371,8 +12388,9 @@ current_scope:
     reserved_hole_bytes: 262144
     vtcm_peak_plan_bytes: 8365824
     scope: Qwen3-1.7B no-rotation SP2 only; Llama and other recipes unchanged
-    fairness: Primary is unchanged sealed EXP0284 binary. New same-binary FP32 helper dispatch was slower,
-      supplemental9.52percent prefill ratio is not actual latest-baseline acceptance.
+    fairness: Primary is unchanged sealed EXP0284 binary. New same-binary FP32 helper
+      dispatch was slower, supplemental9.52percent prefill ratio is not actual latest-baseline
+      acceptance.
   latest_qwen3_06b_port:
     id: EXP-0288
     execution_state: completed

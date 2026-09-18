@@ -1,3 +1,6 @@
+# Active EXP-0293 — FP32/FP16 full-M64 decode parity
+Read docs/experiments/EXP-0293.md. User requests reverting FP32-only valid-row processing; preserve basic vector pipeline and FP32 arithmetic. Prior0292 evidence immutable. No deep tuning. Temporary parent branch then293.
+
 # EXP-0292 completed — temporary Qwen0.6 F16 FP32 residual
 No active experiment/device owner; next293. Source codex/exp-0292-qwen3-06b-f16-fp32-residual @ d7dbaa1c724e09b4c074706f58c78408ab49602b; native measured e2d63b9b9a52e653adde35773adaa511267dfa1d. Read docs/experiments/EXP-0292-RESULTS.md and MODULES.md.
 QBH_FP32_RESIDUAL=1 F16F16 OPT4 ABI137: FP16embedding widens toFP32; O/Down remainFP16outputs, widen/add intoFP32residual; input/post/final RMSNorm readFP32, outputFP16. KV/head/HMX and311weightfiles unchanged. Aligns residual storage/add only, not A8rawprojectionoutput. New vector norm/residual handles logicaldecode rows; originalcontrol retainsM64 work, no claimFP32intrinsicallyfaster.
