@@ -48,7 +48,8 @@ static void qbh_long_attention_tasks(struct qbh_block_w4f16_pool *pool,
         if(rc){pool->attention_gqa_abort=1;break;}
         t=HAP_perf_get_qtimer_count();
         if(!pool->long_common_lut)qbh_attention_u8_prepare_v_row_major_hvx(cfg,lut);
-        qbh_attention_u8_pack_v_long(c,valid,padded,cfg,w,vb,lut,&job->u8_attention_v_recenter_saturation_count);
+        if(h->long_optimization&1024U) qbh_attention_u8_pack_v_long_register(c,valid,padded,cfg,w,vb,lut,&job->u8_attention_v_recenter_saturation_count);
+        else qbh_attention_u8_pack_v_long(c,valid,padded,cfg,w,vb,lut,&job->u8_attention_v_recenter_saturation_count);
         job->u8_attention_v_pack_ticks+=HAP_perf_get_qtimer_count()-t;
         if(qbh_attention_u8_pool_submit(pool,job,a,w,vb,q,QBH_ATTENTION_Q_HEADS_PER_GROUP,
             tiles,QBH_ATTENTION_HEAD_DIM_TILES,&job->u8_attention_av_hmx_ticks))break;

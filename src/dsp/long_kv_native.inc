@@ -126,15 +126,56 @@ static void qbh_attention_u8_patch_v_long(
     asm volatile("barrier" ::: "memory");
 }
 
-void qbh_attention_u8_pack_v_long(const uint8_t *rows,
+/* EXP0297: recenter each complete source row once, then transpose a
+ * four-row group in registers directly into the four HMX N tiles. */
+static inline HVX_Vector qbh_long_v_lookup(HVX_Vector values,const HVX_Vector *lut) {
+    HVX_Vector idx=Q6_V_vand_VV(values,Q6_Vb_vsplat_R(191));
+    HVX_Vector lo=Q6_Vb_vlut32_VbVbI(idx,lut[0],0);
+    lo=Q6_Vb_vlut32or_VbVbVbI(lo,idx,lut[1],1);
+    lo=Q6_Vb_vlut32or_VbVbVbI(lo,idx,lut[4],4);
+    lo=Q6_Vb_vlut32or_VbVbVbI(lo,idx,lut[5],5);
+    HVX_Vector hi=Q6_Vb_vlut32_VbVbI(idx,lut[2],0);
+    hi=Q6_Vb_vlut32or_VbVbVbI(hi,idx,lut[3],1);
+    hi=Q6_Vb_vlut32or_VbVbVbI(hi,idx,lut[6],4);
+    hi=Q6_Vb_vlut32or_VbVbVbI(hi,idx,lut[7],5);
+    return Q6_V_vmux_QVV(Q6_Q_vcmp_eq_VbVb(
+        Q6_V_vand_VV(values,Q6_Vb_vsplat_R(64)),Q6_Vb_vsplat_R(64)),hi,lo);
+}
+static void qbh_long_v_register_rows(const uint8_t *rows,unsigned valid,unsigned padded,
+    int8_t *weight,const uint8_t *scratch) {
+    const HVX_Vector *table=(const HVX_Vector *)(scratch+QBH_ATTN_U8_VGATHER_LUT_OFFSET);
+    HVX_Vector lut[8];
+    for(unsigned bank=0;bank<8U;++bank) {
+        HVX_Vector v=table[bank/2U];
+        if(bank&1U)v=Q6_V_vror_VR(v,64U);
+        lut[bank]=Q6_V_lo_W(Q6_W_vshuff_VVR(v,v,-64));
+    }
+    for(unsigned r=0;r<padded;r+=4U) {
+        HVX_Vector v0=r<valid?qbh_long_v_lookup(*(const HVX_Vector *)(rows+(size_t)r*128U),lut):Q6_V_vzero();
+        HVX_Vector v1=r+1U<valid?qbh_long_v_lookup(*(const HVX_Vector *)(rows+(size_t)(r+1U)*128U),lut):Q6_V_vzero();
+        HVX_Vector v2=r+2U<valid?qbh_long_v_lookup(*(const HVX_Vector *)(rows+(size_t)(r+2U)*128U),lut):Q6_V_vzero();
+        HVX_Vector v3=r+3U<valid?qbh_long_v_lookup(*(const HVX_Vector *)(rows+(size_t)(r+3U)*128U),lut):Q6_V_vzero();
+        HVX_VectorPair ab=Q6_W_vshuff_VVR(v1,v0,-1),cd=Q6_W_vshuff_VVR(v3,v2,-1);
+        HVX_VectorPair n01=Q6_W_vshuff_VVR(Q6_V_lo_W(cd),Q6_V_lo_W(ab),-2);
+        HVX_VectorPair n23=Q6_W_vshuff_VVR(Q6_V_hi_W(cd),Q6_V_hi_W(ab),-2);
+        unsigned off=(r/32U)*QBH_HMX_WEIGHT_BYTES+(r%32U)*32U;
+        *(HVX_Vector *)(weight+off)=Q6_V_lo_W(n01);
+        *(HVX_Vector *)(weight+off+(size_t)padded*32U)=Q6_V_hi_W(n01);
+        *(HVX_Vector *)(weight+off+(size_t)padded*64U)=Q6_V_lo_W(n23);
+        *(HVX_Vector *)(weight+off+(size_t)padded*96U)=Q6_V_hi_W(n23);
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
+static void qbh_attention_u8_pack_v_long_impl(const uint8_t *rows,
     uint32_t valid_tokens,uint32_t padded_tokens,
     const struct qbh_attention_config *config,int8_t *weight,uint32_t *bias,
-    uint8_t *scratch,uint32_t *saturation_count) {
+    uint8_t *scratch,uint32_t *saturation_count,unsigned fast) {
     const uint32_t kt=padded_tokens/32U,div=1U<<config->av_shift;
     const uint32_t rounding=config->av_shift?div/2U:0U;
     const uint16_t conversion=qbh_attention_u8_float_to_half_bits(512.0f/(float)div);
     const int32_t zp=config->av_multiplier==1U?config->output_zero_point:QBH_ATTENTION_HMX_CENTER;
-    for(uint32_t i=0;i<QBH_ATTENTION_HEAD_DIM_TILES*kt*QBH_HMX_WEIGHT_BYTES/128U;++i)
+    if(!fast) for(uint32_t i=0;i<QBH_ATTENTION_HEAD_DIM_TILES*kt*QBH_HMX_WEIGHT_BYTES/128U;++i)
         ((HVX_Vector *)weight)[i]=Q6_V_vzero();
     const uint8_t *saturated=scratch+QBH_ATTN_U8_VGATHER_LUT_OFFSET+QBH_ATTN_U8_VGATHER_LUT_BYTES;
     if(saturation_count && saturated[256]) {
@@ -161,7 +202,8 @@ void qbh_attention_u8_pack_v_long(const uint8_t *rows,
             *saturation_count+=qbh_attention_u8_sum_probability_half(count);
         }
     }
-    for(uint32_t first=0;first<valid_tokens;first+=32U) {
+    if(fast) qbh_long_v_register_rows(rows,valid_tokens,padded_tokens,weight,scratch);
+    else for(uint32_t first=0;first<valid_tokens;first+=32U) {
         uint32_t count=valid_tokens-first;if(count>32U)count=32U;
         qbh_attention_u8_patch_v_long(rows+(size_t)first*QBH_ATTENTION_HEAD_DIM,count,
             config,weight+(first/32U)*QBH_HMX_WEIGHT_BYTES,kt*QBH_HMX_WEIGHT_BYTES,scratch,NULL);
@@ -207,3 +249,6 @@ void qbh_attention_u8_pack_k_long_transpose(const uint8_t *rows,uint32_t valid,u
     }
     asm volatile("barrier" ::: "memory");
 }
+
+void qbh_attention_u8_pack_v_long(const uint8_t *r,uint32_t v,uint32_t p,const struct qbh_attention_config *c,int8_t *w,uint32_t *b,uint8_t *s,uint32_t *n) {qbh_attention_u8_pack_v_long_impl(r,v,p,c,w,b,s,n,0);}
+void qbh_attention_u8_pack_v_long_register(const uint8_t *r,uint32_t v,uint32_t p,const struct qbh_attention_config *c,int8_t *w,uint32_t *b,uint8_t *s,uint32_t *n) {qbh_attention_u8_pack_v_long_impl(r,v,p,c,w,b,s,n,QBH_ATTENTION_HEAD_DIM==128U);}

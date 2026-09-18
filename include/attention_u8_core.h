@@ -42,6 +42,7 @@ void qbh_attention_u8_softmax_long_native4_fast(uint8_t *,uint8_t *,uint32_t,uin
 void qbh_attention_u8_pack_k_long_transpose(const uint8_t *,uint32_t,uint32_t,const struct qbh_attention_config *,int8_t *,uint32_t *);
 void qbh_attention_u8_pack_k_long(const uint8_t *,uint32_t,uint32_t,const struct qbh_attention_config *,int8_t *,uint32_t *);
 void qbh_attention_u8_pack_v_long(const uint8_t *,uint32_t,uint32_t,const struct qbh_attention_config *,int8_t *,uint32_t *,uint8_t *,uint32_t *);
+void qbh_attention_u8_pack_v_long_register(const uint8_t *,uint32_t,uint32_t,const struct qbh_attention_config *,int8_t *,uint32_t *,uint8_t *,uint32_t *);
 
 /* A9: continuous FP32 softmax of the actual raw HMX U8 scores. Optional
  * dense probability dump is diagnostic-only; production passes NULL. */
