@@ -116,7 +116,16 @@ def run(length,tag,decode=3,audit=False,repeat=1,legacy=False):
  if not legacy:env.update(QBH_KV_CACHE_LAYOUT='row_major',QBH_W4U8_PREFILL_CACHE_MODE='duplicate')
  env.update(QBH_GENERATION_SEQUENCE='9',QBH_SP2='8',QBH_LONG_OPT=os.environ.get('QBH_LONG_OPT','31'),LD_LIBRARY_PATH=root,DSP_LIBRARY_PATH=root,ADSP_LIBRARY_PATH=root,QBH_WIDE_SCORE='4',QBH_PAPER_FORMAT_DISABLE='0',QBH_PAPER_PIPELINE_DISABLE='0',QBH_DENSE_R3='0',QBH_DENSE_R4='0')
  if not legacy:env.update(QBH_LONG_PREFILL_TOKENS=str(length),QBH_LONG_DECODE_STEPS=str(decode),QBH_LONG_REPEATS=str(repeat),QBH_KV_CACHE_CAPACITY='832',QBH_GENERATION_EXPECTED_TOKENS='64')
- else:env['QBH_GENERATION_STEPS']='4'
+ else:
+  env['QBH_GENERATION_STEPS']='4'
+  # Same frozen short-cache layout, ten independent trajectories in one process.
+  import struct
+  fixture=read(R/'fixture.json');words=[0x51424556,2,repeat,71]
+  for sample in range(repeat):words += [sample,3,4]+fixture['prompt_ids'][:64]+fixture['fixed'][:4]
+  ef=d/'short-control.bin';ef.write_bytes(struct.pack('<'+'I'*len(words),*words))
+  er=root+'/'+tag.replace('/','_')+'-short-control.bin';adb('push',windows(ef),er)
+  env['QBH_EVAL_FILE']=er
+
  if os.environ.get('QBH_LONG_DIAGNOSTIC'):env['QBH_LONG_DIAGNOSTIC']='1'
  if os.environ.get('QBH_LONG_PADDING_POISON'):env['QBH_LONG_PADDING_POISON']='1'
  if audit:
