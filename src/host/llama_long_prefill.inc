@@ -106,8 +106,7 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
                             const size_t off=head*stride;
                             if(memcmp(now+off,old+off,prefix) ||
                                memcmp(now+off+end,old+off+end,stride-end)) {
-                                fprintf(stderr,"A16 KV guard failed step%u layer%u kind%u head%u
-",step,i,kind,head);
+                                fprintf(stderr,"A16 KV guard failed step%u layer%u kind%u head%u\n",step,i,kind,head);
                                 goto finish;
                             }
                             const uint16_t *added=(const uint16_t *)(now+off+prefix);
@@ -117,8 +116,7 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
                         }
                     }
                 }
-                printf("{\"record\":\"long_cache_guard\",\"step\":%u,\"layers\":%u,\"checked_unchanged_bytes\":%" PRIu64 ",\"finite_append\":true}
-",
+                printf("{\"record\":\"long_cache_guard\",\"step\":%u,\"layers\":%u,\"checked_unchanged_bytes\":%" PRIu64 ",\"finite_append\":true}\n",
                     step,QBH_VERTICAL_SLICE_LAYER_COUNT,checked);
             }
             selected=h->generation_selected_token_id;
