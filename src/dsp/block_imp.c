@@ -20586,6 +20586,11 @@ static int qbh_scan_u8_attention(
                 config, weight, av_bias, buffers->up,
                 &telemetry.v_recenter_saturation_count);
 #else
+            if(header->long_prompt_tokens && (header->long_optimization&8U)) {
+                qbh_attention_u8_prepare_v_row_major_hvx(config,buffers->up);
+                qbh_attention_u8_pack_v_long(plane_c,valid_tokens,padded_tokens,
+                    config,weight,av_bias,buffers->up,&telemetry.v_recenter_saturation_count);
+            } else
             qbh_attention_u8_pack_v_row_major(
                 plane_c, valid_tokens, padded_tokens,
                 config, weight, av_bias,
