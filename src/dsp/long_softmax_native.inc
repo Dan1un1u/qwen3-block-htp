@@ -47,8 +47,8 @@ void qbh_attention_u8_softmax_long_native4(uint8_t *scores,uint8_t *prob,
             HVX_Vector v=*(HVX_Vector *)p;
             HVX_VectorPair dh=Q6_Wuh_vunpack_Vub(Q6_Vub_vsub_VubVub_sat(mx,v));
             HVX_Vector round=Q6_Vh_vsplat_R(1U<<(cfg->fraction_bits-1));
-            HVX_Vector a=Q6_Vuh_vmin_VuhVuh(Q6_Vuh_vlsr_VuhR(Q6_Vh_vadd_VhVh(Q6_Vh_vmpy_VhVh(Q6_V_lo_W(dh),Q6_Vh_vsplat_R(cfg->score_multiplier)),round),cfg->fraction_bits),Q6_Vh_vsplat_R(15));
-            HVX_Vector b=Q6_Vuh_vmin_VuhVuh(Q6_Vuh_vlsr_VuhR(Q6_Vh_vadd_VhVh(Q6_Vh_vmpy_VhVh(Q6_V_hi_W(dh),Q6_Vh_vsplat_R(cfg->score_multiplier)),round),cfg->fraction_bits),Q6_Vh_vsplat_R(15));
+            HVX_Vector a=Q6_Vuh_vmin_VuhVuh(Q6_Vuh_vlsr_VuhR(Q6_Vh_vadd_VhVh(Q6_Vh_vmpyi_VhVh(Q6_V_lo_W(dh),Q6_Vh_vsplat_R(cfg->score_multiplier)),round),cfg->fraction_bits),Q6_Vh_vsplat_R(15));
+            HVX_Vector b=Q6_Vuh_vmin_VuhVuh(Q6_Vuh_vlsr_VuhR(Q6_Vh_vadd_VhVh(Q6_Vh_vmpyi_VhVh(Q6_V_hi_W(dh),Q6_Vh_vsplat_R(cfg->score_multiplier)),round),cfg->fraction_bits),Q6_Vh_vsplat_R(15));
             HVX_Vector codes=Q6_V_vmux_QVV(qbh_long_native_valid((int)(past+row+1)-(int)t*32),Q6_Vub_vpack_VhVh_sat(b,a),Q6_Vb_vsplat_R(16));
             *(HVX_Vector *)p=codes;
             HVX_VectorPair ch=Q6_Wuh_vunpack_Vub(codes);
