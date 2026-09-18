@@ -1,3 +1,6 @@
+# L32-0048 active: delayed mapping probe
+Read docs/experiments/L32-0048.md. User approves independent mapping/correctness/cost probe; no full3B W16 implementation or multisession yet. Previous results frozen.
+
 # L32-0047 completed: generic3B W4A16; missing recipes filled except user-deferred W16
 Read docs/experiments/L32-0047-RESULTS.md and MODULES.md. M64+42/cache128/full28, five short/ten formal repeat10. 493.223307/7.929781 prefill/decodeTPS. No specialization tuning. FP16 residual/KV/nonlinear baseline, same0041 W4/head/scales; no SP2/rotations.
 Selected0/13/27+chain3 floating gates, RoPE/W4 component checks, 1B bounded regression,3B A8/SP2 full audits pass. Native KV inherited one32-token tail bug fixed: native vs row-major all43 hidden/norm and IDs/logitbits exact.

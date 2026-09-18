@@ -227,3 +227,6 @@ User explicitly requests iterative Llama3.2-3B W4A8-SP2 E2E optimization without
 
 ## Missing recipe completion — 2026-09-18
 User authorizes ordinary W4A8 derived from latest SP2 by removing only SP2, preserving all shared optimizations and remaining contracts. Other missing recipes receive generic vector/basic DMA overlap, no specialization tuning. User explicitly defers 3B W16A16 because existing uint32 shared-offset ABI cannot hold its FP16 weights; complete 3B W4A16 and ordinary A8 first. No claim of model-quality acceptance from speed checks.
+
+## L32-0048 mapping probe authorization (2026-09-18)
+User explicitly authorizes independent delayed mapping feasibility on current device before discussing multisession. Supersedes W16 deferral only for this isolated probe. Preserve existing runtime/recipes, no quality/E2E claim; costs of any eventual per-token mapping must be included.
