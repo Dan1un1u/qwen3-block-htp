@@ -72,6 +72,7 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
                 h->intermediate_ddr_read_bytes || h->intermediate_ddr_write_bytes || h->intermediate_spill_fill_count) {
                 fprintf(stderr,"long rep%u step%u rc%d dsp%d failure%u next%u rows%u\n",
                         rep,step,rc,h->dsp_status,h->projection_failure_step,state->next_position,rows);
+                if(h->long_optimization&64U)fprintf(stderr,"KDIAG countW=%u countB=%u W=%llx B=%llx\n",h->scan_total_kv_length,h->scan_padded_kv_length,(unsigned long long)h->u8_attention_k_pack_ticks,(unsigned long long)h->u8_attention_v_pack_ticks);
                 goto finish;
             }
             for(uint32_t i=0;i<QBH_VERTICAL_SLICE_LAYER_COUNT;i++)
