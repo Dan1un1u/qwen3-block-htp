@@ -252,3 +252,5 @@ void qbh_attention_u8_pack_k_long_transpose(const uint8_t *rows,uint32_t valid,u
 
 void qbh_attention_u8_pack_v_long(const uint8_t *r,uint32_t v,uint32_t p,const struct qbh_attention_config *c,int8_t *w,uint32_t *b,uint8_t *s,uint32_t *n) {qbh_attention_u8_pack_v_long_impl(r,v,p,c,w,b,s,n,0);}
 void qbh_attention_u8_pack_v_long_register(const uint8_t *r,uint32_t v,uint32_t p,const struct qbh_attention_config *c,int8_t *w,uint32_t *b,uint8_t *s,uint32_t *n) {qbh_attention_u8_pack_v_long_impl(r,v,p,c,w,b,s,n,QBH_ATTENTION_HEAD_DIM==128U);}
+
+#include "long_k_transpose_register.inc"
