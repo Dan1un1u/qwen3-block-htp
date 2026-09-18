@@ -24,6 +24,17 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0295
+  title: Qwen two-size long-prefill native layout and pipeline migration
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: pending
+  record: docs/experiments/EXP-0295.md
+  approval_ref: 'User: 请将方法迁移到其它还未实现的模型上并实现'
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0294-qwen3-06b-a8-completion
 - id: EXP-0294
   title: Qwen0.6 ordinary A8 from frozen SP2 with Down-only representation change
   execution_state: completed

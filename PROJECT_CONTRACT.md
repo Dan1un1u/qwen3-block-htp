@@ -458,3 +458,6 @@ User explicitly promotes EXP0293 as the paper W16A16 speed baseline for Qwen3-0.
 
 ## User-approved missing recipe completion (2026-09-18)
 User authorizes EXP0294 Qwen0.6 ordinary A8 from latest SP2, changing only Down representation and necessary execution/reference data, all other settings frozen. Remaining Llama recipes use their own authority sequentially. Non-A8 implementations limited to generic vector/basic pipeline, no deep specialization; numerical/physical evidence gates unchanged. No automatic promotion.
+
+## User-approved remaining-model long-prefill migration (EXP-0295)
+User authorizes L32-0051 native layout/pipeline migration to Qwen0.6B and1.7B under EXP-0295. Earlier research freezes superseded only for this scope; all numerical/physical/evidence rules remain.

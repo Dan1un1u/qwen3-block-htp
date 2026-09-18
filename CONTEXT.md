@@ -1,3 +1,6 @@
+# EXP0295 active: long-prefill migration for both Qwen sizes
+Read docs/experiments/EXP-0295.md. Local preparation while L32-0052 owns hardware.
+
 # Missing-recipe inventory updated after L32-0047 closure
 EXP0294 Qwen0.6 ordinaryA8 and L32-0046 ordinary3B A8 complete; L32-0047 generic3B W4A16 complete with independent mathematical-alignment limitation. See PAPER_HARDWARE_MAIN_TABLE_20260918.md/.json. 3B W16A16 remains user-deferred. No native Qwen changes, no automatic SP2 baseline promotion, all48 named-datasetconditions stillpending. Prior headings below retained as history.
 
