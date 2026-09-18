@@ -5,6 +5,10 @@ static void qbh_long_attention_tasks(struct qbh_block_w4f16_pool *pool,
                                     struct qbh_block_w4f16_job *job) {
     struct qbh_block_header *h=pool->attention_header;
     unsigned rows=pool->long_rows,past=pool->long_past,padded=pool->long_padded;
+    /* Each resource has one serialized owner; cache DMA may overlap HMX on
+     * another client's disjoint operand slot. All waits precede slot reuse. */
+    qurt_mutex_t *dma_mutex=(h->long_optimization&32768U)
+        ? &pool->long_dma_mutex : &pool->attention_hmx_mutex;
     unsigned valid=past+rows,tiles=padded/32;
     unsigned width=QBH_ATTENTION_Q_HEADS_PER_GROUP*64U;
     if(width<QBH_BLOCK_HEAD_DIM)width=QBH_BLOCK_HEAD_DIM;
@@ -27,9 +31,9 @@ static void qbh_long_attention_tasks(struct qbh_block_w4f16_pool *pool,
         const uint8_t *ck=pool->long_shared+h->kv_cache_k_offset+(size_t)g*h->kv_cache_capacity*QBH_BLOCK_HEAD_DIM;
         const uint8_t *cv=pool->long_shared+h->kv_cache_v_offset+(size_t)g*h->kv_cache_capacity*QBH_BLOCK_HEAD_DIM;
         if(!(h->long_optimization&4096U)) memset(a,0,qbh_align_up(valid*QBH_BLOCK_HEAD_DIM,128U));
-        qurt_mutex_lock(&pool->attention_hmx_mutex);
+        qurt_mutex_lock(dma_mutex);
         int rc=qbh_scan_cache_dma(h,a,ck,valid*QBH_BLOCK_HEAD_DIM,1);
-        qurt_mutex_unlock(&pool->attention_hmx_mutex);
+        qurt_mutex_unlock(dma_mutex);
         if(rc){pool->attention_gqa_abort=1;break;}
         uint64_t t=HAP_perf_get_qtimer_count();
         if(h->long_optimization&16384U) qbh_attention_u8_pack_k_long_register(a,valid,padded,cfg,w,qb);
@@ -43,9 +47,9 @@ static void qbh_long_attention_tasks(struct qbh_block_w4f16_pool *pool,
         else qbh_attention_u8_softmax_long_native4(c,a,rows,past,padded,cfg);
         job->u8_attention_softmax_ticks+=HAP_perf_get_qtimer_count()-t;
         if(!(h->long_optimization&4096U)) memset(c,0,qbh_align_up(valid*QBH_BLOCK_HEAD_DIM,128U));
-        qurt_mutex_lock(&pool->attention_hmx_mutex);
+        qurt_mutex_lock(dma_mutex);
         rc=qbh_scan_cache_dma(h,c,cv,valid*QBH_BLOCK_HEAD_DIM,1);
-        qurt_mutex_unlock(&pool->attention_hmx_mutex);
+        qurt_mutex_unlock(dma_mutex);
         if(rc){pool->attention_gqa_abort=1;break;}
         t=HAP_perf_get_qtimer_count();
         if(!pool->long_common_lut)qbh_attention_u8_prepare_v_row_major_hvx(cfg,lut);

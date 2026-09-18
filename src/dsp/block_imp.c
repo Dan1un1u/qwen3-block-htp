@@ -484,6 +484,7 @@ struct qbh_block_w4f16_pool {
     struct qbh_block_buffers *attention_buffers;
     struct qbh_block_hmx_worker *attention_hmx_worker;
     qurt_mutex_t attention_hmx_mutex;
+    qurt_mutex_t long_dma_mutex;
     uint8_t *long_shared;
     uint32_t long_rows,long_past,long_padded,long_stride,long_common_lut;
     volatile uint32_t attention_gqa_abort;
@@ -4962,6 +4963,7 @@ static int qbh_w4f16_pool_create(
     }
     memset(pool, 0, sizeof(*pool));
     qurt_mutex_init(&pool->attention_hmx_mutex);
+    qurt_mutex_init(&pool->long_dma_mutex);
     pool->worker_count = worker_count;
     pool->extra_expand_worker_index = UINT32_MAX;
     for (uint32_t worker = 0; worker < pool->worker_count; ++worker) {
@@ -5019,7 +5021,8 @@ static int qbh_w4f16_pool_create(
             qurt_sem_destroy(&pool->command_done[worker]);
             qurt_sem_destroy(&pool->command_ready[worker]);
         }
-        qurt_mutex_destroy(&pool->attention_hmx_mutex);
+        qurt_mutex_destroy(&pool->long_dma_mutex);
+    qurt_mutex_destroy(&pool->attention_hmx_mutex);
         return -1;
     }
     return 0;
@@ -5397,7 +5400,11 @@ static void qbh_llama_fp32_norm_parallel(struct qbh_block_header *header,
     const uint32_t compact=native && (header->paper_format_disable&1U);
     uint8_t *production=compact?buffers->attention_concat:out;
     uint32_t layout=compact?0U:native;
-    if(rows!=64U || !pool || pool->worker_count<3U) {
+    /* Keep the existing16-row parallel Norm schedule for a partial prefill;
+     * downstream consumers still use only the declared valid rows. */
+    const uint32_t parallel_tail=header->long_prompt_tokens &&
+        (header->long_optimization&2048U) && rows>1U && QBH_BLOCK_HEAD_DIM==128U;
+    if((rows!=64U && !parallel_tail) || !pool || pool->worker_count<3U) {
         qbh_llama_fp32_norm((const float *)buffers->residual,gamma,production,q,rows,QBH_BLOCK_HIDDEN,layout,buffers->sp2_scratch,opt);
     } else {
         pool->fp32_norm_opt=opt;pool->fp32_norm_native=layout;
@@ -6365,6 +6372,7 @@ static int qbh_w4f16_pool_destroy(
         qurt_sem_destroy(&pool->command_done[worker]);
         qurt_sem_destroy(&pool->command_ready[worker]);
     }
+    qurt_mutex_destroy(&pool->long_dma_mutex);
     qurt_mutex_destroy(&pool->attention_hmx_mutex);
     return result;
 }
