@@ -23,7 +23,8 @@ def prepare():
  base=read(BASE);src=Path(base['package']);assert sha(src/'manifest.json')==base['manifest_sha256']
  mf=read(src/'manifest.json')
  for n,v in mf['files'].items():assert sha(src/n)==v['sha256'],n
- M.mkdir(exist_ok=False)
+ M.mkdir(exist_ok=True)
+ assert not any(M.iterdir()), 'Refuse to overwrite prepared fixtures'
  original=Path('/mnt/d/llm_exp/models/llama3.2-3B-Instruct-origin')
  cfg=read(original/'config.json');cfg['head_dim']=128
  tok=AutoTokenizer.from_pretrained(original,local_files_only=True)
@@ -34,7 +35,7 @@ def prepare():
  ids+=tok.encode(text*40,add_special_tokens=False)
  ids=ids[:768];fixed=np.fromfile(src/'generation_expected_token_ids_u32.bin','<u4').tolist()
  fixed=(fixed*4)[:64]
- cos,sin=rope(cfg,torch.arange(832,device='cuda')[None],torch.float16)
+ cos,sin=rope(cfg,torch.arange(832)[None],torch.float16)
  cos=cos.cpu().numpy().reshape(832,128);sin=sin.cpu().numpy().reshape(832,128)
  assert np.array_equal(cos[:64],np.fromfile(src/'rope_cos_f16.bin','<f2').reshape(64,128))
  assert np.array_equal(sin[:64],np.fromfile(src/'rope_sin_f16.bin','<f2').reshape(64,128))
