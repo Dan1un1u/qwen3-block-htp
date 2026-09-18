@@ -1,3 +1,6 @@
+# L32-0052 migration checkpoint (active)
+Source 5cedece, branch codex/llama32-no-rotation, 3B28 build. Evidence /mnt/d/llm_exp/results/llama32-htp/l32-0052; read IMPLEMENTATION.md and formal-protocol.json. Final six-shape audits64/65/128/129/536+46/741+3 all exact (2520 layer outputs, all KV/head/padding); old scalar RoPE repair compiler FMA defect fixed with explicit separate rounding, failed evidence retained. Five short rounds done; ten rotated five-arm repeat10 campaign is running under campaign.py. Do not duplicate device work. Source/parameters frozen until campaign completes. Qwen EXP0295 is separately registered, CPU references complete, its campaign waits for this profiling_summary.json before acquiring device. Completion/promotion not yet recorded; short3B long/M64 parity is below1 and is not a pass claim.
+
 # L32-0052 active: migrate long prefill to Llama3B
 User authorizes remaining-model migration. Read docs/experiments/L32-0052.md. Device owned by Llama; Qwen migration follows separately.
 
