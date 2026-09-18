@@ -7,7 +7,7 @@ project:
   source_root: /home/daniuniu/work/qwen3-block-htp
   memory_branch: codex/qwen3-block-project-memory
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
-  updated_on: '2026-09-18'
+  updated_on: '2026-09-19'
   qnn_runtime: none
   qairt_runtime: none
   hexagon_sdk_candidate: 6.6.0.0
@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0298
+  active_experiment: null
   next_experiment_number: 299
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -2793,7 +2793,7 @@ current_scope:
   device_execution_state: idle_released
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  current_handoff: docs/experiments/EXP-0297-RESULTS.md
+  current_handoff: docs/experiments/EXP-0298-RESULTS.md
   active_recipe_specialization: native_W4_SP2_FP32_residual_no_rotation
   last_completed_experiment_contract:
     id: EXP-0297
@@ -12844,3 +12844,320 @@ current_scope:
   latest_e2e_shape: 'Qwen1.7 full28: native/control/optimized64+15, matched536+46 and741+3; ten paired repeat10
     cycles'
   latest_qwen3_17b_long_decode_optimization: *id005
+  latest_abc_a8_pair_measurement:
+    id: EXP-0298
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_role: numerical_physical_and_paired_measurement_completion; long_prefill_throughput_separately_reported
+    source_commits:
+    - 19a6861c8f556360a0565116fa716b56fd5712cb
+    numerical_physical_pass: true
+    table_rows:
+    - model: Qwen3-0.6B
+      recipe: W4A8
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 3060.778573593492
+      decode_tps: 94.07815826154915
+      gate_pass: true
+      experiment: EXP-0298
+    - model: Qwen3-0.6B
+      recipe: W4A8-SP2
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 3011.161886859795
+      decode_tps: 93.59499857427642
+      gate_pass: true
+      experiment: EXP-0298
+    - model: Qwen3-0.6B
+      recipe: W4A8
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 2643.2268460788
+      decode_tps: 63.037891651563406
+      gate_pass: false
+      experiment: EXP-0298
+    - model: Qwen3-0.6B
+      recipe: W4A8-SP2
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 2599.0887563592346
+      decode_tps: 62.82867026095792
+      gate_pass: false
+      experiment: EXP-0298
+    - model: Qwen3-0.6B
+      recipe: W4A8
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 2580.3406185068648
+      decode_tps: 57.59477322548941
+      gate_pass: false
+      experiment: EXP-0298
+    - model: Qwen3-0.6B
+      recipe: W4A8-SP2
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 2546.6733642430254
+      decode_tps: 57.53544640377863
+      gate_pass: false
+      experiment: EXP-0298
+    - model: Qwen3-1.7B
+      recipe: W4A8
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 1861.8814576225527
+      decode_tps: 47.385889551381275
+      gate_pass: true
+      experiment: EXP-0298
+    - model: Qwen3-1.7B
+      recipe: W4A8-SP2
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 1845.5167056449018
+      decode_tps: 47.266754613243776
+      gate_pass: true
+      experiment: EXP-0298
+    - model: Qwen3-1.7B
+      recipe: W4A8
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 1841.22610767649
+      decode_tps: 43.31067499893672
+      gate_pass: true
+      experiment: EXP-0298
+    - model: Qwen3-1.7B
+      recipe: W4A8-SP2
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 1826.3232085957347
+      decode_tps: 43.17921659915898
+      gate_pass: true
+      experiment: EXP-0298
+    - model: Qwen3-1.7B
+      recipe: W4A8
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 1871.2874825900092
+      decode_tps: 41.93705392888111
+      gate_pass: true
+      experiment: EXP-0298
+    - model: Qwen3-1.7B
+      recipe: W4A8-SP2
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 1857.8448992474468
+      decode_tps: 41.90816553217011
+      gate_pass: true
+      experiment: EXP-0298
+    models:
+      0.6B:
+        runtime_option: '927'
+        numerical:
+          audits: 8
+          exact_layer_outputs: 5236
+          exact_kv_elements: 2976210944
+          signed_zero_only: 0
+          all_head_exact: true
+          padding_unchanged: true
+        long_prefill_gate:
+          a8:
+            '536':
+              throughput_over_m64: 0.8635798972467101
+              ci95:
+              - 0.8619214637795397
+              - 0.8652239504770154
+              minimum_ratio: 0.9
+              pass_gate: false
+            '741':
+              throughput_over_m64: 0.8430340700789174
+              ci95:
+              - 0.8412102921391237
+              - 0.8447508532708128
+              minimum_ratio: 0.9
+              pass_gate: false
+          sp2:
+            '536':
+              throughput_over_m64: 0.863151452501183
+              ci95:
+              - 0.8623572207321567
+              - 0.8639816984078766
+              minimum_ratio: 0.9
+              pass_gate: false
+            '741':
+              throughput_over_m64: 0.8457444202373443
+              ci95:
+              - 0.8450594342782949
+              - 0.8463915640979883
+              minimum_ratio: 0.9
+              pass_gate: false
+        sp2_cost:
+          '64':
+            prefill:
+              sp2_over_a8_wall: 1.0164775885847306
+              sp2_wall_overhead_percent: 1.6477588584730585
+              ci95:
+              - 1.0145950188259236
+              - 1.0184239417149128
+            decode:
+              sp2_over_a8_wall: 1.0051622383100876
+              sp2_wall_overhead_percent: 0.5162238310087552
+              ci95:
+              - 1.003890922085609
+              - 1.006280884246981
+          '536':
+            prefill:
+              sp2_over_a8_wall: 1.0169821402257124
+              sp2_wall_overhead_percent: 1.6982140225712428
+              ci95:
+              - 1.015966877820213
+              - 1.018114694838865
+            decode:
+              sp2_over_a8_wall: 1.0033300305375952
+              sp2_wall_overhead_percent: 0.33300305375951744
+              ci95:
+              - 1.00232176429215
+              - 1.0043911516937944
+          '741':
+            prefill:
+              sp2_over_a8_wall: 1.0132200912518072
+              sp2_wall_overhead_percent: 1.322009125180723
+              ci95:
+              - 1.0121279473060594
+              - 1.0145853648538217
+            decode:
+              sp2_over_a8_wall: 1.0010311351596097
+              sp2_wall_overhead_percent: 0.10311351596097307
+              ci95:
+              - 0.9977811957050542
+              - 1.0043802181530008
+        runtime:
+          remote: /data/local/tmp/qwen3-block-htp/exp0298/0.6B/a8/binaries-a1
+          seal:
+            model_size: 0.6B
+            paper_trace: false
+            source_head: 19a6861c8f556360a0565116fa716b56fd5712cb
+            files:
+              /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/qwen3_block_cli: 3c20797c3bf7dd07aaf405c8ad141242b635c29b7e9963263145152c2883c944
+              /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/llama_sp2_cli: ea27a713188cabf0bc44766a351f165a8595e61d59df2814a9408e1b277de4b4
+              /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/libqwen3_probe.so: 8827a7890d5fd88965022149ab151231923051bd1c86a2b6af291412714adead
+              /home/daniuniu/work/qwen3-block-htp/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so: 68729ad20409f9decd3825f51e039bc11a8c54dde4bf8d248ef5c46571038827
+          archive: /mnt/d/llm_exp/results/qwen3-block-htp/exp0298/0.6B/a8/binaries-a1
+      1.7B:
+        runtime_option: '65439'
+        numerical:
+          audits: 8
+          exact_layer_outputs: 5236
+          exact_kv_elements: 2976210944
+          signed_zero_only: 0
+          all_head_exact: true
+          padding_unchanged: true
+        long_prefill_gate:
+          a8:
+            '536':
+              throughput_over_m64: 0.9889061949344307
+              ci95:
+              - 0.9878750993302938
+              - 0.9897626467019787
+              minimum_ratio: 0.9
+              pass_gate: true
+            '741':
+              throughput_over_m64: 1.0050518924977465
+              ci95:
+              - 1.0035418808262435
+              - 1.00646590514061
+              minimum_ratio: 0.9
+              pass_gate: true
+          sp2:
+            '536':
+              throughput_over_m64: 0.9895999331837747
+              ci95:
+              - 0.9890078924637624
+              - 0.9902158715685114
+              minimum_ratio: 0.9
+              pass_gate: true
+            '741':
+              throughput_over_m64: 1.0066800769480095
+              ci95:
+              - 1.0054226407414946
+              - 1.0080248149105824
+              minimum_ratio: 0.9
+              pass_gate: true
+        sp2_cost:
+          '64':
+            prefill:
+              sp2_over_a8_wall: 1.0088673009177298
+              sp2_wall_overhead_percent: 0.8867300917729803
+              ci95:
+              - 1.0080124300047626
+              - 1.0097448492771934
+            decode:
+              sp2_over_a8_wall: 1.0025204806023242
+              sp2_wall_overhead_percent: 0.25204806023242377
+              ci95:
+              - 1.001088782791176
+              - 1.0041554218385058
+          '536':
+            prefill:
+              sp2_over_a8_wall: 1.0081600556848938
+              sp2_wall_overhead_percent: 0.8160055684893752
+              ci95:
+              - 1.0074749008254558
+              - 1.0088311722830643
+            decode:
+              sp2_over_a8_wall: 1.0030444832058465
+              sp2_wall_overhead_percent: 0.3044483205846493
+              ci95:
+              - 1.0023278745972646
+              - 1.0037565510096564
+          '741':
+            prefill:
+              sp2_over_a8_wall: 1.0072355788946685
+              sp2_wall_overhead_percent: 0.7235578894668526
+              ci95:
+              - 1.0055660636943657
+              - 1.0091313493954053
+            decode:
+              sp2_over_a8_wall: 1.000689326205148
+              sp2_wall_overhead_percent: 0.06893262051479443
+              ci95:
+              - 0.9981004182372063
+              - 1.0031589733557558
+        runtime:
+          remote: /data/local/tmp/qwen3-block-htp/exp0298/1.7B/a8/binaries-a2
+          seal:
+            model_size: 1.7B
+            paper_trace: false
+            source_head: 19a6861c8f556360a0565116fa716b56fd5712cb
+            files:
+              /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/qwen3_block_cli: ba7bc07f3ce5d0b7842d97f670a789d16fbb05637729a276f4c4b0f63f4d00b7
+              /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/llama_sp2_cli: ea27a713188cabf0bc44766a351f165a8595e61d59df2814a9408e1b277de4b4
+              /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/libqwen3_probe.so: 8827a7890d5fd88965022149ab151231923051bd1c86a2b6af291412714adead
+              /home/daniuniu/work/qwen3-block-htp/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so: c3d180abff77b63c74be43433f310d425821004f6f85ea690026e8ab3b37c96e
+          archive: /mnt/d/llm_exp/results/qwen3-block-htp/exp0298/1.7B/a8/binaries-a2
+    formal_cycles_per_model: 10
+    formal_repeat: 10
+    short_cycles_per_model: 5
+    timed_rpc_boundaries: 45200
+    quality_claim: false
+    named_dataset_benchmark: false
+    baseline_promoted: false
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0298
+    evidence_ledger_sha256: ca07e29994a372f198de08a24fdf0a8ddc82de3d1efbe26d3b05640a20d632bb
+    report: docs/experiments/EXP-0298-RESULTS.md
+    device_owner: null
+    workbook: C:/Users/35961/Desktop/HTP硬件实验总表.xlsx
+    workbook_updated: true
+    workspace_build: 0.6B/28 layers

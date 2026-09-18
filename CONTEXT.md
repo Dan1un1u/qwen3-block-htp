@@ -1,6 +1,8 @@
-# Active EXP-0298
+# EXP-0298 ABC ordinary A8/SP2 paired measurements completed
 
-Complete paired ordinary A8/SP2 ABC timing for Qwen0.6/1.7; approved protocol docs/experiments/EXP-0298.md. Device serialized with L32-0054; no new optimization search.
+Four-model ABC campaign completed with the separately governed companion experiment. This project contributes two models, three shapes and both recipes: 64+42, 536+46, 741+3. Five short and ten formal repeat10 rounds per model, same binary per model, rotated order; all samples retained. Numerical/physical checks pass; long/M64 lower95% >=0.90 gate remains separately reported, with small-model optimization deferred. No model-quality claim or automatic promotion.
+
+Read docs/experiments/EXP-0298-RESULTS.md. Source 19a6861c8f556360a0565116fa716b56fd5712cb. Desktop workbook A/B/C updated; all A16 rows and curated D history preserved. No active experiment or device owner. Only the long API whitelist changed to admit ordinary A8; restore original ordinary middle qparams/LUT, keep W4 and other boundaries frozen.
 
 # Long-prefill gate now allows10% throughput loss
 User-approved reassessment: original95% CI lower bound of long/M64 prefill TPS >=0.90. See docs/LONG_PREFILL_GATE_10PCT_REVIEW.md/.json. Six of eight current measured long-shape SP2 rows pass; Qwen0.6B536+46 (-11.97%) and741+3 (-13.82%) still fail. Measurements, original strict-gate evidence and decode/numerical/physical guards are unchanged. No new hardware experiment. Desktop workbook B/C gate labels should follow this policy; A/D and TPS values stay unchanged.
