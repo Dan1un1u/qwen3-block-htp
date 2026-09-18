@@ -248,8 +248,9 @@ experiments:
   evidence_validity: valid
   local_gate: pass
   adoption_status: pending
-  approval_ref: 'User 2026-09-16: 补做浮点基线 per annotated audit, then discuss SP2 A16
-    Down comparison; no automatic implementation of A16 Down.'
+  approval_ref: "User 2026-09-16: \u8865\u505A\u6D6E\u70B9\u57FA\u7EBF per annotated\
+    \ audit, then discuss SP2 A16 Down comparison; no automatic implementation of\
+    \ A16 Down."
   parent_source: 5b01822b529fc2968c1b15124cdfd430709fef71
   record: docs/experiments/L32-0039.md
   runtime:
@@ -2432,9 +2433,9 @@ experiments:
 - id: L32-0045
   title: 3B E2E iterative optimization without performance stopping gates
   execution_state: completed
-  approval_ref: 'User 2026-09-18: 为llama 3.2-3B W4A8-SP2启动无gate的loop优化，尽量提高e2e速度。
-    Performance thresholds removed; hardware correctness and physical constraints
-    retained.'
+  approval_ref: "User 2026-09-18: \u4E3Allama 3.2-3B W4A8-SP2\u542F\u52A8\u65E0gate\u7684\
+    loop\u4F18\u5316\uFF0C\u5C3D\u91CF\u63D0\u9AD8e2e\u901F\u5EA6\u3002 Performance\
+    \ thresholds removed; hardware correctness and physical constraints retained."
   parent_source: 6f488b36293d85b2b7f22f70bc78e461e81f816c
   record: docs/experiments/L32-0045.md
   runtime:
@@ -2583,7 +2584,7 @@ experiments:
     modules: docs/experiments/L32-0047-MODULES.md
 - id: L32-0048
   title: Single-session delayed mapping feasibility for 3B FP16 weights
-  execution_state: running
+  execution_state: completed
   approval_ref: User2026-09-18 explicitly approves testing upstream delayed mappings
     on our device first, discussing multiple sessions only if blocked.
   record: docs/experiments/L32-0048.md
@@ -2591,3 +2592,84 @@ experiments:
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
+  evidence_validity: valid
+  local_gate: mapping_dma_pass
+  adoption_status: pending
+  evidence:
+    experiment: L32-0048
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: mapping_dma_pass
+    source_closure: e9995b7fb0e0a93193a20b39af6715e33c6ac2d8
+    measured_source: 4a5fbbfda4dc14ea4b3937e711b01922bc868c59
+    device_owner: null
+    quality_claim: false
+    e2e_measured: false
+    baseline_promoted: false
+    large_mappings: 2200
+    control_mappings: 12
+    large_processes: 15
+    max_resident_gib: 6.73388671875
+    all_pass: true
+    groups:
+      single-final:
+        processes: 5
+        mappings: 700
+        resident_gib: 5.25
+        active_windows: 1
+        map_us: 34.700967261904765
+        unmap_us: 65.29434523809525
+        map_unmap_per_sweep_ms: 0.6999671875
+        per_process_cost_min_ms: 0.6984427083333333
+        per_process_cost_max_ms: 0.7022708333333334
+        mean_allocation_ms: 389.3334164
+        mean_registration_ms: 19.508625
+        mean_probe_host_ms: 150.1705208
+        unique_va_count_per_process:
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+      double-pinned-final:
+        processes: 5
+        mappings: 700
+        resident_gib: 5.98388671875
+        active_windows: 2
+        map_us: 29.787202380952383
+        unmap_us: 56.14784226190476
+        map_unmap_per_sweep_ms: 0.6015453125
+        per_process_cost_min_ms: 0.6007239583333334
+        per_process_cost_max_ms: 0.6022786458333333
+        mean_allocation_ms: 475.8980832
+        mean_registration_ms: 26.6905624
+        mean_probe_host_ms: 149.4125832
+        unique_va_count_per_process:
+        - 6
+        - 6
+        - 6
+        - 6
+        - 6
+      fullsize-final:
+        processes: 5
+        mappings: 800
+        resident_gib: 6.73388671875
+        active_windows: 2
+        map_us: 30.1369140625
+        unmap_us: 56.9984375
+        map_unmap_per_sweep_ms: 0.6970828125
+        per_process_cost_min_ms: 0.696328125
+        per_process_cost_max_ms: 0.6984791666666667
+        mean_allocation_ms: 587.685229
+        mean_registration_ms: 39.774823
+        mean_probe_host_ms: 170.7982398
+        unique_va_count_per_process:
+        - 6
+        - 6
+        - 6
+        - 6
+        - 6
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0048
+    evidence_ledger_sha256: 08d8312bdcd7ae1eb8ca1c73e3a5b06564d0f19ed985409061e815bab1847c89
+    evidence_files: 100
+    report: docs/experiments/L32-0048-RESULTS.md

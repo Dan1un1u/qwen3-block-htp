@@ -6,7 +6,7 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0048
+  active_experiment: null
   next_experiment_number: 49
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -14,7 +14,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: 38b001a6127d7083d7d20f0b552ba23f20fde4ec
+    recorded_head: e9995b7fb0e0a93193a20b39af6715e33c6ac2d8
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -26,12 +26,12 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: large_weight_delayed_mapping_probe
+  stage: large_weight_delayed_mapping_verified
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Verify single-session delayed mappings above4GiB total resident DRAM,
-    sentinel/DMA correctness and repeated reclamation; discuss multisession only if
-    driver blocks. No full W16 export yet.
+  next_action: Discuss/integrate segmented resident FP16 weights with single-session
+    bounded DSP mapping. Mapping probe passed; full 3B W16 model export/inference
+    not yet authorized under0048. No multisession needed by current evidence.
   baseline_manifest: docs/PAPER_NO_ROTATION_BASELINES.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF_L32_0034.md
@@ -44,7 +44,7 @@ current_scope:
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0047
+  last_completed_experiment: L32-0048
   evidence_ledger_sha256: 599d86cf654b2b41526690c76ad1c0a251b5f206815a57ce4ae12b0024f94ac9
   formal_profiling_completed: false
   general_quantization_quality_accepted: false
@@ -2539,7 +2539,8 @@ current_scope:
     current_workspace_build: 3B/full28
   deferred_3b_w16a16:
     reason: FP16 backbone alone 5637144576 bytes exceeds uint32 shared offset ABI
-    user_decision: 先完成其余配置，3B W16A16 待讨论
+    user_decision: "\u5148\u5B8C\u6210\u5176\u4F59\u914D\u7F6E\uFF0C3B W16A16 \u5F85\
+      \u8BA8\u8BBA"
     no_paging_authorized: true
   latest_llama3b_ordinary_a8:
     experiment: L32-0046
@@ -2596,6 +2597,84 @@ current_scope:
     evidence_files: 8104
     report: docs/experiments/L32-0047-RESULTS.md
     modules: docs/experiments/L32-0047-MODULES.md
+  latest_large_weight_mapping_probe:
+    experiment: L32-0048
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: mapping_dma_pass
+    source_closure: e9995b7fb0e0a93193a20b39af6715e33c6ac2d8
+    measured_source: 4a5fbbfda4dc14ea4b3937e711b01922bc868c59
+    device_owner: null
+    quality_claim: false
+    e2e_measured: false
+    baseline_promoted: false
+    large_mappings: 2200
+    control_mappings: 12
+    large_processes: 15
+    max_resident_gib: 6.73388671875
+    all_pass: true
+    groups:
+      single-final:
+        processes: 5
+        mappings: 700
+        resident_gib: 5.25
+        active_windows: 1
+        map_us: 34.700967261904765
+        unmap_us: 65.29434523809525
+        map_unmap_per_sweep_ms: 0.6999671875
+        per_process_cost_min_ms: 0.6984427083333333
+        per_process_cost_max_ms: 0.7022708333333334
+        mean_allocation_ms: 389.3334164
+        mean_registration_ms: 19.508625
+        mean_probe_host_ms: 150.1705208
+        unique_va_count_per_process:
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+      double-pinned-final:
+        processes: 5
+        mappings: 700
+        resident_gib: 5.98388671875
+        active_windows: 2
+        map_us: 29.787202380952383
+        unmap_us: 56.14784226190476
+        map_unmap_per_sweep_ms: 0.6015453125
+        per_process_cost_min_ms: 0.6007239583333334
+        per_process_cost_max_ms: 0.6022786458333333
+        mean_allocation_ms: 475.8980832
+        mean_registration_ms: 26.6905624
+        mean_probe_host_ms: 149.4125832
+        unique_va_count_per_process:
+        - 6
+        - 6
+        - 6
+        - 6
+        - 6
+      fullsize-final:
+        processes: 5
+        mappings: 800
+        resident_gib: 6.73388671875
+        active_windows: 2
+        map_us: 30.1369140625
+        unmap_us: 56.9984375
+        map_unmap_per_sweep_ms: 0.6970828125
+        per_process_cost_min_ms: 0.696328125
+        per_process_cost_max_ms: 0.6984791666666667
+        mean_allocation_ms: 587.685229
+        mean_registration_ms: 39.774823
+        mean_probe_host_ms: 170.7982398
+        unique_va_count_per_process:
+        - 6
+        - 6
+        - 6
+        - 6
+        - 6
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0048
+    evidence_ledger_sha256: 08d8312bdcd7ae1eb8ca1c73e3a5b06564d0f19ed985409061e815bab1847c89
+    evidence_files: 100
+    report: docs/experiments/L32-0048-RESULTS.md
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp

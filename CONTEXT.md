@@ -1,3 +1,10 @@
+# L32-0048 completed: >4GiB delayed mapping works on current V79
+Read docs/experiments/L32-0048-RESULTS.md. Maximum6.73388671875GiB data allocated and fully touched, two768MiB DSP windows plus751.5MiB pinned. Fifteen independent large processes x20 sweeps,2200 mappings allpass; smallcontrol12 maps also pass. 33 distributed pages/buffer, bidirectionalDMA/epoch checks, host readback, retained window/pin checks, map/unmap/cleanup allpass. Addresses reused; bounded test, not exhaustive full-buffer validation or fullmodel inference.
+Mean mapping+unmapping per7/7/8-buffer sweep:0.699967/0.601545/0.697083ms. Wholeprobe wall includes diagnostic loops, notE2E. 8MiBVTCM; noHMX. No recipe/kernel changes, weight export, PPL, quality claim or baseline promotion.
+Mechanism FASTRPC_MAP_FD_DELAYED host registration + HAP_mmap2/HAP_munmap2 insideoneRPC. Doesnot remove32bitDSP/monolithicuint32ABI; next step requires segmented resident FP16 weights and buffer-ID+local-offset lookup, bounded KV/control mappings. No needmultisession atthisstage; integration remainsnextdiscussion.
+Measured4a5fbbfda4dc14ea4b3937e711b01922bc868c59, closuree9995b7fb0e0a93193a20b39af6715e33c6ac2d8. Evidence/mnt/d/llm_exp/results/llama32-htp/l32-0048; ledger08d8312bdcd7ae1eb8ca1c73e3a5b06564d0f19ed985409061e815bab1847c89, 100files rehashed. Source/memory synchronization checked atclosure; activeexperiment/deviceowner released. Initialcontrol-a01 linkerfailure retained, fixedLD_LIBRARY_PATH; notdrivermappingfailure.
+Prior headings below are history, including obsolete active-state notices.
+
 # L32-0048 active: delayed mapping probe
 Read docs/experiments/L32-0048.md. User approves independent mapping/correctness/cost probe; no full3B W16 implementation or multisession yet. Previous results frozen.
 
