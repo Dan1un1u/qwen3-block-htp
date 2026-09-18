@@ -32,7 +32,8 @@ static void qbh_long_attention_tasks(struct qbh_block_w4f16_pool *pool,
         qurt_mutex_unlock(&pool->attention_hmx_mutex);
         if(rc){pool->attention_gqa_abort=1;break;}
         uint64_t t=HAP_perf_get_qtimer_count();
-        qbh_attention_u8_pack_k_long(a,valid,padded,cfg,w,qb);
+        if(h->long_optimization&256U) qbh_attention_u8_pack_k_long_transpose(a,valid,padded,cfg,w,qb);
+        else qbh_attention_u8_pack_k_long(a,valid,padded,cfg,w,qb);
         job->u8_attention_k_pack_ticks+=HAP_perf_get_qtimer_count()-t;
         if(qbh_attention_u8_pool_submit(pool,job,q,w,qb,c,QBH_ATTENTION_Q_HEADS_PER_GROUP,
             QBH_ATTENTION_HEAD_DIM_TILES,tiles,&job->u8_attention_qk_hmx_ticks))break;
