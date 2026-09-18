@@ -6,8 +6,8 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: null
-  next_experiment_number: 49
+  active_experiment: L32-0049
+  next_experiment_number: 50
   maximum_running_experiments: 1
   remote_sync_required: true
 source_worktrees:
@@ -26,12 +26,11 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: large_weight_delayed_mapping_verified
+  stage: llama3b_w16_segmented_implementation
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Discuss/integrate segmented resident FP16 weights with single-session
-    bounded DSP mapping. Mapping probe passed; full 3B W16 model export/inference
-    not yet authorized under0048. No multisession needed by current evidence.
+  next_action: Implement user-approved segmented resident FP16 weights and single-session
+    delayed mappings; validate then full E2E.
   baseline_manifest: docs/PAPER_NO_ROTATION_BASELINES.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF_L32_0034.md
@@ -2541,7 +2540,8 @@ current_scope:
     reason: FP16 backbone alone 5637144576 bytes exceeds uint32 shared offset ABI
     user_decision: "\u5148\u5B8C\u6210\u5176\u4F59\u914D\u7F6E\uFF0C3B W16A16 \u5F85\
       \u8BA8\u8BBA"
-    no_paging_authorized: true
+    no_paging_authorized: false
+    superseded_by: L32-0049 user approved implementation after0048 success
   latest_llama3b_ordinary_a8:
     experiment: L32-0046
     execution_state: completed

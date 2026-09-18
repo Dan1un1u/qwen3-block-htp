@@ -230,3 +230,6 @@ User authorizes ordinary W4A8 derived from latest SP2 by removing only SP2, pres
 
 ## L32-0048 mapping probe authorization (2026-09-18)
 User explicitly authorizes independent delayed mapping feasibility on current device before discussing multisession. Supersedes W16 deferral only for this isolated probe. Preserve existing runtime/recipes, no quality/E2E claim; costs of any eventual per-token mapping must be included.
+
+## L32-0049 segmented FP16 implementation authorization
+User approves full generic3B W16A16 implementation after0048 mapping success. Supersedes prior W16 deferral and0048 probe-only restriction for0049. Fresh original FP16 weights, resident segmented single-session mapping, generic existing kernels/basic DMA only; hardware correctness then formal E2E. No specialization or quality promotion.

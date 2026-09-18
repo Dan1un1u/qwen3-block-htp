@@ -1,3 +1,6 @@
+# L32-0049 active: generic3B W16A16 segmented implementation
+Read docs/experiments/L32-0049.md. User approves implementation after0048. Fresh FP16 weights, bounded delayed mappings, existing generic kernels. No specialty optimization. Qwen activeNone checked; device serialized. Prior entries historical.
+
 # L32-0048 completed: >4GiB delayed mapping works on current V79
 Read docs/experiments/L32-0048-RESULTS.md. Maximum6.73388671875GiB data allocated and fully touched, two768MiB DSP windows plus751.5MiB pinned. Fifteen independent large processes x20 sweeps,2200 mappings allpass; smallcontrol12 maps also pass. 33 distributed pages/buffer, bidirectionalDMA/epoch checks, host readback, retained window/pin checks, map/unmap/cleanup allpass. Addresses reused; bounded test, not exhaustive full-buffer validation or fullmodel inference.
 Mean mapping+unmapping per7/7/8-buffer sweep:0.699967/0.601545/0.697083ms. Wholeprobe wall includes diagnostic loops, notE2E. 8MiBVTCM; noHMX. No recipe/kernel changes, weight export, PPL, quality claim or baseline promotion.

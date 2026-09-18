@@ -2673,3 +2673,13 @@ experiments:
     evidence_ledger_sha256: 08d8312bdcd7ae1eb8ca1c73e3a5b06564d0f19ed985409061e815bab1847c89
     evidence_files: 100
     report: docs/experiments/L32-0048-RESULTS.md
+- id: L32-0049
+  title: Generic3B W16A16 with segmented resident weights
+  execution_state: running
+  approval_ref: User explicitly approves implementation after L32-0048 successful
+    mapping probe.
+  parent_source: e9995b7fb0e0a93193a20b39af6715e33c6ac2d8
+  record: docs/experiments/L32-0049.md
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
