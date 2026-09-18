@@ -2101,7 +2101,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
 #ifdef QBH_QWEN_06B
     if (!header || header->dense_r3_mode || header->dense_r4_mode) return 0;
     if (header->variant == QBH_BLOCK_W4U8 &&
-        (QBH_FP32_RESIDUAL(header)!=2U || QBH_SP2(header)!=8U)) return 0;
+        (QBH_FP32_RESIDUAL(header)!=2U ||
+         (QBH_SP2(header)!=8U && QBH_SP2(header)!=0U))) return 0;
     if (QBH_F16_FP32_RESIDUAL(header) &&
         (header->fp16_common_schedule_mode !=
           (QBH_BLOCK_FP16_COMMON_SCHEDULE_INPUT_NORM_POOL |
