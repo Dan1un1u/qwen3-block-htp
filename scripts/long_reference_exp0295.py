@@ -144,7 +144,7 @@ def layer(x,p,cos,sin,past=None,sp2=True,seed=None):
  kr=exact_qk_norm_rope_u8(kr,8,q['k_projection'],q['k_rope'],np.fromfile(p/'k_norm_weight_f16.bin','<f2'),cos,sin).reshape(-1,8,128)
  k=kr.transpose(1,0,2);v=v.reshape(-1,8,128).transpose(1,0,2);count=0
  if seed is not None:
-  assert past is None and len(x)==64;k[:,0]=seed[0];v[:,0]=seed[1]
+  assert past is None and len(x)>=64;k[:,0]=seed[0];v[:,0]=seed[1]
  if past is not None:count=past[0].shape[1];k=np.concatenate([past[0],k],1);v=np.concatenate([past[1],v],1)
  cfg=np.fromfile(p/'attention_config_all_groups.bin','<i4').reshape(8,15);av=np.empty((len(x),16,128),'u1')
  valid=np.arange(k.shape[1])[None,:]<=count+np.arange(len(x))[:,None]
