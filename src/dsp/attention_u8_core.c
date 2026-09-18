@@ -3152,6 +3152,8 @@ static void qbh_attention_u8_requant_softmax_dynamic_hvx_rows(
     asm volatile("barrier" ::: "memory");
 }
 
+#include "long_softmax_native.inc"
+
 static void qbh_attention_u8_dynamic_stash_scalar_probability(
     uint8_t *score_tiles, const uint8_t *probability_tiles,
     uint32_t tiles) {

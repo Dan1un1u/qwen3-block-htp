@@ -36,6 +36,8 @@ struct qbh_attention_u8_telemetry {
     uint32_t dynamic_hvx_tile4_mismatch_count;
 };
 
+void qbh_attention_u8_softmax_long_native4(uint8_t *,uint8_t *,uint32_t,uint32_t,uint32_t,const struct qbh_attention_config *);
+
 /* A9: continuous FP32 softmax of the actual raw HMX U8 scores. Optional
  * dense probability dump is diagnostic-only; production passes NULL. */
 void qbh_attention_fp32_softmax_native(const uint8_t *scores,uint8_t *probability,

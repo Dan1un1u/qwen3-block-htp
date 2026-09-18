@@ -20593,6 +20593,9 @@ static int qbh_scan_u8_attention(
         start = HAP_perf_get_qtimer_count();
         qbh_wide_decode_audit(header,shared,0U,config->group_index,plane_c,padded_tokens);
         qbh_long_progress(header,5200U+group);
+        if(header->long_prompt_tokens && (header->long_optimization&1U) && logical_rows>1U && header->wide_score_mode==8U)
+            qbh_attention_u8_softmax_long_native4(plane_c,plane_a,logical_rows,past_tokens,padded_tokens,config);
+        else
         qbh_attention_u8_requant_softmax_dynamic(
             plane_c, plane_a, logical_rows, past_tokens,
             valid_tokens, padded_tokens, config, &telemetry,
