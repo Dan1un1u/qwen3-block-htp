@@ -8560,7 +8560,8 @@ qbh_run_f16f16_interleaved_gate_up(
             worker, QBH_BLOCK_HMX_FP16, activation_tiles,
             weight_slots[slot], buffers->scale_or_bias,
             (__fp16 *)outputs[projection] +
-                (size_t)group * output_group_elements,
+                (size_t)(group % QBH_BLOCK_MLP_CROUTON_RING_SLOTS) *
+                    output_group_elements,
             2U, k_tiles, group_tiles);
 
         if (command + 1U < command_count) {
