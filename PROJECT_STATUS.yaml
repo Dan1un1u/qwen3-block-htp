@@ -6,7 +6,7 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0050
+  active_experiment: null
   next_experiment_number: 51
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -14,7 +14,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: dba32d5ebd0bf73175c6d93e09d606e490a14385
+    recorded_head: fad2d40fa909c2c42f251b04a1c1eed64ad2af1c
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -26,11 +26,12 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: llama3b_w16_segmented_completed
+  stage: llama1b_sp2_long_prefill_completed
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Discuss completed3B W16A16 generic speed and retained full mathematical
-    alignment limitation; no baseline promotion or new device task authorized.
+  next_action: Discuss long-KV attention optimization or separately scoped migration
+    to other models/recipes; see latest_long_prefill. Existing short-shape baseline
+    fields remain historical.
   baseline_manifest: docs/PAPER_NO_ROTATION_BASELINES.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF_L32_0034.md
@@ -43,9 +44,9 @@ current_scope:
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0049
+  last_completed_experiment: L32-0050
   evidence_ledger_sha256: 599d86cf654b2b41526690c76ad1c0a251b5f206815a57ce4ae12b0024f94ac9
-  formal_profiling_completed: false
+  formal_profiling_completed: true
   general_quantization_quality_accepted: false
   w4a16_quality_gate_pass: false
   validated_w4a8_rotations:
@@ -2711,6 +2712,7 @@ current_scope:
     evidence_files: 6118
     report: docs/experiments/L32-0049-RESULTS.md
     modules: docs/experiments/L32-0049-MODULES.md
+  long_prefill_report: docs/experiments/L32-0050-RESULTS.md
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp
@@ -2789,3 +2791,46 @@ latest_llama3b_w4a8_sp2_optimization:
   per_token_hmx_commands_saved: 980
   per_token_weight_dma_descriptors_saved: 1960
   parent_experiment: L32-0044
+latest_long_prefill:
+  experiment: L32-0050
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
+  source_closure: fad2d40fa909c2c42f251b04a1c1eed64ad2af1c
+  measured_source: fad2d40fa909c2c42f251b04a1c1eed64ad2af1c
+  model: Llama-3.2-1B-Instruct
+  recipe: W4A8-SP2 no rotation FP32 residual
+  performance:
+    '536':
+      prefill: 638.9579903153573
+      decode: 23.03588493551233
+    '741':
+      prefill: 519.0375821539878
+      decode: 19.387292227603325
+  shapes:
+    '536': 536 prompt +46 decode RPC steps
+    '741': 741 prompt +3 decode RPC steps
+  formal_processes_per_shape: 10
+  replays_per_process: 10
+  short_auxiliary_processes_per_shape: 5
+  timed_rpc_boundaries: 7000
+  auxiliary_rpc_boundaries: 350
+  vtcm_peak_bytes: 8098272
+  implementation_crosscheck_pass: true
+  physical_gate_pass: true
+  performance_gate_applied: false
+  independent_checked_layer_outputs: 1632
+  bit_exact_checked_layer_outputs: 1631
+  signed_zero_only_outputs: 1
+  quality_claim: false
+  baseline_promoted: false
+  device_owner: null
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0050
+  evidence_ledger_sha256: 385b0d52f667264895d2f1ac99f191c3ec5cc25f7f047240b551967742e808f9
+  evidence_files: 5827
+  evidence_bytes: 2502716962
+  report: docs/experiments/L32-0050-RESULTS.md
+  modules: docs/experiments/L32-0050-MODULES.md
+  other_models_recipes_migrated: false
+  workspace_build: 1B /16 layers
+  named_dataset_benchmark: false

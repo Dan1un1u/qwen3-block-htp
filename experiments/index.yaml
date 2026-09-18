@@ -2721,7 +2721,7 @@ experiments:
     modules: docs/experiments/L32-0049-MODULES.md
 - id: L32-0050
   title: Llama1B SP2 chunked long prefill
-  execution_state: running
+  execution_state: completed
   approval_ref: User approves proposed chunked long prefill implementation and validation
     2026-09-18
   parent_source: dba32d5ebd0bf73175c6d93e09d606e490a14385
@@ -2729,6 +2729,49 @@ experiments:
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
-  evidence_validity: pending
-  local_gate: not_run
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: pending
+  evidence:
+    experiment: L32-0050
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    source_closure: fad2d40fa909c2c42f251b04a1c1eed64ad2af1c
+    measured_source: fad2d40fa909c2c42f251b04a1c1eed64ad2af1c
+    model: Llama-3.2-1B-Instruct
+    recipe: W4A8-SP2 no rotation FP32 residual
+    performance:
+      '536':
+        prefill: 638.9579903153573
+        decode: 23.03588493551233
+      '741':
+        prefill: 519.0375821539878
+        decode: 19.387292227603325
+    shapes:
+      '536': 536 prompt +46 decode RPC steps
+      '741': 741 prompt +3 decode RPC steps
+    formal_processes_per_shape: 10
+    replays_per_process: 10
+    short_auxiliary_processes_per_shape: 5
+    timed_rpc_boundaries: 7000
+    auxiliary_rpc_boundaries: 350
+    vtcm_peak_bytes: 8098272
+    implementation_crosscheck_pass: true
+    physical_gate_pass: true
+    performance_gate_applied: false
+    independent_checked_layer_outputs: 1632
+    bit_exact_checked_layer_outputs: 1631
+    signed_zero_only_outputs: 1
+    quality_claim: false
+    baseline_promoted: false
+    device_owner: null
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0050
+    evidence_ledger_sha256: 385b0d52f667264895d2f1ac99f191c3ec5cc25f7f047240b551967742e808f9
+    evidence_files: 5827
+    evidence_bytes: 2502716962
+    report: docs/experiments/L32-0050-RESULTS.md
+    modules: docs/experiments/L32-0050-MODULES.md
+    other_models_recipes_migrated: false
+    workspace_build: 1B /16 layers
+    named_dataset_benchmark: false
