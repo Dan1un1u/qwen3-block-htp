@@ -7661,7 +7661,8 @@ static int qbh_run_generation_head_w4u8(
             QBH_BLOCK_GENERATION_GREEDY_W4U8_BATCH8_RESIDENT_BIAS;
     const uint32_t direct_n_decode =
 #ifdef QBH_MODEL_LLAMA32
-        (logical_rows == 1U || logical_rows == QBH_BLOCK_M || header->long_prompt_tokens) &&
+        (logical_rows == 1U || logical_rows == QBH_BLOCK_M ||
+         (header->long_prompt_tokens && QBH_BLOCK_HEAD_DIM == 128U)) &&
 #else
         header->scan_mode == QBH_BLOCK_SCAN_DECODE &&
         logical_rows == 1U &&
