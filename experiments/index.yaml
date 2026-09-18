@@ -248,9 +248,8 @@ experiments:
   evidence_validity: valid
   local_gate: pass
   adoption_status: pending
-  approval_ref: "User 2026-09-16: \u8865\u505A\u6D6E\u70B9\u57FA\u7EBF per annotated\
-    \ audit, then discuss SP2 A16 Down comparison; no automatic implementation of\
-    \ A16 Down."
+  approval_ref: 'User 2026-09-16: 补做浮点基线 per annotated audit, then discuss SP2 A16
+    Down comparison; no automatic implementation of A16 Down.'
   parent_source: 5b01822b529fc2968c1b15124cdfd430709fef71
   record: docs/experiments/L32-0039.md
   runtime:
@@ -2433,9 +2432,9 @@ experiments:
 - id: L32-0045
   title: 3B E2E iterative optimization without performance stopping gates
   execution_state: completed
-  approval_ref: "User 2026-09-18: \u4E3Allama 3.2-3B W4A8-SP2\u542F\u52A8\u65E0gate\u7684\
-    loop\u4F18\u5316\uFF0C\u5C3D\u91CF\u63D0\u9AD8e2e\u901F\u5EA6\u3002 Performance\
-    \ thresholds removed; hardware correctness and physical constraints retained."
+  approval_ref: 'User 2026-09-18: 为llama 3.2-3B W4A8-SP2启动无gate的loop优化，尽量提高e2e速度。
+    Performance thresholds removed; hardware correctness and physical constraints
+    retained.'
   parent_source: 6f488b36293d85b2b7f22f70bc78e461e81f816c
   record: docs/experiments/L32-0045.md
   runtime:
@@ -2675,7 +2674,7 @@ experiments:
     report: docs/experiments/L32-0048-RESULTS.md
 - id: L32-0049
   title: Generic3B W16A16 with segmented resident weights
-  execution_state: running
+  execution_state: completed
   approval_ref: User explicitly approves implementation after L32-0048 successful
     mapping probe.
   parent_source: e9995b7fb0e0a93193a20b39af6715e33c6ac2d8
@@ -2683,3 +2682,40 @@ experiments:
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
+  evidence_validity: valid
+  local_gate: implementation_crosscheck_pass_full_mathematical_alignment_fail
+  adoption_status: pending
+  evidence:
+    experiment: L32-0049
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: implementation_crosscheck_pass_full_mathematical_alignment_fail
+    source_closure: dba32d5ebd0bf73175c6d93e09d606e490a14385
+    measured_source: dba32d5ebd0bf73175c6d93e09d606e490a14385
+    shape: M64+42/cache128/full28
+    performance:
+      prefill: 409.7704126179929
+      decode: 6.785250125099367
+    mapping:
+      prefill:
+        map_us: 256.9390625
+        unmap_us: 466.76197916666666
+        count: 7
+      decode:
+        map_us: 242.09062500000002
+        unmap_us: 456.964558531746
+        count: 7
+    long_kv_layout_crosscheck_pass: true
+    implementation_crosscheck_pass: true
+    full_mathematical_alignment_pass: false
+    max_full_boundary_nrmse: 0.004798236471210144
+    hardware_composition_scope: Untimed monolithic single-layer RPC composition versus
+      production segmented full-stack RPC; M64+1 only, no throughput claim
+    quality_claim: false
+    baseline_promoted: false
+    device_owner: null
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0049
+    evidence_ledger_sha256: 4647bca725189e7dffc9bcb5bc4b69cd5e3e4a0135e46ec9dc95108266d8d9fa
+    evidence_files: 6118
+    report: docs/experiments/L32-0049-RESULTS.md
+    modules: docs/experiments/L32-0049-MODULES.md

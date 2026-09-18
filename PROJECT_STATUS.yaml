@@ -6,7 +6,7 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0049
+  active_experiment: null
   next_experiment_number: 50
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -14,7 +14,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: e9995b7fb0e0a93193a20b39af6715e33c6ac2d8
+    recorded_head: dba32d5ebd0bf73175c6d93e09d606e490a14385
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -26,11 +26,11 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: llama3b_w16_segmented_implementation
+  stage: llama3b_w16_segmented_completed
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Implement user-approved segmented resident FP16 weights and single-session
-    delayed mappings; validate then full E2E.
+  next_action: Discuss completed3B W16A16 generic speed and retained full mathematical
+    alignment limitation; no baseline promotion or new device task authorized.
   baseline_manifest: docs/PAPER_NO_ROTATION_BASELINES.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF_L32_0034.md
@@ -43,7 +43,7 @@ current_scope:
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0048
+  last_completed_experiment: L32-0049
   evidence_ledger_sha256: 599d86cf654b2b41526690c76ad1c0a251b5f206815a57ce4ae12b0024f94ac9
   formal_profiling_completed: false
   general_quantization_quality_accepted: false
@@ -2538,10 +2538,12 @@ current_scope:
     current_workspace_build: 3B/full28
   deferred_3b_w16a16:
     reason: FP16 backbone alone 5637144576 bytes exceeds uint32 shared offset ABI
-    user_decision: "\u5148\u5B8C\u6210\u5176\u4F59\u914D\u7F6E\uFF0C3B W16A16 \u5F85\
-      \u8BA8\u8BBA"
+    user_decision: 先完成其余配置，3B W16A16 待讨论
     no_paging_authorized: false
     superseded_by: L32-0049 user approved implementation after0048 success
+    resolved_by: L32-0049
+    runtime_supported: true
+    retained_mathematical_alignment_limit: true
   latest_llama3b_ordinary_a8:
     experiment: L32-0046
     execution_state: completed
@@ -2675,6 +2677,40 @@ current_scope:
     evidence_ledger_sha256: 08d8312bdcd7ae1eb8ca1c73e3a5b06564d0f19ed985409061e815bab1847c89
     evidence_files: 100
     report: docs/experiments/L32-0048-RESULTS.md
+  latest_llama3b_w16a16_completion:
+    experiment: L32-0049
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: implementation_crosscheck_pass_full_mathematical_alignment_fail
+    source_closure: dba32d5ebd0bf73175c6d93e09d606e490a14385
+    measured_source: dba32d5ebd0bf73175c6d93e09d606e490a14385
+    shape: M64+42/cache128/full28
+    performance:
+      prefill: 409.7704126179929
+      decode: 6.785250125099367
+    mapping:
+      prefill:
+        map_us: 256.9390625
+        unmap_us: 466.76197916666666
+        count: 7
+      decode:
+        map_us: 242.09062500000002
+        unmap_us: 456.964558531746
+        count: 7
+    long_kv_layout_crosscheck_pass: true
+    implementation_crosscheck_pass: true
+    full_mathematical_alignment_pass: false
+    max_full_boundary_nrmse: 0.004798236471210144
+    hardware_composition_scope: Untimed monolithic single-layer RPC composition versus
+      production segmented full-stack RPC; M64+1 only, no throughput claim
+    quality_claim: false
+    baseline_promoted: false
+    device_owner: null
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0049
+    evidence_ledger_sha256: 4647bca725189e7dffc9bcb5bc4b69cd5e3e4a0135e46ec9dc95108266d8d9fa
+    evidence_files: 6118
+    report: docs/experiments/L32-0049-RESULTS.md
+    modules: docs/experiments/L32-0049-MODULES.md
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp

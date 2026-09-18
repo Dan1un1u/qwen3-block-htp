@@ -1,0 +1,754 @@
+{
+  "experiment": "L32-0049",
+  "model": "Llama-3.2-3B-Instruct",
+  "recipe": "W16A16",
+  "shape": "M64+42/cache128/full28",
+  "measured_source": "dba32d5ebd0bf73175c6d93e09d606e490a14385",
+  "performance": {
+    "short": {
+      "prefill": {
+        "tps": 411.3747588029121,
+        "ci95_tps": [
+          410.1161342915741,
+          413.43495388962344
+        ],
+        "host_ns": 155575904.04000002,
+        "rounds": [
+          154084380.3,
+          155762051.9,
+          155875057.0,
+          155984677.0,
+          156173354.0
+        ],
+        "modules": [
+          {
+            "module": "I/O、metadata",
+            "us": 171.24791666666667,
+            "share": 0.11007354752226749
+          },
+          {
+            "module": "Input RMSNorm",
+            "us": 662.3322916666667,
+            "share": 0.4257293542683672
+          },
+          {
+            "module": "QKV＋RoPE",
+            "us": 20728.305208333335,
+            "share": 13.323596180423861
+          },
+          {
+            "module": "QK–Softmax–AV",
+            "us": 15508.376041666668,
+            "share": 9.968366333696071
+          },
+          {
+            "module": "O projection",
+            "us": 12011.238541666668,
+            "share": 7.7205005593786975
+          },
+          {
+            "module": "Post-attention residual＋RMSNorm",
+            "us": 636.8166666666666,
+            "share": 0.4093285978932413
+          },
+          {
+            "module": "Gate/Up＋SwiGLU",
+            "us": 60937.24166666667,
+            "share": 39.16881733240588
+          },
+          {
+            "module": "Down",
+            "us": 27855.311458333334,
+            "share": 17.904643800862292
+          },
+          {
+            "module": "Final residual",
+            "us": 208.12395833333335,
+            "share": 0.13377647368825363
+          },
+          {
+            "module": "KV carrier conversion",
+            "us": 363.9479166666667,
+            "share": 0.2339359163055818
+          },
+          {
+            "module": "KV append DMA",
+            "us": 509.11145833333336,
+            "share": 0.32724313027449037
+          },
+          {
+            "module": "Block orchestration",
+            "us": 19.323958333333334,
+            "share": 0.012420919841394566
+          },
+          {
+            "module": "Layer bookkeeping",
+            "us": 727.5697916666667,
+            "share": 0.4676622618111875
+          },
+          {
+            "module": "Stage-boundary bookkeeping",
+            "us": 9.450000000000001,
+            "share": 0.006074205422949249
+          },
+          {
+            "module": "DSP unattributed",
+            "us": 0.0,
+            "share": 0.0
+          },
+          {
+            "module": "Runtime setup/teardown",
+            "us": 153.89374999999998,
+            "share": 0.09891875669925881
+          },
+          {
+            "module": "Embedding",
+            "us": 69.43645833333333,
+            "share": 0.044631884842192895
+          },
+          {
+            "module": "Final model RMSNorm",
+            "us": 4.746875,
+            "share": 0.0030511633721758955
+          },
+          {
+            "module": "LM head＋greedy（不含 final norm）",
+            "us": 14294.079166666668,
+            "share": 9.187849014839422
+          },
+          {
+            "module": "Host–DSP 边界",
+            "us": 705.3509150000464,
+            "share": 0.4533805664524334
+          },
+          {
+            "module": "完整 Host wall",
+            "us": 155575.90404000002,
+            "share": 100
+          }
+        ]
+      },
+      "decode": {
+        "tps": 6.808218262000985,
+        "ci95_tps": [
+          6.779109501034822,
+          6.854664303261816
+        ],
+        "host_ns": 146881307.49,
+        "rounds": [
+          144918786.18571427,
+          147037498.82380953,
+          147473280.94285715,
+          147340505.40952381,
+          147636466.08809525
+        ],
+        "modules": [
+          {
+            "module": "I/O、metadata",
+            "us": 163.5171130952381,
+            "share": 0.11132601955246804
+          },
+          {
+            "module": "Input RMSNorm",
+            "us": 656.8704613095239,
+            "share": 0.4472117470456511
+          },
+          {
+            "module": "QKV＋RoPE",
+            "us": 20600.735937499998,
+            "share": 14.025430662034745
+          },
+          {
+            "module": "QK–Softmax–AV",
+            "us": 6313.009722222222,
+            "share": 4.29803480790231
+          },
+          {
+            "module": "O projection",
+            "us": 11937.754166666668,
+            "share": 8.127483592477835
+          },
+          {
+            "module": "Post-attention residual＋RMSNorm",
+            "us": 632.5016369047619,
+            "share": 0.43062091951205156
+          },
+          {
+            "module": "Gate/Up＋SwiGLU",
+            "us": 60649.39799107143,
+            "share": 41.29143389821784
+          },
+          {
+            "module": "Down",
+            "us": 27697.654489087305,
+            "share": 18.85716771071977
+          },
+          {
+            "module": "Final residual",
+            "us": 207.88871527777778,
+            "share": 0.14153517478180896
+          },
+          {
+            "module": "KV carrier conversion",
+            "us": 425.16912202380956,
+            "share": 0.2894644181001425
+          },
+          {
+            "module": "KV append DMA",
+            "us": 220.43005952380952,
+            "share": 0.15007359567439638
+          },
+          {
+            "module": "Block orchestration",
+            "us": 14.89826388888889,
+            "share": 0.010143063228044313
+          },
+          {
+            "module": "Layer bookkeeping",
+            "us": 695.4756200396826,
+            "share": 0.4734949817130624
+          },
+          {
+            "module": "Stage-boundary bookkeeping",
+            "us": 2.4203125,
+            "share": 0.0016478015762249258
+          },
+          {
+            "module": "DSP unattributed",
+            "us": 0.0,
+            "share": 0.0
+          },
+          {
+            "module": "Runtime setup/teardown",
+            "us": 113.77276785714287,
+            "share": 0.07745898358433986
+          },
+          {
+            "module": "Embedding",
+            "us": 2.2244295634920634,
+            "share": 0.0015144401976701545
+          },
+          {
+            "module": "Final model RMSNorm",
+            "us": 3.3159722222222223,
+            "share": 0.002257586263962132
+          },
+          {
+            "module": "LM head＋greedy（不含 final norm）",
+            "us": 14298.211086309524,
+            "share": 9.734534183175743
+          },
+          {
+            "module": "Host–DSP 边界",
+            "us": 2246.0596229365037,
+            "share": 1.529166414241935
+          },
+          {
+            "module": "完整 Host wall",
+            "us": 146881.30749,
+            "share": 100
+          }
+        ]
+      }
+    },
+    "formal": {
+      "prefill": {
+        "tps": 409.7704126179929,
+        "ci95_tps": [
+          409.1703987726325,
+          410.3896337061457
+        ],
+        "host_ns": 156185019.78000003,
+        "rounds": [
+          155957088.5,
+          155392880.1,
+          156434026.0,
+          156365771.1,
+          156183973.8,
+          156048411.6,
+          156150619.6,
+          156028468.7,
+          156367114.5,
+          156921843.9
+        ],
+        "modules": [
+          {
+            "module": "I/O、metadata",
+            "us": 171.01822916666669,
+            "share": 0.10949720364191168
+          },
+          {
+            "module": "Input RMSNorm",
+            "us": 662.3421875000001,
+            "share": 0.4240753616659048
+          },
+          {
+            "module": "QKV＋RoPE",
+            "us": 20831.685937500002,
+            "share": 13.337825847090338
+          },
+          {
+            "module": "QK–Softmax–AV",
+            "us": 15501.152083333334,
+            "share": 9.924864820690251
+          },
+          {
+            "module": "O projection",
+            "us": 12060.069270833334,
+            "share": 7.721655564548362
+          },
+          {
+            "module": "Post-attention residual＋RMSNorm",
+            "us": 637.0864583333334,
+            "share": 0.4079049701634153
+          },
+          {
+            "module": "Gate/Up＋SwiGLU",
+            "us": 61125.50677083334,
+            "share": 39.136600204637965
+          },
+          {
+            "module": "Down",
+            "us": 28065.47760416667,
+            "share": 17.9693786534069
+          },
+          {
+            "module": "Final residual",
+            "us": 208.26927083333334,
+            "share": 0.13334778913284925
+          },
+          {
+            "module": "KV carrier conversion",
+            "us": 364.76927083333334,
+            "share": 0.23354946034334284
+          },
+          {
+            "module": "KV append DMA",
+            "us": 507.9041666666667,
+            "share": 0.3251939061646842
+          },
+          {
+            "module": "Block orchestration",
+            "us": 19.5265625,
+            "share": 0.012502199332243794
+          },
+          {
+            "module": "Layer bookkeeping",
+            "us": 728.7822916666668,
+            "share": 0.46661471932021326
+          },
+          {
+            "module": "Stage-boundary bookkeeping",
+            "us": 9.633854166666667,
+            "share": 0.006168231870275892
+          },
+          {
+            "module": "DSP unattributed",
+            "us": 0.0,
+            "share": 0.0
+          },
+          {
+            "module": "Runtime setup/teardown",
+            "us": 155.353125,
+            "share": 0.09946736583241349
+          },
+          {
+            "module": "Embedding",
+            "us": 70.29895833333333,
+            "share": 0.045010051816976704
+          },
+          {
+            "module": "Final model RMSNorm",
+            "us": 4.835416666666667,
+            "share": 0.0030959541916873753
+          },
+          {
+            "module": "LM head＋greedy（不含 final norm）",
+            "us": 14379.276041666666,
+            "share": 9.206565432409015
+          },
+          {
+            "module": "Host–DSP 边界",
+            "us": 682.0322800000722,
+            "share": 0.4366822637412814
+          },
+          {
+            "module": "完整 Host wall",
+            "us": 156185.01978000003,
+            "share": 100
+          }
+        ]
+      },
+      "decode": {
+        "tps": 6.785250125099367,
+        "ci95_tps": [
+          6.7805174192954345,
+          6.789991212173819
+        ],
+        "host_ns": 147378502.12785715,
+        "rounds": [
+          147184198.85238096,
+          147151375.44523808,
+          147474141.4595238,
+          147577141.95238096,
+          147241648.51904762,
+          147315420.5452381,
+          147438851.13809523,
+          147225562.7047619,
+          147557436.44047618,
+          147619244.22142857
+        ],
+        "modules": [
+          {
+            "module": "I/O、metadata",
+            "us": 164.31494295634923,
+            "share": 0.11149179872502639
+          },
+          {
+            "module": "Input RMSNorm",
+            "us": 656.7503968253969,
+            "share": 0.4456215712218583
+          },
+          {
+            "module": "QKV＋RoPE",
+            "us": 20692.529712301584,
+            "share": 14.040398981901667
+          },
+          {
+            "module": "QK–Softmax–AV",
+            "us": 6313.624615575397,
+            "share": 4.28395222126634
+          },
+          {
+            "module": "O projection",
+            "us": 11979.70529513889,
+            "share": 8.12852968524947
+          },
+          {
+            "module": "Post-attention residual＋RMSNorm",
+            "us": 632.5144717261905,
+            "share": 0.4291768898407294
+          },
+          {
+            "module": "Gate/Up＋SwiGLU",
+            "us": 60800.926091269845,
+            "share": 41.254949136694606
+          },
+          {
+            "module": "Down",
+            "us": 27894.439570932536,
+            "share": 18.927074958824672
+          },
+          {
+            "module": "Final residual",
+            "us": 207.9194816468254,
+            "share": 0.14107856888547177
+          },
+          {
+            "module": "KV carrier conversion",
+            "us": 425.18678075396826,
+            "share": 0.288499865730146
+          },
+          {
+            "module": "KV append DMA",
+            "us": 220.90396825396823,
+            "share": 0.14988886782301844
+          },
+          {
+            "module": "Block orchestration",
+            "us": 14.891654265873017,
+            "share": 0.01010435989704514
+          },
+          {
+            "module": "Layer bookkeeping",
+            "us": 693.5729538690476,
+            "share": 0.47060659720054926
+          },
+          {
+            "module": "Stage-boundary bookkeeping",
+            "us": 2.4023685515873017,
+            "share": 0.0016300671515192525
+          },
+          {
+            "module": "DSP unattributed",
+            "us": 0.0,
+            "share": 0.0
+          },
+          {
+            "module": "Runtime setup/teardown",
+            "us": 113.92244543650796,
+            "share": 0.07729922871496914
+          },
+          {
+            "module": "Embedding",
+            "us": 2.242571924603175,
+            "share": 0.0015216411431958018
+          },
+          {
+            "module": "Final model RMSNorm",
+            "us": 3.3659350198412703,
+            "share": 0.0022838711014454317
+          },
+          {
+            "module": "LM head＋greedy（不含 final norm）",
+            "us": 14400.76803075397,
+            "share": 9.771281308220033
+          },
+          {
+            "module": "Host–DSP 边界",
+            "us": 2158.520840654761,
+            "share": 1.4646103804082307
+          },
+          {
+            "module": "完整 Host wall",
+            "us": 147378.50212785715,
+            "share": 100
+          }
+        ]
+      }
+    }
+  },
+  "mapping": {
+    "prefill": {
+      "map_us": 256.9390625,
+      "unmap_us": 466.76197916666666,
+      "count": 7
+    },
+    "decode": {
+      "map_us": 242.09062500000002,
+      "unmap_us": 456.964558531746,
+      "count": 7
+    }
+  },
+  "implementation_crosscheck_pass": true,
+  "selected_composition_gate_pass": true,
+  "full_mathematical_alignment_pass": false,
+  "max_full_boundary_nrmse": 0.004798236471210144,
+  "min_prefill_cache_cosine": 0.9999909555357752,
+  "peak_vtcm_bytes": 7852800,
+  "quality_accepted": false,
+  "baseline_promoted": false,
+  "hardware_composition_scope": "Untimed monolithic single-layer RPC composition versus production segmented full-stack RPC; M64+1 only, no throughput claim",
+  "long_kv_layout_crosscheck": {
+    "pass_all": true,
+    "exact_hidden_norm_elements": 264192,
+    "exact_token_steps": 43,
+    "checks": [
+      {
+        "step": 0,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 1,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 2,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 3,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 4,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 5,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 6,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 7,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 8,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 9,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 10,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 11,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 12,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 13,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 14,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 15,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 16,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 17,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 18,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 19,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 20,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 21,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 22,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 23,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 24,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 25,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 26,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 27,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 28,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 29,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 30,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 31,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 32,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 33,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 34,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 35,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 36,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 37,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 38,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 39,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 40,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 41,
+        "mismatches": 0,
+        "elements": 6144
+      },
+      {
+        "step": 42,
+        "mismatches": 0,
+        "elements": 6144
+      }
+    ]
+  }
+}
