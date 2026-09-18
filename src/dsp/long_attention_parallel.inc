@@ -5,7 +5,10 @@ static void qbh_long_attention_tasks(struct qbh_block_w4f16_pool *pool,
                                     struct qbh_block_w4f16_job *job) {
     struct qbh_block_header *h=pool->attention_header;
     unsigned rows=pool->long_rows,past=pool->long_past,padded=pool->long_padded;
-    unsigned valid=past+rows,tiles=padded/32,plane=padded*256;
+    unsigned valid=past+rows,tiles=padded/32;
+    unsigned width=QBH_ATTENTION_Q_HEADS_PER_GROUP*64U;
+    if(width<QBH_BLOCK_HEAD_DIM)width=QBH_BLOCK_HEAD_DIM;
+    unsigned plane=padded*width;
     uint8_t *a=pool->attention_buffers->scores+job->worker_index*pool->long_stride;
     int8_t *w=(int8_t *)(a+plane);
     uint8_t *c=a+2*plane;
@@ -23,27 +26,29 @@ static void qbh_long_attention_tasks(struct qbh_block_w4f16_pool *pool,
         uint8_t *q=pool->attention_buffers->q+(size_t)g*QBH_ATTENTION_Q_HEADS_PER_GROUP*QBH_ATTENTION_HEAD_DIM_TILES*2048;
         const uint8_t *ck=pool->long_shared+h->kv_cache_k_offset+(size_t)g*h->kv_cache_capacity*QBH_BLOCK_HEAD_DIM;
         const uint8_t *cv=pool->long_shared+h->kv_cache_v_offset+(size_t)g*h->kv_cache_capacity*QBH_BLOCK_HEAD_DIM;
-        memset(a,0,valid%2 ? (size_t)(valid+1)*64:(size_t)valid*64);
+        memset(a,0,qbh_align_up(valid*QBH_BLOCK_HEAD_DIM,128U));
         qurt_mutex_lock(&pool->attention_hmx_mutex);
         int rc=qbh_scan_cache_dma(h,a,ck,valid*QBH_BLOCK_HEAD_DIM,1);
         qurt_mutex_unlock(&pool->attention_hmx_mutex);
         if(rc){pool->attention_gqa_abort=1;break;}
         uint64_t t=HAP_perf_get_qtimer_count();
-        qbh_attention_u8_pack_k_long(a,valid,padded,cfg,w,qb);
+        if(QBH_BLOCK_HEAD_DIM==64U)qbh_attention_u8_pack_k_long(a,valid,padded,cfg,w,qb);
+        else qbh_attention_u8_pack_k_row_major(a,valid,padded,cfg,w,qb);
         job->u8_attention_k_pack_ticks+=HAP_perf_get_qtimer_count()-t;
         if(qbh_attention_u8_pool_submit(pool,job,q,w,qb,c,QBH_ATTENTION_Q_HEADS_PER_GROUP,
             QBH_ATTENTION_HEAD_DIM_TILES,tiles,&job->u8_attention_qk_hmx_ticks))break;
         t=HAP_perf_get_qtimer_count();
         qbh_attention_u8_softmax_long_native4(c,a,rows,past,padded,cfg);
         job->u8_attention_softmax_ticks+=HAP_perf_get_qtimer_count()-t;
-        memset(c,0,valid%2 ? (size_t)(valid+1)*64:(size_t)valid*64);
+        memset(c,0,qbh_align_up(valid*QBH_BLOCK_HEAD_DIM,128U));
         qurt_mutex_lock(&pool->attention_hmx_mutex);
         rc=qbh_scan_cache_dma(h,c,cv,valid*QBH_BLOCK_HEAD_DIM,1);
         qurt_mutex_unlock(&pool->attention_hmx_mutex);
         if(rc){pool->attention_gqa_abort=1;break;}
         t=HAP_perf_get_qtimer_count();
         if(!pool->long_common_lut)qbh_attention_u8_prepare_v_row_major_hvx(cfg,lut);
-        qbh_attention_u8_pack_v_long(c,valid,padded,cfg,w,vb,lut,&job->u8_attention_v_recenter_saturation_count);
+        if(QBH_BLOCK_HEAD_DIM==64U)qbh_attention_u8_pack_v_long(c,valid,padded,cfg,w,vb,lut,&job->u8_attention_v_recenter_saturation_count);
+        else qbh_attention_u8_pack_v_row_major_hvx_prepared(c,valid,padded,cfg,w,vb,lut,&job->u8_attention_v_recenter_saturation_count);
         job->u8_attention_v_pack_ticks+=HAP_perf_get_qtimer_count()-t;
         if(qbh_attention_u8_pool_submit(pool,job,a,w,vb,q,QBH_ATTENTION_Q_HEADS_PER_GROUP,
             tiles,QBH_ATTENTION_HEAD_DIM_TILES,&job->u8_attention_av_hmx_ticks))break;
@@ -58,7 +63,9 @@ static int qbh_long_attention_parallel(struct qbh_block_header *h,uint8_t *share
  struct qbh_block_buffers *b,struct qbh_block_hmx_worker *worker,
  struct qbh_block_w4f16_pool *pool,unsigned rows,unsigned past) {
     unsigned padded=qbh_align_up(past+rows,32),tiles=padded/32;
-    unsigned stride=qbh_align_up(3*padded*256+tiles*256+QBH_ATTENTION_HEAD_DIM_TILES*256+20480,2048);
+    unsigned width=QBH_ATTENTION_Q_HEADS_PER_GROUP*64U;
+    if(width<QBH_BLOCK_HEAD_DIM)width=QBH_BLOCK_HEAD_DIM;
+    unsigned stride=qbh_align_up(3*padded*width+tiles*256+QBH_ATTENTION_HEAD_DIM_TILES*256+20480,2048);
     unsigned capacity=(uint32_t)(b->compressed_weight-b->scores);
     if(!pool || pool->worker_count<3 || stride*4+20480>capacity)return -1;
     for(unsigned j=0;j<3;++j)
