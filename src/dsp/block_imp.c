@@ -253,6 +253,7 @@ enum qbh_block_hvx_pool_job_kind {
     QBH_BLOCK_HVX_POOL_LLAMA_SWIGLU = 19,
     QBH_BLOCK_HVX_POOL_SP2_EPILOGUE = 20,
     QBH_BLOCK_HVX_POOL_FP32_NORM = 21,
+    QBH_BLOCK_HVX_POOL_LONG_ATTENTION = 22,
 };
 
 enum qbh_block_u8_residual_kind {
@@ -490,6 +491,8 @@ struct qbh_block_w4f16_pool {
     struct qbh_block_buffers *attention_buffers;
     struct qbh_block_hmx_worker *attention_hmx_worker;
     qurt_mutex_t attention_hmx_mutex;
+    uint8_t *long_shared;
+    uint32_t long_rows,long_past,long_padded,long_stride;
     volatile uint32_t attention_gqa_abort;
     float attention_gqa_qk_max_abs[QBH_BLOCK_HEADS];
     volatile uint32_t next_attention_task;
@@ -683,6 +686,7 @@ static void qbh_hvx_copy_aligned_bytes(
     void *destination, const void *source, uint32_t bytes);
 static void qbh_hvx_zero_aligned_bytes(void *destination,
                                         uint32_t bytes);
+static void qbh_long_attention_tasks(struct qbh_block_w4f16_pool *,struct qbh_block_w4f16_job *);
 static void qbh_attention_gqa_pool_run_tasks(
     struct qbh_block_w4f16_pool *pool,
     struct qbh_block_w4f16_job *job);
@@ -4967,6 +4971,8 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
                 }
             }
             }
+        } else if (job->command_kind == QBH_BLOCK_HVX_POOL_LONG_ATTENTION) {
+            qbh_long_attention_tasks(pool,job);
         } else if (job->command_kind == QBH_BLOCK_HVX_POOL_SILU) {
             qbh_silu_pool_run_chunks(
                 pool, &job->silu_ticks, &job->silu_chunk_count);
@@ -20313,12 +20319,17 @@ static void qbh_3b_unpack_gqa_rows(const uint8_t *packed,uint8_t *heads,uint32_t
 }
 #endif
 
+#include "long_attention_parallel.inc"
+
 static int qbh_scan_u8_attention(
     struct qbh_block_header *header, uint8_t *shared,
     struct qbh_block_buffers *buffers,
     struct qbh_block_hmx_worker *worker,
     struct qbh_block_w4f16_pool *pool,
     uint32_t logical_rows, uint32_t past_tokens) {
+    if(header->long_prompt_tokens && (header->long_optimization&16U) &&
+       logical_rows>1U && QBH_BLOCK_HEAD_DIM==64U && header->wide_score_mode==8U)
+        return qbh_long_attention_parallel(header,shared,buffers,worker,pool,logical_rows,past_tokens);
     const uint32_t valid_tokens = past_tokens + logical_rows;
     const int hmx_segmented_cache =
         qbh_hmx_native_u8_segmented_cache_formats(
@@ -21408,7 +21419,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     if (u8_integer_attention_enabled != 0U) {
 #ifdef QBH_MODEL_LLAMA32
         if (header->dense_r3_mode == 0U) {
-        if(!scan_dynamic_attention && w4f16_pool && w4f16_pool->worker_count>=3U) {
+        if((!scan_dynamic_attention || (header->long_prompt_tokens && (header->long_optimization&4U) && logical_rows>1U)) && w4f16_pool && w4f16_pool->worker_count>=3U) {
             if(qbh_hvx_pool_qk_norm_rope(header,w4f16_pool,(__fp16 *)buffers->q,(__fp16 *)buffers->k,NULL,NULL,
                 (const __fp16 *)buffers->rope_cos,(const __fp16 *)buffers->rope_sin)!=0)
                 return QBH_BLOCK_STATUS_QK_NORM_ROPE_FAILED;
