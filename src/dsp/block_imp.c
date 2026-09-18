@@ -17912,15 +17912,24 @@ static int qbh_scan_f16_attention(
             if (header->generation_boundary_audit_enabled) {
                 /* Independent scalar expf/division reference, untimed audit only.
                  * Keep the existing composed FP16 NRMSE limit, plus exact mask. */
-                __fp16 *reference=(__fp16 *)buffers->middle;
-                qbh_scan_softmax_f16(plane_a,reference,logical_rows,past_tokens,padded_tokens);
+                __fp16 reference[832] __attribute__((aligned(128)));
                 for(uint32_t h=0;h<QBH_ATTENTION_Q_HEADS_PER_GROUP;++h)
                     for(uint32_t r=0;r<logical_rows;++r) {
                         double error=0.0,energy=0.0;
                         const uint32_t valid=past_tokens+r+1U;
                         const size_t off=((size_t)h*QBH_BLOCK_M+r)*padded_tokens;
+                        float maximum=-INFINITY,sum=0.0f;
+                        for(uint32_t k=0;k<valid;++k) {
+                            const float x=(float)plane_a[off+k]*QBH_MODEL_ATTENTION_SCALE;
+                            if(x>maximum)maximum=x;
+                        }
+                        for(uint32_t k=0;k<valid;++k) {
+                            const float x=expf((float)plane_a[off+k]*QBH_MODEL_ATTENTION_SCALE-maximum);
+                            reference[k]=(__fp16)x;sum+=x;
+                        }
                         for(uint32_t k=0;k<padded_tokens;++k) {
-                            const double a=(float)plane_c[off+k],b=(float)reference[off+k];
+                            const double a=(float)plane_c[off+k];
+                            const double b=k<valid?(float)(__fp16)((float)reference[k]/sum):0.0;
                             if(!isfinite(a) || (k>=valid && a!=0.0)) return -1;
                             error+=(a-b)*(a-b);energy+=b*b;
                         }
