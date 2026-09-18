@@ -23,7 +23,7 @@ void qbh_attention_u8_softmax_long_native4(uint8_t *scores,uint8_t *prob,
     const HVX_Vector zero=Q6_V_vzero();
     const HVX_Vector lane=*(const HVX_Vector *)qbh_attention_u8_lane_index;
     const HVX_VectorPred low64=Q6_Q_vcmp_gt_VubVub(Q6_Vb_vsplat_R(64),lane);
-    const HVX_Vector banks=Q6_Vw_vlsr_VwR(Q6_V_vand_VV(lane,Q6_Vb_vsplat_R(32)),1);
+    const HVX_Vector banks=Q6_Vuw_vlsr_VuwR(Q6_V_vand_VV(lane,Q6_Vb_vsplat_R(32)),1);
     memset(prob,0,(size_t)QBH_ATTENTION_Q_HEADS_PER_GROUP*tiles*2048);
     for(unsigned head=0;head<QBH_ATTENTION_Q_HEADS_PER_GROUP;++head)
     for(unsigned row=0;row<rows;row+=4) {
