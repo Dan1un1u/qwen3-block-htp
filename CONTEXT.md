@@ -1,5 +1,5 @@
 # L32-0051 active: long prefill parity loop
-Read docs/experiments/L32-0051.md. User targets536/741prefill throughput matching fresh M64. Frozen0050 arithmetic, no weakening of correctness/physical constraints or baseline degradation. No0051results yet.
+Read docs/experiments/L32-0051.md. User targets536/741prefill throughput matching fresh M64. Frozen0050 arithmetic, no weakening of correctness/physical constraints or baseline degradation. Frozen candidate e31a286 / binaries-a10 / QBH_LONG_OPT=31. Final numerical checks and three repeat3 screens pass; formal five-arm ten-cycle campaign is next/running. Read0051protocol and results/formal_protocol.json. Do not rerun completed paths or overwrite failed evidence. Shared LUT MUST remain beyond four live overlay slots. Full128/741poison/536+46 exact checks pass; short TPS M64=2203.55,536=2461.31,741=2465.52. No formal gate decision yet.
 
 # L32-0050 completed: Llama 1B W4A8-SP2 chunked long prefill
 Read docs/experiments/L32-0050-RESULTS.md and MODULES.md. Opt-in M64 chunks, persistent KV and absolute RoPE, valid tail rows; head only on final prompt chunk. Frozen SP2/FP32-residual weights and integer arithmetic; no rotation. Current workspace build is 1B /16 layers.
