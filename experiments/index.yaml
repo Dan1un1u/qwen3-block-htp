@@ -28054,4 +28054,4 @@ experiments:
     W4 slower than W16 by >10%.'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0298-a8-tables
+    source_branch: codex/exp-0299-a16-tables
