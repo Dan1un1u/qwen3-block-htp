@@ -2875,13 +2875,105 @@ experiments:
     other_models_recipes_migrated: false
 - id: L32-0052
   title: Llama3B long-prefill native layout and pipeline migration
-  execution_state: running
+  execution_state: completed
   approval_ref: 'User: 请将方法迁移到其它还未实现的模型上并实现'
   record: docs/experiments/L32-0052.md
   parent_source: e31a286fac5b43cfccd93706bcc21a00400920ce
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
-  evidence_validity: pending
-  local_gate: pending
+  evidence_validity: valid
+  local_gate: fail
   adoption_status: pending
+  source_commits:
+  - 0360df475b91bc2e33d43c3f01dde02e457e8a9e
+  evidence:
+    experiment: L32-0052
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    gate_role: long_vs_fast_M64_throughput_parity_unmet; numerical_and_physical_pass
+    adoption_status: pending
+    recipe: W4A8-SP2 mode8; frozen model-specific FP32 residual; no rotation
+    formal_cycles: 10
+    replays_per_process: 10
+    short_cycles: 5
+    numerical_physical_pass: true
+    quality_claim: false
+    baseline_promoted: false
+    named_dataset_benchmark: false
+    device_owner: null
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0052
+    evidence_ledger_sha256: 5cdc62d51f5aaa0788e0f1088bc50df2eeefd931532b6cfe8a216dd2131447a0
+    evidence_files: 16635
+    evidence_bytes: 14076894094
+    source_closure: 0360df475b91bc2e33d43c3f01dde02e457e8a9e
+    measured_source: 5cedece9dd1050fda6bce6e083cd903d95c77ce0
+    model: Llama-3.2-3B-Instruct
+    performance:
+      m64:
+        prefill: 1167.866208569784
+        decode: 23.771533081121852
+      original536:
+        prefill: 432.0696084292969
+        decode: 15.941818892806468
+      opt536:
+        prefill: 1103.851728771765
+        decode: 16.28452770204632
+      original741:
+        prefill: 370.2298512430432
+        decode: 14.255197753512133
+      opt741:
+        prefill: 1106.973577861401
+        decode: 14.745304233895572
+    parity_gate:
+      '536':
+        throughput_over_m64: 0.9451868036524375
+        ci95:
+        - 0.9402734036994373
+        - 0.9499671048660814
+        pass_parity: false
+      '741':
+        throughput_over_m64: 0.9478599258531896
+        ci95:
+        - 0.9428910667699723
+        - 0.9531615020672476
+        pass_parity: false
+    effects:
+      '536':
+        prefill:
+          wall_ratio: 0.39141996806949125
+          ci95:
+          - 0.38976284810628586
+          - 0.39300600153306087
+          throughput_gain_percent: 155.4800678493908
+          ten_percent_gate: true
+        decode:
+          wall_ratio: 0.9789549432743581
+          ci95:
+          - 0.9701376068353844
+          - 0.9876187624517672
+          throughput_gain_percent: 2.1497472248571015
+          ten_percent_gate: true
+      '741':
+        prefill:
+          wall_ratio: 0.3344522928526465
+          ci95:
+          - 0.3334518854990859
+          - 0.33562021012086923
+          throughput_gain_percent: 198.99630571245072
+          ten_percent_gate: true
+        decode:
+          wall_ratio: 0.9667618604126992
+          ci95:
+          - 0.9602478804393817
+          - 0.9736420599059986
+          throughput_gain_percent: 3.438089662857813
+          ten_percent_gate: true
+    timed_rpc_boundaries: 14400
+    independent_final_binary_layer_outputs: 2520
+    closure_extra_layer_outputs: 112
+    report: docs/experiments/L32-0052-RESULTS.md
+    modules: docs/experiments/L32-0052-MODULES.md
+    workspace_build: 3B/28 layers
+    closure_loadable_sections_equal_measured: true
