@@ -15702,10 +15702,14 @@ static int qbh_run_w4u8_direct_n_mlp(
     start = HAP_perf_get_qtimer_count();
 #ifdef QBH_MODEL_LLAMA32
     if(stream_sp2 && (QBH_LLAMA_SP2(header)>=7U || QBH_FP32_RESIDUAL(header))) {
+        qbh_long_progress(header,6210U);
         if(qbh_llama_sp2_prefill_start(pool,buffers,gate_native,up_native,middle_native,1U))return -1;
+        qbh_long_progress(header,6220U);
         int status=qbh_run_w4u8_direct_n_gate_up_pair(header,shared,buffers,worker,pool,gate_prefetch,
             mlp_arena+gate_up_layout.vtcm_activation_offset,gate_native,up_native,middle_native,swiglu_rows);
+        qbh_long_progress(header,6230U);
         qbh_llama_sp2_prefill_finish(header,pool,buffers,status);
+        qbh_long_progress(header,6240U);
         if(status)return -1;
     } else
 #endif
@@ -15751,6 +15755,7 @@ static int qbh_run_w4u8_direct_n_mlp(
                header->projections[QBH_BLOCK_PROJ_GATE].lpbq_mode != 0U ? 8U :
                header->w4u8_decode_direct_n_gate_up_batch_n_tiles));
 
+    qbh_long_progress(header,6300U);
     if (header->dense_r4_mode != 0U) {
         start=HAP_perf_get_qtimer_count();
         if(qbh_run_dense_r4(header,shared,buffers,worker,pool,middle_native)!=0) return -1;
@@ -15842,11 +15847,13 @@ static int qbh_run_w4u8_direct_n_mlp(
         asm volatile("barrier" ::: "memory");(void)qurt_sem_up(&pool->command_ready[0]);
     }
     if (QBH_LLAMA_SP2(header) && !stream_down && qurt_hvx_unlock()!=AEE_SUCCESS) return -1;
+    qbh_long_progress(header,6400U);
     int down_result = qbh_run_w4u8_direct_n_projection(
             header, shared,
             &header->projections[QBH_BLOCK_PROJ_DOWN], buffers, worker,
             middle_native, down_native,
             header->w4u8_decode_direct_n_down_batch_n_tiles);
+    qbh_long_progress(header,6500U);
     if(stream_down) {
         if(down_result) {pool->sp2_epilogue.abort=1U;asm volatile("barrier" ::: "memory");}
         qbh_w4f16_pool_wait(pool);pool->active_worker_count=0U;worker->sp2_epilogue=NULL;
@@ -22398,6 +22405,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
 #endif
 
 w4u8_mlp_complete:
+    qbh_long_progress(header,7000U);
     start = HAP_perf_get_qtimer_count();
     if (QBH_FP32_RESIDUAL(header)) {
         /* Down epilogue adds once, before any output quantization. */
