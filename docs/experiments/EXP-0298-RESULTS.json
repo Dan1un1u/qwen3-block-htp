@@ -1,0 +1,3729 @@
+{
+  "experiment": "EXP-0298",
+  "models": {
+    "0.6B": {
+      "experiment": "EXP-0298",
+      "size": "0.6B",
+      "runtime": {
+        "remote": "/data/local/tmp/qwen3-block-htp/exp0298/0.6B/a8/binaries-a1",
+        "seal": {
+          "model_size": "0.6B",
+          "paper_trace": false,
+          "source_head": "19a6861c8f556360a0565116fa716b56fd5712cb",
+          "files": {
+            "/home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/qwen3_block_cli": "3c20797c3bf7dd07aaf405c8ad141242b635c29b7e9963263145152c2883c944",
+            "/home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/llama_sp2_cli": "ea27a713188cabf0bc44766a351f165a8595e61d59df2814a9408e1b277de4b4",
+            "/home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/libqwen3_probe.so": "8827a7890d5fd88965022149ab151231923051bd1c86a2b6af291412714adead",
+            "/home/daniuniu/work/qwen3-block-htp/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so": "68729ad20409f9decd3825f51e039bc11a8c54dde4bf8d248ef5c46571038827"
+          }
+        },
+        "archive": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0298/0.6B/a8/binaries-a1"
+      },
+      "protocol": {
+        "arms": [
+          [
+            "a8",
+            64,
+            42,
+            true
+          ],
+          [
+            "sp2",
+            64,
+            42,
+            true
+          ],
+          [
+            "a8",
+            536,
+            46,
+            false
+          ],
+          [
+            "sp2",
+            536,
+            46,
+            false
+          ],
+          [
+            "a8",
+            741,
+            3,
+            false
+          ],
+          [
+            "sp2",
+            741,
+            3,
+            false
+          ]
+        ],
+        "short_rounds": 5,
+        "formal_rounds": 10,
+        "formal_repeat": 10,
+        "short_repeat": 1,
+        "order": "rotate left by round modulo six",
+        "option": "927",
+        "recipe_difference": "only Down quantizer, LUT and existing A8/SP2 implementation; same weights and non-Down qparams",
+        "native_short": true
+      },
+      "arms": {
+        "a8": {
+          "64": {
+            "shape": [
+              64,
+              42
+            ],
+            "speed": {
+              "prefill": {
+                "tps": 3060.778573593492,
+                "mean_ns": 20909712.499999996,
+                "process_mean_ns": [
+                  20873557.4,
+                  20965234.2,
+                  20928172.1,
+                  20804468.7,
+                  20954406.3,
+                  20953864.6,
+                  20882202.9,
+                  20849916.5,
+                  20995552.2,
+                  20889750.1
+                ]
+              },
+              "decode": {
+                "tps": 94.07815826154915,
+                "mean_ns": 446437311.02,
+                "process_mean_ns": [
+                  445117879.3,
+                  446588495.8,
+                  447343926.9,
+                  446159634.6,
+                  446535342.3,
+                  446889520.5,
+                  446158567.1,
+                  446571943.9,
+                  446638014.9,
+                  446369784.9
+                ]
+              }
+            },
+            "modules": {
+              "prefill": [
+                {
+                  "module": "I/O\u3001metadata",
+                  "us": 234.48229166666664,
+                  "host_share_percent": 1.1214037097194265
+                },
+                {
+                  "module": "Input RMSNorm",
+                  "us": 1024.8125,
+                  "host_share_percent": 4.901131471798093
+                },
+                {
+                  "module": "QKV\uff0bRoPE",
+                  "us": 6632.3203125,
+                  "host_share_percent": 31.71884985267014
+                },
+                {
+                  "module": "QK\u2013Softmax\u2013AV",
+                  "us": 3350.4145833333337,
+                  "host_share_percent": 16.023245577065364
+                },
+                {
+                  "module": "O projection",
+                  "us": 1227.3822916666668,
+                  "host_share_percent": 5.869914718658455
+                },
+                {
+                  "module": "Post-attention residual\uff0bRMSNorm",
+                  "us": 1013.1927083333334,
+                  "host_share_percent": 4.845560207168479
+                },
+                {
+                  "module": "Gate/Up\uff0bSwiGLU",
+                  "us": 2642.5062500000004,
+                  "host_share_percent": 12.637697672792012
+                },
+                {
+                  "module": "Down",
+                  "us": 1265.8270833333333,
+                  "host_share_percent": 6.053775647720327
+                },
+                {
+                  "module": "Final residual",
+                  "us": 3.4640625,
+                  "host_share_percent": 0.01656676293373235
+                },
+                {
+                  "module": "KV carrier conversion",
+                  "us": 135.5703125,
+                  "host_share_percent": 0.6483604808052716
+                },
+                {
+                  "module": "KV append DMA",
+                  "us": 254.9989583333333,
+                  "host_share_percent": 1.2195239811801968
+                },
+                {
+                  "module": "Block orchestration",
+                  "us": 38.80729166666667,
+                  "host_share_percent": 0.1855945731758228
+                },
+                {
+                  "module": "Layer bookkeeping",
+                  "us": 24.060416666666665,
+                  "host_share_percent": 0.11506813719541416
+                },
+                {
+                  "module": "Stage-boundary bookkeeping",
+                  "us": 19.9359375,
+                  "host_share_percent": 0.09534295366327969
+                },
+                {
+                  "module": "DSP unattributed",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Runtime setup/teardown",
+                  "us": 118.628125,
+                  "host_share_percent": 0.5673350362899537
+                },
+                {
+                  "module": "Embedding",
+                  "us": 43.0859375,
+                  "host_share_percent": 0.20605705362998175
+                },
+                {
+                  "module": "Final model RMSNorm",
+                  "us": 7.325520833333333,
+                  "host_share_percent": 0.035034058136061565
+                },
+                {
+                  "module": "LM head\uff0bgreedy\uff08\u4e0d\u542b final norm\uff09",
+                  "us": 2022.4260416666668,
+                  "host_share_percent": 9.672184835954424
+                },
+                {
+                  "module": "Host input/RoPE staging",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Host-DSP boundary",
+                  "us": 850.4718749999987,
+                  "host_share_percent": 4.06735326944356
+                },
+                {
+                  "module": "Complete Host wall",
+                  "us": 20909.7125,
+                  "host_share_percent": 100.0
+                }
+              ],
+              "decode": [
+                {
+                  "module": "I/O\u3001metadata",
+                  "us": 227.82222222222225,
+                  "host_share_percent": 2.1433095077720044
+                },
+                {
+                  "module": "Input RMSNorm",
+                  "us": 186.9597470238095,
+                  "host_share_percent": 1.7588828669045142
+                },
+                {
+                  "module": "QKV\uff0bRoPE",
+                  "us": 1477.8858258928572,
+                  "host_share_percent": 13.903677662084847
+                },
+                {
+                  "module": "QK\u2013Softmax\u2013AV",
+                  "us": 1933.9475446428573,
+                  "host_share_percent": 18.194222317444513
+                },
+                {
+                  "module": "O projection",
+                  "us": 760.8238839285715,
+                  "host_share_percent": 7.157690976139864
+                },
+                {
+                  "module": "Post-attention residual\uff0bRMSNorm",
+                  "us": 191.95543154761907,
+                  "host_share_percent": 1.8058813468300872
+                },
+                {
+                  "module": "Gate/Up\uff0bSwiGLU",
+                  "us": 1761.2411706349205,
+                  "host_share_percent": 16.569432558774814
+                },
+                {
+                  "module": "Down",
+                  "us": 1032.2785094246033,
+                  "host_share_percent": 9.711486097964388
+                },
+                {
+                  "module": "Final residual",
+                  "us": 2.311755952380952,
+                  "host_share_percent": 0.02174857423501735
+                },
+                {
+                  "module": "KV carrier conversion",
+                  "us": 165.18814484126983,
+                  "host_share_percent": 1.5540596433308684
+                },
+                {
+                  "module": "KV append DMA",
+                  "us": 93.4232638888889,
+                  "host_share_percent": 0.878908860544936
+                },
+                {
+                  "module": "Block orchestration",
+                  "us": 29.649367559523814,
+                  "host_share_percent": 0.2789357893619722
+                },
+                {
+                  "module": "Layer bookkeeping",
+                  "us": 16.13809523809524,
+                  "host_share_percent": 0.15182422778494764
+                },
+                {
+                  "module": "Stage-boundary bookkeeping",
+                  "us": 1.6333209325396827,
+                  "host_share_percent": 0.015365982518336931
+                },
+                {
+                  "module": "DSP unattributed",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Runtime setup/teardown",
+                  "us": 72.72332589285713,
+                  "host_share_percent": 0.6841676562654428
+                },
+                {
+                  "module": "Embedding",
+                  "us": 1.5245535714285716,
+                  "host_share_percent": 0.014342719217106713
+                },
+                {
+                  "module": "Final model RMSNorm",
+                  "us": 7.6560515873015875,
+                  "host_share_percent": 0.07202672328887433
+                },
+                {
+                  "module": "LM head\uff0bgreedy\uff08\u4e0d\u542b final norm\uff09",
+                  "us": 2015.6252480158732,
+                  "host_share_percent": 18.96263110788116
+                },
+                {
+                  "module": "Host input/RoPE staging",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Host-DSP boundary",
+                  "us": 650.672323392857,
+                  "host_share_percent": 6.121405381656309
+                },
+                {
+                  "module": "Complete Host wall",
+                  "us": 10629.459786190477,
+                  "host_share_percent": 100.0
+                }
+              ]
+            },
+            "vtcm_peak": 5744384,
+            "overlay_peak": 102400
+          },
+          "536": {
+            "shape": [
+              536,
+              46
+            ],
+            "speed": {
+              "prefill": {
+                "tps": 2643.2268460788,
+                "mean_ns": 202782444.04000002,
+                "process_mean_ns": [
+                  202061948.4,
+                  202803108.7,
+                  202768406.2,
+                  202809796.8,
+                  203145218.7,
+                  202897608.6,
+                  202778511.0,
+                  203021092.2,
+                  202491015.9,
+                  203047733.9
+                ]
+              },
+              "decode": {
+                "tps": 63.037891651563406,
+                "mean_ns": 729719836.67,
+                "process_mean_ns": [
+                  728287524.4,
+                  729666800.5,
+                  728750799.5,
+                  730189743.0,
+                  729009494.7,
+                  729826799.7,
+                  729898160.4,
+                  730637837.8,
+                  730669647.7,
+                  730261559.0
+                ]
+              }
+            },
+            "modules": {
+              "prefill": [
+                {
+                  "module": "I/O\u3001metadata",
+                  "us": 2098.4593750000004,
+                  "host_share_percent": 1.034832864814504
+                },
+                {
+                  "module": "Input RMSNorm",
+                  "us": 10248.1671875,
+                  "host_share_percent": 5.053774371847737
+                },
+                {
+                  "module": "QKV\uff0bRoPE",
+                  "us": 59024.99479166667,
+                  "host_share_percent": 29.107546795334837
+                },
+                {
+                  "module": "QK\u2013Softmax\u2013AV",
+                  "us": 58365.89479166669,
+                  "host_share_percent": 28.782518658347804
+                },
+                {
+                  "module": "O projection",
+                  "us": 10963.945833333335,
+                  "host_share_percent": 5.406752978660537
+                },
+                {
+                  "module": "Post-attention residual\uff0bRMSNorm",
+                  "us": 10307.066145833334,
+                  "host_share_percent": 5.082819765107579
+                },
+                {
+                  "module": "Gate/Up\uff0bSwiGLU",
+                  "us": 23627.247395833332,
+                  "host_share_percent": 11.651525114853001
+                },
+                {
+                  "module": "Down",
+                  "us": 11506.9890625,
+                  "host_share_percent": 5.674548956629688
+                },
+                {
+                  "module": "Final residual",
+                  "us": 22.544270833333332,
+                  "host_share_percent": 0.011117466770883946
+                },
+                {
+                  "module": "KV carrier conversion",
+                  "us": 736.6817708333334,
+                  "host_share_percent": 0.3632867600155854
+                },
+                {
+                  "module": "KV append DMA",
+                  "us": 2357.1312500000004,
+                  "host_share_percent": 1.1623941417409107
+                },
+                {
+                  "module": "Block orchestration",
+                  "us": 289.02604166666663,
+                  "host_share_percent": 0.1425301105502282
+                },
+                {
+                  "module": "Layer bookkeeping",
+                  "us": 159.10364583333333,
+                  "host_share_percent": 0.07846026641337317
+                },
+                {
+                  "module": "Stage-boundary bookkeeping",
+                  "us": 19.608854166666667,
+                  "host_share_percent": 0.009669897342197292
+                },
+                {
+                  "module": "DSP unattributed",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Runtime setup/teardown",
+                  "us": 702.0109375000001,
+                  "host_share_percent": 0.34618920825390803
+                },
+                {
+                  "module": "Embedding",
+                  "us": 405.45989583333335,
+                  "host_share_percent": 0.1999482241930934
+                },
+                {
+                  "module": "Final model RMSNorm",
+                  "us": 7.796354166666667,
+                  "host_share_percent": 0.0038446889244163527
+                },
+                {
+                  "module": "LM head\uff0bgreedy\uff08\u4e0d\u542b final norm\uff09",
+                  "us": 4027.576041666667,
+                  "host_share_percent": 1.9861561787233444
+                },
+                {
+                  "module": "Host input/RoPE staging",
+                  "us": 120.04224000000002,
+                  "host_share_percent": 0.059197550640193004
+                },
+                {
+                  "module": "Host-DSP boundary",
+                  "us": 7792.698154166656,
+                  "host_share_percent": 3.8428860008361982
+                },
+                {
+                  "module": "Complete Host wall",
+                  "us": 202782.44403999997,
+                  "host_share_percent": 100.00000000000001
+                }
+              ],
+              "decode": [
+                {
+                  "module": "I/O\u3001metadata",
+                  "us": 233.86531929347825,
+                  "host_share_percent": 1.474237665868056
+                },
+                {
+                  "module": "Input RMSNorm",
+                  "us": 185.42544157608697,
+                  "host_share_percent": 1.168882889551667
+                },
+                {
+                  "module": "QKV\uff0bRoPE",
+                  "us": 1608.7565104166667,
+                  "host_share_percent": 10.141261859739307
+                },
+                {
+                  "module": "QK\u2013Softmax\u2013AV",
+                  "us": 6518.69398777174,
+                  "host_share_percent": 41.092472531085264
+                },
+                {
+                  "module": "O projection",
+                  "us": 823.2315330615942,
+                  "host_share_percent": 5.189478018528721
+                },
+                {
+                  "module": "Post-attention residual\uff0bRMSNorm",
+                  "us": 192.4492527173913,
+                  "host_share_percent": 1.2131595141223255
+                },
+                {
+                  "module": "Gate/Up\uff0bSwiGLU",
+                  "us": 1957.4340126811592,
+                  "host_share_percent": 12.339251320647987
+                },
+                {
+                  "module": "Down",
+                  "us": 1131.5765285326088,
+                  "host_share_percent": 7.133219860109083
+                },
+                {
+                  "module": "Final residual",
+                  "us": 2.3669497282608694,
+                  "host_share_percent": 0.014920752051480612
+                },
+                {
+                  "module": "KV carrier conversion",
+                  "us": 22.105740489130433,
+                  "host_share_percent": 0.13934992738313826
+                },
+                {
+                  "module": "KV append DMA",
+                  "us": 180.59668251811595,
+                  "host_share_percent": 1.1384434105208787
+                },
+                {
+                  "module": "Block orchestration",
+                  "us": 29.69738451086957,
+                  "host_share_percent": 0.1872060507131013
+                },
+                {
+                  "module": "Layer bookkeeping",
+                  "us": 16.384114583333336,
+                  "host_share_percent": 0.10328200399109666
+                },
+                {
+                  "module": "Stage-boundary bookkeeping",
+                  "us": 1.620697463768116,
+                  "host_share_percent": 0.010216535112097809
+                },
+                {
+                  "module": "DSP unattributed",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Runtime setup/teardown",
+                  "us": 72.77488677536232,
+                  "host_share_percent": 0.4587575427500084
+                },
+                {
+                  "module": "Embedding",
+                  "us": 4.020765398550724,
+                  "host_share_percent": 0.025346057355019564
+                },
+                {
+                  "module": "Final model RMSNorm",
+                  "us": 7.742062952898553,
+                  "host_share_percent": 0.048804332558440196
+                },
+                {
+                  "module": "LM head\uff0bgreedy\uff08\u4e0d\u542b final norm\uff09",
+                  "us": 2179.0210597826085,
+                  "host_share_percent": 13.736089347305093
+                },
+                {
+                  "module": "Host input/RoPE staging",
+                  "us": 10.76564304347826,
+                  "host_share_percent": 0.06786434397341898
+                },
+                {
+                  "module": "Host-DSP boundary",
+                  "us": 684.94613692029,
+                  "host_share_percent": 4.317756036633815
+                },
+                {
+                  "module": "Complete Host wall",
+                  "us": 15863.474710217391,
+                  "host_share_percent": 100.0
+                }
+              ]
+            },
+            "vtcm_peak": 3998944,
+            "overlay_peak": 1060864
+          },
+          "741": {
+            "shape": [
+              741,
+              3
+            ],
+            "speed": {
+              "prefill": {
+                "tps": 2580.3406185068648,
+                "mean_ns": 287171389.18999994,
+                "process_mean_ns": [
+                  286904593.0,
+                  287216749.6,
+                  286403171.4,
+                  287542103.0,
+                  286958848.0,
+                  287488276.4,
+                  287340484.7,
+                  287413603.9,
+                  286936723.2,
+                  287509338.7
+                ]
+              },
+              "decode": {
+                "tps": 57.59477322548941,
+                "mean_ns": 52088059.940000005,
+                "process_mean_ns": [
+                  52452458.6,
+                  52112072.9,
+                  52073369.9,
+                  51783875.8,
+                  52246161.4,
+                  52165249.5,
+                  51817796.7,
+                  51945833.3,
+                  52407416.7,
+                  51876364.6
+                ]
+              }
+            },
+            "modules": {
+              "prefill": [
+                {
+                  "module": "I/O\u3001metadata",
+                  "us": 2822.952083333333,
+                  "host_share_percent": 0.9830199628506846
+                },
+                {
+                  "module": "Input RMSNorm",
+                  "us": 14799.827083333334,
+                  "host_share_percent": 5.153656541160994
+                },
+                {
+                  "module": "QKV\uff0bRoPE",
+                  "us": 78954.80937499998,
+                  "host_share_percent": 27.49396783492294
+                },
+                {
+                  "module": "QK\u2013Softmax\u2013AV",
+                  "us": 92468.1,
+                  "host_share_percent": 32.19962136925162
+                },
+                {
+                  "module": "O projection",
+                  "us": 14721.528645833334,
+                  "host_share_percent": 5.1263911378348315
+                },
+                {
+                  "module": "Post-attention residual\uff0bRMSNorm",
+                  "us": 14832.751041666668,
+                  "host_share_percent": 5.165121457086707
+                },
+                {
+                  "module": "Gate/Up\uff0bSwiGLU",
+                  "us": 31832.620833333338,
+                  "host_share_percent": 11.084885901454498
+                },
+                {
+                  "module": "Down",
+                  "us": 15497.388020833334,
+                  "host_share_percent": 5.396564074347902
+                },
+                {
+                  "module": "Final residual",
+                  "us": 29.8640625,
+                  "host_share_percent": 0.010399386437567833
+                },
+                {
+                  "module": "KV carrier conversion",
+                  "us": 1011.5557291666668,
+                  "host_share_percent": 0.3522480885090524
+                },
+                {
+                  "module": "KV append DMA",
+                  "us": 3255.7541666666675,
+                  "host_share_percent": 1.1337320809882547
+                },
+                {
+                  "module": "Block orchestration",
+                  "us": 383.6848958333333,
+                  "host_share_percent": 0.13360832947723683
+                },
+                {
+                  "module": "Layer bookkeeping",
+                  "us": 210.7125,
+                  "host_share_percent": 0.07337517173780399
+                },
+                {
+                  "module": "Stage-boundary bookkeeping",
+                  "us": 25.09322916666667,
+                  "host_share_percent": 0.008738067269669521
+                },
+                {
+                  "module": "DSP unattributed",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Runtime setup/teardown",
+                  "us": 926.1859375,
+                  "host_share_percent": 0.32252026920662746
+                },
+                {
+                  "module": "Embedding",
+                  "us": 553.4442708333333,
+                  "host_share_percent": 0.19272263591243774
+                },
+                {
+                  "module": "Final model RMSNorm",
+                  "us": 8.369270833333335,
+                  "host_share_percent": 0.0029143818459561126
+                },
+                {
+                  "module": "LM head\uff0bgreedy\uff08\u4e0d\u542b final norm\uff09",
+                  "us": 4178.759375,
+                  "host_share_percent": 1.455144743627376
+                },
+                {
+                  "module": "Host input/RoPE staging",
+                  "us": 171.57366000000005,
+                  "host_share_percent": 0.0597460842056527
+                },
+                {
+                  "module": "Host-DSP boundary",
+                  "us": 10486.415009166654,
+                  "host_share_percent": 3.6516224818721654
+                },
+                {
+                  "module": "Complete Host wall",
+                  "us": 287171.38919,
+                  "host_share_percent": 100.0
+                }
+              ],
+              "decode": [
+                {
+                  "module": "I/O\u3001metadata",
+                  "us": 251.46493055555555,
+                  "host_share_percent": 1.448306564951067
+                },
+                {
+                  "module": "Input RMSNorm",
+                  "us": 187.46354166666666,
+                  "host_share_percent": 1.0796920170338753
+                },
+                {
+                  "module": "QKV\uff0bRoPE",
+                  "us": 1620.9385416666667,
+                  "host_share_percent": 9.33575877197472
+                },
+                {
+                  "module": "QK\u2013Softmax\u2013AV",
+                  "us": 7916.346701388889,
+                  "host_share_percent": 45.59401930408443
+                },
+                {
+                  "module": "O projection",
+                  "us": 824.9703125000002,
+                  "host_share_percent": 4.751397806619865
+                },
+                {
+                  "module": "Post-attention residual\uff0bRMSNorm",
+                  "us": 191.23472222222227,
+                  "host_share_percent": 1.1014120459228354
+                },
+                {
+                  "module": "Gate/Up\uff0bSwiGLU",
+                  "us": 1966.8394097222222,
+                  "host_share_percent": 11.327966977390686
+                },
+                {
+                  "module": "Down",
+                  "us": 1135.4142361111112,
+                  "host_share_percent": 6.539392544581176
+                },
+                {
+                  "module": "Final residual",
+                  "us": 2.3671875,
+                  "host_share_percent": 0.013633762724471324
+                },
+                {
+                  "module": "KV carrier conversion",
+                  "us": 22.07621527777778,
+                  "host_share_percent": 0.12714746126006965
+                },
+                {
+                  "module": "KV append DMA",
+                  "us": 201.6079861111111,
+                  "host_share_percent": 1.1611566240517064
+                },
+                {
+                  "module": "Block orchestration",
+                  "us": 29.771875000000005,
+                  "host_share_percent": 0.17147043891226182
+                },
+                {
+                  "module": "Layer bookkeeping",
+                  "us": 16.421527777777776,
+                  "host_share_percent": 0.09457941683771863
+                },
+                {
+                  "module": "Stage-boundary bookkeeping",
+                  "us": 1.6236111111111111,
+                  "host_share_percent": 0.009351151375082935
+                },
+                {
+                  "module": "DSP unattributed",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Runtime setup/teardown",
+                  "us": 73.05173611111113,
+                  "host_share_percent": 0.4207398175047742
+                },
+                {
+                  "module": "Embedding",
+                  "us": 4.863194444444446,
+                  "host_share_percent": 0.028009458117923786
+                },
+                {
+                  "module": "Final model RMSNorm",
+                  "us": 7.256597222222223,
+                  "host_share_percent": 0.04179420714026054
+                },
+                {
+                  "module": "LM head\uff0bgreedy\uff08\u4e0d\u542b final norm\uff09",
+                  "us": 2180.510416666667,
+                  "host_share_percent": 12.558600296373413
+                },
+                {
+                  "module": "Host input/RoPE staging",
+                  "us": 9.327090000000002,
+                  "host_share_percent": 0.05371916334037302
+                },
+                {
+                  "module": "Host-DSP boundary",
+                  "us": 719.1368136111107,
+                  "host_share_percent": 4.141852169803298
+                },
+                {
+                  "module": "Complete Host wall",
+                  "us": 17362.686646666665,
+                  "host_share_percent": 100.0
+                }
+              ]
+            },
+            "vtcm_peak": 3998944,
+            "overlay_peak": 1314816
+          }
+        },
+        "sp2": {
+          "64": {
+            "shape": [
+              64,
+              42
+            ],
+            "speed": {
+              "prefill": {
+                "tps": 3011.161886859795,
+                "mean_ns": 21254254.139999997,
+                "process_mean_ns": [
+                  21276026.0,
+                  21210843.8,
+                  21267708.3,
+                  21259249.9,
+                  21265177.2,
+                  21249479.1,
+                  21202218.6,
+                  21234807.3,
+                  21273833.2,
+                  21303198.0
+                ]
+              },
+              "decode": {
+                "tps": 93.59499857427642,
+                "mean_ns": 448741926.80999994,
+                "process_mean_ns": [
+                  447796448.3,
+                  448390615.8,
+                  447852883.9,
+                  448605765.1,
+                  448926797.1,
+                  447989566.6,
+                  449606176.7,
+                  449359680.6,
+                  449716849.2,
+                  449174484.8
+                ]
+              }
+            },
+            "modules": {
+              "prefill": [
+                {
+                  "module": "I/O\u3001metadata",
+                  "us": 235.084375,
+                  "host_share_percent": 1.1060579846816494
+                },
+                {
+                  "module": "Input RMSNorm",
+                  "us": 1036.553125,
+                  "host_share_percent": 4.876920724539713
+                },
+                {
+                  "module": "QKV\uff0bRoPE",
+                  "us": 6633.236979166666,
+                  "host_share_percent": 31.208984965899475
+                },
+                {
+                  "module": "QK\u2013Softmax\u2013AV",
+                  "us": 3359.0213541666662,
+                  "host_share_percent": 15.803995435648192
+                },
+                {
+                  "module": "O projection",
+                  "us": 1228.4354166666667,
+                  "host_share_percent": 5.77971547989906
+                },
+                {
+                  "module": "Post-attention residual\uff0bRMSNorm",
+                  "us": 1026.0416666666665,
+                  "host_share_percent": 4.82746493905745
+                },
+                {
+                  "module": "Gate/Up\uff0bSwiGLU",
+                  "us": 2660.6765625,
+                  "host_share_percent": 12.518324778533021
+                },
+                {
+                  "module": "Down",
+                  "us": 1582.3171875000003,
+                  "host_share_percent": 7.444708137379976
+                },
+                {
+                  "module": "Final residual",
+                  "us": 3.3510416666666663,
+                  "host_share_percent": 0.0157664514811653
+                },
+                {
+                  "module": "KV carrier conversion",
+                  "us": 135.38177083333335,
+                  "host_share_percent": 0.6369631695451882
+                },
+                {
+                  "module": "KV append DMA",
+                  "us": 255.1515625,
+                  "host_share_percent": 1.2004729068323827
+                },
+                {
+                  "module": "Block orchestration",
+                  "us": 38.26666666666667,
+                  "host_share_percent": 0.18004238781849194
+                },
+                {
+                  "module": "Layer bookkeeping",
+                  "us": 24.067708333333336,
+                  "host_share_percent": 0.11323713443342377
+                },
+                {
+                  "module": "Stage-boundary bookkeeping",
+                  "us": 19.7578125,
+                  "host_share_percent": 0.09295933119956569
+                },
+                {
+                  "module": "DSP unattributed",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Runtime setup/teardown",
+                  "us": 115.33489583333332,
+                  "host_share_percent": 0.5426438164973092
+                },
+                {
+                  "module": "Embedding",
+                  "us": 42.90260416666668,
+                  "host_share_percent": 0.20185419767765458
+                },
+                {
+                  "module": "Final model RMSNorm",
+                  "us": 9.4421875,
+                  "host_share_percent": 0.04442492988841245
+                },
+                {
+                  "module": "LM head\uff0bgreedy\uff08\u4e0d\u542b final norm\uff09",
+                  "us": 2019.5963541666667,
+                  "host_share_percent": 9.502080575793224
+                },
+                {
+                  "module": "Host input/RoPE staging",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Host-DSP boundary",
+                  "us": 829.6348691666656,
+                  "host_share_percent": 3.9033826531946496
+                },
+                {
+                  "module": "Complete Host wall",
+                  "us": 21254.254139999997,
+                  "host_share_percent": 100.0
+                }
+              ],
+              "decode": [
+                {
+                  "module": "I/O\u3001metadata",
+                  "us": 228.28360615079364,
+                  "host_share_percent": 2.1366203792214207
+                },
+                {
+                  "module": "Input RMSNorm",
+                  "us": 187.02118055555553,
+                  "host_share_percent": 1.7504247127456714
+                },
+                {
+                  "module": "QKV\uff0bRoPE",
+                  "us": 1479.4333705357144,
+                  "host_share_percent": 13.846756420602714
+                },
+                {
+                  "module": "QK\u2013Softmax\u2013AV",
+                  "us": 1937.63345734127,
+                  "host_share_percent": 18.135280067732644
+                },
+                {
+                  "module": "O projection",
+                  "us": 761.5404513888889,
+                  "host_share_percent": 7.127637746199687
+                },
+                {
+                  "module": "Post-attention residual\uff0bRMSNorm",
+                  "us": 192.57094494047618,
+                  "host_share_percent": 1.802367731715093
+                },
+                {
+                  "module": "Gate/Up\uff0bSwiGLU",
+                  "us": 1765.0499131944441,
+                  "host_share_percent": 16.51998441089607
+                },
+                {
+                  "module": "Down",
+                  "us": 1075.1982266865077,
+                  "host_share_percent": 10.06331764937882
+                },
+                {
+                  "module": "Final residual",
+                  "us": 2.366592261904762,
+                  "host_share_percent": 0.02215011993788698
+                },
+                {
+                  "module": "KV carrier conversion",
+                  "us": 165.22327628968256,
+                  "host_share_percent": 1.5464072308770116
+                },
+                {
+                  "module": "KV append DMA",
+                  "us": 93.31812996031746,
+                  "host_share_percent": 0.8734110240590053
+                },
+                {
+                  "module": "Block orchestration",
+                  "us": 29.525868055555556,
+                  "host_share_percent": 0.2763473578563996
+                },
+                {
+                  "module": "Layer bookkeeping",
+                  "us": 16.06341765873016,
+                  "host_share_percent": 0.15034555528668558
+                },
+                {
+                  "module": "Stage-boundary bookkeeping",
+                  "us": 1.6306423611111112,
+                  "host_share_percent": 0.015261996946334917
+                },
+                {
+                  "module": "DSP unattributed",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Runtime setup/teardown",
+                  "us": 72.64237351190476,
+                  "host_share_percent": 0.6798962845278781
+                },
+                {
+                  "module": "Embedding",
+                  "us": 1.537562003968254,
+                  "host_share_percent": 0.014390811356927031
+                },
+                {
+                  "module": "Final model RMSNorm",
+                  "us": 7.746961805555555,
+                  "host_share_percent": 0.0725076879145946
+                },
+                {
+                  "module": "LM head\uff0bgreedy\uff08\u4e0d\u542b final norm\uff09",
+                  "us": 2018.959089781746,
+                  "host_share_percent": 18.89644731296449
+                },
+                {
+                  "module": "Host input/RoPE staging",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Host-DSP boundary",
+                  "us": 648.5865262301588,
+                  "host_share_percent": 6.070445499780661
+                },
+                {
+                  "module": "Complete Host wall",
+                  "us": 10684.331590714286,
+                  "host_share_percent": 100.00000000000001
+                }
+              ]
+            },
+            "vtcm_peak": 5744384,
+            "overlay_peak": 102400
+          },
+          "536": {
+            "shape": [
+              536,
+              46
+            ],
+            "speed": {
+              "prefill": {
+                "tps": 2599.0887563592346,
+                "mean_ns": 206226123.94,
+                "process_mean_ns": [
+                  206240463.7,
+                  206212724.5,
+                  206068875.3,
+                  206300223.7,
+                  206265056.3,
+                  206602198.4,
+                  206099339.0,
+                  206057323.0,
+                  206315021.3,
+                  206100014.2
+                ]
+              },
+              "decode": {
+                "tps": 62.82867026095792,
+                "mean_ns": 732149826.01,
+                "process_mean_ns": [
+                  732122239.2,
+                  732001681.6,
+                  733525460.6,
+                  731581978.9,
+                  732004745.6,
+                  732699186.9,
+                  732470988.4,
+                  731579651.8,
+                  731314057.7,
+                  732198269.4
+                ]
+              }
+            },
+            "modules": {
+              "prefill": [
+                {
+                  "module": "I/O\u3001metadata",
+                  "us": 2102.0395833333337,
+                  "host_share_percent": 1.0192887026984547
+                },
+                {
+                  "module": "Input RMSNorm",
+                  "us": 10252.703645833335,
+                  "host_share_percent": 4.971583352270289
+                },
+                {
+                  "module": "QKV\uff0bRoPE",
+                  "us": 59041.463541666664,
+                  "host_share_percent": 28.629478367563337
+                },
+                {
+                  "module": "QK\u2013Softmax\u2013AV",
+                  "us": 58420.081770833334,
+                  "host_share_percent": 28.32816747689552
+                },
+                {
+                  "module": "O projection",
+                  "us": 10948.058854166668,
+                  "host_share_percent": 5.308764304444729
+                },
+                {
+                  "module": "Post-attention residual\uff0bRMSNorm",
+                  "us": 10307.930208333331,
+                  "host_share_percent": 4.998362967502773
+                },
+                {
+                  "module": "Gate/Up\uff0bSwiGLU",
+                  "us": 24175.995833333334,
+                  "host_share_percent": 11.723052041829174
+                },
+                {
+                  "module": "Down",
+                  "us": 14292.280208333334,
+                  "host_share_percent": 6.930392685114698
+                },
+                {
+                  "module": "Final residual",
+                  "us": 22.50885416666667,
+                  "host_share_percent": 0.010914647347595717
+                },
+                {
+                  "module": "KV carrier conversion",
+                  "us": 737.0161458333333,
+                  "host_share_percent": 0.3573825331885512
+                },
+                {
+                  "module": "KV append DMA",
+                  "us": 2357.872395833333,
+                  "host_share_percent": 1.1433432151007885
+                },
+                {
+                  "module": "Block orchestration",
+                  "us": 289.5619791666667,
+                  "host_share_percent": 0.1404099411047034
+                },
+                {
+                  "module": "Layer bookkeeping",
+                  "us": 158.8,
+                  "host_share_percent": 0.07700285345332956
+                },
+                {
+                  "module": "Stage-boundary bookkeeping",
+                  "us": 19.719270833333333,
+                  "host_share_percent": 0.009561965504947622
+                },
+                {
+                  "module": "DSP unattributed",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Runtime setup/teardown",
+                  "us": 703.8645833333333,
+                  "host_share_percent": 0.34130718741439253
+                },
+                {
+                  "module": "Embedding",
+                  "us": 406.259375,
+                  "host_share_percent": 0.19699704733731901
+                },
+                {
+                  "module": "Final model RMSNorm",
+                  "us": 7.740104166666667,
+                  "host_share_percent": 0.0037532122598195137
+                },
+                {
+                  "module": "LM head\uff0bgreedy\uff08\u4e0d\u542b final norm\uff09",
+                  "us": 4035.5802083333338,
+                  "host_share_percent": 1.9568714822509374
+                },
+                {
+                  "module": "Host input/RoPE staging",
+                  "us": 120.75267999999998,
+                  "host_share_percent": 0.058553532255269505
+                },
+                {
+                  "module": "Host-DSP boundary",
+                  "us": 7825.894697499988,
+                  "host_share_percent": 3.794812484463353
+                },
+                {
+                  "module": "Complete Host wall",
+                  "us": 206226.12394000002,
+                  "host_share_percent": 100.0
+                }
+              ],
+              "decode": [
+                {
+                  "module": "I/O\u3001metadata",
+                  "us": 234.09385190217395,
+                  "host_share_percent": 1.4707805431279204
+                },
+                {
+                  "module": "Input RMSNorm",
+                  "us": 187.5574501811594,
+                  "host_share_percent": 1.1783985192418105
+                },
+                {
+                  "module": "QKV\uff0bRoPE",
+                  "us": 1609.3942368659423,
+                  "host_share_percent": 10.11160998279363
+                },
+                {
+                  "module": "QK\u2013Softmax\u2013AV",
+                  "us": 6518.147452445653,
+                  "host_share_percent": 40.952653700201076
+                },
+                {
+                  "module": "O projection",
+                  "us": 822.0808763586956,
+                  "host_share_percent": 5.1650248308579805
+                },
+                {
+                  "module": "Post-attention residual\uff0bRMSNorm",
+                  "us": 192.35780117753626,
+                  "host_share_percent": 1.208558486230633
+                },
+                {
+                  "module": "Gate/Up\uff0bSwiGLU",
+                  "us": 1960.5287364130431,
+                  "host_share_percent": 12.317741351722756
+                },
+                {
+                  "module": "Down",
+                  "us": 1179.0349864130435,
+                  "host_share_percent": 7.407720038747811
+                },
+                {
+                  "module": "Final residual",
+                  "us": 2.334884510869565,
+                  "host_share_percent": 0.01466976890308419
+                },
+                {
+                  "module": "KV carrier conversion",
+                  "us": 22.119440670289855,
+                  "host_share_percent": 0.13897350442304632
+                },
+                {
+                  "module": "KV append DMA",
+                  "us": 180.86613451086959,
+                  "host_share_percent": 1.1363578726557486
+                },
+                {
+                  "module": "Block orchestration",
+                  "us": 29.723573369565212,
+                  "host_share_percent": 0.18674925902138023
+                },
+                {
+                  "module": "Layer bookkeeping",
+                  "us": 16.24530117753623,
+                  "host_share_percent": 0.10206706709733751
+                },
+                {
+                  "module": "Stage-boundary bookkeeping",
+                  "us": 1.6645720108695652,
+                  "host_share_percent": 0.010458284599654357
+                },
+                {
+                  "module": "DSP unattributed",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Runtime setup/teardown",
+                  "us": 72.85502717391304,
+                  "host_share_percent": 0.4577384479162911
+                },
+                {
+                  "module": "Embedding",
+                  "us": 4.026052989130435,
+                  "host_share_percent": 0.02529515557072201
+                },
+                {
+                  "module": "Final model RMSNorm",
+                  "us": 7.859420289855072,
+                  "host_share_percent": 0.049379692583358656
+                },
+                {
+                  "module": "LM head\uff0bgreedy\uff08\u4e0d\u542b final norm\uff09",
+                  "us": 2176.8643568840585,
+                  "host_share_percent": 13.676949288150071
+                },
+                {
+                  "module": "Host input/RoPE staging",
+                  "us": 10.611608260869566,
+                  "host_share_percent": 0.0666713236360631
+                },
+                {
+                  "module": "Host-DSP boundary",
+                  "us": 687.9348018297103,
+                  "host_share_percent": 4.32220288251963
+                },
+                {
+                  "module": "Complete Host wall",
+                  "us": 15916.300565434783,
+                  "host_share_percent": 100.0
+                }
+              ]
+            },
+            "vtcm_peak": 3998944,
+            "overlay_peak": 1060864
+          },
+          "741": {
+            "shape": [
+              741,
+              3
+            ],
+            "speed": {
+              "prefill": {
+                "tps": 2546.6733642430254,
+                "mean_ns": 290967821.15999997,
+                "process_mean_ns": [
+                  290779342.7,
+                  290973290.7,
+                  291654891.3,
+                  290968400.7,
+                  290747211.5,
+                  290596958.6,
+                  290652052.5,
+                  290814312.8,
+                  291154631.2,
+                  291337119.6
+                ]
+              },
+              "decode": {
+                "tps": 57.53544640377863,
+                "mean_ns": 52141769.77,
+                "process_mean_ns": [
+                  51994198.0,
+                  52201723.7,
+                  52204807.6,
+                  52043036.5,
+                  52097411.4,
+                  52139432.1,
+                  52042963.7,
+                  52566114.7,
+                  52241895.5,
+                  51886114.5
+                ]
+              }
+            },
+            "modules": {
+              "prefill": [
+                {
+                  "module": "I/O\u3001metadata",
+                  "us": 2826.5843750000004,
+                  "host_share_percent": 0.9714422590550633
+                },
+                {
+                  "module": "Input RMSNorm",
+                  "us": 14735.3453125,
+                  "host_share_percent": 5.064252553342383
+                },
+                {
+                  "module": "QKV\uff0bRoPE",
+                  "us": 78964.43177083334,
+                  "host_share_percent": 27.138544549712137
+                },
+                {
+                  "module": "QK\u2013Softmax\u2013AV",
+                  "us": 92441.02395833333,
+                  "host_share_percent": 31.770188053716442
+                },
+                {
+                  "module": "O projection",
+                  "us": 14680.846874999997,
+                  "host_share_percent": 5.0455224967736765
+                },
+                {
+                  "module": "Post-attention residual\uff0bRMSNorm",
+                  "us": 14816.43333333333,
+                  "host_share_percent": 5.0921209342891345
+                },
+                {
+                  "module": "Gate/Up\uff0bSwiGLU",
+                  "us": 32550.15625,
+                  "host_share_percent": 11.186857749503863
+                },
+                {
+                  "module": "Down",
+                  "us": 19123.723437499997,
+                  "host_share_percent": 6.572453050395588
+                },
+                {
+                  "module": "Final residual",
+                  "us": 29.788020833333338,
+                  "host_share_percent": 0.010237565348146604
+                },
+                {
+                  "module": "KV carrier conversion",
+                  "us": 1011.5328125,
+                  "host_share_percent": 0.3476442200609425
+                },
+                {
+                  "module": "KV append DMA",
+                  "us": 3255.40625,
+                  "host_share_percent": 1.1188200251909945
+                },
+                {
+                  "module": "Block orchestration",
+                  "us": 383.1901041666667,
+                  "host_share_percent": 0.1316950110287126
+                },
+                {
+                  "module": "Layer bookkeeping",
+                  "us": 209.103125,
+                  "host_share_percent": 0.07186469079858027
+                },
+                {
+                  "module": "Stage-boundary bookkeeping",
+                  "us": 24.419270833333336,
+                  "host_share_percent": 0.00839243004122626
+                },
+                {
+                  "module": "DSP unattributed",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Runtime setup/teardown",
+                  "us": 922.4098958333334,
+                  "host_share_percent": 0.31701440116503826
+                },
+                {
+                  "module": "Embedding",
+                  "us": 552.1916666666667,
+                  "host_share_percent": 0.18977757212644578
+                },
+                {
+                  "module": "Final model RMSNorm",
+                  "us": 8.383854166666667,
+                  "host_share_percent": 0.0028813681640955336
+                },
+                {
+                  "module": "LM head\uff0bgreedy\uff08\u4e0d\u542b final norm\uff09",
+                  "us": 4174.049479166667,
+                  "host_share_percent": 1.4345398960359272
+                },
+                {
+                  "module": "Host input/RoPE staging",
+                  "us": 166.88006000000001,
+                  "host_share_percent": 0.05735344181177839
+                },
+                {
+                  "module": "Host-DSP boundary",
+                  "us": 10091.921308333318,
+                  "host_share_percent": 3.468397731439822
+                },
+                {
+                  "module": "Complete Host wall",
+                  "us": 290967.82116,
+                  "host_share_percent": 100.0
+                }
+              ],
+              "decode": [
+                {
+                  "module": "I/O\u3001metadata",
+                  "us": 252.62743055555558,
+                  "host_share_percent": 1.4535031990853478
+                },
+                {
+                  "module": "Input RMSNorm",
+                  "us": 183.9894097222222,
+                  "host_share_percent": 1.0585912821935783
+                },
+                {
+                  "module": "QKV\uff0bRoPE",
+                  "us": 1620.3630208333334,
+                  "host_share_percent": 9.32283097398211
+                },
+                {
+                  "module": "QK\u2013Softmax\u2013AV",
+                  "us": 7915.590625,
+                  "host_share_percent": 45.54270401589401
+                },
+                {
+                  "module": "O projection",
+                  "us": 824.1963541666668,
+                  "host_share_percent": 4.742050516134601
+                },
+                {
+                  "module": "Post-attention residual\uff0bRMSNorm",
+                  "us": 190.75451388888888,
+                  "host_share_percent": 1.0975146110133014
+                },
+                {
+                  "module": "Gate/Up\uff0bSwiGLU",
+                  "us": 1970.0071180555556,
+                  "host_share_percent": 11.334523895594783
+                },
+                {
+                  "module": "Down",
+                  "us": 1179.6086805555556,
+                  "host_share_percent": 6.78693120175362
+                },
+                {
+                  "module": "Final residual",
+                  "us": 2.350694444444444,
+                  "host_share_percent": 0.013524825421999351
+                },
+                {
+                  "module": "KV carrier conversion",
+                  "us": 22.147569444444446,
+                  "host_share_percent": 0.1274270294744799
+                },
+                {
+                  "module": "KV append DMA",
+                  "us": 201.41371527777778,
+                  "host_share_percent": 1.1588428020350514
+                },
+                {
+                  "module": "Block orchestration",
+                  "us": 29.83576388888889,
+                  "host_share_percent": 0.1716613994144961
+                },
+                {
+                  "module": "Layer bookkeeping",
+                  "us": 16.25208333333334,
+                  "host_share_percent": 0.09350708695747444
+                },
+                {
+                  "module": "Stage-boundary bookkeeping",
+                  "us": 1.6588541666666667,
+                  "host_share_percent": 0.009544291499793488
+                },
+                {
+                  "module": "DSP unattributed",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Runtime setup/teardown",
+                  "us": 73.12048611111112,
+                  "host_share_percent": 0.42070198096640743
+                },
+                {
+                  "module": "Embedding",
+                  "us": 4.771006944444445,
+                  "host_share_percent": 0.027450201434413905
+                },
+                {
+                  "module": "Final model RMSNorm",
+                  "us": 7.946701388888888,
+                  "host_share_percent": 0.04572170118472499
+                },
+                {
+                  "module": "LM head\uff0bgreedy\uff08\u4e0d\u542b final norm\uff09",
+                  "us": 2179.4289930555556,
+                  "host_share_percent": 12.539442002078916
+                },
+                {
+                  "module": "Host input/RoPE staging",
+                  "us": 9.78732,
+                  "host_share_percent": 0.05631178252966307
+                },
+                {
+                  "module": "Host-DSP boundary",
+                  "us": 694.7395824999987,
+                  "host_share_percent": 3.9972152013512225
+                },
+                {
+                  "module": "Complete Host wall",
+                  "us": 17380.589923333333,
+                  "host_share_percent": 100.0
+                }
+              ]
+            },
+            "vtcm_peak": 3998944,
+            "overlay_peak": 1314816
+          }
+        }
+      },
+      "sp2_cost": {
+        "64": {
+          "prefill": {
+            "sp2_over_a8_wall": 1.0164775885847306,
+            "sp2_wall_overhead_percent": 1.6477588584730585,
+            "ci95": [
+              1.0145950188259236,
+              1.0184239417149128
+            ]
+          },
+          "decode": {
+            "sp2_over_a8_wall": 1.0051622383100876,
+            "sp2_wall_overhead_percent": 0.5162238310087552,
+            "ci95": [
+              1.003890922085609,
+              1.006280884246981
+            ]
+          }
+        },
+        "536": {
+          "prefill": {
+            "sp2_over_a8_wall": 1.0169821402257124,
+            "sp2_wall_overhead_percent": 1.6982140225712428,
+            "ci95": [
+              1.015966877820213,
+              1.018114694838865
+            ]
+          },
+          "decode": {
+            "sp2_over_a8_wall": 1.0033300305375952,
+            "sp2_wall_overhead_percent": 0.33300305375951744,
+            "ci95": [
+              1.00232176429215,
+              1.0043911516937944
+            ]
+          }
+        },
+        "741": {
+          "prefill": {
+            "sp2_over_a8_wall": 1.0132200912518072,
+            "sp2_wall_overhead_percent": 1.322009125180723,
+            "ci95": [
+              1.0121279473060594,
+              1.0145853648538217
+            ]
+          },
+          "decode": {
+            "sp2_over_a8_wall": 1.0010311351596097,
+            "sp2_wall_overhead_percent": 0.10311351596097307,
+            "ci95": [
+              0.9977811957050542,
+              1.0043802181530008
+            ]
+          }
+        }
+      },
+      "long_prefill_gate": {
+        "a8": {
+          "536": {
+            "throughput_over_m64": 0.8635798972467101,
+            "ci95": [
+              0.8619214637795397,
+              0.8652239504770154
+            ],
+            "minimum_ratio": 0.9,
+            "pass_gate": false
+          },
+          "741": {
+            "throughput_over_m64": 0.8430340700789174,
+            "ci95": [
+              0.8412102921391237,
+              0.8447508532708128
+            ],
+            "minimum_ratio": 0.9,
+            "pass_gate": false
+          }
+        },
+        "sp2": {
+          "536": {
+            "throughput_over_m64": 0.863151452501183,
+            "ci95": [
+              0.8623572207321567,
+              0.8639816984078766
+            ],
+            "minimum_ratio": 0.9,
+            "pass_gate": false
+          },
+          "741": {
+            "throughput_over_m64": 0.8457444202373443,
+            "ci95": [
+              0.8450594342782949,
+              0.8463915640979883
+            ],
+            "minimum_ratio": 0.9,
+            "pass_gate": false
+          }
+        }
+      },
+      "numerical": {
+        "audits": 8,
+        "exact_layer_outputs": 5236,
+        "exact_kv_elements": 2976210944,
+        "signed_zero_only": 0,
+        "all_head_exact": true,
+        "padding_unchanged": true
+      },
+      "timed_rpc_boundaries": 22600,
+      "quality_claim": false,
+      "named_dataset_benchmark": false
+    },
+    "1.7B": {
+      "experiment": "EXP-0298",
+      "size": "1.7B",
+      "runtime": {
+        "remote": "/data/local/tmp/qwen3-block-htp/exp0298/1.7B/a8/binaries-a2",
+        "seal": {
+          "model_size": "1.7B",
+          "paper_trace": false,
+          "source_head": "19a6861c8f556360a0565116fa716b56fd5712cb",
+          "files": {
+            "/home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/qwen3_block_cli": "ba7bc07f3ce5d0b7842d97f670a789d16fbb05637729a276f4c4b0f63f4d00b7",
+            "/home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/llama_sp2_cli": "ea27a713188cabf0bc44766a351f165a8595e61d59df2814a9408e1b277de4b4",
+            "/home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/libqwen3_probe.so": "8827a7890d5fd88965022149ab151231923051bd1c86a2b6af291412714adead",
+            "/home/daniuniu/work/qwen3-block-htp/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so": "c3d180abff77b63c74be43433f310d425821004f6f85ea690026e8ab3b37c96e"
+          }
+        },
+        "archive": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0298/1.7B/a8/binaries-a2"
+      },
+      "protocol": {
+        "arms": [
+          [
+            "a8",
+            64,
+            42,
+            true
+          ],
+          [
+            "sp2",
+            64,
+            42,
+            true
+          ],
+          [
+            "a8",
+            536,
+            46,
+            false
+          ],
+          [
+            "sp2",
+            536,
+            46,
+            false
+          ],
+          [
+            "a8",
+            741,
+            3,
+            false
+          ],
+          [
+            "sp2",
+            741,
+            3,
+            false
+          ]
+        ],
+        "short_rounds": 5,
+        "formal_rounds": 10,
+        "formal_repeat": 10,
+        "short_repeat": 1,
+        "order": "rotate left by round modulo six",
+        "option": "65439",
+        "recipe_difference": "only Down quantizer, LUT and existing A8/SP2 implementation; same weights and non-Down qparams",
+        "native_short": true
+      },
+      "arms": {
+        "a8": {
+          "64": {
+            "shape": [
+              64,
+              42
+            ],
+            "speed": {
+              "prefill": {
+                "tps": 1861.8814576225527,
+                "mean_ns": 34373831.769999996,
+                "process_mean_ns": [
+                  34312869.7,
+                  34401974.1,
+                  34422500.1,
+                  34317380.2,
+                  34461203.0,
+                  34524521.0,
+                  34250489.3,
+                  34353677.1,
+                  34387604.2,
+                  34306099.0
+                ]
+              },
+              "decode": {
+                "tps": 47.385889551381275,
+                "mean_ns": 886339802.79,
+                "process_mean_ns": [
+                  884321805.1,
+                  886553284.6,
+                  889940916.4,
+                  888366395.3,
+                  891070140.0,
+                  893526040.8,
+                  882453827.1,
+                  883424806.7,
+                  881294274.4,
+                  882446537.5
+                ]
+              }
+            },
+            "modules": {
+              "prefill": [
+                {
+                  "module": "I/O\u3001metadata",
+                  "us": 246.53437500000004,
+                  "host_share_percent": 0.717215283561039
+                },
+                {
+                  "module": "Input RMSNorm",
+                  "us": 2037.5661458333332,
+                  "host_share_percent": 5.9276666025102065
+                },
+                {
+                  "module": "QKV\uff0bRoPE",
+                  "us": 7041.577604166667,
+                  "host_share_percent": 20.485285583762735
+                },
+                {
+                  "module": "QK\u2013Softmax\u2013AV",
+                  "us": 3498.4270833333335,
+                  "host_share_percent": 10.177588308285753
+                },
+                {
+                  "module": "O projection",
+                  "us": 2076.124479166667,
+                  "host_share_percent": 6.039840111682337
+                },
+                {
+                  "module": "Post-attention residual\uff0bRMSNorm",
+                  "us": 2074.0619791666672,
+                  "host_share_percent": 6.033839907766171
+                },
+                {
+                  "module": "Gate/Up\uff0bSwiGLU",
+                  "us": 7138.605208333334,
+                  "host_share_percent": 20.767557297943146
+                },
+                {
+                  "module": "Down",
+                  "us": 3581.5927083333327,
+                  "host_share_percent": 10.419532894378078
+                },
+                {
+                  "module": "Final residual",
+                  "us": 2.8182291666666663,
+                  "host_share_percent": 0.008198763482418317
+                },
+                {
+                  "module": "KV carrier conversion",
+                  "us": 134.56197916666667,
+                  "host_share_percent": 0.39146633423657634
+                },
+                {
+                  "module": "KV append DMA",
+                  "us": 289.7703125,
+                  "host_share_percent": 0.8429968309581913
+                },
+                {
+                  "module": "Block orchestration",
+                  "us": 38.340625,
+                  "host_share_percent": 0.11154015431431198
+                },
+                {
+                  "module": "Layer bookkeeping",
+                  "us": 26.491145833333327,
+                  "host_share_percent": 0.07706777065352852
+                },
+                {
+                  "module": "Stage-boundary bookkeeping",
+                  "us": 20.1578125,
+                  "host_share_percent": 0.05864290206247203
+                },
+                {
+                  "module": "DSP unattributed",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Runtime setup/teardown",
+                  "us": 119.09322916666665,
+                  "host_share_percent": 0.346464804865328
+                },
+                {
+                  "module": "Embedding",
+                  "us": 66.33697916666668,
+                  "host_share_percent": 0.19298686166423473
+                },
+                {
+                  "module": "Final model RMSNorm",
+                  "us": 19.122395833333336,
+                  "host_share_percent": 0.05563067848031576
+                },
+                {
+                  "module": "LM head\uff0bgreedy\uff08\u4e0d\u542b final norm\uff09",
+                  "us": 5154.010937500001,
+                  "host_share_percent": 14.99399593267981
+                },
+                {
+                  "module": "Host input/RoPE staging",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Host-DSP boundary",
+                  "us": 808.638540833332,
+                  "host_share_percent": 2.35248297671334
+                },
+                {
+                  "module": "Complete Host wall",
+                  "us": 34373.831770000004,
+                  "host_share_percent": 100.0
+                }
+              ],
+              "decode": [
+                {
+                  "module": "I/O\u3001metadata",
+                  "us": 241.89583333333331,
+                  "host_share_percent": 1.1462449241272668
+                },
+                {
+                  "module": "Input RMSNorm",
+                  "us": 366.5431795634921,
+                  "host_share_percent": 1.7368974622607753
+                },
+                {
+                  "module": "QKV\uff0bRoPE",
+                  "us": 2537.9473462301585,
+                  "host_share_percent": 12.026289263568353
+                },
+                {
+                  "module": "QK\u2013Softmax\u2013AV",
+                  "us": 1965.27826140873,
+                  "host_share_percent": 9.312645863284471
+                },
+                {
+                  "module": "O projection",
+                  "us": 1356.9426339285712,
+                  "host_share_percent": 6.429993377889969
+                },
+                {
+                  "module": "Post-attention residual\uff0bRMSNorm",
+                  "us": 368.68446180555554,
+                  "host_share_percent": 1.7470441186428507
+                },
+                {
+                  "module": "Gate/Up\uff0bSwiGLU",
+                  "us": 6429.483643353174,
+                  "host_share_percent": 30.4666801796346
+                },
+                {
+                  "module": "Down",
+                  "us": 3500.30804811508,
+                  "host_share_percent": 16.58652105637922
+                },
+                {
+                  "module": "Final residual",
+                  "us": 1.855902777777778,
+                  "host_share_percent": 0.008794360404587951
+                },
+                {
+                  "module": "KV carrier conversion",
+                  "us": 163.76956845238095,
+                  "host_share_percent": 0.77603666825619
+                },
+                {
+                  "module": "KV append DMA",
+                  "us": 112.13012152777779,
+                  "host_share_percent": 0.5313385554098239
+                },
+                {
+                  "module": "Block orchestration",
+                  "us": 28.636830357142856,
+                  "host_share_percent": 0.13569816804052137
+                },
+                {
+                  "module": "Layer bookkeeping",
+                  "us": 16.64387400793651,
+                  "host_share_percent": 0.07886847754471853
+                },
+                {
+                  "module": "Stage-boundary bookkeeping",
+                  "us": 1.6735119047619047,
+                  "host_share_percent": 0.007930085028196933
+                },
+                {
+                  "module": "DSP unattributed",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Runtime setup/teardown",
+                  "us": 73.73452380952381,
+                  "host_share_percent": 0.3493976001361789
+                },
+                {
+                  "module": "Embedding",
+                  "us": 1.7468501984126985,
+                  "host_share_percent": 0.008277605056479261
+                },
+                {
+                  "module": "Final model RMSNorm",
+                  "us": 14.790426587301587,
+                  "host_share_percent": 0.07008575206836862
+                },
+                {
+                  "module": "LM head\uff0bgreedy\uff08\u4e0d\u542b final norm\uff09",
+                  "us": 3263.3120783730155,
+                  "host_share_percent": 15.463494571747221
+                },
+                {
+                  "module": "Host input/RoPE staging",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Host-DSP boundary",
+                  "us": 657.9515421230158,
+                  "host_share_percent": 3.1177619105202217
+                },
+                {
+                  "module": "Complete Host wall",
+                  "us": 21103.32863785714,
+                  "host_share_percent": 100.0
+                }
+              ]
+            },
+            "vtcm_peak": 8365824,
+            "overlay_peak": 102400
+          },
+          "536": {
+            "shape": [
+              536,
+              46
+            ],
+            "speed": {
+              "prefill": {
+                "tps": 1841.22610767649,
+                "mean_ns": 291110362.69,
+                "process_mean_ns": [
+                  290843093.3,
+                  290945067.2,
+                  291403162.5,
+                  291694592.9,
+                  291754021.3,
+                  291884827.7,
+                  290504181.5,
+                  290528988.6,
+                  291087526.1,
+                  290458165.8
+                ]
+              },
+              "decode": {
+                "tps": 43.31067499893672,
+                "mean_ns": 1062093814.0799999,
+                "process_mean_ns": [
+                  1059229833.3,
+                  1060511199.8,
+                  1061622810.9,
+                  1063108670.4,
+                  1065606970.8,
+                  1066061066.3,
+                  1059883764.9,
+                  1060719170.6,
+                  1062529373.8,
+                  1061665280.0
+                ]
+              }
+            },
+            "modules": {
+              "prefill": [
+                {
+                  "module": "I/O\u3001metadata",
+                  "us": 2330.2442708333338,
+                  "host_share_percent": 0.8004676471496082
+                },
+                {
+                  "module": "Input RMSNorm",
+                  "us": 18448.221875,
+                  "host_share_percent": 6.337191745607935
+                },
+                {
+                  "module": "QKV\uff0bRoPE",
+                  "us": 69146.4171875,
+                  "host_share_percent": 23.752647122745408
+                },
+                {
+                  "module": "QK\u2013Softmax\u2013AV",
+                  "us": 47841.18958333333,
+                  "host_share_percent": 16.434038672226468
+                },
+                {
+                  "module": "O projection",
+                  "us": 18944.02135416667,
+                  "host_share_percent": 6.507504981655337
+                },
+                {
+                  "module": "Post-attention residual\uff0bRMSNorm",
+                  "us": 18480.530208333337,
+                  "host_share_percent": 6.348290056583467
+                },
+                {
+                  "module": "Gate/Up\uff0bSwiGLU",
+                  "us": 65430.88958333332,
+                  "host_share_percent": 22.476317565173698
+                },
+                {
+                  "module": "Down",
+                  "us": 32273.103125,
+                  "host_share_percent": 11.086208964456292
+                },
+                {
+                  "module": "Final residual",
+                  "us": 17.43177083333334,
+                  "host_share_percent": 0.005988028276374424
+                },
+                {
+                  "module": "KV carrier conversion",
+                  "us": 789.6333333333334,
+                  "host_share_percent": 0.271248788959878
+                },
+                {
+                  "module": "KV append DMA",
+                  "us": 3052.391666666667,
+                  "host_share_percent": 1.0485341842389593
+                },
+                {
+                  "module": "Block orchestration",
+                  "us": 276.83125,
+                  "host_share_percent": 0.09509494867923832
+                },
+                {
+                  "module": "Layer bookkeeping",
+                  "us": 167.76302083333334,
+                  "host_share_percent": 0.05762866676511349
+                },
+                {
+                  "module": "Stage-boundary bookkeeping",
+                  "us": 20.163020833333334,
+                  "host_share_percent": 0.006926246337305656
+                },
+                {
+                  "module": "DSP unattributed",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Runtime setup/teardown",
+                  "us": 716.0333333333333,
+                  "host_share_percent": 0.24596628121267838
+                },
+                {
+                  "module": "Embedding",
+                  "us": 565.8583333333333,
+                  "host_share_percent": 0.19437931652605211
+                },
+                {
+                  "module": "Final model RMSNorm",
+                  "us": 14.712500000000002,
+                  "host_share_percent": 0.005053925206938501
+                },
+                {
+                  "module": "LM head\uff0bgreedy\uff08\u4e0d\u542b final norm\uff09",
+                  "us": 5168.844791666667,
+                  "host_share_percent": 1.775561935997074
+                },
+                {
+                  "module": "Host input/RoPE staging",
+                  "us": 112.55966000000001,
+                  "host_share_percent": 0.0386656314670129
+                },
+                {
+                  "module": "Host-DSP boundary",
+                  "us": 7313.522821666649,
+                  "host_share_percent": 2.5122852907351616
+                },
+                {
+                  "module": "Complete Host wall",
+                  "us": 291110.36269,
+                  "host_share_percent": 100.0
+                }
+              ],
+              "decode": [
+                {
+                  "module": "I/O\u3001metadata",
+                  "us": 244.93067255434784,
+                  "host_share_percent": 1.060811275627235
+                },
+                {
+                  "module": "Input RMSNorm",
+                  "us": 363.9705729166666,
+                  "host_share_percent": 1.5763811192770545
+                },
+                {
+                  "module": "QKV\uff0bRoPE",
+                  "us": 2546.214198369565,
+                  "host_share_percent": 11.027825562326242
+                },
+                {
+                  "module": "QK\u2013Softmax\u2013AV",
+                  "us": 3993.907801177537,
+                  "host_share_percent": 17.29788427525183
+                },
+                {
+                  "module": "O projection",
+                  "us": 1361.739889039855,
+                  "host_share_percent": 5.897787376729331
+                },
+                {
+                  "module": "Post-attention residual\uff0bRMSNorm",
+                  "us": 372.0326313405797,
+                  "host_share_percent": 1.6112984384991087
+                },
+                {
+                  "module": "Gate/Up\uff0bSwiGLU",
+                  "us": 6442.109080615942,
+                  "host_share_percent": 27.901209269825614
+                },
+                {
+                  "module": "Down",
+                  "us": 3510.6740489130434,
+                  "host_share_percent": 15.20496627596741
+                },
+                {
+                  "module": "Final residual",
+                  "us": 1.8400815217391309,
+                  "host_share_percent": 0.007969517275959242
+                },
+                {
+                  "module": "KV carrier conversion",
+                  "us": 24.37824954710145,
+                  "host_share_percent": 0.10558384431774873
+                },
+                {
+                  "module": "KV append DMA",
+                  "us": 184.16428894927537,
+                  "host_share_percent": 0.7976279665092338
+                },
+                {
+                  "module": "Block orchestration",
+                  "us": 28.64257246376812,
+                  "host_share_percent": 0.12405291471117554
+                },
+                {
+                  "module": "Layer bookkeeping",
+                  "us": 16.703385416666666,
+                  "host_share_percent": 0.07234348971632293
+                },
+                {
+                  "module": "Stage-boundary bookkeeping",
+                  "us": 1.6695765398550726,
+                  "host_share_percent": 0.007231048690351237
+                },
+                {
+                  "module": "DSP unattributed",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Runtime setup/teardown",
+                  "us": 73.80954483695652,
+                  "host_share_percent": 0.3196741208252872
+                },
+                {
+                  "module": "Embedding",
+                  "us": 5.938405797101449,
+                  "host_share_percent": 0.025719636349006262
+                },
+                {
+                  "module": "Final model RMSNorm",
+                  "us": 14.469202898550725,
+                  "host_share_percent": 0.06266709442328036
+                },
+                {
+                  "module": "LM head\uff0bgreedy\uff08\u4e0d\u542b final norm\uff09",
+                  "us": 3265.9760869565216,
+                  "host_share_percent": 14.1451628856473
+                },
+                {
+                  "module": "Host input/RoPE staging",
+                  "us": 8.768614565217392,
+                  "host_share_percent": 0.03797746156250733
+                },
+                {
+                  "module": "Host-DSP boundary",
+                  "us": 627.0570538405797,
+                  "host_share_percent": 2.7158264264680114
+                },
+                {
+                  "module": "Complete Host wall",
+                  "us": 23088.995958260868,
+                  "host_share_percent": 99.99999999999999
+                }
+              ]
+            },
+            "vtcm_peak": 6620384,
+            "overlay_peak": 1060864
+          },
+          "741": {
+            "shape": [
+              741,
+              3
+            ],
+            "speed": {
+              "prefill": {
+                "tps": 1871.2874825900092,
+                "mean_ns": 395984052.09999996,
+                "process_mean_ns": [
+                  396985037.0,
+                  395933421.9,
+                  395280082.6,
+                  396190145.2,
+                  395977438.4,
+                  397085631.4,
+                  395287791.4,
+                  396528848.5,
+                  395195812.1,
+                  395376312.5
+                ]
+              },
+              "decode": {
+                "tps": 41.93705392888111,
+                "mean_ns": 71535783.25,
+                "process_mean_ns": [
+                  71207426.7,
+                  71318510.0,
+                  71451452.9,
+                  71751567.7,
+                  71429239.5,
+                  71875676.9,
+                  71575135.3,
+                  71514104.5,
+                  71687719.5,
+                  71546999.5
+                ]
+              }
+            },
+            "modules": {
+              "prefill": [
+                {
+                  "module": "I/O\u3001metadata",
+                  "us": 3122.805729166667,
+                  "host_share_percent": 0.788619064986498
+                },
+                {
+                  "module": "Input RMSNorm",
+                  "us": 24823.358333333337,
+                  "host_share_percent": 6.268777290824976
+                },
+                {
+                  "module": "QKV\uff0bRoPE",
+                  "us": 92336.52187499999,
+                  "host_share_percent": 23.318242587123628
+                },
+                {
+                  "module": "QK\u2013Softmax\u2013AV",
+                  "us": 73955.42708333334,
+                  "host_share_percent": 18.676365043271232
+                },
+                {
+                  "module": "O projection",
+                  "us": 25246.79635416667,
+                  "host_share_percent": 6.375710390425259
+                },
+                {
+                  "module": "Post-attention residual\uff0bRMSNorm",
+                  "us": 24831.57291666667,
+                  "host_share_percent": 6.270851764099787
+                },
+                {
+                  "module": "Gate/Up\uff0bSwiGLU",
+                  "us": 86234.37916666667,
+                  "host_share_percent": 21.777235398583535
+                },
+                {
+                  "module": "Down",
+                  "us": 43012.88333333334,
+                  "host_share_percent": 10.862276676352376
+                },
+                {
+                  "module": "Final residual",
+                  "us": 23.17395833333333,
+                  "host_share_percent": 0.0058522453645383395
+                },
+                {
+                  "module": "KV carrier conversion",
+                  "us": 1065.8973958333333,
+                  "host_share_percent": 0.2691768494666943
+                },
+                {
+                  "module": "KV append DMA",
+                  "us": 4142.768750000001,
+                  "host_share_percent": 1.046195857643733
+                },
+                {
+                  "module": "Block orchestration",
+                  "us": 367.59479166666665,
+                  "host_share_percent": 0.0928307061148604
+                },
+                {
+                  "module": "Layer bookkeeping",
+                  "us": 220.678125,
+                  "host_share_percent": 0.05572904358892488
+                },
+                {
+                  "module": "Stage-boundary bookkeeping",
+                  "us": 25.70989583333333,
+                  "host_share_percent": 0.006492659413172699
+                },
+                {
+                  "module": "DSP unattributed",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Runtime setup/teardown",
+                  "us": 938.3161458333334,
+                  "host_share_percent": 0.23695806456275553
+                },
+                {
+                  "module": "Embedding",
+                  "us": 771.1125,
+                  "host_share_percent": 0.19473322117661113
+                },
+                {
+                  "module": "Final model RMSNorm",
+                  "us": 14.919791666666669,
+                  "host_share_percent": 0.0037677758959087813
+                },
+                {
+                  "module": "LM head\uff0bgreedy\uff08\u4e0d\u542b final norm\uff09",
+                  "us": 5158.083854166667,
+                  "host_share_percent": 1.3025988867006364
+                },
+                {
+                  "module": "Host input/RoPE staging",
+                  "us": 170.98593,
+                  "host_share_percent": 0.04318000411714056
+                },
+                {
+                  "module": "Host-DSP boundary",
+                  "us": 9521.066169999986,
+                  "host_share_percent": 2.404406470287743
+                },
+                {
+                  "module": "Complete Host wall",
+                  "us": 395984.0521,
+                  "host_share_percent": 99.99999999999999
+                }
+              ],
+              "decode": [
+                {
+                  "module": "I/O\u3001metadata",
+                  "us": 258.1361111111111,
+                  "host_share_percent": 1.0825468012658315
+                },
+                {
+                  "module": "Input RMSNorm",
+                  "us": 369.47517361111113,
+                  "host_share_percent": 1.5494700281111877
+                },
+                {
+                  "module": "QKV\uff0bRoPE",
+                  "us": 2545.7222222222226,
+                  "host_share_percent": 10.676009012128441
+                },
+                {
+                  "module": "QK\u2013Softmax\u2013AV",
+                  "us": 4733.851909722223,
+                  "host_share_percent": 19.852380282935773
+                },
+                {
+                  "module": "O projection",
+                  "us": 1357.9274305555557,
+                  "host_share_percent": 5.69474758867153
+                },
+                {
+                  "module": "Post-attention residual\uff0bRMSNorm",
+                  "us": 366.0387152777779,
+                  "host_share_percent": 1.535058534266253
+                },
+                {
+                  "module": "Gate/Up\uff0bSwiGLU",
+                  "us": 6437.217708333334,
+                  "host_share_percent": 26.995794618632353
+                },
+                {
+                  "module": "Down",
+                  "us": 3506.9295138888883,
+                  "host_share_percent": 14.707029214874312
+                },
+                {
+                  "module": "Final residual",
+                  "us": 1.847048611111111,
+                  "host_share_percent": 0.0077459777213431625
+                },
+                {
+                  "module": "KV carrier conversion",
+                  "us": 24.38090277777778,
+                  "host_share_percent": 0.10224632346264742
+                },
+                {
+                  "module": "KV append DMA",
+                  "us": 176.72135416666669,
+                  "host_share_percent": 0.74111729600724
+                },
+                {
+                  "module": "Block orchestration",
+                  "us": 28.69114583333333,
+                  "host_share_percent": 0.12032221300938925
+                },
+                {
+                  "module": "Layer bookkeeping",
+                  "us": 16.788020833333334,
+                  "host_share_percent": 0.07040401350466798
+                },
+                {
+                  "module": "Stage-boundary bookkeeping",
+                  "us": 1.6770833333333333,
+                  "host_share_percent": 0.007033193419322769
+                },
+                {
+                  "module": "DSP unattributed",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Runtime setup/teardown",
+                  "us": 73.81649305555557,
+                  "host_share_percent": 0.3095646250111712
+                },
+                {
+                  "module": "Embedding",
+                  "us": 5.871701388888889,
+                  "host_share_percent": 0.024624185780011947
+                },
+                {
+                  "module": "Final model RMSNorm",
+                  "us": 13.03732638888889,
+                  "host_share_percent": 0.054674705985925824
+                },
+                {
+                  "module": "LM head\uff0bgreedy\uff08\u4e0d\u542b final norm\uff09",
+                  "us": 3264.555381944445,
+                  "host_share_percent": 13.690583510642327
+                },
+                {
+                  "module": "Host input/RoPE staging",
+                  "us": 9.034346666666668,
+                  "host_share_percent": 0.03788738833722074
+                },
+                {
+                  "module": "Host-DSP boundary",
+                  "us": 653.5414936111098,
+                  "host_share_percent": 2.740760486233062
+                },
+                {
+                  "module": "Complete Host wall",
+                  "us": 23845.26108333333,
+                  "host_share_percent": 99.99999999999999
+                }
+              ]
+            },
+            "vtcm_peak": 6620384,
+            "overlay_peak": 1314816
+          }
+        },
+        "sp2": {
+          "64": {
+            "shape": [
+              64,
+              42
+            ],
+            "speed": {
+              "prefill": {
+                "tps": 1845.5167056449018,
+                "mean_ns": 34678634.88000001,
+                "process_mean_ns": [
+                  34697734.2,
+                  34752682.2,
+                  34719901.1,
+                  34634031.3,
+                  34744875.0,
+                  34768120.0,
+                  34617291.5,
+                  34587593.8,
+                  34664130.1,
+                  34599989.6
+                ]
+              },
+              "decode": {
+                "tps": 47.266754613243776,
+                "mean_ns": 888573805.07,
+                "process_mean_ns": [
+                  886235129.1,
+                  889011748.8,
+                  890209197.1,
+                  889950166.5,
+                  893321963.7,
+                  894059363.6,
+                  881768780.3,
+                  884965858.2,
+                  887752692.2,
+                  888463151.2
+                ]
+              }
+            },
+            "modules": {
+              "prefill": [
+                {
+                  "module": "I/O\u3001metadata",
+                  "us": 245.7953125,
+                  "host_share_percent": 0.7087802427936863
+                },
+                {
+                  "module": "Input RMSNorm",
+                  "us": 2019.1463541666667,
+                  "host_share_percent": 5.822450512119659
+                },
+                {
+                  "module": "QKV\uff0bRoPE",
+                  "us": 7039.0458333333345,
+                  "host_share_percent": 20.29793230815127
+                },
+                {
+                  "module": "QK\u2013Softmax\u2013AV",
+                  "us": 3501.08125,
+                  "host_share_percent": 10.095787397961152
+                },
+                {
+                  "module": "O projection",
+                  "us": 2085.9536458333337,
+                  "host_share_percent": 6.015097344666105
+                },
+                {
+                  "module": "Post-attention residual\uff0bRMSNorm",
+                  "us": 2113.5614583333336,
+                  "host_share_percent": 6.09470778087714
+                },
+                {
+                  "module": "Gate/Up\uff0bSwiGLU",
+                  "us": 7154.2125,
+                  "host_share_percent": 20.630029194505596
+                },
+                {
+                  "module": "Down",
+                  "us": 3819.25625,
+                  "host_share_percent": 11.013283144552663
+                },
+                {
+                  "module": "Final residual",
+                  "us": 2.8276041666666667,
+                  "host_share_percent": 0.008153735510210104
+                },
+                {
+                  "module": "KV carrier conversion",
+                  "us": 136.05781249999998,
+                  "host_share_percent": 0.3923390092222684
+                },
+                {
+                  "module": "KV append DMA",
+                  "us": 289.5916666666667,
+                  "host_share_percent": 0.8350722791388804
+                },
+                {
+                  "module": "Block orchestration",
+                  "us": 38.217708333333334,
+                  "host_share_percent": 0.11020534246973604
+                },
+                {
+                  "module": "Layer bookkeeping",
+                  "us": 26.81875,
+                  "host_share_percent": 0.07733507992111598
+                },
+                {
+                  "module": "Stage-boundary bookkeeping",
+                  "us": 19.871354166666666,
+                  "host_share_percent": 0.05730143137245277
+                },
+                {
+                  "module": "DSP unattributed",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Runtime setup/teardown",
+                  "us": 118.8125,
+                  "host_share_percent": 0.3426100837334921
+                },
+                {
+                  "module": "Embedding",
+                  "us": 66.83593750000001,
+                  "host_share_percent": 0.19272943624013847
+                },
+                {
+                  "module": "Final model RMSNorm",
+                  "us": 13.8859375,
+                  "host_share_percent": 0.04004176504654845
+                },
+                {
+                  "module": "LM head\uff0bgreedy\uff08\u4e0d\u542b final norm\uff09",
+                  "us": 5159.695312500001,
+                  "host_share_percent": 14.878599836338198
+                },
+                {
+                  "module": "Host input/RoPE staging",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Host-DSP boundary",
+                  "us": 827.9676924999983,
+                  "host_share_percent": 2.3875440753797004
+                },
+                {
+                  "module": "Complete Host wall",
+                  "us": 34678.63488,
+                  "host_share_percent": 100.0
+                }
+              ],
+              "decode": [
+                {
+                  "module": "I/O\u3001metadata",
+                  "us": 241.940128968254,
+                  "host_share_percent": 1.1435724707039014
+                },
+                {
+                  "module": "Input RMSNorm",
+                  "us": 364.13373015873015,
+                  "host_share_percent": 1.7211419669817825
+                },
+                {
+                  "module": "QKV\uff0bRoPE",
+                  "us": 2538.5443700396822,
+                  "host_share_percent": 11.998875381349718
+                },
+                {
+                  "module": "QK\u2013Softmax\u2013AV",
+                  "us": 1966.1529637896826,
+                  "host_share_percent": 9.29336696715489
+                },
+                {
+                  "module": "O projection",
+                  "us": 1360.3190104166665,
+                  "host_share_percent": 6.429786486109519
+                },
+                {
+                  "module": "Post-attention residual\uff0bRMSNorm",
+                  "us": 371.08495783730166,
+                  "host_share_percent": 1.753998164276165
+                },
+                {
+                  "module": "Gate/Up\uff0bSwiGLU",
+                  "us": 6435.995548115078,
+                  "host_share_percent": 30.42086222646848
+                },
+                {
+                  "module": "Down",
+                  "us": 3543.56484375,
+                  "host_share_percent": 16.749280992564877
+                },
+                {
+                  "module": "Final residual",
+                  "us": 1.8164930555555554,
+                  "host_share_percent": 0.008585973151360584
+                },
+                {
+                  "module": "KV carrier conversion",
+                  "us": 163.87929067460317,
+                  "host_share_percent": 0.7746042218508918
+                },
+                {
+                  "module": "KV append DMA",
+                  "us": 112.00055803571429,
+                  "host_share_percent": 0.5293902893220477
+                },
+                {
+                  "module": "Block orchestration",
+                  "us": 28.582651289682538,
+                  "host_share_percent": 0.13510091647053404
+                },
+                {
+                  "module": "Layer bookkeeping",
+                  "us": 16.711743551587308,
+                  "host_share_percent": 0.07899098816123364
+                },
+                {
+                  "module": "Stage-boundary bookkeeping",
+                  "us": 1.6747271825396826,
+                  "host_share_percent": 0.00791589187812323
+                },
+                {
+                  "module": "DSP unattributed",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Runtime setup/teardown",
+                  "us": 73.74123263888889,
+                  "host_share_percent": 0.34855087480204844
+                },
+                {
+                  "module": "Embedding",
+                  "us": 1.7517609126984126,
+                  "host_share_percent": 0.008280005320158783
+                },
+                {
+                  "module": "Final model RMSNorm",
+                  "us": 14.361309523809524,
+                  "host_share_percent": 0.06788124931867456
+                },
+                {
+                  "module": "LM head\uff0bgreedy\uff08\u4e0d\u542b final norm\uff09",
+                  "us": 3261.9239707341267,
+                  "host_share_percent": 15.418055989174775
+                },
+                {
+                  "module": "Host input/RoPE staging",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Host-DSP boundary",
+                  "us": 658.33987765873,
+                  "host_share_percent": 3.111758944940812
+                },
+                {
+                  "module": "Complete Host wall",
+                  "us": 21156.519168333332,
+                  "host_share_percent": 100.0
+                }
+              ]
+            },
+            "vtcm_peak": 8365824,
+            "overlay_peak": 102400
+          },
+          "536": {
+            "shape": [
+              536,
+              46
+            ],
+            "speed": {
+              "prefill": {
+                "tps": 1826.3232085957347,
+                "mean_ns": 293485839.46000004,
+                "process_mean_ns": [
+                  293778578.8,
+                  293570656.7,
+                  293885020.4,
+                  293604995.0,
+                  294358781.0,
+                  294352489.8,
+                  293044448.0,
+                  292576863.6,
+                  293006405.9,
+                  292680155.4
+                ]
+              },
+              "decode": {
+                "tps": 43.17921659915898,
+                "mean_ns": 1065327340.8599999,
+                "process_mean_ns": [
+                  1063806890.1,
+                  1063921165.7,
+                  1064572516.8,
+                  1065425847.6,
+                  1069823598.9,
+                  1067758973.1,
+                  1065022635.3,
+                  1062127982.3,
+                  1066798670.0,
+                  1064015128.8
+                ]
+              }
+            },
+            "modules": {
+              "prefill": [
+                {
+                  "module": "I/O\u3001metadata",
+                  "us": 2328.611979166667,
+                  "host_share_percent": 0.7934324815981588
+                },
+                {
+                  "module": "Input RMSNorm",
+                  "us": 18896.78177083334,
+                  "host_share_percent": 6.438737148477935
+                },
+                {
+                  "module": "QKV\uff0bRoPE",
+                  "us": 69141.58177083333,
+                  "host_share_percent": 23.558745422965053
+                },
+                {
+                  "module": "QK\u2013Softmax\u2013AV",
+                  "us": 47834.07291666667,
+                  "host_share_percent": 16.298596553986755
+                },
+                {
+                  "module": "O projection",
+                  "us": 18970.61197916667,
+                  "host_share_percent": 6.463893458734395
+                },
+                {
+                  "module": "Post-attention residual\uff0bRMSNorm",
+                  "us": 18953.24375,
+                  "host_share_percent": 6.457975548283033
+                },
+                {
+                  "module": "Gate/Up\uff0bSwiGLU",
+                  "us": 64646.00729166666,
+                  "host_share_percent": 22.026959600712672
+                },
+                {
+                  "module": "Down",
+                  "us": 34523.0296875,
+                  "host_share_percent": 11.763098945768807
+                },
+                {
+                  "module": "Final residual",
+                  "us": 17.61927083333333,
+                  "host_share_percent": 0.006003448365942271
+                },
+                {
+                  "module": "KV carrier conversion",
+                  "us": 789.0135416666667,
+                  "host_share_percent": 0.26884211623920734
+                },
+                {
+                  "module": "KV append DMA",
+                  "us": 3035.4651041666666,
+                  "host_share_percent": 1.0342799195190397
+                },
+                {
+                  "module": "Block orchestration",
+                  "us": 277.83125,
+                  "host_share_percent": 0.09466598133361263
+                },
+                {
+                  "module": "Layer bookkeeping",
+                  "us": 169.6140625,
+                  "host_share_percent": 0.05779292888954431
+                },
+                {
+                  "module": "Stage-boundary bookkeeping",
+                  "us": 19.955208333333335,
+                  "host_share_percent": 0.006799376886479418
+                },
+                {
+                  "module": "DSP unattributed",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Runtime setup/teardown",
+                  "us": 714.446875,
+                  "host_share_percent": 0.24343487110470072
+                },
+                {
+                  "module": "Embedding",
+                  "us": 565.0953125000001,
+                  "host_share_percent": 0.19254602318794956
+                },
+                {
+                  "module": "Final model RMSNorm",
+                  "us": 14.452083333333334,
+                  "host_share_percent": 0.004924286418698932
+                },
+                {
+                  "module": "LM head\uff0bgreedy\uff08\u4e0d\u542b final norm\uff09",
+                  "us": 5169.969270833333,
+                  "host_share_percent": 1.7615736692256874
+                },
+                {
+                  "module": "Host input/RoPE staging",
+                  "us": 118.39685,
+                  "host_share_percent": 0.04034158861560222
+                },
+                {
+                  "module": "Host-DSP boundary",
+                  "us": 7300.039484999987,
+                  "host_share_percent": 2.4873566296867033
+                },
+                {
+                  "module": "Complete Host wall",
+                  "us": 293485.83946000005,
+                  "host_share_percent": 100.0
+                }
+              ],
+              "decode": [
+                {
+                  "module": "I/O\u3001metadata",
+                  "us": 243.505615942029,
+                  "host_share_percent": 1.051438173387249
+                },
+                {
+                  "module": "Input RMSNorm",
+                  "us": 364.3816236413044,
+                  "host_share_percent": 1.5733713051961111
+                },
+                {
+                  "module": "QKV\uff0bRoPE",
+                  "us": 2548.3702672101444,
+                  "host_share_percent": 11.003663174272347
+                },
+                {
+                  "module": "QK\u2013Softmax\u2013AV",
+                  "us": 3992.9825747282607,
+                  "host_share_percent": 17.24138594708591
+                },
+                {
+                  "module": "O projection",
+                  "us": 1363.1856091485506,
+                  "host_share_percent": 5.886128668228175
+                },
+                {
+                  "module": "Post-attention residual\uff0bRMSNorm",
+                  "us": 370.81384737318837,
+                  "host_share_percent": 1.6011451433694381
+                },
+                {
+                  "module": "Gate/Up\uff0bSwiGLU",
+                  "us": 6460.92638134058,
+                  "host_share_percent": 27.897773965112535
+                },
+                {
+                  "module": "Down",
+                  "us": 3558.0866055253623,
+                  "host_share_percent": 15.363539221854596
+                },
+                {
+                  "module": "Final residual",
+                  "us": 1.805785778985507,
+                  "host_share_percent": 0.007797241528249624
+                },
+                {
+                  "module": "KV carrier conversion",
+                  "us": 24.37115036231884,
+                  "host_share_percent": 0.10523271802652372
+                },
+                {
+                  "module": "KV append DMA",
+                  "us": 183.64815443840578,
+                  "host_share_percent": 0.7929783438531725
+                },
+                {
+                  "module": "Block orchestration",
+                  "us": 28.575203804347826,
+                  "host_share_percent": 0.12338549144330466
+                },
+                {
+                  "module": "Layer bookkeeping",
+                  "us": 16.835382699275364,
+                  "host_share_percent": 0.07269386361017448
+                },
+                {
+                  "module": "Stage-boundary bookkeeping",
+                  "us": 1.6638247282608698,
+                  "host_share_percent": 0.007184264832461293
+                },
+                {
+                  "module": "DSP unattributed",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Runtime setup/teardown",
+                  "us": 73.77193161231884,
+                  "host_share_percent": 0.3185414214026659
+                },
+                {
+                  "module": "Embedding",
+                  "us": 5.9690443840579706,
+                  "host_share_percent": 0.02577386603492326
+                },
+                {
+                  "module": "Final model RMSNorm",
+                  "us": 14.405774456521737,
+                  "host_share_percent": 0.06220300555367839
+                },
+                {
+                  "module": "LM head\uff0bgreedy\uff08\u4e0d\u542b final norm\uff09",
+                  "us": 3267.0569633152177,
+                  "host_share_percent": 14.10689602607784
+                },
+                {
+                  "module": "Host input/RoPE staging",
+                  "us": 9.266598260869564,
+                  "host_share_percent": 0.04001244534434768
+                },
+                {
+                  "module": "Host-DSP boundary",
+                  "us": 629.667679945652,
+                  "host_share_percent": 2.7188557137863225
+                },
+                {
+                  "module": "Complete Host wall",
+                  "us": 23159.290018695647,
+                  "host_share_percent": 100.00000000000001
+                }
+              ]
+            },
+            "vtcm_peak": 6620384,
+            "overlay_peak": 1060864
+          },
+          "741": {
+            "shape": [
+              741,
+              3
+            ],
+            "speed": {
+              "prefill": {
+                "tps": 1857.8448992474468,
+                "mean_ns": 398849225.95000005,
+                "process_mean_ns": [
+                  399095521.1,
+                  398945337.8,
+                  400836365.4,
+                  398765312.2,
+                  399629385.4,
+                  400065683.2,
+                  397808504.0,
+                  397641880.2,
+                  396954265.4,
+                  398750004.8
+                ]
+              },
+              "decode": {
+                "tps": 41.90816553217011,
+                "mean_ns": 71585094.74000001,
+                "process_mean_ns": [
+                  71508224.0,
+                  71634182.5,
+                  71787186.8,
+                  71558807.1,
+                  71678973.9,
+                  71824051.5,
+                  71288666.5,
+                  71361552.3,
+                  71229562.6,
+                  71979740.2
+                ]
+              }
+            },
+            "modules": {
+              "prefill": [
+                {
+                  "module": "I/O\u3001metadata",
+                  "us": 3094.46875,
+                  "host_share_percent": 0.7758492554747806
+                },
+                {
+                  "module": "Input RMSNorm",
+                  "us": 25191.06822916667,
+                  "host_share_percent": 6.315937600020475
+                },
+                {
+                  "module": "QKV\uff0bRoPE",
+                  "us": 92340.4140625,
+                  "host_share_percent": 23.15170948183709
+                },
+                {
+                  "module": "QK\u2013Softmax\u2013AV",
+                  "us": 73970.75052083333,
+                  "host_share_percent": 18.546043393877955
+                },
+                {
+                  "module": "O projection",
+                  "us": 25287.705208333336,
+                  "host_share_percent": 6.340166549929175
+                },
+                {
+                  "module": "Post-attention residual\uff0bRMSNorm",
+                  "us": 25217.481250000004,
+                  "host_share_percent": 6.322559907176875
+                },
+                {
+                  "module": "Gate/Up\uff0bSwiGLU",
+                  "us": 85750.54114583334,
+                  "host_share_percent": 21.499487918420353
+                },
+                {
+                  "module": "Down",
+                  "us": 45942.9875,
+                  "host_share_percent": 11.51888596262675
+                },
+                {
+                  "module": "Final residual",
+                  "us": 23.427083333333336,
+                  "host_share_percent": 0.005873668997986264
+                },
+                {
+                  "module": "KV carrier conversion",
+                  "us": 1066.1364583333336,
+                  "host_share_percent": 0.2673031283422837
+                },
+                {
+                  "module": "KV append DMA",
+                  "us": 4128.915625,
+                  "host_share_percent": 1.0352071300039587
+                },
+                {
+                  "module": "Block orchestration",
+                  "us": 367.37239583333337,
+                  "host_share_percent": 0.09210808795185864
+                },
+                {
+                  "module": "Layer bookkeeping",
+                  "us": 222.39427083333334,
+                  "host_share_percent": 0.05575898268415164
+                },
+                {
+                  "module": "Stage-boundary bookkeeping",
+                  "us": 25.382291666666667,
+                  "host_share_percent": 0.0063638813905705326
+                },
+                {
+                  "module": "DSP unattributed",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Runtime setup/teardown",
+                  "us": 937.5473958333334,
+                  "host_share_percent": 0.23506311027688068
+                },
+                {
+                  "module": "Embedding",
+                  "us": 768.9442708333333,
+                  "host_share_percent": 0.1927907140854596
+                },
+                {
+                  "module": "Final model RMSNorm",
+                  "us": 17.83697916666667,
+                  "host_share_percent": 0.004472110764207105
+                },
+                {
+                  "module": "LM head\uff0bgreedy\uff08\u4e0d\u542b final norm\uff09",
+                  "us": 5155.110416666666,
+                  "host_share_percent": 1.2924960313983196
+                },
+                {
+                  "module": "Host input/RoPE staging",
+                  "us": 143.64747000000003,
+                  "host_share_percent": 0.03601548170435907
+                },
+                {
+                  "module": "Host-DSP boundary",
+                  "us": 9197.094625833317,
+                  "host_share_percent": 2.3059076030365095
+                },
+                {
+                  "module": "Complete Host wall",
+                  "us": 398849.22595,
+                  "host_share_percent": 100.0
+                }
+              ],
+              "decode": [
+                {
+                  "module": "I/O\u3001metadata",
+                  "us": 257.17065972222224,
+                  "host_share_percent": 1.077755057765628
+                },
+                {
+                  "module": "Input RMSNorm",
+                  "us": 368.2156250000001,
+                  "host_share_percent": 1.5431241364031476
+                },
+                {
+                  "module": "QKV\uff0bRoPE",
+                  "us": 2547.1539930555555,
+                  "host_share_percent": 10.67465511769003
+                },
+                {
+                  "module": "QK\u2013Softmax\u2013AV",
+                  "us": 4736.683506944444,
+                  "host_share_percent": 19.850571648252778
+                },
+                {
+                  "module": "O projection",
+                  "us": 1359.3598958333337,
+                  "host_share_percent": 5.696827953237686
+                },
+                {
+                  "module": "Post-attention residual\uff0bRMSNorm",
+                  "us": 367.2105902777778,
+                  "host_share_percent": 1.5389122202527006
+                },
+                {
+                  "module": "Gate/Up\uff0bSwiGLU",
+                  "us": 6432.676562500002,
+                  "host_share_percent": 26.958167419616103
+                },
+                {
+                  "module": "Down",
+                  "us": 3546.7276041666673,
+                  "host_share_percent": 14.863684753293379
+                },
+                {
+                  "module": "Final residual",
+                  "us": 1.8057291666666664,
+                  "host_share_percent": 0.007567479682293423
+                },
+                {
+                  "module": "KV carrier conversion",
+                  "us": 24.376562500000002,
+                  "host_share_percent": 0.10215770163552904
+                },
+                {
+                  "module": "KV append DMA",
+                  "us": 175.91788194444445,
+                  "host_share_percent": 0.7372395716596537
+                },
+                {
+                  "module": "Block orchestration",
+                  "us": 28.6,
+                  "host_share_percent": 0.1198573534220065
+                },
+                {
+                  "module": "Layer bookkeeping",
+                  "us": 16.896354166666665,
+                  "host_share_percent": 0.07080952073068386
+                },
+                {
+                  "module": "Stage-boundary bookkeeping",
+                  "us": 1.6788194444444442,
+                  "host_share_percent": 0.007035624317640363
+                },
+                {
+                  "module": "DSP unattributed",
+                  "us": 0.0,
+                  "host_share_percent": 0.0
+                },
+                {
+                  "module": "Runtime setup/teardown",
+                  "us": 73.70069444444445,
+                  "host_share_percent": 0.3088660902613668
+                },
+                {
+                  "module": "Embedding",
+                  "us": 5.898784722222223,
+                  "host_share_percent": 0.024720724657752498
+                },
+                {
+                  "module": "Final model RMSNorm",
+                  "us": 14.046875,
+                  "host_share_percent": 0.0588678762709702
+                },
+                {
+                  "module": "LM head\uff0bgreedy\uff08\u4e0d\u542b final norm\uff09",
+                  "us": 3271.304861111111,
+                  "host_share_percent": 13.709438562563719
+                },
+                {
+                  "module": "Host input/RoPE staging",
+                  "us": 8.689233333333332,
+                  "host_share_percent": 0.03641498288809835
+                },
+                {
+                  "module": "Host-DSP boundary",
+                  "us": 623.5840133333318,
+                  "host_share_percent": 2.6133262053988235
+                },
+                {
+                  "module": "Complete Host wall",
+                  "us": 23861.69824666667,
+                  "host_share_percent": 100.00000000000001
+                }
+              ]
+            },
+            "vtcm_peak": 6620384,
+            "overlay_peak": 1314816
+          }
+        }
+      },
+      "sp2_cost": {
+        "64": {
+          "prefill": {
+            "sp2_over_a8_wall": 1.0088673009177298,
+            "sp2_wall_overhead_percent": 0.8867300917729803,
+            "ci95": [
+              1.0080124300047626,
+              1.0097448492771934
+            ]
+          },
+          "decode": {
+            "sp2_over_a8_wall": 1.0025204806023242,
+            "sp2_wall_overhead_percent": 0.25204806023242377,
+            "ci95": [
+              1.001088782791176,
+              1.0041554218385058
+            ]
+          }
+        },
+        "536": {
+          "prefill": {
+            "sp2_over_a8_wall": 1.0081600556848938,
+            "sp2_wall_overhead_percent": 0.8160055684893752,
+            "ci95": [
+              1.0074749008254558,
+              1.0088311722830643
+            ]
+          },
+          "decode": {
+            "sp2_over_a8_wall": 1.0030444832058465,
+            "sp2_wall_overhead_percent": 0.3044483205846493,
+            "ci95": [
+              1.0023278745972646,
+              1.0037565510096564
+            ]
+          }
+        },
+        "741": {
+          "prefill": {
+            "sp2_over_a8_wall": 1.0072355788946685,
+            "sp2_wall_overhead_percent": 0.7235578894668526,
+            "ci95": [
+              1.0055660636943657,
+              1.0091313493954053
+            ]
+          },
+          "decode": {
+            "sp2_over_a8_wall": 1.000689326205148,
+            "sp2_wall_overhead_percent": 0.06893262051479443,
+            "ci95": [
+              0.9981004182372063,
+              1.0031589733557558
+            ]
+          }
+        }
+      },
+      "long_prefill_gate": {
+        "a8": {
+          "536": {
+            "throughput_over_m64": 0.9889061949344307,
+            "ci95": [
+              0.9878750993302938,
+              0.9897626467019787
+            ],
+            "minimum_ratio": 0.9,
+            "pass_gate": true
+          },
+          "741": {
+            "throughput_over_m64": 1.0050518924977465,
+            "ci95": [
+              1.0035418808262435,
+              1.00646590514061
+            ],
+            "minimum_ratio": 0.9,
+            "pass_gate": true
+          }
+        },
+        "sp2": {
+          "536": {
+            "throughput_over_m64": 0.9895999331837747,
+            "ci95": [
+              0.9890078924637624,
+              0.9902158715685114
+            ],
+            "minimum_ratio": 0.9,
+            "pass_gate": true
+          },
+          "741": {
+            "throughput_over_m64": 1.0066800769480095,
+            "ci95": [
+              1.0054226407414946,
+              1.0080248149105824
+            ],
+            "minimum_ratio": 0.9,
+            "pass_gate": true
+          }
+        }
+      },
+      "numerical": {
+        "audits": 8,
+        "exact_layer_outputs": 5236,
+        "exact_kv_elements": 2976210944,
+        "signed_zero_only": 0,
+        "all_head_exact": true,
+        "padding_unchanged": true
+      },
+      "timed_rpc_boundaries": 22600,
+      "quality_claim": false,
+      "named_dataset_benchmark": false
+    }
+  },
+  "table_rows": [
+    {
+      "model": "Qwen3-0.6B",
+      "recipe": "W4A8",
+      "sheet": "A_HellaSwag",
+      "prompt": 64,
+      "decode": 42,
+      "prefill_tps": 3060.778573593492,
+      "decode_tps": 94.07815826154915,
+      "gate_pass": true,
+      "experiment": "EXP-0298"
+    },
+    {
+      "model": "Qwen3-0.6B",
+      "recipe": "W4A8-SP2",
+      "sheet": "A_HellaSwag",
+      "prompt": 64,
+      "decode": 42,
+      "prefill_tps": 3011.161886859795,
+      "decode_tps": 93.59499857427642,
+      "gate_pass": true,
+      "experiment": "EXP-0298"
+    },
+    {
+      "model": "Qwen3-0.6B",
+      "recipe": "W4A8",
+      "sheet": "B_Persona-Chat",
+      "prompt": 536,
+      "decode": 46,
+      "prefill_tps": 2643.2268460788,
+      "decode_tps": 63.037891651563406,
+      "gate_pass": false,
+      "experiment": "EXP-0298"
+    },
+    {
+      "model": "Qwen3-0.6B",
+      "recipe": "W4A8-SP2",
+      "sheet": "B_Persona-Chat",
+      "prompt": 536,
+      "decode": 46,
+      "prefill_tps": 2599.0887563592346,
+      "decode_tps": 62.82867026095792,
+      "gate_pass": false,
+      "experiment": "EXP-0298"
+    },
+    {
+      "model": "Qwen3-0.6B",
+      "recipe": "W4A8",
+      "sheet": "C_DroidTask",
+      "prompt": 741,
+      "decode": 3,
+      "prefill_tps": 2580.3406185068648,
+      "decode_tps": 57.59477322548941,
+      "gate_pass": false,
+      "experiment": "EXP-0298"
+    },
+    {
+      "model": "Qwen3-0.6B",
+      "recipe": "W4A8-SP2",
+      "sheet": "C_DroidTask",
+      "prompt": 741,
+      "decode": 3,
+      "prefill_tps": 2546.6733642430254,
+      "decode_tps": 57.53544640377863,
+      "gate_pass": false,
+      "experiment": "EXP-0298"
+    },
+    {
+      "model": "Qwen3-1.7B",
+      "recipe": "W4A8",
+      "sheet": "A_HellaSwag",
+      "prompt": 64,
+      "decode": 42,
+      "prefill_tps": 1861.8814576225527,
+      "decode_tps": 47.385889551381275,
+      "gate_pass": true,
+      "experiment": "EXP-0298"
+    },
+    {
+      "model": "Qwen3-1.7B",
+      "recipe": "W4A8-SP2",
+      "sheet": "A_HellaSwag",
+      "prompt": 64,
+      "decode": 42,
+      "prefill_tps": 1845.5167056449018,
+      "decode_tps": 47.266754613243776,
+      "gate_pass": true,
+      "experiment": "EXP-0298"
+    },
+    {
+      "model": "Qwen3-1.7B",
+      "recipe": "W4A8",
+      "sheet": "B_Persona-Chat",
+      "prompt": 536,
+      "decode": 46,
+      "prefill_tps": 1841.22610767649,
+      "decode_tps": 43.31067499893672,
+      "gate_pass": true,
+      "experiment": "EXP-0298"
+    },
+    {
+      "model": "Qwen3-1.7B",
+      "recipe": "W4A8-SP2",
+      "sheet": "B_Persona-Chat",
+      "prompt": 536,
+      "decode": 46,
+      "prefill_tps": 1826.3232085957347,
+      "decode_tps": 43.17921659915898,
+      "gate_pass": true,
+      "experiment": "EXP-0298"
+    },
+    {
+      "model": "Qwen3-1.7B",
+      "recipe": "W4A8",
+      "sheet": "C_DroidTask",
+      "prompt": 741,
+      "decode": 3,
+      "prefill_tps": 1871.2874825900092,
+      "decode_tps": 41.93705392888111,
+      "gate_pass": true,
+      "experiment": "EXP-0298"
+    },
+    {
+      "model": "Qwen3-1.7B",
+      "recipe": "W4A8-SP2",
+      "sheet": "C_DroidTask",
+      "prompt": 741,
+      "decode": 3,
+      "prefill_tps": 1857.8448992474468,
+      "decode_tps": 41.90816553217011,
+      "gate_pass": true,
+      "experiment": "EXP-0298"
+    }
+  ],
+  "source_heads": [
+    "19a6861c8f556360a0565116fa716b56fd5712cb"
+  ],
+  "numerical_physical_pass": true,
+  "formal_cycles_per_model": 10,
+  "formal_repeat": 10,
+  "timed_rpc_boundaries": 45200,
+  "quality_claim": false,
+  "named_dataset_benchmark": false,
+  "baseline_promoted": false
+}
