@@ -27724,4 +27724,4 @@ experiments:
   approval_ref: 'User: 先补ABC表纯A8的测试，在现有SP2实现上做小修改即可。'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0297-qwen17-decode
+    source_branch: codex/exp-0298-a8-tables
