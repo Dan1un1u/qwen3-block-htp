@@ -189,27 +189,27 @@
       "model": "Llama-3.2-3B-Instruct",
       "configuration": "W4A16",
       "dataset": "project-owned profiling prompt/trajectory; not established as named dataset",
-      "prefill_len": null,
-      "decode_len": null,
-      "prefill_tps": null,
-      "decode_tps": null,
-      "experiment": null,
-      "evidence_level": "not measured",
-      "residual": "unspecified until implemented",
-      "note": ""
+      "prefill_len": 64,
+      "decode_len": 42,
+      "prefill_tps": 493.223307350867,
+      "decode_tps": 7.929780695951035,
+      "experiment": "L32-0047",
+      "evidence_level": "formal",
+      "residual": "FP16",
+      "note": "Generic HVX/HMX/DMA implementation; native KV tail fixed beyond96tokens. Component, slice and row/native exact implementation crosschecks pass; full independent mathematical alignment fails (max NRMSE0.006557>0.003). No quality/PPL acceptance."
     },
     {
       "model": "Llama-3.2-3B-Instruct",
       "configuration": "W4A8",
       "dataset": "project-owned profiling prompt/trajectory; not established as named dataset",
-      "prefill_len": null,
-      "decode_len": null,
-      "prefill_tps": null,
-      "decode_tps": null,
-      "experiment": null,
-      "evidence_level": "not measured",
-      "residual": "unspecified until implemented",
-      "note": ""
+      "prefill_len": 64,
+      "decode_len": 42,
+      "prefill_tps": 1206.676361342118,
+      "decode_tps": 23.7263576955111,
+      "experiment": "L32-0046",
+      "evidence_level": "formal",
+      "residual": "FP32",
+      "note": "Only Down SP2 removed; exact independent hardware gates pass; no quality claim."
     },
     {
       "model": "Llama-3.2-3B-Instruct",
@@ -708,5 +708,15 @@
     }
   ],
   "no_new_hardware_runs": false,
-  "quality_not_inferred_from_timing": true
+  "quality_not_inferred_from_timing": true,
+  "missing_recipe_completion": {
+    "experiments": [
+      "EXP-0294",
+      "L32-0046",
+      "L32-0047"
+    ],
+    "remaining_unsupported": "Llama3B W16A16 explicitly user-deferred;5.25GiB FP16 backbone exceedsuint32 shared-offset ABI",
+    "named_dataset_measurements_completed": false,
+    "baseline_promotion": "No additional automatic promotion"
+  }
 }

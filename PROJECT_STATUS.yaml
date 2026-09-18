@@ -12598,3 +12598,13 @@ current_scope:
     report: docs/experiments/EXP-0294-RESULTS.md
     reference_recovery: Vendor v79 rsqrt approximation independently simulated; original
       ideal-rsqrt failures retained; hardware math unchanged
+  missing_recipe_completion_inventory: docs/PAPER_HARDWARE_MAIN_TABLE_20260918.md
+  missing_recipe_completion:
+    experiments:
+    - EXP-0294
+    - L32-0046
+    - L32-0047
+    remaining_unsupported: Llama3B W16A16 explicitly user-deferred;5.25GiB FP16 backbone
+      exceedsuint32 shared-offset ABI
+    named_dataset_measurements_completed: false
+    baseline_promotion: No additional automatic promotion
