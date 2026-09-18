@@ -172,7 +172,7 @@ void qbh_attention_u8_pack_v_long(const uint8_t *rows,
     asm volatile("barrier" ::: "memory");
 }
 
-/* EXP0296: transpose a 32-token by 32-word K tile entirely in registers.
+/* EXP0296: transpose a 32-token by 32-word K tile in the existing VTCM operand allocation.
  * After five perfect-shuffle stages the column index is bit-reversed.
  * Each output vector holds one four-channel word for all 32 tokens, exactly
  * the consumer's S8 weight format. Accumulate row sums in those same lanes. */
@@ -184,7 +184,7 @@ void qbh_attention_u8_pack_k_long_transpose(const uint8_t *rows,uint32_t valid,u
     const uint32_t div=1U<<cfg->score_shift,round=cfg->score_shift?div/2:0;
     const uint16_t cv=qbh_attention_u8_float_to_half_bits(512.0f/(float)div);
     for(unsigned tile=0;tile<padded/32U;++tile) {
-        HVX_Vector v[32];
+        HVX_Vector *v=(HVX_Vector *)(weight+(size_t)tile*4096U);
         for(unsigned row=0;row<32U;++row)
             v[row]=tile*32U+row<valid ? qbh_attention_u8_center_u8_to_s8(
                 *(const HVX_Vector *)(rows+(size_t)(tile*32U+row)*128U),cfg->k_zero_point) : Q6_V_vzero();
@@ -198,12 +198,12 @@ void qbh_attention_u8_pack_k_long_transpose(const uint8_t *rows,uint32_t valid,u
         HVX_Vector sum=Q6_V_vzero();
         for(unsigned i=0;i<32U;++i) {
             unsigned r=((i&1U)<<4)|((i&2U)<<2)|(i&4U)|((i&8U)>>2)|((i&16U)>>4);
-            *(HVX_Vector *)(weight+(size_t)tile*4096U+i*128U)=v[r];
-            sum=Q6_Vw_vadd_VwVw(sum,Q6_Vw_vrmpy_VbVb(v[r],Q6_Vb_vsplat_R(1)));
+            if(r>i) { HVX_Vector tmp=v[i];v[i]=v[r];v[r]=tmp; }
         }
+        for(unsigned i=0;i<32U;++i)sum=Q6_Vw_vadd_VwVw(sum,Q6_Vw_vrmpy_VbVb(v[i],Q6_Vb_vsplat_R(1)));
         *(HVX_Vector *)(bias+tile*64U)=Q6_V_vsplat_R(cv);
         *(HVX_Vector *)(bias+tile*64U+32U)=Q6_Vw_vsub_VwVw(Q6_V_vsplat_R(128*div+round),
-            Q6_Vw_vmpyi_VwVw(sum,Q6_V_vsplat_R(cfg->q_zero_point)));
+            Q6_Vw_vmpyi_VwRh(sum,cfg->q_zero_point));
     }
     asm volatile("barrier" ::: "memory");
 }
