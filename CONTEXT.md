@@ -2540,3 +2540,6 @@ User-authorized protocol docs/experiments/EXP-0269.md supersedes prior next-acti
 ## Current closure EXP0284 — uniform INT16 Down comparison
 
 Both EXP0284 and L32-0040 complete. All own-reference numerical/physical and ten-percent speed gates pass. Qwen full INT16 all896 layer hashes exact after owned AV reference saturation repair; native DSP unchanged. Read docs/experiments/EXP-0284-RESULTS.md and combined /mnt/d/llm_exp/results/paper-int16-down-20260916/REPORT.md. No active experiment or device owner, no PPL or default promotion. SP2 and uniform INT16 share two-byte carrier and same W4 matrix pipeline; measured near-equal cost does not establish SP2 hardware superiority. Prior failures and historical evidence retained.
+
+# Current EXP-0299 — user-approved generic A16 ABC completion
+Read docs/experiments/EXP-0299.md. A8/SP2 and historical D frozen; no per-model specialization. Fixed fixtures only.

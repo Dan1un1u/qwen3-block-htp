@@ -28043,3 +28043,15 @@ experiments:
     workbook_updated: true
     workspace_build: 0.6B/28 layers
   source_commits: *id002
+- id: EXP-0299
+  title: Generic A16 ABC completion
+  execution_state: running
+  evidence_validity: pending
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/EXP-0299.md
+  approval_ref: 'User2026-09-19: retain fixed lengths, fill ABC A16; only basic vector/DMA overlap, investigate
+    W4 slower than W16 by >10%.'
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0298-a8-tables
