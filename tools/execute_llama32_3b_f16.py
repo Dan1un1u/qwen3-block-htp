@@ -49,7 +49,7 @@ def execute(runtime,name,tag,repeat=1,full=False,audit=False):
         QBH_VERTICAL_SLICE='1',QBH_REPLAY_SEQUENCE='1',QBH_REPLAY_DECODE_STEPS='1',
         QBH_SCAN_MODE='prefill',QBH_LOGICAL_M='64',QBH_KV_CACHE_LENGTH='0',QBH_KV_CACHE_CAPACITY='128' if full else '80',
         QBH_W4F16_DECODE_OPT='2',QBH_W4F16_GROUP_FENCE='join_only_down',QBH_W4F16_EXPAND_CLAIM_REGIONS='1',
-        QBH_W4F16_GATE_UP_EXTRA_EXPAND_WORKER='1',QBH_W4F16_GATE_UP_EXTRA_STREAM_WORKER='1',QBH_W4F16_GATE_UP_STREAM_GROUP_TILES='4')
+        QBH_W4F16_GATE_UP_EXTRA_EXPAND_WORKER='1',QBH_W4F16_GATE_UP_EXTRA_STREAM_WORKER='1',QBH_W4F16_GATE_UP_STREAM_GROUP_TILES='8')
     argv=['./qwen3_block_cli',cfg['remote'],'W4F16','1','4','32','hvx','on','off','fused','serial',
         'adaptive_down96_gate4_cross','hvx','crouton_native','4','64','parallel_qk_norm_rope','4','norms','serial','scalar',
         'input_norm_pool_post_norm_pool','4','3','1','0']

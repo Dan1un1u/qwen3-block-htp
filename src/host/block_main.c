@@ -5874,8 +5874,13 @@ int main(int argc, char **argv) {
         (mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE &&
          (variant != QBH_BLOCK_W4F16 ||
           mlp_hvx_contexts != 4U ||
-          w4f16_pipeline_mode !=
-              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH)) ||
+          (w4f16_pipeline_mode !=
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH
+#ifdef QBH_LLAMA_3B
+           && w4f16_pipeline_mode !=
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH
+#endif
+          ))) ||
         (mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 &&
          (mlp_hvx_contexts != 4U ||
           (variant == QBH_BLOCK_W4F16 &&

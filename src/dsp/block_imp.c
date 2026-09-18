@@ -2682,8 +2682,13 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (header->mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE &&
          (header->variant != QBH_BLOCK_W4F16 ||
           header->mlp_hvx_contexts != 4U ||
-          header->w4f16_pipeline_mode !=
-              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH)) ||
+          (header->w4f16_pipeline_mode !=
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH
+#ifdef QBH_LLAMA_3B
+           && header->w4f16_pipeline_mode !=
+              QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH
+#endif
+          ))) ||
         (header->mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 &&
          (header->mlp_hvx_contexts != 4U ||
           (header->variant == QBH_BLOCK_W4F16 &&
