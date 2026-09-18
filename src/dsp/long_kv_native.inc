@@ -53,7 +53,7 @@ static void qbh_attention_u8_patch_v_long(
     const uint8_t *rows, uint32_t row_count,
     const struct qbh_attention_config *config,
     int8_t *k_tile_weights, uint32_t k_tile_stride_bytes,
-    uint8_t *scratch, uint32_t *saturation_count) {
+    uint8_t *scratch, uint32_t *saturation_count, unsigned fast) {
     int16_t *recenter_lut = (int16_t *)(
         scratch + QBH_ATTN_U8_VGATHER_LUT_OFFSET);
     uint8_t row_group[QBH_ATTN_U8_HVX_BYTES]
@@ -106,12 +106,24 @@ static void qbh_attention_u8_patch_v_long(
             *(HVX_Vector *)row_group=Q6_V_lo_W(Q6_W_vshuff_VVR(cd,ab,-64));
             {
                 const HVX_Vector values = *(const HVX_Vector *)row_group;
-                HVX_Vector index=Q6_V_vand_VV(values,Q6_Vb_vsplat_R(31));
-                HVX_Vector bank=Q6_Vub_vlsr_VubR(values,5);
-                HVX_Vector recentered=Q6_Vb_vlut32_VbVbR_nomatch(index,vluts[0],0);
-                for(uint32_t j=1;j<8U;j++)
-                    recentered=Q6_V_vmux_QVV(Q6_Q_vcmp_eq_VbVb(bank,Q6_Vb_vsplat_R(j)),
-                        Q6_Vb_vlut32_VbVbR_nomatch(index,vluts[j],0),recentered);
+                HVX_Vector recentered;
+                if(fast) {
+                    recentered=Q6_Vb_vlut32_VbVbI(values,vluts[0],0);
+                    recentered=Q6_Vb_vlut32or_VbVbVbI(recentered,values,vluts[1],1);
+                    recentered=Q6_Vb_vlut32or_VbVbVbI(recentered,values,vluts[2],2);
+                    recentered=Q6_Vb_vlut32or_VbVbVbI(recentered,values,vluts[3],3);
+                    recentered=Q6_Vb_vlut32or_VbVbVbI(recentered,values,vluts[4],4);
+                    recentered=Q6_Vb_vlut32or_VbVbVbI(recentered,values,vluts[5],5);
+                    recentered=Q6_Vb_vlut32or_VbVbVbI(recentered,values,vluts[6],6);
+                    recentered=Q6_Vb_vlut32or_VbVbVbI(recentered,values,vluts[7],7);
+                } else {
+                    HVX_Vector index=Q6_V_vand_VV(values,Q6_Vb_vsplat_R(31));
+                    HVX_Vector bank=Q6_Vub_vlsr_VubR(values,5);
+                    recentered=Q6_Vb_vlut32_VbVbR_nomatch(index,vluts[0],0);
+                    for(uint32_t j=1;j<8U;j++)
+                        recentered=Q6_V_vmux_QVV(Q6_Q_vcmp_eq_VbVb(bank,Q6_Vb_vsplat_R(j)),
+                            Q6_Vb_vlut32_VbVbR_nomatch(index,vluts[j],0),recentered);
+                }
                 recentered = Q6_Vb_vdeal_Vb(recentered);
                 recentered = Q6_Vb_vdeal_Vb(recentered);
                 recentered = Q6_Vb_vdeal_Vb(recentered);
@@ -126,10 +138,10 @@ static void qbh_attention_u8_patch_v_long(
     asm volatile("barrier" ::: "memory");
 }
 
-void qbh_attention_u8_pack_v_long(const uint8_t *rows,
+static void qbh_attention_u8_pack_v_long_impl(const uint8_t *rows,
     uint32_t valid_tokens,uint32_t padded_tokens,
     const struct qbh_attention_config *config,int8_t *weight,uint32_t *bias,
-    uint8_t *scratch,uint32_t *saturation_count) {
+    uint8_t *scratch,uint32_t *saturation_count,unsigned fast) {
     const uint32_t kt=padded_tokens/32U,div=1U<<config->av_shift;
     const uint32_t rounding=config->av_shift?div/2U:0U;
     const uint16_t conversion=qbh_attention_u8_float_to_half_bits(512.0f/(float)div);
@@ -164,7 +176,7 @@ void qbh_attention_u8_pack_v_long(const uint8_t *rows,
     for(uint32_t first=0;first<valid_tokens;first+=32U) {
         uint32_t count=valid_tokens-first;if(count>32U)count=32U;
         qbh_attention_u8_patch_v_long(rows+(size_t)first*QBH_ATTENTION_HEAD_DIM,count,
-            config,weight+(first/32U)*QBH_HMX_WEIGHT_BYTES,kt*QBH_HMX_WEIGHT_BYTES,scratch,NULL);
+            config,weight+(first/32U)*QBH_HMX_WEIGHT_BYTES,kt*QBH_HMX_WEIGHT_BYTES,scratch,NULL,fast);
     }
     for(uint32_t tile=0;tile<QBH_ATTENTION_HEAD_DIM_TILES;++tile)for(uint32_t i=0;i<32;++i) {
         uint32_t *b=bias+tile*(QBH_HMX_BIAS_BYTES/4U);b[i]=conversion;b[32+i]=(uint32_t)(zp*(int32_t)div)+rounding;
@@ -207,3 +219,6 @@ void qbh_attention_u8_pack_k_long_transpose(const uint8_t *rows,uint32_t valid,u
     }
     asm volatile("barrier" ::: "memory");
 }
+
+void qbh_attention_u8_pack_v_long(const uint8_t *r,uint32_t v,uint32_t p,const struct qbh_attention_config *c,int8_t *w,uint32_t *b,uint8_t *s,uint32_t *n) {qbh_attention_u8_pack_v_long_impl(r,v,p,c,w,b,s,n,0);}
+void qbh_attention_u8_pack_v_long_fast(const uint8_t *r,uint32_t v,uint32_t p,const struct qbh_attention_config *c,int8_t *w,uint32_t *b,uint8_t *s,uint32_t *n) {qbh_attention_u8_pack_v_long_impl(r,v,p,c,w,b,s,n,1);}
