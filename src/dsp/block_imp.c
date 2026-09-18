@@ -150,8 +150,14 @@ _Static_assert(
 #define QBH_BLOCK_MLP_CROUTON_GROUPS \
     (QBH_BLOCK_INTERMEDIATE / QBH_HMX_FP16_COLS / \
      QBH_BLOCK_MLP_CROUTON_GROUP_TILES)
+#ifdef QBH_LLAMA_3B
+/* Bounded producer/consumer storage; the existing slot-release protocol
+ * permits reuse without retaining the entire K8192 intermediate. */
+#define QBH_BLOCK_MLP_CROUTON_RING_SLOTS UINT32_C(16)
+#else
 #define QBH_BLOCK_MLP_CROUTON_RING_SLOTS \
     QBH_BLOCK_MLP_CROUTON_GROUPS
+#endif
 #define QBH_BLOCK_W4U8_GATE_UP_HVX_WORKERS UINT32_C(3)
 #define QBH_BLOCK_W4U8_DOWN_HVX_WORKERS UINT32_C(6)
 #define QBH_BLOCK_W4U8_DOWN_PERSISTENT_HVX_WORKERS UINT32_C(5)
@@ -853,6 +859,21 @@ static uint64_t qbh_map_gate_layer_hash(
     return hash;
 }
 
+static uint32_t qbh_w4f16_compressed_capacity(uint32_t mlp_mode) {
+    uint32_t bytes = QBH_BLOCK_MAX_K * QBH_HMX_OUTPUT_CHANNELS / 2U *
+                     QBH_BLOCK_W4F16_DMA_BATCH_N_TILES;
+#ifdef QBH_LLAMA_3B
+    if (mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE) {
+        const uint32_t gate_pingpong = 2U * QBH_BLOCK_HIDDEN * 4U *
+                                      QBH_HMX_FP16_COLS / 2U;
+        if (gate_pingpong > bytes) bytes = gate_pingpong;
+    }
+#else
+    (void)mlp_mode;
+#endif
+    return bytes;
+}
+
 static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
                             uint32_t variant,
                             uint32_t f16f16_projection_mode,
@@ -875,6 +896,21 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
     uint32_t hidden_bytes = QBH_BLOCK_M * QBH_BLOCK_HIDDEN * element_bytes;
     uint32_t intermediate_bytes =
         QBH_BLOCK_M * QBH_BLOCK_INTERMEDIATE * element_bytes;
+    uint32_t compact_w4 = 0U;
+#ifdef QBH_LLAMA_3B
+    compact_w4 = variant == QBH_BLOCK_W4F16 &&
+                 mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE;
+#endif
+    const uint32_t ring_bytes = QBH_BLOCK_MLP_CROUTON_RING_SLOTS *
+        (QBH_BLOCK_M / QBH_HMX_FP16_ROWS) * 4U * QBH_HMX_FP16_TILE_BYTES;
+    const uint32_t gate_bytes = compact_w4
+        ? (hidden_bytes > ring_bytes ? hidden_bytes : ring_bytes)
+        : intermediate_bytes;
+    const uint32_t head_scratch_bytes =
+        qbh_align_up(QBH_QWEN3_VOCAB_SIZE * sizeof(float),128U) + 262144U;
+    const uint32_t up_bytes = compact_w4
+        ? (head_scratch_bytes > ring_bytes ? head_scratch_bytes : ring_bytes)
+        : intermediate_bytes;
     uint32_t compressed_batch_factor =
         variant == QBH_BLOCK_W4F16
             ? QBH_BLOCK_W4F16_DMA_BATCH_N_TILES
@@ -962,27 +998,27 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
     }
     /* O output dies after residual/post-norm, before Gate produces any rows. */
     buffers->attention_projection = qbh_arena_alloc_aligned(&arena,
-        variant == QBH_BLOCK_W4F16 && mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8
-            ? intermediate_bytes : hidden_bytes, QBH_HMX_FP16_TILE_BYTES);
+        variant == QBH_BLOCK_W4F16 && (mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 || compact_w4)
+            ? gate_bytes : hidden_bytes, QBH_HMX_FP16_TILE_BYTES);
 #else
     buffers->attention_projection = qbh_arena_alloc(&arena, hidden_bytes);
 #endif
     if (mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE ||
         mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8) {
 #ifdef QBH_MODEL_LLAMA32
-        if (variant == QBH_BLOCK_W4F16 && mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8)
+        if (variant == QBH_BLOCK_W4F16 && (mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 || compact_w4))
             buffers->gate = buffers->attention_projection;
         else
 #endif
         buffers->gate = qbh_arena_alloc_aligned(
-            &arena, intermediate_bytes, QBH_HMX_FP16_TILE_BYTES);
+            &arena, gate_bytes, QBH_HMX_FP16_TILE_BYTES);
         buffers->up = qbh_arena_alloc_aligned(
-            &arena, intermediate_bytes, QBH_HMX_FP16_TILE_BYTES);
+            &arena, up_bytes, QBH_HMX_FP16_TILE_BYTES);
     } else {
         buffers->gate = qbh_arena_alloc(&arena, intermediate_bytes);
         buffers->up = qbh_arena_alloc(&arena, intermediate_bytes);
     }
-    if (mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8) {
+    if (mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 || compact_w4) {
         buffers->middle = qbh_arena_alloc_aligned(
             &arena,
             QBH_BLOCK_W4F16_HVX_WORKERS *
@@ -1001,16 +1037,23 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
 #ifdef QBH_MODEL_LLAMA32
     /* Input/post-norm consumers finish before Down; next-layer norm starts only
      * after the final residual has consumed Down. No concurrent owner. */
-    if (variant == QBH_BLOCK_W4F16 && mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8)
+    if (variant == QBH_BLOCK_W4F16 && (mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 || compact_w4))
         buffers->down = buffers->normalized;
     else
 #endif
     buffers->down = qbh_arena_alloc(&arena, hidden_bytes);
     buffers->hmx_activation = qbh_arena_alloc_aligned(
-        &arena, QBH_BLOCK_M * QBH_BLOCK_MAX_K *
+        &arena, QBH_BLOCK_M * (compact_w4 ? QBH_BLOCK_HIDDEN : QBH_BLOCK_MAX_K) *
             (fp32_residual && !r4_mode ? 1U : (uint32_t)sizeof(uint16_t)),
         r4_mode ? 32768U : QBH_HMX_FP16_TILE_BYTES);
-#ifndef QBH_LLAMA_3B
+#ifdef QBH_LLAMA_3B
+    if (variant != QBH_BLOCK_W4U8) {
+        buffers->compressed_weight = qbh_arena_alloc(
+            &arena, qbh_w4f16_compressed_capacity(mlp_mode));
+        buffers->compressed_weight_alt = qbh_arena_alloc(
+            &arena, qbh_w4f16_compressed_capacity(mlp_mode));
+    }
+#else
     buffers->compressed_weight = qbh_arena_alloc(
         &arena, QBH_BLOCK_MAX_K * QBH_HMX_OUTPUT_CHANNELS / 2U *
                     compressed_batch_factor);
@@ -1030,6 +1073,13 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
             : QBH_BLOCK_HIDDEN * 8U * QBH_HMX_FP16_COLS *
                   sizeof(uint16_t);
     }
+    if (compact_w4) {
+        /* Down uses two K8192 tiles; the unchanged coarse head uses eight
+         * K=hidden tiles. Reserve the maximum, even for selected-layer gates. */
+        const uint32_t head_bytes = QBH_BLOCK_HIDDEN * 8U *
+            QBH_HMX_FP16_COLS * sizeof(uint16_t);
+        if (head_bytes > expanded_buffer_bytes) expanded_buffer_bytes = head_bytes;
+    }
     buffers->expanded_weight = qbh_arena_alloc_aligned(
         &arena, expanded_buffer_bytes,
         r4_mode ? 32768U : QBH_HMX_FP16_TILE_BYTES);
@@ -1037,10 +1087,12 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         &arena, expanded_buffer_bytes,
         r4_mode ? 32768U : QBH_HMX_FP16_TILE_BYTES);
 #ifdef QBH_LLAMA_3B
-    /* 3B accepts only direct-W4: all projection/head DMA uses these slots.
-     * Keep compressed pointers at the same arena boundary for attention scratch. */
-    buffers->compressed_weight = buffers->expanded_weight;
-    buffers->compressed_weight_alt = buffers->expanded_weight_alt;
+    /* A8 direct-W4 uses these DMA slots. A16 has separate compressed slots;
+     * both retain the start of compressed storage as the attention boundary. */
+    if (variant == QBH_BLOCK_W4U8) {
+        buffers->compressed_weight = buffers->expanded_weight;
+        buffers->compressed_weight_alt = buffers->expanded_weight_alt;
+    }
 #endif
     buffers->hmx_output = qbh_arena_alloc_aligned(
         &arena, QBH_BLOCK_HMX_OUTPUT_MAX_BYTES,
@@ -2081,10 +2133,19 @@ static int qbh_header_valid(const struct qbh_block_header *header,
                             uint32_t shared_bytes) {
     uint32_t element_bytes;
 #ifdef QBH_LLAMA_3B
-    if(!header || header->variant!=QBH_BLOCK_W4U8 || QBH_FP32_RESIDUAL(header)!=1U ||
-       (QBH_LLAMA_SP2(header)!=8U && QBH_LLAMA_SP2(header)!=0U) || header->dense_r3_mode || header->dense_r4_mode ||
-       header->w4u8_decode_projection_mode!=QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
-       header->w4u8_decode_direct_n_mask!=63U || header->paper_format_disable || header->paper_pipeline_disable) return 0;
+    if (!header || header->dense_r3_mode || header->dense_r4_mode ||
+        header->paper_format_disable || header->paper_pipeline_disable) return 0;
+    if (header->variant == QBH_BLOCK_W4U8) {
+        if (QBH_FP32_RESIDUAL(header)!=1U ||
+            (QBH_LLAMA_SP2(header)!=8U && QBH_LLAMA_SP2(header)!=0U) ||
+            header->w4u8_decode_projection_mode!=QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
+            header->w4u8_decode_direct_n_mask!=63U) return 0;
+    } else if (header->variant == QBH_BLOCK_W4F16) {
+        if (QBH_FP32_RESIDUAL(header) || QBH_LLAMA_SP2(header) ||
+            header->mlp_mode!=QBH_BLOCK_MLP_CROUTON_NATIVE ||
+            header->w4f16_pipeline_mode!=QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH)
+            return 0;
+    } else return 0; /* Full3B FP16 weights exceed the current uint32 ABI. */
 #endif
 #ifdef QBH_MODEL_LLAMA32
     if (header && QBH_FP32_RESIDUAL(header) &&
@@ -3150,6 +3211,11 @@ static int qbh_w4f16_cross_prefetch_enabled(
 static uint32_t qbh_w4f16_dma_batch_tiles(
     const struct qbh_block_header *header,
     const struct qbh_block_projection_desc *desc) {
+#ifdef QBH_LLAMA_3B
+    if (header->mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE && desc != NULL &&
+        (desc == &header->projections[QBH_BLOCK_PROJ_GATE] ||
+         desc == &header->projections[QBH_BLOCK_PROJ_UP])) return 4U;
+#endif
     if (header->w4f16_pipeline_mode ==
             QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_DMA8_CROSS_PREFETCH &&
         desc != NULL &&
@@ -9387,8 +9453,7 @@ static int qbh_run_w4f16_interleaved_gate_up(
     struct qbh_w4f16_mlp_projection_state *states[2] = {
         &gate, &up};
     const uint32_t compressed_capacity =
-        QBH_BLOCK_MAX_K * QBH_HMX_OUTPUT_CHANNELS / 2U *
-        QBH_BLOCK_W4F16_DMA_BATCH_N_TILES;
+        qbh_w4f16_compressed_capacity(header->mlp_mode);
     const uint32_t expanded_capacity =
         header->mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8
             ? QBH_BLOCK_HIDDEN * 8U * QBH_HMX_FP16_COLS *

@@ -599,12 +599,39 @@ void qbh_hvx_residual_rms_norm_f16_crouton_rows(
 }
 
 #ifdef QBH_MODEL_LLAMA32
-/* Head64 SF32 RoPE uses the existing even/odd HVX conversion convention. */
+/* Head64/head128 SF32 RoPE, with the existing even/odd HVX convention. */
 static void qbh_llama_rope_head(__fp16 *tensor, uint32_t rows,
     uint32_t stride, uint32_t dim, uint32_t head,
     const __fp16 *cosine, const __fp16 *sine) {
     for(uint32_t row=0;row<rows;++row) {
         __fp16 *v=tensor+(size_t)row*stride+head*dim;
+        if (dim == 128U) {
+            /* Preserve both halves before either in-place store. Products and
+             * sums follow the same SF32 contract as the head64 path. */
+            HVX_Vector halves[2] = {*(HVX_Vector *)v, *(HVX_Vector *)(v + 64U)};
+            for (uint32_t half = 0U; half < 2U; ++half) {
+                HVX_VectorPair x = Q6_Wsf_vcvt_Vhf(halves[half]);
+                HVX_VectorPair y = Q6_Wsf_vcvt_Vhf(halves[1U-half]);
+                HVX_VectorPair c = Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)(
+                    cosine + (size_t)row*dim + half*64U));
+                HVX_VectorPair s = Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)(
+                    sine + (size_t)row*dim + half*64U));
+                HVX_Vector result[2];
+                for (uint32_t part = 0U; part < 2U; ++part) {
+                    HVX_Vector a = Q6_Vsf_equals_Vqf32(Q6_Vqf32_vmpy_VsfVsf(
+                        part ? Q6_V_hi_W(x) : Q6_V_lo_W(x),
+                        part ? Q6_V_hi_W(c) : Q6_V_lo_W(c)));
+                    HVX_Vector b = Q6_Vsf_equals_Vqf32(Q6_Vqf32_vmpy_VsfVsf(
+                        part ? Q6_V_hi_W(y) : Q6_V_lo_W(y),
+                        part ? Q6_V_hi_W(s) : Q6_V_lo_W(s)));
+                    result[part] = half ? Q6_Vsf_vadd_VsfVsf(a,b)
+                                        : Q6_Vsf_vsub_VsfVsf(a,b);
+                }
+                *(HVX_Vector *)(v+half*64U) =
+                    Q6_Vhf_vcvt_VsfVsf(result[0],result[1]);
+            }
+            continue;
+        }
         HVX_Vector h=*(HVX_Vector *)v;
         HVX_VectorPair x=Q6_Wsf_vcvt_Vhf(h),y=Q6_Wsf_vcvt_Vhf(Q6_V_vror_VR(h,64));
         HVX_VectorPair c=Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)(cosine+(size_t)row*dim));
