@@ -461,3 +461,7 @@ User authorizes EXP0294 Qwen0.6 ordinary A8 from latest SP2, changing only Down 
 
 ## User-approved remaining-model long-prefill migration (EXP-0295)
 User authorizes L32-0051 native layout/pipeline migration to Qwen0.6B and1.7B under EXP-0295. Earlier research freezes superseded only for this scope; all numerical/physical/evidence rules remain.
+
+## User-approved long-prefill throughput tolerance
+
+User changes the long/M64 prefill throughput gate to a maximum10% TPS loss. For current/future assessments, require the original paired95% CI lower bound of long-prefill TPS divided by the same-experiment M64 reference TPS to be>=0.90. Retain the original reference selection and fixed-sample policy. This change applies only to long-prefill throughput parity: existing paired Host-wall decode regression guards and numerical/physical/provenance requirements are unchanged. Preserve sealed original strict-parity classifications and record new-policy reassessments separately in docs/LONG_PREFILL_GATE_10PCT_REVIEW.md. Untested rows remain pending, not accepted.

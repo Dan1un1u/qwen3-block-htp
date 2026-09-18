@@ -1,0 +1,174 @@
+{
+  "policy": "Long prefill TPS / same-experiment M64 TPS; lower bound of original paired95% CI >=0.90. No remeasurement or change to decode guard/numerical/physical gates.",
+  "threshold": 0.9,
+  "rows": [
+    {
+      "model": "Qwen3-0.6B",
+      "experiment": "EXP-0296",
+      "prompt": 536,
+      "decode": 46,
+      "sheet": "B_Persona-Chat",
+      "reference_arm": "native64",
+      "m64_tps": 2957.3353810096023,
+      "prefill_tps": 2603.4188765123877,
+      "decode_tps": 62.93747928389269,
+      "throughput_ratio": 0.8803258816129298,
+      "throughput_change_percent": -11.96741183870702,
+      "ci95": [
+        0.8767499664364212,
+        0.8830921836093658
+      ],
+      "pass_new": false,
+      "pass_original": false,
+      "source": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0296/0.6B/profiling_summary.json",
+      "source_sha256": "9fb8f5358535ab25a786ff36cd462524397a015a69feeaa1ddea46eb361d2f03"
+    },
+    {
+      "model": "Qwen3-0.6B",
+      "experiment": "EXP-0296",
+      "prompt": 741,
+      "decode": 3,
+      "sheet": "C_DroidTask",
+      "reference_arm": "native64",
+      "m64_tps": 2957.3353810096023,
+      "prefill_tps": 2548.7173848459547,
+      "decode_tps": 57.60306546740406,
+      "throughput_ratio": 0.8618289968775371,
+      "throughput_change_percent": -13.81710031224629,
+      "ci95": [
+        0.8585902566260029,
+        0.8642191439435342
+      ],
+      "pass_new": false,
+      "pass_original": false,
+      "source": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0296/0.6B/profiling_summary.json",
+      "source_sha256": "9fb8f5358535ab25a786ff36cd462524397a015a69feeaa1ddea46eb361d2f03"
+    },
+    {
+      "model": "Qwen3-1.7B",
+      "experiment": "EXP-0297",
+      "prompt": 536,
+      "decode": 46,
+      "sheet": "B_Persona-Chat",
+      "reference_arm": "native64",
+      "m64_tps": 1850.732851965719,
+      "prefill_tps": 1826.921276862891,
+      "decode_tps": 43.148784238091366,
+      "throughput_ratio": 0.9871339750210103,
+      "throughput_change_percent": -1.2866024978989699,
+      "ci95": [
+        0.9851569115580161,
+        0.9890757276441088
+      ],
+      "pass_new": true,
+      "pass_original": false,
+      "source": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0297/profiling_summary.json",
+      "source_sha256": "c52f0ecb8f491d28424305c22738fd27403694bd6af9619f6103e3efcd4cd992"
+    },
+    {
+      "model": "Qwen3-1.7B",
+      "experiment": "EXP-0297",
+      "prompt": 741,
+      "decode": 3,
+      "sheet": "C_DroidTask",
+      "reference_arm": "native64",
+      "m64_tps": 1850.732851965719,
+      "prefill_tps": 1860.806220472872,
+      "decode_tps": 41.960940790022974,
+      "throughput_ratio": 1.0054429079250706,
+      "throughput_change_percent": 0.5442907925070628,
+      "ci95": [
+        1.0029600302468058,
+        1.0086071521484672
+      ],
+      "pass_new": true,
+      "pass_original": true,
+      "source": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0297/profiling_summary.json",
+      "source_sha256": "c52f0ecb8f491d28424305c22738fd27403694bd6af9619f6103e3efcd4cd992"
+    },
+    {
+      "model": "Llama3.2-1B",
+      "experiment": "L32-0051",
+      "prompt": 536,
+      "decode": 46,
+      "sheet": "B_Persona-Chat",
+      "reference_arm": "m64",
+      "m64_tps": 2305.9621503883673,
+      "prefill_tps": 2505.9504630620654,
+      "decode_tps": 37.71335275427236,
+      "throughput_ratio": 1.0867266241295488,
+      "throughput_change_percent": 8.672662412954878,
+      "ci95": [
+        1.0814467993705497,
+        1.091901475069318
+      ],
+      "pass_new": true,
+      "pass_original": true,
+      "source": "/mnt/d/llm_exp/results/llama32-htp/l32-0051/profiling_summary.json",
+      "source_sha256": "9dccef7c43ea6138223fe70a630684a1209d37548412c971868022cebb809921"
+    },
+    {
+      "model": "Llama3.2-1B",
+      "experiment": "L32-0051",
+      "prompt": 741,
+      "decode": 3,
+      "sheet": "C_DroidTask",
+      "reference_arm": "m64",
+      "m64_tps": 2305.9621503883673,
+      "prefill_tps": 2499.1294074448383,
+      "decode_tps": 34.29758879298647,
+      "throughput_ratio": 1.0837686156400868,
+      "throughput_change_percent": 8.376861564008674,
+      "ci95": [
+        1.0781509407316578,
+        1.0890850694074197
+      ],
+      "pass_new": true,
+      "pass_original": true,
+      "source": "/mnt/d/llm_exp/results/llama32-htp/l32-0051/profiling_summary.json",
+      "source_sha256": "9dccef7c43ea6138223fe70a630684a1209d37548412c971868022cebb809921"
+    },
+    {
+      "model": "Llama3.2-3B",
+      "experiment": "L32-0053",
+      "prompt": 536,
+      "decode": 46,
+      "sheet": "B_Persona-Chat",
+      "reference_arm": "native64",
+      "m64_tps": 1182.004649045541,
+      "prefill_tps": 1151.4170139985406,
+      "decode_tps": 23.786411996423194,
+      "throughput_ratio": 0.9741222379525328,
+      "throughput_change_percent": -2.5877762047467168,
+      "ci95": [
+        0.9713928893827929,
+        0.9768725035993149
+      ],
+      "pass_new": true,
+      "pass_original": false,
+      "source": "/mnt/d/llm_exp/results/llama32-htp/l32-0053/profiling_summary.json",
+      "source_sha256": "f2f845a97cc461afb90fb4bf7c34e659d4f12bc6ef8724dc855dd64c84fc2cf2"
+    },
+    {
+      "model": "Llama3.2-3B",
+      "experiment": "L32-0053",
+      "prompt": 741,
+      "decode": 3,
+      "sheet": "C_DroidTask",
+      "reference_arm": "native64",
+      "m64_tps": 1182.004649045541,
+      "prefill_tps": 1168.4636860127875,
+      "decode_tps": 23.16101771776073,
+      "throughput_ratio": 0.9885440695654727,
+      "throughput_change_percent": -1.1455930434527306,
+      "ci95": [
+        0.9858774346431152,
+        0.991121995764326
+      ],
+      "pass_new": true,
+      "pass_original": false,
+      "source": "/mnt/d/llm_exp/results/llama32-htp/l32-0053/profiling_summary.json",
+      "source_sha256": "f2f845a97cc461afb90fb4bf7c34e659d4f12bc6ef8724dc855dd64c84fc2cf2"
+    }
+  ]
+}
