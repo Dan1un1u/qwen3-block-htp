@@ -15,7 +15,7 @@ void qbh_attention_u8_pack_k_long(const uint8_t *rows,uint32_t valid,uint32_t pa
         for(unsigned r=0;r<32 && t*32+r<valid;r+=2) {
             unsigned count=valid-(t*32+r);
             HVX_Vector v=qbh_attention_u8_center_u8_to_s8(*(const HVX_Vector *)(rows+(size_t)(t*32+r)*64),cfg->k_zero_point);
-            HVX_VectorPred live=Q6_Q_vsetq_R(count>=2?128:64);
+            HVX_VectorPred live=count>=2?Q6_Q_vcmp_eq_VbVb(v,v):Q6_Q_vsetq_R(64);
             v=Q6_V_vmux_QVV(live,v,Q6_V_vzero());
             HVX_VectorPair halves=Q6_Wh_vunpack_Vb(v);
             HVX_VectorPair w0=Q6_Ww_vunpack_Vh(Q6_V_lo_W(halves));
@@ -134,7 +134,7 @@ void qbh_attention_u8_pack_v_long(const uint8_t *rows,
                 HVX_Vector v=*(const HVX_Vector *)(rows+i*128U);
                 HVX_VectorPred clipped=Q6_Q_or_QQ(Q6_Q_vcmp_gt_VubVub(vlo,v),
                                                 Q6_Q_vcmp_gt_VubVub(v,vhi));
-                clipped=Q6_Q_and_QQ(clipped,Q6_Q_vsetq_R(valid_tokens-i*2U>=2U?128:64));
+                clipped=Q6_Q_and_QQ(clipped,valid_tokens-i*2U>=2U?Q6_Q_vcmp_eq_VbVb(v,v):Q6_Q_vsetq_R(64));
                 HVX_VectorPair ones=Q6_Wuh_vunpack_Vub(
                     Q6_V_vmux_QVV(clipped,Q6_Vb_vsplat_R(1),Q6_V_vzero()));
                 count=Q6_Vh_vadd_VhVh(count,Q6_Vh_vadd_VhVh(Q6_V_lo_W(ones),Q6_V_hi_W(ones)));
