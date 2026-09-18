@@ -93,6 +93,7 @@ def run(length,tag,decode=3,audit=False,repeat=1,legacy=False):
  if not legacy:env.update(QBH_LONG_PREFILL_TOKENS=str(length),QBH_LONG_DECODE_STEPS=str(decode),QBH_LONG_REPEATS=str(repeat),QBH_KV_CACHE_CAPACITY='832',QBH_GENERATION_EXPECTED_TOKENS='64')
  else:env['QBH_GENERATION_STEPS']='4'
  if os.environ.get('QBH_LONG_DIAGNOSTIC'):env['QBH_LONG_DIAGNOSTIC']='1'
+ if os.environ.get('QBH_LONG_PADDING_POISON'):env['QBH_LONG_PADDING_POISON']='1'
  if audit:
   env['QBH_GENERATION_BOUNDARY_AUDIT']='1';env['QBH_GENERATION_AUDIT_DIR']=root+'/'+tag.replace('/','_')
   adb('shell','mkdir -p '+env['QBH_GENERATION_AUDIT_DIR'])

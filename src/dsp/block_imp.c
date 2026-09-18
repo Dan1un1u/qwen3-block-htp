@@ -22936,6 +22936,18 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
                     (size_t)header->logical_m * QBH_BLOCK_HIDDEN *
                         (QBH_FP32_RESIDUAL(header)?4U:header->variant == QBH_BLOCK_W4U8 ? 1U : 2U));
             }
+            /* Audit only: retain one FP32 row per layer in unused output
+             * storage. This is never enabled in timed profiling. */
+            if (header->long_prompt_tokens && header->generation_boundary_audit_enabled &&
+                QBH_FP32_RESIDUAL(header)) {
+                const size_t off=(68U+4U*slice_index)*QBH_BLOCK_HIDDEN;
+                if (off+4U*QBH_BLOCK_HIDDEN>header->output_bytes ||
+                    qbh_dma_copy(header,shared+header->output_offset+off,
+                                 buffers.residual,4U*QBH_BLOCK_HIDDEN,0U)!=0) {
+                    header->dsp_status=QBH_BLOCK_STATUS_OUTPUT_DMA_FAILED;
+                    result=AEE_EFAILED;goto stop_worker;
+                }
+            }
             if (header->full_stack_stage_mode ==
                 QBH_BLOCK_FULL_STACK_HIDDEN_CAPTURE) {
                 const uint64_t capture_start =

@@ -13,8 +13,8 @@ def fnv(x):
  for b in memoryview(np.ascontiguousarray(x,dtype='<f4')).cast('B'):
   h=((h^b)*1099511628211)&0xffffffffffffffff
  return f'{h:016x}'
-def main(length,decode):
- preflight();p=M/str(length);d=R/f'oracle-{length}';d.mkdir(exist_ok=False)
+def main(length,decode,tag=None):
+ preflight();p=M/str(length);d=R/(tag or f'oracle-{length}');d.mkdir(exist_ok=False)
  ids=np.fromfile(p/'long_prompt_u32.bin','<u4');fixed=np.fromfile(p/'long_fixed_u32.bin','<u4')
  cos=np.fromfile(p/'long_rope_cos_f16.bin','<f2').reshape(-1,64);sin=np.fromfile(p/'long_rope_sin_f16.bin','<f2').reshape(-1,64)
  embed=np.memmap(p/'generation_embedding_weight_f16.bin','<f2','r',shape=(128256,2048))
@@ -23,13 +23,14 @@ def main(length,decode):
  cv=HmxU8Converter(S/'build/l32-0003/qbh_hmx_u8_reference.so')
  for step in range(chunks+decode):
   inp=ids[pos:pos+64] if step<chunks else fixed[step-chunks:step-chunks+1]
-  rows=len(inp);x=embed[inp].astype('f4');hashes=[]
+  rows=len(inp);x=embed[inp].astype('f4');hashes=[];first=[]
   for i in range(16):
    x,caches[i],diag=layer(x,p/f'layer{i}',qs[i],cos[pos:pos+rows],sin[pos:pos+rows],caches[i],sp2=True)
-   hashes.append(fnv(x))
+   hashes.append(fnv(x));first.append(x[0].copy())
    if i in [0,7,15]:
     np.save(d/f's{step:02d}_l{i:02d}_hidden.npy',x)
    print('ORACLE',length,step,i,hashes[-1],flush=True)
+  np.save(d/f's{step:02d}_layer_first_rows.npy',np.stack(first))
   head=step>=chunks-1;token=code=None
   if head:
    gq=load_qparams_bin(p/'generation_qparams_u8.bin');gamma=np.fromfile(p/'generation_final_norm_weight_f16.bin','<f2')
@@ -42,4 +43,4 @@ def main(length,decode):
   for n,x in zip(['k','v'],kv):np.save(d/f'final_l{i:02d}_{n}.npy',x)
  put(d/'summary.json',dict(length=length,decode=decode,steps=out,scope='independent integer HMX arithmetic and ordered FP32 boundaries, not PPL'))
 if __name__=='__main__':
- a=argparse.ArgumentParser();a.add_argument('length',type=int);a.add_argument('--decode',type=int,default=3);v=a.parse_args();main(v.length,v.decode)
+ a=argparse.ArgumentParser();a.add_argument('length',type=int);a.add_argument('--decode',type=int,default=3);a.add_argument('--tag');v=a.parse_args();main(v.length,v.decode,v.tag)

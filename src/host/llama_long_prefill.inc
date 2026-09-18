@@ -9,6 +9,7 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
     uint32_t length=h->long_prompt_tokens, decode=3U, repetitions=1U;
     const char *v=getenv("QBH_LONG_DECODE_STEPS");
     const char *audit=getenv("QBH_GENERATION_AUDIT_DIR");
+    const int poison=getenv("QBH_LONG_PADDING_POISON")!=NULL;
     if (v && qbh_parse_u32(v,&decode)) return -1;
     v=getenv("QBH_LONG_REPEATS");
     if (v && qbh_parse_u32(v,&repetitions)) return -1;
@@ -32,8 +33,8 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
         *state=initial;
         for(uint32_t i=0;i<QBH_VERTICAL_SLICE_LAYER_COUNT;i++) {
             struct qbh_decode_layer_state *l=&state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER+i];
-            memset(shared+l->k_offset,0,l->k_bytes);
-            memset(shared+l->v_offset,0,l->v_bytes);
+            memset(shared+l->k_offset,poison?0xa5:0,l->k_bytes);
+            memset(shared+l->v_offset,poison?0x5a:0,l->v_bytes);
         }
         uint64_t prefill_ns=0,decode_ns=0,stage_ns=0;
         uint32_t chunks=(length+63U)/64U, selected=0;
@@ -43,10 +44,11 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
             const uint32_t rows=is_prefill ? (length-before<64U?length-before:64U):1U;
             const uint64_t stage_start=qbh_monotonic_ns();
             memset(shared+tokens->offset,0,tokens->expected_bytes);
+            if(poison)for(uint32_t i=0;i<64U;i++)((uint32_t *)(shared+tokens->offset))[i]=100U+i;
             if(is_prefill)memcpy(shared+tokens->offset,ids+before,rows*4U);
             else *(uint32_t *)(shared+tokens->offset)=getenv("QBH_LONG_GREEDY")?selected:fixed[step-chunks];
-            memset(shared+ropes[0].offset,0,ropes[0].expected_bytes);
-            memset(shared+ropes[1].offset,0,ropes[1].expected_bytes);
+            memset(shared+ropes[0].offset,poison?0x3c:0,ropes[0].expected_bytes);
+            memset(shared+ropes[1].offset,poison?0xbc:0,ropes[1].expected_bytes);
             memcpy(shared+ropes[0].offset,cos+(size_t)before*QBH_BLOCK_HEAD_DIM,rows*QBH_BLOCK_HEAD_DIM*2U);
             memcpy(shared+ropes[1].offset,sin+(size_t)before*QBH_BLOCK_HEAD_DIM,rows*QBH_BLOCK_HEAD_DIM*2U);
             h->scan_mode=is_prefill?QBH_BLOCK_SCAN_PREFILL:QBH_BLOCK_SCAN_DECODE;
@@ -92,6 +94,9 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
                     snprintf(name,sizeof(name),"long_r%u_s%02u_l%02u_v.bin",rep,step,i);
                     if(qbh_write_named_tensor(audit,name,shared+l->v_offset,l->v_bytes))goto finish;
                 }
+                snprintf(name,sizeof(name),"long_r%u_s%02u_layer_first_rows.bin",rep,step);
+                if(qbh_write_named_tensor(audit,name,shared+h->output_offset+68U*QBH_BLOCK_HIDDEN,
+                    QBH_VERTICAL_SLICE_LAYER_COUNT*4U*QBH_BLOCK_HIDDEN))goto finish;
                 if(!h->long_skip_head) {
                     snprintf(name,sizeof(name),"long_r%u_s%02u_hidden_norm.bin",rep,step);
                     if(qbh_write_named_tensor(audit,name,shared+h->output_offset,QBH_BLOCK_HIDDEN*68U))goto finish;
