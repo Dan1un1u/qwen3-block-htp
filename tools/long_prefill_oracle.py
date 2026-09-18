@@ -13,7 +13,7 @@ def fnv(x):
  for b in memoryview(np.ascontiguousarray(x,dtype='<f4')).cast('B'):
   h=((h^b)*1099511628211)&0xffffffffffffffff
  return f'{h:016x}'
-def main(length,decode,tag=None):
+def main(length,decode,tag=None,resume=None):
  preflight();p=M/str(length);d=R/(tag or f'oracle-{length}');d.mkdir(exist_ok=False)
  ids=np.fromfile(p/'long_prompt_u32.bin','<u4');fixed=np.fromfile(p/'long_fixed_u32.bin','<u4')
  cos=np.fromfile(p/'long_rope_cos_f16.bin','<f2').reshape(-1,64);sin=np.fromfile(p/'long_rope_sin_f16.bin','<f2').reshape(-1,64)
@@ -21,7 +21,12 @@ def main(length,decode,tag=None):
  qs=[load_qparams_bin(p/f'layer{i}/qparams_u8.bin') for i in range(16)]
  caches=[None]*16;out=[];pos=0;chunks=(length+63)//64
  cv=HmxU8Converter(S/'build/l32-0003/qbh_hmx_u8_reference.so')
- for step in range(chunks+decode):
+ begin=0
+ if resume:
+  base=read(R/resume/'summary.json');assert base['length']==length and base['decode']<decode
+  out=base['steps'].copy();begin=len(out);pos=length+base['decode']
+  caches=[tuple(np.load(R/resume/f'final_l{i:02d}_{n}.npy') for n in ['k','v']) for i in range(16)]
+ for step in range(begin,chunks+decode):
   inp=ids[pos:pos+64] if step<chunks else fixed[step-chunks:step-chunks+1]
   rows=len(inp);x=embed[inp].astype('f4');hashes=[];first=[]
   for i in range(16):
@@ -43,4 +48,4 @@ def main(length,decode,tag=None):
   for n,x in zip(['k','v'],kv):np.save(d/f'final_l{i:02d}_{n}.npy',x)
  put(d/'summary.json',dict(length=length,decode=decode,steps=out,scope='independent integer HMX arithmetic and ordered FP32 boundaries, not PPL'))
 if __name__=='__main__':
- a=argparse.ArgumentParser();a.add_argument('length',type=int);a.add_argument('--decode',type=int,default=3);a.add_argument('--tag');v=a.parse_args();main(v.length,v.decode,v.tag)
+ a=argparse.ArgumentParser();a.add_argument('length',type=int);a.add_argument('--decode',type=int,default=3);a.add_argument('--tag');a.add_argument('--resume');v=a.parse_args();main(v.length,v.decode,v.tag,v.resume)

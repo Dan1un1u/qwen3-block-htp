@@ -36,7 +36,7 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
             memset(shared+l->k_offset,poison?0xa5:0,l->k_bytes);
             memset(shared+l->v_offset,poison?0x5a:0,l->v_bytes);
         }
-        uint64_t prefill_ns=0,decode_ns=0,stage_ns=0;
+        uint64_t prefill_ns=0,decode_ns=0,stage_ns=0,prefill_stage_ns=0,decode_stage_ns=0;
         uint32_t chunks=(length+63U)/64U, selected=0;
         for(uint32_t step=0;step<chunks+decode;step++) {
             const uint32_t before=state->next_position;
@@ -59,7 +59,9 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
             h->initial_kv_length=before;h->replay_first_position=before;
             h->replay_expected_step=state->completed_step_count;h->repeat_count=1U;
             h->dsp_status=QBH_BLOCK_STATUS_HOST_READY;
-            stage_ns+=qbh_monotonic_ns()-stage_start;
+            const uint64_t stage_elapsed=qbh_monotonic_ns()-stage_start;
+            stage_ns+=stage_elapsed;
+            if(is_prefill)prefill_stage_ns+=stage_elapsed;else decode_stage_ns+=stage_elapsed;
             const uint64_t start=qbh_monotonic_ns();
             const int rc=qwen3_probe_run_block(session->handle,shared_fd,total_bytes);
             const uint64_t wall=qbh_monotonic_ns()-start;
@@ -103,8 +105,8 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
                 }
             }
         }
-        printf("{\"record\":\"long_complete\",\"sample\":%u,\"prompt_tokens\":%u,\"decode_steps\":%u,\"prefill_ns\":%" PRIu64 ",\"decode_ns\":%" PRIu64 ",\"host_staging_ns\":%" PRIu64 "}\n",
-            rep,length,decode,prefill_ns,decode_ns,stage_ns);fflush(stdout);
+        printf("{\"record\":\"long_complete\",\"sample\":%u,\"prompt_tokens\":%u,\"decode_steps\":%u,\"prefill_ns\":%" PRIu64 ",\"decode_ns\":%" PRIu64 ",\"host_staging_ns\":%" PRIu64 ",\"prefill_host_staging_ns\":%" PRIu64 ",\"decode_host_staging_ns\":%" PRIu64 "}\n",
+            rep,length,decode,prefill_ns,decode_ns,stage_ns,prefill_stage_ns,decode_stage_ns);fflush(stdout);
     }
     result=0;
 finish:free(cos);free(sin);return result;
