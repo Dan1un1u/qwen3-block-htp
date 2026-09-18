@@ -22183,9 +22183,10 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     /* Untimed L32-0052 diagnostic for the isolated long-context norm boundary. */
     if(header->long_prompt_tokens && header->long_debug && header->generation_boundary_audit_enabled &&
        QBH_BLOCK_HIDDEN==3072U && header->prefix_layer_index==27U && past_tokens==640U) {
-        memcpy(shared+header->input_offset,buffers->residual+36U*QBH_BLOCK_HIDDEN*4U,4U*QBH_BLOCK_HIDDEN);
+        if(qbh_dma_copy(header,shared+header->input_offset,buffers->residual+36U*QBH_BLOCK_HIDDEN*4U,4U*QBH_BLOCK_HIDDEN,0U))return QBH_BLOCK_STATUS_OUTPUT_DMA_FAILED;
         for(uint32_t c=0;c<QBH_BLOCK_HIDDEN;c++)
-            shared[header->input_offset+4U*QBH_BLOCK_HIDDEN+c]=w4u8_mlp_native_activation[(c/32U)*2048U+36U*32U+c%32U];
+            buffers->down[c]=w4u8_mlp_native_activation[(c/32U)*2048U+36U*32U+c%32U];
+        if(qbh_dma_copy(header,shared+header->input_offset+4U*QBH_BLOCK_HIDDEN,buffers->down,QBH_BLOCK_HIDDEN,0U))return QBH_BLOCK_STATUS_OUTPUT_DMA_FAILED;
     }
     qbh_r3_chain_audit(header,shared,4,buffers->residual,131072U);
     qbh_r3_chain_audit(header,shared,5,w4u8_mlp_native_activation,131072U);
