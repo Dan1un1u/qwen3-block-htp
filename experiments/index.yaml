@@ -3387,3 +3387,15 @@ experiments:
     workbook_updated: true
     workspace_build: 1B/16 layers
   source_commits: *id001
+- id: L32-0055
+  title: Generic A16 ABC completion
+  execution_state: running
+  evidence_validity: pending
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/L32-0055.md
+  approval_ref: 'User2026-09-19: retain fixed lengths, fill ABC A16; only basic vector/DMA overlap, investigate
+    W4 slower than W16 by >10%.'
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation

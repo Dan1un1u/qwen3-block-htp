@@ -358,3 +358,6 @@ quality conclusions or Qwen/otherrecipe work.
 ## Paired INT16 Down campaign closed
 
 Companion Qwen EXP0284 completed with full896 layer-output hashes exact and formal speed gates passed; device released. L32-0040 sealed evidence unchanged. Combined report /mnt/d/llm_exp/results/paper-int16-down-20260916/REPORT.md. No active experiment, quality claim or baseline promotion.
+
+# Current L32-0055 — user-approved generic A16 ABC completion
+Read docs/experiments/L32-0055.md. A8/SP2 and historical D frozen; no per-model specialization. Fixed fixtures only.

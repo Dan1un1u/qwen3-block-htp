@@ -7,7 +7,7 @@ project:
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
   updated_on: '2026-09-19'
 governance:
-  active_experiment: null
+  active_experiment: L32-0055
   next_experiment_number: 55
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -30,8 +30,7 @@ current_scope:
   stage: long_context_throughput_loop_completed
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Review remaining prefill parity gaps using elapsed module walls; preserve new long decode gains,
-    frozen weights, original math and historical selected baselines. Desktop Excel maintained.
+  next_action: Complete generic A16 ABC implementation and measurement under L32-0055
   baseline_manifest: docs/PAPER_NO_ROTATION_BASELINES.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF_L32_0034.md
@@ -1356,7 +1355,7 @@ current_scope:
           ci95:
           - 1.0020069734319716
           - 1.005944185256383
-  current_handoff: docs/experiments/L32-0054-RESULTS.md
+  current_handoff: docs/experiments/L32-0055.md
   next_direction: Reduce repeated prefix K/V preparation and costly partial-tail work before considering larger
     scheduling changes.
   latest_paper_pipeline_result:
