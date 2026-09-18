@@ -1,0 +1,174 @@
+{
+  "experiment": "EXP-0297",
+  "execution_state": "completed",
+  "evidence_validity": "valid",
+  "local_gate": "fail",
+  "adoption_status": "pending",
+  "recipe": "Qwen3-1.7B W4A8-SP2 mode8 FP32 residual2 no rotation; unchanged weights and arithmetic",
+  "runtime_option": 65439,
+  "parent_control_option": 927,
+  "source_closure": "fa7cb9c8e2718c3a965fc75d04544ef79d3a0da3",
+  "runtime": {
+    "remote": "/data/local/tmp/qwen3-block-htp/exp0297/binaries-a4",
+    "seal": {
+      "model_size": "1.7B",
+      "paper_trace": false,
+      "source_head": "fa7cb9c8e2718c3a965fc75d04544ef79d3a0da3",
+      "files": {
+        "/home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/qwen3_block_cli": "ba7bc07f3ce5d0b7842d97f670a789d16fbb05637729a276f4c4b0f63f4d00b7",
+        "/home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/llama_sp2_cli": "ea27a713188cabf0bc44766a351f165a8595e61d59df2814a9408e1b277de4b4",
+        "/home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/libqwen3_probe.so": "8827a7890d5fd88965022149ab151231923051bd1c86a2b6af291412714adead",
+        "/home/daniuniu/work/qwen3-block-htp/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so": "ebb52003c0282d81cd0c62c32c37e14f15843b25890c1fbf25d72c0466d5dc2b"
+      }
+    },
+    "archive": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0297/binaries-a4"
+  },
+  "performance": {
+    "native64": {
+      "prefill": 1850.732851965719,
+      "decode": 47.79057544205312
+    },
+    "control64": {
+      "prefill": 1841.7078237454525,
+      "decode": 44.74899958836702
+    },
+    "m64": {
+      "prefill": 1840.239862706467,
+      "decode": 46.299669411554206
+    },
+    "control536": {
+      "prefill": 1745.7463242366207,
+      "decode": 39.06879152127217
+    },
+    "opt536": {
+      "prefill": 1826.921276862891,
+      "decode": 43.148784238091366
+    },
+    "control741": {
+      "prefill": 1737.1770100886913,
+      "decode": 37.04915926123101
+    },
+    "opt741": {
+      "prefill": 1860.806220472872,
+      "decode": 41.960940790022974
+    }
+  },
+  "effects": {
+    "536": {
+      "prefill": {
+        "wall_ratio": 0.95556735057262,
+        "ci95": [
+          0.9550185289184638,
+          0.9562062233859866
+        ],
+        "throughput_gain_percent": 4.649871032194008,
+        "ten_percent_gate": true
+      },
+      "decode": {
+        "wall_ratio": 0.9054436228305729,
+        "ci95": [
+          0.9046672984476956,
+          0.9062013799296444
+        ],
+        "throughput_gain_percent": 10.443099358724028,
+        "ten_percent_gate": true
+      }
+    },
+    "741": {
+      "prefill": {
+        "wall_ratio": 0.9335614804894816,
+        "ci95": [
+          0.930247315018608,
+          0.9364668838292176
+        ],
+        "throughput_gain_percent": 7.116673181040367,
+        "ten_percent_gate": true
+      },
+      "decode": {
+        "wall_ratio": 0.8829439608284514,
+        "ci95": [
+          0.8782266417589812,
+          0.8866992623645621
+        ],
+        "throughput_gain_percent": 13.257470956788353,
+        "ten_percent_gate": true
+      }
+    }
+  },
+  "parity_gate": {
+    "536": {
+      "reference": "native64",
+      "throughput_over_m64": 0.9871339750210103,
+      "ci95": [
+        0.9851569115580161,
+        0.9890757276441088
+      ],
+      "pass_parity": false
+    },
+    "741": {
+      "reference": "native64",
+      "throughput_over_m64": 1.0054429079250709,
+      "ci95": [
+        1.0029600302468058,
+        1.0086071521484672
+      ],
+      "pass_parity": true
+    }
+  },
+  "short_matched": {
+    "control64_to_m64": {
+      "prefill": {
+        "wall_ratio": 1.0007977009240667,
+        "throughput_gain_percent": -0.07970651044963972,
+        "ci95": [
+          0.9987842504068598,
+          1.0027947667233312
+        ]
+      },
+      "decode": {
+        "wall_ratio": 0.9665079720245214,
+        "throughput_gain_percent": 3.4652614303142926,
+        "ci95": [
+          0.9655424275906777,
+          0.9674000598696257
+        ]
+      }
+    },
+    "native64_to_m64": {
+      "prefill": {
+        "wall_ratio": 1.0057019682444113,
+        "throughput_gain_percent": -0.566964013639637,
+        "ci95": [
+          1.0035113549788777,
+          1.007673123547321
+        ]
+      },
+      "decode": {
+        "wall_ratio": 1.0322012241004652,
+        "throughput_gain_percent": -3.1196653664625984,
+        "ci95": [
+          1.0306347635829103,
+          1.0339383667197597
+        ]
+      }
+    }
+  },
+  "formal_cycles": 10,
+  "replays_per_process": 10,
+  "short_cycles": 5,
+  "timed_rpc_boundaries": 18800,
+  "candidate_exact_layer_outputs": 2968,
+  "candidate_exact_kv_elements": 2225119232,
+  "signed_zero_exceptions": 0,
+  "numerical_physical_pass": true,
+  "quality_claim": false,
+  "baseline_promoted": false,
+  "named_dataset_benchmark": false,
+  "evidence": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0297",
+  "report": "docs/experiments/EXP-0297-RESULTS.md",
+  "modules": "docs/experiments/EXP-0297-MODULES.md",
+  "device_owner": null,
+  "evidence_ledger_sha256": "5cfe5ae0e7b9c14af647617fcb9c055959c05781a742af81b34f2b6cd9a00858",
+  "evidence_files": 11862,
+  "evidence_bytes": 10598266719
+}
