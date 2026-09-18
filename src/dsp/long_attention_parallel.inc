@@ -26,7 +26,10 @@ static void qbh_long_attention_tasks(struct qbh_block_w4f16_pool *pool,
         uint8_t *q=pool->attention_buffers->q+(size_t)g*QBH_ATTENTION_Q_HEADS_PER_GROUP*QBH_ATTENTION_HEAD_DIM_TILES*2048;
         const uint8_t *ck=pool->long_shared+h->kv_cache_k_offset+(size_t)g*h->kv_cache_capacity*QBH_BLOCK_HEAD_DIM;
         const uint8_t *cv=pool->long_shared+h->kv_cache_v_offset+(size_t)g*h->kv_cache_capacity*QBH_BLOCK_HEAD_DIM;
-        memset(a,0,qbh_align_up(valid*QBH_BLOCK_HEAD_DIM,128U));
+        /* Head128 DMA replaces every byte a packer may read; padded rows
+         * are synthesized by the packers rather than read from this plane. */
+        const unsigned dma_covers_rows=(h->long_optimization&4096U) && QBH_BLOCK_HEAD_DIM==128U;
+        if(!dma_covers_rows)memset(a,0,qbh_align_up(valid*QBH_BLOCK_HEAD_DIM,128U));
         qurt_mutex_lock(&pool->attention_hmx_mutex);
         int rc=qbh_scan_cache_dma(h,a,ck,valid*QBH_BLOCK_HEAD_DIM,1);
         qurt_mutex_unlock(&pool->attention_hmx_mutex);
@@ -41,7 +44,7 @@ static void qbh_long_attention_tasks(struct qbh_block_w4f16_pool *pool,
         if(h->long_optimization&512U) qbh_attention_u8_softmax_long_native4_fast(c,a,rows,past,padded,cfg);
         else qbh_attention_u8_softmax_long_native4(c,a,rows,past,padded,cfg);
         job->u8_attention_softmax_ticks+=HAP_perf_get_qtimer_count()-t;
-        memset(c,0,qbh_align_up(valid*QBH_BLOCK_HEAD_DIM,128U));
+        if(!dma_covers_rows)memset(c,0,qbh_align_up(valid*QBH_BLOCK_HEAD_DIM,128U));
         qurt_mutex_lock(&pool->attention_hmx_mutex);
         rc=qbh_scan_cache_dma(h,c,cv,valid*QBH_BLOCK_HEAD_DIM,1);
         qurt_mutex_unlock(&pool->attention_hmx_mutex);
