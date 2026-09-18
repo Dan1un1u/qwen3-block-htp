@@ -10,7 +10,7 @@ for name,expected in seal["files"].items():
  assert got==expected,(name,got,expected)
 out=x.result_root/x.tag;out.mkdir(exist_ok=False)
 args=[x.count,x.mib,x.window,x.cycles,x.pin_kib]
-cmd="cd "+remote+" && LD_LIBRARY_PATH="+remote+":/vendor/lib64 ADSP_LIBRARY_PATH="+remote+" ./llama_mapping_cli "+" ".join(map(str,args))
+cmd="cd "+remote+" && LD_LIBRARY_PATH="+remote+" DSP_LIBRARY_PATH="+remote+" ADSP_LIBRARY_PATH="+remote+" ./llama_mapping_cli "+" ".join(map(str,args))
 (out/"command.json").write_text(json.dumps(dict(command=cmd,seal=seal),indent=2))
 with (out/"stdout.jsonl").open("w") as f,(out/"stderr.txt").open("w") as e:
  z=subprocess.run(adb+["shell",cmd],stdout=f,stderr=e,timeout=240)
