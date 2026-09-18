@@ -1,6 +1,8 @@
-# Active L32-0054
+# L32-0054 ABC ordinary A8/SP2 paired measurements completed
 
-Complete paired ordinary A8/SP2 ABC timing for Llama1B/3B; protocol docs/experiments/L32-0054.md. Device queued after EXP-0298; preserve math and pipeline.
+Four-model ABC campaign completed with the separately governed companion experiment. This project contributes two models, three shapes and both recipes: 64+42, 536+46, 741+3. Five short and ten formal repeat10 rounds per model, same binary per model, rotated order; all samples retained. Numerical/physical checks pass; long/M64 lower95% >=0.90 gate remains separately reported, with small-model optimization deferred. No model-quality claim or automatic promotion.
+
+Read docs/experiments/L32-0054-RESULTS.md. Source ab9d7c2d0bf1061d10a945757589fb6df0ef64fc. Desktop workbook A/B/C updated; all A16 rows and curated D history preserved. No active experiment or device owner. Only the long API whitelist changed to admit ordinary A8; restore original ordinary middle qparams/LUT, keep W4 and other boundaries frozen.
 
 # L32-0053 long-context throughput loop completed
 Source 04673543a6c847809bcdc16621d9db2d5aa5723d; workspace build 3B/28 layers. Candidate option 8095. Fullmodel six-shape checks,5short and10formal repeat10 cycles complete. Numerical/physical pass; unchanged long/M64 parity+decode guard: fail. Same-binary prior opt31 control, fastest measured64-token reference; no slowed baseline. Long decode now admits parallel GQA. Failed engineering evidence retained. See docs/experiments/L32-0053-RESULTS.md and docs/experiments/LONG_CONTEXT_LOOP_20260918.md. Historical accepted baselines and quality status unchanged. No active experiment/device owner. Desktop workbook C:/Users/35961/Desktop/HTP硬件实验总表.xlsx must preserve exact-length A/B/C results and prior rows in D.

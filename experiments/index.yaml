@@ -3058,12 +3058,332 @@ experiments:
   - 04673543a6c847809bcdc16621d9db2d5aa5723d
 - id: L32-0054
   title: Ordinary A8 ABC paired completion
-  execution_state: running
-  evidence_validity: pending
-  local_gate: not_run
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: pending
   record: docs/experiments/L32-0054.md
   approval_ref: 'User: 先补ABC表纯A8的测试，在现有SP2实现上做小修改即可。'
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
+  evidence:
+    id: L32-0054
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_role: numerical_physical_and_paired_measurement_completion; long_prefill_throughput_separately_reported
+    source_commits: &id001
+    - ab9d7c2d0bf1061d10a945757589fb6df0ef64fc
+    numerical_physical_pass: true
+    table_rows:
+    - model: Llama3.2-1B
+      recipe: W4A8
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 2378.87600275134
+      decode_tps: 44.8902757969178
+      gate_pass: true
+      experiment: L32-0054
+    - model: Llama3.2-1B
+      recipe: W4A8-SP2
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 2343.826040446096
+      decode_tps: 44.86747425242465
+      gate_pass: true
+      experiment: L32-0054
+    - model: Llama3.2-1B
+      recipe: W4A8
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 2556.543546897313
+      decode_tps: 37.717094760016266
+      gate_pass: true
+      experiment: L32-0054
+    - model: Llama3.2-1B
+      recipe: W4A8-SP2
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 2503.9434080353208
+      decode_tps: 37.690673353779495
+      gate_pass: true
+      experiment: L32-0054
+    - model: Llama3.2-1B
+      recipe: W4A8
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 2544.453715193414
+      decode_tps: 34.16774164114457
+      gate_pass: true
+      experiment: L32-0054
+    - model: Llama3.2-1B
+      recipe: W4A8-SP2
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 2506.6646447745006
+      decode_tps: 34.22288127125957
+      gate_pass: true
+      experiment: L32-0054
+    - model: Llama3.2-3B
+      recipe: W4A8
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 1206.282671482911
+      decode_tps: 23.69451206185557
+      gate_pass: true
+      experiment: L32-0054
+    - model: Llama3.2-3B
+      recipe: W4A8-SP2
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 1183.8093492445037
+      decode_tps: 23.681858478986722
+      gate_pass: true
+      experiment: L32-0054
+    - model: Llama3.2-3B
+      recipe: W4A8
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 1174.7871385589235
+      decode_tps: 23.785643937010125
+      gate_pass: true
+      experiment: L32-0054
+    - model: Llama3.2-3B
+      recipe: W4A8-SP2
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 1149.8718839895419
+      decode_tps: 23.755473789197442
+      gate_pass: true
+      experiment: L32-0054
+    - model: Llama3.2-3B
+      recipe: W4A8
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 1192.45509196261
+      decode_tps: 23.16463109154246
+      gate_pass: true
+      experiment: L32-0054
+    - model: Llama3.2-3B
+      recipe: W4A8-SP2
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 1169.4771510047385
+      decode_tps: 23.182566499679996
+      gate_pass: true
+      experiment: L32-0054
+    models:
+      1B:
+        runtime_option: '31'
+        numerical:
+          audits: 8
+          exact_layer_outputs: 2992
+          exact_kv_elements: 850345984
+          signed_zero_only: 0
+          all_head_exact: true
+          padding_unchanged: true
+        long_prefill_gate:
+          a8:
+            '536':
+              throughput_over_m64: 1.074685500186007
+              ci95:
+              - 1.0713156779285207
+              - 1.0778158389248158
+              minimum_ratio: 0.9
+              pass_gate: true
+            '741':
+              throughput_over_m64: 1.0696033388249626
+              ci95:
+              - 1.0664530103742773
+              - 1.07262364768191
+              minimum_ratio: 0.9
+              pass_gate: true
+          sp2:
+            '536':
+              throughput_over_m64: 1.0683145271134327
+              ci95:
+              - 1.0668555231028851
+              - 1.0698162825599833
+              minimum_ratio: 0.9
+              pass_gate: true
+            '741':
+              throughput_over_m64: 1.0694755504539968
+              ci95:
+              - 1.067291012484714
+              - 1.0717514194921713
+              minimum_ratio: 0.9
+              pass_gate: true
+        sp2_cost:
+          '64':
+            prefill:
+              sp2_over_a8_wall: 1.0149541654117695
+              sp2_wall_overhead_percent: 1.4954165411769527
+              ci95:
+              - 1.0121310154175245
+              - 1.0181272062780513
+            decode:
+              sp2_over_a8_wall: 1.000508197639227
+              sp2_wall_overhead_percent: 0.05081976392269372
+              ci95:
+              - 0.9980900260521475
+              - 1.0033710960288578
+          '536':
+            prefill:
+              sp2_over_a8_wall: 1.0210069200019436
+              sp2_wall_overhead_percent: 2.1006920001943596
+              ci95:
+              - 1.019948960331973
+              - 1.0221784800228815
+            decode:
+              sp2_over_a8_wall: 1.0007010064794748
+              sp2_wall_overhead_percent: 0.07010064794747972
+              ci95:
+              - 0.9995140960897291
+              - 1.0019634472018644
+          '741':
+            prefill:
+              sp2_over_a8_wall: 1.0150754391887604
+              sp2_wall_overhead_percent: 1.507543918876042
+              ci95:
+              - 1.0123865508032843
+              - 1.0178423007367021
+            decode:
+              sp2_over_a8_wall: 0.9983888080703099
+              sp2_wall_overhead_percent: -0.1611191929690059
+              ci95:
+              - 0.9947224649518123
+              - 1.0018884445500937
+        runtime:
+          remote: /data/local/tmp/llama32-htp/l32-0054/1B/a8/binaries-a1
+          seal:
+            model_size: 1B
+            layer_count: '16'
+            paper_trace: false
+            source_head: ab9d7c2d0bf1061d10a945757589fb6df0ef64fc
+            files:
+              /home/daniuniu/work/llama32-htp/android_ReleaseG_aarch64/ship/qwen3_block_cli: 5053375d903e4293ffeb7fdbe4548e03d9ef05cc1d35d527cff4d91001937671
+              /home/daniuniu/work/llama32-htp/android_ReleaseG_aarch64/ship/llama_sp2_cli: 330eaf69c177dcc97a4adb5b052c692e5edb08d4de9126a1eaf9546a97301f11
+              /home/daniuniu/work/llama32-htp/android_ReleaseG_aarch64/ship/libqwen3_probe.so: 350da4e9d86ff277979e21e03eb6dd81694081b3da1e1cc24a2d5fcc45ee9da0
+              /home/daniuniu/work/llama32-htp/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so: 9d650d4b7f4a4eb190e81401549d1f3b0ac09b9d1da026c0c3f8f4a11d703f9a
+          archive: /mnt/d/llm_exp/results/llama32-htp/l32-0054/1B/a8/binaries-a1
+      3B:
+        runtime_option: '8095'
+        numerical:
+          audits: 8
+          exact_layer_outputs: 5236
+          exact_kv_elements: 2976210944
+          signed_zero_only: 0
+          all_head_exact: true
+          padding_unchanged: true
+        long_prefill_gate:
+          a8:
+            '536':
+              throughput_over_m64: 0.9738904208204622
+              ci95:
+              - 0.9724273948048775
+              - 0.9750917859734173
+              minimum_ratio: 0.9
+              pass_gate: true
+            '741':
+              throughput_over_m64: 0.9885370321176027
+              ci95:
+              - 0.9866048888211937
+              - 0.9899320173155393
+              minimum_ratio: 0.9
+              pass_gate: true
+          sp2:
+            '536':
+              throughput_over_m64: 0.9713319840930295
+              ci95:
+              - 0.9702752680070642
+              - 0.9723555207604966
+              minimum_ratio: 0.9
+              pass_gate: true
+            '741':
+              throughput_over_m64: 0.9878931533621426
+              ci95:
+              - 0.986942811674542
+              - 0.98887245551278
+              minimum_ratio: 0.9
+              pass_gate: true
+        sp2_cost:
+          '64':
+            prefill:
+              sp2_over_a8_wall: 1.0189839033225658
+              sp2_wall_overhead_percent: 1.8983903322565832
+              ci95:
+              - 1.0170268581470479
+              - 1.0212160811903108
+            decode:
+              sp2_over_a8_wall: 1.0005343154499498
+              sp2_wall_overhead_percent: 0.053431544994975155
+              ci95:
+              - 0.9993056374759574
+              - 1.0019237753306853
+          '536':
+            prefill:
+              sp2_over_a8_wall: 1.0216678526680179
+              sp2_wall_overhead_percent: 2.166785266801785
+              ci95:
+              - 1.0203212336504885
+              - 1.0231457148153758
+            decode:
+              sp2_over_a8_wall: 1.001270029302737
+              sp2_wall_overhead_percent: 0.1270029302737008
+              ci95:
+              - 1.0006020612247692
+              - 1.0020701938294094
+          '741':
+            prefill:
+              sp2_over_a8_wall: 1.0196480460846373
+              sp2_wall_overhead_percent: 1.9648046084637327
+              ci95:
+              - 1.0185662514297855
+              - 1.0206902217940386
+            decode:
+              sp2_over_a8_wall: 0.9992263407014152
+              sp2_wall_overhead_percent: -0.07736592985847501
+              ci95:
+              - 0.9976688788029155
+              - 1.0008801032884764
+        runtime:
+          remote: /data/local/tmp/llama32-htp/l32-0054/3B/a8/binaries-a1
+          seal:
+            model_size: 3B
+            layer_count: '28'
+            paper_trace: false
+            source_head: ab9d7c2d0bf1061d10a945757589fb6df0ef64fc
+            files:
+              /home/daniuniu/work/llama32-htp/android_ReleaseG_aarch64/ship/qwen3_block_cli: 81595af1c9395f59ae0c0cf26289c9f1380d441c9de0be9da7f7a8a20e439143
+              /home/daniuniu/work/llama32-htp/android_ReleaseG_aarch64/ship/llama_sp2_cli: 330eaf69c177dcc97a4adb5b052c692e5edb08d4de9126a1eaf9546a97301f11
+              /home/daniuniu/work/llama32-htp/android_ReleaseG_aarch64/ship/libqwen3_probe.so: 350da4e9d86ff277979e21e03eb6dd81694081b3da1e1cc24a2d5fcc45ee9da0
+              /home/daniuniu/work/llama32-htp/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so: 86bd3f4e343580dca750c158c5c29a5976d7ed8f4cc9631c17f14b153c832232
+          archive: /mnt/d/llm_exp/results/llama32-htp/l32-0054/3B/a8/binaries-a1
+    formal_cycles_per_model: 10
+    formal_repeat: 10
+    short_cycles_per_model: 5
+    timed_rpc_boundaries: 45200
+    quality_claim: false
+    named_dataset_benchmark: false
+    baseline_promoted: false
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0054
+    evidence_ledger_sha256: 64039940948f519cd7f07f2c9446c6caf51af458ca229fa9ceb33007d66a4b6a
+    report: docs/experiments/L32-0054-RESULTS.md
+    device_owner: null
+    workbook: C:/Users/35961/Desktop/HTP硬件实验总表.xlsx
+    workbook_updated: true
+    workspace_build: 1B/16 layers
+  source_commits: *id001

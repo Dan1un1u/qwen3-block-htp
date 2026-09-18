@@ -40,4 +40,4 @@ Per-model module profiles, complete per-process timing arrays, runtime seals, pa
 
 All-layer/KV audits use the chunked frontend at 64+42, 65+3, 128+3, 129+3, 536+46 and 741+3 for A8, and 64+42/741+3 for SP2. Native M64 uses the established short path: all selected head tokens/codes and physical invariants are checked; this is not an additional native full-boundary dump.
 
-Measured source: ab9d7c2d0bf1061d10a945757589fb6df0ef64fc. Full evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0054. Final ledger will be pinned in the experiment closure.
+Measured source: ab9d7c2d0bf1061d10a945757589fb6df0ef64fc. Full evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0054. Evidence ledger SHA256: 64039940948f519cd7f07f2c9446c6caf51af458ca229fa9ceb33007d66a4b6a. Sealed 20448 files, 15239019371 bytes.
