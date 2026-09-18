@@ -24,7 +24,7 @@ def deploy(name):
     sp2=name=='frontend64-sp2'
     p=LONG_M/'frontend64-a01' if sp2 else M.parent/'l32-0046'/name
     mf=read(p/'manifest.json');names=[n for n in mf['files'] if not n.endswith('.npy')]
-    parent=(read(R.parent/'l32-0045/package-frontend64-a01.json') if name.startswith('frontend64') else read(BASE/('package-'+name+'.json')))
+    parent=(read(R.parent/'l32-0045/package-frontend64-a01.json') if name.startswith('frontend64') else read((R.parent/'l32-0045' if name=='layer0-a01' else BASE)/('package-'+name+'.json')))
     source=Path(parent['package']);pm=read(source/'manifest.json')
     remote='/data/local/tmp/llama32-htp/l32-0046/models/'+name
     assert adb('shell','test ! -e '+remote,check=False).returncode==0
