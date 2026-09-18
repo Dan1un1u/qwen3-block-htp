@@ -22,6 +22,15 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
     uint16_t *sin=malloc((size_t)h->kv_cache_capacity*QBH_BLOCK_HEAD_DIM*2U);
     if (!cos || !sin) {free(cos);free(sin);return -1;}
     int result=-1;
+    /* A16 audit: compare every prefix/suffix in memory; archive only boundary
+     * snapshots. Allocation/copies/verification are outside warm timing. */
+    const uint32_t sparse=audit && h->generation_boundary_audit_enabled &&
+        h->variant!=QBH_BLOCK_W4U8;
+    const struct qbh_decode_layer_state *first=&state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER];
+    const size_t cache_bytes=first->k_bytes;
+    uint8_t *previous=sparse?malloc(2U*QBH_VERTICAL_SLICE_LAYER_COUNT*cache_bytes):NULL;
+    if(sparse && !previous) {free(cos);free(sin);return -1;}
+
     if(qbh_read_named_tensor(package_root,"long_prompt_u32.bin",(void *)ids,(h->variant==QBH_BLOCK_W4U8?length:768U)*4U) ||
        qbh_read_named_tensor(package_root,"long_fixed_u32.bin",(void *)fixed,64U*4U) ||
        qbh_read_named_tensor(package_root,"long_rope_cos_f16.bin",(void *)cos,h->kv_cache_capacity*QBH_BLOCK_HEAD_DIM*2U) ||
@@ -42,6 +51,12 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
             const uint32_t before=state->next_position;
             const uint32_t is_prefill=step<chunks;
             const uint32_t rows=is_prefill ? (length-before<64U?length-before:64U):1U;
+            if(sparse) for(uint32_t i=0;i<QBH_VERTICAL_SLICE_LAYER_COUNT;++i) {
+                const struct qbh_decode_layer_state *l=&state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER+i];
+                if(l->k_bytes!=cache_bytes || l->v_bytes!=cache_bytes)goto finish;
+                memcpy(previous+(2U*i)*cache_bytes,shared+l->k_offset,cache_bytes);
+                memcpy(previous+(2U*i+1U)*cache_bytes,shared+l->v_offset,cache_bytes);
+            }
             const uint64_t stage_start=qbh_monotonic_ns();
             memset(shared+tokens->offset,0,tokens->expected_bytes);
             if(poison)for(uint32_t i=0;i<64U;i++)((uint32_t *)(shared+tokens->offset))[i]=100U+i;
@@ -77,6 +92,35 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
             }
             for(uint32_t i=0;i<QBH_VERTICAL_SLICE_LAYER_COUNT;i++)
                 if(state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER+i].valid_length!=before+rows)goto finish;
+            if(sparse) {
+                uint64_t checked=0U;
+                const size_t stride=h->kv_cache_capacity*QBH_BLOCK_HEAD_DIM*2U;
+                const size_t prefix=before*QBH_BLOCK_HEAD_DIM*2U;
+                const size_t end=(before+rows)*QBH_BLOCK_HEAD_DIM*2U;
+                for(uint32_t i=0;i<QBH_VERTICAL_SLICE_LAYER_COUNT;++i) {
+                    const struct qbh_decode_layer_state *l=&state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER+i];
+                    for(uint32_t kind=0;kind<2U;++kind) {
+                        const uint8_t *now=shared+(kind?l->v_offset:l->k_offset);
+                        const uint8_t *old=previous+(2U*i+kind)*cache_bytes;
+                        for(uint32_t head=0;head<QBH_BLOCK_KV_HEADS;++head) {
+                            const size_t off=head*stride;
+                            if(memcmp(now+off,old+off,prefix) ||
+                               memcmp(now+off+end,old+off+end,stride-end)) {
+                                fprintf(stderr,"A16 KV guard failed step%u layer%u kind%u head%u
+",step,i,kind,head);
+                                goto finish;
+                            }
+                            const uint16_t *added=(const uint16_t *)(now+off+prefix);
+                            for(size_t k=0;k<(end-prefix)/2U;++k)
+                                if((added[k]&0x7c00U)==0x7c00U)goto finish;
+                            checked+=prefix+stride-end;
+                        }
+                    }
+                }
+                printf("{\"record\":\"long_cache_guard\",\"step\":%u,\"layers\":%u,\"checked_unchanged_bytes\":%" PRIu64 ",\"finite_append\":true}
+",
+                    step,QBH_VERTICAL_SLICE_LAYER_COUNT,checked);
+            }
             selected=h->generation_selected_token_id;
             struct qbh_replay_step_result pr;memset(&pr,0,sizeof(pr));
             pr.host_wall_ns=wall;pr.first_position=before;pr.valid_length=before+rows;pr.step_index=step;
@@ -90,7 +134,9 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
             printf("]}\n");fflush(stdout);
             if(audit && h->generation_boundary_audit_enabled) {
                 char name[96];
-                for(uint32_t i=0;i<QBH_VERTICAL_SLICE_LAYER_COUNT;i++) {
+                const uint32_t snapshot=!sparse || step==0U || step==1U ||
+                    step+1U==chunks || step+1U==chunks+decode;
+                for(uint32_t i=0;snapshot && i<QBH_VERTICAL_SLICE_LAYER_COUNT;i++) {
                     struct qbh_decode_layer_state *l=&state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER+i];
                     snprintf(name,sizeof(name),"long_r%u_s%02u_l%02u_k.bin",rep,step,i);
                     if(qbh_write_named_tensor(audit,name,shared+l->k_offset,l->k_bytes))goto finish;
@@ -113,5 +159,5 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
             rep,length,decode,prefill_ns,decode_ns,stage_ns,prefill_stage_ns,decode_stage_ns);fflush(stdout);
     }
     result=0;
-finish:free(cos);free(sin);return result;
+finish:free(previous);free(cos);free(sin);return result;
 }
