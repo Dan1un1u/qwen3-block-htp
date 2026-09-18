@@ -2719,3 +2719,16 @@ experiments:
     evidence_files: 6118
     report: docs/experiments/L32-0049-RESULTS.md
     modules: docs/experiments/L32-0049-MODULES.md
+- id: L32-0050
+  title: Llama1B SP2 chunked long prefill
+  execution_state: running
+  approval_ref: User approves proposed chunked long prefill implementation and validation
+    2026-09-18
+  parent_source: dba32d5ebd0bf73175c6d93e09d606e490a14385
+  record: docs/experiments/L32-0050.md
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  evidence_validity: pending
+  local_gate: not_run
+  adoption_status: pending

@@ -1,3 +1,6 @@
+# L32-0050 active: chunked long prefill
+Read docs/experiments/L32-0050.md. User-approved1B W4A8-SP2, preserve latest arithmetic. Boundary64/65/128/129 then536/741. No new measured results yet. Prior completed entries below retained.
+
 # L32-0049 completed: generic3B W16A16 via resident segmented weights
 Read docs/experiments/L32-0049-RESULTS.md and MODULES.md. Fresh original BF16->FP16, seven768MiB backbone shards, resident embedding/full FP16 head; single session, bounded delayed DSP mappings withinoneRPC/token. All weight loading precedes timing; map/unmap included. Generic HMX/HVX/basic DMA, no specialization search.
 M64+42/cache128/full28, five short/ten formal repeat10: 409.770413/6.785250 prefill/decode token/s. Peak VTCM7852800/8388608, zero timed intermediateDDR/spill. Current workspace3B28.

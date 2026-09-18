@@ -6,8 +6,8 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: null
-  next_experiment_number: 50
+  active_experiment: L32-0050
+  next_experiment_number: 51
   maximum_running_experiments: 1
   remote_sync_required: true
 source_worktrees:

@@ -233,3 +233,6 @@ User explicitly authorizes independent delayed mapping feasibility on current de
 
 ## L32-0049 segmented FP16 implementation authorization
 User approves full generic3B W16A16 implementation after0048 mapping success. Supersedes prior W16 deferral and0048 probe-only restriction for0049. Fresh original FP16 weights, resident segmented single-session mapping, generic existing kernels/basic DMA only; hardware correctness then formal E2E. No specialization or quality promotion.
+
+## L32-0050 long prefill authorization
+User approves generic64-token chunked long prefill on latest1B W4A8-SP2. Supersedes short-context-only scope for0050; preserve current arithmetic/weights and all correctness/physical/evidence gates. Target536+46 and741+3 after boundary validation. No model-quality claim or promotion.
