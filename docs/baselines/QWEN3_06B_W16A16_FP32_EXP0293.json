@@ -1,0 +1,41 @@
+{
+  "id": "QWEN3-06B-W16A16-FP32-EXP0293",
+  "model": "Qwen3-0.6B",
+  "recipe": "W16A16",
+  "residual": "FP32",
+  "rotation": "none",
+  "experiment": "EXP-0293",
+  "adoption_status": "accepted",
+  "promoted_by": "user",
+  "promoted_on": "2026-09-18",
+  "approval_ref": "将此新FP32实验晋升为基线，然后列现在我们能填出的实验table。参照quant.npu的table 12",
+  "acceptance_scope": "paper speed baseline; explicit full-M64 matched floating workload, not full-floating numerical or model-quality acceptance",
+  "measured_source": "54eda4b797931858a7eae8b7f6314533424e5b00",
+  "source_closure": "1cf2a041d0d97896d85e18402d23f3cf5f1ed3b0",
+  "source_branch": "codex/exp-0293-qwen3-06b-f16-row-parity",
+  "runtime_manifest": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0293/runtime-l28.json",
+  "runtime_manifest_sha256": "2390393af8dd375775cea1ee31790a1d1bf37f63bfd1b62d91878aa69a645217",
+  "model_directory": "/mnt/d/llm_exp/models/qwen3-block-htp/exp0292/f16f16",
+  "required_environment": {
+    "QBH_FP32_RESIDUAL": "1",
+    "QBH_F16F16_OPT": "4",
+    "QBH_W4F16_DECODE_OPT": "2",
+    "QBH_KV_CACHE_LAYOUT": "hmx_native_f16"
+  },
+  "exact_command_evidence": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0293/formal/00-fp32/protocol.json",
+  "decode_row_policy": "M64 input RMSNorm, post residual+RMSNorm, final residual; shared final head row selection",
+  "shape": "Qwen3-0.6B full28 batch1 M64+42 cache128",
+  "performance": {
+    "prefill_tps": 1687.09322121349,
+    "decode_tps": 27.382773922929328,
+    "prefill_host_ms": 37.93507033,
+    "decode_42_host_ms": 1533.8110053500002
+  },
+  "evidence": "/mnt/d/llm_exp/results/qwen3-block-htp/exp0293",
+  "evidence_ledger_sha256": "0aaf6888021a54d5d1aad85af9197578586f115d55ee426e813e891df8c372f5",
+  "full_floating_alignment_pass": false,
+  "model_quality_accepted": false,
+  "local_gate_retained": "fail",
+  "native_default_flag_changed": false,
+  "historical_fp16_control_retained": true
+}

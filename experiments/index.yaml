@@ -29,7 +29,7 @@ experiments:
   execution_state: completed
   evidence_validity: valid
   local_gate: fail
-  adoption_status: pending
+  adoption_status: accepted
   record: docs/experiments/EXP-0293.md
   approval_ref: User requests FP32 residual to use the original FP16 full-M64 decode
     logic, without FP32-only active-row specialization; basic floating baseline, no
@@ -87,7 +87,7 @@ experiments:
       fp32: 0.012067306152894927
     head_boundary_pass: true
     quality_claim: false
-    baseline_promoted: false
+    baseline_promoted: true
     id: EXP-0293
     source_closure: 1cf2a041d0d97896d85e18402d23f3cf5f1ed3b0
     source_branch: codex/exp-0293-qwen3-06b-f16-row-parity
@@ -110,7 +110,18 @@ experiments:
     validated_device_runs: 38
     validated_profiles: 13080
     full_audit_byte_exact_files: 4902
+    adoption_status: accepted
+    promotion_scope: paper speed baseline; explicit full-M64 matched floating workload,
+      not full-floating numerical or model-quality acceptance
+    promoted_by: user
+    promoted_on: '2026-09-18'
+    baseline_descriptor: docs/baselines/QWEN3_06B_W16A16_FP32_EXP0293.json
   full_profiling_report: /mnt/d/llm_exp/results/qwen3-block-htp/exp0293/FULL_PROFILING_REPORT.md
+  promotion_scope: paper speed baseline; explicit full-M64 matched floating workload,
+    not full-floating numerical or model-quality acceptance
+  promotion_record: docs/baselines/QWEN3_06B_W16A16_FP32_EXP0293.json
+  promoted_by: user
+  promoted_on: '2026-09-18'
 - id: EXP-0292
   title: Qwen0.6 temporary F16F16 FP32 residual precision contract
   execution_state: completed

@@ -1,3 +1,6 @@
+# User-promoted Qwen0.6 W16A16 FP32 baseline — 2026-09-18
+EXP0293 is now the selected paper SPEED baseline:1687.093221 prefill/27.382774 decode token/s, M64+42/cache128/full28. Required flag QBH_FP32_RESIDUAL=1 and original full-M64 row processing. Descriptor docs/baselines/QWEN3_06B_W16A16_FP32_EXP0293.json; measured54eda4b, source closure1cf2a04. Numerical/quality failures and immutable at-measurement reports remain unchanged. No new hardware/native changes or new active experiment. Only this model/recipe promoted. Paper inventory docs/PAPER_HARDWARE_MAIN_TABLE_20260918.md; source datasets must not be inferred from token lengths. Historical pending-promotion notices below are superseded by this event.
+
 # EXP-0293 completed — matched M64 floating decode, FP32 residual retained
 No active experiment/device owner; next294. Source codex/exp-0293-qwen3-06b-f16-row-parity @ 1cf2a041d0d97896d85e18402d23f3cf5f1ed3b0; measured 54eda4b797931858a7eae8b7f6314533424e5b00.
 User requires basic floating baseline without FP32-only valid-row optimization. Input RMSNorm/post-residualNorm/final residual now process fullM64 for both residual types; input/post16tasks perlayer,4rows/task, unchanged workers/vector math/basic pipeline. Final modelNorm already matched and unchanged. No artificial waits, scalar fallback, deeper tuning or otherrecipe changes.

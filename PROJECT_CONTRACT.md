@@ -452,3 +452,6 @@ User requests Qwen3-0.6B W16A16 FP32 residual to align storage/add precision wit
 
 ## User-requested floating decode row parity (2026-09-18; EXP-0293)
 User requires the temporary Qwen0.6 F16 FP32 residual implementation to retain the original FP16 full-M64 decode workload in Norm/residual operations, without FP32-only valid-row specialization. Basic vector implementation and existing pipeline remain; no deep non-A8 tuning or manufactured slowdown. EXP0293 freezes all other mathematics/recipes and preserves historical evidence and numerical/physical thresholds. This supersedes EXP0292's logical-row implementation choice, not its measured history. Future non-A8 baseline changes must preserve matched basic scheduling or clearly identify implementation differences.
+
+## User-selected Qwen0.6 FP32 floating speed baseline (2026-09-18)
+User explicitly promotes EXP0293 as the paper W16A16 speed baseline for Qwen3-0.6B. Selection retains full-M64 decode row parity and QBH_FP32_RESIDUAL=1. This is an explicit speed-baseline acceptance despite the retained full-floating reference failure, not a gate reclassification, quality acceptance, global selection for other model sizes, or permission for further non-A8 tuning. Prior sealed evidence and original FP16 controls remain immutable.
