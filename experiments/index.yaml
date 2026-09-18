@@ -27439,3 +27439,20 @@ experiments:
     conclusion: actual_fourth_context_advances_expansion_and_repeat10_host_but_thread_management_and_join_tail_fail_paired_repeat1_host
     reopen_condition: only_with_persistent_worker_lifetime_or_join_fusion_that_preserves_four_context_expansion_without_per_invocation_overhead
     selected_baseline_changed: false
+
+- id: EXP-0296
+  title: Qwen long-context throughput optimization loop
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: pending
+  record: docs/experiments/EXP-0296.md
+  approval_ref: 'User: 请针对各长序列吞吐门槛不达标的问题继续开展loop优化。'
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0295-qwen-long-prefill
+  evidence:
+    device_owner: EXP-0296
+    parent: EXP-0295
+    quality_claim: false
+    baseline_promoted: false

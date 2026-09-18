@@ -1,3 +1,6 @@
+# EXP-0296 active: long-context throughput loop
+User authorizes unmet-model optimization. Read docs/experiments/EXP-0296.md. Device owner Qwen; frozen0295 inputs/oracles; no dataset or quality promotion. Desktop workbook C:/Users/35961/Desktop/HTP硬件实验总表.xlsx is the maintained presentation artifact.
+
 # EXP-0295 completed — migration implemented, parity separately reported
 Read docs/experiments/EXP-0295-RESULTS.md and IMPLEMENTATION.md. Source closure 9593bfab8061198a411679e6cf21f07cf947eeba. Numerical/physical checks pass; inherited long/M64 parity `fail`. Five short/ten formal repeat10 complete, all samples retained. No tolerance relaxation, slowed control, named-dataset result, PPL acceptance, or automatic baseline promotion. Evidence /mnt/d/llm_exp/results/qwen3-block-htp/exp0295; ledger 7615acb7dfaea97552010893bea5c8866b9e0cf2de84eb563012e87580f82073. Device owner released; no active experiment. Build 1.7B/28 layers. Long frontend prompt<=768/decode<=63/cache832; one-row long-cache decode remains sequential dynamic attention and has further optimization room. Cross-model summary: docs/experiments/LONG_PREFILL_MODEL_MIGRATION.md. Historical selected paper baselines unchanged.
 
