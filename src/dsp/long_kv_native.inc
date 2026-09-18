@@ -203,7 +203,7 @@ void qbh_attention_u8_pack_k_long_transpose(const uint8_t *rows,uint32_t valid,u
         for(unsigned i=0;i<32U;++i)sum=Q6_Vw_vadd_VwVw(sum,Q6_Vw_vrmpy_VbVb(v[i],Q6_Vb_vsplat_R(1)));
         *(HVX_Vector *)(bias+tile*64U)=Q6_V_vsplat_R(cv);
         *(HVX_Vector *)(bias+tile*64U+32U)=Q6_Vw_vsub_VwVw(Q6_V_vsplat_R(128*div+round),
-            Q6_Vw_vmpyi_VwRh(sum,cfg->q_zero_point));
+            Q6_Vw_vmpyi_VwRh(sum,cfg->q_zero_point*0x00010001U));
     }
     asm volatile("barrier" ::: "memory");
 }
