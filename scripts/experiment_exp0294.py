@@ -17,6 +17,11 @@ for m in [c,d,f]:m.R=R;m.O=O;m.preflight=preflight
 d.REMOTE='/data/local/tmp/qwen3-block-htp/exp0294'
 d.package_path=lambda name:O/name
 read=c.read;write=c.write;sha=c.sha
+REV=os.environ.get('QBH_REFERENCE_REVISION','')
+if REV:
+ assert REV=='-sdk'
+ import reference_qhl_exp0294 as sdk_reference
+ mathref.exact_qk_norm_rope_u8=sdk_reference.exact_qk_norm_rope_u8
 os.environ.setdefault('QBH_SP2','0');os.environ.setdefault('QBH_U8_PREFILL_OPT','3')
 def clone(src,dst):
  mf=read(src/'manifest.json');dst.mkdir(parents=True,exist_ok=False)
@@ -69,7 +74,7 @@ def selected(first,count,name,parent):
   padded=np.zeros((64,1024),'<f4');padded[:len(v)]=v;replace_bytes(dst/n,padded.tobytes())
  manifest(dst,src);write(R/(name+'-changes.json'),changes);print('PREPARED',name,flush=True)
 def full_package(mode):
- preflight();src=OLD_O/'frontend64-a03';dst=O/('full-a8-'+mode);clone(src,dst)
+ preflight();src=OLD_O/'frontend64-a03';dst=O/('full-a8-'+mode+REV);clone(src,dst)
  changes=[change_middle(dst/f'layer{i}',i) for i in range(28)]
  ids=np.fromfile(dst/'generation_prompt_token_ids_u32.bin','<u4')
  embed=np.memmap(dst/'generation_embedding_weight_f16.bin',dtype='<f2',mode='r',shape=(151936,1024))
@@ -95,18 +100,18 @@ def full_package(mode):
   a=mathref.norm(x[-1:],g,q['generation_final_norm_output']);logits=mathref.project(a,dst,'generation_lm_head',151936,q['generation_final_norm_output'],q['generation_lm_head_output'])[0]
   tok=int(logits.argmax());tokens.append(tok);codes.append(int(logits[tok]));print('REFERENCE',mode,step,tok,flush=True)
  replace_bytes(dst/'generation_expected_token_ids_u32.bin',np.asarray(tokens+[0]*21,'<u4').tobytes())
- manifest(dst,src);write(R/('a8-'+mode+'-teacher.json'),dict(u8_generated_ids=tokens,u8_selected_codes=codes,prompt_ids=ids.tolist(),quality_accepted=False));write(R/('a8-'+mode+'-changes.json'),changes)
+ manifest(dst,src);write(R/('a8-'+mode+REV+'-teacher.json'),dict(u8_generated_ids=tokens,u8_selected_codes=codes,prompt_ids=ids.tolist(),quality_accepted=False));write(R/('a8-'+mode+REV+'-changes.json'),changes)
 def stage(count):d.stage(count)
 def deploy(name):d.deploy(name)
 def layer_run(name,tag,count):
  d.run(name,tag,count=count,fp32=2,dump=True)
 def full_run(arm,tag,repeat=1,audit=False,greedy=False):
  os.environ['QBH_SP2']='8' if arm=='SP2' else '0';os.environ['QBH_U8_PREFILL_OPT']='0' if arm=='SP2' else '3'
- os.environ['QBH_PACKAGE']='frontend64-a03' if arm=='SP2' else 'full-a8-'+('greedy' if greedy else 'fixed')
+ os.environ['QBH_PACKAGE']='frontend64-a03' if arm=='SP2' else 'full-a8-'+('greedy' if greedy else 'fixed')+REV
  os.environ['QBH_PAPER_FIXED_TOKENS']='0' if greedy else '1'
  f.O=OLD_O if arm=='SP2' else O
  z=f.full(2,repeat,tag,audit=audit,steps=43)
- teacher=read(R/('frontend64-a03-teacher.json' if arm=='SP2' else 'a8-'+('greedy' if greedy else 'fixed')+'-teacher.json'))
+ teacher=read(R/('frontend64-a03-teacher.json' if arm=='SP2' else 'a8-'+('greedy' if greedy else 'fixed')+REV+'-teacher.json'))
  assert z['selected_codes']==[list(v) for v in zip(teacher['u8_generated_ids'][:43],teacher['u8_selected_codes'][:43])]
  if audit:
   p=(OLD_O/'frontend64-a03') if arm=='SP2' else O/os.environ['QBH_PACKAGE'];root=R/tag
@@ -120,7 +125,7 @@ def full_run(arm,tag,repeat=1,audit=False,greedy=False):
   write(root/'independent_gate.json',dict(pass_all=True,steps=43,hidden_norm_kv_ids_codes_exact=True))
  return dict(arm=arm,tag=tag,**z)
 def campaign():
- for tag in ['audit-SP2','audit-A8','greedy-A8']:assert read(R/tag/'independent_gate.json')['pass_all']
+ for tag in ['audit-SP2','audit-A8-sdk','greedy-A8-sdk']:assert read(R/tag/'independent_gate.json')['pass_all']
  write(R/'auxiliary.json',[full_run(a,'aux-'+a) for a in ['SP2','A8']])
  for phase,n in [('short',5),('formal',10)]:
   rows=[]
