@@ -30,12 +30,10 @@ def exact_qk_norm_rope_u8(
     cosine_f16: np.ndarray,
     sine_f16: np.ndarray,
 ) -> np.ndarray:
-    """Q/K oracle using the SDK v79 inverse-square-root rounding.
+    """Preserve Q/K arithmetic and obtain SDK rsqrt from an independent ISA simulator.
 
-    QHL HVX computes rsqrt directly, not float32 sqrt followed by float32
-    division. The latter double rounding crossed an A8 half-step on layer13.
-    Float64 evaluates the reciprocal root before the single float32 rounding.
-    This is mathematical reference evaluation, with no device-output injection.
+    Mathematical reciprocal sqrt is not bit-identical to the SDK's three
+    Newton steps. The simulator sees only reference-computed denominators.
     """
     projected = np.ascontiguousarray(projected_u8, dtype=np.uint8)
     if projected.ndim != 2 or projected.shape[1] != heads * 128:

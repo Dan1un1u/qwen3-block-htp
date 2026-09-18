@@ -102,7 +102,32 @@ def full_package(mode):
  replace_bytes(dst/'generation_expected_token_ids_u32.bin',np.asarray(tokens+[0]*21,'<u4').tobytes())
  manifest(dst,src);write(R/('a8-'+mode+REV+'-teacher.json'),dict(u8_generated_ids=tokens,u8_selected_codes=codes,prompt_ids=ids.tolist(),quality_accepted=False));write(R/('a8-'+mode+REV+'-changes.json'),changes)
 def stage(count):d.stage(count)
-def deploy(name):d.deploy(name)
+def deploy(name):
+ if not name.endswith('-sdk'):
+  return d.deploy(name)
+ preflight();package=O/name;mf=read(package/'manifest.json')
+ parent='full-a8-fixed'  # Immutable on-device same-weight source; byte-check every linked file.
+ old=read(R/('deployment-'+parent+'.json'));pm=read(O/parent/'manifest.json')
+ remote=d.REMOTE+'-models/'+name
+ assert d.adb('shell','test ! -e '+shlex.quote(remote),check=False).returncode==0
+ dirs=sorted({str(Path(n).parent) for n in mf['files']})
+ d.adb('shell','mkdir -p '+' '.join(shlex.quote(remote+'/'+n) for n in dirs))
+ links=[];copies=[]
+ for n,v in mf['files'].items():
+  assert sha(package/n)==v['sha256'],n
+  if n in pm['files'] and pm['files'][n]['sha256']==v['sha256']:links.append(n)
+  else:copies.append(n)
+ for i in range(0,len(links),24):
+  d.adb('shell',' && '.join('ln -s '+shlex.quote(old['remote']+'/'+n)+' '+shlex.quote(remote+'/'+n) for n in links[i:i+24]))
+ for n in copies:d.adb('push',d.win(package/n),remote+'/'+n)
+ names=list(mf['files'])
+ for i in range(0,len(names),32):
+  lines=d.adb('shell','sha256sum '+' '.join(shlex.quote(remote+'/'+n) for n in names[i:i+32])).stdout.splitlines()
+  assert len(lines)==len(names[i:i+32])
+  for line in lines:
+   h,n=line.split(None,1);assert h==mf['files'][n.removeprefix(remote+'/')]['sha256'],n
+ write(R/('deployment-'+name+'.json'),dict(package=str(package),remote=remote,manifest_sha256=sha(package/'manifest.json'),files=len(names),verified=True,linked=len(links),copied=copies))
+ print('DEPLOY_PASS',name,flush=True)
 def layer_run(name,tag,count):
  d.run(name,tag,count=count,fp32=2,dump=True)
 def full_run(arm,tag,repeat=1,audit=False,greedy=False):
