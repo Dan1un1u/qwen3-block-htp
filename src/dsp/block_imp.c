@@ -2082,7 +2082,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
     uint32_t element_bytes;
 #ifdef QBH_LLAMA_3B
     if(!header || header->variant!=QBH_BLOCK_W4U8 || QBH_FP32_RESIDUAL(header)!=1U ||
-       QBH_LLAMA_SP2(header)!=8U || header->dense_r3_mode || header->dense_r4_mode ||
+       (QBH_LLAMA_SP2(header)!=8U && QBH_LLAMA_SP2(header)!=0U) || header->dense_r3_mode || header->dense_r4_mode ||
        header->w4u8_decode_projection_mode!=QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
        header->w4u8_decode_direct_n_mask!=63U || header->paper_format_disable || header->paper_pipeline_disable) return 0;
 #endif
@@ -10427,7 +10427,8 @@ static int qbh_run_w4u8_direct_n_gate_up_pair(
 
 #ifdef QBH_LLAMA_3B
         if (next_projection >= 2U && !(header->paper_pipeline_disable & 16U) &&
-            QBH_FP32_RESIDUAL(header) && QBH_LLAMA_SP2(header) == 8U &&
+            QBH_FP32_RESIDUAL(header) &&
+            (QBH_LLAMA_SP2(header) == 8U || QBH_LLAMA_SP2(header) == 0U) &&
             !header->dense_r3_mode && !header->dense_r4_mode &&
             header->w4u8_decode_direct_n_down_batch_n_tiles == 8U) {
             const struct qbh_block_projection_desc *down =
