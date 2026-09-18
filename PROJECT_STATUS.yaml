@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0296
+  active_experiment: null
   next_experiment_number: 297
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -2791,13 +2791,13 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: Qwen3_28layer_native_W4_SP2_M64_plus15_verified
-  last_completed_experiment: EXP-0295
-  last_completed_source_commit: 8cfc71a113b3e59f271730ca88c5d63829a759dc
+  last_completed_experiment: EXP-0296
+  last_completed_source_commit: 9126da9598c6433b3c1567fdf63eb5e1a62449b4
   provisional_source_parent: EXP0268_diagnostic_U8_pipeline_closure_no_default_promotion
-  device_execution_state: idle_released_to_L32-0046
+  device_execution_state: idle_released
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  current_handoff: docs/experiments/EXP-0284-RESULTS.md
+  current_handoff: docs/experiments/EXP-0296-RESULTS.md
   active_recipe_specialization: native_W4_SP2_FP32_residual_no_rotation
   last_completed_experiment_contract:
     id: EXP-0269
@@ -9421,8 +9421,8 @@ current_scope:
       pass but do not clear gate
     next_direction: discuss_runtime_nondeterminism_then_same_token_device_software_head_and_transformer_alignment
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0257.md
-  last_concluded_experiment: EXP-0294
-  last_concluded_source_commit: 95bad425d80f8aafe75222bd18b14f3f69b9c7d2
+  last_concluded_experiment: EXP-0296
+  last_concluded_source_commit: 9126da9598c6433b3c1567fdf63eb5e1a62449b4
   latest_w4u8_dense_r3_e2e_diagnostic_result:
     id: EXP-0258
     execution_state: completed
@@ -10444,7 +10444,7 @@ current_scope:
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0265.md
     next_direction: discuss_R4_quality_before_new_tuning; staticmiddle_and_RTN_Down_speedfixture_not_qualityaccepted;
       repeat1_cannot_veto_repeat10
-  qwen3_research_state: bounded_INT16_Down_comparison_completed_no_new_work_authorized
+  qwen3_research_state: bounded_long_context_loop_completed
   latest_llama32_migration:
     id: EXP-0266
     execution_state: completed
@@ -11290,8 +11290,8 @@ current_scope:
           - 0.9975734106829254
           - 1.0042720750135432
     paired_effects: *id002
-  next_direction: Qwen0.6B original-derived native W4A8-SP2 FP32 runtime and one inherited
-    head optimization validated; bounded optimization complete.
+  next_direction: Reduce repeated prefix K/V preparation and costly partial-tail work
+    before considering larger scheduling changes.
   latest_paper_pipeline_result:
     id: EXP-0282
     phase: A2
@@ -12186,8 +12186,9 @@ current_scope:
     generalization: supplementary only; not rerun or included
     quality_claim: false
     baseline_promoted: false
-  next_action: Review long-prefill migration results and remaining throughput/long-cache
-    decode gaps; no automatic selected-baseline promotion.
+  next_action: Review remaining prefill parity gaps using elapsed module walls; preserve
+    new long decode gains, frozen weights, original math and historical selected baselines.
+    Desktop Excel maintained.
   latest_f16_baseline_synthesis:
     report: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/REPORT.md
     a16_discussion: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/A16_DOWN_DISCUSSION.md
@@ -12608,15 +12609,15 @@ current_scope:
       exceedsuint32 shared-offset ABI
     named_dataset_measurements_completed: false
     baseline_promotion: No additional automatic promotion
-  stage: long_prefill_migration_implemented_parity_reported
+  stage: long_context_throughput_loop_completed
   latest_long_prefill_migration:
-    experiment: EXP-0295
+    experiment: EXP-0296
     execution_state: completed
     evidence_validity: valid
     local_gate: fail
-    gate_role: long_vs_fast_M64_throughput_parity_unmet; numerical_and_physical_pass
     adoption_status: pending
-    recipe: W4A8-SP2 mode8; frozen model-specific FP32 residual; no rotation
+    recipe: W4A8-SP2 mode8 FP32 residual, no rotation; frozen original weights and
+      math
     formal_cycles: 10
     replays_per_process: 10
     short_cycles: 5
@@ -12625,178 +12626,184 @@ current_scope:
     baseline_promoted: false
     named_dataset_benchmark: false
     device_owner: null
-    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0295
-    evidence_ledger_sha256: 7615acb7dfaea97552010893bea5c8866b9e0cf2de84eb563012e87580f82073
-    evidence_files: 27080
-    evidence_bytes: 21473309740
-    source_closure: 9593bfab8061198a411679e6cf21f07cf947eeba
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0296
+    evidence_ledger_sha256: 3aabbc3f560d3f6932cf5c76f8fd3c93ed46dc9cb9ac6f85e0b99b2bedf495cb
+    evidence_files: 16038
+    evidence_bytes: 14659340415
+    source_closure: 9126da9598c6433b3c1567fdf63eb5e1a62449b4
     models:
       0.6B:
         performance:
           native64:
-            prefill: 2939.8040522483216
-            decode: 94.94744931021614
+            prefill: 2957.3353810096023
+            decode: 94.62107442587678
           m64:
-            prefill: 2937.2619265450676
-            decode: 45.632514598417146
+            prefill: 2945.777761914765
+            decode: 84.41441410291763
           control536:
-            prefill: 1338.0507718915376
-            decode: 25.184048783120232
+            prefill: 2489.1911460446177
+            decode: 24.905093449918468
           opt536:
-            prefill: 2486.7672858684796
-            decode: 24.840294089309143
+            prefill: 2603.4188765123877
+            decode: 62.93747928389269
           control741:
-            prefill: 1225.3188309470438
-            decode: 21.46558977342211
+            prefill: 2413.072086525978
+            decode: 21.148755613257688
           opt741:
-            prefill: 2410.921074774118
-            decode: 21.108794380899276
+            prefill: 2548.7173848459547
+            decode: 57.60306546740406
         parity_gate:
           '536':
             reference: native64
-            throughput_over_m64: 0.8458955908869621
+            throughput_over_m64: 0.8803258816129298
             ci95:
-            - 0.8424890078129896
-            - 0.8491719824185483
+            - 0.8767499664364212
+            - 0.8830921836093658
             pass_parity: false
           '741':
             reference: native64
-            throughput_over_m64: 0.8200958403776195
+            throughput_over_m64: 0.8618289968775371
             ci95:
-            - 0.8167544989992814
-            - 0.8233474206262873
+            - 0.8585902566260029
+            - 0.8642191439435342
             pass_parity: false
         effects:
           '536':
             prefill:
-              wall_ratio: 0.5380683506234224
+              wall_ratio: 0.9561239524310462
               ci95:
-              - 0.5376810360640725
-              - 0.5384219260218599
-              throughput_gain_percent: 85.84999449258991
+              - 0.9550915513870402
+              - 0.9571830138079881
+              throughput_gain_percent: 4.588949733702874
               ten_percent_gate: true
             decode:
-              wall_ratio: 1.0138385919496435
+              wall_ratio: 0.3957116448464487
               ci95:
-              - 1.012051522043823
-              - 1.015444898294634
-              throughput_gain_percent: -1.3649699330375076
+              - 0.39476627251017143
+              - 0.39661752700521696
+              throughput_gain_percent: 152.7092677265129
               ten_percent_gate: true
           '741':
             prefill:
-              wall_ratio: 0.5082368078191216
+              wall_ratio: 0.9467789959269357
               ci95:
-              - 0.5079628338250209
-              - 0.5085565415284339
-              throughput_gain_percent: 96.75867324349593
+              - 0.9461708293350576
+              - 0.947440844931138
+              throughput_gain_percent: 5.621270043169768
               ten_percent_gate: true
             decode:
-              wall_ratio: 1.0169026892812831
+              wall_ratio: 0.36714635656370004
               ci95:
-              - 1.0161837552675685
-              - 1.017692745309751
-              throughput_gain_percent: -1.6621737221709343
+              - 0.3658641753248168
+              - 0.36862462368482646
+              throughput_gain_percent: 172.3709447533356
               ten_percent_gate: true
         timed_rpc_boundaries: 14800
         candidate_exact_layer_outputs: 2520
-        control_exact_layer_outputs: 420
+        signed_zero_only: 0
         runtime:
-          remote: /data/local/tmp/qwen3-block-htp/exp0295/0.6B/binaries-a5
+          remote: /data/local/tmp/qwen3-block-htp/exp0296/0.6B/binaries-a6
           seal:
             model_size: 0.6B
             paper_trace: false
-            source_head: 3a72cd5a4817e39602ae5dc9dd2c045ae03752e8
+            source_head: 9126da9598c6433b3c1567fdf63eb5e1a62449b4
             files:
               /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/qwen3_block_cli: 3c20797c3bf7dd07aaf405c8ad141242b635c29b7e9963263145152c2883c944
               /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/llama_sp2_cli: ea27a713188cabf0bc44766a351f165a8595e61d59df2814a9408e1b277de4b4
               /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/libqwen3_probe.so: 8827a7890d5fd88965022149ab151231923051bd1c86a2b6af291412714adead
-              /home/daniuniu/work/qwen3-block-htp/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so: 4312845de2274fc38c7d84d99fae6e1b320a773b05338d5d768b9497ef58e78d
-          archive: /mnt/d/llm_exp/results/qwen3-block-htp/exp0295/0.6B/binaries-a5
-        report: docs/experiments/EXP-0295-0.6B-RESULTS.md
-        modules: docs/experiments/EXP-0295-0.6B-MODULES.md
+              /home/daniuniu/work/qwen3-block-htp/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so: 5eed308a1c79be2246407f7c52cb118ddc92db53b0f7c5e8ad8e0bf513958235
+          archive: /mnt/d/llm_exp/results/qwen3-block-htp/exp0296/0.6B/binaries-a6
+        report: docs/experiments/EXP-0296-0.6B-RESULTS.md
+        modules: docs/experiments/EXP-0296-0.6B-MODULES.md
       1.7B:
         performance:
           native64:
-            prefill: 1828.7383312489617
-            decode: 47.057058546476554
+            prefill: 1833.3893941317438
+            decode: 47.03190710626564
           m64:
-            prefill: 1829.9207472990088
-            decode: 31.039062565880407
+            prefill: 1819.4705579652407
+            decode: 44.37361176832026
           control536:
-            prefill: 1068.7910047710839
-            decode: 19.965872550115556
+            prefill: 1693.3281041878759
+            decode: 19.956080473803187
           opt536:
-            prefill: 1693.5158914636645
-            decode: 19.950212839970057
+            prefill: 1744.94612348103
+            decode: 39.03140301997376
           control741:
-            prefill: 1000.6386545153485
-            decode: 17.60236097435449
+            prefill: 1674.3083306215983
+            decode: 17.499639023279443
           opt741:
-            prefill: 1677.1932240493181
-            decode: 17.50872253653875
+            prefill: 1741.359259340909
+            decode: 37.11725207446478
         parity_gate:
           '536':
-            reference: m64
-            throughput_over_m64: 0.9254585992116433
+            reference: native64
+            throughput_over_m64: 0.9517596911306456
             ci95:
-            - 0.9234960754351875
-            - 0.9276878588120389
+            - 0.9489400086047368
+            - 0.9544825393024547
             pass_parity: false
           '741':
-            reference: m64
-            throughput_over_m64: 0.9165387225238475
+            reference: native64
+            throughput_over_m64: 0.949803279605848
             ci95:
-            - 0.9141040251560446
-            - 0.9192809333364612
+            - 0.9465280600264987
+            - 0.9534204497034207
             pass_parity: false
         effects:
           '536':
             prefill:
-              wall_ratio: 0.6311077505433703
+              wall_ratio: 0.97041855986351
               ci95:
-              - 0.6305043948692862
-              - 0.6316808209412127
-              throughput_gain_percent: 58.45154795500789
+              - 0.9694552608874416
+              - 0.9713245819266574
+              throughput_gain_percent: 3.048317639416398
               ten_percent_gate: true
             decode:
-              wall_ratio: 1.0007849395027066
+              wall_ratio: 0.511282683422652
               ci95:
-              - 1.000416714280285
-              - 1.0011402460594356
-              throughput_gain_percent: -0.07843238559293031
+              - 0.5105587972126708
+              - 0.5120462504604519
+              throughput_gain_percent: 95.5865184609332
               ten_percent_gate: true
           '741':
             prefill:
-              wall_ratio: 0.5966150114173873
+              wall_ratio: 0.9614950629172933
               ci95:
-              - 0.5961188692018399
-              - 0.5971345496280347
-              throughput_gain_percent: 67.61227606799314
+              - 0.9593300364808823
+              - 0.9631415133894993
+              throughput_gain_percent: 4.004694206736548
               ten_percent_gate: true
             decode:
-              wall_ratio: 1.0053481022170705
+              wall_ratio: 0.4714691429250095
               ci95:
-              - 1.0033141544493476
-              - 1.0077254564473048
-              throughput_gain_percent: -0.531965217348751
+              - 0.4694948350578683
+              - 0.47307271194625633
+              throughput_gain_percent: 112.10295838153232
               ten_percent_gate: true
         timed_rpc_boundaries: 14800
         candidate_exact_layer_outputs: 2520
-        control_exact_layer_outputs: 420
+        signed_zero_only: 0
         runtime:
-          remote: /data/local/tmp/qwen3-block-htp/exp0295/1.7B/binaries-a2
+          remote: /data/local/tmp/qwen3-block-htp/exp0296/1.7B/binaries-a1
           seal:
             model_size: 1.7B
             paper_trace: false
-            source_head: 9593bfab8061198a411679e6cf21f07cf947eeba
+            source_head: 9126da9598c6433b3c1567fdf63eb5e1a62449b4
             files:
               /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/qwen3_block_cli: ba7bc07f3ce5d0b7842d97f670a789d16fbb05637729a276f4c4b0f63f4d00b7
               /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/llama_sp2_cli: ea27a713188cabf0bc44766a351f165a8595e61d59df2814a9408e1b277de4b4
               /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/libqwen3_probe.so: 8827a7890d5fd88965022149ab151231923051bd1c86a2b6af291412714adead
-              /home/daniuniu/work/qwen3-block-htp/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so: fd1e9d6270a7935492cc3649ff6e8b02b2ba201e790d3caf314f4c594b8b6969
-          archive: /mnt/d/llm_exp/results/qwen3-block-htp/exp0295/1.7B/binaries-a2
-        report: docs/experiments/EXP-0295-1.7B-RESULTS.md
-        modules: docs/experiments/EXP-0295-1.7B-MODULES.md
-    report: docs/experiments/EXP-0295-RESULTS.md
+              /home/daniuniu/work/qwen3-block-htp/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so: d3bc9a32b67ce117dd4ab7b65871d241623301f7c1aa79ea1c8525fe5fa12b63
+          archive: /mnt/d/llm_exp/results/qwen3-block-htp/exp0296/1.7B/binaries-a1
+        report: docs/experiments/EXP-0296-1.7B-RESULTS.md
+        modules: docs/experiments/EXP-0296-1.7B-MODULES.md
+    runtime_option: 927
+    report: docs/experiments/EXP-0296-RESULTS.md
     workspace_build: 1.7B/28 layers
     timed_rpc_boundaries: 29600
+    gate_role: unchanged long/M64 throughput parity plus decode guard; numerical and
+      physical checks separately passed
+  latest_formal_measurement_experiment: EXP-0296
+  latest_e2e_shape: 536+46 and741+3, full model, fixed project-owned trajectories,
+    ten rotated repeat10 cycles

@@ -499,3 +499,9 @@ artifacts:
     path: /mnt/d/llm_exp/models/qwen3-block-htp/exp0295/1.7B
     source_commit: 9593bfab8061198a411679e6cf21f07cf947eeba
     manifest: /mnt/d/llm_exp/results/qwen3-block-htp/exp0295/1.7B/CLOSURE_ARTIFACT_VERIFICATION.json
+  - id: EXP-0296-results
+    experiment: EXP-0296
+    kind: formal-result-set
+    path: /mnt/d/llm_exp/results/qwen3-block-htp/exp0296
+    source_commit: 9126da9598c6433b3c1567fdf63eb5e1a62449b4
+    manifest: /mnt/d/llm_exp/results/qwen3-block-htp/exp0296/EVIDENCE_SHA256.json
