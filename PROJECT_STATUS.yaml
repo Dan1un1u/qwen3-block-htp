@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0295
+  active_experiment: null
   next_experiment_number: 296
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -2791,7 +2791,7 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: Qwen3_28layer_native_W4_SP2_M64_plus15_verified
-  last_completed_experiment: EXP-0284
+  last_completed_experiment: EXP-0295
   last_completed_source_commit: 8cfc71a113b3e59f271730ca88c5d63829a759dc
   provisional_source_parent: EXP0268_diagnostic_U8_pipeline_closure_no_default_promotion
   device_execution_state: idle_released_to_L32-0046
@@ -12186,8 +12186,8 @@ current_scope:
     generalization: supplementary only; not rerun or included
     quality_claim: false
     baseline_promoted: false
-  next_action: User-approved W4A8-SP2 chunked long-prefill migration from L32-0051
-    to Qwen0.6B and1.7B. Local preparation while L32-0052 owns device.
+  next_action: Review long-prefill migration results and remaining throughput/long-cache
+    decode gaps; no automatic selected-baseline promotion.
   latest_f16_baseline_synthesis:
     report: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/REPORT.md
     a16_discussion: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/A16_DOWN_DISCUSSION.md
@@ -12608,3 +12608,195 @@ current_scope:
       exceedsuint32 shared-offset ABI
     named_dataset_measurements_completed: false
     baseline_promotion: No additional automatic promotion
+  stage: long_prefill_migration_implemented_parity_reported
+  latest_long_prefill_migration:
+    experiment: EXP-0295
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    gate_role: long_vs_fast_M64_throughput_parity_unmet; numerical_and_physical_pass
+    adoption_status: pending
+    recipe: W4A8-SP2 mode8; frozen model-specific FP32 residual; no rotation
+    formal_cycles: 10
+    replays_per_process: 10
+    short_cycles: 5
+    numerical_physical_pass: true
+    quality_claim: false
+    baseline_promoted: false
+    named_dataset_benchmark: false
+    device_owner: null
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0295
+    evidence_ledger_sha256: 7615acb7dfaea97552010893bea5c8866b9e0cf2de84eb563012e87580f82073
+    evidence_files: 27080
+    evidence_bytes: 21473309740
+    source_closure: 9593bfab8061198a411679e6cf21f07cf947eeba
+    models:
+      0.6B:
+        performance:
+          native64:
+            prefill: 2939.8040522483216
+            decode: 94.94744931021614
+          m64:
+            prefill: 2937.2619265450676
+            decode: 45.632514598417146
+          control536:
+            prefill: 1338.0507718915376
+            decode: 25.184048783120232
+          opt536:
+            prefill: 2486.7672858684796
+            decode: 24.840294089309143
+          control741:
+            prefill: 1225.3188309470438
+            decode: 21.46558977342211
+          opt741:
+            prefill: 2410.921074774118
+            decode: 21.108794380899276
+        parity_gate:
+          '536':
+            reference: native64
+            throughput_over_m64: 0.8458955908869621
+            ci95:
+            - 0.8424890078129896
+            - 0.8491719824185483
+            pass_parity: false
+          '741':
+            reference: native64
+            throughput_over_m64: 0.8200958403776195
+            ci95:
+            - 0.8167544989992814
+            - 0.8233474206262873
+            pass_parity: false
+        effects:
+          '536':
+            prefill:
+              wall_ratio: 0.5380683506234224
+              ci95:
+              - 0.5376810360640725
+              - 0.5384219260218599
+              throughput_gain_percent: 85.84999449258991
+              ten_percent_gate: true
+            decode:
+              wall_ratio: 1.0138385919496435
+              ci95:
+              - 1.012051522043823
+              - 1.015444898294634
+              throughput_gain_percent: -1.3649699330375076
+              ten_percent_gate: true
+          '741':
+            prefill:
+              wall_ratio: 0.5082368078191216
+              ci95:
+              - 0.5079628338250209
+              - 0.5085565415284339
+              throughput_gain_percent: 96.75867324349593
+              ten_percent_gate: true
+            decode:
+              wall_ratio: 1.0169026892812831
+              ci95:
+              - 1.0161837552675685
+              - 1.017692745309751
+              throughput_gain_percent: -1.6621737221709343
+              ten_percent_gate: true
+        timed_rpc_boundaries: 14800
+        candidate_exact_layer_outputs: 2520
+        control_exact_layer_outputs: 420
+        runtime:
+          remote: /data/local/tmp/qwen3-block-htp/exp0295/0.6B/binaries-a5
+          seal:
+            model_size: 0.6B
+            paper_trace: false
+            source_head: 3a72cd5a4817e39602ae5dc9dd2c045ae03752e8
+            files:
+              /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/qwen3_block_cli: 3c20797c3bf7dd07aaf405c8ad141242b635c29b7e9963263145152c2883c944
+              /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/llama_sp2_cli: ea27a713188cabf0bc44766a351f165a8595e61d59df2814a9408e1b277de4b4
+              /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/libqwen3_probe.so: 8827a7890d5fd88965022149ab151231923051bd1c86a2b6af291412714adead
+              /home/daniuniu/work/qwen3-block-htp/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so: 4312845de2274fc38c7d84d99fae6e1b320a773b05338d5d768b9497ef58e78d
+          archive: /mnt/d/llm_exp/results/qwen3-block-htp/exp0295/0.6B/binaries-a5
+        report: docs/experiments/EXP-0295-0.6B-RESULTS.md
+        modules: docs/experiments/EXP-0295-0.6B-MODULES.md
+      1.7B:
+        performance:
+          native64:
+            prefill: 1828.7383312489617
+            decode: 47.057058546476554
+          m64:
+            prefill: 1829.9207472990088
+            decode: 31.039062565880407
+          control536:
+            prefill: 1068.7910047710839
+            decode: 19.965872550115556
+          opt536:
+            prefill: 1693.5158914636645
+            decode: 19.950212839970057
+          control741:
+            prefill: 1000.6386545153485
+            decode: 17.60236097435449
+          opt741:
+            prefill: 1677.1932240493181
+            decode: 17.50872253653875
+        parity_gate:
+          '536':
+            reference: m64
+            throughput_over_m64: 0.9254585992116433
+            ci95:
+            - 0.9234960754351875
+            - 0.9276878588120389
+            pass_parity: false
+          '741':
+            reference: m64
+            throughput_over_m64: 0.9165387225238475
+            ci95:
+            - 0.9141040251560446
+            - 0.9192809333364612
+            pass_parity: false
+        effects:
+          '536':
+            prefill:
+              wall_ratio: 0.6311077505433703
+              ci95:
+              - 0.6305043948692862
+              - 0.6316808209412127
+              throughput_gain_percent: 58.45154795500789
+              ten_percent_gate: true
+            decode:
+              wall_ratio: 1.0007849395027066
+              ci95:
+              - 1.000416714280285
+              - 1.0011402460594356
+              throughput_gain_percent: -0.07843238559293031
+              ten_percent_gate: true
+          '741':
+            prefill:
+              wall_ratio: 0.5966150114173873
+              ci95:
+              - 0.5961188692018399
+              - 0.5971345496280347
+              throughput_gain_percent: 67.61227606799314
+              ten_percent_gate: true
+            decode:
+              wall_ratio: 1.0053481022170705
+              ci95:
+              - 1.0033141544493476
+              - 1.0077254564473048
+              throughput_gain_percent: -0.531965217348751
+              ten_percent_gate: true
+        timed_rpc_boundaries: 14800
+        candidate_exact_layer_outputs: 2520
+        control_exact_layer_outputs: 420
+        runtime:
+          remote: /data/local/tmp/qwen3-block-htp/exp0295/1.7B/binaries-a2
+          seal:
+            model_size: 1.7B
+            paper_trace: false
+            source_head: 9593bfab8061198a411679e6cf21f07cf947eeba
+            files:
+              /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/qwen3_block_cli: ba7bc07f3ce5d0b7842d97f670a789d16fbb05637729a276f4c4b0f63f4d00b7
+              /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/llama_sp2_cli: ea27a713188cabf0bc44766a351f165a8595e61d59df2814a9408e1b277de4b4
+              /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/libqwen3_probe.so: 8827a7890d5fd88965022149ab151231923051bd1c86a2b6af291412714adead
+              /home/daniuniu/work/qwen3-block-htp/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so: fd1e9d6270a7935492cc3649ff6e8b02b2ba201e790d3caf314f4c594b8b6969
+          archive: /mnt/d/llm_exp/results/qwen3-block-htp/exp0295/1.7B/binaries-a2
+        report: docs/experiments/EXP-0295-1.7B-RESULTS.md
+        modules: docs/experiments/EXP-0295-1.7B-MODULES.md
+    report: docs/experiments/EXP-0295-RESULTS.md
+    workspace_build: 1.7B/28 layers
+    timed_rpc_boundaries: 29600

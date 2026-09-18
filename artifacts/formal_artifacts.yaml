@@ -481,3 +481,21 @@ artifacts:
     path: /mnt/d/llm_exp/models/qwen3-block-htp/exp0289/reference-a03/w4f16
     source_commit: b28fde2500e2422dca77e65d85ca48df0eded57c
     manifest: /mnt/d/llm_exp/models/qwen3-block-htp/exp0289/reference-a03/w4f16/manifest.json
+  - id: EXP-0295-results
+    experiment: EXP-0295
+    kind: formal-result-set
+    path: /mnt/d/llm_exp/results/qwen3-block-htp/exp0295
+    source_commit: 9593bfab8061198a411679e6cf21f07cf947eeba
+    manifest: /mnt/d/llm_exp/results/qwen3-block-htp/exp0295/EVIDENCE_SHA256.json
+  - id: EXP-0295-0.6B-fixtures
+    experiment: EXP-0295
+    kind: retained-model-package
+    path: /mnt/d/llm_exp/models/qwen3-block-htp/exp0295/0.6B
+    source_commit: 9593bfab8061198a411679e6cf21f07cf947eeba
+    manifest: /mnt/d/llm_exp/results/qwen3-block-htp/exp0295/0.6B/CLOSURE_ARTIFACT_VERIFICATION.json
+  - id: EXP-0295-1.7B-fixtures
+    experiment: EXP-0295
+    kind: retained-model-package
+    path: /mnt/d/llm_exp/models/qwen3-block-htp/exp0295/1.7B
+    source_commit: 9593bfab8061198a411679e6cf21f07cf947eeba
+    manifest: /mnt/d/llm_exp/results/qwen3-block-htp/exp0295/1.7B/CLOSURE_ARTIFACT_VERIFICATION.json
