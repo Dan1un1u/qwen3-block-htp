@@ -1,3 +1,11 @@
+# EXP-0293 completed — matched M64 floating decode, FP32 residual retained
+No active experiment/device owner; next294. Source codex/exp-0293-qwen3-06b-f16-row-parity @ 1cf2a041d0d97896d85e18402d23f3cf5f1ed3b0; measured 54eda4b797931858a7eae8b7f6314533424e5b00.
+User requires basic floating baseline without FP32-only valid-row optimization. Input RMSNorm/post-residualNorm/final residual now process fullM64 for both residual types; input/post16tasks perlayer,4rows/task, unchanged workers/vector math/basic pipeline. Final modelNorm already matched and unchanged. No artificial waits, scalar fallback, deeper tuning or otherrecipe changes.
+Samebinary5short10formalrepeat10 M64+42/cache128: FP16 1713.050135/27.732103; FP32 1687.093221/27.382774token/s. Host overhead +1.538558%/+1.275725%. Full reports docs/experiments/EXP-0293-RESULTS.md/MODULES.md.
+Selected0/14/27,chain3 valid outputs exact; both full28 arms total4902files byte-exact to0292, including4816KV. All formal paired HMX work/weightbytes/Norm taskcounts equal. Existing independent full-floating-reference failure unchanged (maxNRMSE0.00653235/0.01206731 >0.003); noPPL/modelquality/baselinepromotion. Latest temporary flag1 uses fullM64, flag0 originalFP16 remainsdefault.
+Measured runtime /mnt/d/llm_exp/results/qwen3-block-htp/exp0293/runtime-l28.json; model inputs reused fromexp0292FP32 andexp0289FP16. Evidence ledger 0aaf6888021a54d5d1aad85af9197578586f115d55ee426e813e891df8c372f5, 5309files/1779076583bytes rehashed. 38device runs/13080profiles.
+Historical0292 below remains immutable but its FP32-only logical-row choice is superseded. Do not cite0292decode speed as current full-M64 FP32 result or isolated datatype benefit. Other recipes and Llama unchanged.
+
 # Active EXP-0293 — FP32/FP16 full-M64 decode parity
 Read docs/experiments/EXP-0293.md. User requests reverting FP32-only valid-row processing; preserve basic vector pipeline and FP32 arithmetic. Prior0292 evidence immutable. No deep tuning. Temporary parent branch then293.
 

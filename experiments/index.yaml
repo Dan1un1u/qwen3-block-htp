@@ -26,9 +26,9 @@ allowed_values:
 experiments:
 - id: EXP-0293
   title: Qwen0.6 F16 FP32 residual full-M64 decode parity
-  execution_state: running
-  evidence_validity: pending
-  local_gate: not_run
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
   adoption_status: pending
   record: docs/experiments/EXP-0293.md
   approval_ref: User requests FP32 residual to use the original FP16 full-M64 decode
@@ -38,6 +38,79 @@ experiments:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0293-qwen3-06b-f16-row-parity
     started_on: '2026-09-18'
+    completed_on: '2026-09-18'
+  evidence:
+    experiment: EXP-0293
+    execution_state: completed
+    shape: Qwen3-0.6B full28 batch1 M64+42 cache128
+    measured_source: 54eda4b797931858a7eae8b7f6314533424e5b00
+    short_rounds: 5
+    formal_rounds: 10
+    repeat: 10
+    formal_profiles: 8600
+    performance:
+      fp16:
+        prefill_tps: 1713.050135120162
+        decode_tps: 27.73210289572779
+        prefill_host_ms: 37.360260909999994
+        decode_42_host_ms: 1514.4902699200002
+      fp32:
+        prefill_tps: 1687.09322121349
+        decode_tps: 27.382773922929328
+        prefill_host_ms: 37.93507033
+        decode_42_host_ms: 1533.8110053500002
+    comparison:
+      prefill:
+        wall_ratio: 1.015385583665615
+        wall_overhead_percent: 1.5385583665614933
+        paired_bootstrap95_ratio:
+        - 1.013240910117915
+        - 1.0175147218473832
+        throughput_change_percent: -1.515245431205725
+      decode:
+        wall_ratio: 1.0127572529277593
+        wall_overhead_percent: 1.275725292775931
+        paired_bootstrap95_ratio:
+        - 1.012051792449153
+        - 1.0134590745146868
+        throughput_change_percent: -1.2596555483438632
+    local_gate: fail
+    gate_role: full_floating_alignment_remains_failed; new_residual_boundaries_pass
+    residual_adds_bit_exact: true
+    changed_norm_max_half_ulp: 1
+    original_control_byte_exact_files: 2451
+    prior_fp32_byte_exact_files: 2451
+    cache_files: 4816
+    full_floating_alignment_pass: false
+    full_floating_nrmse_max:
+      fp16: 0.00653234609135029
+      fp32: 0.012067306152894927
+    head_boundary_pass: true
+    quality_claim: false
+    baseline_promoted: false
+    id: EXP-0293
+    source_closure: 1cf2a041d0d97896d85e18402d23f3cf5f1ed3b0
+    source_branch: codex/exp-0293-qwen3-06b-f16-row-parity
+    recipe: temporary F16F16 FP32 residual, original full-M64 decode row scheduling;
+      FP16 matrix/normalized inputs/KV/head
+    report: docs/experiments/EXP-0293-RESULTS.md
+    modules: docs/experiments/EXP-0293-MODULES.md
+    full_profiling_report: /mnt/d/llm_exp/results/qwen3-block-htp/exp0293/FULL_PROFILING_REPORT.md
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0293
+    artifact_directory: /mnt/d/llm_exp/models/qwen3-block-htp/exp0292
+    ledger_sha256: 0aaf6888021a54d5d1aad85af9197578586f115d55ee426e813e891df8c372f5
+    evidence_files: 5309
+    evidence_bytes: 1779076583
+    device_owner: null
+    original_fp16_baseline_retained: true
+    default_changed: false
+    evidence_validity: valid
+    full_m64_decode_parity: true
+    fp32_only_valid_row_specialization: false
+    validated_device_runs: 38
+    validated_profiles: 13080
+    full_audit_byte_exact_files: 4902
+  full_profiling_report: /mnt/d/llm_exp/results/qwen3-block-htp/exp0293/FULL_PROFILING_REPORT.md
 - id: EXP-0292
   title: Qwen0.6 temporary F16F16 FP32 residual precision contract
   execution_state: completed
