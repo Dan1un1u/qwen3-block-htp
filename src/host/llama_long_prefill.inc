@@ -14,8 +14,8 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
     v=getenv("QBH_LONG_REPEATS");
     if (v && qbh_parse_u32(v,&repetitions)) return -1;
     if (!length || length>768U || decode>63U || !repetitions || repetitions>10U ||
-        length+decode>h->kv_cache_capacity || h->variant!=QBH_BLOCK_W4U8 ||
-        !QBH_FP32_RESIDUAL(h) || h->kv_cache_k_format!=QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1)
+        length+decode>h->kv_cache_capacity ||
+        (h->variant==QBH_BLOCK_W4U8 && !QBH_FP32_RESIDUAL(h)) || h->kv_cache_k_format!=QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1)
         return -1;
     uint32_t ids[768], fixed[64];
     uint16_t *cos=malloc((size_t)h->kv_cache_capacity*QBH_BLOCK_HEAD_DIM*2U);
@@ -99,12 +99,12 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
                 }
                 snprintf(name,sizeof(name),"long_r%u_s%02u_layer_first_rows.bin",rep,step);
                 if(qbh_write_named_tensor(audit,name,shared+h->output_offset+68U*QBH_BLOCK_HIDDEN,
-                    QBH_VERTICAL_SLICE_LAYER_COUNT*4U*QBH_BLOCK_HIDDEN))goto finish;
+                    QBH_VERTICAL_SLICE_LAYER_COUNT*(QBH_FP32_RESIDUAL(h)?4U:2U)*QBH_BLOCK_HIDDEN))goto finish;
                 snprintf(name,sizeof(name),"long_r%u_s%02u_final_hidden.bin",rep,step);
-                if(qbh_write_named_tensor(audit,name,shared+h->reference_offset,rows*QBH_BLOCK_HIDDEN*4U))goto finish;
+                if(qbh_write_named_tensor(audit,name,shared+h->reference_offset,rows*QBH_BLOCK_HIDDEN*(QBH_FP32_RESIDUAL(h)?4U:2U)))goto finish;
                 if(!h->long_skip_head) {
                     snprintf(name,sizeof(name),"long_r%u_s%02u_hidden_norm.bin",rep,step);
-                    if(qbh_write_named_tensor(audit,name,shared+h->output_offset,QBH_BLOCK_HIDDEN*68U))goto finish;
+                    if(qbh_write_named_tensor(audit,name,shared+h->output_offset,QBH_BLOCK_HIDDEN*(QBH_FP32_RESIDUAL(h)?(h->variant==QBH_BLOCK_W4U8?68U:6U):4U)))goto finish;
                 }
             }
         }

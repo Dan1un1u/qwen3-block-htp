@@ -1161,3 +1161,5 @@ void qbh_hvx_stable_causal_softmax_f16(__fp16 *scores,
         }
     }
 }
+
+#include "long_softmax_f16.inc"
