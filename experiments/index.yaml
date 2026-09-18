@@ -27656,7 +27656,7 @@ experiments:
   approval_ref: 'User: 专注Qwen3-1.7B的优化，尤其是decode相对原来D历史数据有严重掉速。'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0296-long-throughput-loop
+    source_branch: codex/exp-0297-qwen17-decode
   evidence:
     device_owner: EXP-0297
     parent: EXP-0296
