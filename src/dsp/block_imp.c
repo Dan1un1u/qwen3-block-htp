@@ -15666,6 +15666,9 @@ static int qbh_run_w4u8_direct_n_mlp(
          (QBH_BLOCK_ALIGNMENT - 1U)) != 0U) {
         return -1;
     }
+    /* Cached multi-row attention can bypass attention pool dispatch.
+     * MLP owns these worker inputs and must bind them on every invocation. */
+    if (pool) { pool->attention_header=header; pool->attention_buffers=buffers; }
     buffers->r4_prefill_ready=NULL;buffers->r4_prefill_prepared=0U;
     const uint32_t stream_sp2 = prefill_direct && (QBH_LLAMA_SP2(header)>=5U || QBH_FP32_RESIDUAL(header)) && !(header->paper_pipeline_disable&2U);
     buffers->sp2_prefill_ready=NULL;
