@@ -17652,6 +17652,10 @@ static int qbh_scan_f16_attention(
         ? valid_tokens - QBH_BLOCK_M : 0U;
     const uint32_t delta_bytes =
         decode_rows * QBH_BLOCK_HEAD_DIM * sizeof(uint16_t);
+    /* A native prefix can have more than one 32-token decode tile. */
+    const uint32_t delta_padded_rows = qbh_align_up(decode_rows, QBH_HMX_FP16_COLS);
+    const uint32_t delta_tiles = delta_padded_rows / QBH_HMX_FP16_COLS;
+    const uint32_t delta_padded_bytes = delta_padded_rows * QBH_BLOCK_HEAD_DIM * sizeof(__fp16);
 
     header->scan_attention_overlay_capacity_bytes = overlay_capacity;
     header->scan_attention_overlay_required_bytes = required_bytes;
@@ -17701,8 +17705,7 @@ static int qbh_scan_f16_attention(
             }
             qbh_hvx_zero_aligned_bytes(
                 delta_rows,
-                QBH_HMX_FP16_COLS * QBH_BLOCK_HEAD_DIM *
-                    sizeof(__fp16));
+                delta_padded_bytes);
             if (qbh_scan_cache_dma(
                     header, delta_rows,
                     cache_k + native_base_bytes,
@@ -17712,7 +17715,7 @@ static int qbh_scan_f16_attention(
             start = HAP_perf_get_qtimer_count();
             qbh_pack_fp16_weight_rows_hvx(
                 delta_rows, QBH_BLOCK_HEAD_DIM, 0U,
-                QBH_BLOCK_HEAD_DIM, QBH_HMX_FP16_COLS,
+                QBH_BLOCK_HEAD_DIM, delta_padded_rows,
                 delta_weight);
             qbh_hvx_copy_aligned_bytes(
                 weight +
@@ -17720,8 +17723,7 @@ static int qbh_scan_f16_attention(
                         QBH_ATTENTION_HEAD_DIM_TILES *
                         QBH_HMX_FP16_TILE_ELEMENTS,
                 delta_weight,
-                QBH_HMX_FP16_COLS * QBH_BLOCK_HEAD_DIM *
-                    sizeof(__fp16));
+                delta_padded_bytes);
             header->f16_cache_native_append_update_ticks +=
                 HAP_perf_get_qtimer_count() - start;
         } else {
@@ -17824,8 +17826,7 @@ static int qbh_scan_f16_attention(
                 HAP_perf_get_qtimer_count() - start;
             qbh_hvx_zero_aligned_bytes(
                 delta_rows,
-                QBH_HMX_FP16_COLS * QBH_BLOCK_HEAD_DIM *
-                    sizeof(__fp16));
+                delta_padded_bytes);
             if (qbh_scan_cache_dma(
                     header, delta_rows,
                     cache_v + native_base_bytes,
@@ -17835,7 +17836,7 @@ static int qbh_scan_f16_attention(
             start = HAP_perf_get_qtimer_count();
             qbh_pack_fp16_weight_transposed_hvx(
                 delta_rows, QBH_BLOCK_HEAD_DIM, 0U,
-                QBH_HMX_FP16_COLS, QBH_BLOCK_HEAD_DIM,
+                delta_padded_rows, QBH_BLOCK_HEAD_DIM,
                 delta_weight);
             for (uint32_t output_tile = 0U;
                  output_tile < QBH_ATTENTION_HEAD_DIM_TILES;
@@ -17846,9 +17847,9 @@ static int qbh_scan_f16_attention(
                          QBH_BLOCK_M / QBH_HMX_FP16_ROWS) *
                             QBH_HMX_FP16_TILE_ELEMENTS,
                     delta_weight +
-                        (size_t)output_tile *
+                        (size_t)output_tile * delta_tiles *
                             QBH_HMX_FP16_TILE_ELEMENTS,
-                    QBH_HMX_FP16_TILE_BYTES);
+                    delta_tiles * QBH_HMX_FP16_TILE_BYTES);
             }
             header->f16_cache_native_append_update_ticks +=
                 HAP_perf_get_qtimer_count() - start;

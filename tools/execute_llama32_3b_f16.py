@@ -87,7 +87,7 @@ def execute(runtime,name,tag,repeat=1,full=False,audit=False):
         selected=[v for v in rs if isinstance(v,dict) and 'selected_logit_half_bits' in v]
         assert len(selected)==repeat*43
         trajectory=[(v['selected_token_id'],v['selected_logit_half_bits']) for v in selected]
-        frozen=R/'hardware-trajectory.json'
+        frozen=R/('hardware-trajectory-'+runtime+'.json')
         if frozen.exists():assert trajectory==[tuple(x) for x in read(frozen)['tokens']]*repeat
         elif audit:save(frozen,dict(tokens=trajectory,origin='hardware repeatability only; independent mathematical oracle retained separately'))
         else:raise AssertionError('Freeze audited trajectory before timing')
