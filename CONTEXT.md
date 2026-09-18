@@ -1,3 +1,7 @@
+# Active EXP-0298
+
+Complete paired ordinary A8/SP2 ABC timing for Qwen0.6/1.7; approved protocol docs/experiments/EXP-0298.md. Device serialized with L32-0054; no new optimization search.
+
 # Long-prefill gate now allows10% throughput loss
 User-approved reassessment: original95% CI lower bound of long/M64 prefill TPS >=0.90. See docs/LONG_PREFILL_GATE_10PCT_REVIEW.md/.json. Six of eight current measured long-shape SP2 rows pass; Qwen0.6B536+46 (-11.97%) and741+3 (-13.82%) still fail. Measurements, original strict-gate evidence and decode/numerical/physical guards are unchanged. No new hardware experiment. Desktop workbook B/C gate labels should follow this policy; A/D and TPS values stay unchanged.
 

@@ -18,8 +18,8 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 298
+  active_experiment: EXP-0298
+  next_experiment_number: 299
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -102,8 +102,8 @@ current_scope:
     validated_profiles: 13080
     full_audit_byte_exact_files: 4902
     adoption_status: accepted
-    promotion_scope: paper speed baseline; explicit full-M64 matched floating workload, not full-floating numerical or model-quality
-      acceptance
+    promotion_scope: paper speed baseline; explicit full-M64 matched floating workload, not full-floating numerical
+      or model-quality acceptance
     promoted_by: user
     promoted_on: '2026-09-18'
     baseline_descriptor: docs/baselines/QWEN3_06B_W16A16_FP32_EXP0293.json
@@ -3539,8 +3539,8 @@ current_scope:
     intermediate_files: 672
     calibration_sha256: e65edb14cb774956df92b27b5dc728b976f7ba00e9435145004180c6538a1669
     calibration_ids_sha256: a20ed2093b0e7fb075fe47a9532843402e9f69784c8ad0b0467194bee2fa8efd
-    conclusion: 'A: DSP NLL 3.873038 -> 3.969016, tasks 8 -> 4; B: DSP NLL 4.601481 -> 3.911864, tasks 0 -> 2; C: DSP NLL
-      4.320988 -> 3.956556, tasks 2 -> 9'
+    conclusion: 'A: DSP NLL 3.873038 -> 3.969016, tasks 8 -> 4; B: DSP NLL 4.601481 -> 3.911864, tasks 0 -> 2; C:
+      DSP NLL 4.320988 -> 3.956556, tasks 2 -> 9'
     next_action: discuss_results_no_automatic_next_direction
   latest_w4f16_head_ablation_result:
     id: EXP-0222
@@ -3652,8 +3652,8 @@ current_scope:
     closure_sha256: 196080cc53fd21bb8f1b1c606fe7a9da463ccbe84465bb92d9621d3a1049c6b5
     evidence_ledger_sha256: 54dbdc87eb1b8df4fc5e7baf2c0f0e385d41e583c0caec5975b3d5c5c5556c78
     evidence_files: 27
-    conclusion: 'A: NLL 3.874188 -> 3.853870, tasks 9 -> 8; B: NLL 4.600959 -> 4.413664, tasks 0 -> 0; C: NLL 4.323169 ->
-      4.293221, tasks 2 -> 2'
+    conclusion: 'A: NLL 3.874188 -> 3.853870, tasks 9 -> 8; B: NLL 4.600959 -> 4.413664, tasks 0 -> 0; C: NLL 4.323169
+      -> 4.293221, tasks 2 -> 2'
     next_action: discuss_with_user_before_any_next_direction
   latest_w4f16_gamma_attribution_result:
     id: EXP-0220
@@ -3764,8 +3764,8 @@ current_scope:
     speed_summary_sha256: 8abbdb773bf85fc1b2bd541af4326a7a567e57667899b557c2bb0237fb238476
     evidence_sha256_ledger_sha256: 0bf9fc284fb9f624c3f9a0f78a224c0f6e66e2c5f1b5f2cbd8ec6680cce49a97
     evidence_files: 182
-    conclusion: FP16 folding preserves observed quality; W4 requantization after gamma fold regresses, QKV largest isolated
-      NLL loss; gamma-preserving fixed R2 also regresses; no promotion
+    conclusion: FP16 folding preserves observed quality; W4 requantization after gamma fold regresses, QKV largest
+      isolated NLL loss; gamma-preserving fixed R2 also regresses; no promotion
     reopen_condition: new_approved_quantization_or_rotation_hypothesis_no_repeat_fixed_Hadamard_no_evaluation_tuning
   latest_w4f16_gptq_result:
     id: EXP-0221
@@ -10069,8 +10069,8 @@ current_scope:
     rotation: full6144 H12 tensor H512 via dense HMX factors; no butterfly
     weight_policy: fresh original Down W R, per-output-channel RTN[-7,7]; otherC64frozen
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0261.md
-    next_direction: discuss_HVX_layout_and_output_quantization_fusion_and_streaming_before_retesting_R4; no further experiment
-      authorized
+    next_direction: discuss_HVX_layout_and_output_quantization_fusion_and_streaming_before_retesting_R4; no further
+      experiment authorized
   latest_w4u8_dense_r4_optimization_result:
     id: EXP-0262
     execution_state: completed
@@ -10149,7 +10149,8 @@ current_scope:
     E2E_tokens_per_second: null
     baseline_promoted: false
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0262.md
-    next_direction: discuss_parallel_FP16_SwiGLU_preparation_and_output_quantization_for_prefill; no further experiment authorized
+    next_direction: discuss_parallel_FP16_SwiGLU_preparation_and_output_quantization_for_prefill; no further experiment
+      authorized
   latest_w4u8_dense_r4_parallel_prefill_result:
     id: EXP-0263
     execution_state: completed
@@ -10231,8 +10232,8 @@ current_scope:
     E2E_tokens_per_second: null
     baseline_promoted: false
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0263.md
-    next_direction: discuss_remaining_output_conversion_parameter_setup_gather_and_worker_scheduling; no further experiment
-      authorized
+    next_direction: discuss_remaining_output_conversion_parameter_setup_gather_and_worker_scheduling; no further
+      experiment authorized
   latest_w4u8_dense_r4_fused_quantization_result:
     id: EXP-0264
     execution_state: completed
@@ -10494,7 +10495,8 @@ current_scope:
     device_PPL: null
     baseline_promoted: false
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0265.md
-    next_direction: discuss_R4_quality_before_new_tuning; staticmiddle_and_RTN_Down_speedfixture_not_qualityaccepted; repeat1_cannot_veto_repeat10
+    next_direction: discuss_R4_quality_before_new_tuning; staticmiddle_and_RTN_Down_speedfixture_not_qualityaccepted;
+      repeat1_cannot_veto_repeat10
   qwen3_research_state: bounded_long_context_loop_completed
   latest_llama32_migration:
     id: EXP-0266
@@ -10894,8 +10896,8 @@ current_scope:
     e2e_run: false
     ppl_run: false
     baseline_promoted: false
-    next_action: Discuss remaining FP32 prefill Norm and O cost before any full-model extension; original selected paper speed
-      baselines retained
+    next_action: Discuss remaining FP32 prefill Norm and O cost before any full-model extension; original selected
+      paper speed baselines retained
   paper_no_rotation_speed_baselines:
     schema_version: 1
     selection_date: '2026-09-15'
@@ -10922,8 +10924,8 @@ current_scope:
         QBH_DENSE_R4: '0'
         QBH_WIDE_SCORE: '4'
         QBH_FP32_RESIDUAL: '2'
-      quality: Selected-layer and chain3 independent arithmetic exact; full frozen boundaries/frontend exact; model quality
-        unaccepted
+      quality: Selected-layer and chain3 independent arithmetic exact; full frozen boundaries/frontend exact; model
+        quality unaccepted
       fp32_residual_mode: 2
       formal_evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0272/full-formal.json
     - model: Llama-3.2-1B-Instruct
@@ -11014,22 +11016,23 @@ current_scope:
       diff_sha256: 45c5e75d491c93c23ea442d67f14e18c8c27ce4ed5eb2ece91a39d1ab8934668
       findings:
       - scope: Llama0019-0024
-        result: New R3/R4 includes and routing guarded by rotation mode; no change in selected OFF computational dataflow;
-          independent OFF full16 rechecked in0023
+        result: New R3/R4 includes and routing guarded by rotation mode; no change in selected OFF computational
+          dataflow; independent OFF full16 rechecked in0023
       - scope: Llama0025-0026
         result: Rejected normalized/range/order candidates restored; no new no-rotation kernel
       - scope: Llama0027
         result: Documentation only
       - scope: Qwen0268 vs0267
-        result: Additional U8 prefill scheduling already in parent, SP2mode8 remains the same selected schedule. No later
-          completed Qwen native experiment before0269
+        result: Additional U8 prefill scheduling already in parent, SP2mode8 remains the same selected schedule.
+          No later completed Qwen native experiment before0269
       - scope: This EXP0269
-        result: New FP32 residual/epilogue/native-padding edits are Qwen candidates only; not an accepted faster full-model
-          baseline and not tested on Llama. Do not attach historical2069.70/42.51 to these new kernels
+        result: New FP32 residual/epilogue/native-padding edits are Qwen candidates only; not an accepted faster
+          full-model baseline and not tested on Llama. Do not attach historical2069.70/42.51 to these new kernels
       no_omitted_later_validated_no_rotation_optimization_found: true
       claim_scope: Audited registered branches and completed experiments, not global optimality or performance equivalence
         of unmeasured builds
-      rotation_branch_unique_non_equivalent_commit: cd2360f31c1b1a151db7ecf30acfbe73bded9979 (branch default config only)
+      rotation_branch_unique_non_equivalent_commit: cd2360f31c1b1a151db7ecf30acfbe73bded9979 (branch default config
+        only)
       rotation_branch_equivalent_patches: 79
     new_qwen_candidate:
       experiment: EXP-0272
@@ -11049,8 +11052,8 @@ current_scope:
       accepted_on: '2026-09-15'
     historical_selected_baselines:
     - replaced_on: '2026-09-15'
-      reason: User accepted EXP0272 as current FP32 residual paper baseline; prior integer baseline retained as historical
-        control
+      reason: User accepted EXP0272 as current FP32 residual paper baseline; prior integer baseline retained as
+        historical control
       baseline:
         model: Qwen3-0.6B
         experiment: EXP-0268
@@ -11221,12 +11224,13 @@ current_scope:
     PPL: null
     selected_mode: 2
     selected_method: C1 interleaved independent16-row ordered FP32 Norm; C2 flag-store variants discarded
-    next_direction: User accepted EXP0272. Discuss docs/PAPER_NO_ROTATION_ABLATION_PLAN.md before registering new hardware
-      ablations; Llama current validated baseline remains L32-0018.
+    next_direction: User accepted EXP0272. Discuss docs/PAPER_NO_ROTATION_ABLATION_PLAN.md before registering new
+      hardware ablations; Llama current validated baseline remains L32-0018.
     acceptance:
       accepted_on: '2026-09-15'
       user_approval: 'User: 验收本次优化，基于这两个qwen和llama的latest无旋转baseline，补做消融实验...首先...列一份计划实验清单'
-      scope: EXP0272 mode2 no-rotation SP2 FP32 residual paper working baseline; quality not accepted; no native default change
+      scope: EXP0272 mode2 no-rotation SP2 FP32 residual paper working baseline; quality not accepted; no native
+        default change
       planning_document: docs/PAPER_NO_ROTATION_ABLATION_PLAN.md
       new_ablation_execution: not_started_pending_plan_discussion
   latest_sp2_fp32_fullmodel_speed_result: *id001
@@ -11331,8 +11335,8 @@ current_scope:
           - 0.9975734106829254
           - 1.0042720750135432
     paired_effects: *id002
-  next_direction: 'Remaining long-decode cost: repeated longer KV preparation. A future experiment may evaluate versioned
-    incremental native cache/release without exceeding physical constraints.'
+  next_direction: 'Remaining long-decode cost: repeated longer KV preparation. A future experiment may evaluate
+    versioned incremental native cache/release without exceeding physical constraints.'
   latest_paper_pipeline_result:
     id: EXP-0282
     phase: A2
@@ -11701,8 +11705,9 @@ current_scope:
         prefill: 1726.7186436911688
         decode: 45.78505354252158
     shape: M64+33 cache128, 34 outputs
-    numerical_scope: same frozen LOG2 DSP arithmetic; own selected/chain3 gates inherited from EXP0278; full28 paired outputs/hidden
-      bytes exact and all34 actual finalNorm/full-vocabulary head audited; no full28 CPU transformer equivalence claim
+    numerical_scope: same frozen LOG2 DSP arithmetic; own selected/chain3 gates inherited from EXP0278; full28 paired
+      outputs/hidden bytes exact and all34 actual finalNorm/full-vocabulary head audited; no full28 CPU transformer
+      equivalence claim
     physical_gate: true
     quality_claim: false
     baseline_promoted: false
@@ -11853,8 +11858,9 @@ current_scope:
             - 0.9942819595649987
             - 0.9971622543621514
     scope: M64, two fixed tokenized English/Chinese texts,15/63decode,cache128,maxKV127
-    numerical_scope: Qwen selected0/14/27 andchain3 independent exact inherited, all288 full28 actual last-hidden/norm paired
-      bytes exact and actual finalNorm/full-vocabulary head independently checked; not full28 CPU transformer equivalence
+    numerical_scope: Qwen selected0/14/27 andchain3 independent exact inherited, all288 full28 actual last-hidden/norm
+      paired bytes exact and actual finalNorm/full-vocabulary head independently checked; not full28 CPU transformer
+      equivalence
     physical_gate: true
     quality_claim: false
     baseline_promoted: false
@@ -12107,8 +12113,8 @@ current_scope:
       evidence_files: 864
       evidence_bytes: 431573812
       timed_profiles: 9600
-      numerical_gate_scope: Qwen selected layer14 and chain3 independent exact; full28 physical/front-end finalNorm and full-vocabulary
-        head oracle; no full28 CPU transformer equivalence claim
+      numerical_gate_scope: Qwen selected layer14 and chain3 independent exact; full28 physical/front-end finalNorm
+        and full-vocabulary head oracle; no full28 CPU transformer equivalence claim
       physical_gate: true
       weight_bytes_identical: true
       quality_claim: false
@@ -12166,8 +12172,8 @@ current_scope:
       primary_root: /mnt/d/llm_exp/results/qwen3-block-htp/exp0278/vsum
       timed_profiles: 9600
       prototype_timed_profiles: 9600
-      numerical_gate_scope: Qwen selected layer14 and chain3 independent exact; full28 physical/front-end finalNorm and full-vocabulary
-        head oracle; no full28 CPU transformer equivalence claim
+      numerical_gate_scope: Qwen selected layer14 and chain3 independent exact; full28 physical/front-end finalNorm
+        and full-vocabulary head oracle; no full28 CPU transformer equivalence claim
       physical_gate: true
       quality_claim: false
       baseline_promoted: false
@@ -12221,9 +12227,9 @@ current_scope:
     generalization: supplementary only; not rerun or included
     quality_claim: false
     baseline_promoted: false
-  next_action: Review EXP0297 matched-long decode gains and unchanged strict prefill parity. Latest Qwen1.7 long candidate
-    opt65439; other models remain EXP0296/L32-0053. Preserve independent numerical/physical checks and historical selected
-    baselines.
+  next_action: Review EXP0297 matched-long decode gains and unchanged strict prefill parity. Latest Qwen1.7 long
+    candidate opt65439; other models remain EXP0296/L32-0053. Preserve independent numerical/physical checks and
+    historical selected baselines.
   latest_f16_baseline_synthesis:
     report: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/REPORT.md
     a16_discussion: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/A16_DOWN_DISCUSSION.md
@@ -12367,7 +12373,8 @@ current_scope:
             - 0.9982468412758284
             - 1.0086964359257433
             ten_percent_gate: true
-    reference_repair: experiment-local AV multiplier1 direct zero-point saturation; no native change; initial failures retained
+    reference_repair: experiment-local AV multiplier1 direct zero-point saturation; no native change; initial failures
+      retained
   latest_uniform_int16_down_synthesis:
     experiments:
     - EXP-0284
@@ -12383,8 +12390,8 @@ current_scope:
     execution_state: completed
     evidence_validity: valid
     local_gate: fail
-    failure_reason: FP16 residual prefill overhead12.890172percent exceeds10percent versus original latest baseline; hardware
-      correctness passes
+    failure_reason: FP16 residual prefill overhead12.890172percent exceeds10percent versus original latest baseline;
+      hardware correctness passes
     baseline_promoted: false
     quality_claim: false
     source_closure: 4c96e036c80404b3f22da4bf7170b5e58898edb1
@@ -12402,7 +12409,8 @@ current_scope:
     primary_timed_profiles: 4800
     supplementary_timed_profiles: 4800
     numerical_gate: pass independent selectedlayer/chain3/full28 448 layer hashes, finalnorm and full head
-    physical_gate: pass declared allocation/explicitDDR/ownership counters; no claim that compiler stack traffic is absent
+    physical_gate: pass declared allocation/explicitDDR/ownership counters; no claim that compiler stack traffic
+      is absent
     shape: fixed M64+15 cache128
     performance:
       FP32:
@@ -12566,8 +12574,8 @@ current_scope:
     promoted_by: user
     promoted_on: '2026-09-18'
     approval_ref: 将此新FP32实验晋升为基线，然后列现在我们能填出的实验table。参照quant.npu的table 12
-    acceptance_scope: paper speed baseline; explicit full-M64 matched floating workload, not full-floating numerical or model-quality
-      acceptance
+    acceptance_scope: paper speed baseline; explicit full-M64 matched floating workload, not full-floating numerical
+      or model-quality acceptance
     measured_source: 54eda4b797931858a7eae8b7f6314533424e5b00
     source_closure: 1cf2a041d0d97896d85e18402d23f3cf5f1ed3b0
     source_branch: codex/exp-0293-qwen3-06b-f16-row-parity
@@ -12626,15 +12634,16 @@ current_scope:
     quality_claim: false
     baseline_promoted: false
     report: docs/experiments/EXP-0294-RESULTS.md
-    reference_recovery: Vendor v79 rsqrt approximation independently simulated; original ideal-rsqrt failures retained; hardware
-      math unchanged
+    reference_recovery: Vendor v79 rsqrt approximation independently simulated; original ideal-rsqrt failures retained;
+      hardware math unchanged
   missing_recipe_completion_inventory: docs/PAPER_HARDWARE_MAIN_TABLE_20260918.md
   missing_recipe_completion:
     experiments:
     - EXP-0294
     - L32-0046
     - L32-0047
-    remaining_unsupported: Llama3B W16A16 explicitly user-deferred;5.25GiB FP16 backbone exceedsuint32 shared-offset ABI
+    remaining_unsupported: Llama3B W16A16 explicitly user-deferred;5.25GiB FP16 backbone exceedsuint32 shared-offset
+      ABI
     named_dataset_measurements_completed: false
     baseline_promotion: No additional automatic promotion
   stage: qwen17_decode_optimization_completed
@@ -12829,7 +12838,9 @@ current_scope:
     report: docs/experiments/EXP-0296-RESULTS.md
     workspace_build: 1.7B/28 layers
     timed_rpc_boundaries: 29600
-    gate_role: unchanged long/M64 throughput parity plus decode guard; numerical and physical checks separately passed
+    gate_role: unchanged long/M64 throughput parity plus decode guard; numerical and physical checks separately
+      passed
   latest_formal_measurement_experiment: EXP-0297
-  latest_e2e_shape: 'Qwen1.7 full28: native/control/optimized64+15, matched536+46 and741+3; ten paired repeat10 cycles'
+  latest_e2e_shape: 'Qwen1.7 full28: native/control/optimized64+15, matched536+46 and741+3; ten paired repeat10
+    cycles'
   latest_qwen3_17b_long_decode_optimization: *id005
