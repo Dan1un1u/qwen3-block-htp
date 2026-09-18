@@ -2126,7 +2126,7 @@ static int qbh_scan_request_valid(const struct qbh_block_header *header,
     }
     if (header->long_prompt_tokens) {
         if (header->variant != QBH_BLOCK_W4U8 || header->wide_score_mode != 8U ||
-            !QBH_FP32_RESIDUAL(header) || QBH_LLAMA_SP2(header) != 8U ||
+            !QBH_FP32_RESIDUAL(header) || (QBH_LLAMA_SP2(header) != 0U && QBH_LLAMA_SP2(header) != 8U) ||
             header->long_prompt_tokens > 768U || header->long_skip_head > 1U ||
             header->logical_m == 0U || header->logical_m > QBH_BLOCK_M ||
             header->kv_cache_capacity > 832U ||
