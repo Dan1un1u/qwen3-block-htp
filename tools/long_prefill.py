@@ -92,6 +92,7 @@ def run(length,tag,decode=3,audit=False,repeat=1,legacy=False):
  env.update(LD_LIBRARY_PATH=root,DSP_LIBRARY_PATH=root,ADSP_LIBRARY_PATH=root,QBH_WIDE_SCORE='8',QBH_PAPER_FORMAT_DISABLE='0',QBH_PAPER_PIPELINE_DISABLE='0',QBH_DENSE_R3='0',QBH_DENSE_R4='0')
  if not legacy:env.update(QBH_LONG_PREFILL_TOKENS=str(length),QBH_LONG_DECODE_STEPS=str(decode),QBH_LONG_REPEATS=str(repeat),QBH_KV_CACHE_CAPACITY='832',QBH_GENERATION_EXPECTED_TOKENS='64')
  else:env['QBH_GENERATION_STEPS']='4'
+ if os.environ.get('QBH_LONG_DIAGNOSTIC'):env['QBH_LONG_DIAGNOSTIC']='1'
  if audit:
   env['QBH_GENERATION_BOUNDARY_AUDIT']='1';env['QBH_GENERATION_AUDIT_DIR']=root+'/'+tag.replace('/','_')
   adb('shell','mkdir -p '+env['QBH_GENERATION_AUDIT_DIR'])

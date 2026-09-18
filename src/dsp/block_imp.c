@@ -68,6 +68,12 @@ static void qbh_r3_chain_audit(struct qbh_block_header *h, uint8_t *shared,
 
 /* Untimed decode raw QK/probability capture. Each head has a 128-byte
  * audit row; valid length is recorded by the replay step, padding is ignored. */
+static void qbh_long_progress(struct qbh_block_header *h, uint32_t stage) {
+    if (!h->long_prompt_tokens || !h->long_debug) return;
+    h->projection_failure_step=stage;
+    qurt_mem_cache_clean((qurt_addr_t)h,sizeof(*h),QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE);
+}
+
 static void qbh_wide_decode_audit(struct qbh_block_header *h,uint8_t *shared,
     uint32_t slot,uint32_t group,const uint8_t *src,uint32_t padded) {
     if (!h->dense_r3_audit_offset) return;
@@ -20552,6 +20558,7 @@ static int qbh_scan_u8_attention(
                 HAP_perf_get_qtimer_count() - start;
             ++header->u8_cache_full_prefix_pack_count;
         }
+        qbh_long_progress(header,5100U+group);
         start = HAP_perf_get_qtimer_count();
 #ifdef QBH_LLAMA_3B
         if(compact_gqa) {
@@ -20572,6 +20579,7 @@ static int qbh_scan_u8_attention(
             HAP_perf_get_qtimer_count() - start;
         start = HAP_perf_get_qtimer_count();
         qbh_wide_decode_audit(header,shared,0U,config->group_index,plane_c,padded_tokens);
+        qbh_long_progress(header,5200U+group);
         qbh_attention_u8_requant_softmax_dynamic(
             plane_c, plane_a, logical_rows, past_tokens,
             valid_tokens, padded_tokens, config, &telemetry,
@@ -20580,6 +20588,7 @@ static int qbh_scan_u8_attention(
             header->generation_boundary_audit_enabled != 0U ||
                 header->numerical_audit_enabled != 0U ||
                 header->w4u8_decode_common_padding_poison != 0U, header->wide_score_mode, weight);
+        qbh_long_progress(header,5300U+group);
         qbh_wide_decode_audit(header,shared,1U,config->group_index,plane_a,padded_tokens);
         header->u8_attention_softmax_ticks +=
             HAP_perf_get_qtimer_count() - start;
@@ -21506,6 +21515,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         return QBH_BLOCK_STATUS_ATTENTION_FAILED;
     }
 
+    qbh_long_progress(header,4100U);
     if (scan_enabled != 0U &&
         reuse_prefill_attention_carriers == 0U &&
         reuse_f16_prefill_attention_carriers == 0U) {
@@ -21541,6 +21551,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         attention_attributed_before =
             qbh_attention_attributed_ticks(header);
     }
+    qbh_long_progress(header,4200U);
     start = HAP_perf_get_qtimer_count();
     if ((u8_integer_attention_enabled != 0U
              ? (scan_dynamic_attention != 0U

@@ -6810,6 +6810,7 @@ int main(int argc, char **argv) {
     header->initial_kv_length = initial_kv_length;
     header->kv_cache_capacity = kv_cache_capacity;
     header->long_prompt_tokens = long_prompt_tokens;
+    header->long_debug = getenv("QBH_LONG_DIAGNOSTIC") ? 1U : 0U;
     header->kv_cache_k_format = scan_mode == QBH_BLOCK_SCAN_DISABLED
         ? QBH_KV_CACHE_FORMAT_NONE : kv_cache_k_format;
     header->kv_cache_v_format = scan_mode == QBH_BLOCK_SCAN_DISABLED
