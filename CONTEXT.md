@@ -1,3 +1,6 @@
+# EXP0294 active: ordinary A8 completion
+Read docs/experiments/EXP-0294.md. User-approved Down-only SP2 removal; selected floating baseline unchanged. Qwen owns device; Llama pending.
+
 # User-promoted Qwen0.6 W16A16 FP32 baseline — 2026-09-18
 EXP0293 is now the selected paper SPEED baseline:1687.093221 prefill/27.382774 decode token/s, M64+42/cache128/full28. Required flag QBH_FP32_RESIDUAL=1 and original full-M64 row processing. Descriptor docs/baselines/QWEN3_06B_W16A16_FP32_EXP0293.json; measured54eda4b, source closure1cf2a04. Numerical/quality failures and immutable at-measurement reports remain unchanged. No new hardware/native changes or new active experiment. Only this model/recipe promoted. Paper inventory docs/PAPER_HARDWARE_MAIN_TABLE_20260918.md; source datasets must not be inferred from token lengths. Historical pending-promotion notices below are superseded by this event.
 

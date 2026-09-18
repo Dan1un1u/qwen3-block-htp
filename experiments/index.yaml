@@ -24,6 +24,20 @@ allowed_values:
   - superseded
   - not_applicable
 experiments:
+- id: EXP-0294
+  title: Qwen0.6 ordinary A8 from frozen SP2 with Down-only representation change
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/EXP-0294.md
+  approval_ref: 'User2026-09-18 requests sequential missing recipe implementations:
+    ordinary W4A8 from latest SP2 by removing only SP2, all other configuration unchanged;
+    non-A8 basic generic implementations without specialization.'
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0293-qwen3-06b-f16-row-parity
+    started_on: '2026-09-18'
 - id: EXP-0293
   title: Qwen0.6 F16 FP32 residual full-M64 decode parity
   execution_state: completed

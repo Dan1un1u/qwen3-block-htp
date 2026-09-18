@@ -455,3 +455,6 @@ User requires the temporary Qwen0.6 F16 FP32 residual implementation to retain t
 
 ## User-selected Qwen0.6 FP32 floating speed baseline (2026-09-18)
 User explicitly promotes EXP0293 as the paper W16A16 speed baseline for Qwen3-0.6B. Selection retains full-M64 decode row parity and QBH_FP32_RESIDUAL=1. This is an explicit speed-baseline acceptance despite the retained full-floating reference failure, not a gate reclassification, quality acceptance, global selection for other model sizes, or permission for further non-A8 tuning. Prior sealed evidence and original FP16 controls remain immutable.
+
+## User-approved missing recipe completion (2026-09-18)
+User authorizes EXP0294 Qwen0.6 ordinary A8 from latest SP2, changing only Down representation and necessary execution/reference data, all other settings frozen. Remaining Llama recipes use their own authority sequentially. Non-A8 implementations limited to generic vector/basic pipeline, no deep specialization; numerical/physical evidence gates unchanged. No automatic promotion.
