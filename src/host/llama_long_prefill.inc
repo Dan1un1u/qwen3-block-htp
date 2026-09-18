@@ -53,6 +53,7 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
             h->logical_m=rows;h->generation_token_count=rows;
             h->long_skip_head=is_prefill && step+1U<chunks;
             h->long_output_index=is_prefill?0U:step-chunks+1U;
+            qbh_bind_host_slice_layer(h,0U);
             h->initial_kv_length=before;h->replay_first_position=before;
             h->replay_expected_step=state->completed_step_count;h->repeat_count=1U;
             h->dsp_status=QBH_BLOCK_STATUS_HOST_READY;

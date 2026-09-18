@@ -21372,11 +21372,11 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         for (uint32_t h=0;h<QBH_BLOCK_HEADS;++h)
             qbh_hvx_qk_norm_rope_u8_native_head_rows(buffers->q+h*QBH_BLOCK_M*QBH_BLOCK_HEAD_DIM,
                 &header->qparams[QBH_BLOCK_QP_Q_PROJECTION],&header->qparams[QBH_BLOCK_QP_Q_ROPE],
-                NULL,(const __fp16 *)buffers->rope_cos,(const __fp16 *)buffers->rope_sin, scan_dynamic_attention ? 1U : QBH_BLOCK_M);
+                NULL,(const __fp16 *)buffers->rope_cos,(const __fp16 *)buffers->rope_sin, logical_rows);
         for (uint32_t h=0;h<QBH_BLOCK_KV_HEADS;++h)
             qbh_hvx_qk_norm_rope_u8_native_head_rows(buffers->k+h*QBH_BLOCK_M*QBH_BLOCK_HEAD_DIM,
                 &header->qparams[QBH_BLOCK_QP_K_PROJECTION],&header->qparams[QBH_BLOCK_QP_K_ROPE],
-                NULL,(const __fp16 *)buffers->rope_cos,(const __fp16 *)buffers->rope_sin, scan_dynamic_attention ? 1U : QBH_BLOCK_M);
+                NULL,(const __fp16 *)buffers->rope_cos,(const __fp16 *)buffers->rope_sin, logical_rows);
         }
         }
 #endif
