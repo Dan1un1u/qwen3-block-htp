@@ -20570,6 +20570,18 @@ static int qbh_scan_u8_attention(
             qbh_attention_u8_pack_k_row_major(
                 plane_a, valid_tokens, padded_tokens,
                 config, weight, qk_bias);
+            if(header->long_optimization&64U) {
+                int8_t *ref=weight+padded_tokens*QBH_BLOCK_HEAD_DIM;
+                uint32_t *rb=(uint32_t *)(ref+padded_tokens*QBH_BLOCK_HEAD_DIM);
+                qbh_attention_u8_pack_k_row_major(plane_a,valid_tokens,padded_tokens,config,ref,rb);
+                uint32_t nw=0,nb=0;
+                for(uint32_t i=0;i<padded_tokens*QBH_BLOCK_HEAD_DIM;++i)
+                    if(weight[i]!=ref[i]) {if(nw<4U) FARF(ALWAYS,"LONG K weight %u actual %d ref %d",i,weight[i],ref[i]);++nw;}
+                for(uint32_t i=0;i<qk_bias_bytes/4U;++i)
+                    if(qk_bias[i]!=rb[i]) {if(nb<4U) FARF(ALWAYS,"LONG K bias %u actual %d ref %d",i,(int)qk_bias[i],(int)rb[i]);++nb;}
+                FARF(ALWAYS,"LONG K diagnostic weight=%u bias=%u",nw,nb);
+                if(nw||nb)return -1;
+            }
             header->u8_attention_k_pack_ticks +=
                 HAP_perf_get_qtimer_count() - start;
             ++header->u8_cache_full_prefix_pack_count;
