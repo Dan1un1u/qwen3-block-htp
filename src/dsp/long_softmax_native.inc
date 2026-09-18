@@ -36,7 +36,6 @@ void qbh_attention_u8_softmax_long_native4(uint8_t *scores,uint8_t *prob,
             maxv=Q6_Vub_vmax_VubVub(maxv,Q6_V_vmux_QVV(qbh_long_native_valid((int)(past+row+1)-(int)t*32),v,zero));
         }
         for(unsigned shift=16;shift;shift>>=1)
-            *(HVX_Vector *)(scores+((size_t)head*tiles+t)*2048+row*32)=v;
             maxv=Q6_Vub_vmax_VubVub(maxv,Q6_V_vlalign_VVR(maxv,zero,shift));
         unsigned m0=Q6_R_vextract_VR(maxv,28)>>24,m1=Q6_R_vextract_VR(maxv,60)>>24;
         unsigned m2=Q6_R_vextract_VR(maxv,92)>>24,m3=Q6_R_vextract_VR(maxv,124)>>24;
