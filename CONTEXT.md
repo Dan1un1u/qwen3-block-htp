@@ -1,3 +1,6 @@
+# L32-0053 long-context throughput loop completed
+Source 04673543a6c847809bcdc16621d9db2d5aa5723d; workspace build 3B/28 layers. Candidate option 8095. Fullmodel six-shape checks,5short and10formal repeat10 cycles complete. Numerical/physical pass; unchanged long/M64 parity+decode guard: fail. Same-binary prior opt31 control, fastest measured64-token reference; no slowed baseline. Long decode now admits parallel GQA. Failed engineering evidence retained. See docs/experiments/L32-0053-RESULTS.md and docs/experiments/LONG_CONTEXT_LOOP_20260918.md. Historical accepted baselines and quality status unchanged. No active experiment/device owner. Desktop workbook C:/Users/35961/Desktop/HTP硬件实验总表.xlsx must preserve exact-length A/B/C results and prior rows in D.
+
 # L32-0053 active: long-context throughput loop
 Read docs/experiments/L32-0053.md. CPU work only until Qwen EXP0296 releases device. Frozen Llama0052 fixtures/math; no quality/baseline promotion.
 
