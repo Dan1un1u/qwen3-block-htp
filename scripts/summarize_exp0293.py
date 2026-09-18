@@ -1,11 +1,16 @@
 """EXP0293 complete paired speed report, precision limitations retained."""
 import json,statistics,numpy as np
-from common_exp0289 import Path,read,write
+from common_exp0289 import Path,read,write as write_new
 from measure_exp0218 import OVERVIEW
 from summarize_exp0217 import normalized,TICKS
 from summarize_exp0289 import LABELS,table
 from experiment_exp0293 import R,d
 records=d.records
+def write(p,value):
+ # Re-rendering text must not overwrite or change sealed measurement summaries.
+ if p.exists():
+  assert read(p)==value, f"Existing summary differs: {p}"
+ else: write_new(p,value)
 def main():
  formal=read(R/'formal.json');short=read(R/'short.json')
  assert len(formal)==20 and len(short)==10
@@ -43,7 +48,7 @@ def main():
 Selected0/14/27 and chain3 M64/M1 pass unchanged wholeblock thresholds. Independent actual-operand residual additions exact; norm outputs <=1 FP16 ULP. Full-model software reference remains failed for BOTH arms; see measured maxima below. Do not call this full-model numerical/quality acceptance. Final norm and independent entire LMhead checks pass all43steps, argmax43/43. Each arm full audit matches2451 frozen EXP0292 files, including all43 final hidden/norm boundaries and4816 combined KV snapshots. These are original-versus-current checks, not two newly collected candidate audits. Independent head proof is inherited through byte-identical actual operands and ID/logit outputs. Both KV streams finite, prefix preserved, valid length extends once, padding untouched. Timed paths have full8MiB grant, zero intermediateDDR/spill/output audit, oneRPC/pass, exact own token/logit repeats and complete additive ledgers.
 Five short/ten balanced formal rounds, repeat10; repeat1 auxiliary. Complete Host wall includes embedding, all28blocks, finalnorm, head/greedy, FastRPC; excludes coldloading, tokenizer and audit I/O. Audit-enabled times are not speed evidence. HMX/HVX/DMA/worker counters overlap and cannot be added.
 """
- (R/'RESULTS.md').write_text('# EXP0293 matched full-M64 floating residual result\n\n'+notes+'\n'+et+'\n## Paired speed comparison\n\n'+json.dumps(comparison,indent=2)+'\n## Full floating alignment, NOT passed\n\n'+json.dumps(summary['full_floating_nrmse_max'],indent=2)+'\n\nNative flag: QBH_FP32_RESIDUAL=1 with F16F16, QBH_F16F16_OPT=4, Qwen0.6 build ABI137. Flag0 retains original. Packages: /mnt/d/llm_exp/models/qwen3-block-htp/exp0293/f16f16; exact commands and binary hashes in each protocol.json. Other recipes and original artifacts unchanged.\n')
+ (R/'RESULTS.md').write_text('# EXP0293 matched full-M64 floating residual result\n\n'+notes+'\n'+et+'\n## Paired speed comparison\n\n'+json.dumps(comparison,indent=2)+'\n## Full floating alignment, NOT passed\n\n'+json.dumps(summary['full_floating_nrmse_max'],indent=2)+'\n\nNative flag: QBH_FP32_RESIDUAL=1 with F16F16, QBH_F16F16_OPT=4, Qwen0.6 build ABI137. Flag0 retains original. Packages: /mnt/d/llm_exp/models/qwen3-block-htp/exp0292/f16f16; exact commands and binary hashes in each protocol.json. Other recipes and original artifacts unchanged.\n')
  module_notes='All module values are microseconds and percent of complete Host wall. W4A16 and SP2 are non-paired historical formal repeat10 references; EXP0291 faster W4 diagnostic remains archived separately, not substituted for a formal column.'
  (R/'MODULES.md').write_text('# EXP0293 modules\n\n'+notes+'\n'+module_notes+'\n## Prefill M64\n\n'+modules['prefill']+'\n## Decode per step\n\n'+modules['decode']+'\n## Paired E2E\n\n'+et)
  report=['# EXP0293 FULL PROFILING REPORT',notes,module_notes,et,json.dumps(summary,indent=2),'## Prefill overview\n\n'+modules['prefill'],'## Decode overview\n\n'+modules['decode']]
