@@ -1,3 +1,6 @@
+# L32-0052 active: migrate long prefill to Llama3B
+User authorizes remaining-model migration. Read docs/experiments/L32-0052.md. Device owned by Llama; Qwen migration follows separately.
+
 # L32-0051 completed: long-prefill throughput parity passed
 Read docs/experiments/L32-0051-RESULTS.md, MODULES.md and IMPLEMENTATION.md. Current source/build is Llama1B/16layers, e31a286fac5b43cfccd93706bcc21a00400920ce, archive binaries-a10, opt-in QBH_LONG_OPT=31. Four engineering rounds; no weight/calibration/math changes, no rotation, FP32residual/SP2 retained. Other models/recipes are not migrated.
 Frozen ten rotated five-arm cycles x repeat10: M64 prefill2305.962150TPS; optimized536+46=2505.950463/37.713353prefill/decodeTPS, optimized741+3=2499.129407/34.297589. Matched original0050 controls536=638.318843/23.014299,741=518.944727/19.381251. Parity PASSES: long/M64 throughput536=1.086727[1.081447,1.091901],741=1.083769[1.078151,1.089085]. Both decode10%slowdown guards pass. All samples included; no formal resampling or M64 baseline degradation.

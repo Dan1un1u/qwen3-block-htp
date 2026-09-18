@@ -2873,3 +2873,15 @@ experiments:
     workspace_build: 1B /16 layers
     named_dataset_benchmark: false
     other_models_recipes_migrated: false
+- id: L32-0052
+  title: Llama3B long-prefill native layout and pipeline migration
+  execution_state: running
+  approval_ref: 'User: 请将方法迁移到其它还未实现的模型上并实现'
+  record: docs/experiments/L32-0052.md
+  parent_source: e31a286fac5b43cfccd93706bcc21a00400920ce
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: pending
