@@ -20328,7 +20328,8 @@ static int qbh_scan_u8_attention(
     struct qbh_block_w4f16_pool *pool,
     uint32_t logical_rows, uint32_t past_tokens) {
     if(header->long_prompt_tokens && (header->long_optimization&16U) &&
-       logical_rows>1U && (QBH_BLOCK_HEAD_DIM==64U || QBH_BLOCK_HEAD_DIM==128U) && header->wide_score_mode==8U)
+       (logical_rows>1U || ((header->long_optimization&128U) && QBH_BLOCK_HEAD_DIM==128U)) &&
+       (QBH_BLOCK_HEAD_DIM==64U || QBH_BLOCK_HEAD_DIM==128U) && header->wide_score_mode==8U)
         return qbh_long_attention_parallel(header,shared,buffers,worker,pool,logical_rows,past_tokens);
     const uint32_t valid_tokens = past_tokens + logical_rows;
     const int hmx_segmented_cache =

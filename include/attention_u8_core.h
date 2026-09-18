@@ -243,4 +243,9 @@ void qbh_attention_u8_probability_map_from_active_histogram(
     uint8_t probability_by_raw[256],
     uint32_t *probability_sum, uint32_t *score_saturation_count);
 
+
+void qbh_attention_u8_pack_k_long_transpose(const uint8_t *,uint32_t,uint32_t,const struct qbh_attention_config *,int8_t *,uint32_t *);
+
+void qbh_attention_u8_softmax_long_native4_fast(uint8_t *,uint8_t *,uint32_t,uint32_t,uint32_t,const struct qbh_attention_config *);
+
 #endif

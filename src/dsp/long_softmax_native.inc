@@ -16,9 +16,9 @@ static inline HVX_VectorPred qbh_long_native_valid(int base) {
     hi=Q6_V_vmux_QVV(Q6_Q_vcmp_gt_VhVh(hi,chi),Q6_Vh_vsplat_R(255),Q6_V_vzero());
     return Q6_Q_vcmp_gt_VubVub(Q6_Vub_vpack_VhVh_sat(hi,lo),Q6_V_vzero());
 }
-void qbh_attention_u8_softmax_long_native4(uint8_t *scores,uint8_t *prob,
+static void qbh_attention_u8_softmax_long_native4_impl(uint8_t *scores,uint8_t *prob,
     uint32_t rows,uint32_t past,uint32_t padded,
-    const struct qbh_attention_config *cfg) {
+    const struct qbh_attention_config *cfg,unsigned fast) {
     const unsigned tiles=padded/32;
     const HVX_Vector zero=Q6_V_vzero();
     const HVX_Vector lane=*(const HVX_Vector *)qbh_attention_u8_lane_index;
@@ -27,9 +27,13 @@ void qbh_attention_u8_softmax_long_native4(uint8_t *scores,uint8_t *prob,
     memset(prob,0,(size_t)QBH_ATTENTION_Q_HEADS_PER_GROUP*tiles*2048);
     for(unsigned head=0;head<QBH_ATTENTION_Q_HEADS_PER_GROUP;++head)
     for(unsigned row=0;row<rows;row+=4) {
+        /* Skip only tiles beyond all four causal query bounds. The full
+         * probability destination remains zero initialized. */
+        const unsigned causal_tiles=fast && (past+row+4U+31U)/32U<tiles ?
+            (past+row+4U+31U)/32U : tiles;
         HVX_Vector maxv=zero;
         HVX_Vector sum0=zero,sum1=zero,sum2=zero,sum3=zero;
-        for(unsigned t=0;t<tiles;++t) {
+        for(unsigned t=0;t<causal_tiles;++t) {
             HVX_Vector raw=*(HVX_Vector *)(scores+((size_t)head*tiles+t)*2048+row*32);
             HVX_Vector v=qbh_attention_u8_requant_centered(raw,cfg->score_multiplier,128);
             *(HVX_Vector *)(scores+((size_t)head*tiles+t)*2048+row*32)=v;
@@ -42,7 +46,7 @@ void qbh_attention_u8_softmax_long_native4(uint8_t *scores,uint8_t *prob,
         HVX_Vector mx=Q6_V_vmux_QVV(low64,
             Q6_V_vmux_QVV(Q6_Q_vcmp_gt_VubVub(Q6_Vb_vsplat_R(32),lane),Q6_Vb_vsplat_R(m0),Q6_Vb_vsplat_R(m1)),
             Q6_V_vmux_QVV(Q6_Q_vcmp_gt_VubVub(Q6_Vb_vsplat_R(96),lane),Q6_Vb_vsplat_R(m2),Q6_Vb_vsplat_R(m3)));
-        for(unsigned t=0;t<tiles;++t) {
+        for(unsigned t=0;t<causal_tiles;++t) {
             uint8_t *p=scores+((size_t)head*tiles+t)*2048+row*32;
             HVX_Vector v=*(HVX_Vector *)p;
             HVX_VectorPair dh=Q6_Wuh_vunpack_Vub(Q6_Vub_vsub_VubVub_sat(mx,v));
@@ -66,7 +70,7 @@ void qbh_attention_u8_softmax_long_native4(uint8_t *scores,uint8_t *prob,
         qbh_attention_u8_build_exact_fast_entries(lut1,16,qbh_attention_u8_reduce_sum_words(sum3));
         HVX_VectorPred live=rows-row>=4 ? Q6_Q_vcmp_eq_VbVb(lane,lane) :
             Q6_Q_vcmp_gt_VubVub(Q6_Vb_vsplat_R((rows-row)*32),lane);
-        for(unsigned t=0;t<tiles;++t) {
+        for(unsigned t=0;t<causal_tiles;++t) {
             size_t off=((size_t)head*tiles+t)*2048+row*32;
             HVX_Vector codes=*(HVX_Vector *)(scores+off);
             HVX_Vector idx=Q6_Vb_vadd_VbVb(codes,banks);
@@ -78,4 +82,15 @@ void qbh_attention_u8_softmax_long_native4(uint8_t *scores,uint8_t *prob,
         }
     }
     asm volatile("barrier" ::: "memory");
+}
+
+void qbh_attention_u8_softmax_long_native4(uint8_t *scores,uint8_t *prob,
+    uint32_t rows,uint32_t past,uint32_t padded,
+    const struct qbh_attention_config *cfg) {
+    qbh_attention_u8_softmax_long_native4_impl(scores,prob,rows,past,padded,cfg,0U);
+}
+void qbh_attention_u8_softmax_long_native4_fast(uint8_t *scores,uint8_t *prob,
+    uint32_t rows,uint32_t past,uint32_t padded,
+    const struct qbh_attention_config *cfg) {
+    qbh_attention_u8_softmax_long_native4_impl(scores,prob,rows,past,padded,cfg,1U);
 }
