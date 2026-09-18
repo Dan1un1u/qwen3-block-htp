@@ -2036,8 +2036,8 @@ static int qbh_scan_request_valid(const struct qbh_block_header *header,
                header->kv_cache_v_bytes == 0U;
     }
     if (header->long_prompt_tokens) {
-        if (header->variant != QBH_BLOCK_W4U8 || header->wide_score_mode != 4U ||
-            !QBH_FP32_RESIDUAL(header) || (QBH_SP2(header) != 0U && QBH_SP2(header) != 8U) ||
+        if ((header->variant == QBH_BLOCK_W4U8 && (header->wide_score_mode != 4U ||
+            !QBH_FP32_RESIDUAL(header) || (QBH_SP2(header) != 0U && QBH_SP2(header) != 8U))) ||
             header->long_prompt_tokens > 768U || header->long_skip_head > 1U ||
             header->logical_m == 0U || header->logical_m > QBH_BLOCK_M ||
             header->kv_cache_capacity > 832U ||
@@ -6466,7 +6466,8 @@ static int qbh_stage_generation_embedding(
     header->boundary_ddr_read_bytes += token_bytes;
     ++header->boundary_dma_descriptor_count;
     if (header->long_prompt_tokens)
-        qbh_hvx_zero_aligned_bytes(buffers->residual, QBH_BLOCK_M * QBH_BLOCK_HIDDEN * 4U);
+        qbh_hvx_zero_aligned_bytes(buffers->residual, QBH_BLOCK_M * QBH_BLOCK_HIDDEN *
+            (QBH_FP32_RESIDUAL(header) ? 4U : header->variant == QBH_BLOCK_W4U8 ? 1U : 2U));
     for (uint32_t row = 0U; row < header->generation_token_count; ++row) {
         const uint32_t token = token_ids[row];
         if (token >= QBH_QWEN3_VOCAB_SIZE ||
@@ -17593,7 +17594,7 @@ static int qbh_scan_f16_attention(
     uint32_t logical_rows, uint32_t past_tokens) {
     const uint32_t valid_tokens = past_tokens + logical_rows;
     const uint32_t padded_tokens = qbh_align_up(
-        valid_tokens, QBH_HMX_FP16_COLS);
+        valid_tokens, header->long_prompt_tokens ? 64U : QBH_HMX_FP16_COLS);
     const uint32_t kv_tiles =
         padded_tokens / QBH_HMX_FP16_COLS;
     /* Scores hold every GQA query head; weights hold head_dim rows. */
@@ -17766,6 +17767,11 @@ static int qbh_scan_f16_attention(
             HAP_perf_get_qtimer_count() - start;
 
         start = HAP_perf_get_qtimer_count();
+        if (header->long_prompt_tokens) {
+            qbh_hvx_long_softmax_f16(plane_a, plane_c,
+                QBH_ATTENTION_Q_HEADS_PER_GROUP, logical_rows,
+                padded_tokens, past_tokens, QBH_MODEL_ATTENTION_SCALE);
+        } else
 #ifdef QBH_QWEN_06B
         if (logical_rows==1U && padded_tokens<=128U) {
             qbh_hvx_decode_softmax_f16(plane_a, plane_c,
@@ -22760,12 +22766,12 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
             }
             /* Audit only: retain one FP32 row per layer in unused output
              * storage. This is never enabled in timed profiling. */
-            if (header->long_prompt_tokens && header->generation_boundary_audit_enabled &&
-                QBH_FP32_RESIDUAL(header)) {
-                const size_t off=(68U+4U*slice_index)*QBH_BLOCK_HIDDEN;
-                if (off+4U*QBH_BLOCK_HIDDEN>header->output_bytes ||
+            if (header->long_prompt_tokens && header->generation_boundary_audit_enabled) {
+                const uint32_t row_bytes=QBH_BLOCK_HIDDEN*(QBH_FP32_RESIDUAL(header)?4U:2U);
+                const size_t off=68U*QBH_BLOCK_HIDDEN+row_bytes*slice_index;
+                if (off+row_bytes>header->output_bytes ||
                     qbh_dma_copy(header,shared+header->output_offset+off,
-                                 buffers.residual,4U*QBH_BLOCK_HIDDEN,0U)!=0) {
+                                 buffers.residual,row_bytes,0U)!=0) {
                     header->dsp_status=QBH_BLOCK_STATUS_OUTPUT_DMA_FAILED;
                     result=AEE_EFAILED;goto stop_worker;
                 }
@@ -22877,6 +22883,13 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
                     profile->layer_bookkeeping_ticks += bookkeeping_gap;
                     header->layer_bookkeeping_ticks += bookkeeping_gap;
                 }
+            }
+        }
+        if (header->long_prompt_tokens && header->generation_boundary_audit_enabled) {
+            if (qbh_dma_copy(header, shared+header->reference_offset, buffers.residual,
+                    header->logical_m*QBH_BLOCK_HIDDEN*(QBH_FP32_RESIDUAL(header)?4U:2U), 0U)) {
+                header->dsp_status=QBH_BLOCK_STATUS_OUTPUT_DMA_FAILED;
+                result=AEE_EFAILED;goto stop_worker;
             }
         }
         if (generation_enabled != 0U && !header->long_skip_head) {

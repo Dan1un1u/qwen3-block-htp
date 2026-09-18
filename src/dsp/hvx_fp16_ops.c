@@ -1275,3 +1275,5 @@ void qbh_hvx_decode_softmax_f16(const __fp16 *scores,__fp16 *probability,
         }
     }
 }
+
+#include "long_softmax_f16.inc"
