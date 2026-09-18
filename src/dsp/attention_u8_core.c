@@ -3152,6 +3152,7 @@ static void qbh_attention_u8_requant_softmax_dynamic_hvx_rows(
     asm volatile("barrier" ::: "memory");
 }
 
+#include "long_kv_native.inc"
 #include "long_softmax_native.inc"
 
 static void qbh_attention_u8_dynamic_stash_scalar_probability(

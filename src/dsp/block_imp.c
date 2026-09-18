@@ -20564,6 +20564,9 @@ static int qbh_scan_u8_attention(
                 return -1;
             }
             start = HAP_perf_get_qtimer_count();
+            if(header->long_prompt_tokens && (header->long_optimization&2U) && QBH_BLOCK_HEAD_DIM==64U)
+                qbh_attention_u8_pack_k_long(plane_a,valid_tokens,padded_tokens,config,weight,qk_bias);
+            else
             qbh_attention_u8_pack_k_row_major(
                 plane_a, valid_tokens, padded_tokens,
                 config, weight, qk_bias);
@@ -20725,6 +20728,9 @@ static int qbh_scan_u8_attention(
                 delta_lut_numerator=config->v_recenter_numerator;
                 delta_lut_denominator=config->v_recenter_denominator;
             }
+            if(header->long_prompt_tokens && (header->long_optimization&2U) && QBH_BLOCK_HEAD_DIM==64U)
+                qbh_attention_u8_pack_v_long(plane_c,valid_tokens,padded_tokens,config,weight,av_bias,buffers->up,&telemetry.v_recenter_saturation_count);
+            else
             qbh_attention_u8_pack_v_row_major_hvx_prepared(
                 plane_c, valid_tokens, padded_tokens,
                 config, weight, av_bias, buffers->up,
