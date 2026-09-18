@@ -22859,12 +22859,17 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
                     HAP_perf_get_qtimer_count();
                 uint64_t block_named_ticks;
                 uint64_t block_end;
+                const uint32_t live_rows = header->logical_m;
+                /* Padded M64 kernels, logical rows for attention/cache only. */
+                if (header->long_prompt_tokens && live_rows > 1U && live_rows < QBH_BLOCK_M)
+                    header->logical_m = QBH_BLOCK_M;
                 block_status = qbh_run_one_block(
                     header, shared, &buffers, &worker,
                     hvx_pool_created != 0 ? &w4f16_pool : NULL,
-                    header->input_offset, header->logical_m,
+                    header->input_offset, live_rows,
                     layer->valid_length,
                     generation_enabled != 0U || slice_index != 0U);
+                header->logical_m = live_rows;
                 block_end = HAP_perf_get_qtimer_count();
                 block_named_ticks =
                     (header->input_stage_ticks - input_before) +
