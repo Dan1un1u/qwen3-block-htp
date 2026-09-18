@@ -32,8 +32,7 @@ static void qbh_long_attention_tasks(struct qbh_block_w4f16_pool *pool,
         qurt_mutex_unlock(&pool->attention_hmx_mutex);
         if(rc){pool->attention_gqa_abort=1;break;}
         uint64_t t=HAP_perf_get_qtimer_count();
-        if(QBH_BLOCK_HEAD_DIM==64U)qbh_attention_u8_pack_k_long(a,valid,padded,cfg,w,qb);
-        else qbh_attention_u8_pack_k_row_major(a,valid,padded,cfg,w,qb);
+        qbh_attention_u8_pack_k_long(a,valid,padded,cfg,w,qb);
         job->u8_attention_k_pack_ticks+=HAP_perf_get_qtimer_count()-t;
         if(qbh_attention_u8_pool_submit(pool,job,q,w,qb,c,QBH_ATTENTION_Q_HEADS_PER_GROUP,
             QBH_ATTENTION_HEAD_DIM_TILES,tiles,&job->u8_attention_qk_hmx_ticks))break;
@@ -47,8 +46,7 @@ static void qbh_long_attention_tasks(struct qbh_block_w4f16_pool *pool,
         if(rc){pool->attention_gqa_abort=1;break;}
         t=HAP_perf_get_qtimer_count();
         if(!pool->long_common_lut)qbh_attention_u8_prepare_v_row_major_hvx(cfg,lut);
-        if(QBH_BLOCK_HEAD_DIM==64U)qbh_attention_u8_pack_v_long(c,valid,padded,cfg,w,vb,lut,&job->u8_attention_v_recenter_saturation_count);
-        else qbh_attention_u8_pack_v_row_major_hvx_prepared(c,valid,padded,cfg,w,vb,lut,&job->u8_attention_v_recenter_saturation_count);
+        qbh_attention_u8_pack_v_long(c,valid,padded,cfg,w,vb,lut,&job->u8_attention_v_recenter_saturation_count);
         job->u8_attention_v_pack_ticks+=HAP_perf_get_qtimer_count()-t;
         if(qbh_attention_u8_pool_submit(pool,job,a,w,vb,q,QBH_ATTENTION_Q_HEADS_PER_GROUP,
             tiles,QBH_ATTENTION_HEAD_DIM_TILES,&job->u8_attention_av_hmx_ticks))break;

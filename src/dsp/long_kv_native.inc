@@ -2,6 +2,27 @@
 /* Head64 long-cache packers: two K rows per vector and register V LUT. */
 void qbh_attention_u8_pack_k_long(const uint8_t *rows,uint32_t valid,uint32_t padded,
  const struct qbh_attention_config *cfg,int8_t *weight,uint32_t *bias) {
+    if(QBH_ATTENTION_HEAD_DIM==128U) {
+        const uint32_t div=1U<<cfg->score_shift,round=cfg->score_shift?div/2:0;
+        const uint16_t cv=qbh_attention_u8_float_to_half_bits(512.0f/(float)div);
+        uint32_t off[32] __attribute__((aligned(128)));
+        for(unsigned i=0;i<32;++i)off[i]=(i/8)*1024+(i%8)*128;
+        HVX_Vector offsets=*(HVX_Vector *)off;
+        memset(weight,0,(size_t)padded*128U);
+        for(unsigned tile=0;tile<padded/32;++tile) {
+            uint32_t *b=bias+tile*64;
+            *(HVX_Vector *)b=Q6_V_vsplat_R(cv);
+            *((HVX_Vector *)b+1)=Q6_V_vsplat_R(128*div+round);
+            for(unsigned row=0;row<32 && tile*32+row<valid;++row) {
+                HVX_Vector v=qbh_attention_u8_center_u8_to_s8(*(const HVX_Vector *)(rows+(size_t)(tile*32+row)*128),cfg->k_zero_point);
+                HVX_Vector sum=Q6_Vw_vrmpy_VbVb(v,Q6_Vb_vsplat_R(1));
+                for(unsigned sh=64;sh>=4;sh>>=1)sum=Q6_Vw_vadd_VwVw(sum,Q6_V_vlalign_VVR(sum,Q6_V_vzero(),sh));
+                b[32+row]=(uint32_t)(-(int32_t)cfg->q_zero_point*(int32_t)Q6_R_vextract_VR(sum,124)+128*(int32_t)div+(int32_t)round);
+                Q6_vscatter_RMVwV((uint32_t)(uintptr_t)(weight+tile*4096),4095,Q6_Vw_vadd_VwVw(offsets,Q6_V_vsplat_R(row*4)),v);
+            }
+        }
+        asm volatile("barrier" ::: "memory");return;
+    }
     const uint32_t div=1U<<cfg->score_shift,round=cfg->score_shift?div/2:0;
     const uint16_t cv=qbh_attention_u8_float_to_half_bits(512.0f/(float)div);
     uint32_t offsets[32] __attribute__((aligned(128)));
@@ -77,7 +98,7 @@ static void qbh_attention_u8_patch_v_long(
             for(uint32_t lane=0;lane<4U;lane++) {
                 uint32_t row=input_group*4U+lane;
                 lanes[lane]=row<row_count
-                    ?Q6_V_vror_VR(*(const HVX_Vector *)(rows+(row&~1U)*64U),(row&1U)*64U+n_tile*32U)
+                    ?(QBH_ATTENTION_HEAD_DIM==128U ? Q6_V_vror_VR(*(const HVX_Vector *)(rows+row*128U),n_tile*32U) : Q6_V_vror_VR(*(const HVX_Vector *)(rows+(row&~1U)*64U),(row&1U)*64U+n_tile*32U))
                     :Q6_Vb_vsplat_R(config->v_zero_point);
             }
             HVX_Vector ab=Q6_V_lo_W(Q6_W_vshuff_VVR(lanes[1],lanes[0],-32));
@@ -128,11 +149,11 @@ void qbh_attention_u8_pack_v_long(const uint8_t *rows,
         } else {
             HVX_Vector count=Q6_V_vzero();
             const HVX_Vector vlo=Q6_Vb_vsplat_R(low),vhi=Q6_Vb_vsplat_R(high);
-            for(uint32_t i=0;i<(valid_tokens+1U)/2U;++i) {
+            for(uint32_t i=0;i<(valid_tokens*QBH_ATTENTION_HEAD_DIM+127U)/128U;++i) {
                 HVX_Vector v=*(const HVX_Vector *)(rows+i*128U);
                 HVX_VectorPred clipped=Q6_Q_or_QQ(Q6_Q_vcmp_gt_VubVub(vlo,v),
                                                 Q6_Q_vcmp_gt_VubVub(v,vhi));
-                clipped=Q6_Q_and_QQ(clipped,valid_tokens-i*2U>=2U?Q6_Q_vcmp_eq_VbVb(v,v):Q6_Q_vsetq_R(64));
+                clipped=Q6_Q_and_QQ(clipped,valid_tokens*QBH_ATTENTION_HEAD_DIM-i*128U>=128U?Q6_Q_vcmp_eq_VbVb(v,v):Q6_Q_vsetq_R(64));
                 HVX_VectorPair ones=Q6_Wuh_vunpack_Vub(
                     Q6_V_vmux_QVV(clipped,Q6_Vb_vsplat_R(1),Q6_V_vzero()));
                 count=Q6_Vh_vadd_VhVh(count,Q6_Vh_vadd_VhVh(Q6_V_lo_W(ones),Q6_V_hi_W(ones)));
@@ -150,4 +171,3 @@ void qbh_attention_u8_pack_v_long(const uint8_t *rows,
     }
     asm volatile("barrier" ::: "memory");
 }
-
