@@ -21597,12 +21597,6 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         attention_attributed_before =
             qbh_attention_attributed_ticks(header);
     }
-    if(header->long_prompt_tokens && header->long_debug && header->generation_boundary_audit_enabled &&
-       QBH_BLOCK_HIDDEN==3072U && header->prefix_layer_index==27U && past_tokens==640U) {
-        for(uint32_t c=0;c<QBH_BLOCK_HIDDEN;c++)
-            buffers->down[c]=buffers->q[(c/32U)*2048U+36U*32U+c%32U];
-        if(qbh_dma_copy(header,shared+header->input_offset+5U*QBH_BLOCK_HIDDEN,buffers->down,QBH_BLOCK_HIDDEN,0U))return QBH_BLOCK_STATUS_OUTPUT_DMA_FAILED;
-    }
     qbh_long_progress(header,4200U);
     start = HAP_perf_get_qtimer_count();
     if ((u8_integer_attention_enabled != 0U
@@ -21819,12 +21813,6 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     /* L32-0018: O uses the same two-slot raw-store/HVX residual pipeline as
      * Down, with one native W4 pass and its existing U8 zero compensation. */
     qbh_long_progress(header,6000U);
-    if(header->long_prompt_tokens && header->long_debug && header->generation_boundary_audit_enabled &&
-       QBH_BLOCK_HIDDEN==3072U && header->prefix_layer_index==27U && past_tokens==640U) {
-        for(uint32_t c=0;c<QBH_BLOCK_HIDDEN;c++)
-            buffers->down[c]=buffers->q[(c/32U)*2048U+36U*32U+c%32U];
-        if(qbh_dma_copy(header,shared+header->input_offset+6U*QBH_BLOCK_HIDDEN,buffers->down,QBH_BLOCK_HIDDEN,0U))return QBH_BLOCK_STATUS_OUTPUT_DMA_FAILED;
-    }
     const uint32_t fp32_o_stream=QBH_FP32_RESIDUAL(header) && (logical_rows==64U || (header->long_prompt_tokens && logical_rows>1U)) && !(header->paper_pipeline_disable&4U);
     if(fp32_o_stream) {
         if(!w4f16_pool || !w4f16_pool->worker_count)
@@ -22191,14 +22179,6 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         qbh_drain_w4u8_direct_n_gate_prefetch(
             header, &gate_prefetch);
         return QBH_BLOCK_STATUS_RESIDUAL_POOL_FAILED;
-    }
-    /* Untimed L32-0052 diagnostic for the isolated long-context norm boundary. */
-    if(header->long_prompt_tokens && header->long_debug && header->generation_boundary_audit_enabled &&
-       QBH_BLOCK_HIDDEN==3072U && header->prefix_layer_index==27U && past_tokens==640U) {
-        if(qbh_dma_copy(header,shared+header->input_offset,buffers->residual+36U*QBH_BLOCK_HIDDEN*4U,4U*QBH_BLOCK_HIDDEN,0U))return QBH_BLOCK_STATUS_OUTPUT_DMA_FAILED;
-        for(uint32_t c=0;c<QBH_BLOCK_HIDDEN;c++)
-            buffers->down[c]=w4u8_mlp_native_activation[(c/32U)*2048U+36U*32U+c%32U];
-        if(qbh_dma_copy(header,shared+header->input_offset+4U*QBH_BLOCK_HIDDEN,buffers->down,QBH_BLOCK_HIDDEN,0U))return QBH_BLOCK_STATUS_OUTPUT_DMA_FAILED;
     }
     qbh_r3_chain_audit(header,shared,4,buffers->residual,131072U);
     qbh_r3_chain_audit(header,shared,5,w4u8_mlp_native_activation,131072U);

@@ -102,10 +102,6 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
                     QBH_VERTICAL_SLICE_LAYER_COUNT*4U*QBH_BLOCK_HIDDEN))goto finish;
                 snprintf(name,sizeof(name),"long_r%u_s%02u_final_hidden.bin",rep,step);
                 if(qbh_write_named_tensor(audit,name,shared+h->reference_offset,rows*QBH_BLOCK_HIDDEN*4U))goto finish;
-                if(h->long_debug && before==640U) {
-                    snprintf(name,sizeof(name),"long_r%u_s%02u_norm_diagnostic.bin",rep,step);
-                    if(qbh_write_named_tensor(audit,name,shared+h->input_offset,7U*QBH_BLOCK_HIDDEN))goto finish;
-                }
                 if(!h->long_skip_head) {
                     snprintf(name,sizeof(name),"long_r%u_s%02u_hidden_norm.bin",rep,step);
                     if(qbh_write_named_tensor(audit,name,shared+h->output_offset,QBH_BLOCK_HIDDEN*68U))goto finish;

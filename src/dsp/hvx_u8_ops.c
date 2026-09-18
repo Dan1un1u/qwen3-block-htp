@@ -768,6 +768,9 @@ static void qbh_llama_rope_u8_hvx_prepared(uint8_t *v,
     const struct qbh_block_qparam *in, const struct qbh_block_qparam *out,
     const __fp16 *cosine, const __fp16 *sine,
     const struct qbh_llama_rope_u8_affine *affine) {
+#pragma clang fp contract(off)
+    /* The scalar repair must preserve the same separately rounded SF32
+     * products as the vector path and independent arithmetic contract. */
 #ifdef QBH_LLAMA_3B
     /* L32-0042: head128 maps directly to one byte vector. Preserve each
      * SF32 multiply/add and the same division-boundary repair as head64. */
