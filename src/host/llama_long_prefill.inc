@@ -22,7 +22,7 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
     uint16_t *sin=malloc((size_t)h->kv_cache_capacity*QBH_BLOCK_HEAD_DIM*2U);
     if (!cos || !sin) {free(cos);free(sin);return -1;}
     int result=-1;
-    if(qbh_read_named_tensor(package_root,"long_prompt_u32.bin",(void *)ids,length*4U) ||
+    if(qbh_read_named_tensor(package_root,"long_prompt_u32.bin",(void *)ids,(h->variant==QBH_BLOCK_W4U8?length:768U)*4U) ||
        qbh_read_named_tensor(package_root,"long_fixed_u32.bin",(void *)fixed,64U*4U) ||
        qbh_read_named_tensor(package_root,"long_rope_cos_f16.bin",(void *)cos,h->kv_cache_capacity*QBH_BLOCK_HEAD_DIM*2U) ||
        qbh_read_named_tensor(package_root,"long_rope_sin_f16.bin",(void *)sin,h->kv_cache_capacity*QBH_BLOCK_HEAD_DIM*2U)) goto finish;
