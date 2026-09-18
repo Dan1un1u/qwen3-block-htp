@@ -7661,7 +7661,7 @@ static int qbh_run_generation_head_w4u8(
             QBH_BLOCK_GENERATION_GREEDY_W4U8_BATCH8_RESIDENT_BIAS;
     const uint32_t direct_n_decode =
 #ifdef QBH_MODEL_LLAMA32
-        (logical_rows == 1U || logical_rows == QBH_BLOCK_M) &&
+        (logical_rows == 1U || logical_rows == QBH_BLOCK_M || header->long_prompt_tokens) &&
 #else
         header->scan_mode == QBH_BLOCK_SCAN_DECODE &&
         logical_rows == 1U &&
@@ -23087,6 +23087,14 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
                     profile->layer_bookkeeping_ticks += bookkeeping_gap;
                     header->layer_bookkeeping_ticks += bookkeeping_gap;
                 }
+            }
+        }
+        /* Untimed long audit: the reference tensor is never consumed by generation. */
+        if (header->long_prompt_tokens && header->generation_boundary_audit_enabled && QBH_FP32_RESIDUAL(header)) {
+            if (qbh_dma_copy(header, shared+header->reference_offset, buffers.residual,
+                    header->logical_m*QBH_BLOCK_HIDDEN*4U, 0U)) {
+                header->dsp_status=QBH_BLOCK_STATUS_OUTPUT_DMA_FAILED;
+                result=AEE_EFAILED;goto stop_worker;
             }
         }
         if (generation_enabled != 0U && !header->long_skip_head) {
