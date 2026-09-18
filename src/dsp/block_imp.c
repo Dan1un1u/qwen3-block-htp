@@ -16151,6 +16151,8 @@ static int qbh_scan_append_u8_kv_row_major(
 
         qbh_attention_u8_native_head_to_row_major(
             k_head, row_scratch, logical_rows);
+        if(header->long_prompt_tokens && header->prefix_kv_mode && !past_tokens)
+            memcpy(row_scratch,header->prefix_kv_u8[header->prefix_layer_index]+0U+head*QBH_BLOCK_HEAD_DIM,QBH_BLOCK_HEAD_DIM);
         if (qbh_scan_cache_dma(
                 header, k_destination, row_scratch,
                 append_bytes, 0U) != 0) {
@@ -16158,6 +16160,8 @@ static int qbh_scan_append_u8_kv_row_major(
         }
         qbh_attention_u8_native_head_to_row_major(
             v_head, row_scratch, logical_rows);
+        if(header->long_prompt_tokens && header->prefix_kv_mode && !past_tokens)
+            memcpy(row_scratch,header->prefix_kv_u8[header->prefix_layer_index]+QBH_BLOCK_KV_HIDDEN+head*QBH_BLOCK_HEAD_DIM,QBH_BLOCK_HEAD_DIM);
         if (qbh_scan_cache_dma(
                 header, v_destination, row_scratch,
                 append_bytes, 0U) != 0) {
