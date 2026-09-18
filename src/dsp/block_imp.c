@@ -18563,6 +18563,7 @@ static int qbh_scan_u8_attention_delta_pipeline(
             header, &second_slot->telemetry);
     }
 
+    qbh_long_progress(header,5400U);
     header->u8_attention_group_count += QBH_BLOCK_KV_HEADS;
     header->u8_attention_qk_execution_count +=
         QBH_BLOCK_KV_HEADS * QBH_ATTENTION_Q_HEADS_PER_GROUP * kv_tiles;
@@ -19155,6 +19156,7 @@ static int qbh_scan_u8_attention_segmented_short_pipeline(
             header, &second_slot->telemetry);
     }
 
+    qbh_long_progress(header,5400U);
     header->u8_attention_group_count += QBH_BLOCK_KV_HEADS;
     header->u8_attention_qk_execution_count +=
         QBH_BLOCK_KV_HEADS * QBH_ATTENTION_Q_HEADS_PER_GROUP *
@@ -20259,6 +20261,7 @@ static int qbh_scan_u8_attention_segmented(
             header, &telemetry[group]);
     }
 
+    qbh_long_progress(header,5400U);
     header->u8_attention_group_count += QBH_BLOCK_KV_HEADS;
     header->u8_attention_qk_execution_count +=
         (fused_short != 0U ? 1U : 2U) * QBH_BLOCK_KV_HEADS *
@@ -20773,6 +20776,7 @@ static int qbh_scan_u8_attention(
                 telemetry.probability_row_sum_max;
         }
     }
+    qbh_long_progress(header,5400U);
     header->u8_attention_group_count += QBH_BLOCK_KV_HEADS;
     header->u8_attention_qk_execution_count +=
         QBH_BLOCK_KV_HEADS * QBH_ATTENTION_Q_HEADS_PER_GROUP * kv_tiles;
@@ -21766,7 +21770,8 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     }
     /* L32-0018: O uses the same two-slot raw-store/HVX residual pipeline as
      * Down, with one native W4 pass and its existing U8 zero compensation. */
-    const uint32_t fp32_o_stream=QBH_FP32_RESIDUAL(header) && logical_rows==64U && !(header->paper_pipeline_disable&4U);
+    qbh_long_progress(header,6000U);
+    const uint32_t fp32_o_stream=QBH_FP32_RESIDUAL(header) && (logical_rows==64U || (header->long_prompt_tokens && logical_rows>1U)) && !(header->paper_pipeline_disable&4U);
     if(fp32_o_stream) {
         if(!w4f16_pool || !w4f16_pool->worker_count)
             return QBH_BLOCK_STATUS_O_PROJECTION_FAILED;
@@ -21802,6 +21807,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         if(fp32_o_result) {w4f16_pool->sp2_epilogue.abort=1U;asm volatile("barrier":::"memory");}
         qbh_w4f16_pool_wait(w4f16_pool);w4f16_pool->active_worker_count=0U;worker->sp2_epilogue=NULL;
     }
+    qbh_long_progress(header,6100U);
     if(fp32_o_result) return QBH_BLOCK_STATUS_O_PROJECTION_FAILED;
     if (header->variant == QBH_BLOCK_W4U8 &&
         qbh_copy_w4u8_tail_audit(
@@ -22137,6 +22143,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     header->post_attention_norm_ticks +=
         HAP_perf_get_qtimer_count() - start;
 
+    qbh_long_progress(header,6200U);
     if (qbh_block_mlp_is_w4u8_streaming(header->mlp_mode)) {
         const int mlp_result =
             w4u8_direct_n_mlp_enabled != 0U
