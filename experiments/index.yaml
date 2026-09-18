@@ -27450,7 +27450,7 @@ experiments:
   approval_ref: 'User: 请针对各长序列吞吐门槛不达标的问题继续开展loop优化。'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0295-qwen-long-prefill
+    source_branch: codex/exp-0296-long-throughput-loop
   evidence:
     device_owner: EXP-0296
     parent: EXP-0295
