@@ -1,0 +1,4 @@
+# EXP0293 floating decode row parity
+User requests removing FP32-only valid-row specialization. Input RMSNorm and fused post-attention residual/Norm now dispatch M64 for both residual types using unchanged row workers; FP32 final residual add covers M64*hidden like FP16. Final head Norm already has matched row selection and stays unchanged.
+Preserve FP32 residual arithmetic, vector functions, original FP16 implementation, all basic pipelines/weights/other recipes. No waits, scalarization, retuning or target slowdown. Six existing schedule counters are serialized by Host after the timed RPC for evidence.
+Compare new FP32 outputs with frozen EXP0292 valid outputs; padding is not a model token. Keep inherited full-floating-reference failure explicit; speed does not imply model-quality acceptance.

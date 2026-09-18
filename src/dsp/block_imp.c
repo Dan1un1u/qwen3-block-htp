@@ -5411,7 +5411,8 @@ static int qbh_hvx_pool_fp16_input_norm(
         return -1;
     }
     pool->fp16_residual_is_f32=QBH_F16_FP32_RESIDUAL(header);
-    pool->fp16_residual_rows=QBH_F16_FP32_RESIDUAL(header)?header->logical_m:QBH_BLOCK_M;
+    /* EXP0293: both floating residual formats retain the baseline M64 work. */
+    pool->fp16_residual_rows=QBH_BLOCK_M;
     memset(&main_job, 0, sizeof(main_job));
     pool->fp16_input_norm_input = input;
     pool->fp16_input_norm_gamma = gamma;
@@ -5487,7 +5488,8 @@ static int qbh_hvx_pool_fp16_post_residual_norm(
         return -1;
     }
     pool->fp16_residual_is_f32=QBH_F16_FP32_RESIDUAL(header);
-    pool->fp16_residual_rows=QBH_F16_FP32_RESIDUAL(header)?header->logical_m:QBH_BLOCK_M;
+    /* EXP0293: both floating residual formats retain the baseline M64 work. */
+    pool->fp16_residual_rows=QBH_BLOCK_M;
     memset(&main_job, 0, sizeof(main_job));
     pool->fp16_post_residual = residual;
     pool->fp16_post_addition = addition;
@@ -22136,7 +22138,7 @@ w4u8_mlp_complete:
     start = HAP_perf_get_qtimer_count();
     if (QBH_F16_FP32_RESIDUAL(header)) {
         qbh_hvx_residual_add_f32_f16((float *)buffers->residual,
-            (const __fp16 *)buffers->down,logical_rows*QBH_BLOCK_HIDDEN);
+            (const __fp16 *)buffers->down,QBH_BLOCK_M*QBH_BLOCK_HIDDEN);
     } else if (QBH_FP32_RESIDUAL(header)) {
         /* Down epilogue adds once, before any output quantization. */
     } else if (header->variant == QBH_BLOCK_W4U8) {

@@ -2988,6 +2988,13 @@ static void qbh_print_replay_profile(
         QBH_REPLAY_FP16_MIN_COSINE,
         QBH_REPLAY_FP16_MAX_CACHE_VIOLATION_FRACTION);
 
+    /* EXP0293: expose existing scheduling counters outside the timed RPC. */
+    QBH_REPLAY_PROFILE_U32(fp16_norm_contexts);
+    QBH_REPLAY_PROFILE_U32(fp16_norm_rows_per_task);
+    QBH_REPLAY_PROFILE_U32(fp16_input_norm_task_count);
+    QBH_REPLAY_PROFILE_U32(fp16_input_norm_active_contexts);
+    QBH_REPLAY_PROFILE_U32(fp16_post_residual_norm_task_count);
+    QBH_REPLAY_PROFILE_U32(fp16_post_residual_norm_active_contexts);
     QBH_REPLAY_PROFILE_U32(repeat_count);
     QBH_REPLAY_PROFILE_U32(prepared_session_run_index);
     QBH_REPLAY_PROFILE_U32(numerical_audit_enabled);
