@@ -36,7 +36,7 @@ experiments:
     non-A8 basic generic implementations without specialization.'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0293-qwen3-06b-f16-row-parity
+    source_branch: codex/exp-0294-qwen3-06b-a8-completion
     started_on: '2026-09-18'
 - id: EXP-0293
   title: Qwen0.6 F16 FP32 residual full-M64 decode parity
