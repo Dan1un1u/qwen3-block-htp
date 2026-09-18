@@ -2002,8 +2002,9 @@ static int qbh_generation_request_valid(
         header->full_stack_stage_mode != QBH_BLOCK_FULL_STACK_RUN ||
         header->repeat_count != 1U ||
         header->generation_token_count != header->logical_m ||
-        (header->generation_token_count != 1U &&
-         header->generation_token_count != QBH_BLOCK_M) ||
+        (header->long_prompt_tokens ?
+         (header->generation_token_count == 0U || header->generation_token_count > QBH_BLOCK_M) :
+         (header->generation_token_count != 1U && header->generation_token_count != QBH_BLOCK_M)) ||
         header->generation_token_ids_bytes !=
             QBH_BLOCK_M * sizeof(uint32_t) ||
         header->generation_embedding_bytes !=
@@ -2113,7 +2114,20 @@ static int qbh_scan_request_valid(const struct qbh_block_header *header,
                header->kv_cache_v_offset == 0U &&
                header->kv_cache_v_bytes == 0U;
     }
-    if (header->scan_mode == QBH_BLOCK_SCAN_PREFILL) {
+    if (header->long_prompt_tokens) {
+        if (header->variant != QBH_BLOCK_W4U8 || header->wide_score_mode != 8U ||
+            !QBH_FP32_RESIDUAL(header) || QBH_LLAMA_SP2(header) != 8U ||
+            header->long_prompt_tokens > 768U || header->long_skip_head > 1U ||
+            header->logical_m == 0U || header->logical_m > QBH_BLOCK_M ||
+            header->kv_cache_capacity > 832U ||
+            header->kv_cache_k_format != QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1 ||
+            header->kv_cache_v_format != QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1 ||
+            (header->scan_mode == QBH_BLOCK_SCAN_PREFILL
+                 ? header->initial_kv_length >= header->long_prompt_tokens ||
+                   header->initial_kv_length + header->logical_m > header->long_prompt_tokens
+                 : header->scan_mode != QBH_BLOCK_SCAN_DECODE || header->logical_m != 1U ||
+                   header->initial_kv_length < header->long_prompt_tokens)) return 0;
+    } else if (header->scan_mode == QBH_BLOCK_SCAN_PREFILL) {
         if ((header->logical_m != 16U && header->logical_m != 32U &&
              header->logical_m != 64U && header->logical_m != 128U) ||
             header->initial_kv_length != 0U) {
@@ -2275,7 +2289,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         ((header->paper_format_disable&4U) && ((header->paper_format_disable&3U) || !QBH_FP32_RESIDUAL(header) || QBH_LLAMA_SP2(header)!=8U || header->dense_r3_mode || header->dense_r4_mode)) || header->paper_pipeline_disable > 31U ||
         header->wide_score_mode > 8U || header->prefix_kv_mode > 2U ||
         (header->prefix_kv_mode && header->variant != QBH_BLOCK_W4U8) ||
-        (header->wide_score_mode && (header->variant != QBH_BLOCK_W4U8 || header->kv_cache_capacity > 128U)) ||
+        (header->wide_score_mode && (header->variant != QBH_BLOCK_W4U8 || (header->kv_cache_capacity > 128U && !header->long_prompt_tokens))) ||
         header->experiment != QBH_BLOCK_EXPERIMENT ||
         header->header_bytes != sizeof(*header) ||
         header->shared_bytes != shared_bytes ||
@@ -6500,6 +6514,8 @@ static int qbh_stage_generation_embedding(
     header->generation_embedding_ddr_read_bytes += token_bytes;
     header->boundary_ddr_read_bytes += token_bytes;
     ++header->boundary_dma_descriptor_count;
+    if (header->long_prompt_tokens)
+        qbh_hvx_zero_aligned_bytes(buffers->residual, QBH_BLOCK_M * QBH_BLOCK_HIDDEN * 4U);
     for (uint32_t row = 0U; row < header->generation_token_count; ++row) {
         const uint32_t token = token_ids[row];
         if (token >= QBH_QWEN3_VOCAB_SIZE ||
@@ -20839,7 +20855,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     uint32_t scan_enabled =
         header->scan_mode != QBH_BLOCK_SCAN_DISABLED;
     uint32_t scan_dynamic_attention =
-        scan_enabled != 0U && past_tokens != 0U;
+        scan_enabled != 0U && (past_tokens != 0U || (header->long_prompt_tokens && logical_rows != QBH_BLOCK_M));
     uint32_t w4u8_decode_row4_common_enabled =
         header->variant == QBH_BLOCK_W4U8 &&
         scan_dynamic_attention != 0U && logical_rows == 1U &&
@@ -22995,7 +23011,7 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
                 }
             }
         }
-        if (generation_enabled != 0U) {
+        if (generation_enabled != 0U && !header->long_skip_head) {
             uint64_t evaluation_setup_ticks = 0U;
             if (header->evaluation_mode == 1U) {
                 uint64_t start = HAP_perf_get_qtimer_count();
@@ -23010,15 +23026,15 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
                     ? qbh_run_generation_head_w4u8(
                           header, shared, &buffers, &worker,
                           hvx_pool_created != 0 ? &w4f16_pool : NULL,
-                          header->logical_m, generation_step)
+                          header->logical_m, header->long_prompt_tokens ? header->long_output_index : generation_step)
                     : qbh_generation_f16f16_enabled(header->generation_mode)
                     ? qbh_run_generation_head_f16f16(
                           header, shared, &buffers, &worker,
-                          header->logical_m, generation_step)
+                          header->logical_m, header->long_prompt_tokens ? header->long_output_index : generation_step)
                     : qbh_run_generation_head_w4f16(
                           header, shared, &buffers, &worker,
                           hvx_pool_created != 0 ? &w4f16_pool : NULL,
-                          header->logical_m, generation_step);
+                          header->logical_m, header->long_prompt_tokens ? header->long_output_index : generation_step);
             if (generation_status != 0) {
                 header->dsp_status = generation_status == -2
                     ? QBH_BLOCK_STATUS_FINAL_NORM_FAILED
@@ -23049,7 +23065,7 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
                     goto stop_worker;
                 }
             }
-        } else {
+        } else if (generation_enabled == 0U) {
             uint64_t output_start = HAP_perf_get_qtimer_count();
             if (qbh_dma_copy(
                     header, shared + header->output_offset,

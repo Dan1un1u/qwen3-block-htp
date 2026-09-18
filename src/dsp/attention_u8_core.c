@@ -2969,6 +2969,189 @@ static void qbh_attention_u8_requant_softmax_dynamic_hvx_tile4(
     asm volatile("barrier" ::: "memory");
 }
 
+static inline __attribute__((always_inline)) HVX_Vector
+qbh_attention_u8_dynamic_load_head_pair_row(
+    const uint8_t *score_tiles, uint32_t tiles,
+    uint32_t first_head, uint32_t first_tile, uint32_t quarter) {
+    const size_t head_stride =
+        (size_t)tiles * QBH_HMX_OUTPUT_BYTES;
+    const size_t tile_offset =
+        (size_t)first_tile * QBH_HMX_OUTPUT_BYTES;
+    const HVX_Vector zero = Q6_V_vzero();
+    const HVX_Vector tile0 = *(const HVX_Vector *)(
+        score_tiles + (size_t)first_head * head_stride + tile_offset);
+    const HVX_Vector tile1 = first_tile + 1U < tiles
+        ? *(const HVX_Vector *)(
+              score_tiles + (size_t)first_head * head_stride +
+              tile_offset + QBH_HMX_OUTPUT_BYTES)
+        : zero;
+    const HVX_Vector tile2 = *(const HVX_Vector *)(
+        score_tiles + (size_t)(first_head + 1U < QBH_ATTENTION_Q_HEADS_PER_GROUP ? first_head + 1U : first_head) * head_stride +
+        tile_offset);
+    const HVX_Vector tile3 = first_tile + 1U < tiles
+        ? *(const HVX_Vector *)(
+              score_tiles + (size_t)(first_head + 1U < QBH_ATTENTION_Q_HEADS_PER_GROUP ? first_head + 1U : first_head) * head_stride +
+              tile_offset + QBH_HMX_OUTPUT_BYTES)
+        : zero;
+    HVX_Vector row0;
+    HVX_Vector row1;
+    HVX_Vector row2;
+    HVX_Vector row3;
+
+    qbh_attention_u8_transpose_four_32byte_quarters(
+        tile0, tile1, tile2, tile3,
+        &row0, &row1, &row2, &row3);
+    return quarter == 0U ? row0 : quarter == 1U ? row1 : quarter == 2U ? row2 : row3;
+}
+
+static inline void qbh_attention_u8_dynamic_store_head_pair_row(
+    uint8_t *p, uint32_t tiles, uint32_t head, uint32_t tile,
+    HVX_Vector v, uint32_t row) {
+    uint8_t lanes[128] __attribute__((aligned(128)));
+    *(HVX_Vector *)lanes = v;
+    for (uint32_t h=0; h<2U && head+h<QBH_ATTENTION_Q_HEADS_PER_GROUP; ++h)
+        for (uint32_t k=0; k<2U && tile+k<tiles; ++k)
+            memcpy(p+((size_t)(head+h)*tiles+tile+k)*QBH_HMX_ACTIVATION_BYTES+row*32U,
+                   lanes+h*64U+k*32U,32U);
+}
+
+static void qbh_attention_u8_requant_softmax_dynamic_hvx_rows(
+    uint8_t *score_tiles, uint8_t *probability_tiles,
+    uint32_t past_tokens, uint32_t valid_tokens,
+    uint32_t padded_tokens,
+    const struct qbh_attention_config *config,
+    struct qbh_attention_u8_telemetry *telemetry, uint32_t wide_score_mode,
+    uint32_t query_rows, uint8_t *code_buffer) {
+    const uint32_t tiles = padded_tokens / QBH_HMX_INPUT_CHANNELS;
+    const uint32_t tile_blocks = (tiles + 1U) / 2U;
+
+    const HVX_Vector lane =
+        *(const HVX_Vector *)qbh_attention_u8_lane_index;
+    const HVX_VectorPred lower_half = Q6_Q_vcmp_gt_VubVub(
+        Q6_Vb_vsplat_R(64), lane);
+    uint32_t row_sum_min = UINT_MAX;
+    uint32_t row_sum_max = 0U;
+    uint8_t lut[QBH_ATTN_U8_HVX_BYTES]
+        __attribute__((aligned(QBH_ATTN_U8_HVX_BYTES)));
+
+    memset(probability_tiles, 0,
+        (size_t)QBH_ATTENTION_Q_HEADS_PER_GROUP * tiles * QBH_HMX_ACTIVATION_BYTES);
+    for (uint32_t row = 0U; row < query_rows; ++row) {
+    const uint32_t valid_count = past_tokens + row + 1U;
+    for (uint32_t pair = 0U;
+         pair < (QBH_ATTENTION_Q_HEADS_PER_GROUP + 1U) / 2U; ++pair) {
+        const uint32_t first_head = pair * 2U;
+        uint8_t maximum0 = 0U;
+        uint8_t maximum1 = 0U;
+        uint32_t weight_sum0 = 0U;
+        uint32_t weight_sum1 = 0U;
+        uint32_t probability_sum0 = 0U;
+        uint32_t probability_sum1 = 0U;
+
+        for (uint32_t block = 0U; block < tile_blocks; ++block) {
+            const uint32_t first_token = block * 64U;
+            const uint32_t valid_in_block = first_token >= valid_count ? 0U :
+                (valid_count - first_token < 64U ? valid_count - first_token : 64U);
+            const HVX_VectorPred valid =
+                qbh_attention_u8_dynamic_pair_valid(valid_in_block);
+            HVX_Vector raw = qbh_attention_u8_dynamic_load_head_pair_row(
+                score_tiles + (size_t)(row & ~3U) * 32U, tiles, first_head, block * 2U, row & 3U);
+            HVX_Vector score;
+
+            if (telemetry != NULL && wide_score_mode == 0U) {
+                telemetry->score_saturation_count +=
+                    qbh_attention_u8_dynamic_saturation_count(
+                        raw, valid, config->score_multiplier);
+            }
+            score = wide_score_mode ? raw : qbh_attention_u8_requant_centered(
+                raw, config->score_multiplier,
+                QBH_ATTN_U8_SCORE_ZP);
+            qbh_attention_u8_dynamic_pair_maximum(
+                score, valid, &maximum0, &maximum1);
+        }
+
+        for (uint32_t block = 0U; block < tile_blocks; ++block) {
+            const uint32_t first_token = block * 64U;
+            const uint32_t valid_in_block = first_token >= valid_count ? 0U :
+                (valid_count - first_token < 64U ? valid_count - first_token : 64U);
+            const HVX_VectorPred valid =
+                qbh_attention_u8_dynamic_pair_valid(valid_in_block);
+            const HVX_Vector raw =
+                qbh_attention_u8_dynamic_load_head_pair_row(
+                    score_tiles + (size_t)(row & ~3U) * 32U, tiles, first_head, block * 2U, row & 3U);
+            const HVX_Vector score = wide_score_mode ? raw : qbh_attention_u8_requant_centered(
+                raw, config->score_multiplier,
+                QBH_ATTN_U8_SCORE_ZP);
+            const HVX_Vector codes =
+                qbh_attention_u8_dynamic_pair_codes(
+                    score, valid, maximum0, maximum1,
+                    config->fraction_bits, wide_score_mode ? config->score_multiplier : 1U);
+            const HVX_VectorPair code_h = Q6_Wuh_vunpack_Vub(codes);
+            uint8_t *code_scratch = code_buffer + (size_t)(pair * tile_blocks + block) * 128U;
+
+            weight_sum0 += qbh_attention_u8_sum_log2_weights_half(
+                Q6_V_lo_W(code_h));
+            weight_sum1 += qbh_attention_u8_sum_log2_weights_half(
+                Q6_V_hi_W(code_h));
+            *(HVX_Vector *)code_scratch = codes;
+        }
+
+        memset(lut, 0, sizeof(lut));
+        qbh_attention_u8_build_probability_lut_entries(
+            lut, 0U, weight_sum0,
+            config->division_mode, valid_count);
+        qbh_attention_u8_build_probability_lut_entries(
+            lut, 16U, weight_sum1,
+            config->division_mode, valid_count);
+
+        for (uint32_t block = 0U; block < tile_blocks; ++block) {
+            const uint32_t first_token = block * 64U;
+            const uint32_t valid_in_block = first_token >= valid_count ? 0U :
+                (valid_count - first_token < 64U ? valid_count - first_token : 64U);
+            const HVX_VectorPred valid =
+                qbh_attention_u8_dynamic_pair_valid(valid_in_block);
+            uint8_t *code_scratch = code_buffer + (size_t)(pair * tile_blocks + block) * 128U;
+            const HVX_Vector codes = *(const HVX_Vector *)code_scratch;
+            const HVX_Vector banked_codes = Q6_V_vmux_QVV(
+                lower_half, codes,
+                Q6_Vb_vadd_VbVb(codes, Q6_Vb_vsplat_R(16)));
+            const HVX_Vector probabilities = Q6_V_vmux_QVV(
+                valid,
+                Q6_Vb_vlut32_VbVbR_nomatch(
+                    banked_codes, *(const HVX_Vector *)lut, 0),
+                Q6_V_vzero());
+            if(telemetry!=NULL || config->division_mode!=QBH_ATTENTION_DIVISION_EXACT_FAST) {
+            const HVX_VectorPair probability_h =
+                Q6_Wuh_vunpack_Vub(probabilities);
+
+            probability_sum0 += qbh_attention_u8_sum_probability_half(
+                Q6_V_lo_W(probability_h));
+            probability_sum1 += qbh_attention_u8_sum_probability_half(
+                Q6_V_hi_W(probability_h));
+            }
+            *(HVX_Vector *)code_scratch = Q6_V_vzero();
+            qbh_attention_u8_dynamic_store_head_pair_row(
+                probability_tiles, tiles, first_head, block * 2U, probabilities, row);
+        }
+
+        qbh_attention_u8_update_probability_extrema(
+            probability_sum0, probability_sum1,
+            &row_sum_min, &row_sum_max);
+    }
+    if (telemetry != NULL) {
+        if (valid_count > valid_tokens) {
+            telemetry->probability_mask_violation_count +=
+                QBH_ATTENTION_Q_HEADS_PER_GROUP *
+                (valid_count - valid_tokens);
+        }
+        telemetry->probability_row_sum_min = row_sum_min;
+        telemetry->probability_row_sum_max = row_sum_max;
+        ++telemetry->dynamic_hvx_tile4_call_count;
+    }
+    }
+    asm volatile("barrier" ::: "memory");
+}
+
 static void qbh_attention_u8_dynamic_stash_scalar_probability(
     uint8_t *score_tiles, const uint8_t *probability_tiles,
     uint32_t tiles) {
@@ -3040,6 +3223,15 @@ void qbh_attention_u8_requant_softmax_dynamic(
         wide_score_mode=wide_score_mode>=5U ? 2U : 1U;
     }
 
+    if (query_rows > 1U && query_rows <= 64U && use_hvx_tile4 &&
+        config && config->fraction_bits && config->score_multiplier <= INT8_MAX &&
+        config->division_mode == QBH_ATTENTION_DIVISION_EXACT_FAST &&
+        fp_scratch && past_tokens+query_rows <= valid_tokens && valid_tokens <= padded_tokens) {
+        qbh_attention_u8_requant_softmax_dynamic_hvx_rows(
+            score_tiles, probability_tiles, past_tokens, valid_tokens, padded_tokens,
+            config, telemetry, wide_score_mode, query_rows, (uint8_t *)fp_scratch);
+        return;
+    }
     if (wide_score_mode != 2U && use_hvx_tile4 != 0U && query_rows == 1U &&
         padded_tokens != 0U &&
         (padded_tokens % QBH_HMX_INPUT_CHANNELS) == 0U &&

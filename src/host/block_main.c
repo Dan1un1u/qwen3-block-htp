@@ -4442,6 +4442,8 @@ static int qbh_run_generation_sequence(
 
 /* EXP-0218: multiple independent samples reuse one loaded weight arena.
  * Resource sessions are renewed between samples to reset private VTCM KV tails. */
+#include "llama_long_prefill.inc"
+
 static int qbh_run_evaluation_suite(struct qbh_session *session, int shared_fd,
     uint8_t *shared, uint32_t total_bytes, const char *package_root,
     struct qbh_block_header *header, const struct qbh_file_slot *token_slot,
@@ -4721,6 +4723,7 @@ int main(int argc, char **argv) {
     uint32_t logical_m = QBH_BLOCK_M;
     uint32_t initial_kv_length = 0U;
     uint32_t kv_cache_capacity = 0U;
+    uint32_t long_prompt_tokens = 0U;
     uint32_t kv_cache_k_format =
         QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1;
     uint32_t kv_cache_v_format =
@@ -5154,6 +5157,9 @@ int main(int argc, char **argv) {
         const char *logical = getenv("QBH_LOGICAL_M");
         const char *past = getenv("QBH_KV_CACHE_LENGTH");
         const char *capacity = getenv("QBH_KV_CACHE_CAPACITY");
+        const char *long_length = getenv("QBH_LONG_PREFILL_TOKENS");
+        if (long_length && (qbh_parse_u32(long_length,&long_prompt_tokens) ||
+            !long_prompt_tokens || long_prompt_tokens>768U)) return 2;
         if (mode != NULL && mode[0] != '\0') {
             if (strcmp(mode, "disabled") == 0) {
                 scan_mode = QBH_BLOCK_SCAN_DISABLED;
@@ -5660,7 +5666,7 @@ int main(int argc, char **argv) {
           logical_m != QBH_BLOCK_M ||
           initial_kv_length != 0U ||
           (kv_cache_capacity != 80U && kv_cache_capacity != 128U &&
-           kv_cache_capacity != 257U))) ||
+           kv_cache_capacity != 257U && !(long_prompt_tokens && kv_cache_capacity<=832U && kv_cache_capacity>=long_prompt_tokens)))) ||
         full_stack_stage_mode >
             QBH_BLOCK_FULL_STACK_HIDDEN_CAPTURE ||
         w4u8_boundary_audit_enabled > 1U ||
@@ -6803,6 +6809,7 @@ int main(int argc, char **argv) {
     header->logical_m = logical_m;
     header->initial_kv_length = initial_kv_length;
     header->kv_cache_capacity = kv_cache_capacity;
+    header->long_prompt_tokens = long_prompt_tokens;
     header->kv_cache_k_format = scan_mode == QBH_BLOCK_SCAN_DISABLED
         ? QBH_KV_CACHE_FORMAT_NONE : kv_cache_k_format;
     header->kv_cache_v_format = scan_mode == QBH_BLOCK_SCAN_DISABLED
@@ -7432,6 +7439,11 @@ int main(int argc, char **argv) {
         goto cleanup;
     }
 
+    if (long_prompt_tokens) {
+        exit_code=qbh_run_long_prefill(&session,shared_fd,shared,(uint32_t)total_bytes,
+            argv[1],header,&generation_token_slot,rope_slots)==0?0:1;
+        goto cleanup;
+    }
     if (generation_mode != QBH_BLOCK_GENERATION_DISABLED && getenv("QBH_EVAL_FILE") != NULL) {
         printf("{\"record\":\"eval_model_ready\",\"model_ready_ns\":%" PRIu64 "}\n", qbh_monotonic_ns() - main_start);
         fflush(stdout);
