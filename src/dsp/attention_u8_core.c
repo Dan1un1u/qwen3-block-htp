@@ -2774,6 +2774,54 @@ static void qbh_attention_u8_requant_softmax_dynamic_hvx_tile4(
     asm volatile("barrier" ::: "memory");
 }
 
+static inline __attribute__((always_inline)) HVX_Vector
+qbh_attention_u8_dynamic_load_head_pair_row(
+    const uint8_t *score_tiles, uint32_t tiles,
+    uint32_t first_head, uint32_t first_tile, uint32_t quarter) {
+    const size_t head_stride =
+        (size_t)tiles * QBH_HMX_OUTPUT_BYTES;
+    const size_t tile_offset =
+        (size_t)first_tile * QBH_HMX_OUTPUT_BYTES;
+    const HVX_Vector zero = Q6_V_vzero();
+    const HVX_Vector tile0 = *(const HVX_Vector *)(
+        score_tiles + (size_t)first_head * head_stride + tile_offset);
+    const HVX_Vector tile1 = first_tile + 1U < tiles
+        ? *(const HVX_Vector *)(
+              score_tiles + (size_t)first_head * head_stride +
+              tile_offset + QBH_HMX_OUTPUT_BYTES)
+        : zero;
+    const HVX_Vector tile2 = *(const HVX_Vector *)(
+        score_tiles + (size_t)(first_head + 1U < QBH_ATTENTION_Q_HEADS_PER_GROUP ? first_head + 1U : first_head) * head_stride +
+        tile_offset);
+    const HVX_Vector tile3 = first_tile + 1U < tiles
+        ? *(const HVX_Vector *)(
+              score_tiles + (size_t)(first_head + 1U < QBH_ATTENTION_Q_HEADS_PER_GROUP ? first_head + 1U : first_head) * head_stride +
+              tile_offset + QBH_HMX_OUTPUT_BYTES)
+        : zero;
+    HVX_Vector row0;
+    HVX_Vector row1;
+    HVX_Vector row2;
+    HVX_Vector row3;
+
+    qbh_attention_u8_transpose_four_32byte_quarters(
+        tile0, tile1, tile2, tile3,
+        &row0, &row1, &row2, &row3);
+    return quarter == 0U ? row0 : quarter == 1U ? row1 : quarter == 2U ? row2 : row3;
+}
+
+static inline void qbh_attention_u8_dynamic_store_head_pair_row(
+    uint8_t *p, uint32_t tiles, uint32_t head, uint32_t tile,
+    HVX_Vector v, uint32_t row) {
+    uint8_t lanes[128] __attribute__((aligned(128)));
+    *(HVX_Vector *)lanes = v;
+    for (uint32_t h=0; h<2U && head+h<QBH_ATTENTION_Q_HEADS_PER_GROUP; ++h)
+        for (uint32_t k=0; k<2U && tile+k<tiles; ++k)
+            memcpy(p+((size_t)(head+h)*tiles+tile+k)*QBH_HMX_ACTIVATION_BYTES+row*32U,
+                   lanes+h*64U+k*32U,32U);
+}
+
+#include "long_softmax_native.inc"
+
 static void qbh_attention_u8_dynamic_stash_scalar_probability(
     uint8_t *score_tiles, const uint8_t *probability_tiles,
     uint32_t tiles) {

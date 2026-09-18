@@ -13,9 +13,9 @@
 #define QBH_SP2(h) ((h)->sp2_mode)
 #elif defined(QBH_NATIVE_SP2)
 #ifdef QBH_QWEN_06B
-#define QBH_BLOCK_ABI_VERSION UINT32_C(137)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(138)
 #else
-#define QBH_BLOCK_ABI_VERSION UINT32_C(134)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(135)
 #endif
 #define QBH_SP2(h) ((h)->sp2_mode)
 #else
@@ -878,6 +878,12 @@ struct qbh_block_header {
     uint32_t logical_m;
     uint32_t initial_kv_length;
     uint32_t kv_cache_capacity;
+    /* L32-0050: opt-in chunked prompt; zero preserves legacy generation. */
+    uint32_t long_prompt_tokens;
+    uint32_t long_skip_head;
+    uint32_t long_output_index;
+    uint32_t long_debug;
+    uint32_t long_optimization;
 
     /* EXP-0148 persistent, layer-indexed replay session. */
     uint32_t replay_mode;
