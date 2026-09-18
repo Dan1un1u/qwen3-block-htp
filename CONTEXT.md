@@ -1,3 +1,6 @@
+# Active EXP-0297: Qwen1.7 decode focus
+User requests optimization against historical short decode. Read docs/experiments/EXP-0297.md. Frozen0295 inputs/oracles,0296 opt927 control; current/native short path reproduced, long KV preparation remains costly. Device owner Qwen. Other models frozen.
+
 # EXP-0296 long-context throughput loop completed
 Source 9126da9598c6433b3c1567fdf63eb5e1a62449b4; workspace build 1.7B/28 layers. Candidate option 927. Fullmodel six-shape checks,5short and10formal repeat10 cycles complete. Numerical/physical pass; unchanged long/M64 parity+decode guard: fail. Same-binary prior opt31 control, fastest measured64-token reference; no slowed baseline. Long decode now admits parallel GQA. Failed engineering evidence retained. See docs/experiments/EXP-0296-RESULTS.md and docs/experiments/LONG_CONTEXT_LOOP_20260918.md. Historical accepted baselines and quality status unchanged. No active experiment/device owner. Desktop workbook C:/Users/35961/Desktop/HTP硬件实验总表.xlsx must preserve exact-length A/B/C results and prior rows in D.
 

@@ -27646,3 +27646,19 @@ experiments:
       physical checks separately passed
   source_commits:
   - 9126da9598c6433b3c1567fdf63eb5e1a62449b4
+- id: EXP-0297
+  title: Qwen1.7 long decode preparation and scheduling optimization
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/EXP-0297.md
+  approval_ref: 'User: 专注Qwen3-1.7B的优化，尤其是decode相对原来D历史数据有严重掉速。'
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0296-long-throughput-loop
+  evidence:
+    device_owner: EXP-0297
+    parent: EXP-0296
+    quality_claim: false
+    baseline_promoted: false
