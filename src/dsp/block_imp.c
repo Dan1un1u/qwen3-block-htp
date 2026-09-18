@@ -5487,7 +5487,12 @@ static void qbh_llama_fp32_norm_parallel(struct qbh_block_header *header,
     const uint32_t compact=native && (header->paper_format_disable&1U);
     uint8_t *production=compact?buffers->attention_concat:out;
     uint32_t layout=compact?0U:native;
-    if(rows!=64U || !pool || pool->worker_count<3U) {
+    /* L32-0053: a partial prefill still owns all64 residual/output rows.
+     * Compute the padded rows with the existing16-row workers; only live rows
+     * are consumed or appended to KV. Keep one-row decode and opt31 unchanged. */
+    const uint32_t parallel_tail=header->long_prompt_tokens &&
+        (header->long_optimization&2048U) && rows>1U && QBH_BLOCK_HEAD_DIM==128U;
+    if((rows!=64U && !parallel_tail) || !pool || pool->worker_count<3U) {
         qbh_llama_fp32_norm((const float *)buffers->residual,gamma,production,q,rows,QBH_BLOCK_HIDDEN,layout,buffers->sp2_scratch);
     } else {
         pool->fp32_norm_native=layout;
