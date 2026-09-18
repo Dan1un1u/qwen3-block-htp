@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0294
+  active_experiment: null
   next_experiment_number: 295
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -2794,7 +2794,7 @@ current_scope:
   last_completed_experiment: EXP-0284
   last_completed_source_commit: 8cfc71a113b3e59f271730ca88c5d63829a759dc
   provisional_source_parent: EXP0268_diagnostic_U8_pipeline_closure_no_default_promotion
-  device_execution_state: idle_no_active_device_process
+  device_execution_state: idle_released_to_L32-0046
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
   current_handoff: docs/experiments/EXP-0284-RESULTS.md
@@ -9421,8 +9421,8 @@ current_scope:
       pass but do not clear gate
     next_direction: discuss_runtime_nondeterminism_then_same_token_device_software_head_and_transformer_alignment
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0257.md
-  last_concluded_experiment: EXP-0284
-  last_concluded_source_commit: 5b64c3156f6522fa7de289b995265a93a147b50c
+  last_concluded_experiment: EXP-0294
+  last_concluded_source_commit: 95bad425d80f8aafe75222bd18b14f3f69b9c7d2
   latest_w4u8_dense_r3_e2e_diagnostic_result:
     id: EXP-0258
     execution_state: completed
@@ -12186,8 +12186,8 @@ current_scope:
     generalization: supplementary only; not rerun or included
     quality_claim: false
     baseline_promoted: false
-  next_action: 'EXP0289: Qwen3-0.6B W16A16 and W4A16 fair vectorized baseline port,
-    independent gates, matched M64+42 E2E; preserve SP2.'
+  next_action: Complete Llama3B ordinary A8 and generic W4A16; 3B W16A16 deferred
+    per user. Qwen recipe completion finished.
   latest_f16_baseline_synthesis:
     report: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/REPORT.md
     a16_discussion: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/A16_DOWN_DISCUSSION.md
@@ -12560,3 +12560,41 @@ current_scope:
     local_gate_retained: fail
     native_default_flag_changed: false
     historical_fp16_control_retained: true
+  latest_qwen3_06b_ordinary_a8:
+    experiment: EXP-0294
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    source_closure: 95bad425d80f8aafe75222bd18b14f3f69b9c7d2
+    measured_native_source: 9a7deaad69426543b08c1d37aca5e5d7153b77f7
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0294
+    evidence_ledger_sha256: 82a9070162c3351ebd5afec3e3172905ad44d51e84b18fe87ea74e25c6f76567
+    evidence_files: 14775
+    performance:
+      SP2:
+        prefill_tps: 3022.363200605578
+        decode_tps: 92.91801526052528
+        prefill_host_ms: 21.17548281
+        decode42_host_ms: 452.01137672
+      A8:
+        prefill_tps: 3074.858384910771
+        decode_tps: 93.46564686927516
+        prefill_host_ms: 20.813966690000004
+        decode42_host_ms: 449.36296282999996
+      prefill_ns:
+        a8_over_sp2_wall_ratio: 0.9829276091013486
+        ci95:
+        - 0.9802330845770028
+        - 0.9855006195200637
+      decode_ns:
+        a8_over_sp2_wall_ratio: 0.9941408247083998
+        ci95:
+        - 0.9925324971286598
+        - 0.9959376336389559
+    shape: M64+42/cache128/full28
+    numerical_physical_pass: true
+    quality_claim: false
+    baseline_promoted: false
+    report: docs/experiments/EXP-0294-RESULTS.md
+    reference_recovery: Vendor v79 rsqrt approximation independently simulated; original
+      ideal-rsqrt failures retained; hardware math unchanged

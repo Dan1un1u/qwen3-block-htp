@@ -46,14 +46,14 @@
       "model": "Qwen3-0.6B",
       "configuration": "W4A8",
       "dataset": "project-owned profiling prompt/trajectory; not established as named dataset",
-      "prefill_len": null,
-      "decode_len": null,
-      "prefill_tps": null,
-      "decode_tps": null,
-      "experiment": null,
-      "evidence_level": "not measured",
+      "prefill_len": 64,
+      "decode_len": 42,
+      "prefill_tps": 3074.858384910771,
+      "decode_tps": 93.46564686927516,
+      "experiment": "EXP-0294",
+      "evidence_level": "formal",
       "residual": "FP32",
-      "note": ""
+      "note": "Only Down SP2 removed; independent hardware arithmetic gate passed; no quality acceptance."
     },
     {
       "model": "Qwen3-0.6B",
@@ -181,9 +181,9 @@
       "prefill_tps": null,
       "decode_tps": null,
       "experiment": null,
-      "evidence_level": "not measured",
+      "evidence_level": "unsupported; user deferred",
       "residual": "unspecified until implemented",
-      "note": ""
+      "note": "FP16 backbone5.25GiB exceeds uint32 shared-offset ABI; generic weight paging deferred."
     },
     {
       "model": "Llama-3.2-3B-Instruct",
@@ -707,6 +707,6 @@
       "status": "pending named-dataset measurement"
     }
   ],
-  "no_new_hardware_runs": true,
+  "no_new_hardware_runs": false,
   "quality_not_inferred_from_timing": true
 }

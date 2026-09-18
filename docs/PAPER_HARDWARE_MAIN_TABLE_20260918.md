@@ -40,3 +40,6 @@ Other measured A16 rows retain their historical FP16 residuals; only the promote
 A8/SP2 comparisons for1.7B/1B use the same fixed-trajectory paired experiments0284/0040; do not choose the larger greedy or earlier noisy values per cell. These are archived numerical implementations, not software-side precision validation.
 Pending: Qwen0.6 ordinaryA8, Llama3B W16A16/W4A16/ordinaryA8; Qwen0.6 latest W4A16 formal repetition; named-dataset alignment across all48 conditions and runtime support/measurement for536+46/741+3. Existing1B and1.7B M64+7/15 results cannot fill64+42 decode cells.
 References: authoritative per-experiment status/index/reports; exact current values and target48 placeholders in paired JSON. Quant.npu Table12 was read and page21 visually inspected.
+
+## EXP0294 update
+Qwen3-0.6B ordinary W4A8 completed: M64+42,3074.86/93.47 TPS (prefill/decode), ten formal repeat10; project prompt only, named datasets remain pending. 3B W16A16 user-deferred due uint32-offset ABI. All other existing rows unchanged. Machine-readable inventory updated.

@@ -1,3 +1,6 @@
+# EXP0294 completed: Qwen0.6 ordinary A8
+3074.858385 prefill /93.465647 decode TPS, M64+42, five short/ten paired formal repeat10. SP2 samebinary3022.363201/92.918015. Independent selected0/14/27,chain3,full43fixed/freegreedy and SP2 exact; original rsqrt-reference failure preserved and corrected from independent vendor ISA simulation, no hardware arithmetic changes. Ledger 82a9070162c3351ebd5afec3e3172905ad44d51e84b18fe87ea74e25c6f76567. Source 95bad425d80f8aafe75222bd18b14f3f69b9c7d2. Device released to L32-0046; no active Qwen experiment. See docs/experiments/EXP-0294-RESULTS.md. Existing selected baselines unchanged.
+
 # EXP0294 active: ordinary A8 completion
 Read docs/experiments/EXP-0294.md. User-approved Down-only SP2 removal; selected floating baseline unchanged. Qwen owns device; Llama pending.
 
