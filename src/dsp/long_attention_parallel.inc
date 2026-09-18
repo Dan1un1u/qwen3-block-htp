@@ -11,7 +11,7 @@ static void qbh_long_attention_tasks(struct qbh_block_w4f16_pool *pool,
     uint8_t *c=a+2*plane;
     uint32_t *qb=(uint32_t *)(a+3*plane);
     uint32_t *vb=qb+tiles*64;
-    uint8_t *lut=pool->long_common_lut ? pool->attention_buffers->up : (uint8_t *)(vb+QBH_ATTENTION_HEAD_DIM_TILES*64);
+    uint8_t *lut=pool->long_common_lut ? pool->attention_buffers->scores+4U*pool->long_stride : (uint8_t *)(vb+QBH_ATTENTION_HEAD_DIM_TILES*64);
     job->u8_attention_k_pack_ticks=job->u8_attention_v_pack_ticks=0;
     job->u8_attention_softmax_ticks=job->u8_attention_qk_hmx_ticks=0;
     job->u8_attention_av_hmx_ticks=job->u8_attention_hmx_queue_wait_ticks=0;
@@ -60,12 +60,12 @@ static int qbh_long_attention_parallel(struct qbh_block_header *h,uint8_t *share
     unsigned padded=qbh_align_up(past+rows,32),tiles=padded/32;
     unsigned stride=qbh_align_up(3*padded*256+tiles*256+QBH_ATTENTION_HEAD_DIM_TILES*256+20480,2048);
     unsigned capacity=(uint32_t)(b->compressed_weight-b->scores);
-    if(!pool || pool->worker_count<3 || stride*4>capacity)return -1;
+    if(!pool || pool->worker_count<3 || stride*4+20480>capacity)return -1;
     for(unsigned j=0;j<3;++j)
         if(pool->jobs[j].command_kind!=QBH_BLOCK_HVX_POOL_NONE)return -1;
     uint64_t start=HAP_perf_get_qtimer_count();
     h->scan_attention_overlay_capacity_bytes=capacity;
-    h->scan_attention_overlay_required_bytes=stride*4;
+    h->scan_attention_overlay_required_bytes=stride*4+20480;
     h->scan_total_kv_length=past+rows;h->scan_padded_kv_length=padded;
     pool->attention_header=h;pool->attention_buffers=b;pool->attention_hmx_worker=worker;
     pool->long_shared=shared;pool->long_rows=rows;pool->long_past=past;
@@ -76,7 +76,7 @@ static int qbh_long_attention_parallel(struct qbh_block_header *h,uint8_t *share
         if(a->v_zero_point!=c->v_zero_point || a->v_recenter_numerator!=c->v_recenter_numerator ||
            a->v_recenter_denominator!=c->v_recenter_denominator)pool->long_common_lut=0;
     }
-    if(pool->long_common_lut)qbh_attention_u8_prepare_v_row_major_hvx(&b->attention_configs[0],b->up);
+    if(pool->long_common_lut)qbh_attention_u8_prepare_v_row_major_hvx(&b->attention_configs[0],b->scores+4U*stride);
     pool->next_attention_task=0;pool->attention_gqa_abort=0;
     pool->active_worker_count=3;
     for(unsigned j=0;j<3;++j)pool->jobs[j].command_kind=QBH_BLOCK_HVX_POOL_LONG_ATTENTION;
