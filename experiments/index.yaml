@@ -34,7 +34,7 @@ experiments:
   approval_ref: 'User: 请将方法迁移到其它还未实现的模型上并实现'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0294-qwen3-06b-a8-completion
+    source_branch: codex/exp-0295-qwen-long-prefill
 - id: EXP-0294
   title: Qwen0.6 ordinary A8 from frozen SP2 with Down-only representation change
   execution_state: completed
