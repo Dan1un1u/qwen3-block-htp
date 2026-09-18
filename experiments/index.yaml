@@ -2775,3 +2775,16 @@ experiments:
     other_models_recipes_migrated: false
     workspace_build: 1B /16 layers
     named_dataset_benchmark: false
+- id: L32-0051
+  title: Long-prefill native layout and pipeline parity loop
+  execution_state: running
+  approval_ref: User2026-09-18 explicitly requests loop optimization to match M64
+    single-chunk prefill throughput
+  record: docs/experiments/L32-0051.md
+  parent_source: fad2d40fa909c2c42f251b04a1c1eed64ad2af1c
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  evidence_validity: pending
+  local_gate: not_run
+  adoption_status: pending

@@ -1,3 +1,6 @@
+# L32-0051 active: long prefill parity loop
+Read docs/experiments/L32-0051.md. User targets536/741prefill throughput matching fresh M64. Frozen0050 arithmetic, no weakening of correctness/physical constraints or baseline degradation. No0051results yet.
+
 # L32-0050 completed: Llama 1B W4A8-SP2 chunked long prefill
 Read docs/experiments/L32-0050-RESULTS.md and MODULES.md. Opt-in M64 chunks, persistent KV and absolute RoPE, valid tail rows; head only on final prompt chunk. Frozen SP2/FP32-residual weights and integer arithmetic; no rotation. Current workspace build is 1B /16 layers.
 64/65/128/129/536/741 and 536+46 independent hardware checks pass. Across seven checks, 1631 layer outputs are bit-exact and one differs only as -0 versus +0; no nonzero tolerance relaxed. All-layer KV/head and future-cache/padding poison checks pass. Audit-only copies are excluded from speed runs.

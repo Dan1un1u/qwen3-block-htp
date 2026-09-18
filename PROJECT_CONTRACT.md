@@ -236,3 +236,6 @@ User approves full generic3B W16A16 implementation after0048 mapping success. Su
 
 ## L32-0050 long prefill authorization
 User approves generic64-token chunked long prefill on latest1B W4A8-SP2. Supersedes short-context-only scope for0050; preserve current arithmetic/weights and all correctness/physical/evidence gates. Target536+46 and741+3 after boundary validation. No model-quality claim or promotion.
+
+## L32-0051 iterative long-prefill speed authorization
+User explicitly authorizes a loop targeting M64 single-chunk prefill throughput parity for current1B SP2 longprefill. Supersedes0050 no-tuning scope; preserve arithmetic/physical/evidence constraints and fair M64 control. See0051protocol. No model-quality or automatic baseline promotion.
