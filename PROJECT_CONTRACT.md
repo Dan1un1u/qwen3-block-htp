@@ -224,3 +224,6 @@ User supplies original Llama-3.2-3B-Instruct and authorizes migration of latest 
 
 ## L32-0045 no-performance-gate loop authorization (2026-09-18)
 User explicitly requests iterative Llama3.2-3B W4A8-SP2 E2E optimization without gates. For this experiment, supersede prior10% slowdown/external-speed stopping thresholds; numerical correctness, physical constraints, provenance, fair matched measurements and uncertainty reporting remain. Routine iterative candidates under the registered protocol require no repeated permission.
+
+## Missing recipe completion — 2026-09-18
+User authorizes ordinary W4A8 derived from latest SP2 by removing only SP2, preserving all shared optimizations and remaining contracts. Other missing recipes receive generic vector/basic DMA overlap, no specialization tuning. User explicitly defers 3B W16A16 because existing uint32 shared-offset ABI cannot hold its FP16 weights; complete 3B W4A16 and ordinary A8 first. No claim of model-quality acceptance from speed checks.

@@ -1,3 +1,6 @@
+# L32-0046 active: missing recipe completion
+Read docs/experiments/L32-0046.md. Ordinary3B A8 only removes SP2, latest0045 optimizations preserved. Device after EXP0294 closure. W4A16 follows; W16A16 user-deferred for >4GiB ABI.
+
 # L32-0045 completed: 3B no-performance-gate pipeline loop
 Latest 3B no-rotation W4A8-SP2mode8, FP32 residual: 1184.718073 prefill / 23.640810 decode token/s, M64+42/cache128/full28.
 Paired frozen0044 control 1136.492048/22.446407; gains +4.243411%/+5.321132%. Five short + ten formal AB/BA pairs repeat10; all retained, performance gates disabled by user. CI in SUMMARY/results, not an acceptance threshold.

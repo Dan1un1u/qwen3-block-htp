@@ -2500,3 +2500,16 @@ experiments:
     per_token_hmx_commands_saved: 980
     per_token_weight_dma_descriptors_saved: 1960
     parent_experiment: L32-0044
+- id: L32-0046
+  title: 3B ordinary A8 with Down-only SP2 removal
+  execution_state: running
+  approval_ref: User2026-09-18 requests missing recipes; W4A8 only removes SP2 from
+    latest optimized SP2. User explicitly defers 3B W16A16 paging.
+  parent_source: 9ddf524f70f057069c8c4d03cd5cbe1b2277f028
+  record: docs/experiments/L32-0046.md
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
