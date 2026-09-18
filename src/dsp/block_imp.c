@@ -2209,7 +2209,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         }
     }
 #ifdef QBH_LLAMA_3B
-    if (!header || header->dense_r3_mode || header->dense_r4_mode ||
+    if (!header || header->generation_lm_head.weight_segment ||
+        header->dense_r3_mode || header->dense_r4_mode ||
         header->paper_format_disable || header->paper_pipeline_disable) return 0;
     if (header->variant == QBH_BLOCK_W4U8) {
         if (QBH_FP32_RESIDUAL(header)!=1U ||
@@ -2222,7 +2223,10 @@ static int qbh_header_valid(const struct qbh_block_header *header,
             header->w4f16_pipeline_mode!=QBH_BLOCK_W4F16_PIPELINE_ADAPTIVE_DOWN96_GATE4_CROSS_PREFETCH)
             return 0;
     } else if(header->variant==QBH_BLOCK_F16F16) {
-        if(QBH_FP32_RESIDUAL(header) || QBH_LLAMA_SP2(header))return 0;
+        if(QBH_FP32_RESIDUAL(header) || QBH_LLAMA_SP2(header) ||
+           header->mlp_mode!=QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 ||
+           header->f16f16_projection_mode!=QBH_BLOCK_F16F16_PROJECTION_GATE8_INTERLEAVED)
+            return 0;
     } else return 0;
 #endif
 #ifdef QBH_MODEL_LLAMA32
