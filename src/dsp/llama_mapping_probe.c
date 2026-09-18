@@ -24,6 +24,7 @@ static int lmp_dma(void *dst,const void *src,uint32_t bytes,int to_ddr) {
 int lmp_run(int fd,uint32_t bytes,void *vtcm,uint32_t vtcm_bytes) {
  struct lmp_header *h=NULL;
  void *active[2]={NULL,NULL};
+ void *pinned=NULL;
  uint32_t ev_ids[2]={0,0}, next=0;
  int ret=HAP_mmap_get(fd,(void **)&h,NULL);
  if(ret || !h)return AEE_EFAILED;
@@ -31,11 +32,12 @@ int lmp_run(int fd,uint32_t bytes,void *vtcm,uint32_t vtcm_bytes) {
   HAP_mmap_put(fd);return AEE_EBADPARM;
  }
  h->status=-1;h->vtcm_bytes=vtcm_bytes;
- if(h->magic!=LMP_MAGIC || h->version!=1 || !h->count || h->count>LMP_MAX_BUFFERS ||
+ if(h->magic!=LMP_MAGIC || h->version!=2 || !h->count || h->count>LMP_MAX_BUFFERS ||
     !h->window || h->window>2 || h->cycles<1 ||
     (uint64_t)h->cycles*h->count>LMP_MAX_EVENTS || vtcm_bytes!=8388608U)goto done;
  for(uint32_t b=0;b<h->count;b++)if(h->fds[b]<0 || h->sizes[b]<LMP_PAGE_BYTES*LMP_SAMPLES ||
     h->sizes[b]%LMP_PAGE_BYTES || h->sizes[b]>1073741824U)goto done;
+ if(h->pinned_bytes && (h->pinned_fd<0 || HAP_mmap_get(h->pinned_fd,&pinned,NULL) || !pinned))goto done;
  {
  uint64_t start=HAP_perf_get_qtimer_count();
  for(uint32_t cycle=0;cycle<h->cycles;cycle++) {
@@ -61,6 +63,25 @@ int lmp_run(int fd,uint32_t bytes,void *vtcm,uint32_t vtcm_bytes) {
    e->va=(uint32_t)(uintptr_t)ptr;
    active[slot]=ptr;ev_ids[slot]=ei;
    if((uint64_t)e->va+e->bytes>0x100000000ULL){h->status=-4;goto finish;}
+   /* After each remap, verify every retained window remains addressable. */
+   for(uint32_t a=0;a<h->window;a++)if(active[a] && a!=slot) {
+    struct lmp_event *old=&h->events[ev_ids[a]];
+    if(old->buffer!=id && (uint64_t)e->va<((uint64_t)old->va+old->bytes) &&
+       (uint64_t)old->va<((uint64_t)e->va+e->bytes)){h->status=-7;goto finish;}
+    if(lmp_dma(vtcm,active[a],128,0)){h->status=-5;goto finish;}
+    for(uint32_t w=0;w<32;w++) {
+     h->retained_checks++;
+     if(((uint32_t *)vtcm)[w]!=lmp_value(old->buffer,0,w)){h->status=-7;goto finish;}
+    }
+   }
+   if(pinned)for(uint32_t s=0;s<3;s++){
+    uint32_t off=lmp_offset(h->pinned_bytes,s*16);
+    if(lmp_dma(vtcm,(uint8_t *)pinned+off,128,0)){h->status=-5;goto finish;}
+    for(uint32_t w=0;w<32;w++){
+     h->retained_checks++;
+     if(((uint32_t *)vtcm)[w]!=0x5a5a5a5aU){h->status=-8;goto finish;}
+    }
+   }
    for(uint32_t sample=0;sample<LMP_SAMPLES;sample++) {
     uint8_t *src=(uint8_t *)ptr+lmp_offset(e->bytes,sample);
     t=HAP_perf_get_qtimer_count();
@@ -94,6 +115,7 @@ int lmp_run(int fd,uint32_t bytes,void *vtcm,uint32_t vtcm_bytes) {
  h->total_ticks=HAP_perf_get_qtimer_count()-start;
  }
  done:
+ if(pinned && HAP_mmap_put(h->pinned_fd))h->cleanup_errors++;
  ret=h->status==0 && h->cleanup_errors==0?AEE_SUCCESS:AEE_EFAILED;
  if(qurt_mem_cache_clean((qurt_addr_t)h,bytes,QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE))ret=AEE_EFAILED;
  if(HAP_mmap_put(fd))ret=AEE_EFAILED;

@@ -32,7 +32,7 @@ int main(int argc,char **argv) {
  h=rpcmem_alloc2(RPCMEM_HEAP_ID_SYSTEM,RPCMEM_FLAG_UNCACHED,sizeof(*h));
  if(!h)goto cleanup;
  memset(h,0,sizeof(*h));
- h->magic=LMP_MAGIC;h->version=1;h->count=count;h->window=window;h->cycles=cycles;h->pinned_bytes=pinbytes;
+ h->magic=LMP_MAGIC;h->version=2;h->pinned_fd=-1;h->count=count;h->window=window;h->cycles=cycles;h->pinned_bytes=pinbytes;
  for(uint32_t i=0;i<count;i++) {
   buf[i]=rpcmem_alloc2(RPCMEM_HEAP_ID_SYSTEM,RPCMEM_FLAG_UNCACHED,size);
   if(!buf[i]){printf("{\"allocation_failed_buffer\":%u,\"errno\":%d}\n",i,errno);goto cleanup;}
@@ -47,7 +47,7 @@ int main(int argc,char **argv) {
  if(pinbytes){
   pin=rpcmem_alloc2(RPCMEM_HEAP_ID_SYSTEM,RPCMEM_FLAG_UNCACHED,pinbytes);
   if(!pin)goto cleanup;
-  memset(pin,0x5a,pinbytes);pin_fd=rpcmem_to_fd(pin);
+  memset(pin,0x5a,pinbytes);pin_fd=rpcmem_to_fd(pin);h->pinned_fd=pin_fd;
  }
  alloc_ns=ns()-t;
  if(qbh_session_open(&session))goto cleanup;
@@ -78,6 +78,7 @@ int main(int argc,char **argv) {
   printf("{\"record\":\"mapping\",\"cycle\":%u,\"buffer\":%u,\"va\":%u,\"bytes\":%u,\"map_result\":%d,\"unmap_result\":%d,\"checks\":%u,\"mismatches\":%u,\"map_ticks\":%"PRIu64",\"dma_ticks\":%"PRIu64",\"unmap_ticks\":%"PRIu64"}\n",
    e->cycle,e->buffer,e->va,e->bytes,e->map_result,e->unmap_result,e->checks,e->mismatches,e->map_ticks,e->dma_ticks,e->unmap_ticks);
  }
+ printf("{\"record\":\"retained_checks\",\"count\":%u}\n",h->retained_checks);
  ret=run || h->status || h->cleanup_errors || host_bad || h->completed!=count*cycles;
  cleanup:
  for(uint32_t i=0;i<count;i++)if(registered[i])cleanup_errors+=fastrpc_munmap(CDSP_DOMAIN_ID,fds[i],buf[i],size)!=0;

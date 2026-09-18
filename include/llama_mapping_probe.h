@@ -18,11 +18,13 @@ struct lmp_header {
  uint32_t sizes[LMP_MAX_BUFFERS];
  uint32_t event_count, mismatches, completed, vtcm_bytes;
  int32_t status, cleanup_errors;
+ int32_t pinned_fd;
+ uint32_t retained_checks;
  uint64_t total_ticks;
  struct lmp_event events[LMP_MAX_EVENTS];
 };
 _Static_assert(sizeof(struct lmp_event)==56,"event ABI");
-_Static_assert(sizeof(struct lmp_header)==114824,"header ABI");
+_Static_assert(sizeof(struct lmp_header)==114832,"header ABI");
 static inline uint32_t lmp_offset(uint32_t bytes,uint32_t sample) {
  return (uint32_t)(((uint64_t)(bytes/LMP_PAGE_BYTES-1U)*sample/(LMP_SAMPLES-1U))*LMP_PAGE_BYTES);
 }

@@ -3,7 +3,7 @@ import argparse,hashlib,json,subprocess
 from pathlib import Path
 a=argparse.ArgumentParser()
 a.add_argument("result_root",type=Path);a.add_argument("tag");a.add_argument("count",type=int);a.add_argument("mib",type=int);a.add_argument("window",type=int);a.add_argument("cycles",type=int);a.add_argument("pin_kib",type=int,nargs="?",default=0)
-x=a.parse_args();seal=json.loads((x.result_root/"runtime-a01/seal.json").read_text())
+x=a.parse_args();seal=json.loads((x.result_root/"runtime-a02/seal.json").read_text())
 adb=["/mnt/c/adb/adb.exe","-s","3B15C8007Z300000"];remote=seal["remote"]
 for name,expected in seal["files"].items():
  got=subprocess.check_output(adb+["shell","sha256sum "+remote+"/"+name],text=True).split()[0]
