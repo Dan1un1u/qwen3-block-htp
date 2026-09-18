@@ -2777,7 +2777,7 @@ experiments:
     named_dataset_benchmark: false
 - id: L32-0051
   title: Long-prefill native layout and pipeline parity loop
-  execution_state: running
+  execution_state: completed
   approval_ref: User2026-09-18 explicitly requests loop optimization to match M64
     single-chunk prefill throughput
   record: docs/experiments/L32-0051.md
@@ -2785,6 +2785,91 @@ experiments:
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
-  evidence_validity: pending
-  local_gate: not_run
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: pending
+  evidence:
+    experiment: L32-0051
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    source_closure: e31a286fac5b43cfccd93706bcc21a00400920ce
+    measured_source: e31a286fac5b43cfccd93706bcc21a00400920ce
+    control_source: fad2d40fa909c2c42f251b04a1c1eed64ad2af1c
+    runtime_option: 31
+    runtime_archive: /mnt/d/llm_exp/results/llama32-htp/l32-0051/binaries-a10
+    model: Llama-3.2-1B-Instruct
+    recipe: W4A8-SP2 no rotation FP32 residual
+    performance:
+      '536':
+        prefill: 2505.9504630620654
+        decode: 37.71335275427236
+      '741':
+        prefill: 2499.1294074448383
+        decode: 34.29758879298647
+    matched_m64_prefill_tps: 2305.9621503883673
+    parity_gate:
+      '536':
+        throughput_over_m64: 1.0867266241295488
+        ci95:
+        - 1.0814467993705497
+        - 1.091901475069318
+        pass_parity: true
+      '741':
+        throughput_over_m64: 1.083768615640087
+        ci95:
+        - 1.0781509407316578
+        - 1.0890850694074197
+        pass_parity: true
+    effects:
+      '536':
+        prefill:
+          wall_ratio: 0.2547212532913585
+          ci95:
+          - 0.25442582703984357
+          - 0.2550474190476966
+          throughput_gain_percent: 292.5860080690508
+          ten_percent_gate: true
+        decode:
+          wall_ratio: 0.6102427161251487
+          ci95:
+          - 0.6092017401034399
+          - 0.6113537559440815
+          throughput_gain_percent: 63.86922343779682
+          ten_percent_gate: true
+      '741':
+        prefill:
+          wall_ratio: 0.2076502022870553
+          ci95:
+          - 0.20739089119203938
+          - 0.2078855879414683
+          throughput_gain_percent: 381.5791118843225
+          ten_percent_gate: true
+        decode:
+          wall_ratio: 0.5650907728615292
+          ci95:
+          - 0.5644952449317107
+          - 0.5658424798279265
+          throughput_gain_percent: 76.96271962399246
+          ten_percent_gate: true
+    formal_cycles: 10
+    replays_per_process: 10
+    formal_processes: 50
+    timed_rpc_boundaries: 14400
+    independent_final_binary_layer_outputs: 1200
+    bit_exact_layer_outputs: 1200
+    numerical_physical_pass: true
+    vtcm_peak_bytes: 8098272
+    attention_overlay_peak_bytes: 2494464
+    quality_claim: false
+    baseline_promoted: false
+    device_owner: null
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0051
+    evidence_ledger_sha256: 559e75c2eaae9811bee974e40f98f65ba9cf42c3c8f1485ff5ebe2776f5cad83
+    evidence_files: 9260
+    evidence_bytes: 4505934845
+    report: docs/experiments/L32-0051-RESULTS.md
+    modules: docs/experiments/L32-0051-MODULES.md
+    workspace_build: 1B /16 layers
+    named_dataset_benchmark: false
+    other_models_recipes_migrated: false
