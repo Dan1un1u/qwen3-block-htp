@@ -1,3 +1,6 @@
+# L32-0053 active: long-context throughput loop
+Read docs/experiments/L32-0053.md. CPU work only until Qwen EXP0296 releases device. Frozen Llama0052 fixtures/math; no quality/baseline promotion.
+
 # L32-0052 completed — migration implemented, parity separately reported
 Read docs/experiments/L32-0052-RESULTS.md and IMPLEMENTATION.md. Source closure 0360df475b91bc2e33d43c3f01dde02e457e8a9e. Numerical/physical checks pass; inherited long/M64 parity `fail`. Five short/ten formal repeat10 complete, all samples retained. No tolerance relaxation, slowed control, named-dataset result, PPL acceptance, or automatic baseline promotion. Evidence /mnt/d/llm_exp/results/llama32-htp/l32-0052; ledger 5cdc62d51f5aaa0788e0f1088bc50df2eeefd931532b6cfe8a216dd2131447a0. Device owner released; no active experiment. Build 3B/28 layers. Long frontend prompt<=768/decode<=63/cache832; one-row long-cache decode remains sequential dynamic attention and has further optimization room. Cross-model summary: docs/experiments/LONG_PREFILL_MODEL_MIGRATION.md. Historical selected paper baselines unchanged.
 

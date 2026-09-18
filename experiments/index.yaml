@@ -2977,3 +2977,20 @@ experiments:
     modules: docs/experiments/L32-0052-MODULES.md
     workspace_build: 3B/28 layers
     closure_loadable_sections_equal_measured: true
+
+- id: L32-0053
+  title: Llama3B long-context throughput loop
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: pending
+  record: docs/experiments/L32-0053.md
+  approval_ref: 'User: 请针对各长序列吞吐门槛不达标的问题继续开展loop优化。'
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  evidence:
+    device_owner: null
+    parent: L32-0052
+    quality_claim: false
+    baseline_promoted: false
