@@ -32,9 +32,11 @@ void qbh_attention_u8_softmax_long_native4(uint8_t *scores,uint8_t *prob,
         for(unsigned t=0;t<tiles;++t) {
             HVX_Vector raw=*(HVX_Vector *)(scores+((size_t)head*tiles+t)*2048+row*32);
             HVX_Vector v=qbh_attention_u8_requant_centered(raw,cfg->score_multiplier,128);
+            *(HVX_Vector *)(scores+((size_t)head*tiles+t)*2048+row*32)=v;
             maxv=Q6_Vub_vmax_VubVub(maxv,Q6_V_vmux_QVV(qbh_long_native_valid((int)(past+row+1)-(int)t*32),v,zero));
         }
         for(unsigned shift=16;shift;shift>>=1)
+            *(HVX_Vector *)(scores+((size_t)head*tiles+t)*2048+row*32)=v;
             maxv=Q6_Vub_vmax_VubVub(maxv,Q6_V_vlalign_VVR(maxv,zero,shift));
         unsigned m0=Q6_R_vextract_VR(maxv,28)>>24,m1=Q6_R_vextract_VR(maxv,60)>>24;
         unsigned m2=Q6_R_vextract_VR(maxv,92)>>24,m3=Q6_R_vextract_VR(maxv,124)>>24;
@@ -43,7 +45,7 @@ void qbh_attention_u8_softmax_long_native4(uint8_t *scores,uint8_t *prob,
             Q6_V_vmux_QVV(Q6_Q_vcmp_gt_VubVub(Q6_Vb_vsplat_R(96),lane),Q6_Vb_vsplat_R(m2),Q6_Vb_vsplat_R(m3)));
         for(unsigned t=0;t<tiles;++t) {
             uint8_t *p=scores+((size_t)head*tiles+t)*2048+row*32;
-            HVX_Vector v=qbh_attention_u8_requant_centered(*(HVX_Vector *)p,cfg->score_multiplier,128);
+            HVX_Vector v=*(HVX_Vector *)p;
             HVX_VectorPair dh=Q6_Wuh_vunpack_Vub(Q6_Vub_vsub_VubVub_sat(mx,v));
             HVX_Vector round=Q6_Vh_vsplat_R(1U<<(cfg->fraction_bits-1));
             HVX_Vector a=Q6_Vuh_vmin_VuhVuh(Q6_Vuh_vlsr_VuhR(Q6_Vh_vadd_VhVh(Q6_V_lo_W(dh),round),cfg->fraction_bits),Q6_Vh_vsplat_R(15));

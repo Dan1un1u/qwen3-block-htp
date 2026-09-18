@@ -17,13 +17,11 @@ void qbh_attention_u8_pack_k_long(const uint8_t *rows,uint32_t valid,uint32_t pa
             HVX_Vector v=qbh_attention_u8_center_u8_to_s8(*(const HVX_Vector *)(rows+(size_t)(t*32+r)*64),cfg->k_zero_point);
             HVX_VectorPred live=count>=2?Q6_Q_vcmp_eq_VbVb(v,v):Q6_Q_vsetq_R(64);
             v=Q6_V_vmux_QVV(live,v,Q6_V_vzero());
-            HVX_VectorPair halves=Q6_Wh_vunpack_Vb(v);
-            HVX_VectorPair w0=Q6_Ww_vunpack_Vh(Q6_V_lo_W(halves));
-            HVX_VectorPair w1=Q6_Ww_vunpack_Vh(Q6_V_hi_W(halves));
-            int32_t sum0=(int32_t)qbh_attention_u8_reduce_sum_words(Q6_Vw_vadd_VwVw(Q6_V_lo_W(w0),Q6_V_hi_W(w0)));
-            int32_t sum1=(int32_t)qbh_attention_u8_reduce_sum_words(Q6_Vw_vadd_VwVw(Q6_V_lo_W(w1),Q6_V_hi_W(w1)));
-            b[32+r]=(uint32_t)(-(int32_t)cfg->q_zero_point*sum0+128*(int32_t)div+(int32_t)round);
-            if(count>=2)b[33+r]=(uint32_t)(-(int32_t)cfg->q_zero_point*sum1+128*(int32_t)div+(int32_t)round);
+            HVX_Vector sums=Q6_Vw_vrmpy_VbVb(v,Q6_Vb_vsplat_R(1));
+            for(unsigned sh=32;sh>=4;sh>>=1)
+                sums=Q6_Vw_vadd_VwVw(sums,Q6_V_vlalign_VVR(sums,Q6_V_vzero(),sh));
+            b[32+r]=(uint32_t)(-(int32_t)cfg->q_zero_point*(int32_t)Q6_R_vextract_VR(sums,60)+128*(int32_t)div+(int32_t)round);
+            if(count>=2)b[33+r]=(uint32_t)(-(int32_t)cfg->q_zero_point*(int32_t)Q6_R_vextract_VR(sums,124)+128*(int32_t)div+(int32_t)round);
             Q6_vscatter_QRMVwV(live,(uint32_t)(uintptr_t)(weight+t*2048),2047,
                 Q6_Vw_vadd_VwVw(base,Q6_V_vsplat_R(r*4)),v);
         }

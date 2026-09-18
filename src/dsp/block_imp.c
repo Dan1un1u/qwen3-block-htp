@@ -492,7 +492,7 @@ struct qbh_block_w4f16_pool {
     struct qbh_block_hmx_worker *attention_hmx_worker;
     qurt_mutex_t attention_hmx_mutex;
     uint8_t *long_shared;
-    uint32_t long_rows,long_past,long_padded,long_stride;
+    uint32_t long_rows,long_past,long_padded,long_stride,long_common_lut;
     volatile uint32_t attention_gqa_abort;
     float attention_gqa_qk_max_abs[QBH_BLOCK_HEADS];
     volatile uint32_t next_attention_task;
