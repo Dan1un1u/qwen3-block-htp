@@ -1,3 +1,13 @@
+# L32-0047 completed: generic3B W4A16; missing recipes filled except user-deferred W16
+Read docs/experiments/L32-0047-RESULTS.md and MODULES.md. M64+42/cache128/full28, five short/ten formal repeat10. 493.223307/7.929781 prefill/decodeTPS. No specialization tuning. FP16 residual/KV/nonlinear baseline, same0041 W4/head/scales; no SP2/rotations.
+Selected0/13/27+chain3 floating gates, RoPE/W4 component checks, 1B bounded regression,3B A8/SP2 full audits pass. Native KV inherited one32-token tail bug fixed: native vs row-major all43 hidden/norm and IDs/logitbits exact.
+Full mathematical alignment remains FAILED (max boundaryNRMSE 0.006557147>.003, some cache cosine<.99999). Do not claim full FP16 alignment or model-quality/PPL acceptance. Old failed runs retained. Timing has audit disabled.
+Measuredd08ea545270fff12ee5bc08218c606a3760a2b91, source closure38b001a6127d7083d7d20f0b552ba23f20fde4ec; runtime R/f16-l28c, whereR=/mnt/d/llm_exp/results/llama32-htp/l32-0047. Current workspace rebuilt3B28 (latest host audit admission only); use frozen measured runtime for archived speed.
+Evidence ledgerfa3e1db2638a6573c2aeb1addb3c6e6fb1597d602af0fb6062a7a1a98783eb50, 8104files rehashed. No active experiment/device owner; next48. No auto baseline promotion.
+Ordinary3B A8 L32-0046=1206.676361/23.726358; matchedSP2control1186.505056/23.717208. Qwen0.6 ordinaryA8 EXP0294=3074.858385/93.465647. All preserve latest sharedA8 optimizations while only removingDownSP2.
+3B W16A16 unsupported/user-deferred:5.25GiB FP16 backbone exceedsuint32 shared-offsetABI. No weight paging authorized. Named-dataset48-row table stillpending; completed shapes alone do not establish HellaSwag data.
+Prior headings below are historical, including obsolete active-state notices.
+
 # L32-0047 active: generic3B W4A16
 Read docs/experiments/L32-0047.md. User requests generic vector/basic DMA overlap, no specialization tuning. Ordinary3B A8 completed (L32-0046), preserved0045 SP2 and all shared optimizations. 3B W16A16 remains deferred by explicit user choice. L32-0046 reports/ledger retained; no quality or baseline promotion.
 
