@@ -5654,7 +5654,7 @@ int main(int argc, char **argv) {
                                   ? QBH_BLOCK_F16F16 : QBH_BLOCK_W4F16) ||
                   (!qbh_hmx_native_f16_cache_formats(
                       kv_cache_k_format, kv_cache_v_format) &&
-                   !(generation_boundary_audit_enabled != 0U &&
+                   !((generation_boundary_audit_enabled != 0U || long_prompt_tokens) &&
                      kv_cache_k_format == QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1 &&
                      kv_cache_v_format == QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1)))
                : (variant != QBH_BLOCK_W4U8 ||
