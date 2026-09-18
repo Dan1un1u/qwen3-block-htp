@@ -39,7 +39,6 @@ struct qbh_attention_u8_telemetry {
 void qbh_attention_u8_softmax_long_native4(uint8_t *,uint8_t *,uint32_t,uint32_t,uint32_t,const struct qbh_attention_config *);
 
 void qbh_attention_u8_softmax_long_native4_fast(uint8_t *,uint8_t *,uint32_t,uint32_t,uint32_t,const struct qbh_attention_config *);
-void qbh_attention_u8_pack_v_long_fast(const uint8_t *,uint32_t,uint32_t,const struct qbh_attention_config *,int8_t *,uint32_t *,uint8_t *,uint32_t *);
 void qbh_attention_u8_pack_k_long_transpose(const uint8_t *,uint32_t,uint32_t,const struct qbh_attention_config *,int8_t *,uint32_t *);
 void qbh_attention_u8_pack_k_long(const uint8_t *,uint32_t,uint32_t,const struct qbh_attention_config *,int8_t *,uint32_t *);
 void qbh_attention_u8_pack_v_long(const uint8_t *,uint32_t,uint32_t,const struct qbh_attention_config *,int8_t *,uint32_t *,uint8_t *,uint32_t *);
