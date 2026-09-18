@@ -2502,7 +2502,7 @@ experiments:
     parent_experiment: L32-0044
 - id: L32-0046
   title: 3B ordinary A8 with Down-only SP2 removal
-  execution_state: running
+  execution_state: completed
   approval_ref: User2026-09-18 requests missing recipes; W4A8 only removes SP2 from
     latest optimized SP2. User explicitly defers 3B W16A16 paging.
   parent_source: 9ddf524f70f057069c8c4d03cd5cbe1b2277f028
@@ -2510,12 +2510,46 @@ experiments:
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
-  evidence_validity: not_checked
-  local_gate: not_run
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: pending
+  evidence:
+    experiment: L32-0046
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    source_closure: 1d3e797a7544365f3b248ed1fcf7a535baadc209
+    measured_source: 4623e975a37478a28b4dd4d3bf1e62a151e7e09e
+    shape: M64+42/cache128/full28
+    performance:
+      SP2:
+        prefill: 1186.505055826241
+        decode: 23.717207981091875
+      A8:
+        prefill: 1206.676361342118
+        decode: 23.7263576955111
+    effects:
+      prefill:
+        a8_over_sp2_wall_ratio: 0.9832835827715714
+        ci95:
+        - 0.9816984175985882
+        - 0.9848798752203622
+      decode:
+        a8_over_sp2_wall_ratio: 0.9996143649802196
+        ci95:
+        - 0.9982838334288546
+        - 1.0007995899350064
+    numerical_physical_pass: true
+    quality_claim: false
+    baseline_promoted: false
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0046
+    evidence_ledger_sha256: e1162819cab0abd441e771dcd1162f62f5c7856dc5a12fb6f28b82d8211f2460
+    evidence_files: 755
+    report: docs/experiments/L32-0046-RESULTS.md
+    modules: docs/experiments/L32-0046-MODULES.md
 - id: L32-0047
   title: Generic 3B W4A16 completion
-  execution_state: planned
+  execution_state: running
   approval_ref: User2026-09-18 authorizes missing configurations with generic vector/basic
     DMA overlap only; no specialization. User defers W16A16 paging.
   record: docs/experiments/L32-0047.md
@@ -2525,3 +2559,4 @@ experiments:
   evidence_validity: not_checked
   local_gate: not_run
   adoption_status: pending
+  parent_source: 1d3e797a7544365f3b248ed1fcf7a535baadc209

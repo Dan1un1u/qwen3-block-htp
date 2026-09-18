@@ -1,3 +1,6 @@
+# L32-0047 active: generic3B W4A16
+Read docs/experiments/L32-0047.md. User requests generic vector/basic DMA overlap, no specialization tuning. Ordinary3B A8 completed (L32-0046), preserved0045 SP2 and all shared optimizations. 3B W16A16 remains deferred by explicit user choice. L32-0046 reports/ledger retained; no quality or baseline promotion.
+
 # L32-0046 active: missing recipe completion
 Read docs/experiments/L32-0046.md. Ordinary3B A8 only removes SP2, latest0045 optimizations preserved. Device after EXP0294 closure. W4A16 follows; W16A16 user-deferred for >4GiB ABI.
 

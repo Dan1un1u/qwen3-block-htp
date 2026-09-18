@@ -6,7 +6,7 @@ project:
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
 governance:
-  active_experiment: L32-0046
+  active_experiment: L32-0047
   next_experiment_number: 48
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -14,7 +14,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: 9ddf524f70f057069c8c4d03cd5cbe1b2277f028
+    recorded_head: 1d3e797a7544365f3b248ed1fcf7a535baadc209
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -29,8 +29,8 @@ current_scope:
   stage: llama32_3b_no_performance_gate_loop_completed
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Complete ordinary 3B W4A8 by removing only SP2 from L32-0045. Then
-    generic W4A16; W16A16 deferred per explicit user reply because >4GiB ABI limit.
+  next_action: L32-0047 generic W4A16 adaptation; A8 completion finished. 3B W16A16
+    remains explicitly user-deferred.
   baseline_manifest: docs/PAPER_NO_ROTATION_BASELINES.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF_L32_0034.md
@@ -43,7 +43,7 @@ current_scope:
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0045
+  last_completed_experiment: L32-0046
   evidence_ledger_sha256: 599d86cf654b2b41526690c76ad1c0a251b5f206815a57ce4ae12b0024f94ac9
   formal_profiling_completed: false
   general_quantization_quality_accepted: false
@@ -2540,6 +2540,40 @@ current_scope:
     reason: FP16 backbone alone 5637144576 bytes exceeds uint32 shared offset ABI
     user_decision: 先完成其余配置，3B W16A16 待讨论
     no_paging_authorized: true
+  latest_llama3b_ordinary_a8:
+    experiment: L32-0046
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    source_closure: 1d3e797a7544365f3b248ed1fcf7a535baadc209
+    measured_source: 4623e975a37478a28b4dd4d3bf1e62a151e7e09e
+    shape: M64+42/cache128/full28
+    performance:
+      SP2:
+        prefill: 1186.505055826241
+        decode: 23.717207981091875
+      A8:
+        prefill: 1206.676361342118
+        decode: 23.7263576955111
+    effects:
+      prefill:
+        a8_over_sp2_wall_ratio: 0.9832835827715714
+        ci95:
+        - 0.9816984175985882
+        - 0.9848798752203622
+      decode:
+        a8_over_sp2_wall_ratio: 0.9996143649802196
+        ci95:
+        - 0.9982838334288546
+        - 1.0007995899350064
+    numerical_physical_pass: true
+    quality_claim: false
+    baseline_promoted: false
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0046
+    evidence_ledger_sha256: e1162819cab0abd441e771dcd1162f62f5c7856dc5a12fb6f28b82d8211f2460
+    evidence_files: 755
+    report: docs/experiments/L32-0046-RESULTS.md
+    modules: docs/experiments/L32-0046-MODULES.md
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp
