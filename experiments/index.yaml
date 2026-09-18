@@ -2513,3 +2513,15 @@ experiments:
   evidence_validity: not_checked
   local_gate: not_run
   adoption_status: pending
+- id: L32-0047
+  title: Generic 3B W4A16 completion
+  execution_state: planned
+  approval_ref: User2026-09-18 authorizes missing configurations with generic vector/basic
+    DMA overlap only; no specialization. User defers W16A16 paging.
+  record: docs/experiments/L32-0047.md
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
