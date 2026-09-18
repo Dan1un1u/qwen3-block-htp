@@ -17183,6 +17183,30 @@ static void qbh_scan_gather_fp16_head(
     }
 }
 
+/* Basic row-major KV conversion. Inverse of the existing 64-channel
+ * word-scatter pack, preserving both FP16 bit patterns in each word. */
+static void qbh_scan_unpack_fp16_weight_rows_hvx(
+    const __fp16 *weight_tiles, __fp16 *rows, uint32_t valid_rows) {
+    const uint32_t k_tiles=QBH_BLOCK_HEAD_DIM/QBH_HMX_FP16_COLS;
+    const HVX_Vector base=*(const HVX_Vector *)qbh_attention_vscatter_offsets;
+    for(uint32_t row=0;row<valid_rows;++row) {
+        const HVX_Vector offsets=Q6_Vw_vadd_VwVw(base,Q6_V_vsplat_R((row%32U)*4U));
+        for(uint32_t channel=0;channel<QBH_BLOCK_HEAD_DIM;channel+=64U) {
+            const __fp16 *tile=weight_tiles+
+                ((size_t)(row/32U)*k_tiles+channel/32U)*QBH_HMX_FP16_TILE_ELEMENTS;
+            Q6_vgather_ARMVw((HVX_Vector *)(rows+(size_t)row*QBH_BLOCK_HEAD_DIM+channel),
+                (int32_t)(uintptr_t)tile,2U*QBH_HMX_FP16_TILE_BYTES-1U,offsets);
+        }
+    }
+    asm volatile("barrier":::"memory");
+}
+static void qbh_scan_gather_fp16_head_hvx(
+    const __fp16 *source,uint32_t stride,uint32_t head,__fp16 *rows,uint32_t valid_rows) {
+    for(uint32_t row=0;row<valid_rows;++row)
+        qbh_hvx_copy_aligned_bytes(rows+(size_t)row*QBH_BLOCK_HEAD_DIM,
+            source+(size_t)row*stride+(size_t)head*QBH_BLOCK_HEAD_DIM,
+            QBH_BLOCK_HEAD_DIM*sizeof(__fp16));
+}
 static int qbh_scan_append_f16_kv_row_major(
     struct qbh_block_header *header, uint8_t *shared,
     struct qbh_block_buffers *buffers, uint32_t logical_rows,
@@ -17223,12 +17247,12 @@ static int qbh_scan_append_f16_kv_row_major(
             (size_t)past_tokens * QBH_BLOCK_HEAD_DIM;
 
         if (direct_qkv != 0U) {
-            qbh_scan_unpack_fp16_weight_rows(
+            qbh_scan_unpack_fp16_weight_rows_hvx(
                 (const __fp16 *)buffers->scores +
                     (size_t)head * head_elements,
                 row_scratch, logical_rows);
         } else {
-            qbh_scan_gather_fp16_head(
+            qbh_scan_gather_fp16_head_hvx(
                 (const __fp16 *)buffers->k,
                 QBH_BLOCK_KV_HIDDEN, head,
                 row_scratch, logical_rows);
@@ -17240,11 +17264,11 @@ static int qbh_scan_append_f16_kv_row_major(
         }
 
         if (direct_qkv != 0U) {
-            qbh_scan_gather_fp16_head(
+            qbh_scan_gather_fp16_head_hvx(
                 v_rows, QBH_BLOCK_KV_HIDDEN, head,
                 row_scratch, logical_rows);
         } else {
-            qbh_scan_gather_fp16_head(
+            qbh_scan_gather_fp16_head_hvx(
                 (const __fp16 *)buffers->v,
                 QBH_BLOCK_KV_HIDDEN, head,
                 row_scratch, logical_rows);
@@ -17715,7 +17739,7 @@ static int qbh_scan_f16_attention(
             header->f16_cache_native_append_update_ticks +=
                 HAP_perf_get_qtimer_count() - start;
         } else {
-            memset(plane_a, 0, plane_bytes);
+            qbh_hvx_zero_aligned_bytes(plane_a, plane_bytes);
             if (qbh_scan_cache_dma(
                     header, plane_a, cache_k,
                     valid_tokens * QBH_BLOCK_HEAD_DIM * sizeof(__fp16),
@@ -17886,7 +17910,7 @@ static int qbh_scan_f16_attention(
             header->f16_cache_native_append_update_ticks +=
                 HAP_perf_get_qtimer_count() - start;
         } else {
-            memset(plane_c, 0, plane_bytes);
+            qbh_hvx_zero_aligned_bytes(plane_c, plane_bytes);
             if (qbh_scan_cache_dma(
                     header, plane_c, cache_v,
                     valid_tokens * QBH_BLOCK_HEAD_DIM * sizeof(__fp16),
@@ -17928,7 +17952,7 @@ static int qbh_scan_f16_attention(
             HAP_perf_get_qtimer_count() - start;
     }
 
-    if(header->variant!=QBH_BLOCK_W4U8 && header->w4f16_decode_opt>=2U && logical_rows==1U)
+    if(header->long_prompt_tokens || (header->variant!=QBH_BLOCK_W4U8 && header->w4f16_decode_opt>=2U && logical_rows==1U))
         qbh_hvx_copy_aligned_bytes(buffers->attention_concat,buffers->q,
             QBH_BLOCK_M*QBH_BLOCK_ATTN_WIDTH*sizeof(__fp16));
     else memcpy(
