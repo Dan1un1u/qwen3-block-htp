@@ -52,6 +52,14 @@ def prepare():
    elif n=='generation_expected_token_ids_u32.bin':
     np.array(fixed,'<u4').tofile(target);changed.append(n)
    else:os.link(src/n,target)
+  # Some frozen packages contain only segmented-native caches. The long
+  # frontend needs explicit empty row-major cache slots, including references.
+  for layer_index in range(28):
+   for kind in ['k','v']:
+    for prefix in ['', 'reference_']:
+     n=f'layer{layer_index}/{prefix}kv_cache_{kind}_u8.bin'
+     if not (dst/n).exists():
+      np.zeros((8,832,128),'u1').tofile(dst/n);changed.append(n)
   np.array(ids[:length],'<u4').tofile(dst/'long_prompt_u32.bin')
   np.array(fixed,'<u4').tofile(dst/'long_fixed_u32.bin')
   cos.astype('<f2').tofile(dst/'long_rope_cos_f16.bin');sin.astype('<f2').tofile(dst/'long_rope_sin_f16.bin')
