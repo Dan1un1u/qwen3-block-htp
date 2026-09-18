@@ -12,7 +12,7 @@ from reference_w4u8_hmx import load_qparams_bin,unpack_u8_hmx_activation
 S=c.S;OLD_R=c.R;OLD_O=c.O;R=OLD_R.parent/'exp0294';O=OLD_O.parent/'exp0294'
 def preflight():
  z=subprocess.check_output(['python3',str(S)+'-project-memory/scripts/project_memory.py','preflight','--source-worktree',str(S)],text=True)
- assert 'EXPERIMENT=EXP-0294\\n' in z
+ assert 'EXPERIMENT=EXP-0294' in z.splitlines()
 for m in [c,d,f]:m.R=R;m.O=O;m.preflight=preflight
 d.REMOTE='/data/local/tmp/qwen3-block-htp/exp0294'
 d.package_path=lambda name:O/name
