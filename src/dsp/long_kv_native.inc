@@ -256,3 +256,5 @@ void qbh_attention_u8_pack_v_long_register(const uint8_t *r,uint32_t v,uint32_t 
 #include "long_k_transpose_register.inc"
 
 #include "long_k_transpose_staged16.inc"
+
+#include "long_k_transpose_byte16.inc"
