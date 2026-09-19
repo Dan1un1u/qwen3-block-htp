@@ -16002,6 +16002,33 @@ static void qbh_record_f16_nonfinite(struct qbh_block_header *header,
     }
 }
 
+/* EXP0300 C4: one outstanding cache DMA, descriptor lives until join.
+ * Counters measure exposed issue/join time, not overlapped engine occupancy. */
+static int qbh_scan_cache_prefetch_begin(struct qbh_block_header *header,
+    struct qbh_dma_aligned_desc_1d *aligned,void *dst,const void *src,uint32_t bytes) {
+    uint64_t start=HAP_perf_get_qtimer_count();
+    struct qbh_dma_desc_1d *d=&aligned->descriptor;
+    if(dst==NULL || src==NULL || !bytes || bytes>=UINT32_C(0x01000000))return -1;
+    if(qbh_dma_wait_idle()!=0)return -2;
+    memset(aligned,0,sizeof(*aligned));
+    d->length=bytes;d->type=QBH_DMA_TYPE_1D;
+    d->src_bypass=1U;d->dst_bypass=0U;d->ordered=1U;
+    d->dstate=QBH_DMA_DESC_PENDING;d->src=(uint32_t)(uintptr_t)src;
+    d->dst=(uint32_t)(uintptr_t)dst;
+    if(qbh_dma_start(d)!=0)return -3;
+    ++header->scan_cache_dma_descriptor_count;
+    header->scan_cache_ddr_read_bytes+=bytes;
+    header->scan_cache_stage_ticks+=HAP_perf_get_qtimer_count()-start;
+    return 0;
+}
+static int qbh_scan_cache_prefetch_join(struct qbh_block_header *header,
+    struct qbh_dma_aligned_desc_1d *aligned) {
+    uint64_t start=HAP_perf_get_qtimer_count();
+    int result=qbh_dma_wait_idle();
+    header->scan_cache_stage_ticks+=HAP_perf_get_qtimer_count()-start;
+    return result==0 && aligned->descriptor.dstate==QBH_DMA_DESC_COMPLETE ? 0 : -1;
+}
+
 static int qbh_scan_cache_dma(struct qbh_block_header *header,
                               void *destination, const void *source,
                               uint32_t bytes, uint32_t ddr_to_vtcm) {
@@ -17709,13 +17736,32 @@ static int qbh_scan_f16_attention(
     const uint32_t delta_padded = qbh_align_up(decode_rows, QBH_HMX_FP16_COLS);
     const uint32_t delta_tiles = delta_padded / QBH_HMX_FP16_COLS;
 
+    struct qbh_dma_aligned_desc_1d v_prefetch_descriptor;
+    uint32_t v_dma_active=0U;
+    uint32_t k_prefetch_pending=0U;
+    /* C2 uses13KiB scratch; reserve19.5KiB so the alternate native kernel also
+     * remains disjoint. The rest is dead expanded-weight storage in this phase. */
+    const uint32_t scratch_reserve=4U*1248U*sizeof(float);
+    __fp16 *v_prefetch_rows=(__fp16 *)(buffers->expanded_weight+scratch_reserve);
+    uint32_t v_prefetch_enabled=0U;
+#ifndef QBH_QWEN_06B
+    v_prefetch_enabled=header->variant!=QBH_BLOCK_W4U8 &&
+        header->long_prompt_tokens && (header->long_optimization&2U) &&
+        logical_rows>1U && !native_cache &&
+        (uintptr_t)buffers->expanded_weight_alt-(uintptr_t)buffers->expanded_weight >=
+            scratch_reserve+padded_tokens*QBH_BLOCK_HEAD_DIM*sizeof(__fp16);
+#endif
+    if(v_prefetch_enabled)
+        qbh_hvx_zero_aligned_bytes(v_prefetch_rows+(size_t)valid_tokens*QBH_BLOCK_HEAD_DIM,
+            (padded_tokens-valid_tokens)*QBH_BLOCK_HEAD_DIM*sizeof(__fp16));
+
     header->scan_attention_overlay_capacity_bytes = overlay_capacity;
     header->scan_attention_overlay_required_bytes = required_bytes;
     header->scan_total_kv_length = valid_tokens;
     header->scan_padded_kv_length = padded_tokens;
     if (required_bytes > overlay_capacity ||
         kv_tiles > QBH_BLOCK_SCAN_MAX_KV_TILES) {
-        return -1;
+        goto qbh_scan_failure;
     }
     qbh_hmx_fp16_init_unity_scale(buffers->scale_or_bias);
 
@@ -17756,14 +17802,13 @@ static int qbh_scan_f16_attention(
             shared + header->kv_cache_v_offset +
             (size_t)group * cache_head_stride_bytes;
         __fp16 *q_group = q_group_scratch;
-        uint32_t native_probability=0U;
         uint64_t start;
 
         if (native_cache != 0U) {
             if (qbh_scan_cache_dma(
                     header, weight, cache_k,
                     native_base_bytes, 1U) != 0) {
-                return -1;
+                goto qbh_scan_failure;
             }
             qbh_hvx_zero_aligned_bytes(
                 delta_rows,
@@ -17773,7 +17818,7 @@ static int qbh_scan_f16_attention(
                     header, delta_rows,
                     cache_k + native_base_bytes,
                     delta_bytes, 1U) != 0) {
-                return -1;
+                goto qbh_scan_failure;
             }
             start = HAP_perf_get_qtimer_count();
             qbh_pack_fp16_weight_rows_hvx(
@@ -17791,20 +17836,35 @@ static int qbh_scan_f16_attention(
             header->f16_cache_native_append_update_ticks +=
                 HAP_perf_get_qtimer_count() - start;
         } else {
-            qbh_hvx_zero_aligned_bytes(plane_a, plane_bytes);
-            if (qbh_scan_cache_dma(
-                    header, plane_a, cache_k,
-                    valid_tokens * QBH_BLOCK_HEAD_DIM * sizeof(__fp16),
-                    1U) != 0) {
-                return -1;
+            const __fp16 *key_rows=plane_a;
+            if(v_prefetch_enabled && k_prefetch_pending) {
+                if(qbh_scan_cache_prefetch_join(header,&v_prefetch_descriptor)!=0)
+                    goto qbh_scan_failure;
+                v_dma_active=0U;k_prefetch_pending=0U;key_rows=v_prefetch_rows;
+            } else {
+                if(v_prefetch_enabled)
+                    qbh_hvx_zero_aligned_bytes(plane_a+(size_t)valid_tokens*QBH_BLOCK_HEAD_DIM,
+                        (padded_tokens-valid_tokens)*QBH_BLOCK_HEAD_DIM*sizeof(__fp16));
+                else qbh_hvx_zero_aligned_bytes(plane_a,plane_bytes);
+                if(qbh_scan_cache_dma(header,plane_a,cache_k,
+                    valid_tokens*QBH_BLOCK_HEAD_DIM*sizeof(__fp16),1U)!=0)
+                    goto qbh_scan_failure;
             }
             start = HAP_perf_get_qtimer_count();
             qbh_pack_fp16_weight_rows_hvx(
-                plane_a, QBH_BLOCK_HEAD_DIM, 0U,
+                key_rows, QBH_BLOCK_HEAD_DIM, 0U,
                 QBH_BLOCK_HEAD_DIM, padded_tokens, weight);
             header->attention_qk_pack_ticks +=
                 HAP_perf_get_qtimer_count() - start;
             ++header->f16_cache_full_prefix_pack_count;
+            /* K has been consumed into native weight tiles. The reusable
+             * look-ahead slot is free for V while QK/softmax run. */
+            if(v_prefetch_enabled) {
+                if(qbh_scan_cache_prefetch_begin(header,&v_prefetch_descriptor,
+                    v_prefetch_rows,cache_v,valid_tokens*QBH_BLOCK_HEAD_DIM*sizeof(__fp16))!=0)
+                    goto qbh_scan_failure;
+                v_dma_active=1U;
+            }
         }
 
         for (uint32_t local_head = 0U;
@@ -17824,7 +17884,7 @@ static int qbh_scan_f16_attention(
                 2U * QBH_ATTENTION_Q_HEADS_PER_GROUP,
                 QBH_BLOCK_HEAD_DIM / QBH_HMX_FP16_COLS,
                 kv_tiles) != 0) {
-            return -1;
+            goto qbh_scan_failure;
         }
         header->attention_qk_hmx_ticks +=
             HAP_perf_get_qtimer_count() - start;
@@ -17859,34 +17919,22 @@ static int qbh_scan_f16_attention(
                 qbh_hvx_zero_aligned_bytes(plane_c,
                     QBH_ATTENTION_Q_HEADS_PER_GROUP*64U*padded_tokens*sizeof(__fp16));
                 for(uint32_t i=0;i<contexts-1U;++i)
-                    pool->jobs[i].command_kind=QBH_BLOCK_HVX_POOL_LONG_F16_NATIVE;
+                    pool->jobs[i].command_kind=QBH_BLOCK_HVX_POOL_LONG_F16_SOFTMAX;
                 asm volatile("barrier":::"memory");
                 for(uint32_t i=0;i<contexts-1U;++i)qurt_sem_up(&pool->command_ready[i]);
-                qbh_hvx_long_softmax_f16_native_partition(plane_a,plane_c,
+                qbh_hvx_long_softmax_f16_partition(plane_a,plane_c,
                     QBH_ATTENTION_Q_HEADS_PER_GROUP,logical_rows,padded_tokens,
                     past_tokens,QBH_MODEL_ATTENTION_SCALE,
-                    pool->long_f16_scratch+(contexts-1U)*1248U,contexts-1U,contexts);
+                    pool->long_f16_scratch+(contexts-1U)*832U,contexts-1U,contexts);
                 for(uint32_t i=0;i<contexts-1U;++i)qurt_sem_down(&pool->command_done[i]);
                 asm volatile("barrier":::"memory");
-                native_probability=1U;
             } else
 #endif
             qbh_hvx_long_softmax_f16(plane_a, plane_c,
                 QBH_ATTENTION_Q_HEADS_PER_GROUP, logical_rows,
                 padded_tokens, past_tokens, QBH_MODEL_ATTENTION_SCALE);
-            if (header->generation_boundary_audit_enabled) {
-                __fp16 *audit_probability=plane_c;
-                if(native_probability) {
-                    /* K weights are dead after QK. Untimed independent audit
-                     * unpacks native P here while preserving original scores. */
-                    for(uint32_t h=0;h<QBH_ATTENTION_Q_HEADS_PER_GROUP;++h)
-                        qbh_unpack_fp16_output(plane_c+(size_t)h*score_head_elements,
-                            kv_tiles,weight+(size_t)h*score_head_elements,padded_tokens,0U);
-                    audit_probability=weight;
-                }
-                if(qbh_scan_audit_vector_softmax_f16(plane_a,audit_probability,
-                    logical_rows,padded_tokens,past_tokens)) return -1;
-            }
+            if (header->generation_boundary_audit_enabled &&
+                qbh_scan_audit_vector_softmax_f16(plane_a,plane_c,logical_rows,padded_tokens,past_tokens)) goto qbh_scan_failure;
         } else
         if (logical_rows==1U && padded_tokens<=128U) {
             qbh_hvx_decode_softmax_f16(plane_a, plane_c,
@@ -17894,11 +17942,11 @@ static int qbh_scan_f16_attention(
                 QBH_MODEL_ATTENTION_SCALE);
             ++header->w4f16_decode_opt_calls;
             if (header->generation_boundary_audit_enabled &&
-                qbh_scan_audit_vector_softmax_f16(plane_a,plane_c,logical_rows,padded_tokens,past_tokens)) return -1;
+                qbh_scan_audit_vector_softmax_f16(plane_a,plane_c,logical_rows,padded_tokens,past_tokens)) goto qbh_scan_failure;
         } else
         if(header->variant!=QBH_BLOCK_W4U8 && header->w4f16_decode_opt && logical_rows==1U && padded_tokens<=128U) {
             if(qbh_scan_softmax_f16_exact_batch(header,plane_a,plane_c,
-                (__fp16 *)buffers->middle,past_tokens,padded_tokens)!=0)return -1;
+                (__fp16 *)buffers->middle,past_tokens,padded_tokens)!=0)goto qbh_scan_failure;
         } else qbh_scan_softmax_f16(
             plane_a, plane_c, logical_rows,
             past_tokens, padded_tokens);
@@ -17906,7 +17954,7 @@ static int qbh_scan_f16_attention(
             HAP_perf_get_qtimer_count() - start;
 
         start = HAP_perf_get_qtimer_count();
-        if(!native_probability) for (uint32_t local_head = 0U;
+        for (uint32_t local_head = 0U;
              local_head < QBH_ATTENTION_Q_HEADS_PER_GROUP;
              ++local_head) {
             qbh_pack_fp16_activation(
@@ -17922,7 +17970,7 @@ static int qbh_scan_f16_attention(
             if (qbh_scan_cache_dma(
                     header, delta_weight, cache_v,
                     native_base_bytes, 1U) != 0) {
-                return -1;
+                goto qbh_scan_failure;
             }
             start = HAP_perf_get_qtimer_count();
             for (uint32_t output_tile = 0U;
@@ -17949,7 +17997,7 @@ static int qbh_scan_f16_attention(
                     header, delta_rows,
                     cache_v + native_base_bytes,
                     delta_bytes, 1U) != 0) {
-                return -1;
+                goto qbh_scan_failure;
             }
             start = HAP_perf_get_qtimer_count();
             qbh_pack_fp16_weight_transposed_hvx(
@@ -17972,13 +18020,19 @@ static int qbh_scan_f16_attention(
             header->f16_cache_native_append_update_ticks +=
                 HAP_perf_get_qtimer_count() - start;
         } else {
-            __fp16 *value_rows=native_probability ? plane_a : plane_c;
-            qbh_hvx_zero_aligned_bytes(value_rows, plane_bytes);
-            if (qbh_scan_cache_dma(
-                    header, value_rows, cache_v,
-                    valid_tokens * QBH_BLOCK_HEAD_DIM * sizeof(__fp16),
-                    1U) != 0) {
-                return -1;
+            __fp16 *value_rows=plane_c;
+            if(v_prefetch_enabled) {
+                if(qbh_scan_cache_prefetch_join(header,&v_prefetch_descriptor)!=0)
+                    goto qbh_scan_failure;
+                v_dma_active=0U;value_rows=v_prefetch_rows;
+            } else {
+                qbh_hvx_zero_aligned_bytes(plane_c, plane_bytes);
+                if (qbh_scan_cache_dma(
+                        header, plane_c, cache_v,
+                        valid_tokens * QBH_BLOCK_HEAD_DIM * sizeof(__fp16),
+                        1U) != 0) {
+                    goto qbh_scan_failure;
+                }
             }
             start = HAP_perf_get_qtimer_count();
             qbh_pack_fp16_weight_transposed_hvx(
@@ -17988,14 +18042,23 @@ static int qbh_scan_f16_attention(
                 HAP_perf_get_qtimer_count() - start;
             ++header->f16_cache_full_prefix_pack_count;
         }
+        /* V rows have been consumed into native weight tiles. Read next
+         * group's K into the same slot while AV and output preparation run. */
+        if(v_prefetch_enabled && group+1U<QBH_BLOCK_KV_HEADS) {
+            if(qbh_scan_cache_prefetch_begin(header,&v_prefetch_descriptor,
+                v_prefetch_rows,cache_k+cache_head_stride_bytes,
+                valid_tokens*QBH_BLOCK_HEAD_DIM*sizeof(__fp16))!=0)
+                goto qbh_scan_failure;
+            v_dma_active=1U;k_prefetch_pending=1U;
+        }
         start = HAP_perf_get_qtimer_count();
         if (qbh_hmx_submit(
                 worker, QBH_BLOCK_HMX_FP16,
-                native_probability ? plane_c : plane_a, weight, buffers->scale_or_bias, q_group,
+                plane_a, weight, buffers->scale_or_bias, q_group,
                 2U * QBH_ATTENTION_Q_HEADS_PER_GROUP,
                 kv_tiles,
                 QBH_BLOCK_HEAD_DIM / QBH_HMX_FP16_COLS) != 0) {
-            return -1;
+            goto qbh_scan_failure;
         }
         header->attention_av_hmx_ticks +=
             HAP_perf_get_qtimer_count() - start;
@@ -18028,6 +18091,9 @@ static int qbh_scan_f16_attention(
     header->scan_dynamic_attention_ticks +=
         HAP_perf_get_qtimer_count() - dynamic_start;
     return 0;
+qbh_scan_failure:
+    if(v_dma_active) (void)qbh_dma_wait_idle();
+    return -1;
 }
 
 static int qbh_scan_audit_f16_q(
