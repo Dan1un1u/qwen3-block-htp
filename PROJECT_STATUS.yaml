@@ -2699,7 +2699,7 @@ current_scope:
     report: docs/experiments/L32-0049-RESULTS.md
     modules: docs/experiments/L32-0049-MODULES.md
   long_prefill_report: docs/experiments/L32-0053-RESULTS.md
-  device_execution_state: waiting_qwen
+  device_execution_state: reserved_llama
   latest_abc_a8_pair_measurement:
     id: L32-0054
     execution_state: completed
