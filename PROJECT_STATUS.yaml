@@ -7,15 +7,15 @@ project:
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
   updated_on: '2026-09-19'
 governance:
-  active_experiment: L32-0056
-  next_experiment_number: 56
+  active_experiment: null
+  next_experiment_number: 57
   maximum_running_experiments: 1
   remote_sync_required: true
 source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: 5a818c744e3aa63b9f5c6401248ec17983e6a86e
+    recorded_head: 68d9401265b8f77aa6de9d1d2135d5608b61e9db
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -27,12 +27,11 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: measurements_complete_workbook_pending
+  stage: generic_a16_long_optimization_complete
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: All model measurements complete; desktop workbook EBUSY. Save18 completed A16 rows after workbook
-    closes, readback/render, seal evidence, close authority. No further hardware run. Reports L32-0056-RESULTS.md
-    and MODULES.md.
+  next_action: Review generic A16 long-throughput confidence gates; Qwen0.6 excluded. No automatic promotion or
+    quality evaluation.
   baseline_manifest: docs/PAPER_NO_ROTATION_BASELINES.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF_L32_0034.md
@@ -45,7 +44,7 @@ current_scope:
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0054
+  last_completed_experiment: L32-0056
   evidence_ledger_sha256: 599d86cf654b2b41526690c76ad1c0a251b5f206815a57ce4ae12b0024f94ac9
   formal_profiling_completed: true
   general_quantization_quality_accepted: false
@@ -582,7 +581,7 @@ current_scope:
     physical_pass: true
     overall_speed_gate_pass: false
     baseline_promoted: false
-  latest_formal_measurement_experiment: L32-0055
+  latest_formal_measurement_experiment: L32-0056
   fp32_pipeline_followup_speed:
     experiment: L32-0018
     source_head: e3d065a515221aa1e97c63fa4d58d23e434c45df
@@ -1955,7 +1954,7 @@ current_scope:
     physical_gate: true
     quality_claim: false
     baseline_promoted: false
-  last_completed_source_commit: 5a818c744e3aa63b9f5c6401248ec17983e6a86e
+  last_completed_source_commit: 68d9401265b8f77aa6de9d1d2135d5608b61e9db
   prior_paper_ablation_campaign:
     execution_state: completed
     report: /mnt/d/llm_exp/results/paper-no-rotation-ablation-20260915/REPORT.md
@@ -2701,7 +2700,7 @@ current_scope:
     report: docs/experiments/L32-0049-RESULTS.md
     modules: docs/experiments/L32-0049-MODULES.md
   long_prefill_report: docs/experiments/L32-0053-RESULTS.md
-  device_execution_state: idle_measurements_complete
+  device_execution_state: idle_released
   latest_abc_a8_pair_measurement:
     id: L32-0054
     execution_state: completed
@@ -3380,6 +3379,890 @@ current_scope:
     workbook: C:/Users/35961/Desktop/HTP硬件实验总表.xlsx
     workbook_updated: true
     workbook_sha256: 1a1f7f7b89eb1a47ad49bf19f92cf1574b2d572df4fff9f6d7ea23120910a956
+    workspace_build: 3B/28 layers
+  latest_generic_a16_long_optimization:
+    id: L32-0056
+    models:
+      1B:
+        experiment: L32-0056
+        model: Llama3.2-1B
+        source_head: 68d9401265b8f77aa6de9d1d2135d5608b61e9db
+        runtime:
+          remote: /data/local/tmp/llama32-htp/l32-0056/1B/binaries-a1
+          seal:
+            model_size: 1B
+            layer_count: '16'
+            paper_trace: false
+            source_head: 68d9401265b8f77aa6de9d1d2135d5608b61e9db
+            files:
+              /home/daniuniu/work/llama32-htp/android_ReleaseG_aarch64/ship/qwen3_block_cli: 6ec1b2f41b46226ec5825fd2ea54b0f99b3efa61f66e4e868b70a10b63c4a1c9
+              /home/daniuniu/work/llama32-htp/android_ReleaseG_aarch64/ship/llama_sp2_cli: 330eaf69c177dcc97a4adb5b052c692e5edb08d4de9126a1eaf9546a97301f11
+              /home/daniuniu/work/llama32-htp/android_ReleaseG_aarch64/ship/libqwen3_probe.so: 350da4e9d86ff277979e21e03eb6dd81694081b3da1e1cc24a2d5fcc45ee9da0
+              /home/daniuniu/work/llama32-htp/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so: e3e55f310717d50555404e61351c9ce410436402ae5a68e82f7a283fa30c70e2
+          archive: /mnt/d/llm_exp/results/llama32-htp/l32-0056/1B/binaries-a1
+        campaign: c4
+        cross_context_decode:
+          w16:
+            A_tps: 17.883461410644994
+            B_tps: 17.04655678055347
+            C_tps: 16.51320860536281
+            B_over_A: 0.9532023129709463
+            C_over_A: 0.9233787702605184
+            role: descriptive_different_context_and_decode_count
+          w4:
+            A_tps: 23.942291022260644
+            B_tps: 22.305690321220023
+            C_tps: 21.650239379267173
+            B_over_A: 0.9316439391903235
+            C_over_A: 0.9042676558871326
+            role: descriptive_different_context_and_decode_count
+        all_gates_pass: true
+        summary:
+          w16:
+            performance:
+              A0:
+                prefill:
+                  tps: 962.3499245084225
+                  mean_ns: 66503875.95
+                decode:
+                  tps: 17.883461410644994
+                  mean_ns: 2348538632.1799994
+              M1:
+                prefill:
+                  tps: 957.139334976928
+                  mean_ns: 66865917.7
+                decode:
+                  tps: 17.89336760601767
+                  mean_ns: 167659887.51
+              B0:
+                prefill:
+                  tps: 816.1211858460928
+                  mean_ns: 656765207.54
+                decode:
+                  tps: 16.95751779630686
+                  mean_ns: 2712661166.13
+              B1:
+                prefill:
+                  tps: 1094.362064391679
+                  mean_ns: 489783059.41
+                decode:
+                  tps: 17.04655678055347
+                  mean_ns: 2698492170.13
+              C0:
+                prefill:
+                  tps: 764.3990105442189
+                  mean_ns: 969389009.9
+                decode:
+                  tps: 16.51224578067284
+                  mean_ns: 181683342.16000003
+              C1:
+                prefill:
+                  tps: 1100.7388910092843
+                  mean_ns: 673184172.97
+                decode:
+                  tps: 16.51320860536281
+                  mean_ns: 181672748.86999997
+            gates:
+              B:
+                reference: A0
+                prefill_ratio:
+                  mean: 1.137517370636376
+                  ci95:
+                  - 1.1211278713568635
+                  - 1.1537161436339904
+                decode_wall_ratio:
+                  mean: 0.994879845712988
+                  ci95:
+                  - 0.9851029301541304
+                  - 1.0051358263605787
+                prefill_pass: true
+                decode_pass: true
+              C:
+                reference: A0
+                prefill_ratio:
+                  mean: 1.1439986102068906
+                  ci95:
+                  - 1.1322668067643662
+                  - 1.1555823115793735
+                decode_wall_ratio:
+                  mean: 1.0001372571074505
+                  ci95:
+                  - 0.9877294511410387
+                  - 1.0131434520998435
+                prefill_pass: true
+                decode_pass: true
+          w4:
+            performance:
+              A0:
+                prefill:
+                  tps: 1254.2394388041405
+                  mean_ns: 51026939.529999994
+                decode:
+                  tps: 23.942291022260644
+                  mean_ns: 1754218088.86
+              M1:
+                prefill:
+                  tps: 1249.3811936957507
+                  mean_ns: 51225358.86
+                decode:
+                  tps: 24.6334567055727
+                  mean_ns: 121785587.61999997
+              B0:
+                prefill:
+                  tps: 968.5304478831827
+                  mean_ns: 553415745.65
+                decode:
+                  tps: 22.239432199309075
+                  mean_ns: 2068398131.2
+              B1:
+                prefill:
+                  tps: 1380.135264354151
+                  mean_ns: 388367730.21
+                decode:
+                  tps: 22.305690321220023
+                  mean_ns: 2062254040.8999996
+              C0:
+                prefill:
+                  tps: 885.6456923338452
+                  mean_ns: 836677699.01
+                decode:
+                  tps: 21.22951622846794
+                  mean_ns: 141312687.85000002
+              C1:
+                prefill:
+                  tps: 1378.0016297020886
+                  mean_ns: 537735213.1
+                decode:
+                  tps: 21.650239379267173
+                  mean_ns: 138566597.23000002
+            gates:
+              B:
+                reference: A0
+                prefill_ratio:
+                  mean: 1.1003773485034385
+                  ci95:
+                  - 1.099263144273087
+                  - 1.1015593464987232
+                decode_wall_ratio:
+                  mean: 0.9970529542748585
+                  ci95:
+                  - 0.9936713675676435
+                  - 1.0005506282089254
+                prefill_pass: true
+                decode_pass: true
+              C:
+                reference: A0
+                prefill_ratio:
+                  mean: 1.098676437462864
+                  ci95:
+                  - 1.0974905299405557
+                  - 1.0998290532849206
+                decode_wall_ratio:
+                  mean: 0.9805676291267508
+                  ci95:
+                  - 0.9790800493349102
+                  - 0.982144488629683
+                prefill_pass: true
+                decode_pass: true
+        table_rows:
+        - model: Llama3.2-1B
+          recipe: W16A16
+          sheet: A_HellaSwag
+          prompt: 64
+          decode: 42
+          prefill_tps: 962.3499245084225
+          decode_tps: 17.883461410644994
+          rounds: 10
+          repeats: 10
+          experiment: L32-0056
+        - model: Llama3.2-1B
+          recipe: W4A16
+          sheet: A_HellaSwag
+          prompt: 64
+          decode: 42
+          prefill_tps: 1254.2394388041405
+          decode_tps: 23.942291022260644
+          rounds: 10
+          repeats: 10
+          experiment: L32-0056
+        - model: Llama3.2-1B
+          recipe: W16A16
+          sheet: B_Persona-Chat
+          prompt: 536
+          decode: 46
+          prefill_tps: 1094.362064391679
+          decode_tps: 17.04655678055347
+          rounds: 10
+          repeats: 10
+          experiment: L32-0056
+        - model: Llama3.2-1B
+          recipe: W4A16
+          sheet: B_Persona-Chat
+          prompt: 536
+          decode: 46
+          prefill_tps: 1380.135264354151
+          decode_tps: 22.305690321220023
+          rounds: 10
+          repeats: 10
+          experiment: L32-0056
+        - model: Llama3.2-1B
+          recipe: W16A16
+          sheet: C_DroidTask
+          prompt: 741
+          decode: 3
+          prefill_tps: 1100.7388910092843
+          decode_tps: 16.51320860536281
+          rounds: 10
+          repeats: 10
+          experiment: L32-0056
+        - model: Llama3.2-1B
+          recipe: W4A16
+          sheet: C_DroidTask
+          prompt: 741
+          decode: 3
+          prefill_tps: 1378.0016297020886
+          decode_tps: 21.650239379267173
+          rounds: 10
+          repeats: 10
+          experiment: L32-0056
+        audit:
+          pass_all: true
+          cases:
+          - - 64
+            - 42
+            - true
+          - - 64
+            - 42
+            - false
+          - - 65
+            - 3
+            - false
+          - - 128
+            - 3
+            - false
+          - - 129
+            - 3
+            - false
+          - - 536
+            - 46
+            - false
+          - - 741
+            - 3
+            - false
+          - - 741
+            - 3
+            - false
+          poison: true
+          source_head: 68d9401265b8f77aa6de9d1d2135d5608b61e9db
+          capture_files: 5234
+          checks:
+          - pass_all: true
+            files: 1419
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/1B/audits-shared/w4-64-native
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 225
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/1B/audits-shared/w4-64-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 110
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/1B/audits-shared/w4-65-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 110
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/1B/audits-shared/w4-128-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 144
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/1B/audits-shared/w4-129-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 285
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/1B/audits-shared/w4-536-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 162
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/1B/audits-shared/w4-741-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 162
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/1B/audits-shared/w4-741-poison
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 1419
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/1B/audits-shared/w16-64-native
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 225
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/1B/audits-shared/w16-64-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 110
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/1B/audits-shared/w16-65-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 110
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/1B/audits-shared/w16-128-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 144
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/1B/audits-shared/w16-129-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 285
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/1B/audits-shared/w16-536-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 162
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/1B/audits-shared/w16-741-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 162
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/1B/audits-shared/w16-741-poison
+            full_capture_sha256_exact: true
+        a8_regression:
+          pass_all: true
+          checks:
+          - pass_all: true
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0054/1B/a8/audit128-campaign
+            steps: 5
+            capture_files: 174
+            all_layers_exact: true
+            all_parent_captures_sha256_exact: true
+            new_final_hidden_captures_validated: 0
+            physical: true
+            quality_claim: false
+          - pass_all: true
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0054/1B/sp2/audit741-campaign
+            steps: 15
+            capture_files: 514
+            all_layers_exact: true
+            all_parent_captures_sha256_exact: true
+            new_final_hidden_captures_validated: 0
+            physical: true
+            quality_claim: false
+          source_head: 68d9401265b8f77aa6de9d1d2135d5608b61e9db
+        quality_claim: false
+      3B:
+        experiment: L32-0056
+        model: Llama3.2-3B
+        source_head: 68d9401265b8f77aa6de9d1d2135d5608b61e9db
+        runtime:
+          remote: /data/local/tmp/llama32-htp/l32-0056/3B/binaries-a1
+          seal:
+            model_size: 3B
+            layer_count: '28'
+            paper_trace: false
+            source_head: 68d9401265b8f77aa6de9d1d2135d5608b61e9db
+            files:
+              /home/daniuniu/work/llama32-htp/android_ReleaseG_aarch64/ship/qwen3_block_cli: e1910ebebddcc14127325d5e5a4aa3f36c80265a0abd4d4c4357a3319e3a1942
+              /home/daniuniu/work/llama32-htp/android_ReleaseG_aarch64/ship/llama_sp2_cli: 330eaf69c177dcc97a4adb5b052c692e5edb08d4de9126a1eaf9546a97301f11
+              /home/daniuniu/work/llama32-htp/android_ReleaseG_aarch64/ship/libqwen3_probe.so: 350da4e9d86ff277979e21e03eb6dd81694081b3da1e1cc24a2d5fcc45ee9da0
+              /home/daniuniu/work/llama32-htp/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so: d50fa2eeb51737c796dab572cf2983f35ad5b5fa37ed39e0e54c1337e3c1611c
+          archive: /mnt/d/llm_exp/results/llama32-htp/l32-0056/3B/binaries-a1
+        campaign: c4
+        transport_recovery:
+          interrupted_arm: /mnt/d/llm_exp/results/llama32-htp/l32-0056/3B/c4/formal/09-w4-B1
+          resumed_arm: /mnt/d/llm_exp/results/llama32-htp/l32-0056/3B/c4/recovery-transport/remaining-five
+          analysis_view: /mnt/d/llm_exp/results/llama32-htp/l32-0056/3B/c4/recovery-transport/ten-completed-view
+          complete_replays_retained: 5
+          missing_replays_completed: 5
+          partial_replay_retained_in_raw: true
+          raw_failure_not_overwritten: true
+          source_head: 68d9401265b8f77aa6de9d1d2135d5608b61e9db
+          policy: Completed samples are concatenated in observed order; all original timing values retained; only
+            continuation sample labels offset. Ten formal rounds remain, final round spans connection interruption.
+            Original gate and numerical tolerances unchanged.
+          second_interruption:
+            original: /mnt/d/llm_exp/results/llama32-htp/l32-0056/3B/c4/formal/09-w4-C1
+            completed_replays_before_failure: 0
+            resumed: /mnt/d/llm_exp/results/llama32-htp/l32-0056/3B/c4/recovery-after-charge/09-w4-C1
+            replays: 10
+            user_confirmed_charged_and_cooled: true
+            condition: /mnt/d/llm_exp/results/llama32-htp/l32-0056/3B/c4/recovery-after-charge/device-condition.json
+            raw_failed_evidence_unchanged: true
+        cross_context_decode:
+          w16:
+            A_tps: 6.8046371024522365
+            B_tps: 6.622289305264342
+            C_tps: 6.5512180543408505
+            B_over_A: 0.9732024214601862
+            C_over_A: 0.9627578893193203
+            role: descriptive_different_context_and_decode_count
+          w4:
+            A_tps: 8.136482255669232
+            B_tps: 7.698773690720501
+            C_tps: 7.634735591048424
+            B_over_A: 0.9462042008825435
+            C_over_A: 0.9383337111967265
+            role: descriptive_different_context_and_decode_count
+        all_gates_pass: true
+        summary:
+          w16:
+            performance:
+              A0:
+                prefill:
+                  tps: 400.9759994658328
+                  mean_ns: 159610550.47
+                decode:
+                  tps: 6.8046371024522365
+                  mean_ns: 6172261557.470001
+              M1:
+                prefill:
+                  tps: 402.4597300353658
+                  mean_ns: 159022121.28
+                decode:
+                  tps: 6.897393823937241
+                  mean_ns: 434946891.03999996
+              B0:
+                prefill:
+                  tps: 353.38694456666684
+                  mean_ns: 1516750995.5899997
+                decode:
+                  tps: 6.6106976346584165
+                  mean_ns: 6958418391.25
+              B1:
+                prefill:
+                  tps: 413.16558775454206
+                  mean_ns: 1297300684.9699998
+                decode:
+                  tps: 6.622289305264342
+                  mean_ns: 6946238359.51
+              C0:
+                prefill:
+                  tps: 344.59402308650084
+                  mean_ns: 2150356507.5299997
+                decode:
+                  tps: 6.546115660526997
+                  mean_ns: 458287044.65
+              C1:
+                prefill:
+                  tps: 421.366344521469
+                  mean_ns: 1758564749.2600002
+                decode:
+                  tps: 6.5512180543408505
+                  mean_ns: 457930109.35
+            gates:
+              B:
+                reference: M1
+                prefill_ratio:
+                  mean: 1.026780878339341
+                  ci95:
+                  - 1.0177568184702115
+                  - 1.0328158635201772
+                decode_wall_ratio:
+                  mean: 0.9982847034614265
+                  ci95:
+                  - 0.9956871608983582
+                  - 1.000353003508537
+                prefill_pass: true
+                decode_pass: true
+              C:
+                reference: M1
+                prefill_ratio:
+                  mean: 1.0473711368839538
+                  ci95:
+                  - 1.0341441505290996
+                  - 1.0553060852354097
+                decode_wall_ratio:
+                  mean: 0.999232223262859
+                  ci95:
+                  - 0.995167397556784
+                  - 1.003283348995521
+                prefill_pass: true
+                decode_pass: true
+          w4:
+            performance:
+              A0:
+                prefill:
+                  tps: 493.8051010464142
+                  mean_ns: 129605789.54
+                decode:
+                  tps: 8.136482255669232
+                  mean_ns: 5161935917.789999
+              M1:
+                prefill:
+                  tps: 491.0233986635191
+                  mean_ns: 130340020.80999999
+                decode:
+                  tps: 8.514648961064406
+                  mean_ns: 352333961.59000003
+              B0:
+                prefill:
+                  tps: 399.3831037407016
+                  mean_ns: 1342069794.59
+                decode:
+                  tps: 7.731864083260765
+                  mean_ns: 5949406185.19
+              B1:
+                prefill:
+                  tps: 476.27992690493465
+                  mean_ns: 1125388599.69
+                decode:
+                  tps: 7.698773690720501
+                  mean_ns: 5974977554.6
+              C0:
+                prefill:
+                  tps: 387.1916408159178
+                  mean_ns: 1913780985.6600003
+                decode:
+                  tps: 7.61584039726905
+                  mean_ns: 393915818.02000004
+              C1:
+                prefill:
+                  tps: 489.17187458596374
+                  mean_ns: 1514804996.97
+                decode:
+                  tps: 7.634735591048424
+                  mean_ns: 392940916.45
+            gates:
+              B:
+                reference: A0
+                prefill_ratio:
+                  mean: 0.9660000980291901
+                  ci95:
+                  - 0.9415044105783906
+                  - 0.9787144794136178
+                decode_wall_ratio:
+                  mean: 1.0041776254044998
+                  ci95:
+                  - 0.998171444264183
+                  - 1.0140493014360825
+                prefill_pass: true
+                decode_pass: true
+              C:
+                reference: A0
+                prefill_ratio:
+                  mean: 0.9906265243935005
+                  ci95:
+                  - 0.9890146572131161
+                  - 0.9924025381289908
+                decode_wall_ratio:
+                  mean: 0.9975285074512055
+                  ci95:
+                  - 0.9949712771692608
+                  - 0.9999337742841692
+                prefill_pass: true
+                decode_pass: true
+        table_rows:
+        - model: Llama3.2-3B
+          recipe: W16A16
+          sheet: A_HellaSwag
+          prompt: 64
+          decode: 42
+          prefill_tps: 400.9759994658328
+          decode_tps: 6.8046371024522365
+          rounds: 10
+          repeats: 10
+          experiment: L32-0056
+        - model: Llama3.2-3B
+          recipe: W4A16
+          sheet: A_HellaSwag
+          prompt: 64
+          decode: 42
+          prefill_tps: 493.8051010464142
+          decode_tps: 8.136482255669232
+          rounds: 10
+          repeats: 10
+          experiment: L32-0056
+        - model: Llama3.2-3B
+          recipe: W16A16
+          sheet: B_Persona-Chat
+          prompt: 536
+          decode: 46
+          prefill_tps: 413.16558775454206
+          decode_tps: 6.622289305264342
+          rounds: 10
+          repeats: 10
+          experiment: L32-0056
+        - model: Llama3.2-3B
+          recipe: W4A16
+          sheet: B_Persona-Chat
+          prompt: 536
+          decode: 46
+          prefill_tps: 476.27992690493465
+          decode_tps: 7.698773690720501
+          rounds: 10
+          repeats: 10
+          experiment: L32-0056
+        - model: Llama3.2-3B
+          recipe: W16A16
+          sheet: C_DroidTask
+          prompt: 741
+          decode: 3
+          prefill_tps: 421.366344521469
+          decode_tps: 6.5512180543408505
+          rounds: 10
+          repeats: 10
+          experiment: L32-0056
+        - model: Llama3.2-3B
+          recipe: W4A16
+          sheet: C_DroidTask
+          prompt: 741
+          decode: 3
+          prefill_tps: 489.17187458596374
+          decode_tps: 7.634735591048424
+          rounds: 10
+          repeats: 10
+          experiment: L32-0056
+        audit:
+          pass_all: true
+          cases:
+          - - 64
+            - 42
+            - true
+          - - 64
+            - 42
+            - false
+          - - 65
+            - 3
+            - false
+          - - 128
+            - 3
+            - false
+          - - 129
+            - 3
+            - false
+          - - 536
+            - 46
+            - false
+          - - 741
+            - 3
+            - false
+          - - 741
+            - 3
+            - false
+          poison: true
+          source_head: 68d9401265b8f77aa6de9d1d2135d5608b61e9db
+          capture_files: 8498
+          checks:
+          - pass_all: true
+            files: 2451
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/3B/audits-shared/w4-64-native
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 297
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/3B/audits-shared/w4-64-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 182
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/3B/audits-shared/w4-65-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 182
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/3B/audits-shared/w4-128-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 240
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/3B/audits-shared/w4-129-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 381
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/3B/audits-shared/w4-536-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 258
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/3B/audits-shared/w4-741-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 258
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/3B/audits-shared/w4-741-poison
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 2451
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/3B/audits-shared/w16-64-native
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 297
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/3B/audits-shared/w16-64-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 182
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/3B/audits-shared/w16-65-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 182
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/3B/audits-shared/w16-128-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 240
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/3B/audits-shared/w16-129-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 381
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/3B/audits-shared/w16-536-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 258
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/3B/audits-shared/w16-741-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 258
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0055/3B/audits-shared/w16-741-poison
+            full_capture_sha256_exact: true
+        a8_regression:
+          pass_all: true
+          checks:
+          - pass_all: true
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0054/3B/a8/audit128-campaign
+            steps: 5
+            capture_files: 294
+            all_layers_exact: true
+            all_parent_captures_sha256_exact: true
+            new_final_hidden_captures_validated: 0
+            physical: true
+            quality_claim: false
+          - pass_all: true
+            parent: /mnt/d/llm_exp/results/llama32-htp/l32-0054/3B/sp2/audit741-campaign
+            steps: 15
+            capture_files: 874
+            all_layers_exact: true
+            all_parent_captures_sha256_exact: true
+            new_final_hidden_captures_validated: 0
+            physical: true
+            quality_claim: false
+          source_head: 68d9401265b8f77aa6de9d1d2135d5608b61e9db
+        quality_claim: false
+    source_closure: 68d9401265b8f77aa6de9d1d2135d5608b61e9db
+    source_branch: codex/llama32-no-rotation
+    source_commits:
+    - 68d9401265b8f77aa6de9d1d2135d5608b61e9db
+    all_gates_pass: true
+    quality_claim: false
+    table_rows:
+    - model: Llama3.2-1B
+      recipe: W16A16
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 962.3499245084225
+      decode_tps: 17.883461410644994
+      rounds: 10
+      repeats: 10
+      experiment: L32-0056
+    - model: Llama3.2-1B
+      recipe: W4A16
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 1254.2394388041405
+      decode_tps: 23.942291022260644
+      rounds: 10
+      repeats: 10
+      experiment: L32-0056
+    - model: Llama3.2-1B
+      recipe: W16A16
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 1094.362064391679
+      decode_tps: 17.04655678055347
+      rounds: 10
+      repeats: 10
+      experiment: L32-0056
+    - model: Llama3.2-1B
+      recipe: W4A16
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 1380.135264354151
+      decode_tps: 22.305690321220023
+      rounds: 10
+      repeats: 10
+      experiment: L32-0056
+    - model: Llama3.2-1B
+      recipe: W16A16
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 1100.7388910092843
+      decode_tps: 16.51320860536281
+      rounds: 10
+      repeats: 10
+      experiment: L32-0056
+    - model: Llama3.2-1B
+      recipe: W4A16
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 1378.0016297020886
+      decode_tps: 21.650239379267173
+      rounds: 10
+      repeats: 10
+      experiment: L32-0056
+    - model: Llama3.2-3B
+      recipe: W16A16
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 400.9759994658328
+      decode_tps: 6.8046371024522365
+      rounds: 10
+      repeats: 10
+      experiment: L32-0056
+    - model: Llama3.2-3B
+      recipe: W4A16
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 493.8051010464142
+      decode_tps: 8.136482255669232
+      rounds: 10
+      repeats: 10
+      experiment: L32-0056
+    - model: Llama3.2-3B
+      recipe: W16A16
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 413.16558775454206
+      decode_tps: 6.622289305264342
+      rounds: 10
+      repeats: 10
+      experiment: L32-0056
+    - model: Llama3.2-3B
+      recipe: W4A16
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 476.27992690493465
+      decode_tps: 7.698773690720501
+      rounds: 10
+      repeats: 10
+      experiment: L32-0056
+    - model: Llama3.2-3B
+      recipe: W16A16
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 421.366344521469
+      decode_tps: 6.5512180543408505
+      rounds: 10
+      repeats: 10
+      experiment: L32-0056
+    - model: Llama3.2-3B
+      recipe: W4A16
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 489.17187458596374
+      decode_tps: 7.634735591048424
+      rounds: 10
+      repeats: 10
+      experiment: L32-0056
+    execution_state: completed
+    evidence_validity: valid
+    adoption_status: pending
+    device_owner: null
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0056
+    evidence_ledger_sha256: 0d94ed728ba1b6499c9a5a19ebac6b05f87ba5b77f89e5117c9704125fc55b2a
+    evidence_files: 2817
+    evidence_bytes: 10866026120
+    report: docs/experiments/L32-0056-RESULTS.md
+    modules: docs/experiments/L32-0056-MODULES.md
+    workbook: C:/Users/35961/Desktop/HTP硬件实验总表.xlsx
+    workbook_updated: true
+    workbook_sha256: b9c90e539b63ceb3bd623ce2d80469cc103cba7f583bfebd72b35d51d3d7e468
     workspace_build: 3B/28 layers
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp

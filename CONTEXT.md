@@ -1,3 +1,9 @@
+# L32-0056 completed: generic A16 long-context repair
+
+Read docs/experiments/L32-0056-RESULTS.md and MODULES.md. Qwen1.7B and Llama1B/3B were processed sequentially, excluding Qwen0.6. Five short and ten formal repeat10 paired rounds with unchanged native/long64 references and same-length controls. Generic row-parallel softmax and cache-DMA overlap retain exact per-row arithmetic; selected A16 long flag3, original control0; all original A16/A8/SP2 capture fields exact. Extra final-hidden capture fields independently verified. No per-model specialization or baseline degradation. Confidence gates all pass: True. Source closure 68d9401265b8f77aa6de9d1d2135d5608b61e9db.
+
+Desktop workbook: refresh only18 affected A16 ABC rows across these two experiments; preserve Qwen0.6, A8/SP2 and curated D. Historical floating-alignment failures remain failures; no PPL/quality claim or automatic baseline promotion. Evidence /mnt/d/llm_exp/results/llama32-htp/l32-0056; ledger 0d94ed728ba1b6499c9a5a19ebac6b05f87ba5b77f89e5117c9704125fc55b2a. Device released; next 57.
+
 # L32-0056 measurements complete; workbook save pending
 
 All three models completed numerical validation, five short and ten formal repeat10 rounds. All long-prefill and equal-length decode confidence gates pass. Read docs/experiments/L32-0056-RESULTS.md and MODULES.md. Llama3B final round spans two ADB interruptions; all completed slow samples retained. User restored charge/cooling; only missing final C arms were added. Device released. No automatic baseline promotion or quality acceptance.
