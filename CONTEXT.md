@@ -1,3 +1,6 @@
+# EXP-0300 active: generic long-context speed repair
+User excludes Qwen0.6B. Read docs/experiments/EXP-0300.md; retain10% long/M64 throughput gate, unchanged math and basic A16 fairness. Device serialized Qwen1.7 then Llama1B/3B.
+
 # EXP-0299 completed: generic A16 ABC baselines
 
 Read docs/experiments/EXP-0299-RESULTS.md and MODULES.md. Two models x W16A16/W4A16 x A64+42/B536+46/C741+3 completed, five short and ten formal repeat10 paired rounds per model. Fixed fixtures, not named datasets. Basic vector and DMA implementation only; no new per-model specialization. Implementation/physical checks pass; historical teacher-alignment failures remain failures and no quality/PPL claim or automatic baseline promotion is made. Source closure 009b4fb8c3b5edd94a7521d34b4dc5103409403b.

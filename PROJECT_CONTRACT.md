@@ -465,3 +465,6 @@ User authorizes L32-0051 native layout/pipeline migration to Qwen0.6B and1.7B un
 ## User-approved long-prefill throughput tolerance
 
 User changes the long/M64 prefill throughput gate to a maximum10% TPS loss. For current/future assessments, require the original paired95% CI lower bound of long-prefill TPS divided by the same-experiment M64 reference TPS to be>=0.90. Retain the original reference selection and fixed-sample policy. This change applies only to long-prefill throughput parity: existing paired Host-wall decode regression guards and numerical/physical/provenance requirements are unchanged. Preserve sealed original strict-parity classifications and record new-policy reassessments separately in docs/LONG_PREFILL_GATE_10PCT_REVIEW.md. Untested rows remain pending, not accepted.
+
+## User-approved generic long-context speed repair (2026-09-19)
+User authorizes EXP-0300 under its registered protocol: all remaining models except Qwen0.6, generic A16 layout/vector/DMA repairs and paired10% long/M64 throughput gate. Supersedes prior experiment-specific no-further-optimization notices only within this bounded scope. Numerical/physical gates, frozen M64 fairness and historical failures remain.
