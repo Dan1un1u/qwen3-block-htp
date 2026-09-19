@@ -40,6 +40,15 @@ current_scope:
     screening: 11 Qwen B/C decode rows >10% below same-model/recipe A64+42; includes
       previously deferred Qwen0.6; no Llama flagged
     quality_claim: false
+    stage: Qwen0.6 A8/SP2 formal complete; generic A16 decode-only KV prefetch candidate
+      passes741+3 exact audits, full campaign running
+    source_head: 22fba3060abd606ec33efb7fabb942b33e14a20e
+    a8_summary: /mnt/d/llm_exp/results/qwen3-block-htp/exp0301/0.6B/A8_SUMMARY.json
+    a8_prefill_long_gate: all four pass
+    a8_cross_context_decode: B ~16.6% loss; C ~24.5% loss remains
+    a16_candidate_option:
+      0.6B: 4
+      1.7B: 7
   latest_qwen3_06b_f16_fp32_residual:
     experiment: EXP-0293
     execution_state: completed

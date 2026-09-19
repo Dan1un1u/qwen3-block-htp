@@ -1,4 +1,8 @@
-# Current continuation: EXP-0301
+# Current continuation: EXP-0301 A16 stage
+
+Qwen0.6 A8/SP2 migration927->65439 complete:5236 exact layer outputs,5 short +10 repeat10 formal rounds,36600 formal RPCs. All four long prefill gates pass; cross-context decode still B16.6%/C24.5% slower. Frozen summary at exp0301/0.6B/A8_SUMMARY.json. Source22fba30 adds generic decode KV look-ahead, opt4 for0.6,7 for1.7; no residual/Norm row changes. 0.6 A16 both741+3 audits byte-exact and ~4% engineering decode gain; a16/full_campaign.py running full checks then paired5+10. Next: complete0.6, build1.7 and repeat bounded A16 verification/measurement, then update workbook and close. Llama and Qwen1.7 A8 remain read-only; no same missing option found. See EXP-0301 protocol and result-root progress JSON. Device owned by EXP-0301.
+
+# Archived EXP-0301 registration
 
 Decode >10% coverage audit active; source codex/exp-0301-decode-alignment from d2af6c7. See docs/experiments/EXP-0301.md. Qwen0.6 included by latest user scope; Llama0057 complete/no lock. No hardware result yet.
 
