@@ -18,8 +18,8 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0299
-  next_experiment_number: 299
+  active_experiment: null
+  next_experiment_number: 300
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -2788,7 +2788,7 @@ current_scope:
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: Qwen3_28layer_native_W4_SP2_M64_plus15_verified
   last_completed_experiment: EXP-0297
-  last_completed_source_commit: fa7cb9c8e2718c3a965fc75d04544ef79d3a0da3
+  last_completed_source_commit: 009b4fb8c3b5edd94a7521d34b4dc5103409403b
   provisional_source_parent: EXP0268_diagnostic_U8_pipeline_closure_no_default_promotion
   device_execution_state: idle_released
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
@@ -12227,7 +12227,8 @@ current_scope:
     generalization: supplementary only; not rerun or included
     quality_claim: false
     baseline_promoted: false
-  next_action: Complete generic A16 ABC implementation and measurement under EXP-0299
+  next_action: Review completed desktop ABC tables; no further specialization or named-dataset/quality evaluation
+    authorized by this experiment.
   latest_f16_baseline_synthesis:
     report: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/REPORT.md
     a16_discussion: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/A16_DOWN_DISCUSSION.md
@@ -12644,7 +12645,7 @@ current_scope:
       ABI
     named_dataset_measurements_completed: false
     baseline_promotion: No additional automatic promotion
-  stage: qwen17_decode_optimization_completed
+  stage: generic_a16_abc_completion_complete
   latest_long_prefill_migration:
     experiment: EXP-0296
     execution_state: completed
@@ -12838,9 +12839,9 @@ current_scope:
     timed_rpc_boundaries: 29600
     gate_role: unchanged long/M64 throughput parity plus decode guard; numerical and physical checks separately
       passed
-  latest_formal_measurement_experiment: EXP-0297
-  latest_e2e_shape: 'Qwen1.7 full28: native/control/optimized64+15, matched536+46 and741+3; ten paired repeat10
-    cycles'
+  latest_formal_measurement_experiment: EXP-0299
+  latest_e2e_shape: 'W16A16/W4A16: A64+42, B536+46, C741+3; fixed project-owned trajectories; 10 paired repeat10
+    rounds per model'
   latest_qwen3_17b_long_decode_optimization: *id005
   latest_abc_a8_pair_measurement:
     id: EXP-0298
@@ -13159,3 +13160,362 @@ current_scope:
     workbook: C:/Users/35961/Desktop/HTP硬件实验总表.xlsx
     workbook_updated: true
     workspace_build: 0.6B/28 layers
+  latest_abc_a16_pair_measurement:
+    id: EXP-0299
+    experiment_root: /mnt/d/llm_exp/results/qwen3-block-htp/exp0299
+    models:
+      0.6B:
+        model: Qwen3-0.6B
+        measured_source: dee3b14d83149da720658e3cb006e9cb352781cf
+        campaign: vector
+        audit_set: audits-vector
+        comparisons:
+          A:
+            prefill:
+              tps:
+                w16: 1674.053342465727
+                w4: 1740.5537991385427
+              mean_ns:
+                w16: 38230561.94
+                w4: 36769906.239999995
+              w4_over_w16_wall: 0.9617951388173228
+              ci95:
+              - 0.9606372262338326
+              - 0.962953051400813
+              investigate: false
+            decode:
+              tps:
+                w16: 27.17938761223764
+                w4: 27.27919979464581
+              mean_ns:
+                w16: 1545288679.76
+                w4: 1539634604.98
+              w4_over_w16_wall: 0.9963434844797663
+              ci95:
+              - 0.9950779312647561
+              - 0.9976090376947765
+              investigate: false
+          B:
+            prefill:
+              tps:
+                w16: 1102.2768966764525
+                w4: 1082.79919429198
+              mean_ns:
+                w16: 486266201.90999997
+                w4: 495013297.78000003
+              w4_over_w16_wall: 1.0179937913504273
+              ci95:
+              - 1.0161241813156339
+              - 1.0198634013852208
+              investigate: false
+            decode:
+              tps:
+                w16: 23.9138749884331
+                w4: 23.925569649283517
+              mean_ns:
+                w16: 1923569476.81
+                w4: 1922629248.72
+              w4_over_w16_wall: 0.9995247496416031
+              ci95:
+              - 0.9967792074110022
+              - 1.002270291872204
+              investigate: false
+          C:
+            prefill:
+              tps:
+                w16: 1002.0801519500704
+                w4: 982.4065641182943
+              mean_ns:
+                w16: 739461807.0799999
+                w4: 754270204.4799999
+              w4_over_w16_wall: 1.0200325190599366
+              ci95:
+              - 1.0179571655995296
+              - 1.0221078725203436
+              investigate: false
+            decode:
+              tps:
+                w16: 22.849546649399663
+                w4: 23.221402968278728
+              mean_ns:
+                w16: 131293633.35
+                w4: 129191160.59
+              w4_over_w16_wall: 0.9840069186526769
+              ci95:
+              - 0.9800330588377123
+              - 0.9879807784676414
+              investigate: false
+        runtime:
+          remote: /data/local/tmp/qwen3-block-htp/exp0299/0.6B/binaries-a5
+          seal:
+            model_size: 0.6B
+            paper_trace: false
+            source_head: dee3b14d83149da720658e3cb006e9cb352781cf
+            files:
+              /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/qwen3_block_cli: 54cd585609e1cc4b86f4eac172c0f469f72b7e160569f273ce3fce4f0bb90e11
+              /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/llama_sp2_cli: ea27a713188cabf0bc44766a351f165a8595e61d59df2814a9408e1b277de4b4
+              /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/libqwen3_probe.so: 8827a7890d5fd88965022149ab151231923051bd1c86a2b6af291412714adead
+              /home/daniuniu/work/qwen3-block-htp/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so: e7d422e30174581edb6b00512c11d64de61d5cdea58bc2a8013086421a771a96
+          archive: /mnt/d/llm_exp/results/qwen3-block-htp/exp0299/0.6B/binaries-a5
+        implementation_checks:
+          audits: 16
+          pass_all: true
+          head_checks: 306
+          profiles: 374
+          cache_snapshots: 2800
+          scope: Actual-operand references and exact contracts; not full teacher or model quality acceptance.
+          native_long64_exact_layer_outputs: 2408
+      1.7B:
+        model: Qwen3-1.7B
+        measured_source: 009b4fb8c3b5edd94a7521d34b4dc5103409403b
+        campaign: shared
+        audit_set: audits-shared
+        comparisons:
+          A:
+            prefill:
+              tps:
+                w16: 790.1034552723813
+                w4: 1036.9017552733023
+              mean_ns:
+                w16: 81002050.52000001
+                w4: 61722337.40999999
+              w4_over_w16_wall: 0.7619887593327614
+              ci95:
+              - 0.7604431096973122
+              - 0.7635344089682107
+              investigate: false
+            decode:
+              tps:
+                w16: 12.65601800757371
+                w4: 15.33864801710718
+              mean_ns:
+                w16: 3318579348.96
+                w4: 2738181354.2599998
+              w4_over_w16_wall: 0.8251073832156288
+              ci95:
+              - 0.8235135632810504
+              - 0.8267012031502072
+              investigate: false
+          B:
+            prefill:
+              tps:
+                w16: 641.3607566845579
+                w4: 753.5144382307179
+              mean_ns:
+                w16: 835723100.32
+                w4: 711333416.86
+              w4_over_w16_wall: 0.8511600888788179
+              ci95:
+              - 0.8502384650143311
+              - 0.8520817127433047
+              investigate: false
+            decode:
+              tps:
+                w16: 11.86494289748181
+                w4: 14.243365727295265
+              mean_ns:
+                w16: 3876967668.3199997
+                w4: 3229573745.4700003
+              w4_over_w16_wall: 0.8330156529132344
+              ci95:
+              - 0.8306791188340913
+              - 0.8353521869923776
+              investigate: false
+          C:
+            prefill:
+              tps:
+                w16: 612.4721623918832
+                w4: 706.9309908838866
+              mean_ns:
+                w16: 1209850905.0700002
+                w4: 1048192835.7300001
+              w4_over_w16_wall: 0.8663840481328364
+              ci95:
+              - 0.8651178345173397
+              - 0.8676502617483332
+              investigate: false
+            decode:
+              tps:
+                w16: 11.574807393495758
+                w4: 13.866235451838918
+              mean_ns:
+                w16: 259183578.44
+                w4: 216352881.82000002
+              w4_over_w16_wall: 0.8347526491061681
+              ci95:
+              - 0.8329476422436518
+              - 0.8365576559686844
+              investigate: false
+        runtime:
+          remote: /data/local/tmp/qwen3-block-htp/exp0299/1.7B/binaries-a2
+          seal:
+            model_size: 1.7B
+            paper_trace: false
+            source_head: 009b4fb8c3b5edd94a7521d34b4dc5103409403b
+            files:
+              /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/qwen3_block_cli: 32f21f2c2d37d9c9e425af4041414e2e24a33745d590766a429c6852994ce19e
+              /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/llama_sp2_cli: ea27a713188cabf0bc44766a351f165a8595e61d59df2814a9408e1b277de4b4
+              /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/libqwen3_probe.so: 8827a7890d5fd88965022149ab151231923051bd1c86a2b6af291412714adead
+              /home/daniuniu/work/qwen3-block-htp/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so: bfed7df15d8758ab446facb2d09e96af3bec84e2a31bf86fe66a5645dbd2a741
+          archive: /mnt/d/llm_exp/results/qwen3-block-htp/exp0299/1.7B/binaries-a2
+        implementation_checks:
+          audits: 16
+          pass_all: true
+          head_checks: 306
+          profiles: 374
+          cache_snapshots: 2800
+          scope: Actual-operand references and exact contracts; not full teacher or model quality acceptance.
+          native_long64_exact_layer_outputs: 2408
+    table_rows:
+    - model: Qwen3-0.6B
+      recipe: W16A16
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 1674.053342465727
+      decode_tps: 27.17938761223764
+      rounds: 10
+      repeats: 10
+      experiment: EXP-0299
+    - model: Qwen3-0.6B
+      recipe: W4A16
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 1740.5537991385427
+      decode_tps: 27.27919979464581
+      rounds: 10
+      repeats: 10
+      experiment: EXP-0299
+    - model: Qwen3-0.6B
+      recipe: W16A16
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 1102.2768966764525
+      decode_tps: 23.9138749884331
+      rounds: 10
+      repeats: 10
+      experiment: EXP-0299
+    - model: Qwen3-0.6B
+      recipe: W4A16
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 1082.79919429198
+      decode_tps: 23.925569649283517
+      rounds: 10
+      repeats: 10
+      experiment: EXP-0299
+    - model: Qwen3-0.6B
+      recipe: W16A16
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 1002.0801519500704
+      decode_tps: 22.849546649399663
+      rounds: 10
+      repeats: 10
+      experiment: EXP-0299
+    - model: Qwen3-0.6B
+      recipe: W4A16
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 982.4065641182943
+      decode_tps: 23.221402968278728
+      rounds: 10
+      repeats: 10
+      experiment: EXP-0299
+    - model: Qwen3-1.7B
+      recipe: W16A16
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 790.1034552723813
+      decode_tps: 12.65601800757371
+      rounds: 10
+      repeats: 10
+      experiment: EXP-0299
+    - model: Qwen3-1.7B
+      recipe: W4A16
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 1036.9017552733023
+      decode_tps: 15.33864801710718
+      rounds: 10
+      repeats: 10
+      experiment: EXP-0299
+    - model: Qwen3-1.7B
+      recipe: W16A16
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 641.3607566845579
+      decode_tps: 11.86494289748181
+      rounds: 10
+      repeats: 10
+      experiment: EXP-0299
+    - model: Qwen3-1.7B
+      recipe: W4A16
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 753.5144382307179
+      decode_tps: 14.243365727295265
+      rounds: 10
+      repeats: 10
+      experiment: EXP-0299
+    - model: Qwen3-1.7B
+      recipe: W16A16
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 612.4721623918832
+      decode_tps: 11.574807393495758
+      rounds: 10
+      repeats: 10
+      experiment: EXP-0299
+    - model: Qwen3-1.7B
+      recipe: W4A16
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 706.9309908838866
+      decode_tps: 13.866235451838918
+      rounds: 10
+      repeats: 10
+      experiment: EXP-0299
+    quality_claim: false
+    named_dataset_benchmark: false
+    baseline_promoted: false
+    formal_cycles_per_model: 10
+    formal_repeat: 10
+    short_cycles_per_model: 5
+    formal_timed_rpc_boundaries: 45200
+    short_timed_rpc_boundaries: 22600
+    source_closure: 009b4fb8c3b5edd94a7521d34b4dc5103409403b
+    source_commits:
+    - 009b4fb8c3b5edd94a7521d34b4dc5103409403b
+    - dee3b14d83149da720658e3cb006e9cb352781cf
+    source_branch: codex/exp-0299-a16-tables
+    implementation_checks_pass: true
+    historical_full_floating_alignment_status: unchanged; prior failures remain failures
+    local_gate: pass
+    gate_role: implementation checks and formal measurement completion; no PPL/quality acceptance
+    w4_slower_than_w16_over_10_percent: []
+    execution_state: completed
+    evidence_validity: valid
+    adoption_status: pending
+    device_owner: null
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0299
+    evidence_ledger_sha256: 2817cd6a245d30b88a091558f57cc3d4abf0c0c942ab9423ea3ff5bef6a3e00d
+    evidence_files: 5862
+    evidence_bytes: 24057669533
+    report: docs/experiments/EXP-0299-RESULTS.md
+    modules: docs/experiments/EXP-0299-MODULES.md
+    workbook: C:/Users/35961/Desktop/HTP硬件实验总表.xlsx
+    workbook_updated: true
+    workbook_sha256: 1a1f7f7b89eb1a47ad49bf19f92cf1574b2d572df4fff9f6d7ea23120910a956
+    workspace_build: 1.7B/28 layers

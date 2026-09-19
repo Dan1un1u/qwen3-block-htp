@@ -1,3 +1,9 @@
+# EXP-0299 completed: generic A16 ABC baselines
+
+Read docs/experiments/EXP-0299-RESULTS.md and MODULES.md. Two models x W16A16/W4A16 x A64+42/B536+46/C741+3 completed, five short and ten formal repeat10 paired rounds per model. Fixed fixtures, not named datasets. Basic vector and DMA implementation only; no new per-model specialization. Implementation/physical checks pass; historical teacher-alignment failures remain failures and no quality/PPL claim or automatic baseline promotion is made. Source closure 009b4fb8c3b5edd94a7521d34b4dc5103409403b.
+
+Desktop workbook A/B/C now contains 48 formal rows across four models and four recipes; the 24 A16 rows were completed/refreshed, prior A8/SP2 and eight curated D rows preserved. Evidence /mnt/d/llm_exp/results/qwen3-block-htp/exp0299; ledger 2817cd6a245d30b88a091558f57cc3d4abf0c0c942ab9423ea3ff5bef6a3e00d. Device released, no active experiment; next 300. Parent weight payloads, residual policy and original full-M64 Qwen0.6 W16 decode scheduling preserved. A8/SP2 long/M64 throughput gate remains a separate result.
+
 # EXP-0298 ABC ordinary A8/SP2 paired measurements completed
 
 Four-model ABC campaign completed with the separately governed companion experiment. This project contributes two models, three shapes and both recipes: 64+42, 536+46, 741+3. Five short and ten formal repeat10 rounds per model, same binary per model, rotated order; all samples retained. Numerical/physical checks pass; long/M64 lower95% >=0.90 gate remains separately reported, with small-model optimization deferred. No model-quality claim or automatic promotion.
