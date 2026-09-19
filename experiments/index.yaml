@@ -28873,14 +28873,107 @@ experiments:
   source_commits: *id004
 - id: EXP-0301
   title: Decode optimization coverage audit and repair across flagged Qwen ABC rows
-  execution_state: running
-  evidence_validity: pending
-  local_gate: not_run
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
   adoption_status: pending
   record: docs/experiments/EXP-0301.md
-  approval_ref: 'User2026-09-19: sequentially inspect other decode losses >10% for
-    unequal missing optimization, repair and remeasure/update data. Includes Qwen0.6
-    under latest request.'
+  approval_ref: 'User2026-09-19: sequentially inspect other decode losses >10% for unequal missing optimization,
+    repair and remeasure/update data. Includes Qwen0.6 under latest request.'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0301-decode-alignment
+  results:
+    experiment: EXP-0301
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    gate_role: numerical_exact_and_physical_and_same_length_guards_pass; some_cross_context_decode_and_Qwen06_A16_prefill_gates_remain_failed
+    adoption_status: pending
+    baseline_promoted: false
+    quality_claim: false
+    device_owner: null
+    source_branch: codex/exp-0301-decode-alignment
+    source_head: 22fba3060abd606ec33efb7fabb942b33e14a20e
+    measured_sources:
+      a8: 7682a576a90c812d083ed058e26ab8bdc892ef22
+      a16: 22fba3060abd606ec33efb7fabb942b33e14a20e
+    screening_rows: 11
+    updated_rows: 18
+    note_only_updates: 2
+    formal_rpc_count: 109800
+    short_rounds: 5
+    formal_rounds: 10
+    repeat: 10
+    long_options:
+      Qwen06_A8_SP2: 65439
+      Qwen17_A8_SP2_retained: 65439
+      Qwen06_A16: 4
+      Qwen17_A16: 7
+    same_length_guards_pass: true
+    remaining_decode_losses:
+    - sheet: B_Persona-Chat
+      model: Qwen3-0.6B
+      recipe: W4A8
+      decode_tps: 79.17854398573192
+      reference_tps: 94.95925551288006
+      loss_percent: 16.618402747489615
+    - sheet: B_Persona-Chat
+      model: Qwen3-0.6B
+      recipe: W4A8-SP2
+      decode_tps: 78.79741810599013
+      reference_tps: 94.5574836339005
+      loss_percent: 16.667179499963037
+    - sheet: C_DroidTask
+      model: Qwen3-0.6B
+      recipe: W16A16
+      decode_tps: 24.068151408335076
+      reference_tps: 27.280882678785755
+      loss_percent: 11.776493115264831
+    - sheet: C_DroidTask
+      model: Qwen3-0.6B
+      recipe: W4A16
+      decode_tps: 23.973319396658265
+      reference_tps: 27.209314052664677
+      loss_percent: 11.892966686859573
+    - sheet: C_DroidTask
+      model: Qwen3-0.6B
+      recipe: W4A8
+      decode_tps: 71.70674612342054
+      reference_tps: 94.95925551288006
+      loss_percent: 24.486827812488066
+    - sheet: C_DroidTask
+      model: Qwen3-0.6B
+      recipe: W4A8-SP2
+      decode_tps: 71.39706332654919
+      reference_tps: 94.5574836339005
+      loss_percent: 24.493482078078376
+    - sheet: C_DroidTask
+      model: Qwen3-1.7B
+      recipe: W4A8
+      decode_tps: 41.93705392888111
+      reference_tps: 47.385889551381275
+      loss_percent: 11.498856883528386
+    - sheet: C_DroidTask
+      model: Qwen3-1.7B
+      recipe: W4A8-SP2
+      decode_tps: 41.90816553217011
+      reference_tps: 47.266754613243776
+      loss_percent: 11.336909260895677
+    uncertain_decode_gains: []
+    report: docs/experiments/EXP-0301-RESULTS.md
+    modules: docs/experiments/EXP-0301-MODULES.md
+    report_commit: 6436e1eaee6461fcda5a0f6327f71912009ce10f
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0301
+    evidence_ledger_sha256: d5bb1cee6418430a7da65cd0b4022532b69dc5c6ead60aab5107e48257c50e69
+    evidence_files: 3535
+    evidence_bytes: 13607235560
+    workbook: C:/Users/35961/Desktop/HTP硬件实验总表.xlsx
+    workbook_sha256: 3c8428d0d97d6d7d9e0700fc4282ed6defd3d72ba8a9a0d6c3e0501b38f84b95
+    workspace_build: 1.7B/28 layers
+    full_floating_alignment_pass: false
+    prefill_06_a8_long_gates_pass: true
+    prefill_06_a16_long_gates_pass: false
+  source_commits:
+  - 7682a576a90c812d083ed058e26ab8bdc892ef22
+  - 22fba3060abd606ec33efb7fabb942b33e14a20e

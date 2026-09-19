@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0301
+  active_experiment: null
   next_experiment_number: 302
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -33,22 +33,95 @@ governance:
 current_scope:
   decode_alignment_audit:
     experiment: EXP-0301
-    execution_state: running
-    source_branch: codex/exp-0301-decode-alignment
-    source_parent: d2af6c7d3d5bccf467b5dd194be08c16ae6ed68c
-    device_owner: EXP-0301
-    screening: 11 Qwen B/C decode rows >10% below same-model/recipe A64+42; includes
-      previously deferred Qwen0.6; no Llama flagged
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    gate_role: numerical_exact_and_physical_and_same_length_guards_pass; some_cross_context_decode_and_Qwen06_A16_prefill_gates_remain_failed
+    adoption_status: pending
+    baseline_promoted: false
     quality_claim: false
-    stage: Qwen0.6 A8/SP2 formal complete; generic A16 decode-only KV prefetch candidate
-      passes741+3 exact audits, full campaign running
+    device_owner: null
+    source_branch: codex/exp-0301-decode-alignment
     source_head: 22fba3060abd606ec33efb7fabb942b33e14a20e
-    a8_summary: /mnt/d/llm_exp/results/qwen3-block-htp/exp0301/0.6B/A8_SUMMARY.json
-    a8_prefill_long_gate: all four pass
-    a8_cross_context_decode: B ~16.6% loss; C ~24.5% loss remains
-    a16_candidate_option:
-      0.6B: 4
-      1.7B: 7
+    measured_sources:
+      a8: 7682a576a90c812d083ed058e26ab8bdc892ef22
+      a16: 22fba3060abd606ec33efb7fabb942b33e14a20e
+    screening_rows: 11
+    updated_rows: 18
+    note_only_updates: 2
+    formal_rpc_count: 109800
+    short_rounds: 5
+    formal_rounds: 10
+    repeat: 10
+    long_options:
+      Qwen06_A8_SP2: 65439
+      Qwen17_A8_SP2_retained: 65439
+      Qwen06_A16: 4
+      Qwen17_A16: 7
+    same_length_guards_pass: true
+    remaining_decode_losses:
+    - sheet: B_Persona-Chat
+      model: Qwen3-0.6B
+      recipe: W4A8
+      decode_tps: 79.17854398573192
+      reference_tps: 94.95925551288006
+      loss_percent: 16.618402747489615
+    - sheet: B_Persona-Chat
+      model: Qwen3-0.6B
+      recipe: W4A8-SP2
+      decode_tps: 78.79741810599013
+      reference_tps: 94.5574836339005
+      loss_percent: 16.667179499963037
+    - sheet: C_DroidTask
+      model: Qwen3-0.6B
+      recipe: W16A16
+      decode_tps: 24.068151408335076
+      reference_tps: 27.280882678785755
+      loss_percent: 11.776493115264831
+    - sheet: C_DroidTask
+      model: Qwen3-0.6B
+      recipe: W4A16
+      decode_tps: 23.973319396658265
+      reference_tps: 27.209314052664677
+      loss_percent: 11.892966686859573
+    - sheet: C_DroidTask
+      model: Qwen3-0.6B
+      recipe: W4A8
+      decode_tps: 71.70674612342054
+      reference_tps: 94.95925551288006
+      loss_percent: 24.486827812488066
+    - sheet: C_DroidTask
+      model: Qwen3-0.6B
+      recipe: W4A8-SP2
+      decode_tps: 71.39706332654919
+      reference_tps: 94.5574836339005
+      loss_percent: 24.493482078078376
+    - sheet: C_DroidTask
+      model: Qwen3-1.7B
+      recipe: W4A8
+      decode_tps: 41.93705392888111
+      reference_tps: 47.385889551381275
+      loss_percent: 11.498856883528386
+    - sheet: C_DroidTask
+      model: Qwen3-1.7B
+      recipe: W4A8-SP2
+      decode_tps: 41.90816553217011
+      reference_tps: 47.266754613243776
+      loss_percent: 11.336909260895677
+    uncertain_decode_gains: []
+    report: docs/experiments/EXP-0301-RESULTS.md
+    modules: docs/experiments/EXP-0301-MODULES.md
+    report_commit: 6436e1eaee6461fcda5a0f6327f71912009ce10f
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0301
+    evidence_ledger_sha256: d5bb1cee6418430a7da65cd0b4022532b69dc5c6ead60aab5107e48257c50e69
+    evidence_files: 3535
+    evidence_bytes: 13607235560
+    workbook: C:/Users/35961/Desktop/HTP硬件实验总表.xlsx
+    workbook_sha256: 3c8428d0d97d6d7d9e0700fc4282ed6defd3d72ba8a9a0d6c3e0501b38f84b95
+    workspace_build: 1.7B/28 layers
+    full_floating_alignment_pass: false
+    prefill_06_a8_long_gates_pass: true
+    prefill_06_a16_long_gates_pass: false
   latest_qwen3_06b_f16_fp32_residual:
     experiment: EXP-0293
     execution_state: completed
@@ -12858,7 +12931,7 @@ current_scope:
     timed_rpc_boundaries: 29600
     gate_role: unchanged long/M64 throughput parity plus decode guard; numerical and physical checks separately
       passed
-  latest_formal_measurement_experiment: EXP-0300
+  latest_formal_measurement_experiment: EXP-0301
   latest_e2e_shape: 'W16A16/W4A16: A64+42, B536+46, C741+3; fixed project-owned trajectories; 10 paired repeat10
     rounds per model'
   latest_qwen3_17b_long_decode_optimization: *id005
