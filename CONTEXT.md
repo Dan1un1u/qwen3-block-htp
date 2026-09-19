@@ -1,3 +1,9 @@
+# L32-0055 completed: generic A16 ABC baselines
+
+Read docs/experiments/L32-0055-RESULTS.md and MODULES.md. Two models x W16A16/W4A16 x A64+42/B536+46/C741+3 completed, five short and ten formal repeat10 paired rounds per model. Fixed fixtures, not named datasets. Basic vector and DMA implementation only; no new per-model specialization. Implementation/physical checks pass; historical teacher-alignment failures remain failures and no quality/PPL claim or automatic baseline promotion is made. Source closure 5a818c744e3aa63b9f5c6401248ec17983e6a86e.
+
+Desktop workbook A/B/C now contains 48 formal rows across four models and four recipes; the 24 A16 rows were completed/refreshed, prior A8/SP2 and eight curated D rows preserved. Evidence /mnt/d/llm_exp/results/llama32-htp/l32-0055; ledger 6465a9e0404d9b47af9641f141c6e17eaedc48afb06233f143ea953d823c9497. Device released, no active experiment; next 56. Parent weight payloads, residual policy and original full-M64 Qwen0.6 W16 decode scheduling preserved. A8/SP2 long/M64 throughput gate remains a separate result.
+
 # L32-0054 ABC ordinary A8/SP2 paired measurements completed
 
 Four-model ABC campaign completed with the separately governed companion experiment. This project contributes two models, three shapes and both recipes: 64+42, 536+46, 741+3. Five short and ten formal repeat10 rounds per model, same binary per model, rotated order; all samples retained. Numerical/physical checks pass; long/M64 lower95% >=0.90 gate remains separately reported, with small-model optimization deferred. No model-quality claim or automatic promotion.

@@ -3389,9 +3389,9 @@ experiments:
   source_commits: *id001
 - id: L32-0055
   title: Generic A16 ABC completion
-  execution_state: running
-  evidence_validity: pending
-  local_gate: not_run
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: pending
   record: docs/experiments/L32-0055.md
   approval_ref: 'User2026-09-19: retain fixed lengths, fill ABC A16; only basic vector/DMA overlap, investigate
@@ -3399,3 +3399,364 @@ experiments:
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
+  evidence:
+    id: L32-0055
+    experiment_root: /mnt/d/llm_exp/results/llama32-htp/l32-0055
+    models:
+      1B:
+        model: Llama3.2-1B
+        measured_source: 5a818c744e3aa63b9f5c6401248ec17983e6a86e
+        campaign: shared
+        audit_set: audits-shared
+        comparisons:
+          A:
+            prefill:
+              tps:
+                w16: 978.4397284971444
+                w4: 1255.247206683436
+              mean_ns:
+                w16: 65410263.029999994
+                w4: 50985972.849999994
+              w4_over_w16_wall: 0.7794872245770692
+              ci95:
+              - 0.7774217719888439
+              - 0.7815526771652945
+              investigate: false
+            decode:
+              tps:
+                w16: 18.133200784240863
+                w4: 23.925474455537493
+              mean_ns:
+                w16: 2316193401.2499995
+                w4: 1755451081.15
+              w4_over_w16_wall: 0.7579056941040787
+              ci95:
+              - 0.7569113443836923
+              - 0.7589000438244651
+              investigate: false
+          B:
+            prefill:
+              tps:
+                w16: 827.544415652274
+                w4: 968.1689238266384
+              mean_ns:
+                w16: 647699374.03
+                w4: 553622396.6800001
+              w4_over_w16_wall: 0.8547541868547924
+              ci95:
+              - 0.8538476803898983
+              - 0.8556606933196865
+              investigate: false
+            decode:
+              tps:
+                w16: 17.26416483217111
+                w4: 22.288590341245694
+              mean_ns:
+                w16: 2664478730.78
+                w4: 2063836218.2500005
+              w4_over_w16_wall: 0.7745821052988505
+              ci95:
+              - 0.7715594227954984
+              - 0.7776047878022027
+              investigate: false
+          C:
+            prefill:
+              tps:
+                w16: 772.9817967797262
+                w4: 885.2708260125911
+              mean_ns:
+                w16: 958625420.53
+                w4: 837031988.66
+              w4_over_w16_wall: 0.8731603515130493
+              ci95:
+              - 0.8723097649502936
+              - 0.874010938075805
+              investigate: false
+            decode:
+              tps:
+                w16: 16.77813081317054
+                w4: 21.290593910034328
+              mean_ns:
+                w16: 178804184.65
+                w4: 140907295.15
+              w4_over_w16_wall: 0.7880604189972787
+              ci95:
+              - 0.786229158766921
+              - 0.7898916792276365
+              investigate: false
+        runtime:
+          remote: /data/local/tmp/llama32-htp/l32-0055/1B/binaries-a1
+          seal:
+            model_size: 1B
+            layer_count: '16'
+            paper_trace: false
+            source_head: 5a818c744e3aa63b9f5c6401248ec17983e6a86e
+            files:
+              /home/daniuniu/work/llama32-htp/android_ReleaseG_aarch64/ship/qwen3_block_cli: 6ec1b2f41b46226ec5825fd2ea54b0f99b3efa61f66e4e868b70a10b63c4a1c9
+              /home/daniuniu/work/llama32-htp/android_ReleaseG_aarch64/ship/llama_sp2_cli: 330eaf69c177dcc97a4adb5b052c692e5edb08d4de9126a1eaf9546a97301f11
+              /home/daniuniu/work/llama32-htp/android_ReleaseG_aarch64/ship/libqwen3_probe.so: 350da4e9d86ff277979e21e03eb6dd81694081b3da1e1cc24a2d5fcc45ee9da0
+              /home/daniuniu/work/llama32-htp/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so: e48086bf04c21dd899a5f5d8a9d7114b29701a9080ffbb713aff701835307b7b
+          archive: /mnt/d/llm_exp/results/llama32-htp/l32-0055/1B/binaries-a1
+        implementation_checks:
+          audits: 16
+          pass_all: true
+          head_checks: 306
+          profiles: 374
+          cache_snapshots: 1600
+          scope: Actual-operand references and exact contracts; not full teacher or model quality acceptance.
+          native_long64_exact_layer_outputs: 1376
+      3B:
+        model: Llama3.2-3B
+        measured_source: 5a818c744e3aa63b9f5c6401248ec17983e6a86e
+        campaign: shared
+        audit_set: audits-shared
+        comparisons:
+          A:
+            prefill:
+              tps:
+                w16: 405.7173901793517
+                w4: 493.94889892602174
+              mean_ns:
+                w16: 157745271.82999998
+                w4: 129568058.84
+              w4_over_w16_wall: 0.8213853095993789
+              ci95:
+              - 0.8190587986041828
+              - 0.823711820594575
+              investigate: false
+            decode:
+              tps:
+                w16: 6.85197035568882
+                w4: 8.117619156036385
+              mean_ns:
+                w16: 6129623716.94
+                w4: 5173930827.83
+              w4_over_w16_wall: 0.8440878734213293
+              ci95:
+              - 0.8430847619453711
+              - 0.8450909848972875
+              investigate: false
+          B:
+            prefill:
+              tps:
+                w16: 357.6363629152678
+                w4: 402.1158840213802
+              mean_ns:
+                w16: 1498729032.0
+                w4: 1332949085.8200002
+              w4_over_w16_wall: 0.8893868932349903
+              ci95:
+              - 0.8887313600047135
+              - 0.8900424264652671
+              investigate: false
+            decode:
+              tps:
+                w16: 6.679742367338857
+                w4: 7.73943291592893
+              mean_ns:
+                w16: 6886493141.55
+                w4: 5943587921.710001
+              w4_over_w16_wall: 0.8630804428481904
+              ci95:
+              - 0.8620636413207724
+              - 0.8640972443756084
+              investigate: false
+          C:
+            prefill:
+              tps:
+                w16: 348.57483082921703
+                w4: 386.6851539607923
+              mean_ns:
+                w16: 2125798923.11
+                w4: 1916287688.86
+              w4_over_w16_wall: 0.9014468116672258
+              ci95:
+              - 0.8999978175895148
+              - 0.9028958057449369
+              investigate: false
+            decode:
+              tps:
+                w16: 6.584997290492896
+                w4: 7.596262835002995
+              mean_ns:
+                w16: 455581053.05999994
+                w4: 394931042.43
+              w4_over_w16_wall: 0.8668857861285879
+              ci95:
+              - 0.8640763956997471
+              - 0.8696951765574287
+              investigate: false
+        runtime:
+          remote: /data/local/tmp/llama32-htp/l32-0055/3B/binaries-a1
+          seal:
+            model_size: 3B
+            layer_count: '28'
+            paper_trace: false
+            source_head: 5a818c744e3aa63b9f5c6401248ec17983e6a86e
+            files:
+              /home/daniuniu/work/llama32-htp/android_ReleaseG_aarch64/ship/qwen3_block_cli: e1910ebebddcc14127325d5e5a4aa3f36c80265a0abd4d4c4357a3319e3a1942
+              /home/daniuniu/work/llama32-htp/android_ReleaseG_aarch64/ship/llama_sp2_cli: 330eaf69c177dcc97a4adb5b052c692e5edb08d4de9126a1eaf9546a97301f11
+              /home/daniuniu/work/llama32-htp/android_ReleaseG_aarch64/ship/libqwen3_probe.so: 350da4e9d86ff277979e21e03eb6dd81694081b3da1e1cc24a2d5fcc45ee9da0
+              /home/daniuniu/work/llama32-htp/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so: c2dba37882722f136bf490d305ade59e4fca2331a0df3e22eb4030ccbff22528
+          archive: /mnt/d/llm_exp/results/llama32-htp/l32-0055/3B/binaries-a1
+        implementation_checks:
+          audits: 16
+          pass_all: true
+          head_checks: 306
+          profiles: 374
+          cache_snapshots: 2800
+          scope: Actual-operand references and exact contracts; not full teacher or model quality acceptance.
+          native_long64_exact_layer_outputs: 2408
+    table_rows:
+    - model: Llama3.2-1B
+      recipe: W16A16
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 978.4397284971444
+      decode_tps: 18.133200784240863
+      rounds: 10
+      repeats: 10
+      experiment: L32-0055
+    - model: Llama3.2-1B
+      recipe: W4A16
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 1255.247206683436
+      decode_tps: 23.925474455537493
+      rounds: 10
+      repeats: 10
+      experiment: L32-0055
+    - model: Llama3.2-1B
+      recipe: W16A16
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 827.544415652274
+      decode_tps: 17.26416483217111
+      rounds: 10
+      repeats: 10
+      experiment: L32-0055
+    - model: Llama3.2-1B
+      recipe: W4A16
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 968.1689238266384
+      decode_tps: 22.288590341245694
+      rounds: 10
+      repeats: 10
+      experiment: L32-0055
+    - model: Llama3.2-1B
+      recipe: W16A16
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 772.9817967797262
+      decode_tps: 16.77813081317054
+      rounds: 10
+      repeats: 10
+      experiment: L32-0055
+    - model: Llama3.2-1B
+      recipe: W4A16
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 885.2708260125911
+      decode_tps: 21.290593910034328
+      rounds: 10
+      repeats: 10
+      experiment: L32-0055
+    - model: Llama3.2-3B
+      recipe: W16A16
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 405.7173901793517
+      decode_tps: 6.85197035568882
+      rounds: 10
+      repeats: 10
+      experiment: L32-0055
+    - model: Llama3.2-3B
+      recipe: W4A16
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 493.94889892602174
+      decode_tps: 8.117619156036385
+      rounds: 10
+      repeats: 10
+      experiment: L32-0055
+    - model: Llama3.2-3B
+      recipe: W16A16
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 357.6363629152678
+      decode_tps: 6.679742367338857
+      rounds: 10
+      repeats: 10
+      experiment: L32-0055
+    - model: Llama3.2-3B
+      recipe: W4A16
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 402.1158840213802
+      decode_tps: 7.73943291592893
+      rounds: 10
+      repeats: 10
+      experiment: L32-0055
+    - model: Llama3.2-3B
+      recipe: W16A16
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 348.57483082921703
+      decode_tps: 6.584997290492896
+      rounds: 10
+      repeats: 10
+      experiment: L32-0055
+    - model: Llama3.2-3B
+      recipe: W4A16
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 386.6851539607923
+      decode_tps: 7.596262835002995
+      rounds: 10
+      repeats: 10
+      experiment: L32-0055
+    quality_claim: false
+    named_dataset_benchmark: false
+    baseline_promoted: false
+    formal_cycles_per_model: 10
+    formal_repeat: 10
+    short_cycles_per_model: 5
+    formal_timed_rpc_boundaries: 45200
+    short_timed_rpc_boundaries: 22600
+    source_closure: 5a818c744e3aa63b9f5c6401248ec17983e6a86e
+    source_commits: &id002
+    - 5a818c744e3aa63b9f5c6401248ec17983e6a86e
+    source_branch: codex/llama32-no-rotation
+    implementation_checks_pass: true
+    historical_full_floating_alignment_status: unchanged; prior failures remain failures
+    local_gate: pass
+    gate_role: implementation checks and formal measurement completion; no PPL/quality acceptance
+    w4_slower_than_w16_over_10_percent: []
+    execution_state: completed
+    evidence_validity: valid
+    adoption_status: pending
+    device_owner: null
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0055
+    evidence_ledger_sha256: 6465a9e0404d9b47af9641f141c6e17eaedc48afb06233f143ea953d823c9497
+    evidence_files: 1487
+    evidence_bytes: 7359960585
+    report: docs/experiments/L32-0055-RESULTS.md
+    modules: docs/experiments/L32-0055-MODULES.md
+    workbook: C:/Users/35961/Desktop/HTP硬件实验总表.xlsx
+    workbook_updated: true
+    workbook_sha256: 1a1f7f7b89eb1a47ad49bf19f92cf1574b2d572df4fff9f6d7ea23120910a956
+    workspace_build: 3B/28 layers
+  source_commits: *id002
