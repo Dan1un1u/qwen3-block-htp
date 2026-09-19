@@ -242,3 +242,6 @@ User explicitly authorizes a loop targeting M64 single-chunk prefill throughput 
 
 ## User-approved generic long-context speed repair (2026-09-19)
 User authorizes L32-0056 under its registered protocol: all remaining models except Qwen0.6, generic A16 layout/vector/DMA repairs and paired10% long/M64 throughput gate. Supersedes prior experiment-specific no-further-optimization notices only within this bounded scope. Numerical/physical gates, frozen M64 fairness and historical failures remain.
+
+## L32-0057 authorization
+User explicitly requests optimizing Llama1B long decode for ordinary A8/SP2. This supersedes earlier small-model optimization deferral only for this registered scope; preserve all arithmetic/physical/evidence constraints.

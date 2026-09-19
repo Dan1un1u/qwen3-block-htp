@@ -1,3 +1,6 @@
+# L32-0057 active: Llama1B A8/SP2 long decode repair
+Read docs/experiments/L32-0057.md. Preserve numerical/physical gates and frozen other recipes/models. Existing head64 long decode is sequential; test parallel admission and exact vector preparation. Device reserved for this experiment.
+
 # L32-0056 completed: generic A16 long-context repair
 
 Read docs/experiments/L32-0056-RESULTS.md and MODULES.md. Qwen1.7B and Llama1B/3B were processed sequentially, excluding Qwen0.6. Five short and ten formal repeat10 paired rounds with unchanged native/long64 references and same-length controls. Generic row-parallel softmax and cache-DMA overlap retain exact per-row arithmetic; selected A16 long flag3, original control0; all original A16/A8/SP2 capture fields exact. Extra final-hidden capture fields independently verified. No per-model specialization or baseline degradation. Confidence gates all pass: True. Source closure 68d9401265b8f77aa6de9d1d2135d5608b61e9db.

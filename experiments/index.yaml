@@ -4657,3 +4657,16 @@ experiments:
     workbook_sha256: b9c90e539b63ceb3bd623ce2d80469cc103cba7f583bfebd72b35d51d3d7e468
     workspace_build: 3B/28 layers
   source_commits: *id003
+- id: L32-0057
+  title: Llama1B A8 long decode parallel pipeline repair
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: pending
+  approval_ref: User2026-09-19 explicitly requests diagnosis and optimization of Llama1B long-context W4A8 and SP2
+    decode.
+  parent_source: 68d9401265b8f77aa6de9d1d2135d5608b61e9db
+  record: docs/experiments/L32-0057.md
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
