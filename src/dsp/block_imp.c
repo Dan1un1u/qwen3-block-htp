@@ -252,6 +252,7 @@ enum qbh_block_hvx_pool_job_kind {
     QBH_BLOCK_HVX_POOL_SP2_EPILOGUE = 20,
     QBH_BLOCK_HVX_POOL_FP32_NORM = 21,
     QBH_BLOCK_HVX_POOL_LONG_ATTENTION = 22,
+    QBH_BLOCK_HVX_POOL_LONG_F16_SOFTMAX = 23,
 };
 
 enum qbh_block_u8_residual_kind {
@@ -486,6 +487,7 @@ struct qbh_block_w4f16_pool {
     qurt_mutex_t attention_hmx_mutex;
     qurt_mutex_t long_dma_mutex;
     uint8_t *long_shared;
+    float *long_f16_scratch;
     uint32_t long_rows,long_past,long_padded,long_stride,long_common_lut;
     volatile uint32_t attention_gqa_abort;
     float attention_gqa_qk_max_abs[QBH_BLOCK_HEADS];
@@ -4882,6 +4884,13 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
                 }
             }
             }
+        } else if (job->command_kind == QBH_BLOCK_HVX_POOL_LONG_F16_SOFTMAX) {
+            qbh_hvx_long_softmax_f16_partition(pool->attention_scores,
+                pool->attention_probability,QBH_ATTENTION_Q_HEADS_PER_GROUP,
+                pool->long_rows,pool->long_padded,pool->long_past,
+                QBH_MODEL_ATTENTION_SCALE,
+                pool->long_f16_scratch+job->worker_index*832U,
+                job->worker_index,pool->active_worker_count+1U);
         } else if (job->command_kind == QBH_BLOCK_HVX_POOL_LONG_ATTENTION) {
             qbh_long_attention_tasks(pool,job);
         } else if (job->command_kind == QBH_BLOCK_HVX_POOL_SILU) {
@@ -17648,6 +17657,7 @@ static int qbh_scan_f16_attention(
     struct qbh_block_header *header, uint8_t *shared,
     struct qbh_block_buffers *buffers,
     struct qbh_block_hmx_worker *worker,
+    struct qbh_block_w4f16_pool *pool,
     uint32_t logical_rows, uint32_t past_tokens) {
     const uint32_t valid_tokens = past_tokens + logical_rows;
     const uint32_t padded_tokens = qbh_align_up(
@@ -17825,6 +17835,32 @@ static int qbh_scan_f16_attention(
 
         start = HAP_perf_get_qtimer_count();
         if (header->long_prompt_tokens) {
+#ifndef QBH_QWEN_06B
+            if ((header->long_optimization&1U) && logical_rows>1U &&
+                pool!=NULL && pool->worker_count>=3U) {
+                /* Weights are dead until the next projection. Expanded-weight
+                 * memory follows the attention overlay: four disjoint VTCM
+                 * scratch rows, no allocation or intermediate DDR materialization. */
+                const uint32_t contexts=4U;
+                pool->long_f16_scratch=(float *)buffers->expanded_weight;
+                pool->attention_scores=plane_a;
+                pool->attention_probability=plane_c;
+                pool->long_rows=logical_rows;pool->long_padded=padded_tokens;
+                pool->long_past=past_tokens;pool->active_worker_count=contexts-1U;
+                qbh_hvx_zero_aligned_bytes(plane_c,
+                    QBH_ATTENTION_Q_HEADS_PER_GROUP*64U*padded_tokens*sizeof(__fp16));
+                for(uint32_t i=0;i<contexts-1U;++i)
+                    pool->jobs[i].command_kind=QBH_BLOCK_HVX_POOL_LONG_F16_SOFTMAX;
+                asm volatile("barrier":::"memory");
+                for(uint32_t i=0;i<contexts-1U;++i)qurt_sem_up(&pool->command_ready[i]);
+                qbh_hvx_long_softmax_f16_partition(plane_a,plane_c,
+                    QBH_ATTENTION_Q_HEADS_PER_GROUP,logical_rows,padded_tokens,
+                    past_tokens,QBH_MODEL_ATTENTION_SCALE,
+                    pool->long_f16_scratch+(contexts-1U)*832U,contexts-1U,contexts);
+                for(uint32_t i=0;i<contexts-1U;++i)qurt_sem_down(&pool->command_done[i]);
+                asm volatile("barrier":::"memory");
+            } else
+#endif
             qbh_hvx_long_softmax_f16(plane_a, plane_c,
                 QBH_ATTENTION_Q_HEADS_PER_GROUP, logical_rows,
                 padded_tokens, past_tokens, QBH_MODEL_ATTENTION_SCALE);
@@ -21454,7 +21490,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
                                  header, buffers, worker)))
              : (scan_dynamic_attention != 0U
                     ? qbh_scan_f16_attention(
-                          header, shared, buffers, worker,
+                          header, shared, buffers, worker, w4f16_pool,
                           logical_rows, past_tokens)
                     : qbh_attention_f16(
                           header, buffers, worker, w4f16_pool,
