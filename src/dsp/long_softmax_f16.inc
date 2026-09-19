@@ -64,30 +64,39 @@ void qbh_hvx_long_softmax_f16_partition(const __fp16 *scores,__fp16 *probability
         const __fp16 *src=scores+(h*64U+row)*padded;
         const uint32_t valid=past+row+1U;
         HVX_Vector mx=qbh_long_f16_splat(-INFINITY);
-        for(uint32_t t=0;t<padded/64U;++t) {
-            HVX_VectorPair x=Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)(src+t*64U));
-            x=Q6_W_vshuff_VVR(Q6_V_hi_W(x),Q6_V_lo_W(x),-4);
-            ((HVX_Vector *)tmp)[t*2]=Q6_V_lo_W(x);
-            ((HVX_Vector *)tmp)[t*2+1]=Q6_V_hi_W(x);
-        }
-        for(uint32_t t=0;t<padded/32U;++t) {
-            HVX_Vector x=qbh_long_f16_mul(((HVX_Vector *)tmp)[t],qbh_long_f16_splat(scale));
-            HVX_VectorPred live=Q6_Q_vcmp_gt_VwVw(Q6_V_vsplat_R((int32_t)valid-(int32_t)t*32),*(const HVX_Vector *)indices);
-            x=Q6_V_vmux_QVV(live,x,qbh_long_f16_splat(-INFINITY));
-            ((HVX_Vector *)tmp)[t]=x;mx=Q6_Vsf_vmax_VsfVsf(mx,x);
+        const uint32_t active32=(valid+31U)/32U;
+        const uint32_t active64=(valid+63U)/64U;
+        const HVX_Vector scalev=qbh_long_f16_splat(scale);
+        const HVX_Vector neginf=qbh_long_f16_splat(-INFINITY);
+        /* Fuse conversion with scale/mask. Preserve low-then-high max order.
+         * Entirely masked tiles cannot contribute to max or positive exp sum. */
+        for(uint32_t t=0;t<active64;++t) {
+            HVX_VectorPair pair=Q6_Wsf_vcvt_Vhf(*(const HVX_Vector *)(src+t*64U));
+            pair=Q6_W_vshuff_VVR(Q6_V_hi_W(pair),Q6_V_lo_W(pair),-4);
+            HVX_Vector lo=qbh_long_f16_mul(Q6_V_lo_W(pair),scalev);
+            HVX_Vector hi=qbh_long_f16_mul(Q6_V_hi_W(pair),scalev);
+            HVX_VectorPred live0=Q6_Q_vcmp_gt_VwVw(Q6_V_vsplat_R((int32_t)valid-(int32_t)t*64),*(const HVX_Vector *)indices);
+            HVX_VectorPred live1=Q6_Q_vcmp_gt_VwVw(Q6_V_vsplat_R((int32_t)valid-(int32_t)t*64-32),*(const HVX_Vector *)indices);
+            lo=Q6_V_vmux_QVV(live0,lo,neginf);
+            hi=Q6_V_vmux_QVV(live1,hi,neginf);
+            ((HVX_Vector *)tmp)[t*2]=lo;
+            ((HVX_Vector *)tmp)[t*2+1]=hi;
+            mx=Q6_Vsf_vmax_VsfVsf(mx,lo);
+            mx=Q6_Vsf_vmax_VsfVsf(mx,hi);
         }
         for(int n=64;n>=4;n>>=1)mx=Q6_Vsf_vmax_VsfVsf(mx,Q6_V_vror_VR(mx,n));
         HVX_Vector sum=Q6_V_vzero();
-        for(uint32_t t=0;t<padded/32U;++t) {
+        for(uint32_t t=0;t<active32;++t) {
             HVX_Vector x=qhmath_hvx_exp_vf(Q6_Vsf_vsub_VsfVsf(((HVX_Vector *)tmp)[t],mx));
             HVX_VectorPred live=Q6_Q_vcmp_gt_VwVw(Q6_V_vsplat_R((int32_t)valid-(int32_t)t*32),*(const HVX_Vector *)indices);
             x=Q6_V_vmux_QVV(live,x,Q6_V_vzero());
             ((HVX_Vector *)tmp)[t]=x;sum=Q6_Vsf_vadd_VsfVsf(sum,x);
         }
+        if(active32 & 1U) ((HVX_Vector *)tmp)[active32]=Q6_V_vzero();
         for(int n=64;n>=4;n>>=1)sum=Q6_Vsf_vadd_VsfVsf(sum,Q6_V_vror_VR(sum,n));
         union {int32_t i;float f;} total={.i=Q6_R_vextract_VR(sum,0)};
         HVX_Vector inv=qbh_long_f16_splat(1.0f/total.f);
-        for(uint32_t t=0;t<padded/64U;++t) {
+        for(uint32_t t=0;t<active64;++t) {
             HVX_VectorPair d=Q6_W_vdeal_VVR(((HVX_Vector *)tmp)[t*2+1],((HVX_Vector *)tmp)[t*2],-4);
             HVX_Vector e=Q6_Vhf_vcvt_VsfVsf(Q6_V_lo_W(d),Q6_V_hi_W(d));
             d=Q6_Wsf_vcvt_Vhf(e);
