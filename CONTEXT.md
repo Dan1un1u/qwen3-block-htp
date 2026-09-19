@@ -1,3 +1,6 @@
+# L32-0056 active: generic long-context speed repair
+User excludes Qwen0.6B. Read docs/experiments/L32-0056.md; retain10% long/M64 throughput gate, unchanged math and basic A16 fairness. Device serialized Qwen1.7 then Llama1B/3B.
+
 # L32-0055 completed: generic A16 ABC baselines
 
 Read docs/experiments/L32-0055-RESULTS.md and MODULES.md. Two models x W16A16/W4A16 x A64+42/B536+46/C741+3 completed, five short and ten formal repeat10 paired rounds per model. Fixed fixtures, not named datasets. Basic vector and DMA implementation only; no new per-model specialization. Implementation/physical checks pass; historical teacher-alignment failures remain failures and no quality/PPL claim or automatic baseline promotion is made. Source closure 5a818c744e3aa63b9f5c6401248ec17983e6a86e.

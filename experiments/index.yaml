@@ -3760,3 +3760,15 @@ experiments:
     workbook_sha256: 1a1f7f7b89eb1a47ad49bf19f92cf1574b2d572df4fff9f6d7ea23120910a956
     workspace_build: 3B/28 layers
   source_commits: *id002
+- id: L32-0056
+  title: Generic A16 long-context throughput repair
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/L32-0056.md
+  approval_ref: 'User2026-09-19: repair long-sequence slowdown except Qwen0.6; gate10%; prior generic A16 fairness
+    retained.'
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation

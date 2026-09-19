@@ -239,3 +239,6 @@ User approves generic64-token chunked long prefill on latest1B W4A8-SP2. Superse
 
 ## L32-0051 iterative long-prefill speed authorization
 User explicitly authorizes a loop targeting M64 single-chunk prefill throughput parity for current1B SP2 longprefill. Supersedes0050 no-tuning scope; preserve arithmetic/physical/evidence constraints and fair M64 control. See0051protocol. No model-quality or automatic baseline promotion.
+
+## User-approved generic long-context speed repair (2026-09-19)
+User authorizes L32-0056 under its registered protocol: all remaining models except Qwen0.6, generic A16 layout/vector/DMA repairs and paired10% long/M64 throughput gate. Supersedes prior experiment-specific no-further-optimization notices only within this bounded scope. Numerical/physical gates, frozen M64 fairness and historical failures remain.
