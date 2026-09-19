@@ -1,3 +1,9 @@
+# L32-0056 measurements complete; workbook save pending
+
+All three models completed numerical validation, five short and ten formal repeat10 rounds. All long-prefill and equal-length decode confidence gates pass. Read docs/experiments/L32-0056-RESULTS.md and MODULES.md. Llama3B final round spans two ADB interruptions; all completed slow samples retained. User restored charge/cooling; only missing final C arms were added. Device released. No automatic baseline promotion or quality acceptance.
+
+Desktop HTP hardware workbook remains unchanged: export hit EBUSY. User asked to close workbook. Prepared18 rows; do not confuse interim reports with a saved workbook update. Re-run workbook_bundle.py prepare, long-a16-update.mjs, review/render/readback, archive, seal, authority_finish.py close. Operation marker already ran once successfully for this edit; do not repeat on retry. Full scripts/checkpoint: /mnt/d/llm_exp/results/qwen3-block-htp/exp0300/PROGRESS.json. Keep active experiment until workbook/evidence closure.
+
 # L32-0056 active: generic long-context speed repair
 User excludes Qwen0.6B. Read docs/experiments/L32-0056.md; retain10% long/M64 throughput gate, unchanged math and basic A16 fairness. Device serialized Qwen1.7 then Llama1B/3B.
 
