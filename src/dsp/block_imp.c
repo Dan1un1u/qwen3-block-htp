@@ -253,6 +253,7 @@ enum qbh_block_hvx_pool_job_kind {
     QBH_BLOCK_HVX_POOL_FP32_NORM = 21,
     QBH_BLOCK_HVX_POOL_LONG_ATTENTION = 22,
     QBH_BLOCK_HVX_POOL_LONG_F16_SOFTMAX = 23,
+    QBH_BLOCK_HVX_POOL_LONG_F16_NATIVE = 24,
 };
 
 enum qbh_block_u8_residual_kind {
@@ -4890,6 +4891,13 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
                 pool->long_rows,pool->long_padded,pool->long_past,
                 QBH_MODEL_ATTENTION_SCALE,
                 pool->long_f16_scratch+job->worker_index*832U,
+                job->worker_index,pool->active_worker_count+1U);
+        } else if (job->command_kind == QBH_BLOCK_HVX_POOL_LONG_F16_NATIVE) {
+            qbh_hvx_long_softmax_f16_native_partition(pool->attention_scores,
+                pool->attention_probability,QBH_ATTENTION_Q_HEADS_PER_GROUP,
+                pool->long_rows,pool->long_padded,pool->long_past,
+                QBH_MODEL_ATTENTION_SCALE,
+                pool->long_f16_scratch+job->worker_index*1248U,
                 job->worker_index,pool->active_worker_count+1U);
         } else if (job->command_kind == QBH_BLOCK_HVX_POOL_LONG_ATTENTION) {
             qbh_long_attention_tasks(pool,job);
@@ -17748,6 +17756,7 @@ static int qbh_scan_f16_attention(
             shared + header->kv_cache_v_offset +
             (size_t)group * cache_head_stride_bytes;
         __fp16 *q_group = q_group_scratch;
+        uint32_t native_probability=0U;
         uint64_t start;
 
         if (native_cache != 0U) {
@@ -17850,22 +17859,34 @@ static int qbh_scan_f16_attention(
                 qbh_hvx_zero_aligned_bytes(plane_c,
                     QBH_ATTENTION_Q_HEADS_PER_GROUP*64U*padded_tokens*sizeof(__fp16));
                 for(uint32_t i=0;i<contexts-1U;++i)
-                    pool->jobs[i].command_kind=QBH_BLOCK_HVX_POOL_LONG_F16_SOFTMAX;
+                    pool->jobs[i].command_kind=QBH_BLOCK_HVX_POOL_LONG_F16_NATIVE;
                 asm volatile("barrier":::"memory");
                 for(uint32_t i=0;i<contexts-1U;++i)qurt_sem_up(&pool->command_ready[i]);
-                qbh_hvx_long_softmax_f16_partition(plane_a,plane_c,
+                qbh_hvx_long_softmax_f16_native_partition(plane_a,plane_c,
                     QBH_ATTENTION_Q_HEADS_PER_GROUP,logical_rows,padded_tokens,
                     past_tokens,QBH_MODEL_ATTENTION_SCALE,
-                    pool->long_f16_scratch+(contexts-1U)*832U,contexts-1U,contexts);
+                    pool->long_f16_scratch+(contexts-1U)*1248U,contexts-1U,contexts);
                 for(uint32_t i=0;i<contexts-1U;++i)qurt_sem_down(&pool->command_done[i]);
                 asm volatile("barrier":::"memory");
+                native_probability=1U;
             } else
 #endif
             qbh_hvx_long_softmax_f16(plane_a, plane_c,
                 QBH_ATTENTION_Q_HEADS_PER_GROUP, logical_rows,
                 padded_tokens, past_tokens, QBH_MODEL_ATTENTION_SCALE);
-            if (header->generation_boundary_audit_enabled &&
-                qbh_scan_audit_vector_softmax_f16(plane_a,plane_c,logical_rows,padded_tokens,past_tokens)) return -1;
+            if (header->generation_boundary_audit_enabled) {
+                __fp16 *audit_probability=plane_c;
+                if(native_probability) {
+                    /* K weights are dead after QK. Untimed independent audit
+                     * unpacks native P here while preserving original scores. */
+                    for(uint32_t h=0;h<QBH_ATTENTION_Q_HEADS_PER_GROUP;++h)
+                        qbh_unpack_fp16_output(plane_c+(size_t)h*score_head_elements,
+                            kv_tiles,weight+(size_t)h*score_head_elements,padded_tokens,0U);
+                    audit_probability=weight;
+                }
+                if(qbh_scan_audit_vector_softmax_f16(plane_a,audit_probability,
+                    logical_rows,padded_tokens,past_tokens)) return -1;
+            }
         } else
         if (logical_rows==1U && padded_tokens<=128U) {
             qbh_hvx_decode_softmax_f16(plane_a, plane_c,
@@ -17885,7 +17906,7 @@ static int qbh_scan_f16_attention(
             HAP_perf_get_qtimer_count() - start;
 
         start = HAP_perf_get_qtimer_count();
-        for (uint32_t local_head = 0U;
+        if(!native_probability) for (uint32_t local_head = 0U;
              local_head < QBH_ATTENTION_Q_HEADS_PER_GROUP;
              ++local_head) {
             qbh_pack_fp16_activation(
@@ -17951,16 +17972,17 @@ static int qbh_scan_f16_attention(
             header->f16_cache_native_append_update_ticks +=
                 HAP_perf_get_qtimer_count() - start;
         } else {
-            qbh_hvx_zero_aligned_bytes(plane_c, plane_bytes);
+            __fp16 *value_rows=native_probability ? plane_a : plane_c;
+            qbh_hvx_zero_aligned_bytes(value_rows, plane_bytes);
             if (qbh_scan_cache_dma(
-                    header, plane_c, cache_v,
+                    header, value_rows, cache_v,
                     valid_tokens * QBH_BLOCK_HEAD_DIM * sizeof(__fp16),
                     1U) != 0) {
                 return -1;
             }
             start = HAP_perf_get_qtimer_count();
             qbh_pack_fp16_weight_transposed_hvx(
-                plane_c, QBH_BLOCK_HEAD_DIM, 0U,
+                value_rows, QBH_BLOCK_HEAD_DIM, 0U,
                 padded_tokens, QBH_BLOCK_HEAD_DIM, weight);
             header->attention_av_pack_ticks +=
                 HAP_perf_get_qtimer_count() - start;
@@ -17969,7 +17991,7 @@ static int qbh_scan_f16_attention(
         start = HAP_perf_get_qtimer_count();
         if (qbh_hmx_submit(
                 worker, QBH_BLOCK_HMX_FP16,
-                plane_a, weight, buffers->scale_or_bias, q_group,
+                native_probability ? plane_c : plane_a, weight, buffers->scale_or_bias, q_group,
                 2U * QBH_ATTENTION_Q_HEADS_PER_GROUP,
                 kv_tiles,
                 QBH_BLOCK_HEAD_DIM / QBH_HMX_FP16_COLS) != 0) {
