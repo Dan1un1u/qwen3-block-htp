@@ -28426,4 +28426,4 @@ experiments:
     retained.'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0299-a16-tables
+    source_branch: codex/exp-0300-a16-long
