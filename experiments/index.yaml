@@ -4659,9 +4659,9 @@ experiments:
   source_commits: *id003
 - id: L32-0057
   title: Llama1B A8 long decode parallel pipeline repair
-  execution_state: running
-  evidence_validity: pending
-  local_gate: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: pending
   approval_ref: User2026-09-19 explicitly requests diagnosis and optimization of Llama1B long-context W4A8 and SP2
     decode.
@@ -4670,3 +4670,82 @@ experiments:
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
+  evidence:
+    experiment: L32-0057
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    source_head: 0e796912fa562bd5ab9797b40fec894d18aba862
+    measured_source: 0e796912fa562bd5ab9797b40fec894d18aba862
+    runtime_option: 159
+    control_option: 31
+    rows:
+    - model: Llama3.2-1B
+      recipe: W4A8
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 2373.5618977410504
+      decode_tps: 44.748330392125446
+      rounds: 10
+      repeats: 10
+      experiment: L32-0057
+    - model: Llama3.2-1B
+      recipe: W4A8
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 2539.9030952155763
+      decode_tps: 50.852458843343214
+      rounds: 10
+      repeats: 10
+      experiment: L32-0057
+    - model: Llama3.2-1B
+      recipe: W4A8
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 2546.639542967712
+      decode_tps: 49.543205681913676
+      rounds: 10
+      repeats: 10
+      experiment: L32-0057
+    - model: Llama3.2-1B
+      recipe: W4A8-SP2
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 2344.1963605122264
+      decode_tps: 44.76618294829742
+      rounds: 10
+      repeats: 10
+      experiment: L32-0057
+    - model: Llama3.2-1B
+      recipe: W4A8-SP2
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 2493.7075408777964
+      decode_tps: 50.8348281591014
+      rounds: 10
+      repeats: 10
+      experiment: L32-0057
+    - model: Llama3.2-1B
+      recipe: W4A8-SP2
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 2488.335493928346
+      decode_tps: 49.04979902833202
+      rounds: 10
+      repeats: 10
+      experiment: L32-0057
+    all_gates_pass: true
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0057
+    evidence_ledger_sha256: de8bfe8a33bfa5a4badbbddcacd5318299e2ca510a85e0d7222c2b8172286f6a
+    report: docs/experiments/L32-0057-RESULTS.md
+    modules: docs/experiments/L32-0057-MODULES.md
+    workbook_updated: true
+    quality_claim: false
+    baseline_promoted: false
+    device_owner: null

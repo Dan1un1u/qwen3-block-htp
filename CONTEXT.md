@@ -1,3 +1,6 @@
+# L32-0057 completed: head64 parallel long decode
+Read docs/experiments/L32-0057-RESULTS.md and MODULES.md. Selected long option159, same-binary prior31. Exact frozen0054 full-layer/KV/head/padding checks,5short and10formal repeat10. All10percent confidence gates pass. Six Llama1B A8/SP2 ABC rows updated; A16,3B,Qwen,D unchanged. No quality claim or automatic baseline promotion. Source 0e796912fa562bd5ab9797b40fec894d18aba862; evidence ledger de8bfe8a33bfa5a4badbbddcacd5318299e2ca510a85e0d7222c2b8172286f6a. Device released; next58.
+
 # L32-0057 active: Llama1B A8/SP2 long decode repair
 Read docs/experiments/L32-0057.md. Preserve numerical/physical gates and frozen other recipes/models. Existing head64 long decode is sequential; test parallel admission and exact vector preparation. Device reserved for this experiment.
 
