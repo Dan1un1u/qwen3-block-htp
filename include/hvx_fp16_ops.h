@@ -104,6 +104,7 @@ void qbh_hvx_residual_rms_norm_f16_crouton_rows(
     const __fp16 *gamma, __fp16 *output_tiles,
     uint32_t first_row, uint32_t row_count, uint32_t width);
 
+void qbh_hvx_long_softmax_f16_partition(const __fp16 *, __fp16 *, uint32_t heads, uint32_t rows, uint32_t padded, uint32_t past, float scale, float *scratch, uint32_t first, uint32_t stride);
 void qbh_hvx_long_softmax_f16(const __fp16 *, __fp16 *, uint32_t heads, uint32_t rows, uint32_t padded, uint32_t past, float scale);
 void qbh_hvx_stable_causal_softmax_f16(__fp16 *scores,
                                         __fp16 *probability,
