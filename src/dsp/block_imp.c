@@ -17745,13 +17745,20 @@ static int qbh_scan_f16_attention(
     const uint32_t scratch_reserve=4U*1248U*sizeof(float);
     __fp16 *v_prefetch_rows=(__fp16 *)(buffers->expanded_weight+scratch_reserve);
     uint32_t v_prefetch_enabled=0U;
+    /* EXP0301: reuse the existing bounded KV look-ahead slot at decode.
+     * Bit4 applies equally to W16A16/W4A16 and both Qwen sizes. Keep all
+     * physical M64 matrix, residual and normalization work unchanged. */
+    const uint32_t decode_prefetch =
+        logical_rows==1U && (header->long_optimization&4U);
+    uint32_t prefill_prefetch=0U;
 #ifndef QBH_QWEN_06B
+    prefill_prefetch=logical_rows>1U && (header->long_optimization&2U);
+#endif
     v_prefetch_enabled=header->variant!=QBH_BLOCK_W4U8 &&
-        header->long_prompt_tokens && (header->long_optimization&2U) &&
-        logical_rows>1U && !native_cache &&
+        header->long_prompt_tokens && (prefill_prefetch || decode_prefetch) &&
+        !native_cache &&
         (uintptr_t)buffers->expanded_weight_alt-(uintptr_t)buffers->expanded_weight >=
             scratch_reserve+padded_tokens*QBH_BLOCK_HEAD_DIM*sizeof(__fp16);
-#endif
     if(v_prefetch_enabled)
         qbh_hvx_zero_aligned_bytes(v_prefetch_rows+(size_t)valid_tokens*QBH_BLOCK_HEAD_DIM,
             (padded_tokens-valid_tokens)*QBH_BLOCK_HEAD_DIM*sizeof(__fp16));
