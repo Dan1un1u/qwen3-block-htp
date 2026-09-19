@@ -17694,6 +17694,7 @@ static int qbh_scan_f16_attention(
     struct qbh_block_hmx_worker *worker,
     struct qbh_block_w4f16_pool *pool,
     uint32_t logical_rows, uint32_t past_tokens) {
+    (void)pool; /* Generic pool may be compiled out in the small-model path. */
     const uint32_t valid_tokens = past_tokens + logical_rows;
     const uint32_t padded_tokens = qbh_align_up(
         valid_tokens, header->long_prompt_tokens ? 64U : QBH_HMX_FP16_COLS);
