@@ -18,8 +18,8 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0300
-  next_experiment_number: 300
+  active_experiment: null
+  next_experiment_number: 301
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -2787,18 +2787,19 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: Qwen3_28layer_native_W4_SP2_M64_plus15_verified
-  last_completed_experiment: EXP-0297
-  last_completed_source_commit: 009b4fb8c3b5edd94a7521d34b4dc5103409403b
+  last_completed_experiment: EXP-0300
+  last_completed_source_commit: d2af6c7d3d5bccf467b5dd194be08c16ae6ed68c
   provisional_source_parent: EXP0268_diagnostic_U8_pipeline_closure_no_default_promotion
-  device_execution_state: idle_measurements_complete
+  device_execution_state: idle_released
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
   current_handoff: docs/experiments/EXP-0300.md
   active_recipe_specialization: native_W4_SP2_FP32_residual_no_rotation
   last_completed_experiment_contract:
-    id: EXP-0297
-    protocol: docs/experiments/EXP-0297.md
-    scope: Qwen1.7 only; frozen math/weights/other models; five short and ten formal repeat10
+    id: EXP-0300
+    protocol: docs/experiments/EXP-0300.md
+    scope: Generic A16 long-context repair, fixed contracts, five short and ten formal paired repeat10; no baseline
+      promotion.
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
   last_completed_evidence: &id005
@@ -9477,7 +9478,7 @@ current_scope:
     root_cause: unresolved; raw output/token mismatch, postfailure bounded reruns pass but do not clear gate
     next_direction: discuss_runtime_nondeterminism_then_same_token_device_software_head_and_transformer_alignment
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0257.md
-  last_concluded_experiment: EXP-0297
+  last_concluded_experiment: EXP-0300
   last_concluded_source_commit: fa7cb9c8e2718c3a965fc75d04544ef79d3a0da3
   latest_w4u8_dense_r3_e2e_diagnostic_result:
     id: EXP-0258
@@ -12227,9 +12228,8 @@ current_scope:
     generalization: supplementary only; not rerun or included
     quality_claim: false
     baseline_promoted: false
-  next_action: All model measurements complete; desktop workbook EBUSY. Save18 completed A16 rows after workbook
-    closes, readback/render, seal evidence, close authority. No further hardware run. Reports EXP-0300-RESULTS.md
-    and MODULES.md.
+  next_action: Review generic A16 long-throughput confidence gates; Qwen0.6 excluded. No automatic promotion or
+    quality evaluation.
   latest_f16_baseline_synthesis:
     report: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/REPORT.md
     a16_discussion: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/A16_DOWN_DISCUSSION.md
@@ -12646,7 +12646,7 @@ current_scope:
       ABI
     named_dataset_measurements_completed: false
     baseline_promotion: No additional automatic promotion
-  stage: measurements_complete_workbook_pending
+  stage: generic_a16_long_optimization_complete
   latest_long_prefill_migration:
     experiment: EXP-0296
     execution_state: completed
@@ -12840,7 +12840,7 @@ current_scope:
     timed_rpc_boundaries: 29600
     gate_role: unchanged long/M64 throughput parity plus decode guard; numerical and physical checks separately
       passed
-  latest_formal_measurement_experiment: EXP-0299
+  latest_formal_measurement_experiment: EXP-0300
   latest_e2e_shape: 'W16A16/W4A16: A64+42, B536+46, C741+3; fixed project-owned trajectories; 10 paired repeat10
     rounds per model'
   latest_qwen3_17b_long_decode_optimization: *id005
@@ -13519,4 +13519,447 @@ current_scope:
     workbook: C:/Users/35961/Desktop/HTP硬件实验总表.xlsx
     workbook_updated: true
     workbook_sha256: 1a1f7f7b89eb1a47ad49bf19f92cf1574b2d572df4fff9f6d7ea23120910a956
+    workspace_build: 1.7B/28 layers
+  latest_generic_a16_long_optimization:
+    id: EXP-0300
+    models:
+      1.7B:
+        experiment: EXP-0300
+        model: Qwen3-1.7B
+        source_head: d2af6c7d3d5bccf467b5dd194be08c16ae6ed68c
+        runtime:
+          remote: /data/local/tmp/qwen3-block-htp/exp0300/1.7B/binaries-a4
+          seal:
+            model_size: 1.7B
+            paper_trace: false
+            source_head: d2af6c7d3d5bccf467b5dd194be08c16ae6ed68c
+            files:
+              /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/qwen3_block_cli: 32f21f2c2d37d9c9e425af4041414e2e24a33745d590766a429c6852994ce19e
+              /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/llama_sp2_cli: ea27a713188cabf0bc44766a351f165a8595e61d59df2814a9408e1b277de4b4
+              /home/daniuniu/work/qwen3-block-htp/android_ReleaseG_aarch64/ship/libqwen3_probe.so: 8827a7890d5fd88965022149ab151231923051bd1c86a2b6af291412714adead
+              /home/daniuniu/work/qwen3-block-htp/hexagon_ReleaseG_toolv19_v79/ship/libqwen3_probe_skel.so: 8c67907d71bddb1e491a27fdbd3db3888948c02d3959b2596e3e7a7f83dad7b4
+          archive: /mnt/d/llm_exp/results/qwen3-block-htp/exp0300/1.7B/binaries-a4
+        campaign: c4
+        cross_context_decode:
+          w16:
+            A_tps: 12.495927798152305
+            B_tps: 11.706347315793806
+            C_tps: 11.416979844178966
+            B_over_A: 0.9368129765862404
+            C_over_A: 0.9136560348777882
+            role: descriptive_different_context_and_decode_count
+          w4:
+            A_tps: 15.315675758965508
+            B_tps: 14.18519072262508
+            C_tps: 13.778493258557472
+            B_over_A: 0.9261877142000304
+            C_over_A: 0.8996333870865477
+            role: descriptive_different_context_and_decode_count
+        all_gates_pass: true
+        summary:
+          w16:
+            performance:
+              A0:
+                prefill:
+                  tps: 778.914836235818
+                  mean_ns: 82165593.75
+                decode:
+                  tps: 12.495927798152305
+                  mean_ns: 3361094964.57
+              M1:
+                prefill:
+                  tps: 770.9093116782451
+                  mean_ns: 83018844.14999999
+                decode:
+                  tps: 12.458233469144346
+                  mean_ns: 240804605.84
+              B0:
+                prefill:
+                  tps: 631.5686394364394
+                  mean_ns: 848680517.8899999
+                decode:
+                  tps: 11.626573610599653
+                  mean_ns: 3956453684.5200005
+              B1:
+                prefill:
+                  tps: 766.1446688063234
+                  mean_ns: 699606773.7900001
+                decode:
+                  tps: 11.706347315793806
+                  mean_ns: 3929492160.03
+              C0:
+                prefill:
+                  tps: 607.8750259471977
+                  mean_ns: 1219000564.8700001
+                decode:
+                  tps: 11.413809348465982
+                  mean_ns: 262839505.06
+              C1:
+                prefill:
+                  tps: 777.1664086770635
+                  mean_ns: 953463752.07
+                decode:
+                  tps: 11.416979844178966
+                  mean_ns: 262766514.52000004
+            gates:
+              B:
+                reference: A0
+                prefill_ratio:
+                  mean: 0.983716727985407
+                  ci95:
+                  - 0.9768629371244808
+                  - 0.9925232671077058
+                decode_wall_ratio:
+                  mean: 0.9935225672556278
+                  ci95:
+                  - 0.9783726845141573
+                  - 1.0105862507041459
+                prefill_pass: true
+                decode_pass: true
+              C:
+                reference: A0
+                prefill_ratio:
+                  mean: 0.99795298221451
+                  ci95:
+                  - 0.9864022266782358
+                  - 1.0095244991888237
+                decode_wall_ratio:
+                  mean: 1.0000149092041852
+                  ci95:
+                  - 0.9852455465501123
+                  - 1.0153965823805389
+                prefill_pass: true
+                decode_pass: true
+          w4:
+            performance:
+              A0:
+                prefill:
+                  tps: 1038.809319848048
+                  mean_ns: 61608996.739999995
+                decode:
+                  tps: 15.315675758965508
+                  mean_ns: 2742288401.8300004
+              M1:
+                prefill:
+                  tps: 1028.4552949954818
+                  mean_ns: 62229248.379999995
+                decode:
+                  tps: 16.581454344335533
+                  mean_ns: 180925022.48
+              B0:
+                prefill:
+                  tps: 754.6261339954216
+                  mean_ns: 710285498.8100001
+                decode:
+                  tps: 14.20982861946211
+                  mean_ns: 3237195974.13
+              B1:
+                prefill:
+                  tps: 954.4839178688685
+                  mean_ns: 561560011.6099999
+                decode:
+                  tps: 14.18519072262508
+                  mean_ns: 3242818577.45
+              C0:
+                prefill:
+                  tps: 707.0825390206966
+                  mean_ns: 1047968177.8399999
+                decode:
+                  tps: 13.79892611546495
+                  mean_ns: 217408222.56
+              C1:
+                prefill:
+                  tps: 948.6043881105187
+                  mean_ns: 781147556.65
+                decode:
+                  tps: 13.778493258557472
+                  mean_ns: 217730628.72000003
+            gates:
+              B:
+                reference: A0
+                prefill_ratio:
+                  mean: 0.9188288276584122
+                  ci95:
+                  - 0.9170319038827184
+                  - 0.9204529920092568
+                decode_wall_ratio:
+                  mean: 1.001750769011081
+                  ci95:
+                  - 0.9982336853611387
+                  - 1.0052353455416334
+                prefill_pass: true
+                decode_pass: true
+              C:
+                reference: A0
+                prefill_ratio:
+                  mean: 0.9131680909011969
+                  ci95:
+                  - 0.9117548011225783
+                  - 0.9146905859948485
+                decode_wall_ratio:
+                  mean: 1.0014921825904175
+                  ci95:
+                  - 0.9989279675742397
+                  - 1.0041112312998255
+                prefill_pass: true
+                decode_pass: true
+        table_rows:
+        - model: Qwen3-1.7B
+          recipe: W16A16
+          sheet: A_HellaSwag
+          prompt: 64
+          decode: 42
+          prefill_tps: 778.914836235818
+          decode_tps: 12.495927798152305
+          rounds: 10
+          repeats: 10
+          experiment: EXP-0300
+        - model: Qwen3-1.7B
+          recipe: W4A16
+          sheet: A_HellaSwag
+          prompt: 64
+          decode: 42
+          prefill_tps: 1038.809319848048
+          decode_tps: 15.315675758965508
+          rounds: 10
+          repeats: 10
+          experiment: EXP-0300
+        - model: Qwen3-1.7B
+          recipe: W16A16
+          sheet: B_Persona-Chat
+          prompt: 536
+          decode: 46
+          prefill_tps: 766.1446688063234
+          decode_tps: 11.706347315793806
+          rounds: 10
+          repeats: 10
+          experiment: EXP-0300
+        - model: Qwen3-1.7B
+          recipe: W4A16
+          sheet: B_Persona-Chat
+          prompt: 536
+          decode: 46
+          prefill_tps: 954.4839178688685
+          decode_tps: 14.18519072262508
+          rounds: 10
+          repeats: 10
+          experiment: EXP-0300
+        - model: Qwen3-1.7B
+          recipe: W16A16
+          sheet: C_DroidTask
+          prompt: 741
+          decode: 3
+          prefill_tps: 777.1664086770635
+          decode_tps: 11.416979844178966
+          rounds: 10
+          repeats: 10
+          experiment: EXP-0300
+        - model: Qwen3-1.7B
+          recipe: W4A16
+          sheet: C_DroidTask
+          prompt: 741
+          decode: 3
+          prefill_tps: 948.6043881105187
+          decode_tps: 13.778493258557472
+          rounds: 10
+          repeats: 10
+          experiment: EXP-0300
+        audit:
+          pass_all: true
+          cases:
+          - - 64
+            - 42
+            - true
+          - - 64
+            - 42
+            - false
+          - - 65
+            - 3
+            - false
+          - - 128
+            - 3
+            - false
+          - - 129
+            - 3
+            - false
+          - - 536
+            - 46
+            - false
+          - - 741
+            - 3
+            - false
+          - - 741
+            - 3
+            - false
+          poison: true
+          source_head: d2af6c7d3d5bccf467b5dd194be08c16ae6ed68c
+          capture_files: 8498
+          checks:
+          - pass_all: true
+            files: 2451
+            parent: /mnt/d/llm_exp/results/qwen3-block-htp/exp0299/1.7B/audits-shared/w4-64-native
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 297
+            parent: /mnt/d/llm_exp/results/qwen3-block-htp/exp0299/1.7B/audits-shared/w4-64-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 182
+            parent: /mnt/d/llm_exp/results/qwen3-block-htp/exp0299/1.7B/audits-shared/w4-65-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 182
+            parent: /mnt/d/llm_exp/results/qwen3-block-htp/exp0299/1.7B/audits-shared/w4-128-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 240
+            parent: /mnt/d/llm_exp/results/qwen3-block-htp/exp0299/1.7B/audits-shared/w4-129-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 381
+            parent: /mnt/d/llm_exp/results/qwen3-block-htp/exp0299/1.7B/audits-shared/w4-536-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 258
+            parent: /mnt/d/llm_exp/results/qwen3-block-htp/exp0299/1.7B/audits-shared/w4-741-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 258
+            parent: /mnt/d/llm_exp/results/qwen3-block-htp/exp0299/1.7B/audits-shared/w4-741-poison
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 2451
+            parent: /mnt/d/llm_exp/results/qwen3-block-htp/exp0299/1.7B/audits-shared/w16-64-native
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 297
+            parent: /mnt/d/llm_exp/results/qwen3-block-htp/exp0299/1.7B/audits-shared/w16-64-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 182
+            parent: /mnt/d/llm_exp/results/qwen3-block-htp/exp0299/1.7B/audits-shared/w16-65-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 182
+            parent: /mnt/d/llm_exp/results/qwen3-block-htp/exp0299/1.7B/audits-shared/w16-128-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 240
+            parent: /mnt/d/llm_exp/results/qwen3-block-htp/exp0299/1.7B/audits-shared/w16-129-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 381
+            parent: /mnt/d/llm_exp/results/qwen3-block-htp/exp0299/1.7B/audits-shared/w16-536-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 258
+            parent: /mnt/d/llm_exp/results/qwen3-block-htp/exp0299/1.7B/audits-shared/w16-741-long
+            full_capture_sha256_exact: true
+          - pass_all: true
+            files: 258
+            parent: /mnt/d/llm_exp/results/qwen3-block-htp/exp0299/1.7B/audits-shared/w16-741-poison
+            full_capture_sha256_exact: true
+        a8_regression:
+          pass_all: true
+          checks:
+          - pass_all: true
+            parent: /mnt/d/llm_exp/results/qwen3-block-htp/exp0298/1.7B/a8/audit128-campaign
+            steps: 5
+            capture_files: 289
+            all_layers_exact: true
+            all_parent_captures_sha256_exact: true
+            new_final_hidden_captures_validated: 5
+            physical: true
+            quality_claim: false
+          - pass_all: true
+            parent: /mnt/d/llm_exp/results/qwen3-block-htp/exp0298/1.7B/sp2/audit741-campaign
+            steps: 15
+            capture_files: 859
+            all_layers_exact: true
+            all_parent_captures_sha256_exact: true
+            new_final_hidden_captures_validated: 15
+            physical: true
+            quality_claim: false
+          source_head: d2af6c7d3d5bccf467b5dd194be08c16ae6ed68c
+        quality_claim: false
+    source_closure: d2af6c7d3d5bccf467b5dd194be08c16ae6ed68c
+    source_branch: codex/exp-0300-a16-long
+    source_commits:
+    - d2af6c7d3d5bccf467b5dd194be08c16ae6ed68c
+    all_gates_pass: true
+    quality_claim: false
+    table_rows:
+    - model: Qwen3-1.7B
+      recipe: W16A16
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 778.914836235818
+      decode_tps: 12.495927798152305
+      rounds: 10
+      repeats: 10
+      experiment: EXP-0300
+    - model: Qwen3-1.7B
+      recipe: W4A16
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 1038.809319848048
+      decode_tps: 15.315675758965508
+      rounds: 10
+      repeats: 10
+      experiment: EXP-0300
+    - model: Qwen3-1.7B
+      recipe: W16A16
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 766.1446688063234
+      decode_tps: 11.706347315793806
+      rounds: 10
+      repeats: 10
+      experiment: EXP-0300
+    - model: Qwen3-1.7B
+      recipe: W4A16
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 954.4839178688685
+      decode_tps: 14.18519072262508
+      rounds: 10
+      repeats: 10
+      experiment: EXP-0300
+    - model: Qwen3-1.7B
+      recipe: W16A16
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 777.1664086770635
+      decode_tps: 11.416979844178966
+      rounds: 10
+      repeats: 10
+      experiment: EXP-0300
+    - model: Qwen3-1.7B
+      recipe: W4A16
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 948.6043881105187
+      decode_tps: 13.778493258557472
+      rounds: 10
+      repeats: 10
+      experiment: EXP-0300
+    execution_state: completed
+    evidence_validity: valid
+    adoption_status: pending
+    device_owner: null
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0300
+    evidence_ledger_sha256: a2ccbbc09e53efd8e8aa32769fd78c812eb869bf0637f65540e1997917c62422
+    evidence_files: 3359
+    evidence_bytes: 18622403711
+    report: docs/experiments/EXP-0300-RESULTS.md
+    modules: docs/experiments/EXP-0300-MODULES.md
+    workbook: C:/Users/35961/Desktop/HTP硬件实验总表.xlsx
+    workbook_updated: true
+    workbook_sha256: b9c90e539b63ceb3bd623ce2d80469cc103cba7f583bfebd72b35d51d3d7e468
     workspace_build: 1.7B/28 layers

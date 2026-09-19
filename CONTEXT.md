@@ -1,3 +1,9 @@
+# EXP-0300 completed: generic A16 long-context repair
+
+Read docs/experiments/EXP-0300-RESULTS.md and MODULES.md. Qwen1.7B and Llama1B/3B were processed sequentially, excluding Qwen0.6. Five short and ten formal repeat10 paired rounds with unchanged native/long64 references and same-length controls. Generic row-parallel softmax and cache-DMA overlap retain exact per-row arithmetic; selected A16 long flag3, original control0; all original A16/A8/SP2 capture fields exact. Extra final-hidden capture fields independently verified. No per-model specialization or baseline degradation. Confidence gates all pass: True. Source closure d2af6c7d3d5bccf467b5dd194be08c16ae6ed68c.
+
+Desktop workbook: refresh only18 affected A16 ABC rows across these two experiments; preserve Qwen0.6, A8/SP2 and curated D. Historical floating-alignment failures remain failures; no PPL/quality claim or automatic baseline promotion. Evidence /mnt/d/llm_exp/results/qwen3-block-htp/exp0300; ledger a2ccbbc09e53efd8e8aa32769fd78c812eb869bf0637f65540e1997917c62422. Device released; next 301.
+
 # EXP-0300 measurements complete; workbook save pending
 
 All three models completed numerical validation, five short and ten formal repeat10 rounds. All long-prefill and equal-length decode confidence gates pass. Read docs/experiments/EXP-0300-RESULTS.md and MODULES.md. Llama3B final round spans two ADB interruptions; all completed slow samples retained. User restored charge/cooling; only missing final C arms were added. Device released. No automatic baseline promotion or quality acceptance.
