@@ -7,7 +7,7 @@ project:
   source_root: /home/daniuniu/work/qwen3-block-htp
   memory_branch: codex/qwen3-block-project-memory
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
-  updated_on: '2026-09-19'
+  updated_on: '2026-09-20'
   qnn_runtime: none
   qairt_runtime: none
   hexagon_sdk_candidate: 6.6.0.0
@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0302
+  active_experiment: null
   next_experiment_number: 303
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -12344,8 +12344,8 @@ current_scope:
     generalization: supplementary only; not rerun or included
     quality_claim: false
     baseline_promoted: false
-  next_action: Review generic A16 long-throughput confidence gates; Qwen0.6 excluded.
-    No automatic promotion or quality evaluation.
+  next_action: Completed scoped Qwen1.7 A8/SP2 C decode optimization. Other models/recipes/B/D
+    frozen; no further work or baseline promotion inferred.
   latest_f16_baseline_synthesis:
     report: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/REPORT.md
     a16_discussion: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/A16_DOWN_DISCUSSION.md
@@ -12961,7 +12961,7 @@ current_scope:
     timed_rpc_boundaries: 29600
     gate_role: unchanged long/M64 throughput parity plus decode guard; numerical and
       physical checks separately passed
-  latest_formal_measurement_experiment: EXP-0301
+  latest_formal_measurement_experiment: EXP-0302
   latest_e2e_shape: 'W16A16/W4A16: A64+42, B536+46, C741+3; fixed project-owned trajectories;
     10 paired repeat10 rounds per model'
   latest_qwen3_17b_long_decode_optimization: *id005
@@ -14088,7 +14088,123 @@ current_scope:
     workbook_sha256: b9c90e539b63ceb3bd623ce2d80469cc103cba7f583bfebd72b35d51d3d7e468
     workspace_build: 1.7B/28 layers
   qwen17_c_decode_optimization:
+    source_head: 43c075fd881236df9b5d1b0a641ca3bcd485703c
+    candidate_option: 196511
+    control_option: 65439
+    short_rounds: 5
+    formal_rounds: 10
+    repeat: 10
+    formal_rpc_count: 14600
+    exact_layer_outputs: 2548
+    exact_kv_elements: 2155905024
+    same_length_guards_pass: true
+    cross_context_gates_pass: true
+    numerical_physical_pass: true
+    rows:
+    - model: Qwen3-1.7B
+      recipe: W4A8
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 1870.7687312739793
+      decode_tps: 47.933775739025734
+      experiment: EXP-0302
+    - model: Qwen3-1.7B
+      recipe: W4A8
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 1880.9042156834753
+      decode_tps: 44.43237409709642
+      experiment: EXP-0302
+    - model: Qwen3-1.7B
+      recipe: W4A8-SP2
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 1850.9409853692334
+      decode_tps: 47.70846134602099
+      experiment: EXP-0302
+    - model: Qwen3-1.7B
+      recipe: W4A8-SP2
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 1861.8145398244278
+      decode_tps: 44.2851517639072
+      experiment: EXP-0302
     experiment: EXP-0302
-    execution_state: running
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_role: unchanged exact/physical, same-length wall guards, C/A throughput gates
+      separately
+    adoption_status: pending
+    baseline_promoted: false
+    quality_claim: false
     device_owner: null
-    scope: Qwen3-1.7B A8/SP2 C741+3 only, native A64+42 companion
+    source_branch: codex/exp-0302-qwen17-c-decode
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0302
+    evidence_ledger_sha256: a526806f6edcfad349960aef6f436273cbda81d6c90c9d3865218d2db607be6a
+    evidence_files: 976
+    evidence_bytes: 2771474152
+    report: docs/experiments/EXP-0302-RESULTS.md
+    modules: docs/experiments/EXP-0302-MODULES.md
+    report_commit: 61174d18aac6f912af4aa04a8b60bb21c72b71f2
+    workbook: C:/Users/35961/Desktop/HTP硬件实验总表.xlsx
+    workbook_sha256: cd7d2690e2e2c49eea7cab603f7bb95749a710555277bc1ea20af2c64d083317
+    gates:
+      a8:
+        same_length_wall_ratios:
+          '741':
+            prefill:
+              value: 1.0002617715031095
+              ci95:
+              - 0.9989023191012065
+              - 1.0014419994148882
+            decode:
+              value: 0.9578268906604073
+              ci95:
+              - 0.9554236720248112
+              - 0.9603794514474036
+        cross_context_tps_ratios:
+          '741':
+            prefill:
+              value: 1.0054178179483435
+              ci95:
+              - 1.0025467470262002
+              - 1.0076669375385106
+              pass: true
+            decode:
+              value: 0.9269533520373482
+              ci95:
+              - 0.9235157477317231
+              - 0.9300935275283061
+              pass: true
+      sp2:
+        same_length_wall_ratios:
+          '741':
+            prefill:
+              value: 1.0000063836274287
+              ci95:
+              - 0.9983146171298468
+              - 1.0012656705293712
+            decode:
+              value: 0.9560105962934443
+              ci95:
+              - 0.9546038518585422
+              - 0.9577623966759506
+        cross_context_tps_ratios:
+          '741':
+            prefill:
+              value: 1.0058746089373698
+              ci95:
+              - 1.0052265185349534
+              - 1.0064786414369224
+              pass: true
+            decode:
+              value: 0.9282452318618047
+              ci95:
+              - 0.9264621279901681
+              - 0.9299194354291573
+              pass: true

@@ -1,3 +1,11 @@
+# Current closure: EXP-0302 Qwen1.7 C decode
+
+Read docs/experiments/EXP-0302-RESULTS.md and MODULES.md. Only Qwen1.7 A8/SP2 C741+3 optimized; unchanged native A64+42 companions formally measured. B, other models/recipes and D frozen. Candidate long option196511 vs original65439: exact byte centering + full16-row/staged K transpose, no quantizer/cache/HMX changes. Candidate1 staged16 alone not adopted. All exact layer/KV/head/poison and8MiB/no-intermediate-DDR checks pass. Five short +ten formal repeat10,14600formalRPCs. Same-length guards True; C/A prefill/decode gates True.
+Source 43c075fd881236df9b5d1b0a641ca3bcd485703c on codex/exp-0302-qwen17-c-decode. Four scoped A/C workbook rows refreshed, B/D and unrelated data preserved. Source/evidence/quality baselines not automatically promoted; historical floating failures unchanged. No active experiment/device owner, next303. Ledger a526806f6edcfad349960aef6f436273cbda81d6c90c9d3865218d2db607be6a.
+
+a8: A {'prefill': 1870.7687312739793, 'decode': 47.933775739025734}; C {'prefill': 1880.9042156834753, 'decode': 44.43237409709642}.
+sp2: A {'prefill': 1850.9409853692334, 'decode': 47.70846134602099}; C {'prefill': 1861.8145398244278, 'decode': 44.2851517639072}.
+
 # Active EXP-0302: Qwen1.7 C decode only
 Read docs/experiments/EXP-0302.md. Original65439 control, A64+42 companion, C741+3 target, A8/SP2. All other work frozen. Initial parent branch binding for preflight before experiment branch creation.
 
