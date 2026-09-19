@@ -18,8 +18,8 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 301
+  active_experiment: EXP-0301
+  next_experiment_number: 302
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -31,6 +31,15 @@ governance:
     slowdown_threshold: 1.1
     prefill_and_decode: paired_bootstrap95_CI_upper_at_most_threshold
 current_scope:
+  decode_alignment_audit:
+    experiment: EXP-0301
+    execution_state: running
+    source_branch: codex/exp-0301-decode-alignment
+    source_parent: d2af6c7d3d5bccf467b5dd194be08c16ae6ed68c
+    device_owner: EXP-0301
+    screening: 11 Qwen B/C decode rows >10% below same-model/recipe A64+42; includes
+      previously deferred Qwen0.6; no Llama flagged
+    quality_claim: false
   latest_qwen3_06b_f16_fp32_residual:
     experiment: EXP-0293
     execution_state: completed

@@ -28871,3 +28871,16 @@ experiments:
     workbook_sha256: b9c90e539b63ceb3bd623ce2d80469cc103cba7f583bfebd72b35d51d3d7e468
     workspace_build: 1.7B/28 layers
   source_commits: *id004
+- id: EXP-0301
+  title: Decode optimization coverage audit and repair across flagged Qwen ABC rows
+  execution_state: running
+  evidence_validity: pending
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/EXP-0301.md
+  approval_ref: 'User2026-09-19: sequentially inspect other decode losses >10% for
+    unequal missing optimization, repair and remeasure/update data. Includes Qwen0.6
+    under latest request.'
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0301-decode-alignment

@@ -1,3 +1,7 @@
+# Current continuation: EXP-0301
+
+Decode >10% coverage audit active; source codex/exp-0301-decode-alignment from d2af6c7. See docs/experiments/EXP-0301.md. Qwen0.6 included by latest user scope; Llama0057 complete/no lock. No hardware result yet.
+
 # EXP-0300 completed: generic A16 long-context repair
 
 Read docs/experiments/EXP-0300-RESULTS.md and MODULES.md. Qwen1.7B and Llama1B/3B were processed sequentially, excluding Qwen0.6. Five short and ten formal repeat10 paired rounds with unchanged native/long64 references and same-length controls. Generic row-parallel softmax and cache-DMA overlap retain exact per-row arithmetic; selected A16 long flag3, original control0; all original A16/A8/SP2 capture fields exact. Extra final-hidden capture fields independently verified. No per-model specialization or baseline degradation. Confidence gates all pass: True. Source closure d2af6c7d3d5bccf467b5dd194be08c16ae6ed68c.
