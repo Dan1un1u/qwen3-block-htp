@@ -29076,4 +29076,4 @@ experiments:
     configurations deferred.'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0301-decode-alignment
+    source_branch: codex/exp-0302-qwen17-c-decode
