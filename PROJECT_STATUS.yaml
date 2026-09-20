@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0303
+  active_experiment: null
   next_experiment_number: 304
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -12344,8 +12344,9 @@ current_scope:
     generalization: supplementary only; not rerun or included
     quality_claim: false
     baseline_promoted: false
-  next_action: Completed scoped Qwen1.7 A8/SP2 C decode optimization. Other models/recipes/B/D
-    frozen; no further work or baseline promotion inferred.
+  next_action: Completed Qwen0.6 A16 B/C prefill bounded generic optimization and
+    formal measurements. Remaining gates explicit; no deeper specialization or baseline
+    promotion inferred. Other rows and D frozen.
   latest_f16_baseline_synthesis:
     report: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/REPORT.md
     a16_discussion: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/A16_DOWN_DISCUSSION.md
@@ -12961,7 +12962,7 @@ current_scope:
     timed_rpc_boundaries: 29600
     gate_role: unchanged long/M64 throughput parity plus decode guard; numerical and
       physical checks separately passed
-  latest_formal_measurement_experiment: EXP-0302
+  latest_formal_measurement_experiment: EXP-0303
   latest_e2e_shape: 'W16A16/W4A16: A64+42, B536+46, C741+3; fixed project-owned trajectories;
     10 paired repeat10 rounds per model'
   latest_qwen3_17b_long_decode_optimization: *id005
@@ -14209,8 +14210,193 @@ current_scope:
               - 0.9299194354291573
               pass: true
   qwen06_a16_long_prefill_optimization:
+    source_head: d8e0576d61133090a1cbc25add11698d2e80f2ae
+    candidate_option: 7
+    control_option: 4
+    short_rounds: 5
+    formal_rounds: 10
+    repeat: 10
+    formal_rpc_count: 37400
+    exact_capture_files: 8498
+    audit_rpc_count: 374
+    same_length_guards_pass: true
+    prefill_gates_pass: false
+    numerical_physical_pass: true
+    rows:
+    - model: Qwen3-0.6B
+      recipe: W16A16
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 1690.6180309389756
+      decode_tps: 27.3539935249199
+      experiment: EXP-0303
+    - model: Qwen3-0.6B
+      recipe: W16A16
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 1579.6759303163512
+      decode_tps: 25.023770947967524
+      experiment: EXP-0303
+    - model: Qwen3-0.6B
+      recipe: W16A16
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 1559.4013271833373
+      decode_tps: 24.056728679978363
+      experiment: EXP-0303
+    - model: Qwen3-0.6B
+      recipe: W4A16
+      sheet: A_HellaSwag
+      prompt: 64
+      decode: 42
+      prefill_tps: 1740.9596279476134
+      decode_tps: 27.133946124043817
+      experiment: EXP-0303
+    - model: Qwen3-0.6B
+      recipe: W4A16
+      sheet: B_Persona-Chat
+      prompt: 536
+      decode: 46
+      prefill_tps: 1538.4894902190438
+      decode_tps: 24.748656557517677
+      experiment: EXP-0303
+    - model: Qwen3-0.6B
+      recipe: W4A16
+      sheet: C_DroidTask
+      prompt: 741
+      decode: 3
+      prefill_tps: 1510.851018475742
+      decode_tps: 24.21281889907069
+      experiment: EXP-0303
     experiment: EXP-0303
-    execution_state: running
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    gate_role: unchanged exact/physical and same-length guards; long/fastest same-round
+      M64 prefill gate separately
+    adoption_status: pending
+    baseline_promoted: false
+    quality_claim: false
     device_owner: null
     source_branch: codex/exp-0303-qwen06-a16-prefill
-    protocol: docs/experiments/EXP-0303.md
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0303
+    evidence_ledger_sha256: 16b945eb734290d9c4b1e9d9ce4a1cd4fae65b92333babc941b9a9bc0aa1d1ac
+    evidence_files: 1465
+    evidence_bytes: 5620970089
+    report: docs/experiments/EXP-0303-RESULTS.md
+    modules: docs/experiments/EXP-0303-MODULES.md
+    report_commit: 1ef408ce64b3df56c16db1838b1bad71bf21e069
+    workbook: C:/Users/35961/Desktop/HTP硬件实验总表.xlsx
+    workbook_sha256: e43981b050c21fc50faafcc846acf5e06362bf538b576bd51dbc4c7b84a31c1e
+    workspace_build: 0.6B/28 layers
+    full_floating_alignment_pass: false
+    gates:
+      w16:
+        same_length_wall_ratios:
+          B:
+            prefill:
+              value: 0.701524285463712
+              ci95:
+              - 0.7005401264243215
+              - 0.7023960021508205
+            decode:
+              value: 1.0010475530019303
+              ci95:
+              - 1.0003485741837739
+              - 1.001899201736879
+          C:
+            prefill:
+              value: 0.6457935669850509
+              ci95:
+              - 0.6450931337757685
+              - 0.6464759175043686
+            decode:
+              value: 0.9995751523842659
+              ci95:
+              - 0.9980617233532695
+              - 1.0011119533168944
+        cross_context_tps_ratios:
+          B:
+            prefill:
+              value: 0.9343777845779827
+              ci95:
+              - 0.9326337524742324
+              - 0.936020661999143
+              reference: A-o4
+              pass: true
+            decode:
+              value: 0.9148123444999172
+              ci95:
+              - 0.9138492330571218
+              - 0.9157117204091537
+              pass: true
+          C:
+            prefill:
+              value: 0.9223853636041254
+              ci95:
+              - 0.9211691133812463
+              - 0.923561723681289
+              reference: A-o4
+              pass: true
+            decode:
+              value: 0.8794594711760211
+              ci95:
+              - 0.8787763940411409
+              - 0.8801972924308877
+              pass: false
+      w4:
+        same_length_wall_ratios:
+          B:
+            prefill:
+              value: 0.7057517156725307
+              ci95:
+              - 0.7050079777632636
+              - 0.7066787307245607
+            decode:
+              value: 0.9969328794226042
+              ci95:
+              - 0.9964103403105464
+              - 0.9974994055894245
+          C:
+            prefill:
+              value: 0.6510705426131722
+              ci95:
+              - 0.6506161762268979
+              - 0.6514831038120742
+            decode:
+              value: 0.9894020533700898
+              ci95:
+              - 0.9879696398606304
+              - 0.9908355070406626
+        cross_context_tps_ratios:
+          B:
+            prefill:
+              value: 0.8837019914314393
+              ci95:
+              - 0.8823217164136735
+              - 0.8850678194664653
+              reference: A-o4
+              pass: false
+            decode:
+              value: 0.9120920504661688
+              ci95:
+              - 0.9114374368240706
+              - 0.91271713455519
+              pass: true
+          C:
+            prefill:
+              value: 0.8678265677285448
+              ci95:
+              - 0.8671102549592562
+              - 0.8686011842542287
+              reference: A-o4
+              pass: false
+            decode:
+              value: 0.8923441798100767
+              ci95:
+              - 0.8913181232456928
+              - 0.8932791124667889
+              pass: false

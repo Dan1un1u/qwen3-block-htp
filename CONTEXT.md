@@ -1,3 +1,12 @@
+# Current closure: EXP-0303 Qwen0.6 A16 long prefill
+
+Read docs/experiments/EXP-0303-RESULTS.md and MODULES.md. Both A16 recipes B536+46/C741+3 optimized with existing generic row-parallel softmax/KV DMA, option7 vs original4. Second candidate15 exact but slower, removed from final source; all evidence retained. Native A/full-M64 decode residual/Norm unchanged. Native/long64 companion reference measured; other models/A8/SP2/D frozen.
+All exact capture/actual-operand checks and8MiB/no-intermediate-DDR pass. Five short and ten formal repeat10 rounds. Same-length guards True; all four prefill gates False. Historical floating failures unchanged; no quality or baseline promotion.
+Source d8e0576d61133090a1cbc25add11698d2e80f2ae on codex/exp-0303-qwen06-a16-prefill; workspace build0.6B/28. Six scoped ABC workbook rows refreshed. No active experiment/device owner, next304. Ledger 16b945eb734290d9c4b1e9d9ce4a1cd4fae65b92333babc941b9a9bc0aa1d1ac.
+
+w16: {'A-o4': {'prefill': 1690.6180309389756, 'decode': 27.3539935249199}, 'M-o7': {'prefill': 1660.9694299256382, 'decode': 27.708709132874123}, 'B-o4': {'prefill': 1108.1810282794029, 'decode': 25.049984674343683}, 'B-o7': {'prefill': 1579.6759303163512, 'decode': 25.023770947967524}, 'C-o4': {'prefill': 1007.0513454429497, 'decode': 24.04650823615631}, 'C-o7': {'prefill': 1559.4013271833373, 'decode': 24.056728679978363}}.
+w4: {'A-o4': {'prefill': 1740.9596279476134, 'decode': 27.133946124043817}, 'M-o7': {'prefill': 1711.676196984646, 'decode': 29.55010532885346}, 'B-o4': {'prefill': 1085.7915972662472, 'decode': 24.672749443727213}, 'B-o7': {'prefill': 1538.4894902190438, 'decode': 24.748656557517677}, 'C-o4': {'prefill': 983.6705924066652, 'decode': 23.956212736618657}, 'C-o7': {'prefill': 1510.851018475742, 'decode': 24.21281889907069}}.
+
 # Active EXP-0303: Qwen0.6 A16 B/C prefill
 Read docs/experiments/EXP-0303.md. Existing generic prefill optimization port only; original opt4, candidate7, native A unchanged. All other recipes/models frozen. No hardware yet.
 
