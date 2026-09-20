@@ -7,7 +7,7 @@ project:
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
   updated_on: '2026-09-19'
 governance:
-  active_experiment: L32-0059
+  active_experiment: null
   next_experiment_number: 60
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -15,7 +15,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: 0e796912fa562bd5ab9797b40fec894d18aba862
+    recorded_head: 2b80267b2e086ffe01dfb180db096c284233a9fc
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -43,7 +43,7 @@ current_scope:
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0058
+  last_completed_experiment: L32-0059
   evidence_ledger_sha256: 599d86cf654b2b41526690c76ad1c0a251b5f206815a57ce4ae12b0024f94ac9
   formal_profiling_completed: true
   general_quantization_quality_accepted: false
@@ -4331,11 +4331,236 @@ current_scope:
     report: docs/experiments/L32-0058-RESULTS.md
   sp2_hvx_shiftadd:
     experiment: L32-0059
-    execution_state: running
-    device_owner: L32-0059
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: exact arithmetic and complete comparison; slower diagnostic allowed
+    performance_parity: false
+    adoption_status: pending
+    baseline_promoted: false
     model: Llama3.2-1B
-    scope: complete Down component M64 and M1; fullmodel if requested
-    source_parent: 0e796912fa562bd5ab9797b40fec894d18aba862
+    component: Down8192->2048 layer7 M64/M1
+    source_head: 2b80267b2e086ffe01dfb180db096c284233a9fc
+    runtime_source: 2b80267b2e086ffe01dfb180db096c284233a9fc
+    fullmodel: false
+    quality_claim: false
+    phases:
+      prefill:
+        arms:
+          hmx:
+            mean_us:
+              host_ns: 8832.954169999999
+              total_ticks: 7797.335937500001
+              load_ticks: 1072.25
+              pack_ticks: 3008.8489583333335
+              dma_ticks: 9.822916666666666
+              mac_ticks: 205.37395833333335
+              convert_ticks: 0.0
+              merge_ticks: 27.147916666666667
+              publish_ticks: 3473.7031249999995
+            round_total_us:
+            - 7749.880208333334
+            - 7853.500000000001
+            - 7807.859375
+            - 7837.218750000001
+            - 7866.723958333334
+            - 7766.734375
+            - 7726.182291666668
+            - 7805.328125
+            - 7829.479166666667
+            - 7730.453125000001
+            round_core_us:
+            - 205.14583333333334
+            - 204.78125000000003
+            - 205.80208333333334
+            - 205.13541666666666
+            - 205.44270833333334
+            - 205.23958333333334
+            - 205.92708333333334
+            - 204.77604166666666
+            - 206.64583333333334
+            - 204.84375
+            round_prepared_chain_us:
+            - 3250.9583333333335
+            - 3252.260416666667
+            - 3252.0
+            - 3251.6614583333335
+            - 3251.135416666667
+            - 3250.546875
+            - 3252.84375
+            - 3250.21875
+            - 3251.3333333333335
+            - 3250.8697916666665
+            peak_bytes: 7395328
+            streams: 1024
+            conversions: 384
+          hvx4v2:
+            mean_us:
+              host_ns: 50523.679149999996
+              total_ticks: 49404.3078125
+              load_ticks: 1062.9583333333333
+              pack_ticks: 156.75677083333338
+              dma_ticks: 9.976562500000002
+              mac_ticks: 44673.4953125
+              convert_ticks: 0.0
+              merge_ticks: 27.321875000000002
+              publish_ticks: 3473.3088541666666
+            round_total_us:
+            - 49479.880208333336
+            - 49426.60416666667
+            - 49333.984375
+            - 49439.79166666667
+            - 49492.817708333336
+            - 49355.95312500001
+            - 49376.567708333336
+            - 49371.145833333336
+            - 49396.47916666667
+            - 49369.854166666664
+            round_core_us:
+            - 44673.786458333336
+            - 44673.90625
+            - 44673.552083333336
+            - 44672.692708333336
+            - 44673.348958333336
+            - 44672.609375
+            - 44673.796875
+            - 44673.45312500001
+            - 44673.984375
+            - 44673.82291666667
+            round_prepared_chain_us:
+            - 44868.46354166667
+            - 44868.494791666664
+            - 44867.76041666667
+            - 44867.015625
+            - 44868.255208333336
+            - 44867.052083333336
+            - 44868.458333333336
+            - 44867.54166666667
+            - 44868.661458333336
+            - 44868.703125
+            peak_bytes: 7395328
+            streams: 0
+            conversions: 0
+        complete_ratio: 6.336049672414156
+        complete_ci95:
+        - 6.313850040145512
+        - 6.359669326361456
+        core_ratio: 217.52268727270888
+        core_ci95:
+        - 217.12377558416068
+        - 217.86695796735535
+        within10: false
+      decode:
+        arms:
+          hmx:
+            mean_us:
+              host_ns: 930.7114200000002
+              total_ticks: 455.996875
+              load_ticks: 26.106250000000003
+              pack_ticks: 229.02187499999997
+              dma_ticks: 54.93333333333334
+              mac_ticks: 91.05729166666667
+              convert_ticks: 0.0
+              merge_ticks: 0.4140625
+              publish_ticks: 54.35
+            round_total_us:
+            - 459.6666666666667
+            - 454.64062500000006
+            - 452.4010416666667
+            - 457.7239583333333
+            - 459.53645833333337
+            - 454.1302083333333
+            - 457.0208333333333
+            - 457.04166666666674
+            - 452.1041666666667
+            - 455.703125
+            round_core_us:
+            - 91.52604166666667
+            - 90.35416666666667
+            - 91.63020833333333
+            - 90.890625
+            - 90.80208333333334
+            - 91.37500000000001
+            - 90.9375
+            - 90.35937500000001
+            - 91.70833333333333
+            - 90.98958333333334
+            round_prepared_chain_us:
+            - 379.0416666666667
+            - 373.66145833333337
+            - 372.45312500000006
+            - 377.34375
+            - 378.89583333333337
+            - 373.9270833333333
+            - 375.703125
+            - 376.51562500000006
+            - 372.15625
+            - 375.70833333333337
+            peak_bytes: 3266560
+            streams: 512
+            conversions: 192
+          hvx4v2:
+            mean_us:
+              host_ns: 2926.4177699999996
+              total_ticks: 2215.8328125
+              load_ticks: 25.619270833333335
+              pack_ticks: 2.791666666666667
+              dma_ticks: 10.048958333333333
+              mac_ticks: 2122.26875
+              convert_ticks: 0.0
+              merge_ticks: 0.5843750000000001
+              publish_ticks: 54.38541666666667
+            round_total_us:
+            - 2216.3489583333335
+            - 2216.0520833333335
+            - 2215.359375
+            - 2216.0208333333335
+            - 2214.9010416666665
+            - 2216.71875
+            - 2216.916666666667
+            - 2215.0052083333335
+            - 2215.4843750000005
+            - 2215.5208333333335
+            round_core_us:
+            - 2121.9583333333335
+            - 2122.6458333333335
+            - 2122.369791666667
+            - 2121.916666666667
+            - 2121.90625
+            - 2122.609375
+            - 2122.3645833333335
+            - 2121.713541666667
+            - 2122.5572916666665
+            - 2122.6458333333335
+            round_prepared_chain_us:
+            - 2135.65625
+            - 2136.1927083333335
+            - 2135.8802083333335
+            - 2135.588541666667
+            - 2135.432291666667
+            - 2136.3020833333335
+            - 2136.1302083333335
+            - 2134.96875
+            - 2136.041666666667
+            - 2136.088541666667
+            peak_bytes: 3266560
+            streams: 0
+            conversions: 0
+        complete_ratio: 4.859315784784709
+        complete_ci95:
+        - 4.842931991845125
+        - 4.876099236722777
+        core_ratio: 23.30696104787508
+        core_ci95:
+        - 23.23436210658568
+        - 23.38188849870321
+        within10: false
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0059
+    evidence_ledger_sha256: 06af2b075751c4eaec9902fc1516e44ae9fbc3c7f29696753e6a53cbf5fcf890
+    evidence_files: 747
+    device_owner: null
+    report: docs/experiments/L32-0059-RESULTS.md
+    recommendation: retain HMX; HVX shift-add is slower in this implementation
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp

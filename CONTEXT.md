@@ -1,3 +1,6 @@
+# L32-0059 complete: HVX SP2 shift-add Down
+User selected full Down component only, not E2E. Llama1B8192->2048 layer7; four HVX workers and native-W4 gather unpack/K-vector shifts, exact outputs. Five short/ten formal repeat10,600 validated samples. HVX/HMX complete component wall6.336x prefill and4.859x decode; core217.523x/23.307x. Independent component copies/preparation differ from in-model fused endpoints: do not call these fullmodel or production Down ledger timings. Retain HMX default; no quality or baseline promotion. Read docs/experiments/L32-0059-RESULTS.md and MODULES.md. Source 2b80267b2e086ffe01dfb180db096c284233a9fc; evidence ledger 06af2b075751c4eaec9902fc1516e44ae9fbc3c7f29696753e6a53cbf5fcf890. Device released.
+
 # Active L32-0059: SP2 HVX shift/add comparison
 Read docs/experiments/L32-0059.md. Device owned; full Down component on Llama1B, exact same SP2/W4 contract. Historical baselines immutable.
 
