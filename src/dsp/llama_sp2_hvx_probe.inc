@@ -12,7 +12,8 @@ struct sp59_pool {
  qurt_thread_t thread[3];qurt_sem_t go[3],done[3];
  struct sp59_job job[3];volatile uint32_t stop;int lock_status[3];
  const uint8_t *weight;const uint32_t *meta;int32_t *output;
- uint32_t rows,k,n,first,count,created;
+ uint32_t rows,k,n,first,count,created,mode;
+ int8_t *expanded;HVX_Vector *gather;
 };
 static HVX_Vector sp59_meta(HVX_Vector v) {
  HVX_Vector zero=Q6_V_vzero(),one=Q6_V_vsplat_R(1),s=Q6_Vw_vasr_VwR(v,31);
@@ -65,10 +66,21 @@ static __attribute__((noinline)) void sp59_kernel(const uint8_t *weight,
  }
 }
 #undef SP59_ACC
+
+#include "llama_sp2_hvx_k.inc"
 static void sp59_work(struct sp59_pool *p,uint32_t id) {
- if(id<p->count)sp59_kernel(p->weight+(size_t)id*p->k*16U,p->meta,
+ if(id>=p->count)return;
+ if(p->mode==14U && p->k>=128U) {
+  int8_t *x=p->expanded+(size_t)id*32U*p->k;
+  sp59_unpack_k(p->weight+(size_t)id*p->k*16U,x,p->k,p->gather+id);
+  sp59_kernel_k(x,p->meta,p->output+p->first+id*32U,p->rows,p->k,p->n);
+  return;
+ }
+ sp59_kernel(p->weight+(size_t)id*p->k*16U,p->meta,
    p->output+p->first+id*32U,p->rows,p->k,p->n);
 }
+
+#include "llama_sp2_hvx_k.inc"
 static void sp59_worker(void *arg) {
  struct sp59_job *j=arg;struct sp59_pool *p=j->p;uint32_t i=j->id-1U;
  p->lock_status[i]=qurt_hvx_lock(QURT_HVX_MODE_128B);
@@ -153,13 +165,14 @@ static int sp59_run(uint8_t *shared,uint32_t bytes,uint8_t *vtcm,uint32_t vbytes
  SP59_ALLOC(uint8_t,raw0,8192U);SP59_ALLOC(uint8_t,raw1,8192U);
  SP59_ALLOC(int32_t,wide0,8192U);SP59_ALLOC(int32_t,wide1,8192U);
  SP59_ALLOC(uint32_t,bias,2048U);SP59_ALLOC(uint8_t,scratch,2048U);
+ SP59_ALLOC(int8_t,expanded,128U*k);SP59_ALLOC(HVX_Vector,gather,512U);
  #undef SP59_ALLOC
  if(pos>vbytes)return AEE_ENOMEMORY;
  c.status=-1;c.vtcm_bytes=vbytes;c.peak_bytes=pos;c.streams=c.conversions=0;
  c.load_ticks=c.pack_ticks=c.dma_ticks=c.mac_ticks=c.convert_ticks=c.merge_ticks=c.publish_ticks=0;
- struct sp59_pool pool;memset(&pool,0,sizeof(pool));pool.meta=meta;pool.output=out;pool.rows=m;pool.k=k;pool.n=n;
+ struct sp59_pool pool;memset(&pool,0,sizeof(pool));pool.meta=meta;pool.output=out;pool.rows=m;pool.k=k;pool.n=n;pool.mode=c.mode;pool.expanded=expanded;pool.gather=gather;
  int ret=0,hmx_locked=0;
- if(c.mode==12U && sp59_pool_open(&pool))return AEE_EFAILED;
+ if((c.mode==12U||c.mode==14U) && sp59_pool_open(&pool))return AEE_EFAILED;
  if(c.mode==13U){ret=HAP_compute_res_hmx_lock2(ctx,HAP_COMPUTE_RES_HMX_SHARED);if(ret)return ret;hmx_locked=1;}
  uint64_t start=HAP_perf_get_qtimer_count(),t=start;
  memcpy(input,shared+c.input_offset,m*k*2U);memcpy(sums,shared+c.sum_offset,n*4U);
@@ -177,7 +190,7 @@ static int sp59_run(uint8_t *shared,uint32_t bytes,uint8_t *vtcm,uint32_t vbytes
    if(sp59_prefetch((g+1U)&1U,(g&1U)?w0:w1,shared+c.weight_offset+(size_t)(g+1U)*64U*k,(remain<128U?remain:128U)*k/2U)){ret=AEE_EFAILED;goto end;}}
   c.dma_ticks+=HAP_perf_get_qtimer_count()-t;t=HAP_perf_get_qtimer_count();
   pool.weight=(g&1U)?w1:w0;pool.first=g*128U;pool.count=(n-pool.first<128U?n-pool.first:128U)/32U;
-  if(c.mode==12U){for(uint32_t i=0;i<3U;i++)qurt_sem_up(&pool.go[i]);sp59_work(&pool,0);for(uint32_t i=0;i<3U;i++)qurt_sem_down(&pool.done[i]);}
+  if((c.mode==12U||c.mode==14U)){for(uint32_t i=0;i<3U;i++)qurt_sem_up(&pool.go[i]);sp59_work(&pool,0);for(uint32_t i=0;i<3U;i++)qurt_sem_down(&pool.done[i]);}
   else for(uint32_t i=0;i<pool.count;i++) {
    if(c.mode==11U)sp59_work(&pool,i);
    else sp59_hmx(pool.weight+(size_t)i*k*16U,a0,a1,out+pool.first+i*32U,sums+pool.first+i*32U,m,k,n,raw0,raw1,wide0,wide1,bias,&c);
@@ -196,6 +209,6 @@ static int sp59_run(uint8_t *shared,uint32_t bytes,uint8_t *vtcm,uint32_t vbytes
  c.publish_ticks=HAP_perf_get_qtimer_count()-t;
  end:c.total_ticks=HAP_perf_get_qtimer_count()-start;c.status=ret;*h=c;
  if(hmx_locked)HAP_compute_res_hmx_unlock2(ctx,HAP_COMPUTE_RES_HMX_SHARED);
- if(c.mode==12U)sp59_pool_close(&pool);
+ if((c.mode==12U||c.mode==14U))sp59_pool_close(&pool);
  return ret;
 }

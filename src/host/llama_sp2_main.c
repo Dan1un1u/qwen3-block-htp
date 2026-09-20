@@ -29,7 +29,7 @@ int main(int argc,char **argv){
 
  {struct lsp2_header *h=(void*)shared;printf("{\"rpc_status\":%d,\"dsp_status\":%d,\"host_ns\":%llu,\"mode\":%u,\"rows\":%u,\"k\":%u,\"n\":%u,\"vtcm_bytes\":%u,\"peak_bytes\":%u,\"streams\":%u,\"conversions\":%u,\"total_ticks\":%llu,\"load_ticks\":%llu,\"pack_ticks\":%llu,\"dma_ticks\":%llu,\"mac_ticks\":%llu,\"convert_ticks\":%llu,\"merge_ticks\":%llu,\"publish_ticks\":%llu}\n",ret,h->status,(unsigned long long)elapsed,h->mode,h->rows,h->k,h->n,h->vtcm_bytes,h->peak_bytes,h->streams,h->conversions,(unsigned long long)h->total_ticks,(unsigned long long)h->load_ticks,(unsigned long long)h->pack_ticks,(unsigned long long)h->dma_ticks,(unsigned long long)h->mac_ticks,(unsigned long long)h->convert_ticks,(unsigned long long)h->merge_ticks,(unsigned long long)h->publish_ticks);}
  if(ret)break;
- if(request->mode>=11U && request->mode<=13U){
+ if(request->mode>=11U && request->mode<=14U){
   uint64_t hash=1469598103934665603ULL;size_t count=(size_t)request->rows*request->n*8U;
   if(request->output_offset+(uint64_t)count>(uint64_t)size){ret=1;break;}
   for(size_t j=0;j<count;j++)hash=(hash^shared[request->output_offset+j])*1099511628211ULL;
