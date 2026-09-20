@@ -4283,8 +4283,8 @@ current_scope:
     execution_state: running
     model: Llama3.2-3B
     shape: 741+3
-    device_owner: null
-    device_waits_for: EXP-0304
+    device_owner: L32-0058
+    device_waits_for: null
     baseline_promoted: false
     quality_claim: false
 storage:
