@@ -1,3 +1,6 @@
+# Active EXP-0304: Qwen0.6 SP2/INT16 comparison
+Read docs/experiments/EXP-0304.md. Fixed64+42, frozen native SP2 runtime, metadata-only INT16 arm, all physical/numerical gates. Llama3B companion runs sequentially. No measurements yet.
+
 # Current closure: EXP-0303 Qwen0.6 A16 long prefill
 
 Read docs/experiments/EXP-0303-RESULTS.md and MODULES.md. Both A16 recipes B536+46/C741+3 optimized with existing generic row-parallel softmax/KV DMA, option7 vs original4. Second candidate15 exact but slower, removed from final source; all evidence retained. Native A/full-M64 decode residual/Norm unchanged. Native/long64 companion reference measured; other models/A8/SP2/D frozen.

@@ -29407,3 +29407,15 @@ experiments:
   - e61a3ec3cf85c8d706faf43631ec621626989a49
   - e118d47fa1fc578132c3316bad33c90afa0cc96b
   - d8e0576d61133090a1cbc25add11698d2e80f2ae
+- id: EXP-0304
+  title: SP2 versus uniform INT16 Down additional model/shape validation
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/EXP-0304.md
+  approval_ref: 'User2026-09-20: verify historical SP2/INT16 with two additional representative
+    configurations'
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0303-qwen06-a16-prefill

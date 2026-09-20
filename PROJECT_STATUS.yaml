@@ -18,8 +18,8 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 304
+  active_experiment: EXP-0304
+  next_experiment_number: 305
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -14400,3 +14400,11 @@ current_scope:
               - 0.8913181232456928
               - 0.8932791124667889
               pass: false
+  sp2_int16_generalization:
+    experiment: EXP-0304
+    execution_state: running
+    model: Qwen3-0.6B
+    shape: 64+42
+    device_owner: EXP-0304
+    baseline_promoted: false
+    quality_claim: false
