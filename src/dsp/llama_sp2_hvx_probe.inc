@@ -80,7 +80,7 @@ static void sp59_work(struct sp59_pool *p,uint32_t id) {
    p->output+p->first+id*32U,p->rows,p->k,p->n);
 }
 
-#include "llama_sp2_hvx_k.inc"
+
 static void sp59_worker(void *arg) {
  struct sp59_job *j=arg;struct sp59_pool *p=j->p;uint32_t i=j->id-1U;
  p->lock_status[i]=qurt_hvx_lock(QURT_HVX_MODE_128B);
