@@ -255,6 +255,7 @@ enum qbh_block_hvx_pool_job_kind {
     QBH_BLOCK_HVX_POOL_FP32_NORM = 21,
     QBH_BLOCK_HVX_POOL_LONG_ATTENTION = 22,
     QBH_BLOCK_HVX_POOL_LONG_F16_SOFTMAX = 23,
+    QBH_BLOCK_HVX_POOL_SP2_SHIFTADD = 24,
 };
 
 enum qbh_block_u8_residual_kind {
@@ -557,6 +558,10 @@ struct qbh_block_w4f16_pool {
     const struct qbh_block_qparam *fp32_norm_qparam;
     uint8_t *fp32_norm_output,*fp32_norm_scratch;
     uint32_t fp32_norm_native;
+    uint32_t *sp60_meta; int32_t *sp60_output;
+    int8_t *sp60_expanded[4]; HVX_Vector *sp60_gather;
+    const uint8_t *sp60_weight; const float *sp60_scale;
+    uint32_t sp60_rows,sp60_first;
     const uint16_t *u8_swiglu_lut;
     uint8_t *u8_swiglu_gather_scratch;
     volatile uint32_t u8_swiglu_ready[QBH_BLOCK_INTERMEDIATE / (32U * QBH_HMX_OUTPUT_CHANNELS)];
@@ -3530,6 +3535,7 @@ static int qbh_hmx_run_w4u8_qkv_ring(
 static void qbh_llama_fp32_epilogue(const uint8_t *,const uint8_t *,const float *,float *,uint32_t,uint32_t,int32_t);
 #include "llama_sp2_down.inc"
 #include "llama_fp32_residual.inc"
+#include "llama_sp2_hvx_full_kernel.inc"
 #ifdef QBH_MODEL_LLAMA32
 #include "llama_r3_prepare.inc"
 #endif
@@ -5029,6 +5035,8 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
             qbh_llama_swiglu_worker(pool,job->worker_index);
         } else if (job->command_kind == QBH_BLOCK_HVX_POOL_SP2_EPILOGUE) {
             qbh_sp2_epilogue_run(&pool->sp2_epilogue);
+        } else if(job->command_kind==QBH_BLOCK_HVX_POOL_SP2_SHIFTADD) {
+            sp60_worker(pool,job->worker_index);
         } else if(job->command_kind==QBH_BLOCK_HVX_POOL_FP32_NORM) {
             qbh_llama_fp32_norm_worker(pool,job->worker_index);
 #endif
@@ -15518,7 +15526,10 @@ static void qbh_accumulate_w4u8_phase_metrics(
         header->w4u8_mlp_down_producer_progress_command_count +=
             phase->hmx_producer_progress_command_count;
         header->w4u8_mlp_down_pipeline_ticks += phase->pipeline_ticks;
-        header->w4u8_mlp_down_hmx_command_count += command_count;
+    #ifdef QBH_MODEL_LLAMA32
+    if(!header->llama_sp2_down_backend)
+#endif
+    header->w4u8_mlp_down_hmx_command_count += command_count;
         header->w4u8_mlp_down_hvx_hmx_overlap |=
             phase->hvx_hmx_overlap_observed;
         header->w4u8_mlp_down_hvx_parallel_overlap |=
@@ -15649,6 +15660,9 @@ static int qbh_llama_swiglu_parallel(struct qbh_block_w4f16_pool *pool,
 }
 #endif
 
+#ifdef QBH_MODEL_LLAMA32
+#include "llama_sp2_hvx_full.inc"
+#endif
 static int qbh_run_w4u8_direct_n_mlp(
     struct qbh_block_header *header, uint8_t *shared,
     struct qbh_block_buffers *buffers,
@@ -15856,6 +15870,14 @@ static int qbh_run_w4u8_direct_n_mlp(
     }
 
     start = HAP_perf_get_qtimer_count();
+    int down_result;
+#ifdef QBH_MODEL_LLAMA32
+    if(header->llama_sp2_down_backend) {
+        down_result=sp60_down(header,shared,buffers,pool,middle_native);
+        if(down_result)return -1;
+    } else
+#endif
+    {
     /* Transfer main's HVX slot to the HMX epilogue owner. Main only submits
      * scalar DMA descriptors and waits until the projection has joined. */
     const uint32_t stream_down=(QBH_LLAMA_SP2(header)>=8U || QBH_FP32_RESIDUAL(header)) && prefill_direct && !(header->paper_pipeline_disable&8U);
@@ -15872,7 +15894,7 @@ static int qbh_run_w4u8_direct_n_mlp(
     }
     if (QBH_LLAMA_SP2(header) && !stream_down && qurt_hvx_unlock()!=AEE_SUCCESS) return -1;
     qbh_long_progress(header,6400U);
-    int down_result = qbh_run_w4u8_direct_n_projection(
+    down_result = qbh_run_w4u8_direct_n_projection(
             header, shared,
             &header->projections[QBH_BLOCK_PROJ_DOWN], buffers, worker,
             middle_native, down_native,
@@ -15888,8 +15910,12 @@ static int qbh_run_w4u8_direct_n_mlp(
     }
     if (QBH_LLAMA_SP2(header) && !stream_down && qurt_hvx_lock(QURT_HVX_MODE_128B)!=AEE_SUCCESS) return -1;
     if (down_result != 0) return -1;
+    }
     qbh_r3_chain_audit(header,shared,9,down_native,131072U);
     header->down_ticks += HAP_perf_get_qtimer_count() - start;
+#ifdef QBH_MODEL_LLAMA32
+    if(!header->llama_sp2_down_backend)
+#endif
     header->w4u8_mlp_down_hmx_command_count +=
         QBH_BLOCK_HIDDEN / QBH_HMX_OUTPUT_CHANNELS /
             (header->projections[QBH_BLOCK_PROJ_DOWN].lpbq_mode != 0U ? 2U :

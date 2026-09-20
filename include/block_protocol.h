@@ -9,7 +9,7 @@
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
 #ifdef QBH_MODEL_LLAMA32
-#define QBH_BLOCK_ABI_VERSION UINT32_C(135)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(136)
 #define QBH_LLAMA_SP2(h) ((h)->llama_sp2_mode)
 #define QBH_FP32_RESIDUAL(h) ((h)->llama_fp32_residual)
 #else
@@ -946,6 +946,7 @@ struct qbh_block_header {
     uint32_t wide_score_mode; /* 0 legacy; 1 HVX wide; 2 untimed scalar wide oracle. */
 #ifdef QBH_MODEL_LLAMA32
     uint32_t llama_sp2_mode;
+    uint32_t llama_sp2_down_backend; /* 0 HMX;1 HVX shift-add diagnostic */
     uint32_t llama_fp32_residual; /* L32-0016: O/Down accumulate into FP32 hidden. */ /* Explicit frozen SP2 LUT + native W4 radix256 Down. */
 #endif
     uint32_t dense_r4_mode, dense_r4_audit_offset, dense_r4_optimization;

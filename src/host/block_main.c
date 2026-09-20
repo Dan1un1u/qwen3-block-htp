@@ -7077,6 +7077,8 @@ int main(int argc, char **argv) {
     }
 #ifdef QBH_MODEL_LLAMA32
     header->llama_fp32_residual=qbh_host_fp32_residual();
+    header->llama_sp2_down_backend=getenv("QBH_SP2_DOWN_HVX")?(uint32_t)atoi(getenv("QBH_SP2_DOWN_HVX")):0U;
+    if(header->llama_sp2_down_backend>1U)return 2;
     header->llama_sp2_mode=getenv("QBH_LLAMA_SP2") ? (uint32_t)atoi(getenv("QBH_LLAMA_SP2")) : 0U;
     if((header->llama_sp2_mode!=0U && header->llama_sp2_mode!=3U && header->llama_sp2_mode!=4U && header->llama_sp2_mode!=5U && header->llama_sp2_mode!=6U && header->llama_sp2_mode!=7U && header->llama_sp2_mode!=8U && header->llama_sp2_mode!=9U) || (header->llama_sp2_mode &&
        (variant!=QBH_BLOCK_W4U8 || (dense_r3_mode && !QBH_FP32_RESIDUAL(header))))) return 2;
