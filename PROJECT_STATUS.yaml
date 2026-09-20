@@ -7,8 +7,8 @@ project:
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
   updated_on: '2026-09-19'
 governance:
-  active_experiment: null
-  next_experiment_number: 58
+  active_experiment: L32-0058
+  next_experiment_number: 59
   maximum_running_experiments: 1
   remote_sync_required: true
 source_worktrees:
@@ -67,8 +67,8 @@ current_scope:
     w4a8:
       prefill: 2015.9163652745706
       decode: 45.646624553664694
-  latest_e2e_shape: 'W16A16/W4A16: A64+42, B536+46, C741+3; fixed project-owned trajectories; 10 paired repeat10
-    rounds per model'
+  latest_e2e_shape: 'W16A16/W4A16: A64+42, B536+46, C741+3; fixed project-owned trajectories;
+    10 paired repeat10 rounds per model'
   additional_m64_plus15_e2e_tokens_per_second:
     prefill: 2046.8128485478423
     decode: 46.675701580572316
@@ -87,7 +87,8 @@ current_scope:
     code_bits: 8
     hmx_weight_path: native signed4, no S8 expansion
     exact_llama_sp2_elements: 399360
-    quality_scope: local Down against pre-middle-quantization A8 Gate/Up trajectory only
+    quality_scope: local Down against pre-middle-quantization A8 Gate/Up trajectory
+      only
     full_block_gate_applied: false
     ppl_run: false
     e2e_run: false
@@ -540,7 +541,8 @@ current_scope:
     intermediate_spill: false
     frontend_exact: true
     quality_accepted: false
-    rounding_fix: Explicit noncontracted FP32 arithmetic validated through full16 generation; no gate weakening
+    rounding_fix: Explicit noncontracted FP32 arithmetic validated through full16
+      generation; no gate weakening
     report: docs/LLAMA32_FP32_RESIDUAL.md
     fixed_scale_ppl:
       all: 1766.764883021644
@@ -780,8 +782,8 @@ current_scope:
           - 1.021524858110149
           - 1.074523205713089
           gate_pass: true
-    formal_shape: singlelayer0 M64+decode1 past64;10 cyclic four-arm cycles,40 processes;1warmup+10 measured replays
-      each
+    formal_shape: singlelayer0 M64+decode1 past64;10 cyclic four-arm cycles,40 processes;1warmup+10
+      measured replays each
     all_speed_gates_pass: false
     fullmodel_rotation_validated: false
     e2e_run: false
@@ -928,8 +930,8 @@ current_scope:
     evidence_ledger_sha256: 1ce076bf6ff75fbc54f4a9c6de1516b414311cf6895d20640d26011681dbbcf3
     old_native_chain3_reproduced_identical: true
     previous_chain3_was_unmeasured: true
-    method: Same FP16 normalized H512 coefficients move from output converter to dense weights; unity conversion,
-      original XOR generation cost; fast0021 pipeline retained
+    method: Same FP16 normalized H512 coefficients move from output converter to dense
+      weights; unity conversion, original XOR generation cost; fast0021 pipeline retained
     singlelayer_actual_arithmetic_pass: true
     chain3_independent_gate_pass: true
     chain3_cache_values_exact: true
@@ -1061,8 +1063,8 @@ current_scope:
     evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0024
     evidence_ledger_sha256: fc13eb282b1b7b26253d4a64986988154e4604d32c0d9b7a405fcbe6865fd2c6
     mode: 3
-    method: Complete dense DSP int64 sums of exact binary16 units, explicit RNE after181/4096 and1/4; no butterfly;
-      sparse refinement not implemented
+    method: Complete dense DSP int64 sums of exact binary16 units, explicit RNE after181/4096
+      and1/4; no butterfly; sparse refinement not implemented
     singlelayer_indices:
     - 0
     - 7
@@ -1216,10 +1218,12 @@ current_scope:
   paper_working_implementation:
     accepted: true
     accepted_on: '2026-09-14'
-    acceptance_scope: paper/performance working implementation with explicitly known numerical limitation
+    acceptance_scope: paper/performance working implementation with explicitly known
+      numerical limitation
     native_source_parent: cb8be962f3f31a1b89c8f8cd2bebb9cceef049a7
     source_documentation_head: 0f7d083dc99af7e2983ecd426fca03e9d57a0a07
-    selected: Original fast dense R3/R4 + SP2mode8 + FP32 residual; no native/default changes in L32-0027
+    selected: Original fast dense R3/R4 + SP2mode8 + FP32 residual; no native/default
+      changes in L32-0027
     rejected_candidates_not_selected:
     - L32-0026 exponent-shift
     - L32-0026 reverse K order
@@ -1227,14 +1231,15 @@ current_scope:
     independent_full16_gate_pass: false
     model_quality_accepted: false
     combined_frontend_e2e_measured: false
-    speed_evidence: L32-0022 singlelayer paired; fullmodel SP2 L32-0012 and unrotated FP32-residual SP2 L32-0018
-      remain separate
+    speed_evidence: L32-0022 singlelayer paired; fullmodel SP2 L32-0012 and unrotated
+      FP32-residual SP2 L32-0018 remain separate
     paper_report: docs/PAPER_STORY_RUNTIME_V2.md
     paper_report_sha256: 02f0b458fd2d79e73c711bfa16b741c40fb151217548da0baa6a8baad91b6904
     evidence_index: docs/PAPER_STORY_RUNTIME_V2_EVIDENCE.json
     evidence_index_sha256: b2444718b14fffcbf57475a5bced441ca3ae2624b8df19030bfcba3069093379
     numerical_alignment_paused: true
-    superseded_as_primary_speed_baseline_by: L32-0028; retained as historical supplemental rotation acceptance only
+    superseded_as_primary_speed_baseline_by: L32-0028; retained as historical supplemental
+      rotation acceptance only
   paper_no_rotation_speed_baseline:
     model: Llama-3.2-1B-Instruct
     experiment: L32-0018
@@ -1257,7 +1262,8 @@ current_scope:
       QBH_DENSE_R4: '0'
       QBH_R3_OPT: '0'
       QBH_R4_OPT: '0'
-    quality: Full-model implementation validated; fixed-scale text unusable, quality unaccepted
+    quality: Full-model implementation validated; fixed-scale text unusable, quality
+      unaccepted
   paper_baseline_audit:
     experiment: L32-0028
     source_documentation_head: 0ae07a92e4d99fd3fd23c89adc3ce4a2b44f7b4f
@@ -1357,8 +1363,8 @@ current_scope:
           - 1.0020069734319716
           - 1.005944185256383
   current_handoff: docs/experiments/L32-0056.md
-  next_direction: Reduce repeated prefix K/V preparation and costly partial-tail work before considering larger
-    scheduling changes.
+  next_direction: Reduce repeated prefix K/V preparation and costly partial-tail work
+    before considering larger scheduling changes.
   latest_paper_pipeline_result:
     id: L32-0038
     phase: A2
@@ -1727,7 +1733,8 @@ current_scope:
         prefill: 2022.5159597714044
         decode: 43.83890357302921
     shape: M64+33 cache128, 34 outputs
-    numerical_scope: independent full16 CPU greedy selected token/logit code exact, first16 matches old frozen model
+    numerical_scope: independent full16 CPU greedy selected token/logit code exact,
+      first16 matches old frozen model
     physical_gate: true
     quality_claim: false
     baseline_promoted: false
@@ -1947,9 +1954,10 @@ current_scope:
             - 0.9859995097176806
             - 0.9890632456263714
     scope: M64, two fixed tokenized English/Chinese texts,15/63decode,cache128,maxKV127
-    numerical_scope: all288 full16 hardware last-hidden vectors,native finalNorm liveU8 and full-vocabulary head
-      selected token/logit match independent exact host teacher, paired carrier bytes exact;128 host teacher steps,48
-      original CPU hidden and47 token/logit crosschecks
+    numerical_scope: all288 full16 hardware last-hidden vectors,native finalNorm liveU8
+      and full-vocabulary head selected token/logit match independent exact host teacher,
+      paired carrier bytes exact;128 host teacher steps,48 original CPU hidden and47
+      token/logit crosschecks
     physical_gate: true
     quality_claim: false
     baseline_promoted: false
@@ -1982,7 +1990,8 @@ current_scope:
     llama_final_experiment: L32-0034
   supplementary_generalization:
     source: *id001
-    classification: supplementary experiment; excluded from main ablations by explicit user instruction; not rerun
+    classification: supplementary experiment; excluded from main ablations by explicit
+      user instruction; not rerun
   pre_optimization_paper_ablation_results:
     latest_paper_factorial_result:
       id: L32-0029
@@ -2092,8 +2101,8 @@ current_scope:
       trace_complete: false
       trace_status: 'N/A: truncated FARF; five exact diagnostic runs retained'
       mechanism_coverage:
-        QKV: 'N/A: Qwen ring scheduling site is inactive in the measured Llama no-rotation path; QKV arm is a no-op
-          control, not evidence against QKV overlap'
+        QKV: 'N/A: Qwen ring scheduling site is inactive in the measured Llama no-rotation
+          path; QKV arm is a no-op control, not evidence against QKV overlap'
         FFN: active
         EPILOGUE: prefill active; decode current implementation inline
         LOOKAHEAD: decode active; no prefill cross-operator lookahead path
@@ -2207,8 +2216,9 @@ current_scope:
       evidence_files: 583
       evidence_bytes: 266094775
       timed_profiles: 9600
-      numerical_gate_scope: Llama independent selected layer7, chain3, chain16 two-step exact; full16 all-layer
-        greedy/fixed CPU teacher selected token/logit codes exact
+      numerical_gate_scope: Llama independent selected layer7, chain3, chain16 two-step
+        exact; full16 all-layer greedy/fixed CPU teacher selected token/logit codes
+        exact
       physical_gate: true
       weight_bytes_identical: true
       quality_claim: false
@@ -2265,8 +2275,9 @@ current_scope:
       evidence_bytes: 300912966
       timed_profiles: 9600
       physical_gate: true
-      numerical_gate_scope: Llama independent selected layer7, chain3, chain16 two-step exact; full16 all-layer
-        greedy/fixed CPU teacher selected token/logit codes exact
+      numerical_gate_scope: Llama independent selected layer7, chain3, chain16 two-step
+        exact; full16 all-layer greedy/fixed CPU teacher selected token/logit codes
+        exact
       quality_claim: false
       baseline_promoted: false
       trajectories:
@@ -2688,8 +2699,8 @@ current_scope:
     implementation_crosscheck_pass: true
     full_mathematical_alignment_pass: false
     max_full_boundary_nrmse: 0.004798236471210144
-    hardware_composition_scope: Untimed monolithic single-layer RPC composition versus production segmented full-stack
-      RPC; M64+1 only, no throughput claim
+    hardware_composition_scope: Untimed monolithic single-layer RPC composition versus
+      production segmented full-stack RPC; M64+1 only, no throughput claim
     quality_claim: false
     baseline_promoted: false
     device_owner: null
@@ -3123,7 +3134,8 @@ current_scope:
           head_checks: 306
           profiles: 374
           cache_snapshots: 1600
-          scope: Actual-operand references and exact contracts; not full teacher or model quality acceptance.
+          scope: Actual-operand references and exact contracts; not full teacher or
+            model quality acceptance.
           native_long64_exact_layer_outputs: 1376
       3B:
         model: Llama3.2-3B
@@ -3225,7 +3237,8 @@ current_scope:
           head_checks: 306
           profiles: 374
           cache_snapshots: 2800
-          scope: Actual-operand references and exact contracts; not full teacher or model quality acceptance.
+          scope: Actual-operand references and exact contracts; not full teacher or
+            model quality acceptance.
           native_long64_exact_layer_outputs: 2408
     table_rows:
     - model: Llama3.2-1B
@@ -3363,7 +3376,8 @@ current_scope:
     implementation_checks_pass: true
     historical_full_floating_alignment_status: unchanged; prior failures remain failures
     local_gate: pass
-    gate_role: implementation checks and formal measurement completion; no PPL/quality acceptance
+    gate_role: implementation checks and formal measurement completion; no PPL/quality
+      acceptance
     w4_slower_than_w16_over_10_percent: []
     execution_state: completed
     evidence_validity: valid
@@ -3769,9 +3783,10 @@ current_scope:
           partial_replay_retained_in_raw: true
           raw_failure_not_overwritten: true
           source_head: 68d9401265b8f77aa6de9d1d2135d5608b61e9db
-          policy: Completed samples are concatenated in observed order; all original timing values retained; only
-            continuation sample labels offset. Ten formal rounds remain, final round spans connection interruption.
-            Original gate and numerical tolerances unchanged.
+          policy: Completed samples are concatenated in observed order; all original
+            timing values retained; only continuation sample labels offset. Ten formal
+            rounds remain, final round spans connection interruption. Original gate
+            and numerical tolerances unchanged.
           second_interruption:
             original: /mnt/d/llm_exp/results/llama32-htp/l32-0056/3B/c4/formal/09-w4-C1
             completed_replays_before_failure: 0
@@ -4263,6 +4278,15 @@ current_scope:
     workbook_updated: true
     workbook_sha256: b9c90e539b63ceb3bd623ce2d80469cc103cba7f583bfebd72b35d51d3d7e468
     workspace_build: 3B/28 layers
+  sp2_int16_generalization:
+    experiment: L32-0058
+    execution_state: running
+    model: Llama3.2-3B
+    shape: 741+3
+    device_owner: null
+    device_waits_for: EXP-0304
+    baseline_promoted: false
+    quality_claim: false
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp
@@ -4336,8 +4360,8 @@ latest_llama3b_w4a8_sp2_optimization:
   bounded_1b_pass: true
   true_greedy_exact: true
   vtcm_peak_bytes: 8360416
-  recipe: W4A8-SP2mode8 FP32 residual, no rotation; AVrows4; both head32; candidate QKV32 plus Norm/QKV/Down boundary
-    DMA overlap
+  recipe: W4A8-SP2mode8 FP32 residual, no rotation; AVrows4; both head32; candidate
+    QKV32 plus Norm/QKV/Down boundary DMA overlap
   per_token_hmx_commands_saved: 980
   per_token_weight_dma_descriptors_saved: 1960
   parent_experiment: L32-0044
@@ -4523,7 +4547,8 @@ latest_llama3b_long_prefill:
   workspace_build: 3B/28 layers
   candidate_exact_layer_outputs: 2520
   signed_zero_only: 0
-  gate_role: unchanged long/M64 throughput parity plus decode guard; numerical and physical checks separately passed
+  gate_role: unchanged long/M64 throughput parity plus decode guard; numerical and
+    physical checks separately passed
 latest_llama1b_long_decode_optimization:
   experiment: L32-0057
   execution_state: completed
