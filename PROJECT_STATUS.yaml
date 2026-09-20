@@ -7,7 +7,7 @@ project:
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
   updated_on: '2026-09-19'
 governance:
-  active_experiment: L32-0058
+  active_experiment: null
   next_experiment_number: 59
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -43,7 +43,7 @@ current_scope:
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0057
+  last_completed_experiment: L32-0058
   evidence_ledger_sha256: 599d86cf654b2b41526690c76ad1c0a251b5f206815a57ce4ae12b0024f94ac9
   formal_profiling_completed: true
   general_quantization_quality_accepted: false
@@ -4280,13 +4280,55 @@ current_scope:
     workspace_build: 3B/28 layers
   sp2_int16_generalization:
     experiment: L32-0058
-    execution_state: running
-    model: Llama3.2-3B
-    shape: 741+3
-    device_owner: L32-0058
-    device_waits_for: null
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending
+    model: 3B
+    shape:
+    - 741
+    - 3
+    arms:
+      sp2:
+        times_ns:
+          prefill: 629986975.5600001
+          decode: 127987801.27000001
+        tps:
+          prefill: 1176.2147929190435
+          decode: 23.439733867068092
+        profiles: 1500
+      int16:
+        times_ns:
+          prefill: 629672314.6899999
+          decode: 127971423.05000003
+        tps:
+          prefill: 1176.802572882387
+          decode: 23.442733764301916
+        profiles: 1500
+    comparisons:
+      prefill:
+        wall_ratio: 0.9995005279756451
+        overhead_percent: -0.04994720243548523
+        ci95:
+        - 0.9978571117153674
+        - 1.0009685407751872
+        within10: true
+      decode:
+        wall_ratio: 0.9998720329606614
+        overhead_percent: -0.012796703933859455
+        ci95:
+        - 0.9967285723687132
+        - 1.0027425801832583
+        within10: true
+    source_head: 0e796912fa562bd5ab9797b40fec894d18aba862
+    runtime_source: ab9d7c2d0bf1061d10a945757589fb6df0ef64fc
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0058
+    evidence_ledger_sha256: cd1b2da3bf6d48055aff0d32a40c2ba613cd0a075e289b597b8a8b89b4ca37f9
+    evidence_files: 724
+    device_owner: null
     baseline_promoted: false
     quality_claim: false
+    report: docs/experiments/L32-0058-RESULTS.md
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp

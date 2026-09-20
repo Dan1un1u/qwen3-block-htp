@@ -4789,9 +4789,9 @@ experiments:
     device_owner: null
 - id: L32-0058
   title: Additional SP2 versus uniform INT16 Down validation on 3B long context
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: pending
   record: docs/experiments/L32-0058.md
   approval_ref: 'User2026-09-20: two representative model configurations beyond historical
@@ -4800,3 +4800,54 @@ experiments:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
     expected_source_head: 0e796912fa562bd5ab9797b40fec894d18aba862
+  results:
+    experiment: L32-0058
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending
+    model: 3B
+    shape:
+    - 741
+    - 3
+    arms:
+      sp2:
+        times_ns:
+          prefill: 629986975.5600001
+          decode: 127987801.27000001
+        tps:
+          prefill: 1176.2147929190435
+          decode: 23.439733867068092
+        profiles: 1500
+      int16:
+        times_ns:
+          prefill: 629672314.6899999
+          decode: 127971423.05000003
+        tps:
+          prefill: 1176.802572882387
+          decode: 23.442733764301916
+        profiles: 1500
+    comparisons:
+      prefill:
+        wall_ratio: 0.9995005279756451
+        overhead_percent: -0.04994720243548523
+        ci95:
+        - 0.9978571117153674
+        - 1.0009685407751872
+        within10: true
+      decode:
+        wall_ratio: 0.9998720329606614
+        overhead_percent: -0.012796703933859455
+        ci95:
+        - 0.9967285723687132
+        - 1.0027425801832583
+        within10: true
+    source_head: 0e796912fa562bd5ab9797b40fec894d18aba862
+    runtime_source: ab9d7c2d0bf1061d10a945757589fb6df0ef64fc
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0058
+    evidence_ledger_sha256: cd1b2da3bf6d48055aff0d32a40c2ba613cd0a075e289b597b8a8b89b4ca37f9
+    evidence_files: 724
+    device_owner: null
+    baseline_promoted: false
+    quality_claim: false
+    report: docs/experiments/L32-0058-RESULTS.md
