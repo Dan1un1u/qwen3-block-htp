@@ -4851,3 +4851,15 @@ experiments:
     baseline_promoted: false
     quality_claim: false
     report: docs/experiments/L32-0058-RESULTS.md
+- id: L32-0059
+  title: SP2 HVX shift-add versus native HMX Down
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/L32-0059.md
+  approval_ref: User2026-09-21 requests SP2 shift/add HVX implementation and comparison
+    on one representative configuration
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation

@@ -7,8 +7,8 @@ project:
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
   updated_on: '2026-09-19'
 governance:
-  active_experiment: null
-  next_experiment_number: 59
+  active_experiment: L32-0059
+  next_experiment_number: 60
   maximum_running_experiments: 1
   remote_sync_required: true
 source_worktrees:
@@ -4329,6 +4329,13 @@ current_scope:
     baseline_promoted: false
     quality_claim: false
     report: docs/experiments/L32-0058-RESULTS.md
+  sp2_hvx_shiftadd:
+    experiment: L32-0059
+    execution_state: running
+    device_owner: L32-0059
+    model: Llama3.2-1B
+    scope: complete Down component M64 and M1; fullmodel if requested
+    source_parent: 0e796912fa562bd5ab9797b40fec894d18aba862
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp

@@ -1,3 +1,6 @@
+# Active L32-0059: SP2 HVX shift/add comparison
+Read docs/experiments/L32-0059.md. Device owned; full Down component on Llama1B, exact same SP2/W4 contract. Historical baselines immutable.
+
 # L32-0058 completed: SP2 / uniform INT16 Down
 Read docs/experiments/L32-0058-RESULTS.md and MODULES.md. Both arms use identical nativeW4 pipeline and FP32 residual; only Down LUT/scale changed. Own full CPU reference exact,5short/10formal repeat10. No model-quality or baseline promotion. Device released. Ledger cd1b2da3bf6d48055aff0d32a40c2ba613cd0a075e289b597b8a8b89b4ca37f9.
 
