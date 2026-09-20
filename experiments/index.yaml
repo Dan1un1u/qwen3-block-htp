@@ -5103,9 +5103,9 @@ experiments:
   - 2b80267b2e086ffe01dfb180db096c284233a9fc
 - id: L32-0060
   title: SP2 HVX shift-add full-model generalization
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: pending
   record: docs/experiments/L32-0060.md
   approval_ref: User2026-09-21 requests additional model configurations and complete
@@ -5113,3 +5113,68 @@ experiments:
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
+  results:
+    experiment: L32-0060
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: exact arithmetic and complete comparison; slower diagnostic allowed
+    performance_parity: false
+    baseline_promoted: false
+    quality_claim: false
+    fullmodel: true
+    source_head: 4806798f979834f6913cd97f09c401e476ad709d
+    measured_source_heads:
+      1B: 5ec72782c410fbbe85ec5d92e031c8fc8fd14797
+      3B: 4806798f979834f6913cd97f09c401e476ad709d
+    rows:
+    - model: Llama3.2-1B
+      prompt: 64
+      decode: 42
+      hmx_prefill_tps: 2318.6107768195657
+      hmx_decode_tps: 44.5094218842966
+      hvx_prefill_tps: 85.42356182244077
+      hvx_decode_tps: 17.075756230335024
+      prefill_wall_ratio: 27.142520486782917
+      decode_wall_ratio: 2.60658569283308
+    - model: Llama3.2-1B
+      prompt: 536
+      decode: 46
+      hmx_prefill_tps: 2496.0525834143727
+      hmx_decode_tps: 50.75491521792911
+      hvx_prefill_tps: 79.8142208352107
+      hvx_decode_tps: 17.92171127072461
+      prefill_wall_ratio: 31.27328134378302
+      decode_wall_ratio: 2.832035091472433
+    - model: Llama3.2-3B
+      prompt: 64
+      decode: 42
+      hmx_prefill_tps: 1181.4573165052866
+      hmx_decode_tps: 23.636053426576638
+      hvx_prefill_tps: 32.95506192495938
+      hvx_decode_tps: 7.288499826942686
+      prefill_wall_ratio: 35.85055671251762
+      decode_wall_ratio: 3.242924331177665
+    - model: Llama3.2-3B
+      prompt: 536
+      decode: 46
+      hmx_prefill_tps: 1148.7257200193358
+      hmx_decode_tps: 23.742757920628467
+      hvx_prefill_tps: 30.697337249166655
+      hvx_decode_tps: 7.282263883092656
+      prefill_wall_ratio: 37.42102159204445
+      decode_wall_ratio: 3.2603539643423787
+    short_rounds: 5
+    formal_rounds: 10
+    repeat: 10
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0060
+    evidence_ledger_sha256: db12f374fc3f09a3b0b306404cc2eaeb1dc9b8c72302d4f08697d39be9337fc2
+    evidence_files: 11872
+    report: docs/experiments/L32-0060-RESULTS.md
+    modules: docs/experiments/L32-0060-MODULES.md
+    device_owner: null
+    recommendation: Retain native HMX default; four-HVX shift/add is slower in all
+      four measured configurations.
+  source_commits:
+  - 5ec72782c410fbbe85ec5d92e031c8fc8fd14797
+  - 4806798f979834f6913cd97f09c401e476ad709d
