@@ -25,17 +25,26 @@ static int sp60_down(struct qbh_block_header *h,const uint8_t *shared,
    Q6_Vw_vasl_VwR(sp60_bytes32(hi+off),8)),Q6_V_vsplat_R(32768));
   *(HVX_Vector *)(p->sp60_meta+(size_t)r*k+c)=sp60_meta(v);
  }
+ uint32_t first_slot=0U;
+ uint64_t t;
+ int rc=0;
 #ifdef QBH_LLAMA_3B
- b->down_prefetched=0U; /* Existing producer prefetch is counted, not hidden. */
+ if(b->down_prefetched) {
+  first_slot=b->down_prefetched_slot;
+  memcpy(bias[first_slot],b->scale_or_bias+first_slot*8U*QBH_HMX_BIAS_BYTES,1024U);
+  b->down_prefetched=0U;
+ } else
 #endif
- uint64_t t=HAP_perf_get_qtimer_count();
- int rc=qbh_dma_start_w4u8_direct_n_prefetch(dma,slots[0],shared+d->direct_n_weight_offset,
+ {
+ t=HAP_perf_get_qtimer_count();
+ rc=qbh_dma_start_w4u8_direct_n_prefetch(dma,slots[0],shared+d->direct_n_weight_offset,
  packed,bias[0],shared+d->bias_offset,1024U,1U,&count);
  if(!rc)rc=qbh_dma_wait_w4u8_direct_n_prefetch(dma,count);
  h->weight_dma_ticks+=HAP_perf_get_qtimer_count()-t;
  h->weight_ddr_read_bytes+=packed+1024U;h->weight_dma_descriptor_count+=count;
  if(rc)return -1;
- for(uint32_t first=0,slot=0;first<QBH_BLOCK_HIDDEN;first+=128U,slot^=1U) {
+ }
+ for(uint32_t first=0,slot=first_slot;first<QBH_BLOCK_HIDDEN;first+=128U,slot^=1U) {
   uint32_t next=first+128U;
   p->sp60_weight=slots[slot];p->sp60_scale=(const float *)bias[slot];p->sp60_first=first;
   p->active_worker_count=3U;

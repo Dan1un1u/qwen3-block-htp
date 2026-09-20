@@ -10648,13 +10648,14 @@ static int qbh_run_w4u8_direct_n_gate_up_pair(
             header->w4u8_decode_direct_n_down_batch_n_tiles == 8U) {
             const struct qbh_block_projection_desc *down =
                 &header->projections[QBH_BLOCK_PROJ_DOWN];
-            const uint32_t wb = 8U * (down->k / QBH_HMX_INPUT_CHANNELS) * QBH_W4_PACKED_TILE_BYTES;
+            const uint32_t down_tiles = header->llama_sp2_down_backend ? 4U : 8U;
+            const uint32_t wb = down_tiles * (down->k / QBH_HMX_INPUT_CHANNELS) * QBH_W4_PACKED_TILE_BYTES;
             dma_start = HAP_perf_get_qtimer_count();
             result = qbh_dma_start_w4u8_batch_prefetch(
                 descriptors, weight_slots[next_slot],
                 shared + down->direct_n_weight_offset, wb,
                 buffers->scale_or_bias + next_slot * 8U * QBH_HMX_BIAS_BYTES,
-                shared + down->bias_offset, 8U * QBH_HMX_BIAS_BYTES);
+                shared + down->bias_offset, down_tiles * QBH_HMX_BIAS_BYTES);
             if (!result) result = qbh_dma_wait_w4u8_batch_prefetch(descriptors);
             header->weight_dma_ticks += HAP_perf_get_qtimer_count() - dma_start;
             if (result) {
@@ -10666,7 +10667,7 @@ static int qbh_run_w4u8_direct_n_gate_up_pair(
             }
             buffers->down_prefetched = 1U;
             buffers->down_prefetched_slot = next_slot;
-            header->weight_ddr_read_bytes += wb + 8U * QBH_HMX_BIAS_BYTES;
+            header->weight_ddr_read_bytes += wb + down_tiles * QBH_HMX_BIAS_BYTES;
             header->w4u8_decode_direct_n_weight_ddr_read_bytes += wb;
             header->weight_dma_descriptor_count += 2U;
             ++header->w4u8_qkvo_prefetch_count;
