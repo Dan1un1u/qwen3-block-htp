@@ -17750,10 +17750,10 @@ static int qbh_scan_f16_attention(
      * physical M64 matrix, residual and normalization work unchanged. */
     const uint32_t decode_prefetch =
         logical_rows==1U && (header->long_optimization&4U);
-    uint32_t prefill_prefetch=0U;
-#ifndef QBH_QWEN_06B
-    prefill_prefetch=logical_rows>1U && (header->long_optimization&2U);
-#endif
+    /* EXP0303: the same generic prefill workers/DMA slot now also serve
+     * Qwen0.6. Explicit option bits preserve the original selectable path. */
+    const uint32_t prefill_prefetch=
+        logical_rows>1U && (header->long_optimization&2U);
     v_prefetch_enabled=header->variant!=QBH_BLOCK_W4U8 &&
         header->long_prompt_tokens && (prefill_prefetch || decode_prefetch) &&
         !native_cache &&
@@ -17912,7 +17912,6 @@ static int qbh_scan_f16_attention(
 
         start = HAP_perf_get_qtimer_count();
         if (header->long_prompt_tokens) {
-#ifndef QBH_QWEN_06B
             if ((header->long_optimization&1U) && logical_rows>1U &&
                 pool!=NULL && pool->worker_count>=3U) {
                 /* Weights are dead until the next projection. Expanded-weight
@@ -17937,7 +17936,6 @@ static int qbh_scan_f16_attention(
                 for(uint32_t i=0;i<contexts-1U;++i)qurt_sem_down(&pool->command_done[i]);
                 asm volatile("barrier":::"memory");
             } else
-#endif
             qbh_hvx_long_softmax_f16(plane_a, plane_c,
                 QBH_ATTENTION_Q_HEADS_PER_GROUP, logical_rows,
                 padded_tokens, past_tokens, QBH_MODEL_ATTENTION_SCALE);
