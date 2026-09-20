@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0304
+  active_experiment: null
   next_experiment_number: 305
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -14402,9 +14402,52 @@ current_scope:
               pass: false
   sp2_int16_generalization:
     experiment: EXP-0304
-    execution_state: running
-    model: Qwen3-0.6B
-    shape: 64+42
-    device_owner: EXP-0304
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending
+    model: 0.6B
+    shape:
+    - 64
+    - 42
+    arms:
+      sp2:
+        times_ns:
+          prefill: 21345125.94
+          decode: 450306534.2799999
+        tps:
+          prefill: 2998.342580873055
+          decode: 93.2697991317276
+        profiles: 4300
+      int16:
+        times_ns:
+          prefill: 21380861.91
+          decode: 450089926.09000003
+        tps:
+          prefill: 2993.3311514474863
+          decode: 93.31468572260752
+        profiles: 4300
+    comparisons:
+      prefill:
+        wall_ratio: 1.0016741981331219
+        overhead_percent: 0.16741981331218625
+        ci95:
+        - 0.9985358222111906
+        - 1.0050698769258741
+        within10: true
+      decode:
+        wall_ratio: 0.9995189761340101
+        overhead_percent: -0.048102386598991576
+        ci95:
+        - 0.9950312821845326
+        - 1.004535871089148
+        within10: true
+    source_head: d8e0576d61133090a1cbc25add11698d2e80f2ae
+    runtime_source: d8e0576d61133090a1cbc25add11698d2e80f2ae
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0304
+    evidence_ledger_sha256: 889fc2ddeb2721ffc8357b42f5922eab06c0efaebdf364d6437c1bab182a33b4
+    evidence_files: 479
+    device_owner: null
     baseline_promoted: false
     quality_claim: false
+    report: docs/experiments/EXP-0304-RESULTS.md

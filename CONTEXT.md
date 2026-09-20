@@ -1,3 +1,6 @@
+# EXP-0304 completed: SP2 / uniform INT16 Down
+Read docs/experiments/EXP-0304-RESULTS.md and MODULES.md. Both arms use identical nativeW4 pipeline and FP32 residual; only Down LUT/scale changed. Own full CPU reference exact,5short/10formal repeat10. No model-quality or baseline promotion. Device released. Ledger 889fc2ddeb2721ffc8357b42f5922eab06c0efaebdf364d6437c1bab182a33b4.
+
 # Active EXP-0304: Qwen0.6 SP2/INT16 comparison
 Read docs/experiments/EXP-0304.md. Fixed64+42, frozen native SP2 runtime, metadata-only INT16 arm, all physical/numerical gates. Llama3B companion runs sequentially. No measurements yet.
 
