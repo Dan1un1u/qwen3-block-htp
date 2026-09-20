@@ -5101,3 +5101,15 @@ experiments:
   - 03ce964adb2269fbfa63b36a1ce5405a4ed0dc8b
   - ed379e58295c4d6165f58b23e65890435f80aac6
   - 2b80267b2e086ffe01dfb180db096c284233a9fc
+- id: L32-0060
+  title: SP2 HVX shift-add full-model generalization
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/L32-0060.md
+  approval_ref: User2026-09-21 requests additional model configurations and complete
+    E2E after0059 component study
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
