@@ -1,3 +1,6 @@
+# Active EXP-0303: Qwen0.6 A16 B/C prefill
+Read docs/experiments/EXP-0303.md. Existing generic prefill optimization port only; original opt4, candidate7, native A unchanged. All other recipes/models frozen. No hardware yet.
+
 # Current closure: EXP-0302 Qwen1.7 C decode
 
 Read docs/experiments/EXP-0302-RESULTS.md and MODULES.md. Only Qwen1.7 A8/SP2 C741+3 optimized; unchanged native A64+42 companions formally measured. B, other models/recipes and D frozen. Candidate long option196511 vs original65439: exact byte centering + full16-row/staged K transpose, no quantizer/cache/HMX changes. Candidate1 staged16 alone not adopted. All exact layer/KV/head/poison and8MiB/no-intermediate-DDR checks pass. Five short +ten formal repeat10,14600formalRPCs. Same-length guards True; C/A prefill/decode gates True.

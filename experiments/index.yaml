@@ -29201,3 +29201,14 @@ experiments:
   source_commits:
   - c720a08d2a929313e0ef02c9cccda0e2499b8ab7
   - 43c075fd881236df9b5d1b0a641ca3bcd485703c
+- id: EXP-0303
+  title: Qwen0.6 generic A16 long-prefill completion
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: pending
+  record: docs/experiments/EXP-0303.md
+  approval_ref: 'User2026-09-20: complete Qwen0.6 W16A16/W4A16 B/C prefill.'
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0302-qwen17-c-decode
