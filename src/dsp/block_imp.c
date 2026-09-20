@@ -254,7 +254,6 @@ enum qbh_block_hvx_pool_job_kind {
     QBH_BLOCK_HVX_POOL_LONG_ATTENTION = 22,
     QBH_BLOCK_HVX_POOL_LONG_F16_SOFTMAX = 23,
     QBH_BLOCK_HVX_POOL_LONG_F16_NATIVE = 24,
-    QBH_BLOCK_HVX_POOL_LONG_F16_TAIL = 25,
 };
 
 enum qbh_block_u8_residual_kind {
@@ -4888,13 +4887,6 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
             }
         } else if (job->command_kind == QBH_BLOCK_HVX_POOL_LONG_F16_SOFTMAX) {
             qbh_hvx_long_softmax_f16_partition(pool->attention_scores,
-                pool->attention_probability,QBH_ATTENTION_Q_HEADS_PER_GROUP,
-                pool->long_rows,pool->long_padded,pool->long_past,
-                QBH_MODEL_ATTENTION_SCALE,
-                pool->long_f16_scratch+job->worker_index*832U,
-                job->worker_index,pool->active_worker_count+1U);
-        } else if (job->command_kind == QBH_BLOCK_HVX_POOL_LONG_F16_TAIL) {
-            qbh_hvx_long_softmax_f16_partition_tail(pool->attention_scores,
                 pool->attention_probability,QBH_ATTENTION_Q_HEADS_PER_GROUP,
                 pool->long_rows,pool->long_padded,pool->long_past,
                 QBH_MODEL_ATTENTION_SCALE,
@@ -17931,15 +17923,13 @@ static int qbh_scan_f16_attention(
                 pool->attention_probability=plane_c;
                 pool->long_rows=logical_rows;pool->long_padded=padded_tokens;
                 pool->long_past=past_tokens;pool->active_worker_count=contexts-1U;
-                const uint32_t tail_owned=(header->long_optimization&8U)!=0U;
-                if(!tail_owned) qbh_hvx_zero_aligned_bytes(plane_c,
+                qbh_hvx_zero_aligned_bytes(plane_c,
                     QBH_ATTENTION_Q_HEADS_PER_GROUP*64U*padded_tokens*sizeof(__fp16));
                 for(uint32_t i=0;i<contexts-1U;++i)
-                    pool->jobs[i].command_kind=tail_owned ? QBH_BLOCK_HVX_POOL_LONG_F16_TAIL : QBH_BLOCK_HVX_POOL_LONG_F16_SOFTMAX;
+                    pool->jobs[i].command_kind=QBH_BLOCK_HVX_POOL_LONG_F16_SOFTMAX;
                 asm volatile("barrier":::"memory");
                 for(uint32_t i=0;i<contexts-1U;++i)qurt_sem_up(&pool->command_ready[i]);
-                (tail_owned ? qbh_hvx_long_softmax_f16_partition_tail :
-                    qbh_hvx_long_softmax_f16_partition)(plane_a,plane_c,
+                qbh_hvx_long_softmax_f16_partition(plane_a,plane_c,
                     QBH_ATTENTION_Q_HEADS_PER_GROUP,logical_rows,padded_tokens,
                     past_tokens,QBH_MODEL_ATTENTION_SCALE,
                     pool->long_f16_scratch+(contexts-1U)*832U,contexts-1U,contexts);
