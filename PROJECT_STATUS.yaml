@@ -14212,5 +14212,5 @@ current_scope:
     experiment: EXP-0303
     execution_state: running
     device_owner: null
-    source_branch: codex/exp-0302-qwen17-c-decode
+    source_branch: codex/exp-0303-qwen06-a16-prefill
     protocol: docs/experiments/EXP-0303.md

@@ -29211,4 +29211,4 @@ experiments:
   approval_ref: 'User2026-09-20: complete Qwen0.6 W16A16/W4A16 B/C prefill.'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0302-qwen17-c-decode
+    source_branch: codex/exp-0303-qwen06-a16-prefill
