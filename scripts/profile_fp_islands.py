@@ -99,7 +99,7 @@ def reference():
     logits=ref.project(a,P,'generation_lm_head',151936,q['generation_final_norm_output'],q['generation_lm_head_output']);ids=logits.argmax(1)
     heads[str(i+1)]=[dict(token=int(t),code=int(logits[j,t])) for j,t in enumerate(ids)];save(hfile,heads[str(i+1)]);ref.weight.cache_clear()
   print('REFERENCE',i,flush=True)
- save(out/'summary.json',dict(hashes=hashes,heads=heads));save(R/'fixture.json',dict(prompt=prompt,fixed=fixed))
+ save(out/'summary-runtime-hash.json',dict(hashes=hashes,heads=heads));save(R/'fixture.json',dict(prompt=prompt,fixed=fixed))
 def execute(tag,repeat=1,audit=False,nl=28):
  from device_exp0284 import records
  from summarize_exp0217 import normalized
