@@ -2611,3 +2611,7 @@ Both EXP0284 and L32-0040 complete. All own-reference numerical/physical and ten
 
 # Current EXP-0299 — user-approved generic A16 ABC completion
 Read docs/experiments/EXP-0299.md. A8/SP2 and historical D frozen; no per-model specialization. Fixed fixtures only.
+
+## Current closure EXP-0305 — floating-intermediate motivation profiling
+
+User-authorized vector FP SwiGLU and FP Softmax diagnostic complete; L32-0063 companion also complete. No active experiment/device owner, no baseline/workbook or PPL/quality promotion. Read docs/experiments/EXP-0305-RESULTS.md and MODULES.md. Qwen28 all56 prefill/decode layer hashes exact, 1,835,008 component cases exact, zero timed intermediate DDR/spill, 8MiB grant. Five short and ten formal repeat10. Operator-boundary prefill Host75.9455ms; FP SwiGLU+fused QDQ29.2524%, FP Softmax+fused QDQ3.7626%, combined33.0150%. Llama matching diagnostic combined41.9700%. These are additive diagnostic-schedule fractions, not production-overlap critical-path shares; QDQ-only time is not separable. Failed attempts and owned repairs preserved; no numerical gates relaxed. Runtime12f672a, report/source closure 06165f3675d6903214d7473f60bc6fdd44ae3ba5. Recovered909 original deployment payloads exactly match EXP0284 retained hashes;32 retired historical chain arrays not required or used. Final evidence ledger 1dd97c67886be57fafba1da1d2878d4f16f7922bb82c0b267c1bde5182b18e47. Device is released; await next direction.

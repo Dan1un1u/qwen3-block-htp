@@ -29472,9 +29472,9 @@ experiments:
     report: docs/experiments/EXP-0304-RESULTS.md
 - id: EXP-0305
   title: Qwen1.7 floating intermediate motivation profiling
-  execution_state: running
-  evidence_validity: pending
-  local_gate: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: pending
   record: docs/experiments/EXP-0305.md
   approval_ref: User2026-09-21 approves real hardware FP nonlinear/QDQ motivation
@@ -29482,4 +29482,68 @@ experiments:
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0305-fp-islands
-    device_owner: EXP-0305
+    device_owner: null
+  results:
+    experiment: EXP-0305
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_role: independent numerical and physical diagnostic; no speed/PPL gate
+    adoption_status: pending
+    baseline_promoted: false
+    quality_claim: false
+    device_owner: null
+    source_branch: codex/exp-0305-fp-islands
+    source_head: 06165f3675d6903214d7473f60bc6fdd44ae3ba5
+    measured_source: 12f672a47c41448824e32373f645cdf67d7b0ab2
+    report: docs/experiments/EXP-0305-RESULTS.md
+    modules: docs/experiments/EXP-0305-MODULES.md
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0305
+    evidence_ledger_sha256: 1dd97c67886be57fafba1da1d2878d4f16f7922bb82c0b267c1bde5182b18e47
+    evidence_files: 732
+    evidence_bytes: 151588968
+    model: Qwen3-1.7B
+    shape:
+    - 64
+    - 1
+    schedule: operator-boundary diagnostic, native integer matrices and vector FP
+      intermediates
+    short_rounds: 5
+    formal_rounds: 10
+    repeat: 10
+    full_layer_hashes_exact: 56
+    component_code_pairs_exact: 1835008
+    peak_vtcm: 8365824
+    no_intermediate_ddr: true
+    prefill_host_us: 75945.53227000001
+    prefill_tps: 842.7092165536283
+    decode_one_step_tps: 22.979147048397007
+    nonlinear_qdq:
+      FP Softmax + QDQ:
+        us: 2857.5223958333336
+        percent: 3.7625944679330554
+        ci95_percent:
+        - 3.7600556475525955
+        - 3.7649631067353475
+      FP SwiGLU + QDQ:
+        us: 22215.904166666667
+        percent: 29.25241749269086
+        ci95_percent:
+        - 29.230960662252585
+        - 29.272811274826296
+    combined_percent: 33.015011960623916
+    interpretation: Combined FP arithmetic+fused QDQ; not QDQ-only cost or overlapped
+      production critical-path share
+    companion: L32-0063
+  source_commits:
+  - 9c3838e
+  - 76fac08
+  - d90a637
+  - efe22be
+  - 75b727a
+  - d35a470
+  - 397af73
+  - d104705
+  - 58c1681
+  - 12f672a
+  - 06165f3675d6903214d7473f60bc6fdd44ae3ba5
