@@ -126,7 +126,10 @@ def execute(arm,tag,repeats=1,audit=False):
     env.update(QBH_WIDE_SCORE='8',QBH_W4U8_DECODE_AV_REQUANT_ROWS='4')
     if audit:
         adb('shell','mkdir -p '+REMOTE+'/'+tag);env['QBH_REPLAY_DUMP_DIR']=REMOTE+'/'+tag
-    args[1]=REMOTE+'/'+arm;args[3]=str(repeats);args[8]='on' if audit else 'off'
+        env['QBH_DENSE_R3_AUDIT']='1'
+    # Replay owns independent output/KV checks; generic numerical-audit mode
+    # is forbidden with vertical slice. OFF-rotation chain capture is separate.
+    args[1]=REMOTE+'/'+arm;args[3]=str(repeats);args[8]='off'
     command='cd '+REMOTE+'/binaries && '+' '.join(k+'='+shlex.quote(v) for k,v in env.items())+' '+' '.join(shlex.quote(v) for v in args)
     save(dest/'protocol.json',dict(command=command,arm=arm,repeats=repeats,audit=audit,package_manifest_sha256=sha256(M/arm/'manifest.json'),build_seal_sha256=sha256(R/'build-seal.json')))
     run=adb('shell',command,check=False);(dest/'stdout.txt').write_text(run.stdout);(dest/'stderr.txt').write_text(run.stderr)
@@ -149,13 +152,13 @@ def execute(arm,tag,repeats=1,audit=False):
             golden='reference_w4u8_block_output_f32.bin' if step==0 else 'replay_decode_reference_00_f32.bin'
             actual=np.fromfile(dest/n,'<u4').reshape(64,2048)[:64 if step==0 else 1];expected=np.fromfile(M/arm/golden,'<u4').reshape(64,2048)[:len(actual)]
             assert np.array_equal(actual,expected),(tag,phase,'not bit exact',int(np.count_nonzero(actual!=expected)))
-            n=f'actual_replay_attention_audit_{step:02d}.bin';adb('pull',REMOTE+'/'+tag+'/'+n,windows(dest/n))
+            n=f'actual_replay_chain_{step:02d}.bin';adb('pull',REMOTE+'/'+tag+'/'+n,windows(dest/n))
     result=dict(arm=arm,profiles=profiles)
     save(dest/'result.json',result);print('PASS',tag,flush=True);return result
 
 def run():
     preflight()
-    for arm in ['control','folded']:execute(arm,'audit-'+arm,audit=True)
+    for arm in ['control','folded']:execute(arm,'audit-a02-'+arm,audit=True)
     for arm in ['control','folded']:execute(arm,'warmup-'+arm)
     for stage,rounds in [('short',5),('formal',10)]:
         pairs=[]
