@@ -1,0 +1,13 @@
+{
+  "status": "rejected_before_timing",
+  "reason": "Fold bypasses noncommuting original U8 saturation",
+  "candidate_trajectory_saturated": 1310,
+  "candidate_trajectory_elements": 6078464,
+  "first_layer_same_input_saturated": 6,
+  "own_reference_is_not_equivalence": true,
+  "remaining_arms": [
+    "F",
+    "I"
+  ],
+  "speed_claim": false
+}
