@@ -5199,3 +5199,15 @@ experiments:
   source_commits:
   - 5ec72782c410fbbe85ec5d92e031c8fc8fd14797
   - 4806798f979834f6913cd97f09c401e476ad709d
+- id: L32-0061
+  title: AV post-HMX requantization elimination by O scale folding
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: pending
+  record: docs/experiments/L32-0061.md
+  approval_ref: User2026-09-21 approves annotated AV saturation audit, O multiplier
+    folding and bounded configuration experiment
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
