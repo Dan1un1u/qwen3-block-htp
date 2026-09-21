@@ -21089,15 +21089,13 @@ static int qbh_scan_u8_attention(
                 kv_tiles, QBH_ATTENTION_HEAD_DIM_TILES) != 0) {
             return -1;
         }
-#ifdef QBH_LLAMA_3B
-        /* Only the live decode row is consumed by direct-native O. HVX granule=4 rows. */
-        if (logical_rows == 1U &&
-            header->w4u8_decode_av_requant_rows == QBH_BLOCK_W4U8_AV_REQUANT_DECODE_ROWS)
-            qbh_attention_u8_requant_av_rows(q_group, config, 4U);
-        else
-#endif
-        qbh_attention_u8_requant_av(q_group, config);
         header->u8_attention_av_hmx_ticks +=
+            HAP_perf_get_qtimer_count() - start;
+        /* L32-0065: every model gets the same live-row AV conversion.
+         * Retain the padding-poison audit and separate conversion telemetry. */
+        start = HAP_perf_get_qtimer_count();
+        qbh_scan_u8_requant_av(header, q_group, config, logical_rows);
+        header->u8_attention_av_requant_ticks +=
             HAP_perf_get_qtimer_count() - start;
         header->u8_attention_score_saturation_count +=
             telemetry.score_saturation_count;
