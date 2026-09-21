@@ -5366,3 +5366,17 @@ experiments:
     device_owner: null
   source_commits:
   - 5486a5f772641a6717fdc05cba9aae2d40c0837a
+- id: L32-0063
+  title: FP intermediate islands motivation profiling
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: pending
+  record: docs/experiments/L32-0063.md
+  approval_ref: User2026-09-21 authorizes real-device profiling of floating nonlinear
+    intermediates on current W4A8 runtime; implementation correctness only, no performance
+    or quality gate.
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+    device_owner: L32-0063
