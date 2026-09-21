@@ -1,3 +1,7 @@
+## 2026-09-22 completed paired integer/fusion ablations
+
+L32-0065 and EXP-0307 complete; both sources clean/synced at report closure and device released. Fixed M64+42, uniform INT16 Down, no rotation, FP32 residual/Norm, production pipeline. F/I prefill wall reductions: Llama33.019%,Qwen33.462%; decode0.305%/0.833%. Llama fair valid-row AV fusion adds0.408%decode gain; no confirmed prefill gain. Qwen unconditional AV fold fails original saturation semantics and is not timed/promoted as a valid comparison. Full own-reference checks pass for all eligible arms. Do not claim universal no-RQ, whole-block no-floating-point, or PPL acceptance. E/workbook untouched. Combined report: /mnt/d/llm_exp/results/paper-integer-fusion-20260922/REPORT.md. No further hardware work queued; await user discussion. See latest experiment record below and PROJECT_STATUS for hashes/results.
+
 # EXP-0306 completed: four-model Figure b archive
 Qwen0.6 full28 independent hash/head exact, component1835008 pairs exact,8MiB/no intermediateDDR. Five short/ten formal repeat10. Softmax+QDQ5.780899%, SwiGLU+QDQ22.548989%, combined28.329888% complete Host wall. Read EXP-0306-RESULTS/MODULES. Workbook G now includes Llama1B/Qwen1.7/Llama3B/Qwen0.6; A-F and Figure a untouched. No quality or baseline promotion. Device released, next307.
 

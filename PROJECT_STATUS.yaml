@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0307
+  active_experiment: null
   next_experiment_number: 308
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -2882,7 +2882,7 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: Qwen3_28layer_native_W4_SP2_M64_plus15_verified
-  last_completed_experiment: EXP-0300
+  last_completed_experiment: EXP-0307
   last_completed_source_commit: d2af6c7d3d5bccf467b5dd194be08c16ae6ed68c
   provisional_source_parent: EXP0268_diagnostic_U8_pipeline_closure_no_default_promotion
   device_execution_state: idle
@@ -12344,9 +12344,8 @@ current_scope:
     generalization: supplementary only; not rerun or included
     quality_claim: false
     baseline_promoted: false
-  next_action: Completed Qwen0.6 A16 B/C prefill bounded generic optimization and
-    formal measurements. Remaining gates explicit; no deeper specialization or baseline
-    promotion inferred. Other rows and D frozen.
+  next_action: Discuss complete ablation results and conditional AV scale propagation;
+    no queued device work; no automatic baseline promotion
   latest_f16_baseline_synthesis:
     report: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/REPORT.md
     a16_discussion: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/A16_DOWN_DISCUSSION.md
@@ -12767,7 +12766,7 @@ current_scope:
       exceedsuint32 shared-offset ABI
     named_dataset_measurements_completed: false
     baseline_promotion: No additional automatic promotion
-  stage: generic_a16_long_optimization_complete
+  stage: paper_integer_fusion_ablations_completed
   latest_long_prefill_migration:
     experiment: EXP-0296
     execution_state: completed
@@ -14551,9 +14550,76 @@ current_scope:
       critical path
     workbook_sha256: 0fafa21de314c24ce60120b64c15b587dd207936543e90599397200aabaa25cd
     source_head: 4408dc37e3c766f5c3d3b7dc1bd28ab47edfaf04
-  integer_fusion_ablation:
+  integer_fusion_ablation: &id006
     experiment: EXP-0307
-    execution_state: running
-    device_owner: EXP-0307
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    gate_role: Own-contract numerical/physical and paired measurement complete; Qwen
+      unconditional AV fold rejected for active saturation
+    adoption_status: pending
+    device_owner: null
+    shape:
+    - 64
+    - 42
+    short_rounds: 5
+    formal_rounds: 10
+    repeat: 10
     baseline_promoted: false
     quality_claim: false
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0307
+    report: docs/experiments/EXP-0307-RESULTS.md
+    combined_report: /mnt/d/llm_exp/results/paper-integer-fusion-20260922/REPORT.md
+    speed:
+      prefill:
+        F:
+          wall_ms: 52.35247144
+          tps: 1222.482878833122
+        I:
+          wall_ms: 34.83426409
+          tps: 1837.2714817412411
+        F->I:
+          wall_ratio: 0.6653795538558819
+          ci95:
+          - 0.6639885208265713
+          - 0.6664458874432195
+          wall_reduction_pct: 33.46204461441181
+      decode:
+        F:
+          wall_ms: 897.0850635
+          tps: 46.81830264360432
+        I:
+          wall_ms: 889.6102974700001
+          tps: 47.21168372201351
+        F->I:
+          wall_ratio: 0.9916677176623173
+          ci95:
+          - 0.98874271583659
+          - 0.9938927614540136
+          wall_reduction_pct: 0.8332282337682684
+    postflight:
+      packages_exact: true
+      binaries_exact: true
+      full_hashes_per_arm: 1204
+      formal_rounds: 10
+      short_rounds: 5
+      repeat: 10
+      formal_invocations: 8600
+      all_timed_invocations: 12900
+      M_rejected_before_timing: true
+    source_closure: 8e6e015a66ccfafb44ba3d17052b85a3928d2501
+    evidence_ledger_sha256: 50364ace033f4fca97aad525c8c07f6031dc6c5a609c32043a23b23e26a12179
+    files: 1666
+    bytes: 1240136222
+    rejected_candidate:
+      status: rejected_before_timing
+      reason: Fold bypasses noncommuting original U8 saturation
+      candidate_trajectory_saturated: 1310
+      candidate_trajectory_elements: 6078464
+      first_layer_same_input_saturated: 6
+      own_reference_is_not_equivalence: true
+      remaining_arms:
+      - F
+      - I
+      speed_claim: false
+  integer_fusion_ablation_result: *id006

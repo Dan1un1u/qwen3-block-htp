@@ -29613,9 +29613,9 @@ experiments:
   - 4408dc37e3c766f5c3d3b7dc1bd28ab47edfaf04
 - id: EXP-0307
   title: Qwen1.7 matched integer nonlinear and AV scale folding ablations
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
   adoption_status: pending
   approval_ref: 'User2026-09-22: finish complete ablations without milestone stop;
     E excluded'
@@ -29623,4 +29623,78 @@ experiments:
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0307-integer-fusion-ablation
-    device_owner: EXP-0307
+    device_owner: null
+  results:
+    experiment: EXP-0307
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    gate_role: Own-contract numerical/physical and paired measurement complete; Qwen
+      unconditional AV fold rejected for active saturation
+    adoption_status: pending
+    device_owner: null
+    shape:
+    - 64
+    - 42
+    short_rounds: 5
+    formal_rounds: 10
+    repeat: 10
+    baseline_promoted: false
+    quality_claim: false
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0307
+    report: docs/experiments/EXP-0307-RESULTS.md
+    combined_report: /mnt/d/llm_exp/results/paper-integer-fusion-20260922/REPORT.md
+    speed:
+      prefill:
+        F:
+          wall_ms: 52.35247144
+          tps: 1222.482878833122
+        I:
+          wall_ms: 34.83426409
+          tps: 1837.2714817412411
+        F->I:
+          wall_ratio: 0.6653795538558819
+          ci95:
+          - 0.6639885208265713
+          - 0.6664458874432195
+          wall_reduction_pct: 33.46204461441181
+      decode:
+        F:
+          wall_ms: 897.0850635
+          tps: 46.81830264360432
+        I:
+          wall_ms: 889.6102974700001
+          tps: 47.21168372201351
+        F->I:
+          wall_ratio: 0.9916677176623173
+          ci95:
+          - 0.98874271583659
+          - 0.9938927614540136
+          wall_reduction_pct: 0.8332282337682684
+    postflight:
+      packages_exact: true
+      binaries_exact: true
+      full_hashes_per_arm: 1204
+      formal_rounds: 10
+      short_rounds: 5
+      repeat: 10
+      formal_invocations: 8600
+      all_timed_invocations: 12900
+      M_rejected_before_timing: true
+    source_closure: 8e6e015a66ccfafb44ba3d17052b85a3928d2501
+    evidence_ledger_sha256: 50364ace033f4fca97aad525c8c07f6031dc6c5a609c32043a23b23e26a12179
+    files: 1666
+    bytes: 1240136222
+    rejected_candidate:
+      status: rejected_before_timing
+      reason: Fold bypasses noncommuting original U8 saturation
+      candidate_trajectory_saturated: 1310
+      candidate_trajectory_elements: 6078464
+      first_layer_same_input_saturated: 6
+      own_reference_is_not_equivalence: true
+      remaining_arms:
+      - F
+      - I
+      speed_claim: false
+  source_commits:
+  - 8e6e015a66ccfafb44ba3d17052b85a3928d2501
