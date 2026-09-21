@@ -64,9 +64,12 @@ def prepare():
  for arm in ['control','folded']:
   p=M/arm;save(p/'manifest.json',dict(experiment='EXP-0307',arm=arm,parent_manifest_sha256=sha256(PARENT/'manifest.json'),files={str(f.relative_to(p)):dict(bytes=f.stat().st_size,sha256=sha256(f)) for f in p.rglob('*') if f.is_file() and f.name!='manifest.json'}))
  save(R/'folding-contracts.json',folds)
- ids=read(R.parent/'exp0284/fixed_tokens.json')['ids'];assert len(ids)>=43
- save(FIXTURE,dict(prompt_ids=np.fromfile(PARENT/'generation_prompt_token_ids_u32.bin','<u4').tolist(),fixed=ids))
+ fixture()
  print('PREPARED',len(old['files']),'payloads',flush=True)
+def fixture():
+ preflight();ids=read(R.parent/'exp0284/fixed_tokens.json')['ids'];n=len(ids);assert n>0
+ ids=ids+[ids[-1]]*max(0,64-n)
+ save(FIXTURE,dict(prompt_ids=np.fromfile(PARENT/'generation_prompt_token_ids_u32.bin','<u4').tolist(),fixed=ids,original_token_count=n,extension='repeat last frozen token to64; fixed before any timing; not generation quality'))
 def deploy():
  preflight();parent=read(PARENT/'manifest.json')['files'];parentremote='/data/local/tmp/qwen3-block-htp/exp0284-models/full-int16'
  for arm in ['control','folded']:
