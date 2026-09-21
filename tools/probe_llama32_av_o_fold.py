@@ -188,5 +188,41 @@ def run():
         save(R/(stage+'-summary.json'),summary)
         print(stage,json.dumps(summary),flush=True)
 
+def verify_captures():
+    """Audit actual AV carriers, output rounding, and captured FP32 residuals."""
+    from report_llama32_pipeline_profile import MODULES
+    preflight();report={};carrier_bytes=64*40*64*2
+    base_bytes=2*carrier_bytes+64*40*64;slot2=base_bytes+2*carrier_bytes
+    control_q=load_qparams_bin(M/'control/layer0/qparams_u8.bin')
+    m=configs(M/'control/layer0')[0][-1];zp=control_q['attention_concat']['zero_point']
+    for step,phase in enumerate(['prefill','decode']):
+        rows=64 if step==0 else 1;avs={};ys={}
+        for arm in ['control','folded']:
+            d=R/('audit-a02-'+arm)
+            raw=np.fromfile(d/f'actual_replay_chain_{step:02d}.bin','u1',count=131072,offset=slot2)
+            # Consumer-native [N32 tiles, M64, N32] layout.
+            avs[arm]=raw.reshape(64,64,32).transpose(1,0,2).reshape(64,2048)[:rows]
+            assert np.array_equal(avs[arm],np.load(M/arm/(phase+'_attention.npy')))
+            ys[arm]=np.fromfile(d/f'actual_replay_output_{step:02d}_f32.bin','<f4').reshape(64,2048)[:rows]
+        lifted=(avs['folded'].astype('i4')-128)*m+zp
+        assert np.array_equal(np.clip(lifted,0,255),avs['control'])
+        dy=ys['folded'].astype('f8')-ys['control'].astype('f8')
+        report[phase]=dict(actual_av_elements=lifted.size,actual_av_reference_bit_exact=True,actual_saturated=int(np.count_nonzero((lifted<0)|(lifted>255))),actual_av_transform_exact=True,final_block_changed=int(np.count_nonzero(dy)),final_block_max_abs=float(np.max(np.abs(dy))),final_block_relative_l2=float(np.linalg.norm(dy)/max(np.linalg.norm(ys['control']),1e-30)))
+    measured=0;all_profiles=0;peak=0;ledgers=[]
+    for stage in ['short','formal']:
+        for p in sorted(R.glob(stage+'-*/records.json')):
+            profiles=[d for d in json.loads(p.read_text()) if d.get('record')=='replay_profile']
+            assert len(profiles)==22
+            for d in profiles:
+                total=sum(sum(d[k] for k in fields) for _,fields in MODULES)-d['generation_final_norm_ticks']
+                # MODULES includes the final norm separately from LM-head.
+                assert total==d['invocation_ticks'],(p,total,d['invocation_ticks'])
+                assert d['host_wall_ns']/1000>=total/19.2
+                assert d['output_mismatches']==d['cache_mismatches']==d['intermediate_ddr_read_bytes']==d['intermediate_ddr_write_bytes']==d['intermediate_spill_fill_count']==0
+                peak=max(peak,d['vtcm_peak_plan_bytes']);all_profiles+=1
+            measured+=len(profiles)-2
+    save(R/'hardware-capture-audit.json',dict(phases=report,measured_token_boundaries=measured,including_priming_boundaries=all_profiles,peak_plan_bytes=peak,additive_ledgers_exact=True,decode_attribution_note='head64 short decode calls full-M64 AV RQ; cost is included in av_hmx_ticks. This probe removes that existing work, not a matched row4-only RQ control.',model_quality_evaluated=False))
+    print(json.dumps(report),flush=True)
+
 if __name__=='__main__':
-    ap=argparse.ArgumentParser();ap.add_argument('action',choices=['prepare','deploy','run']);a=ap.parse_args();globals()[a.action]()
+    ap=argparse.ArgumentParser();ap.add_argument('action',choices=['prepare','deploy','run','verify_captures']);a=ap.parse_args();globals()[a.action]()
