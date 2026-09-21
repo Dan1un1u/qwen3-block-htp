@@ -5368,9 +5368,9 @@ experiments:
   - 5486a5f772641a6717fdc05cba9aae2d40c0837a
 - id: L32-0063
   title: FP intermediate islands motivation profiling
-  execution_state: running
-  evidence_validity: pending
-  local_gate: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: pending
   record: docs/experiments/L32-0063.md
   approval_ref: User2026-09-21 authorizes real-device profiling of floating nonlinear
@@ -5379,4 +5379,41 @@ experiments:
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
-    device_owner: L32-0063
+    device_owner: null
+  results:
+    experiment: L32-0063
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: own arithmetic and physical contract; no performance or model-quality
+      threshold
+    adoption_status: pending
+    source_closure: 14d7858900244f18ac475c27df2fd8fa134ef956
+    source_head: 2ac474ac485d16e33bb913493c3c4aadbf00321e
+    model: Llama3.2-1B-Instruct
+    shape: 64 prefill plus one fixed-token decode
+    component_exact_cases: 1048576
+    full_reference_exact: true
+    physical_pass: true
+    fp_softmax_qdq_percent: 6.553084128434912
+    fp_swiglu_qdq_percent: 35.416892313303556
+    fp_nonlinear_qdq_percent: 41.96997644173847
+    attribution_scope: explicit operator-boundary diagnostic, not production critical
+      path
+    qdq_separable: false
+    short_rounds: 5
+    formal_rounds: 10
+    repeat: 10
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0063
+    evidence_ledger_sha256: 0cf8040b765dea06aca4a481cebf28ab4aceb715f48b972c16f590a077a2ff1f
+    evidence_files: 671
+    report: docs/experiments/L32-0063-RESULTS.md
+    modules: docs/experiments/L32-0063-MODULES.md
+    device_owner: null
+    quality_claim: false
+    baseline_promoted: false
+  source_commits:
+  - 993ba6d
+  - 95e0ee3a630bdb87032cd22b2bf4973286ac03ce
+  - 2ac474ac485d16e33bb913493c3c4aadbf00321e
+  - 14d7858900244f18ac475c27df2fd8fa134ef956
