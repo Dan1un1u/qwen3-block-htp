@@ -501,6 +501,7 @@ struct qbh_block_w4f16_pool {
     float attention_gqa_qk_max_abs[QBH_BLOCK_HEADS];
     volatile uint32_t next_attention_task;
     uint32_t attention_task_base;
+    uint32_t fp_island_phase; /* L32-0063 diagnostic phase; no public ABI. */
     uint32_t attention_task_count;
     volatile uint32_t next_attention_softmax_task;
     volatile uint32_t next_attention_av_task;
@@ -14716,7 +14717,11 @@ static void qbh_attention_u8_pool_run_tasks(
         return;
     }
 
-    job->u8_attention_probability_row_sum_min = UINT32_MAX;
+    uint32_t split = 0U;
+#ifdef QBH_FP_ISLANDS
+    split = (header->paper_pipeline_disable & 1U) != 0U;
+#endif
+    if (!split) job->u8_attention_probability_row_sum_min = UINT32_MAX;
     for (;;) {
         const uint32_t group =
             qbh_atomic_fetch_increment(&pool->next_attention_task);
@@ -14750,9 +14755,9 @@ static void qbh_attention_u8_pool_run_tasks(
             break;
         }
         scratch = buffers->attention_concat +
-            (size_t)(qbh_attention_u8_qkv_overlap_enabled(
+            (size_t)(split ? group % header->attention_hvx_contexts : (qbh_attention_u8_qkv_overlap_enabled(
                          header->attention_pipeline_mode)
-                         ? group : job->worker_index) *
+                         ? group : job->worker_index)) *
                 QBH_ATTN_U8_GROUP_SCRATCH_BYTES;
         k_weight = (int8_t *)(
             scratch + QBH_ATTN_U8_K_WEIGHT_OFFSET);
@@ -14788,6 +14793,7 @@ static void qbh_attention_u8_pool_run_tasks(
         memset(&telemetry, 0, sizeof(telemetry));
         telemetry_ptr = header->numerical_audit_enabled != 0U
             ? &telemetry : NULL;
+        if (!split || pool->fp_island_phase == 0U) {
 
         if (!qbh_attention_u8_qkv_overlap_enabled(
                 header->attention_pipeline_mode)) {
@@ -14960,6 +14966,8 @@ static void qbh_attention_u8_pool_run_tasks(
                 HAP_perf_get_qtimer_count() - start;
         }
 
+        } /* preparation and QK phase */
+        if (!split || pool->fp_island_phase == 1U) {
         start = HAP_perf_get_qtimer_count();
         if(header->wide_score_mode==7U) {
             qbh_attention_fp32_softmax_native(score_group,probability_group,
@@ -14994,6 +15002,8 @@ static void qbh_attention_u8_pool_run_tasks(
         job->u8_attention_softmax_ticks +=
             HAP_perf_get_qtimer_count() - start;
 
+        } /* FP Softmax and QDQ phase */
+        if (!split || pool->fp_island_phase == 2U) {
         if (qbh_attention_u8_gqa_hmx_batch_enabled(
                 header->attention_pipeline_mode)) {
             if (qbh_attention_u8_pool_submit(
@@ -15058,6 +15068,7 @@ static void qbh_attention_u8_pool_run_tasks(
         job->u8_attention_av_requant_ticks +=
             HAP_perf_get_qtimer_count() - start;
 
+        } /* AV and output conversion phase */
         if (telemetry_ptr != NULL) {
             job->u8_attention_score_saturation_count +=
                 telemetry.score_saturation_count;
@@ -15076,7 +15087,8 @@ static void qbh_attention_u8_pool_run_tasks(
                     telemetry.probability_row_sum_max;
             }
         }
-        ++job->u8_attention_group_count;
+        if (!split || pool->fp_island_phase == 2U)
+            ++job->u8_attention_group_count;
     }
 }
 
@@ -15143,7 +15155,15 @@ static int qbh_hvx_pool_u8_attention(
         header->attention_hvx_contexts - 1U > pool->worker_count) {
         return -1;
     }
+    uint32_t split = 0U;
+#ifdef QBH_FP_ISLANDS
+    split = (header->paper_pipeline_disable & 1U) != 0U;
+    if (split && (header->wide_score_mode != 7U ||
+        qbh_attention_u8_dependency_stream_enabled(header->attention_pipeline_mode)))
+        return -1;
+#endif
     memset(&main_job, 0, sizeof(main_job));
+    main_job.u8_attention_probability_row_sum_min = UINT32_MAX;
     main_job.worker_index = header->attention_hvx_contexts - 1U;
     pool->attention_header = header;
     pool->attention_buffers = buffers;
@@ -15191,16 +15211,36 @@ static int qbh_hvx_pool_u8_attention(
         job->command_kind =
             QBH_BLOCK_HVX_POOL_U8_GQA_ATTENTION;
     }
-    asm volatile("barrier" ::: "memory");
-    for (uint32_t worker_index = 0U;
-         worker_index < pool->active_worker_count; ++worker_index) {
-        (void)qurt_sem_up(&pool->command_ready[worker_index]);
+    /* Keep vector parallelism within each phase and reuse the existing four
+     * scratch slots. Only the diagnostic arm adds operator boundaries. */
+    const uint32_t batches = split ?
+        (QBH_BLOCK_KV_HEADS + header->attention_hvx_contexts - 1U) /
+            header->attention_hvx_contexts : 1U;
+    for (uint32_t batch = 0U; batch < batches; ++batch) {
+      for (uint32_t phase = 0U; phase < (split ? 3U : 1U); ++phase) {
+        pool->fp_island_phase = phase;
+        if (split) {
+            pool->next_attention_task = batch * header->attention_hvx_contexts;
+            pool->attention_task_count = pool->next_attention_task + header->attention_hvx_contexts;
+            if (pool->attention_task_count > QBH_BLOCK_KV_HEADS)
+                pool->attention_task_count = QBH_BLOCK_KV_HEADS;
+        }
+        for (uint32_t w = 0U; w < pool->active_worker_count; ++w)
+            pool->jobs[w].command_kind = QBH_BLOCK_HVX_POOL_U8_GQA_ATTENTION;
+        const uint64_t phase_start = HAP_perf_get_qtimer_count();
+        asm volatile("barrier" ::: "memory");
+        for (uint32_t w = 0U; w < pool->active_worker_count; ++w)
+            (void)qurt_sem_up(&pool->command_ready[w]);
+        qbh_attention_u8_pool_run_tasks(pool, &main_job);
+        wait_start = HAP_perf_get_qtimer_count();
+        qbh_w4f16_pool_wait(pool);
+        main_job.u8_attention_hmx_queue_wait_ticks +=
+            HAP_perf_get_qtimer_count() - wait_start;
+        if (split && phase == 1U)
+            header->attention_softmax_ticks += HAP_perf_get_qtimer_count() - phase_start;
+        if (pool->attention_gqa_abort) return -1;
+      }
     }
-    qbh_attention_u8_pool_run_tasks(pool, &main_job);
-    wait_start = HAP_perf_get_qtimer_count();
-    qbh_w4f16_pool_wait(pool);
-    main_job.u8_attention_hmx_queue_wait_ticks +=
-        HAP_perf_get_qtimer_count() - wait_start;
 
     qbh_attention_u8_accumulate_job(header, &main_job);
     completed_groups = main_job.u8_attention_group_count;

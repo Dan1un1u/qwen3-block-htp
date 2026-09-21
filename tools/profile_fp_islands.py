@@ -41,7 +41,7 @@ def fp_table(q):
 def stage():
  preflight();seal=read(ROOT/'build/llama-build-seal.json');assert seal['fp_islands']
  assert seal['source_head']==subprocess.check_output(['git','-C',str(ROOT),'rev-parse','HEAD'],text=True).strip()
- d=R/f'binaries-{seal["layer_count"]}';d.mkdir(exist_ok=False);remote=REMOTE+'/'+d.name
+ d=R/f'binaries-{seal["layer_count"]}-phases';d.mkdir(exist_ok=False);remote=REMOTE+'/'+d.name
  adb('shell','mkdir -p '+remote)
  for n,h in seal['files'].items():
   p=Path(n);assert sha256(p)==h;shutil.copy2(p,d/p.name);adb('push',windows(p),remote+'/'+p.name)
@@ -99,15 +99,15 @@ def execute(tag,repeat=1,audit=False,nl=16,serial=False):
  if (d/'validated.json').exists():return read(d/'validated.json')
  base=read(BASE);prefix,args=base['command'].split(' ./qwen3_block_cli ',1)
  env=dict(t.split('=',1) for t in shlex.split(prefix.split(' && ')[1]));argv=shlex.split(args)
- binary=REMOTE+f'/binaries-{nl}';argv[0]='/data/local/tmp/llama32-htp/l32-0062/control'
+ suffix='-phases' if serial else '';binary=REMOTE+f'/binaries-{nl}'+suffix;argv[0]='/data/local/tmp/llama32-htp/l32-0062/control'
  for k in ['QBH_EVAL_FILE','QBH_GENERATION_AUDIT_DIR','QBH_GENERATION_BOUNDARY_AUDIT']:env.pop(k,None)
- env.update(LD_LIBRARY_PATH=binary,DSP_LIBRARY_PATH=binary,ADSP_LIBRARY_PATH=binary,QBH_GENERATION_STEPS='2',QBH_GENERATION_EXPECTED_TOKENS='64',QBH_GENERATION_SEQUENCE='9',QBH_LLAMA_SP2='8',QBH_SP2_DOWN_HVX='0',QBH_WIDE_SCORE='7',QBH_PAPER_FORMAT_DISABLE='0',QBH_PAPER_PIPELINE_DISABLE='2' if serial else '0',QBH_DENSE_R3='0',QBH_DENSE_R4='0',QBH_W4U8_DECODE_AV_REQUANT_ROWS='4')
+ env.update(LD_LIBRARY_PATH=binary,DSP_LIBRARY_PATH=binary,ADSP_LIBRARY_PATH=binary,QBH_GENERATION_STEPS='2',QBH_GENERATION_EXPECTED_TOKENS='64',QBH_GENERATION_SEQUENCE='9',QBH_LLAMA_SP2='8',QBH_SP2_DOWN_HVX='0',QBH_WIDE_SCORE='7',QBH_PAPER_FORMAT_DISABLE='0',QBH_PAPER_PIPELINE_DISABLE='3' if serial else '0',QBH_DENSE_R3='0',QBH_DENSE_R4='0',QBH_W4U8_DECODE_AV_REQUANT_ROWS='4')
  f=read(FIXTURE);words=[0x51424556,2,repeat,69]
  for j in range(repeat):words += [j,3,2]+f['prompt_ids'][:64]+f['fixed'][:2]
  ef=d/'trajectory.bin';ef.write_bytes(struct.pack('<'+'I'*len(words),*words));er=binary+'/'+tag+'-trajectory.bin';env['QBH_EVAL_FILE']=er
  if audit:env.update(QBH_GENERATION_BOUNDARY_AUDIT='1',QBH_GENERATION_AUDIT_DIR=REMOTE+'/'+tag)
  cmd='cd '+binary+' && '+' '.join(k+'='+shlex.quote(v) for k,v in env.items())+' ./qwen3_block_cli '+' '.join(shlex.quote(v) for v in argv)
- if not (d/'protocol.json').exists():save(d/'protocol.json',dict(command=cmd,layers=nl,repeat=repeat,audit=audit,serial=serial,seal_sha256=sha256(R/f'binaries-{nl}/seal.json'),package_manifest_sha256=sha256(P/'manifest.json')))
+ if not (d/'protocol.json').exists():save(d/'protocol.json',dict(command=cmd,layers=nl,repeat=repeat,audit=audit,serial=serial,seal_sha256=sha256(R/(f'binaries-{nl}'+suffix)/'seal.json'),package_manifest_sha256=sha256(P/'manifest.json')))
  if not (d/'exit.json').exists():
   adb('push',windows(ef),er)
   if audit:adb('shell','mkdir -p '+env['QBH_GENERATION_AUDIT_DIR'])
@@ -137,6 +137,11 @@ def run():
  execute('warmup')
  for kind,n in [('short',5),('formal',10)]:
   for i in range(n):execute(f'{kind}-{i:02d}',repeat=10)
+def phases():
+ preflight();execute('phases-audit16',audit=True,serial=True)
+ execute('phases-warmup',serial=True)
+ for kind,n in [('short',5),('formal',10)]:
+  for i in range(n):execute(f'phases-{kind}-{i:02d}',repeat=10,serial=True)
 if __name__=='__main__':
  a=argparse.ArgumentParser();a.add_argument('action');a.add_argument('--layers',type=int,default=16);a.add_argument('--tag',default='audit');args=a.parse_args()
  if args.action=='audit':preflight();execute(args.tag,nl=args.layers,audit=True)
