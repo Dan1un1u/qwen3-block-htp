@@ -11,6 +11,10 @@ if(QBH_MODEL_LLAMA32)
     add_compile_definitions(QBH_MODEL_LLAMA32=1 QBH_LLAMA_LAYER_COUNT=${QBH_LLAMA_LAYER_COUNT})
 endif()
 
+option(QBH_FP_ISLANDS "FP vector intermediate diagnostic" OFF)
+if(QBH_FP_ISLANDS)
+  add_compile_definitions(QBH_FP_ISLANDS=1)
+endif()
 option(QBH_PAPER_TRACE "Untimed software pipeline event tracing" OFF)
 if(QBH_PAPER_TRACE)
     add_compile_definitions(QBH_PAPER_TRACE=1)
@@ -166,6 +170,7 @@ else()
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/hvx_u8_ops
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/attention_u8_core
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/paper_softmax_fp32.c
+    src/dsp/fp_island_swiglu.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/attention_imp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/block_imp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/rpcmem2_imp

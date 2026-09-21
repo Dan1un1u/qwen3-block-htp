@@ -1,3 +1,4 @@
+#include "fp_island_swiglu.h"
 /* L32-0008 isolated component, never selected by the model runtime. */
 #include <AEEStdErr.h>
 #include <HAP_compute_res.h>
@@ -112,11 +113,31 @@ static int paper_softmax_probe(uint8_t *shared,uint32_t bytes,uint8_t *vtcm,uint
     memcpy(shared+h->sum_offset,prob,sz);memcpy(shared+h->output_offset,dump,4*sz);
     h->vtcm_bytes=vbytes;h->peak_bytes=6*sz+2048U;h->status=0;return AEE_SUCCESS;
 }
+static int fp63_audit(uint8_t *shared,uint32_t bytes,uint8_t *vtcm,uint32_t vbytes) {
+ struct lsp2_header *h=(struct lsp2_header *)shared;
+ if(h->magic!=LSP2_MAGIC || h->abi!=1U || h->bytes!=bytes || vbytes!=8388608U ||
+    !valid(h->input_offset,20U,bytes) || !valid(h->output_offset,131072U,bytes))return AEE_EBADPARM;
+ uint8_t *g=vtcm,*u=g+65536U,*lo=u+65536U,*hi=lo+65536U;
+ float params[5];memcpy(params,shared+h->input_offset,20U);
+ for(uint32_t i=0;i<65536U;i++){g[i]=i>>8;u[i]=i&255U;}
+ uint64_t start=HAP_perf_get_qtimer_count();
+ qbh_fp_island_swiglu(g,u,lo,hi,65536U,params);
+ h->total_ticks=HAP_perf_get_qtimer_count()-start;
+ memcpy(shared+h->output_offset,lo,131072U);
+ h->status=0;h->vtcm_bytes=vbytes;h->peak_bytes=262144U;return AEE_SUCCESS;
+}
+
 int lsp2_run(int fd,uint32_t bytes,uint8_t *vtcm,uint32_t vbytes,uint32_t ctx){
  uint8_t *shared=0;int ret=HAP_mmap_get(fd,(void**)&shared,0);if(ret||!shared)return AEE_EFAILED;
  ret=qurt_mem_cache_clean((qurt_addr_t)shared,bytes,QURT_MEM_CACHE_INVALIDATE,QURT_MEM_DCACHE);
  if(ret){HAP_mmap_put(fd);return AEE_EFAILED;}
  struct lsp2_header *h=(struct lsp2_header*)shared;
+ if(bytes>=128U && h->mode==15U) {
+  ret=fp63_audit(shared,bytes,vtcm,vbytes);
+  int e=qurt_mem_cache_clean((qurt_addr_t)shared,bytes,QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE);
+  HAP_mmap_put(fd);return ret?ret:(e?AEE_EFAILED:AEE_SUCCESS);
+ }
+
  if(bytes>=128U && (h->mode==5U || h->mode==6U)) {
    ret=paper_softmax_probe(shared,bytes,vtcm,vbytes);
    int e=qurt_mem_cache_clean((qurt_addr_t)shared,bytes,QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE);
