@@ -118,30 +118,40 @@ def deploy():
     save(R/'build-seal.json',seal)
 
 def execute(arm,tag,repeats=1,audit=False):
-    dest=R/tag;dest.mkdir(exist_ok=False)
+    dest=R/tag
+    if (dest/'result.json').exists():return json.loads((dest/'result.json').read_text())
+    dest.mkdir(exist_ok=True)
     old=json.loads(Path('/mnt/d/llm_exp/results/llama32-htp/l32-0018/layer0-a01/protocol.json').read_text())['command']
     toks=shlex.split(old.split(' && ',1)[1]);index=toks.index('./qwen3_block_cli');env=dict(t.split('=',1) for t in toks[:index]);args=toks[index:]
     for k in ['LD_LIBRARY_PATH','DSP_LIBRARY_PATH','ADSP_LIBRARY_PATH']:env[k]=REMOTE+'/binaries'
     env.pop('QBH_REPLAY_DUMP_DIR',None)
     env.update(QBH_WIDE_SCORE='8',QBH_W4U8_DECODE_AV_REQUANT_ROWS='4')
+    if repeats>1:env['QBH_LLAMA_REPLAY_REPEATS']=str(repeats+1)
     if audit:
         adb('shell','mkdir -p '+REMOTE+'/'+tag);env['QBH_REPLAY_DUMP_DIR']=REMOTE+'/'+tag
         env['QBH_DENSE_R3_AUDIT']='1'
     # Replay owns independent output/KV checks; generic numerical-audit mode
     # is forbidden with vertical slice. OFF-rotation chain capture is separate.
-    args[1]=REMOTE+'/'+arm;args[3]=str(repeats);args[8]='off'
+    args[1]=REMOTE+'/'+arm;args[3]='1';args[8]='off'
     command='cd '+REMOTE+'/binaries && '+' '.join(k+'='+shlex.quote(v) for k,v in env.items())+' '+' '.join(shlex.quote(v) for v in args)
-    save(dest/'protocol.json',dict(command=command,arm=arm,repeats=repeats,audit=audit,package_manifest_sha256=sha256(M/arm/'manifest.json'),build_seal_sha256=sha256(R/'build-seal.json')))
-    run=adb('shell',command,check=False);(dest/'stdout.txt').write_text(run.stdout);(dest/'stderr.txt').write_text(run.stderr)
+    protocol=dict(command=command,arm=arm,repeats=repeats,audit=audit,package_manifest_sha256=sha256(M/arm/'manifest.json'),build_seal_sha256=sha256(R/'build-seal.json'))
+    if (dest/'protocol.json').exists():assert json.loads((dest/'protocol.json').read_text())==protocol
+    else:save(dest/'protocol.json',protocol)
+    if (dest/'stdout.txt').exists():
+        if (dest/'process.json').exists():assert json.loads((dest/'process.json').read_text())['returncode']==0
+        run=subprocess.CompletedProcess(command,0,(dest/'stdout.txt').read_text(),(dest/'stderr.txt').read_text())
+    else:
+        run=adb('shell',command,check=False);(dest/'stdout.txt').write_text(run.stdout);(dest/'stderr.txt').write_text(run.stderr)
+        save(dest/'process.json',dict(returncode=run.returncode))
     records=[]
     for line in run.stdout.splitlines():
         try: records.append(json.loads(re.sub(r':-?(?:nan|inf)([,}])',r':null\1',line)))
         except ValueError:pass
-    save(dest/'records.json',records)
+    if not (dest/'records.json').exists():save(dest/'records.json',records)
     if run.returncode:print(run.stdout[-2500:]+run.stderr[-1500:],flush=True)
     assert run.returncode==0,(tag,run.returncode)
-    profiles=[p for p in records if 'replay_step' in p and 'host_wall_ns' in p]
-    assert len(profiles)==2*repeats,(tag,len(profiles))
+    profiles=[p for p in records if p.get('record')=='replay_profile']
+    assert len(profiles)==2*(repeats+1 if repeats>1 else 1),(tag,len(profiles))
     for p in profiles:
         for k in ['output_mismatches','cache_mismatches','cache_prefix_mismatches','cache_structure_mismatches','intermediate_ddr_read_bytes','intermediate_ddr_write_bytes','intermediate_spill_fill_count']:
             assert p[k]==0,(tag,k,p[k])
@@ -153,6 +163,7 @@ def execute(arm,tag,repeats=1,audit=False):
             actual=np.fromfile(dest/n,'<u4').reshape(64,2048)[:64 if step==0 else 1];expected=np.fromfile(M/arm/golden,'<u4').reshape(64,2048)[:len(actual)]
             assert np.array_equal(actual,expected),(tag,phase,'not bit exact',int(np.count_nonzero(actual!=expected)))
             n=f'actual_replay_chain_{step:02d}.bin';adb('pull',REMOTE+'/'+tag+'/'+n,windows(dest/n))
+    if repeats>1:profiles=profiles[2:] # per-process priming replay excluded
     result=dict(arm=arm,profiles=profiles)
     save(dest/'result.json',result);print('PASS',tag,flush=True);return result
 
