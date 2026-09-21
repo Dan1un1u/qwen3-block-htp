@@ -109,7 +109,7 @@ def execute(tag,repeat=1,audit=False,nl=28):
  base=read(R.parent/'exp0284/fixed-aux-INT16-r1/protocol.json');prefix,args=base['command'].split(' ./qwen3_block_cli ',1)
  env=dict(t.split('=',1) for t in shlex.split(prefix.split(' && ')[1]));argv=shlex.split(args);binary=REMOTE+f'/binaries-{nl}'
  # Retain vector operators, four attention contexts and ordinary group preparation.
- argv[8]='hvx_fused_post_norm_pool4';argv[16]='u8_log2_gqa';argv[17]='4';argv[19]='serial';argv[20]='hvx_tree'
+ argv[8]='hvx_fused_post_norm_pool4';argv[15]='u8_log2_gqa';argv[16]='4';argv[18]='serial';argv[19]='hvx_tree'
  for k in ['QBH_EVAL_FILE','QBH_GENERATION_AUDIT_DIR','QBH_GENERATION_BOUNDARY_AUDIT']:env.pop(k,None)
  env.update(LD_LIBRARY_PATH=binary,DSP_LIBRARY_PATH=binary,ADSP_LIBRARY_PATH=binary,QBH_GENERATION_STEPS='2',QBH_GENERATION_EXPECTED_TOKENS='64',QBH_GENERATION_SEQUENCE='9',QBH_SP2='8',QBH_WIDE_SCORE='7',QBH_PAPER_PIPELINE_DISABLE='3',QBH_DENSE_R3='0',QBH_DENSE_R4='0',QBH_W4U8_DECODE_AV_REQUANT_ROWS='4')
  fixture=read(R/'fixture.json');words=[0x51424556,2,repeat,69]

@@ -5,11 +5,11 @@ from common_exp0269 import *
 from reference_w4u8_hmx import load_qparams_bin,unpack_w4_codes,HmxU8Converter,projection_bias_words,exact_qk_norm_rope_u8
 from integer_attention_exp0252 import numpy_oracle as legacy_numpy_oracle,config
 from profile_fp_islands import fp_table
-def numpy_oracle(q,k,v,valid,c,'wide_float'):
+def numpy_oracle(q,k,v,valid,c,mode):
  # AV multiplier==1 is converted directly with output_zero_point by the
  # frozen DSP pack_v contract. The historical oracle incorrectly saturated
  # at center128 first, then translated; clipping and translation do not commute.
- res=legacy_numpy_oracle(q,k,v,valid,c,mode)
+ res=legacy_numpy_oracle(q,k,v,valid,c,'wide_float')
  if c['avm']==1:
   vv=np.asarray(v,np.int64)-c['vz']
   vv=np.clip(np.sign(vv)*((np.abs(vv)*c['vn']+c['vd']//2)//c['vd']),-128,127)
