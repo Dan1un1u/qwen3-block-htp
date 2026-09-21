@@ -5417,3 +5417,16 @@ experiments:
   - 95e0ee3a630bdb87032cd22b2bf4973286ac03ce
   - 2ac474ac485d16e33bb913493c3c4aadbf00321e
   - 14d7858900244f18ac475c27df2fd8fa134ef956
+- id: L32-0064
+  title: Llama3B FP intermediate motivation extension
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: pending
+  record: docs/experiments/L32-0064.md
+  approval_ref: User requests remaining two models for Figure b; matching existing
+    diagnostic protocol and chart-data archive.
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+    device_owner: L32-0064

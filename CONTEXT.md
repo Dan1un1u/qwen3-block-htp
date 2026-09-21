@@ -1,3 +1,6 @@
+# Active L32-0064: Llama3B FP-island diagnostic
+Read docs/experiments/L32-0064.md. Match L32-0063 M64 phase accounting; device reserved for Llama, Qwen companion waits. No speed/quality promotion.
+
 # L32-0063 complete: FP intermediate motivation
 Read docs/experiments/L32-0063-RESULTS.md and MODULES.md. Llama1B full16 M64 + one decode exact independent reference; vector FP Softmax/SwiGLU, unchanged INT16 Down and FP32 residual. Diagnostic operator-boundary shares: Softmax+QDQ6.553%, SwiGLU+QDQ35.417%, total41.970%; NOT pipelined critical-path fractions or QDQ-only overhead. Production-style run retained, overlapping timers not additive. Five short/ten formal repeat10 each; initial diagnostic batch excluded for possible concurrent read-only hash checking, fixed isolated replacement retained. No baseline/quality/workbook change. Source 14d7858900244f18ac475c27df2fd8fa134ef956, device released, active none,next64. Qwen companion not measured here.
 
