@@ -29622,5 +29622,5 @@ experiments:
   record: docs/experiments/EXP-0307.md
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0306-fp-islands-06b
+    source_branch: codex/exp-0307-integer-fusion-ablation
     device_owner: null
