@@ -2244,7 +2244,16 @@ static int qbh_header_valid(const struct qbh_block_header *header,
 #ifdef QBH_LLAMA_3B
     if (!header || header->generation_lm_head.weight_segment ||
         header->dense_r3_mode || header->dense_r4_mode ||
-        header->paper_format_disable || header->paper_pipeline_disable) return 0;
+        header->paper_format_disable ||
+#ifdef QBH_FP_ISLANDS
+        /* L32-0064: permit only the independently audited phase diagnostic. */
+        (header->paper_pipeline_disable &&
+         !(header->paper_pipeline_disable == 3U && header->wide_score_mode == 7U &&
+           header->variant == QBH_BLOCK_W4U8 && QBH_LLAMA_SP2(header) == 8U))
+#else
+        header->paper_pipeline_disable
+#endif
+        ) return 0;
     if (header->variant == QBH_BLOCK_W4U8) {
         if (QBH_FP32_RESIDUAL(header)!=1U ||
             (QBH_LLAMA_SP2(header)!=8U && QBH_LLAMA_SP2(header)!=0U) ||

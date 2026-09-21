@@ -43,14 +43,14 @@ def fp_table(q):
 def stage():
  preflight();seal=read(ROOT/'build/llama-build-seal.json');assert seal['fp_islands'] and seal['model_size']=='3B'
  assert seal['source_head']==subprocess.check_output(['git','-C',str(ROOT),'rev-parse','HEAD'],text=True).strip()
- d=R/f'binaries-{seal["layer_count"]}-phases';d.mkdir(exist_ok=False);remote=REMOTE+'/'+d.name
+ d=R/f'binaries-{seal["layer_count"]}-phases-a02';d.mkdir(exist_ok=False);remote=REMOTE+'/'+d.name
  adb('shell','mkdir -p '+remote)
  for n,h in seal['files'].items():
   p=Path(n);assert sha256(p)==h;shutil.copy2(p,d/p.name);adb('push',windows(p),remote+'/'+p.name)
   assert adb('shell','sha256sum '+remote+'/'+p.name).stdout.split()[0]==h
  adb('shell','chmod 755 '+remote+'/qwen3_block_cli '+remote+'/llama_sp2_cli');save(d/'seal.json',seal)
 def component():
- preflight();binary=REMOTE+'/binaries-28-phases';results=[]
+ preflight();binary=REMOTE+'/binaries-28-phases-a02';results=[]
  for i in range(28):
   d=R/'component'/f'layer{i}';d.mkdir(parents=True,exist_ok=True)
   if (d/'summary.json').exists():results.append(read(d/'summary.json'));continue
@@ -101,7 +101,7 @@ def execute(tag,repeat=1,audit=False,nl=28,serial=True):
  if (d/'validated.json').exists():return read(d/'validated.json')
  base=read(BASE);prefix,args=base['command'].split(' ./qwen3_block_cli ',1)
  env=dict(t.split('=',1) for t in shlex.split(prefix.split(' && ')[1]));argv=shlex.split(args)
- suffix='-phases' if serial else '';binary=REMOTE+f'/binaries-{nl}'+suffix;argv[0]='/data/local/tmp/llama32-htp/l32-0064/int16'
+ suffix='-phases-a02' if serial else '';binary=REMOTE+f'/binaries-{nl}'+suffix;argv[0]='/data/local/tmp/llama32-htp/l32-0064/int16'
  for k in ['QBH_EVAL_FILE','QBH_GENERATION_AUDIT_DIR','QBH_GENERATION_BOUNDARY_AUDIT']:env.pop(k,None)
  env.update(LD_LIBRARY_PATH=binary,DSP_LIBRARY_PATH=binary,ADSP_LIBRARY_PATH=binary,QBH_GENERATION_STEPS='2',QBH_GENERATION_EXPECTED_TOKENS='64',QBH_GENERATION_SEQUENCE='9',QBH_LLAMA_SP2='8',QBH_SP2_DOWN_HVX='0',QBH_WIDE_SCORE='7',QBH_PAPER_FORMAT_DISABLE='0',QBH_PAPER_PIPELINE_DISABLE='3' if serial else '0',QBH_DENSE_R3='0',QBH_DENSE_R4='0',QBH_W4U8_DECODE_AV_REQUANT_ROWS='4')
  f=read(FIXTURE);words=[0x51424556,2,repeat,69]
