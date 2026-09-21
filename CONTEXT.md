@@ -1,3 +1,6 @@
+# L32-0060 comparison archived in workbook E
+Four full-model HMX/HVX comparisons added to desktop main hardware workbook E sheet, with original TPS, formula-driven wall ratios and measurement scope. Original A-D parts and existing style entries preserved. Workbook SHA256 80fabddb5f4698adc76b1678c59e3f877e92966c6672fee6366fb618b311e539. Receipt: docs/experiments/L32-0060-WORKBOOK-E.json. No hardware rerun or baseline change.
+
 # Latest closure: L32-0060
 
 Four Llama1B/3B short/long full-model configurations completed. All independent and paired hardware arithmetic checks pass. Five short and ten formal paired repeat10 rounds retained. HVX shift/add Down is slower in all measured E2E cases; native HMX remains default. No baseline or quality promotion. Evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0060; ledger SHA256 db12f374fc3f09a3b0b306404cc2eaeb1dc9b8c72302d4f08697d39be9337fc2. Source heads: {"1B": "5ec72782c410fbbe85ec5d92e031c8fc8fd14797", "3B": "4806798f979834f6913cd97f09c401e476ad709d"}. Results: docs/experiments/L32-0060-RESULTS.md; additive modules: docs/experiments/L32-0060-MODULES.md. Device released; active experiment cleared.
