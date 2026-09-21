@@ -1,3 +1,6 @@
+# L32-0061 complete: AV-to-O scale folding probe
+One Llama1B layer0 M64+1, uniform INT16 Down, FP32 residual. Metadata-only candidate skips AV HVX RQ and folds multiplier9 into O scale/zero128. Hardware outputs exact to each own reference; actual AV saturation0/133120. Small FP32 reassociation differences between arms, no old-bitwise-equivalence claim. Five short/ten formal repeat10: Host wall -1.109% prefill (CI crosses1), -5.489% decode. Current1B short decode RQ visits M64, so gain partly removes redundant row work; not a row4-optimized control. No E2E/PPL/baseline promotion. Read docs/experiments/L32-0061-RESULTS.md. Source820254505b42f6da6cddf821ac0809fa831ebaae, native code unchanged. Device released.
+
 # Active L32-0061: AV-to-O scale folding probe
 User approves one bounded Llama1B M64/M1 configuration. Read docs/experiments/L32-0061.md. Regenerate only needed retired inputs; no baseline promotion or model-quality claim.
 

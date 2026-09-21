@@ -5201,9 +5201,9 @@ experiments:
   - 4806798f979834f6913cd97f09c401e476ad709d
 - id: L32-0061
   title: AV post-HMX requantization elimination by O scale folding
-  execution_state: running
-  evidence_validity: pending
-  local_gate: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: pending
   record: docs/experiments/L32-0061.md
   approval_ref: User2026-09-21 approves annotated AV saturation audit, O multiplier
@@ -5211,3 +5211,30 @@ experiments:
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
+  results:
+    experiment: L32-0061
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    scope: Llama1B layer0 M64+1, uniform INT16 Down, FP32 residual; no fullmodel
+    source_head: 820254505b42f6da6cddf821ac0809fa831ebaae
+    measured_runtime_source: f99ad7a203025f5c631665e3d04df4eca86eee1c
+    native_code_changed: false
+    exact_own_reference: true
+    actual_av_saturation: 0
+    short_rounds: 5
+    formal_rounds: 10
+    repeat: 10
+    measured_boundaries: 600
+    prefill_host_wall_ratio: 0.9889104894800105
+    decode_host_wall_ratio: 0.9451138072026947
+    prefill_significant_gain: false
+    decode_significant_gain: true
+    decode_attribution_caveat: Current head64 short decode RQ visits full64 rows;
+      observed gain includes removing this redundant work. Row4-only control not measured.
+    baseline_promoted: false
+    quality_claim: false
+    device_owner: null
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0061
+    evidence_ledger_sha256: fe3b3aa087607c42c85acdc5bf41f726ce05394bfc691a46b3d69d4ced0ffc39
+    report: docs/experiments/L32-0061-RESULTS.md
