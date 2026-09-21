@@ -1,3 +1,6 @@
+# Active EXP-0305: FP intermediate motivation
+Read docs/experiments/EXP-0305.md. Llama0063 closed and released device. Qwen1.7 companion uses vector FP nonlinear/QDQ, uniform INT16 Down and explicit operator-boundary attribution. No quality or baseline promotion.
+
 # D-drive artifact retirement (2026-09-21)
 User authorizes deletion of derived weights/builds/captured tensors, retaining original models, reports/raw logs/reproduction parameters and existing hash ledgers. Cleanup completed; D free space 264.63 GiB, net reclaimed 249.54 GiB. All 43 original file SHA256 values match. Reports/logs and historical ledgers remain retained; referenced derived payloads are intentionally unavailable, not a new hash failure. See docs/D_DRIVE_CLEANUP_20260921.md and D:/llm_exp/results/maintenance-cleanup-20260921. No source/gate/baseline/result changes.
 

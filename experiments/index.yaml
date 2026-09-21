@@ -29470,3 +29470,16 @@ experiments:
     baseline_promoted: false
     quality_claim: false
     report: docs/experiments/EXP-0304-RESULTS.md
+- id: EXP-0305
+  title: Qwen1.7 floating intermediate motivation profiling
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: pending
+  record: docs/experiments/EXP-0305.md
+  approval_ref: User2026-09-21 approves real hardware FP nonlinear/QDQ motivation
+    diagnostic, correct implementation, no speed gate.
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0305-fp-islands
+    device_owner: EXP-0305
