@@ -18,8 +18,8 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 306
+  active_experiment: EXP-0306
+  next_experiment_number: 307
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -2885,7 +2885,7 @@ current_scope:
   last_completed_experiment: EXP-0300
   last_completed_source_commit: d2af6c7d3d5bccf467b5dd194be08c16ae6ed68c
   provisional_source_parent: EXP0268_diagnostic_U8_pipeline_closure_no_default_promotion
-  device_execution_state: EXP-0305
+  device_execution_state: EXP-0306
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
   current_handoff: docs/experiments/EXP-0300.md
@@ -14503,3 +14503,4 @@ current_scope:
     interpretation: Combined FP arithmetic+fused QDQ; not QDQ-only cost or overlapped
       production critical-path share
     companion: L32-0063
+  device_owner: EXP-0306

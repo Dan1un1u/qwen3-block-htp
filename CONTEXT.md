@@ -1,3 +1,6 @@
+# Active EXP-0306: Qwen0.6 FP-island motivation
+Read docs/experiments/EXP-0306.md. Llama0064 closed/device released,39.921093% combined FP nonlinear+QDQ. Complete matched0.6 diagnostic, then extend workbook G; Figure a unchanged.
+
 # Active EXP-0305: FP intermediate motivation
 Read docs/experiments/EXP-0305.md. Llama0063 closed and released device. Qwen1.7 companion uses vector FP nonlinear/QDQ, uniform INT16 Down and explicit operator-boundary attribution. No quality or baseline promotion.
 

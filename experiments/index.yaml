@@ -29547,3 +29547,16 @@ experiments:
   - 58c1681
   - 12f672a
   - 06165f3675d6903214d7473f60bc6fdd44ae3ba5
+- id: EXP-0306
+  title: Qwen0.6 FP intermediate motivation extension
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  approval_ref: User asks remaining two models for Figure b, matching prior protocol;
+    Llama0064 completed and released device.
+  record: docs/experiments/EXP-0306.md
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0305-fp-islands
+    device_owner: EXP-0306
