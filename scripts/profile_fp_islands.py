@@ -23,7 +23,7 @@ def preflight():
  z=subprocess.check_output(['python3',str(S)+'-project-memory/scripts/project_memory.py','preflight','--source-worktree',str(S)],text=True);assert 'EXPERIMENT=EXP-0305' in z
  print(z,flush=True)
 def fnv(x):
- h=0xcbf29ce484222325
+ h=1469598103934665603
  for a in np.asarray(x,dtype='<f4').tobytes():h=((h^a)*0x100000001b3)&0xffffffffffffffff
  return h
 def fl(x):return np.asarray(x,dtype='f4')
@@ -125,7 +125,7 @@ def execute(tag,repeat=1,audit=False,nl=28):
   if audit:adb('pull',env['QBH_GENERATION_AUDIT_DIR']+'/.',win(d/'audit'))
  assert read(d/'exit.json')['returncode']==0,(tag,(d/'stderr.txt').read_text()[-1500:])
  rr=records(d/'stdout.txt');pp=[x for x in rr if x.get('record')=='generation_profile'];ss=[x for x in rr if 'selected_logit_half_bits' in x and 'generation_step' in x];assert len(pp)==len(ss)==2*repeat,(tag,len(pp),len(ss))
- gold=read(R/'reference/summary.json');checks=[]
+ gold=read(R/'reference/summary-runtime-hash.json');checks=[]
  for j,(x,t) in enumerate(zip(pp,ss)):
   step=j%2;g=gold['heads'][str(nl)][step];assert x['dsp_status']==3 and x['numerical_status']==1
   assert x['vtcm_requested_bytes']==x['vtcm_acquired_bytes']==8388608 and x['vtcm_peak_plan_bytes']<=8388608
