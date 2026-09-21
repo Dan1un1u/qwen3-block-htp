@@ -88,6 +88,29 @@ def deploy():
     h,n=line.split(None,1);assert h==mf[n.removeprefix(remote+'/')]['sha256'],n
   print('DEPLOYED',arm,flush=True)
  save(R/'verified-packages.json',dict(manifests={a:sha256(M/a/'manifest.json') for a in ['control','folded']},local_and_device=True))
+def extend_expected_tokens():
+ preflight();old=M/'control';p=M/'control-v2';p.mkdir(exist_ok=False);mf=read(old/'manifest.json')['files'];ids=read(FIXTURE)['fixed'][:64];assert len(ids)==64
+ for n in mf:
+  d=p/n;d.parent.mkdir(parents=True,exist_ok=True)
+  if n=='generation_expected_token_ids_u32.bin':np.asarray(ids,dtype='<u4').tofile(d)
+  else:os.link(old/n,d)
+ save(p/'manifest.json',dict(parent_manifest_sha256=sha256(old/'manifest.json'),change='extend expected-token capacity16 to64 for fixed trajectory; arithmetic payloads unchanged',files={n:dict(bytes=(p/n).stat().st_size,sha256=sha256(p/n)) for n in mf}))
+ remote=PACKAGE_REMOTE+'/control-v2';adb('shell','mkdir -p '+remote)
+ names=list(mf)
+ for i in range(0,len(names),24):
+  cmd=[]
+  for n in names[i:i+24]:
+   cmd.append('mkdir -p '+shlex.quote(str(Path(remote+'/'+n).parent)))
+   if n!='generation_expected_token_ids_u32.bin':cmd.append('ln -s '+shlex.quote(PACKAGE_REMOTE+'/control/'+n)+' '+shlex.quote(remote+'/'+n))
+  adb('shell',' && '.join(cmd))
+ adb('push',windows(p/'generation_expected_token_ids_u32.bin'),remote+'/generation_expected_token_ids_u32.bin')
+ mf=read(p/'manifest.json')['files']
+ for i in range(0,len(names),32):
+  lines=adb('shell','sha256sum '+' '.join(shlex.quote(remote+'/'+n) for n in names[i:i+32])).stdout.splitlines();assert len(lines)==len(names[i:i+32])
+  for line in lines:
+   h,n=line.split(None,1);assert h==mf[n.removeprefix(remote+'/')]['sha256']
+ save(R/'control-v2-deployment.json',dict(manifest_sha256=sha256(p/'manifest.json'),all_files_verified=True,old_reference_arithmetic_unchanged=True))
+
 def stage(nl):
  preflight();seal=read(ROOT/'build/qwen3-sp2-build-seal.json');mode='F' if seal['fp_islands'] else 'I'
  assert seal['source_head']==subprocess.check_output(['git','-C',str(ROOT),'rev-parse','HEAD'],text=True).strip()
@@ -135,7 +158,7 @@ def references():
 
 def execute(mode,tag,nl=28,repeat=1,audit=False,poison=False):
     assert mode in MODES, "Unconditional AV folding rejected by clipping contract"
-    arm="control"
+    arm="control-v2"
     d=R/tag
     if (d/'validated.json').exists():return read(d/'validated.json')
     d.mkdir(exist_ok=True);binary_mode='F' if mode=='F' else 'I';root=REMOTE+f'/binaries-{binary_mode}-{nl}';base=read(BASE)
