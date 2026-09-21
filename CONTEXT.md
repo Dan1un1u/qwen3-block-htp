@@ -1,3 +1,6 @@
+# EXP-0306 completed: four-model Figure b archive
+Qwen0.6 full28 independent hash/head exact, component1835008 pairs exact,8MiB/no intermediateDDR. Five short/ten formal repeat10. Softmax+QDQ5.780899%, SwiGLU+QDQ22.548989%, combined28.329888% complete Host wall. Read EXP-0306-RESULTS/MODULES. Workbook G now includes Llama1B/Qwen1.7/Llama3B/Qwen0.6; A-F and Figure a untouched. No quality or baseline promotion. Device released, next307.
+
 # Active EXP-0306: Qwen0.6 FP-island motivation
 Read docs/experiments/EXP-0306.md. Llama0064 closed/device released,39.921093% combined FP nonlinear+QDQ. Complete matched0.6 diagnostic, then extend workbook G; Figure a unchanged.
 

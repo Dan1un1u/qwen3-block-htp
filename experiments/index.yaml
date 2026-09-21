@@ -29549,9 +29549,9 @@ experiments:
   - 06165f3675d6903214d7473f60bc6fdd44ae3ba5
 - id: EXP-0306
   title: Qwen0.6 FP intermediate motivation extension
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: pending
   approval_ref: User asks remaining two models for Figure b, matching prior protocol;
     Llama0064 completed and released device.
@@ -29559,4 +29559,55 @@ experiments:
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0306-fp-islands-06b
-    device_owner: EXP-0306
+    device_owner: null
+  results:
+    experiment: EXP-0306
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending
+    device_owner: null
+    model: Qwen3-0.6B
+    shape:
+    - 64
+    - 1
+    short_rounds: 5
+    formal_rounds: 10
+    repeat: 10
+    component_code_pairs_exact: 1835008
+    full_layer_hashes_exact: 56
+    no_intermediate_ddr: true
+    peak_vtcm: 5744384
+    quality_claim: false
+    baseline_promoted: false
+    measured_source: d307b591f545db53ade227eca9dfd7b3e98b1be0
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0306
+    evidence_ledger_sha256: d4075bb81e99864991e85aa3f32eaada07d9cfa36298fa2f93e2c223093377ae
+    evidence_files: 726
+    combined_percent: 28.329888027375333
+    nonlinear_qdq:
+      FP Softmax + QDQ:
+        us: 2858.015625
+        percent: 5.780899019662562
+        ci95_percent:
+        - 5.773433992126683
+        - 5.788149741446784
+      FP SwiGLU + QDQ:
+        us: 11147.9828125
+        percent: 22.54898900771277
+        ci95_percent:
+        - 22.521714631431838
+        - 22.575505928965985
+    prefill_host_us: 49438.94739
+    prefill_tps: 1294.5259431827074
+    decode_one_step_tps: 31.478388873176247
+    report: docs/experiments/EXP-0306-RESULTS.md
+    modules: docs/experiments/EXP-0306-MODULES.md
+    interpretation: Combined FP arithmetic and fused QDQ; not QDQ-only or production
+      critical path
+    workbook_sha256: 0fafa21de314c24ce60120b64c15b587dd207936543e90599397200aabaa25cd
+    source_head: 4408dc37e3c766f5c3d3b7dc1bd28ab47edfaf04
+  source_commits:
+  - d307b59
+  - 5091bfd
+  - 4408dc37e3c766f5c3d3b7dc1bd28ab47edfaf04
