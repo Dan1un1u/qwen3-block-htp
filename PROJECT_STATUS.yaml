@@ -4631,7 +4631,7 @@ current_scope:
       experiment: L32-0060
       updated_on: '2026-09-21'
       original_workbook_sha256: e43981b050c21fc50faafcc846acf5e06362bf538b576bd51dbc4c7b84a31c1e
-      workbook_sha256: 80fabddb5f4698adc76b1678c59e3f877e92966c6672fee6366fb618b311e539
+      workbook_sha256: 99c76a1a523ac1515e07ce1c87cfafe05ec4713514d5518466b3bfab5df419be
       original_A_B_C_D_parts_unchanged: true
       formula_checks: true
       visual_checks: true
@@ -4639,6 +4639,12 @@ current_scope:
       evidence_ledger_sha256: db12f374fc3f09a3b0b306404cc2eaeb1dc9b8c72302d4f08697d39be9337fc2
       approval: User requests new E sheet in main workbook to archive HMX versus HVX
         comparison.
+      down_latency:
+        range: A23:J35
+        statistic: formal fullmodel Down sum divided by layer count
+        unit: microseconds per layer; decode also per token
+        rows: 4
+        receipt: docs/experiments/L32-0060-WORKBOOK-E-DOWN.json
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp

@@ -1,0 +1,76 @@
+{
+  "workbook": "C:/Users/35961/Desktop/HTP硬件实验总表.xlsx",
+  "sheet": "E_HMX-HVX对比",
+  "range": "A23:J35",
+  "statistic": "formal fullmodel Down sum divided by layer count",
+  "unit": "microseconds per layer; decode also per token",
+  "original_workbook_sha256": "80fabddb5f4698adc76b1678c59e3f877e92966c6672fee6366fb618b311e539",
+  "workbook_sha256": "99c76a1a523ac1515e07ce1c87cfafe05ec4713514d5518466b3bfab5df419be",
+  "updated_on": "2026-09-21",
+  "original_E_E2E_and_A_D_unchanged": true,
+  "formula_checks": true,
+  "visual_checks": true,
+  "approval": "User requests Down latency comparison and specifies single-layer latency; use fullmodel formal Down sum divided by16/28layers, explicitly labeled average.",
+  "rows": [
+    {
+      "row": 27,
+      "values": [
+        "Llama3.2-1B",
+        64,
+        42,
+        196.33642578125003,
+        45072.132259114594,
+        165.18541821676587,
+        2169.035512772817,
+        229.56581836389398,
+        13.130913952262318,
+        16
+      ]
+    },
+    {
+      "row": 28,
+      "values": [
+        "Llama3.2-1B",
+        536,
+        46,
+        1767.71123046875,
+        405610.0387044271,
+        165.48287831182066,
+        2164.3156504755434,
+        229.45491984958994,
+        13.078789011617907,
+        16
+      ]
+    },
+    {
+      "row": 29,
+      "values": [
+        "Llama3.2-3B",
+        64,
+        42,
+        266.0126116071429,
+        67379.90052083333,
+        226.74078798185943,
+        3221.499157631803,
+        253.29588741582828,
+        14.207850234204626,
+        28
+      ]
+    },
+    {
+      "row": 30,
+      "values": [
+        "Llama3.2-3B",
+        536,
+        46,
+        2391.691220238095,
+        606426.948232887,
+        227.09369419642857,
+        3228.9918627879138,
+        253.55570280201832,
+        14.218764964891283,
+        28
+      ]
+    }
+  ]
+}

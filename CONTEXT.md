@@ -1,3 +1,6 @@
+# E sheet single-layer Down latency added
+L32-0060 E A23:J35 now contains single-layer average Down latency in microseconds: formal fullmodel module sums divided by16/28layers, decode per token. Prefill536 includes all nine M64 chunks per layer. Original E E2E and A-D preserved. Workbook SHA256 99c76a1a523ac1515e07ce1c87cfafe05ec4713514d5518466b3bfab5df419be. Receipt: docs/experiments/L32-0060-WORKBOOK-E-DOWN.json. No hardware rerun or independent single-layer benchmark claim.
+
 # L32-0060 comparison archived in workbook E
 Four full-model HMX/HVX comparisons added to desktop main hardware workbook E sheet, with original TPS, formula-driven wall ratios and measurement scope. Original A-D parts and existing style entries preserved. Workbook SHA256 80fabddb5f4698adc76b1678c59e3f877e92966c6672fee6366fb618b311e539. Receipt: docs/experiments/L32-0060-WORKBOOK-E.json. No hardware rerun or baseline change.
 
