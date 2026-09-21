@@ -7,7 +7,7 @@ project:
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
   updated_on: '2026-09-21'
 governance:
-  active_experiment: L32-0064
+  active_experiment: null
   next_experiment_number: 65
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -15,7 +15,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: 14d7858900244f18ac475c27df2fd8fa134ef956
+    recorded_head: 5ac995fdecdd69cc875cd9113646321522c69bff
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -27,11 +27,10 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: fp_island_motivation_3b
+  stage: fp_island_motivation_3b_completed
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Complete Llama3B matching M64 FP-island diagnostic and own-reference
-    gates, then release device to Qwen0.6 companion.
+  next_action: Qwen0.6 companion then extend Figure b workbook G
   baseline_manifest: docs/PAPER_NO_ROTATION_BASELINES.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF_L32_0034.md
@@ -44,7 +43,7 @@ current_scope:
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0063
+  last_completed_experiment: L32-0064
   evidence_ledger_sha256: 599d86cf654b2b41526690c76ad1c0a251b5f206815a57ce4ae12b0024f94ac9
   formal_profiling_completed: true
   general_quantization_quality_accepted: false
@@ -4819,6 +4818,51 @@ current_scope:
     quality_claim: false
     baseline_promoted: false
   device_owner: null
+  fp_island_motivation_3b:
+    experiment: L32-0064
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending
+    device_owner: null
+    model: Llama3.2-3B
+    shape:
+    - 64
+    - 1
+    short_rounds: 5
+    formal_rounds: 10
+    repeat: 10
+    full_reference_exact: true
+    component_exact_cases: 1835008
+    physical_pass: true
+    quality_claim: false
+    baseline_promoted: false
+    source_head: a2aa343676a20917931f82da4f4b836efa9eaefe
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0064
+    evidence_ledger_sha256: 4be198ecaa2060800aaff03ca5b6f00124e44954af5fcede6daeff9da578e510
+    evidence_files: 589
+    fp_nonlinear_qdq_percent: 39.92109299169337
+    nonlinear_qdq:
+      FP Softmax + QDQ:
+        us: 4192.936458333334
+        percent: 4.920878567976973
+        ci95_percent:
+        - 4.9174136592249065
+        - 4.924476499765113
+      FP SwiGLU + QDQ:
+        us: 29822.65729166667
+        percent: 35.0002144237164
+        ci95_percent:
+        - 34.97703902645279
+        - 35.02552274349269
+    prefill_host_us: 85207.07025
+    prefill_tps: 751.1113785771786
+    decode_one_step_tps: 23.19257009095837
+    report: docs/experiments/L32-0064-RESULTS.md
+    modules: docs/experiments/L32-0064-MODULES.md
+    attribution_scope: explicit operator-boundary diagnostic; not production critical
+      path
+    source_closure: 5ac995fdecdd69cc875cd9113646321522c69bff
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp

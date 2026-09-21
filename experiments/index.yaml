@@ -5419,9 +5419,9 @@ experiments:
   - 14d7858900244f18ac475c27df2fd8fa134ef956
 - id: L32-0064
   title: Llama3B FP intermediate motivation extension
-  execution_state: running
-  evidence_validity: pending
-  local_gate: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: pending
   record: docs/experiments/L32-0064.md
   approval_ref: User requests remaining two models for Figure b; matching existing
@@ -5429,4 +5429,55 @@ experiments:
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
-    device_owner: L32-0064
+    device_owner: null
+  results:
+    experiment: L32-0064
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending
+    device_owner: null
+    model: Llama3.2-3B
+    shape:
+    - 64
+    - 1
+    short_rounds: 5
+    formal_rounds: 10
+    repeat: 10
+    full_reference_exact: true
+    component_exact_cases: 1835008
+    physical_pass: true
+    quality_claim: false
+    baseline_promoted: false
+    source_head: a2aa343676a20917931f82da4f4b836efa9eaefe
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0064
+    evidence_ledger_sha256: 4be198ecaa2060800aaff03ca5b6f00124e44954af5fcede6daeff9da578e510
+    evidence_files: 589
+    fp_nonlinear_qdq_percent: 39.92109299169337
+    nonlinear_qdq:
+      FP Softmax + QDQ:
+        us: 4192.936458333334
+        percent: 4.920878567976973
+        ci95_percent:
+        - 4.9174136592249065
+        - 4.924476499765113
+      FP SwiGLU + QDQ:
+        us: 29822.65729166667
+        percent: 35.0002144237164
+        ci95_percent:
+        - 34.97703902645279
+        - 35.02552274349269
+    prefill_host_us: 85207.07025
+    prefill_tps: 751.1113785771786
+    decode_one_step_tps: 23.19257009095837
+    report: docs/experiments/L32-0064-RESULTS.md
+    modules: docs/experiments/L32-0064-MODULES.md
+    attribution_scope: explicit operator-boundary diagnostic; not production critical
+      path
+    source_closure: 5ac995fdecdd69cc875cd9113646321522c69bff
+  source_commits:
+  - 75e9190
+  - fa9ee76
+  - bdc8c11
+  - a2aa343
+  - 5ac995fdecdd69cc875cd9113646321522c69bff
