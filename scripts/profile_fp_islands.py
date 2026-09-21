@@ -47,7 +47,7 @@ def fp_table(q):
 def stage(nl):
  preflight();seal=read(S/'build/qwen3-sp2-build-seal.json');assert seal['fp_islands']
  assert seal['source_head']==subprocess.check_output(['git','-C',str(S),'rev-parse','HEAD'],text=True).strip()
- d=R/f'binaries-{nl}';d.mkdir(exist_ok=False);remote=REMOTE+'/'+d.name;adb('shell','mkdir -p '+remote)
+ d=R/f'binaries-{nl}-a02';d.mkdir(exist_ok=False);remote=REMOTE+'/'+d.name;adb('shell','mkdir -p '+remote)
  for n,h in seal['files'].items():
   p=Path(n);assert sha(p)==h;shutil.copy2(p,d/p.name);adb('push',win(p),remote+'/'+p.name);assert adb('shell','sha256sum '+remote+'/'+p.name).stdout.split()[0]==h
  adb('shell','chmod 755 '+remote+'/qwen3_block_cli '+remote+'/llama_sp2_cli');save(d/'seal.json',seal)
@@ -109,7 +109,7 @@ def execute(tag,repeat=1,audit=False,nl=28):
  base=read(R.parent/'exp0284/fixed-aux-INT16-r1/protocol.json');prefix,args=base['command'].split(' ./qwen3_block_cli ',1)
  env=dict(t.split('=',1) for t in shlex.split(prefix.split(' && ')[1]));argv=shlex.split(args);binary=REMOTE+f'/binaries-{nl}'
  # Retain vector operators, four attention contexts and ordinary group preparation.
- argv[8]='hvx_fused_post_norm_pool4';argv[15]='u8_log2_gqa';argv[16]='4';argv[18]='serial';argv[19]='hvx_tree';argv[24]='0'
+ argv[8]='hvx_fused_post_norm_pool4';argv[15]='u8_log2_gqa_qkv_overlap_vgather_vdeal_fused_qk_requant_hmx_batch_lut_templates_gqa_batch';argv[16]='4';argv[18]='qkvo_batch4';argv[19]='hvx_tree';argv[24]='0'
  for k in ['QBH_EVAL_FILE','QBH_GENERATION_AUDIT_DIR','QBH_GENERATION_BOUNDARY_AUDIT']:env.pop(k,None)
  env.update(LD_LIBRARY_PATH=binary,DSP_LIBRARY_PATH=binary,ADSP_LIBRARY_PATH=binary,QBH_GENERATION_STEPS='2',QBH_GENERATION_EXPECTED_TOKENS='64',QBH_GENERATION_SEQUENCE='9',QBH_SP2='8',QBH_WIDE_SCORE='7',QBH_PAPER_PIPELINE_DISABLE='3',QBH_DENSE_R3='0',QBH_DENSE_R4='0',QBH_W4U8_DECODE_AV_REQUANT_ROWS='4',QBH_W4U8_QKV_RING_EXPAND_WORKERS='0')
  fixture=read(R/'fixture.json');words=[0x51424556,2,repeat,69]
@@ -117,7 +117,7 @@ def execute(tag,repeat=1,audit=False,nl=28):
  ef=d/'trajectory.bin';ef.write_bytes(struct.pack('<'+'I'*len(words),*words));er=binary+'/'+tag+'-trajectory.bin';env['QBH_EVAL_FILE']=er
  if audit:env.update(QBH_GENERATION_BOUNDARY_AUDIT='1',QBH_GENERATION_AUDIT_DIR=REMOTE+'/'+tag)
  cmd='cd '+binary+' && '+' '.join(k+'='+shlex.quote(v) for k,v in env.items())+' ./qwen3_block_cli '+' '.join(shlex.quote(v) for v in argv)
- if not (d/'protocol.json').exists():save(d/'protocol.json',dict(command=cmd,layers=nl,repeat=repeat,audit=audit,seal_sha256=sha(R/f'binaries-{nl}/seal.json'),package_manifest_sha256=sha(P/'manifest.json')))
+ if not (d/'protocol.json').exists():save(d/'protocol.json',dict(command=cmd,layers=nl,repeat=repeat,audit=audit,seal_sha256=sha(R/f'binaries-{nl}-a02/seal.json'),package_manifest_sha256=sha(P/'manifest.json')))
  if not (d/'exit.json').exists():
   adb('push',win(ef),er)
   if audit:adb('shell','mkdir -p '+env['QBH_GENERATION_AUDIT_DIR'])

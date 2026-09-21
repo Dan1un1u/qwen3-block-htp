@@ -14596,9 +14596,9 @@ static void qbh_attention_u8_pool_run_tasks(
             break;
         }
         scratch = buffers->attention_concat +
-            (size_t)(split ? group % header->attention_hvx_contexts : (qbh_attention_u8_qkv_overlap_enabled(
-                         header->attention_pipeline_mode)
-                         ? group : job->worker_index)) *
+            (size_t)(qbh_attention_u8_qkv_overlap_enabled(header->attention_pipeline_mode)
+                         ? group : (split ? group % header->attention_hvx_contexts
+                         : job->worker_index)) *
                 QBH_ATTN_U8_GROUP_SCRATCH_BYTES;
         k_weight = (int8_t *)(
             scratch + QBH_ATTN_U8_K_WEIGHT_OFFSET);
