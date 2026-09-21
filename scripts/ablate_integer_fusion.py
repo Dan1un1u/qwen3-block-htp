@@ -36,7 +36,11 @@ def fnv(x):
 def prepare():
  preflight();R.mkdir(parents=True,exist_ok=True);M.mkdir(parents=True,exist_ok=True)
  old=read(PARENT/'manifest.json')
+ retired=set(read(R.parent/'exp0305/postflight-verification.json')['retired_old_chain_arrays_not_used'])
+ missing={n for n in old['files'] if not (PARENT/n).exists()};assert missing==retired
+ old['files']={n:v for n,v in old['files'].items() if n not in retired};assert len(old['files'])==909
  for n,v in old['files'].items():assert sha256(PARENT/n)==v['sha256'],n
+ save(R/'recovery-scope.json',dict(retired_not_used=sorted(retired),verified_payload_count=len(old['files']),original_manifest_sha256=sha256(PARENT/'manifest.json')))
  for arm in ['control','folded']:
   p=M/arm;p.mkdir(exist_ok=False)
   for n in old['files']:
