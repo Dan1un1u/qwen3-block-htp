@@ -1,3 +1,6 @@
+# Active L32-0065: complete integer/fusion ablations
+User authorizes continuous completion; read docs/experiments/L32-0065.md. Llama1B64+42 first, device owned. Prior SP2/INT16 shared-backend ablations retained; E untouched. Qwen companion not started. No quality/baseline promotion.
+
 # L32-0064 completed: Llama3B FP-island motivation
 28-layer M64+one decode own reference exact; five short/ten formal repeat10. FP Softmax+QDQ4.920879%, SwiGLU+QDQ35.000214%, combined39.921093% complete Host wall. Read docs/experiments/L32-0064-RESULTS.md and MODULES.md. Device released to Qwen0.6 companion. No promotion/quality claim; diagram a unchanged.
 
