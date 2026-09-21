@@ -29611,3 +29611,16 @@ experiments:
   - d307b59
   - 5091bfd
   - 4408dc37e3c766f5c3d3b7dc1bd28ab47edfaf04
+- id: EXP-0307
+  title: Qwen1.7 matched integer nonlinear and AV scale folding ablations
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  approval_ref: 'User2026-09-22: finish complete ablations without milestone stop;
+    E excluded'
+  record: docs/experiments/EXP-0307.md
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0306-fp-islands-06b
+    device_owner: null

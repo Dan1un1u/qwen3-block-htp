@@ -7,7 +7,7 @@ project:
   source_root: /home/daniuniu/work/qwen3-block-htp
   memory_branch: codex/qwen3-block-project-memory
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
-  updated_on: '2026-09-21'
+  updated_on: '2026-09-22'
   qnn_runtime: none
   qairt_runtime: none
   hexagon_sdk_candidate: 6.6.0.0
@@ -18,8 +18,8 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 307
+  active_experiment: EXP-0307
+  next_experiment_number: 308
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -14551,3 +14551,10 @@ current_scope:
       critical path
     workbook_sha256: 0fafa21de314c24ce60120b64c15b587dd207936543e90599397200aabaa25cd
     source_head: 4408dc37e3c766f5c3d3b7dc1bd28ab47edfaf04
+  integer_fusion_ablation:
+    experiment: EXP-0307
+    execution_state: running
+    device_owner: null
+    device_pending: L32-0065 owns device until Llama timing completes
+    baseline_promoted: false
+    quality_claim: false
