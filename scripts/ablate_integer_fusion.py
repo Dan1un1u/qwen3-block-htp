@@ -21,7 +21,7 @@ BASE=R.parent/'exp0284/fixed-aux-INT16-r1/protocol.json'
 FIXTURE=R/'fixture.json'
 REMOTE='/data/local/tmp/qwen3-block-htp/exp0307'
 PACKAGE_REMOTE=REMOTE+'/models'
-MODES=['F','I','M']
+MODES=['F','I'] # M rejected: original AV saturation is active under this package.
 def read(p):return json.loads(Path(p).read_text())
 def save(p,v):
  p.parent.mkdir(parents=True,exist_ok=True);assert not p.exists(),p
@@ -134,7 +134,8 @@ def references():
   if mode=='M':assert all(c['saturated']==0 for c in clipping),clipping
 
 def execute(mode,tag,nl=28,repeat=1,audit=False,poison=False):
-    arm="folded" if mode=="M" else "control"
+    assert mode in MODES, "Unconditional AV folding rejected by clipping contract"
+    arm="control"
     d=R/tag
     if (d/'validated.json').exists():return read(d/'validated.json')
     d.mkdir(exist_ok=True);binary_mode='F' if mode=='F' else 'I';root=REMOTE+f'/binaries-{binary_mode}-{nl}';base=read(BASE)
@@ -161,7 +162,7 @@ def execute(mode,tag,nl=28,repeat=1,audit=False,poison=False):
     if not (d/'records.json').exists():save(d/'records.json',rr)
     pp=[x for x in rr if x.get('record')=='generation_profile'];ss=[x for x in rr if 'selected_logit_half_bits' in x and 'generation_step' in x]
     assert len(pp)==len(ss)==43*repeat,(tag,len(pp),len(ss))
-    gold=read(R/('oracle-'+mode)/'summary.json');peak=exact=0;times={k:[] for k in ['prefill','decode']};fields={k:{f:[] for f in ['invocation_ticks','u8_attention_av_requant_ticks','u8_attention_av_hmx_ticks','o_projection_ticks','gate_up_swiglu_ticks','u8_attention_softmax_ticks']} for k in times}
+    gold=read(R/('oracle-'+mode)/'summary.json');peak=exact=0;times={k:[] for k in ['prefill','decode']};fields={k:{f:[] for f in ['invocation_ticks','u8_attention_av_requant_ticks','u8_attention_av_hmx_ticks','o_projection_ticks','w4u8_gate_up_swiglu_worker_ticks','u8_attention_softmax_ticks']} for k in times}
     for rep in range(repeat):
         for phase,lo,hi in [('prefill',0,1),('decode',1,43)]:
             wall=0;totals={k:0 for k in fields[phase]}
@@ -180,7 +181,7 @@ def execute(mode,tag,nl=28,repeat=1,audit=False,poison=False):
                 z=normalized([x]);total=sum(z[k] for _,k in LEDGER);assert total==x['invocation_ticks']
                 assert x['host_wall_ns']==st['host_wall_ns'] and x['host_wall_ns']/1000>=total/19.2
                 wall+=x['host_wall_ns'];peak=max(peak,x['vtcm_peak_plan_bytes'])
-                for k in totals:totals[k]+=x.get(k,0)
+                for k in totals:totals[k]+=x[k]
             times[phase].append(wall)
             for k,v in totals.items():fields[phase][k].append(v)
     result=dict(mode=mode,arm=arm,layers=nl,repeat=repeat,exact_layer_outputs=exact,boundaries=len(pp),peak=peak,times=times,fields=fields)
@@ -192,14 +193,14 @@ def run():
  for stage_name,n in [('short',5),('formal',10)]:
   rounds=[]
   for i in range(n):
-   order=MODES[i%3:]+MODES[:i%3]
+   order=MODES[i%len(MODES):]+MODES[:i%len(MODES)]
    if i%2:order=order[::-1]
    rounds.append({m:execute(m,f'{stage_name}-{i:02d}-{m}',repeat=10) for m in order})
   rng=np.random.default_rng(650065);ix=rng.integers(0,n,(20000,n));s={}
   for phase,tokens in [('prefill',64),('decode',42)]:
    a={m:np.array([np.mean(r[m]['times'][phase])/1e6 for r in rounds]) for m in MODES}
    s[phase]={m:dict(wall_ms=float(x.mean()),tps=float(tokens*1000/x.mean())) for m,x in a.items()}
-   for ctl,opt in [('F','I'),('I','M'),('F','M')]:
+   for ctl,opt in [('F','I')]:
     x,y=a[ctl],a[opt];s[phase][ctl+'->'+opt]=dict(wall_ratio=float(y.mean()/x.mean()),ci95=np.quantile(y[ix].mean(1)/x[ix].mean(1),[.025,.975]).tolist(),wall_reduction_pct=float((1-y.mean()/x.mean())*100))
   f=R/(stage_name+'-summary.json')
   if not f.exists():save(f,s)
