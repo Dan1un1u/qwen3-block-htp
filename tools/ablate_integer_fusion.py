@@ -118,7 +118,7 @@ def execute(mode,tag,nl=16,repeat=1,audit=False,poison=False):
     if not (d/'records.json').exists():save(d/'records.json',rr)
     pp=[x for x in rr if x.get('record')=='generation_profile'];ss=[x for x in rr if 'selected_logit_half_bits' in x and 'generation_step' in x]
     assert len(pp)==len(ss)==43*repeat,(tag,len(pp),len(ss))
-    gold=read(R/('oracle-'+mode)/'summary.json');peak=exact=0;times={k:[] for k in ['prefill','decode']};fields={k:{f:[] for f in ['invocation_ticks','u8_attention_av_requant_ticks','u8_attention_av_hmx_ticks','o_projection_ticks','gate_up_swiglu_ticks','u8_attention_softmax_ticks']} for k in times}
+    gold=read(R/('oracle-'+mode)/'summary.json');peak=exact=0;times={k:[] for k in ['prefill','decode']};fields={k:{f:[] for f in ['invocation_ticks','u8_attention_av_requant_ticks','u8_attention_av_hmx_ticks','o_projection_ticks','w4u8_gate_up_swiglu_worker_ticks','u8_attention_softmax_ticks']} for k in times}
     for rep in range(repeat):
         for phase,lo,hi in [('prefill',0,1),('decode',1,43)]:
             wall=0;totals={k:0 for k in fields[phase]}
@@ -137,7 +137,7 @@ def execute(mode,tag,nl=16,repeat=1,audit=False,poison=False):
                 total=sum(sum(x[k] for k in f) for _,f in MODULES)-x['generation_final_norm_ticks'];assert total==x['invocation_ticks']
                 assert x['host_wall_ns']==st['host_wall_ns'] and x['host_wall_ns']/1000>=total/19.2
                 wall+=x['host_wall_ns'];peak=max(peak,x['vtcm_peak_plan_bytes'])
-                for k in totals:totals[k]+=x.get(k,0)
+                for k in totals:totals[k]+=x[k]
             times[phase].append(wall)
             for k,v in totals.items():fields[phase][k].append(v)
     result=dict(mode=mode,arm=arm,layers=nl,repeat=repeat,exact_layer_outputs=exact,boundaries=len(pp),peak=peak,times=times,fields=fields)
