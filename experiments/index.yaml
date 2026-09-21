@@ -29558,5 +29558,5 @@ experiments:
   record: docs/experiments/EXP-0306.md
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0305-fp-islands
+    source_branch: codex/exp-0306-fp-islands-06b
     device_owner: EXP-0306
