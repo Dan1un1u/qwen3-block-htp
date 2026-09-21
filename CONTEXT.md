@@ -1,4 +1,7 @@
-# Active L32-0062: fullmodel AV-to-O scale folding
+# L32-0062 complete: fullmodel AV-O folding, F archived
+Llama1B64+42 uniform INT16 Down/FP32 residual/no rotation. Source5486a5f772641a6717fdc05cba9aae2d40c0837a, native src/include unchanged. Each arm matches own independent full16 reference688layer outputs/43heads,preKVexact; no AV saturation6,946,816samples. BUT not old-output-equivalent: layer11 norm142.5 vs142.4999847 causes143vs142code; finalrelativeL2.2605 and5/43greedy token changes. No PPL/quality claim or baseline promotion. Ten paired repeat10: prefill2319.56->2317.91TPS(no gain),decode44.6586->46.4437TPS(+3.997%). Decode control includes fullM64RQ invalid rows, not minimalrow comparison. Timed12900boundaries,8MiB/no intermediateDDR. Workbook F added and A-E preserved. Read docs/experiments/L32-0062-RESULTS.md. Device released; no active experiment. Discuss accumulator-side factor restoration before any new folding adoption.
+
+# Historical registration L32-0062: fullmodel AV-to-O scale folding
 Read docs/experiments/L32-0062.md. Llama1B64+42 INT16 Down FP32 residual, one paired configuration; append F only.
 
 # L32-0061 complete: AV-to-O scale folding probe

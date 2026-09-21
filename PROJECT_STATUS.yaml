@@ -7,7 +7,7 @@ project:
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
   updated_on: '2026-09-21'
 governance:
-  active_experiment: L32-0062
+  active_experiment: null
   next_experiment_number: 63
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -15,7 +15,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: 820254505b42f6da6cddf821ac0809fa831ebaae
+    recorded_head: 5486a5f772641a6717fdc05cba9aae2d40c0837a
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -27,11 +27,11 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: av_o_scale_folding_fullmodel
+  stage: av_o_scale_folding_fullmodel_completed
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Llama1B64+42 INT16 Down fullmodel control/folded comparison, then append
-    workbook F.
+  next_action: Discuss cross-arm rounding sensitivity before considering AV-O folding
+    adoption; workbook F complete.
   baseline_manifest: docs/PAPER_NO_ROTATION_BASELINES.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF_L32_0034.md
@@ -44,7 +44,7 @@ current_scope:
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0061
+  last_completed_experiment: L32-0062
   evidence_ledger_sha256: 599d86cf654b2b41526690c76ad1c0a251b5f206815a57ce4ae12b0024f94ac9
   formal_profiling_completed: true
   general_quantization_quality_accepted: false
@@ -4672,6 +4672,120 @@ current_scope:
     evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0061
     evidence_ledger_sha256: fe3b3aa087607c42c85acdc5bf41f726ce05394bfc691a46b3d69d4ced0ffc39
     report: docs/experiments/L32-0061-RESULTS.md
+  latest_av_o_fullmodel:
+    experiment: L32-0062
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: own-contract numerical,physical and10% speed guard; NOT cross-arm
+      model equivalence
+    source_head: 5486a5f772641a6717fdc05cba9aae2d40c0837a
+    native_code_changed: false
+    model: Llama3.2-1B-Instruct
+    configuration: 64prefill+42decode,uniform INT16 Down,FP32 residual,no rotation
+    exact_own_reference: true
+    cross_arm_greedy_token_changes: 5
+    cross_arm_head_pair_changes: 39
+    cross_arm_final_relative_l2: 0.2604957954647709
+    sampled_av_saturation: 0
+    short_rounds: 5
+    formal_rounds: 10
+    repeat: 10
+    measured_boundaries: 12900
+    vtcm_peak_bytes: 8098272
+    performance:
+      prefill:
+        control: 27.591467180000002
+        folded: 27.61104531
+        ratio: 1.0007095719075856
+        ci95:
+        - 0.9977682026813837
+        - 1.003776642135464
+        control_tps: 2319.5576945031453
+        folded_tps: 2317.9129685764146
+        units: ms total phase wall
+        components_us:
+          invocation_ticks:
+            control: 26819.038020833337
+            folded: 26821.06197916667
+            ratio: 1.0000754672233865
+            ci95:
+            - 0.9980201706297711
+            - 1.002366586238691
+          u8_attention_av_requant_ticks:
+            control: 927.3583333333333
+            folded: 5.419791666666667
+            ratio: 0.005844333815587286
+            ci95:
+            - 0.005805680402103854
+            - 0.005887541551971284
+          u8_attention_av_hmx_ticks:
+            control: 2122.179166666667
+            folded: 2135.274479166667
+            ratio: 1.0061706912902029
+            ci95:
+            - 1.0021778249253823
+            - 1.0102026530332868
+          o_projection_ticks:
+            control: 1592.6026041666669
+            folded: 1589.509375
+            ratio: 0.998057752035207
+            ci95:
+            - 0.9953086294071738
+            - 1.0004887800035822
+      decode:
+        control: 940.4680065100001
+        folded: 904.32023131
+        ratio: 0.9615640564593563
+        ci95:
+        - 0.9595996014385406
+        - 0.9638320086419156
+        control_tps: 44.65861646464569
+        folded_tps: 46.443724850829355
+        units: ms total phase wall
+        components_us:
+          invocation_ticks:
+            control: 913554.1203125
+            folded: 877084.1958333334
+            ratio: 0.9600790761398007
+            ci95:
+            - 0.9582650937944326
+            - 0.9622430442348584
+          u8_attention_av_requant_ticks:
+            control: 0.0
+            folded: 0.0
+            ratio: null
+            ci95: null
+          u8_attention_av_hmx_ticks:
+            control: 50839.693750000006
+            folded: 13632.966666666669
+            ratio: 0.26815595573226025
+            ci95:
+            - 0.2661829895032276
+            - 0.2702391564888342
+          o_projection_ticks:
+            control: 38144.6984375
+            folded: 37811.725000000006
+            ratio: 0.9912707807076894
+            ci95:
+            - 0.9821566910975795
+            - 0.999175167992969
+    baseline_promoted: false
+    quality_claim: false
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0062
+    evidence_ledger_sha256: faaadfb12e336057e24af8fb2eed87c1508b7515b06e960486e183ed06d75041
+    report: docs/experiments/L32-0062-RESULTS.md
+    modules: docs/experiments/L32-0062-MODULES.md
+    workbook_f:
+      experiment: L32-0062
+      sheet: F_AV-O尺度融合
+      original_workbook_sha256: 99c76a1a523ac1515e07ce1c87cfafe05ec4713514d5518466b3bfab5df419be
+      workbook_sha256: 4445bcf9474db15371787b67445799891e4e4c79be64149d7989b7a01212870f
+      original_A_through_E_parts_unchanged: true
+      original_cell_values_formulas_styles_unchanged: true
+      formula_cache_checks: true
+      artifact_tool_authored: true
+    device_owner: null
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp
