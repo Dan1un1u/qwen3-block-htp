@@ -194,7 +194,7 @@ def run():
   rounds=[]
   for i in range(n):
    order=MODES[i%len(MODES):]+MODES[:i%len(MODES)]
-   if i%2:order=order[::-1]
+   if len(MODES)>2 and i%2:order=order[::-1]
    rounds.append({m:execute(m,f'{stage_name}-{i:02d}-{m}',repeat=10) for m in order})
   rng=np.random.default_rng(650065);ix=rng.integers(0,n,(20000,n));s={}
   for phase,tokens in [('prefill',64),('decode',42)]:
