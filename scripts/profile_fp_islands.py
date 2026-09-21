@@ -47,7 +47,7 @@ def fp_table(q):
 def stage(nl):
  preflight();seal=read(S/'build/qwen3-sp2-build-seal.json');assert seal['fp_islands']
  assert seal['source_head']==subprocess.check_output(['git','-C',str(S),'rev-parse','HEAD'],text=True).strip()
- d=R/f'binaries-{nl}-a02';d.mkdir(exist_ok=False);remote=REMOTE+'/'+d.name;adb('shell','mkdir -p '+remote)
+ d=R/f'binaries-{nl}-a03';d.mkdir(exist_ok=False);remote=REMOTE+'/'+d.name;adb('shell','mkdir -p '+remote)
  for n,h in seal['files'].items():
   p=Path(n);assert sha(p)==h;shutil.copy2(p,d/p.name);adb('push',win(p),remote+'/'+p.name);assert adb('shell','sha256sum '+remote+'/'+p.name).stdout.split()[0]==h
  adb('shell','chmod 755 '+remote+'/qwen3_block_cli '+remote+'/llama_sp2_cli');save(d/'seal.json',seal)
@@ -117,7 +117,7 @@ def execute(tag,repeat=1,audit=False,nl=28):
  ef=d/'trajectory.bin';ef.write_bytes(struct.pack('<'+'I'*len(words),*words));er=binary+'/'+tag+'-trajectory.bin';env['QBH_EVAL_FILE']=er
  if audit:env.update(QBH_GENERATION_BOUNDARY_AUDIT='1',QBH_GENERATION_AUDIT_DIR=REMOTE+'/'+tag)
  cmd='cd '+binary+' && '+' '.join(k+'='+shlex.quote(v) for k,v in env.items())+' ./qwen3_block_cli '+' '.join(shlex.quote(v) for v in argv)
- if not (d/'protocol.json').exists():save(d/'protocol.json',dict(command=cmd,layers=nl,repeat=repeat,audit=audit,seal_sha256=sha(R/f'binaries-{nl}-a02/seal.json'),package_manifest_sha256=sha(P/'manifest.json')))
+ if not (d/'protocol.json').exists():save(d/'protocol.json',dict(command=cmd,layers=nl,repeat=repeat,audit=audit,seal_sha256=sha(R/f'binaries-{nl}-a03/seal.json'),package_manifest_sha256=sha(P/'manifest.json')))
  if not (d/'exit.json').exists():
   adb('push',win(ef),er)
   if audit:adb('shell','mkdir -p '+env['QBH_GENERATION_AUDIT_DIR'])
@@ -133,7 +133,7 @@ def execute(tag,repeat=1,audit=False,nl=28):
   z=normalized([x]);assert sum(z[k] for _,k in LEDGER)==x['invocation_ticks']
   for i in range(nl):
    layer=x[f'slice_layer_{i}'];assert layer['status']==3 and layer['layer_unattributed_ticks']==0
-   if audit:checks.append(dict(step=step,layer=i,exact=layer['output_hash']==gold['hashes'][i][step],got=layer['output_hash'],expected=gold['hashes'][i][step]))
+   if audit:checks.append(dict(step=step,layer=i,exact=(int(layer['output_hash'],16) if isinstance(layer['output_hash'],str) else layer['output_hash'])==gold['hashes'][i][step],got=layer['output_hash'],expected=gold['hashes'][i][step]))
   assert (t['selected_token_id'],t['selected_logit_half_bits'])==(g['token'],g['code']),(tag,j,'head',t['selected_token_id'],g)
  if audit:
   save(d/'hash-checks.json',checks);assert all(x['exact'] for x in checks),[x for x in checks if not x['exact']][:5]

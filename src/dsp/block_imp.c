@@ -14635,6 +14635,18 @@ static void qbh_attention_u8_pool_run_tasks(
         telemetry_ptr = header->numerical_audit_enabled != 0U
             ? &telemetry : NULL;
         if (!split || pool->fp_island_phase == 0U) {
+#ifdef QBH_FP_ISLANDS
+        /* EXP0305 retains the frozen token0 K/V seed outside the former
+         * dependency-stream dispatcher as well. Native QKV prep has joined. */
+        if (header->prefix_kv_mode && qbh_attention_u8_qkv_overlap_enabled(header->attention_pipeline_mode)) {
+            struct qbh_attention_u8_group_view seed_view;
+            if (qbh_attention_u8_group_view_init(header,buffers,group,&seed_view)) {
+                pool->attention_gqa_abort=1U;return;
+            }
+            qbh_exp0257_prefix_group(header,buffers,group,&seed_view);
+        }
+#endif
+
 
         if (!qbh_attention_u8_qkv_overlap_enabled(
                 header->attention_pipeline_mode)) {
