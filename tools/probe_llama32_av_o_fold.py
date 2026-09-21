@@ -155,7 +155,8 @@ def execute(arm,tag,repeats=1,audit=False):
     for p in profiles:
         for k in ['output_mismatches','cache_mismatches','cache_prefix_mismatches','cache_structure_mismatches','intermediate_ddr_read_bytes','intermediate_ddr_write_bytes','intermediate_spill_fill_count']:
             assert p[k]==0,(tag,k,p[k])
-        assert p['vtcm_peak_bytes']<=8*1024*1024
+        assert p['vtcm_requested_bytes']==p['vtcm_acquired_bytes']==8*1024*1024
+        assert p['vtcm_peak_plan_bytes']<=8*1024*1024
     if audit:
         for step,phase in enumerate(['prefill','decode']):
             n=f'actual_replay_output_{step:02d}_f32.bin';adb('pull',REMOTE+'/'+tag+'/'+n,windows(dest/n))
