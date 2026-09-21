@@ -7,7 +7,7 @@ project:
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
   updated_on: '2026-09-22'
 governance:
-  active_experiment: L32-0065
+  active_experiment: null
   next_experiment_number: 66
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -27,11 +27,11 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: integer_fusion_ablation_running
+  stage: paper_integer_fusion_ablations_completed
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Complete companion EXP-0307 and combined archival; Llama formal measurement
-    complete
+  next_action: Discuss complete ablation results and conditional AV scale propagation;
+    no queued device work; no automatic baseline promotion
   baseline_manifest: docs/PAPER_NO_ROTATION_BASELINES.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF_L32_0034.md
@@ -44,7 +44,7 @@ current_scope:
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0064
+  last_completed_experiment: L32-0065
   evidence_ledger_sha256: 599d86cf654b2b41526690c76ad1c0a251b5f206815a57ce4ae12b0024f94ac9
   formal_profiling_completed: true
   general_quantization_quality_accepted: false
@@ -4866,9 +4866,94 @@ current_scope:
     source_closure: 5ac995fdecdd69cc875cd9113646321522c69bff
   integer_fusion_ablation_result:
     experiment: L32-0065
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_role: Own-contract numerical/physical pass; conditional AV fold preserves
+      checked clipping but not guaranteed bitwise FP reassociation
+    adoption_status: pending
     device_owner: null
-    timing_completed: true
-    summary: /mnt/d/llm_exp/results/llama32-htp/l32-0065/formal-summary.json
+    shape:
+    - 64
+    - 42
+    short_rounds: 5
+    formal_rounds: 10
+    repeat: 10
+    baseline_promoted: false
+    quality_claim: false
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0065
+    report: docs/experiments/L32-0065-RESULTS.md
+    combined_report: /mnt/d/llm_exp/results/paper-integer-fusion-20260922/REPORT.md
+    speed:
+      prefill:
+        F:
+          wall_ms: 41.20435624
+          tps: 1553.2338286569477
+        I:
+          wall_ms: 27.599083880000002
+          tps: 2318.9175509690867
+        M:
+          wall_ms: 27.64155882
+          tps: 2315.354225019065
+        F->I:
+          wall_ratio: 0.6698098550368227
+          ci95:
+          - 0.6691096589657833
+          - 0.6704708628720197
+          wall_reduction_pct: 33.01901449631773
+        I->M:
+          wall_ratio: 1.0015389981850369
+          ci95:
+          - 0.9990250848389196
+          - 1.0043242625118454
+          wall_reduction_pct: -0.15389981850368883
+        F->M:
+          wall_ratio: 0.6708406911880441
+          ci95:
+          - 0.6691919166744902
+          - 0.6725207117266145
+          wall_reduction_pct: 32.915930881195585
+      decode:
+        F:
+          wall_ms: 913.1270808100002
+          tps: 45.995788409586325
+        I:
+          wall_ms: 910.34185185
+          tps: 46.13651444745449
+        M:
+          wall_ms: 906.6315219
+          tps: 46.32532510228839
+        F->I:
+          wall_ratio: 0.9969497904305614
+          ci95:
+          - 0.995521568799452
+          - 0.9983774764233552
+          wall_reduction_pct: 0.3050209569438578
+        I->M:
+          wall_ratio: 0.9959242454442144
+          ci95:
+          - 0.9934352605918976
+          - 0.9984768615819913
+          wall_reduction_pct: 0.4075754555785571
+        F->M:
+          wall_ratio: 0.9928864677803245
+          ci95:
+          - 0.9909157458196782
+          - 0.9951581145803896
+          wall_reduction_pct: 0.7113532219675478
+    postflight:
+      packages_exact: true
+      binaries_exact: true
+      full_hashes_per_arm: 688
+      formal_rounds: 10
+      short_rounds: 5
+      repeat: 10
+      formal_invocations: 12900
+      all_timed_invocations: 19350
+    source_closure: 68bab93e4044e857af2ac1a50b9e32fcad94cc6d
+    evidence_ledger_sha256: 34fce7c545d6fc87a2804b3955d6daa573d506eff08bd316a3a34ae5c7e62472
+    files: 1710
+    bytes: 1266477871
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp
