@@ -21,6 +21,11 @@ if(QBH_MODEL_LLAMA32)
     add_compile_definitions(QBH_MODEL_LLAMA32=1 QBH_LLAMA_LAYER_COUNT=${QBH_LLAMA_LAYER_COUNT})
 endif()
 
+option(QBH_FP_ISLANDS "L32-0063 vector floating intermediate diagnostic" OFF)
+if(QBH_FP_ISLANDS)
+    add_compile_definitions(QBH_FP_ISLANDS=1)
+endif()
+
 option(QBH_PAPER_TRACE "Untimed software pipeline event tracing" OFF)
 if(QBH_PAPER_TRACE)
     add_compile_definitions(QBH_PAPER_TRACE=1)
@@ -155,6 +160,7 @@ if(${OS_TYPE} MATCHES "HLOS")
 else()
     add_library(qwen3_probe_skel SHARED
         ${CMAKE_CURRENT_BINARY_DIR}/qwen3_probe_skel
+        src/dsp/fp_island_swiglu.c
         src/dsp/llama_mapping_probe.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/llama_sp2_probe.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/probe_imp

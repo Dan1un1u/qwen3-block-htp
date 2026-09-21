@@ -22,6 +22,7 @@
 #include "hvx_fp16_ops.h"
 #include "hvx_u8_ops.h"
 #include "mlp_u8.h"
+#include "fp_island_swiglu.h"
 #include "qbh_user_dma.h"
 #include "w4_parallel_pipeline.h"
 #include "w4_u8_expand.h"
@@ -4765,6 +4766,16 @@ static void qbh_r4_prepare_tile(const uint8_t *gate,const uint8_t *up,
 static void qbh_r4_convert_worker(void *context,uint32_t worker_index);
 static void qbh_r4_prepare_tile(const uint8_t*,const uint8_t*,__fp16*,uint32_t,uint32_t,const uint16_t*,uint8_t*);
 #ifdef QBH_MODEL_LLAMA32
+#ifdef QBH_FP_ISLANDS
+static void fp63_swiglu(const struct qbh_block_header *h,const uint8_t *g,
+ const uint8_t *u,uint8_t *lo,uint8_t *hi,uint32_t count) {
+ const float p[5]={h->qparams[QBH_BLOCK_QP_GATE].scale,
+  (float)h->qparams[QBH_BLOCK_QP_GATE].zero_point,
+  h->qparams[QBH_BLOCK_QP_UP].scale,(float)h->qparams[QBH_BLOCK_QP_UP].zero_point,
+  h->qparams[QBH_BLOCK_QP_MIDDLE].scale};
+ qbh_fp_island_swiglu(g,u,lo,hi,count,p);
+}
+#endif
 static void qbh_llama_swiglu_worker(struct qbh_block_w4f16_pool *pool,uint32_t index) {
     for(uint32_t tile=index;tile<QBH_BLOCK_INTERMEDIATE/32U;tile+=3U) {
         if(pool->sp2_prefill_stream) {
@@ -4774,6 +4785,13 @@ static void qbh_llama_swiglu_worker(struct qbh_block_w4f16_pool *pool,uint32_t i
             }
             asm volatile("barrier" ::: "memory");
         }
+#ifdef QBH_FP_ISLANDS
+        if(pool->u8_sp2_high && !pool->u8_r4_act) {
+            fp63_swiglu(pool->attention_header,pool->u8_swiglu_gate+(size_t)tile*2048U,
+                pool->u8_swiglu_up+(size_t)tile*2048U,pool->u8_swiglu_middle+(size_t)tile*2048U,
+                pool->u8_sp2_high+(size_t)tile*2048U,2048U);
+        } else
+#endif
         if(pool->u8_r4_act) {
             qbh_r4_prepare_tile(pool->u8_swiglu_gate,pool->u8_swiglu_up,pool->u8_r4_act,
                 64U,tile,pool->u8_swiglu_lut,pool->u8_swiglu_gather_scratch+(size_t)index*256U);
@@ -4832,6 +4850,15 @@ static void qbh_w4u8_swiglu_stream_worker_run(
         for (uint32_t tile = 0U;
              tile < pool->u8_swiglu_group_tiles; ++tile) {
             const uint32_t output_tile = first_tile + tile;
+#ifdef QBH_FP_ISLANDS
+            if(pool->u8_sp2_high && !pool->u8_r4_act) {
+                uint8_t *lo=pool->u8_swiglu_middle+(size_t)output_tile*2048U;
+                uint8_t *hi=pool->u8_sp2_high+(size_t)output_tile*2048U;
+                *(HVX_Vector *)lo=Q6_V_vzero();*(HVX_Vector *)hi=Q6_Vb_vsplat_R(128);
+                fp63_swiglu(pool->attention_header,pool->u8_swiglu_gate+(size_t)output_tile*2048U,
+                    pool->u8_swiglu_up+(size_t)output_tile*2048U,lo,hi,32U);
+            } else
+#endif
             if(pool->u8_r4_act)qbh_r4_prepare_tile(pool->u8_swiglu_gate,pool->u8_swiglu_up,
                 pool->u8_r4_act,1U,output_tile,pool->u8_swiglu_lut,pool->u8_swiglu_gather_scratch);
             else if(pool->u8_sp2_high && (pool->attention_header->paper_format_disable&2U))
@@ -15824,6 +15851,12 @@ static int qbh_run_w4u8_direct_n_mlp(
              tile < QBH_BLOCK_INTERMEDIATE / QBH_HMX_OUTPUT_CHANNELS;
              ++tile) {
             if(QBH_LLAMA_SP2(header)) {
+#ifdef QBH_FP_ISLANDS
+                uint8_t *fp63lo=middle_native+(size_t)tile*2048U;
+                uint8_t *fp63hi=((header->paper_format_disable&4U)?buffers->sp2_high:middle_native+128U)+(size_t)tile*2048U;
+                *(HVX_Vector *)fp63lo=Q6_V_vzero();*(HVX_Vector *)fp63hi=Q6_Vb_vsplat_R(128);
+                fp63_swiglu(header,gate_native+(size_t)tile*2048U,up_native+(size_t)tile*2048U,fp63lo,fp63hi,32U);
+#else
                 if(header->paper_format_disable&2U)qbh_mlp_gate_up_sp2_decode_row1_compact_hvx(
                     gate_native+(size_t)tile*2048U,up_native+(size_t)tile*2048U,
                     middle_native+(size_t)tile*2048U,((header->paper_format_disable&4U)?buffers->sp2_high:middle_native+128U)+(size_t)tile*2048U,
@@ -15831,6 +15864,7 @@ static int qbh_run_w4u8_direct_n_mlp(
                 else qbh_mlp_gate_up_sp2_decode_row1_hvx(gate_native+(size_t)tile*2048U,up_native+(size_t)tile*2048U,
                     middle_native+(size_t)tile*2048U,((header->paper_format_disable&4U)?buffers->sp2_high:middle_native+128U)+(size_t)tile*2048U,
                     (const uint16_t *)buffers->w4u8_silu_lut,buffers->w4u8_gather_scratch);
+#endif
             } else qbh_mlp_gate_up_decode_row1_hvx(
                 gate_native + (size_t)tile * QBH_HMX_OUTPUT_BYTES,
                 up_native + (size_t)tile * QBH_HMX_OUTPUT_BYTES,
