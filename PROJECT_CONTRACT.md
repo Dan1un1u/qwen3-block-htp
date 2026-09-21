@@ -468,3 +468,7 @@ User changes the long/M64 prefill throughput gate to a maximum10% TPS loss. For 
 
 ## User-approved generic long-context speed repair (2026-09-19)
 User authorizes EXP-0300 under its registered protocol: all remaining models except Qwen0.6, generic A16 layout/vector/DMA repairs and paired10% long/M64 throughput gate. Supersedes prior experiment-specific no-further-optimization notices only within this bounded scope. Numerical/physical gates, frozen M64 fairness and historical failures remain.
+
+
+## User-approved D-drive artifact retirement (2026-09-21)
+User explicitly requests deleting all D-drive derived model weights and intermediate artifacts, including final quantized weights. Preserve original checkpoints, formal reports, raw profiling logs, accuracy results, reproduction/export configuration, historical hash manifests, and clearly identified small rotation/scale/gain/bias/LUT parameters. User separately approves removal of D:/llm_exp/models/qualcomm-sdk; independent WSL tools are retained. This supersedes earlier physical-retention instructions for those artifact categories only. Historical results, gate classifications and hashes remain unchanged. Record intentional absence separately; do not relabel regenerated files as original evidence. Future hardware reruns require regeneration/revalidation. This is closed-state storage maintenance, not a new experiment. See docs/D_DRIVE_CLEANUP_20260921.md.

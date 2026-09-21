@@ -1,3 +1,6 @@
+# D-drive artifact retirement (2026-09-21)
+User authorizes deletion of derived weights/builds/captured tensors, retaining original models, reports/raw logs/reproduction parameters and existing hash ledgers. Cleanup completed; D free space 264.63 GiB, net reclaimed 249.54 GiB. All 43 original file SHA256 values match. Reports/logs and historical ledgers remain retained; referenced derived payloads are intentionally unavailable, not a new hash failure. See docs/D_DRIVE_CLEANUP_20260921.md and D:/llm_exp/results/maintenance-cleanup-20260921. No source/gate/baseline/result changes.
+
 # EXP-0304 completed: SP2 / uniform INT16 Down
 Read docs/experiments/EXP-0304-RESULTS.md and MODULES.md. Both arms use identical nativeW4 pipeline and FP32 residual; only Down LUT/scale changed. Own full CPU reference exact,5short/10formal repeat10. No model-quality or baseline promotion. Device released. Ledger 889fc2ddeb2721ffc8357b42f5922eab06c0efaebdf364d6437c1bab182a33b4.
 
