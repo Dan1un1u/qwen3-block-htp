@@ -7,8 +7,8 @@ project:
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
   updated_on: '2026-09-21'
 governance:
-  active_experiment: null
-  next_experiment_number: 62
+  active_experiment: L32-0062
+  next_experiment_number: 63
   maximum_running_experiments: 1
   remote_sync_required: true
 source_worktrees:
@@ -27,11 +27,11 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: av_o_scale_folding_probe_complete
+  stage: av_o_scale_folding_fullmodel
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Discuss successful local AV-to-O scale folding and full-row1B decode
-    RQ attribution caveat before expansion.
+  next_action: Llama1B64+42 INT16 Down fullmodel control/folded comparison, then append
+    workbook F.
   baseline_manifest: docs/PAPER_NO_ROTATION_BASELINES.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF_L32_0034.md

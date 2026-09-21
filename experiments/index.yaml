@@ -5238,3 +5238,15 @@ experiments:
     evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0061
     evidence_ledger_sha256: fe3b3aa087607c42c85acdc5bf41f726ce05394bfc691a46b3d69d4ced0ffc39
     report: docs/experiments/L32-0061-RESULTS.md
+- id: L32-0062
+  title: Full-model AV-to-O scale folding and workbook F
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: pending
+  record: docs/experiments/L32-0062.md
+  approval_ref: User2026-09-21 requests one concrete fullmodel configuration and results
+    in workbook F
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
