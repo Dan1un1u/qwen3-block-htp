@@ -1,3 +1,6 @@
+# D-drive artifact retirement (2026-09-21)
+User authorizes deletion of derived weights/builds/captured tensors, retaining original models, reports/raw logs/reproduction parameters and existing hash ledgers. Cleanup completed; D free space 264.63 GiB, net reclaimed 249.54 GiB. All 43 original file SHA256 values match. Reports/logs and historical ledgers remain retained; referenced derived payloads are intentionally unavailable, not a new hash failure. See docs/D_DRIVE_CLEANUP_20260921.md and D:/llm_exp/results/maintenance-cleanup-20260921. No source/gate/baseline/result changes.
+
 # E sheet single-layer Down latency added
 L32-0060 E A23:J35 now contains single-layer average Down latency in microseconds: formal fullmodel module sums divided by16/28layers, decode per token. Prefill536 includes all nine M64 chunks per layer. Original E E2E and A-D preserved. Workbook SHA256 99c76a1a523ac1515e07ce1c87cfafe05ec4713514d5518466b3bfab5df419be. Receipt: docs/experiments/L32-0060-WORKBOOK-E-DOWN.json. No hardware rerun or independent single-layer benchmark claim.
 

@@ -245,3 +245,7 @@ User authorizes L32-0056 under its registered protocol: all remaining models exc
 
 ## L32-0057 authorization
 User explicitly requests optimizing Llama1B long decode for ordinary A8/SP2. This supersedes earlier small-model optimization deferral only for this registered scope; preserve all arithmetic/physical/evidence constraints.
+
+
+## User-approved D-drive artifact retirement (2026-09-21)
+User explicitly requests deleting all D-drive derived model weights and intermediate artifacts, including final quantized weights. Preserve original checkpoints, formal reports, raw profiling logs, accuracy results, reproduction/export configuration, historical hash manifests, and clearly identified small rotation/scale/gain/bias/LUT parameters. User separately approves removal of D:/llm_exp/models/qualcomm-sdk; independent WSL tools are retained. This supersedes earlier physical-retention instructions for those artifact categories only. Historical results, gate classifications and hashes remain unchanged. Record intentional absence separately; do not relabel regenerated files as original evidence. Future hardware reruns require regeneration/revalidation. This is closed-state storage maintenance, not a new experiment. See docs/D_DRIVE_CLEANUP_20260921.md.
