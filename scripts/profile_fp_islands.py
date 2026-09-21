@@ -107,7 +107,7 @@ def execute(tag,repeat=1,audit=False,nl=28):
  d=R/tag;d.mkdir(exist_ok=True)
  if (d/'validated.json').exists():return read(d/'validated.json')
  base=read(R.parent/'exp0284/fixed-aux-INT16-r1/protocol.json');prefix,args=base['command'].split(' ./qwen3_block_cli ',1)
- env=dict(t.split('=',1) for t in shlex.split(prefix.split(' && ')[1]));argv=shlex.split(args);binary=REMOTE+f'/binaries-{nl}'
+ env=dict(t.split('=',1) for t in shlex.split(prefix.split(' && ')[1]));argv=shlex.split(args);binary=REMOTE+f'/binaries-{nl}-a03'
  # Retain vector operators, four attention contexts and ordinary group preparation.
  argv[8]='hvx_fused_post_norm_pool4';argv[15]='u8_log2_gqa_qkv_overlap_vgather_vdeal_fused_qk_requant_hmx_batch_lut_templates_gqa_batch';argv[16]='4';argv[18]='qkvo_batch4';argv[19]='hvx_tree';argv[24]='0'
  for k in ['QBH_EVAL_FILE','QBH_GENERATION_AUDIT_DIR','QBH_GENERATION_BOUNDARY_AUDIT']:env.pop(k,None)
