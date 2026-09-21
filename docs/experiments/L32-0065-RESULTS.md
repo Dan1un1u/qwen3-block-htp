@@ -41,3 +41,5 @@ These are end-to-end comparisons with the same production overlap. Component cou
 | decode | M | 36.594 | 343.762 | 486.712 | 903.356 |
 
 Per-module additive tables: MODULES.md and modules.json. Raw profiles, commands, build seals, independent references and failed attempts remain beside this report.
+
+The legacy SP2 mode8 flag selects the shared byte-carrier execution path; this experiment uses the verified uniform INT16 LUT/scale package. It is not a SP2-grid measurement. Complete formal profile comparisons confirm equal matrix commands/tile work, weight traffic, DMA descriptors, VTCM peak and producer-release counts. See counter-invariants.json and protocol-invariants.json.
