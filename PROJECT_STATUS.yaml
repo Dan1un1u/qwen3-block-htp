@@ -14554,7 +14554,6 @@ current_scope:
   integer_fusion_ablation:
     experiment: EXP-0307
     execution_state: running
-    device_owner: null
-    device_pending: L32-0065 owns device until Llama timing completes
+    device_owner: EXP-0307
     baseline_promoted: false
     quality_claim: false

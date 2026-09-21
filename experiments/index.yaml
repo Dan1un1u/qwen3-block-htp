@@ -29623,4 +29623,4 @@ experiments:
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0307-integer-fusion-ablation
-    device_owner: null
+    device_owner: EXP-0307
