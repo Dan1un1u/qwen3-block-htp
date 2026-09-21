@@ -107,7 +107,7 @@ def execute(tag,repeat=1,audit=False,nl=28):
  # Retain vector operators, four attention contexts and ordinary group preparation.
  argv[8]='hvx_fused_post_norm_pool4';argv[15]='u8_log2_gqa_qkv_overlap_vgather_vdeal_fused_qk_requant_hmx_batch_lut_templates_gqa_batch';argv[16]='4';argv[18]='qkvo_batch4';argv[19]='hvx_tree';argv[24]='0'
  for k in ['QBH_EVAL_FILE','QBH_GENERATION_AUDIT_DIR','QBH_GENERATION_BOUNDARY_AUDIT']:env.pop(k,None)
- env.update(LD_LIBRARY_PATH=binary,DSP_LIBRARY_PATH=binary,ADSP_LIBRARY_PATH=binary,QBH_GENERATION_STEPS='2',QBH_GENERATION_EXPECTED_TOKENS='64',QBH_GENERATION_SEQUENCE='9',QBH_SP2='8',QBH_WIDE_SCORE='7',QBH_PAPER_PIPELINE_DISABLE='3',QBH_DENSE_R3='0',QBH_DENSE_R4='0',QBH_W4U8_DECODE_AV_REQUANT_ROWS='4',QBH_W4U8_QKV_RING_EXPAND_WORKERS='0',QBH_PREFIX_KV='0',QBH_KV_CACHE_LAYOUT='row_major',QBH_W4U8_PREFILL_CACHE_MODE='duplicate')
+ env.update(LD_LIBRARY_PATH=binary,DSP_LIBRARY_PATH=binary,ADSP_LIBRARY_PATH=binary,QBH_GENERATION_STEPS='2',QBH_GENERATION_EXPECTED_TOKENS='64',QBH_GENERATION_SEQUENCE='9',QBH_SP2='8',QBH_WIDE_SCORE='7',QBH_PAPER_PIPELINE_DISABLE='3',QBH_DENSE_R3='0',QBH_DENSE_R4='0',QBH_W4U8_DECODE_AV_REQUANT_ROWS='4',QBH_W4U8_QKV_RING_EXPAND_WORKERS='0',QBH_PREFIX_KV='0')
  fixture=read(R/'fixture.json');words=[0x51424556,2,repeat,69]
  for j in range(repeat):words += [j,3,2]+fixture['prompt']+fixture['fixed'][:2]
  ef=d/'trajectory.bin';ef.write_bytes(struct.pack('<'+'I'*len(words),*words));er=binary+'/'+tag+'-trajectory.bin';env['QBH_EVAL_FILE']=er
