@@ -5712,3 +5712,17 @@ experiments:
       cross-arm equivalence or PPL claim
   source_commits:
   - 85cf38b2311303589e7f35d31328e7fe485e75a9
+- id: L32-0067
+  title: Full-model residual boundary fusion four-arm ablation
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: not_requested
+  approval_ref: 'User explicitly approves only four configurations: fused, split Norm-Q,
+    split projection-residual, both; Llama1B64+42'
+  record: docs/experiments/L32-0067.md
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+    expected_source_head: 85cf38b2311303589e7f35d31328e7fe485e75a9
+    device_owner: L32-0067

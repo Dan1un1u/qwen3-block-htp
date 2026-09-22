@@ -7,8 +7,8 @@ project:
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
   updated_on: '2026-09-22'
 governance:
-  active_experiment: null
-  next_experiment_number: 67
+  active_experiment: L32-0067
+  next_experiment_number: 68
   maximum_running_experiments: 1
   remote_sync_required: true
 source_worktrees:
@@ -27,11 +27,11 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: llama3b_av_folding_replication_completed
+  stage: residual_boundary_fusion_ablation
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Discuss complete Llama3B paired AV folding results and preserved FP
-    rounding limitations
+  next_action: Implement exact four-arm boundary splitting; audit selected/three/full16
+    layers, five short and ten formal balanced paired repeat10
   baseline_manifest: docs/PAPER_NO_ROTATION_BASELINES.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF_L32_0034.md

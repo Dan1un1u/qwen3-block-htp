@@ -1,3 +1,6 @@
+# Active L32-0067: residual boundary fusion four-arm experiment
+Read docs/experiments/L32-0067.md. User approves only Llama1B64+42 N/R/NR versus fused, exact arithmetic and fair vector controls. Device reserved; no other experiments.
+
 # 2026-09-22 workbook archive and matched A refresh completed
 
 User authorized existing matched results only; no new hardware run. Desktop HTP workbook saved and read back. A64+42 final rows use actual uniform INT16 Down EXP-0304, EXP-0307 I, L32-0065 M, L32-0066 folded. Qwen retains independent AV RQ. B/C speed numbers and historical SP2 identities unchanged, explicitly pending refresh; historical relative-A percentages still refer to their original paired A. Other A recipes and D/E/G unchanged. F uses fair valid-row comparisons and retains superseded L32-0062 data in its history section. H/I/J archive138 paired phase comparisons,89 configurations,3570 module rows. Optimized historical pipeline source is EXP-0282/L32-0038; do not regress to older campaign reports. No PPL acceptance, source change or model-artifact baseline mutation.
