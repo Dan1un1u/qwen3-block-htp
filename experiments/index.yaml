@@ -29709,5 +29709,5 @@ experiments:
   record: docs/experiments/EXP-0308.md
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0307-integer-fusion-ablation
+    source_branch: codex/exp-0308-table-a-down-precision
     device_owner: null
