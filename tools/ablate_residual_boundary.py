@@ -9,9 +9,9 @@ from llama_reference import sha256
 from run_llama32_frontend import records
 from report_llama32_pipeline_profile import MODULES
 from probe_llama32_av_o_fullmodel import M,BASE,FIXTURE
-R=Path('/mnt/d/llm_exp/results/llama32-htp/l32-0067')
+R=Path('/mnt/d/llm_exp/results/llama32-htp/l32-0067/a02')
 OLD=Path('/mnt/d/llm_exp/results/llama32-htp/l32-0065')
-REMOTE='/data/local/tmp/llama32-htp/l32-0067'
+REMOTE='/data/local/tmp/llama32-htp/l32-0067/a02'
 PACKAGE_REMOTE='/data/local/tmp/llama32-htp/l32-0062'
 MASKS={'F':128,'N':160,'R':192,'NR':224,'PARENT':0}
 MODES=['F','N','R','NR']

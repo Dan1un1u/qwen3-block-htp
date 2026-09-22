@@ -33,14 +33,22 @@ static void qbh_llama_fp32_epilogue(const uint8_t *lo,const uint8_t *hi,
     for(uint32_t row=0;row<rows;row+=4U) {
         struct qbh_sp2_words l=qbh_sp2_chunk24(lo,row*32U);
         struct qbh_sp2_words h=sp2?qbh_sp2_chunk24(hi,row*32U):l;
-        HVX_Vector lv[4]={l.v0,l.v1,l.v2,l.v3},hv[4]={h.v0,h.v1,h.v2,h.v3};
-        for(uint32_t k=0;k<4U && row+k<rows;k++) {
-            HVX_Vector acc=qbh_fp32_dot(lv[k],hv[k],sum,sp2,zero);
-            HVX_Vector add=qbh_fp32_mul(Q6_Vsf_equals_Vw(acc),scales);
-            HVX_Vector *out=(HVX_Vector *)(dst+(row+k)*QBH_BLOCK_HIDDEN);
-            if(tmp) *(HVX_Vector *)(tmp+(row+k)*32U)=add;
-            else *out=Q6_Vsf_vadd_VsfVsf(*out,add);
-        }
+        /* Explicit lanes keep partial payloads in HVX registers. Dynamic
+         * indexing of vector arrays materializes them on the thread stack.
+         * Apply the same expansion to fused and split arms. */
+#define QBH_BOUNDARY_ROW(k) do { \
+        if(row+(k)<rows) { \
+            HVX_Vector acc=qbh_fp32_dot(l.v##k,h.v##k,sum,sp2,zero); \
+            HVX_Vector add=qbh_fp32_mul(Q6_Vsf_equals_Vw(acc),scales); \
+            HVX_Vector *out=(HVX_Vector *)(dst+(row+(k))*QBH_BLOCK_HIDDEN); \
+            if(tmp) *(HVX_Vector *)(tmp+(row+(k))*32U)=add; \
+            else *out=Q6_Vsf_vadd_VsfVsf(*out,add); \
+        } \
+    } while(0)
+        QBH_BOUNDARY_ROW(0); QBH_BOUNDARY_ROW(1);
+        QBH_BOUNDARY_ROW(2); QBH_BOUNDARY_ROW(3);
+#undef QBH_BOUNDARY_ROW
+
     }
     if(tmp) {
         asm volatile("barrier":::"memory");
