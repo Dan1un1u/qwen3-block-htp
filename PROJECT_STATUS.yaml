@@ -12344,8 +12344,8 @@ current_scope:
     generalization: supplementary only; not rerun or included
     quality_claim: false
     baseline_promoted: false
-  next_action: Offline paired protocol preparation; device remains L32-0068 until
-    explicit release. Then Qwen0.6/1.7 matched A64+42 measurement.
+  next_action: L32-0068 device released; recover Qwen0.6 verified payload and measure
+    both Qwen paired arms
   latest_f16_baseline_synthesis:
     report: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/REPORT.md
     a16_discussion: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/A16_DOWN_DISCUSSION.md
@@ -14502,7 +14502,7 @@ current_scope:
     interpretation: Combined FP arithmetic+fused QDQ; not QDQ-only cost or overlapped
       production critical-path share
     companion: L32-0063
-  device_owner: null
+  device_owner: EXP-0308
   floating_intermediate_motivation_06b:
     experiment: EXP-0306
     execution_state: completed
