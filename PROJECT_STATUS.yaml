@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0308
+  active_experiment: null
   next_experiment_number: 309
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -2882,7 +2882,7 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: Qwen3_28layer_native_W4_SP2_M64_plus15_verified
-  last_completed_experiment: EXP-0307
+  last_completed_experiment: EXP-0308
   last_completed_source_commit: d2af6c7d3d5bccf467b5dd194be08c16ae6ed68c
   provisional_source_parent: EXP0268_diagnostic_U8_pipeline_closure_no_default_promotion
   device_execution_state: idle
@@ -12344,8 +12344,8 @@ current_scope:
     generalization: supplementary only; not rerun or included
     quality_claim: false
     baseline_promoted: false
-  next_action: L32-0068 device released; recover Qwen0.6 verified payload and measure
-    both Qwen paired arms
+  next_action: Scoped Table A paired Down precision audit complete. Discuss measured
+    residual prefill cost; no further experiments implied.
   latest_f16_baseline_synthesis:
     report: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/REPORT.md
     a16_discussion: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/A16_DOWN_DISCUSSION.md
@@ -12766,7 +12766,7 @@ current_scope:
       exceedsuint32 shared-offset ABI
     named_dataset_measurements_completed: false
     baseline_promotion: No additional automatic promotion
-  stage: paper_integer_fusion_ablations_completed
+  stage: table_a_down_precision_pair_completed
   latest_long_prefill_migration:
     experiment: EXP-0296
     execution_state: completed
@@ -14502,7 +14502,7 @@ current_scope:
     interpretation: Combined FP arithmetic+fused QDQ; not QDQ-only cost or overlapped
       production critical-path share
     companion: L32-0063
-  device_owner: EXP-0308
+  device_owner: null
   floating_intermediate_motivation_06b:
     experiment: EXP-0306
     execution_state: completed
@@ -14623,3 +14623,126 @@ current_scope:
       - I
       speed_claim: false
   integer_fusion_ablation_result: *id006
+  latest_table_a_down_precision_pair:
+    experiment: EXP-0308
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: not_requested
+    device_owner: null
+    shape:
+    - 64
+    - 42
+    short_rounds: 5
+    formal_rounds: 10
+    repeat: 10
+    baseline_promoted: false
+    quality_claim: false
+    measured_sources:
+      0.6B: 351faad913439b27bcac00ec9278a0c205b85776
+      1.7B: 351faad913439b27bcac00ec9278a0c205b85776
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0308
+    evidence_ledger_sha256: afa598074f07eba57a0ab21a5cbaf7aefa4ed399192f68c8e4a6cf33712c26c2
+    evidence_files: 3267
+    evidence_bytes: 2321450700
+    source_closure: 7e80b08190c8e9ddc70c56a10278969397e75cd2
+    report: docs/experiments/EXP-0308-RESULTS.md
+    speed:
+      0.6B:
+        prefill:
+          A8:
+            wall_ms: 20.81310518
+            tps: 3074.9856615100234
+          INT16:
+            wall_ms: 21.159091150000002
+            tps: 3024.7045842514835
+          int16_over_a8:
+            wall_ratio: 1.0166234671380256
+            ci95:
+            - 1.0141288615930535
+            - 1.0185800932400018
+        decode:
+          A8:
+            wall_ms: 442.5338807
+            tps: 94.90798745977237
+          INT16:
+            wall_ms: 445.25657392000005
+            tps: 94.32763592962965
+          int16_over_a8:
+            wall_ratio: 1.0061525079519185
+            ci95:
+            - 1.0031854142588612
+            - 1.0095694799967885
+      1.7B:
+        prefill:
+          A8:
+            wall_ms: 34.39234903
+            tps: 1860.8789979472945
+          INT16:
+            wall_ms: 34.72326552
+            tps: 1843.144619077866
+          int16_over_a8:
+            wall_ratio: 1.0096218054111787
+            ci95:
+            - 1.0067109308369806
+            - 1.011909708047124
+        decode:
+          A8:
+            wall_ms: 881.49441668
+            tps: 47.64635964251018
+          INT16:
+            wall_ms: 883.5439723100001
+            tps: 47.535834453368764
+          int16_over_a8:
+            wall_ratio: 1.002325092015579
+            ci95:
+            - 0.9976139814975333
+            - 1.0057504861969488
+    postflight:
+      0.6B:
+        exact_layer_outputs:
+          A8: 1376
+          INT16: 1376
+        padding_full_layers: true
+        binaries_verified: true
+        formal_invocations: 8600
+        short_invocations: 4300
+        physical_and_same_contract_pass: true
+      1.7B:
+        exact_layer_outputs:
+          A8: 1376
+          INT16: 1376
+        padding_full_layers: true
+        binaries_verified: true
+        formal_invocations: 8600
+        short_invocations: 4300
+        physical_and_same_contract_pass: true
+    workbook:
+      input_sha256: ba867d6fb41e99396cc164a29be7e361ea5747fe4748d88da7a14fe67e389598
+      output_sha256: dda3eca82949b44399f6b484919588698e53d9aa7c38ee277678619b70850bd1
+      changed_parts:
+      - xl/worksheets/sheet1.xml
+      - xl/worksheets/sheet10.xml
+      - xl/worksheets/sheet11.xml
+      - xl/worksheets/sheet8.xml
+      - xl/worksheets/sheet9.xml
+      preserved_all_original_styles: true
+      unrelated_parts_byte_identical: true
+      updated_A_rows:
+      - 8
+      - 9
+      - 12
+      - 13
+      - 16
+      - 17
+      append_counts:
+        H: 6
+        I: 6
+        J: 384
+        K: 180
+      output: C:\Users\35961\.codex\visualizations\2026\09\22\table-a-down-pair\validated.xlsx
+      desktop_saved: C:\Users\35961\Desktop\HTP硬件实验总表_重建.xlsx
+      archive: D:\llm_exp\results\paper-table-a-down-pair-20260922
+      saved_at: '2026-09-22T16:48:31.939076'
+    gate_scope: Own-contract exact1/3/full-layer and padding audits, physical invariants,
+      five short/ten formal paired repeat10. Not a model-quality claim.

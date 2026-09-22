@@ -1,3 +1,6 @@
+# Completed EXP-0308: matched Table A Down precision
+Full-model fixed64+42, five short and ten formal alternating repeat10, same binary/trace/shared optimizations. Exact own-reference1/3/full-layer and padding checks plus8MiBVTCM/zero intermediateDDR passed. Main rebuilt workbook A six scoped rows updated across L32-0068/EXP0308; H/I/J/K appended paired module evidence. Other rows/tabs frozen. No quality or Selected promotion. Source 7e80b08190c8e9ddc70c56a10278969397e75cd2; ledger afa598074f07eba57a0ab21a5cbaf7aefa4ed399192f68c8e4a6cf33712c26c2; device released. See docs/experiments/EXP-0308-RESULTS.md.
+
 # Active EXP-0308: Table A Down precision fairness
 Qwen0.6/1.7 A64+42 paired A8/INT16; initially offline while L32-0068 owns device. See docs/experiments/EXP-0308.md.
 
