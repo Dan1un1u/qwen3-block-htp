@@ -7,7 +7,7 @@ project:
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
   updated_on: '2026-09-22'
 governance:
-  active_experiment: L32-0067
+  active_experiment: null
   next_experiment_number: 68
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -15,7 +15,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: 85cf38b2311303589e7f35d31328e7fe485e75a9
+    recorded_head: a0d6d8f504d360009333c0d0b7c649e49ce69aa2
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -27,11 +27,11 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: residual_boundary_fusion_ablation
+  stage: residual_boundary_fusion_ablation_completed
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Implement exact four-arm boundary splitting; audit selected/three/full16
-    layers, five short and ten formal balanced paired repeat10
+  next_action: Discuss measured residual-boundary marginal gains; no further experiments
+    authorized by this turn
   baseline_manifest: docs/PAPER_NO_ROTATION_BASELINES.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF_L32_0034.md
@@ -44,7 +44,7 @@ current_scope:
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0066
+  last_completed_experiment: L32-0067
   evidence_ledger_sha256: 599d86cf654b2b41526690c76ad1c0a251b5f206815a57ce4ae12b0024f94ac9
   formal_profiling_completed: true
   general_quantization_quality_accepted: false
@@ -5407,3 +5407,140 @@ latest_llama3b_av_folding_ablation:
   vtcm_peak_bytes: 8360416
   gate_scope: Own-contract arithmetic/physical and fixed paired timing; no bitwise
     cross-arm equivalence or PPL claim
+latest_residual_boundary_fusion_ablation:
+  experiment: L32-0067
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
+  adoption_status: not_requested
+  device_owner: null
+  model: Llama3.2-1B
+  shape:
+  - 64
+  - 42
+  short_rounds: 5
+  formal_rounds: 10
+  repeat: 10
+  quality_claim: false
+  baseline_promoted: false
+  source_closure: a0d6d8f504d360009333c0d0b7c649e49ce69aa2
+  measured_source: a0d6d8f504d360009333c0d0b7c649e49ce69aa2
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0067
+  evidence_ledger_sha256: 4ca3b60a027cc4ac6b0435a2f4ee0f99e30b069bf49a3c94d293f5385dbdfc68
+  evidence_files: 3601
+  evidence_bytes: 1781804780
+  report: docs/experiments/L32-0067-RESULTS.md
+  modules: docs/experiments/L32-0067-MODULES.md
+  speed:
+    prefill:
+      F:
+        wall_ms: 27.08212656
+        tps: 2363.182221241344
+      N:
+        wall_ms: 27.186094779999998
+        tps: 2354.1446654222254
+      R:
+        wall_ms: 27.1808604
+        tps: 2354.59801706645
+      NR:
+        wall_ms: 27.33904943
+        tps: 2340.973857334293
+      N/F:
+        wall_ratio: 1.0038389976418454
+        ci95:
+        - 1.0008887867118754
+        - 1.0064587013302277
+      R/F:
+        wall_ratio: 1.0036457196144202
+        ci95:
+        - 1.000580092553626
+        - 1.0068728188507106
+      NR/F:
+        wall_ratio: 1.0094868056033484
+        ci95:
+        - 1.004073025720697
+        - 1.014603882350975
+      NR/R:
+        wall_ratio: 1.0058198683806197
+        ci95:
+        - 1.0021546663352516
+        - 1.0093597190273098
+      NR/N:
+        wall_ratio: 1.0056262089585786
+        ci95:
+        - 1.0007441314861822
+        - 1.0103412723653933
+      interaction:
+        wall_ratio: 1.0019732952629132
+        ci95:
+        - 0.9975648317915868
+        - 1.0069740223905972
+    decode:
+      F:
+        wall_ms: 904.10844215
+        tps: 46.45460438365402
+      N:
+        wall_ms: 905.4970865399998
+        tps: 46.38336293326624
+      R:
+        wall_ms: 904.98788966
+        tps: 46.40946081143607
+      NR:
+        wall_ms: 908.71693323
+        tps: 46.2190132748078
+      N/F:
+        wall_ratio: 1.0015359268039767
+        ci95:
+        - 0.997903852892988
+        - 1.0048029071079625
+      R/F:
+        wall_ratio: 1.0009727234798391
+        ci95:
+        - 0.9970079649727873
+        - 1.004782720188245
+      NR/F:
+        wall_ratio: 1.0050972769030238
+        ci95:
+        - 1.0002203262347993
+        - 1.0097004667750242
+      NR/R:
+        wall_ratio: 1.004120545272049
+        ci95:
+        - 1.0000841391895843
+        - 1.0084060385921005
+      NR/N:
+        wall_ratio: 1.0035558885145657
+        ci95:
+        - 0.9987484617494147
+        - 1.008500498478383
+      interaction:
+        wall_ratio: 1.0025806547712373
+        ci95:
+        - 0.9965388477773316
+        - 1.0094306993897464
+  full_hashes_per_arm: 688
+  formal_invocations: 17200
+  vtcm_peak_bytes: 8139232
+  common_scratch_bytes: 40960
+  gate_scope: Exact1/3/16-layer hashes, heads, FP32 hidden/U8 norm/prefill KV payloads;
+    full16 padding poison; physical and fixed timing checks; no PPL claim
+  workbook:
+    workbook_before_sha256: f5d823bbf70a0f39ec5313f765857fac39895c5e012ed449cbd3058772649237
+    workbook_after_sha256: b1193e77b0f5dc2d1e5ab9fefb8ad18d57b5f97a4fbbc2bbf27e7dd2a4d78b39
+    desktop: C:\Users\35961\Desktop\HTP硬件实验总表.xlsx
+    output: C:\Users\35961\.codex\visualizations\2026\09\22\l32-0067-workbook\outputs\l32-0067\HTP硬件实验总表.xlsx
+    appended:
+      H_消融汇总:
+      - 144
+      - 155
+      I_消融配置:
+      - 95
+      - 98
+      J_消融模块:
+      - 3576
+      - 3743
+    all_original_cells_styles_preserved: true
+    ABCDEF_G_parts_byte_identical: true
+    artifact_tool_authored: true
+    formula_cache_verified: true
+    desktop_updated: true
