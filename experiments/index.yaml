@@ -5866,3 +5866,17 @@ experiments:
   source_commits:
   - 74be1857432b86d253e5b5da89cfc2e5cc7f752d
   - a0d6d8f504d360009333c0d0b7c649e49ce69aa2
+- id: L32-0068
+  title: Table A same-binary A8 versus uniform INT16 Down fairness
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: not_requested
+  approval_ref: User asks audit missing shared optimizations, paired remeasure and
+    update A rows for Llama1B and two Qwen sizes, excludes Llama3B
+  record: docs/experiments/L32-0068.md
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+    expected_source_head: a0d6d8f504d360009333c0d0b7c649e49ce69aa2
+    device_owner: L32-0068

@@ -1,3 +1,6 @@
+# Active L32-0068: Table A matched Down precision pair
+Read docs/experiments/L32-0068.md. Latest shared production path, exact independent arithmetic, full1B64+42 pair; serialized device.
+
 # L32-0067 completed: residual boundary fusion
 Llama1B full16 fixed64+42, uniform INT16 Down, FP32 residual/Norm, no rotation. F/N/R/NR same-binary five short/ten formal repeat10; exact numerical/physical and padding checks passed. Both splits retain native layouts, tile/row granularity and common buffering; do not describe as unfused whole-layer/DDR controls. Combined NR/F wall ratios: prefill1.009487, decode1.005097; use formal CI before asserting individual gains. H/I/J appended to desktop workbook; main A-G unchanged, no promotion/quality claim. Device released. Sourcea0d6d8f504d360009333c0d0b7c649e49ce69aa2. See docs/experiments/L32-0067-RESULTS.md.
 
