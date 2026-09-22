@@ -71,7 +71,7 @@ def reference():
   hashes.append([fnv(x[:64])]+[fnv(x[j:j+1]) for j in range(64,106)]);clipping.append(read(cf));_cached_w4_projection.cache_clear()
   if i+1 in [1,3,16]:
    hf=d/f'head-{i+1}.json'
-   if not hf.exists():save(hf,get_head(x[63:],p))
+   if not hf.exists():save(hf,get_head(x,p))
    heads[str(i+1)]=read(hf)
   print('REFERENCE',mode,i,clipping[-1],flush=True)
  assert all(c['saturated']==0 for c in clipping),clipping
