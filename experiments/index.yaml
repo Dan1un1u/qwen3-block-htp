@@ -5588,13 +5588,127 @@ experiments:
   - 68bab93e4044e857af2ac1a50b9e32fcad94cc6d
 - id: L32-0066
   title: Llama3B fair AV-to-O scale folding replication
-  execution_state: running
-  evidence_validity: pending
-  local_gate: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: pending
   approval_ref: User requests Llama3B replacement evidence after Qwen saturation rejection
   record: docs/experiments/L32-0066.md
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
-    device_owner: L32-0066
+    device_owner: null
+  results:
+    experiment: L32-0066
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: pending
+    device_owner: null
+    model: Llama3.2-3B
+    shape:
+    - 64
+    - 42
+    short_rounds: 5
+    formal_rounds: 10
+    repeat: 10
+    quality_claim: false
+    baseline_promoted: false
+    source_closure: 85cf38b2311303589e7f35d31328e7fe485e75a9
+    measured_source: 9c799a4fc8bf89fdd2f23e137be14e49ee733c40
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0066
+    evidence_ledger_sha256: 7c06a79a9155becf6c7b721de466cf0ee716014c4db78e657038519b55717e2f
+    evidence_files: 1227
+    evidence_bytes: 1224207756
+    report: docs/experiments/L32-0066-RESULTS.md
+    modules: docs/experiments/L32-0066-MODULES.md
+    speed:
+      prefill:
+        control: 53.74563425
+        folded: 53.156031760000005
+        ratio: 0.9890297603102526
+        ci95:
+        - 0.9875976194135982
+        - 0.9907346292246019
+        control_tps: 1190.7943946163402
+        folded_tps: 1204.0025916336385
+        units: ms total phase wall
+        components_us:
+          invocation_ticks:
+            control: 52881.1671875
+            folded: 52307.55572916666
+            ratio: 0.9891528215271895
+            ci95:
+            - 0.9884600952793882
+            - 0.9902557500471071
+          u8_attention_av_requant_ticks:
+            control: 2474.09375
+            folded: 8.401041666666668
+            ratio: 0.0033956036090656097
+            ci95:
+            - 0.0033699167167624295
+            - 0.003419186555110295
+          u8_attention_av_hmx_ticks:
+            control: 688.8927083333334
+            folded: 676.0421875
+            ratio: 0.9813461215688822
+            ci95:
+            - 0.9776663401669834
+            - 0.9848549601039956
+          o_projection_ticks:
+            control: 4151.955208333333
+            folded: 4142.953645833333
+            ratio: 0.9978319702288857
+            ci95:
+            - 0.9961056050879146
+            - 0.9995456664722171
+      decode:
+        control: 1751.6659061999999
+        folded: 1746.0726363400001
+        ratio: 0.9968068854681692
+        ci95:
+        - 0.9957801108211757
+        - 0.9979829523502054
+        control_tps: 23.977175014562718
+        folded_tps: 24.053982134464675
+        units: ms total phase wall
+        components_us:
+          invocation_ticks:
+            control: 1722648.284375
+            folded: 1716612.9171875
+            ratio: 0.99649645998998
+            ci95:
+            - 0.9955738395558572
+            - 0.9975145245227992
+          u8_attention_av_requant_ticks:
+            control: 6891.978645833335
+            folded: 477.81875
+            ratio: 0.06932969101534776
+            ci95:
+            - 0.06906933354537304
+            - 0.06962357564803517
+          u8_attention_av_hmx_ticks:
+            control: 27522.31197916667
+            folded: 27431.0234375
+            ratio: 0.9966831078095557
+            ci95:
+            - 0.9898313009051204
+            - 1.001741078299852
+          o_projection_ticks:
+            control: 122009.39270833335
+            folded: 121943.58072916667
+            ratio: 0.9994605990759744
+            ci95:
+            - 0.9952828834232694
+            - 1.0033425313548967
+    full_hashes_per_arm: 1204
+    saturated_elements: 0
+    checked_av_elements: 18235392
+    head_token_changes: 7
+    final_hidden_relative_l2: 0.36584658140318244
+    formal_invocations: 8600
+    vtcm_peak_bytes: 8360416
+    gate_scope: Own-contract arithmetic/physical and fixed paired timing; no bitwise
+      cross-arm equivalence or PPL claim
+  source_commits:
+  - 85cf38b2311303589e7f35d31328e7fe485e75a9

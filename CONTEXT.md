@@ -1,3 +1,6 @@
+# L32-0066 completed: Llama3B AV folding supplement
+M64+42, uniform INT16 Down, FP32 residual, no rotation. Five short/ten formal paired repeat10. Zero AV clipping across18,235,392reference values; own1/3/28-layer exact checks. Prefill wall reduction1.0970%, decode0.3193%. Preserve rounding/output differences, no quality/baseline promotion. Device released. See docs/experiments/L32-0066-RESULTS.md.
+
 # Active L32-0066: Llama3B AV folding replication
 Read docs/experiments/L32-0066.md. User requests matched3B I/M supplement; numerical eligibility precedes timing. Device owned; prior failures preserved.
 
