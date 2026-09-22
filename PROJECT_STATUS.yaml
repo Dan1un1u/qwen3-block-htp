@@ -18,8 +18,8 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 308
+  active_experiment: EXP-0308
+  next_experiment_number: 309
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -12344,8 +12344,8 @@ current_scope:
     generalization: supplementary only; not rerun or included
     quality_claim: false
     baseline_promoted: false
-  next_action: Discuss complete ablation results and conditional AV scale propagation;
-    no queued device work; no automatic baseline promotion
+  next_action: Offline paired protocol preparation; device remains L32-0068 until
+    explicit release. Then Qwen0.6/1.7 matched A64+42 measurement.
   latest_f16_baseline_synthesis:
     report: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/REPORT.md
     a16_discussion: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/A16_DOWN_DISCUSSION.md

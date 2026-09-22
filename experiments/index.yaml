@@ -29698,3 +29698,16 @@ experiments:
       speed_claim: false
   source_commits:
   - 8e6e015a66ccfafb44ba3d17052b85a3928d2501
+- id: EXP-0308
+  title: Table A Qwen matched A8 versus uniform INT16 Down
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: not_requested
+  approval_ref: User requests Qwen0.6/1.7 and Llama1B A-table fairness audit, repair
+    unmatched optimizations and remeasure; excludes Llama3B
+  record: docs/experiments/EXP-0308.md
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0307-integer-fusion-ablation
+    device_owner: null
