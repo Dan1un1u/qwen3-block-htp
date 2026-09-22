@@ -1,0 +1,36 @@
+{
+  "workbook_before_sha256": "df2d122177ae5a53779866fb10d593bf0010a1655503298dd2e5043964e60bdd",
+  "workbook_after_sha256": "f5d823bbf70a0f39ec5313f765857fac39895c5e012ed449cbd3058772649237",
+  "desktop": "C:\\Users\\35961\\Desktop\\HTP硬件实验总表.xlsx",
+  "output": "C:\\Users\\35961\\.codex\\visualizations\\2026\\09\\22\\htp-ablation-main-refresh\\outputs\\ablation-main-20260922\\HTP硬件实验总表.xlsx",
+  "effects": 138,
+  "arms": 89,
+  "module_rows": 3570,
+  "A_rows_updated": [
+    9,
+    13,
+    17,
+    21
+  ],
+  "BC_speed_cells_unchanged": true,
+  "DEG_sheet_parts_byte_identical": true,
+  "all_unrelated_cells_and_styles_preserved": true,
+  "formula_cache_verified": true,
+  "artifact_tool_authored": true,
+  "sources": {
+    "file:///D:/llm_exp/results/qwen3-block-htp/exp0282/SUMMARY.json": "507f83d381ae72fb7294dce2189fb290d38bb2ff01ef198cee5efdbe879a8053",
+    "file:///D:/llm_exp/results/llama32-htp/l32-0038/SUMMARY.json": "4b440cf581fd50a1d5b2b6865d558b4c8332b4157041723b6d80e6ecdfa14c13",
+    "file:///D:/llm_exp/results/qwen3-block-htp/exp0284/SUMMARY.json": "210025fc3590b7f849900a908afe231905fd0db5be502486cad093a00b5db6aa",
+    "file:///D:/llm_exp/results/llama32-htp/l32-0040/SUMMARY.json": "6b0d50b6af466be29f55313511a54952233d9b0061502d650df81e920851b60c",
+    "file:///D:/llm_exp/results/qwen3-block-htp/exp0304/SUMMARY.json": "d25c74a59226b2de05fa25c319332228668d4799dbd818aa7b4fb70734acb457",
+    "file:///D:/llm_exp/results/llama32-htp/l32-0058/SUMMARY.json": "0521283a660b73a0ae72928d36aa507e9055b98957aba128d589dc8bb0e8b69f",
+    "file:///D:/llm_exp/results/llama32-htp/l32-0065/formal-summary.json": "b760fb1df93ef2ac5601e396ea252562f7f0589ead1659d735fb9e9cfb2d78d0",
+    "file:///D:/llm_exp/results/llama32-htp/l32-0065/modules.json": "023ac9835191f9a97e336e908818fbbb4b2ac3df6123c8b1d1b864e31844d389",
+    "file:///D:/llm_exp/results/qwen3-block-htp/exp0307/formal-summary.json": "a3526e7e7f17ba1b13a785d0368d9af75c16b17725dea1c61231d6334466c42b",
+    "file:///D:/llm_exp/results/qwen3-block-htp/exp0307/modules.json": "f3ce25cc30ebd46e46cc69a43f86b7e12d958c0c6dbe64f2ec79d137f0e38691",
+    "file:///D:/llm_exp/results/llama32-htp/l32-0066/formal-summary.json": "e2de6b7dd7fa8223f400796596002efd741be437973fc4ce00479c7c928baa12",
+    "file:///D:/llm_exp/results/llama32-htp/l32-0066/modules.json": "84ce6eb011000633d04a8f23468b224fde3b6a222aaa69ddebbd362a23c793c2"
+  },
+  "desktop_saved": true,
+  "saved_at": "2026-09-22T11:21:03.173473"
+}

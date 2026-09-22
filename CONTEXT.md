@@ -1,3 +1,9 @@
+# 2026-09-22 workbook archive and matched A refresh completed
+
+User authorized existing matched results only; no new hardware run. Desktop HTP workbook saved and read back. A64+42 final rows use actual uniform INT16 Down EXP-0304, EXP-0307 I, L32-0065 M, L32-0066 folded. Qwen retains independent AV RQ. B/C speed numbers and historical SP2 identities unchanged, explicitly pending refresh; historical relative-A percentages still refer to their original paired A. Other A recipes and D/E/G unchanged. F uses fair valid-row comparisons and retains superseded L32-0062 data in its history section. H/I/J archive138 paired phase comparisons,89 configurations,3570 module rows. Optimized historical pipeline source is EXP-0282/L32-0038; do not regress to older campaign reports. No PPL acceptance, source change or model-artifact baseline mutation.
+
+See docs/PAPER_ABLATION_WORKBOOK_20260922.md and .json for scope, provenance and workbook receipt. Evidence/authoring snapshot: /mnt/d/llm_exp/results/paper-ablation-workbook-20260922. Workbook SHA256 f5d823bbf70a0f39ec5313f765857fac39895c5e012ed449cbd3058772649237. No active experiment or device work. Historical contexts below remain historical.
+
 # L32-0066 completed: Llama3B AV folding supplement
 M64+42, uniform INT16 Down, FP32 residual, no rotation. Five short/ten formal paired repeat10. Zero AV clipping across18,235,392reference values; own1/3/28-layer exact checks. Prefill wall reduction1.0970%, decode0.3193%. Preserve rounding/output differences, no quality/baseline promotion. Device released. See docs/experiments/L32-0066-RESULTS.md.
 
