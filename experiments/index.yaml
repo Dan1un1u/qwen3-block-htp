@@ -5868,9 +5868,9 @@ experiments:
   - a0d6d8f504d360009333c0d0b7c649e49ce69aa2
 - id: L32-0068
   title: Table A same-binary A8 versus uniform INT16 Down fairness
-  execution_state: running
-  evidence_validity: pending
-  local_gate: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: not_requested
   approval_ref: User asks audit missing shared optimizations, paired remeasure and
     update A rows for Llama1B and two Qwen sizes, excludes Llama3B
@@ -5880,3 +5880,93 @@ experiments:
     source_branch: codex/llama32-no-rotation
     expected_source_head: 8a8a52a9102cdce623a3bdf45573975b8ac4989b
     device_owner: null
+  results:
+    experiment: L32-0068
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    adoption_status: not_requested
+    device_owner: null
+    shape:
+    - 64
+    - 42
+    short_rounds: 5
+    formal_rounds: 10
+    repeat: 10
+    baseline_promoted: false
+    quality_claim: false
+    measured_sources:
+      l32-0068: 8a8a52a9102cdce623a3bdf45573975b8ac4989b
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0068
+    evidence_ledger_sha256: 651f24415c1b96de3bf60d3a91d0101f680fac8a40fe2bf472c9ca6e1bc87fc2
+    evidence_files: 1182
+    evidence_bytes: 847510013
+    source_closure: 399cc083f6c586e91695edef2d64c4105e3c4da6
+    report: docs/experiments/L32-0068-RESULTS.md
+    speed:
+      l32-0068:
+        prefill:
+          A8:
+            wall_ms: 26.677298989999997
+            tps: 2399.0434722792006
+          INT16:
+            wall_ms: 27.216615660000002
+            tps: 2351.5047131322863
+          int16_over_a8:
+            wall_ratio: 1.0202163146352323
+            ci95:
+            - 1.0145496729672252
+            - 1.0254243812132295
+        decode:
+          A8:
+            wall_ms: 907.09569526
+            tps: 46.30161979543027
+          INT16:
+            wall_ms: 908.67473814
+            tps: 46.22115949428874
+          int16_over_a8:
+            wall_ratio: 1.0017407676921535
+            ci95:
+            - 0.9966563938923672
+            - 1.006151195345091
+    postflight:
+      l32-0068:
+        exact_layer_outputs:
+          A8: 860
+          INT16: 860
+        padding_full_layers: true
+        binaries_verified: true
+        formal_invocations: 8600
+        short_invocations: 4300
+        device_released: true
+    workbook:
+      input_sha256: ba867d6fb41e99396cc164a29be7e361ea5747fe4748d88da7a14fe67e389598
+      output_sha256: dda3eca82949b44399f6b484919588698e53d9aa7c38ee277678619b70850bd1
+      changed_parts:
+      - xl/worksheets/sheet1.xml
+      - xl/worksheets/sheet10.xml
+      - xl/worksheets/sheet11.xml
+      - xl/worksheets/sheet8.xml
+      - xl/worksheets/sheet9.xml
+      preserved_all_original_styles: true
+      unrelated_parts_byte_identical: true
+      updated_A_rows:
+      - 8
+      - 9
+      - 12
+      - 13
+      - 16
+      - 17
+      append_counts:
+        H: 6
+        I: 6
+        J: 384
+        K: 180
+      output: C:\Users\35961\.codex\visualizations\2026\09\22\table-a-down-pair\validated.xlsx
+      desktop_saved: C:\Users\35961\Desktop\HTP硬件实验总表_重建.xlsx
+      archive: D:\llm_exp\results\paper-table-a-down-pair-20260922
+      saved_at: '2026-09-22T16:48:31.939076'
+    gate_scope: Own-contract exact1/3/full-layer and padding audits, physical invariants,
+      five short/ten formal paired repeat10. Not a model-quality claim.
+  source_commits:
+  - 399cc083f6c586e91695edef2d64c4105e3c4da6

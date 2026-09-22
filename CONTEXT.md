@@ -1,3 +1,6 @@
+# Completed L32-0068: matched Table A Down precision
+Full-model fixed64+42, five short and ten formal alternating repeat10, same binary/trace/shared optimizations. Exact own-reference1/3/full-layer and padding checks plus8MiBVTCM/zero intermediateDDR passed. Main rebuilt workbook A six scoped rows updated across L32-0068/EXP0308; H/I/J/K appended paired module evidence. Other rows/tabs frozen. No quality or Selected promotion. Source 399cc083f6c586e91695edef2d64c4105e3c4da6; ledger 651f24415c1b96de3bf60d3a91d0101f680fac8a40fe2bf472c9ca6e1bc87fc2; device released. See docs/experiments/L32-0068-RESULTS.md.
+
 # Active L32-0068: Table A matched Down precision pair
 Read docs/experiments/L32-0068.md. Latest shared production path, exact independent arithmetic, full1B64+42 pair; serialized device.
 
