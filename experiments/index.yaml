@@ -5586,3 +5586,15 @@ experiments:
     bytes: 1266477871
   source_commits:
   - 68bab93e4044e857af2ac1a50b9e32fcad94cc6d
+- id: L32-0066
+  title: Llama3B fair AV-to-O scale folding replication
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: pending
+  approval_ref: User requests Llama3B replacement evidence after Qwen saturation rejection
+  record: docs/experiments/L32-0066.md
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+    device_owner: L32-0066

@@ -1,3 +1,6 @@
+# Active L32-0066: Llama3B AV folding replication
+Read docs/experiments/L32-0066.md. User requests matched3B I/M supplement; numerical eligibility precedes timing. Device owned; prior failures preserved.
+
 ## 2026-09-22 completed paired integer/fusion ablations
 
 L32-0065 and EXP-0307 complete; both sources clean/synced at report closure and device released. Fixed M64+42, uniform INT16 Down, no rotation, FP32 residual/Norm, production pipeline. F/I prefill wall reductions: Llama33.019%,Qwen33.462%; decode0.305%/0.833%. Llama fair valid-row AV fusion adds0.408%decode gain; no confirmed prefill gain. Qwen unconditional AV fold fails original saturation semantics and is not timed/promoted as a valid comparison. Full own-reference checks pass for all eligible arms. Do not claim universal no-RQ, whole-block no-floating-point, or PPL acceptance. E/workbook untouched. Combined report: /mnt/d/llm_exp/results/paper-integer-fusion-20260922/REPORT.md. No further hardware work queued; await user discussion. See latest experiment record below and PROJECT_STATUS for hashes/results.
