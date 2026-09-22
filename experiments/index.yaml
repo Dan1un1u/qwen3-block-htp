@@ -5878,5 +5878,5 @@ experiments:
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
-    expected_source_head: a0d6d8f504d360009333c0d0b7c649e49ce69aa2
+    expected_source_head: 519e03a85ae34af816a09bd8c9e26e2d69efefe4
     device_owner: L32-0068
