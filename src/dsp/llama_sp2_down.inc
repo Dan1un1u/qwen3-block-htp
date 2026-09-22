@@ -112,7 +112,7 @@ __attribute__((noinline)) static void qbh_sp2_epilogue_run(struct qbh_sp2_epilog
         const int32_t *meta=e->meta[slot];
         uint8_t *out=e->output[slot];
         if(e->fp32_residual) {
-            qbh_llama_fp32_epilogue(raw,e->fp32_sp2?raw+8192U:NULL,(const float *)meta,(float *)out,64U,e->fp32_sp2,e->zero_point);
+            qbh_llama_fp32_epilogue(raw,e->fp32_sp2?raw+8192U:NULL,(const float *)meta,(float *)out,64U,e->fp32_sp2,e->zero_point,e->fp32_boundary_tmp);
         } else {
         HVX_Vector sum=*(const HVX_Vector *)(meta+32U),multiplier=*(const HVX_Vector *)meta;
         HVX_Vector zp=Q6_V_vsplat_R(e->zero_point);

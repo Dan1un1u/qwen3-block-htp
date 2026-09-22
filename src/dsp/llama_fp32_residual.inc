@@ -18,8 +18,17 @@ static inline HVX_Vector qbh_fp32_dot(HVX_Vector low,HVX_Vector high,
             Q6_Vw_vasl_VwR(sum,15))
         : Q6_Vw_vsub_VwVw(low,Q6_Vw_vmpyi_VwRh(sum,(uint32_t)zero*0x00010001U));
 }
+/* Separate noinline consumer ensures a real VTCM handoff, at existing tile
+ * granularity, while keeping all arithmetic and stream ownership unchanged. */
+static __attribute__((noinline)) void qbh_boundary_residual_add(
+    const float *tmp,float *dst,uint32_t rows) {
+    for(uint32_t row=0;row<rows;row++) {
+        HVX_Vector *out=(HVX_Vector *)(dst+row*QBH_BLOCK_HIDDEN);
+        *out=Q6_Vsf_vadd_VsfVsf(*out,*(const HVX_Vector *)(tmp+row*32U));
+    }
+}
 static void qbh_llama_fp32_epilogue(const uint8_t *lo,const uint8_t *hi,
-    const float *scale,float *dst,uint32_t rows,uint32_t sp2,int32_t zero) {
+    const float *scale,float *dst,uint32_t rows,uint32_t sp2,int32_t zero,float *tmp) {
     HVX_Vector scales=*(const HVX_Vector *)scale,sum=*(const HVX_Vector *)(scale+32U);
     for(uint32_t row=0;row<rows;row+=4U) {
         struct qbh_sp2_words l=qbh_sp2_chunk24(lo,row*32U);
@@ -29,8 +38,13 @@ static void qbh_llama_fp32_epilogue(const uint8_t *lo,const uint8_t *hi,
             HVX_Vector acc=qbh_fp32_dot(lv[k],hv[k],sum,sp2,zero);
             HVX_Vector add=qbh_fp32_mul(Q6_Vsf_equals_Vw(acc),scales);
             HVX_Vector *out=(HVX_Vector *)(dst+(row+k)*QBH_BLOCK_HIDDEN);
-            *out=Q6_Vsf_vadd_VsfVsf(*out,add);
+            if(tmp) *(HVX_Vector *)(tmp+(row+k)*32U)=add;
+            else *out=Q6_Vsf_vadd_VsfVsf(*out,add);
         }
+    }
+    if(tmp) {
+        asm volatile("barrier":::"memory");
+        qbh_boundary_residual_add(tmp,dst,rows);
     }
 }
 static int qbh_llama_w4_fp32_residual(struct qbh_block_hmx_worker *w) {
@@ -51,7 +65,7 @@ static int qbh_llama_w4_fp32_residual(struct qbh_block_hmx_worker *w) {
         }
         qbh_llama_fp32_epilogue(lo,w->fp32_sp2 ? ((w->fp32_rows==64U || w->fp32_split)?hi:lo+128U):NULL,
             scale,w->fp32_residual+w->fp32_first_channel+nt*32U,
-            w->fp32_rows,w->fp32_sp2,w->fp32_input_zero);
+            w->fp32_rows,w->fp32_sp2,w->fp32_input_zero,w->fp32_boundary_tmp);
     }
     asm volatile("barrier":::"memory");
     return AEE_SUCCESS;
@@ -60,7 +74,7 @@ static int qbh_llama_w4_fp32_residual(struct qbh_block_hmx_worker *w) {
  * Scratch reuses the idle SP2 VTCM raw slots; no tensor on the thread stack. */
 static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
     uint8_t *out,const struct qbh_block_qparam *q,uint32_t rows,
-    uint32_t width,uint32_t native,uint8_t *scratch) {
+    uint32_t width,uint32_t native,uint8_t *scratch,float *normalized) {
 #pragma clang fp contract(off)
     HVX_Vector *tile=(HVX_Vector *)scratch;
     float *gf=(float *)(scratch+4096U),*sums=(float *)(scratch+4096U+width*4U);
@@ -175,10 +189,21 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
             /* L32-0018: collect rare division-boundary repairs per row.
              * The transpose tile is idle here: reuse its first 2048 bytes for flags.
              * HVX writes native 32-byte segments without a scalar stack roundtrip. */
+            if(normalized) {
+                for(uint32_t c=0;c<width;c+=32U) {
+                    HVX_Vector v=qbh_fp32_mul(*(const HVX_Vector *)(x+row*width+c),vi);
+                    *(HVX_Vector *)(normalized+c)=qbh_fp32_mul(v,*(const HVX_Vector *)(gf+c));
+                }
+                asm volatile("barrier":::"memory");
+            }
             HVX_Vector row_mask=Q6_V_vzero();
             for(uint32_t c=0;c<width;c+=32U) {
-                HVX_Vector v=qbh_fp32_mul(*(const HVX_Vector *)(x+row*width+c),vi);
-                v=qbh_fp32_mul(v,*(const HVX_Vector *)(gf+c));
+                HVX_Vector v;
+                if(normalized)v=*(const HVX_Vector *)(normalized+c);
+                else {
+                    v=qbh_fp32_mul(*(const HVX_Vector *)(x+row*width+c),vi);
+                    v=qbh_fp32_mul(v,*(const HVX_Vector *)(gf+c));
+                }
                 HVX_Vector code=Q6_Vsf_vadd_VsfVsf(qbh_fp32_mul(v,vq),qbh_fp32_splat((float)q->zero_point));
                 HVX_Vector z=Q6_Vsf_vadd_VsfVsf(code,qbh_fp32_splat(0.5f));
                 HVX_Vector w=Q6_Vw_equals_Vsf(z);
@@ -211,8 +236,9 @@ static void qbh_llama_fp32_norm(const float *x,const __fp16 *gamma,
                 asm volatile("barrier":::"memory");
                 for(uint32_t k=0;k<32U;k++)if(flags[k])
                     for(uint32_t c=k;c<width;c+=32U)if(scratch[c]) {
-                        float val=x[row*width+c]*inv;
-                        val=val*gf[c];
+                        float val;
+                        if(normalized)val=normalized[c];
+                        else {val=x[row*width+c]*inv;val=val*gf[c];}
                         float exact=roundf(val/q->scale+(float)q->zero_point);
                         size_t off=native?(size_t)(c/32U)*2048U+row*32U+c%32U:(size_t)row*width+c;
                         out[off]=(uint8_t)fminf(255.0f,fmaxf(0.0f,exact));
@@ -226,5 +252,6 @@ static void qbh_llama_fp32_norm_worker(struct qbh_block_w4f16_pool *p,uint32_t w
     uint32_t first=worker*16U;
     qbh_llama_fp32_norm(p->fp32_norm_input+first*QBH_BLOCK_HIDDEN,p->fp32_norm_gamma,
         p->fp32_norm_output+first*(p->fp32_norm_native?32U:QBH_BLOCK_HIDDEN),p->fp32_norm_qparam,16U,QBH_BLOCK_HIDDEN,p->fp32_norm_native,
-        p->fp32_norm_scratch+worker*((4096U+QBH_BLOCK_HIDDEN*4U+512U+4095U)&~4095U));
+        p->fp32_norm_scratch+worker*((4096U+QBH_BLOCK_HIDDEN*4U+512U+4095U)&~4095U),
+        p->fp32_norm_tmp?p->fp32_norm_tmp+worker*QBH_BLOCK_HIDDEN:NULL);
 }

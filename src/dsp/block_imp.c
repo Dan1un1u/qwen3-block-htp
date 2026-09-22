@@ -303,6 +303,7 @@ struct qbh_block_buffers {
     uint8_t *projection_scales;
     uint8_t *gate_up_scale_cache;
     uint8_t *sp2_high, *sp2_scratch;
+    float *boundary_scratch;
     volatile uint32_t *sp2_prefill_ready;
     uint8_t *w4u8_silu_lut;
     uint8_t *w4u8_gather_scratch;
@@ -320,6 +321,7 @@ struct qbh_block_buffers {
 
 struct qbh_sp2_epilogue {
     float *fp32_residual;
+    float *fp32_boundary_tmp;
     uint32_t fp32_sp2;
     uint32_t mode; /* 9: exact 187-level SP2 radix257, offset32770. */
     uint8_t *scratch;
@@ -331,6 +333,7 @@ struct qbh_sp2_epilogue {
 };
 struct qbh_block_hmx_worker {
     float *fp32_residual;
+    float *fp32_boundary_tmp;
     uint32_t fp32_first_channel, fp32_rows, fp32_sp2, fp32_split;
     int32_t fp32_input_zero;
     struct qbh_sp2_epilogue *sp2_epilogue;
@@ -560,6 +563,7 @@ struct qbh_block_w4f16_pool {
     const struct qbh_block_qparam *fp32_norm_qparam;
     uint8_t *fp32_norm_output,*fp32_norm_scratch;
     uint32_t fp32_norm_native;
+    float *fp32_norm_tmp;
     uint32_t *sp60_meta; int32_t *sp60_output;
     int8_t *sp60_expanded[4]; HVX_Vector *sp60_gather;
     const uint8_t *sp60_weight; const float *sp60_scale;
@@ -903,7 +907,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
                             uint32_t kv_cache_k_format,
                             uint32_t kv_cache_v_format,
                             uint32_t scan_mode, uint32_t sp2_mode, uint32_t r4_mode,
-                            uint32_t fp32_residual,
+                            uint32_t fp32_residual, uint32_t boundary_mode,
                             struct qbh_block_buffers *buffers,
                             uint32_t *peak_bytes) {
     struct qbh_block_arena arena = {vtcm, vtcm_bytes, 0U, 0U};
@@ -1150,6 +1154,13 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
 #endif
         buffers->sp2_scratch = qbh_arena_alloc_aligned(&arena, (sp2_mode>=8U || fp32_residual) ? 34816U : 18432U, 2048U);
         if (!buffers->sp2_high || !buffers->sp2_scratch) return -1;
+    }
+    /* L32-0067: identical diagnostic reservation in all four arms.
+     * Four independent normalized rows plus one 64x32 epilogue tile. */
+    if (boundary_mode & 128U) {
+        buffers->boundary_scratch=qbh_arena_alloc_aligned(&arena,
+            4U*QBH_BLOCK_HIDDEN*sizeof(float)+8192U,2048U);
+        if(!buffers->boundary_scratch)return -1;
     }
     if (qbh_attention_u8_enabled(attention_pipeline_mode)) {
         buffers->attention_configs = qbh_arena_alloc_aligned(
@@ -2313,7 +2324,9 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          * Modes 0/1/2 retain W4F16 meaning; F16F16 mode 3 adds head prefetch. */
         header->w4f16_decode_opt>(header->variant==QBH_BLOCK_F16F16 ? 3U : 2U) || header->w4f16_decode_audit>1U ||
         (header->w4f16_decode_opt && header->variant==QBH_BLOCK_W4U8) ||
-        header->paper_format_disable > 31U ||
+        header->paper_format_disable > 255U ||
+        ((header->paper_format_disable&96U) && !(header->paper_format_disable&128U)) ||
+        ((header->paper_format_disable&128U) && (header->paper_format_disable&31U)) ||
         ((header->paper_format_disable&4U) && ((header->paper_format_disable&3U) || !QBH_FP32_RESIDUAL(header) || QBH_LLAMA_SP2(header)!=8U || header->dense_r3_mode || header->dense_r4_mode)) || header->paper_pipeline_disable > 31U ||
         header->wide_score_mode > 8U || header->prefix_kv_mode > 2U ||
         (header->prefix_kv_mode && header->variant != QBH_BLOCK_W4U8) ||
@@ -3543,7 +3556,7 @@ static int qbh_hmx_run_w4u8_qkv_ring(
     return 0;
 }
 
-static void qbh_llama_fp32_epilogue(const uint8_t *,const uint8_t *,const float *,float *,uint32_t,uint32_t,int32_t);
+static void qbh_llama_fp32_epilogue(const uint8_t *,const uint8_t *,const float *,float *,uint32_t,uint32_t,int32_t,float *);
 #include "llama_sp2_down.inc"
 #include "llama_fp32_residual.inc"
 #include "llama_sp2_hvx_full_kernel.inc"
@@ -5547,9 +5560,10 @@ static void qbh_llama_fp32_norm_parallel(struct qbh_block_header *header,
     const uint32_t parallel_tail=header->long_prompt_tokens &&
         (header->long_optimization&2048U) && rows>1U && QBH_BLOCK_HEAD_DIM==128U;
     if((rows!=64U && !parallel_tail) || !pool || pool->worker_count<3U) {
-        qbh_llama_fp32_norm((const float *)buffers->residual,gamma,production,q,rows,QBH_BLOCK_HIDDEN,layout,buffers->sp2_scratch);
+        qbh_llama_fp32_norm((const float *)buffers->residual,gamma,production,q,rows,QBH_BLOCK_HIDDEN,layout,buffers->sp2_scratch,(header->paper_format_disable&32U)?buffers->boundary_scratch:NULL);
     } else {
         pool->fp32_norm_native=layout;
+        pool->fp32_norm_tmp=(header->paper_format_disable&32U)?buffers->boundary_scratch:NULL;
         pool->fp32_norm_input=(const float *)buffers->residual;
         pool->fp32_norm_gamma=gamma;pool->fp32_norm_output=production;
         pool->fp32_norm_qparam=q;pool->fp32_norm_scratch=buffers->normalized;
@@ -7865,7 +7879,7 @@ static int qbh_run_generation_head_w4u8(
             qbh_llama_fp32_norm((const float *)buffers->residual+
                 (size_t)(logical_rows-1U)*QBH_BLOCK_HIDDEN,
                 (const __fp16 *)buffers->input_norm_weight,buffers->hmx_activation,
-                &header->generation_final_norm_output_qparam,1U,QBH_BLOCK_HIDDEN,1U,buffers->sp2_scratch);
+                &header->generation_final_norm_output_qparam,1U,QBH_BLOCK_HIDDEN,1U,buffers->sp2_scratch,NULL);
         else qbh_hvx_rms_norm_u8_native_activation(
             buffers->residual +
                 (size_t)(logical_rows - 1U) * QBH_BLOCK_HIDDEN,
@@ -10126,6 +10140,7 @@ static int qbh_run_w4u8_direct_n_projection(
     const uint32_t fp32_projection=QBH_FP32_RESIDUAL(header) &&
         (desc==&header->projections[QBH_BLOCK_PROJ_O] || desc==&header->projections[QBH_BLOCK_PROJ_DOWN]);
     worker->fp32_residual=(float *)buffers->residual;
+    worker->fp32_boundary_tmp=(header->paper_format_disable&64U)?buffers->boundary_scratch+4U*QBH_BLOCK_HIDDEN:NULL;
     worker->fp32_rows=header->logical_m;
     worker->fp32_sp2=QBH_LLAMA_SP2(header) && desc==&header->projections[QBH_BLOCK_PROJ_DOWN];
     worker->fp32_split=worker->fp32_sp2 && header->logical_m==1U && (header->paper_format_disable&4U);
@@ -15970,6 +15985,7 @@ static int qbh_run_w4u8_direct_n_mlp(
         struct qbh_sp2_epilogue *e=&pool->sp2_epilogue;
         memset(e,0,sizeof(*e));e->scratch=buffers->sp2_scratch;e->mode=QBH_LLAMA_SP2(header);
         e->fp32_residual=QBH_FP32_RESIDUAL(header)?(float *)buffers->residual:NULL;
+        e->fp32_boundary_tmp=(header->paper_format_disable&64U)?buffers->boundary_scratch+4U*QBH_BLOCK_HIDDEN:NULL;
         e->fp32_sp2=QBH_LLAMA_SP2(header)!=0U;
         e->tiles=QBH_BLOCK_HIDDEN/32U;e->zero_point=header->qparams[QBH_FP32_RESIDUAL(header)?QBH_BLOCK_QP_MIDDLE:QBH_BLOCK_QP_DOWN].zero_point;
         worker->sp2_epilogue=e;pool->active_worker_count=1U;
@@ -22128,6 +22144,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
         struct qbh_sp2_epilogue *e=&w4f16_pool->sp2_epilogue;
         memset(e,0,sizeof(*e));e->scratch=buffers->sp2_scratch;
         e->fp32_residual=(float *)buffers->residual;e->tiles=QBH_BLOCK_HIDDEN/32U;
+        e->fp32_boundary_tmp=(header->paper_format_disable&64U)?buffers->boundary_scratch+4U*QBH_BLOCK_HIDDEN:NULL;
         e->zero_point=header->qparams[QBH_BLOCK_QP_ATTENTION_CONCAT].zero_point;
         worker->sp2_epilogue=e;w4f16_pool->active_worker_count=1U;
         w4f16_pool->jobs[0].command_kind=QBH_BLOCK_HVX_POOL_SP2_EPILOGUE;
@@ -22987,7 +23004,7 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
                          header->kv_cache_v_format,
                          header->scan_mode, QBH_LLAMA_SP2(header),
                          header->dense_r4_mode, QBH_FP32_RESIDUAL(header),
-                         &buffers,
+                         header->paper_format_disable, &buffers,
                          &header->vtcm_peak_plan_bytes) != 0) {
         header->dsp_status = QBH_BLOCK_STATUS_ARENA_FAILED;
         result = AEE_ENOMEMORY;
