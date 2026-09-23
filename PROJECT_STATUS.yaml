@@ -18,8 +18,8 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 311
+  active_experiment: EXP-0311
+  next_experiment_number: 312
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -14501,7 +14501,7 @@ current_scope:
     interpretation: Combined FP arithmetic+fused QDQ; not QDQ-only cost or overlapped
       production critical-path share
     companion: L32-0063
-  device_owner: null
+  device_owner: EXP-0311
   floating_intermediate_motivation_06b:
     experiment: EXP-0306
     execution_state: completed

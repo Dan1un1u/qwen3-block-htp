@@ -30166,3 +30166,16 @@ experiments:
       dma_cached_1m_x8:
         median: 37.60920507305626
         best: 37.72019950873347
+- id: EXP-0311
+  title: HVX HMX concurrent VTCM bandwidth independence characterization
+  approval_ref: 'User2026-09-23: supplement experiments to test whether HVX/HMX bandwidth
+    is independent'
+  execution_state: running
+  local_gate: pending
+  evidence_validity: pending
+  adoption_status: not_requested
+  record: docs/experiments/EXP-0311.md
+  runtime:
+    source_branch: codex/exp-0311-vtcm-concurrent-bandwidth
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    device_owner: EXP-0311

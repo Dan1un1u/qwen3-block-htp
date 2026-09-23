@@ -2654,3 +2654,6 @@ User authorized independent memory microbenchmarks, not LLM profiling. Source co
 
 ## EXP-0310 closed: measured memory ceilings
 Independent V79 benchmarks completed: HMX FP16 dual operands 1060.15 GB/s; six-context HVX read 810.95 GB/s (single 135.17); DMA source-bypass large-footprint medians 63.28–63.47 GB/s, best formal round 64.39. These are measured effective path peaks, not undisclosed theoretical bus widths; HMX includes MAC execution. U8S8 928.97, packed U8S4 774.14 GB/s with format-aware physical-operand counts. 3×10 formal samples/config, exact VTCM8MiB, hardware query6HVX, observed2.112GHz, allchecks pass. Source 1eb5abc4b7b9c60e9b37cccedd27a780f8d1213f; report docs/experiments/EXP-0310-RESULTS.md. Device released, active lock none, no model baseline change.
+
+## EXP0311 active
+User requests simultaneous HVX/HMX bandwidth characterization; EXP0310 separate peaks alone cannot establish independence. Device owned EXP0311, source codex/exp-0311-vtcm-concurrent-bandwidth.
