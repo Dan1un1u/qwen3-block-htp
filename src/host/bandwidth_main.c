@@ -25,10 +25,10 @@ int main(int argc,char **argv) {
  for(unsigned i=0;i<h->rounds;i++)printf("%s%"PRIu64,i?",":"",h->ticks[i]);
  printf("],\"hvx_units\":%u,\"verified_source_bytes\":%u,\"cycles\":[",h->checks[0],h->checks[1]);for(unsigned i=0;i<h->rounds;i++)printf("%s%"PRIu64,i?",":"",h->cycles[i]);printf("]");
  if(h->mode>=7){
-  printf(","hvx_bytes":[");for(unsigned i=0;i<h->rounds;i++)printf("%s%"PRIu64,i?",":"",h->hvx_bytes[i]);
-  printf("],"hmx_bytes":[");for(unsigned i=0;i<h->rounds;i++)printf("%s%"PRIu64,i?",":"",h->hmx_bytes[i]);
-  printf("],"start_delay":[");for(unsigned i=0;i<h->rounds;i++)printf("%s%"PRIu64,i?",":"",h->start_delay[i]);
-  printf("],"finish_delay":[");for(unsigned i=0;i<h->rounds;i++)printf("%s%"PRIu64,i?",":"",h->finish_delay[i]);printf("]");
+  printf(",%chvx_bytes%c:[",34,34);for(unsigned i=0;i<h->rounds;i++)printf("%s%"PRIu64,i?",":"",h->hvx_bytes[i]);
+  printf("],%chmx_bytes%c:[",34,34);for(unsigned i=0;i<h->rounds;i++)printf("%s%"PRIu64,i?",":"",h->hmx_bytes[i]);
+  printf("],%cstart_delay%c:[",34,34);for(unsigned i=0;i<h->rounds;i++)printf("%s%"PRIu64,i?",":"",h->start_delay[i]);
+  printf("],%cfinish_delay%c:[",34,34);for(unsigned i=0;i<h->rounds;i++)printf("%s%"PRIu64,i?",":"",h->finish_delay[i]);printf("]");
  }
  printf("}\n");
  int fail=rc||h->status||h->errors;qbh_session_close(&s);if(mapped)fastrpc_munmap(CDSP_DOMAIN_ID,fd,mem,size);rpcmem_free(mem);return fail?1:0;
