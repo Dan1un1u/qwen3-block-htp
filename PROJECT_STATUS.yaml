@@ -7,7 +7,7 @@ project:
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
   updated_on: '2026-09-23'
 governance:
-  active_experiment: L32-0069
+  active_experiment: null
   next_experiment_number: 70
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -15,7 +15,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: 399cc083f6c586e91695edef2d64c4105e3c4da6
+    recorded_head: cc20e9afcfb9d375cac1eb3574979a01c46321d2
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -27,11 +27,11 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: table_a_down_precision_pair_completed
+  stage: hvx_butterfly_r4_component_complete
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Scoped Table A paired Down precision audit complete. Discuss measured
-    residual prefill cost; no further experiments implied.
+  next_action: Requested component ablation complete; discuss observed affordable
+    core and unmeasured integration cost. No additional experiment authorized.
   baseline_manifest: docs/PAPER_NO_ROTATION_BASELINES.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF_L32_0034.md
@@ -44,7 +44,7 @@ current_scope:
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0068
+  last_completed_experiment: L32-0069
   evidence_ledger_sha256: 599d86cf654b2b41526690c76ad1c0a251b5f206815a57ce4ae12b0024f94ac9
   formal_profiling_completed: true
   general_quantization_quality_accepted: false
@@ -4954,6 +4954,220 @@ current_scope:
     evidence_ledger_sha256: 34fce7c545d6fc87a2804b3955d6daa573d506eff08bd316a3a34ae5c7e62472
     files: 1710
     bytes: 1266477871
+  hvx_butterfly_r4:
+    experiment: L32-0069
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: Component arithmetic/physical validation only; no quality or E2E speed
+      gate
+    adoption_status: not_requested
+    baseline_promoted: false
+    quality_claim: false
+    e2e_measured: false
+    model: Llama-3.2-1B
+    rotation: full H8192 HVX FP32 butterfly at post-SwiGLU/pre-A8
+    base_recipe: ordinary W4A8, no INT16/SP2 Down
+    input_provenance: deterministic synthetic A8 Gate/Up with original layer0 qparams,
+      not a model trajectory
+    device_owner: null
+    source_head: cc20e9afcfb9d375cac1eb3574979a01c46321d2
+    measured_source: a43398ba64760da3756a006ba2dde99638873cd1
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0069
+    evidence_ledger_sha256: 84de5a52a0e3b5e876e616420d44c47e03a8404f012c359ce8967c23221ca2f4
+    evidence_files: 672
+    evidence_bytes: 104544127
+    report: docs/experiments/L32-0069-RESULTS.md
+    short_rounds: 5
+    formal_rounds: 10
+    in_rpc_repeats: 10
+    numerical:
+      cases: 24
+      fp32_bit_exact: true
+      u8_exact: true
+      max_relative_l2: 4.0827051087190494e-07
+    physical:
+      vtcm_grant: 8388608
+      peak_prefill: 3670016
+      peak_decode: 573440
+      core_hmx_calls: 0
+      core_vector_stack_spill: false
+      core_scalar_tensor_loop: false
+    timings:
+    - phase: prefill
+      transforms: 1
+      workers: 1
+      mode: 16
+      core_us: 642.4427083333334
+      core_ci95_us:
+      - 642.3901041666667
+      - 642.4911458333333
+      prepare_us: 46.547916666666666
+      quantize_pack_us: 248.4854166666667
+      core_samples_us:
+      - 642.4947916666667
+      - 642.375
+      - 642.5677083333334
+      - 642.515625
+      - 642.2916666666667
+      - 642.4479166666667
+      - 642.4635416666667
+      - 642.4947916666667
+      - 642.328125
+      - 642.4479166666667
+    - phase: prefill
+      transforms: 1
+      workers: 4
+      mode: 17
+      core_us: 165.77343750000003
+      core_ci95_us:
+      - 165.73436197916666
+      - 165.81250000000003
+      prepare_us: 46.54739583333334
+      quantize_pack_us: 248.6609375
+      core_samples_us:
+      - 165.796875
+      - 165.79166666666669
+      - 165.66666666666669
+      - 165.77604166666669
+      - 165.6875
+      - 165.79166666666669
+      - 165.86458333333334
+      - 165.86979166666669
+      - 165.76041666666669
+      - 165.72916666666669
+    - phase: prefill
+      transforms: 1
+      workers: 1
+      mode: 18
+      core_us: 0.07864583333333333
+      core_ci95_us:
+      - 0.06354166666666666
+      - 0.09322916666666667
+      prepare_us: 46.547916666666666
+      quantize_pack_us: 248.43802083333335
+      core_samples_us:
+      - 0.05729166666666667
+      - 0.052083333333333336
+      - 0.10416666666666667
+      - 0.046875
+      - 0.10416666666666667
+      - 0.09375
+      - 0.09375
+      - 0.09375
+      - 0.04166666666666667
+      - 0.09895833333333334
+    - phase: prefill
+      transforms: 16
+      workers: 1
+      mode: 16
+      core_us: 10274.922916666666
+      core_ci95_us:
+      - 10274.717708333334
+      - 10275.1182421875
+      prepare_us: 46.550000000000004
+      quantize_pack_us: 248.49739583333331
+      core_samples_us:
+      - 10275.078125
+      - 10275.338541666668
+      - 10275.161458333334
+      - 10274.588541666668
+      - 10275.255208333334
+      - 10275.177083333334
+      - 10274.473958333334
+      - 10275.072916666668
+      - 10274.505208333334
+      - 10274.578125
+      fraction_historical_e2e_percent: 38.51560429906426
+    - phase: prefill
+      transforms: 16
+      workers: 4
+      mode: 17
+      core_us: 2649.3109375
+      core_ci95_us:
+      - 2649.1265625
+      - 2649.4807291666666
+      prepare_us: 46.5453125
+      quantize_pack_us: 248.6322916666667
+      core_samples_us:
+      - 2649.1458333333335
+      - 2648.9739583333335
+      - 2649.625
+      - 2649.3020833333335
+      - 2648.7239583333335
+      - 2649.572916666667
+      - 2649.3125
+      - 2649.703125
+      - 2649.307291666667
+      - 2649.4427083333335
+      fraction_historical_e2e_percent: 9.930956422886348
+    - phase: decode
+      transforms: 1
+      workers: 1
+      mode: 16
+      core_us: 10.035416666666666
+      core_ci95_us:
+      - 10.0328125
+      - 10.038020833333334
+      prepare_us: 0.7270833333333333
+      quantize_pack_us: 3.8854166666666665
+      core_samples_us:
+      - 10.03125
+      - 10.03125
+      - 10.041666666666668
+      - 10.036458333333334
+      - 10.03125
+      - 10.03125
+      - 10.041666666666668
+      - 10.041666666666668
+      - 10.036458333333334
+      - 10.03125
+    - phase: decode
+      transforms: 1
+      workers: 1
+      mode: 18
+      core_us: 0.0041666666666666675
+      core_ci95_us:
+      - 0.0015625
+      - 0.007291666666666666
+      prepare_us: 0.7281250000000001
+      quantize_pack_us: 3.8723958333333335
+      core_samples_us:
+      - 0.0
+      - 0.010416666666666668
+      - 0.005208333333333334
+      - 0.010416666666666668
+      - 0.005208333333333334
+      - 0.010416666666666668
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    - phase: decode
+      transforms: 16
+      workers: 1
+      mode: 16
+      core_us: 160.66354166666667
+      core_ci95_us:
+      - 160.6609375
+      - 160.66614583333336
+      prepare_us: 0.7270833333333334
+      quantize_pack_us: 3.8796875
+      core_samples_us:
+      - 160.66145833333334
+      - 160.66666666666669
+      - 160.66666666666669
+      - 160.66145833333334
+      - 160.65625
+      - 160.66145833333334
+      - 160.671875
+      - 160.66145833333334
+      - 160.66145833333334
+      - 160.66666666666669
+      fraction_historical_e2e_percent: 0.7438982221237271
+    conclusion: Four-worker M64 R4 core16 wall2.64931ms is9.93percent of historical
+      ordinaryA8 E2E; M1 core16 wall0.160664ms is0.744percent. Does not support core
+      slower than full inference; not measured incremental E2E overhead.
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp
