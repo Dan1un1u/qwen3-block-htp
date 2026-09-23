@@ -10043,7 +10043,7 @@ static int qbh_run_w4u8_direct_n_projection(
      * coefficients intact while widening the 3B native-W4 submission. */
 #ifdef QBH_LLAMA_3B
     const uint32_t qkv_wide = batch_tiles == 32U &&
-        header->dense_r3_mode == 0U && header->dense_r4_mode == 0U &&
+        header->dense_r3_mode == 0U && (header->dense_r4_mode == 0U || header->dense_r4_mode == 4U) &&
         (desc == &header->projections[QBH_BLOCK_PROJ_Q] ||
          desc == &header->projections[QBH_BLOCK_PROJ_K] ||
          desc == &header->projections[QBH_BLOCK_PROJ_V]);
@@ -21387,7 +21387,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     buffers->down_prefetched = 0U;
     if (header->variant == QBH_BLOCK_W4U8 && QBH_FP32_RESIDUAL(header) &&
         !(header->paper_pipeline_disable & 16U) &&
-        !header->dense_r3_mode && !header->dense_r4_mode &&
+        !header->dense_r3_mode && (header->dense_r4_mode==0U || header->dense_r4_mode==4U) &&
         !w4u8_qkv_ring_enabled &&
         header->qkv_schedule_mode != QBH_BLOCK_QKV_SCHEDULE_Q_PREFIX4_K_ALL &&
         header->w4u8_decode_projection_mode == QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N &&
