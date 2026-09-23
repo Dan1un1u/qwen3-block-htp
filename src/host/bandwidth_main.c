@@ -23,6 +23,6 @@ int main(int argc,char **argv) {
  if(!rc)rc=qwen3_probe_run_bandwidth(s.handle,fd,size);
  printf("{\"mode\":%u,\"bytes\":%u,\"workers\":%u,\"repeats\":%u,\"stream\":%u,\"depth\":%u,\"bypass\":%u,\"rc\":%d,\"status\":%u,\"errors\":%u,\"vtcm\":%u,\"payload\":%"PRIu64",\"ticks\":[",h->mode,h->bytes,h->workers,h->repeats,h->stream,h->depth,h->bypass,rc,h->status,h->errors,h->vtcm_bytes,h->payload_bytes);
  for(unsigned i=0;i<h->rounds;i++)printf("%s%"PRIu64,i?",":"",h->ticks[i]);
- printf("],\"cycles\":[");for(unsigned i=0;i<h->rounds;i++)printf("%s%"PRIu64,i?",":"",h->cycles[i]);printf("]}\n");
+ printf("],\"hvx_units\":%u,\"cycles\":[",h->checks[0]);for(unsigned i=0;i<h->rounds;i++)printf("%s%"PRIu64,i?",":"",h->cycles[i]);printf("]}\n");
  int fail=rc||h->status||h->errors;qbh_session_close(&s);if(mapped)fastrpc_munmap(CDSP_DOMAIN_ID,fd,mem,size);rpcmem_free(mem);return fail?1:0;
 }

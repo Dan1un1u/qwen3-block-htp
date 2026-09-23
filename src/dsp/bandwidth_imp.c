@@ -13,6 +13,7 @@
 #include "qbh_user_dma.h"
 #include "hmx_fp16.h"
 #define MAXW 6
+static uint8_t pattern(uint32_t i);
 static uint8_t stacks[MAXW][8192] __attribute__((aligned(128)));
 struct job {uint8_t *p,*out;struct bw_header *h;uint32_t id;int status;qurt_sem_t ready,go,done;uint64_t t0,t1,c0,c1;};
 static struct job jobs[MAXW];
@@ -73,12 +74,12 @@ static void hmx_run(uint8_t *v,struct bw_header *h){
 int qbh_bandwidth_run(void *vtcm,uint32_t vbytes,uint32_t hmx,int fd,uint32_t size){
  uint8_t *mem=0,*v=vtcm;int result=HAP_mmap_get(fd,(void**)&mem,0);if(result||!mem)return AEE_EFAILED;
  qurt_mem_cache_clean((qurt_addr_t)mem,sizeof(struct bw_header),QURT_MEM_CACHE_INVALIDATE,QURT_MEM_DCACHE);
- struct bw_header *h=(void*)mem;h->status=1;h->vtcm_bytes=vbytes;h->errors=0;
+ struct bw_header *h=(void*)mem;h->status=1;h->vtcm_bytes=vbytes;h->errors=0;h->checks[0]=(uint32_t)qurt_hvx_get_units();
  if(h->magic!=BW_MAGIC||size<BW_DRAM+BW_PAYLOAD||h->rounds!=BW_ROUNDS||h->mode>6||!h->bytes||h->bytes%1024||!h->repeats||h->repeats>100000||!h->workers||h->workers>MAXW||!h->stream||h->stream>32||!h->depth||h->depth>256||h->bypass>1)goto done;
  if(h->mode<3){
-  if((uint64_t)h->workers*h->bytes*2U>vbytes)goto done;
+  if((uint64_t)h->workers*(h->bytes*2U+(h->depth-1U)*128U)>vbytes)goto done;
   qurt_thread_t threads[MAXW];
-  for(uint32_t i=0;i<h->workers;i++){struct job *j=&jobs[i];memset(j,0,sizeof(*j));j->p=v+i*h->bytes*2U;j->out=j->p+h->bytes;j->h=h;j->id=i;memset(j->p,0xa5,h->bytes);memset(j->out,0,h->bytes);qurt_sem_init_val(&j->ready,0);qurt_sem_init_val(&j->go,0);qurt_sem_init_val(&j->done,0);qurt_thread_attr_t a;qurt_thread_attr_init(&a);qurt_thread_attr_set_name(&a,"bw-hvx");qurt_thread_attr_set_stack_addr(&a,stacks[i]);qurt_thread_attr_set_stack_size(&a,sizeof(stacks[i]));qurt_thread_attr_set_priority(&a,qurt_thread_get_priority(qurt_thread_get_id()));if(qurt_thread_create(&threads[i],&a,worker,j))goto done;}
+  for(uint32_t i=0;i<h->workers;i++){struct job *j=&jobs[i];memset(j,0,sizeof(*j));j->p=v+i*(h->bytes*2U+(h->depth-1U)*128U);j->out=j->p+h->bytes;j->h=h;j->id=i;for(uint32_t k=0;k<h->bytes;k++)j->p[k]=pattern(k+i*97U);memset(j->out,0,h->bytes);qurt_sem_init_val(&j->ready,0);qurt_sem_init_val(&j->go,0);qurt_sem_init_val(&j->done,0);qurt_thread_attr_t a;qurt_thread_attr_init(&a);qurt_thread_attr_set_name(&a,"bw-hvx");qurt_thread_attr_set_stack_addr(&a,stacks[i]);qurt_thread_attr_set_stack_size(&a,sizeof(stacks[i]));qurt_thread_attr_set_priority(&a,qurt_thread_get_priority(qurt_thread_get_id()));if(qurt_thread_create(&threads[i],&a,worker,j))goto done;}
   for(uint32_t i=0;i<h->workers;i++)qurt_sem_down(&jobs[i].ready);
   for(uint32_t r=0;r<h->rounds;r++){
    for(uint32_t i=0;i<h->workers;i++)qurt_sem_up(&jobs[i].go);
@@ -87,7 +88,7 @@ int qbh_bandwidth_run(void *vtcm,uint32_t vbytes,uint32_t hmx,int fd,uint32_t si
    for(uint32_t i=0;i<h->workers;i++){struct job*j=&jobs[i];if(j->t0<t0)t0=j->t0;if(j->t1>t1)t1=j->t1;if(j->c0<c0)c0=j->c0;if(j->c1>c1)c1=j->c1;}
    h->ticks[r]=t1-t0;h->cycles[r]=c1-c0;
   }
-  for(uint32_t i=0;i<h->workers;i++){int st;qurt_thread_join(threads[i],&st);h->errors+=jobs[i].status!=0;uint32_t len=h->mode==0?1024:h->bytes;for(uint32_t b=0;b<len;b++)h->errors+=jobs[i].out[b]!=(h->mode==1?0x5a:0xa5);qurt_sem_destroy(&jobs[i].ready);qurt_sem_destroy(&jobs[i].go);qurt_sem_destroy(&jobs[i].done);}
+  for(uint32_t i=0;i<h->workers;i++){int st;qurt_thread_join(threads[i],&st);h->errors+=jobs[i].status!=0;uint32_t len=h->mode==0?1024:h->bytes;for(uint32_t b=0;b<len;b++)h->errors+=jobs[i].out[b]!=(h->mode==1?0x5a:pattern(b+(h->mode==0?h->bytes-1024U:0U)+i*97U));qurt_sem_destroy(&jobs[i].ready);qurt_sem_destroy(&jobs[i].go);qurt_sem_destroy(&jobs[i].done);}
   h->payload_bytes=(uint64_t)h->workers*h->bytes*h->repeats*(h->mode==2?2U:1U);
  }else if(h->mode<6){
   if(h->bytes>3U*1024U*1024U||h->bytes%(h->stream*2048U))goto done;
