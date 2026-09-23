@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0311
+  active_experiment: null
   next_experiment_number: 312
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -2882,10 +2882,10 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: Qwen3_28layer_native_W4_SP2_M64_plus15_verified
-  last_completed_experiment: EXP-0310
-  last_completed_source_commit: 1eb5abc4b7b9c60e9b37cccedd27a780f8d1213f
+  last_completed_experiment: EXP-0311
+  last_completed_source_commit: d84d9467dda5b0f63f0d10621a7fe121c947690e
   provisional_source_parent: EXP0268_diagnostic_U8_pipeline_closure_no_default_promotion
-  device_execution_state: idle_EXP0310_completed
+  device_execution_state: idle_EXP0311_completed
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
   current_handoff: docs/experiments/EXP-0300.md
@@ -12344,7 +12344,8 @@ current_scope:
     generalization: supplementary only; not rerun or included
     quality_claim: false
     baseline_promoted: false
-  next_action: Await user direction; EXP0310 bandwidth archived, no baseline promoted
+  next_action: Await user direction; independent saturation bandwidths must not be
+    added as simultaneous capacity
   latest_f16_baseline_synthesis:
     report: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/REPORT.md
     a16_discussion: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/A16_DOWN_DISCUSSION.md
@@ -12765,7 +12766,7 @@ current_scope:
       exceedsuint32 shared-offset ABI
     named_dataset_measurements_completed: false
     baseline_promotion: No additional automatic promotion
-  stage: standalone_bandwidth_characterization_completed
+  stage: concurrent_bandwidth_characterization_completed
   latest_long_prefill_migration:
     experiment: EXP-0296
     execution_state: completed
@@ -14501,7 +14502,7 @@ current_scope:
     interpretation: Combined FP arithmetic+fused QDQ; not QDQ-only cost or overlapped
       production critical-path share
     companion: L32-0063
-  device_owner: EXP-0311
+  device_owner: null
   floating_intermediate_motivation_06b:
     experiment: EXP-0306
     execution_state: completed
@@ -15047,3 +15048,93 @@ current_scope:
       dma_cached_1m_x8:
         median: 37.60920507305626
         best: 37.72019950873347
+  latest_concurrent_bandwidth:
+    experiment: EXP-0311
+    execution_state: completed
+    local_gate: pass
+    evidence_validity: valid
+    adoption_status: not_requested
+    baseline_promoted: false
+    source_head: d84d9467dda5b0f63f0d10621a7fe121c947690e
+    measured_source: 14bb13c08304ebff8f18fa38a0a93b29680a2c89
+    report: docs/experiments/EXP-0311-RESULTS.md
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0311
+    evidence_ledger_sha256: b8ec85c81272790ca2701cea4478ff0957bdee0f359985243c48bd0a744dcc06
+    device_owner: null
+    formal_invocations: 72
+    formal_samples: 720
+    conclusion: 'Concurrent read throughput is not independent: HMX rate retained,
+      six-HVX rate loses 38-40%; physical topology not identified'
+    comparisons:
+      f3_l1:
+        HVX_solo: 809.33289984
+        HMX_solo: 1058.97787392
+        HVX_both: 491.90797312
+        HMX_both: 1058.97787392
+        HVX_drop_percent: 39.22056384742951
+        HMX_drop_percent: 0.0
+        total: 1550.88584704
+        sum_solo: 1868.31077376
+        sum_peak_retention: 0.8301005747126436
+        scalar_control_HVX: 808.74569728
+        scalar_control_drop_percent: 0.07255389718077154
+      f3_l2:
+        HVX_solo: 809.33289984
+        HMX_solo: 1058.97787392
+        HVX_both: 491.86603008
+        HMX_both: 1058.97787392
+        HVX_drop_percent: 39.225746268656714
+        HMX_drop_percent: 0.0
+        total: 1550.843904
+        sum_solo: 1868.31077376
+        sum_peak_retention: 0.830078125
+        scalar_control_HVX: 808.74569728
+        scalar_control_drop_percent: 0.07255389718077154
+      f4_l1:
+        HVX_solo: 809.33289984
+        HMX_solo: 928.6189056
+        HVX_both: 500.7998976
+        HMX_both: 928.6189056
+        HVX_drop_percent: 38.12189054726368
+        HMX_drop_percent: 0.0
+        total: 1429.4188032
+        sum_solo: 1737.95180544
+        sum_peak_retention: 0.822473211699971
+        scalar_control_HVX: 808.70375424
+        scalar_control_drop_percent: 0.07773631840796158
+      f4_l2:
+        HVX_solo: 809.33289984
+        HMX_solo: 928.6189056
+        HVX_both: 500.84184064
+        HMX_both: 928.6189056
+        HVX_drop_percent: 38.11670812603648
+        HMX_drop_percent: 0.0
+        total: 1429.46074624
+        sum_solo: 1737.95180544
+        sum_peak_retention: 0.8224973453036006
+        scalar_control_HVX: 808.74569728
+        scalar_control_drop_percent: 0.07255389718077154
+      f5_l1:
+        HVX_solo: 809.33289984
+        HMX_solo: 773.849088
+        HVX_both: 489.8947072
+        HMX_both: 773.849088
+        HVX_drop_percent: 39.46932006633499
+        HMX_drop_percent: 0.0
+        total: 1263.7437952
+        sum_solo: 1583.1819878400001
+        sum_peak_retention: 0.7982302760557409
+        scalar_control_HVX: 808.74569728
+        scalar_control_drop_percent: 0.07255389718077154
+      f5_l2:
+        HVX_solo: 809.33289984
+        HMX_solo: 773.849088
+        HVX_both: 489.76887808000004
+        HMX_both: 773.849088
+        HVX_drop_percent: 39.484867330016584
+        HMX_drop_percent: 0.0
+        total: 1263.61796608
+        sum_solo: 1583.1819878400001
+        sum_peak_retention: 0.7981507974354899
+        scalar_control_HVX: 808.74569728
+        scalar_control_drop_percent: 0.07255389718077154
