@@ -6422,4 +6422,4 @@ experiments:
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
-    device_owner: L32-0072
+    device_owner: null

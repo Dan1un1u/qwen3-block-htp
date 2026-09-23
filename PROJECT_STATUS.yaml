@@ -2712,7 +2712,7 @@ current_scope:
     report: docs/experiments/L32-0049-RESULTS.md
     modules: docs/experiments/L32-0049-MODULES.md
   long_prefill_report: docs/experiments/L32-0053-RESULTS.md
-  device_execution_state: idle
+  device_execution_state: released_after_L32_0072_formal
   latest_abc_a8_pair_measurement:
     id: L32-0054
     execution_state: completed
