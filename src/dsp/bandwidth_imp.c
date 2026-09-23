@@ -21,6 +21,48 @@ static struct qbh_dma_aligned_desc_1d desc[256];
 /* Eight independent volatile vector reads; no per-vector reduction on critical path. */
 __attribute__((noinline)) static void hvx_loop(uint8_t *p,uint8_t *out,uint32_t bytes,uint32_t repeats,uint32_t mode) {
  HVX_Vector a=Q6_V_vsplat_R(0x5a5a5a5a),b=a,c=a,d=a,e=a,f=a,g=a,h=a;
+ if(mode==0 && bytes%4096U==0U){
+  for(uint32_t rep=0;rep<repeats;rep++){
+   uint8_t *ptr=p;
+   asm volatile("loop0(1f,%9)\n"
+    "1:\n"
+    "%0=vmem(%8+#0)\n"
+    "%1=vmem(%8+#1)\n"
+    "%2=vmem(%8+#2)\n"
+    "%3=vmem(%8+#3)\n"
+    "%4=vmem(%8+#4)\n"
+    "%5=vmem(%8+#5)\n"
+    "%6=vmem(%8+#6)\n"
+    "{%7=vmem(%8+#7)\n %8=add(%8,#1024)}\n"
+    "%0=vmem(%8+#0)\n"
+    "%1=vmem(%8+#1)\n"
+    "%2=vmem(%8+#2)\n"
+    "%3=vmem(%8+#3)\n"
+    "%4=vmem(%8+#4)\n"
+    "%5=vmem(%8+#5)\n"
+    "%6=vmem(%8+#6)\n"
+    "{%7=vmem(%8+#7)\n %8=add(%8,#1024)}\n"
+    "%0=vmem(%8+#0)\n"
+    "%1=vmem(%8+#1)\n"
+    "%2=vmem(%8+#2)\n"
+    "%3=vmem(%8+#3)\n"
+    "%4=vmem(%8+#4)\n"
+    "%5=vmem(%8+#5)\n"
+    "%6=vmem(%8+#6)\n"
+    "{%7=vmem(%8+#7)\n %8=add(%8,#1024)}\n"
+    "%0=vmem(%8+#0)\n"
+    "%1=vmem(%8+#1)\n"
+    "%2=vmem(%8+#2)\n"
+    "%3=vmem(%8+#3)\n"
+    "%4=vmem(%8+#4)\n"
+    "%5=vmem(%8+#5)\n"
+    "%6=vmem(%8+#6)\n"
+    "{%7=vmem(%8+#7)\n %8=add(%8,#1024)}:endloop0\n"
+    :"=v"(a),"=v"(b),"=v"(c),"=v"(d),"=v"(e),"=v"(f),"=v"(g),"=v"(h),"+r"(ptr):"r"(bytes/4096U):"lc0","sa0","memory");
+  }
+  HVX_Vector *q=(HVX_Vector*)out;q[0]=a;q[1]=b;q[2]=c;q[3]=d;q[4]=e;q[5]=f;q[6]=g;q[7]=h;
+  asm volatile("barrier":::"memory");return;
+ }
  for(uint32_t r=0;r<repeats;r++)for(uint32_t i=0;i<bytes;i+=1024){
   if(mode!=1) {
    asm volatile("%0=vmem(%8+#0)\n%1=vmem(%8+#1)\n%2=vmem(%8+#2)\n%3=vmem(%8+#3)\n%4=vmem(%8+#4)\n%5=vmem(%8+#5)\n%6=vmem(%8+#6)\n%7=vmem(%8+#7)\n":"=v"(a),"=v"(b),"=v"(c),"=v"(d),"=v"(e),"=v"(f),"=v"(g),"=v"(h):"r"(p+i):"memory");
