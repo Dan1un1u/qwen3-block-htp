@@ -10,7 +10,7 @@ static void qbh_bf70_worker(void *context,uint32_t id){
  struct bf70_task *t=context;uint32_t rows=t->h->logical_m,nr=rows==64U?16U:1U,first=rows==64U?id*16U:0U;
  float *x=(float *)t->b->expanded_weight;
  if(t->phase==0U){
-  const __fp16 *act=(const __fp16 *)t->b->hmx_activation;
+  const __fp16 *act=(const __fp16 *)t->b->butterfly_activation;
   for(uint32_t r=first;r<first+nr;r++)for(uint32_t a=0;a<QBH_BLOCK_INTERMEDIATE/512U;a++)for(uint32_t c=0;c<512U;c+=64U){
    uint32_t sr=a*rows+r;const __fp16 *s=act+qbh_r4_pos(sr&~1U,c,16U);
    HVX_VectorPair v=Q6_W_vdeal_VVR(*(const HVX_Vector *)(s+1024U),*(const HVX_Vector *)s,-2);
