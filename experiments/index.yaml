@@ -6199,13 +6199,103 @@ experiments:
       slower than full inference; not measured incremental E2E overhead.
 - id: L32-0070
   title: Full-model HVX butterfly R4 on ordinary W4A8
-  execution_state: running
-  evidence_validity: pending
-  local_gate: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: not_requested
   approval_ref: 'User2026-09-23: continue full-model E2E after HVX R4 component.'
   record: docs/experiments/L32-0070.md
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
-    device_owner: L32-0070
+    device_owner: null
+  results:
+    experiment: L32-0070
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: Own-contract exact arithmetic and physical gates;10percent wall only
+      descriptive, prefill exceeds it; no quality gate
+    adoption_status: not_requested
+    baseline_promoted: false
+    quality_claim: false
+    e2e_measured: true
+    model: Llama-3.2-1B-Instruct
+    shape:
+    - 64
+    - 42
+    base_recipe: ordinary W4A8, FP32 residual, no SP2/INT16 Down, R3off
+    rotation: full normalized H8192 HVX FP32 butterfly after prequantization FP16
+      SwiGLU; fresh original Down folded per-channel W4 RTN
+    device_owner: null
+    source_head: cbc3ddc1b55ae8000645a77c7e3afac24f410c2b
+    measured_source: 51ded69018c3b5e20ddcfc590d7a32f050019ef0
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0070
+    evidence_ledger_sha256: 57c71782848c3ed05593a43577e38d54a82571dd663da704a97a7d78c192128d
+    evidence_files: 1186
+    evidence_bytes: 851890593
+    report: docs/experiments/L32-0070-RESULTS.md
+    short_rounds: 5
+    formal_rounds: 10
+    in_rpc_repeats: 10
+    numerical:
+      exact_layer_hashes_per_arm: 1548
+      final_hidden_payload_exact: true
+      r4_prefill_kv_and_final_norm_exact: true
+      full16_padding_poison_pass: true
+      formal_token_boundaries: 8600
+      short_token_boundaries: 4300
+    physical:
+      vtcm_grant: 8388608
+      peak:
+      - 8098272
+      intermediate_ddr_bytes: 0
+      spills: 0
+      r4_hmx_calls: 0
+      hmx_command_counts_same: true
+    timings:
+      prefill:
+        A8:
+          wall_ms: 26.682105090000004
+          tps: 2398.6113458486493
+        R4:
+          wall_ms: 31.706155190000004
+          tps: 2018.535505692136
+        r4_over_a8:
+          wall_ratio: 1.188292868312063
+          ci95:
+          - 1.1845644806997457
+          - 1.1915942000879711
+      decode:
+        A8:
+          wall_ms: 905.5070732500001
+          tps: 46.382851377688006
+        R4:
+          wall_ms: 920.4759429899999
+          tps: 45.628568915740026
+        r4_over_a8:
+          wall_ratio: 1.016530925248628
+          ci95:
+          - 1.0128789545297858
+          - 1.0194872423627956
+    r4_subcounters_us:
+      prefill:
+        dense_r4_prepare_ticks: 377.22552083333335
+        dense_r4_layout_ticks: 2616.159375
+        dense_r4_finish_ticks: 1217.9130208333333
+        activation_ticks: 4213.666666666667
+        gate_up_ticks: 6317.269791666667
+        w4u8_gate_up_swiglu_worker_ticks: 0.0
+      decode:
+        dense_r4_prepare_ticks: 32.04409722222223
+        dense_r4_layout_ticks: 159.80044642857143
+        dense_r4_finish_ticks: 73.83380456349207
+        activation_ticks: 266.9386284722222
+        gate_up_ticks: 4894.233754960318
+        w4u8_gate_up_swiglu_worker_ticks: 1874.5043154761906
+    speed_reference10pct:
+      prefill_pass: false
+      decode_pass: true
+    conclusion: R4 increases full-model prefill wall18.829percent and decode1.653percent.
+      Core alone is2.616ms/0.1598ms per decode step, not slower than full inference;
+      boundary integration adds measurable cost. No promotion/workbook update.
