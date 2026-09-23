@@ -7040,7 +7040,7 @@ int main(int argc, char **argv) {
     if(header->dense_r4_optimization>6U) return 2;
     if((header->paper_format_disable&4U) && header->dense_r4_mode) return 2;
     if(header->dense_r4_mode) {
-        if(variant!=QBH_BLOCK_W4U8 || header->dense_r4_mode>2U) return 2;
+        if(variant!=QBH_BLOCK_W4U8 || (header->dense_r4_mode>2U && header->dense_r4_mode!=4U)) return 2;
         if(header->dense_r4_optimization<2U)header->w4u8_decode_direct_n_gate_up_swiglu_stream=0U;
     }
     header->dense_r3_mode=dense_r3_mode;

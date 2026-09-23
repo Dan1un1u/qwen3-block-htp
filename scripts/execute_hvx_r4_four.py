@@ -113,7 +113,7 @@ def deploy():
   print('DEPLOYED',SIZE,arm,flush=True)
  save(R/'deployment.json',dict(all_payload_hashes_verified=True))
 def stage():
- preflight();seal=read(ROOT/'build/qwen3-sp2-build-seal.json');assert not seal['fp_islands'] and seal['model_size']==SIZE;assert seal['source_head']==subprocess.check_output(['git','-C',str(ROOT),'rev-parse','HEAD'],text=True).strip();cache=(ROOT/'hexagon_ReleaseG_toolv19_v79/CMakeCache.txt').read_text();nl=int(next(l.split('=',1)[1] for l in cache.splitlines() if l.startswith('QBH_EXP0257_LAYER_COUNT:STRING=')));d=R/f'binaries-I-{nl}';d.mkdir(exist_ok=False);remote=REMOTE+'/'+d.name;adb('shell','mkdir -p '+remote)
+ preflight();seal=read(ROOT/'build/qwen3-sp2-build-seal.json');assert not seal['fp_islands'] and seal['model_size']==SIZE;assert seal['source_head']==subprocess.check_output(['git','-C',str(ROOT),'rev-parse','HEAD'],text=True).strip();cache=(ROOT/'hexagon_ReleaseG_toolv19_v79/CMakeCache.txt').read_text();nl=int(next(l.split('=',1)[1] for l in cache.splitlines() if l.startswith('QBH_EXP0257_LAYER_COUNT:STRING=')));d=R/f'binaries-Ib-{nl}';d.mkdir(exist_ok=False);remote=REMOTE+'/'+d.name;adb('shell','mkdir -p '+remote)
  for n,h in seal['files'].items():
   p=Path(n);assert sha256(p)==h;shutil.copy2(p,d/p.name);adb('push',windows(p),remote+'/'+p.name);assert adb('shell','sha256sum '+remote+'/'+p.name).stdout.split()[0]==h
  adb('shell','chmod 755 '+remote+'/qwen3_block_cli');save(d/'seal.json',seal)
@@ -122,7 +122,7 @@ def execute(mode,tag,nl=28,repeat=1,audit=False,poison=False):
     arm=mode
     d=R/tag
     if (d/'validated.json').exists():return read(d/'validated.json')
-    d.mkdir(exist_ok=True);binary_mode='I';root=REMOTE+f'/binaries-{binary_mode}-{nl}';base=read(BASE)
+    d.mkdir(exist_ok=True);binary_mode='Ib';root=REMOTE+f'/binaries-{binary_mode}-{nl}';base=read(BASE)
     prefix,args=base['command'].split(' ./qwen3_block_cli ',1)
     env=dict(t.split('=',1) for t in shlex.split(prefix.split(' && ')[1]));argv=shlex.split(args);argv[0]=PACKAGE_REMOTE+'/'+arm
     for k in ['QBH_EVAL_FILE','QBH_GENERATION_AUDIT_DIR','QBH_GENERATION_BOUNDARY_AUDIT']:env.pop(k,None)
@@ -184,5 +184,5 @@ def run():
   save(R/(stage_name+'-summary.json'),s);print(stage_name,json.dumps(s),flush=True)
 if __name__=='__main__':
  ap=argparse.ArgumentParser();ap.add_argument('action');ap.add_argument('--layers',type=int,default=28);ap.add_argument('--mode',default='A8');a=ap.parse_args()
- if a.action=='audit':preflight();execute(a.mode,f'audit{a.layers}-{a.mode}',nl=a.layers,audit=True)
+ if a.action=='audit':preflight();execute(a.mode,f'audit-b-{a.layers}-{a.mode}',nl=a.layers,audit=True)
  else:globals()[a.action]()
