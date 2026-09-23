@@ -252,3 +252,6 @@ User explicitly requests deleting all D-drive derived model weights and intermed
 
 ## User-approved HVX butterfly R4 diagnostic (2026-09-23)
 L32-0069 explicitly permits HVX FWHT at the post-SwiGLU/pre-A8 boundary for isolated wall measurement on ordinary W4A8. Dense-only restrictions superseded solely here; no production, weight, quality or E2E changes. See registered protocol.
+
+## User-approved full-model HVX R4 (2026-09-23)
+L32-0070 extends0069 to actual fullmodel ordinaryA8 paired E2E, with fresh original Down folding and matching single-scaleA8 contract. Dense-only/component-only restrictions superseded only here. No PPL/default promotion; numerical/physical gates retained. See registered protocol.

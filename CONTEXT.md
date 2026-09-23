@@ -477,3 +477,6 @@ User-authorized ordinary-A8 HVX butterfly R4 diagnostic active. Read docs/experi
 
 ## L32-0069 closure (2026-09-23)
 Component-only full8192 HVX butterfly after SwiGLU/before ordinaryA8 passes24 exact FP32/U8 audits and5short/10formal repeat10. No E2E run. Single-layer M64 core642.443us one-worker or165.773us four-worker; M1 10.035us. Direct16-transform core10.2749/2.64931ms M64 and0.160664ms M1. Optimized core/historical ordinaryA8 fullmodelwall9.93%/0.744%; nonpaired reference only, not E2E slowdown. Synthetic Gate/Up with original qparams, not real trajectory. No model folding or quality claim; no promotion. Source cc20e9afcfb9d375cac1eb3574979a01c46321d2; measured a43398ba64760da3756a006ba2dde99638873cd1. Read docs/experiments/L32-0069-RESULTS.md. Active none/device released.
+
+## Current L32-0070
+User requests fullmodel64+42 paired E2E for HVX butterfly R4 vs ordinaryA8. Read registered protocol;0070 owns device.
