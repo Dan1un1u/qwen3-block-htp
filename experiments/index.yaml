@@ -29836,3 +29836,16 @@ experiments:
       five short/ten formal paired repeat10. Not a model-quality claim.
   source_commits:
   - 7e80b08190c8e9ddc70c56a10278969397e75cd2
+- id: EXP-0309
+  title: Qwen HVX butterfly full R4 paired fullmodel side experiment
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: not_requested
+  approval_ref: 'User2026-09-23: retain R4 only and expand to all four models with
+    new workbook sheet'
+  record: docs/experiments/EXP-0309.md
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0309-hvx-r4-four-model
+    device_owner: null
