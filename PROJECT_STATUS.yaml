@@ -7,7 +7,7 @@ project:
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
   updated_on: '2026-09-23'
 governance:
-  active_experiment: L32-0072
+  active_experiment: null
   next_experiment_number: 73
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -15,7 +15,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: 2fcab92e71f6ba3deac39e55f96cf4ba76ba2968
+    recorded_head: 90353c4725ae8e53431944bd1cdb7dfbf457335d
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -27,12 +27,10 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: hvx_r4_four_model_side_ablation
+  stage: hvx_r4_four_model_side_ablation_complete
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: User-approved R4-only fullmodel paired expansion to four models with
-    Qwen EXP-0309; append final workbook sheet. R3 combination excluded from controlled
-    ablation.
+  next_action: Four-model R4-only archive complete. Await user direction; no R3/default promotion.
   baseline_manifest: docs/PAPER_NO_ROTATION_BASELINES.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF_L32_0034.md
@@ -45,7 +43,7 @@ current_scope:
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0071
+  last_completed_experiment: L32-0072
   evidence_ledger_sha256: 599d86cf654b2b41526690c76ad1c0a251b5f206815a57ce4ae12b0024f94ac9
   formal_profiling_completed: true
   general_quantization_quality_accepted: false
@@ -69,8 +67,8 @@ current_scope:
     w4a8:
       prefill: 2015.9163652745706
       decode: 45.646624553664694
-  latest_e2e_shape: 'W16A16/W4A16: A64+42, B536+46, C741+3; fixed project-owned trajectories;
-    10 paired repeat10 rounds per model'
+  latest_e2e_shape: 'W16A16/W4A16: A64+42, B536+46, C741+3; fixed project-owned trajectories; 10 paired repeat10 rounds per
+    model'
   additional_m64_plus15_e2e_tokens_per_second:
     prefill: 2046.8128485478423
     decode: 46.675701580572316
@@ -89,8 +87,7 @@ current_scope:
     code_bits: 8
     hmx_weight_path: native signed4, no S8 expansion
     exact_llama_sp2_elements: 399360
-    quality_scope: local Down against pre-middle-quantization A8 Gate/Up trajectory
-      only
+    quality_scope: local Down against pre-middle-quantization A8 Gate/Up trajectory only
     full_block_gate_applied: false
     ppl_run: false
     e2e_run: false
@@ -543,8 +540,7 @@ current_scope:
     intermediate_spill: false
     frontend_exact: true
     quality_accepted: false
-    rounding_fix: Explicit noncontracted FP32 arithmetic validated through full16
-      generation; no gate weakening
+    rounding_fix: Explicit noncontracted FP32 arithmetic validated through full16 generation; no gate weakening
     report: docs/LLAMA32_FP32_RESIDUAL.md
     fixed_scale_ppl:
       all: 1766.764883021644
@@ -784,8 +780,7 @@ current_scope:
           - 1.021524858110149
           - 1.074523205713089
           gate_pass: true
-    formal_shape: singlelayer0 M64+decode1 past64;10 cyclic four-arm cycles,40 processes;1warmup+10
-      measured replays each
+    formal_shape: singlelayer0 M64+decode1 past64;10 cyclic four-arm cycles,40 processes;1warmup+10 measured replays each
     all_speed_gates_pass: false
     fullmodel_rotation_validated: false
     e2e_run: false
@@ -932,8 +927,8 @@ current_scope:
     evidence_ledger_sha256: 1ce076bf6ff75fbc54f4a9c6de1516b414311cf6895d20640d26011681dbbcf3
     old_native_chain3_reproduced_identical: true
     previous_chain3_was_unmeasured: true
-    method: Same FP16 normalized H512 coefficients move from output converter to dense
-      weights; unity conversion, original XOR generation cost; fast0021 pipeline retained
+    method: Same FP16 normalized H512 coefficients move from output converter to dense weights; unity conversion, original
+      XOR generation cost; fast0021 pipeline retained
     singlelayer_actual_arithmetic_pass: true
     chain3_independent_gate_pass: true
     chain3_cache_values_exact: true
@@ -1065,8 +1060,8 @@ current_scope:
     evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0024
     evidence_ledger_sha256: fc13eb282b1b7b26253d4a64986988154e4604d32c0d9b7a405fcbe6865fd2c6
     mode: 3
-    method: Complete dense DSP int64 sums of exact binary16 units, explicit RNE after181/4096
-      and1/4; no butterfly; sparse refinement not implemented
+    method: Complete dense DSP int64 sums of exact binary16 units, explicit RNE after181/4096 and1/4; no butterfly; sparse
+      refinement not implemented
     singlelayer_indices:
     - 0
     - 7
@@ -1220,12 +1215,10 @@ current_scope:
   paper_working_implementation:
     accepted: true
     accepted_on: '2026-09-14'
-    acceptance_scope: paper/performance working implementation with explicitly known
-      numerical limitation
+    acceptance_scope: paper/performance working implementation with explicitly known numerical limitation
     native_source_parent: cb8be962f3f31a1b89c8f8cd2bebb9cceef049a7
     source_documentation_head: 0f7d083dc99af7e2983ecd426fca03e9d57a0a07
-    selected: Original fast dense R3/R4 + SP2mode8 + FP32 residual; no native/default
-      changes in L32-0027
+    selected: Original fast dense R3/R4 + SP2mode8 + FP32 residual; no native/default changes in L32-0027
     rejected_candidates_not_selected:
     - L32-0026 exponent-shift
     - L32-0026 reverse K order
@@ -1233,15 +1226,13 @@ current_scope:
     independent_full16_gate_pass: false
     model_quality_accepted: false
     combined_frontend_e2e_measured: false
-    speed_evidence: L32-0022 singlelayer paired; fullmodel SP2 L32-0012 and unrotated
-      FP32-residual SP2 L32-0018 remain separate
+    speed_evidence: L32-0022 singlelayer paired; fullmodel SP2 L32-0012 and unrotated FP32-residual SP2 L32-0018 remain separate
     paper_report: docs/PAPER_STORY_RUNTIME_V2.md
     paper_report_sha256: 02f0b458fd2d79e73c711bfa16b741c40fb151217548da0baa6a8baad91b6904
     evidence_index: docs/PAPER_STORY_RUNTIME_V2_EVIDENCE.json
     evidence_index_sha256: b2444718b14fffcbf57475a5bced441ca3ae2624b8df19030bfcba3069093379
     numerical_alignment_paused: true
-    superseded_as_primary_speed_baseline_by: L32-0028; retained as historical supplemental
-      rotation acceptance only
+    superseded_as_primary_speed_baseline_by: L32-0028; retained as historical supplemental rotation acceptance only
   paper_no_rotation_speed_baseline:
     model: Llama-3.2-1B-Instruct
     experiment: L32-0018
@@ -1264,8 +1255,7 @@ current_scope:
       QBH_DENSE_R4: '0'
       QBH_R3_OPT: '0'
       QBH_R4_OPT: '0'
-    quality: Full-model implementation validated; fixed-scale text unusable, quality
-      unaccepted
+    quality: Full-model implementation validated; fixed-scale text unusable, quality unaccepted
   paper_baseline_audit:
     experiment: L32-0028
     source_documentation_head: 0ae07a92e4d99fd3fd23c89adc3ce4a2b44f7b4f
@@ -1365,8 +1355,8 @@ current_scope:
           - 1.0020069734319716
           - 1.005944185256383
   current_handoff: docs/experiments/L32-0056.md
-  next_direction: Reduce repeated prefix K/V preparation and costly partial-tail work
-    before considering larger scheduling changes.
+  next_direction: Reduce repeated prefix K/V preparation and costly partial-tail work before considering larger scheduling
+    changes.
   latest_paper_pipeline_result:
     id: L32-0038
     phase: A2
@@ -1735,8 +1725,7 @@ current_scope:
         prefill: 2022.5159597714044
         decode: 43.83890357302921
     shape: M64+33 cache128, 34 outputs
-    numerical_scope: independent full16 CPU greedy selected token/logit code exact,
-      first16 matches old frozen model
+    numerical_scope: independent full16 CPU greedy selected token/logit code exact, first16 matches old frozen model
     physical_gate: true
     quality_claim: false
     baseline_promoted: false
@@ -1956,10 +1945,9 @@ current_scope:
             - 0.9859995097176806
             - 0.9890632456263714
     scope: M64, two fixed tokenized English/Chinese texts,15/63decode,cache128,maxKV127
-    numerical_scope: all288 full16 hardware last-hidden vectors,native finalNorm liveU8
-      and full-vocabulary head selected token/logit match independent exact host teacher,
-      paired carrier bytes exact;128 host teacher steps,48 original CPU hidden and47
-      token/logit crosschecks
+    numerical_scope: all288 full16 hardware last-hidden vectors,native finalNorm liveU8 and full-vocabulary head selected
+      token/logit match independent exact host teacher, paired carrier bytes exact;128 host teacher steps,48 original CPU
+      hidden and47 token/logit crosschecks
     physical_gate: true
     quality_claim: false
     baseline_promoted: false
@@ -1992,8 +1980,7 @@ current_scope:
     llama_final_experiment: L32-0034
   supplementary_generalization:
     source: *id001
-    classification: supplementary experiment; excluded from main ablations by explicit
-      user instruction; not rerun
+    classification: supplementary experiment; excluded from main ablations by explicit user instruction; not rerun
   pre_optimization_paper_ablation_results:
     latest_paper_factorial_result:
       id: L32-0029
@@ -2103,8 +2090,8 @@ current_scope:
       trace_complete: false
       trace_status: 'N/A: truncated FARF; five exact diagnostic runs retained'
       mechanism_coverage:
-        QKV: 'N/A: Qwen ring scheduling site is inactive in the measured Llama no-rotation
-          path; QKV arm is a no-op control, not evidence against QKV overlap'
+        QKV: 'N/A: Qwen ring scheduling site is inactive in the measured Llama no-rotation path; QKV arm is a no-op control,
+          not evidence against QKV overlap'
         FFN: active
         EPILOGUE: prefill active; decode current implementation inline
         LOOKAHEAD: decode active; no prefill cross-operator lookahead path
@@ -2218,9 +2205,8 @@ current_scope:
       evidence_files: 583
       evidence_bytes: 266094775
       timed_profiles: 9600
-      numerical_gate_scope: Llama independent selected layer7, chain3, chain16 two-step
-        exact; full16 all-layer greedy/fixed CPU teacher selected token/logit codes
-        exact
+      numerical_gate_scope: Llama independent selected layer7, chain3, chain16 two-step exact; full16 all-layer greedy/fixed
+        CPU teacher selected token/logit codes exact
       physical_gate: true
       weight_bytes_identical: true
       quality_claim: false
@@ -2277,9 +2263,8 @@ current_scope:
       evidence_bytes: 300912966
       timed_profiles: 9600
       physical_gate: true
-      numerical_gate_scope: Llama independent selected layer7, chain3, chain16 two-step
-        exact; full16 all-layer greedy/fixed CPU teacher selected token/logit codes
-        exact
+      numerical_gate_scope: Llama independent selected layer7, chain3, chain16 two-step exact; full16 all-layer greedy/fixed
+        CPU teacher selected token/logit codes exact
       quality_claim: false
       baseline_promoted: false
       trajectories:
@@ -2701,8 +2686,8 @@ current_scope:
     implementation_crosscheck_pass: true
     full_mathematical_alignment_pass: false
     max_full_boundary_nrmse: 0.004798236471210144
-    hardware_composition_scope: Untimed monolithic single-layer RPC composition versus
-      production segmented full-stack RPC; M64+1 only, no throughput claim
+    hardware_composition_scope: Untimed monolithic single-layer RPC composition versus production segmented full-stack RPC;
+      M64+1 only, no throughput claim
     quality_claim: false
     baseline_promoted: false
     device_owner: null
@@ -3136,8 +3121,7 @@ current_scope:
           head_checks: 306
           profiles: 374
           cache_snapshots: 1600
-          scope: Actual-operand references and exact contracts; not full teacher or
-            model quality acceptance.
+          scope: Actual-operand references and exact contracts; not full teacher or model quality acceptance.
           native_long64_exact_layer_outputs: 1376
       3B:
         model: Llama3.2-3B
@@ -3239,8 +3223,7 @@ current_scope:
           head_checks: 306
           profiles: 374
           cache_snapshots: 2800
-          scope: Actual-operand references and exact contracts; not full teacher or
-            model quality acceptance.
+          scope: Actual-operand references and exact contracts; not full teacher or model quality acceptance.
           native_long64_exact_layer_outputs: 2408
     table_rows:
     - model: Llama3.2-1B
@@ -3378,8 +3361,7 @@ current_scope:
     implementation_checks_pass: true
     historical_full_floating_alignment_status: unchanged; prior failures remain failures
     local_gate: pass
-    gate_role: implementation checks and formal measurement completion; no PPL/quality
-      acceptance
+    gate_role: implementation checks and formal measurement completion; no PPL/quality acceptance
     w4_slower_than_w16_over_10_percent: []
     execution_state: completed
     evidence_validity: valid
@@ -3785,10 +3767,9 @@ current_scope:
           partial_replay_retained_in_raw: true
           raw_failure_not_overwritten: true
           source_head: 68d9401265b8f77aa6de9d1d2135d5608b61e9db
-          policy: Completed samples are concatenated in observed order; all original
-            timing values retained; only continuation sample labels offset. Ten formal
-            rounds remain, final round spans connection interruption. Original gate
-            and numerical tolerances unchanged.
+          policy: Completed samples are concatenated in observed order; all original timing values retained; only continuation
+            sample labels offset. Ten formal rounds remain, final round spans connection interruption. Original gate and numerical
+            tolerances unchanged.
           second_interruption:
             original: /mnt/d/llm_exp/results/llama32-htp/l32-0056/3B/c4/formal/09-w4-C1
             completed_replays_before_failure: 0
@@ -4623,8 +4604,7 @@ current_scope:
     report: docs/experiments/L32-0060-RESULTS.md
     modules: docs/experiments/L32-0060-MODULES.md
     device_owner: null
-    recommendation: Retain native HMX default; four-HVX shift/add is slower in all
-      four measured configurations.
+    recommendation: Retain native HMX default; four-HVX shift/add is slower in all four measured configurations.
     workbook_e:
       workbook: C:/Users/35961/Desktop/HTP硬件实验总表.xlsx
       sheet: E_HMX-HVX对比
@@ -4638,8 +4618,7 @@ current_scope:
       visual_checks: true
       workbook_updated: true
       evidence_ledger_sha256: db12f374fc3f09a3b0b306404cc2eaeb1dc9b8c72302d4f08697d39be9337fc2
-      approval: User requests new E sheet in main workbook to archive HMX versus HVX
-        comparison.
+      approval: User requests new E sheet in main workbook to archive HMX versus HVX comparison.
       down_latency:
         range: A23:J35
         statistic: formal fullmodel Down sum divided by layer count
@@ -4665,8 +4644,8 @@ current_scope:
     decode_host_wall_ratio: 0.9451138072026947
     prefill_significant_gain: false
     decode_significant_gain: true
-    decode_attribution_caveat: Current head64 short decode RQ visits full64 rows;
-      observed gain includes removing this redundant work. Row4-only control not measured.
+    decode_attribution_caveat: Current head64 short decode RQ visits full64 rows; observed gain includes removing this redundant
+      work. Row4-only control not measured.
     baseline_promoted: false
     quality_claim: false
     device_owner: null
@@ -4678,8 +4657,7 @@ current_scope:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    gate_scope: own-contract numerical,physical and10% speed guard; NOT cross-arm
-      model equivalence
+    gate_scope: own-contract numerical,physical and10% speed guard; NOT cross-arm model equivalence
     source_head: 5486a5f772641a6717fdc05cba9aae2d40c0837a
     native_code_changed: false
     model: Llama3.2-1B-Instruct
@@ -4792,8 +4770,7 @@ current_scope:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    gate_scope: own arithmetic and physical contract; no performance or model-quality
-      threshold
+    gate_scope: own arithmetic and physical contract; no performance or model-quality threshold
     adoption_status: pending
     source_closure: 14d7858900244f18ac475c27df2fd8fa134ef956
     source_head: 2ac474ac485d16e33bb913493c3c4aadbf00321e
@@ -4805,8 +4782,7 @@ current_scope:
     fp_softmax_qdq_percent: 6.553084128434912
     fp_swiglu_qdq_percent: 35.416892313303556
     fp_nonlinear_qdq_percent: 41.96997644173847
-    attribution_scope: explicit operator-boundary diagnostic, not production critical
-      path
+    attribution_scope: explicit operator-boundary diagnostic, not production critical path
     qdq_separable: false
     short_rounds: 5
     formal_rounds: 10
@@ -4862,16 +4838,15 @@ current_scope:
     decode_one_step_tps: 23.19257009095837
     report: docs/experiments/L32-0064-RESULTS.md
     modules: docs/experiments/L32-0064-MODULES.md
-    attribution_scope: explicit operator-boundary diagnostic; not production critical
-      path
+    attribution_scope: explicit operator-boundary diagnostic; not production critical path
     source_closure: 5ac995fdecdd69cc875cd9113646321522c69bff
   integer_fusion_ablation_result:
     experiment: L32-0065
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    gate_role: Own-contract numerical/physical pass; conditional AV fold preserves
-      checked clipping but not guaranteed bitwise FP reassociation
+    gate_role: Own-contract numerical/physical pass; conditional AV fold preserves checked clipping but not guaranteed bitwise
+      FP reassociation
     adoption_status: pending
     device_owner: null
     shape:
@@ -4960,8 +4935,7 @@ current_scope:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    gate_scope: Component arithmetic/physical validation only; no quality or E2E speed
-      gate
+    gate_scope: Component arithmetic/physical validation only; no quality or E2E speed gate
     adoption_status: not_requested
     baseline_promoted: false
     quality_claim: false
@@ -4969,8 +4943,7 @@ current_scope:
     model: Llama-3.2-1B
     rotation: full H8192 HVX FP32 butterfly at post-SwiGLU/pre-A8
     base_recipe: ordinary W4A8, no INT16/SP2 Down
-    input_provenance: deterministic synthetic A8 Gate/Up with original layer0 qparams,
-      not a model trajectory
+    input_provenance: deterministic synthetic A8 Gate/Up with original layer0 qparams, not a model trajectory
     device_owner: null
     source_head: cc20e9afcfb9d375cac1eb3574979a01c46321d2
     measured_source: a43398ba64760da3756a006ba2dde99638873cd1
@@ -5166,9 +5139,8 @@ current_scope:
       - 160.66145833333334
       - 160.66666666666669
       fraction_historical_e2e_percent: 0.7438982221237271
-    conclusion: Four-worker M64 R4 core16 wall2.64931ms is9.93percent of historical
-      ordinaryA8 E2E; M1 core16 wall0.160664ms is0.744percent. Does not support core
-      slower than full inference; not measured incremental E2E overhead.
+    conclusion: Four-worker M64 R4 core16 wall2.64931ms is9.93percent of historical ordinaryA8 E2E; M1 core16 wall0.160664ms
+      is0.744percent. Does not support core slower than full inference; not measured incremental E2E overhead.
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp
@@ -5242,8 +5214,8 @@ latest_llama3b_w4a8_sp2_optimization:
   bounded_1b_pass: true
   true_greedy_exact: true
   vtcm_peak_bytes: 8360416
-  recipe: W4A8-SP2mode8 FP32 residual, no rotation; AVrows4; both head32; candidate
-    QKV32 plus Norm/QKV/Down boundary DMA overlap
+  recipe: W4A8-SP2mode8 FP32 residual, no rotation; AVrows4; both head32; candidate QKV32 plus Norm/QKV/Down boundary DMA
+    overlap
   per_token_hmx_commands_saved: 980
   per_token_weight_dma_descriptors_saved: 1960
   parent_experiment: L32-0044
@@ -5429,8 +5401,7 @@ latest_llama3b_long_prefill:
   workspace_build: 3B/28 layers
   candidate_exact_layer_outputs: 2520
   signed_zero_only: 0
-  gate_role: unchanged long/M64 throughput parity plus decode guard; numerical and
-    physical checks separately passed
+  gate_role: unchanged long/M64 throughput parity plus decode guard; numerical and physical checks separately passed
 latest_llama1b_long_decode_optimization:
   experiment: L32-0057
   execution_state: completed
@@ -5620,8 +5591,7 @@ latest_llama3b_av_folding_ablation:
   final_hidden_relative_l2: 0.36584658140318244
   formal_invocations: 8600
   vtcm_peak_bytes: 8360416
-  gate_scope: Own-contract arithmetic/physical and fixed paired timing; no bitwise
-    cross-arm equivalence or PPL claim
+  gate_scope: Own-contract arithmetic/physical and fixed paired timing; no bitwise cross-arm equivalence or PPL claim
 latest_residual_boundary_fusion_ablation:
   experiment: L32-0067
   execution_state: completed
@@ -5737,8 +5707,8 @@ latest_residual_boundary_fusion_ablation:
   formal_invocations: 17200
   vtcm_peak_bytes: 8139232
   common_scratch_bytes: 40960
-  gate_scope: Exact1/3/16-layer hashes, heads, FP32 hidden/U8 norm/prefill KV payloads;
-    full16 padding poison; physical and fixed timing checks; no PPL claim
+  gate_scope: Exact1/3/16-layer hashes, heads, FP32 hidden/U8 norm/prefill KV payloads; full16 padding poison; physical and
+    fixed timing checks; no PPL claim
   workbook:
     workbook_before_sha256: f5d823bbf70a0f39ec5313f765857fac39895c5e012ed449cbd3058772649237
     workbook_after_sha256: b1193e77b0f5dc2d1e5ab9fefb8ad18d57b5f97a4fbbc2bbf27e7dd2a4d78b39
@@ -5845,15 +5815,15 @@ latest_table_a_down_precision_pair:
     desktop_saved: C:\Users\35961\Desktop\HTP硬件实验总表_重建.xlsx
     archive: D:\llm_exp\results\paper-table-a-down-pair-20260922
     saved_at: '2026-09-22T16:48:31.939076'
-  gate_scope: Own-contract exact1/3/full-layer and padding audits, physical invariants,
-    five short/ten formal paired repeat10. Not a model-quality claim.
+  gate_scope: Own-contract exact1/3/full-layer and padding audits, physical invariants, five short/ten formal paired repeat10.
+    Not a model-quality claim.
 latest_hvx_butterfly_r4_e2e:
   experiment: L32-0070
   execution_state: completed
   evidence_validity: valid
   local_gate: pass
-  gate_scope: Own-contract exact arithmetic and physical gates;10percent wall only
-    descriptive, prefill exceeds it; no quality gate
+  gate_scope: Own-contract exact arithmetic and physical gates;10percent wall only descriptive, prefill exceeds it; no quality
+    gate
   adoption_status: not_requested
   baseline_promoted: false
   quality_claim: false
@@ -5863,8 +5833,8 @@ latest_hvx_butterfly_r4_e2e:
   - 64
   - 42
   base_recipe: ordinary W4A8, FP32 residual, no SP2/INT16 Down, R3off
-  rotation: full normalized H8192 HVX FP32 butterfly after prequantization FP16 SwiGLU;
-    fresh original Down folded per-channel W4 RTN
+  rotation: full normalized H8192 HVX FP32 butterfly after prequantization FP16 SwiGLU; fresh original Down folded per-channel
+    W4 RTN
   device_owner: null
   source_head: cbc3ddc1b55ae8000645a77c7e3afac24f410c2b
   measured_source: 51ded69018c3b5e20ddcfc590d7a32f050019ef0
@@ -5934,16 +5904,14 @@ latest_hvx_butterfly_r4_e2e:
   speed_reference10pct:
     prefill_pass: false
     decode_pass: true
-  conclusion: R4 increases full-model prefill wall18.829percent and decode1.653percent.
-    Core alone is2.616ms/0.1598ms per decode step, not slower than full inference;
-    boundary integration adds measurable cost. No promotion/workbook update.
+  conclusion: R4 increases full-model prefill wall18.829percent and decode1.653percent. Core alone is2.616ms/0.1598ms per
+    decode step, not slower than full inference; boundary integration adds measurable cost. No promotion/workbook update.
 latest_hvx_butterfly_r3_r4_e2e:
   experiment: L32-0071
   execution_state: completed
   evidence_validity: valid
   local_gate: pass
-  gate_scope: Own-contract exact1/3/16-layer arithmetic/KV/padding/physical gates;
-    speed side experiment, no quality gate
+  gate_scope: Own-contract exact1/3/16-layer arithmetic/KV/padding/physical gates; speed side experiment, no quality gate
   adoption_status: not_requested
   baseline_promoted: false
   quality_claim: false
@@ -6031,7 +5999,146 @@ latest_hvx_butterfly_r3_r4_e2e:
         dense_r4_finish_ticks: 73.83232886904763
         qkv_projection_ticks: 1482.900967261905
         qk_norm_rope_ticks: 109.38258928571429
-  interpretation: 'Complete boundary implementations, not isolated R3-core ablation:
-    R3 inherited pre/post FP16 and vector reciprocal quantization replaces nonrotated
-    SF32/division rounding-edge repair. Both own-contract exact. No quality/same-output/algorithm-intrinsic
+  interpretation: 'Complete boundary implementations, not isolated R3-core ablation: R3 inherited pre/post FP16 and vector
+    reciprocal quantization replaces nonrotated SF32/division rounding-edge repair. Both own-contract exact. No quality/same-output/algorithm-intrinsic
     speedup claim; no additional R4 optimization.'
+  excluded_from_controlled_r4_comparison: true
+latest_hvx_butterfly_r4_four_model:
+  experiment: L32-0072
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
+  gate_scope: Exact own-contract arithmetic/physical plus completed paired measurements. Speed slowdown is descriptive, no
+    acceptance gate. No model quality claim.
+  adoption_status: not_requested
+  baseline_promoted: false
+  quality_claim: false
+  device_owner: null
+  shape:
+  - 64
+  - 42
+  source_head: 90353c4725ae8e53431944bd1cdb7dfbf457335d
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0072
+  evidence_ledger_sha256: 6360edebb3e79524599a47275255b21bf857303849edaa44b2f6abe664b96139
+  evidence_files: 1331
+  evidence_bytes: 1246361914
+  report: docs/experiments/L32-0072-RESULTS.md
+  full_profiling_report: docs/experiments/L32-0072-RESULTS.md
+  workbook:
+    input_sha256: 8563d1b75b26e33f20809790ed4041a6f22e5eda842352f6245272086023a98a
+    output_sha256: f2252117e2c5fcc685c48e5f0ed649a6efd53849bfa2532bcf7bbcd85230b98c
+    original_sheet_count: 12
+    new_sheet: M_R4蝶形消融
+    new_sheet_part: xl/worksheets/sheet13.xml
+    changed_original_parts:
+    - '[Content_Types].xml'
+    - docProps/app.xml
+    - xl/_rels/workbook.xml.rels
+    - xl/styles.xml
+    - xl/workbook.xml
+    all_original_sheet_parts_byte_identical: true
+    all_original_style_records_preserved: true
+    output: C:\Users\35961\.codex\visualizations\2026\09\23\r4-four-model\outputs\r4-four-model\HTP硬件实验总表_重建.xlsx
+    desktop_saved: C:/Users/35961/Desktop/HTP硬件实验总表_重建.xlsx
+    archive: /mnt/d/llm_exp/results/paper-hvx-r4-four-model-20260923
+    saved_at: '2026-09-23T08:51:37.936938+00:00'
+    new_sheet_formulas_verified: true
+    no_cached_xlsx_errors: true
+    artifact_reimport_existing_formula_parser_limit: Original unquoted Chinese cross-sheet formulas are not understood by
+      artifact parser; original cached numeric values and formulas preserved byte-identically, original worksheets never re-exported
+  short_rounds: 5
+  formal_rounds: 10
+  in_rpc_repeats: 10
+  models:
+    Llama3.2-3B:
+      summary:
+        prefill:
+          A8:
+            wall_ms: 51.1942375
+            tps: 1250.140701870987
+          R4:
+            wall_ms: 59.38664162000001
+            tps: 1077.6834361087413
+          r4_over_a8:
+            wall_ratio: 1.160025903696681
+            ci95:
+            - 1.158669919789473
+            - 1.1614064966318516
+        decode:
+          A8:
+            wall_ms: 1745.6463795700001
+            tps: 24.059855702473794
+          R4:
+            wall_ms: 1787.4000970700004
+            tps: 23.497816783633724
+          r4_over_a8:
+            wall_ratio: 1.0239187718593301
+            ci95:
+            - 1.0231706060585375
+            - 1.0247877708711575
+      modules:
+        prefill:
+          A8:
+            gate_up_ticks: 13704.885937500003
+            activation_ticks: 0.0
+            down_ticks: 6270.565625
+            dense_r4_prepare_ticks: 0.0
+            dense_r4_layout_ticks: 0.0
+            dense_r4_finish_ticks: 0.0
+            dense_r4_hmx_calls: 0.0
+          R4:
+            gate_up_ticks: 13960.820833333335
+            activation_ticks: 7371.5848958333345
+            down_ticks: 6780.807291666669
+            dense_r4_prepare_ticks: 659.3083333333333
+            dense_r4_layout_ticks: 4577.6109375
+            dense_r4_finish_ticks: 2131.194791666667
+            dense_r4_hmx_calls: 0.0
+        decode:
+          A8:
+            gate_up_ticks: 12444.999255952382
+            activation_ticks: 0.0
+            down_ticks: 6213.467671130953
+            dense_r4_prepare_ticks: 0.0
+            dense_r4_layout_ticks: 0.0
+            dense_r4_finish_ticks: 0.0
+            dense_r4_hmx_calls: 0.0
+          R4:
+            gate_up_ticks: 12438.799503968254
+            activation_ticks: 467.1136780753968
+            down_ticks: 6738.267249503969
+            dense_r4_prepare_ticks: 56.25115327380952
+            dense_r4_layout_ticks: 279.60353422619045
+            dense_r4_finish_ticks: 129.24766865079363
+            dense_r4_hmx_calls: 0.0
+      vtcm_peaks:
+      - 8360416
+      transform: H8192
+      postflight:
+        A8:
+          exact_layer_hashes: 2580
+          validated_full_padding: true
+          formal_invocations: 4300
+          short_invocations: 2150
+          peak_bytes:
+          - 8360416
+        R4:
+          exact_layer_hashes: 2580
+          validated_full_padding: true
+          formal_invocations: 4300
+          short_invocations: 2150
+          peak_bytes:
+          - 8360416
+        boundary_checks:
+          r4_prefill_kv_payloads_byte_exact: 112
+          r4_final_norm_vectors_exact: 86
+          cache_bookkeeping_invocations: 344
+          final_hidden_vectors_byte_exact: 344
+          valid_kv_only: true
+        all_sealed_binaries_verified: true
+        quality_claim: false
+        baseline_promoted: false
+      measured_source: 13be9bb340116bc9ece4acaab0b27ac91f01cb33
+  four_model_report: /mnt/d/llm_exp/results/paper-hvx-r4-four-model-20260923/REPORT.md
+  r3_excluded: L32-0071 changed Q/K boundary, not a controlled R4-only comparison
+  retained_llama1b_experiment: L32-0070

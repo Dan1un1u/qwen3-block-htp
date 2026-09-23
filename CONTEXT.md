@@ -1,3 +1,7 @@
+# Completed L32-0072: four-model HVX R4 side comparison
+
+R3 excluded by user due to Q/K confound. Llama1B retains L32-0070; Qwen0.6/1.7 and Llama3B freshly paired against ordinaryA8 at fixed64+42, five short/ten formal repeat10. Exact own-reference, padding, KV/finalNorm/hidden and8MiB/no spill checks pass. No quality/default promotion. Results appended as final M_R4蝶形消融 in rebuilt workbook; original12 tabs unchanged. Source 90353c4725ae8e53431944bd1cdb7dfbf457335d; ledger 6360edebb3e79524599a47275255b21bf857303849edaa44b2f6abe664b96139. Device released. Read docs/experiments/L32-0072-RESULTS.md.
+
 # Completed L32-0068: matched Table A Down precision
 Full-model fixed64+42, five short and ten formal alternating repeat10, same binary/trace/shared optimizations. Exact own-reference1/3/full-layer and padding checks plus8MiBVTCM/zero intermediateDDR passed. Main rebuilt workbook A six scoped rows updated across L32-0068/EXP0308; H/I/J/K appended paired module evidence. Other rows/tabs frozen. No quality or Selected promotion. Source 399cc083f6c586e91695edef2d64c4105e3c4da6; ledger 651f24415c1b96de3bf60d3a91d0101f680fac8a40fe2bf472c9ca6e1bc87fc2; device released. See docs/experiments/L32-0068-RESULTS.md.
 
