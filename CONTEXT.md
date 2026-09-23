@@ -2640,3 +2640,5 @@ User-authorized vector FP SwiGLU and FP Softmax diagnostic complete; L32-0063 co
 
 ## 2026-09-23 EXP-0309
 R4-only four-model side ablation authorized. Qwen H12 times power-of-two full transform, ordinary A8, R3 off. L32-0072 initially owns device; serialize.
+
+2026-09-23 device handoff: Llama3B formal10 and padding/boundary checks complete; release L32-0072, acquire EXP-0309 for two Qwen sizes.
