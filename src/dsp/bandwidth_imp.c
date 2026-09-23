@@ -78,7 +78,7 @@ int qbh_bandwidth_run(void *vtcm,uint32_t vbytes,uint32_t hmx,int fd,uint32_t si
  if(h->mode<3){
   if((uint64_t)h->workers*h->bytes*2U>vbytes)goto done;
   qurt_thread_t threads[MAXW];
-  for(uint32_t i=0;i<h->workers;i++){struct job *j=&jobs[i];memset(j,0,sizeof(*j));j->p=v+i*h->bytes*2U;j->out=j->p+h->bytes;j->h=h;j->id=i;memset(j->p,0xa5,h->bytes);memset(j->out,0,h->bytes);qurt_sem_init(&j->ready,0);qurt_sem_init(&j->go,0);qurt_sem_init(&j->done,0);qurt_thread_attr_t a;qurt_thread_attr_init(&a);qurt_thread_attr_set_name(&a,"bw-hvx");qurt_thread_attr_set_stack_addr(&a,stacks[i]);qurt_thread_attr_set_stack_size(&a,sizeof(stacks[i]));qurt_thread_attr_set_priority(&a,qurt_thread_get_priority(qurt_thread_get_id()));if(qurt_thread_create(&threads[i],&a,worker,j))goto done;}
+  for(uint32_t i=0;i<h->workers;i++){struct job *j=&jobs[i];memset(j,0,sizeof(*j));j->p=v+i*h->bytes*2U;j->out=j->p+h->bytes;j->h=h;j->id=i;memset(j->p,0xa5,h->bytes);memset(j->out,0,h->bytes);qurt_sem_init(&j->ready);qurt_sem_init(&j->go);qurt_sem_init(&j->done);qurt_thread_attr_t a;qurt_thread_attr_init(&a);qurt_thread_attr_set_name(&a,"bw-hvx");qurt_thread_attr_set_stack_addr(&a,stacks[i]);qurt_thread_attr_set_stack_size(&a,sizeof(stacks[i]));qurt_thread_attr_set_priority(&a,qurt_thread_get_priority(qurt_thread_get_id()));if(qurt_thread_create(&threads[i],&a,worker,j))goto done;}
   for(uint32_t i=0;i<h->workers;i++)qurt_sem_down(&jobs[i].ready);
   for(uint32_t r=0;r<h->rounds;r++){
    for(uint32_t i=0;i<h->workers;i++)qurt_sem_up(&jobs[i].go);
