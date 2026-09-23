@@ -62,6 +62,13 @@ if(${OS_TYPE} MATCHES "HLOS")
     )
     build_idl(include/qwen3_probe.idl qwen3_probe)
 
+    add_executable(qwen3_bandwidth_cli src/host/bandwidth_main.c src/host/session.c)
+    set_common_compile_and_link_options(qwen3_bandwidth_cli)
+    target_compile_options(qwen3_bandwidth_cli PRIVATE -Wall -Wextra -Werror)
+    target_link_libraries(qwen3_bandwidth_cli qwen3_probe)
+    target_link_options(qwen3_bandwidth_cli PRIVATE -llog -ldl)
+    copy_binaries(qwen3_bandwidth_cli)
+
     add_executable(qwen3_probe_cli
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host/main
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host/session
@@ -158,6 +165,7 @@ else()
     add_library(qwen3_probe_skel SHARED
         ${CMAKE_CURRENT_BINARY_DIR}/qwen3_probe_skel
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/llama_sp2_probe.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/bandwidth_imp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/probe_imp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/hmx_int8_tile
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/hmx_u8s8_projection

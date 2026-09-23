@@ -1674,3 +1674,10 @@ AEEResult qwen3_probe_run_llama_sp2(remote_handle64 handle,int32 fd,uint32 bytes
  int ret=lsp2_run(fd,bytes,s->vtcm,s->vtcm_granted_bytes,s->hmx_context_id);
  qurt_hvx_unlock();return ret;
 }
+
+extern int qbh_bandwidth_run(void *, uint32_t, uint32_t, int, uint32_t);
+AEEResult qwen3_probe_run_bandwidth(remote_handle64 handle, int32 fd, uint32 bytes) {
+ struct qbh_probe_session *s=qbh_session_from_handle(handle);
+ if (!s || !s->prepared) return AEE_EBADSTATE;
+ return qbh_bandwidth_run(s->vtcm,s->vtcm_granted_bytes,s->hmx_context_id,fd,bytes);
+}
