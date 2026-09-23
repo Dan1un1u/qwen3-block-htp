@@ -249,6 +249,7 @@ enum qbh_block_hvx_pool_job_kind {
     QBH_BLOCK_HVX_POOL_W4U8_GENERATION_EXPAND = 16,
     QBH_BLOCK_HVX_POOL_U8_SWIGLU_STREAM = 17,
     QBH_BLOCK_HVX_POOL_R4_CONVERT = 18,
+    QBH_BLOCK_HVX_POOL_R4_BUTTERFLY = 25,
     QBH_BLOCK_HVX_POOL_LLAMA_SWIGLU = 19,
     QBH_BLOCK_HVX_POOL_SP2_EPILOGUE = 20,
     QBH_BLOCK_HVX_POOL_FP32_NORM = 21,
@@ -1025,7 +1026,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
     buffers->down = qbh_arena_alloc(&arena, hidden_bytes);
     buffers->hmx_activation = qbh_arena_alloc_aligned(
         &arena, QBH_BLOCK_M * QBH_BLOCK_MAX_K *
-            (fp32_residual ? 1U : (uint32_t)sizeof(uint16_t)),
+            (fp32_residual && !r4_mode ? 1U : (uint32_t)sizeof(uint16_t)),
         r4_mode ? 32768U : QBH_HMX_FP16_TILE_BYTES);
     buffers->compressed_weight = qbh_arena_alloc(
         &arena, QBH_BLOCK_MAX_K * QBH_HMX_OUTPUT_CHANNELS / 2U *
@@ -2129,7 +2130,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
                             uint32_t shared_bytes) {
     uint32_t element_bytes;
 #ifdef QBH_QWEN_06B
-    if (!header || header->dense_r3_mode || header->dense_r4_mode) return 0;
+    if (!header || header->dense_r3_mode || (header->dense_r4_mode && header->dense_r4_mode!=4U)) return 0;
     if (header->variant == QBH_BLOCK_W4U8 &&
         (QBH_FP32_RESIDUAL(header)!=2U ||
          (QBH_SP2(header)!=8U && QBH_SP2(header)!=0U))) return 0;
@@ -2144,7 +2145,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
 #if defined(QBH_MODEL_LLAMA32) || defined(QBH_NATIVE_SP2)
     if (header && QBH_FP32_RESIDUAL(header) && !QBH_F16_FP32_RESIDUAL(header) &&
         (QBH_FP32_RESIDUAL(header)>QBH_FP32_RESIDUAL_MAX || header->variant!=QBH_BLOCK_W4U8 ||
-         (QBH_SP2(header)!=8U && QBH_SP2(header)!=0U) || header->dense_r3_mode || header->dense_r4_mode ||
+         (QBH_SP2(header)!=8U && QBH_SP2(header)!=0U) || header->dense_r3_mode || (header->dense_r4_mode && header->dense_r4_mode!=4U) ||
          header->w4u8_decode_projection_mode!=QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
          header->w4u8_decode_direct_n_mask!=63U ||
          (header->crouton_boundary_mode & (QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
@@ -2169,7 +2170,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         return 0;
     }
 #endif
-    if (header == NULL || header->magic != QBH_BLOCK_MAGIC ||
+    if (header == NULL || (header->dense_r4_mode==4U && (QBH_SP2(header) || !QBH_FP32_RESIDUAL(header) || header->dense_r4_optimization!=6U || (header->logical_m!=1U && header->logical_m!=64U))) || header->magic != QBH_BLOCK_MAGIC ||
         header->abi_version != QBH_BLOCK_ABI_VERSION ||
         (QBH_SP2(header)!=0U && QBH_SP2(header)!=3U && QBH_SP2(header)!=4U && QBH_SP2(header)!=5U && QBH_SP2(header)!=6U && QBH_SP2(header)!=7U && QBH_SP2(header)!=8U) ||
         (QBH_SP2(header)>=5U &&
@@ -2184,7 +2185,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         QBH_U8_PREFILL_OPT(header)>3U ||
         (QBH_U8_PREFILL_OPT(header) &&
          (QBH_SP2(header) || header->variant!=QBH_BLOCK_W4U8 ||
-          header->dense_r3_mode || header->dense_r4_mode ||
+          header->dense_r3_mode || (header->dense_r4_mode && header->dense_r4_mode!=4U) ||
           header->w4u8_decode_projection_mode!=QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
           header->w4u8_decode_direct_n_mask!=63U ||
           header->w4u8_decode_direct_n_gate_up_batch_n_tiles!=32U ||
@@ -4672,6 +4673,7 @@ static void qbh_w4u8_generation_expand_worker_run(
 static void qbh_r4_prepare_tile(const uint8_t *gate,const uint8_t *up,
     __fp16 *act,uint32_t rows,uint32_t tile,const uint16_t *lut,uint8_t *scratch);
 static void qbh_r4_convert_worker(void *context,uint32_t worker_index);
+static void qbh_bf70_worker(void *context,uint32_t worker_index);
 #if defined(QBH_MODEL_LLAMA32) || defined(QBH_NATIVE_SP2)
 #ifdef QBH_FP_ISLANDS
 static void fp63_swiglu(const struct qbh_block_header *h,const uint8_t *g,
@@ -4979,6 +4981,8 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
         } else if(job->command_kind==QBH_BLOCK_HVX_POOL_FP32_NORM) {
             qbh_llama_fp32_norm_worker(pool,job->worker_index);
 #endif
+        } else if (job->command_kind == QBH_BLOCK_HVX_POOL_R4_BUTTERFLY) {
+            qbh_bf70_worker(job->r4_convert_context,job->worker_index);
         } else if (job->command_kind == QBH_BLOCK_HVX_POOL_R4_CONVERT) {
             qbh_r4_convert_worker(job->r4_convert_context,job->worker_index);
         } else if (job->command_kind ==
@@ -15514,6 +15518,7 @@ static uint64_t qbh_fnv1a64_u8_native_tile_row(
 #include "llama_dense_r4.inc"
 #else
 #include "dense_r4.inc"
+#include "qwen_butterfly_r4.inc"
 #endif
 
 #if defined(QBH_MODEL_LLAMA32) || defined(QBH_NATIVE_SP2)
@@ -15704,7 +15709,8 @@ static int qbh_run_w4u8_direct_n_mlp(
     qbh_long_progress(header,6300U);
     if (header->dense_r4_mode != 0U) {
         start=HAP_perf_get_qtimer_count();
-        if(qbh_run_dense_r4(header,shared,buffers,worker,pool,middle_native)!=0) return -1;
+        if(header->dense_r4_mode==4U) {if(qbh_run_butterfly_r4(header,shared,buffers,pool,middle_native))return -1;}
+        else if(qbh_run_dense_r4(header,shared,buffers,worker,pool,middle_native)!=0) return -1;
         header->activation_ticks+=HAP_perf_get_qtimer_count()-start;
 #if defined(QBH_MODEL_LLAMA32) || defined(QBH_NATIVE_SP2)
     } else if(prefill_direct!=0U && !stream_prefill

@@ -137,7 +137,7 @@ def project(a,p,name,n,iq,oq,raw=False):
 from reference_qhl_exp0294 import exact_qk_norm_rope_u8
 H=1024 if os.environ.get("QBH_QWEN_MODEL_SIZE","0.6B")=="0.6B" else 2048
 F=3072 if H==1024 else 6144
-def layer(x,p,cos,sin,past=None,sp2=True,seed=None):
+def layer(x,p,cos,sin,past=None,sp2=True,seed=None,r4=False):
  q=load_qparams_bin(p/'qparams_u8.bin');n=norm(x,np.fromfile(p/'input_norm_weight_f16.bin','<f2'),q['input_norm'])
  qr=project(n,p,'q',2048,q['input_norm'],q['q_projection']);kr=project(n,p,'k',1024,q['input_norm'],q['k_projection']);v=project(n,p,'v',1024,q['input_norm'],q['v'])
  qr=exact_qk_norm_rope_u8(qr,16,q['q_projection'],q['q_rope'],np.fromfile(p/'q_norm_weight_f16.bin','<f2'),cos,sin).reshape(-1,16,128)
@@ -155,5 +155,11 @@ def layer(x,p,cos,sin,past=None,sp2=True,seed=None):
  post=norm(res,np.fromfile(p/'post_norm_weight_f16.bin','<f2'),q['post_attention_norm'])
  g=project(post,p,'gate',F,q['post_attention_norm'],q['gate']);u=project(post,p,'up',F,q['post_attention_norm'],q['up'])
  lut=np.fromfile(p/'silu_up_lut_u16.bin','<u2').reshape(256,256).astype('i4');lut=lut-32768 if sp2 else lut;mid=lut[g,u]
+ if r4:
+  assert not sp2
+  from hvx_r4_qwen import transform
+  mid=transform(mid.astype('<u2').view('<f2').astype('f4'))
+  code=np.float32(mid*np.float32(1/q['middle']['scale']))+np.float32(q['middle']['zero_point'])
+  mid=np.clip(np.trunc(np.float32(code+np.float32(.5))),0,255).astype('u1')
  down=project(mid,p,'down',H,q['middle'],None,True);y=res+down
  return y,(k,v),dict(input_norm=n,q=qr,k=kr,attention=av,o=o,residual=res,post=post,gate=g,up=u,middle=mid,down=down)
