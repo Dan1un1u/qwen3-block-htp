@@ -2646,3 +2646,7 @@ User-authorized vector FP SwiGLU and FP Softmax diagnostic complete; L32-0063 co
 R4-only four-model side ablation authorized. Qwen H12 times power-of-two full transform, ordinary A8, R3 off. L32-0072 initially owns device; serialize.
 
 2026-09-23 device handoff: Llama3B formal10 and padding/boundary checks complete; release L32-0072, acquire EXP-0309 for two Qwen sizes.
+
+
+## EXP-0310 active: standalone peak bandwidth
+User authorized independent memory microbenchmarks, not LLM profiling. Source codex/exp-0310-peak-bandwidth. Device owned by EXP-0310. See experiment protocol.
