@@ -6299,3 +6299,16 @@ experiments:
     conclusion: R4 increases full-model prefill wall18.829percent and decode1.653percent.
       Core alone is2.616ms/0.1598ms per decode step, not slower than full inference;
       boundary integration adds measurable cost. No promotion/workbook update.
+- id: L32-0071
+  title: Add HVX butterfly R3 to full-model HVX R4 side experiment
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: not_requested
+  approval_ref: 'User2026-09-23: add R3, confirms HVX butterfly; side experiment no
+    further pipeline optimization.'
+  record: docs/experiments/L32-0071.md
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+    device_owner: L32-0071

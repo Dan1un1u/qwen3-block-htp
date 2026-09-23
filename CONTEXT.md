@@ -483,3 +483,6 @@ User requests fullmodel64+42 paired E2E for HVX butterfly R4 vs ordinaryA8. Read
 
 ## L32-0070 closure (2026-09-23)
 Full16 Llama1B ordinaryA8+HVX H8192 R4 passes exact1/3/16-layer and padding checks. Fresh original Down fold/per-channel RTN, other weights unchanged; FP32 residual, noR3/SP2/INT16 Down. Five short/ten formal repeat10 pairs on64+42: A8 prefill2398.611tps vsR4 2018.536tps, wall+18.829%; decode46.383 vs45.629tps, wall+1.653%. Core16 prefill2.61616ms; perdecode0.159800ms. Fullboundary4.21130ms/0.265678ms; Gate/Up producer changes outside these windows. No claim of butterfly slower than fullmodel, no quality/default promotion. Read docs/experiments/L32-0070-RESULTS.md; evidence/mnt/d/llm_exp/results/llama32-htp/l32-0070; ledger57c71782848c3ed05593a43577e38d54a82571dd663da704a97a7d78c192128d. Source closurecbc3ddc1b55ae8000645a77c7e3afac24f410c2b; activeNone/device released; next0071.
+
+## Current L32-0071
+User-confirmed HVX butterfly R3 added to0070 R4, same64+42 E2E. Side experiment, no deeper optimization. Read protocol;0071 owns device.
