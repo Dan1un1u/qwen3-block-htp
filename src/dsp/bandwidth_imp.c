@@ -76,7 +76,7 @@ static void worker(void *arg){struct job *j=arg;j->status=qurt_hvx_lock(QURT_HVX
  for(uint32_t r=0;r<j->h->rounds;r++){qurt_sem_down(&j->go);j->t0=HAP_perf_get_qtimer_count();j->c0=HAP_perf_get_pcycles();if(!j->status)hvx_loop(j->p,j->out,j->h->bytes,j->h->repeats,j->h->mode);j->c1=HAP_perf_get_pcycles();j->t1=HAP_perf_get_qtimer_count();qurt_sem_up(&j->done);}
  if(!j->status)qurt_hvx_unlock();
 }
-static uint8_t pattern(uint32_t i){return (uint8_t)((i*13U+(i>>12)*7U)^0x5aU);}
+static uint8_t pattern(uint32_t i){return (uint8_t)((i*13U+(i>>12)*7U+(i>>20)*29U)^0x5aU);}
 static inline void hmx_issue(uint8_t *a,uint8_t *w,uint32_t stream,uint32_t mode){
  uint32_t ar=1792U+124U+(stream-1U)*2048U;
  uint32_t wr=stream*(mode==5?512U:1024U)-1U;
@@ -149,6 +149,14 @@ int qbh_bandwidth_run(void *vtcm,uint32_t vbytes,uint32_t hmx,int fd,uint32_t si
    asm volatile("barrier":::"memory");h->ticks[r]=HAP_perf_get_qtimer_count()-t;h->cycles[r]=HAP_perf_get_pcycles()-c;
    for(uint32_t b=0;b<span;b++)h->errors+=v[b]!=pattern(last+b);
   }
+  /* Untimed coverage of every source region, not just the last timed batch. */
+  for(uint32_t group=0;group<groups;group++){
+   uint32_t base=group*span;
+   for(uint32_t d=0;d<h->depth;d++){struct qbh_dma_desc_1d *x=&desc[d].descriptor;x->control=0;x->length=h->bytes;x->src_bypass=h->bypass;x->dst_bypass=1;x->src=(uint32_t)(uintptr_t)(mem+BW_PAYLOAD+base+d*h->bytes);}
+   if(qbh_dma_start(desc)||qbh_dma_wait_idle()){h->errors++;break;}
+   for(uint32_t b=0;b<span;b++)h->errors+=v[b]!=pattern(base+b);
+  }
+  h->checks[1]=groups*span;
   h->payload_bytes=(uint64_t)h->repeats*span;
  }
  h->status=0;
