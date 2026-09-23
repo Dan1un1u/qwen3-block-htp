@@ -61,7 +61,7 @@ def deploy():
   for l in lines:h,n=l.split(None,1);assert h==mf[n.removeprefix(PACKAGE_REMOTE+'/R4/')]['sha256']
  save(R/'deployment.json',dict(all_payload_hashes_verified=True,reused_package=str(p),manifest_sha256=sha256(p/'manifest.json')))
 def stage():
- preflight();seal=read(ROOT/'build/llama-build-seal.json');assert not seal['fp_islands'] and seal['model_size']=='1B';assert seal['source_head']==subprocess.check_output(['git','-C',str(ROOT),'rev-parse','HEAD'],text=True).strip();nl=int(seal['layer_count']);d=R/f'binaries-I-{nl}';d.mkdir(exist_ok=False);remote=REMOTE+'/'+d.name;adb('shell','mkdir -p '+remote)
+ preflight();seal=read(ROOT/'build/llama-build-seal.json');assert not seal['fp_islands'] and seal['model_size']=='1B';assert seal['source_head']==subprocess.check_output(['git','-C',str(ROOT),'rev-parse','HEAD'],text=True).strip();nl=int(seal['layer_count']);d=R/f'binaries-I-{nl}-a02';d.mkdir(exist_ok=False);remote=REMOTE+'/'+d.name;adb('shell','mkdir -p '+remote)
  for n,h in seal['files'].items():
   p=Path(n);assert sha256(p)==h;shutil.copy2(p,d/p.name);adb('push',windows(p),remote+'/'+p.name);assert adb('shell','sha256sum '+remote+'/'+p.name).stdout.split()[0]==h
  adb('shell','chmod 755 '+remote+'/qwen3_block_cli');save(d/'seal.json',seal)
@@ -69,11 +69,11 @@ def execute(mode,tag,nl=16,repeat=1,audit=False,poison=False):
     arm=mode
     d=R/tag
     if (d/'validated.json').exists():return read(d/'validated.json')
-    d.mkdir(exist_ok=True);binary_mode='I';root=REMOTE+f'/binaries-{binary_mode}-{nl}';base=read(BASE)
+    d.mkdir(exist_ok=True);binary_mode='I';root=REMOTE+f'/binaries-{binary_mode}-{nl}-a02';base=read(BASE)
     prefix,args=base['command'].split(' ./qwen3_block_cli ',1)
     env=dict(t.split('=',1) for t in shlex.split(prefix.split(' && ')[1]));argv=shlex.split(args);argv[0]=PACKAGE_REMOTE+'/R4'
     for k in ['QBH_EVAL_FILE','QBH_GENERATION_AUDIT_DIR','QBH_GENERATION_BOUNDARY_AUDIT']:env.pop(k,None)
-    env.update(LD_LIBRARY_PATH=root,DSP_LIBRARY_PATH=root,ADSP_LIBRARY_PATH=root,QBH_GENERATION_STEPS='43',QBH_GENERATION_EXPECTED_TOKENS='64',QBH_GENERATION_SEQUENCE='9',QBH_LLAMA_SP2='0',QBH_SP2_DOWN_HVX='0',QBH_WIDE_SCORE='8',QBH_PAPER_FORMAT_DISABLE='0',QBH_PAPER_PIPELINE_DISABLE='0',QBH_DENSE_R3='2' if mode=='R3R4' else '0',QBH_R3_OPT='2' if mode=='R3R4' else '0',QBH_DENSE_R4='4',QBH_R4_OPT='6',QBH_W4U8_DECODE_AV_REQUANT_ROWS='4')
+    env.update(LD_LIBRARY_PATH=root,DSP_LIBRARY_PATH=root,ADSP_LIBRARY_PATH=root,QBH_GENERATION_STEPS='43',QBH_GENERATION_EXPECTED_TOKENS='64',QBH_GENERATION_SEQUENCE='9',QBH_LLAMA_SP2='0',QBH_SP2_DOWN_HVX='0',QBH_WIDE_SCORE='8',QBH_PAPER_FORMAT_DISABLE='0',QBH_PAPER_PIPELINE_DISABLE='0',QBH_DENSE_R3='2' if mode=='R3R4' else '0',QBH_R3_OPT='3' if mode=='R3R4' else '0',QBH_DENSE_R4='4',QBH_R4_OPT='6',QBH_W4U8_DECODE_AV_REQUANT_ROWS='4')
     if poison:env['QBH_W4U8_DECODE_AV_PADDING_POISON']='1'
     fixture=read(FIXTURE);words=[0x51424556,2,repeat,110]
     for j in range(repeat):words += [j,3,43]+fixture['prompt_ids'][:64]+fixture['fixed'][:43]
@@ -82,7 +82,7 @@ def execute(mode,tag,nl=16,repeat=1,audit=False,poison=False):
     er=root+'/'+tag+'-trajectory.bin';env['QBH_EVAL_FILE']=er
     if audit:env.update(QBH_GENERATION_BOUNDARY_AUDIT='1',QBH_GENERATION_AUDIT_DIR=REMOTE+'/'+tag)
     cmd='cd '+root+' && '+' '.join(k+'='+shlex.quote(v) for k,v in env.items())+' ./qwen3_block_cli '+' '.join(shlex.quote(v) for v in argv)
-    if not (d/'protocol.json').exists():save(d/'protocol.json',dict(command=cmd,arm=arm,layers=nl,repeat=repeat,audit=audit,seal_sha256=sha256(R/f'binaries-{binary_mode}-{nl}/seal.json'),package_manifest_sha256=sha256(M/'R4'/'manifest.json')))
+    if not (d/'protocol.json').exists():save(d/'protocol.json',dict(command=cmd,arm=arm,layers=nl,repeat=repeat,audit=audit,seal_sha256=sha256(R/f'binaries-{binary_mode}-{nl}-a02/seal.json'),package_manifest_sha256=sha256(M/'R4'/'manifest.json')))
     if not (d/'exit.json').exists():
         adb('push',windows(ef),er)
         if audit:adb('shell','mkdir -p '+env['QBH_GENERATION_AUDIT_DIR'])
@@ -131,5 +131,5 @@ def run():
   save(R/(stage_name+'-summary.json'),s);print(stage_name,json.dumps(s),flush=True)
 if __name__=='__main__':
  ap=argparse.ArgumentParser();ap.add_argument('action');ap.add_argument('--layers',type=int,default=16);ap.add_argument('--mode',default='A8');a=ap.parse_args()
- if a.action=='audit':preflight();execute(a.mode,f'audit{a.layers}-{a.mode}',nl=a.layers,audit=True)
+ if a.action=='audit':preflight();execute(a.mode,f'audit{a.layers}-{a.mode}-a02',nl=a.layers,audit=True)
  else:globals()[a.action]()

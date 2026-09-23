@@ -2299,7 +2299,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          header->w4u8_decode_common_padding_poison)) do { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; } while(0);
     /* Llama A8 currently validates the unrotated head64 integer pipeline. */
     if (header == NULL || (header->dense_r3_mode &&
-        ((header->dense_r3_mode!=1U && header->dense_r3_mode!=2U) || header->dense_r3_optimization!=2U || !QBH_FP32_RESIDUAL(header))) ||
+        ((header->dense_r3_mode==1U ? header->dense_r3_optimization!=2U : (header->dense_r3_mode!=2U || header->dense_r3_optimization!=3U)) || !QBH_FP32_RESIDUAL(header))) ||
         (header->dense_r4_mode && (header->dense_r4_mode>4U || header->dense_r4_optimization!=6U ||
           (header->dense_r4_mode==4U ? (QBH_LLAMA_SP2(header)!=0U || QBH_BLOCK_INTERMEDIATE!=8192U || !QBH_FP32_RESIDUAL(header)) : QBH_LLAMA_SP2(header)!=8U))) ||
         (header->variant == QBH_BLOCK_W4U8
