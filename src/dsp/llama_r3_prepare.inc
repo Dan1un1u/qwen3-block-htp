@@ -24,3 +24,32 @@ static void qbh_llama_r3_prepare(const uint8_t *native,uint32_t rows,
  }
  asm volatile("barrier":::"memory");
 }
+
+/* L32-0071: six-stage normalized H64, exclusively HVX. Preserve the
+ * post-RoPE FP16 and post-R3 FP16 boundaries of the existing R3 contract.
+ * Scratch is a head-private slice of phase-dead Gate VTCM. */
+#include "hvx_fwht8192.h"
+static void qbh_llama_r3_quantize(const __fp16 *,uint8_t *,uint32_t,const struct qbh_block_qparam *);
+static void qbh_llama_bf3_head(uint8_t *native,uint32_t rows,
+ const struct qbh_block_qparam *qi,const struct qbh_block_qparam *qo,
+ const __fp16 *co,const __fp16 *si,__fp16 *scratch) {
+ qbh_llama_r3_prepare(native,rows,qi,co,si,scratch);
+ const HVX_Vector lanes=*(const HVX_Vector *)bf69_lanes;
+ for(uint32_t r=0;r<rows;r++) {
+  HVX_VectorPair f=Q6_Wsf_vcvt_Vhf(*(HVX_Vector *)(scratch+r*64U));
+  HVX_VectorPair order=Q6_W_vshuff_VVR(Q6_V_hi_W(f),Q6_V_lo_W(f),-4);
+  HVX_Vector a=Q6_V_lo_W(order),b=Q6_V_hi_W(order);
+  for(uint32_t h=1;h<32;h*=2U) {
+   HVX_Vector ctl=Q6_V_vsplat_R((h*4U)*0x01010101U);
+   HVX_Vector aa=Q6_V_vdelta_VV(a,ctl),bb=Q6_V_vdelta_VV(b,ctl);
+   HVX_VectorPred upper=Q6_Q_vcmp_gt_VwVw(Q6_V_vand_VV(lanes,Q6_V_vsplat_R(h)),Q6_V_vzero());
+   a=Q6_V_vmux_QVV(upper,Q6_Vsf_vsub_VsfVsf(aa,a),Q6_Vsf_vadd_VsfVsf(a,aa));
+   b=Q6_V_vmux_QVV(upper,Q6_Vsf_vsub_VsfVsf(bb,b),Q6_Vsf_vadd_VsfVsf(b,bb));
+  }
+  HVX_Vector lo=bf69_mul(Q6_Vsf_vadd_VsfVsf(a,b),bf69_splat(.125f));
+  HVX_Vector hi=bf69_mul(Q6_Vsf_vsub_VsfVsf(a,b),bf69_splat(.125f));
+  HVX_VectorPair eo=Q6_W_vdeal_VVR(hi,lo,-4);
+  *(HVX_Vector *)(scratch+r*64U)=Q6_Vhf_vcvt_VsfVsf(Q6_V_lo_W(eo),Q6_V_hi_W(eo));
+ }
+ qbh_llama_r3_quantize(scratch,native,rows,qo);
+}

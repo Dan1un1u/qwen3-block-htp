@@ -22,7 +22,7 @@ def norm(x,gamma,q):
  v=(x*inv)*gamma.astype('f4')
  code=v/np.float32(q['scale'])+np.float32(q['zero_point'])
  return np.clip(np.copysign(np.floor(np.abs(code)+np.float32(.5)),code),0,255).astype('u1')
-def layer(x,p,q,cos,sin,past=None,sp2=True,r4=False):
+def layer(x,p,q,cos,sin,past=None,sp2=True,r4=False,r3=False):
  cv=HmxU8Converter(ROOT/'build/l32-0003/qbh_hmx_u8_reference.so')
  def project(a,name,iq,oq):
   n={'q':2048,'k':512,'v':512,'gate':8192,'up':8192}[name]
@@ -34,8 +34,19 @@ def layer(x,p,q,cos,sin,past=None,sp2=True,r4=False):
   return acc.astype('f4')*(np.float32(scale)*ws)
  a=norm(x,np.fromfile(p/'input_norm_weight_f16.bin',dtype='<f2'),q['input_norm'])
  qr=project(a,'q','input_norm','q_projection');kr=project(a,'k','input_norm','k_projection');v=project(a,'v','input_norm','v')
- qr=exact_qk_norm_rope_u8(qr,32,q['q_projection'],q['q_rope'],None,cos,sin).reshape(-1,32,64)
- kr=exact_qk_norm_rope_u8(kr,8,q['k_projection'],q['k_rope'],None,cos,sin).reshape(-1,8,64)
+ if r3:
+  from llama32_rotated_fp32 import rope
+  def rotate_r3(codes,heads,qi,qo):
+   z=rope(codes,heads,qi,cos,sin).astype('f4')
+   for h in [1,2,4,8,16,32]:
+    rv=z.reshape(-1,64//(2*h),2*h);a=rv[:,:,:h].copy();b=rv[:,:,h:].copy();rv[:,:,:h]=a+b;rv[:,:,h:]=a-b
+   z=(z*np.float32(.125)).astype('f2').astype('f4')
+   code=np.float32(z*np.float32(1/qo['scale']))+np.float32(qo['zero_point']+.5)
+   return np.clip(np.trunc(code),0,255).astype('u1')
+  qr=rotate_r3(qr,32,q['q_projection'],q['q_rope']);kr=rotate_r3(kr,8,q['k_projection'],q['k_rope'])
+ else:
+  qr=exact_qk_norm_rope_u8(qr,32,q['q_projection'],q['q_rope'],None,cos,sin).reshape(-1,32,64)
+  kr=exact_qk_norm_rope_u8(kr,8,q['k_projection'],q['k_rope'],None,cos,sin).reshape(-1,8,64)
  k=kr.transpose(1,0,2);v=v.reshape(-1,8,64).transpose(1,0,2);count=0
  if past is not None:count=past[0].shape[1];k=np.concatenate([past[0],k],1);v=np.concatenate([past[1],v],1)
  av,score,prob=exact_attention_dynamic(qr,k,v,count,configs(q),cv,divide);av=av.reshape(len(x),2048)

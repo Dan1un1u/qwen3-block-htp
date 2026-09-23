@@ -2299,7 +2299,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
          header->w4u8_decode_common_padding_poison)) do { if(header)((struct qbh_block_header *)header)->projection_failure_step=__LINE__; return 0; } while(0);
     /* Llama A8 currently validates the unrotated head64 integer pipeline. */
     if (header == NULL || (header->dense_r3_mode &&
-        (header->dense_r3_mode!=1U || header->dense_r3_optimization!=2U || !QBH_FP32_RESIDUAL(header))) ||
+        ((header->dense_r3_mode!=1U && header->dense_r3_mode!=2U) || header->dense_r3_optimization!=2U || !QBH_FP32_RESIDUAL(header))) ||
         (header->dense_r4_mode && (header->dense_r4_mode>4U || header->dense_r4_optimization!=6U ||
           (header->dense_r4_mode==4U ? (QBH_LLAMA_SP2(header)!=0U || QBH_BLOCK_INTERMEDIATE!=8192U || !QBH_FP32_RESIDUAL(header)) : QBH_LLAMA_SP2(header)!=8U))) ||
         (header->variant == QBH_BLOCK_W4U8
@@ -4462,7 +4462,13 @@ static void qbh_attention_qk_norm_run_head(
         const uint32_t isq=task<QBH_BLOCK_HEADS;
         const uint32_t h=isq?task:task-QBH_BLOCK_HEADS;
         uint8_t *base=(uint8_t *)(isq?pool->attention_q:pool->attention_k);
-        qbh_hvx_qk_norm_rope_u8_native_head_rows(base+(size_t)h*QBH_BLOCK_M*QBH_BLOCK_HEAD_DIM,
+        if(header->dense_r3_mode==2U) {
+            qbh_llama_bf3_head(base+(size_t)h*QBH_BLOCK_M*QBH_BLOCK_HEAD_DIM,QBH_BLOCK_M,
+                &header->qparams[isq?QBH_BLOCK_QP_Q_PROJECTION:QBH_BLOCK_QP_K_PROJECTION],
+                &header->qparams[isq?QBH_BLOCK_QP_Q_ROPE:QBH_BLOCK_QP_K_ROPE],
+                pool->attention_rope_cos,pool->attention_rope_sin,
+                (__fp16 *)pool->attention_buffers->gate+task*4096U);
+        } else qbh_hvx_qk_norm_rope_u8_native_head_rows(base+(size_t)h*QBH_BLOCK_M*QBH_BLOCK_HEAD_DIM,
             &header->qparams[isq?QBH_BLOCK_QP_Q_PROJECTION:QBH_BLOCK_QP_K_PROJECTION],
             &header->qparams[isq?QBH_BLOCK_QP_Q_ROPE:QBH_BLOCK_QP_K_ROPE],NULL,
             pool->attention_rope_cos,pool->attention_rope_sin,QBH_BLOCK_M);
@@ -21670,7 +21676,7 @@ static int qbh_run_one_block(struct qbh_block_header *header,
             header, w4f16_pool) != 0) {
         return QBH_BLOCK_STATUS_QK_NORM_ROPE_FAILED;
     }
-    if (header->dense_r3_mode != 0U &&
+    if (header->dense_r3_mode == 1U &&
         (w4u8_qkv_ring_enabled == 0U ||
          qbh_run_dense_r3(header,shared,buffers,worker,logical_rows)!=0)) {
         return QBH_BLOCK_STATUS_QK_NORM_ROPE_FAILED;
@@ -21749,23 +21755,36 @@ static int qbh_run_one_block(struct qbh_block_header *header,
     start = HAP_perf_get_qtimer_count();
     if (u8_integer_attention_enabled != 0U) {
 #ifdef QBH_MODEL_LLAMA32
-        if (header->dense_r3_mode == 0U) {
+        if (header->dense_r3_mode == 0U || header->dense_r3_mode == 2U) {
+        if(w4f16_pool)w4f16_pool->attention_buffers=buffers;
         if((!scan_dynamic_attention || (header->long_prompt_tokens && (header->long_optimization&4U) && logical_rows>1U)) && w4f16_pool && w4f16_pool->worker_count>=3U) {
             if(qbh_hvx_pool_qk_norm_rope(header,w4f16_pool,(__fp16 *)buffers->q,(__fp16 *)buffers->k,NULL,NULL,
                 (const __fp16 *)buffers->rope_cos,(const __fp16 *)buffers->rope_sin)!=0)
                 return QBH_BLOCK_STATUS_QK_NORM_ROPE_FAILED;
         } else {
         for (uint32_t h=0;h<QBH_BLOCK_HEADS;++h)
-            qbh_hvx_qk_norm_rope_u8_native_head_rows(buffers->q+h*QBH_BLOCK_M*QBH_BLOCK_HEAD_DIM,
+            if(header->dense_r3_mode==2U) qbh_llama_bf3_head(buffers->q+h*QBH_BLOCK_M*QBH_BLOCK_HEAD_DIM,logical_rows,
+                &header->qparams[QBH_BLOCK_QP_Q_PROJECTION],&header->qparams[QBH_BLOCK_QP_Q_ROPE],
+                (const __fp16 *)buffers->rope_cos,(const __fp16 *)buffers->rope_sin,
+                (__fp16 *)buffers->gate+h*4096U);
+            else qbh_hvx_qk_norm_rope_u8_native_head_rows(buffers->q+h*QBH_BLOCK_M*QBH_BLOCK_HEAD_DIM,
                 &header->qparams[QBH_BLOCK_QP_Q_PROJECTION],&header->qparams[QBH_BLOCK_QP_Q_ROPE],
                 NULL,(const __fp16 *)buffers->rope_cos,(const __fp16 *)buffers->rope_sin, logical_rows);
         for (uint32_t h=0;h<QBH_BLOCK_KV_HEADS;++h)
-            qbh_hvx_qk_norm_rope_u8_native_head_rows(buffers->k+h*QBH_BLOCK_M*QBH_BLOCK_HEAD_DIM,
+            if(header->dense_r3_mode==2U) qbh_llama_bf3_head(buffers->k+h*QBH_BLOCK_M*QBH_BLOCK_HEAD_DIM,logical_rows,
+                &header->qparams[QBH_BLOCK_QP_K_PROJECTION],&header->qparams[QBH_BLOCK_QP_K_ROPE],
+                (const __fp16 *)buffers->rope_cos,(const __fp16 *)buffers->rope_sin,
+                (__fp16 *)buffers->gate+(h+QBH_BLOCK_HEADS)*4096U);
+            else qbh_hvx_qk_norm_rope_u8_native_head_rows(buffers->k+h*QBH_BLOCK_M*QBH_BLOCK_HEAD_DIM,
                 &header->qparams[QBH_BLOCK_QP_K_PROJECTION],&header->qparams[QBH_BLOCK_QP_K_ROPE],
                 NULL,(const __fp16 *)buffers->rope_cos,(const __fp16 *)buffers->rope_sin, logical_rows);
         }
         }
 #endif
+        if(header->dense_r3_mode==2U) {
+            header->dense_r3_rows=(QBH_BLOCK_HEADS+QBH_BLOCK_KV_HEADS)*logical_rows;
+            header->dense_r3_total_calls++;header->dense_r3_total_rows+=header->dense_r3_rows;
+        }
         /* Native Q/K projection tiles are normalized and rotated inside
          * the per-GQA integer Attention pipeline. */
     } else if (header->variant != QBH_BLOCK_W4U8 &&
