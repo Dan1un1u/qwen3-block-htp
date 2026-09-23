@@ -1044,7 +1044,12 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         buffers->up = qbh_arena_alloc_aligned(
             &arena, up_bytes, QBH_HMX_FP16_TILE_BYTES);
     } else {
+        #ifdef QBH_LLAMA_3B
+        /* L32-0072 R4 consumes Gate/Up before publishing Down input. */
+        buffers->gate = qbh_arena_alloc_aligned(&arena, intermediate_bytes, r4_mode==4U?65536U:QBH_BLOCK_ALIGNMENT);
+#else
         buffers->gate = qbh_arena_alloc(&arena, intermediate_bytes);
+#endif
         buffers->up = qbh_arena_alloc(&arena, intermediate_bytes);
     }
     if (mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8 || compact_w4) {
@@ -1058,7 +1063,8 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         /* The 3B low SP2 plane previously straddled the 4MiB VTCM boundary
          * inside one 64KiB HMX stream. Align its fixed 512KiB carrier so stream
          * boundaries also align with the physical VTCM segment boundary. */
-        buffers->middle = qbh_arena_alloc_aligned(&arena, intermediate_bytes, 65536U);
+        buffers->middle = r4_mode==4U ? buffers->gate :
+            qbh_arena_alloc_aligned(&arena, intermediate_bytes, 65536U);
 #else
         buffers->middle = qbh_arena_alloc(&arena, intermediate_bytes);
 #endif
@@ -2255,7 +2261,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
     }
 #ifdef QBH_LLAMA_3B
     if (!header || header->generation_lm_head.weight_segment ||
-        header->dense_r3_mode || header->dense_r4_mode ||
+        header->dense_r3_mode || (header->dense_r4_mode && header->dense_r4_mode!=4U) ||
         header->paper_format_disable ||
 #ifdef QBH_FP_ISLANDS
         /* L32-0064: permit only the independently audited phase diagnostic. */
