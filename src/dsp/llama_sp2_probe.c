@@ -136,11 +136,17 @@ static int paper_softmax_probe(uint8_t *shared,uint32_t bytes,uint8_t *vtcm,uint
 }
 
 #include "llama_sp2_hvx_probe.inc"
+#include "llama_r4_butterfly_probe.inc"
 int lsp2_run(int fd,uint32_t bytes,uint8_t *vtcm,uint32_t vbytes,uint32_t ctx){
  uint8_t *shared=0;int ret=HAP_mmap_get(fd,(void**)&shared,0);if(ret||!shared)return AEE_EFAILED;
  ret=qurt_mem_cache_clean((qurt_addr_t)shared,bytes,QURT_MEM_CACHE_INVALIDATE,QURT_MEM_DCACHE);
  if(ret){HAP_mmap_put(fd);return AEE_EFAILED;}
  struct lsp2_header *h=(struct lsp2_header*)shared;
+ if(bytes>=128U && h->mode>=16U && h->mode<=18U) {
+  ret=bf69_run(shared,bytes,vtcm,vbytes);
+  int e=qurt_mem_cache_clean((qurt_addr_t)shared,bytes,QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE);
+  HAP_mmap_put(fd);return ret?ret:(e?AEE_EFAILED:AEE_SUCCESS);
+ }
  if(bytes>=128U && h->mode==15U) {
   ret=fp63_audit(shared,bytes,vtcm,vbytes);
   int e=qurt_mem_cache_clean((qurt_addr_t)shared,bytes,QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE);
