@@ -489,3 +489,6 @@ User-confirmed HVX butterfly R3 added to0070 R4, same64+42 E2E. Side experiment,
 
 ## L32-0071 closure
 User-confirmed HVX R3+R4 on ordinaryA8, full16 64+42 complete. Five short/ten formal repeat10 paired R4/R3R4; own-contract1/3/16-layer, KV/hidden/norm/padding exact; no HMX rotation,8MiB/no intermediateDDR. See docs/experiments/L32-0071-RESULTS.md for speeds and mandatory boundary-contract caveat: inherited R3 FP16/vector quant path differs from nonrotated SF32/division repair, so negative difference is not butterfly itself accelerating computation. No quality/default promotion or extra R4 optimization. Source closure 2fcab92e71f6ba3deac39e55f96cf4ba76ba2968, measured f291128c946e4e1124f0d8af2288fbb05b27296d; ledger 8ddf5e0a483eccede1945df58d85517a1e99ac8fabe95322dea3967b03c96c6e; activeNone/device released,next0072.
+
+## 2026-09-23 L32-0072
+User approves R4-only four-model E2E expansion and new final workbook sheet. R3 combination excluded from controlled ablation. Active L32-0072; Qwen counterpart EXP-0309.
