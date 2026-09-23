@@ -22,7 +22,7 @@ def norm(x,gamma,q):
  v=(x*inv)*gamma.astype('f4')
  code=v/np.float32(q['scale'])+np.float32(q['zero_point'])
  return np.clip(np.copysign(np.floor(np.abs(code)+np.float32(.5)),code),0,255).astype('u1')
-def layer(x,p,q,cos,sin,past=None,sp2=True):
+def layer(x,p,q,cos,sin,past=None,sp2=True,r4=False):
  cv=HmxU8Converter(ROOT/'build/l32-0003/qbh_hmx_u8_reference.so')
  def project(a,name,iq,oq):
   n={'q':2048,'k':512,'v':512,'gate':8192,'up':8192}[name]
@@ -42,5 +42,15 @@ def layer(x,p,q,cos,sin,past=None,sp2=True):
  o=raw(av,'o',q['attention_concat']['scale'],q['attention_concat']['zero_point']);res=x+o
  post=norm(res,np.fromfile(p/'post_norm_weight_f16.bin',dtype='<f2'),q['post_attention_norm'])
  g=project(post,'gate','post_attention_norm','gate');u=project(post,'up','post_attention_norm','up')
- lut=table(str(p/'silu_up_lut_u16.bin')) if sp2 else np.fromfile(p/'silu_up_lut_u16.bin','<u2').reshape(256,256);mid=lut[g,u];down=raw(mid,'down',q['middle']['scale'],0 if sp2 else q['middle']['zero_point']);y=res+down
+ lut=table(str(p/'silu_up_lut_u16.bin')) if sp2 else np.fromfile(p/'silu_up_lut_u16.bin','<u2').reshape(256,256)
+ if r4:
+  assert not sp2
+  z=lut.view('<f2')[g,u].astype('f4');rot=z.copy()
+  for h in [1<<i for i in range(13)]:
+   rv=rot.reshape(len(x),-1,2*h);ra=rv[:,:,:h].copy();rb=rv[:,:,h:].copy();rv[:,:,:h]=ra+rb;rv[:,:,h:]=ra-rb
+  rot*=np.float32(1/np.sqrt(8192))
+  code=np.float32(np.float32(rot*np.float32(1/q['middle']['scale']))+np.float32(q['middle']['zero_point']))
+  mid=np.clip(np.trunc(np.float32(code+np.float32(.5))),0,255).astype('u1')
+ else:mid=lut[g,u]
+ down=raw(mid,'down',q['middle']['scale'],0 if sp2 else q['middle']['zero_point']);y=res+down
  return y,(k,v),dict(input_norm=a,q=qr,k=kr,attention=av,o=o,residual=res,post=post,gate=g,up=u,middle=mid,down=down,score=score,probability=prob)
