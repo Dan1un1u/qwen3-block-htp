@@ -113,12 +113,113 @@ static void hmx_run(uint8_t *v,struct bw_header *h){
   if(h->mode==3)for(uint32_t i=0;i<len/2;i++)((uint16_t*)q)[i]=0x1c00;else memset(q,which&&h->mode==5?0x11:1,len);
  }
 }
+
+/* EXP0311: common-window readers. All results count only batches completed
+ * before the common deadline. Buffers and kernels are identical in solo/both. */
+#define CW_MAX 7
+static uint8_t cw_stacks[CW_MAX][8192] __attribute__((aligned(128)));
+struct cw_job {
+ uint8_t *a,*w,*out;uint32_t *bias;
+ uint32_t role,fmt,bytes,stream,hmx,rounds;int status;
+ qurt_sem_t ready,go,done;
+ uint64_t begin,deadline,t0,t1,c0,c1,count;
+};
+static struct cw_job cw_jobs[CW_MAX];
+__attribute__((noinline)) static void cw_hmx_batch(struct cw_job *j) {
+ uint32_t stream=j->stream,fmt=j->fmt,step=stream*2048U;
+ uint32_t wb=stream*(fmt==3?2048U:fmt==4?1024U:512U),chunks=j->bytes/step;
+ uint8_t *a=j->a,*w=j->w,*out=j->out;
+ for(uint32_t rep=0;rep<16;rep++) {
+  if(fmt==3)asm volatile("mxclracc.hf":::"memory");else Q6_mxclracc();
+  for(uint32_t k=0;k<chunks;k++)hmx_issue(a+k*step,w+k*wb,stream,fmt);
+  if(fmt==3)asm volatile("cvt.hf=acc(%0)\nmxmem(%1,%2)=cvt\n"::"r"(2),"r"(out),"r"(0):"memory");
+  else Q6_mxmem_AR_after_cm_sat_ub(out,1792U);
+ }
+ asm volatile("barrier":::"memory");
+}
+static void cw_worker(void *arg) {
+ struct cw_job *j=arg;
+ j->status=j->role==0?qurt_hvx_lock(QURT_HVX_MODE_128B):j->role==1?HAP_compute_res_hmx_lock2(j->hmx,HAP_COMPUTE_RES_HMX_SHARED):0;
+ if(j->role==1&&!j->status)Q6_bias_mxmem2_A(j->bias);
+ qurt_sem_up(&j->ready);
+ for(uint32_t round=0;round<j->rounds;round++) {
+  qurt_sem_down(&j->go);j->count=0;
+  while(HAP_perf_get_qtimer_count()<j->begin)asm volatile("pause(#8)":::"memory");
+  j->t0=HAP_perf_get_qtimer_count();j->c0=HAP_perf_get_pcycles();
+  if(!j->status)while(HAP_perf_get_qtimer_count()<j->deadline) {
+   if(j->role==0)hvx_loop(j->a,j->out,524288U,8U,0U);
+   else if(j->role==1)cw_hmx_batch(j);
+   else { for(uint32_t k=0;k<4096;k++)asm volatile("nop":::"memory"); }
+   asm volatile("barrier":::"memory");
+   uint64_t end=HAP_perf_get_qtimer_count();
+   if(end<=j->deadline)j->count++;
+  }
+  j->c1=HAP_perf_get_pcycles();j->t1=HAP_perf_get_qtimer_count();qurt_sem_up(&j->done);
+ }
+ if(!j->status){if(j->role==0)qurt_hvx_unlock();else if(j->role==1)HAP_compute_res_hmx_unlock2(j->hmx,HAP_COMPUTE_RES_HMX_SHARED);}
+}
+static int concurrent_run(uint8_t *v,uint32_t hmx,struct bw_header *h){
+ const uint32_t fmt=h->bypass;
+ uint32_t nv=h->mode==8?0:h->workers,nh=h->mode==7?0:1,nt=nv+nh;
+ qurt_thread_t threads[CW_MAX];
+ if(fmt==3){for(uint32_t k=0;k<6U*1024U*1024U/2;k++)((uint16_t*)v)[k]=0x1c00;}
+ else{memset(v,1,6U*1024U*1024U);if(fmt==5)memset(v+1048576U,0x11,h->bytes/4U);}
+ uint32_t *bias=(void*)(v+7U*1024U*1024U+4096U);
+ if(fmt==3)qbh_hmx_fp16_init_unity_scale(bias);
+ else for(unsigned k=0;k<32;k++){bias[k]=24U<<10;bias[k+32]=0;}
+ for(uint32_t i=0;i<nt;i++){
+  struct cw_job *j=&cw_jobs[i];memset(j,0,sizeof(*j));
+  j->role=i<nv?0:h->mode==10?2:1;j->fmt=fmt;j->bytes=h->bytes;j->stream=h->stream;j->hmx=hmx;j->rounds=h->rounds;j->bias=bias;
+  j->a=j->role==0?(h->depth==2?v:v+2U*1024U*1024U+i*524288U+(h->depth==3?i*2048U:0U)):v;
+  j->w=v+1048576U;j->out=j->role==0?v+6U*1024U*1024U+i*2048U:v+7U*1024U*1024U;
+  memset(j->out,0,2048);qurt_sem_init_val(&j->ready,0);qurt_sem_init_val(&j->go,0);qurt_sem_init_val(&j->done,0);
+  qurt_thread_attr_t a;qurt_thread_attr_init(&a);qurt_thread_attr_set_name(&a,"bw-concurrent");qurt_thread_attr_set_stack_addr(&a,cw_stacks[i]);qurt_thread_attr_set_stack_size(&a,sizeof(cw_stacks[i]));qurt_thread_attr_set_priority(&a,qurt_thread_get_priority(qurt_thread_get_id()));
+  if(qurt_thread_create(&threads[i],&a,cw_worker,j))return -1;
+ }
+ for(uint32_t i=0;i<nt;i++)qurt_sem_down(&cw_jobs[i].ready);
+ uint64_t ticks=(uint64_t)h->repeats*192U/10U;
+ for(uint32_t round=0;round<h->rounds;round++){
+  uint64_t begin=HAP_perf_get_qtimer_count()+38400U,end=begin+ticks;
+  for(uint32_t i=0;i<nt;i++){cw_jobs[i].begin=begin;cw_jobs[i].deadline=end;}
+  asm volatile("barrier":::"memory");
+  for(uint32_t i=0;i<nt;i++)qurt_sem_up(&cw_jobs[i].go);
+  for(uint32_t i=0;i<nt;i++)qurt_sem_down(&cw_jobs[i].done);
+  uint64_t c0=UINT64_MAX,c1=0,t0=UINT64_MAX,t1=0;
+  h->hvx_bytes[round]=h->hmx_bytes[round]=h->start_delay[round]=h->finish_delay[round]=0;
+  for(uint32_t i=0;i<nt;i++){
+   struct cw_job *j=&cw_jobs[i];
+   if(j->role==0)h->hvx_bytes[round]+=j->count*524288ULL*8ULL;
+   if(j->role==1)h->hmx_bytes[round]+=j->count*16ULL*h->bytes*(fmt==3?8U:fmt==4?6U:5U)/4U;
+   uint64_t startdelay=j->t0-begin,finishdelay=j->t1-end;
+   if(startdelay>h->start_delay[round])h->start_delay[round]=startdelay;
+   if(finishdelay>h->finish_delay[round])h->finish_delay[round]=finishdelay;
+   if(j->c0<c0)c0=j->c0;if(j->c1>c1)c1=j->c1;
+   if(j->t0<t0)t0=j->t0;if(j->t1>t1)t1=j->t1;
+   h->errors+=j->status!=0||j->count==0;
+  }
+  h->ticks[round]=ticks;h->cycles[round]=(uint64_t)((double)(c1-c0)*ticks/(t1-t0));
+ }
+ for(uint32_t i=0;i<nt;i++){
+  int st;qurt_thread_join(threads[i],&st);struct cw_job *j=&cw_jobs[i];
+  if(j->role==0){for(uint32_t k=0;k<1024;k++)h->errors+=j->out[k]!=(fmt==3?(k%2?0x1c:0):1);}
+  else if(j->role==1){
+   if(fmt==3){__fp16 val=(__fp16)((float)(h->bytes/64U)/65536.0f);uint16_t bits;memcpy(&bits,&val,2);for(uint32_t k=0;k<1024;k++)h->errors+=((uint16_t*)j->out)[k]!=bits;}
+   else for(uint32_t k=0;k<2048;k++)h->errors+=j->out[k]!=255;
+  }
+  qurt_sem_destroy(&j->ready);qurt_sem_destroy(&j->go);qurt_sem_destroy(&j->done);
+ }
+ return 0;
+}
+
 int qbh_bandwidth_run(void *vtcm,uint32_t vbytes,uint32_t hmx,int fd,uint32_t size){
  uint8_t *mem=0,*v=vtcm;int result=HAP_mmap_get(fd,(void**)&mem,0);if(result||!mem)return AEE_EFAILED;
  qurt_mem_cache_clean((qurt_addr_t)mem,sizeof(struct bw_header),QURT_MEM_CACHE_INVALIDATE,QURT_MEM_DCACHE);
  struct bw_header *h=(void*)mem;h->status=1;h->vtcm_bytes=vbytes;h->errors=0;h->checks[0]=(uint32_t)qurt_hvx_get_units();
- if(h->magic!=BW_MAGIC||size<BW_DRAM+BW_PAYLOAD||h->rounds!=BW_ROUNDS||h->mode>6||!h->bytes||h->bytes%1024||!h->repeats||h->repeats>100000||!h->workers||h->workers>MAXW||!h->stream||h->stream>32||!h->depth||h->depth>256||h->bypass>1)goto done;
- if(h->mode<3){
+ if(h->magic!=BW_MAGIC||size<BW_DRAM+BW_PAYLOAD||h->rounds!=BW_ROUNDS||h->mode>10||!h->bytes||h->bytes%1024||!h->repeats||h->repeats>100000||!h->workers||h->workers>MAXW||!h->stream||h->stream>32||!h->depth||h->depth>256||(h->mode<7?h->bypass>1:(h->bypass<3||h->bypass>5)))goto done;
+ if(h->mode>=7){
+  if(h->bytes!=1048576U||h->depth>3||h->repeats<1000U)goto done;
+  if(concurrent_run(v,hmx,h))goto done;
+ }else if(h->mode<3){
   if((uint64_t)h->workers*(h->bytes*2U+(h->depth-1U)*128U)>vbytes)goto done;
   qurt_thread_t threads[MAXW];
   for(uint32_t i=0;i<h->workers;i++){struct job *j=&jobs[i];memset(j,0,sizeof(*j));j->p=v+i*(h->bytes*2U+(h->depth-1U)*128U);j->out=j->p+h->bytes;j->h=h;j->id=i;for(uint32_t k=0;k<h->bytes;k++)j->p[k]=pattern(k+i*97U);memset(j->out,0,h->bytes);qurt_sem_init_val(&j->ready,0);qurt_sem_init_val(&j->go,0);qurt_sem_init_val(&j->done,0);qurt_thread_attr_t a;qurt_thread_attr_init(&a);qurt_thread_attr_set_name(&a,"bw-hvx");qurt_thread_attr_set_stack_addr(&a,stacks[i]);qurt_thread_attr_set_stack_size(&a,sizeof(stacks[i]));qurt_thread_attr_set_priority(&a,qurt_thread_get_priority(qurt_thread_get_id()));if(qurt_thread_create(&threads[i],&a,worker,j))goto done;}

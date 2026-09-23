@@ -10,5 +10,6 @@ struct bw_header {
  uint32_t rounds, errors, vtcm_bytes, status;
  uint64_t payload_bytes, ticks[BW_ROUNDS], cycles[BW_ROUNDS];
  uint32_t checks[6];
+ uint64_t hvx_bytes[BW_ROUNDS], hmx_bytes[BW_ROUNDS], start_delay[BW_ROUNDS], finish_delay[BW_ROUNDS];
 };
 #endif
