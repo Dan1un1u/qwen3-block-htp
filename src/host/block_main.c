@@ -3471,7 +3471,7 @@ static int qbh_run_exp0240_layer(
             if (dump != NULL && rep == 0U) {
                 if(h->dense_r4_audit_offset) {
                     snprintf(name,sizeof(name),"step%02u_r4.bin",step);
-                    if(qbh_write_named_tensor(dump,name,shared+h->dense_r4_audit_offset,3U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U)) return -1;
+                    if(qbh_write_named_tensor(dump,name,shared+h->dense_r4_audit_offset,4U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U)) return -1;
                 }
                 if (h->dense_r3_audit_offset) {
                     snprintf(name,sizeof(name),"step%02u_r3.bin",step);
@@ -3664,7 +3664,7 @@ static int qbh_run_replay_sequence(
                     header->vtcm_peak_plan_bytes, header->dense_r4_calls, header->projection_failure_step);
             fprintf(stderr,"header diag repeat=%u logical_m=%u scan=%u chunks=%u bytes=%u abi=%u paper=%u/%u\n",header->repeat_count,header->logical_m,header->scan_mode,header->scan_physical_chunk_count,header->header_bytes,header->abi_version,header->paper_format_disable,header->paper_pipeline_disable);
             if(header->dense_r4_audit_offset) {
-                uint32_t *diag=(uint32_t *)(shared+header->dense_r4_audit_offset+3U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U-128U);
+                uint32_t *diag=(uint32_t *)(shared+header->dense_r4_audit_offset+4U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U-128U);
                 fprintf(stderr,"r4 diag a=%08x w=%08x out=%08x sc=%08x mt=%u kt=%u nt=%u\n",diag[0],diag[1],diag[2],diag[3],diag[4],diag[5],diag[6]);
             }
             free(cache_snapshots);
@@ -3878,7 +3878,7 @@ static int qbh_run_replay_sequence(
             if(header->dense_r4_audit_offset) {
                 snprintf(name,sizeof(name),"actual_replay_r4_%02u.bin",step);
                 if(qbh_write_named_tensor(dump_root,name,shared+header->dense_r4_audit_offset,
-                    3U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U)) {free(cache_snapshots);return -1;}
+                    4U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U)) {free(cache_snapshots);return -1;}
             }
             if (snprintf(
                     name, sizeof(name),
@@ -6536,8 +6536,8 @@ int main(int argc, char **argv) {
         if (getenv("QBH_DENSE_R4_AUDIT")) {
             cursor=qbh_align_up_size(cursor,QBH_HOST_ALIGNMENT);
             dense_r4_audit_offset=cursor;
-            if(3U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U>UINT32_MAX-cursor) return 2;
-            cursor+=3U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U;
+            if(4U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U>UINT32_MAX-cursor) return 2;
+            cursor+=4U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U;
         }
         if (getenv("QBH_DENSE_R3_AUDIT")) {
             cursor=qbh_align_up_size(cursor,QBH_HOST_ALIGNMENT);
@@ -7098,7 +7098,7 @@ int main(int argc, char **argv) {
     if(header->dense_r4_optimization>6U) return 2;
     if((header->paper_format_disable&4U) && header->dense_r4_mode) return 2;
     if(header->dense_r4_mode) {
-        if(variant!=QBH_BLOCK_W4U8 || header->dense_r4_mode>3U) return 2;
+        if(variant!=QBH_BLOCK_W4U8 || header->dense_r4_mode>4U) return 2;
         if(header->dense_r4_optimization<2U)header->w4u8_decode_direct_n_gate_up_swiglu_stream=0U;
     }
     header->dense_r3_mode=dense_r3_mode;

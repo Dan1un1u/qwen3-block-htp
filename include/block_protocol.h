@@ -9,7 +9,7 @@
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
 #ifdef QBH_MODEL_LLAMA32
-#define QBH_BLOCK_ABI_VERSION UINT32_C(136)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(137)
 #define QBH_LLAMA_SP2(h) ((h)->llama_sp2_mode)
 #define QBH_FP32_RESIDUAL(h) ((h)->llama_fp32_residual)
 #else

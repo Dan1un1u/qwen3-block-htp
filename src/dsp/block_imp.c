@@ -257,6 +257,7 @@ enum qbh_block_hvx_pool_job_kind {
     QBH_BLOCK_HVX_POOL_LONG_ATTENTION = 22,
     QBH_BLOCK_HVX_POOL_LONG_F16_SOFTMAX = 23,
     QBH_BLOCK_HVX_POOL_SP2_SHIFTADD = 24,
+    QBH_BLOCK_HVX_POOL_R4_BUTTERFLY = 25,
 };
 
 enum qbh_block_u8_residual_kind {
@@ -2299,7 +2300,8 @@ static int qbh_header_valid(const struct qbh_block_header *header,
     /* Llama A8 currently validates the unrotated head64 integer pipeline. */
     if (header == NULL || (header->dense_r3_mode &&
         (header->dense_r3_mode!=1U || header->dense_r3_optimization!=2U || !QBH_FP32_RESIDUAL(header))) ||
-        (header->dense_r4_mode && (header->dense_r4_mode>3U || header->dense_r4_optimization!=6U || QBH_LLAMA_SP2(header)!=8U)) ||
+        (header->dense_r4_mode && (header->dense_r4_mode>4U || header->dense_r4_optimization!=6U ||
+          (header->dense_r4_mode==4U ? (QBH_LLAMA_SP2(header)!=0U || QBH_BLOCK_INTERMEDIATE!=8192U || !QBH_FP32_RESIDUAL(header)) : QBH_LLAMA_SP2(header)!=8U))) ||
         (header->variant == QBH_BLOCK_W4U8
             ? (header->attention_pipeline_mode != QBH_BLOCK_ATTENTION_PIPELINE_U8_LOG2_GQA ||
                (header->scan_mode && (header->kv_cache_k_format != QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1 ||
@@ -4787,6 +4789,9 @@ static void qbh_w4u8_generation_expand_worker_run(
 static void qbh_r4_prepare_tile(const uint8_t *gate,const uint8_t *up,
     __fp16 *act,uint32_t rows,uint32_t tile,const uint16_t *lut,uint8_t *scratch);
 static void qbh_r4_convert_worker(void *context,uint32_t worker_index);
+#ifdef QBH_MODEL_LLAMA32
+static void qbh_bf70_worker(void *context,uint32_t worker_index);
+#endif
 static void qbh_r4_prepare_tile(const uint8_t*,const uint8_t*,__fp16*,uint32_t,uint32_t,const uint16_t*,uint8_t*);
 #ifdef QBH_MODEL_LLAMA32
 #ifdef QBH_FP_ISLANDS
@@ -5085,6 +5090,8 @@ static void qbh_w4f16_hvx_worker_main(void *opaque) {
             qbh_llama_swiglu_worker(pool,job->worker_index);
         } else if (job->command_kind == QBH_BLOCK_HVX_POOL_SP2_EPILOGUE) {
             qbh_sp2_epilogue_run(&pool->sp2_epilogue);
+        } else if(job->command_kind==QBH_BLOCK_HVX_POOL_R4_BUTTERFLY) {
+            qbh_bf70_worker(job->r4_convert_context,job->worker_index);
         } else if(job->command_kind==QBH_BLOCK_HVX_POOL_SP2_SHIFTADD) {
             sp60_worker(pool,job->worker_index);
         } else if(job->command_kind==QBH_BLOCK_HVX_POOL_FP32_NORM) {
@@ -15694,6 +15701,7 @@ static uint64_t qbh_fnv1a64_u8_native_tile_row(
 #include "r3_sign_matrix.inc"
 #ifdef QBH_MODEL_LLAMA32
 #include "llama_dense_r4.inc"
+#include "llama_butterfly_r4.inc"
 #else
 #include "dense_r4.inc"
 #endif
@@ -15888,6 +15896,10 @@ static int qbh_run_w4u8_direct_n_mlp(
     qbh_long_progress(header,6300U);
     if (header->dense_r4_mode != 0U) {
         start=HAP_perf_get_qtimer_count();
+        #ifdef QBH_MODEL_LLAMA32
+        if(header->dense_r4_mode==4U) { if(qbh_run_butterfly_r4(header,shared,buffers,pool,middle_native))return -1; }
+        else
+#endif
         if(qbh_run_dense_r4(header,shared,buffers,worker,pool,middle_native)!=0) return -1;
         header->activation_ticks+=HAP_perf_get_qtimer_count()-start;
 #ifdef QBH_MODEL_LLAMA32
@@ -23749,8 +23761,8 @@ publish:
                 QURT_MEM_CACHE_FLUSH, QURT_MEM_DCACHE);
         }
         if(flush_status==0 && header->dense_r4_audit_offset &&
-        qbh_range_valid(header->dense_r4_audit_offset,3U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U,shared_bytes))
-        flush_status=qurt_mem_cache_clean((qurt_addr_t)(shared+header->dense_r4_audit_offset),3U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U,QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE);
+        qbh_range_valid(header->dense_r4_audit_offset,4U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U,shared_bytes))
+        flush_status=qurt_mem_cache_clean((qurt_addr_t)(shared+header->dense_r4_audit_offset),4U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U,QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE);
     if (flush_status==0 && header->dense_r3_audit_offset &&
             qbh_range_valid(header->dense_r3_audit_offset,QBH_DENSE_R3_AUDIT_BYTES,shared_bytes))
             flush_status=qurt_mem_cache_clean((qurt_addr_t)(shared+header->dense_r3_audit_offset),
