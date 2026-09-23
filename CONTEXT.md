@@ -471,3 +471,6 @@ Companion Qwen EXP0284 completed with full896 layer-output hashes exact and form
 
 # Current L32-0055 — user-approved generic A16 ABC completion
 Read docs/experiments/L32-0055.md. A8/SP2 and historical D frozen; no per-model specialization. Fixed fixtures only.
+
+## Current L32-0069
+User-authorized ordinary-A8 HVX butterfly R4 diagnostic active. Read docs/experiments/L32-0069.md. No E2E requested; preserve exact scope and do not assume expected slowdown.

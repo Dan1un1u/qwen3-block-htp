@@ -249,3 +249,6 @@ User explicitly requests optimizing Llama1B long decode for ordinary A8/SP2. Thi
 
 ## User-approved D-drive artifact retirement (2026-09-21)
 User explicitly requests deleting all D-drive derived model weights and intermediate artifacts, including final quantized weights. Preserve original checkpoints, formal reports, raw profiling logs, accuracy results, reproduction/export configuration, historical hash manifests, and clearly identified small rotation/scale/gain/bias/LUT parameters. User separately approves removal of D:/llm_exp/models/qualcomm-sdk; independent WSL tools are retained. This supersedes earlier physical-retention instructions for those artifact categories only. Historical results, gate classifications and hashes remain unchanged. Record intentional absence separately; do not relabel regenerated files as original evidence. Future hardware reruns require regeneration/revalidation. This is closed-state storage maintenance, not a new experiment. See docs/D_DRIVE_CLEANUP_20260921.md.
+
+## User-approved HVX butterfly R4 diagnostic (2026-09-23)
+L32-0069 explicitly permits HVX FWHT at the post-SwiGLU/pre-A8 boundary for isolated wall measurement on ordinary W4A8. Dense-only restrictions superseded solely here; no production, weight, quality or E2E changes. See registered protocol.
