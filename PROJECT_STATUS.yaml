@@ -7,7 +7,7 @@ project:
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
   updated_on: '2026-09-23'
 governance:
-  active_experiment: L32-0071
+  active_experiment: null
   next_experiment_number: 72
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -15,7 +15,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: cbc3ddc1b55ae8000645a77c7e3afac24f410c2b
+    recorded_head: 2fcab92e71f6ba3deac39e55f96cf4ba76ba2968
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -27,11 +27,11 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: hvx_butterfly_r4_fullmodel_complete
+  stage: hvx_butterfly_r3_r4_fullmodel_complete
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Requested full-model paired E2E complete. Discuss R4 prefill overhead
-    and optional optimization; no further experiment authorized.
+  next_action: Requested R3+R4 side experiment complete. No further optimization/workbook
+    update authorized.
   baseline_manifest: docs/PAPER_NO_ROTATION_BASELINES.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF_L32_0034.md
@@ -44,7 +44,7 @@ current_scope:
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0070
+  last_completed_experiment: L32-0071
   evidence_ledger_sha256: 599d86cf654b2b41526690c76ad1c0a251b5f206815a57ce4ae12b0024f94ac9
   formal_profiling_completed: true
   general_quantization_quality_accepted: false
@@ -5936,3 +5936,101 @@ latest_hvx_butterfly_r4_e2e:
   conclusion: R4 increases full-model prefill wall18.829percent and decode1.653percent.
     Core alone is2.616ms/0.1598ms per decode step, not slower than full inference;
     boundary integration adds measurable cost. No promotion/workbook update.
+latest_hvx_butterfly_r3_r4_e2e:
+  experiment: L32-0071
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
+  gate_scope: Own-contract exact1/3/16-layer arithmetic/KV/padding/physical gates;
+    speed side experiment, no quality gate
+  adoption_status: not_requested
+  baseline_promoted: false
+  quality_claim: false
+  e2e_measured: true
+  model: Llama-3.2-1B-Instruct
+  shape:
+  - 64
+  - 42
+  base_recipe: ordinary W4A8, FP32 residual, no SP2/INT16 Down
+  rotation: HVX H64 R3 plus unchanged HVX H8192 R4
+  device_owner: null
+  source_head: 2fcab92e71f6ba3deac39e55f96cf4ba76ba2968
+  measured_source: f291128c946e4e1124f0d8af2288fbb05b27296d
+  evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0071
+  evidence_ledger_sha256: 8ddf5e0a483eccede1945df58d85517a1e99ac8fabe95322dea3967b03c96c6e
+  evidence_files: 1201
+  evidence_bytes: 855236813
+  report: docs/experiments/L32-0071-RESULTS.md
+  short_rounds: 5
+  formal_rounds: 10
+  in_rpc_repeats: 10
+  numerical:
+    exact_layer_hashes_per_arm: 1548
+    final_hidden_exact: 172
+    full16_kv_norm_exact: true
+    padding_poison_pass: true
+    formal_invocations: 8600
+  physical:
+    vtcm_grant: 8388608
+    peak:
+    - 8098272
+    intermediate_ddr_bytes: 0
+    spills: 0
+    rotation_hmx_calls: 0
+    hmx_command_counts_same: true
+  timings:
+    prefill:
+      R4:
+        wall_ms: 31.68166344
+        tps: 2020.0959498608952
+      R3R4:
+        wall_ms: 30.48259895
+        tps: 2099.558508937441
+      r3r4_over_r4:
+        wall_ratio: 0.9621527293770152
+        ci95:
+        - 0.9597687665328369
+        - 0.9657757179495202
+    decode:
+      R4:
+        wall_ms: 919.4988257499999
+        tps: 45.67705670068933
+      R3R4:
+        wall_ms: 915.82442266
+        tps: 45.86031881308816
+      r3r4_over_r4:
+        wall_ratio: 0.9960039067075449
+        ci95:
+        - 0.9945200297661206
+        - 0.9979181016614272
+  subcounters_us:
+    R4:
+      prefill:
+        dense_r4_prepare_ticks: 378.3390625
+        dense_r4_layout_ticks: 2616.5041666666666
+        dense_r4_finish_ticks: 1218.2151041666666
+        qkv_projection_ticks: 1488.3291666666667
+        qk_norm_rope_ticks: 2357.9656250000003
+      decode:
+        dense_r4_prepare_ticks: 32.063058035714285
+        dense_r4_layout_ticks: 159.68245287698414
+        dense_r4_finish_ticks: 73.83257688492064
+        qkv_projection_ticks: 1481.8318452380954
+        qk_norm_rope_ticks: 180.1826140873016
+    R3R4:
+      prefill:
+        dense_r4_prepare_ticks: 378.3833333333333
+        dense_r4_layout_ticks: 2616.6984375
+        dense_r4_finish_ticks: 1218.371875
+        qkv_projection_ticks: 1492.3651041666667
+        qk_norm_rope_ticks: 1147.4260416666668
+      decode:
+        dense_r4_prepare_ticks: 32.04038938492064
+        dense_r4_layout_ticks: 159.72783978174604
+        dense_r4_finish_ticks: 73.83232886904763
+        qkv_projection_ticks: 1482.900967261905
+        qk_norm_rope_ticks: 109.38258928571429
+  interpretation: 'Complete boundary implementations, not isolated R3-core ablation:
+    R3 inherited pre/post FP16 and vector reciprocal quantization replaces nonrotated
+    SF32/division rounding-edge repair. Both own-contract exact. No quality/same-output/algorithm-intrinsic
+    speedup claim; no additional R4 optimization.'
