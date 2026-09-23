@@ -27,12 +27,32 @@ static __attribute__((noinline)) void bf69_rows(float *x,uint32_t rows) {
     }
   /* H12 mixes the twelve butterfly blocks; all12 inputs are loaded before stores. */
   for(uint32_t j=0;j<QBH_BLOCK_INTERMEDIATE/12U;j+=32U) {
-   HVX_Vector src[12];
-   for(uint32_t g=0;g<12U;g++)src[g]=*(HVX_Vector *)(v+g*(QBH_BLOCK_INTERMEDIATE/12U)+j);
-   for(uint32_t n=0;n<12U;n++) {
-    HVX_Vector z=Q6_V_vzero();
-    for(uint32_t g=0;g<12U;g++) z=qbh_r4_h12[n][g]>0?Q6_Vsf_vadd_VsfVsf(z,src[g]):Q6_Vsf_vsub_VsfVsf(z,src[g]);
-    *(HVX_Vector *)(v+n*(QBH_BLOCK_INTERMEDIATE/12U)+j)=bf69_mul(z,bf69_splat(
+   HVX_Vector s0=*(HVX_Vector *)(v+0U*(QBH_BLOCK_INTERMEDIATE/12U)+j);
+   HVX_Vector s1=*(HVX_Vector *)(v+1U*(QBH_BLOCK_INTERMEDIATE/12U)+j);
+   HVX_Vector s2=*(HVX_Vector *)(v+2U*(QBH_BLOCK_INTERMEDIATE/12U)+j);
+   HVX_Vector s3=*(HVX_Vector *)(v+3U*(QBH_BLOCK_INTERMEDIATE/12U)+j);
+   HVX_Vector s4=*(HVX_Vector *)(v+4U*(QBH_BLOCK_INTERMEDIATE/12U)+j);
+   HVX_Vector s5=*(HVX_Vector *)(v+5U*(QBH_BLOCK_INTERMEDIATE/12U)+j);
+   HVX_Vector s6=*(HVX_Vector *)(v+6U*(QBH_BLOCK_INTERMEDIATE/12U)+j);
+   HVX_Vector s7=*(HVX_Vector *)(v+7U*(QBH_BLOCK_INTERMEDIATE/12U)+j);
+   HVX_Vector s8=*(HVX_Vector *)(v+8U*(QBH_BLOCK_INTERMEDIATE/12U)+j);
+   HVX_Vector s9=*(HVX_Vector *)(v+9U*(QBH_BLOCK_INTERMEDIATE/12U)+j);
+   HVX_Vector s10=*(HVX_Vector *)(v+10U*(QBH_BLOCK_INTERMEDIATE/12U)+j);
+   HVX_Vector s11=*(HVX_Vector *)(v+11U*(QBH_BLOCK_INTERMEDIATE/12U)+j);
+   { HVX_Vector z=Q6_V_vzero();
+    z=Q6_Vsf_vadd_VsfVsf(z,s0);
+    z=Q6_Vsf_vadd_VsfVsf(z,s1);
+    z=Q6_Vsf_vadd_VsfVsf(z,s2);
+    z=Q6_Vsf_vadd_VsfVsf(z,s3);
+    z=Q6_Vsf_vadd_VsfVsf(z,s4);
+    z=Q6_Vsf_vadd_VsfVsf(z,s5);
+    z=Q6_Vsf_vadd_VsfVsf(z,s6);
+    z=Q6_Vsf_vadd_VsfVsf(z,s7);
+    z=Q6_Vsf_vadd_VsfVsf(z,s8);
+    z=Q6_Vsf_vadd_VsfVsf(z,s9);
+    z=Q6_Vsf_vadd_VsfVsf(z,s10);
+    z=Q6_Vsf_vadd_VsfVsf(z,s11);
+    *(HVX_Vector *)(v+0U*(QBH_BLOCK_INTERMEDIATE/12U)+j)=bf69_mul(z,bf69_splat(
 #ifdef QBH_QWEN_06B
      0.018042195912175808f
 #else
@@ -40,6 +60,238 @@ static __attribute__((noinline)) void bf69_rows(float *x,uint32_t rows) {
 #endif
     ));
    }
+   { HVX_Vector z=Q6_V_vzero();
+    z=Q6_Vsf_vadd_VsfVsf(z,s0);
+    z=Q6_Vsf_vsub_VsfVsf(z,s1);
+    z=Q6_Vsf_vsub_VsfVsf(z,s2);
+    z=Q6_Vsf_vadd_VsfVsf(z,s3);
+    z=Q6_Vsf_vsub_VsfVsf(z,s4);
+    z=Q6_Vsf_vsub_VsfVsf(z,s5);
+    z=Q6_Vsf_vsub_VsfVsf(z,s6);
+    z=Q6_Vsf_vadd_VsfVsf(z,s7);
+    z=Q6_Vsf_vadd_VsfVsf(z,s8);
+    z=Q6_Vsf_vadd_VsfVsf(z,s9);
+    z=Q6_Vsf_vsub_VsfVsf(z,s10);
+    z=Q6_Vsf_vadd_VsfVsf(z,s11);
+    *(HVX_Vector *)(v+1U*(QBH_BLOCK_INTERMEDIATE/12U)+j)=bf69_mul(z,bf69_splat(
+#ifdef QBH_QWEN_06B
+     0.018042195912175808f
+#else
+     0.01275775907699572f
+#endif
+    ));
+   }
+   { HVX_Vector z=Q6_V_vzero();
+    z=Q6_Vsf_vadd_VsfVsf(z,s0);
+    z=Q6_Vsf_vadd_VsfVsf(z,s1);
+    z=Q6_Vsf_vsub_VsfVsf(z,s2);
+    z=Q6_Vsf_vsub_VsfVsf(z,s3);
+    z=Q6_Vsf_vadd_VsfVsf(z,s4);
+    z=Q6_Vsf_vsub_VsfVsf(z,s5);
+    z=Q6_Vsf_vsub_VsfVsf(z,s6);
+    z=Q6_Vsf_vsub_VsfVsf(z,s7);
+    z=Q6_Vsf_vadd_VsfVsf(z,s8);
+    z=Q6_Vsf_vadd_VsfVsf(z,s9);
+    z=Q6_Vsf_vadd_VsfVsf(z,s10);
+    z=Q6_Vsf_vsub_VsfVsf(z,s11);
+    *(HVX_Vector *)(v+2U*(QBH_BLOCK_INTERMEDIATE/12U)+j)=bf69_mul(z,bf69_splat(
+#ifdef QBH_QWEN_06B
+     0.018042195912175808f
+#else
+     0.01275775907699572f
+#endif
+    ));
+   }
+   { HVX_Vector z=Q6_V_vzero();
+    z=Q6_Vsf_vadd_VsfVsf(z,s0);
+    z=Q6_Vsf_vsub_VsfVsf(z,s1);
+    z=Q6_Vsf_vadd_VsfVsf(z,s2);
+    z=Q6_Vsf_vsub_VsfVsf(z,s3);
+    z=Q6_Vsf_vsub_VsfVsf(z,s4);
+    z=Q6_Vsf_vadd_VsfVsf(z,s5);
+    z=Q6_Vsf_vsub_VsfVsf(z,s6);
+    z=Q6_Vsf_vsub_VsfVsf(z,s7);
+    z=Q6_Vsf_vsub_VsfVsf(z,s8);
+    z=Q6_Vsf_vadd_VsfVsf(z,s9);
+    z=Q6_Vsf_vadd_VsfVsf(z,s10);
+    z=Q6_Vsf_vadd_VsfVsf(z,s11);
+    *(HVX_Vector *)(v+3U*(QBH_BLOCK_INTERMEDIATE/12U)+j)=bf69_mul(z,bf69_splat(
+#ifdef QBH_QWEN_06B
+     0.018042195912175808f
+#else
+     0.01275775907699572f
+#endif
+    ));
+   }
+   { HVX_Vector z=Q6_V_vzero();
+    z=Q6_Vsf_vadd_VsfVsf(z,s0);
+    z=Q6_Vsf_vadd_VsfVsf(z,s1);
+    z=Q6_Vsf_vsub_VsfVsf(z,s2);
+    z=Q6_Vsf_vadd_VsfVsf(z,s3);
+    z=Q6_Vsf_vsub_VsfVsf(z,s4);
+    z=Q6_Vsf_vsub_VsfVsf(z,s5);
+    z=Q6_Vsf_vadd_VsfVsf(z,s6);
+    z=Q6_Vsf_vsub_VsfVsf(z,s7);
+    z=Q6_Vsf_vsub_VsfVsf(z,s8);
+    z=Q6_Vsf_vsub_VsfVsf(z,s9);
+    z=Q6_Vsf_vadd_VsfVsf(z,s10);
+    z=Q6_Vsf_vadd_VsfVsf(z,s11);
+    *(HVX_Vector *)(v+4U*(QBH_BLOCK_INTERMEDIATE/12U)+j)=bf69_mul(z,bf69_splat(
+#ifdef QBH_QWEN_06B
+     0.018042195912175808f
+#else
+     0.01275775907699572f
+#endif
+    ));
+   }
+   { HVX_Vector z=Q6_V_vzero();
+    z=Q6_Vsf_vadd_VsfVsf(z,s0);
+    z=Q6_Vsf_vadd_VsfVsf(z,s1);
+    z=Q6_Vsf_vadd_VsfVsf(z,s2);
+    z=Q6_Vsf_vsub_VsfVsf(z,s3);
+    z=Q6_Vsf_vadd_VsfVsf(z,s4);
+    z=Q6_Vsf_vsub_VsfVsf(z,s5);
+    z=Q6_Vsf_vsub_VsfVsf(z,s6);
+    z=Q6_Vsf_vadd_VsfVsf(z,s7);
+    z=Q6_Vsf_vsub_VsfVsf(z,s8);
+    z=Q6_Vsf_vsub_VsfVsf(z,s9);
+    z=Q6_Vsf_vsub_VsfVsf(z,s10);
+    z=Q6_Vsf_vadd_VsfVsf(z,s11);
+    *(HVX_Vector *)(v+5U*(QBH_BLOCK_INTERMEDIATE/12U)+j)=bf69_mul(z,bf69_splat(
+#ifdef QBH_QWEN_06B
+     0.018042195912175808f
+#else
+     0.01275775907699572f
+#endif
+    ));
+   }
+   { HVX_Vector z=Q6_V_vzero();
+    z=Q6_Vsf_vadd_VsfVsf(z,s0);
+    z=Q6_Vsf_vadd_VsfVsf(z,s1);
+    z=Q6_Vsf_vadd_VsfVsf(z,s2);
+    z=Q6_Vsf_vadd_VsfVsf(z,s3);
+    z=Q6_Vsf_vsub_VsfVsf(z,s4);
+    z=Q6_Vsf_vadd_VsfVsf(z,s5);
+    z=Q6_Vsf_vsub_VsfVsf(z,s6);
+    z=Q6_Vsf_vsub_VsfVsf(z,s7);
+    z=Q6_Vsf_vadd_VsfVsf(z,s8);
+    z=Q6_Vsf_vsub_VsfVsf(z,s9);
+    z=Q6_Vsf_vsub_VsfVsf(z,s10);
+    z=Q6_Vsf_vsub_VsfVsf(z,s11);
+    *(HVX_Vector *)(v+6U*(QBH_BLOCK_INTERMEDIATE/12U)+j)=bf69_mul(z,bf69_splat(
+#ifdef QBH_QWEN_06B
+     0.018042195912175808f
+#else
+     0.01275775907699572f
+#endif
+    ));
+   }
+   { HVX_Vector z=Q6_V_vzero();
+    z=Q6_Vsf_vadd_VsfVsf(z,s0);
+    z=Q6_Vsf_vsub_VsfVsf(z,s1);
+    z=Q6_Vsf_vadd_VsfVsf(z,s2);
+    z=Q6_Vsf_vadd_VsfVsf(z,s3);
+    z=Q6_Vsf_vadd_VsfVsf(z,s4);
+    z=Q6_Vsf_vsub_VsfVsf(z,s5);
+    z=Q6_Vsf_vadd_VsfVsf(z,s6);
+    z=Q6_Vsf_vsub_VsfVsf(z,s7);
+    z=Q6_Vsf_vsub_VsfVsf(z,s8);
+    z=Q6_Vsf_vadd_VsfVsf(z,s9);
+    z=Q6_Vsf_vsub_VsfVsf(z,s10);
+    z=Q6_Vsf_vsub_VsfVsf(z,s11);
+    *(HVX_Vector *)(v+7U*(QBH_BLOCK_INTERMEDIATE/12U)+j)=bf69_mul(z,bf69_splat(
+#ifdef QBH_QWEN_06B
+     0.018042195912175808f
+#else
+     0.01275775907699572f
+#endif
+    ));
+   }
+   { HVX_Vector z=Q6_V_vzero();
+    z=Q6_Vsf_vadd_VsfVsf(z,s0);
+    z=Q6_Vsf_vsub_VsfVsf(z,s1);
+    z=Q6_Vsf_vsub_VsfVsf(z,s2);
+    z=Q6_Vsf_vadd_VsfVsf(z,s3);
+    z=Q6_Vsf_vadd_VsfVsf(z,s4);
+    z=Q6_Vsf_vadd_VsfVsf(z,s5);
+    z=Q6_Vsf_vsub_VsfVsf(z,s6);
+    z=Q6_Vsf_vadd_VsfVsf(z,s7);
+    z=Q6_Vsf_vsub_VsfVsf(z,s8);
+    z=Q6_Vsf_vsub_VsfVsf(z,s9);
+    z=Q6_Vsf_vadd_VsfVsf(z,s10);
+    z=Q6_Vsf_vsub_VsfVsf(z,s11);
+    *(HVX_Vector *)(v+8U*(QBH_BLOCK_INTERMEDIATE/12U)+j)=bf69_mul(z,bf69_splat(
+#ifdef QBH_QWEN_06B
+     0.018042195912175808f
+#else
+     0.01275775907699572f
+#endif
+    ));
+   }
+   { HVX_Vector z=Q6_V_vzero();
+    z=Q6_Vsf_vadd_VsfVsf(z,s0);
+    z=Q6_Vsf_vsub_VsfVsf(z,s1);
+    z=Q6_Vsf_vsub_VsfVsf(z,s2);
+    z=Q6_Vsf_vsub_VsfVsf(z,s3);
+    z=Q6_Vsf_vadd_VsfVsf(z,s4);
+    z=Q6_Vsf_vadd_VsfVsf(z,s5);
+    z=Q6_Vsf_vadd_VsfVsf(z,s6);
+    z=Q6_Vsf_vsub_VsfVsf(z,s7);
+    z=Q6_Vsf_vadd_VsfVsf(z,s8);
+    z=Q6_Vsf_vsub_VsfVsf(z,s9);
+    z=Q6_Vsf_vsub_VsfVsf(z,s10);
+    z=Q6_Vsf_vadd_VsfVsf(z,s11);
+    *(HVX_Vector *)(v+9U*(QBH_BLOCK_INTERMEDIATE/12U)+j)=bf69_mul(z,bf69_splat(
+#ifdef QBH_QWEN_06B
+     0.018042195912175808f
+#else
+     0.01275775907699572f
+#endif
+    ));
+   }
+   { HVX_Vector z=Q6_V_vzero();
+    z=Q6_Vsf_vadd_VsfVsf(z,s0);
+    z=Q6_Vsf_vadd_VsfVsf(z,s1);
+    z=Q6_Vsf_vsub_VsfVsf(z,s2);
+    z=Q6_Vsf_vsub_VsfVsf(z,s3);
+    z=Q6_Vsf_vsub_VsfVsf(z,s4);
+    z=Q6_Vsf_vadd_VsfVsf(z,s5);
+    z=Q6_Vsf_vadd_VsfVsf(z,s6);
+    z=Q6_Vsf_vadd_VsfVsf(z,s7);
+    z=Q6_Vsf_vsub_VsfVsf(z,s8);
+    z=Q6_Vsf_vadd_VsfVsf(z,s9);
+    z=Q6_Vsf_vsub_VsfVsf(z,s10);
+    z=Q6_Vsf_vsub_VsfVsf(z,s11);
+    *(HVX_Vector *)(v+10U*(QBH_BLOCK_INTERMEDIATE/12U)+j)=bf69_mul(z,bf69_splat(
+#ifdef QBH_QWEN_06B
+     0.018042195912175808f
+#else
+     0.01275775907699572f
+#endif
+    ));
+   }
+   { HVX_Vector z=Q6_V_vzero();
+    z=Q6_Vsf_vadd_VsfVsf(z,s0);
+    z=Q6_Vsf_vsub_VsfVsf(z,s1);
+    z=Q6_Vsf_vadd_VsfVsf(z,s2);
+    z=Q6_Vsf_vsub_VsfVsf(z,s3);
+    z=Q6_Vsf_vsub_VsfVsf(z,s4);
+    z=Q6_Vsf_vsub_VsfVsf(z,s5);
+    z=Q6_Vsf_vadd_VsfVsf(z,s6);
+    z=Q6_Vsf_vadd_VsfVsf(z,s7);
+    z=Q6_Vsf_vadd_VsfVsf(z,s8);
+    z=Q6_Vsf_vsub_VsfVsf(z,s9);
+    z=Q6_Vsf_vadd_VsfVsf(z,s10);
+    z=Q6_Vsf_vsub_VsfVsf(z,s11);
+    *(HVX_Vector *)(v+11U*(QBH_BLOCK_INTERMEDIATE/12U)+j)=bf69_mul(z,bf69_splat(
+#ifdef QBH_QWEN_06B
+     0.018042195912175808f
+#else
+     0.01275775907699572f
+#endif
+    ));
+   }
+
   }
  }
 }

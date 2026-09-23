@@ -45,6 +45,9 @@ def prepare():
    d=dst/n;d.parent.mkdir(parents=True,exist_ok=True);os.link(PARENT/n,d)
  original=Path('/mnt/d/llm_exp/models')/('Qwen3-0.6B-origin' if SIZE=='0.6B' else 'Qwen3-origin')
  hashes={p.name:sha256(p) for p in original.glob('*.safetensors')};folds=[];F=3072 if SIZE=='0.6B' else 6144
+ pins={'model-00001-of-00002.safetensors': '169ad53ec313c3a34b06c0809216e4fc072cce444a5d4ff2b59690d064130ed5', 'model-00002-of-00002.safetensors': '912becff8d60672aa8628ef08c05898d9adf17c2ad4ae3caf99b065622fdeff9'}
+ if SIZE=='0.6B':pins={f['Path']:f['Sha256'] for f in read(original/'DOWNLOAD_PROVENANCE.json')['files'] if f['Path'].endswith('.safetensors')}
+ assert hashes==pins,(hashes,pins)
  for i in range(28):
   key=f'model.layers.{i}.mlp.down_proj.weight';file='model.safetensors' if SIZE=='0.6B' else read(original/'model.safetensors.index.json')['weight_map'][key]
   with safe_open(original/file,framework='pt',device='cpu') as f:w=f.get_tensor(key).double().numpy()
