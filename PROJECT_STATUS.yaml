@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0310
+  active_experiment: null
   next_experiment_number: 311
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -2882,10 +2882,10 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: Qwen3_28layer_native_W4_SP2_M64_plus15_verified
-  last_completed_experiment: EXP-0308
-  last_completed_source_commit: d2af6c7d3d5bccf467b5dd194be08c16ae6ed68c
+  last_completed_experiment: EXP-0310
+  last_completed_source_commit: 1eb5abc4b7b9c60e9b37cccedd27a780f8d1213f
   provisional_source_parent: EXP0268_diagnostic_U8_pipeline_closure_no_default_promotion
-  device_execution_state: EXP-0309_serial_four_model_R4
+  device_execution_state: idle_EXP0310_completed
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
   current_handoff: docs/experiments/EXP-0300.md
@@ -12344,7 +12344,7 @@ current_scope:
     generalization: supplementary only; not rerun or included
     quality_claim: false
     baseline_promoted: false
-  next_action: Independent VTCM HVX/HMX and DDR DMA bandwidth characterization
+  next_action: Await user direction; EXP0310 bandwidth archived, no baseline promoted
   latest_f16_baseline_synthesis:
     report: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/REPORT.md
     a16_discussion: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/A16_DOWN_DISCUSSION.md
@@ -12765,7 +12765,7 @@ current_scope:
       exceedsuint32 shared-offset ABI
     named_dataset_measurements_completed: false
     baseline_promotion: No additional automatic promotion
-  stage: hvx_r4_four_model_side_ablation
+  stage: standalone_bandwidth_characterization_completed
   latest_long_prefill_migration:
     experiment: EXP-0296
     execution_state: completed
@@ -14501,7 +14501,7 @@ current_scope:
     interpretation: Combined FP arithmetic+fused QDQ; not QDQ-only cost or overlapped
       production critical-path share
     companion: L32-0063
-  device_owner: EXP-0310
+  device_owner: null
   floating_intermediate_motivation_06b:
     experiment: EXP-0306
     execution_state: completed
@@ -14983,3 +14983,67 @@ current_scope:
     four_model_report: /mnt/d/llm_exp/results/paper-hvx-r4-four-model-20260923/REPORT.md
     r3_excluded: L32-0071 changed Q/K boundary, not a controlled R4-only comparison
     retained_llama1b_experiment: L32-0070
+  latest_standalone_bandwidth:
+    experiment: EXP-0310
+    execution_state: completed
+    local_gate: pass
+    evidence_validity: valid
+    adoption_status: not_requested
+    baseline_promoted: false
+    source_head: 1eb5abc4b7b9c60e9b37cccedd27a780f8d1213f
+    measured_source: 3ee9dffcf5159d82f03dbba1e7e2ab5619627a1f
+    report: docs/experiments/EXP-0310-RESULTS.md
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0310
+    evidence_ledger_sha256: 779c7ccdadd05c5fda522a3ffee85bf9636413b54172cdd36067ffd7b8736dca
+    device_owner: null
+    scope: Standalone V79 memory microbenchmarks; no model or recipe change; measured
+      sustained ceilings, not verified theoretical bus limits
+    formal_configs: 15
+    formal_sessions_per_config: 3
+    formal_retained_rounds_per_session: 10
+    results_GBps:
+      hvx_read_1:
+        median: 135.16679957120797
+        best: 135.16702112525303
+      hvx_read_2:
+        median: 270.32252191224217
+        best: 270.32606652712735
+      hvx_read_4:
+        median: 540.6370686632138
+        best: 540.644157683835
+      hvx_read_6:
+        median: 810.9542738230613
+        best: 810.9609197254292
+      hvx_read_6_skew:
+        median: 810.9502863339255
+        best: 810.9622489189743
+      hvx_write_6:
+        median: 810.6280939395134
+        best: 810.728377936427
+      hvx_copy_6:
+        median: 810.6187973465233
+        best: 810.7257210867567
+      hmx_f16_32:
+        median: 1060.1539995183264
+        best: 1060.1653574755571
+      hmx_f16_4:
+        median: 1060.1539995183264
+        best: 1060.1585426720148
+      hmx_u8s8:
+        median: 928.9740181656598
+        best: 928.9833206269573
+      hmx_u8s4:
+        median: 774.1440461437937
+        best: 774.156643272892
+      dma_1m_x8:
+        median: 63.33179230817416
+        best: 64.38507358243075
+      dma_2m_x4:
+        median: 63.28282011528947
+        best: 63.79049175553599
+      dma_4m_x2:
+        median: 63.47115371250053
+        best: 64.06613947232667
+      dma_cached_1m_x8:
+        median: 37.60920507305626
+        best: 37.72019950873347

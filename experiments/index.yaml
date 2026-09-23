@@ -30092,12 +30092,77 @@ experiments:
   title: Standalone V79 memory bandwidth microbenchmarks
   approval_ref: 'User2026-09-23: design and measure maximum VTCM to HMX/HVX and DRAM
     to VTCM bandwidth'
-  execution_state: running
-  local_gate: pending
-  evidence_validity: pending
+  execution_state: completed
+  local_gate: pass
+  evidence_validity: valid
   adoption_status: not_requested
   record: docs/experiments/EXP-0310.md
   runtime:
     source_branch: codex/exp-0310-peak-bandwidth
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    device_owner: EXP-0310
+    device_owner: null
+  full_profiling_report: docs/experiments/EXP-0310-RESULTS.md
+  results:
+    experiment: EXP-0310
+    execution_state: completed
+    local_gate: pass
+    evidence_validity: valid
+    adoption_status: not_requested
+    baseline_promoted: false
+    source_head: 1eb5abc4b7b9c60e9b37cccedd27a780f8d1213f
+    measured_source: 3ee9dffcf5159d82f03dbba1e7e2ab5619627a1f
+    report: docs/experiments/EXP-0310-RESULTS.md
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0310
+    evidence_ledger_sha256: 779c7ccdadd05c5fda522a3ffee85bf9636413b54172cdd36067ffd7b8736dca
+    device_owner: null
+    scope: Standalone V79 memory microbenchmarks; no model or recipe change; measured
+      sustained ceilings, not verified theoretical bus limits
+    formal_configs: 15
+    formal_sessions_per_config: 3
+    formal_retained_rounds_per_session: 10
+    results_GBps:
+      hvx_read_1:
+        median: 135.16679957120797
+        best: 135.16702112525303
+      hvx_read_2:
+        median: 270.32252191224217
+        best: 270.32606652712735
+      hvx_read_4:
+        median: 540.6370686632138
+        best: 540.644157683835
+      hvx_read_6:
+        median: 810.9542738230613
+        best: 810.9609197254292
+      hvx_read_6_skew:
+        median: 810.9502863339255
+        best: 810.9622489189743
+      hvx_write_6:
+        median: 810.6280939395134
+        best: 810.728377936427
+      hvx_copy_6:
+        median: 810.6187973465233
+        best: 810.7257210867567
+      hmx_f16_32:
+        median: 1060.1539995183264
+        best: 1060.1653574755571
+      hmx_f16_4:
+        median: 1060.1539995183264
+        best: 1060.1585426720148
+      hmx_u8s8:
+        median: 928.9740181656598
+        best: 928.9833206269573
+      hmx_u8s4:
+        median: 774.1440461437937
+        best: 774.156643272892
+      dma_1m_x8:
+        median: 63.33179230817416
+        best: 64.38507358243075
+      dma_2m_x4:
+        median: 63.28282011528947
+        best: 63.79049175553599
+      dma_4m_x2:
+        median: 63.47115371250053
+        best: 64.06613947232667
+      dma_cached_1m_x8:
+        median: 37.60920507305626
+        best: 37.72019950873347
