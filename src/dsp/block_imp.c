@@ -302,7 +302,6 @@ struct qbh_block_buffers {
     uint8_t *projection_scales;
     uint8_t *gate_up_scale_cache;
     uint8_t *sp2_high, *sp2_scratch;
-    uint8_t *butterfly_activation;
     volatile uint32_t *sp2_prefill_ready;
     uint8_t *w4u8_silu_lut;
     uint8_t *w4u8_gather_scratch;
@@ -890,14 +889,10 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
      * W4's K8192 arena fits through DMA sizing and disjoint-stage reuse. */
     uint32_t score_elements = QBH_BLOCK_SCORE_ELEMENTS;
     (void)scan_mode;
-    /* EXP-0309: Qwen1.7's 28-layer KV atlas leaves no extra FP16 plane.
-     * In R4-only MLP, K/V/scores/probability/attention_concat are all dead.
-     * Their contiguous region holds [64,6144] FP16 SwiGLU while q retains
-     * the live Gate/Up input. No attention/cache task remains outstanding. */
 #if !defined(QBH_QWEN_06B) && !defined(QBH_MODEL_LLAMA32)
-    const uint32_t butterfly_reuse = variant == QBH_BLOCK_W4U8 && r4_mode == 4U;
+    const uint32_t r4_hmx_alignment = r4_mode && r4_mode!=4U;
 #else
-    const uint32_t butterfly_reuse = 0U;
+    const uint32_t r4_hmx_alignment = r4_mode;
 #endif
     uint32_t element_bytes = variant == QBH_BLOCK_W4U8 ? 1U : 2U;
     uint32_t hidden_bytes = QBH_BLOCK_M * QBH_BLOCK_HIDDEN * element_bytes;
@@ -1014,7 +1009,12 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
 #endif
             intermediate_bytes, QBH_HMX_FP16_TILE_BYTES);
     } else {
+#if !defined(QBH_QWEN_06B) && !defined(QBH_MODEL_LLAMA32)
+        buffers->gate = qbh_arena_alloc_aligned(&arena, intermediate_bytes,
+            r4_mode==4U ? QBH_HMX_FP16_TILE_BYTES : QBH_BLOCK_ALIGNMENT);
+#else
         buffers->gate = qbh_arena_alloc(&arena, intermediate_bytes);
+#endif
         buffers->up = qbh_arena_alloc(&arena, intermediate_bytes);
     }
     if (mlp_mode == QBH_BLOCK_MLP_CROUTON_NATIVE_BATCH8) {
@@ -1024,7 +1024,16 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
                 QBH_BLOCK_HMX_OUTPUT_MAX_BYTES,
             QBH_HMX_FP16_TILE_BYTES);
     } else {
+#if !defined(QBH_QWEN_06B) && !defined(QBH_MODEL_LLAMA32)
+        /* EXP-0309: full R4 publishes quantized Down input only after every
+         * Gate/Up/SwiGLU worker joins. Gate storage is then dead. The live
+         * Gate/Up input has a nonzero offset in the q-based phase arena;
+         * do not reuse the attention region while those consumers run. */
+        buffers->middle = r4_mode==4U ? buffers->gate :
+            qbh_arena_alloc(&arena, intermediate_bytes);
+#else
         buffers->middle = qbh_arena_alloc(&arena, intermediate_bytes);
+#endif
     }
 #ifdef QBH_MODEL_LLAMA32
     /* Input/post-norm consumers finish before Down; next-layer norm starts only
@@ -1036,12 +1045,8 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
     buffers->down = qbh_arena_alloc(&arena, hidden_bytes);
     buffers->hmx_activation = qbh_arena_alloc_aligned(
         &arena, QBH_BLOCK_M * QBH_BLOCK_MAX_K *
-            (fp32_residual && (!r4_mode || butterfly_reuse) ? 1U : (uint32_t)sizeof(uint16_t)),
-        r4_mode && !butterfly_reuse ? 32768U : QBH_HMX_FP16_TILE_BYTES);
-    buffers->butterfly_activation = butterfly_reuse ? buffers->k : buffers->hmx_activation;
-    if (butterfly_reuse &&
-        (uintptr_t)buffers->attention_projection - (uintptr_t)buffers->k <
-            (size_t)QBH_BLOCK_M * QBH_BLOCK_INTERMEDIATE * sizeof(uint16_t)) return -1;
+            (fp32_residual && !r4_mode ? 1U : (uint32_t)sizeof(uint16_t)),
+        r4_hmx_alignment ? 32768U : QBH_HMX_FP16_TILE_BYTES);
     buffers->compressed_weight = qbh_arena_alloc(
         &arena, QBH_BLOCK_MAX_K * QBH_HMX_OUTPUT_CHANNELS / 2U *
                     compressed_batch_factor);
@@ -1062,7 +1067,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
     }
     buffers->expanded_weight = qbh_arena_alloc_aligned(
         &arena, expanded_buffer_bytes,
-        r4_mode && !butterfly_reuse ? 32768U :
+        r4_hmx_alignment ? 32768U :
 #ifdef QBH_QWEN_06B
         (variant == QBH_BLOCK_W4U8 ? QBH_HMX_FP16_TILE_BYTES : 65536U)
 #else
@@ -1071,7 +1076,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         );
     buffers->expanded_weight_alt = qbh_arena_alloc_aligned(
         &arena, expanded_buffer_bytes,
-        r4_mode && !butterfly_reuse ? 32768U :
+        r4_hmx_alignment ? 32768U :
 #ifdef QBH_QWEN_06B
         (variant == QBH_BLOCK_W4U8 ? QBH_HMX_FP16_TILE_BYTES : 65536U)
 #else
@@ -10301,7 +10306,7 @@ static int qbh_start_w4u8_gate_up_swiglu_stream(
         ++pool->u8_swiglu_generation;
     }
     pool->u8_r4_act = header->dense_r4_mode && header->dense_r4_optimization>=2U
-        ? (__fp16 *)(header->dense_r4_mode==4U?buffers->butterfly_activation:buffers->hmx_activation) : NULL;
+        ? (__fp16 *)buffers->hmx_activation : NULL;
     if(pool->u8_r4_act) {
         for(uint32_t v=0;v<32768U/128U;++v)((HVX_Vector *)pool->u8_r4_act)[v]=Q6_V_vzero();
         asm volatile("barrier" ::: "memory");
@@ -15547,7 +15552,7 @@ static int qbh_llama_sp2_prefill_start(struct qbh_block_w4f16_pool *pool,
     pool->u8_swiglu_gate=gate;pool->u8_swiglu_up=up;pool->u8_swiglu_middle=middle;
     pool->u8_sp2_high=QBH_SP2(pool->attention_header)?buffers->sp2_high:NULL;
     pool->sp2_pipelined_gather=QBH_SP2(pool->attention_header)>=6U;
-    pool->u8_r4_act=pool->attention_header->dense_r4_mode?(__fp16*)(pool->attention_header->dense_r4_mode==4U?buffers->butterfly_activation:buffers->hmx_activation):NULL;
+    pool->u8_r4_act=pool->attention_header->dense_r4_mode?(__fp16*)buffers->hmx_activation:NULL;
     pool->u8_swiglu_lut=(const uint16_t *)buffers->w4u8_silu_lut;
     pool->u8_swiglu_gather_scratch=buffers->w4u8_gather_scratch;
     pool->u8_swiglu_abort=0U;pool->sp2_prefill_stream=1U;pool->sp2_pipelined_gather=pipelined;
@@ -15577,7 +15582,7 @@ static int qbh_llama_swiglu_parallel(struct qbh_block_w4f16_pool *pool,
         if(pool->jobs[i].command_kind!=QBH_BLOCK_HVX_POOL_NONE)return -1;
     pool->u8_swiglu_gate=gate;pool->u8_swiglu_up=up;pool->u8_swiglu_middle=middle;
     pool->u8_sp2_high=QBH_SP2(pool->attention_header)?buffers->sp2_high:NULL;
-    pool->u8_r4_act=pool->attention_header->dense_r4_mode?(__fp16*)(pool->attention_header->dense_r4_mode==4U?buffers->butterfly_activation:buffers->hmx_activation):NULL;
+    pool->u8_r4_act=pool->attention_header->dense_r4_mode?(__fp16*)buffers->hmx_activation:NULL;
     pool->u8_swiglu_lut=(const uint16_t *)buffers->w4u8_silu_lut;
     pool->u8_swiglu_gather_scratch=buffers->w4u8_gather_scratch;
     pool->active_worker_count=2U;pool->extra_expand_worker_index=UINT32_MAX;
