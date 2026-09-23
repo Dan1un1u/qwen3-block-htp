@@ -46,7 +46,7 @@ static void hmx_run(uint8_t *v,struct bw_header *h){
  uint32_t step=h->stream*2048U,wb=h->stream*(h->mode==3?2048U:h->mode==4?1024U:512U);
  uint32_t chunks=h->bytes/step;
  if(h->mode==3){for(uint32_t i=0;i<h->bytes/2;i++){((uint16_t*)v)[i]=0x1c00;((uint16_t*)w)[i]=0x1c00;}qbh_hmx_fp16_init_unity_scale(bias);}
- else{memset(v,1,h->bytes);memset(w,h->mode==5?0x11:1,chunks*wb);for(unsigned n=0;n<32;n++){bias[n*2]=24U<<10;bias[n*2+1]=0;}}
+ else{memset(v,1,h->bytes);memset(w,h->mode==5?0x11:1,chunks*wb);for(unsigned n=0;n<32;n++){bias[n]=24U<<10;bias[n+32]=0;}}
  Q6_bias_mxmem2_A(bias);
  for(uint32_t r=0;r<h->rounds;r++){
  uint64_t t=HAP_perf_get_qtimer_count(),c=HAP_perf_get_pcycles();
@@ -78,7 +78,7 @@ int qbh_bandwidth_run(void *vtcm,uint32_t vbytes,uint32_t hmx,int fd,uint32_t si
  if(h->mode<3){
   if((uint64_t)h->workers*h->bytes*2U>vbytes)goto done;
   qurt_thread_t threads[MAXW];
-  for(uint32_t i=0;i<h->workers;i++){struct job *j=&jobs[i];memset(j,0,sizeof(*j));j->p=v+i*h->bytes*2U;j->out=j->p+h->bytes;j->h=h;j->id=i;memset(j->p,0xa5,h->bytes);memset(j->out,0,h->bytes);qurt_sem_init(&j->ready);qurt_sem_init(&j->go);qurt_sem_init(&j->done);qurt_thread_attr_t a;qurt_thread_attr_init(&a);qurt_thread_attr_set_name(&a,"bw-hvx");qurt_thread_attr_set_stack_addr(&a,stacks[i]);qurt_thread_attr_set_stack_size(&a,sizeof(stacks[i]));qurt_thread_attr_set_priority(&a,qurt_thread_get_priority(qurt_thread_get_id()));if(qurt_thread_create(&threads[i],&a,worker,j))goto done;}
+  for(uint32_t i=0;i<h->workers;i++){struct job *j=&jobs[i];memset(j,0,sizeof(*j));j->p=v+i*h->bytes*2U;j->out=j->p+h->bytes;j->h=h;j->id=i;memset(j->p,0xa5,h->bytes);memset(j->out,0,h->bytes);qurt_sem_init_val(&j->ready,0);qurt_sem_init_val(&j->go,0);qurt_sem_init_val(&j->done,0);qurt_thread_attr_t a;qurt_thread_attr_init(&a);qurt_thread_attr_set_name(&a,"bw-hvx");qurt_thread_attr_set_stack_addr(&a,stacks[i]);qurt_thread_attr_set_stack_size(&a,sizeof(stacks[i]));qurt_thread_attr_set_priority(&a,qurt_thread_get_priority(qurt_thread_get_id()));if(qurt_thread_create(&threads[i],&a,worker,j))goto done;}
   for(uint32_t i=0;i<h->workers;i++)qurt_sem_down(&jobs[i].ready);
   for(uint32_t r=0;r<h->rounds;r++){
    for(uint32_t i=0;i<h->workers;i++)qurt_sem_up(&jobs[i].go);
