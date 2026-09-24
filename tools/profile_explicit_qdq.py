@@ -72,7 +72,8 @@ def execute(a,tag,arm,repeat=1,audit=False):
    layer=x[f'slice_layer_{i}'];assert layer['status']==3 and layer['layer_unattributed_ticks']==0
    if audit:
     got=int(layer['output_hash'],16) if isinstance(layer['output_hash'],str) else layer['output_hash']
-    checks.append(dict(step=step,layer=i,exact=got==gold['hashes'][i][step],got=got,expected=gold['hashes'][i][step]))
+    expected=gold['hashes'][i][step];expected=int(expected,16) if isinstance(expected,str) else expected
+    checks.append(dict(step=step,layer=i,exact=got==expected,got=got,expected=expected))
   assert (t['selected_token_id'],t['selected_logit_half_bits'])==(g['token'],g['code']),(tag,j,'head',t,g)
   if arm=='split' and step==0:
    assert all(x[k]>0 for k in COUNTERS)
