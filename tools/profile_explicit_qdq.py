@@ -39,18 +39,18 @@ def execute(a,tag,arm,repeat=1,audit=False):
  if (d/'validated.json').exists():return read(d/'validated.json')
  assert not (d/'exit.json').exists(),'Retain failure; use a fresh tag'
  d.mkdir(parents=True,exist_ok=True)
- base=read(OLD/'phases-formal-00/protocol.json')['command']
+ base=read(OLD/ORIGINAL_PHASE/'protocol.json')['command']
  prefix,args=base.split(' ./qwen3_block_cli ',1)
  env=dict(t.split('=',1) for t in shlex.split(prefix.split(' && ')[1]))
  argv=shlex.split(args);binary=REMOTE+f'/binaries-{a.layers}-{a.version}'
  for k in ['QBH_EVAL_FILE','QBH_GENERATION_AUDIT_DIR','QBH_GENERATION_BOUNDARY_AUDIT']:env.pop(k,None)
  env.update(LD_LIBRARY_PATH=binary,DSP_LIBRARY_PATH=binary,ADSP_LIBRARY_PATH=binary,QBH_FP_QDQ_SPLIT=str(int(arm=='split')))
- raw=(OLD/'phases-formal-00/trajectory.bin').read_bytes();stored=struct.unpack('<'+'I'*(len(raw)//4),raw);fixture=dict(prompt=list(stored[7:71]),fixed=list(stored[71:73]));words=[0x51424556,2,repeat,69]
+ raw=(OLD/ORIGINAL_PHASE/'trajectory.bin').read_bytes();stored=struct.unpack('<'+'I'*(len(raw)//4),raw);fixture=dict(prompt=list(stored[7:71]),fixed=list(stored[71:73]));words=[0x51424556,2,repeat,69]
  for j in range(repeat):words += [j,3,2]+fixture['prompt']+fixture['fixed'][:2]
  ef=d/'trajectory.bin';ef.write_bytes(struct.pack('<'+'I'*len(words),*words));er=binary+'/'+tag+'-trajectory.bin';env['QBH_EVAL_FILE']=er
  if audit:env.update(QBH_GENERATION_BOUNDARY_AUDIT='1',QBH_GENERATION_AUDIT_DIR=REMOTE+'/'+tag)
  cmd='cd '+binary+' && '+' '.join(k+'='+shlex.quote(v) for k,v in env.items())+' ./qwen3_block_cli '+' '.join(shlex.quote(v) for v in argv)
- save(d/'protocol.json',dict(command=cmd,layers=a.layers,repeat=repeat,arm=arm,audit=audit,seal_sha256=sha(R/f'binaries-{a.layers}-{a.version}/seal.json'),old_protocol_sha256=sha(OLD/'phases-formal-00/protocol.json'),reference_sha256=sha(OLD/'reference/summary.json')))
+ save(d/'protocol.json',dict(command=cmd,layers=a.layers,repeat=repeat,arm=arm,audit=audit,seal_sha256=sha(R/f'binaries-{a.layers}-{a.version}/seal.json'),old_protocol_sha256=sha(OLD/ORIGINAL_PHASE/'protocol.json'),reference_sha256=sha(OLD/'reference/summary.json')))
  adb('push',win(ef),er)
  if audit:adb('shell','mkdir -p '+env['QBH_GENERATION_AUDIT_DIR'])
  z=adb('shell',cmd,check=False)
@@ -95,6 +95,7 @@ if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('action',choices=['stage','audit','run']);p.add_argument('--model',choices=['1B','3B'],default='1B');p.add_argument('--layers',type=int,default=16);p.add_argument('--version',default='a01');p.add_argument('--arm',choices=['fused','split'],default='split');p.add_argument('--tag',default='audit');a=p.parse_args()
  R=Path('/mnt/d/llm_exp/results/llama32-htp/l32-0073')/a.model;REMOTE='/data/local/tmp/llama32-htp/l32-0073/'+a.model
  OLD=Path('/mnt/d/llm_exp/results/llama32-htp')/('l32-0063' if a.model=='1B' else 'l32-0064')
+ ORIGINAL_PHASE='isolated-phases-formal-00' if a.model=='1B' else 'phases-formal-00'
  if a.action=='stage':stage(a)
  elif a.action=='audit':execute(a,a.tag,a.arm,audit=True)
  else:run(a)
