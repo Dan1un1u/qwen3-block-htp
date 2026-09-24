@@ -4818,7 +4818,7 @@ current_scope:
     device_owner: null
     quality_claim: false
     baseline_promoted: false
-  device_owner: null
+  device_owner: L32-0073
   fp_island_motivation_3b:
     experiment: L32-0064
     execution_state: completed
