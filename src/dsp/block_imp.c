@@ -497,6 +497,7 @@ struct qbh_block_w4f16_pool {
     volatile uint32_t next_attention_task;
     uint32_t attention_task_base;
     uint32_t fp_island_phase;
+    uint32_t fp_qdq_swiglu_phase,fp_qdq_swiglu_batch;
     uint32_t attention_task_count;
     volatile uint32_t next_attention_softmax_task;
     volatile uint32_t next_attention_av_task;
@@ -2231,7 +2232,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (header->w4f16_decode_opt && header->variant==QBH_BLOCK_W4U8) ||
         header->paper_format_disable > 31U ||
         ((header->paper_format_disable&4U) && (!QBH_FP32_RESIDUAL(header) || QBH_SP2(header)!=8U || header->dense_r3_mode || header->dense_r4_mode)) ||
-        ((header->paper_format_disable & 4U) && (header->paper_format_disable & 3U)) || header->paper_pipeline_disable > 31U ||
+        ((header->paper_format_disable & 4U) && (header->paper_format_disable & 3U)) || header->paper_pipeline_disable > 31U || header->fp_qdq_split > 1U ||
         header->wide_score_mode > 7U || header->prefix_kv_mode > 2U ||
         (header->prefix_kv_mode && header->variant != QBH_BLOCK_W4U8) ||
         (header->wide_score_mode && (header->variant != QBH_BLOCK_W4U8 || (header->kv_cache_capacity > 128U && !header->long_prompt_tokens))) ||
@@ -4705,6 +4706,27 @@ static void fp63_swiglu(const struct qbh_block_header *h,const uint8_t *g,
 }
 #endif
 static void qbh_llama_swiglu_worker(struct qbh_block_w4f16_pool *pool,uint32_t index) {
+#ifdef QBH_FP_ISLANDS
+    if(pool->attention_header->fp_qdq_split){
+        const struct qbh_block_header *h=pool->attention_header;
+        const uint32_t tile=pool->fp_qdq_swiglu_batch+index;
+        if(tile>=QBH_BLOCK_INTERMEDIATE/32U)return;
+        const uint32_t count=h->logical_m==64U?2048U:32U;
+        const float pars[5]={h->qparams[QBH_BLOCK_QP_GATE].scale,
+          (float)h->qparams[QBH_BLOCK_QP_GATE].zero_point,h->qparams[QBH_BLOCK_QP_UP].scale,
+          (float)h->qparams[QBH_BLOCK_QP_UP].zero_point,h->qparams[QBH_BLOCK_QP_MIDDLE].scale};
+        uint8_t *lo=pool->u8_swiglu_middle+(size_t)tile*2048U;
+        uint8_t *hi=pool->u8_sp2_high+(size_t)tile*2048U;
+        if(count==32U && pool->fp_qdq_swiglu_phase==2U){
+          *(HVX_Vector *)lo=Q6_V_vzero();*(HVX_Vector *)hi=Q6_Vb_vsplat_R(128);
+        }
+        qbh_fp_island_swiglu_phase(pool->fp_qdq_swiglu_phase,
+          pool->u8_swiglu_gate+(size_t)tile*2048U,pool->u8_swiglu_up+(size_t)tile*2048U,
+          lo,hi,count,pars,(float *)(pool->attention_buffers->normalized+(size_t)index*16384U));
+        return;
+    }
+#endif
+
     for(uint32_t tile=index;tile<QBH_BLOCK_INTERMEDIATE/32U;tile+=3U) {
         if(pool->sp2_prefill_stream) {
             while(!pool->u8_swiglu_ready[tile/32U]) {
@@ -14838,9 +14860,18 @@ static void qbh_attention_u8_pool_run_tasks(
         }
 
         }
-        if (!split || pool->fp_island_phase == 1U) {
+        if (!split || pool->fp_island_phase == 1U ||
+            (header->fp_qdq_split && (pool->fp_island_phase==2U || pool->fp_island_phase==3U))) {
         start = HAP_perf_get_qtimer_count();
-        if (header->wide_score_mode==7U) {
+        if (header->fp_qdq_split && split) {
+            /* MLP gate is phase-dead. One FP32 score/probability tensor per
+             * active group; maximum batch occupancy fits every model's gate. */
+            float *materialized=(float *)buffers->gate+
+                (size_t)(group%header->attention_hvx_contexts)*QBH_ATTENTION_Q_HEADS_PER_GROUP*64U*64U;
+            qbh_attention_fp32_softmax_phase(pool->fp_island_phase-1U,
+                score_group,probability_group,QBH_ATTENTION_Q_HEADS_PER_GROUP,64U,0U,64U,
+                config,materialized,(float *)softmax_scratch);
+        } else if (header->wide_score_mode==7U) {
             qbh_attention_fp32_softmax_native(score_group,probability_group,
                 QBH_ATTENTION_Q_HEADS_PER_GROUP,0U,64U,0U,64U,config,
                 (float *)softmax_scratch,NULL,telemetry_ptr);
@@ -14871,7 +14902,7 @@ static void qbh_attention_u8_pool_run_tasks(
             HAP_perf_get_qtimer_count() - start;
 
         }
-        if (!split || pool->fp_island_phase == 2U) {
+        if (!split || pool->fp_island_phase == (header->fp_qdq_split ? 4U : 2U)) {
         if (qbh_attention_u8_gqa_hmx_batch_enabled(
                 header->attention_pipeline_mode)) {
             if (qbh_attention_u8_pool_submit(
@@ -14955,7 +14986,7 @@ static void qbh_attention_u8_pool_run_tasks(
                     telemetry.probability_row_sum_max;
             }
         }
-        if (!split || pool->fp_island_phase == 2U)
+        if (!split || pool->fp_island_phase == (header->fp_qdq_split ? 4U : 2U))
             ++job->u8_attention_group_count;
     }
 }
@@ -15085,7 +15116,7 @@ static int qbh_hvx_pool_u8_attention(
         (QBH_BLOCK_KV_HEADS + header->attention_hvx_contexts - 1U) /
             header->attention_hvx_contexts : 1U;
     for (uint32_t batch = 0U; batch < batches; ++batch) {
-      for (uint32_t phase = 0U; phase < (split ? 3U : 1U); ++phase) {
+      for (uint32_t phase = 0U; phase < (split ? (header->fp_qdq_split ? 5U : 3U) : 1U); ++phase) {
         pool->fp_island_phase = phase;
         if (split) {
             pool->next_attention_task = batch * header->attention_hvx_contexts;
@@ -15104,8 +15135,15 @@ static int qbh_hvx_pool_u8_attention(
         qbh_w4f16_pool_wait(pool);
         main_job.u8_attention_hmx_queue_wait_ticks +=
             HAP_perf_get_qtimer_count() - wait_start;
-        if (split && phase == 1U)
-            header->attention_softmax_ticks += HAP_perf_get_qtimer_count() - phase_start;
+        if (split && (phase==1U || (header->fp_qdq_split && (phase==2U || phase==3U)))) {
+            const uint64_t elapsed=HAP_perf_get_qtimer_count()-phase_start;
+            header->attention_softmax_ticks+=elapsed;
+            if(header->fp_qdq_split){
+              if(phase==1U)header->fp_softmax_dq_ticks+=elapsed;
+              else if(phase==2U)header->fp_softmax_compute_ticks+=elapsed;
+              else header->fp_softmax_q_ticks+=elapsed;
+            }
+        }
         if (pool->attention_gqa_abort) return -1;
       }
     }
@@ -15585,6 +15623,35 @@ static int qbh_llama_swiglu_parallel(struct qbh_block_w4f16_pool *pool,
     pool->u8_r4_act=pool->attention_header->dense_r4_mode?(__fp16*)buffers->hmx_activation:NULL;
     pool->u8_swiglu_lut=(const uint16_t *)buffers->w4u8_silu_lut;
     pool->u8_swiglu_gather_scratch=buffers->w4u8_gather_scratch;
+#ifdef QBH_FP_ISLANDS
+    if(pool->attention_header->fp_qdq_split){
+        struct qbh_block_header *h=pool->attention_header;
+        const uint32_t contexts=h->logical_m==64U?3U:1U;
+        /* Normalized is dead after completed Gate/Up. Three 16KiB slots fit
+         * even Qwen0.6's smallest 128KiB allocation; no extra DDR/VTCM grant. */
+        if(h->logical_m!=64U && h->logical_m!=1U)return -1;
+        if(!QBH_SP2(h) || h->dense_r4_mode || !(h->paper_pipeline_disable&2U))return -1;
+        if(h->logical_m==1U)pool->u8_sp2_high=(h->paper_format_disable&4U)?buffers->sp2_high:middle+128U;
+        pool->extra_expand_worker_index=UINT32_MAX;
+        for(uint32_t tile=0;tile<QBH_BLOCK_INTERMEDIATE/32U;tile+=contexts){
+          pool->fp_qdq_swiglu_batch=tile;
+          for(uint32_t phase=0;phase<3U;++phase){
+            pool->fp_qdq_swiglu_phase=phase;pool->active_worker_count=contexts-1U;
+            const uint64_t st=HAP_perf_get_qtimer_count();
+            for(uint32_t i=0;i<contexts-1U;++i)pool->jobs[i].command_kind=QBH_BLOCK_HVX_POOL_LLAMA_SWIGLU;
+            asm volatile("barrier" ::: "memory");
+            for(uint32_t i=0;i<contexts-1U;++i)(void)qurt_sem_up(&pool->command_ready[i]);
+            qbh_llama_swiglu_worker(pool,contexts-1U);
+            if(contexts>1U)qbh_w4f16_pool_wait(pool);
+            const uint64_t elapsed=HAP_perf_get_qtimer_count()-st;
+            if(phase==0U)h->fp_swiglu_dq_ticks+=elapsed;
+            else if(phase==1U)h->fp_swiglu_compute_ticks+=elapsed;
+            else h->fp_swiglu_q_ticks+=elapsed;
+          }
+        }
+        pool->active_worker_count=0U;return 0;
+    }
+#endif
     pool->active_worker_count=2U;pool->extra_expand_worker_index=UINT32_MAX;
     for(uint32_t i=0;i<2U;++i)pool->jobs[i].command_kind=QBH_BLOCK_HVX_POOL_LLAMA_SWIGLU;
     asm volatile("barrier" ::: "memory");
@@ -15732,6 +15799,12 @@ static int qbh_run_w4u8_direct_n_mlp(
         else if(qbh_run_dense_r4(header,shared,buffers,worker,pool,middle_native)!=0) return -1;
         header->activation_ticks+=HAP_perf_get_qtimer_count()-start;
 #if defined(QBH_MODEL_LLAMA32) || defined(QBH_NATIVE_SP2)
+#ifdef QBH_FP_ISLANDS
+    } else if(header->fp_qdq_split) {
+        start=HAP_perf_get_qtimer_count();
+        if(qbh_llama_swiglu_parallel(pool,buffers,gate_native,up_native,middle_native)!=0)return -1;
+        header->activation_ticks+=HAP_perf_get_qtimer_count()-start;
+#endif
     } else if(prefill_direct!=0U && !stream_prefill
 #ifndef QBH_MODEL_LLAMA32
         && (QBH_SP2(header) || QBH_U8_PREFILL_OPT(header))

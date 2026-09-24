@@ -253,4 +253,8 @@ void qbh_attention_u8_probability_map_from_active_histogram(
     uint8_t probability_by_raw[256],
     uint32_t *probability_sum, uint32_t *score_saturation_count);
 
+/* EXP0312 diagnostic: phase0 centered-score DQ,1 exp/reduce/normalize,2 Q/native store. */
+void qbh_attention_fp32_softmax_phase(uint32_t phase,const uint8_t *scores,
+ uint8_t *probability,uint32_t heads,uint32_t rows,uint32_t past,uint32_t padded,
+ const struct qbh_attention_config *config,float *materialized,float *scratch);
 #endif

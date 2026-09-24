@@ -3228,6 +3228,14 @@ static void qbh_print_replay_profile(
     QBH_REPLAY_PROFILE_U32(wide_score_mode);
     QBH_REPLAY_PROFILE_U32(paper_format_disable);
     QBH_REPLAY_PROFILE_U32(paper_pipeline_disable);
+    QBH_REPLAY_PROFILE_U32(fp_qdq_split);
+    QBH_REPLAY_PROFILE_U64(fp_softmax_dq_ticks);
+    QBH_REPLAY_PROFILE_U64(fp_softmax_compute_ticks);
+    QBH_REPLAY_PROFILE_U64(fp_softmax_q_ticks);
+    QBH_REPLAY_PROFILE_U64(fp_swiglu_dq_ticks);
+    QBH_REPLAY_PROFILE_U64(fp_swiglu_compute_ticks);
+    QBH_REPLAY_PROFILE_U64(fp_swiglu_q_ticks);
+
 #if defined(QBH_MODEL_LLAMA32) || defined(QBH_NATIVE_SP2)
     QBH_REPLAY_PROFILE_U32(fp32_residual);
 #endif
@@ -7029,8 +7037,9 @@ int main(int argc, char **argv) {
 #endif
     header->paper_format_disable=getenv("QBH_PAPER_FORMAT_DISABLE")?(uint32_t)atoi(getenv("QBH_PAPER_FORMAT_DISABLE")):0U;
     header->paper_pipeline_disable=getenv("QBH_PAPER_PIPELINE_DISABLE")?(uint32_t)atoi(getenv("QBH_PAPER_PIPELINE_DISABLE")):0U;
+    header->fp_qdq_split=getenv("QBH_FP_QDQ_SPLIT")?(uint32_t)atoi(getenv("QBH_FP_QDQ_SPLIT")):0U;
     if(header->paper_format_disable>31U ||
-       ((header->paper_format_disable&4U) && (header->paper_format_disable&3U)) || header->paper_pipeline_disable>31U ||
+       ((header->paper_format_disable&4U) && (header->paper_format_disable&3U)) || header->paper_pipeline_disable>31U || header->fp_qdq_split>1U ||
        ((header->paper_format_disable || header->paper_pipeline_disable) &&
         (!qbh_host_fp32_residual() || header->sp2_mode!=8U || dense_r3_mode))) return 2;
     header->wide_score_mode=wide_score_mode;

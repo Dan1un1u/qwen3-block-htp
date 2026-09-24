@@ -13,9 +13,9 @@
 #define QBH_SP2(h) ((h)->sp2_mode)
 #elif defined(QBH_NATIVE_SP2)
 #ifdef QBH_QWEN_06B
-#define QBH_BLOCK_ABI_VERSION UINT32_C(138)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(139)
 #else
-#define QBH_BLOCK_ABI_VERSION UINT32_C(135)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(136)
 #endif
 #define QBH_SP2(h) ((h)->sp2_mode)
 #else
@@ -963,6 +963,7 @@ struct qbh_block_header {
     uint8_t prefix_kv_u8[28][2048];
     uint32_t paper_format_disable; /* bits1/2: modular Norm/SP2; bit4: EXP0276 separate decode SP2 streams (exclusive). */
     uint32_t paper_pipeline_disable; /* bit1 QKV prep,2 GateUp,4 O,8 Down,16 cross prefetch. */
+    uint32_t fp_qdq_split; /* EXP0312: explicit materialized FP nonlinear phases. */
     uint32_t wide_score_mode; /* 0 legacy; 1 HVX wide; 2 untimed scalar wide oracle. */
 #if defined(QBH_MODEL_LLAMA32) || defined(QBH_NATIVE_SP2)
     uint32_t fp32_residual; /* EXP0269 native O/Down -> FP32 residual. */
@@ -1392,6 +1393,13 @@ struct qbh_block_header {
     uint64_t attention_qk_audit_ticks;
     uint64_t attention_softmax_ticks;
     uint64_t attention_softmax_audit_ticks;
+    uint64_t fp_softmax_dq_ticks;
+    uint64_t fp_softmax_compute_ticks;
+    uint64_t fp_softmax_q_ticks;
+    uint64_t fp_swiglu_dq_ticks;
+    uint64_t fp_swiglu_compute_ticks;
+    uint64_t fp_swiglu_q_ticks;
+
     uint64_t attention_av_pack_ticks;
     uint64_t attention_av_hmx_ticks;
     uint64_t attention_av_unpack_ticks;
