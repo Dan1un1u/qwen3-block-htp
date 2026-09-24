@@ -5,9 +5,9 @@ project:
   git_common_dir: /home/daniuniu/work/qwen3-block-htp/.git
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
-  updated_on: '2026-09-23'
+  updated_on: '2026-09-24'
 governance:
-  active_experiment: L32-0073
+  active_experiment: null
   next_experiment_number: 74
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -15,7 +15,7 @@ source_worktrees:
   /home/daniuniu/work/llama32-htp:
     branch: codex/llama32-no-rotation
     default_w4a8_rotation: none
-    recorded_head: 90353c4725ae8e53431944bd1cdb7dfbf457335d
+    recorded_head: 272298e3958e65bc9e9d89c0a7c9800fb8aad465
   /home/daniuniu/work/llama32-htp-rotation:
     branch: codex/llama32-rotation
     default_w4a8_rotation: r3
@@ -27,11 +27,11 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: hvx_r4_four_model_side_ablation_complete
+  stage: explicit_qdq_motivation_diagnostic_completed
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Four-model R4-only archive complete. Await user direction; no R3/default
-    promotion.
+  next_action: Await user direction; four-model explicit FP/QDQ appended in N, original
+    G retained. Production defaults unchanged.
   baseline_manifest: docs/PAPER_NO_ROTATION_BASELINES.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF_L32_0034.md
@@ -44,7 +44,7 @@ current_scope:
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0072
+  last_completed_experiment: L32-0073
   evidence_ledger_sha256: 599d86cf654b2b41526690c76ad1c0a251b5f206815a57ce4ae12b0024f94ac9
   formal_profiling_completed: true
   general_quantization_quality_accepted: false
@@ -1962,7 +1962,7 @@ current_scope:
     physical_gate: true
     quality_claim: false
     baseline_promoted: false
-  last_completed_source_commit: 68d9401265b8f77aa6de9d1d2135d5608b61e9db
+  last_completed_source_commit: 272298e3958e65bc9e9d89c0a7c9800fb8aad465
   prior_paper_ablation_campaign:
     execution_state: completed
     report: /mnt/d/llm_exp/results/paper-no-rotation-ablation-20260915/REPORT.md
@@ -2711,7 +2711,7 @@ current_scope:
     report: docs/experiments/L32-0049-RESULTS.md
     modules: docs/experiments/L32-0049-MODULES.md
   long_prefill_report: docs/experiments/L32-0053-RESULTS.md
-  device_execution_state: released_after_L32_0072_formal
+  device_execution_state: idle_explicit_qdq_completed
   latest_abc_a8_pair_measurement:
     id: L32-0054
     execution_state: completed
@@ -4818,7 +4818,7 @@ current_scope:
     device_owner: null
     quality_claim: false
     baseline_promoted: false
-  device_owner: L32-0073
+  device_owner: null
   fp_island_motivation_3b:
     experiment: L32-0064
     execution_state: completed
@@ -5168,6 +5168,638 @@ current_scope:
     conclusion: Four-worker M64 R4 core16 wall2.64931ms is9.93percent of historical
       ordinaryA8 E2E; M1 core16 wall0.160664ms is0.744percent. Does not support core
       slower than full inference; not measured incremental E2E overhead.
+  latest_explicit_qdq_motivation:
+    experiment: L32-0073
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: Exact historical reference and cross-arm fullmodel boundary plus physical
+      checks; descriptive speed, no quality gate
+    adoption_status: not_requested
+    baseline_promoted: false
+    quality_claim: false
+    device_owner: null
+    source_head: 272298e3958e65bc9e9d89c0a7c9800fb8aad465
+    source_branch: codex/llama32-no-rotation
+    shape:
+    - 64
+    - 1
+    scope: Prefill Softmax/SwiGLU explicit DQ/FP/Q; decode auxiliary, Softmax remains
+      fused
+    evidence: /mnt/d/llm_exp/results/llama32-htp/l32-0073
+    evidence_ledger_sha256: 46defe33954e792ce3ccf9e4fd1cae55908363f3ccee6d5840b921a2fba3b032
+    evidence_files: 832
+    evidence_bytes: 175593575
+    report: docs/experiments/L32-0073-RESULTS.md
+    full_profiling_report: docs/experiments/L32-0073-RESULTS.md
+    short_rounds: 5
+    formal_rounds: 10
+    in_rpc_repeats: 10
+    workbook:
+      input_sha256: 15e7f26fa255afcd7f4290b04d296200efd83c21ac5206911392d3fc9dcf019b
+      output_sha256: 08f3d7ebcfc4040536229358a93b27fffe0f4e4d20837e0848e10c4092758ccb
+      original_sheet_count: 13
+      new_sheet: N_FP与QDQ拆分
+      new_sheet_part: xl/worksheets/sheet14.xml
+      changed_original_parts:
+      - '[Content_Types].xml'
+      - docProps/app.xml
+      - xl/_rels/workbook.xml.rels
+      - xl/styles.xml
+      - xl/workbook.xml
+      all_original_sheet_parts_byte_identical: true
+      all_original_style_records_preserved: true
+      output: C:\Users\35961\.codex\visualizations\2026\09\24\explicit-qdq\outputs\explicit-qdq\HTP硬件实验总表_重建.xlsx
+      new_sheet_formulas_verified: 200
+      new_sheet_no_cached_errors: true
+      source_data_reconciled: true
+      desktop_saved: C:\Users\35961\Desktop\HTP硬件实验总表_重建.xlsx
+      archive: D:\llm_exp\results\paper-explicit-qdq-20260924
+      saved_at: '2026-09-24T04:11:04.376192+00:00'
+    models:
+      Llama3.2-1B:
+        modes:
+          prefill:
+            fused:
+              host_ms: 47.58241763
+              host_ci95_ms:
+              - 47.40760200249999
+              - 47.790492724249994
+              tps: 1345.034640687298
+              modules_ms:
+                I/O、metadata: 0.11819739583333333
+                Input RMSNorm: 1.3422859375
+                QKV + Q/K preparation: 3.853307291666667
+                QK–Softmax–AV: 9.448278125
+                O projection: 1.2072020833333332
+                Post-attention residual＋RMSNorm: 1.3108005208333333
+                Gate/Up＋SwiGLU: 22.0322875
+                Down: 3.03465
+                Final residual: 0.0020015625
+                KV carrier conversion: 0.026713541666666667
+                KV append DMA: 0.11201979166666667
+                Block orchestration: 0.0263453125
+                Layer bookkeeping: 0.013531770833333333
+                Stage-boundary bookkeeping: 0.0058140625
+                DSP unattributed: 0.0
+                Runtime setup/teardown: 0.08776145833333333
+                Embedding: 0.05610520833333334
+                Final model RMSNorm: 0.05848177083333333
+                LM head＋greedy（不含 final norm）: 3.3330953125
+                Host-DSP boundary: 1.5135389841666664
+              phases_ms:
+                fp_softmax_dq_ticks: 0.0
+                fp_softmax_compute_ticks: 0.0
+                fp_softmax_q_ticks: 0.0
+                fp_swiglu_dq_ticks: 0.0
+                fp_swiglu_compute_ticks: 0.0
+                fp_swiglu_q_ticks: 0.0
+                activation_ticks: 17.043242708333334
+                attention_softmax_ticks: 3.153220833333333
+              peak_vtcm: 8098272
+              round_wall_ms:
+              - 47.19310409999999
+              - 47.38309869999999
+              - 47.492489500000005
+              - 47.5209897
+              - 47.6854791
+              - 47.8883696
+              - 47.3562603
+              - 48.291202999999996
+              - 47.309624899999996
+              - 47.7035574
+              exclusive_plot_ms:
+                I/O、metadata: 0.11819739583333333
+                Input RMSNorm: 1.3422859375
+                QKV + Q/K preparation: 3.853307291666667
+                O projection: 1.2072020833333332
+                Post-attention residual＋RMSNorm: 1.3108005208333333
+                Down: 3.03465
+                Final residual: 0.0020015625
+                KV carrier conversion: 0.026713541666666667
+                KV append DMA: 0.11201979166666667
+                Block orchestration: 0.0263453125
+                Layer bookkeeping: 0.013531770833333333
+                Stage-boundary bookkeeping: 0.0058140625
+                DSP unattributed: 0.0
+                Runtime setup/teardown: 0.08776145833333333
+                Embedding: 0.05610520833333334
+                Final model RMSNorm: 0.05848177083333333
+                LM head＋greedy（不含 final norm）: 3.3330953125
+                Host-DSP boundary: 1.5135389841666664
+                Gate/Up matrix pipeline: 4.9890447916666645
+                QK/AV and attention preparation: 6.295057291666667
+                FP Softmax + fused QDQ: 3.153220833333333
+                FP SwiGLU + fused QDQ: 17.043242708333334
+            split:
+              host_ms: 58.48910097
+              host_ci95_ms:
+              - 58.377884126999994
+              - 58.604046190000005
+              tps: 1094.220956359487
+              modules_ms:
+                I/O、metadata: 0.11961979166666666
+                Input RMSNorm: 1.3418140625000001
+                QKV + Q/K preparation: 3.851975520833333
+                QK–Softmax–AV: 9.754245833333332
+                O projection: 1.2024807291666668
+                Post-attention residual＋RMSNorm: 1.3102348958333332
+                Gate/Up＋SwiGLU: 32.72951302083334
+                Down: 3.0382619791666667
+                Final residual: 0.001971354166666667
+                KV carrier conversion: 0.026625
+                KV append DMA: 0.11202135416666667
+                Block orchestration: 0.025981770833333334
+                Layer bookkeeping: 0.013204166666666668
+                Stage-boundary bookkeeping: 0.005594270833333333
+                DSP unattributed: 0.0
+                Runtime setup/teardown: 0.08592395833333333
+                Embedding: 0.056186979166666665
+                Final model RMSNorm: 0.05847760416666667
+                LM head＋greedy（不含 final norm）: 3.3608802083333336
+                Host-DSP boundary: 1.39408847
+              phases_ms:
+                fp_softmax_dq_ticks: 0.8063276041666666
+                fp_softmax_compute_ticks: 2.1326447916666664
+                fp_softmax_q_ticks: 0.5190838541666667
+                fp_swiglu_dq_ticks: 4.985998958333333
+                fp_swiglu_compute_ticks: 16.153431770833333
+                fp_swiglu_q_ticks: 6.5267125
+                activation_ticks: 27.7414703125
+                attention_softmax_ticks: 3.45805625
+              peak_vtcm: 8098272
+              round_wall_ms:
+              - 58.57744799999999
+              - 58.6221925
+              - 58.231802200000004
+              - 58.3998957
+              - 58.26977579999999
+              - 58.5430832
+              - 58.64328650000001
+              - 58.3129479
+              - 58.456536400000005
+              - 58.8340415
+              fp_ms: 18.2860765625
+              dq_ms: 5.7923265624999996
+              q_ms: 7.045796354166667
+              qdq_ms: 12.838122916666666
+              nonlinear_outer_ms: 0.0753270833333346
+              exclusive_plot_ms:
+                I/O、metadata: 0.11961979166666666
+                Input RMSNorm: 1.3418140625000001
+                QKV + Q/K preparation: 3.851975520833333
+                O projection: 1.2024807291666668
+                Post-attention residual＋RMSNorm: 1.3102348958333332
+                Down: 3.0382619791666667
+                Final residual: 0.001971354166666667
+                KV carrier conversion: 0.026625
+                KV append DMA: 0.11202135416666667
+                Block orchestration: 0.025981770833333334
+                Layer bookkeeping: 0.013204166666666668
+                Stage-boundary bookkeeping: 0.005594270833333333
+                DSP unattributed: 0.0
+                Runtime setup/teardown: 0.08592395833333333
+                Embedding: 0.056186979166666665
+                Final model RMSNorm: 0.05847760416666667
+                LM head＋greedy（不含 final norm）: 3.3608802083333336
+                Host-DSP boundary: 1.39408847
+                Gate/Up matrix pipeline: 4.988042708333339
+                QK/AV and attention preparation: 6.296189583333332
+                Softmax DQ / input preparation: 0.8063276041666666
+                Softmax FP nonlinear compute: 2.1326447916666664
+                Softmax Q / output publication: 0.5190838541666667
+                SwiGLU DQ / input preparation: 4.985998958333333
+                SwiGLU FP nonlinear compute: 16.153431770833333
+                SwiGLU Q / output publication: 6.5267125
+                SwiGLU phase bookkeeping: 0.0753270833333346
+            split_over_fused:
+              wall_ratio: 1.2292166704266725
+              ci95:
+              - 1.2227759538744523
+              - 1.2347536127686896
+          decode_one_step:
+            fused:
+              host_ms: 22.306881800000003
+              host_ci95_ms:
+              - 22.1855210425
+              - 22.434958636000005
+              tps: 44.82921499140233
+              modules_ms:
+                I/O、metadata: 0.11604739583333334
+                Input RMSNorm: 0.8919734375
+                QKV + Q/K preparation: 1.6567979166666666
+                QK–Softmax–AV: 4.701255208333333
+                O projection: 0.8906322916666667
+                Post-attention residual＋RMSNorm: 0.8767473958333333
+                Gate/Up＋SwiGLU: 5.547095833333334
+                Down: 2.574453125
+                Final residual: 0.0012203125
+                KV carrier conversion: 0.04846510416666667
+                KV append DMA: 0.09201927083333333
+                Block orchestration: 0.018658333333333332
+                Layer bookkeeping: 0.0100328125
+                Stage-boundary bookkeeping: 0.0013338541666666666
+                DSP unattributed: 0.0
+                Runtime setup/teardown: 0.05240104166666667
+                Embedding: 0.0017447916666666666
+                Final model RMSNorm: 0.05537604166666667
+                LM head＋greedy（不含 final norm）: 3.3222895833333332
+                Host-DSP boundary: 1.4483380499999998
+              phases_ms:
+                fp_softmax_dq_ticks: 0.0
+                fp_softmax_compute_ticks: 0.0
+                fp_softmax_q_ticks: 0.0
+                fp_swiglu_dq_ticks: 0.0
+                fp_swiglu_compute_ticks: 0.0
+                fp_swiglu_q_ticks: 0.0
+                activation_ticks: 0.9647354166666666
+                attention_softmax_ticks: 0.0
+              peak_vtcm: 8098272
+              round_wall_ms:
+              - 22.0945574
+              - 22.158307100000002
+              - 22.3140677
+              - 22.3333646
+              - 22.5316876
+              - 22.6862552
+              - 22.0534429
+              - 22.290130400000002
+              - 22.0926614
+              - 22.5143437
+            split:
+              host_ms: 22.88063434
+              host_ci95_ms:
+              - 22.813203236
+              - 22.948429094750004
+              tps: 43.7050819981768
+              modules_ms:
+                I/O、metadata: 0.11676406249999999
+                Input RMSNorm: 0.8920208333333333
+                QKV + Q/K preparation: 1.6574729166666666
+                QK–Softmax–AV: 4.697908854166667
+                O projection: 0.8859062500000001
+                Post-attention residual＋RMSNorm: 0.8768536458333334
+                Gate/Up＋SwiGLU: 6.232586979166666
+                Down: 2.5799119791666665
+                Final residual: 0.0012401041666666667
+                KV carrier conversion: 0.0484328125
+                KV append DMA: 0.09225885416666667
+                Block orchestration: 0.018200520833333334
+                Layer bookkeeping: 0.010019791666666666
+                Stage-boundary bookkeeping: 0.0013453125
+                DSP unattributed: 0.0
+                Runtime setup/teardown: 0.052556770833333336
+                Embedding: 0.0016989583333333331
+                Final model RMSNorm: 0.055307291666666675
+                LM head＋greedy（不含 final norm）: 3.3519588541666665
+                Host-DSP boundary: 1.3081895483333335
+              phases_ms:
+                fp_softmax_dq_ticks: 0.0
+                fp_softmax_compute_ticks: 0.0
+                fp_softmax_q_ticks: 0.0
+                fp_swiglu_dq_ticks: 0.3175010416666667
+                fp_swiglu_compute_ticks: 0.7907770833333333
+                fp_swiglu_q_ticks: 0.46537812500000003
+                activation_ticks: 1.6510447916666668
+                attention_softmax_ticks: 0.0
+              peak_vtcm: 8098272
+              round_wall_ms:
+              - 22.9329428
+              - 22.8304064
+              - 22.734526
+              - 22.783114599999998
+              - 22.735255200000005
+              - 23.0603332
+              - 22.9605312
+              - 22.842374900000003
+              - 22.9021667
+              - 23.0246924
+            split_over_fused:
+              wall_ratio: 1.0257208759675231
+              ci95:
+              - 1.019606166308473
+              - 1.0317809285029877
+        verification:
+          audits:
+          - file: audit-full-fused/hash-checks.json
+            checks: 32
+            normalized_numeric_match: true
+          - file: audit-full-split/hash-checks.json
+            checks: 32
+            normalized_numeric_match: true
+          - file: audit1-fused/hash-checks.json
+            checks: 2
+            normalized_numeric_match: true
+          - file: audit1-fused-a02/hash-checks.json
+            checks: 2
+            normalized_numeric_match: true
+          - file: audit1-split-a02/hash-checks.json
+            checks: 2
+            normalized_numeric_match: true
+          - file: audit3-split-a02/hash-checks.json
+            checks: 6
+            normalized_numeric_match: true
+          exact_cross_arm_payload_files: 36
+          formal_token_invocations: 400
+          short_token_invocations: 200
+          requested_and_granted_vtcm: 8388608
+          no_intermediate_ddr: true
+          no_spill: true
+          quality_claim: false
+          baseline_promoted: false
+        measured_source: 272298e3958e65bc9e9d89c0a7c9800fb8aad465
+      Llama3.2-3B:
+        modes:
+          prefill:
+            fused:
+              host_ms: 83.50376664000001
+              host_ci95_ms:
+              - 83.38923576825
+              - 83.63054577525
+              tps: 766.4324925115736
+              modules_ms:
+                I/O、metadata: 0.2401171875
+                Input RMSNorm: 3.718383854166667
+                QKV + Q/K preparation: 9.025056770833332
+                QK–Softmax–AV: 7.727572395833334
+                O projection: 3.1557182291666668
+                Post-attention residual＋RMSNorm: 3.5765885416666667
+                Gate/Up＋SwiGLU: 42.602843229166666
+                Down: 7.737771354166666
+                Final residual: 0.002921875
+                KV carrier conversion: 0.08117864583333334
+                KV append DMA: 0.2338916666666667
+                Block orchestration: 0.040448437500000003
+                Layer bookkeeping: 0.022966145833333333
+                Stage-boundary bookkeeping: 0.006724479166666668
+                DSP unattributed: 0.0
+                Runtime setup/teardown: 0.0892578125
+                Embedding: 0.074075
+                Final model RMSNorm: 0.08266510416666667
+                LM head＋greedy（不含 final norm）: 3.7932921875000005
+                Host-DSP boundary: 1.2922937233333334
+              phases_ms:
+                fp_softmax_dq_ticks: 0.0
+                fp_softmax_compute_ticks: 0.0
+                fp_softmax_q_ticks: 0.0
+                fp_swiglu_dq_ticks: 0.0
+                fp_swiglu_compute_ticks: 0.0
+                fp_swiglu_q_ticks: 0.0
+                activation_ticks: 29.815645833333335
+                attention_softmax_ticks: 4.196045312500001
+              peak_vtcm: 8360416
+              round_wall_ms:
+              - 83.55365120000002
+              - 83.3270522
+              - 83.6071199
+              - 83.38115599999999
+              - 83.2985154
+              - 83.73085409999999
+              - 83.3408229
+              - 83.5800935
+              - 83.90090619999998
+              - 83.31749500000001
+              exclusive_plot_ms:
+                I/O、metadata: 0.2401171875
+                Input RMSNorm: 3.718383854166667
+                QKV + Q/K preparation: 9.025056770833332
+                O projection: 3.1557182291666668
+                Post-attention residual＋RMSNorm: 3.5765885416666667
+                Down: 7.737771354166666
+                Final residual: 0.002921875
+                KV carrier conversion: 0.08117864583333334
+                KV append DMA: 0.2338916666666667
+                Block orchestration: 0.040448437500000003
+                Layer bookkeeping: 0.022966145833333333
+                Stage-boundary bookkeeping: 0.006724479166666668
+                DSP unattributed: 0.0
+                Runtime setup/teardown: 0.0892578125
+                Embedding: 0.074075
+                Final model RMSNorm: 0.08266510416666667
+                LM head＋greedy（不含 final norm）: 3.7932921875000005
+                Host-DSP boundary: 1.2922937233333334
+                Gate/Up matrix pipeline: 12.787197395833331
+                QK/AV and attention preparation: 3.5315270833333336
+                FP Softmax + fused QDQ: 4.196045312500001
+                FP SwiGLU + fused QDQ: 29.815645833333335
+            split:
+              host_ms: 103.72571452
+              host_ci95_ms:
+              - 103.63877950999999
+              - 103.81567678875
+              tps: 617.0118981215576
+              modules_ms:
+                I/O、metadata: 0.22705989583333333
+                Input RMSNorm: 3.713298958333333
+                QKV + Q/K preparation: 8.996973958333333
+                QK–Softmax–AV: 8.2005453125
+                O projection: 3.1771890625
+                Post-attention residual＋RMSNorm: 3.5762484375
+                Gate/Up＋SwiGLU: 62.260765625
+                Down: 7.782916145833333
+                Final residual: 0.0028927083333333335
+                KV carrier conversion: 0.080046875
+                KV append DMA: 0.23517447916666667
+                Block orchestration: 0.040071875
+                Layer bookkeeping: 0.023300520833333335
+                Stage-boundary bookkeeping: 0.00665625
+                DSP unattributed: 0.0
+                Runtime setup/teardown: 0.087528125
+                Embedding: 0.07115677083333334
+                Final model RMSNorm: 0.08229375
+                LM head＋greedy（不含 final norm）: 3.77288125
+                Host-DSP boundary: 1.3887145200000004
+              phases_ms:
+                fp_softmax_dq_ticks: 1.0805380208333335
+                fp_softmax_compute_ticks: 2.8534041666666665
+                fp_softmax_q_ticks: 0.7200739583333333
+                fp_swiglu_dq_ticks: 9.011006770833333
+                fp_swiglu_compute_ticks: 28.641170833333334
+                fp_swiglu_q_ticks: 11.779194791666667
+                activation_ticks: 49.56505
+                attention_softmax_ticks: 4.654016145833333
+              peak_vtcm: 8360416
+              round_wall_ms:
+              - 103.53614050000002
+              - 103.7421457
+              - 103.7069895
+              - 103.7821146
+              - 103.51541669999999
+              - 103.64598959999998
+              - 103.6231456
+              - 103.9910103
+              - 103.8612239
+              - 103.85296880000001
+              fp_ms: 31.494575
+              dq_ms: 10.091544791666667
+              q_ms: 12.49926875
+              qdq_ms: 22.59081354166667
+              nonlinear_outer_ms: 0.13367760416666385
+              exclusive_plot_ms:
+                I/O、metadata: 0.22705989583333333
+                Input RMSNorm: 3.713298958333333
+                QKV + Q/K preparation: 8.996973958333333
+                O projection: 3.1771890625
+                Post-attention residual＋RMSNorm: 3.5762484375
+                Down: 7.782916145833333
+                Final residual: 0.0028927083333333335
+                KV carrier conversion: 0.080046875
+                KV append DMA: 0.23517447916666667
+                Block orchestration: 0.040071875
+                Layer bookkeeping: 0.023300520833333335
+                Stage-boundary bookkeeping: 0.00665625
+                DSP unattributed: 0.0
+                Runtime setup/teardown: 0.087528125
+                Embedding: 0.07115677083333334
+                Final model RMSNorm: 0.08229375
+                LM head＋greedy（不含 final norm）: 3.77288125
+                Host-DSP boundary: 1.3887145200000004
+                Gate/Up matrix pipeline: 12.695715624999998
+                QK/AV and attention preparation: 3.546529166666666
+                Softmax DQ / input preparation: 1.0805380208333335
+                Softmax FP nonlinear compute: 2.8534041666666665
+                Softmax Q / output publication: 0.7200739583333333
+                SwiGLU DQ / input preparation: 9.011006770833333
+                SwiGLU FP nonlinear compute: 28.641170833333334
+                SwiGLU Q / output publication: 11.779194791666667
+                SwiGLU phase bookkeeping: 0.13367760416666385
+            split_over_fused:
+              wall_ratio: 1.242168092454805
+              ci95:
+              - 1.240304669522667
+              - 1.2439916722857387
+          decode_one_step:
+            fused:
+              host_ms: 42.40181298
+              host_ci95_ms:
+              - 42.25544124
+              - 42.555333141249996
+              tps: 23.583897237405342
+              modules_ms:
+                I/O、metadata: 0.23922083333333333
+                Input RMSNorm: 2.3138302083333335
+                QKV + Q/K preparation: 3.761207291666666
+                QK–Softmax–AV: 5.712610416666666
+                O projection: 2.8718541666666666
+                Post-attention residual＋RMSNorm: 2.326725520833333
+                Gate/Up＋SwiGLU: 13.634008854166666
+                Down: 6.130484895833333
+                Final residual: 0.0020838541666666666
+                KV carrier conversion: 0.013046875
+                KV append DMA: 0.17820104166666667
+                Block orchestration: 0.031241145833333334
+                Layer bookkeeping: 0.0178828125
+                Stage-boundary bookkeeping: 0.0019333333333333331
+                DSP unattributed: 0.0
+                Runtime setup/teardown: 0.05325572916666667
+                Embedding: 0.0020963541666666665
+                Final model RMSNorm: 0.08175625
+                LM head＋greedy（不含 final norm）: 3.8033854166666665
+                Host-DSP boundary: 1.22698798
+              phases_ms:
+                fp_softmax_dq_ticks: 0.0
+                fp_softmax_compute_ticks: 0.0
+                fp_softmax_q_ticks: 0.0
+                fp_swiglu_dq_ticks: 0.0
+                fp_swiglu_compute_ticks: 0.0
+                fp_swiglu_q_ticks: 0.0
+                activation_ticks: 1.6860890625
+                attention_softmax_ticks: 0.0
+              peak_vtcm: 8360416
+              round_wall_ms:
+              - 42.497453300000004
+              - 42.1685365
+              - 42.58294789999999
+              - 42.223213699999995
+              - 42.132968700000006
+              - 42.7436457
+              - 42.0975624
+              - 42.4660206
+              - 42.808786299999994
+              - 42.2969947
+            split:
+              host_ms: 43.54837038
+              host_ci95_ms:
+              - 43.49213669550001
+              - 43.613130319999996
+              tps: 22.962971777682395
+              modules_ms:
+                I/O、metadata: 0.22485312500000001
+                Input RMSNorm: 2.314244791666667
+                QKV + Q/K preparation: 3.7433010416666668
+                QK–Softmax–AV: 5.713725
+                O projection: 2.8803880208333332
+                Post-attention residual＋RMSNorm: 2.3265192708333333
+                Gate/Up＋SwiGLU: 14.803309375
+                Down: 6.123123958333333
+                Final residual: 0.00210625
+                KV carrier conversion: 0.012761458333333335
+                KV append DMA: 0.16762604166666667
+                Block orchestration: 0.03076875
+                Layer bookkeeping: 0.017657812499999998
+                Stage-boundary bookkeeping: 0.0019203125
+                DSP unattributed: 0.0
+                Runtime setup/teardown: 0.05322239583333333
+                Embedding: 0.002009375
+                Final model RMSNorm: 0.08156510416666667
+                LM head＋greedy（不含 final norm）: 3.7716072916666668
+                Host-DSP boundary: 1.2776610050000001
+              phases_ms:
+                fp_softmax_dq_ticks: 0.0
+                fp_softmax_compute_ticks: 0.0
+                fp_softmax_q_ticks: 0.0
+                fp_swiglu_dq_ticks: 0.5643770833333334
+                fp_swiglu_compute_ticks: 1.3852885416666667
+                fp_swiglu_q_ticks: 0.8326411458333333
+                activation_ticks: 2.9172151041666665
+                attention_softmax_ticks: 0.0
+              peak_vtcm: 8360416
+              round_wall_ms:
+              - 43.5113178
+              - 43.518588400000006
+              - 43.4570833
+              - 43.711776199999996
+              - 43.5206981
+              - 43.4818437
+              - 43.4659063
+              - 43.7380314
+              - 43.61725
+              - 43.461208600000006
+            split_over_fused:
+              wall_ratio: 1.0270402918983865
+              ci95:
+              - 1.0231395008314972
+              - 1.0308169643552145
+        verification:
+          audits:
+          - file: audit-full-fused/hash-checks.json
+            checks: 56
+            normalized_numeric_match: true
+          - file: audit-full-split/hash-checks.json
+            checks: 56
+            normalized_numeric_match: true
+          - file: audit1-fused/hash-checks.json
+            checks: 2
+            normalized_numeric_match: true
+          - file: audit1-split/hash-checks.json
+            checks: 2
+            normalized_numeric_match: true
+          - file: audit3-split/hash-checks.json
+            checks: 6
+            normalized_numeric_match: true
+          exact_cross_arm_payload_files: 60
+          formal_token_invocations: 400
+          short_token_invocations: 200
+          requested_and_granted_vtcm: 8388608
+          no_intermediate_ddr: true
+          no_spill: true
+          quality_claim: false
+          baseline_promoted: false
+        measured_source: 272298e3958e65bc9e9d89c0a7c9800fb8aad465
+    four_model_report: /mnt/d/llm_exp/results/paper-explicit-qdq-20260924/REPORT.md
+    interpretation: New materialized diagnostic, includes dispatch/join and input
+      preparation; cannot retrospectively split original fusedG cost or infer production
+      critical path. Original G and baselines preserved.
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp

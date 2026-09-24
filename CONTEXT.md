@@ -501,3 +501,6 @@ User approves R4-only four-model E2E expansion and new final workbook sheet. R3 
 
 ## L32-0073 active
 Explicit QDQ follow-up to G-b FP islands; offline port initially, EXP0312 owns device. Original fused evidence immutable; append new paired results after exact validation.
+
+## L32-0073 closed: explicit FP/QDQ separation
+Four-model follow-up with EXP0312 complete. Five short/ten formal paired repeat10, M64+1. Exact historical independent-reference checks at1/3/full layers, fullmodel fused/split hidden/Norm/KV byte-exact, deployment hashes verified. No timed intermediateDDR/spill,8MiB. N_FP与QDQ拆分 appended; original13 worksheet XML parts unchanged. QDQ/input-output prep occupies15.60–21.95% of explicit Host wall, includes materialization/scheduling; not original fusedG or production critical-path attribution. DecodeSoftmax fused, one-step E2E auxiliary. No promotion. Source 272298e3958e65bc9e9d89c0a7c9800fb8aad465; report docs/experiments/L32-0073-RESULTS.md; ledger 46defe33954e792ce3ccf9e4fd1cae55908363f3ccee6d5840b921a2fba3b032. No active experiment/device owner.
