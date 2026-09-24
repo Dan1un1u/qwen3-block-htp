@@ -2660,3 +2660,6 @@ User requests simultaneous HVX/HMX bandwidth characterization; EXP0310 separate 
 
 ## EXP0311 closed: HVX/HMX bandwidths not throughput-independent
 Three-session formal confirms six-HVX809.33GB/s solo ->491.91FP16/500.80S8/489.89S4GB/s concurrently; HMX1058.98/928.62/773.85GB/s unchanged within window granularity. Similar on disjoint and shared-read-only addresses; skewed scan agrees. Extra scalar-worker controlHVX808.7GB/s (~0.08%loss), clocks2112MHz stable. Empirical asymmetric contention, not proof of bus/bank topology. EXP0310 maxima cannot be added as attainable simultaneous capacity. All checks pass. Source d84d9467dda5b0f63f0d10621a7fe121c947690e; docs/experiments/EXP-0311-RESULTS.md; no baseline promotion, no active/device owner.
+
+## EXP0312 active: explicit QDQ diagnostic
+User requests separating G-b FP nonlinear from QDQ. Original fused timings remain immutable; explicit materialized-stage timings require new hardware validation. Device absent, offline preparation in progress. See docs/experiments/EXP-0312.md.

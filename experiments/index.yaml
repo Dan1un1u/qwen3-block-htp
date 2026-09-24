@@ -30270,3 +30270,16 @@ experiments:
         sum_peak_retention: 0.7981507974354899
         scalar_control_HVX: 808.74569728
         scalar_control_drop_percent: 0.07255389718077154
+- id: EXP-0312
+  title: Explicit QDQ versus fused FP nonlinear motivation profiling
+  approval_ref: User2026-09-24 requests locating G panel b, explicit QDQ timing separation
+    and appended workbook results.
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: not_requested
+  record: docs/experiments/EXP-0312.md
+  runtime:
+    source_branch: codex/exp-0311-vtcm-concurrent-bandwidth
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    device_owner: null
