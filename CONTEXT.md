@@ -498,3 +498,6 @@ User-confirmed HVX R3+R4 on ordinaryA8, full16 64+42 complete. Five short/ten fo
 User approves R4-only four-model E2E expansion and new final workbook sheet. R3 combination excluded from controlled ablation. Active L32-0072; Qwen counterpart EXP-0309.
 
 2026-09-23 device handoff: Llama3B formal10 and padding/boundary checks complete; release L32-0072, acquire EXP-0309 for two Qwen sizes.
+
+## L32-0073 active
+Explicit QDQ follow-up to G-b FP islands; offline port initially, EXP0312 owns device. Original fused evidence immutable; append new paired results after exact validation.
