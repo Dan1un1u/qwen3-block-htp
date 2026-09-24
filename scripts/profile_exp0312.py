@@ -10,8 +10,7 @@ def read(p):return json.loads(Path(p).read_text())
 def save(p,v):
  p.parent.mkdir(parents=True,exist_ok=True)
  assert not p.exists(),p
- p.write_text(json.dumps(v,indent=2,allow_nan=False)+'
-')
+ p.write_text(json.dumps(v,indent=2,allow_nan=False)+chr(10))
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 def adb(*a,check=True):
  return subprocess.run([ADB,'-P','5038','-s',SERIAL,*a],capture_output=True,text=True,check=check,timeout=900)
