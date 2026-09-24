@@ -9,11 +9,11 @@
 
 #define QBH_BLOCK_MAGIC UINT32_C(0x5142424c)
 #ifdef QBH_MODEL_LLAMA32
-#define QBH_BLOCK_ABI_VERSION UINT32_C(137)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(138)
 #define QBH_LLAMA_SP2(h) ((h)->llama_sp2_mode)
 #define QBH_FP32_RESIDUAL(h) ((h)->llama_fp32_residual)
 #else
-#define QBH_BLOCK_ABI_VERSION UINT32_C(128)
+#define QBH_BLOCK_ABI_VERSION UINT32_C(129)
 #define QBH_LLAMA_SP2(h) 0U
 #define QBH_FP32_RESIDUAL(h) 0U
 #endif
@@ -943,6 +943,7 @@ struct qbh_block_header {
     uint8_t prefix_kv_u8[28][2048];
     uint32_t paper_format_disable; /* bits1/2 modular interfaces; exclusivebit4 independentSP2decode streams; bit8 legacy decode gather; bits32/64 split Norm-Q/projection-residual; bit128 identical diagnostic scratch */
     uint32_t paper_pipeline_disable;
+    uint32_t fp_qdq_split; /* L32-0073 explicit FP nonlinear phases. */
     uint32_t wide_score_mode; /* 0 legacy; 1 HVX wide; 2 untimed scalar wide oracle. */
 #ifdef QBH_MODEL_LLAMA32
     uint32_t llama_sp2_mode;
@@ -1376,6 +1377,13 @@ struct qbh_block_header {
     uint64_t attention_qk_audit_ticks;
     uint64_t attention_softmax_ticks;
     uint64_t attention_softmax_audit_ticks;
+    uint64_t fp_softmax_dq_ticks;
+    uint64_t fp_softmax_compute_ticks;
+    uint64_t fp_softmax_q_ticks;
+    uint64_t fp_swiglu_dq_ticks;
+    uint64_t fp_swiglu_compute_ticks;
+    uint64_t fp_swiglu_q_ticks;
+
     uint64_t attention_av_pack_ticks;
     uint64_t attention_av_hmx_ticks;
     uint64_t attention_av_unpack_ticks;

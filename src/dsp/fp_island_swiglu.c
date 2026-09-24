@@ -60,3 +60,47 @@ void qbh_fp_island_swiglu(const uint8_t *g,const uint8_t *u,uint8_t *lo,
  }
  asm volatile("barrier" ::: "memory");
 }
+
+
+/* EXP0312. Noinline passes force materialization of caller-owned VTCM values.
+ * Exactly the same rounded HVX operations and quantization as the fused arm. */
+__attribute__((noinline))
+void qbh_fp_island_swiglu_phase(uint32_t phase,const uint8_t *g,const uint8_t *u,
+ uint8_t *lo,uint8_t *hi,size_t elements,const float params[5],float *scratch){
+ const HVX_Vector zero=Q6_V_vzero(),one=fs(1.0f),half=fs(0.5f);
+ float *fg=scratch,*fu=scratch+elements;
+ if(phase==0U){
+  for(size_t off=0;off<elements;off+=32U){
+   *(HVX_Vector *)(fg+off)=fm(Q6_Vsf_equals_Vw(Q6_Vw_vsub_VwVw(load32(g+off),Q6_V_vsplat_R((int)params[1]))),fs(params[0]));
+   *(HVX_Vector *)(fu+off)=fm(Q6_Vsf_equals_Vw(Q6_Vw_vsub_VwVw(load32(u+off),Q6_V_vsplat_R((int)params[3]))),fs(params[2]));
+  }
+ }else if(phase==1U){
+  for(size_t off=0;off<elements;off+=32U){
+   HVX_Vector gf=*(const HVX_Vector *)(fg+off),uf=*(const HVX_Vector *)(fu+off);
+  HVX_Vector ag=Q6_V_vand_VV(gf,Q6_V_vsplat_R(0x7fffffff));
+  ag=Q6_V_vmux_QVV(Q6_Q_vcmp_gt_VsfVsf(ag,fs(80.0f)),fs(80.0f),ag);
+  HVX_Vector e=exp_negative(Q6_Vsf_vsub_VsfVsf(zero,ag));
+  HVX_Vector den=Q6_Vsf_vadd_VsfVsf(one,e),inv=fs(0.75f);
+  for(uint32_t j=0;j<5U;j++)inv=fm(inv,Q6_Vsf_vsub_VsfVsf(fs(2.0f),fm(den,inv)));
+  HVX_Vector sig=Q6_V_vmux_QVV(Q6_Q_vcmp_gt_VsfVsf(zero,gf),fm(e,inv),inv);
+
+   *(HVX_Vector *)(fg+off)=fm(fm(gf,sig),uf);
+  }
+ }else{
+  for(size_t off=0;off<elements;off+=32U){
+   HVX_Vector v=fm(*(const HVX_Vector *)(fg+off),fs(1.0f/params[4]));
+  HVX_Vector av=Q6_V_vand_VV(v,Q6_V_vsplat_R(0x7fffffff));
+  av=Q6_V_vmux_QVV(Q6_Q_vcmp_gt_VsfVsf(av,fs(32767.0f)),fs(32767.0f),av);
+  HVX_Vector i=qhmath_hvx_vw_truncate_vsf(av);
+  HVX_Vector frac=Q6_Vsf_vsub_VsfVsf(av,Q6_Vsf_equals_Vw(i));
+  HVX_VectorPred gt=Q6_Q_vcmp_gt_VsfVsf(frac,half);
+  HVX_VectorPred eq=Q6_Q_vcmp_eq_VwVw(frac,half);
+  HVX_VectorPred odd=Q6_Q_vcmp_eq_VwVw(Q6_V_vand_VV(i,Q6_V_vsplat_R(1)),Q6_V_vsplat_R(1));
+  i=Q6_Vw_vadd_VwVw(i,Q6_V_vmux_QVV(Q6_Q_or_QQ(gt,Q6_Q_and_QQ(eq,odd)),Q6_V_vsplat_R(1),zero));
+  i=Q6_V_vmux_QVV(Q6_Q_vcmp_gt_VsfVsf(zero,v),Q6_Vw_vsub_VwVw(zero,i),i);
+  i=Q6_Vw_vadd_VwVw(i,Q6_V_vsplat_R(32768));
+  store32(lo+off,i);store32(hi+off,Q6_Vuw_vlsr_VuwR(i,8));
+  }
+ }
+ asm volatile("barrier" ::: "memory");
+}

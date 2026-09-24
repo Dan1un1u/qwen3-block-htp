@@ -96,3 +96,38 @@ void qbh_attention_fp32_softmax_native(const uint8_t *scores,uint8_t *probabilit
 
     asm volatile("barrier":::"memory");
 }
+
+/* Materialized FP32 row-major tensor. The original integer row-max subtraction
+ * is retained before scaling, so all IEEE rounding points stay identical.
+ * It belongs to input preparation/DQ; phase1 owns exp, reduction, normalization. */
+__attribute__((noinline))
+void qbh_attention_fp32_softmax_phase(uint32_t phase,const uint8_t *scores,
+ uint8_t *probability,uint32_t heads,uint32_t rows,uint32_t past,uint32_t padded,
+ const struct qbh_attention_config *config,float *materialized,float *scratch){
+ const uint32_t tiles=padded/32U;
+ const float scale=(float)config->score_multiplier*(0.69314718055994530942f/(float)(1U<<config->fraction_bits));
+ (void)scratch;
+ for(uint32_t head=0;head<heads;++head)for(uint32_t row=0;row<rows;++row){
+  const uint8_t *base=scores+(size_t)head*tiles*2048U+row*32U;
+  uint8_t *dst=probability+(size_t)head*tiles*2048U+row*32U;
+  float *tmp=materialized+((size_t)head*rows+row)*padded;
+  uint32_t valid=past+row+1U;
+  if(phase==0U){
+   int32_t mx=rowmax(base,tiles,valid);
+   for(uint32_t t=0;t<tiles;++t)
+    *(HVX_Vector *)(tmp+t*32)=mul(Q6_Vsf_equals_Vw(Q6_Vw_vsub_VwVw(load32(base+t*2048),Q6_V_vsplat_R(mx))),splat(scale));
+  }else if(phase==1U){
+   for(uint32_t t=0;t<tiles;++t){
+    HVX_Vector e=qhmath_hvx_exp_vf(*(const HVX_Vector *)(tmp+t*32));
+    HVX_VectorPred live=Q6_Q_vcmp_gt_VwVw(Q6_V_vsplat_R((int32_t)valid-(int32_t)t*32),*(const HVX_Vector *)lanes);
+    *(HVX_Vector *)(tmp+t*32)=Q6_V_vmux_QVV(live,e,Q6_V_vzero());
+   }
+   HVX_Vector inv=splat(1.0f/rowsum(tmp,tiles));
+   for(uint32_t t=0;t<tiles;++t)*(HVX_Vector *)(tmp+t*32)=mul(*(const HVX_Vector *)(tmp+t*32),inv);
+  }else{
+   for(uint32_t t=0;t<tiles;++t)
+    publish(*(const HVX_Vector *)(tmp+t*32),splat(1.0f),dst+t*2048,NULL);
+  }
+ }
+ asm volatile("barrier" ::: "memory");
+}

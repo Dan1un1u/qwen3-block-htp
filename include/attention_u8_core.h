@@ -250,4 +250,8 @@ void qbh_attention_u8_softmax_long_native4_fast(uint8_t *,uint8_t *,uint32_t,uin
 
 void qbh_attention_u8_pack_v_long_fast(const uint8_t *,uint32_t,uint32_t,const struct qbh_attention_config *,int8_t *,uint32_t *,uint8_t *,uint32_t *);
 
+/* EXP0312 diagnostic: phase0 centered-score DQ,1 exp/reduce/normalize,2 Q/native store. */
+void qbh_attention_fp32_softmax_phase(uint32_t phase,const uint8_t *scores,
+ uint8_t *probability,uint32_t heads,uint32_t rows,uint32_t past,uint32_t padded,
+ const struct qbh_attention_config *config,float *materialized,float *scratch);
 #endif
