@@ -30280,6 +30280,6 @@ experiments:
   adoption_status: not_requested
   record: docs/experiments/EXP-0312.md
   runtime:
-    source_branch: codex/exp-0311-vtcm-concurrent-bandwidth
+    source_branch: codex/exp-0312-explicit-qdq
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    device_owner: null
+    device_owner: EXP-0312
