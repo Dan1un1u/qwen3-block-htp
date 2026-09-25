@@ -7305,3 +7305,15 @@ experiments:
         exact_historical_eval_steps: 430
     metric: unique DMA-BUF backing bytes plus ordinary RSS excluding DMA-BUF RSS,
       after model-ready; decimal MB; excludes VTCM/loading/sampler/hidden allocations
+- id: L32-0076
+  title: A-table W4A8-INT16-Down inference DRAM peak rerun
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: not_requested
+  record: docs/experiments/L32-0076.md
+  approval_ref: User2026-09-25 requests rerun four A-table W4A8-INT16-Down baselines
+    and peak memory in Paper_Hardware_Tables_ABC.xlsx
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
