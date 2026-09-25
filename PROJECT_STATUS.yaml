@@ -7,7 +7,7 @@ project:
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
   updated_on: '2026-09-25'
 governance:
-  active_experiment: L32-0077
+  active_experiment: null
   next_experiment_number: 78
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -5905,6 +5905,83 @@ current_scope:
         exact_historical_eval_steps: 430
     metric: unique DMA-BUF backing bytes plus ordinary RSS excluding DMA-BUF RSS,
       after model-ready; decimal MB; excludes VTCM/loading/sampler/hidden allocations
+  latest_bc_a16_inference_dram:
+    experiment: L32-0077
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: Historical SHA256 and long-step non-timing records/output hashes and
+      numerical/physical flags match; sampled inference DRAM
+    adoption_status: not_requested
+    baseline_promoted: false
+    quality_claim: false
+    device_owner: null
+    evidence: /mnt/d/llm_exp/results/paper-bc-a16-memory-20260925
+    evidence_ledger_sha256: 6ff3a7776ea67a892c742a78c40f857b472832445720016e4185fd3e7e90aa39
+    evidence_files: 334
+    evidence_bytes: 190799792
+    workbook: C:\Users\35961\Desktop\Paper_Hardware_Tables_ABC.xlsx
+    workbook_sha256: 42bfbf4f01ec5bf62682cb598ba4217a058d91c1a18d1372ec53c18a34cbdb1c
+    report: docs/experiments/L32-0077-RESULTS.md
+    configurations:
+      llama1-B-w16:
+        peak_bytes: 3060289536
+        peak_MB: 3060.289536
+        peak_MiB: 2918.51953125
+        ready_samples: 685
+        sample_interval_median_ms: 47.224219
+        exact_historical_steps: 550
+      llama1-B-w4:
+        peak_bytes: 1210814464
+        peak_MB: 1210.814464
+        peak_MiB: 1154.72265625
+        ready_samples: 624
+        sample_interval_median_ms: 40.052552
+        exact_historical_steps: 550
+      llama1-C-w16:
+        peak_bytes: 3060408320
+        peak_MB: 3060.40832
+        peak_MiB: 2918.6328125
+        ready_samples: 177
+        sample_interval_median_ms: 48.077056999999996
+        exact_historical_steps: 150
+      llama1-C-w4:
+        peak_bytes: 1210875904
+        peak_MB: 1210.875904
+        peak_MiB: 1154.78125
+        ready_samples: 174
+        sample_interval_median_ms: 40.147187
+        exact_historical_steps: 150
+      llama3-B-w16:
+        peak_bytes: 7414272000
+        peak_MB: 7414.272
+        peak_MiB: 7070.80078125
+        ready_samples: 1433
+        sample_interval_median_ms: 55.9603905
+        exact_historical_steps: 550
+      llama3-B-w4:
+        peak_bytes: 2599211008
+        peak_MB: 2599.211008
+        peak_MiB: 2478.80078125
+        ready_samples: 1520
+        sample_interval_median_ms: 47.676563
+        exact_historical_steps: 550
+      llama3-C-w16:
+        peak_bytes: 7414173696
+        peak_MB: 7414.173696
+        peak_MiB: 7070.70703125
+        ready_samples: 389
+        sample_interval_median_ms: 56.049426499999996
+        exact_historical_steps: 150
+      llama3-C-w4:
+        peak_bytes: 2598957056
+        peak_MB: 2598.957056
+        peak_MiB: 2478.55859375
+        ready_samples: 477
+        sample_interval_median_ms: 40.2422395
+        exact_historical_steps: 150
+    metric: unique DMA-BUF backing bytes plus ordinary RSS excluding DMA-BUF RSS after
+      generation_startup; decimal MB; no VTCM/loading/sampler/hidden allocations
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp
