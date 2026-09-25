@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0316
+  active_experiment: null
   next_experiment_number: 317
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -15869,3 +15869,80 @@ current_scope:
         exact_historical_eval_steps: 430
     metric: unique DMA-BUF backing bytes plus ordinary RSS excluding DMA-BUF RSS,
       after model-ready; decimal MB; excludes VTCM/loading/sampler/hidden allocations
+  latest_bc_a16_inference_dram:
+    experiment: EXP-0316
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: Historical SHA256 and long-step non-timing records/output hashes and
+      numerical/physical flags match; sampled inference DRAM
+    adoption_status: not_requested
+    baseline_promoted: false
+    quality_claim: false
+    device_owner: null
+    evidence: /mnt/d/llm_exp/results/paper-bc-a16-memory-20260925
+    evidence_ledger_sha256: 6ff3a7776ea67a892c742a78c40f857b472832445720016e4185fd3e7e90aa39
+    evidence_files: 334
+    evidence_bytes: 190799792
+    workbook: C:\Users\35961\Desktop\Paper_Hardware_Tables_ABC.xlsx
+    workbook_sha256: 42bfbf4f01ec5bf62682cb598ba4217a058d91c1a18d1372ec53c18a34cbdb1c
+    report: docs/experiments/EXP-0316-RESULTS.md
+    configurations:
+      qwen06-B-w16:
+        peak_bytes: 1703616512
+        peak_MB: 1703.616512
+        peak_MiB: 1624.6953125
+        ready_samples: 548
+        sample_interval_median_ms: 38.884063
+        exact_historical_steps: 550
+      qwen06-B-w4:
+        peak_bytes: 812474368
+        peak_MB: 812.474368
+        peak_MiB: 774.8359375
+        ready_samples: 565
+        sample_interval_median_ms: 40.0121615
+        exact_historical_steps: 550
+      qwen06-C-w16:
+        peak_bytes: 1703612416
+        peak_MB: 1703.612416
+        peak_MiB: 1624.69140625
+        ready_samples: 144
+        sample_interval_median_ms: 42.935313
+        exact_historical_steps: 150
+      qwen06-C-w4:
+        peak_bytes: 812552192
+        peak_MB: 812.552192
+        peak_MiB: 774.91015625
+        ready_samples: 160
+        sample_interval_median_ms: 39.930834
+        exact_historical_steps: 150
+      qwen17-B-w16:
+        peak_bytes: 4263612416
+        peak_MB: 4263.612416
+        peak_MiB: 4066.09765625
+        ready_samples: 938
+        sample_interval_median_ms: 48.046875
+        exact_historical_steps: 550
+      qwen17-B-w4:
+        peak_bytes: 1688817664
+        peak_MB: 1688.817664
+        peak_MiB: 1610.58203125
+        ready_samples: 896
+        sample_interval_median_ms: 42.425261
+        exact_historical_steps: 550
+      qwen17-C-w16:
+        peak_bytes: 4263763968
+        peak_MB: 4263.763968
+        peak_MiB: 4066.2421875
+        ready_samples: 247
+        sample_interval_median_ms: 48.1131775
+        exact_historical_steps: 150
+      qwen17-C-w4:
+        peak_bytes: 1688752128
+        peak_MB: 1688.752128
+        peak_MiB: 1610.51953125
+        ready_samples: 263
+        sample_interval_median_ms: 38.3953125
+        exact_historical_steps: 150
+    metric: unique DMA-BUF backing bytes plus ordinary RSS excluding DMA-BUF RSS after
+      generation_startup; decimal MB; no VTCM/loading/sampler/hidden allocations

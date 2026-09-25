@@ -1,3 +1,7 @@
+# EXP-0316 B/C A16 memory completed 2026-09-25
+
+Sixteen W16A16/W4A16 B536+46/C741+3 memory cells saved in Paper_Hardware_Tables_ABC.xlsx. Cache832; observed DMA-BUF plus non-DMA RSS after ready. See docs/experiments/EXP-0316-RESULTS.md. No runtime/quality/speed changes; device released.
+
 # EXP-0315 A-table W4A8-INT16-Down memory rerun completed 2026-09-25
 
 Four-model results in docs/experiments/EXP-0315-RESULTS.md. Target Paper_Hardware_Tables_ABC.xlsx, A F9/F14/F19/F24. Decimal MB, sampled DMA-BUF plus non-DMA RSS, post-ready. Historical tokens/numerics exact. No baseline/code/throughput changes. Device released.
