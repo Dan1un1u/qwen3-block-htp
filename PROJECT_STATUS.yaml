@@ -7,7 +7,7 @@ project:
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
   updated_on: '2026-09-25'
 governance:
-  active_experiment: L32-0076
+  active_experiment: null
   next_experiment_number: 77
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -5867,6 +5867,41 @@ current_scope:
         peak_MiB: 2324.11328125
         ready_samples: 1153
         sample_interval_median_ms: 47.638489
+        exact_historical_eval_steps: 430
+    metric: unique DMA-BUF backing bytes plus ordinary RSS excluding DMA-BUF RSS,
+      after model-ready; decimal MB; excludes VTCM/loading/sampler/hidden allocations
+  latest_a_w4a8_inference_dram:
+    experiment: L32-0076
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: Historical SHA256 and 430 non-timing eval-step records per model match;
+      observed inference DRAM only
+    adoption_status: not_requested
+    baseline_promoted: false
+    quality_claim: false
+    device_owner: null
+    evidence: /mnt/d/llm_exp/results/paper-w4a8-memory-20260925
+    evidence_ledger_sha256: fb9ff176cad4dd212a34c0b43b5ff019cb61a28c92258fe6a65679bf2e82973d
+    evidence_files: 92
+    evidence_bytes: 58328440
+    workbook: C:\Users\35961\Desktop\Paper_Hardware_Tables_ABC.xlsx
+    workbook_sha256: 7d1c098d5696d5baa23d5f65975ef55a11b82d1832786301fcdd4e89a75062b9
+    report: docs/experiments/L32-0076-RESULTS.md
+    models:
+      Llama-3.2-1B-Instruct:
+        peak_bytes: 2190331904
+        peak_MB: 2190.331904
+        peak_MiB: 2088.86328125
+        ready_samples: 238
+        sample_interval_median_ms: 40.08125
+        exact_historical_eval_steps: 430
+      Llama-3.2-3B-Instruct:
+        peak_bytes: 4040740864
+        peak_MB: 4040.740864
+        peak_MiB: 3853.55078125
+        ready_samples: 392
+        sample_interval_median_ms: 47.838125
         exact_historical_eval_steps: 430
     metric: unique DMA-BUF backing bytes plus ordinary RSS excluding DMA-BUF RSS,
       after model-ready; decimal MB; excludes VTCM/loading/sampler/hidden allocations
