@@ -7213,9 +7213,9 @@ experiments:
       critical path. Original G and baselines preserved.
 - id: L32-0074
   title: A-table W16A16 inference DRAM peak rerun
-  execution_state: running
-  evidence_validity: pending
-  local_gate: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: not_requested
   record: docs/experiments/L32-0074.md
   approval_ref: User2026-09-25 requests rerun four A-table floating baselines and
@@ -7223,3 +7223,38 @@ experiments:
   runtime:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
+  results:
+    experiment: L32-0074
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: Historical SHA256 and 430 non-timing eval-step records per model match;
+      observed inference DRAM only
+    adoption_status: not_requested
+    baseline_promoted: false
+    quality_claim: false
+    device_owner: null
+    evidence: /mnt/d/llm_exp/results/paper-fp16-memory-20260925
+    evidence_ledger_sha256: 3a341997f45ffabd38e02a071026e964d153d8e4fc4673f1adae6aaee0cd2f9b
+    evidence_files: 87
+    evidence_bytes: 59358722
+    workbook: C:\Users\35961\Desktop\Paper_Hardware_Tables_ABC.xlsx
+    workbook_sha256: 3725e5b055b06c0264076cb58db782852fe8ef50b25300cdf64f1c7b7cd47aa3
+    report: docs/experiments/L32-0074-RESULTS.md
+    models:
+      Llama-3.2-1B-Instruct:
+        peak_bytes: 3013881856
+        peak_MB: 3013.881856
+        peak_MiB: 2874.26171875
+        ready_samples: 535
+        sample_interval_median_ms: 44.476719
+        exact_historical_eval_steps: 430
+      Llama-3.2-3B-Instruct:
+        peak_bytes: 7252299776
+        peak_MB: 7252.299776
+        peak_MiB: 6916.33203125
+        ready_samples: 1097
+        sample_interval_median_ms: 55.983515499999996
+        exact_historical_eval_steps: 430
+    metric: unique DMA-BUF backing bytes plus ordinary RSS excluding DMA-BUF RSS,
+      after model-ready; decimal MB; excludes VTCM/loading/sampler/hidden allocations
