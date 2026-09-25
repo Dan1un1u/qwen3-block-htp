@@ -30911,3 +30911,15 @@ experiments:
     interpretation: Explicit phase wall includes materialization/dispatch/join and
       input preparation. New diagnostic schedule; do not retrospectively split original
       G fused time. Original G and main baselines preserved.
+- id: EXP-0313
+  title: A-table W16A16 inference DRAM peak rerun
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: not_requested
+  record: docs/experiments/EXP-0313.md
+  approval_ref: User2026-09-25 requests rerun four A-table floating baselines and
+    peak memory in Paper_Hardware_Tables_ABC.xlsx
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0312-explicit-qdq
