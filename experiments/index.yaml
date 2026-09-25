@@ -31052,3 +31052,15 @@ experiments:
         exact_historical_eval_steps: 430
     metric: unique DMA-BUF backing bytes plus ordinary RSS excluding DMA-BUF RSS,
       after model-ready; decimal MB; excludes VTCM/loading/sampler/hidden allocations
+- id: EXP-0316
+  title: B/C-table W16A16 and W4A16 inference DRAM peak rerun
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: not_requested
+  record: docs/experiments/EXP-0316.md
+  approval_ref: User2026-09-25 requests rerun four B/C-table W16A16 and W4A16 baselines
+    and peak memory in Paper_Hardware_Tables_ABC.xlsx
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0312-explicit-qdq
