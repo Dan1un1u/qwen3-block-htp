@@ -1,3 +1,7 @@
+# EXP-0313 A-table W16A16 memory rerun completed 2026-09-25
+
+Four-model results in docs/experiments/EXP-0313-RESULTS.md. Target Paper_Hardware_Tables_ABC.xlsx, A F7/F12/F17/F22. Decimal MB, sampled DMA-BUF plus non-DMA RSS, post-ready. Historical tokens/numerics exact. No baseline/code/throughput changes. Device released.
+
 # Completed EXP-0309: four-model HVX R4 side comparison
 
 R3 excluded by user due to Q/K confound. Llama1B retains L32-0070; Qwen0.6/1.7 and Llama3B freshly paired against ordinaryA8 at fixed64+42, five short/ten formal repeat10. Exact own-reference, padding, KV/finalNorm/hidden and8MiB/no spill checks pass. No quality/default promotion. Results appended as final M_R4蝶形消融 in rebuilt workbook; original12 tabs unchanged. Source da2bccf660879785d018b7ba5f615284de3c5737; ledger 0c3cec340cdbc2d87a347e734e44320e8e65da16dd9969b5ffa454241afeeeeb. Device released. Read docs/experiments/EXP-0309-RESULTS.md.

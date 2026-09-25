@@ -30913,9 +30913,9 @@ experiments:
       G fused time. Original G and main baselines preserved.
 - id: EXP-0313
   title: A-table W16A16 inference DRAM peak rerun
-  execution_state: running
-  evidence_validity: pending
-  local_gate: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: not_requested
   record: docs/experiments/EXP-0313.md
   approval_ref: User2026-09-25 requests rerun four A-table floating baselines and
@@ -30923,3 +30923,38 @@ experiments:
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0312-explicit-qdq
+  results:
+    experiment: EXP-0313
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: Historical SHA256 and 430 non-timing eval-step records per model match;
+      observed inference DRAM only
+    adoption_status: not_requested
+    baseline_promoted: false
+    quality_claim: false
+    device_owner: null
+    evidence: /mnt/d/llm_exp/results/paper-fp16-memory-20260925
+    evidence_ledger_sha256: 3a341997f45ffabd38e02a071026e964d153d8e4fc4673f1adae6aaee0cd2f9b
+    evidence_files: 87
+    evidence_bytes: 59358722
+    workbook: C:\Users\35961\Desktop\Paper_Hardware_Tables_ABC.xlsx
+    workbook_sha256: 3725e5b055b06c0264076cb58db782852fe8ef50b25300cdf64f1c7b7cd47aa3
+    report: docs/experiments/EXP-0313-RESULTS.md
+    models:
+      Qwen3-0.6B:
+        peak_bytes: 1541705728
+        peak_MB: 1541.705728
+        peak_MiB: 1470.28515625
+        ready_samples: 413
+        sample_interval_median_ms: 37.8433855
+        exact_historical_eval_steps: 430
+      Qwen3-1.7B:
+        peak_bytes: 4101902336
+        peak_MB: 4101.902336
+        peak_MiB: 3911.87890625
+        ready_samples: 708
+        sample_interval_median_ms: 47.973125
+        exact_historical_eval_steps: 430
+    metric: unique DMA-BUF backing bytes plus ordinary RSS excluding DMA-BUF RSS,
+      after model-ready; decimal MB; excludes VTCM/loading/sampler/hidden allocations
