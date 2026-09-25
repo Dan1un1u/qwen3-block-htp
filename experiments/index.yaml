@@ -7211,3 +7211,15 @@ experiments:
     interpretation: New materialized diagnostic, includes dispatch/join and input
       preparation; cannot retrospectively split original fusedG cost or infer production
       critical path. Original G and baselines preserved.
+- id: L32-0074
+  title: A-table W16A16 inference DRAM peak rerun
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: not_requested
+  record: docs/experiments/L32-0074.md
+  approval_ref: User2026-09-25 requests rerun four A-table floating baselines and
+    peak memory in Paper_Hardware_Tables_ABC.xlsx
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation

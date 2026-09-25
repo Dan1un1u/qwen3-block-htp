@@ -7,8 +7,8 @@ project:
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
   updated_on: '2026-09-24'
 governance:
-  active_experiment: null
-  next_experiment_number: 74
+  active_experiment: L32-0074
+  next_experiment_number: 75
   maximum_running_experiments: 1
   remote_sync_required: true
 source_worktrees:
