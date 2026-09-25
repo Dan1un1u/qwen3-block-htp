@@ -1,3 +1,7 @@
+# L32-0075 A-table W4A16 memory rerun completed 2026-09-25
+
+Four-model results in docs/experiments/L32-0075-RESULTS.md. Target Paper_Hardware_Tables_ABC.xlsx, A F8/F13/F18/F23. Decimal MB, sampled DMA-BUF plus non-DMA RSS, post-ready. Historical tokens/numerics exact. No baseline/code/throughput changes. Device released.
+
 # L32-0074 A-table W16A16 memory rerun completed 2026-09-25
 
 Four-model results in docs/experiments/L32-0074-RESULTS.md. Target Paper_Hardware_Tables_ABC.xlsx, A F7/F12/F17/F22. Decimal MB, sampled DMA-BUF plus non-DMA RSS, post-ready. Historical tokens/numerics exact. No baseline/code/throughput changes. Device released.
