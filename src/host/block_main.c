@@ -5127,7 +5127,7 @@ int main(int argc, char **argv) {
         const char *capacity = getenv("QBH_KV_CACHE_CAPACITY");
         const char *long_length = getenv("QBH_LONG_PREFILL_TOKENS");
         if (long_length && (qbh_parse_u32(long_length,&long_prompt_tokens) ||
-            !long_prompt_tokens || long_prompt_tokens>768U)) return 2;
+            !long_prompt_tokens || long_prompt_tokens>(variant==QBH_BLOCK_W4U8?2048U:768U))) return 2;
         if (mode != NULL && mode[0] != '\0') {
             if (strcmp(mode, "disabled") == 0) {
                 scan_mode = QBH_BLOCK_SCAN_DISABLED;
@@ -5633,7 +5633,7 @@ int main(int argc, char **argv) {
           logical_m != QBH_BLOCK_M ||
           initial_kv_length != 0U ||
           (kv_cache_capacity != 80U && kv_cache_capacity != 128U &&
-           kv_cache_capacity != 257U && !(long_prompt_tokens && kv_cache_capacity<=832U && kv_cache_capacity>=long_prompt_tokens)))) ||
+           kv_cache_capacity != 257U && !(long_prompt_tokens && kv_cache_capacity<=(variant==QBH_BLOCK_W4U8?2112U:832U) && kv_cache_capacity>=long_prompt_tokens)))) ||
         full_stack_stage_mode >
             QBH_BLOCK_FULL_STACK_HIDDEN_CAPTURE ||
         w4u8_boundary_audit_enabled > 1U ||

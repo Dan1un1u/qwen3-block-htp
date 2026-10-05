@@ -13,11 +13,11 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
     if (v && qbh_parse_u32(v,&decode)) return -1;
     v=getenv("QBH_LONG_REPEATS");
     if (v && qbh_parse_u32(v,&repetitions)) return -1;
-    if (!length || length>768U || decode>63U || !repetitions || repetitions>10U ||
+    if (!length || length>(h->variant==QBH_BLOCK_W4U8?2048U:768U) || decode>63U || !repetitions || repetitions>10U ||
         length+decode>h->kv_cache_capacity ||
         (h->variant==QBH_BLOCK_W4U8 && !QBH_FP32_RESIDUAL(h)) || h->kv_cache_k_format!=QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1)
         return -1;
-    uint32_t ids[768], fixed[64];
+    uint32_t ids[2048], fixed[64];
     uint16_t *cos=malloc((size_t)h->kv_cache_capacity*QBH_BLOCK_HEAD_DIM*2U);
     uint16_t *sin=malloc((size_t)h->kv_cache_capacity*QBH_BLOCK_HEAD_DIM*2U);
     if (!cos || !sin) {free(cos);free(sin);return -1;}

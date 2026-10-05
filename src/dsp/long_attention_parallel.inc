@@ -18,7 +18,7 @@ static void qbh_long_attention_tasks(struct qbh_block_w4f16_pool *pool,
     uint8_t *c=a+2*plane;
     uint32_t *qb=(uint32_t *)(a+3*plane);
     uint32_t *vb=qb+tiles*64;
-    uint8_t *lut=pool->long_common_lut ? pool->attention_buffers->scores+4U*pool->long_stride : (uint8_t *)(vb+QBH_ATTENTION_HEAD_DIM_TILES*64);
+    uint8_t *lut=pool->long_common_lut ? pool->attention_buffers->scores+(pool->active_worker_count+1U)*pool->long_stride : (uint8_t *)(vb+QBH_ATTENTION_HEAD_DIM_TILES*64);
     job->u8_attention_k_pack_ticks=job->u8_attention_v_pack_ticks=0;
     job->u8_attention_softmax_ticks=job->u8_attention_qk_hmx_ticks=0;
     job->u8_attention_av_hmx_ticks=job->u8_attention_hmx_queue_wait_ticks=0;
@@ -81,12 +81,19 @@ static int qbh_long_attention_parallel(struct qbh_block_header *h,uint8_t *share
     if(width<QBH_BLOCK_HEAD_DIM)width=QBH_BLOCK_HEAD_DIM;
     unsigned stride=qbh_align_up(3*padded*width+tiles*256+QBH_ATTENTION_HEAD_DIM_TILES*256+20480,2048);
     unsigned capacity=(uint32_t)(b->compressed_weight-b->scores);
-    if(!pool || pool->worker_count<3 || stride*4+20480>capacity)return -1;
-    for(unsigned j=0;j<3;++j)
+    /* Keep each full-context softmax intact. Only concurrency changes when
+     * disjoint per-client operands no longer fit the fixed VTCM overlay. */
+    if(!pool || capacity<20480U || !stride)return -1;
+    unsigned clients=(capacity-20480U)/stride;
+    if(clients>4U)clients=4U;
+    if(clients>pool->worker_count+1U)clients=pool->worker_count+1U;
+    if(!clients)return -1;
+    const unsigned workers=clients-1U;
+    for(unsigned j=0;j<pool->worker_count;++j)
         if(pool->jobs[j].command_kind!=QBH_BLOCK_HVX_POOL_NONE)return -1;
     uint64_t start=HAP_perf_get_qtimer_count();
     h->scan_attention_overlay_capacity_bytes=capacity;
-    h->scan_attention_overlay_required_bytes=stride*4+20480;
+    h->scan_attention_overlay_required_bytes=stride*clients+20480;
     h->scan_total_kv_length=past+rows;h->scan_padded_kv_length=padded;
     pool->attention_header=h;pool->attention_buffers=b;pool->attention_hmx_worker=worker;
     pool->long_shared=shared;pool->long_rows=rows;pool->long_past=past;
@@ -97,18 +104,19 @@ static int qbh_long_attention_parallel(struct qbh_block_header *h,uint8_t *share
         if(a->v_zero_point!=c->v_zero_point || a->v_recenter_numerator!=c->v_recenter_numerator ||
            a->v_recenter_denominator!=c->v_recenter_denominator)pool->long_common_lut=0;
     }
-    if(pool->long_common_lut)qbh_attention_u8_prepare_v_row_major_hvx(&b->attention_configs[0],b->scores+4U*stride);
+    if(pool->long_common_lut)qbh_attention_u8_prepare_v_row_major_hvx(&b->attention_configs[0],b->scores+clients*stride);
     pool->next_attention_task=0;pool->attention_gqa_abort=0;
-    pool->active_worker_count=3;
-    for(unsigned j=0;j<3;++j)pool->jobs[j].command_kind=QBH_BLOCK_HVX_POOL_LONG_ATTENTION;
+    pool->active_worker_count=workers;
+    pool->extra_expand_worker_index=UINT32_MAX;
+    for(unsigned j=0;j<workers;++j)pool->jobs[j].command_kind=QBH_BLOCK_HVX_POOL_LONG_ATTENTION;
     asm volatile("barrier" ::: "memory");
-    for(unsigned j=0;j<3;++j)qurt_sem_up(&pool->command_ready[j]);
+    for(unsigned j=0;j<workers;++j)qurt_sem_up(&pool->command_ready[j]);
     struct qbh_block_w4f16_job main_job;
-    memset(&main_job,0,sizeof(main_job));main_job.worker_index=3;
+    memset(&main_job,0,sizeof(main_job));main_job.worker_index=workers;
     qbh_long_attention_tasks(pool,&main_job);
     qbh_w4f16_pool_wait(pool);
-    for(unsigned j=0;j<4;++j) {
-        const struct qbh_block_w4f16_job *job=j==3?&main_job:&pool->jobs[j];
+    for(unsigned j=0;j<clients;++j) {
+        const struct qbh_block_w4f16_job *job=j==workers?&main_job:&pool->jobs[j];
         h->u8_attention_k_pack_ticks+=job->u8_attention_k_pack_ticks;
         h->u8_attention_v_pack_ticks+=job->u8_attention_v_pack_ticks;
         h->u8_attention_softmax_ticks+=job->u8_attention_softmax_ticks;
