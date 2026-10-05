@@ -31570,9 +31570,9 @@ experiments:
   full_profiling_report: docs/experiments/EXP-0326-PROFILING.md
 - id: EXP-0327
   title: R3 long-context adaptive concurrency and overlap
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
   adoption_status: pending
   record: docs/experiments/EXP-0327.md
   approval_ref: User provisionally accepts accuracy and authorizes long-context R3
@@ -31580,4 +31580,142 @@ experiments:
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0327-r3-long-pipeline
-    device_owner: EXP-0327
+    device_owner: null
+  full_profiling_report: docs/experiments/EXP-0327-PROFILING.md
+  results:
+    experiment: EXP-0327
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    gate_scope: Numerical/physical and R3 overhead10percent gates pass; same-round
+      long/M64 prefill throughput10percent parity narrowly fails.
+    source_head: 54e910c72d62b653d7a92741783e474245e50fc8
+    runtime_source_head: c163b3ea61210b4bdb581b7066dca29916968b36
+    source_branch: codex/exp-0327-r3-long-pipeline
+    device_owner: null
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0327
+    evidence_ledger_sha256: bf7ac2300914319b8486886c05fa2feee00858f5f76ce6bdf99c41014cd2cc71
+    evidence_files: 1211
+    evidence_bytes: 4811743631
+    report: docs/experiments/EXP-0327-RESULTS.md
+    full_profiling_report: docs/experiments/EXP-0327-PROFILING.md
+    runtime_options:
+      QBH_DENSE_R3: 1
+      QBH_R3_OPT: 2
+      QBH_LONG_OPT: 2555807
+      QBH_PROJECTION_ROUNDING: 2
+      QBH_SP2: 8
+      QBH_FP32_RESIDUAL: 2
+    client_policy:
+      first_chunk: existing fixed short attention
+      valid_KV_up_to1664: 4
+      valid_KV1665_to2112: 3
+    formal:
+      '64':
+        control_to_candidate:
+          prefill_ms:
+            tokens: 64
+            control_ms: 42.15840615
+            candidate_ms: 34.75870834999999
+            control_tps: 1518.0839563119964
+            candidate_tps: 1841.265197646506
+            wall_ratio: 0.8258807596118133
+            ci95:
+            - 0.8229469463442629
+            - 0.8266973054338985
+            within10percent: true
+          decode_ms:
+            tokens: 64
+            control_ms: 1396.76862455
+            candidate_ms: 1387.9512203
+            control_tps: 45.82004411834424
+            candidate_tps: 46.11113061031544
+            wall_ratio: 0.9927926644652421
+            ci95:
+            - 0.9916865282727119
+            - 0.9971894278327875
+            within10percent: true
+        off_to_candidate:
+          prefill_ms:
+            tokens: 64
+            control_ms: 34.85999975
+            candidate_ms: 34.75870834999999
+            control_tps: 1835.915102093482
+            candidate_tps: 1841.265197646506
+            wall_ratio: 0.9973820775445701
+            ci95:
+            - 0.9960879482194409
+            - 0.9996393656459344
+            within10percent: true
+          decode_ms:
+            tokens: 64
+            control_ms: 1376.17641825
+            candidate_ms: 1387.9512203
+            control_tps: 46.50566537202033
+            candidate_tps: 46.11113061031544
+            wall_ratio: 1.008871074065091
+            ci95:
+            - 1.007507414257741
+            - 1.0103239583975694
+            within10percent: true
+      '2048':
+        control_to_candidate:
+          prefill_ms:
+            tokens: 2048
+            control_ms: 1593.55561615
+            candidate_ms: 1240.8471301
+            control_tps: 1285.176356096017
+            candidate_tps: 1650.485342086379
+            wall_ratio: 0.7785902383227449
+            ci95:
+            - 0.7767466323725591
+            - 0.7799156965557621
+            within10percent: true
+          decode_ms:
+            tokens: 64
+            control_ms: 1772.0331501
+            candidate_ms: 1758.10272725
+            control_tps: 36.11670582821113
+            candidate_tps: 36.40287851672235
+            wall_ratio: 0.9923069155869465
+            ci95:
+            - 0.9903793824717975
+            - 0.9929085046568592
+            within10percent: true
+        off_to_candidate:
+          prefill_ms:
+            tokens: 2048
+            control_ms: 1241.63417375
+            candidate_ms: 1240.8471301
+            control_tps: 1649.4391369839664
+            candidate_tps: 1650.485342086379
+            wall_ratio: 0.9992423668817405
+            ci95:
+            - 0.9985048955059247
+            - 1.0007275159507123
+            within10percent: true
+          decode_ms:
+            tokens: 64
+            control_ms: 1747.4355678000002
+            candidate_ms: 1758.10272725
+            control_tps: 36.62509861841442
+            candidate_tps: 36.40287851672235
+            wall_ratio: 1.006124471705073
+            ci95:
+            - 1.0053011885763792
+            - 1.006642603381341
+            within10percent: true
+    long_prefill_parity:
+      ratio: 0.8958310725426882
+      ci95:
+      - 0.8953265602483121
+      - 0.8975453591849868
+      threshold: 0.9
+      pass_gate: false
+    timing_calls: 50715
+    layer_ledgers: 1420020
+    formal_rounds: 10
+    short_rounds: 5
+    numerical_math_unchanged: true
+    ppl_rerun: false
+    baseline_promoted: false
