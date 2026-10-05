@@ -2713,3 +2713,6 @@ Matched Qwen17 long8192 PPL:BF1617.8746,fakequant25.72495,hardware28.46705. Hard
 
 ## EXP0322 active
 Host module floatingfallback attribution on EXP0321 long PPL protocol; no hardware changes.
+
+## EXP0322 closed
+22distinct hostfloatingfallback configs onmatched8192targets. Control25.72495 exact. FullAttention19.04958,fullMLP23.70817,fullhead24.85513. FPattentioncore22.67381; conditionalKpostRoPE/cachefloat19.91251, Qonly22.84011, bothQK19.92945. Softmax-only25.67821, floatingSwiGLU/Downinput25.86733. Kgrid and integercore are priority, notDown16. Conditional gains notadditive and notactualhardwarefallback. No source/hardware/baseline changes; lockreleased.

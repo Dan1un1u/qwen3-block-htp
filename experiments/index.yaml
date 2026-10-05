@@ -31410,9 +31410,9 @@ experiments:
     standard_float_softmax: false
 - id: EXP-0322
   title: Module floating fallback attribution for Qwen17 Down16 PPL
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: not_requested
   record: docs/experiments/EXP-0322.md
   approval_ref: User requests per-module floating fallback to locate largest quality
@@ -31421,3 +31421,45 @@ experiments:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0319-long-decode-pipeline
     device_owner: null
+  results:
+    experiment: EXP-0322
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: Original/package provenance,FP component correctness,exact control
+      and matched scoring; not quality acceptance
+    source_unchanged: true
+    source_head: 486c3cc5244d6d047988cf00f521485a09f6e968
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0322
+    evidence_ledger_sha256: 8a3c582edfa50904ce86ab0910cff8d170a6ce9cc2afa67b81c836508fe88980
+    report: docs/experiments/EXP-0322-RESULTS.md
+    distinct_configs: 22
+    total_evaluations: 32
+    targets_each: 8192
+    ppl:
+      attention_full_fp32: 19.04957768415642
+      attention_boundaries_fp32: 19.913277556218656
+      attention_core_fp32: 22.673814718453887
+      mlp_full_fp32: 23.70817088483699
+      qkv_w16: 24.45606613036497
+      down_w16: 24.687118188791885
+      head_full_fp32: 24.85513321882863
+      post_norm_a16: 25.0667433561001
+      head_w16: 25.187721291637878
+      gateup_w16: 25.20714026243788
+      head_grids_fp32: 25.239390521480143
+      o_w16: 25.421496852734204
+      input_norm_a16: 25.589814121574882
+      control: 25.724948759601293
+      swiglu_down_input_fp32: 25.867327889347667
+      qk_rope_grid_off: 19.929448688437716
+      concat_grid_off: 22.69732293356925
+      v_grid_off: 22.807417230107642
+      qk_projection_grid_off: 22.971509763888236
+      softmax_only_fp32: 25.67821227662118
+      k_rope_grid_off: 19.912506786970148
+      q_rope_grid_off: 22.84011305907739
+    principal_finding: K postRoPE/K-cache A8 boundary and integerattentioncore dominate;
+      K-only bypass19.9125 conditional onFPcore22.6738. Down16notprimary.
+    device_owner: null
+    baseline_promoted: false
