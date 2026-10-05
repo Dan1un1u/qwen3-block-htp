@@ -42,6 +42,13 @@
 #else
 #define QBH_F16_FP32_RESIDUAL(h) 0U
 #endif
+/* EXP0324: only the validated Qwen1.7 Down16/FP32 path may combine R3.
+ * Scalar/identity modes remain audit-only and use the same physical carrier. */
+#if defined(QBH_NATIVE_SP2) && !defined(QBH_MODEL_LLAMA32) && !defined(QBH_QWEN_06B)
+#define QBH_R3_DOWN16(h) ((h)->variant == QBH_BLOCK_W4U8 && QBH_SP2(h)==8U && QBH_FP32_RESIDUAL(h)==2U && (h)->dense_r3_mode>=1U && (h)->dense_r3_mode<=4U && !(h)->dense_r4_mode)
+#else
+#define QBH_R3_DOWN16(h) 0U
+#endif
 #define QBH_BLOCK_EXPERIMENT UINT32_C(218)
 
 #define QBH_BLOCK_M UINT32_C(64)
@@ -808,6 +815,7 @@ struct qbh_block_slice_layer_profile {
 #define QBH_DENSE_R3_CARRIER_BYTES (64U * 24U * 128U * 2U)
 #define QBH_DENSE_R3_BASE_AUDIT_BYTES (2U * QBH_DENSE_R3_CARRIER_BYTES + 64U * 24U * 128U)
 #define QBH_DENSE_R3_AUDIT_BYTES (QBH_DENSE_R3_BASE_AUDIT_BYTES + 11U * QBH_DENSE_R3_CARRIER_BYTES)
+#define QBH_R3_LAYER_AUDIT_BYTES (QBH_DENSE_R3_AUDIT_BYTES + QBH_VERTICAL_SLICE_LAYER_COUNT * QBH_DENSE_R3_BASE_AUDIT_BYTES)
 struct qbh_block_header {
     uint32_t magic;
     uint32_t abi_version;

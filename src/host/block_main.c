@@ -6505,8 +6505,8 @@ int main(int argc, char **argv) {
         if (getenv("QBH_DENSE_R3_AUDIT")) {
             cursor=qbh_align_up_size(cursor,QBH_HOST_ALIGNMENT);
             dense_r3_audit_offset=cursor;
-            if (QBH_DENSE_R3_AUDIT_BYTES>UINT32_MAX-cursor) return 2;
-            cursor+=QBH_DENSE_R3_AUDIT_BYTES;
+            if (QBH_R3_LAYER_AUDIT_BYTES>UINT32_MAX-cursor) return 2;
+            cursor+=QBH_R3_LAYER_AUDIT_BYTES;
         }
         if (w4u8_boundary_audit_enabled != 0U) {
             const size_t boundary_bytes =
@@ -7027,9 +7027,10 @@ int main(int argc, char **argv) {
     }
 #if defined(QBH_MODEL_LLAMA32) || defined(QBH_NATIVE_SP2)
     header->fp32_residual=qbh_host_fp32_residual();
+    header->dense_r3_mode=dense_r3_mode;
     header->sp2_mode=getenv("QBH_SP2") ? (uint32_t)atoi(getenv("QBH_SP2")) : 0U;
     if((header->sp2_mode!=0U && header->sp2_mode!=3U && header->sp2_mode!=4U && header->sp2_mode!=5U && header->sp2_mode!=6U && header->sp2_mode!=7U && header->sp2_mode!=8U) || (header->sp2_mode &&
-       (variant!=QBH_BLOCK_W4U8 || dense_r3_mode))) return 2;
+       (variant!=QBH_BLOCK_W4U8 || (dense_r3_mode && !QBH_R3_DOWN16(header))))) return 2;
 #endif
 #if defined(QBH_NATIVE_SP2) && !defined(QBH_MODEL_LLAMA32)
     header->u8_prefill_opt=getenv("QBH_U8_PREFILL_OPT") ? (uint32_t)atoi(getenv("QBH_U8_PREFILL_OPT")) : 0U;

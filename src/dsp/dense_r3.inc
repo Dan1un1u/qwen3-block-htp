@@ -180,6 +180,13 @@ static int qbh_run_dense_r3(struct qbh_block_header *h,uint8_t *shared,
         memcpy(audit+QBH_DENSE_R3_CARRIER_BYTES,result,rows*128U*2U);
         memcpy(audit+2U*QBH_DENSE_R3_CARRIER_BYTES,b->q,16U*8192U);
         memcpy(audit+2U*QBH_DENSE_R3_CARRIER_BYTES+16U*8192U,b->k,8U*8192U);
+        if (QBH_R3_DOWN16(h)) {
+            const uint32_t layer=h->prefix_layer_index-QBH_VERTICAL_SLICE_FIRST_LAYER;
+            if(layer>=QBH_VERTICAL_SLICE_LAYER_COUNT || !qbh_range_valid(h->dense_r3_audit_offset,QBH_R3_LAYER_AUDIT_BYTES,h->shared_bytes))return -1;
+            memcpy(audit+QBH_DENSE_R3_AUDIT_BYTES+layer*QBH_DENSE_R3_BASE_AUDIT_BYTES,audit,QBH_DENSE_R3_BASE_AUDIT_BYTES);
+            h->boundary_ddr_write_bytes+=QBH_DENSE_R3_BASE_AUDIT_BYTES;
+        }
+
     }
     return 0;
 }

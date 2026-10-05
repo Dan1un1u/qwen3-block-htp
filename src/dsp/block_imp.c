@@ -2172,7 +2172,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
 #if defined(QBH_MODEL_LLAMA32) || defined(QBH_NATIVE_SP2)
     if (header && QBH_FP32_RESIDUAL(header) && !QBH_F16_FP32_RESIDUAL(header) &&
         (QBH_FP32_RESIDUAL(header)>QBH_FP32_RESIDUAL_MAX || header->variant!=QBH_BLOCK_W4U8 ||
-         (QBH_SP2(header)!=8U && QBH_SP2(header)!=0U) || header->dense_r3_mode || (header->dense_r4_mode && header->dense_r4_mode!=4U) ||
+         (QBH_SP2(header)!=8U && QBH_SP2(header)!=0U) || (header->dense_r3_mode && !QBH_R3_DOWN16(header)) || (header->dense_r4_mode && header->dense_r4_mode!=4U) ||
          header->w4u8_decode_projection_mode!=QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
          header->w4u8_decode_direct_n_mask!=63U ||
          (header->crouton_boundary_mode & (QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
@@ -2203,7 +2203,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         (QBH_SP2(header)>=5U &&
           (header->w4u8_decode_direct_n_gate_up_batch_n_tiles!=32U || header->attention_hvx_contexts<4U)) ||
         (QBH_SP2(header) && (header->variant!=QBH_BLOCK_W4U8 ||
-          header->dense_r3_mode || header->dense_r4_mode ||
+          (header->dense_r3_mode && !QBH_R3_DOWN16(header)) || header->dense_r4_mode ||
           header->w4u8_decode_projection_mode!=QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
           header->w4u8_decode_direct_n_mask!=63U ||
           header->w4u8_decode_swiglu_rows!=4U ||
@@ -23611,7 +23611,7 @@ publish:
     if (flush_status==0 && header->dense_r3_audit_offset &&
             qbh_range_valid(header->dense_r3_audit_offset,QBH_DENSE_R3_AUDIT_BYTES,shared_bytes))
             flush_status=qurt_mem_cache_clean((qurt_addr_t)(shared+header->dense_r3_audit_offset),
-                QBH_DENSE_R3_AUDIT_BYTES,QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE);
+                (QBH_R3_DOWN16(header)?QBH_R3_LAYER_AUDIT_BYTES:QBH_DENSE_R3_AUDIT_BYTES),QURT_MEM_CACHE_FLUSH,QURT_MEM_DCACHE);
         /* Public projection audit ranges are CPU-written on the DSP. */
         for (uint32_t proj=0U; flush_status==0 && proj<QBH_BLOCK_PROJECTION_COUNT; ++proj) {
             const struct qbh_block_projection_desc *desc=&header->projections[proj];
