@@ -31200,3 +31200,16 @@ experiments:
         text_assessment: limited readable relevant answers; repetition/control-marker
           leakage; not general quality acceptance
   full_profiling_report: docs/experiments/EXP-0317-RESULTS.md
+- id: EXP-0318
+  title: Qwen3-1.7B Down16 2048-token context and long-context quality validation
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/EXP-0318.md
+  approval_ref: 'User2026-10-05: 同意，按此步骤实现。 Extend Qwen3-1.7B to2048 context before
+    long-context PPL.'
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0312-explicit-qdq
+    device_owner: EXP-0318
