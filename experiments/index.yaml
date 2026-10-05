@@ -31513,5 +31513,5 @@ experiments:
     followed by same full-model device PPL.
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0319-long-decode-pipeline
+    source_branch: codex/exp-0324-r3-down16-device
     device_owner: EXP-0324
