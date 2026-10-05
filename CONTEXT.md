@@ -2707,3 +2707,6 @@ Qwen17 originalBF16 teacher: long2048subset17.87459766 vs deployed28.46704766(+5
 
 ## EXP0321 active
 Deployment-matched fakequant PPL vsEXP0318/0320; unchanged hardware/math packages, host-only.
+
+## EXP0321 closed
+Matched Qwen17 long8192 PPL:BF1617.8746,fakequant25.72495,hardware28.46705. Hardware vsfake+10.66%;fake vsteacher+43.92%. Fakequant preserves actualW4/staticgrids/prefix/integerattention/LUT/quanthead and replaces projectionRQ/normalization with idealFP32. Not standardfloatsoftmax,not a hardwarebug attribution. Source unchanged/no promotion. See EXP0321 results.

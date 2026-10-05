@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0321
+  active_experiment: null
   next_experiment_number: 322
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -16119,3 +16119,32 @@ current_scope:
       hardware_rows_sha256: 15a96063eefdb7aebafda4342898f17854bf3ae5a79aefee4328d13880a3e6f4
     baseline_promoted: false
     device_owner: null
+  latest_qwen17_fakequant:
+    experiment: EXP-0321
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: Input provenance,component reference and matched scoring protocol;
+      no accuracy acceptance
+    source_unchanged: true
+    source_head: 486c3cc5244d6d047988cf00f521485a09f6e968
+    device_owner: null
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0321
+    evidence_ledger_sha256: bc4dac6b33aef1922eb2b0d7a2e6d6d51bced1446dc51fa4692562897a6dc9f5
+    report: docs/experiments/EXP-0321-RESULTS.md
+    comparison:
+      teacher_ppl: 17.87459766148885
+      fakequant_ppl: 25.724948759601293
+      hardware_ppl: 28.4670476589086
+      teacher_nll: 2.883380579878576
+      fakequant_nll: 3.247461289865896
+      hardware_nll: 3.348747195839262
+      hardware_vs_fakequant_ppl_increase_percent: 10.65929780825657
+      fakequant_vs_teacher_ppl_increase_percent: 43.91903665068878
+      hardware_vs_fakequant_delta_nll: 0.10128590597336595
+      total_delta_nll: 0.46536661596068596
+      software_contract_gap_fraction_of_total_nll: 0.7823524453633722
+      remaining_fraction_of_total_nll: 0.21764755463662774
+      all_target_context_positions_exact: true
+    baseline_promoted: false
+    standard_float_softmax: false
