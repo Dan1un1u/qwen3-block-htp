@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0324
+  active_experiment: null
   next_experiment_number: 325
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -16216,3 +16216,30 @@ current_scope:
       and paired FPcore22.86137to20.16108; OFF recal integerregresses37.92236. Actual
       device pending.
     evidence_ledger_sha256: fb51ad2ffebd978469b67793d44d4d4b9a7e115def90a07c4cb2f56baff2857b
+  latest_qwen17_r3_device_quality:
+    experiment: EXP-0324
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: Stated FP16 dense HMX component, conditional independent downstream
+      chain, cache/physical/determinism and matched PPL; not ideal FP32 whole-model
+      equality or quality acceptance
+    source_head: 688a05b73a130be3876213a0f86b8115c72df70a
+    source_branch: codex/exp-0324-r3-down16-device
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0324
+    report: docs/experiments/EXP-0324-RESULTS.md
+    targets: 8192
+    ppl: 23.31959205742959
+    old_hardware_ppl: 28.4670476589086
+    r3_simulator_ppl: 21.780754540302457
+    teacher_ppl: 17.87459766148885
+    ppl_reduction_percent: 18.08215471852117
+    hardware_vs_simulator_percent: 7.06512492154352
+    component_layer_steps: 136
+    conditional_chain_exact_layer_steps: 128
+    repeat_exact_layer_hashes: 112
+    baseline_promoted: false
+    quality_accepted: false
+    device_owner: null
+    evidence_ledger_sha256: d8c4c104a8d3309bf39e84b185535c298021c499365924c42d0b5bd0c8d69c8f
+    evidence_files: 600
