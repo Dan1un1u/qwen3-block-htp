@@ -31202,14 +31202,54 @@ experiments:
   full_profiling_report: docs/experiments/EXP-0317-RESULTS.md
 - id: EXP-0318
   title: Qwen3-1.7B Down16 2048-token context and long-context quality validation
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
-  adoption_status: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
+  adoption_status: not_requested
   record: docs/experiments/EXP-0318.md
   approval_ref: 'User2026-10-05: 同意，按此步骤实现。 Extend Qwen3-1.7B to2048 context before
     long-context PPL.'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0318-qwen17-context2048
-    device_owner: EXP-0318
+    device_owner: null
+  results:
+    experiment: EXP-0318
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: 2048+64 full28 implementation, independent integer/ISA reference,
+      cache/physical guards and8192target scoring integrity; not model-quality acceptance
+      or formal speed gate
+    adoption_status: not_requested
+    baseline_promoted: false
+    quality_accepted: false
+    device_owner: null
+    source_head: 0deb09e6ad504d3bafedbb006f5d816dc59fe4ba
+    source_branch: codex/exp-0318-qwen17-context2048
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0318
+    evidence_ledger_sha256: 26b70e3ba70899d3747e483b6014fc7afabb7fd7fe41be162c8a510d860d1181
+    report: docs/experiments/EXP-0318-RESULTS.md
+    prefill_tokens: 2048
+    decode_steps: 64
+    cache_capacity: 2112
+    independent_layer_hashes_exact: 980
+    parallel_serial_layer_hashes_exact: 2688
+    padding_poison_layer_hashes_exact: 980
+    ppl: 28.4670476589086
+    mean_nll: 3.348747195839262
+    target_tokens: 8192
+    ppl_protocol: Same EXP0317 WikiText2 raw test token positions64..8255;2048-token
+      windows,64warmup,1984targets per full window,final256tail. Context64..2047;
+      not full corpus. Old short PPL49.62699611278172.
+    short_scoring_regression_tokens: 43
+    performance_diagnostic_only:
+      shape: 2048+64
+      prefill_host_ms: 1316.821302
+      decode_host_ms: 1881.410671
+      prefill_tps: 1555.2603811082638
+      decode_tps: 34.01702827909601
+      scope: one uninstrumented complete-model diagnostic run; includes host input
+        staging and FastRPC, excludes cold load and tokenization; not formal repeat10
+    text_assessment: readable English but repeats background and fails to answer within65outputs;
+      long-context task quality not accepted
