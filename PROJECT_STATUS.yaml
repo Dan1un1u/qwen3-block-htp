@@ -18,8 +18,8 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 327
+  active_experiment: EXP-0327
+  next_experiment_number: 328
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -14503,7 +14503,7 @@ current_scope:
     interpretation: Combined FP arithmetic+fused QDQ; not QDQ-only cost or overlapped
       production critical-path share
     companion: L32-0063
-  device_owner: null
+  device_owner: EXP-0327
   floating_intermediate_motivation_06b:
     experiment: EXP-0306
     execution_state: completed
@@ -16273,8 +16273,8 @@ current_scope:
     execution_state: completed
     evidence_validity: valid
     local_gate: pass
-    gate_scope: Component/conditional integration, unchanged-control, physical and paired
-      speed gates; not ideal fullmodel bit equality or quality acceptance
+    gate_scope: Component/conditional integration, unchanged-control, physical and
+      paired speed gates; not ideal fullmodel bit equality or quality acceptance
     source_head: e3859c3f99f814edd540d81617cca471236202cc
     source_branch: codex/exp-0326-projection-rounding
     evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0326
@@ -16316,3 +16316,8 @@ current_scope:
         - 1.0014320751507908
     baseline_promoted: false
     quality_accepted: false
+  r3_accuracy_user_acceptance:
+    date: '2026-10-06'
+    experiment: EXP-0326
+    status: provisionally accepted by user for speed work
+    strict_full_bit_exact_claim: false

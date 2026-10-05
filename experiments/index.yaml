@@ -31568,3 +31568,16 @@ experiments:
     source_branch: codex/exp-0326-projection-rounding
     device_owner: null
   full_profiling_report: docs/experiments/EXP-0326-PROFILING.md
+- id: EXP-0327
+  title: R3 long-context adaptive concurrency and overlap
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/EXP-0327.md
+  approval_ref: User provisionally accepts accuracy and authorizes long-context R3
+    speed optimization, context-dependent lanes and matched rotation overhead verification.
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0326-projection-rounding
+    device_owner: EXP-0327
