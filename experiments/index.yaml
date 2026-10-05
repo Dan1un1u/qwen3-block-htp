@@ -31408,3 +31408,16 @@ experiments:
       all_target_context_positions_exact: true
     baseline_promoted: false
     standard_float_softmax: false
+- id: EXP-0322
+  title: Module floating fallback attribution for Qwen17 Down16 PPL
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: not_requested
+  record: docs/experiments/EXP-0322.md
+  approval_ref: User requests per-module floating fallback to locate largest quality
+    loss.
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0319-long-decode-pipeline
+    device_owner: null
