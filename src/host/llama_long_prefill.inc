@@ -10,13 +10,24 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
     const char *v=getenv("QBH_LONG_DECODE_STEPS");
     const char *audit=getenv("QBH_GENERATION_AUDIT_DIR");
     const int poison=getenv("QBH_LONG_PADDING_POISON")!=NULL;
+    const char *target_file=getenv("QBH_LONG_TARGET_FILE");
+    uint32_t targets[2112];
     if (v && qbh_parse_u32(v,&decode)) return -1;
     v=getenv("QBH_LONG_REPEATS");
     if (v && qbh_parse_u32(v,&repetitions)) return -1;
-    if (!length || length>(h->variant==QBH_BLOCK_W4U8?2048U:768U) || decode>63U || !repetitions || repetitions>10U ||
+    if (!length || length>(h->variant==QBH_BLOCK_W4U8?2048U:768U) || (!target_file && decode>63U) || decode>=2112U || !repetitions || repetitions>10U ||
         length+decode>h->kv_cache_capacity ||
         (h->variant==QBH_BLOCK_W4U8 && !QBH_FP32_RESIDUAL(h)) || h->kv_cache_k_format!=QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1)
         return -1;
+    if(target_file) {
+        if(h->variant!=QBH_BLOCK_W4U8 || repetitions!=1U) return -1;
+        FILE *f=fopen(target_file,"rb");
+        if(!f)return -1;
+        const size_t count=fread(targets,sizeof(uint32_t),decode+1U,f);
+        const int tail=fgetc(f);fclose(f);
+        if(count!=decode+1U || tail!=EOF)return -1;
+        for(uint32_t i=0;i<=decode;++i)if(targets[i]>=QBH_QWEN3_VOCAB_SIZE)return -1;
+    }
     uint32_t ids[2048], fixed[64];
     uint16_t *cos=malloc((size_t)h->kv_cache_capacity*QBH_BLOCK_HEAD_DIM*2U);
     uint16_t *sin=malloc((size_t)h->kv_cache_capacity*QBH_BLOCK_HEAD_DIM*2U);
@@ -61,7 +72,7 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
             memset(shared+tokens->offset,0,tokens->expected_bytes);
             if(poison)for(uint32_t i=0;i<64U;i++)((uint32_t *)(shared+tokens->offset))[i]=100U+i;
             if(is_prefill)memcpy(shared+tokens->offset,ids+before,rows*4U);
-            else *(uint32_t *)(shared+tokens->offset)=getenv("QBH_LONG_GREEDY")?selected:fixed[step-chunks];
+            else *(uint32_t *)(shared+tokens->offset)=target_file?targets[step-chunks]:(getenv("QBH_LONG_GREEDY")?selected:fixed[step-chunks]);
             memset(shared+ropes[0].offset,poison?0x3c:0,ropes[0].expected_bytes);
             memset(shared+ropes[1].offset,poison?0xbc:0,ropes[1].expected_bytes);
             memcpy(shared+ropes[0].offset,cos+(size_t)before*QBH_BLOCK_HEAD_DIM,rows*QBH_BLOCK_HEAD_DIM*2U);
@@ -70,6 +81,8 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
             h->logical_m=rows;h->generation_token_count=rows;
             h->long_skip_head=is_prefill && step+1U<chunks;
             h->long_output_index=is_prefill?0U:step-chunks+1U;
+            h->evaluation_mode=target_file && !h->long_skip_head ? 1U : 0U;
+            if(h->evaluation_mode)h->evaluation_target_token=targets[h->long_output_index];
             qbh_bind_host_slice_layer(h,0U);
             h->initial_kv_length=before;h->replay_first_position=before;
             h->replay_expected_step=state->completed_step_count;h->repeat_count=1U;
@@ -119,6 +132,15 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
                 printf("{\"record\":\"long_cache_guard\",\"step\":%u,\"layers\":%u,\"checked_unchanged_bytes\":%" PRIu64 ",\"finite_append\":true}\n",
                     step,QBH_VERTICAL_SLICE_LAYER_COUNT,checked);
             }
+            if(h->evaluation_mode) {
+                if(h->evaluation_nonfinite || h->evaluation_vocab_count!=QBH_QWEN3_VOCAB_SIZE ||
+                   h->evaluation_target_seen!=1U || !isfinite(h->evaluation_nll) ||
+                   fabsf(h->evaluation_nll-(h->evaluation_logsumexp-h->evaluation_target_logit))>0.00002f)goto finish;
+                printf("{\"record\":\"long_eval\",\"target_index\":%u,\"target_token\":%u,\"target_code\":%u,\"nll\":%.9g,\"target_logit\":%.9g,\"logsumexp\":%.9g,\"vocab_count\":%u,\"saturated\":%u,\"cache_valid\":%u}\n",
+                    h->long_output_index,h->evaluation_target_token,h->evaluation_target_code,
+                    h->evaluation_nll,h->evaluation_target_logit,h->evaluation_logsumexp,
+                    h->evaluation_vocab_count,h->evaluation_saturated,before+rows);
+            }
             selected=h->generation_selected_token_id;
             struct qbh_replay_step_result pr;memset(&pr,0,sizeof(pr));
             pr.host_wall_ns=wall;pr.first_position=before;pr.valid_length=before+rows;pr.step_index=step;
@@ -157,5 +179,5 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
             rep,length,decode,prefill_ns,decode_ns,stage_ns,prefill_stage_ns,decode_stage_ns);fflush(stdout);
     }
     result=0;
-finish:free(previous);free(cos);free(sin);return result;
+finish:h->evaluation_mode=0U;free(previous);free(cos);free(sin);return result;
 }
