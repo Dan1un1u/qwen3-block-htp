@@ -87,6 +87,13 @@ static int qbh_long_attention_parallel(struct qbh_block_header *h,uint8_t *share
     unsigned clients=(capacity-20480U)/stride;
     if(clients>4U)clients=4U;
     if(clients>pool->worker_count+1U)clients=pool->worker_count+1U;
+    /* EXP0327: optional measured concurrency cap. Capacity remains a hard
+     * upper bound. No operand sizes, arithmetic, or resource owners change.
+     * bits19:20: 0=capacity policy, 1=two clients, 2=three clients.
+     * Reserved value3 keeps capacity policy until a measured table is frozen. */
+    const unsigned lane_policy=(h->long_optimization>>19U)&3U;
+    const unsigned lane_cap=lane_policy==1U?2U:lane_policy==2U?3U:4U;
+    if(clients>lane_cap)clients=lane_cap;
     if(!clients)return -1;
     const unsigned workers=clients-1U;
     for(unsigned j=0;j<pool->worker_count;++j)
