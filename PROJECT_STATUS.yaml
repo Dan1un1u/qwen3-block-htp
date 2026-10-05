@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0325
+  active_experiment: null
   next_experiment_number: 326
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -16243,3 +16243,28 @@ current_scope:
     device_owner: null
     evidence_ledger_sha256: d8c4c104a8d3309bf39e84b185535c298021c499365924c42d0b5bd0c8d69c8f
     evidence_files: 600
+  latest_qwen17_r3_numerical_alignment:
+    experiment: EXP-0325
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: partial_alignment
+    gate_scope: Major contract mismatches corrected and two long divergence triggers
+      localized; independent full8192 bit-exact alignment NOT achieved
+    device_owner: null
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0325
+    report: docs/experiments/EXP-0325-RESULTS.md
+    evidence_ledger_sha256: b420cdece676ef89a070d5a693b53ed32d20ea1979846d0eb1f2f4369ce04c4d
+    frozen_device_source: 688a05b73a130be3876213a0f86b8115c72df70a
+    host_capture_source: 1fa5fca
+    device_arithmetic_unchanged: true
+    targets: 8192
+    ideal_r3_ppl: 21.780754540302457
+    sdk_reference_ppl: 23.059651349235985
+    actual_hardware_ppl: 23.31959205742959
+    independent_short_exact_layer_steps: 112
+    independent_full8192_bit_exact: false
+    conditional_two_code_ppl: 23.36773492792518
+    conditional_result_not_independent: true
+    conditional_remaining_divergence: window1/context1812 not component localized
+    baseline_promoted: false
+    quality_accepted: false

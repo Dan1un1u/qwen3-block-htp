@@ -31544,13 +31544,13 @@ experiments:
     evidence_files: 600
 - id: EXP-0325
   title: Frozen R3 software hardware numerical contract alignment
-  execution_state: running
-  evidence_validity: pending
-  local_gate: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: partial_alignment
   adoption_status: not_requested
   record: docs/experiments/EXP-0325.md
   approval_ref: User agrees next step should first align software and hardware.
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0324-r3-down16-device
-    device_owner: EXP-0325
+    device_owner: null
