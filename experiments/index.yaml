@@ -31556,9 +31556,9 @@ experiments:
     device_owner: null
 - id: EXP-0326
   title: Hardware projection rounding repair toward frozen software target
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: pending
   record: docs/experiments/EXP-0326.md
   approval_ref: User approves trying hardware-to-software rounding repair, projection
@@ -31566,4 +31566,5 @@ experiments:
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0326-projection-rounding
-    device_owner: EXP-0326
+    device_owner: null
+  full_profiling_report: docs/experiments/EXP-0326-PROFILING.md

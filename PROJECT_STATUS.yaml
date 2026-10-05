@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0326
+  active_experiment: null
   next_experiment_number: 327
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -16266,5 +16266,53 @@ current_scope:
     conditional_two_code_ppl: 23.36773492792518
     conditional_result_not_independent: true
     conditional_remaining_divergence: window1/context1812 not component localized
+    baseline_promoted: false
+    quality_accepted: false
+  latest_qwen17_projection_rounding_repair:
+    experiment: EXP-0326
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: Component/conditional integration, unchanged-control, physical and paired
+      speed gates; not ideal fullmodel bit equality or quality acceptance
+    source_head: e3859c3f99f814edd540d81617cca471236202cc
+    source_branch: codex/exp-0326-projection-rounding
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0326
+    report: docs/experiments/EXP-0326-RESULTS.md
+    full_profiling_report: docs/experiments/EXP-0326-PROFILING.md
+    evidence_ledger_sha256: 0634f0639783b824f513e447be4f2c4a8f953688aec510351c1f7131e6d4a755
+    device_owner: null
+    rounding_mode: 2
+    default_mode: 0
+    weights_scales_calibration_unchanged: true
+    dsp_binary_unchanged: true
+    r3_unchanged: true
+    targets: 8192
+    old_hardware_ppl: 23.31959205742959
+    hardware_ppl: 21.582352741525476
+    sdk_reference_ppl: 21.667880029454604
+    ppl_reduction_percent: 7.44969856945088
+    independent_full_bit_exact: false
+    formal:
+      prefill_ns:
+        tokens: 64
+        control_host_ms: 42.336263200000005
+        candidate_host_ms: 42.293648450000006
+        control_tps: 1511.7063992553788
+        candidate_tps: 1513.229582821673
+        wall_change_percent: -0.10065779730885627
+        ratio_ci95:
+        - 0.9954936391650501
+        - 1.0020980937414647
+      decode_ns:
+        tokens: 15
+        control_host_ms: 326.22189395
+        candidate_host_ms: 326.21659569999997
+        control_tps: 45.980972700437604
+        candidate_tps: 45.981719500851256
+        wall_change_percent: -0.0016241245907377966
+        ratio_ci95:
+        - 0.9987430160924126
+        - 1.0014320751507908
     baseline_promoted: false
     quality_accepted: false
