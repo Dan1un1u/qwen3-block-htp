@@ -2724,3 +2724,5 @@ EXP-0323 closed: frozen dense R3 QK-only recalibration,8192-target hostPPL. Inte
 EXP-0324 running: approved frozen R3 actualHMX numerical validation then conditional8192token devicePPL, no speed/quality promotion.
 
 EXP-0324 completed: actual HMX fixed dense R3+EXP0323 frozen QK scales, Qwen17 W4A8 Down16 FP32residual. Actual8192targetPPL23.319592 vs retainedOFF28.467048 (-18.0822%), R3software21.780755 (+7.0651%),teacher17.874598. All5windows improve. Single/three/full28 components pass136layersteps; conditional downstream exact128layersteps; fullrepeat112hashes/184files exact; OFF43score exact;2048cache35steps pass. HMXFP16carrier/roundednormalization differs fromidealFP32; remaininggap not solelyR3rounding. Source688a05b73a130be3876213a0f86b8115c72df70a branchcodex/exp-0324-r3-down16-device. No baseline promotion/qualityacceptance/speedcampaign; existinghistorical idealR3failed gates unchanged. Device released. See EXP-0324-RESULTS.md.
+
+EXP-0325 started: frozen R3 software/hardware contract alignment; reuse EXP0324 captured evidence first, matched PPL after boundary checks. No retuning or baseline promotion.
