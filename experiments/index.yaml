@@ -31318,3 +31318,15 @@ experiments:
     failed_candidate: four-client1179648reserve rejected HMX precise exception; cause
       unresolved; evidence retained
   full_profiling_report: docs/experiments/EXP-0319-FULL-PROFILING.md
+- id: EXP-0320
+  title: Matched original BF16 teacher for Qwen17 Down16 WikiText2 PPL
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: not_requested
+  record: docs/experiments/EXP-0320.md
+  approval_ref: User asks floating teacher for current PPL; memory optimization deferred.
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0319-long-decode-pipeline
+    device_owner: null

@@ -2698,3 +2698,6 @@ User requests separating G-b FP nonlinear from QDQ. Original fused timings remai
 
 ## EXP-0312 closed: explicit FP/QDQ separation
 Four-model follow-up complete with partner L32-0073. Five short/ten formal paired repeat10, M64+1. Own historical reference exact at1/3/full layers; fullmodel fused/split hidden/Norm/KV byte-exact. Model deployment hashes verified. No timed intermediateDDR/spill,8MiB. Workbook N_FP与QDQ拆分 appended and all original13 worksheet parts byte-identical. QDQ/input-output prep occupies15.60–21.95% of explicit Host wall acrossfourmodels, includes phase materialization/scheduling; not retrospectively attributable to original fusedG or production critical path. DecodeSoftmax remains fused and one-step E2E auxiliary. No baseline promotion. Source 51a00a484e7c0209cdc60441c08a5312c3386c9a; report docs/experiments/EXP-0312-RESULTS.md; ledger b708ce0cb909142e5df4d5ecf80d4ca254681d304c853ffa741ea106be7ecbf6. Active/device owner none.
+
+## EXP0320 active
+Matched original BF16 teacher for current Qwen17 long/short8192token PPL. Host-only; memory optimization deferred.
