@@ -31502,3 +31502,16 @@ experiments:
       and paired FPcore22.86137to20.16108; OFF recal integerregresses37.92236. Actual
       device pending.
     evidence_ledger_sha256: fb51ad2ffebd978469b67793d44d4d4b9a7e115def90a07c4cb2f56baff2857b
+- id: EXP-0324
+  title: Frozen EXP0323 dense R3 Down16 device validation and conditional PPL
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: not_requested
+  record: docs/experiments/EXP-0324.md
+  approval_ref: User agrees to freeze R3 candidate, actual HMX numerical validation
+    followed by same full-model device PPL.
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0319-long-decode-pipeline
+    device_owner: EXP-0324
