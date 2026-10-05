@@ -10938,7 +10938,9 @@ static int qbh_run_w4u8_qkv_ring(
         (header->w4u8_decode_direct_n_mask &
          QBH_BLOCK_W4U8_DIRECT_N_QKV) != 0U &&
         ((logical_rows == 1U && past_tokens != 0U) ||
-         (logical_rows == QBH_BLOCK_M && past_tokens == 0U &&
+         (logical_rows == QBH_BLOCK_M &&
+          (past_tokens == 0U || (header->long_prompt_tokens &&
+           (header->long_optimization & 2097152U))) &&
           (header->w4u8_decode_direct_n_mask &
            QBH_BLOCK_W4U8_DIRECT_N_PREFILL_QKVO) != 0U));
     state.tiles_per_batch = state.direct_n_weights != 0U
