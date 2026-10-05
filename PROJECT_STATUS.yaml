@@ -7,7 +7,7 @@ project:
   source_root: /home/daniuniu/work/qwen3-block-htp
   memory_branch: codex/qwen3-block-project-memory
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
-  updated_on: '2026-09-25'
+  updated_on: '2026-10-05'
   qnn_runtime: none
   qairt_runtime: none
   hexagon_sdk_candidate: 6.6.0.0
@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0317
+  active_experiment: null
   next_experiment_number: 318
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -2882,7 +2882,7 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: Qwen3_28layer_native_W4_SP2_M64_plus15_verified
-  last_completed_experiment: EXP-0312
+  last_completed_experiment: EXP-0317
   last_completed_source_commit: 51a00a484e7c0209cdc60441c08a5312c3386c9a
   provisional_source_parent: EXP0268_diagnostic_U8_pipeline_closure_no_default_promotion
   device_execution_state: idle_explicit_qdq_completed
@@ -12344,8 +12344,8 @@ current_scope:
     generalization: supplementary only; not rerun or included
     quality_claim: false
     baseline_promoted: false
-  next_action: Await user direction; explicit FP/QDQ four-model results appended in
-    N, original G retained; production defaults unchanged.
+  next_action: Discuss accuracy diagnostics with user; no queued experiment or automatic
+    quality/baseline promotion.
   latest_f16_baseline_synthesis:
     report: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/REPORT.md
     a16_discussion: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/A16_DOWN_DISCUSSION.md
@@ -12766,7 +12766,7 @@ current_scope:
       exceedsuint32 shared-offset ABI
     named_dataset_measurements_completed: false
     baseline_promotion: No additional automatic promotion
-  stage: explicit_qdq_motivation_diagnostic_completed
+  stage: down16_text_and_conditional_wikitext2_quality_completed
   latest_long_prefill_migration:
     experiment: EXP-0296
     execution_state: completed
@@ -15946,3 +15946,47 @@ current_scope:
         exact_historical_steps: 150
     metric: unique DMA-BUF backing bytes plus ordinary RSS excluding DMA-BUF RSS after
       generation_startup; decimal MB; no VTCM/loading/sampler/hidden allocations
+  latest_down16_quality_baseline:
+    experiment: EXP-0317
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: Hardware execution and PPL collection integrity only; no model-quality
+      acceptance threshold
+    adoption_status: not_applicable
+    baseline_promoted: false
+    device_owner: null
+    source_head: 51a00a484e7c0209cdc60441c08a5312c3386c9a
+    source_unchanged: true
+    evidence: /mnt/d/llm_exp/results/quality-down16-20261005
+    evidence_ledger_sha256: fff391d8ed968974496304ef82db058483eab98c97bb5fc92686e796c649ffdf
+    report: docs/experiments/EXP-0317-RESULTS.md
+    scope: WikiText2 raw test first8192 targets after64tokens; stride43; per-window64-token
+      context reset; final22targets retained; not full corpus/standard2048context
+      PPL
+    models:
+      qwen06:
+        model: Qwen3-0.6B
+        ppl_status: skipped_unusable_text
+        ppl: null
+        text_assessment: unusable; fragmented text/Answer/newline loops in both checks
+      qwen17:
+        model: Qwen3-1.7B
+        ppl_status: complete
+        ppl: 49.62699611278172
+        mean_nll: 3.9045349621335417
+        target_tokens: 8192
+        verification:
+          score_positions_exact: true
+          targets: 8192
+          unique_token_pairs: 8192
+          windows: 191
+          tail_targets: 22
+          independent_aggregate_ppl: 49.62699611278172
+          all_implementation_checks_pass: true
+          max_head_saturated_entries_per_token: 0
+          tokens_with_head_saturation: 0
+          head_saturated_entries_total: 0
+          host_token_invocation_seconds: 242.198812216
+        text_assessment: limited readable relevant answers; repetition/control-marker
+          leakage; not general quality acceptance
