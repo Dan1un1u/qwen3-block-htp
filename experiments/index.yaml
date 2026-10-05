@@ -7441,3 +7441,17 @@ experiments:
         exact_historical_steps: 150
     metric: unique DMA-BUF backing bytes plus ordinary RSS excluding DMA-BUF RSS after
       generation_startup; decimal MB; no VTCM/loading/sampler/hidden allocations
+- id: L32-0078
+  title: W4A8 uniform INT16 Down text screening and conditional WikiText2 device PPL
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/L32-0078.md
+  approval_ref: User2026-10-05 requests four-model current W4A8Down16 quality baseline;
+    only run WikiText2 PPL when readable usable text is confirmed; skip gibberish
+    models.
+  runtime:
+    source_worktree: /home/daniuniu/work/llama32-htp
+    source_branch: codex/llama32-no-rotation
+    device_owner: null
