@@ -5127,7 +5127,7 @@ int main(int argc, char **argv) {
         const char *capacity = getenv("QBH_KV_CACHE_CAPACITY");
         const char *long_length = getenv("QBH_LONG_PREFILL_TOKENS");
         if (long_length && (qbh_parse_u32(long_length,&long_prompt_tokens) ||
-            !long_prompt_tokens || long_prompt_tokens>(variant==QBH_BLOCK_W4U8?2048U:768U))) return 2;
+            !long_prompt_tokens || long_prompt_tokens>2048U)) return 2;
         if (mode != NULL && mode[0] != '\0') {
             if (strcmp(mode, "disabled") == 0) {
                 scan_mode = QBH_BLOCK_SCAN_DISABLED;
@@ -5334,6 +5334,7 @@ int main(int argc, char **argv) {
     }
     if (argc < 3 || argc > 26 ||
         qbh_parse_variant(argv[2], &variant) != 0 ||
+        long_prompt_tokens>(variant==QBH_BLOCK_W4U8?2048U:768U) ||
         (argc >= 4 && qbh_parse_u32(argv[3], &repeats) != 0) ||
         (argc >= 5 && qbh_parse_u32(
                           argv[4], &w4f16_hvx_workers) != 0) ||
