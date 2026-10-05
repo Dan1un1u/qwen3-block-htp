@@ -883,6 +883,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
                             uint32_t kv_cache_v_format,
                             uint32_t scan_mode, uint32_t sp2_mode, uint32_t r4_mode,
                             uint32_t fp32_residual, uint32_t f16_fp32_residual,
+                            uint32_t long_optimization,
                             struct qbh_block_buffers *buffers,
                             uint32_t *peak_bytes) {
     struct qbh_block_arena arena = {vtcm, vtcm_bytes, 0U, 0U};
@@ -1048,6 +1049,12 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         &arena, QBH_BLOCK_M * QBH_BLOCK_MAX_K *
             (fp32_residual && !r4_mode ? 1U : (uint32_t)sizeof(uint16_t)),
         r4_hmx_alignment ? 32768U : QBH_HMX_FP16_TILE_BYTES);
+    /* EXP-0319: reserve unused VTCM for four disjoint long-attention slots.
+     * Projection buffers follow the reserve and never alias live operands. */
+    if ((long_optimization & 262144U) && variant==QBH_BLOCK_W4U8 &&
+        fp32_residual && !r4_mode && QBH_BLOCK_HIDDEN==2048U) {
+        if (!qbh_arena_alloc_aligned(&arena, 1179648U, 2048U)) return -1;
+    }
     buffers->compressed_weight = qbh_arena_alloc(
         &arena, QBH_BLOCK_MAX_K * QBH_HMX_OUTPUT_CHANNELS / 2U *
                     compressed_batch_factor);
@@ -22862,6 +22869,7 @@ AEEResult qbh_run_block_rpc(int32_t shared_fd, uint32_t shared_bytes,
                          header->scan_mode, QBH_SP2(header),
                          header->dense_r4_mode, QBH_F16_FP32_RESIDUAL(header) ? 0U : QBH_FP32_RESIDUAL(header),
                           QBH_F16_FP32_RESIDUAL(header),
+                         header->long_prompt_tokens ? header->long_optimization : 0U,
                          &buffers,
                          &header->vtcm_peak_plan_bytes) != 0) {
         header->dsp_status = QBH_BLOCK_STATUS_ARENA_FAILED;
