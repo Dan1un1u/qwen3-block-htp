@@ -1049,11 +1049,11 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         &arena, QBH_BLOCK_M * QBH_BLOCK_MAX_K *
             (fp32_residual && !r4_mode ? 1U : (uint32_t)sizeof(uint16_t)),
         r4_hmx_alignment ? 32768U : QBH_HMX_FP16_TILE_BYTES);
-    /* EXP-0319: reserve unused VTCM for four disjoint long-attention slots.
+    /* EXP-0319: reserve unused VTCM for three disjoint long-attention slots.
      * Projection buffers follow the reserve and never alias live operands. */
     if ((long_optimization & 262144U) && variant==QBH_BLOCK_W4U8 &&
         fp32_residual && !r4_mode && QBH_BLOCK_HIDDEN==2048U) {
-        if (!qbh_arena_alloc_aligned(&arena, 1179648U, 2048U)) return -1;
+        if (!qbh_arena_alloc_aligned(&arena, 393216U, 2048U)) return -1;
     }
     buffers->compressed_weight = qbh_arena_alloc(
         &arena, QBH_BLOCK_MAX_K * QBH_HMX_OUTPUT_CHANNELS / 2U *
