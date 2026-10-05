@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0320
+  active_experiment: null
   next_experiment_number: 321
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -16082,3 +16082,40 @@ current_scope:
     ppl_rerun: false
     failed_candidate: four-client1179648reserve rejected HMX precise exception; cause
       unresolved; evidence retained
+  latest_qwen17_matched_bf16_teacher:
+    experiment: EXP-0320
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: Matched corpus token/context and original checkpoint provenance, finite
+      PPL; not quality acceptance
+    source_head: 486c3cc5244d6d047988cf00f521485a09f6e968
+    source_unchanged: true
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0320
+    evidence_ledger_sha256: 12c97c9adb317a4c956bbd0115a8643159d27dc10fb65829c2ce66b2c4e1d657
+    report: docs/experiments/EXP-0320-RESULTS.md
+    comparisons:
+    - stride: 1984
+      teacher_ppl: 17.87459766148885
+      hardware_ppl: 28.4670476589086
+      teacher_nll: 2.883380579878576
+      hardware_nll: 3.348747195839262
+      delta_nll: 0.46536661596068596
+      ppl_ratio: 1.592597953700596
+      ppl_increase_percent: 59.25979537005961
+      ppl_absolute_difference: 10.592449997419752
+      positions_targets_contexts_exact: true
+      hardware_rows_sha256: e68e38d5cda4641508bba63604eb32de1b663bf6c3598cef51517f74792d4df1
+    - stride: 43
+      teacher_ppl: 27.935909199007728
+      hardware_ppl: 49.62699611278172
+      teacher_nll: 3.329912929330021
+      hardware_nll: 3.9045349621335417
+      delta_nll: 0.5746220328035205
+      ppl_ratio: 1.776458956794735
+      ppl_increase_percent: 77.64589567947353
+      ppl_absolute_difference: 21.69108691377399
+      positions_targets_contexts_exact: true
+      hardware_rows_sha256: 15a96063eefdb7aebafda4342898f17854bf3ae5a79aefee4328d13880a3e6f4
+    baseline_promoted: false
+    device_owner: null

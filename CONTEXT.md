@@ -2701,3 +2701,6 @@ Four-model follow-up complete with partner L32-0073. Five short/ten formal paire
 
 ## EXP0320 active
 Matched original BF16 teacher for current Qwen17 long/short8192token PPL. Host-only; memory optimization deferred.
+
+## EXP0320 closed
+Qwen17 originalBF16 teacher: long2048subset17.87459766 vs deployed28.46704766(+59.26%); short27.93590920 vs49.62699611(+77.65%). Both same8192targetpositions and matchedwindowprotocol. Complete recipe loss includes prefixKV and quantizedhead; no W4-only attribution. Source unchanged, no baseline promotion; memory optimization deferred. See EXP0320 results.
