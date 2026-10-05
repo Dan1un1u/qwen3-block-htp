@@ -31211,5 +31211,5 @@ experiments:
     long-context PPL.'
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0312-explicit-qdq
+    source_branch: codex/exp-0318-qwen17-context2048
     device_owner: EXP-0318
