@@ -7443,10 +7443,10 @@ experiments:
       generation_startup; decimal MB; no VTCM/loading/sampler/hidden allocations
 - id: L32-0078
   title: W4A8 uniform INT16 Down text screening and conditional WikiText2 device PPL
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
-  adoption_status: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
+  adoption_status: not_applicable
   record: docs/experiments/L32-0078.md
   approval_ref: User2026-10-05 requests four-model current W4A8Down16 quality baseline;
     only run WikiText2 PPL when readable usable text is confirmed; skip gibberish
@@ -7455,3 +7455,48 @@ experiments:
     source_worktree: /home/daniuniu/work/llama32-htp
     source_branch: codex/llama32-no-rotation
     device_owner: null
+  results:
+    experiment: L32-0078
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: Hardware execution and PPL collection integrity only; no model-quality
+      acceptance threshold
+    adoption_status: not_applicable
+    baseline_promoted: false
+    device_owner: null
+    source_head: 272298e3958e65bc9e9d89c0a7c9800fb8aad465
+    source_unchanged: true
+    evidence: /mnt/d/llm_exp/results/quality-down16-20261005
+    evidence_ledger_sha256: fff391d8ed968974496304ef82db058483eab98c97bb5fc92686e796c649ffdf
+    report: docs/experiments/L32-0078-RESULTS.md
+    scope: WikiText2 raw test first8192 targets after64tokens; stride43; per-window64-token
+      context reset; final22targets retained; not full corpus/standard2048context
+      PPL
+    models:
+      llama1:
+        model: Llama-3.2-1B-Instruct
+        ppl_status: skipped_unusable_text
+        ppl: null
+        text_assessment: unusable; numeric and whitespace loops in both checks
+      llama3:
+        model: Llama-3.2-3B-Instruct
+        ppl_status: complete
+        ppl: 111.9084720821225
+        mean_nll: 4.717681323641588
+        target_tokens: 8192
+        verification:
+          score_positions_exact: true
+          targets: 8192
+          unique_token_pairs: 8192
+          windows: 191
+          tail_targets: 22
+          independent_aggregate_ppl: 111.9084720821225
+          all_implementation_checks_pass: true
+          max_head_saturated_entries_per_token: 9
+          tokens_with_head_saturation: 22
+          head_saturated_entries_total: 54
+          host_token_invocation_seconds: 410.044791445
+        text_assessment: limited readable photosynthesis response; France question
+          instruction echo/off-topic in both checks; not general quality acceptance
+  full_profiling_report: docs/experiments/L32-0078-RESULTS.md

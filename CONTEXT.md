@@ -1,3 +1,7 @@
+# L32-0078 completed: W4A8 uniform INT16 Down accuracy baseline (2026-10-05)
+
+Four-model device text check complete, including non-repeating-prompt control. Qwen0.6/Llama1 degenerate, PPL skipped by user rule. Qwen1.7 limited readable text, WikiText2 subset PPL49.62699611278172; Llama3 limited readable/off-topic responses, PPL111.9084720821225. Each8192targets,64context,stride43,191windows,22tailtargets, original raw test revision b08601e04326c79dfdd32d625aee71d232d685c3, no chat/BOS in corpus. Not full-WikiText2 or2048context scores; no matched floating teacher or quantization-loss ratio. Actual U8 head logits, nativeW4/uniformINT16Down/FP32residual/no rotation. Historical weights/binaries verified and unchanged; all hardware/collection checks pass, not quality acceptance. Read docs/experiments/L32-0078-RESULTS.md and /mnt/d/llm_exp/results/quality-down16-20261005. Source unchanged272298e3958e65bc9e9d89c0a7c9800fb8aad465; active/device none.
+
 # L32-0077 B/C A16 memory completed 2026-09-25
 
 Sixteen W16A16/W4A16 B536+46/C741+3 memory cells saved in Paper_Hardware_Tables_ABC.xlsx. Cache832; observed DMA-BUF plus non-DMA RSS after ready. See docs/experiments/L32-0077-RESULTS.md. No runtime/quality/speed changes; device released.

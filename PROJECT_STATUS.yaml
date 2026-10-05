@@ -5,9 +5,9 @@ project:
   git_common_dir: /home/daniuniu/work/qwen3-block-htp/.git
   memory_branch: codex/llama32-project-memory
   memory_worktree: /home/daniuniu/work/llama32-htp-project-memory
-  updated_on: '2026-09-25'
+  updated_on: '2026-10-05'
 governance:
-  active_experiment: L32-0078
+  active_experiment: null
   next_experiment_number: 79
   maximum_running_experiments: 1
   remote_sync_required: true
@@ -27,11 +27,11 @@ frozen_qwen3:
   memory_worktree: /home/daniuniu/work/qwen3-block-htp-project-memory
   handoff_experiment: EXP-0266
 current_scope:
-  stage: explicit_qdq_motivation_diagnostic_completed
+  stage: down16_text_and_conditional_wikitext2_quality_completed
   checkpoint: LLM-Research/Llama-3.2-1B-Instruct
   llama_runtime_implemented: true
-  next_action: Await user direction; four-model explicit FP/QDQ appended in N, original
-    G retained. Production defaults unchanged.
+  next_action: Discuss accuracy diagnostics with user; no queued experiment or automatic
+    quality/baseline promotion.
   baseline_manifest: docs/PAPER_NO_ROTATION_BASELINES.json
   native_code_unchanged_from_qwen3_freeze: false
   handoff: docs/SESSION_HANDOFF_L32_0034.md
@@ -44,7 +44,7 @@ current_scope:
   - w4a16
   - w4a8
   unvalidated_recipes: []
-  last_completed_experiment: L32-0073
+  last_completed_experiment: L32-0078
   evidence_ledger_sha256: 599d86cf654b2b41526690c76ad1c0a251b5f206815a57ce4ae12b0024f94ac9
   formal_profiling_completed: true
   general_quantization_quality_accepted: false
@@ -5982,6 +5982,50 @@ current_scope:
         exact_historical_steps: 150
     metric: unique DMA-BUF backing bytes plus ordinary RSS excluding DMA-BUF RSS after
       generation_startup; decimal MB; no VTCM/loading/sampler/hidden allocations
+  latest_down16_quality_baseline:
+    experiment: L32-0078
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: Hardware execution and PPL collection integrity only; no model-quality
+      acceptance threshold
+    adoption_status: not_applicable
+    baseline_promoted: false
+    device_owner: null
+    source_head: 272298e3958e65bc9e9d89c0a7c9800fb8aad465
+    source_unchanged: true
+    evidence: /mnt/d/llm_exp/results/quality-down16-20261005
+    evidence_ledger_sha256: fff391d8ed968974496304ef82db058483eab98c97bb5fc92686e796c649ffdf
+    report: docs/experiments/L32-0078-RESULTS.md
+    scope: WikiText2 raw test first8192 targets after64tokens; stride43; per-window64-token
+      context reset; final22targets retained; not full corpus/standard2048context
+      PPL
+    models:
+      llama1:
+        model: Llama-3.2-1B-Instruct
+        ppl_status: skipped_unusable_text
+        ppl: null
+        text_assessment: unusable; numeric and whitespace loops in both checks
+      llama3:
+        model: Llama-3.2-3B-Instruct
+        ppl_status: complete
+        ppl: 111.9084720821225
+        mean_nll: 4.717681323641588
+        target_tokens: 8192
+        verification:
+          score_positions_exact: true
+          targets: 8192
+          unique_token_pairs: 8192
+          windows: 191
+          tail_targets: 22
+          independent_aggregate_ppl: 111.9084720821225
+          all_implementation_checks_pass: true
+          max_head_saturated_entries_per_token: 9
+          tokens_with_head_saturation: 22
+          head_saturated_entries_total: 54
+          host_token_invocation_seconds: 410.044791445
+        text_assessment: limited readable photosynthesis response; France question
+          instruction echo/off-topic in both checks; not general quality acceptance
 storage:
   models: /mnt/d/llm_exp/models/llama32-htp
   results: /mnt/d/llm_exp/results/llama32-htp
