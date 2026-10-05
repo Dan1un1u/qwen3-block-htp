@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0319
+  active_experiment: null
   next_experiment_number: 320
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -12344,8 +12344,9 @@ current_scope:
     generalization: supplementary only; not rerun or included
     quality_claim: false
     baseline_promoted: false
-  next_action: Discuss matched same8192token/same2048window floating teacher and repetition/instruction-following
-    diagnostics; no queued experiment or automatic baseline promotion.
+  next_action: Discuss remaining long-context repeatedKVpacking and incremental nativeKV
+    design; four-client HMXaddress/layout fault must be diagnosed before reuse. No
+    queued experiment or automatic baseline promotion.
   latest_f16_baseline_synthesis:
     report: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/REPORT.md
     a16_discussion: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/A16_DOWN_DISCUSSION.md
@@ -12766,7 +12767,7 @@ current_scope:
       exceedsuint32 shared-offset ABI
     named_dataset_measurements_completed: false
     baseline_promotion: No additional automatic promotion
-  stage: qwen17_down16_2048_context_implemented_and_quality_measured
+  stage: qwen17_context2048_three_client_optimization_verified
   latest_long_prefill_migration:
     experiment: EXP-0296
     execution_state: completed
@@ -16030,3 +16031,54 @@ current_scope:
         staging and FastRPC, excludes cold load and tokenization; not formal repeat10
     text_assessment: readable English but repeats background and fails to answer within65outputs;
       long-context task quality not accepted
+  latest_qwen17_long_context_optimization:
+    experiment: EXP-0319
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: Exact long/short/padding/cache/physical correctness;5short and10formal
+      alternating pairedrepeat10 performance improvement, not long-vs-short10percent
+      parity
+    adoption_status: not_requested
+    baseline_promoted: false
+    device_owner: null
+    source_head: 486c3cc5244d6d047988cf00f521485a09f6e968
+    source_branch: codex/exp-0319-long-decode-pipeline
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0319
+    evidence_ledger_sha256: f4e72f9c08d487a1a0762769edb2290842fca9598dbc8733ec307a30af114c8c
+    report: docs/experiments/EXP-0319-RESULTS.md
+    candidate_long_option: 458655
+    control_long_option: 196511
+    formal:
+      prefill:
+        control_ms: 1313.19021155
+        candidate_ms: 1267.1892948500001
+        control_tps: 1559.5608176081976
+        candidate_tps: 1616.175269411841
+        wall_ratio: 0.9649701038772567
+        wall_reduction_percent: 3.502989612274332
+        ci95:
+        - 0.9641370698197914
+        - 0.9657318044999739
+      decode:
+        control_ms: 1888.10639328
+        candidate_ms: 1745.0848389900002
+        control_tps: 33.896394942458635
+        candidate_tps: 36.67443471518621
+        wall_ratio: 0.9242513267265919
+        wall_reduction_percent: 7.574867327340806
+        ci95:
+        - 0.9233199790552935
+        - 0.9251844626412858
+    correctness:
+      call_records: 20160
+      profiles: 20160
+      head_outputs: 13650
+      all_head_tokens_and_codes_exact: true
+      all_positions_and_masks_exact: true
+      all_physical_checks_pass: true
+      production_zero_hashes_not_used: true
+    vtcm_peak: 7013600
+    ppl_rerun: false
+    failed_candidate: four-client1179648reserve rejected HMX precise exception; cause
+      unresolved; evidence retained
