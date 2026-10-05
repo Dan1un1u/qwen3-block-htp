@@ -31554,3 +31554,16 @@ experiments:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0324-r3-down16-device
     device_owner: null
+- id: EXP-0326
+  title: Hardware projection rounding repair toward frozen software target
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/EXP-0326.md
+  approval_ref: User approves trying hardware-to-software rounding repair, projection
+    first then R3, without assuming zero overhead.
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0324-r3-down16-device
+    device_owner: EXP-0326
