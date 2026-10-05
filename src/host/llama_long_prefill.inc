@@ -153,7 +153,10 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
             for(uint32_t i=0;i<QBH_VERTICAL_SLICE_LAYER_COUNT;i++)
                 printf("%s\"%016" PRIx64 "\"",i?",":"",h->slice_profiles[i].output_hash);
             printf("]}\n");fflush(stdout);
-            if(audit && h->generation_boundary_audit_enabled) {
+            /* Host-only capture filter: never changes DSP arithmetic or cache state. */
+            const char *audit_from=getenv("QBH_LONG_AUDIT_FROM_POSITION");
+            const uint32_t save_audit=!audit_from || before+rows>=strtoul(audit_from,NULL,10);
+            if(audit && h->generation_boundary_audit_enabled && save_audit) {
                 char name[96];
                 if(h->dense_r3_audit_offset && QBH_R3_DOWN16(h)) {
                     snprintf(name,sizeof(name),"long_r%u_s%02u_r3_layers.bin",rep,step);
