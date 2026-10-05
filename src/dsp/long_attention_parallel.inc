@@ -1,5 +1,5 @@
 
-/* Four independent GQA groups share one serialized HMX/DMA owner. Each
+/* Up to four independent GQA groups share serialized HMX and DMA owners. Each
  * HVX client owns one disjoint slot in the existing attention overlay. */
 static void qbh_long_attention_tasks(struct qbh_block_w4f16_pool *pool,
                                     struct qbh_block_w4f16_job *job) {

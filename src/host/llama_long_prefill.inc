@@ -15,7 +15,7 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
     if (v && qbh_parse_u32(v,&decode)) return -1;
     v=getenv("QBH_LONG_REPEATS");
     if (v && qbh_parse_u32(v,&repetitions)) return -1;
-    if (!length || length>(h->variant==QBH_BLOCK_W4U8?2048U:768U) || (!target_file && decode>63U) || decode>=2112U || !repetitions || repetitions>10U ||
+    if (!length || length>(h->variant==QBH_BLOCK_W4U8?2048U:768U) || (!target_file && decode>(h->variant==QBH_BLOCK_W4U8?64U:63U)) || decode>=2112U || !repetitions || repetitions>10U ||
         length+decode>h->kv_cache_capacity ||
         (h->variant==QBH_BLOCK_W4U8 && !QBH_FP32_RESIDUAL(h)) || h->kv_cache_k_format!=QBH_KV_CACHE_FORMAT_HEAD_MAJOR_ROW_V1)
         return -1;
@@ -33,10 +33,11 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
     uint16_t *sin=malloc((size_t)h->kv_cache_capacity*QBH_BLOCK_HEAD_DIM*2U);
     if (!cos || !sin) {free(cos);free(sin);return -1;}
     int result=-1;
-    /* A16 audit: compare every prefix/suffix in memory; archive only boundary
+    /* Cache audit: compare every prefix/suffix in memory; archive only boundary
      * snapshots. Allocation/copies/verification are outside warm timing. */
-    const uint32_t sparse=audit && h->generation_boundary_audit_enabled &&
-        h->variant!=QBH_BLOCK_W4U8;
+    const uint32_t sparse=(audit && h->generation_boundary_audit_enabled &&
+        h->variant!=QBH_BLOCK_W4U8) || getenv("QBH_LONG_CACHE_GUARD")!=NULL;
+    const size_t cache_element_bytes=h->variant==QBH_BLOCK_W4U8?1U:2U;
     const struct qbh_decode_layer_state *first=&state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER];
     const size_t cache_bytes=first->k_bytes;
     uint8_t *previous=sparse?malloc(2U*QBH_VERTICAL_SLICE_LAYER_COUNT*cache_bytes):NULL;
@@ -107,9 +108,9 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
                 if(state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER+i].valid_length!=before+rows)goto finish;
             if(sparse) {
                 uint64_t checked=0U;
-                const size_t stride=h->kv_cache_capacity*QBH_BLOCK_HEAD_DIM*2U;
-                const size_t prefix=before*QBH_BLOCK_HEAD_DIM*2U;
-                const size_t end=(before+rows)*QBH_BLOCK_HEAD_DIM*2U;
+                const size_t stride=h->kv_cache_capacity*QBH_BLOCK_HEAD_DIM*cache_element_bytes;
+                const size_t prefix=before*QBH_BLOCK_HEAD_DIM*cache_element_bytes;
+                const size_t end=(before+rows)*QBH_BLOCK_HEAD_DIM*cache_element_bytes;
                 for(uint32_t i=0;i<QBH_VERTICAL_SLICE_LAYER_COUNT;++i) {
                     const struct qbh_decode_layer_state *l=&state->layers[QBH_VERTICAL_SLICE_FIRST_LAYER+i];
                     for(uint32_t kind=0;kind<2U;++kind) {
@@ -119,11 +120,11 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
                             const size_t off=head*stride;
                             if(memcmp(now+off,old+off,prefix) ||
                                memcmp(now+off+end,old+off+end,stride-end)) {
-                                fprintf(stderr,"A16 KV guard failed step%u layer%u kind%u head%u\n",step,i,kind,head);
+                                fprintf(stderr,"KV guard failed step%u layer%u kind%u head%u\n",step,i,kind,head);
                                 goto finish;
                             }
                             const uint16_t *added=(const uint16_t *)(now+off+prefix);
-                            for(size_t k=0;k<(end-prefix)/2U;++k)
+                            for(size_t k=0;cache_element_bytes==2U && k<(end-prefix)/2U;++k)
                                 if((added[k]&0x7c00U)==0x7c00U)goto finish;
                             checked+=prefix+stride-end;
                         }
