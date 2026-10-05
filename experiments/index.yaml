@@ -31264,5 +31264,5 @@ experiments:
     KV/layout optimization
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0318-qwen17-context2048
+    source_branch: codex/exp-0319-long-decode-pipeline
     device_owner: EXP-0319
