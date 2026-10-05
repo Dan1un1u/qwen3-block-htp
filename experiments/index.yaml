@@ -31565,5 +31565,5 @@ experiments:
     first then R3, without assuming zero overhead.
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0324-r3-down16-device
+    source_branch: codex/exp-0326-projection-rounding
     device_owner: EXP-0326
