@@ -1910,6 +1910,18 @@ static int qbh_build_bias_words(
         &header->qparams[qbh_projection_output_qparam[projection_index]];
     uint32_t k_tiles = desc->k / 32U;
     uint32_t n_tiles = desc->n / 32U;
+    /* EXP0326: opt-in, setup-only nearest-rounding compensation.  Existing
+     * FP32 O/Down epilogues and generation head retain their own contracts. */
+    const char *round_env=getenv("QBH_PROJECTION_ROUNDING");
+    uint32_t rounding=0U;
+    if(round_env) {
+        if(strcmp(round_env,"0") && strcmp(round_env,"1") && strcmp(round_env,"2"))return -1;
+        rounding=(uint32_t)(round_env[0]-'0');
+        if(rounding && (!QBH_FP32_RESIDUAL(header) || desc->lpbq_mode))return -1;
+#if defined(QBH_MODEL_LLAMA32) || defined(QBH_QWEN_06B)
+        if(rounding)return -1;
+#endif
+    }
 
     for (uint32_t n_tile = 0; n_tile < n_tiles; ++n_tile) {
         for (uint32_t output = 0; output < 32U; ++output) {
@@ -1966,7 +1978,16 @@ static int qbh_build_bias_words(
             }
             bias[(size_t)n_tile * 64U + output] =
                 qbh_float_to_half_bits(512.0f * ratio);
-            offset = llround(
+            if(rounding) {
+                const double encoded_ratio=(double)qbh_half_bits_to_float(
+                    (uint16_t)bias[(size_t)n_tile*64U+output])/512.0;
+                if(!(encoded_ratio>0.0) || !isfinite(encoded_ratio))return -1;
+                const double divisor=rounding==2U?encoded_ratio:(double)ratio;
+                const double corrected=-(double)input_qparam->zero_point*(double)sum+
+                    ((double)output_qparam->zero_point+0.5)/divisor;
+                if(!isfinite(corrected) || corrected<(double)INT32_MIN || corrected>(double)INT32_MAX)return -1;
+                offset=llround(corrected);
+            } else offset = llround(
                 -(double)input_qparam->zero_point * (double)sum +
                 (double)output_qparam->zero_point / (double)ratio);
             if (offset < INT32_MIN || offset > INT32_MAX) {
