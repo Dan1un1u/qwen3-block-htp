@@ -31367,3 +31367,15 @@ experiments:
       hardware_rows_sha256: 15a96063eefdb7aebafda4342898f17854bf3ae5a79aefee4328d13880a3e6f4
     baseline_promoted: false
     device_owner: null
+- id: EXP-0321
+  title: Deployment-matched fakequant for Qwen17 Down16 long PPL
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: not_requested
+  record: docs/experiments/EXP-0321.md
+  approval_ref: User requests fakequant PPL versus measured hardware.
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0319-long-decode-pipeline
+    device_owner: null
