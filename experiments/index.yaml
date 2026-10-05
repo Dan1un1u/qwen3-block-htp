@@ -31253,3 +31253,16 @@ experiments:
         staging and FastRPC, excludes cold load and tokenization; not formal repeat10
     text_assessment: readable English but repeats background and fails to answer within65outputs;
       long-context task quality not accepted
+- id: EXP-0319
+  title: Qwen17 Down16 long-context decode pipeline optimization
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/EXP-0319.md
+  approval_ref: User2026-10-05 agrees matched64decode length scan and same-math long-context
+    KV/layout optimization
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0318-qwen17-context2048
+    device_owner: EXP-0319
