@@ -2718,3 +2718,5 @@ Host module floatingfallback attribution on EXP0321 long PPL protocol; no hardwa
 22distinct hostfloatingfallback configs onmatched8192targets. Control25.72495 exact. FullAttention19.04958,fullMLP23.70817,fullhead24.85513. FPattentioncore22.67381; conditionalKpostRoPE/cachefloat19.91251, Qonly22.84011, bothQK19.92945. Softmax-only25.67821, floatingSwiGLU/Downinput25.86733. Kgrid and integercore are priority, notDown16. Conditional gains notadditive and notactualhardwarefallback. No source/hardware/baseline changes; lockreleased.
 
 EXP-0323 running: host dense fixed R3 QK-only recalibration 2x2 quality attribution; no hardware/source changes.
+
+EXP-0323 closed: frozen dense R3 QK-only recalibration,8192-target hostPPL. Integer old25.72495/OFFrecal37.92236/R3recal21.78075; FPcore old22.67381/OFF22.86137/R3 20.16108. R3 improves all5windows vs currentinteger and pairedFPcore. OFFrecal integerregression highlights score-carrier coupling; do not exaggerate gain. Independenttrain16384tokens, controls exact,68integer checks. No hardware/newweights/promotion. Next: actualHMX R3 candidate verification before devicePPL. Report docs/experiments/EXP-0323-RESULTS.md.

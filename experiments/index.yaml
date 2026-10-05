@@ -31465,9 +31465,9 @@ experiments:
     baseline_promoted: false
 - id: EXP-0323
   title: Dense fixed R3 with matched QK recalibration on Qwen17 Down16
-  execution_state: running
-  evidence_validity: pending
-  local_gate: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: not_requested
   record: docs/experiments/EXP-0323.md
   approval_ref: User agrees to R3 four-arm host quality validation after EXP0322 K-boundary
@@ -31476,3 +31476,29 @@ experiments:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0319-long-decode-pipeline
     device_owner: null
+  results:
+    experiment: EXP-0323
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: Dense rotation and integer reference correctness,exact controls,disjoint
+      calibration,matched PPL; not hardware quality acceptance
+    source_unchanged: true
+    source_head: 486c3cc5244d6d047988cf00f521485a09f6e968
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0323
+    report: docs/experiments/EXP-0323-RESULTS.md
+    ppl:
+      control: 25.724948759601293
+      attention_core_fp32: 22.673814718453887
+      off_fp: 22.861365859515736
+      r3_fp: 20.161081666837973
+      off_int: 37.92236388337608
+      r3_int: 21.780754540302457
+    targets_each: 8192
+    calibration_tokens: 16384
+    device_owner: null
+    baseline_promoted: false
+    principal_finding: Fixed dense R3 QK recalibration improves integer fakequant25.72495to21.78075
+      and paired FPcore22.86137to20.16108; OFF recal integerregresses37.92236. Actual
+      device pending.
+    evidence_ledger_sha256: fb51ad2ffebd978469b67793d44d4d4b9a7e115def90a07c4cb2f56baff2857b
