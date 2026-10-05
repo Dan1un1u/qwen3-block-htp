@@ -2716,3 +2716,5 @@ Host module floatingfallback attribution on EXP0321 long PPL protocol; no hardwa
 
 ## EXP0322 closed
 22distinct hostfloatingfallback configs onmatched8192targets. Control25.72495 exact. FullAttention19.04958,fullMLP23.70817,fullhead24.85513. FPattentioncore22.67381; conditionalKpostRoPE/cachefloat19.91251, Qonly22.84011, bothQK19.92945. Softmax-only25.67821, floatingSwiGLU/Downinput25.86733. Kgrid and integercore are priority, notDown16. Conditional gains notadditive and notactualhardwarefallback. No source/hardware/baseline changes; lockreleased.
+
+EXP-0323 running: host dense fixed R3 QK-only recalibration 2x2 quality attribution; no hardware/source changes.

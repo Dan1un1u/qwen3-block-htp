@@ -31463,3 +31463,16 @@ experiments:
       K-only bypass19.9125 conditional onFPcore22.6738. Down16notprimary.
     device_owner: null
     baseline_promoted: false
+- id: EXP-0323
+  title: Dense fixed R3 with matched QK recalibration on Qwen17 Down16
+  execution_state: running
+  evidence_validity: pending
+  local_gate: pending
+  adoption_status: not_requested
+  record: docs/experiments/EXP-0323.md
+  approval_ref: User agrees to R3 four-arm host quality validation after EXP0322 K-boundary
+    diagnosis.
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0319-long-decode-pipeline
+    device_owner: null
