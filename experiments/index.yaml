@@ -31579,5 +31579,5 @@ experiments:
     speed optimization, context-dependent lanes and matched rotation overhead verification.
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0326-projection-rounding
+    source_branch: codex/exp-0327-r3-long-pipeline
     device_owner: EXP-0327
