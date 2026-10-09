@@ -63,96 +63,113 @@
       "source_branch": "codex/exp-0318-qwen17-context2048",
       "source": {
         "source_head": "0deb09e6ad504d3bafedbb006f5d816dc59fe4ba",
-        "source_closure": null,
-        "measured_source": null
+        "source_closure": "0deb09e6ad504d3bafedbb006f5d816dc59fe4ba",
+        "measured_source": "0deb09e6ad504d3bafedbb006f5d816dc59fe4ba"
       },
       "report_authority_relative": "docs/experiments/EXP-0318-RESULTS.md",
       "evidence_relative_to_results_root": "exp0318",
-      "ledger_sha256": "26b70e3ba70899d3747e483b6014fc7afabb7fd7fe41be162c8a510d860d1181"
+      "ledger_sha256": "26b70e3ba70899d3747e483b6014fc7afabb7fd7fe41be162c8a510d860d1181",
+      "runtime_seal_relative": "exp0318/runtime.json",
+      "ledger_relative_to_results_root": "exp0318/EVIDENCE_SHA256.json"
     },
     {
       "experiment": "EXP-0319",
       "source_branch": "codex/exp-0319-long-decode-pipeline",
       "source": {
         "source_head": "486c3cc5244d6d047988cf00f521485a09f6e968",
-        "source_closure": null,
-        "measured_source": null
+        "source_closure": "486c3cc5244d6d047988cf00f521485a09f6e968",
+        "measured_source": "486c3cc5244d6d047988cf00f521485a09f6e968"
       },
       "report_authority_relative": "docs/experiments/EXP-0319-RESULTS.md",
       "evidence_relative_to_results_root": "exp0319",
-      "ledger_sha256": "f4e72f9c08d487a1a0762769edb2290842fca9598dbc8733ec307a30af114c8c"
+      "ledger_sha256": "f4e72f9c08d487a1a0762769edb2290842fca9598dbc8733ec307a30af114c8c",
+      "runtime_seal_relative": "exp0319/runtime.json",
+      "ledger_relative_to_results_root": "exp0319/EVIDENCE_SHA256.json"
     },
     {
       "experiment": "EXP-0326",
       "source_branch": "codex/exp-0326-projection-rounding",
       "source": {
         "source_head": "e3859c3f99f814edd540d81617cca471236202cc",
-        "source_closure": null,
-        "measured_source": null
+        "source_closure": "e3859c3f99f814edd540d81617cca471236202cc",
+        "measured_source": "e3859c3f99f814edd540d81617cca471236202cc"
       },
       "report_authority_relative": "docs/experiments/EXP-0326-RESULTS.md",
       "evidence_relative_to_results_root": "exp0326",
-      "ledger_sha256": "0634f0639783b824f513e447be4f2c4a8f953688aec510351c1f7131e6d4a755"
+      "ledger_sha256": "0634f0639783b824f513e447be4f2c4a8f953688aec510351c1f7131e6d4a755",
+      "runtime_seal_relative": "exp0326/runtime-full28.json",
+      "ledger_relative_to_results_root": "exp0326/EVIDENCE_SHA256.json"
     },
     {
       "experiment": "EXP-0327",
       "source_branch": "codex/exp-0327-r3-long-pipeline",
       "source": {
         "source_head": "54e910c72d62b653d7a92741783e474245e50fc8",
-        "source_closure": null,
-        "measured_source": null
+        "source_closure": "54e910c72d62b653d7a92741783e474245e50fc8",
+        "measured_source": "c163b3ea61210b4bdb581b7066dca29916968b36"
       },
       "report_authority_relative": "docs/experiments/EXP-0327-RESULTS.md",
       "evidence_relative_to_results_root": "exp0327",
-      "ledger_sha256": "bf7ac2300914319b8486886c05fa2feee00858f5f76ce6bdf99c41014cd2cc71"
+      "ledger_sha256": "bf7ac2300914319b8486886c05fa2feee00858f5f76ce6bdf99c41014cd2cc71",
+      "runtime_seal_relative": "exp0327/runtime-native-full.json",
+      "ledger_relative_to_results_root": "exp0327/EVIDENCE_SHA256.json"
     },
     {
       "experiment": "EXP-0329",
       "source_branch": "codex/exp-0329-r4-down16-baselines",
       "source": {
         "source_head": "6d6f365a91b4043089a6bdafc9c2c185a138f2d2",
-        "source_closure": null,
-        "measured_source": null
+        "source_closure": "6d6f365a91b4043089a6bdafc9c2c185a138f2d2",
+        "measured_source": "849da67bd63632a6ea74610049a2f6335ad1dde1"
       },
       "report_authority_relative": "docs/experiments/EXP-0329-RESULTS.md",
       "evidence_relative_to_results_root": "exp0329",
-      "ledger_sha256": null
+      "ledger_sha256": "70617d2e4ac3687bc857978b8d7f58453b17860a1136559dcfd5bf719bbe78a6",
+      "runtime_seal_relative": "exp0329/runtime-final28.json",
+      "ledger_relative_to_results_root": "exp0329/evidence-ledger.json"
     },
     {
       "experiment": "EXP-0330",
       "source_branch": "codex/exp-0330-dense-r4-integration",
       "source": {
         "source_head": "cdc3838ba1d091afa06f036bd8b9c394423b307a",
-        "source_closure": null,
-        "measured_source": null
+        "source_closure": "cdc3838ba1d091afa06f036bd8b9c394423b307a",
+        "measured_source": "5feace117f8f816e31b925ab7e1721af13dd8b13"
       },
       "report_authority_relative": "docs/experiments/EXP-0330-RESULTS.md",
       "evidence_relative_to_results_root": "exp0330",
-      "ledger_sha256": null
+      "ledger_sha256": "0895fb5eacd5e627750b57b9bc9ae6bad3156246b42548bc0f8040a9114189be",
+      "runtime_seal_relative": "exp0330/runtime-full.json",
+      "ledger_relative_to_results_root": "exp0330/evidence-ledger.json"
     },
     {
       "experiment": "EXP-0331",
       "source_branch": "codex/exp-0331-butterfly-r4-integration",
       "source": {
         "source_head": "7fb199b8d84ef1a9827e5c4112659f34db73d2b9",
-        "source_closure": null,
-        "measured_source": null
+        "source_closure": "7fb199b8d84ef1a9827e5c4112659f34db73d2b9",
+        "measured_source": "7625e984e8af1bfda9318d142e6fcc1c8e4b3b8e"
       },
       "report_authority_relative": "docs/experiments/EXP-0331-RESULTS.md",
       "evidence_relative_to_results_root": "exp0331",
-      "ledger_sha256": null
+      "ledger_sha256": "97d3b77bb932c985600907d228e22e819ded321ee4c76376bf81f4636b56cfe4",
+      "runtime_seal_relative": "exp0331/runtime-full.json",
+      "ledger_relative_to_results_root": "exp0331/evidence-ledger.json"
     },
     {
       "experiment": "EXP-0332",
-      "source_branch": null,
+      "source_branch": "codex/exp-0332-r3-r4-quality",
       "source": {
         "source_head": null,
         "source_closure": "d0eec6462f7e3eee158eca153ef8f3b1ba017cdc",
-        "measured_source": null
+        "measured_source": "8271d56ead1318f72873374140882f4cc04eff99",
+        "measured_quality_source": "74162460e2fd6b98444f5d190c970b0ee1247abb"
       },
       "report_authority_relative": "docs/experiments/EXP-0332-RESULTS.md",
       "evidence_relative_to_results_root": "exp0332",
-      "ledger_sha256": "2202021c0d7d983af42f3e54e1fa2fea53301dfa57b901e7a8282d1df1215ca1"
+      "ledger_sha256": "2202021c0d7d983af42f3e54e1fa2fea53301dfa57b901e7a8282d1df1215ca1",
+      "runtime_seal_relative": "exp0332/runtime-delivery.json",
+      "ledger_relative_to_results_root": "exp0332/EVIDENCE_SHA256.json"
     }
   ],
   "performance": {
@@ -229,7 +246,55 @@
       "no_inside_window_reset": true,
       "matched_BF16_teacher_ppl": 17.8745976615
     },
-    "EXP0333_state": "running"
+    "EXP0333_state": "completed",
+    "EXP0333_result": {
+      "C0": {
+        "ppl": 28.4670476589086,
+        "mean_nll": 3.348747195839262,
+        "targets": 8192
+      },
+      "C2": {
+        "ppl": 25.22940160422084,
+        "mean_nll": 3.228010044742719,
+        "targets": 8192
+      },
+      "R2": {
+        "ppl": 21.582352741525476,
+        "mean_nll": 3.071875978054361,
+        "targets": 8192
+      },
+      "D0": {
+        "ppl": 30.253443089802904,
+        "mean_nll": 3.409609999150224,
+        "targets": 8192
+      },
+      "D2": {
+        "ppl": 27.339091454239746,
+        "mean_nll": 3.3083175993698086,
+        "targets": 8192
+      },
+      "RD2": {
+        "ppl": 23.589334500381742,
+        "mean_nll": 3.1607946819314248,
+        "targets": 8192
+      },
+      "B2": {
+        "ppl": 27.819149211809464,
+        "mean_nll": 3.3257246041372754,
+        "targets": 8192
+      },
+      "RB2": {
+        "ppl": 23.507789027312583,
+        "mean_nll": 3.157331814204117,
+        "targets": 8192
+      }
+    },
+    "best_by_matched_subset_PPL": "R2",
+    "EXP0333_runtime_source": "49f95a7d8f319dde322fd662523ec66d80882cfd",
+    "EXP0333_driver_source": "7317082378051a197ab19d03734b405294d2f8d6",
+    "EXP0333_evidence_relative": "exp0333/comparison.json",
+    "quality_acceptance": false,
+    "baseline_promoted": false
   },
   "migration_guards": [
     "Keep no-rotation speed anchor and R3-only accuracy/schedule candidate.",
@@ -238,6 +303,7 @@
     "Retain rejected1179648 reserve and rounding/oldalignment failures as evidence;do not re-enable silently.",
     "Preserve original-weight quantizer/export pipeline/calibration and checked hashes.",
     "Do not mark legacy SP2 R4mode1 recipe as this latest Down16 full6144 config.",
-    "No current global Pareto claim or defaultpromotion from unmatched historical speed and new quality measurements."
+    "No current global Pareto claim or defaultpromotion from unmatched historical speed and new quality measurements.",
+    "EXP0333 validates full2048 quality/highKV correctness,not new formal long/combined speed. Retain all switches including non-winning R4 comparison references."
   ]
 }
