@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0329
+  active_experiment: null
   next_experiment_number: 330
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -2882,22 +2882,26 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: Qwen3_28layer_native_W4_SP2_M64_plus15_verified
-  last_completed_experiment: EXP-0327
-  last_completed_source_commit: 54e910c72d62b653d7a92741783e474245e50fc8
+  last_completed_experiment: EXP-0329
+
+  last_completed_source_commit: 6d6f365a91b4043089a6bdafc9c2c185a138f2d2
+
   provisional_source_parent: EXP0268_diagnostic_U8_pipeline_closure_no_default_promotion
-  device_execution_state: idle_explicit_qdq_completed
+  device_execution_state: idle_exp0329_r4_baselines_completed
+
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  current_handoff: docs/experiments/EXP-0300.md
+  current_handoff: docs/experiments/EXP-0329-RESULTS.md
+
   active_recipe_specialization: native_W4_SP2_FP32_residual_no_rotation
   last_completed_experiment_contract:
-    id: EXP-0300
-    protocol: docs/experiments/EXP-0300.md
-    scope: Generic A16 long-context repair, fixed contracts, five short and ten formal
-      paired repeat10; no baseline promotion.
+    id: EXP-0329
+    protocol: docs/experiments/EXP-0329.md
+    scope: Qwen3-1.7B W4A8 uniform INT16 Down FP32 residual R3 OFF; fixed64+42
+
   final_profiling_summary_standard: stable_three_recipe_module_table_then_direct_E2E_tokens_per_second
   throughput_measurement_rule: direct_complete_token_in_token_out_execution_only_no_block_layer_module_or_partial_model_extrapolation
-  last_completed_evidence: &id005
+  prior_last_completed_evidence_exp0297: &id005
     experiment: EXP-0297
     execution_state: completed
     evidence_validity: valid
@@ -9578,8 +9582,10 @@ current_scope:
       pass but do not clear gate
     next_direction: discuss_runtime_nondeterminism_then_same_token_device_software_head_and_transformer_alignment
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0257.md
-  last_concluded_experiment: EXP-0300
-  last_concluded_source_commit: fa7cb9c8e2718c3a965fc75d04544ef79d3a0da3
+  last_concluded_experiment: EXP-0329
+
+  last_concluded_source_commit: 6d6f365a91b4043089a6bdafc9c2c185a138f2d2
+
   latest_w4u8_dense_r3_e2e_diagnostic_result:
     id: EXP-0258
     execution_state: completed
@@ -12344,9 +12350,9 @@ current_scope:
     generalization: supplementary only; not rerun or included
     quality_claim: false
     baseline_promoted: false
-  next_action: Discuss remaining narrow long/M64 throughput gap; preserve frozen R3
-    accuracy and accepted low-overhead runtime. Native incremental KV is a future
-    hypothesis, not implemented.
+  next_action: Discuss next R4 algorithms from matched optimized HVX/dense baselines; both prefill overheads exceed10%,
+    decode overheads remain below5%. Preserve numerical contracts and frozen baselines.
+
   latest_f16_baseline_synthesis:
     report: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/REPORT.md
     a16_discussion: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/A16_DOWN_DISCUSSION.md
@@ -14504,6 +14510,7 @@ current_scope:
       production critical-path share
     companion: L32-0063
   device_owner: null
+
   floating_intermediate_motivation_06b:
     experiment: EXP-0306
     execution_state: completed
@@ -16476,3 +16483,449 @@ current_scope:
     hardware_run: false
     baseline_promoted: false
     device_owner: null
+
+  last_completed_evidence:
+    experiment: EXP-0329
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    gate_scope: Numerical/physical gates pass. Descriptive R4 overhead10percent prefill fails for both paths; decode
+      passes both. Baseline research completed; no adoption requested.
+    source_head: 6d6f365a91b4043089a6bdafc9c2c185a138f2d2
+    runtime_source_head: 6d6f365a91b4043089a6bdafc9c2c185a138f2d2
+    source_branch: codex/exp-0329-r4-down16-baselines
+    device_owner: null
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0329
+    evidence_ledger_sha256: 70617d2e4ac3687bc857978b8d7f58453b17860a1136559dcfd5bf719bbe78a6
+    evidence_files: 2061
+    evidence_bytes: 2328650396
+    report: docs/experiments/EXP-0329-RESULTS.md
+    full_profiling_report: docs/experiments/EXP-0329-PROFILING.md
+    scope: Qwen3-1.7B W4A8 uniform INT16 Down FP32 residual R3 OFF; fixed64+42
+    runtime_options:
+      QBH_SP2: 8
+      QBH_FP32_RESIDUAL: 2
+      QBH_DENSE_R3: 0
+      QBH_U8_PREFILL_OPT: 0
+      QBH_WIDE_SCORE: 4
+      C:
+        QBH_DENSE_R4: 0
+        QBH_R4_OPT: 6
+      B:
+        QBH_DENSE_R4: 4
+        QBH_R4_OPT: 9
+      D:
+        QBH_DENSE_R4: 5
+        QBH_R4_OPT: 7
+    parent_manifest_sha256: 112452e7785f96f5b06c40eacb0d0c328c45268ec2a59456a62dd27bc4896264
+    rotated_manifest_sha256: 2abe3974a237e3f65e17ddc4ce2740f946a3dcca96e1f01fe4d49832a8b9eee0
+    transform: normalized H12 tensor H512, full6144 coordinates; B FP32, D FP16 two-factor HMX; same logical orientation
+      and fresh original-derived DownW4
+    formal:
+      prefill:
+        C:
+          wall_ms: 34.63183229
+          tps: 1848.0107972363944
+          rounds_ms:
+          - 34.6667812
+          - 34.5261874
+          - 34.641995
+          - 34.6646198
+          - 34.6436195
+          - 34.7795209
+          - 34.757692899999995
+          - 34.6225521
+          - 34.4847605
+          - 34.5305936
+        B:
+          wall_ms: 39.400735399999995
+          tps: 1624.3351640588924
+          rounds_ms:
+          - 39.4429114
+          - 39.3917556
+          - 39.5152291
+          - 39.4672759
+          - 39.5033958
+          - 39.4453228
+          - 39.439656299999996
+          - 39.417187399999996
+          - 39.1971666
+          - 39.1874531
+          wall_ratio_over_control: 1.1377028818477222
+          wall_overhead_pct: 13.770288184772216
+          paired_ci95:
+          - 1.1361636254174605
+          - 1.1391474823349925
+        D:
+          wall_ms: 41.66776608
+          tps: 1535.9594722962408
+          rounds_ms:
+          - 41.759781100000005
+          - 41.7764739
+          - 41.716848799999994
+          - 41.721036299999994
+          - 41.549541700000006
+          - 41.7212082
+          - 41.6355207
+          - 41.6685522
+          - 41.672718700000004
+          - 41.4559792
+          wall_ratio_over_control: 1.203163775196256
+          wall_overhead_pct: 20.316377519625604
+          paired_ci95:
+          - 1.2008946282103667
+          - 1.2055275682957876
+      decode:
+        C:
+          wall_ms: 878.71966808
+          tps: 47.79681339302429
+          rounds_ms:
+          - 879.6530766000001
+          - 873.8422809
+          - 879.4807698999999
+          - 881.1189887999999
+          - 882.2825876
+          - 881.92879
+          - 880.6905675
+          - 883.0351471
+          - 873.1104311
+          - 872.0540413
+        B:
+          wall_ms: 904.78256179
+          tps: 46.419992795736704
+          rounds_ms:
+          - 904.0726096000001
+          - 904.9527452000001
+          - 906.5529838
+          - 906.2065269
+          - 905.5349334
+          - 906.1822079
+          - 907.0919213999999
+          - 908.1028292999999
+          - 901.5882343
+          - 897.5406261
+          wall_ratio_over_control: 1.0296600777890261
+          wall_overhead_pct: 2.966007778902613
+          paired_ci95:
+          - 1.028195070064066
+          - 1.031384668790526
+        D:
+          wall_ms: 918.1060691999999
+          tps: 45.74634828043026
+          rounds_ms:
+          - 917.6945931
+          - 915.0583802000001
+          - 917.6736513
+          - 917.6970891
+          - 919.6090416000001
+          - 919.4497657999999
+          - 919.3633699
+          - 920.8226294
+          - 920.4751673
+          - 913.2170043
+          wall_ratio_over_control: 1.0448224872513199
+          wall_overhead_pct: 4.482248725131988
+          paired_ci95:
+          - 1.0429195055829488
+          - 1.047322669369734
+    microseconds:
+      prefill:
+        B:
+          activation_ticks: 3858.094791666667
+          dense_r4_prepare_ticks: 0.0
+          dense_r4_layout_ticks: 3854.5609375000004
+          dense_r4_matmul_ticks: 0.0
+          dense_r4_finish_ticks: 0.0
+          gate_up_ticks: 7842.027604166667
+          down_ticks: 3830.1677083333334
+          dense_r4_parallel_join_ticks: 0.0
+          dense_r4_prefill_join_ticks: 0.0
+          R4_wrapper_mean_per_layer_us: 137.78909970238095
+        D:
+          activation_ticks: 6154.2484375
+          dense_r4_prepare_ticks: 287.425
+          dense_r4_layout_ticks: 1770.6901041666667
+          dense_r4_matmul_ticks: 717.375
+          dense_r4_finish_ticks: 3306.127604166667
+          gate_up_ticks: 7840.514583333334
+          down_ticks: 3814.5828125000003
+          dense_r4_parallel_join_ticks: 303.4526041666667
+          dense_r4_prefill_join_ticks: 0.0
+          R4_wrapper_mean_per_layer_us: 219.79458705357143
+      decode:
+        B:
+          activation_ticks: 348.2753596230159
+          dense_r4_prepare_ticks: 0.0
+          dense_r4_layout_ticks: 345.9550223214286
+          dense_r4_matmul_ticks: 0.0
+          dense_r4_finish_ticks: 0.0
+          gate_up_ticks: 6522.703373015874
+          down_ticks: 3526.3755952380957
+          dense_r4_parallel_join_ticks: 0.0
+          dense_r4_prefill_join_ticks: 0.0
+          R4_wrapper_mean_per_layer_us: 12.438405700821997
+        D:
+          activation_ticks: 631.8753844246031
+          dense_r4_prepare_ticks: 276.9662202380953
+          dense_r4_layout_ticks: 27.43523065476191
+          dense_r4_matmul_ticks: 126.61378968253969
+          dense_r4_finish_ticks: 193.98360615079366
+          gate_up_ticks: 6523.641703869048
+          down_ticks: 3527.619977678571
+          dense_r4_parallel_join_ticks: 0.0
+          dense_r4_prefill_join_ticks: 0.0
+          R4_wrapper_mean_per_layer_us: 22.5669780151644
+    one_layer_screen_R4_reduction_pct:
+      B: 29.71550190727852
+      D: 15.745463538285575
+    numerical_gate:
+    - arm: B
+      exact_layers_steps: 1204
+      all_independent_layer_hashes_exact: true
+    - arm: C
+      exact_layers_steps: 1204
+      all_independent_layer_hashes_exact: true
+    - arm: D
+      stages_and_codes_and_conditional_Down_residual: true
+      steps: 43
+    formal_invocations: 12900
+    formal_layer_ledgers: 361200
+    formal_head_checks: 12900
+    short_rounds: 5
+    formal_rounds: 10
+    trajectories_per_round: 10
+    per_RPC_repeat_count: 1
+    vtcm_peak_plan_bytes:
+      C: 8365824
+      B: 8365824
+      D: 8300288
+    all_ledgers_close: true
+    intermediate_DDR_zero: true
+    battery_temperature_C:
+      min: 32.4
+      max: 36.6
+    ppl_rerun: false
+    baseline_promoted: false
+
+  latest_qwen17_int16_r4_baselines:
+    experiment: EXP-0329
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    gate_scope: Numerical/physical gates pass. Descriptive R4 overhead10percent prefill fails for both paths; decode
+      passes both. Baseline research completed; no adoption requested.
+    source_head: 6d6f365a91b4043089a6bdafc9c2c185a138f2d2
+    runtime_source_head: 6d6f365a91b4043089a6bdafc9c2c185a138f2d2
+    source_branch: codex/exp-0329-r4-down16-baselines
+    device_owner: null
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0329
+    evidence_ledger_sha256: 70617d2e4ac3687bc857978b8d7f58453b17860a1136559dcfd5bf719bbe78a6
+    evidence_files: 2061
+    evidence_bytes: 2328650396
+    report: docs/experiments/EXP-0329-RESULTS.md
+    full_profiling_report: docs/experiments/EXP-0329-PROFILING.md
+    scope: Qwen3-1.7B W4A8 uniform INT16 Down FP32 residual R3 OFF; fixed64+42
+    runtime_options:
+      QBH_SP2: 8
+      QBH_FP32_RESIDUAL: 2
+      QBH_DENSE_R3: 0
+      QBH_U8_PREFILL_OPT: 0
+      QBH_WIDE_SCORE: 4
+      C:
+        QBH_DENSE_R4: 0
+        QBH_R4_OPT: 6
+      B:
+        QBH_DENSE_R4: 4
+        QBH_R4_OPT: 9
+      D:
+        QBH_DENSE_R4: 5
+        QBH_R4_OPT: 7
+    parent_manifest_sha256: 112452e7785f96f5b06c40eacb0d0c328c45268ec2a59456a62dd27bc4896264
+    rotated_manifest_sha256: 2abe3974a237e3f65e17ddc4ce2740f946a3dcca96e1f01fe4d49832a8b9eee0
+    transform: normalized H12 tensor H512, full6144 coordinates; B FP32, D FP16 two-factor HMX; same logical orientation
+      and fresh original-derived DownW4
+    formal:
+      prefill:
+        C:
+          wall_ms: 34.63183229
+          tps: 1848.0107972363944
+          rounds_ms:
+          - 34.6667812
+          - 34.5261874
+          - 34.641995
+          - 34.6646198
+          - 34.6436195
+          - 34.7795209
+          - 34.757692899999995
+          - 34.6225521
+          - 34.4847605
+          - 34.5305936
+        B:
+          wall_ms: 39.400735399999995
+          tps: 1624.3351640588924
+          rounds_ms:
+          - 39.4429114
+          - 39.3917556
+          - 39.5152291
+          - 39.4672759
+          - 39.5033958
+          - 39.4453228
+          - 39.439656299999996
+          - 39.417187399999996
+          - 39.1971666
+          - 39.1874531
+          wall_ratio_over_control: 1.1377028818477222
+          wall_overhead_pct: 13.770288184772216
+          paired_ci95:
+          - 1.1361636254174605
+          - 1.1391474823349925
+        D:
+          wall_ms: 41.66776608
+          tps: 1535.9594722962408
+          rounds_ms:
+          - 41.759781100000005
+          - 41.7764739
+          - 41.716848799999994
+          - 41.721036299999994
+          - 41.549541700000006
+          - 41.7212082
+          - 41.6355207
+          - 41.6685522
+          - 41.672718700000004
+          - 41.4559792
+          wall_ratio_over_control: 1.203163775196256
+          wall_overhead_pct: 20.316377519625604
+          paired_ci95:
+          - 1.2008946282103667
+          - 1.2055275682957876
+      decode:
+        C:
+          wall_ms: 878.71966808
+          tps: 47.79681339302429
+          rounds_ms:
+          - 879.6530766000001
+          - 873.8422809
+          - 879.4807698999999
+          - 881.1189887999999
+          - 882.2825876
+          - 881.92879
+          - 880.6905675
+          - 883.0351471
+          - 873.1104311
+          - 872.0540413
+        B:
+          wall_ms: 904.78256179
+          tps: 46.419992795736704
+          rounds_ms:
+          - 904.0726096000001
+          - 904.9527452000001
+          - 906.5529838
+          - 906.2065269
+          - 905.5349334
+          - 906.1822079
+          - 907.0919213999999
+          - 908.1028292999999
+          - 901.5882343
+          - 897.5406261
+          wall_ratio_over_control: 1.0296600777890261
+          wall_overhead_pct: 2.966007778902613
+          paired_ci95:
+          - 1.028195070064066
+          - 1.031384668790526
+        D:
+          wall_ms: 918.1060691999999
+          tps: 45.74634828043026
+          rounds_ms:
+          - 917.6945931
+          - 915.0583802000001
+          - 917.6736513
+          - 917.6970891
+          - 919.6090416000001
+          - 919.4497657999999
+          - 919.3633699
+          - 920.8226294
+          - 920.4751673
+          - 913.2170043
+          wall_ratio_over_control: 1.0448224872513199
+          wall_overhead_pct: 4.482248725131988
+          paired_ci95:
+          - 1.0429195055829488
+          - 1.047322669369734
+    microseconds:
+      prefill:
+        B:
+          activation_ticks: 3858.094791666667
+          dense_r4_prepare_ticks: 0.0
+          dense_r4_layout_ticks: 3854.5609375000004
+          dense_r4_matmul_ticks: 0.0
+          dense_r4_finish_ticks: 0.0
+          gate_up_ticks: 7842.027604166667
+          down_ticks: 3830.1677083333334
+          dense_r4_parallel_join_ticks: 0.0
+          dense_r4_prefill_join_ticks: 0.0
+          R4_wrapper_mean_per_layer_us: 137.78909970238095
+        D:
+          activation_ticks: 6154.2484375
+          dense_r4_prepare_ticks: 287.425
+          dense_r4_layout_ticks: 1770.6901041666667
+          dense_r4_matmul_ticks: 717.375
+          dense_r4_finish_ticks: 3306.127604166667
+          gate_up_ticks: 7840.514583333334
+          down_ticks: 3814.5828125000003
+          dense_r4_parallel_join_ticks: 303.4526041666667
+          dense_r4_prefill_join_ticks: 0.0
+          R4_wrapper_mean_per_layer_us: 219.79458705357143
+      decode:
+        B:
+          activation_ticks: 348.2753596230159
+          dense_r4_prepare_ticks: 0.0
+          dense_r4_layout_ticks: 345.9550223214286
+          dense_r4_matmul_ticks: 0.0
+          dense_r4_finish_ticks: 0.0
+          gate_up_ticks: 6522.703373015874
+          down_ticks: 3526.3755952380957
+          dense_r4_parallel_join_ticks: 0.0
+          dense_r4_prefill_join_ticks: 0.0
+          R4_wrapper_mean_per_layer_us: 12.438405700821997
+        D:
+          activation_ticks: 631.8753844246031
+          dense_r4_prepare_ticks: 276.9662202380953
+          dense_r4_layout_ticks: 27.43523065476191
+          dense_r4_matmul_ticks: 126.61378968253969
+          dense_r4_finish_ticks: 193.98360615079366
+          gate_up_ticks: 6523.641703869048
+          down_ticks: 3527.619977678571
+          dense_r4_parallel_join_ticks: 0.0
+          dense_r4_prefill_join_ticks: 0.0
+          R4_wrapper_mean_per_layer_us: 22.5669780151644
+    one_layer_screen_R4_reduction_pct:
+      B: 29.71550190727852
+      D: 15.745463538285575
+    numerical_gate:
+    - arm: B
+      exact_layers_steps: 1204
+      all_independent_layer_hashes_exact: true
+    - arm: C
+      exact_layers_steps: 1204
+      all_independent_layer_hashes_exact: true
+    - arm: D
+      stages_and_codes_and_conditional_Down_residual: true
+      steps: 43
+    formal_invocations: 12900
+    formal_layer_ledgers: 361200
+    formal_head_checks: 12900
+    short_rounds: 5
+    formal_rounds: 10
+    trajectories_per_round: 10
+    per_RPC_repeat_count: 1
+    vtcm_peak_plan_bytes:
+      C: 8365824
+      B: 8365824
+      D: 8300288
+    all_ledgers_close: true
+    intermediate_DDR_zero: true
+    battery_temperature_C:
+      min: 32.4
+      max: 36.6
+    ppl_rerun: false
+    baseline_promoted: false
