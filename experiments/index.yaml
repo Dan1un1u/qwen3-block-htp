@@ -33137,14 +33137,91 @@ experiments:
       implemented.
 - id: EXP-0332
   title: Qwen17 R3 plus R4 integration and matched quality
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
-  adoption_status: not_requested
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
+  adoption_status: pending
   record: docs/experiments/EXP-0332.md
-  approval_ref: User2026-10-10 prioritizes combined rotation quality experiment and
-    records source-build-to-device-start duration; authorizes fetch policy amendment.
+  approval_ref: User2026-10-10 prioritizes combined rotation quality experiment and records source-build-to-device-start duration; authorizes
+    fetch policy amendment.
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0332-r3-r4-quality
-    device_owner: EXP-0332
+    device_owner: null
+  result:
+    gate_scope: Actual finite-precision component/one/three/full28 implementation contracts, physical gates and matched quality measurement protocol;
+      not ideal-FP32 equivalence or performance/quality acceptance.
+    source_parent: 7fb199b8d84ef1a9827e5c4112659f34db73d2b9
+    source_closure: d0eec6462f7e3eee158eca153ef8f3b1ba017cdc
+    measured_quality_source: 74162460e2fd6b98444f5d190c970b0ee1247abb
+    delivery_source: 8271d56ead1318f72873374140882f4cc04eff99
+    delivery_four_binaries_byte_exact_to_quality_build: true
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0332
+    report: docs/experiments/EXP-0332-RESULTS.md
+    profiling_report: docs/experiments/EXP-0332-PROFILING.md
+    evidence_ledger: /mnt/d/llm_exp/results/qwen3-block-htp/exp0332/EVIDENCE_SHA256.json
+    evidence_ledger_sha256: 2202021c0d7d983af42f3e54e1fa2fea53301dfa57b901e7a8282d1df1215ca1
+    evidence_files: 1394
+    evidence_bytes: 1233186824
+    quality_scope: WT2 raw test subset8192 targets, positions64..8255,191 reset windows,64 warmup and43 targets,22-target tail retained; context64..106;
+      not full-corpus/2048 PPL.
+    ppl:
+      D0: 52.08347109844863
+      D2: 49.84815218875262
+      RD2: 41.43340654072981
+      B2: 48.53350996369988
+      RB2: 41.828562567794656
+    paired_ppl_change_percent:
+      RD2/D2: -16.88075741736611
+      RB2/B2: -13.815088587081615
+    paired_window_bootstrap95_ppl_ratio:
+      RD2/D2:
+      - 0.7989936142504724
+      - 0.8648492407752228
+      RB2/B2:
+      - 0.8272554938064521
+      - 0.8964008980868894
+    historical_matched_original_BF16_teacher_ppl: 27.935909199007728
+    text_before_first_EOS_readable_all_five_arms: true
+    target_records_valid: 40960
+    histogram_saturations: 0
+    nonfinite_records: 0
+    R3_sampled_quantizer_code_difference_max: 0
+    R4_dense_reference: FP16 H512/H12 intermediate contract
+    R4_butterfly_reference: FP32 stage-order exact contract
+    last_layer_INT16_byteplanes_and_conditional_Down_FP32_residual_exact: true
+    full_valid_prefill_K_cache_and_corrections_exact: true
+    vtcm_requested_granted_bytes: 8388608
+    vtcm_peak_plan_bytes:
+      dense: 8300288
+      butterfly: 8365824
+    timed_intermediate_DDR_zero: true
+    one_HMX_owner: true
+    all_215_diagnostic_profiles_and_6020_layer_ledgers_close: true
+    preserved_rejected_attempts:
+    - Host audit-write counter omitted new R3 diagnostic bytes; corrected counter only.
+    - First dense PPL histogram used aliased Down scratch; invalid record rejected, histogram relocated to dead Gate; output regression exact.
+    workflow_seconds:
+      clean_full28_source_build: 20.831
+      archive_deploy_hash: 1.227
+      launch_to_model_ready: 2.634
+      launch_to_first_result: 2.673
+      source_build_to_first_result: 32.71044142300525
+      host_incremental: 4.144
+      DSP_rebuild_range:
+      - 18.501
+      - 19.694
+      cached_package_hash_verification_separate: 119.496
+    workflow_host: AMD Ryzen9 8945HX;WSL16 logical CPUs;20GiB;build-j8;SDK6.6.0.0/Hexagon19.0.07/v79;NDKr26c;CMake3.28.6
+    weights_already_on_phone: true
+    full_model_export_transfer_excluded: true
+    performance_measurement: One64+42 trajectory per arm,repeat1 auxiliary; no5/10 formal campaign or speed gate.
+    baseline_promoted: false
+    quality_acceptance: false
+    ideal_FP32_equivalence: false
+    deferred:
+    - DenseFP16 versus butterflyFP32 R4 precision unification
+    - Combined long-context and other-model validation
+    - Repository migration/server setup discussion
+    next_action: Discuss collaboration repository and single-device source-build workflow with user; no new experiment or migration implementation
+      automatically authorized.

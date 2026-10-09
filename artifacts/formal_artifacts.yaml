@@ -511,3 +511,16 @@ artifacts:
   path: /mnt/d/llm_exp/results/qwen3-block-htp/exp0305
   source_commit: 06165f3675d6903214d7473f60bc6fdd44ae3ba5
   manifest: /mnt/d/llm_exp/results/qwen3-block-htp/exp0305/evidence-ledger.json
+- id: EXP-0332-results
+  experiment: EXP-0332
+  kind: quality-result-set
+  path: /mnt/d/llm_exp/results/qwen3-block-htp/exp0332
+  source_commit: 74162460e2fd6b98444f5d190c970b0ee1247abb
+  source_closure: d0eec6462f7e3eee158eca153ef8f3b1ba017cdc
+  delivery_source: 8271d56ead1318f72873374140882f4cc04eff99
+  manifest: /mnt/d/llm_exp/results/qwen3-block-htp/exp0332/EVIDENCE_SHA256.json
+  manifest_sha256: 2202021c0d7d983af42f3e54e1fa2fea53301dfa57b901e7a8282d1df1215ca1
+  report: docs/experiments/EXP-0332-RESULTS.md
+  files: 1394
+  bytes: 1233186824
+  note: Matched quality and actual implementation-contract validation; repeat1 performance auxiliary,not formal performance promotion.
