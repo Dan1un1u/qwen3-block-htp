@@ -128,9 +128,10 @@ def configuration(arm,tag,build,audit=False,long=False):
   if cfg['r3']:env['QBH_DENSE_R3_AUDIT']='1'
  return rt,pkg,env,argv
 
-def execute(arm,tag,build,words,audit=False):
+def execute(arm,tag,build,words,audit=False,quiet=False):
  preflight();d=R/tag;d.mkdir(parents=True,exist_ok=False);rt,pkg,env,argv=configuration(arm,tag,build,audit)
  p=d/'trajectory.bin';p.write_bytes(struct.pack('<'+'I'*len(words),*words));remote=REMOTE+'/inputs/'+tag+'.bin';adb('shell','mkdir -p '+REMOTE+'/inputs');adb('push',win(p),remote);env['QBH_EVAL_FILE']=remote
+ if quiet:env['QBH_EVAL_QUIET']='1'
  cmd='cd '+rt['remote']+' && '+' '.join(k+'='+shlex.quote(v) for k,v in env.items())+' ./qwen3_block_cli '+shlex.join(argv)
  save(d/'protocol.json',dict(command=cmd,arm=arm,configuration=ARMS[arm],runtime=rt,package=pkg,audit=audit))
  start=time.monotonic();first_ready=None;first_result=None;records=[]
@@ -151,6 +152,9 @@ def execute(arm,tag,build,words,audit=False):
   if v.get('record')=='generation_profile':
    assert v['dsp_status']==3 and v['numerical_status']==1 and v['vtcm_peak_plan_bytes']<=8388608
    assert v['intermediate_ddr_read_bytes']==v['intermediate_ddr_write_bytes']==v['intermediate_spill_fill_count']==0
+ for v in records:
+  if v.get('record')=='eval_step':
+   assert v['pass'] and v['vtcm_bytes']<=8388608 and v['intermediate_read']==v['intermediate_write']==v['spill']==0
  if audit:adb('pull',REMOTE+'/audit/'+tag+'/.',win(d/'audit'))
  print('RUN_PASS',tag,len(records),flush=True);return records
 
@@ -166,7 +170,7 @@ def quality(arm,build='full'):
  for batch in range(0,len(samples),64):
   group=samples[batch:batch+64];w=[0x51424556,2,len(group),110]
   for x in group:w += [x['id'],1,len(x['targets'])]+x['context']+x['targets']+[0]*(43-len(x['targets']))
-  tag='quality/'+arm+f'/batch-{batch//64:02d}';rr=execute(arm,tag.replace('/','-'),build,w,False)
+  tag='quality/'+arm+f'/batch-{batch//64:02d}';rr=execute(arm,tag.replace('/','-'),build,w,False,quiet=True)
   scores=[v for v in rr if v.get('record')=='eval_step'];by={x['id']:x for x in group}
   assert len(scores)==sum(len(x['targets']) for x in group)
   for v in scores:
