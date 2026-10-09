@@ -335,6 +335,8 @@ static __attribute__((noinline)) void bf331_h12_direct(struct bf70_task *t,uint3
    if(t->audit_rotated)*(HVX_Vector *)(t->audit_rotated+r*6144U+0U+c)=z;
    size_t off=(size_t)((0U+c)/32U)*2048U+r*32U;
    qbh_r4_i16_store32(t->middle,t->high,off,qbh_r4_i16_words(z,inv));
+   /* Keep independent output sums from exceeding the register file. */
+   asm volatile("" : "+v"(s0),"+v"(s1),"+v"(s2),"+v"(s3),"+v"(s4),"+v"(s5),"+v"(s6),"+v"(s7),"+v"(s8),"+v"(s9),"+v"(s10),"+v"(s11) : : "memory");
   }
   {HVX_Vector z=Q6_V_vzero();
    z=Q6_Vsf_vadd_VsfVsf(z,s0);
@@ -353,6 +355,8 @@ static __attribute__((noinline)) void bf331_h12_direct(struct bf70_task *t,uint3
    if(t->audit_rotated)*(HVX_Vector *)(t->audit_rotated+r*6144U+512U+c)=z;
    size_t off=(size_t)((512U+c)/32U)*2048U+r*32U;
    qbh_r4_i16_store32(t->middle,t->high,off,qbh_r4_i16_words(z,inv));
+   /* Keep independent output sums from exceeding the register file. */
+   asm volatile("" : "+v"(s0),"+v"(s1),"+v"(s2),"+v"(s3),"+v"(s4),"+v"(s5),"+v"(s6),"+v"(s7),"+v"(s8),"+v"(s9),"+v"(s10),"+v"(s11) : : "memory");
   }
   {HVX_Vector z=Q6_V_vzero();
    z=Q6_Vsf_vadd_VsfVsf(z,s0);
@@ -371,6 +375,8 @@ static __attribute__((noinline)) void bf331_h12_direct(struct bf70_task *t,uint3
    if(t->audit_rotated)*(HVX_Vector *)(t->audit_rotated+r*6144U+1024U+c)=z;
    size_t off=(size_t)((1024U+c)/32U)*2048U+r*32U;
    qbh_r4_i16_store32(t->middle,t->high,off,qbh_r4_i16_words(z,inv));
+   /* Keep independent output sums from exceeding the register file. */
+   asm volatile("" : "+v"(s0),"+v"(s1),"+v"(s2),"+v"(s3),"+v"(s4),"+v"(s5),"+v"(s6),"+v"(s7),"+v"(s8),"+v"(s9),"+v"(s10),"+v"(s11) : : "memory");
   }
   {HVX_Vector z=Q6_V_vzero();
    z=Q6_Vsf_vadd_VsfVsf(z,s0);
@@ -389,6 +395,8 @@ static __attribute__((noinline)) void bf331_h12_direct(struct bf70_task *t,uint3
    if(t->audit_rotated)*(HVX_Vector *)(t->audit_rotated+r*6144U+1536U+c)=z;
    size_t off=(size_t)((1536U+c)/32U)*2048U+r*32U;
    qbh_r4_i16_store32(t->middle,t->high,off,qbh_r4_i16_words(z,inv));
+   /* Keep independent output sums from exceeding the register file. */
+   asm volatile("" : "+v"(s0),"+v"(s1),"+v"(s2),"+v"(s3),"+v"(s4),"+v"(s5),"+v"(s6),"+v"(s7),"+v"(s8),"+v"(s9),"+v"(s10),"+v"(s11) : : "memory");
   }
   {HVX_Vector z=Q6_V_vzero();
    z=Q6_Vsf_vadd_VsfVsf(z,s0);
@@ -407,6 +415,8 @@ static __attribute__((noinline)) void bf331_h12_direct(struct bf70_task *t,uint3
    if(t->audit_rotated)*(HVX_Vector *)(t->audit_rotated+r*6144U+2048U+c)=z;
    size_t off=(size_t)((2048U+c)/32U)*2048U+r*32U;
    qbh_r4_i16_store32(t->middle,t->high,off,qbh_r4_i16_words(z,inv));
+   /* Keep independent output sums from exceeding the register file. */
+   asm volatile("" : "+v"(s0),"+v"(s1),"+v"(s2),"+v"(s3),"+v"(s4),"+v"(s5),"+v"(s6),"+v"(s7),"+v"(s8),"+v"(s9),"+v"(s10),"+v"(s11) : : "memory");
   }
   {HVX_Vector z=Q6_V_vzero();
    z=Q6_Vsf_vadd_VsfVsf(z,s0);
@@ -425,6 +435,8 @@ static __attribute__((noinline)) void bf331_h12_direct(struct bf70_task *t,uint3
    if(t->audit_rotated)*(HVX_Vector *)(t->audit_rotated+r*6144U+2560U+c)=z;
    size_t off=(size_t)((2560U+c)/32U)*2048U+r*32U;
    qbh_r4_i16_store32(t->middle,t->high,off,qbh_r4_i16_words(z,inv));
+   /* Keep independent output sums from exceeding the register file. */
+   asm volatile("" : "+v"(s0),"+v"(s1),"+v"(s2),"+v"(s3),"+v"(s4),"+v"(s5),"+v"(s6),"+v"(s7),"+v"(s8),"+v"(s9),"+v"(s10),"+v"(s11) : : "memory");
   }
   {HVX_Vector z=Q6_V_vzero();
    z=Q6_Vsf_vadd_VsfVsf(z,s0);
@@ -443,6 +455,8 @@ static __attribute__((noinline)) void bf331_h12_direct(struct bf70_task *t,uint3
    if(t->audit_rotated)*(HVX_Vector *)(t->audit_rotated+r*6144U+3072U+c)=z;
    size_t off=(size_t)((3072U+c)/32U)*2048U+r*32U;
    qbh_r4_i16_store32(t->middle,t->high,off,qbh_r4_i16_words(z,inv));
+   /* Keep independent output sums from exceeding the register file. */
+   asm volatile("" : "+v"(s0),"+v"(s1),"+v"(s2),"+v"(s3),"+v"(s4),"+v"(s5),"+v"(s6),"+v"(s7),"+v"(s8),"+v"(s9),"+v"(s10),"+v"(s11) : : "memory");
   }
   {HVX_Vector z=Q6_V_vzero();
    z=Q6_Vsf_vadd_VsfVsf(z,s0);
@@ -461,6 +475,8 @@ static __attribute__((noinline)) void bf331_h12_direct(struct bf70_task *t,uint3
    if(t->audit_rotated)*(HVX_Vector *)(t->audit_rotated+r*6144U+3584U+c)=z;
    size_t off=(size_t)((3584U+c)/32U)*2048U+r*32U;
    qbh_r4_i16_store32(t->middle,t->high,off,qbh_r4_i16_words(z,inv));
+   /* Keep independent output sums from exceeding the register file. */
+   asm volatile("" : "+v"(s0),"+v"(s1),"+v"(s2),"+v"(s3),"+v"(s4),"+v"(s5),"+v"(s6),"+v"(s7),"+v"(s8),"+v"(s9),"+v"(s10),"+v"(s11) : : "memory");
   }
   {HVX_Vector z=Q6_V_vzero();
    z=Q6_Vsf_vadd_VsfVsf(z,s0);
@@ -479,6 +495,8 @@ static __attribute__((noinline)) void bf331_h12_direct(struct bf70_task *t,uint3
    if(t->audit_rotated)*(HVX_Vector *)(t->audit_rotated+r*6144U+4096U+c)=z;
    size_t off=(size_t)((4096U+c)/32U)*2048U+r*32U;
    qbh_r4_i16_store32(t->middle,t->high,off,qbh_r4_i16_words(z,inv));
+   /* Keep independent output sums from exceeding the register file. */
+   asm volatile("" : "+v"(s0),"+v"(s1),"+v"(s2),"+v"(s3),"+v"(s4),"+v"(s5),"+v"(s6),"+v"(s7),"+v"(s8),"+v"(s9),"+v"(s10),"+v"(s11) : : "memory");
   }
   {HVX_Vector z=Q6_V_vzero();
    z=Q6_Vsf_vadd_VsfVsf(z,s0);
@@ -497,6 +515,8 @@ static __attribute__((noinline)) void bf331_h12_direct(struct bf70_task *t,uint3
    if(t->audit_rotated)*(HVX_Vector *)(t->audit_rotated+r*6144U+4608U+c)=z;
    size_t off=(size_t)((4608U+c)/32U)*2048U+r*32U;
    qbh_r4_i16_store32(t->middle,t->high,off,qbh_r4_i16_words(z,inv));
+   /* Keep independent output sums from exceeding the register file. */
+   asm volatile("" : "+v"(s0),"+v"(s1),"+v"(s2),"+v"(s3),"+v"(s4),"+v"(s5),"+v"(s6),"+v"(s7),"+v"(s8),"+v"(s9),"+v"(s10),"+v"(s11) : : "memory");
   }
   {HVX_Vector z=Q6_V_vzero();
    z=Q6_Vsf_vadd_VsfVsf(z,s0);
@@ -515,6 +535,8 @@ static __attribute__((noinline)) void bf331_h12_direct(struct bf70_task *t,uint3
    if(t->audit_rotated)*(HVX_Vector *)(t->audit_rotated+r*6144U+5120U+c)=z;
    size_t off=(size_t)((5120U+c)/32U)*2048U+r*32U;
    qbh_r4_i16_store32(t->middle,t->high,off,qbh_r4_i16_words(z,inv));
+   /* Keep independent output sums from exceeding the register file. */
+   asm volatile("" : "+v"(s0),"+v"(s1),"+v"(s2),"+v"(s3),"+v"(s4),"+v"(s5),"+v"(s6),"+v"(s7),"+v"(s8),"+v"(s9),"+v"(s10),"+v"(s11) : : "memory");
   }
   {HVX_Vector z=Q6_V_vzero();
    z=Q6_Vsf_vadd_VsfVsf(z,s0);
@@ -533,6 +555,8 @@ static __attribute__((noinline)) void bf331_h12_direct(struct bf70_task *t,uint3
    if(t->audit_rotated)*(HVX_Vector *)(t->audit_rotated+r*6144U+5632U+c)=z;
    size_t off=(size_t)((5632U+c)/32U)*2048U+r*32U;
    qbh_r4_i16_store32(t->middle,t->high,off,qbh_r4_i16_words(z,inv));
+   /* Keep independent output sums from exceeding the register file. */
+   asm volatile("" : "+v"(s0),"+v"(s1),"+v"(s2),"+v"(s3),"+v"(s4),"+v"(s5),"+v"(s6),"+v"(s7),"+v"(s8),"+v"(s9),"+v"(s10),"+v"(s11) : : "memory");
   }
  }
 }
