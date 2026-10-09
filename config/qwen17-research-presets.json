@@ -1,0 +1,295 @@
+{
+  "schema_version": 1,
+  "model": "Qwen3-1.7B",
+  "recipe": "W4A8 uniform signed INT16 Down;FP32 residual2;single-scale symmetric W4[-7,7]",
+  "source_parent": "d0eec6462f7e3eee158eca153ef8f3b1ba017cdc",
+  "common_env": {
+    "QBH_W4U8_STREAM_FENCE": "single_fence",
+    "QBH_W4U8_GATE_UP_RING_SLOTS": "16",
+    "QBH_W4U8_QKV_RING_EXPAND_WORKERS": "3",
+    "QBH_KV_CACHE_LAYOUT": "hmx_native_u8_segmented_vtcm_k7_session_v9",
+    "QBH_W4U8_PREFILL_CACHE_MODE": "reuse",
+    "QBH_W4U8_DELTA_RECONSTRUCTION": "serial",
+    "QBH_W4U8_DECODE_SOFTMAX": "hvx_tile4",
+    "QBH_W4U8_DECODE_LM_HEAD_GROUP_TILES": "32",
+    "QBH_W4U8_DECODE_O_BATCH_N_TILES": "16",
+    "QBH_W4U8_DECODE_AV_REQUANT_ROWS": "4",
+    "QBH_W4U8_DECODE_COMMON_OP_ROWS": "4",
+    "QBH_W4U8_DECODE_QK_NORM_ROPE_ROWS": "4",
+    "QBH_W4U8_DECODE_PROJECTION_MODE": "direct_n",
+    "QBH_W4U8_DECODE_DIRECT_N_MASK": "63",
+    "QBH_W4U8_DECODE_DIRECT_N_GATE_UP_BATCH_N_TILES": "32",
+    "QBH_W4U8_DECODE_DIRECT_N_GATE_UP_CONTINUOUS": "1",
+    "QBH_W4U8_DECODE_DIRECT_N_O_GATE_PREFETCH": "1",
+    "QBH_W4U8_DECODE_DIRECT_N_GATE_UP_SWIGLU_STREAM": "1",
+    "QBH_W4U8_DECODE_DIRECT_N_QKV_BATCH_N_TILES": "16",
+    "QBH_W4U8_DECODE_DIRECT_N_Q_BATCH_N_TILES": "32",
+    "QBH_W4U8_DECODE_DIRECT_N_DOWN_BATCH_N_TILES": "8",
+    "QBH_W4U8_DECODE_DIRECT_N_DOWN_SINGLE_DMA": "1",
+    "QBH_W4U8_DECODE_DIRECT_N_O_SINGLE_DMA": "1",
+    "QBH_W4U8_DECODE_SWIGLU_ROWS": "4",
+    "QBH_VERTICAL_SLICE": "1",
+    "QBH_REPLAY_SEQUENCE": "1",
+    "QBH_SCAN_MODE": "prefill",
+    "QBH_LOGICAL_M": "64",
+    "QBH_KV_CACHE_LENGTH": "0",
+    "QBH_KV_CACHE_CAPACITY": "128",
+    "QBH_SP2": "8",
+    "QBH_U8_PREFILL_OPT": "0",
+    "QBH_FP32_RESIDUAL": "2",
+    "QBH_PAPER_FORMAT_DISABLE": "0",
+    "QBH_PAPER_PIPELINE_DISABLE": "0",
+    "QBH_WIDE_SCORE": "4",
+    "QBH_GENERATION_SEQUENCE": "9",
+    "QBH_GENERATION_STEPS": "43",
+    "QBH_PREFIX_KV": "1",
+    "QBH_GENERATION_EXPECTED_TOKENS": "64",
+    "QBH_SP2_DOWN_HVX": "0"
+  },
+  "argv_after_package": [
+    "W4U8",
+    "1",
+    "2",
+    "32",
+    "rms_rope_softmax",
+    "on",
+    "off",
+    "fused_pool6_shuffle4",
+    "serial",
+    "control",
+    "hvx",
+    "w4u8_streaming_persistent_mlp_hvx",
+    "3",
+    "64",
+    "u8_log2_gqa_qkv_overlap_vgather_vdeal_fused_qk_requant_hmx_batch_lut_templates_gqa_batch_dependency_stream_softmax_shuffle4",
+    "6",
+    "w4u8_mlp_io_qkv_o",
+    "qkvo_batch4_qk_head_pairs",
+    "hvx_tree_qk_batched_rsqrt_shared_rope_parallel_input",
+    "control",
+    "4",
+    "4",
+    "4",
+    "2"
+  ],
+  "profiles": {
+    "speed64": {
+      "prompt_tokens": 64,
+      "kv_capacity": 128,
+      "decode_steps_default": 42,
+      "env": {
+        "QBH_KV_CACHE_LAYOUT": "hmx_native_u8_segmented_vtcm_k7_session_v9",
+        "QBH_W4U8_PREFILL_CACHE_MODE": "reuse",
+        "QBH_KV_CACHE_CAPACITY": "128",
+        "QBH_LONG_OPT": "0"
+      },
+      "evidence_scope": "EXP0331 matched64+42 performance; EXP0332 quality only short reset windows"
+    },
+    "quality2048": {
+      "window_tokens": 2048,
+      "warmup_tokens": 64,
+      "scored_targets_per_full_window": 1984,
+      "subset_target_count": 8192,
+      "tail_targets": 256,
+      "kv_capacity": 2112,
+      "env": {
+        "QBH_KV_CACHE_LAYOUT": "row_major",
+        "QBH_W4U8_PREFILL_CACHE_MODE": "duplicate",
+        "QBH_KV_CACHE_CAPACITY": "2112",
+        "QBH_LONG_OPT": "2555807"
+      },
+      "evidence_scope": "EXP0333 actual full2048 quality; EXP0327 historical long performance,not new combination performance",
+      "supported_prefill_tokens_max": 2048,
+      "historical_R3_prefill_lengths_tested": [
+        64,
+        512,
+        1024,
+        2048
+      ],
+      "current_combined_high_KV_verification": {
+        "prefill_tokens": 2048,
+        "decode_steps": 3,
+        "layers": [
+          1,
+          3,
+          28
+        ],
+        "backends": [
+          "hmx_dense",
+          "hvx_butterfly"
+        ]
+      }
+    }
+  },
+  "rotation": {
+    "r3_options": [
+      false,
+      true
+    ],
+    "r3_mode": 1,
+    "r3_opt": 2,
+    "r4_backends": {
+      "off": {
+        "mode": 0,
+        "opt": 0,
+        "arithmetic": "none"
+      },
+      "hmx_dense": {
+        "mode": 5,
+        "opt": 10,
+        "arithmetic": "FP16 H512/H12 intermediates;independent FP16 bound"
+      },
+      "hvx_butterfly": {
+        "mode": 4,
+        "opt": 12,
+        "arithmetic": "FP32 exact stage-order butterfly/H12 reference"
+      }
+    },
+    "projection_rounding_options": [
+      0,
+      2
+    ],
+    "requires_matching_package": true
+  },
+  "packages": {
+    "original-off": {
+      "relative_to_model_root": "exp0318/64",
+      "manifest_sha256": "66a187b08e4635fb504b188d216555f7b60155771fd07f0f163850eb5f75360e",
+      "device_package": "/data/local/tmp/qwen3-block-htp/exp0318/models/64",
+      "prefix_sha256": "7683237318d42ac5cc80052fb53619205a3d82a0d1377bcbbaed78d7c7683b91",
+      "device_prefix": "/data/local/tmp/qwen3-block-htp/exp0257-prefix/prefix_kv_u8.bin",
+      "prefix_relative_to_results_root": "exp0318/prefix_kv_u8.bin",
+      "r3": false,
+      "r4": false,
+      "long_cache_supplement": "original-off"
+    },
+    "original-on": {
+      "relative_to_model_root": "exp0324",
+      "manifest_sha256": "f67d96e0f861c9d424c25d255305075924bfaa1b4249f1e22112245249ee64bc",
+      "device_package": "/data/local/tmp/qwen3-block-htp/exp0324/model",
+      "prefix_sha256": "106a91064489e5eb38a1b338de2a65f7cf331fa0a7082006ef030476c887f336",
+      "device_prefix": "/data/local/tmp/qwen3-block-htp/exp0324/model/prefix_kv_u8.bin",
+      "prefix_relative_to_results_root": null,
+      "r3": true,
+      "r4": false,
+      "long_cache_supplement": "original-on"
+    },
+    "rotated-off": {
+      "relative_to_model_root": "exp0332/off",
+      "manifest_sha256": "4f2465e372353e30dcab37f3a28a917f8c8acde70a4d7425b5095444e18064a4",
+      "device_package": "/data/local/tmp/qwen3-block-htp/exp0332/models/off",
+      "prefix_sha256": "7683237318d42ac5cc80052fb53619205a3d82a0d1377bcbbaed78d7c7683b91",
+      "device_prefix": "/data/local/tmp/qwen3-block-htp/exp0332/models/off/prefix_kv_u8.bin",
+      "prefix_relative_to_results_root": null,
+      "r3": false,
+      "r4": true,
+      "long_cache_supplement": "original-off"
+    },
+    "rotated-on": {
+      "relative_to_model_root": "exp0332/on",
+      "manifest_sha256": "21c9fafb5fa2da5c87cff3eb631598bf73b8624fd976ab50e0a83beee6fc72c9",
+      "device_package": "/data/local/tmp/qwen3-block-htp/exp0332/models/on",
+      "prefix_sha256": "106a91064489e5eb38a1b338de2a65f7cf331fa0a7082006ef030476c887f336",
+      "device_prefix": "/data/local/tmp/qwen3-block-htp/exp0332/models/on/prefix_kv_u8.bin",
+      "prefix_relative_to_results_root": null,
+      "r3": true,
+      "r4": true,
+      "long_cache_supplement": "original-on"
+    }
+  },
+  "schedule_controls": {
+    "native_W4_later_prefill_chunks_bit": 2097152,
+    "long_overlay_reserve_bit": 262144,
+    "long_overlay_reserve_bytes": 393216,
+    "reserve_applies_only_if_R4_off": true,
+    "client_cap_mask": 1572864,
+    "client_caps": {
+      "0": "capacity_adaptive",
+      "524288": "max2_capacity_clamped",
+      "1048576": "max3_capacity_clamped"
+    },
+    "reserved_cap_value": 1572864,
+    "rejected_reserve_bytes": 1179648,
+    "warning": "Do not import rejected large-reserve candidate. Actual clients derive from current padded KV and actual per-backend VTCM overlay,not prompt length alone."
+  },
+  "quality_protocol": {
+    "dataset": "WikiText2 raw test subset",
+    "token_sha256": "e08c49458e0f03f12781431ad46d6118f636d1129a495307dca2f16a989a39f0",
+    "target_positions": [
+      64,
+      8255
+    ],
+    "reset_windows": 5,
+    "tail_retained": true,
+    "no_inside_window_reset": true,
+    "matched_BF16_teacher_ppl": 17.8745976615
+  },
+  "not_promoted": true,
+  "legacy_recipe_warning": "recipes/w4a8-r3-r4.json is EXP0265 SP2/R4mode1 historical reference,not this uniformINT16 full6144 preset.",
+  "quality_status": "EXP0333 running; short regressions and 1/3/28layer highKV gates pass; full2048 PPL pending",
+  "frozen_quality_arms": {
+    "C0": {
+      "r3": 0,
+      "r4": 0,
+      "r4opt": 0,
+      "rounding": 0
+    },
+    "C2": {
+      "r3": 0,
+      "r4": 0,
+      "r4opt": 0,
+      "rounding": 2
+    },
+    "R2": {
+      "r3": 1,
+      "r4": 0,
+      "r4opt": 0,
+      "rounding": 2
+    },
+    "D0": {
+      "r3": 0,
+      "r4": 5,
+      "r4opt": 10,
+      "rounding": 0
+    },
+    "D2": {
+      "r3": 0,
+      "r4": 5,
+      "r4opt": 10,
+      "rounding": 2
+    },
+    "RD2": {
+      "r3": 1,
+      "r4": 5,
+      "r4opt": 10,
+      "rounding": 2
+    },
+    "B2": {
+      "r3": 0,
+      "r4": 4,
+      "r4opt": 12,
+      "rounding": 2
+    },
+    "RB2": {
+      "r3": 1,
+      "r4": 4,
+      "r4opt": 12,
+      "rounding": 2
+    }
+  },
+  "quantization_and_export_provenance": {
+    "original_checkpoint": "Qwen3-origin fresh safetensors; original shard hashes in EXP0329/fold.json",
+    "backbone": "Single-scale per-output-channel symmetric W4[-7,7]; frozen runtime package;no LPBQ/group scales",
+    "original_Down16_export": "scripts/compare_down_precision_a.py;EXP0308/1.7B/INT16 immutable manifest",
+    "R3_QK_and_prefix_export": "EXP0324 model manifest;frozen EXP0323 Q/K qparams;prefix transformed once;no new weight transform",
+    "full6144_R4_export": "EXP0329/run.py prepare:load original Down weight,re-fold normalized H12 tensor H512,re-RTN W4 and rebuild FP16 SwiGLU LUT;fold.json validates invariance/range",
+    "existing_exporter_source_preservation": [
+      "scripts/export_exp0257.py",
+      "scripts/export_exp0258.py",
+      "scripts/export_exp0261.py",
+      "scripts/compare_down_precision_a.py",
+      "scripts/hvx_r4_qwen.py"
+    ],
+    "migration_requirement": "Parameterize retained original-derived quantizer/export chain;do not deliver runtime-only binaries or re-use incorrectly folded old packages. This experiment inventories provenance,not a new quantizer run."
+  }
+}

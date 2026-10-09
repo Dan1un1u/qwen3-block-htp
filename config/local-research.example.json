@@ -1,0 +1,10 @@
+{
+  "developer": "alice",
+  "shared_environment_root": "../htp-env",
+  "model_root": "../models/qwen3-block-htp",
+  "results_root": "../runs/alice/results/qwen3-block-htp",
+  "build_root": "../runs/alice/build",
+  "device_serial": "3B15C8007Z300000",
+  "device_run_root": "/data/local/tmp/qwen3-block-htp/developers/alice",
+  "note": "Linux paths resolve relative to repo root. Copy to ignored local config and customize. Shared environment read-only;model packages immutable. Device execution remains serialized by central owner;no server set up here."
+}

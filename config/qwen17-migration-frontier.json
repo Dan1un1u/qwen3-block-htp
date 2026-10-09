@@ -1,0 +1,243 @@
+{
+  "schema_version": 1,
+  "model": "Qwen3-1.7B",
+  "scope": "Recent uniformINT16Down/FP32residual experiment family;retain Pareto-relevant candidates and distinct-contract comparison references. Not a global Pareto ranking across unmatched trajectories/precision.",
+  "source_parent": "d0eec6462f7e3eee158eca153ef8f3b1ba017cdc",
+  "preset_config_relative": "config/qwen17-research-presets.json",
+  "resolver_relative": "scripts/qwen17_research_preset.py",
+  "quality_driver_relative": "scripts/run_exp0333_long_rotation.py",
+  "reference_relative": "scripts/check_exp0333_long_rotation.py",
+  "retained_arms": {
+    "C0": {
+      "r3": 0,
+      "r4": 0,
+      "r4opt": 0,
+      "rounding": 0
+    },
+    "C2": {
+      "r3": 0,
+      "r4": 0,
+      "r4opt": 0,
+      "rounding": 2
+    },
+    "R2": {
+      "r3": 1,
+      "r4": 0,
+      "r4opt": 0,
+      "rounding": 2
+    },
+    "D0": {
+      "r3": 0,
+      "r4": 5,
+      "r4opt": 10,
+      "rounding": 0
+    },
+    "D2": {
+      "r3": 0,
+      "r4": 5,
+      "r4opt": 10,
+      "rounding": 2
+    },
+    "RD2": {
+      "r3": 1,
+      "r4": 5,
+      "r4opt": 10,
+      "rounding": 2
+    },
+    "B2": {
+      "r3": 0,
+      "r4": 4,
+      "r4opt": 12,
+      "rounding": 2
+    },
+    "RB2": {
+      "r3": 1,
+      "r4": 4,
+      "r4opt": 12,
+      "rounding": 2
+    }
+  },
+  "historical_evidence": [
+    {
+      "experiment": "EXP-0318",
+      "source_branch": "codex/exp-0318-qwen17-context2048",
+      "source": {
+        "source_head": "0deb09e6ad504d3bafedbb006f5d816dc59fe4ba",
+        "source_closure": null,
+        "measured_source": null
+      },
+      "report_authority_relative": "docs/experiments/EXP-0318-RESULTS.md",
+      "evidence_relative_to_results_root": "exp0318",
+      "ledger_sha256": "26b70e3ba70899d3747e483b6014fc7afabb7fd7fe41be162c8a510d860d1181"
+    },
+    {
+      "experiment": "EXP-0319",
+      "source_branch": "codex/exp-0319-long-decode-pipeline",
+      "source": {
+        "source_head": "486c3cc5244d6d047988cf00f521485a09f6e968",
+        "source_closure": null,
+        "measured_source": null
+      },
+      "report_authority_relative": "docs/experiments/EXP-0319-RESULTS.md",
+      "evidence_relative_to_results_root": "exp0319",
+      "ledger_sha256": "f4e72f9c08d487a1a0762769edb2290842fca9598dbc8733ec307a30af114c8c"
+    },
+    {
+      "experiment": "EXP-0326",
+      "source_branch": "codex/exp-0326-projection-rounding",
+      "source": {
+        "source_head": "e3859c3f99f814edd540d81617cca471236202cc",
+        "source_closure": null,
+        "measured_source": null
+      },
+      "report_authority_relative": "docs/experiments/EXP-0326-RESULTS.md",
+      "evidence_relative_to_results_root": "exp0326",
+      "ledger_sha256": "0634f0639783b824f513e447be4f2c4a8f953688aec510351c1f7131e6d4a755"
+    },
+    {
+      "experiment": "EXP-0327",
+      "source_branch": "codex/exp-0327-r3-long-pipeline",
+      "source": {
+        "source_head": "54e910c72d62b653d7a92741783e474245e50fc8",
+        "source_closure": null,
+        "measured_source": null
+      },
+      "report_authority_relative": "docs/experiments/EXP-0327-RESULTS.md",
+      "evidence_relative_to_results_root": "exp0327",
+      "ledger_sha256": "bf7ac2300914319b8486886c05fa2feee00858f5f76ce6bdf99c41014cd2cc71"
+    },
+    {
+      "experiment": "EXP-0329",
+      "source_branch": "codex/exp-0329-r4-down16-baselines",
+      "source": {
+        "source_head": "6d6f365a91b4043089a6bdafc9c2c185a138f2d2",
+        "source_closure": null,
+        "measured_source": null
+      },
+      "report_authority_relative": "docs/experiments/EXP-0329-RESULTS.md",
+      "evidence_relative_to_results_root": "exp0329",
+      "ledger_sha256": null
+    },
+    {
+      "experiment": "EXP-0330",
+      "source_branch": "codex/exp-0330-dense-r4-integration",
+      "source": {
+        "source_head": "cdc3838ba1d091afa06f036bd8b9c394423b307a",
+        "source_closure": null,
+        "measured_source": null
+      },
+      "report_authority_relative": "docs/experiments/EXP-0330-RESULTS.md",
+      "evidence_relative_to_results_root": "exp0330",
+      "ledger_sha256": null
+    },
+    {
+      "experiment": "EXP-0331",
+      "source_branch": "codex/exp-0331-butterfly-r4-integration",
+      "source": {
+        "source_head": "7fb199b8d84ef1a9827e5c4112659f34db73d2b9",
+        "source_closure": null,
+        "measured_source": null
+      },
+      "report_authority_relative": "docs/experiments/EXP-0331-RESULTS.md",
+      "evidence_relative_to_results_root": "exp0331",
+      "ledger_sha256": null
+    },
+    {
+      "experiment": "EXP-0332",
+      "source_branch": null,
+      "source": {
+        "source_head": null,
+        "source_closure": "d0eec6462f7e3eee158eca153ef8f3b1ba017cdc",
+        "measured_source": null
+      },
+      "report_authority_relative": "docs/experiments/EXP-0332-RESULTS.md",
+      "evidence_relative_to_results_root": "exp0332",
+      "ledger_sha256": "2202021c0d7d983af42f3e54e1fa2fea53301dfa57b901e7a8282d1df1215ca1"
+    }
+  ],
+  "performance": {
+    "EXP0331": {
+      "shape": [
+        64,
+        42
+      ],
+      "protocol": "5short,10formalrepeat10,rotated five-arm;C/D10/B12 same campaign;rounding0",
+      "result": {
+        "C0": {
+          "prefill": {
+            "wall_ms": 34.91884947,
+            "tps": 1832.8209826897255
+          },
+          "decode": {
+            "wall_ms": 883.90594877,
+            "tps": 47.51636761631159
+          }
+        },
+        "D0": {
+          "prefill": {
+            "wall_ms": 38.179789549999995,
+            "tps": 1676.279538319247
+          },
+          "decode": {
+            "wall_ms": 926.4055591599999,
+            "tps": 45.33651550848062
+          }
+        },
+        "B0-reference": {
+          "prefill": {
+            "wall_ms": 39.243402079999996,
+            "tps": 1630.8473936467642
+          },
+          "decode": {
+            "wall_ms": 913.52362564,
+            "tps": 45.97582243215163
+          }
+        }
+      },
+      "note": "Dense wins R4 prefill;butterfly has lower R4 decode wall within this matched campaign. OFF wins speed overall;quality comparisons measured separately."
+    },
+    "EXP0327": {
+      "shapes": [
+        [
+          64,
+          64
+        ],
+        [
+          2048,
+          64
+        ]
+      ],
+      "R3_opt": 2,
+      "long_opt": 2555807,
+      "formal_repeat": 10,
+      "R3_cost_gate": "paired95upper<=1.10 PASS allscopes",
+      "long_vs_short_prefill_parity": "ratio0.895831 CI[0.895327,0.897545],narrow10percent FAIL retained",
+      "note": "NativeW4 QKV every complete chunk;capacity scheduler. No automatic universal zero-cost claim."
+    }
+  },
+  "quality": {
+    "EXP0332_scope": "8192 targets;64warmup+43 target resets;191windows;historical short quality only",
+    "EXP0333_scope": {
+      "dataset": "WikiText2 raw test subset",
+      "token_sha256": "e08c49458e0f03f12781431ad46d6118f636d1129a495307dca2f16a989a39f0",
+      "target_positions": [
+        64,
+        8255
+      ],
+      "reset_windows": 5,
+      "tail_retained": true,
+      "no_inside_window_reset": true,
+      "matched_BF16_teacher_ppl": 17.8745976615
+    },
+    "EXP0333_state": "running"
+  },
+  "migration_guards": [
+    "Keep no-rotation speed anchor and R3-only accuracy/schedule candidate.",
+    "Keep both R4 backends and both combined presets;do not merge their FP16/FP32 arithmetic references.",
+    "Preserve long-context nativeQKV bit21,capacity-derived attention clients,projectionrounding0/2 and package compatibility.",
+    "Retain rejected1179648 reserve and rounding/oldalignment failures as evidence;do not re-enable silently.",
+    "Preserve original-weight quantizer/export pipeline/calibration and checked hashes.",
+    "Do not mark legacy SP2 R4mode1 recipe as this latest Down16 full6144 config.",
+    "No current global Pareto claim or defaultpromotion from unmatched historical speed and new quality measurements."
+  ]
+}
