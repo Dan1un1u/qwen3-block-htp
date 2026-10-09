@@ -32000,5 +32000,5 @@ experiments:
     motivation.
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0329-r4-down16-baselines
+    source_branch: codex/exp-0330-dense-r4-integration
     device_owner: null
