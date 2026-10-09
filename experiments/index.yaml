@@ -32564,13 +32564,574 @@ experiments:
 
 - id: EXP-0331
   title: Qwen17 6144 HVX butterfly R4 integration optimization
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
-  adoption_status: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: fail
+  adoption_status: not_applicable
   record: docs/experiments/EXP-0331.md
   approval_ref: User2026-10-09 authorizes one more optimization round, fixed6144 route.
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0331-butterfly-r4-integration
-    device_owner: EXP-0331
+    device_owner: null
+  results:
+    experiment: EXP-0331
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: fail
+    gate_scope: Numerical/physical exact pass. Selected butterfly prefill10percent overhead fails; decode passes. Descriptive cost only, no adoption/quality acceptance.
+    source_head: 7fb199b8d84ef1a9827e5c4112659f34db73d2b9
+    runtime_source_head: 7625e984e8af1bfda9318d142e6fcc1c8e4b3b8e
+    implementation_unchanged_after_measurement: true
+    source_branch: codex/exp-0331-butterfly-r4-integration
+    device_owner: null
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0331
+    evidence_ledger_sha256: 97d3b77bb932c985600907d228e22e819ded321ee4c76376bf81f4636b56cfe4
+    evidence_files: 2315
+    evidence_bytes: 3860273661
+    report: docs/experiments/EXP-0331-RESULTS.md
+    full_profiling_report: docs/experiments/EXP-0331-PROFILING.md
+    method: docs/BUTTERFLY_R4_INTEGRATION.md
+    scope: Qwen17 W4A8 uniform INT16 Down / FP32 residual / R3 OFF / full64+42
+    selected_butterfly: B12
+    selection_rule: Both exact finalists B11/B12 frozen before fullmodel timing; minimum complete fullmodel prefill Hostwall. No baseline promotion.
+    runtime_options:
+      QBH_SP2: 8
+      QBH_FP32_RESIDUAL: 2
+      QBH_DENSE_R3: 0
+      QBH_U8_PREFILL_OPT: 0
+      QBH_WIDE_SCORE: 4
+      C:
+        QBH_DENSE_R4: 0
+        QBH_R4_OPT: 6
+      B9:
+        QBH_DENSE_R4: 4
+        QBH_R4_OPT: 9
+      B11:
+        QBH_DENSE_R4: 4
+        QBH_R4_OPT: 11
+      B12:
+        QBH_DENSE_R4: 4
+        QBH_R4_OPT: 12
+      D10:
+        QBH_DENSE_R4: 5
+        QBH_R4_OPT: 10
+    parent_manifest_sha256: 112452e7785f96f5b06c40eacb0d0c328c45268ec2a59456a62dd27bc4896264
+    rotated_manifest_sha256: 2abe3974a237e3f65e17ddc4ce2740f946a3dcca96e1f01fe4d49832a8b9eee0
+    transform: Normalized full H12 tensor H512, unchanged FP32 butterfly stage/quantizer contract; dense FP16 distinct finite precision. No crosspath equality claim.
+    formal:
+      prefill:
+        C:
+          wall_ms: 34.91884947
+          tps: 1832.8209826897255
+          rounds_ms:
+          - 35.067697700000004
+          - 34.9331615
+          - 34.847296799999995
+          - 34.9872186
+          - 34.9685
+          - 35.036521
+          - 35.033572799999995
+          - 34.718672
+          - 34.8350575
+          - 34.760796799999994
+          component:
+            host_wall_ns: 34918849.47
+            invocation_ticks: 656168.69
+            gate_up_ticks: 137691.32
+            down_ticks: 74818.25
+            activation_ticks: 0.0
+            dense_r4_prepare_ticks: 0.0
+            dense_r4_layout_ticks: 0.0
+            dense_r4_matmul_ticks: 0.0
+            dense_r4_finish_ticks: 0.0
+            dense_r4_hmx_calls: 0.0
+            vtcm_peak_plan_bytes: 8365824.0
+        B9:
+          wall_ms: 39.49725571999999
+          tps: 1620.3657401846453
+          rounds_ms:
+          - 39.741020899999995
+          - 39.237021
+          - 39.3591614
+          - 39.5400105
+          - 39.332494600000004
+          - 39.5703071
+          - 39.5361668
+          - 39.4861406
+          - 39.6073959
+          - 39.5628384
+          component:
+            host_wall_ns: 39497255.72
+            invocation_ticks: 744078.0
+            gate_up_ticks: 151668.61000000002
+            down_ticks: 74990.9
+            activation_ticks: 73683.41
+            dense_r4_prepare_ticks: 0.0
+            dense_r4_layout_ticks: 73619.32
+            dense_r4_matmul_ticks: 0.0
+            dense_r4_finish_ticks: 0.0
+            dense_r4_hmx_calls: 0.0
+            vtcm_peak_plan_bytes: 8365824.0
+          wall_ratio_over_control: 1.1311156100355901
+          wall_overhead_pct: 13.111561003559014
+          paired_ci95:
+          - 1.128069553084161
+          - 1.1341899816195993
+        D10:
+          wall_ms: 38.179789549999995
+          tps: 1676.279538319247
+          rounds_ms:
+          - 38.0826822
+          - 38.2394582
+          - 37.9786407
+          - 38.181932200000006
+          - 38.1815732
+          - 38.146984200000006
+          - 38.1590209
+          - 38.1779635
+          - 38.3220259
+          - 38.3276145
+          component:
+            host_wall_ns: 38179789.550000004
+            invocation_ticks: 718910.37
+            gate_up_ticks: 151776.98
+            down_ticks: 75213.5
+            activation_ticks: 48530.33
+            dense_r4_prepare_ticks: 7080.45
+            dense_r4_layout_ticks: 3898.31
+            dense_r4_matmul_ticks: 22421.0
+            dense_r4_finish_ticks: 14927.25
+            dense_r4_hmx_calls: 56.0
+            vtcm_peak_plan_bytes: 8300288.0
+          wall_ratio_over_control: 1.0933862406549673
+          wall_overhead_pct: 9.338624065496726
+          paired_ci95:
+          - 1.0902536093051465
+          - 1.0967703487556826
+        B11:
+          wall_ms: 39.36089158
+          tps: 1625.9794285889495
+          rounds_ms:
+          - 39.457427100000004
+          - 39.411260299999995
+          - 39.378546799999995
+          - 39.474104
+          - 39.4008384
+          - 39.219197799999996
+          - 39.433531200000004
+          - 39.1992707
+          - 39.4424688
+          - 39.1922707
+          component:
+            host_wall_ns: 39360891.58
+            invocation_ticks: 741626.14
+            gate_up_ticks: 151541.76
+            down_ticks: 74843.62
+            activation_ticks: 71468.65
+            dense_r4_prepare_ticks: 0.0
+            dense_r4_layout_ticks: 71408.14
+            dense_r4_matmul_ticks: 0.0
+            dense_r4_finish_ticks: 0.0
+            dense_r4_hmx_calls: 0.0
+            vtcm_peak_plan_bytes: 8365824.0
+          wall_ratio_over_control: 1.1272104372687397
+          wall_overhead_pct: 12.72104372687397
+          paired_ci95:
+          - 1.1250671625724717
+          - 1.1290850489850035
+        B12:
+          wall_ms: 39.243402079999996
+          tps: 1630.8473936467642
+          rounds_ms:
+          - 39.236703
+          - 39.0628906
+          - 39.280296899999996
+          - 39.2555105
+          - 39.341052
+          - 39.261156299999996
+          - 39.2427085
+          - 39.3561145
+          - 39.1079583
+          - 39.289630200000005
+          component:
+            host_wall_ns: 39243402.08
+            invocation_ticks: 739424.54
+            gate_up_ticks: 151851.28
+            down_ticks: 75125.91
+            activation_ticks: 68601.49
+            dense_r4_prepare_ticks: 0.0
+            dense_r4_layout_ticks: 68540.55
+            dense_r4_matmul_ticks: 0.0
+            dense_r4_finish_ticks: 0.0
+            dense_r4_hmx_calls: 0.0
+            vtcm_peak_plan_bytes: 8365824.0
+          wall_ratio_over_control: 1.1238457931930252
+          wall_overhead_pct: 12.384579319302524
+          paired_ci95:
+          - 1.121074501989653
+          - 1.1270635436727117
+      decode:
+        C:
+          wall_ms: 883.90594877
+          tps: 47.51636761631159
+          rounds_ms:
+          - 895.0261292
+          - 882.8400627999999
+          - 881.7523021000001
+          - 882.4880933
+          - 885.817104
+          - 885.0707712000001
+          - 884.3202335
+          - 877.5869941
+          - 885.7522561000001
+          - 878.4055414
+          component:
+            host_wall_ns: 883905948.77
+            invocation_ticks: 16508398.14
+            gate_up_ticks: 5160263.75
+            down_ticks: 2860122.85
+            activation_ticks: 0.0
+            dense_r4_prepare_ticks: 0.0
+            dense_r4_layout_ticks: 0.0
+            dense_r4_matmul_ticks: 0.0
+            dense_r4_finish_ticks: 0.0
+            dense_r4_hmx_calls: 0.0
+            vtcm_peak_plan_bytes: 351364608.0
+        B9:
+          wall_ms: 912.25878945
+          tps: 46.03956737465008
+          rounds_ms:
+          - 923.731692
+          - 901.5996659
+          - 903.4778534
+          - 916.2789838
+          - 900.5217182
+          - 915.2672703
+          - 913.7460617
+          - 915.9033847999999
+          - 915.3338484
+          - 916.727416
+          component:
+            host_wall_ns: 912258789.45
+            invocation_ticks: 17051773.4
+            gate_up_ticks: 5372428.29
+            down_ticks: 2877000.81
+            activation_ticks: 277463.56
+            dense_r4_prepare_ticks: 0.0
+            dense_r4_layout_ticks: 275365.07
+            dense_r4_matmul_ticks: 0.0
+            dense_r4_finish_ticks: 0.0
+            dense_r4_hmx_calls: 0.0
+            vtcm_peak_plan_bytes: 351364608.0
+          wall_ratio_over_control: 1.0320767619218474
+          wall_overhead_pct: 3.2076761921847385
+          paired_ci95:
+          - 1.0266812027545675
+          - 1.0371955158924375
+        D10:
+          wall_ms: 926.4055591599999
+          tps: 45.33651550848062
+          rounds_ms:
+          - 925.5894119
+          - 925.5129535
+          - 916.1544836
+          - 928.1608846
+          - 926.9145823
+          - 928.2519616000001
+          - 926.5302739
+          - 929.7306354
+          - 929.5303788
+          - 927.680026
+          component:
+            host_wall_ns: 926405559.16
+            invocation_ticks: 17338168.03
+            gate_up_ticks: 5391095.8
+            down_ticks: 2887936.94
+            activation_ticks: 507952.21
+            dense_r4_prepare_ticks: 223813.72
+            dense_r4_layout_ticks: 22055.67
+            dense_r4_matmul_ticks: 100331.4
+            dense_r4_finish_ticks: 155919.04
+            dense_r4_hmx_calls: 2352.0
+            vtcm_peak_plan_bytes: 348612096.0
+          wall_ratio_over_control: 1.0480815978771727
+          wall_overhead_pct: 4.80815978771727
+          paired_ci95:
+          - 1.043620983950404
+          - 1.0523112932792869
+        B11:
+          wall_ms: 912.0814645799999
+          tps: 46.048518285962956
+          rounds_ms:
+          - 914.8463799
+          - 912.5008538999999
+          - 911.9045055
+          - 916.0958216
+          - 913.2366666
+          - 905.7462659
+          - 914.1409062
+          - 907.8700617999999
+          - 917.4960143999999
+          - 906.97717
+          component:
+            host_wall_ns: 912081464.58
+            invocation_ticks: 17058062.28
+            gate_up_ticks: 5376665.47
+            down_ticks: 2878951.09
+            activation_ticks: 277424.17
+            dense_r4_prepare_ticks: 0.0
+            dense_r4_layout_ticks: 275323.64
+            dense_r4_matmul_ticks: 0.0
+            dense_r4_finish_ticks: 0.0
+            dense_r4_hmx_calls: 0.0
+            vtcm_peak_plan_bytes: 351364608.0
+          wall_ratio_over_control: 1.0318761468335036
+          wall_overhead_pct: 3.1876146833503594
+          paired_ci95:
+          - 1.0285586171093661
+          - 1.0346714895388722
+        B12:
+          wall_ms: 913.52362564
+          tps: 45.97582243215163
+          rounds_ms:
+          - 914.5072852999999
+          - 902.0377646000001
+          - 911.8577068999999
+          - 914.4486357000001
+          - 916.2293902
+          - 918.1197604
+          - 916.4779382
+          - 916.9130828
+          - 907.6866718
+          - 916.9580205
+          component:
+            host_wall_ns: 913523625.64
+            invocation_ticks: 17087944.86
+            gate_up_ticks: 5388395.14
+            down_ticks: 2883482.97
+            activation_ticks: 277438.98
+            dense_r4_prepare_ticks: 0.0
+            dense_r4_layout_ticks: 275340.69
+            dense_r4_matmul_ticks: 0.0
+            dense_r4_finish_ticks: 0.0
+            dense_r4_hmx_calls: 0.0
+            vtcm_peak_plan_bytes: 351364608.0
+          wall_ratio_over_control: 1.03350772433562
+          wall_overhead_pct: 3.3507724335620104
+          paired_ci95:
+          - 1.028657519640293
+          - 1.0382772943983707
+    paired_comparisons:
+      prefill:
+        B11/B9:
+          wall_ratio: 0.9965475034274105
+          wall_delta_percent: -0.3452496572589503
+          ci95:
+          - 0.993818680421291
+          - 0.9993945481099358
+        B12/B9:
+          wall_ratio: 0.9935728790425444
+          wall_delta_percent: -0.6427120957455568
+          ci95:
+          - 0.991081213180049
+          - 0.9960469966575153
+        B12/B11:
+          wall_ratio: 0.9970150701550748
+          wall_delta_percent: -0.2984929844925155
+          ci95:
+          - 0.994486214056411
+          - 0.9996948342245423
+        B11/D10:
+          wall_ratio: 1.0309352682118178
+          wall_delta_percent: 3.09352682118178
+          ci95:
+          - 1.0282387258699766
+          - 1.033397385388062
+        B12/D10:
+          wall_ratio: 1.0278579987615464
+          wall_delta_percent: 2.7857998761546376
+          ci95:
+          - 1.025253439488323
+          - 1.0302686836765287
+      decode:
+        B11/B9:
+          wall_ratio: 0.9998056199928673
+          wall_delta_percent: -0.019438000713267733
+          ci95:
+          - 0.9943099864924115
+          - 1.0055605560483862
+        B12/B9:
+          wall_ratio: 1.0013864883568429
+          wall_delta_percent: 0.1386488356842852
+          ci95:
+          - 0.9969576752773651
+          - 1.006210382459488
+        B12/B11:
+          wall_ratio: 1.0015811757129218
+          wall_delta_percent: 0.1581175712921823
+          ci95:
+          - 0.9965917196715426
+          - 1.006461800002415
+        B11/D10:
+          wall_ratio: 0.984537987236402
+          wall_delta_percent: -1.5462012763598043
+          ci95:
+          - 0.9808448089690971
+          - 0.9881064957893069
+        B12/D10:
+          wall_ratio: 0.9860947147902692
+          wall_delta_percent: -1.3905285209730778
+          ci95:
+          - 0.9823333877401075
+          - 0.989464366730222
+    microseconds:
+      prefill:
+        C:
+          activation_ticks: 0.0
+          gate_up_ticks: 7171.422916666667
+          down_ticks: 3896.783854166667
+          dense_r4_prepare_ticks: 0.0
+          dense_r4_layout_ticks: 0.0
+          dense_r4_matmul_ticks: 0.0
+          dense_r4_finish_ticks: 0.0
+          dense_r4_parallel_join_ticks: 0.0
+        B9:
+          activation_ticks: 3837.677604166667
+          gate_up_ticks: 7899.406770833334
+          down_ticks: 3905.7760416666665
+          dense_r4_prepare_ticks: 0.0
+          dense_r4_layout_ticks: 3834.339583333334
+          dense_r4_matmul_ticks: 0.0
+          dense_r4_finish_ticks: 0.0
+          dense_r4_parallel_join_ticks: 0.0
+        D10:
+          activation_ticks: 2527.621354166667
+          gate_up_ticks: 7905.0510416666675
+          down_ticks: 3917.369791666667
+          dense_r4_prepare_ticks: 368.7734375
+          dense_r4_layout_ticks: 203.03697916666667
+          dense_r4_matmul_ticks: 1167.7604166666667
+          dense_r4_finish_ticks: 777.4609375
+          dense_r4_parallel_join_ticks: 30.564583333333335
+        B11:
+          activation_ticks: 3722.325520833333
+          gate_up_ticks: 7892.800000000001
+          down_ticks: 3898.1052083333334
+          dense_r4_prepare_ticks: 0.0
+          dense_r4_layout_ticks: 3719.1739583333333
+          dense_r4_matmul_ticks: 0.0
+          dense_r4_finish_ticks: 0.0
+          dense_r4_parallel_join_ticks: 0.0
+        B12:
+          activation_ticks: 3572.9942708333338
+          gate_up_ticks: 7908.920833333334
+          down_ticks: 3912.8078125
+          dense_r4_prepare_ticks: 0.0
+          dense_r4_layout_ticks: 3569.8203125000005
+          dense_r4_matmul_ticks: 0.0
+          dense_r4_finish_ticks: 0.0
+          dense_r4_parallel_join_ticks: 0.0
+      decode:
+        C:
+          activation_ticks: 0.0
+          gate_up_ticks: 6399.136594742064
+          down_ticks: 3546.779327876984
+          dense_r4_prepare_ticks: 0.0
+          dense_r4_layout_ticks: 0.0
+          dense_r4_matmul_ticks: 0.0
+          dense_r4_finish_ticks: 0.0
+          dense_r4_parallel_join_ticks: 0.0
+        B9:
+          activation_ticks: 344.07683531746034
+          gate_up_ticks: 6662.23746279762
+          down_ticks: 3567.709337797619
+          dense_r4_prepare_ticks: 0.0
+          dense_r4_layout_ticks: 341.4745411706349
+          dense_r4_matmul_ticks: 0.0
+          dense_r4_finish_ticks: 0.0
+          dense_r4_parallel_join_ticks: 0.0
+        D10:
+          activation_ticks: 629.9010540674603
+          gate_up_ticks: 6685.386656746032
+          down_ticks: 3581.2710069444447
+          dense_r4_prepare_ticks: 277.5467757936508
+          dense_r4_layout_ticks: 27.35078125
+          dense_r4_matmul_ticks: 124.41889880952381
+          dense_r4_finish_ticks: 193.35198412698415
+          dense_r4_parallel_join_ticks: 0.0
+        B11:
+          activation_ticks: 344.02798859126983
+          gate_up_ticks: 6667.491902281747
+          down_ticks: 3570.1278397817464
+          dense_r4_prepare_ticks: 0.0
+          dense_r4_layout_ticks: 341.42316468253966
+          dense_r4_matmul_ticks: 0.0
+          dense_r4_finish_ticks: 0.0
+          dense_r4_parallel_join_ticks: 0.0
+        B12:
+          activation_ticks: 344.04635416666673
+          gate_up_ticks: 6682.037624007937
+          down_ticks: 3575.7477306547617
+          dense_r4_prepare_ticks: 0.0
+          dense_r4_layout_ticks: 341.4443080357143
+          dense_r4_matmul_ticks: 0.0
+          dense_r4_finish_ticks: 0.0
+          dense_r4_parallel_join_ticks: 0.0
+    numerical_gate:
+      all_exact: true
+      checks:
+        B11:
+          all_audit_files_exact: 185
+          layer_steps_exact: 1204
+          independent_FP32_R4_INT16_and_Down_residual: true
+        B12:
+          all_audit_files_exact: 185
+          layer_steps_exact: 1204
+          independent_FP32_R4_INT16_and_Down_residual: true
+        C:
+          historical_layer_steps_exact: 1204
+          all_historical_audit_files_exact: true
+        B9:
+          historical_layer_steps_exact: 1204
+          all_historical_audit_files_exact: true
+        D10:
+          historical_layer_steps_exact: 1204
+          all_historical_audit_files_exact: true
+    short_rounds: 5
+    formal_rounds: 10
+    trajectories_per_round: 10
+    per_RPC_repeat_count: 1
+    formal_invocations: 21500
+    formal_layer_ledgers: 602000
+    formal_head_checks: 21500
+    auxiliary_invocations: 2150
+    repeat1: auxiliary only, no veto
+    vtcm_peak_plan_bytes:
+      C: 8365824
+      B9: 8365824
+      D10: 8300288
+      B11: 8365824
+      B12: 8365824
+    vtcm_reporting_note: Actual perprofile max; decode summed field never used as peak.
+    all_ledgers_close: true
+    intermediate_DDR_zero: true
+    battery_temperature_C:
+      min: 36.0
+      max: 40.9
+    overhead_gate:
+      prefill:
+        B9: false
+        D10: true
+        B11: false
+        B12: false
+      decode:
+        B9: true
+        D10: true
+        B11: true
+        B12: true
+    ppl_rerun: false
+    baseline_promoted: false
+    conclusion: Selected B12, prefill wall 0.6427percent lower than B9 and R4 wrapper 6.8970percent lower. Prefill still slower than optimized dense and overhead
+      above10percent. Decode change vs oldbutterfly CI assessed, no speedup claim where CI includes1. B13 exact but slower, retained; no fullstreamed R4/Down overlap
+      implemented.
