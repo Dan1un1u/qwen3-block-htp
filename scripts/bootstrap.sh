@@ -29,14 +29,41 @@ actual_origin=$(git -C "$MEMORY_WORKTREE" remote get-url origin) ||
 [[ -z "$(git -C "$MEMORY_WORKTREE" status --porcelain=v1 --untracked-files=all)" ]] ||
     hard_stop "project-memory worktree is dirty"
 
-git -C "$MEMORY_WORKTREE" fetch origin \
-    "+refs/heads/$MEMORY_BRANCH:refs/remotes/origin/$MEMORY_BRANCH" ||
-    hard_stop "fetch failed; stale fallback is forbidden"
+# Network refresh is best effort: retry boundedly, including a process-local
+# proxy bypass. Never turn a transport outage into a request for user approval.
+refresh_state=unavailable
+for attempt in 1 2 3; do
+    if [[ "$attempt" == 1 ]]; then
+        if timeout 30s git -C "$MEMORY_WORKTREE" fetch origin \
+            "+refs/heads/$MEMORY_BRANCH:refs/remotes/origin/$MEMORY_BRANCH"; then
+            refresh_state=verified
+            break
+        fi
+    else
+        if env -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY \
+            -u http_proxy -u https_proxy -u all_proxy \
+            timeout 30s git -c http.proxy= -c https.proxy= \
+            -C "$MEMORY_WORKTREE" fetch origin \
+            "+refs/heads/$MEMORY_BRANCH:refs/remotes/origin/$MEMORY_BRANCH"; then
+            refresh_state=verified
+            break
+        fi
+    fi
+    printf 'PROJECT_MEMORY_NETWORK_RETRY=%s\n' "$attempt" >&2
+ done
+printf 'PROJECT_MEMORY_REMOTE_REFRESH=%s\n' "$refresh_state"
+if [[ "$refresh_state" != verified ]]; then
+    printf 'PROJECT_MEMORY_NETWORK_NOTE=using clean last-synchronized local authority; remote freshness unverified\n' >&2
+fi
 
 local_head=$(git -C "$MEMORY_WORKTREE" rev-parse HEAD) ||
     hard_stop "local project-memory HEAD is unavailable"
 remote_head=$(git -C "$MEMORY_WORKTREE" rev-parse "refs/remotes/origin/$MEMORY_BRANCH") ||
     hard_stop "remote project-memory branch is unavailable"
+
+if [[ "$refresh_state" != verified && "$local_head" != "$remote_head" ]]; then
+    hard_stop "offline authority differs from its last synchronized tracking reference"
+fi
 
 git -C "$MEMORY_WORKTREE" merge-base --is-ancestor "$local_head" "$remote_head" ||
     hard_stop "local and remote project-memory history diverged"
@@ -66,4 +93,8 @@ printf 'AUTHORITY_FILE=%s\n' \
     "$MEMORY_WORKTREE/experiments/index.yaml"
 printf 'STATEFUL_PREFLIGHT=python3 %s/scripts/project_memory.py preflight --source-worktree %s\n' \
     "$MEMORY_WORKTREE" "${SOURCE_WORKTREE:-/home/daniuniu/work/qwen3-block-htp}"
-printf 'PROJECT_MEMORY_BOOTSTRAP=verified\n'
+if [[ "$refresh_state" == verified ]]; then
+    printf 'PROJECT_MEMORY_BOOTSTRAP=verified\n'
+else
+    printf 'PROJECT_MEMORY_BOOTSTRAP=local_verified_remote_unavailable\n'
+fi

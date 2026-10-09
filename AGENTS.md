@@ -5,7 +5,7 @@ block laboratory. It never carries implementation source or build products.
 
 - Before any project reading, theory discussion, source work, build, model
   generation, device execution, or profiling, run
-  `scripts/bootstrap.sh /home/daniuniu/work/qwen3-block-htp`. A failed bootstrap blocks dependent work until repaired and revalidated; apply the recovery policy below. Stale fallback is forbidden.
+  `scripts/bootstrap.sh /home/daniuniu/work/qwen3-block-htp`. A failed bootstrap blocks dependent work until repaired and revalidated; apply the recovery policy below. Transient fetch outages do not require stopping or asking the user: retry normally and with a process-local proxy bypass, then use only a clean last-synchronized locally validated authority snapshot, explicitly recording remote freshness as unverified.
 - Read `PROJECT_CONTRACT.md`, `PROJECT_STATUS.yaml`, `CONTEXT.md`, and
   `experiments/index.yaml` in the order printed by bootstrap before project
   work.
@@ -29,3 +29,4 @@ block laboratory. It never carries implementation source or build products.
 - Repair reference/measurement collection defects and recollect under the existing experiment. Never turn missing values into measured zeros, rewrite old hashes, substitute a reference, loosen numerical/physical thresholds, or retroactively change performance gates to obtain a pass.
 - Escalate only for ambiguous authority/ownership, unexplained source/artifact hash mismatches, compromised evidence, required numerical/physical contract amendments, destructive recovery, scope expansion, or exhausted bounded recovery. Implementation bugs within approved scope may be fixed autonomously and affected gates rerun.
 - Bootstrap/preflight must pass before resuming dependent source/build/model/device work. During authorized Project Memory repair, minimal inspection and repair may proceed despite its failed gate; validate syntax and invariants before committing, synchronize and rerun full bootstrap/preflight. Baseline promotion remains user-only.
+- User amendment 2026-10-10 removes fetch-transport failure as an immediate hard stop. Bootstrap retries at most three times (30 seconds per attempt); if all fail, an unchanged clean local HEAD equal to its last synchronized tracking reference may proceed after full local validation. Record the outage and exact HEADs. This exception does not permit accepting changed hashes, remote divergence, wrong origin/branch, concurrent locks or invalid evidence; remote refresh must never be claimed successful while offline.

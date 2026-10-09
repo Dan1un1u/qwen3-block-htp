@@ -18,8 +18,8 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 332
+  active_experiment: EXP-0332
+  next_experiment_number: 333
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -19171,3 +19171,18 @@ current_scope:
     baseline_promoted: false
     conclusion: Selected B12, prefill wall 0.6427percent lower than B9 and R4 wrapper 6.8970percent lower. Prefill still slower than optimized dense and overhead above10percent.
       Decode change vs oldbutterfly CI assessed, no speedup claim where CI includes1. B13 exact but slower, retained; no fullstreamed R4/Down overlap implemented.
+
+current_r3_r4_integration:
+  experiment: EXP-0332
+  state: running
+  approval: User2026-10-10 prioritizes R3+R4 quality comparison and build-to-run timing
+  source_parent: 7fb199b8d84ef1a9827e5c4112659f34db73d2b9
+  evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0332
+network_recovery_policy:
+  amendment: User2026-10-10
+  fetch_failure_requires_user_permission: false
+  bounded_attempts: 3
+  timeout_seconds: 30
+  process_local_proxy_bypass: true
+  offline_authority: clean_last_synchronized_locally_validated_snapshot
+  remote_freshness_must_be_disclosed: true

@@ -33135,3 +33135,16 @@ experiments:
     conclusion: Selected B12, prefill wall 0.6427percent lower than B9 and R4 wrapper 6.8970percent lower. Prefill still slower than optimized dense and overhead
       above10percent. Decode change vs oldbutterfly CI assessed, no speedup claim where CI includes1. B13 exact but slower, retained; no fullstreamed R4/Down overlap
       implemented.
+- id: EXP-0332
+  title: Qwen17 R3 plus R4 integration and matched quality
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: not_requested
+  record: docs/experiments/EXP-0332.md
+  approval_ref: User2026-10-10 prioritizes combined rotation quality experiment and
+    records source-build-to-device-start duration; authorizes fetch policy amendment.
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0331-butterfly-r4-integration
+    device_owner: null
