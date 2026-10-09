@@ -25,3 +25,17 @@ static inline void qbh_r4_i16_half64(uint8_t *lo,uint8_t *hi,size_t off,HVX_Vect
     qbh_r4_i16_store32(lo,hi,off,qbh_r4_i16_words(Q6_V_lo_W(ordered),inv));
     qbh_r4_i16_store32(lo,hi,off+2048U,qbh_r4_i16_words(Q6_V_hi_W(ordered),inv));
 }
+
+static inline HVX_Vector qbh_r4_i16_halfwords(HVX_Vector hf,HVX_Vector inv) {
+ HVX_VectorPair f=Q6_Wsf_vcvt_Vhf(hf);
+ HVX_VectorPair o=Q6_W_vshuff_VVR(Q6_V_hi_W(f),Q6_V_lo_W(f),-4);
+ return Q6_Vh_vpack_VwVw_sat(qbh_r4_i16_words(Q6_V_hi_W(o),inv),qbh_r4_i16_words(Q6_V_lo_W(o),inv));
+}
+static inline HVX_Vector qbh_r4_i16_low_pair(HVX_Vector b,HVX_Vector a) {
+ HVX_Vector mask=Q6_V_vsplat_R(0x00ff00ff);
+ return Q6_Vub_vpack_VhVh_sat(Q6_V_vand_VV(b,mask),Q6_V_vand_VV(a,mask));
+}
+static inline HVX_Vector qbh_r4_i16_high_pair(HVX_Vector b,HVX_Vector a) {
+ HVX_Vector bias=Q6_Vh_vsplat_R(128);
+ return Q6_Vub_vpack_VhVh_sat(Q6_Vh_vadd_VhVh(Q6_Vh_vasr_VhR(b,8),bias),Q6_Vh_vadd_VhVh(Q6_Vh_vasr_VhR(a,8),bias));
+}

@@ -9,6 +9,11 @@ struct bf70_task {struct qbh_block_header *h;struct qbh_block_buffers *b;uint8_t
 static void qbh_bf70_worker(void *context,uint32_t id){
  struct bf70_task *t=context;uint32_t rows=t->h->logical_m,nr=rows==64U?16U:1U,first=rows==64U?id*16U:0U;
  float *x=(float *)t->b->expanded_weight;
+ if(t->phase==3U) {
+  struct bf70_task part=*t;
+  for(uint32_t phase=0;phase<3U;++phase){part.phase=phase;qbh_bf70_worker(&part,id);}
+  return;
+ }
  if(t->phase==0U){
   const __fp16 *act=(const __fp16 *)t->b->hmx_activation;
   for(uint32_t r=first;r<first+nr;r++)for(uint32_t a=0;a<QBH_BLOCK_INTERMEDIATE/512U;a++)for(uint32_t c=0;c<512U;c+=64U){
@@ -18,7 +23,7 @@ static void qbh_bf70_worker(void *context,uint32_t id){
    HVX_VectorPair o=Q6_W_vshuff_VVR(Q6_V_hi_W(f),Q6_V_lo_W(f),-4);
    *(HVX_Vector *)(x+r*QBH_BLOCK_INTERMEDIATE+a*512U+c)=Q6_V_lo_W(o);*(HVX_Vector *)(x+r*QBH_BLOCK_INTERMEDIATE+a*512U+c+32U)=Q6_V_hi_W(o);
   }
- }else if(t->phase==1U){bf69_rows(x+first*QBH_BLOCK_INTERMEDIATE,nr);}
+ }else if(t->phase==1U){bf69_rows_opt(x+first*QBH_BLOCK_INTERMEDIATE,nr,t->h->dense_r4_optimization);}
  else{
   for(uint32_t r=first;r<first+nr;r++)for(uint32_t c=0;c<QBH_BLOCK_INTERMEDIATE;c+=32U){
    if(QBH_R4_DOWN16(t->h)) {
@@ -57,6 +62,11 @@ static int qbh_run_butterfly_r4(struct qbh_block_header *h,uint8_t *shared,struc
  if(rows==1U)for(uint32_t c=0;c<QBH_BLOCK_INTERMEDIATE/32U;c++) {
   *(HVX_Vector *)(middle+c*2048U)=Q6_Vb_vsplat_R((int)task.zp);
   if(QBH_R4_DOWN16(h))*(HVX_Vector *)(task.high+c*2048U)=Q6_Vb_vsplat_R(128);
+ }
+ if(h->dense_r4_optimization==9U && !h->dense_r4_audit_offset) {
+  task.phase=3U;if(bf70_dispatch(pool,&task))return -1;
+  h->dense_r4_layout_ticks+=HAP_perf_get_qtimer_count()-start;
+  h->dense_r4_calls++;h->dense_r4_rows+=rows;return 0;
  }
  if(bf70_dispatch(pool,&task))return -1;h->dense_r4_prepare_ticks+=HAP_perf_get_qtimer_count()-start;
  if(h->dense_r4_audit_offset)memcpy(shared+h->dense_r4_audit_offset,b->expanded_weight,rows*QBH_BLOCK_INTERMEDIATE*4U);

@@ -188,6 +188,21 @@ static void qbh_r4_finish_int16(struct qbh_block_header *h,const __fp16 *weight,
     __fp16 *audit,uint32_t a_first,uint32_t a_count) {
     HVX_Vector inv=qbh_r4_i16_splat(1.0f/h->qparams[QBH_BLOCK_QP_MIDDLE].scale);
     HVX_Vector offsets=*(const HVX_Vector *)qbh_attention_vscatter_offsets;
+    if(h->dense_r4_optimization>=7U) {
+      for(uint32_t a=a_first;a<a_first+a_count;++a)for(uint32_t c=0;c<512U;c+=64U)
+       for(uint32_t r=0;r<count;r+=4U) {
+        HVX_Vector v0=qbh_r4_i16_halfwords(qbh_r4_gather_finish(weight,scratch,offsets,audit,first,count,r,a,c),inv);
+        HVX_Vector v1=qbh_r4_i16_halfwords(qbh_r4_gather_finish(weight,scratch,offsets,audit,first,count,r+1U,a,c),inv);
+        HVX_Vector v2=qbh_r4_i16_halfwords(qbh_r4_gather_finish(weight,scratch,offsets,audit,first,count,r+2U,a,c),inv);
+        HVX_Vector v3=qbh_r4_i16_halfwords(qbh_r4_gather_finish(weight,scratch,offsets,audit,first,count,r+3U,a,c),inv);
+        HVX_VectorPair l=Q6_W_vdeal_VVR(qbh_r4_i16_low_pair(v3,v2),qbh_r4_i16_low_pair(v1,v0),-32);
+        HVX_VectorPair u=Q6_W_vdeal_VVR(qbh_r4_i16_high_pair(v3,v2),qbh_r4_i16_high_pair(v1,v0),-32);
+        size_t off=(a*16U+c/32U)*2048U+(first+r)*32U;
+        *(HVX_Vector *)(middle+off)=Q6_V_lo_W(l);*(HVX_Vector *)(middle+off+2048U)=Q6_V_hi_W(l);
+        *(HVX_Vector *)(high+off)=Q6_V_lo_W(u);*(HVX_Vector *)(high+off+2048U)=Q6_V_hi_W(u);
+       }
+      return;
+    }
     for(uint32_t a=a_first;a<a_first+a_count;++a)for(uint32_t c=0;c<512U;c+=64U)
         for(uint32_t r=0;r<count;++r) {
             HVX_Vector v=qbh_r4_gather_finish(weight,scratch,offsets,audit,first,count,r,a,c);
@@ -357,7 +372,7 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
     float scales[32] __attribute__((aligned(128)));
     __fp16 *audit=h->dense_r4_audit_offset?(__fp16 *)(shared+h->dense_r4_audit_offset):NULL;
     if(h->variant!=QBH_BLOCK_W4U8 || (h->dense_r4_mode>2U && !QBH_R4_DOWN16(h)) ||
-       h->dense_r4_optimization>6U ||
+       h->dense_r4_optimization>7U ||
        (rows!=1U && rows!=64U) ||
        (h->w4u8_decode_direct_n_gate_up_swiglu_stream && h->dense_r4_optimization<2U) ||
        (h->dense_r4_mode==2U && !audit) ||
