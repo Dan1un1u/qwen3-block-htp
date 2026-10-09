@@ -4205,10 +4205,6 @@ static int qbh_run_generation_sequence(
         if (header->variant != QBH_BLOCK_W4U8 &&
             header->generation_boundary_audit_enabled && audit_root && audit_root[0]) {
             char name[96];
-            if(header->dense_r4_audit_offset) {
-                snprintf(name,sizeof(name),"generation_r4_step%02u.bin",step);
-                if(qbh_write_named_tensor(audit_root,name,shared+header->dense_r4_audit_offset,QBH_R4_AUDIT_BYTES))step_pass=0;
-            }
             snprintf(name,sizeof(name),QBH_F16_FP32_RESIDUAL(header)?
                 "generation_hidden_norm_step%02u_f32_f16.bin":"generation_hidden_norm_step%02u_f16.bin",step);
             if(qbh_write_named_tensor(audit_root,name,shared+header->output_offset,
@@ -4225,6 +4221,10 @@ static int qbh_run_generation_sequence(
             header->generation_boundary_audit_enabled != 0U &&
             audit_root != NULL && audit_root[0] != '\0') {
             char audit_name[96];
+            if(header->dense_r4_audit_offset) {
+                snprintf(audit_name,sizeof(audit_name),"generation_r4_step%02u.bin",step);
+                if(qbh_write_named_tensor(audit_root,audit_name,shared+header->dense_r4_audit_offset,QBH_R4_AUDIT_BYTES))step_pass=0;
+            }
             if (snprintf(
                     audit_name, sizeof(audit_name),
                     "generation_hidden_step%02" PRIu32 "_%s.bin",
