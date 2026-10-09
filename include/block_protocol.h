@@ -43,16 +43,19 @@
 #define QBH_F16_FP32_RESIDUAL(h) 0U
 #endif
 /* EXP0324: only the validated Qwen1.7 Down16/FP32 path may combine R3.
- * Scalar/identity modes remain audit-only and use the same physical carrier. */
+ * Scalar/identity modes remain audit-only and use the same physical carrier.
+ * EXP0332 also permits production R3 mode1 with validated R4 modes4/5.
+ * R3 scratch dies after attention; R4 reuses it only after Gate/Up joins. */
 #if defined(QBH_NATIVE_SP2) && !defined(QBH_MODEL_LLAMA32) && !defined(QBH_QWEN_06B)
-#define QBH_R3_DOWN16(h) ((h)->variant == QBH_BLOCK_W4U8 && QBH_SP2(h)==8U && QBH_FP32_RESIDUAL(h)==2U && (h)->dense_r3_mode>=1U && (h)->dense_r3_mode<=4U && !(h)->dense_r4_mode)
+#define QBH_R3_DOWN16(h) ((h)->variant == QBH_BLOCK_W4U8 && QBH_SP2(h)==8U && QBH_FP32_RESIDUAL(h)==2U && (h)->dense_r3_mode>=1U && (h)->dense_r3_mode<=4U && (!(h)->dense_r4_mode || ((h)->dense_r3_mode==1U && ((h)->dense_r4_mode==4U || (h)->dense_r4_mode==5U))))
 #else
 #define QBH_R3_DOWN16(h) 0U
 #endif
 /* EXP0329: full Qwen R4 may feed the existing uniform INT16 radix256 Down.
- * Modes4/5 select HVX FP32 / dense FP16 factors; R3 stays disabled. */
+ * Modes4/5 select HVX FP32 / dense FP16 factors; production R3 mode1
+ * may precede attention. Neither rotation changes the other's arithmetic. */
 #if defined(QBH_NATIVE_SP2) && !defined(QBH_MODEL_LLAMA32) && !defined(QBH_QWEN_06B)
-#define QBH_R4_DOWN16(h) ((h)->variant==QBH_BLOCK_W4U8 && QBH_SP2(h)==8U && QBH_FP32_RESIDUAL(h)==2U && !(h)->dense_r3_mode && ((h)->dense_r4_mode==4U || (h)->dense_r4_mode==5U))
+#define QBH_R4_DOWN16(h) ((h)->variant==QBH_BLOCK_W4U8 && QBH_SP2(h)==8U && QBH_FP32_RESIDUAL(h)==2U && (!(h)->dense_r3_mode || (h)->dense_r3_mode==1U) && ((h)->dense_r4_mode==4U || (h)->dense_r4_mode==5U))
 #else
 #define QBH_R4_DOWN16(h) 0U
 #endif

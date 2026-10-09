@@ -4221,6 +4221,12 @@ static int qbh_run_generation_sequence(
             header->generation_boundary_audit_enabled != 0U &&
             audit_root != NULL && audit_root[0] != '\0') {
             char audit_name[96];
+            if(header->dense_r3_audit_offset && QBH_R3_DOWN16(header)) {
+                snprintf(audit_name,sizeof(audit_name),"generation_r3_layers_step%02u.bin",step);
+                if(qbh_write_named_tensor(audit_root,audit_name,
+                    shared+header->dense_r3_audit_offset+QBH_DENSE_R3_AUDIT_BYTES,
+                    QBH_VERTICAL_SLICE_LAYER_COUNT*QBH_DENSE_R3_BASE_AUDIT_BYTES))step_pass=0;
+            }
             if(header->dense_r4_audit_offset) {
                 snprintf(audit_name,sizeof(audit_name),"generation_r4_step%02u.bin",step);
                 if(qbh_write_named_tensor(audit_root,audit_name,shared+header->dense_r4_audit_offset,QBH_R4_AUDIT_BYTES))step_pass=0;

@@ -164,6 +164,12 @@ static int qbh_run_long_prefill(struct qbh_session *session, int shared_fd,
                         QBH_VERTICAL_SLICE_LAYER_COUNT*QBH_DENSE_R3_BASE_AUDIT_BYTES))goto finish;
                 }
 
+                if(h->dense_r4_audit_offset) {
+                    snprintf(name,sizeof(name),"long_r%u_s%02u_r4.bin",rep,step);
+                    if(qbh_write_named_tensor(audit,name,shared+h->dense_r4_audit_offset,
+                        QBH_R4_AUDIT_BYTES))goto finish;
+                }
+
                 const uint32_t snapshot=!sparse || step==0U || step==1U ||
                     step+1U==chunks || step+1U==chunks+decode;
                 for(uint32_t i=0;snapshot && i<QBH_VERTICAL_SLICE_LAYER_COUNT;i++) {
