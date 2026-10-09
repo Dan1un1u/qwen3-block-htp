@@ -14509,7 +14509,7 @@ current_scope:
     interpretation: Combined FP arithmetic+fused QDQ; not QDQ-only cost or overlapped
       production critical-path share
     companion: L32-0063
-  device_owner: null
+  device_owner: EXP-0330
 
   floating_intermediate_motivation_06b:
     experiment: EXP-0306
@@ -16717,7 +16717,7 @@ current_scope:
     source_head: 6d6f365a91b4043089a6bdafc9c2c185a138f2d2
     runtime_source_head: 6d6f365a91b4043089a6bdafc9c2c185a138f2d2
     source_branch: codex/exp-0329-r4-down16-baselines
-    device_owner: EXP-0330
+    device_owner: null
     evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0329
     evidence_ledger_sha256: 70617d2e4ac3687bc857978b8d7f58453b17860a1136559dcfd5bf719bbe78a6
     evidence_files: 2061
