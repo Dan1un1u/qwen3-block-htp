@@ -32561,3 +32561,16 @@ experiments:
     baseline_promoted: false
     conclusion: Strengthened dense wins prefill against current HVX butterfly by3.50percent wall; current data do not establish
       butterfly necessity. Decode unchanged vs olddense; butterfly remains1.42percent faster decode.
+
+- id: EXP-0331
+  title: Qwen17 6144 HVX butterfly R4 integration optimization
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/EXP-0331.md
+  approval_ref: User2026-10-09 authorizes one more optimization round, fixed6144 route.
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0330-dense-r4-integration
+    device_owner: null
