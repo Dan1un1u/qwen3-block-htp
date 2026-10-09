@@ -31722,9 +31722,9 @@ experiments:
 
 - id: EXP-0328
   title: Deliver fixed-input Qwen17 W4A8 INT16 inference shell launcher
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
   adoption_status: not_requested
   record: docs/experiments/EXP-0328.md
   approval_ref: User2026-10-09 requests .sh running Qwen W4A8 INT16 with fixed input
@@ -31733,3 +31733,21 @@ experiments:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
     source_branch: codex/exp-0327-r3-long-pipeline
     device_owner: null
+  results:
+    experiment: EXP-0328
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: Offline Bash/fixture/decoder and mock ADB orchestration only; no device
+      run or speed/quality claim.
+    source_head: 54e910c72d62b653d7a92741783e474245e50fc8
+    source_unchanged: true
+    deliverable: C:/Users/35961/Desktop/run_qwen3_w4a8_int16.sh
+    script_sha256: 312a7be8a4f78ce7004bee6376d46be034e105e88148b7326916f6948d08d5d4
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0328
+    evidence_ledger_sha256: a53c68b3476860d2732d3aa14338cbae552cc51423a39ec5e59226e1d27ce3c7
+    report: docs/experiments/EXP-0328-RESULTS.md
+    hardware_run: false
+    baseline_promoted: false
+    device_owner: null
+  full_profiling_report: docs/experiments/EXP-0328-RESULTS.md

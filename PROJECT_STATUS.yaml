@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0328
+  active_experiment: null
   next_experiment_number: 329
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -16458,3 +16458,21 @@ current_scope:
     numerical_math_unchanged: true
     ppl_rerun: false
     baseline_promoted: false
+
+  latest_fixed_input_inference_launcher:
+    experiment: EXP-0328
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: Offline Bash/fixture/decoder and mock ADB orchestration only; no device
+      run or speed/quality claim.
+    source_head: 54e910c72d62b653d7a92741783e474245e50fc8
+    source_unchanged: true
+    deliverable: C:/Users/35961/Desktop/run_qwen3_w4a8_int16.sh
+    script_sha256: 312a7be8a4f78ce7004bee6376d46be034e105e88148b7326916f6948d08d5d4
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0328
+    evidence_ledger_sha256: a53c68b3476860d2732d3aa14338cbae552cc51423a39ec5e59226e1d27ce3c7
+    report: docs/experiments/EXP-0328-RESULTS.md
+    hardware_run: false
+    baseline_promoted: false
+    device_owner: null
