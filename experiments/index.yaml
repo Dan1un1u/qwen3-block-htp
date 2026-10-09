@@ -33235,5 +33235,5 @@ experiments:
   approval_ref: User2026-10-10 full2048 PPL comparison and recent Qwen17 Pareto frontier/switch inventory;64 remains speed-development scope.
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0332-r3-r4-quality
+    source_branch: codex/exp-0333-long-rotation-quality
     device_owner: null
