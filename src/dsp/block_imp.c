@@ -1044,7 +1044,17 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         buffers->down = buffers->normalized;
     else
 #endif
+#if defined(QBH_NATIVE_SP2) && !defined(QBH_MODEL_LLAMA32) && !defined(QBH_QWEN_06B)
+    /* EXP0329 dense/Down16 writes FP32 projection results straight into the
+     * residual. The nominal U8 Down output is unused (audits disabled by the
+     * header contract). Post-norm transpose has joined before Down starts;
+     * normalized remains the independently owned radix epilogue scratch.
+     * No kernel writes through this nominal alias in this configuration. */
+    buffers->down = r4_mode==5U && sp2_mode==8U && fp32_residual==2U
+        ? buffers->normalized : qbh_arena_alloc(&arena,hidden_bytes);
+#else
     buffers->down = qbh_arena_alloc(&arena, hidden_bytes);
+#endif
     buffers->hmx_activation = qbh_arena_alloc_aligned(
         &arena, QBH_BLOCK_M * QBH_BLOCK_MAX_K *
             (fp32_residual && !r4_mode ? 1U : (uint32_t)sizeof(uint16_t)),
