@@ -65,5 +65,9 @@ static int qbh_run_butterfly_r4(struct qbh_block_header *h,uint8_t *shared,struc
  if(h->dense_r4_audit_offset)memcpy(shared+h->dense_r4_audit_offset+QBH_BLOCK_INTERMEDIATE*256U,b->expanded_weight,rows*QBH_BLOCK_INTERMEDIATE*4U);
  task.phase=2U;start=HAP_perf_get_qtimer_count();if(bf70_dispatch(pool,&task))return -1;
  h->dense_r4_finish_ticks+=HAP_perf_get_qtimer_count()-start;
+ if(h->dense_r4_audit_offset && QBH_R4_DOWN16(h)) {
+  memcpy(shared+h->dense_r4_audit_offset+QBH_BLOCK_INTERMEDIATE*512U,middle,QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE);
+  memcpy(shared+h->dense_r4_audit_offset+QBH_BLOCK_INTERMEDIATE*576U,task.high,QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE);
+ }
  h->dense_r4_calls++;h->dense_r4_rows+=rows;return 0;
 }

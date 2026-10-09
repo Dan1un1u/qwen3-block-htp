@@ -3483,7 +3483,7 @@ static int qbh_run_exp0240_layer(
             if (dump != NULL && rep == 0U) {
                 if(h->dense_r4_audit_offset) {
                     snprintf(name,sizeof(name),"step%02u_r4.bin",step);
-                    if(qbh_write_named_tensor(dump,name,shared+h->dense_r4_audit_offset,3U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U)) return -1;
+                    if(qbh_write_named_tensor(dump,name,shared+h->dense_r4_audit_offset,QBH_R4_AUDIT_BYTES)) return -1;
                 }
                 if (h->dense_r3_audit_offset) {
                     snprintf(name,sizeof(name),"step%02u_r3.bin",step);
@@ -3673,7 +3673,7 @@ static int qbh_run_replay_sequence(
                     step, (unsigned int)rpc_result, header->dsp_status,
                     header->vtcm_peak_plan_bytes, header->dense_r4_calls);
             if(header->dense_r4_audit_offset) {
-                uint32_t *diag=(uint32_t *)(shared+header->dense_r4_audit_offset+3U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U-128U);
+                uint32_t *diag=(uint32_t *)(shared+header->dense_r4_audit_offset+QBH_R4_AUDIT_BYTES-128U);
                 fprintf(stderr,"r4 diag a=%08x w=%08x out=%08x sc=%08x mt=%u kt=%u nt=%u\n",diag[0],diag[1],diag[2],diag[3],diag[4],diag[5],diag[6]);
             }
             free(cache_snapshots);
@@ -3887,7 +3887,7 @@ static int qbh_run_replay_sequence(
             if(header->dense_r4_audit_offset) {
                 snprintf(name,sizeof(name),"actual_replay_r4_%02u.bin",step);
                 if(qbh_write_named_tensor(dump_root,name,shared+header->dense_r4_audit_offset,
-                    3U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U)) {free(cache_snapshots);return -1;}
+                    QBH_R4_AUDIT_BYTES)) {free(cache_snapshots);return -1;}
             }
             if (snprintf(
                     name, sizeof(name),
@@ -4205,6 +4205,10 @@ static int qbh_run_generation_sequence(
         if (header->variant != QBH_BLOCK_W4U8 &&
             header->generation_boundary_audit_enabled && audit_root && audit_root[0]) {
             char name[96];
+            if(header->dense_r4_audit_offset) {
+                snprintf(name,sizeof(name),"generation_r4_step%02u.bin",step);
+                if(qbh_write_named_tensor(audit_root,name,shared+header->dense_r4_audit_offset,QBH_R4_AUDIT_BYTES))step_pass=0;
+            }
             snprintf(name,sizeof(name),QBH_F16_FP32_RESIDUAL(header)?
                 "generation_hidden_norm_step%02u_f32_f16.bin":"generation_hidden_norm_step%02u_f16.bin",step);
             if(qbh_write_named_tensor(audit_root,name,shared+header->output_offset,
@@ -6520,8 +6524,8 @@ int main(int argc, char **argv) {
         if (getenv("QBH_DENSE_R4_AUDIT")) {
             cursor=qbh_align_up_size(cursor,QBH_HOST_ALIGNMENT);
             dense_r4_audit_offset=cursor;
-            if(3U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U>UINT32_MAX-cursor) return 2;
-            cursor+=3U*QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE*2U;
+            if(QBH_R4_AUDIT_BYTES>UINT32_MAX-cursor) return 2;
+            cursor+=QBH_R4_AUDIT_BYTES;
         }
         if (getenv("QBH_DENSE_R3_AUDIT")) {
             cursor=qbh_align_up_size(cursor,QBH_HOST_ALIGNMENT);

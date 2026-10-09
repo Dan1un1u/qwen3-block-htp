@@ -488,6 +488,10 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
         }
         h->dense_r4_finish_ticks+=HAP_perf_get_qtimer_count()-t;
     }
+    if(audit && QBH_R4_DOWN16(h)) {
+        memcpy(shared+h->dense_r4_audit_offset+QBH_BLOCK_INTERMEDIATE*512U,middle,QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE);
+        memcpy(shared+h->dense_r4_audit_offset+QBH_BLOCK_INTERMEDIATE*576U,rows==1U?middle+128U:b->sp2_high,QBH_BLOCK_M*QBH_BLOCK_INTERMEDIATE);
+    }
     ++h->dense_r4_calls;h->dense_r4_rows+=rows;
     if(audit)h->dense_r4_audit_bytes+=3U*rows*6144U*2U;
     return 0;
