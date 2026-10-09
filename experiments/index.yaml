@@ -31719,3 +31719,17 @@ experiments:
     numerical_math_unchanged: true
     ppl_rerun: false
     baseline_promoted: false
+
+- id: EXP-0328
+  title: Deliver fixed-input Qwen17 W4A8 INT16 inference shell launcher
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: not_requested
+  record: docs/experiments/EXP-0328.md
+  approval_ref: User2026-10-09 requests .sh running Qwen W4A8 INT16 with fixed input
+    and saved output. Launcher delivery only; no hardware run requested.
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0327-r3-long-pipeline
+    device_owner: null
