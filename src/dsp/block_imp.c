@@ -15806,6 +15806,9 @@ static int qbh_run_w4u8_direct_n_mlp(
 
     qbh_long_progress(header,6300U);
     if (header->dense_r4_mode != 0U) {
+        if(header->dense_r4_audit_offset && QBH_R4_DOWN16(header))
+            memcpy(shared+header->dense_r4_audit_offset+QBH_BLOCK_INTERMEDIATE*640U,
+                   buffers->residual,header->logical_m*QBH_BLOCK_HIDDEN*4U);
         start=HAP_perf_get_qtimer_count();
         if(header->dense_r4_mode==4U) {if(qbh_run_butterfly_r4(header,shared,buffers,pool,middle_native))return -1;}
         else if(qbh_run_dense_r4(header,shared,buffers,worker,pool,middle_native)!=0) return -1;

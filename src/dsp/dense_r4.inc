@@ -188,7 +188,7 @@ static void qbh_r4_finish_int16(struct qbh_block_header *h,const __fp16 *weight,
     __fp16 *audit,uint32_t a_first,uint32_t a_count) {
     HVX_Vector inv=qbh_r4_i16_splat(1.0f/h->qparams[QBH_BLOCK_QP_MIDDLE].scale);
     HVX_Vector offsets=*(const HVX_Vector *)qbh_attention_vscatter_offsets;
-    if(h->dense_r4_optimization>=7U) {
+    if(h->dense_r4_optimization>=7U && h->logical_m==64U) {
       for(uint32_t a=a_first;a<a_first+a_count;++a)for(uint32_t c=0;c<512U;c+=64U)
        for(uint32_t r=0;r<count;r+=4U) {
         HVX_Vector v0=qbh_r4_i16_halfwords(qbh_r4_gather_finish(weight,scratch,offsets,audit,first,count,r,a,c),inv);

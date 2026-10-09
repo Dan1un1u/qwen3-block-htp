@@ -25,6 +25,20 @@ static void qbh_bf70_worker(void *context,uint32_t id){
   }
  }else if(t->phase==1U){bf69_rows_opt(x+first*QBH_BLOCK_INTERMEDIATE,nr,t->h->dense_r4_optimization);}
  else{
+  if(QBH_R4_DOWN16(t->h) && t->h->dense_r4_optimization==9U) {
+   HVX_Vector inv=bf69_splat(t->inv);
+   for(uint32_t r=first;r<first+nr;r+=4U)for(uint32_t c=0;c<QBH_BLOCK_INTERMEDIATE;c+=32U) {
+    HVX_Vector w0=qbh_r4_i16_words(*(HVX_Vector *)(x+r*QBH_BLOCK_INTERMEDIATE+c),inv);
+    HVX_Vector w1=r+1U<rows?qbh_r4_i16_words(*(HVX_Vector *)(x+(r+1U)*QBH_BLOCK_INTERMEDIATE+c),inv):Q6_V_vzero();
+    HVX_Vector w2=r+2U<rows?qbh_r4_i16_words(*(HVX_Vector *)(x+(r+2U)*QBH_BLOCK_INTERMEDIATE+c),inv):Q6_V_vzero();
+    HVX_Vector w3=r+3U<rows?qbh_r4_i16_words(*(HVX_Vector *)(x+(r+3U)*QBH_BLOCK_INTERMEDIATE+c),inv):Q6_V_vzero();
+    HVX_Vector a=Q6_Vh_vpack_VwVw_sat(w1,w0),b=Q6_Vh_vpack_VwVw_sat(w3,w2);
+    size_t off=(size_t)(c/32U)*2048U+r*32U;
+    *(HVX_Vector *)(t->middle+off)=qbh_r4_i16_low_pair(b,a);
+    *(HVX_Vector *)(t->high+off)=qbh_r4_i16_high_pair(b,a);
+   }
+   return;
+  }
   for(uint32_t r=first;r<first+nr;r++)for(uint32_t c=0;c<QBH_BLOCK_INTERMEDIATE;c+=32U){
    if(QBH_R4_DOWN16(t->h)) {
     size_t off=(size_t)(c/32U)*2048U+r*32U;
