@@ -31762,5 +31762,5 @@ experiments:
   approval_ref: User2026-10-09 focuses R4 on Qwen17 W4A8INT16 context64; reuse and optimize historical HVX butterfly and dense implementations.
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0327-r3-long-pipeline
+    source_branch: codex/exp-0329-r4-down16-baselines
     device_owner: null
