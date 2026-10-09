@@ -5,7 +5,8 @@
  * Three persistent pool workers plus caller own disjoint 16-row ranges.
  */
 #include "hvx_fwht_qwen.h"
-struct bf70_task {struct qbh_block_header *h;struct qbh_block_buffers *b;uint8_t *middle;uint32_t phase;float inv;float zp;uint8_t *high;};
+struct bf70_task {struct qbh_block_header *h;struct qbh_block_buffers *b;uint8_t *middle;uint32_t phase;float inv;float zp;uint8_t *high;float *audit_input;float *audit_rotated;};
+#include "butterfly_r4_fused.inc"
 static void qbh_bf70_worker(void *context,uint32_t id){
  struct bf70_task *t=context;uint32_t rows=t->h->logical_m,nr=rows==64U?16U:1U,first=rows==64U?id*16U:0U;
  float *x=(float *)t->b->expanded_weight;
@@ -15,6 +16,7 @@ static void qbh_bf70_worker(void *context,uint32_t id){
   return;
  }
  if(t->phase==0U){
+   if(rows==64U && t->h->dense_r4_optimization>=11U) {bf331_prepare_blocks(t,first,nr);return;}
   const __fp16 *act=(const __fp16 *)t->b->hmx_activation;
   for(uint32_t r=first;r<first+nr;r++)for(uint32_t a=0;a<QBH_BLOCK_INTERMEDIATE/512U;a++)for(uint32_t c=0;c<512U;c+=64U){
    uint32_t sr=a*rows+r;const __fp16 *s=act+qbh_r4_pos(sr&~1U,c,16U);
@@ -23,15 +25,19 @@ static void qbh_bf70_worker(void *context,uint32_t id){
    HVX_VectorPair o=Q6_W_vshuff_VVR(Q6_V_hi_W(f),Q6_V_lo_W(f),-4);
    *(HVX_Vector *)(x+r*QBH_BLOCK_INTERMEDIATE+a*512U+c)=Q6_V_lo_W(o);*(HVX_Vector *)(x+r*QBH_BLOCK_INTERMEDIATE+a*512U+c+32U)=Q6_V_hi_W(o);
   }
- }else if(t->phase==1U){bf69_rows_opt(x+first*QBH_BLOCK_INTERMEDIATE,nr,t->h->dense_r4_optimization);}
+ }else if(t->phase==1U){
+   if(rows==64U && t->h->dense_r4_optimization>=11U)bf331_tail(t,first,nr);
+   else bf69_rows_opt(x+first*QBH_BLOCK_INTERMEDIATE,nr,t->h->dense_r4_optimization);
+  }
  else{
-  if(QBH_R4_DOWN16(t->h) && t->h->dense_r4_optimization==9U) {
+  if(rows==64U && t->h->dense_r4_optimization==13U)return;
+   if(QBH_R4_DOWN16(t->h) && (t->h->dense_r4_optimization==9U || t->h->dense_r4_optimization>=11U)) {
    HVX_Vector inv=bf69_splat(t->inv);
    for(uint32_t r=first;r<first+nr;r+=4U)for(uint32_t c=0;c<QBH_BLOCK_INTERMEDIATE;c+=32U) {
-    HVX_Vector w0=qbh_r4_i16_words(*(HVX_Vector *)(x+r*QBH_BLOCK_INTERMEDIATE+c),inv);
-    HVX_Vector w1=r+1U<rows?qbh_r4_i16_words(*(HVX_Vector *)(x+(r+1U)*QBH_BLOCK_INTERMEDIATE+c),inv):Q6_V_vzero();
-    HVX_Vector w2=r+2U<rows?qbh_r4_i16_words(*(HVX_Vector *)(x+(r+2U)*QBH_BLOCK_INTERMEDIATE+c),inv):Q6_V_vzero();
-    HVX_Vector w3=r+3U<rows?qbh_r4_i16_words(*(HVX_Vector *)(x+(r+3U)*QBH_BLOCK_INTERMEDIATE+c),inv):Q6_V_vzero();
+    HVX_Vector w0=((rows==64U && t->h->dense_r4_optimization==12U)?*(HVX_Vector *)(x+r*QBH_BLOCK_INTERMEDIATE+c):qbh_r4_i16_words(*(HVX_Vector *)(x+r*QBH_BLOCK_INTERMEDIATE+c),inv));
+    HVX_Vector w1=r+1U<rows?((rows==64U && t->h->dense_r4_optimization==12U)?*(HVX_Vector *)(x+(r+1U)*QBH_BLOCK_INTERMEDIATE+c):qbh_r4_i16_words(*(HVX_Vector *)(x+(r+1U)*QBH_BLOCK_INTERMEDIATE+c),inv)):Q6_V_vzero();
+    HVX_Vector w2=r+2U<rows?((rows==64U && t->h->dense_r4_optimization==12U)?*(HVX_Vector *)(x+(r+2U)*QBH_BLOCK_INTERMEDIATE+c):qbh_r4_i16_words(*(HVX_Vector *)(x+(r+2U)*QBH_BLOCK_INTERMEDIATE+c),inv)):Q6_V_vzero();
+    HVX_Vector w3=r+3U<rows?((rows==64U && t->h->dense_r4_optimization==12U)?*(HVX_Vector *)(x+(r+3U)*QBH_BLOCK_INTERMEDIATE+c):qbh_r4_i16_words(*(HVX_Vector *)(x+(r+3U)*QBH_BLOCK_INTERMEDIATE+c),inv)):Q6_V_vzero();
     HVX_Vector a=Q6_Vh_vpack_VwVw_sat(w1,w0),b=Q6_Vh_vpack_VwVw_sat(w3,w2);
     size_t off=(size_t)(c/32U)*2048U+r*32U;
     *(HVX_Vector *)(t->middle+off)=qbh_r4_i16_low_pair(b,a);
@@ -69,6 +75,11 @@ static int qbh_run_butterfly_r4(struct qbh_block_header *h,uint8_t *shared,struc
     (uintptr_t)b->expanded_weight_alt-(uintptr_t)b->expanded_weight<QBH_BLOCK_INTERMEDIATE*128U||
     (uintptr_t)b->hmx_output-(uintptr_t)b->expanded_weight<QBH_BLOCK_INTERMEDIATE*256U)return -1;
  struct bf70_task task={.h=h,.b=b,.middle=middle,.inv=1.0f/h->qparams[QBH_BLOCK_QP_MIDDLE].scale,.zp=(float)h->qparams[QBH_BLOCK_QP_MIDDLE].zero_point,.high=rows==1U?middle+128U:b->sp2_high};
+ if(h->dense_r4_optimization>=11U && QBH_BLOCK_INTERMEDIATE!=6144U)return -1;
+ if(h->dense_r4_audit_offset && rows==64U && h->dense_r4_optimization>=11U) {
+  task.audit_input=(float *)(shared+h->dense_r4_audit_offset);
+  if(h->dense_r4_optimization>=12U)task.audit_rotated=(float *)(shared+h->dense_r4_audit_offset+QBH_BLOCK_INTERMEDIATE*256U);
+ }
  if(rows==64U&&!b->r4_prefill_prepared)return -1;
  if(rows==1U&&!h->w4u8_decode_direct_n_gate_up_swiglu_stream)return -1;
  uint64_t start=HAP_perf_get_qtimer_count();
@@ -77,16 +88,16 @@ static int qbh_run_butterfly_r4(struct qbh_block_header *h,uint8_t *shared,struc
   *(HVX_Vector *)(middle+c*2048U)=Q6_Vb_vsplat_R((int)task.zp);
   if(QBH_R4_DOWN16(h))*(HVX_Vector *)(task.high+c*2048U)=Q6_Vb_vsplat_R(128);
  }
- if(h->dense_r4_optimization==9U && !h->dense_r4_audit_offset) {
+ if((h->dense_r4_optimization==9U || h->dense_r4_optimization>=11U) && !h->dense_r4_audit_offset) {
   task.phase=3U;if(bf70_dispatch(pool,&task))return -1;
   h->dense_r4_layout_ticks+=HAP_perf_get_qtimer_count()-start;
   h->dense_r4_calls++;h->dense_r4_rows+=rows;return 0;
  }
  if(bf70_dispatch(pool,&task))return -1;h->dense_r4_prepare_ticks+=HAP_perf_get_qtimer_count()-start;
- if(h->dense_r4_audit_offset)memcpy(shared+h->dense_r4_audit_offset,b->expanded_weight,rows*QBH_BLOCK_INTERMEDIATE*4U);
+ if(h->dense_r4_audit_offset && !task.audit_input)memcpy(shared+h->dense_r4_audit_offset,b->expanded_weight,rows*QBH_BLOCK_INTERMEDIATE*4U);
  task.phase=1U;start=HAP_perf_get_qtimer_count();if(bf70_dispatch(pool,&task))return -1;
  h->dense_r4_layout_ticks+=HAP_perf_get_qtimer_count()-start; /* exact core wall, HMX ticks remain zero */
- if(h->dense_r4_audit_offset)memcpy(shared+h->dense_r4_audit_offset+QBH_BLOCK_INTERMEDIATE*256U,b->expanded_weight,rows*QBH_BLOCK_INTERMEDIATE*4U);
+ if(h->dense_r4_audit_offset && !task.audit_rotated)memcpy(shared+h->dense_r4_audit_offset+QBH_BLOCK_INTERMEDIATE*256U,b->expanded_weight,rows*QBH_BLOCK_INTERMEDIATE*4U);
  task.phase=2U;start=HAP_perf_get_qtimer_count();if(bf70_dispatch(pool,&task))return -1;
  h->dense_r4_finish_ticks+=HAP_perf_get_qtimer_count()-start;
  if(h->dense_r4_audit_offset && QBH_R4_DOWN16(h)) {
