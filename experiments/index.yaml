@@ -32572,5 +32572,5 @@ experiments:
   approval_ref: User2026-10-09 authorizes one more optimization round, fixed6144 route.
   runtime:
     source_worktree: /home/daniuniu/work/qwen3-block-htp
-    source_branch: codex/exp-0330-dense-r4-integration
+    source_branch: codex/exp-0331-butterfly-r4-integration
     device_owner: null
