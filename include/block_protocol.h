@@ -49,6 +49,18 @@
 #else
 #define QBH_R3_DOWN16(h) 0U
 #endif
+/* EXP0329: full Qwen R4 may feed the existing uniform INT16 radix256 Down.
+ * Modes4/5 select HVX FP32 / dense FP16 factors; R3 stays disabled. */
+#if defined(QBH_NATIVE_SP2) && !defined(QBH_MODEL_LLAMA32) && !defined(QBH_QWEN_06B)
+#define QBH_R4_DOWN16(h) ((h)->variant==QBH_BLOCK_W4U8 && QBH_SP2(h)==8U && QBH_FP32_RESIDUAL(h)==2U && !(h)->dense_r3_mode && ((h)->dense_r4_mode==4U || (h)->dense_r4_mode==5U))
+#else
+#define QBH_R4_DOWN16(h) 0U
+#endif
+#ifdef QBH_MODEL_LLAMA32
+#define QBH_R4_LUT_MULTIPLIER(sp2,r4) ((sp2) && (r4) ? 2U : 1U)
+#else
+#define QBH_R4_LUT_MULTIPLIER(sp2,r4) 1U
+#endif
 #define QBH_BLOCK_EXPERIMENT UINT32_C(218)
 
 #define QBH_BLOCK_M UINT32_C(64)

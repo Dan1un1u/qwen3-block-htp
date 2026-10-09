@@ -181,9 +181,26 @@ static void qbh_r4_finish_prepared(struct qbh_block_header *h,
         }
     asm volatile("barrier" ::: "memory");
 }
+/* Each dense batch finishes into dead Gate/Up planes. They cannot alias
+ * either ping-pong HMX operand. Decode packs low/high as two native rows. */
+static void qbh_r4_finish_int16(struct qbh_block_header *h,const __fp16 *weight,
+    uint8_t *middle,uint8_t *high,uint32_t first,uint32_t count,HVX_Vector *scratch,
+    __fp16 *audit,uint32_t a_first,uint32_t a_count) {
+    HVX_Vector inv=qbh_r4_i16_splat(1.0f/h->qparams[QBH_BLOCK_QP_MIDDLE].scale);
+    HVX_Vector offsets=*(const HVX_Vector *)qbh_attention_vscatter_offsets;
+    for(uint32_t a=a_first;a<a_first+a_count;++a)for(uint32_t c=0;c<512U;c+=64U)
+        for(uint32_t r=0;r<count;++r) {
+            HVX_Vector v=qbh_r4_gather_finish(weight,scratch,offsets,audit,first,count,r,a,c);
+            size_t off=(a*16U+c/32U)*2048U+(first+r)*32U;
+            qbh_r4_i16_half64(middle,high,off,v,inv);
+        }
+}
 static void qbh_r4_finish_range(struct qbh_block_header *h,
-    const __fp16 *weight,uint8_t *middle,uint32_t first,uint32_t count,
+    const __fp16 *weight,uint8_t *middle,uint8_t *high,uint32_t first,uint32_t count,
     HVX_Vector *scratch,__fp16 *audit,uint32_t a_first,uint32_t a_count) {
+    if(QBH_R4_DOWN16(h)) {
+        qbh_r4_finish_int16(h,weight,middle,high,first,count,scratch,audit,a_first,a_count);return;
+    }
     if(h->dense_r4_optimization==6U) {
         qbh_r4_finish_fused(h,weight,middle,first,count,scratch,audit,a_first,a_count);return;
     }
@@ -250,7 +267,7 @@ static void qbh_r4_convert_worker(void *context,uint32_t id) {
         return;
     }
     if(task->finish)qbh_r4_finish_range(task->h,task->weight,task->middle,
-        task->first,task->count,(HVX_Vector *)scratch,task->audit,id*4U,4U);
+        task->h->logical_m==1U?task->middle+128U:task->b->sp2_high,task->first,task->count,(HVX_Vector *)scratch,task->audit,id*4U,4U);
     else for(uint32_t tile=id*64U;tile<(id+1U)*64U;++tile)
         qbh_r4_prepare_tile(task->b->gate,task->b->up,(__fp16 *)task->b->hmx_activation,
             64U,tile,(const uint16_t *)task->b->w4u8_silu_lut,scratch);
@@ -324,7 +341,7 @@ static int qbh_r4_finish_vector(struct qbh_block_header *h,
             .audit=audit,.finish=1U,.first=first,.count=count};
         return qbh_r4_convert_parallel(pool,&task);
     }
-    qbh_r4_finish_range(h,weight,middle,first,count,scratch,audit,0U,12U);
+    qbh_r4_finish_range(h,weight,middle,h->logical_m==1U?middle+128U:b->sp2_high,first,count,scratch,audit,0U,12U);
     return 0;
 }
 static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
@@ -339,22 +356,26 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
     uint8_t codes[128] __attribute__((aligned(128)));
     float scales[32] __attribute__((aligned(128)));
     __fp16 *audit=h->dense_r4_audit_offset?(__fp16 *)(shared+h->dense_r4_audit_offset):NULL;
-    if(h->variant!=QBH_BLOCK_W4U8 || h->dense_r4_mode>2U ||
+    if(h->variant!=QBH_BLOCK_W4U8 || (h->dense_r4_mode>2U && !QBH_R4_DOWN16(h)) ||
        h->dense_r4_optimization>6U ||
        (rows!=1U && rows!=64U) ||
        (h->w4u8_decode_direct_n_gate_up_swiglu_stream && h->dense_r4_optimization<2U) ||
        (h->dense_r4_mode==2U && !audit) ||
        (audit && !qbh_range_valid(h->dense_r4_audit_offset,3U*786432U,h->shared_bytes)))return -1;
-    if(audit && h->dense_r4_optimization>=5U &&
+    if(audit && !QBH_R4_DOWN16(h) && h->dense_r4_optimization>=5U &&
        qbh_r4_quant_selftest(&h->qparams[QBH_BLOCK_QP_MIDDLE]))return -1;
     /* These bounds are the existing owned allocations, no arena growth. */
     if((uintptr_t)b->expanded_weight_alt-(uintptr_t)b->expanded_weight<1048576U ||
        (uintptr_t)b->hmx_output-(uintptr_t)b->expanded_weight_alt<1048576U ||
        (uintptr_t)b->compressed_weight-(uintptr_t)b->hmx_activation<786432U) return -1;
     uint64_t t=HAP_perf_get_qtimer_count();
+    if(QBH_R4_DOWN16(h) && rows==1U)for(uint32_t c=0;c<192U;++c) {
+        *(HVX_Vector *)(middle+c*2048U)=Q6_V_vzero();
+        *(HVX_Vector *)(middle+128U+c*2048U)=Q6_Vb_vsplat_R(128);
+    }
     const uint32_t streamed=rows==1U && h->dense_r4_optimization>=2U &&
         h->w4u8_decode_direct_n_gate_up_swiglu_stream;
-    const uint32_t prefill_streamed=rows==64U && h->dense_r4_optimization==4U && b->r4_prefill_prepared;
+    const uint32_t prefill_streamed=rows==64U && h->dense_r4_optimization>=4U && b->r4_prefill_prepared;
     if(!streamed && !prefill_streamed) {
         if(!h->dense_r4_optimization || rows==1U)qbh_r4_zero(act,p1*512U*2U);
         if(h->dense_r4_optimization>=3U && rows==64U) {
@@ -391,11 +412,11 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
     qbh_r4_zero(w12,2048U);
     /* Input row is [group], output column is [new group]. */
     for(uint32_t n=0;n<12U;++n)for(uint32_t k=0;k<12U;++k)
-        w12[qbh_hmx_fp16_tile_offset(k,n)]=(__fp16)qbh_r4_h12[k][n];
+        w12[qbh_hmx_fp16_tile_offset(k,n)]=(__fp16)(h->dense_r4_mode==5U?qbh_r4_h12[n][k]:qbh_r4_h12[k][n]);
     for(uint32_t c=0;c<32U;++c)scales[c]=(float)(__fp16)0.2886751345948129f;
     qbh_hmx_fp16_init_channel_scales(b->channel_scale,scales);
     h->dense_r4_prepare_ticks+=HAP_perf_get_qtimer_count()-t;
-    if(h->dense_r4_optimization>=2U && rows==64U && h->dense_r4_mode==1U) {
+    if(h->dense_r4_optimization>=2U && rows==64U && (h->dense_r4_mode==1U || h->dense_r4_mode==5U)) {
         /* Two 256KiB input/output slots live inside the original arenas.
          * The previous output and next input use the opposite slot from the
          * active HMX command. Stage1, H12 and scales remain immutable. */

@@ -1013,7 +1013,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
     } else {
 #if !defined(QBH_QWEN_06B) && !defined(QBH_MODEL_LLAMA32)
         buffers->gate = qbh_arena_alloc_aligned(&arena, intermediate_bytes,
-            r4_mode==4U ? QBH_HMX_FP16_TILE_BYTES : QBH_BLOCK_ALIGNMENT);
+            (r4_mode==4U || r4_mode==5U) ? QBH_HMX_FP16_TILE_BYTES : QBH_BLOCK_ALIGNMENT);
 #else
         buffers->gate = qbh_arena_alloc(&arena, intermediate_bytes);
 #endif
@@ -1031,7 +1031,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
          * Gate/Up/SwiGLU worker joins. Gate storage is then dead. The live
          * Gate/Up input has a nonzero offset in the q-based phase arena;
          * do not reuse the attention region while those consumers run. */
-        buffers->middle = r4_mode==4U ? buffers->gate :
+        buffers->middle = (r4_mode==4U || r4_mode==5U) ? buffers->gate :
             qbh_arena_alloc(&arena, intermediate_bytes);
 #else
         buffers->middle = qbh_arena_alloc(&arena, intermediate_bytes);
@@ -1105,7 +1105,7 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
         QBH_HMX_FP16_SCALE_BYTES);
     if (qbh_block_mlp_is_w4u8_streaming(mlp_mode)) {
         buffers->w4u8_silu_lut = qbh_arena_alloc_aligned(
-            &arena, QBH_MLP_LUT_BYTES * (sp2_mode && r4_mode ? 2U : 1U),
+            &arena, QBH_MLP_LUT_BYTES * QBH_R4_LUT_MULTIPLIER(sp2_mode,r4_mode),
             QBH_MLP_GATHER_HALF_BYTES);
         buffers->w4u8_gather_scratch = qbh_arena_alloc_aligned(
             &arena, QBH_BLOCK_W4U8_GATHER_SCRATCH_BYTES,
@@ -1128,7 +1128,9 @@ static int qbh_plan_buffers(uint8_t *vtcm, uint32_t vtcm_bytes,
          * live, and its FP32 norm transpose lifetime ends before projection.
          * Native norm output is in hmx_activation (QKV) or q (Gate/Up). */
         if (fp32_residual && scratch_bytes > hidden_bytes) return -1;
-        buffers->sp2_high = buffers->hmx_activation;
+        /* R4 joins every Gate/Up reader before publishing the high plane.
+         * Reuse dead Up, leaving the FP16 dense input arena independent. */
+        buffers->sp2_high = r4_mode ? buffers->up : buffers->hmx_activation;
         buffers->sp2_scratch = fp32_residual ? buffers->normalized : buffers->hmx_activation + high_bytes;
 #else
         buffers->sp2_high = qbh_arena_alloc_aligned(&arena,
@@ -1611,7 +1613,7 @@ static int qbh_slice_layer_desc_valid(
         return 0;
     }
     if (qbh_block_mlp_is_w4u8_streaming(header->mlp_mode)) {
-        if (layer->w4u8_silu_lut_bytes != QBH_MLP_LUT_BYTES * (QBH_SP2(header) && header->dense_r4_mode ? 2U : 1U) ||
+        if (layer->w4u8_silu_lut_bytes != QBH_MLP_LUT_BYTES * QBH_R4_LUT_MULTIPLIER(QBH_SP2(header),header->dense_r4_mode) ||
             layer->w4u8_gate_up_bundle_bytes == 0U ||
             layer->w4u8_down_bundle_bytes == 0U ||
             !qbh_range_valid(layer->w4u8_silu_lut_offset,
@@ -2172,7 +2174,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
 #if defined(QBH_MODEL_LLAMA32) || defined(QBH_NATIVE_SP2)
     if (header && QBH_FP32_RESIDUAL(header) && !QBH_F16_FP32_RESIDUAL(header) &&
         (QBH_FP32_RESIDUAL(header)>QBH_FP32_RESIDUAL_MAX || header->variant!=QBH_BLOCK_W4U8 ||
-         (QBH_SP2(header)!=8U && QBH_SP2(header)!=0U) || (header->dense_r3_mode && !QBH_R3_DOWN16(header)) || (header->dense_r4_mode && header->dense_r4_mode!=4U) ||
+         (QBH_SP2(header)!=8U && QBH_SP2(header)!=0U) || (header->dense_r3_mode && !QBH_R3_DOWN16(header)) || (header->dense_r4_mode && header->dense_r4_mode!=4U && !QBH_R4_DOWN16(header)) ||
          header->w4u8_decode_projection_mode!=QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
          header->w4u8_decode_direct_n_mask!=63U ||
          (header->crouton_boundary_mode & (QBH_BLOCK_CROUTON_BOUNDARY_W4U8_MLP_INPUT |
@@ -2197,13 +2199,13 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         return 0;
     }
 #endif
-    if (header == NULL || (header->dense_r4_mode==4U && (QBH_SP2(header) || !QBH_FP32_RESIDUAL(header) || header->dense_r4_optimization!=6U || (header->logical_m!=1U && header->logical_m!=64U))) || header->magic != QBH_BLOCK_MAGIC ||
+    if (header == NULL || ((header->dense_r4_mode==4U || header->dense_r4_mode==5U) && ((QBH_SP2(header) && !QBH_R4_DOWN16(header)) || !QBH_FP32_RESIDUAL(header) || header->dense_r4_optimization<6U || header->dense_r4_optimization>9U || (header->dense_r4_mode==5U && (header->dense_r4_optimization!=6U || !QBH_R4_DOWN16(header))) || (header->logical_m!=1U && header->logical_m!=64U))) || header->magic != QBH_BLOCK_MAGIC ||
         header->abi_version != QBH_BLOCK_ABI_VERSION ||
         (QBH_SP2(header)!=0U && QBH_SP2(header)!=3U && QBH_SP2(header)!=4U && QBH_SP2(header)!=5U && QBH_SP2(header)!=6U && QBH_SP2(header)!=7U && QBH_SP2(header)!=8U) ||
         (QBH_SP2(header)>=5U &&
           (header->w4u8_decode_direct_n_gate_up_batch_n_tiles!=32U || header->attention_hvx_contexts<4U)) ||
         (QBH_SP2(header) && (header->variant!=QBH_BLOCK_W4U8 ||
-          (header->dense_r3_mode && !QBH_R3_DOWN16(header)) || header->dense_r4_mode ||
+          (header->dense_r3_mode && !QBH_R3_DOWN16(header)) || (header->dense_r4_mode && !QBH_R4_DOWN16(header)) ||
           header->w4u8_decode_projection_mode!=QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
           header->w4u8_decode_direct_n_mask!=63U ||
           header->w4u8_decode_swiglu_rows!=4U ||
@@ -2212,7 +2214,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         QBH_U8_PREFILL_OPT(header)>3U ||
         (QBH_U8_PREFILL_OPT(header) &&
          (QBH_SP2(header) || header->variant!=QBH_BLOCK_W4U8 ||
-          header->dense_r3_mode || (header->dense_r4_mode && header->dense_r4_mode!=4U) ||
+          header->dense_r3_mode || (header->dense_r4_mode && header->dense_r4_mode!=4U && !QBH_R4_DOWN16(header)) ||
           header->w4u8_decode_projection_mode!=QBH_BLOCK_W4U8_DECODE_PROJECTION_DIRECT_N ||
           header->w4u8_decode_direct_n_mask!=63U ||
           header->w4u8_decode_direct_n_gate_up_batch_n_tiles!=32U ||
@@ -2868,7 +2870,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         return 0;
     }
     if (qbh_block_mlp_is_w4u8_streaming(header->mlp_mode) &&
-        (header->w4u8_silu_lut_bytes != QBH_MLP_LUT_BYTES * (QBH_SP2(header) && header->dense_r4_mode ? 2U : 1U) ||
+        (header->w4u8_silu_lut_bytes != QBH_MLP_LUT_BYTES * QBH_R4_LUT_MULTIPLIER(QBH_SP2(header),header->dense_r4_mode) ||
          header->w4u8_gate_up_bundle_bytes == 0U ||
          header->w4u8_down_bundle_bytes == 0U ||
          !qbh_range_valid(header->w4u8_silu_lut_offset,
@@ -15583,6 +15585,7 @@ static uint64_t qbh_fnv1a64_u8_native_tile_row(
 #ifdef QBH_MODEL_LLAMA32
 #include "llama_dense_r4.inc"
 #else
+#include "r4_int16_boundary.inc"
 #include "dense_r4.inc"
 #include "qwen_butterfly_r4.inc"
 #endif

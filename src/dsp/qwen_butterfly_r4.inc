@@ -5,7 +5,7 @@
  * Three persistent pool workers plus caller own disjoint 16-row ranges.
  */
 #include "hvx_fwht_qwen.h"
-struct bf70_task {struct qbh_block_header *h;struct qbh_block_buffers *b;uint8_t *middle;uint32_t phase;float inv;float zp;};
+struct bf70_task {struct qbh_block_header *h;struct qbh_block_buffers *b;uint8_t *middle;uint32_t phase;float inv;float zp;uint8_t *high;};
 static void qbh_bf70_worker(void *context,uint32_t id){
  struct bf70_task *t=context;uint32_t rows=t->h->logical_m,nr=rows==64U?16U:1U,first=rows==64U?id*16U:0U;
  float *x=(float *)t->b->expanded_weight;
@@ -21,6 +21,11 @@ static void qbh_bf70_worker(void *context,uint32_t id){
  }else if(t->phase==1U){bf69_rows(x+first*QBH_BLOCK_INTERMEDIATE,nr);}
  else{
   for(uint32_t r=first;r<first+nr;r++)for(uint32_t c=0;c<QBH_BLOCK_INTERMEDIATE;c+=32U){
+   if(QBH_R4_DOWN16(t->h)) {
+    size_t off=(size_t)(c/32U)*2048U+r*32U;
+    qbh_r4_i16_store32(t->middle,t->high,off,qbh_r4_i16_words(*(HVX_Vector *)(x+r*QBH_BLOCK_INTERMEDIATE+c),bf69_splat(t->inv)));
+    continue;
+   }
    HVX_Vector a=Q6_Vsf_vadd_VsfVsf(bf69_mul(*(HVX_Vector *)(x+r*QBH_BLOCK_INTERMEDIATE+c),bf69_splat(t->inv)),bf69_splat(t->zp));
    HVX_Vector w=Q6_Vw_equals_Vsf(Q6_Vsf_vadd_VsfVsf(a,bf69_splat(.5f)));
    HVX_Vector packed=Q6_Vub_vpack_VhVh_sat(Q6_V_vzero(),Q6_Vh_vpack_VwVw_sat(Q6_V_vzero(),w));
@@ -41,15 +46,18 @@ static int bf70_dispatch(struct qbh_block_w4f16_pool *pool,struct bf70_task *t){
 }
 static int qbh_run_butterfly_r4(struct qbh_block_header *h,uint8_t *shared,struct qbh_block_buffers *b,struct qbh_block_w4f16_pool *pool,uint8_t *middle){
  const uint32_t rows=h->logical_m;
- if(QBH_SP2(h)||!QBH_FP32_RESIDUAL(h)||(rows!=1U&&rows!=64U)||
+ if((QBH_SP2(h)&&!QBH_R4_DOWN16(h))||!QBH_FP32_RESIDUAL(h)||(rows!=1U&&rows!=64U)||
     (uintptr_t)b->expanded_weight_alt-(uintptr_t)b->expanded_weight<QBH_BLOCK_INTERMEDIATE*128U||
     (uintptr_t)b->hmx_output-(uintptr_t)b->expanded_weight<QBH_BLOCK_INTERMEDIATE*256U)return -1;
- struct bf70_task task={.h=h,.b=b,.middle=middle,.inv=1.0f/h->qparams[QBH_BLOCK_QP_MIDDLE].scale,.zp=(float)h->qparams[QBH_BLOCK_QP_MIDDLE].zero_point};
+ struct bf70_task task={.h=h,.b=b,.middle=middle,.inv=1.0f/h->qparams[QBH_BLOCK_QP_MIDDLE].scale,.zp=(float)h->qparams[QBH_BLOCK_QP_MIDDLE].zero_point,.high=rows==1U?middle+128U:b->sp2_high};
  if(rows==64U&&!b->r4_prefill_prepared)return -1;
  if(rows==1U&&!h->w4u8_decode_direct_n_gate_up_swiglu_stream)return -1;
  uint64_t start=HAP_perf_get_qtimer_count();
  /* Decode padding is required by the physical M64 carrier, only four rows are consumed. */
- if(rows==1U)for(uint32_t c=0;c<QBH_BLOCK_INTERMEDIATE/32U;c++)*(HVX_Vector *)(middle+c*2048U)=Q6_Vb_vsplat_R((int)task.zp);
+ if(rows==1U)for(uint32_t c=0;c<QBH_BLOCK_INTERMEDIATE/32U;c++) {
+  *(HVX_Vector *)(middle+c*2048U)=Q6_Vb_vsplat_R((int)task.zp);
+  if(QBH_R4_DOWN16(h))*(HVX_Vector *)(task.high+c*2048U)=Q6_Vb_vsplat_R(128);
+ }
  if(bf70_dispatch(pool,&task))return -1;h->dense_r4_prepare_ticks+=HAP_perf_get_qtimer_count()-start;
  if(h->dense_r4_audit_offset)memcpy(shared+h->dense_r4_audit_offset,b->expanded_weight,rows*QBH_BLOCK_INTERMEDIATE*4U);
  task.phase=1U;start=HAP_perf_get_qtimer_count();if(bf70_dispatch(pool,&task))return -1;

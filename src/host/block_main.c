@@ -7069,10 +7069,10 @@ int main(int argc, char **argv) {
     header->dense_r4_mode=getenv("QBH_DENSE_R4") ? (uint32_t)atoi(getenv("QBH_DENSE_R4")) : 0U;
     header->dense_r4_audit_offset=(uint32_t)dense_r4_audit_offset;
     header->dense_r4_optimization=getenv("QBH_R4_OPT") ? (uint32_t)atoi(getenv("QBH_R4_OPT")) : 0U;
-    if(header->dense_r4_optimization>6U) return 2;
+    if(header->dense_r4_optimization>9U || (header->dense_r4_optimization>6U && header->dense_r4_mode!=4U)) return 2;
     if((header->paper_format_disable&4U) && header->dense_r4_mode) return 2;
     if(header->dense_r4_mode) {
-        if(variant!=QBH_BLOCK_W4U8 || (header->dense_r4_mode>2U && header->dense_r4_mode!=4U)) return 2;
+        if(variant!=QBH_BLOCK_W4U8 || (header->dense_r4_mode>2U && header->dense_r4_mode!=4U && !QBH_R4_DOWN16(header))) return 2;
         if(header->dense_r4_optimization<2U)header->w4u8_decode_direct_n_gate_up_swiglu_stream=0U;
     }
     header->dense_r3_mode=dense_r3_mode;
