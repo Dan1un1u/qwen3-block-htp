@@ -2209,7 +2209,7 @@ static int qbh_header_valid(const struct qbh_block_header *header,
         return 0;
     }
 #endif
-    if (header == NULL || ((header->dense_r4_mode==4U || header->dense_r4_mode==5U) && ((QBH_SP2(header) && !QBH_R4_DOWN16(header)) || !QBH_FP32_RESIDUAL(header) || header->dense_r4_optimization<6U || header->dense_r4_optimization>9U || (header->dense_r4_mode==5U && (header->dense_r4_optimization>8U || !QBH_R4_DOWN16(header))) || (header->logical_m!=1U && header->logical_m!=64U))) || header->magic != QBH_BLOCK_MAGIC ||
+    if (header == NULL || ((header->dense_r4_mode==4U || header->dense_r4_mode==5U) && ((QBH_SP2(header) && !QBH_R4_DOWN16(header)) || !QBH_FP32_RESIDUAL(header) || header->dense_r4_optimization<6U || header->dense_r4_optimization>9U || (header->dense_r4_mode==5U && (header->dense_r4_optimization>9U || !QBH_R4_DOWN16(header))) || (header->logical_m!=1U && header->logical_m!=64U))) || header->magic != QBH_BLOCK_MAGIC ||
         header->abi_version != QBH_BLOCK_ABI_VERSION ||
         (QBH_SP2(header)!=0U && QBH_SP2(header)!=3U && QBH_SP2(header)!=4U && QBH_SP2(header)!=5U && QBH_SP2(header)!=6U && QBH_SP2(header)!=7U && QBH_SP2(header)!=8U) ||
         (QBH_SP2(header)>=5U &&

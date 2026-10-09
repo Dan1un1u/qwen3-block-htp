@@ -311,7 +311,8 @@ static void qbh_r4_convert_worker(void *context,uint32_t id) {
         }
         return;
     }
-    if(task->finish==2U)qbh_r4_finish_tiles(task->h,task->weight,task->middle,task->b->sp2_high,task->first,task->audit,id*4U,4U);
+    if(task->finish==2U)for(uint32_t c=0;c<task->count;++c)
+        qbh_r4_finish_tiles(task->h,task->weight+c*24576U,task->middle,task->b->sp2_high,task->first+c,task->audit,id*4U,4U);
     else if(task->finish)qbh_r4_finish_range(task->h,task->weight,task->middle,
         task->h->logical_m==1U?task->middle+128U:task->b->sp2_high,task->first,task->count,(HVX_Vector *)scratch,task->audit,id*4U,4U);
     else for(uint32_t tile=id*64U;tile<(id+1U)*64U;++tile)
@@ -408,6 +409,16 @@ static int qbh_r4_h12_tile_pipeline(struct qbh_block_header *h,struct qbh_block_
         for(uint32_t v=0;v<16U;++v)dst[v]=src[v];
     }
     h->dense_r4_prepare_ticks+=HAP_perf_get_qtimer_count()-t;
+    if(h->dense_r4_optimization==9U) {
+        t=HAP_perf_get_qtimer_count();
+        for(uint32_t c=0;c<16U;++c)qbh_r4_layout_tiles(stage1,slots+c*24576U,c);
+        h->dense_r4_layout_ticks+=HAP_perf_get_qtimer_count()-t;
+        /* All stage1 tiles have been consumed. Reuse that arena for output. */
+        if(qbh_r4_gemm(h,worker,slots,w,b->channel_scale,(__fp16 *)stage1,32U,12U,12U))return -1;
+        struct qbh_r4_convert_task task={.h=h,.b=b,.weight=stage1,.middle=middle,.audit=audit,.finish=2U,.first=0U,.count=16U};
+        t=HAP_perf_get_qtimer_count();if(qbh_r4_convert_parallel(pool,&task))return -1;
+        h->dense_r4_finish_ticks+=HAP_perf_get_qtimer_count()-t;return 0;
+    }
     t=HAP_perf_get_qtimer_count();qbh_r4_layout_tiles(stage1,slots,0U);
     h->dense_r4_layout_ticks+=HAP_perf_get_qtimer_count()-t;
     for(uint32_t chunk=0;chunk<16U;++chunk) {
@@ -416,7 +427,7 @@ static int qbh_r4_h12_tile_pipeline(struct qbh_block_header *h,struct qbh_block_
         qbh_hmx_start(worker,QBH_BLOCK_HMX_FP16,ai,w,b->channel_scale,oi,2U,12U,12U);
         ++h->hmx_command_count;++h->dense_r4_hmx_calls;h->hmx_fp16_tile_pair_count+=288U;++h->dense_r4_pipeline_batches;
         if(chunk) {
-            struct qbh_r4_convert_task task={.h=h,.b=b,.weight=slots+(2U+other)*24576U,.middle=middle,.audit=audit,.finish=2U,.first=chunk-1U,.count=64U};
+            struct qbh_r4_convert_task task={.h=h,.b=b,.weight=slots+(2U+other)*24576U,.middle=middle,.audit=audit,.finish=2U,.first=chunk-1U,.count=1U};
             t=HAP_perf_get_qtimer_count();
             if(qbh_r4_convert_parallel(pool,&task)){(void)qbh_hmx_wait(worker);return -1;}
             uint64_t dt=HAP_perf_get_qtimer_count()-t;h->dense_r4_finish_ticks+=dt;h->dense_r4_pipeline_hvx_ticks+=dt;
@@ -427,7 +438,7 @@ static int qbh_r4_h12_tile_pipeline(struct qbh_block_header *h,struct qbh_block_
         }
         t=HAP_perf_get_qtimer_count();int rc=qbh_hmx_wait(worker);h->dense_r4_matmul_ticks+=HAP_perf_get_qtimer_count()-t;if(rc)return -1;
     }
-    struct qbh_r4_convert_task task={.h=h,.b=b,.weight=slots+3U*24576U,.middle=middle,.audit=audit,.finish=2U,.first=15U,.count=64U};
+    struct qbh_r4_convert_task task={.h=h,.b=b,.weight=slots+3U*24576U,.middle=middle,.audit=audit,.finish=2U,.first=15U,.count=1U};
     t=HAP_perf_get_qtimer_count();if(qbh_r4_convert_parallel(pool,&task))return -1;
     h->dense_r4_finish_ticks+=HAP_perf_get_qtimer_count()-t;return 0;
 }
@@ -444,7 +455,7 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
     float scales[32] __attribute__((aligned(128)));
     __fp16 *audit=h->dense_r4_audit_offset?(__fp16 *)(shared+h->dense_r4_audit_offset):NULL;
     if(h->variant!=QBH_BLOCK_W4U8 || (h->dense_r4_mode>2U && !QBH_R4_DOWN16(h)) ||
-       h->dense_r4_optimization>8U ||
+       h->dense_r4_optimization>9U ||
        (rows!=1U && rows!=64U) ||
        (h->w4u8_decode_direct_n_gate_up_swiglu_stream && h->dense_r4_optimization<2U) ||
        (h->dense_r4_mode==2U && !audit) ||
@@ -503,7 +514,7 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
     for(uint32_t c=0;c<32U;++c)scales[c]=(float)(__fp16)0.2886751345948129f;
     qbh_hmx_fp16_init_channel_scales(b->channel_scale,scales);
     h->dense_r4_prepare_ticks+=HAP_perf_get_qtimer_count()-t;
-    if(h->dense_r4_optimization==8U && rows==64U && h->dense_r4_mode==5U) {
+    if(h->dense_r4_optimization>=8U && rows==64U && h->dense_r4_mode==5U) {
         if(qbh_r4_h12_tile_pipeline(h,b,worker,pool,stage1,middle,audit))return -1;
     } else
     if(h->dense_r4_optimization>=2U && rows==64U && (h->dense_r4_mode==1U || h->dense_r4_mode==5U)) {
