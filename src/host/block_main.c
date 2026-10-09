@@ -4183,7 +4183,9 @@ static int qbh_run_generation_sequence(
             header->intermediate_spill_fill_count == 0U &&
             header->boundary_ddr_write_bytes ==
                 (header->generation_boundary_audit_enabled != 0U
-                     ? QBH_BLOCK_HIDDEN*(QBH_F16_FP32_RESIDUAL(header)?6U:QBH_FP32_RESIDUAL(header)?68U:header->variant!=QBH_BLOCK_W4U8?4U:1U) : 0U) &&
+                     ? QBH_BLOCK_HIDDEN*(QBH_F16_FP32_RESIDUAL(header)?6U:QBH_FP32_RESIDUAL(header)?68U:header->variant!=QBH_BLOCK_W4U8?4U:1U) : 0U) +
+                    (header->dense_r3_audit_offset && QBH_R3_DOWN16(header)
+                     ? QBH_VERTICAL_SLICE_LAYER_COUNT*QBH_DENSE_R3_BASE_AUDIT_BYTES : 0U) &&
             state->completed_step_count == step + 1U;
         for (uint32_t slice_index = 0U;
              slice_index < QBH_VERTICAL_SLICE_LAYER_COUNT;
