@@ -87,7 +87,7 @@ def configuration(arm,build):
  env.update(LD_LIBRARY_PATH=rt['remote'],DSP_LIBRARY_PATH=rt['remote'],ADSP_LIBRARY_PATH=rt['remote'],QBH_DENSE_R3=str(cfg['r3']),QBH_R3_OPT='2' if cfg['r3'] else '0',QBH_DENSE_R4=str(cfg['r4']),QBH_R4_OPT=str(cfg['r4opt']),QBH_PROJECTION_ROUNDING=str(cfg['rounding']),QBH_LONG_OPT='2555807',QBH_KV_CACHE_CAPACITY='2112',QBH_PREFIX_FILE=p['prefix_remote'])
  return rt,p,env,argv
 
-def window(arm,start,count,tag,build='full',prompt_length=64,audit=False,length_override=None):
+def window(arm,start,count,tag,build='full-r1',prompt_length=64,audit=False,length_override=None):
  preflight();ids=read(TOKEN_FILE);assert sha(TOKEN_FILE)==TOKEN_SHA and len(ids)==8256
  d=R/'runs'/tag;d.mkdir(parents=True,exist_ok=False);rt,p,env,argv=configuration(arm,build)
  prompt=ids[start-prompt_length:start];targets=ids[start:start+count];assert len(prompt)==prompt_length and len(targets)==count
@@ -98,9 +98,19 @@ def window(arm,start,count,tag,build='full',prompt_length=64,audit=False,length_
  files=read(Path(p['package'])/'manifest.json')['files'];names=[n for n in files if n not in ('long_prompt_u32.bin','targets.bin')]
  dirs=sorted({str(Path(n).parent) for n in names});adb('shell','mkdir -p '+' '.join(shlex.quote(remote+'/'+n) for n in dirs))
  for i in range(0,len(names),40):adb('shell',' && '.join('ln -s '+shlex.quote(p['remote']+'/'+n)+' '+shlex.quote(remote+'/'+n) for n in names[i:i+40]))
- # Rotated EXP0332 packages deliberately omit unrelated long-input files.
- for n in ['long_fixed_u32.bin','long_rope_cos_f16.bin','long_rope_sin_f16.bin']:
-  if n not in files:adb('shell','ln -s '+shlex.quote('/data/local/tmp/qwen3-block-htp/exp0318/models/64/'+n)+' '+shlex.quote(remote+'/'+n))
+ # Rotated short packages omit long input and row-major initialization/reference files.
+ # These buffers are reset by the long frontend; no weights/qparams/LUT are substituted.
+ supplements=['long_fixed_u32.bin','long_rope_cos_f16.bin','long_rope_sin_f16.bin']
+ supplements += [f'layer{li}/{pre}kv_cache_{kind}_u8.bin' for li in range(28) for pre in ('','reference_') for kind in ('k','v')]
+ original=read(R/('package-original-'+('on' if ARMS[arm]['r3'] else 'off')+'.json'))
+ original_files=read(Path(original['package'])/'manifest.json')['files']
+ added={}
+ for n in supplements:
+  if n not in files:
+   assert n in original_files
+   adb('shell','ln -s '+shlex.quote(original['remote']+'/'+n)+' '+shlex.quote(remote+'/'+n))
+   added[n]=dict(original_files[n],source_package=original['remote'])
+ save(d/'supplemental-files.json',added)
  for n in ['long_prompt_u32.bin','targets.bin']:
   adb('push',win(d/n),remote+'/'+n);assert adb('shell','sha256sum '+remote+'/'+n).stdout.split()[0]==sha(d/n)
  env.update(QBH_LONG_PREFILL_TOKENS=str(prompt_length),QBH_LONG_TARGET_FILE=remote+'/targets.bin',QBH_LONG_DECODE_STEPS=str(count-1),QBH_LONG_REPEATS='1')
@@ -156,7 +166,7 @@ def quality(arm):
  save(R/'quality'/arm/'result.json',result);print('FINAL_PPL',json.dumps(result),flush=True)
 
 if __name__=='__main__':
- a=argparse.ArgumentParser();a.add_argument('action',choices=['prepare','build','window','quality']);a.add_argument('--arm',choices=list(ARMS),default='RD2');a.add_argument('--layers',type=int,default=28);a.add_argument('--tag',default='full');a.add_argument('--build-tag',default='full');a.add_argument('--start',type=int,default=64);a.add_argument('--count',type=int,default=43);a.add_argument('--prompt',type=int,default=64);a.add_argument('--audit',action='store_true');v=a.parse_args()
+ a=argparse.ArgumentParser();a.add_argument('action',choices=['prepare','build','window','quality']);a.add_argument('--arm',choices=list(ARMS),default='RD2');a.add_argument('--layers',type=int,default=28);a.add_argument('--tag',default='full');a.add_argument('--build-tag',default='full-r1');a.add_argument('--start',type=int,default=64);a.add_argument('--count',type=int,default=43);a.add_argument('--prompt',type=int,default=64);a.add_argument('--audit',action='store_true');v=a.parse_args()
  if v.action=='prepare':prepare()
  elif v.action=='build':build(v.layers,v.tag)
  elif v.action=='window':window(v.arm,v.start,v.count,v.tag,v.build_tag,v.prompt,v.audit)
