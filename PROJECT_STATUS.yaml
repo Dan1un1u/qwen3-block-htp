@@ -18,7 +18,7 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: EXP-0333
+  active_experiment: null
   next_experiment_number: 334
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
@@ -2882,16 +2882,16 @@ current_scope:
         rotation_checkpoint_sha256: e48b1dbb3441e418a182e2c066acaef69607bbd118ca3f2727a8b157bd3499fd
     next_action: discuss_result_no_automatic_next_direction_or_promotion
   execution_unit: Qwen3_28layer_native_W4_SP2_M64_plus15_verified
-  last_completed_experiment: EXP-0331
+  last_completed_experiment: EXP-0333
 
-  last_completed_source_commit: 7fb199b8d84ef1a9827e5c4112659f34db73d2b9
+  last_completed_source_commit: f107ccda70288729d065839b77d3b59b761c5fa7
 
   provisional_source_parent: EXP0268_diagnostic_U8_pipeline_closure_no_default_promotion
-  device_execution_state: idle_exp0331_butterfly_r4_completed
+  device_execution_state: idle_exp0333_full2048_quality_completed
 
   full_model: EXP0218_three_recipes_complete_token_boundary_with_lightweight_quality_harness
   qwen3_middle_block: accepted_EXP0149_block_substrate_reused_across_28_layers
-  current_handoff: docs/experiments/EXP-0331-RESULTS.md
+  current_handoff: docs/experiments/EXP-0333-RESULTS.md
 
   active_recipe_specialization: native_W4_SP2_FP32_residual_no_rotation
   last_completed_experiment_contract:
@@ -9582,9 +9582,9 @@ current_scope:
       pass but do not clear gate
     next_direction: discuss_runtime_nondeterminism_then_same_token_device_software_head_and_transformer_alignment
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0257.md
-  last_concluded_experiment: EXP-0331
+  last_concluded_experiment: EXP-0333
 
-  last_concluded_source_commit: 7fb199b8d84ef1a9827e5c4112659f34db73d2b9
+  last_concluded_source_commit: f107ccda70288729d065839b77d3b59b761c5fa7
 
   latest_w4u8_dense_r3_e2e_diagnostic_result:
     id: EXP-0258
@@ -10607,7 +10607,7 @@ current_scope:
     checkpoint_handoff: docs/SESSION_HANDOFF_EXP0265.md
     next_direction: discuss_R4_quality_before_new_tuning; staticmiddle_and_RTN_Down_speedfixture_not_qualityaccepted;
       repeat1_cannot_veto_repeat10
-  qwen3_research_state: bounded_long_context_loop_completed
+  qwen3_research_state: full2048_quality_and_migration_inventory_completed
   latest_llama32_migration:
     id: EXP-0266
     execution_state: completed
@@ -12350,7 +12350,7 @@ current_scope:
     generalization: supplementary only; not rerun or included
     quality_claim: false
     baseline_promoted: false
-  next_action: Discuss collaboration repository and single-device source-build workflow with user; no new experiment or migration implementation automatically authorized.
+  next_action: Discuss migration release and collaboration workflow using preserved frontier;no automatic new hardware experiment.
 
   latest_f16_baseline_synthesis:
     report: /mnt/d/llm_exp/results/paper-f16-baselines-20260916/REPORT.md
@@ -12772,7 +12772,7 @@ current_scope:
       exceedsuint32 shared-offset ABI
     named_dataset_measurements_completed: false
     baseline_promotion: No additional automatic promotion
-  stage: qwen17_context2048_three_client_optimization_verified
+  stage: qwen17_recent_rotation_frontier_full2048_quality_verified
   latest_long_prefill_migration:
     experiment: EXP-0296
     execution_state: completed
@@ -19172,7 +19172,7 @@ current_scope:
     conclusion: Selected B12, prefill wall 0.6427percent lower than B9 and R4 wrapper 6.8970percent lower. Prefill still slower than optimized dense and overhead above10percent.
       Decode change vs oldbutterfly CI assessed, no speedup claim where CI includes1. B13 exact but slower, retained; no fullstreamed R4/Down overlap implemented.
 
-  last_completed_evidence:
+  prior_last_completed_evidence_exp0332:
     experiment: EXP-0332
     evidence_validity: valid
     local_gate: pass
@@ -19193,6 +19193,94 @@ current_scope:
       RB2: 41.828562567794656
     baseline_promoted: false
     quality_acceptance: false
+  last_completed_evidence:
+    experiment: EXP-0333
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: Matched2048-window score protocol and actual finite-precision long implementation/physical contracts;not new formal speed,idealFP32
+      equivalence or quality-threshold acceptance.
+    device_owner: null
+    source_parent: d0eec6462f7e3eee158eca153ef8f3b1ba017cdc
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0333-long-rotation-quality
+    source_closure: f107ccda70288729d065839b77d3b59b761c5fa7
+    measured_quality_source: 49f95a7d8f319dde322fd662523ec66d80882cfd
+    quality_driver_source: 7317082378051a197ab19d03734b405294d2f8d6
+    delivery_source: 2971d9db7591ba04170147505ec97dac5457790c
+    delivery_four_binaries_byte_exact_to_quality_build: true
+    evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0333
+    report: docs/experiments/EXP-0333-RESULTS.md
+    profiling_report: docs/experiments/EXP-0333-PROFILING.md
+    evidence_ledger: /mnt/d/llm_exp/results/qwen3-block-htp/exp0333/EVIDENCE_SHA256.json
+    evidence_ledger_sha256: 7870592aab22091168a13d312f643077476e8a3c02921474e115b7fa564fffa8
+    evidence_files: 968
+    evidence_bytes: 6180186876
+    quality_window_tokens: 2048
+    performance_development_prompt_tokens: 64
+    quality_scope: WT2 rawtest fixed8192-target subset,positions64..8255;4full2048windows each64warmup+1984targets plus256-target tail;no inside-window
+      reset,context64..2047;not fullcorpus.
+    ppl:
+      C0: 28.4670476589086
+      C2: 25.22940160422084
+      R2: 21.582352741525476
+      D0: 30.253443089802904
+      D2: 27.339091454239746
+      RD2: 23.589334500381742
+      B2: 27.819149211809464
+      RB2: 23.507789027312583
+    matched_original_BF16_teacher_ppl: 17.87459766148885
+    best_by_this_subset_PPL: R2
+    pairwise_ppl_change_percent:
+      C2/C0: -11.37331167418958
+      R2/C2: -14.455550392781479
+      D2/C2: 8.362028886432093
+      RD2/R2: 9.299179671893398
+      RD2/D2: -13.715733604879876
+      B2/C2: 10.264799967175442
+      RB2/R2: 8.921345642185141
+      RB2/B2: -15.497814658784293
+      B2/D2: 1.7559389578590823
+      RB2/RD2: -0.3456878915674366
+    score_records_verified: 65536
+    histogram_saturations: 0
+    nonfinite_records: 0
+    C0_exact_historical_targets: 8192
+    R2_exact_historical_targets: 8192
+    long_combined_checks:
+      layers:
+      - 1
+      - 3
+      - 28
+      prefill_tokens: 2048
+      decode_steps: 3
+      R3_max_code_error: 0
+      all_cache_guards_pass: true
+      vtcm_requested_granted_bytes: 8388608
+      peak_plan_bytes:
+        dense: 6554848
+        butterfly: 6620384
+      zero_timed_intermediate_DDR: true
+    diagnostic_invocations: 65536
+    diagnostic_layer_ledgers: 1835008
+    all_ledgers_close: true
+    retained_switches:
+    - R3off/on and matching Q/K/score/prefix
+    - R4off/denseOPT10/butterflyOPT12 and matching fresh folded DownW4/LUT
+    - projectionrounding0/2
+    - speed64/quality2048/long_session length and decode length
+    - capacity-derived clients and bounded2/3 diagnostics
+    - nativeW4 QKV every completeM64 chunk;384KiB overlay onlyR4off
+    migration_inventory: config/qwen17-migration-frontier.json
+    migration_guide: docs/QWEN17_MIGRATION_FRONTIER.md
+    baseline_promoted: false
+    quality_acceptance: false
+    new_formal_speed_campaign: false
+    deferred:
+    - DenseFP16/butterflyFP32 precision unification
+    - New combined long-context formal speed
+    - New private repository/SDK purification/remote job server
+    next_action: Discuss migration release and collaboration workflow using preserved frontier;no automatic new hardware experiment.
+    full_profiling_report: docs/experiments/EXP-0333-PROFILING.md
 
 current_r3_r4_integration:
   experiment: EXP-0332
@@ -19290,11 +19378,89 @@ network_recovery_policy:
 
 current_long_rotation_quality:
   experiment: EXP-0333
-  state: running
+  state: completed
+  evidence_validity: valid
+  local_gate: pass
+  gate_scope: Matched2048-window score protocol and actual finite-precision long implementation/physical contracts;not new formal speed,idealFP32
+    equivalence or quality-threshold acceptance.
+  device_owner: null
   source_parent: d0eec6462f7e3eee158eca153ef8f3b1ba017cdc
-  device_owner: EXP-0333
-  approval: User2026-10-10 requests full2048 context PPL and preservation of recent
-    Qwen17 migration frontier switches
+  source_worktree: /home/daniuniu/work/qwen3-block-htp
+  source_branch: codex/exp-0333-long-rotation-quality
+  source_closure: f107ccda70288729d065839b77d3b59b761c5fa7
+  measured_quality_source: 49f95a7d8f319dde322fd662523ec66d80882cfd
+  quality_driver_source: 7317082378051a197ab19d03734b405294d2f8d6
+  delivery_source: 2971d9db7591ba04170147505ec97dac5457790c
+  delivery_four_binaries_byte_exact_to_quality_build: true
+  evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0333
+  report: docs/experiments/EXP-0333-RESULTS.md
+  profiling_report: docs/experiments/EXP-0333-PROFILING.md
+  evidence_ledger: /mnt/d/llm_exp/results/qwen3-block-htp/exp0333/EVIDENCE_SHA256.json
+  evidence_ledger_sha256: 7870592aab22091168a13d312f643077476e8a3c02921474e115b7fa564fffa8
+  evidence_files: 968
+  evidence_bytes: 6180186876
   quality_window_tokens: 2048
   performance_development_prompt_tokens: 64
-  evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0333
+  quality_scope: WT2 rawtest fixed8192-target subset,positions64..8255;4full2048windows each64warmup+1984targets plus256-target tail;no inside-window
+    reset,context64..2047;not fullcorpus.
+  ppl:
+    C0: 28.4670476589086
+    C2: 25.22940160422084
+    R2: 21.582352741525476
+    D0: 30.253443089802904
+    D2: 27.339091454239746
+    RD2: 23.589334500381742
+    B2: 27.819149211809464
+    RB2: 23.507789027312583
+  matched_original_BF16_teacher_ppl: 17.87459766148885
+  best_by_this_subset_PPL: R2
+  pairwise_ppl_change_percent:
+    C2/C0: -11.37331167418958
+    R2/C2: -14.455550392781479
+    D2/C2: 8.362028886432093
+    RD2/R2: 9.299179671893398
+    RD2/D2: -13.715733604879876
+    B2/C2: 10.264799967175442
+    RB2/R2: 8.921345642185141
+    RB2/B2: -15.497814658784293
+    B2/D2: 1.7559389578590823
+    RB2/RD2: -0.3456878915674366
+  score_records_verified: 65536
+  histogram_saturations: 0
+  nonfinite_records: 0
+  C0_exact_historical_targets: 8192
+  R2_exact_historical_targets: 8192
+  long_combined_checks:
+    layers:
+    - 1
+    - 3
+    - 28
+    prefill_tokens: 2048
+    decode_steps: 3
+    R3_max_code_error: 0
+    all_cache_guards_pass: true
+    vtcm_requested_granted_bytes: 8388608
+    peak_plan_bytes:
+      dense: 6554848
+      butterfly: 6620384
+    zero_timed_intermediate_DDR: true
+  diagnostic_invocations: 65536
+  diagnostic_layer_ledgers: 1835008
+  all_ledgers_close: true
+  retained_switches:
+  - R3off/on and matching Q/K/score/prefix
+  - R4off/denseOPT10/butterflyOPT12 and matching fresh folded DownW4/LUT
+  - projectionrounding0/2
+  - speed64/quality2048/long_session length and decode length
+  - capacity-derived clients and bounded2/3 diagnostics
+  - nativeW4 QKV every completeM64 chunk;384KiB overlay onlyR4off
+  migration_inventory: config/qwen17-migration-frontier.json
+  migration_guide: docs/QWEN17_MIGRATION_FRONTIER.md
+  baseline_promoted: false
+  quality_acceptance: false
+  new_formal_speed_campaign: false
+  deferred:
+  - DenseFP16/butterflyFP32 precision unification
+  - New combined long-context formal speed
+  - New private repository/SDK purification/remote job server
+  next_action: Discuss migration release and collaboration workflow using preserved frontier;no automatic new hardware experiment.

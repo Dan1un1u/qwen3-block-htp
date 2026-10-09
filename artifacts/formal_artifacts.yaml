@@ -524,3 +524,16 @@ artifacts:
   files: 1394
   bytes: 1233186824
   note: Matched quality and actual implementation-contract validation; repeat1 performance auxiliary,not formal performance promotion.
+- id: EXP-0333-results
+  experiment: EXP-0333
+  kind: quality-result-set
+  path: /mnt/d/llm_exp/results/qwen3-block-htp/exp0333
+  source_commit: 49f95a7d8f319dde322fd662523ec66d80882cfd
+  source_closure: f107ccda70288729d065839b77d3b59b761c5fa7
+  delivery_source: 2971d9db7591ba04170147505ec97dac5457790c
+  manifest: /mnt/d/llm_exp/results/qwen3-block-htp/exp0333/EVIDENCE_SHA256.json
+  manifest_sha256: 7870592aab22091168a13d312f643077476e8a3c02921474e115b7fa564fffa8
+  report: docs/experiments/EXP-0333-RESULTS.md
+  files: 968
+  bytes: 6180186876
+  note: Matched full2048 subset PPL and long actual implementation validation;scoring-instrumented profiling only;no formal speed or promotion.

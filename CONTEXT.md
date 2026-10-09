@@ -2770,3 +2770,9 @@ R3+R4 integration implemented and validated on Qwen17W4A8 uniformDown16/FP32resi
 
 ## EXP0333 active (2026-10-10)
 User corrects precision evaluation to full2048 windows while speed development stays64. Eight frozen no/R3/R4dense/R4butterfly/both plus originalrounding anchors; same8192targets,matched17.8746teacher,longKV gates. Also create repository-relative frontier/preset compatibility manifest including context and scheduler flags,retained quantizer/export references; no omission of recentR3long oroptimizedR4. No recalibration,newprecision,automaticpromotion or private-repo deployment. SeeEXP0333protocol.
+
+## EXP-0333 completed: full2048 PPL and migration frontier
+
+Primary quality is now full2048windows on the fixed8192-target WT2 subset with tail,not the old191short reset windows. All8 arms completed;PPL:C0=28.467048,C2=25.229402,R2=21.582353,D0=30.253443,D2=27.339091,RD2=23.589335,B2=27.819149,RB2=23.507789;matchedBF16=17.874598. Best subset arm:R2. C0/R2 reproduce historical8192 scores exactly. Long combined1/3/28 reference/physical gates pass;DenseFP16/butterflyFP32 difference remains explicit.
+
+Preserve R3/R4/backend/rounding/context/client/package switches and original-derived quantizer/export provenance via source docs/QWEN17_MIGRATION_FRONTIER.md and config manifests. Historical speed remains separate;no new formal speed or defaultpromotion. EXP0333 results/profiling sealed;source andauthority synchronized;device/experiment locks released. Next:discuss migration/collaboration release,not another automatic optimization loop.
