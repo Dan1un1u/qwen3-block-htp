@@ -19292,7 +19292,7 @@ current_long_rotation_quality:
   experiment: EXP-0333
   state: running
   source_parent: d0eec6462f7e3eee158eca153ef8f3b1ba017cdc
-  device_owner: null
+  device_owner: EXP-0333
   approval: User2026-10-10 requests full2048 context PPL and preservation of recent
     Qwen17 migration frontier switches
   quality_window_tokens: 2048
