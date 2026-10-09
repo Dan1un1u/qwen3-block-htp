@@ -288,7 +288,7 @@ struct qbh_r4_convert_task {
     uint32_t finish,first,count,stream;
     volatile uint32_t ready[6],abort;
     uint32_t consumed[2];
-    uint64_t work_ticks[3];
+    uint64_t work_ticks[4];
 };
 static void qbh_r4_convert_worker(void *context,uint32_t id) {
     struct qbh_r4_convert_task *task=context;
@@ -311,8 +311,11 @@ static void qbh_r4_convert_worker(void *context,uint32_t id) {
         }
         return;
     }
-    if(task->finish==2U)for(uint32_t c=0;c<task->count;++c)
-        qbh_r4_finish_tiles(task->h,task->weight+c*24576U,task->middle,task->b->sp2_high,task->first+c,task->audit,id*4U,4U);
+    if(task->finish==2U) {
+        uint32_t groups=task->h->dense_r4_optimization==10U?3U:4U;
+        for(uint32_t c=0;c<task->count;++c)
+            qbh_r4_finish_tiles(task->h,task->weight+c*24576U,task->middle,task->b->sp2_high,task->first+c,task->audit,id*groups,groups);
+    }
     else if(task->finish)qbh_r4_finish_range(task->h,task->weight,task->middle,
         task->h->logical_m==1U?task->middle+128U:task->b->sp2_high,task->first,task->count,(HVX_Vector *)scratch,task->audit,id*4U,4U);
     else for(uint32_t tile=id*64U;tile<(id+1U)*64U;++tile)
@@ -322,21 +325,22 @@ static void qbh_r4_convert_worker(void *context,uint32_t id) {
 }
 static int qbh_r4_convert_parallel(struct qbh_block_w4f16_pool *pool,
     struct qbh_r4_convert_task *task) {
-    if(!pool || pool->worker_count<2U)return -1;
+    const uint32_t n=task->finish==2U && task->h->dense_r4_optimization==10U?3U:2U;
+    if(!pool || pool->worker_count<n)return -1;
     for(uint32_t i=0;i<pool->worker_count;++i)
         if(pool->jobs[i].command_kind!=QBH_BLOCK_HVX_POOL_NONE)return -1;
-    pool->active_worker_count=2U;pool->extra_expand_worker_index=UINT32_MAX;
-    for(uint32_t i=0;i<2U;++i) {
+    pool->active_worker_count=n;pool->extra_expand_worker_index=UINT32_MAX;
+    for(uint32_t i=0;i<n;++i) {
         pool->jobs[i].r4_convert_context=task;
         pool->jobs[i].command_kind=QBH_BLOCK_HVX_POOL_R4_CONVERT;
     }
     asm volatile("barrier" ::: "memory");
-    for(uint32_t i=0;i<2U;++i)(void)qurt_sem_up(&pool->command_ready[i]);
-    qbh_r4_convert_worker(task,2U);
+    for(uint32_t i=0;i<n;++i)(void)qurt_sem_up(&pool->command_ready[i]);
+    qbh_r4_convert_worker(task,n);
     uint64_t t=HAP_perf_get_qtimer_count();
     qbh_w4f16_pool_wait(pool);pool->active_worker_count=0U;
     task->h->dense_r4_parallel_join_ticks+=HAP_perf_get_qtimer_count()-t;
-    for(uint32_t i=0;i<3U;++i)task->h->dense_r4_parallel_work_ticks+=task->work_ticks[i];
+    for(uint32_t i=0;i<n+1U;++i)task->h->dense_r4_parallel_work_ticks+=task->work_ticks[i];
     ++task->h->dense_r4_parallel_dispatches;
     if(task->finish)task->h->dense_r4_parallel_finish_groups+=12U;
     else task->h->dense_r4_parallel_prepare_tiles+=192U;
@@ -409,7 +413,7 @@ static int qbh_r4_h12_tile_pipeline(struct qbh_block_header *h,struct qbh_block_
         for(uint32_t v=0;v<16U;++v)dst[v]=src[v];
     }
     h->dense_r4_prepare_ticks+=HAP_perf_get_qtimer_count()-t;
-    if(h->dense_r4_optimization==9U) {
+    if(h->dense_r4_optimization>=9U) {
         t=HAP_perf_get_qtimer_count();
         for(uint32_t c=0;c<16U;++c)qbh_r4_layout_tiles(stage1,slots+c*24576U,c);
         h->dense_r4_layout_ticks+=HAP_perf_get_qtimer_count()-t;
@@ -455,7 +459,7 @@ static int qbh_run_dense_r4(struct qbh_block_header *h,uint8_t *shared,
     float scales[32] __attribute__((aligned(128)));
     __fp16 *audit=h->dense_r4_audit_offset?(__fp16 *)(shared+h->dense_r4_audit_offset):NULL;
     if(h->variant!=QBH_BLOCK_W4U8 || (h->dense_r4_mode>2U && !QBH_R4_DOWN16(h)) ||
-       h->dense_r4_optimization>9U ||
+       h->dense_r4_optimization>10U ||
        (rows!=1U && rows!=64U) ||
        (h->w4u8_decode_direct_n_gate_up_swiglu_stream && h->dense_r4_optimization<2U) ||
        (h->dense_r4_mode==2U && !audit) ||
