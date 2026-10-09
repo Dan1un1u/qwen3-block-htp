@@ -18,8 +18,8 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 333
+  active_experiment: EXP-0333
+  next_experiment_number: 334
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -19287,3 +19287,14 @@ network_recovery_policy:
   process_local_proxy_bypass: true
   offline_authority: clean_last_synchronized_locally_validated_snapshot
   remote_freshness_must_be_disclosed: true
+
+current_long_rotation_quality:
+  experiment: EXP-0333
+  state: running
+  source_parent: d0eec6462f7e3eee158eca153ef8f3b1ba017cdc
+  device_owner: null
+  approval: User2026-10-10 requests full2048 context PPL and preservation of recent
+    Qwen17 migration frontier switches
+  quality_window_tokens: 2048
+  performance_development_prompt_tokens: 64
+  evidence: /mnt/d/llm_exp/results/qwen3-block-htp/exp0333

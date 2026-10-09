@@ -33225,3 +33225,15 @@ experiments:
     - Repository migration/server setup discussion
     next_action: Discuss collaboration repository and single-device source-build workflow with user; no new experiment or migration implementation
       automatically authorized.
+- id: EXP-0333
+  title: Qwen17 full2048 rotation PPL and migration frontier preservation
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/EXP-0333.md
+  approval_ref: User2026-10-10 full2048 PPL comparison and recent Qwen17 Pareto frontier/switch inventory;64 remains speed-development scope.
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0332-r3-r4-quality
+    device_owner: null
