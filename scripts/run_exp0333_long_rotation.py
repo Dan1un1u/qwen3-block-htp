@@ -105,11 +105,12 @@ def window(arm,start,count,tag,build='full-r1',prompt_length=64,audit=False,leng
  original=read(R/('package-original-'+('on' if ARMS[arm]['r3'] else 'off')+'.json'))
  original_files=read(Path(original['package'])/'manifest.json')['files']
  added={}
- for n in supplements:
-  if n not in files:
-   assert n in original_files
-   adb('shell','ln -s '+shlex.quote(original['remote']+'/'+n)+' '+shlex.quote(remote+'/'+n))
-   added[n]=dict(original_files[n],source_package=original['remote'])
+ missing=[n for n in supplements if n not in files]
+ for n in missing:
+  assert n in original_files
+  added[n]=dict(original_files[n],source_package=original['remote'])
+ for i in range(0,len(missing),40):
+  adb('shell',' && '.join('ln -s '+shlex.quote(original['remote']+'/'+n)+' '+shlex.quote(remote+'/'+n) for n in missing[i:i+40]))
  save(d/'supplemental-files.json',added)
  for n in ['long_prompt_u32.bin','targets.bin']:
   adb('push',win(d/n),remote+'/'+n);assert adb('shell','sha256sum '+remote+'/'+n).stdout.split()[0]==sha(d/n)
