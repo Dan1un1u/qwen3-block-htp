@@ -18,7 +18,6 @@ ARMS={
  'RD2':dict(r3=1,r4=5,r4opt=10,rounding=2),
  'B2':dict(r3=0,r4=4,r4opt=12,rounding=2),
  'RB2':dict(r3=1,r4=4,r4opt=12,rounding=2),
- 'C0':dict(r3=0,r4=0,r4opt=6,rounding=0),
 }
 CAP=64*6144;H=2048;F=6144
 
@@ -184,8 +183,8 @@ def quality(arm,build='full'):
  save(R/'quality'/arm/'rows.json',allrows);save(R/'quality'/arm/'result.json',result);print('FINAL_PPL',json.dumps(result),flush=True)
 
 if __name__=='__main__':
- p=argparse.ArgumentParser();p.add_argument('action',choices=['prepare','build','fixed','quality']);p.add_argument('--arm',choices=list(ARMS),default='RD2');p.add_argument('--tag',default='one');p.add_argument('--layers',type=int,default=1);p.add_argument('--clean',action='store_true');p.add_argument('--steps',type=int,default=4);p.add_argument('--no-audit',action='store_true');a=p.parse_args()
+ p=argparse.ArgumentParser();p.add_argument('action',choices=['prepare','build','fixed','quality']);p.add_argument('--arm',choices=list(ARMS),default='RD2');p.add_argument('--tag',default='one');p.add_argument('--layers',type=int,default=1);p.add_argument('--build-tag');p.add_argument('--clean',action='store_true');p.add_argument('--steps',type=int,default=4);p.add_argument('--no-audit',action='store_true');a=p.parse_args()
  if a.action=='prepare':prepare()
  elif a.action=='build':build(a.layers,a.tag,a.clean)
- elif a.action=='fixed':fixed(a.arm,a.tag,a.tag.split('-')[0],a.steps,not a.no_audit)
- else:quality(a.arm)
+ elif a.action=='fixed':fixed(a.arm,a.tag,a.build_tag or a.tag.split('-')[0],a.steps,not a.no_audit)
+ else:quality(a.arm,a.build_tag or 'quality')
