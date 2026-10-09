@@ -395,9 +395,18 @@ static int qbh_r4_h12_tile_pipeline(struct qbh_block_header *h,struct qbh_block_
     const __fp16 *stage1,uint8_t *middle,__fp16 *audit) {
     __fp16 *w=(__fp16 *)b->expanded_weight,*slots=(__fp16 *)b->hmx_activation;
     uint64_t t=HAP_perf_get_qtimer_count();
-    qbh_r4_zero(w,12U*12U*2048U);
-    for(uint32_t a=0;a<12U;++a)for(uint32_t z=0;z<12U;++z)for(uint32_t c=0;c<32U;++c)
-        w[qbh_r4_pos(a*32U+c,z*32U+c,12U)]=(__fp16)qbh_r4_h12[z][a];
+    __fp16 eye[2][1024] __attribute__((aligned(128)));
+    qbh_r4_zero(eye,sizeof(eye));
+    for(uint32_t c=0;c<32U;++c) {
+        eye[0][qbh_hmx_fp16_tile_offset(c,c)]=(__fp16)1.0f;
+        eye[1][qbh_hmx_fp16_tile_offset(c,c)]=(__fp16)-1.0f;
+    }
+    /* HMX weights are N-major/K-minor, unlike activation M-major/K-minor. */
+    for(uint32_t z=0;z<12U;++z)for(uint32_t a=0;a<12U;++a) {
+        const HVX_Vector *src=(const HVX_Vector *)eye[qbh_r4_h12[z][a]<0];
+        HVX_Vector *dst=(HVX_Vector *)(w+(z*12U+a)*1024U);
+        for(uint32_t v=0;v<16U;++v)dst[v]=src[v];
+    }
     h->dense_r4_prepare_ticks+=HAP_perf_get_qtimer_count()-t;
     t=HAP_perf_get_qtimer_count();qbh_r4_layout_tiles(stage1,slots,0U);
     h->dense_r4_layout_ticks+=HAP_perf_get_qtimer_count()-t;
