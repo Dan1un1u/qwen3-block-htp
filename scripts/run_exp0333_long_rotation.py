@@ -150,7 +150,7 @@ def quality(arm):
   rows+=got
  assert [v['corpus_position'] for v in rows]==list(range(64,8256))
  teacher=read(PARENTS/'exp0320/rows-1984.json')
- for a,b in zip(rows,teacher):assert a['corpus_position']==b['corpus_position'] and a['target_token']==b['target_token'] and a['cache_valid']==b['context_length']
+ for a,b in zip(rows,teacher):assert a['corpus_position']==b['position'] and a['target_token']==b['target'] and a['cache_valid']==b['context']
  mean=math.fsum(v['nll'] for v in rows)/8192
  save(R/'quality'/arm/'rows.json',rows);result=dict(arm=arm,configuration=ARMS[arm],ppl=math.exp(mean),mean_nll=mean,targets=8192,windows=5,scope='WT2 rawtest subset;full2048 including64warmup,1984targets/window,256targettail;context64..2047',saturation=sum(v['saturated'] for v in rows))
  save(R/'quality'/arm/'result.json',result);print('FINAL_PPL',json.dumps(result),flush=True)
