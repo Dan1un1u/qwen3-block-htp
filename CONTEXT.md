@@ -2742,3 +2742,6 @@ Frozen rounding2/Down16/FP32/R3 arithmetic. Reuse OPT2 QK-ready preparation; ena
 
 ## EXP0328 closed: fixed-input inference shell delivery
 Delivered Desktop run_qwen3_w4a8_int16.sh for Qwen17 W4A8 uniformINT16Down FP32residual2 noR3/R4, verified EXP0317/EXP0308 text-screen config. Fixed64 chat tokens,43 genuinegreedy outputs; save text/raw/tokens/logs and validate913 deployed model/runtime/prefix identities. Pythonstdlib only; offline fixture/Bash/mock validation passes, decoder exact historical text/raw. Existing-output collision detected/repaired and hashes preserved. No actualdevice/build/export/profiling/PPL or baselinepromotion; source54e910c unchanged, active/deviceowner none. Read EXP0328RESULTS.
+
+## EXP0329 active
+User requests R4-only optimized HVX butterfly/dense baselines on Qwen17 W4A8 uniformINT16Down/FP32residual, context64. Historical EXP0309 and EXP0261-0265; R3 OFF frozen. See EXP0329 protocol; no new measurements or promotion. ProxyCONNECT failure recovered with process-local direct Git access; authority bootstrap verified.

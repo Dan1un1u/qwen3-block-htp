@@ -31751,3 +31751,16 @@ experiments:
     baseline_promoted: false
     device_owner: null
   full_profiling_report: docs/experiments/EXP-0328-RESULTS.md
+
+- id: EXP-0329
+  title: Qwen17 Down16 M64 optimized HVX butterfly and dense R4 baselines
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/EXP-0329.md
+  approval_ref: User2026-10-09 focuses R4 on Qwen17 W4A8INT16 context64; reuse and optimize historical HVX butterfly and dense implementations.
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0327-r3-long-pipeline
+    device_owner: null
