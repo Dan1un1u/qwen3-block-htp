@@ -31988,3 +31988,17 @@ experiments:
     ppl_rerun: false
     baseline_promoted: false
   full_profiling_report: docs/experiments/EXP-0329-PROFILING.md
+
+- id: EXP-0330
+  title: Qwen17 Down16 dense R4 integration optimization
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/EXP-0330.md
+  approval_ref: User2026-10-09 requires adequately optimized dense R4 before butterfly
+    motivation.
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0329-r4-down16-baselines
+    device_owner: null
