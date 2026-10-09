@@ -6618,7 +6618,11 @@ static uint32_t *qbh_generation_histogram(const struct qbh_block_header *h,
     if (h->variant == QBH_BLOCK_W4F16)
         return (uint32_t *)(b->up + qbh_align_up(QBH_QWEN3_VOCAB_SIZE * sizeof(float),128U));
 #else
-    (void)h;
+    /* EXP0332: dense R4 aliases nominal Down to normalized. Final norm and
+     * the resident head bias table overwrite that region. Gate is dead after
+     * MLP; its first 1KiB is independent of every live head operand. */
+    if (QBH_R4_DOWN16(h) && h->dense_r4_mode == 5U)
+        return (uint32_t *)b->gate;
 #endif
     return (uint32_t *)b->down;
 }
@@ -7838,6 +7842,15 @@ static int qbh_run_generation_head_w4u8(
         argmax_scratch = hmx_output + output_group_bytes;
     }
 
+    if (header->evaluation_mode == 1U && QBH_R4_DOWN16(header) &&
+        header->dense_r4_mode == 5U) {
+        const uintptr_t hist=(uintptr_t)qbh_generation_histogram(header,buffers);
+        const uintptr_t bias=(uintptr_t)resident_bias_table;
+        const uintptr_t activation=(uintptr_t)buffers->hmx_activation;
+        /* Explicit lifetime/range check before populating the head arena. */
+        if (hist < bias + head->bias_bytes || hist + 1024U > activation)
+            return -1;
+    }
     if (header->generation_boundary_audit_enabled != 0U) {
         if (qbh_dma_copy(
                 header, shared + header->output_offset,
