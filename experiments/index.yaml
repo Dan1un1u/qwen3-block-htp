@@ -33328,10 +33328,10 @@ experiments:
   full_profiling_report: docs/experiments/EXP-0333-PROFILING.md
 - id: EXP-0334
   title: Private HTP research migration and local collaboration infrastructure
-  execution_state: running
-  evidence_validity: not_checked
-  local_gate: not_run
-  adoption_status: pending
+  execution_state: completed
+  evidence_validity: valid
+  local_gate: pass
+  adoption_status: not_applicable
   record: docs/experiments/EXP-0334.md
   approval_ref: User2026-10-10 approves the revised migration plan, permits agent-created
     private repository and autonomous completion;remote access later.
@@ -33343,3 +33343,56 @@ experiments:
     repository: https://github.com/Dan1un1u/htp-research
     source_root: /home/daniuniu/work/htp-research
     initial_source_snapshot: f107ccda70288729d065839b77d3b59b761c5fa7
+  result:
+    execution_state: completed
+    evidence_validity: valid
+    local_gate: pass
+    gate_scope: Snapshot/flag integrity, shared registry/original export, local collaboration
+      isolation/locks, representative finite-contract regressions, private remote
+      publication;not new speed/PPL or precision unification.
+    source_snapshot: f107ccda70288729d065839b77d3b59b761c5fa7
+    destination: https://github.com/Dan1un1u/htp-research
+    destination_private_verified: true
+    destination_head: e74c1d4b0d0bf4733206cd7ba4dce83a2b38c76c
+    destination_synchronized: true
+    source_files_byte_exact: 1652
+    retained_runtime_compile_symbols: 796
+    retained_cmake_switches: 9
+    service_unit_tests: 15
+    portable_clone_pass: true
+    original_weight_export_smokes:
+    - one-layer R4
+    - full28 RTN/head/embedding/norm;not historical GPTQ quality
+    staged_device_layers:
+    - 1
+    - 3
+    - 28
+    retained_runtime_rotation_modes:
+    - 'off'
+    - R3
+    - denseR4
+    - HVXbutterflyR4
+    - R3+denseR4
+    - R3+HVXbutterflyR4
+    context64_and2048_verified: true
+    full_control_exact_score_rows: 43
+    full_control_exact_layer_hashes: 1204
+    R3_max_code_error: 0
+    timed_intermediate_DDR_zero: true
+    device_owner: null
+    evidence: /mnt/d/llm_exp/htp-research/shared/results/exp0334
+    evidence_ledger_sha256: ee1b0380ed6a6fb66bf20b25cc40f6b5d726becc7f502ce0c116073cba2acf97
+    evidence_files: 868
+    evidence_bytes: 1474054578
+    new_report: docs/MIGRATION_REPORT.md
+    report: docs/experiments/EXP-0334-RESULTS.md
+    cold_full_build_compute_seconds_range:
+    - 42.47
+    - 43.5
+    cached_phone_deploy_verify_to_ready_seconds_range:
+    - 56.18
+    - 63.79
+    shared_model_copies_added_at_import: 0
+    remote_access_deferred: true
+    baseline_promoted: false
+    historical_results_unchanged: true
