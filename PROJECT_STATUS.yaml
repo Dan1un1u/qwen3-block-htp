@@ -18,8 +18,8 @@ project:
   soc: SM8750
   accelerator: HTP V79
 governance:
-  active_experiment: null
-  next_experiment_number: 334
+  active_experiment: EXP-0334
+  next_experiment_number: 335
   maximum_running_experiments: 1
   source_branch_pattern: codex/exp-<number>-<slug>
   remote_sync_required: true
@@ -19464,3 +19464,14 @@ current_long_rotation_quality:
   - New combined long-context formal speed
   - New private repository/SDK purification/remote job server
   next_action: Discuss migration release and collaboration workflow using preserved frontier;no automatic new hardware experiment.
+
+current_private_migration:
+  experiment: EXP-0334
+  state: running
+  source_snapshot: f107ccda70288729d065839b77d3b59b761c5fa7
+  destination: https://github.com/Dan1un1u/htp-research
+  destination_root: /home/daniuniu/work/htp-research
+  scope: User-approved private snapshot migration, shared hash model library, independent
+    quantizers/environments/jobs, narrowly scoped locks, local collaboration interfaces;remote
+    access deferred.
+  device_owner: null

@@ -33326,3 +33326,20 @@ experiments:
     - New private repository/SDK purification/remote job server
     next_action: Discuss migration release and collaboration workflow using preserved frontier;no automatic new hardware experiment.
   full_profiling_report: docs/experiments/EXP-0333-PROFILING.md
+- id: EXP-0334
+  title: Private HTP research migration and local collaboration infrastructure
+  execution_state: running
+  evidence_validity: not_checked
+  local_gate: not_run
+  adoption_status: pending
+  record: docs/experiments/EXP-0334.md
+  approval_ref: User2026-10-10 approves the revised migration plan, permits agent-created
+    private repository and autonomous completion;remote access later.
+  runtime:
+    source_worktree: /home/daniuniu/work/qwen3-block-htp
+    source_branch: codex/exp-0333-long-rotation-quality
+    device_owner: null
+  migration_output:
+    repository: https://github.com/Dan1un1u/htp-research
+    source_root: /home/daniuniu/work/htp-research
+    initial_source_snapshot: f107ccda70288729d065839b77d3b59b761c5fa7
